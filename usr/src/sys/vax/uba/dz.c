@@ -1,9 +1,9 @@
-/*	dz.c	4.48	82/12/17	*/
+/*	dz.c	4.49	82/12/30	*/
 
 #include "dz.h"
 #if NDZ > 0
 /*
- *  DZ-11 and DZ32 Driver
+ *  DZ-11/DZ-32 Driver
  *
  * This driver mimics dh.c; see it for explanation of common code.
  */
@@ -28,6 +28,7 @@
 
 #include "../vaxuba/pdma.h"
 #include "../vaxuba/ubavar.h"
+#include "../vaxuba/dzreg.h"
 
 /*
  * Driver information for auto-configuration stuff.
@@ -39,95 +40,12 @@ struct	uba_driver dzdriver =
 	{ dzprobe, 0, dzattach, 0, dzstd, "dz", dzinfo };
 
 #define	NDZLINE 	(NDZ*8)
- 
-/*
- * Registers and bits
- */
-
-/* bits in dzlpr */
-#define	BITS7	0020
-#define	BITS8	0030
-#define	TWOSB	0040
-#define	PENABLE	0100
-#define	OPAR	0200
-
-/* bits in dzrbuf */
-#define	DZ_PE	010000
-#define	DZ_FE	020000
-#define	DZ_DO	040000
-
-/* bits in dzcsr */
-#define	DZ_32	000001		/* DZ32 mode */
-#define	DZ_MIE	000002		/* Modem Interrupt Enable */
-#define	DZ_CLR	000020		/* Reset dz */
-#define	DZ_MSE	000040		/* Master Scan Enable */
-#define	DZ_RIE	000100		/* Receiver Interrupt Enable */
-#define DZ_MSC	004000		/* Modem Status Change */
-#define	DZ_SAE	010000		/* Silo Alarm Enable */
-#define	DZ_TIE	040000		/* Transmit Interrupt Enable */
-#define	DZ_IEN	(DZ_32|DZ_MIE|DZ_MSE|DZ_RIE|DZ_TIE|DZ_SAE)
-
-/* flags for modem-control */
-#define	DZ_ON	DZ_DTR
-#define	DZ_OFF	0
-
-/* bits in dzlcs */
-#define DZ_ACK	0100000		/* ACK bit in dzlcs */
-#define DZ_RTS	0010000		/* Request To Send */
-#define	DZ_ST	0004000		/* Secondary Transmit */
-#define	DZ_BRK	0002000		/* Break */
-#define DZ_DTR	0001000		/* Data Terminal Ready */
-#define	DZ_LE	0000400		/* Line Enable */
-#define	DZ_DSR	0000200		/* Data Set Ready */
-#define	DZ_RI	0000100		/* Ring Indicate */
-#define DZ_CD	0000040		/* Carrier Detect */
-#define	DZ_CTS	0000020		/* Clear To Send */
-#define	DZ_SR	0000010		/* Secondary Receive */
- 
-/* bits in dm lsr, copied from dh.c */
-#define	DML_DSR		0000400		/* data set ready, not a real DM bit */
-#define	DML_RNG		0000200		/* ring */
-#define	DML_CAR		0000100		/* carrier detect */
-#define	DML_CTS		0000040		/* clear to send */
-#define	DML_SR		0000020		/* secondary receive */
-#define	DML_ST		0000010		/* secondary transmit */
-#define	DML_RTS		0000004		/* request to send */
-#define	DML_DTR		0000002		/* data terminal ready */
-#define	DML_LE		0000001		/* line enable */
 
 int	dzstart(), dzxint(), dzdma();
 int	ttrstrt();
 struct	tty dz_tty[NDZLINE];
 int	dz_cnt = { NDZLINE };
 int	dzact;
-
-struct device {
-	short dzcsr;
-	short dzrbuf;
-	union {
-		struct {
-			char	dztcr0;
-			char	dzdtr0;
-			char	dztbuf0;
-			char	dzbrk0;
-		} dz11;
-		struct {
-			short	dzlcs0;
-			char	dztbuf0;
-			char	dzlnen0;
-		} dz32;
-	} dzun;
-};
-
-#define dzlpr	dzrbuf
-#define dzmsr	dzun.dz11.dzbrk0
-#define dztcr	dzun.dz11.dztcr0
-#define dzdtr	dzun.dz11.dzdtr0
-#define dztbuf	dzun.dz11.dztbuf0
-#define dzlcs	dzun.dz32.dzlcs0
-#define	dzbrk	dzmsr
-#define dzlnen	dzun.dz32.dzlnen0
-#define dzmtsr	dzun.dz32.dztbuf0
 
 #define dzwait(x)	while (((x)->dzlcs & DZ_ACK) == 0)
 
@@ -164,7 +82,7 @@ dzprobe(reg)
 	caddr_t reg;
 {
 	register int br, cvec;
-	register struct device *dzaddr = (struct device *)reg;
+	register struct dzdevice *dzaddr = (struct dzdevice *)reg;
 
 #ifdef lint
 	br = 0; cvec = br; br = cvec;
@@ -179,7 +97,7 @@ dzprobe(reg)
 	dzaddr->dzcsr = DZ_CLR|DZ_32;		/* reset everything */
 	if (cvec && cvec != 0x200)
 		cvec -= 4;
-	return (sizeof (struct device));
+	return (sizeof (struct dzdevice));
 }
 
 dzattach(ui)
@@ -191,7 +109,7 @@ dzattach(ui)
 	extern dzscan();
 
 	for (cntr = 0; cntr < 8; cntr++) {
-		pdp->p_addr = (struct device *)ui->ui_addr;
+		pdp->p_addr = (struct dzdevice *)ui->ui_addr;
 		pdp->p_arg = (int)tp;
 		pdp->p_fcn = dzxint;
 		pdp++, tp++;
@@ -241,7 +159,7 @@ dzclose(dev, flag)
 {
 	register struct tty *tp;
 	register int unit;
-	register struct device *dzaddr;
+	register struct dzdevice *dzaddr;
 	int dz;
  
 	unit = minor(dev);
@@ -284,7 +202,7 @@ dzrint(dz)
 {
 	register struct tty *tp;
 	register int c;
-	register struct device *dzaddr;
+	register struct dzdevice *dzaddr;
 	register struct tty *tp0;
 	register int unit;
 	int overrun = 0;
@@ -361,7 +279,7 @@ dzioctl(dev, cmd, data, flag)
 	register struct tty *tp;
 	register int unit = minor(dev);
 	register int dz = unit >> 3;
-	register struct device *dzaddr;
+	register struct dzdevice *dzaddr;
 	int error;
  
 	tp = &dz_tty[unit];
@@ -452,7 +370,7 @@ dzparam(unit)
 	register int unit;
 {
 	register struct tty *tp;
-	register struct device *dzaddr;
+	register struct dzdevice *dzaddr;
 	register int lpr;
  
 	tp = &dz_tty[unit];
@@ -508,7 +426,7 @@ dzstart(tp)
 	register struct tty *tp;
 {
 	register struct pdma *dp;
-	register struct device *dzaddr;
+	register struct dzdevice *dzaddr;
 	register int cc;
 	int s, dz, unit;
  
@@ -578,7 +496,7 @@ dzmctl(dev, bits, how)
 	dev_t dev;
 	int bits, how;
 {
-	register struct device *dzaddr;
+	register struct dzdevice *dzaddr;
 	register int unit, mbits;
 	int b, s;
 
@@ -633,7 +551,7 @@ dzmctl(dev, bits, how)
 dzscan()
 {
 	register i;
-	register struct device *dzaddr;
+	register struct dzdevice *dzaddr;
 	register bit;
 	register struct tty *tp;
 	register car;
