@@ -1,4 +1,4 @@
-/*	routed.h	82/08/18	4.8	*/
+/*	routed.h	83/05/25	4.9	*/
 /*
  * Routing Information Protocol
  *
@@ -6,6 +6,8 @@
  * by changing 32-bit net numbers to sockaddr's and
  * padding stuff to 32-bit boundaries.
  */
+#define	RIPVERSION	1
+
 struct netinfo {
 	struct	sockaddr rip_dst;	/* destination net/host */
 	int	rip_metric;		/* cost of route */
@@ -13,7 +15,8 @@ struct netinfo {
 
 struct rip {
 	u_char	rip_cmd;		/* request/response */
-	u_char	rip_res1[3];		/* pad to 32-bit boundary */
+	u_char	rip_vers;		/* protocol version # */
+	u_char	rip_res1[2];		/* pad to 32-bit boundary */
 	union {
 		struct	netinfo ru_nets[1];	/* variable length... */
 		char	ru_tracefile[1];	/* ditto ... */
@@ -22,6 +25,9 @@ struct rip {
 #define	rip_tracefile	ripun.ru_tracefile
 };
  
+/*
+ * Packet types.
+ */
 #define	RIPCMD_REQUEST		1	/* want info */
 #define	RIPCMD_RESPONSE		2	/* responding to request */
 #define	RIPCMD_TRACEON		3	/* turn tracing on */

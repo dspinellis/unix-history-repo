@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	4.4 %G%";
+static char sccsid[] = "@(#)main.c	4.5 (Berkeley) %G%";
 #endif
 
 /*
@@ -76,7 +76,7 @@ main(argc, argv)
 		for (t = 0; t < 20; t++)
 			if (t != s)
 #ifdef COMPAT
-			    if (t != snoroute)
+				if (t != snoroute)
 #endif
 				(void) close(cc);
 		(void) open("/", 0);
@@ -108,8 +108,13 @@ main(argc, argv)
 	if (supplier < 0)
 		supplier = 0;
 	msg->rip_cmd = RIPCMD_REQUEST;
+	msg->rip_vers = RIPVERSION;
 	msg->rip_nets[0].rip_dst.sa_family = AF_UNSPEC;
 	msg->rip_nets[0].rip_metric = HOPCNT_INFINITY;
+#ifdef notyet
+	msg->rip_nets[0].rip_dst.sa_family = htons(AF_UNSPEC);
+	msg->rip_nets[0].rip_metric = htonl(HOPCNT_INFINITY);
+#endif
 	toall(sendmsg);
 	sigset(SIGALRM, timer);
 	timer();

@@ -1,4 +1,4 @@
-/*	trace.h	4.2	83/01/31	*/
+/*	trace.h	4.3	83/05/25	*/
 
 /*
  * Routing table management daemon.
@@ -43,7 +43,7 @@ FILE	*ftrace;		/* output trace file */
 		ifp = if_iflookup(src); \
 		if (ifp) \
 			trace(&ifp->int_input, src, packet, size, \
-				ifp->int_metric); \
+				ntohl(ifp->int_metric)); \
 	  } \
 	  if (tracepackets) \
 		dumppacket(stdout, "from", src, packet, size); \

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)timer.c	4.2 %G%";
+static char sccsid[] = "@(#)timer.c	4.3 (Berkeley) %G%";
 #endif
 
 /*
@@ -54,9 +54,16 @@ again:
 				if (!supplier || timetobroadcast)
 					continue;
 				msg->rip_cmd = RIPCMD_RESPONSE;
+				msg->rip_vers = RIPVERSION;
 				msg->rip_nets[0].rip_dst = rt->rt_dst;
 				msg->rip_nets[0].rip_metric =
-				    min(rt->rt_metric+1, HOPCNT_INFINITY);
+				   min(rt->rt_metric+1, HOPCNT_INFINITY);
+#ifdef notyet
+				msg->rip_nets[0].rip_dst.sa_family =
+				   htons(msg->rip_nets[0].rip_dst.sa_family);
+				msg->rip_nets[0].rip_metric =
+				   htonl(msg->rip_nets[0].rip_metric);
+#endif
 				toall(sendmsg);
 			}
 		}

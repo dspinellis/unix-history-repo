@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)input.c	4.3 %G%";
+static char sccsid[] = "@(#)input.c	4.4 (Berkeley) %G%";
 #endif
 
 /*
@@ -36,6 +36,13 @@ rip_input(from, size)
 				break;
 			size -= sizeof (struct netinfo);
 
+#ifdef notyet
+			if (msg->rip_vers > 0) {
+				n->rip_dst.sa_family =
+					ntohs(n->rip_dst.sa_family);
+				n->rip_metric = ntohl(n->rip_metric);
+			}
+#endif
 			/* 
 			 * A single entry with sa_family == AF_UNSPEC and
 			 * metric ``infinity'' means ``all routes''.
@@ -48,6 +55,13 @@ rip_input(from, size)
 			rt = rtlookup(&n->rip_dst);
 			n->rip_metric = rt == 0 ? HOPCNT_INFINITY :
 				min(rt->rt_metric+1, HOPCNT_INFINITY);
+#ifdef notyet
+			if (msg->rip_vers > 0) {
+				n->rip_dst.sa_family =
+					htons(n->rip_dst.sa_family);
+				n->rip_metric = htonl(n->rip_metric);
+			}
+#endif
 			n++, newsize += sizeof (struct netinfo);
 		}
 		if (newsize > 0) {
@@ -89,6 +103,13 @@ rip_input(from, size)
 		for (; size > 0; size -= sizeof (struct netinfo), n++) {
 			if (size < sizeof (struct netinfo))
 				break;
+#ifdef notyet
+			if (msg->rip_vers > 0) {
+				n->rip_dst.sa_family =
+					ntohs(n->rip_dst.sa_family);
+				n->rip_metric = ntohl(n->rip_metric);
+			}
+#endif
 			if (n->rip_metric >= HOPCNT_INFINITY)
 				continue;
 			rt = rtlookup(&n->rip_dst);

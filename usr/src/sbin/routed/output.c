@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)output.c	4.2 %G%";
+static char sccsid[] = "@(#)output.c	4.3 (Berkeley) %G%";
 #endif
 
 /*
@@ -27,7 +27,7 @@ toall(f)
 		dst = ifp->int_flags & IFF_BROADCAST ? &ifp->int_broadaddr :
 		      ifp->int_flags & IFF_POINTOPOINT ? &ifp->int_dstaddr :
 		      &ifp->int_addr;
-		flags = ifp->int_flags & IFF_INTERFACE ? SOF_DONTROUTE : 0;
+		flags = ifp->int_flags & IFF_INTERFACE ? MSG_DONTROUTE : 0;
 		(*f)(dst, flags, ifp);
 	}
 }
@@ -64,6 +64,7 @@ supply(dst, flags, ifp)
 	int (*output)() = afswitch[dst->sa_family].af_output;
 
 	msg->rip_cmd = RIPCMD_RESPONSE;
+	msg->rip_vers = RIPVERSION;
 again:
 	for (rh = base; rh < &base[ROUTEHASHSIZ]; rh++)
 	for (rt = rh->rt_forw; rt != (struct rt_entry *)rh; rt = rt->rt_forw) {
@@ -75,6 +76,10 @@ again:
 		}
 		n->rip_dst = rt->rt_dst;
 		n->rip_metric = min(rt->rt_metric + 1, HOPCNT_INFINITY);
+#ifdef notyet
+		n->rip_dst.sa_family = htons(n->rip_dst.sa_family);
+		n->rip_metric = htonl(n->rip_metric);
+#endif
 		n++;
 	}
 	if (doinghost) {
