@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)unstr.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)unstr.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -47,118 +47,56 @@ static char sccsid[] = "@(#)unstr.c	5.3 (Berkeley) %G%";
 # include	<stdio.h>
 # include	<ctype.h>
 
-# define	TRUE	1
-# define	FALSE	0
-
 # ifndef MAXPATHLEN
 # define	MAXPATHLEN	1024
 # endif	/* MAXPATHLEN */
 
-# ifdef SYSV
-# define	rename(a1,a2)	(-1)
-# endif
-
-char	Infile[MAXPATHLEN],		/* name of input file */
-	Outfile[MAXPATHLEN],		/* name of output file */
-	Tmpfile[MAXPATHLEN],		/* name of temporary file */
+char	*Infile,			/* name of input file */
+	Datafile[MAXPATHLEN],		/* name of data file */
 	Delimch;			/* delimiter character */
 
-FILE	*Inf, *Outf, *Textf;
+FILE	*Inf, *Dataf;
 
-char	*rindex(), *malloc(), *strcat(), *strcpy(), *mktemp();
+char	*strcat(), *strcpy();
 
+/* ARGSUSED */
 main(ac, av)
 int	ac;
 char	**av;
 {
 	static STRFILE	tbl;		/* description table */
 
-	getargs(ac, av);
+	getargs(av);
 	if ((Inf = fopen(Infile, "r")) == NULL) {
 		perror(Infile);
-		exit(-1);
-		/* NOTREACHED */
+		exit(1);
 	}
-	(void) fread((char *) &tbl, sizeof tbl, 1, Inf);
+	if ((Dataf = fopen(Datafile, "r")) == NULL) {
+		perror(Datafile);
+		exit(1);
+	}
+	(void) fread((char *) &tbl, sizeof tbl, 1, Dataf);
 	if (!(tbl.str_flags & (STR_ORDERED | STR_RANDOM))) {
 		fprintf(stderr, "nothing to do -- table in file order\n");
 		exit(1);
 	}
 	Delimch = tbl.str_delim;
-	if ((Textf = fopen(Outfile, "r")) == NULL) {
-		perror(Outfile);
-		exit(-1);
-		/* NOTREACHED */
-	}
-	(void) strcpy(Tmpfile, mktemp("unstrXXXXXX"));
-	if ((Outf = fopen(Tmpfile, "w")) == NULL) {
-		perror(Tmpfile);
-		exit(-1);
-		/* NOTREACHED */
-	}
 	order_unstr(&tbl);
-	fclose(Outf);
-	fclose(Textf);
-	fclose(Inf);
-	if (rename(Tmpfile, Outfile) < 0 && mv(Tmpfile, Outfile) < 0) {
-		fprintf(stderr, "could not rename %s to %s\n", Tmpfile, Outfile);
-		exit(-1);
-	}
+	(void) fclose(Inf);
+	(void) fclose(Dataf);
 	exit(0);
 }
 
-getargs(ac, av)
-register int	ac;
+getargs(av)
 register char	*av[];
 {
-	register int	i;
-	register char	*sp;
-	register short	bad;
-
-	bad = 0;
-	for (i = 1; i < ac; i++)  {
-		if (av[i][0] != '-') {
-			(void) strcpy(Infile, av[i]);
-			if (i + 1 >= ac) {
-				(void) strcpy(Outfile, Infile);
-				if ((sp = rindex(av[i], '.')) &&
-				    strcmp(sp, ".dat") == 0)
-					Outfile[strlen(Outfile) - 4] = '\0';
-				else
-					(void) strcat(Infile, ".dat");
-			}
-			else
-				(void) strcpy(Outfile, av[i + 1]);
-			break;
-		}
-		else if (av[i][1] == '\0') {
-			printf("usage: unstr datafile[.dat] [outfile]\n");
-			exit(0);
-			/* NOTREACHED */
-		}
-		else
-			for (sp = &av[i][1]; *sp != '\0'; sp++)
-				switch (*sp) {
-				  default:
-					fprintf(stderr, "unknown flag: '%c'\n",
-						*sp);
-					bad++;
-					break;
-				}
+	if (!*++av) {
+		(void) fprintf(stderr, "usage: unstr datafile\n");
+		exit(1);
 	}
-	if (bad) {
-		printf("use \"%s -\" to get usage\n", av[0]);
-		exit(-1);
-	}
-}
-
-mv(file1, file2)
-char	*file1, *file2;
-{
-	char	buf[BUFSIZ];
-
-	sprintf(buf, "mv %s %s", file1, file2);
-	return system(buf) != 0 ? -1 : 0;
+	Infile = *av;
+	(void) strcpy(Datafile, Infile);
+	(void) strcat(Datafile, ".dat");
 }
 
 order_unstr(tbl)
@@ -170,16 +108,16 @@ register STRFILE	*tbl;
 	char		buf[BUFSIZ];
 
 	for (i = 0; i < tbl->str_numstr; i++) {
-		fread((char *) &pos, 1, sizeof pos, Inf);
-		fseek(Textf, pos, 0);
+		(void) fread((char *) &pos, 1, sizeof pos, Dataf);
+		(void) fseek(Inf, pos, 0);
 		if (i != 0)
-			fprintf(Outf, "%c%c\n", Delimch, Delimch);
+			(void) printf("%c\n", Delimch);
 		for (;;) {
-			sp = fgets(buf, sizeof buf, Textf);
+			sp = fgets(buf, sizeof buf, Inf);
 			if (sp == NULL || STR_ENDSTRING(sp, *tbl))
 				break;
 			else
-				fputs(sp, Outf);
+				fputs(sp, stdout);
 		}
 	}
 }
