@@ -110,6 +110,7 @@ struct gmonparam {
 	u_long		lowpc;
 	u_long		highpc;
 	u_long		textsize;
+	u_long		hashfraction;
 };
 extern struct gmonparam _gmonparam;
 
@@ -124,8 +125,9 @@ extern struct gmonparam _gmonparam;
 /*
  * Sysctl definitions for extracting profiling information from the kernel.
  */
-#define	GPROF_STATE	0	/* profiling enabling variable */
-#define	GPROF_COUNT	1	/* profile tick count buffer */
-#define	GPROF_FROMS	2	/* from location hash bucket */
-#define	GPROF_TOS	3	/* destination/count structure */
+#define	GPROF_STATE	0	/* int: profiling enabling variable */
+#define	GPROF_COUNT	1	/* struct: profile tick count buffer */
+#define	GPROF_FROMS	2	/* struct: from location hash bucket */
+#define	GPROF_TOS	3	/* struct: destination/count structure */
+#define	GPROF_GMONPARAM	4	/* struct: profiling parameters (see above) */
 #endif
