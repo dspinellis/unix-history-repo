@@ -1,7 +1,7 @@
-static char *sccsid = "@(#)find.c	4.5 (Berkeley) %G%";
+static char *sccsid = "@(#)find.c	4.6 (Berkeley) %G%";
 /*	find	COMPILE:	cc -o find -s -O -i find.c -lS	*/
 #include <stdio.h>
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/dir.h>
 #include <sys/stat.h>
 #define A_DAY	86400L /* a day full of seconds */
@@ -504,22 +504,16 @@ getunum(f, s) char *f, *s; { /* find user/group name and return number */
 }
 
 descend(name, fname, exlist)
-struct anode *exlist;
-char *name, *fname;
+	struct anode *exlist;
+	char *name, *fname;
 {
-	int	dir = 0, /* open directory */
-		offset,
-		dsize,
-		entries,
-		dirsize;
-	struct direct dentry[BUFSIZ / sizeof (struct direct)];
+	DIR	*dir = NULL;
 	register struct direct	*dp;
-	register char *c1, *c2;
-	int i;
+	register char *c1;
 	int rv = 0;
 	char *endofname;
 
-	if(lstat(fname, &Statb)<0) {
+	if (lstat(fname, &Statb)<0) {
 		fprintf(stderr, "find: bad status < %s >\n", name);
 		return(0);
 	}
@@ -527,74 +521,39 @@ char *name, *fname;
 	if((Statb.st_mode&S_IFMT)!=S_IFDIR)
 		return(1);
 
-	for(c1 = name; *c1; ++c1);
-	if(*(c1-1) == '/')
+	for (c1 = name; *c1; ++c1);
+	if (*(c1-1) == '/')
 		--c1;
 	endofname = c1;
-	dirsize = Statb.st_size;
 
-	if(chdir(fname) == -1)
+	if (chdir(fname) == -1)
 		return(0);
-	for(offset=0 ; offset < dirsize ; offset += BUFSIZ) { /* each block */
-		dsize = BUFSIZ<(dirsize-offset)? BUFSIZ: (dirsize-offset);
-		if(!dir) {
-			if((dir=open(".", 0))<0) {
-				fprintf(stderr, "find: cannot open < %s >\n",
-					name);
-				rv = 0;
-				goto ret;
-			}
-			if(offset) lseek(dir, (long)offset, 0);
-			if(read(dir, (char *)dentry, dsize)<0) {
-				fprintf(stderr, "find: cannot read < %s >\n",
-					name);
-				rv = 0;
-				goto ret;
-			}
-			if(dir > 10) {
-				close(dir);
-				dir = 0;
-			}
-		} else 
-			if(read(dir, (char *)dentry, dsize)<0) {
-				fprintf(stderr, "find: cannot read < %s >\n",
-					name);
-				rv = 0;
-				goto ret;
-			}
-		for(dp=dentry, entries=dsize>>4; entries; --entries, ++dp) { /* each directory entry */
-			if(dp->d_ino==0
-			|| (dp->d_name[0]=='.' && dp->d_name[1]=='\0')
-			|| (dp->d_name[0]=='.' && dp->d_name[1]=='.' && dp->d_name[2]=='\0'))
-				continue;
-			c1 = endofname;
-			*c1++ = '/';
-			c2 = dp->d_name;
-			for(i=0; i<14; ++i)
-				if(*c2)
-					*c1++ = *c2++;
-				else
-					break;
-			*c1 = '\0';
-			if(c1 == endofname) { /* ?? */
-				rv = 0;
-				goto ret;
-			}
-			Fname = endofname+1;
-			if(!descend(name, Fname, exlist)) {
-				*endofname = '\0';
-				chdir(Home);
-				if(chdir(Pathname) == -1) {
-					fprintf(stderr, "find: bad directory tree\n");
-					exit(1);
-				}
+	if ((dir = opendir(".")) == NULL) {
+		fprintf(stderr, "find: cannot open < %s >\n", name);
+		rv = 0;
+		goto ret;
+	}
+	for (dp = readdir(dir); dp != NULL; dp = readdir(dir)) {
+		if ((dp->d_name[0]=='.' && dp->d_name[1]=='\0') ||
+		    (dp->d_name[0]=='.' && dp->d_name[1]=='.' && dp->d_name[2]=='\0'))
+			continue;
+		c1 = endofname;
+		*c1++ = '/';
+		strcpy(c1, dp->d_name);
+		Fname = endofname+1;
+		if(!descend(name, Fname, exlist)) {
+			*endofname = '\0';
+			chdir(Home);
+			if(chdir(Pathname) == -1) {
+				fprintf(stderr, "find: bad directory tree\n");
+				exit(1);
 			}
 		}
 	}
 	rv = 1;
 ret:
 	if(dir)
-		close(dir);
+		closedir(dir);
 	if(chdir("..") == -1) {
 		*endofname = '\0';
 		fprintf(stderr, "find: bad directory <%s>\n", name);
