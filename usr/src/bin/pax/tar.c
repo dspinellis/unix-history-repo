@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tar.c	1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)tar.c	1.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -850,6 +850,14 @@ ustar_rd(arcn, buf)
 		arcn->type = PAX_DIR;
 		arcn->sb.st_mode |= S_IFDIR;
 		arcn->sb.st_nlink = 2;
+
+		/*
+                 * Some programs that create ustar archives append a '/'
+                 * to the pathname for directories. This clearly violates
+                 * ustar specs, but we will silently strip it off anyway.
+                 */
+                if (arcn->name[arcn->nlen - 1] == '/')
+                        arcn->name[--arcn->nlen] = '\0';
 		break;
 	case BLKTYPE:
 	case CHRTYPE:
