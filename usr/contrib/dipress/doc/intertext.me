@@ -1,0 +1,109 @@
+.bp
+.sh 1 "Introduction to the syntax of Intertext"
+.sh 2 Introduction
+.lp
+This section describes a language used to represent an Interpress master,
+called \fIIntertext\fP.  In order to make an Interpress master compact,
+an encoding scheme is used to represent the operators and the values.  
+Although this encoding uses less disk space and results in shorter
+transmission times, it is practically impossible to examine or edit an
+Interpress master.  For this reason, the utilities \fIiptotext\fP and
+\fItexttoip\fP represent the master in a language called \fIIntertext\fP.
+For someone to completely use the Interpress utilities and understand the
+output, an understanding of this language is necessary.  It is recommended
+that the reader of this section have a working knowledge of Interpress.
+.sh 2 Tokens
+.sh 3 "Keywords"
+.lp
+The keyword \*(lqHeader\*(rq indicates that the following string is the
+header that appears at the front of the Interpress file.  This keyword can
+only be used once at the top of the file.  It is not checked for validity.
+.sh 2 "Integers"
+.lp
+A series of digits optionally preceded by a plus or minus sign is an integer.
+.sh 2 "Short numbers"
+.lp
+Any integer that starts in the first column is translated into an Interpress 
+\fIshort number\fP.  This number must be in the range \(mi4000..28767.
+.sh 2 "Operators"
+.lp
+Any word that starts in the first column
+is translated into an operator, with the exceptions noted in \fIkeywords\fP.
+The \*(lqpseudo\*(rq operators are handled as follows.
+The word \*(lqBEGIN\*(rq marks
+the beginning of a block.  The word \*(lqEND\*(rq indicates the
+end of a block.  The character \*(lq{\*(rq indicates the beginning
+of a body and the character \*(lq}\*(rq indicates the end of a
+body.  All other words refer to an Interpress operator.  The names found in
+Appendix B of the \fIInterpress Electronic printing Standard\fP
+are recognized.  The case of the letters is insignificant.
+.sh 2 "Comments"
+.lp
+Anything that appears in parentheses is assumed to be a
+comment and is ignored.  These comments should not be confused with a
+comment sequence.
+.sh 2 "Sequences"
+.lp
+If the first
+character on the line is \*(lq>\*(rq then the remainder of the line
+describes a \fIsequence\fP.
+If the second character is also \*(lq>\*(rq then the
+sequence described is \fIlong\fP, otherwise it is \fIshort\fP.
+The keyword that starts
+in the third column describes the type of sequence.  The value of the
+sequence appears after the colon.  The following names are valid sequence
+names:  Comment, Identifier, Insert file, Integer, Rational, String.
+.sh 2 "Strings"
+.lp
+Strings are represented in the same way they are in C.
+A double quote is used to mark each end of the string
+and a backslash is used to indicate the start of a special
+character.  If a digit follows a backslash, it starts an octal number that
+does not exceed three digits.  This number is the octal value of the
+character represented.  For example, the string "a\e244b" consists of an
+ascii \*(lqa\*(rq followed by the octal value 244 and ending with an ascii
+\*(lqb\*(rq.  Two successive backslashes represents a single backslash and a
+backslash followed by a double quote represents a double quote.  It will not
+be uncommon in program listings to use strings like:
+"#include\ \e"file.h\e"".
+.sh 2 "Rationals"
+.lp
+A rational number is represented as a fraction with a slash separating the
+numerator and the denominator.
+For example:  \*(lq1/2\*(rq represents the rational 1 over 2.
+.sh 2 Format
+.sp
+Here is a Backus-Naur style grammar that describes the Intertext format
+(tokens are in italics, literals are contained in double quotes):
+.sp
+.(l
+Intertext ::= prelim body | body
+
+prelim ::= file header | file | header
+
+file ::= "File: " \fIstring\fP \fInl\fP
+
+header ::= "Header: " \fIstring\fP \fInl\fP
+
+body ::= line \fInl\fP\^ body | line \fInl\fP
+
+line ::= \fIinteger\fP | \fIoperator\fP | short-long sequence
+
+.ta \w'sequence ::= 'u
+sequence ::= "Comment: " \fIstring\fP |
+	"Identifier: " \fIidentifier\fP |
+	"Insert file: " \fIstring\fP |
+	"Integer: " \fIinteger\fP |
+	"Rational: " \fIinteger\fP\^ "/" \fIinteger\fP |
+	"String: " \fIstring\fP
+
+short-long ::= "> " | ">>"
+.)l
+.sp
+The token \fInl\fP\^ is a newline or line terminator.
+The other italicized tokens are explained in the previous section.
+.sh 2 Omissions
+.lp
+There is currently no way to express large vectors or any
+of the pixel vectors.  There is also no way to specify a continued
+sequence.
