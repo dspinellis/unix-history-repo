@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)restore.c	3.17	(Berkeley)	83/08/11";
+static char sccsid[] = "@(#)restore.c	3.18	(Berkeley)	83/12/30";
 #endif
 
 /* Copyright (c) 1983 Regents of the University of California */
@@ -683,9 +683,9 @@ createlinks()
 				continue;
 			(void) strcpy(name, myname(ep));
 			if (ep->e_type == NODE) {
-				linkit(name, myname(np), SYMLINK);
+				(void) linkit(name, myname(np), SYMLINK);
 			} else {
-				linkit(name, myname(np), HARDLINK);
+				(void) linkit(name, myname(np), HARDLINK);
 			}
 			np->e_flags &= ~NEW;
 		}
