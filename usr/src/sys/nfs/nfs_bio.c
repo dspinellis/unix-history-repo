@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_bio.c	7.5 (Berkeley) %G%
+ *	@(#)nfs_bio.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -291,7 +291,6 @@ loop:
 			if (invalidate) {
 				notavail(ep);
 				ep->b_flags |= B_INVAL;
-				brelvp(ep);
 				brelse(ep);
 			}
 	        }
