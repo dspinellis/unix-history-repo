@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dump.h	5.3 (Berkeley) %G%
+ *	@(#)dump.h	5.4 (Berkeley) %G%
  */
 
 #define	NI		16
@@ -66,6 +66,7 @@ time_t	tstart_writing;	/* when started writing the first tape block */
 char	*processname;
 struct fs *sblock;	/* the file system super block */
 char	buf[MAXBSIZE];
+long	dev_bsize;
 
 char	*ctime();
 char	*prdate();
