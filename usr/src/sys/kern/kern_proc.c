@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.46	82/10/31	*/
+/*	kern_proc.c	4.47	82/11/02	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -283,14 +283,15 @@ execve()
 	getxfile(ip, nc + (na+4)*NBPW, uid, gid);
 	if (u.u_error) {
 badarg:
-		for (c = 0; c < nc; c += CLSIZE*NBPG)
-			bp = baddr(argdev, bno + ctod(c / NBPG), CLSIZE*NBPG));
+		for (c = 0; c < nc; c += CLSIZE*NBPG) {
+			bp = baddr(argdev, bno + ctod(c / NBPG), CLSIZE*NBPG);
 			if (bp) {
 				bp->b_flags |= B_AGE;		/* throw away */
 				bp->b_flags &= ~B_DELWRI;	/* cancel io */
 				brelse(bp);
 				bp = 0;
 			}
+		}
 		goto bad;
 	}
 
