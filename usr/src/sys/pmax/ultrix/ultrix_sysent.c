@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_sysent.c 1.1 90/07/09$
  *
- *	@(#)ultrix_sysent.c	7.2 (Berkeley) %G%
+ *	@(#)ultrix_sysent.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -44,8 +44,8 @@ int	ptrace();
 int	saccess();
 int	sync();
 int	kill();
-int	stat();
-int	lstat();
+int	ostat();
+int	olstat();
 int	dup();
 int	pipe();
 int	profil();
@@ -58,7 +58,7 @@ int	readlink();
 int	execve();
 int	umask();
 int	chroot();
-int	fstat();
+int	ofstat();
 int	getpagesize();
 int	vfork();
 int	sbrk();
@@ -92,7 +92,7 @@ int	ultrixsigvec();
 int	osigblock();
 int	osigsetmask();
 int	sigsuspend();
-int	sigstack();
+int	osigstack();
 int	orecvmsg();
 int	osendmsg();
 int	gettimeofday();
@@ -173,9 +173,9 @@ struct sysent ultrixsysent[] = {
 	0, nosys,			/*  35 = old ftime */
 	0, sync,			/*  36 = sync */
 	2, kill,			/*  37 = kill */
-	2, stat,			/*  38 = stat */
+	2, ostat,			/*  38 = stat */
 	0, nosys,			/*  39 = old setpgrp */
-	2, lstat,			/*  40 = lstat */
+	2, olstat,			/*  40 = lstat */
 	1, dup,				/*  41 = dup */
 	1, pipe,			/*  42 = pipe */
 	0, nosys,			/*  43 = old times */
@@ -197,7 +197,7 @@ struct sysent ultrixsysent[] = {
 	3, execve,			/*  59 = execve */
 	1, umask,			/*  60 = umask */
 	1, chroot,			/*  61 = chroot */
-	2, fstat,			/*  62 = fstat */
+	2, ofstat,			/*  62 = fstat */
 	0, nosys,			/*  63 = unused */
 	0, getpagesize,			/*  64 = getpagesize */
 	0, notimp,			/*  65 = mremap */
@@ -247,7 +247,7 @@ struct sysent ultrixsysent[] = {
 	1, osigblock,			/* 109 = sigblock */
 	1, osigsetmask,			/* 110 = sigsetmask */
 	1, sigsuspend,			/* 111 = sigpause */
-	2, sigstack,			/* 112 = sigstack */
+	2, osigstack,			/* 112 = sigstack */
 	3, orecvmsg,			/* 113 = recvmsg */
 	3, osendmsg,			/* 114 = sendmsg */
 	0, nosys,			/* 115 = old vtrace */
