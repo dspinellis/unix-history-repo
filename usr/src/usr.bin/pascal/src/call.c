@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)call.c 1.11 %G%";
+static	char sccsid[] = "@(#)call.c 1.12 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -116,7 +116,7 @@ call(p, argv, porf, psbn)
 			/*
 			 *	... p( ...
 			 */
-		    sextname( extname , p -> symbol , p -> nl_block & 037 );
+		    sextname( extname , p -> symbol , BLOCKNO(p -> nl_block) );
 		    putleaf( P2ICON , 0 , 0 , p2type( p ) , extname );
 		    break;
 		case FFUNC:
@@ -156,7 +156,7 @@ call(p, argv, porf, psbn)
 				chk = FALSE;
 				break;
 			}
-			q = lvalue( (int *) argv[1], MOD , LREQ );
+			q = lvalue( (int *) argv[1], MOD | ASGN , LREQ );
 			if (q == NIL) {
 				chk = FALSE;
 				break;
