@@ -1,4 +1,4 @@
-/*	init_main.c	4.46	83/01/23	*/
+/*	init_main.c	4.47	83/03/01	*/
 
 #include "../machine/pte.h"
 
@@ -98,6 +98,9 @@ main(regs)
 	p->p_quota = u.u_quota = getquota(0, 0, Q_NDQ);
 #endif
 	startrtclock();
+#ifdef KGCLOCK
+	startkgclock();
+#endif
 
 	/*
 	 * Initialize tables, protocols, and set up well-known inodes.
