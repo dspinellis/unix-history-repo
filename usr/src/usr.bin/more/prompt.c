@@ -20,7 +20,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)prompt.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)prompt.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -307,9 +307,7 @@ wherechar(p, wp)
 	char *p;
 	int *wp;
 {
-	int c;
-
-	switch (c = *p)
+	switch (*p)
 	{
 	case 'b': case 'l': case 'p':
 		switch (*++p)
