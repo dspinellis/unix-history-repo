@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)man.1	6.1 (Berkeley) %G%
+.\"	@(#)man.1	6.2 (Berkeley) %G%
 .\"
 .TH MAN 1 ""
 .UC 4
@@ -112,6 +112,17 @@ with the
 or
 .B \-f
 options, it must be specified first.
+.PP
+.I Man
+will look for the manual page in either of two forms, the nroff source or
+preformatted pages.
+If either version is available, the manual page will be displayed.
+If the preformatted version is available, and it has a more recent modify
+time than the nroff source,  it will be promptly displayed.
+Otherwise, the manual page will be formatted with nroff and displayed.
+If the user has permission, the formatted manual page will be deposited
+in the proper place, so that later invocations of man will not need to
+format the page again.
 .SH FILES
 .nf
 .ta \w'/usr/man/man?/*   'u
