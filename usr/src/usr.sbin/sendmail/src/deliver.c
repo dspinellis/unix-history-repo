@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.56 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.57 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1564,9 +1564,9 @@ endmailer(mci, e, pv)
 
 	/* close any connections */
 	if (mci->mci_in != NULL)
-		(void) xfclose(mci->mci_in, pv[0], "mci_in");
+		(void) xfclose(mci->mci_in, mci->mci_mailer->m_name, "mci_in");
 	if (mci->mci_out != NULL)
-		(void) xfclose(mci->mci_out, pv[0], "mci_out");
+		(void) xfclose(mci->mci_out, mci->mci_mailer->m_name, "mci_out");
 	mci->mci_in = mci->mci_out = NULL;
 	mci->mci_state = MCIS_CLOSED;
 
@@ -1589,7 +1589,7 @@ endmailer(mci, e, pv)
 	}
 
 	/* it died a horrid death */
-	syserr("mailer %s died with signal %o", pv[0], st);
+	syserr("mailer %s died with signal %o", mci->mci_mailer->m_name, st);
 
 	/* log the arguments */
 	if (pv != NULL && e->e_xfp != NULL)
