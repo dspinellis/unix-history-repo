@@ -20,7 +20,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)apilib.c	1.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)apilib.c	3.1 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include "../ctlr/api.h"

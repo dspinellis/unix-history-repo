@@ -2,7 +2,7 @@
  * Define the translate tables used to go between 3270 display code
  * and ascii
  *
- * @(#)disp_asc.h	1.3 (Berkeley) %G%
+ * @(#)disp_asc.h	3.1 (Berkeley) %G%
  */
 
 extern unsigned char

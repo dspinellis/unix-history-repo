@@ -1,5 +1,5 @@
 /*
- * @(#)hostctlr.h	1.4 (Berkeley) %G%
+ * @(#)hostctlr.h	3.1 (Berkeley) %G%
  */
 
 #define	INCLUDED_HOST3270

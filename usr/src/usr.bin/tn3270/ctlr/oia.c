@@ -20,7 +20,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)oia.c	1.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)oia.c	3.1 (Berkeley) %G%";
 #endif	/* not lint */
 
 /*

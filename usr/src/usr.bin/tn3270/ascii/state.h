@@ -1,5 +1,5 @@
 /*
- * @(#)state.h	1.3 (Berkeley) %G%
+ * @(#)state.h	3.1 (Berkeley) %G%
  */
 
 #define	INCLUDED_STATE

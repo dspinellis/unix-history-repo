@@ -1,6 +1,6 @@
 /*
  *
- * @(#)dohits.h	1.3 (Berkeley) %G%
+ * @(#)dohits.h	3.1 (Berkeley) %G%
  */
 
 #define	numberof(x)	(sizeof x/sizeof x[0])

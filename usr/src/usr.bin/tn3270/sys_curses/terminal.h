@@ -1,5 +1,5 @@
 /*
- * @(#)terminal.h	1.6 (Berkeley) %G%
+ * @(#)terminal.h	3.1 (Berkeley) %G%
  */
 
 #define	INCLUDED_TERMINAL
