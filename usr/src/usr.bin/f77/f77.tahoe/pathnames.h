@@ -37,19 +37,25 @@
 #define	GPRFFOOT	"/usr/lib/gcrt0.o"
 #define	TEMPPREF	"fort"
 
-static char *liblist [ ] =
-		{ "/usr/lib/libU77.a", 
-		  "/usr/lib/libF77.a", 
-		  "/usr/lib/libI77.a", 
-		  "/usr/lib/libm.a", 
-		  "/usr/lib/libc.a",NULL };
-static char *p_liblist [ ] =
-		{ "/usr/lib/libU77_p.a", 
-		  "/usr/lib/libF77_p.a", 
-		  "/usr/lib/libI77_p.a", 
-		  "/usr/lib/libF77_p.a", 
-		  "/usr/lib/libm_p.a", 
-		  "/usr/lib/libc_p.a",NULL };
+static char *liblist [ ] = {
+	"/usr/lib/libU77.a",
+	"/usr/lib/libF77.a",
+	"/usr/lib/libI77.a",
+	"/usr/lib/libm.a",
+	"/usr/lib/libc.a",
+	"/usr/lib/libcompat.a",
+	NULL
+};
+static char *p_liblist [ ] = {
+	"/usr/lib/libU77_p.a",
+	"/usr/lib/libF77_p.a",
+	"/usr/lib/libI77_p.a",
+	"/usr/lib/libF77_p.a",
+	"/usr/lib/libm_p.a",
+	"/usr/lib/libc_p.a",
+	"/usr/lib/libcompat_p.a",
+	NULL
+};
 
 #include <paths.h>
 
