@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)srt0.c	6.2 (Berkeley) %G%
+ *	@(#)srt0.c	6.3 (Berkeley) %G%
  */
 
 #include "../vax/mtpr.h"
@@ -98,8 +98,12 @@ _badloc:
 	.word	8f-0b		# 1 is 780
 	.word	5f-0b		# 2 is 750
 	.word	5f-0b		# 3 is 730
+	.word	6f-0b		# 4 is 8600
 5:
 	mtpr	$0xf,$MCESR
+	brb	1f
+6:
+	mtpr	$0,$EHSR
 	brb	1f
 8:
 	mtpr	$0,$SBIFS
