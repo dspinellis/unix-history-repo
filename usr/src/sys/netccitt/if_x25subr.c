@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_x25subr.c	7.10 (Berkeley) %G%
+ *	@(#)if_x25subr.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -206,8 +206,14 @@ register struct	rtentry *rt;
 
 	if ((ifp->if_flags & IFF_UP) == 0)
 		senderr(ENETDOWN);
-	if (rt == 0 ||
-	    ((rt->rt_flags & RTF_GATEWAY) && (dst = rt->rt_gateway))) {
+	while (rt == 0 || (rt->rt_flags & RTF_GATEWAY)) {
+		if (rt) {
+			if (rt->rt_llinfo) {
+				rt = (struct rtentry *)rt->rt_llinfo;
+				continue;
+			}
+			dst = rt->rt_gateway;
+		}
 		if ((rt = rtalloc1(dst, 1)) == 0)
 			senderr(EHOSTUNREACH);
 		rt->rt_refcnt--;
@@ -220,10 +226,6 @@ register struct	rtentry *rt;
 	    ((lx = (struct llinfo_x25 *)rt->rt_llinfo) == 0)) {
 		senderr(ENETUNREACH);
 	}
-	if (dst->sa_family == AF_INET &&
-	    ifp->if_type == IFT_X25DDN &&
-	    rt->rt_gateway->sa_family != AF_CCITT)
-		x25_ddnip_to_ccitt(dst, rt);
 next_circuit:
 	lcp = lx->lx_lcd;
 	if (lcp == 0) {
@@ -236,6 +238,10 @@ next_circuit:
 	}
 	switch (lcp->lcd_state) {
 	case READY:
+		if (dst->sa_family == AF_INET &&
+		    ifp->if_type == IFT_X25DDN &&
+		    rt->rt_gateway->sa_family != AF_CCITT)
+			x25_ddnip_to_ccitt(dst, rt);
 		if (rt->rt_gateway->sa_family != AF_CCITT) {
 			if ((rt->rt_flags & RTF_XRESOLVE) == 0)
 				senderr(EHOSTUNREACH);
@@ -308,7 +314,7 @@ struct ifnet *ifp;
 }
 /*
  * This routine gets called when validating additions of new routes
- * or deletions of old *ones.
+ * or deletions of old ones.
  */
 x25_ifrtchange(cmd, rt, dst)
 register struct rtentry *rt;
@@ -326,14 +332,16 @@ struct sockaddr *dst;
 			(caddr_t)rtalloc1(rt->rt_gateway, 1) : 0;
 		return;
 	}
+	if ((rt->rt_flags & RTF_HOST) == 0)
+		return;
 	if (cmd == RTM_DELETE) {
 		while (rt->rt_llinfo)
 			x25_lxfree((struct llinfo *)rt->rt_llinfo);
 		x25_rtinvert(RTM_DELETE, rt->rt_gateway, rt);
 		return;
 	}
-	if (lx == 0)
-		lx = x25_lxalloc(rt);
+	if (lx == 0 && (lx = x25_lxalloc(rt)) == 0)
+		return;
 	if ((lcp = lx->lx_lcd) && lcp->lcd_state != READY) {
 		/*
 		 * This can only happen on a RTM_CHANGE operation
@@ -351,6 +359,8 @@ struct sockaddr *dst;
 	x25_rtinvert(RTM_ADD, rt->rt_gateway, rt);
 }
 
+int x25_dont_rtinvert = 1;
+
 x25_rtinvert(cmd, sa, rt)
 register struct sockaddr *sa;
 register struct rtentry *rt;
@@ -361,6 +371,8 @@ register struct rtentry *rt;
 	 * family on the other end, so will be different
 	 * from general host route via X.25.
 	 */
+	if (x25_dont_rtinvert)
+		return;
 	if (rt->rt_ifp->if_type == IFT_X25DDN)
 		return;
 	if (sa->sa_family != AF_CCITT)
