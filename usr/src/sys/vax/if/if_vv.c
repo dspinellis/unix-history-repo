@@ -1,4 +1,4 @@
-/*	if_vv.c	4.17	83/05/10	*/
+/*	if_vv.c	4.18	83/05/10	*/
 
 #include "vv.h"
 
@@ -182,6 +182,11 @@ vvattach(ui)
 	vs->vs_if.if_output = vvoutput;
 	vs->vs_if.if_reset = vvreset;
 	vs->vs_ifuba.ifu_flags = UBA_CANTWAIT | UBA_NEEDBDP | UBA_NEED16;
+#if defined(VAX750)
+	/* don't chew up 750 bdp's */
+	if (cpu == VAX_750 && ui->ui_unit > 0)
+		vs->vs_ifuba.ifu_flags &= ~UBA_NEEDBDP;
+#endif
 	if_attach(&vs->vs_if);
 }
 
