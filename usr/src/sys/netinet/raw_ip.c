@@ -1,4 +1,4 @@
-/*	raw_ip.c	4.3	82/02/01	*/
+/*	raw_ip.c	4.4	82/02/02	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -36,7 +36,7 @@ COUNT(RIP_INPUT);
 	ripproto.sp_protocol = ip->ip_p;
 	ripdst.sin_addr = ip->ip_dst;
 	ripsrc.sin_addr = ip->ip_src;
-	raw_input(m, ripproto, ripdst, ripsrc);
+	raw_input(m, &ripproto, &ripdst, &ripsrc);
 }
 
 /*ARGSUSED*/
@@ -68,7 +68,7 @@ COUNT(RIP_OUTPUT);
 		len += m->m_len;
 	m = m_get(M_DONTWAIT);
 	if (m == 0) {
-		(void) m_freem(m);
+		m_freem(m);
 		return;
 	}
 	
@@ -110,6 +110,9 @@ COUNT(RAW_USRREQ);
 
 	switch (req) {
 	
+	/*
+	 * SHOULD HAVE CONTROL TO SET PROTOCOL NUMBER (e.g. GGP)
+	 */
 	case PRU_CONTROL:
 		return (EOPNOTSUPP);
 	}
