@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_subr.c	8.9 (Berkeley) %G%
+ *	@(#)union_subr.c	8.10 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -107,8 +107,8 @@ union_updatevp(un, uppervp, lowervp)
 
 	if (ohash != nhash || !docache) {
 		if (un->un_flags & UN_CACHED) {
-			LIST_REMOVE(un, un_cache);
 			un->un_flags &= ~UN_CACHED;
+			LIST_REMOVE(un, un_cache);
 		}
 	}
 
@@ -488,8 +488,8 @@ union_freevp(vp)
 	struct union_node *un = VTOUNION(vp);
 
 	if (un->un_flags & UN_CACHED) {
-		LIST_REMOVE(un, un_cache);
 		un->un_flags &= ~UN_CACHED;
+		LIST_REMOVE(un, un_cache);
 	}
 
 	if (un->un_uppervp != NULLVP)
@@ -837,12 +837,16 @@ void
 union_removed_upper(un)
 	struct union_node *un;
 {
+
 	if (un->un_flags & UN_ULOCK) {
 		un->un_flags &= ~UN_ULOCK;
 		VOP_UNLOCK(un->un_uppervp);
 	}
 
-	union_newupper(un, NULLVP);
+	if (un->un_flags & UN_CACHED) {
+		un->un_flags &= ~UN_CACHED;
+		LIST_REMOVE(un, un_cache);
+	}
 }
 
 struct vnode *
