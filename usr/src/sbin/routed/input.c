@@ -5,13 +5,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)input.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)input.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
  * Routing Table Management Daemon
  */
 #include "defs.h"
+#include <sys/syslog.h>
 
 /*
  * Process a newly received packet.
@@ -29,9 +30,13 @@ rip_input(from, size)
 
 	ifp = 0;
 	TRACE_INPUT(ifp, from, size);
-	if (from->sa_family >= AF_MAX)
+	if (from->sa_family >= af_max ||
+	    (afp = &afswitch[from->sa_family])->af_hash == (int (*)())0) {
+		syslog(LOG_INFO,
+	 "\"from\" address in unsupported address family (%d), cmd %d\n",
+		    from->sa_family, msg->rip_cmd);
 		return;
-	afp = &afswitch[from->sa_family];
+	}
 	switch (msg->rip_cmd) {
 
 	case RIPCMD_REQUEST:
@@ -51,9 +56,13 @@ rip_input(from, size)
 			/* 
 			 * A single entry with sa_family == AF_UNSPEC and
 			 * metric ``infinity'' means ``all routes''.
+			 * We respond to routers only if we are acting
+			 * as a supplier, or to anyone other than a router
+			 * (eg, query).
 			 */
 			if (n->rip_dst.sa_family == AF_UNSPEC &&
-			    n->rip_metric == HOPCNT_INFINITY && size == 0) {
+			    n->rip_metric == HOPCNT_INFINITY && size == 0 &&
+			    (supplier || (*afp->af_portcheck)(from) == 0)) {
 				supply(from, 0, ifp);
 				return;
 			}
@@ -122,11 +131,23 @@ rip_input(from, size)
 			}
 			if ((unsigned) n->rip_metric > HOPCNT_INFINITY)
 				continue;
-			if (n->rip_dst.sa_family >= AF_MAX)
+			if (n->rip_dst.sa_family >= af_max ||
+			    (afp = &afswitch[n->rip_dst.sa_family])->af_hash ==
+			    (int (*)())0) {
+				syslog(LOG_INFO,
+		"route in unsupported address family (%d), from %s (af %d)\n",
+				   n->rip_dst.sa_family,
+				   (*afswitch[from->sa_family].af_format)(from),
+				   from->sa_family);
 				continue;
-			afp = &afswitch[n->rip_dst.sa_family];
-			if (((*afp->af_checkhost)(&n->rip_dst)) == 0)
+			}
+			if (((*afp->af_checkhost)(&n->rip_dst)) == 0) {
+				syslog(LOG_DEBUG,
+				    "bad host in route from %s (af %d)\n",
+				   (*afswitch[from->sa_family].af_format)(from),
+				   from->sa_family);
 				continue;
+			}
 			rt = rtlookup(&n->rip_dst);
 			if (rt == 0) {
 				if (n->rip_metric < HOPCNT_INFINITY)
