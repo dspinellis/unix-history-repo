@@ -1,4 +1,4 @@
-/*	tcp_usrreq.c	1.79	83/06/14	*/
+/*	tcp_usrreq.c	1.80	83/06/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -327,7 +327,7 @@ bad:
 /*
  * Initiate (or continue) disconnect.
  * If embryonic state, just send reset (once).
- * If not in ``let data drain'' option, just drop.
+ * If in ``let data drain'' option and linger null, just drop.
  * Otherwise (hard), mark socket disconnecting and drop
  * current input data; switch states based on user close, and
  * send segment to peer (with FIN).
@@ -340,7 +340,7 @@ tcp_disconnect(tp)
 
 	if (tp->t_state < TCPS_ESTABLISHED)
 		tp = tcp_close(tp);
-	else if (so->so_linger == 0)
+	else if ((so->so_options & SO_LINGER) && so->so_linger == 0)
 		tp = tcp_drop(tp, 0);
 	else {
 		soisdisconnecting(so);
