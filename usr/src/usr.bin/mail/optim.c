@@ -9,7 +9,7 @@
 #include "rcv.h"
 #include <ctype.h>
 
-static char *SccsId = "@(#)optim.c	1.1 %G%";
+static char *SccsId = "@(#)optim.c	1.2 %G%";
 
 /*
  * Map a name into the correct network "view" of the
@@ -126,7 +126,8 @@ struct netmach {
 	"vax",		'v',		BN|SN,
 	"ucb",		'v',		BN|SN,
 	"ucbvax",	'v',		BN|SN,
-	"vax135",	'x',		BN,
+	"onyx",		'x',		SN,
+	"vax135",	'X',		BN,
 	"cory",		'y',		SN,
 	"eecs40",	'z',		SN,
 	0,		0,		0
