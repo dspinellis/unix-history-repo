@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)UNSYNC.c 1.1 %G%";
+static char sccsid[] = "@(#)UNSYNC.c 1.2 %G%";
 
 #include "h00vars.h"
 #include "h01errs.h"
@@ -14,6 +14,10 @@ UNSYNC(curfile)
 {
 	if (curfile->funit & FWRITE) {
 		ERROR(EREADIT, curfile->pfname);
+		return;
+	}
+	if (curfile->funit & EOFF) {
+		ERROR(EPASTEOF, curfile->pfname);
 		return;
 	}
 	if ((curfile->funit & SYNC) == 0) {
