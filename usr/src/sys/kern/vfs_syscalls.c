@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	8.17 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	8.18 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -63,13 +63,9 @@ mount(p, uap, retval)
 	register struct vnode *vp;
 	register struct mount *mp;
 	int error, flag;
+	struct vattr va;
 	struct nameidata nd;
 
-	/*
-	 * Must be super user
-	 */
-	if (error = suser(p->p_ucred, &p->p_acflag))
-		return (error);
 	/*
 	 * Get vnode to be covered
 	 */
@@ -95,8 +91,49 @@ mount(p, uap, retval)
 		}
 		mp->mnt_flag |=
 		    uap->flags & (MNT_RELOAD | MNT_FORCE | MNT_UPDATE);
+		/*
+		 * Only root, or the user that did the original mount is
+		 * permitted to update it.
+		 */
+		if (mp->mnt_stat.f_owner != p->p_ucred->cr_uid &&
+		    (error = suser(p->p_ucred, &p->p_acflag))) {
+			vput(vp);
+			return (error);
+		}
+		/*
+		 * Do not allow NFS export by non-root users. Silently
+		 * enforce MNT_NOSUID and MNT_NODEV for non-root users.
+		 */
+		if (p->p_ucred->cr_uid != 0) {
+			if (uap->flags & MNT_EXPORTED) {
+				vput(vp);
+				return (EPERM);
+			}
+			uap->flags |= MNT_NOSUID | MNT_NODEV;
+		}
 		VOP_UNLOCK(vp);
 		goto update;
+	}
+	/*
+	 * If the user is not root, ensure that they own the directory
+	 * onto which we are attempting to mount.
+	 */
+	if ((error = VOP_GETATTR(vp, &va, p->p_ucred, p)) ||
+	    (va.va_uid != p->p_ucred->cr_uid &&
+	     (error = suser(p->p_ucred, &p->p_acflag)))) {
+		vput(vp);
+		return (error);
+	}
+	/*
+	 * Do not allow NFS export by non-root users. Silently
+	 * enforce MNT_NOSUID and MNT_NODEV for non-root users.
+	 */
+	if (p->p_ucred->cr_uid != 0) {
+		if (uap->flags & MNT_EXPORTED) {
+			vput(vp);
+			return (EPERM);
+		}
+		uap->flags |= MNT_NOSUID | MNT_NODEV;
 	}
 	if (error = vinvalbuf(vp, V_SAVE, p->p_ucred, p, 0, 0))
 		return (error);
@@ -129,6 +166,7 @@ mount(p, uap, retval)
 	}
 	vp->v_mountedhere = mp;
 	mp->mnt_vnodecovered = vp;
+	mp->mnt_stat.f_owner = p->p_ucred->cr_uid;
 update:
 	/*
 	 * Set the mount level flags.
@@ -198,12 +236,13 @@ unmount(p, uap, retval)
 	if (error = namei(&nd))
 		return (error);
 	vp = nd.ni_vp;
+	mp = vp->v_mount;
 
 	/*
-	 * Unless this is a user mount, then must
-	 * have suser privilege.
+	 * Only root, or the user that did the original mount is
+	 * permitted to unmount this filesystem.
 	 */
-	if (((vp->v_mount->mnt_flag & MNT_USER) == 0) &&
+	if ((mp->mnt_stat.f_owner != p->p_ucred->cr_uid) &&
 	    (error = suser(p->p_ucred, &p->p_acflag))) {
 		vput(vp);
 		return (error);
@@ -216,7 +255,6 @@ unmount(p, uap, retval)
 		vput(vp);
 		return (EINVAL);
 	}
-	mp = vp->v_mount;
 	vput(vp);
 	return (dounmount(mp, uap->flags, p));
 }
