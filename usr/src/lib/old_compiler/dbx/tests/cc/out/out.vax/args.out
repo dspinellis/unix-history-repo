@@ -1,0 +1,9 @@
+reading symbolic information ...
+[1] stop in main
+[1] stopped in main at line 9
+    9   }
+127 
+"vm_sw.o" 
+"vm_swap.o" 
+"vm_swp.o" 
+
