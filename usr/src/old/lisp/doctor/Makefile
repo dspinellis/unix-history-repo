@@ -1,23 +1,39 @@
 #
-# Copyright (c) 1987 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# Copyright (c) 1987 The Regents of the University of California.
+# All rights reserved.
 #
-#	@(#)Makefile	4.7	(Berkeley)	%G%
+# Redistribution and use in source and binary forms are permitted
+# provided that the above copyright notice and this paragraph are
+# duplicated in all such forms and that any documentation,
+# advertising materials, and other materials related to such
+# distribution and use acknowledge that the software was developed
+# by the University of California, Berkeley.  The name of the
+# University may not be used to endorse or promote products derived
+# from this software without specific prior written permission.
+# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+# WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
+#	@(#)Makefile	4.8 (Berkeley) %G%
+#
+MAN=	doctor.0
+
 all: doctor
 
-doctor: FRC
+doctor:
 	liszt -mrq -o doctor doctor.l
 
-install: FRC
+install: ${MAN}
 	install -o games -g bin -m 700 doctor ${DESTDIR}/usr/games/hide
 	rm -f ${DESTDIR}/usr/games/doctor
 	ln -s ${DESTDIR}/usr/games/dm ${DESTDIR}/usr/games/doctor
 	chown games.bin ${DESTDIR}/usr/games/doctor
+	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/games/cat6
 
-clean: FRC
-	rm -f doctor core
+clean:
+	rm -f doctor
 
-depend: FRC
-FRC:
+cleandir: clean
+	rm -f ${MAN}
+
+depend lint tags:
