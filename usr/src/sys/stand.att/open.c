@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)open.c	7.3 (Berkeley) %G%
+ *	@(#)open.c	7.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -19,6 +19,7 @@ extern u_int bootdev;
 struct dirstuff {
 	int loc;
 	struct iob *io;
+	char *name;
 };
 
 #ifndef SMALL
@@ -274,6 +275,7 @@ dlook(s, io, dir)
 	len = strlen(s);
 	dirp.loc = 0;
 	dirp.io = io;
+	dirp.name = dir;
 	for (dp = readdir(&dirp); dp != NULL; dp = readdir(&dirp)) {
 		if(dp->d_ino == 0)
 			continue;
@@ -307,15 +309,21 @@ readdir(dirp)
 			io->i_cc = dblksize(&io->i_fs, &io->i_ino, lbn);
 			if (devread(io) < 0) {
 				errno = io->i_error;
-				printf("bn %ld: directory read error\n",
-					io->i_bn);
+				printf("%s: directory read error, bn %ld\n",
+					dirp->name, io->i_bn);
 				return (NULL);
 			}
 		}
 		dp = (struct direct *)(io->i_buf + off);
 		dirp->loc += dp->d_reclen;
-		if (dp->d_ino == 0)
+		if (dp->d_ino == 0) {
+			if (dp->d_reclen == 0) {
+				printf("%s: bad directory entry, offset %ld\n",
+				       dirp->name, dirp->loc);
+				return (NULL);
+			}
 			continue;
+		}
 		return (dp);
 	}
 }
@@ -337,4 +345,3 @@ openi(n, io)
 	io->i_ino = dp[itoo(&io->i_fs, n)];
 	return (cc);
 }
-
