@@ -1,5 +1,5 @@
 %{
-/*	lang.l	1.9	82/07/21	*/
+/*	lang.l	1.10	82/10/11	*/
 
 #include <ctype.h>
 #include "y.tab.h"
@@ -88,7 +88,6 @@ WORD	[A-Za-z_][-A-Za-z_]*
 ";"		{	return SEMICOLON;		}
 ","		{	return COMMA;			}
 "="		{	return EQUALS;			}
-"@"		{	return AT;			}
 .		{	return yytext[0];		}
 
 %%
