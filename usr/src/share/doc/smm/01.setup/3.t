@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)3.t	6.2 (Berkeley) %G%
+.\"	@(#)3.t	6.3 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -152,8 +152,8 @@ The exact procedure chosen will depend on the disk configuration
 and the number of suitable disk partitions that may be used.
 If there is insufficient space to load the new root and \fI/usr\fP
 filesystems before reusing the existing 4.2BSD partitions,
-it is strongly advised that you make full dumps of each filesystem
-on magtape before beginning.
+it is strongly advised that you make and verify full dumps of each
+filesystem on magtape before beginning.
 It is also desirable to run file system checks
 of all filesystems to be converted to \*(4B before shutting down 4.2BSD.
 If you are running an older system, you will have to
