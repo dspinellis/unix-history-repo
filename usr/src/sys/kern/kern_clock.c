@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1991 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_clock.c	7.11 (Berkeley) %G%
+ *	@(#)kern_clock.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -14,20 +14,7 @@
 #include "kernel.h"
 #include "proc.h"
 
-#include "machine/reg.h"
-#include "machine/psl.h"
-
-#if defined(vax) || defined(tahoe)
-#include "machine/mtpr.h"
-#include "machine/clock.h"
-#endif
-#if defined(hp300)
-#include "machine/mtpr.h"
-#endif
-#ifdef i386
-#include "machine/frame.h"
-#include "machine/segments.h"
-#endif
+#include "machine/cpu.h"
 
 #ifdef GPROF
 #include "gprof.h"
@@ -77,19 +64,12 @@ int	adjtimedelta;
  * If this timer is also being used to gather statistics,
  * we run through the statistics gathering routine as well.
  */
-/*ARGSUSED*/
-#ifndef i386
-hardclock(pc, ps)
-	caddr_t pc;
-	int ps;
-#else
 hardclock(frame)
-	struct intrframe frame;
-#define	pc	frame.if_eip
-#endif
+	clockframe frame;
 {
 	register struct callout *p1;
-	register struct proc *p = u.u_procp;
+	register struct proc *p = curproc;
+	register struct pstats *pstats = p->p_stats;
 	register int s;
 
 	/*
@@ -117,19 +97,14 @@ hardclock(frame)
 	 * assuming that the current state has been around at least
 	 * one tick.
 	 */
-#ifdef i386
-	if (ISPL(frame.if_cs) == SEL_UPL) {
-#else
-	if (USERMODE(ps)) {
-#endif
 		/*
 		 * CPU was in user state.  Increment
 		 * user time counter, and process process-virtual time
 		 * interval timer. 
 		 */
 		BUMPTIME(&p->p_utime, tick);
-		if (timerisset(&u.u_timer[ITIMER_VIRTUAL].it_value) &&
-		    itimerdecr(&u.u_timer[ITIMER_VIRTUAL], tick) == 0)
+		if (timerisset(&pstats->p_timer[ITIMER_VIRTUAL].it_value) &&
+		    itimerdecr(&pstats->p_timer[ITIMER_VIRTUAL], tick) == 0)
 			psignal(p, SIGVTALRM);
 	} else {
 		/*
@@ -149,37 +124,36 @@ hardclock(frame)
 	 */
 	if (noproc == 0) {
 		if ((p->p_utime.tv_sec+p->p_stime.tv_sec+1) >
-		    u.u_rlimit[RLIMIT_CPU].rlim_cur) {
+		    p->p_rlimit[RLIMIT_CPU].rlim_cur) {
 			psignal(p, SIGXCPU);
-			if (u.u_rlimit[RLIMIT_CPU].rlim_cur <
-			    u.u_rlimit[RLIMIT_CPU].rlim_max)
-				u.u_rlimit[RLIMIT_CPU].rlim_cur += 5;
+			if (p->p_rlimit[RLIMIT_CPU].rlim_cur <
+			    p->p_rlimit[RLIMIT_CPU].rlim_max)
+				p->p_rlimit[RLIMIT_CPU].rlim_cur += 5;
 		}
-		if (timerisset(&u.u_timer[ITIMER_PROF].it_value) &&
-		    itimerdecr(&u.u_timer[ITIMER_PROF], tick) == 0)
+		if (timerisset(&pstats->p_timer[ITIMER_PROF].it_value) &&
+		    itimerdecr(&pstats->p_timer[ITIMER_PROF], tick) == 0)
 			psignal(p, SIGPROF);
-	}
 
-	/*
-	 * We adjust the priority of the current process.
-	 * The priority of a process gets worse as it accumulates
-	 * CPU time.  The cpu usage estimator (p_cpu) is increased here
-	 * and the formula for computing priorities (in kern_synch.c)
-	 * will compute a different value each time the p_cpu increases
-	 * by 4.  The cpu usage estimator ramps up quite quickly when
-	 * the process is running (linearly), and decays away exponentially,
-	 * at a rate which is proportionally slower when the system is
-	 * busy.  The basic principal is that the system will 90% forget
-	 * that a process used a lot of CPU time in 5*loadav seconds.
-	 * This causes the system to favor processes which haven't run
-	 * much recently, and to round-robin among other processes.
-	 */
-	if (!noproc) {
+		/*
+		 * We adjust the priority of the current process.
+		 * The priority of a process gets worse as it accumulates
+		 * CPU time.  The cpu usage estimator (p_cpu) is increased here
+		 * and the formula for computing priorities (in kern_synch.c)
+		 * will compute a different value each time the p_cpu increases
+		 * by 4.  The cpu usage estimator ramps up quite quickly when
+		 * the process is running (linearly), and decays away
+		 * exponentially, * at a rate which is proportionally slower
+		 * when the system is busy.  The basic principal is that the
+		 * system will 90% forget that a process used a lot of CPU
+		 * time in 5*loadav seconds.  This causes the system to favor
+		 * processes which haven't run much recently, and to
+		 * round-robin among other processes.
+		 */
 		p->p_cpticks++;
 		if (++p->p_cpu == 0)
 			p->p_cpu--;
 		if ((p->p_cpu&3) == 0) {
-			(void) setpri(p);
+			setpri(p);
 			if (p->p_pri >= PUSER)
 				p->p_pri = p->p_usrpri;
 		}
@@ -190,11 +164,7 @@ hardclock(frame)
 	 * we must gather the statistics.
 	 */
 	if (phz == 0)
-#ifdef i386
-		gatherstats(pc, ISPL(frame.if_cs), frame.if_ppl);
-#else
-		gatherstats(pc, ps);
-#endif
+		gatherstats(&frame);
 
 	/*
 	 * Increment the time-of-day, and schedule
@@ -242,30 +212,19 @@ int	dk_ndrive = DK_NDRIVE;
  * or idle state) for the entire last time interval, and
  * update statistics accordingly.
  */
-/*ARGSUSED*/
-#ifdef i386
-#undef pc
-gatherstats(pc, ps, ppl)
-#else
-gatherstats(pc, ps)
-#endif
-	caddr_t pc;
-	int ps;
+gatherstats(framep)
+	clockframe *framep;
 {
 	register int cpstate, s;
 
 	/*
 	 * Determine what state the cpu is in.
 	 */
-#ifdef i386
-	if (ps == SEL_UPL) {
-#else
-	if (USERMODE(ps)) {
-#endif
+	if (CLKF_USERMODE(framep)) {
 		/*
 		 * CPU was in user state.
 		 */
-		if (u.u_procp->p_nice > NZERO)
+		if (curproc->p_nice > NZERO)
 			cpstate = CP_NICE;
 		else
 			cpstate = CP_USER;
@@ -282,14 +241,10 @@ gatherstats(pc, ps)
 		 * timers makes doing anything else difficult.
 		 */
 		cpstate = CP_SYS;
-#if defined(i386)
-		if (noproc && ps == 0)
-#else
-		if (noproc && BASEPRI(ps))
-#endif
+		if (noproc && CLKF_BASEPRI(framep))
 			cpstate = CP_IDLE;
 #ifdef GPROF
-		s = pc - s_lowpc;
+		s = CLKF_PC(framep) - s_lowpc;
 		if (profiling < 2 && s < s_textsize)
 			kcount[s / (HISTFRACTION * sizeof (*kcount))]++;
 #endif
@@ -310,15 +265,8 @@ gatherstats(pc, ps)
  * Run periodic events from timeout queue.
  */
 /*ARGSUSED*/
-#ifdef i386
 softclock(frame)
-	struct	intrframe frame;
-#define	pc	frame.if_eip
-#else
-softclock(pc, ps)
-	caddr_t pc;
-	int ps;
-#endif
+	clockframe frame;
 {
 
 	for (;;) {
@@ -343,36 +291,30 @@ softclock(pc, ps)
 	 * If trapped user-mode and profiling, give it
 	 * a profiling tick.
 	 */
-#ifdef i386
-	if (ISPL(frame.if_cs) == SEL_UPL) {
-#else
-	if (USERMODE(ps)) {
-#endif
-		register struct proc *p = u.u_procp;
+	if (CLKF_USERMODE(&frame)) {
+		register struct proc *p = curproc;
 
-		if (u.u_prof.pr_scale) {
-			p->p_flag |= SOWEUPC;
-			aston();
-		}
+		if (p->p_stats->p_prof.pr_scale)
+			profile_tick(p, &frame);
 		/*
 		 * Check to see if process has accumulated
 		 * more than 10 minutes of user time.  If so
 		 * reduce priority to give others a chance.
 		 */
-		if (p->p_uid && p->p_nice == NZERO &&
+		if (p->p_ucred->cr_uid && p->p_nice == NZERO &&
 		    p->p_utime.tv_sec > 10 * 60) {
-			p->p_nice = NZERO+4;
-			(void) setpri(p);
+			p->p_nice = NZERO + 4;
+			setpri(p);
 			p->p_pri = p->p_usrpri;
 		}
 	}
 }
 
 /*
- * Arrange that (*fun)(arg) is called in t/hz seconds.
+ * Arrange that (*func)(arg) is called in t/hz seconds.
  */
-timeout(fun, arg, t)
-	int (*fun)();
+timeout(func, arg, t)
+	int (*func)();
 	caddr_t arg;
 	register int t;
 {
@@ -386,7 +328,7 @@ timeout(fun, arg, t)
 		panic("timeout table overflow");
 	callfree = pnew->c_next;
 	pnew->c_arg = arg;
-	pnew->c_func = fun;
+	pnew->c_func = func;
 	for (p1 = &calltodo; (p2 = p1->c_next) && p2->c_time < t; p1 = p2)
 		if (p2->c_time > 0)
 			t -= p2->c_time;
@@ -402,8 +344,8 @@ timeout(fun, arg, t)
  * untimeout is called to remove a function timeout call
  * from the callout structure.
  */
-untimeout(fun, arg)
-	int (*fun)();
+untimeout(func, arg)
+	int (*func)();
 	caddr_t arg;
 {
 	register struct callout *p1, *p2;
@@ -411,7 +353,7 @@ untimeout(fun, arg)
 
 	s = splhigh();
 	for (p1 = &calltodo; (p2 = p1->c_next) != 0; p1 = p2) {
-		if (p2->c_func == fun && p2->c_arg == arg) {
+		if (p2->c_func == func && p2->c_arg == arg) {
 			if (p2->c_next && p2->c_time > 0)
 				p2->c_next->c_time += p2->c_time;
 			p1->c_next = p2->c_next;
@@ -467,7 +409,7 @@ profil(p, uap, retval)
 	} *uap;
 	int *retval;
 {
-	register struct uprof *upp = &u.u_prof;
+	register struct uprof *upp = &p->p_stats->p_prof;
 
 	upp->pr_base = uap->bufbase;
 	upp->pr_size = uap->bufsize;
