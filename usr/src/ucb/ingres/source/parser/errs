@@ -1,0 +1,16 @@
+sccs get  SCCS/s.grammar.y
+7.2
+1137 lines
+grep -v "DDD" grammar.y > grammar.z
+yacc  grammar.z
+
+conflicts: 15 shift/reduce
+mv y.tab.c grammar.c
+rm -f grammar.z
+cc -O -I../h -c grammar.c
+ar rvu parlib grammar.o
+r - grammar.o
+chmod 664 parlib
+ranlib parlib
+cp parlib ../../lib/parser
+ranlib ../../lib/parser
