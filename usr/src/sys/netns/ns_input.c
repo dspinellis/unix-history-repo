@@ -1,4 +1,4 @@
-/*	ns_input.c	6.1	85/05/30	*/
+/*	ns_input.c	6.2	85/06/01	*/
 
 #include "param.h"
 #include "systm.h"
@@ -140,18 +140,19 @@ next:
 		   (ns_netof(idp->idp_dna)!=-1) && (ns_netof(idp->idp_sna)!=0)
 		   && (ns_netof(idp->idp_dna)!=0)) {
 			/*
-			 * Look to see if I need to eat this packet as well.
+			 * Look to see if I need to eat this packet.
+			 * Algorithm is to forward all young packets
+			 * and prematurely age any packets which will
+			 * by physically broadcasted.
+			 * Any very old packets eaten without forwarding
+			 * would die anyway.
+			 *
+			 * Suggestion of Bill Nesheim, Cornell U.
 			 */
-			struct ns_ifaddr *ia =
-					ns_iaonnetof(idp->idp_dna.x_net);
-			if (ia) {
-				m = m_copy(m, 0, M_COPYALL);
-			} else
-				m = NULL;
-			idp_forward(idp);
-			if (m==NULL)
+			if(idp->idp_tc < NS_MAXHOPS) {
+				idp_forward(idp);
 				goto next;
-			idp = mtod(m, struct idp *);
+			}
 		}
 	/*
 	 * Is this our packet? If not, forward.
@@ -251,7 +252,11 @@ idp_forward(idp)
 	register struct idp *idp;
 {
 	register int error, type, code;
-	struct mbuf *mopt, *mcopy;
+	struct mbuf *mcopy = NULL;
+	int agedelta = 1;
+	int flags = NS_FORWARDING;
+	int ok_there = 0;
+	int ok_back = 0;
 
 	if (idpprintfs) {
 		printf("forward: src ");
@@ -270,6 +275,46 @@ idp_forward(idp)
 		type = NS_ERR_TOO_OLD, code = 0;
 		goto senderror;
 	}
+	/*
+	 * Save at most 42 bytes of the packet in case
+	 * we need to generate an NS error message to the src.
+	 */
+	mcopy = m_copy(dtom(idp), 0, imin(ntohs(idp->idp_len), 42));
+
+	if((ok_there = idp_do_route(&idp->idp_dna,&idp_droute))==0) {
+		type = NS_ERR_UNREACH_HOST, code = 0;
+		goto senderror;
+	}
+	/*
+	 * Here we think about  forwarding  broadcast packets,
+	 * so we try to insure that it doesn't go back out
+	 * on the interface it came in on.  Also, if we
+	 * are going to physically broadcast this, let us
+	 * age the packet so we can eat it safely the second time around.
+	 */
+	if (idp->idp_dna.x_host.c_host[0] & 0x1) {
+		struct ns_ifaddr *ia = ns_iaonnetof(idp->idp_dna.x_net);
+		struct ifnet *ifp;
+		if (ia) {
+			/* I'm gonna hafta eat this packet */
+			agedelta += NS_MAXHOPS - idp->idp_tc;
+			idp->idp_tc = NS_MAXHOPS;
+		}
+		if ((ok_back = idp_do_route(&idp->idp_sna,&idp_sroute))==0) {
+			/* error = ENETUNREACH; He'll never get it! */
+			m_freem(dtom(idp));
+			goto cleanup;
+		}
+		if (idp_droute.ro_rt &&
+		    (ifp=idp_droute.ro_rt->rt_ifp) &&
+		    idp_sroute.ro_rt &&
+		    (ifp!=idp_sroute.ro_rt->rt_ifp)) {
+			flags |= NS_ALLOWBROADCAST;
+		} else {
+			type = NS_ERR_UNREACH_HOST, code = 0;
+			goto senderror;
+		}
+	}
 	/* need to adjust checksum */
 	if (idp->idp_sum!=0xffff) {
 		union bytes {
@@ -278,78 +323,47 @@ idp_forward(idp)
 			long l;
 		} x;
 		register int shift;
-		x.l = 0; x.c[0] = 1;
+		x.l = 0; x.c[0] = agedelta;
 		shift = (((((int)ntohs(idp->idp_len))+1)>>1)-2) & 0xf;
 		x.l = idp->idp_sum + (x.l << shift);
 		x.l = x.s[0] + x.s[1];
 		x.l = x.s[0] + x.s[1];
 		if (x.l==0xffff) idp->idp_sum = 0; else idp->idp_sum = x.l;
 	}
-	mopt = m_get(M_DONTWAIT, MT_DATA);
-	if (mopt == NULL) {
-		m_freem(dtom(idp));
-		return;
-	}
+	if ((error = ns_output(dtom(idp), &idp_droute, flags)) && 
+	    (mcopy!=NULL)) {
+		idp = mtod(mcopy, struct idp *);
+		type = NS_ERR_UNSPEC_T, code = 0;
+		switch (error) {
 
-	/*
-	 * Save at most 42 bytes of the packet in case
-	 * we need to generate an NS error message to the src.
-	 */
-	mcopy = m_copy(dtom(idp), 0, imin(ntohs(idp->idp_len), 42));
+		case ENETUNREACH:
+		case EHOSTDOWN:
+		case EHOSTUNREACH:
+		case ENETDOWN:
+		case EPERM:
+			type = NS_ERR_UNREACH_HOST;
+			break;
 
-	if ((idp->idp_dna.x_host.c_host[0] & 0x1) == 0)
-		error = ns_output(dtom(idp), (struct route *)0, NS_FORWARDING);
-	/*
-	 * Here we are about to forward a broadcast packet,
-	 * so we try to insure that it doesn't go back out
-	 * on the interface it came in on.
-	 */
-	else if (idp_do_route(&idp->idp_dna,&idp_droute)) {
-		if (idp_do_route(&idp->idp_sna,&idp_sroute)) {
-		    struct ifnet *ifp;
+		case EMSGSIZE:
+			type = NS_ERR_TOO_BIG;
+			code = 576; /* too hard to figure out mtu here */
+			break;
 
-		    if (idp_droute.ro_rt &&
-			(ifp=idp_droute.ro_rt->rt_ifp) &&
-		        idp_sroute.ro_rt &&
-			(ifp!=idp_sroute.ro_rt->rt_ifp)) {
-				error = ns_output(dtom(idp), &idp_droute,
-					      NS_FORWARDING|NS_ALLOWBROADCAST);
-		    }
-		    idp_undo_route(&idp_sroute);
+		case ENOBUFS:
+			type = NS_ERR_UNSPEC_T;
+			break;
 		}
-		idp_undo_route(&idp_droute);
-	}
-
-	if (error == 0) {
-		if (mcopy)
-			m_freem(mcopy);
-		return;
-	}
-	if (mcopy == NULL)
-		return;
-	idp = mtod(mcopy, struct idp *);
-	type = NS_ERR_UNSPEC_T, code = 0;
-	switch (error) {
-
-	case ENETUNREACH:
-	case EHOSTDOWN:
-	case EHOSTUNREACH:
-	case ENETDOWN:
-	case EPERM:
-		type = NS_ERR_UNREACH_HOST;
-		break;
-
-	case EMSGSIZE:
-		type = NS_ERR_TOO_BIG;
-		code = 576; /* too hard to figure out mtu here */
-		break;
-
-	case ENOBUFS:
-		type = NS_ERR_UNSPEC_T;
-		break;
 	}
 senderror:
 	ns_error(dtom(idp), type, code);
+	mcopy = NULL;
+cleanup:
+	if (ok_there)
+		idp_undo_route(&idp_droute);
+	if (ok_back)
+		idp_undo_route(&idp_sroute);
+	if (mcopy != NULL)
+		m_freem(mcopy);
 }
 
 idp_do_route(src, ro)
