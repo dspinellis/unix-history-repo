@@ -7,13 +7,15 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.c	7.4 (Berkeley) %G%
+ *	@(#)conf.c	7.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/buf.h>
 #include <sys/ioctl.h>
+#include <sys/proc.h>
+#include <sys/vnode.h>
 #include <sys/tty.h>
 #include <sys/conf.h>
 
@@ -351,3 +353,106 @@ int	mem_no = 2; 	/* major device number of memory special file */
  * provided as a character (raw) device.
  */
 dev_t	swapdev = makedev(1, 0);
+
+/*
+ * Routine that identifies /dev/mem and /dev/kmem.
+ *
+ * A minimal stub routine can always return 0.
+ */
+iskmemdev(dev)
+	dev_t dev;
+{
+
+	if (major(dev) == 3 && (minor(dev) == 0 || minor(dev) == 1))
+		return (1);
+	return (0);
+}
+
+/*
+ * Routine to determine if a device is a disk.
+ *
+ * A minimal stub routine can always return 0.
+ */
+isdisk(dev, type)
+	dev_t dev;
+	int type;
+{
+
+	switch (major(dev)) {
+	case 0:
+	case 3:
+		if (type == VBLK)
+			return (1);
+		return (0);
+	case 4:
+	case 15:
+		if (type == VCHR)
+			return (1);
+		/* FALLTHROUGH */
+	default:
+		return (0);
+	}
+	/* NOTREACHED */
+}
+
+#define MAXDEV	43
+static int chrtoblktbl[MAXDEV] =  {
+      /* VCHR */      /* VBLK */
+	/* 0 */		NODEV,
+	/* 1 */		NODEV,
+	/* 2 */		NODEV,
+	/* 3 */		NODEV,
+	/* 4 */		0,
+	/* 5 */		NODEV,
+	/* 6 */		NODEV,
+	/* 7 */		NODEV,
+	/* 8 */		NODEV,
+	/* 9 */		NODEV,
+	/* 10 */	NODEV,
+	/* 11 */	NODEV,
+	/* 12 */	NODEV,
+	/* 13 */	NODEV,
+	/* 14 */	NODEV,
+	/* 15 */	3,
+	/* 16 */	NODEV,
+	/* 17 */	NODEV,
+	/* 18 */	NODEV,
+	/* 19 */	NODEV,
+	/* 20 */	NODEV,
+	/* 21 */	NODEV,
+	/* 22 */	NODEV,
+	/* 23 */	NODEV,
+	/* 24 */	NODEV,
+	/* 25 */	NODEV,
+	/* 26 */	NODEV,
+	/* 27 */	NODEV,
+	/* 28 */	NODEV,
+	/* 29 */	NODEV,
+	/* 30 */	NODEV,
+	/* 31 */	NODEV,
+	/* 32 */	NODEV,
+	/* 33 */	NODEV,
+	/* 34 */	NODEV,
+	/* 35 */	NODEV,
+	/* 36 */	NODEV,
+	/* 37 */	NODEV,
+	/* 38 */	NODEV,
+	/* 39 */	NODEV,
+	/* 40 */	NODEV,
+	/* 41 */	NODEV,
+	/* 42 */	NODEV,
+};
+/*
+ * Routine to convert from character to block device number.
+ *
+ * A minimal stub routine can always return NODEV.
+ */
+chrtoblk(dev)
+	dev_t dev;
+{
+	int blkmaj;
+
+	if (major(dev) >= MAXDEV || (blkmaj = chrtoblktbl[major(dev)]) == NODEV)
+		return (NODEV);
+	return (makedev(blkmaj, minor(dev)));
+}
