@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_input.c,v 5.6 88/11/18 17:27:38 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_input.c,v $
- *	@(#)tp_input.c	7.16 (Berkeley) %G% *
+ *	@(#)tp_input.c	7.17 (Berkeley) %G% *
  *
  * tp_input() gets an mbuf chain from ip.  Actually, not directly
  * from ip, because ip calls a net-level routine that strips off
@@ -641,7 +641,8 @@ again:
 				}
 			}
 			for (t = tp_listeners; t ; t = t->tp_nextlisten)
-				if (bcmp(lsufxloc, t->tp_lsuffix, lsufxlen) == 0 &&
+				if (lsufxlen == t->tp_lsuffixlen &&
+					bcmp(lsufxloc, t->tp_lsuffix, lsufxlen) == 0 &&
 					laddr->sa_family == t->tp_nlproto->nlp_afamily)
 						break;
 			CHECK(t == 0, E_TP_NO_SESSION, ts_inv_sufx, respond,
