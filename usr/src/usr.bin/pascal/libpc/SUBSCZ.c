@@ -1,16 +1,17 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)SUBSCZ.c 1.3 %G%";
+static char sccsid[] = "@(#)SUBSCZ.c 1.4 %G%";
 
+extern char ESUBSC[];	/* ESUBSC is defined in SUBSCZ.c */
 
 long
-SUBSCZ(i, upper)
-
-	long	i, upper;
+SUBSCZ(value, upper)
+	long		value;
+	unsigned long	upper;
 {
-	if (i < 0 || i > upper) {
-		ERROR("Subscript value of %D is out of range\n", i);
+	if (value > upper) {
+		ERROR(ESUBSC, value);
 		return;
 	}
-	return i;
+	return value;
 }

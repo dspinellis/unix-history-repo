@@ -1,16 +1,16 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)RSNG4.c 1.3 %G%";
+static char sccsid[] = "@(#)RSNG4.c 1.4 %G%";
 
+extern char ERANG[];	/* ERANG is defined in RANG4.c */
 
 long
 RSNG4(value, upper)
-
-	long	value;
-	long	upper;
+	long		value;
+	unsigned long	upper;
 {
-	if (value < 0 || value > upper) {
-		ERROR("Value of %D is out of range\n", value);
+	if (value > upper) {
+		ERROR(ERANG, value);
 		return;
 	}
 	return	value;
