@@ -58,6 +58,8 @@ char	*getbsize __P((char *, int *, long *));
 int	 linkchk __P((FTSENT *));
 void	 usage __P((void));
 
+int	kflag;
+
 main(argc, argv)
 	int argc;
 	char *argv[];
@@ -71,11 +73,14 @@ main(argc, argv)
 
 	ftsoptions = FTS_PHYSICAL;
 	save = argv;
-	aflag = sflag = 0;
-	while ((ch = getopt(argc, argv, "asx")) != EOF)
+	aflag = kflag = sflag = 0;
+	while ((ch = getopt(argc, argv, "aksx")) != EOF)
 		switch(ch) {
 		case 'a':
 			aflag = 1;
+			break;
+		case 'k':
+			kflag = 1;
 			break;
 		case 's':
 			sflag = 1;

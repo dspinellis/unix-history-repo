@@ -40,19 +40,23 @@
 .Sh SYNOPSIS
 .Nm du
 .Op Fl a Li \&| Fl s
-.Op Fl x
+.Op Fl kx
 .Op Ar file ...
 .Sh DESCRIPTION
 The
 .Nm du
-utility displays the file system block usage for each file argument
-and for each directory in the file hierarchy rooted in each directory
+utility displays the file system block usage for each file
+argument and for each directory in the file hierarchy rooted in each directory
 argument.
 If no file is specified, the block usage of the hierarchy rooted in
 the current directory is displayed.
 The number of blocks are in the same units as that returned by the
 .Xr stat 2
-system call, i.e. 512-byte blocks.
+system call, i.e. 512-byte blocks, unless the
+.Fl k
+option is specified, or the
+.Ev BLOCKSIZE
+environment variable is set (see below).
 Partial numbers of blocks are rounded up.
 .Pp
 The options are as follows:
@@ -61,6 +65,8 @@ The options are as follows:
 Display an entry for each file in the file hierarchy.
 .It Fl s
 Display only the grand total for the specified files.
+.It Fl k
+The block counts are forced to be in 1K (1024 8-bit bytes) size blocks.
 .It Fl x
 Filesystem mount points are not traversed.
 .El

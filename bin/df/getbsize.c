@@ -37,6 +37,7 @@ static char sccsid[] = "@(#)getbsize.c	5.3 (Berkeley) 3/9/92";
 
 #include <stdio.h>
 #include <stdlib.h>
+extern int kflag;
 
 char *
 getbsize(prog, headerlenp, blocksizep)
@@ -53,7 +54,15 @@ getbsize(prog, headerlenp, blocksizep)
 #define	GB	(1024L * 1024L * 1024L)
 #define	MAXB	GB		/* No tera, peta, nor exa. */
 	form = "";
-	if ((p = getenv("BLOCKSIZE")) != NULL && *p != '\0') {
+	/* POSIX requires the -k option to display in 1024-blocks */
+	if (kflag) {
+		n = 1;
+		blocksize = 1024;
+		form = "K";
+		max = MAXB / KB;
+		mul = KB;
+	}
+	else if ((p = getenv("BLOCKSIZE")) != NULL && *p != '\0') {
 		if ((n = strtol(p, &ep, 10)) < 0)
 			goto underflow;
 		if (n == 0)

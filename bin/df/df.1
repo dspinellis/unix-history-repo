@@ -39,7 +39,7 @@
 .Nd display free disk space
 .Sh SYNOPSIS
 .Nm df
-.Op Fl in
+.Op Fl ikn
 .Op Ar file | Ar filesystem ...
 .Sh DESCRIPTION
 .Nm Df
@@ -48,7 +48,12 @@ displays statistics about the amount of free disk space on the specified
 or on the filesystem of which
 .Ar file
 is a part.
-Values are displayed in 512-byte per block block counts.
+Values are displayed in 512-byte per block block counts,
+unless the 
+.Fl k
+option is specified, or the
+.Ev BLOCKSIZE
+environment variable is set (see below).
 If neither a file or a filesystem operand is specified,
 statistics for all mounted filesystems are displayed.
 .Pp
@@ -56,6 +61,8 @@ The following options are available:
 .Bl -tag -width Ds
 .It Fl i
 Include statistics on the number of free inodes.
+.It Fl k
+The block counts are forced to be in 1K (1024 8-bit bytes) size blocks.
 .It Fl n
 Print out the previously obtained statistics from the filesystems.
 This option should be used if it is possible that one or more

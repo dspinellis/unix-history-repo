@@ -58,7 +58,7 @@ void	 prtstat __P((struct statfs *, long));
 void	 ufs_df __P((char *, long));
 void	 usage __P((void));
 
-int	iflag, nflag;
+int	iflag, kflag, nflag;
 struct	ufs_args mdev;
 
 int
@@ -72,10 +72,14 @@ main(argc, argv)
 	int err, ch, i;
 	char *mntpt;
 
-	while ((ch = getopt(argc, argv, "in")) != EOF)
+	iflag = kflag = nflag = 0;
+	while ((ch = getopt(argc, argv, "ikn")) != EOF)
 		switch(ch) {
 		case 'i':
 			iflag = 1;
+			break;
+		case 'k':
+			kflag = 1;
 			break;
 		case 'n':
 			nflag = 1;
