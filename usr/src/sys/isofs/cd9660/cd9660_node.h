@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cd9660_node.h	8.2 (Berkeley) %G%
+ *	@(#)cd9660_node.h	8.3 (Berkeley) %G%
  */
 
 /*
@@ -32,22 +32,20 @@ typedef	struct	{
 	dev_t		iso_rdev;	/* Major/Minor number for special */
 } ISO_RRIP_INODE;
 
-#ifdef	ISODEVMAP
+#ifdef ISODEVMAP
 /*
  * FOr device# (major,minor) translation table
  */
 struct iso_dnode {
-	struct iso_dnode *d_chain[2];	/* hash chain, MUST be first */
+	struct iso_dnode *d_next, **d_prev;	/* hash chain */
 	dev_t		i_dev;		/* device where dnode resides */
 	ino_t		i_number;	/* the identity of the inode */
 	dev_t		d_dev;		/* device # for translation */
 };
-#define	d_forw		d_chain[0]
-#define	d_back		d_chain[1]
 #endif
 
 struct iso_node {
-	struct	iso_node *i_chain[2]; /* hash chain, MUST be first */
+	struct	iso_node *i_next, **i_prev;	/* hash chain */
 	struct	vnode *i_vnode;	/* vnode associated with this inode */
 	struct	vnode *i_devvp;	/* vnode for block I/O */
 	u_long	i_flag;		/* see below */
@@ -60,8 +58,7 @@ struct iso_node {
 	doff_t	i_diroff;	/* offset in dir, where we found last entry */
 	doff_t	i_offset;	/* offset of free space in directory */
 	ino_t	i_ino;		/* inode number of found directory */
-	long	i_spare0;
-	long	i_spare1;
+	pid_t	i_lockholder, i_lockwaiter;
 
 	long iso_extent;	/* extent of file */
 	long i_size;
@@ -74,15 +71,12 @@ struct iso_node {
 #define	i_back		i_chain[1]
 
 /* flags */
-#define	ILOCKED		0x0001		/* inode is locked */
-#define	IWANT		0x0002		/* some process waiting on lock */
-#define	IACC		0x0020		/* inode access time to be updated */
+#define	IN_LOCKED	0x0001		/* inode is locked */
+#define	IN_WANTED	0x0002		/* some process waiting on lock */
+#define	IN_ACCESS	0x0020		/* inode access time to be updated */
 
 #define VTOI(vp) ((struct iso_node *)(vp)->v_data)
 #define ITOV(ip) ((ip)->i_vnode)
-
-#define ISO_ILOCK(ip)	iso_ilock(ip)
-#define ISO_IUNLOCK(ip)	iso_iunlock(ip)
 
 /*
  * Prototypes for ISOFS vnode operations
@@ -111,6 +105,9 @@ void cd9660_defattr __P((struct iso_directory_record *,
 			struct iso_node *, struct buf *));
 void cd9660_deftstamp __P((struct iso_directory_record *,
 			struct iso_node *, struct buf *));
+struct vnode *cd9660_ihashget __P((dev_t, ino_t));
+void cd9660_ihashins __P((struct iso_node *));
+void cd9660_ihashrem __P((struct iso_node *));
 #ifdef	ISODEVMAP
 struct iso_dnode *iso_dmap __P((dev_t, ino_t, int));
 void iso_dunmap __P((dev_t));
