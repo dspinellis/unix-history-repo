@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty_tty.c	7.5 (Berkeley) %G%
+ *	@(#)tty_tty.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -21,8 +21,6 @@
 #include "uio.h"
 
 #define cttyvp(p) ((p)->p_flag&SCTTY ? (p)->p_session->s_ttyvp : NULL)
-
-static off_t dummyoff;
 
 /*ARGSUSED*/
 syopen(dev, flag)
@@ -45,11 +43,15 @@ syread(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
 {
-	struct vnode *ttyvp = cttyvp(u.u_procp);
+	register struct vnode *ttyvp = cttyvp(u.u_procp);
+	int error;
 
 	if (ttyvp == NULL)
 		return (ENXIO);
-	return (VOP_READ(ttyvp, uio, &dummyoff, flag, NOCRED));
+	VOP_LOCK(ttyvp);
+	error = VOP_READ(ttyvp, uio, flag, NOCRED);
+	VOP_UNLOCK(ttyvp);
+	return (error);
 }
 
 /*ARGSUSED*/
@@ -57,11 +59,15 @@ sywrite(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
 {
-	struct vnode *ttyvp = cttyvp(u.u_procp);
+	register struct vnode *ttyvp = cttyvp(u.u_procp);
+	int error;
 
 	if (ttyvp == NULL)
 		return (ENXIO);
-	return (VOP_WRITE(ttyvp, uio, &dummyoff, flag, NOCRED));
+	VOP_LOCK(ttyvp);
+	error = VOP_WRITE(ttyvp, uio, flag, NOCRED);
+	VOP_UNLOCK(ttyvp);
+	return (error);
 }
 
 /*ARGSUSED*/
