@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)negdi2.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)negdi2.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include "longlong.h"
@@ -36,7 +36,7 @@ __negdi2 (u)
 static int
 bneg (a, b, n)
      unsigned short *a, *b;
-     size_t n;
+     unsigned long n;
 {
   signed long acc;
   int i;

@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)subdi3.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)subdi3.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include "longlong.h"
@@ -39,7 +39,7 @@ __subdi3 (u, v)
 static int 
 bsub (a, b, c, n)
      unsigned short *a, *b, *c;
-     size_t n;
+     unsigned long n;
 {
   signed long acc;
   int i;
