@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_syscalls.c	7.43 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.44 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -232,6 +232,9 @@ dounmount(mp, flags)
 	int error;
 
 	coveredvp = mp->m_vnodecovered;
+	if (vfs_busy(mp))
+		return (EBUSY);
+	mp->m_flag |= M_UNMOUNT;
 	if (error = vfs_lock(mp))
 		return (error);
 
@@ -240,6 +243,8 @@ dounmount(mp, flags)
 	VFS_SYNC(mp, MNT_WAIT);
 
 	error = VFS_UNMOUNT(mp, flags);
+	mp->m_flag &= ~M_UNMOUNT;
+	vfs_unbusy(mp);
 	if (error) {
 		vfs_unlock(mp);
 	} else {
@@ -259,6 +264,7 @@ sync(scp)
 	struct syscontext *scp;
 {
 	register struct mount *mp;
+	struct mount *omp;
 
 	mp = rootfs;
 	do {
@@ -266,10 +272,41 @@ sync(scp)
 		 * The lock check below is to avoid races with mount
 		 * and unmount.
 		 */
-		if ((mp->m_flag & (M_MLOCK|M_RDONLY)) == 0)
+		if ((mp->m_flag & (M_MLOCK|M_RDONLY|M_MPBUSY)) == 0 &&
+		    !vfs_busy(mp)) {
 			VFS_SYNC(mp, MNT_NOWAIT);
-		mp = mp->m_next;
+			omp = mp;
+			mp = mp->m_next;
+			vfs_unbusy(omp);
+		} else
+			mp = mp->m_next;
 	} while (mp != rootfs);
+}
+
+/*
+ * operate on filesystem quotas
+ */
+quotactl(scp)
+	register struct syscontext *scp;
+{
+	struct a {
+		char *path;
+		int cmd;
+		int uid;
+		caddr_t arg;
+	} *uap = (struct a *)scp->sc_ap;
+	register struct mount *mp;
+	register struct nameidata *ndp = &scp->sc_nd;
+	int error;
+
+	ndp->ni_nameiop = LOOKUP | FOLLOW;
+	ndp->ni_segflg = UIO_USERSPACE;
+	ndp->ni_dirp = uap->path;
+	if (error = namei(ndp))
+		RETURN (error);
+	mp = ndp->ni_vp->v_mount;
+	vrele(ndp->ni_vp);
+	RETURN (VFS_QUOTACTL(mp, uap->cmd, uap->uid, uap->arg));
 }
 
 /*
