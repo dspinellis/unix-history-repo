@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_exec.c	7.38 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.39 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -61,7 +61,7 @@ execve(p, uap, retval)
 	int indir, uid, gid;
 	char *sharg;
 	struct vnode *vp;
-	int resid, error, flags = 0;
+	int resid, error, paged = 0;
 	vm_offset_t execargs;
 	struct vattr vattr;
 	char cfname[MAXCOMLEN + 1];
@@ -180,7 +180,7 @@ execve(p, uap, retval)
 		 * treated as an HPUX binary.
 		 */
 		if (exdata.ex_hexec.ha_version != BSDVNUM)
-			flags |= SHPUX;
+			paged |= SHPUX;				/* XXX */
 		/*
 		 * Shuffle important fields to their BSD locations.
 		 * Note that the order in which this is done is important.
@@ -214,7 +214,8 @@ execve(p, uap, retval)
 		break;
 
 	case ZMAGIC:
-		flags |= SPAGV;
+		paged++;
+		/* FALLTHROUGH */
 	case NMAGIC:
 		if (exdata.ex_exec.a_text == 0) {
 			error = ENOEXEC;
@@ -333,7 +334,7 @@ execve(p, uap, retval)
 			goto bad;
 	}
 	nc = (nc + NBPW-1) & ~(NBPW-1);
-	error = getxfile(p, vp, &exdata.ex_exec, flags, nc + (na+4)*NBPW,
+	error = getxfile(p, vp, &exdata.ex_exec, paged, nc + (na+4)*NBPW,
 	    uid, gid);
 	if (error)
 		goto bad;
@@ -431,11 +432,11 @@ bad:
 /*
  * Read in and set up memory for executed file.
  */
-getxfile(p, vp, ep, flags, nargc, uid, gid)
+getxfile(p, vp, ep, paged, nargc, uid, gid)
 	register struct proc *p;
 	register struct vnode *vp;
 	register struct exec *ep;
-	int flags, nargc, uid, gid;
+	int paged, nargc, uid, gid;
 {
 	segsz_t ts, ds, ss;
 	register struct ucred *cred = p->p_ucred;
@@ -446,14 +447,16 @@ getxfile(p, vp, ep, flags, nargc, uid, gid)
 	struct vmspace *vm = p->p_vmspace;
 
 #ifdef HPUXCOMPAT
+	int hpux = (paged & SHPUX);
+	paged &= ~SHPUX;
 	if (ep->a_mid == MID_HPUX) {
-		if (flags & SPAGV)
+		if (paged)
 			toff = CLBYTES;
 		else
 			toff = sizeof (struct hpux_exec);
 	} else
 #endif
-	if (flags & SPAGV)
+	if (paged)
 		toff = CLBYTES;
 	else
 		toff = sizeof (struct exec);
@@ -512,10 +515,13 @@ getxfile(p, vp, ep, flags, nargc, uid, gid)
 	/* remember that we were loaded from an HPUX format file */
 	if (ep->a_mid == MID_HPUX)
 		u.u_pcb.pcb_flags |= PCB_HPUXBIN;
+	if (hpux)
+		p->p_flag |= SHPUX;
+	else
+		p->p_flag &= ~SHPUX;
 #endif
 #endif
-	p->p_flag &= ~(SPAGV|SSEQL|SUANOM|SHPUX);
-	p->p_flag |= flags | SEXEC;
+	p->p_flag |= SEXEC;
 	addr = VM_MIN_ADDRESS;
 	if (vm_allocate(&vm->vm_map, &addr, round_page(ctob(ts + ds)), FALSE)) {
 		uprintf("Cannot allocate text+data space\n");
@@ -533,7 +539,7 @@ getxfile(p, vp, ep, flags, nargc, uid, gid)
 	vm->vm_taddr = (caddr_t)VM_MIN_ADDRESS;
 	vm->vm_daddr = (caddr_t)(VM_MIN_ADDRESS + ctob(ts));
 
-	if ((flags & SPAGV) == 0) {
+	if (paged == 0) {
 		/*
 		 * Read in data segment.
 		 */
@@ -572,7 +578,7 @@ badmap:
 		uprintf("sorry, pid %d was killed in exec: VM allocation\n",
 			p->p_pid);
 		psignal(p, SIGKILL);
-		p->p_flag |= SULOCK;
+		p->p_flag |= SKEEP;
 		return(error);
 	}
 
