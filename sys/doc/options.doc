@@ -1,4 +1,4 @@
-$Id: options.doc,v 1.2 1994/04/21 22:19:19 wollman Exp $
+$Id: options.texi,v 1.3 1994/04/21 22:19:21 wollman Exp $
 
    This file documents the configuration options available in the
 FreeBSD operating system.
@@ -492,44 +492,26 @@ options also apply to EISA systems.  The same goes for VESA Local Bus
 
 `device lpt0 at isa? port "IO_LPT1" tty'
 `device lpt0 at isa? port "IO_LPT1" tty irq 7 vector lptintr'
-`device lpt0 at isa? port? tty irq 7 vector lptintr'
-`device lpt0 at isa? port? tty'
-     The `lpt' device provides support for the parallel printer driver
-     accessed as /dev/lpt[0123].  The current version of lpt provides
-     support for either polled or interrupt-driven access to parallel
-     ports.  (The polling functionality replaces the functionality of
-     `lpa', which has been removed in release 1.1.5.)
-     There is now a fairly wide number of options available for the
-     `lpt' driver:
+`device lpt0 at isa? port ? tty irq 7 vector lptintr'
+`device lpt0 at isa? port ? tty'
+     The `lpt' driver provides support for the parallel printer driver
+     accessed as `/dev/lptN' (N=0, 1, ...).  The current version of
+     this driver provides support for either polled or interrupt-driven
+     ports, a unification of the `lpt' and `lpa' drivers from FreeBSD
+     1.1.
 
-     1) Port selection
-        The first and second examples above show the explicit selection
-        of a port address.  The last two defer the binding of the port
-        address to boot time, when the device probe uses the BIOS list
-        of printers to detect the i/o address of the printer port.
+     The first and second examples show explicit selection of a port
+     address.  If the port is not specified, as in the third and fourth
+     examples, the driver defaults to whatever address the BIOS printer
+     driver would have used.  The second and third examples select
+     interrupt-driven I/O; if polled mode is specified, as in the first
+     and fourth examples, it is impossible to enable interrupt-driven
+     access at run time.
 
-     1) Interrupt selection
-        The second and third example lines above show the use of
-        interrupt driven printer ports.  If no irq and interrupt vector
-        are given, then only polled behaviour will be available from the
-        port.
-
-     A port which has been configured with an interrupt can be switched
-     between interrupt-driven and polled operation by using the
-     lptcontrol(1) utility.
-
-     See the lptcontrol(1) and lpt(4) manual pages for more details.
-
-     If you receive `ISA strayintr 7' messages correlated with the use 
-     of the `lpt' driver configured for polled operation, chances are
-     that your controller supports interrupt-driven operation, and you
-     should switch to interrupt-driven operation.
-
-     The `lpa' driver is obsolete, and has been removed in release
-     1.1.5.
-
-     The lpt driver is still far from perfect, and will hopefully be
-     totally rewritten for release 2.0.
+     If you receive "ISA strayintr 7" messages correlated with the use
+     of the polled mode of `lpt', chances are that your controller
+     supports interrupt-driven operation, and you should switch to that
+     mode.
 
 `device mcd0 at isa? port 0x300 bio irq 10 vector mcdintr'
      This device provides support for the Mitsumi non-SCSI CD-ROM drive.

@@ -10,7 +10,7 @@
 @c %**end of header
 
 @ifinfo
-$Id: options.texi,v 1.2 1994/04/03 18:38:48 wollman Exp $
+$Id: options.texi,v 1.3 1994/04/21 22:19:21 wollman Exp $
 
 This file documents the configuration options available in the FreeBSD
 operating system.
@@ -33,7 +33,7 @@ Trademarks are property of their respective owners.
 
 @titlepage
 @title Configuration Options in FreeBSD
-@subtitle for FreeBSD 1.1-1.2
+@subtitle for FreeBSD 1.1.5
 @author Garrett A. Wollman
 @author FreeBSD Project
 
@@ -759,21 +759,31 @@ Isolink 4110 Ethernet controllers.
 @c source tree.  When it is made available, this information will be
 @c updated.
 
-@item device lpa0 at isa? port "IO_LPT1" tty
+@item device lpt0 at isa? port "IO_LPT1" tty
 @itemx device lpt0 at isa? port "IO_LPT1" tty irq 7 vector lptintr
+@itemx device lpt0 at isa? port ? tty irq 7 vector lptintr
+@itemx device lpt0 at isa? port ? tty
 @findex lpa
 @findex lpt
 @cindex Parallel printers
-The @samp{lpa} device provides support for the parallel printer driver
-accessed as @file{/dev/lp}.  The @samp{lpt} driver provides the same
-functionality, but only works with those printer controllers which
-support interrupt-driven operations.  If you receive @samp{ISA strayintr
-7} messages correlated with the use of the @samp{lpa} driver, chances
-are that your controller supports interrupt-driven operation, and you
-should switch to the @samp{lpt} driver.
 
-The @samp{lpa} driver is obsolete, and will be removed in release 1.2,
-to be replaced by special flags to the @samp{lpt} driver.
+The @samp{lpt} driver provides support for the parallel printer driver
+accessed as @file{/dev/lpt@var{N}} (@var{N}=0, 1, @dots{}).  The current
+version of this driver provides support for either polled or
+interrupt-driven ports, a unification of the @samp{lpt} and @samp{lpa}
+drivers from FreeBSD 1.1.
+
+The first and second examples show explicit selection of a port address.
+If the port is not specified, as in the third and fourth examples, the
+driver defaults to whatever address the BIOS printer driver would have
+used.  The second and third examples select interrupt-driven I/O; if
+polled mode is specified, as in the first and fourth examples, it is
+impossible to enable interrupt-driven access at run time.
+
+If you receive ``ISA strayintr 7'' messages correlated with the use of
+the polled mode of @samp{lpt}, chances are that your controller supports
+interrupt-driven operation, and you should switch to that mode.
+
 
 @item device mcd0 at isa? port 0x300 bio irq 10 vector mcdintr
 @findex mcd
