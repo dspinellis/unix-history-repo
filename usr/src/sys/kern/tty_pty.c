@@ -1,4 +1,4 @@
-/*	tty_pty.c	4.26	82/10/13	*/
+/*	tty_pty.c	4.27	82/10/17	*/
 
 /*
  * Pseudo-teletype Driver
@@ -51,25 +51,21 @@ ptsopen(dev, flag)
 {
 	register struct tty *tp;
 
-	if (minor(dev) >= NPTY) {
-		u.u_error = ENXIO;
-		return;
-	}
+	if (minor(dev) >= NPTY)
+		return (ENXIO);
 	tp = &pt_tty[minor(dev)];
 	if ((tp->t_state & TS_ISOPEN) == 0) {
 		ttychars(tp);		/* Set up default chars */
 		tp->t_flags = 0;	/* No features (nor raw mode) */
-	} else if (tp->t_state&TS_XCLUDE && u.u_uid != 0) {
-		u.u_error = EBUSY;
-		return;
-	}
+	} else if (tp->t_state&TS_XCLUDE && u.u_uid != 0)
+		return (EBUSY);
 	if (tp->t_oproc)			/* Ctrlr still around. */
 		tp->t_state |= TS_CARR_ON;
 	while ((tp->t_state & TS_CARR_ON) == 0) {
 		tp->t_state |= TS_WOPEN;
 		sleep((caddr_t)&tp->t_rawq, TTIPRI);
 	}
-	(*linesw[tp->t_line].l_open)(dev, tp);
+	return ((*linesw[tp->t_line].l_open)(dev, tp));
 }
 
 ptsclose(dev)
@@ -186,15 +182,11 @@ ptcopen(dev, flag)
 	register struct tty *tp;
 	struct pt_ioctl *pti;
 
-	if (minor(dev) >= NPTY) {
-		u.u_error = ENXIO;
-		return;
-	}
+	if (minor(dev) >= NPTY)
+		return (ENXIO);
 	tp = &pt_tty[minor(dev)];
-	if (tp->t_oproc) {
-		u.u_error = EIO;
-		return;
-	}
+	if (tp->t_oproc)
+		return (EIO);
 	tp->t_oproc = ptsstart;
 	if (tp->t_state & TS_WOPEN)
 		wakeup((caddr_t)&tp->t_rawq);
@@ -202,6 +194,7 @@ ptcopen(dev, flag)
 	pti = &pt_ioctl[minor(dev)];
 	pti->pt_flags = 0;
 	pti->pt_send = 0;
+	return (0);
 }
 
 ptcclose(dev)
@@ -401,6 +394,7 @@ ptyioctl(dev, cmd, data, flag)
 {
 	register struct tty *tp = &pt_tty[minor(dev)];
 	register struct pt_ioctl *pti = &pt_ioctl[minor(dev)];
+	int error;
 
 	/* IF CONTROLLER STTY THEN MUST FLUSH TO PREVENT A HANG ??? */
 	if (cdevsw[major(dev)].d_open == ptcopen)
@@ -411,7 +405,7 @@ ptyioctl(dev, cmd, data, flag)
 				pti->pt_flags |= PF_PKT;
 			else
 				pti->pt_flags &= ~PF_PKT;
-			return;
+			return (0);
 
 		case TIOCREMOTE:
 			if (*(int *)data)
@@ -419,22 +413,23 @@ ptyioctl(dev, cmd, data, flag)
 			else
 				pti->pt_flags &= ~PF_REMOTE;
 			flushtty(tp, FREAD|FWRITE);
-			return;
+			return (0);
 
 		case FIONBIO:
 			if (*(int *)data)
 				pti->pt_flags |= PF_NBIO;
 			else
 				pti->pt_flags &= ~PF_NBIO;
-			return;
+			return (0);
 
 		case TIOCSETP:
 			while (getc(&tp->t_outq) >= 0)
 				;
 			break;
 		}
-	if (ttioctl(tp, cmd, data, dev) == 0)
-		u.u_error = ENOTTY;
+	error = ttioctl(tp, cmd, data, dev);
+	if (error < 0)
+		error = ENOTTY;
 	{ int stop = (tp->t_un.t_chr.t_stopc == ('s'&037) &&
 		      tp->t_un.t_chr.t_startc == ('q'&037));
 	if (pti->pt_flags & PF_NOSTOP) {
@@ -453,5 +448,6 @@ ptyioctl(dev, cmd, data, flag)
 		}
 	}
 	}
+	return (error);
 }
 #endif
