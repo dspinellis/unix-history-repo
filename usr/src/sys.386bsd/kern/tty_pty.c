@@ -34,7 +34,7 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         3       00067
+ * CURRENT PATCH LEVEL:         4       00070
  * --------------------         -----   ----------------------
  *
  * 11 Dec 92	Williams Jolitz		Fixed tty handling
@@ -42,6 +42,8 @@
  * 28 Nov 1991	Warren Toomey		Cleaned up the use of COMPAT_43
  *					in the 386BSD kernel.	 
  * 6 Oct 1992	Holger Veit		Fixed 'hanging console' bug
+ * 11 Jan 93	Julian Elischer		Fixes multiple processes on one
+ *					pty bug
  */
 static char rcsid[] = "$Header: /usr/bill/working/sys/kern/RCS/tty_pty.c,v 1.3 92/01/21 21:31:23 william Exp $";
 
@@ -236,7 +238,7 @@ ptcwakeup(tp, flag)
 			pti->pt_selr = 0;
 			pti->pt_flags &= ~PF_RCOLL;
 		}
-		wakeup((caddr_t)&tp->t_out.rb_hd);
+		wakeup((caddr_t)&tp->t_out.rb_tl);
 	}
 	if (flag & FWRITE) {
 		if (pti->pt_selw) {
@@ -336,7 +338,7 @@ ptcread(dev, uio, flag)
 			return (0);	/* EOF */
 		if (flag & IO_NDELAY)
 			return (EWOULDBLOCK);
-		if (error = tsleep((caddr_t)&tp->t_out.rb_hd, TTIPRI | PCATCH,
+		if (error = tsleep((caddr_t)&tp->t_out.rb_tl, TTIPRI | PCATCH,
 		    ttyin, 0))
 			return (error);
 	}
