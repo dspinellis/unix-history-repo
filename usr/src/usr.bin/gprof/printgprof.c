@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)printgprof.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)printgprof.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "gprof.h"
@@ -37,7 +37,7 @@ printprof()
 	flatprofline( np );
     }
     actime = 0.0;
-    cfree( sortednlp );
+    free( sortednlp );
 }
 
 timecmp( npp1 , npp2 )
@@ -198,7 +198,7 @@ printgprof(timesortnlp)
 	printf( "-----------------------------------------------\n" );
 	printf( "\n" );
     }
-    cfree( timesortnlp );
+    free( timesortnlp );
 }
 
     /*
@@ -688,5 +688,5 @@ printindex()
 	}
 	printf( "\n" );
     }
-    cfree( namesortnlp );
+    free( namesortnlp );
 }
