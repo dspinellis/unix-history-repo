@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -986,6 +986,8 @@ stab_map_open(map, mode)
 	register MAP *map;
 	int mode;
 {
+	FILE *af;
+
 	if (tTd(38, 2))
 		printf("stab_map_open(%s)\n", map->map_file);
 
@@ -994,6 +996,12 @@ stab_map_open(map, mode)
 		errno = ENODEV;
 		return FALSE;
 	}
+
+	af = fopen(map->map_file, "r");
+	if (af == NULL)
+		return FALSE;
+	readaliases(map, af, TRUE);
+	fclose(af);
 
 	return TRUE;
 }
