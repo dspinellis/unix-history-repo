@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)dm.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)dm.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -25,10 +25,10 @@ static char sccsid[] = "@(#)dm.c	5.2 (Berkeley) %G%";
 #include <ctype.h>
 
 #define	GAMEHIDE	"/usr/games/hide"
-#define	NOGAMING	"/etc/nogames"
-#define	CONTROL		"/usr/games/game.control"
+#define	NOGAMING	"/usr/games/nogames"
+#define	CONTROL		"/usr/games/dm.config"
 #ifdef LOG
-#define	LOGFILE		"/usr/adm/gamelog"
+#define	LOGFILE		"/usr/adm/dm.log"
 #endif
 
 static FILE	*cfp;
@@ -79,7 +79,7 @@ play(args)
 		perror("dm: chdir");
 		exit(1);
 	}
-	if (priority && setpriority(PRIO_PROCESS, 0, priority) < 0)
+	if (priority > 0 && setpriority(PRIO_PROCESS, 0, priority) < 0)
 		fputs("dm: unable to set priority!\n", stderr);
 	setgid(getgid());	/* we run setgid kmem; lose it */
 	execv(game, args);
@@ -193,7 +193,7 @@ read_games()
 				fputs("dm: Sorry, there are too many users logged on right now.\n", stderr);
 				exit(0);
 			}
-			if (isdigit(*f4) || *f4 == '-' || *f4 == '+')
+			if (isdigit(*f4))
 				priority = atoi(f3);
 			return;
 		}
