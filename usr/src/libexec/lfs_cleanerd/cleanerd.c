@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cleanerd.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)cleanerd.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -223,21 +223,31 @@ clean_loop(fsp, nsegs, options)
 	double loadavg[MAXLOADS];
 	time_t	now;
 	u_long max_free_segs;
+	u_long db_per_seg;
 
         /*
 	 * Compute the maximum possible number of free segments, given the
 	 * number of free blocks.
 	 */
-	max_free_segs = fsp->fi_statfsp->f_bfree / fsp->fi_lfs.lfs_ssize;
+	db_per_seg = fsbtodb(&fsp->fi_lfs, fsp->fi_lfs.lfs_ssize);
+	max_free_segs = fsp->fi_lfs.lfs_bfree / db_per_seg;
 	
 	/* 
 	 * We will clean if there are not enough free blocks or total clean
 	 * space is less than BUSY_LIM % of possible clean space.
 	 */
 	now = time((time_t *)NULL);
-	if (fsp->fi_cip->clean < max_free_segs &&
+#ifdef VERBOSE
+	printf("db_er_seg = %d max_free_segs = %d, bfree = %d avail = %d ",
+	    db_per_seg, max_free_segs, fsp->fi_lfs.lfs_bfree,
+	    fsp->fi_lfs.lfs_avail);
+	printf("clean = %d\n", fsp->fi_cip->clean);
+#endif
+	if ((fsp->fi_lfs.lfs_bfree - fsp->fi_lfs.lfs_avail > db_per_seg &&
+	    fsp->fi_lfs.lfs_avail < db_per_seg) ||
+	    (fsp->fi_cip->clean < max_free_segs &&
 	    (fsp->fi_cip->clean <= MIN_SEGS(&fsp->fi_lfs) ||
-	    fsp->fi_cip->clean < max_free_segs * BUSY_LIM)) {
+	    fsp->fi_cip->clean < max_free_segs * BUSY_LIM))) {
 		printf("Cleaner Running  at %s (%d of %d segments available)\n",
 		    ctime(&now), fsp->fi_cip->clean, max_free_segs);
 		clean_fs(fsp, cost_benefit, nsegs, options);
