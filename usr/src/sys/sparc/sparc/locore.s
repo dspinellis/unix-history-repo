@@ -9,24 +9,24 @@
  * All advertising materials mentioning features or use of this software
  * must display the following acknowledgement:
  *	This product includes software developed by the University of
- *	California, Lawrence Berkeley Laboratories.
+ *	California, Lawrence Berkeley Laboratory.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)locore.s	7.4 (Berkeley) %G%
+ *	@(#)locore.s	7.5 (Berkeley) %G%
  *
- * from: $Header: locore.s,v 1.46 92/08/05 04:17:58 torek Exp $
+ * from: $Header: locore.s,v 1.51 93/04/21 06:19:37 torek Exp $
  */
 
 #define	LOCORE
 #include "assym.s"
-#include <sparc/sparc/ctlreg.h>
 #include <sparc/sparc/intreg.h>
 #include <sparc/sparc/timerreg.h>
 #ifdef notyet
-#include "zsaddr.h"
+#include <sparc/sparc/vaddrs.h>
 #include <sparc/dev/zsreg.h>
 #endif
+#include <machine/ctlreg.h>
 #include <machine/psl.h>
 #include <machine/signal.h>
 #include <machine/trap.h>
@@ -35,18 +35,16 @@
  * GNU assembler does not understand `.empty' directive; Sun assembler
  * gripes about labels without it.  To allow cross-compilation using
  * the Sun assembler, and because .empty directives are useful documentation,
- * we use this trick.  While we are at it we fix the .align mismatch.
- *
- * XXX	new GNU assemblers match the Sun assembler in interpretation of
- * XXX	.align -- will have to fix this for them
+ * we use this trick.
  */
 #ifdef SUN_AS
 #define	EMPTY	.empty
-#define	ALIGN	.align 4
 #else
 #define	EMPTY	/* .empty */
-#define	ALIGN	.align 2
 #endif
+
+/* use as needed to align things on longword boundaries */
+#define	ALIGN	.align 4
 
 /*
  * CCFSZ (C Compiler Frame SiZe) is the size of a stack frame required if
@@ -2254,8 +2252,12 @@ init_tables:
 	retl
 	 stb	%o2, [%o3 + %o1]	! (wmask - 1)[i] = j;
 
-
 dostart:
+	rd	%psr, %l0		! paranoia: make sure ...
+	andn	%l0, PSR_ET, %l0	! we have traps off
+	wr	%l0, 0, %psr		! so that we can fiddle safely
+	nop; nop; nop
+
 	/*
 	 * Startup.
 	 *
@@ -2264,6 +2266,7 @@ dostart:
 	 * want to run (0xf8004000).  Until we get everything set,
 	 * we have to be sure to use only pc-relative addressing.
 	 */
+
 	wr	%g0, 0, %wim		! make sure we can set psr
 	mov	%o0, %g7		! save prom vector pointer
 	nop; nop
