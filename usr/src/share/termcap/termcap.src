@@ -3,7 +3,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)termcap.src	5.97 (Berkeley) %G%
+#	@(#)termcap.src	5.98 (Berkeley) %G%
 #
 
 #	Termcap source file
@@ -915,6 +915,16 @@ m7|mt70|m70|morrow mt70:\
 	:dm=:dc=\EW:ed=:kl=\034L:kr=\034M:ku=\034J:kd=\034K:\
 	:so=\EG4:se=\EG0:us=\EG1:ue=\EG0:vs=\E"2:ve=\E"5\E(:\
 	:tc=adm31:
+# standard-issue France Telecom minitel terminal (made by Philips)
+mt|m2-nam|minitel|minitel-2|minitel-2-nam|minitel 2|France Telecom Minitel:\
+	:li#24:al=\E[L:dl=\E[M:ip=7:dc=\E[P:ei=\E[4l:im=\E[4h:xn:\
+	:ho=\E[H:cl=\E[H\E[J:ug#0:sg#0:\
+	:co#80:am@:bs:cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
+	:as=\E(0:ae=\E(B:sf=^j:sr=\EM:is=\E[1;24r\E[24;1H:\
+	:ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:us=\E[4m:ue=\E[m:\
+	:zd=\E[1m:zb=\E[5m:zc=lkmjqxtuwvn:\
+	:ku=\E[A:kd=\E[B:kr=\E[C:kl=\E[D:\
+	:kh=\E[H:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:pt:
 # from keith bostic (bostic@monet)
 #
 m2|mod2|Modgraph GX-1000, set to 80x24, keypad not enabled:\
