@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)0.h 1.6 %G%"; */
+/* static char sccsid[] = "@(#)0.h 1.7 %G%"; */
 
 #define DEBUG
 #define CONSETS
@@ -693,6 +693,7 @@ long		leven();
 long		aryconst();
 long		a8tol();
 long		roundup();
+long		tmpalloc();
 struct nl 	*lookup();
 double		atof();
 int		*tree();
@@ -700,6 +701,8 @@ int		*hash();
 char		*alloc();
 int		*calloc();
 char		*savestr();
+char		*parnam();
+bool		fcompat();
 struct nl	*lookup1();
 struct nl	*hdefnl();
 struct nl	*defnl();
