@@ -1,41 +1,35 @@
-/*
- * Copyright (c) 1984 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Chris Torek.
+ *
+ * %sccs.include.redist.c%
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fputs.c	5.2 (Berkeley) %G%";
-#endif LIBC_SCCS and not lint
+static char sccsid[] = "@(#)fputs.c	5.3 (Berkeley) %G%";
+#endif /* LIBC_SCCS and not lint */
 
-#include	<stdio.h>
+#include <sys/stdc.h>
+#include <stdio.h>
+#include <string.h>
+#include "fvwrite.h"
 
-fputs(s, iop)
-register char *s;
-register FILE *iop;
+/*
+ * Write the given string to the given file.
+ */
+fputs(s, fp)
+	char *s;
+	FILE *fp;
 {
-	register r = 0;
-	register c;
-	int unbuffered;
-	char localbuf[BUFSIZ];
+	struct __suio uio;
+	struct __siov iov;
 
-	unbuffered = iop->_flag & _IONBF;
-	if (unbuffered) {
-		iop->_flag &= ~_IONBF;
-		iop->_ptr = iop->_base = localbuf;
-		iop->_bufsiz = BUFSIZ;
-	}
-
-	while (c = *s++)
-		r = putc(c, iop);
-
-	if (unbuffered) {
-		fflush(iop);
-		iop->_flag |= _IONBF;
-		iop->_base = NULL;
-		iop->_bufsiz = NULL;
-		iop->_cnt = 0;
-	}
-
-	return(r);
+	iov.iov_base = s;
+	iov.iov_len = uio.uio_resid = strlen(s);
+	uio.uio_iov = &iov;
+	uio.uio_iovcnt = 1;
+	return (__sfvwrite(fp, &uio));
 }

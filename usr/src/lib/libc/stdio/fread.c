@@ -1,46 +1,49 @@
-/*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Chris Torek.
+ *
+ * %sccs.include.redist.c%
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fread.c	5.2 (Berkeley) %G%";
-#endif LIBC_SCCS and not lint
+static char sccsid[] = "@(#)fread.c	5.3 (Berkeley) %G%";
+#endif /* LIBC_SCCS and not lint */
 
-#include	<stdio.h>
+#include <stdio.h>
+#include <string.h>
 
-fread(ptr, size, count, iop)
-	register char *ptr;
-	unsigned size, count;
-	register FILE *iop;
+fread(buf, size, count, fp)
+	void *buf;
+	size_t size, count;
+	register FILE *fp;
 {
-	register int s;
-	int c;
+	register size_t resid;
+	register char *p;
+	register int r;
+	size_t total;
 
-	s = size * count;
-	while (s > 0) {
-		if (iop->_cnt < s) {
-			if (iop->_cnt > 0) {
-				bcopy(iop->_ptr, ptr, iop->_cnt);
-				ptr += iop->_cnt;
-				s -= iop->_cnt;
-			}
-			/*
-			 * filbuf clobbers _cnt & _ptr,
-			 * so don't waste time setting them.
-			 */
-			if ((c = _filbuf(iop)) == EOF)
-				break;
-			*ptr++ = c;
-			s--;
-		}
-		if (iop->_cnt >= s) {
-			bcopy(iop->_ptr, ptr, s);
-			iop->_ptr += s;
-			iop->_cnt -= s;
-			return (count);
+	if ((resid = count * size) == 0)
+		return (count);
+	if (fp->_r < 0)
+		fp->_r = 0;
+	total = resid;
+	p = buf;
+	while (resid > (r = fp->_r)) {
+		(void) memcpy((void *)p, (void *)fp->_p, (size_t)r);
+		fp->_p += r;
+		/* fp->_r = 0 ... done in __srefill */
+		p += r;
+		resid -= r;
+		if (__srefill(fp)) {
+			/* no more input: return partial result */
+			return ((total - resid) / size);
 		}
 	}
-	return (size != 0 ? count - ((s + size - 1) / size) : 0);
+	(void) memcpy((void *)p, (void *)fp->_p, resid);
+	fp->_r -= resid;
+	fp->_p += resid;
+	return (count);
 }
