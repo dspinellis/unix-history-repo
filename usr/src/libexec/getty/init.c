@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)init.c	4.1 (Berkeley) 83/07/06";
+static char sccsid[] = "@(#)init.c	4.2 (Berkeley) 83/07/07";
 #endif
 
 /*
@@ -77,6 +77,7 @@ struct	gettyflags gettyflags[] = {
 	{ "uc",	0 },			/* terminal has no lower case */
 	{ "ig",	0 },			/* ignore garbage */
 	{ "ps",	0 },			/* do port selector speed select */
-	{ "hc",	1 },			/* set hangup on close */
+	{ "hc",	1 },			/* don't set hangup on close */
+	{ "ub", 0 },			/* unbuffered output */
 	{ 0 }
 };
