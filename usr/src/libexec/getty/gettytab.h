@@ -1,4 +1,4 @@
-/*	gettytab.h	4.2	83/07/07	*/
+/*	gettytab.h	4.3	83/07/09	*/
 
 /*
  * Getty description definitions.
@@ -70,6 +70,7 @@ struct gettyflags {
 #define	F1set	gettynums[10].set
 #define	F2	gettynums[11].value
 #define	F2set	gettynums[11].set
+#define	PF	gettynums[12].value
 
 /*
  * Boolean values.

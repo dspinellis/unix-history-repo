@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)init.c	4.3 (Berkeley) 83/07/09";
+static char sccsid[] = "@(#)init.c	4.4 (Berkeley) 83/07/09";
 #endif
 
 /*
@@ -56,6 +56,7 @@ struct	gettynums gettynums[] = {
 	{ "f0" },			/* output flags */
 	{ "f1" },			/* input flags */
 	{ "f2" },			/* user mode flags */
+	{ "pf" },			/* delay before flush at 1st prompt */
 	{ 0 }
 };
 
