@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)assert.h	5.2 (Berkeley) %G%
+ *	@(#)assert.h	5.3 (Berkeley) %G%
  */
 
 /*
@@ -13,6 +13,7 @@
  */
 
 #undef assert
+#undef _assert
 
 #ifdef NDEBUG
 #define	assert(e)	((void)0)
