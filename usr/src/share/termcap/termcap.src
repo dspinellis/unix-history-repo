@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file	@(#)termcap.src	5.38 (Berkeley) %G%
+#	Termcap source file	@(#)termcap.src	5.39 (Berkeley) %G%
 #	John Kunze, Berkeley
 #
 # Please mail changes to (arpanet):  termcap@berkeley
@@ -1873,7 +1873,7 @@ vs|xterm|vs100|xterm terminal emulator (X window system):\
 	:md=\E[1m:mr=\E[7m:me=\E[m:\
 	:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:kb=^H:\
 	:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:pt:sf=\n:sr=\EM:\
-	:al=\E[L:dl=\E[M:ic=\E[@:dc=\E[P:\
+	:al=\E[L:dl=\E[M:im=\E[4h:ei=\E[4l:mi:dc=\E[P:\
 	:MT:ks=\E[?1h\E=:ke=\E[?1l\E>:xn:\
 	:AL=\E[%dL:DL=\E[%dM:IC=\E[%d@:DC=\E[%dP:\
 	:hs:ts=\E[?E\E[?%i%dT:fs=\E[?F:es:ds=\E[?E:\
