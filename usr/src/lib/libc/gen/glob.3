@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)glob.3	5.2 (Berkeley) %G%
+.\"	@(#)glob.3	5.3 (Berkeley) %G%
 .\"
 .TH GLOB 3 ""
 .UC 7
@@ -36,8 +36,10 @@ which contains at least the following fields:
 .nf
 .ta .5i +\w'char **gl_pathv;\0\0\0'u
 typedef struct {
-	int gl_pathc;		/* count of paths matching pattern */
+	int gl_pathc;		/* count of total paths so far */
+	int gl_matchc;		/* count of paths matching pattern */
 	int gl_offs;		/* reserved at beginning of gl_pathv */
+	int gl_flags;		/* returned flags */
 	char **gl_pathv;	/* list of paths matching pattern */
 } glob_t;
 .fi
@@ -148,7 +150,8 @@ does not match any pathname, then
 returns a list
 consisting of only
 .IR pattern ,
-and the number of matched pathnames is set to 1.
+with the number of total pathnames is set to 1, and the number of matched
+pathnames set to 0.
 If
 .I GLOB_QUOTE
 is set, its effect is present in the pattern returned.
@@ -209,17 +212,37 @@ from a previous call(s) to
 On successful completion,
 .I glob
 returns zero.
-The field
+In addition the fields of
+.I pglob
+contain the values described below:
+.TP
 .I gl_pathc
-returns the number of matched pathnames and
-the field
+contains the total number of matched pathnames so far.
+This includes other matches from previous invocations of 
+.I glob 
+if 
+.I GLOB_APPEND 
+was specified.
+.TP
+.I gl_matchc
+contains the number of matched pathnames in the current invocation of
+.I glob.
+.TP
+.I gl_flags
+contains a copy of the 
+.I flags 
+parameter with the bit GLOB_MAGCHAR set if
+.I pattern
+contained any of the special characters ``*'', ``?'' or ``['', cleared
+if not.
+.TP
 .I gl_pathv
 contains a pointer to a NULL-terminated list of matched pathnames.
 However, if
-.I pglob->gl_pathc
+.I gl_pathc
 is zero, the contents of
-.I pglob->gl_pathv
-is undefined.
+.I gl_pathv
+are undefined.
 .PP
 If
 .I glob
@@ -243,8 +266,13 @@ are still set as specified above.
 The
 .I glob
 function is expected to be POSIX 1003.2 compatible with the exception
-that the flag GLOB_QUOTE should not be used by applications striving
-for strict POSIX conformance.
+that the flag 
+.I GLOB_QUOTE 
+and the fields 
+.I gl_matchc 
+and 
+.I gl_flags 
+should not be used by applications striving for strict POSIX conformance.
 .SH EXAMPLE
 A rough equivalent of ``ls -l *.c *.h'' can be obtained with the
 following code:

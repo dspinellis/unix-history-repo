@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)glob.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)glob.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -19,9 +19,14 @@ static char sccsid[] = "@(#)glob.c	5.4 (Berkeley) %G%";
  * The [!...] convention to negate a range is supported (SysV, Posix, ksh).
  *
  * Optional extra services, controlled by flags not defined by POSIX:
- *	GLOB_QUOTE: escaping convention: \ inhibits any special meaning
-		the following character might have (except \ at end of
- *		string is kept);
+ *
+ * GLOB_QUOTE:
+ *	Escaping convention: \ inhibits any special meaning the following
+ *	character might have (except \ at end of string is retained).
+ * GLOB_MAGCHAR:
+ *	Set in gl_flags is pattern contained a globbing character.
+ * gl_matchc:
+ *	Number of matches in the current invocation of glob.
  */
 
 #include <sys/param.h>
@@ -99,9 +104,10 @@ glob(pattern, flags, errfunc, pglob)
 		if (!(flags & GLOB_DOOFFS))
 			pglob->gl_offs = 0;
 	}
-	pglob->gl_flags = flags;
+	pglob->gl_flags = flags & ~GLOB_MAGCHAR;
 	pglob->gl_errfunc = errfunc;
 	oldpathc = pglob->gl_pathc;
+	pglob->gl_matchc = 0;
 
 	bufnext = patbuf;
 	bufend = bufnext+MAXPATHLEN;
@@ -111,6 +117,7 @@ glob(pattern, flags, errfunc, pglob)
 	while (bufnext < bufend && (c = *patnext++) != EOS) {
 		switch (c) {
 		case LBRACKET:
+			pglob->gl_flags |= GLOB_MAGCHAR;
 			c = *patnext;
 			if (c == NOT)
 				++patnext;
@@ -138,6 +145,7 @@ glob(pattern, flags, errfunc, pglob)
 			*bufnext++ = M_END;
 			break;
 		case QUESTION:
+			pglob->gl_flags |= GLOB_MAGCHAR;
 			*bufnext++ = M_ONE;
 			break;
 		case QUOTE:
@@ -152,6 +160,7 @@ glob(pattern, flags, errfunc, pglob)
 			}
 			break;
 		case STAR:
+			pglob->gl_flags |= GLOB_MAGCHAR;
 			*bufnext++ = M_ALL;
 			break;
 		default:
@@ -231,6 +240,7 @@ glob2(pathbuf, pathend, pattern, pglob)
 				*pathend++ = SEP;
 				*pathend = EOS;
 			}
+			++pglob->gl_matchc;
 			return(globextend(pathbuf, pglob));
 		}
 
