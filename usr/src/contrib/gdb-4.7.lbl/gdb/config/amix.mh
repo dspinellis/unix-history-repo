@@ -1,0 +1,24 @@
+# Host: Commodore Amiga running SVR4.
+XDEPFILES= procfs.o fork-child.o
+XM_FILE= xm-amix.h
+SYSV_DEFINE=-DSYSV
+REGEX=regex.o
+REGEX1=regex.o
+
+# We need to find alloca() somewhere.  Gcc has one built in, but most other
+# compilers don't.  Using the one in /usr/ucblib/libucb.a is tricky because
+# we have to be careful not to pull in anything else from the library (lots
+# of things are broken in most SVR4 versions).  The best solution is to just
+# compile alloca.c and link it into the executable.  If we end up not needing
+# it, then the code is just dead.  Once alloca.c moves to libiberty, then we
+# can eliminate this semi-kludge.
+ALLOCA=alloca.o
+ALLOCA1=alloca.o
+
+# SVR4 comes standard with terminfo, and in some implementations, the
+# old termcap descriptions are incomplete.  So ensure that we use the
+# new terminfo interface and latest terminal descriptions.
+TERMCAP=-ltermlib
+
+# SVR4 puts the BSD compatible install in /usr/ucb.
+INSTALL = /usr/ucb/install -c
