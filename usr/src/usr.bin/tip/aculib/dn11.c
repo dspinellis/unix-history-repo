@@ -1,4 +1,4 @@
-/*	dn11.c	4.5	81/06/21	*/
+/*	dn11.c	4.6	81/07/11	*/
 
 #if DN11
 /*
@@ -26,7 +26,7 @@ char *num, *acu;
 	if (boolean(value(VERBOSE)))
 		printf("\nstarting call...");
 	if ((dn = open(acu, 1)) < 0) {
-		if (errno == ENXIO)
+		if (errno == EBUSY)
 			printf("line busy...");
 		else
 			printf("acu open error...");
@@ -49,17 +49,12 @@ char *num, *acu;
 		signal(SIGQUIT, SIG_IGN);
 		sleep(2);
 		nw = write(dn, num, lt = strlen(num));
-		if (nw != lt) {
-			printf("dn11 write failed...");
-			exit(1);
-		}
-		exit(0);
+		exit(nw != lt);
 	}
 	/*
 	 * open line - will return on carrier
 	 */
-	FD = open(DV, 2);
-	if (FD < 0) {
+	if ((FD = open(DV, 2)) < 0) {
 		if (errno == EIO)
 			printf("lost carrier...");
 		else

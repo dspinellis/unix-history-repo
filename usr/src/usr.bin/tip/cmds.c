@@ -1,4 +1,4 @@
-/*	cmds.c	4.4	81/06/09	*/
+/*	cmds.c	4.5	81/07/11	*/
 #include "tip.h"
 /*
  * tip
@@ -513,9 +513,6 @@ finish()
 	disconnect();
 	printf("\r\n[EOT]\r\n");
 	delock(uucplock);
-#ifdef VMUNIX
-	ioctl(0, TIOCSETD, (char *)&odisc);
-#endif
 	unraw();
 	exit(0);
 }

@@ -1,4 +1,4 @@
-/*	tip.h	4.3	81/06/16	*/
+/*	tip.h	4.4	81/07/11	*/
 /*
  * tip - terminal interface program
  *
@@ -234,6 +234,7 @@ struct capacity {
 
 #ifdef VMUNIX
 int	odisc;				/* initial tty line discipline */
+extern int disc;			/* current tty discpline */
 #endif
 
 extern char		*ctrl();

@@ -1,6 +1,8 @@
-/*	remcap.c	4.3	81/05/21	*/
+/*	remcap.c	4.4	81/07/11	*/
 /* Copyright (c) 1979 Regents of the University of California */
+#ifndef BUFSIZ
 #define	BUFSIZ	1024
+#endif
 #define MAXHOP	32	/* max number of tc= indirections */
 
 #include <ctype.h>
