@@ -766,6 +766,9 @@ summary of the changes in that release.
 		IETF is moving toward legalizing it.  Note that turning on
 		this option is not sufficient to guarantee that a downstream
 		neighbor won't rewrite the address for you.
+	Add "-m" flag to makesendmail script -- this tells you what object
+		directory and Makefile it will use, but doesn't actually do
+		the make.
 	PORTABILITY FIXES:
 		Solaris 2 from Rob McMahon <cudcv@csv.warwick.ac.uk>.
 		System V Release 4 from Motonori Nakamura of Ritsumeikan
