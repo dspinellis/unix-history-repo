@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)rk.c	6.10 (Berkeley) %G%
+ *	@(#)rk.c	6.11 (Berkeley) %G%
  */
 
 #include "rk.h"
@@ -568,7 +568,7 @@ rkecc(ui, flag)
 	if (flag == CONT)
 		npf = bp->b_error;
 	else
-		npf = btop((rk->rkwc * sizeof(short)) + bp->b_bcount);
+		npf = btodb(bp->b_bcount + (rk->rkwc * sizeof(short)) + 511);
 	reg = btop(um->um_ubinfo&0x3ffff) + npf;
 	o = (int)bp->b_un.b_addr & PGOFSET;
 	bn = bp->b_blkno;
@@ -595,7 +595,7 @@ rkecc(ui, flag)
 		bit = i&07;
 		i = (i&~07)>>3;
 		byte = i + o;
-		while (i < 512 && (int)ptob(npf)+i < bp->b_bcount && bit > -11) {
+		while (i < 512 && (int)dbtob(npf)+i < bp->b_bcount && bit > -11) {
 			addr = ptob(ubp->uba_map[reg+btop(byte)].pg_pfnum)+
 			    (byte & PGOFSET);
 			putmemc(addr, getmemc(addr)^(mask<<bit));
@@ -639,9 +639,9 @@ rkecc(ui, flag)
 	printf("rkecc, CONT: bn %d cn %d tn %d sn %d\n", bn,cn,tn,sn);
 #endif
 		bp->b_flags &= ~B_BAD;
-		rk->rkwc = -((bp->b_bcount - (int)ptob(npf)) / sizeof (short));
-		if (rk->rkwc == 0)
+		if ((int)dbtob(npf) >= bp->b_bcount)
 			return (0);
+		rk->rkwc = -((bp->b_bcount - (int)dbtob(npf)) / sizeof (short));
 		break;
 	}
 	rk->rkcs1 = RK_CCLR;

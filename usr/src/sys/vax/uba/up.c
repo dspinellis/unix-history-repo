@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)up.c	6.10 (Berkeley) %G%
+ *	@(#)up.c	6.11 (Berkeley) %G%
  */
 
 #include "up.h"
@@ -791,7 +791,7 @@ upecc(ui, flag)
 	if (flag == CONT)
 		npf = bp->b_error;
 	else
-		npf = btop((up->upwc * sizeof(short)) + bp->b_bcount);
+		npf = btodb(bp->b_bcount + (up->upwc * sizeof(short)) + 511);
 	reg = btop(um->um_ubinfo&0x3ffff) + npf;
 	o = (int)bp->b_un.b_addr & PGOFSET;
 	mask = up->upec2;
@@ -835,7 +835,7 @@ upecc(ui, flag)
 		 * Also watch out for end of this block and the end of the whole
 		 * transfer.
 		 */
-		while (i < 512 && (int)ptob(npf)+i < bp->b_bcount && bit > -11) {
+		while (i < 512 && (int)dbtob(npf)+i < bp->b_bcount && bit > -11) {
 			struct pte pte;
 
 			pte = ubp->uba_map[reg + btop(byte)];
@@ -887,9 +887,9 @@ upecc(ui, flag)
 		printf("upecc, CONT: bn %d cn %d tn %d sn %d\n", bn, cn, tn, sn);
 #endif
 		bp->b_flags &= ~B_BAD;
-		up->upwc = -((bp->b_bcount - (int)ptob(npf)) / sizeof(short));
-		if (up->upwc == 0)
-			return(0);
+		if ((int)dbtob(npf) >= bp->b_bcount)
+			return (0);
+		up->upwc = -((bp->b_bcount - (int)dbtob(npf)) / sizeof(short));
 		break;
 	}
 	if (up->upwc == 0) {
