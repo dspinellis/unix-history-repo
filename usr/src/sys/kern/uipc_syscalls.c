@@ -1,4 +1,4 @@
-/*	uipc_syscalls.c	4.40	83/01/08	*/
+/*	uipc_syscalls.c	4.41	83/01/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -25,31 +25,22 @@ socket()
 		int	domain;
 		int	type;
 		int	protocol;
-		struct	socketopt *opt;
 	} *uap = (struct a *)u.u_ap;
 	struct socket *so;
 	register struct file *fp;
-	struct socketopt aopt;
 
-	u.u_error = sockopt(&aopt, (caddr_t)uap->opt);
-	if (u.u_error)
-		return;
 	if ((fp = falloc()) == NULL)
-		goto freeopt;
+		return;
 	fp->f_flag = FREAD|FWRITE;
 	fp->f_type = DTYPE_SOCKET;
-	u.u_error = socreate(uap->domain, &so, uap->type, uap->protocol, &aopt);
+	u.u_error = socreate(uap->domain, &so, uap->type, uap->protocol);
 	if (u.u_error)
 		goto bad;
 	fp->f_socket = so;
-freeopt:
-	if (uap->opt)
-		(void) m_free(dtom(aopt.so_optdata));
 	return;
 bad:
 	u.u_ofile[u.u_r.r_val1] = 0;
 	fp->f_count = 0;
-	goto freeopt;
 }
 
 bind()
@@ -58,11 +49,9 @@ bind()
 		int	s;
 		caddr_t	name;
 		int	namelen;
-		struct	socketopt *opt;
 	} *uap = (struct a *)u.u_ap;
 	register struct file *fp;
 	struct mbuf *nam;
-	struct socketopt aopt;
 
 	fp = getf(uap->s);
 	if (fp == 0)
@@ -74,16 +63,8 @@ bind()
 	u.u_error = sockname(&nam, uap->name, uap->namelen);
 	if (u.u_error)
 		return;
-	u.u_error = sockopt(&aopt, (caddr_t)uap->opt);
-	if (u.u_error) {
-		m_freem(nam);
-		goto freeopt;
-	}
-	u.u_error = sobind(fp->f_socket, nam, &aopt);
+	u.u_error = sobind(fp->f_socket, nam);
 	m_freem(nam);
-freeopt:
-	if (uap->opt)
-		(void) m_free(dtom(aopt.so_optdata));
 }
 
 listen()
@@ -110,11 +91,9 @@ accept()
 		int	s;
 		caddr_t	name;
 		int	*anamelen;
-		struct	socketopt *opt;
 	} *uap = (struct a *)u.u_ap;
 	register struct file *fp;
 	struct mbuf *nam;
-	struct socketopt aopt;
 	int namelen;
 	int s;
 	register struct socket *so;
@@ -130,27 +109,24 @@ accept()
 		return;
 	}
 noname:
-	u.u_error = sockopt(&aopt, (caddr_t)uap->opt);
-	if (u.u_error)
-		return;
 	fp = getf(uap->s);
 	if (fp == 0)
-		goto bad;
+		return;
 	if (fp->f_type != DTYPE_SOCKET) {
 		u.u_error = ENOTSOCK;
-		goto bad;
+		return;
 	}
 	s = splnet();
 	so = fp->f_socket;
 	if ((so->so_options & SO_ACCEPTCONN) == 0) {
 		u.u_error = EINVAL;
 		splx(s);
-		goto bad;
+		return;
 	}
 	if ((so->so_state & SS_NBIO) && so->so_qlen == 0) {
 		u.u_error = EWOULDBLOCK;
 		splx(s);
-		goto bad;
+		return;
 	}
 	while (so->so_qlen == 0 && so->so_error == 0) {
 		if (so->so_state & SS_CANTRCVMORE) {
@@ -162,7 +138,7 @@ noname:
 	if (so->so_error) {
 		u.u_error = so->so_error;
 		splx(s);
-		goto bad;
+		return;
 	}
 	if ((so->so_options & SO_NEWFDONCONN) == 0) {
 		struct socket *nso = so->so_q;
@@ -175,13 +151,13 @@ noname:
 	}
 	if (ufalloc() < 0) {
 		splx(s);
-		goto bad;
+		return;
 	}
 	fp = falloc();
 	if (fp == 0) {
 		u.u_ofile[u.u_r.r_val1] = 0;
 		splx(s);
-		goto bad;
+		return;
 	}
 	{ struct socket *aso = so->so_q;
 	  if (soqremque(aso, 1) == 0)
@@ -193,7 +169,7 @@ noname:
 	fp->f_socket = so;
 ret:
 	nam = m_get(M_WAIT, MT_SONAME);
-	(void) soaccept(so, nam, &aopt);
+	(void) soaccept(so, nam);
 	if (uap->name) {
 		if (namelen > nam->m_len)
 			namelen = nam->m_len;
@@ -205,9 +181,6 @@ ret:
 	}
 	m_freem(nam);
 	splx(s);
-bad:
-	if (uap->opt)
-		(void) m_free(dtom(aopt.so_optdata));
 }
 
 connect()
@@ -216,12 +189,10 @@ connect()
 		int	s;
 		caddr_t	name;
 		int	namelen;
-		struct	socketopt *opt;
 	} *uap = (struct a *)u.u_ap;
 	register struct file *fp;
 	register struct socket *so;
 	struct mbuf *nam;
-	struct socketopt aopt;
 	int s;
 
 	fp = getf(uap->s);
@@ -235,12 +206,7 @@ connect()
 	u.u_error = sockname(&nam, uap->name, uap->namelen);
 	if (u.u_error)
 		return;
-	u.u_error = sockopt(&aopt, (caddr_t)uap->opt);
-	if (u.u_error) {
-		m_freem(nam);
-		return;
-	}
-	u.u_error = soconnect(so, nam, &aopt);
+	u.u_error = soconnect(so, nam);
 	if (u.u_error)
 		goto bad;
 	s = splnet();
@@ -257,9 +223,6 @@ connect()
 	splx(s);
 bad:
 	m_freem(nam);
-	if (uap->opt)
-		(void) m_free(dtom(aopt.so_optdata));
-	return;
 }
 
 socketpair()
@@ -406,7 +369,6 @@ recvfrom()
 bad:
 	if (from)
 		m_freem(from);
-	return;
 }
 
 recv()
@@ -472,6 +434,90 @@ shutdown()
 		return;
 	}
 	u.u_error = soshutdown(fp->f_socket, uap->how);
+}
+
+setsockopt()
+{
+	struct a {
+		int	s;
+		int	level;
+		int	name;
+		caddr_t	val;
+		int	valsize;
+	} *uap = (struct a *)u.u_ap;
+	struct file *fp;
+	struct mbuf *m;
+
+	fp = getf(uap->s);
+	if (fp == 0)
+		return;
+	if (fp->f_type != DTYPE_SOCKET) {
+		u.u_error = ENOTSOCK;
+		return;
+	}
+	if (uap->valsize > MLEN) {
+		u.u_error = EINVAL;
+		return;
+	}
+	m = m_get(M_WAIT, MT_SOOPTS);
+	if (m == 0) {
+		u.u_error = ENOBUFS;
+		return;
+	}
+	u.u_error = copyin(uap->val, mtod(m, caddr_t), (u_int)uap->valsize);
+	if (u.u_error)
+		goto bad;
+	m->m_len = uap->valsize;
+	u.u_error = sosetopt(fp->f_socket, uap->level, uap->name, m);
+bad:
+	(void) m_free(m);
+}
+
+getsockopt()
+{
+	struct a {
+		int	s;
+		int	level;
+		int	name;
+		caddr_t	val;
+		int	*avalsize;
+	} *uap = (struct a *)u.u_ap;
+	struct file *fp;
+	struct mbuf *m;
+	int valsize;
+
+	fp = getf(uap->s);
+	if (fp == 0)
+		return;
+	if (fp->f_type != DTYPE_SOCKET) {
+		u.u_error = ENOTSOCK;
+		return;
+	}
+	u.u_error = copyin((caddr_t)uap->avalsize, (caddr_t)&valsize,
+		sizeof (valsize));
+	if (u.u_error)
+		return;
+	if (useracc((caddr_t)uap->val, (u_int)valsize, B_WRITE) == 0) {
+		u.u_error = EFAULT;
+		return;
+	}
+	m = m_get(M_WAIT, MT_SOOPTS);
+	if (m == 0) {
+		u.u_error = ENOBUFS;
+		return;
+	}
+	u.u_error = sogetopt(fp->f_socket, uap->level, uap->name, m);
+	if (u.u_error)
+		goto bad;
+	if (valsize > m->m_len)
+		valsize = m->m_len;
+	u.u_error = copyout(mtod(m, caddr_t), uap->val, (u_int)valsize);
+	if (u.u_error)
+		goto bad;
+	u.u_error = copyout((caddr_t)&valsize, (caddr_t)uap->avalsize,
+	    sizeof (valsize));
+bad:
+	(void) m_free(m);
 }
 
 pipe()
@@ -570,49 +616,4 @@ sockname(aname, name, namelen)
 	else
 		*aname = m;
 	return (error);
-}
-
-sockopt(so, opt)
-	register struct socketopt *so;
-	caddr_t opt;
-{
-	register struct mbuf *m;
-	register caddr_t cp;
-	int error, len;
-
-	if (opt == 0) {
-		so->so_optlen = 0;
-		so->so_optdata = 0;
-		return (0);
-	}
-	error = copyin((caddr_t)opt, (caddr_t)so, sizeof (struct socketopt));
-	if (error)
-		return (error);
-	if (so->so_optlen < 0 || so->so_optlen > MLEN)
-		return (EINVAL);
-	m = m_get(M_WAIT, MT_SOOPTS);
-	m->m_len = so->so_optlen;
-	error = copyin(so->so_optdata, mtod(m, caddr_t), (u_int)m->m_len);
-	if (error) {
-		(void) m_free(m);
-		return (error);
-	}
-	so->so_optdata = mtod(m, struct sotemplate *);
-	/*
-	 * Verify data structure consistency.
-	 */
-	cp = (caddr_t)so->so_optdata;
-	len = so->so_optlen;
-	while (len > 0 && cp < (caddr_t)so->so_optdata + m->m_len) {
-		struct sotemplate *tp;
-
-		if (len < sizeof (struct sotemplate))
-			break;
-		tp = (struct sotemplate *)cp;
-		len -= tp->opt_size + sizeof (int);
-		cp += tp->opt_size + sizeof (int);
-	}
-	if (len != 0 || cp != (caddr_t)so->so_optdata + m->m_len)
-		return (EINVAL);
-	return (0);
 }
