@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kadb.c	7.2 (Berkeley) %G%
+ *	@(#)kadb.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -578,8 +578,7 @@ kdbstacktrace(printlocals)
 
 loop:
 	/* check for current PC in the kernel interrupt handler code */
-	if (pc >= (unsigned)MachKernIntr &&
-	    pc < (unsigned)MachUserIntr) {
+	if (pc >= (unsigned)MachKernIntr && pc < (unsigned)MachUserIntr) {
 		/* NOTE: the offsets depend on the code in locore.s */
 		kdbprintf("interupt\n");
 		a0 = kdbchkget(sp + 36, DSP);
@@ -592,9 +591,9 @@ loop:
 	}
 
 	/* check for current PC in the exception handler code */
-	if (pc >= 0x80000000 &&
-	    pc < (unsigned)setsoftclock) {
+	if (pc >= 0x80000000 && pc < (unsigned)setsoftclock) {
 		ra = 0;
+		subr = 0;
 		goto done;
 	}
 	/*
@@ -614,6 +613,9 @@ loop:
 	stksize = 0;
 	more = 3;
 	for (; more; va += sizeof(int), more = (more == 3) ? 3 : more - 1) {
+		/* stop if hit our current position */
+		if (va >= pc)
+			break;
 		instr = kdbchkget(va, ISP);
 		i.word = instr;
 		switch (i.JType.op) {
