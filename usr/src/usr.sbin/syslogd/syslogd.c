@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)syslogd.c	5.50 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslogd.c	5.51 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -163,7 +163,7 @@ int	MarkSeq = 0;		/* mark sequence number */
 void  cfline __P((char *, struct filed *));
 char *cvthname __P((struct sockaddr_in *));
 void  daemon __P((int, int));
-int   decode __P((char *, CODE *));
+int   decode __P((const char *, CODE *));
 void  die __P((int));
 void  domark __P((int));
 void  fprintlog __P((struct filed *, int, char *));
@@ -1091,7 +1091,7 @@ cfline(line, f)
  */
 int
 decode(name, codetab)
-	char *name;
+	const char *name;
 	CODE *codetab;
 {
 	register CODE *c;
@@ -1101,10 +1101,13 @@ decode(name, codetab)
 	if (isdigit(*name))
 		return (atoi(name));
 
-	(void)strcpy(buf, name);
-	for (p = buf; *p; p++)
-		if (isupper(*p))
-			*p = tolower(*p);
+	for (p = buf; *name && p < &buf[sizeof(buf) - 1]; p++, name++) {
+		if (isupper(*name))
+			*p = tolower(*name);
+		else
+			*p = *name;
+	}
+	*p = '\0';
 	for (c = codetab; c->c_name; c++)
 		if (!strcmp(buf, c->c_name))
 			return (c->c_val);
