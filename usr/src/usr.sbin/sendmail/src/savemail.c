@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.18 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -439,6 +439,7 @@ returntosender(msg, returnq, sendbody, e)
 
 	SendBody = sendbody;
 	define('g', e->e_from.q_paddr, e);
+	define('u', NULL, e);
 	ee = newenvelope(&errenvelope, e);
 	define('a', "\201b", ee);
 	define('r', "internal", ee);
