@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)w.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)w.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -49,6 +49,7 @@ static char sccsid[] = "@(#)w.c	8.3 (Berkeley) %G%";
 #include <tzfile.h>
 #include <unistd.h>
 #include <utmp.h>
+#include <vis.h>
 
 #include "extern.h"
 
@@ -96,8 +97,9 @@ main(argc, argv)
 	struct stat *stp;
 	FILE *ut;
 	u_long l;
+	size_t arglen;
 	int ch, i, nentries, nusers, wcmd;
-	char *memf, *nlistf, *p, *x;
+	char *memf, *nlistf, *p, *vis_args, *x;
 	char buf[MAXHOSTNAMELEN], errbuf[256];
 
 	/* Are we w(1) or uptime(1)? */
@@ -260,9 +262,11 @@ main(argc, argv)
 			memmove(domain, p, strlen(p) + 1);
 		}
 
+	if ((vis_args = malloc(argwidth * 4 + 1)) == NULL)
+		err(1, NULL);
 	for (ep = ehead; ep != NULL; ep = ep->next) {
 		p = *ep->utmp.ut_host ? ep->utmp.ut_host : "-";
-		if (x = strchr(p, ':'))
+		if ((x = strchr(p, ':')) != NULL)
 			*x++ = '\0';
 		if (!nflag && isdigit(*p) &&
 		    (long)(l = inet_addr(p)) != -1 &&
@@ -287,6 +291,12 @@ main(argc, argv)
 		    UT_HOSTSIZE, UT_HOSTSIZE, *p ? p : "-");
 		pr_attime(&ep->utmp.ut_time, &now);
 		pr_idle(ep->idle);
+		if (ep->args != NULL) {
+			arglen = strlen(ep->args);
+			strvisx(vis_args, ep->args,
+			    arglen > argwidth ? argwidth : arglen,
+			    VIS_TAB | VIS_NL | VIS_NOSLASH);
+		}
 		(void)printf("%.*s\n", argwidth, ep->args);
 	}
 	exit(0);
