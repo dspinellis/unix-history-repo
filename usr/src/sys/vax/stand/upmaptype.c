@@ -1,4 +1,4 @@
-/*	upmaptype.c	4.3	83/02/21	*/
+/*	upmaptype.c	4.4	83/03/10	*/
 
 /*
  * UNIBUS peripheral standalone
@@ -42,7 +42,7 @@ upmaptype(unit, upaddr)
 	upaddr->uphr = UPHR_MAXTRAK;
 	for (st = upst; st->ntrak != 0; st++)
 		if (upaddr->uphr == st->ntrak - 1) {
-			type = st - st;
+			type = st - upst;
 			break;
 		}
 	if (st->ntrak == 0)
