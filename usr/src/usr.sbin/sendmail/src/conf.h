@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.170 (Berkeley) %G%
+ *	@(#)conf.h	8.171 (Berkeley) %G%
  */
 
 /*
@@ -418,6 +418,7 @@ extern long	dgux_inet_addr();
 
 #ifdef NeXT
 # define HASINITGROUPS	1	/* has initgroups(3) call */
+# define NEEDPUTENV	1	/* need putenv(3) call */
 # ifndef HASFLOCK
 #  define HASFLOCK	1	/* has flock(2) call */
 # endif
