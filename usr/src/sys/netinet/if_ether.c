@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_ether.c	7.1.1.1 (Berkeley) %G%
+ *	@(#)if_ether.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -292,7 +292,7 @@ in_arpinput(ac, m)
 	struct sockaddr_in sin;
 	struct sockaddr sa;
 	struct in_addr isaddr, itaddr, myaddr;
-	int proto, op, s;
+	int proto, op, s, completed = 0;
 
 	myaddr = ac->ac_ipaddr;
 	ea = mtod(m, struct ether_arp *);
@@ -325,6 +325,8 @@ in_arpinput(ac, m)
 	if (at) {
 		bcopy((caddr_t)ea->arp_sha, (caddr_t)at->at_enaddr,
 		    sizeof(ea->arp_sha));
+		if ((at->at_flags & ATF_COM) == 0)
+			completed = 1;
 		at->at_flags |= ATF_COM;
 		if (at->at_hold) {
 			sin.sin_family = AF_INET;
@@ -339,6 +341,7 @@ in_arpinput(ac, m)
 		if (at = arptnew(&isaddr)) {
 			bcopy((caddr_t)ea->arp_sha, (caddr_t)at->at_enaddr,
 			    sizeof(ea->arp_sha));
+			completed = 1;
 			at->at_flags |= ATF_COM;
 		}
 	}
@@ -360,10 +363,13 @@ reply:
 
 	case ETHERTYPE_IP:
 		/*
-		 * Reply if this is an IP request, or if we want to send
-		 * a trailer response.
+		 * Reply if this is an IP request,
+		 * or if we want to send a trailer response.
+		 * Send the latter only to the IP response
+		 * that completes the current ARP entry.
 		 */
-		if (op != ARPOP_REQUEST && ac->ac_if.if_flags & IFF_NOTRAILERS)
+		if (op != ARPOP_REQUEST &&
+		    (completed == 0 || ac->ac_if.if_flags & IFF_NOTRAILERS))
 			goto out;
 	}
 	if (itaddr.s_addr == myaddr.s_addr) {
