@@ -1,0 +1,66 @@
+F>=1  .if 3F<=8 .    if 3F>1 .if 3F<6 .ds an-extra3 "BSD Program-
+
+
+
+LOC(3F)                BSD Reference Manual               LOC(3F)
+
+mer's Manual
+NNAAMMEE
+       loc - return the address of an object
+
+SSYYNNOOPPSSIISS
+       ffuunnccttiioonn lloocc ((aarrgg))
+
+DDEESSCCRRIIPPTTIIOONN
+       The returned value will be the address of _a_r_g_.
+
+FFIILLEESS
+       /usr/lib/libU77.a
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+4.2 Berkeley Distribution  June 5, 1993                         1
+
+
+
+
+

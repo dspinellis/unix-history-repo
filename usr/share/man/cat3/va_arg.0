@@ -1,0 +1,105 @@
+STDARG(3)                   BSD Programmer's Manual                  STDARG(3)
+
+NNAAMMEE
+     ssttddaarrgg - variable argument lists
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddaarrgg..hh>>
+
+     _v_o_i_d
+     vvaa__ssttaarrtt(_v_a___l_i_s_t _a_p, _l_a_s_t);
+
+     _t_y_p_e
+     vvaa__aarrgg(_v_a___l_i_s_t _a_p, _t_y_p_e);
+
+     _v_o_i_d
+     vvaa__eenndd(_v_a___l_i_s_t _a_p);
+
+DDEESSCCRRIIPPTTIIOONN
+     A function may be called with a varying number of arguments of varying
+     types.  The include file <_s_t_d_a_r_g_._h> declares a type (_v_a___l_i_s_t) and defines
+     three macros for stepping through a list of arguments whose number and
+     types are not known to the called function.
+
+     The called function must declare an object of type _v_a___l_i_s_t which is used
+     by the macros vvaa__ssttaarrtt(), vvaa__aarrgg(), and vvaa__eenndd().
+
+     The vvaa__ssttaarrtt() macro initializes _a_p for subsequent use by vvaa__aarrgg() and
+     vvaa__eenndd(), and must be called first.
+
+     The parameter _l_a_s_t is the name of the last parameter before the variable
+     argument list, i.e. the last parameter of which the calling function
+     knows the type.
+
+     Because the address of this parameter is used in the vvaa__ssttaarrtt() macro, it
+     should not be declared as a register variable, or as a function or an ar-
+     ray type.
+
+     The vvaa__ssttaarrtt() macro returns no value.
+
+     The vvaa__aarrgg() macro expands to an expression that has the type and value
+     of the next argument in the call.  The parameter _a_p is the _v_a___l_i_s_t _a_p
+     initialized by vvaa__ssttaarrtt().  Each call to vvaa__aarrgg() modifies _a_p so that the
+     next call returns the next argument.  The parameter _t_y_p_e is a type name
+     specified so that the type of a pointer to an object that has the speci-
+     fied type can be obtained simply by adding a * to _t_y_p_e.
+
+     If there is no next argument, or if _t_y_p_e is not compatible with the type
+     of the actual next argument (as promoted according to the default argu-
+     ment promotions), random errors will occur.
+
+     The first use of the vvaa__aarrgg() macro after that of the vvaa__ssttaarrtt() macro
+     returns the argument after _l_a_s_t. Successive invocations return the values
+     of the remaining arguments.
+
+     The vvaa__eenndd() macro handles a normal return from the function whose vari-
+     able argument list was initialized by vvaa__ssttaarrtt().
+
+     The vvaa__eenndd() macro returns no value.
+
+EEXXAAMMPPLLEESS
+     The function _f_o_o takes a string of format characters and prints out the
+     argument associated with each format character based on the type.
+
+           void foo(char *fmt, ...)
+           {
+                   va_list ap;
+                   int d;
+                   char c, *p, *s;
+
+                   va_start(ap, fmt);
+                   while (*fmt)
+                           switch(*fmt++) {
+                           case 's':                       /* string */
+                                   s = va_arg(ap, char *);
+                                   printf("string %s\n", s);
+                                   break;
+                           case 'd':                       /* int */
+                                   d = va_arg(ap, int);
+                                   printf("int %d\n", d);
+                                   break;
+                           case 'c':                       /* char */
+                                   c = va_arg(ap, char);
+                                   printf("char %c\n", c);
+                                   break;
+                           }
+                   va_end(ap);
+           }
+
+SSTTAANNDDAARRDDSS
+     The vvaa__ssttaarrtt(), vvaa__aarrgg(), and vvaa__eenndd() macros conform to ANSI C
+     X3.159-1989 (``ANSI C '').
+
+CCOOMMPPAATTIIBBIILLIITTYY
+     These macros are _n_o_t compatible with the historic macros they replace.  A
+     backward compatible version can be found in the include file <_v_a_r_a_r_g_s_._h>.
+
+BBUUGGSS
+     Unlike the _v_a_r_a_r_g_s macros, the ssttddaarrgg macros do not permit programmers to
+     code a function with no fixed arguments.  This problem generates work
+     mainly when converting _v_a_r_a_r_g_s code to ssttddaarrgg code, but it also creates
+     difficulties for variadic functions that wish to pass all of their argu-
+     ments on to a function that takes a _v_a___l_i_s_t argument, such as
+     vfprintf(3).
+
+4.4BSD                           June 5, 1993                                2

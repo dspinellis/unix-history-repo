@@ -1,0 +1,27 @@
+INTRO(1)                     BSD Reference Manual                     INTRO(1)
+
+NNAAMMEE
+     iinnttrroo - introduction to general commands (tools and utilities)
+
+DDEESSCCRRIIPPTTIIOONN
+     Section one of the manual contains most of the commands which comprise
+     the BSD user enviroment.  Some of the commands included in section one
+     are text editors, command shell interpreters, searching and sorting
+     tools, file manipulation commands system status commands, remote file
+     copy commands, mail commands, compilers and compiler tools, formatted
+     output tools, and line printer commands.
+
+     All commands set a status value upon exit which may be tested to see if
+     the command completed normally.  The exit values and their meanings are
+     explained in the individual manuals.  Traditionally, the value 0 signi-
+     fies successful completetion of the command.
+
+SSEEEE AALLSSOO
+     man(1) intro(2) intro(3) intro(3) intro(4) intro(8)
+
+     Tutorials in the _U_N_I_X _U_s_e_r_'_s _M_a_n_u_a_l _S_u_p_p_l_e_m_e_n_t_a_r_y _D_o_c_u_m_e_n_t_s.
+
+HHIISSTTOORRYY
+     A iinnttrroo manual appeared in Version 6 AT&T UNIX.
+
+4.4BSD                           June 5, 1993                                1

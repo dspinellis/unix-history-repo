@@ -1,0 +1,94 @@
+BITSTRING(3)                BSD Programmer's Manual               BITSTRING(3)
+
+NNAAMMEE
+     bbiitt__aalllloocc, bbiitt__cclleeaarr, bbiitt__ddeeccll, bbiitt__ffffss, bbiitt__nncclleeaarr, bbiitt__nnsseett,, bbiitt__sseett,
+     bbiittssttrr__ssiizzee, bbiitt__tteesstt - bit-string manipulation macros
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<bbiittssttrriinngg..hh>>
+
+     _b_i_t_s_t_r___t _*
+     bbiitt__aalllloocc(_i_n_t _n_b_i_t_s);
+
+     bbiitt__ddeeccll(_b_i_t___s_t_r _n_a_m_e, _i_n_t _n_b_i_t_s);
+
+     bbiitt__cclleeaarr(_b_i_t___s_t_r _n_a_m_e, _i_n_t _b_i_t);
+
+     bbiitt__ffffcc(_b_i_t___s_t_r _n_a_m_e, _i_n_t _n_b_i_t_s, _i_n_t _*_v_a_l_u_e);
+
+     bbiitt__ffffss(_b_i_t___s_t_r _n_a_m_e, _i_n_t _n_b_i_t_s, _i_n_t _*_v_a_l_u_e);
+
+     bbiitt__nncclleeaarr(_b_i_t___s_t_r _n_a_m_e, _i_n_t _s_t_a_r_t, _i_n_t _s_t_o_p);
+
+     bbiitt__nnsseett(_b_i_t___s_t_r _n_a_m_e, _i_n_t _s_t_a_r_t, _i_n_t _s_t_o_p);
+
+     bbiitt__sseett(_b_i_t___s_t_r _n_a_m_e, _i_n_t _b_i_t);
+
+     bbiittssttrr__ssiizzee(_i_n_t _n_b_i_t_s);
+
+     bbiitt__tteesstt(_b_i_t___s_t_r _n_a_m_e, _i_n_t _b_i_t);
+
+DDEESSCCRRIIPPTTIIOONN
+     These macros operate on strings of bits.
+
+     The macro bbiitt__aalllloocc() returns a pointer of type ``_b_i_t_s_t_r___t _*'' to suffi-
+     cient space to store _n_b_i_t_s bits, or NULL if no space is available.
+
+     The macro bbiitt__ddeeccll() allocates sufficient space to store _n_b_i_t_s bits on
+     the stack.
+
+     The macro bbiittssttrr__ssiizzee() returns the number of elements of type _b_i_t_s_t_r___t
+     necessary to store _n_b_i_t_s bits.  This is useful for copying bit strings.
+
+     The macros bbiitt__cclleeaarr() and bbiitt__sseett() clear or set the zero-based numbered
+     bit _b_i_t, in the bit string _n_a_m_e.
+
+     The bbiitt__nnsseett() and bbiitt__nncclleeaarr() macros set or clear the zero-based num-
+     bered bits from _s_t_a_r_t to _s_t_o_p in the bit string _n_a_m_e.
+
+     The bbiitt__tteesstt() macro evaluates to non-zero if the zero-based numbered bit
+     _b_i_t of bit string _n_a_m_e is set, and zero otherwise.
+
+     The bbiitt__ffffss() macro stores in the location referenced by _v_a_l_u_e the zero-
+     based number of the first bit set in the array of _n_b_i_t_s bits referenced
+     by _n_a_m_e. If no bits are set, the location referenced by _v_a_l_u_e is set to
+     -1.
+
+     The macro bbiitt__ffffcc() stores in the location referenced by _v_a_l_u_e the zero-
+     based number of the first bit not set in the array of _n_b_i_t_s bits refer-
+     enced by _n_a_m_e. If all bits are set, the location referenced by _v_a_l_u_e is
+     set to -1.
+
+     The arguments to these macros are evaluated only once and may safely have
+     side effects.
+
+EEXXAAMMPPLLEE
+           #include <limits.h>
+           #include <bitstring.h>
+
+           #define LPR_BUSY_BIT            0
+           #define LPR_FORMAT_BIT          1
+           #define LPR_DOWNLOAD_BIT        2
+           #define LPR_AVAILABLE_BIT       9
+           #define LPR_MAX_BITS            10
+
+           make_lpr_available()
+           {
+                   bitstr_t bit_decl(bitlist, LPR_MAX_BITS);
+                   ...
+                   bit_nclear(bitlist, 0, LPR_MAX_BITS - 1);
+                   ...
+                   if (!bit_test(bitlist, LPR_BUSY_BIT)) {
+                           bit_clear(bitlist, LPR_FORMAT_BIT);
+                           bit_clear(bitlist, LPR_DOWNLOAD_BIT);
+                           bit_set(bitlist, LPR_AVAILABLE_BIT);
+                   }
+           }
+
+SSEEEE AALLSSOO
+     malloc(3)
+
+HHIISSTTOORRYY
+     The bbiittssttrriinngg functions first appeared in 4.4BSD.
+
+4th Berkeley Distribution        July 19, 1993                               2
