@@ -485,10 +485,6 @@ swapout_threads()
 			continue;
 		switch (p->p_stat) {
 		case SRUN:
-/*
-			if (p->p_pri < PUSER)
-				continue;
-*/
 			if ((tpri = p->p_time + p->p_nice * 8) > outpri2) {
 				outp2 = p;
 				outpri2 = tpri;
@@ -497,10 +493,8 @@ swapout_threads()
 			
 		case SSLEEP:
 		case SSTOP:
-/*
-			if (p->p_pri <= PRIBIO)
+			if (p->p_pri <= PVM)
 				continue;
-*/
 			if (p->p_slptime > maxslp) {
 				swapout(p);
 				didswap++;
