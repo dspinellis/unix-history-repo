@@ -1,8 +1,0 @@
-BIT	lastcomm.c	/^#define	BIT(flag, ch)	if (f & flag) *p++ = ch;$/
-HASH	lastcomm.c	/^#define HASH(d)	(((int) d) % N_DEVS)$/
-Mlastcomm	lastcomm.c	/^main(argc, argv)$/
-expand	lastcomm.c	/^expand (t)$/
-flagbits	lastcomm.c	/^flagbits(f)$/
-getdev	lastcomm.c	/^getdev(dev)$/
-ok	lastcomm.c	/^ok(argv, acp)$/
-setupdevs	lastcomm.c	/^setupdevs()$/

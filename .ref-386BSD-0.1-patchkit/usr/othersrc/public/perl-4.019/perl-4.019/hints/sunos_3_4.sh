@@ -1,3 +1,0 @@
-usemymalloc=n
-mallocsrc=''
-mallocobj=''

@@ -1,3 +1,0 @@
-Mtr	tr.c	/^main(argc, argv)$/
-next	tr.c	/^next(s)$/
-tran	tr.c	/^tran(s)$/

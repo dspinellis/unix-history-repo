@@ -1,5 +1,0 @@
-Mquery	query.c	/^main(argc, argv)$/
-inet_subnetof	query.c	/^inet_subnetof(in)$/
-query	query.c	/^query(host)$/
-rip_input	query.c	/^rip_input(from, size)$/
-timeout	query.c	/^timeout()$/

@@ -1,3 +1,0 @@
-Mvpltdmp	vpltdmp.c	/^main(argc, argv)$/
-account	vpltdmp.c	/^account(who, from, acctfile)$/
-putplot	vpltdmp.c	/^putplot()$/

@@ -1,2 +1,0 @@
-Mcolrm	colrm.c	/^main(argc,argv)$/
-getn	colrm.c	/^getn(ap)$/
