@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.114 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.115 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -867,8 +867,11 @@ main(argc, argv, envp)
 			(void) fflush(stdout);
 			if (fgets(buf, sizeof buf, stdin) == NULL)
 				finis();
+			p = strchr(buf, '\n');
+			if (p != NULL)
+				*p = '\0';
 			if (!Verbose)
-				printf("> %s", buf);
+				printf("> %s\n", buf);
 			testmodeline(buf, CurEnv);
 		}
 	}
