@@ -1,4 +1,4 @@
-/*	tty.c	4.6	81/03/22	*/
+/*	tty.c	4.7	81/07/05	*/
 
 /*
  * TTY subroutines common to more than one line discipline
@@ -343,6 +343,10 @@ caddr_t addr;
 		tp->t_erase = iocb.sg_erase;
 		tp->t_kill = iocb.sg_kill;
 		tp->t_flags = iocb.sg_flags;
+		if (tp->t_flags & RAW) {
+			tp->t_state &= ~TTSTOP;
+			ttstart(tp);
+		}
 		(void) spl0();
 		break;
 
