@@ -12,14 +12,18 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)kgmon.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)kgmon.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <machine/pte.h>
-
 #include <sys/param.h>
+#if BSD >= 199103
+#define NEWVM
+#endif
 #include <sys/file.h>
+#ifndef NEWVM
+#include <machine/pte.h>
 #include <sys/vm.h>
+#endif
 #include <sys/gprof.h>
 #include <stdio.h>
 #include <nlist.h>
@@ -141,6 +145,11 @@ main(argc, argv)
 		rflag = bflag = hflag = 0;
 	}
 	if (kflag) {
+#ifdef NEWVM
+		(void)fprintf(stderr,
+		    "kgmon: can't do core files yet\n");
+		exit(1);
+#else
 		off_t off;
 
 		Sysmap = (struct pte *)
@@ -154,6 +163,7 @@ main(argc, argv)
 		(void)lseek(kmem, off, L_SET);
 		(void)read(kmem, (char *)Sysmap,
 		    (int)(nl[N_SYSSIZE].n_value * sizeof(struct pte)));
+#endif
 	}
 	mode = kfetch(N_PROFILING);
 	if (hflag)
@@ -315,9 +325,12 @@ klseek(fd, base, off)
 	int fd, off;
 	off_t base;
 {
+
+#ifndef NEWVM
 	if (kflag) {	/* get kernel pte */
 		base &= ~KERNBASE;
 		base = ctob(Sysmap[btop(base)].pg_pfnum) + (base & PGOFSET);
 	}
+#endif
 	return (lseek(fd, base, off));
 }

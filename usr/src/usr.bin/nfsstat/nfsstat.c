@@ -15,13 +15,17 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)nfsstat.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)nfsstat.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
+#if BSD >= 199103
+#define NEWVM
+#endif
+#ifndef NEWVM
 #include <sys/vmmac.h>
 #include <machine/pte.h>
-#include <sys/namei.h>
+#endif
 #include <sys/mount.h>
 #include <nfs/nfsv2.h>
 #include <nfs/nfs.h>
@@ -39,14 +43,18 @@ static char sccsid[] = "@(#)nfsstat.c	5.8 (Berkeley) %G%";
 struct nlist nl[] = {
 #define	N_NFSSTAT	0
 	{ "_nfsstats" },
+#ifndef NEWVM
 #define	N_SYSMAP	1
 	{ "_Sysmap" },
 #define	N_SYSSIZE	2
 	{ "_Syssize" },
+#endif
 	"",
 };
 
+#ifndef NEWVM
 struct pte *Sysmap;
+#endif
 
 int kflag, kmem;
 char *kernel = _PATH_UNIX;
@@ -105,6 +113,10 @@ main(argc, argv)
 		exit(1);
 	}
 	if (kflag) {
+#ifdef NEWVM
+		(void)fprintf(stderr, "nfsstat: can't do core files yet\n");
+		exit(1);
+#else
 		off_t off;
 
 		Sysmap = (struct pte *)
@@ -117,6 +129,7 @@ main(argc, argv)
 		(void)lseek(kmem, off, L_SET);
 		(void)read(kmem, (char *)Sysmap,
 		    (int)(nl[N_SYSSIZE].n_value * sizeof(struct pte)));
+#endif
 	}
 
 	if (!nl[N_NFSSTAT].n_value) {
@@ -324,11 +337,13 @@ klseek(fd, base, off)
 	int fd, off;
 	off_t base;
 {
+#ifndef NEWVM
 	if (kflag) {
 		/* get kernel pte */
 		base &= ~KERNBASE;
 		base = ctob(Sysmap[btop(base)].pg_pfnum) + (base & PGOFSET);
 	}
+#endif
 	return (lseek(fd, base, off));
 }
 
