@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)icheck.c	1.16 (Berkeley) %G%";
+static	char *sccsid = "@(#)icheck.c	1.17 (Berkeley) %G%";
 
 /*
  * icheck
@@ -422,9 +422,11 @@ makecg()
 	for (c = 0; c < sblock.fs_ncg; c++) {
 		dbase = cgbase(&sblock, c);
 		dmax = dbase + sblock.fs_fpg;
-		if (dmax > sblock.fs_size)
-			for ( ; dmax > sblock.fs_size; dmax--)
+		if (dmax > sblock.fs_size) {
+			for ( ; dmax >= sblock.fs_size; dmax--)
 				clrbit(cgrp.cg_free, dmax - dbase);
+			dmax++;
+		}
 		dmin = sblock.fs_dblkno;
 		cs = &sblock.fs_cs(&sblock, c);
 		cgrp.cg_time = time(0);

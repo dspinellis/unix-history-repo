@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	1.20 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	1.21 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -1489,9 +1489,11 @@ makecg()
 	for (c = 0; c < sblock.fs_ncg; c++) {
 		dbase = cgbase(&sblock, c);
 		dmax = dbase + sblock.fs_fpg;
-		if (dmax > sblock.fs_size)
-			for ( ; dmax > sblock.fs_size ; dmax--)
+		if (dmax > sblock.fs_size) {
+			for ( ; dmax >= sblock.fs_size ; dmax--)
 				clrbit(cgrp.cg_free, dmax - dbase);
+			dmax++;
+		}
 		dmin = sblock.fs_dblkno;
 		cs = &sblock.fs_cs(&sblock, c);
 		cgrp.cg_time = time(0);
