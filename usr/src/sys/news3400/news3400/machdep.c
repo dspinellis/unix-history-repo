@@ -11,7 +11,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)machdep.c	7.10 (Berkeley) %G%
+ *	@(#)machdep.c	7.11 (Berkeley) %G%
  */
 
 /* from: Utah $Hdr: machdep.c 1.63 91/04/24$ */
@@ -37,9 +37,7 @@
 #include <sys/shm.h>
 #endif
 
-#include <vm/vm.h>
 #include <vm/vm_kern.h>
-#include <vm/vm_page.h>
 
 #include <machine/cpu.h>
 #include <machine/reg.h>
@@ -100,9 +98,6 @@ mach_init(x_boothowto, x_unkown, x_bootdev, x_maxmem)
 	extern char edata[], end[];
 	extern char MachUTLBMiss[], MachUTLBMissEnd[];
 	extern char MachException[], MachExceptionEnd[];
-#ifdef ATTR
-	extern char *pmap_attributes;
-#endif
 
 	/*
 	 * Save parameters into kernel work area.
@@ -162,7 +157,8 @@ mach_init(x_boothowto, x_unkown, x_bootdev, x_maxmem)
 	 * This could be used for an idle process.
 	 */
 	nullproc.p_addr = (struct user *)v;
-	nullproc.p_md.md_regs = ((struct user *)v)->u_pcb.pcb_regs;
+	nullproc.p_md.md_regs = nullproc.p_addr->u_pcb.pcb_regs;
+	bcopy("nullproc", nullproc.p_comm, sizeof("nullproc"));
 	for (i = 0; i < UPAGES; i++) {
 		nullproc.p_md.md_upte[i] = firstaddr | PG_V | PG_M;
 		firstaddr += NBPG;
@@ -216,10 +212,6 @@ mach_init(x_boothowto, x_unkown, x_bootdev, x_maxmem)
 #ifdef SYSVSHM
 	valloc(shmsegs, struct shmid_ds, shminfo.shmmni);
 #endif
-#ifdef ATTR
-	/* this is allocated here just to save a few bytes */
-	valloc(pmap_attributes, char, physmem);
-#endif
 
 	/*
 	 * Determine how many buffers to allocate.
@@ -246,13 +238,12 @@ mach_init(x_boothowto, x_unkown, x_bootdev, x_maxmem)
 	/*
 	 * Clear allocated memory.
 	 */
-	v = (caddr_t)pmax_round_page(v);
 	bzero(start, v - start);
 
 	/*
 	 * Initialize the virtual memory system.
 	 */
-	pmap_bootstrap((vm_offset_t)MACH_CACHED_TO_PHYS(v));
+	pmap_bootstrap((vm_offset_t)v);
 }
 
 /*
@@ -315,16 +306,12 @@ cpu_startup()
 	register unsigned i;
 	register caddr_t v;
 	int base, residual;
-	extern long Usrptsize;
-	extern struct map *useriomap;
+	vm_offset_t minaddr, maxaddr;
+	vm_size_t size;
 #ifdef DEBUG
 	extern int pmapdebug;
 	int opmapdebug = pmapdebug;
-#endif
-	vm_offset_t minaddr, maxaddr;
-	vm_size_t size;
 
-#ifdef DEBUG
 	pmapdebug = 0;
 #endif
 
@@ -369,7 +356,7 @@ cpu_startup()
 	 * limits the number of processes exec'ing at any time.
 	 */
 	exec_map = kmem_suballoc(kernel_map, &minaddr, &maxaddr,
-				 16*NCARGS, TRUE);
+				 16 * NCARGS, TRUE);
 	/*
 	 * Allocate a submap for physio
 	 */
