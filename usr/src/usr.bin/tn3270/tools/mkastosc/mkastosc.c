@@ -21,12 +21,12 @@
 #include <ctype.h>
 
 #define	LETS_SEE_ASCII
-#include "../m4.out"
+#include "../keyboard/m4.out"
 #undef	LETS_SEE_ASCII
 
-#include "../ascebc.h"
-#include "../ebc_disp.h"
-#include "../kbd3270.h"
+#include "../ascii/ascebc.h"
+#include "../ctlr/ebc_disp.h"
+#include "../ctlr/function.h"
 
 #include "dohits.h"
 
@@ -35,21 +35,73 @@ void
 main()
 {
     int scancode;
+    int asciicode;
     int empty;
     int i;
+    int c;
     int found;
     struct hits *ph;
     struct Hits *Ph;
     TC_Ascii_t *TC;
     struct thing *this;
+    struct {
+	char *shift;
+	int	scancode;
+    } tbl[128], *Pt;
+    static char *shiftof[] = { "normal", "shifted", "alted", "shiftalted" };
 
     dohits();		/* Set up "Hits" */
 
-    printf("struct tctokbd {\n\tenum { cantdo, normal, shifted, alted,");
+    printf("/*\n");
+    printf(" * Ascii to scancode conversion table.  First\n");
+    printf(" * 128 bytes (0-127) correspond with actual Ascii\n");
+    printf(" * characters; the rest are TC types from termcodes.m4\n");
+    printf(" * (actually, from m4.out).\n");
+    printf(" */\n");
+    printf("struct asctosc {\n");
+    printf("\tenum shiftvalue { cantdo, normal, shifted, alted,");
     printf(" shiftalted } shift;\n\tunsigned char scancode;");
-    printf("\n} tctokbd[] = {\n");
+    printf("\n} asctosc[] = {\n");
+    /* Build the ascii part of the table. */
+    for (Ph = Hits, scancode = 0; Ph <= Hits+highestof(Hits);
+							Ph++, scancode++) {
+	ph = &Ph->hits;
+	for (i = 0; i < 4; i++) {
+	    if (ph->hit[i].type == character) {
+		c = Ph->name[i][0];	/* "name" of this one */
+		if (tbl[c].shift[0] == 0) {
+		    tbl[c].shift = shiftof[i];
+		    tbl[c].scancode = scancode;
+		}
+	    }
+	}
+    }
+    /* Now, output the table */
+    for (Pt = tbl, asciicode = 0; Pt <= tbl+highestof(tbl); Pt++, asciicode++) {
+	if (Pt->shift[0] == 0) {
+	    if (isprint(asciicode) && (asciicode != ' ')) {
+		fprintf(stderr, "Unable to produce scancode sequence for");
+		fprintf(stderr, " ASCII character [%c]!\n", asciicode);
+	    }
+	    printf("\t{ cantdo, 0 },\t");
+	} else {
+	    printf("\t{ %s, 0x%x },", Pt->shift, Pt->scancode);
+	}
+	printf("\t/* 0x%x", asciicode);
+	if (isprint(asciicode)) {
+	    printf(" [%c]", asciicode);
+	}
+	printf(" */\n");
+    }
+		
+
+    for (TC = &TC_Ascii[TC_LOWEST-TC_LOWEST];
+		TC < &TC_Ascii[TC_LOWEST_USER-TC_LOWEST]; TC++, asciicode++) {
+	printf("\t{ cantdo, 0 },\t");
+	printf("\t/* 0x%x */\n", asciicode);
+    }
     for (TC = &TC_Ascii[TC_LOWEST_USER-TC_LOWEST];
-		TC <= &TC_Ascii[TC_HIGHEST-TC_LOWEST]; TC++) {
+		TC <= &TC_Ascii[TC_HIGHEST-TC_LOWEST]; TC++, asciicode++) {
 	/* Hack for "PFK" names (which should be "PF") */
 	if (memcmp(TC->tc_name, "PFK", 3) == 0) {
 	    static char PFonly[100] = "PF";
@@ -88,16 +140,18 @@ main()
 			    printf("shitfalted, ");
 			    break;
 			}
-			printf("0x%x },\n", Ph-Hits);
+			printf("0x%02x },", Ph-Hits);
+			break;
 		    }
 		}
 	    }
 	}
 	if (!found) {
-	    printf("\t{ cantdo, 0 },\n");
+	    printf("\t{ cantdo, 0 },\t");
 	    fprintf(stderr, "Unable to produce TC_%s with scan codes!\n",
 				TC->tc_name);
 	}
+	printf("\t/* 0x%x - %s */\n", asciicode, TC->tc_name);
     }
     printf("};\n");
 }

@@ -19,9 +19,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
-#include "../ascebc.h"
-#include "../ebc_disp.h"
-#include "../kbd3270.h"
+#include "../ascii/ascebc.h"
+#include "../ctlr/ebc_disp.h"
+#include "../ctlr/function.h"
 
 #include "dohits.h"
 
