@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_alloc.c	7.53 (Berkeley) %G%
+ *	@(#)lfs_alloc.c	7.54 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -45,7 +45,7 @@ lfs_valloc(ap)
 	daddr_t blkno;
 	ino_t new_ino;
 	u_long i, max;
-	int error;
+	int bb, error;
 
 	/* Get the head of the freelist. */
 	fs = VTOI(ap->a_pvp)->i_lfs;
@@ -66,6 +66,9 @@ lfs_valloc(ap)
 
 	/* Extend IFILE so that the next lfs_valloc will succeed. */
 	if (fs->lfs_free == LFS_UNUSED_INUM) {
+		bb = fsbtodb(fs, 1);
+		if (!ISSPACE(fs, bb, ap->a_cred))
+			return(ENOSPC);
 		vp = fs->lfs_ivnode;
 		ip = VTOI(vp);
 		blkno = lblkno(fs, ip->i_size);
