@@ -1,0 +1,2 @@
+# The SVR4 m4 is in the /usr/ccs/bin directory.
+M4 = /usr/ccs/bin/m4
