@@ -1,0 +1,73 @@
+.th STAT I 3/15/72
+.sh NAME
+stat  _  get file status
+.sh SYNOPSIS
+.bd stat
+name ...
+.sh DESCRIPTION
+.it stat
+gives several kinds of information about one or more
+files:
+.s3
+   i-number
+   access mode
+   number of links
+   owner
+   size in bytes
+   date and time of last modification
+   name (useful when several files are named)
+.s3
+All information is self-explanatory except the mode.
+The mode is a six-character string whose characters mean the
+following:
+.s3
+.in +5
+.ti -2
+1 s: file is small (smaller than 4096 bytes)
+.br
+l: file is large
+
+.ti -2
+2 d: file is a directory
+.br
+x: file is executable
+.br
+u: set user ID on execution
+.br
+-: none of the above
+.ti -2
+.s3
+3 r: owner can read
+.br
+-: owner cannot read
+.s3
+.ti -2
+4 w: owner can write
+.br
+-: owner cannot write
+.s3
+.ti -2
+5 r: non-owner can read
+.br
+-: non-owner cannot read
+.ti -2
+.s3
+6 w: non-owner can write
+.br
+-: non-owner cannot write
+.in -5
+.s3
+The owner is almost always given in symbolic form;  however
+if he cannot be found in "/etc/passwd" a number is given.
+.s3
+If the number of arguments to
+.it stat
+is not exactly 1
+a header is generated identifying the fields of the status information.
+.sh FILES
+/etc/passwd
+.sh "SEE ALSO"
+istat(I), ls(I) (-l option)
+.sh DIAGNOSTICS
+"name?"
+for any error.
