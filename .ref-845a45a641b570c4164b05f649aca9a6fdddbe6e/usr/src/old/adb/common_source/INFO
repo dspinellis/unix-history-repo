@@ -1,0 +1,69 @@
+	INFORMATION ABOUT ADB INTERNALS
+
+	23 August 1988, Chris Torek
+
+	(This file is incomplete.)
+
+TYPES
+	write something here.
+
+FORMATTED OUTPUT
+	Adb has a simplified, and slightly extended, version of printf,
+called adbprintf().  adbprintf() conversion specifiers are introduced by
+the usual `%' escape.  (Beware of SCCS eating 5 and  escapes.)  The
+format of a conversion-specifier is:
+
+	[flags] [width] [`.' precision] conversion-character
+
+The default width is 0; the default precision is -1.  The available
+flags are `-', for right adjustment within the field, and `+', which
+forces a sign on numeric conversions.  If the result of a conversion
+is narrower than the specified width, it is passed on the right (or
+left if `-') with blanks.  If a precision is given, and is not negative,
+the result of a conversion will be truncated after precision characters.
+Width and precision may be given as `*', in which case they are taken
+from an integer argument a la printf().
+
+The conversion-characters, and the types they expect, are:
+
+	[numeric]
+	d	prints an hword_t value as a signed decimal integer.
+	D	prints an expr_t value as a signed decimal integer.
+	u	prints an hword_t value as an unsigned decimal integer.
+	U	prints an expr_t value as an unsigned decimal integer.
+	q	prints an hword_t value as a signed octal integer.
+	Q	prints an expr_t value as a signed octal integer.
+	o	prints an hword_t value as an unsigned octal integer.
+	O	prints an expr_t value as an unsigned octal integer.
+	z	prints an hword_t value as a signed hexadecimal integer.
+	Z	prints an expr_t value as a signed hexadecimal integer.
+	x	prints an hword_t value as an unsigned hexadecimal integer.
+	X	prints an expr_t value as an unsigned hexadecimal integer.
+	r	prints an hword_t value in the current radix.
+	R	prints an expr_t value in the current radix.
+	v	prints an hword_t value in signed variant of current radix.
+	V	prints an expr_t value in signed variant of current radix.
+
+	[non-numeric]
+	c	prints a character.
+
+	s	prints a string.
+
+	m	prints nothing; hence %<width>m prints <width> spaces.
+
+	t	prints nothing, but adjusts the width such that it
+		becomes a tabstop.  Thus %24t moves to the next column
+		that is a multiple of 24, and %8t acts like \t would
+		if \t were implemented in adb.
+
+	[special]
+	?	converts an integer value, then applies a second
+		conversion-specifier.  If integer was zero, the
+		output from the second conversion-specifier is
+		suppressed.  For instance, %?s converts one integer
+		and one string, and prints the string only if the
+		integer is nonzero (and the pointer is not evaluated).
+		Thus `adbprintf("%?s", s!=NULL, s)' prints the string
+		s if and only if the pointer s is not NULL.  `?'
+		conversions may be nested: ("%??x", a, b, c) prints
+		c only if both a and b are nonzero.

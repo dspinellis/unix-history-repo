@@ -1,0 +1,59 @@
+.\" Copyright (c) 1980, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)lp.4	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt LP 4 vax
+.Os BSD 4
+.Sh NAME
+.Nm lp
+.Nd line printer
+.Sh SYNOPSIS
+.Cd "device lp0 at uba0 csr 0177514 vector lpintr"
+.Sh DESCRIPTION
+The
+.Nm lp
+device
+supports
+.Tn DEC
+and
+.Tn DEC
+compatible printers
+on the
+.Tn LP-11
+parallel interface.
+.Pp
+The unit number of the printer is specified by the minor device
+after removing the low 3 bits, which act as per-device parameters.
+Currently only the lowest of the low three bits is interpreted:
+if it is set, the device is assumed to have a 64-character set or
+.Pf half Tn -ASCII
+mode,
+rather than a full 96-character set.
+.Pp
+If the 64-character set is assumed,
+any lower case characters are mapped to upper case; left curly and
+right curly braces are mapped to left and right parentheses over
+laid with a hyphen; grave accents are mapped to acute accents
+with overlaid with a hyphen; the pipe bar character is mapped
+to an exclamation sign overlaid with a hyphen; and the tilde
+character is mapped to a carat overlaid with a hyphen.
+.Pp
+The default page width is 132 columns; longer lines are
+truncated.
+This may be overridden by specifying, for example,
+.Ql flags 256 .
+.Sh FILES
+.Bl -tag -width Pa -compact
+.It Pa /dev/lp
+.El
+.Sh SEE ALSO
+.Xr lpr 1
+.Sh HISTORY
+A
+.Nm
+driver appeared in
+.At v6 .

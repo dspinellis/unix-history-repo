@@ -1,0 +1,44 @@
+.\" Copyright (c) 1989, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)kvm_mkdb.8	5.4 (Berkeley) %G%
+.\"
+.Dd 
+.Dt KVM_MKDB 8
+.Os
+.Sh NAME
+.Nm kvm_mkdb
+.Nd create kernel database
+.Sh SYNOPSIS
+.Nm kvm_mkdb
+.Op file
+.Sh DESCRIPTION
+.Nm Kvm_mkdb
+creates a database in
+.Pa /var/db
+containing information about the specified file.
+If no file is specified,
+.Pa /vmunix
+is used by default.
+The file is named ``kvm_filename.db'', where ``filename'' is the
+name of the file read.
+Various library routines consult this database.
+The only information currently stored is the kernel namelist, which is
+used by the
+.Xr kvm_nlist 3
+function, however, in the future the database may contain other static
+information about the current system.
+.Sh FILES
+.Bl -tag -width /var/db/kvm_vmunix.db -compact
+.It Pa /vmunix
+.It Pa /var/db/kvm_vmunix.db
+.El
+.Sh SEE ALSO
+.Xr kvm_nlist 3
+.Sh HISTORY
+The
+.Nm
+command
+.Ud

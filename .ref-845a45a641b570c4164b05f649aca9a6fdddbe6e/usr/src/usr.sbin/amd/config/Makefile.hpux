@@ -1,0 +1,13 @@
+#	@(#)Makefile.hpux	5.4 (Berkeley) %G%
+#
+# $Id: Makefile.hpux,v 5.2.2.1 1992/02/09 15:10:26 jsp beta $
+#
+# Extra Makefile definitions for HP-UX
+#
+
+#CC = gcc ${GCCOPTS}
+# Works only on HP300
+CC = cc -Wc,-Nd2000
+SYSCC = $(CC)
+# Works only Hp800
+# CC = cc

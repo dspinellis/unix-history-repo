@@ -1,0 +1,74 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)kdump.1	5.5 (Berkeley) %G%
+.\"
+.Dd 
+.Dt KDUMP 1
+.Os BSD 4.4
+.Sh NAME
+.Nm kdump
+.Nd display kernel trace data
+.Sh SYNOPSIS
+.Nm kdump
+.Op Fl dnlRT
+.Op Fl f Ar file
+.Op Fl m Ar maxdata
+.Op Fl t Op cnis
+.Sh DESCRIPTION
+.Nm Kdump
+displays the kernel trace files produced with
+.Xr ktrace 1
+in human readable format.
+By default, the file
+.Pa ktrace.out
+in the current directory is displayed.
+.Pp
+The options are as follows:
+.Bl -tag -width Fl
+.It Fl d
+Display all numbers in decimal.
+.It Fl f Ar file 
+Display the specified file instead of
+.Pa ktrace.out .
+.It Fl l
+Loop reading the trace file, once the end-of-file is reached, waiting for
+more data.
+.It Fl m Ar maxdata 
+Display at most
+.Ar maxdata
+bytes when decoding
+.Tn I/O .
+.It Fl n
+Suppress ad hoc translations.
+Normally
+.Nm kdump
+tries to decode many system calls into a more human readable format.
+For example,
+.Xr ioctl 2
+values are replaced with the macro name and
+.Va errno
+values are replaced with the
+.Xr strerror 3
+string.
+Suppressing this feature yields a more consistent output format and is
+easily amenable to further processing.
+.It Fl R
+Display relative timestamps (time since previous entry).
+.It Fl T
+Display absolute timestamps for each entry (seconds since epoch).
+.It Fl t Ar cnis 
+See the
+.Fl t
+option of
+.Xr ktrace 1 .
+.El
+.Sh SEE ALSO
+.Xr ktrace 1
+.Sh HISTORY
+The
+.Nm kdump
+command appears in
+.Bx 4.4 .

@@ -1,0 +1,26 @@
+.\" Copyright (c) 1983, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)kill.3	8.1 (Berkeley) %G%
+.\"
+.TH KILL 3F ""
+.UC 5
+.SH NAME
+kill \- send a signal to a process
+.SH SYNOPSIS
+.B function kill (pid, signum)
+.br
+.B integer pid, signum
+.SH DESCRIPTION
+.I Pid
+must be the process id of one of the user's processes.
+.I Signum
+must be a valid signal number (see sigvec(2)).
+The returned value will be 0 if successful; an error code otherwise.
+.SH FILES
+.ie \nM /usr/ucb/lib/libU77.a
+.el /usr/lib/libU77.a
+.SH "SEE ALSO"
+kill(2), sigvec(2), signal(3F), fork(3F), perror(3F)

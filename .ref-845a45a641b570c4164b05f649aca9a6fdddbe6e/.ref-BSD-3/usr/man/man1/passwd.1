@@ -1,0 +1,30 @@
+.TH PASSWD 1 
+.SH NAME
+passwd \- change login password
+.SH SYNOPSIS
+.B passwd
+[ name ]
+.SH DESCRIPTION
+This command changes (or installs) a password
+associated with the user
+.IR name
+(your own name by default).
+.PP
+The program prompts for the old password and then for the new one.
+The caller must supply both.
+The new password must be typed twice, to forestall mistakes.
+.PP
+New passwords must be at least four characters long if they use
+a sufficiently rich alphabet and at least six characters long
+if monocase.
+These rules are relaxed if you are insistent enough.
+.PP
+Only the owner of the name or the super-user may change a password;
+the owner must prove he knows the old password.
+.SH FILES
+/etc/passwd
+.SH "SEE ALSO"
+login(1), passwd(5), crypt(3)
+.br
+Robert Morris and Ken Thompson,
+.I UNIX password security

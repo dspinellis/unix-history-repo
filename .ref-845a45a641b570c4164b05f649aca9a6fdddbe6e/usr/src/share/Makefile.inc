@@ -1,0 +1,3 @@
+#	@(#)Makefile.inc	8.1 (Berkeley) %G%
+
+BINDIR?=	/usr/share

@@ -1,0 +1,98 @@
+.\" Copyright (c) 1980, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)lastcomm.1	6.8 (Berkeley) %G%
+.\"
+.Dd 
+.Dt LASTCOMM 1
+.Os BSD 3
+.Sh NAME
+.Nm lastcomm
+.Nd show last commands executed in reverse order
+.Sh SYNOPSIS
+.Nm lastcomm
+.Op Fl f Ar file
+.Op Ar command ...
+.Op Ar user ...
+.Op Ar terminal ...
+.Sh DESCRIPTION
+.Nm Lastcomm
+gives information on previously executed commands.
+With no arguments,
+.Nm lastcomm
+prints information about all the commands recorded
+during the current accounting file's lifetime.
+.Pp
+Option:
+.Pp
+.Bl -tag -width Fl
+.It Fl f Ar file
+Read from
+.Ar file
+rather than the default
+accounting file.
+.El
+.Pp
+If called with arguments, only accounting entries with a
+matching
+.Ar command
+name,
+.Ar user
+name,
+or
+.Ar terminal
+name
+are printed.
+So, for example:
+.Pp
+.Dl lastcomm a.out root ttyd0
+.Pp
+would produce a listing of all the
+executions of commands named
+.Pa a.out
+by user
+.Ar root
+on the terminal
+.Ar ttyd0  .
+.Pp
+For each process entry, the following are printed.
+.Pp
+.Bl -bullet -offset indent -compact
+.It
+The name of the user who ran the process.
+.It
+Flags, as accumulated by the accounting facilities in the system.
+.It
+The command name under which the process was called.
+.It
+The amount of cpu time used by the process (in seconds).
+.It
+The time the process exited.
+.El
+.Pp
+The flags are encoded as follows: ``S'' indicates the command was
+executed by the super-user, ``F'' indicates the command ran after
+a fork, but without a following
+.Xr exec ,
+``C'' indicates the command was run in PDP-11 compatibility mode
+(VAX only),
+``D'' indicates the command terminated with the generation of a
+.Pa core
+file, and ``X'' indicates the command was terminated with a signal.
+.Sh FILES
+.Bl -tag -width /var/account/acct -compact
+.It Pa /var/account/acct
+Default accounting file.
+.El
+.Sh SEE ALSO
+.Xr last 1 ,
+.Xr sigvec 2 ,
+.Xr acct 5 ,
+.Xr core 5
+.Sh HISTORY
+The
+.Nm lastcomm
+command appeared in
+.Bx 3.0 .

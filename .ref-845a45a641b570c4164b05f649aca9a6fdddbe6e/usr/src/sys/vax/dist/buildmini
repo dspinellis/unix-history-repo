@@ -1,0 +1,25 @@
+#!/bin/sh -
+#
+# Copyright (c) 1990 The Regents of the University of California.
+# All rights reserved.
+#
+# %sccs.include.redist.sh%
+#
+#	@(#)buildmini	4.9 (Berkeley) %G%
+#
+
+dist=/sys/vaxdist
+miniroot=ra1b
+minimnt=/tmp/mini
+
+date
+mkdir ${minimnt}
+umount /dev/${miniroot}
+newfs -s 4096 ${miniroot}
+fsck /dev/r${miniroot}
+mount /dev/${miniroot} ${minimnt}
+cd ${minimnt}; sh ${dist}/get
+cd /; sync
+umount /dev/${miniroot}
+fsck /dev/r${miniroot}
+date

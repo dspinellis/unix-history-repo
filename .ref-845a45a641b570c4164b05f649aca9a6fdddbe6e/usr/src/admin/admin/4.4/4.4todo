@@ -1,0 +1,74 @@
+#	@(#)4.4todo	5.9 (Berkeley) %G%
+
+Target for alpha tape release: May 31.
+Target architectures: 386/486, HP300, Sparc, DECstation 3100/5000.
+
+Required:			Owner:		Prio:	Time:	Date:	Status:
+NFS update			Kirk		1	1 week	07 Feb	done
+32-bit uid/gid			Kirk		1	2 day	11 Feb
+64-bit file sizes		Kirk		2	3 day	14 Feb
+32-bit dev			Kirk		3	1 week	21 Feb
+Symlinks (sys calls & utils)	Kirk/TK		4
+VM				Kirk
+	Merged buffer pool
+	kern_exec.c
+	vfs_bio.c
+Nano-second (POSIX) timers	Kirk
+kern_physio.c			Kirk
+Getloadinfo			Kirk/TK
+Getsysinfo/uname		Kirk/TK
+Pathconf			Kirk
+
+Block size in environment	TK		1	1 day	done
+Generate man page info/printout	TK		2	1 day
+Symlinks			TK		2.1	2 day
+Vi				TK		3	1 mo
+LFS				TK		4	1 mo
+Mpool(3) interface		TK		5	2 wk
+Bug list pass			TK/Marc		6	2 wk
+ANSI C compatibility		TK/Chris	7	1 wk
+Integrate getcap into libc	TK		8	1 day
+make				TK		9	2 wk
+subr_rmap.c			TK		9	1 wk
+
+Routed update			Keith
+
+POSIX 1003.1 compatibility	Marc
+POSIX 1003.2 shell		Marc
+ (see ~marc/4.4/todo)
+	hard changes				1	1 mo
+	easy changes				1	1 mo
+POSIX 1003.2a shell		Marc
+	history/editing				1	3 weeks (in parallel)
+	aliases					3	1 week	(in parallel)
+
+tty streams			Marc/Mike	?	unknown
+clists (hp300/dev/hil.c)	Marc
+
+Bstreams			Mike
+Sparc port			Chris
+DECstation 3100/5000 ports	Ralph/Ted
+Libm				Peter
+Man page pass			Everyone
+
+Wish list:
+Memory file system cleanup	Kirk
+Accounting (kern_acct.c)	TK/Kirk
+POSIX 1003.2 compatibility	TK/Marc
+/proc (sys_process.c)		Chris
+
+Utility wish list:
+at/cron
+bc/dc/libmp
+diff
+ed
+expr
+file system utilities
+grep/egrep/fgrep/regexp
+pax
+pr
+sed
+sort
+test
+units
+uucp

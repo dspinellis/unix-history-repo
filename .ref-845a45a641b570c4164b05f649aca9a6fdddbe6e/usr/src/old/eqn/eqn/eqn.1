@@ -1,0 +1,329 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)eqn.1	6.6 (Berkeley) %G%
+.\"
+.Vx
+.Dd 
+.Dt EQN 1
+.Os ATT 7th
+.EQ
+delim $$
+.EN
+.Sh NAME
+.Nm eqn, neqn , checkeq
+.Nd typeset mathematics
+.Sh SYNOPSIS
+.Nm eqn
+.Oo
+.Op Fl d Ar xy
+.Op Fl p Ar n
+.Op Fl s Ar n
+.Op Fl f Ar n
+.Op  file
+\&...
+.Nm checkeq
+.Op  file
+\&...
+.Sh DESCRIPTION
+.Nm Eqn
+is a
+.Xr troff 1
+preprocessor
+for typesetting mathematics
+on a Graphic Systems phototypesetter,
+.Xr neqn
+on terminals.
+Usage is almost always
+.Pp
+.Dl eqn file ... | troff
+.Pp
+.Dl neqn file ... | nroff
+.Pp
+If no files are specified,
+these programs
+read from the standard input.
+A line beginning with `.EQ' marks the start of an equation;
+the end of an equation
+is marked by a line beginning with `.EN'.
+Neither of these lines is altered,
+so they may be defined in macro packages
+to get
+centering, numbering, etc.
+It is also possible to set two characters as `delimiters';
+subsequent text between delimiters is also treated as
+.Nm eqn
+input.
+Delimiters may be set to characters
+.Ar x
+and
+.Ar y
+with the command-line argument
+.Fl d xy
+or (more commonly) with
+`delim
+.Ar xy  '
+between .EQ and .EN.
+The left and right delimiters may be identical.
+Delimiters are turned off by `delim off'.
+All text that is neither between delimiters nor between .EQ and .EN
+is passed through untouched.
+.Pp
+The program
+.Nm checkeq
+reports missing or unbalanced delimiters and .EQ/.EN pairs.
+.Pp
+Tokens within
+.Nm eqn
+are separated by
+spaces, tabs, newlines, braces, double quotes,
+tildes or circumflexes.
+Braces {} are used for grouping;
+generally speaking,
+anywhere a single character like
+.Ar x
+could appear, a complicated construction
+enclosed in braces may be used instead.
+Tilde ~ represents a full space in the output,
+circumflex ^ half as much.
+.Pp
+.vs 13p
+Subscripts and superscripts are produced with the keywords
+.Ic sub
+and
+.Ic sup .
+Thus
+.Ar "x sub i"
+makes
+$x sub i$,
+.Ar "a sub i sup 2"
+produces
+$a sub i sup 2$,
+and
+.Ar "e sup {x sup 2 +
+.Ar y sup 2}"
+gives
+$e sup {x sup 2 + y sup 2}$.
+.Pp
+Fractions are made with
+.Ic over :
+.Ar "a over b"
+yields $a over b$.
+.Pp
+.Ic sqrt
+makes square roots:
+.Ar "1 over sqrt
+.Ar {ax sup 2 +bx+c}"
+results in
+$1 over sqrt {ax sup 2 +bx+c}$ .
+.Pp
+The keywords
+.Ic from
+and
+.Ic to
+introduce lower and upper limits on arbitrary things:
+$lim from {n-> inf} sum from 0 to n x sub i$
+is made with
+.Ar "lim from {n\-> inf }
+.Ar sum from 0 to n x
+.Ar sub i."
+.Pp
+Left and right brackets, braces, etc., of the right height are made with
+.Ic left
+and
+.Ic right :
+.Op Ar "left
+.Ar  x sup 2 + y sup 2
+.AR over alpha right
+.Ar \&~=~1"
+produces
+$left [ x sup 2 + y sup 2 over alpha right ] ~=~1$.
+The
+.Ic right
+clause is optional.
+Legal characters after
+.Ic left
+and
+.Ic right
+are braces, brackets, bars,
+.Ic c
+and
+.Ic f
+for ceiling and floor,
+and "" for nothing at all (useful for a right-side-only bracket).
+.Pp
+Vertical piles of things are made with
+.Ic pile  ,
+.Ic lpile ,
+.Ic cpile  ,
+and
+.Ic rpile  :
+.Ar "pile {a above b above c}"
+produces
+$pile {a above b above c}$.
+There can be an arbitrary number of elements in a pile.
+.Ic lpile
+left-justifies,
+.Ic pile
+and
+.Ic cpile
+center, with different vertical spacing,
+and
+.Ic rpile
+right justifies.
+.Pp
+Matrices are made with
+.Ic matrix  :
+.Ar "matrix { lcol { x sub i
+.Ar above y sub 2 } ccol {
+.Ar 1 above 2 } }"
+produces
+$matrix { lcol { x sub i above y sub 2 } ccol { 1 above 2 } }$.
+In addition, there is
+.Ic rcol
+for a right-justified column.
+.Pp
+.vs 12p
+Diacritical marks are made with
+.Ic dot  ,
+.Ic dotdot ,
+.Ic hat  ,
+.Ic tilde ,
+.Ic bar  ,
+.Ic vec ,
+.Ic dyad  ,
+and
+.Ic under  :
+.Ar "x dot \&= f(t) bar"
+is
+$x dot = f(t) bar$,
+.Ar "y dotdot bar \&~=~
+.Ar n under"
+is
+$y dotdot bar ~=~ n under$,
+and
+.Ar "x vec \&~=~ y dyad"
+is
+$x vec ~=~ y dyad$.
+.Pp
+Sizes and font can be changed with
+.Ic size
+.Op Ar n
+or
+.Ic size
+.Sf Sy \(+- n,
+.Ic roman  ,
+.Ic italic ,
+.Ic bold  ,
+and
+.Ic font
+.Ar n.
+Size and fonts can be changed globally in a document by
+.Ic gsize
+.Ar n
+and
+.Ic gfont
+.Ar n ,
+or by the command-line arguments
+.Cx Fl s
+.Ar n
+.Cx
+and
+.Cx Fl f
+.Ar n
+.Cx .
+.Cx
+.Pp
+Normally subscripts and superscripts are reduced by
+3 point sizes from the previous size;
+this may be changed by the command-line argument
+.Cx Fl p
+.Ar n .
+.Cx
+.Pp
+Successive display arguments can be lined up.
+Place
+.Ic mark
+before the desired lineup point in the first equation;
+place
+.Ic lineup
+at the place that is to line up vertically in subsequent equations.
+.Pp
+Shorthands may be defined
+or existing keywords redefined with
+.Ic define  :
+.Ar "define thing \&% replacement \&%"
+defines a new token called
+.Ar thing
+which will be replaced by
+.Ar replacement
+whenever it appears thereafter.
+The
+.Ic \&%
+may be any character that does not occur in
+.Ar replacement .
+.Pp
+Keywords like
+.Ar sum
+.EQ
+( sum )
+.EN
+.Ar int
+.EQ
+( int )
+.EN
+.Ar inf
+.EQ
+( inf )
+.EN
+and shorthands like
+>=
+.EQ
+(>=)
+.EN
+\->
+.EQ
+(->),
+.EN
+and
+!=
+.EQ
+( != )
+.EN
+are recognized.
+Greek letters are spelled out in the desired case, as in
+.Ar alpha
+or
+.Ar GAMMA .
+Mathematical words like sin, cos, log are made Roman automatically.
+.Xr Troff  1
+four-character escapes like \e(bs (\(bs)
+can be used anywhere.
+Strings enclosed in double quotes "..."
+are passed through untouched;
+this permits keywords to be entered as text,
+and can be used to communicate
+with
+.Xr troff 1
+when all else fails.
+.Sh SEE ALSO
+.Xr troff 1 ,
+.Xr tbl 1 ,
+.Xr ms 7 ,
+.Xr eqnchar 7
+.br
+B. W. Kernighan and L. L. Cherry,
+.Em Typesetting Mathematics\-User's Guide
+.Br
+J. F. Ossanna,
+.Em NROFF/TROFF User's Manual
+.Sh HISTORY
+.Nm Eqn
+appeared in Version 6 AT&T Unix.
+.Sh BUGS
+.Pp
+To embolden digits, parens, etc.,
+it is necessary to quote them,
+as in `bold "12.3"'.

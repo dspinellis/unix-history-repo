@@ -1,0 +1,60 @@
+.\" Copyright (c) 1986 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)L.aliases.5	6.3 (Berkeley) %G%
+.\"
+.TH L.ALIASES 5 ""
+.UC 6
+.SH NAME
+L.aliases \- UUCP hostname alias file
+.SH DESCRIPTION
+The
+.I L.aliases
+file defines mapping (aliasing) of system names for uucp.
+This is intended for compensating for systems that have
+changed names, or do not provide their entire machine name
+(like most USG systems). It is also useful when a machine's name
+is not obvious or commonly misspelled.
+.PP
+Each line in
+.I L.aliases
+is of the form:
+.PP
+.nf
+	real_name alias_name
+.fi
+.PP
+Any amount of whitespace may separate the two items.
+Lines beginning with a `#' character are comments.
+.PP
+All occurrences of
+.I alias_name
+are mapped to
+.I real_name
+by
+.IR uucico (8C),
+.IR uucp (1),
+and
+.IR uux (1).
+The mapping occurs regardless of whether the name was typed in by a user
+or provided by a remote site. An exception is the
+.B -s
+option of
+.IR uucico ;
+only the site's real hostname (the name in
+.IR L.sys (5))
+will be accepted there.
+.PP
+Aliased system names should not be placed in
+.IR L.sys ;
+they will not be used.
+.SH FILES
+.ta \w'/usr/lib/uucp/UUAIDS/L.aliases   'u
+.nr
+/usr/lib/uucp/L.aliases
+/usr/lib/uucp/UUAIDS/L.aliases	L.aliases example
+.fi
+.SH SEE ALSO
+uucp(1C), uux(1C), L.sys(5), uucico(8C)

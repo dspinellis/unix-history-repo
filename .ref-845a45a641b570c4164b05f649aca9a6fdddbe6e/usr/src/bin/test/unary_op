@@ -1,0 +1,33 @@
+# Copyright (c) 1988 The Regents of the University of California.
+# All rights reserved.
+#
+# This code is derived from software contributed to Berkeley by
+# Kenneth Almquist.
+#
+# %sccs.include.redist.sh%
+#
+#      @(#)unary_op	1.2 (Berkeley) %G%
+#
+
+#
+# List of unary operators used by test.
+#
+
+NOT	 !	3
+ISBLOCK	 -b	12   OP_FILE
+ISCHAR	 -c	12   OP_FILE
+ISDIR	 -d	12   OP_FILE
+ISEXIST  -e	12   OP_FILE
+ISFILE	 -f	12   OP_FILE
+ISSETGID -g	12   OP_FILE
+ISSTICKY -k	12   OP_FILE
+STRLEN	 -n	12   OP_STRING
+ISFIFO	 -p	12   OP_FILE
+ISREAD	 -r	12   OP_FILE
+ISSIZE	 -s	12   OP_FILE
+ISTTY	 -t	12   OP_INT
+ISSETUID -u	12   OP_FILE
+ISWRITE  -w	12   OP_FILE
+ISEXEC	 -x	12   OP_FILE
+NULSTR	 -z	12   OP_STRING
+

@@ -1,0 +1,59 @@
+.\" Copyright (c) 1989, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the American National Standards Committee X3, on Information
+.\" Processing Systems.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)time.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt TIME 3
+.Os BSD 4
+.Sh NAME
+.Nm time
+.Nd get time of day
+.Sh SYNOPSIS
+.Fd #include <sys/types.h>
+.Ft time_t
+.Fn time "time_t *tloc"
+.Sh DESCRIPTION
+The
+.Fn time
+function
+returns the value of time in seconds since 0 hours, 0 minutes,
+0 seconds, January 1, 1970, Coordinated Universal Time.
+.Pp
+A copy of the time value may be saved to the area indicated by the
+pointer
+.Fa tloc .
+If
+.Fa tloc
+is a NULL pointer, no value is stored.
+.Pp
+Upon successful completion,
+.Fn time
+returns the value of time.
+Otherwise a value of
+.Po
+.Po Fa time_t Pc \-1
+.Pc
+is returned and the global variable
+.Va errno
+is set to indicate the error.
+.Sh ERRORS
+The following error codes may be set in
+.Va errno :
+.Bl -tag -width [EFAULT]
+.It Bq Er EFAULT
+An argument address referenced invalid memory.
+.Sh SEE ALSO
+.Xr gettimeofday 2 ,
+.Xr ctime 3
+.Sh HISTORY
+A
+.Fn time
+function appeared in
+.At v6 .

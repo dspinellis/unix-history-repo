@@ -1,0 +1,327 @@
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)tmac.scover	5.1 (Berkeley) %G%
+.\"
+.	\"OK - "other keywords" for cover sheet.
+.de OK
+.br
+.di
+.di OD
+.nf
+.ft 3
+..
+.	\"CS - spew out cover sheet
+.de CS
+.br
+.if \\n(AJ>0 .tm Abstract not finished, AE assumed.
+.if \\n(AJ>0 .AE
+.di
+.if t .po 0.5i
+.ft 2
+.nr IB \\n(.b
+.ft P
+.nr K1 1
+.if t .sp |.4i
+.if t .lg
+.ll 7.0i
+.vs 12p
+.nf
+.if t \h'7n'\s24\(bs\s12\f3  Bell Laboratories        \s16\f1Cover Sheet for Technical Memorandum
+.if n Bell Laboratories        Cover Sheet for Technical Memorandum
+.if t .sp .5v
+.if n .sp
+.if t \s6\l'7i'
+.fi
+.ps 9
+.ft 2
+.if t .sp 2p
+.if \\n(.$<=6 The information contained herein is for the use of employees of Bell Laboratories and is not for publication.  (See GEI 13.9-3)\p
+.if \\n(.$>6 Warning: studying this document may cause drowsiness.  Do not read before driving or operating machinery.  (See GEI 13.9-3)\p
+.ft 1
+.nf
+.if \\n(IB>0 .bd 2 \\n(IB
+.if t \s6\l'7i'
+.if t .sp .5v
+.if n .sp
+.if t .ll 4.0i
+.if n .ll 30
+.if t .po 1.0i
+.ps 9
+.if t .ta 0.5i 4.5i 4.9i
+.if n .ta 9 39 46
+.mk
+Title- \f3\s10
+.rt
+.if t .in 0.5i
+.if n .in 10
+.hy 0
+.WT
+.hy 14
+.br
+.rt
+.ll \\n(LLu
+.if t .in 4.5i
+.if n .in 40
+.nf
+\s9\f1Date- \s10\f3
+.rt
+.if t .in 4.9i
+.if n .in 47
+\\*(DY
+.sp
+.if t .ti 4.5i
+.if n .ti 40
+.mk
+\s9\f1TM- \f3\s10
+.br
+.rt
+.CZ \\*(MN
+.in 0
+.sp |\\n(.hu+1v
+.mk
+\s9\f1Other Keywords- \f3
+.rt
+.if t .in 1.1i
+.if n .in 20
+.OD
+.in 0
+.if t .sp .7i
+.if n .sp 3
+.ps 9
+.if t .ta 1.8i 3.3i 4.3i
+.if n .ta 19 34 44
+.ft 1
+.mk
+.fi
+.ll 6.7i
+.in 4.6i
+.ti 0
+.nr SJ \\n(.j
+.na
+Author	Location	Extension	Charging Case- \s10\f3\\*(CA
+.ps 10
+.ti 4.3i
+\f1\s9Filing Case- \s10\f3\\*(CC
+.nf
+.in 0
+.ad \\n(SJ
+.rt
+.sp 1
+.CB 1
+.if \\n(NA-1 .CB 2
+.if \\n(NA-2 .CB 3
+.if \\n(NA-3 .CB 4
+.if \\n(NA-4 .CB 5
+.if \\n(NA-5 .CB 6
+.if \\n(NA-6 .CB 7
+.if \\n(NA-7 .CB 8
+.if \\n(NA-8 .CB 9
+.ft 1
+.rm OK OD R1 E1 R2 E2 R3 E3 R4 E4 AB AE
+.ds K1 \\$1
+.ds K2 \\$2
+.ds K3 \\$3
+.ds K4 \\$4
+.ds K5 \\$5
+.ds K6 \\$6
+.wh 9.8i CG
+.ch FO 16i
+.if t .sp .4i
+.if n .sp 2
+.ls 1
+.pn 2
+.WB
+.rm WB
+.ls
+.br
+.if 9.7i-\\n(nlu-\\n(FPu-1v>0 .sp 9.7i-\\n(nlu-\\n(FPu-1v
+.if \\n(FP>0 .FA
+.FG
+.nr K1 0
+.if \\n(GA=1 .nr GA 2
+.if \\n(VS>40 .vs \\n(VSu
+.if \\n(VS<=39 .vs \\n(VSp
+.bp 1
+.rm CG
+.if t .po \\n(POu
+..
+.	\" CG - write bottom box on cover sheet
+.de CG
+.if t .po 0.5i
+.vs 12p
+.ch FO 12i
+.ch FX 12i
+.if t .ll 7i
+.br
+.if t \l'7i'
+.if t .ta 1.4i 2.8i 4.2i
+.if n .ta 14 29 44
+.if t .sp 8p
+.if n .sp
+Pages Text   \\*(K1	Other   \\*(K2	Total   \\*(K3
+.if t .sp 8p
+.if n .sp 
+.if t .po .5i
+.if t No. Figures   \\*(K4	No. Tables   \\*(K5	No. Refs.   \\*(K6	\b'|||||\ \ '
+.if n No. Figures   \\*(K4	No. Tables   \\*(K5	No. Refs.   \\*(K6
+.br
+.if t .po .5i
+.if t \l'7i'
+.ps 7
+.br
+.if n .sp
+.rm K1
+.rm K2
+.rm K3
+.rm K4
+.rm K5
+.rm K6
+.if t .po .5i
+.if t .tl 'E-1932-U (6-73)'SEE REVERSE SIDE FOR DISTRIBUTION LIST''
+.if n .tl 'E-1932-U (6-73)  SEE REVERSE SIDE FOR DISTRIBUTION LIST'''
+.if t .po 0.5i
+.ll \\n(LLu
+.ps 10
+.ch CG 12i
+.if \\n(K1>0 .bp
+..
+.	\"CB - help with cover sheet
+.de CB
+.br
+.mk
+.A\\$1
+.rt
+\&	\\*(R\\$1	\\*(E\\$1
+.br
+..
+.de CZ
+.br
+.if !"\\$1"" \\$1
+.br
+.if !"\\$2"" \\$2
+.br
+.if !"\\$3"" \\$3
+.br
+.if !"\\$4"" \\$4
+.br
+.if !"\\$5"" \\$5
+.br
+.if !"\\$6"" \\$6
+.br
+.if !"\\$7"" \\$7
+.br
+.if !"\\$8"" \\$8
+.br
+.if !"\\$9"" \\$9
+..
+.	\"S1 - tm style 
+.de S1
+.br
+.if t .ta 4.75i
+.if n .ta 46
+.ll 80
+.ps 36
+.br
+.if t .vs .35i
+.if t \t\(bs
+.br
+.if n .sp 24p
+.ps 12
+.br
+.ft 3
+\tBell Laboratories
+.ft 1
+.nr SJ \\n(.j
+.na
+.br
+.ps 8
+.vs 12p
+.sp 2v
+.mk
+.ll
+.ll 4.0i
+Subject:
+.ft 3
+.br
+.rt
+.if n .in +9
+.if t .in +\w'Subject: 'u
+.ps
+.nf
+.hy 0
+.WT
+.hy 14
+.ft 1
+.fi
+.in 0
+.if \\n(MC>0 \\s8Case- \\*(CA\\s10
+.if \\n(MG>0 --\s8 File- \\*(CC\\s10
+.br
+.rt
+.if n .ll 70
+.if t .ll 6.5i
+.if t .in 5.10i
+.if n .in 52
+.ps 8
+.ti -6n
+.ta 6n
+date:\t\\s\\n(PS\\f3\\*(DY
+.sp
+.ft 1
+.ps 8
+.mk
+.ti -6n
+from:
+.ps
+.br
+.rt
+.nf
+.ft 3
+.A1
+.if \\n(NA>1 .A2
+.if \\n(NA>2 .A3
+.if \\n(NA>3 .A4
+.if \\n(NA>4 .A5
+.if \\n(NA>5 .A6
+.if \\n(NA>6 .A7
+.if \\n(NA>7 .A8
+.if \\n(NA>8 .A9
+.ft 1
+.sp
+.mk
+.ps 8
+.ti -6n
+.ft 1
+.if \\n(IM=0 .if \\n(MM .if "\\*(MQ"" \{\
+.if \\n(MN=0 .ds MQ TM:
+.if \\n(MN=1 .ds MQ MF:
+.if \\n(MN=2 .ds MQ MR:
+.if \\n(MN=3 .ds MQ EN:\}
+\\*(MQ
+.br
+.ti \\n(.iu
+.rt
+.ps
+.ft 3
+.hy 0
+.ll 20i
+.if t .ll 7.75i-\\n(.ou
+.fi
+.na
+.if \\n(MM .CZ \\*(MN
+.hy 14
+.nf
+.ft 1
+.ll \\n(LLu
+.in
+.sp |\\n(.hu
+.if \\n(IM=0 .sp
+.ad \\n(SJ
+.ce
+.ft 2
+.if \\n(IM=0 \\*(QF
+.ft 1
+.ce 0
+.if \\n(IM=0 .sp
+.fi
+..

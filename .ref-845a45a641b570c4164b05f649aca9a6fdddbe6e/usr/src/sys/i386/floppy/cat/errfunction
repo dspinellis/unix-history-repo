@@ -1,0 +1,36 @@
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)errfunction	5.1 (Berkeley) %G%
+ */
+
+err(s, syserr)
+	register char *s;
+	int syserr;
+{
+	extern int errno, sys_nerr;
+        extern char *sys_errlist[];
+	register char *e;
+
+	(void)write(2, PROGNAME, sizeof(PROGNAME) - 1);
+	if (s) {
+		for (e = s; *e; ++e);
+		(void)write(2, s, e - s);
+	}
+#define	BADERR	"unknown error"
+	if (syserr) {
+		if (s)
+			(void)write(2, ": ", 2);
+		if (errno > sys_nerr)
+			(void)write(2, BADERR, sizeof(BADERR) - 1);
+		else {
+			for (e = s = sys_errlist[errno]; *e; ++e);
+			(void)write(2, s, e - s);
+		}
+	}
+	(void)write(2, "\n", 1);
+	eval = 1;
+}

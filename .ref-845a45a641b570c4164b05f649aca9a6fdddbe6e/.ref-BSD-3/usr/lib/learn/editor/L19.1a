@@ -1,0 +1,42 @@
+#print
+Now that you know how to add lines to a file,
+you will want to know how to get rid of them.
+The command
+   5d
+will delete line 5 of a file.  The command
+   .d
+will delete the current line.
+In the file 'pres' either the 5th or 6th line
+is wrong.  Print those lines and delete the bad
+one; then rewrite the corrected file.
+Then type 'ready'.
+#create Ref
+george washington
+john adams
+thomas jefferson
+james madison
+james monroe
+john quincy adams
+andrew jackson
+martin van buren
+william henry harrison
+john tyler
+#create pres
+george washington
+john adams
+thomas jefferson
+james madison
+james monroe
+ this is wrong Qwertyuiop
+john quincy adams
+andrew jackson
+martin van buren
+william henry harrison
+john tyler
+#pipe
+#user
+#unpipe
+#cmp pres Ref
+#log
+#next
+19.1b 10

@@ -1,0 +1,43 @@
+.\" Copyright (c) 1983, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)kg.4	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt KG 4 vax
+.Os BSD 4.2
+.Sh NAME
+.Nm kg
+.Nd
+.Tn KL-11 Ns / Tn DL-11W
+line clock
+.Sh SYNOPSIS
+.Cd "device kg0 at uba0 csr 0176500 vector kglock"
+.Sh DESCRIPTION
+A
+.Tn KL-11
+or
+.Tn DL-11W
+can be used as an alternate real
+time clock
+source.  When configured, certain system
+statistics and, optionally, system profiling work
+will be collected each time the clock interrupts.  For
+optimum accuracy in profiling, the
+.Tn DL-11W
+should be
+configured to interrupt at the highest possible priority
+level.  The 
+.Nm kg
+device driver automatically calibrates itself to the
+line clock frequency.
+.Sh SEE ALSO
+.Xr kgmon 8 ,
+.Xr config 8
+.Sh HISTORY
+The
+.Nm
+driver appeared in
+.Bx 4.2 .

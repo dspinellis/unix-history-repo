@@ -1,0 +1,62 @@
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)reboot.8	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt REBOOT 8
+.Os
+.Sh NAME
+.Nm reboot ,
+.Nm halt
+.Nd
+stopping and restarting the system
+.Sh SYNOPSIS
+.Nm halt
+.Op Fl nq
+.Nm reboot
+.Op Fl nq
+.Sh DESCRIPTION
+The
+.Nm halt
+and
+.Nm reboot
+utilities flush the file system cache to disk, send all running processes
+a SIGTERM (and subsequently a SIGKILL) and, respectively, halt or restart
+the system.
+The action is logged, including entering a shutdown record into the login
+accounting file.
+.Pp
+The options are as follows:
+.Bl -tag -width Ds
+.It Fl n
+If the
+.Fl n
+option is specified,
+the file system cache is not flushed.
+This option should probably not be used.
+.It Fl q
+If the
+.Fl q
+option is specified,
+the system is halted or restarted quickly and ungracefully, and only
+the flushing of the file system cache is performed.
+This option should probably not be used.
+.El
+.Pp
+Normally, the
+.Xr shutdown 8
+utility is used when the system needs to be halted or restarted, giving
+users advance warning of their impending doom.
+.Sh SEE ALSO
+.Xr sync 1 ,
+.Xr utmp 5 ,
+.Xr boot 8 ,
+.Xr shutdown 8
+.Sh HISTORY
+The
+.Nm
+command is
+.Ud .

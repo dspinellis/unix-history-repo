@@ -1,0 +1,353 @@
+.\" Copyright (c) 1980 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)ch9.n	6.3 (Berkeley) %G%
+.\"
+." $Header: ch9.n 1.4 83/07/21 21:08:57 sklower Exp $
+.Lc Arrays\ and\ Vectors 9
+.pp
+Arrays and vectors are two means of expressing aggregate
+data objects in
+.Fr .
+Vectors may be thought of as sequences of data.
+They are intended as a vehicle for user-defined
+data types.
+This use of vectors is still experimental and subject
+to revision.
+As a simple data structure, they are similar to
+hunks and strings.
+Vectors are used to implement closures,
+and are useful to communicate with foreign functions.
+Both of these topics were discussed in Chapter 8.
+Later in this chapter,
+we describe the current implementation of vectors, and will
+advise the user what is most likely to change.
+.pp
+Arrays in 
+.Fr
+provide a programmable data structure access mechanism.
+One possible use for 
+.Fr
+arrays is to implement Maclisp style arrays which are simple vectors
+of fixnums, flonums or general lisp values.
+This is described in more detail in \(sc9.3 but first
+we will describe how array references are handled by
+the lisp system.
+.pp
+The structure of an array object is given in \(sc1.3.10 and reproduced here
+for your convenience.
+.(b
+.TS
+box center ;
+c | c | c | c .
+Subpart name	Get value	Set value	Type
+
+=
+access function	getaccess	putaccess	binary, list
+			or symbol
+_
+auxiliary	getaux	putaux	lispval
+_
+data	arrayref	replace	block of contiguous
+		set	lispval
+_
+length	getlength	putlength	fixnum
+_
+delta	getdelta	putdelta	fixnum
+.TE
+.)b
+.sh 2 "general arrays" \n(ch 1
+Suppose the evaluator is told to evaluate \fI(foo\ a\ b)\fP
+and the function cell of the symbol foo contains an array object
+(which we will call foo_arr_obj).
+First the evaluator will evaluate and stack the values of 
+.i a 
+and 
+.i b .
+Next it will stack the array object foo_arr_obj.
+Finally it will call the access function of foo_arr_obj.
+The access function should be a lexpr\*[\(dg\*]
+or a symbol whose 
+function cell contains a lexpr.
+.(f
+\*[\(dg\*]A lexpr is a function which accepts any number of arguments
+which are evaluated before the function is called.
+.)f
+The access function is responsible for locating and returning 
+a value from the array.
+The array access function is free to interpret the arguments as it wishes.
+The Maclisp compatible array access function which is provided 
+in the standard
+.Fr
+system interprets the arguments as subscripts in the same way as 
+languages like Fortran and Pascal.
+.pp
+The array access function will also be called upon to store elements in 
+the array.
+For example, \fI(store\ (foo\ a\ b)\ c)\fP
+will automatically expand to (foo c a b) and when the evaluator is called
+to evaluate this, it will evaluate the arguments 
+.i c , 
+.i b 
+and
+.i a .
+Then it will
+stack the array object (which is stored 
+in the function cell of foo) and call the array access function
+with (now) four arguments.
+The array access function must be able to tell this is a store operation,
+which it can do by checking the number of arguments it has been
+given (a lexpr can do this very easily).
+.sh 2 "subparts of an array object"
+An array is created by allocating an
+array object with
+.i marray
+and  filling in the fields.
+Certain lisp functions interpret the values of the subparts 
+of the array object in special
+ways as described in the following text.
+Placing illegal values in these subparts may cause
+the lisp system to fail.
+.sh 3 "access function"
+The purpose of the access function has been described above.
+The contents of the access function should be a lexpr, 
+either a binary (compiled function) or a list (interpreted function).
+It may also be a symbol whose function cell contains a function 
+definition.
+This subpart 
+is used by 
+.i eval , 
+.i funcall , 
+and 
+.i apply
+when evaluating array references.
+.sh 3 auxiliary
+This can be used for any purpose. If it is a list and the first element
+of that list is the symbol unmarked_array then the data subpart will
+not be marked by the garbage collector (this is used in the Maclisp
+compatible array package and has the potential for causing strange errors
+if used incorrectly).
+.sh 3 data
+This is either nil or points to a block of data space allocated by 
+.i segment 
+or 
+.i small-segment.
+.sh 3 length
+This is a fixnum whose value is the number of elements in the
+data block.  This is used by the garbage collector and by 
+.i arrayref
+to determine if your index is in bounds.
+.sh 3 delta
+This is a fixnum whose value is the number of bytes in each element of 
+the data block.
+This will be four for an array of fixnums or value cells, and eight
+for an array of flonums.
+This is used by the garbage collector and 
+.i arrayref
+as well.
+.sh 2 "The Maclisp compatible array package"
+.pp
+A Maclisp style array is similar to what is known as arrays in other
+languages: a block of homogeneous data elements which
+is indexed by one or more integers called subscripts.
+The data elements can be all fixnums, flonums or general lisp objects.
+An array is created by a call to the function 
+.i array 
+or \fI*array\fP.
+The only difference is that 
+.i *array
+evaluates its arguments.
+This call: 
+.i "(array foo t 3 5)"
+sets up an array called foo of dimensions 3 by 5.
+The subscripts are zero based. 
+The first element is \fI(foo\ 0\ 0)\fP, the next is \fI(foo\ 0\ 1)\fP
+and so on up to \fI(foo\ 2\ 4)\fP.
+The t indicates a general lisp object array which means each element of
+foo can be any type.
+Each element can be any type since all that is stored in the array is
+a pointer to a lisp object, not the object itself.
+.i Array 
+does this by allocating an array object
+with
+.i marray
+and then allocating a segment of 15 consecutive value cells with
+.i small-segment
+and storing a pointer to that segment in the data subpart of the array
+object.
+The length and delta subpart of the array object are filled in (with 15
+and 4 respectively) and the access function subpart is set to point to 
+the appropriate  array access function.
+In this case there is a special access function for two dimensional
+value cell arrays called arrac-twoD, and this access function is used.
+The auxiliary subpart is set to (t\ 3\ 5) which describes the type of array
+and the bounds of the subscripts.  
+Finally this array object is placed in the function cell of the symbol foo.
+Now when 
+.i "(foo 1 3)"
+is evaluated, the array access function is invoked with three arguments:
+1, 3 and the array object.  From the auxiliary field of the
+array object it gets a description of the particular array.
+It then determines which element \fI(foo\ 1\ 3)\fP refers to  and 
+uses arrayref to extract that element.
+Since this is an array of value cells, what arrayref returns is a
+value cell whose value is what we want, so we evaluate the value cell
+and return it as the value of \fI(foo\ 1\ 3)\fP.
+.pp
+In Maclisp the call \fI(array\ foo\ fixnum\ 25)\fP
+returns an array whose data object is a block of 25 memory words.
+When fixnums are stored in this array, the actual numbers are 
+stored instead of pointers to the numbers as is done in general lisp
+object arrays.
+This is efficient under Maclisp but inefficient in
+.Fr
+since every time a value was referenced from an array it had to be copied
+and a pointer to the copy returned to prevent aliasing\*[\(dg\*].
+.(f
+\*[\(dg\*]Aliasing is when two variables are share the same storage location.
+For example if the copying mentioned weren't done then after 
+\fI(setq\ x\ (foo\ 2))\fP was done, the value of x and 
+(foo\ 2) would share the same 
+location.
+Then should the value of (foo\ 2) change, x's value would change as well.
+This is considered dangerous and as a result pointers are never returned
+into the data space of arrays.
+.)f
+Thus t, fixnum and flonum arrays are all implemented in the same 
+manner.
+This should not affect the compatibility of Maclisp
+and 
+.Fr .
+If there is an application where a block of fixnums or flonums is required,
+then the exact same effect of fixnum and flonum arrays in Maclisp
+can be achieved by using fixnum-block and flonum-block arrays.
+Such arrays are required if you want to pass a large number of arguments to a 
+Fortran or C coded function and then get answers back.
+.pp
+The Maclisp compatible array package is 
+just one example of how a general array scheme can be implemented.
+Another type of array you could implement would be hashed arrays.
+The subscript could be anything, not just a number.
+The access function would hash the subscript and use the result to
+select an array element.
+With the generality of arrays also comes extra cost; if you just
+want a simple aggregate of (less than 128) general lisp objects
+you would be wise to look into using hunks.
+.sh 2 vectors
+Vectors were invented to fix two shortcommings with hunks.
+They can be longer than 128 elements.  They also have a
+tag associated with them, which is intended to say, for example,
+"Think of me as an \fIBlobit\fP."  Thus a \fBvector\fP
+is an arbitrary sized hunk with a property list.
+.pp
+Continuing the example,
+the lisp kernel may not know how to print out
+or evaluate \fIblobits\fP, but this is information which will
+be common to all \fIblobits\fP.  On the other hand, for each
+individual blobits there are particulars which are likely to change,
+(height, weight, eye-color).  This is the part that would
+previously have been stored in the individual entries in the hunk,
+and are stored in the data slots of the vector.
+Once again we summarize the structure of a vector in tabular form:
+.(b
+.TS
+box center ;
+c | c | c | c .
+Subpart name	Get value	Set value	Type
+
+=
+datum[\fIi\fP]	vref	vset	lispval
+_
+property	vprop	vsetprop	lispval
+		vputprop
+_
+size	vsize	\-	fixnum
+.TE
+.)b
+Vectors are created specifying size and optional fill value using the
+function (\fInew-vector\fP  'x_size ['g_fill ['g_prop]]), or by
+initial values: (\fIvector\fP ['g_val ...]).
+.sh 2 "anatomy of vectors"
+There are some technical details about vectors, that the user should
+know:
+.sh 3 size
+The user is not free to alter this.  It is noted when the vector
+is created, and is used by the garbage collector.  The garbage
+collector will coallesce two free vectors, which are neighbors
+in the heap.  Internally, this is kept as the number of bytes
+of data.  Thus, a vector created by (\fIvector\fP 'foo), has a
+size of 4.
+.sh 3 property
+Currently, we expect the property to be either a symbol, or a list
+whose first entry is a symbol.  The symbols \fBfclosure\fP and
+\fBstructure-value-argument\fP are magic, and their effect is described in
+Chapter 8.  If the property is a (non-null) symbol, the vector
+will be printed out as <symbol>[<size>].  
+Another case is if the property is actually a (disembodied) property-list, which
+contains a value for the indicator \fBprint\fP.
+The value is taken to be a Lisp function, which the printer
+will invoke with two arguments:  the vector and the current output port.
+Otherwise, the vector will be printed as vector[<size>].
+We have vague (as yet unimplemented) ideas
+about similar mechanisms for evaluation properties.
+Users are cautioned against putting anything other than nil
+in the property entry of a vector.
+.sh 3 "internal order"
+In memory, vectors start with a longword containing the size
+(which is immediate data within the vector).
+The next cell contains a pointer to the property.
+Any remaining cells (if any) are for data.
+Vectors are handled differently from any other object in
+.Fr,
+in that a pointer to a vector is pointer to the first data
+cell, i.e. a pointer to the \fIthird\fP longword of the structure.
+This was done for efficiency in compiled code and for uniformity
+in referencing immediate-vectors (described below).
+The user should never return a pointer to any other part
+of a vector, as this may cause the garbage collector to follow an
+invalid pointer.
+.sh 2 "immediate-vectors"
+Immediate-vectors are similar to vectors.  They differ, in
+that binary data are stored in space directly within the vector.
+Thus the garbage collector will preserve the vector itself (if used),
+and will only traverse the property cell.
+The data may be referenced as longwords, shortwords, or even bytes.
+Shorts and bytes are returned sign-extended.
+The compiler open-codes such references,
+and will avoid boxing the resulting integer data, where possible.
+Thus, immediate vectors may be used for efficiently processing
+character data.
+They are also useful in storing results from functions written
+in other languages.
+.(b
+.TS
+box center ;
+c | c | c | c .
+Subpart name	Get value	Set value	Type
+
+=
+datum[\fIi\fP]	vrefi-byte	vseti-byte	fixnum
+	vrefi-word	vseti-word	fixnum
+	vrefi-long	vseti-long	fixnum
+_
+property	vprop	vsetprop	lispval
+		vputprop
+_
+size	vsize	\-	fixnum
+	vsize-byte		fixnum
+	vsize-word		fixnum
+.TE
+.)b
+To create immediate vectors specifying size and fill data,
+you can use the functions
+\fInew-vectori-byte\fP,
+\fInew-vectori-word\fP,
+or \fInew-vectori-long\fP.
+You can also use the functions
+\fIvectori-byte\fP,
+\fIvectori-word\fP,
+or \fIvectori-long\fP.
+All of these functions are described in
+chapter 2.

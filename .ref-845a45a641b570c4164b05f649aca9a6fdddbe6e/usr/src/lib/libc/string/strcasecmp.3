@@ -1,0 +1,61 @@
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek.
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)strcasecmp.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt STRCASECMP 3
+.Os
+.Sh NAME
+.Nm strcasecmp
+.Nd compare strings, ignoring case
+.Sh SYNOPSIS
+.Fd #include <string.h>
+.Ft int
+.Fn strcasecmp "const char *s1" "const char *s2"
+.Ft int
+.Fn strncasecmp "const char *s1" "const char *s2" "size_t len"
+.Sh DESCRIPTION
+The
+.Fn strcasecmp
+and
+.Fn strncasecmp
+functions
+compare the null-terminated strings
+.Fa s1
+and
+.Fa s2
+and return an integer greater than, equal to, or less than 0,
+according as
+.Fa s1
+is lexicographically greater than, equal to, or less than
+.Fa s2
+after translation of each corresponding character to lower-case.
+The strings themselves are not modified.
+The comparison is done using unsigned characters, so that
+.Sq Li \e200
+is greater than
+.Ql \e0 .
+.Pp
+The
+.Fn strncasecmp
+compares at most
+.Fa len
+characters.
+.Sh SEE ALSO
+.Xr bcmp 3 ,
+.Xr memcmp 3 ,
+.Xr strcmp 3 ,
+.Xr strcoll 3 ,
+.Xr strxfrm 3
+.Sh HISTORY
+The
+.Fn strcasecmp
+and
+.Fn strncasecmp
+functions are
+.Ud .

@@ -1,0 +1,44 @@
+.\" Copyright (c) 1983, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)intro.8	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt INTRO 8
+.Os BSD 4.2
+.Sh NAME
+.Nm intro
+.Nd "introduction to system maintenance and operation commands"
+.Sh DESCRIPTION
+This section contains information related to system operation
+and maintenance.
+It describes commands used to create new file systems,
+.Ql Xr newfs ,
+verify the integrity of the file systems,
+.Ql Xr fsck ,
+control disk usage,
+.Ql Xr edquota ,
+maintain system backups,
+.Ql Xr dump ,
+and recover files when disks die an untimely death,
+.Ql Xr restore .
+The manual 
+.Ql Xr format
+should be consulted when formatting disk packs respective
+to the architecture the system is running on.
+Network related services like
+.Ql Xr inetd
+and
+.Ql Xr ftpd
+are also described.
+The section
+.Ql Xr crash
+should be consulted in understanding how to interpret system
+crash dumps.
+.Sh HISTORY
+The
+.Nm intro
+section manual page appeared in
+.Bx 4.2 .

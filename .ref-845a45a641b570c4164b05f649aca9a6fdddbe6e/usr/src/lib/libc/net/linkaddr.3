@@ -1,0 +1,92 @@
+.\" Copyright (c) 1993 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Donn Seeley at BSDI.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)linkaddr.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt LINK_ADDR 3
+.Os BSD 4.4
+.Sh NAME
+.Nm link_addr ,
+.Nm link_ntoa
+.Nd elementary address specification routines for link level access
+.Sh SYNOPSIS
+.Fd #include <sys/types.h>
+.Fd #include <sys/socket.h>
+.Fd #include <net/if_dl.h>
+.Ft void
+.Fn link_addr "const char *addr" "struct sockaddr_dl *sdl"
+.Ft char *
+.Fn link_ntoa "const struct sockaddr_dl *sdl"
+.Sh DESCRIPTION
+The routine
+.Fn link_addr
+interprets character strings representing
+link-level addresses, returning binary information suitable
+for use in system calls.
+The routine
+.Fn link_ntoa
+takes
+a link-level
+addresses and returns
+.Tn ASCII
+strings representing some of the information present
+(The link level address itself, and the interface name
+or number, if present.)
+This facility is still experimental, and had there been
+further development of the system would have been subject to change.
+.Pp
+The syntax employed by
+.Fn link_addr
+is an optional network interface identifier (a string of the
+form
+.Dq name\ unit ,
+suitable for the first argument to
+.Xr ifconfig 4 )
+followed by a colon when the interface identifier is present,
+followed in all cases by a sequence of hexadecimal
+.Dq digits
+(optionally separated by periods),
+of the form:
+.Bd -filled -offset indent
+<name unit :> <hex digits>.<hex digits>.<hex digits>
+.Ed
+.Pp
+Each pair of hexadecimal digits represents a byte
+with the leading digit indicating the higher-ordered bits.
+A period following an even number of bytes has no
+effect (but may be used to increase legitibility).
+A period following an odd number of bytes has the
+effective of filling the byte of address being translated
+to have its higher order bits filled with zeros.
+.Pp
+Thus le0:8.0.9.13.d.30 represents an ethernet address
+to be transmitted on the first lance ethernet interface.
+.Sh RETURN VALUES
+.Fn link_ntoa
+always returns a null terminated string.
+.Fn link_addr
+has no return value.
+(See
+.Sx BUGS . )
+.Sh SEE ALSO
+.Xr iso 4 ,
+.Sh HISTORY
+The
+.Fn link_addr
+and
+.Fn link_ntoa
+functions appeared in 
+.Bx 4.3 Reno  .
+.Sh BUGS
+The returned values for link_ntoa
+reside in a static memory area.
+The function
+.Fn link_addr
+should diagnose improperly formed input, and there should be an unambiguous
+way to recognize this.

@@ -1,0 +1,55 @@
+.\" Copyright (c) 1983, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)fsync.2	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt FSYNC 2
+.Os BSD 4.2
+.Sh NAME
+.Nm fsync
+.Nd "synchronize a file's in-core state with that on disk"
+.Sh SYNOPSIS
+.Fd #include <unistd.h>
+.Ft int
+.Fn fsync "int fd"
+.Sh DESCRIPTION
+.Fn Fsync
+causes all modified data and attributes of
+.Fa fd
+to be moved to a permanent storage device.
+This normally results in all in-core modified copies
+of buffers for the associated file to be written to a disk.
+.Pp
+.Fn Fsync
+should be used by programs that require a file to be
+in a known state, for example, in building a simple transaction
+facility.
+.Sh RETURN VALUES
+A 0 value is returned on success.  A -1 value indicates
+an error.
+.Sh ERRORS
+The
+.Fn fsync
+fails if:
+.Bl -tag -width Er
+.It Bq Er EBADF
+.Fa Fd
+is not a valid descriptor.
+.It Bq Er EINVAL
+.Fa Fd
+refers to a socket, not to a file.
+.It Bq Er EIO
+An I/O error occurred while reading from or writing to the file system.
+.El
+.Sh SEE ALSO
+.Xr sync 2 ,
+.Xr sync 8 ,
+.Xr update 8
+.Sh HISTORY
+The
+.Nm
+function call appeared in
+.Bx 4.2 .

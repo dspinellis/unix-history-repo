@@ -1,0 +1,23 @@
+# Copyright (c) 1991, 1993
+#	The Regents of the University of California.  All rights reserved.
+#
+# This code is derived from software contributed to Berkeley by
+# Kenneth Almquist.
+#
+# %sccs.include.redist.sh%
+#
+#	@(#)kill	8.1 (Berkeley) %G%
+
+# Convert job names to process ids and then run /bin/kill.
+
+kill() {
+	local args x
+	args=
+	for x in "$@"
+	do	case $x in
+		%*)	x=`jobid "$x"` ;;
+		esac
+		args="$args $x"
+	done
+	/bin/kill $args
+}

@@ -1,0 +1,140 @@
+.\" Copyright (c) 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)unix.4	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt UNIX 4
+.Os
+.Sh NAME
+.Nm unix
+.Nd UNIX-domain protocol family
+.Sh SYNOPSIS
+.Fd #include <sys/types.h>
+.Fd #include <sys/un.h>
+.Sh DESCRIPTION
+The
+.Tn UNIX Ns -domain
+protocol family is a collection of protocols
+that provides local (on-machine) interprocess
+communication through the normal
+.Xr socket 2
+mechanisms.
+The 
+.Tn UNIX Ns -domain
+family supports the
+.Dv SOCK_STREAM
+and
+.Dv SOCK_DGRAM
+socket types and uses
+filesystem pathnames for addressing.
+.Sh ADDRESSING
+.Tn UNIX Ns -domain
+addresses are variable-length filesystem pathnames of
+at most 104 characters.
+The include file
+.Aq Pa sys/un.h
+defines this address:
+.Bd -literal -offset indent
+struct sockaddr_un {
+u_char	sun_len;
+u_char	sun_family;
+char	sun_path[104];
+};
+.Ed
+.Pp
+Binding a name to a
+.Tn UNIX Ns -domain
+socket with
+.Xr bind 2
+causes a socket file to be created in the filesystem.
+This file is
+.Em not
+removed when the socket is closed\(em\c
+.Xr unlink 2
+must be used to remove the file.
+.Pp
+The
+.Tn UNIX Ns -domain
+protocol family does not support broadcast addressing or any form
+of
+.Dq wildcard
+matching on incoming messages. 
+All addresses are absolute- or relative-pathnames
+of other
+.Tn UNIX Ns -domain
+sockets.
+Normal filesystem access-control mechanisms are also
+applied when referencing pathnames; e.g., the destination
+of a
+.Xr connect 2
+or
+.Xr sendto 2
+must be writable.
+.Sh PROTOCOLS
+The 
+.Tn UNIX Ns -domain
+protocol family is comprised of simple
+transport protocols that support the
+.Dv SOCK_STREAM
+and
+.Dv SOCK_DGRAM
+abstractions.
+.Dv SOCK_STREAM
+sockets also support the communication of 
+.Ux
+file descriptors through the use of the
+.Ar msg_control
+field in the
+.Ar msg
+argument to
+.Xr sendmsg 2
+and
+.Xr recvmsg 2 .
+.Pp
+Any valid descriptor may be sent in a message.
+The file descriptor(s) to be passed are described using a 
+.Ar struct cmsghdr
+that is defined in the include file
+.Aq Pa sys/socket.h .
+The type of the message is
+.Dv SCM_RIGHTS ,
+and the data portion of the messages is an array of integers
+representing the file descriptors to be passed.
+The number of descriptors being passed is defined
+by the length field of the message;
+the length field is the sum of the size of the header
+plus the size of the array of file descriptors.
+.Pp
+The received descriptor is a 
+.Em duplicate
+of the sender's descriptor, as if it were created with a call to
+.Xr dup 2 .
+Per-process descriptor flags, set with
+.Xr fcntl 2 ,
+are 
+.Em not
+passed to a receiver.
+Descriptors that are awaiting delivery, or that are
+purposely not received, are automatically closed by the system
+when the destination socket is closed.
+.Sh SEE ALSO
+.Xr socket 2 ,
+.Xr intro 4
+.Rs
+.%T "An Introductory 4.3 BSD Interprocess Communication Tutorial"
+.%B PS1
+.%N 7
+.Re
+.Rs
+.%T "An Advanced 4.3 BSD Interprocess Communication Tutorial"
+.%B PS1
+.%N 8
+.Re
+.Sh HISTORY
+The
+.Tn UNIX Ns -domain
+protocol manual
+.Ud

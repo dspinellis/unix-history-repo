@@ -1,0 +1,141 @@
+.\" Copyright (c) 1983, 1991 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"     @(#)tarformat.5	6.4 (Berkeley) %G%
+.\"
+.Dd 
+.Dt TAR 5
+.Os BSD 4.2
+.Sh NAME
+.Nm tar
+.Nd tape archive file format
+.Sh DESCRIPTION
+The
+.Nm tar
+tape archive command
+dumps several files into one, in a medium suitable for transportation.
+.Pp
+A ``tar tape'' or file is a series of blocks.  Each block is of size
+.Dv TBLOCK .
+A file on the tape is represented by a header block which describes
+the file, followed by zero or more blocks which give the contents of the
+file.  At the end of the tape are two blocks filled with binary
+zeros, as an end-of-file indicator.  
+.Pp
+The blocks are grouped for physical
+.Tn I/O
+operations.  Each group of
+.Ar n
+functions
+blocks (where
+.Ar n
+is set by the 
+.Cm b
+keyletter on the 
+.Xr tar 1
+command line \(em default is 20 blocks) is written with a single system
+call; on nine-track tapes, the result of this write is a single tape
+record.  The last group is always written at the full size, so blocks after
+the two zero blocks contain random data.  On reading, the specified or
+default group size is used for the
+first read, but if that read returns less than a full tape block, the reduced
+block size is used for further reads.
+.Pp
+The header block looks like:
+.Bd -literal -offset indent
+#define TBLOCK	512
+#define NBLOCK	20
+#define NAMSIZ	100
+
+union hblock {
+        char dummy[TBLOCK];
+        struct header {
+                char name[NAMSIZ];
+                char mode[8];
+                char uid[8];
+                char gid[8];
+                char size[12];
+                char mtime[12];
+                char chksum[8];
+                char linkflag;
+                char linkname[NAMSIZ];
+        } dbuf;
+};
+.Ed
+.Pp
+The
+.Fa name
+field
+is a null-terminated string.
+The other fields are zero-filled octal numbers in
+.Tn ASCII . 
+Each field
+(of width w) contains w\-2 digits, a space, and a null, except
+.Xr size
+and
+.Fa mtime ,
+which do not contain the trailing null and
+.Fa chksum
+which has a null followed by a space.
+.Fa Name
+is the name of the file, as specified on the 
+.Nm tar
+command line.
+Files dumped because they were in a directory which
+was named in the command line have the directory name as prefix and
+.Pa /filename
+as suffix.
+.Fa Mode
+is the file mode, with the top bit masked off.
+.Fa Uid
+and
+.Fa gid
+are the user and group numbers which own the file.
+.Fa Size
+is the size of the file in bytes.  Links and symbolic links are dumped
+with this field specified as zero.
+.Fa Mtime
+is the modification time of the file at the time it was dumped.
+.Fa Chksum
+is an octal
+.Tn ASCII
+value which represents the sum of all the bytes in the
+header block.  When calculating the checksum, the 
+.Fa chksum
+field is treated as if it were all blanks.
+.Fa Linkflag
+is
+.Dv NULL
+if the file is ``normal'' or a special file,
+.Tn ASCII
+`1'
+if it is an hard link, and
+.Tn ASCII
+`2'
+if it is a symbolic link.  The name linked-to, if any, is in
+.Fa linkname ,
+with a trailing null.
+Unused fields of the header are binary zeros (and are included in the
+checksum).
+.Pp
+The first time a given i-node number is dumped, it is dumped as a regular
+file.  The second and subsequent times, it is dumped as a link instead.
+Upon retrieval, if a link entry is retrieved, but not the file it was
+linked to, an error message is printed and the tape must be manually
+re-scanned to retrieve the linked-to file.
+.Pp
+The encoding of the header is designed to be portable across machines.
+.Sh SEE ALSO
+.Xr tar 1
+.Sh BUGS
+Names or linknames longer than
+.Dv NAMSIZ
+produce error reports and cannot be
+dumped.
+.Sh HISTORY
+The
+.Nm
+file format manual appeared in
+.Bx 4.2 .

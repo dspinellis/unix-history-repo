@@ -1,0 +1,71 @@
+.\" Copyright (c) 1980, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)nice.1	6.7 (Berkeley) %G%
+.\"
+.Dd 
+.Dt NICE 1
+.Os BSD 4
+.Sh NAME
+.Nm nice
+.Nd execute a command at a low scheduling priority
+.Sh SYNOPSIS
+.Nm nice
+.Op Fl Ns Ar number
+.Ar command
+.Op Ar arguments
+.Sh DESCRIPTION
+.Nm Nice
+runs
+.Ar command
+at a low priority.
+(Think of low and slow).
+If
+.Fl Ns Ar number
+is specified, and if it is greater than or equal
+to 10 (the default),
+.Nm nice
+will execute
+.Ar command
+at that priority.
+The upper bound, or lowest priority that
+.Nm nice
+will run a command is 20.
+The lower bounds or
+higher priorities (integers less than 10)
+can only be requested by the super-user.
+Negative numbers are expressed as
+.Fl - Ns Ar number .
+.Pp
+The returned exit status is the exit value from the
+command executed by
+.Nm nice .
+.Sh SEE ALSO
+.Xr csh 1 ,
+.Xr renice 8
+.Sh HISTORY
+A
+.Nm nice
+command appeared in
+.At v6 .
+.Sh BUGS
+.Nm Nice
+is particular to
+.Xr sh  1  .
+If you use
+.Xr csh  1  ,
+then commands executed with ``&'' are automatically immune to hangup
+signals while in the background.
+.Pp
+.Nm Nice
+is built into
+.Xr csh  1
+with a slightly different syntax than described here.  The form
+.Ql nice +10
+nices to positive nice, and
+.Ql nice \-10
+can be used
+by the super-user to give a process more of the processor.

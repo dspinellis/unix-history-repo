@@ -1,0 +1,53 @@
+#
+# UCB ISA 486 CIRCE
+#
+machine		"i386"
+cpu		"i486"
+ident		CIRCE
+timezone	8 dst
+maxusers	10
+
+# Standard options
+options		QUOTA
+options		INET
+options		FFS,MFS,NFS,FIFO
+options		"COMPAT_43"
+options		"COMPAT_42","TCP_COMPAT_42"
+
+# Options specific to this host.
+options		DEBUG,DIAGNOSTIC
+options		KTRACE
+options		NPX
+options		"NKMEMCLUSTERS=256"
+
+config		vmunix	root on dk0 swap on dk0
+
+controller	isa0
+controller	wd0	at isa? port "IO_WD1" bio irq 14 vector wdintr
+disk		dk0	at wd0 drive 0
+disk		dk1	at wd0 drive 1
+# controller	xd0	at isa? port "IO_WD2" bio irq 11 vector xdintr
+# disk		dk2	at xd0 drive 0
+# disk		dk3	at xd0 drive 1
+controller	fd0	at isa? port "IO_FD1" bio irq 6 drq 2 vector fdintr
+disk		dk4	at fd0 drive 0
+disk		dk5	at fd0 drive 1
+
+device		cn0	at isa? port "IO_KBD" tty irq 1 vector cnrint
+device		npx0	at isa? port "IO_NPX" irq 13 vector npxintr
+device		com0	at isa? port "IO_COM1" tty irq 4 vector comintr
+device		com1	at isa? port "IO_COM2" tty irq 3 vector comintr
+device		ne0	at isa? port 0x320 net irq 9 vector neintr
+device we0 at isa? port 0x380 net irq 10 iomem 0xd0000 iosiz 8192 vector weintr
+device		wt0	at isa? port 0x300 bio irq 5 drq 1 vector wtintr
+
+pseudo-device	loop
+pseudo-device	pty
+pseudo-device	ether
+pseudo-device	sl	2
+
+pseudo-device	log	4
+
+pseudo-device	swappager
+pseudo-device	vnodepager
+pseudo-device	devpager

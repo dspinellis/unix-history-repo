@@ -1,0 +1,10 @@
+#	@(#)Makefile.irix	5.4 (Berkeley) %G%
+#
+# $Id: Makefile.irix,v 5.2.2.1 1992/02/09 15:10:31 jsp beta $
+#
+# Extra Makefile definitions for IRIX
+#
+
+DEBUG = #-g -DDEBUG
+CCOPTS = -I/usr/include/sun -I/usr/include/bsd -DIRIX
+RESOLV = -lrpcsvc -lsun -lbsd

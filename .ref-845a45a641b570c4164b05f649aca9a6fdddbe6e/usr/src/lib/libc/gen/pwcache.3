@@ -1,0 +1,65 @@
+.\" Copyright (c) 1989, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)pwcache.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt PWCACHE 3
+.Os
+.Sh NAME
+.Nm pwcache
+.Nd cache password and group entries
+.Sh SYNOPSIS
+.Fn user_from_uid "uid_t uid" "int nouser"
+.Fn group_from_gid "gid_t gid" "int nogroup"
+.Sh DESCRIPTION
+.Pp
+The
+.Fn user_from_uid
+function returns the user name associated with the argument
+.Fa uid .
+The user name is cached so that multiple calls with the same
+.Fa uid 
+do not require additional calls to
+.Xr getpwuid 3 .
+If there is no user associated with the
+.Fa uid ,
+a pointer is returned
+to a string representation of the
+.Fa uid ,
+unless the argument
+.Fa nouser
+is non-zero, in which case a
+.Dv NULL
+pointer is returned.
+.Pp
+The
+.Fn group_from_gid
+function returns the group name associated with the argument
+.Fa gid .
+The group name is cached so that multiple calls with the same
+.Fa gid
+do not require additional calls to
+.Xr getgrgid 3 .
+If there is no group associated with the
+.Fa gid ,
+a pointer is returned
+to a string representation of the
+.Fa gid ,
+unless the argument
+.Fa nogroup
+is non-zero, in which case a
+.Dv NULL
+pointer is returned.
+.Sh SEE ALSO
+.Xr getgrgid 3 ,
+.Xr getpwuid 3
+.Sh HISTORY
+The
+.Fn user_from_id
+and
+.Fn group_from_id
+functions are
+.Ud .

@@ -1,0 +1,103 @@
+.nr _0 \n(c.
+.\" Copyright (c) 1988, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)refer.me	8.1 (Berkeley) %G%
+.\"
+.\"	%beginstrip%
+.\"
+.de ][				\" *** refer output
+.if \\$1>5 .tm Bad arg to []
+.[\\$1
+..
+.de [0				\" --- other
+.(f
+.ip "\\*([F.\0"
+.if !"\\*([A"" \\*([A,
+.if !"\\*([T"" \\f2\\*([T\\f1\c
+.if !"\\*([T"" .if !"\\*([O"" ,\ 
+.ie !"\\*([O"" \\*([O
+.el .if !"\\*([T"" \&.
+.if !"\\*([D"" \\*([D.
+.@p
+.)f
+..
+.de [1				\" --- journal article
+.(f
+.ip "\\*([F.\0"
+\\*([A,
+.if !"\\*([T"" \\*(lq\\*([T,\\*(rq
+.if "\\*([V"" \\f2\\*([J\\f1,
+.if !"\\*([V"" \\f2\\*([J\\f1
+.if !"\\*([V"" .if n Vol.\&
+.if !"\\*([V"" \\f3\\*([V\\f1\c
+.if !"\\*([N"" (\\*([N)\c
+.if !"\\*([P"" \
+\{\
+.	ie \\n([P>0 \ pp.\&
+.	el \ p.\&
+\\*([P
+.\}
+.if !"\\*([I"" .if "\\*([R"" \\*([I,
+(\\*([D).
+.if !"\\*([O"" \\*([O
+.)f
+..
+.de [2				\" --- book
+.(f
+.ip "\\*([F.\0"
+\\*([A, \\f2\\*([T,\\f1
+\\*([I\c
+.if !"\\*([C"" , \\*([C\c
+ (\\*([D).
+.if !"\\*([G"" Gov't. ordering no. \\*([G
+.if !"\\*([O"" \\*([O
+.)f
+..
+.de [3				\" --- article in book
+.(f
+.ip "\\*([F.\0"
+\\*([A, \\*(lq\\*([T,\\*(rq
+.if !"\\*([P"" pp. \\*([P
+in \\f2\\*([B\\f1, \c
+.if !"\\*([E"" ed. \\*([E,\c
+.if !"\\*([I"" \\*([I\c
+.if !"\\*([C"" ,  \\*([C\c
+ (\\*([D).
+.if !"\\*([O"" \\*([O
+.)f
+..
+.de [4				\" --- report
+.(f
+.ip "\\*([F.\0"
+\\*([A, \\*(lq\\*([T,\\*(rq
+\\*([R\c
+.if !"\\*([G"" \& (\\*([G)\c
+.if !"\\*([I"" ,  \\*([I\c
+.if !"\\*([C"" ,  \\*([C\c
+ (\\*([D).
+.if !"\\*([O"" \\*([O
+.)f
+..
+.de [5				\" --- tm style
+.(f
+.ip "\\*([F.\0"
+\\*([A, \\f2\\*([T\\f1,
+.ie \\n(TN \\*([M.
+.el Bell Laboratories internal memorandum (\\*([D).
+.)f
+..
+.de ]<
+.$p References
+.lp
+.rm (f )f
+..
+.de ]>
+.sp
+..
+.de ]-
+.rm [V [P [A [T [N [C [B [O [R [I [E [D
+..
+.nr c. \n(_0

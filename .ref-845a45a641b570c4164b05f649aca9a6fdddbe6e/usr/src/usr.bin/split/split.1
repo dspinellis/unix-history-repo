@@ -1,0 +1,79 @@
+.\" Copyright (c) 1990, 1991 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)split.1	6.4 (Berkeley) %G%
+.\"
+.Dd 
+.Dt SPLIT 1
+.Os
+.Sh NAME
+.Nm split
+.Nd split a file into pieces
+.Sh SYNOPSIS
+.Nm split
+.Op Fl Ns Ar n
+.Op Fl b Ar bytes
+.Op Ar file Op Ar name
+.Sh DESCRIPTION
+The
+.Nm split
+utility reads the given
+.Ar file
+and splits it up in to
+smaller files.
+.Pp
+Available options:
+.Bl -tag -width "bb bytesx"
+.It Fl Ns Ar lines
+Create files of length
+.Fl Ns Ar n
+lines long.
+.It Fl b Ar bytes
+Create files of length
+.Ar bytes .
+If no output file length is specified, the file size
+will default to a lenght of 1000 lines.
+.El
+.Pp
+Available operands:
+.Bl -tag -width name
+.It Fl
+Read from the standard input.
+.It Ar file
+A pathname specifying the
+.Ar file 
+to be split.  If no
+.Ar file
+operand is given,
+.Nm split
+reads from the standard input.
+.It Ar name
+If the
+.Ar name
+operand is given,
+the output files will begin with the prefix
+.Ar name
+and each sequential portion of the split file
+receives a lexically ordered suffix
+in the range of 
+.Bq Em aa-zz .
+If the operand
+.Ar name
+is not specified,
+the default prefix of
+.Em x
+is be used.
+.Pp
+.Sh BUGS
+If you provide
+.Ar name ,
+.Nm split
+can only create 676 separate
+files.  The default naming convention allows 2028 separate files.
+.Sh HISTORY
+A
+.Nm split
+command appeared in
+.At v6 .

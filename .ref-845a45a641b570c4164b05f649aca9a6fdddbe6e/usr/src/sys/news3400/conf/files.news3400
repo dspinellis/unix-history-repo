@@ -1,0 +1,94 @@
+netinet/in_cksum.c			optional inet
+netns/ns_cksum.c			optional ns
+news3400/news3400/pmap.c		standard
+news3400/news3400/autoconf.c		standard		device-driver
+news3400/news3400/clock.c		standard
+news3400/news3400/conf.c		standard
+news3400/news3400/cons.c		standard
+news3400/news3400/kbms_if.c		optional bm
+news3400/news3400/machdep.c		standard		config-dependent
+news3400/news3400/mem.c			standard
+news3400/news3400/fp.s			standard
+news3400/news3400/sys_machdep.c		standard
+news3400/news3400/trap.c		standard
+news3400/news3400/vm_machdep.c		standard
+news3400/bm/bmcons.c			optional bm
+news3400/bm/bitmapif.c			optional bm
+news3400/bm/fnt.c			optional bm
+news3400/bm/fnt24.c			optional bm
+news3400/bm/kb_ctrl.c			optional bm
+news3400/bm/kb_encode.c			optional bm
+news3400/bm/keyconf.c			standard 
+news3400/bm/keytbl.c			standard 
+news3400/bm/vt100.c			optional bm
+news3400/bm/vt100esc.c			optional bm
+news3400/bm/vt100if.c			optional bm
+news3400/fb/askrom.c			optional nwb251		device-driver
+news3400/fb/askrom.c			optional nwb514		device-driver
+news3400/fb/askrom.c			optional nwb256		device-driver
+news3400/fb/fb_cfb.c			optional nwb252
+news3400/fb/fb_conf.c			optional fb
+news3400/fb/fb_mfbs.c			optional fb
+news3400/fb/fb_probe.c			optional fb		device-driver
+news3400/fb/fb_start.c			optional fb
+news3400/fb/fbbm_101.c			optional slb101		device-driver
+news3400/fb/fbbm_1521.c			optional nwb254		device-driver
+news3400/fb/fbbm_1521.c			optional nwb257		device-driver
+news3400/fb/fbbm_225.c			optional nwb225		device-driver
+news3400/fb/fbbm_251.c			optional nwb251		device-driver
+news3400/fb/fbbm_252.c			optional nwb252		device-driver
+news3400/fb/fbbm_253.c			optional nwb253		device-driver
+news3400/fb/fbbm_254.c			optional nwb254		device-driver
+news3400/fb/fbbm_255.c			optional nwb255		device-driver
+news3400/fb/fbbm_256.c			optional nwb256		device-driver
+news3400/fb/fbbm_257.c			optional nwb257		device-driver
+news3400/fb/fbbm_512.c			optional nwb512		device-driver
+news3400/fb/fbbm_514.c			optional nwb514		device-driver
+news3400/fb/fbbm_518.c			optional nwb518		device-driver
+news3400/fb/fbbm_51x.c			optional nwb225		device-driver
+news3400/fb/fbbm_51x.c			optional nwb512		device-driver
+news3400/fb/fbbm_lcdm.c			optional lfbm		device-driver
+news3400/fb/fbbm_pop.c			optional nwb518		device-driver
+news3400/fb/fbbm_pop.c			optional pfbc		device-driver
+news3400/fb/fbbm_pop.c			optional pfbm		device-driver
+news3400/fb/fbbm_popc.c			optional pfbc		device-driver
+news3400/fb/fbbm_popm.c			optional pfbm		device-driver
+news3400/fb/fbbm_qpdm.c			optional nwb251		device-driver
+news3400/fb/fbbm_qpdm.c			optional nwb514		device-driver
+news3400/fb/fbbm_qpdm24.c		optional slb101		device-driver
+news3400/hbdev/fd.c			optional fd		device-driver
+news3400/hbdev/gpib_low.c		optional gpib		device-driver
+news3400/hbdev/hb.c			optional hb		device-driver
+news3400/hbdev/ickdmac2.c		optional fd		device-driver
+news3400/hbdev/ickdmac2.c		optional sb		device-driver
+news3400/hbdev/imgb.c			optional imgbb		device-driver
+news3400/hbdev/lbp_ir.c			optional lb		device-driver
+news3400/hbdev/lp.c			optional lp		device-driver
+news3400/hbdev/ms.c			optional ms		device-driver
+news3400/hbdev/sb.c			optional sb		device-driver
+news3400/hbdev/scsi_1185.c		standard		device-driver
+news3400/hbdev/vn.c			optional vn
+news3400/hbdev/rs.c			optional rs		device-driver
+news3400/hbdev/kb.c			optional kb		device-driver
+news3400/hbdev/fb.c			optional fb		device-driver
+news3400/hbdev/fb_sub.c			optional fb		device-driver
+news3400/if/if_le.c			optional le
+news3400/if/if_en.c			optional en
+news3400/if/if_lance.c			optional en		device-driver
+news3400/if/if_news.c			optional en
+news3400/if/if_rawether.c		optional rawether
+news3400/iodev/psd.c			standard
+news3400/iodev/rawscsi.c		optional rawscsi	device-driver
+news3400/iodev/scsi.c			standard
+news3400/iodev/sd.c			optional sd		device-driver
+news3400/iodev/sd_var.c			optional sd		device-driver
+news3400/iodev/sddefs.c			optional sd		device-driver
+news3400/iodev/st.c			optional st		device-driver
+news3400/iodev/stdefs.c			optional st		device-driver
+news3400/sio/scc.c			standard
+news3400/newsos/news_compat.c		optional compat_newsos
+news3400/newsos/news_syscalls.c		optional compat_newsos
+news3400/newsos/news_sysent.c		optional compat_newsos
+thisisfor_ir				optional ir
+thisisfor_iop				optional iop
+thisisfor_in_proto.c			optional hy

@@ -1,0 +1,127 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This module is believed to contain source code proprietary to AT&T.
+.\" Use and redistribution is subject to the Berkeley Software License
+.\" Agreement and your Software Agreement with AT&T (Western Electric).
+.\"
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)plot.1	6.9 (Berkeley) %G%
+.\"
+.Dd 
+.Dt PLOT 1
+.Os ATT 7th
+.Sh NAME
+.Nm plot
+.Nd graphics filters
+.Sh SYNOPSIS
+.Nm plot
+.Op Fl T Ar terminal
+.Op Fl r Ar resolution
+.Ar
+.Sh DESCRIPTION
+These commands read plotting instructions (see
+.Xr plot 5 )
+from the standard input or the specified
+.Ar files  ,
+and in general
+produce plotting instructions suitable for
+a particular
+.Ar terminal
+on the standard output.
+The
+.Fl r
+flag may be used to specify the device's output resolution
+(currently only the Imagen laser printer understands this option).
+.Pp
+If no
+.Ar terminal
+type is specified, the environment parameter
+.Ev $TERM
+(see
+.Xr environ 7 )
+is used.
+Known
+.Ar terminals
+are:
+.Bl -tag -width indent
+.It Cm 4013
+Tektronix 4013 storage scope.
+.It Cm 4014 No \&or Cm tek
+Tektronix 4014 or 4015 storage scope with Enhanced Graphics Module.
+(Use 4013 for Tektronix 4014 or 4015 without the Enhanced Graphics Module).
+.It Cm 450
+.Tn DASI
+Hyterm 450 terminal (Diablo mechanism).
+.It Cm 300
+.Tn DASI
+300 or
+.Tn GSI
+terminal (Diablo mechanism).
+.It Cm 300S
+DASI 300S terminal (Diablo mechanism).
+.It Cm aed
+.Tn AED
+512 color graphics terminal.
+.It Cm bitgraph No \&or Cm bg
+.Tn BBN
+bitgraph graphics terminal.
+.It Cm imagen No \&or Cm \&ip
+Imagen laser printer (default 240 dots-per-inch resolution).
+.It Cm crt
+Any crt terminal capable of running
+.Xr vi  1  .
+.It Cm dumb
+Dumb terminals without cursor addressing or line printers.
+.It Cm vt125
+DEC vt125 terminal.
+.It Xo
+.Cm hp2648 No \&or Cm \&hp
+.No \&or Cm hp8
+.Xc
+Hewlett Packard 2648 graphics terminal.
+.It Cm ver
+Versatec D1200A printer-plotter.
+.It Cm var
+Benson Varian printer-plotter.
+.El
+.Pp
+These versions of
+.Nm plot
+use the
+.Fl g
+option of
+.Xr lpr  1
+to send the result directly to the plotter device rather than to
+the standard output.
+.Sh ENVIRONMENT
+.Bl -tag -width Fl
+.It Ev TERM
+Used to determine the terminal type if not given as an argument.
+.Sh FILES
+.Bl -tag -width /usr/bin/gigiplot -compact
+.It Pa /usr/libexec/plot/t4013
+.It Pa /usr/libexec/plot/tek
+.It Pa /usr/libexec/plot/t450
+.It Pa /usr/libexec/plot/t300
+.It Pa /usr/libexec/plot/t300s
+.It Pa /usr/libexec/plot/aedplot
+.It Pa /usr/libexec/plot/bgplot
+.It Pa /usr/libexec/plot/crtplot
+.It Pa /usr/libexec/plot/dumbplot
+.It Pa /usr/libexec/plot/gigiplot
+.It Pa /usr/libexec/plot/hpplot
+.It Pa /usr/libexec/plot/implot
+.It Pa /usr/bin/lpr
+.El
+.Sh SEE ALSO
+.Xr plot 3 ,
+.Xr plot 5 ,
+.Xr lpr 1
+.Sh HISTORY
+The
+.Nm plot
+command
+appeared in
+.At v6 .

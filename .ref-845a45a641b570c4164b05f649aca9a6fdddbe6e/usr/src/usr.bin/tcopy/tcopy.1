@@ -1,0 +1,57 @@
+.\" Copyright (c) 1985, 1990, 1991 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)tcopy.1	6.4 (Berkeley) %G%
+.\"
+.Dd 
+.Dt TCOPY 1
+.Os BSD 4.3
+.Sh NAME
+.Nm tcopy
+.Nd copy and/or verify mag tapes
+.Sh SYNOPSIS
+.Nm tcopy
+.Op Fl cv
+.Op Fl s Ar maxblk
+.Oo Ar src Op Ar dest
+.Oc
+.Sh DESCRIPTION
+.Nm Tcopy
+is designed to copy magnetic tapes.  The only assumption made
+about the tape is that there are two tape marks at the end.
+.Nm Tcopy
+with only a source tape
+.Pf ( Ar rmt0
+by default) specified will print
+information about the sizes of records and tape files.  If a destination
+is specified a copy will be made of the source tape.  The blocking on the
+destination tape will be identical to that used on the source tape.  Copying
+a tape will yield the same output as if just printing the sizes.
+.Pp
+Options:
+.Bl -tag -width s_maxblk
+.It Fl c
+Copy
+.Ar src
+to
+.Ar dest
+and then verify that the two tapes are identical.
+.It Fl s Ar maxblk
+Specify a maximum block size,
+.Ar maxblk .
+.It Fl v
+Given the two tapes,
+.ar src
+and
+.Ar dest
+verify that they are identical.
+.El
+.Sh SEE ALSO
+.Xr mtio 4
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 4.3 .

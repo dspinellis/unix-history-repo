@@ -1,0 +1,110 @@
+.\" Copyright (c) 1990, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek and the American National Standards Committee X3,
+.\" on Information Processing Systems.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)getc.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt GETC 3
+.Os
+.Sh NAME
+.Nm fgetc ,
+.Nm getc ,
+.Nm getchar ,
+.Nm getw
+.Nd get next character or word from input stream
+.Sh SYNOPSIS
+.Fd #include <stdio.h>
+.Ft int
+.Fn fgetc "FILE *stream"
+.Ft int
+.Fn getc "FILE *stream"
+.Ft int
+.Fn getchar 
+.Ft int
+.Fn getw "FILE *stream"
+.Sh DESCRIPTION
+The
+.Fn fgetc
+function
+obtains the next input character (if present) from the stream pointed at by
+.Fa stream ,
+or the next character pushed back on the stream via
+.Xr ungetc .
+.Pp
+The
+.Fn getc
+function
+acts essentially identically to
+.Fn fgetc ,
+but is a macro that expands in-line.
+.Pp
+The
+.Fn getchar
+function
+is equivalent to:
+getc with the argument stdin.
+.Pp
+The
+.Fn getw
+function
+obtains the next
+.Em int
+(if present)
+from the stream pointed at by
+.Fa stream .
+.Sh RETURN VALUES
+If successful, these routines return the next requested object
+from the
+.Fa stream .
+If the stream is at end-of-file or a read error occurs,
+the routines return
+.Dv EOF .
+The routines
+.Xr feof 3
+and
+.Xr ferror 3
+must be used to distinguish between end-of-file and error.
+If an error occurs, the global variable
+.Va errno
+is set to indicate the error.
+The end-of-file condition is remembered, even on a terminal, and all
+subsequent attempts to read will return
+.Dv EOF
+until the condition is cleared with
+.Xr clearerr .
+.Sh SEE ALSO
+.Xr ferror 3 ,
+.Xr fread 3 ,
+.Xr fopen 3 ,
+.Xr putc 3 ,
+.Xr ungetc 3
+.Sh STANDARDS
+The
+.Fn fgetc ,
+.Fn getc
+and
+.Fn getchar
+functions
+conform to
+.St -ansiC .
+.Sh BUGS
+Since
+.Dv EOF
+is a valid integer value,
+.Xr feof
+and
+.Xr ferror
+must be used to check for failure after calling
+.Fn getw .
+The size and byte order of an
+.Em int
+varies from one machine to another, and
+.Fn getw
+is not recommended for portable applications.
+.Pp

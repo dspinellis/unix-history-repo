@@ -1,0 +1,34 @@
+.\" Copyright (c) 1989, 1990, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)creat.2	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt CREAT 2
+.Os BSD 4
+.Sh NAME
+.Nm creat
+.Nd create a new file
+.Sh SYNOPSIS
+.Fd #include <fcntl.h>
+.Ft int
+.Fn creat "char *path" "mode_t mode"
+.Sh DESCRIPTION
+.Bf -symbolic
+This interface is made obsolete by:
+.Ef
+.Xr open 2 .
+.Pp
+.Fn Creat
+is the same as:
+.Bd -literal -offset indent
+open(path, O_CREAT | O_TRUNC | O_WRONLY, mode);
+.Ed
+.Sh SEE ALSO
+.Xr open 2
+.Sh HISTORY
+The
+.Nm
+function call appeared in Version 6 AT&T UNIX.

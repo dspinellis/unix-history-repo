@@ -1,0 +1,77 @@
+.\" Copyright (c) 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.proprietary.man%
+.\"
+.\"	@(#)ratfor.1	6.7 (Berkeley) %G%
+.\"
+.Dd 
+.Dt RATFOR 1
+.Os ATT 7th
+.Sh NAME
+.Nm ratfor
+.Nd rational Fortran dialect
+.Sh SYNOPSIS
+.Nm ratfor
+.Op Ar option ...
+.Op Ar filename ...
+.Sh DESCRIPTION
+.Nm Ratfor
+converts a rational dialect of Fortran into ordinary irrational Fortran.
+.Nm Ratfor
+provides control flow constructs essentially identical to those in C:
+.Bl -tag -width indent
+.It Statement grouping:
+{ statement; statement; statement }
+.It Decision-making:
+.Bd -unfilled -compact
+if (condition) statement { else statement }
+switch (integer value) {
+\tcase integer:	statement
+\t...
+\t[default]: statement
+}
+.Ed
+.It Loops:
+.Bd -unfilled -compact
+while (condition) statement
+for (expression; condition; expression) statement
+do limits statement
+repeat statement [until (condition)]
+break
+next
+.Ed
+.El
+.Pp
+And some syntactic sugar to make programs easier to read and write:
+.Bl -tag -width Fl
+.It Free form input:
+multiple statements/line; automatic continuation
+.It Comments:
+# this is a comment
+.It Translation of relationals:
+>, >=, etc., become .GT., .GE., etc.
+.It Return (expression)
+returns expression to caller from function
+.It Define:
+define name replacement
+.It Include:
+include filename
+.El
+.Pp
+.Nm Ratfor
+is best used with
+.Xr f77  1  .
+.Sh SEE ALSO
+.Xr f77 1
+.Rs
+.%A B. W. Kernighan
+.%A P. J. Plauger
+.%T "Software Tools"
+.%I Addison-Wesley
+.%D 1976
+.Re
+.Sh HISTORY
+.Nm Ratfor
+appeared in
+.At v6 .

@@ -1,0 +1,8 @@
+reading symbolic information ...
+[using memory image in strings.core]
+kill(0x4129, 0x4) at 0x110
+abort() at 0x100
+f(s = "parameter test"), line 15 in "strings.c"
+main(0x1, 0x7fffe918, 0x7fffe920), line 9 in "strings.c"
+"this is a test" 
+

@@ -1,0 +1,44 @@
+.TH VPAC 1M 3/9/79
+.UC
+.SH NAME
+vpac \- print Versatec accounting information
+.SH SYNOPSIS
+.B vpac
+[
+.B \-srt
+]
+[
+name ...
+]
+.SH DESCRIPTION
+.I Vpac
+reads the Versatec accounting file, accumulating the number
+of feet of paper consumed by each user, and printing out
+how much each user consumed in feet and dollars (billed at
+8 cents / foot).  If any
+.I names
+are specified, then statistics are only printed for those users;
+usually, statistics are printed for every user who has used any paper.
+.PP
+The
+.B \-t
+flag causes the output to be sorted by feet of paper; usually the
+output is sorted alphabetically by name.  The
+.B \-r
+flag reverses the sorting order.
+The
+.B \-s
+flag causes the accounting information to be summarized on the
+file
+.I /usr/adm/vp_sum\c
+; this summarization is necessary since on a busy system, the
+accounting file can grow by several lines per day.
+.SH FILES
+/usr/adm/vpacct \- Versatec accounting file
+.br
+/usr/adm/vp_sum \- summary accounting file
+.SH BUGS
+The relationship between the computed price and reality is
+as yet unknown.
+.SH AUTHOR
+Kurt Shoens

@@ -1,0 +1,71 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the Institute of Electrical and Electronics Engineers, Inc.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)basename.1	6.7 (Berkeley) %G%
+.\"
+.Dd 
+.Dt BASENAME 1
+.Os
+.Sh NAME
+.Nm basename , dirname
+.Nd return filename or directory portion of pathname
+.Sh SYNOPSIS
+.Nm basename
+.Ar string
+.Op Ar suffix
+.Nm dirname
+.Ar string
+.Sh DESCRIPTION
+.Nm Basename
+deletes any prefix ending with the last slash
+.Ql \&/
+character present in
+.Ar string ,
+and a
+.Ar suffix ,
+if given.
+The resulting filename is written to the standard output.
+If
+.Ar string
+ends in the slash character,
+.Ql / ,
+or is the same as the
+.Ar suffix
+argument,
+a newline is output.
+A non-existant suffix is ignored.
+.Pp
+.Nm Dirname
+deletes the filename portion, beginning
+with the last slash
+.Ql \&/
+character to the end of
+.Ar string , 
+and writes the result to the standard output.
+.Sh EXAMPLES 
+The following line sets the shell variable
+.Ev FOO
+to
+.Pa /usr/bin .
+.Pp
+.Dl FOO=`dirname /usr/bin/trail`
+.Pp
+Both the
+.Nm basename
+and
+.Nm dirname
+exit 0 on success, and >0 if an error occurs.
+.Sh SEE ALSO
+.Xr csh 1
+.Xr sh 1
+.Sh STANDARDS
+The
+.Nm basename
+and
+.Nm dirname
+functions are expected to be POSIX 1003.2 compatible.

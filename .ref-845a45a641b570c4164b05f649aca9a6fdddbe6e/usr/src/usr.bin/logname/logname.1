@@ -1,0 +1,50 @@
+.\" Copyright (c) 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the Institute of Electrical and Electronics Engineers, Inc.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)logname.1	5.3 (Berkeley) %G%
+.\"
+.Dd ""
+.Dt LOGNAME 1
+.Os BSD 4.4
+.Sh NAME
+.Nm logname
+.Nd display user's login name
+.Sh SYNOPSIS
+.Nm logname
+.Sh DESCRIPTION
+The
+.Nm logname
+utility writes the user's login name to standard output followed by
+a newline.
+.Pp
+The
+.Nm logname
+utility explicitly ignores the
+.Ev LOGNAME
+and
+.Ev USER
+environment variables
+because the environment cannot be trusted.
+.Pp
+The
+.Nm logname
+utility exits 0 on success, and >0 if an error occurs.
+.Sh SEE ALSO
+.Xr who 1 ,
+.Xr whoami 1 ,
+.Xr getlogin 3
+.Sh STANDARDS
+The
+.Nm logname
+function is expected to conform to
+.St -p1003.2 .
+.Sh HISTORY
+The
+.Nm
+command appears in
+.Bx 4.4 .

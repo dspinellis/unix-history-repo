@@ -1,0 +1,100 @@
+.\"
+.\" Copyright (c) 1993 The Regents of the University of California
+.\" Copyright (c) 1993 Jan-Simon Pendry
+.\" All rights reserved.
+.\"
+.\" This code is derived from software donated to Berkeley by
+.\" Jan-Simon Pendry.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)mount_portal.8	8.1 (Berkeley) %G%
+.\"
+.\"
+.Dd 
+.Dt MOUNT_PORTAL 8
+.Os BSD 4.4
+.Sh NAME
+.Nm mount_portal
+.Nd mount the portal daemon
+.Sh SYNOPSIS
+.Nm mount_portal
+.Op Fl F fsoptions
+.Pa /etc/portal.conf
+.Pa mount_point
+.Sh DESCRIPTION
+The
+.Nm mount_portal
+command attaches an instance of the portal daemon
+to the global filesystem namespace.
+The conventional mount point is
+.Pa /p .
+.PA /dev .
+This command is normally executed by
+.Xr mount 8
+at boot time.
+.Pp
+The portal daemon provides an
+.I open
+service.
+Objects opened under the portal mount point are
+dynamically created by the portal daemon according
+to rules specified in the named configuration file.
+Using this mechanism allows descriptors such as sockets
+to be made available in the filesystem namespace.
+.Pp
+The portal daemon works by being passed the full pathname
+of the object being opened.
+The daemon creates an appropriate descriptor according
+to the rules in the configuration file, and then passes the descriptor back
+to the calling process as the result of the open system call.
+.Sh NAMESPACE
+By convention, the portal daemon divides the namespace into sub-namespaces,
+each of which handles objects of a particular type.
+.Pp
+Current, two sub-namespaces are implemented:
+.Pa tcp
+and
+.Pa fs .
+The
+.Pa tcp
+namespace takes a hostname and a port (slash separated) and
+creates an open TCP/IP connection.
+The
+.Pa fs
+namespace opens the named file, starting back at the root directory.
+This can be used to provide a controlled escape path from
+a chrooted environment.
+.Sh "CONFIGURATION FILE"
+The configuration file contains a list of rules.
+Each rule takes one line and consists of two or more
+whitespace separated fields.
+A hash (``#'') character causes the remainder of a line to
+be ignored.  Blank lines are ignored.
+.Pp
+The first field is a pathname prefix to match
+against the requested pathname.
+If a match is found, the second field
+tells the daemon what type of object to create.
+Subsequent fields are passed to the creation function.
+.Bd -literal
+# @(#)portal.conf	5.1 (Berkeley) 7/13/92
+tcp/		tcp tcp/
+fs/		file fs/
+.Ed
+.Sh FILES
+.Bl -tag -width /p/* -compact
+.It Pa /p/*
+.El
+.Sh SEE ALSO
+.Xr mount 2 ,
+.Xr unmount 2 ,
+.Xr fstab 5
+.Sh CAVEATS
+This filesystem may not be NFS-exported.
+.Sh HISTORY
+The
+.Nm
+portal filesystem
+is
+.Ud

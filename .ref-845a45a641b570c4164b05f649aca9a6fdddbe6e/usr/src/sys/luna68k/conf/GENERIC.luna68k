@@ -1,0 +1,70 @@
+#	@(#)GENERIC.luna68k	7.4 (Berkeley) %G%
+#
+machine		"luna68k"
+
+cpu		"LUNA1"
+cpu		"LUNA2"
+ident		GENERIC
+
+# Need to set locally
+timezone	8 dst
+maxusers	48
+
+# Standard system options
+options		SWAPPAGER		# swap pager (anonymous and swap space)
+options		VNODEPAGER		# vnode pager (mapped files)
+options		DEVPAGER		# device pager (mapped devices)
+options		DIAGNOSTIC		# extra kernel debugging checks
+options		DEBUG			# extra kernel debugging support
+options		"COMPAT_43"		# compatibility with 4.3BSD binaries
+options		KTRACE			# system call tracing support
+options		"NKMEMCLUSTERS=1024"	# 4K pages in kernel malloc pool
+
+# luna68k does not support GDB kernel debugging
+#options	KGDB			# support for kernel gdb
+#options	"KGDBRATE=19200"	# kernel gdb port rate (default 9600)
+#options	"KGDBDEV=15*256+0"	# device for kernel gdb
+
+# Filesystem options
+options		FIFO		# POSIX fifo support (in all filesystems)
+options		FFS,QUOTA	# fast filesystem with user and group quotas
+options		MFS		# memory-based filesystem
+options		NFS		# Sun NFS-compatible filesystem
+options		LOFS		# Loop-back filesystem
+options		KERNFS		# kernel data-structure filesystem
+options		FDESC		# user file descriptor filesystem
+#options	UMAPFS		# uid/gid remapping filesystem
+#options	NULLFS		# null layer filesystem
+#options	LFS		# Log-based filesystem (still experimental)
+#options	PORTAL		# portal filesystem (still experimental)
+
+# Networking options
+options		INET		# Internet protocols
+options		"TCP_COMPAT_42"	# compatibility with 4.2BSD TCP/IP
+options		GATEWAY		# IP packet forwarding
+#options	MULTICAST	# Multicast support
+#options	MROUTING	# Multicast routing support
+#options	ISO		# OSI networking
+#options	TPIP
+#options	EON
+
+# Options for LUNA hardware
+options		HPFPLIB		# floating point emulation for MC68040
+options		DEBUGPRINT	# extra kernel debugging support for SCSI drivers
+
+config		vmunix swap generic
+
+master		sc0	at scode?
+disk		sd0	at sc0 slave 6
+disk		sd1	at sc0 slave 5
+tape		st0	at sc0 slave 4
+
+device		sio0	at scode? flags 0x0
+device		bmc0	at scode? flags 0x0
+device		le0	at scode?
+
+pseudo-device	sl		 4	# serial-line IP ports
+pseudo-device	pty		64	# pseudo ptys
+pseudo-device	bpfilter	16	# packet filter ports
+pseudo-device	loop
+pseudo-device	ether

@@ -1,0 +1,82 @@
+.\" Copyright (c) 1991 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the Institute of Electrical and Electronics Engineers, Inc.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)wc.1	6.5 (Berkeley) %G%
+.\"
+.Dd 
+.Dt WC 1
+.Os
+.Sh NAME
+.Nm wc
+.Nd word, line, and byte count
+.Sh SYNOPSIS
+.Nm wc
+.Op Fl clw
+.Op Ar file ...
+.Sh DESCRIPTION
+The
+.Nm wc
+utility displays the number of lines, words, and bytes contained in each
+input
+.Ar file
+(or standard input, by default) to the standard output.
+A line is defined as a string of chacters delimited by a <newline> character,
+and a word is defined as a string of characters delimited by white space
+characters.
+White space characters are the set of characters for which the
+.Xr isspace 3
+function returns true.
+If more than one input file is specified, a line of cumulative counts
+for all the files is displayed on a separate line after the output for
+the last file.
+.Pp
+The following options are available:
+.Bl -tag -width Ds
+.It Fl c
+The number of bytes in each input file
+is written to the standard output.
+.It Fl l
+The number of lines in each input file
+is written to the standard output.
+.It Fl w
+The number of words in each input file
+is written to the standard output.
+.El
+.Pp
+When an option is specified,
+.Nm wc
+only reports the information requested by that option.
+The default action is equivalent to specifying all of the flags.
+.Pp
+If no files are specified, the standard input is used and no
+file name is displayed.
+.Pp
+The
+.Nm wc
+utility exits 0 on success, and >0 if an error occurs.
+.Sh SEE ALSO
+.Xr isspace 3
+.Sh COMPATIBILITY
+Historically, the
+.Nm wc
+utility was documented to define a word as a ``maximal string of
+characters delimited by <space>, <tab> or <newline> characters''.
+The implementation, however, didn't handle non-printing characters
+correctly so that ``  ^D^E  '' counted as 6 spaces, while ``foo^D^Ebar''
+counted as 8 characters.
+4BSD systems after 4.3BSD modified the implementation to be consistent
+with the documentation.
+This implementation defines a ``word'' in terms of the
+.Xr isspace 3
+function, as required by
+.St -p1003.2 .
+.Sh STANDARDS
+The
+.Nm wc
+function conforms to
+.St -p1003.2 .

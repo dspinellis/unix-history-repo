@@ -1,0 +1,75 @@
+.\" Copyright (c) 1992 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)cap_mkdb.1	5.4 (Berkeley) %G%
+.\"
+.Dd ""
+.Dt CAP_MKDB 1
+.Os
+.Sh NAME
+.Nm cap_mkdb
+.Nd create capability database
+.Pp
+.Sh SYNOPSIS
+.Nm cap_mkdb
+.Op Fl v
+.Op Fl f Ar outfile
+.Ar file1
+.Op Ar file2 ...
+.Pp
+.Sh DESCRIPTION
+.Nm Cap_mkdb 
+builds a hashed database out of the
+.Xr getcap 3 
+logical database constructed by the concatenation of the specified
+files .
+.Pp
+The database is named by the basename of the first file argument and
+the string
+.Dq .db .  
+The
+.Xr getcap 3
+routines can access the database in this form much more quickly
+than they can the original text file(s).
+.Pp
+The ``tc'' capabilities of the records are expanded before the
+record is stored into the database.
+.Pp
+The options as as follows:
+.Bl -tag -width XXXXXX -indent
+.It Fl f Ar outfile
+Specify a different database basename.
+.It Fl v
+Print out the number of capability records in the database.
+.El
+.Pp
+.Sh FORMAT
+Each record is stored in the database using two different types of keys.
+.Pp
+The first type is a key which consists of the first capability of
+the record (not including the trailing colon (``:'')) with a data
+field consisting of a special byte followed by the rest of the record.
+The special byte is either a 0 or 1, where a 0 means that the record
+is okay, and a 1 means that there was a ``tc'' capability in the record
+that couldn't be expanded.
+.Pp
+The second type is a key which consists of one of the names from the
+first capability of the record with a data field consisting a special
+byte followed by the the first capability of the record.
+The special byte is a 2.
+.Pp
+In normal operation names are looked up in the database, resulting
+in a key/data pair of the second type.
+The data field of this key/data pair is used to look up a key/data
+pair of the first type which has the real data associated with the
+name.
+.Sh RETURN VALUE
+The
+.Nm cap_mkdb 
+utility exits 0 on success and >0 if an error occurs.
+.Sh SEE ALSO
+.Xr dbopen 3 ,
+.Xr getcap 3 ,
+.Xr termcap 5

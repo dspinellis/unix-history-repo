@@ -1,0 +1,83 @@
+.\" Copyright (c) 1980, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)ts.4	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt TS 4 vax
+.Os BSD 4
+.Sh NAME
+.Nm ts
+.Nd
+.Tn TS-11
+magtape interface
+.Sh SYNOPSIS
+.Cd "controller zs0 at uba? csr 0172520 vector tsintr"
+.Cd "tape ts0 at zs0 drive 0"
+.Sh DESCRIPTION
+The
+.Tn TS-11
+combination provides a standard tape drive
+interface as described in
+.Xr mtio 4 .
+The
+.Tn TS-11
+operates only at 1600
+.Tn BPI ,
+and only one transport
+is possible per controller.
+.Sh DIAGNOSTICS
+.Bl -diag
+.It ts%d: no write ring.
+An attempt was made to write on the tape drive
+when no write ring was present; this message is written on the terminal of
+the user who tried to access the tape.
+.Pp
+.It ts%d: not online.
+An attempt was made to access the tape while it
+was offline; this message is written on the terminal of the user
+who tried to access the tape.
+.Pp
+.It ts%d: hard error bn%d xs0=%b.
+A hard error occurred on the tape
+at block
+.Em bn ;
+status register 0 is printed in octal and symbolically
+decoded as bits.
+.El
+.Sh SEE ALSO
+.Xr mt 1 ,
+.Xr tar 1 ,
+.Xr tp 1 ,
+.Xr mtio 4 ,
+.Xr ht 4 ,
+.Xr tm 4 ,
+.Xr mt 4 ,
+.Xr ut 4
+.Sh HISTORY
+The
+.Nm
+driver appeared in
+.Bx 4.1 .
+.Sh BUGS
+May hang ungracefully if a physical error (non-data) occurs.
+.Pp
+The device lives at the same address as a
+.Tn TM-11
+.Pq Xr tm 4 ;
+as it is very difficult to get this device to interrupt, a generic
+system assumes that a
+.Nm ts
+is present whenever no
+.Tn TM-11
+exists but
+the
+.Tn CSR
+responds and a
+.Tn TS-11
+is configured.
+This does no harm as long as a non-existent
+.Tn TS-11
+is not accessed.

@@ -1,0 +1,10 @@
+reading symbolic information ...
+[1] stop at 6
+[1] stopped in program at line 6
+    6       write(output, a);
+'blah                                                                                                ' 
+'xlah                                                                                                ' 
+'xyzzy' 
+xyzzyexecution completed
+'xyzzy' 
+

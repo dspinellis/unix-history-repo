@@ -1,0 +1,49 @@
+.\" Copyright (c) 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)fmod.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt FMOD 3
+.Os
+.Sh NAME
+.Nm fmod
+.Nd floating-point remainder function
+.Sh SYNOPSIS
+.Fd #include <math.h>
+.Ft double
+.Fn fmod "double x" "double y"
+.Sh DESCRIPTION
+The
+.Fn fmod
+function computes the floating-point remainder of
+.Fa x Ns / Fa y .
+.Sh RETURN VALUES
+The
+.Fn fmod
+function returns the value
+.Sm off
+.Fa x - Em i * Fa y ,
+.Sm on
+for some integer
+.Em i
+such that, if
+.Fa y
+is non-zero, the result has the same sign as
+.Fa x
+and magnitude less than the magnitude of
+.Fa y .
+If
+.Fa y
+is zero, whether a domain error occurs or the
+.Fn fmod
+function returns zero is implementation-defined.
+.Sh SEE ALSO
+.Xr math 3
+.Sh STANDARDS
+The
+.Fn fmod
+function conforms to
+.St -ansiC .

@@ -1,0 +1,35 @@
+.\" Copyright (c) 1983, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)getenv.3	8.1 (Berkeley) %G%
+.\"
+.TH GETENV 3F ""
+.UC 5
+.SH NAME
+getenv \- get value of environment variables
+.SH SYNOPSIS
+.B subroutine getenv (ename, evalue)
+.br
+.B character*(*) ename, evalue
+.SH DESCRIPTION
+.I Getenv
+.a
+searches the environment list
+(see
+.IR environ (7))
+for a string of the form
+.IB ename = value
+and returns
+.I value
+in
+.I evalue
+if such a string is present, otherwise fills
+.I evalue
+with blanks.
+.SH FILES
+.ie \nM /usr/ucb/lib/libU77.a
+.el /usr/lib/libU77.a
+.SH "SEE ALSO"
+environ(7), execve(2)

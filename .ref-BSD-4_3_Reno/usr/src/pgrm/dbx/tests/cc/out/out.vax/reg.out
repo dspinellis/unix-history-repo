@@ -1,0 +1,14 @@
+reading symbolic information ...
+[1] stop in put
+[1] stopped in put at line 29
+   29       printf("%d ", i);
+put(i = 0), line 29 in "reg.c"
+main(0x1, 0x7fffebe8, 0x7fffebf0), line 22 in "reg.c"
+0 (x = 3, y = 4) "is a test" 
+[1] stopped in put at line 29
+   29       printf("%d ", i);
+put(i = 1), line 29 in "reg.c"
+main(0x1, 0x7fffebe8, 0x7fffebf0), line 22 in "reg.c"
+0 1 
+execution completed
+

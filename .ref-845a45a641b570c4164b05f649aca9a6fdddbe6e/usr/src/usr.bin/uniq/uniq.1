@@ -1,0 +1,104 @@
+.\" Copyright (c) 1991 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the Institute of Electrical and Electronics Engineers, Inc.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"     @(#)uniq.1	6.5 (Berkeley) %G%
+.\"
+.Dd 
+.Dt UNIQ 1
+.Os
+.Sh NAME
+.Nm uniq
+.Nd report or filter out repeated lines in a file
+.Sh SYNOPSIS
+.Nm uniq
+.Op Fl c | Fl d | Fl u
+.Op Fl f Ar fields
+.Op Fl s Ar chars
+.Oo
+.Ar input_file
+.Op Ar output_file
+.Oc
+.Sh DESCRIPTION
+The
+.Nm uniq
+utility reads the standard input comparing adjacent lines, and writes
+a copy of each unique input line to the standard output.
+The second and succeeding copies of identical adjacent input lines are
+not written.
+Repeated lines in the input will not be detected if they are not adjacent,
+so it may be necessary to sort the files first.
+.Pp
+The following options are available:
+.Bl -tag -width Ds
+.It Fl c
+Precede each output line with the count of the number of times the line
+occurred in the input, followed by a single space.
+.It Fl d
+Don't output lines that are not repeated in the input.
+.It Fl f Ar fields
+Ignore the first
+.Ar fields
+in each input line when doing comparisons.
+A field is a string of non-blank characters separated from adjacent fields
+by blanks.
+Field numbers are one based, i.e. the first field is field one.
+.It Fl s Ar chars
+Ignore the first
+.Ar chars
+characters in each input line when doing comparisons.
+If specified in conjunction with the
+.Fl f
+option, the first
+.Ar chars
+characters after the first
+.Ar fields
+fields will be ignored.
+Character numbers are one based, i.e. the first character is character one.
+.It Fl u
+Don't output lines that are repeated in the input.
+.\".It Fl Ns Ar n
+.\"(Deprecated; replaced by
+.\".Fl f ) .
+.\"Ignore the first n
+.\"fields on each input line when doing comparisons,
+.\"where n is a number.
+.\"A field is a string of non-blank
+.\"characters separated from adjacent fields
+.\"by blanks.
+.\".It Cm \&\(pl Ns Ar n
+.\"(Deprecated; replaced by
+.\".Fl s ) .
+.\"Ignore the first
+.\".Ar m
+.\"characters when doing comparisons, where
+.\".Ar m
+.\"is a
+.\"number.
+.El
+.Pp
+If additional arguments are specified on the command line, the first
+such argument is used as the name of an input file, the second is used
+as the name of an output file.
+.Pp
+The
+.Nm uniq
+utility exits 0 on success, and >0 if an error occurs.
+.Sh COMPATIBILITY
+The historic
+.Cm \&\(pl Ns Ar number
+and
+.Fl Ns Ar number
+options have been deprecated but are still supported in this implementation.
+.Sh SEE ALSO
+.Xr sort 1
+.Sh STANDARDS
+The
+.Nm uniq
+utility is expected to be
+.St -p1003.2
+compatible.

@@ -1,0 +1,271 @@
+.\" Copyright (c) 1985 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)refer.1	6.7 (Berkeley) %G%
+.\"
+.Dd 
+.Dt REFER 1
+.Os ATT 7th
+.Sh NAME
+.Nm refer
+.Nd find and insert literature references in documents
+.Sh SYNOPSIS
+.Nm refer
+.Op Fl a
+.Op Fl b
+.Op Fl c
+.Op Fl e
+.Op Fl f Ns Ar n
+.Op Fl k Ns Ar x
+.Op Fl l Ns Ar m,n
+.Op Fl n
+.Op Fl p Ar bib
+.Op Fl s Ns Ar keys
+.Op Fl B Ns Ar l.m
+.Op Fl P
+.Op Fl S
+.Op Ar
+.Sh DESCRIPTION
+.Nm Refer
+is a preprocessor for
+.Xr nroff 1
+or
+.Xr troff  1
+that finds and formats references for footnotes or endnotes.
+It is also the base for a series of programs designed to
+index, search, sort, and print stand-alone bibliographies,
+or other data entered in the appropriate form.
+.Pp
+Given an incomplete citation with sufficiently precise keywords,
+.Nm refer
+will search a bibliographic database for references
+containing these keywords anywhere in the title, author, journal, etc.
+The input file (or standard input)
+is copied to standard output,
+except for lines between
+.Ql \&.[
+and
+.Ql \&.]
+delimiters,
+which are assumed to contain keywords,
+and are replaced by information from the bibliographic database.
+The user may also search different databases,
+override particular fields, or add new fields.
+The reference data, from whatever source, are assigned to a set of
+.Xr troff 1
+strings.
+Macro packages such as
+.Xr ms  7
+print the finished reference text from these strings.
+By default references are flagged by footnote numbers.
+.Pp
+The following options are available:
+.Bl -tag -width flag
+.It Fl a Ns Ar n 
+Reverse the first
+.Ar n
+author names (Jones, J. A. instead of J. A. Jones).
+If
+.Ar n
+is omitted all author names are reversed.
+.It Fl b
+Bare mode: do not put any flags in text (neither numbers nor labels).
+.It Fl c Ns Ar keys 
+Capitalize (with C\s-2APS\s+2 S\s-2MALL\s+2 C\s-2APS\s+2)
+the fields whose key-letters are in
+.Ar keys  .
+.It Fl e
+Instead of leaving the references where encountered,
+accumulate them until a sequence of the form
+.Bd -literal -offset indent -compact
+\&.[
+$LIST$
+\&.]
+.Ed
+is encountered, and then write out all references collected so far.
+Collapse references to same source.
+.It Fl f Ns Ar n 
+Set the footnote number to
+.Ar n
+instead of the default of 1 (one).
+With labels rather than numbers,
+this flag is a no-op.
+.It Fl k Ns Ar x 
+Instead of numbering references, use labels as specified in a
+reference data line beginning
+.Ar \&%x ;
+by default
+.Ar x
+is
+.Cm L .
+.It Fl l Ns Ar m,n 
+Instead of numbering references, use labels made from
+the senior author's last name and the year of publication.
+Only the first
+.Ar m
+letters of the last name
+and the last
+.Ar n
+digits of the date are used.
+If either
+.Ar m
+or
+.Ar n
+is omitted the entire name or date respectively is used.
+.It Fl n
+Do not search the default file
+.Pa /var/db/Ind .
+If there is a
+.Ev REFER
+environment variable,
+the specified file will be searched instead of the default file;
+in this case the
+.Fl n
+flag has no effect.
+.It Fl p Ns Ar bib 
+Take the next argument
+.Ar bib
+as a file of references to be searched.
+The default file is searched last.
+.It Fl s Ns Ar keys 
+Sort references by fields whose key-letters are in the
+.Ar keys
+string;
+permute reference numbers in text accordingly.
+Implies
+.Fl e  .
+The key-letters in
+.Ar keys
+may be followed by a number to indicate how many such fields
+are used, with
+.Cm +
+taken as a very large number.
+The default is
+.Cm AD
+which sorts on the senior author and then date; to sort, for example,
+on all authors and then title, use
+.Fl sA+T .
+.It Fl B Ns Ar l.m 
+Bibliography mode.
+Take a file composed of records separated by blank lines,
+and turn them into
+.Xr troff 1
+input.
+Label
+.Ar \&l
+will be turned into the macro
+.Ar \&.m
+with
+.Ar \&l
+defaulting to
+.Cm \&%X
+and
+.Cm \&.m
+defaulting to
+.Cm \&.AP
+(annotation paragraph).
+.It Fl P
+Place punctuation marks
+.Ql ".,:;?!" after the reference signal,
+rather than before.
+(Periods and commas used to be done with strings.)
+.It Fl S
+Produce references in the Natural or Social Science format.
+.El
+.Pp
+To use your own references,
+put them in the format described below.
+They can be searched more rapidly by running
+.Xr indxbib 1
+on them before using
+.Nm refer ;
+failure to index results in a linear search.
+When
+.Nm refer
+is used with the
+.Xr eqn 1 ,
+.Xr neqn 1
+or
+.Xr tbl 1
+preprocessors
+.Nm refer
+should be first, to minimize the volume
+of data passed through pipes.
+.Pp
+The
+.Nm refer
+preprocessor and associated programs
+expect input from a file of references
+composed of records separated by blank lines.
+A record is a set of lines (fields),
+each containing one kind of information.
+Fields start on a line beginning with a
+.Ql % ,
+followed by a key-letter, then a blank,
+and finally the contents of the field,
+and continue until the next line starting with
+.Ql % .
+The output ordering and formatting of fields
+is controlled by the macros specified for
+.Xr nroff 1
+or
+.Xr troff 1
+(for footnotes and endnotes) or
+.Xr roffbib 1
+(for stand-alone bibliographies).
+For a list of the most common key-letters
+and their corresponding fields, see
+.Xr addbib  1  .
+An example of a
+.Nm refer
+entry is given below.
+.Sh ENVIRONMENT
+The following environment variable is used by
+.Nm refer
+if it exists.
+.Bl -tag -width Fl
+.It Ev REFER
+Specify an alternate default search file for publication lists.
+.El
+.Sh EXAMPLES
+.Bd -literal -offset indent
+%A	M. E. Lesk
+%T	Some Applications of Inverted Indexes on the UNIX System
+%B	UNIX Programmer's Manual
+%V	2b
+%I	Bell Laboratories
+%C	Murray Hill, NJ
+%D	1978
+.Ed
+.Sh FILES
+.Bl -tag -width /usr/share/dict/papers -compact
+.It Pa /usr/share/dict/papers
+Directory of default publication lists.
+.It Pa /var/db/Ind
+Default search file (for
+.Em hunt
+phase).
+.It Pa /usr/share/dict/eign
+Contains common words.
+.It Pa /usr/libexec
+Directory where companion programs reside.
+.El
+.Sh SEE ALSO
+.Xr addbib 1 ,
+.Xr sortbib 1 ,
+.Xr roffbib 1 ,
+.Xr indxbib 1 ,
+.Xr lookbib 1
+.Sh HISTORY
+The
+.Nm Refer
+command appeared in
+.At v7 .
+.Sh AUTHOR
+.An Mike Lesk
+.Sh BUGS
+Blank spaces at the end of lines in bibliography fields
+will cause the records to sort and reverse incorrectly.
+Sorting large numbers of references causes a core dump.

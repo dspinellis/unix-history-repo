@@ -1,0 +1,82 @@
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)strsep.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt STRSEP 3
+.Os
+.Sh NAME
+.Nm strsep
+.Nd separate strings
+.Sh SYNOPSIS
+.Fd #include <string.h>
+.Ft char *
+.Fn strsep "char **stringp" "char *delim"
+.Sh DESCRIPTION
+The
+.Fn strsep
+function locates, in the string referenced by
+.Fa *stringp ,
+the first occurrence of any character in the string
+.Fa delim
+(or the terminating
+.Ql \e0
+character) and replaces it with a
+.Ql \e0 .
+The location of the next character after the delimiter character
+(or NULL, if the end of the string was reached) is stored in
+.Fa *stringp .
+The original value of
+.Fa *stringp
+is returned.
+.Pp
+An ``empty'' field, i.e. one caused by two adjacent delimiter characters,
+can be detected by comparing the location referenced by the pointer returned
+in
+.Fa *stringp
+to
+.Ql \e0 .
+.Pp
+If
+.Fa *stringp
+is initially
+.Dv NULL ,
+.Fn strsep
+returns
+.Dv NULL .
+.Sh EXAMPLES
+The following uses
+.Fn strsep
+to parse a string, containing tokens delimited by white space, into an
+argument vector:
+.Bd -literal -offset indent
+char **ap, *argv[10], *inputstring;
+
+for (ap = argv; (*ap = strsep(&inputstring, " \et")) != NULL;)
+	if (**ap != '\e0')
+		++ap;
+.Ed
+.Sh HISTORY
+The
+.Fn strsep
+function
+is intended as a replacement for the
+.Fn strtok
+function.
+While the
+.Fn strtok
+function should be preferred for portability reasons (it conforms to
+.St -ansiC )
+it is unable to handle empty fields, i.e. detect fields delimited by
+two adjacent delimiter characters, or to be used for more than a single
+string at a time.
+The
+.Fn strsep
+function is
+.Ud .

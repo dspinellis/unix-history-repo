@@ -1,0 +1,10 @@
+PATH=/bin:/usr/bin:/usr/ucb
+rmail
+rnews
+ruusend
+bnproc
+# These next programs are security holes, but people like them
+ipr
+lpr
+who
+uusend

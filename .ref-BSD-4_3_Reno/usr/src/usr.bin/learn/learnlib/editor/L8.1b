@@ -1,0 +1,18 @@
+#print
+You can also use "-" in addresses.  For example,
+the line before the current line is line ".-1"
+and can be printed with ".-1p" or even just ".-1".
+How would you print the line two lines before the current
+line?  Type "answer COMMAND" where COMMAND is
+the command you would type to print that line.
+#copyin
+#user
+#uncopyin
+#match .-2p
+#match .-2
+#match -2
+#match --
+#log
+#next
+9.1a 10
+9.2a 5

@@ -1,0 +1,44 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)strncmp.3	5.1 (Berkeley) %G%
+.\"
+.TH STRNCMP 3 ""
+.UC 4
+.SH NAME
+strncmp \- compare strings of limited length
+.SH SYNOPSIS
+.nf
+.ft B
+#include <string.h>
+
+int
+strcmp(const char *s1, const char *s2, size_t len);
+.ft R
+.fi
+.SH DESCRIPTION
+.B Strncmp
+compares at most
+.I len
+characters in the null-terminated strings
+.I s1
+and
+.I s2
+and returns an integer greater than, equal to, or less than 0,
+according as
+.I s1
+is lexicographically greater than, equal to, or less than
+.IR s2 .
+The comparison is done using unsigned characters, so that '\e200'
+is greater than '\e0'.
+.SH SEE ALSO
+bcmp(3), memcmp(3), strcasecmp(3), strcmp(3), strcoll(3), strncasecmp(3),
+strxfrm(3)
+.SH STANDARDS
+.B Strncmp
+conforms to ANSI X3.159-1989 (``ANSI C'').

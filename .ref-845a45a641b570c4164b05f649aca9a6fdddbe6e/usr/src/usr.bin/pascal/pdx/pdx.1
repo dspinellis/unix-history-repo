@@ -1,0 +1,464 @@
+.\" Copyright (c) 1983, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)pdx.1	6.4 (Berkeley) %G%
+.\"
+.Dd 
+.Dt PDX 1
+.Os BSD 4.2
+.Sh NAME
+.Nm pdx
+.Nd pascal debugger
+.Sh SYNOPSIS
+.Nm pdx
+.Op Fl r
+.Op Ar objfile
+.Sh DESCRIPTION
+.Nm Pdx
+is a tool for source level debugging and execution of
+Pascal programs.
+The
+.Ar objfile
+is an object file produced by the Pascal translator
+.Xr pi 1 .
+If no
+.Ar objfile
+is specified,
+.Nm pdx
+looks
+for a file named ``obj'' in the current directory.
+The object file contains a symbol table which includes the name of the
+all the source files translated by
+.Xr pi 1
+to create it.
+These files are available for perusal while using the debugger.
+.Pp
+If the file
+.Dq Pa .pdxinit
+exists in the current directory, then the
+debugger commands in it are executed.
+.Pp
+.Bl -tag -width flag r
+.It Fl r
+The
+.Fl r
+option causes the
+.Ar objfile
+to be executed immediately;
+if it terminates successfully
+.Nm pdx
+exits.
+Otherwise it reports the reason for termination
+and offers the user the option of entering the debugger
+or simply letting
+.Xr px
+continue with a traceback.
+If
+.Fl r
+is not specified,
+.Nm pdx
+just prompts and waits for a command.
+.El
+.Pp
+The commands are:
+.Pp
+.Bl -tag -width flag -compact
+.It Xo
+.Ic run
+.Op Ar args
+.Op Ic \&< Ar filename
+.Op Ic \&> Ar filename
+.Xc
+Start executing
+.Ar objfile  ,
+passing
+.Ar args
+as command line arguments;
+.Ic \&<
+or
+.Ic \&>
+can be used to redirect input or output in the usual manner.
+.Pp
+.It Xo
+.Ic trace
+.Op Ic in Ar procedure/function
+.Op Ic if Ar condition 
+.Xc
+.It Xo
+.Ic trace
+.Ar source-line-number
+.Op Ic if Ar condition
+.Xc
+.It Xo
+.Ic trace
+.Ar procedure/function
+.Op Ic in Ar procedure/function
+.Op Ic if Ar condition 
+.Xc
+.It Xo
+.Ic trace
+.Ar expression Ic at Ar source-line-number
+.Op Ic if Ar condition 
+.Xc
+.It Xo
+.Ic trace
+.Ar variable
+.Op Ic in Ar procedure/function
+.Op Ic if Ar condition 
+.Xc
+Have tracing information printed when the program is executed.
+A number is associated with the command that is used
+to turn the tracing off (see the
+.Ic delete
+command).
+.Pp
+The first argument describes what is to be traced.
+If it is a
+.Ar source-line-number  ,
+then the line is printed
+immediately prior to being executed.
+Source line numbers in a file other than the current one
+must be preceded by the name of the file and a colon, e.g.
+``mumble.p:17''.
+.Pp
+If the argument is a procedure or function name then
+every time it is called, information is printed telling
+what routine called it, from what source line it was called,
+and what parameters were passed to it.
+In addition, its return is noted, and if it's a function
+then the value it is returning is also printed.
+.Pp
+If the argument is an
+.Ar expression
+with an
+.Ic at
+clause
+then the value of the expression is printed whenever the
+identified source line is reached.
+.Pp
+If the argument is a variable then the name and value of the variable
+is printed whenever it changes.
+Execution is substantially slower during this form of tracing.
+.Pp
+If no argument is specified then all source lines are printed
+before they are executed.
+Execution is substantially slower during this form of tracing.
+.Pp
+The clause
+.Dq Ic in Ar procedure/function 
+restricts tracing information
+to be printed only while executing inside the given procedure
+or function.
+.Pp
+.Ar Condition
+is a Pascal boolean expression and is
+evaluated prior to printing the tracing information;
+if it is false then the information is not printed.
+.Pp
+There is no restriction on the amount of information
+that can be traced.
+.Pp
+.ne 10
+.It Ic stop if Ar condition 
+.It Xo
+.Ic stop at Ar source-line-number
+.Op Ic if Ar condition 
+.Xc
+.It Xo
+.Ic stop in Ar procedure/function
+.Op Ic if Ar condition 
+.Xc
+.It Xo
+.Ic stop Ar variable
+.Op Ic if Ar condition 
+.Xc
+Stop execution when the given line is reached, procedure or function
+called, variable changed, or condition true.
+.Pp
+.It Ic delete Ar command-number 
+The trace or stop corresponding to the given number is removed.
+The numbers associated with traces and stops are printed by
+the
+.Ic status
+command.
+.Pp
+.It Ic status Op Ic \&> Ar filename 
+Print out
+the currently active
+.Ic trace
+and
+.Ic stop
+commands.
+.Pp
+.It Ic cont
+Continue execution from where it stopped.
+This can only be
+done when the program was stopped by an interrupt
+or through use of the
+.Ic stop
+command.
+.Pp
+.It Ic step
+Execute one source line.
+.Pp
+.It Ic next
+Execute up to the next source line.
+The difference between this and
+.Ic step
+is that
+if the line contains a call to a procedure or function
+the
+.Ic step
+command will stop at the beginning of that
+block, while the
+.Ic next
+command will not.
+.Pp
+.It Xo
+.Ic print Ar expression
+.Op Ic \&, Ar expression ... 
+.Xc
+Print out the values of the Pascal expressions.
+Variables declared in an outer block but having
+the same identifier as one in the current block may be
+referenced as
+.Dq Ar block-name \&. variable
+.Pp
+.It Ic whatis Ar identifier 
+Print the declaration of the given identifier.
+.Pp
+.It Ic which Ar identifier 
+Print the full qualification of the given identifer, i.e.
+the outer blocks that the identifier is associated with.
+.Pp
+.It Ic assign Ar variable Ar expression 
+Assign the value of the expression to the variable.
+.Pp
+.It Ic call Ar procedure Ns (parameters) 
+Execute the object code associated with the named procedure or function.
+.Pp
+.It Ic help
+Print out a synopsis of
+.Nm pdx
+commands.
+.Pp
+.It Ic gripe
+Invokes a mail program to send a message to the person in charge of
+.Nm pdx  .
+.Pp
+.It Ic where
+Print out
+a list of the active procedures and functions and the respective source
+line where they are called.
+.Pp
+.It Ic source Ar filename 
+Read
+.Nm pdx
+commands from the given
+.Ar filename  .
+Especially useful when the
+.Ar filename
+has been created by redirecting
+a
+.Ic status
+command from an earlier debugging session.
+.Pp
+.It Ic dump Op Ic \&> Ar filename 
+Print the names and values of all active
+data.
+.Pp
+.It Xo
+.Ic list
+.Oo Ar source-line-number
+.Op \&, Ar source-line-number Oc
+.Xc
+.It Ic list Ar procedure/function 
+List the lines in the current source file from the first line number to
+the second inclusive.
+As in the editor
+``$'' can be used to refer to the last line.
+If no lines are specified, the entire file is listed.
+If the name of a procedure or function is given
+lines
+.Ar n-k
+to
+.Ar n+k
+are listed where
+.Ar n
+is the first statement
+in the procedure or function and
+.Ar k
+is small.
+.Pp
+.It Ic file Op Ar filename 
+Change the current source file name to
+.Ar filename  .
+If none is specified then the current source file name is printed.
+.Pp
+.It Ic edit Op Ar filename 
+.It Ic edit Ar procedure Ns / Ns Ar function-name 
+Invoke an editor on
+.Ar filename
+or the current source file if none
+is specified.
+If a
+.Ar procedure
+or
+.Ar function
+name is specified,
+the editor is invoked on the file that contains it.
+Which editor is invoked by default depends on the installation.
+The default can be overridden by setting the environment variable
+.Ev EDITOR
+to the name of the desired editor.
+.Pp
+.It Ic pi
+Recompile the program and read in the new symbol table information.
+.Pp
+.It Ic sh Ar command-line 
+Pass the command line to the shell for execution.
+The SHELL environment variable determines which shell is used.
+.Pp
+.It Ic alias Ar new-command-name Ar old-command-name 
+This command makes
+.Nm pdx
+respond to
+.Ar new-command-name
+the way it used to respond to
+.Ar old-command-name  .
+.Pp
+.It Ic quit
+Exit
+.Nm pdx  .
+.El
+.Pp
+The following commands deal with the program at the
+.Ar px
+instruction
+level rather than source level.
+They are not intended for general use.
+.Pp
+.Bl -tag -width Fl -compact
+.It Xo
+.Ic tracei
+.Op Ar address
+.Op Ic if Ar cond 
+.Xc
+.It Xo
+.Ic tracei
+.Op Ar variable
+.Op Ic at Ar address
+.Op Ic if Ar cond 
+.Xc
+.It Xo
+.Ic stopi
+.Op Ar address
+.Op Ic if Ar cond 
+.Xc
+.It Xo
+.Ic stopi
+.Op Ic at
+.Op Ar address
+.Op Ic if Ar cond 
+.Xc
+Turn on tracing or set a stop using a
+.Ic px
+machine
+instruction addresses.
+.Pp
+.It Xo
+.Ic xi Ar address
+.Op Ic \&, Ar address 
+.Xc
+Print the instructions starting at the first
+.Ar address  .
+Instructions up to
+the second
+.Ar address
+are printed.
+.Pp
+.It Xo
+.Ic xd Ar address
+.Op Ic \&, Ar address 
+.Xc
+Print in octal the specified data location(s).
+.El
+.Sh ENVIRONMENT
+.Bl -tag -width Ar
+.It Ev EDITOR
+The
+.Ic edit
+function uses the
+.Ev EDITOR
+environment variable to see what editor to use.
+.It Ev SHELL
+The function
+.Ic sh
+checks the
+.Ev SHELL
+variable to see which shell to
+execute.
+.El
+.Sh FILES
+.Bl -tag -width .pdxinit -compact
+.It Pa obj
+Pascal object file
+.It Pa .pdxinit
+.Nm Pdx
+initialization file
+.El
+.Sh SEE ALSO
+.Xr pi 1 ,
+.Xr px 1
+.Rs
+.%T "An Introduction to Pdx"
+.Re
+.Sh HISTORY
+.Nm Pdx
+appeared in
+.Bx 4.2 .
+.Sh BUGS
+.Nm Pdx
+does not understand sets,
+and provides no information about files.
+.Pp
+The
+.Ic whatis
+command doesn't quite work for variant records.
+.Pp
+Bad things will happen if a procedure invoked with
+the
+.Ic call
+command does a non-local goto.
+.Pp
+The commands
+.Ic step
+and
+.Ic next
+should be able to take a
+.Ar count
+that specifies how many lines to execute.
+.Pp
+There should be commands
+.Ic stepi
+and
+.Ic nexti
+that correspond
+to
+.Ic step
+and
+.Ic next
+but work at the instruction level.
+.Pp
+There should be a way to get an address associated with
+a line number, procedure or function, and variable.
+.Pp
+Most of the command names are too long.
+.Pp
+The alias facility is quite weak.
+.Pp
+A
+.Xr csh 1 Ns \-like
+history capability would improve the situation.

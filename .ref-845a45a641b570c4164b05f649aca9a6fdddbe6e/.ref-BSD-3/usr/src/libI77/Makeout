@@ -1,0 +1,40 @@
+cc -O -c lio.c
+"lio.c", line 129: warning: illegal pointer combination
+ar ru libI77.a lio.o
+rm lio.o
+> lio.x
+cc -O -c lread.c
+ar ru libI77.a lread.o
+rm lread.o
+> lread.x
+cc -O -c open.c
+ar ru libI77.a open.o
+rm open.o
+> open.x
+cc -O -c close.c
+ar ru libI77.a close.o
+rm close.o
+> close.x
+cc -O -c util.c
+"util.c", line 68: warning: illegal combination of pointer and integer
+ar ru libI77.a util.o
+rm util.o
+> util.x
+cc -O -c endfile.c
+ar ru libI77.a endfile.o
+rm endfile.o
+> endfile.x
+cc -O -c wrtfmt.c
+"wrtfmt.c", line 73: warning: illegal combination of pointer and integer
+"wrtfmt.c", line 93: warning: illegal combination of pointer and integer
+ar ru libI77.a wrtfmt.o
+rm wrtfmt.o
+> wrtfmt.x
+cc -O -c err.c
+ar ru libI77.a err.o
+rm err.o
+> err.x
+cc -O -c fmtlib.c
+ar ru libI77.a fmtlib.o
+rm fmtlib.o
+> fmtlib.x

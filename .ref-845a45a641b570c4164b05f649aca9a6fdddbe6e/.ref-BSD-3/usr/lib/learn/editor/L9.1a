@@ -1,0 +1,34 @@
+#print
+Printing only one line at a time gets pretty
+slow.  You can print several lines with
+commands like
+  1,3p
+which prints lines 1, 2 and 3.
+Again, I'll put you into the editor
+with the familiar file.  Print lines
+2 through 5 of it; then type w, q and ready.
+#create Ref
+john adams
+thomas jefferson
+james madison
+james monroe
+91
+#create file
+george washington
+john adams
+thomas jefferson
+james madison
+james monroe
+john quincy adams
+#copyout
+#pipe
+ed file
+#user
+#unpipe
+#uncopyout
+tail -5 .ocopy >X1
+#cmp X1 Ref
+#log
+#next
+10.1a 10
+9.2e 5

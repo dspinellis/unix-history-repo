@@ -1,0 +1,38 @@
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)strdup.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt STRDUP 3
+.Os
+.Sh NAME
+.Nm strdup
+.Nd save a copy of a string
+.Sh SYNOPSIS
+.Fd #include <string.h>
+.Ft char *
+.Fn strdup "const char *str"
+.Sh DESCRIPTION
+The
+.Fn strdup
+function
+allocates sufficient memory for a copy
+of the string
+.Fa str ,
+does the copy, and returns a pointer to it.
+The pointer may subsequently be used as an
+argument to the function
+.Xr free 3 .
+.Pp
+If insufficient memory is available, NULL is returned.
+.Sh SEE ALSO
+.Xr malloc 3
+.Xr free 3
+.Sh HISTORY
+The
+.Fn strdup
+function
+.Ud .

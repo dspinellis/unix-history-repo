@@ -1,0 +1,27 @@
+.nr _0 \n(c.
+.\" Copyright (c) 1988, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)deltext.me	8.1 (Berkeley) %G%
+.\"
+.\"	%beginstrip%
+.\"
+.de (d			\" *** begin delayed text
+.am |d )d
+.sp \\n(bsu
+..
+.de )d			\" *** end delayed text
+.if \\n# \
+.	nr $d +1
+.ds # [\\n($d]\k#
+.rr #
+..
+.de pd			\" *** print delayed text
+.|d
+.rm |d
+.nr $d 1 1
+.ds # [1]\k#
+..
+.nr c. \n(_0

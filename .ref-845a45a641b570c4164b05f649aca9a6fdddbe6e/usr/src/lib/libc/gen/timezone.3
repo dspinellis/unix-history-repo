@@ -1,0 +1,41 @@
+.\" Copyright (c) 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)timezone.3	8.1 (Berkeley) %G%
+.\"
+.Dd ""
+.Dt TIMEZONE 3
+.Os
+.Sh NAME
+.Nm timezone
+.Nd return the timezone abbreviation
+.Sh SYNOPSIS
+.Ft char *
+.Fn timezone "int zone" "int dst"
+.Sh DESCRIPTION
+.ft B
+This interface is for compatibility only; it is impossible to reliably
+map timezone's arguments to a time zone abbreviation.
+See ctime(3).
+.ft P
+.Pp
+The
+.Fn timezone
+function returns a pointer to a time zone abbreviation for the specifed
+.Ar zone
+and
+.Ar dst
+values.
+.Ar Zone
+is the number of minutes west of GMT and
+.Ar dst
+is non-zero if daylight savings time is in effect.
+.Sh SEE ALSO
+.Xr ctime 3
+.Sh HISTORY
+A
+.Fn timezone
+function appeared in
+.At v7 .

@@ -1,0 +1,42 @@
+#	@(#)PIT	7.3 (Berkeley) %G%
+#
+
+machine		"luna68k"
+cpu		"LUNA1"
+cpu		"LUNA2"
+ident		PIT
+
+timezone	5
+maxusers	16
+
+# Standard options
+options		QUOTA
+options		INET
+options		FFS,MFS,NFS,LFS,FIFO
+options		LOFS,KERNFS,FDESC,PORTAL,NULLFS,UMAPFS
+options		"COMPAT_43"
+options		"TCP_COMPAT_42"
+options		SWAPPAGER,VNODEPAGER,DEVPAGER
+
+options		DEBUG
+options		DIAGNOSTIC
+options		DEBUGPRINT
+options		HPFPLIB		# floating point emulation for MC68040
+
+config		vmunix root on sd0 swap on sd0b and sd1b
+
+master		sc0	at scode?
+disk		sd0	at sc? slave 6
+disk		sd1	at sc? slave 5
+tape		st0	at sc? slave 4
+
+device		le0	at scode?
+device		sio0	at scode? flags 0x0
+device		bmc0	at scode? flags 0x0
+
+pseudo-device	sl	4
+pseudo-device	bpfilter 16
+pseudo-device	ite
+pseudo-device	pty
+pseudo-device	loop
+pseudo-device	ether

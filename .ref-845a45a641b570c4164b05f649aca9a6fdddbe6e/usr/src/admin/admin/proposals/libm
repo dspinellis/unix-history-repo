@@ -1,0 +1,30 @@
+.\"	@(#)libm	5.1 (Berkeley) %G%
+.\" use -me
+.\"
+.lh
+.sz 14
+.nr pp 14
+.ti 4i
+June 5, 1992
+.sp 2
+.lp
+The U.C. Berkeley Computer Systems Research Group (CSRG) is looking
+for someone to work on the mathematical portions of the 4BSD system.
+Specifically, the following items are needed:
+.sp 2
+.ip
+A replacement implementation of the log gamma (lgamma) function
+for the math library.
+.ip
+Replacement implementations of the Bessel functions (j0, j1, jn, y0,
+y1 and yn) for the math library.
+.ip
+Replacement implementations of the error and complementary error functions
+(erf and erfc) for the math library.
+.ip
+Selection and integration of binary-to-decimal and decimal-to-binary
+conversion functions into the C library.
+.sp 2
+.lp
+For further information, contact Keith Bostic (bostic@cs.berkeley.edu,
+510-642-8524).

@@ -1,0 +1,80 @@
+.\" Copyright (c) 1990, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek and the American National Standards Committee X3,
+.\" on Information Processing Systems.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)fread.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt FREAD 3
+.Os
+.Sh NAME
+.Nm fread ,
+.Nm fwrite
+.Nd binary stream input/output
+.Sh SYNOPSIS
+.Fd #include <stdio.h>
+.Ft int
+.Fn fread "void *ptr" "size_t size" "size_t nmemb" "FILE *stream"
+.Ft int
+.Fn fwrite "void *ptr" "size_t size" "size_t nmemb" "FILE *stream"
+.Sh DESCRIPTION
+The function
+.Fn fread
+reads
+.Fa nmemb
+objects, each
+.Xr size
+bytes long, from the stream pointed to by
+.Fa stream ,
+storing them at the location given by
+.Fa ptr .
+.Pp
+The function
+.Fn fwrite
+writes
+.Fa nmemb
+objects, each
+.Fa size
+bytes long, to the stream pointed to by
+.Fa stream ,
+obtaining them from the location given by
+.Fa ptr .
+.Sh RETURN VALUES
+The functions
+.Fn fread
+and
+.Fn fwrite
+advance the file position indicator for the stream
+by the number of bytes read or written.
+They return the number of objects read or written.
+If an error occurs, or the end-of-file is reached,
+the return value is a short object count (or zero).
+.Pp
+The function
+.Fn fread
+does not distinguish between end-of-file and error, and callers
+must use
+.Xr feof 3
+and
+.Xr ferror 3
+to determine which occurred.
+The function
+.Fn fwrite
+returns a value less than
+.Fa nmemb
+only if a write error has occurred.
+.Sh SEE ALSO
+.Xr read 2 ,
+.Xr write 2
+.Sh STANDARDS
+The functions
+.Fn fread
+and
+.Fn fwrite
+conform to
+.St -ansiC .

@@ -1,0 +1,125 @@
+.\" Copyright (c) 1990, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek and the American National Standards Committee X3,
+.\" on Information Processing Systems.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)fgets.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt FGETS 3
+.Os
+.Sh NAME
+.Nm fgets ,
+.Nm gets
+.Nd get a line from a stream
+.Sh SYNOPSIS
+.Fd #include <stdio.h>
+.Ft char *
+.Fn fgets "char *str" "size_t size" "FILE *stream"
+.Ft char *
+.Fn gets "char *str"
+.Sh DESCRIPTION
+The
+.Fn fgets
+function
+reads at most one less than the number of characters specified by
+.Xr size
+from the given
+.Fa stream
+and stores them in the string
+.Fa str .
+Reading stops when a newline character is found,
+at end-of-file or error.
+The newline, if any, is retained.
+In any case a
+.Ql \e0
+character is appended to end the string.
+.Pp
+The
+.Fn gets
+function
+is equivalent to
+.Fn fgets
+with an infinite
+.Xr size
+and a
+.Fa stream
+of
+.Em stdin ,
+except that the newline character (if any) is not stored in the string.
+It is the caller's responsibility to ensure that the input line,
+if any, is sufficiently short to fit in the string.
+.Sh RETURN VALUES
+.Pp
+Upon successful completion,
+.Fn fgets
+and 
+.Fn gets
+return
+a pointer to the string.
+If end-of-file or an error occurs before any characters are read, 
+they return
+.Dv NULL.
+The
+.Fn fgets
+and
+functions
+.Fn gets
+do not distinguish between end-of-file and error, and callers must use
+.Xr feof 3
+and
+.Xr ferror 3
+to determine which occurred.
+.Sh ERRORS
+.Bl -tag -width [EBADF]
+.It Bq Er EBADF
+The given
+.Fa stream
+is not a readable stream.
+.El
+.Pp
+The function
+.Fn fgets
+may also fail and set
+.Va errno
+for any of the errors specified for the routines
+.Xr fflush 3 ,
+.Xr fstat 2 ,
+.Xr read 2 ,
+or
+.Xr malloc 3 .
+.Pp
+The function
+.Fn gets
+may also fail and set
+.Va errno
+for any of the errors specified for the routine
+.Xr getchar 3 .
+.Sh SEE ALSO
+.Xr feof 3 ,
+.Xr ferror 3 ,
+.Xr fgetline 3
+.Sh STANDARDS
+The functions
+.Fn fgets
+and
+.Fn gets
+conform to
+.St -ansiC .
+.Sh BUGS
+Since it is usually impossible to ensure that the next input line
+is less than some arbitrary length, and because overflowing the
+input buffer is almost invariably a security violation, programs
+should
+.Em NEVER
+use
+.Fn gets .
+The
+.Fn gets
+function
+exists purely to conform to
+.St -ansiC .

@@ -1,0 +1,58 @@
+.\" Copyright (c) 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)xneko.6	8.1 (Berkeley) %G%
+.\"
+.TH XNEKO 6 ""
+.SH NAME
+xneko \- cat-and-mouse chase in an X window
+.SH SYNOPSIS
+xneko [
+.B -display
+.I display
+] [
+.B -geometry
+.I geometry
+] [
+.B -title
+.I title
+] [
+.B -name
+.I name
+] [
+.B -iconic
+] [
+.B -speed
+.I speed
+] [
+.B -time
+.I time
+] [
+.B -help
+]
+.SH DESCRIPTION
+.I Xneko
+displays a window in which a cat chases your ``mouse'' cursor.
+.PP
+All options except the last three above behave in the standard manner
+for X applications (see
+.IR X (1)).
+The
+.B -speed
+option controls the speed of the cat (the default is 16).
+The
+.B -time
+option controls the interval (in microseconds) between updates of the
+.I xneko
+window (the default is 125000).
+The
+.B -help
+option provides a usage message and exits.
+.PP
+The word ``neko'' means ``cat'' in Japanese.
+.SH SEE ALSO
+X(1)
+.SH AUTHOR
+Masayuki Koba, 1990

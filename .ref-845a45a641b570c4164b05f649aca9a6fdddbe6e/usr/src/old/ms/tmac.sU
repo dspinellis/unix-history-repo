@@ -1,0 +1,17 @@
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)tmac.sU	5.3 (Berkeley) %G%
+.\"
+.\" Modify -ms macros for typesetting manuals for Usenix distribution.
+.\" Differences: page numbers even on page 1, MH = Bell Labs,
+.\" default line length (and title length) 6.5i instead of 6i.
+.\"
+.so /usr/old/lib/tmac/tmac.s
+.nr P1 1	\" page number on page 1
+.nr LL 6.5i
+.ll \\n(LLu
+.lt 6.5i
+.de MH
+AT&T Bell Laboratories
+Murray Hill, New Jersey 07974
+..

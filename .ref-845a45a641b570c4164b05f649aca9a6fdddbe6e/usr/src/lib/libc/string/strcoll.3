@@ -1,0 +1,48 @@
+.\" Copyright (c) 1990, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek and the American National Standards Committee X3,
+.\" on Information Processing Systems.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)strcoll.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt STRCOLL 3
+.Os
+.Sh NAME
+.Nm strcoll
+.Nd compare strings according to current collation
+.Sh SYNOPSIS
+.Fd #include <string.h>
+.Ft int
+.Fn strcoll "const char *s1" "const char *s2"
+.Sh DESCRIPTION
+The
+.Fn strcoll
+function
+lexicographically compares the null-terminated strings
+.Fa s1
+and
+.Fa s2
+according to the current locale collation
+and returns an integer greater than, equal to, or less than 0,
+according as
+.Fa s1
+is greater than, equal to, or less than
+.Fa s2 .
+.Sh SEE ALSO
+.Xr bcmp 3 ,
+.Xr memcmp 3 ,
+.Xr setlocale 3 ,
+.Xr strcasecmp 3 ,
+.Xr strcmp 3 ,
+.Xr strxfrm 3
+.Sh STANDARDS
+The
+.Fn strcoll
+function
+conforms to
+.St -ansiC .

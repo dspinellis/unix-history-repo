@@ -1,0 +1,93 @@
+#print
+How would you look for a blank line?  Do you
+understand
+
+  /^$/p
+
+Note this command: it looks for the beginning of the
+line, followed immediately by the end of the line.  If
+there are any characters in between, it will keep
+looking for a line with no__ characters at all.  All right.
+The file "text" contains an extraneous blank line.
+Delete it and rewrite the file.
+#create Ref
+   When the people of America reflect that they are now
+called upon to decide a question, which in its consequences
+must prove one of the most important that ever
+engaged their attention, the propriety of their taking a
+very comprehensive, as well as a very serious, view of it
+will be evident.
+   Nothing is more certain than the indispensable necessity
+of government; and it is equally undeniable that
+whenever and however it is instituted, the people must
+cede to it some of their natural rights, in order to vest it
+with requisite powers.  It is well worthy of consideration,
+therefore, whether it would conduce more to the interest
+of the people of America that they should, to all
+general purposes, be one nation, under one federal government,
+than that they should divide themselves into
+separate confederacies and give to the head of each the
+same kind of powers which they are advised to place in
+one national government.
+   It has until lately been a received and uncontradicted
+opinion that the prosperity of the people of America
+depended on their continuing firmly united, and the wishes,
+prayers, and efforts of our best and wisest citizens have
+been constantly directed to that object.  But politicians
+now appear who insist that this opinion is erroneous,
+and that instead of looking for safety and happiness in
+union, we ought to seek it in a division of the States
+into distinct confederacies or sovereignties.  However
+extraordinary this new doctrine may appear, it nevertheless
+has its advocates; and certain characters who were
+much opposed to it formerly are at present of the number.
+Whatever may be the arguments or inducements
+which have wrought this change in the sentiments and
+declarations of these gentlemen, it certainly would not be
+wise in the people at large to adopt these new political
+tenets without being fully convinced that they are founded
+in truth and sound policy.
+#create text
+   When the people of America reflect that they are now
+called upon to decide a question, which in its consequences
+must prove one of the most important that ever
+engaged their attention, the propriety of their taking a
+very comprehensive, as well as a very serious, view of it
+will be evident.
+   Nothing is more certain than the indispensable necessity
+of government; and it is equally undeniable that
+whenever and however it is instituted, the people must
+cede to it some of their natural rights, in order to vest it
+with requisite powers.  It is well worthy of consideration,
+therefore, whether it would conduce more to the interest
+of the people of America that they should, to all
+general purposes, be one nation, under one federal government,
+than that they should divide themselves into
+separate confederacies and give to the head of each the
+same kind of powers which they are advised to place in
+one national government.
+   It has until lately been a received and uncontradicted
+opinion that the prosperity of the people of America
+depended on their continuing firmly united, and the wishes,
+prayers, and efforts of our best and wisest citizens have
+been constantly directed to that object.  But politicians
+now appear who insist that this opinion is erroneous,
+and that instead of looking for safety and happiness in
+union, we ought to seek it in a division of the States
+into distinct confederacies or sovereignties.  However
+extraordinary this new doctrine may appear, it nevertheless
+has its advocates; and certain characters who were
+much opposed to it formerly are at present of the number.
+Whatever may be the arguments or inducements
+which have wrought this change in the sentiments and
+declarations of these gentlemen, it certainly would not be
+wise in the people at large to adopt these new political
+
+tenets without being fully convinced that they are founded
+in truth and sound policy.
+#user
+#cmp Ref text
+#log
+#next
+52.1a 10
+52.2a 5

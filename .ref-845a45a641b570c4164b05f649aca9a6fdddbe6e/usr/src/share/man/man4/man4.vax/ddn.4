@@ -1,0 +1,106 @@
+.\" Copyright (c) 1983, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)ddn.4	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt DDN 4 vax
+.Os BSD 4.3
+.Sh NAME
+.Nm ddn
+.Nd
+.Tn DDN
+Standard Mode
+.Tn X.25
+.Tn IMP
+interface
+.Sh SYNOPSIS
+.Cd "device ddn0 at uba0 csr 166740 vector ddnintr"
+.Sh DESCRIPTION
+The 
+.Nm ddn
+device provides a
+.Tn DDN
+Standard Mode
+.Tn X.25
+interface to an
+.Tn IMP
+using
+the
+.Tn ACC ACP625
+.Tn X.25
+board.  It is normally used for connecting to
+the Defense Data Network
+.Pq Tn DDN .
+The controller itself is not accessible
+to users, but instead provides a network interface for the
+Internet Protocol described in
+.Xr ip 4 .
+.Sh DIAGNOSTICS
+.Bl -diag
+.It ddn%d: not alive.
+The initialization routine was entered even though the device
+did not autoconfigure.  This indicates a system problem.
+.Pp
+.It ddn%d: failed getting UBA resources for lcn %d."
+Insufficient
+.Tn UNIBUS
+resources existed to initialize the device.
+This is likely to be a shortage of
+.Tn UNIBUS
+mapping registers.
+.Pp
+.It ddn%d: couldn't get X25 init buffer.
+This indicates that an 
+.Em mbuf
+could not be allocated for sending the initialization message to the
+.Tn ACP Ns 625.
+.Pp
+.It DDN: illegal X25 address length!
+.It DDN: illegal X25 address format!
+These errors indicate a problem with the called
+.Tn X.25
+address received
+from the
+.Tn IMP
+on an incoming call.
+.Pp
+.It X25 RESET on lcn = %d.
+This indicates that an unexpected
+.Tn X.25
+.Tn RESET
+was received on the
+indicated
+.Tn LCN .
+.Pp
+.It X25 INTERRUPT on lcn = %d, code = %d.
+This indicates that an unexpected
+.Tn X.25
+.Tn INTERRUPT
+Packet was received on the
+indicated
+.Tn LCN .
+.Pp
+.It ddn%d: failed to get supr msg bfr!
+This indicates that an 
+.Em mbuf
+could not be allocated for sending a supervisor message to the
+.Tn ACP625 .
+.El
+.Pp
+Any other error message from
+.Ql ddn%d:
+indicates a serious error
+detected by either the driver or the
+.Tn ACP Ns 625
+firmware.
+.Sh SEE ALSO
+.Xr netintro 4 ,
+.Xr ip 4
+.Sh HISTORY
+The
+.Nm
+interface appeared in
+.Bx 4.3 .

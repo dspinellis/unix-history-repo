@@ -1,0 +1,37 @@
+.\" Copyright (c) 1983, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the Institute of Electrical and Electronics Engineers, Inc.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)false.1	6.6 (Berkeley) %G%
+.\"
+.Dd 
+.Dt FALSE 1
+.Os BSD 4.2
+.Sh NAME
+.Nm false
+.Nd return false value
+.Sh SYNOPSIS
+.Nm false
+.Sh DESCRIPTION
+.Nm False
+is usually used in a Bourne shell script.
+It tests for the appropriate status "false" before running 
+(or failing to run) a list of commands.  
+.Pp
+The
+.Nm false
+utility always exits with a value other than zero.
+.Sh SEE ALSO
+.Xr csh 1 ,
+.Xr sh 1 ,
+.Xr true 1
+.Sh STANDARDS
+The
+.Nm false
+utility is expected to be
+.St -p1003.2
+compatible.

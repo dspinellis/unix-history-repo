@@ -1,0 +1,166 @@
+#
+#	"@(#)bib.spe	2.3	%G%";
+#
+#  Software - Practice and Exprience format
+#
+I bibinc.shortnames
+AA
+EA
+H
+.\" citation formatting string
+.ds [[ \s-2\u
+.ds ]] \d\s0
+.ds [{ " \&
+.ds }]
+.ds [.
+.ds .] .
+.ds [,
+.ds ,] ,
+.ds [?
+.ds ?] ?
+.ds [:
+.ds :] :
+.ds [;
+.ds ;] ;
+.ds [!
+.ds !] !
+.ds ["
+.ds "] \&"
+.ds ['
+.ds '] '
+.ds [<
+.ds >] " \&
+.ds ], ,
+.ds ]- -
+.\" reference formmating strings
+.ds c] , \&
+.ds n] "" and \&
+.ds m] "" and \&
+.ds a] " \&
+.ds b] , \&
+.ds p] .
+.\" reference formating macros
+.de s[   \" start reference
+.nh
+.IP \\*([F. 5n
+..
+.de e[   \" end reference
+.[-
+..
+.de []   \" start to display collected references
+.LP
+..
+.de ][   \" choose format
+.ie !"\\*([J"" \{\
+.    ie !"\\*([V"" .nr t[ 1    \" journal
+.    el            .nr t[ 5    \" conference paper
+.\}
+.el .ie !"\\*([B"" .nr t[ 3    \" article in book
+.el .ie !"\\*([R"" .nr t[ 4    \" technical report
+.el .ie !"\\*([I"" .nr t[ 2    \" book
+.el                .nr t[ 0    \" other
+.\\n(t[[
+..
+.de 0[   \" other
+.s[
+.if !"\\*([A"" \\*([A,
+.if !"\\*([E"" \{\
+.       ie \\n([E \\*([E, eds.,
+.       el \\*([E, ed.,\}
+.if !"\\*([T"" \\*([T\c
+.if !"\\*([O"" , \\*([O\c
+.if !"\\*([D"" , \\*([D\c
+\\&.
+.e[
+..
+.de 1[ \" journal article
+.s[
+.if !"\\*([A"" \\*([A,
+.if !"\\*([E"" \{\
+.       ie \\n([E \\*([E, eds.,
+.       el \\*([E, ed.,\}
+.if !"\\*([T"" `\\*([T',
+\\fI\\*([J\\fP,
+.if !"\\*([V"" \\fB\\*([V\\fP,
+.if !"\\*([P"" \\*([P
+.if !"\\*([D"" (\\*([D)\c
+.if !"\\*([I"" , \\*([I\c
+\\&.
+.if !"\\*([O"" \\*([O.
+.e[
+..
+.de 2[ \" book
+.s[
+.ie !"\\*([A"" \\*([A,
+.if !"\\*([E"" \{\
+.       ie \\n([E \\*([E, eds.,
+.       el \\*([E, ed.,\}
+.if !"\\*([T"" \\fI\\*([T\\fP,
+.rm a[
+.if !"\\*([I"" .ds a[ \\*([I
+.if !"\\*([C"" \{\
+.       if !"\\*(a["" .as a[ , \\&
+.       as a[ \\*([C\}
+.if !"\\*([D"" \{\
+.       if !"\\*(a["" .as a[ , \\&
+.       as a[ \\*([D\}
+\\*(a[.
+.if !"\\*([G"" Gov. ordering no. \\*([G.
+.if !"\\*([O"" \\*([O.
+.e[
+..
+.de 3[ \" article in book
+.s[
+.if !"\\*([A"" \\*([A,
+.if !"\\*([T"" `\\*([T',
+in \\fI\\*([B\\fP,
+.if !"\\*([V"" vol. \\*([V,
+.if !"\\*([E"" \{\
+.       ie \\n([E \\*([E, (eds.),
+.       el \\*([E, (ed.),\}
+.if !"\\*([I"" \\*([I,
+.if !"\\*([C"" \\*([C,
+.if !"\\*([D"" \\*([D\c
+\\&.
+.if !"\\*([O"" \\*([O.
+.e[
+..
+.de 4[ \" report
+.s[
+.if !"\\*([A"" \\*([A,
+.if !"\\*([E"" \{\
+.       ie \\n([E \\*([E, eds.,
+.       el \\*([E, ed.,\}
+`\\*([T',
+\\*([R\c
+.if !"\\*([G"" \& (\\*([G)\c
+.if !"\\*([I"" , \\*([I\c
+.if !"\\*([C"" , \\*([C\c
+.if !"\\*([D"" , \\*([D\c
+\\&.
+.if !"\\*([O"" \\*([O.
+.e[
+..
+.de 5[ \" conference paper
+.s[
+.if !"\\*([A"" \\*([A,
+.if !"\\*([E"" \{\
+.       ie \\n([E \\*([E, eds.,
+.       el \\*([E, ed.,\}
+.if !"\\*([T"" `\\*([T',
+\\fI\\*([J\\fP,
+.if !"\\*([C"" \\*([C\c
+.if !"\\*([P"" , \\*([P\c
+.if !"\\*([D"" \& (\\*([D)\c
+\\&.
+.if !"\\*([O"" \& \\*([O.
+.e[
+..
+.de [-   \" clean up after yourself
+.rm [A [B [C [D
+.rm [E [F [G
+.rm [I [J [K
+.rm [N [O [P
+.rm [R [T
+.rm [V [W
+..

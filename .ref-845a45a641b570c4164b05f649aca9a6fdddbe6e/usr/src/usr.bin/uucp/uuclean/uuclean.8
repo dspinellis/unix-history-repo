@@ -1,0 +1,63 @@
+.\" Copyright (c) 1983, 1991 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)uuclean.8	6.7 (Berkeley) %G%
+.\"
+.Dd 
+.Dt UUCLEAN 8
+.Os BSD 4.2
+.Sh NAME
+.Nm uuclean
+.Nd uucp spool directory clean-up
+.Sh SYNOPSIS
+.Nm uuclean
+.Op Fl d Ns Ar subdirectory
+.Op Fl m
+.Op Fl n Ns Ar time
+.Op Fl p Ns Ar pre
+.Sh DESCRIPTION
+.Xr Uuclean
+will scan the spool directory for files with the
+specified prefix and delete all those which are
+older than the specified number of hours.
+.Pp
+The following options are available.
+.Bl -tag -width Ds
+.It Fl d Ns Ar subdirectory
+Only the specified subdirectory will be cleaned.
+.It Fl m
+Send mail to the owner of the file
+when it is deleted.
+.It Fl n Ns Ar time
+Files whose age is more than
+.Ar time
+hours will be deleted if the prefix
+test is satisfied.
+(default time is 72 hours)
+.It Fl p Ns Ar pre
+Scan for files with
+.Ar pre
+as the file prefix.
+Up to 10
+.Fl p
+arguments may be specified.
+.El
+.Pp
+This program will typically be run daily by
+.Xr cron 8 .
+.Sh FILES
+.Bl -tag -width /var/spool/uucp
+.It Pa /var/spool/uucp
+Spool directory
+.El
+.Sh SEE ALSO
+.Xr uucp 1 ,
+.Xr uux 1 ,
+.Xr uucico 8
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 4.2 .

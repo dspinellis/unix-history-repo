@@ -1,0 +1,55 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)locate.1	5.7 (Berkeley) %G%
+.\"
+.Dd 
+.Dt LOCATE 1
+.Os BSD 4.4
+.Sh NAME
+.Nm locate
+.Nd find files
+.Sh SYNOPSIS
+.Ar locate
+pattern
+.Sh DESCRIPTION
+.Nm Locate
+searches a database for all pathnames which match the specified
+.Ar pattern  .
+The database is recomputed periodically, and contains the pathnames
+of all files which are publicly accessible.
+.Pp
+Shell globbing and quoting characters (``*'', ``?'', ``\e'', ``[''
+and ``]'')
+may be used in
+.Ar pattern  ,
+although they will have to be escaped from the shell.
+Preceding any character with a backslash (``\e'') eliminates any special
+meaning which it may have.
+The matching differs in that no characters must be matched explicitly,
+including slashes (``/'').
+.Pp
+As a special case, a pattern containing no globbing characters (``foo'')
+is matched as though it were ``*foo*''.
+.Sh FILES
+.Bl -tag -width /var/db/locate.database -compact
+.It Pa /var/db/locate.database
+.El
+.Sh SEE ALSO
+.Xr find 1 ,
+.Xr fnmatch 3
+.Rs
+.%A Woods, James A.
+.%D 1983
+.%T "Finding Files Fast"
+.%J ";login"
+.%V 8:1
+.%P pp. 8-10
+.Re
+.Sh HISTORY
+The
+.Nm locate
+command appears in
+.Bx 4.4 .

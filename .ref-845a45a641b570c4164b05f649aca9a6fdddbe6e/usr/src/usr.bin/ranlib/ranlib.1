@@ -1,0 +1,61 @@
+.\" Copyright (c) 1990 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"     @(#)ranlib.1	6.7 (Berkeley) %G%
+.\"
+.Dd 
+.Dt RANLIB 1
+.Os
+.Sh NAME
+.Nm ranlib
+.Nd table-of-contents for archive libraries
+.Sh SYNOPSIS
+.Nm ranlib
+.Op Fl t
+.Ar file ...
+.Sh DESCRIPTION
+.Nm Ranlib
+creates a table of external references for archive libraries,
+normally used by the loader,
+.Xr ld 1 .
+This table is is named ``__.SYMDEF'' and is prepended to the archive.
+Files in the archive which are not executable and symbols which are
+uninteresting to the loader are ignored.
+.Pp
+The options are as follows:
+.Bl -tag -width indent
+.It Fl t
+Set the modification time of the __.SYMDEF file.
+This time is compared by the loader with the modification time of the
+archive to verify that the table is up-to-date with respect to the
+archive.
+If the modification time has been changed without any change to the
+archive (for example, by a
+.Xr cp 1 ) ,
+the
+.Fl t
+option can be used to ``touch'' the modification time so that it
+appears that the table is up-to-date.
+This is also useful after using the
+.Fl t
+option of
+.Xr make 1 .
+.El
+.Sh FILES
+.Bl -tag -width /tmp/ranlib.XXXXXX -compact
+.It Pa /tmp/ranlib.XXXXXX
+Temporary file names.
+.El
+.Sh SEE ALSO
+.Xr ar 1 ,
+.Xr ld 1 ,
+.Xr lorder 1 ,
+.Xr nm 1 ,
+.Xr ranlib 5
+.Sh HISTORY
+A
+.Nm ranlib
+command appeared in
+.At v7 .

@@ -1,0 +1,156 @@
+tahoe/tahoe/autoconf.c		standard device-driver
+tahoe/tahoe/conf.c		standard
+tahoe/tahoe/cons.c		standard
+tahoe/tahoe/clock.c		standard
+tahoe/tahoe/kdb_machdep.c	optional kadb
+tahoe/tahoe/kdb_opset.c		optional kadb
+tahoe/tahoe/in_cksum.c		optional inet
+tahoe/tahoe/machdep.c		standard config-dependent
+tahoe/tahoe/mem.c		standard
+netns/ns_cksum.c		optional ns
+tahoe/tahoe/sys_machdep.c	standard
+tahoe/tahoe/trap.c		standard
+tahoe/tahoe/vm_machdep.c	standard
+tahoe/tahoe/udiv.s		standard
+tahoe/tahoe/urem.s		standard
+tahoe/align/align.c		optional align
+tahoe/align/exception.c		optional align
+tahoe/align/table.c		optional align
+tahoe/align/Aadd2.c		optional align
+tahoe/align/Aadd3.c		optional align
+tahoe/align/Aadda.c		optional align
+tahoe/align/Aaddd.c		optional align
+tahoe/align/Aaddf.c		optional align
+tahoe/align/Aadwc.c		optional align
+tahoe/align/Aand2.c		optional align
+tahoe/align/Aand3.c		optional align
+tahoe/align/Aaobleq.c		optional align
+tahoe/align/Aaoblss.c		optional align
+tahoe/align/Abbc.c		optional align
+tahoe/align/Abbs.c		optional align
+tahoe/align/Abicpsw.c		optional align
+tahoe/align/Abispsw.c		optional align
+tahoe/align/Abit.c		optional align
+tahoe/align/Acall.c		optional align
+tahoe/align/Acasel.c		optional align
+tahoe/align/Aclr.c		optional align
+tahoe/align/Acmp.c		optional align
+tahoe/align/Acmpd.c		optional align
+tahoe/align/Acmpd2.c		optional align
+tahoe/align/Acmpf.c		optional align
+tahoe/align/Acmpf2.c		optional align
+tahoe/align/Acvdl.c		optional align
+tahoe/align/Acvfl.c		optional align
+tahoe/align/Acvld.c		optional align
+tahoe/align/Acvlf.c		optional align
+tahoe/align/Acvt.c		optional align
+tahoe/align/Acvtlb.c		optional align
+tahoe/align/Acvtlw.c		optional align
+tahoe/align/Adec.c		optional align
+tahoe/align/Adivd.c		optional align
+tahoe/align/Adivf.c		optional align
+tahoe/align/Adivl2.c		optional align
+tahoe/align/Adivl3.c		optional align
+tahoe/align/Aediv.c		optional align
+tahoe/align/Aemul.c		optional align
+tahoe/align/Affc.c		optional align
+tahoe/align/Affs.c		optional align
+tahoe/align/Aget_byte.c		optional align
+tahoe/align/Aget_long.c		optional align
+tahoe/align/Aget_word.c		optional align
+tahoe/align/Ainc.c		optional align
+tahoe/align/Ajmp.c		optional align
+tahoe/align/Aldd.c		optional align
+tahoe/align/Aldf.c		optional align
+tahoe/align/Aldfd.c		optional align
+tahoe/align/Alnd.c		optional align
+tahoe/align/Alnf.c		optional align
+tahoe/align/Aloadr.c		optional align
+tahoe/align/Amcom.c		optional align
+tahoe/align/Amneg.c		optional align
+tahoe/align/Amov.c		optional align
+tahoe/align/Amova.c		optional align
+tahoe/align/Amovob.c		optional align
+tahoe/align/Amovpsl.c		optional align
+tahoe/align/Amovzb.c		optional align
+tahoe/align/Amovzwl.c		optional align
+tahoe/align/Amuld.c		optional align
+tahoe/align/Amulf.c		optional align
+tahoe/align/Amull2.c		optional align
+tahoe/align/Amull3.c		optional align
+tahoe/align/Aoperand.c		optional align
+tahoe/align/Aor2.c		optional align
+tahoe/align/Aor3.c		optional align
+tahoe/align/Aprober.c		optional align
+tahoe/align/Aprobew.c		optional align
+tahoe/align/Apush.c		optional align
+tahoe/align/Apusha.c		optional align
+tahoe/align/Apushx.c		optional align
+tahoe/align/Aput_byte.c		optional align
+tahoe/align/Aput_long.c		optional align
+tahoe/align/Aput_word.c		optional align
+tahoe/align/Areadable.c		optional align
+tahoe/align/Aregister.c		optional align
+tahoe/align/Asbwc.c		optional align
+tahoe/align/Ashal.c		optional align
+tahoe/align/Ashar.c		optional align
+tahoe/align/Ashll.c		optional align
+tahoe/align/Ashlq.c		optional align
+tahoe/align/Ashrl.c		optional align
+tahoe/align/Ashrq.c		optional align
+tahoe/align/Astd.c		optional align
+tahoe/align/Astf.c		optional align
+tahoe/align/Astorer.c		optional align
+tahoe/align/Asub2.c		optional align
+tahoe/align/Asub3.c		optional align
+tahoe/align/Asuba.c		optional align
+tahoe/align/Asubd.c		optional align
+tahoe/align/Asubf.c		optional align
+tahoe/align/Atst.c		optional align
+tahoe/align/Awrite_back.c	optional align
+tahoe/align/Awrite_byte.c	optional align
+tahoe/align/Awrite_long.c	optional align
+tahoe/align/Awrite_quad.c	optional align
+tahoe/align/Awrite_word.c	optional align
+tahoe/align/Awriteable.c	optional align
+tahoe/align/Axor2.c		optional align
+tahoe/align/Axor3.c		optional align
+tahoe/if/if_ace.c		optional ace device-driver
+tahoe/if/if_enp.c		optional enp device-driver
+tahoe/if/if_ex.c		optional ex device-driver
+tahoe/if/if_vba.c		optional inet device-driver
+tahoe/if/if_vba.c		optional ns device-driver
+tahoe/if/if_vba.c		optional iso device-driver
+tahoe/if/if_hy.notreally.c	optional hy device-driver
+tahoe/math/fpe.c		optional fpe
+tahoe/math/Kaddd.s		optional fpe
+tahoe/math/Kaddf.s		optional fpe
+tahoe/math/Katanf.s		optional fpe
+tahoe/math/Kcvtld.s		optional fpe
+tahoe/math/Kcvtlf.s		optional fpe
+tahoe/math/Kdivd.s		optional fpe
+tahoe/math/Kdivf.s		optional fpe
+tahoe/math/Kexpf.s		optional fpe
+tahoe/math/Kfnorm.s		optional fpe
+tahoe/math/Kfp_exp.s		optional fpe
+tahoe/math/Kfp_mvtoacc.s	optional fpe
+tahoe/math/Kfrexpf.s		optional fpe
+tahoe/math/Kldexpf.s		optional fpe
+tahoe/math/Klogf.s		optional fpe
+tahoe/math/Kmodf.s		optional fpe
+tahoe/math/Kmuld.s		optional fpe
+tahoe/math/Kmulf.s		optional fpe
+tahoe/math/Ksfnorm.s		optional fpe
+tahoe/math/Ksfp_exp.s		optional fpe
+tahoe/math/Ksinfcosf.s		optional fpe
+tahoe/math/Ksqrtf.s		optional fpe
+tahoe/math/Ksubd.s		optional fpe
+tahoe/math/Ksubf.s		optional fpe
+tahoe/vba/cy.c			optional yc device-driver
+tahoe/vba/dr.c			optional dr device-driver
+tahoe/vba/ik.c			optional ik device-driver
+tahoe/vba/mp.c			optional mp device-driver
+tahoe/vba/vba.c			optional vba device-driver
+tahoe/vba/vd.c			optional dk device-driver
+tahoe/vba/vx.c			optional vx device-driver
+tahoe/vba/hd.c			optional hd device-driver

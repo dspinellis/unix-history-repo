@@ -1,0 +1,62 @@
+.\" Copyright (c) 1989, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)nfsstat.1	5.8 (Berkeley) %G%
+.\"
+.Dd 
+.Dt NFSSTAT 1
+.Os BSD 4.4
+.Sh NAME
+.Nm nfsstat
+.Nd display
+.Tn NFS
+statistics
+.Sh SYNOPSIS
+.Nm nfsstat
+.Op Fl M Ar core
+.Op Fl N Ar system
+.Op Fl w Ar wait
+.Sh DESCRIPTION
+.Nm Nfsstat
+displays statistics kept about
+.Tn NFS
+client and server activity.
+.Pp
+The options are as follows:
+.Bl -tag -width Ds
+.It Fl M
+Extract values associated with the name list from the specified core
+instead of the default
+.Pa /dev/kmem .
+.It Fl N
+Extract the name list from the specified system instead of the default
+.Pa /vmunix .
+.It Fl w
+Display a shorter summary of
+.Tn NFS
+activity for both the client and server at
+.Ar wait
+second intervals.
+.El
+.Sh FILES
+.Bl -tag -width /dev/kmem -compact
+.It Pa /vmunix
+default kernel namelist
+.It Pa /dev/kmem
+default memory file
+.El
+.Sh SEE ALSO
+.Xr fstat 1 ,
+.Xr netstat 1 ,
+.Xr ps 1 ,
+.Xr systat 1 ,
+.Xr vmstat 1 ,
+.Xr iostat 8 ,
+.Xr pstat 8 ,
+.Sh HISTORY
+The
+.Nm nfsstat
+command appears in
+.Bx 4.4 .

@@ -1,0 +1,44 @@
+#print
+You can give addresses involving simple arithmetic
+to move around in the file.  For example, 
+  3+1p
+is the same as
+  4p
+in the editor.  Now that's not interesting, but
+if the current line (".") is line 3, then
+  .+1p
+is also 4p; it prints the next line. For example,
+you can print the 3rd and 4th lines of this file
+using
+   3p
+   .+1p
+   w
+   q
+where "3p" prints the third line, as usual,
+and then ".+1p" prints the next or fourth line.
+Try that.  Type "ready" when done.
+#create Ref
+caslon
+century schoolbook
+86
+#create file
+baskerville
+bodoni
+caslon
+century schoolbook
+futura
+helvetica
+news gothic
+times roman
+#copyout
+#pipe
+ed file
+#user
+#unpipe
+#uncopyout
+tail -3 .ocopy >X1
+#cmp Ref X1
+#log
+#next
+8.2b 5
+9.1a 10

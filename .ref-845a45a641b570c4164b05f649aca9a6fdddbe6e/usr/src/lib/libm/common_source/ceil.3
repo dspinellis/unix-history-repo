@@ -1,0 +1,39 @@
+.\" Copyright (c) 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)ceil.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt CEIL 3
+.Os
+.Sh NAME
+.Nm ceil
+.Nd smallest integral value not greater than x
+.Sh SYNOPSIS
+.Fd #include <math.h>
+.Ft double
+.Fn ceil "double x"
+.Sh DESCRIPTION
+The
+.Fn ceil
+function computes the smallest integral value not less than
+.Fa x .
+.Sh RETURN VALUES
+The
+.Fn ceil
+function returns the smallest integral value
+expressed as a double.
+.Sh SEE ALSO
+.Xr abs 3 ,
+.Xr fabs 3 ,
+.Xr floor 3 ,
+.Xr rint 3 ,
+.Xr ieee 3 ,
+.Xr math.3
+.Sh STANDARDS
+The
+.Fn ceil
+function conforms to
+.St -ansiC .

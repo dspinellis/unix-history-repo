@@ -1,0 +1,198 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)spline.1	6.3 (Berkeley) %G%
+.\"
+.TH SPLINE 1 "%Q"
+.AT 3
+.SH NAME
+spline \- interpolate smooth curve
+.SH SYNOPSIS
+.B spline
+[ option ] ...
+.SH DESCRIPTION
+.I Spline
+takes pairs of numbers from the standard input as abcissas and ordinates
+of a function.
+It produces a similar set, which
+is approximately equally spaced and
+includes the input set, on the standard output.
+The cubic spline output
+(R. W. Hamming,
+.ft I
+Numerical Methods for Scientists and Engineers,
+.ft R
+2nd ed., 349ff)
+has two continuous derivatives,
+and sufficiently many points to look smooth when plotted, for
+example by
+.IR  graph (1G).
+.PP
+The following options are recognized,
+each as a separate argument.
+.TP 5
+.B  \-a
+Supply abscissas automatically (they are missing from
+the input); spacing is given by the next
+argument, or is assumed to be 1 if next argument is not a number.
+.TP 5
+.B  \-k
+The constant
+.IR k ""
+used in the boundary value computation
+.IP
+.if n .ig
+.ti +1.5i
+.ds ' \h'-\w'\(fm\(fm'u'
+.EQ
+.nr 99 \n(.s
+.nr 98 \n(.f
+'ps 10
+.ft I
+.ds 11 "y\(fm\(fm
+.nr 11 \w'\*(11'
+.ds 12 "\*'
+.nr 12 \w'\*(12'
+'ps 8
+.ds 13 "\fR0\fP
+.nr 13 \w'\*(13'
+.as 12 \v'18u'\s8\*(13\|\s10\v'-18u'
+'ps 10
+.nr 12 \n(12+\n(13+\w'\s8\|'
+.as 11 "\*(12
+.nr 11 \w'\*(11'
+.ds 12 "\|\|
+.nr 12 \w'\*(12'
+.as 11 "\*(12
+.nr 11 \w'\*(11'
+.ds 12 "\|=\|
+.nr 12 \w'\*(12'
+.as 11 "\*(12
+.nr 11 \w'\*(11'
+.ds 12 "\|\|
+.nr 12 \w'\*(12'
+.as 11 "\*(12
+.nr 11 \w'\*(11'
+.ds 12 "ky\(fm\(fm
+.nr 12 \w'\*(12'
+.as 11 "\*(12
+.nr 11 \w'\*(11'
+.ds 12 "\*'
+.nr 12 \w'\*(12'
+'ps 8
+.ds 13 "\fR1\fP
+.nr 13 \w'\*(13'
+.as 12 \v'18u'\s8\*(13\|\s10\v'-18u'
+'ps 10
+.nr 12 \n(12+\n(13+\w'\s8\|'
+.as 11 "\*(12
+.nr 11 \w'\*(11'
+.ds 12 ",
+.nr 12 \w'\*(12'
+.as 11 "\*(12
+.nr 11 \w'\*(11'
+.ds 12 "\|\|
+.nr 12 \w'\*(12'
+.as 11 "\*(12
+.nr 11 \w'\*(11'
+.ds 12 "\|\|
+.nr 12 \w'\*(12'
+.as 11 "\*(12
+.nr 11 \w'\*(11'
+.ds 12 "\|\|
+.nr 12 \w'\*(12'
+.as 11 "\*(12
+.nr 11 \w'\*(11'
+.ds 12 "y\(fm\(fm
+.nr 12 \w'\*(12'
+.as 11 "\*(12
+.nr 11 \w'\*(11'
+.ds 12 "\*'
+.nr 12 \w'\*(12'
+'ps 8
+.ds 13 "n
+.nr 13 \w'\*(13'
+.as 12 \v'18u'\s8\*(13\|\s10\v'-18u'
+'ps 10
+.nr 12 \n(12+\n(13+\w'\s8\|'
+.as 11 "\*(12
+.nr 11 \w'\*(11'
+.ds 12 "\|\|
+.nr 12 \w'\*(12'
+.as 11 "\*(12
+.nr 11 \w'\*(11'
+.ds 12 "\|=\|
+.nr 12 \w'\*(12'
+.as 11 "\*(12
+.nr 11 \w'\*(11'
+.ds 12 "\|\|
+.nr 12 \w'\*(12'
+.as 11 "\*(12
+.nr 11 \w'\*(11'
+.ds 12 "ky\(fm\(fm
+.nr 12 \w'\*(12'
+.as 11 "\*(12
+.nr 11 \w'\*(11'
+.ds 12 "\*'
+.nr 12 \w'\*(12'
+'ps 8
+.ds 13 "n\|\(mi\|\fR1\fP
+.nr 13 \w'\*(13'
+.as 12 \v'18u'\s8\*(13\|\s10\v'-18u'
+'ps 10
+.nr 12 \n(12+\n(13+\w'\s8\|'
+.as 11 "\*(12
+.nr 11 \w'\*(11'
+.ds 11 \x'0'\fI\*(11\s\n(99\f\n(98
+.ne 78u
+\*(11
+'ps \n(99
+.ft \n(98
+.EN
+..
+.if t .ig
+.ce
+(2nd deriv. at end) = k*(2nd deriv. next to end)
+..
+.IP
+.br
+is set by the next argument.
+By default
+.IR k ""
+= 0.
+.TP 5
+.B  \-n
+Space output points
+so that approximately
+.I n
+intervals occur between the lower and upper
+.I x
+limits.
+(Default
+.I n
+= 100.)
+.TP 5
+.B  \-p
+Make output periodic, i.e. match
+derivatives at ends.
+First and last input values should normally agree.
+.TP 5
+.B  \-x
+Next 
+1 (or 2) arguments are lower (and upper) 
+.I x
+limits.
+Normally these limits are calculated from the data.
+Automatic abcissas start at lower limit
+(default 0).
+.SH "SEE ALSO"
+graph(1), plot(1)
+.SH DIAGNOSTICS
+When data is not strictly monotone in
+.I x,
+.I spline
+reproduces the input without interpolating extra points.
+.SH BUGS
+A limit of 1000 input points is enforced silently.

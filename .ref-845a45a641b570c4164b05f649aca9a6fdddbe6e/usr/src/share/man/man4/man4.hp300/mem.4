@@ -1,0 +1,60 @@
+.\" Copyright (c) 1990, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)mem.4	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt MEM 4 hp300
+.Os
+.Sh NAME
+.Nm mem ,
+.Nm kmem
+.Nd main memory
+.Sh DESCRIPTION
+The file
+.Nm /dev/mem
+is an interface to the physical memory of the
+computer.
+Byte offsets in this file are interpreted as physical memory addresses.
+Reading and writing this file is equivalent to reading and writing
+memory itself.
+An error will be returned if an attempt is made to reference
+an offset outside of
+.Nm /dev/mem .
+.Pp
+Kernel virtual memory is accessed via the file
+.Nm /dev/kmem
+in the same manner as
+.Nm /dev/mem .
+Only kernel virtual addresses that are currently mapped to memory are allowed.
+.Sh HP300
+On the
+.Tn HP300 ,
+the last byte of physical memory is always
+.Li 0xFFFFFFFF .
+Therefore, on an
+.Tn HP300
+with
+8Mb of memory, physical memory would start
+at
+.Li 0xFF800000 .
+On the
+.Tn HP300 ,
+kernel virtual memory runs from
+.Li 0
+to about
+.Li 0x2400000 .
+.Sh FILES
+.Bl -tag -width /dev/kmem -compact
+.It Pa /dev/mem
+.It Pa /dev/kmem
+.El
+.Sh HISTORY
+The files
+.Nm mem
+and
+.Nm kmem
+appeared in
+.At v6 .

@@ -1,0 +1,60 @@
+.\" Copyright (c) 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Paul Borman at Krystal Technologies.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)utf2.4	8.1 (Berkeley) %G%
+.\"
+.Dd ""
+.Dt UTF2 4
+.Os
+.Sh NAME
+.Nm UTF2
+.Nd "Universal character set Transformation Format encoding of runes
+.Sh SYNOPSIS
+\fBENCODING "UTF2"\fP
+.Sh DESCRIPTION
+The
+.Nm UTF2
+encoding is based on a proposed X-Open multibyte
+\s-1FSS-UCS-TF\s+1 (File System Safe Universal Character Set Transformation Format) encoding as used in
+.Nm Plan 9 from Bell Labs.
+Although it is capable of representing more than 16 bits,
+the current implementation is limited to 16 bits as defined by the
+Unicode Standard.
+.Pp
+.Nm UTF2
+representation is backwards compatible with ASCII, so 0x00-0x7f refer to the
+ASCII character set.  The multibyte encoding of runes between 0x0080 and 0xffff
+consist entirely of bytes whose high order bit is set.  The actual
+encoding is represented by the following table:
+.Bd -literal
+[0x0000 - 0x007f] [00000000.0bbbbbbb] -> 0bbbbbbb
+[0x0080 - 0x03ff] [00000bbb.bbbbbbbb] -> 110bbbbb, 10bbbbbb
+[0x0400 - 0xffff] [bbbbbbbb.bbbbbbbb] -> 1110bbbb, 10bbbbbb, 10bbbbbb
+.Ed
+.sp
+If more than a single representation of a value exists (for example,
+0x00; 0xC0 0x80; 0xE0 0x80 0x80) the shortest representation is always
+used (but the longer ones will be correctly decoded).
+.Pp
+The final three encodings provided by X-Open:
+.Bd -literal
+[00000000.000bbbbb.bbbbbbbb.bbbbbbbb] ->
+	11110bbb, 10bbbbbb, 10bbbbbb, 10bbbbbb
+
+[000000bb.bbbbbbbb.bbbbbbbb.bbbbbbbb] ->
+	111110bb, 10bbbbbb, 10bbbbbb, 10bbbbbb, 10bbbbbb
+
+[0bbbbbbb.bbbbbbbb.bbbbbbbb.bbbbbbbb] ->
+	1111110b, 10bbbbbb, 10bbbbbb, 10bbbbbb, 10bbbbbb, 10bbbbbb
+.Ed
+.sp
+which provides for the entire proposed ISO-10646 31 bit standard are currently
+not implemented.
+.Sh "SEE ALSO"
+.Xr mklocale 1 ,
+.Xr setlocale 3

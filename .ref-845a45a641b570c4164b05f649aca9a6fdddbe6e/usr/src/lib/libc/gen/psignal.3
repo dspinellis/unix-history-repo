@@ -1,0 +1,66 @@
+.\" Copyright (c) 1983, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)psignal.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt PSIGNAL 3
+.Os BSD 4.2
+.Sh NAME
+.Nm psignal ,
+.Nm sys_siglist
+.Nm sys_signame
+.Nd system signal messages
+.Sh SYNOPSIS
+.Fd #include <sys/signal.h>
+.Ft void
+.Fn psignal "unsigned sig" "const char *s"
+.Vt extern char *sys_siglist[];
+.Vt extern char *sys_signame[];
+.Sh DESCRIPTION
+The
+.Fn psignal
+function locates the descriptive message
+string for the given signal number
+.Fa sig
+and writes it to the standard error.
+.Pp
+If the argument
+.Fa s
+is
+.Pf non- Dv NULL
+it is written to the standard error file descriptor
+prior to the message string,
+immediately followed by a colon and a space.
+If the signal number is not recognized
+.Pq Xr sigaction 2 ,
+the string
+.Dq "Unknown signal
+is produced.
+.Pp
+The message strings can be accessed directly
+through the external array
+.Va sys_siglist ,
+indexed by recognized signal numbers.
+The external array
+.Va sys_signame
+is used similarly and
+contains short, lower-case abbreviations for signals
+which are useful for recognizing signal names
+in user input.
+The defined variable
+.Dv NSIG
+contains a count of the strings in
+.Va sys_siglist
+and
+.Va sys_signame .
+.Sh SEE ALSO
+.Xr sigaction 2 ,
+.Xr perror 3
+.Sh HISTORY
+The
+.Fn psignal
+function appeared in 
+.Bx 4.2 .

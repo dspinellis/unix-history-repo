@@ -1,0 +1,16 @@
+(Version 6.11 of %G%)
+
+*****	Database (keyed lookup) locking and rebuild.
+
+****	8 -> 7 bit MIME conversion.
+
+***	NIS support for aliases.
+
+***	cf/cf/Makefile.dist
+
+**	Handle Expires: header field (if still in queue).
+
+**	Find a good test suite and include in the distribution.
+
+*	WIN/3B support (non-atomic rename, no h_addr_list, others?)
+	(Bruce Lilly <blilly!bruce@uu.psi.com>)

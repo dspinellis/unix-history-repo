@@ -1,0 +1,166 @@
+#	@(#)special	5.6 (Berkeley) %G%
+#
+# Hand-crafted mtree specification for the dangerous files.
+#
+
+.		type=dir mode=0755 uname=root gname=wheel
+
+dev		type=dir mode=0755 uname=root gname=wheel
+drum		type=char mode=640 uname=root gname=kmem
+fd		type=dir mode=0755 uname=root gname=wheel ignore
+..	#dev/fd
+kmem		type=char mode=640 uname=root gname=kmem
+mem		type=char mode=640 uname=root gname=kmem ignore
+..	#dev
+
+etc		type=dir mode=0755 uname=root gname=wheel
+aliases		type=file mode=0644 uname=root gname=wheel
+aliases.db	type=file mode=0644 uname=root gname=wheel
+crontab		type=file mode=0644 uname=root gname=wheel
+csh.cshrc	type=file mode=0644 uname=root gname=wheel
+csh.login	type=file mode=0644 uname=root gname=wheel
+csh.logout	type=file mode=0644 uname=root gname=wheel
+daily		type=file mode=0644 uname=root gname=wheel
+disklabels	type=dir mode=0755 uname=root gname=wheel ignore
+..	#disklabels
+exports		type=file mode=0644 uname=root gname=wheel
+fstab		type=file mode=0644 uname=root gname=wheel
+ftpusers	type=file mode=0644 uname=root gname=wheel
+group		type=file mode=0644 uname=root gname=wheel
+hosts.equiv	type=file mode=0600 uname=root gname=wheel
+kerberosIV	type=dir mode=0755 uname=root gname=wheel ignore
+..	#kerberosIV
+mail.rc		type=file mode=0644 uname=root gname=wheel
+master.passwd	type=file mode=600 uname=root gname=wheel
+monthly		type=file mode=0644 uname=root gname=wheel
+mtree		type=dir mode=0755 uname=root gname=wheel
+special		type=file mode=0600 uname=root gname=wheel
+..	#mtree
+named.boot	type=file mode=0644 uname=root gname=wheel
+netstart	type=file mode=0744 uname=root gname=wheel
+nfsstart	type=file mode=0744 uname=root gname=wheel
+passwd		type=file mode=644 uname=root gname=wheel
+printcap	type=file mode=0644 uname=root gname=wheel
+rc		type=file mode=0644 uname=root gname=wheel
+rc.local	type=file mode=0644 uname=root gname=wheel
+security	type=file mode=0644 uname=root gname=wheel
+sendmail.cf	type=file mode=0644 uname=root gname=wheel
+sendmail.fc	type=file mode=0644 uname=root gname=wheel
+shells		type=file mode=0644 uname=root gname=wheel
+spwd.db		type=file mode=0600 uname=root gname=wheel
+syslog.conf	type=file mode=0644 uname=root gname=wheel
+ttys		type=file mode=0644 uname=root gname=wheel
+weekly		type=file mode=0644 uname=root gname=wheel
+..	#etc
+
+root		type=dir mode=0755 uname=root gname=wheel
+.cshrc		type=file mode=0644 uname=root gname=wheel
+.klogin		type=file mode=0644 uname=root gname=wheel
+.login		type=file mode=0644 uname=root gname=wheel
+.profile	type=file mode=0644 uname=root gname=wheel
+.rhosts		type=file mode=0600 uname=root gname=wheel
+..	#root
+
+sbin		type=dir mode=0755 uname=root gname=wheel ignore
+..	#sbin
+
+usr		type=dir mode=0755 uname=root gname=wheel
+bin		type=dir mode=0755 uname=root gname=wheel ignore
+..	#usr/bin
+contrib		type=dir mode=0755 uname=root gname=wheel
+bin		type=dir mode=0755 uname=root gname=wheel ignore
+..	#usr/contrib/bin
+lib		type=dir mode=0755 uname=root gname=wheel ignore
+..	#usr/contrib/lib
+..	#usr/contrib
+games		type=dir mode=0755 uname=root gname=wheel
+hide		type=dir mode=0700 uname=games gname=wheel ignore
+..	#usr/games/hide
+..	#usr/games
+include		type=dir mode=0755 uname=root gname=wheel ignore
+..	#usr/include
+lib		type=dir mode=0755 uname=root gname=wheel ignore
+..	#usr/lib
+libdata		type=dir mode=0755 uname=root gname=wheel ignore
+..	#usr/libdata
+libexec		type=dir mode=0755 uname=root gname=wheel ignore
+..	#usr/libexec
+local		type=dir mode=0755 uname=root gname=wheel
+bin		type=dir mode=0755 uname=root gname=wheel ignore
+..	#usr/local/bin
+lib		type=dir mode=0755 uname=root gname=wheel ignore
+..	#usr/local/lib
+..	#usr/local
+new		type=dir mode=0755 uname=root gname=wheel
+bin		type=dir mode=0755 uname=root gname=wheel ignore
+..	#usr/new/bin
+lib		type=dir mode=0755 uname=root gname=wheel ignore
+..	#usr/new/lib
+..	#usr/new
+old		type=dir mode=0755 uname=root gname=wheel
+bin		type=dir mode=0755 uname=root gname=wheel ignore
+..	#usr/old/bin
+lib		type=dir mode=0755 uname=root gname=wheel ignore
+..	#usr/old/lib
+..	#usr/old
+sbin		type=dir mode=0755 uname=root gname=wheel ignore
+..	#usr/sbin
+share		type=dir mode=0755 uname=root gname=wheel ignore
+..	#usr/share
+src		type=dir mode=0775 uname=root gname=wsrc ignore
+..	#usr/src
+..	#usr
+
+var		type=dir mode=0755 uname=root gname=wheel
+account		type=dir mode=0755 uname=root gname=wheel
+acct		type=file mode=644 uname=root gname=wheel
+..	#var/account
+at		type=dir mode=0755 uname=root gname=daemon ignore
+..	#var/at
+backups		type=dir mode=0755 uname=root gname=wheel ignore
+..	#var/backups
+db		type=dir mode=0755 uname=root gname=wheel ignore
+..	#var/db
+kvm_vmunix.db	type=file mode=0644 uname=root gname=wheel
+local		type=dir mode=0755 uname=root gname=wheel ignore
+..	#var/local
+log		type=dir mode=0755 uname=root gname=wheel
+secure		type=file mode=0600 uname=root gname=wheel
+wtmp		type=file mode=0644 uname=root gname=wheel
+..	#var/log
+mail		type=dir mode=0755 uname=root gname=wheel ignore
+..	#var/mail
+preserve	type=dir mode=0755 uname=root gname=wheel ignore
+..	#var/preserve
+run		type=dir mode=0755 uname=root gname=wheel
+utmp		type=file mode=0664 uname=root gname=utmp
+..	#var/run
+spool		type=dir mode=0755 uname=root gname=wheel
+ftp		type=dir mode=0755 uname=root gname=wheel
+bin		type=dir mode=0755 uname=root gname=wheel
+ls		type=file mode=555 uname=root gname=wheel
+..	#var/spool/ftp/bin
+etc		type=dir mode=0755 uname=root gname=wheel
+group		type=file mode=644 uname=root gname=wheel
+localtime	type=file mode=644 uname=root gname=wheel
+master.passwd	type=file mode=644 uname=root gname=wheel
+passwd		type=file mode=644 uname=root gname=wheel
+..	#var/spool/ftp/etc
+hidden		type=dir mode=0111 uname=root gname=wheel ignore
+..	#var/spool/ftp/hidden
+pub		type=dir mode=0777 uname=root gname=wheel ignore
+..	#var/spool/ftp/pub
+..	#var/spool/ftp
+mqueue		type=dir mode=0755 uname=root gname=wheel ignore
+..	#var/spool/mqueue
+news		type=dir mode=0755 uname=root gname=wheel ignore
+..	#var/spool/news
+output		type=dir mode=0755 uname=root gname=wheel ignore
+..	#var/spool/output
+secretmail	type=dir mode=0755 uname=root gname=wheel ignore
+..	#var/spool/secretmail
+uucp		type=dir mode=0755 uname=uucp gname=daemon ignore
+..	#var/spool/uucp
+uucppublic	type=dir mode=0777 uname=uucp gname=daemon ignore
+..	#var/spool/uucppublic
+..	#var/spool

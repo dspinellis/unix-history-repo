@@ -1,0 +1,35 @@
+.\" Copyright (c) 1983, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)getpagesize.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt GETPAGESIZE 3
+.Os BSD 4.2
+.Sh NAME
+.Nm getpagesize
+.Nd get system page size
+.Sh SYNOPSIS
+.Fd #include <unistd.h>
+.Ft int
+.Fn getpagesize void
+.Sh DESCRIPTION
+.Fn Getpagesize
+returns the number of bytes in a page.
+Page granularity is the granularity of many of the memory
+management calls.
+.Pp
+The page size is a 
+.Xr system
+page size and may not be the same as the underlying
+hardware page size.
+.Sh SEE ALSO
+.Xr sbrk 2 ,
+.Xr pagesize 1
+.Sh HISTORY
+The
+.Nm
+function call appeared in
+.Bx 4.2 .

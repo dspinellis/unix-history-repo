@@ -1,0 +1,151 @@
+.\" Copyright (c) 1989, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"     @(#)man.1	6.14 (Berkeley) %G%
+.\"
+.Dd 
+.Dt MAN 1
+.Os BSD 4
+.Sh NAME
+.Nm man
+.Nd display the on-line manual pages
+.Sh SYNOPSIS
+.Nm man
+.Op Fl achw
+.Op Fl M Ar path
+.Op Fl m Ar path
+.Op Ar section
+.Ar name Ar ...
+.Sh DESCRIPTION
+The
+.Nm man
+utility
+displays the
+.Bx
+manual pages entitled
+.Ar name .
+.Pp
+The options are as follows:
+.Bl -tag -width indent
+.It Fl a
+Display all of the manual pages for a specified
+.Ar section
+and
+.Ar name
+combination.
+(Normally, only the first manual page found is displayed.)
+.It Fl c
+Copy the manual page to the standard output instead of using
+.Xr more 1
+to paginate it.
+This is done by default if the standard output is not a terminal device.
+.It Fl h
+Display only the
+.Dq Tn SYNOPSIS
+lines of the requested manual pages.
+.It Fl M
+Override the list of standard directories which
+.Nm man
+searches for manual pages.
+The supplied
+.Ar path
+must be a colon (``:'') separated list of directories.
+This search path may also be set using the environment variable
+.Ev MANPATH .
+The subdirectories to be searched as well as their search order
+is specified by the ``_subdir'' line in the
+.Nm man
+configuration file.
+.It Fl m
+Augment the list of standard directories which
+.Nm man
+searches for manual pages.
+The supplied
+.Ar path
+must be a colon (``:'') separated list of directories.
+These directories will be searched before the standard directories or
+the directories specified using the
+.Fl M
+option or the
+.Ev MANPATH
+environment variable.
+.It Fl w
+List the pathnames of the manual pages which
+.Nm man
+would display for the specified
+.Ar section
+and
+.Ar name
+combination.
+.El
+.Pp
+The optional
+.Ar section
+restricts the directories that
+.Nm man
+will search.
+The
+.Nm man
+configuration file (see
+.Xr man_conf 5 )
+specifies the possible
+.Ar section
+values that are currently available.
+If only a single argument is specified or if the first argument is
+not a valid section,
+.Nm man
+assumes that the argument is the name of a manual page to be displayed.
+.Sh ENVIRONMENT
+.Bl -tag -width MANPATHX
+.It Ev MACHINE
+As some manual pages are intended only for use on certain architectures,
+.Nm man
+searches certain directories applicable to the current machine.
+Man's
+determination of the current machine type may be overridden by setting
+the environment variable
+.Ev MACHINE
+to the name of an architecture (see
+.Xr machine 1 ) .
+Machine specific areas are checked before general areas.
+.It Ev MANPATH
+The standard search path used by
+.Nm man
+may be overridden by specifying a path in the
+.Ev MANPATH
+environment
+variable.
+The format of the path is a colon (``:'') separated list of directories.
+The subdirectories to be searched as well as their search order
+is specified by the ``_subdir'' line in the
+.Nm man
+configuration file.
+.It Ev PAGER
+Any value of the environment variable
+.Ev PAGER
+will be used instead of the standard pagination program
+.Xr more 1 .
+.El
+.Sh FILES
+.Bl -tag -width /etc/man.conf -compact
+.It Pa /etc/man.conf
+man configuration file (see
+.Xr man_conf 5 )
+.El
+.Sh SEE ALSO
+.Xr apropos 1 ,
+.Xr machine 1 ,
+.Xr whatis 1 ,
+.Xr whereis 1 ,
+.Xr man_conf 5
+.Sh BUGS
+The on-line manual pages are, by necessity, forgiving toward stupid
+display devices, causing some manual pages to not be as good as their
+typeset counterparts.
+.Sh HISTORY
+A
+.Nm
+command appeared in
+.At v6 .

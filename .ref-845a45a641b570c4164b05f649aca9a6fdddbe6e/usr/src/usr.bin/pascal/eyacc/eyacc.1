@@ -1,0 +1,52 @@
+.\" Copyright (c) 1980, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)eyacc.1	6.7 (Berkeley) %G%
+.\"
+.Dd 
+.Dt EYACC 1
+.Os BSD 4
+.Sh NAME
+.Nm eyacc
+.Nd modified yacc allowing much improved error recovery
+.Sh SYNOPSIS
+.Nm eyacc
+.Op Fl v
+.Op Ar grammar
+.Sh DESCRIPTION
+.Nm Eyacc
+is an old version of
+.Xr yacc  1  ,
+which produces tables used by the Pascal system and its error recovery
+routines.
+.Nm Eyacc
+fully enumerates test actions in its parser when an error token
+is in the look-ahead set.
+This prevents the parser from making undesirable reductions
+when an error occurs before the error is detected.
+The table format is different in
+.Nm eyacc
+than it was in the old
+.Xr yacc 1 ,
+as minor changes had been made for efficiency reasons.
+.Sh SEE ALSO
+.Xr yacc 1
+.Rs
+.%T "Practical LR Error Recovery"
+.%A Susan L.  Graham
+.%A Charles B. Haley
+.%A W. N. Joy
+.%J "\\*(tNSIGPLAN\\*(sP Conference on Compiler Construction"
+.%D "August 1979"
+.Re
+.Sh HISTORY
+.Nm Eyacc
+appeared in
+.Bx 2.0 .
+.Sh BUGS
+.Xr \&Pc 1
+and its error recovery routines should be made into a library
+of routines for the new
+.Xr yacc 1 .

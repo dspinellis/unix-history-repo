@@ -1,0 +1,67 @@
+.\" Copyright (c) 1983, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)stty.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt STTY 3
+.Os BSD 4.2
+.Sh NAME
+.Nm stty ,
+.Nm gtty
+.Nd set and get terminal state (defunct)
+.Sh SYNOPSIS
+.Fd #include <sgtty.h>
+.Fn stty "int fd" "struct sgttyb *buf"
+.Fn gtty "int fd" "struct sgttyb *buf"
+.Sh DESCRIPTION
+.Bf -symbolic
+These interfaces are obsoleted by ioctl(2).
+They are available from the compatibility library, libcompat.
+.Ef
+.Pp
+The
+.Fn stty
+function
+sets the state of the terminal associated with
+.Fa fd .
+The
+.Fn gtty
+function
+retrieves the state of the terminal associated
+with
+.Fa fd .
+To set the state of a terminal the call must have
+write permission.
+.Pp
+The
+.Fn stty
+call is actually
+.Ql ioctl(fd, TIOCSETP, buf) ,
+while
+the
+.Fn gtty
+call is
+.Ql ioctl(fd, TIOCGETP, buf) .
+See 
+.Xr ioctl 2
+and
+.Xr tty 4
+for an explanation.
+.Sh DIAGNOSTICS
+If the call is successful 0 is returned, otherwise \-1 is
+returned and the global variable
+.Va errno
+contains the reason for the failure.
+.Sh SEE ALSO
+.Xr ioctl 2 ,
+.Xr tty 4
+.Sh HISTORY
+The
+.Fn stty
+and
+.Fn gtty
+functions appeared in 
+.Bx 4.2 .

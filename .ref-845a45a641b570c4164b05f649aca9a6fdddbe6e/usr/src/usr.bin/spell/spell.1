@@ -1,0 +1,159 @@
+.\" Copyright (c) 1985 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)spell.1	6.5 (Berkeley) %G%
+.\"
+.Dd 
+.Dt SPELL 1
+.Os ATT 7th
+.Sh NAME
+.Nm spell ,
+.Nm spellin ,
+.Nm spellout
+.Nd find spelling errors
+.Sh SYNOPSIS
+.Nm spell
+.Op Fl v
+.Op Fl b
+.Op Fl x
+.Op Fl d Ar hlist
+.Op Fl s Ar hstop
+.Op Fl h Ar spellhist
+.Op Ar file
+.Ar ...
+.Nm spellin
+.Op Ar list
+.Nm spellout
+.Op Fl d
+Ar list
+.Sh DESCRIPTION
+.Nm Spell
+collects words from the named documents,
+and looks them up in a spelling list.
+Words that neither occur among nor are derivable
+(by applying certain inflections,
+prefixes or suffixes) from words in the spelling list
+are printed on the standard output.
+If no files are named,
+words are collected from the standard input.
+.Pp
+.Nm Spell
+ignores most
+.Xr troff 1 ,
+.Xr tbl 1
+and
+.Xr eqn 1
+constructions.
+.Pp
+Under the
+.Fl v
+option, all words not literally in the spelling list are printed,
+and plausible derivations from spelling list words are indicated.
+.Pp
+Under the 
+.Fl b
+option, British spelling is checked.
+Besides preferring
+.Em centre , colour , speciality , travelled ,
+etc.,
+this option insists upon
+.Fl ise
+in words like
+.Em standardise,
+Fowler and the OED to the contrary notwithstanding.
+.Pp
+Under the 
+.Fl x
+option, every plausible stem is printed with `=' for each word.
+.Pp
+The spelling list is based on many sources.
+While it is more haphazard than an ordinary
+dictionary, it is also more effective with
+proper names and popular technical words.
+Coverage of
+the specialized vocabularies of biology,
+medicine and chemistry is light.
+.Pp
+The auxiliary files used for the spelling list,
+stop list, and history file may be specified by
+arguments following the
+.Fl d ,
+.Fl s ,
+and
+.Fl h
+options.
+The default files are indicated below.
+Copies of all output
+may be accumulated in the history file.
+The stop list filters out misspellings (e.g. thier=thy\-y+ier)
+that would otherwise pass.
+.Pp
+Two routines help maintain the hash lists used by
+.Nm spell.
+Both expect a set of words, one per line,
+from the standard input.
+.Nm Spellin
+combines the words from the standard input and the
+preexisting
+.Ar list
+file and places a new list on the standard output.
+If no 
+.Ar list
+file is specified, the new list is created from scratch.
+.Nm Spellout
+looks up each word from the standard input and prints
+on the standard output
+those that are missing from (or present on, with
+option
+.Fl d )
+the hashed
+.Ar list
+file.
+For example, to verify that
+.Em hookey
+is not on the default spelling list, add it to your own
+private list, and then use it with
+.Nm spell ,
+.Pp
+.Bd -literal -offset indent -compact
+echo  hookey  |  spellout  /usr/share/dict/hlista
+echo  hookey  |  spellin  /usr/share/dict/hlista  >  myhlist
+spell  \-d  myhlist  huckfinn
+.Ed
+.Sh FILES
+.Bl -tag -width /usr/dict/hlist[ab]xx -compact
+.It Pa /usr/dict/hlist[ab]
+Hashed spelling lists, American & British, default for
+.Fl d .
+.It Pa /usr/dict/hstop
+Hashed stop list, default for
+.Fl s .
+.It Pa /dev/null
+History file, default for
+.Fl h .
+.It Pa /tmp/spell.$$\(**
+Temporary files.
+.It Pa /usr/libexec/spell
+Binary exectuted by the
+shell script
+.Pa /usr/bin/spell .
+.El
+.Sh SEE ALSO
+.Xr deroff 1 ,
+.Xr sort 1 ,
+.Xr tee 1 ,
+.Xr sed 1
+.Sh BUGS
+The spelling list's coverage is uneven;
+new installations will probably wish to 
+monitor the output for several months to gather
+local additions.
+.Pp
+British spelling was done by an American.
+.Sh HISTORY
+The
+.Nm spell
+command appeared in
+.At v6 .

@@ -1,0 +1,41 @@
+.\" Copyright (c) 1986, 1991 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"     @(#)uuname.1	6.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt UUNAME 1
+.Os BSD 4.3
+.Sh NAME
+.Nm uuname
+.Nd list names of
+.Tn UUCP
+hosts
+.Sh SYNOPSIS
+.Nm uuname
+.Op Fl l
+.Sh DESCRIPTION
+.Nm Uuname
+lists the
+.Tn UUCP
+names of known systems.
+.Pp
+Available option:
+.Bl -tag -width Ds
+.It Fl l
+Return the local system name; this may differ from the
+.Xr hostname 1
+for the system if the
+.Xr hostname
+is very long.
+.El
+.Sh SEE ALSO
+.Xr uucp 1 ,
+.Xr uux 1 .
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 4.0 .

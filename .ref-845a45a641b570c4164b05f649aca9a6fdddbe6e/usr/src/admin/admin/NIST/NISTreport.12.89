@@ -1,0 +1,62 @@
+.\"	@(#)NISTreport.12.89	1.1	90/01/03
+.\" *troff -me
+.sp 2
+.ce 100
+\fB\s+2Interim Report on Operating Systems Research
+in the Berkeley UNIX Project\s-2\fP
+October 1, 1989 \- December 31, 1989
+.sp 2
+Susan L. Graham
+Domenico Ferrari
+Marshall Kirk McKusick
+Michael J. Karels
+Keith Sklower
+.ce 0
+.sp 2
+.pp
+Berkeley continues to  participate in the Posix Standardization effort.
+.pp
+We completed an implementation of Connectionless mode Transport,
+did some rudimentary testing, and collaborated with Marshall Rose in 
+modifying the SNMP agent to make use of it.
+.pp
+We are continuing our development of X.25 support for CLNP and CONS.
+These changes are being made so that it can gracefully co-exist with
+IP over public data networks and the DDN.
+It should work over a variety of drivers (including front-end processors),
+and with the possibility of multiple X.25 interface boards on a given machine.
+This work requires some changes to the network routing layer.
+.pp
+We have fixed many bugs and performance problems during this period.
+We found and corrected a bug in our ``fix'' to avoid silly window
+syndrome between the socket layer and transport.
+We have found and fixed bugs specific to the microvax version that
+kept the message passing routing mechanism from working, and issuing
+explicit connection confirmation requests.
+.pp
+We are pursing problems, yet to be resolved,
+with ESIS ISH's and redirects.
+We are also tracking down the mishandling of a kernel resource
+exhaustion bug that was exposed by the most recent version of ISODE.
+.pp
+We are collaborating with colleagues at
+NIST to determine why the Wisconsin/BSD
+transport refuses SUNLINK connection requests,
+but can establish connections in the other direction.
+One such problems (recently corrected)
+involved a protocol violation of increasing a negotiated parameter
+during connection setup (packet size on a local ethernet).
+.pp
+We have received and are incorporating changes from MITRE about
+reception of the congestion-experienced bit.
+.pp
+A pageable memory based file system was implemented under the vnode
+interface.
+It is typically used for the /tmp file system where fast access is
+more important than longevity of file data.
+.pp
+The semantics of POSIX sessions were completed with the addition
+of code to implement revocation of the controlling terminal when
+the session leader exits.
+These semantics are implemented with a fourth file system type
+that rejects all attempts for access.

@@ -1,0 +1,43 @@
+.\" Copyright (c) 1983, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)fastboot.8	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt FASTBOOT 8
+.Os BSD 4.2
+.Sh NAME
+.Nm fastboot ,
+.Nm fasthalt
+.Nd "reboot/halt the system without checking the disks"
+.Sh SYNOPSIS
+.Nm fastboot
+.Op Ar boot-options
+.Nm fasthalt
+.Op Ar halt-options
+.Sh DESCRIPTION
+.Nm Fastboot
+and
+.Nm fasthalt
+are shell scripts which reboot and halt the system without
+checking the file systems.  This is done by creating a
+file 
+.Pa /fastboot ,
+then invoking the 
+.Xr reboot
+program.  The system startup script,
+.Pa /etc/rc ,
+looks for this file and, if present, skips the normal
+invocation of
+.Xr fsck 8 .
+.Sh SEE ALSO
+.Xr halt 8 ,
+.Xr reboot 8 ,
+.Xr rc 8
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 4.2 .

@@ -1,0 +1,54 @@
+.\" Copyright (c) 1983, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)insque.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt INSQUE 3
+.Os BSD 4.2
+.Sh NAME
+.Nm insque ,
+.Nm remque
+.Nd insert/remove element from a queue
+.Sh SYNOPSIS
+.Bd -literal
+struct qelem {
+	struct	qelem *q_forw;
+	struct	qelem *q_back;
+	char	q_data[];
+};
+.Ed
+
+.Fn insque "(caddr_t) struct qelem *elem" "(caddr_t) struct qelem *pred"
+.Fn remque "(caddr_t) struct qelem *elem"
+.Sh DESCRIPTION
+The
+.Fn insque
+and 
+.Fn remque
+functions
+manipulate queues built from doubly linked lists.  Each
+element in the queue must in the form of
+.Dq Li struct qelem .
+The function
+.Fn insque
+inserts 
+.Fa elem
+in a queue immediately after 
+.Fa pred ;
+.Fn remque
+removes an entry
+.Fa elem
+from a queue.
+.Sh SEE ALSO
+.%T "VAX Architecture Handbook" ,
+pp. 228-235.
+.Sh HISTORY
+The
+.Fn insque
+and
+.Fn remque
+functions appeared in 
+.Bx 4.2 .

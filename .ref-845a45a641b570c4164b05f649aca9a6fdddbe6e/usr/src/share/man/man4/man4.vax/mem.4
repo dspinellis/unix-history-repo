@@ -1,0 +1,78 @@
+.\" Copyright (c) 1980, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)mem.4	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt MEM 4 vax
+.Os BSD 4
+.Sh NAME
+.Nm mem ,
+.Nm kmem ,
+.Nm kUmem
+.Nd memory files
+.Sh DESCRIPTION
+The special file
+.Nm /dev/mem
+is an interface to the physical memory of the computer.
+Byte offsets in this file are interpreted as physical memory addresses.
+Reading and writing this file is equivalent to reading and writing
+memory itself.
+Only offsets within the bounds of
+.Nm /dev/mem
+are allowed.
+.Pp
+Kernel virtual memory is accessed through the interface
+.Nm /dev/kmem
+in the same manner as
+.Nm /dev/mem .
+Only kernel virtual addresses that are currently mapped to memory are allowed.
+.Pp
+The file
+.Nm /dev/kUmem
+also refers to kernel virtual memory,
+but may be used to access areas mapped to
+.Tn UNIBUS
+address space
+and other
+.Tn I/O
+areas.
+It forces all accesses to use word (short integer) accesses.
+.Pp
+On the
+.Tn VAX
+11/780,
+the
+.Tn I/O
+space base address is
+20000000(16);
+on an 11/750
+the
+.Tn I/O space addresses are of the form fxxxxx(16).
+On all
+.Tn VAX Ns 'en
+the
+per-process data
+size
+for the current process
+is
+.Dv UPAGES
+long and ends at the virtual address 80000000(16).
+.Sh FILES
+.Bl -tag -width Pa -compact
+.It Pa /dev/mem
+.It Pa /dev/kmem
+.It Pa /dev/kUmem
+.El
+.Sh HISTORY
+The
+.Nm mem ,
+.Nm kmem
+files appeared in
+.At v6 .
+The file
+.Nm kUmem
+appeared in
+.Bx 3.0 .

@@ -1,0 +1,699 @@
+.\" Copyright (c) 1980 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)ch6.n	6.2 (Berkeley) %G%
+.\"
+." $Header: ch6.n,v 1.4 83/07/21 21:08:16 sklower Exp $
+.Lc System\ Functions 6
+.pp
+This chapter describes the functions used to interact
+with internal components of the Lisp system and operating system.
+.Lf allocate "'s_type 'x_pages"
+.Wh
+s_type is one of the 
+.Fr
+data types described in \(sc1.3.
+.Re
+x_pages.
+.Se
+.Fr
+attempts to allocate x_pages of type s_type.
+If there aren't x_pages of memory left, no space will be 
+allocated and an error will occur.
+The storage that is allocated is not given to the caller, instead it is 
+added to the free storage list of s_type.
+The functions
+.i segment
+and 
+.i small-segment 
+allocate blocks  of storage and return it to the caller.
+.Lf argv "'x_argnumb"
+.Re
+a symbol whose pname is the x_argnumb\fIth\fP argument (starting at 0)
+on the command
+line which invoked the current lisp.
+.No
+if x_argnumb is less than zero, a fixnum whose value is the number of arguments
+on the command line is returned.
+\fI(argv\ 0)\fP returns the name of the lisp you are running.
+.Lf baktrace 
+.Re
+nil
+.Se
+the lisp runtime stack is examined and the name of (most) of the functions
+currently in execution are printed, most active first.
+.No
+this will occasionally miss the names of compiled lisp functions due to
+incomplete information on the stack.
+If you are tracing compiled code, then \fIbaktrace\fP won't be able
+to interpret the stack unless 
+.i (sstatus\ translink\ nil)
+was done.
+See the function 
+.i showstack 
+for another way of printing the lisp runtime
+stack.
+This misspelling is from Maclisp.
+.Lf chdir "'s_path"
+.Re
+t iff the system call succeeds.
+.Se
+the current directory set to s_path. 
+Among other things, this will affect the default location
+where the input/output functions look for and create files.
+.No
+\fIchdir\fP follows the standard UNIX conventions, if s_path does not begin
+with a slash, the default path is changed to the current path with
+s_path appended.
+.i Chdir
+employs tilde-expansion (discussed in Chapter 5).
+.Lf command-line-args
+.Re
+a list of the arguments typed on the command line, either to the
+lisp interpreter, or saved lisp dump, or application compiled
+with the autorun option (liszt -r).
+.Lf deref "'x_addr"
+.Re
+The contents of x_addr, when thought of as a longword memory
+location.
+.No
+This may be useful in constructing arguments to C functions
+out of `dangerous' areas of memory.
+.Lf dumplisp "s_name"
+.Re
+nil
+.Se
+the current lisp is dumped to the named file.
+When s_name is executed, you will be in a lisp in the
+same state as when the dumplisp was done.
+.No
+dumplisp will fail if one tries to 
+write over the current running file. 
+UNIX does not allow you to modify the file you are running.
+.Lf eval-when "l_time g_exp1 ..."
+.Se
+l_time may contain any combination of the symbols
+.i load ,
+.i eval ,
+and
+.i compile .
+The effects of load and compile is discussed in \(sc12.3.2.1
+compiler.
+If eval is present however, this simply means that the expressions g_exp1
+and so on are evaluated from left to right.
+If eval is not present, the forms are not evaluated.
+.Lf exit "['x_code]"
+.Re
+nothing (it never returns).
+.Se
+the lisp system dies with exit code x_code or 0 if x_code is not
+specified.
+.Lf fake "'x_addr"
+.Re
+the lisp object at address x_addr.
+.No
+This is intended to be used by people debugging the lisp system.
+.Lf fork 
+.Re
+nil to the child process and the process number of the child to 
+the parent.
+.Se
+A copy of the current lisp system is made in memory and both
+lisp systems now begin to run.
+This function can be used interactively to temporarily
+save the state of Lisp (as shown below), but you must be careful that only one
+of the lisp's interacts with the terminal after the fork.
+The
+.i wait 
+function is useful for this.
+.Eb
+\-> \fI(setq foo 'bar)\fP		;; set a variable
+bar
+\-> \fI(cond ((fork)(wait)))\fP	;; duplicate the lisp system and
+nil				;; make the parent wait
+\-> \fIfoo\fP				;; check the value of the variable
+bar
+\-> \fI(setq foo 'baz)\fP		;; give it a new value
+baz
+\-> \fIfoo\fP 				;; make sure it worked
+baz
+\-> \fI(exit)\fP			;; exit the child
+(5274 . 0) 			;; the \fIwait\fP function returns this
+\-> \fIfoo\fP 				;; we check to make sure parent was
+bar				;; not modified.
+.Ee
+.Lf gc
+.Re
+nil
+.Se
+this causes a garbage collection.
+.No
+The function
+.i gcafter
+is not called automatically after this function finishes.
+Normally the user doesn't have to call
+.i gc
+since
+garbage collection occurs automatically whenever internal free lists
+are exhausted.
+.Lf gcafter "s_type"
+.Wh
+s_type is one of the 
+.Fr
+data types listed in \(sc1.3.
+.No
+this function is called by the garbage collector
+after a garbage collection which was caused by running out of 
+data type s_type.
+This function should determine if more space need be allocated
+and if so should allocate it.
+There is a default gcafter function but users who want control over
+space allocation can define their own -- but note that it must be
+an nlambda.
+.Lf getenv "'s_name"
+.Re
+a symbol whose pname is the value of s_name in the current 
+UNIX environment.
+If s_name doesn't exist in the current environment, a symbol with a null pname
+is returned.
+.Lf hashtabstat
+.Re
+a list of fixnums representing the number of symbols in each bucket of
+the oblist.
+.No
+the oblist is stored a hash table of buckets.
+Ideally there would be the same number of symbols in each bucket.
+.Lf help "[sx_arg]"
+.Se
+If sx_arg is a symbol then
+the portion of this manual beginning with the description of sx_arg
+is printed on the terminal.
+If sx_arg is  a fixnum or the name of one of the appendicies, that
+chapter or appendix is printed on the terminal.
+If no argument is provided, 
+.i help
+prints the options that it recognizes.
+The program `more' is used to print the manual on the terminal; it will
+stop after each page and will continue after the space key is pressed.
+.Lf include "s_filename"
+.Re
+nil
+.Se
+The given filename is 
+.i load ed
+into the lisp.
+.No
+this is similar to load except the argument is not evaluated.
+Include means something special to the compiler.
+.Lf include-if "'g_predicate s_filename"
+.Re
+nil
+.Se
+This has the same effect as include, but is only actuated
+if the predicate is non-nil.
+.Lf includef "'s_filename"
+.Re
+nil
+.Se
+this is the same as 
+.i include
+except the argument is evaluated.
+.Lf includef-if "'g_predicate s_filename"
+.Re
+nil
+.Se
+This has the same effect as includef, but is only actuated
+if the predicate is non-nil.
+.Lf maknum "'g_arg"
+.Re
+the address of its argument converted into a fixnum.
+.Lf monitor "['xs_maxaddr]"
+.Re
+t
+.Se
+If xs_maxaddr is t then profiling of the entire lisp system is begun.
+If xs_maxaddr is a fixnum then profiling is done only up to address
+xs_maxaddr.
+If xs_maxaddr is not given, then profiling is stopped and the data
+obtained is written to the file 'mon.out' where it can be analyzed
+with the UNIX 'prof' program.
+.No
+this function only works if the lisp system has been compiled
+in a special way, otherwise, an error is invoked.
+.Lf opval "'s_arg ['g_newval]"
+.Re
+the value associated with s_arg before the call.
+.Se
+If g_newval is specified, the value associated with s_arg is changed to
+g_newval.
+.No
+\fIopval\fP keeps track of storage allocation. If s_arg is one of the data types
+then \fIopval\fP will return a list of three fixnums representing the number of
+items of that type in use, the number of pages allocated and the number
+of items of that type per page.  
+You should never try to change the value \fIopval\fP associates
+with a data type using
+\fIopval\fP.
+.br
+If s_arg is 
+.i pagelimit
+then 
+.i opval 
+will return (and set if g_newval is given)
+the maximum amount of lisp data pages
+it will allocate.
+This limit should remain small unless you know your program requires 
+lots of space as this limit will catch programs in infinite loops which
+gobble up memory.
+.Lf *process "'st_command ['g_readp ['g_writep]]"
+.Re
+either a fixnum if one argument is given, or a list of two ports and a
+fixnum if two or three arguments are given.
+.No
+\fI*process\fP starts another process by passing st_command to the shell
+(it first tries /bin/csh, then it tries /bin/sh if /bin/csh doesn't exist).
+If only one argument is given to \fI*process\fP,
+\fI*process\fP waits for the new
+process to die and then returns the exit code of the new process.
+If more two or three arguments are given, \fI*process\fP starts the process
+and then returns a list which, depending on the value of g_readp
+and g_writep, may contain i/o ports for communcating with the new
+process.
+If g_writep is non-null, then a port will be created which the lisp program
+can use to send characters to the new process.
+If g_readp is non-null, then a port will be created which the lisp program
+can use to read characters from the new process.
+The value returned by \fI*process\fP is (readport\ writeport\ pid)
+where readport and writeport are either nil or a port based on the value
+of g_readp and g_writep.  Pid is the process id of the new process.
+Since it is hard to remember the order of g_readp and g_writep, the
+functions \fI*process-send\fP and \fI*process-receive\fP were written to
+perform the common functions.
+.Lf *process-receive "'st_command"
+.Re
+a port which can be read.
+.Se
+The command st_command is given to the shell and it is started running in the
+background.
+The output of that command is available for reading via the port returned.
+The input of the command process is set to /dev/null.
+.Lf *process-send "'st_command"
+.Re
+a port which can be written to.
+.Se
+The command st_command is given to the shell and it is started runing in the
+background.
+The lisp program can provide input for that command
+by sending characters to the port returned by this function.
+The output of the command process is set to /dev/null.
+.Lf process "s_pgrm [s_frompipe s_topipe]"
+.Re
+if the optional arguments are
+not present a fixnum which is the exit code when s_prgm dies.
+If the optional arguments are present, it returns a fixnum which
+is the process id of the child.
+.No
+This command is obsolete.
+New programs should use one of the \fI*process\fP commands
+given above.
+.Se
+If s_frompipe and s_topipe are given, they are bound to 
+ports which are pipes which
+direct characters from 
+.Fr
+to the new process
+and to
+.Fr
+from the new process respectively.
+.i Process
+forks a process named s_prgm and waits for it to die iff there
+are no pipe arguments given.
+.Lf ptime 
+.Re
+a list of two elements.
+The first is the amount of processor time used
+by the lisp system so far, and the 
+second is the amount of time used by the garbage collector so far.
+.No
+the time is measured in those units used by the
+.i times (2)
+system call, usually 60\fIth\fPs of a second.
+The first number includes the second number.
+The amount of time used by garbage collection is not recorded
+until the first call to ptime.
+This is done to prevent overhead when the user is not interested in
+garbage collection times.
+.Lf reset
+.Se
+the lisp runtime stack is cleared and the system restarts at the top level 
+by executing a \fI(funcall\ top-level\ nil)\fP.
+.Lf restorelisp "'s_name"
+.Se
+this reads in file s_name (which was created by 
+.i savelisp )
+and then does a \fI(reset)\fP.
+.No
+This is only used on VMS systems where 
+.i dumplisp
+cannot be used.
+.Lf retbrk "['x_level]
+.Wh
+x_level is a small integer of either sign.
+.Se
+The default error handler keeps a notion of the current level
+of the error caught.  If x_level is negative, control is thrown
+to this default error handler whose level is that many less than
+the present, or to \fItop-level\fP if there aren't enough.
+If x_level is non-negative, control is passed to the handler at
+that level.  If x_level is not present, the value -1 is taken by
+default.
+.Lf *rset "'g_flag"
+.Re
+g_flag
+.Se
+If g_flag is non nil then the lisp system will maintain extra information
+about calls to \fIeval\fP and \fIfuncall\fP.
+This record keeping slows down the evaluation but this is 
+required  for the functions
+\fIevalhook\fP, \fIfuncallhook\fP, and \fIevalframe\fP to work. 
+To debug compiled lisp code the transfer tables should be unlinked:
+\fI(sstatus\ translink\ nil)\fP
+.Lf savelisp "'s_name"
+.Re
+t
+.Se
+the state of the Lisp system is saved in the file s_name.
+It can be read in by 
+.i restorelisp .
+.No
+This is only used on VMS systems where 
+.i dumplisp
+cannot be used.
+.Lf segment "'s_type 'x_size"
+.Wh
+s_type is one of the data types given in \(sc1.3
+.Re
+a segment of contiguous lispvals of type s_type.
+.No
+In reality, 
+.i segment 
+returns a new data cell of type s_type and allocates
+space for x_size \- 1 more s_type's beyond the one returned.
+.i Segment 
+always allocates new space and does so in 512 byte chunks.
+If you ask for 2 fixnums, segment will actually allocate 128 of them
+thus wasting 126 fixnums.
+The function
+.i small-segment
+is a smarter space allocator and should be used whenever possible.
+.Lf shell
+.Re
+the exit code of the shell when it dies.
+.Se
+this forks a new shell and returns when the shell dies.
+.Lf showstack
+.Re
+nil
+.Se
+all forms currently in evaluation are printed, beginning with the most recent.
+For compiled code the most that 
+showstack will show is the function name and it may miss
+some functions.
+.Lf signal "'x_signum 's_name"
+.Re
+nil if no previous call to signal has been made, or the previously
+installed s_name.
+.Se
+this declares that the function named s_name 
+will handle the signal number x_signum.
+If s_name is nil, the signal is ignored.  Presently only
+four UNIX signals are caught.
+They and their numbers are:
+Interrupt(2), Floating exception(8), Alarm(14), and
+Hang-up(1).
+.Lf sizeof "'g_arg"
+.Re
+the number of bytes required to store one object of type g_arg, encoded
+as a fixnum.
+.Lf small-segment "'s_type 'x_cells"
+.Wh
+s_type is one of fixnum, flonum and value.
+.Re
+a segment of x_cells data objects of type s_type.
+.Se
+This may call
+.i segment
+to allocate new space or it may be able to fill the request on a page
+already allocated.
+The value returned by 
+.i small-segment 
+is usually stored in the data subpart
+of an array object.
+.Lf sstatus "g_type g_val"
+.Re
+g_val
+.Se
+If g_type is not one of the special sstatus codes described in the 
+next few pages
+this simply sets g_val as the value of status 
+type g_type in the system status property list.
+.Lf sstatus\ appendmap "g_val"
+.Re
+g_val
+.Se
+If g_val is non-null when 
+.i fasl
+is told to create a load map, it will append to the file name given in
+the 
+.i fasl
+command, rather than creating a new map file.
+The initial value is nil.
+.Lf sstatus\ automatic-reset "g_val"
+.Re
+g_val
+.Se
+If g_val is non-null when an error occurs which no one wants to 
+handle, a 
+.i reset
+will be done instead of entering a primitive internal break loop.
+The initial value is t.
+.Lf sstatus\ chainatom "g_val"
+.Re
+g_val
+.Se
+If g_val is non nil and a 
+.i car
+or 
+.i cdr
+of a symbol is done, then nil will be returned instead of an error
+being signaled.
+This only affects the interpreter, not the compiler.
+The initial value is nil.
+.Lf sstatus\ dumpcore "g_val"
+.Re
+g_val
+.Se
+If g_val is nil, 
+.Fr 
+tells UNIX that a segmentation violation or 
+bus error should cause a core dump.
+If g_val is non nil then 
+.Fr
+will catch those errors and print a message advising the user to reset.
+.No
+The initial value for this flag is nil, and only those knowledgeable of
+the innards of the lisp system should ever set this flag non nil.
+.Lf sstatus\ dumpmode "x_val"
+.Re
+x_val
+.Se
+All subsequent 
+.i dumplisp 's
+will be done in mode x_val.
+x_val may be either 413 or 410 (decimal).
+.No
+the advantage of mode 413 is that the dumped Lisp can be demand paged in when
+first started, which will make it start faster and disrupt other users less.
+The initial value is 413.
+.Lf sstatus\ evalhook "g_val"
+.Re
+g_val
+.Se
+When g_val is non nil, this enables the 
+evalhook and funcallhook traps in the evaluator.
+See \(sc14.4 for more details.
+.Lf sstatus\ feature "g_val"
+.Re
+g_val
+.Se
+g_val is added to the \fI(status\ features)\fP list, 
+.Lf sstatus\ gcstrings "g_val"
+.Re
+g_val
+.Se
+if g_val is non-null, and if string garbage collection was enabled when
+the lisp system was compiled, string space will be garbage collected.
+.No
+the default value for this is nil since in most applications garbage
+collecting strings is a waste of time.
+.Lf sstatus\ ignoreeof "g_val"
+.Re
+g_val
+.Se
+If g_val is non-null when
+an end of file (CNTL-D on UNIX) is typed to the standard top-level interpreter,
+it will be ignored rather then cause the lisp system to exit.
+If the the standard input is a file or pipe then this has no effect,
+an EOF will always cause lisp to exit.
+The initial value is nil.
+.Lf sstatus\ nofeature "g_val"
+.Re
+g_val
+.Se
+g_val is removed from the status features list if it was present.
+.Lf sstatus\ translink "g_val"
+.Re
+g_val
+.Se
+If g_val is nil then all transfer tables are cleared and further calls
+through the transfer table will not cause the fast links to be set up.
+If g_val is the symbol 
+.i on
+then all possible transfer table entries will be linked and the flag
+will be set to cause fast links to be set up dynamically.
+Otherwise all that is done is to set the flag to cause fast links
+to be set up dynamically.
+The initial value is nil.
+.No
+For a discussion of transfer tables, see \(sc12.8.
+.Lf sstatus\ uctolc "g_val"
+.Re
+g_val
+.Se
+If g_val is not nil then all unescaped capital letters 
+in symbols read by the reader will be converted to lower case.
+.No
+This allows 
+.Fr
+to be compatible with single case lisp
+systems (e.g. Maclisp, Interlisp and UCILisp).
+.Lf status "g_code"
+.Re
+the value associated with the status code g_code
+if g_code is not one of the special cases given below
+.Lf status\ ctime 
+.Re
+a symbol whose print name is the current time and date.
+.Ex
+\fI(status ctime)\fP = |Sun Jun 29 16:51:26 1980|
+.No
+This has been made obsolete by \fItime-string\fP, described below.
+.Lf status\ feature "g_val"
+.Re
+t iff g_val is in the status features list.
+.Lf status\ features 
+.Re
+the value of the features code, which is a list of features which
+are present in this system.
+You add to this list with \fI(sstatus\ feature\ 'g_val)\fP
+and test if feature g_feat is present with \fI(status\ feature\ 'g_feat)\fP.
+.Lf status\ isatty 
+.Re
+t iff the standard input is a terminal.
+.Lf status\ localtime
+.Re
+a list of fixnums representing the current time.
+.Ex
+\fI(status localtime)\fP =  (3 51 13 31 6 81 5 211 1)
+.br
+means 3\fIrd\fP second, 51\fIst\fP minute, 13\fIth\fP hour (1 p.m),
+31\fIst\fP day, month 6 (0\ =\ January), year 81 (0\ =\ 1900),
+day of the week 5 (0\ =\ Sunday), 211\fIth\fP day of the year
+and daylight savings time is in effect.
+.Lf status\ syntax "s_char"
+.No
+This function should not be used.
+See the description of
+.i getsyntax
+(in Chapter 7) for a replacement.
+.Lf status\ undeffunc
+.Re
+a list of all functions which transfer table entries point to but which
+are not defined at this point.
+.No
+Some of the undefined functions listed could be arrays which have yet
+to be created.
+.Lf status\ version
+.Re
+a string which is the current lisp version name.
+.Ex
+\fI(status version)\fP = "Franz Lisp, Opus 38.61"
+.Lf syscall "'x_index ['xst_arg1 ...]"
+.Re
+the result of issuing the UNIX system call number x_index with arguments
+xst_arg\fIi\fP.
+.No
+The UNIX system calls are described in section 2 of the
+UNIX Programmer's manual. 
+If xst_arg\fIi\fP is a fixnum, then 
+its value is passed as an argument, if it is a symbol then 
+its pname is passed and finally if it is a string then the string itself
+is passed as an argument.
+Some useful syscalls are:
+.br
+\fI(syscall\ 20)\fP returns process id.
+.br
+\fI(syscall\ 13)\fP returns the number of seconds since Jan 1, 1970.
+.br
+\fI(syscall\ 10\ 'foo)\fP will unlink (delete) the file foo.
+.Lf sys:access "'st_filename 'x_mode"
+.Lx sys:chmod "'st_filename 'x_mode"
+.Lx sys:gethostname
+.Lx sys:getpid
+.Lx sys:getpwnam 'st_username
+.Lx sys:link "'st_oldfilename 'st_newfilename"
+.Lx sys:time
+.Lx sys:unlink 'st_filename
+.No
+We have been warned that the actual system call numbers may vary
+among different UNIX systems.  Users concerned about portability
+may wish to use this group of functions.
+Another advantage is that tilde-expansion is performed on
+all filename arguments.
+These functions do what is described
+in the system call section of your UNIX manual.
+.br
+.sp
+.i sys:getpwnam
+returns a vector of four entries from the password file, being
+the user name, user id, group id, and home directory.
+.Lf time-string "['x_seconds]"
+.Re
+an ascii string giving the time and date which was
+x_seconds after UNIX's idea of creation
+(Midnight, Jan 1, 1970 GMT).  If no argument is given,
+time-string returns the current date.
+This supplants \fI(status ctime)\fP, and may be used
+to make the results of \fIfilestat\fP more intelligible.
+.Lf top-level
+.Re
+nothing (it never returns)
+.No
+This function is the top-level read-eval-print loop.
+It never returns any value.
+Its main utility is that if you redefine it, and do a (reset) then the
+redefined (top-level) is then invoked.
+The default top-level for Franz, allow one to specify
+his own printer or reader, by binding the symbols \fBtop-level-printer\fP
+and \fBtop-level-reader\fP.
+One can let the default top-level do most of the drudgery in catching
+.i reset 's,
+and reading in .lisprc files,
+by binding the symbol \fBuser-top-level\fP, to a routine that
+concerns itself only with the read-eval-print loop.
+.Lf wait
+.Re
+a dotted pair \fI(processid . status)\fP when the
+next child process dies. 

@@ -1,0 +1,501 @@
+.\" Copyright (c) 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the Institute of Electrical and Electronics Engineers, Inc.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"     @(#)sed.1	6.7 (Berkeley) %G%
+.\"
+.Dd 
+.Dt SED 1
+.Os
+.Sh NAME
+.Nm sed
+.Nd stream editor.
+.Sh SYNOPSIS
+.Nm sed
+.Op Fl n
+.Ar script
+.Ar
+.Nm sed
+.Op Fl n
+.Op Fl e Ar script
+.Op Fl f Ar script_file
+.Ar
+.Sh DESCRIPTION
+The
+.Nm sed
+utility is a stream editor which reads one or more
+text files, applies given editing command scripts,
+and writes the results to standard output.
+The script of editing commands can be given in the command
+line, or can be contained in the file
+.Ar script_file .
+.Pp
+Options:
+.Bl -tag -width indent
+.It Fl e Ar script
+The command line
+.Ar script
+is used to edit the input.
+If multiple
+.Fl e
+options are given, the scripts are
+applied in the order given to each line of the
+input files.
+If a
+.Fl f
+option is given in addition
+to
+.Fl e ,
+lines are acted upon by scripts first.
+.It Fl f Ar script_file
+The file
+.Ar script_file
+is expected to contain editing commands, one per line,
+and these commands are applied to the input.
+If multiple
+.Fl f
+options are given, the commands in the
+.Ar script_file Ns s
+are applied in
+the order given to each line of the input
+files.
+If a
+.Fl e
+option is given in addition to
+.Fl f ,
+lines are acted upon by
+the commands in the
+.At script_file Ns s
+first.
+.It Fl n
+The
+.Fl n
+option suppresses the default output, which normally
+passes each line, after it is examined for editing,
+to standard output.
+Therefore, only lines explicitly
+selected for output are written.
+.El
+.Pp
+The following operands are available:
+.Bl -tag -width file
+.It Ar file
+A pathname of a file whose contents are read and
+edited.
+If multiple file operands are given,
+the named files are read in the order given and
+the concatenation is edited.
+If no file operands
+are given, the standard input is used.
+.It Ar script
+The script consists of one or more editing
+instructions that are entered on the command line.
+.El
+.\" .Pp
+.\" The following environment variable affects the execution of
+.\" sed:
+.\" .It Ev LC_CTYPE
+.\" The locale for character classification.
+.Pp
+.Bd -filled -offset indent -compact
+.Op address Op ,address
+function
+.Op arguments
+.Ed
+.Pp
+In default operation,
+.Nm sed
+cyclically copies a line of input
+into a pattern space (unless there is something left after a
+.Cm D
+command), applies in sequence all commands whose addresses
+select that pattern space, and at the end of the script
+copies the pattern space to the standard output (except
+under
+.Fl n )
+and deletes the pattern space.
+.Pp
+Some of the commands use a hold space to save all or part of
+the pattern space for
+subsequent retrieval.
+.\" The pattern and hold spaces are each
+.\" limited to
+.\" .Pf { Dv SED_PATTERN_MAX Ns }
+.\" bytes.
+.Pp
+An address is either no address; a decimal number that
+counts input lines cumulatively across files; a
+.Ql $
+that
+addresses the last line of input; a context address; or
+regular expression.
+.Pp
+A command line with no addresses selects every pattern
+space.
+.Pp
+A command line with one address selects each pattern space
+that matches the address.
+.Pp
+A command line with two addresses selects the inclusive
+range from the first pattern space that matches the first
+address through the next pattern space which matches the
+second.
+(If the second address is a number less than or
+equal to the line number first selected, only one line is
+selected.)
+Starting at the first line following the
+selected range,
+.Nm sed
+looks again for the first address.
+Thereafter the process is repeated.
+.Pp
+Editing commands can be applied only to non-selected pattern
+spaces by use of the negation function
+.Cm \&!
+(See below.)
+.Pp
+The
+.Nm sed
+utility uses basic regular expressions, as are found in the
+editor
+.Xr ed 1 ,
+with the following additions:
+.Pp
+.Bl -enum -offset indent
+.It
+In a context address, the construction
+.Li \e?RE? ,
+where ?
+is any character, is identical to
+.Li /RE/ .
+Note that in the
+context address
+.Li \exabc\exdefx ,
+the second
+.Ql x
+stands for
+itself, so that the regular expression is
+.Li abcxdef .
+.It
+The escape sequence
+.Ql \en
+matches a <newline> embedded
+in the pattern space.
+.It
+A period
+.Ql \&.
+matches any character except the terminal <newline> of the pattern space.
+.El
+.Pp
+In the following list of functions the maximum number of
+permissible addresses for each function is indicated by
+.Op 0addr ,
+.Op 1addr ,
+or
+.Op 2addr ;
+representing zero, one, or two
+addresses.
+.Pp
+The argument text consists of one or more lines.
+Each
+embedded <newline> in the text shall be preceded by a
+backslash.
+Other backslashes in text are treated like
+backslashes in the replacement string of an s command, and
+can be used to protect initial <blank>s against the stripping
+that is done on every script line.
+.Pp
+The
+.Cm r
+and
+.Cm w
+commands take an optional
+.Ar rfile
+(or
+.Ar wfile )
+parameter, separated from the command letter by zero or more
+<blank>s.
+.Pp
+The argument
+.Ar rfile
+or the argument
+.Ar wfile
+shall terminate the
+command line.
+Each
+.Ar wfile
+is created before processing
+begins.
+There can be at most ten distinct
+.Ar wfile
+arguments
+in the script.
+.Pp
+The
+.Cm b , r , s , t ,
+.Cm w , y , \&! ,
+and
+.Cm \&:
+commands take additional
+arguments.
+The following synopses indicate which arguments
+are separated from the commands by <blank>s.
+.Bl -tag -width addrcommandxx
+.It Xo
+.Oo Ad 2addr Oc \&{ command_list \&}
+.Xc
+Executes command_list only when the pattern
+space is selected.
+The {} braces can be preceded
+and followed by white space.
+.It Xo
+.Oo Ad 1addr Oc Ns Cm a Ar text
+.Xc
+Writes text to the standard output after the
+pattern space is written.
+.It Xo
+.Oo Ad 2addr Oc Ns Cm b Ar label
+.Xc
+Branches to the
+.Cm \&:
+command bearing the label.
+If label is empty, branch to the end of the
+script.
+.It Xo
+.Oo Ad 2addr Oc Ns Cm c Ar text
+.Xc
+Deletes the pattern space.
+With 0 or 1
+address or at the end of a 2-address range,
+places text on the output.
+.It Xo
+.Oo Ad 2addr Oc Ns Cm d
+.Xc
+Deletes the pattern space and starts the next
+cycle.
+.It Xo
+.Oo Ad 2addr Oc Ns Cm D
+.Xc
+Deletes the initial segment of the pattern
+space through the first <newline> and starts
+the next cycle.
+.It Xo
+.Oo Ad 2addr Oc Ns Cm g
+.Xc
+Replaces the contents of the pattern space by
+the contents of the hold space.
+.It Xo
+.Oo Ad 2addr Oc Ns Cm G
+.Xc
+Appends the contents of the hold space to the
+pattern space.
+.It Xo
+.Oo Ad 2addr Oc Ns Cm h
+.Xc
+Replaces the contents of the hold space by
+the contents of the pattern space.
+.It Xo
+.Oo Ad 2addr Oc Ns Cm H
+.Xc
+Appends the contents of the pattern space to
+the hold space.
+.It Xo
+.Oo Ad 1addr Oc Ns Cm i Ar text
+.Xc
+Writes text to the standard output before the
+pattern space is written.
+.It Xo
+.Oo Ad 2addr Oc Ns Cm l
+.Xc
+Lists the pattern space on the standard out-
+put in an unambiguous form.
+Nonprinting
+characters are listed as hexadecimal digit
+pairs, with a preceding backslash, with the
+following exceptions:
+.Bl -column <carriagexreturn> -offset indent
+<alert>	\ea
+<backslash>	\e\e
+<backspace>	\eb
+<carriage return>	\er
+<form-feed>	\ef
+<newline>	\en
+<tab>	\et
+<vertical tab>	\ev
+.El
+.Pp
+Long lines are folded; the length at which
+folding occurs is ungiven, but should be
+appropriate for the output device.
+.It Xo
+.Oo Ad 2addr Oc Ns Cm n
+.Xc
+Copies the pattern space to the standard output
+and replaces the pattern space with the
+next line of input.
+.It Xo
+.Oo Ad 2addr Oc Ns Cm N
+.Xc
+Appends the next line of input to the pattern
+space, using an embedded <newline> to
+separate the appended material from the
+original material.
+Note that the current line
+number changes.
+.It Xo
+.Oo Ad 2addr Oc Ns Cm p
+.Xc
+Copies
+.Op prints
+the pattern space to the
+standard output.
+.It Xo
+.Oo Ad 2addr Oc Ns Cm P
+.Xc
+Copies
+.Op prints
+the pattern space, up to the
+first <newline>, to the standard output.
+.It Xo
+.Oo Ad 1addr Oc Ns Cm q
+.Xc
+Branches to the end of the script and quits
+without starting a new cycle.
+.It Xo
+.Oo Ad 1addr Oc Ns Cm r Ar rfile
+.Xc
+Read the contents of rfile.
+Place them on the
+output before reading the next input line.
+.It Xo
+.Oo Ad 2addr Oc Ns \\*(cMs\\*(dF/\\*(aRregular expression\\*(dF/\\*(aRreplacement string\\*(dF/flags
+.Xc
+Substitutes the replacement string for
+instances of the regular expression in the
+pattern space.
+Any character can be used
+instead of
+.Ql / .
+The value of flags is zero or
+more of:
+.Bl -tag -width Ds
+.It Ar n
+n=1-512.  Substitutes for the
+.Ar n Ns th
+occurrence only of the regular
+expression found within the pattern space.
+.It Cm g
+Globally substitutes for all
+non-overlapping instances of the regular
+expression rather than just
+the first one.  If both
+.Cm g
+and
+.Cm n
+are given,
+.Cm g
+takes precedence.
+.It Cm p
+Prints the pattern space if a
+replacement was made.
+.It Cm w Ar wfile
+Write.  Appends the pattern space
+to
+.Ar wfile
+if a replacement was
+made.
+.El
+.It Xo
+.Oo Ad 2addr Oc Ns Cm t Ar label
+.Xc
+Test.
+Branches to the
+.Cm \&:
+command bearing the
+label if any substitutions have been made
+since the most recent reading of an input
+line or execution of a
+.Cm t .
+If label is empty,
+branches to the end of the script.
+.It Xo
+.Oo Ad 2addr Oc Ns Cm w Ar wfile
+.Xc
+Appends
+.Op writes
+the pattern space to
+.Ar wfile .
+.It Xo
+.Oo Ad 2addr Oc Ns Cm x
+.Xc
+Exchanges the contents of the pattern and
+hold spaces.
+.It Xo
+.Oo Ad 2addr Oc Ns \\*(cMy\\*(dF/\\*(aRstring1\\*(dF/\\*(aRstring2\\*(dF/
+.Xc
+Replaces all occurrences of collating
+elements in
+.Ar string1
+with the corresponding
+collating element in
+.Ar string2 .
+The lengths of
+.Ar string1
+and
+.Ar string2
+shall be equal.
+.It Xo
+.Oo Ad 2addr Oc Ns \\*(cM!\\*(dFfunction
+.Xc
+Applies the function (or group, if function
+is {) only to the lines that are not selected
+by the address(es).
+.It Xo
+.Oo Ad 0addr Oc Ns \\*(cM:\\*(dFlabel
+.Xc
+This command does nothing; it bears a label
+for the b and t commands to branch to.
+.It Xo
+.Oo Ad 1addr Oc Ns Cm \&=
+.Xc
+Places the current line number on the standard
+output as a line with its own line
+number.
+.It Xo
+.Oo Ad 0addr Oc
+.Xc
+An empty command is ignored.
+.It Xo
+.Oo Ad 0addr Oc Cm #
+.Xc
+If a
+.Cm #
+appears as the first character on any
+line of a script file, that entire line is
+ignored (treated as a comment), with the single
+exception that if the first line of the
+script file begins with
+.Cm Ns #n ,
+the default
+output is suppressed.
+.El
+.Pp
+The
+.Nm sed
+utility exits 0 on success, and >0 if an error occurs.
+.Pp
+If one or more of the input (not script) files cannot be
+opened for reading,
+.Nm sed
+continues to process the remaining
+files.
+.Sh STANDARDS
+The
+.Nm sed
+utility is expected to be
+.St -p1003.2
+compatible.

@@ -1,0 +1,56 @@
+.\" Copyright (c) 1986, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)crl.4	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt CRL 4 vax
+.Os BSD 4.3
+.Sh NAME
+.Nm crl
+.Nd
+.Tn VAX
+8600 console
+.Tn RL Ns 02
+interface
+.Sh DESCRIPTION
+This is a simple interface to the
+.Tn DEC
+.Tn RL Ns 02
+disk unit which is part of the console
+subsystem on the
+.Tn VAX
+8600 and 8650.
+Access is given to the entire
+.Tn RL Ns 02
+disk; the pack format is the same
+as that of
+.Tn RL Ns 02
+disks on other controllers.
+As on other
+.Tn VAX
+console media, transfers are done a word at a time
+using privileged registers (i.e., slowly).
+.Pp
+All
+.Tn I/O
+is raw; the seek addresses in raw transfers should be a multiple
+of 512 bytes and a multiple of 512 bytes should be transferred,
+as in other
+.Dq raw
+disk interfaces.
+(Although the sector size is actually 256 bytes, the driver allows
+operations only on 512-byte boundaries.)
+.Sh FILES
+.Bl -tag -width /dev/crl -compact
+.It Pa /dev/crl
+.El
+.Sh SEE ALSO
+.Xr arff 8
+.Sh HISTORY
+The
+.Nm
+driver appeared in
+.Bx 4.3 .

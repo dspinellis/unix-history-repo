@@ -1,0 +1,46 @@
+.\" Copyright (c) 1990, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek.
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)bcmp.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt BCMP 3
+.Os BSD 4.2
+.Sh NAME
+.Nm bcmp
+.Nd compare byte string
+.Sh SYNOPSIS
+.Fd #include <string.h>
+.Ft int
+.Fn bcmp "const void *b1" "const void *b2" "size_t len"
+.Sh DESCRIPTION
+The
+.Fn bcmp
+function
+compares byte string
+.Fa b1
+against byte string
+.Fa b2 ,
+returning zero if they are identical, non-zero otherwise.
+Both strings are assumed to be
+.Fa len
+bytes long.
+Zero-length strings are always identical.
+.Pp
+The strings may overlap.
+.Sh SEE ALSO
+.Xr bcmp 3 ,
+.Xr memcmp 3 ,
+.Xr strcasecmp 3 ,
+.Xr strcmp 3 ,
+.Xr strcoll 3 ,
+.Xr strxfrm 3
+.Sh HISTORY
+A
+.Fn bcmp
+function first appeared in 
+.Bx 4.2 .

@@ -1,0 +1,56 @@
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the Systems Programming Group of the University of Utah Computer
+.\" Science Department.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)ppi.4	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt PPI 4 hp300
+.Os
+.Sh NAME
+.Nm ppi
+.Nd
+.Tn HP-IB
+printer/plotter interface
+.Sh SYNOPSIS
+.Cd "device ppi0 at hpib0 slave 5"
+.Sh DESCRIPTION
+The
+.Nm ppi
+interface provides a means of communication with
+.Tn HP-IB
+printers and plotters.
+.Pp
+Special files
+.Pa ppi0
+through
+.Pa ppi7
+are used to access the devices, with the digit at the end
+of the filename referring to the bus address of the device.
+Current versions of the autoconf code can not probe for these
+devices, so the device entry in the configuration file must be
+fully qualified.
+.Pp
+The device files appear as follows:
+.Bd -literal -offset indent
+"crw-rw-rw-  1 root      11,   0 Dec 21 11:22 /dev/ppi"
+.Ed
+.Sh DIAGNOSTICS
+None.
+.Sh SEE ALSO
+.Xr hpib 4 .
+.Sh HISTORY
+The
+.Nm
+interface
+.Ud
+.Sh BUGS
+This driver is very primitive, it handshakes data out byte by byte.
+It should use
+.Tn DMA
+if possible.

@@ -1,0 +1,105 @@
+.\" Copyright (c) 1986, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)de.4	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt DE 4 vax
+.Os BSD 4.2
+.Sh NAME
+.Nm de
+.Nd
+.Tn DEC DEUNA
+10 Mb/s Ethernet interface
+.Sh SYNOPSIS
+.Cd "device de0 at uba0 csr 174510 vector deintr"
+.Sh DESCRIPTION
+The
+.Nm de
+interface provides access to a 10 Mb/s Ethernet network through
+a Digital Equipment
+.Tn UNIBUS
+Network Adapter
+.Pq Tn DEUNA .
+.Pp
+Each of the host's network addresses
+is specified at boot time with an
+.Dv SIOCSIFADDR
+.Xr ioctl 2 .
+The
+.Nm de
+interface employs the address resolution protocol described in
+.Xr arp 4
+to dynamically map between Internet and Ethernet addresses on the local
+network.
+.Pp
+The interface normally tries to use a
+.Dq trailer
+encapsulation
+to minimize copying data on input and output.
+The use of trailers is negotiated with
+.Tn ARP .
+This negotiation may be disabled, on a per-interface basis,
+by setting the
+.Dv IFF_NOTRAILERS
+flag with an 
+.Dv SIOCSIFFLAGS
+.Xr ioctl .
+.Sh DIAGNOSTICS
+.Bl -diag
+.It de%d: hardware address %s.
+This is a normal autoconfiguration message noting the 6 byte physical
+ethernet address of the adapter.
+.Pp
+.It de%d: oerror, flags=%b tdrerr=%b (len=%d).
+The hardware indicated an error
+in transmitting a packet to the cable.
+The status and error flags are reported.
+.Pp
+.It de%d: ierror, flags=%b lenerr=%b (len=%d).
+The hardware indicated an error
+in reading a packet from the cable.
+The status and error flags are reported.
+.Pp
+.It de%d: can't handle af%d.
+The interface was handed
+a message with addresses formatted in an unsuitable address
+family; the packet was dropped.
+.Pp
+.It de%d: buffer unavailable.
+The interface received more packets
+than it had buffers allocated to receive them.
+.Pp
+.It de%d: address change failed, csr0=%b csr1=%b.
+The interface was unable to reprogram
+its physical ethernet address.
+This may happen with very early models of the interface.
+This facility is used only when
+the controller is not the first network interface configured for
+.Tn XNS .
+.El
+.Pp
+The following messages indicate a probable hardware error performing
+the indicated operation during autoconfiguration or initialization.
+The two control and status registers
+should indicate the nature of the failure.
+See the hardware manual for details.
+.Pp
+.Bl -diag
+.It de%d: reset failed, csr0=%b csr1=%b.
+.It de%d: ppcb failed, csr0=%b csr1=%b.
+.It de%d: read addr failed, csr0=%b csr1=%b.
+.It de%d: wtring failed, csr0=%b csr1=%b.
+.It de%d: wtmode failed, csr0=%b csr1=%b.
+.El
+.Sh SEE ALSO
+.Xr netintro 4 ,
+.Xr inet 4 ,
+.Xr arp 4
+.Sh HISTORY
+The
+.Nm
+driver appeared in
+.Bx 4.3 .

@@ -1,0 +1,15 @@
+#print
+Again, remembering that "5i" is the same as "4a"
+what command is the same as
+  .-1a
+to the editor?  Respond "answer XX" where XX is that
+command.
+#copyin
+#user
+#uncopyin
+#match i
+#match .i
+#log
+#next
+18.2d 2
+18.2e 6

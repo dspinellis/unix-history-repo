@@ -1,0 +1,83 @@
+.\" Copyright (c) 1989, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)getmntinfo.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt GETMNTINFO 3
+.Os
+.Sh NAME
+.Nm getmntinfo
+.Nd get information about mounted file systems
+.Sh SYNOPSIS
+.Fd #include <sys/param.h>
+.Fd #include <sys/ucred.h>
+.Fd #include <sys/mount.h>
+.Ft int
+.Fn getmntinfo "struct statfs **mntbufp" "int flags"
+.Sh DESCRIPTION
+The
+.Fn getmntinfo
+function
+returns an array of
+.Xr statfs
+structures describing each currently mounted file system (see
+.Xr statfs 2 ) .
+.Pp
+The
+.Fn getmntinfo
+function
+passes its
+.Fa flags
+parameter transparently to
+.Xr getfsstat 2 .
+.Sh RETURN VALUES
+On successful completion,
+.Fn getmntinfo
+returns a count of the number of elements in the array.
+The pointer to the array is stored into
+.Fa mntbufp .
+.Pp
+If an error occurs, zero is returned and the external variable
+.Va errno
+is set to indicate the error.
+Although the pointer 
+.Fa mntbufp
+will be unmodified, any information previously returned by 
+.Fn getmntinfo
+will be lost.
+.Sh ERRORS
+The
+.Fn getmntinfo
+function
+may fail and set errno for any of the errors specified for the library 
+routines
+.Xr getfsstat 2
+or 
+.Xr malloc 3 .
+.Sh SEE ALSO
+.Xr getfsstat 2 ,
+.Xr statfs 2 ,
+.Xr mount 2 ,
+.Xr mount 8
+.Sh HISTORY
+The
+.Fn getmntinfo
+function is
+.Ud .
+.Sh BUGS
+The
+.Fn getmntinfo
+function writes the array of structures to an internal static object
+and returns
+a pointer to that object. Subsequent calls to
+.Fn getmntinfo
+will modify the same object.
+.Pp
+The memory allocated by
+.Fn getmntinfo
+cannot be
+.Xr free 2 Ns 'd
+by the application.

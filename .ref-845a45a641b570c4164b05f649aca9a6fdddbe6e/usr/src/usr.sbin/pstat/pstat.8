@@ -1,0 +1,442 @@
+.\" Copyright (c) 1980, 1991 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\"	@(#)pstat.8	6.9 (Berkeley) %G%
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)pstat.8	6.9 (Berkeley) %G%
+.\"
+.Dd 
+.Dt PSTAT 8
+.Os BSD 4
+.Sh NAME
+.Nm pstat
+.Nd display system data structures
+.Sh SYNOPSIS
+.Nm pstat
+.Op Fl Tfnpstvx
+.Op Fl U Ar pid
+.Op Ar system
+.Op Ar corefile
+.Sh DESCRIPTION
+.Nm Pstat
+displays certain system data structures.
+If
+.Ar corefile
+is given, the information is sought there, otherwise
+in
+.Pa /dev/kmem .
+The required namelist is taken from
+.Pa /vmunix
+unless 
+.Ar system
+is specified.
+Options are
+.Tw 5n
+.Tl Fl T
+Prints the number of used and free slots in the several system tables
+and is useful for checking to see how full system tables have become if the
+system is under heavy load.
+.Tl Fl f
+Print the open file table with these headings:
+.Tt 0 1 0 OFFSET
+.Tl LOC
+The core location of this table entry.
+.Tl TYPE
+The type of object the file table entry points to.
+.Tl FLG
+Miscellaneous state variables encoded thus:
+.Tt 0 1 4n 4n
+.Tl R
+open for reading
+.Tl W
+open for writing
+.Tl A
+open for appending
+.Tl S
+shared lock present
+.Tl X
+exclusive lock present
+.Tl I
+signal pgrp when data ready
+.Tl
+.Tl CNT
+Number of processes that know this open file.
+.Tl MSG
+Number of messages outstanding for this file.
+.Tl DATA
+The location of the vnode table entry or socket structure for this file.
+.Tl OFFSET
+The file offset (see
+.Xr lseek 2 ) .
+.Tl
+.Tl Fl p
+Print process table for active processes with these headings:
+.Tt 0 1 0 TEXTP
+.Tl LOC
+The core location of this table entry.
+.Tl S
+Run state encoded thus:
+.Tt 0 1 4n 4n
+.Tl 0
+no process
+.Tl 1
+waiting for some event
+.Tl 3
+runnable
+.Tl 4
+being created
+.Tl 5
+being terminated
+.Tl 6
+stopped (by signal or under trace)
+.Tl
+.Tl F
+Miscellaneous state variables, or'ed together (hexadecimal):
+.Tt 0 1 4n 1000000xx
+.Tl 0001
+loaded
+.Tl 0002
+the scheduler process
+.Tl 0004
+locked for swap out
+.Tl 0008
+swapped out
+.Tl 0010
+traced
+.Tl 0020
+used in tracing
+.       \".Tl 000040
+.       \"locked in by
+.       \".Xr lock 2 .
+.Tl 0080
+in page-wait
+.Tl 0100
+prevented from swapping during
+.Xr fork 2
+.Tl 0200
+will restore old mask after taking signal
+.Tl 0400
+exiting
+.Tl 0800
+doing physical I/O (bio.c)
+.Tl 1000
+process resulted from a
+.Xr vfork 2
+which is not yet complete
+.Tl 2000
+another flag for
+.Xr vfork 2
+.Tl 4000
+process has no virtual memory, as it is a parent in the context of
+.Xr vfork 2
+.Tl 8000
+process is demand paging data pages from its text vnode.
+.Tl 10000
+process using sequential VM patterns
+.Tl 20000
+process using random VM patterns
+.Tl 100000
+using old 4.1-compatible signal semantics
+.Tl 200000
+process needs profiling tick
+.Tl 400000
+process is scanning descriptors during select
+.Tl 1000000
+process page tables have changed
+.Tl
+.Tl POIP
+number of pages currently being pushed out from this process.
+.Tl PRI
+Scheduling priority, see
+.Xr setpriority 2 .
+.Tl SIG
+Signals received (signals 1-32 coded in bits 0-31),
+.Tl UID
+Real user ID.
+.Tl SLP
+Amount of time process has been blocked.
+.Tl TIM
+Time resident in seconds; times over 127 coded as 127.
+.Tl CPU
+Weighted integral of CPU time, for scheduler.
+.Tl NI
+Nice level,
+see
+.Xr setpriority 2 .
+.Tl PID
+The process ID number.
+.Tl PPID
+The process ID of parent process.
+.Tl ADDR
+If in core, the page frame number of the first page of the `u-area' of
+the process.
+If swapped out, the position in the swap area
+measured in multiples of 512 bytes.
+.Tl RSS
+Resident set size \- the number of physical page frames allocated
+to this process.
+.Tl SRSS
+RSS at last swap (0 if never swapped).
+.Tl SIZE
+Virtual size of process image (data+stack) in multiples of 512 bytes.
+.Tl WCHAN
+Wait channel number of a waiting process.
+.Tl LINK
+Link pointer in list of runnable processes.
+.Tl TEXTP
+If text is pure, pointer to location of text table entry.
+.Tl
+.Tl Fl s
+Print information about swap space usage: the number of (1k byte) pages used
+and free is given as well as the number of used pages which belong
+to text images.
+.Tl Fl t
+Print table for terminals
+with these headings:
+.Tt 0 1 0 STATE
+.Tl RAW
+Number of characters in raw input queue.
+.Tl CAN
+Number of characters in canonicalized input queue.
+.Tl OUT
+Number of characters in putput queue.
+.Tl MODE
+See
+.Xr tty 4 .
+.Tl ADDR
+Physical device address.
+.Tl DEL
+Number of delimiters (newlines) in canonicalized input queue.
+.Tl COL
+Calculated column position of terminal.
+.Tl STATE
+Miscellaneous state variables encoded thus:
+.Tt 0 1 4n 4n
+.Tl T
+delay timeout in progress
+.Tl W
+waiting for open to complete
+.Tl O
+open
+.Tl F
+outq has been flushed during DMA
+.Tl C
+carrier is on
+.Tl B
+busy doing output
+.Tl A
+process is awaiting output
+.Tl X
+open for exclusive use
+.Tl S
+output stopped
+.Tl H
+hangup on close
+.Tl
+.Tl PGRP
+Process group for which this is controlling terminal.
+.Tl DISC
+Line discipline; blank is old tty
+OTTYDISC
+or
+.Ql new tty
+for
+NTTYDISC
+or
+.Ql net
+for
+NETLDISC
+(see
+.Xr bk 4 ) .
+.Tl
+.Tl Fl u
+print information about a user process;
+the next argument is its address as given
+by
+.Xr ps 1 .
+The process must be in main memory, or the file used can
+be a core image and the address 0.
+Only the fields located in the first page cluster can be located
+succesfully if the process is in main memory.
+.Tl Fl v
+Print the active vnodes.  Each group of vnodes coresponding
+to a particular filesystem is preceded by a two line header.  The
+first line consists of the following:
+.Pp
+.Df I
+.No *** MOUNT Em fstype from 
+on
+.Em on fsflags
+.De
+.Pp
+where
+.Em fstype
+is one of
+.Em ufs , nfs , mfs , or pc ;
+.Em from
+is the filesystem is mounted from;
+.Em on
+is the directory
+the filesystem is mounted on; and
+.Em fsflags
+is a list
+of optional flags applied to the mount (see
+.Xr mount 8 ) .
+.The second line is a header for the individual fields ,
+the first part of which are fixed, and the second part are filesystem
+type specific.  The headers common to all vnodes are:
+.\" .Tt 0 1 0 VFLAG
+.Tt 0 1 0 SIZ/DEV
+.Tl ADDR
+Location of this vnode.
+.Tl TYP
+File type.
+.Tl VFLAG
+A list of letters representing vnode flags:
+.Pp
+.Tt 0 1 4n 4n
+.Tl R
+\- VROOT
+.Tl T
+\- VTEXT
+.Tl L
+\- VXLOCK
+.Tl W
+\- VXWANT
+.Tl E
+\- VEXLOCK
+.Tl S
+\- VSHLOCK
+.Tl T
+\- VLWAIT
+.Tl A
+\- VALIASED
+.Tl B
+\- VBWAIT
+.Tl \&\&
+.Tl \&**** WAS HERE *****
+.Tl \&Next
+.Tl
+.Pp
+.Tl LOC
+The core location of this table entry.
+.Tl FLAGS
+Miscellaneous state variables encoded thus:
+.Tt 0 1 4n 4n
+.Tl L
+locked
+.Tl U
+update time
+.Pq Xr fs 5
+must be corrected
+.Tl A
+access time must be corrected
+.Tl W
+wanted by another process (L flag is on)
+.Tl C
+changed time must be corrected
+.Tl S
+shared lock applied
+.Tl E
+exclusive lock applied
+.Tl Z
+someone waiting for a lock
+.Tl M
+contains modifications
+.Tl R
+has a rename in progress
+.Tl
+.Tl CNT
+Number of open file table entries for this inode.
+.Tl DEV
+Major and minor device number of file system in which
+this inode resides.
+.Tl RDC
+Reference count of shared locks on the inode.
+.Tl WRC
+Reference count of exclusive locks on the inode (this may
+be > 1 if, for example, a file descriptor is inherited across a fork).
+.Tl INO
+I-number within the device.
+.Tl MODE
+Mode bits, see
+.Xr chmod 2 .
+.Tl NLK
+Number of links to this inode.
+.Tl UID
+User ID of owner.
+.Tl SIZ/DEV
+Number of bytes in an ordinary file, or
+major and minor device of special file.
+.Tl
+.Tl Fl x
+Print the text table with these headings:
+.Tt 0 1 0 FLAGS
+.Tl LOC
+The core location of this table entry.
+.Tl FLAGS
+Miscellaneous state variables encoded thus:
+.Tt 0 1 4n 4n
+.Tl T
+.Xr ptrace 2
+in effect
+.Tl W
+text not yet written on swap device
+.Tl L
+loading in progress
+.Tl K
+locked
+.Tl w
+wanted (L flag is on)
+.Tl P
+resulted from demand-page-from-vnode exec format (see
+.Xr execve 2 )
+.Tl
+.Tl DADDR
+Disk address in swap, measured in multiples of 512 bytes.
+.Tl CADDR
+Head of a linked list of loaded processes using this text segment.
+.Tl RSS
+Size of resident text, measured in multiples of 512 bytes.
+.Tl SIZE
+Size of text segment, measured in multiples of 512 bytes.
+.Tl VPTR
+Core location of corresponding vnode.
+.Tl CNT
+Number of processes using this text segment.
+.Tl CCNT
+Number of processes in core using this text segment.
+.Tl FORW
+Forward link in free list.
+.Tl BACK
+Backward link in free list.
+.Tl
+.Tl
+.Sh FILES
+.Tw /dev/kmemxx
+.Tl Pa /vmunix
+namelist
+.Tl Pa /dev/kmem
+default source of tables
+.Tl
+.Sh SEE ALSO
+.Xr iostat 1 ,
+.Xr ps 1 ,
+.Xr systat 1 ,
+.Xr vmstat 1 ,
+.Xr stat 2 ,
+.Xr fs 5 ,
+.Rs
+.Rt Tn UNIX Rt Implementation ,
+.Ra K. Thompson
+.Re
+.Sh BUGS
+It would be very useful if the system recorded \*(lqmaximum occupancy\*(rq
+on the tables reported by
+.Fl T ;
+even more useful if these tables were dynamically allocated.
+.Sh HISTORY
+The
+.Nm
+command appeared in 4.0BSD.

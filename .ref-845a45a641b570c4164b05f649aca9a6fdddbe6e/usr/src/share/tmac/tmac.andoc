@@ -1,0 +1,28 @@
+.\"
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)tmac.andoc	5.8 (Berkeley) %G%
+.\"
+.\" If -mdoc macros, source tmac.mdoc
+.\" If -man macros, check to see if groff or troff/nroff is being used
+.\"
+.de Dd
+.rn Dd xX
+.so /usr/share/tmac/tmac.doc
+.Dd \\$1 \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8
+.rm xX
+..
+.de TH
+.rn TH xX
+.ie \n(.g \{\
+.	so /usr/share/tmac/tmac.groff_an
+.\}
+.el \{\
+.	so /usr/old/lib/tmac/tmac.an
+.\}
+.TH \\$1 \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8
+.rm xX
+..

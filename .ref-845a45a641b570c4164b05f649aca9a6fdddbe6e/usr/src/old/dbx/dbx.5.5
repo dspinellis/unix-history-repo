@@ -1,0 +1,272 @@
+.\" Copyright (c) 1985 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)dbx.5.5	6.3 (Berkeley) %G%
+.\"
+.TH DBX 5 ""
+.UC 6
+.SH NAME
+dbx \- dbx symbol table information
+.SH DESCRIPTION
+The compiler symbol information generated
+for \fIdbx\fP(1) uses the same structure
+as described in \fIstab\fP(5), with additional type and scope information
+appended to a symbol's name.
+The assembler directive used to describe symbol information
+has the following format:
+.sp 1
+.ti +8n
+\fBstabs\fR ``\fIstring\fP'',\fIkind\fP,0,\fIsize\fP,\fIvalue\fP
+.PP
+\fIString\fR contains the name, source language type, and scope of the symbol,
+\fIkind\fR specifies the memory class
+(e.g., external, static, parameter, local, register), and
+\fIsize\fR specifies the byte size of the object, if relevant.
+The third field (0 above) is unused.
+For a global variable or a type, \fIvalue\fR is unused;
+for a local variable or parameter, it is the offset from the frame pointer,
+for a register variable, it is the associated register number.
+.PP
+The different kinds of stab entries are interpreted by dbx as follows:
+.IP N_GSYM 10
+The symbol is a global variable (e.g., .comm variable).
+The variable's address can be found from the corresponding
+ld(1) symbol entry, thus the value field for N_GSYM symbols is ignored.
+For example, a global variable ``x'' will have both an N_GSYM entry and
+an \fIld\fP(1) entry (e.g., N_BSS + N_EXT).
+See \fIa.out\fP(5) for details about these other entries.
+of 
+.IP N_FUN
+The symbol is a procedure or function.
+The size field contains the line number of the entry point.
+The value field contains the address of the entry point (in the text segment).
+.IP N_STSYM
+The symbol is a statically allocated variable for which
+an initial value has been specified.
+The value field contains the address of the variable (in the data segment).
+.IP N_LCSYM
+The symbol is statically allocated, but not initialized.
+.IP N_RSYM
+The symbol is a register variable whose value is kept in the register
+denoted by the value field.
+.IP N_PSYM
+The symbol is a parameter whose value is pushed on the stack before the call.
+The value field contains the offset from the argument base pointer
+(on the VAX, the ap register).
+.IP N_LSYM
+The symbol is a local variable whose value is stored in the most recently
+defined procedure's stack frame.
+The value is the (often negative) offset from the frame pointer
+(on the VAX, the fp register).
+.IP "N_PC, N_MOD2"
+The symbol defines separate compilation information
+for pre-linking checking for Berkeley Pascal and DEC Modula-2 programs
+respectively.
+For Pascal, the value field contains the line number
+that the symbol is defined on.
+The value field is not used for Modula-2.
+.PP
+Most of the source level information about a symbol
+is stored in the string field of the stab entry.
+Since strings are kept in a separate string table in the a.out file,
+they can be arbitrarily long.
+Thus there are no restrictions on the kind or length of information
+in the string field, and it was not necessary
+to modify the assembler or loader when extending or modifying
+the format of this information.
+.sp
+.PP
+Below is a grammar describing the syntax of the symbol string.
+Except in the case of a constant whose value is a string,
+there are no blanks in a symbol string.
+.nf
+.ta 1i 2i 3i 4i 5i 6i 7i 
+.sp 1
+NAME:	[a-zA-Z_][a-zA-Z_0-9]*
+INTEGER:	[-][0-9][0-9]*
+REAL:	[+-][0-9]*(\.[0-9][0-9]*|)([eE]([+-]|)[0-9][0-9]*|)
+STRING:	``.*''
+BSTRING:	.*
+
+String:
+    NAME `:' Class
+    `:' Class
+
+Class:
+    `c' `=' Constant `;'
+    Variable
+    Procedure
+    Parameter
+    NamedType
+    `X' ExportInfo	-- export or import information (for N_MOD2 only)
+
+Constant:
+    `i' INTEGER
+    `r' REAL
+    `c' OrdValue
+    `b' OrdValue
+    `s' STRING
+    `e' TypeId `,' OrdValue
+    `S' TypeId `,' NumElements `,' NumBits `,' BSTRING
+
+OrdValue:
+    INTEGER
+
+NumElements:
+    INTEGER
+
+NumBits:
+    INTEGER
+
+Variable:
+    TypeId	-- local variable of type TypeId
+    `r' TypeId	-- register variable of type TypeId
+    `S' TypeId	-- module variable of type TypeId (static global in C)
+    `V' TypeId	-- own variable of type TypeId (static local in C)
+    `G' TypeId	-- global variable of type TypeId
+
+Procedure:
+    Proc		-- top level procedure
+    Proc `,' NAME `,' NAME	-- local to first NAME,
+		-- second NAME is corresponding ld symbol
+
+.need 8
+Proc:
+    `P'	-- global procedure
+    `Q'	-- local procedure (static in C)
+    `I'	-- internal procedure (different calling sequence)
+    `F' TypeId	-- function returning type TypeId
+    `f' TypeId	-- local function
+    `J' TypeId	-- internal function
+
+Parameter:
+    `p' TypeId	-- value parameter of type TypeId
+    `v' TypeId	-- reference parameter of type TypeId
+
+NamedType:
+    `t' TypeId	-- type name for type TypeId
+    `T' TypeId	-- C structure tag name for struct TypeId
+
+TypeId:
+    INTEGER		-- Unique (per compilation) number of type
+    INTEGER `=' TypeDef	-- Definition of type number
+    INTEGER `=' TypeAttrs TypeDef
+
+--
+-- Type attributes are extra information associated with a type,
+-- such as alignment constraints or pointer checking semantics.
+-- Dbx interprets some of these, but will ignore rather than complain
+-- about any it does not recognize.  Therefore this is a way to add
+-- extra information for pre-linking checking.
+--
+TypeAttrs:
+    `@' TypeAttrList `;'
+
+TypeAttrList:
+    TypeAttrList `,' TypeAttr
+    TypeAttr
+
+TypeAttr:
+    `a' INTEGER	-- align boundary
+    `s' INTEGER	-- size in bits
+    `p' INTEGER	-- pointer class (e.g., checking)
+    BSTRING		-- something else
+
+TypeDef:
+    INTEGER
+    Subrange
+    Array
+    Record
+    `e' EnumList `;'	-- enumeration
+    `*' TypeId		-- pointer to TypeId
+    `S' TypeId		-- set of TypeId
+    `d' TypeId		-- file of TypeId
+    ProcedureType
+    `i' NAME `:' NAME `;'	-- imported type ModuleName:Name
+    `o' NAME `;'		-- opaque type
+    `i' NAME `:' NAME `,' TypeId `;'
+    `o' NAME `,' TypeId `;'
+
+Subrange:
+    `r' TypeId `;' INTEGER `;' INTEGER
+
+Array:
+    `a' TypeId `;' TypeId	-- array [TypeId] of TypeId
+    `A' TypeId		-- open array of TypeId
+    `D' INTEGER `,' TypeId	-- N-dim. dynamic array
+    `E' INTEGER `,' TypeId	-- N-dim. subarray
+
+ProcedureType:
+    `f' TypeId `;'		-- C function type
+    `f' TypeId `,' NumParams `;' TParamList `;'
+    `p' NumParams `;' TParamList `;'
+
+NumParams:
+    INTEGER
+
+Record:
+    `s' ByteSize FieldList `;'	-- structure/record
+    `u' ByteSize FieldList `;'	-- C union
+
+ByteSize:
+    INTEGER
+
+FieldList :
+    Field
+    FieldList Field
+
+Field:
+    NAME `:' TypeId `,' BitOffset `,' BitSize `;'
+
+BitSize:
+    INTEGER
+
+BitOffset:
+    INTEGER
+
+EnumList:
+    Enum
+    EnumList Enum
+
+Enum:
+    NAME `:' OrdValue `,'
+
+ParamList:
+    Param
+    ParamList Param
+
+Param:
+    NAME `:' TypeId `,' PassBy `;'
+
+PassBy:
+    INTEGER
+
+TParam:
+    TypeId `,' PassBy `;'
+
+TParamList :
+    TParam
+    TParamList TParam
+
+Export:
+    INTEGER ExportInfo
+
+ExportInfo:
+    `t' TypeId
+    `f' TypeId `,' NumParams `;' ParamList `;'
+    `p' NumParams `;' ParamList `;'
+    `v' TypeId
+    `c' `=' Constant
+
+.fi
+.PP
+A `?' indicates that the symbol information is continued in
+the next stab entry.
+This directive can only occur where a `;' would otherwise
+separate the fields of a record or constants in an enumeration.
+It is useful when the number of elements in one of these lists
+is large.
+.SH "SEE ALSO"
+dbx(1), stab(5), a.out(5)

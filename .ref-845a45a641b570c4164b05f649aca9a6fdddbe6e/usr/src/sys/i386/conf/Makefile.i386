@@ -1,0 +1,157 @@
+#	@(#)Makefile.i386	7.4 (Berkeley) %G%
+#
+# Makefile for 4.4 BSD
+#
+# This makefile is constructed from a machine description:
+#	config machineid
+# Most changes should be made in the machine description
+#	/sys/conf/``machineid''
+# after which you should do
+#	 config machineid
+# Machine generic makefile changes should be made in
+#	/sys/conf/Makefile.``machinetype''
+# after which config should be rerun for all machines of that type.
+#
+# N.B.: NO DEPENDENCIES ON FOLLOWING FLAGS ARE VISIBLE TO MAKEFILE
+#	IF YOU CHANGE THE DEFINITION OF ANY OF THESE RECOMPILE EVERYTHING
+#
+# -DTRACE	compile in kernel tracing hooks
+# -DQUOTA	compile in file system quotas
+
+
+# DEBUG is set to -g by config if debugging is requested.
+# PROF is set to -pg by config if profiling is requested.
+AS=	as ${DEBUG}
+CC=	cc ${DEBUG}
+CPP=	cpp
+LD=	ld
+TOUCH=	touch -f -c
+GPROF.EX=/usr/src/usr.lib/libc/csu/i386/gmon.ex
+
+# source tree is located via $S relative to the compilation directory
+S=	../..
+I386=	$S/i386
+
+INCLUDES= -I. -I$S -I$S/sys
+COPTS+=	${INCLUDES} ${IDENT} -DKERNEL
+CFLAGS=	-O ${COPTS}
+
+# compile rules: rules are named ${TYPE}_${SUFFIX}${CONFIG_DEP}
+# where TYPE is NORMAL, DRIVER, or PROFILE}; SUFFIX is the file suffix,
+# capitalized (e.g. C for a .c file), and CONFIG_DEP is _C if the file
+# is marked as config-dependent.
+
+NORMAL_C=	${CC} -c ${CFLAGS} ${PROF} $<
+NORMAL_C_C=	${CC} -c ${CFLAGS} ${PROF} ${PARAM} $<
+
+DRIVER_C=	${CC} -c ${CFLAGS} ${PROF} $<
+DRIVER_C_C=	${CC} -c ${CFLAGS} ${PROF} ${PARAM} $<
+
+PROFILE_C=	${CC} -S -c ${COPTS} $<; \
+		ex - $*.s < ${GPROF.EX}; \
+		${AS} -o $@ $*.s; \
+		rm -f $*.s
+
+NORMAL_S=	${CPP} ${COPTS} $< | ${AS} -o $@
+NORMAL_S_C=	${CPP} ${COPTS} ${PARAM} $< | ${AS} -o $@
+
+%OBJS
+
+%CFILES
+
+# load lines for config "xxx" will be emitted as:
+# xxx: ${SYSTEM_DEP} swapxxx.o
+#	${SYSTEM_LD_HEAD}
+#	${SYSTEM_LD} swapxxx.o
+#	${SYSTEM_LD_TAIL}
+SYSTEM_OBJ=	locore.o ${OBJS} param.o ioconf.o vnode_if.o
+#SYSTEM_DEP=	Makefile symbols.sort ${SYSTEM_OBJ}
+SYSTEM_DEP=	Makefile ${SYSTEM_OBJ}
+SYSTEM_LD_HEAD=	@echo loading $@; rm -f $@
+SYSTEM_LD=	@strip=-x; [ X${DEBUG} = X-g ] && strip=-X; \
+		${LD} $$strip -n -T FE000000 -o $@ ${SYSTEM_OBJ} vers.o \
+			../../quad/libquad.a
+#SYSTEM_LD_TAIL= @echo rearranging symbols;\
+#		symorder symbols.sort $@;\
+SYSTEM_LD_TAIL=	@size $@; chmod 755 $@; \
+		[ X${DEBUG} = X-g ] && { \
+		echo cp $@ $@.gdb; cp $@ $@.gdb; \
+		echo strip -d $@; strip -d $@; }
+
+%LOAD
+
+newvers:
+	sh $S/conf/newvers.sh
+	${CC} $(CFLAGS) -c vers.c
+
+clean:
+	rm -f eddep *vmunix tags *.o locore.i [a-z]*.s \
+		Errs errs linterrs makelinks
+
+lint: /tmp param.c
+	@lint -hbxn -DGENERIC -Dvolatile= ${COPTS} ${PARAM} -UKGDB \
+	    ${I386}/i386/Locore.c ${CFILES} ${I386}/i386/swapgeneric.c \
+	    ioconf.c param.c| \
+	    grep -v 'struct/union .* never defined' | \
+	    grep -v 'possible pointer alignment problem'
+
+symbols.sort: ${I386}/i386/symbols.raw
+	grep -v '^#' ${I386}/i386/symbols.raw \
+	    | sed 's/^	//' | sort -u > symbols.sort
+
+locore.o: assym.s vector.s ${I386}/i386/locore.s 
+locore.o: ${I386}/include/trap.h ${I386}/include/psl.h ${I386}/i386/pte.h
+locore.o: ${I386}/include/cpu.h
+	${CPP} -DLOCORE ${COPTS} ${I386}/i386/locore.s | ${AS} -o locore.o
+
+# the following is necessary because autoconf.o depends on #if GENERIC
+autoconf.o: Makefile
+
+# the following are necessary because the files depend on the types of
+# hp cpu's included in the system configuration
+clock.o machdep.o autoconf.o conf.o: Makefile
+
+# depend on network configuration
+af.o uipc_proto.o locore.o: Makefile
+
+# depend on maxusers
+assym.s: Makefile
+
+assym.s: genassym
+	./genassym >assym.s
+
+genassym:
+	${CC} ${INCLUDES} ${IDENT} ${PARAM} -Di386 -o genassym \
+	    ${I386}/i386/genassym.c
+
+depend: assym.s param.c vnode_if.h
+	mkdep ${COPTS} ${CFILES} ioconf.c param.c
+	mkdep -a -p ${INCLUDES} ${IDENT} ${PARAM} ${I386}/i386/genassym.c
+
+links:
+	egrep '#if' ${CFILES} | sed -f $S/conf/defines | \
+	  sed -e 's/:.*//' -e 's/\.c/.o/' | sort -u > dontlink
+	echo ${CFILES} | tr -s ' ' '\12' | sed 's/\.c/.o/' | \
+	  sort -u | comm -23 - dontlink | \
+	  sed 's,../.*/\(.*.o\),rm -f \1;ln -s ../GENERIC/\1 \1,' > makelinks
+	sh makelinks && rm -f dontlink
+
+tags:
+	@echo "see $S/kern/Makefile for tags"
+
+ioconf.o: ioconf.c
+	${CC} -c ${CFLAGS} ioconf.c
+
+param.c: $S/conf/param.c
+	rm -f param.c
+	cp $S/conf/param.c .
+
+param.o: param.c Makefile
+	${CC} -c ${CFLAGS} ${PARAM} param.c
+
+vnode_if.c: $S/kern/vnode_if.sh $S/kern/vnode_if.src
+	sh $S/kern/vnode_if.sh $S/kern/vnode_if.src
+vnode_if.h: $S/kern/vnode_if.sh $S/kern/vnode_if.src
+	sh $S/kern/vnode_if.sh $S/kern/vnode_if.src
+
+%RULES

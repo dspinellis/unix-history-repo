@@ -1,0 +1,191 @@
+.\" Copyright (c) 1986, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"     @(#)mtio.4	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt MTIO 4
+.Os
+.Sh NAME
+.Nm mtio
+.Nd
+.Tn UNIX
+magtape interface
+.Sh DESCRIPTION
+The special files named
+.Pa /dev/cy0s ,
+...,
+.Pa /dev/cy15s
+are interfaces to the
+.Tn UNIX
+magtape drivers.
+For the
+Tahoe, these interfaces
+may be on the
+.Tn VERSABUS
+via a
+.Tn CIPHER
+tapemaster formatter
+.Xr cy 4 .
+The files
+.Pa cy0s ,
+...,
+.Pa cy15s
+are read/written in 25
+.Tn IPS , 
+The density (1600
+.Tn BPI
+or 3200
+.Tn BPI )
+is selected by a switch on the drive.
+The following table of device names
+applies to any of the transport/controller pairs.
+.Bl -column "rewindxxx" "No-rewindxxx" "rewindxxxx" "No-rewindxxxx" -offset indent
+.Em Rewind	No-rewind	Rewind	No-rewind
+cy0s/rcy0s	ncy0s/nrcy0s	cy8s/rcy8s	ncy8s/nrcy8s
+cy1s/rcy1s	ncy1s/nrcy1s	cy9s/rcy9s	ncy9s/nrcy9s
+cy2s/rcy2s	ncy2s/nrcy2s	cy10s/rcy10s	ncy10s/nrcy10s
+cy3s/rcy3s	ncy3s/nrcy3s	cy11s/rcy11s	ncy11s/nrcy11s
+cy4s/rcy4s	ncy4s/nrcy4s	cy12s/rcy12s	ncy12s/nrcy12s
+cy5s/rcy5s	ncy5s/nrcy5s	cy13s/rcy13s	ncy13s/nrcy13s
+cy6s/rcy6s	ncy6s/nrcy6s	cy14s/rcy14s	ncy14s/nrcy14s
+cy7s/rcy7s	ncy7s/nrcy7s	cy15s/rcy15s	ncy15s/nrcy15s
+.El
+.Pp
+The rewind devices automatically rewind
+when the last requested read, write or seek has finished, or the end of the tape
+has been reached. The letter
+.Ql n
+is usually prepended to
+the name of the no-rewind devices.
+.Pp
+For compatibility with customary
+.Tn UNIX
+tape device
+names
+.Dq Em mt* ,
+the
+.Bo Pa n Bc Pa cy*s
+files are linked to appropriate
+.Bo Pa n Bc Em mt*
+files.
+.Pp
+Unix tapes are written in multiples of 1024 byte block
+records. Two end-of-file markers mark the end of a tape, and
+one end-of-file marker marks the end of a tape file.
+If the tape is not to be rewound it is positioned with the
+head in between the two tape marks, where the next write
+will over write the second end-of-file marker.
+.Pp
+All of the magtape devices may be manipulated with the
+.Xr mt 1
+command.
+.Pp
+A number of other
+.Xr ioctl 2
+operations are available
+on raw magnetic tape.
+The following definitions are from
+.Aq Pa sys/mtio.h :
+.Bd  -literal
+/*
+ * Structures and definitions for mag tape io control commands
+ */
+
+/* structure for MTIOCTOP - mag tape op command */
+struct mtop {
+	short	mt_op;		/* operations defined below */
+	daddr_t	mt_count;	/* how many of them */
+};
+
+/* operations */
+#define MTWEOF		0	/* write an end-of-file record */
+#define MTFSF		1	/* forward space file */
+#define MTBSF		2	/* backward space file */
+#define MTFSR		3	/* forward space record */
+#define MTBSR		4	/* backward space record */
+#define MTREW		5	/* rewind */
+#define MTOFFL		6	/* rewind and put the drive offline */
+#define MTNOP		7	/* no operation, sets status only */
+#define MTCACHE 	8	/* enable controller cache */
+#define MTNOCACHE	9	/* disable controller cache */
+
+/* structure for MTIOCGET - mag tape get status command */
+
+struct mtget {
+	short	mt_type;	/* type of magtape device */
+/* the following two registers are grossly device dependent */
+	short	mt_dsreg;	/* ``drive status'' register */
+	short	mt_erreg;	/* ``error'' register */
+/* end device-dependent registers */
+	short	mt_resid;	/* residual count */
+/* the following two are not yet implemented */
+	daddr_t	mt_fileno;	/* file number of current position */
+	daddr_t	mt_blkno;	/* block number of current position */
+/* end not yet implemented */
+};
+
+/*
+ * Constants for mt_type byte.  These are the same
+ * for controllers compatible with the types listed.
+ */
+#define	MT_ISTS		0x01		/* TS-11 */
+#define	MT_ISHT		0x02		/* TM03 Massbus: TE16, TU45, TU77 */
+#define	MT_ISTM		0x03		/* TM11/TE10 Unibus */
+#define	MT_ISMT		0x04		/* TM78/TU78 Massbus */
+#define	MT_ISUT		0x05		/* SI TU-45 emulation on Unibus */
+#define	MT_ISCPC	0x06		/* SUN */
+#define	MT_ISAR		0x07		/* SUN */
+#define	MT_ISTMSCP	0x08		/* DEC TMSCP protocol (TU81, TK50) */
+#define MT_ISCY 	0x09		/* CCI Cipher */
+#define MT_ISCT 	0x0a		/* HP 1/4 tape */
+#define MT_ISFHP	0x0b		/* HP 7980 1/2 tape */
+#define MT_ISEXABYTE	0x0c		/* Exabyte */
+#define MT_ISEXA8200	0x0c		/* Exabyte EXB-8200 */
+#define MT_ISEXA8500	0x0d		/* Exabyte EXB-8500 */
+#define MT_ISVIPER1	0x0e		/* Archive Viper-150 */
+#define MT_ISPYTHON	0x0f		/* Archive Python (DAT) */
+#define MT_ISHPDAT	0x10		/* HP 35450A DAT drive */
+
+/* mag tape io control commands */
+#define	MTIOCTOP	_IOW('m', 1, struct mtop)	/* do a mag tape op */
+#define	MTIOCGET	_IOR('m', 2, struct mtget)	/* get tape status */
+#define MTIOCIEOT	_IO('m', 3)			/* ignore EOT error */
+#define MTIOCEEOT	_IO('m', 4)			/* enable EOT error */
+
+#ifndef KERNEL
+#define	DEFTAPE	"/dev/rmt12"
+#endif
+
+#ifdef	KERNEL
+/*
+ * minor device number
+ */
+
+#define	T_UNIT		003		/* unit selection */
+#define	T_NOREWIND	004		/* no rewind on close */
+#define	T_DENSEL	030		/* density select */
+#define	T_800BPI	000		/* select  800 bpi */
+#define	T_1600BPI	010		/* select 1600 bpi */
+#define	T_6250BPI	020		/* select 6250 bpi */
+#define	T_BADBPI	030		/* undefined selection */
+#endif
+.Ed
+.Sh FILES
+.Bl -tag -width /dev/nrcy? -compact
+.It Pa /dev/cy? ,
+.It Pa /dev/rcy?
+Rewind devices.
+.It Pa /dev/ncy? ,
+.It Pa /dev/nrcy?
+No-rewind devices.
+.It Pa /dev/[n]mt? ,
+.It Pa /dev/[n]rmt?
+Linked device names.
+.El
+.Sh SEE ALSO
+.Xr mt 1 ,
+.Xr tar 1 ,
+.Xr cy 4

@@ -1,0 +1,15 @@
+# This is basically used for string matching
+# You do not need to use it. Some sites prefer
+# to put "chicago2486706" in their L.sys instead of
+# "13122486707"
+#
+#
+# A line beginning with a # is a comment
+# If the last character of a line is \
+# the next line is considered to be a continuation of the first.
+#
+#	Example L-dialcodes
+#
+chicago 1312
+dc	1202
+sandiego	1714

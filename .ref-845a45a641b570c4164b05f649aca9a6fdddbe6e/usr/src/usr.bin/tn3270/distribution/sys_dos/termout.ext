@@ -1,0 +1,21 @@
+/*-
+ * Copyright (c) 1988 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)termout.ext	4.2 (Berkeley) %G%
+ */
+
+extern void
+	StartScreen(),
+	StopScreen(),
+	ConnectScreen(),
+	ClearScreen(),
+	LocalClearScreen(),
+	RefreshScreen(),
+	RingBell(),
+	AddHost();
+
+extern int
+	DoTerminalOutput();

@@ -1,0 +1,169 @@
+.\" Copyright (c) 1980, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)ex.1	6.9 (Berkeley) %G%
+.\"
+.Dd 
+.Dt EX 1
+.Os BSD 4
+.Sh NAME
+.Nm ex , edit
+.Nd text editor
+.Sh SYNOPSIS
+.Nm ex
+.Op Fl
+.Op Fl v
+.Op Fl t Ar tag
+.Op Fl r
+.Oo
+.Op Cm + Ns Ar command
+.Oc
+.Op Fl l
+.Ar name
+\&...
+.Nm edit
+.Op ex options
+.Sh DESCRIPTION
+.Nm \&Ex
+is the root of a family of editors:
+.Nm edit ,
+.Nm ex
+and
+.Nm vi .
+.Nm \&Ex
+is a superset of
+.Xr ed ,
+with the most notable extension being a display editing facility.
+Display based editing is the focus of
+.Xr vi 1
+and requires a
+.Tn CRT .
+.Pp
+For users unfamiliar with
+.Xr ed 1 ,
+the editor
+.Nm edit
+is probably easier to learn.
+It avoids some of the complexities of
+.Nm ex
+used mostly by systems programmers and persons comfortable with the
+.Xr ed 1
+editor.
+.Sh DOCUMENTATION
+The following documentation is found in the
+.Dq "\\*(tNUNIX\\*(fP User's Manual Supplementary Documents" :
+.Pp
+.%T "Edit: A tutorial"
+provides a comprehensive introduction to
+.Nm edit
+assuming no previous knowledge of computers or the
+.Tn UNIX
+system.
+.Pp
+.%T "Ex Reference Manual \- Version 3.7"
+is a comprehensive and complete manual for the command mode features
+of
+.Nm ex ,
+but you cannot learn to use the editor by reading it.
+For an introduction to
+more advanced forms of editing using the command mode of
+.Nm ex
+see the editing documents written by Brian Kernighan for the editor
+.Xr ed 1 ;
+the material in the introductory and advanced documents works also with
+.Nm ex .
+.Pp
+.%T "An Introduction to Display Editing with Vi"
+introduces the display editor
+.Xr vi 1
+and provides reference material on
+.Xr vi 1 .
+In addition, the
+.%T "Vi Quick Reference"
+card summarizes the commands
+of
+.Xr vi 1
+in a useful, functional way, and is useful with the
+introduction.
+.Sh ENVIRONMENT
+The
+.Nm
+command uses the following environment variables.
+.Bl -tag -width TERMCAP
+.It Ev EXINIT
+User specified startup values for
+.Nm ex .
+.It Ev HOME
+Default directory to search for
+the file
+.Pa ~/.exrc
+.It Ev SHELL
+Shell used for
+.Em escaped
+commands (with the
+.Ic \&!
+command).
+.It Ev TERM
+Terminal type.
+.It Ev TERMCAP
+Alternate termcap file.
+.El
+.Sh FILES
+.Bl -tag -width /usr/libexec/ex?.?preserve -compact
+.It Pa  /usr/libexec/ex?.?strings
+error messages
+.It Pa  /usr/libexec/ex?.?recover
+recover command
+.It Pa  /usr/libexec/ex?.?preserve
+preserve command
+.It Pa  /usr/share/misc/termcap
+describes capabilities of terminals
+.It Pa  ~/.exrc
+editor startup file
+.It Pa /tmp/Ex Ns Ar nnnnn
+editor temporary
+.It Pa /tmp/Rx Ns Ar nnnnn
+named buffer temporary
+.It Pa /var/preserve
+preservation directory
+.El
+.Sh SEE ALSO
+.Xr awk 1 ,
+.Xr ed 1 ,
+.Xr grep 1 ,
+.Xr sed 1 ,
+.Xr grep 1 ,
+.Xr vi 1 ,
+.Xr termcap 5 ,
+.Xr environ 7
+.Sh HISTORY
+.Nm \&Ex
+appeared in
+.Bx 3 .
+.Sh BUGS
+The
+.Ic undo
+command causes all marks to be lost on lines changed and then restored
+if the marked lines were changed.
+.Pp
+.Ic Undo
+never clears the buffer modified condition.
+.Pp
+The
+.Ic z
+command prints a number of logical rather than physical lines.
+More than a screen full of output may result if long lines are present.
+.Pp
+File input/output errors don't print a name if the command line
+.Sq Fl
+option is used.
+.Pp
+There is no easy way to do a single scan ignoring case.
+.Pp
+The editor does not warn if text is placed in named buffers and not used
+before exiting the editor.
+.Pp
+Null characters are discarded in input files, and cannot appear in resultant
+files.

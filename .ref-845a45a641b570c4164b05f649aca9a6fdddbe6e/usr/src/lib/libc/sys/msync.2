@@ -1,0 +1,49 @@
+.\" Copyright (c) 1991, 1991 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)msync.2	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt MSYNC 2
+.Os
+.Sh NAME
+.Nm msync
+.Nd synchronize a mapped region
+.Sh SYNOPSIS
+.Fn msync "caddr_t addr" "int len"
+.Sh DESCRIPTION
+The
+.Fn msync
+system call
+writes any modified pages back to the filesystem and updates
+the file modification time.
+If
+.Fa len
+is 0, all modified pages within the region containing
+.Fa addr
+will be flushed;
+if
+.Fa len
+is non-zero, only the pages containing
+.Fa addr
+and
+.Fa len
+succeeding locations will be examined.
+Any required synchronization of memory caches
+will also take place at this time.
+Filesystem operations on a file that is mapped for shared modifications
+are unpredictable except after an
+.Fn msync .
+.Sh SEE ALSO
+.Xr madvise 2 ,
+.Xr munmap 2 ,
+.Xr mprotect 2 ,
+.Xr mincore 2
+.Sh HISTORY
+The
+.Fn msync
+function call is
+.Ud .
+

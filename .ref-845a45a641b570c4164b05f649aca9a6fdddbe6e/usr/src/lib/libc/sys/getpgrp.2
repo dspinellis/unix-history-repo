@@ -1,0 +1,75 @@
+.\" Copyright (c) 1983, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)getpgrp.2	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt GETPGRP 2
+.Os BSD 4.2
+.Sh NAME
+.Nm getpgrp
+.Nd get process group
+.Sh SYNOPSIS
+.Fd #include <unistd.h>
+.Ft pid_t
+.Fn getpgrp "void"
+.Sh DESCRIPTION
+The process group of the current process is returned by
+.Fn getpgrp .
+.Pp
+Process groups are used for distribution of signals, and
+by terminals to arbitrate requests for their input: processes
+that have the same process group as the terminal are foreground
+and may read, while others will block with a signal if they attempt
+to read.
+.Pp
+This call is thus used by programs such as
+.Xr csh 1
+to create
+process groups
+in implementing job control.
+The
+.Fn tcgetpgrp
+and
+.Fn tcsetpgrp
+calls
+are used to get/set the process group of the control terminal.
+.Sh SEE ALSO
+.Xr setpgid 2 ,
+.Xr termios 4
+.Sh HISTORY
+The
+.Nm
+function call appeared in
+.Bx 4.0 .
+.Sh STANDARDS
+The
+.Fn getpgrp
+function conforms to IEEE Std 1003.1-1988
+.Pq Dq Tn POSIX .
+.Sh COMPATABILITY
+This version of
+.Fn getpgrp
+differs from past Berkeley versions by not taking a
+.Fa "pid_t pid"
+argument.
+This incompatibility is required by
+.St -p1003.1-88 .
+.Pp
+From the
+.St -p1003.1-88
+Rationale:
+.sp
+4.3BSD provides a
+.Fn getpgrp
+function that returns the process group ID for a specified process.
+Although this function is used to support job control, all known
+job-control shells always specify the calling process with this
+function.
+Thus, the simpler System V
+.Fn getpgrp
+suffices, and the added complexity of the 4.3BSD
+.Fn getpgrp
+has been omitted from POSIX.1.

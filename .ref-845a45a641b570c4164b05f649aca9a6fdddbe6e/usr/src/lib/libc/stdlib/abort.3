@@ -1,0 +1,44 @@
+.\" Copyright (c) 1990, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the American National Standards Committee X3, on Information
+.\" Processing Systems.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)abort.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt ABORT 3
+.Os
+.Sh NAME
+.Nm abort
+.Nd cause abnormal program termination
+.Sh SYNOPSIS
+.Fd #include <stdlib.h>
+.Ft void
+.Fn abort void
+.Sh DESCRIPTION
+The
+.Fn abort
+function causes abnormal program termination to occur, unless the
+signal
+.Dv SIGABRT
+is being caught and the signal handler does not return.
+.Pp
+No open streams are closed or flushed.
+.Sh RETURN VALUES
+The
+.Nm abort
+function
+never returns.
+.Sh SEE ALSO
+.Xr sigaction 2 ,
+.Xr exit 2
+.Sh STANDARDS
+The
+.Fn abort
+function
+conforms to
+.St -ansiC .

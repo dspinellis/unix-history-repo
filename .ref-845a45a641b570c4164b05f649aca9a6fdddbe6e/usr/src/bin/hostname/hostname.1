@@ -1,0 +1,39 @@
+.\" Copyright (c) 1983, 1988, 1990, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)hostname.1	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt HOSTNAME 1
+.Os BSD 4.2
+.Sh NAME
+.Nm hostname
+.Nd set or print name of current host system
+.Sh SYNOPSIS
+.Nm hostname
+.Op Fl s
+.Op Ar nameofhost
+.Sh DESCRIPTION
+.Nm Hostname
+prints the name of the current host.  The super-user can
+set the hostname by supplying an argument; this is usually done in the
+network initialization script
+.Pa /etc/netstart ,
+normally run at boot
+time.
+.Pp
+Options:
+.Bl -tag -width flag
+.It Fl s
+Trims off any domain information from the printed
+name.
+.El
+.Sh SEE ALSO
+.Xr gethostname 2
+.Sh HISTORY
+The
+.Nm hostname
+command appeared in
+.Bx 4.2 .

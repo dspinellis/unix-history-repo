@@ -1,0 +1,626 @@
+.\"	@(#)Cover.alpha	1.7.1.1 (Berkeley) %G%
+.\" use -ms
+.\"
+.so HEADERS
+.FH
+.sp .75i
+.tl '''July 7, 1992'
+.LP
+Dear Colleague:
+.sp
+.PP
+We are happy to send you information about our June 1992 release of
+4.4BSD-alpha.
+This release represents our expectations for the final interfaces
+that will be present in 4.4BSD.
+Our goal in making this release available is to get feedback on any
+problems in the design or implementation of the new facilities,
+and to allow adventurous sites to gain experience with
+the new interfaces in 4.4BSD.
+.PP
+This distribution is NOT intended to be used on production systems;
+nor is it intended for sites without enough local expertise
+to find and fix any problems that are encountered.
+It is intended to be used to provide an advance look at some of the
+facilities and interfaces that we will be distributing in 4.4BSD.
+We are interested in getting feedback on the problems that you find 
+and also any compatibility problems that you encounter in
+converting your applications to run on this release.
+While we hope that the interfaces in this release will not change
+before the final release of 4.4BSD,
+we will make changes that we feel are necessary to fix problems
+that arise during the alpha release period
+(at least in part based on feedback from this test group).
+Where possible, we will minimize changes that will break
+applications ported to this release.
+The code in this distribution may be redistributed and used
+in released products.
+However, you are strongly encouraged to upgrade any code
+that you use from this distribution to the similarly-licensed
+distribution of the 4.4BSD code within one year of its release.
+.PP
+Only limited support can be provided by our group.
+Specifically,
+we cannot provide help with installation
+of this software on other systems, although we are, of course, interested
+in hearing of problems that you encounter.
+.PP
+We are releasing two versions of the software, 4.4BSD-Encumbered
+and 4.4BSD-Lite.
+The 4.4BSD-Encumbered distribution is available only to sites
+with UNIX/32V\(dg, System III, or System V
+.FS
+\(dgUNIX, UNIX/32V, UNIX System III, and UNIX System V
+are registered trademarks of USL/AT&T in the USA and other countries.
+.FE
+source licenses with USL/AT&T.
+The 4.4BSD-Encumbered distribution is a complete distribution in the style of
+4.3BSD and contains the complete source for the Berkeley Distribution.
+.PP
+The 4.4BSD-Lite distribution is a distribution that
+is copyrighted by the University of California
+and others, but may be freely redistributed.
+It is available to anyone and requires no previous license, either from
+USL/AT&T or The Regents of the University of California.
+Its license agreement is similar to that of the two BSD
+Networking Releases.
+The 4.4BSD-Lite distribution contains only a few additional programs
+and no additional kernel files from the Second Networking
+release done in June 1991.
+However, it does contain support for additional architectures
+and has many bug fixes and performance enhancements.
+The distribution includes both software developed at Berkeley
+and also much software contributed by authors outside Berkeley.
+.PP
+Because the 4.4BSD-Lite distribution is a partial-source
+distribution, it is not possible to compile or run it
+without a pre-existing system that is already installed and running.
+It includes source code and manual pages for the C library
+and about three-fourths of the utilities contained in
+the 4.4BSD-Encumbered distribution.
+.\" An approximate list of the included and excluded utilities is provided
+.\" in the attached utilities list.
+Additionally, the 4.4BSD-Lite distribution includes source code for most
+of the 4.4BSD kernel, including machine support for the six architectures
+described below.
+The kernel source code is not complete for any architecture.
+Specifically, the kernel support for executing files, doing physical I/O,
+managing the buffer cache, handling process tracing and doing accounting
+is not included in 4.4BSD-Lite.
+.PP
+The enclosed information is designed to serve two purposes.  The first
+purpose is to acquaint you with the details of our distribution so you
+can decide whether you would like to receive it.
+The second purpose is to tell you how to obtain our distribution.
+.SH
+What is 4.4BSD?
+.PP
+This software distribution is provided on one 6250bpi 1/2'' 9-track tape
+or one 8mm Exabyte cassette only.
+The 4.4BSD-Encumbered distribution contains complete source
+as well as binaries for
+the HP9000/300 series of workstations.
+The 4.4BSD-Lite distribution contains only freely redistributable sources.
+As the sources do not comprise a complete system,
+no binaries will be included.
+.PP
+The architectures that are supported include:
+.IP \(bu
+HP 9000/300 68000-based workstations
+.IP \(bu
+Intel 386/486-based machines (ISA/AT or EISA bus only)
+.IP \(bu
+Sony News MIPS-based workstations
+.IP \(bu
+Omron Luna 68000-based workstations
+.IP \(bu
+DECstation 3100 and 5000 MIPS-based workstations
+.IP \(bu
+Sparcstation I & II SPARC-based workstations
+.LP
+The distribution does
+.B not
+include the machine support for the Tahoe and VAX architectures
+found in previous BSD distributions.
+Our primary development is on the HP9000/300 series machines.
+The other architectures are being developed and supported by
+people outside the university.
+Consequently, we are not able to directly test or maintain these 
+other architectures, so cannot comment on their robustness,
+reliability, or completeness.
+.PP
+The major new facilities available in the 4.4BSD release are
+a new virtual memory system, 
+a log-structured filesystem,
+enhancement of the local filesystems to support
+files and filesystems that are up to 2^63 bytes in size,
+the addition of ISO/OSI networking support,
+a freely redistributable implementation of NFS, and
+the conversion to and addition of the IEEE Std1003.1 (``POSIX'')
+facilities and many of the IEEE Std1003.2 facilities.
+In addition, many new utilities and additions to the C
+library are present as well.
+The kernel sources have been reorganized to collect all machine-dependent
+files for each architecture under one directory,
+and most of the machine-independent code is now free of code
+conditional on specific machines.
+The user structure and process structure have been reorganized
+to eliminate the statically-mapped user structure and to make most
+of the process resources shareable by multiple processes.
+The system and include files have been converted to be compatible
+with ANSI C, including function prototypes for most of the exported
+functions.
+There are numerous other changes throughout the system.
+.PP
+The new virtual memory implementation is derived from the MACH
+operating system developed at Carnegie-Mellon,
+and was ported to the BSD kernel at the University of Utah.
+The MACH virtual memory system call interface has been replaced with the
+``mmap''-based interface described in the ``Berkeley Software
+Architecture Manual'' (see UNIX Programmer's Manual, 
+Supplementary Documents, PS1:6).
+The interface is similar to the interfaces shipped
+by several commercial vendors such as Sun, Convex Computer Corp.
+and USL/AT&T.
+The integration of the new virtual memory is functionally complete,
+but still has serious performance problems under heavy memory load.
+The internal kernel interfaces have not yet been completed
+and the memory pool and buffer cache have not yet been merged.
+Some of these changes are expected before the release of 4.4BSD.
+.PP
+The ISO/OSI Networking consists of a kernel implementation of
+transport class 4 (TP-4),
+connectionless networking protocol (CLNP),
+and 802.3-based link-level support (hardware-compatible with Ethernet*).
+.FS
+*Ethernet is a trademark of the Xerox Corporation.
+.FE
+We also include support for ISO Connection-Oriented Network Service,
+X.25, TP-0.
+The session and presentation layers are provided outside
+the kernel by the ISO development environment (ISODE).
+Included in this development environment are file
+transfer and management (FTAM), virtual terminals (VT),
+a directory services implementation (X.500), and miscellaneous other utilities.
+.PP
+A new virtual filesystem interface has been added to the
+kernel to support multiple filesystems.
+In comparison with other interfaces,
+the Berkeley interface has been structured for more efficient support
+of filesystems that maintain state (such as the local filesystem).
+The interface has been extended with support for stackable
+filesystems done at UCLA.
+These extensions allow for filesystems to be layered on top of each
+other and allow new vnode operations to be added without requiring
+changes to existing filesystem implementations.
+.PP
+In addition to the local ``fast filesystem'',
+we have added an implementation of the network filesystem (NFS)
+that fully interoperates with the NFS shipped by Sun and its licensees.
+Because our NFS implementation was implemented using only the
+publicly available NFS specification,
+it does not require a license from Sun to use in source or binary form.
+By default it runs over UDP to be compatible with Sun's implementation.
+However, it can be configured on a per-mount basis to run over TCP.
+Using TCP allows it to be used quickly and efficiently through
+gateways and over long-haul networks.
+Using an extended protocol, it supports Leases to allow a limited
+callback mechanism that greatly reduces the network traffic necessary
+to maintain cache consistency between the server and its clients.
+.PP
+A new log-structured filesystem has been added that provides
+near disk-speed output and fast crash recovery.
+It is still experimental in the alpha release,
+though we hope to have enough experience with it to recommend
+it for production use by the time of the final 4.4BSD release.
+We have also added a memory-based filesystem that runs in
+pageable memory, allowing large temporary filesystems without
+requiring dedicated physical memory.
+.PP
+The quota system has been rewritten to support both
+user and group quotas (simultaneously if desired).
+Quota expiration is based on time rather than
+the previous metric of number of logins over quota.
+This change makes quotas more useful on fileservers
+onto which users seldom login.
+.PP
+The 4.4BSD distribution contains most of the interfaces
+specified in the IEEE Std1003.1 system interface standard.
+The biggest area of change is a new terminal driver.
+The terminal driver is similar to the System V terminal driver
+with the addition of the necessary extensions to get the
+functionality previously available in the 4.3BSD terminal driver.
+4.4BSD also adds the IEEE Std1003.1 job control interface,
+which is similar to the 4.3BSD job control interface,
+but adds a security model that was missing in the
+4.3BSD job control implementation.
+Other additions include IEEE Std1003.1 signals, FIFOs,
+byte-range file locking, and saved user and group identifiers.
+.PP
+There are several new tools and utilities included in this release.
+A new version of make allows much-simplified makefiles for the system software
+and allows compilation for multiple architectures from the same source tree
+(which may be mounted read-only).
+Notable additions to the libraries include functions to traverse a
+filesystem hierarchy, database interfaces to btree and hashing functions,
+a new, fast implementation of stdio and a radix sort function.
+The additions to the utility suite include greatly enhanced versions of
+programs that display system status information, implementations of
+various traditional tools described in the IEEE Std1003.2 standard,
+and many others.
+.PP
+We have been tracking the IEEE Std1003.2 shell and utility work
+and have included prototypes of many of the proposed utilities.
+Because most of the traditional utilities have been replaced
+with implementations conformant to the POSIX standards,
+you should realize that the utility software may not be as stable,
+reliable or well documented as in traditional Berkeley releases.
+In particular, almost the entire manual suite has been rewritten to
+be freely redistributable and, in many instances,
+it does not correctly reflect the current state of the software.
+It is also worth noting that, in rewriting this software, we have generally
+been rewarded with significant performance improvements.
+Most of the libraries and header files have been converted
+to be compliant with ANSI C.
+The default compiler (gcc) is a superset of ANSI C,
+but supports traditional C as a command-line option.
+The system libraries and utilities all compile
+with either ANSI or traditional C.
+.PP
+Work has also progressed in several other areas.
+Several important enhancements have been added to the TCP/IP
+protocols including TCP header prediction and
+serial line IP (SLIP) with header compression.
+The routing implementation has been completely rewritten
+to use a hierarchical routing tree with a mask per route
+to support the arbitrary levels of routing found in the ISO protocols.
+The routing table also stores and caches route characteristics
+to speed the adaptation of the throughput and congestion avoidance
+algorithms.
+.PP
+The Kerberos (version 4) authentication software has been
+integrated into much of the system (including NFS) to provide
+the first real network authentication on BSD.
+.PP
+This release includes several important structural kernel changes.
+The kernel uses a new internal system call convention;
+the use of global (``u-dot'') variables for parameters and error returns
+has been eliminated,
+and interrupted system calls no longer abort using non-local goto's (longjmp's).
+A new sleep interface separates signal handling from scheduling priority,
+returning characteristic errors to abort or restart the current system call.
+This sleep call also passes a string describing the process state,
+which is used by the ps(1) program.
+The old sleep interface can be used only for non-interruptible sleeps.
+The sleep interface (\fItsleep\fP) can be used at any priority,
+but is only interruptible if the PCATCH flag is set.
+When interrupted, \fItsleep\fP returns EINTR or ERESTART.
+.PP
+Many data structures that were previously statically allocated
+are now allocated dynamically.
+These structures include mount entries, file entries,
+user open file descriptors, the process entries, the vnode table,
+the name cache, and the quota structures.
+.SH
+The End of BSD from Berkeley
+.PP
+As you may already have heard, the CSRG is going to go away after the
+final release of 4.4BSD.
+For the following reasons, clearly the CSRG cannot continue
+in its present form.
+.PP
+Funding has become increasingly time-consuming and difficult.
+We are spending more and more of our time obtaining funding,
+time that we would prefer to spend working on BSD.
+As many of you are intimately aware, computer corporations are
+actively seeking ways to reduce discretionary outlays.
+Also, as UNIX vendors have developed their own research groups,
+the work of the CSRG has become less necessary to them.
+Finally, making BSD freely redistributable has resulted
+in fewer distributions sold,
+as other organizations sell our releases for less money.
+.PP
+Support within the University of California has declined as BSD has
+become less widely used internally.
+Victims of our own success, many of the features once found only in
+BSD are now available from every vendor.
+.PP
+The system has become too large and complex for a group of four to
+architect and maintain.
+In particular, losing Mike Karels has made it obvious to us that
+the group is below critical mass for developing and distributing a
+complete UNIX system.
+.PP
+We are making the 4.4BSD-alpha distribution available now.
+We will spend the summer and some part of the fall cleaning up
+the release and make the final 4.4BSD release available in the fall.
+When the final release happens is mostly dependent on when our
+current funding runs out.
+At that time we will close down the group.
+We would really like to have six months to finish up 4.4BSD.
+The amount of time that we get is largely a function of how many
+of you purchase the alpha distribution.
+So, if you are planning to get 4.4BSD when it comes out, please
+consider buying an alpha distribution with an upgrade option instead.
+That way your money will go to support the final 4.4BSD release.
+.PP
+BSD has always been a community effort, and, as a community effort,
+does not rely on a small group of people in Berkeley to keep it going.
+BSD will not go away, but will live on through the free software and
+commercial efforts of many people.
+We thank you for your support over the years, your funding, and,
+of course, the software you've contributed to make the BSD system
+what it is today!
+.SH
+How to obtain 4.4BSD-Encumbered or 4.4BSD-Lite
+.PP
+To obtain 4.4BSD-Encumbered or 4.4BSD-Lite
+we require execution of the appropriate Berkeley License Agreement (6/92).
+In addition, foreign licensees must execute Addendum Number One for 
+Foreign Licensees in ordering 4.4BSD-Encumbered.
+The fee is $2000.00 for 4.4BSD-Encumbered and
+$1000.00 for 4.4BSD-Lite.
+.PP
+Because we are a research and development organization
+and not a commercial organization,
+we make our research results available for a small license fee.
+We distribute only the whole system ``As Is''
+and cannot send individual pieces of the system.
+We are required by the University of California to have
+a formal license arrangement with each
+organization to which we distribute. 
+All material is considered licensed material regardless of its
+availability from other sources that make such material publicly available.
+In addition, for 4.4BSD-Encumbered, we are required
+to secure a copy of the AT&T Software Agreement with your organization 
+and confirm it with AT&T before the software can be shipped.
+.PP
+Specifically, for 4.4BSD-Encumbered, we must receive from your organization the
+following material before the distribution can be sent:
+.IP \(bu
+\fBTwo\fR copies of the \fBcurrent\fR Software Agreement
+between your company or institution and
+AT&T (Western Electric) that authorize you as a source licensee for
+UNIX/32V, System III, or System V.
+Note that a complete copy of the agreement up to the Schedule is required,
+not just the cover and/or signature page.
+Letters authorizing additional CPUs are not necessary in this process;
+however, it is your legal responsibility to obtain
+an additional CPU authorization from AT&T.
+.IP \(bu
+\fBTwo\fR original signed and executed copies of
+the Berkeley License Agreement (6/92) between your company
+or institution and The Regents of the University of California
+along with Exhibit A properly filled out.
+For Foreign licensees, there is an Addendum to
+the License Agreement that must also be executed.
+The name of the organization on the Berkeley License Agreement
+must be the same as that which appears on
+the Software Agreement with AT&T (or Western Electric).
+The Berkeley License Agreement (6/92) must be signed
+by a duly authorized person who holds a position that is
+at the same level or a higher level of authority
+as that which appears on the AT&T Software Agreement. 
+Please have this person's name and title 
+.B 
+typed 
+.R
+in the available space in addition to the signature.
+This license agreement applies to all the CPUs covered
+by the Software Agreement with AT&T (or Western Electric)
+that you have provided.
+One signed copy of the Berkeley License Agreement will be
+returned to you after it has been executed by
+The Regents of the University of California.
+.IP \(bu
+A check from a U.S. bank for $2000.00 must be received before
+the distribution can be sent.
+Checks should be made payable to 
+``The Regents of the University of California,
+Computer Systems Research Group.'' 
+If you must issue a Purchase Order,
+together with your prepayment, 
+please issue one that is blank-backed.
+If this is not possible,
+insert and initial in the body of the Purchase Order the following clause:
+``The terms and conditions of this Purchase Order
+are not accepted by The Regents of the University of California.
+The revised Berkeley License Agreement (6/92) prevails.''
+Wire transfers are strongly discouraged.
+.IP \(bu
+The attached Site Information Form completely filled out.
+Your copy of the signed 4.4BSD-Encumbered License Agreement
+will be sent to the person listed as the administrative contact.
+The distribution itself will be sent to the technical contact.
+All information is kept confidential;
+it is for our use in notifying you of important
+bug fixes and the availability of future BSD distributions.
+Please note that we cannot ship to post office boxes;
+therefore, please have the technical contact's address
+supplied without use of a post office box.
+.PP
+For 4.4BSD-Lite, we must receive from your organization the following
+material before the distribution can be sent:
+.IP \(bu
+Two original signed and executed copies of the
+4.4BSD-Lite License Agreements (6/92) with Exhibit A
+by an authorized official of your company or institution.
+One signed copy will be returned to you after it has been
+executed by The Regents of the University of California.
+.IP \(bu
+A check from a U.S. bank for $1000.00 payable to
+``The Regents of the University of California,
+Computer Systems Research Group.''
+If you must issue a Purchase Order,
+please issue one that is blank-backed.
+If this is not possible, insert and initial in the body
+of the Purchase Order the following clause:
+``The terms and conditions of this Purchase Order are not
+accepted by The Regents of the University of California.
+The 4.4BSD-Lite License Agreement (6/92) prevails.''
+.IP \(bu
+The attached Site Information Form completely filled out.
+Your copy of the signed 4.4BSD-Lite License Agreement will be
+sent to the person listed as the administrative contact.
+The distribution itself will be sent to the technical contact.
+All information is kept confidential;
+it is for our use in notifying you of important
+bug fixes and the availability of future BSD distributions.
+Please note that we cannot ship to post office boxes;
+therefore, please have the technical contact's address
+supplied without use of a post office box.
+.PP
+.sp 2
+A checklist is included to aid you in assembling this material.
+All the above material must be sent to:
+.DS
+Pauline Schwartz, Distribution Coordinator
+Computer Systems Research Group
+Computer Science Division, EECS
+University of California
+Berkeley, California 94720
+.DE
+Once all these items have been received and are in proper order,
+the distribution will be sent to the technical address listed on the
+Site Information Form.
+We cannot provide delivery dates.
+Once the material is assembled and packaged,
+the distribution is shipped by commercial carrier.
+Order of shipment will be based on time
+of arrival of the properly completed paperwork and
+confirmation with AT&T if necessary.
+Because of the differential in costs of shipping outside the United States,
+we ask that organizations beyond the North American continent pay
+the collect shipping charges.
+If the destination is one where collect shipment
+cannot be made by the carrier,
+then advance payment of the shipping charges will be required.
+.PP
+The most expedient way to ensure that your full distribution
+is sent as quickly as possible is to include in a single
+package two original copies of the appropriate
+Berkeley License Agreement completed
+and properly signed (\fBwithout modification\fR),
+two complete copies of your AT&T Software Agreement
+(only for 4.4BSD-Encumbered),
+the appropriate check properly made out to 
+``The Regents of the University of California,
+Computer Systems Research Group'' and a completely filled out
+Site Information Form and to send this single package
+to the address noted above.
+.PP
+Please note that if you modify the  Berkeley License Agreement,
+you may experience a delay of three months or more before 
+receiving an acceptance or denial of the changes.
+We reserve the right to cancel your application if we have
+not received the requested paperwork within 60 days
+from the date it was sent to us.
+.SH
+Ordering the Upgrade to 4.4BSD
+.PP
+For those who would like to order the upgrade to the present
+alpha release of 4.4BSD,
+we offer the opportunity to prepay a fee of $400.00 for such upgrade,
+scheduled to be released at year's end or soon thereafter.
+The advantage in ordering the upgrade at the time of ordering the
+alpha release is that there will not be additional licensing costs.
+.PP
+If one wishes to order the 4.4BSD-Lite and upgrade,
+the total fee will be $1,400.00.
+If one wishes to order the 4.4BSD-Encumbered and upgrade,
+the total fee will be $2,400.00.
+For those who choose not to order the upgrade now,
+we will notify you when it is available so that you may order
+it for whatever fee will be set at that time.
+.SH
+Special Cases
+.PP
+\fBUniversity of California Sites\fR.
+If you are a part of the University of California,
+the following requirements apply:
+To run 4.4BSD-Encumbered on any CPU,
+you must have a CPU authorization under
+The Regents of the University of California Software
+Agreement with AT&T.
+This can be obtained by contacting Pam True at (510) 642-6348
+in Berkeley Campus Materiel Management for an application. 
+A copy of this should be sent to us.
+In addition, the following items must
+be sent to the Computer Systems Research Group:
+1) a letter of authorization signed by the Director or Head of Department 
+requesting 4.4BSD-Encumbered,
+stating that you have read and understood the Berkeley
+License Agreement (6/92) and that your organization
+will abide by it;
+2) an IOC for $2,000.00; and
+3) a Site Information Form.
+The same requirements apply to 4.4BSD-Lite, except for the
+difference in fee ($1000.00 for 4.4BSD-Lite).
+.PP
+\fBGovernment Agencies and Government Contractors\fR.
+.IP \(bu
+The U.S. Government has a UNIX Source Software Agreement
+with AT&T dated Sept. 1, 1975.
+If you are a government agency operating under the 1975 Software Agreement,
+you do not need a copy of the aforementioned Software Agreement;
+instead you must send a copy of your additional CPU authorization from AT&T.
+The Berkeley License Agreement for 4.4BSD-Encumbered (6/92)
+should be signed by the appropriate Contracting Officer.
+.IP \(bu
+Several government agencies have acquired
+their own AT&T UNIX Software Agreement.
+Here, we need a copy of this Software Agreement with AT&T.
+The Berkeley License Agreement (6/92) must
+be signed by the same officeholder (or replacement) whose
+signature appears on the Software Agreement with AT&T.
+The government agency shall be identified as the Licensee in 
+the Berkeley License Agreement (6/92).
+.IP \(bu
+If you are a contractor of the Government and have obtained an
+additional CPU authorization from AT&T for your contract work,
+the Berkeley License Agreement (6/92) must be signed by the appropriate
+Contracting Officer for the contract.
+The contractor should address a letter
+to the Contracting Officer stating that the contractor
+agrees to abide by the terms and conditions
+of the Berkeley License Agreement (6/92) for 4.4BSD and ask that
+the Contracting Officer sign the Berkeley License
+Agreement (6/92) for 4.4BSD.
+The Contracting Officer should then return the signed 
+Berkeley License Agreement (6/92) directly to the
+Computer Systems Research Group with a cover
+letter stating that the contractor is hereby authorized
+to receive a copy of 4.4BSD-Encumbered.
+.IP \(bu
+For those government agencies who wish to obtain 4.4BSD-Lite,
+we need two original copies of
+the Berkeley License Agreement (6/92) for 4.4BSD-Lite
+executed by an authorized official of that agency.
+.SH
+A Special Note 
+.PP
+The procedures and rules set out in this document
+are University and AT&T constraints that must be followed
+for the distribution of software to be possible.
+The Computer Systems Research Group has no control over
+these constraints and must reject your application if
+material submitted is not in order.
+.SH
+.ne 2.5i
+If You Have Read Everything and Still Need Help
+.PP
+If you have questions about the licensing process after reading
+this letter, you may call Pauline Schwartz at (510) 642-7780,
+write to her, or contact her via electronic mail at pauline@cs.berkeley.edu.
+.sp 2
+.ti +2.5i
+Sincerely yours,
+.sp 3
+.ti +2.5i
+Marshall Kirk McKusick
+.br
+.ti +2.5i
+Research Computer Scientist
+.br
+.ti +2.5i
+Computer Systems Research Group

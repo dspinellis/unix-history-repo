@@ -1,0 +1,145 @@
+#	@(#)Makefile.sparc	7.1 (Berkeley) %G%
+#
+# Makefile for 4.4 BSD
+#
+# This makefile is constructed from a machine description:
+#	config machineid
+# Most changes should be made in the machine description
+#	/sys/conf/``machineid''
+# after which you should do
+#	 config machineid
+# Machine generic makefile changes should be made in
+#	/sys/conf/Makefile.``machinetype''
+# after which config should be rerun for all machines of that type.
+#
+# N.B.: NO DEPENDENCIES ON FOLLOWING FLAGS ARE VISIBLE TO MAKEFILE
+#	IF YOU CHANGE THE DEFINITION OF ANY OF THESE RECOMPILE EVERYTHING
+#
+# -DTRACE	compile in kernel tracing hooks
+# -DQUOTA	compile in file system quotas
+
+# DEBUG is set to -g if debugging.
+# PROF is set to -pg if profiling.
+
+AS?=	as
+
+CC=	cc -W ${DEBUG}
+CPP=	cpp
+LD=	ld
+TOUCH=	touch -f -c
+
+# source tree is located via $S relative to the compilation directory
+S=	../..
+SPARC=	$S/sparc
+LIBKERN=$S/libkern/obj/libkern.a
+
+INCLUDES=-I. -I$S -I$S/sys
+COPTS=	${INCLUDES} ${IDENT} -DKERNEL -DSUN4C -Dsun4c
+CFLAGS=	-O4 ${COPTS}
+
+# compile rules: rules are named ${TYPE}_${SUFFIX}${CONFIG_DEP}
+# where TYPE is NORMAL, DRIVER, or PROFILE}; SUFFIX is the file suffix,
+# capitalized (e.g. C for a .c file), and CONFIG_DEP is _C if the file
+# is marked as config-dependent.
+
+# sparc kernel uses volatile, rather than heavy "device-driver"s.
+
+NORMAL_C=	${CC} -c ${CFLAGS} ${PROF} $<
+NORMAL_C_C=	${CC} -c ${CFLAGS} ${PROF} ${PARAM} $<
+
+NORMAL_S=	rm -f $*.c; ln -s $< $*.c; \
+		${CC} ${COPTS} -I${SPARC}/sparc -E $*.c > $*.i; \
+		${AS} -o $@ $*.i; rm -f $*.c $*.i
+NORMAL_S_C=	rm -f $*.c; ln -s $< $*.c; \
+		${CC} ${COPTS} ${PARAM} -I${SPARC}/sparc -E $*.c > $*.i; \
+		${AS} -o $@ $*.i; rm -f $*.c $*.i
+
+%OBJS
+
+%CFILES
+
+# load lines for config "xxx" will be emitted as:
+# xxx: ${SYSTEM_DEP} swapxxx.o
+#	${SYSTEM_LD_HEAD}
+#	${SYSTEM_LD} swapxxx.o
+#	${SYSTEM_LD_TAIL}
+DEBUG?=
+.if ${DEBUG} == "-g"
+LDX=-X
+.else
+LDX=-x
+.endif
+SYSTEM_OBJ=	locore.o ${OBJS} param.o ioconf.o vnode_if.o
+SYSTEM_DEP=	Makefile ${SYSTEM_OBJ}
+SYSTEM_LD_HEAD=	rm -f $@
+SYSTEM_LD=	-@echo ${LD} ${LDX} -p -N -e start -T f8004000 -o $@ \
+		    '$${SYSTEM_OBJ}' vers.o ${LIBKERN}; \
+		${LD} ${LDX} -p -N -e start -T f8004000 -o $@ \
+		    ${SYSTEM_OBJ} vers.o ${LIBKERN}
+SYSTEM_LD_TAIL=	@size $@; chmod 755 $@
+#.if ${DEBUG} == "-g"
+#SYSTEM_LD_TAIL+=; echo cp $@ $@.gdb; rm -f $@.gdb; cp $@ $@.gdb; \
+#		echo strip -d $@; strip -d $@
+#.endif
+
+%LOAD
+
+newvers:
+	sh $S/conf/newvers.sh
+	${CC} ${CFLAGS} -c vers.c
+
+clean:
+	rm -f eddep *vmunix vmunix.gdb tags tags1 *.[io] [a-z]*.s \
+		Errs errs linterrs makelinks
+
+locore.o: ${SPARC}/sparc/locore.s assym.s
+	${NORMAL_S}
+
+# depend on maxusers
+assym.s: Makefile
+
+./assym.s: assym.s
+assym.s: genassym
+	./genassym >assym.s
+
+genassym: genassym.o
+	${CC} -o $@ genassym.o
+
+genassym.o: ${SPARC}/sparc/genassym.c
+	${CC} -c ${CFLAGS} ${PARAM} $<
+
+SRCS=	${CFILES} ${SPARC}/sparc/locore.s ${SPARC}/sparc/bsd_audiointr.s \
+	${SPARC}/sparc/genassym.c ioconf.c param.c vnode_if.c
+depend: .depend
+.depend: ${SRCS} assym.s
+	mkdep ${COPTS} ${SRCS}
+
+links:
+	egrep '#if' ${CFILES} | sed -f $S/conf/defines | \
+	  sed -e 's/:.*//' -e 's/\.c/.o/' | sort -u > dontlink
+	echo ${CFILES} | tr -s ' ' '\12' | sed 's/\.c/.o/' | \
+	  sort -u | comm -23 - dontlink | \
+	  sed 's,../.*/\(.*.o\),rm -f \1;ln -s ../GENERIC/\1 \1,' > makelinks
+	sh makelinks && rm -f dontlink
+
+tags: depend
+	sh $S/conf/systags.sh
+	rm -f tags1
+	sed -e 's,	../,	,' tags > tags1
+
+ioconf.o: ioconf.c
+	${CC} -c ${CFLAGS} ioconf.c
+
+param.c: $S/conf/param.c
+	rm -f param.c
+	cp $S/conf/param.c .
+
+param.o: param.c Makefile
+	${CC} -c ${CFLAGS} ${PARAM} param.c
+
+vnode_if.c: $S/kern/vnode_if.sh $S/kern/vnode_if.src
+	sh $S/kern/vnode_if.sh $S/kern/vnode_if.src
+vnode_if.h: $S/kern/vnode_if.sh $S/kern/vnode_if.src
+	sh $S/kern/vnode_if.sh $S/kern/vnode_if.src
+
+%RULES

@@ -1,0 +1,81 @@
+.\" Copyright (c) 1987, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the Institute of Electrical and Electronics Engineers, Inc.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)cmp.1	6.9 (Berkeley) %G%
+.\"
+.Dd 
+.Dt CMP 1
+.Os
+.Sh NAME
+.Nm cmp
+.Nd compare two files
+.Sh SYNOPSIS
+.Nm cmp
+.Op Fl l | Fl s
+.Ar file1 file2
+.Op Ar skip1 Op Ar skip2
+.Sh DESCRIPTION
+The cmp utility compares two files of any type and writes the results
+to the standard output.
+By default,
+.Nm
+is silent if the files are the same; if they differ, the byte
+and line number at which the first difference occurred is reported.
+.Pp
+Bytes and lines are numbered beginning with one.
+.Pp
+The following options are available:
+.Bl -tag -width flag
+.It Fl l
+Print the byte number (decimal) and the differing
+byte values (octal) for each difference.
+.It Fl s
+Print nothing for differing files; return exit
+status only.
+.El
+.Pp
+The optional arguments
+.Ar skip1
+and 
+.Ar skip2
+are the byte offsets from the beginning of
+.Ar file1
+and
+.Ar file2 ,
+respectively, where the comparison will begin.
+The offset is decimal by default, but may be expressed as an hexadecimal
+or octal value by preceding it with a leading ``0x'' or ``0''.
+.Pp
+The
+.Nm cmp
+utility exits with one of the following values:
+.Bl -tag -width 4n
+.It 0
+The files are identical.
+.It 1
+The files are different; this includes the case
+where one file is identical to the first part of
+the other.
+In the latter case, if the
+.Fl s
+option has not been specified,
+.Nm cmp
+writes to standard output that EOF was reached in the shorter
+file (before any differences were found).
+.It >1
+An error occurred.
+.El
+.Sh SEE ALSO
+.Xr diff 1 ,
+.Xr diff3 1
+.Sh STANDARDS
+The
+.Nm cmp
+utility is expected to be
+.St -p1003.2
+compatible.

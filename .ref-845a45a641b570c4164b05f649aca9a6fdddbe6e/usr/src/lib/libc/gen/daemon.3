@@ -1,0 +1,49 @@
+.\" Copyright (c) 1993 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)daemon.3	8.1 (Berkeley) %G%
+.Dd 
+.Dt DAEMON 3
+.Os
+.Sh NAME
+.Nm daemon
+.Nd run in the background
+.Sh SYNOPSIS
+.Fn daemon "int nochdir" "int noclose"
+.Sh DESCRIPTION
+.Pp
+The
+.Fn daemon
+function is for programs wishing to detach themselves from the
+controlling terminal and run in the background as system daemons.
+.Pp
+Unless the argument
+.Fa nochdir
+is non-zero,
+.Fn daemon
+changes the current working directory to the root (``/'').
+.Pp
+Unless the argument
+.Fa noclose
+is non-zero,
+.Fn daemon
+will redirect standard input, standard output and standard error
+to ``/dev/null''.
+.Sh ERRORS
+The function
+.Fn daemon
+may fail and set
+.Va errno
+for any of the errors specified for the library functions
+.Xr fork 2
+and 
+.Xr setsid 2 .
+.Sh SEE ALSO
+.Xr setsid 2
+.Sh HISTORY
+The
+.Fn daemon
+function is
+.Ud .

@@ -1,0 +1,47 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)lorder.1	6.7 (Berkeley) %G%
+.\"
+.Dd 
+.Dt LORDER 1
+.Os
+.Sh NAME
+.Nm lorder
+.Nd list dependencies for object files
+.Sh SYNOPSIS
+.Nm lorder
+.Ar
+.Sh DESCRIPTION
+The
+.Nm lorder
+utility uses
+.Xr nm 1
+to determine interdependencies in the list of object files
+specified on the command line.
+.Nm Lorder
+outputs a list of file names where the first file contains a symbol
+which is defined by the second file.
+.Pp
+The output is normally used with
+.Xr tsort  1
+when a library is created to determine the optimum ordering of the
+object modules so that all references may be resolved in a single
+pass of the loader.
+.Sh EXAMPLES
+.Bd -literal -offset indent
+ar cr library.a `lorder ${OBJS}  tsort`
+.Ed
+.Sh SEE ALSO
+.Xr ar 1 ,
+.Xr ld 1 ,
+.Xr nm 1 ,
+.Xr ranlib 1 ,
+.Xr tsort 1
+.Sh HISTORY
+An
+.Nm lorder
+utility appeared in
+.At v7 .

@@ -1,0 +1,36 @@
+.\" Copyright (c) 1991, 1991 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)mincore.2	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt MINCORE 2
+.Os
+.Sh NAME
+.Nm mincore
+.Nd get advise about use of memory
+.Sh SYNOPSIS
+.Fn mincore "caddr_t addr" "int len" "char *vec"
+.Sh DESCRIPTION
+The
+.Fn mincore
+system call
+allows a process to obtain information about whether pages are
+core resident.
+Here the current core residency of the pages is returned
+in the character array
+.Fa vec ,
+with a value of 1 meaning
+that the page is in-core.
+.Sh SEE ALSO
+.Xr msync 2 ,
+.Xr munmap 2 ,
+.Xr mprotect 2 ,
+.Xr madvise 2 ,
+.Sh HISTORY
+The
+.Fn mincore
+function call is
+.Ud .

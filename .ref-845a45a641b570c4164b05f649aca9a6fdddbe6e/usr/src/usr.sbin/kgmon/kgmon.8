@@ -1,0 +1,96 @@
+.\" Copyright (c) 1983, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)kgmon.8	6.5 (Berkeley) %G%
+.\"
+.Dd 
+.Dt KGMON 8
+.Os BSD 4.2
+.Sh NAME
+.Nm kgmon
+.Nd generate a dump of the operating system's profile buffers
+.Sh SYNOPSIS
+.Nm kgmon
+.Op Fl bhpr
+.Op Fl M core
+.Op Fl N system
+.Sh DESCRIPTION
+.Nm Kgmon
+is a tool used when profiling the operating system.
+When no arguments are supplied,
+.Nm kgmon
+indicates the state of operating system profiling as running,
+off, or not configured.
+(see
+.Xr config 8 )
+If the
+.Fl p
+flag is specified,
+.Nm kgmon
+extracts profile data from the operating system and produces a
+.Pa gmon.out
+file suitable for later analysis by
+.Xr gprof 1 .
+.Pp
+The options are as follows:
+.Bl -tag -width Ds
+.It Fl b
+Resume the collection of profile data.
+.It Fl h
+Stop the collection of profile data.
+.It Fl p
+Dump the contents of the profile buffers into a
+.Pa gmon.out
+file.
+.It Fl r
+Reset all the profile buffers. 
+If the
+.Fl p
+flag is also specified, the
+.Pa gmon.out
+file is generated before the buffers are reset.
+.It Fl M
+Extract values associated with the name list from the specified core
+instead of the default ``/dev/kmem''.
+.It Fl N
+Extract the name list from the specified system instead of the
+default ``/vmunix''.
+.El
+.Pp
+If neither 
+.Fl b
+nor
+.Fl h
+is specified, the state of profiling collection remains unchanged.
+For example, if the
+.Fl p
+flag is specified and profile data is being collected,
+profiling will be momentarily suspended,
+the operating system profile buffers will be dumped,
+and profiling will be immediately resumed.
+.Sh FILES
+.Bl -tag -width /dev/kmemx -compact
+.It Pa /vmunix
+the default system
+.It Pa /dev/kmem
+the default memory
+.El
+.Sh SEE ALSO
+.Xr gprof 1 ,
+.Xr config 8
+.Sh DIAGNOSTICS
+Users with only read permission on
+.Pa /dev/kmem
+cannot change the state
+of profiling collection. 
+They can get a 
+.Pa gmon.out
+file with the warning that the data may be
+inconsistent if profiling is in progress.
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 4.2 .

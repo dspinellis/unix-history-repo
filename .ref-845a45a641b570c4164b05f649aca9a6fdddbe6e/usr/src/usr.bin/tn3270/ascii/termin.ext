@@ -1,0 +1,7 @@
+/*
+ *	@(#)termin.ext	3.1  10/29/86
+ */
+
+extern int
+	TerminalIn(),
+	DataFromTerminal();

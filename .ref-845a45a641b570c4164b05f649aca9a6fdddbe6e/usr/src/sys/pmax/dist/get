@@ -1,0 +1,127 @@
+#!/bin/sh -
+#
+# Copyright (c) 1992 The Regents of the University of California.
+# All rights reserved.
+#
+# %sccs.include.redist.sh%
+#
+#	@(#)get	7.2 (Berkeley) %G%
+#
+
+# Shell script to build a mini-root file system in preparation for building
+# a distribution tape.  The file system created here is image copied onto
+# tape, then image copied onto disk as the "first" step in a cold boot of
+# 4.3BSD systems.
+#
+DISTROOT=
+#
+if [ `pwd` = '/' ]
+then
+	echo You just '(almost)' destroyed the root
+	exit
+fi
+
+# copy in kernel
+cp $DISTROOT/sys/GENERIC.pmax/vmunix .
+
+# create necessary directories
+DIRLIST="bin dev etc a tmp stand sbin usr usr/mdec"
+rm -rf $DIRLIST
+mkdir $DIRLIST
+
+ETC="disktab services"
+for i in $ETC; do
+	cp $DISTROOT/etc/$i etc/$i
+done
+
+SBIN="disklabel fsck ifconfig init mknod mount newfs restore umount"
+USBIN="pwd_mkdb"
+for i in $SBIN; do
+	cp $DISTROOT/sbin/$i sbin/$i
+done
+for i in $USBIN; do
+	cp $DISTROOT/usr/sbin/$i sbin/$i
+done
+ln sbin/restore sbin/rrestore
+
+BIN="[ cat cp dd echo ed expr ls mkdir mv rcp rm sh stty sync"
+UBIN="awk mt"
+for i in $BIN; do
+	cp $DISTROOT/bin/$i bin/$i
+done
+for i in $UBIN; do
+	cp $DISTROOT/usr/bin/$i bin/$i
+done
+ln bin/[ bin/test
+
+MDEC="rzboot bootrz"
+for i in $MDEC; do
+	cp $DISTROOT/usr/mdec/$i usr/mdec/$i
+done
+
+DOT=".profile"
+for i in $DOT; do
+	cp $DISTROOT/$i $i
+done
+
+# initialize /dev
+cp $DISTROOT/dev/MAKEDEV dev/MAKEDEV
+chmod +x dev/MAKEDEV
+cp /dev/null dev/MAKEDEV.local
+(cd dev; ./MAKEDEV std dc0 scc0 rz0 rz1 rz2 rz3 rz4 tz0 tz1 \
+	pm0 cfb0 xcfb0 mfb0 pty0)
+
+# initialize /etc/passwd
+cat >etc/passwd <<EOF
+root::0:10::/:/bin/sh
+daemon:*:1:1::/:
+EOF
+
+# initialize /etc/group
+cat >etc/group <<EOF
+system:*:0:
+daemon:*:1:
+uucp:*:2:
+kmem:*:3:
+bin:*:4:
+news:*:8:
+staff:*:10:
+operator:*:28:
+EOF
+
+# initialize /etc/fstab
+cat >etc/fstab <<EOF
+/dev/rz0a	/	ufs	xx	1 1
+/dev/rz0g	/usr	ufs	xx	1 2
+EOF
+
+# create xtr script
+cat >xtr <<'EOF'
+#!/bin/sh -e
+: ${disk?'Usage: disk=xx0 tape=yy [type=zz] xtr'}
+: ${tape?'Usage: disk=xx0 tape=yy [type=zz] xtr'}
+echo 'Build root file system'
+disklabel -W ${disk}c ${type}
+disklabel -w -r ${disk}c ${type}
+newfs ${disk}a ${type}
+sync
+echo 'Check the file system'
+fsck /dev/r${disk}a
+mount /dev/${disk}a /a
+cd /a
+echo 'Rewind tape'
+mt -f /dev/${tape}0 rew
+echo 'Restore the dump image of the root'
+restore rsf 2 /dev/${tape}0
+cd /
+sync
+umount /a
+sync
+fsck /dev/r${disk}a
+echo 'Root filesystem extracted'
+EOF
+
+# make xtr script executable
+chmod +x xtr
+
+sync

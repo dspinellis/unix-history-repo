@@ -1,0 +1,54 @@
+.\" Copyright (c) 1986, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)installboot.8	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt INSTALLBOOT 8
+.Os BSD 4.3t
+.Sh NAME
+.Nm installboot
+.Nd installs a boot program in a file system
+.Sh SYNOPSIS
+.Nm installboot
+.Ar bootblock bootprog special
+.Sh DESCRIPTION
+.Xr Installboot
+concatentates
+.Ar bootblock
+and
+.Ar bootprog
+and writes at most
+.Dv BBSIZE
+bytes (from
+.Aq Pa sys/fs.h )
+of them on the first bytes of
+.Ar special .
+.Sh FILES
+.Bl -tag -width /usr/mdec/bootxxx -compact
+.It Pa /usr/mdec/??boot
+boot blocks
+.It Pa /usr/mdec/boot??
+boot programs
+.El
+.Sh SEE ALSO
+.Xr newfs 8 ,
+.Xr dd 1
+.Sh EXAMPLES
+.Bd -literal -offset indent -compact
+cd /usr/mdec
+installboot raboot bootra /dev/ra0a
+.Ed
+.Sh BUGS
+There is no convenient way to determine the names of the boot blocks
+and boot programs without
+.Em a priori
+knowledge of one's make of disk.
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 4.3 tahoe .
+This manual page was written by Geoff Collyer.

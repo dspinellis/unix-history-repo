@@ -1,0 +1,70 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)look.1	6.6 (Berkeley) %G%
+.\"
+.Dd 
+.Dt LOOK 1
+.Os
+.Sh NAME
+.Nm look
+.Nd display lines beginning with a given string
+.Sh SYNOPSIS
+.Nm look
+.Op Fl df
+.Ar string
+.Op Ar file
+.Sh DESCRIPTION
+The 
+.Nm look
+utility displays any lines in
+.Ar file
+which contain
+.Ar string
+as a prefix.
+As
+.Nm look
+performs a binary search, the lines in
+.Ar file
+must be sorted.
+.Pp
+If
+.Ar file
+is not specified, the file
+.Pa /usr/share/dict/words
+is used, only alphanumeric characters are compared and the case of
+alphabetic characters is ignored.
+.Pp
+Options:
+.Bl -tag -width Ds
+.It Fl d
+Dictionary character set and order, i.e. only alphanumeric characters
+are compared.
+.It Fl f
+Ignore the case of alphabetic characters.
+.El
+.Pp
+The
+.Nm look
+utility exits 0 if one or more lines were found and displayed,
+1 if no lines were found, and >1 if an error occurred.
+.Sh FILES
+.Bl -tag -width /usr/share/dict/words -compact
+.It Pa /usr/share/dict/words
+the dictionary
+.El
+.Sh SEE ALSO
+.Xr grep 1 ,
+.Xr sort 1
+.Sh COMPATIBILITY
+The original manual page stated that tabs and blank characters participated
+in comparisons when the
+.Fl d
+option was specified.
+This was incorrect and the current man page matches the historic
+implementation.
+.Sh HISTORY
+.Nm Look
+appeared in Version 7 AT&T Unix.

@@ -1,0 +1,62 @@
+.\" Copyright (c) 1991 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the Institute of Electrical and Electronics Engineers, Inc.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"     @(#)tee.1	6.5 (Berkeley) %G%
+.\"
+.Dd 
+.Dt TEE 1
+.Os
+.Sh NAME
+.Nm tee
+.Nd pipe fitting
+.Sh SYNOPSIS
+.Nm tee
+.Op Fl ai
+.Op Ar file ...
+.Sh DESCRIPTION
+The
+.Nm tee
+utility copies standard input to standard output,
+making a copy in zero or more files.
+The output is unbuffered.
+.Pp
+The following options are available:
+.Bl -tag -width Ds
+.It Fl a
+Append the output to the files rather than
+overwriting them.
+.It Fl i
+Ignore the
+.Dv SIGINT
+signal.
+.El
+.Pp
+The following operands are available:
+.Bl -tag -width file
+.It file
+A pathname of an output
+.Ar file .
+.El
+.Pp
+The
+.Nm tee
+utility takes the default action for all signals,
+except in the event of the
+.Fl i
+option.
+.Pp
+The
+.Nm tee
+utility exits 0 on success, and >0 if an error occurs.
+.Sh STANDARDS
+The
+.Nm tee
+function is expected to be
+.Tn POSIX
+.St -p1003.2
+compatible.

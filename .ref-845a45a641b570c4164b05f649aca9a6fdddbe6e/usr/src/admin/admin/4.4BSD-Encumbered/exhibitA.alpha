@@ -1,0 +1,14 @@
+.\"     @(#)exhibitA	1.1 (Berkeley) 1/16/92
+.ll 6.8i
+.nr LL 6.8i
+.ls 4
+.ce 2
+.ps 14
+.B "4.4BSD-ENCUMBERED"    
+.ps 10
+.B "EXHIBIT A"
+.nf
+.sp 3
+.ta 6i
+\l'.5i'  4.4BSD, 9 track tape, 6250 bpi  $2000
+\l'.5i'  4.4BSD, 8mm Exabyte  $2000

@@ -1,0 +1,121 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)ptx.1	6.7 (Berkeley) %G%
+.\"
+.Dd 
+.Dt PTX 1
+.Os ATT 7th
+.Sh NAME
+.Nm ptx
+.Nd permuted index
+.Sh SYNOPSIS
+.Nm ptx
+.Op  option
+.Ar ...
+.Op input Op output
+.Sh DESCRIPTION
+.Nm Ptx
+generates a permuted index to file
+.Ar input
+on file
+.Ar output
+(standard input and output default).
+It has three phases: the first does the permutation, generating
+one line for each keyword in an input line.
+The keyword is rotated to the front.
+The permuted file is then
+sorted.
+Finally, the sorted lines are rotated so the keyword
+comes at the middle of the page.
+.Nm Ptx
+produces output in the form:
+.Pp
+.Dl \&.xx "tail" "before keyword" "keyword and after" "head"
+.Pp
+where
+.Ar \&.xx
+may be an
+.Xr nroff 1
+or
+.Xr troff  1
+macro
+for user-defined formatting.
+The
+.Ar before keyword
+and
+.Ar keyword and after
+fields incorporate as much of the line as will fit
+around the keyword when it is printed at the middle of the page.
+.Ar Tail
+and
+.Ar head ,
+at least one of which is an empty string "",
+are wrapped-around pieces small enough to fit
+in the unused space at the opposite end of the line.
+When original text must be discarded, `/' marks the spot.
+.Pp
+The following options can be applied:
+.Bl -tag -width flag
+.It Fl f
+Fold upper and lower case letters for sorting.
+.It Fl t
+Prepare the output for the phototypesetter;
+the default line length is 100 characters.
+.It Fl w Ar n 
+Use the next argument,
+.Ar n ,
+as the width of the output line.
+The default line length is 72 characters.
+.It Fl g Ar n 
+Use the next argument,
+.Ar n ,
+as the number of characters to allow for each gap
+among the four parts of the line as finally printed.
+The default gap is 3 characters.
+.It Fl o Ar only 
+Use as keywords only the words given in the
+.Ar only
+file.
+.It Fl i Ar ignore 
+Do not use as keywords any words given in the
+ignore
+file.
+If the
+.Fl i
+and
+.Fl o
+options are missing, use
+.Pa /usr/share/dict/eign
+as the
+ignore
+file.
+.It Fl b Ar break 
+Use the characters in the
+break
+file to separate words.
+In any case, tab, newline, and space characters are always used as break characters.
+.It Fl r
+Take any leading nonblank characters of each input line to
+be a reference identifier (as to a page or chapter)
+separate from the text of the line.
+Attach that identifier as a 5th field on each output line.
+.El
+.Pp
+The index for this manual was generated using
+.Nm ptx .
+.Sh FILES
+.Bl -tag -width /usr/share/dict.eign -compact
+.It /usr/bin/sort
+.It /usr/share/dict/eign
+.El
+.Sh HISTORY
+The
+.Nm ptx
+command appeared in
+.At v7 .
+.Sh BUGS
+Line length counts do not account for overstriking or
+proportional spacing.

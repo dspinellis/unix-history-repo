@@ -1,0 +1,72 @@
+.\" Copyright (c) 1986,1990, 1991 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)uulog.1	6.5 (Berkeley) %G%
+.\"
+.Dd 
+.Dt UULOG 1
+.Os BSD 4.3
+.Sh NAME
+.Nm uulog
+.Nd display
+.Tn UUCP
+log entries
+.Sh SYNOPSIS
+.Nm uulog
+.Op Fl s Ar sys
+.Op Fl u Ar user
+.Sh DESCRIPTION
+The
+.Nm uulog
+program displays
+.Xr uucp 1
+and
+.Xr uux 1
+log entries from the file
+.Pa /var/spool/uucp/LOGFILE .
+.Pp
+Options supported by
+.Nm uulog :
+.Bl -tag -width Ar
+.It Fl s Ar sys
+Display all entries logged which include the system named
+.Ar sys .
+.It Fl u Ar user
+Display only entries which include the user name
+.Ar user .
+.El
+.Sh FILES
+.Bl -tag -width /usr/spool/uucp/LOGFILEXx
+.It Pa /usr/spool/uucp/LOGFILE
+Logfile of all uucp events.
+.El
+.Sh SEE ALSO
+.Xr uucp 1 ,
+.Xr uux 1 .
+.Sh NOTES
+Very early releases of
+.Tn UUCP
+used separate log files
+for each of the
+.Tn UUCP
+utilities;
+.Nm uulog
+was used to merge the individual logs into a master file.
+This capability has not been necessary for some time and is
+no longer supported.
+.Sh BUGS
+.Tn UUCP Ns 's
+recording of which user issued a request is unreliable.
+.Pp
+The
+.Nm uulog
+program
+is little more than an overspecialized version of
+.Xr grep 1 .
+.Sh HISTORY
+A
+.Nm
+command appeared in
+.At 32v .

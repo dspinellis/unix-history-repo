@@ -1,0 +1,64 @@
+.\" Copyright (c) 1989, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the Institute of Electrical and Electronics Engineers, Inc.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)nohup.1	6.8 (Berkeley) %G%
+.\"
+.Dd 
+.Dt NOHUP 1
+.Os
+.Sh NAME
+.Nm nohup
+.Nd invoke a command immune to hangups
+.Sh SYNOPSIS
+.Nm nohup
+.Ar command
+.Op Ar arg ...
+.Sh DESCRIPTION
+The
+.Nm nohup
+utility invokes
+.Ar command
+with
+its arguments
+and at this time sets the signal
+.Dv SIGHUP
+to be ignored. The signal
+.Dv SIGQUIT
+may also be set
+to be ignored.
+If the standard output is a terminal, the standard output is
+appended to the file
+.Pa nohup.out
+in the current directory.
+If standard error is a terminal, it is directed to the same place
+as the standard output.
+.Pp
+.Nm Nohup
+exits 1 if an error occurs, otherwise the exit status is that of
+.Ar command  .
+.Sh ENVIRONMENT
+The following variable is utilized by
+.Nm nohup .
+.Bl -tag -width flag
+.It Ev HOME
+If the output file
+.Pa nohup.out
+cannot be created in the current directory, the
+.Nm nohup
+utility uses the directory named by
+.Ev HOME
+to create the file.
+.El
+.Sh SEE ALSO
+.Xr signal 3
+.Sh STANDARDS
+The
+.Nm nohup
+command is expected to be
+.St -p1003.2
+compatible.

@@ -1,0 +1,62 @@
+.\" Copyright (c) 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)acos.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt ACOS 3
+.Os
+.Sh NAME
+.Nm acos
+.Nd arc cosine function
+.Sh SYNOPSIS
+.Fd #include <math.h>
+.Ft double
+.Fn acos "double x"
+.Sh DESCRIPTION
+The
+.Fn acos
+function computes the principal value of the arc cosine of
+.Fa x .
+A domain error occurs for arguments not in the range [-1, +1].
+For a discussion of error due to roundoff, see
+.Xr math 3 .
+.Sh RETURN VALUES
+The 
+.Fn acos
+function returns the arc cosine in the range
+.Bq 0 , \*(Pi
+radians.
+On the
+.Tn VAX
+and
+.Tn Tahoe ,
+if:
+.Bd -unfilled -offset indent
+.Pf \&| Ns Ar x Ns \&| > 1 ,
+.Ed
+.Pp
+.Fn acos x
+sets the global variable
+.Va errno
+to
+.Dv EDOM
+and a reserved operand fault is generated.
+.Sh SEE ALSO
+.Xr sin 3 ,
+.Xr cos 3 ,
+.Xr tan 3 ,
+.Xr asin 3 ,
+.Xr atan 3 ,
+.Xr atan2 3 ,
+.Xr sinh 3 ,
+.Xr cosh 3 ,
+.Xr tanh 3 ,
+.Xr math 3 ,
+.Sh STANDARDS
+The
+.Fn acos
+function conforms to
+.St -ansiC .

@@ -1,0 +1,117 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)prof.1	6.1 (Berkeley) %G%
+.\"
+.TH PROF 1 ""
+.UC 4
+.SH NAME
+prof \- display profile data
+.SH SYNOPSIS
+.B prof
+[
+.B \-a
+] [
+.B \-l
+] [
+.B \-n
+] [
+.B \-z
+] [
+.B \-s
+] [
+.B \-v
+[
+.BI \- "low\fR [ \fB\-\fIhigh\fR ]"
+] ]
+[ a.out
+[ mon.out ... ] ]
+.SH DESCRIPTION
+.I Prof
+interprets the file
+produced by the
+.I monitor
+subroutine.
+Under default modes,
+the symbol table in the
+named object file
+.I (a.out
+default)
+is read and correlated with the
+profile file
+.I (mon.out
+default).
+For each external symbol, the percentage
+of time spent executing between that symbol
+and the next
+is printed (in decreasing order),
+together with the number of times that routine was called
+and the number of milliseconds per call.
+If more than one profile file is specified,
+the output represents the sum of the profiles.
+.PP
+In order for the number of calls to a routine to be tallied,
+the
+.B \-p
+option of
+.I cc,
+.I f77
+or
+.I pc
+must have been given when the file containing the
+routine was compiled.
+This option also arranges for the
+profile file to be produced automatically.
+.PP
+Options are:
+.TP
+.B \-a
+all symbols are reported rather than
+just external symbols.
+.TP
+.B \-l
+the output is sorted by symbol value.
+.TP
+.B \-n
+the output is sorted by number of calls
+.TP
+.B \-s
+a summary profile file is produced in
+.I mon.sum.
+This is really only useful
+when more than one profile file is specified.
+.TP
+.B \-v
+all printing is suppressed
+and a graphic version of the profile
+is produced
+on the standard output for display by the
+.IR  plot (1)
+filters.
+When plotting, the numbers
+.I low
+and 
+.I high,
+by default 0 and 100, may be given to cause a selected
+percentage of the profile to be plotted
+with accordingly higher resolution.
+.TP
+.B \-z
+routines which have zero usage (as indicated by call counts
+and accumulated time) are nevertheless printed in the output.
+.SH FILES
+.ta \w'mon.out  'u
+mon.out	for profile
+.br
+a.out		for namelist
+.br
+mon.sum	for summary profile
+.SH "SEE ALSO"
+monitor(3), profil(2), cc(1), plot(1G)
+.SH BUGS
+Beware of quantization errors.
+.PP
+Is confused by
+.I f77
+which puts the entry points at the bottom of subroutines and functions.

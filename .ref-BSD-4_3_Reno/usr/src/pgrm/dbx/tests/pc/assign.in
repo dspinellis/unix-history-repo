@@ -1,0 +1,9 @@
+stop at 6
+run
+print a
+assign a[1] = 'x'
+print a
+assign a = "xyzzy"
+print a
+cont
+print a

@@ -1,0 +1,94 @@
+#	@(#)files.sparc	7.2 (Berkeley) %G%
+#
+# sparc-specific configuration info
+
+maxusers 2 8 64
+
+device mainbus at root { }		# no locators (yet?)
+
+device audio at mainbus
+file	sparc/dev/bsd_audio.c		bsdaudio audio needs-flag
+
+device auxreg at mainbus
+file	sparc/sparc/auxreg.c
+
+device clock at mainbus
+device timer at mainbus
+file	sparc/sparc/clock.c
+
+device cpu at mainbus
+file	sparc/sparc/cpu.c
+
+device memreg at mainbus
+file	sparc/sparc/memreg.c
+
+device zs at mainbus
+file	sparc/dev/zs.c			zs needs-count
+
+device sbus at mainbus { slot = -1, offset = -1 }
+file	sparc/sbus/sbus.c		sbus
+
+device dma at sbus
+device esp at sbus: scsi
+file	sparc/sbus/esp.c		esp dma
+
+device bwtwo at sbus
+file	sparc/sbus/bwtwo.c		bwtwo needs-flag
+
+device cgthree at sbus
+file	sparc/sbus/cgthree.c		cgthree needs-flag
+
+device le at sbus: ifnet, ether
+file	sparc/sbus/if_le.c		le
+
+
+major { sd = 7 }
+
+file	sparc/dev/cons.c
+file	sparc/dev/event.c
+file	sparc/dev/fb.c
+file	sparc/dev/kbd.c
+file	sparc/dev/ms.c
+
+file	sparc/fpu/fpu.c
+file	sparc/fpu/fpu_add.c
+file	sparc/fpu/fpu_compare.c
+file	sparc/fpu/fpu_div.c
+file	sparc/fpu/fpu_explode.c
+file	sparc/fpu/fpu_implode.c
+file	sparc/fpu/fpu_mul.c
+file	sparc/fpu/fpu_sqrt.c
+file	sparc/fpu/fpu_subr.c
+
+file	sparc/rcons/raster_op.c	rconsole
+file	sparc/rcons/raster_text.c	rconsole
+file	sparc/rcons/rcons_font.c	rconsole
+file	sparc/rcons/rcons_kern.c	rconsole
+file	sparc/rcons/rcons_subr.c	rconsole
+
+file	sparc/sparc/autoconf.c
+file	sparc/sparc/bsd_audiointr.s	bsdaudio audio needs-flag
+file	sparc/sparc/cache.c
+file	sparc/sparc/conf.c
+file	sparc/sparc/in_cksum.c
+file	sparc/sparc/intr.c
+file	sparc/sparc/kgdb_stub.c
+# sparc/sparc/locore.s is handled specially in the makefile,
+# because it must come first in the "ld" command line.
+file	sparc/sparc/locore2.c
+file	sparc/sparc/machdep.c
+file	sparc/sparc/mem.c
+file	sparc/sparc/openprom.c
+file	sparc/sparc/pmap.c
+# the following overrides the generic "sys_process.c"
+file	sparc/sparc/sys_process.c
+file	sparc/sparc/sys_machdep.c	trace
+file	sparc/sparc/trap.c
+file	sparc/sparc/vm_machdep.c
+
+file	sparc/sunos/sun_disklabel.c	compat_sunos
+file	sparc/sunos/sun_ioctl.c		compat_sunos
+file	sparc/sunos/sun_misc.c		compat_sunos
+file	sparc/sunos/sun_sysent.c	compat_sunos
+
+file	kludge_for_in_proto.c		hy needs-flag

@@ -1,0 +1,940 @@
+.\" Copyright (c) 1980, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.proprietary.man%
+.\"
+.\"	@(#)ed.1	6.8 (Berkeley) %G%
+.\"
+.Dd 
+.Dt ED 1
+.Os ATT 7th
+.Sh NAME
+.Nm \&ed
+.Nd text editor
+.Sh SYNOPSIS
+.Nm \&ed
+.Op Fl
+.Op Ar file
+.Sh DESCRIPTION
+.Nm \&Ed
+once was
+the standard text editor in the early days of
+.Ux .
+While its life as a line editor is dated,
+.Nm \&ed
+still resides on systems produced
+by a variety of vendors for good reason.
+Because of its
+small size and simplicity,
+.Nm \&ed,
+is found on the root partition
+.Pq Pa /bin/ed
+for emergency editing when normal system
+reboots fail or single user tasks
+are performed and
+.Pa /usr
+is not mounted.
+.Nm \&Ed
+is also useful for script editing tasks,
+and although there is nothing which can
+be done by
+.Nm \&ed
+that cannot be performed by
+.Xr sed 1 ,
+.Xr ex 1
+or
+.Em Gnu Emacs ,
+.Nm \&ed
+remains the simplest and easiest to use.
+.Pp
+If a
+.Ar file
+argument is given,
+.Nm \&ed
+simulates an
+.Cm \&e
+command (see below) on the named file; that is to say,
+the file is read into
+.Nm \&ed Ns 's
+buffer so that it can be edited.
+.It Fl
+Suppresses the printing
+of explanatory output
+and should be used
+when the standard input is
+an editor script.
+.El
+.Pp
+.Nm \&Ed
+operates on a copy of any file it is editing; changes made
+in the copy have no effect on the file until a
+.Cm \&w
+(write) command is given.
+The copy of the text being edited resides
+in a temporary file called the
+.Ar buffer  .
+.Pp
+Commands to
+.Nm \&ed
+have a simple and regular structure: zero or
+more
+.Ad addresses
+followed by a single character
+.Cm command ,
+possibly
+followed by parameters to the command.
+These addresses specify one or more lines in the buffer.
+Missing addresses are supplied by default.
+.Pp
+In general, only one command may appear on a line.
+Certain commands allow the
+addition of text to the buffer.
+While
+.Nm \&ed
+is accepting text, it is said
+to be in
+.Ar input mode .
+In this mode, no commands are recognized;
+all input is merely collected.
+Input mode is left by typing a period
+.Sq Ad \&.
+alone at the
+beginning of a line.
+.Pp
+.Nm \&Ed
+supports a limited form of
+.Ar regular expression
+notation.
+A regular expression specifies
+a set of strings of characters.
+A member of this set of strings is said to be
+.Ar matched
+by the regular expression.
+In the following specification for regular expressions
+the word `character' means any character but newline.
+.Bl -enum
+.It
+Any character except a special character
+matches itself.
+Special characters are
+the regular expression delimiter plus
+.Ql \e\&[.
+and sometimes
+.Ql ^*$ .
+.It
+A
+.Sq Ql \&.
+matches any character.
+.It
+A
+.Ql \e
+followed by any character except a digit or
+.Li (\)
+matches that character.
+.It
+A nonempty string
+.Ar \&s
+bracketed
+.Bq Ar \&s
+(or
+.Bq Ar \&^s )
+matches any character in (or not in)
+.Ar \&s.
+In
+.Ar \&s,
+.Ql \e
+has no special meaning, and
+may only appear as
+the first letter.
+A substring
+.Ar \&a\-b ,
+with
+.Ar \&a
+and
+.Ar \&b
+in ascending
+.Tn ASCII
+order, stands for the inclusive
+range of
+.Tn ASCII
+characters.
+.It
+A regular expression of form 1\-4 followed by
+.Ql \&*
+matches a sequence of
+0 or more matches of the regular expression.
+.It
+A regular expression,
+.Ar \&x ,
+of form 1\-8, bracketed
+.No \e( Ar \&x Ns \e)
+matches what
+.Ar \&x
+matches.
+.It
+A \e followed by a digit
+.Ar \&n
+matches a copy of the string that the
+bracketed regular expression beginning with the
+.Ar \&n Ns \&th
+.No \e(
+matched.
+.It
+A regular expression of form 1\-8,
+.Ar \&x ,
+followed by a regular expression of form 1\-7,
+.Ar \&y
+matches a match for
+.Ar \&x
+followed by a match for
+.Ar \&y ,
+with the
+.Ar \&x
+match being as long as possible while still permitting a
+.Ar \&y
+match.
+.It
+A regular expression of form 1\-8 preceded by
+.Sq Li ^
+(or followed by
+.Sq Li $ ) ,
+is constrained to matches that
+begin at the left (or end at the right) end of a line.
+.It
+A regular expression of form 1\-9 picks out the
+longest among the leftmost matches in a line.
+.It
+An empty regular expression stands for a copy of the
+last regular expression encountered.
+.El
+.Pp
+Regular expressions are used in addresses to specify
+lines and in one command
+(see
+.Ar \&s
+below)
+to specify a portion of a line which is to be replaced.
+If it is desired to use one of
+the regular expression metacharacters as an ordinary
+character, that character may be preceded by
+.Sq Li \e .
+This also applies to the character bounding the regular
+expression (often
+.Sq Li \&/ )
+and to
+.Sq Li \e
+itself.
+.Pp
+To understand addressing in
+.Nm \&ed
+it is necessary to know that at any time there is a
+.Ar current line.
+Generally speaking, the current line is
+the last line affected by a command; however,
+the exact effect on the current line
+is discussed under the description of
+the command.
+Addresses are constructed as follows.
+.Bl -enum
+.It
+The character
+.Sq Ad \&.
+addresses the current line.
+.It
+The character
+.Sq Ad \&$
+addresses the last line of the buffer.
+.It
+A decimal number
+.Ar \&n
+addresses the
+.Ar \&n Ns \&th
+line of the buffer.
+.It
+.Sq \(fm Ns Ar \&x
+addresses the line marked with the name
+.Ar \&x  ,
+which must be a lower-case letter.
+Lines are marked with the
+.Ar \&k
+command described below.
+.It
+A regular expression enclosed in slashes
+.Ql \&/
+addresses
+the line found by searching forward from the current line
+and stopping at the first line containing a
+string that matches the regular expression.
+If necessary the search wraps around to the beginning of the
+buffer.
+.It
+A regular expression enclosed in queries
+.Ql ?
+addresses
+the line found by searching backward from the current line
+and stopping at the first line containing
+a string that matches the regular expression.
+If necessary
+the search wraps around to the end of the buffer.
+.It
+An address followed by a plus sign
+.Ql \&+
+or a minus sign
+.Ql \-
+followed by a decimal number specifies that address plus
+(resp. minus) the indicated number of lines.
+The plus sign may be omitted.
+.It
+If an address begins with
+.Ql \&+
+or
+.Ql \-
+the addition or subtraction is taken with respect to the current line;
+e.g.
+.Ql \-5
+is understood to mean
+.Ql .\-5 .
+.It
+If an address ends with
+.Ql \&+
+or
+.Ql \&\-
+then 1 is added (resp. subtracted).
+As a consequence of this rule and rule 8,
+the address
+.Ql \&\-
+refers to the line before the current line.
+Moreover,
+trailing
+.Ql \&+
+and
+.Ql \&\-
+characters
+have cumulative effect, so
+.Ql \&\-\-
+refers to the current
+line less 2.
+.It
+To maintain compatibility with earlier versions of the editor,
+the character
+.Ql \&^
+in addresses is
+equivalent to
+.Ql \&\-
+.El
+.Pp
+Commands may require zero, one, or two addresses.
+Commands which require no addresses regard the presence
+of an address as an error.
+Commands which accept one or two addresses
+assume default addresses when insufficient are given.
+If more addresses are given than such a command requires,
+the last one or two (depending on what is accepted) are used.
+.Pp
+Addresses are separated from each other typically by a comma
+.Ql \&,
+They may also be separated by a semicolon
+.Ql \&;
+In this case the current line
+.Ql \&.
+is set to
+the previous address before the next address is interpreted.
+This feature can be used to determine the starting
+line for forward and backward searches
+.Pf ( Ql \&/ ,
+.Ql \&? )
+The second address of any two-address sequence
+must correspond to a line following the line corresponding to the first address.
+The special form
+.Ql \&%
+is an abbreviation for the address pair
+.Ql \&1,$ .
+.Pp
+In the following list of
+.Nm \&ed
+commands, the default addresses
+are shown in parentheses.
+The parentheses are not part of
+the address, but are used to show that the given addresses are
+the default.
+.Pp
+As mentioned, it is generally illegal for more than one
+command to appear on a line.
+However, most commands may be suffixed by
+.Ql \&p
+or by
+.Ql \&l ,
+in which case
+the current line is either
+printed or listed respectively
+in the way discussed below.
+Commands may also be suffixed by
+.Ql \&n ,
+meaning the output of the command is to
+be line numbered.
+These suffixes may be combined in any order.
+.Pp
+.Bl -tag -width four -compact
+.It Xo
+.Po Ad \&.
+.Pc Ns Cm \&a
+.Xc
+.It <text>
+.It Cm \&.
+.br
+The append command reads the given text
+and appends it after the addressed line.
+.Sq Ad \&.
+is left
+on the last line input, if there
+were any, otherwise at the addressed line.
+Address `0' is legal for this command; text is placed
+at the beginning of the buffer.
+.Pp
+.It Xo
+.Po Ad \&. , Ns Ad \&.
+.Pc Ns Cm \&c
+.Xc
+.It <text>
+.It Cm \&.
+.br
+The change
+command deletes the addressed lines, then accepts input
+text which replaces these lines.
+.Sq Ad \&.
+is left at the last line input; if there were none,
+it is left at the line preceding the deleted lines.
+.Pp
+.It Xo
+.Po Ad \&. , Ns Ad \&.
+.Pc Ns Cm \&d
+.Xc
+.It <text>
+.It Cm \&.
+.br
+The delete command deletes the addressed lines from the buffer.
+The line originally after the last line deleted becomes the current line;
+if the lines deleted were originally at the end,
+the new last line becomes the current line.
+.Pp
+.It Cm \&e Ar filename
+The edit
+command causes the entire contents of the buffer to be deleted,
+and then the named file to be read in.
+.Sq Ad \&.
+is set to the last line of the buffer.
+The number of characters read is typed.
+.Ar filename
+is remembered for possible use as a default file name
+in a subsequent
+.Cm \&r
+or
+.Cm \&w
+command.
+If
+.Ar filename
+is missing, the remembered name is used.
+.Pp
+.It Cm \&E Ar filename
+This command is the same as
+.Cm \&e ,
+except that no diagnostic results when no
+.Cm \&w
+has been given since the last buffer alteration.
+.Pp
+.It Cm \&f Ar filename
+The filename command prints the currently remembered file name.
+If
+.Ar filename
+is given,
+the currently remembered file name is changed to
+.Ar filename .
+.Sm off
+.Pp
+.It Xo
+.Po Ad \&1 , Ns Ad \&$
+.Pc Cm \&g Ar "/regular\ expression/" Cm "command\ list"
+.Xc
+.Sm on
+In the global
+command, the first step is to mark every line which matches
+the given regular expression.
+Then for every such line, the
+given command list is executed with
+In the global
+command, the first step is to mark every line which matches
+the given regular expression.
+Then for every such line, the
+given command list is executed with
+.Sq Ad \&.
+initially set to that line.
+A single command or the first of multiple commands
+appears on the same line with the global command.
+All lines of a multi-line list except the last line must be ended with
+.Sq Cm \&\e
+.Cm \&A ,
+.Cm \&i ,
+and
+.Cm \&c
+commands and associated input are permitted;
+the
+.Sq Ad \&.
+terminating input mode may be omitted if it would be on the
+last line of the command list.
+The commands
+.Cm \&g
+and
+.Cm \&v
+are not permitted in the command list.
+.Pp
+.It Xo
+.Po Ad \&.
+.Pc Ns Cm \&i
+.Xc
+.It <text>
+.It Cm \&.
+.br
+This command inserts the given text before the addressed line.
+.Sq Ad \&.
+is left at the last line input, or, if there were none,
+at the line before the addressed line.
+This command differs from the
+.Cm \&a
+command only in the placement of the
+text.
+.Pp
+.It Xo
+.Po Ad \&. , Ns Ad \&.+1
+.Pc Ns Cm \&j
+.Xc
+This command joins the addressed lines into a single line;
+intermediate newlines simply disappear.
+.Sq Ad \&.
+is left at the resulting line.
+.Pp
+.It Xo
+.Po Ad \&.
+.Pc Ns Cm k Ns Ar \&x
+.Xc
+The mark command marks the addressed line with
+name
+.Ar \&x ,
+which must be a lower-case letter.
+The address form
+.Ar \(fmx
+then addresses this line.
+.Pp
+.It Xo
+.Po Ad \&. , Ns Ad \&.
+.Pc Ns Cm \&l
+.Xc
+The list command
+prints the addressed lines in an unambiguous way:
+non-graphic characters are
+printed in two-digit octal,
+and long lines are folded.
+The
+.Ar \&l
+command may be placed on the same line after any non-i/o
+command.
+.Pp
+.It Xo
+.Po Ad \&. , Ns Ad \&.
+.Pc Ns Cm \&m Ns Ar \&a
+.Xc
+The move command repositions the addressed lines after the line
+addressed by
+.Ql Ad \&a  .
+The last of the moved lines becomes the current line.
+.Pp
+.It Xo
+.Po Ad \&. , Ns Ad \&.
+.Pc Ns Cm \&p
+.Xc
+The print command prints the addressed lines.
+.Sq Ad \&.
+is left at the last line printed.
+The
+.Cm \&p
+command
+may
+be placed on the same line after any non-i/o command.
+.Pp
+.It Xo
+.Po Ad \&. , Ns Ad \&.
+.Pc Ns Cm \&P
+.Xc
+This command is a synonym for
+.Cm \&p .
+.Pp
+.It Cm \&q
+The quit command causes
+.Nm \&ed
+to exit.
+No automatic write
+of a file is done.
+.Pp
+.It Cm \&Q
+This command is the same as
+.Cm \&q ,
+except that no diagnostic results when no
+.Cm \&w
+has been given since the last buffer alteration.
+.Pp
+.It Xo
+.Po Ad \&$ , Ns Ad \&.
+.Pc Ns Cm \&r Ar filename
+.Xc
+The read command
+reads in the given file after the addressed line.
+If no file name is given,
+the remembered file name, if any, is used
+(see
+.Cm \&e
+and
+.Cm \&f
+commands).
+The file name is remembered if there was no
+remembered file name already.
+Address `0' is legal for
+.Cm \&r
+and causes the
+file to be read at the beginning of the buffer.
+If the read is successful, the number of characters
+read is typed.
+.Sq Ad \&.
+is left at the last line read in from the file.
+.Sm off
+.Pp
+.It Xo
+.Po Ad \&1 , Ns Ad \&$
+.Pc Cm \&g Ar "/regular\ expression/" Cm "replacement\ list"
+.No "	or,"
+.Xc
+.Sm on
+.Sm off
+.It Xo
+.Po Ad \&1 , Ns Ad \&$
+.Pc Cm \&g Ar "/regular\ expression/" Cm "replacement\ list/"
+.Ns Cm \&g
+.Xc
+.Sm on
+The substitute command searches each addressed
+line for an occurrence of the specified regular expression.
+On each line in which a match is found,
+all matched strings are replaced by the replacement specified,
+if the global replacement indicator
+.Cm \&g
+appears after the command.
+If the global indicator does not appear, only the first occurrence
+of the matched string is replaced.
+It is an error for the substitution to fail on all addressed lines.
+Any punctuation character
+may be used instead of
+.Sq Cm \&/
+to delimit the regular expression
+and the replacement.
+.Sq Ad \&.
+is left at the last line substituted.
+An ampersand
+.Sq Cm \&&
+appearing in the replacement
+is replaced by the string matching the regular expression.
+The special meaning of
+.Sq Cm \&&
+in this context may be
+suppressed by preceding it by
+.Sq Cm \&\e
+The characters
+.Sq Cm \&\e Ns Ar \&n
+where
+.Ar \&n
+is a digit,
+are replaced by the text matched by the
+.Ar \&n Ns
+regular subexpression
+enclosed between
+.Sq Cm \&\e\&(
+and
+.Sq Cm \&\e\&)
+When
+nested, parenthesized subexpressions
+are present,
+.Ar \&n
+is determined by counting occurrences of
+.Sq Cm \&\e\&(
+starting from the left.
+Lines may be split by substituting new-line characters into them.
+The new-line in the
+replacement string
+must be escaped by preceding it by
+.Sq Cm \&\e
+One or two trailing delimiters may be omitted,
+implying the
+.Cm \&p
+suffix.
+The special form
+.Cm \&s
+followed by
+.Ar \&no
+delimiters
+repeats the most recent substitute command
+on the addressed lines.
+The
+.Cm \&s
+may be followed by the letters
+.Cm \&r
+(use the most recent regular expression for the
+left hand side, instead of the most recent
+left hand side of a substitute command),
+.Cm \&p
+(complement the setting of the
+.Cm \&p
+suffix from the previous substitution), or
+.Cm \&g
+(complement the setting of the
+.Cm \&g
+suffix).
+These letters may be combined in any order.
+.Pp
+.It Xo
+.Po Ad \&. , Ns Ad \&.
+.Pc Ns Cm \&t Ns Ar \&a
+.Xc
+This command acts just like the
+.Cm \&m
+command, except that a copy of the addressed lines is placed
+after address
+.Ad \&a
+(which may be 0).
+.Sq Ad \&.
+is left on the last line of the copy.
+.Pp
+.It Xo
+.Po Ad \&. , Ns Ad \&.
+.Pc Ns Cm \&u
+.Xc
+The undo command restores the buffer to it's state
+before the most recent buffer modifying command.
+The current line is also restored.
+Buffer modifying commands are
+.Cm \&a , \&c , \&d , \&g ,
+.Cm \&i , \&k , \&m , \&r ,
+.Cm \&s , \&t ,
+and
+.Cm \&v .
+For purposes of undo,
+.Cm \&g
+and
+.Cm \&v
+are considered to be a single buffer modifying command.
+Undo is its own inverse.
+When
+.Nm \&ed
+runs out of memory
+(at about 8000 lines on any 16 bit mini-computer
+such as the PDP-11)
+This full undo is not possible, and
+.Cm \&u
+can only undo the effect of the most recent
+substitute on the current line.
+This restricted undo also applies to editor scripts
+when
+.Nm \&ed
+is invoked with the
+.Fl
+option.
+.Sm off
+.Pp
+.It Xo
+.Po Ad \&1 , Ns Ad \&$
+.Pc Cm \&v Ar "/regular\ expression/" Cm "command\ list"
+.Xc
+.Sm on
+This command is the same as the global command
+.Cm \&g
+except that the command list is executed
+.Cm \&g
+with
+.Sq Ad \&.
+initially set to every line
+.Em except
+those
+matching the regular expression.
+.Pp
+.It Xo
+.Po Ad \&1 , Ns Ad \&$
+.Pc Ns Cm \&w Ar filename
+.Xc
+The write command writes the addressed lines onto
+the given file.
+If the file does not exist,
+it is created.
+The file name is remembered if there was no
+remembered file name already.
+If no file name is given,
+the remembered file name, if any, is used
+(see
+.Cm \&e
+and
+.Cm \&f
+commands).
+.Sq Ad \&.
+is unchanged.
+If the command is successful, the number of characters written is
+printed.
+.Pp
+.It Xo
+.Po Ad \&1 , Ns Ad \&$
+.Pc Ns Cm \&W Ar filename
+.Xc
+This command is the same as
+.Cm \&w ,
+except that the addressed lines are appended to the file.
+.Pp
+.It Xo
+.Po Ad \&1 , Ns Ad \&$
+.Pc Ns Cm \&wq Ar filename
+.Xc
+This command is the same as
+.Cm \&w
+except that afterwards a
+.Cm \&q
+command is done,
+exiting the editor
+after the file is written.
+.Pp
+.It Xo
+.Po Ad \&.+1
+.Pc Ns Cm \&z
+.No "	or,"
+.Xc
+.It Xo
+.Po Ad \&.+1
+.Pc Ns Cm \&z Ns Ar \&n
+.Xc
+This command scrolls through the buffer starting at the addressed line.
+22 (or
+.Ar \&n ,
+if given)
+lines are printed.
+The last line printed becomes the current line.
+The value
+.Ar \&n
+is sticky, in that it becomes the default for
+future
+.Cm \&z
+commands.
+.Pp
+.It Xo
+.Po Ad \&$
+.Pc Ns Cm \&=
+.Xc
+The line number of the addressed line is typed.
+.Sq Ad \&.
+is unchanged by this command.
+.Pp
+.It Xo
+.Ad \&! Ns Aq shell\ command
+.Xc
+The remainder of the line after the
+.Ql Cm \&!
+is sent
+to
+.Xr sh 1
+to be interpreted as a command.
+.Sq Ad \&.
+is unchanged.
+.Pp
+.It Xo
+.Po Ad \&.+1 , Ns Ad \&.+1
+.Pc Ns Aq newline
+.Xc
+An address alone on a line causes the addressed line to be printed.
+A blank line alone is equivalent to
+.Ad .+1
+it is useful
+for stepping through text.
+If two addresses are present with no
+intervening semicolon,
+.Nm \&ed
+prints the range of lines.
+If they are separated by a semicolon,
+the second line is printed.
+.El
+.Pp
+If an interrupt signal
+.Pq Tn ASCII DEL
+is sent,
+.Nm \&ed
+prints
+.Sq Li ?interrupted
+and returns to its command level.
+.Pp
+Some size limitations:
+512 characters per line,
+256 characters per global command list,
+64 characters per file name,
+and, on mini computers,
+128K characters in the temporary file.
+The limit on the number of lines depends on the amount of core:
+each line takes 2 words.
+.Pp
+When reading a file,
+.Nm \&ed
+discards
+.Tn ASCII NUL
+characters
+and all characters after the last newline.
+It refuses to read files containing
+.Ns non- Tn ASCII
+characters.
+.Sh FILES
+.Bl -tag -compact -width "/tmp/ed*"
+.It Pa /tmp/e*
+.It Pa edhup
+work is saved here if terminal hangs up
+.El
+.Sh SEE ALSO
+.Xr \&ex 1 ,
+.Xr sed 1 ,
+.Xr crypt 1
+.br
+B. W. Kernighan,
+.Em A Tutorial Introduction to the ED Text Editor
+.br
+B. W. Kernighan,
+.Em Ar Advanced editing on UNIX
+.Sh HISTORY
+The
+.Nm \&ed
+command appeared in
+.At 6
+.Sh DIAGNOSTICS
+.Sq Li name
+for inaccessible file;
+.Sq Li ?self-explanatory message
+for other errors.
+.Pp
+To protect against throwing away valuable work,
+a
+.Cm \&q
+or
+.Cm \&e
+command is considered to be in error, unless a
+.Cm \&w
+has occurred since the last buffer change.
+A second
+.Cm \&q
+or
+.Cm \&e
+will be obeyed regardless.
+.Sh BUGS
+The
+.Cm \&l
+command mishandles
+.Li DEL .
+.br
+The
+.Cm \&undo
+command causes marks to be lost on affected lines.

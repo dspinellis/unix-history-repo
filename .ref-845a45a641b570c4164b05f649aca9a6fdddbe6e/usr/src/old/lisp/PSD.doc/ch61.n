@@ -1,0 +1,12 @@
+.\" Copyright (c) 1980 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)ch61.n	6.2 (Berkeley) %G%
+.\"
+.Lc "Local functions" 61
+.pp
+This chapter describes functions which we found 
+useful at Berkeley.
+Some of these functions may be useful at other sites

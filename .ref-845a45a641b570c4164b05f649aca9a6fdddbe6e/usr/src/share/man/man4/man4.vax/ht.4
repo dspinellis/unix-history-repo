@@ -1,0 +1,86 @@
+.\" Copyright (c) 1980, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)ht.4	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt HT 4 vax
+.Os BSD 4
+.Sh NAME
+.Nm ht
+.Nd
+.Tn TM-03 Ns / Tn TE-16 ,
+.Tn TU-45 ,
+.Tn TU-77
+.Tn MASSBUS
+magtape device interface:
+.Sh SYNOPSIS
+.Cd "master ht0 at mba? drive ?"
+.Cd "tape tu0 at ht0 slave 0"
+.Sh DESCRIPTION
+The
+.Tn TM-03
+transport combination provides a standard tape drive
+interface as described in
+.Xr mtio 4 .
+All drives provide both 800 and 1600
+.Tn BPI ;
+the
+.Tn TE-16
+runs at 45
+.Tn IPS ,
+the
+.Tn TU-45
+at 75
+.Tn IPS ,
+while the
+.Tn TU-77
+runs at 125
+.Tn IPS
+and autoloads tapes.
+.Sh DIAGNOSTICS
+.Bl -diag
+.It tu%d: no write ring.
+An attempt was made to write on the tape drive
+when no write ring was present; this message is written on the terminal of
+the user who tried to access the tape.
+.Pp
+.It tu%d: not online.
+An attempt was made to access the tape while it
+was offline; this message is written on the terminal of the user
+who tried to access the tape.
+.Pp
+.It tu%d: can't change density in mid-tape.
+An attempt was made to write
+on a tape at a different density than is already recorded on the tape.
+This message is written on the terminal of the user who tried to switch
+the density.
+.Pp
+.It "tu%d: hard error bn%d mbsr=%b er=%b ds=%b."
+A tape error occurred
+at block
+.Em bn ;
+the ht error register and drive status register are
+printed in octal with the bits symbolically decoded.  Any error is
+fatal on non-raw tape; when possible the driver will have retried
+the operation which failed several times before reporting the error.
+.El
+.Sh SEE ALSO
+.Xr mt 1 ,
+.Xr tar 1 ,
+.Xr tp 1 ,
+.Xr mtio 4 ,
+.Xr mt 4 ,
+.Xr physio 4 ,
+.Xr tm 4 ,
+.Xr ts 4 ,
+.Xr ut 4
+.Sh HISTORY
+An
+.Nm
+driver appeared in
+.At v6 .
+.Sh BUGS
+May hang if physical (non-data) errors occur.

@@ -1,0 +1,42 @@
+#! /bin/sh
+: '/*********************************************************************
+   program:	uutbl
+   description:	Make a "tbl" entry from output of uuusage command.
+		Produces tbl commands to make a centered display
+		table suitable for inclusion in monthly report.
+
+   programmer:	Alan S. Watt
+   
+   Sccsid=@(#)uutbl.sh	1.1
+
+   usage:
+	uuusage [options] | uutbl
+
+   history:
+	03/28/82	original version
+	05/27/82	Fix to eliminate "mangled record" diagnostics
+			from input.
+   *********************************************************************/'
+
+: 'delete all the information on user usage and just report
+   the system usage summary. Leave the first line (the banner
+   heading) in.
+   '
+grep -v "uuusage: mangled record" \
+	| sed '
+		1i\
+.DS\
+.TS\
+center, tab(:);\
+c s s s s s s\
+l r r r r r r\
+_ _ _ _ _ _ _\
+l n n n n n n.
+	1a\
+.sp
+	s/^[ 	]*//
+	2,$s/  */:/g
+	$a\
+.DE\
+.TE
+'

@@ -1,0 +1,137 @@
+.\" Copyright (c) 1990, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek and the American National Standards Committee X3,
+.\" on Information Processing Systems.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)strtoul.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt STRTOUL 3
+.Os
+.Sh NAME
+.Nm strtoul, strtouq
+.Nd convert a string to an unsigned long or uquad_t integer
+.Sh SYNOPSIS
+.Fd #include <stdlib.h>
+.Fd #include <limits.h>
+.Ft unsigned long
+.Fn strtoul "const char *nptr" "char **endptr" "int base"
+
+.Fd #include <sys/types.h>
+.Fd #include <stdlib.h>
+.Fd #include <limits.h>
+.Ft u_quad_t
+.Fn strtouq "const char *nptr" "char **endptr" "int base"
+.Sh DESCRIPTION
+The
+.Fn strtoul
+function
+converts the string in
+.Fa nptr
+to an
+.Em unsigned long
+value.
+The
+.Fn strtouq
+function
+converts the string in
+.Fa nptr
+to a
+.Em u_quad_t
+value.
+The conversion is done according to the given
+.Fa base ,
+which must be between 2 and 36 inclusive,
+or be the special value 0.
+.Pp
+The string may begin with an arbitrary amount of white space
+(as determined by
+.Xr isspace 3 )
+followed by a single optional
+.Ql +
+or
+.Ql -
+sign.
+If
+.Fa base
+is zero or 16,
+the string may then include a
+.Ql 0x
+prefix,
+and the number will be read in base 16; otherwise, a zero
+.Fa base
+is taken as 10 (decimal) unless the next character is
+.Ql 0 ,
+in which case it is taken as 8 (octal).
+.Pp
+The remainder of the string is converted to an
+.Em unsigned long
+value in the obvious manner,
+stopping at the end of the string
+or at the first character that does not produce a valid digit
+in the given base.
+(In bases above 10, the letter
+.Ql A
+in either upper or lower case
+represents 10,
+.Ql B
+represents 11, and so forth, with
+.Ql Z
+representing 35.)
+.Pp
+If
+.Fa endptr
+is non nil,
+.Fn strtoul
+stores the address of the first invalid character in
+.Fa *endptr .
+If there were no digits at all, however,
+.Fn strtoul
+stores the original value of
+.Fa nptr
+in
+.Fa *endptr .
+(Thus, if
+.Fa *nptr
+is not
+.Ql \e0
+but
+.Fa **endptr
+is
+.Ql \e0
+on return, the entire string was valid.)
+.Sh RETURN VALUES
+The
+.Fn strtoul
+function
+returns either the result of the conversion
+or, if there was a leading minus sign,
+the negation of the result of the conversion,
+unless the original (non-negated) value would overflow;
+in the latter case,
+.Fn strtoul
+returns
+.Dv ULONG_MAX
+and sets the global variable
+.Va errno
+to
+.Er ERANGE .
+.Sh ERRORS
+.Bl -tag -width [ERANGE]
+.It Bq Er ERANGE
+The given string was out of range; the value converted has been clamped.
+.El
+.Sh SEE ALSO
+.Xr strtol 3
+.Sh STANDARDS
+The
+.Fn strtoul
+function
+conforms to
+.St -ansiC .
+.Sh BUGS
+Ignores the current locale.

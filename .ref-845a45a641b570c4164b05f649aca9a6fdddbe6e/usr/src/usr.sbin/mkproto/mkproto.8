@@ -1,0 +1,120 @@
+.\" Copyright (c) 1983, 1991 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)mkproto.8	6.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt MKPROTO 8
+.Os BSD 4.2
+.Sh NAME
+.Nm mkproto
+.Nd construct a prototype file system
+.Sh SYNOPSIS
+.Nm mkproto
+.Ar special proto
+.Sh DESCRIPTION
+.Nm Mkproto
+is used to bootstrap a new file system.
+First a new file system is created using
+.Xr newfs 8 .
+.Nm Mkproto
+is then used to copy files from the old file system into the new
+file system according to the directions found in the prototype file
+.Ar proto .
+The prototype file
+contains tokens separated by spaces or
+new lines.
+The first tokens comprise the specification
+for the root directory.
+File specifications consist of tokens
+giving the mode,
+the user-id,
+the group id,
+and the initial contents of the file.
+The syntax of the contents field
+depends on the mode.
+.Pp
+The mode token for a file is a 6 character string.
+The first character
+specifies the type of the file.
+(The characters
+.Fl bcd
+specify regular, block special,
+character special and directory files
+respectively.)
+The second character of the type
+is either
+.Cm u
+or
+.Ql Fl
+to specify set-user-id mode or not.
+The third is
+.Cm g
+or
+.Ql Fl
+for the set-group-id mode.
+The rest of the mode
+is a three digit octal number giving the
+owner, group, and other read, write, execute
+permissions, see
+.Xr chmod 1 .
+.Pp
+Two decimal number
+tokens come after the mode; they specify the
+user and group ID's of the owner of the file.
+.Pp
+If the file is a regular file,
+the next token is a pathname
+whence the contents and size are copied.
+.Pp
+If the file is a block or character special file,
+two decimal number tokens
+follow which give the major and minor device numbers.
+.Pp
+If the file is a directory,
+.Nm mkproto
+makes the entries
+.Ql \&.
+and
+.Ql \&..
+and then
+reads a list of names and
+(recursively)
+file specifications for the entries
+in the directory.
+The scan is terminated with the
+token
+.Cm $ .
+.Pp
+A sample prototype specification follows:
+.Bd -literal -offset indent
+d\-\-777 3 1
+usr	d\-\-777 3 1
+	sh	\-\-\-755 3 1 /bin/sh
+	ken	d\-\-755 6 1
+		$
+	b0	b\-\-644 3 1 0 0
+	c0	c\-\-644 3 1 0 0
+	$
+$
+.Ed
+.Sh SEE ALSO
+.Xr fs 5 ,
+.Xr dir 5 ,
+.Xr fsck 8 ,
+.Xr newfs 8
+.Sh BUGS
+There should be some way to specify links.
+.Pp
+There should be some way to specify bad blocks.
+.Pp
+.Nm Mkproto
+can only be run on virgin file systems.
+It should be possible to copy files into existent file systems.
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 4.2 .

@@ -1,0 +1,159 @@
+#	@(#)Makefile.news3400	7.12 (Berkeley) %G%
+
+# Makefile for 4.4 BSD
+#
+# This makefile is constructed from a machine description:
+#	config machineid
+# Most changes should be made in the machine description
+#	/sys/vax/conf/``machineid''
+# after which you should do
+#	 config machineid
+# Machine generic makefile changes should be made in
+#	/sys/conf/Makefile.``machinetype''
+# after which config should be rerun for all machines of that type.
+#
+# N.B.: NO DEPENDENCIES ON FOLLOWING FLAGS ARE VISIBLE TO MAKEFILE
+#	IF YOU CHANGE THE DEFINITION OF ANY OF THESE RECOMPILE EVERYTHING
+#
+# -DTRACE	compile in kernel tracing hooks
+# -DQUOTA	compile in file system quotas
+# -DUUDMA	compile in unibus tu58 pseudo-dma code
+#
+
+CC=	gcc -traditional-cpp -fno-builtin -nostdinc
+AS=	cc2.11 -I
+LD=	/usr/local/gnu/lib/gcc-lib/mips-sony-bsd/2.3.3/ld
+
+S=	../..
+NEWS3400=	$S/news3400
+
+INCLUDES= -I. -I$S
+COPTS=	${INCLUDES} ${IDENT} -Unews3800 -Unews3700 -Dmips -DKERNEL
+CFLAGS=	${COPTS}
+AHEADS=
+
+INLINECMD=	${NEWS3400}/inline/obj/inline
+INLINE= ${INLINECMD} ${INLINEOPTS}
+
+
+# compile rules: rules are named ${TYPE}_${SUFFIX}${CONFIG_DEP}
+# where TYPE is NORMAL, DRIVER, or PROFILE}; SUFFIX is the file suffix,
+# capitalized (e.g. C for a .c file), and CONFIG_DEP is _C if the file
+# is marked as config-dependent.
+
+NORMAL_C=	${CC} -c ${CFLAGS} ${PROF} $<
+NORMAL_C_C=	${CC} -c ${CFLAGS} ${PROF} ${PARAM} $<
+
+DRIVER_C=	${CC} -c ${COPTS} ${PROF} $<
+DRIVER_C_C=	${CC} -c ${COPTS} ${PROF} ${PARAM} $<
+
+NORMAL_S=	${AS} -c ${COPTS} $<
+NORMAL_S_C=	${AS} -c ${COPTS} ${PARAM} $<
+
+%OBJS
+
+%CFILES
+
+# load lines for config "xxx" will be emitted as:
+# xxx: ${SYSTEM_DEP} swapxxx.o
+#	${SYSTEM_LD_HEAD}
+#	${SYSTEM_LD} swapxxx.o
+#	${SYSTEM_LD_TAIL}
+SYSTEM_OBJ=	locore.o ${OBJS} param.o ioconf.o vnode_if.o
+SYSTEM_DEP=	Makefile ${SYSTEM_OBJ}
+SYSTEM_LD_HEAD=	rm -f $@
+SYSTEM_LD=	@echo loading vmunix; \
+		${LD} -N -o $@ -e start -T 80001000 ${SYSTEM_OBJ} vers.o ../../libkern/obj/libkern.a
+SYSTEM_LD_TAIL= @echo done
+
+%LOAD
+
+newvers vers.c:
+	sh $S/conf/newvers.sh
+	${CC} $(CFLAGS) -c vers.c
+
+clean:
+	rm -f eddep *vmunix tags *.o locore.i [a-tv-z]*.s assym.h \
+		vnode_if.c vnode_if.h \
+		Errs errs linterrs makelinks
+
+lint: /tmp param.c
+	@lint -hbxn -DGENERIC ${COPTS} ${PARAM} \
+	  ${NEWS3400}/news3400/Locore.c ${CFILES} ioconf.c param.c | \
+	    grep -v 'struct/union .* never defined' | \
+	    grep -v 'possible pointer alignment problem'
+
+${INLINECMD}:
+	cd ${NEWS3400}/inline; make
+
+locore.o: assym.h ${AHEADS} ${NEWS3400}/news3400/locore.s
+locore.o: ../../sys/errno.h
+locore.o: ../../sys/syscall.h
+locore.o: ../../sys/cdefs.h
+locore.o: ../../sys/cdefs.h
+locore.o: ${NEWS3400}/include/param.h
+locore.o: ${NEWS3400}/include/vmparam.h
+locore.o: ${NEWS3400}/include/psl.h
+locore.o: ${NEWS3400}/include/machConst.h
+locore.o: ${NEWS3400}/include/reg.h
+locore.o: ${NEWS3400}/include/machAsmDefs.h
+locore.o: ${NEWS3400}/include/regdef.h
+locore.o: ${NEWS3400}/include/pte.h
+locore.o: ${NEWS3400}/include/endian.h
+locore.o: ${NEWS3400}/include/adrsmap.h
+	${AS} -c -DLOCORE ${COPTS} ${PARAM} ${NEWS3400}/news3400/locore.s
+
+# the following is necessary because autoconf.o depends on #if GENERIC
+autoconf.o tu.o: Makefile
+
+# the following are necessary because the files depend on the types of
+# vax cpu's included in the system configuration
+clock.o machdep.o autoconf.o conf.o cons.o cpudata.o : Makefile
+
+# depend on network configuration
+af.o uipc_proto.o uipc_domain.o locore.o: Makefile
+
+# depends on kdb being configured
+trap.o:	Makefile
+
+assym.h: genassym
+	./genassym >assym.h
+
+genassym:
+	${CC} ${INCLUDES} ${IDENT} ${PARAM} -o genassym \
+	    ${NEWS3400}/news3400/genassym.c
+
+depend: assym.h param.c vnode_if.h
+	mkdep ${COPTS} ${CFILES} ioconf.c
+	mkdep -a -p ${INCLUDES} ${IDENT} ${PARAM} \
+	    ${NEWS3400}/news3400/genassym.c
+
+links:
+	egrep '#if' ${CFILES} | sed -f $S/conf/defines | \
+	  sed -e 's/:.*//' -e 's/\.c/.o/' | sort -u > dontlink
+	echo ${CFILES} | tr -s ' ' '\12' | sed 's/\.c/.o/' | \
+	  sort -u | comm -23 - dontlink | \
+	  sed 's,../.*/\(.*.o\),rm -f \1;ln -s ../GENERIC/\1 \1,' > makelinks
+	echo 'rm -f udiv.o;ln -s ../GENERIC/udiv.o udiv.o' >> makelinks
+	echo 'rm -f urem.o;ln -s ../GENERIC/urem.o urem.o' >> makelinks
+	sh makelinks && rm -f dontlink
+
+tags:
+	@echo "see $S/kern/Makefile for tags"
+
+ioconf.o:
+	${CC} -c ${COPTS} ioconf.c
+
+param.c: $S/conf/param.c
+	rm -f param.c
+	cp $S/conf/param.c .
+
+param.o: param.c Makefile
+	${CC} -c ${CFLAGS} ${PARAM} param.c
+
+vnode_if.c: $S/kern/vnode_if.sh $S/kern/vnode_if.src
+	sh $S/kern/vnode_if.sh $S/kern/vnode_if.src
+vnode_if.h: $S/kern/vnode_if.sh $S/kern/vnode_if.src
+	sh $S/kern/vnode_if.sh $S/kern/vnode_if.src
+
+%RULES

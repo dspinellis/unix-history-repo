@@ -1,0 +1,101 @@
+.\" Copyright (c) 1989, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)getlogin.2	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt GETLOGIN 2
+.Os BSD 4.2
+.Sh NAME
+.Nm getlogin ,
+.Nm setlogin
+.Nd get/set login name
+.Sh SYNOPSIS
+.Fd #include <unistd.h>
+.Ft char *
+.Fn getlogin void
+.Ft int
+.Fn setlogin "const char *name"
+.Sh DESCRIPTION
+The
+.Fn getlogin
+routine
+returns the login name of the user associated with the current session,
+as previously set by
+.Fn setlogin .
+The name is normally associated with a login shell
+at the time a session is created,
+and is inherited by all processes descended from the login shell.
+(This is true even if some of those processes assume another user ID,
+for example when
+.Xr su 1
+is used.)
+.Pp
+.Fn Setlogin
+sets the login name of the user associated with the current session to
+.Fa name .
+This call is restricted to the super-user, and
+is normally used only when a new session is being created on behalf
+of the named user
+(for example, at login time, or when a remote shell is invoked).
+.Sh RETURN VALUES
+If a call to
+.Fn getlogin
+succeeds, it returns a pointer to a null-terminated string in a static buffer.
+If the name has not been set, it returns
+.Dv NULL .
+If a call to
+.Fn setlogin
+succeeds, a value of 0 is returned.  If
+.Fn setlogin
+fails, a value of -1 is returned and an error code is
+placed in the global location
+.Va errno .
+.Sh ERRORS
+The following errors may be returned by these calls:
+.Bl -tag -width Er
+.It Bq Er EFAULT
+The
+.Fa name
+parameter gave an
+invalid address.
+.It Bq Er EINVAL
+The
+.Fa name
+parameter
+pointed to a string that was too long.
+Login names are limited to
+.Dv MAXLOGNAME
+(from
+.Ao Pa sys/param.h Ac )
+characters, currently 12.
+.It Bq Er EPERM
+The caller tried to set the login name and was not the super-user.
+.El
+.Sh SEE ALSO
+.Xr setsid 2
+.Sh BUGS
+Login names are limited in length by
+.Fn setlogin .
+However, lower limits are placed on login names elsewhere in the system
+.Pf ( Dv UT_NAMESIZE
+in
+.Ao Pa utmp.h Ac ) .
+.Pp
+In earlier versions of the system,
+.Fn getlogin
+failed unless the process was associated with a login terminal.
+The current implementation (using
+.Fn setlogin )
+allows getlogin to succeed even when the process has no controlling terminal.
+In earlier versions of the system, the value returned by
+.Fn getlogin
+could not be trusted without checking the user ID.
+Portable programs should probably still make this check.
+.Sh HISTORY
+The
+.Nm getlogin
+function call is
+.Ud .

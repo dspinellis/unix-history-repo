@@ -1,0 +1,57 @@
+.\" Copyright (c) 1990, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek and the American National Standards Committee X3,
+.\" on Information Processing Systems.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)memcpy.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt MEMCPY 3
+.Os
+.Sh NAME
+.Nm memcpy
+.Nd copy byte string
+.Sh SYNOPSIS
+.Fd #include <string.h>
+.Ft void *
+.Fn memcpy "void *dst" "const void *src" "size_t len"
+.Sh DESCRIPTION
+The
+.Fn memcpy
+function
+copies
+.Fa len
+bytes from string
+.Fa src
+to string
+.Fa dst .
+.Sh RETURN VALUES
+The
+.Fn memcpy
+function
+returns the original value of
+.Fa dst .
+.Sh SEE ALSO
+.Xr bcopy 3 ,
+.Xr memccpy 3 ,
+.Xr memmove 3 ,
+.Xr strcpy 3
+.Sh STANDARDS
+The
+.Fn memcpy
+function
+conforms to
+.St -ansiC .
+.Sh BUGS
+In this implementation
+.Fn memcpy
+is implemented using
+.Xr bcopy 3 ,
+and therefore the strings may overlap.
+On other systems, copying overlapping strings may produce surprises.
+A simpler solution is to not use
+.Fn memcpy .

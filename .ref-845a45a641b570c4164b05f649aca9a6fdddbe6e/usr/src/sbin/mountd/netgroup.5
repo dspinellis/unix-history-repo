@@ -1,0 +1,65 @@
+.\" Copyright (c) 1992, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"     @(#)netgroup.5	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt NETGROUP 5
+.Os
+.Sh NAME
+.Nm netgroup
+.Nd defines network groups
+.Sh SYNOPSIS
+.Nm netgroup
+.Sh DESCRIPTION
+The
+.Nm netgroup
+file
+specifies ``netgroups'', which are sets of
+.Sy (host, user, domain)
+tuples that are to be given similar network access.
+.Pp
+Each line in the file
+consists of a netgroup name followed by a list of the members of the
+netgroup.
+Each member can be either the name of another netgroup or a specification
+of a tuple as follows:
+.Bd -literal -offset indent
+(host, user, domain)
+.Ed
+where the
+.Sy host ,
+.Sy user ,
+and
+.Sy domain
+are character string names for the corresponding component.
+Any of the comma separated fields may be empty to specify a ``wildcard'' value
+or may consist of the string ``-'' to specify ``no valid value''.
+The members of the list may be separated by whitespace and/or commas;
+the ``\e'' character may be used at the end of a line to specify
+line continuation.
+The functions specified in
+.Xr getnetgrent 3
+should normally be used to access the
+.Nm netgroup
+database.
+.Pp
+Lines that begin with a # are treated as comments.
+.Sh FILES
+.Bl -tag -width /etc/netgroup -compact
+.It Pa /etc/netgroup
+the netgroup database.
+.El
+.Sh SEE ALSO
+.Xr getnetgrent 3 ,
+.Xr exports 5
+.Sh COMPATIBILITY
+The file format is compatible with that of various vendors, however it
+appears that not all vendors use an identical format.
+.Sh BUGS
+The interpretation of access restrictions based of the member tuples of a
+netgroup is left up to the various network applications.
+Also, it is not obvious how the domain specification
+applies to the BSD environment.

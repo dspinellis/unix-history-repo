@@ -1,0 +1,10 @@
+#! /bin/csh -f
+if ($#argv != 1) then
+	echo "usage: why dumpnumber"
+	exit 2
+endif
+adb -k vm{unix,core}.$1 << 'EOF'
+version/s
+0=n"Backtrace:"n
+*pwfl_stk$c
+'EOF'

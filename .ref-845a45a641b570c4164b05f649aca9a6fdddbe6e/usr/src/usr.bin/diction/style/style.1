@@ -1,0 +1,76 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)style.1	6.2 (Berkeley) %G%
+.\"
+.Dd 
+.Dt STYLE 1
+.Os BSD 4
+.Sh NAME
+.Nm style
+.Nd analyze surface characteristics of a document
+.Sh SYNOPSIS
+.Nm style
+.Op Fl ml
+.Op Fl mm
+.Op Fl a
+.Op Fl e
+.Op Fl l Ns Ar num
+.Op Fl r Ns Ar num
+.Op Fl p
+.Op Fl P
+.Ar file ...
+.Sh DESCRIPTION
+.Nm Style
+analyzes the surface characteristics of the writing style
+of a document.
+It reports on readability, sentence length and
+structure, word length and usage, verb type, and sentence openers.
+Because
+.Nm style
+runs
+.Xr deroff
+before looking at the text, formatting
+header files should be included as part of the input.
+.Pp
+Options available:
+.Bl -tag -width 8n
+.It Fl a
+print all sentences with their length and readability index.
+.It Fl e
+print all sentences that begin with an expletive.
+.It Fl p
+print all sentences that contain a passive verb.
+.It Fl l Ar num
+print all sentences longer than
+.Ar num .
+.It Fl ml
+The flag
+.Fl ml ,
+which causes 
+.Xr deroff
+to skip lists, should be used if the document contains many lists of
+non-sentences.
+.It Fl mm
+The default macro package
+.Fl ms
+may be overridden with the flag
+.Fl mm .
+.It Fl r Ar num
+print all sentences whose readability index is greater than
+.Ar num .
+.It Fl P
+print parts of speech of the words in the document.
+.Sh SEE ALSO
+.Xr deroff 1 ,
+.Xr diction 1
+.Sh BUGS
+Use of non-standard formatting macros may cause
+incorrect sentence breaks.
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 4 .

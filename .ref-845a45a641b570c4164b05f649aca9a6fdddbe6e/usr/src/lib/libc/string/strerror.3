@@ -1,0 +1,99 @@
+.\" Copyright (c) 1980, 1991 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the American National Standards Committee X3, on Information
+.\" Processing Systems.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)strerror.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt STRERROR 3
+.Os BSD 4
+.Sh NAME
+.Nm perror ,
+.Nm strerror ,
+.Nm sys_errlist ,
+.Nm sys_nerr
+.Nd system error messages
+.Sh SYNOPSIS
+.Fd #include <stdio.h>
+.Ft void
+.Fn perror "const char *string"
+.Vt extern char *sys_errlist[];
+.Vt extern int sys_nerr;
+.Fd #include <string.h>
+.Ft char *
+.Fn strerror "int errnum"
+.Sh DESCRIPTION
+The
+.Fn strerror
+and
+.Fn perror
+functions look up the error message string corresponding to an
+error number.
+.Pp
+The
+.Fn strerror
+function accepts an error number argument
+.Fa errnum
+and
+returns a pointer to the corresponding
+message string.
+.Pp
+The
+.Fn perror
+function finds the error message corresponding to the current
+value of the global variable
+.Va errno
+.Pq Xr intro 2
+and writes it, followed by a newline, to the
+standard error file descriptor.
+If the argument
+.Fa string
+is
+.Pf non- Dv NULL ,
+it is prepended to the message
+string and separated from it by
+a colon and space
+.Pq Ql \&:\ \& .
+If
+.Fa string
+is
+.Dv NULL ,
+only the error message string is printed.
+.Pp
+If
+.Fa errnum
+is not a recognized error number,
+the error message string will contain
+.Dq Li "Unknown error:\0
+followed by the error number in decimal.
+.Pp
+The message strings can be accessed directly using the external
+array
+.Fa sys_errlist .
+The external value
+.Fa sys_nerr
+contains a count of the messages in
+.Fa sys_errlist .
+The use of these variables is deprecated;
+.Fn strerror
+should be used instead.
+.Sh SEE ALSO
+.Xr intro 2 ,
+.Xr psignal 3
+.Sh HISTORY
+The
+.Fn strerror
+and
+.Fn perror
+functions are
+.Ud .
+.Sh BUGS
+For unknown error numbers, the
+.Fn strerror
+function will return its result in a static buffer which
+may be overwritten by subsequent calls.

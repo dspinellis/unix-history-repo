@@ -1,0 +1,55 @@
+.\" Copyright (c) 1983, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)ruptime.1	6.10 (Berkeley) %G%
+.\"
+.Dd 
+.Dt RUPTIME 1
+.Os BSD 4.2
+.Sh NAME
+.Nm ruptime
+.Nd show host status of local machines
+.Sh SYNOPSIS
+.Nm ruptime
+.Op Fl alrtu
+.Sh DESCRIPTION
+.Nm Ruptime
+gives a status line like
+.Ar uptime
+for each machine on the local network; these are formed from packets
+broadcast by each host on the network once a minute.
+.Pp
+Machines for which no status report has been received for 11
+minutes are shown as being down.
+.Pp
+Options:
+.Bl -tag -width Ds
+.It Fl a
+Users idle an hour or more are not counted unless the
+.Fl a
+flag is given.
+.It Fl l
+Sort by load average.
+.It Fl r
+Reverses the sort order.
+.It Fl t
+Sort by uptime.
+.It Fl u
+Sort by number of users.
+.El
+.Pp
+The default listing is sorted by host name.
+.Sh FILES
+.Bl -tag -width /var/rwho/whod.* -compact
+.It Pa /var/rwho/whod.*
+data files
+.El
+.Sh SEE ALSO
+.Xr rwho 1
+.Xr uptime 1
+.Sh HISTORY
+.Nm Ruptime
+appeared in
+.Bx 4.2 .
