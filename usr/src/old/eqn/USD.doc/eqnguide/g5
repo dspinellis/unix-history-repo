@@ -1,4 +1,4 @@
-.\"	@(#)g5	5.1 (Berkeley) %G%
+.\"	@(#)g5	6.1 (Berkeley) %G%
 .\"
 .SC "Use on UNIX"
 .PP
@@ -17,12 +17,6 @@ options, they go after the
 part of the command. For example,
 .P1
 eqn files | troff -ms
-.P2
-To run the same document on the
-.UC GCOS
-typesetter, use
-.P1
-eqn files | troff -g (other options) | gcat
 .P2
 .PP
 A compatible version of
