@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)arithmetic.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)arithmetic.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -60,7 +60,7 @@ static char sccsid[] = "@(#)arithmetic.c	5.2 (Berkeley) %G%";
 #include <sys/signal.h>
 #include <ctype.h>
 #include <stdio.h>
-#include <strings.h>
+#include <string.h>
 
 char keylist[] = "+-x/";
 char defaultkeys[] = "+-";

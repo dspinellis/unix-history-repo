@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)df.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)df.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -33,7 +33,7 @@ static char sccsid[] = "@(#)df.c	5.18 (Berkeley) %G%";
 #include <sys/mount.h>
 #include <sys/file.h>
 #include <stdio.h>
-#include <strings.h>
+#include <string.h>
 #include <unistd.h>
 
 char	*getmntpt();

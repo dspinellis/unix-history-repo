@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)date.c	4.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)date.c	4.26 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -38,7 +38,7 @@ static char sccsid[] = "@(#)date.c	4.25 (Berkeley) %G%";
 #include <tzfile.h>
 #include <stdio.h>
 #include <ctype.h>
-#include <strings.h>
+#include <string.h>
 
 #define	ATOI2(ar)	(ar[0] - '0') * 10 + (ar[1] - '0'); ar += 2;
 

@@ -11,7 +11,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tar.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)tar.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -27,7 +27,7 @@ static char sccsid[] = "@(#)tar.c	5.14 (Berkeley) %G%";
 #include <signal.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <strings.h>
+#include <string.h>
 #include <stdio.h>
 #include "pathnames.h"
 

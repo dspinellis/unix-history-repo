@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)defs.h	5.4 (Berkeley) %G%
+ *	@(#)defs.h	5.5 (Berkeley) %G%
  */
 
 /*
@@ -67,7 +67,7 @@
 #define	LOG_ODELAY	0
 #endif
 #include <ctype.h>
-#include <strings.h>
+#include <string.h>
 
 #ifndef	USE_TERMIO
 #include <sgtty.h>

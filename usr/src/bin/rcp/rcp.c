@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rcp.c	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)rcp.c	5.25 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -39,7 +39,7 @@ static char sccsid[] = "@(#)rcp.c	5.24 (Berkeley) %G%";
 #include <pwd.h>
 #include <netdb.h>
 #include <errno.h>
-#include <strings.h>
+#include <string.h>
 #include <stdio.h>
 #include <ctype.h>
 #include "pathnames.h"
