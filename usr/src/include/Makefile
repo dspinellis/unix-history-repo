@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.31 (Berkeley) %G%
+#	@(#)Makefile	5.32 (Berkeley) %G%
 #
 # Doing a make install builds /usr/include
 #
@@ -15,10 +15,12 @@ STD=	a.out.h ar.h assert.h bitstring.h vis.h ctype.h curses.h ndbm.h \
 	strings.h struct.h sysexits.h time.h ttyent.h tzfile.h unistd.h \
 	utmp.h varargs.h vfont.h
 LMCH=	float.h frame.h
-LSYS=	errno.h signal.h syslog.h termios.h
+LSYS=	errno.h fcntl.h signal.h syslog.h termios.h unistd.h
 
 DIRS=	sys net netimp netinet netiso netns ufs nfs
-.if (${MACHINE} == "tahoe")
+.if   (${MACHINE} == "hp300")
+DIRS+=	hp300 hpdev
+.elif (${MACHINE} == "tahoe")
 DIRS+=	tahoe tahoemath tahoevba tahoeif
 .elif (${MACHINE} == "vax")
 DIRS+=	vax vaxmba vaxuba vaxif
