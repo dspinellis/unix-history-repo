@@ -1,23 +1,81 @@
-.\"	@(#)split.1	6.4 (Berkeley) %G%
+.\" Copyright (c) 1990, 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.TH SPLIT 1 ""
-.AT 3
-.SH NAME
-split \- split a file into pieces
-.SH SYNOPSIS
-\fBsplit\fP [ -\fBn\fP ] [ -\fBb\fP byte_cnt ] [ file [ name ] ]
-.SH DESCRIPTION
-\fISplit\fP reads \fIfile\fP and writes it in
-.IR n -line
-pieces or in \fIbyte_cnt\fP byte pieces to a set of output
-files.  The default is in 1000 line pieces.  The name of the
-first output file is \fIname\fP with "aa" appended, and so
-on, lexicographically, to "zz".  If no output name is given,
-"x" is the default, in which case \fIsplit\fP will create
-files from "xaa" to "zzz".
-.PP
-If no input file is given, or if \fB-\fP is given in its stead, then
-the standard input file is used.
-.SH BUGS
-If you provide \fIname\fP, \fIsplit\fP can only create 676 separate
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)split.1	6.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt SPLIT 1
+.Os BSD 4.4
+.Sh NAME
+.Nm split
+.Nd split a file into pieces
+.Sh SYNOPSIS
+.Nm split
+.Op Fl Ns Ar n
+.Op Fl b Ar bytes
+.Oo Ar file
+.Op Ar name
+.Oc
+.Sh DESCRIPTION
+The
+.Nm split
+utility reads the given
+.Ar file
+and splits it up in to
+smaller files.
+.Pp
+Available options:
+.Bl -tag -width "bb bytesx"
+.It Fl Ns Ar lines
+Create files of length
+.Fl Ns Ar n
+lines long.
+.It Fl b Ar bytes
+Create files of length
+.Ar bytes .
+If no output file length is specified, the file size
+will default to a lenght of 1000 lines.
+.El
+.Pp
+Available operands:
+.Bl -tag -width name
+.It Fl
+Read from the standard input.
+.It Ar file
+A pathname specifying the
+.Ar file 
+to be split.  If no
+.Ar file
+operand is given,
+.Nm split
+reads from the standard input.
+.It Ar name
+If the
+.Ar name
+operand is given,
+the output files will begin with the prefix
+.Ar name
+and each sequential portion of the split file
+receives a lexically ordered suffix
+in the range of 
+.Bq Em aa-zz .
+If the operand
+.Ar name
+is not specified,
+the default prefix of
+.Em x
+is be used.
+.Pp
+.Sh BUGS
+If you provide
+.Ar name ,
+.Nm split
+can only create 676 separate
 files.  The default naming convention allows 2028 separate files.
+.Sh HISTORY
+A
+.Nm
+command appeared in
+.At v6 .
