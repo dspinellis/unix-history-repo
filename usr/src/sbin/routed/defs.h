@@ -1,4 +1,4 @@
-/*	defs.h	4.8	82/06/09	*/
+/*	defs.h	4.9	82/06/09	*/
 
 /*
  * Internal data structure definitions for
@@ -33,7 +33,7 @@ struct rt_entry {
 			int	rtu_timer;
 			int	rtu_metric;
 			struct	ifnet *rtu_ifp;
-			struct	sockaddr rtu_newrouter;
+			struct	sockaddr rtu_oldrouter;
 		} rtu_entry;
 	} rt_rtu;
 };
@@ -47,7 +47,7 @@ struct rt_entry {
 #define	rt_state	rt_rtu.rtu_entry.rtu_state	/* see below */
 #define	rt_metric	rt_rtu.rtu_entry.rtu_metric	/* cost of route */
 #define	rt_ifp		rt_rtu.rtu_entry.rtu_ifp	/* interface to take */
-#define	rt_newrouter	rt_rtu.rtu_entry.rtu_newrouter	/* for change's */
+#define	rt_oldrouter	rt_rtu.rtu_entry.rtu_oldrouter	/* for change's */
 
 #define	ROUTEHASHSIZ	19
 
@@ -57,9 +57,10 @@ struct rt_entry {
 #define	RTS_DELRT	0x1		/* delete pending */
 #define	RTS_CHGRT	0x2		/* change command pending */
 #define	RTS_ADDRT	0x4		/* add command pending */
-#define	RTS_PASSIVE	0x8		/* don't send to router */
-#define	RTS_INTERFACE	0x10		/* route is for an interface */
-#define	RTS_GLOBAL	0x20		/* entry is non-local, don't lose it */
+#define	RTS_PASSIVE	0x8		/* don't time out route */
+#define	RTS_DONTDELETE	0x10		/* don't remove route if timed out */
+#define	RTS_DONTROUTE	0x20		/* don't route outgoing packets */
+#define	RTS_HIDDEN	0x40		/* deleted but still reclaimable */
 
 struct	rthash nethash[ROUTEHASHSIZ], hosthash[ROUTEHASHSIZ];
 struct	rt_entry *rtlookup(), *rtfind();
