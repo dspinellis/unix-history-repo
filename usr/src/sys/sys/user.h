@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)user.h	7.11 (Berkeley) %G%
+ *	@(#)user.h	7.12 (Berkeley) %G%
  */
 
 #ifdef KERNEL
@@ -32,20 +32,6 @@ struct	user {
 	struct	pcb u_pcb;
 	struct	proc *u_procp;		/* pointer to proc structure */
 	int	*u_ar0;			/* address of users saved R0 */
-/* syscall parameters, results and catches */
-	int	u_arg[8];		/* arguments to current system call */
-	int	*u_ap;			/* pointer to arglist */
-	union {				/* syscall return values */
-		struct	{
-			int	R_val1;
-			int	R_val2;
-		} u_rv;
-#define	r_val1	u_rv.R_val1
-#define	r_val2	u_rv.R_val2
-		off_t	r_off;
-		time_t	r_time;
-	} u_r;
-	int	u_error;		/* return error code */
 
 /* 1.1 - processes and protection */
 #define u_cred u_nd.ni_cred
@@ -74,8 +60,8 @@ struct	user {
 	struct	sigstack u_sigstack;	/* sp & on stack state variable */
 #define	u_onstack	u_sigstack.ss_onstack
 #define	u_sigsp		u_sigstack.ss_sp
-#define	u_sig	u_arg[0]		/* for core dump/debugger XXX */
-#define	u_code	u_arg[1]		/* for core dump/debugger XXX */
+	int	u_sig;			/* for core dump/debugger XXX */
+	int	u_code;			/* for core dump/debugger XXX */
 
 /* 1.4 - descriptor management */
 	struct	file *u_ofile[NOFILE];	/* file structures for open files */
