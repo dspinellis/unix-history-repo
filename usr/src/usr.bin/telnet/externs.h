@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)externs.h	8.1 (Berkeley) %G%
+ *	@(#)externs.h	8.2 (Berkeley) %G%
  */
 
 #ifndef	BSD
@@ -18,8 +18,10 @@
 #define BSD 43
 #endif
 
-#if (BSD > 43 || defined(SYSV_TERMIO)) && !defined(USE_TERMIO)
-# define USE_TERMIO
+#ifndef	USE_TERMIO
+# if BSD > 43 || defined(SYSV_TERMIO)
+#  define USE_TERMIO
+# endif
 #endif
 
 #include <stdio.h>

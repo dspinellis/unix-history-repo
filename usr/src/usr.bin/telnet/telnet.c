@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)telnet.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -102,6 +102,11 @@ cc_t echoc;
 #define	TS_SE		8		/* looking for sub-option end */
 
 static int	telrcv_state;
+#ifdef	OLD_ENVIRON
+unsigned char telopt_environ = TELOPT_NEW_ENVIRON;
+#else
+# define telopt_environ TELOPT_NEW_ENVIRON
+#endif
 
 jmp_buf	toplevel = { 0 };
 jmp_buf	peerdied;
@@ -461,12 +466,26 @@ dooption(option)
 	    case TELOPT_LFLOW:		/* local flow control */
 	    case TELOPT_TTYPE:		/* terminal type option */
 	    case TELOPT_SGA:		/* no big deal */
-	    case TELOPT_ENVIRON:	/* environment variable option */
 #ifdef	ENCRYPTION
 	    case TELOPT_ENCRYPT:	/* encryption variable option */
 #endif	/* ENCRYPTION */
 		new_state_ok = 1;
 		break;
+
+	    case TELOPT_NEW_ENVIRON:	/* New environment variable option */
+#ifdef	OLD_ENVIRON
+		if (my_state_is_will(TELOPT_OLD_ENVIRON))
+			send_wont(TELOPT_OLD_ENVIRON, 1); /* turn off the old */
+		goto env_common;
+	    case TELOPT_OLD_ENVIRON:	/* Old environment variable option */
+		if (my_state_is_will(TELOPT_NEW_ENVIRON))
+			break;		/* Don't enable if new one is in use! */
+	    env_common:
+		telopt_environ = option;
+#endif
+		new_state_ok = 1;
+		break;
+
 #if	defined(AUTHENTICATION)
 	    case TELOPT_AUTHENTICATION:
 		if (autologin)
@@ -540,6 +559,16 @@ dontoption(option)
 	    case TELOPT_LINEMODE:
 		linemode = 0;	/* put us back to the default state */
 		break;
+#ifdef	OLD_ENVIRON
+	    case TELOPT_NEW_ENVIRON:
+		/*
+		 * The new environ option wasn't recognized, try
+		 * the old one.
+		 */
+		send_will(TELOPT_OLD_ENVIRON, 1);
+		telopt_environ = TELOPT_OLD_ENVIRON;
+		break;
+#endif
 	    }
 	    /* we always accept a DONT */
 	    set_my_want_state_wont(option);
@@ -757,8 +786,10 @@ gettermname()
     static void
 suboption()
 {
+    unsigned char subchar;
+
     printsub('<', subbuffer, SB_LEN()+2);
-    switch (SB_GET()) {
+    switch (subchar = SB_GET()) {
     case TELOPT_TTYPE:
 	if (my_want_state_is_wont(TELOPT_TTYPE))
 	    return;
@@ -864,17 +895,20 @@ suboption()
 	}
 	break;
 
-    case TELOPT_ENVIRON:
+#ifdef	OLD_ENVIRON
+    case TELOPT_OLD_ENVIRON:
+#endif
+    case TELOPT_NEW_ENVIRON:
 	if (SB_EOF())
 	    return;
 	switch(SB_PEEK()) {
 	case TELQUAL_IS:
 	case TELQUAL_INFO:
-	    if (my_want_state_is_dont(TELOPT_ENVIRON))
+	    if (my_want_state_is_dont(subchar))
 		return;
 	    break;
 	case TELQUAL_SEND:
-	    if (my_want_state_is_wont(TELOPT_ENVIRON)) {
+	    if (my_want_state_is_wont(subchar)) {
 		return;
 	    }
 	    break;
@@ -1426,7 +1460,8 @@ slc_update()
 	return(need_update);
 }
 
-#ifdef	ENV_HACK
+#ifdef	OLD_ENVIRON
+# ifdef	ENV_HACK
 /*
  * Earlier version of telnet/telnetd from the BSD code had
  * the definitions of VALUE and VAR reversed.  To ensure
@@ -1437,11 +1472,12 @@ slc_update()
  * know what type of server it is.
  */
 int env_auto = 1;
-int env_var = ENV_VALUE;
-int env_value = ENV_VAR;
-#else
-#define env_var ENV_VAR
-#define env_value ENV_VALUE
+int old_env_var = OLD_ENV_VAR;
+int old_env_value = OLD_ENV_VALUE;
+# else
+#  define old_env_var OLD_ENV_VAR
+#  define old_env_value OLD_ENV_VALUE
+# endif
 #endif
 
 	void
@@ -1459,22 +1495,27 @@ env_opt(buf, len)
 			env_opt_add(NULL);
 		} else for (i = 1; i < len; i++) {
 			switch (buf[i]&0xff) {
-			case ENV_VAR:
-#ifdef	ENV_HACK
-				if (env_auto) {
-					/* The server has correct definitions */
-					env_var = ENV_VAR;
-					env_value = ENV_VALUE;
+#ifdef	OLD_ENVIRON
+			case OLD_ENV_VAR:
+# ifdef	ENV_HACK
+				if (telopt_environ == TELOPT_OLD_ENVIRON
+				    && env_auto) {
+					/* Server has the same definitions */
+					old_env_var = OLD_ENV_VAR;
+					old_env_value = OLD_ENV_VALUE;
 				}
 				/* FALL THROUGH */
-#endif
-			case ENV_VALUE:
+# endif
+			case OLD_ENV_VALUE:
 				/*
-				 * Although ENV_VALUE is not legal, we will
+				 * Although OLD_ENV_VALUE is not legal, we will
 				 * still recognize it, just in case it is an
 				 * old server that has VAR & VALUE mixed up...
 				 */
 				/* FALL THROUGH */
+#else
+			case NEW_ENV_VAR:
+#endif
 			case ENV_USERVAR:
 				if (ep) {
 					*epc = 0;
@@ -1529,7 +1570,7 @@ env_opt_start()
 	opt_replyend = opt_reply + OPT_REPLY_SIZE;
 	*opt_replyp++ = IAC;
 	*opt_replyp++ = SB;
-	*opt_replyp++ = TELOPT_ENVIRON;
+	*opt_replyp++ = telopt_environ;
 	*opt_replyp++ = TELQUAL_IS;
 }
 
@@ -1579,7 +1620,12 @@ env_opt_add(ep)
 		opt_replyend = opt_reply + len;
 	}
 	if (opt_welldefined(ep))
-		*opt_replyp++ = env_var;
+#ifdef	OLD_ENVIRON
+		if (telopt_environ == TELOPT_OLD_ENVIRON)
+			*opt_replyp++ = old_env_var;
+		else
+#endif
+			*opt_replyp++ = NEW_ENV_VAR;
 	else
 		*opt_replyp++ = ENV_USERVAR;
 	for (;;) {
@@ -1588,8 +1634,8 @@ env_opt_add(ep)
 			case IAC:
 				*opt_replyp++ = IAC;
 				break;
-			case ENV_VALUE:
-			case ENV_VAR:
+			case NEW_ENV_VAR:
+			case NEW_ENV_VALUE:
 			case ENV_ESC:
 			case ENV_USERVAR:
 				*opt_replyp++ = ENV_ESC;
@@ -1598,7 +1644,12 @@ env_opt_add(ep)
 			*opt_replyp++ = c;
 		}
 		if (ep = vp) {
-			*opt_replyp++ = env_value;
+#ifdef	OLD_ENVIRON
+			if (telopt_environ == TELOPT_OLD_ENVIRON)
+				*opt_replyp++ = old_env_value;
+			else
+#endif
+				*opt_replyp++ = NEW_ENV_VALUE;
 			vp = NULL;
 		} else
 			break;
@@ -2200,7 +2251,7 @@ telnet(user)
 	send_will(TELOPT_TSPEED, 1);
 	send_will(TELOPT_LFLOW, 1);
 	send_will(TELOPT_LINEMODE, 1);
-	send_will(TELOPT_ENVIRON, 1);
+	send_will(TELOPT_NEW_ENVIRON, 1);
 	send_do(TELOPT_STATUS, 1);
 	if (env_getvalue((unsigned char *)"DISPLAY"))
 	    send_will(TELOPT_XDISPLOC, 1);

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)commands.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)commands.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #if	defined(unix)
@@ -1550,7 +1550,7 @@ extern void
 	env_export P((unsigned char *)),
 	env_unexport P((unsigned char *)),
 	env_send P((unsigned char *)),
-#ifdef	ENV_HACK
+#if defined(OLD_ENVIRON) && defined(ENV_HACK)
 	env_varval P((unsigned char *)),
 #endif
 	env_list P((void));
@@ -1569,7 +1569,7 @@ struct envlist EnvList[] = {
     { "send",	"Send an environment variable", env_send,	1 },
     { "list",	"List the current environment variables",
 						env_list,	0 },
-#ifdef	ENV_HACK
+#if defined(OLD_ENVIRON) && defined(ENV_HACK)
     { "varval", "Reverse VAR and VALUE (auto, right, wrong, status)",
 						env_varval,    1 },
 #endif
@@ -1776,7 +1776,11 @@ env_send(var)
 {
 	register struct env_lst *ep;
 
-        if (my_state_is_wont(TELOPT_ENVIRON)) {
+        if (my_state_is_wont(TELOPT_NEW_ENVIRON)
+#ifdef	OLD_ENVIRON
+	    && my_state_is_wont(TELOPT_OLD_ENVIRON)
+#endif
+		) {
 		fprintf(stderr,
 		    "Cannot send '%s': Telnet ENVIRON option not enabled\n",
 									var);
@@ -1834,37 +1838,37 @@ env_getvalue(var)
 	return(NULL);
 }
 
-#ifdef	ENV_HACK
+#if defined(OLD_ENVIRON) && defined(ENV_HACK)
 	void
 env_varval(what)
 	unsigned char *what;
 {
-	extern int env_var, env_value, env_auto;
-	int len = strlen(what);
+	extern int old_env_var, old_env_value, env_auto;
+	int len = strlen((char *)what);
 
 	if (len == 0)
 		goto unknown;
 
-	if (strncasecmp(what, "status", len) == 0) {
+	if (strncasecmp((char *)what, "status", len) == 0) {
 		if (env_auto)
 			printf("%s%s", "VAR and VALUE are/will be ",
 					"determined automatically\n");
-		if (env_var == ENV_VAR)
+		if (old_env_var == OLD_ENV_VAR)
 			printf("VAR and VALUE set to correct definitions\n");
 		else
 			printf("VAR and VALUE definitions are reversed\n");
-	} else if (strncasecmp(what, "auto", len) == 0) {
+	} else if (strncasecmp((char *)what, "auto", len) == 0) {
 		env_auto = 1;
-		env_var = ENV_VALUE;
-		env_value = ENV_VAR;
-	} else if (strncasecmp(what, "right", len) == 0) {
+		old_env_var = OLD_ENV_VALUE;
+		old_env_value = OLD_ENV_VAR;
+	} else if (strncasecmp((char *)what, "right", len) == 0) {
 		env_auto = 0;
-		env_var = ENV_VAR;
-		env_value = ENV_VALUE;
-	} else if (strncasecmp(what, "wrong", len) == 0) {
+		old_env_var = OLD_ENV_VAR;
+		old_env_value = OLD_ENV_VALUE;
+	} else if (strncasecmp((char *)what, "wrong", len) == 0) {
 		env_auto = 0;
-		env_var = ENV_VALUE;
-		env_value = ENV_VAR;
+		old_env_var = OLD_ENV_VALUE;
+		old_env_value = OLD_ENV_VAR;
 	} else {
 unknown:
 		printf("Unknown \"varval\" command. (\"auto\", \"right\", \"wrong\", \"status\")\n");

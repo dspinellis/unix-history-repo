@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)network.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)network.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -108,7 +108,7 @@ netflush()
 #endif	/* ENCRYPTION */
     if ((n1 = n = ring_full_consecutive(&netoring)) > 0) {
 	if (!ring_at_mark(&netoring)) {
-	    n = send(net, netoring.consume, n, 0);	/* normal write */
+	    n = send(net, (char *)netoring.consume, n, 0); /* normal write */
 	} else {
 	    /*
 	     * In 4.2 (and 4.3) systems, there is some question about
@@ -118,7 +118,7 @@ netflush()
 	     * we really have more the TCP philosophy of urgent data
 	     * rather than the Unix philosophy of OOB data).
 	     */
-	    n = send(net, netoring.consume, 1, MSG_OOB);/* URGENT data */
+	    n = send(net, (char *)netoring.consume, 1, MSG_OOB);/* URGENT data */
 	}
     }
     if (n < 0) {
