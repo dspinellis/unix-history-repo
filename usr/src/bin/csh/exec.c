@@ -5,12 +5,12 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)exec.c	5.5 (Berkeley) %G%";
+static char *sccsid = "@(#)exec.c	5.6 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
 #include <sys/dir.h>
-#include <syspaths.h>
+#include "pathnames.h"
 
 /*
  * C shell
