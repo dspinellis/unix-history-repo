@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)kdump.c	1.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)kdump.c	1.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <cencode.h>
@@ -107,8 +107,8 @@ main(argc, argv)
 	       stdin, tail)) {
 		if (trpoints & (1<<ktr_header.ktr_type))
 			dumpheader(&ktr_header);
-		if ((ktrlen = ktr_header.ktr_len) > 80000) {	/* XXX */
-			fprintf(stderr, "kdump: bogus length %d\n", 
+		if ((ktrlen = ktr_header.ktr_len) < 0) {
+			fprintf(stderr, "kdump: bogus length 0x%x\n", 
 				ktrlen);
 			exit(1);
 		}
