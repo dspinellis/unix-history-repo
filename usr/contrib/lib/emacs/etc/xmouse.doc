@@ -1,0 +1,31 @@
+.\" X windows GNU Emacs key bindings.
+.\" Print with `tbl xmouse.doc | troff`
+.\"
+.rs
+.sp 1i
+.ps 6
+.vs 7
+.TS
+box;
+cfI s s
+c | c | c
+l | l | l.
+GNU Emacs Key Bindings for X Windows
+=
+Key	Button	Function
+_
+Unshifted	left	x-mouse-set-point
+\^	middle	x-paste-text
+\^	right	x-cut-text
+_
+Control	middle	x-cut-and-wipe-text
+\^	right	x-mouse-select-and-split
+_
+Shift	middle	x-cut-text
+\^	right	x-paste-text
+_
+Control-Shift	left	x-buffer-menu
+\^	middle	x-help
+\^	right	x-mouse-keep-one-window
+.TE
+
