@@ -84,9 +84,9 @@
 #define VTIME		17	/* !ICANON */
 #ifndef _POSIX_SOURCE
 #define VSTATUS		18	/* ICANON */
+#endif
 /*			19	   spare 2 */
 #define	NCCS		20
-#endif
 
 #define _POSIX_VDISABLE	((unsigned char)'\377')
 
