@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_search.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_search.c	5.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -20,9 +20,8 @@ static char sccsid[] = "@(#)rec_search.c	5.2 (Berkeley) %G%";
  *
  * Parameters:
  *	t:	tree to search
- *	key:	key to find
+ *	recno:	key to find
  *	op: 	search operation
- *	exactp:	pointer to exact match flag
  *
  * Returns:
  *	EPG for matching record, if any, or the EPG for the location of the
@@ -63,7 +62,7 @@ __rec_search(t, recno, op)
 			total += r->nrecs;
 		}
 
-		if (__bt_push(t, pg, index) == RET_ERROR)
+		if (__bt_push(t, pg, index - 1) == RET_ERROR)
 			return (NULL);
 		
 		pg = r->pgno;
