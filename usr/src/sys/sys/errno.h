@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)errno.h	7.4 (Berkeley) %G%
+ *	@(#)errno.h	7.5 (Berkeley) %G%
  */
 
 #define	EPERM		1		/* Operation not permitted */
@@ -59,12 +59,10 @@
 #define	ERANGE		34		/* Result too large */
 
 /* non-blocking and interrupt i/o */
+#define	EDEADLK		35		/* Resource deadlock avoided */
+#define	EAGAIN		EDEADLK		/* Resource temporarily unavailable */
 #ifndef _POSIX_SOURCE
-#define	EWOULDBLOCK	35		/* Operation would block */
-#endif
-#define	EDEADLK		EWOULDBLOCK	/* Resource deadlock avoided */
-#define	EAGAIN		EWOULDBLOCK	/* Resource temporarily unavailable */
-#ifndef _POSIX_SOURCE
+#define	EWOULDBLOCK	EDEADLK		/* Operation would block */
 #define	EINPROGRESS	36		/* Operation now in progress */
 #define	EALREADY	37		/* Operation already in progress */
 
