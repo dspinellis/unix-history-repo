@@ -1,4 +1,4 @@
-/*	if_imphost.h	4.4	82/02/21	*/
+/*	if_imphost.h	4.5	82/03/09	*/
 
 /*
  * Host structure used with IMP's.
@@ -37,23 +37,24 @@ struct host {
  */
 #define	HOST_ENQUE(hp, m) { \
 	register struct mbuf *n; \
-	hp->h_qcnt++; \
-	if ((n = hp->h_q) == 0) \
-		hp->h_q = m->m_act = m; \
+	(hp)->h_qcnt++; \
+	if ((n = (hp)->h_q) == 0) \
+		(hp)->h_q = (m)->m_act = (m); \
 	else { \
-		m->m_act = n->m_act; \
-		hp->h_q = n->m_act = m; \
+		(m)->m_act = n->m_act; \
+		(hp)->h_q = n->m_act = (m); \
 	} \
 }
 #define	HOST_DEQUE(hp, m) { \
-	if (m = hp->h_q) { \
-		if (m->m_act == m) \
-			hp->h_q = 0; \
+	if ((m) = (hp)->h_q) { \
+		if ((m)->m_act == (m)) \
+			(hp)->h_q = 0; \
 		else { \
-			m = m->m_act; \
-			hp->h_q->m_act = m->m_act; \
+			(m) = (m)->m_act; \
+			(hp)->h_q->m_act = (m)->m_act; \
 		} \
-		hp->h_qcnt--; \
+		(hp)->h_qcnt--; \
+		(m)->m_act = 0; \
 	} \
 }
 
