@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -20,7 +20,7 @@ newsyntax(argc, argvp)
 	char ***argvp;
 {
 	extern char *optarg;
-	extern int depth, optind, xdev;
+	extern int depth, optind;
 	int ch;
 	char **argv, **cur;
 
@@ -38,8 +38,8 @@ newsyntax(argc, argvp)
 			ftsoptions |= FTS_LOGICAL;
 			break;
 		case 'x':
-			xdev = 1;
 			ftsoptions &= ~FTS_NOSTAT;
+			ftsoptions |= FTS_XDEV;
 			break;
 		case '?':
 		default:

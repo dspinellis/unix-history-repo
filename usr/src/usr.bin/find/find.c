@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)find.c	4.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)find.c	4.29 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -28,12 +28,10 @@ static char sccsid[] = "@(#)find.c	4.28 (Berkeley) %G%";
 
 FTS *tree;			/* pointer to top of FTS hierarchy */
 time_t now;			/* time find was run */
-dev_t curdev = (dev_t)-1;	/* device number of current tree */
 int ftsoptions;			/* options passed to ftsopen() */
 int deprecated;			/* old or new syntax */
 int depth;			/* set by -depth option */
 int output_specified;		/* one of -print, -ok or -exec was specified */
-int xdev;			/* set by -xdev option */
 
 main(argc, argv)
 	int argc;
@@ -205,22 +203,12 @@ find_execute(plan, paths)
 			break;
 		}
 
-		/* always keep curdev up to date, -fstype uses it. */
-		if (xdev && curdev != entry->fts_statb.st_dev &&
-		    curdev != -1 && ftsset(tree, entry, FTS_SKIP)) {
-			(void)fprintf(stderr, "find: %s: %s.\n",
-			    entry->fts_path, strerror(errno));
-			exit(1);
-		}
-
 		/*
 		 * call all the functions in the execution plan until one is
 		 * false or all have been executed.  This is where we do all
 		 * the work specified by the user on the command line.
 		 */
 		for (p = plan; p && (p->eval)(p, entry); p = p->next);
-
-		curdev = entry->fts_statb.st_dev;
 	}
 	(void)ftsclose(tree);
 }

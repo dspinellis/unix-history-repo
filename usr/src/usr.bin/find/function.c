@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)function.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)function.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -300,17 +300,19 @@ f_fstype(plan, entry)
 	PLAN *plan;
 	FTSENT *entry;
 {
-	extern dev_t curdev;
+	static dev_t curdev;	/* need a guaranteed illegal dev value */
+	static int first = 1;
 	struct statfs sb;
 	static short val;
 
 	/* only check when we cross mount point */
-	if (curdev != entry->fts_statb.st_dev) {
+	if (first || curdev != entry->fts_statb.st_dev) {
 		if (statfs(entry->fts_accpath, &sb)) {
 			(void)fprintf(stderr, "find: %s: %s.\n",
 			    entry->fts_accpath, strerror(errno));
 			exit(1);
 		}
+		first = 0;
 		val = plan->flags == MOUNT_NONE ? sb.f_flags : sb.f_type;
 	}
 	return(plan->flags == MOUNT_NONE ?
@@ -815,17 +817,14 @@ c_user(username)
  *
  *	Always true, causes find not to decend past directories that have a
  *	different device ID (st_dev, see stat() S5.6.2 [POSIX.1])
- *
- *	Note: this checking is done in find_execute().
  */
 PLAN *
 c_xdev()
 {
-	extern int xdev;
 	PLAN *new;
     
-	xdev = 1;
 	ftsoptions &= ~FTS_NOSTAT;
+	ftsoptions |= FTS_XDEV;
 
 	NEW(T_XDEV, f_always_true);
 	return(new);
