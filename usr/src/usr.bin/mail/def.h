@@ -9,7 +9,7 @@
 #undef isdigit
 
 /*
- * Sccs Id = "@(#)def.h	2.2 %G%";
+ * Sccs Id = "@(#)def.h	2.3 %G%";
  */
 
 /*
@@ -101,7 +101,7 @@ struct cmd {
 
 #define	P	040		/* Autoprint dot after command */
 #define	I	0100		/* Interactive command bit */
-#define	M	0200		/* Illegal from send mode bit */
+#define	M	0200		/* Legal from send mode bit */
 #define	W	0400		/* Illegal when read only bit */
 #define	F	01000		/* Is a conditional command */
 #define	T	02000		/* Is a transparent command */
