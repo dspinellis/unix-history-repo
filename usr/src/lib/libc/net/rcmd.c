@@ -5,13 +5,15 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rcmd.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)rcmd.c	5.10 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <stdio.h>
 #include <ctype.h>
 #include <pwd.h>
 #include <sys/param.h>
+#include <sys/file.h>
+#include <sys/signal.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 
@@ -29,42 +31,62 @@ rcmd(ahost, rport, locuser, remuser, cmd, fd2p)
 	char *locuser, *remuser, *cmd;
 	int *fd2p;
 {
-	int s, timo = 1;
+	int s, timo = 1, pid, oldmask;
 	struct sockaddr_in sin, sin2, from;
 	char c;
 	int lport = IPPORT_RESERVED - 1;
 	struct hostent *hp;
 
+	pid = getpid();
 	hp = gethostbyname(*ahost);
 	if (hp == 0) {
 		fprintf(stderr, "%s: unknown host\n", *ahost);
 		return (-1);
 	}
 	*ahost = hp->h_name;
-retry:
-	s = rresvport(&lport);
-	if (s < 0) {
-		if (errno == EAGAIN)
-			fprintf(stderr, "socket: All ports in use\n");
-		else
-			perror("rcmd: socket");
-		return (-1);
-	}
-	sin.sin_family = hp->h_addrtype;
-	bcopy(hp->h_addr, (caddr_t)&sin.sin_addr, hp->h_length);
-	sin.sin_port = rport;
-	if (connect(s, (caddr_t)&sin, sizeof (sin), 0) < 0) {
+	oldmask = sigblock(sigmask(SIGURG));
+	for (;;) {
+		s = rresvport(&lport);
+		if (s < 0) {
+			if (errno == EAGAIN)
+				fprintf(stderr, "socket: All ports in use\n");
+			else
+				perror("rcmd: socket");
+			sigsetmask(oldmask);
+			return (-1);
+		}
+		fcntl(s, F_SETOWN, pid);
+		sin.sin_family = hp->h_addrtype;
+		bcopy(hp->h_addr_list[0], (caddr_t)&sin.sin_addr, hp->h_length);
+		sin.sin_port = rport;
+		if (connect(s, (caddr_t)&sin, sizeof (sin), 0) >= 0)
+			break;
 		(void) close(s);
 		if (errno == EADDRINUSE) {
 			lport--;
-			goto retry;
+			continue;
 		}
 		if (errno == ECONNREFUSED && timo <= 16) {
 			sleep(timo);
 			timo *= 2;
-			goto retry;
+			continue;
+		}
+		if (hp->h_addr_list[1] != NULL) {
+			int oerrno = errno;
+
+			fprintf(stderr,
+			    "connect to address %s: ", inet_ntoa(sin.sin_addr));
+			errno = oerrno;
+			perror(0);
+			hp->h_addr_list++;
+			bcopy(hp->h_addr_list[0], (caddr_t)&sin.sin_addr,
+			    hp->h_length);
+			fprintf(stderr, "Trying %s...\n",
+				inet_ntoa(sin.sin_addr));
+			continue;
 		}
 		perror(hp->h_name);
+		sigsetmask(oldmask);
 		return (-1);
 	}
 	lport--;
@@ -116,12 +138,14 @@ retry:
 		}
 		goto bad2;
 	}
+	sigsetmask(oldmask);
 	return (s);
 bad2:
 	if (lport)
 		(void) close(*fd2p);
 bad:
 	(void) close(s);
+	sigsetmask(oldmask);
 	return (-1);
 }
 
