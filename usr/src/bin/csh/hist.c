@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)hist.c 4.7 %G%";
+static	char *sccsid = "@(#)hist.c 4.8 %G%";
 
 #include "sh.h"
 
@@ -76,14 +76,11 @@ dohist(vp)
 		sigsetmask(sigblock(0) & ~sigmask(SIGINT));
 	vp++;
 	while (*vp && *vp[0] == '-') {
-		if (*vp && eq(*vp, "-h")) {
+		if (*vp && eq(*vp, "-h"))
 			hflg++;
-			vp++;
-		}
-		if (*vp && eq(*vp, "-r")) {
+		else if (*vp && eq(*vp, "-r"))
 			rflg++;
-			vp++;
-		}
+		vp++;
 	}
 	if (*vp)
 		n = getn(*vp);
