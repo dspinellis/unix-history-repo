@@ -3,55 +3,45 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)syslog.h	4.5 (Berkeley) %G%
+ *	@(#)syslog.h	4.6 (Berkeley) %G%
  */
 
 /*
- *  Declarations for system logging program
- *
- *	These are used as the first parameter to syslog().
+ *  Facility codes
  */
 
-	/* kernel priorities */
-#define	KERN_EMERG	1	/* emergency -- send to all users (wall) */
-#define	KERN_ALERT	2	/* alert -- system failure */
-#define	KERN_ERR	3	/* hard errors */
-#define	KERN_FAIL	4	/* table full/overflow */
-#define	KERN_RECOV	5	/* recoverable errors (softecc) */
-#define	KERN_INFO	6	/* inconsistency/configuration error */
+#define LOG_KERN	(0<<3)	/* kernel messages */
+#define LOG_USER	(1<<3)	/* random user-level messages */
+#define LOG_MAIL	(2<<3)	/* mail system */
+#define LOG_DAEMON	(3<<3)	/* system daemons */
+#define LOG_AUTH	(4<<3)	/* security/authorization messages */
+	/* codes 5 - 15 reserved for system use */
+#define LOG_LOCAL0	(16<<3)	/* reserved for local use */
+#define LOG_LOCAL1	(17<<3)	/* reserved for local use */
+#define LOG_LOCAL2	(18<<3)	/* reserved for local use */
+#define LOG_LOCAL3	(19<<3)	/* reserved for local use */
+#define LOG_LOCAL4	(20<<3)	/* reserved for local use */
+#define LOG_LOCAL5	(21<<3)	/* reserved for local use */
+#define LOG_LOCAL6	(22<<3)	/* reserved for local use */
+#define LOG_LOCAL7	(23<<3)	/* reserved for local use */
 
-	/* user abnormal conditions priorities */
-#define	LOG_EMERG	7	/* system unusable -- send to all users */
-#define	LOG_ALERT	8	/* missing files (e.g., /etc/utmp) */
-#define	LOG_CRIT	9	/* critical conditions */
-#define	LOG_ERR		10	/* init open faliures/fatal daemon errors */
-#define	LOG_FAIL	11	/* getty failing, interface dropped */
-#define	LOG_WARNING	12	/* non-fatal daemon errs */
+#define LOG_NFACILITIES	24	/* maximum number of facilities */
+#define LOG_FACMASK	0x03f8	/* mask to extract facility part */
 
-	/* user priorities */
-#define	LOG_SALERT	13	/* important information */
-#define	LOG_SECURITY	14	/* root/su logins */
-#define	LOG_FIXED	15	/* abnormal condition fixed (recovery action) */
-#define	LOG_MAIL	16	/* mail failures */
-#define	LOG_REJECT	17	/* login/daemon rejections */
-#define	LOG_NOTICE	18	/* important info */
+/*
+ *  Priorities (these are ordered)
+ */
 
-	/* user information priorities */
-#define	LOG_INFO	19	/* informational message */
-#define	LOG_INFO1	20	/* informational message */
-#define	LOG_INFO2	21	/* informational message */
-#define	LOG_INFO3	22	/* informational message */
-#define	LOG_INFO4	23	/* informational message */
-#define	LOG_INFO5	24	/* informational message */
+#define LOG_EMERG	0	/* system is unusable */
+#define LOG_ALERT	1	/* action must be taken immediately */
+#define LOG_CRIT	2	/* critical conditions */
+#define LOG_ERR		3	/* error conditions */
+#define LOG_WARNING	4	/* warning conditions */
+#define LOG_NOTICE	5	/* normal but signification condition */
+#define LOG_INFO	6	/* informational */
+#define LOG_DEBUG	7	/* debug-level messages */
 
-	/* user debug/local priorities */
-#define	LOG_DEBUG	25	/* debugging info */
-#define	LOG_LOCAL1	26	/* reserved for local use */
-#define	LOG_LOCAL2	27	/* reserved for local use */
-#define	LOG_LOCAL3	28	/* reserved for local use */
-#define	LOG_LOCAL4	29	/* reserved for local use */
-#define	LOG_LOCAL5	30	/* reserved for local use */
-#define	LOG_LOCAL6	31	/* reserved for local use */
+#define LOG_PRIMASK	0x0007	/* mask to extract priority part */
 
 /*
  *  Option flags for openlog.
