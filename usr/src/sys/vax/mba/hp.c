@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hp.c	7.19 (Berkeley) %G%
+ *	@(#)hp.c	7.20 (Berkeley) %G%
  */
 
 #ifdef HPDEBUG
@@ -373,24 +373,21 @@ hpinit(dev, flags)
 	sc->sc_state = RDBADTBL;
 	i = 0;
 	do {
-		u.u_error = 0;				/* XXX */
 		bp->b_flags = B_BUSY | B_READ;
 		bp->b_blkno = lp->d_secperunit - lp->d_nsectors + i;
 		bp->b_bcount = lp->d_secsize;
 		bp->b_cylin = lp->d_ncylinders - 1;
 		hpstrategy(bp);
-		biowait(bp);
+		(void) biowait(bp);
 	} while ((bp->b_flags & B_ERROR) && (i += 2) < 10 &&
 	    i < lp->d_nsectors);
 	db = (struct dkbad *)(bp->b_un.b_addr);
 	if ((bp->b_flags & B_ERROR) == 0 && db->bt_mbz == 0 &&
 	    db->bt_flag == 0) {
 		hpbad[unit] = *db;
-	} else {
+	} else
 		log(LOG_ERR, "hp%d: %s bad-sector file\n", unit,
 		    (bp->b_flags & B_ERROR) ? "can't read" : "format error in");
-		u.u_error = 0;				/* XXX */
-	}
 	sc->sc_state = OPEN;
 	bp->b_flags = B_INVAL | B_AGE;
 	brelse(bp);
