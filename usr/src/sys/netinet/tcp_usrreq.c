@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tcp_usrreq.c	7.18 (Berkeley) %G%
+ *	@(#)tcp_usrreq.c	7.19 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -201,16 +201,9 @@ tcp_usrreq(so, req, m, nam, control)
 	 * done at higher levels; just return the address
 	 * of the peer, storing through addr.
 	 */
-	case PRU_ACCEPT: {
-		struct sockaddr_in *sin = mtod(nam, struct sockaddr_in *);
-
-		nam->m_len = sizeof (struct sockaddr_in);
-		sin->sin_family = AF_INET;
-		sin->sin_len = sizeof(*sin);
-		sin->sin_port = inp->inp_fport;
-		sin->sin_addr = inp->inp_faddr;
+	case PRU_ACCEPT:
+		in_setpeeraddr(inp, nam);
 		break;
-		}
 
 	/*
 	 * Mark the connection as being incapable of further output.
