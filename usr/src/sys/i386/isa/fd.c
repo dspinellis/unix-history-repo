@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fd.c	7.3 (Berkeley) %G%
+ *	@(#)fd.c	7.4 (Berkeley) %G%
  */
 
 #include "fd.h"
@@ -220,7 +220,7 @@ dump_stat()
 		fd_status[i] = in_fdc();
 		if (fd_status[i] < 0) break;
 	}
-printf("FD bad status :%X %X %X %X %X %X %X\n",
+printf("FD bad status :%lx %lx %lx %lx %lx %lx %lx\n",
 	fd_status[0], fd_status[1], fd_status[2], fd_status[3],
 	fd_status[4], fd_status[5], fd_status[6] );
 }
@@ -237,7 +237,7 @@ int x;
 		if (r==(NE7_DIO|NE7_RQM)) {
 			dump_stat(); /* error: direction. eat up output */
 #ifdef FDOTHER
-printf("%X\n",x);
+printf("%lx\n",x);
 #endif
 		}
 		/* printf("Error r = %d:",r); */
@@ -372,12 +372,12 @@ int x;
 	out_fdc(0x4);
 	out_fdc(fd_drive);
 	i = in_fdc();
-	printf("Timeout drive status %X\n",i);
+	printf("Timeout drive status %lx\n",i);
 
 	out_fdc(0x8);
 	i = in_fdc();
 	j = in_fdc();
-	printf("ST0 = %X, PCN = %X\n",i,j);
+	printf("ST0 = %lx, PCN = %lx\n",i,j);
 
 	if (bp) badtrans(dp,bp);
 }
@@ -410,7 +410,7 @@ fdintr(unit)
 			i = in_fdc();
 			cyl = in_fdc();
 			if (!(i&0x20) || (cyl != bp->b_cylin*dp->b_step)) {
-printf("Stray int ST0 = %X, PCN = %X:",i,cyl);
+printf("Stray int ST0 = %lx, PCN = %lx:",i,cyl);
 				return;
 			}
 		}
@@ -533,13 +533,13 @@ printf("Seek %d %d\n", bp->b_cylin, dp->b_step);
 		out_fdc(0x8);
 		i = in_fdc();
 		sec = in_fdc();
-		printf("ST0 = %X, PCN = %X\n",i,sec);
+		printf("ST0 = %lx, PCN = %lx\n",i,sec);
 		out_fdc(0x4A); 
 		out_fdc(fd_drive);
 		for(i=0;i<7;i++) {
 			fd_status[i] = in_fdc();
 		}
-	printf("intr status :%X %X %X %X %X %X %X ",
+	printf("intr status :%lx %lx %lx %lx %lx %lx %lx ",
 		fd_status[0], fd_status[1], fd_status[2], fd_status[3],
 		fd_status[4], fd_status[5], fd_status[6] );
 		break;
@@ -558,7 +558,7 @@ retry:
 	case 5: case 6: case 7:
 		break;
 	default:
-		printf("FD err %X %X %X %X %X %X %X\n",
+		printf("FD err %lx %lx %lx %lx %lx %lx %lx\n",
 		fd_status[0], fd_status[1], fd_status[2], fd_status[3],
 		fd_status[4], fd_status[5], fd_status[6] );
 		badtrans(dp,bp);

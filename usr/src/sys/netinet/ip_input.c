@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ip_input.c	7.18 (Berkeley) %G%
+ *	@(#)ip_input.c	7.19 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -838,7 +838,7 @@ ip_srcroute()
 	if (ipprintfs)
 		printf(" hops %X", ntohl(*mtod(m, struct in_addr *)));
 	if (ipprintfs)
-		printf(" hops %X", ntohl(mtod(m, struct in_addr *)->s_addr));
+		printf(" hops %lx", ntohl(mtod(m, struct in_addr *)->s_addr));
 #endif
 
 	/*
@@ -858,7 +858,7 @@ ip_srcroute()
 	while (p >= ip_srcrt.route) {
 #ifdef DIAGNOSTIC
 		if (ipprintfs)
-			printf(" %X", ntohl(q->s_addr));
+			printf(" %lx", ntohl(q->s_addr));
 #endif
 		*q++ = *p--;
 	}
@@ -875,7 +875,7 @@ ip_srcroute()
 	*q = ip_srcrt.dst;
 #ifdef DIAGNOSTIC
 	if (ipprintfs)
-		printf(" %X\n", ntohl(q->s_addr));
+		printf(" %lx\n", ntohl(q->s_addr));
 #endif
 	return (m);
 }

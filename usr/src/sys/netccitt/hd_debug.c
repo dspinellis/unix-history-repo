@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)hd_debug.c	7.3 (Berkeley) %G%
+ *	@(#)hd_debug.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -165,7 +165,7 @@ struct hdcb *hdp;
 	hd_status (hdp);
 	printf ("retransmit queue:");
 	for (i = 0; i < 8; i++)
-		printf (" %X", hdp -> hd_retxq[i]);
+		printf (" %lx", hdp -> hd_retxq[i]);
 	printf ("\n");
 	ltrace = hdp -> hd_xcp -> xc_ltrace;
 	hdp -> hd_xcp -> xc_ltrace = 1;

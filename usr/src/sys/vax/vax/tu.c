@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tu.c	7.5 (Berkeley) %G%
+ *	@(#)tu.c	7.6 (Berkeley) %G%
  */
 
 #if defined(VAX750) || defined(VAX730)
@@ -676,7 +676,7 @@ tuwatch()
 	}
 	printf("tu%d: read stalled\n", tudata.pk_unit);
 #ifdef TUDEBUG
-	printf("%X %X %X %X %X %X %X %X\n", tu.tu_rbptr, tu.tu_rcnt,
+	printf("%lx %lx %lx %lx %lx %lx %lx %lx\n", tu.tu_rbptr, tu.tu_rcnt,
 		tu.tu_wbptr, tu.tu_wcnt, tu.tu_state, tu.tu_flag,
 		tu.tu_addr, tu.tu_count);
 #endif
