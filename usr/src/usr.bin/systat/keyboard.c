@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)keyboard.c	1.1 (Lucasfilm) %G%";
+static char sccsid[] = "@(#)keyboard.c	1.2 (Lucasfilm) %G%";
 #endif
 
 /*
@@ -7,14 +7,17 @@ static char sccsid[] = "@(#)keyboard.c	1.1 (Lucasfilm) %G%";
  */
 
 #include "systat.h"
+#include <signal.h>
+#include <ctype.h>
 
 keyboard()
 {
         char ch, line[80];
+	int oldmask;
 
         for (;;) {
                 col = 0;
-                move(22, 0);
+                move(CMDLINE, 0);
                 do {
                         refresh();
                         ch = getch() & 0177;
@@ -27,19 +30,20 @@ keyboard()
                         if (col == 0) {
 #define	mask(s)	(1 << ((s) - 1))
                                 if (ch == CTRL(l)) {
-					int oldmask = sigblock(mask(SIGALRM));
-
+					oldmask = sigblock(mask(SIGALRM));
 					wrefresh(curscr);
 					sigsetmask(oldmask);
                                         continue;
                                 }
 				if (ch == CTRL(g)) {
+					oldmask = sigblock(mask(SIGALRM));
 					status();
+					sigsetmask(oldmask);
 					continue;
 				}
                                 if (ch != ':')
                                         continue;
-                                move(22, 0);
+                                move(CMDLINE, 0);
                                 clrtoeol();
                         }
                         if (ch == _tty.sg_erase && col > 0) {
@@ -63,18 +67,20 @@ keyboard()
                                 if (line[0] == ':')
                                         col++;
                 doerase:
-                                move(22, col);
+                                move(CMDLINE, col);
                                 clrtoeol();
                                 continue;
                         }
                         if (isprint(ch)) {
                                 line[col] = ch;
-                                mvaddch(22, col, ch);
+                                mvaddch(CMDLINE, col, ch);
                                 col++;
                         }
                 } while (col == 0 || (ch != '\r' && ch != '\n'));
                 line[col] = '\0';
+		oldmask = sigblock(mask(SIGALRM));
                 command(line + 1);
+		sigsetmask(oldmask);
         }
 	/*NOTREACHED*/
 }

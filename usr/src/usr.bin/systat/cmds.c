@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	1.3 (Lucasfilm) %G%";
+static char sccsid[] = "@(#)cmds.c	1.4 (Lucasfilm) %G%";
 #endif
 
 /*
@@ -7,6 +7,8 @@ static char sccsid[] = "@(#)cmds.c	1.3 (Lucasfilm) %G%";
  */
 
 #include "systat.h"
+#include <signal.h>
+#include <ctype.h>
 
 command(cmd)
         char *cmd;
@@ -21,6 +23,8 @@ command(cmd)
                 *cp++ = '\0';
 	if (*cmd == '\0')
 		return;
+	for (; *cp && isspace(*cp); cp++)
+		;
         if (strcmp(cmd, "quit") == 0 || strcmp(cmd, "q") == 0)
                 die();
 	if (strcmp(cmd, "load") == 0) {
@@ -29,19 +33,16 @@ command(cmd)
 	}
         if (strcmp(cmd, "stop") == 0) {
                 alarm(0);
-                mvaddstr(22, 0, "Refresh disabled.");
+                mvaddstr(CMDLINE, 0, "Refresh disabled.");
                 clrtoeol();
                 return;
         }
         if (strcmp(cmd, "start") == 0 || strcmp(cmd, "interval") == 0) {
                 int x;
 
-		for (; *cp && isspace(*cp); cp++)
-			;
 		x = *cp ? atoi(cp) : naptime;
                 if (x <= 0) {
-                        mvprintw(22, 0, "%d: bad interval.", x);
-                        clrtoeol();
+			error("%d: bad interval.", x);
                         return;
                 }
                 alarm(0);
@@ -71,8 +72,9 @@ command(cmd)
                 status();
                 return;
         }
-	mvprintw(22, 0, "%s: Unknown command.", cmd);
-	clrtoeol();
+	if (curcmd->c_cmd && (*curcmd->c_cmd)(cmd, cp))
+		return;
+	error("%s: Unknown command.", cmd);
 }
 
 struct cmdtab *
@@ -107,9 +109,8 @@ lookup(name)
 status()
 {
 
-        mvprintw(22, 0, "Showing %s, refresh every %d seconds.",
+        error("Showing %s, refresh every %d seconds.",
           curcmd->c_name, naptime);
-        clrtoeol();
 }
 
 suspend()
@@ -117,7 +118,7 @@ suspend()
         int oldmask;
 
 	alarm(0);
-        move(22, 0);
+        move(CMDLINE, 0);
         refresh();
         echo();
         nocrmode();
@@ -128,7 +129,7 @@ suspend()
         signal(SIGTSTP, suspend);
         crmode();
         noecho();
-        move(22, col);
+        move(CMDLINE, col);
         wrefresh(curscr);
 	alarm(naptime);
 }
