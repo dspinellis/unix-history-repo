@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-/*	fs.h	1.5	%G%	*/
+/*	fs.h	1.6	%G%	*/
 
 /*
  * Each disk drive contains some number of file systems.
@@ -60,10 +60,10 @@
  * specially noticed in mkfs, icheck and fsck.
  */
 struct csum {
-	short	cs_ndir;	/* number of directories */
-	short	cs_nbfree;	/* number of free blocks */
-	short	cs_nifree;	/* number of free inodes */
-	short	cs_xx;		/* for later use... */
+	long	cs_ndir;	/* number of directories */
+	long	cs_nbfree;	/* number of free blocks */
+	long	cs_nifree;	/* number of free inodes */
+	long	cs_nffree;	/* number of free frags */
 };
 #define	cssize(fs)	((fs)->fs_ncg*sizeof(struct csum))
 #define	csaddr(fs)	(cgdmin(0, fs))
@@ -104,31 +104,30 @@ struct	fs
 	long	fs_magic;		/* magic number */
 	daddr_t	fs_sblkno;		/* offset of super-block in filesys */
 	time_t 	fs_time;    		/* last time written */
-	daddr_t	fs_size;		/* number of blocks in fs */
-	short	fs_ncg;			/* number of cylinder groups */
+	long	fs_size;		/* number of blocks in fs */
+	long	fs_dsize;		/* number of data blocks in fs */
+	long	fs_ncg;			/* number of cylinder groups */
 /* sizes determined by number of cylinder groups and their sizes */
-	short	fs_cssize;		/* size of cyl grp summary area */
-	short	fs_cgsize;		/* cylinder group size */
+	long	fs_cssize;		/* size of cyl grp summary area */
+	long	fs_cgsize;		/* cylinder group size */
 /* these fields should be derived from the hardware */
 	short	fs_ntrak;		/* tracks per cylinder */
 	short	fs_nsect;		/* sectors per track */
-	short  	fs_spc;   		/* sectors per cylinder */
+	long  	fs_spc;   		/* sectors per cylinder */
 /* this comes from the disk driver partitioning */
-	short	fs_ncyl;   		/* cylinders in file system */
+	long	fs_ncyl;   		/* cylinders in file system */
 /* these fields can be computed from the others */
 	short	fs_cpg;			/* cylinders per group */
-	short	fs_fpg;			/* blocks per group*FRAG */
 	short	fs_ipg;			/* inodes per group */
-/* these fields must be re-computed after crashes */
-	daddr_t	fs_nffree;   		/* total free fragments */
-	daddr_t	fs_nbfree;		/* free data blocks */
-	ino_t  	fs_nifree;  		/* total free inodes */
+	long	fs_fpg;			/* blocks per group*FRAG */
+/* this data must be re-computed after crashes */
+	struct	csum fs_cstotal;	/* cylinder summary information */
 /* these fields are cleared at mount time */
 	char   	fs_fmod;    		/* super block modified flag */
 	char   	fs_ronly;   		/* mounted read-only flag */
-	char	fs_fsmnt[32];		/* name mounted on */
+	char	fs_fsmnt[34];		/* name mounted on */
 /* these fields retain the current block allocation info */
-	short	fs_cgrotor;		/* last cg searched */
+	long	fs_cgrotor;		/* last cg searched */
 	struct	csum *fs_csp[NBUF];	/* list of fs_cs info buffers */
 	short	fs_postbl[NRPOS];	/* head of blocks for each rotation */
 	short	fs_rotbl[1];		/* list of blocks for each rotation */
@@ -199,18 +198,15 @@ struct	fs
 struct	cg {
 	long	cg_magic;		/* magic number */
 	time_t	cg_time;		/* time last written */
-	short	cg_cgx;			/* we are the cgx'th cylinder group */
+	long	cg_cgx;			/* we are the cgx'th cylinder group */
 	short	cg_ncyl;		/* number of cyl's this cg */
 	short	cg_niblk;		/* number of inode blocks this cg */
-	short	cg_ndblk;		/* number of data blocks this cg */
-	short	cg_nifree;		/* free inodes */
-	short	cg_ndir;		/* allocated directories */
-	short	cg_nffree;		/* free block fragments */
-	short	cg_nbfree;		/* free blocks */
-	short	cg_rotor;		/* position of last used block */
-	short	cg_irotor;		/* position of last used inode */
-	short	cg_frotor;		/* position of last used frag */
-	short	cg_frsum[FRAG];		/* counts of available frags */
+	long	cg_ndblk;		/* number of data blocks this cg */
+	struct	csum cg_cs;		/* cylinder summary information */
+	long	cg_rotor;		/* position of last used block */
+	long	cg_frotor;		/* position of last used frag */
+	long	cg_irotor;		/* position of last used inode */
+	long	cg_frsum[FRAG];		/* counts of available frags */
 	short	cg_b[MAXCPG][NRPOS];	/* positions of free blocks */
 	char	cg_iused[MAXIPG/NBBY];	/* used inode map */
 	char	cg_free[1];		/* free block map */
