@@ -4,14 +4,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)inode.h	7.17 (Berkeley) %G%
+ *	@(#)inode.h	7.18 (Berkeley) %G%
  */
 
-#ifdef KERNEL
-#include "../ufs/dinode.h"
-#else
-#include <ufs/dinode.h>
-#endif
+#include <ufs/ufs/dinode.h>
 
 /*
  * The inode is used to describe each active (or recently active)
@@ -31,7 +27,12 @@ struct inode {
 	u_long	i_flag;		/* see below */
 	dev_t	i_dev;		/* device where inode resides */
 	ino_t	i_number;	/* the identity of the inode */
-	struct	fs *i_fs;	/* filesystem associated with this inode */
+	union {			/* associated filesystem */
+		struct	fs *fs;		/* FFS */
+		struct	lfs *lfs;	/* LFS */
+	} inode_u;
+#define	i_fs	inode_u.fs
+#define	i_lfs	inode_u.lfs
 	struct	dquot *i_dquot[MAXQUOTAS]; /* pointer to dquot structures */
 	struct	lockf *i_lockf;	/* head of byte-level lock list */
 	long	i_diroff;	/* offset in dir, where we found last entry */
@@ -75,15 +76,11 @@ struct inode {
 #define	ILWAIT		0x0400		/* someone waiting on file lock */
 
 #ifdef KERNEL
-/*
- * Convert between inode pointers and vnode pointers
- */
+/* Convert between inode pointers and vnode pointers. */
 #define VTOI(vp)	((struct inode *)(vp)->v_data)
 #define ITOV(ip)	((ip)->i_vnode)
 
-/*
- * Convert between vnode types and inode formats
- */
+/* Convert between vnode types and inode formats. */
 extern enum vtype	iftovt_tab[];
 extern int		vttoif_tab[];
 #define IFTOVT(mode)	(iftovt_tab[((mode) & IFMT) >> 12])
@@ -91,13 +88,7 @@ extern int		vttoif_tab[];
 
 #define MAKEIMODE(indx, mode)	(int)(VTTOIF(indx) | (mode))
 
-u_long	nextgennumber;		/* next generation number to assign */
-
-extern ino_t	dirpref();
-
-/*
- * Lock and unlock inodes.
- */
+/* Lock and unlock inodes. */
 #ifdef notdef
 #define	ILOCK(ip) { \
 	while ((ip)->i_flag & ILOCKED) { \
@@ -115,14 +106,9 @@ extern ino_t	dirpref();
 	} \
 }
 #else
-#define ILOCK(ip)	ilock(ip)
-#define IUNLOCK(ip)	iunlock(ip)
+#define ILOCK(ip)	ufs_ilock(ip)
+#define IUNLOCK(ip)	ufs_iunlock(ip)
 #endif
-
-#define	IUPDAT(ip, t1, t2, waitfor) { \
-	if (ip->i_flag&(IUPD|IACC|ICHG|IMOD)) \
-		(void) iupdat(ip, t1, t2, waitfor); \
-}
 
 #define	ITIMES(ip, t1, t2) { \
 	if ((ip)->i_flag&(IUPD|IACC|ICHG)) { \
@@ -137,68 +123,11 @@ extern ino_t	dirpref();
 	} \
 }
 
-/*
- * This overlays the fid sturcture (see mount.h)
- */
+/* This overlays the fid structure (see mount.h). */
 struct ufid {
 	u_short	ufid_len;	/* length of structure */
 	u_short	ufid_pad;	/* force long alignment */
 	ino_t	ufid_ino;	/* file number (ino) */
 	long	ufid_gen;	/* generation number */
 };
-
-/*
- * Prototypes for UFS vnode operations
- */
-int ufs_lookup __P((struct vnode *vp, struct nameidata *ndp, struct proc *p));
-int ufs_create __P((struct nameidata *ndp, struct vattr *vap, struct proc *p));
-int ufs_mknod __P((struct nameidata *ndp, struct vattr *vap, struct ucred *cred,
-	struct proc *p));
-int ufs_open __P((struct vnode *vp, int mode, struct ucred *cred,
-	struct proc *p));
-int ufs_close __P((struct vnode *vp, int fflag, struct ucred *cred,
-	struct proc *p));
-int ufs_access __P((struct vnode *vp, int mode, struct ucred *cred,
-	struct proc *p));
-int ufs_getattr __P((struct vnode *vp, struct vattr *vap, struct ucred *cred,
-	struct proc *p));
-int ufs_setattr __P((struct vnode *vp, struct vattr *vap, struct ucred *cred,
-	struct proc *p));
-int ufs_read __P((struct vnode *vp, struct uio *uio, int ioflag,
-	struct ucred *cred));
-int ufs_write __P((struct vnode *vp, struct uio *uio, int ioflag,
-	struct ucred *cred));
-int ufs_ioctl __P((struct vnode *vp, int command, caddr_t data, int fflag,
-	struct ucred *cred, struct proc *p));
-int ufs_select __P((struct vnode *vp, int which, int fflags, struct ucred *cred,
-	struct proc *p));
-int ufs_mmap __P((struct vnode *vp, int fflags, struct ucred *cred,
-	struct proc *p));
-int ufs_fsync __P((struct vnode *vp, int fflags, struct ucred *cred,
-	int waitfor, struct proc *p));
-int ufs_seek __P((struct vnode *vp, off_t oldoff, off_t newoff,
-	struct ucred *cred));
-int ufs_remove __P((struct nameidata *ndp, struct proc *p));
-int ufs_link __P((struct vnode *vp, struct nameidata *ndp, struct proc *p));
-int ufs_rename __P((struct nameidata *fndp, struct nameidata *tdnp,
-	struct proc *p));
-int ufs_mkdir __P((struct nameidata *ndp, struct vattr *vap, struct proc *p));
-int ufs_rmdir __P((struct nameidata *ndp, struct proc *p));
-int ufs_symlink __P((struct nameidata *ndp, struct vattr *vap, char *target,
-	struct proc *p));
-int ufs_readdir __P((struct vnode *vp, struct uio *uio, struct ucred *cred,
-	int *eofflagp));
-int ufs_readlink __P((struct vnode *vp, struct uio *uio, struct ucred *cred));
-int ufs_abortop __P((struct nameidata *ndp));
-int ufs_inactive __P((struct vnode *vp, struct proc *p));
-int ufs_reclaim __P((struct vnode *vp));
-int ufs_lock __P((struct vnode *vp));
-int ufs_unlock __P((struct vnode *vp));
-int ufs_bmap __P((struct vnode *vp, daddr_t bn, struct vnode **vpp,
-	daddr_t *bnp));
-int ufs_strategy __P((struct buf *bp));
-int ufs_print __P((struct vnode *vp));
-int ufs_islocked __P((struct vnode *vp));
-int ufs_advlock __P((struct vnode *vp, caddr_t id, int op, struct flock *fl,
-	int flags));
 #endif /* KERNEL */
