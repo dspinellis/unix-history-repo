@@ -1,4 +1,4 @@
-/*	route.c	4.18	83/03/15	*/
+/*	route.c	4.19	83/04/05	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -25,7 +25,7 @@ rtalloc(ro)
 	register int (*match)();
 	struct afhash h;
 	struct sockaddr *dst = &ro->ro_dst;
-	int af = dst->sa_family;
+	u_int af = dst->sa_family;
 
 	if (ro->ro_rt && ro->ro_rt->rt_ifp)			/* XXX */
 		return;
@@ -133,7 +133,8 @@ rtrequest(req, entry)
 	register struct mbuf *m, **mprev;
 	register struct rtentry *rt;
 	struct afhash h;
-	int af, s, error = 0, hash, (*match)();
+	int s, error = 0, hash, (*match)();
+	u_int af;
 	struct ifnet *ifp;
 
 	af = entry->rt_dst.sa_family;
