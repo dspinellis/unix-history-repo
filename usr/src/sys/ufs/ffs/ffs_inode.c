@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_inode.c	7.46 (Berkeley) %G%
+ *	@(#)ffs_inode.c	7.47 (Berkeley) %G%
  */
 
 #include <sys/param.h>
