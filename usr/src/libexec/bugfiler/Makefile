@@ -14,72 +14,38 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.12 (Berkeley) %G%
+#	@(#)Makefile	5.13 (Berkeley) %G%
 #
 CFLAGS=	-O -I.
 LIBC=	/lib/libc.a
 SRCS=	bugfiler.c error.c gethead.c process.c redist.c reply.c
 OBJS=	bugfiler.o error.o gethead.o process.o redist.o reply.o
+MAN1=	sendbug.0
+MAN8=	bugfiler.0
 
 all: bugfiler
 
 bugfiler: ${OBJS} ${LIBC}
 	${CC} ${CFLAGS} -o $@ ${OBJS}
 
-clean: FRC
+clean:
 	rm -f ${OBJS} core bugfiler
 
-depend: FRC
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
+depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
-install: FRC
-	install -s -o root -g bin -m 4755 bugfiler ${DESTDIR}/usr/lib/bugfiler
-	install -c -o bin -g bin -m 755 sendbug.sh ${DESTDIR}/usr/ucb/sendbug
-	install -c -o bin -g bin -m 644 bugformat ${DESTDIR}/usr/lib/bugformat
+install: ${MAN1} ${MAN8}
+	install -s -o root -g bin -m 4755 bugfiler ${DESTDIR}/usr/lib
+	install -c -o bin -g bin -m 755 sendbug.sh ${DESTDIR}/usr/ucb
+	install -c -o bin -g bin -m 644 bugformat ${DESTDIR}/usr/lib
+	install -c -o bin -g bin -m 444 ${MAN1} ${DESTDIR}/usr/man/cat1
+	install -c -o bin -g bin -m 444 ${MAN8} ${DESTDIR}/usr/man/cat8
 
-lint: FRC
+lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
 
-tags: FRC
+tags: ${SRCS}
 	ctags ${SRCS}
-
-FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-bugfiler.o: bugfiler.c
-bugfiler.o:bug.h
-bugfiler.o: /usr/include/sys/param.h /usr/include/sys/types.h
-bugfiler.o: /usr/include/signal.h /usr/include/machine/machparam.h
-bugfiler.o: /usr/include/sys/dir.h /usr/include/sys/time.h /usr/include/time.h
-bugfiler.o: /usr/include/sys/file.h /usr/include/pwd.h /usr/include/stdio.h
-error.o: error.c
-error.o:bug.h
-error.o: /usr/include/sys/param.h /usr/include/sys/types.h
-error.o: /usr/include/signal.h /usr/include/machine/machparam.h
-error.o: /usr/include/sys/dir.h /usr/include/syslog.h /usr/include/stdio.h
-gethead.o: gethead.c
-gethead.o:bug.h
-gethead.o: /usr/include/sys/param.h /usr/include/sys/types.h
-gethead.o: /usr/include/signal.h /usr/include/machine/machparam.h
-gethead.o: /usr/include/sys/dir.h /usr/include/sys/stat.h /usr/include/stdio.h
-process.o: process.c
-process.o:bug.h
-process.o: /usr/include/sys/param.h /usr/include/sys/types.h
-process.o: /usr/include/signal.h /usr/include/machine/machparam.h
-process.o: /usr/include/sys/dir.h /usr/include/sys/file.h
-process.o: /usr/include/sys/time.h /usr/include/time.h /usr/include/stdio.h
-process.o: /usr/include/ctype.h
-redist.o: redist.c /usr/include/sys/file.h /usr/include/stdio.h
-redist.o:bug.h
-redist.o: /usr/include/sys/param.h /usr/include/sys/types.h
-redist.o: /usr/include/signal.h /usr/include/machine/machparam.h
-redist.o: /usr/include/sys/dir.h
-reply.o: reply.c
-reply.o:bug.h
-reply.o: /usr/include/sys/param.h /usr/include/sys/types.h
-reply.o: /usr/include/signal.h /usr/include/machine/machparam.h
-reply.o: /usr/include/sys/dir.h /usr/include/sys/file.h /usr/include/stdio.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY

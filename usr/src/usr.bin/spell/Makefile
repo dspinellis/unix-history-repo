@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	4.9	(Berkeley)	%G%
+#	@(#)Makefile	4.10	(Berkeley)	%G%
 #
 # The word lists may be extended by adding special words.
 # The set of files containing words to be added are defined
@@ -19,17 +19,12 @@ CFLAGS=	-O
 LIBC=	/lib/libc.a
 SRCS=	spell.c spellin.c spellout.c
 OBJS=	spell.o spellin.o spellout.o
+MAN=	spell.0
 
 all: spell hlist hlista hlistb hstop spellin spellout
 
-spell: spell.c
-	${CC} ${CFLAGS} spell.c -o $@
-
-spellin: spellin.c
-	${CC} ${CFLAGS} spellin.c -o $@
-
-spellout: spellout.c
-	${CC} ${CFLAGS} spellout.c -o $@
+spell spellin spellout: ${LIBC}
+	${CC} ${CFLAGS} $@.c -o $@
 
 hlist: /usr/dict/words spellin
 	spellin < words >hlist
@@ -43,13 +38,16 @@ hlistb: british ${SPECIAL} ${LOCAL} hlist spellin
 hstop: stop spellin
 	spellin < stop >hstop
 
-clean: FRC
+clean:
 	rm -f ${OBJS} core spell spellin hlista hlistb hlist hstop spellout
 
-depend: FRC
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
+depend: ${SRCS}
 	mkdep -p ${CFLAGS} ${SRCS}
 
-install: FRC
+install: ${MAN}
 	-[ -d ${DESTDIR}/usr/dict/special ] || mkdir ${DESTDIR}/usr/dict/special
 	install -s -o bin -g bin -m 755 spell ${DESTDIR}/usr/lib/spell
 	install -s -o bin -g bin -m 755 spellin ${DESTDIR}/usr/bin/spellin
@@ -66,25 +64,19 @@ install: FRC
 	install -c -o bin -g bin -m 444 README ${DESTDIR}/usr/dict/README
 	install -c -o bin -g bin -m 444 special.4bsd ${DESTDIR}/usr/dict/special/4bsd
 	install -c -o bin -g bin -m 444 special.math ${DESTDIR}/usr/dict/special/math
+	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
+	rm -f ${DESTDIR}/usr/man/cat1/spellin.0
+	rm -f ${DESTDIR}/usr/man/cat1/spellout.0
+	ln ${DESTDIR}/usr/man/cat1/spell.0 ${DESTDIR}/usr/man/cat1/spellin.0
+	ln ${DESTDIR}/usr/man/cat1/spell.0 ${DESTDIR}/usr/man/cat1/spellout.0
 
-lint: FRC
+lint: ${SRCS}
 	lint ${CFLAGS} spell.c
 	lint ${CFLAGS} spellin.c
 	lint ${CFLAGS} spellout.c
 
-tags: FRC
+tags: ${SRCS}
 	ctags spell.c
 	ctags -a spellin.c
 	ctags -a spellout.c
 	sort -o tags tags
-
-FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-spell: spell.c spell.h /usr/include/stdio.h /usr/include/ctype.h
-spellin: spellin.c spell.h /usr/include/stdio.h /usr/include/ctype.h
-spellout: spellout.c spell.h /usr/include/stdio.h /usr/include/ctype.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
