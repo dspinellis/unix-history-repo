@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)options.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)options.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "shell.h"
@@ -270,7 +270,7 @@ shiftcmd(argc, argv)  char **argv; {
 	if (argc > 1)
 		n = number(argv[1]);
 	if (n > shellparam.nparam)
-		n = shellparam.nparam;
+		error("can't shift that many");
 	INTOFF;
 	shellparam.nparam -= n;
 	for (ap1 = shellparam.p ; --n >= 0 ; ap1++) {
