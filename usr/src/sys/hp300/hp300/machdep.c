@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: machdep.c 1.63 91/04/24$
  *
- *	@(#)machdep.c	7.17 (Berkeley) %G%
+ *	@(#)machdep.c	7.18 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -284,7 +284,7 @@ again:
 #ifdef DEBUG
 	pmapdebug = opmapdebug;
 #endif
-	printf("avail mem = %d\n", ptoa(vm_page_free_count));
+	printf("avail mem = %d\n", ptoa(vm_stat.free_count));
 	printf("using %d buffers containing %d bytes of memory\n",
 		nbuf, bufpages * CLBYTES);
 	/*
