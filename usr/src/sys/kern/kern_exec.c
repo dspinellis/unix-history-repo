@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)kern_exec.c	7.52 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.53 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -231,7 +231,11 @@ execve(p, uap, retval)
 		break;
 
 	case ZMAGIC:
+#ifdef HPUXCOMPAT
+		paged |= 1;	/* XXX fix me */
+#else
 		paged = 1;
+#endif
 		/* FALLTHROUGH */
 
 	case NMAGIC:
@@ -508,12 +512,9 @@ getxfile(p, vp, ep, paged, ssize, uid, gid)
 #ifdef HPUXCOMPAT
 	int hpux = (paged & SHPUX);
 	paged &= ~SHPUX;
-	if (ep->a_mid == MID_HPUX) {
-		if (paged)
-			toff = CLBYTES;
-		else
-			toff = sizeof (struct hpux_exec);
-	} else
+	if (ep->a_mid == MID_HPUX)
+		toff = paged ? CLBYTES : sizeof(struct hpux_exec);
+	else
 #endif
 #ifdef COFF
 	toff = N_TXTOFF(*ep);
