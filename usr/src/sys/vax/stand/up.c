@@ -1,4 +1,4 @@
-/*	up.c	6.2	83/09/23	*/
+/*	up.c	6.3	84/02/06	*/
 
 /*
  * UNIBUS peripheral standalone driver
@@ -89,6 +89,7 @@ upopen(io)
 		}	
 		up_gottype[unit] = 1;
 	}
+	st = &upst[up_type[unit]];
 	io->i_boff = st->off[io->i_boff] * st->nspc;
 	io->i_flgs &= ~F_TYPEMASK;
 }
