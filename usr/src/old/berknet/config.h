@@ -1,45 +1,94 @@
-/*	@(#)config.h	4.1	(Berkeley)	%G%	*/
+/*	@(#)config.h	4.2	(Berkeley)	%G%	*/
 
 /*
 	These are machine-configuration dependent
 	tables.  To add a machine, be sure to update all
 	these tables, add the "ifdef" entry in "mach.h",
 	and add config? to gothru() in sub.c.
+	The tables must be consistent.
 	For Berkeley, this file corresponds to the following network:
 
-			C70
-			 |
-			 |
-			 |
-			 |
-	IngVAX          ARPA----Onyx
-	  |		 |
-	  |		 |
-	  |		 |
-	  |		 |
-	Ing70-----------CSVAX---Kim	A              B
-	   		 |		|              |
-		         |		|              |
-	            	 |		|              |
-	   		 |		|              |
-	MathStat--------Cory------------C--------------D
-			 |		|	       |
-			 |		|	       |
-			 |		|	       |
-			 |		|	       |
-	EECS40----------ESVAX		E-------F     SRC
-	   		 |	       /|\
-	   		 |     	      / | \
-	   		 |	     /	|  \
-	   		 |	    /	|   \
-	VLSI------------Image	 Virus	Q    G
-			 |
-			 |
-			 |
-			CAD
+		T H E   B E R K E L E Y   N E T W O R K
 
-	The tables must be consistent.
+			   September 7 1982
 
+                   INGVAX----i
+                      |       
+	   KIM-----\  |  /----ERNIE         /--earvax
+                    \ | /                  /
+           C70-----\ \ / /----CAD-----ESVAX
+                   UCBVAX                  \
+	  Onyx-----/ /|\ \----ARPA          \--medea----oz
+                    / | \ 
+  t----statvax-----/  |  \-------y
+		      |                    
+	              | /------jade(h)                         
+		      |/                   
+                 d----G----------c--------a
+                      |          |
+                      |          |
+                      f     b----e----s
+
+
+		M A C H I N E   G U I D E 
+
+Name 	Char 	Run By		Type	Vers.	Default Mach.
+----	----	------		----	----	-------------
+A	a	CFO		11/70	V7	C
+B	b	CFO		11/70	V7	E
+C	c	CFO		11/70	V7	A
+D	d	CFO		11/70	V7	G
+E	e	CFO		11/70	V7	C
+F	f	CFO		11/70	V7	G
+G	g	CFO		VAX/780	V7	C
+H(jade)	h	CFO		VAX/750	V7	G
+ing70	i	CSSG		11/70	V7	INGVAX
+INGVAX	j	Ingres Group 	VAX/780	V7	Ing70
+ucbvax	k	CS network hub	VAX/750	V7	
+oz	l	Brodersen	VAX/750	V7	medea
+medea	m	EE-Signal Proc.	VAX/750	V7	ESVAX
+KIM	n	Kim No-vax (RJF)VAX/780	V7	CSVAX
+ESVAX	o	EECS-CE Res.	VAX/780	V7	CSVAX	
+CAD	p	Newton CAD      VAX/780 V7      ESVAX
+ARPAVAX	r	Fabry		VAX/780	V7	CSVAX	
+SRC	s	CFO & SRC	11/45	V6	E
+MathStat t	Math/Stat Dept	11/45	V7	statvax
+C70     u       EECS            C70     V7      ARPAVAX
+CSVAX	v	CS Research	VAX	V7	ARPAVAX
+statvax w	Stat Dept	VAX/750	V7	UCBVAX
+Onyx	x	CS Research	Onyx	V7	ARPAVAX
+Cory	y	EECS Dept.	11/70	V7	UCBVAX
+EARVAX	z	EECS Dept.	VAX/750	V7	ESVAX
+
+(the following machines are not connected or do not exist yet)
+Phonology ?	Linguistics	11/45	V6		?
+
+(Letters used: A-P, R-Z (total of 25))
+(Letters free: Q (total of 1))
+
+The links between  A-C, C-E, C-G, G-D, G-F, G-CSVAX and CSVAX-ARPAVAX 
+run at 9600 baud, all others run at 1200 Baud.
+
+Files 200,000 to 500,000 bytes are only transmitted between midnight and 6AM.
+There is a file-length limit of 500,000 bytes.
+Larger files must be split up (use the split command).
+
+
+Free Commands (log in as user "network", no password):
+
+	bpq		news		vpq		yank
+	epq		ps		w
+	finger 		pstat		wc
+	help		rcs		where
+	lpq		rcslog		who
+	netlog		rcsq		whom
+	netq		trq		write		
+
+In addition, the "lpr" command is free on the Ingres machines.
+Sending mail between machines, and netlpr between the Computer Center machines
+is free.  On the EARVAX, there are no free commands (but sending mail is free).
+The netlpr command to Cory will allow the -c option to "epr" and "bpr",
+and to the CSVAX will allow "vpr".
 
 	For RAND, these tables are:
 
@@ -263,7 +312,7 @@ static struct tt {
 /* Computer Center A Machine (A) */
 char configA[] = {		/* to get to i, config[i] */
 	'a','c','c','c','c',		/* a,b,c,d,e */
-	'c','c',000,'c','c',		/* f,g,h,i,j */
+	'c','c','c','c','c',		/* f,g,h,i,j */
 	'c','c','c','c','c',		/* k,l,m,n,o */
 	'c','c','c','c','c',		/* p,q,r,s,t */
 	'c','c','c','c','c',		/* u,v,w,x,y */
@@ -272,7 +321,7 @@ char configA[] = {		/* to get to i, config[i] */
 /* Computer Center B Machine (B) */
 char configB[] = {		/* to get to i, config[i] */
 	'e','b','e','e','e',		/* a,b,c,d,e */
-	'e','e',000,'e','e',		/* f,g,h,i,j */
+	'e','e','e','e','e',		/* f,g,h,i,j */
 	'e','e','e','e','e',		/* k,l,m,n,o */
 	'e','e','e','e','e',		/* p,q,r,s,t */
 	'e','e','e','e','e',		/* u,v,w,x,y */
@@ -281,16 +330,16 @@ char configB[] = {		/* to get to i, config[i] */
 /* Computer Center C Machine (C) */
 char configC[] = {		/* to get to i, config[i] */
 	'a','e','c','g','e',		/* a,b,c,d,e */
-	'g','g',000,'g','g',		/* f,g,h,i,j */
+	'g','g','g','g','g',		/* f,g,h,i,j */
 	'g','g','g','g','g',		/* k,l,m,n,o */
 	'g','e','g','e','g',		/* p,q,r,s,t */
-	'g','g','g','g','y',		/* u,v,w,x,y */
+	'g','g','g','g','g',		/* u,v,w,x,y */
 	'g',0				/* z */
 	};
 /* Computer Center D Machine (D) */
 char configD[] = {		/* to get to i, config[i] */
 	'g','g','g','d','g',		/* a,b,c,d,e */
-	'g','g',000,'g','g',		/* f,g,h,i,j */
+	'g','g','g','g','g',		/* f,g,h,i,j */
 	'g','g','g','g','g',		/* k,l,m,n,o */
 	'g','g','g','g','g',		/* p,q,r,s,t */
 	'g','g','g','g','g',		/* u,v,w,x,y */
@@ -299,16 +348,16 @@ char configD[] = {		/* to get to i, config[i] */
 /* Computer Center E Machine (E) */
 char configE[] = {		/* to get to i, config[i] */
 	'c','b','c','c','e',		/* a,b,c,d,e */
-	'g','g',000,'g','g',		/* f,g,h,i,j */
-	'g','g','g','g','g',		/* k,l,m,n,o */
-	'g','e','g','s','g',		/* p,q,r,s,t */
-	'g','g','g','g','c',		/* u,v,w,x,y */
-	'g',0				/* z */
+	'c','c','c','c','c',		/* f,g,h,i,j */
+	'c','c','c','c','c',		/* k,l,m,n,o */
+	'c','c','c','s','c',		/* p,q,r,s,t */
+	'c','c','c','c','c',		/* u,v,w,x,y */
+	'c',0				/* z */
 	};
 /* Computer Center F Machine (F) */
 char configF[] = {		/* to get to i, config[i] */
 	'g','g','g','g','g',		/* a,b,c,d,e */
-	'f','g',000,'g','g',		/* f,g,h,i,j */
+	'f','g','g','g','g',		/* f,g,h,i,j */
 	'g','g','g','g','g',		/* k,l,m,n,o */
 	'g','g','g','g','g',		/* p,q,r,s,t */
 	'g','g','g','g','g',		/* u,v,w,x,y */
@@ -317,16 +366,25 @@ char configF[] = {		/* to get to i, config[i] */
 /* Computer Center G Machine (Comp Center VAX) */
 char configG[] = {		/* to get to i, config[i] */
 	'c','c','c','d','c',		/* a,b,c,d,e */
-	'f','g',000,'k','k',		/* f,g,h,i,j */
+	'f','g','h','k','k',		/* f,g,h,i,j */
 	'k','k','k','k','k',		/* k,l,m,n,o */
-	'k','c','k','c','k',		/* p,q,r,s,t */
+	'k','k','k','c','k',		/* p,q,r,s,t */
 	'k','k','k','k','c',		/* u,v,w,x,y */
 	'k',0				/* z */
+	};
+/* Computer Center Jade Machine (H) */
+char configH[] = {		/* to get to i, config[i] */
+	'g','g','g','g','g',		/* a,b,c,d,e */
+	'g','g','h','g','g',		/* f,g,h,i,j */
+	'g','g','g','g','g',		/* k,l,m,n,o */
+	'g','g','g','g','g',		/* p,q,r,s,t */
+	'g','g','g','g','g',		/* u,v,w,x,y */
+	'g',0				/* z */
 	};
 /* Project INGRES 11/70 (Ing70) */
 char configI[] = {		/* to get to i, config[i] */
 	'j','j','j','j','j',		/* a,b,c,d,e */
-	'j','j',000,'i','j',		/* f,g,h,i,j */
+	'j','j','j','i','j',		/* f,g,h,i,j */
 	'j','j','j','j','j',		/* k,l,m,n,o */
 	'j','j','j','j','j',		/* p,q,r,s,t */
 	'j','j','j','j','j',		/* u,v,w,x,y */
@@ -335,7 +393,7 @@ char configI[] = {		/* to get to i, config[i] */
 /* Project INGRES VAX (IngVAX) */
 char configJ[] = {		/* to get to i, config[i] */
 	'k','k','k','k','k',		/* a,b,c,d,e */
-	'k','k',000,'i','k',		/* f,g,h,i,j */
+	'k','k','k','i','k',		/* f,g,h,i,j */
 	'k','k','k','k','k',		/* k,l,m,n,o */
 	'k','k','k','k','k',		/* p,q,r,s,t */
 	'k','k','k','k','k',		/* u,v,w,x,y */
@@ -344,16 +402,16 @@ char configJ[] = {		/* to get to i, config[i] */
 /* UUCP gateway VAX (ucbvax) */
 char configK[] = {		/* to get to i, config[i] */
 	'g','g','g','g','g',		/* a,b,c,d,e */
-	'g','g',000,'j','j',		/* f,g,h,i,j */
+	'g','g','g','j','j',		/* f,g,h,i,j */
 	'k','p','p','n','p',		/* k,l,m,n,o */
-	'p','g','r','g','w',		/* p,q,r,s,t */
-	'u','v','w','x','p',		/* u,v,w,x,y */
+	'p',000,'r','g','w',		/* p,q,r,s,t */
+	'u','v','w','x','y',		/* u,v,w,x,y */
 	'p',0				/* z */
 	};
 /* Brodersen EECS VLSI VAX (VLSI) */
 char configL[] = {		/* to get to i, config[i] */
 	'm','m','m','m','m',		/* a,b,c,d,e */
-	'm','m',000,'m','m',		/* f,g,h,i,j */
+	'm','m','m','m','m',		/* f,g,h,i,j */
 	'm','l','m','m','m',		/* k,l,m,n,o */
 	'm','m','m','m','m',		/* p,q,r,s,t */
 	'm','m','m','m','m',		/* u,v,w,x,y */
@@ -362,7 +420,7 @@ char configL[] = {		/* to get to i, config[i] */
 /* Sakrison's Image Project 11/40 (Image) */
 char configM[] = {		/* to get to i, config[i] */
 	'o','o','o','o','o',		/* a,b,c,d,e */
-	'o','o',000,'o','o',		/* f,g,h,i,j */
+	'o','o','o','o','o',		/* f,g,h,i,j */
 	'o','l','m','o','o',		/* k,l,m,n,o */
 	'o','o','o','o','o',		/* p,q,r,s,t */
 	'o','o','o','o','o',		/* u,v,w,x,y */
@@ -371,7 +429,7 @@ char configM[] = {		/* to get to i, config[i] */
 /* Fatemans Applied Math VAX (Kim) */
 char configN[] = {		/* to get to i, config[i] */
 	'k','k','k','k','k',		/* a,b,c,d,e */
-	'k','k',000,'k','k',		/* f,g,h,i,j */
+	'k','k','k','k','k',		/* f,g,h,i,j */
 	'k','k','k','n','k',		/* k,l,m,n,o */
 	'k','k','k','k','k',		/* p,q,r,s,t */
 	'k','k','k','k','k',		/* u,v,w,x,y */
@@ -379,35 +437,35 @@ char configN[] = {		/* to get to i, config[i] */
 	};
 /* Pfeister - Pollack - Sangiovanni Optimization VAX (ESVAX) */
 char configO[] = {		/* to get to i, config[i] */
-	'y','y','y','p','y',		/* a,b,c,d,e */
-	'g','g',000,'p','p',		/* f,g,h,i,j */
+	'p','p','p','p','p',		/* a,b,c,d,e */
+	'p','p','p','p','p',		/* f,g,h,i,j */
 	'p','m','m','p','o',		/* k,l,m,n,o */
-	'p','y','p','y','p',		/* p,q,r,s,t */
-	'p','p','p','p','y',		/* u,v,w,x,y */
+	'p','p','p','p','p',		/* p,q,r,s,t */
+	'p','p','p','p','p',		/* u,v,w,x,y */
 	'z',0				/* z */
 	};
 /* Newton's CAD machine (VAX 11/780) */
 char configP[] = {		/* to get to i, config[i] */
 	'k','k','k','k','k',		/* a,b,c,d,e */
-	'k','k',000,'k','k',		/* f,g,h,i,j */
+	'k','k','k','k','k',		/* f,g,h,i,j */
 	'k','o','o','k','o',		/* k,l,m,n,o */
 	'p','k','k','k','k',		/* p,q,r,s,t */
-	'k','k','k','k','o',		/* u,v,w,x,y */
+	'k','k','k','k','k',		/* u,v,w,x,y */
 	'o',0				/* z */
 	};
 /* Computer Center Q Machine (Q) */
 char configQ[] = {		/* to get to i, config[i] */
-	'e','e','e','e','e',		/* a,b,c,d,e */
-	'e','e',000,'e','e',		/* f,g,h,i,j */
-	'e','e','e','e','e',		/* k,l,m,n,o */
-	'e','q','e','e','e',		/* p,q,r,s,t */
-	'e','e','e','e','e',		/* u,v,w,x,y */
-	'e',0				/* z */
+	'k','k','k','k','k',		/* a,b,c,d,e */
+	'k','k','k','k','k',		/* f,g,h,i,j */
+	'k','k','k','k','k',		/* k,l,m,n,o */
+	'k','q','k','k','k',		/* p,q,r,s,t */
+	'k','k','k','k','k',		/* u,v,w,x,y */
+	'k',0				/* z */
 	};
 /* Fabry's ARPA support VAX - ARPAVAX */
 char configR[] = {		/* to get to i, config[i] */
 	'k','k','k','k','k',		/* a,b,c,d,e */
-	'k','k',000,'k','k',		/* f,g,h,i,j */
+	'k','k','k','k','k',		/* f,g,h,i,j */
 	'k','k','k','k','k',		/* k,l,m,n,o */
 	'k','k','r','k','k',		/* p,q,r,s,t */
 	'k','k','k','k','k',		/* u,v,w,x,y */
@@ -416,7 +474,7 @@ char configR[] = {		/* to get to i, config[i] */
 /* Survey Research Center 11/40 (SRC) */
 char configS[] = {		/* to get to i, config[i] */
 	'e','e','e','e','e',		/* a,b,c,d,e */
-	'e','e',000,'e','e',		/* f,g,h,i,j */
+	'e','e','e','e','e',		/* f,g,h,i,j */
 	'e','e','e','e','e',		/* k,l,m,n,o */
 	'e','e','e','s','e',		/* p,q,r,s,t */
 	'e','e','e','e','e',		/* u,v,w,x,y */
@@ -424,17 +482,17 @@ char configS[] = {		/* to get to i, config[i] */
 	};
 /* Math-Stat Departement machine 11-45 (MathStat) */
 char configT[] = {		/* to get to i, config[i] */
-	'y','y','y','y','y',		/* a,b,c,d,e */
-	'y','y',000,'y','y',		/* f,g,h,i,j */
-	'y','y','y','y','y',		/* k,l,m,n,o */
-	'y','y','y','y','t',		/* p,q,r,s,t */
-	'y','y','w','y','y',		/* u,v,w,x,y */
-	'y',0				/* z */
+	'w','w','w','w','w',		/* a,b,c,d,e */
+	'w','w','w','w','w',		/* f,g,h,i,j */
+	'w','w','w','w','w',		/* k,l,m,n,o */
+	'w','w','w','w','t',		/* p,q,r,s,t */
+	'w','w','w','w','w',		/* u,v,w,x,y */
+	'w',0				/* z */
 	};
 /* ARPANET gateway (ucbc70) */
 char configU[] = {		/* to get to i, config[i] */
 	'k','k','k','k','k',		/* a,b,c,d,e */
-	'k','k',000,'k','k',		/* f,g,h,i,j */
+	'k','k','k','k','k',		/* f,g,h,i,j */
 	'k','k','k','k','k',		/* k,l,m,n,o */
 	'k','k','k','k','k',		/* p,q,r,s,t */
 	'u','k','k','k','k',		/* u,v,w,x,p */
@@ -443,16 +501,16 @@ char configU[] = {		/* to get to i, config[i] */
 /* EECS Research (Fateman - Ernie) VAX (CSVAX) */
 char configV[] = {		/* to get to i, config[i] */
 	'k','k','k','k','k',		/* a,b,c,d,e */
-	'k','k',000,'k','k',		/* f,g,h,i,j */
+	'k','k','k','k','k',		/* f,g,h,i,j */
 	'k','k','k','k','k',		/* k,l,m,n,o */
 	'k','k','k','k','k',		/* p,q,r,s,t */
-	'k','v','k','k','k',		/* u,v,w,x,z */
+	'k','v','k','k','k',		/* u,v,w,x,p */
 	'k',0				/* z */
 	};
 /* Statistics VAX 11/780 (ucbstatvax) */
 char configW[] = {		/* to get to i, config[i] */
 	'k','k','k','k','k',		/* a,b,c,d,e */
-	'k','k',000,'k','k',		/* f,g,h,i,j */
+	'k','k','k','k','k',		/* f,g,h,i,j */
 	'k','k','k','k','k',		/* k,l,m,n,o */
 	'k','k','k','k','t',		/* p,q,r,s,t */
 	'k','k','w','k','k',		/* u,v,w,x,p */
@@ -461,7 +519,7 @@ char configW[] = {		/* to get to i, config[i] */
 /* CS Research Onyx Computer */
 char configX[] = {		/* to get to i, config[i] */
 	'k','k','k','k','k',		/* a,b,c,d,e */
-	'k','k',000,'k','k',		/* f,g,h,i,j */
+	'k','k','k','k','k',		/* f,g,h,i,j */
 	'k','k','k','k','k',		/* k,l,m,n,o */
 	'k','k','k','k','k',		/* p,q,r,s,t */
 	'k','k','k','x','k',		/* u,v,w,x,y */
@@ -469,17 +527,17 @@ char configX[] = {		/* to get to i, config[i] */
 	};
 /* EECS Instructional 11/70 (199 Cory) (Cory) */
 char configY[] = {		/* to get to i, config[i] */
-	'c','c','c','c','c',		/* a,b,c,d,e */
-	'c','c',000,'o','o',		/* f,g,h,i,j */
-	'o','o','o','o','o',		/* k,l,m,n,o */
-	'o','c','o','c','t',		/* p,q,r,s,t */
-	'o','o','o','o','y',		/* u,v,w,x,y */
-	'o',0				/* z */
+	'k','k','k','k','k',		/* a,b,c,d,e */
+	'k','k','k','k','k',		/* f,g,h,i,j */
+	'k','k','k','k','k',		/* k,l,m,n,o */
+	'k','k','k','k','k',		/* p,q,r,s,t */
+	'k','k','k','k','y',		/* u,v,w,x,y */
+	'k',0				/* z */
 	};
 /* EECS Departmental 11/40  (EECS40) */
 char configZ[] = {		/* to get to i, config[i] */
 	'o','o','o','o','o',		/* a,b,c,d,e */
-	'o','o',000,'o','o',		/* f,g,h,i,j */
+	'o','o','o','o','o',		/* f,g,h,i,j */
 	'o','o','o','o','o',		/* k,l,m,n,o */
 	'o','o','o','o','o',		/* p,q,r,s,t */
 	'o','o','o','o','o',		/* u,v,w,x,y */
@@ -494,19 +552,19 @@ char configZ[] = {		/* to get to i, config[i] */
 */
 char machtype[]= {
 	M_CC, M_CC, M_CC, M_CC, M_CC,			/* a,b,c,d,e */
-	M_CC, M_CC, 0, M_INGRES, M_INGRES,		/* f,g,h,i,j */
+	M_CC, M_CC, M_CC, M_INGRES, M_INGRES,		/* f,g,h,i,j */
 	M_OTHER, M_OTHER, M_OTHER, M_OTHER, M_OTHER,	/* k,l,m,n,o */
-	M_OTHER, M_OTHER, M_OTHER, M_OTHER, M_OTHER,	/* p,q,r,s,t */
+	M_OTHER, M_OTHER, M_OTHER, M_CC, M_OTHER,	/* p,q,r,s,t */
 	M_OTHER, M_OTHER, M_OTHER, M_OTHER, M_OTHER,	/* u,v,w,x,y */
 	M_OTHER, 0};					/* z */
 
 /* this is basically the default machine for each local machine */
 char remtable[] = {
 	'c','e','g','g','c',		/* a,b,c,d,e */
-	'g','k',000,'j','k',		/* f,g,h,i,j */
-	'v','o','o','k','p',		/* k,l,m,n,o */
-	'k','e','k','e','w',		/* p,q,r,s,t */
-	'k','k','k','k','o',		/* u,v,w,x,y */
+	'g','k','g','j','k',		/* f,g,h,i,j */
+	'v','m','o','k','p',		/* k,l,m,n,o */
+	'k','k','k','e','w',		/* p,q,r,s,t */
+	'k','k','k','k','k',		/* u,v,w,x,y */
 	'o',0				/* z */
 	};
 /* bad login names */
@@ -533,44 +591,65 @@ static struct tt {
 	"ucbcfo-f",	'f',
 	"G",		'g',
 	"ucbcfo-g",	'g',
+	"ucbjade",	'h',
+	"jade",		'h',
 	"H",		'h',
-	"ucbcfo-h",	'h',
 	"Ing70",	'i',
 	"ucbing70",	'i',
+	"I",		'i',
 	"IngVAX",	'j',
 	"ucbingres",	'j',
+	"J",		'j',
 	"ucbvax",	'k',
 	"UCBVAX",	'k',
-	"VLSI",		'l',
-	"ucbvlsi",	'l',
+	"K",		'k',
+	"OZ",		'l',
+	"ucboz",	'l',
+	"L",		'l',
 	"Image",	'm',
 	"ucbimage",	'm',
+	"ucbmedea",	'm',
+	"medea",	'm',
+	"M",		'm',
 	"Kim",		'n',
 	"ucbkim",	'n',
+	"N",		'n',
 	"ESVAX",	'o',
 	"ucbopt",	'o',
+	"O",		'o',
 	"CAD",		'p',
 	"ucbcad",	'p',
+	"P",		'p',
 	"Q",		'q',
-	"ucbcfo-q",	'q',
 	"ARPAVAX",	'r',
 	"ucbarpa",	'r',
+	"R",		'r',
 	"SRC",		's',
 	"ucbsrc",	's',
+	"S",		's',
 	"MathStat",	't',
 	"ucbmathstat",	't',
+	"T",		't',
 	"ucbc70",	'u',
 	"C70",		'u',
+	"U",		'u',
 	"CSVAX",	'v',
 	"ucbernie",	'v',
+	"V",		'v',
 	"ucbstatvax",	'w',
 	"StatVax",	'w',
+	"W",		'w',
 	"ucbonyx",	'x',
 	"Onyx",		'x',
+	"X",		'x',
 	"Cory",		'y',
 	"ucbcory",	'y',
+	"Y",		'y',
+	"EARVAX", 	'z',
 	"EECS40", 	'z',
 	"ucbeecs40", 	'z',
+	"ucbear", 	'z',
+	"Z",	 	'z',
 	0, 		0
 	};
 # endif
