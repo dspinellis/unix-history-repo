@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	From:	@(#)nfs_serv.c	7.40 (Berkeley) 5/15/91
- *	$Id: nfs_serv.c,v 1.3 1993/09/09 22:06:03 rgrimes Exp $
+ *	$Id: nfs_serv.c,v 1.4 1993/11/25 01:36:50 wollman Exp $
  */
 
 /*
@@ -72,6 +72,7 @@
 #include "nfs.h"
 #include "xdr_subs.h"
 #include "nfsm_subs.h"
+#include "nfsnode.h"
 
 /* Defs */
 #define	TRUE	1
@@ -616,7 +617,7 @@ nfsrv_create(mrep, md, dpos, cred, xid, mrq, repstat, p)
 			FREE(nd.ni_pnbuf, M_NAMEI);
 		} else if (vap->va_type == VCHR || vap->va_type == VBLK ||
 			vap->va_type == VFIFO) {
-			if (vap->va_type == VCHR && rdev == 0xffffffff)
+			if (vap->va_type == VCHR && rdev == 0xffffffffUL)
 				vap->va_type = VFIFO;
 			if (vap->va_type == VFIFO) {
 #ifndef FIFO

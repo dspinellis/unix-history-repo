@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ioctl.h	7.19 (Berkeley) 6/26/91
- *	$Id: ioctl.h,v 1.4 1993/10/12 04:57:33 rgrimes Exp $
+ *	$Id: ioctl.h,v 1.5 1993/11/14 23:29:49 ache Exp $
  */
 
 #ifndef	_IOCTL_H_
@@ -71,11 +71,11 @@ struct ttysize {
 #define	IOCGROUP(x)	(((x) >> 8) & 0xff)
 
 #define	IOCPARM_MAX	NBPG		/* max size of ioctl, mult. of NBPG */
-#define	IOC_VOID	0x20000000	/* no parameters */
-#define	IOC_OUT		0x40000000	/* copy out parameters */
-#define	IOC_IN		0x80000000	/* copy in parameters */
+#define	IOC_VOID	0x20000000UL	/* no parameters */
+#define	IOC_OUT		0x40000000UL	/* copy out parameters */
+#define	IOC_IN		0x80000000UL	/* copy in parameters */
 #define	IOC_INOUT	(IOC_IN|IOC_OUT)
-#define	IOC_DIRMASK	0xe0000000	/* mask for IN/OUT/VOID */
+#define	IOC_DIRMASK	0xe0000000UL	/* mask for IN/OUT/VOID */
 
 #define	_IOC(inout,group,num,len) \
 	(inout | ((len & IOCPARM_MASK) << 16) | ((group) << 8) | (num))

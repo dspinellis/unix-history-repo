@@ -45,7 +45,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	$Id: tty_ring.c,v 1.2 1993/10/16 15:25:01 rgrimes Exp $
+ *	$Id: tty_ring.c,v 1.3 1993/11/25 01:33:30 wollman Exp $
  */
 
 #include "param.h"
@@ -53,11 +53,6 @@
 #include "buf.h"
 #include "ioctl.h"
 #include "tty.h"
-
-/*
- * XXX - put this in tty.h someday.
- */
-size_t rb_write __P((struct ringb *to, char *buf, size_t nfrom));
 
 int
 putc(c, rbp)

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)sys_generic.c	7.30 (Berkeley) 5/30/91
- *	$Id: sys_generic.c,v 1.4 1993/10/16 15:24:47 rgrimes Exp $
+ *	$Id: sys_generic.c,v 1.5 1993/11/25 01:33:20 wollman Exp $
  */
 
 #include "param.h"
@@ -45,6 +45,7 @@
 #include "kernel.h"
 #include "stat.h"
 #include "malloc.h"
+#include "signalvar.h"
 #ifdef KTRACE
 #include "ktrace.h"
 #endif

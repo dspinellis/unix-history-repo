@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)inode.h	7.17 (Berkeley) 5/8/91
- *	$Id: inode.h,v 1.4 1993/11/07 17:53:38 wollman Exp $
+ *	$Id: inode.h,v 1.5 1993/11/25 01:38:21 wollman Exp $
  */
 
 #ifndef _UFS_INODE_H_
@@ -241,6 +241,41 @@ extern void iput(struct inode *);
 extern void ilock(struct inode *);
 extern void iunlock(struct inode *);
 extern void dirbad(struct inode *, off_t, char *);
+
+extern int alloc(struct inode *, daddr_t, daddr_t, int, daddr_t *);
+extern int realloccg(struct inode *, off_t, daddr_t, int, int, struct buf **);
+extern int ialloc(struct inode *, ino_t, int, struct ucred *, struct inode **);
+extern daddr_t blkpref(struct inode *, daddr_t, int, daddr_t *);
+extern u_long hashalloc(struct inode *, int, long, int, 
+			u_long (*)(struct inode *, int, long, int));
+extern daddr_t fragextend(struct inode *, int, long, int, int);
+extern daddr_t alloccg(struct inode *, int, daddr_t, int);
+
+struct cg;			/* I really don't want to know why */
+struct direct;			/* this header is required by NFS... */
+
+extern daddr_t alloccgblk(struct fs *, struct cg *, daddr_t);
+extern ino_t ialloccg(struct inode *, int, daddr_t, int);
+extern int ufs_lookup(struct vnode *, struct nameidata *, struct proc *);
+extern int dirbadentry(struct direct *, int);
+extern int direnter(struct inode *, struct nameidata *);
+extern int dirremove(struct nameidata *);
+extern int dirrewrite(struct inode *, struct inode *, struct nameidata *);
+extern int blkatoff(struct inode *, off_t, char **, struct buf **);
+extern int dirempty(struct inode *, ino_t, struct ucred *);
+extern int checkpath(struct inode *, struct inode *, struct ucred *);
+
+extern void ufs_init(void);
+extern int iget(struct inode *, ino_t, struct inode **);
+extern int ufs_inactive(struct vnode *, struct proc *);
+extern int ufs_reclaim(struct vnode *);
+extern int iupdat(struct inode *, struct timeval *, struct timeval *,
+		  int);
+extern int itrunc(struct inode *, u_long, int);
+extern int indirtrunc(struct inode *, daddr_t, daddr_t, int, long *);
+
+extern int bmap(struct inode *, daddr_t, daddr_t *);
+extern int balloc(struct inode *, daddr_t, int, struct buf **, int);
 
 #endif /* KERNEL */
 #endif /* _UFS_INODE_H_ */

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tp_iso.c	7.11 (Berkeley) 5/6/91
- *	$Id: tp_iso.c,v 1.3 1993/10/16 21:05:47 rgrimes Exp $
+ *	$Id: tp_iso.c,v 1.4 1993/11/25 01:36:08 wollman Exp $
  */
 
 /***********************************************************
@@ -109,6 +109,10 @@ SOFTWARE.
 #include "tp_tpdu.h"
 #include "tp_clnp.h"
 #include "cltp_var.h"
+
+int clnp_output();		/* XXX */
+void tpclnp_ctlinput();		/* XXX */
+int tp_driver();		/* XXX */
 
 /*
  * CALLED FROM:
@@ -630,7 +634,7 @@ tpiso_quench(isop)
  *	(cmd) is the type of ICMP error.   
  * 	(siso) is the address of the guy who sent the ER CLNPDU
  */
-ProtoHook
+void
 tpclnp_ctlinput(cmd, siso)
 	int cmd;
 	struct sockaddr_iso *siso;
@@ -647,9 +651,9 @@ tpclnp_ctlinput(cmd, siso)
 	ENDDEBUG
 
 	if (cmd < 0 || cmd > PRC_NCMDS)
-		return 0;
+		return;
 	if (siso->siso_family != AF_ISO)
-		return 0;
+		return;
 	switch (cmd) {
 
 		case	PRC_QUENCH2:
@@ -691,7 +695,7 @@ tpclnp_ctlinput(cmd, siso)
 		iso_pcbnotify(&tp_isopcb, siso, (int)inetctlerrmap[cmd], tpiso_abort);
 		break;
 	}
-	return 0;
+	return;
 }
 /*
  * XXX - Variant which is called by clnp_er.c with an isoaddr rather

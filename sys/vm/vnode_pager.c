@@ -36,7 +36,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vnode_pager.c	7.5 (Berkeley) 4/20/91
- *	$Id: vnode_pager.c,v 1.3 1993/11/07 17:54:30 wollman Exp $
+ *	$Id: vnode_pager.c,v 1.4 1993/11/25 01:39:19 wollman Exp $
  */
 
 /*
@@ -50,6 +50,7 @@
 #if NVNODEPAGER > 0
 
 #include "param.h"
+#include "systm.h"
 #include "proc.h"
 #include "malloc.h"
 #include "vnode.h"
@@ -72,6 +73,8 @@ struct pagerops vnodepagerops = {
 	vnode_pager_putpage,
 	vnode_pager_haspage
 };
+
+static int vnode_pager_io(vn_pager_t, vm_page_t, enum uio_rw);
 
 queue_head_t	vnode_pager_list;	/* list of managed vnodes */
 
@@ -419,7 +422,7 @@ vnode_pager_uncache(vp)
 	return(uncached);
 }
 
-int
+static int
 vnode_pager_io(vnp, m, rw)
 	register vn_pager_t vnp;
 	vm_page_t m;
@@ -489,7 +492,7 @@ vnode_pager_io(vnp, m, rw)
 		if (count == 0)
 			error = EINVAL;
 		else if (count != PAGE_SIZE && rw == UIO_READ)
-			bzero(kva + count, PAGE_SIZE - count);
+			bzero((caddr_t)(kva + count), PAGE_SIZE - count);
 	}
 	vm_pager_unmap_page(kva);
 	return (error ? VM_PAGER_FAIL : VM_PAGER_OK);

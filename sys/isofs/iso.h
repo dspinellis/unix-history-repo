@@ -1,5 +1,5 @@
 /*
- *	$Id: iso.h,v 1.3 1993/11/07 17:46:01 wollman Exp $
+ *	$Id: iso.h,v 1.4 1993/11/25 01:32:16 wollman Exp $
  */
 
 #ifndef _ISOFS_ISO_H_
@@ -113,5 +113,17 @@ int isofs_sync __P((struct mount *mp, int waitfor));
 int isofs_fhtovp __P((struct mount *mp, struct fid *fhp, struct vnode **vpp));
 int isofs_vptofh __P((struct vnode *vp, struct fid *fhp));
 void isofs_init __P((void));
+
+/* From isofs_util.c: */
+extern int isonum_711(char *);
+extern int isonum_712(char *);
+extern int isonum_721(char *);
+extern int isonum_722(char *);
+extern int isonum_723(char *);
+extern int isonum_731(u_char *);
+extern int isonum_732(u_char *);
+extern int isonum_733(u_char *);
+extern int isofncmp(char *, int, char *, int);
+extern void isofntrans(char *, int, char *, int *);
 
 #endif /* _ISOFS_ISO_H_ */

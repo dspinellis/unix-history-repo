@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)icmp_var.h	7.5 (Berkeley) 6/28/90
- *	$Id: icmp_var.h,v 1.3 1993/11/07 17:47:45 wollman Exp $
+ *	$Id: icmp_var.h,v 1.4 1993/11/18 00:08:11 wollman Exp $
  */
 
 #ifndef _NETINET_ICMP_VAR_H_
@@ -60,5 +60,9 @@ struct	icmpstat {
 
 #ifdef KERNEL
 extern struct	icmpstat icmpstat;
+extern int icmpprintfs;
+extern int ipbroadcastecho;
+extern int ipmaskagent;
+extern struct sockaddr_in icmpmask;
 #endif
 #endif /* _NETINET_ICMP_VAR_H_ */

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tcp_subr.c	7.20 (Berkeley) 12/1/90
- *	$Id: tcp_subr.c,v 1.4 1993/11/18 00:08:22 wollman Exp $
+ *	$Id: tcp_subr.c,v 1.5 1993/11/25 01:35:16 wollman Exp $
  */
 
 #include "param.h"
@@ -60,16 +60,6 @@
 #include "tcp_var.h"
 #include "tcpip.h"
 
-/* patchable/settable parameters for tcp */
-int	tcp_ttl = TCP_TTL;
-int 	tcp_mssdflt = TCP_MSS;
-int 	tcp_rttdflt = TCPTV_SRTTDFLT / PR_SLOWHZ;
-
-extern	struct inpcb *tcp_last_inpcb;
-
-#ifdef KPROF
-int	tcp_acounts[TCP_NSTATES][PRU_NREQ];
-#endif
 tcp_seq	tcp_iss;
 struct	inpcb tcb;
 struct	tcpstat tcpstat;
@@ -415,7 +405,7 @@ tcp_notify(inp, error)
  * In the immortal words of Ken and Dennis, ``You are not expected to
  * understand this.''
  */
-void /* grrr... should be void... */
+void
 tcp_checkmtu(struct inpcb *inp, int error) {
 #ifdef MTUDISC
   /*

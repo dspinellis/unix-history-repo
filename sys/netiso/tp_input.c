@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	@(#)tp_input.c	7.19 (Berkeley) 6/27/91
- *	$Id: tp_input.c,v 1.2 1993/10/16 21:05:44 rgrimes Exp $
+ *	$Id: tp_input.c,v 1.3 1993/11/25 01:36:05 wollman Exp $
  */
 
 /***********************************************************
@@ -348,7 +348,7 @@ tp_newsocket(so, fname, cons_channel, class_to_use, netservice)
 			 * the passive open case
 			 */
 			tpcb->tp_dont_change_params = 0;
-			err = tp_route_to( m, tpcb, cons_channel);
+			err = tp_route_to( m, tpcb, (caddr_t)cons_channel);
 			m_free(m);
 
 			if (!err)
@@ -375,7 +375,7 @@ tpcons_output()
 {
 	return(0);
 }
-#endif !CONS
+#endif /* !CONS */
 
 /* 
  * NAME: 	tp_input()
@@ -917,7 +917,7 @@ again:
 			/* we've now made the error reporting thing check for
 			multiple channels and not close out if more than
 			one in use */
-#endif old_history
+#endif /* old_history */
 		{
 
 			CHECK( ((int)dref <= 0 || dref >= N_TPREF) ,
@@ -1234,7 +1234,7 @@ again:
 #else
 				e.ATTR(AK_TPDU).e_cdt = hdr->tpdu_AKcdtX;
 				e.ATTR(AK_TPDU).e_seq = hdr->tpdu_AKseqX;
-#endif BYTE_ORDER
+#endif /* BYTE_ORDER */
 			} else {
 				e.ATTR(AK_TPDU).e_cdt = hdr->tpdu_AKcdt;
 				e.ATTR(AK_TPDU).e_seq = hdr->tpdu_AKseq;
@@ -1259,7 +1259,7 @@ again:
 				e.ATTR(XAK_TPDU).e_seq = seqeotX.s_seq;
 #else
 				e.ATTR(XAK_TPDU).e_seq = hdr->tpdu_XAKseqX;
-#endif BYTE_ORDER
+#endif /* BYTE_ORDER */
 			} else {
 				e.ATTR(XAK_TPDU).e_seq = hdr->tpdu_XAKseq;
 			}
@@ -1277,7 +1277,7 @@ again:
 				e.ATTR(XPD_TPDU).e_seq = seqeotX.s_seq;
 #else
 				e.ATTR(XPD_TPDU).e_seq = hdr->tpdu_XPDseqX;
-#endif BYTE_ORDER
+#endif /* BYTE_ORDER */
 			} else {
 				e.ATTR(XPD_TPDU).e_seq = hdr->tpdu_XPDseq;
 			}
@@ -1312,7 +1312,7 @@ again:
 #else
 				e.ATTR(DT_TPDU).e_seq = hdr->tpdu_DTseqX;
 				e.ATTR(DT_TPDU).e_eot = hdr->tpdu_DTeotX;
-#endif BYTE_ORDER
+#endif /* BYTE_ORDER */
 			} else {
 				e.ATTR(DT_TPDU).e_seq = hdr->tpdu_DTseq;
 				e.ATTR(DT_TPDU).e_eot = hdr->tpdu_DTeot;

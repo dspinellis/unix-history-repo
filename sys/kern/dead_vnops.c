@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)dead_vnops.c	7.13 (Berkeley) 4/15/91
- *	$Id: dead_vnops.c,v 1.3 1993/11/07 21:44:40 wollman Exp $
+ *	$Id: dead_vnops.c,v 1.4 1993/11/25 01:32:42 wollman Exp $
  */
 
 #include "param.h"
@@ -41,6 +41,8 @@
 #include "errno.h"
 #include "namei.h"
 #include "buf.h"
+
+static int chkvnlock(struct vnode *);
 
 /*
  * Prototypes for dead operations on vnodes.
@@ -417,7 +419,7 @@ dead_nullop()
  * We have to wait during times when the vnode is
  * in a state of change.
  */
-int
+static int
 chkvnlock(vp)
 	register struct vnode *vp;
 {

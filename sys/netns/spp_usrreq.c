@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)spp_usrreq.c	7.15 (Berkeley) 6/27/91
- *	$Id: spp_usrreq.c,v 1.3 1993/11/07 17:50:39 wollman Exp $
+ *	$Id: spp_usrreq.c,v 1.4 1993/11/25 01:36:36 wollman Exp $
  */
 
 #include "param.h"
@@ -58,8 +58,8 @@
 #include "spp_var.h"
 #include "spp_debug.h"
 
-static void spp_quench(struct nspcb *);
-static void spp_abort(struct nspcb *);
+static void spp_quench(struct nspcb *, int);
+static void spp_abort(struct nspcb *, int);
 static void spp_setpersist(struct sppcb *);
 static void spp_template(struct sppcb *);
 
@@ -299,8 +299,8 @@ int spprexmtthresh = 3;
  */
 int
 spp_reass(cb, si)
-register struct sppcb *cb;
-register struct spidp *si;
+	register struct sppcb *cb;
+	register struct spidp *si;
 {
 	register struct spidp_q *q;
 	register struct mbuf *m;
@@ -592,8 +592,6 @@ spp_ctlinput(cmd, arg)
 	caddr_t arg;
 {
 	struct ns_addr *na;
-	extern u_char nsctlerrmap[];
-	extern struct nspcb *idp_drop();
 	struct ns_errp *errp = 0;
 	struct nspcb *nsp;
 	struct sockaddr_ns *sns;
@@ -651,8 +649,9 @@ spp_ctlinput(cmd, arg)
  * to one packet.  We will gradually open it again as we proceed.
  */
 static void
-spp_quench(nsp)
+spp_quench(nsp, errno)
 	struct nspcb *nsp;
+	int errno;
 {
 	struct sppcb *cb = nstosppcb(nsp);
 
@@ -1273,10 +1272,11 @@ spp_ctloutput(req, so, level, name, value)
 
 /*ARGSUSED*/
 int
-spp_usrreq(so, req, m, nam, controlp)
+spp_usrreq(so, req, m, nam, controlp, dummy)
 	struct socket *so;
 	int req;
 	struct mbuf *m, *nam, *controlp;
+	struct mbuf *dummy;
 {
 	struct nspcb *nsp = sotonspcb(so);
 	register struct sppcb *cb = 0;
@@ -1526,12 +1526,13 @@ release:
 }
 
 int
-spp_usrreq_sp(so, req, m, nam, controlp)
+spp_usrreq_sp(so, req, m, nam, controlp, dummy)
 	struct socket *so;
 	int req;
 	struct mbuf *m, *nam, *controlp;
+	struct mbuf *dummy;
 {
-	int error = spp_usrreq(so, req, m, nam, controlp);
+	int error = spp_usrreq(so, req, m, nam, controlp, dummy);
 
 	if (req == PRU_ATTACH && error == 0) {
 		struct nspcb *nsp = sotonspcb(so);
@@ -1643,8 +1644,9 @@ spp_drop(cb, errno)
 }
 
 static void
-spp_abort(nsp)
+spp_abort(nsp, errno)
 	struct nspcb *nsp;
+	int errno;
 {
 
 	(void) spp_close((struct sppcb *)nsp->nsp_pcb);
@@ -1704,9 +1706,11 @@ spp_slowtimo()
 		for (i = 0; i < SPPT_NTIMERS; i++) {
 			if (cb->s_timer[i] && --cb->s_timer[i] == 0) {
 				(void) spp_usrreq(cb->s_nspcb->nsp_socket,
-				    PRU_SLOWTIMO, (struct mbuf *)0,
-				    (struct mbuf *)i, (struct mbuf *)0,
-				    (struct mbuf *)0);
+						  PRU_SLOWTIMO,
+						  (struct mbuf *)0,
+						  (struct mbuf *)i,
+						  (struct mbuf *)0,
+						  (struct mbuf *)0);
 				if (ipnxt->nsp_prev != ip)
 					goto tpgone;
 			}
@@ -1822,7 +1826,7 @@ spp_timers(cb, timer)
 	}
 	return (cb);
 }
-#ifndef lint
+#if 0
 int SppcbSize = sizeof (struct sppcb);
 int NspcbSize = sizeof (struct nspcb);
-#endif lint
+#endif

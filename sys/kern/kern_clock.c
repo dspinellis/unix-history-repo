@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_clock.c	7.16 (Berkeley) 5/9/91
- *	$Id: kern_clock.c,v 1.9 1993/11/09 17:07:27 ache Exp $
+ *	$Id: kern_clock.c,v 1.10 1993/11/25 01:32:51 wollman Exp $
  */
 
 #include "param.h"
@@ -40,6 +40,7 @@
 #include "callout.h"
 #include "kernel.h"
 #include "proc.h"
+#include "signalvar.h"
 #include "resourcevar.h"
 
 #include "machine/cpu.h"
@@ -52,7 +53,6 @@
 #endif
 
 static void gatherstats(clockframe *);
-
 
 /* From callout.h */
 struct callout *callfree, *callout, calltodo;

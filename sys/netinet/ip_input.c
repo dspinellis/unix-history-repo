@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ip_input.c	7.19 (Berkeley) 5/25/91
- *	$Id: ip_input.c,v 1.5 1993/11/18 00:08:20 wollman Exp $
+ *	$Id: ip_input.c,v 1.6 1993/11/25 01:35:08 wollman Exp $
  */
 
 #include "param.h"
@@ -56,47 +56,12 @@
 #include "ip_var.h"
 #include "ip_icmp.h"
 
-#ifndef	IPFORWARDING
-#ifdef GATEWAY
-#define	IPFORWARDING	1	/* forward IP packets not for us */
-#else /* not GATEWAY */
-#define	IPFORWARDING	0	/* don't forward IP packets not for us */
-#endif /* not GATEWAY */
-#endif /* not IPFORWARDING */
-
-/*
- * NB: RFC 1122, ``Requirements for Internet Hosts: Communication Layers'',
- * absolutely forbids hosts (which are not acting as gateways) from sending
- * ICMP redirects.
- */
-#ifndef	IPSENDREDIRECTS
-#ifdef GATEWAY
-#define	IPSENDREDIRECTS	1
-#else /* not GATEWAY */
-#define IPSENDREDIRECTS 0
-#endif /* not GATEWAY */
-#endif /* not IPSENDREDIRECTS */
-
-int	ipforwarding = IPFORWARDING;
-int	ipsendredirects = IPSENDREDIRECTS;
-#ifdef DIAGNOSTIC
-int	ipprintfs = 0;
-#endif
-
 static void ip_freef(struct ipq *);
 static void ip_enq(struct ipasfrag *, struct ipasfrag *);
 static void ip_deq(struct ipasfrag *);
 static void save_rte(u_char *, struct in_addr);
 static void ip_forward(struct mbuf *, int);
-
-extern	struct domain inetdomain;
-extern	struct protosw inetsw[];
-u_char	ip_protox[IPPROTO_MAX];
-int	ipqmaxlen = IFQ_MAXLEN;
-struct	in_ifaddr *in_ifaddr;			/* first inet address */
-struct	ipstat ipstat;
-struct	ipq ipq;
-u_short ip_id;
+static struct ip *ip_reass(struct ipasfrag *, struct ipq *);
 
 /*
  * We need to save the IP options in case a protocol wants to respond
@@ -113,10 +78,7 @@ static	struct ip_srcrt {
 	struct	in_addr route[MAX_IPOPTLEN/sizeof(struct in_addr)];
 } ip_srcrt;
 
-#ifdef GATEWAY
 extern	int if_index;
-u_long	*ip_ifmatrix;
-#endif
 
 /*
  * IP initialization: fill in IP protocol switch table.
@@ -125,16 +87,16 @@ u_long	*ip_ifmatrix;
 void
 ip_init()
 {
-	register struct protosw *pr;
+	register struct in_protosw *pr;
 	register int i;
 
-	pr = pffindproto(PF_INET, IPPROTO_RAW, SOCK_RAW);
+	pr = (struct in_protosw *)pffindproto(PF_INET, IPPROTO_RAW, SOCK_RAW);
 	if (pr == 0)
 		panic("ip_init");
 	for (i = 0; i < IPPROTO_MAX; i++)
 		ip_protox[i] = pr - inetsw;
-	for (pr = inetdomain.dom_protosw;
-	    pr < inetdomain.dom_protoswNPROTOSW; pr++)
+	for (pr = (struct in_protosw *)inetdomain.dom_protosw;
+	    pr < (struct in_protosw *)inetdomain.dom_protoswNPROTOSW; pr++)
 		if (pr->pr_domain->dom_family == PF_INET &&
 		    pr->pr_protocol && pr->pr_protocol != IPPROTO_RAW)
 			ip_protox[pr->pr_protocol] = pr - inetsw;
@@ -147,10 +109,6 @@ ip_init()
 		panic("no memory for ip_ifmatrix");
 #endif
 }
-
-struct	ip *ip_reass();
-struct	sockaddr_in ipaddr = { sizeof(ipaddr), AF_INET };
-struct	route ipforward_rt;
 
 /*
  * Ip input routine.  Checksum and byte swap header.  If fragmented
@@ -370,7 +328,7 @@ bad:
  * reassembly of this datagram already exists, then it
  * is given as fp; otherwise have to make a chain.
  */
-struct ip *
+static struct ip *
 ip_reass(ip, fp)
 	register struct ipasfrag *ip;
 	register struct ipq *fp;
@@ -929,42 +887,6 @@ ip_stripoptions(m, mopt)
 		m->m_pkthdr.len -= olen;
 	ip->ip_hl = sizeof(struct ip) >> 2;
 }
-
-u_char inetctlerrmap[PRC_NCMDS] = {
-	0,			/* ifdown */
-	0,			/* routedead */
-	0,			/* #2 */
-	0,			/* quench2 */
-	0,			/* quench */
-	EMSGSIZE,		/* msgsize */
-	EHOSTDOWN,		/* hostdead */
-	EHOSTUNREACH,		/* hostunreach */
-	EHOSTUNREACH,		/* unreachnet */
-	EHOSTUNREACH,		/* unreachhost */
-	ECONNREFUSED,		/* unreachproto */
-	ECONNREFUSED,		/* unreachport */
-	EMSGSIZE,		/* old needfrag */
-	EHOSTUNREACH,		/* srcfail */
-	EHOSTUNREACH,		/* netunknown */
-	EHOSTUNREACH,		/* hostunknown */
-	EHOSTUNREACH,		/* isolated */
-	ECONNREFUSED,		/* net admin. prohibited */
-	ECONNREFUSED,		/* host admin. prohibited */
-	EHOSTUNREACH,		/* tos net unreachable */
-	EHOSTUNREACH,		/* tos host unreachable */
-	0,			/* redirect net */
-	0,			/* redirect host */
-	0,			/* redirect tosnet */
-	0,			/* redirect toshost */
-	0,			/* time exceeded */
-	0,			/* reassembly timeout */
-	ENOPROTOOPT,		/* parameter problem */
-	ENOPROTOOPT,		/* required option missing */
-	0,			/* MTU changed */
-	/* NB: this means that this error will only
-	   get propagated by in_mtunotify(), which
-	   doesn't bother to check. */
-};
 
 /*
  * Forward a packet.  If some error occurs return the sender

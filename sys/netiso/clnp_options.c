@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)clnp_options.c	7.8 (Berkeley) 5/6/91
- *	$Id: clnp_options.c,v 1.2 1993/10/16 21:04:50 rgrimes Exp $
+ *	$Id: clnp_options.c,v 1.3 1993/11/25 01:35:44 wollman Exp $
  */
 
 /***********************************************************
@@ -64,6 +64,7 @@ SOFTWARE.
 #ifdef ISO
 
 #include "types.h"
+#include "systm.h"
 #include "param.h"
 #include "mbuf.h"
 #include "domain.h"
@@ -533,4 +534,4 @@ clnp_opt_sanity(m, opts, len, oidx)
 		ENDDEBUG
 	return(0);
 }
-#endif	ISO
+#endif /* ISO */

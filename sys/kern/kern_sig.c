@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_sig.c	7.35 (Berkeley) 6/28/91
- *	$Id: kern_sig.c,v 1.7 1993/11/25 01:33:08 wollman Exp $
+ *	$Id: kern_sig.c,v 1.8 1993/11/27 17:07:00 davidg Exp $
  */
 
 #define	SIGPROP		/* include signal properties table */
@@ -62,6 +62,7 @@
 static void setsigvec(struct proc *, int, struct sigaction *);
 static void stop(struct proc *);
 static void sigexit(struct proc *, int);
+static int killpg1(struct proc *, int, int, int);
 
 /*
  * Can process p, with pcred pc, send the signal signo to process q?
@@ -491,7 +492,7 @@ okillpg(p, uap, retval)
  * Common code for kill process group/broadcast kill.
  * cp is calling process.
  */
-int
+static int
 killpg1(cp, signo, pgid, all)
 	register struct proc *cp;
 	int signo, pgid, all;

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)time.h	7.6 (Berkeley) 2/22/91
- *	$Id: time.h,v 1.2 1993/10/16 17:17:59 rgrimes Exp $
+ *	$Id: time.h,v 1.3 1993/11/25 01:38:06 wollman Exp $
  */
 
 #ifndef _SYS_TIME_H_
@@ -87,6 +87,8 @@ extern void timevaladd(struct timeval *, struct timeval *);
 extern void timevalsub(struct timeval *, struct timeval *);
 extern void timevalfix(struct timeval *);
 extern void realitexpire(caddr_t, int);
+extern int itimerdecr(struct itimerval *, int);	/* XXX 2nd arg? */
+extern u_long hzto(struct timeval *);
 
 #else /* not KERNEL */
 #include <time.h>

@@ -37,7 +37,7 @@
  *
  *	from: Utah $Hdr: uipc_shm.c 1.9 89/08/14$
  *	from: @(#)sysv_shm.c	7.15 (Berkeley) 5/13/91
- *	$Id: sysv_shm.c,v 1.5 1993/11/07 17:46:20 wollman Exp $
+ *	$Id: sysv_shm.c,v 1.6 1993/11/25 01:33:24 wollman Exp $
  */
 
 /*
@@ -59,6 +59,7 @@
 #include "vm/vm_kern.h"
 #include "vm/vm_inherit.h"
 #include "vm/vm_pager.h"
+#include "vm/vm_user.h"
 
 #ifdef HPUXCOMPAT
 #include "hp300/hpux/hpux.h"
@@ -89,8 +90,11 @@ struct	shmhandle {
 	caddr_t		shmh_id;
 };
 
+static int ipcaccess(struct ipc_perm *, int, struct ucred *);
 static void shmufree(struct proc *, struct shmdesc *);
 static void shmfree(struct shmid_ds *);
+static int shmvalid(int);
+
 
 vm_map_t shm_map;	/* address space for shared memory segments */
 
@@ -193,7 +197,7 @@ shmget(p, uap, retval)
 		shmh = (struct shmhandle *)
 			malloc(sizeof(struct shmhandle), M_SHM, M_WAITOK);
 		shmh->shmh_kva = 0;
-		shmh->shmh_id = (caddr_t)(0xc0000000|rval);	/* XXX */
+		shmh->shmh_id = (caddr_t)(0xc0000000UL|rval);	/* XXX */
 		error = vm_mmap(shm_map, &shmh->shmh_kva, ctob(size),
 				VM_PROT_ALL, VM_PROT_DEFAULT, MAP_ANON, shmh->shmh_id, 0);
 		if (error) {
@@ -368,9 +372,11 @@ shmat(p, uap, retval)
 	if (uva)
 		flags |= MAP_FIXED;
 	else
-		uva = (caddr_t)0x1000000;	/* XXX */
-	error = vm_mmap(&p->p_vmspace->vm_map, &uva, (vm_size_t)size, prot, VM_PROT_DEFAULT,
-	    flags, ((struct shmhandle *)shp->shm_handle)->shmh_id, 0);
+		uva = (caddr_t)0x1000000UL;	/* XXX */
+	error = vm_mmap(&p->p_vmspace->vm_map, (vm_offset_t *)&uva,
+			(vm_size_t)size, prot, VM_PROT_DEFAULT,
+			flags, ((struct shmhandle *)shp->shm_handle)->shmh_id,
+			0);
 	if (error)
 		return(error);
 	shmd->shmd_uva = (vm_offset_t)uva;
@@ -453,7 +459,7 @@ shmexit(p)
 	p->p_vmspace->vm_shm = NULL;
 }
 
-int
+static int
 shmvalid(id)
 	register int id;
 {
@@ -524,7 +530,7 @@ shmfree(shp)
  * XXX This routine would be common to all sysV style IPC
  *     (if the others were implemented).
  */
-int
+static int
 ipcaccess(ipc, mode, cred)
 	register struct ipc_perm *ipc;
 	int mode;

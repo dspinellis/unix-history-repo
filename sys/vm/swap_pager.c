@@ -37,7 +37,7 @@
  *
  *	from: Utah $Hdr: swap_pager.c 1.4 91/04/30$
  *	from: @(#)swap_pager.c	7.4 (Berkeley) 5/7/91
- *	$Id: swap_pager.c,v 1.5 1993/11/25 01:38:56 wollman Exp $
+ *	$Id: swap_pager.c,v 1.6 1993/11/29 14:50:27 ache Exp $
  */
 
 /*
@@ -58,6 +58,7 @@
 #include "vnode.h"
 #include "malloc.h"
 #include "rlist.h"
+#include "kernel.h"
 
 #include "vm.h"
 #include "vm_page.h"
@@ -345,7 +346,7 @@ swap_pager_dealloc(pager)
 	s = splbio();
 	while (swp->sw_poip) {
 		swp->sw_flags |= SW_WANTED;
-		assert_wait((int)swp);
+		assert_wait((int)swp, 0);
 		thread_block("swpgde");
 	}
 	splx(s);
@@ -666,7 +667,7 @@ swap_pager_io(swp, m, flags)
 		swap_pager_poip++;
 #endif
 	while ((bp->b_flags & B_DONE) == 0) {
-		assert_wait((int)bp);
+		assert_wait((int)bp, 0);
 		thread_block("swpgio");
 	}
 #ifdef DEBUG

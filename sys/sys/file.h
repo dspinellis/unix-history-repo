@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)file.h	7.10 (Berkeley) 6/4/91
- *	$Id: file.h,v 1.2 1993/10/16 17:16:47 rgrimes Exp $
+ *	$Id: file.h,v 1.3 1993/11/07 17:52:35 wollman Exp $
  */
 
 #ifndef _SYS_FILE_H_
@@ -73,6 +73,10 @@ struct file {
 extern struct file *filehead;	/* head of list of open files */
 extern int maxfiles;		/* kernel limit on number of open files */
 extern int nfiles;		/* actual number of open files */
+
+extern void ffree(struct file *);
+extern int closef(struct file *, struct proc *);
+extern int falloc(struct proc *, struct file **, int *);
 
 #endif /* KERNEL */
 #endif /* _SYS_FILE_H_ */

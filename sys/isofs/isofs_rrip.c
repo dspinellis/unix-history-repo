@@ -28,7 +28,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	$Id: isofs_rrip.c,v 1.3 1993/10/25 19:43:04 rgrimes Exp $
+ *	$Id: isofs_rrip.c,v 1.4 1993/11/25 01:32:27 wollman Exp $
  */
 
 #include "param.h"
@@ -464,9 +464,9 @@ setdefault:
  *    it will be return the translated ISO9660 name,
  */
 int	isofs_rrip_getname( isodir, outbuf, outlen )
-struct iso_directory_record 	*isodir;
-char				*outbuf;
-int				*outlen;
+	struct iso_directory_record *isodir;
+	char *outbuf;
+	int *outlen;
 {
 	ISO_SUSP_HEADER  *phead, *pend;
 	ISO_RRIP_ALTNAME *p;

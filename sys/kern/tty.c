@@ -32,7 +32,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tty.c	7.44 (Berkeley) 5/28/91
- *	$Id: tty.c,v 1.9 1993/11/25 01:33:25 wollman Exp $
+ *	$Id: tty.c,v 1.10 1993/12/13 01:10:13 ache Exp $
  */
 
 #include "param.h"
@@ -49,6 +49,7 @@
 #include "kernel.h"
 #include "vnode.h"
 #include "syslog.h"
+#include "signalvar.h"
 
 #include "vm/vm.h"
 

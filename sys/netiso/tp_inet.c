@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tp_inet.c	7.8 (Berkeley) 5/6/91
- *	$Id: tp_inet.c,v 1.2 1993/10/16 21:05:42 rgrimes Exp $
+ *	$Id: tp_inet.c,v 1.3 1993/11/25 01:36:03 wollman Exp $
  */
 
 /***********************************************************
@@ -85,6 +85,7 @@ SOFTWARE.
 #ifdef INET
 
 #include "param.h"
+#include "systm.h"
 #include "socket.h"
 #include "socketvar.h"
 #include "mbuf.h"
@@ -818,4 +819,4 @@ tpip_route(dst)
 	return ifp;
 }
 
-#endif INET
+#endif /* INET */

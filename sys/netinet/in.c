@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)in.c	7.17 (Berkeley) 4/20/91
- *	$Id: in.c,v 1.5 1993/11/18 00:08:13 wollman Exp $
+ *	$Id: in.c,v 1.6 1993/11/25 01:35:02 wollman Exp $
  */
 
 #include "param.h"
@@ -47,8 +47,6 @@
 #include "in_var.h"
 
 #ifdef INET
-struct in_ifaddr *in_ifaddr;
-struct ifqueue ipintrq;
 
 static void in_ifscrub(struct ifnet *, struct in_ifaddr *);
 
@@ -189,10 +187,6 @@ in_lnaof(in)
 	return (host);
 }
 
-#ifndef SUBNETSARELOCAL
-#define	SUBNETSARELOCAL	1
-#endif
-int subnetsarelocal = SUBNETSARELOCAL;
 /*
  * Return 1 if an internet address is for a ``local'' host
  * (one to which we have a connection).  If subnetsarelocal
@@ -240,8 +234,7 @@ in_canforward(in)
 	return (1);
 }
 
-int	in_interfaces;		/* number of external internet interfaces */
-extern	struct ifnet loif;
+static int in_interfaces;	/* number of external internet interfaces */
 
 /*
  * Generic internet control operations (ioctl's).

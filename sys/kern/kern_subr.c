@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_subr.c	7.7 (Berkeley) 4/15/91
- *	$Id: kern_subr.c,v 1.3 1993/11/18 05:02:34 rgrimes Exp $
+ *	$Id: kern_subr.c,v 1.4 1993/11/25 01:33:11 wollman Exp $
  */
 
 #include "param.h"
@@ -39,11 +39,12 @@
 #include "proc.h"
 
 int
-uiomove(cp, n, uio)
-	register caddr_t cp;
+uiomove(xcp, n, uio)
+	register void *xcp;
 	register int n;
 	register struct uio *uio;
 {
+	caddr_t cp = (caddr_t)xcp;
 	register struct iovec *iov;
 	u_int cnt;
 	int error = 0;
@@ -97,8 +98,8 @@ uiomove(cp, n, uio)
 int
 uioapply(func, arg1, arg2, uio)
 	int (*func)() ;
-	int arg1;
-	int arg2;
+	caddr_t arg1;
+	caddr_t arg2;
 	register struct uio *uio;
 {
 	register struct iovec *iov;
@@ -176,15 +177,18 @@ again:
 	return (0);
 }
 
-void
+char *
 strcat(src, append)
-	register char *src, *append;
+	register char *src;
+	const char *append;
 {
+	char *old = src;
 
 	for (; *src; ++src)
 		;
 	while (*src++ = *append++)
 		;
+	return old;
 }
 
 char *
@@ -198,15 +202,18 @@ strcpy(to, from)
 	return old;
 }
 
-void
+char *
 strncpy(to, from, cnt)
-	register char *to, *from;
-	register int cnt;
+	char *to;
+	const char *from;
+	int cnt;
 {
+	char *old = to;
 
 	for (; cnt && (*to = *from); --cnt, ++from, ++to)
 		;
 	*to = '\0';
+	return old;
 }
 
 

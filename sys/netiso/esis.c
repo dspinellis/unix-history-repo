@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)esis.c	7.19 (Berkeley) 6/27/91
- *	$Id: esis.c,v 1.4 1993/11/18 00:10:14 wollman Exp $
+ *	$Id: esis.c,v 1.5 1993/11/25 01:35:52 wollman Exp $
  */
 
 /***********************************************************
@@ -101,14 +101,9 @@ SOFTWARE.
 struct rawcb	esis_pcb;
 struct esis_stat esis_stat;
 
-void esis_config(caddr_t, int);
-extern void snpac_age(caddr_t, int);
-void esis_input(struct mbuf *, struct snpa_hdr *);
 static void esis_eshinput(struct mbuf *, struct snpa_hdr *);
 static void esis_ishinput(struct mbuf *, struct snpa_hdr *);
 static void esis_rdinput(struct mbuf *, struct snpa_hdr *);
-void esis_shoutput(struct ifnet *, int, int /*short*/, caddr_t, int, struct iso_addr *);
-void isis_input(struct mbuf *, struct snpa_hdr *);
 
 int esis_sendspace = 2048;
 int esis_recvspace = 2048;

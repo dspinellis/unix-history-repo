@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_exit.c	7.35 (Berkeley) 6/27/91
- *	$Id: kern_exit.c,v 1.9 1993/10/19 01:01:20 nate Exp $
+ *	$Id: kern_exit.c,v 1.10 1993/11/25 01:32:57 wollman Exp $
  */
 
 #include "param.h"
@@ -48,6 +48,7 @@
 #include "vnode.h"
 #include "syslog.h"
 #include "malloc.h"
+#include "signalvar.h"
 #include "resourcevar.h"
 
 #include "machine/cpu.h"
@@ -258,7 +259,24 @@ done:
 	/* NOTREACHED */
 }
 
+/*
+ * Wait: check child processes to see if any have exited,
+ * stopped under trace, or (optionally) stopped by a signal.
+ * Pass back status and deallocate exited child's proc structure.
+ */
+
+struct wait1_args {
+	int	pid;
+	int	*status;
+	int	options;
+	struct	rusage *rusage;
 #ifdef COMPAT_43
+	int compat;
+#endif
+};
+
+#ifdef COMPAT_43
+static int wait1(struct proc *, struct wait1_args *, int *);
 
 struct owait_args {
 	int	pid;
@@ -280,7 +298,7 @@ owait(p, uap, retval)
 	uap->pid = WAIT_ANY;
 	uap->status = 0;
 	uap->compat = 1;
-	return (wait1(p, uap, retval));
+	return (wait1(p, (struct wait1_args *)uap, retval));
 }
 
 struct wait4_args {
@@ -299,29 +317,13 @@ wait4(p, uap, retval)
 {
 
 	uap->compat = 0;
-	return (wait1(p, uap, retval));
+	return (wait1(p, (struct wait1_args *)uap, retval));
 }
 #else
 #define	wait1	wait4
 #endif
 
-/*
- * Wait: check child processes to see if any have exited,
- * stopped under trace, or (optionally) stopped by a signal.
- * Pass back status and deallocate exited child's proc structure.
- */
-
-struct wait1_args {
-	int	pid;
-	int	*status;
-	int	options;
-	struct	rusage *rusage;
-#ifdef COMPAT_43
-	int compat;
-#endif
-};
-
-int
+static int
 wait1(q, uap, retval)
 	register struct proc *q;
 	register struct wait1_args *uap;

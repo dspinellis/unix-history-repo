@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ufs_vnops.c	7.64 (Berkeley) 5/16/91
- *	$Id: ufs_vnops.c,v 1.7 1993/11/13 22:46:40 rgrimes Exp $
+ *	$Id: ufs_vnops.c,v 1.8 1993/11/25 01:38:40 wollman Exp $
  */
 
 #include "param.h"
@@ -58,6 +58,11 @@
 
 /* Get the current value of _POSIX_CHOWN_RESTRICTED */
 #include "sys/unistd.h"		/* make sure to get sys/ version. */
+
+static int maknode(int, struct nameidata *, struct inode **);
+
+/* XXX - don't want to change ucred.h again */
+extern int groupmember(int /*gid_t*/, struct ucred *);
 
 /*
  * Create a regular file
@@ -310,7 +315,7 @@ ufs_setattr(vp, vap, cred, p)
 		if (cred->cr_uid == 0) {
 			ip->i_flags = vap->va_flags;
 		} else {
-			ip->i_flags &= 0xffff0000;
+			ip->i_flags &= 0xffff0000ul;
 			ip->i_flags |= (vap->va_flags & 0xffff);
 		}
 		ip->i_flag |= ICHG;
@@ -1643,7 +1648,7 @@ ufsfifo_close(vp, fflag, cred, p)
 /*
  * Allocate a new inode.
  */
-int
+static int
 maknode(mode, ndp, ipp)
 	int mode;
 	register struct nameidata *ndp;

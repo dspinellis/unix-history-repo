@@ -45,7 +45,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	$Id: kern__physio.c,v 1.3 1993/11/18 05:02:33 rgrimes Exp $
+ *	$Id: kern__physio.c,v 1.4 1993/11/25 01:32:47 wollman Exp $
  */
 
 #include "param.h"
@@ -58,8 +58,6 @@
 #include "vm/vm.h"
 #include "specdev.h"
 
-int physio(int (*)(), int, struct buf *, int, int, caddr_t, int *, struct proc *);
-
 /*
  * Driver interface to do "raw" I/O in the address space of a
  * user process directly for read and write operations..
@@ -67,20 +65,27 @@ int physio(int (*)(), int, struct buf *, int, int, caddr_t, int *, struct proc *
 
 int
 rawread(dev, uio)
-	dev_t dev; struct uio *uio;
+	dev_t dev; 
+	struct uio *uio;
 {
-	return (uioapply(physio, cdevsw[major(dev)].d_strategy, dev, uio));
+	return (uioapply(physio,
+			 (caddr_t)cdevsw[major(dev)].d_strategy, 
+			 (caddr_t)(u_long)dev, uio));
 }
 
 int
 rawwrite(dev, uio)
-	dev_t dev; struct uio *uio;
+	dev_t dev;
+	struct uio *uio;
 {
-	return (uioapply(physio, cdevsw[major(dev)].d_strategy, dev, uio));
+	return (uioapply(physio, 
+			 (caddr_t)cdevsw[major(dev)].d_strategy, 
+			 (caddr_t)(u_long)dev, uio));
 }
 
-int physio(strat, dev, bp, off, rw, base, len, p)
-	int (*strat)(); 
+int
+physio(strat, dev, bp, off, rw, base, len, p)
+	d_strategy_t *strat;
 	dev_t dev;
 	struct buf *bp;
 	int rw, off;
@@ -136,7 +141,7 @@ int physio(strat, dev, bp, off, rw, base, len, p)
 /* 09 Sep 92*/	for (adr = (caddr_t)trunc_page(base); adr < base + bp->b_bcount;
 			adr += NBPG) {
 			vm_fault(&curproc->p_vmspace->vm_map,
-				adr, ftype, FALSE);
+				 (vm_offset_t)adr, ftype, FALSE);
 			*(int *) adr += zero;
 		}
 

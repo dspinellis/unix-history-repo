@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_page.h	7.3 (Berkeley) 4/21/91
- *	$Id: vm_page.h,v 1.3 1993/11/07 17:54:21 wollman Exp $
+ *	$Id: vm_page.h,v 1.4 1993/12/12 12:27:25 davidg Exp $
  */
 
 /*
@@ -260,5 +260,25 @@ void		vm_set_page_size();
 #define	vm_page_unlock_queues()	simple_unlock(&vm_page_queue_lock)
 
 #define vm_page_set_modified(m)	{ (m)->clean = FALSE; }
+
+/* Some pmap things are declared here for the convenience of other bits of
+   code. */
+extern void pmap_bootstrap(vm_offset_t, vm_offset_t);
+extern void pmap_init(vm_offset_t, vm_offset_t);
+extern vm_offset_t pmap_map(vm_offset_t, vm_offset_t, vm_offset_t, int);
+extern void pmap_remove_all(vm_offset_t);
+extern void pmap_copy_on_write(vm_offset_t);
+extern void pmap_page_protect(vm_offset_t, vm_prot_t);
+extern void pmap_update(void);
+extern void pmap_zero_page(vm_offset_t);
+extern void pmap_copy_page(vm_offset_t, vm_offset_t);
+extern void pmap_clear_modify(vm_offset_t);
+extern void pmap_clear_reference(vm_offset_t);
+extern boolean_t pmap_is_referenced(vm_offset_t);
+extern boolean_t pmap_is_modified(vm_offset_t);
+extern vm_offset_t pmap_phys_ddress(int);
+extern boolean_t pmap_testbit(vm_offset_t, int);
+extern void pmap_changebit(vm_offset_t, int, boolean_t);
+
 #endif /* KERNEL */
 #endif /* _VM_PAGE_ */

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)sys_socket.c	7.11 (Berkeley) 4/16/91
- *	$Id: sys_socket.c,v 1.2 1993/10/16 15:24:50 rgrimes Exp $
+ *	$Id: sys_socket.c,v 1.3 1993/11/25 01:33:22 wollman Exp $
  */
 
 #include "param.h"
@@ -130,7 +130,8 @@ soo_ioctl(fp, cmd, data, p)
 	if (IOCGROUP(cmd) == 'r')
 		return (rtioctl(cmd, data, p));
 	return ((*so->so_proto->pr_usrreq)(so, PRU_CONTROL, 
-	    (struct mbuf *)cmd, (struct mbuf *)data, (struct mbuf *)0));
+	    (struct mbuf *)cmd, (struct mbuf *)data, (struct mbuf *)0,
+					   (struct mbuf *)0));
 }
 
 int
@@ -182,7 +183,7 @@ soo_stat(so, ub)
 	bzero((caddr_t)ub, sizeof (*ub));
 	return ((*so->so_proto->pr_usrreq)(so, PRU_SENSE,
 	    (struct mbuf *)ub, (struct mbuf *)0, 
-	    (struct mbuf *)0));
+	    (struct mbuf *)0, (struct mbuf *)0));
 }
 
 /* ARGSUSED */

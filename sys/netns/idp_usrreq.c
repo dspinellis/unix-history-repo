@@ -31,10 +31,11 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)idp_usrreq.c	7.11 (Berkeley) 6/27/91
- *	$Id: idp_usrreq.c,v 1.3 1993/11/07 17:50:20 wollman Exp $
+ *	$Id: idp_usrreq.c,v 1.4 1993/11/25 01:36:21 wollman Exp $
  */
 
 #include "param.h"
+#include "systm.h"
 #include "malloc.h"
 #include "mbuf.h"
 #include "protosw.h"
@@ -105,8 +106,9 @@ bad:
 }
 
 void
-idp_abort(nsp)
+idp_abort(nsp, errno)
 	struct nspcb *nsp;
+	int errno;
 {
 	struct socket *so = nsp->nsp_socket;
 
@@ -117,7 +119,7 @@ idp_abort(nsp)
  * Drop connection, reporting
  * the specified error.
  */
-struct nspcb *
+void
 idp_drop(nsp, errno)
 	register struct nspcb *nsp;
 	int errno;
@@ -136,7 +138,6 @@ idp_drop(nsp, errno)
 	so->so_error = errno;
 	ns_pcbdisconnect(nsp);
 	soisdisconnected(so);
-	return nsp;
 }
 
 int noIdpRoute;
@@ -260,7 +261,7 @@ idp_output(nsp, m0)
 		}
 	}
 	nsp->nsp_lastdst = idp->idp_dna;
-#endif ancient_history
+#endif /* ancient_history */
 	if (noIdpRoute) ro = 0;
 	return (ns_output(m, ro, so->so_options & SO_BROADCAST));
 }
@@ -365,7 +366,7 @@ idp_ctloutput(req, so, level, name, value)
 		case SO_NSIP_ROUTE:
 			error = nsip_route(*value);
 			break;
-#endif NSIP
+#endif /* NSIP */
 		default:
 			error = EINVAL;
 		}
@@ -378,10 +379,11 @@ idp_ctloutput(req, so, level, name, value)
 
 /*ARGSUSED*/
 int
-idp_usrreq(so, req, m, nam, control)
+idp_usrreq(so, req, m, nam, control, dummy)
 	struct socket *so;
 	int req;
 	struct mbuf *m, *nam, *control;
+	struct mbuf *dummy;
 {
 	struct nspcb *nsp = sotonspcb(so);
 	int error = 0;
@@ -539,12 +541,13 @@ release:
 		m_freem(m);
 	return (error);
 }
-/*ARGSUSED*/
+
 int
-idp_raw_usrreq(so, req, m, nam, control)
+idp_raw_usrreq(so, req, m, nam, control, dummy)
 	struct socket *so;
 	int req;
 	struct mbuf *m, *nam, *control;
+	struct mbuf *dummy;
 {
 	int error = 0;
 	struct nspcb *nsp = sotonspcb(so);
@@ -569,7 +572,7 @@ idp_raw_usrreq(so, req, m, nam, control)
 		nsp->nsp_flags = NSP_RAWIN | NSP_RAWOUT;
 		break;
 	default:
-		error = idp_usrreq(so, req, m, nam, control);
+		error = idp_usrreq(so, req, m, nam, control, 0);
 	}
 	return (error);
 }

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)sys_process.c	7.22 (Berkeley) 5/11/91
- *	$Id: sys_process.c,v 1.7 1993/11/25 01:33:22 wollman Exp $
+ *	$Id: sys_process.c,v 1.8 1993/12/02 02:48:15 davidg Exp $
  */
 
 #include "param.h"
@@ -197,7 +197,8 @@ pwrite (struct proc *procp, unsigned int addr, unsigned int datum) {
 		rv = vm_fault (map, pageno, VM_PROT_WRITE, 0);
 
 	/* Find space in kernel_map for the page we're interested in */
-	rv = vm_map_find (kernel_map, object, off, &kva, PAGE_SIZE, 1);
+	rv = vm_map_find (kernel_map, object, off, (vm_offset_t *)&kva,
+			  PAGE_SIZE, 1);
 
 	if (!rv) {
 		vm_object_reference (object);
@@ -428,7 +429,8 @@ profil(p, uap, retval)
 	 * addupc is set right... it's gotta be writable by the user...
 	 */
 
-	if (useracc(uap->bufbase,uap->bufsize*sizeof(short),B_WRITE) == 0)
+	if (useracc((caddr_t)uap->bufbase, uap->bufsize * sizeof(short),
+		    B_WRITE) == 0)
 		return EFAULT;
 
 	p->p_stats->p_prof.pr_base = uap->bufbase;

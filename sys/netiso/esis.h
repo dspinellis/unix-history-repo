@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)esis.h	7.4 (Berkeley) 5/6/91
- *	$Id: esis.h,v 1.2 1993/10/16 21:05:08 rgrimes Exp $
+ *	$Id: esis.h,v 1.3 1993/11/07 17:49:35 wollman Exp $
  */
 
 /***********************************************************
@@ -116,7 +116,12 @@ struct esis_stat {
 	u_short		es_rdrcvd;			/* RD rcvd */
 };
 
-#ifdef	KERNEL
+#ifdef KERNEL
 extern struct esis_stat esis_stat;
+void esis_config(caddr_t, int);
+void esis_input(struct mbuf *, struct snpa_hdr *);
+void esis_shoutput(struct ifnet *, int, int /*short*/, caddr_t, int, struct iso_addr *);
+void isis_input(struct mbuf *, struct snpa_hdr *);
+
 #endif /* KERNEL */
 #endif /* _NETISO_ESIS_H_ */

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ip_icmp.c	7.15 (Berkeley) 4/20/91
- *	$Id: ip_icmp.c,v 1.4 1993/11/18 00:08:18 wollman Exp $
+ *	$Id: ip_icmp.c,v 1.5 1993/11/25 01:35:07 wollman Exp $
  */
 
 #include "param.h"
@@ -58,21 +58,6 @@
  * routines to turnaround packets back to the originator, and
  * host table maintenance routines.
  */
-#ifdef ICMPPRINTFS
-int	icmpprintfs = 0;
-#endif
-
-#ifndef IPBROADCASTECHO
-#define IPBROADCASTECHO 0
-#endif
-int	ipbroadcastecho = IPBROADCASTECHO;
-
-#ifndef IPMASKAGENT
-#define IPMASKAGENT 0
-#endif
-int	ipmaskagent = IPMASKAGENT;
-
-struct icmpstat icmpstat;
 
 #define satosin(sa) ((struct sockaddr_in *)(sa))
 static void icmp_reflect(struct mbuf *);
@@ -228,7 +213,6 @@ static struct sockproto icmproto = { AF_INET, IPPROTO_ICMP };
 static struct sockaddr_in icmpsrc = { sizeof (struct sockaddr_in), AF_INET };
 static struct sockaddr_in icmpdst = { sizeof (struct sockaddr_in), AF_INET };
 static struct sockaddr_in icmpgw = { sizeof (struct sockaddr_in), AF_INET };
-struct sockaddr_in icmpmask = { 8, 0 };
 
 /*
  * Process a received ICMP message.
@@ -243,7 +227,8 @@ icmp_input(m, hlen)
 	int icmplen = ip->ip_len;
 	register int i;
 	struct in_ifaddr *ia;
-	int (*ctlfunc)(), code;
+	in_ctlinput_t *ctlfunc;
+	int code;
 
 	/*
 	 * Locate icmp structure in mbuf, and check
@@ -340,7 +325,7 @@ icmp_input(m, hlen)
 		icmpsrc.sin_addr = icp->icmp_ip.ip_dst;
 		if (ctlfunc = inetsw[ip_protox[icp->icmp_ip.ip_p]].pr_ctlinput)
 			(*ctlfunc)(code, (struct sockaddr *)&icmpsrc,
-			    (caddr_t) &icp->icmp_ip);
+				   &icp->icmp_ip);
 		break;
 
 	badcode:

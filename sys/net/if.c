@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)if.c	7.14 (Berkeley) 4/20/91
- *	$Id: if.c,v 1.5 1993/11/07 17:46:53 wollman Exp $
+ *	$Id: if.c,v 1.6 1993/11/25 01:33:52 wollman Exp $
  */
 
 #include "param.h"
@@ -545,7 +545,10 @@ ifioctl(so, cmd, data, p)
 			cmd = SIOCGIFNETMASK;
 		}
 		error =  ((*so->so_proto->pr_usrreq)(so, PRU_CONTROL,
-							    cmd, data, ifp));
+						     (struct mbuf *)cmd,
+						     (struct mbuf *)data,
+						     (struct mbuf *)ifp,
+						     (struct mbuf *)0));
 		switch (ocmd) {
 
 		case OSIOCGIFADDR:
@@ -649,4 +652,36 @@ sprint_d(n, buf, buflen)
 		n /= 10;
 	} while (n != 0);
 	return (cp);
+}
+
+/*
+ * Set/clear promiscuous mode on interface ifp based on the truth value
+ * of pswitch.  The calls are reference counted so that only the first
+ * "on" request actually has an effect, as does the final "off" request.
+ * Results are undefined if the "off" and "on" requests are not matched.
+ */
+int
+ifpromisc(ifp, pswitch)
+	struct ifnet *ifp;
+	int pswitch;
+{
+	struct ifreq ifr;
+	/*
+	 * If the device is not configured up, we cannot put it in
+	 * promiscuous mode.
+	 */
+	if ((ifp->if_flags & IFF_UP) == 0)
+		return (ENETDOWN);
+
+	if (pswitch) {
+		if (ifp->if_pcount++ != 0)
+			return (0);
+		ifp->if_flags |= IFF_PROMISC;
+	} else {
+		if (--ifp->if_pcount > 0)
+			return (0);
+		ifp->if_flags &= ~IFF_PROMISC;
+	}
+	ifr.ifr_flags = ifp->if_flags;
+	return ((*ifp->if_ioctl)(ifp, SIOCSIFFLAGS, (caddr_t)&ifr));
 }

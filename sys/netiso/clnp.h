@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)clnp.h	7.8 (Berkeley) 5/6/91
- *	$Id: clnp.h,v 1.3 1993/11/07 17:49:22 wollman Exp $
+ *	$Id: clnp.h,v 1.4 1993/11/25 01:35:38 wollman Exp $
  */
 
 /***********************************************************
@@ -463,6 +463,21 @@ extern struct troll	trollctl;
 #endif	/* TROLL */
 
 extern void clnp_emit_er(struct mbuf *, int /*char*/);
+extern void clnp_discard(struct mbuf *, int);
+
+/* From clnp_subr.h: */
+struct snpa_hdr; struct route_iso;
+extern struct mbuf *clnp_data_ck(struct mbuf *, int);
+extern int clnp_ours(struct iso_addr *);
+extern void clnp_forward(struct mbuf *, int, struct iso_addr *, 
+			 struct clnp_optidx *, int, struct snpa_hdr *);
+extern int clnp_route(struct iso_addr *, struct route_iso *, int, 
+		      struct sockaddr **, struct iso_ifaddr **);
+extern int clnp_srcroute(struct mbuf *, struct clnp_optidx *, 
+			 struct route_iso *, struct sockaddr **,
+			 struct iso_ifaddr **, struct iso_addr *);
+extern int clnp_badmtu(struct ifnet *, struct rtentry *, int, const char *);
+extern void clnp_ypocb(caddr_t, caddr_t, u_int);
 
 #endif	/* KERNEL */
 #endif /* _NETISO_CLNP_H_ */

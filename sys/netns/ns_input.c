@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ns_input.c	7.8 (Berkeley) 6/27/91
- *	$Id: ns_input.c,v 1.3 1993/11/18 00:10:53 wollman Exp $
+ *	$Id: ns_input.c,v 1.4 1993/11/25 01:36:30 wollman Exp $
  */
 
 #include "param.h"
@@ -283,8 +283,6 @@ idp_ctlinput(cmd, arg)
 	struct ns_addr *ns;
 	struct nspcb *nsp;
 	struct ns_errp *errp = 0;
-	int idp_abort();
-	extern struct nspcb *idp_drop();
 	int type;
 
 	if (cmd < 0 || cmd > PRC_NCMDS)
@@ -487,8 +485,8 @@ idp_undo_route(ro)
 
 void
 ns_watch_output(m, ifp)
-struct mbuf *m;
-struct ifnet *ifp;
+	struct mbuf *m;
+	struct ifnet *ifp;
 {
 	register struct nspcb *nsp;
 	register struct ifaddr *ifa;

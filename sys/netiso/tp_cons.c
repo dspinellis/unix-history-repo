@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tp_cons.c	7.8 (Berkeley) 5/9/91
- *	$Id$
+ *	$Id: tp_cons.c,v 1.2 1993/10/16 21:05:36 rgrimes Exp $
  */
 
 /***********************************************************
@@ -79,6 +79,7 @@ SOFTWARE.
 #ifdef TPCONS
 
 #include "param.h"
+#include "systm.h"
 #include "socket.h"
 #include "domain.h"
 #include "mbuf.h"
@@ -286,5 +287,5 @@ tpcons_dg_output(chan, m0, datalen)
 {
 	return tpcons_output(((struct pklcd *)chan)->lcd_upnext, m0, datalen, 0);
 }
-#endif TPCONS
-#endif ISO
+#endif /* TPCONS */
+#endif /* ISO */

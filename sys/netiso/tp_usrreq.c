@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tp_usrreq.c	7.17 (Berkeley) 6/27/91
- *	$Id: tp_usrreq.c,v 1.2 1993/10/16 21:06:14 rgrimes Exp $
+ *	$Id: tp_usrreq.c,v 1.3 1993/11/25 01:36:15 wollman Exp $
  */
 
 /***********************************************************
@@ -92,6 +92,8 @@ SOFTWARE.
 #include "tp_meas.h"
 #include "iso.h"
 #include "iso_errno.h"
+
+int tp_confirm(struct tp_pcb *);
 
 int tp_attach(), tp_driver();
 int TNew;
@@ -807,7 +809,7 @@ struct uio *uio;
 
 int
 tp_confirm(tpcb)
-register struct tp_pcb *tpcb;
+	register struct tp_pcb *tpcb;
 {
 	struct tp_event E;
 	if (tpcb->tp_state == TP_CONFIRMING)

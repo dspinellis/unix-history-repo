@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)proc.h	7.28 (Berkeley) 5/30/91
- *	$Id: proc.h,v 1.3 1993/11/07 17:52:55 wollman Exp $
+ *	$Id: proc.h,v 1.4 1993/11/25 01:38:00 wollman Exp $
  */
 
 #ifndef _PROC_H_
@@ -229,7 +229,7 @@ struct	pcred {
 extern	int pidhashmask;		/* in param.c */
 extern	struct proc *pidhash[];		/* in param.c */
 extern	struct pgrp *pgrphash[];	/* in param.c */
-struct	proc *zombproc, *allproc;	/* lists of procs in various states */
+extern	struct proc *zombproc, *allproc; /* lists of procs in various states */
 extern	struct proc proc0;		/* process slot for swapper */
 extern	struct	proc *initproc, *pageproc; /* process slots for init, pager */
 extern	struct proc *curproc;		/* current running proc */
@@ -239,14 +239,24 @@ extern	int nprocs, maxproc;		/* current and max number of procs */
 struct	prochd {
 	struct	proc *ph_link;	/* linked list of running processes */
 	struct	proc *ph_rlink;
-} qs[NQS];
+};
 
+extern struct prochd qs[NQS];
 extern	int whichqs;		/* bit mask summarizing non-empty qs's */
 
-extern struct 	pgrp *pgfind();	/* find process group by id */
-extern struct	proc *pfind();	/* find process by id */
+extern struct 	pgrp *pgfind(pid_t);	/* find process group by id */
+extern struct	proc *pfind(int);	/* find process by id */
 
 void fixjobc(struct proc *, struct pgrp *, int);
+void unsleep(struct proc *);
+void setrun(struct proc *);
+void setpri(struct proc *);
+
+void	remrq __P((struct proc *));
+void	setrq __P((struct proc *));
+void	updatepri __P((struct proc *));
+int	cpu_fork __P((struct proc *, struct proc *));
+void	enterpgrp __P((struct proc *, int /*pid_t*/, int));
 
 #endif	/* KERNEL */
 

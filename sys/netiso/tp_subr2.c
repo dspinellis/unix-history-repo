@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tp_subr2.c	7.10 (Berkeley) 6/27/91
- *	$Id: tp_subr2.c,v 1.3 1993/10/16 21:06:04 rgrimes Exp $
+ *	$Id: tp_subr2.c,v 1.4 1993/11/25 01:36:13 wollman Exp $
  */
 
 /***********************************************************
@@ -187,10 +187,10 @@ tp_protocol_error(e,tpcb)
 
 
 /* Not used at the moment */
-ProtoHook
-tp_drain()
+void
+tp_drain(void)
 {
-	return 0;
+	return;
 }
 
 
@@ -636,7 +636,7 @@ done:
 	return error;
 }
 
-#ifndef TPCONS
+#ifndef CCITT
 static void
 pk_flowcontrol() {}
 #endif

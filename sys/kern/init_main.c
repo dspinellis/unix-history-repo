@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)init_main.c	7.41 (Berkeley) 5/15/91
- *	$Id: init_main.c,v 1.9 1993/11/25 01:32:46 wollman Exp $
+ *	$Id: init_main.c,v 1.10 1993/11/25 13:16:07 davidg Exp $
  */
 
 #include "param.h"
@@ -252,8 +252,8 @@ main()
 #endif
 
 	/* kick off timeout driven events by calling first time */
-	roundrobin();
-	schedcpu();
+	roundrobin(0, 0);
+	schedcpu(0, 0);
 	enablertclock();		/* enable realtime clock interrupts */
 
 	/*

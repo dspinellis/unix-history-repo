@@ -36,7 +36,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)pk_debug.c	7.7 (Berkeley) 5/9/91
- *	$Id: pk_debug.c,v 1.2 1993/10/16 19:46:48 rgrimes Exp $
+ *	$Id: pk_debug.c,v 1.3 1993/11/25 01:34:28 wollman Exp $
  */
 
 #include "param.h"
@@ -53,13 +53,13 @@
 #include "pk.h"
 #include "pk_var.h"
 
-char	*pk_state[] = {
+const char *const pk_state[] = {
 	"Listen",	"Ready",	"Received-Call",
 	"Sent-Call",	"Data-Transfer","Received-Clear",
 	"Sent-Clear",
 };
 
-char   *pk_name[] = {
+const char *const pk_name[] = {
 	"Call",		"Call-Conf",	"Clear",
 	"Clear-Conf",	"Data",		"Intr",		"Intr-Conf",
 	"Rr",		"Rnr",		"Reset",	"Reset-Conf",
@@ -71,7 +71,7 @@ void
 pk_trace (xcp, m, dir)
 	struct x25config *xcp;
 	register struct mbuf *m;
-	char *dir;
+	const char *dir;
 {
 	register char *s;
 	struct x25_packet *xp = mtod(m, struct x25_packet *);

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)uipc_socket.c	7.28 (Berkeley) 5/4/91
- *	$Id: uipc_socket.c,v 1.8 1993/10/23 16:23:49 davidg Exp $
+ *	$Id: uipc_socket.c,v 1.9 1993/11/25 01:33:33 wollman Exp $
  */
 
 #include "param.h"
@@ -83,7 +83,8 @@ socreate(dom, aso, type, proto)
 	so->so_proto = prp;
 	error =
 	    (*prp->pr_usrreq)(so, PRU_ATTACH,
-		(struct mbuf *)0, (struct mbuf *)proto, (struct mbuf *)0);
+		(struct mbuf *)0, (struct mbuf *)proto, (struct mbuf *)0,
+			      (struct mbuf *)0);
 	if (error) {
 		so->so_state |= SS_NOFDREF;
 		sofree(so);
@@ -103,7 +104,7 @@ sobind(so, nam)
 
 	error =
 	    (*so->so_proto->pr_usrreq)(so, PRU_BIND,
-		(struct mbuf *)0, nam, (struct mbuf *)0);
+		(struct mbuf *)0, nam, (struct mbuf *)0, (struct mbuf *)0);
 	splx(s);
 	return (error);
 }
@@ -117,7 +118,8 @@ solisten(so, backlog)
 
 	error =
 	    (*so->so_proto->pr_usrreq)(so, PRU_LISTEN,
-		(struct mbuf *)0, (struct mbuf *)0, (struct mbuf *)0);
+		(struct mbuf *)0, (struct mbuf *)0, (struct mbuf *)0,
+				       (struct mbuf *)0);
 	if (error) {
 		splx(s);
 		return (error);
@@ -188,7 +190,8 @@ drop:
 	if (so->so_pcb) {
 		int error2 =
 		    (*so->so_proto->pr_usrreq)(so, PRU_DETACH,
-			(struct mbuf *)0, (struct mbuf *)0, (struct mbuf *)0);
+			(struct mbuf *)0, (struct mbuf *)0, (struct mbuf *)0,
+					       (struct mbuf *)0);
 		if (error == 0)
 			error = error2;
 	}
@@ -211,7 +214,8 @@ soabort(so)
 
 	return (
 	    (*so->so_proto->pr_usrreq)(so, PRU_ABORT,
-		(struct mbuf *)0, (struct mbuf *)0, (struct mbuf *)0));
+		(struct mbuf *)0, (struct mbuf *)0, (struct mbuf *)0,
+				       (struct mbuf *)0));
 }
 
 int
@@ -226,7 +230,7 @@ soaccept(so, nam)
 		panic("soaccept: !NOFDREF");
 	so->so_state &= ~SS_NOFDREF;
 	error = (*so->so_proto->pr_usrreq)(so, PRU_ACCEPT,
-	    (struct mbuf *)0, nam, (struct mbuf *)0);
+	    (struct mbuf *)0, nam, (struct mbuf *)0, (struct mbuf *)0);
 	splx(s);
 	return (error);
 }
@@ -254,7 +258,7 @@ soconnect(so, nam)
 		error = EISCONN;
 	else
 		error = (*so->so_proto->pr_usrreq)(so, PRU_CONNECT,
-		    (struct mbuf *)0, nam, (struct mbuf *)0);
+		    (struct mbuf *)0, nam, (struct mbuf *)0, (struct mbuf *)0);
 	splx(s);
 	return (error);
 }
@@ -268,7 +272,8 @@ soconnect2(so1, so2)
 	int error;
 
 	error = (*so1->so_proto->pr_usrreq)(so1, PRU_CONNECT2,
-	    (struct mbuf *)0, (struct mbuf *)so2, (struct mbuf *)0);
+	    (struct mbuf *)0, (struct mbuf *)so2, (struct mbuf *)0,
+					    (struct mbuf *)0);
 	splx(s);
 	return (error);
 }
@@ -289,7 +294,8 @@ sodisconnect(so)
 		goto bad;
 	}
 	error = (*so->so_proto->pr_usrreq)(so, PRU_DISCONNECT,
-	    (struct mbuf *)0, (struct mbuf *)0, (struct mbuf *)0);
+	    (struct mbuf *)0, (struct mbuf *)0, (struct mbuf *)0,
+					   (struct mbuf *)0);
 bad:
 	splx(s);
 	return (error);
@@ -436,7 +442,7 @@ nopages:
 		    s = splnet();				/* XXX */
 		    error = (*so->so_proto->pr_usrreq)(so,
 			(flags & MSG_OOB) ? PRU_SENDOOB : PRU_SEND,
-			top, addr, control);
+			top, addr, control, (struct mbuf *)0);
 		    splx(s);
 		    if (dontroute)
 			    so->so_options &= ~SO_DONTROUTE;
@@ -504,7 +510,8 @@ soreceive(so, paddr, uio, mp0, controlp, flagsp)
 	if (flags & MSG_OOB) {
 		m = m_get(M_WAIT, MT_DATA);
 		error = (*pr->pr_usrreq)(so, PRU_RCVOOB,
-		    m, (struct mbuf *)(flags & MSG_PEEK), (struct mbuf *)0);
+		    m, (struct mbuf *)(flags & MSG_PEEK), (struct mbuf *)0,
+					 (struct mbuf *)0);
 		if (error)
 			goto bad;
 		do {
@@ -521,7 +528,7 @@ bad:
 		*mp = (struct mbuf *)0;
 	if (so->so_state & SS_ISCONFIRMING && uio->uio_resid)
 		(*pr->pr_usrreq)(so, PRU_RCVD, (struct mbuf *)0,
-		    (struct mbuf *)0, (struct mbuf *)0);
+		    (struct mbuf *)0, (struct mbuf *)0, (struct mbuf *)0);
 
 restart:
 	if (error = sblock(&so->so_rcv))
@@ -784,7 +791,8 @@ soshutdown(so, how)
 		sorflush(so);
 	if (how & FWRITE)
 		return ((*pr->pr_usrreq)(so, PRU_SHUTDOWN,
-		    (struct mbuf *)0, (struct mbuf *)0, (struct mbuf *)0));
+		    (struct mbuf *)0, (struct mbuf *)0, (struct mbuf *)0,
+					 (struct mbuf *)0));
 	return (0);
 }
 

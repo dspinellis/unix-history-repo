@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_lock.c	7.4 (Berkeley) 4/21/91
- *	$Id$
+ *	$Id: kern_lock.c,v 1.2 1993/10/16 16:20:13 rgrimes Exp $
  */
 
 /*
@@ -69,8 +69,11 @@
  */
 
 #include "param.h"
+#include "systm.h"
 #include "vm_param.h"
 #include "lock.h"
+
+#include "vm/vm.h"
 
 /* XXX */
 #include "proc.h"

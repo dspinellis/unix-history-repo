@@ -31,11 +31,12 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ufs_tables.c	7.4 (Berkeley) 6/28/90
- *	$Id$
+ *	$Id: ufs_tables.c,v 1.2 1993/10/16 18:18:00 rgrimes Exp $
  */
 
 #ifdef KERNEL
 #include "param.h"
+#include "systm.h"
 #else
 #include <sys/param.h>
 #endif

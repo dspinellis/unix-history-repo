@@ -15,7 +15,7 @@
  *
  *  October 1992
  *
- *	$Id: pcfs_denode.c,v 1.3 1993/11/07 21:48:09 wollman Exp $
+ *	$Id: pcfs_denode.c,v 1.4 1993/11/25 01:37:09 wollman Exp $
  */
 
 #include "param.h"
@@ -588,7 +588,7 @@ printf("pcfs_inactive(): v_usecount %d, de_Name[0] %x\n", vp->v_usecount,
 	return error;
 }
 
-int
+void
 delock(dep)
 	struct denode *dep;
 {
@@ -602,11 +602,9 @@ delock(dep)
 	dep->de_spare1 = 0;
 	dep->de_spare0 = curproc->p_pid;
 	dep->de_flag |= DELOCKED;
-
-	return 0;
 }
 
-int
+void
 deunlock(dep)
 	struct denode *dep;
 {
@@ -618,6 +616,4 @@ deunlock(dep)
 		dep->de_flag &= ~DEWANT;
 		wakeup((caddr_t)dep);
 	}
-
-	return 0;
 }

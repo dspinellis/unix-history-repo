@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)spp_var.h	7.7 (Berkeley) 6/28/90
- *	$Id: spp_var.h,v 1.2 1993/10/16 19:54:41 rgrimes Exp $
+ *	$Id: spp_var.h,v 1.3 1993/11/07 17:50:41 wollman Exp $
  */
 
 #ifndef _NETNS_SPP_VAR_H_
@@ -195,8 +195,6 @@ extern struct spp_istat spp_istat;
 #endif
 
 extern u_short spp_iss;
-extern struct sppcb *spp_close(), *spp_disconnect();
-extern struct sppcb *spp_usrclosed(), *spp_timers(), *spp_drop();
 #endif /* KERNEL */
 
 #define	SPP_ISSINCR	128
@@ -209,4 +207,34 @@ extern struct sppcb *spp_usrclosed(), *spp_timers(), *spp_drop();
 #define	SSEQ_LEQ(a,b)	(((short)((a)-(b))) <= 0)
 #define	SSEQ_GT(a,b)	(((short)((a)-(b))) > 0)
 #define	SSEQ_GEQ(a,b)	(((short)((a)-(b))) >= 0)
+
+#ifdef KERNEL
+/* From spp_debug.c: */
+extern void spp_trace(int /*short*/, int /*u_char*/, struct sppcb *, 
+		      struct spidp *, int);
+
+/* From spp_usrreq.c: */
+extern struct spp_istat spp_istat;
+extern u_short spp_iss;
+extern void spp_init(void);
+extern void spp_input(struct mbuf *, struct nspcb *);
+extern int spprexmtthresh;
+extern int spp_reass(struct sppcb *, struct spidp *);
+extern void spp_ctlinput(int, caddr_t);
+extern int spp_output(struct sppcb *, struct mbuf *);
+extern int spp_do_persist_panics;
+extern int spp_ctloutput(int, struct socket *, int, int, struct mbuf **);
+extern int spp_usrreq(struct socket *, int, struct mbuf *, struct mbuf *,
+		      struct mbuf *, struct mbuf *);
+extern int spp_usrreq_sp(struct socket *, int, struct mbuf *, struct mbuf *,
+			 struct mbuf *, struct mbuf *);
+extern struct sppcb *spp_close(struct sppcb *);
+extern struct sppcb *spp_usrclosed(struct sppcb *);
+extern struct sppcb *spp_disconnect(struct sppcb *);
+extern struct sppcb *spp_drop(struct sppcb *, int);
+extern void spp_fasttimo(void);
+extern void spp_slowtimo(void);
+extern struct sppcb *spp_timers(struct sppcb *, int);
+
+#endif /* KERNEL */
 #endif /* _NETNS_SPP_VAR_H_ */

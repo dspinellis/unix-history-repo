@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)in_pcb.c	7.14 (Berkeley) 4/20/91
- *	$Id: in_pcb.c,v 1.3 1993/11/18 00:08:15 wollman Exp $
+ *	$Id: in_pcb.c,v 1.4 1993/11/25 01:35:05 wollman Exp $
  */
 
 #include "param.h"
@@ -51,8 +51,6 @@
 #include "ip.h"
 #include "in_pcb.h"
 #include "in_var.h"
-
-struct	in_addr zeroin_addr;
 
 int
 in_pcballoc(so, head)

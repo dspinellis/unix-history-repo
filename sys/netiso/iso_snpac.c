@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)iso_snpac.c	7.14 (Berkeley) 6/27/91
- *	$Id: iso_snpac.c,v 1.3 1993/11/07 17:49:46 wollman Exp $
+ *	$Id: iso_snpac.c,v 1.4 1993/11/25 01:35:59 wollman Exp $
  */
 
 /***********************************************************
@@ -94,7 +94,6 @@ struct llinfo_llc llinfo_llc;
 
 int iso_systype = SNPA_ES;	/* default to be an ES */
 extern short	esis_holding_time, esis_config_time, esis_esconfig_time;
-extern int esis_config();
 static void snpac_fixdstandmask();
 
 struct sockaddr_iso blank_siso = {sizeof(blank_siso), AF_ISO};
@@ -351,7 +350,7 @@ int		*snpa_len;			/* RESULT: length of snpa */
  */
 void
 snpac_free(lc)
-register struct llinfo_llc *lc;		/* entry to free */
+	register struct llinfo_llc *lc;		/* entry to free */
 {
 	register struct rtentry *rt = lc->lc_rt;
 	register struct iso_addr *r;
@@ -380,12 +379,12 @@ register struct llinfo_llc *lc;		/* entry to free */
  */
 int
 snpac_add(ifp, nsap, snpa, type, ht, nsellength)
-struct ifnet		*ifp;		/* interface info is related to */
-struct iso_addr		*nsap;		/* nsap to add */
-caddr_t				snpa;		/* translation */
-char				type;		/* SNPA_IS or SNPA_ES */
-u_short				ht;			/* holding time (in seconds) */
-int					nsellength;	/* nsaps may differ only in trailing bytes */
+	struct ifnet *ifp;	/* interface info is related to */
+	struct iso_addr	*nsap;	/* nsap to add */
+	caddr_t	snpa;		/* translation */
+	char type;		/* SNPA_IS or SNPA_ES */
+	u_short	ht;		/* holding time (in seconds) */
+	int nsellength;		/* nsaps may differ only in trailing bytes */
 {
 	register struct	llinfo_llc *lc;
 	register struct rtentry *rt;
@@ -427,8 +426,10 @@ int					nsellength;	/* nsaps may differ only in trailing bytes */
 			goto add;
 		if (nsellength && (rt->rt_flags & RTF_HOST)) {
 			if (rt->rt_refcnt == 0) {
-				rtrequest(RTM_DELETE, S(dst), (struct sockaddr *)0,
-					(struct sockaddr *)0, 0, (struct rtentry *)0);
+				rtrequest(RTM_DELETE, S(dst),
+					  (struct sockaddr *)0,
+					  (struct sockaddr *)0,
+					  0, (struct rtentry **)0);
 				rt = 0;
 				goto add;
 			} else {
@@ -490,9 +491,9 @@ snpac_fixdstandmask(nsellength)
  */
 int
 snpac_ioctl (so, cmd, data)
-struct socket *so;
-int		cmd;	/* ioctl to process */
-caddr_t	data;	/* data for the cmd */
+	struct socket *so;
+	int cmd;		/* ioctl to process */
+	caddr_t	data;		/* data for the cmd */
 {
 	register struct systype_req *rq = (struct systype_req *)data;
 
@@ -521,7 +522,7 @@ caddr_t	data;	/* data for the cmd */
 		if (esis_esconfig_time != rq->sr_esconfigt) {
 			untimeout(esis_config, (caddr_t)0);
 			esis_esconfig_time = rq->sr_esconfigt;
-			esis_config();
+			esis_config(0, 0);
 		}
 	} else if (cmd == SIOCGSTYPE) {
 		rq->sr_type = iso_systype;
@@ -593,7 +594,7 @@ snpac_logdefis(sc)
  *					than the current time.
  */
 void
-snpac_age()
+snpac_age(caddr_t dummy1, int dummy2)
 {
 	register struct	llinfo_llc *lc, *nlc;
 	register struct	rtentry *rt;
@@ -628,8 +629,8 @@ snpac_age()
  */
 int
 snpac_ownmulti(snpa, len)
-caddr_t	snpa;
-u_int	len;
+	caddr_t	snpa;
+	u_int len;
 {
 	return (((iso_systype & SNPA_ES) &&
 			 (!bcmp(snpa, (caddr_t)all_es_snpa, len))) ||
@@ -674,12 +675,12 @@ struct ifnet	*ifp;
  */
 void
 snpac_rtrequest(req, host, gateway, netmask, flags, ret_nrt)
-int				req;
-struct iso_addr	*host;
-struct iso_addr	*gateway;
-struct iso_addr	*netmask;
-short			flags;
-struct rtentry	**ret_nrt;
+	int req;
+	struct iso_addr	*host;
+	struct iso_addr	*gateway;
+	struct iso_addr	*netmask;
+	short flags;
+	struct rtentry	**ret_nrt;
 {
 	register struct iso_addr *r;
 
@@ -729,8 +730,8 @@ struct rtentry	**ret_nrt;
  */
 void
 snpac_addrt(ifp, host, gateway, netmask)
-struct ifnet *ifp;
-struct iso_addr	*host, *gateway, *netmask;
+	struct ifnet *ifp;
+	struct iso_addr	*host, *gateway, *netmask;
 {
 	register struct iso_addr *r;
 
@@ -745,4 +746,4 @@ struct iso_addr	*host, *gateway, *netmask;
 		rtredirect(S(dst), S(gte), (struct sockaddr *)0,
 							RTF_DONE | RTF_HOST, S(gte), 0);
 }
-#endif	ISO
+#endif /* ISO */

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)iso_var.h	7.5 (Berkeley) 5/6/91
- *	$Id: iso_var.h,v 1.2 1993/10/16 21:05:30 rgrimes Exp $
+ *	$Id: iso_var.h,v 1.3 1993/11/07 17:49:49 wollman Exp $
  */
 
 /***********************************************************
@@ -135,5 +135,21 @@ struct snpa_hdr {
 extern struct iso_ifaddr *iso_ifaddr; /* linked list of iso address ifaces */
 struct iso_ifaddr *iso_localifa(); /* linked list of iso address ifaces */
 extern struct ifqueue clnlintrq; /* clnl packet input queue */
+
+extern int iso_check_csum(struct mbuf *, int);
+extern void iso_gen_csum(struct mbuf *, int, int);
+extern void iso_init(void);
+extern int iso_addrmatch1(struct iso_addr *, struct iso_addr *);
+extern int iso_addrmatch(struct sockaddr_iso *, struct sockaddr_iso *);
+extern u_long iso_hashchar(caddr_t, int);
+extern int iso_control(struct socket *, int, caddr_t, struct ifnet *);
+extern int iso_ifinit(struct ifnet *, struct iso_ifaddr *, 
+		      struct sockaddr_iso *, int);
+extern int iso_ck_addr(struct iso_addr *);
+extern struct iso_ifaddr *iso_localifa(struct sockaddr_iso *);
+extern int iso_nlctloutput(int, int, caddr_t, struct mbuf *);
+extern void dump_isoaddr(struct sockaddr_iso *);
+extern void dump_addr(struct sockaddr *);
+
 #endif /* KERNEL */
 #endif /* _NETISO_ISO_VAR_H_ */

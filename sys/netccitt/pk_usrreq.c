@@ -36,7 +36,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)pk_usrreq.c	7.16 (Berkeley) 6/27/91
- *	$Id: pk_usrreq.c,v 1.3 1993/10/16 19:46:56 rgrimes Exp $
+ *	$Id: pk_usrreq.c,v 1.4 1993/11/25 01:34:33 wollman Exp $
  */
 
 #include "param.h"
@@ -306,13 +306,12 @@ release:
  * other X.25 level 2 driver, have the ifp -> if_ioctl routine
  * assign pk_start to ia -> ia_start when called with SIOCSIFCONF_X25.
  */
-/* ARGSUSED */
 int
 pk_start (lcp)
 	register struct pklcd *lcp;
 {
-	pk_output (lcp);
-	return (0); /* XXX pk_output should return a value */
+	pk_output (lcp, 0);
+	return 0;
 }
 
 #ifndef _offsetof

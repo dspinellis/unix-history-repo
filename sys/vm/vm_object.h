@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_object.h	7.3 (Berkeley) 4/21/91
- *	$Id: vm_object.h,v 1.3 1993/11/07 17:54:20 wollman Exp $
+ *	$Id: vm_object.h,v 1.4 1993/11/25 01:39:11 wollman Exp $
  */
 
 /*
@@ -171,5 +171,6 @@ void		vm_object_print();
 #endif /* VM_OBJECT_DEBUG */
 
 extern void vm_object_page_clean(vm_object_t, vm_offset_t, vm_offset_t);
+extern int pager_cache(vm_object_t, boolean_t);
 
 #endif /* _VM_OBJECT_ */

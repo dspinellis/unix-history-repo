@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)raw_usrreq.c	7.9 (Berkeley) 6/28/90
- *	$Id: raw_usrreq.c,v 1.3 1993/10/16 17:43:38 rgrimes Exp $
+ *	$Id: raw_usrreq.c,v 1.4 1993/11/25 01:34:09 wollman Exp $
  */
 
 #include "param.h"
@@ -144,10 +144,11 @@ raw_ctlinput(cmd, arg)
 
 /*ARGSUSED*/
 int
-raw_usrreq(so, req, m, nam, control)
+raw_usrreq(so, req, m, nam, control, dummy)
 	struct socket *so;
 	int req;
 	struct mbuf *m, *nam, *control;
+	struct mbuf *dummy;
 {
 	register struct rawcb *rp = sotorawcb(so);
 	register int error = 0;

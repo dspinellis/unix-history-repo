@@ -31,10 +31,11 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ip_output.c	7.23 (Berkeley) 11/12/90
- *	$Id: ip_output.c,v 1.3 1993/10/19 09:14:15 davidg Exp $
+ *	$Id: ip_output.c,v 1.4 1993/11/25 01:35:09 wollman Exp $
  */
 
 #include "param.h"
+#include "systm.h"
 #include "malloc.h"
 #include "mbuf.h"
 #include "errno.h"

@@ -36,7 +36,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_pager.h	7.2 (Berkeley) 4/20/91
- *	$Id$
+ *	$Id: vm_pager.h,v 1.2 1993/10/16 16:20:51 rgrimes Exp $
  */
 
 /*
@@ -90,16 +90,17 @@ struct	pagerops {
 #define	VM_PAGER_HASPAGE(pg, o)		(*(pg)->pg_ops->pgo_haspage)(pg, o)
 
 #ifdef KERNEL
-vm_pager_t	vm_pager_allocate();
-void		vm_pager_deallocate();
-int		vm_pager_get();
-int		vm_pager_put();
-boolean_t	vm_pager_has_page();
-
-vm_offset_t	vm_pager_map_page();
-void		vm_pager_unmap_page();
-vm_pager_t	vm_pager_lookup();
-void		vm_pager_sync();
+extern void vm_pager_init(void);
+extern vm_pager_t vm_pager_allocate(int, caddr_t, vm_size_t, vm_prot_t, int);
+extern void vm_pager_deallocate(vm_pager_t);
+struct vm_page;
+extern int vm_pager_get(vm_pager_t, struct vm_page *, boolean_t);
+extern int vm_pager_put(vm_pager_t, struct vm_page *, boolean_t);
+extern boolean_t vm_pager_has_page(vm_pager_t, vm_offset_t);
+extern void vm_pager_sync(void);
+extern vm_offset_t vm_pager_map_page(struct vm_page *);
+extern void vm_pager_unmap_page(vm_offset_t);
+extern vm_pager_t vm_pager_lookup(queue_head_t *, caddr_t);
 
 extern struct pagerops *dfltpagerops;
 #endif

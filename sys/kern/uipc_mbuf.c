@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)uipc_mbuf.c	7.19 (Berkeley) 4/20/91
- *	$Id: uipc_mbuf.c,v 1.4 1993/11/07 17:46:23 wollman Exp $
+ *	$Id: uipc_mbuf.c,v 1.5 1993/11/25 01:33:32 wollman Exp $
  */
 
 #include "param.h"
@@ -591,3 +591,175 @@ out:	if (((m = m0)->m_flags & M_PKTHDR) && (m->m_pkthdr.len < totlen))
 		m->m_pkthdr.len = totlen;
 }
 
+struct mbuf *
+m_split (m0, len0, wait)
+	register struct mbuf *m0;
+	int len0;
+	int wait;
+{
+	register struct mbuf *m, *n;
+	unsigned len = len0, remain;
+
+	for (m = m0; m && len > m -> m_len; m = m -> m_next)
+		len -= m -> m_len;
+	if (m == 0)
+		return (0);
+	remain = m -> m_len - len;
+	if (m0 -> m_flags & M_PKTHDR) {
+		MGETHDR(n, wait, m0 -> m_type);
+		if (n == 0)
+			return (0);
+		n -> m_pkthdr.rcvif = m0 -> m_pkthdr.rcvif;
+		n -> m_pkthdr.len = m0 -> m_pkthdr.len - len0;
+		m0 -> m_pkthdr.len = len0;
+		if (m -> m_flags & M_EXT)
+			goto extpacket;
+		if (remain > MHLEN) {
+			/* m can't be the lead packet */
+			MH_ALIGN(n, 0);
+			n -> m_next = m_split (m, len, wait);
+			if (n -> m_next == 0) {
+				(void) m_free (n);
+				return (0);
+			} else
+				return (n);
+		} else
+			MH_ALIGN(n, remain);
+	} else if (remain == 0) {
+		n = m -> m_next;
+		m -> m_next = 0;
+		return (n);
+	} else {
+		MGET(n, wait, m -> m_type);
+		if (n == 0)
+			return (0);
+		M_ALIGN(n, remain);
+	}
+extpacket:
+	if (m -> m_flags & M_EXT) {
+		n -> m_flags |= M_EXT;
+		n -> m_ext = m -> m_ext;
+		mclrefcnt[mtocl (m -> m_ext.ext_buf)]++;
+		n -> m_data = m -> m_data + len;
+	} else {
+		bcopy (mtod (m, caddr_t) + len, mtod (n, caddr_t), remain);
+	}
+	n -> m_len = remain;
+	m -> m_len = len;
+	n -> m_next = m -> m_next;
+	m -> m_next = 0;
+	return (n);
+}
+
+/* The following taken from netiso/iso_chksum.c */
+struct mbuf *
+m_append(head, m)		/* XXX */
+	struct mbuf *head, *m;
+{
+	register struct mbuf *n;
+
+	if (m == 0)
+		return head;
+	if (head == 0)
+		return m;
+	n = head;
+	while (n->m_next)
+		n = n->m_next;
+	n->m_next = m;
+	return head;
+}
+
+/*
+ * FUNCTION:	m_datalen
+ *
+ * PURPOSE:		returns length of the mbuf chain.
+ * 				used all over the iso code.
+ *
+ * RETURNS:		integer
+ *
+ * SIDE EFFECTS: none
+ *
+ * NOTES:		
+ */
+int
+m_datalen (morig)		/* XXX */
+	struct mbuf *morig;
+{ 	
+	int	s = splimp();
+	register struct mbuf *n=morig;
+	register int datalen = 0;
+
+	if( morig == (struct mbuf *)0)
+		return 0;
+	for(;;) {
+		datalen += n->m_len;
+		if (n->m_next == (struct mbuf *)0 ) {
+			break;
+		}
+		n = n->m_next;
+	}
+	splx(s);
+	return datalen;
+}
+
+int
+m_compress(in, out)
+	register struct mbuf *in, **out;
+{
+	register 	int datalen = 0;
+	int	s = splimp();
+
+	if(!in->m_next) {
+		*out = in;
+		splx(s);
+		return in->m_len;
+	}
+	MGET((*out), M_DONTWAIT, MT_DATA);
+	if(! (*out)) {
+		*out = in;
+		splx(s);
+		return -1; 
+	}
+	(*out)->m_len = 0;
+	(*out)->m_act = 0;
+
+	while (in) {
+		if (in->m_flags & M_EXT) {
+#ifdef DEBUG
+			ASSERT(in->m_len == 0);
+#endif
+		}
+		if ( in->m_len == 0) {
+			in = in->m_next;
+			continue;
+		}
+		if (((*out)->m_flags & M_EXT) == 0) {
+			int len;
+
+			len = M_TRAILINGSPACE(*out);
+			len = MIN(len, in->m_len);
+			datalen += len;
+
+			bcopy(mtod(in, caddr_t), mtod((*out), caddr_t) + (*out)->m_len,
+						(unsigned)len);
+
+			(*out)->m_len += len;
+			in->m_len -= len;
+			continue;
+		} else {
+			/* (*out) is full */
+			if( !((*out)->m_next = m_get(M_DONTWAIT, MT_DATA))) {
+				m_freem(*out);
+				*out = in;
+				splx(s);
+				return -1;
+			}
+			(*out)->m_len = 0;
+			(*out)->m_act = 0;
+			*out = (*out)->m_next;
+		}
+	}
+	m_freem(in);
+	splx(s);
+	return datalen;
+}

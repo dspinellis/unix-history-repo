@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)buf.h	7.11 (Berkeley) 5/9/90
- *	$Id: buf.h,v 1.4 1993/11/18 05:03:22 rgrimes Exp $
+ *	$Id: buf.h,v 1.5 1993/11/25 01:37:50 wollman Exp $
  */
 
 #ifndef _SYS_BUF_H_
@@ -162,6 +162,8 @@ extern void bgetvp(struct vnode *, struct buf *);
 extern void brelvp(struct buf *);
 extern void reassignbuf(struct buf *, struct vnode *);
 extern void bufstats(void);
+extern int physio(void (*)(struct buf *), int, struct buf *, int, int,
+		  caddr_t, int *, struct proc *);
 
 #endif /* KERNEL */
 

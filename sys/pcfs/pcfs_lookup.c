@@ -15,7 +15,7 @@
  *
  *  October 1992
  *
- *	$Id: pcfs_lookup.c,v 1.5 1993/11/17 23:26:17 wollman Exp $
+ *	$Id: pcfs_lookup.c,v 1.6 1993/11/25 01:37:12 wollman Exp $
  */
 
 #include "param.h"
@@ -427,7 +427,8 @@ createde(dep, ndp, depp)
 {
 	int bn;
 	int error;
-	u_long dirclust, diroffset;
+	u_int dirclust;
+	u_long diroffset;
 	struct direntry *ndep;
 	struct denode *ddep = VTODE(ndp->ni_dvp);	/* directory to add to */
 	struct pcfsmount *pmp = dep->de_pmp;

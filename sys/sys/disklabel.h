@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)disklabel.h	7.19 (Berkeley) 5/7/91
- *	$Id: disklabel.h,v 1.4 1993/11/25 01:37:56 wollman Exp $
+ *	$Id: disklabel.h,v 1.5 1993/11/28 14:23:10 ats Exp $
  */
 
 #ifndef _SYS_DISKLABEL_H_
@@ -71,7 +71,7 @@
 #define LABELOFFSET	64			/* offset of label in sector */
 #endif
 
-#define DISKMAGIC	((u_long) 0x82564557)	/* The disk magic number */
+#define DISKMAGIC	(0x82564557UL)	/* The disk magic number */
 #ifndef MAXPARTITIONS
 #define	MAXPARTITIONS	8
 #endif

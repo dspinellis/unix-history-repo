@@ -1,4 +1,4 @@
-# $Id: files,v 1.11 1993/11/18 05:01:34 rgrimes Exp $
+# $Id: files,v 1.12 1993/12/12 12:21:57 davidg Exp $
 #
 ddb/db_access.c		optional ddb
 ddb/db_aout.c		optional ddb
@@ -115,6 +115,7 @@ netinet/in.c		optional inet
 netinet/in_pcb.c	optional inet
 netinet/in_proto.c	optional inet
 netinet/in_mtudisc.c	optional mtudisc
+netinet/in_var.c	optional inet
 netinet/ip_icmp.c	optional inet
 netinet/ip_input.c	optional inet
 netinet/ip_output.c	optional inet
@@ -198,9 +199,9 @@ pcfs/pcfs_fat.c		optional pcfs
 pcfs/pcfs_lookup.c	optional pcfs
 pcfs/pcfs_vfsops.c	optional pcfs
 pcfs/pcfs_vnops.c	optional pcfs
-procfs/procfs_vnops.c	optional procfs
-procfs/procfs_vfsops.c	optional procfs
-procfs/procfs_subr.c	optional procfs
+procfs/procfs_vnops.c	standard
+procfs/procfs_vfsops.c	standard
+procfs/procfs_subr.c	standard
 scsi/cd.c		optional cd
 scsi/ch.c		optional ch
 scsi/scsiconf.c		optional scbus
@@ -223,9 +224,9 @@ ufs/ufs_subr.c		standard
 ufs/ufs_tables.c	standard
 ufs/ufs_vfsops.c	standard
 ufs/ufs_vnops.c		standard
-vm/device_pager.c	optional devpager
+vm/device_pager.c	standard
 vm/kern_lock.c		standard
-vm/swap_pager.c		optional swappager
+vm/swap_pager.c		standard
 vm/vm_fault.c		standard
 vm/vm_glue.c		standard
 vm/vm_init.c		standard
@@ -240,4 +241,4 @@ vm/vm_pager.c		standard
 vm/vm_swap.c		standard
 vm/vm_unix.c		standard
 vm/vm_user.c		standard
-vm/vnode_pager.c	optional vnodepager
+vm/vnode_pager.c	standard

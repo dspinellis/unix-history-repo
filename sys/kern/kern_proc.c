@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_proc.c	7.16 (Berkeley) 6/28/91
- *	$Id: kern_proc.c,v 1.2 1993/10/16 15:24:23 rgrimes Exp $
+ *	$Id: kern_proc.c,v 1.3 1993/11/25 01:33:03 wollman Exp $
  */
 
 #include "param.h"
@@ -48,6 +48,10 @@
 #include "mbuf.h"
 #include "ioctl.h"
 #include "tty.h"
+
+struct prochd qs[NQS];		/* as good a place as any... */
+struct proc *zombproc;
+struct proc *allproc;
 
 static void pgdelete(struct pgrp *);
 static void orphanpg(struct pgrp *);
@@ -70,8 +74,7 @@ inferior(p)
  * Locate a process by number
  */
 struct proc *
-pfind(pid)
-	register pid;
+pfind(int pid)
 {
 	register struct proc *p = pidhash[PIDHASH(pid)];
 
@@ -85,8 +88,7 @@ pfind(pid)
  * Locate a process group by number
  */
 struct pgrp *
-pgfind(pgid)
-	register pid_t pgid;
+pgfind(pid_t pgid)
 {
 	register struct pgrp *pgrp = pgrphash[PIDHASH(pgid)];
 

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)clnp_input.c	7.13 (Berkeley) 5/6/91
- *	$Id: clnp_input.c,v 1.2 1993/10/16 21:04:48 rgrimes Exp $
+ *	$Id: clnp_input.c,v 1.3 1993/11/25 01:35:43 wollman Exp $
  */
 
 /***********************************************************
@@ -61,8 +61,8 @@ SOFTWARE.
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
 
-#include "types.h"
 #include "param.h"
+#include "systm.h"
 #include "mbuf.h"
 #include "domain.h"
 #include "protosw.h"
@@ -95,8 +95,6 @@ int			clnpqmaxlen = IFQ_MAXLEN;	/* RAH? why is this a variable */
 struct mbuf	*clnp_data_ck();
 
 void	clnp_input(struct mbuf *, struct snpa_hdr *);
-
-int	esis_input();
 
 #ifdef	ISO_X25ESIS
 int	x25esis_input();

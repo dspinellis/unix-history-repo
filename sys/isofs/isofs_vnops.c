@@ -1,5 +1,5 @@
 /*
- *	$Id: isofs_vnops.c,v 1.2 1993/07/20 03:27:37 jkh Exp $
+ *	$Id: isofs_vnops.c,v 1.3 1993/11/25 01:32:31 wollman Exp $
  */
 #include "param.h"
 #include "systm.h"
@@ -317,27 +317,32 @@ isofs_readdir(vp, uio, cred, eofflagp)
 		 *
 		 */
 		switch (ep->name[0]) {
-			case 0:
-				dirent.d_name[0] = '.';
-				dirent.d_namlen = 1;
+		case 0:
+			dirent.d_name[0] = '.';
+			dirent.d_namlen = 1;
+			break;
+		case 1:
+			dirent.d_name[0] = '.';
+			dirent.d_name[1] = '.';
+			dirent.d_namlen = 2;
+			break;
+		default:
+			switch ( imp->iso_ftype ) {
+			case ISO_FTYPE_RRIP:
+				isofs_rrip_getname( ep, dirent.d_name, &dirent.d_namlen );
 				break;
-			case 1:
-				dirent.d_name[0] = '.';
-				dirent.d_name[1] = '.';
-				dirent.d_namlen = 2;
+			case ISO_FTYPE_9660:
+			{
+				int namelen = dirent.d_namlen;
+				isofntrans(ep->name, dirent.d_namlen,
+					   dirent.d_name, &namelen);
+				dirent.d_namlen = namelen;
 				break;
+			}
 			default:
-				switch ( imp->iso_ftype ) {
-					case ISO_FTYPE_RRIP:
-						isofs_rrip_getname( ep, dirent.d_name, &dirent.d_namlen );
-					break;
-					case ISO_FTYPE_9660:
-						isofntrans(ep->name, dirent.d_namlen, dirent.d_name, &dirent.d_namlen);
-					break;
-					default:
-					break;
-				}
 				break;
+			}
+			break;
 		}
 
 		dirent.d_name[dirent.d_namlen] = 0;

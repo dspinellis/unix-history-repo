@@ -15,13 +15,14 @@
  *
  *  October 1992
  *
- *	$Id: pcfs_conv.c,v 1.2 1993/10/16 19:29:31 rgrimes Exp $
+ *	$Id: pcfs_conv.c,v 1.3 1993/11/25 01:37:08 wollman Exp $
  */
 
 /*
  *  System include files.
  */
 #include "param.h"
+#include "systm.h"
 #include "time.h"
 #include "kernel.h"	/* defines tz */
 

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)uipc_syscalls.c	7.24 (Berkeley) 6/3/91
- *	$Id: uipc_syscalls.c,v 1.4 1993/10/16 15:25:14 rgrimes Exp $
+ *	$Id: uipc_syscalls.c,v 1.5 1993/11/25 01:33:36 wollman Exp $
  */
 
 #include "param.h"
@@ -48,6 +48,12 @@
 #ifdef KTRACE
 #include "ktrace.h"
 #endif
+
+/* First two also used by NFS, boooo, hiss! */
+int getsock(struct filedesc *, int, struct file **);
+int sockargs(struct mbuf **, caddr_t, int, int);
+static int sendit(struct proc *, int, struct msghdr *, int, int *);
+static int recvit(struct proc *, int, struct msghdr *, caddr_t, int *);
 
 /*
  * System call interface to the socket abstraction.
@@ -133,7 +139,18 @@ listen(p, uap, retval)
 	return (solisten((struct socket *)fp->f_data, uap->backlog));
 }
 
+struct accept1_args {
+	int	s;
+	caddr_t	name;
+	int	*anamelen;
 #ifdef COMPAT_43
+	int	compat_43;
+#endif
+};
+
+#ifdef COMPAT_43
+
+int accept1(struct proc *, struct accept1_args *, int *);
 
 struct accept_args {
 	int	s;
@@ -150,7 +167,7 @@ accept(p, uap, retval)
 {
 
 	uap->compat_43 = 0;
-	return (accept1(p, uap, retval));
+	return (accept1(p, (struct accept1_args *)uap, retval));
 }
 
 struct oaccept_args {
@@ -168,21 +185,12 @@ oaccept(p, uap, retval)
 {
 
 	uap->compat_43 = 1;
-	return (accept1(p, uap, retval));
+	return (accept1(p, (struct accept1_args *)uap, retval));
 }
 #else /* COMPAT_43 */
 
 #define	accept1	accept
 #endif
-
-struct accept1_args {
-	int	s;
-	caddr_t	name;
-	int	*anamelen;
-#ifdef COMPAT_43
-	int	compat_43;
-#endif
-};
 
 int
 accept1(p, uap, retval)
@@ -516,7 +524,7 @@ done:
 	return (error);
 }
 
-int
+static int
 sendit(p, s, mp, flags, retsize)
 	register struct proc *p;
 	int s;
@@ -1080,7 +1088,18 @@ free1:
 /*
  * Get socket name.
  */
+struct getsockname1_args {
+	int	fdes;
+	caddr_t	asa;
+	int	*alen;
 #ifdef COMPAT_43
+	int	compat_43;
+#endif
+};
+
+#ifdef COMPAT_43
+
+int getsockname1(struct proc *, struct getsockname1_args *, int *);
 
 struct getsockname_args {
 	int	fdes;
@@ -1097,7 +1116,7 @@ getsockname(p, uap, retval)
 {
 
 	uap->compat_43 = 0;
-	return (getsockname1(p, uap, retval));
+	return (getsockname1(p, (struct getsockname1_args *)uap, retval));
 }
 
 struct ogetsockname_args {
@@ -1115,21 +1134,12 @@ ogetsockname(p, uap, retval)
 {
 
 	uap->compat_43 = 1;
-	return (getsockname1(p, uap, retval));
+	return (getsockname1(p, (struct getsockname1_args *)uap, retval));
 }
 #else /* COMPAT_43 */
 
 #define	getsockname1	getsockname
 #endif
-
-struct getsockname1_args {
-	int	fdes;
-	caddr_t	asa;
-	int	*alen;
-#ifdef COMPAT_43
-	int	compat_43;
-#endif
-};
 
 /* ARGSUSED */
 int
@@ -1151,7 +1161,7 @@ getsockname1(p, uap, retval)
 	m = m_getclr(M_WAIT, MT_SONAME);
 	if (m == NULL)
 		return (ENOBUFS);
-	if (error = (*so->so_proto->pr_usrreq)(so, PRU_SOCKADDR, 0, m, 0))
+	if (error = (*so->so_proto->pr_usrreq)(so, PRU_SOCKADDR, 0, m, 0, 0))
 		goto bad;
 	if (len > m->m_len)
 		len = m->m_len;
@@ -1172,7 +1182,18 @@ bad:
 /*
  * Get name of peer for connected socket.
  */
+struct getpeername1_args {
+	int	fdes;
+	caddr_t	asa;
+	int	*alen;
 #ifdef COMPAT_43
+	int	compat_43;
+#endif
+};
+
+#ifdef COMPAT_43
+
+int getpeername1(struct proc *, struct getpeername1_args *, int *);
 
 struct getpeername_args {
 	int	fdes;
@@ -1189,7 +1210,7 @@ getpeername(p, uap, retval)
 {
 
 	uap->compat_43 = 0;
-	return (getpeername1(p, uap, retval));
+	return (getpeername1(p, (struct getpeername1_args *)uap, retval));
 }
 
 struct ogetpeername_args {
@@ -1207,21 +1228,12 @@ ogetpeername(p, uap, retval)
 {
 
 	uap->compat_43 = 1;
-	return (getpeername1(p, uap, retval));
+	return (getpeername1(p, (struct getpeername1_args *)uap, retval));
 }
 #else /* COMPAT_43 */
 
 #define	getpeername1	getpeername
 #endif
-
-struct getpeername1_args {
-	int	fdes;
-	caddr_t	asa;
-	int	*alen;
-#ifdef COMPAT_43
-	int	compat_43;
-#endif
-};
 
 /* ARGSUSED */
 int
@@ -1245,7 +1257,7 @@ getpeername1(p, uap, retval)
 		return (ENOBUFS);
 	if (error = copyin((caddr_t)uap->alen, (caddr_t)&len, sizeof (len)))
 		return (error);
-	if (error = (*so->so_proto->pr_usrreq)(so, PRU_PEERADDR, 0, m, 0))
+	if (error = (*so->so_proto->pr_usrreq)(so, PRU_PEERADDR, 0, m, 0, 0))
 		goto bad;
 	if (len > m->m_len)
 		len = m->m_len;

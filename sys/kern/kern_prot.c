@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_prot.c	7.21 (Berkeley) 5/3/91
- *	$Id: kern_prot.c,v 1.3 1993/10/16 15:24:24 rgrimes Exp $
+ *	$Id: kern_prot.c,v 1.4 1993/11/25 01:33:04 wollman Exp $
  */
 
 /*
@@ -39,8 +39,8 @@
  */
 
 #include "param.h"
-#include "acct.h"
 #include "systm.h"
+#include "acct.h"
 #include "ucred.h"
 #include "proc.h"
 #include "timeb.h"

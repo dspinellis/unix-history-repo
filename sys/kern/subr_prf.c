@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)subr_prf.c	7.30 (Berkeley) 6/29/91
- *	$Id: subr_prf.c,v 1.4 1993/10/16 15:24:42 rgrimes Exp $
+ *	$Id: subr_prf.c,v 1.5 1993/11/13 02:25:32 davidg Exp $
  */
 
 #include "param.h"
@@ -129,7 +129,7 @@ panic(msg)
 #endif
 #include "ddb.h"
 #if NDDB > 0
-	Debugger ();
+	Debugger ("panic");
 #endif
 	boot(bootopt);
 }
@@ -139,7 +139,7 @@ panic(msg)
  */
 void
 tablefull(tab)
-	char *tab;
+	const char *tab;
 {
 
 	log(LOG_ERR, "%s: table is full\n", tab);
@@ -285,12 +285,12 @@ logpri(level)
 	putchar('>', TOLOG, NULL);
 }
 
-int
+void
 #ifdef __STDC__
 addlog(const char *fmt, ...)
 #else
 addlog(fmt /*, va_alist */)
-	char *fmt;
+	const char *fmt;
 #endif
 {
 	register int s;
@@ -307,7 +307,6 @@ addlog(fmt /*, va_alist */)
 		va_end(ap);
 	}
 	logwakeup();
-	return (0);
 }
 
 int	consintr = 1;			/* ok to handle console interrupts? */
@@ -317,7 +316,7 @@ int
 printf(const char *fmt, ...)
 #else
 printf(fmt /*, va_alist */)
-	char *fmt;
+	const char *fmt;
 #endif
 {
 	va_list ap;

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ufs_disksubr.c	7.16 (Berkeley) 5/4/91
- *	$Id: ufs_disksubr.c,v 1.3 1993/10/08 21:00:37 rgrimes Exp $
+ *	$Id: ufs_disksubr.c,v 1.4 1993/11/25 01:38:31 wollman Exp $
  */
 
 #include "param.h"
@@ -336,7 +336,7 @@ setdisklabel(olp, nlp, openmask, dp)
 			return(EINVAL);
 
 	/* special case to allow disklabel to be invalidated */
-	if (nlp->d_magic == 0xffffffff) {
+	if (nlp->d_magic == 0xffffffffUL) {
 		*olp = *nlp;
 		return (0);
 	}
@@ -566,7 +566,7 @@ diskerr(bp, dname, what, pri, blkdone, lp)
 
 	if (pri != LOG_PRINTF) {
 		log(pri, "");
-		pr = addlog;
+		pr = (int (*)(const char *, ...))addlog; /* XXX FIXME! */
 	} else
 		pr = printf;
 	(*pr)("%s%d%c: %s %sing fsbn ", dname, unit, partname, what,

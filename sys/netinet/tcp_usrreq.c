@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tcp_usrreq.c	7.15 (Berkeley) 6/28/90
- *	$Id: tcp_usrreq.c,v 1.2 1993/10/16 18:26:36 rgrimes Exp $
+ *	$Id: tcp_usrreq.c,v 1.3 1993/11/25 01:35:20 wollman Exp $
  */
 
 #include "param.h"
@@ -64,7 +64,6 @@
  * TCP protocol interface to socket abstraction.
  */
 extern	char *tcpstates[];
-struct	tcpcb *tcp_newtcpcb();
 
 /*
  * Process a TCP user request for TCP tb.  If this is a send request
@@ -73,10 +72,11 @@ struct	tcpcb *tcp_newtcpcb();
  */
 /*ARGSUSED*/
 int
-tcp_usrreq(so, req, m, nam, control)
+tcp_usrreq(so, req, m, nam, control, dummy)
 	struct socket *so;
 	int req;
 	struct mbuf *m, *nam, *control;
+	struct mbuf *dummy;
 {
 	register struct inpcb *inp;
 	register struct tcpcb *tp = 0;
@@ -396,14 +396,6 @@ tcp_ctloutput(op, so, level, optname, mp)
 	}
 	return (error);
 }
-
-#ifdef	TCP_SMALLSPACE
-u_long	tcp_sendspace = 1024*4;
-u_long	tcp_recvspace = 1024*4;
-#else
-u_long	tcp_sendspace = 1024*16;
-u_long	tcp_recvspace = 1024*16;
-#endif	/* TCP_SMALLSPACE */
 
 /*
  * Attach TCP protocol to socket, allocating

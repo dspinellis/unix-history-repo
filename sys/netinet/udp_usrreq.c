@@ -31,10 +31,11 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)udp_usrreq.c	7.20 (Berkeley) 4/20/91
- *	$Id: udp_usrreq.c,v 1.4 1993/11/18 00:08:23 wollman Exp $
+ *	$Id: udp_usrreq.c,v 1.5 1993/11/25 01:35:22 wollman Exp $
  */
 
 #include "param.h"
+#include "systm.h"
 #include "malloc.h"
 #include "mbuf.h"
 #include "protosw.h"
@@ -47,6 +48,7 @@
 
 #include "in.h"
 #include "in_systm.h"
+#include "in_var.h"
 #include "ip.h"
 #include "in_pcb.h"
 #include "ip_var.h"
@@ -54,10 +56,8 @@
 #include "udp.h"
 #include "udp_var.h"
 
-struct	inpcb udb;
-struct	udpstat udpstat;
-
-struct	inpcb *udp_last_inpcb = &udb;
+static struct	inpcb udb;
+static struct	inpcb *udp_last_inpcb = &udb;
 
 static void udp_detach(struct inpcb *);
 
@@ -72,14 +72,7 @@ udp_init()
 	udb.inp_next = udb.inp_prev = &udb;
 }
 
-#ifndef	COMPAT_42
-int	udpcksum = 1;
-#else
-int	udpcksum = 0;		/* XXX */
-#endif
-int	udp_ttl = UDP_TTL;
-
-struct	sockaddr_in udp_in = { sizeof(udp_in), AF_INET };
+static struct	sockaddr_in udp_in = { sizeof(udp_in), AF_INET };
 
 void
 udp_input(m, iphlen)
@@ -375,10 +368,6 @@ release:
 	m_freem(m);
 	return (error);
 }
-
-u_long	udp_sendspace = 9216;		/* really max datagram size */
-u_long	udp_recvspace = 40 * (1024 + sizeof(struct sockaddr_in));
-					/* 40 1K datagrams */
 
 /*ARGSUSED*/
 int

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)clnp_subr.c	7.13 (Berkeley) 5/6/91
- *	$Id: clnp_subr.c,v 1.4 1993/11/07 17:49:25 wollman Exp $
+ *	$Id: clnp_subr.c,v 1.5 1993/11/25 01:35:48 wollman Exp $
  */
 
 /***********************************************************
@@ -109,9 +109,9 @@ struct clnp_stat clnp_stat;
  */
 struct mbuf *
 clnp_data_ck(m, length)
-register struct mbuf	*m;		/* ptr to mbuf chain containing hdr & data */
-int						length;	/* length (in bytes) of packet */
- {
+	register struct mbuf *m; /* ptr to mbuf chain containing hdr & data */
+	int length;		/* length (in bytes) of packet */
+{
 	register int 			len;		/* length of data */
 	register struct mbuf	*mhead;		/* ptr to head of chain */
 
@@ -191,7 +191,7 @@ register struct iso_addr	*destp;		/* ptr to destination address buffer */
 	else
 		return (caddr_t) 0;
 }
-#endif	notdef
+#endif /* notdef */
 
 /*
  * FUNCTION:		clnp_ours
@@ -208,7 +208,7 @@ register struct iso_addr	*destp;		/* ptr to destination address buffer */
  */
 int
 clnp_ours(dst)
-register struct iso_addr *dst;		/* ptr to destination address */
+	register struct iso_addr *dst; /* ptr to destination address */
 {
 	register struct iso_ifaddr *ia;	/* scan through interface addresses */
 
@@ -240,7 +240,7 @@ int congest_threshold = 0;
  *					clnpintr guarantees that the header will be
  *					contigious (a cluster mbuf will be used if necessary).
  *
- *					If oidx is NULL, no options are present.
+ *				If oidx is NULL, no options are present.
  *
  * RETURNS:			nothing
  *
@@ -250,12 +250,12 @@ int congest_threshold = 0;
  */
 void
 clnp_forward(m, len, dst, oidx, seg_off, inbound_shp)
-struct mbuf			*m;		/* pkt to forward */
-int					len;	/* length of pkt */
-struct iso_addr		*dst;	/* destination address */
-struct clnp_optidx	*oidx;	/* option index */
-int					seg_off;/* offset of segmentation part */
-struct snpa_hdr		*inbound_shp;	/* subnetwork header of inbound packet */
+	struct mbuf *m;		/* pkt to forward */
+	int len;		/* length of pkt */
+	struct iso_addr *dst;	/* destination address */
+	struct clnp_optidx *oidx; /* option index */
+	int seg_off;		/* offset of segmentation part */
+	struct snpa_hdr *inbound_shp; /* subnetwork header of inbound packet */
 {
 	struct clnp_fixed		*clnp;	/* ptr to fixed part of header */
 	int						error;	/* return value of route function */
@@ -372,7 +372,7 @@ struct snpa_hdr		*inbound_shp;	/* subnetwork header of inbound packet */
 			}
 		}
 	}
-#endif	DECBIT
+#endif /* DECBIT */
 	
 	/*
 	 *	Dispatch the datagram if it is small enough, otherwise fragment
@@ -422,7 +422,7 @@ register struct iso_addr	*dstp;	/* ptr to dst addr */
 	return bufp;
 }
 
-#endif	notdef
+#endif /* notdef */
 
 /*
  * FUNCTION:		clnp_route
@@ -445,11 +445,11 @@ register struct iso_addr	*dstp;	/* ptr to dst addr */
  */
 int
 clnp_route(dst, ro, flags, first_hop, ifa)
-	struct iso_addr	*dst;			/* ptr to datagram destination */
-	register struct	route_iso *ro;	/* existing route structure */
-	int flags;						/* flags for routing */
-	struct sockaddr **first_hop;	/* result: fill in with ptr to firsthop */
-	struct iso_ifaddr **ifa;		/* result: fill in with ptr to interface */
+	struct iso_addr	*dst;	/* ptr to datagram destination */
+	register struct	route_iso *ro; /* existing route structure */
+	int flags;		/* flags for routing */
+	struct sockaddr **first_hop; /* result: fill in with ptr to firsthop */
+	struct iso_ifaddr **ifa; /* result: fill in with ptr to interface */
 {
 	if (flags & SO_DONTROUTE) {
 		struct iso_ifaddr *ia;
@@ -541,12 +541,12 @@ clnp_route(dst, ro, flags, first_hop, ifa)
  */
 int
 clnp_srcroute(options, oidx, ro, first_hop, ifa, final_dst)
-struct mbuf			*options;		/* ptr to options */
-struct clnp_optidx	*oidx;			/* index to options */
-struct route_iso	*ro;			/* route structure */
-struct sockaddr		**first_hop;	/* RETURN: fill in with ptr to firsthop */
-struct iso_ifaddr	**ifa;			/* RETURN: fill in with ptr to interface */
-struct iso_addr		*final_dst;		/* final destination */
+	struct mbuf *options;	/* ptr to options */
+	struct clnp_optidx *oidx; /* index to options */
+	struct route_iso *ro;	/* route structure */
+	struct sockaddr	**first_hop; /* RETURN: fill in with ptr to firsthop */
+	struct iso_ifaddr **ifa; /* RETURN: fill in with ptr to interface */
+	struct iso_addr	*final_dst; /* final destination */
 {
 	struct iso_addr	dst;		/* first hop specified by src rt */
 	int				error = 0;	/* return code */
@@ -598,16 +598,16 @@ struct iso_addr		*final_dst;		/* final destination */
  */
 int
 clnp_badmtu(ifp, rt, line, file)
-struct ifnet *ifp;	/* outgoing interface */
-struct rtentry *rt; /* dst route */
-int line;			/* where the dirty deed occured */
-char *file;			/* where the dirty deed occured */
+	struct ifnet *ifp;	/* outgoing interface */
+	struct rtentry *rt; /* dst route */
+	int line;		/* where the dirty deed occured */
+	const char *file;	/* where the dirty deed occured */
 {
 	printf("sending on route %x with no mtu, line %s of file %s\n",
 		rt, line, file);
 #ifdef ARGO_DEBUG
 	printf("route dst is");
-	dump_isoaddr(rt_key(rt));
+	dump_isoaddr((struct sockaddr_iso *)rt_key(rt));
 #endif
 	return ifp->if_mtu;
 }
@@ -633,3 +633,5 @@ clnp_ypocb(from, to, len)
 		*(to + len) = *(from + len);
 }
 #endif /* ISO */
+
+

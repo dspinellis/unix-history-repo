@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_glue.c	7.8 (Berkeley) 5/15/91
- *	$Id: vm_glue.c,v 1.12 1993/11/25 01:39:01 wollman Exp $
+ *	$Id: vm_glue.c,v 1.13 1993/12/12 12:27:23 davidg Exp $
  */
 
 /*
@@ -502,6 +502,7 @@ swapout(p)
  * The rest of these routines fake thread handling
  */
 
+#ifndef assert_wait
 void
 assert_wait(event, ruptible)
 	int event;
@@ -512,6 +513,7 @@ assert_wait(event, ruptible)
 #endif
 	curproc->p_thread = event;
 }
+#endif /* assert_wait */
 
 void
 thread_block(const char *wmesg)
@@ -540,6 +542,7 @@ thread_sleep_(event, lock, wmesg)
 	splx(s);
 }
 
+#ifndef thread_wakeup
 void
 thread_wakeup(event)
 	int event;
@@ -553,6 +556,7 @@ thread_wakeup(event)
 	splx(s);
 #endif
 }
+#endif /* thread_wakeup */
 
 /*
  * DEBUG stuff
@@ -563,13 +567,13 @@ int indent = 0;
 
 /*ARGSUSED2*/
 void
-iprintf(const char *a, ...)
+iprintf(const char *fmt, ...)
 {
 	va_list args;
 	int i, j = 0;
 	char indentbuf[indent + 1];
 
-	va_start(args, a);
+	va_start(args, fmt);
 	i = indent;
 	while (i >= 8) {
 	  indentbuf[j++] = '\t';
@@ -580,7 +584,7 @@ iprintf(const char *a, ...)
 
 	indentbuf[j++] = '\0';
 
-	printf("%s%r", indentbuf, a, args);
+	printf("%s%r", indentbuf, fmt, args);
 	va_end(args);
 }
 #endif	/* defined(DEBUG) || (NDDB > 0) */

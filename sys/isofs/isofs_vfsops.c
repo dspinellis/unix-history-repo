@@ -1,5 +1,5 @@
 /*
- *	$Id: isofs_vfsops.c,v 1.3 1993/10/24 04:29:08 rgrimes Exp $
+ *	$Id: isofs_vfsops.c,v 1.4 1993/11/25 01:32:30 wollman Exp $
  */
 
 #include "param.h"
@@ -42,6 +42,8 @@ struct vfsops isofs_vfsops = {
  * Name is updated by mount(8) after booting.
  */
 #define ROOTNAME	"root_device"
+
+static int iso_mountfs(struct vnode *, struct mount *, struct proc *);
 
 int
 isofs_mountroot()
@@ -196,7 +198,7 @@ isofs_mount(mp, path, data, ndp, p)
 /*
  * Common code for mount and mountroot
  */
-int
+static int
 iso_mountfs(devvp, mp, p)
 	register struct vnode *devvp;
 	struct mount *mp;

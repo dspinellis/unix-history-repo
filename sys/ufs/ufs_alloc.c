@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ufs_alloc.c	7.26 (Berkeley) 5/2/91
- *	$Id: ufs_alloc.c,v 1.2 1993/10/16 18:17:49 rgrimes Exp $
+ *	$Id: ufs_alloc.c,v 1.3 1993/11/25 01:38:29 wollman Exp $
  */
 
 #include "param.h"
@@ -46,6 +46,7 @@
 #include "inode.h"
 #include "fs.h"
 
+/* XXX */
 extern u_long		hashalloc();
 extern ino_t		ialloccg();
 extern daddr_t		alloccg();

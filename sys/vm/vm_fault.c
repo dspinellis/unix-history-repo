@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_fault.c	7.6 (Berkeley) 5/7/91
- *	$Id: vm_fault.c,v 1.7 1993/11/25 01:38:59 wollman Exp $
+ *	$Id: vm_fault.c,v 1.8 1993/12/12 12:27:22 davidg Exp $
  */
 
 /*
@@ -69,10 +69,13 @@
  */
 
 #include "param.h"
+#include "systm.h"
+#include "proc.h"		/* XXX - just to get curproc */
 
 #include "vm.h"
 #include "vm_page.h"
 #include "vm_pageout.h"
+#include "vm_user.h"		/* make sure we match prototype */
 
 vm_statistics_data_t vm_stat;
 

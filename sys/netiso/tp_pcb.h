@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tp_pcb.h	7.9 (Berkeley) 5/6/91
- *	$Id: tp_pcb.h,v 1.4 1993/11/18 00:10:15 wollman Exp $
+ *	$Id: tp_pcb.h,v 1.5 1993/11/25 01:36:10 wollman Exp $
  */
 
 /***********************************************************
@@ -365,6 +365,35 @@ extern struct tp_param	tp_param;
 extern struct nl_protosw  nl_protosw[];
 extern struct tp_pcb	*tp_listeners;
 extern struct tp_pcb	*tp_intercepts;
+
+extern int tp_goodXack(struct tp_pcb *, SeqNum);
+extern void tp_rtt_rtv(struct timeval *, struct timeval *, struct timeval *);
+extern int tp_goodack(struct tp_pcb *, u_int, SeqNum, SeqNum);
+extern int tp_send(struct tp_pcb *);
+struct tp_event;
+extern int tp_stash(struct tp_pcb *, struct tp_event *);
+
+extern void tp_local_credit(struct tp_pcb *);
+extern int tp_protocol_error(struct tp_event *, struct tp_pcb *);
+extern void tp_drain(void);
+extern void tp_indicate(int, struct tp_pcb *, int /*u_short*/);
+extern void tp_getoptions(struct tp_pcb *);
+extern void tp_recycle_tsuffix(struct tp_pcb *);
+extern void tp_quench(struct tp_pcb *, int);
+extern void tp_netcmd(struct tp_pcb *, int);
+extern int tp_mask_to_num(int /*u_char*/);
+extern int tp_route_to(struct mbuf *, struct tp_pcb *, caddr_t);
+extern void tp0_stash(struct tp_pcb *, struct tp_event *);
+extern void ytp0_openflow(struct tp_pcb *);
+extern int tp_setup_perf(struct tp_pcb *);
+
+extern int tp_consistency(struct tp_pcb *, u_int, struct tp_conn_param *);
+extern int tp_ctloutput(int, struct socket *, int, int, struct mbuf **);
+extern struct mbuf *tp_inputprep(struct mbuf *);
+extern int tp_input(struct mbuf *, struct sockaddr *, struct sockaddr *, 
+		     u_int, int (*)(), int);
+extern int tp_headersize(int, struct tp_pcb *);
+ 
 #endif
 
 #define	sototpcb(so) 	((struct tp_pcb *)(so->so_tpcb))

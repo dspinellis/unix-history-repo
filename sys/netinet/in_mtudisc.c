@@ -26,7 +26,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	$Id$
+ *	$Id: in_mtudisc.c,v 1.1 1993/11/18 00:08:14 wollman Exp $
  */
 
 #ifdef MTUDISC
@@ -61,28 +61,12 @@ struct inpcb *checkpcbs[] = {
   0
 };
 
-/*
- * MTUTIMER1 is the number of minutes to wait after having incremented
- * the MTU estimate before trying again.  MTUTIMER2 is the number
- * of minutes to wait after having decremented the MTU estimate
- * before trying to increment it.
- */
-#ifndef MTUTIMER1
-#define MTUTIMER1 2
-#endif
-int in_mtutimer1 = MTUTIMER1;
-
-#ifndef MTUTIMER2
-#define MTUTIMER2 10
-#endif
-int in_mtutimer2 = MTUTIMER2;
-
 
 /*
  * Table of likely MTU values, courtesy of RFC 1191.
  * This MUST remain in sorted order.
  */
-const u_short in_mtus[] = {
+static const u_short in_mtus[] = {
   65535,			/* maximum */
   32767,			/* convenient power of 2 - 1 */
   17914,			/* 16Mb Token Ring */

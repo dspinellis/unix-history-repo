@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_swap.c	7.18 (Berkeley) 5/6/91
- *	$Id: vm_swap.c,v 1.5 1993/11/17 23:27:04 wollman Exp $
+ *	$Id: vm_swap.c,v 1.6 1993/11/25 01:39:16 wollman Exp $
  */
 
 #include "param.h"
@@ -45,6 +45,9 @@
 #include "specdev.h"
 #include "file.h"
 #include "rlist.h"
+#include "kernel.h"
+
+static int swfree(struct proc *, int);
 
 /*
  * Indirect driver for multi-controller paging.
@@ -230,7 +233,7 @@ swapon(p, uap, retval)
  * space, which is laid out with blocks of dmmax pages circularly
  * among the devices.
  */
-int
+static int
 swfree(p, index)
 	struct proc *p;
 	int index;

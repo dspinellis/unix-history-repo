@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)uipc_socket2.c	7.17 (Berkeley) 5/4/91
- *	$Id: uipc_socket2.c,v 1.2 1993/10/16 15:25:12 rgrimes Exp $
+ *	$Id: uipc_socket2.c,v 1.3 1993/11/25 01:33:35 wollman Exp $
  */
 
 #include "param.h"
@@ -173,7 +173,8 @@ sonewconn1(head, connstatus)
 	(void) soreserve(so, head->so_snd.sb_hiwat, head->so_rcv.sb_hiwat);
 	soqinsque(head, so, soqueue);
 	if ((*so->so_proto->pr_usrreq)(so, PRU_ATTACH,
-	    (struct mbuf *)0, (struct mbuf *)0, (struct mbuf *)0)) {
+	    (struct mbuf *)0, (struct mbuf *)0, (struct mbuf *)0,
+				       (struct mbuf *)0)) {
 		(void) soqremque(so, soqueue);
 		(void) free((caddr_t)so, M_SOCKET);
 		return ((struct socket *)0);

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vnode.h	7.39 (Berkeley) 6/27/91
- *	$Id: vnode.h,v 1.5 1993/11/25 01:38:11 wollman Exp $
+ *	$Id: vnode.h,v 1.6 1993/12/12 12:27:03 davidg Exp $
  */
 
 #ifndef _SYS_VNODE_H_
@@ -273,7 +273,7 @@ struct vnodeops {
 /*
  * Token indicating no attribute value yet assigned
  */
-#define	VNOVAL	((unsigned)0xffffffff)
+#define	VNOVAL	(~0)
 
 #ifdef KERNEL
 /*
@@ -291,6 +291,9 @@ int	vn_write __P((struct file *fp, struct uio *uio, struct ucred *cred));
 int	vn_ioctl __P((struct file *fp, int com, caddr_t data, struct proc *p));
 int	vn_select __P((struct file *fp, int which, struct proc *p));
 int 	vn_closefile __P((struct file *fp, struct proc *p));
+struct stat;
+int	vn_stat __P((struct vnode *, struct stat *, struct proc *));
+int	vn_writechk __P((struct vnode *));
 int 	getnewvnode __P((enum vtagtype tag, struct mount *mp,
 	    struct vnodeops *vops, struct vnode **vpp));
 int 	bdevvp __P((int dev, struct vnode **vpp));
@@ -316,6 +319,10 @@ extern void vclean(struct vnode *, int);
 extern int vfinddev(int /*dev_t*/, enum vtype, struct vnode **);
 extern void vprint(const char *, struct vnode *);
 extern int kinfo_vnode(int, char *, int *, int, int *);
+extern int vnode_pager_uncache(struct vnode *);
+extern void vnode_pager_setsize(struct vnode *, u_long);
+extern void cache_purge(struct vnode *);
+extern void cache_purgevfs(struct mount *);
 
 /*
  * Flags to various vnode functions.

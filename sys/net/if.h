@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)if.h	7.11 (Berkeley) 3/19/91
- *	$Id: if.h,v 1.9 1993/11/16 02:37:39 wollman Exp $
+ *	$Id: if.h,v 1.10 1993/11/25 01:33:59 wollman Exp $
  */
 
 #ifndef _NET_IF_H_
@@ -263,7 +263,12 @@ extern struct	ifqueue rawintrq;		/* raw packet input queue */
 extern struct	ifnet *ifnet;
 struct	ifaddr *ifa_ifwithaddr(), *ifa_ifwithnet();
 struct	ifaddr *ifa_ifwithdstaddr();
+extern int ifpromisc(struct ifnet *, int);
+
+/* Loopback interface, used internally by non-loopback code */
 extern struct	ifnet loif;
+extern int looutput(struct ifnet *, struct mbuf *, struct sockaddr *,
+		    struct rtentry *);
 
 #else /* KERNEL */
 #include <net/if_arp.h>

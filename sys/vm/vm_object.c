@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_object.c	7.4 (Berkeley) 5/7/91
- *	$Id: vm_object.c,v 1.9 1993/11/25 01:39:10 wollman Exp $
+ *	$Id: vm_object.c,v 1.10 1993/11/25 12:07:41 davidg Exp $
  */
 
 /*
@@ -68,13 +68,14 @@
  *	Virtual memory object module.
  */
 
-#include "ddb.h"
-
 #include "param.h"
+#include "systm.h"
 #include "malloc.h"
 
 #include "vm.h"
 #include "vm_page.h"
+#include "ddb.h"
+
 
 static void _vm_object_allocate(vm_size_t, vm_object_t);
 static void vm_object_deactivate_pages(vm_object_t);

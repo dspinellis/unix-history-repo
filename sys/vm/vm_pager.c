@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_pager.c	7.4 (Berkeley) 5/7/91
- *	$Id: vm_pager.c,v 1.4 1993/11/22 09:49:54 davidg Exp $
+ *	$Id: vm_pager.c,v 1.5 1993/11/25 01:39:15 wollman Exp $
  */
 
 /*
@@ -70,6 +70,7 @@
  */
 
 #include "param.h"
+#include "systm.h"
 #include "malloc.h"
 
 #include "vm.h"

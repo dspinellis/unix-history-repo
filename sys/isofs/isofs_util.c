@@ -1,5 +1,5 @@
 /*
- *	$Id: isofs_util.c,v 1.2 1993/07/20 03:27:33 jkh Exp $
+ *	$Id: isofs_util.c,v 1.3 1993/11/25 01:32:28 wollman Exp $
  */
 
 #include "param.h"
@@ -14,19 +14,19 @@ char *p;
 
 int
 isonum_712 (p)
-char *p;
+	char *p;
 {
 	int val;
 
 	val = *p;
 	if (val & 0x80)
-		val |= 0xffffff00;
+		val |= ~0xff;
 	return (val);
 }
 
 int
 isonum_721 (p)
-char *p;
+	char *p;
 {
 	return ((p[0] & 0xff) | ((p[1] & 0xff) << 8));
 }

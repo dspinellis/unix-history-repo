@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm.h	7.1 (Berkeley) 5/5/91
- *	$Id: vm.h,v 1.4 1993/11/25 01:38:58 wollman Exp $
+ *	$Id: vm.h,v 1.5 1993/12/12 12:27:21 davidg Exp $
  */
 
 #ifndef _VM_H_
@@ -76,5 +76,10 @@ struct	vmspace *vmspace_fork __P((struct vmspace *));
 void	vmspace_free __P((struct vmspace *));
 
 extern void thread_block(const char *);
+
+/* This really doesn't belong here, but the VM code doesn't distinguish
+ * very well between internal and interface code. */
+#define assert_wait(e, r) (curproc->p_thread = (e))
+#define thread_wakeup(e) (wakeup((caddr_t)(e)))
 
 #endif /* _VM_H_ */

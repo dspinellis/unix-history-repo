@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)clnp_raw.c	7.8 (Berkeley) 5/6/91
- *	$Id: clnp_raw.c,v 1.2 1993/10/16 21:04:53 rgrimes Exp $
+ *	$Id: clnp_raw.c,v 1.3 1993/11/25 01:35:46 wollman Exp $
  */
 
 /***********************************************************
@@ -62,6 +62,7 @@ SOFTWARE.
  */
 
 #include "param.h"
+#include "systm.h"
 #include "mbuf.h"
 #include "domain.h"
 #include "protosw.h"
@@ -351,7 +352,7 @@ clnp_usrreq(so, req, m, nam, control)
 		return (0);
 	    }
 	}
-	error =  raw_usrreq(so, req, m, nam, control);
+	error =  raw_usrreq(so, req, m, nam, control, 0);
 
 	if (error && req == PRU_ATTACH && so->so_pcb)
 		free((caddr_t)rp, M_PCB);

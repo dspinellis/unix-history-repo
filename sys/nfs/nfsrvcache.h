@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	From:	@(#)nfsrvcache.h	7.3 (Berkeley) 6/28/90
- *	$Id$
+ *	$Id: nfsrvcache.h,v 1.2 1993/09/09 22:06:26 rgrimes Exp $
  */
 
 #ifndef __h_nfsrvcache
@@ -95,5 +95,12 @@ struct nfsrvcache {
 /* Delay time after completion that request is dropped */
 #define	RC_DELAY	2		/* seconds */
 
+#ifdef KERNEL
 
+extern void nfsrv_initcache(void);
+extern int nfsrv_getcache(struct mbuf *, u_long, int, struct mbuf **);
+extern void nfsrv_updatecache(struct mbuf *, u_long, int, int, int, 
+			      struct mbuf *);
+
+#endif /* KERNEL */
 #endif /* __h_nfsrvcache */

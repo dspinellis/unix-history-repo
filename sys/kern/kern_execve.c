@@ -28,7 +28,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	$Id: kern_execve.c,v 1.4 1993/12/11 06:55:33 davidg Exp davidg $
+ *	$Id: kern_execve.c,v 1.10 1993/12/12 12:23:19 davidg Exp $
  */
 
 #include "param.h"
@@ -50,6 +50,7 @@
 #include "vm/vm_param.h"
 #include "vm/vm_map.h"
 #include "vm/vm_kern.h"
+#include "vm/vm_user.h"
 
 #include "machine/reg.h"
 
@@ -110,7 +111,8 @@ execve(p, uap, retval)
 	 * Allocate temporary demand zeroed space for argument and
 	 *	environment strings
 	 */
-	error = vm_allocate(kernel_map, &iparams->stringbase, ARG_MAX, TRUE);
+	error = vm_allocate(kernel_map, (vm_offset_t *)&iparams->stringbase, 
+			    ARG_MAX, TRUE);
 	if (error) {
 		log(LOG_WARNING, "execve: failed to allocate string space\n");
 		return (error);
@@ -136,7 +138,8 @@ interpret:
 
 	error = namei(ndp, p);
 	if (error) {
-		vm_deallocate(kernel_map, iparams->stringbase, ARG_MAX);
+		vm_deallocate(kernel_map, (vm_offset_t)iparams->stringbase, 
+			      ARG_MAX);
 		goto exec_fail;	
 	}
 
@@ -178,16 +181,16 @@ interpret:
 	 * Map the image header (first page) of the file into
 	 *	kernel address space
 	 */
-	error = vm_mmap(kernel_map,	/* map */
-		    &image_header,	/* address */
-		    NBPG,		/* size */
-		    VM_PROT_READ,	/* protection */
-		    VM_PROT_READ,	/* maximum protection */
-		    MAP_FILE,		/* flags */
-		    vnodep,		/* vnode */
-		    0);			/* offset */
+	error = vm_mmap(kernel_map,			/* map */
+			(vm_offset_t *)&image_header,	/* address */
+			NBPG,				/* size */
+			VM_PROT_READ, 			/* protection */
+			VM_PROT_READ, 			/* max protection */
+			MAP_FILE, 			/* flags */
+			(caddr_t)vnodep,		/* vnode */
+			0);				/* offset */
 	if (error) {
-		printf("mmap filed: %d\n",error);
+		printf("mmap failed: %d\n",error);
 		goto exec_fail_dealloc;
 	}
 	iparams->image_header = image_header;
@@ -214,7 +217,8 @@ interpret:
 			/* free old vnode and name buffer */
 			vput(ndp->ni_vp);
 			FREE(ndp->ni_pnbuf, M_NAMEI);
-			if (vm_deallocate(kernel_map, image_header, NBPG))
+			if (vm_deallocate(kernel_map, 
+					  (vm_offset_t)image_header, NBPG))
 				panic("execve: header dealloc failed (1)");
 
 			/* set new name to that of the interpreter */
@@ -294,9 +298,10 @@ interpret:
 	/*
 	 * free various allocated resources
 	 */
-	if (vm_deallocate(kernel_map, iparams->stringbase, ARG_MAX))
+	if (vm_deallocate(kernel_map, (vm_offset_t)iparams->stringbase,
+			  ARG_MAX))
 		panic("execve: string buffer dealloc failed (1)");
-	if (vm_deallocate(kernel_map, image_header, NBPG))
+	if (vm_deallocate(kernel_map, (vm_offset_t)image_header, NBPG))
 		panic("execve: header dealloc failed (2)");
 	vput(ndp->ni_vp);
 	FREE(ndp->ni_pnbuf, M_NAMEI);
@@ -305,10 +310,12 @@ interpret:
 
 exec_fail_dealloc:
 	if (iparams->stringbase && iparams->stringbase != (char *)-1)
-		if (vm_deallocate(kernel_map, iparams->stringbase, ARG_MAX))
+		if (vm_deallocate(kernel_map, (vm_offset_t)iparams->stringbase,
+				  ARG_MAX))
 			panic("execve: string buffer dealloc failed (2)");
 	if (iparams->image_header && iparams->image_header != (char *)-1)
-		if (vm_deallocate(kernel_map, image_header, NBPG))
+		if (vm_deallocate(kernel_map, 
+				  (vm_offset_t)iparams->image_header, NBPG))
 			panic("execve: header dealloc failed (3)");
 	vput(ndp->ni_vp);
 	FREE(ndp->ni_pnbuf, M_NAMEI);
@@ -346,7 +353,8 @@ exec_new_vmspace(iparams)
 	vm_deallocate(&vmspace->vm_map, 0, USRSTACK);
 
 	/* Allocate a new stack */
-	error = vm_allocate(&vmspace->vm_map, &stack_addr, DFLSSIZ, FALSE);
+	error = vm_allocate(&vmspace->vm_map, (vm_offset_t *)&stack_addr,
+			    DFLSSIZ, FALSE);
 	if (error)
 		return(error);
 

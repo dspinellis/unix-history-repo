@@ -36,7 +36,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)pk_input.c	7.14 (Berkeley) 7/16/91
- *	$Id: pk_input.c,v 1.3 1993/10/30 06:37:09 rgrimes Exp $
+ *	$Id: pk_input.c,v 1.4 1993/11/25 01:34:29 wollman Exp $
  */
 
 #include "param.h"
@@ -170,6 +170,7 @@ pk_ctlinput (code, pkp)
 	}
 	return (0);
 }
+
 struct ifqueue pkintrq;
 /*
  * This routine is called if there are semi-smart devices that do HDLC
@@ -260,7 +261,7 @@ pk_input (m)
 			/* send response on lcd 0's output queue */
 			lcp = pkp -> pk_chan[0];
 			lcp -> lcd_template = pk_template (lcn, X25_CLEAR_CONFIRM);
-			pk_output (lcp);
+			pk_output (lcp, 0);
 			m_freem (m);
 			return;
 		}
@@ -322,7 +323,7 @@ pk_input (m)
 	case CLEAR + DATA_TRANSFER: 
 		lcp -> lcd_state = RECEIVED_CLEAR;
 		lcp -> lcd_template = pk_template (lcp -> lcd_lcn, X25_CLEAR_CONFIRM);
-		pk_output (lcp);
+		pk_output (lcp, 0);
 		pk_clearcause (pkp, xp);
 		if (lcp -> lcd_upper) {
 			MCHTYPE(m, MT_CONTROL);
@@ -460,7 +461,7 @@ pk_input (m)
 			break;
 		lcp -> lcd_intrdata = xp -> packet_data;
 		lcp -> lcd_template = pk_template (lcp -> lcd_lcn, X25_INTERRUPT_CONFIRM);
-		pk_output (lcp);
+		pk_output (lcp, 0);
 		m -> m_data += PKHEADERLN;
 		m -> m_len -= PKHEADERLN;
 		m -> m_pkthdr.len -= PKHEADERLN;
@@ -498,7 +499,7 @@ pk_input (m)
 		}
 		if (lcp -> lcd_rnr_condition == TRUE)
 			lcp -> lcd_rnr_condition = FALSE;
-		pk_output (lcp);
+		pk_output (lcp, 0);
 		break;
 
 	/* 
@@ -533,7 +534,7 @@ pk_input (m)
 		lcp -> lcd_rsn = MODULUS - 1;
 
 		lcp -> lcd_template = pk_template (lcp -> lcd_lcn, X25_RESET_CONFIRM);
-		pk_output (lcp);
+		pk_output (lcp, 0);
 
 		pk_flush(lcp);
 		if (so == 0)
@@ -549,7 +550,7 @@ pk_input (m)
 	case RESET_CONF + DATA_TRANSFER: 
 		if (lcp -> lcd_reset_condition) {
 			lcp -> lcd_reset_condition = FALSE;
-			pk_output (lcp);
+			pk_output (lcp, 0);
 		}
 		else
 			pk_procerror (RESET, lcp, "unexpected packet", 32);
@@ -586,7 +587,7 @@ pk_input (m)
 			pk_restartcause (pkp, xp);
 			pkp -> pk_chan[0] -> lcd_template = pk_template (0,
 				X25_RESTART_CONFIRM);
-			pk_output (pkp -> pk_chan[0]);
+			pk_output (pkp -> pk_chan[0], 0);
 		}
 		break;
 
@@ -648,8 +649,7 @@ copyrest:
 		cp2++;
 }
 
-/* static */
-void
+static void
 pk_simple_bsd (from, to, lower, len)
 	register octet *from, *to;
 	register len, lower;
@@ -666,8 +666,7 @@ pk_simple_bsd (from, to, lower, len)
 	*to = 0;
 }
 
-/*static octet * */
-void
+static void
 pk_from_bcd (a, iscalling, sa, xcp)
 	register struct x25_calladdr *a;
 	int iscalling;
@@ -706,7 +705,7 @@ save_extra(m0, fp, so)
 {
 	register struct mbuf *m = 0;
 	struct cmsghdr cmsghdr;
-	if (m = m_copym (m, 0, (int)M_COPYALL), M_DONTWAIT) {
+	if (m = m_copym (m, 0, (int)M_COPYALL, M_DONTWAIT)) {
 		int off = fp - mtod (m0, octet *);
 		int len = m->m_pkthdr.len - off + sizeof (cmsghdr);
 		cmsghdr.cmsg_len = len;
@@ -831,7 +830,7 @@ pk_incoming_call (pkp, m0)
 				lcp -> lcd_flags &= ~X25_DBIT;
 		}
 		if (so) {
-			pk_output (lcp);
+			pk_output (lcp, 0);
 			soisconnected (so);
 			if (so -> so_options & SO_OOBINLINE)
 				save_extra(m0, facp, so);

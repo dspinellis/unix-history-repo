@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)com.c	7.5 (Berkeley) 5/16/91
- *	$Id: com.c,v 1.5 1993/10/16 13:45:46 rgrimes Exp $
+ *	$Id: com.c,v 1.6 1993/11/25 01:31:30 wollman Exp $
  */
 
 #include "com.h"
@@ -58,6 +58,7 @@
 #include "i386/isa/ic/ns16550.h"
 #define cominor(d)
 
+static int commctl(int /*dev_t*/, int, int);
 static int comprobe();
 static int comattach();
 void comintr(int);
@@ -588,7 +589,7 @@ comstop(tp, flag)
 	splx(s);
 }
  
-int
+static int
 commctl(dev, bits, how)
 	dev_t dev;
 	int bits, how;

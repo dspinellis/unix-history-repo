@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)fs.h	7.12 (Berkeley) 5/8/91
- *	$Id: fs.h,v 1.3 1993/11/07 17:53:36 wollman Exp $
+ *	$Id: fs.h,v 1.4 1993/11/25 01:38:17 wollman Exp $
  */
 
 #ifndef _UFS_FS_H_
@@ -446,6 +446,12 @@ struct	ocg {
 #ifdef KERNEL
 
 extern void fserr(struct fs *, int /*uid_t*/, const char *);
+extern void fragacct(struct fs *, int, long *, int);
+extern int isblock(struct fs *, u_char *, daddr_t);
+extern void clrblock(struct fs *, u_char *, daddr_t);
+extern void setblock(struct fs *, u_char *, daddr_t);
+extern ino_t dirpref(struct fs *);
+extern daddr_t mapsearch(struct fs *, struct cg *, daddr_t, int);
 
 #endif /* KERNEL */
 #endif /* _UFS_FS_H_ */

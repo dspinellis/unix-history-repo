@@ -31,10 +31,11 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ns.c	7.8 (Berkeley) 6/27/91
- *	$Id: ns.c,v 1.3 1993/11/07 17:50:23 wollman Exp $
+ *	$Id: ns.c,v 1.4 1993/11/25 01:36:27 wollman Exp $
  */
 
 #include "param.h"
+#include "systm.h"
 #include "mbuf.h"
 #include "ioctl.h"
 #include "protosw.h"

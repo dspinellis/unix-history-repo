@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)iso.c	7.14 (Berkeley) 6/27/91
- *	$Id: iso.c,v 1.4 1993/11/07 17:49:40 wollman Exp $
+ *	$Id: iso.c,v 1.5 1993/11/25 01:35:57 wollman Exp $
  */
 
 /***********************************************************
@@ -65,7 +65,6 @@ SOFTWARE.
  * iso.c: miscellaneous routines to support the iso address family
  */
 
-#include "types.h"
 #include "param.h"
 #include "systm.h"
 #include "ioctl.h"
@@ -94,7 +93,6 @@ struct iso_ifaddr *iso_ifaddr;
 struct ifqueue clnlintrq;
 
 int	iso_interfaces = 0;		/* number of external interfaces */
-extern	struct ifnet loif;	/* loopback interface */
 int ether_output();
 void llc_rtrequest();
 
@@ -238,7 +236,7 @@ struct sockaddr_iso *sisoa, *sisob;
 
 	return ((lena == lenb) && (!bcmp(bufa, bufb, lena)));
 }
-#endif notdef
+#endif /* notdef */
 
 /*
  * FUNCTION:		iso_hashchar
@@ -255,8 +253,8 @@ struct sockaddr_iso *sisoa, *sisob;
  */
 u_long
 iso_hashchar(buf, len)
-register caddr_t	buf;		/* buffer to pack from */
-register int		len;		/* length of buffer */
+	register caddr_t buf;	/* buffer to pack from */
+	register int len;	/* length of buffer */
 {
 	register u_long	h = 0;
 	register int	i;
@@ -435,7 +433,8 @@ caddr_t			buf;		/* RESULT: network portion of address here */
 	ENDDEBUG
 	return len;
 }
-#endif notdef
+#endif /* notdef */
+
 /*
  * Generic iso control operations (ioctl's).
  * Ifp is 0 if not an interface-specific ioctl.
@@ -737,7 +736,7 @@ iso_ifwithidi(addr)
 	return ((struct ifaddr *)0);
 }
 
-#endif notdef
+#endif /* notdef */
 /*
  * FUNCTION:		iso_ck_addr
  *
@@ -751,7 +750,7 @@ iso_ifwithidi(addr)
  */
 int
 iso_ck_addr(isoa)
-struct iso_addr	*isoa;	/* address to check */
+	struct iso_addr	*isoa;	/* address to check */
 {
 	return (isoa->isoa_len <= 20);
 
@@ -787,7 +786,8 @@ struct iso_addr	*isoab;		/* other addr to check */
 	}
 	return(0);
 }
-#endif notdef
+#endif /* notdef */
+
 /*
  * FUNCTION:		iso_localifa()
  *
@@ -843,7 +843,7 @@ iso_localifa(siso)
 
 #ifdef	TPCONS
 #include "cons.h"
-#endif	TPCONS
+#endif /* TPCONS */
 /*
  * FUNCTION:		iso_nlctloutput
  *
@@ -858,10 +858,10 @@ iso_localifa(siso)
  */
 int
 iso_nlctloutput(cmd, optname, pcb, m)
-int			cmd;		/* command:set or get */
-int			optname;	/* option of interest */
-caddr_t		pcb;		/* nl pcb */
-struct mbuf	*m;			/* data for set, buffer for get */
+	int cmd;		/* command:set or get */
+	int optname;		/* option of interest */
+	caddr_t pcb;		/* nl pcb */
+	struct mbuf *m;		/* data for set, buffer for get */
 {
 	struct isopcb	*isop = (struct isopcb *)pcb;
 	int				error = 0;	/* return value */
@@ -905,7 +905,7 @@ struct mbuf	*m;			/* data for set, buffer for get */
 			bcopy(data, (caddr_t)isop->isop_x25crud, (unsigned)data_len);
 			isop->isop_x25crud_len = data_len;
 			break;
-#endif	TPCONS
+#endif /* TPCONS */
 
 		default:
 			error = EOPNOTSUPP;
@@ -913,7 +913,7 @@ struct mbuf	*m;			/* data for set, buffer for get */
 
 	return error;
 }
-#endif ISO
+#endif /* ISO */
 
 #ifdef ARGO_DEBUG
 

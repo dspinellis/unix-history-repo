@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_kern.c	7.4 (Berkeley) 5/7/91
- *	$Id: vm_kern.c,v 1.4 1993/11/07 17:54:13 wollman Exp $
+ *	$Id: vm_kern.c,v 1.5 1993/11/25 01:39:02 wollman Exp $
  */
 
 /*
@@ -70,6 +70,8 @@
  */
 
 #include "param.h"
+#include "systm.h"
+#include "proc.h"		/* XXX - for curproc */
 #include "syslog.h"
 
 #include "vm.h"

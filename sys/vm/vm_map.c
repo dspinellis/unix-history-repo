@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_map.c	7.3 (Berkeley) 4/21/91
- *	$Id: vm_map.c,v 1.7 1993/10/16 16:20:33 rgrimes Exp $
+ *	$Id: vm_map.c,v 1.8 1993/11/25 01:39:04 wollman Exp $
  */
 
 /*
@@ -790,6 +790,7 @@ void vm_map_simplify_entry(map, entry)
  *	This routine is called only when it is known that
  *	the entry must be split.
  */
+static
 void _vm_map_clip_start(map, entry, start)
 	register vm_map_t	map;
 	register vm_map_entry_t	entry;
@@ -834,7 +835,6 @@ void _vm_map_clip_start(map, entry, start)
  *	it splits the entry into two.
  */
 
-void _vm_map_clip_end();
 #define vm_map_clip_end(map, entry, endaddr) \
 { \
 	if (endaddr < entry->end) \
@@ -845,6 +845,7 @@ void _vm_map_clip_end();
  *	This routine is called only when it is known that
  *	the entry must be split.
  */
+static
 void _vm_map_clip_end(map, entry, end)
 	register vm_map_t	map;
 	register vm_map_entry_t	entry;

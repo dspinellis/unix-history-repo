@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)in_var.h	7.6 (Berkeley) 6/28/90
- *	$Id: in_var.h,v 1.3 1993/11/07 17:47:53 wollman Exp $
+ *	$Id: in_var.h,v 1.4 1993/11/18 00:08:17 wollman Exp $
  */
 
 #ifndef _NETINET_IN_VAR_H_
@@ -73,18 +73,64 @@ struct	in_aliasreq {
  */
 #define	IA_SIN(ia) (&(((struct in_ifaddr *)(ia))->ia_addr))
 
+struct ip;			/* forward declaration */
+typedef void in_input_t(struct mbuf *, int);
+typedef int in_output_t(struct mbuf *, struct socket *);
+typedef void in_ctlinput_t(int, struct sockaddr *, struct ip *);
+typedef int in_ctloutput_t(int, struct socket *, int, int, struct mbuf **);
+
+/*
+ * This structure is a pun for `struct protosw'. The difference is that it
+ * has appropriate interprotocol hook prototypes for the Internet family.
+ */
+struct in_protosw {
+	short	pr_type;		/* socket type used for */
+	struct	domain *pr_domain;	/* domain protocol a member of */
+	short	pr_protocol;		/* protocol number */
+	short	pr_flags;		/* see below */
+/* protocol-protocol hooks */
+	in_input_t *pr_input;
+	in_output_t *pr_output;
+	in_ctlinput_t *pr_ctlinput;
+	in_ctloutput_t *pr_ctloutput;
+/* user-protocol hook */
+	int	(*pr_usrreq)(struct socket *, int, struct mbuf *, 
+			     struct mbuf *, struct mbuf *, struct mbuf *);
+/* utility hooks */
+	void	(*pr_init)(void); /* initialization hook */
+	void	(*pr_fasttimo)(void);	/* fast timeout (200ms) */
+	void	(*pr_slowtimo)(void);	/* slow timeout (500ms) */
+	void	(*pr_drain)(void); /* flush any excess space possible */
+};
+
+
 #ifdef	KERNEL
-extern struct	in_ifaddr *in_ifaddr;
-struct	in_ifaddr *in_iaonnetof();
-extern struct	ifqueue	ipintrq;		/* ip packet input queue */
-extern struct protosw inetsw[];
-extern u_char ip_protox[];
-extern struct in_addr in_makeaddr();
+extern struct in_ifaddr *in_ifaddr;
+extern struct in_ifaddr *in_iaonnetof(u_long);
 extern struct in_ifaddr *ifptoia(struct ifnet *);
+extern int in_ifinit(struct ifnet *, struct in_ifaddr *, struct sockaddr_in *, int);
+
+extern int in_cksum(struct mbuf *, int);
+
+extern struct ifqueue ipintrq;	/* ip packet input queue */
+extern struct in_protosw inetsw[];
+extern struct domain inetdomain;
+extern u_char ip_protox[];
 extern u_char inetctlerrmap[];
 extern struct in_addr zeroin_addr;
-#ifdef MTUDISC
+
+/* From in_var.c: */
 struct route;
+extern int subnetsarelocal;	/* obsolescent */
+extern int ipqmaxlen;
+extern u_long *ip_ifmatrix;
+extern int ipforwarding;
+extern struct sockaddr_in ipaddr;
+extern struct route ipforward_rt;
+extern int ipsendredirects;
+
+
+#ifdef MTUDISC
 extern unsigned in_nextmtu(unsigned, int);
 extern int	in_routemtu(struct route *);
 extern void	in_mtureduce(struct in_addr, unsigned);

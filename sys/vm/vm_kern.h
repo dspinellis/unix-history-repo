@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_kern.h	7.2 (Berkeley) 4/21/91
- *	$Id: vm_kern.h,v 1.2 1993/10/16 16:20:31 rgrimes Exp $
+ *	$Id: vm_kern.h,v 1.3 1993/11/07 17:54:14 wollman Exp $
  */
 
 /*
@@ -87,4 +87,5 @@ extern vm_map_t	mb_map;
 extern vm_map_t	kmem_map;
 extern vm_map_t	phys_map;
 extern vm_map_t	buffer_map;
+
 #endif /* _VM_VM_KERN_H_ */

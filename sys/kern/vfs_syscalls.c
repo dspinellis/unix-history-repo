@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vfs_syscalls.c	7.74 (Berkeley) 6/21/91
- *	$Id: vfs_syscalls.c,v 1.6 1993/11/25 01:33:43 wollman Exp $
+ *	$Id: vfs_syscalls.c,v 1.7 1993/12/13 11:58:07 davidg Exp $
  */
 
 #include "param.h"
@@ -46,6 +46,9 @@
 #include "proc.h"
 #include "uio.h"
 #include "malloc.h"
+
+static int getvnode(struct filedesc *, int, struct file **);
+static int chdirec(struct nameidata *, struct proc *);
 
 /*
  * Virtual File System System Calls
@@ -565,7 +568,7 @@ chroot(p, uap, retval)
 /*
  * Common routine for chroot and chdir.
  */
-int
+static int
 chdirec(ndp, p)
 	struct nameidata *ndp;
 	struct proc *p;
@@ -1913,11 +1916,11 @@ out:
 /*
  * Convert a user file descriptor to a kernel file entry.
  */
-int
+static int
 getvnode(fdp, fdes, fpp)
 	struct filedesc *fdp;
-	struct file **fpp;
 	int fdes;
+	struct file **fpp;
 {
 	struct file *fp;
 

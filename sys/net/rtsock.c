@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)rtsock.c	7.18 (Berkeley) 6/27/91
- *	$Id: rtsock.c,v 1.4 1993/11/07 17:47:09 wollman Exp $
+ *	$Id: rtsock.c,v 1.5 1993/11/25 01:34:12 wollman Exp $
  */
 
 #include "param.h"
@@ -83,7 +83,7 @@ route_usrreq(so, req, m, nam, control)
 		route_cb.any_count--;
 	}
 	s = splnet();
-	error = raw_usrreq(so, req, m, nam, control);
+	error = raw_usrreq(so, req, m, nam, control, 0);
 	rp = sotorawcb(so);
 	if (req == PRU_ATTACH && rp) {
 		int af = rp->rcb_proto.sp_protocol;
@@ -603,7 +603,6 @@ rt_walk(rn, f, w)
  * Definitions of protocols supported in the ROUTE domain.
  */
 
-int	raw_init(),raw_usrreq(),raw_input(),raw_ctlinput();
 extern	struct domain routedomain;		/* or at least forward */
 
 struct protosw routesw[] = {

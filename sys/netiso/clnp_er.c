@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)clnp_er.c	7.7 (Berkeley) 5/6/91
- *	$Id: clnp_er.c,v 1.2 1993/10/16 21:04:45 rgrimes Exp $
+ *	$Id: clnp_er.c,v 1.3 1993/11/25 01:35:40 wollman Exp $
  */
 
 /***********************************************************
@@ -62,6 +62,7 @@ SOFTWARE.
  */
 
 #include "param.h"
+#include "systm.h"
 #include "mbuf.h"
 #include "domain.h"
 #include "protosw.h"

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ns_pcb.c	7.11 (Berkeley) 6/27/91
- *	$Id: ns_pcb.c,v 1.3 1993/11/07 17:50:30 wollman Exp $
+ *	$Id: ns_pcb.c,v 1.4 1993/11/25 01:36:33 wollman Exp $
  */
 
 #include "param.h"
@@ -285,8 +285,9 @@ ns_setpeeraddr(nsp, nam)
 void
 ns_pcbnotify(dst, errno, notify, param)
 	register struct ns_addr *dst;
+	int errno;
+	ns_notify_func_t notify;
 	long param;
-	int errno, (*notify)();
 {
 	register struct nspcb *nsp, *oinp;
 	int s = splimp();
@@ -304,7 +305,7 @@ ns_pcbnotify(dst, errno, notify, param)
 		oinp = nsp;
 		nsp = nsp->nsp_next;
 		oinp->nsp_notify_param = param;
-		(*notify)(oinp);
+		(*notify)(oinp, errno);
 	}
 	splx(s);
 }

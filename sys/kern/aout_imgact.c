@@ -28,7 +28,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	$Id: aout_imgact.c,v 1.3 1993/12/11 06:55:33 davidg Exp davidg $
+ *	$Id: aout_imgact.c,v 1.1 1993/12/12 12:23:18 davidg Exp $
  */
 
 #include "param.h"
@@ -55,7 +55,7 @@ exec_aout_imgact(iparams)
 	 *	We do two cases: host byte order and network byte order
 	 *	(for NetBSD compatibility)
 	 */
-	switch (a_out->a_magic & 0xffff) {
+	switch ((int)(a_out->a_magic & 0xffff)) {
 	case ZMAGIC:
 		virtual_offset = 0;
 		if (a_out->a_text) {
@@ -71,7 +71,7 @@ exec_aout_imgact(iparams)
 		break;
 	default:
 		/* NetBSD compatibility */
-		switch (ntohl(a_out->a_magic) & 0xffff) {
+		switch ((int)(ntohl(a_out->a_magic) & 0xffff)) {
 		case ZMAGIC:
 		case QMAGIC:
 			virtual_offset = NBPG;

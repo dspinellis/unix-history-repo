@@ -27,7 +27,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *	$Id: procfs_subr.c,v 1.3 1993/08/24 16:47:24 pk Exp $
+ *	$Id: procfs_subr.c,v 1.1 1993/12/12 12:26:40 davidg Exp $
  */
 #include "param.h"
 #include "systm.h"
@@ -42,6 +42,7 @@
 #include "vm/vm.h"
 #include "vm/vm_page.h"
 #include "vm/vm_kern.h"
+#include "vm/vm_user.h"
 #include "kinfo.h"
 #include "kinfo_proc.h"
 #include "machine/pmap.h"
@@ -366,7 +367,7 @@ pfs_doio(vp, uio, ioflag, cred)
 			}
 		}
 
-		error = uiomove(kbuf + on, (int)n, uio);
+		error = uiomove((caddr_t)(kbuf + on), (int)n, uio);
 
 		if( !error && uio->uio_rw == UIO_WRITE) {
 			/* Now just fault the page table and the page */

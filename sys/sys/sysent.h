@@ -1,11 +1,6 @@
-/*
- * Copyright (c) 1988 University of Utah.
- * Copyright (c) 1990 The Regents of the University of California.
+/*-
+ * Copyright (c) 1982, 1988, 1991 The Regents of the University of California.
  * All rights reserved.
- *
- * This code is derived from software contributed to Berkeley by
- * the Systems Programming Group of the University of Utah Computer
- * Science Department.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -35,38 +30,22 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * from: Utah $Hdr: rmp_proto.c 1.3 89/06/07$
- *
- *	From: @(#)rmp_proto.c	7.1 (Berkeley) 5/8/90
- *	$Id: rmp_proto.c,v 1.1 1993/11/07 22:55:11 wollman Exp $
+ *	from: @(#)systm.h	7.17 (Berkeley) 5/25/91
+ *	$Id$
  */
 
-#include "param.h"
-#include "systm.h"
-#include "socket.h"
-#include "protosw.h"
-#include "domain.h"
+#ifndef _SYS_SYSENT_H_
+#define _SYS_SYSENT_H_ 1
 
-#include "rmp.h"
-
-#ifdef RMP
-/*
- * HP Remote Maintenance Protocol (RMP) family: BOOT
- */
-
-extern	struct domain	rmpdomain;
-extern	int		raw_usrreq(), rmp_output();
-
-struct protosw rmpsw[] = {
-  {	SOCK_RAW,	&rmpdomain,	RMPPROTO_BOOT,	PR_ATOMIC|PR_ADDR,
-	0,		rmp_output,	0,		0,
-	raw_usrreq,
-	0,		0,		0,		0,
-  },
+struct sysent {		/* system call table */
+	int	sy_narg;	/* number of arguments */
+	int	(*sy_call)();	/* implementing function */
 };
 
-struct domain rmpdomain = {
-	AF_RMP, "RMP", 0, 0, 0, rmpsw, &rmpsw[sizeof(rmpsw)/sizeof(rmpsw[0])]
-};
-
+#ifdef KERNEL
+extern struct sysent sysent[];
 #endif
+
+#endif /* _SYS_SYSENT_H_ */
+
+

@@ -36,7 +36,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)pk_subr.c	7.16 (Berkeley) 6/6/91
- *	$Id: pk_subr.c,v 1.3 1993/11/17 23:32:23 wollman Exp $
+ *	$Id: pk_subr.c,v 1.4 1993/11/25 01:34:31 wollman Exp $
  */
 
 #include "param.h"
@@ -75,7 +75,6 @@ struct socket *so;
 {
 	register struct pklcd *lcp;
 	register int error = ENOBUFS;
-	int pk_output();
 
 	MALLOC(lcp, struct pklcd *, sizeof (*lcp), M_PCB, M_NOWAIT);
 	if (lcp) {
@@ -243,7 +242,7 @@ pk_restart (pkp, restart_cause)
 	m -> m_pkthdr.len = m -> m_len += 2;
 	mtod (m, struct x25_packet *) -> packet_data = 0;	/* DTE only */
 	mtod (m, octet *)[4]  = restart_cause;
-	pk_output (lcp);
+	pk_output (lcp, 0);
 }
 
 
@@ -616,7 +615,7 @@ pk_clear (lcp, diagnostic, abortive)
 		struct sockbuf *sb = so ? & so -> so_snd : & lcp -> lcd_sb;
 		sbappendrecord (sb, m);
 	}
-	pk_output (lcp);
+	pk_output (lcp, 0);
 
 }
 
@@ -638,7 +637,7 @@ pk_flowcontrol (lcp, inhibit, forced)
 	lcp -> lcd_rxrnr_condition = inhibit;
 	lcp -> lcd_template =
 		pk_template (lcp -> lcd_lcn, inhibit ? X25_RNR : X25_RR);
-	pk_output (lcp);
+	pk_output (lcp, 0);
 }
 
 /* 
@@ -673,7 +672,7 @@ pk_reset (lcp, diagnostic)
 	m -> m_pkthdr.len = m -> m_len += 2;
 	mtod (m, struct x25_packet *) -> packet_data = 0;
 	mtod (m, octet *)[4] = diagnostic;
-	pk_output (lcp);
+	pk_output (lcp, 0);
 
 }
 
@@ -713,7 +712,7 @@ void
 pk_procerror (error, lcp, errstr, diagnostic)
 	int error;
 	register struct pklcd *lcp;
-	char *errstr;
+	const char *errstr;
 	int diagnostic;
 {
 
@@ -982,8 +981,8 @@ pk_message (int lcn, struct x25config *xcp, const char *fmt, ...)
 
 int
 pk_fragment (lcp, m0, qbit, mbit, wait)
-	struct mbuf *m0;
 	register struct pklcd *lcp;
+	struct mbuf *m0;
 	int qbit;
 	int mbit;
 	int wait;
@@ -1045,62 +1044,3 @@ abort:
 	return ENOBUFS;
 }
 
-struct mbuf *
-m_split (m0, len0, wait)
-	register struct mbuf *m0;
-	int len0;
-	int wait;
-{
-	register struct mbuf *m, *n;
-	unsigned len = len0, remain;
-
-	for (m = m0; m && len > m -> m_len; m = m -> m_next)
-		len -= m -> m_len;
-	if (m == 0)
-		return (0);
-	remain = m -> m_len - len;
-	if (m0 -> m_flags & M_PKTHDR) {
-		MGETHDR(n, wait, m0 -> m_type);
-		if (n == 0)
-			return (0);
-		n -> m_pkthdr.rcvif = m0 -> m_pkthdr.rcvif;
-		n -> m_pkthdr.len = m0 -> m_pkthdr.len - len0;
-		m0 -> m_pkthdr.len = len0;
-		if (m -> m_flags & M_EXT)
-			goto extpacket;
-		if (remain > MHLEN) {
-			/* m can't be the lead packet */
-			MH_ALIGN(n, 0);
-			n -> m_next = m_split (m, len, wait);
-			if (n -> m_next == 0) {
-				(void) m_free (n);
-				return (0);
-			} else
-				return (n);
-		} else
-			MH_ALIGN(n, remain);
-	} else if (remain == 0) {
-		n = m -> m_next;
-		m -> m_next = 0;
-		return (n);
-	} else {
-		MGET(n, wait, m -> m_type);
-		if (n == 0)
-			return (0);
-		M_ALIGN(n, remain);
-	}
-extpacket:
-	if (m -> m_flags & M_EXT) {
-		n -> m_flags |= M_EXT;
-		n -> m_ext = m -> m_ext;
-		mclrefcnt[mtocl (m -> m_ext.ext_buf)]++;
-		n -> m_data = m -> m_data + len;
-	} else {
-		bcopy (mtod (m, caddr_t) + len, mtod (n, caddr_t), remain);
-	}
-	n -> m_len = remain;
-	m -> m_len = len;
-	n -> m_next = m -> m_next;
-	m -> m_next = 0;
-	return (n);
-}

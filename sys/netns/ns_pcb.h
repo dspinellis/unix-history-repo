@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ns_pcb.h	7.4 (Berkeley) 6/28/90
- *	$Id: ns_pcb.h,v 1.3 1993/11/07 17:50:31 wollman Exp $
+ *	$Id: ns_pcb.h,v 1.4 1993/11/25 01:36:34 wollman Exp $
  */
 
 #ifndef _NETNS_NS_PCB_H_
@@ -80,8 +80,17 @@ struct nspcb {
 
 #ifdef KERNEL
 extern struct	nspcb nspcb;			/* head of list */
-struct	nspcb *ns_pcblookup();
-extern void ns_pcbdetach(struct nspcb *);
 
-#endif
+extern int ns_pcballoc(struct socket *, struct nspcb *);
+extern int ns_pcbbind(struct nspcb *, struct mbuf *);
+extern int ns_pcbconnect(struct nspcb *, struct mbuf *);
+extern void ns_pcbdisconnect(struct nspcb *);
+extern void ns_pcbdetach(struct nspcb *);
+extern void ns_setsockaddr(struct nspcb *, struct mbuf *);
+extern void ns_setpeeraddr(struct nspcb *, struct mbuf *);
+typedef void (*ns_notify_func_t)(struct nspcb *, int);
+extern void ns_pcbnotify(struct ns_addr *, int, ns_notify_func_t, long);
+extern struct nspcb *ns_pcblookup(struct ns_addr *, int /*u_short*/, int);
+
+#endif /* KERNEL */
 #endif /* _NETNS_NS_PCB_H_ */

@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	From:	@(#)nfs_subs.c	7.41 (Berkeley) 5/15/91
- *	$Id: nfs_subs.c,v 1.3 1993/11/07 17:50:57 wollman Exp $
+ *	$Id: nfs_subs.c,v 1.4 1993/11/25 01:36:52 wollman Exp $
  */
 
 /*
@@ -543,7 +543,7 @@ nfs_init()
 	 * Initialize reply list and start timer
 	 */
 	nfsreqh.r_prev = nfsreqh.r_next = &nfsreqh;
-	nfs_timer();
+	nfs_timer(0);
 }
 
 /*
@@ -651,7 +651,7 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 	 */
 	np = VTONFS(vp);
 	if (vp->v_type == VNON) {
-		if (type == VCHR && rdev == 0xffffffff)
+		if (type == VCHR && rdev == 0xffffffffUL)
 			vp->v_type = type = VFIFO;
 		else
 			vp->v_type = type;

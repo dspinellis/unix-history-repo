@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_map.h	7.3 (Berkeley) 4/21/91
- *	$Id$
+ *	$Id: vm_map.h,v 1.2 1993/10/16 16:20:36 rgrimes Exp $
  */
 
 /*
@@ -176,22 +176,50 @@ typedef struct {
 /*
  *	Exported procedures that operate on vm_map_t.
  */
+extern int vm_map_pageable(vm_map_t, vm_offset_t, vm_offset_t, boolean_t);
+extern void vm_map_startup(void);
+struct pmap; struct vm_object;
+extern vm_map_t vm_map_create(struct pmap *, vm_offset_t, vm_offset_t,
+			      boolean_t);
+extern void vm_map_init(struct vm_map *, vm_offset_t, vm_offset_t, boolean_t);
+extern vm_map_entry_t vm_map_entry_create(vm_map_t);
+extern void vm_map_entry_dispose(vm_map_t, vm_map_entry_t);
+extern void vm_map_reference(vm_map_t);
+extern void vm_map_deallocate(vm_map_t);
+extern int vm_map_insert(vm_map_t, struct vm_object *, vm_offset_t, vm_offset_t,
+			 vm_offset_t);
+extern boolean_t vm_map_lookup_entry(vm_map_t, vm_offset_t, vm_map_entry_t *);
+extern int vm_map_find(vm_map_t, struct vm_object *, vm_offset_t, vm_offset_t*,
+		       vm_size_t, boolean_t);
+extern void vm_map_simplify_entry(vm_map_t, vm_map_entry_t);
+extern int vm_map_submap(vm_map_t, vm_offset_t, vm_offset_t, vm_map_t);
+extern int vm_map_protect(vm_map_t, vm_offset_t, vm_offset_t, vm_prot_t,
+			  boolean_t);
+extern int vm_map_inherit(vm_map_t, vm_offset_t, vm_offset_t, vm_inherit_t);
+extern int vm_map_pageable(vm_map_t, vm_offset_t, vm_offset_t, boolean_t);
+extern void vm_map_entry_unwire(vm_map_t, vm_map_entry_t);
+extern void vm_map_entry_delete(vm_map_t, vm_map_entry_t);
+extern int vm_map_delete(vm_map_t, vm_offset_t, vm_offset_t);
+extern int vm_map_remove(vm_map_t, vm_offset_t, vm_offset_t);
+extern boolean_t vm_map_check_protection(vm_map_t, vm_offset_t, vm_offset_t,
+					 vm_prot_t);
+extern void vm_map_copy_entry(vm_map_t, vm_map_t, vm_map_entry_t, 
+			      vm_map_entry_t);
+extern int vm_map_copy(vm_map_t, vm_map_t, vm_offset_t, vm_size_t, vm_offset_t,
+		       boolean_t, boolean_t);
+extern int vm_map_lookup(vm_map_t *, vm_offset_t, vm_prot_t,
+			 vm_map_entry_t *, struct vm_object **, vm_offset_t *,
+			 vm_prot_t *, boolean_t *, boolean_t *);
+extern void vm_map_lookup_done(vm_map_t, vm_map_entry_t);
+extern void vm_map_simplify(vm_map_t, vm_offset_t);
+extern void vm_map_print(vm_map_t, boolean_t); /* f defined(DEBUG) || NDDB>0 */
 
-void		vm_map_init();
-vm_map_t	vm_map_create();
-void		vm_map_deallocate();
-void		vm_map_reference();
-int		vm_map_find();
-int		vm_map_remove();
-int		vm_map_lookup();
-void		vm_map_lookup_done();
-int		vm_map_protect();
-int		vm_map_inherit();
-int		vm_map_copy();
-void		vm_map_print();
-void		vm_map_copy_entry();
-boolean_t	vm_map_verify();
-void		vm_map_verify_done();
+extern int vm_fault(struct vm_map *, vm_offset_t, vm_prot_t, boolean_t);
+extern void vm_fault_wire(struct vm_map *, vm_offset_t, vm_offset_t);
+extern void vm_fault_unwire(struct vm_map *, vm_offset_t, vm_offset_t);
+extern void vm_fault_copy_entry(vm_map_t, vm_map_t, vm_map_entry_t,
+				vm_map_entry_t);
+
 
 /*
  *	Functions implemented as macros

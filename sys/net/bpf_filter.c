@@ -36,10 +36,13 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)bpf.c	7.5 (Berkeley) 7/15/91
- *	$Id: bpf_filter.c,v 1.2 1993/10/16 17:43:07 rgrimes Exp $
+ *	$Id: bpf_filter.c,v 1.3 1993/11/25 01:33:48 wollman Exp $
  */
 
 #include <sys/param.h>
+#ifdef KERNEL
+#include "systm.h"
+#endif
 #include <sys/types.h>
 #include <sys/time.h>
 #include <net/bpf.h>

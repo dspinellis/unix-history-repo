@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kernel.h	7.4 (Berkeley) 2/15/91
- *	$Id: kernel.h,v 1.4 1993/11/07 17:52:39 wollman Exp $
+ *	$Id: kernel.h,v 1.5 1993/11/25 01:37:57 wollman Exp $
  */
 
 #ifndef _SYS_KERNEL_H_
@@ -68,4 +68,33 @@ extern int profiling;
 extern u_short *kcount;
 extern char *s_lowpc;
 #endif
+
+extern const char *panicstr;	/* panic message */
+extern char version[];		/* system version */
+extern char copyright[];	/* system copyright */
+
+extern int nblkdev;		/* number of entries in bdevsw */
+extern int nchrdev;		/* number of entries in cdevsw */
+extern int nswdev;		/* number of swap devices */
+extern int nswap;		/* size of swap space */
+
+extern int maxmem;		/* max memory per process */
+extern int physmem;		/* physical memory */
+
+extern dev_t dumpdev;		/* dump device */
+extern long dumplo;		/* offset into dumpdev */
+
+extern dev_t rootdev;		/* root device */
+extern struct vnode *rootvp;	/* vnode equivalent to above */
+
+extern dev_t swapdev;		/* swapping device */
+extern struct vnode *swapdev_vp;/* vnode equivalent to above */
+
+extern int boothowto;		/* reboot flags, from console subsystem */
+#ifdef	KADB
+extern char *bootesym;		/* end of symbol info from boot */
+#endif
+
+extern u_char curpri;		/* priority of current process */
+
 #endif /* _SYS_KERNEL_H_ */
