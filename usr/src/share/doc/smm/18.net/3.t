@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)3.t	5.1 (Berkeley) %G%
+.\"	@(#)3.t	6.1 (Berkeley) %G%
 .\"
 .nr H2 1
 .ds RH Goals
