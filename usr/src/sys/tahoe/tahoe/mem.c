@@ -1,4 +1,4 @@
-/*	mem.c	1.2	86/01/05	*/
+/*	mem.c	1.3	86/07/16	*/
 
 /*
  * Memory special file
@@ -66,8 +66,9 @@ mmrw(dev, uio, rw)
 				(rw == UIO_READ ? PG_KR : PG_KW);
 			mtpr(TBIS, vmmap);
 			o = (int)uio->uio_offset & PGOFSET;
-			c = min((u_int)(NBPG - o), (u_int)iov->iov_len);
-			c = min(c, (u_int)(NBPG - ((int)iov->iov_base&PGOFSET)));
+			c = (u_int)(NBPG - ((int)iov->iov_base & PGOFSET));
+			c = MIN(c, (u_int)(NBPG - o));
+			c = MIN(c, (u_int)iov->iov_len);
 			error = uiomove((caddr_t)&vmmap[o], (int)c, rw, uio);
 			continue;
 
