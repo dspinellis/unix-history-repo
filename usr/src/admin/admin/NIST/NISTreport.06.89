@@ -1,0 +1,57 @@
+.\"	@(#)NISTreport.06.89	1.1	89/11/20
+.\" *troff -me
+.sp 2
+.ce 100
+\fB\s+2Interim Report on Operating Systems Research
+in the DASH and Berkeley UNIX Projects\s-2\fP
+April 1, 1989 \- June 30, 1989
+.sp 2
+Susan L. Graham
+Domenico Ferrari
+David P. Anderson
+Marshall Kirk McKusick
+Michael J. Karels
+Keith Sklower
+.ce 0
+.sp 2
+.ce
+\fB\s+2DASH Project\s0\fP
+.pp
+The DASH project was not funded by this grant during the period of
+this report.
+The funds were applied to a no-cost extension for the Berkeley UNIX Project
+during the period April to June 1989.
+.sp 2
+.ce
+\fB\s+2Berkeley UNIX Project\s0\fP
+.pp
+During this period, Berkeley continued to participate in the IEEE
+P1003 standards committees (Posix), and the IETF OSI working group.
+.pp
+We revised the Wisconsin transport level code so that it was possible
+explicitly negotiate connection requests,
+being able to send confirmation or rejections
+(with user supplied data),
+rather than having them automatically
+confirmed in the kernel (as TCP does).
+.pp
+We tested the code against itself over a single ethernet,
+and found it stable enough to sustain transport level
+connections among different machine types
+(a microvax and CCI machine; the latter having opposite
+native byte order from the VAX).
+We shipped this version to colleagues
+at NIST for review and testing during this period.
+.pp
+We began collaborating with Marshall Rose to integrate support for the
+4.4 socket interface in ISODE.
+.pp
+The virtual file system interface is now running on our development
+machine.
+Rick Macklem's NFS implementation has been integrated and will
+be ready for testing in the next quarter.
+.pp
+POSIX saved process and group identifiers have been implemented.
+Several small problems were encountered in the specification and have
+been forwarded to the POSIX group working on the revisions to P1003.1.
+We anticipate that our revisions will be incorporated.
