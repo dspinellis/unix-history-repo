@@ -299,9 +299,12 @@ H3|h1552rv|hazeltine 1552 reverse video:\
 H4|h1420|hazeltine 1420:\
 	:do=^J:le=^H:bs:am:li#24:co#80:al=\E^Z:dl=\E^S:cd=\E^X:cl=\E\034:\
 	:up=\E^L:nd=^P:ce=\E^O:ta=^N:cm=\E^Q%r%.%+ :so=\E\037:se=\E^Y:
+# New "safe" cursor movement (11/87) from cgs@umd5.  Prevents freakout with
+# out-of-range args and tn3270.  No hz since it needs to receive ~'s.
 H5|h1500|hazeltine 1500:\
-	:do=^J:al=40~^Z:am:le=^H:bs:cd=10~^X:ce=~^O:cl=~^\:cm=~^Q%r%.%.:\
-	:co#80:dl=40~^S:do=~^K:hz:li#24:nd=^P:.se=~^_:.so=~^Y:up=~^L:
+	:al=40~^Z:am:bs:cd=10~^X:ce=~^O:cl=~^\:cm=~^Q%r%>^^ %+`%+`:\
+	:co#80:dl=40~^S:do=~^K:ho=~^R:kh=~^R:kr=^P:ku=~^L:kd=^J:kl=^H:\
+	:le=^H:li#24:nd=^P:so=~^_:se=~^Y:up=~^L:.cm=~^Q%r%.%.:
 # h1510 assumed to be in sane escape mode.  Else use h1500.
 H6|h1510|hazeltine 1510:\
 	:do=^J:al=\E^Z:am:le=^H:bs:cd=\E^X:ce=\E^O:cl=\E^\:cm=\E^Q%r%.%.:\
@@ -2170,9 +2173,14 @@ le|adm11|lsi adm11:\
 # The default mime is assumed to be in enhanced act iv mode.
 m3|mime3a|mime1 emulating 3a:\
 	:am@:ma=^X ^K^J^Z^P:ku=^Z:kd=^K:kl=^H:kr=^X:tc=adm3a:
-m4|microterm|act4|microterm act iv:\
-	:am:do=^J:le=^H:bs:cd=^_:ce=^^:cl=^L:cm=^T%.%.:\
-	:co#80:li#24:nd=^X:up=^Z:ho=^]:
+# New "safe" cursor movement (5/87) from reuss@umd5.  Prevents freakout with
+# out-of-range args on Sytek multiplexors.  No so and se since it gets confused
+# and it's too dim anyway.  No ic since Sytek insists ^S means xoff.
+m4|act4|microterm|microterm act iv:\
+	:am:bs:cd=2.2*^_:ce=.1*^~:cl=12^L:cm=^T%+^X%>/0%+P:co#80:li#24:\
+	:le=^H:nd=^X:up=^Z:ho=^]:al=2.3*^A:do=^K:dc=.1*^D:dl=2.3*^W:\
+	:ku=^Z:kd=^K:kl=^H:kr=^X:\
+	:.so=^N:.se=^N:.ic=2^S:.ei=:.im=:.ip=.1*^V:.cm=^T%.%.:
 # The padding on sr and ta for act5 and mime is a guess and not final.
 # The act 5 has hardware tabs, but they are in columns 8, 16, 24, 32, 41 (!)...
 m5|microterm5|act5|microterm act v:\
