@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	3.17	(Berkeley)	83/05/19";
+static char sccsid[] = "@(#)tape.c	3.18	(Berkeley)	83/06/02";
 #endif
 
 #include "restore.h"
@@ -338,7 +338,7 @@ extractfile(name)
 
 	case IFREG:
 		vprintf(stdout, "extract file %s\n", name);
-		if ((ofile = open(name, FWRONLY|FCREATE, 0666)) < 0) {
+		if ((ofile = creat(name, 0666)) < 0) {
 			fprintf(stderr, "%s: ", name);
 			(void) fflush(stderr);
 			perror("cannot create file");
