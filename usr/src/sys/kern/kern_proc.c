@@ -1,4 +1,4 @@
-/*	kern_proc.c	3.9	%H%	*/
+/*	kern_proc.c	3.10	%H%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -514,7 +514,7 @@ done:
 			 * Protect this process from future
 			 * tty signals, and clear TSTP/TTIN/TTOU if pending.
 			 */
-			q->p_pgrp = 0;
+			q->p_pgrp = q->p_pid;
 #define	bit(a)	(1<<(a-1))
 			q->p_sig &= ~(bit(SIGTSTP)|bit(SIGTTIN)|bit(SIGTTOU));
 		}
