@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(@(#)proto.m4	2.14 (Berkeley) %G%)
+VERSIONID(@(#)proto.m4	2.15 (Berkeley) %G%)
 
 MAILER(local)dnl
 
@@ -60,9 +60,9 @@ CO @ % !
 # a class with just dot (for identifying canonical names)
 C..
 
-ifdef(`USERDB_FILE',
-`# location of user database file (null means no lookup)
-CONCAT(`OU', USERDB_FILE)',
+ifdef(`USERDB_SPEC',
+`# list of locations of user database file (null means no lookup)
+CONCAT(`OU', USERDB_SPEC)',
 `dnl')
 
 ifdef(`_NO_WILDCARD_MX_',
