@@ -1,3 +1,4 @@
+static	char *sccsid = "@(#)ps.c	4.3 (Berkeley) %G%";
 /*
  * ps; VAX 4BSD version
  */
@@ -15,6 +16,7 @@
 #include <sys/vm.h>
 #include <sys/text.h>
 #include <sys/stat.h>
+#include <math.h>
 
 struct nlist nl[] = {
 	{ "_proc" },
@@ -29,6 +31,8 @@ struct nlist nl[] = {
 #define	X_NSWAP		4
 	{ "_maxslp" },
 #define	X_MAXSLP	5
+	{ "_ccpu" },
+#define	X_CCPU		6
 	{ 0 },
 };
 
@@ -53,7 +57,7 @@ struct	asav {
 };
 
 char	*lhdr;
-/*	     F UID   PID  PPID CP PRI NI ADDR  SZ  RSS WCHAN S  TT  TIME */
+/*	     F UID   PID  PPID CP PRI NI ADDR  SZ  RSS WCHAN ST TT  TIME */
 struct	lsav {
 	short	l_ppid;
 	char	l_cpu;
@@ -62,18 +66,18 @@ struct	lsav {
 };
 
 char	*uhdr;
-/*	USER       PID %CPU NICE  SZ  RSS TT F  TIME */
+/*	USER       PID %CPU NI   SZ  RSS TT ST TIME */
 
 char	*shdr;
-/*	SSIZ   PID TT S  TIME */
+/*	SSIZ   PID TT ST TIME */
 
 char	*vhdr;
-/*	F     PID TT  TIME RES SL  MINFLT  MAJFLT SIZE  RSS  SRS TSIZ TRS PF*/
+/*	   PID TT ST    TIME RES SL MINFLT MAJFLT SIZE  RSS  SRS TSIZ TRS %CP*/
 struct	vsav {
 	u_int	v_minflt, v_majflt;
 	size_t	v_swrss, v_tsiz, v_txtrss, v_txtswrss;
 	short	v_xccount;
-	short	v_aveflt;
+	short	v_pctcpu;
 };
 
 struct	proc proc[8];		/* 8 = a few, for less syscalls */
@@ -92,8 +96,10 @@ int	chkpid;
 int	aflg, cflg, eflg, gflg, kflg, lflg, sflg, uflg, vflg, xflg;
 char	*tptr;
 char	*gettty(), *getcmd(), *getname(), *savestr(), *alloc(), *state();
+double	pcpu();
 int	pscomp();
 int	nswap, maxslp;
+double	ccpu;
 struct	pte *Usrptma, *usrpt;
 
 struct	ttys {
@@ -310,6 +316,11 @@ getkvars(argc, argv)
 	lseek(kmem, (long)nl[X_MAXSLP].n_value, 0);
 	if (read(kmem, &maxslp, sizeof (maxslp)) != sizeof (maxslp)) {
 		cantread("maxslp", kmemf);
+		exit(1);
+	}
+	lseek(kmem, (long)nl[X_CCPU].n_value, 0);
+	if (read(kmem, &ccpu, sizeof (ccpu)) != sizeof (ccpu)) {
+		cantread("ccpu", kmemf);
 		exit(1);
 	}
 	if (vflg) {
@@ -571,7 +582,7 @@ save()
 		sp->sun.vp = vp = (struct vsav *)alloc(sizeof (struct vsav));
 #define e(a,b) vp->a = mproc->b
 		if (ap->a_stat != SZOMB) {
-			e(v_swrss, p_swrss); e(v_aveflt, p_aveflt);
+			e(v_swrss, p_swrss);
 			vp->v_minflt = u.u_vm.vm_minflt;
 			vp->v_majflt = u.u_vm.vm_majflt;
 			if (mproc->p_textp) {
@@ -583,9 +594,10 @@ save()
 				vp->v_xccount = xp->x_ccount;
 			}
 		}
+		vp->v_pctcpu = pcpu();
 #undef e
 	} else if (uflg)
-		sp->sun.u_pctcpu = 0.0;
+		sp->sun.u_pctcpu = pcpu();
 	else if (sflg) {
 		if (ap->a_stat != SZOMB) {
 			for (cp = (char *)u.u_stack;
@@ -596,6 +608,15 @@ save()
 		}
 	}
 	npr++;
+}
+
+double
+pcpu()
+{
+
+	if (mproc->p_time == 0 || (mproc->p_flag&SLOAD) == 0)
+		return (0.0);
+	return (100.0 * mproc->p_pctcpu / (1.0 - exp(mproc->p_time * log(ccpu))));
 }
 
 getu()
@@ -732,7 +753,7 @@ retucomm:
 }
 
 char	*lhdr =
-"     F UID   PID  PPID CP PRI NI ADDR  SZ  RSS WCHAN S  TT  TIME";
+"     F UID   PID  PPID CP PRI NI ADDR  SZ  RSS WCHAN ST TT  TIME";
 lpr(sp)
 	struct savcom *sp;
 {
@@ -764,13 +785,13 @@ ptime(ap)
 }
 
 char	*uhdr =
-"USER       PID %CPU NICE  SZ  RSS TT F   TIME";
+"USER       PID %CPU NI   SZ  RSS TT ST  TIME";
 upr(sp)
 	struct savcom *sp;
 {
 	register struct asav *ap = sp->ap;
 
-	printf("%-8.8s %5u%5.1f%5d%4d%5d",
+	printf("%-8.8s %5u%5.1f%3d%5d%5d",
 	    getname(ap->a_uid), ap->a_pid, sp->sun.u_pctcpu, ap->a_nice-NZERO,
 	    ap->a_size/2, ap->a_rss/2);
 	putchar(' ');
@@ -780,7 +801,7 @@ upr(sp)
 }
 
 char *vhdr =
-"   PID TT S     TIME RES SL MINFLT MAJFLT SIZE  RSS  SRS TSIZ TRS PF";
+"   PID TT ST    TIME RES SL MINFLT MAJFLT SIZE  RSS  SRS TSIZ TRS %CP";
 vpr(sp)
 	struct savcom *sp;
 {
@@ -791,14 +812,14 @@ vpr(sp)
 	ptty(ap->a_tty);
 	printf(" %4s", state(ap));
 	ptime(ap);
-	printf("%4d%3d%7d%7d%5d%5d%5d%5d%4d%3d",
+	printf("%4d%3d%7d%7d%5d%5d%5d%5d%4d%4d",
 	   ap->a_time, ap->a_slptime, vp->v_minflt, vp->v_majflt,
 	   ap->a_size/2, ap->a_rss/2, vp->v_swrss/2,
-	   vp->v_tsiz/2, vp->v_txtrss/2, vp->v_aveflt);
+	   vp->v_tsiz/2, vp->v_txtrss/2, vp->v_pctcpu);
 }
 
 char	*shdr =
-"SSIZ   PID TT S   TIME";
+"SSIZ   PID TT ST  TIME";
 spr(sp)
 	struct savcom *sp;
 {
@@ -907,6 +928,8 @@ pscomp(s1, s2)
 {
 	register int i;
 
+	if (uflg)
+		return (s2->sun.u_pctcpu > s1->sun.u_pctcpu ? 1 : -1);
 	if (vflg)
 		return (vsize(s2) - vsize(s1));
 	i = s1->ap->a_ttyd - s2->ap->a_ttyd;
