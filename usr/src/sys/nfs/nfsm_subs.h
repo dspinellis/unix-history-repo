@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfsm_subs.h	7.15 (Berkeley) %G%
+ *	@(#)nfsm_subs.h	8.1 (Berkeley) %G%
  */
 
 /*
