@@ -9,19 +9,18 @@
 */
 
 
-# include <ctype.h>
 # include <sysexits.h>
 # include <errno.h>
 # include "sendmail.h"
 
 # ifndef SMTP
 # ifndef lint
-static char	SccsId[] = "@(#)usersmtp.c	5.7 (Berkeley) %G%	(no SMTP)";
+static char	SccsId[] = "@(#)usersmtp.c	5.8 (Berkeley) %G%	(no SMTP)";
 # endif not lint
 # else SMTP
 
 # ifndef lint
-static char	SccsId[] = "@(#)usersmtp.c	5.7 (Berkeley) %G%";
+static char	SccsId[] = "@(#)usersmtp.c	5.8 (Berkeley) %G%";
 # endif not lint
 
 
