@@ -1,8 +1,8 @@
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 
 MAN1=	mkdep.0
 
-.if (${MACHINE} == "hp300" || ${MACHINE} == "i386")
+.if (${MACHINE} == "hp300" || ${MACHINE} == "i386" || ${MACHINE} == "sparc")
 beforeinstall:
 	install -c -o ${BINOWN} -g ${BINGRP} -m ${BINMODE} \
 	    ${.CURDIR}/mkdep.gcc.sh ${DESTDIR}/usr/bin/mkdep
