@@ -1,8 +1,10 @@
-static char *sccsid = "@(#)chsh.sh	4.3 (Berkeley) %G%";
+static char *sccsid = "@(#)chsh.sh	4.4 (Berkeley) %G%";
 /*
  * chsh
  */
 #include <stdio.h>
+#include <sys/types.h>
+#include <stat.h>
 #include <signal.h>
 #include <pwd.h>
 
@@ -30,6 +32,7 @@ char *argv[];
 	int c;
 	int pwlen;
 	FILE *tf;
+	struct stat sbuf;
 
 	insist = 0;
 	if(argc < 2 || argc > 3) {
@@ -38,12 +41,13 @@ char *argv[];
 	}
 	if (argc == 2)
 		argv[2] = "";
-	else if (strcmp(argv[2], "/bin/csh") && getuid()) {
-		printf("Only /bin/csh may be specified\n");
+	else if (strcmp(argv[2], "/bin/csh") != 0 &&
+		 strcmp(argv[2], "/usr/new/csh") != 0 && getuid()) {
+		printf("Only /bin/csh or /usr/new/csh may be specified\n");
 		exit(1);
 	}
 	if (argc == 3)
-		if (stat(argv[2]) < 0)
+		if (stat(argv[2],&sbuf) < 0)
 		{
 			printf("%s is unavailable\n",argv[2]);
 			exit(1);
