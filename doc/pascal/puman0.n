@@ -1,0 +1,127 @@
+.so tmac.p
+.RP
+.TL
+Berkeley Pascal User's Manual
+.br
+Version 1.1 \- April, 1979
+.AU
+William N. Joy*
+.AU
+Susan L. Graham*
+.AU
+Charles B. Haley**
+.AI
+Computer Science Division
+.if n Department of Electrical Engineering
+.if n and Computer Science
+.if t Department of Electrical Engineering and Computer Science
+University of California, Berkeley
+Berkeley, California  94720
+...AI
+...MH
+.AB
+.FS
+\s-2(C)\s0 1977, 1979 William N. Joy, Susan L. Graham, Charles B. Haley
+.FE
+.FS
+* Author's current address: Bell Laboratories, Murray Hill NJ  07974
+.FE
+.PP
+Berkeley
+Pascal
+is designed for interactive instructional use
+and runs on the \s-2PDP\s0 11 family of computers.
+It produces interpretive code,
+providing fast translation at the expense of slower execution speed.
+An execution profiler and
+Wirth's cross reference program are also
+available with the system.
+..An interpretive implementation for the \s-2VAX\s0 11/780 is nearly complete,
+..and a compiled version of the system, utilizing the code generator of
+..the portable C compiler, is under construction, and should be completed by
+..September, 1979.
+.PP
+The system supports full Pascal, with the exception of
+.B procedure
+and
+.B function
+names as parameters.
+The language accepted is very close to
+`standard' Pascal,
+with only a small number of extensions.
+.PP
+The
+.UM
+gives a list of sources relating to the
+.UX
+system, the Pascal language, and the
+.UP
+system.
+Basic usage examples are provided for the Pascal
+interpreter components
+.PI ,
+.X ,
+.IX ,
+and
+.XP .
+Errors commonly encountered in these programs are discussed.
+Details are given of special considerations due to the
+interactive implementation.
+A number of examples are provided including many dealing with
+input/output.  An appendix supplements Wirth's
+.I "Pascal Report"
+to form the full definition of the Berkeley implementation of the language.
+.AE
+.ND
+.SH
+'if n 'ND
+Introduction
+.PP
+.FS
+* The financial support of the first and second authors' work by
+the National Science Foundation under grants
+MCS74-07644-A03 and MCS78-07291,
+and the first author's work by an
+.SM IBM
+Graduate Fellowship
+are gratefully acknowledged.
+.FE
+.FS
+** Author's present address: Bell Laboratories, Murray Hill, NJ  07974.
+.FE
+The
+.UP
+.UM
+consists of five major sections and an appendix.
+In section 1 we give sources of information about 
+.UX ,
+about the programming
+language Pascal, and about the
+Berkeley
+implementation of the language.
+Section 2 introduces the
+Berkeley
+implementation and provides a number of basic examples.
+Section 3 discusses the error diagnostics produced by the translator
+.PI
+and the runtime interpreter
+.X .
+Section 4 describes input/output with special attention given to features
+of the interactive implementation and to features unique to
+.UX .
+Section 5 gives details on the components of the system
+and explanation of all relevant options.
+The
+.UM
+concludes with an appendix to Wirth's
+.I "Pascal Report"
+with which it forms a precise definition of the implementation.
+.SH
+History of the implementation
+.PP
+The first
+Berkeley
+system was written by Ken Thompson in early 1976.
+The main features of the present system result from the work
+of Charles Haley and William Joy during the latter half of 1976.
+Earlier versions of this system have been in use since January, 1977.

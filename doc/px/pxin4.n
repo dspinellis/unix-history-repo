@@ -1,0 +1,72 @@
+.if !\n(xx .so tmac.p
+.nr H1 3
+.if n .ND
+.NH
+Conclusions
+.PP
+It is appropriate to consider,
+given the amount of time invested in rewriting the interpreter,
+whether the time was well spent, or whether a code-generator
+could have been written with an equivalent amount of effort.
+It is the author's belief that the existing code generator for the
+.SM
+PDP-11
+.NL
+series in the
+.SM
+UNIX
+.NL
+C compiler could have been easily modified to produce good quality
+code for Pascal with not much more work than was involved in
+rewriting
+.I px.
+...FS
+..\*(dg With the release of Version 7
+...UX
+..and the portable C compiler, an effort has begun to have
+...I pi
+..use this code generator.
+..We hope to have such a system working by September, 1979.
+..This would allow Pascal, \s-2FORTRAN\s0\-77 and C programs
+..to run together on all systems which support the portable C compiler.
+...FE
+.PP
+The author feels, however, that such an endeavor
+would not have been a good choice for an instructional environment.
+The speed of binary preparation would have been degraded, and the
+necessary loading and assembly processes would have slowed the overall
+compilation process to a noticeable degree.
+This effect would be further exaggerated by the fact that
+student users spend more time in compilation than in execution.
+Measurements over the course of a quarter at Berkeley with a mixture
+of students from beginning programming to a upper division compiler
+construction show that the amount of time in compilation exceeds the amount
+of time spent in the interpreter, the ratio being approximately 60/40.
+.PP
+A more promising approach might have been a throw-away code generator
+such as was done for the
+.SM
+WATFIV
+.NL
+system.
+Here the generated code runs at full machine speed, and compilation
+speed is still very fast.
+Any code generation scheme would be hindered, however,
+if it tried to implement 32 bit integers as implemented by the
+current
+Berkeley Pascal interpreter.
+Given the small number of registers available and the difficulty
+of some of the long integer operations it is not clear that
+reasonable code generation is possible using long integers.
+A 16 bit code generated Pascal would be much simpler, and several
+other such implementations exist.
+.PP
+All things considered, interpretation seems
+to be a reasonable choice for a student environment.
+While a code generator for
+Berkeley Pascal
+would be a useful addition to the system,
+the author believes that, for instructional use,
+a high-quality post-mortem and interactive debugging facility
+would be a more valuable addition to the system than a code generator.
+The interpreter would be easy to modify to accomodate such facilities.

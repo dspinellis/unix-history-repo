@@ -1,0 +1,92 @@
+ABORT	2.2	Halt execution immediately for debugging
+ABS*	2.7	Absolute value
+ADD*	2.7	Addition
+AND	2.4	Boolean and
+ARGC	2.13	Built-in function
+ARGV	2.13	Built-in procedure
+AS*	2.5	Assignment operators
+ASRT	2.12	Assert true to continue
+ATAN	2.13	Built-in function
+BEG w,w,"	2.2,1.8	Write second part of block mark, enter block
+BUFF	3.6	Specify buffering for file output
+CALL l,a	2.2,1.8	Procedure or function call
+CARD s	2.11	Cardinality of set
+CASEOP*	2.9	Case statements
+CHR*	2.13	Built-in function
+CLCK	2.13	Built-in function clock
+CON* v	2.5	Load constant operators
+COUNT s	2.10	Count a statement count point
+CTTOT s,w,w	2.11	Construct set
+DATE	2.13	Built-in procedure
+DEFNAME s	3.6	Attach file name for prgram statement files
+DISPOSE	2.13	Built-in procedure
+DIV*	2.7	Division
+DVD*	2.7	Floating division
+END	2.2,1.8	End block execution
+EOF	3.6	Boolean built-in function
+EOLN	3.6	Boolean built-in function
+EXP	2.13	Built-in function
+EXPO	2.13	Built-in function yielding exponent of real
+FNIL	3.6	Check file initialized, not eof, synced
+FOR* a	2.12	For statements
+GET	3.6	File procedure get
+GOTO l,a	2.2,1.8	Non-local goto statement
+HALT	2.2	Produce control flow backtrace
+IF a	2.3	Conditional transfer
+IN s,w,w	2.11	Set membership
+INCT	2.11	Membership in a constructed set
+IND*	2.6	Indirection operators
+INX* s,w,w	2.6	Subscripting (indexing) operator
+ITOD	2.12	Convert integer to real
+ITOS	2.12	Convert integer to short integer
+LINO s	2.2	Set line number, count statements
+LLIMIT	2.13	Built-in procedure
+LN	2.13	Built-in function
+LV l,w	2.6	Address of operator
+MESSAGE l	3.6	Write to terminal, built-in procedure
+MOD*	2.7	Modulus
+MUL*	2.7	Multiplication
+NEG*	2.7	Negation
+NEW s	2.13	Built-in procedure
+NIL	2.6	Assert non-nil pointer
+NODUMP w	2.2	\s-2BEG\s0 main program, suppress pm dump
+NOT	2.4	Boolean not
+ODD*	2.13	Built-in function
+OFF s	2.5	Offset address (i.e. for field reference)
+OR	2.4	Boolean or
+PAGE	3.6	Built-in procedure
+POP s	2.2,1.9	Pop (arguments) off stack
+PRED*	2.13	Built-in function
+PUSH s	2.2,1.9	Clear space (for function result)
+PUT	3.6	File procedure put
+PXPBUF w	2.10	Initialize \fIpxp\fP count buffer
+RANDOM	2.13	Built-in function
+RANG* v	2.8	Subrange checking
+READ*	3.6	Built-in procedure
+REL* r	2.3	Relational test yielding Boolean result
+REMOVE s	3.6	Remove a file
+RESET s,w	3.6	Built-in procedure
+REWRITE s,w	3.6	Built-in procedure
+ROUND	2.13	Built-in function
+RV* l,a	2.5	Rvalue (load) operators
+SCLCK	2.13	Built-in function sysclock
+SDUP	2.2	Duplicate top stack word
+SEED	2.13	Built-in function
+SIN	2.13	Built-in function
+SQR*	2.7	Squaring
+SQRT	2.13	Built-in function
+STLIM	2.13	Built-in procedure for changing statement limit
+STOD	2.12	Convert short integer to real
+STOI	2.12	Convert short to long integer
+SUB*	2.7	Subtraction
+SUCC*	2.13	Built-in function
+TIME	2.13	Built-in procedure
+TRA a	2.2	Transfer of control (local goto)
+TRACNT w,a	2.10	Count a procedure entry
+TRUNC	2.13	Built-in function
+UNDEF	2.13	Built-in function
+UNIT*	3.6	Set active file
+WRHEX* l	3.6	Hexadecimal write
+WRITE* l	3.5	Built-in procedure
+WRITELN	3.6	Write a new line character
+WROCT* l	3.6	Octal write
