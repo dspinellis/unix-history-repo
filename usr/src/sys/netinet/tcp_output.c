@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tcp_output.c	7.25 (Berkeley) %G%
+ *	@(#)tcp_output.c	7.26 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -243,16 +243,6 @@ send:
  				tp->request_r_scale);
  			optlen += 4;
  		}
- 
-#ifdef DO_SACK
- 		/* Send a SACK_PERMITTED option in the SYN segment. */
-		*((u_long *) (opt + optlen)) = htonl(
- 				TCPOPT_NOP<<24 |
- 				TCPOPT_NOP<<16 |
- 				TCPOPT_SACK_PERMITTED<<8 |
- 				TCPOLEN_SACK_PERMITTED);
-		optlen += 4;
-#endif
  	}
  
  	/*
@@ -272,61 +262,9 @@ send:
  		*lp   = htonl(tp->ts_recent);
  		optlen += TCPOLEN_TSTAMP_APPA;
  	}
- 
-#ifdef DO_SACK
- 	/* Send SACK if needed. Don't tack a SACK onto a non-empty segment. */
- 	if (tp->seg_next != (struct tcpiphdr *)tp && len == 0 &&
-	    (tp->t_flags & (TF_SACK_PERMIT|TF_NOOPT)) == TF_SACK_PERMIT) {
- 
- 		register struct tcpiphdr *q = tp->seg_next;
- 		register u_long *optl = (u_long *)(opt + optlen) + 1;
- 		tcp_seq	block_start;
- 		u_long	block_size;
- 		int sack_len = 2;
- 
- 		/*
-		 * Use these to gather runs of received segments.
- 		 * The first segment in the queue becomes the initial run.
- 		 */
- 		block_start = q->ti_seq;
- 		block_size = q->ti_len;
- 
- 		do {
- 			q = (struct tcpiphdr *) q->ti_next;
- 			if (q == (struct tcpiphdr *) tp ||
- 				block_start + block_size != q->ti_seq) {
- 				
- 				/*
-				 * Stick the relative origin and block size
- 				 * in the SACK option.
- 				 */
- 				*optl++ = htonl(block_start-tp->rcv_nxt);
- 				*optl++ = htonl(block_size);
- 				sack_len += 8;
- 
- 				/* If no more will fit into options, quit. */
- 				if (sack_len + optlen > MAX_TCPOPTLEN - 8)
- 					break;
- 
- 				if (q != (struct tcpiphdr *) tp) {
- 					block_start = q->ti_seq;
- 					block_size = q->ti_len;
- 				}
- 			} else {
- 				/* 
-				 * This segment just accumulates into previous
- 				 * run.
- 				 */
- 				block_size += q->ti_len;
-			}
- 		} while (q != (struct tcpiphdr *) tp);
- 
- 		*((u_long *) (opt + optlen)) = htonl(TCPOPT_NOP << 24 |
- 			TCPOPT_NOP << 16 | TCPOPT_SACK << 8 | sack_len);
- 		optlen += sack_len + 2;
- 	}
-#endif
+
  	hdrlen += optlen;
+ 
 	/*
 	 * Adjust data length if insertion of options will
 	 * bump the packet length beyond the t_maxseg length.
