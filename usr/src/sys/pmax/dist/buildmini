@@ -5,18 +5,18 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)buildmini	7.1 (Berkeley) %G%
+#	@(#)buildmini	7.2 (Berkeley) %G%
 #
 
-dist=/bsd3/src/sys.newvm/pmax/dist
-miniroot=rz0b
+dist=/sys/pmax/dist
+miniroot=rz1b
 minimnt=/tmp/mini
 
 date
 mkdir ${minimnt}
 umount /dev/${miniroot}
-newfs -s 4096 ${miniroot}
-fsck -P /dev/r${miniroot}
+newfs -s 10240 ${miniroot}
+fsck /dev/r${miniroot}
 mount /dev/${miniroot} ${minimnt}
 cd ${minimnt}; sh ${dist}/get
 cd ${dist}; sync
