@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)lex.c	5.4 (Berkeley) %G%";
+static char *sccsid = "@(#)lex.c	5.5 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -426,8 +426,8 @@ addla(cp)
 {
 	char buf[BUFSIZ];
 
-	if (lap != 0 && strlen(cp) + strlen(lap) >= sizeof (labuf) - 4) {
-		seterr("Expansion buf ovflo");
+	if (strlen(cp) + (lap ? strlen(lap) : 0) >= sizeof (labuf) - 4) {
+		seterr("Expansion buffer overflow");
 		return;
 	}
 	if (lap)
