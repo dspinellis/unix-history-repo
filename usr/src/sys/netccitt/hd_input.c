@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)hd_input.c	7.8 (Berkeley) %G%
+ *	@(#)hd_input.c	7.9 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -28,6 +28,9 @@
 #include <netccitt/hd_var.h>
 #include <netccitt/x25.h>
 
+static frame_reject();
+static rej_routine();
+static free_iframes();
 /*
  *      HDLC INPUT INTERFACE
  *
@@ -41,7 +44,6 @@ hdintr ()
 	register struct hdcb *hdp;
 	register struct ifnet *ifp;
 	register int s;
-	extern struct ifqueue pkintrq;
 	static struct ifnet *lastifp;
 	static struct hdcb *lasthdp;
 
@@ -85,8 +87,6 @@ hdintr ()
 		if (process_rxframe (hdp, m) == FALSE)
 			m_freem (m);
 	}
-	if (pkintrq.ifq_len)
-		pkintr ();
 }
 
 process_rxframe (hdp, fbuf)
