@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pmap.c	7.10 (Berkeley) %G%
+ *	@(#)pmap.c	7.11 (Berkeley) %G%
  */
 
 /*
@@ -2188,7 +2188,7 @@ pmap_enter_ptpage(pmap, va)
 		kpt->kpt_next = kpt_used_list;
 		kpt_used_list = kpt;
 		ptpa = kpt->kpt_pa;
-		bzero(kpt->kpt_va, HP_PAGE_SIZE);
+		bzero((caddr_t)kpt->kpt_va, HP_PAGE_SIZE);
 		pmap_enter(pmap, va, ptpa, VM_PROT_DEFAULT, TRUE);
 #ifdef DEBUG
 		if (pmapdebug & (PDB_ENTER|PDB_PTPAGE)) {
