@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty.h	7.6 (Berkeley) %G%
+ *	@(#)tty.h	7.7 (Berkeley) %G%
  */
 
 #ifdef KERNEL
@@ -32,9 +32,9 @@ struct clist {
  * (low, high, timeout).
  */
 struct tty {
-	struct	clist t_rawq;
+	struct	clist t_rawq;		/* queues */
 	struct	clist t_canq;
-	struct	clist t_outq;		/* device */
+	struct	clist t_outq;
 	int	(*t_oproc)();		/* device */
 	int	(*t_param)();		/* device */
 	struct	proc *t_rsel;		/* tty */
@@ -47,8 +47,8 @@ struct tty {
 	struct	session *t_session;	/* tty */
 	struct	pgrp *t_pgrp;		/* foreground process group */
 	char	t_line;			/* glue */
-	char	t_col;			/* tty */
-	char	t_rocount, t_rocol;	/* tty */
+	short	t_col;			/* tty */
+	short	t_rocount, t_rocol;	/* tty */
 	short	t_hiwat;		/* hi water mark */
 	short	t_lowat;		/* low water mark */
 	struct	winsize t_winsize;	/* window size */
@@ -65,6 +65,7 @@ struct tty {
 	long	t_cancc;		/* stats */
 	long	t_rawcc;
 	long	t_outcc;
+	short	t_gen;			/* generation number */
 };
 
 #define	TTIPRI	28
@@ -129,13 +130,15 @@ struct speedtab {
 #define TTY_PE          0x02000000      /* Parity error */
 
 /*
- * Macros
+ * Is tp controlling terminal for p
  */
 #define isctty(p, tp)	((p)->p_session == (tp)->t_session && \
 			 (p)->p_flag&SCTTY)
+/*
+ * Is p in background of tp
+ */
 #define isbackground(p, tp)	(isctty((p), (tp)) && \
 				(p)->p_pgrp != (tp)->t_pgrp)
-
 /*
  * Modem control commands (driver).
  */
