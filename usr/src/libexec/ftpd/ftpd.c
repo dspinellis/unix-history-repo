@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)ftpd.c	4.33 (Berkeley) %G%";
+static	char sccsid[] = "@(#)ftpd.c	4.34 (Berkeley) %G%";
 #endif
 
 /*
@@ -189,7 +189,7 @@ pass(passwd)
 	setegid(pw->pw_gid);
 	initgroups(pw->pw_name, pw->pw_gid);
 	if (chdir(pw->pw_dir)) {
-		reply(550, "User %s: can't change directory to $s.",
+		reply(550, "User %s: can't change directory to %s.",
 			pw->pw_name, pw->pw_dir);
 		goto bad;
 	}
