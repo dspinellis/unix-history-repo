@@ -1,4 +1,4 @@
-/*	rx.c	4.12	83/04/09	*/
+/*	rx.c	4.13	83/04/15	*/
 
 #include "rx.h"
 #if NFX > 0
@@ -9,9 +9,11 @@
 
 /*
  * TODO:
- *	- Make the driver automatically detect the density of
- *	  the floppy disks ( this is easily done using the 
- *	  'read status' command )
+ *	- clean up the code for multisector transfers using
+ *	  a 'transfer in progress' flag
+ *	- Test Deleted Data read/write 
+ *	- Test error handling/reporting and 'volume valid'
+ *	  handling.
  *
  * 	Note: If the drive subsystem is
  * 	powered off at boot time, the controller won't interrupt!
@@ -63,10 +65,10 @@ struct buf	rxutab[NRX];	/* per drive buffers */
 /* per-drive data */
 struct rx_softc {
 	int	sc_flags;	/* drive status flags */
-#define	RXF_DBLDEN	0x01	/* use double density */
-#define	RXF_DIRECT	0x02	/* use direct sector mapping */
-#define	RXF_TRKZERO	0x04	/* start mapping on track 0 */
-#define	RXF_DEVTYPE	0x07	/* density and mapping flags */
+#define	RXF_DIRECT	0x01	/* use direct sector mapping */
+#define	RXF_TRKZERO	0x02	/* start mapping on track 0 */
+#define	RXF_DBLDEN	0x04	/* use double density */
+#define	RXF_DEVTYPE	0x07	/* mapping flags */
 #define	RXF_LOCK	0x10	/* exclusive use */
 #define	RXF_DDMK	0x20	/* deleted-data mark detected */
 #define	RXF_USEWDDS	0x40	/* write deleted-data sector */
@@ -107,12 +109,13 @@ int	rxwstart;
 
 /* constants related to floppy data capacity */
 #define	RXSECS	2002				/* # sectors on a floppy */
-#define	DDSTATE	(sc->sc_flags&RXF_DBLDEN)
+#define	DDSTATE	(sc->sc_csbits&RX_DDEN)
 #define	NBPS	(DDSTATE ? 256 : 128)		/* # bytes per sector */
 #define	RXSIZE	(DDSTATE ? 512512 : 256256)	/* # bytes per disk */
 #define	SECMASK	(DDSTATE ? 0xff : 0x7f)		/* shifted-out bits of offset */
 
-#define	B_CTRL	0x80000000			/* control (format) request */
+#define	B_CTRL		0x80000000		/* control (format) request */
+#define B_RDSTAT	0x40000000		/* read drive status (open) */
 
 /*ARGSUSED*/
 rxprobe (reg)
@@ -160,27 +163,45 @@ rxopen(dev, flag)
 	if (unit >= NRX || (ui = rxdinfo[unit]) == 0 || ui->ui_alive == 0)
 		return (ENXIO);
 	sc = &rx_softc[unit];
-	if (sc->sc_open++ == 0) {
-		rxc = &rx_ctlr[ui->ui_mi->um_ctlr];
-		sc->sc_flags = ( minor(dev) & RXF_DEVTYPE );
+	if (sc->sc_open == 0 && sc->sc_csbits == 0) {
+		struct buf *bp = &erxbuf[unit];
+		/*
+		 * lock the device while an open 
+		 * is in progress
+		 */
+		sc->sc_flags = (minor(dev) & RXF_DEVTYPE) || RXF_LOCK;
 		sc->sc_csbits = RX_INTR;
 		sc->sc_csbits |= ui->ui_slave == 0 ? RX_DRV0 : RX_DRV1;
-		sc->sc_csbits |= minor(dev) & RXF_DBLDEN ? RX_DDEN : RX_SDEN;
+
+		bp->b_dev = dev;
+		bp->b_flags = B_RDSTAT | B_BUSY;
+		bp->b_error = 0;
+		bp->b_blkno = 0;
+		/*
+		 * read device status to determine if
+		 * a floppy is present in the drive and
+		 * what density it is
+		 */
+		rxstrategy(bp);
+		iowait(bp);
+		if (bp->b_flags & B_ERROR) {
+			sc->sc_csbits = 0;
+			return (bp->b_error);
+		}
 		if (rxwstart++ == 0) {
+			rxc = &rx_ctlr[ui->ui_mi->um_ctlr];
 			rxc->rxc_tocnt = 0;
 			rxtimo();			/* start watchdog */
 		}
+#ifdef RXDEBUG
+		printf("rxopen: csbits=0x%x\n", sc->sc_csbits);
+#endif
+		sc->sc_flags &= ~RXF_LOCK;
 	} else	{
-		if ((sc->sc_flags&RXF_DBLDEN) != (dev&RXF_DBLDEN)) {
-			/* 
-			 * Can't open the device if the density does 
-			 * not match the currently selected density 
-			 */
-			return(ENODEV);	
-		}
-		if (sc->sc_flags&RXF_LOCK)
+		if (sc->sc_flags & RXF_LOCK)
 			return(EBUSY);
 	}
+	sc->sc_open++;
 	return (0);
 }
 
@@ -190,8 +211,11 @@ rxclose(dev, flag)
 	int flag;
 {
 	register struct rx_softc *sc = &rx_softc[RXUNIT(dev)];
+	register struct buf *dp = &rxutab[RXUNIT(dev)];
 
 	if (--sc->sc_open == 0 ) {
+		if (dp->b_active)
+			iowait(dp->b_actl);
 		sc->sc_csbits = 0;
 		rxwstart--;
 	}
@@ -209,9 +233,9 @@ rxstrategy(bp)
 	if (unit >= NRX)
 		goto bad;
 	ui = rxdinfo[unit];
-	sc = &rx_softc[unit];
 	if (ui == 0 || ui->ui_alive == 0) 
 		goto bad;
+	sc = &rx_softc[unit];
 	if (bp->b_blkno < 0 || (bp->b_blkno * DEV_BSIZE) > RXSIZE )
 		goto bad;
 #ifdef RXDEBUG
@@ -234,6 +258,7 @@ rxstrategy(bp)
 bad:
 	bp->b_flags |= B_ERROR;
 	iodone(bp);
+	bp->b_error = ENXIO;
 	return;
 }
 
@@ -296,9 +321,9 @@ rxmap(bp, psector, ptrack)
 	 * then interleaving is not performed.
 	 */
 	ptoff = 0;
-	if (sc->sc_flags&RXF_DIRECT)
+	if (sc->sc_flags & RXF_DIRECT)
 		ptoff = 77;
-	if (sc->sc_flags&RXF_TRKZERO)
+	if (sc->sc_flags & RXF_TRKZERO)
 		ptoff++;
 	if (lt + ptoff < 77)
 		ls = ((ls << 1) + (ls >= 13) + (6*lt)) % 26;
@@ -354,14 +379,14 @@ loop:
 #endif
 	if (rxaddr->rxcs == 0x800) {
 		/*
-		 * 'Volume valid'?, check
-		 * if the drive unit has been powered down
+		 * 'Volume valid'? (check if the 
+		 * drive unit has been powered down)
 		 */
 		rxaddr->rxcs = RX_INIT;
 		while((rxaddr->rxcs&RX_DONE) == 0)
 			;
 	}
-	if (bp->b_flags&B_CTRL) {				/* format */
+	if (bp->b_flags & B_CTRL) {				/* format */
 		rxc->rxc_state = RXS_FORMAT;
 		rxaddr->rxcs = RX_FORMAT | sc->sc_csbits;
 		while ((rxaddr->rxcs&RX_TREQ) == 0)
@@ -369,8 +394,13 @@ loop:
 		rxaddr->rxdb = 'I';
 		return;
 	}
+	if (bp->b_flags & B_RDSTAT) {			/* read drive status */
+		rxc->rxc_state = RXS_RDSTAT;
+		rxaddr->rxcs = RX_RDSTAT | sc->sc_csbits;
+		return;
+	}
 
-	if (bp->b_flags&B_READ) {
+	if (bp->b_flags & B_READ) {
 		rxmap(bp, &sector, &track);			/* read */
 #ifdef RXDEBUG
 		printf("read tr=%d, sc=%d", track, sector);
@@ -491,6 +521,16 @@ rxintr(ctlr)
 	 * Possibly completed command.
 	 */
 	case RXS_RDSTAT:
+		if (bp->b_flags & B_RDSTAT) {
+			if ((rxaddr->rxdb&RXES_READY) == 0) {
+				bp->b_flags |= B_ERROR;
+				bp->b_error = ENODEV;
+			} else {
+				sc->sc_csbits |= rxaddr->rxdb&RXES_DBLDEN ?
+					RX_DDEN : RX_SDEN;
+			}
+			goto rdone;
+		}
 		if (rxaddr->rxdb&RXES_READY)
 			goto rderr;
 		bp->b_error = EBUSY;
@@ -502,8 +542,10 @@ rxintr(ctlr)
 	 */
 	case RXS_EMPTY:
 	case RXS_WRITE:	
-	case RXS_FORMAT:
 		goto done;
+
+	case RXS_FORMAT:
+		goto rdone;
 
 	case RXS_RDERR:
 		bp = bp->b_back;		/* kludge, see 'rderr:' */
@@ -550,8 +592,6 @@ retry:
 	/*
 	 * In case we already have UNIBUS resources, give
 	 * them back since we reallocate things in rxstart.
-	 * Also, the active flag must be reset, otherwise rxstart
-	 * will not restart the transfer
 	 */
 	if (um->um_ubinfo)
 		ubadone(um);
@@ -604,10 +644,12 @@ rderr:
 	um->um_cmd = RX_RDERR;
 	(void) ubago(ui);
 	return;
+
 done:
+	ubadone(um);
+rdone:
 	um->um_tab.b_active = 0;
 	um->um_tab.b_errcnt = 0;
-	ubadone(um);
 	if ((sc->sc_resid -= NBPS) > 0) {
 		bp->b_un.b_addr += NBPS;
 #ifdef RXDEBUG
@@ -757,6 +799,7 @@ rxioctl(dev, cmd, data, flag)
 			return (EBADF);
 		if (sc->sc_open > 1 )
 			return(EBUSY);
+		sc->sc_csbits |= *(int *)data ? RX_DDEN : RX_SDEN;
 		return (rxformat(dev));
 
 	case RXIOC_WDDS:
@@ -765,6 +808,10 @@ rxioctl(dev, cmd, data, flag)
 
 	case RXIOC_RDDSMK:
 		*(int *)data = sc->sc_flags & RXF_DDMK;
+		return (0);
+
+	case RXIOC_GDENS:
+		*(int *)data = sc->sc_csbits & RX_DDEN;
 		return (0);
 	}
 	return (ENXIO);
@@ -782,21 +829,16 @@ rxformat(dev)
 	int s, error = 0;
 
 	bp = &rrxbuf[unit];
-	s = spl5();
-	while (bp->b_flags & B_BUSY)
-		sleep(bp, PRIBIO);
 	bp->b_flags = B_BUSY | B_CTRL;
-	splx(s);
 	sc->sc_flags = RXF_FORMAT | RXF_LOCK;
 	bp->b_dev = dev;
 	bp->b_error = 0;
-	bp->b_resid = 0;
-	rxstrategy (bp);
+	bp->b_blkno = 0;
+	rxstrategy(bp);
 	iowait(bp);
 	if (bp->b_flags & B_ERROR)
 		error = bp->b_error;
 	bp->b_flags &= ~B_BUSY;
-	wakeup((caddr_t)bp);
 	sc->sc_flags &= ~RXF_LOCK;
 	return (error);
 }
