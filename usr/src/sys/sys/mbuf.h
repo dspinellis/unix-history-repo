@@ -1,4 +1,4 @@
-/*	mbuf.h	4.13	82/06/14	*/
+/*	mbuf.h	4.14	82/10/05	*/
 
 /*
  * Constants related to memory allocator.
@@ -50,7 +50,8 @@ struct mbuf {
 	{ int ms = splimp(); \
 	  if ((m)=mfree) \
 		{ if ((m)->m_free == 0) panic("mget"); (m)->m_free = 0; \
-		  mbstat.m_mbfree--; mfree = (m)->m_next; (m)->m_next = 0; } \
+		  mbstat.m_mbfree--; mfree = (m)->m_next; (m)->m_next = 0; \
+		  (m)->m_off = MMINOFF; } \
 	  else \
 		(m) = m_more(i); \
 	  splx(ms); }
