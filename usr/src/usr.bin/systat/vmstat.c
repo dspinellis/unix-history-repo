@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	5.23 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -420,7 +420,7 @@ showkre()
 	putint(pgtokb(total.t_vm), MEMROW + 3, MEMCOL + 15, 7);
 	putint(pgtokb(total.t_vmshr), MEMROW + 3, MEMCOL + 22, 7);
 	putint(pgtokb(total.t_free), MEMROW + 2, MEMCOL + 29, 6);
-	putint(total.t_rq, PROCSROW + 1, PROCSCOL + 3, 3);
+	putint(total.t_rq - 1, PROCSROW + 1, PROCSCOL + 3, 3);
 	putint(total.t_pw, PROCSROW + 1, PROCSCOL + 6, 3);
 	putint(total.t_dw, PROCSROW + 1, PROCSCOL + 9, 3);
 	putint(total.t_sl, PROCSROW + 1, PROCSCOL + 12, 3);

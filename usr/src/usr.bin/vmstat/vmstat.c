@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	5.43 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	5.44 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -391,7 +391,7 @@ dovmstat(interval, reps)
 			bzero(&total, sizeof(total));
 		}
 		(void)printf("%2d%2d%2d",
-		    total.t_rq, total.t_dw + total.t_pw, total.t_sw);
+		    total.t_rq - 1, total.t_dw + total.t_pw, total.t_sw);
 #define pgtok(a) ((a) * sum.v_page_size >> 10)
 #define	rate(x)	(((x) + halfuptime) / uptime)	/* round */
 		(void)printf("%6ld%6ld ",
