@@ -12,13 +12,14 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)from.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)from.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <ctype.h>
 #include <pwd.h>
 #include <stdio.h>
+#include <paths.h>
 
 main(argc, argv)
 	int argc;
@@ -63,7 +64,7 @@ main(argc, argv)
 			}
 			file = pwd->pw_name;
 		}
-		(void)sprintf(buf, "/usr/spool/mail/%s", file);
+		(void)sprintf(buf, "%s/%s", _PATH_MAILDIR, file);
 		file = buf;
 	}
 	if (!freopen(file, "r", stdin)) {
