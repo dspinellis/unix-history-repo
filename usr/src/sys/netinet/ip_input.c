@@ -1,4 +1,4 @@
-/* ip_input.c 1.27 81/12/12 */
+/* ip_input.c 1.28 81/12/22 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -119,6 +119,7 @@ next:
 		ip_dooptions(ip);
 	if (ifnet && ip->ip_dst.s_addr != ifnet->if_addr.s_addr &&
 	    if_ifwithaddr(ip->ip_dst) == 0) {
+printf("ip->ip_dst %x ip->ip_ttl %x\n", ip->ip_dst, ip->ip_ttl);
 		if (--ip->ip_ttl == 0) {
 			icmp_error(ip, ICMP_TIMXCEED, 0);
 			goto next;
