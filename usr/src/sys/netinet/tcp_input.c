@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.83	82/12/14	*/
+/*	tcp_input.c	1.84	82/12/30	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -360,10 +360,10 @@ trimthenstep6:
 	}
 
 	/*
-	 * If a segment is received on a connection after the
+	 * If data is received on a connection after the
 	 * user processes are gone, then RST the other end.
 	 */
-	if (so->so_state & SS_NOFDREF) {
+	if ((so->so_state & SS_NOFDREF) && ti->ti_len) {
 		tcp_close(tp);
 		tp = 0;
 		goto dropwithreset;
