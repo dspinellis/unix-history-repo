@@ -9,7 +9,7 @@
 
 
 #ifndef lint
-static char sccsid[] = "@(#)startup.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)startup.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -39,8 +39,8 @@ ifinit()
 {
 	struct interface ifs, *ifp;
 	int s, n;
-	char buf[BUFSIZ];
         struct ifconf ifc;
+	char buf[(sizeof (struct ifreq ) * 20)];
         struct ifreq ifreq, *ifr;
 	u_long i;
 
@@ -71,22 +71,28 @@ ifinit()
 			lookforinterfaces = 1;
 			continue;
 		}
+#ifdef notdef
 		/* already known to us? */
-		/*if (if_ifwithaddr(&ifs.int_addr))
-			continue;*/
-		/* argh, this'll have to change sometime */
+		/* We can have more than one point to point link
+		   with the same local address.
+		   It is not clear what this was guarding against
+		   anyway.
+		if (if_ifwithaddr(ifr->ifr_addr))
+			continue;
+		   */
+#endif
 		if (ifs.int_addr.sa_family != AF_NS)
 			continue;
                 if (ifs.int_flags & IFF_POINTOPOINT) {
                         if (ioctl(s, SIOCGIFDSTADDR, (char *)&ifreq) < 0) {
-                                syslog(LOG_ERR, "ioctl (get dstaddr)");
+                                syslog(LOG_ERR, "ioctl (get dstaddr): %m");
                                 continue;
 			}
 			ifs.int_dstaddr = ifreq.ifr_dstaddr;
 		}
                 if (ifs.int_flags & IFF_BROADCAST) {
                         if (ioctl(s, SIOCGIFBRDADDR, (char *)&ifreq) < 0) {
-                                syslog(LOG_ERR, "ioctl (get broadaddr)");
+                                syslog(LOG_ERR, "ioctl (get broadaddr: %m");
                                 continue;
                         }
 			ifs.int_broadaddr = ifreq.ifr_broadaddr;
@@ -96,7 +102,7 @@ ifinit()
 			continue;
 		ifp = (struct interface *)malloc(sizeof (struct interface));
 		if (ifp == 0) {
-			printf("routed: out of memory\n");
+			syslog(LOG_ERR,"XNSrouted: out of memory\n");
 			break;
 		}
 		*ifp = ifs;
@@ -111,7 +117,7 @@ ifinit()
 			externalinterfaces++;
 		ifp->int_name = malloc(strlen(ifr->ifr_name) + 1);
 		if (ifp->int_name == 0) {
-			fprintf(stderr, "routed: ifinit: out of memory\n");
+			syslog(LOG_ERR,"XNSrouted: out of memory\n");
 			goto bad;		/* ??? */
 		}
 		strcpy(ifp->int_name, ifr->ifr_name);
@@ -128,6 +134,7 @@ ifinit()
 bad:
 	sleep(60);
 	close(s);
+	sleep(60);
 	execv("/etc/XNSrouted", argv0);
 	_exit(0177);
 }
