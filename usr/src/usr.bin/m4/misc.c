@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)misc.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)misc.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -212,38 +212,3 @@ usage() {
         fprintf(stderr, "Usage: m4 [-Dname[=val]] [-Uname]\n");
         exit(1);
 }
-
-#ifdef DUFFCP
-/*
- * This code uses Duff's Device (tm Tom Duff)
- * to unroll the copying loop:
- * while (count-- > 0)
- *	*to++ = *from++;
- */
-
-#define COPYBYTE 	*to++ = *from++
-
-memcpy(to, from, count)
-register char *from, *to;
-register int count;
-{
-	if (count > 0) {
-		register int loops = (count+8-1) >> 3;	/* div 8 round up */
-
-		switch (count&(8-1)) {			/* mod 8 */
-		case 0: do {
-			COPYBYTE;
-		case 7:	COPYBYTE;
-		case 6:	COPYBYTE;
-		case 5:	COPYBYTE;
-		case 4:	COPYBYTE;
-		case 3:	COPYBYTE;
-		case 2:	COPYBYTE;
-		case 1:	COPYBYTE;
-			} while (--loops > 0);
-		}
-
-	}
-}
-
-#endif
