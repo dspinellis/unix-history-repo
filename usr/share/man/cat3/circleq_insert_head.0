@@ -1,0 +1,313 @@
+QUEUE(3)                    BSD Programmer's Manual                   QUEUE(3)
+
+NNAAMMEE
+     LLIISSTT__EENNTTRRYY, LLIISSTT__HHEEAADD, LLIISSTT__IINNIITT, LLIISSTT__IINNSSEERRTT__AAFFTTEERR, LLIISSTT__IINNSSEERRTT__BBEEFFOORREE,
+     LLIISSTT__IINNSSEERRTT__HHEEAADD, LLIISSTT__RREEMMOOVVEE, TTAAIILLQQ__EENNTTRRYY, TTAAIILLQQ__HHEEAADD, TTAAIILLQQ__IINNIITT,
+     TTAAIILLQQ__IINNSSEERRTT__AAFFTTEERR, TTAAIILLQQ__IINNSSEERRTT__BBEEFFOORREE, TTAAIILLQQ__IINNSSEERRTT__HHEEAADD,
+     TTAAIILLQQ__IINNSSEERRTT__TTAAIILL, TTAAIILLQQ__RREEMMOOVVEE, CCIIRRCCLLEEQQ__EENNTTRRYY, CCIIRRCCLLEEQQ__HHEEAADD,
+     CCIIRRCCLLEEQQ__IINNIITT, CCIIRRCCLLEEQQ__IINNSSEERRTT__AAFFTTEERR, CCIIRRCCLLEEQQ__IINNSSEERRTT__BBEEFFOORREE,
+     CCIIRRCCLLEEQQ__IINNSSEERRTT__HHEEAADD, CCIIRRCCLLEEQQ__IINNSSEERRTT__TTAAIILL, CCIIRRCCLLEEQQ__RREEMMOOVVEE - implementa-
+     tions of lists, tail queues, and circular queues
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//qquueeuuee..hh>>
+
+
+     LLIISSTT__EENNTTRRYY(_T_Y_P_E);
+
+     LLIISSTT__HHEEAADD(_H_E_A_D_N_A_M_E, _T_Y_P_E);
+
+     LLIISSTT__IINNIITT(_L_I_S_T___H_E_A_D _*_h_e_a_d);
+
+     LLIISSTT__IINNSSEERRTT__AAFFTTEERR(_L_I_S_T___E_N_T_R_Y _*_l_i_s_t_e_l_m, _T_Y_P_E _*_e_l_m, _L_I_S_T___E_N_T_R_Y _N_A_M_E);
+
+     LLIISSTT__IINNSSEERRTT__BBEEFFOORREE(_L_I_S_T___E_N_T_R_Y _*_l_i_s_t_e_l_m, _T_Y_P_E _*_e_l_m, _L_I_S_T___E_N_T_R_Y _N_A_M_E);
+
+     LLIISSTT__IINNSSEERRTT__HHEEAADD(_L_I_S_T___H_E_A_D _*_h_e_a_d, _T_Y_P_E _*_e_l_m, _L_I_S_T___E_N_T_R_Y _N_A_M_E);
+
+     LLIISSTT__RREEMMOOVVEE(_T_Y_P_E _*_e_l_m, _L_I_S_T___E_N_T_R_Y _N_A_M_E);
+
+
+     TTAAIILLQQ__EENNTTRRYY(_T_Y_P_E);
+
+     TTAAIILLQQ__HHEEAADD(_H_E_A_D_N_A_M_E, _T_Y_P_E);
+
+     TTAAIILLQQ__IINNIITT(_T_A_I_L_Q___H_E_A_D _*_h_e_a_d);
+
+     TTAAIILLQQ__IINNSSEERRTT__AAFFTTEERR(_T_A_I_L_Q___H_E_A_D _*_h_e_a_d, _T_Y_P_E _*_l_i_s_t_e_l_m, _T_Y_P_E _*_e_l_m,
+             _T_A_I_L_Q___E_N_T_R_Y _N_A_M_E);
+
+     TTAAIILLQQ__IINNSSEERRTT__BBEEFFOORREE(_T_A_I_L_Q___H_E_A_D _*_h_e_a_d, _T_Y_P_E _*_l_i_s_t_e_l_m, _T_Y_P_E _*_e_l_m,
+             _T_A_I_L_Q___E_N_T_R_Y _N_A_M_E);
+
+     TTAAIILLQQ__IINNSSEERRTT__HHEEAADD(_T_A_I_L_Q___H_E_A_D _*_h_e_a_d, _T_Y_P_E _*_e_l_m, _T_A_I_L_Q___E_N_T_R_Y _N_A_M_E);
+
+     TTAAIILLQQ__IINNSSEERRTT__TTAAIILL(_T_A_I_L_Q___H_E_A_D _*_h_e_a_d, _T_Y_P_E _*_e_l_m, _T_A_I_L_Q___E_N_T_R_Y _N_A_M_E);
+
+     TTAAIILLQQ__RREEMMOOVVEE(_T_A_I_L_Q___H_E_A_D _*_h_e_a_d, _T_Y_P_E _*_e_l_m, _T_A_I_L_Q___E_N_T_R_Y _N_A_M_E);
+
+
+     CCIIRRCCLLEEQQ__EENNTTRRYY(_T_Y_P_E);
+
+     CCIIRRCCLLEEQQ__HHEEAADD(_H_E_A_D_N_A_M_E, _T_Y_P_E);
+
+     CCIIRRCCLLEEQQ__IINNIITT(_C_I_R_C_L_E_Q___H_E_A_D _*_h_e_a_d);
+
+     CCIIRRCCLLEEQQ__IINNSSEERRTT__AAFFTTEERR(_C_I_R_C_L_E_Q___H_E_A_D _*_h_e_a_d, _T_Y_P_E _*_l_i_s_t_e_l_m, _T_Y_P_E _*_e_l_m,
+             _C_I_R_C_L_E_Q___E_N_T_R_Y _N_A_M_E);
+
+     CCIIRRCCLLEEQQ__IINNSSEERRTT__BBEEFFOORREE(_C_I_R_C_L_E_Q___H_E_A_D _*_h_e_a_d, _T_Y_P_E _*_l_i_s_t_e_l_m, _T_Y_P_E _*_e_l_m,
+             _C_I_R_C_L_E_Q___E_N_T_R_Y _N_A_M_E);
+
+     CCIIRRCCLLEEQQ__IINNSSEERRTT__HHEEAADD(_C_I_R_C_L_E_Q___H_E_A_D _*_h_e_a_d, _T_Y_P_E _*_e_l_m, _C_I_R_C_L_E_Q___E_N_T_R_Y _N_A_M_E);
+
+     CCIIRRCCLLEEQQ__IINNSSEERRTT__TTAAIILL(_C_I_R_C_L_E_Q___H_E_A_D _*_h_e_a_d, _T_Y_P_E _*_e_l_m, _C_I_R_C_L_E_Q___E_N_T_R_Y _N_A_M_E);
+
+
+     CCIIRRCCLLEEQQ__RREEMMOOVVEE(_C_I_R_C_L_E_Q___H_E_A_D _*_h_e_a_d, _T_Y_P_E _*_e_l_m, _C_I_R_C_L_E_Q___E_N_T_R_Y _N_A_M_E);
+
+DDEESSCCRRIIPPTTIIOONN
+     These macros define and operate on three types of data structures: lists,
+     tail queues, and circular queues.  All three structures support the fol-
+     lowing functionality:
+           1.   Insertion of a new entry at the head of the list.
+           2.   Insertion of a new entry after any element in the list.
+           3.   Insertion of a new entry before any element in the list.
+           4.   Removal of any entry in the list.
+           5.   Forward traversal through the list.
+
+     Lists are the simplest of the three data structures and support only the
+     above functionality.
+
+     Tail queues add the following functionality:
+           1.   Entries can be added at the end of a list.
+     However:
+           1.   All list insertions and removals must specify the head of the
+                list.
+           2.   Each head entry requires two pointers rather than one.
+           3.   Code size is about 15% greater and operations run about 20%
+                slower than lists.
+
+     Circular queues add the following functionality:
+           1.   Entries can be added at the end of a list.
+           2.   They may be traversed backwards, from tail to head.
+     However:
+           1.   All list insertions and removals must specify the head of the
+                list.
+           2.   Each head entry requires two pointers rather than one.
+           3.   The termination condition for traversal is more complex.
+           4.   Code size is about 40% greater and operations run about 45%
+                slower than lists.
+
+     In the macro definitions, _T_Y_P_E is the name of a user defined structure,
+     that must contain a field of type LIST_ENTRY, TAILQ_ENTRY, or
+     CIRCLEQ_ENTRY, named _N_A_M_E. The argument _H_E_A_D_N_A_M_E is the name of a user
+     defined structure that must be declared using the macros LIST_HEAD,
+     TAILQ_HEAD, or CIRCLEQ_HEAD. See the examples below for further explana-
+     tion of how these macros are used.
+
+LLIISSTTSS
+     A list is headed by a structure defined by the LLIISSTT__HHEEAADD macro.  This
+     structure contains a single pointer to the first element on the list.
+     The elements are doubly linked so that an arbitrary element can be re-
+     moved without traversing the list.  New elements can be added to the list
+     before or after an existing element or at the head of the list.  A
+     _L_I_S_T___H_E_A_D structure is declared as follows:
+
+           LIST_HEAD(HEADNAME, TYPE) head;
+
+     where _H_E_A_D_N_A_M_E is the name of the structure to be defined, and _T_Y_P_E is
+     the type of the elements to be linked into the list.  A pointer to the
+     head of the list can later be declared as:
+
+           struct HEADNAME *headp;
+
+     (The names head and headp are user selectable.)
+
+     The macro LLIISSTT__EENNTTRRYY declares a structure that connects the elements in
+     the list.
+
+     The macro LLIISSTT__IINNIITT initializes the list referenced by _h_e_a_d.
+
+
+     The macro LLIISSTT__IINNSSEERRTT__HHEEAADD inserts the new element _e_l_m at the head of the
+     list.
+
+     The macro LLIISSTT__IINNSSEERRTT__AAFFTTEERR inserts the new element _e_l_m after the element
+     _l_i_s_t_e_l_m.
+
+     The macro LLIISSTT__IINNSSEERRTT__BBEEFFOORREE inserts the new element _e_l_m before the ele-
+     ment _l_i_s_t_e_l_m.
+
+     The macro LLIISSTT__RREEMMOOVVEE removes the element _e_l_m from the list.
+
+LLIISSTT EEXXAAMMPPLLEE
+     LIST_HEAD(listhead, entry) head;
+     struct listhead *headp;         /* List head. */
+     struct entry {
+             ...
+             LIST_ENTRY(entry) entries;      /* List. */
+             ...
+     } *n1, *n2, *np;
+
+     LIST_INIT(&head);                       /* Initialize the list. */
+
+     n1 = malloc(sizeof(struct entry));      /* Insert at the head. */
+     LIST_INSERT_HEAD(&head, n1, entries);
+
+     n2 = malloc(sizeof(struct entry));      /* Insert after. */
+     LIST_INSERT_AFTER(n1, n2, entries);
+
+     n2 = malloc(sizeof(struct entry));      /* Insert before. */
+     LIST_INSERT_BEFORE(n1, n2, entries);
+                                             /* Forward traversal. */
+     for (np = head.lh_first; np != NULL; np = np->entries.le_next)
+             np-> ...
+
+     while (head.lh_first != NULL)           /* Delete. */
+             LIST_REMOVE(head.lh_first, entries);
+
+TTAAIILL QQUUEEUUEESS
+     A tail queue is headed by a structure defined by the TTAAIILLQQ__HHEEAADD macro.
+     This structure contains a pair of pointers, one to the first element in
+     the tail queue and the other to the last element in the tail queue.  The
+     elements are doubly linked so that an arbitrary element can be removed
+     without traversing the tail queue.  New elements can be added to the tail
+     queue after an existing element, at the head of the tail queue, or at the
+     end of the tail queue.  A _T_A_I_L_Q___H_E_A_D structure is declared as follows:
+
+           TAILQ_HEAD(HEADNAME, TYPE) head;
+
+     where HEADNAME is the name of the structure to be defined, and TYPE is
+     the type of the elements to be linked into the tail queue.  A pointer to
+     the head of the tail queue can later be declared as:
+
+           struct HEADNAME *headp;
+
+     (The names head and headp are user selectable.)
+
+     The macro TTAAIILLQQ__EENNTTRRYY declares a structure that connects the elements in
+     the tail queue.
+
+     The macro TTAAIILLQQ__IINNIITT initializes the tail queue referenced by _h_e_a_d.
+
+     The macro TTAAIILLQQ__IINNSSEERRTT__HHEEAADD inserts the new element _e_l_m at the head of
+     the tail queue.
+
+
+     The macro TTAAIILLQQ__IINNSSEERRTT__TTAAIILL inserts the new element _e_l_m at the end of the
+     tail queue.
+
+     The macro TTAAIILLQQ__IINNSSEERRTT__AAFFTTEERR inserts the new element _e_l_m after the ele-
+     ment _l_i_s_t_e_l_m.
+
+     The macro TTAAIILLQQ__IINNSSEERRTT__BBEEFFOORREE inserts the new element _e_l_m before the ele-
+     ment _l_i_s_t_e_l_m.
+
+     The macro TTAAIILLQQ__RREEMMOOVVEE removes the element _e_l_m from the tail queue.
+
+TTAAIILL QQUUEEUUEE EEXXAAMMPPLLEE
+     TAILQ_HEAD(tailhead, entry) head;
+     struct tailhead *headp;         /* Tail queue head. */
+     struct entry {
+             ...
+             TAILQ_ENTRY(entry) entries;     /* Tail queue. */
+             ...
+     } *n1, *n2, *np;
+
+     TAILQ_INIT(&head);                      /* Initialize the queue. */
+
+     n1 = malloc(sizeof(struct entry));      /* Insert at the head. */
+     TAILQ_INSERT_HEAD(&head, n1, entries);
+
+     n1 = malloc(sizeof(struct entry));      /* Insert at the tail. */
+     TAILQ_INSERT_TAIL(&head, n1, entries);
+
+     n2 = malloc(sizeof(struct entry));      /* Insert after. */
+     TAILQ_INSERT_AFTER(&head, n1, n2, entries);
+
+     n2 = malloc(sizeof(struct entry));      /* Insert before. */
+     TAILQ_INSERT_BEFORE(&head, n1, n2, entries);
+                                             /* Forward traversal. */
+     for (np = head.tqh_first; np != NULL; np = np->entries.tqe_next)
+             np-> ...
+                                             /* Delete. */
+     while (head.tqh_first != NULL)
+             TAILQ_REMOVE(&head, head.tqh_first, entries);
+
+CCIIRRCCUULLAARR QQUUEEUUEESS
+     A circular queue is headed by a structure defined by the CCIIRRCCLLEEQQ__HHEEAADD
+     macro.  This structure contains a pair of pointers, one to the first ele-
+     ment in the circular queue and the other to the last element in the cir-
+     cular queue.  The elements are doubly linked so that an arbitrary element
+     can be removed without traversing the queue.  New elements can be added
+     to the queue after an existing element, before an existing element, at
+     the head of the queue, or at the end of the queue.  A _C_I_R_C_L_E_Q___H_E_A_D struc-
+     ture is declared as follows:
+
+           CIRCLEQ_HEAD(HEADNAME, TYPE) head;
+
+     where HEADNAME is the name of the structure to be defined, and TYPE is
+     the type of the elements to be linked into the circular queue.  A pointer
+     to the head of the circular queue can later be declared as:
+
+           struct HEADNAME *headp;
+
+     (The names head and headp are user selectable.)
+
+     The macro CCIIRRCCLLEEQQ__EENNTTRRYY declares a structure that connects the elements
+     in the circular queue.
+
+     The macro CCIIRRCCLLEEQQ__IINNIITT initializes the circular queue referenced by _h_e_a_d.
+
+
+     The macro CCIIRRCCLLEEQQ__IINNSSEERRTT__HHEEAADD inserts the new element _e_l_m at the head of
+     the circular queue.
+
+     The macro CCIIRRCCLLEEQQ__IINNSSEERRTT__TTAAIILL inserts the new element _e_l_m at the end of
+     the circular queue.
+
+     The macro CCIIRRCCLLEEQQ__IINNSSEERRTT__AAFFTTEERR inserts the new element _e_l_m after the ele-
+     ment _l_i_s_t_e_l_m.
+
+     The macro CCIIRRCCLLEEQQ__IINNSSEERRTT__BBEEFFOORREE inserts the new element _e_l_m before the
+     element _l_i_s_t_e_l_m.
+
+     The macro CCIIRRCCLLEEQQ__RREEMMOOVVEE removes the element _e_l_m from the circular queue.
+
+CCIIRRCCUULLAARR QQUUEEUUEE EEXXAAMMPPLLEE
+     CIRCLEQ_HEAD(circleq, entry) head;
+     struct circleq *headp;                  /* Circular queue head. */
+     struct entry {
+             ...
+             CIRCLEQ_ENTRY entries;          /* Circular queue. */
+             ...
+     } *n1, *n2, *np;
+
+     CIRCLEQ_INIT(&head);                    /* Initialize the circular queue. */
+
+     n1 = malloc(sizeof(struct entry));      /* Insert at the head. */
+     CIRCLEQ_INSERT_HEAD(&head, n1, entries);
+
+     n1 = malloc(sizeof(struct entry));      /* Insert at the tail. */
+     CIRCLEQ_INSERT_TAIL(&head, n1, entries);
+
+     n2 = malloc(sizeof(struct entry));      /* Insert after. */
+     CIRCLEQ_INSERT_AFTER(&head, n1, n2, entries);
+
+     n2 = malloc(sizeof(struct entry));      /* Insert before. */
+     CIRCLEQ_INSERT_BEFORE(&head, n1, n2, entries);
+                                             /* Forward traversal. */
+     for (np = head.cqh_first; np != (void *)&head; np = np->entries.cqe_next)
+             np-> ...
+                                             /* Reverse traversal. */
+     for (np = head.cqh_last; np != (void *)&head; np = np->entries.cqe_prev)
+             np-> ...
+                                             /* Delete. */
+     while (head.cqh_first != (void *)&head)
+             CIRCLEQ_REMOVE(&head, head.cqh_first, entries);
+
+HHIISSTTOORRYY
+     The qquueeuuee functions first appeared in 4.4BSD.
+
+4th Berkeley Distribution       August 20, 1994                              5
