@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)headers.c	3.55		%G%);
+SCCSID(@(#)headers.c	3.56		%G%);
 
 /*
 **  CHOMPHEADER -- process and save a header line.
@@ -646,7 +646,19 @@ putheader(fp, m, e)
 		else
 		{
 			/* vanilla header line */
-			(void) sprintf(obuf, "%s: %s\n", capitalize(h->h_field), p);
+			register char *nlp;
+
+			(void) sprintf(obuf, "%s: ", capitalize(h->h_field));
+			while ((nlp = index(p, '\n')) != NULL)
+			{
+				*nlp = '\0';
+				(void) strcat(obuf, p);
+				*nlp = '\n';
+				putline(obuf, fp, m);
+				p = ++nlp;
+				(void) strcpy(obuf, "\t");
+			}
+			(void) strcat(obuf, p);
 			putline(obuf, fp, m);
 		}
 	}
