@@ -1,4 +1,4 @@
-/*	ufsmount.h	4.2	81/02/19	*/
+/*	ufsmount.h	4.3	81/02/26	*/
 
 /*
  * Mount structure.
@@ -10,4 +10,7 @@ struct	mount
 	dev_t	m_dev;		/* device mounted */
 	struct	buf *m_bufp;	/* pointer to superblock */
 	struct	inode *m_inodp;	/* pointer to mounted on inode */
-} mount[NMOUNT];
+};
+#ifdef KERNEL
+struct	mount mount[NMOUNT];
+#endif
