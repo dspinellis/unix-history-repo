@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)ex_data.c	7.5 (Berkeley) %G%";
+static char *sccsid = "@(#)ex_data.c	7.6 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -20,7 +20,11 @@ static char *sccsid = "@(#)ex_data.c	7.5 (Berkeley) %G%";
  * to confuse xstr so it will leave them alone.
  */
 char	direct[ONMSZ] =
+#ifdef vms
+	{'t', 'm', 'p', ':'}; 
+#else
 	{'/', 't', 'm', 'p'}; 
+#endif
 char	paragraphs[ONMSZ] = {
 	'I', 'P', 'L', 'P', 'P', 'P', 'Q', 'P',		/* -ms macros */
 	'P', ' ', 'L', 'I',				/* -mm macros */
@@ -54,6 +58,9 @@ struct	option options[NOPTS + 1] = {
 	"errorbells",	"eb",	ONOFF,		0,	0,	0,
 	"hardtabs",	"ht",	NUMERIC,	8,	8,	0,
 	"ignorecase",	"ic",	ONOFF,		0,	0,	0,
+#ifndef	UNIX_SBRK
+	"linelimit",	"ll",	NUMERIC,	2000,	2000,	0,
+#endif
 	"lisp",		0,	ONOFF,		0,	0,	0,
 	"list",		0,	ONOFF,		0,	0,	0,
 	"magic",	0,	ONOFF,		1,	1,	0,

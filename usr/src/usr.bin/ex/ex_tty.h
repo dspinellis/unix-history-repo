@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ex_tty.h	7.6 (Berkeley) %G%
+ *	@(#)ex_tty.h	7.7 (Berkeley) %G%
  */
 
 /*
@@ -116,7 +116,9 @@ var	bool	UPPERCASE;	/* Ick! */
 extern	short	LINES;		/* Number of lines on screen */
 extern	short	COLUMNS;
 var	short	OCOLUMNS;	/* Save COLUMNS for a hack in open mode */
+#ifdef	TIOCGWINSZ
 var	struct winsize winsz;	/* Save window size for stopping comparisons */
+#endif
 
 var	short	outcol;		/* Where the cursor is */
 var	short	outline;
@@ -136,7 +138,7 @@ var	short	destline;
  *
  * The following attempts to decide what we are on, and declare
  * some variables in the appropriate format.  The wierd looking one (ttymode)
- * is the thing we pass to sTTY and family to turn "RAW" mode on or off
+ * is the thing we pass to ex_sTTY and family to turn "RAW" mode on or off
  * when we go into or out of visual mode.  In V7/V6 it's just the flags word
  * to stty.  In USG V3 it's the whole tty structure.
  */

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)ex_unix.c	7.6 (Berkeley) %G%";
+static char *sccsid = "@(#)ex_unix.c	7.7 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -30,7 +30,7 @@ unix0(warn)
 
 	printub = 0;
 	CP(puxb, uxb);
-	c = getchar();
+	c = ex_getchar();
 	if (c == '\n' || c == EOF)
 		error("Incomplete shell escape command@- use 'shell' to get a shell");
 	up = uxb;
@@ -39,7 +39,7 @@ unix0(warn)
 
 		case '\\':
 			if (any(peekchar(), "%#!"))
-				c = getchar();
+				c = ex_getchar();
 		default:
 			if (up >= &uxb[UXBSIZE]) {
 tunix:
@@ -86,7 +86,7 @@ uexp:
 			}
 			break;
 		}
-		c = getchar();
+		c = ex_getchar();
 	} while (c == '"' || c == '|' || !endcmd(c));
 	if (c == EOF)
 		ungetchar(c);
@@ -98,7 +98,7 @@ uexp:
 	if (warn && hush == 0 && chng && xchng != chng && value(WARN) && dol > zero) {
 		xchng = chng;
 		vnfl();
-		printf(mesg("[No write]|[No write since last change]"));
+		ex_printf(mesg("[No write]|[No write since last change]"));
 		noonl();
 		flush();
 	} else
@@ -148,7 +148,7 @@ unixex(opt, up, newstdin, mode)
 	if ((mode & 1) && pipe(pvec) < 0) {
 		/* Newstdin should be io so it will be closed */
 		if (inopen)
-			setty(f);
+			ignore(setty(f));
 		error("Can't make pipe for filter");
 	}
 #ifndef VFORK
@@ -184,7 +184,7 @@ unixex(opt, up, newstdin, mode)
 			close(io);
 		if (tfile)
 			close(tfile);
-#ifndef VMUNIX
+#ifdef EXSTRINGS
 		close(erfile);
 #endif
 		signal(SIGHUP, oldhup);
@@ -192,7 +192,7 @@ unixex(opt, up, newstdin, mode)
 		if (ruptible)
 			signal(SIGINT, SIG_DFL);
 		execl(svalue(SHELL), "sh", opt, up, (char *) 0);
-		printf("No %s!\n", svalue(SHELL));
+		ex_printf("No %s!\n", svalue(SHELL));
 		error(NOSTR);
 	}
 	if (mode & 1) {
@@ -220,10 +220,10 @@ unixwt(c, f)
 		signal(SIGTSTP, onsusp);
 #endif
 	if (inopen)
-		setty(f);
+		ignore(setty(f));
 	setrupt();
 	if (!inopen && c && hush == 0) {
-		printf("!\n");
+		ex_printf("!\n");
 		flush();
 		termreset();
 		gettmode();
@@ -261,7 +261,7 @@ filter(mode)
 			io = pvec[1];
 			close(pvec[0]);
 			putfile(1);
-			exit(0);
+			ex_exit(0);
 		}
 		close(pvec[1]);
 		io = pvec[0];
@@ -269,7 +269,7 @@ filter(mode)
 	}
 	f = unixex("-c", uxb, (mode & 2) ? pvec[0] : 0, mode);
 	if (mode == 3) {
-		delete(0);
+		ex_delete(0);
 		addr2 = addr1 - 1;
 	}
 	if (mode & 1) {

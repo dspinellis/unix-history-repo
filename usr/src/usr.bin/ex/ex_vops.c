@@ -27,7 +27,7 @@
 char	*vUA1, *vUA2;
 char	*vUD1, *vUD2;
 
-vUndo()
+ex_vUndo()
 {
 
 	/*
@@ -142,7 +142,7 @@ bool show;	/* if true update the screen */
 		vprepins();
 		temp[vUA2 - linebuf] = 0;
 		for (cp = &temp[vUA1 - linebuf]; *cp;)
-			putchar(*cp++);
+			ex_putchar(*cp++);
 		Outchar = OO; hold = oldhold;
 		endim();
 		physdc(cindent(), cindent() + doomed);
@@ -173,8 +173,6 @@ bool fromvis;
 	char *savecursor;
 	char savelb[LBSIZE];
 	int nlines, more;
-	register line *a1, *a2;
-	char ch;	/* DEBUG */
 	int copyw(), copywR();
 
 	if (!inopen)
@@ -204,7 +202,13 @@ bool fromvis;
 		CP(savelb, linebuf);
 		nlines = dol - zero;
 		while ((line *) endcore - truedol < nlines)
-			morelines();
+			if (morelines() < 0) {
+				dot = savedot;
+				dol = savedol;
+				cursor = savecursor;
+				CP(linebuf, savelb);
+				error("Out of memory@- too many lines to undo");
+			}
 		copyw(truedol+1, zero+1, nlines);
 		truedol += nlines;
 
@@ -318,7 +322,7 @@ vmove()
 			c = *cp;
 			*cp = 0;
 			hold |= HOLDDOL;
-			vreopen(WTOP, lineDOT(), vcline);
+			ignore(vreopen(WTOP, lineDOT(), vcline));
 			hold = oldhold;
 			*cp = c;
 		} else if (wcursor > cursor) {
@@ -326,7 +330,7 @@ vmove()
 			for (cp = cursor; *cp && cp < wcursor;) {
 				register int c = *cp++ & TRIM;
 
-				putchar(c ? c : ' ');
+				ex_putchar(c ? c : ' ');
 			}
 		}
 	}
@@ -359,7 +363,7 @@ vdelete(c)
 			vputchar('@');
 		}
 		wdot = dot;
-		vremote(i, delete, 0);
+		vremote(i, ex_delete, 0);
 		notenam = "delete";
 		DEL[0] = 0;
 		killU();
@@ -388,7 +392,7 @@ vdelete(c)
 	}
 	physdc(column(cursor - 1), i);
 	DEPTH(vcline) = 0;
-	vreopen(LINE(vcline), lineDOT(), vcline);
+	ignore(vreopen(LINE(vcline), lineDOT(), vcline));
 	vsyncCL();
 	vsetcurs(cp);
 }
@@ -479,7 +483,7 @@ vchange(c)
 		 * case we are told to put.
 		 */
 		addr = dot;
-		vremote(cnt, delete, 0);
+		vremote(cnt, ex_delete, 0);
 		setpk();
 		notenam = "delete";
 		if (c != 'd')
@@ -497,7 +501,7 @@ vchange(c)
 		 */
 		vreplace(vcline, cnt, 0);
 		wdot = NOLINE;
-		noteit(0);
+		ignore(noteit(0));
 		vcline--;
 		if (addr <= dol)
 			dot--;
@@ -537,7 +541,7 @@ vchange(c)
 			vcline = 0;
 		vopen(dot, i);
 		vsyncCL();
-		noteit(1);
+		ignore(noteit(1));
 		if (c != 'd') {
 			if (ind >= 0) {
 				cursor = linebuf;
@@ -580,7 +584,7 @@ smallchange:
 		bleep(i, cp);
 	else {
 		vcursbef(wcursor);
-		putchar('$');
+		ex_putchar('$');
 		i = cindent();
 	}
 
@@ -624,11 +628,15 @@ voOpen(c, cnt)
 {
 	register int ind = 0, i;
 	short oldhold = hold;
+#ifdef	SIGWINCH
 	int oldmask;
+#endif
 
 	if (value(SLOWOPEN) || value(REDRAW) && AL && DL)
 		cnt = 1;
+#ifdef	SIGWINCH
 	oldmask = sigblock(sigmask(SIGWINCH));
+#endif
 	vsave();
 	setLAST();
 	if (value(AUTOINDENT))
@@ -653,8 +661,8 @@ voOpen(c, cnt)
 		c = WBOT + 1;
 	else {
 		c = vcline < 0 ? WTOP - cnt : LINE(vcline) + DEPTH(vcline);
-		if (c < ZERO)
-			c = ZERO;
+		if (c < ex_ZERO)
+			c = ex_ZERO;
 		i = LINE(vcline + 1) - c;
 		if (i < cnt && c <= WBOT && (!AL || !DL))
 			vinslin(c, cnt - i, vcline);
@@ -676,7 +684,9 @@ voOpen(c, cnt)
 	cursor = linebuf;
 	linebuf[0] = 0;
 	vappend('o', 1, ind);
+#ifdef	SIGWINCH
 	(void)sigsetmask(oldmask);
+#endif
 }
 
 /*

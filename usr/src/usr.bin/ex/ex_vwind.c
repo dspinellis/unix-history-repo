@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)ex_vwind.c	7.3 (Berkeley) %G%";
+static char *sccsid = "@(#)ex_vwind.c	7.4 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -45,12 +45,12 @@ vjumpto(addr, curs, context)
 	char context;
 {
 
-	noteit(0);
+	ignore(noteit(0));
 	if (context != 0)
 		vcontext(addr, context);
 	else
 		vshow(addr, NOLINE);
-	noteit(1);
+	ignore(noteit(1));
 	vnline(curs);
 }
 
@@ -104,9 +104,9 @@ vup(cnt, ind, scroll)
 	if (hold & HOLDWIG)
 		goto contxt;
 	if (state == VISUAL && !AL && !SR &&
-	    cnt <= WTOP - ZERO && vfit(dot - cnt, cnt) <= WTOP - ZERO)
+	    cnt <= WTOP - ex_ZERO && vfit(dot - cnt, cnt) <= WTOP - ex_ZERO)
 		goto okr;
-	tot = WECHO - ZERO;
+	tot = WECHO - ex_ZERO;
 	if (state != VISUAL || (!AL && !SR) || (!scroll && (cnt > tot || vfit(dot - cnt, cnt) > tot / 3 + 1))) {
 		if (ind > basWLINES / 2)
 			ind = basWLINES / 3;
@@ -154,7 +154,7 @@ vdown(cnt, ind, scroll)
 	if (hold & HOLDWIG)
 		goto dcontxt;
 	if (!scroll) {
-		tot = WECHO - ZERO;
+		tot = WECHO - ex_ZERO;
 		if (state != VISUAL || cnt - tot > 0 || vfit(dot, cnt) > tot / 3 + 1) {
 dcontxt:
 			vcontext(dot + cnt, '.');
@@ -369,7 +369,7 @@ vroll(cnt)
 	if (vcookit(cnt))
 		fried++, vcook();
 #endif
-	for (; cnt > 0 && Peekkey != ATTN; cnt--) {
+	for (; cnt > 0 && Peek_key != ATTN; cnt--) {
 		dot++, vcline++;
 		vopen(dot, LASTLINE);
 		vscrap();
@@ -390,7 +390,6 @@ vroll(cnt)
 vrollR(cnt)
 	register int cnt;
 {
-	register bool fried = 0;
 	short oldhold = hold;
 
 #ifdef ADEBUG
@@ -405,7 +404,7 @@ vrollR(cnt)
 		vcnt = 0;
 	heldech = 0;
 	hold |= HOLDAT|HOLDECH;
-	for (; cnt > 0 && Peekkey != ATTN; cnt--) {
+	for (; cnt > 0 && Peek_key != ATTN; cnt--) {
 		dot--;
 		vopen(dot, WTOP);
 		vscrap();
@@ -443,7 +442,7 @@ vdepth()
 {
 	register int d;
 
-	d = (column(NOSTR) + WCOLS - 1 + (Putchar == listchar) + IN) / WCOLS;
+	d = (column(NOSTR) + WCOLS - 1 + (Put_char == listchar) + IN) / WCOLS;
 #ifdef ADEBUG
 	if (trace)
 		tfixnl(), fprintf(trace, "vdepth returns %d\n", d == 0 ? 1 : d);

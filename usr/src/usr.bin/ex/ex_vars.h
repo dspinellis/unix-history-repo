@@ -1,11 +1,4 @@
-/*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
- *
- *	@(#)ex_vars.h	7.5 (Berkeley) %G%
- */
-
+	/*  sccs id   @(#)  ex_vars.h  @(#)makeoptions	6.4 5/31/85  */
 #define AUTOINDENT      0
 #define AUTOPRINT       1
 #define AUTOWRITE       2

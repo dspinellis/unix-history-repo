@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)ex_cmds2.c	7.4 (Berkeley) %G%";
+static char *sccsid = "@(#)ex_cmds2.c	7.5 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -30,7 +30,7 @@ cmdreg()
 	register int wh = skipwh();
 
 	if (wh && isalpha(peekchar()))
-		c = getchar();
+		c = ex_getchar();
 	return (c);
 }
 
@@ -72,10 +72,14 @@ eol()
  */
 /*VARARGS2*/
 error(str, i)
-#ifdef lint
-	register char *str;
+#ifndef EXSTRINGS
+	char *str;
 #else
-	register int str;
+# ifdef lint
+	char *str;
+# else
+	int str;
+# endif
 #endif
 	int i;
 {
@@ -99,9 +103,9 @@ erewind()
 	argv = argv0;
 	args = args0;
 	if (argc > 1 && !hush) {
-		printf(mesg("%d files@to edit"), argc);
+		ex_printf(mesg("%d files@to edit"), argc);
 		if (inopen)
-			putchar(' ');
+			ex_putchar(' ');
 		else
 			putNFL();
 	}
@@ -183,7 +187,7 @@ error1(str)
 	if (str && !vcatch)
 		putNFL();
 	if (die)
-		exit(1);
+		ex_exit(1);
 	lseek(0, 0L, 2);
 	if (inglobal)
 		setlastchar('\n');
@@ -263,7 +267,7 @@ newline()
 
 	resetflav();
 	for (;;) {
-		c = getchar();
+		c = ex_getchar();
 		switch (c) {
 
 		case '^':
@@ -336,7 +340,7 @@ quickly()
 		chng = 0;
 */
 		xchng = 0;
-		error("No write@since last change (:%s! overrides)", Command);
+		serror("No write@since last change (:%s! overrides)", Command);
 	}
 	return (0);
 }
@@ -385,8 +389,8 @@ setflav()
 
 	if (inopen)
 		return;
-	setnumb(nflag || value(NUMBER));
-	setlist(listf || value(LIST));
+	ignorf(setnumb(nflag || value(NUMBER)));
+	ignorf(setlist(listf || value(LIST)));
 	setoutt();
 }
 
@@ -444,7 +448,7 @@ tailprim(comm, i, notinvis)
 	for (cp = tcommand; i > 0; i--)
 		*cp++ = *comm++;
 	while (*comm && peekchar() == *comm)
-		*cp++ = getchar(), comm++;
+		*cp++ = ex_getchar(), comm++;
 	c = peekchar();
 	if (notinvis || isalpha(c)) {
 		/*
@@ -456,7 +460,7 @@ tailprim(comm, i, notinvis)
 		if (tcommand[0] == 's' && any(c, "gcr"))
 			goto ret;
 		while (cp < &tcommand[19] && isalpha(peekchar()))
-			*cp++ = getchar();
+			*cp++ = ex_getchar();
 		*cp = 0;
 		if (notinvis)
 			serror("What?|%s: No such command from open/visual", tcommand);
@@ -522,7 +526,7 @@ vcontin(ask)
 			}
 		}
 		vclrech(1);
-		if (Peekkey != ':') {
+		if (Peek_key != ':') {
 			putpad(TI);
 			tostart();
 			/* replaced by ostart.

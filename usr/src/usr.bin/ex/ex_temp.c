@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)ex_temp.c	7.5.1.1 (Berkeley) %G%";
+static char *sccsid = "@(#)ex_temp.c	7.6 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -19,6 +19,12 @@ static char *sccsid = "@(#)ex_temp.c	7.5.1.1 (Berkeley) %G%";
  */
 #define	READ	0
 #define	WRITE	1
+
+#ifndef vms
+#define	EPOSITION	7
+#else
+#define	EPOSITION	13
+#endif
 
 char	tfname[40];
 char	rfname[40];
@@ -35,7 +41,8 @@ fileinit()
 	if (tline == INCRMT * (HBLKS+2))
 		return;
 	cleanup(0);
-	close(tfile);
+	if (tfile >= 0)
+		close(tfile);
 	tline = INCRMT * (HBLKS+2);
 	blocks[0] = HBLKS;
 	blocks[1] = HBLKS+1;
@@ -45,24 +52,41 @@ fileinit()
 	iblock2 = -1;
 	oblock = -1;
 	CP(tfname, svalue(DIRECTORY));
-	if (stat(tfname, &stbuf)) {
+#ifndef vms
+	if (stat(tfname, &stbuf))
+#else
+	goto vms_no_check_dir;
+#endif
+	{
 dumbness:
 		if (setexit() == 0)
 			filioerr(tfname);
 		else
 			putNFL();
 		cleanup(1);
-		exit(1);
+		ex_exit(1);
 	}
+#ifndef	vms
 	if ((stbuf.st_mode & S_IFMT) != S_IFDIR) {
 		errno = ENOTDIR;
 		goto dumbness;
 	}
+#else
+vms_no_check_dir:
+#endif
 	ichanged = 0;
 	ichang2 = 0;
+#ifndef	vms
 	ignore(strcat(tfname, "/ExXXXXX"));
+#else
+	ignore(strcat(tfname, "ExXXXXX"));
+#endif
 	for (p = strend(tfname), i = 5, j = getpid(); i > 0; i--, j /= 10)
 		*--p = j % 10 | '0';
+#ifdef vms
+	ignore(strcat(tfname, ".txt.1"));
+	unlink(tfname);
+#endif
 	tfile = creat(tfname, 0600);
 	if (tfile < 0)
 		goto dumbness;
@@ -73,11 +97,14 @@ dumbness:
 	}
 #endif
 	havetmp = 1;
-	close(tfile);
+	if (tfile >= 0)
+		close(tfile);
 	tfile = open(tfname, 2);
 	if (tfile < 0)
 		goto dumbness;
+#ifdef UNIX_SBRK
 /* 	brk((char *)fendcore); */
+#endif
 }
 
 cleanup(all)
@@ -87,12 +114,16 @@ cleanup(all)
 		putpad(TE);
 		flush();
 	}
-	if (havetmp)
+	if (havetmp) {
+		if (tfile >= 0)
+			close(tfile);
 		unlink(tfname);
+	}
 	havetmp = 0;
 	if (all && rfile >= 0) {
+		if (rfile >= 0)
+			close(rfile);
 		unlink(rfname);
-		close(rfile);
 		rfile = -1;
 	}
 }
@@ -152,8 +183,10 @@ getblock(atl, iof)
 	int iof;
 {
 	register int bno, off;
+#ifdef CRYPT
         register char *p1, *p2;
         register int n;
+#endif
 	
 	bno = (atl >> OFFBTS) & BLKMSK;
 	off = (atl << SHFT) & LBTMSK;
@@ -175,24 +208,55 @@ getblock(atl, iof)
 	if (iof == READ) {
 		if (hitin2 == 0) {
 			if (ichang2) {
+#ifdef CRYPT
+				if(xtflag)
+					crblock(tperm, ibuff2, CRSIZE, (long)0);
+#endif
 				blkio(iblock2, ibuff2, write);
 			}
 			ichang2 = 0;
 			iblock2 = bno;
 			blkio(bno, ibuff2, read);
+#ifdef CRYPT
+			if(xtflag)
+				crblock(tperm, ibuff2, CRSIZE, (long)0);
+#endif
 			hitin2 = 1;
 			return (ibuff2 + off);
 		}
 		hitin2 = 0;
 		if (ichanged) {
+#ifdef CRYPT
+			if(xtflag)
+				crblock(tperm, ibuff, CRSIZE, (long)0);
+#endif
 			blkio(iblock, ibuff, write);
 		}
 		ichanged = 0;
 		iblock = bno;
 		blkio(bno, ibuff, read);
+#ifdef CRYPT
+		if(xtflag)
+			crblock(tperm, ibuff, CRSIZE, (long)0);
+#endif
 		return (ibuff + off);
 	}
 	if (oblock >= 0) {
+#ifdef CRYPT
+		if(xtflag) {
+			/*
+			 * Encrypt block before writing, so some devious
+			 * person can't look at temp file while editing.
+			 */
+			p1 = obuff;
+			p2 = crbuf;
+			n = CRSIZE;
+			while(n--)
+				*p2++ = *p1++;
+			crblock(tperm, crbuf, CRSIZE, (long)0);
+			blkio(oblock, crbuf, write);
+		} else
+#endif
 			blkio(oblock, obuff, write);
 	}
 	oblock = bno;
@@ -200,7 +264,11 @@ getblock(atl, iof)
 }
 
 #ifdef	VMUNIX
+#ifdef	vms
+#define	INCORB	32
+#else
 #define	INCORB	64
+#endif
 char	incorb[INCORB+1][BUFSIZ];
 #define	pagrnd(a)	((char *)(((int)a)&~(BUFSIZ-1)))
 int	stilinc;	/* up to here not written yet */
@@ -310,7 +378,9 @@ oops:
 	 * but can result in pregnant pauses between commands
 	 * when the TSYNC call is made, so...
 	 */
+#ifndef vms
 	(void) fsync(tfile);
+#endif
 #endif
 }
 
@@ -372,12 +442,13 @@ regio(b, iofcn)
 
 	if (rfile == -1) {
 		CP(rfname, tfname);
-		*(strend(rfname) - 7) = 'R';
+		*(strend(rfname) - EPOSITION) = 'R';
 		rfile = creat(rfname, 0600);
 		if (rfile < 0)
 oops:
 			filioerr(rfname);
-		close(rfile);
+		else
+			close(rfile);
 		rfile = open(rfname, 2);
 		if (rfile < 0)
 			goto oops;
@@ -402,7 +473,7 @@ REGblk()
 				j++, m >>= 1;
 			rused[i] |= (1 << j);
 #ifdef RDEBUG
-			printf("allocating block %d\n", i * 16 + j);
+			ex_printf("allocating block %d\n", i * 16 + j);
 #endif
 			return (i * 16 + j);
 		}
@@ -435,7 +506,7 @@ KILLreg(c)
 	sp->rg_flags = sp->rg_nleft = 0;
 	while (rblock != 0) {
 #ifdef RDEBUG
-		printf("freeing block %d\n", rblock);
+		ex_printf("freeing block %d\n", rblock);
 #endif
 		rused[rblock / 16] &= ~(1 << (rblock % 16));
 		regio(rblock, shread);
@@ -657,3 +728,144 @@ int buflen;
  * Encryption routines.  These are essentially unmodified from ed.
  */
 
+#ifdef CRYPT
+/*
+ * crblock: encrypt/decrypt a block of text.
+ * buf is the buffer through which the text is both input and
+ * output. nchar is the size of the buffer. permp is a work
+ * buffer, and startn is the beginning of a sequence.
+ */
+crblock(permp, buf, nchar, startn)
+char *permp;
+char *buf;
+int nchar;
+long startn;
+{
+	register char *p1;
+	int n1;
+	int n2;
+	register char *t1, *t2, *t3;
+
+	t1 = permp;
+	t2 = &permp[256];
+	t3 = &permp[512];
+
+	n1 = startn&0377;
+	n2 = (startn>>8)&0377;
+	p1 = buf;
+	while(nchar--) {
+		*p1 = t2[(t3[(t1[(*p1+n1)&0377]+n2)&0377]-n2)&0377]-n1;
+		n1++;
+		if(n1==256){
+			n1 = 0;
+			n2++;
+			if(n2==256) n2 = 0;
+		}
+		p1++;
+	}
+}
+
+/*
+ * makekey: initialize buffers based on user key a.
+ */
+makekey(a, b)
+char *a, *b;
+{
+       register int i;
+	long t;
+	char temp[KSIZE + 1];
+
+	for(i = 0; i < KSIZE; i++)
+		temp[i] = *a++;
+	time(&t);
+	t += getpid();
+	for(i = 0; i < 4; i++)
+		temp[i] ^= (t>>(8*i))&0377;
+	crinit(temp, b);
+}
+
+/*
+ * crinit: besides initializing the encryption machine, this routine
+ * returns 0 if the key is null, and 1 if it is non-null.
+ */
+crinit(keyp, permp)
+char    *keyp, *permp;
+{
+       register char *t1, *t2, *t3;
+	register i;
+	int ic, k, temp;
+	unsigned random;
+	char buf[13];
+	long seed;
+
+	t1 = permp;
+	t2 = &permp[256];
+	t3 = &permp[512];
+	if(*keyp == 0)
+		return(0);
+	strncpy(buf, keyp, 8);
+	while (*keyp)
+		*keyp++ = '\0';
+
+	buf[8] = buf[0];
+	buf[9] = buf[1];
+	domakekey(buf);
+
+	seed = 123;
+	for (i=0; i<13; i++)
+		seed = seed*buf[i] + i;
+	for(i=0;i<256;i++){
+		t1[i] = i;
+		t3[i] = 0;
+	}
+	for(i=0; i<256; i++) {
+		seed = 5*seed + buf[i%13];
+		random = seed % 65521;
+		k = 256-1 - i;
+		ic = (random&0377) % (k+1);
+		random >>= 8;
+		temp = t1[k];
+		t1[k] = t1[ic];
+		t1[ic] = temp;
+		if(t3[k]!=0) continue;
+		ic = (random&0377) % k;
+		while(t3[ic]!=0) ic = (ic+1) % k;
+		t3[k] = ic;
+		t3[ic] = k;
+	}
+	for(i=0; i<256; i++)
+		t2[t1[i]&0377] = i;
+	return(1);
+}
+
+/*
+ * domakekey: the following is the major nonportable part of the encryption
+ * mechanism. A 10 character key is supplied in buffer.
+ * This string is fed to makekey (an external program) which
+ * responds with a 13 character result. This result is placed
+ * in buffer.
+ */
+domakekey(buffer)
+char *buffer;
+{
+       int pf[2];
+
+	if (pipe(pf)<0)
+		pf[0] = pf[1] = -1;
+	if (fork()==0) {
+		close(0);
+		close(1);
+		dup(pf[0]);
+		dup(pf[1]);
+		execl("/usr/lib/makekey", "-", 0);
+		execl("/lib/makekey", "-", 0);
+		ex_exit(1);
+	}
+	write(pf[1], buffer, 10);
+	if (wait((int *)NULL)==-1 || read(pf[0], buffer, 13)!=13)
+		error("crypt: cannot generate key");
+	close(pf[0]);
+	close(pf[1]);
+	/* end of nonportable part */
+}
+#endif

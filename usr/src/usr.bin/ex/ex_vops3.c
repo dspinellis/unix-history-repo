@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)ex_vops3.c	7.3 (Berkeley) %G%";
+static char *sccsid = "@(#)ex_vops3.c	7.4 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -155,7 +155,7 @@ begin:
 			 */
 			if (linebuf[0] == 0 && !pastatom && 
 			   (wdot != dot - 1 || cursor != linebuf)) {
-				lnext();
+				ignore(lnext());
 				goto ret;
 			}
 		}
@@ -223,11 +223,12 @@ ret:
 /*
  * Is this the end of a sentence?
  */
+/* ARGSUSED */
 endsent(pastatom)
 	bool pastatom;
 {
 	register char *cp = wcursor;
-	register int c, d;
+	register int d;
 
 	/*
 	 * If this is the beginning of a line, then
@@ -242,7 +243,7 @@ endsent(pastatom)
 	 * or followed by 2 spaces.  Any number of intervening ) ] ' "
 	 * characters are allowed.
 	 */
-	if (!any(c = *cp, ".!?"))
+	if (!any(*cp, ".!?"))
 		goto tryps;
 	do
 		if ((d = *++cp) == 0)

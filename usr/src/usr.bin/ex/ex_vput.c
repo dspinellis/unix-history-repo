@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)ex_vput.c	7.4 (Berkeley) %G%";
+static char *sccsid = "@(#)ex_vput.c	7.5 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -31,7 +31,7 @@ vclear()
 	destline = 0;
 	outline = 0;
 	if (inopen)
-		vclrbyte(vtube0, WCOLS * (WECHO - ZERO + 1));
+		vclrbyte(vtube0, WCOLS * (WECHO - ex_ZERO + 1));
 }
 
 /*
@@ -58,7 +58,7 @@ vclrlin(l, tp)
 
 	vigoto(l, 0);
 	if ((hold & HOLDAT) == 0)
-		putchar(tp > dol ? ((UPPERCASE || HZ) ? '^' : '~') : '@');
+		ex_putchar(tp > dol ? ((UPPERCASE || HZ) ? '^' : '~') : '@');
 	if (state == HARDOPEN)
 		sethard();
 	vclreol();
@@ -111,7 +111,7 @@ vclrech(didphys)
 	bool didphys;
 {
 
-	if (Peekkey == ATTN)
+	if (Peek_key == ATTN)
 		return;
 	if (hold & HOLDECH) {
 		heldech = !didphys;
@@ -472,7 +472,7 @@ vmaktop(p, cp)
 
 	if (p < 0 || vtube[p] == cp)
 		return;
-	for (i = ZERO; i <= WECHO; i++)
+	for (i = ex_ZERO; i <= WECHO; i++)
 		if (vtube[i] == cp) {
 			copy(temp, vtube[i], WCOLS);
 			copy(vtube[i], vtube[p], WCOLS);

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)ex_get.c	7.6 (Berkeley) %G%";
+static char *sccsid = "@(#)ex_get.c	7.7 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -21,10 +21,10 @@ short	lastc = '\n';
 
 ignchar()
 {
-	ignore(getchar());
+	ignore(ex_getchar());
 }
 
-getchar()
+ex_getchar()
 {
 	register int c;
 
@@ -57,7 +57,7 @@ peekchar()
 {
 
 	if (peekc == 0)
-		peekc = getchar();
+		peekc = ex_getchar();
 	return (peekc);
 }
 
@@ -72,7 +72,6 @@ getach()
 {
 	register int c;
 	static char inline[BUFSIZ];
-	struct stat statb;
 
 	c = peekc;
 	if (c != 0) {
@@ -137,7 +136,7 @@ gettty()
 	if (intty && !inglobal) {
 		if (offset) {
 			holdcm = 1;
-			printf("  %4d  ", lineDOT() + 1);
+			ex_printf("  %4d  ", lineDOT() + 1);
 			flush();
 			holdcm = 0;
 		}
@@ -165,13 +164,13 @@ gettty()
 					if (c == '0')
 						lastin = 0;
 					if (!OS) {
-						putchar('\b' | QUOTE);
-						putchar(' ' | QUOTE);
-						putchar('\b' | QUOTE);
+						ex_putchar('\b' | QUOTE);
+						ex_putchar(' ' | QUOTE);
+						ex_putchar('\b' | QUOTE);
 					}
 					tab(offset);
 					hadup = 1;
-					c = getchar();
+					c = ex_getchar();
 				} else
 					ungetchar(ch);
 				break;
@@ -194,12 +193,12 @@ gettty()
 		holdcm = 0;
 	}
 	if (c == 0)
-		c = getchar();
+		c = ex_getchar();
 	while (c != EOF && c != '\n') {
 		if (cp > &genbuf[LBSIZE - 2])
 			error("Input line too long");
 		*cp++ = c;
-		c = getchar();
+		c = ex_getchar();
 	}
 	if (c == EOF) {
 		if (inglobal)

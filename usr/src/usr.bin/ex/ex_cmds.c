@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)ex_cmds.c	7.10 (Berkeley) %G%";
+static char *sccsid = "@(#)ex_cmds.c	7.11 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -77,7 +77,7 @@ error("Offset out-of-bounds|Offset after command too large");
 		if (inglobal == 0) {
 			flush();
 			if (!hush && value(PROMPT) && !globp && !noprompt && endline) {
-				putchar(':');
+				ex_putchar(':');
 				hadpr = 1;
 			}
 			TSYNC();
@@ -91,7 +91,7 @@ error("Offset out-of-bounds|Offset after command too large");
 		given = seensemi = 0;
 		do {
 			addr1 = addr2;
-			addr = address(0);
+			addr = address((char *) 0);
 			c = getcd();
 			if (addr == 0)
 				if (c == ',')
@@ -114,12 +114,12 @@ error("Offset out-of-bounds|Offset after command too large");
 			addr1 = one;
 			addr2 = dol;
 			given = 2;
-			c = getchar();
+			c = ex_getchar();
 		}
 		if (addr1 == 0)
 			addr1 = addr2;
 		if (c == ':')
-			c = getchar();
+			c = ex_getchar();
 
 		/*
 		 * Set command name for special character commands.
@@ -142,7 +142,6 @@ error("Offset out-of-bounds|Offset after command too large");
 notinvis:
 				tailprim(Command, 1, 1);
 		}
-choice:
 		switch (c) {
 
 		case 'a':
@@ -237,7 +236,7 @@ changdir:
 			setCNL();
 			vmacchng(0);
 			setin(addr1);
-			delete(0);
+			ex_delete(0);
 			inappend = 1;
 			ignore(append(gettty, addr1 - 1));
 			inappend = 0;
@@ -255,7 +254,7 @@ changdir:
 			vmacchng(0);
 			if (c)
 				YANKreg(c);
-			delete(0);
+			ex_delete(0);
 			appendnone();
 			continue;
 
@@ -276,13 +275,13 @@ doecmd:
 			init();
 			addr2 = zero;
 			laste++;
-			sync();
+			ex_sync();
 			rop(c);
 #ifdef VMUNIX
 			tlaste();
 #endif
 			laste = 0;
-			sync();
+			ex_sync();
 			nochng();
 			continue;
 
@@ -341,7 +340,7 @@ doecmd:
 		case 'k':
 casek:
 			pastwh();
-			c = getchar();
+			c = ex_getchar();
 			if (endcmd(c))
 				serror("Mark what?|%s requires following letter", Command);
 			newline();
@@ -470,10 +469,10 @@ quit:
 					tostop();
 				}
 				flush();
-				setty(normf);
+				ignore(setty(normf));
 			}
 			cleanup(1);
-			exit(0);
+			ex_exit(0);
 
 		case 'r':
 			if (peekchar() == 'e') {
@@ -512,7 +511,7 @@ quit:
 					init();
 					addr2 = zero;
 					laste++;
-					sync();
+					ex_sync();
 					recover();
 					rop2();
 					revocer();
@@ -672,7 +671,7 @@ suspend:
 /* version */
 				tail("version");
 				setNAEOL();
-				printf("@(#) Version 3.7, %G%."+5);
+				ex_printf("@(#) Version 3.7, 6/7/85."+5);
 				noonl();
 				continue;
 
@@ -745,7 +744,7 @@ wq:
 /* @ */
 		case '*':
 		case '@':
-			c = getchar();
+			c = ex_getchar();
 			if (c=='\n' || c=='\r')
 				ungetchar(c);
 			if (any(c, "@*\n\r"))
@@ -813,7 +812,7 @@ numberit:
 			setall();
 			if (inglobal == 2)
 				pofix();
-			printf("%d", lineno(addr2));
+			ex_printf("%d", lineno(addr2));
 			noonl();
 			continue;
 

@@ -5,12 +5,13 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)printf.c	7.3 (Berkeley) %G%";
-#endif not lint
-
+static char *sccsid = "@(#)printf.c	7.4 (Berkeley) %G%";
 /* The pwb version this is based on */
 static char *printf_id = "@(#) printf.c:2.2 6/5/79";
-#include "varargs.h"
+#endif not lint
+
+#include <varargs.h>
+ 
 /*
  * This version of printf is compatible with the Version 7 C
  * printf. The differences are only minor except that this
@@ -18,7 +19,6 @@ static char *printf_id = "@(#) printf.c:2.2 6/5/79";
  * printf is more general (and is much larger) and includes
  * provisions for floating point.
  */
- 
 
 #define MAXOCT	11	/* Maximum octal digits in a long */
 #define MAXINT	32767	/* largest normal length positive integer */
@@ -29,7 +29,8 @@ static int width, sign, fill;
 
 char *_p_dconv();
 
-printf(va_alist)
+/* VARARGS */
+ex_printf(va_alist)
 	va_dcl
 {
 	va_list ap;
@@ -50,7 +51,7 @@ printf(va_alist)
 			/* ordinary (non-%) character */
 			if (fcode=='\0')
 				return;
-			putchar(fcode);
+			ex_putchar(fcode);
 		}
 		/* length modifier: -1 for h, 1 for l, 0 for none */
 		length = 0;
@@ -180,8 +181,8 @@ printf(va_alist)
 				}
 				else
 					if (!sign && fill <= 0) {
-						putchar('0');
-						putchar(fcode);
+						ex_putchar('0');
+						ex_putchar(fcode);
 						width -= 2;
 					}
 					else {
@@ -329,7 +330,7 @@ _p_emit(s, send)
 	
 	/* we may want to print a leading '-' before anything */
 	if (*s == '-' && fill < 0) {
-		putchar(*s++);
+		ex_putchar(*s++);
 		alen--;
 		width--;
 	}
@@ -338,14 +339,14 @@ _p_emit(s, send)
 	/* emit any leading pad characters */
 	if (!sign)
 		while (--npad >= 0)
-			putchar(cfill);
+			ex_putchar(cfill);
 			
 	/* emit the string itself */
 	while (--alen >= 0)
-		putchar(*s++);
+		ex_putchar(*s++);
 		
 	/* emit trailing pad characters */
 	if (sign)
 		while (--npad >= 0)
-			putchar(cfill);
+			ex_putchar(cfill);
 }
