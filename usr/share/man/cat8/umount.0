@@ -1,0 +1,56 @@
+UMOUNT(8)                 BSD System Manager's Manual                UMOUNT(8)
+
+NNAAMMEE
+     uummoouunntt - unmount filesystems
+
+SSYYNNOOPPSSIISS
+     uummoouunntt [--ffvv] _s_p_e_c_i_a_l | _n_o_d_e
+     uummoouunntt --aa | --AA [--ffvv] [--hh _h_o_s_t] [--tt _t_y_p_e]
+
+DDEESSCCRRIIPPTTIIOONN
+     The uummoouunntt command calls the unmount(2) system call to remove a _s_p_e_c_i_a_l
+     _d_e_v_i_c_e or the remote node (rhost:path) from the filesystem tree at the
+     point _n_o_d_e. If either _s_p_e_c_i_a_l or _n_o_d_e are not provided, the appropriate
+     information is taken from the fstab(5) file.
+
+     The options are as follows:
+
+     --aa      All the filesystems described in fstab(5) are unmounted.
+
+     --AA      All the currently mounted filesystems except the root are un-
+             mounted.
+
+     --ff      The filesystem is forcibly unmounted.  Active special devices
+             continue to work, but all other files return errors if further
+             accesses are attempted.  The root filesystem cannot be forcibly
+             unmounted.
+
+     --hh _h_o_s_t
+             Only filesystems mounted from the specified host will be unmount-
+             ed.  This option is implies the --AA option and, unless otherwise
+             specified with the --tt option, will only unmount NFS filesystems.
+
+     --tt _t_y_p_e
+             Is used to indicate the actions should only be taken on filesys-
+             tems of the specified type.  More than one type may be specified
+             in a comma separated list.  The list of filesystem types can be
+             prefixed with ``no'' to specify the filesystem types for which
+             action should _n_o_t be taken.  For example, the uummoouunntt command:
+
+                   umount -a -t nfs,mfs
+
+             umounts all filesystems of the type NFS and MFS.
+
+     --vv      Verbose, additional information is printed out as each filesystem
+             is unmounted.
+
+FFIILLEESS
+     /etc/fstab  filesystem table
+
+SSEEEE AALLSSOO
+     unmount(2),  fstab(5),  mount(8)
+
+HHIISSTTOORRYY
+     A uummoouunntt command appeared in Version 6 AT&T UNIX.
+
+4th Berkeley Distribution         May 8, 1995                                1
