@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)sys_process.c	7.34 (Berkeley) %G%
+ *	@(#)sys_process.c	7.35 (Berkeley) %G%
  */
 
 #define IPCREG
@@ -140,13 +140,14 @@ ptrace(curp, uap, retval)
 procxmt(p)
 	register struct proc *p;
 {
-	register int i, *poff;
+	register int i, *poff, *regs;
 	extern char kstack[];
 
 	if (ipc.ip_lock != p->p_pid)
 		return (0);
 	p->p_slptime = 0;
-	p->p_addr->u_kproc.kp_proc.p_md.md_regs = p->p_md.md_regs; /* u.u_ar0 */
+	regs = p->p_md.md_regs;
+	p->p_addr->u_kproc.kp_proc.p_md.md_regs = regs; /* u.u_ar0 */
 	i = ipc.ip_req;
 	ipc.ip_req = 0;
 	switch (i) {
@@ -164,11 +165,6 @@ procxmt(p)
 		break;
 
 	case PT_READ_U:			/* read the child's u. */
-#ifdef HPUXCOMPAT
-		if (p->p_addr->u_pcb.pcb_flags & PCB_HPUXTRACE)
-			i = hpuxtobsduoff(ipc.ip_addr);
-		else
-#endif
 		i = (int)ipc.ip_addr;
 		if ((u_int) i > ctob(UPAGES)-sizeof(int) || (i & 1) != 0)
 			goto error;
@@ -202,11 +198,6 @@ procxmt(p)
 		break;
 
 	case PT_WRITE_U:		/* write the child's u. */
-#ifdef HPUXCOMPAT
-		if (p->p_addr->u_pcb.pcb_flags & PCB_HPUXTRACE)
-			i = hpuxtobsduoff(ipc.ip_addr);
-		else
-#endif
 		i = (int)ipc.ip_addr;
 #ifdef mips
 		poff = (int *)PHYSOFF(curproc->p_addr, i);
@@ -214,9 +205,17 @@ procxmt(p)
 		poff = (int *)PHYSOFF(kstack, i);
 #endif
 		for (i=0; i<NIPCREG; i++)
-			if (poff == &p->p_md.md_regs[ipcreg[i]])
+			if (poff == &regs[ipcreg[i]])
 				goto ok;
-		if (poff == &p->p_md.md_regs[PS]) {
+#if defined(hp300)
+		/*
+		 * In the new frame layout, PS/PC are skewed by 2 bytes.
+		 */
+		regs = (int *)((short *)regs + 1);
+		if (poff == &regs[PC])
+			goto ok;
+#endif
+		if (poff == &regs[PS]) {
 			ipc.ip_data |= PSL_USERSET;
 			ipc.ip_data &= ~PSL_USERCLR;
 #ifdef PSL_CM_CLR
@@ -240,15 +239,16 @@ procxmt(p)
 
 	case PT_STEP:			/* single step the child */
 	case PT_CONTINUE:		/* continue the child */
+		regs = (int *)((short *)regs + 1);
 		if ((unsigned)ipc.ip_data >= NSIG)
 			goto error;
 		if ((int)ipc.ip_addr != 1)
-			p->p_md.md_regs[PC] = (int)ipc.ip_addr;
+			regs[PC] = (int)ipc.ip_addr;
 		p->p_xstat = ipc.ip_data;	/* see issig */
 #ifdef PSL_T
 		/* need something more machine independent here... */
 		if (i == PT_STEP) 
-			p->p_md.md_regs[PS] |= PSL_T;
+			regs[PS] |= PSL_T;
 #endif
 		wakeup((caddr_t)&ipc);
 		return (1);
@@ -258,10 +258,11 @@ procxmt(p)
 		exit(p, (int)p->p_xstat);
 
 	case PT_DETACH:			/* stop tracing the child */
+		regs = (int *)((short *)regs + 1);
 		if ((unsigned)ipc.ip_data >= NSIG)
 			goto error;
 		if ((int)ipc.ip_addr != 1)
-			p->p_md.md_regs[PC] = (int)ipc.ip_addr;
+			regs[PC] = (int)ipc.ip_addr;
 		p->p_xstat = ipc.ip_data;	/* see issig */
 		p->p_flag &= ~STRC;
 		if (p->p_oppid != p->p_pptr->p_pid) {
