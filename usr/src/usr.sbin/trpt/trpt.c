@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)trpt.c	4.5 83/01/18";
+static char sccsid[] = "@(#)trpt.c	4.6 %G%";
 #endif
 
 #include <sys/param.h>
@@ -33,20 +33,23 @@ static char sccsid[] = "@(#)trpt.c	4.5 83/01/18";
 
 n_time	ntime;
 int	sflag;
+int	tflag;
+int	jflag;
+int	numeric();
 struct	nlist nl[] = {
 	{ "_tcp_debug" },
 	{ "_tcp_debx" },
 	0
 };
 struct	tcp_debug tcp_debug[TCP_NDEBUG];
+caddr_t	tcp_pcbs[TCP_NDEBUG];
 int	tcp_debx;
 
 main(argc, argv)
 	int argc;
 	char **argv;
 {
-	int i, mask = 0;
-	caddr_t tcpcb = 0;
+	int i, mask = 0, npcbs = 0;
 	char *system = "/vmunix", *core = "/dev/kmem";
 
 	argc--, argv++;
@@ -55,13 +58,25 @@ again:
 		sflag++, argc--, argv++;
 		goto again;
 	}
+	if (argc > 0 && !strcmp(*argv, "-t")) {
+		tflag++, argc--, argv++;
+		goto again;
+	}
+	if (argc > 0 && !strcmp(*argv, "-j")) {
+		jflag++, argc--, argv++;
+		goto again;
+	}
 	if (argc > 0 && !strcmp(*argv, "-p")) {
+		argc--, argv++;
 		if (argc < 1) {
 			fprintf(stderr, "-p: missing tcpcb address\n");
 			exit(1);
 		}
-		argc--, argv++;
-		sscanf(*argv, "%x", &tcpcb);
+		if (npcbs >= TCP_NDEBUG) {
+			fprintf(stderr, "-p: too many pcb's specified\n");
+			exit(1);
+		}
+		sscanf(*argv, "%x", &tcp_pcbs[npcbs++]);
 		argc--, argv++;
 		goto again;
 	}
@@ -100,25 +115,67 @@ again:
 		fprintf(stderr, "trpt: "); perror("tcp_debug");
 		exit(3);
 	}
-	for (i = tcp_debx % TCP_NDEBUG; i < TCP_NDEBUG; i++) {
-		struct tcp_debug *td = &tcp_debug[i];
+	/*
+	 * If no control blocks have been specified, figure
+	 * out how many distinct one we have and summarize
+	 * them in tcp_pcbs for sorting the trace records
+	 * below.
+	 */
+	if (npcbs == 0) {
+		for (i = 0; i < TCP_NDEBUG; i++) {
+			register int j;
+			register struct tcp_debug *td = &tcp_debug[i];
 
-		if (tcpcb && td->td_tcb != tcpcb)
-			continue;
-		ntime = ntohl(td->td_time);
-		tcp_trace(td->td_act, td->td_ostate, td->td_tcb, &td->td_cb,
-		    &td->td_ti, td->td_req);
+			if (td->td_tcb == 0)
+				continue;
+			for (j = 0; j < npcbs; j++)
+				if (tcp_pcbs[j] == td->td_tcb)
+					break;
+			if (j >= npcbs)
+				tcp_pcbs[npcbs++] = td->td_tcb;
+		}
 	}
-	for (i = 0; i < tcp_debx % TCP_NDEBUG; i++) {
-		struct tcp_debug *td = &tcp_debug[i];
+	qsort(tcp_pcbs, npcbs, sizeof (caddr_t), numeric);
+	if (jflag) {
+		char *cp = "";
 
-		if (tcpcb && td->td_tcb != tcpcb)
-			continue;
-		ntime = ntohl(td->td_time);
-		tcp_trace(td->td_act, td->td_ostate, td->td_tcb, &td->td_cb,
-		    &td->td_ti, td->td_req);
+		for (i = 0; i < npcbs; i++) {
+			printf("%s%x", cp, tcp_pcbs[i]);
+			cp = ", ";
+		}
+		if (*cp)
+			putchar('\n');
+		exit(0);
+	}
+	for (i = 0; i < npcbs; i++) {
+		printf("\n%x:\n", tcp_pcbs[i]);
+		dotrace(tcp_pcbs[i]);
 	}
 	exit(0);
+}
+
+dotrace(tcpcb)
+	register caddr_t tcpcb;
+{
+	register int i;
+	register struct tcp_debug *td;
+
+	for (i = 0; i < tcp_debx % TCP_NDEBUG; i++) {
+		td = &tcp_debug[i];
+		if (tcpcb && td->td_tcb != tcpcb)
+			continue;
+		ntime = ntohl(td->td_time);
+		tcp_trace(td->td_act, td->td_ostate, td->td_tcb, &td->td_cb,
+		    &td->td_ti, td->td_req);
+	}
+	for (i = tcp_debx % TCP_NDEBUG; i < TCP_NDEBUG; i++) {
+		td = &tcp_debug[i];
+		if (tcpcb && td->td_tcb != tcpcb)
+			continue;
+		ntime = ntohl(td->td_time);
+		tcp_trace(td->td_act, td->td_ostate, td->td_tcb, &td->td_cb,
+		    &td->td_ti, td->td_req);
+	}
 }
 
 /*
@@ -135,8 +192,7 @@ tcp_trace(act, ostate, atp, tp, ti, req)
 	char *cp;
 
 	ptime(ntime);
-	printf("%x %s:%s ", ((int)atp)&0xfffff,
-	    tcpstates[ostate], tanames[act]);
+	printf("%s:%s ", tcpstates[ostate], tanames[act]);
 	switch (act) {
 
 	case TA_INPUT:
@@ -187,6 +243,22 @@ tcp_trace(act, ostate, atp, tp, ti, req)
 		printf("\tsnd_wl1 %x snd_wl2 %x snd_wnd %x\n", tp->snd_wl1,
 		    tp->snd_wl2, tp->snd_wnd);
 	}
+	/* print out timers? */
+	if (tflag) {
+		char *cp = "\t";
+		register int i;
+
+		for (i = 0; i < TCPT_NTIMERS; i++) {
+			if (tp->t_timer[i] == 0)
+				continue;
+			printf("%s%s=%d", cp, tcptimers[i], tp->t_timer[i]);
+			if (i == TCPT_REXMT)
+				printf(" (t_rxtshft=%d)", tp->t_rxtshift);
+			cp = ", ";
+		}
+		if (*cp != '\t')
+			putchar('\n');
+	}
 }
 
 ptime(ms)
@@ -194,4 +266,11 @@ ptime(ms)
 {
 
 	printf("%03d ", (ms/10) % 1000);
+}
+
+numeric(c1, c2)
+	caddr_t *c1, *c2;
+{
+	
+	return (*c1 - *c2);
 }
