@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	4.3 82/11/14";
+static char sccsid[] = "@(#)rlogind.c	4.4 82/11/15";
 #endif
 
 #include <stdio.h>
@@ -85,7 +85,7 @@ main(argc, argv)
 
 		s = accept(f, &from, &len, 0);
 		if (s < 0) {
-			perror("accept");
+			perror("rlogind: accept");
 			sleep(1);
 			continue;
 		}
@@ -110,7 +110,7 @@ doit(f, fromp)
 	struct sockaddr_in *fromp;
 {
 	char c;
-	int i, p, cc, t;
+	int i, p, cc, t, pid;
 	int stop = TIOCPKT_DOSTOP;
 	register struct hostent *hp;
 
@@ -122,12 +122,12 @@ doit(f, fromp)
 	fromp->sin_port = htons(fromp->sin_port);
 	hp = gethostbyaddr(&fromp->sin_addr, sizeof (struct in_addr),
 		fromp->sin_family);
+	if (hp == 0)
+		fatal(f, "Host name for your address unknown");
 	if (fromp->sin_family != AF_INET ||
 	    fromp->sin_port >= IPPORT_RESERVED ||
-	    hp == 0) {
-		write(f, "\01Permission denied.\n", 20);
-		exit(1);
-	}
+	    hp == 0)
+		fatal(f, "Permission denied");
 	write(f, "", 1);
 	for (c = 'p'; c <= 's'; c++) {
 		struct stat stb;
@@ -143,9 +143,8 @@ doit(f, fromp)
 				goto gotpty;
 		}
 	}
-	dup2(f, 1);
-	printf("All network ports in use.\r\n");
-	exit(1);
+	fatal(f, "All network ports in use");
+	/*NOTREACHED*/
 gotpty:
 	dup2(f, 0);
 	line[strlen("/dev/")] = 't';
@@ -158,15 +157,15 @@ gotpty:
 	}
 #endif
 	t = open(line, 2);
-	if (t < 0) {
-		dup2(f, 2);
-		perror(line);
-		exit(1);
-	}
+	if (t < 0)
+		fatalperror(f, line, errno);
 	{ struct sgttyb b;
 	  gtty(t, &b); b.sg_flags = RAW|ANYP; stty(t, &b);
 	}
-	if (fork()) {
+	pid = fork();
+	if (pid < 0)
+		fatalperror(f, "", errno);
+	if (pid) {
 		char pibuf[1024], fibuf[1024], *pbp, *fbp;
 		int pcc = 0, fcc = 0, on = 1;
 /* FILE *console = fopen("/dev/console", "w");  */
@@ -180,10 +179,18 @@ gotpty:
 		sigset(SIGCHLD, cleanup);
 		for (;;) {
 			int ibits = 0, obits = 0;
-			if (fcc) obits |= (1<<p); else ibits |= (1<<f);
+
+			if (fcc)
+				obits |= (1<<p);
+			else
+				ibits |= (1<<f);
 			if (pcc >= 0)
-			if (pcc) obits |= (1<<f); else ibits |= (1<<p);
-			if (fcc < 0 && pcc < 0) break;
+				if (pcc)
+					obits |= (1<<f);
+				else
+					ibits |= (1<<p);
+			if (fcc < 0 && pcc < 0)
+				break;
 /* fprintf(console, "ibits from %d obits from %d\r\n", ibits, obits); */
 			select(16, &ibits, &obits, 0, 0, 0);
 /* fprintf(console, "ibits %d obits %d\r\n", ibits, obits); */
@@ -253,8 +260,8 @@ gotpty:
 	dup2(t, 2);
 	close(t);
 	execl("/bin/login", "login", "-r", hp->h_name, 0);
-	perror("/bin/login");
-	exit(1);
+	fatalperror(2, "/bin/login", errno);
+	/*NOTREACHED*/
 }
 
 cleanup()
@@ -265,6 +272,30 @@ cleanup()
 	ioctl(netf, SIOCDONE, &how);
 	kill(0, SIGKILL);
 	exit(1);
+}
+
+fatal(f, msg)
+	int f;
+	char *msg;
+{
+	char buf[BUFSIZ];
+
+	buf[0] = '\01';		/* error indicator */
+	(void) sprintf(buf + 1, "rlogind: %s.\n", msg);
+	(void) write(f, buf, strlen(buf));
+	exit(1);
+}
+
+fatalperror(f, msg, errno)
+	int f;
+	char *msg;
+	int errno;
+{
+	char buf[BUFSIZ];
+	extern char *sys_errlist[];
+
+	(void) sprintf(buf, "%s: %s", msg, sys_errlist[errno]);
+	fatal(f, buf);
 }
 
 #include <utmp.h>
