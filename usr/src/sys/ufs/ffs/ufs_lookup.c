@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_lookup.c	7.46 (Berkeley) %G%
+ *	@(#)ufs_lookup.c	7.47 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -64,7 +64,11 @@ int	dirchk = 0;
  */
 int
 ufs_lookup (ap)
-	struct vop_lookup_args *ap;
+	struct vop_lookup_args /* {
+		struct vnode * a_dvp;
+		struct vnode ** a_vpp;
+		struct componentname * a_cnp;
+	} */ *ap;
 {
 	USES_VOP_ACCESS;
 	USES_VOP_BLKATOFF;
@@ -706,7 +710,8 @@ ufs_direnter(ip, dvp, cnp)
 	error = VOP_BWRITE(bp);
 	dp->i_flag |= IUPD|ICHG;
 	if (!error && dp->i_endoff && dp->i_endoff < dp->i_size)
-		error = VOP_TRUNCATE(dvp, (off_t)dp->i_endoff, IO_SYNC, NOCRED);
+		error = VOP_TRUNCATE(dvp, (off_t)dp->i_endoff, IO_SYNC,
+		    cnp->cn_cred, cnp->cn_proc);
 	return (error);
 }
 
