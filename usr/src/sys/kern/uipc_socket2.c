@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)uipc_socket2.c	7.2 (Berkeley) %G%
+ *	@(#)uipc_socket2.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -312,15 +312,15 @@ sowakeup(so, sb)
  *    a data record, perhaps of zero length.
  *
  * Before using a new socket structure it is first necessary to reserve
- * buffer space to the socket, by calling sbreserve().  This commits
+ * buffer space to the socket, by calling sbreserve().  This should commit
  * some of the available buffer space in the system buffer pool for the
- * socket.  The space should be released by calling sbrelease() when the
- * socket is destroyed.
+ * socket (currently, it does nothing but enforce limits).  The space
+ * should be released by calling sbrelease() when the socket is destroyed.
  */
 
 soreserve(so, sndcc, rcvcc)
 	register struct socket *so;
-	int sndcc, rcvcc;
+	u_long sndcc, rcvcc;
 {
 
 	if (sbreserve(&so->so_snd, sndcc) == 0)
@@ -341,9 +341,10 @@ bad:
  */
 sbreserve(sb, cc)
 	struct sockbuf *sb;
+	u_long cc;
 {
 
-	if ((unsigned) cc > (unsigned)SB_MAX * CLBYTES / (2 * MSIZE + CLBYTES))
+	if (cc > (u_long)SB_MAX * CLBYTES / (2 * MSIZE + CLBYTES))
 		return (0);
 	sb->sb_hiwat = cc;
 	sb->sb_mbmax = MIN(cc * 2, SB_MAX);
