@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)db.h	5.9 (Berkeley) %G%
+ *	@(#)db.h	5.10 (Berkeley) %G%
  */
 
 #ifndef _DB_H_
@@ -33,7 +33,11 @@ typedef struct {
 
 /* access method description structure */
 typedef struct __db {
-	void *internal;		/* access method private; really void * */
+	void *internal;		/* access method private */
+#define	DB_BTREE	1
+#define	DB_HASH		2
+#define	DB_RECNO	3
+	int type;		/* type of underlying db */
 	int (*close) __P((const struct __db *));
 	int (*del) __P((const struct __db *, const DBT *, unsigned int));
 	int (*get) __P((const struct __db *, DBT *, DBT *, unsigned int));

@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash.c	5.14 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -212,6 +212,7 @@ const HASHINFO	*info;		/* Special directives for create */
     dbp->put = hash_put;
     dbp->seq = hash_seq;
     dbp->sync = hash_sync;
+    dbp->type = DB_HASH;
 
 #ifdef DEBUG
 	(void)fprintf(stderr, "%s\n%s%x\n%s%d\n%s%d\n%s%d\n%s%d\n%s%d\n%s%d\n%s%d\n%s%x\n%s%x\n%s%d\n%s%d\n",

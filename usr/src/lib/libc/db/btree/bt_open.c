@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_open.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_open.c	5.8 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -98,6 +98,7 @@ btree_open(f, flags, mode, b)
 	db->put = bt_put;
 	db->seq = bt_seq;
 	db->sync = bt_sync;
+	db->type = DB_BTREE;
 
 	return (db);
 }
