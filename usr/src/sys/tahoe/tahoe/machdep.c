@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)machdep.c	7.9 (Berkeley) %G%
+ *	@(#)machdep.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -25,7 +25,6 @@
 #include "malloc.h"
 #include "mbuf.h"
 #include "msgbuf.h"
-#include "../ufs/quota.h"
 
 #include "cpu.h"
 #include "reg.h"
@@ -123,10 +122,6 @@ startup(firstaddr)
 	valloc(mbmap, struct map, nmbclusters/4);
 	valloc(kmemmap, struct map, ekmempt - kmempt);
 	valloc(kmemusage, struct kmemusage, ekmempt - kmempt);
-#ifdef QUOTA
-	valloclim(quota, struct quota, nquota, quotaNQUOTA);
-	valloclim(dquot, struct dquot, ndquot, dquotNDQUOT);
-#endif
 	
 	/*
 	 * Determine how many buffers to allocate.
