@@ -1,4 +1,4 @@
-/*	vm_swap.c	4.13	82/10/31	*/
+/*	vm_swap.c	4.14	82/11/02	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -9,6 +9,7 @@
 #include "../h/inode.h"
 #include "../h/map.h"
 #include "../h/uio.h"
+#include "../h/file.h"
 
 struct	buf rswbuf;
 /*
@@ -31,7 +32,7 @@ swstrategy(bp)
 	if (rootdev == dumpdev)
 		bp->b_blkno += MINIROOTSIZE;
 #endif
-	sz = howmany(bp->b_bocunt, DEV_BSIZE);
+	sz = howmany(bp->b_bcount, DEV_BSIZE);
 	off = bp->b_blkno % DMMAX;
 	if (bp->b_blkno+sz > nswap || off+sz > DMMAX) {
 		bp->b_flags |= B_ERROR;
