@@ -12,7 +12,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_usrreq.c	8.1 (Berkeley) %G%
+ *	@(#)pk_usrreq.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -294,7 +294,7 @@ struct sockaddr_x25 pk_sockmask = {
 /*ARGSUSED*/
 pk_control (so, cmd, data, ifp)
 struct socket *so;
-int cmd;
+u_long cmd;
 caddr_t data;
 register struct ifnet *ifp;
 {
