@@ -3,7 +3,7 @@
 * All rights reserved.  The Berkeley software License Agreement
 * specifies the terms and conditions for redistribution.
 *
-* 		@(#)qd.c	1.8  Berkeley  %G%
+* 		@(#)qd.c	1.9  Berkeley  %G%
 *
 */
 
@@ -102,8 +102,8 @@ struct qdflags {
 #define SEL_WRITE	0x02		/* write select is active */
 
 /*
-* constants used in shared memory operations 
-*/
+ * constants used in shared memory operations 
+ */
 #define EVENT_BUFSIZE  1024	/* # of bytes per device's event buffer */
 #define MAXEVENTS  ( (EVENT_BUFSIZE - sizeof(struct qdinput))	 \
 	/ sizeof(struct _vs_event) )
@@ -111,16 +111,15 @@ struct qdflags {
 #define COLOR_BUFSIZ  ((sizeof(struct color_buf) + 512) & ~0x01FF)
 
 /*
-* reference to an array of "uba_device" structures built by the auto
-* configuration program.  The uba_device structure decribes the device
-* sufficiently for the driver to talk to it.  The auto configuration code
-* fills in the uba_device structures (located in ioconf.c) from user
-* maintained info.  
-*/
+ * reference to an array of "uba_device" structures built by the auto
+ * configuration program.  The uba_device structure decribes the device
+ * sufficiently for the driver to talk to it.  The auto configuration code
+ * fills in the uba_device structures (located in ioconf.c) from user
+ * maintained info.  
+ */
 struct uba_device *qdinfo[NQD];  /* array of pntrs to each QDSS's */
 struct tty qd_tty[NQD*4];	/* teletype structures for each.. */
-struct qd_softc qd_softc[NQD];
-extern char qvmem[][128*NBPG];	/* XXX - *NQD - but can't test it */
+extern char qvmem[][128*NBPG];
 extern struct pte QVmap[][128];
 #define CHUNK	  (64 * 1024)
 #define QMEMSIZE  (1024 * 1024 * 4)	/* 4 meg */
@@ -136,58 +135,58 @@ struct buf qdbuf[NQD];		/* buf structs used by strategy */
 short qdopened[NQD];		/* graphics device is open exclusive use */
 
 /*
-* the array "event_shared[]" is made up of a number of event queue buffers
-* equal to the number of QDSS's configured into the running kernel (NQD).
-* Each event queue buffer begins with an event queue header (struct qdinput)
-* followed by a group of event queue entries (struct _vs_event).  The array
-* "*eq_header[]" is an array of pointers to the start of each event queue
-* buffer in "event_shared[]".  
-*/
+ * the array "event_shared[]" is made up of a number of event queue buffers
+ * equal to the number of QDSS's configured into the running kernel (NQD).
+ * Each event queue buffer begins with an event queue header (struct qdinput)
+ * followed by a group of event queue entries (struct _vs_event).  The array
+ * "*eq_header[]" is an array of pointers to the start of each event queue
+ * buffer in "event_shared[]".  
+ */
 #define EQSIZE ((EVENT_BUFSIZE * NQD) + 512)
 
 char event_shared[EQSIZE];	    /* reserve space for event bufs */
 struct qdinput *eq_header[NQD];     /* event queue header pntrs */
 
 /*
-* This allocation method reserves enough memory pages for NQD shared DMA I/O
-* buffers.  Each buffer must consume an integral number of memory pages to
-* guarantee that a following buffer will begin on a page boundary.  Also,
-* enough space is allocated so that the FIRST I/O buffer can start at the
-* 1st page boundary after "&DMA_shared".  Page boundaries are used so that
-* memory protections can be turned on/off for individual buffers. 
-*/
+ * This allocation method reserves enough memory pages for NQD shared DMA I/O
+ * buffers.  Each buffer must consume an integral number of memory pages to
+ * guarantee that a following buffer will begin on a page boundary.  Also,
+ * enough space is allocated so that the FIRST I/O buffer can start at the
+ * 1st page boundary after "&DMA_shared".  Page boundaries are used so that
+ * memory protections can be turned on/off for individual buffers. 
+ */
 #define IOBUFSIZE  ((DMA_BUFSIZ * NQD) + 512)
 
 char DMA_shared[IOBUFSIZE];	    /* reserve I/O buffer space */
 struct DMAreq_header *DMAheader[NQD];  /* DMA buffer header pntrs */
 
 /*
-* The driver assists a client in scroll operations by loading dragon
-* registers from an interrupt service routine.	The loading is done using
-* parameters found in memory shrade between the driver and it's client.
-* The scroll parameter structures are ALL loacted in the same memory page
-* for reasons of memory economy.  
-*/
+ * The driver assists a client in scroll operations by loading dragon
+ * registers from an interrupt service routine.	The loading is done using
+ * parameters found in memory shrade between the driver and it's client.
+ * The scroll parameter structures are ALL loacted in the same memory page
+ * for reasons of memory economy.  
+ */
 char scroll_shared[2 * 512];	/* reserve space for scroll structs */
 struct scroll *scroll[NQD];	/* pointers to scroll structures */
 
 /*
-* the driver is programmable to provide the user with color map write
-* services at VSYNC interrupt time.  At interrupt time the driver loads
-* the color map with any user-requested load data found in shared memory 
-*/
+ * the driver is programmable to provide the user with color map write
+ * services at VSYNC interrupt time.  At interrupt time the driver loads
+ * the color map with any user-requested load data found in shared memory 
+ */
 #define COLOR_SHARED  ((COLOR_BUFSIZ * NQD) + 512)
 
 char color_shared[COLOR_SHARED];      /* reserve space: color bufs */
 struct color_buf *color_buf[NQD];     /* pointers to color bufs */
 
 /*
-* mouse input event structures 
-*/
+ * mouse input event structures 
+ */
 struct mouse_report last_rep[NQD];
 struct mouse_report current_rep[NQD];
 
-struct proc *rsel[NQD]; 	/* process waiting for select */
+struct proc *qdrsel[NQD]; 	/* process waiting for select */
 struct _vs_cursor cursor[NQD];	/* console cursor */
 int qdcount = 0;		/* count of successfully probed qd's */
 int nNQD = NQD;
@@ -196,8 +195,8 @@ int QDlast_DMAtype;             /* type of the last DMA operation */
 
 #define QDSSMAJOR	41	/* QDSS major device number */
 /*
-* macro to get system time.  Used to time stamp event queue entries 
-*/
+ * macro to get system time.  Used to time stamp event queue entries 
+ */
 #define TOY ((time.tv_sec * 100) + (time.tv_usec / 10000))
 
 int qdprobe();
@@ -209,10 +208,10 @@ int qdiint();
 u_short qdstd[] = { 0 };
 
 struct uba_driver qddriver = {
-	qdprobe,			/* device probe entry */
-	0,				/* no slave device */
-	qdattach,			/* device attach entry */
-	0,				/* no "fill csr/ba to start" */
+	qdprobe,		/* device probe entry */
+	0,			/* no slave device */
+	qdattach,		/* device attach entry */
+	0,			/* no "fill csr/ba to start" */
 	qdstd,			/* device addresses */
 	"qd",			/* device name string */
 	qdinfo			/* ptr to QDSS's uba_device struct */
@@ -324,16 +323,13 @@ struct q_keyboard {
 #define CFLAG (PARENB|CREAD|CS7|CLOCAL)
 #endif
 
-/*********************************************************************
-*
-*	qdcons_init()... init QDSS as console (before probe routine)
-*
-*********************************************************************/
+/*
+ * Init QDSS as console (before probe routine)
+ */
 
 qdcons_init()
 {
-	register u_int unit;
-	int *ptep;			/* page table entry pointer */
+	register unit;
 	caddr_t phys_adr;		/* physical QDSS base adrs */
 	u_int mapix;			/* index into QVmap[] array */
 	struct percpu *pcpu;		/* pointer to cpusw structure  */
@@ -345,7 +341,7 @@ qdcons_init()
 #define QDSSCSR 0x1F00
 
 	if (v_putc != cnputc)
-	    return;
+	    return 0;
 
 	unit = 0;
 
@@ -355,20 +351,18 @@ qdcons_init()
 	for (pcpu = percpu; pcpu && pcpu->pc_cputype != cpu; pcpu++)
 		;
 	if (pcpu == NULL)
-	    return;
+	    return 0;
 
 	/*
 	 * Map device registers - the last 8K of qvmem.
 	 */
 	qb = (struct qbus *)pcpu->pc_io->io_details;
 	ioaccess(qb->qb_iopage, UMEMmap[0] + qb->qb_memsize,
-	UBAIOPAGES * NBPG);
+		 UBAIOPAGES * NBPG);
 	devptr = (u_short *)((char *)umem[0]+(qb->qb_memsize * NBPG));
 	qdaddr = (u_short *)((u_int)devptr + ubdevreg(QDSSCSR));
-	if (badaddr(qdaddr, sizeof(short)))  {
-		printf("Can't find qdss (badaddr)\n"); /* debug */
-		return(0);
-	}
+	if (badaddr((caddr_t)qdaddr, sizeof(short)))
+		return 0;
 
 	/*
 	 * Map q-bus memory used by qdss. (separate map)
@@ -419,44 +413,38 @@ qdcons_init()
 	setup_input(unit);		/* init the DUART */
 	v_putc = qdputc;		/* kernel console output to qdss */
 	consops = &cdevsw[QDSSMAJOR];	/* virtual console is qdss */
-	return(1);
+	return 1;
 
 } /* qdcons_init */
 
-/*********************************************************************
-*
-*	qdprobe()... configure QDSS into Q memory and make it intrpt
-*
-**********************************************************************
-*
-*  calling convention:
-*			qdprobe(reg, ctlr);
-*			caddr_t reg;
-*			int ctlr;
-*
-*	where: reg - a character pointer to the QDSS I/O page register
-*	       ctlr - controller number (?)
-*
-*  side effects: QDSS gets mapped into Qbus memory space at the first
-*		 vacant 64kb boundary counting back from the top of
-*		 Qbus memory space (qvmem+4mb)
-*
-*  return: QDSS bus request level and vector address returned in
-*	   registers by UNIX convention.
-*
-*****************/
-
+/*
+ *  Configure QDSS into Q memory and make it intrpt.
+ *
+ *  side effects: QDSS gets mapped into Qbus memory space at the first
+ *		 vacant 64kb boundary counting back from the top of
+ *		 Qbus memory space (qvmem+4mb)
+ *
+ *  return: QDSS bus request level and vector address returned in
+ *	   registers by UNIX convention.
+ *
+ */
 qdprobe(reg)
-	caddr_t reg;
+	caddr_t reg;	/* character pointer to the QDSS I/O page register */
 {
 	register int br, cvec;  	/* value-result */
 	register int unit;
 	struct dga *dga;		/* pointer to gate array structure */
-	struct cpusw *cpup;		/* pointer to the cpusw structure */
-	int *ptep;			/* page table entry pointer */
 	int vector;
+#ifdef notdef
+	int *ptep;			/* page table entry pointer */
 	caddr_t phys_adr;		/* physical QDSS base adrs */
 	u_int mapix;
+#endif
+
+#ifdef lint
+	br = 0; cvec = br; br = cvec; nNQD = br; br = nNQD;
+	qddint(0); qdaint(0); qdiint(0); (void)qdgetc();
+#endif
 
 	/*
 	 * calculate board unit number from I/O page register address  
@@ -484,7 +472,7 @@ qdprobe(reg)
 
 	if (unit != 0) {
 		printf("qd: can't support two qdss's (yet)\n");
-#ifdef notdef	/* notyet - don't have two qd's so i can't test it */
+#ifdef notdef	/* can't test */
 		if (v_consputc != qdputc  ||  unit != 0) {
 
 			/*
@@ -499,15 +487,15 @@ qdprobe(reg)
 			qdbase[unit] = (caddr_t) (qvmem[0] + QMEMSIZE - CHUNK);
 
 			/*
-			* find the cpusw entry that matches this machine. */
-
+			* find the cpusw entry that matches this machine. 
+			*/
 			cpup = &cpusw[cpu];
-			while ( !(BADADDR(qdbase[unit], sizeof(short))) )
-			    qdbase[unit] -= CHUNK;
+			while (!(BADADDR(qdbase[unit], sizeof(short))))
+				qdbase[unit] -= CHUNK;
 
 			/*
-			* tell QDSS which Q memory address base to decode */
-
+			* tell QDSS which Q memory address base to decode 
+			*/
 			mapix = (int) (VTOP(qdbase[unit]) - VTOP(qvmem[0]));
 			ptep = (int *) QVmap[0] + mapix;
 			phys_adr = (caddr_t)(((int)*ptep&0x001FFFFF)<<PGSHIFT);
@@ -579,7 +567,7 @@ qdprobe(reg)
 	dga->csr = HALT;		/* stop the wheels */
 
 	if (cvec != vector)		/* if vector != base vector.. */
-	    return(0);			/* ..return = 'no device' */
+		return(0);		/* ..return = 'no device' */
 
 	/*
 	* score this as an existing qdss
@@ -590,27 +578,10 @@ qdprobe(reg)
 
 } /* qdprobe */
 
-/*****************************************************************
-*
-*	qdattach()... do the one-time initialization
-*
-******************************************************************
-*
-*  calling convention:
-*			qdattach(ui);
-*			struct uba_device *ui;
-*
-*		where: ui - pointer to the QDSS's uba_device structure
-*
-*  side effects: none
-*	 return: none
-*
-*************************/
-
 qdattach(ui)
 	struct uba_device *ui;
 {
-	register u_int unit;		/* QDSS module # for this call */
+	register unit;			/* QDSS module # for this call */
 
 	unit = ui->ui_unit;		/* get QDSS number */
 
@@ -642,11 +613,10 @@ qdattach(ui)
 	last_rep[unit].bytcnt = 0;
 
 	/*
-	* init the event queue (except mouse position) */
-
-	eq_header[unit]->header.events = (struct _vs_event *)
-	    ((int)eq_header[unit]
-	    + sizeof(struct qdinput));
+	* init the event queue (except mouse position) 
+	*/
+	eq_header[unit]->header.events = 
+	    (struct _vs_event *)((int)eq_header[unit] + sizeof(struct qdinput));
 
 	eq_header[unit]->header.size = MAXEVENTS;
 	eq_header[unit]->header.head = 0;
@@ -659,20 +629,7 @@ qdattach(ui)
 
 } /* qdattach */
 
-/***************************************************************
-*
-*	qdopen()... open a minor device
-*
-****************************************************************
-*
-*  calling convention: qdopen(dev, flag);
-*		       dev_t dev;
-*		       int flag;
-*
-*  side effects: none
-*
-*********************/
-
+/*ARGSUSED*/
 qdopen(dev, flag)
 	dev_t dev;
 	int flag;
@@ -680,11 +637,9 @@ qdopen(dev, flag)
 	register struct uba_device *ui; /* ptr to uba structures */
 	register struct dga *dga;	/* ptr to gate array struct */
 	register struct tty *tp;
-	struct adder *adder;
 	struct duart *duart;
-	u_int unit;
-	u_int minor_dev;
-	int s;
+	int unit;
+	int minor_dev;
 
 	minor_dev = minor(dev); /* get QDSS minor device number */
 	unit = minor_dev >> 2;
@@ -696,7 +651,6 @@ qdopen(dev, flag)
 	if (ui == 0  || ui->ui_alive == 0)
 		return(ENXIO);		/* no such device or address */
 
-	adder = (struct adder *) qdmap[unit].adder;
 	duart = (struct duart *) qdmap[unit].duart;
 	dga = (struct dga *) qdmap[unit].dga;
 
@@ -705,7 +659,7 @@ qdopen(dev, flag)
 		* this is the graphic device... 
 		*/
 		if (qdopened[unit] != 0)
-		    return(EBUSY);
+			return(EBUSY);
 		else
 			qdopened[unit] = 1;
 		qdflags[unit].inuse |= GRAPHIC_DEV;  /* graphics dev is open */
@@ -752,20 +706,7 @@ qdopen(dev, flag)
 
 } /* qdopen */
 
-/***************************************************************
-*
-*	qdclose()... clean up on the way out
-*
-****************************************************************
-*
-*  calling convention: qdclose();
-*
-*  side effects: none
-*
-*  return: none
-*
-*********************/
-
+/*ARGSUSED*/
 qdclose(dev, flag)
 	dev_t dev;
 	int flag;
@@ -776,8 +717,8 @@ qdclose(dev, flag)
 	struct dga *dga;		/* gate array register map pointer */
 	struct duart *duart;
 	struct adder *adder;
-	u_int unit;
-	u_int minor_dev;
+	int unit;
+	int minor_dev;
 	u_int mapix;
 	int i;				/* SIGNED index */
 
@@ -790,7 +731,7 @@ qdclose(dev, flag)
 		* this is the graphic device... 
 		*/
 		if (qdopened[unit] != 1)
-		    return(EBUSY);
+		    	return(EBUSY);
 		else
 			qdopened[unit] = 0;	/* allow it to be re-opened */
 		/*
@@ -802,22 +743,22 @@ qdclose(dev, flag)
 			*/
 			mapix = VTOP((int)qd->template) - VTOP(qvmem[0]);
 			ptep = (int *)(QVmap[0] + mapix);
-			for (i = VTOP(TMPSIZE); i > 0; --i)
-				*ptep++ = (*ptep & ~PG_PROT) | PG_V | PG_KW;
+			for (i = 0; i < btop(TMPSIZE); i++, ptep++)
+				*ptep = (*ptep & ~PG_PROT) | PG_V | PG_KW;
 			/*
 			* ADDER 
 			*/
 			mapix = VTOP((int)qd->adder) - VTOP(qvmem[0]);
 			ptep = (int *)(QVmap[0] + mapix);
-			for (i = VTOP(REGSIZE); i > 0; --i)
-				*ptep++ = (*ptep & ~PG_PROT) | PG_V | PG_KW;
+			for (i = 0; i < btop(REGSIZE); i++, ptep++)
+				*ptep = (*ptep & ~PG_PROT) | PG_V | PG_KW;
 			/*
 			* COLOR MAPS 
 			*/
 			mapix = VTOP((int)qd->red) - VTOP(qvmem[0]);
 			ptep = (int *)(QVmap[0] + mapix);
-			for (i = VTOP(CLRSIZE); i > 0; --i)
-				*ptep++ = (*ptep & ~PG_PROT) | PG_V | PG_KW;
+			for (i = 0; i < btop(CLRSIZE); i++, ptep++)
+				*ptep = (*ptep & ~PG_PROT) | PG_V | PG_KW;
 		}
 
 		/*
@@ -841,8 +782,8 @@ qdclose(dev, flag)
 			}
 			ptep = (int *)
 			   ((VTOP(DMAheader[unit]*4)) + (mfpr(SBR)|0x80000000));
-			for (i = (DMAbuf_size >> PGSHIFT); i > 0; --i)
-				*ptep++ = (*ptep & ~PG_PROT) | PG_V | PG_KW;
+			for (i = 0; i < btop(DMAbuf_size); i++, ptep++)
+				*ptep = (*ptep & ~PG_PROT) | PG_V | PG_KW;
 			ubarelse(0, &Qbus_unmap[unit]);
 		}
 
@@ -852,8 +793,7 @@ qdclose(dev, flag)
 		if (qdflags[unit].mapped & MAPEQ) {
 			ptep = (int *)
 			   ((VTOP(eq_header[unit])*4) + (mfpr(SBR)|0x80000000));
-
-			*ptep++ = (*ptep & ~PG_PROT) | PG_KW | PG_V;
+			*ptep = (*ptep & ~PG_PROT) | PG_KW | PG_V; ptep++;
 			*ptep = (*ptep & ~PG_PROT) | PG_KW | PG_V;
 		}
 		/*
@@ -876,7 +816,7 @@ qdclose(dev, flag)
 		if (qdflags[unit].mapped & MAPCOLOR) {
 			ptep = (int *) ((VTOP(color_buf[unit]) * 4)
 				+ (mfpr(SBR) | 0x80000000));
-			*ptep++ = (*ptep & ~PG_PROT) | PG_KW | PG_V;
+			*ptep = (*ptep & ~PG_PROT) | PG_KW | PG_V; ptep++;
 			*ptep = (*ptep & ~PG_PROT) | PG_KW | PG_V;
 			color_buf[unit]->status = 0;
 			adder = (struct adder *) qdmap[unit].adder;
@@ -951,41 +891,17 @@ qdclose(dev, flag)
 
 } /* qdclose */
 
-/***************************************************************
-*
-*	qdioctl()... provide QDSS control services
-*
-****************************************************************
-*
-*  calling convention:	qdioctl(dev, cmd, datap, flags);
-*
-*		where:	dev - the major/minor device number
-*			cmd - the user-passed command argument
-*			datap - ptr to user input buff (128 bytes max)
-*			flags - "f_flags" from "struct file" in file.h
-*
-*
-*	- here is the format for the input "cmd" argument
-*
-*	31     29 28	23 22	      16 15		8 7		 0
-*	+----------------------------------------------------------------+
-*	|I/O type|	  | buff length | device ID char |  user command |
-*	+----------------------------------------------------------------+
-*
-*  Return data is in the data buffer pointed to by "datap" input spec
-*
-*********************/
-
 qdioctl(dev, cmd, datap, flags)
 	dev_t dev;
 	int cmd;
-	caddr_t datap;
+	register caddr_t datap;
 	int flags;
 {
 	register int *ptep;		/* page table entry pointer */
 	register int mapix;		/* QVmap[] page table index */
 	register struct _vs_event *event;
 	register struct tty *tp;
+	register i;
 	struct qdmap *qd;		/* pointer to device map struct */
 	struct dga *dga;		/* Gate Array reg structure pntr */
 	struct duart *duart;		/* DUART reg structure pointer */
@@ -993,18 +909,10 @@ qdioctl(dev, cmd, datap, flags)
 	struct prgkbd *cmdbuf;
 	struct prg_cursor *curs;
 	struct _vs_cursor *pos;
-	u_int unit = minor(dev) >> 2;	/* number of caller's QDSS */
+	int unit = minor(dev) >> 2;	/* number of caller's QDSS */
 	u_int minor_dev = minor(dev);
-	struct uba_device *ui = qdinfo[unit];
-	struct qd_softc *sc = &qd_softc[ui->ui_unit];
 	int error;
 	int s;
-	int i;				/* SIGNED index */
-	int sbr;			/* SBR variable (you silly boy) */
-	u_int ix;
-	short status;
-	short *shortp;			/* generic pointer to a short */
-	char *chrp;			/* generic character pointer */
 	short *temp;			/* a pointer to template RAM */
 
 	/*
@@ -1025,7 +933,7 @@ qdioctl(dev, cmd, datap, flags)
 		s = spl5();
 		GETEND(eq_header[unit]);
 		splx(s);
-		bcopy(event, datap, sizeof(struct _vs_event));
+		bcopy((caddr_t)event, datap, sizeof(struct _vs_event));
 		break;
 
 	case QD_RESET:
@@ -1052,7 +960,7 @@ qdioctl(dev, cmd, datap, flags)
 		/*
 		* clear the QDSS screen.  (NOTE that this reinits the dragon) 
 		*/
-#ifdef notdef	/* has caused problems and is not necessary */
+#ifdef notdef	/* has caused problems and isn't necessary */
 		setup_dragon(unit);
 		clear_qd_screen(unit);
 #endif
@@ -1062,7 +970,7 @@ qdioctl(dev, cmd, datap, flags)
 		/*
 		* load a cursor into template RAM  
 		*/
-		ldcursor(unit, datap);
+		ldcursor(unit, (short *)datap);
 		break;
 
 	case QD_RDCURSOR:
@@ -1113,23 +1021,22 @@ qdioctl(dev, cmd, datap, flags)
 		*/
 		mapix = VTOP((int)qd->template) - VTOP(qvmem[0]);
 		ptep = (int *)(QVmap[0] + mapix);
-		for (i = VTOP(TMPSIZE); i > 0; --i)
-			*ptep++ = (*ptep & ~PG_PROT) | PG_UW | PG_V;
+		for (i = 0; i < btop(TMPSIZE); i++, ptep++)
+			*ptep = (*ptep & ~PG_PROT) | PG_UW | PG_V;
 		/*
 		* enable user write to registers 
 		*/
 		mapix = VTOP((int)qd->adder) - VTOP(qvmem[0]);
 		ptep = (int *)(QVmap[0] + mapix);
-
-		for (i = VTOP(REGSIZE); i > 0; --i)
-			*ptep++ = (*ptep & ~PG_PROT) | PG_UW | PG_V;
+		for (i = 0; i < btop(REGSIZE); i++, ptep++)
+			*ptep = (*ptep & ~PG_PROT) | PG_UW | PG_V;
 		/*
 		* enable user write to color maps 
 		*/
 		mapix = VTOP((int)qd->red) - VTOP(qvmem[0]);
 		ptep = (int *)(QVmap[0] + mapix);
-		for (i = VTOP(CLRSIZE); i > 0; --i)
-			*ptep++ = (*ptep & ~PG_PROT) | PG_UW | PG_V;
+		for (i = 0; i < btop(CLRSIZE); i++, ptep++)
+			*ptep = (*ptep & ~PG_PROT) | PG_UW | PG_V;
 		/*
 		* enable user write to DUART 
 		*/
@@ -1137,12 +1044,12 @@ qdioctl(dev, cmd, datap, flags)
 		ptep = (int *)(QVmap[0] + mapix);
 		*ptep = (*ptep & ~PG_PROT) | PG_UW | PG_V; /* duart page */
 
-		mtpr(TBIA, 0);		/* smash CPU's translation buffer */
+		mtpr(TBIA, 0);		/* invalidate translation buffer */
 
 		/*
-		* stuff qdmap structure in return buffer 
-		*/
-		bcopy(qd, datap, sizeof(struct qdmap));
+		 * stuff qdmap structure in return buffer 
+		 */
+		bcopy((caddr_t)qd, datap, sizeof(struct qdmap));
 		break;
 
 	case QD_MAPIOBUF:
@@ -1154,16 +1061,16 @@ qdioctl(dev, cmd, datap, flags)
 		qdflags[unit].mapped |= MAPDMA;
 		ptep = (int *) ((VTOP(DMAheader[unit]) * 4)
 			+ (mfpr(SBR) | 0x80000000));
-		for (i = (DMAbuf_size >> PGSHIFT); i > 0; --i)
-			*ptep++ = (*ptep & ~PG_PROT) | PG_UW | PG_V;
-		mtpr(TBIA, 0);			/* clr CPU translation buf */
+		for (i = 0; i < btop(DMAbuf_size); i++, ptep++)
+			*ptep = (*ptep & ~PG_PROT) | PG_UW | PG_V;
+		mtpr(TBIA, 0);		/* invalidate translation buffer */
 		/*
 		* set up QBUS map registers for DMA 
 		*/
 		DMAheader[unit]->QBAreg =
-		    uballoc(0, DMAheader[unit], DMAbuf_size, 0);
+		    uballoc(0, (caddr_t)DMAheader[unit], DMAbuf_size, 0);
 		if (DMAheader[unit]->QBAreg == 0)
-		    printf("\nqd%d: qdioctl: QBA setup error", unit);
+		    printf("qd%d: qdioctl: QBA setup error\n", unit);
 		Qbus_unmap[unit] = DMAheader[unit]->QBAreg;
 		DMAheader[unit]->QBAreg &= 0x3FFFF;
 		/*
@@ -1183,7 +1090,7 @@ qdioctl(dev, cmd, datap, flags)
 		 * allow user write to scroll area 
 		 */
 		*ptep = (*ptep & ~PG_PROT) | PG_UW | PG_V;
-		mtpr(TBIA, 0);			/* clr CPU translation buf */
+		mtpr(TBIA, 0);			/* invalidate translation buf */
 		scroll[unit]->status = 0;
 		adder = (struct adder *) qdmap[unit].adder;
 		qdflags[unit].adder_ie |= FRAME_SYNC;
@@ -1217,31 +1124,35 @@ qdioctl(dev, cmd, datap, flags)
 		qdflags[unit].mapped |= MAPCOLOR;
 		ptep = (int *) ((VTOP(color_buf[unit]) * 4)
 			+ (mfpr(SBR) | 0x80000000));
-
-		/* allow user write to color map write buffer */
-
-		*ptep++ = (*ptep & ~PG_PROT) | PG_UW | PG_V;
+		/*
+		 * allow user write to color map write buffer 
+		 */
+		*ptep = (*ptep & ~PG_PROT) | PG_UW | PG_V; ptep++;
 		*ptep = (*ptep & ~PG_PROT) | PG_UW | PG_V;
 		mtpr(TBIA, 0);			/* clr CPU translation buf */
 		adder = (struct adder *) qdmap[unit].adder;
 		qdflags[unit].adder_ie |= VSYNC;
 		adder->interrupt_enable = qdflags[unit].adder_ie;
-		/* return color area address */
+		/*
+		 * return color area address 
+		 */
 		*(int *)datap = (int) color_buf[unit];
 		break;
 
 	case QD_UNMAPCOLOR:
 		/*
-		* unmap shared color map write buffer and kill VSYNC intrpts 
-		*/
+		 * unmap shared color map write buffer and kill VSYNC intrpts 
+		 */
 		if (qdflags[unit].mapped & MAPCOLOR) {
 			qdflags[unit].mapped &= ~MAPCOLOR;
 			ptep = (int *) ((VTOP(color_buf[unit]) * 4)
 				+ (mfpr(SBR) | 0x80000000));
-			/* re-protect color map write buffer */
-			*ptep++ = (*ptep & ~PG_PROT) | PG_KW | PG_V;
+			/*
+			 * re-protect color map write buffer 
+			 */
+			*ptep = (*ptep & ~PG_PROT) | PG_KW | PG_V; ptep++;
 			*ptep = (*ptep & ~PG_PROT) | PG_KW | PG_V;
-			mtpr(TBIA, 0);	/* smash CPU's translation buf */
+			mtpr(TBIA, 0);
 			adder = (struct adder *) qdmap[unit].adder;
 			qdflags[unit].adder_ie &= ~VSYNC;
 			adder->interrupt_enable = qdflags[unit].adder_ie;
@@ -1255,31 +1166,35 @@ qdioctl(dev, cmd, datap, flags)
 		qdflags[unit].mapped |= MAPEQ;
 		ptep = (int *) ((VTOP(eq_header[unit]) * 4)
 			+ (mfpr(SBR) | 0x80000000));
-		/* allow user write to 1K event queue */
-		*ptep++ = (*ptep & ~PG_PROT) | PG_UW | PG_V;
+		/*
+		 * allow user write to 1K event queue 
+		 */
+		*ptep = (*ptep & ~PG_PROT) | PG_UW | PG_V; ptep++;
 		*ptep = (*ptep & ~PG_PROT) | PG_UW | PG_V;
 		mtpr(TBIA, 0);			/* clr CPU translation buf */
-		/* return event queue address */
-		*(int *)datap = (int) eq_header[unit];
+		/*
+		 * return event queue address 
+		 */
+		*(int *)datap = (int)eq_header[unit];
 		break;
 
 	case QD_PRGKBD:
 		/*
 		* pass caller's programming commands to LK201 
 		*/
-		duart = (struct duart *) qdmap[unit].duart;
-		cmdbuf = (struct prgkbd *) datap;    /* pnt to kbd cmd buf */
+		duart = (struct duart *)qdmap[unit].duart;
+		cmdbuf = (struct prgkbd *)datap;    /* pnt to kbd cmd buf */
 		/*
 		* send command 
 		*/
 		for (i = 1000; i > 0; --i) {
-			if ((status = duart->statusA) & XMT_RDY) {
+			if (duart->statusA&XMT_RDY) {
 				duart->dataA = cmdbuf->cmd;
 				break;
 			}
 		}
 		if (i == 0) {
-			printf("\nqd%d: qdioctl: timeout on XMT_RDY [1]", unit);
+			printf("qd%d: qdioctl: timeout on XMT_RDY [1]\n", unit);
 			break;
 		}
 		/*
@@ -1288,13 +1203,13 @@ qdioctl(dev, cmd, datap, flags)
 		if (cmdbuf->cmd & LAST_PARAM)
 			break;
 		for (i = 1000; i > 0; --i) {
-			if ((status = duart->statusA) & XMT_RDY) {
+			if (duart->statusA&XMT_RDY) {
 				duart->dataA = cmdbuf->param1;
 				break;
 			}
 		}
 		if (i == 0) {
-			printf("\nqd%d: qdioctl: timeout on XMT_RDY [2]", unit);
+			printf("qd%d: qdioctl: timeout on XMT_RDY [2]\n", unit);
 			break;
 		}
 		/*
@@ -1303,13 +1218,13 @@ qdioctl(dev, cmd, datap, flags)
 		if (cmdbuf->param1 & LAST_PARAM)
 		    break;
 		for (i = 1000; i > 0; --i) {
-			if ((status = duart->statusA) & XMT_RDY) {
+			if (duart->statusA&XMT_RDY) {
 				duart->dataA = cmdbuf->param2;
 				break;
 			}
 		}
 		if (i == 0) {
-			printf("\nqd%d: qdioctl: timeout on XMT_RDY [3]", unit);
+			printf("qd%d: qdioctl: timeout on XMT_RDY [3]\n", unit);
 			break;
 		}
 		break;
@@ -1320,13 +1235,13 @@ qdioctl(dev, cmd, datap, flags)
 		*/
 		duart = (struct duart *) qdmap[unit].duart;
 		for (i = 1000; i > 0; --i) {
-			if ((status = duart->statusB) & XMT_RDY) {
+			if (duart->statusB&XMT_RDY) {
 				duart->dataB = *datap;
 				break;
 			}
 		}
 		if (i == 0) {
-			printf("\nqd%d: qdioctl: timeout on XMT_RDY [4]", unit);
+			printf("qd%d: qdioctl: timeout on XMT_RDY [4]\n", unit);
 		}
 		break;
 
@@ -1351,13 +1266,13 @@ qdioctl(dev, cmd, datap, flags)
 		*/
 		duart = (struct duart *) qdmap[unit].duart;
 		for (i = 1000; i > 0; --i) {
-			if ((status = duart->statusB) & XMT_RDY) {
+			if (duart->statusB&XMT_RDY) {
 				duart->dataB = *datap;
 				break;
 			}
 		}
 		if (i == 0) {
-			printf("\nqd%d: qdioctl: timeout on XMT_RDY [5]", unit);
+			printf("qd%d: qdioctl: timeout on XMT_RDY [5]\n", unit);
 		}
 		break;
 
@@ -1391,18 +1306,12 @@ qdioctl(dev, cmd, datap, flags)
 
 } /* qdioctl */
 
-/**********************************************************************
-*
-*	qdselect()... service select call for event queue input
-*
-**********************************************************************/
-
 qdselect(dev, rw)
 	dev_t dev;
 	int rw;
 {
-	register int s;
-	register int unit;
+	register s;
+	register unit;
 	register struct tty *tp;
 	u_int minor_dev = minor(dev);
 
@@ -1415,12 +1324,11 @@ qdselect(dev, rw)
 			/*
 			* this is a graphics device, so check for events
 			*/
-			if(!(ISEMPTY(eq_header[unit])))
-			    {
+			if(!(ISEMPTY(eq_header[unit]))) {
 				splx(s);
 				return(1);
 			}
-			rsel[unit] = u.u_procp;
+			qdrsel[unit] = u.u_procp;
 			qdflags[unit].selmask |= SEL_READ;
 			splx(s);
 			return(0);
@@ -1446,7 +1354,7 @@ qdselect(dev, rw)
 				splx(s);
 				return(1);
 			}
-			rsel[unit] = u.u_procp;
+			qdrsel[unit] = u.u_procp;
 			qdflags[unit].selmask |= SEL_WRITE;
 			splx(s);
 			return(0);
@@ -1462,14 +1370,10 @@ qdselect(dev, rw)
 			return(0);
 		}
 	}
+	splx(s);
+	return(0);
 
 } /* qdselect() */
-
-/***************************************************************
-*
-*	qdwrite()... output to the QDSS screen as a TTY
-*
-***************************************************************/
 
 extern qd_strategy();
 
@@ -1478,8 +1382,8 @@ qdwrite(dev, uio)
 	struct uio *uio;
 {
 	register struct tty *tp;
-	register int minor_dev;
-	register int unit;
+	register minor_dev;
+	register unit;
 
 	minor_dev = minor(dev);
 	unit = (minor_dev >> 2) & 0x07;
@@ -1497,21 +1401,16 @@ qdwrite(dev, uio)
 		return (physio(qd_strategy, &qdbuf[unit],
 		dev, B_WRITE, minphys, uio));
 	}
+	return (ENXIO);
 }
-
-/***************************************************************
-*
-*	qdread()... read from QDSS keyboard as a TTY
-*
-***************************************************************/
 
 qdread(dev, uio)
 	dev_t dev;
 	struct uio *uio;
 {
 	register struct tty *tp;
-	register int minor_dev;
-	register int unit;
+	register minor_dev;
+	register unit;
 
 	minor_dev = minor(dev);
 	unit = (minor_dev >> 2) & 0x07;
@@ -1529,6 +1428,7 @@ qdread(dev, uio)
 		return (physio(qd_strategy, &qdbuf[unit],
 		dev, B_READ, minphys, uio));
 	}
+	return (ENXIO);
 }
 
 /***************************************************************
@@ -1542,13 +1442,10 @@ qd_strategy(bp)
 {
 	register struct dga *dga;
 	register struct adder *adder;
-	char *DMAbufp;
+	register unit;
 	int QBAreg;
-	int bytcnt;
 	int s;
-	int unit;
 	int cookie;
-	int i,j,k;
 
 	unit = (minor(bp->b_dev) >> 2) & 0x07;
 
@@ -1556,7 +1453,7 @@ qd_strategy(bp)
 	* init pointers 
 	*/
 	if ((QBAreg = ubasetup(0, bp, 0)) == 0) {
-		printf("\nqd%d: qd_strategy: QBA setup error", unit);
+		printf("qd%d: qd_strategy: QBA setup error\n", unit);
 		goto STRAT_ERR;
 	}
 	dga = (struct dga *) qdmap[unit].dga;
@@ -1600,26 +1497,14 @@ STRAT_ERR:
 
 } /* qd_strategy */
 
-/*******************************************************************
-*
-*	qdstart()... startup output to the console screen
-*
-********************************************************************
-*
-*	calling convention:
-*
-*		qdstart(tp);
-*		struct tty *tp; 	;pointer to tty structure
-*
-********/
-
+/*
+ *  Start output to the console screen
+ */
 qdstart(tp)
 	register struct tty *tp;
 {
-	register int which_unit, unit, c;
+	register which_unit, unit, c;
 	int s;
-	int curs_on;
-	struct dga *dga;
 
 	unit = minor(tp->t_dev);
 	which_unit = (unit >> 2) & 0x3;
@@ -1644,7 +1529,7 @@ qdstart(tp)
 	while (tp->t_outq.c_cc) {
 		c = getc(&tp->t_outq);
 		if (unit == 0)
-			blitc(which_unit, (char)(c & 0xFF));
+			blitc(which_unit, (u_char)c);
 	}
 	/*
 	* If there are sleepers, and output has drained below low
@@ -1664,13 +1549,7 @@ out:
 
 } /* qdstart */
 
-
-/*******************************************************************
-*
-*	qdstop()... stop the tty
-*
-*******************************************************************/
-
+/*ARGSUSED*/
 qdstop(tp, flag)
 	register struct tty *tp;
 	int flag;
@@ -1678,42 +1557,29 @@ qdstop(tp, flag)
 	register int s;
 
 	s = spl5();	/* block intrpts during state modification */
-	if (tp->t_state & TS_BUSY) {
-		if ((tp->t_state & TS_TTSTOP) == 0) {
+	if (tp->t_state & TS_BUSY)
+		if ((tp->t_state & TS_TTSTOP) == 0)
 			tp->t_state |= TS_FLUSH;
-		} 
 		else
 			tp->t_state &= ~TS_BUSY;
-	}
 	splx(s);
 }
 
-/*******************************************************************
-*
-*	blitc()... output a character to the QDSS screen
-*
-********************************************************************
-*
-*	calling convention:
-*
-*		blitc(chr);
-*		char chr;		# character to be displayed
-*
-********/
+/*
+ *  Output a character to the QDSS screen
+ */
 
 blitc(unit, chr)
-	int unit;
-	unsigned char chr;
+	register unit;
+	register u_char chr;
 {
 	register struct adder *adder;
 	register struct dga *dga;
 	register int i;
 	int nograph = !(qdflags[unit].inuse&GRAPHIC_DEV);
-	unsigned char savechar;
-	short x;
 	static short inescape[NQD];
 
-	adder = (struct adder *) qdmap[unit].adder;
+	adder = (struct adder *)qdmap[unit].adder;
 	dga = (struct dga *) qdmap[unit].dga;
 	/* 
 	 * BSD comment: this (&=0177) defeats the extended character 
@@ -1723,10 +1589,9 @@ blitc(unit, chr)
 	 */
 	chr &= 0177;
 	/*
-	 * Cursor addressing (so vi will work when i really need it).
+	 * Cursor addressing (so vi will work).
 	 * Decode for "\E=%.%." cursor motion description.
-	 * Corresponds to type "qdcons" in /etc/termcap, or if you
-	 * don't have it:
+	 * Corresponds to type "qdcons" in /etc/termcap:
 	 *
 	 *    qd|qdss|qdcons|qdss glass tty (4.4 BSD):\
 	 *      :am:do=^J:le=^H:bs:cm=\E=%.%.:cl=1^Z:co#128:li#57::nd=^L:up=^K:
@@ -1740,14 +1605,14 @@ blitc(unit, chr)
 				inescape[unit] = 0;
 				blitc(unit, chr);
 			}
-			return(0);
+			return;
 		case 2:
 			/* position row */
 			cursor[unit].y = CHAR_HEIGHT * chr;
 			if (cursor[unit].y > 863 - CHAR_HEIGHT)
 				cursor[unit].y = 863 - CHAR_HEIGHT;
 			dga->y_cursor = TRANY(cursor[unit].y);
-			return(0);
+			return;
 		case 3:
 			/* position column */
 			cursor[unit].x = CHAR_WIDTH * chr;
@@ -1755,7 +1620,7 @@ blitc(unit, chr)
 				cursor[unit].x = 1023 - CHAR_WIDTH;
 			dga->x_cursor = TRANX(cursor[unit].x);
 			inescape[unit] = 0;
-			return(0);
+			return;
 		default:
 			inescape[unit] = 0;
 			blitc(unit, chr);
@@ -1767,13 +1632,13 @@ blitc(unit, chr)
 		cursor[unit].x = 0;
 		if (nograph)
 			dga->x_cursor = TRANX(cursor[unit].x);
-		return(0);
+		return;
 
 	case '\t':			/* tab char */
 		for (i = 8 - ((cursor[unit].x >> 3) & 0x07); i > 0; --i) {
 			blitc(unit, ' ');
 		}
-		return(0);
+		return;
 
 	case '\n':			/* line feed char */
 		if ((cursor[unit].y += CHAR_HEIGHT) > (863 - CHAR_HEIGHT)) {
@@ -1785,7 +1650,7 @@ blitc(unit, chr)
 		}
 		if (nograph)
 			dga->y_cursor = TRANY(cursor[unit].y);
-		return(0);
+		return;
 
 	case '\b':			/* backspace char */
 		if (cursor[unit].x > 0) {
@@ -1793,13 +1658,13 @@ blitc(unit, chr)
 			if (nograph)
 				dga->x_cursor = TRANX(cursor[unit].x);
 		}
-		return(0);
+		return;
 	case CTRL('k'):		/* cursor up */
 		if (nograph && cursor[unit].y > 0) {
 			cursor[unit].y -= CHAR_HEIGHT;
 			dga->y_cursor = TRANY(cursor[unit].y);
 		}
-		return(0);
+		return;
 
 	case CTRL('^'):		/* home cursor */
 		if (nograph) {
@@ -1808,14 +1673,14 @@ blitc(unit, chr)
 			cursor[unit].y = 0;
 			dga->y_cursor = TRANY(cursor[unit].y);
 		}
-		return(0);
+		return;
 
 	case CTRL('l'):		/* cursor right */
 		if (nograph && cursor[unit].x < 1023 - CHAR_WIDTH) {
 			cursor[unit].x += CHAR_WIDTH;
 			dga->x_cursor = TRANX(cursor[unit].x);
 		}
-		return(0);
+		return;
 
 	case CTRL('z'):		/* clear screen */
 		if (nograph) {
@@ -1827,16 +1692,16 @@ blitc(unit, chr)
 			cursor[unit].y = 0;
 			dga->y_cursor = TRANY(cursor[unit].y);
 		}
-		return(0);
+		return;
 
 	case '\033':		/* start escape sequence */
 		if (nograph)
 			inescape[unit] = 1;
-		return(0);
+		return;
 
 	default:
 		if ((chr < ' ') || (chr > '~'))
-			return(0);
+			return;
 	}
 	/*
 	 * setup VIPER operand control registers  
@@ -1865,7 +1730,7 @@ blitc(unit, chr)
 	adder->error_1 = 0;
 	adder->error_2 = 0;
 	adder->rasterop_mode = DST_WRITE_ENABLE | NORMAL;
-	wait_status(adder, RASTEROP_COMPLETE);
+	(void)wait_status(adder, RASTEROP_COMPLETE);
 	adder->destination_x = cursor[unit].x;
 	adder->fast_dest_dx = CHAR_WIDTH;
 	adder->destination_y = cursor[unit].y;
@@ -1904,41 +1769,25 @@ blitc(unit, chr)
 
 } /* blitc */
 
-qdreset()
-{
-}
-qd_init()
-{
-}
+qdreset() { }
 
-/******************************************************************
-*******************************************************************
-*******************************************************************
-*
-*	INTERRUPT SERVICE ROUTINES
-*
-*******************************************************************
-*******************************************************************
-******************************************************************/
+/*
+ *  INTERRUPT SERVICE ROUTINES
+ */
 
-/*****************************************************************
-*
-*	qddint()... service "DMA DONE" interrupt condition
-*
-*****************************************************************/
-
+/*
+ *  Service "DMA DONE" interrupt condition
+ */
 qddint(qd)
-	int qd;
+	register qd;
 {
 	register struct DMAreq_header *header;
 	register struct DMAreq *request;
 	register struct dga *dga;
 	struct adder *adder;
-
 	int cookie;			/* DMA adrs for QDSS */
-	int i;
 
-	spl4(); 			/* allow interval timer in */
+	(void)spl4(); 			/* allow interval timer in */
 
 	/*
 	* init pointers 
@@ -1961,10 +1810,10 @@ qddint(qd)
 	if (dga->csr & DMA_ERR) {
 
 		if (dga->csr & PARITY_ERR)
-		    printf("\nqd%d: qddint: DMA hardware parity fault.", qd);
+		    printf("qd%d: qddint: DMA hardware parity fault.\n", qd);
 
 		if (dga->csr & BUS_ERR)
-		    printf("\nqd%d: qddint: DMA hardware bus error.", qd);
+		    printf("qd%d: qddint: DMA hardware bus error.\n", qd);
 	}
 
 	/*
@@ -1991,9 +1840,9 @@ qddint(qd)
 		header->newest = header->oldest;
 		header->used = 0;
 
-		if (rsel[qd] && qdflags[qd].selmask & SEL_WRITE) {
-			selwakeup(rsel[qd], 0);
-			rsel[qd] = 0;
+		if (qdrsel[qd] && qdflags[qd].selmask & SEL_WRITE) {
+			selwakeup(qdrsel[qd], 0);
+			qdrsel[qd] = 0;
 			qdflags[qd].selmask &= ~SEL_WRITE;
 		}
 
@@ -2010,10 +1859,9 @@ qddint(qd)
 	* wakeup "select" client.
 	*/
 	if (DMA_ISFULL(header)) {
-
-		if (rsel[qd] && qdflags[qd].selmask & SEL_WRITE) {
-			selwakeup(rsel[qd], 0);
-			rsel[qd] = 0;
+		if (qdrsel[qd] && qdflags[qd].selmask & SEL_WRITE) {
+			selwakeup(qdrsel[qd], 0);
+			qdrsel[qd] = 0;
 			qdflags[qd].selmask &= ~SEL_WRITE;
 		}
 	}
@@ -2028,13 +1876,13 @@ qddint(qd)
 	DMA_GETEND(header);	/* update request queue indices */
 
 	/*
-	* if no more DMA pending, wake up "select" client and exit */
-
+	* if no more DMA pending, wake up "select" client and exit 
+	*/
 	if (DMA_ISEMPTY(header)) {
 
-		if (rsel[qd] && qdflags[qd].selmask & SEL_WRITE) {
-			selwakeup(rsel[qd], 0);
-			rsel[qd] = 0;
+		if (qdrsel[qd] && qdflags[qd].selmask & SEL_WRITE) {
+			selwakeup(qdrsel[qd], 0);
+			qdrsel[qd] = 0;
 			qdflags[qd].selmask &= ~SEL_WRITE;
 		}
 
@@ -2043,8 +1891,8 @@ qddint(qd)
 	}
 
 	/*
-	* initiate next DMA xfer  */
-
+	* initiate next DMA xfer  
+	*/
 	request = DMA_GETBEGIN(header);
 	if (request->DMAtype != QDlast_DMAtype) {
 		dga->csr &= ~0x0600;	  /* halt DMA (reset fifo) */
@@ -2085,7 +1933,7 @@ qddint(qd)
 		}
 		break;
 	default:
-		printf("\nqd%d: qddint: illegal DMAtype parameter.", qd);
+		printf("qd%d: qddint: illegal DMAtype parameter.\n", qd);
 		DMA_CLRACTIVE(header);	/* flag DMA done */
 		return;
 	}
@@ -2116,28 +1964,21 @@ qddint(qd)
 	return;
 }
 
-/*****************************************************************
-*
-*	qdaint()... ADDER interrupt service
-*
-*****************************************************************/
-int Nqdaint;
-
+/*
+ * ADDER interrupt service routine
+ */
 qdaint(qd)
-	register int qd;
+	register qd;
 {
 	register struct adder *adder;
 	struct color_buf *cbuf;
-
-	short stat;
 	int i;
 	register struct rgb *rgbp;
 	register short *red;
 	register short *green;
 	register short *blue;
 
-	spl4(); 			/* allow interval timer in */
-	Nqdaint++;			/* debug */
+	(void)spl4(); 			/* allow interval timer in */
 
 	adder = (struct adder *) qdmap[qd].adder;
 
@@ -2173,13 +2014,12 @@ qdaint(qd)
 
 		if (scroll[qd]->status & LOAD_REGS) {
 
-			for ( i = 1000, adder->status = 0; i > 0  
-			      &&  !((stat = adder->status) & ID_SCROLL_READY);
-			      --i)
+			for (i = 1000, adder->status = 0; i > 0 && 
+			     !(adder->status&ID_SCROLL_READY); --i)
 			      ;
 
 			if (i == 0) {
-			    printf("\nqd%d: qdaint: timeout on ID_SCROLL_READY",
+			    printf("qd%d: qdaint: timeout on ID_SCROLL_READY\n",
 				qd);
 				return;
 			}
@@ -2204,64 +2044,52 @@ qdaint(qd)
 	}
 }
 
-/*****************************************************************
-*
-*	qdiint()... DUART input interrupt service routine
-*
-*	XXX - this routine should be broken out - it is essentially
-*	      straight line code.
-*
-*****************************************************************/
+/*
+ *  DUART input interrupt service routine
+ *
+ *  XXX - this routine should be broken out - it is essentially
+ *	      straight line code.
+ */
 
 qdiint(qd)
-	register int qd;
+	register qd;
 {
 	register struct _vs_event *event;
 	register struct qdinput *eqh;
-
 	struct dga *dga;
 	struct duart *duart;
 	struct mouse_report *new_rep;
-
 	struct uba_device *ui;
 	struct tty *tp;
-
 	u_short chr;
-	int i,j;
-	int k,l;
-
 	u_short status;
 	u_short data;
 	u_short key;
-
 	char do_wakeup = 0;		/* flag to do a select wakeup call */
 	char a, b, c;			/* mouse button test variables */
 
-	spl4(); 			/* allow interval timer in */
+	(void)spl4(); 			/* allow interval timer in */
 
 	eqh = eq_header[qd];		/* optimized as a register */
 	new_rep = &current_rep[qd];
 	duart = (struct duart *) qdmap[qd].duart;
 
 	/*
-	* if the graphic device is turned on..	*/
-
+	* if the graphic device is turned on..	
+	*/
 	if (qdflags[qd].inuse & GRAPHIC_DEV) {
-
 		/*
 		* empty DUART 
 		*/
-		while ((status = duart->statusA) & RCV_RDY	||
-		    (status = duart->statusB) & RCV_RDY) {
-
+		while (duart->statusA&RCV_RDY || duart->statusB&RCV_RDY) {
 			/*
-			* pick up LK-201 input (if any) */
-
-			if ((status = duart->statusA) & RCV_RDY) {
+			 * pick up LK-201 input (if any) 
+			 */
+			if (duart->statusA&RCV_RDY) {
 
 				/* if error condition, then reset it */
 
-				if ((status = duart->statusA) & 0x70) {
+				if (duart->statusA&0x70) {
 					duart->cmdA = 0x40;
 					continue;
 				}
@@ -2270,7 +2098,7 @@ qdiint(qd)
 
 				if (ISFULL(eqh) == TRUE) {
 					printf(
-					 "\nqd%d: qdiint: event queue overflow",
+					 "qd%d: qdiint: event queue overflow\n",
 					   qd);
 					break;
 				}
@@ -2285,13 +2113,13 @@ qdiint(qd)
 				    key == LK_INPUT_ERROR || 
 				    key == LK_OUTPUT_ERROR) {
 					printf(
-				    "\nqd%d: qdiint: keyboard error, code = %x",
+				    "qd%d: qdiint: keyboard error, code = %x\n",
 					qd,key);
-					return(0);
+					return;
 				}
 
 				if (key < LK_LOWEST)
-				    return(0);
+				    return;
 
 				++do_wakeup;  /* request a select wakeup call */
 
@@ -2323,7 +2151,7 @@ qdiint(qd)
 
 				if (ISFULL(eqh) == TRUE) {
 					printf(
-					"\nqd%d: qdiint: event queue overflow",
+					"qd%d: qdiint: event queue overflow\n",
 					     qd);
 					break;
 				}
@@ -2457,7 +2285,7 @@ GET_MBUTTON:
 							/* event queue full? (overflow condition) */
 
 							if (ISFULL(eqh) == TRUE) {
-								printf("\nqd%d: qdiint: event queue overflow", qd);
+								printf("qd%d: qdiint: event queue overflow\n", qd);
 								break;
 							}
 
@@ -2496,23 +2324,20 @@ GET_MBUTTON:
 					last_rep[qd] = current_rep[qd];
 
 				}  /* get last byte of report */
-			} /* pickup mouse input */
-
-			/*
-			* pickup tablet input, if any  */
-
-			else if ((status = duart->statusB) & RCV_RDY  &&
-			    qdflags[qd].pntr_id == TABLET_ID) {
-
-				if (status & 0x70) {
+			} else if ((status = duart->statusB)&RCV_RDY &&
+			           qdflags[qd].pntr_id == TABLET_ID) {
+				/*
+				* pickup tablet input, if any  
+				*/
+				if (status&0x70) {
 					duart->cmdB = 0x40;
 					continue;
 				}
-
-				/* event queue full now? (overflow condition) */
-
+				/* 
+				 * event queue full now? (overflow condition) 
+				 */
 				if (ISFULL(eqh) == TRUE) {
-					printf("\nqd%d: qdiint: event queue overflow", qd);
+					printf("qd%d: qdiint: event queue overflow\n", qd);
 					break;
 				}
 
@@ -2634,7 +2459,7 @@ GET_TBUTTON:
 						/* event queue full now? (overflow condition) */
 
 						if (ISFULL(eqh) == TRUE) {
-							printf("\nqd%d: qdiint: event queue overflow",qd);
+							printf("qd%d: qdiint: event queue overflow\n",qd);
 							break;
 						}
 
@@ -2686,44 +2511,39 @@ GET_TBUTTON:
 		/*
 		* do select wakeup	
 		*/
-		if (rsel[qd] && do_wakeup && qdflags[qd].selmask & SEL_READ) {
-			selwakeup(rsel[qd], 0);
-			rsel[qd] = 0;
+		if (qdrsel[qd] && do_wakeup && qdflags[qd].selmask & SEL_READ) {
+			selwakeup(qdrsel[qd], 0);
+			qdrsel[qd] = 0;
 			qdflags[qd].selmask &= ~SEL_READ;
 			do_wakeup = 0;
 		}
-	}
-
-	/*
-	* if the graphic device is not turned on, this is console input */
-
-	else {
-
+	} else {
+		/*
+		 * if the graphic device is not turned on, this is console input
+		 */
 		ui = qdinfo[qd];
 		if (ui == 0 || ui->ui_alive == 0)
-		    return(0);
+			return;
 
 		tp = &qd_tty[qd << 2];
 
 		/*
-		* Get a character from the keyboard. */
-
-		while ((status = duart->statusA) & RCV_RDY) {
-
+		 * Get a character from the keyboard. 
+		 */
+		while (duart->statusA&RCV_RDY) {
 			key = duart->dataA;
 			key &= 0xFF;
-
 			/*
-			* Check for various keyboard errors  */
-
-			if( key == LK_POWER_ERROR || key == LK_KDOWN_ERROR ||
+			* Check for various keyboard errors  
+			*/
+			if (key == LK_POWER_ERROR || key == LK_KDOWN_ERROR ||
 			    key == LK_INPUT_ERROR || key == LK_OUTPUT_ERROR) {
-				printf("\nqd%d: qdiint: Keyboard error, code = %x",qd,key);
-				return(0);
+				printf("qd%d: qdiint: Keyboard error, code = %x\n",qd,key);
+				return;
 			}
 
 			if (key < LK_LOWEST)
-			    return(0);
+			    return;
 
 			/*
 			* See if its a state change key */
@@ -2733,9 +2553,11 @@ GET_TBUTTON:
 			case LOCK:
 				q_keyboard.lock ^= 0xffff;	/* toggle */
 				if (q_keyboard.lock)
-				    led_control(qd, LK_LED_ENABLE, LK_LED_LOCK);
+					(void)led_control(qd, LK_LED_ENABLE,
+							  LK_LED_LOCK);
 				else
-					led_control(qd, LK_LED_DISABLE, LK_LED_LOCK);
+					(void)led_control(qd, LK_LED_DISABLE,
+							  LK_LED_LOCK);
 				return;
 
 			case SHIFT:
@@ -2791,43 +2613,26 @@ GET_TBUTTON:
 			}
 		}
 	}
-
-	/*
-	* cleanup and exit  */
-
-	return(0);
-
 } /* qdiint */
 
-/******************************************************************
-*******************************************************************
-*******************************************************************
-*
-*	THE SUBROUTINES START HERE:
-*
-******************************************************************/
-
-/*****************************************************************
-*
-*	clear_qd_screen()... clear the QDSS screen
-*
-******************************************************************
-*
-*			     >>> NOTE <<<
-*
-*   This code requires that certain adder initialization be valid.  To
-*   assure that this requirement is satisfied, this routine should be
-*   called only after calling the "setup_dragon()" function.
-*
-*   Clear the bitmap a piece at a time. Since the fast scroll clear
-*   only clears the current displayed portion of the bitmap put a
-*   temporary value in the y limit register so we can access whole
-*   bitmap
-*
-****************/
-
+/*
+ *
+ * Clear the QDSS screen
+ *
+ *			     >>> NOTE <<<
+ *
+ *   This code requires that certain adder initialization be valid.  To
+ *   assure that this requirement is satisfied, this routine should be
+ *   called only after calling the "setup_dragon()" function.
+ *
+ *   Clear the bitmap a piece at a time. Since the fast scroll clear
+ *   only clears the current displayed portion of the bitmap put a
+ *   temporary value in the y limit register so we can access whole
+ *   bitmap
+ *
+ */
 clear_qd_screen(unit)
-int unit;
+	int unit;
 {
 	register struct adder *adder;
 	adder = (struct adder *) qdmap[unit].adder;
@@ -2835,7 +2640,7 @@ int unit;
 	adder->x_limit = 1024;
 	adder->y_limit = 2048 - CHAR_HEIGHT;
 	adder->y_offset_pending = 0;
-#define WSV	wait_status(adder, VSYNC); wait_status(adder, VSYNC)
+#define WSV  (void)wait_status(adder, VSYNC); (void)wait_status(adder, VSYNC)
 	WSV;
 	adder->y_scroll_constant = SCROLL_ERASE;
 	WSV;
@@ -2855,20 +2660,9 @@ int unit;
 
 } /* clear_qd_screen */
 
-/**********************************************************************
-*
-*	qdputc()... route kernel console output to the glass tty
-*
-***********************************************************************
-*
-*	calling convention:
-*
-*		qdputc(chr);
-*
-*	where:	char chr;	 ;character for output
-*
-****************/
-
+/*
+ *  kernel console output to the glass tty
+ */
 qdputc(chr)
 	register char chr;
 {
@@ -2879,155 +2673,32 @@ qdputc(chr)
 	if ((mfpr(MAPEN) & 1) == 0)
 		return;
 
-	blitc(0, chr & 0xff);
+	blitc(0, (u_char)(chr & 0xff));
 	if ((chr & 0177) == '\n')
 		blitc(0, '\r');
 
 } /* qdputc */
 
-/*******************************************************************
-*
-*	qdgetc()... get a character from the LK201
-*
-*******************************************************************
-*
-*	calling convention:
-*
-*		qdgetc();
-*
-*	returns:  the character read.
-*
-****************/
-
-qdgetc()
-{
-	register short key;
-	register char chr;
-	register struct duart *duart;
-
-	u_int status;
-
-	duart = (struct duart *) qdmap[0].duart;
-
-	/*
-	* Get a character from the keyboard. */
-
-LOOP:
-	while (!((status = duart->statusA) & RCV_RDY))
-	    ;
-
-	key = duart->dataA;
-	key &= 0xFF;
-
-	/*
-	* Check for various keyboard errors  */
-
-	if (key == LK_POWER_ERROR || key == LK_KDOWN_ERROR ||
-	    key == LK_INPUT_ERROR || key == LK_OUTPUT_ERROR) {
-		printf("Keyboard error, code = %x\n", key);
-		return(0);
-	}
-
-	if (key < LK_LOWEST)
-	    return(0);
-
-	/*
-	* See if its a state change key */
-
-	switch (key) {
-
-	case LOCK:
-		q_keyboard.lock ^= 0xffff;	/* toggle */
-		if (q_keyboard.lock)
-		    led_control(LK_LED_ENABLE, LK_LED_LOCK);
-		else
-			led_control(LK_LED_DISABLE, LK_LED_LOCK);
-		goto LOOP;
-
-	case SHIFT:
-		q_keyboard.shift ^= 0xFFFF;
-		goto LOOP;
-
-	case CNTRL:
-		q_keyboard.cntrl ^= 0xFFFF;
-		goto LOOP;
-
-	case ALLUP:
-		q_keyboard.cntrl = 0;
-		q_keyboard.shift = 0;
-		goto LOOP;
-
-	case REPEAT:
-		chr = q_keyboard.last;
-		break;
-
-		/*
-		* Test for cntrl characters. If set, see if the character
-		* is elligible to become a control character. */
-
-	default:
-
-		if (q_keyboard.cntrl) {
-			chr = q_key[key];
-			if (chr >= ' ' && chr <= '~')
-			    chr &= 0x1F;
-		}
-		else if ( q_keyboard.lock || q_keyboard.shift )
-		    chr = q_shift_key[key];
-		else
-			chr = q_key[key];
-		break;
-	}
-
-	if (chr < ' ' && chr > '~')	/* if input is non-displayable */
-		return(0);		/* ..then pitch it! */
-
-	q_keyboard.last = chr;
-
-	/*
-	* Check for special function keys */
-
-	if (chr & 0x80) 		/* pitch the function keys */
-		return(0);
-	else
-		return(chr);
-
-} /* qdgetc */
-
-/**********************************************************************
-*
-*	ldcursor()... load the mouse cursor's template RAM bitmap
-*
-*********************************************************************
-*
-*	calling convention:
-*
-*		ldcursor(unit, bitmap);
-*		u_int unit;
-*		short *bitmap;
-*
-****************/
-
+/*
+ *  load the mouse cursor's template RAM bitmap
+ */
 ldcursor(unit, bitmap)
-	u_int unit;
-	short *bitmap;
+	int unit;
+	register short *bitmap;
 {
 	register struct dga *dga;
 	register short *temp;
 	register int i;
-
-	int cursor;
+	int curs;
 
 	dga = (struct dga *) qdmap[unit].dga;
 	temp = (short *) qdmap[unit].template;
 
 	if (dga->csr & CURS_ENB) {	/* if the cursor is enabled.. */
-		cursor = -1;		/* ..note that.. */
+		curs = -1;		/* ..note that.. */
 		dga->csr &= ~CURS_ENB;	/* ..and shut it off */
-	}
-	else {
-		cursor = 0;
-	}
+	} else 
+		curs = 0;
 
 	dga->csr &= ~CURS_ENB;		/* shut off the cursor */
 
@@ -3036,43 +2707,28 @@ ldcursor(unit, bitmap)
 	for (i = 0; i < 32; ++i)
 		*temp++ = *bitmap++;
 
-	if (cursor) {			/* if cursor was enabled.. */
+	if (curs) {			/* if cursor was enabled.. */
 		dga->csr |= CURS_ENB;	/* ..turn it back on */
 	}
 
-	return(0);
-
 } /* ldcursor */
 
-/**********************************************************************
-*
-*	ldfont()... put the console font in the QDSS off-screen memory
-*
-***********************************************************************
-*
-*	calling convention:
-*
-*		ldfont(unit);
-*		u_int unit;	;QDSS unit number
-*
-****************/
-
+/*
+ *  Put the console font in the QDSS off-screen memory
+ */
 ldfont(unit)
-	u_int unit;
+	int unit;
 {
 	register struct adder *adder;
 
-	int i;		/* scratch variables */
-	int j;
-	int k;
-	short packed;
-	int max_chars_line;
+	register i, j, k, max_chars_line;
+	register short packed;
 
 	adder = (struct adder *) qdmap[unit].adder;
 
 	/*
-	* setup VIPER operand control registers  */
-
+	* setup VIPER operand control registers  
+	*/
 	write_ID(adder, MASK_1, 0xFFFF);
 	write_ID(adder, VIPER_Z_LOAD | FOREGROUND_COLOR_Z, 255);
 	write_ID(adder, VIPER_Z_LOAD | BACKGROUND_COLOR_Z, 0);
@@ -3087,16 +2743,17 @@ ldfont(unit)
 	adder->rasterop_mode = DST_WRITE_ENABLE | DST_INDEX_ENABLE | NORMAL;
 
 	/*
-	* load destination data  */
-
-	wait_status(adder, RASTEROP_COMPLETE);
+	* load destination data  
+	*/
+	(void)wait_status(adder, RASTEROP_COMPLETE);
 
 	adder->destination_x = FONT_X;
 	adder->destination_y = FONT_Y;
-	if (FONT_WIDTH > MAX_SCREEN_X)
-	    adder->fast_dest_dx = MAX_SCREEN_X;
-	else
-		adder->fast_dest_dx = FONT_WIDTH;
+#if FONT_WIDTH > MAX_SCREEN_X
+	adder->fast_dest_dx = MAX_SCREEN_X;
+#else
+	adder->fast_dest_dx = FONT_WIDTH;
+#endif
 	adder->slow_dest_dy = CHAR_HEIGHT;
 
 	/*
@@ -3128,7 +2785,7 @@ ldfont(unit)
 			packed |= ((short)q_font[k] << 8);
 			k += ROWS;
 
-			wait_status(adder, TX_READY);
+			(void)wait_status(adder, TX_READY);
 			adder->id_data = packed;
 		}
 	}
@@ -3177,45 +2834,128 @@ ldfont(unit)
 			k += ROWS;
 			packed |= ((short)q_font[k + FONT_OFFSET] << 8);
 			k += ROWS;
-			wait_status(adder, TX_READY);
+			(void)wait_status(adder, TX_READY);
 			adder->id_data = packed;
 		}
 	}
 
 }  /* ldfont */
 
-/*********************************************************************
-*
-*	led_control()... twiddle LK-201 LED's
-*
-**********************************************************************
-*
-*	led_control(unit, cmd, led_mask);
-*	u_int unit;	QDSS number
-*	int cmd;	LED enable/disable command
-*	int led_mask;	which LED(s) to twiddle
-*
-*************/
-
-led_control(unit, cmd, led_mask)
-	u_int unit;
-	int cmd;
-	int led_mask;
+/*
+ *  Get a character from the LK201 (polled)
+ */
+qdgetc()
 {
-	register int i;
-	register int status;
+	register short key;
+	register char chr;
 	register struct duart *duart;
 
-	duart = (struct duart *) qdmap[unit].duart;
+	duart = (struct duart *) qdmap[0].duart;
+
+	/*
+	* Get a character from the keyboard. 
+	*/
+LOOP:
+	while (!(duart->statusA&RCV_RDY))
+		;
+
+	key = duart->dataA;
+	key &= 0xFF;
+
+	/*
+	* Check for various keyboard errors  */
+
+	if (key == LK_POWER_ERROR || key == LK_KDOWN_ERROR ||
+	    key == LK_INPUT_ERROR || key == LK_OUTPUT_ERROR) {
+		printf("Keyboard error, code = %x\n", key);
+		return(0);
+	}
+
+	if (key < LK_LOWEST)
+		return(0);
+
+	/*
+	 * See if its a state change key 
+	 */
+	switch (key) {
+
+	case LOCK:
+		q_keyboard.lock ^= 0xffff;	/* toggle */
+		if (q_keyboard.lock)
+			(void)led_control(0, LK_LED_ENABLE, LK_LED_LOCK);
+		else
+			(void)led_control(0, LK_LED_DISABLE, LK_LED_LOCK);
+		goto LOOP;
+
+	case SHIFT:
+		q_keyboard.shift ^= 0xFFFF;
+		goto LOOP;
+
+	case CNTRL:
+		q_keyboard.cntrl ^= 0xFFFF;
+		goto LOOP;
+
+	case ALLUP:
+		q_keyboard.cntrl = 0;
+		q_keyboard.shift = 0;
+		goto LOOP;
+
+	case REPEAT:
+		chr = q_keyboard.last;
+		break;
+
+		/*
+		* Test for cntrl characters. If set, see if the character
+		* is elligible to become a control character. 
+		*/
+	default:
+
+		if (q_keyboard.cntrl) {
+			chr = q_key[key];
+			if (chr >= ' ' && chr <= '~')
+			    chr &= 0x1F;
+		}
+		else if ( q_keyboard.lock || q_keyboard.shift )
+		    chr = q_shift_key[key];
+		else
+			chr = q_key[key];
+		break;
+	}
+
+	if (chr < ' ' && chr > '~')	/* if input is non-displayable */
+		return(0);		/* ..then pitch it! */
+
+	q_keyboard.last = chr;
+
+	/*
+	* Check for special function keys */
+
+	if (chr & 0x80) 		/* pitch the function keys */
+		return(0);
+	else
+		return(chr);
+
+} /* qdgetc */
+
+/*
+ *  led_control()... twiddle LK-201 LED's
+ */
+led_control(unit, cmd, led_mask)
+	int unit, cmd, led_mask;
+{
+	register i;
+	register struct duart *duart;
+
+	duart = (struct duart *)qdmap[unit].duart;
 
 	for (i = 1000; i > 0; --i) {
-		if ((status = duart->statusA) & XMT_RDY) {
+		if (duart->statusA&XMT_RDY) {
 			duart->dataA = cmd;
 			break;
 		}
 	}
 	for (i = 1000; i > 0; --i) {
-		if ((status = duart->statusA) & XMT_RDY) {
+		if (duart->statusA&XMT_RDY) {
 			duart->dataA = led_mask;
 			break;
 		}
@@ -3226,26 +2966,16 @@ led_control(unit, cmd, led_mask)
 
 } /* led_control */
 
-/*******************************************************************
-*
-*	scroll_up()... move the screen up one character height
-*
-********************************************************************
-*
-*	calling convention:
-*
-*		scroll_up(adder);
-*		struct adder *adder;	;address of adder
-*
-********/
-
+/*
+ *  scroll_up()... move the screen up one character height
+ */
 scroll_up(adder)
 	register struct adder *adder;
 {
 	/*
 	* setup VIPER operand control registers  
 	*/
-	wait_status(adder, ADDRESS_COMPLETE);
+	(void)wait_status(adder, ADDRESS_COMPLETE);
 	write_ID(adder, CS_UPDATE_MASK, 0x00FF);  /* select all planes */
 	write_ID(adder, MASK_1, 0xFFFF);
 	write_ID(adder, VIPER_Z_LOAD | FOREGROUND_COLOR_Z, 255);
@@ -3288,7 +3018,7 @@ scroll_up(adder)
 	adder->slow_dest_dx = 0;		/* set up the width of	*/
 	adder->slow_dest_dy = CHAR_HEIGHT;	/* rectangle */
 	adder->rasterop_mode = (NORMAL | DST_WRITE_ENABLE) ;
-	wait_status(adder, RASTEROP_COMPLETE);
+	(void)wait_status(adder, RASTEROP_COMPLETE);
 	adder->destination_x = 0;
 	adder->destination_y = 864 - CHAR_HEIGHT;
 	adder->fast_dest_dx = 1024;	/* set up the height	*/
@@ -3298,21 +3028,11 @@ scroll_up(adder)
 
 } /* scroll_up */
 
-/********************************************************************
-*
-*	init_shared()... init shared memory pointers and structures
-*
-*********************************************************************
-*
-*	calling convention:
-*
-*		init_shared(unit);
-*		u_int unit;
-*
-****************/
-
+/*
+ *  init shared memory pointers and structures
+ */
 init_shared(unit)
-	register u_int unit;
+	register unit;
 {
 	register struct dga *dga;
 
@@ -3370,29 +3090,17 @@ init_shared(unit)
 
 } /* init_shared */
 
-/*********************************************************************
-*
-*	setup_dragon()... init the ADDER, VIPER, bitmaps, & color map
-*
-**********************************************************************
-*
-*	calling convention:
-*
-*		setup_dragon();
-*
-*	return: NONE
-*
-************************/
-
+/*
+ * init the ADDER, VIPER, bitmaps, & color map
+ */
 setup_dragon(unit)
-	u_int unit;
+	int unit;
 {
 
 	register struct adder *adder;
 	register struct dga *dga;
 	short *memcsr;
-	int i;			/* general purpose variables */
-	int status;
+	register i;
 	short top;		/* clipping/scrolling boundaries */
 	short bottom;
 	short right;
@@ -3449,8 +3157,8 @@ setup_dragon(unit)
 		/*
 		 * delay at least 1 full frame time 
 		 */
-		wait_status(adder, VSYNC);	
-		wait_status(adder, VSYNC);
+		(void)wait_status(adder, VSYNC);	
+		(void)wait_status(adder, VSYNC);
 		/*
 		 * now load the REAL sync values (in reverse order just to
 		 * be safe.  
@@ -3491,7 +3199,7 @@ setup_dragon(unit)
 	adder->error_1 = 0;
 	adder->error_2 = 0;
 	/*
-	 * scale factor = unity 
+	 * scale factor = UNITY 
 	 */
 	adder->fast_scale = UNITY;
 	adder->slow_scale = UNITY;
@@ -3538,11 +3246,11 @@ setup_dragon(unit)
 	/*
 	 * set clipping and scrolling limits to full screen 
 	 */
-	for ( i = 1000, adder->status = 0 ; 
-	      i > 0  &&  !((status = adder->status) & ADDRESS_COMPLETE) ; --i)
+	for (i = 1000, adder->status = 0; 
+	     i > 0 && !(adder->status&ADDRESS_COMPLETE); --i)
 		;
 	if (i == 0)
-	    printf("\nqd%d: setup_dragon: timeout on ADDRESS_COMPLETE",unit);
+	    printf("qd%d: setup_dragon: timeout on ADDRESS_COMPLETE\n",unit);
 	top = 0;
 	bottom = 2048;
 	left = 0;
@@ -3555,8 +3263,8 @@ setup_dragon(unit)
 	adder->scroll_x_max = right;
 	adder->scroll_y_min = top;
 	adder->scroll_y_max = bottom;
-	wait_status(adder, VSYNC);	/* wait at LEAST 1 full frame */
-	wait_status(adder, VSYNC);
+	(void)wait_status(adder, VSYNC);	/* wait at LEAST 1 full frame */
+	(void)wait_status(adder, VSYNC);
 	adder->x_index_pending = left;
 	adder->y_index_pending = top;
 	adder->x_index_new = left;
@@ -3564,12 +3272,11 @@ setup_dragon(unit)
 	adder->x_index_old = left;
 	adder->y_index_old = top;
 
-	for ( i = 1000, adder->status = 0 ; 
-	      i > 0  &&  !((status = adder->status) & ADDRESS_COMPLETE) ;
-	      --i)
+	for (i = 1000, adder->status = 0; i > 0 && 
+	     !(adder->status&ADDRESS_COMPLETE) ; --i)
 		;
 	if (i == 0)
-	       printf("\nqd%d: setup_dragon: timeout on ADDRESS_COMPLETE",unit);
+	       printf("qd%d: setup_dragon: timeout on ADDRESS_COMPLETE\n",unit);
 
 	write_ID(adder, LEFT_SCROLL_MASK, 0x0000);
 	write_ID(adder, RIGHT_SCROLL_MASK, 0x0000);
@@ -3601,12 +3308,11 @@ setup_dragon(unit)
 	/*
 	* load the color map for black & white 
 	*/
-	for ( i = 0, adder->status = 0; i < 10000  &&  
-	      !((status = adder->status) & VSYNC) ; ++i)
+	for (i = 0, adder->status = 0; i < 10000 && !(adder->status&VSYNC); ++i)
 		;
 
 	if (i == 0)
-	    printf("\nqd%d: setup_dragon: timeout on VSYNC", unit);
+		printf("qd%d: setup_dragon: timeout on VSYNC\n", unit);
 
 	red = (short *) qdmap[unit].red;
 	green = (short *) qdmap[unit].green;
@@ -3621,7 +3327,8 @@ setup_dragon(unit)
 	*blue-- = 0xFF;
 
 	/*
-	* set color map for mouse cursor */
+	* set color map for mouse cursor 
+	*/
 
 	red += 254;
 	green += 254;
@@ -3635,33 +3342,17 @@ setup_dragon(unit)
 	*green = 0xFF;
 	*blue = 0xFF;
 
-	return(0);
-
 } /* setup_dragon */
 
-/******************************************************************
-*
-*	setup_input()... init the DUART and set defaults in input
-*			 devices
-*
-*******************************************************************
-*
-*	calling convention:
-*
-*		setup_input(unit);
-*
-*	where: unit - is the QDSS unit number to be setup
-*
-*********/
-
+/*
+ * Init the DUART and set defaults in input
+ */
 setup_input(unit)
-u_int unit;
+	int unit;
 {
 	register struct duart *duart;	/* DUART register structure pointer */
-	register int i; 		/* scratch variable */
-	register int bits;
+	register i, bits;
 	char id_byte;
-	short status;
 
 	duart = (struct duart *) qdmap[unit].duart;
 	duart->imask = 0;
@@ -3669,21 +3360,19 @@ u_int unit;
 	/*
 	* setup the DUART for kbd & pointing device 
 	*/
-	duart->cmdA = RESET_M;	  /* reset mode reg ptr for kbd */
-	duart->modeA = 0x13;	  /* 8 bits, no parity, rcv IE, */
-	/* no RTS control,char error mode */
-	duart->modeA = 0x07;	  /* 1 stop bit,CTS does not IE XMT */
-	/* no RTS control,no echo or loop */
-	duart->cmdB = RESET_M;	  /* reset mode reg pntr for host */
-	duart->modeB = 0x07;	  /* 8 bits, odd parity, rcv IE.. */
-	/* ..no RTS cntrl, char error mode */
-	duart->modeB = 0x07;	  /* 1 stop bit,CTS does not IE XMT */
-	/* no RTS control,no echo or loop */
-
-	duart->auxctl = 0x00;	  /* baud rate set 1 */
-
-	duart->clkselA = 0x99;	  /* 4800 baud for kbd */
-	duart->clkselB = 0x99;	  /* 4800 baud for mouse */
+	duart->cmdA = RESET_M;	/* reset mode reg ptr for kbd */
+	duart->modeA = 0x13;	/* 8 bits, no parity, rcv IE, */
+				/* no RTS control,char error mode */
+	duart->modeA = 0x07;	/* 1 stop bit,CTS does not IE XMT */
+				/* no RTS control,no echo or loop */
+	duart->cmdB = RESET_M;	/* reset mode reg pntr for host */
+	duart->modeB = 0x07;	/* 8 bits, odd parity, rcv IE.. */
+				/* ..no RTS cntrl, char error mode */
+	duart->modeB = 0x07;	/* 1 stop bit,CTS does not IE XMT */
+				/* no RTS control,no echo or loop */
+	duart->auxctl = 0x00;	/* baud rate set 1 */
+	duart->clkselA = 0x99;	/* 4800 baud for kbd */
+	duart->clkselB = 0x99;	/* 4800 baud for mouse */
 
 	/* reset everything for keyboard */
 
@@ -3699,28 +3388,29 @@ u_int unit;
 	duart->cmdB = EN_RCV | EN_XMT; /* enbl xmt & rcv for pointer device */
 
 	/*
-	* init keyboard defaults (DUART channel A) */
-
+	* init keyboard defaults (DUART channel A) 
+	*/
 	for (i = 500; i > 0; --i) {
-		if ((status = duart->statusA) & XMT_RDY) {
+		if (duart->statusA&XMT_RDY) {
 			duart->dataA = LK_DEFAULTS;
 			break;
 		}
 	}
 
 	for (i = 100000; i > 0; --i) {
-		if ((status = duart->statusA) & RCV_RDY) {
+		if (duart->statusA&RCV_RDY) {
 			break;
 		}
 	}
 
-	status = duart->dataA;		/* flush the ACK */
+	if (duart->dataA)	/* flush the ACK */
+		;		
 
 	/*
-	* identify the pointing device */
-
+	* identify the pointing device 
+	*/
 	for (i = 500; i > 0; --i) {
-		if ((status = duart->statusB) & XMT_RDY) {
+		if (duart->statusB&XMT_RDY) {
 			duart->dataB = SELF_TEST;
 			break;
 		}
@@ -3730,130 +3420,111 @@ u_int unit;
 	* wait for 1st byte of self test report */
 
 	for (i = 100000; i > 0; --i) {
-		if ((status = duart->statusB) & RCV_RDY) {
+		if (duart->statusB&RCV_RDY) {
 			break;
 		}
 	}
 
 	if (i == 0) {
-		printf("\nqd[%d]: setup_input: timeout on 1st byte of self test"
+		printf("qd[%d]: setup_input: timeout on 1st byte of self test\n"
 		       ,unit);
 		goto OUT;
 	}
 
-	status = duart->dataB;
+	if (duart->dataB)
+		;
 
 	/*
-	* wait for ID byte of self test report	*/
-
+	* wait for ID byte of self test report	
+	*/
 	for (i = 100000; i > 0; --i) {
-		if ((status = duart->statusB) & RCV_RDY) {
+		if (duart->statusB&RCV_RDY) {
 			break;
 		}
 	}
 
 	if (i == 0) {
-		printf("\nqd[%d]: setup_input: timeout on 2nd byte of self test", unit);
+		printf("qd[%d]: setup_input: timeout on 2nd byte of self test\n", unit);
 		goto OUT;
 	}
 
 	id_byte = duart->dataB;
 
 	/*
-	* wait for other bytes to come in  */
-
+	* wait for other bytes to come in  
+	*/
 	for (i = 100000; i > 0; --i) {
-		if ((status = duart->statusB) & RCV_RDY) {
-			status = duart->dataB;
+		if (duart->statusB & RCV_RDY) {
+			if (duart->dataB)
+				;
 			break;
 		}
 	}
-
 	if (i == 0) {
-		printf("\nqd[%d]: setup_input: timeout on 3rd byte of self test", unit);
+		printf("qd[%d]: setup_input: timeout on 3rd byte of self test\n", unit);
 		goto OUT;
 	}
-
 	for (i = 100000; i > 0; --i) {
-		if ((status = duart->statusB) & RCV_RDY) {
-			status = duart->dataB;
+		if (duart->statusB&RCV_RDY) {
+			if (duart->dataB)
+				;
 			break;
 		}
 	}
-
 	if (i == 0) {
-		printf("\nqd[%d]: setup_input: timeout on 4th byte of self test\n", unit);
+		printf("qd[%d]: setup_input: timeout on 4th byte of self test\n", unit);
 		goto OUT;
 	}
-
 	/*
-	* flag pointing device type and set defaults */
-
-	for (i=100000; i>0; --i);
+	* flag pointing device type and set defaults 
+	*/
+	for (i=100000; i>0; --i)
+		;		/*XXX*/
 
 	if ((id_byte & 0x0F) != TABLET_ID) {
-
 		qdflags[unit].pntr_id = MOUSE_ID;
 
 		for (i = 500; i > 0; --i) {
-			if ((status = duart->statusB) & XMT_RDY) {
+			if (duart->statusB&XMT_RDY) {
 				duart->dataB = INC_STREAM_MODE;
 				break;
 			}
 		}
 	} 
 	else {
-
 		qdflags[unit].pntr_id = TABLET_ID;
 
 		for (i = 500; i > 0; --i) {
-			if ((status = duart->statusB) & XMT_RDY) {
+			if (duart->statusB&XMT_RDY) {
 				duart->dataB = T_STREAM;
 				break;
 			}
 		}
 	}
-
-	/*
-	* exit */
-
 OUT:
 	duart->imask = qdflags[unit].duart_imask;
-	return(0);
 
 } /* setup_input */
 
-/**********************************************************************
-*
-*	wait_status()... delay for at least one display frame time
-*
-***********************************************************************
-*
-*	calling convention:
-*
-*		wait_status(adder, mask);
-*		struct *adder adder;
-*		int mask;
-*
-*	return: BAD means that we timed out without ever seeing the
-*		      vertical sync status bit
-*		GOOD otherwise
-*
-**************/
-
+/*
+ * delay for at least one display frame time
+ *
+ *	return: BAD means that we timed out without ever seeing the
+ *		      vertical sync status bit
+ *		GOOD otherwise
+ */
 wait_status(adder, mask)
 	register struct adder *adder;
 	register int mask;
 {
-	register short status;
-	int i;
+	register i;
 
-	for ( i = 10000, adder->status = 0 ; i > 0  &&  
-	     !((status = adder->status) & mask) ; --i)
+	for (i = 10000, adder->status = 0 ; i > 0  &&  
+	     !(adder->status&mask) ; --i)
 		;
 
 	if (i == 0) {
-		printf("\nwait_status: timeout polling for 0x%x in adder->status", mask);
+		printf("wait_status: timeout polling for 0x%x in adder->status\n", mask);
 		return(BAD);
 	}
 
@@ -3861,54 +3532,36 @@ wait_status(adder, mask)
 
 } /* wait_status */
 
-/**********************************************************************
-*
-*	write_ID()... write out onto the ID bus
-*
-***********************************************************************
-*
-*	calling convention:
-*
-*		struct *adder adder;	;pntr to ADDER structure
-*		short adrs;		;VIPER address
-*		short data;		;data to be written
-*		write_ID(adder);
-*
-*	return: BAD means that we timed out waiting for status bits
-*		      VIPER-access-specific status bits
-*		GOOD otherwise
-*
-**************/
-
+/*
+ * write out onto the ID bus
+ */
 write_ID(adder, adrs, data)
 	register struct adder *adder;
 	register short adrs;
 	register short data;
 {
-	int i;
-	short status;
+	register i;
 
-	for ( i = 100000, adder->status = 0 ; 
-	      i > 0  &&  !((status = adder->status) & ADDRESS_COMPLETE) ;
-	      --i)
+	for (i = 100000, adder->status = 0 ; 
+	      i > 0  &&  !(adder->status&ADDRESS_COMPLETE) ; --i)
 		;
 
 	if (i == 0)
-	    goto ERR;
+		goto ERR;
 
-	for ( i = 100000, adder->status = 0 ; 
-	      i > 0  &&  !((status = adder->status) & TX_READY) ; --i)
+	for (i = 100000, adder->status = 0 ; 
+	      i > 0  &&  !(adder->status&TX_READY) ; --i)
 		;
 
 	if (i > 0) {
 		adder->id_data = data;
 		adder->command = ID_LOAD | adrs;
-		return(GOOD);
+		return ;
 	}
 
 ERR:
-	printf("\nwrite_ID: timeout trying to write to VIPER");
-	return(BAD);
+	printf("write_ID: timeout trying to write to VIPER\n");
+	return ;
 
 } /* write_ID */
 #endif

@@ -3,9 +3,8 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- * 		@(#)qdreg.h	1.4  Berkeley  %G%
+ * 		@(#)qdreg.h	1.5  Berkeley  %G%
  */
-/* derived from: @(#)qdreg.h	6.1	(ULTRIX)	11/24/87       */
 
 /************************************************************************
  *									*
@@ -28,57 +27,6 @@
  *   of its software on equipment which is not supplied by Digital.	*
  *									*
  ************************************************************************/
-
-/*
- * qdreg.h
- *
- * Modification history
- *
- * QDSS registers/data structures and definitions
- *
- *  4-Feb-85 - longo
- *
- *	Created file.
- *
- * 18-Mar-85 - longo
- *
- *	Added DGA CSR bit definitions.
- *
- * 20-Mar-85 - longo
- *
- *	Revised register naming conventions.
- *
- * 28-Mar-85 - longo
- *
- *	Added DUART register struct.
- *
- * 19-Apr-85 - longo
- *
- *	Removed "base" entry from 'struct qdmap'.
- *
- *  1-May-85 - longo
- *
- *	Changed layout of DUART device map data structure and
- *	added command/intrpt/status bit definitions.
- *
- *  4-Jun-85 - longo
- *
- *	Added bit definitions for ADDER registers.
- *
- * 10-Sep-85 - longo
- *
- *	Changed dga struct DMA address entry names.
- *
- * 25-Sep-85 - longo
- *
- *	Changed ADDER status bit constant.
- *
- * 20-May-86 - ricky palmer
- *
- *	Added new DEVIOCGET ioctl request code. V2.0
- *
- */
-#define DEV_SIZE 8	/*XXX*/
 
 /* Dragon ADDER reg map */
 /* ADDER register bit definitions */
@@ -401,13 +349,4 @@
 	    short stpctr;		/* stop counter command (read) */
 #define resetbits stpctr		/* output bits reset cmd (write) */
 
-	};
-
-/* Driver and data specific structure */
-struct	qd_softc {
-	long	sc_flags;		/* Flags			*/
-	long	sc_category_flags;	/* Category flags		*/
-	u_long	sc_softcnt;		/* Soft error count total	*/
-	u_long	sc_hardcnt;		/* Hard error count total	*/
-	char	sc_device[DEV_SIZE];	/* Device type string		*/
 };

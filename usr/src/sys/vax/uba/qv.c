@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- * 		@(#)qv.c	1.6  Berkeley  %G%
+ * 		@(#)qv.c	1.7  Berkeley  %G%
  *
  *	derived from: @(#)qv.c	1.8 (ULTRIX) 8/21/85
  */
@@ -230,18 +230,17 @@ short kbdinitstring[] = {		/* reset any random keyboard stuff */
 
 #define TOY ((time.tv_sec * 100) + (time.tv_usec / 10000))
 
-int	qv_events;
 int	qv_ipl_lo = 1;			/* IPL low flag			*/
 int	mouseon = 0;			/* mouse channel is enabled when 1*/
-struct proc *rsel;			/* process waiting for select */
+struct proc *qvrsel;			/* process waiting for select */
 
 int	qvstart(), qvputc(),  ttrstrt();
 
 /*
  * Keyboard translation and font tables
  */
-extern  char q_key[],q_shift_key[],*q_special[],q_font[];
-extern	short q_cursor[];
+extern u_short q_key[], q_shift_key[], q_cursor[];
+extern char *q_special[], q_font[];
 
 /*
  * See if the qvss will interrupt.
@@ -258,6 +257,7 @@ qvprobe(reg, ctlr)
 
 #ifdef lint
 	br = 0; cvec = br; br = cvec;
+	qvkint(0); qvvint(0);
 #endif
 	/*
 	 * Allocate the next two vectors
@@ -317,8 +317,8 @@ qvattach(ui)
         /*
          * If not the console then we have to setup the screen
          */
-        if( v_putc != qvputc || ui->ui_unit != 0)
-                qv_setup((struct qvdevice *)ui->ui_addr, ui->ui_unit, 1);
+        if (v_putc != qvputc || ui->ui_unit != 0)
+                (void)qv_setup((struct qvdevice *)ui->ui_addr, ui->ui_unit, 1);
 	else
 		qv_scn->qvaddr = (struct qvdevice *)ui->ui_addr;
 }
@@ -469,15 +469,18 @@ dev_t dev;
 				splx(s);
 				return(1);
 			}
-			rsel = u.u_procp;
+			qvrsel = u.u_procp;
 			splx(s);
 			return(0);
-		case FWRITE:			/* can never write */
+		default:			/* can never write */
 			splx(s);
-			return(EACCES);
+			return(0);
 		}
-	else
+	else {
+		splx(s);
 		return( ttselect(dev, rw) );
+	}
+	/*NOTREACHED*/
 }
 		
 /*
@@ -490,8 +493,7 @@ qvkint(qv)
 	register c;
 	struct uba_device *ui;
 	register int key;
-	register int i,j;
-	int k,l;
+	register int i;
 
 	ui = qvinfo[qv];
 	if (ui == 0 || ui->ui_alive == 0)
@@ -572,7 +574,8 @@ qvkint(qv)
 		register struct qv_info *qp = qv_scn;
 		register vsEvent *vep;
 
-		if ((i = EVROUND(qp->itail+1)) == qp->ihead) return;
+		if ((i = EVROUND(qp->itail+1)) == qp->ihead) 
+			return;
 		vep = &qp->ibuff[qp->itail];
 		vep->vse_direction = VSE_KBTRAW;
 		vep->vse_type = VSE_BUTTON;
@@ -582,9 +585,9 @@ qvkint(qv)
 		vep->vse_time = TOY;
 		vep->vse_key = key;
 		qp->itail = i;
-		if(rsel) {
-			selwakeup(rsel,0);
-			rsel = 0;
+		if(qvrsel) {
+			selwakeup(qvrsel,0);
+			qvrsel = 0;
 		}
 	}
 }
@@ -609,7 +612,7 @@ qvioctl(dev, cmd, data, flag)
 	 */
 	switch( cmd ) {
 	case QIOCGINFO:					/* return screen info */
-		bcopy(qp, data, sizeof (struct qv_info));
+		bcopy((caddr_t)qp, data, sizeof (struct qv_info));
 		break;
 
 	case QIOCSMSTATE:				/* set mouse state */
@@ -731,7 +734,7 @@ qvvint(qv)
 	 */
 	if( --qv_ipl_lo )
 		return;
-	spl4();
+	(void)spl4();
 	ui = qvinfo[qv];
 	unit = qv<<2;
 	qvaddr = (struct qvdevice *)ui->ui_addr;
@@ -838,9 +841,9 @@ switches:if( om_switch != ( m_switch = (qvaddr->qv_csr & QV_MOUSE_ANY) >> 8 ) ) 
 		qp->mswitches = m_switch;
 	}
 	/* if we have proc waiting, and event has happened, wake him up */
-	if(rsel && (qp->ihead != qp->itail)) {
-		selwakeup(rsel,0);
-		rsel = 0;
+	if(qvrsel && (qp->ihead != qp->itail)) {
+		selwakeup(qvrsel,0);
+		qvrsel = 0;
 	}
 	/*
 	 * Okay we can take another hit now
@@ -1102,7 +1105,7 @@ qvscroll()
 	 * Save the first 15 scanlines so that we can put them at
 	 * the bottom when done.
 	 */
-	bcopy( qp->scanmap, tmpscanlines, sizeof tmpscanlines );
+	bcopy((caddr_t)qp->scanmap, (caddr_t)tmpscanlines, sizeof tmpscanlines);
 
 	/*
 	 * Clear the wrapping line so that it won't flash on the bottom
@@ -1115,12 +1118,14 @@ qvscroll()
 	/*
 	 * Now move the scanlines down 
 	 */
-	bcopy( qp->scanmap+15, qp->scanmap, (qp->row * 15) * sizeof (short) );
+	bcopy((caddr_t)(qp->scanmap+15), (caddr_t)qp->scanmap,
+	      (qp->row * 15) * sizeof (short) );
 
 	/*
 	 * Now put the other lines back
 	 */
-	bcopy( tmpscanlines, qp->scanmap+(qp->row * 15), sizeof tmpscanlines );
+	bcopy((caddr_t)tmpscanlines, (caddr_t)(qp->scanmap+(qp->row * 15)),
+	      sizeof (tmpscanlines) );
 
 }
 
@@ -1128,14 +1133,14 @@ qvscroll()
  * Output to the keyboard. This routine status polls the transmitter on the
  * keyboard to output a code. The timer is to avoid hanging on a bad device.
  */
-qv_key_out( c )
-char c;
+qv_key_out(c)
+	u_short c;
 {
 	int timer = 30000;
 	register struct qv_info *qp = qv_scn;
 
-	if( qp->qvaddr ) {
-		while( (qp->qvaddr->qv_uartstatus & 0x4) == 0  && timer-- )
+	if (qp->qvaddr) {
+		while ((qp->qvaddr->qv_uartstatus & 0x4) == 0  && timer--)
 			;
 		qp->qvaddr->qv_uartdata = c;
 	}
@@ -1161,14 +1166,14 @@ qvcons_init()
 	 * don't override the previous one.
 	 */
 	if (v_putc != cnputc)
-		return;
+		return 0;
         /*
          * find the percpu entry that matches this machine.
          */
         for( pcpu = percpu ; pcpu && pcpu->pc_cputype != cpu ; pcpu++ )
                 ;
         if( pcpu == NULL )
-                return;
+                return 0;
 
         /*
          * Found an entry for this cpu. Because this device is Microvax specific
@@ -1178,22 +1183,23 @@ qvcons_init()
          * Map the device registers.
          */
 	qb = (struct qbus *)pcpu->pc_io->io_details;
-	ioaccess(qb->qb_iopage, UMEMmap[0] + qb->qb_memsize,
-	    UBAIOPAGES * NBPG);
+	ioaccess(qb->qb_iopage, UMEMmap[0] + qb->qb_memsize, UBAIOPAGES * NBPG);
 
         /*
          * See if the qvss is there.
          */
         devptr = (short *)((char *)umem[0] + (qb->qb_memsize * NBPG));
         qvaddr = (struct qvdevice *)((u_int)devptr + ubdevreg(QVSSCSR));
-        if( badaddr( qvaddr, sizeof(short) ) )
-                return;
+        if (badaddr((caddr_t)qvaddr, sizeof(short)))
+                return 0;
         /*
          * Okay the device is there lets set it up
          */
-        qv_setup(qvaddr, 0, 0);
+        if (!qv_setup(qvaddr, 0, 0))
+		return 0;
 	v_putc = qvputc;
         consops = &cdevsw[QVSSMAJOR];
+	return 1;
 }
 /*
  * Do the board specific setup
@@ -1265,5 +1271,6 @@ int probed;
          * Turn on the video
          */
         qvaddr->qv_csr |= QV_VIDEO_ENA ;
+	return 1;
 }
 #endif
