@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)object.c 1.12 %G%";
+static char sccsid[] = "@(#)object.c 1.13 %G%";
 
 /*
  * Object code interface, mainly for extraction of symbolic information.
@@ -873,6 +873,7 @@ Symbol type;
 		skipchar(curchar, ';');
 		t->symvalue.rangev.lowertype = getrangetype();
 	        t->symvalue.rangev.lower = getint();
+		skipchar(curchar, ';');
 		t->symvalue.rangev.uppertype = getrangetype();
 		t->symvalue.rangev.upper = getint();
 		break;
