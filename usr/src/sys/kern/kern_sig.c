@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_sig.c	7.2 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.3 (Berkeley) %G%
  */
 
 #include "../machine/reg.h"
@@ -784,6 +784,14 @@ core()
 		u.u_error = EFAULT;
 		goto out;
 	}
+#ifdef MMAP
+	{ register int fd;
+	/* unmasp funky devices in the user's address space */
+	for (fd = 0; fd < u.u_lastfile; fd++)
+		if (u.u_ofile[fd] && (u.u_pofile[fd] & UF_MAPPED))
+			munmapfd(fd);
+	}
+#endif
 	itrunc(ip, (u_long)0);
 	u.u_acflag |= ACORE;
 	u.u_error = rdwri(UIO_WRITE, ip,
