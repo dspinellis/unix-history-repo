@@ -9,7 +9,7 @@
  *
  * %sccs.include.386.c%
  *
- *	@(#)fd.c	5.2 (Berkeley) %G%
+ *	@(#)fd.c	5.3 (Berkeley) %G%
  */
 
 /****************************************************************************/
@@ -28,7 +28,7 @@
 #include "vm.h"
 #include "uio.h"
 #include "machine/pte.h"
-#include "machine/isa/device.h"
+#include "machine/isa/isa_device.h"
 #include "machine/isa/fdreg.h"
 #include "icu.h"
 

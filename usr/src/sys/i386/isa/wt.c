@@ -5,7 +5,7 @@
  * Copyright (c) 1989 Carnegie-Mellon University
  * All rights reserved.  The CMU software License Agreement specifies
  * the terms and conditions for use and redistribution.
- *	@(#)wt.c	1.1 (Berkeley) %G%
+ *	@(#)wt.c	1.2 (Berkeley) %G%
  */
 /* 
  * HISTORY
@@ -1109,7 +1109,7 @@ wtdump()
 {
 }
 
-#include "machine/isa/device.h"
+#include "machine/isa/isa_device.h"
 #include "machine/isa/icu.h"
 
 int	wtprobe(), wtattach();

@@ -3,7 +3,7 @@
 /*
  * NE2000 Ethernet driver
  * Copyright (C) 1990 W. Jolitz
- * @(#)if_ne.c	1.4 (Berkeley) %G%
+ * @(#)if_ne.c	1.5 (Berkeley) %G%
  *
  * Parts inspired from Tim Tucker's if_wd driver for the wd8003,
  * insight on the ne2000 gained from Robert Clements PC/FTP driver.
@@ -36,7 +36,7 @@
 #include "../netns/ns_if.h"
 #endif
 
-#include "machine/isa/device.h"
+#include "machine/isa/isa_device.h"
 #include "if_nereg.h"
 #include "icu.h"
 

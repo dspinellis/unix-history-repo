@@ -9,7 +9,7 @@
  *
  * %sccs.include.386.c%
  *
- *	@(#)clock.c	5.3 (Berkeley) %G%
+ *	@(#)clock.c	5.4 (Berkeley) %G%
  */
 
 /*
@@ -18,8 +18,9 @@
 #include "param.h"
 #include "time.h"
 #include "kernel.h"
-#include "icu.h"
-#include "isa.h"
+#include "machine/segments.h"
+#include "machine/isa/icu.h"
+#include "machine/isa/isa.h"
 
 #define DAYST 119
 #define DAYEN 303
@@ -27,9 +28,9 @@
 startrtclock() {
 
 	/* initialize 8253 clock */
-	outb (IO_TIMER0+3, 0x36);
-	outb (IO_TIMER0, 1193182/hz);
-	outb (IO_TIMER0, (1193182/hz)/256);
+	outb (IO_TIMER1+3, 0x36);
+	outb (IO_TIMER1, 1193182/hz);
+	outb (IO_TIMER1, (1193182/hz)/256);
 }
 
 /* convert 2 digit BCD number */
@@ -153,7 +154,10 @@ resettodr()
 {
 }
 
+#define V(s)	V/**/s
+extern V(clk)();
 enablertclock() {
 	INTREN(IRQ0);
+	setidt(ICU_OFFSET+0, &V(clk), SDT_SYS386IGT, SEL_KPL);
 	splnone();
 }

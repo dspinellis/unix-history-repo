@@ -9,7 +9,7 @@
  *
  * %sccs.include.386.c%
  *
- *	@(#)pccons.c	5.3 (Berkeley) %G%
+ *	@(#)pccons.c	5.4 (Berkeley) %G%
  */
 
 /*
@@ -23,7 +23,7 @@
 #include "proc.h"
 #include "tty.h"
 #include "uio.h"
-#include "machine/isa/device.h"
+#include "machine/isa/isa_device.h"
 #include "callout.h"
 #include "systm.h"
 #include "kernel.h"
