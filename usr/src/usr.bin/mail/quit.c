@@ -9,7 +9,7 @@
  * Termination processing.
  */
 
-static char *SccsId = "@(#)quit.c	2.3 %G%";
+static char *SccsId = "@(#)quit.c	2.4 %G%";
 
 /*
  * Save all of the undetermined messages at the top of "mbox"
@@ -192,7 +192,7 @@ quit()
 		}
 	for (mp = &message[0]; mp < &message[msgCount]; mp++)
 		if (mp->m_flag & MBOX)
-			if (send(mp, obuf) < 0) {
+			if (send(mp, obuf, 0) < 0) {
 				perror(mbox);
 				fclose(ibuf);
 				fclose(obuf);
@@ -274,7 +274,6 @@ newmail:
  * saved.  On any error, just return -1.  Else return 0.
  * Incorporate the any new mail that we found.
  */
-
 writeback(res)
 	register FILE *res;
 {
@@ -295,7 +294,7 @@ writeback(res)
 	for (mp = &message[0]; mp < &message[msgCount]; mp++)
 		if ((mp->m_flag&MPRESERVE)||(mp->m_flag&MTOUCH)==0) {
 			p++;
-			if (send(mp, obuf) < 0) {
+			if (send(mp, obuf, 0) < 0) {
 				perror(mailname);
 				fclose(obuf);
 				return(-1);
