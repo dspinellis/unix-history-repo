@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)collect.c	3.49		%G%);
+SCCSID(@(#)collect.c	3.50		%G%);
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -55,20 +55,6 @@ maketemp(from)
 		finis();
 	}
 	(void) chmod(CurEnv->e_df, 0600);
-
-	/*
-	**  Create the Received: line if we want to.
-	*/
-
-	if (Smtp && macvalue('s') != NULL)
-	{
-		char xbuf[50];
-
-		/* this should be in the config file */
-		(void) sprintf(xbuf, "Received: from $s by $i with SMTP; $b");
-		expand(xbuf, buf, &buf[sizeof buf - 1], CurEnv);
-		(void) chompheader(buf, FALSE);
-	}
 
 	/*
 	**  Tell ARPANET to go ahead.

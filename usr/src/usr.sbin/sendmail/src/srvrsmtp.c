@@ -1,10 +1,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)srvrsmtp.c	3.29		%G%	(no SMTP));
+SCCSID(@(#)srvrsmtp.c	3.30		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)srvrsmtp.c	3.29		%G%);
+SCCSID(@(#)srvrsmtp.c	3.30		%G%);
 
 /*
 **  SMTP -- run the SMTP protocol.
@@ -90,7 +90,7 @@ smtp()
 		(void) close(1);
 		(void) dup(fileno(OutChannel));
 	}
-	message("220", "%s Sendmail v%s ready at %s", HostName,
+	message("220", "%s Sendmail %s ready at %s", HostName,
 			Version, arpadate(NULL));
 	(void) setjmp(TopFrame);
 	QuickAbort = FALSE;
