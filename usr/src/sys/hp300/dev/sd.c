@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sd.c	7.5 (Berkeley) %G%
+ *	@(#)sd.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -17,7 +17,7 @@
 #if NSD > 0
 
 #ifndef lint
-static char rcsid[] = "$Header: sd.c,v 1.3 90/10/10 14:55:10 mike Exp $";
+static char rcsid[] = "$Header: sd.c,v 1.15 91/04/24 11:54:30 mike Exp $";
 #endif
 
 #include "sys/param.h"
@@ -46,6 +46,7 @@ extern int scsiustart();
 extern int scsigo();
 extern void scsifree();
 extern void scsireset();
+extern void scsi_delay();
 
 extern void disksort();
 extern void biodone();
@@ -177,11 +178,13 @@ sdident(sc, hd)
 	register int ctlr, slave;
 	register int i;
 	register int tries = 10;
+	char idstr[32];
 	int ismo = 0;
 
 	ctlr = hd->hp_ctlr;
 	slave = hd->hp_slave;
 	unit = sc->sc_punit;
+	scsi_delay(-1);
 
 	/*
 	 * See if unit exists and is a disk then read block size & nblocks.
@@ -191,7 +194,7 @@ sdident(sc, hd)
 			if (ismo)
 				break;
 			/* doesn't exist or not a CCS device */
-			return (-1);
+			goto failed;
 		}
 		if (i == STS_CHECKCOND) {
 			u_char sensebuf[128];
@@ -222,7 +225,7 @@ sdident(sc, hd)
 	 */
 	if (scsi_immed_command(ctlr, slave, unit, &inq,
 			       (u_char *)&inqbuf, sizeof(inqbuf), B_READ))
-		return(-1);
+		goto failed;
 	switch (inqbuf.type) {
 	case 0:		/* disk */
 	case 4:		/* WORM */
@@ -230,42 +233,15 @@ sdident(sc, hd)
 	case 7:		/* Magneto-optical */
 		break;
 	default:	/* not a disk */
-		return (-1);
+		goto failed;
 	}
 	/*
-	 * XXX determine if this is an HP MO drive.
+	 * Get a usable id string
 	 */
-	{
-		u_long *id = (u_long *)&inqbuf;
-
-		ismo = (id[2] == 0x48502020 &&	/* "HP  " */
-			id[3] == 0x20202020 &&	/* "    " */
-			id[4] == 0x53363330 &&	/* "S630" */
-			id[5] == 0x302e3635 &&	/* "0.65" */
-			id[6] == 0x30412020);	/* "0A  " */
-	}
-	i = scsi_immed_command(ctlr, slave, unit, &cap,
-			       (u_char *)&capbuf, sizeof(capbuf), B_READ);
-	if (i) {
-		/* XXX unformatted or non-existant MO media; fake it */
-		if (i == STS_CHECKCOND && ismo) {
-			sc->sc_blks = 318664;
-			sc->sc_blksize = 1024;
-		} else
-			return(-1);
+	if (inqbuf.version != 1) {
+		bcopy("UNKNOWN", &idstr[0], 8);
+		bcopy("DRIVE TYPE", &idstr[8], 11);
 	} else {
-		sc->sc_blks = *(u_int *)&capbuf[0];
-		sc->sc_blksize = *(int *)&capbuf[4];
-	}
-	/* return value of read capacity is last valid block number */
-	sc->sc_blks++;
-
-	if (inqbuf.version != 1)
-		printf("sd%d: type 0x%x, qual 0x%x, ver %d", hd->hp_unit,
-			inqbuf.type, inqbuf.qual, inqbuf.version);
-	else {
-		char idstr[32];
-
 		bcopy((caddr_t)&inqbuf.vendor_id, (caddr_t)idstr, 28);
 		for (i = 27; i > 23; --i)
 			if (idstr[i] != ' ')
@@ -279,22 +255,47 @@ sdident(sc, hd)
 			if (idstr[i] != ' ')
 				break;
 		idstr[i+1] = 0;
+	}
+	i = scsi_immed_command(ctlr, slave, unit, &cap,
+			       (u_char *)&capbuf, sizeof(capbuf), B_READ);
+	if (i) {
+		if (i != STS_CHECKCOND ||
+		    bcmp(&idstr[0], "HP", 3) ||
+		    bcmp(&idstr[8], "S6300.650A", 11))
+			goto failed;
+		/* XXX unformatted or non-existant MO media; fake it */
+		sc->sc_blks = 318664;
+		sc->sc_blksize = 1024;
+	} else {
+		sc->sc_blks = *(u_int *)&capbuf[0];
+		sc->sc_blksize = *(int *)&capbuf[4];
+	}
+	/* return value of read capacity is last valid block number */
+	sc->sc_blks++;
+
+	if (inqbuf.version != 1)
+		printf("sd%d: type 0x%x, qual 0x%x, ver %d", hd->hp_unit,
+			inqbuf.type, inqbuf.qual, inqbuf.version);
+	else
 		printf("sd%d: %s %s rev %s", hd->hp_unit, idstr, &idstr[8],
 			&idstr[24]);
-	}
 	printf(", %d %d byte blocks\n", sc->sc_blks, sc->sc_blksize);
 	if (sc->sc_blksize != DEV_BSIZE) {
 		if (sc->sc_blksize < DEV_BSIZE) {
 			printf("sd%d: need %d byte blocks - drive ignored\n",
 				unit, DEV_BSIZE);
-			return (-1);
+			goto failed;
 		}
 		for (i = sc->sc_blksize; i > DEV_BSIZE; i >>= 1)
 			++sc->sc_bshift;
 		sc->sc_blks <<= sc->sc_bshift;
 	}
 	sc->sc_wpms = 32 * (60 * DEV_BSIZE / 2);	/* XXX */
+	scsi_delay(0);
 	return(inqbuf.type);
+failed:
+	scsi_delay(0);
+	return(-1);
 }
 
 int
