@@ -68,8 +68,13 @@
  * already have the structures defined by <rpc/netdb.h> included in <netdb.h>.
  */
 /* routines for parsing /etc/rpc */
-#ifndef sun
-#include <rpc/netdb.h>		/* structures and routines to parse /etc/rpc */
-#endif
+
+struct rpcent {
+      char    *r_name;        /* name of server for this rpc program */
+      char    **r_aliases;    /* alias list */
+      int     r_number;       /* rpc program number */
+};
+
+struct rpcent *getrpcbyname(), *getrpcbynumber(), *getrpcent();
 
 #endif /* ndef __RPC_HEADER__ */
