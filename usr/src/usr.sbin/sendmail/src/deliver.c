@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1109,13 +1109,35 @@ tryhost:
 			extern int DtableSize;
 
 			/* child -- set up input & exec mailer */
-			/* make diagnostic output be standard output */
 			(void) setsignal(SIGINT, SIG_IGN);
 			(void) setsignal(SIGHUP, SIG_IGN);
 			(void) setsignal(SIGTERM, SIG_DFL);
 
 			/* close any other cached connections */
 			mci_flush(FALSE, mci);
+
+			/* reset user and group */
+			if (!bitnset(M_RESTR, m->m_flags))
+			{
+				if (ctladdr == NULL || ctladdr->q_uid == 0)
+				{
+					(void) setgid(DefGid);
+					(void) initgroups(DefUser, DefGid);
+					(void) setuid(DefUid);
+				}
+				else
+				{
+					(void) setgid(ctladdr->q_gid);
+					(void) initgroups(ctladdr->q_ruser?
+						ctladdr->q_ruser: ctladdr->q_user,
+						ctladdr->q_gid);
+					(void) setuid(ctladdr->q_uid);
+				}
+			}
+
+			if (tTd(11, 2))
+				printf("openmailer: running as r/euid=%d/%d\n",
+					getuid(), geteuid());
 
 			/* move into some "safe" directory */
 			if (m->m_execdir != NULL)
@@ -1178,30 +1200,14 @@ tryhost:
 				_exit(EX_OSERR);
 			}
 			(void) close(mpvect[0]);
-			if (!bitnset(M_RESTR, m->m_flags))
-			{
-				if (ctladdr == NULL || ctladdr->q_uid == 0)
-				{
-					(void) setgid(DefGid);
-					(void) initgroups(DefUser, DefGid);
-					(void) setuid(DefUid);
-				}
-				else
-				{
-					(void) setgid(ctladdr->q_gid);
-					(void) initgroups(ctladdr->q_ruser?
-						ctladdr->q_ruser: ctladdr->q_user,
-						ctladdr->q_gid);
-					(void) setuid(ctladdr->q_uid);
-				}
-			}
 
 			/* arrange for all the files to be closed */
 			for (i = 3; i < DtableSize; i++)
 			{
 				register int j;
+
 				if ((j = fcntl(i, F_GETFD, 0)) != -1)
-					(void)fcntl(i, F_SETFD, j|1);
+					(void) fcntl(i, F_SETFD, j | 1);
 			}
 
 			/* set up the mailer environment */
