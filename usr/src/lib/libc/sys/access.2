@@ -1,0 +1,55 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)access.2	4.1 (Berkeley) %G%
+.\"
+.TH ACCESS 2 
+.UC 4
+.SH NAME
+access \- determine accessibility of file
+.SH SYNOPSIS
+.nf
+.B access(name, mode)
+.B char *name;
+.fi
+.SH DESCRIPTION
+.I Access
+checks the given
+file
+.I name
+for accessibility according to
+.I mode,
+which is 4 (read), 2 (write) or 1 (execute) or a combination thereof.
+Specifying mode 0
+tests whether the directories leading to the file can be
+searched and the file exists.
+.PP
+An appropriate error indication is returned if 
+.I name
+cannot be found or if any
+of the desired access modes would not be granted.
+On disallowed accesses
+\-1 is returned and the error code is in
+.IR errno .
+0 is returned from successful tests.
+.PP
+The user and group IDs with respect to which permission is checked
+are the real UID and GID of the process, so this call is
+useful to set-UID programs.
+.PP
+Notice that it is only access bits that are checked.
+A directory may be announced as writable by
+.I access,
+but an attempt to open it for writing will fail
+(although files may be created there);
+a file may look executable, but
+.I exec
+will fail unless it is in proper format.
+.PP
+.SH SEE ALSO
+stat(2)
+.SH "ASSEMBLER (PDP-11)"
+(access = 33.)
+.br
+.B sys access; name; mode
