@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: uipc_shm.c 1.9 89/08/14$
  *
- *	@(#)sysv_shm.c	7.3 (Berkeley) %G%
+ *	@(#)sysv_shm.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -78,6 +78,7 @@ shmget(ap)
 		int size;
 		int shmflg;
 	} *uap = (struct a *)ap;
+	struct proc *p = u.u_procp;
 	register struct shmid_ds *shp;
 	register int i;
 	int rval = 0, size;
@@ -144,7 +145,7 @@ shmget(ap)
 		shp->shm_perm.mode = SHM_ALLOC | (uap->shmflg&0777);
 		shp->shm_handle = (void *) kvtopte(kva);
 		shp->shm_segsz = uap->size;
-		shp->shm_cpid = u.u_procp->p_pid;
+		shp->shm_cpid = p->p_pid;
 		shp->shm_lpid = shp->shm_nattch = 0;
 		shp->shm_atime = shp->shm_dtime = 0;
 		shp->shm_ctime = time.tv_sec;
@@ -178,6 +179,7 @@ shmctl(ap)
 		int cmd;
 		caddr_t buf;
 	} *uap = (struct a *)ap;
+	struct proc *p = u.u_procp;
 	register struct shmid_ds *shp;
 	struct shmid_ds sbuf;
 
@@ -224,7 +226,7 @@ shmctl(ap)
 	case SHM_LOCK:
 	case SHM_UNLOCK:
 		/* don't really do anything, but make them think we did */
-		if ((u.u_procp->p_flag & SHPUX) == 0)
+		if ((p->p_flag & SHPUX) == 0)
 			u.u_error = EINVAL;
 		else if (u.u_uid && u.u_uid != shp->shm_perm.uid &&
 			 u.u_uid != shp->shm_perm.cuid)
@@ -246,11 +248,12 @@ shmat(ap)
 		caddr_t	shmaddr;
 		int	shmflg;
 	} *uap = (struct a *)ap;
+	struct proc *p = u.u_procp;
 	register struct shmid_ds *shp;
 	register int size;
 	struct mapmem *mp;
 	caddr_t uva;
-	int prot, shmmapin();
+	int error, prot, shmmapin();
 
 	if (!shmvalid(uap->shmid))
 		return;
@@ -289,17 +292,20 @@ shmat(ap)
 	prot |= MM_CI;
 #endif
 	size = ctob(clrnd(btoc(shp->shm_segsz)));
-	mp = mmalloc(uap->shmid, &uva, (segsz_t)size, prot, &shmops);
-	if (mp == MMNIL)
+	error = mmalloc(p, uap->shmid, &uva, (segsz_t)size, prot, &shmops, &mp);
+	if (error) {
+		u.u_error = error;
 		return;
-	if (!mmmapin(mp, shmmapin)) {
-		mmfree(mp);
+	}
+	if (u.u_error = mmmapin(p, mp, shmmapin)) {
+		if (error = mmfree(p, mp))
+			u.u_error = error;
 		return;
 	}
 	/*
 	 * Fill in the remaining fields
 	 */
-	shp->shm_lpid = u.u_procp->p_pid;
+	shp->shm_lpid = p->p_pid;
 	shp->shm_atime = time.tv_sec;
 	shp->shm_nattch++;
 	u.u_r.r_val1 = (int) uva;
@@ -311,6 +317,7 @@ shmdt(ap)
 	register struct a {
 		caddr_t	shmaddr;
 	} *uap = (struct a *)ap;
+	struct proc *p = u.u_procp;
 	register struct mapmem *mp;
 
 	for (mp = u.u_mmap; mp; mp = mp->mm_next)
@@ -320,8 +327,8 @@ shmdt(ap)
 		u.u_error = EINVAL;
 		return;
 	}
-	shmsegs[mp->mm_id % SHMMMNI].shm_lpid = u.u_procp->p_pid;
-	shmufree(mp);
+	shmsegs[mp->mm_id % SHMMMNI].shm_lpid = p->p_pid;
+	u.u_error = shmufree(p, mp);
 }
 
 shmmapin(mp, off)
@@ -351,7 +358,9 @@ shmfork(mp, ischild)
 shmexit(mp)
 	register struct mapmem *mp;
 {
-	shmufree(mp);
+	struct proc *p = u.u_procp;		/* XXX */
+
+	u.u_error = shmufree(p, mp);
 }
 
 shmvalid(id)
@@ -372,17 +381,20 @@ shmvalid(id)
 /*
  * Free user resources associated with a shared memory segment
  */
-shmufree(mp)
+shmufree(p, mp)
+	struct proc *p;
 	struct mapmem *mp;
 {
 	register struct shmid_ds *shp;
+	int error;
 
 	shp = &shmsegs[mp->mm_id % SHMMMNI];
-	mmmapout(mp);
-	mmfree(mp);
+	mmmapout(p, mp);
+	error = mmfree(p, mp);
 	shp->shm_dtime = time.tv_sec;
 	if (--shp->shm_nattch <= 0 && (shp->shm_perm.mode & SHM_DEST))
 		shmfree(shp);
+	return (error);
 }
 
 /*

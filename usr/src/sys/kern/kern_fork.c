@@ -14,13 +14,13 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_fork.c	7.16 (Berkeley) %G%
+ *	@(#)kern_fork.c	7.17 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
 #include "map.h"
-#include "user.h"
+#include "syscontext.h"
 #include "kernel.h"
 #include "proc.h"
 #include "vnode.h"
@@ -39,37 +39,47 @@
 /*
  * fork system call.
  */
-fork()
+/* ARGSUSED */
+fork(p, uap, retval)
+	struct proc *p;
+	struct args *uap;
+	int retval[];
 {
+	int error;
 
 	u.u_cdmap = zdmap;
 	u.u_csmap = zdmap;
-	if (swpexpand(u.u_dsize, u.u_ssize, &u.u_cdmap, &u.u_csmap) == 0) {
-		u.u_r.r_val2 = 0;
-		return;
+	if (error = swpexpand(u.u_dsize, u.u_ssize, &u.u_cdmap, &u.u_csmap)) {
+		retval[1] = 0;
+		RETURN (error);
 	}
-	fork1(0);
+	RETURN (fork1(p, 0, retval));
 }
 
-vfork()
+/* ARGSUSED */
+vfork(p, uap, retval)
+	struct proc *p;
+	struct args *uap;
+	int retval[];
 {
 
-	fork1(1);
+	RETURN (fork1(p, 1, retval));
 }
 
-fork1(isvfork)
-	int isvfork;
+fork1(p1, isvfork, retval)
+	register struct proc *p1;
+	int isvfork, retval[];
 {
-	register struct proc *p1, *p2;
-	register a;
+	register struct proc *p2;
+	register int a;
 
 	a = 0;
-	if (u.u_uid != 0) {
-		for (p1 = allproc; p1; p1 = p1->p_nxt)
-			if (p1->p_uid == u.u_uid)
+	if (p1->p_uid != 0) {
+		for (p2 = allproc; p2; p2 = p2->p_nxt)
+			if (p2->p_uid == p1->p_uid)
 				a++;
-		for (p1 = zombproc; p1; p1 = p1->p_nxt)
-			if (p1->p_uid == u.u_uid)
+		for (p2 = zombproc; p2; p2 = p2->p_nxt)
+			if (p2->p_uid == p1->p_uid)
 				a++;
 	}
 	/*
@@ -81,25 +91,24 @@ fork1(isvfork)
 	p2 = freeproc;
 	if (p2==NULL)
 		tablefull("proc");
-	if (p2==NULL || (u.u_uid!=0 && (p2->p_nxt == NULL || a>MAXUPRC))) {
-		u.u_error = EAGAIN;
+	if (p2 == NULL ||
+	    (p1->p_uid != 0 && (p2->p_nxt == NULL || a > MAXUPRC))) {
 		if (!isvfork) {
 			(void) vsexpand((segsz_t)0, &u.u_cdmap, 1);
 			(void) vsexpand((segsz_t)0, &u.u_csmap, 1);
 		}
-		goto out;
+		retval[1] = 0;
+		return (EAGAIN);
 	}
-	p1 = u.u_procp;
 	if (newproc(isvfork)) {
-		u.u_r.r_val1 = p1->p_pid;
-		u.u_r.r_val2 = 1;  /* child */
+		retval[0] = p1->p_pid;
+		retval[1] = 1;  /* child */
 		u.u_acflag = AFORK;
-		return;
+		return (0);
 	}
-	u.u_r.r_val1 = p2->p_pid;
-
-out:
-	u.u_r.r_val2 = 0;
+	retval[0] = p2->p_pid;
+	retval[1] = 0;
+	return (0);
 }
 
 /*

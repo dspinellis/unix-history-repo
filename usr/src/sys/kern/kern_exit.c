@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_exit.c	7.21 (Berkeley) %G%
+ *	@(#)kern_exit.c	7.22 (Berkeley) %G%
  */
 
 #include "param.h"
