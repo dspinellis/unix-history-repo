@@ -1,6 +1,9 @@
-#	@(#)Makefile	6.2 (Berkeley) 6/30/90
+#	from: @(#)Makefile	6.2 (Berkeley) 6/30/90
+#	Makefile,v 1.3 1993/07/31 15:34:01 mycroft Exp
 
 DIR=	ps1/04.pascal
+DOC=	04.pascal
+
 SRCS=	puman0.n puman1.n puman2.n puman3.n puman4.n puman5.n pumanA.n
 FIGURES=firstout firstobjout firstobjout2 bigger2.p bigger3.p bigout1 \
 	bigger6.p bigout2 bigout3 bigout4 primeout1 primeout2 digitsout \
@@ -9,10 +12,10 @@ FIGURES=firstout firstobjout firstobjout2 bigger2.p bigger3.p bigout1 \
 	xxxxqqqout xxxxqqqout2 primes primes-d comments1.p commentsout
 CLEANFILES+=csfix ${FIGURES}
 
-paper.${PRINTER}: ${FIGURES}
-	${SOELIM} ${SRCS} | ${TBL} | ${ROFF} > ${.TARGET}
-
 .include <bsd.doc.mk>
+
+${DOC}.${PRINTER}: ${FIGURES}
+	${SOELIM} ${SRCS} | ${TBL} | ${ROFF} > ${.TARGET}
 
 csfix:
 	${CC} -O ${.CURDIR}/csfix.c -o ${.TARGET}

@@ -1,14 +1,19 @@
-#	@(#)Makefile	6.4 (Berkeley) 6/30/90
+#	from: @(#)Makefile	6.4 (Berkeley) 6/30/90
+#	Makefile,v 1.4 1993/07/31 15:33:26 mycroft Exp
 
 DIR=	ps1/18.curses
+DOC=	18.curses
+
 SRCS=	Master macros appen.A appen.B appen.C intro.0 intro.1 \
 	intro.2 intro.3 intro.4 intro.5
 MACROS=	-me
 
 CLEANFILES+=win_st.gr twinkle1.gr twinkle2.gr life.gr intro.2.tbl appen.A.tbl
 
-paper.${PRINTER}: ${SRCS}
-	${ROFF} ${SRCS} > ${.TARGET}
+.include <bsd.doc.mk>
+
+${DOC}.${PRINTER}: ${SRCS}
+	( cd ${.CURDIR} ; ${ROFF} ${SRCS} ) > ${.TARGET}
 
 .SUFFIXES:
 .SUFFIXES: .c .gr
@@ -22,16 +27,16 @@ paper.${PRINTER}: ${SRCS}
 # Don't re-run vgrind unless you want to patch the output files.
 VFONT=	/usr/libexec/vfontedpr
 .c.gr:
-	${VFONT} $*.c | grep -v "^'wh" > $*.gr
+	( cd ${.CURDIR} ; ${VFONT} $*.c ) | grep -v "^'wh" > $*.gr
+
+.VPATH:	${CURDIR}/obj
 
 intro.5: doc.I doc.II doc.III doc.IV
 appen.B: win_st.gr
 appen.C: twinkle1.gr life.gr twinkle2.gr
 
 intro.2.tbl: intro.2
-	${TBL} intro.2 > intro.2.tbl
+	( cd ${.CURDIR} ; ${TBL} intro.2 ) > intro.2.tbl
 
 appen.A.tbl: appen.A
-	${TBL} appen.A > appen.A.tbl
-
-.include <bsd.doc.mk>
+	( cd ${.CURDIR} ; ${TBL} appen.A ) > appen.A.tbl

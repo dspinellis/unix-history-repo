@@ -1,4 +1,5 @@
-#	@(#)Makefile	6.1 (Berkeley) 5/26/86
+#	from: @(#)Makefile	6.1 (Berkeley) 5/26/86
+#	Makefile,v 1.2 1993/07/31 15:30:23 mycroft Exp
 #
 #	Makefile for the notesfile reference manual
 #	March 29, 1982
@@ -13,8 +14,6 @@
 #	This copy of everything has been modified to run with troff
 #	and a typesetter. Hopefully the only changes to make it
 #	run again under nroff will be in page length/width statements.
-#
-#
 
 DISTDIR	= p:/usr/src/uiuc/notesfiles
 DCP=	rcp

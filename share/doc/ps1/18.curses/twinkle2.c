@@ -29,7 +29,8 @@
 .\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 .\" SUCH DAMAGE.
 .\"
-.\"	@(#)twinkle2.c	6.3 (Berkeley) 4/17/91
+.\"	from: @(#)twinkle2.c	6.3 (Berkeley) 4/17/91
+.\"	twinkle2.c,v 1.2 1993/08/01 18:23:14 mycroft Exp
 .\"
 extern int	_putchar();
 

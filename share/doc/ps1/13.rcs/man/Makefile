@@ -1,3 +1,5 @@
+#	Makefile,v 1.2 1993/08/02 17:51:17 mycroft Exp
+
 DEST	      = $(DESTDIR)/usr/man/mann
 
 MAKEFILE      = Makefile

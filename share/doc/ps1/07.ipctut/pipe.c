@@ -29,7 +29,8 @@
 .\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 .\" SUCH DAMAGE.
 .\"
-.\"	@(#)pipe.c	6.4 (Berkeley) 4/17/91
+.\"	from: @(#)pipe.c	6.4 (Berkeley) 4/17/91
+.\"	pipe.c,v 1.2 1993/08/01 18:23:32 mycroft Exp
 .\"
 #include <stdio.h>
 

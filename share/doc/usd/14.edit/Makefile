@@ -1,11 +1,17 @@
-#	@(#)Makefile	6.2 (Berkeley) 6/30/90
+#	from: @(#)Makefile	6.2 (Berkeley) 6/30/90
+#	Makefile,v 1.5 1993/07/31 15:30:17 mycroft Exp
 
 DIR=	usd/14.edit
-SRCS=	edittut.ms
-MACROS=	-msU
+DOC=	14.edit
 
-paper.${PRINTER}: ${SRCS}
-	${TBL} ${SRCS} | ${ROFF} > ${.TARGET}
+SRCS=	edittut.ms
+MACROS=	-ms
+CLEANFILES+=	editvindex
+
+.include <bsd.doc.mk>
+
+${DOC}.${PRINTER}: ${SRCS}
+	( cd ${.CURDIR} ; ${TBL} ${SRCS} ) | ${ROFF} > ${.TARGET}
 
 # index for versatec is different from the one in edit.tut
 # because the fonts are different and entries reference page
@@ -13,6 +19,4 @@ paper.${PRINTER}: ${SRCS}
 # you should just use the index in edit.tut, and ignore editvindex.
 
 editvindex:
-	${TROFF} ${MACROS} -n22 edit.vindex
-
-.include <bsd.doc.mk>
+	( cd ${.CURDIR} ; ${ROFF} ${MACROS} -n22 edit.vindex ) > ${.TARGET}

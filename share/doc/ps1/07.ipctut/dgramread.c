@@ -29,7 +29,8 @@
 .\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 .\" SUCH DAMAGE.
 .\"
-.\"	@(#)dgramread.c	6.4 (Berkeley) 4/17/91
+.\"	from: @(#)dgramread.c	6.4 (Berkeley) 4/17/91
+.\"	dgramread.c,v 1.2 1993/08/01 18:23:31 mycroft Exp
 .\"
 #include <sys/types.h>
 #include <sys/socket.h>

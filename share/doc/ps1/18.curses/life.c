@@ -29,7 +29,8 @@
 .\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 .\" SUCH DAMAGE.
 .\"
-.\"	@(#)life.c	6.3 (Berkeley) 4/17/91
+.\"	from: @(#)life.c	6.3 (Berkeley) 4/17/91
+.\"	life.c,v 1.2 1993/08/01 18:23:17 mycroft Exp
 .\"
 # include	<curses.h>
 # include	<signal.h>

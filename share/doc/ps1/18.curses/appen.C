@@ -29,7 +29,8 @@
 .\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 .\" SUCH DAMAGE.
 .\"
-.\"	@(#)appen.C	6.3 (Berkeley) 4/17/91
+.\"	from: @(#)appen.C	6.3 (Berkeley) 4/17/91
+.\"	appen.C,v 1.2 1993/08/01 18:23:16 mycroft Exp
 .\"
 .ie t .oh '\*(Ln Appendix C''PS1:18-%'
 .eh 'PS1:18-%''\*(Ln Appendix C'

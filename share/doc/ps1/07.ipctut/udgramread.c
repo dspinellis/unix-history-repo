@@ -29,7 +29,8 @@
 .\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 .\" SUCH DAMAGE.
 .\"
-.\"	@(#)udgramread.c	6.5 (Berkeley) 4/17/91
+.\"	from: @(#)udgramread.c	6.5 (Berkeley) 4/17/91
+.\"	udgramread.c,v 1.2 1993/08/01 18:23:26 mycroft Exp
 .\"
 #include <sys/types.h>
 #include <sys/socket.h>

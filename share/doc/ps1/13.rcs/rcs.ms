@@ -265,19 +265,19 @@ Automatic Identification
 RCS can put special strings for identification into your source and object
 code. To obtain such identification, place the marker
 .DS
-$Header$
+/b/source/CVS/src/share/doc/ps1/13.rcs/rcs.ms,v 1.1.1.1 1993/03/21 09:48:22 cgd Exp
 .DE
 into your text, for instance inside a comment.
 RCS will replace this marker with a string of the form
 .DS
-$Header:  filename  revisionnumber  date  time  author  state $
+/b/source/CVS/src/share/doc/ps1/13.rcs/rcs.ms,v 1.1.1.1 1993/03/21 09:48:22 cgd Exp
 .DE
 You never need to touch this string, because RCS keeps it
 up to date automatically.
 To propagate the marker into your object code, simply put
 it into a literal character string. In C, this is done as follows:
 .DS
-static char rcsid[] = "$Header$";
+static char rcsid[] = "/b/source/CVS/src/share/doc/ps1/13.rcs/rcs.ms,v 1.1.1.1 1993/03/21 09:48:22 cgd Exp";
 .DE
 The command \fIident\fR extracts such markers from any file, even object code.
 Thus, \fIident\fR helps you to find out 
@@ -285,7 +285,10 @@ which revisions of which modules were used in a given program.
 .PP
 You may also find it useful to put the marker
 .DS
-$Log$
+rcs.ms,v
+.\" Revision 1.1.1.1  1993/03/21  09:48:22  cgd
+.\" initial import of 386bsd-0.1 sources
+.\"
 .DE
 into your text, inside a comment. This marker accumulates
 the log messages that are requested during checkin.
