@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_debug.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_debug.c	5.17 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #if defined(lint) && !defined(DEBUG)
@@ -115,9 +115,9 @@ fp_query(msg,file)
 			cp = p_cdname(cp, msg, file);
 			if (cp == NULL)
 				return;
-			fprintf(file,", type = %s", p_type(getshort(cp)));
+			fprintf(file,", type = %s", p_type(_getshort(cp)));
 			cp += sizeof(u_short);
-			fprintf(file,", class = %s\n\n", p_class(getshort(cp)));
+			fprintf(file,", class = %s\n\n", p_class(_getshort(cp)));
 			cp += sizeof(u_short);
 		}
 	}
@@ -195,13 +195,13 @@ p_rr(cp, msg, file)
 
 	if ((cp = p_cdname(cp, msg, file)) == NULL)
 		return (NULL);			/* compression error */
-	fprintf(file,"\n\ttype = %s", p_type(type = getshort(cp)));
+	fprintf(file,"\n\ttype = %s", p_type(type = _getshort(cp)));
 	cp += sizeof(u_short);
-	fprintf(file,", class = %s", p_class(class = getshort(cp)));
+	fprintf(file,", class = %s", p_class(class = _getshort(cp)));
 	cp += sizeof(u_short);
-	fprintf(file,", ttl = %u", getlong(cp));
+	fprintf(file,", ttl = %u", _getlong(cp));
 	cp += sizeof(u_long);
-	fprintf(file,", dlen = %d\n", dlen = getshort(cp));
+	fprintf(file,", dlen = %d\n", dlen = _getshort(cp));
 	cp += sizeof(u_short);
 	cp1 = cp;
 	/*
@@ -260,20 +260,20 @@ p_rr(cp, msg, file)
 		cp = p_cdname(cp, msg, file);
 		fprintf(file,"\n\tmail addr = ");
 		cp = p_cdname(cp, msg, file);
-		fprintf(file,"\n\tserial=%ld", getlong(cp));
+		fprintf(file,"\n\tserial=%ld", _getlong(cp));
 		cp += sizeof(u_long);
-		fprintf(file,", refresh=%ld", getlong(cp));
+		fprintf(file,", refresh=%ld", _getlong(cp));
 		cp += sizeof(u_long);
-		fprintf(file,", retry=%ld", getlong(cp));
+		fprintf(file,", retry=%ld", _getlong(cp));
 		cp += sizeof(u_long);
-		fprintf(file,", expire=%ld", getlong(cp));
+		fprintf(file,", expire=%ld", _getlong(cp));
 		cp += sizeof(u_long);
-		fprintf(file,", min=%ld\n", getlong(cp));
+		fprintf(file,", min=%ld\n", _getlong(cp));
 		cp += sizeof(u_long);
 		break;
 
 	case T_MX:
-		fprintf(file,"\tpreference = %ld,",getshort(cp));
+		fprintf(file,"\tpreference = %ld,",_getshort(cp));
 		cp += sizeof(u_short);
 		fprintf(file," name = ");
 		cp = p_cdname(cp, msg, file);
@@ -294,7 +294,7 @@ p_rr(cp, msg, file)
 	case T_UID:
 	case T_GID:
 		if (dlen == 4) {
-			fprintf(file,"\t%ld\n", getlong(cp));
+			fprintf(file,"\t%ld\n", _getlong(cp));
 			cp += sizeof(int);
 		}
 		break;
