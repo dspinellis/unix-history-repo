@@ -6,166 +6,154 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)verify.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)verify.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/stat.h>
-#include <errno.h>
 #include <dirent.h>
+#include <fts.h>
+#include <errno.h>
 #include <stdio.h>
 #include "mtree.h"
 
 extern ENTRY *root;
-extern char path[];
 
-static dev_t device;
+static char path[MAXPATHLEN];
 
 verify()
 {
-	extern int xflag;
-	struct stat sbuf;
-
-	if (xflag) {
-		if (lstat(".", &sbuf)) {
-			(void)fprintf(stderr, "mtree: root: %s\n",
-			    strerror(errno));
-			exit(1);
-		}
-		device = sbuf.st_dev;
-	}
-	vwalk(root, path + 1);
-	miss(root, path + 1);
+	vwalk();
+	miss(root, path);
 }
 
-static
-vwalk(level, tail)
-	register ENTRY *level;
-	register char *tail;
+vwalk()
 {
-	extern int dflag, eflag, rflag, xflag;
-	register ENTRY *ep;
-	register DIR *dirp;
-	register struct dirent *dp;
-	struct stat sbuf;
+	extern int ftsoptions, dflag, eflag, rflag;
+	register FTS *t;
+	register FTSENT *p;
+	register ENTRY *ep, *level;
 
-	if (!(dirp = opendir("."))) {
-		(void)fprintf(stderr, "mtree: %s: %s\n",
-		    level == root ? "root" : path, strerror(errno));
+	if (!(t = ftsopen(".", ftsoptions, (int (*)())NULL))) {
+		(void)fprintf(stderr,
+		    "mtree: ftsopen: %s.\n", strerror(errno));
 		exit(1);
 	}
-	*tail++ = '/';
-	while ((dp = readdir(dirp))) {
-		if (dp->d_name[0] == '.' &&
-		    (!dp->d_name[1] || dp->d_name[1] == '.' && !dp->d_name[2]))
+	level = root;
+	while (p = ftsread(t)) {
+		switch(p->fts_info) {
+		case FTS_D:
+			if (!strcmp(p->fts_name, "."))
+				continue;
+			break;
+		case FTS_DC:
+			(void)fprintf(stderr,
+			    "mtree: directory cycle: %s.\n", RP(p));
 			continue;
-		bcopy(dp->d_name, tail, dp->d_namlen + 1);
+		case FTS_DNR:
+			(void)fprintf(stderr,
+			    "mtree: %s: unable to read.\n", RP(p));
+			continue;
+		case FTS_DNX:
+			(void)fprintf(stderr,
+			    "mtree: %s: unable to search.\n", RP(p));
+			continue;
+		case FTS_DP:
+			for (level = level->parent; level->prev;
+			    level = level->prev);
+			continue;
+		case FTS_ERR:
+			(void)fprintf(stderr, "mtree: %s: %s.\n",
+			    RP(p), strerror(errno));
+			continue;
+		case FTS_NS:
+			(void)fprintf(stderr,
+			    "mtree: can't stat: %s.\n", RP(p));
+			continue;
+		default:
+			if (dflag)
+				continue;
+		}
+
 		for (ep = level; ep; ep = ep->next)
-			if (!strcmp(ep->name, dp->d_name))
-				break;
-		if (ep && ep->flags&F_IGN) {
-			ep->flags |= F_VISIT;
-			continue;
-		}
-		if (lstat(dp->d_name, &sbuf)) {
-			(void)fprintf(stderr, "mtree: %s: %s\n",
-			    path + 2, strerror(errno));
-			exit(1);
-		}
-		if (!dflag || S_ISDIR(sbuf.st_mode))
-			if (ep) {
-				compare(ep->name, &ep->info, &sbuf);
+			if (!strcmp(ep->name, p->fts_name)) {
 				ep->flags |= F_VISIT;
-			} else if (!eflag) {
-				(void)printf("extra: %s%s",
-				    path + 2, rflag ? "" : "\n");
-				if (rflag)
-					if (unlink(path))
-					    (void)printf(", not removed: %s\n",
-						strerror(errno));
-					else
-					    (void)printf(", removed\n");
+				if (ep->info.flags&F_IGN) {
+					(void)ftsset(t, p, FTS_SKIP);
+					continue;
+				}
+				compare(ep->name, &ep->info, p);
+				if (ep->child && ep->info.type == F_DIR &&
+				    p->fts_info == FTS_D)
+					level = ep->child;
+				break;
 			}
-		if (S_ISDIR(sbuf.st_mode) &&
-		    (!xflag || device == sbuf.st_dev)) {
-			if (chdir(dp->d_name)) {
-				(void)fprintf(stderr, "mtree: %s: %s\n",
-				    path + 2, strerror(errno));
-				exit(1);
+		if (ep)
+			continue;
+		if (!eflag) {
+			(void)printf("extra: %s", RP(p));
+			if (rflag) {
+				if (unlink(p->fts_accpath)) {
+					(void)printf(", not removed: %s",
+					    strerror(errno));
+				} else
+					(void)printf(", removed");
 			}
-			vwalk(ep ? ep->child : ep, tail + dp->d_namlen);
-			if (chdir("..")) {
-				(void)fprintf(stderr, "mtree: ..: %s\n",
-				    strerror(errno));
-				exit(1);
-			}
+			(void)putchar('\n');
 		}
+		(void)ftsset(t, p, FTS_SKIP);
 	}
-	(void)closedir(dirp);
 }
 
-static
-miss(level, tail)
-	register ENTRY *level;
+miss(p, tail)
+	register ENTRY *p;
 	register char *tail;
 {
 	extern int dflag, uflag;
 	register int create;
-	register char *p;
+	register char *tp;
 
-	for (*tail++ = '/'; level; level = level->next) {
-		if (level->info.type != F_DIR &&
-			(dflag || level->flags&F_VISIT))
-				continue;
-		(void)strcpy(tail, level->name);
-		if (!(level->flags&F_VISIT))
-			(void)printf("missing: %s%s", path + 2,
-			    uflag ? "" : "\n");
-		if (level->info.type != F_DIR)
+	for (; p; p = p->next) {
+		if (p->info.type != F_DIR && (dflag || p->flags&F_VISIT))
 			continue;
+		(void)strcpy(tail, p->name);
+		if (!(p->flags&F_VISIT))
+			(void)printf("missing: %s", path);
+		if (p->info.type != F_DIR) {
+			putchar('\n');
+			continue;
+		}
+
 		create = 0;
-		if (uflag)
-			if (mkdir(path, 0777))
-				(void)printf(" (not created: %s)\n",
+		if (!(p->flags&F_VISIT) && uflag)
+#define	MINBITS	(F_GROUP|F_MODE|F_OWNER)
+			if ((p->info.flags & MINBITS) != MINBITS)
+				(void)printf(" (not created -- group, mode or owner not specified)");
+			else if (mkdir(path, S_IRWXU))
+				(void)printf(" (not created: %s)",
 				    strerror(errno));
 			else {
 				create = 1;
-				(void)printf(" (created)\n");
+				(void)printf(" (created)");
 			}
-		for (p = tail; *p; ++p);
-		miss(level->child, p);
-		if (create) {
-			*p = '\0';
-			dirset(&level->info);
+
+		if (!(p->flags&F_VISIT))
+			(void)putchar('\n');
+
+		for (tp = tail; *tp; ++tp);
+		*tp = '/';
+		miss(p->child, tp + 1);
+		*tp = '\0';
+
+		if (!create)
+			continue;
+		if (chown(path, p->info.st_uid, p->info.st_gid)) {
+			(void)printf("%s: owner/group/mode not modified: %s\n",
+			    path, strerror(errno));
+			continue;
 		}
+		if (chmod(path, p->info.st_mode))
+			(void)printf("%s: permissions not set: %s\n",
+			    path, strerror(errno));
 	}
 }
-
-static
-dirset(s1)
-	register INFO *s1;
-{
-	register struct stat *s2;
-	struct stat sbuf;
-
-	if (stat(path, &sbuf)) {
-		(void)fprintf(stderr,
-		    "mtree: %s: %s\n", path, strerror(errno));
-		return;
-	}
-	s2 = &sbuf;
-
-	if (s1->flags&F_MODE && s1->st_mode != (s2->st_mode&07777) &&
-	    chmod(path, s1->st_mode))
-		(void)printf("%s: permissions not set: %s\n",
-		    path + 2, strerror(errno));
-	if (s1->flags&F_OWNER && s1->st_uid != s2->st_uid &&
-	    chown(path, s1->st_uid, -1))
-		(void)printf("%s: owner not modified: %s\n",
-		    path + 2, strerror(errno));
-	if (s1->flags&F_GROUP && s1->st_gid != s2->st_gid &&
-	    chown(path, -1, s1->st_gid))
-		(void)printf("%s: group not modified: %s\n",
-		    path + 2, strerror(errno));
-}
-
