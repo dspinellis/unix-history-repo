@@ -1,6 +1,4 @@
-/*	types.h	2.1	3/25/82	*/
-
-/*	types.h	4.4	82/04/19	*/
+/*	types.h	4.5	82/09/08	*/
 
 /*
  * Basic system types and major/minor device constructing/busting macros.
@@ -29,7 +27,9 @@ typedef	u_long	ino_t;
 typedef	int	swblk_t;
 typedef	int	size_t;
 typedef	int	time_t;
-typedef	int	label_t[14];
+typedef	struct	label_t	{
+	int	val[14];
+} label_t;
 typedef	short	dev_t;
 typedef	int	off_t;
 typedef	long	portid_t;
