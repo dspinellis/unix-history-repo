@@ -5,7 +5,7 @@
 # include <sysexits.h>
 # include <whoami.h>
 
-static char SccsId[] = "@(#)sccs.c	1.21 %G%";
+static char SccsId[] = "@(#)sccs.c	1.22 %G%";
 
 # define bitset(bit, word)	((bit) & (word))
 
@@ -141,8 +141,10 @@ command(argv, forkflag)
 	register char *q;
 	char buf[40];
 	extern struct sccsprog *lookup();
-	char *nav[7];
+	char *nav[200];
 	char **avp;
+	register int i;
+	extern bool unedit();
 
 # ifdef DEBUG
 	if (Debug)
@@ -215,9 +217,15 @@ command(argv, forkflag)
 		break;
 
 	  case UNEDIT:
+		i = 0;
 		for (avp = &argv[1]; *avp != NULL; avp++)
-			unedit(*avp);
-		xcommand(&argv[1], FALSE, "get", NULL);
+		{
+			if (unedit(*avp))
+				nav[i++] = *avp;
+		}
+		nav[i] = NULL;
+		if (i > 0)
+			xcommand(nav, FALSE, "get", NULL);
 		break;
 
 	  default:
@@ -469,13 +477,16 @@ clean(really)
 **		fn -- the name of the file to be unedited.
 **
 **	Returns:
-**		none.
+**		TRUE -- if the file was successfully unedited.
+**		FALSE -- if the file was not unedited for some
+**			reason.
 **
 **	Side Effects:
 **		fn is removed
 **		entries are removed from pfile.
 */
 
+bool
 unedit(fn)
 	char *fn;
 {
@@ -501,7 +512,7 @@ unedit(fn)
 	if (q <= pfn && (q[0] != 's' || q[1] != '.'))
 	{
 		fprintf(stderr, "Sccs: bad file name \"%s\"\n", fn);
-		return;
+		return (FALSE);
 	}
 
 	/* turn "s." into "p." */
@@ -511,7 +522,7 @@ unedit(fn)
 	if (pfp == NULL)
 	{
 		printf("%12s: not being edited\n", fn);
-		return;
+		return (FALSE);
 	}
 
 	/*
@@ -554,7 +565,7 @@ unedit(fn)
 		if (freopen(pfn, "w", pfp) == NULL)
 		{
 			fprintf(stderr, "Sccs: cannot create \"%s\"\n", pfn);
-			return;
+			return (FALSE);
 		}
 		while (fgets(buf, sizeof buf, tfp) != NULL)
 			fputs(buf, pfp);
@@ -571,10 +582,12 @@ unedit(fn)
 	{
 		unlink(fn);
 		printf("%12s: removed\n", fn);
+		return (TRUE);
 	}
 	else
 	{
 		printf("%12s: not being edited by you\n", fn);
+		return (FALSE);
 	}
 }
 /*
