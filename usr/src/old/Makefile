@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.35 (Berkeley) %G%
+#	@(#)Makefile	5.36 (Berkeley) %G%
 
 SUBDIR=	awk compact cpp crypt dbconv ed eqn groups hostid lex make \
 	mkpasswd more ms od pr refer roff sed sh sum symorder tbl \
