@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)proc.c 1.6 %G%";
+static char sccsid[] = "@(#)proc.c 1.7 %G%";
 
 #include "whoami.h"
 #ifdef OBJ
@@ -275,6 +275,12 @@ proc(r)
 				    (fmtspec & CONWIDTH) && field < 0) {
 					error("Negative widths are not allowed");
 					continue;
+				}
+				if ( opt('s') &&
+				    ((fmtspec & CONPREC) && prec == 0 ||
+				    (fmtspec & CONWIDTH) && field == 0)) {
+					standard();
+					error("Zero widths are non-standard");
 				}
 			}
 			if (filetype != nl+T1CHAR) {

@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pcproc.c 1.3 %G%";
+static	char sccsid[] = "@(#)pcproc.c 1.4 %G%";
 
 #include "whoami.h"
 #ifdef PC
@@ -306,6 +306,12 @@ pcproc(r)
 				    (fmtspec & CONWIDTH) && field < 0) {
 					error("Negative widths are not allowed");
 					continue;
+				}
+				if ( opt('s') &&
+				    ((fmtspec & CONPREC) && prec == 0 ||
+				    (fmtspec & CONWIDTH) && field == 0)) {
+					standard();
+					error("Zero widths are non-standard");
 				}
 			}
 			if (filetype != nl+T1CHAR) {
