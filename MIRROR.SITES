@@ -4,6 +4,9 @@ The FreeBSD software is being mirrored at the following locations:
 Country		Site/Directory/Maintainer
 =======		=========================================================
 
+Australia	minnie.cs.adfa.oz.au:/BSD/FreeBSD-1.1-RELEASE
+		<root@minnie.cs.adfa.oz.au>
+
 Austria		ftp.tu-graz.ac.at:/pub/FreeBSD	
 		<ftp@ftp.tu-graz.ac.at>
 
@@ -47,4 +50,4 @@ USA		wuarchive.wustl.edu:/systems/unix/FreeBSD
 		<archives@wugate.wustl.edu>
 
 
-$Id: MIRROR.SITES,v 1.12 1994/04/25 15:38:07 jkh Exp $
+$Id: MIRROR.SITES,v 1.13 1994/04/26 16:24:02 jkh Exp $
