@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)profile.c	1.2 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)profile.c	1.3 (Berkeley/CCI) %G%";
 #endif
 
 
@@ -19,7 +19,7 @@ profile()
 
 	print("Disk seek profile for ");
 	printf("controller %d, drive %d, ", cur.controller, cur.drive);
-	printf("type %s.\n",CURRENT->vc_name);
+	printf("type %s.\n", lab->d_typename);
 
 	indent();
 	if(is_formatted() == false) {
@@ -33,8 +33,8 @@ profile()
 	cur.state = prof;
 	zero.cylinder = zero.track = zero.sector=0;
 	ead.track = ead.sector=0;
-	step = CURRENT->vc_ncyl / 55;
-	for(ead.cylinder=1; ead.cylinder<CURRENT->vc_ncyl; ead.cylinder+=step){
+	step = lab->d_ncylinders / 55;
+	for(ead.cylinder=1; ead.cylinder<lab->d_ncylinders; ead.cylinder+=step){
 		total_time = 0;
 		for(i=0; i<cycles; i++) {
 			access_dsk((char *)save, &zero, VDOP_SEEK, 1, 60);

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)verify.c	1.3 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)verify.c	1.4 (Berkeley/CCI) %G%";
 #endif
 
 #include	"vdfmt.h"
@@ -17,12 +17,13 @@ verify()
 	cur.state = vfy;
 	print("Starting verification on ");
 	printf("controller %d, drive %d, ", cur.controller, cur.drive);
-	printf("type %s.\n",CURRENT->vc_name);
+	printf("type %s.\n", lab->d_typename);
 
 	if(is_formatted() == true) {
 		if(read_bad_sector_map() == true) {
-			if(bad_map->bs_id == D_INFO.id) {
+			if(bad_map->bs_id == D_INFO->id) {
 				verify_users_data_area();
+				writelabel();
 				return;
 			}
 		}
@@ -40,10 +41,10 @@ verify()
 load_verify_patterns()
 {
 	register int index;
-	register struct flawpat *fp = CURRENT->vc_pat;
+	register struct flawpat *fp = (struct flawpat *)lab->d_pat;
 
 	/* Init bad block pattern array */
-	for(index=0; index<TRKSIZ; index++) {
+	for(index=0; index<MAXTRKSIZ; index++) {
 		pattern_0[index] = fp->fp_pat[0];
 		pattern_1[index] = fp->fp_pat[1];
 		pattern_2[index] = fp->fp_pat[2];
@@ -70,7 +71,7 @@ load_verify_patterns()
 verify_relocation_area()
 {
 	cur.substate = sub_vfy;
-	verify_cylinders((int)CURRENT->vc_ncyl - NUMSYS, NUMREL, 16);
+	verify_cylinders((int)lab->d_ncylinders - NUMSYS, NUMREL, 16);
 	sync_bad_sector_map();
 }
 
@@ -84,7 +85,7 @@ verify_users_data_area()
 	int	pats = ops_to_do[cur.controller][cur.drive].numpat;
 
 	cur.substate = sub_vfy;
-	verify_cylinders(0, (int)CURRENT->vc_ncyl - NUMSYS, pats);
+	verify_cylinders(0, (int)lab->d_ncylinders - NUMSYS, pats);
 	sync_bad_sector_map();
 }
 
@@ -93,10 +94,10 @@ verify_users_data_area()
 **
 */
 
-verify_maintainence_area()
+verify_maintenence_area()
 {
 	cur.substate = sub_vfy;
-	verify_cylinders(CURRENT->vc_ncyl - NUMSYS + NUMREL, NUMMNT, 16);
+	verify_cylinders(lab->d_ncylinders - NUMSYS + NUMREL, NUMMNT, 16);
 	sync_bad_sector_map();
 }
 
@@ -116,7 +117,7 @@ int	base_cyl, cyl_count, pats;
 	/* verify each track of each cylinder */
 	for (dskaddr.cylinder = base_cyl;
 	    dskaddr.cylinder < base_cyl + cyl_count; dskaddr.cylinder++)
-		for (dskaddr.track = 0; dskaddr.track < CURRENT->vc_ntrak;
+		for (dskaddr.track = 0; dskaddr.track < lab->d_ntracks;
 		    dskaddr.track++)
 			verify_track(&dskaddr, pats, verbose);
 }
@@ -138,7 +139,7 @@ int	verbosity;
 	register int	count;
 	register long	before;
 	register long	*after;
-	register long	offset = SECSIZ / sizeof(long);
+	register long	offset = lab->d_secsize / sizeof(long);
 	int		pattern_count = pats;
 	int		sectorflagged = -1;
 
@@ -146,7 +147,7 @@ int	verbosity;
 		return;
 	dskaddr->sector = (char)0;
 	access_dsk((char *)pattern_address[0], dskaddr, VDOP_WD,
-	    CURRENT->vc_nsec, 1);
+	    lab->d_nsectors, 1);
 	for (index = 0; index < pattern_count; index++) {
 		if (!data_ok()) {
 			if (dcb.operrsta & HEADER_ERROR)  {
@@ -159,14 +160,14 @@ int	verbosity;
 				pattern_count = 16;
 		}
 		access_dsk((char *)scratch, dskaddr, VDOP_RD,
-		    CURRENT->vc_nsec, 1);
+		    lab->d_nsectors, 1);
 		if (!data_ok()) {
 			if (dcb.operrsta & HEADER_ERROR)  {
 				flag_sector(dskaddr, dcb.operrsta,
 				    dcb.err_code, verbosity);
 				break;
 			}
-			for (i = 0; i < CURRENT->vc_nsec; i++) {
+			for (i = 0; i < lab->d_nsectors; i++) {
 				register long	*next;
 
 				dskaddr->sector = i;
@@ -180,8 +181,8 @@ int	verbosity;
 		}
 		if (index+1 < pattern_count)
 			access_dsk((char *)pattern_address[index+1],
-			    dskaddr, VDOP_WD, CURRENT->vc_nsec, 0);
-		count = CURRENT->vc_nsec * offset;
+			    dskaddr, VDOP_WD, lab->d_nsectors, 0);
+		count = lab->d_nsectors * offset;
 		before = *pattern_address[index];
 		after = scratch;
 		for (i = 0; i < count; i++) {
@@ -205,6 +206,11 @@ int	verbosity;
 			_longjmp(quit_environ, 1);
 		}
 	}
+	/* check again in case of header error */
+	if (kill_processes == true) {
+		sync_bad_sector_map();
+		_longjmp(quit_environ, 1);
+	}
 }
 
 
@@ -226,14 +232,14 @@ int	verbosity;
 			print("  status=%b", status, VDERRBITS);
 		else
 			printf("  data comparison error");
-		if (C_INFO.type == VDTYPE_SMDE && ecode)
+		if (C_INFO->type == VDTYPE_SMDE && ecode)
 			printf(", ecode=0x%x", ecode);
 		printf(".\n  Sector will be relocated.\n");
 	}
 	if(is_in_map(dskaddr) == false) {
 		error.err_adr = *dskaddr;
 		error.err_stat = status;
-		entry = (*C_INFO.code_pos)(error);
+		entry = (*C_INFO->code_pos)(error);
 		add_flaw(&entry);
 	}
 	exdent(1);

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)vdfmt.c	1.4 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)vdfmt.c	1.5 (Berkeley/CCI) %G%";
 #endif
 
 /*
@@ -11,7 +11,7 @@ static char sccsid[] = "@(#)vdfmt.c	1.4 (Berkeley/CCI) %G%";
 main()
 {
 	exdent(-1);
-	print("VDFORMAT                   Version 3.0 \n\n");
+	print("VDFORMAT            Berkeley Version 1.5 \n\n");
 
 	for(;;) {
 		determine_controller_types();
@@ -68,49 +68,43 @@ determine_controller_types()
 {
 	extern fmt_err	smd_decode_position(), smd_e_decode_position();
 	extern bs_entry	smd_code_position(), smd_e_code_position();
-	extern int	smd_cyl_skew(), smd_trk_skew();
-	extern int	smd_e_cyl_skew(), smd_e_trk_skew();
 	register int	ctlr, drive;
+	register ctlr_info *ci;
 
 	/* Identify which controllers are present and what type they are. */
 	num_controllers = 0;
 	for(ctlr = 0; ctlr < MAXCTLR; ctlr++) {
-		c_info[ctlr].addr = (struct vddevice *)(VDBASE+(ctlr*VDOFF));
-		if(!badaddr(c_info[ctlr].addr, 2)) {
+		ci = &c_info[ctlr];
+		ci->addr = (struct vddevice *)(VDBASE+(ctlr*VDOFF));
+		if(!badaddr(ci->addr, 2)) {
 			printf("controller %d: ", ctlr);
 			num_controllers++;
-			c_info[ctlr].addr->vdreset = (unsigned)0xffffffff;
+			ci->addr->vdreset = (unsigned)0xffffffff;
 			DELAY(1000000);
-			if(c_info[ctlr].addr->vdreset!=(unsigned)0xffffffff) {
-				c_info[ctlr].alive = u_true;
-				c_info[ctlr].type = VDTYPE_VDDC;
-				c_info[ctlr].name = "VDDC";
-				c_info[ctlr].decode_pos = smd_decode_position;
-				c_info[ctlr].code_pos = smd_code_position;
-				c_info[ctlr].cylinder_skew = smd_cyl_skew;
-				c_info[ctlr].track_skew = smd_trk_skew;
+			if(ci->addr->vdreset!=(unsigned)0xffffffff) {
+				ci->alive = u_true;
+				ci->type = VDTYPE_VDDC;
+				ci->name = "VDDC";
+				ci->decode_pos = smd_decode_position;
+				ci->code_pos = smd_code_position;
 				printf("vddc\n");
 				DELAY(1000000);
 			} else {
-				c_info[ctlr].alive = u_true;
-				c_info[ctlr].type = VDTYPE_SMDE;
-				c_info[ctlr].name = "SMD-E";
-				c_info[ctlr].addr->vdrstclr = 0;
-				c_info[ctlr].decode_pos = smd_e_decode_position;
-				c_info[ctlr].code_pos = smd_e_code_position;
-				c_info[ctlr].cylinder_skew = smd_e_cyl_skew;
-				c_info[ctlr].track_skew = smd_e_trk_skew;
+				ci->alive = u_true;
+				ci->type = VDTYPE_SMDE;
+				ci->name = "SMD-E";
+				ci->addr->vdrstclr = 0;
+				ci->decode_pos = smd_e_decode_position;
+				ci->code_pos = smd_e_code_position;
 				printf("smd-e\n");
 				DELAY(3000000);
 			}
 		} else  {
-			c_info[ctlr].alive = u_false;
-			c_info[ctlr].type = -1;
+			ci->alive = u_false;
+			ci->type = -1;
 		}
-		for(drive=0; drive<MAXDRIVE; drive++) {
+		for(drive=0; drive<MAXDRIVE; drive++)
 			d_info[ctlr][drive].alive = u_unknown;
-			d_info[ctlr][drive].info = (struct vdconfig *)0;
-		}
 	}
 	if(num_controllers == 0)
 		_stop("vdfmt: I can't find any disk controllers.  Giving up!");
@@ -129,13 +123,11 @@ init_environment()
 
 	/* clear list of operations to do */
 	for(ctlr=0; ctlr<MAXCTLR; ctlr++) {
-		for(drive=0; drive<MAXCTLR; drive++) {
+		for(drive=0; drive<MAXDRIVE; drive++) {
+			bzero((char *)&d_info[ctlr][drive],
+			    sizeof(d_info[ctlr][drive]));
 			d_info[ctlr][drive].alive = u_unknown;
-			d_info[ctlr][drive].info = (struct vdconfig *)0;
 			d_info[ctlr][drive].id = -1;
-			d_info[ctlr][drive].trk_size = 0;
-			d_info[ctlr][drive].num_slip = 0;
-			d_info[ctlr][drive].track_skew = 0;
 		}
 	}
 	/* Init pattern table pointers */

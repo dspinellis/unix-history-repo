@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)util.c	1.1 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)util.c	1.2 (Berkeley/CCI) %G%";
 #endif
 
 #include	"vdfmt.h"
@@ -11,7 +11,7 @@ static char sccsid[] = "@(#)util.c	1.1 (Berkeley/CCI) %G%";
 to_track(daddr)
 dskadr	daddr;
 {
-	return ((daddr.cylinder * CURRENT->vc_ntrak) + daddr.track);
+	return ((daddr.cylinder * lab->d_ntracks) + daddr.track);
 }
 
 
@@ -23,8 +23,8 @@ int	trk;
 {
 	static dskadr	temp;
 
-	temp.cylinder = trk / CURRENT->vc_ntrak;
-	temp.track = trk % CURRENT->vc_ntrak;
+	temp.cylinder = trk / lab->d_ntracks;
+	temp.track = trk % lab->d_ntracks;
 	temp.sector = 0;
 	return &temp;
 }
@@ -36,7 +36,7 @@ int	trk;
 to_sector(daddr)
 dskadr	daddr;
 {
-	return ((to_track(daddr) * CURRENT->vc_nsec) + daddr.sector);
+	return ((to_track(daddr) * lab->d_nsectors) + daddr.sector);
 }
 
 
@@ -48,8 +48,8 @@ unsigned int	sec;
 {
 	static dskadr	temp;
 
-	temp = *from_track((int)(sec / CURRENT->vc_nsec));
-	temp.sector = sec % CURRENT->vc_nsec;
+	temp = *from_track((int)(sec / lab->d_nsectors));
+	temp.sector = sec % lab->d_nsectors;
 	return &temp;
 }
 
@@ -63,26 +63,27 @@ dskadr	dskaddr;
 {
 	char	fs;
 	int	blk;
-	int	sec_per_blk=DEV_BSIZE / SECSIZ;
+	register struct partition *pp;
 			
 	indent();
-	blk = to_sector(dskaddr) / sec_per_blk;
+	blk = to_sector(dskaddr);
 	print("** Warning - Unable to relocate sector %d:\n",to_sector(dskaddr)); 
-#ifdef notdef
 	indent();
 	print("to map out using BADSECT use the following values:\n");
 	indent();
-	for(fs = 0; fs < 8; fs++) {
+	for(fs = 0; fs < lab->d_npartitions; fs++) {
 		int	s, l;
 
-		s = CURRENT->partition[fs].par_start;
-		l = CURRENT->partition[fs].par_len;
+		pp = &lab->d_partitions[fs];
+		s = pp->p_offset;
+		l = pp->p_size;
+		if (pp->p_fsize == 0)
+			pp->p_fsize = DEV_BSIZE;
 		if((blk < (s+l)) && (blk >= s)) {
-			print("On the '%c' Partition use block %d.\n",
-			    fs+'a', blk-s);
+			print("On the `%c' Partition use filesystem block %d.\n",
+			    fs+'a', (blk - s) * lab->d_secsize / pp->p_fsize);
 		}
 	}
-#endif
 	exdent(3);
 }
 
@@ -92,22 +93,21 @@ unsigned int	block;
 {
 	unsigned int	sector;
 	register int	fs;
+	register struct partition *pp;
 	static dskadr		dskaddr;
 
-#ifdef notdef
 	fs =  tolower(par) - 'a';
-	if((fs < 8) && (block <= CURRENT->partition[fs].par_len))
-		dskaddr = *from_sector(
-		    (CURRENT->partition[fs].par_start + block) *
-		     DEV_BSIZE/SECSIZE);
-	else {
-#endif
+	if((fs < lab->d_npartitions) &&
+	    (block <= (pp = &lab->d_partitions[fs])->p_size)) {
+		if (pp->p_fsize == 0)
+			pp->p_fsize = DEV_BSIZE;
+		dskaddr = *from_sector(pp->p_offset +
+		    block * pp->p_fsize / lab->d_secsize);
+	} else {
 		dskaddr.cylinder = -1;
 		dskaddr.track = -1;
 		dskaddr.sector = -1;
-#ifdef notdef
 	}
-#endif
 	return &dskaddr;
 }
 
@@ -142,4 +142,3 @@ register int	len;
 	}
 	return true;
 }
-

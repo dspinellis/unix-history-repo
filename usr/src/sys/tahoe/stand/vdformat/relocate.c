@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)relocate.c	1.3 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)relocate.c	1.4 (Berkeley/CCI) %G%";
 #endif
 
 #include	"vdfmt.h"
@@ -16,12 +16,12 @@ relocate()
 	cur.state = rel;
 	print("Adding flaws to bad sector map on ");
 	printf("controller %d, drive %d, ", cur.controller, cur.drive);
-	printf("type %s.\n",CURRENT->vc_name);
+	printf("type %s.\n", lab->d_typename);
 
 	indent();
 	if(is_formatted() == true) {
 		if(read_bad_sector_map() == true)
-			if(bad_map->bs_id != D_INFO.id) {
+			if(bad_map->bs_id != D_INFO->id) {
 				print("Drive serial numbers do not match!\n");
 				exdent(1);
 				_longjmp(abort_environ, 1);
@@ -44,7 +44,7 @@ rel_help()
 	indent();
 	print("Relocation commands are in the following form:\n");
 	indent();
-	print("[a-h] (block)   -  UNIX file system format.\n");
+	print("[a-h] (block)   -  UNIX file system block (frag) number.\n");
 	print("SEctor (sector) -  Absolute sector number on disk.\n");
 	print("Track (track)   -  Absolute disk track number.\n");
 	print("(cylinder) (head) (offset) (length) - CDC flaw map format.\n");
@@ -65,8 +65,8 @@ get_new_relocations()
 	dskadr		dskaddr;
 	int		max_track;
 
-	dskaddr.cylinder = CURRENT->vc_ncyl - 1;
-	dskaddr.cylinder = CURRENT->vc_ntrak - 1;
+	dskaddr.cylinder = lab->d_ncylinders - 1;
+	dskaddr.cylinder = lab->d_ntracks - 1;
 	max_track = to_track(dskaddr);
 	for(;;) {
 		print("Location? ");
@@ -92,8 +92,10 @@ get_new_relocations()
 				goto next;
 			}
 			print("Confirm block %d on file-system '%c'",block,par);
+			printf(" (cyl %d, track %d, sector %d)",
+			    dskaddr.cylinder, dskaddr.track, dskaddr.sector);
 			if(get_yes_no("") == true) {
-				entry=(*C_INFO.code_pos)(dskaddr,HEADER_ERROR);
+				entry=(*C_INFO->code_pos)(dskaddr, DATA_ERROR);
 				add_user_relocations(&entry);
 			}
 		}
@@ -104,10 +106,11 @@ get_new_relocations()
 				print("Invalid track number!\n");
 				goto next;
 			}
-			print("Confirm track %d", trk);
+			dskaddr = *from_track(trk);
+			print("Confirm track %d (cyl %d, track %d)",
+			    trk, dskaddr.cylinder, dskaddr.track);
 			if(get_yes_no("") == true) {
-				dskaddr = *from_track(trk);
-				entry=(*C_INFO.code_pos)(dskaddr,HEADER_ERROR);
+				entry=(*C_INFO->code_pos)(dskaddr,HEADER_ERROR);
 				add_user_relocations(&entry);
 			}
 		}
@@ -115,14 +118,16 @@ get_new_relocations()
 			register int	sec = get_next_digit(ptr);
 
 			if((sec == -1) ||
-			    ((CURRENT->vc_nsec*CURRENT->vc_ntrak*CURRENT->vc_ncyl)<sec)){
+			    ((lab->d_nsectors*lab->d_ntracks*lab->d_ncylinders)<sec)){
 				print("Invalid sector number!\n");
 				goto next;
 			}
-			print("Confirm sector %d", sec);
+			dskaddr = *from_sector((unsigned int)sec);
+			print("Confirm sector %d (cyl %d, track %d, sector %d)",
+			    sec,
+			    dskaddr.cylinder, dskaddr.track, dskaddr.sector);
 			if(get_yes_no("") == true) {
-				dskaddr = *from_sector((unsigned int)sec);
-				entry = (*C_INFO.code_pos)(dskaddr, DATA_ERROR);
+				entry = (*C_INFO->code_pos)(dskaddr, DATA_ERROR);
 				add_user_relocations(&entry);
 			}
 		}
@@ -139,11 +144,11 @@ get_new_relocations()
 			entry.bs_length = get_next_digit(ptr);
 			if((entry.bs_trk != -1) && (entry.bs_offset != -1) &&
 			    (entry.bs_length != -1)) {
-				if(entry.bs_cyl >= CURRENT->vc_ncyl)
+				if(entry.bs_cyl >= lab->d_ncylinders)
 					print("Cylinder number to high!\n");
-				else if(entry.bs_trk >= CURRENT->vc_ntrak)
+				else if(entry.bs_trk >= lab->d_ntracks)
 					print("Head number to high!\n");
-				else if(entry.bs_offset >= CURRENT->vc_traksize)
+				else if(entry.bs_offset >= lab->d_traksize)
 					print("Offset too long!\n");
 				else if(entry.bs_length == 0)
 					print("Can't have a 0 length error!\n");
@@ -177,11 +182,11 @@ register int	i;
 	fmt_err		temp, cmp;
 	boolean		bad_track = false;
 
-	cmp = (*C_INFO.decode_pos)(entry);
+	cmp = (*C_INFO->decode_pos)(entry);
 	/* Check to see if a alternate track is or will be on this track */
 	while((bad_map->list[j].bs_cyl == entry.bs_cyl) &&
 	    (bad_map->list[j].bs_trk == entry.bs_trk)) {
-		temp = (*C_INFO.decode_pos)(bad_map->list[j]);
+		temp = (*C_INFO->decode_pos)(bad_map->list[j]);
 		if(temp.err_stat & HEADER_ERROR) {
 			bad_track = true;
 			/* if track was mapped out (it can't be us) */
@@ -215,7 +220,7 @@ register int	i;
 	j = i;
 	while((bad_map->list[j].bs_cyl == entry.bs_cyl) &&
 	    (bad_map->list[j].bs_trk == entry.bs_trk)) {
-		temp = (*C_INFO.decode_pos)(bad_map->list[j]);
+		temp = (*C_INFO->decode_pos)(bad_map->list[j]);
 		if(temp.err_adr.sector == cmp.err_adr.sector) {
 			/* if it is not really the current entry */
 			if((bad_map->list[j].bs_offset != entry.bs_offset) ||
@@ -266,8 +271,8 @@ sync_bad_sector_map()
 	** relocation area.
 	*/
 	for(i=bad_map->bs_count-1; i>=0; i--) {
-		if((bad_map->list[i].bs_cyl >= CURRENT->vc_ncyl-NUMSYS) &&
-		    (bad_map->list[i].bs_cyl < CURRENT->vc_ncyl-NUMMAP-NUMMNT)) {
+		if((bad_map->list[i].bs_cyl >= lab->d_ncylinders-NUMSYS) &&
+		    (bad_map->list[i].bs_cyl < lab->d_ncylinders-NUMMAP-NUMMNT)) {
 			if((bad_map->list[i].bs_alt.cylinder == 0) &&
 			    (bad_map->list[i].bs_alt.track == 0) &&
 			    (bad_map->list[i].bs_alt.sector == 0)) {
@@ -305,15 +310,15 @@ bs_entry	entry;
 {
 	fmt_err	temp;
 
-	if(entry.bs_cyl >= CURRENT->vc_ncyl-NUMSYS)
-		if(entry.bs_cyl != (CURRENT->vc_ncyl - NUMMAP - NUMMNT))
+	if(entry.bs_cyl >= lab->d_ncylinders-NUMSYS)
+		if(entry.bs_cyl != (lab->d_ncylinders - NUMMAP - NUMMNT))
 			return;
-	temp = (*C_INFO.decode_pos)(entry);
+	temp = (*C_INFO->decode_pos)(entry);
 	if((entry.bs_alt.cylinder == 0) && (entry.bs_alt.track == 0) &&
 	    (entry.bs_alt.sector == 0))
 		print_unix_block(temp.err_adr);
 	else if(temp.err_stat & HEADER_ERROR)
-		if(C_INFO.type == VDTYPE_VDDC) {
+		if(C_INFO->type == VDTYPE_VDDC) {
 			print("Can't relocate tracks on VDDC controllers.\n");
 			print_unix_block(temp.err_adr);
 		}
@@ -335,7 +340,7 @@ bs_entry	entry;
 	fmt_err		temp;
 	register long	status;
 
-	temp = (*C_INFO.decode_pos)(entry);
+	temp = (*C_INFO->decode_pos)(entry);
 	phys = temp.err_adr;
 	reloc = entry.bs_alt;
 	format_sectors(&phys, &reloc, RELOC_SECTOR, (long)1);
@@ -363,16 +368,16 @@ bs_entry	entry;
 	fmt_err		temp;
 	register long	status;
 
-	temp = (*C_INFO.decode_pos)(entry);
+	temp = (*C_INFO->decode_pos)(entry);
 	temp.err_adr.sector = 0;
 	phys = temp.err_adr;
 	reloc = entry.bs_alt;
 	reloc.sector = 0xff;
-	format_sectors(&phys, &reloc, RELOC_SECTOR, (long)CURRENT->vc_nsec);
+	format_sectors(&phys, &reloc, RELOC_SECTOR, (long)lab->d_nsectors);
 	
 	reloc.sector = 0x00;
-	format_sectors(&reloc, &phys, ALT_SECTOR, (long)CURRENT->vc_nsec);
-	status = access_dsk((char *)save, &temp.err_adr, VDOP_WD, CURRENT->vc_nsec, 1);
+	format_sectors(&reloc, &phys, ALT_SECTOR, (long)lab->d_nsectors);
+	status = access_dsk((char *)save, &temp.err_adr, VDOP_WD, lab->d_nsectors, 1);
 	if(!((status & DCBS_ATA) && !(status & (DCBS_HARD|DCBS_SOFT)))) {
 		print("Track relocation failed.  Status = 0x%x.\n", status);
 		print_unix_block(phys);

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)exercise.c	1.2 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)exercise.c	1.3 (Berkeley/CCI) %G%";
 #endif
 
 #include	"vdfmt.h"
@@ -17,10 +17,10 @@ exercise()
 
 	print("Starting disk exercise on ");
 	printf("controller %d, drive %d, ", cur.controller, cur.drive);
-	printf("type %s.\n",CURRENT->vc_name);
+	printf("type %s.\n", lab->d_typename);
 
 	if(read_bad_sector_map() == true) {
-		if(bad_map->bs_id != D_INFO.id) {
+		if(bad_map->bs_id != D_INFO->id) {
 			print("Module serial numbers do not match!\n");
 			print("Use `info' to find the real serial number.\n");
 			_longjmp(abort_environ, 1);
@@ -34,11 +34,11 @@ exercise()
 	cur.state = exec;
 	sad.track = sad.sector = 0;
 	indent();
-	for(sad.cylinder=0; sad.cylinder<CURRENT->vc_ncyl; sad.cylinder++) {
+	for(sad.cylinder=0; sad.cylinder<lab->d_ncylinders; sad.cylinder++) {
 		print("pass %d...\n", sad.cylinder);
-		for(cyl=0; cyl<CURRENT->vc_ncyl-NUMSYS; cyl++){
+		for(cyl=0; cyl<lab->d_ncylinders-NUMSYS; cyl++){
 			ead.cylinder = cyl;
-			for(trk=0; trk<CURRENT->vc_ntrak; trk++) {
+			for(trk=0; trk<lab->d_ntracks; trk++) {
 				ead.track = trk;
 				ead.sector = 0;
 				access_dsk((char *)scratch, &sad,

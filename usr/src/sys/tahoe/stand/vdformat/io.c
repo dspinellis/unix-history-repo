@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)io.c	1.4 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)io.c	1.5 (Berkeley/CCI) %G%";
 #endif
 
 #include	"vdfmt.h"
@@ -26,13 +26,16 @@ char	*clean_up = "Cleaning up...  Please wait.\n";
 poll(wait)
 int	wait;
 {
+	register struct vddevice *addr = C_INFO->addr;
 	int	tokens[10];
 	int	didmsg = 0;
 
 	wait_for_char = 0;
-	vdtimeout = wait*1000*1000;
-	uncache(&(dcb.operrsta));
-	while (!((dcb.operrsta) & (DCBS_DONE | DCBS_ABORT))) {
+	vdtimeout = wait*1000;
+	for (;;) {
+		uncache(&(dcb.operrsta));
+		if (dcb.operrsta & (DCBS_DONE | DCBS_ABORT))
+			break;
 		if (input()) {
 			get_text_cmd(nul_table, tokens);
 			if (didmsg == 0 && kill_processes == true) {
@@ -42,29 +45,36 @@ int	wait;
 				exdent(1);
 			}
 		}
-		vdtimeout--;
-		uncache(&(dcb.operrsta));
-		if (vdtimeout <= 0) {
-			if(C_INFO.type == VDTYPE_VDDC)
+		if (vdtimeout-- <= 0) {
+			if(C_INFO->type == VDTYPE_VDDC)
 				printf("\nVDDC");
 			else
 				printf("\nSMD-E");
 			printf(": Controller timeout");
-			VDABORT(C_INFO.addr, C_INFO.type);
+abort:
+			VDABORT(addr, C_INFO->type);
 			DELAY(30000);
 			break;
 		}
+		DELAY(1000);
 	}
-	if((vdtimeout > 0)) {
-		if(C_INFO.type == VDTYPE_SMDE) {
-			uncache(&(C_INFO.addr->vdcsr));
-			while(C_INFO.addr->vdcsr & CS_GO) {
-				DELAY(50);
-				uncache(&(C_INFO.addr->vdcsr));
+	if ((vdtimeout > 0)) {
+		if (C_INFO->type == VDTYPE_SMDE) {
+			for (;;) {
+				uncache(&(addr->vdcsr));
+				if ((addr->vdcsr & CS_GO) == 0)
+					break;
+				DELAY(1000);
+				if (vdtimeout-- <= 0) {
+					printf("\nSMD-E timed out clearing GO");
+					goto abort;
+				}
 			}
+			DELAY(300);
 		}
 		DELAY(500);
 	}
+	DELAY(200);
 	if((dcb.opcode == VDOP_RD) || (dcb.opcode == VDOP_RDRAW))
 		mtpr(PADC, 0);
 	uncache(&(dcb.operrsta));
@@ -85,11 +95,12 @@ int	function, wait_time;
 	dcb.intflg = DCBINT_NONE;
 	dcb.nxtdcb = (struct dcb *)0;	/* end of chain */
 	dcb.operrsta  = 0;
-	dcb.devselect = (function == VDOP_START) ? 0 : (char)cur.drive;
+	dcb.devselect = (function == VDOP_START) ? 0 :
+	    ((char)cur.drive | lab->d_devflags);
 	dcb.trailcnt = (char)0;
 	mdcb.mdcb_head = &dcb;
 	mdcb.mdcb_status = 0;
-	VDGO(C_INFO.addr, (u_long)&mdcb, C_INFO.type);	
+	VDGO(C_INFO->addr, (u_long)&mdcb, C_INFO->type);	
 	poll(wait_time);
 	if(vdtimeout <= 0) {
 		printf(" during startup operation.\n");
@@ -98,6 +109,34 @@ int	function, wait_time;
 	return dcb.operrsta;
 }
 
+vread(sn, buf, seccnt)
+int sn, seccnt;
+char *buf;
+{
+	return (vrdwr(sn, buf, seccnt, VDOP_RD));
+}
+
+vwrite(sn, buf, seccnt)
+int sn, seccnt;
+char *buf;
+{
+	return (vrdwr(sn, buf, seccnt, VDOP_WD));
+}
+
+vrdwr(sn, buf, seccnt, op)
+int sn, seccnt, op;
+char *buf;
+{
+	dskadr	dskaddr;
+
+	dskaddr.cylinder = sn / lab->d_secpercyl;
+	sn %= lab->d_secpercyl;
+	dskaddr.track = sn / lab->d_nsectors;
+	dskaddr.sector = sn % lab->d_nsectors;
+	if (access_dsk(buf, &dskaddr, op, seccnt, 1) & DCBS_HARD)
+		return (0);
+	return (seccnt);
+}
 
 /*
 **	access_dsk is used by other routines to do reads and writes to the disk.
@@ -116,26 +155,25 @@ int	func, count, wait;
 	dcb.intflg = DCBINT_NONE;
 	dcb.nxtdcb = (struct dcb *)0;	/* end of chain */
 	dcb.operrsta  = 0;
-	dcb.devselect = (char)cur.drive;
+	dcb.devselect = (char)cur.drive | lab->d_devflags;
 	if(func == VDOP_SEEK) {
 		dcb.trailcnt = (char)(sizeof(struct trseek) / sizeof(long));
 		dcb.trail.sktrail.skaddr.cylinder = dskaddr->cylinder;
 		dcb.trail.sktrail.skaddr.track = dskaddr->track;
 		dcb.trail.sktrail.skaddr.sector = dskaddr->sector;
-	}
-	else {
+	} else {
 		dcb.trailcnt = (char)(sizeof(struct trrw) / sizeof(long));
 		dcb.trail.rwtrail.memadr = (u_long)buf; 
-		dcb.trail.rwtrail.wcount=count*(SECSIZ/sizeof(short));
+		dcb.trail.rwtrail.wcount=count*(lab->d_secsize/sizeof(short));
 		dcb.trail.rwtrail.disk.cylinder = dskaddr->cylinder;
 		dcb.trail.rwtrail.disk.track = dskaddr->track;
 		dcb.trail.rwtrail.disk.sector = dskaddr->sector;
 	}
 	mdcb.mdcb_head = &dcb;
 	mdcb.mdcb_status = 0;
-	VDGO(C_INFO.addr, (u_long)&mdcb, C_INFO.type);
+	VDGO(C_INFO->addr, (u_long)&mdcb, C_INFO->type);
 	if(wait) {
-		poll(2*60);
+		poll(10);
 		if(vdtimeout <= 0) {
 			printf(" in access_dsk.\n");
 			_longjmp(abort_environ, 1);
@@ -153,14 +191,16 @@ int	func, count, wait;
 
 spin_up_drive()
 {
-	VDRESET(C_INFO.addr, C_INFO.type);
-	if(C_INFO.type == VDTYPE_SMDE) {
-		C_INFO.addr->vdcsr =  0;
-		C_INFO.addr->vdtcf_mdcb =  AM_ENPDA;
-		C_INFO.addr->vdtcf_dcb =  AM_ENPDA;
-		C_INFO.addr->vdtcf_trail =  AM_ENPDA;
-		C_INFO.addr->vdtcf_data =  AM_ENPDA;
-		C_INFO.addr->vdccf = CCF_SEN | 0x8 | CCF_STS |
+	register struct vddevice *addr = C_INFO->addr;
+
+	VDRESET(addr, C_INFO->type);
+	if(C_INFO->type == VDTYPE_SMDE) {
+		addr->vdcsr =  0;
+		addr->vdtcf_mdcb =  AM_ENPDA;
+		addr->vdtcf_dcb =  AM_ENPDA;
+		addr->vdtcf_trail =  AM_ENPDA;
+		addr->vdtcf_data =  AM_ENPDA;
+		addr->vdccf = CCF_SEN | 0x8 | CCF_STS |
 		    XMD_32BIT | BSZ_16WRD | CCF_ERR |
 		    CCF_ENP | CCF_EPE | CCF_EDE | CCF_ECE;
 	}
@@ -177,42 +217,79 @@ spin_up_drive()
 configure_drive(pass)
 int	pass;
 {
+	register struct vddevice *addr = C_INFO->addr;
+	register i;
+
+top:
 	dcb.opcode = VDOP_CONFIG;		/* command */
 	dcb.intflg = DCBINT_NONE;
 	dcb.nxtdcb = (struct dcb *)0;	/* end of chain */
-	dcb.operrsta  = 0;
-	dcb.devselect = (char)cur.drive;
-	dcb.trail.rstrail.ncyl = CURRENT->vc_ncyl;
-	dcb.trail.rstrail.nsurfaces = CURRENT->vc_ntrak;
-	if(C_INFO.type == VDTYPE_VDDC)
+	dcb.operrsta = 0;
+	dcb.devselect = cur.drive | lab->d_devflags;
+	dcb.trail.rstrail.ncyl = lab->d_ncylinders;
+	dcb.trail.rstrail.nsurfaces = lab->d_ntracks;
+	if(C_INFO->type == VDTYPE_VDDC)
 		dcb.trailcnt = (char)2;
 	else {
-		dcb.trailcnt = (char)4;
-		dcb.trail.rstrail.nsectors = CURRENT->vc_nsec;
-		dcb.trail.rstrail.slip_sec = CURRENT->vc_nslip;
-		dcb.trail.rstrail.recovery = 0x00;
-		C_INFO.addr->vdcylskew = (*C_INFO.cylinder_skew)();
-		C_INFO.addr->vdtrackskew = (*C_INFO.track_skew)();
+		dcb.trailcnt = sizeof (struct treset)/sizeof (long);
+		dcb.trail.rstrail.nsectors = lab->d_nsectors;
+		dcb.trail.rstrail.slip_sec = lab->d_sparespertrack;
+		dcb.trail.rstrail.recovery = VDRF_NONE;
+		addr->vdcylskew = lab->d_cylskew;
+		addr->vdtrackskew = lab->d_trackskew;
+/*
+		addr->vdsecsize = lab->d_secsize/sizeof(short);
+*/
 	}
+printf("devsel %x, ncyl %d, ntrk %d, nsec %d, slip %d, cylskew %d, trackskew %d, secsize %d\n", dcb.devselect, dcb.trail.rstrail.ncyl, dcb.trail.rstrail.nsurfaces, dcb.trail.rstrail.nsectors, dcb.trail.rstrail.slip_sec, lab->d_cylskew, lab->d_trackskew, lab->d_secsize);
 	mdcb.mdcb_head = &dcb;
 	mdcb.mdcb_status = 0;
-	VDGO(C_INFO.addr, (u_long)&mdcb, C_INFO.type);
+	VDGO(addr, (u_long)&mdcb, C_INFO->type);
 	poll(5);
 	if(vdtimeout <= 0) {
 		printf(" during drive configuration.\n");
-		_longjmp(abort_environ, 1);
+		goto bad;
 	}
-	if(dcb.operrsta & (DCBS_OCYL | DCBS_NRDY)) {
+	if(dcb.operrsta & VDERR_HARD) {
+		if (C_INFO->type == VDTYPE_SMDE) {
+			if (lab->d_devflags == 0) {
+				lab->d_devflags = VD_ESDI;
+				goto top;
+			}
+#ifdef notdef
+printf("vdstatus %x\n", addr->vdstatus[cur.drive]);
+			if ((addr->vdstatus[cur.drive] & STA_US) == 0) {
+				printf("Drive not present\n\n");
+				goto bad;
+			}
+#endif
+		}
+		if ((dcb.operrsta & (DCBS_OCYL|DCBS_NRDY)) == 0) {
+			printf("drive config error\n");
+			goto bad;
+		}
 		if(pass) {
 			printf("\nDrive failed to start!\n\n");
-			_longjmp(abort_environ, -1);
+			goto bad;
 		}
 		printf("\ndrive not ready, attempting to spin up...");
-		access_with_no_trailer(VDOP_START, (cur.drive * 6) + 62);
-		DELAY((cur.drive * 5500000) + 62000000);
+		access_with_no_trailer(VDOP_START, 62);
+		for (i = 0; i < 620; i++) {
+			if (C_INFO->type == VDTYPE_SMDE &&
+			    addr->vdstatus[cur.drive] & STA_UR)
+				break;
+			DELAY(100000);
+		}
 		printf(" retrying drive configuration\n");
-		configure_drive(1);
+		pass++;
+		lab->d_devflags = 0;
+		goto top;
 	}
+	D_INFO->alive = u_true;
+	return;
+bad:
+	D_INFO->alive = u_false;
+	_longjmp(abort_environ, -1);
 }
 
 
@@ -248,7 +325,7 @@ data_ok()
 		else
 			printf("\nNot on cylinder error!");
 		printf("   Status = 0x%lx", status);
-		if(C_INFO.type == VDTYPE_SMDE)
+		if(C_INFO->type == VDTYPE_SMDE)
 			printf("  Error code =  0x%x", dcb.err_code & 0xff);
 		printf("\n");
 		printf("cylinder = %d, track = %d,", dcb.err_cyl, dcb.err_trk);

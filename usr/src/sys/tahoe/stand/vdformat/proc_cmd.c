@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)proc_cmd.c	1.3 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)proc_cmd.c	1.4 (Berkeley/CCI) %G%";
 #endif
 
 #include	"vdfmt.h"
@@ -34,8 +34,6 @@ static cmd_text_element	commands[] = {
 	{ 0,	     "",	  "" }
 };
 
-static cmd_text_element	drive_types[20];
-
 
 /*
 **
@@ -43,24 +41,14 @@ static cmd_text_element	drive_types[20];
 
 process_commands()
 {
-	int	type, tokens[20];
+	int	tokens[20];
 	int	*tok_ptr, count;
 	int	op_mask = 0;
 	char	*cptr;
 	boolean	should_start = false;
 
-	for(type=0; type<ndrives; type++) {
-		drive_types[type].cmd_token = (int)&vdconfig[type];
-		drive_types[type].cmd_text = vdconfig[type].vc_name;
-		drive_types[type].cmd_help = vdconfig[type].vc_type;
-		cptr = drive_types[type].cmd_text;
-		while(*cptr) {
-			*cptr = toupper(*cptr);
-			cptr++;
-		}
-	}
-	drive_types[type].cmd_token = 0;
 	for(;;) {
+		(void)_setjmp(abort_environ);
 		cur.state = cmd;
 		kill_processes = false;
 		exdent(-1);
@@ -162,7 +150,12 @@ int	op_mask;
 			}
 		}
 		for(j=0; d_list[j] != -1; j++) {
-			get_drive_type(c_list[i], d_list[j]);
+			cur.controller = c_list[i];
+			cur.drive = d_list[j];
+			C_INFO = &c_info[cur.controller];
+			D_INFO = &d_info[cur.controller][cur.drive];
+			lab = &D_INFO->label;
+			get_drive_type(cur.controller, cur.drive, op_mask);
 			if(kill_processes == true) {
 				kill_processes = false;
 				break;
@@ -275,36 +268,6 @@ int	ctlr, *d_list, op_mask;
 			break;
 	}
 }
-
-
-/*
-**
-*/
-
-get_drive_type(ctlr, drive)
-int	ctlr, drive;
-{
-	int	tokens[20];
-	int	count;
-
-	for(;;) {
-		print("Drive type for controller %d, drive %d? ", ctlr, drive);
-		if(d_info[ctlr][drive].info != 0)
-			printf("(%s) ", d_info[ctlr][drive].info->vc_name);
-		if(c_info[ctlr].type == VDTYPE_VDDC)
-			count = get_text_cmd(drive_types+smddrives, tokens);
-		else
-			count = get_text_cmd(drive_types, tokens);
-		if(kill_processes == true)
-			return;
-		if(!*tokens && (d_info[ctlr][drive].info != 0) && !count)
-			break;
-		if(d_info[ctlr][drive].info = (struct vdconfig *)*tokens)
-			break;
-	}
-}
-
-
 
 /*
 **
