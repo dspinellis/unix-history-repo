@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)chgrp.c	4.4 83/01/20";
+static	char *sccsid = "@(#)chgrp.c	4.5 83/04/28";
 #endif
 
 /*
@@ -18,6 +18,7 @@ struct	passwd *getpwuid(), *pwd;
 struct	stat stbuf;
 int	gid, uid;
 int	status;
+int	fflag;
 /* VARARGS */
 int	fprintf();
 
@@ -28,8 +29,12 @@ main(argc, argv)
 	register c, i;
 
 	argc--, argv++;
+	if (argc > 0 && strcmp(argv[0], "-f") == 0) {
+		fflag++;
+		argv++, argc--;
+	}
 	if (argc < 2) {
-		printf("usage: chgrp gid file ...\n");
+		printf("usage: chgrp [-f] gid file ...\n");
 		exit(2);
 	}
 	uid = getuid();
@@ -57,6 +62,8 @@ main(argc, argv)
 		for (i=0; gr->gr_mem[i]; i++)
 			if (!(strcmp(pwd->pw_name, gr->gr_mem[i])))
 				goto ok;
+		if (fflag)
+			exit(0);
 		fprintf(stderr, "You are not a member of the %s group.\n",
 		    argv[0]);
 		exit(2);
@@ -68,6 +75,8 @@ ok:
 			continue;
 		}
 		if (uid && uid != stbuf.st_uid) {
+			if (fflag)
+				continue;
 			fprintf(stderr, "You are not the owner of %s\n",
 			    argv[c]);
 			status = 1;
