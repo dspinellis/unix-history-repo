@@ -3,14 +3,14 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	7.23 (Berkeley) %G%
+#	@(#)Makefile	7.24 (Berkeley) %G%
 #
 #
 # Copyright (c) 1980 Regents of the University of California.
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	7.23 (Berkeley) %G%
+#	@(#)Makefile	7.24 (Berkeley) %G%
 #
 #
 # Copyright (c) 1987 The Regents of the University of California.
@@ -28,7 +28,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	7.23 (Berkeley) %G%
+#	@(#)Makefile	7.24 (Berkeley) %G%
 #
 VERSION=3.7
 #
@@ -83,7 +83,7 @@ MAN=	ex.0 vi.0
 all: ex exrecover expreserve
 
 ex: ${OBJS} ${LIBC}
-	${CC} ${LDFLAGS} ${OBJS} -ltermcap
+	${CC} ${LDFLAGS} -o $@ ${OBJS} -ltermcap
 
 ex_vars.h: ex_data.c
 	csh makeoptions ${CFLAGS}
@@ -110,7 +110,7 @@ expreserve.o: expreserve.c
 
 clean:
 #	If we dont have ex we cant make it so don't rm ex_vars.h
-	rm -f a.out exrecover expreserve strings core errs trace
+	rm -f ex exrecover expreserve strings core errs trace
 	rm -f *.o x*.[cs]
 
 cleandir: clean
@@ -124,7 +124,7 @@ install: ${MAN}
 	rm -f ${DESTDIR}/${BINDIR}/ex ${DESTDIR}/${BINDIR}/vi \
 		${DESTDIR}/${BINDIR}/view ${DESTDIR}/${BINDIR}/edit \
 		${DESTDIR}/${BINDIR}/e ${DESTDIR}/usr/bin/ex
-	install -s -o bin -g bin -m 1755 a.out ${DESTDIR}/${BINDIR}/ex
+	install -s -o bin -g bin -m 1755 ex ${DESTDIR}/${BINDIR}/ex
 	install -s -o root -m 4755 exrecover ${DESTDIR}/${LIBDIR}/ex${VERSION}recover
 	install -s -o root -m 4755 expreserve ${DESTDIR}/${LIBDIR}/ex${VERSION}preserve
 #	cp ex${VERSION}strings ${DESTDIR}/${LIBDIR}/ex${VERSION}strings
