@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)ftpd.c	4.30 (Berkeley) %G%";
+static	char sccsid[] = "@(#)ftpd.c	4.31 (Berkeley) %G%";
 #endif
 
 /*
@@ -131,6 +131,7 @@ nextopt:
 	}
 	signal(SIGPIPE, lostconn);
 	signal(SIGCHLD, SIG_IGN);
+	dolog(&his_addr);
 	/* do telnet option negotiation here */
 	/*
 	 * Set up default state
@@ -178,7 +179,8 @@ pass(passwd)
 	}
 	if (!guest) {		/* "ftp" is only account allowed no password */
 		xpasswd = crypt(passwd, pw->pw_passwd);
-		if (strcmp(xpasswd, pw->pw_passwd) != 0) {
+		/* The strcmp does not catch null passwords! */
+		if (*pw->pw_passwd == '\0' || strcmp(xpasswd, pw->pw_passwd)) {
 			reply(530, "Login incorrect.");
 			pw = NULL;
 			return;
@@ -192,10 +194,14 @@ pass(passwd)
 		goto bad;
 	}
 
-	if (guest)			/* grab wtmp before chroot */
-		wtmp = open("/usr/adm/wtmp", O_WRONLY|O_APPEND);
+	/* grab wtmp before chroot */
+	wtmp = open("/usr/adm/wtmp", O_WRONLY|O_APPEND);
 	if (guest && chroot(pw->pw_dir) < 0) {
 		reply(550, "Can't set guest privileges.");
+		if (wtmp >= 0) {
+			(void) close(wtmp);
+			wtmp = -1;
+		}
 		goto bad;
 	}
 	if (!guest)
@@ -685,10 +691,6 @@ dologin(pw)
 {
 	char line[32];
 
-	if (guest && (wtmp >= 0))
-		lseek(wtmp, 0, L_XTND);
-	else
-		wtmp = open("/usr/adm/wtmp", O_WRONLY|O_APPEND);
 	if (wtmp >= 0) {
 		/* hack, but must be unique and no tty line */
 		sprintf(line, "ftp%d", getpid());
@@ -697,7 +699,10 @@ dologin(pw)
 		SCPYN(utmp.ut_host, remotehost);
 		utmp.ut_time = time(0);
 		(void) write(wtmp, (char *)&utmp, sizeof (utmp));
-		(void) close(wtmp);
+		if (!guest) {		/* anon must hang on */
+			(void) close(wtmp);
+			wtmp = -1;
+		}
 	}
 }
 
@@ -712,9 +717,7 @@ dologout(status)
 	if (!logged_in)
 		return;
 	seteuid(0);
-	if (guest && (wtmp >= 0))
-		lseek(wtmp, 0, L_XTND);
-	else
+	if (wtmp < 0)
 		wtmp = open("/usr/adm/wtmp", O_WRONLY|O_APPEND);
 	if (wtmp >= 0) {
 		SCPYN(utmp.ut_name, "");
