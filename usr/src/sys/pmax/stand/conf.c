@@ -7,28 +7,36 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.c	7.3 (Berkeley) %G%
+ *	@(#)conf.c	7.4 (Berkeley) %G%
  */
 
-#include <pmax/stand/saio.h>
-#include <machine/machMon.h>
+#include <stand/stand.h>
+#include <pmax/stand/samachdep.h>
 
-devread(io)
-	register struct iob *io;
-{
+extern int	nullsys(), nodev(), noioctl();
 
-	if (lseek(io->i_unit, (io->i_bn + io->i_boff) * DEV_BSIZE, 0) < 0)
-		return (-1);
-	return (read(io->i_unit, io->i_ma, io->i_cc));
-}
-
-#ifndef SMALL
-devwrite(io)
-	register struct iob *io;
-{
-
-	if (lseek(io->i_unit, (io->i_bn + io->i_boff) * DEV_BSIZE, 0) < 0)
-		return (-1);
-	return (write(io->i_unit, io->i_ma, io->i_cc));
-}
+#if NRZ > 0
+int	rzstrategy(), rzopen(), rzclose();
+#else
+#define	rzstrategy	nodev
+#define	rzopen		nodev
+#define	rzclose		nodev
 #endif
+#define	rzioctl		noioctl
+
+#if NTZ > 0 && !defined(BOOT)
+int	tzstrategy(), tzopen(), tzclose();
+#else
+#define	tzstrategy	nodev
+#define	tzopen		nodev
+#define	tzclose		nodev
+#endif
+#define	tzioctl		noioctl
+
+
+struct devsw devsw[] = {
+	{ "rz",	rzstrategy,	rzopen,	rzclose,	rzioctl }, /*0*/
+	{ "tz",	tzstrategy,	tzopen,	tzclose,	tzioctl }, /*1*/
+};
+
+int	ndevs = (sizeof(devsw)/sizeof(devsw[0]));
