@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fifo.h	8.1 (Berkeley) %G%
+ *	@(#)fifo.h	8.2 (Berkeley) %G%
  */
 
 #ifdef FIFO
@@ -50,6 +50,8 @@ int	fifo_pathconf __P((struct vop_pathconf_args *));
 int	fifo_advlock __P((struct vop_advlock_args *));
 #define fifo_blkatoff ((int (*) __P((struct  vop_blkatoff_args *)))fifo_badop)
 #define fifo_valloc ((int (*) __P((struct  vop_valloc_args *)))fifo_badop)
+#define fifo_reallocblks \
+	((int (*) __P((struct  vop_reallocblks_args *)))fifo_badop)
 #define fifo_vfree ((int (*) __P((struct  vop_vfree_args *)))fifo_badop)
 #define fifo_truncate ((int (*) __P((struct  vop_truncate_args *)))nullop)
 #define fifo_update ((int (*) __P((struct  vop_update_args *)))nullop)

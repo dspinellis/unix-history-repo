@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)specdev.h	8.1 (Berkeley) %G%
+ *	@(#)specdev.h	8.2 (Berkeley) %G%
  */
 
 /*
@@ -93,6 +93,8 @@ int	spec_pathconf __P((struct vop_pathconf_args *));
 int	spec_advlock __P((struct vop_advlock_args *));
 #define spec_blkatoff ((int (*) __P((struct  vop_blkatoff_args *)))spec_badop)
 #define spec_valloc ((int (*) __P((struct  vop_valloc_args *)))spec_badop)
+#define spec_reallocblks \
+	((int (*) __P((struct  vop_reallocblks_args *)))spec_badop)
 #define spec_vfree ((int (*) __P((struct  vop_vfree_args *)))spec_badop)
 #define spec_truncate ((int (*) __P((struct  vop_truncate_args *)))nullop)
 #define spec_update ((int (*) __P((struct  vop_update_args *)))nullop)
