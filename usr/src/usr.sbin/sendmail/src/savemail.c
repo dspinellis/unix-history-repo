@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-SCCSID(@(#)savemail.c	3.42		%G%);
+SCCSID(@(#)savemail.c	3.43		%G%);
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -237,6 +237,7 @@ returntosender(msg, returnto, sendbody)
 
 	NoAlias = TRUE;
 	SendBody = sendbody;
+	define('g', "$f");
 	ee = newenvelope(&errenvelope);
 	ee->e_puthdr = putheader;
 	ee->e_putbody = errbody;
