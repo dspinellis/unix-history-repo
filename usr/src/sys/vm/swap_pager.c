@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: swap_pager.c 1.4 91/04/30$
  *
- *	@(#)swap_pager.c	8.2 (Berkeley) %G%
+ *	@(#)swap_pager.c	8.3 (Berkeley) %G%
  */
 
 /*
@@ -93,7 +93,8 @@ queue_head_t	swap_pager_list;	/* list of "named" anon regions */
 
 static int		swap_pager_finish __P((swp_clean_t));
 static void 		swap_pager_init __P((void));
-static vm_pager_t	swap_pager_alloc __P((caddr_t, vm_size_t, vm_prot_t));
+static vm_pager_t	swap_pager_alloc
+			    __P((caddr_t, vm_size_t, vm_prot_t, vm_offset_t));
 static boolean_t	swap_pager_clean __P((vm_page_t, int));
 static void		swap_pager_dealloc __P((vm_pager_t));
 static int		swap_pager_getpage
@@ -180,10 +181,11 @@ swap_pager_init()
  * we should not wait for memory as it could resulting in deadlock.
  */
 static vm_pager_t
-swap_pager_alloc(handle, size, prot)
+swap_pager_alloc(handle, size, prot, foff)
 	caddr_t handle;
 	register vm_size_t size;
 	vm_prot_t prot;
+	vm_offset_t foff;
 {
 	register vm_pager_t pager;
 	register sw_pager_t swp;

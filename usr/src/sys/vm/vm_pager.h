@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_pager.h	8.1 (Berkeley) %G%
+ *	@(#)vm_pager.h	8.2 (Berkeley) %G%
  */
 
 /*
@@ -25,7 +25,7 @@ struct	pager_struct {
 	caddr_t		pg_handle;	/* external handle (vp, dev, fp) */
 	int		pg_type;	/* type of pager */
 	struct pagerops	*pg_ops;	/* pager operations */
-	caddr_t		pg_data;	/* private pager data */
+	void		*pg_data;	/* private pager data */
 };
 
 /* pager types */
@@ -38,7 +38,7 @@ struct	pagerops {
 	void		(*pgo_init)		/* Initialize pager. */
 			    __P((void));
 	vm_pager_t	(*pgo_alloc)		/* Allocate pager. */
-			    __P((caddr_t, vm_size_t, vm_prot_t));
+			    __P((caddr_t, vm_size_t, vm_prot_t, vm_offset_t));
 	void		(*pgo_dealloc)		/* Disassociate. */
 			    __P((vm_pager_t));
 	int		(*pgo_getpage)		/* Get (read) page. */
@@ -63,7 +63,7 @@ struct	pagerops {
 #define	VM_PAGER_PEND	3
 #define	VM_PAGER_ERROR	4
 
-#define	VM_PAGER_ALLOC(h, s, p)		(*(pg)->pg_ops->pgo_alloc)(h, s, p)
+#define	VM_PAGER_ALLOC(h, s, p, o)	(*(pg)->pg_ops->pgo_alloc)(h, s, p, o)
 #define	VM_PAGER_DEALLOC(pg)		(*(pg)->pg_ops->pgo_dealloc)(pg)
 #define	VM_PAGER_GET(pg, m, s)		(*(pg)->pg_ops->pgo_getpage)(pg, m, s)
 #define	VM_PAGER_PUT(pg, m, s)		(*(pg)->pg_ops->pgo_putpage)(pg, m, s)
@@ -72,7 +72,8 @@ struct	pagerops {
 #ifdef KERNEL
 extern struct pagerops *dfltpagerops;
 
-vm_pager_t	 vm_pager_allocate __P((int, caddr_t, vm_size_t, vm_prot_t));
+vm_pager_t	 vm_pager_allocate
+		    __P((int, caddr_t, vm_size_t, vm_prot_t, vm_offset_t));
 void		 vm_pager_deallocate __P((vm_pager_t));
 int		 vm_pager_get __P((vm_pager_t, vm_page_t, boolean_t));
 boolean_t	 vm_pager_has_page __P((vm_pager_t, vm_offset_t));
