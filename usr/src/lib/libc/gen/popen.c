@@ -19,13 +19,14 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)popen.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)popen.c	5.10 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
 #include <sys/signal.h>
 #include <sys/wait.h>
 #include <stdio.h>
+#include <paths.h>
 
 static pid_t *pids;
 static int fds;
@@ -70,7 +71,7 @@ popen(program, type)
 			}
 			(void)close(pdes[1]);
 		}
-		execl("/bin/sh", "sh", "-c", program, NULL);
+		execl(_PATH_BSHELL, "sh", "-c", program, NULL);
 		_exit(127);
 		/* NOTREACHED */
 	}
