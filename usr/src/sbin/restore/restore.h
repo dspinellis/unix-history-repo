@@ -1,6 +1,6 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
-/*	@(#)restore.h	3.2	(Berkeley)	83/02/26	*/
+/*	@(#)restore.h	3.4	(Berkeley)	83/03/23	*/
 
 #include <stdio.h>
 #include <sys/param.h>
@@ -37,50 +37,42 @@ struct entry {
 	char	e_type;			/* type of this entry, see below */
 	short	e_flags;		/* status flags, see below */
 	ino_t	e_ino;			/* inode number in previous file sys */
-	char	*e_newname;		/* full pathname of rename in new fs */
+	long	e_index;		/* unique index (for dumpped table) */
 	struct	entry *e_parent;	/* pointer to parent directory (..) */
 	struct	entry *e_sibling;	/* next element in this directory (.) */
 	struct	entry *e_links;		/* hard links to this inode */
 	struct	entry *e_entries;	/* for directories, their entries */
+	struct	entry *e_next;		/* hash chain list */
 };
 /* types */
 #define	LEAF 1			/* non-directory entry */
 #define NODE 2			/* directory entry */
 #define LINK 4			/* synthesized type, stripped by addentry */
 /* flags */
-#define REMOVE		0x0001	/* entry to be removed */
-#define REMOVED		0x0002	/* entry has been removed */
-#define RENAME		0x0004	/* entry to be renamed */
-#define TMPNAME		0x0008	/* entry has been given a temporary name */
-#define TMPNODE		0x0010	/* entry is a temporary, to be replaced */
-#define EXTRACT		0x0020	/* entry is to be extracted from the tape */
-#define RENUMBER	0x0040	/* entry is to be assigned a new inode number */
-#define CHANGE		0x0080	/* entry is to be deleted and extracted */
-#define NEW		0x0100	/* a new entry to be extracted */
-#define KEEP		0x0200	/* entry is not to change */
+#define EXTRACT		0x0001	/* entry is to be replaced from the tape */
+#define NEW		0x0002	/* a new entry to be extracted */
+#define KEEP		0x0004	/* entry is not to change */
+#define REMOVED		0x0010	/* entry has been removed */
+#define TMPNAME		0x0020	/* entry has been given a temporary name */
 /*
  * functions defined on entry structs
  */
-extern struct entry **entry;
 extern struct entry *lookupino();
 extern struct entry *lookupname();
 extern struct entry *lookupparent();
-extern struct entry *pathcheck();
 extern struct entry *addentry();
 extern char *myname();
 extern char *savename();
+extern char *gentempname();
 extern ino_t lowerbnd();
 extern ino_t upperbnd();
 #define NIL ((struct entry *)(0))
-#define lookupino(inum)		(entry[(inum)])
-#define addino(inum, np)	(entry[(inum)] = (np))
-#define deleteino(inum)		(entry[(inum)] = (struct entry *)NIL)
 /*
  * Constants associated with entry structs
  */
-#define HARDLINK 1
-#define SYMLINK  2
-#define TMPCHAR (0x01)
+#define HARDLINK	1
+#define SYMLINK		2
+#define TMPHDR		"RSTTMP"
 
 /*
  * The entry describes the next file available on the tape
@@ -102,13 +94,16 @@ struct context {
 extern ino_t psearch();
 extern void listfile();
 extern void addfile();
-extern void markfile();
+extern void nodeupdates();
 extern void verifyfile();
 extern char *rindex();
 extern char *index();
-extern void strcat();
-extern void strcpy();
-extern void mktemp();
+extern char *strcat();
+extern char *strcpy();
+extern char *mktemp();
+extern char *malloc();
+extern char *calloc();
+extern long lseek();
 
 /*
  * Useful macros
