@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)utmp.5	4.1 (Berkeley) %G%
+.\"	@(#)utmp.5	5.1 (Berkeley) %G%
 .\"
-.TH UTMP 5 
+.TH UTMP 5  "26 July 1983"
 .UC 4
 .SH NAME
 utmp, wtmp \- login records
@@ -13,8 +13,7 @@ utmp, wtmp \- login records
 .SH DESCRIPTION
 The
 .I utmp
-file allows one to discover information about who is currently
-using UNIX.
+file records information about who is currently using the system.
 The file is a sequence of entries with the following
 structure declared in the include file:
 .RS
@@ -27,21 +26,16 @@ structure declared in the include file:
 This structure gives the name of the special file
 associated with the user's terminal, the user's login name,
 and the time of the login in the form of
-.IR time (2).
+.IR time (3C).
 .PP
 The
 .I wtmp
 file records all logins and logouts.
-Its format is exactly like
-.I utmp
-except that
-a null user name indicates a logout on the associated
-terminal.
+A null user name indicates a logout on the associated terminal.
 Furthermore, the terminal name `~' indicates that the
 system was rebooted at the indicated time;
 the adjacent pair of entries with terminal names
-`\^|\^' and `}' indicate the system-maintained time
-just before and just after a
+`\^|\^' and `}' indicate the system-maintained time just before and just after a
 .I date
 command has changed the system's idea of the time.
 .PP
@@ -51,8 +45,7 @@ is maintained by
 and
 .IR init (8).
 Neither of these programs creates the file,
-so if it is removed record-keeping is turned off.
-It is summarized by
+so if it is removed record-keeping is turned off.  It is summarized by
 .IR ac (8).
 .SH FILES
 /etc/utmp
