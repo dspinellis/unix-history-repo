@@ -1,4 +1,4 @@
-/*	protosw.h	4.16	83/06/14	*/
+/*	protosw.h	4.17	83/07/20	*/
 
 /*
  * Protocol switch table.
@@ -97,7 +97,8 @@ char *prurequests[] = {
 	"CONNECT",	"ACCEPT",	"DISCONNECT",	"SHUTDOWN",
 	"RCVD",		"SEND",		"ABORT",	"CONTROL",
 	"SENSE",	"RCVOOB",	"SENDOOB",	"SOCKADDR",
-	"FASTTIMO",	"SLOWTIMO",	"PROTORCV",	"PROTOSEND",
+	"CONNECT2",	"FASTTIMO",	"SLOWTIMO",	"PROTORCV",
+	"PROTOSEND",
 };
 #endif
 
