@@ -577,4 +577,12 @@ Init3270()
     UnLocked = 1;
     OutputClock = 1;
     TransparentClock = -1;
+    SetOiaReady3274(&OperatorInformationArea);
+}
+
+
+void
+Stop3270()
+{
+    ResetOiaReady3274(&OperatorInformationArea);
 }
