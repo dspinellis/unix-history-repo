@@ -1,8 +1,7 @@
-#	@(#)Makefile	6.1 (Berkeley) %G%
+#	@(#)Makefile	6.2 (Berkeley) %G%
 
-PROG=		ld++
-BINDIR=		/usr/libexec
-SRCS=		ld++.c cplus-dem.c
-NOMAN=		noman
+PROG=	ld
+SRCS=	ld.c cplus-dem.c
+NOMAN=	noman
 
 .include <bsd.prog.mk>
