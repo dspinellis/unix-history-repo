@@ -3,10 +3,10 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)param.h	7.16 (Berkeley) %G%
+ *	@(#)param.h	7.17 (Berkeley) %G%
  */
 
-#define	BSD	199003		/* system version (year & month) */
+#define	BSD	199006		/* June, 1990 system version (year & month) */
 #define BSD4_3	1
 #define BSD4_4	0.5
 
