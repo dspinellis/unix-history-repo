@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)rval.c 1.1 %G%";
+static	char sccsid[] = "@(#)rval.c 1.2 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -304,6 +304,7 @@ cstrng:
 			    return (q);
 
 		    case FUNC:
+		    case FFUNC:
 			    /*
 			     * Function call with no arguments.
 			     */
@@ -323,6 +324,7 @@ cstrng:
 			    return (NIL);
 
 		    case PROC:
+		    case FPROC:
 			    error("Procedure %s found where expression required", p->symbol);
 			    return (NIL);
 		    default:

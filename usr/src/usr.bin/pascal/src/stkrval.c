@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)stkrval.c 1.2 %G%";
+static	char sccsid[] = "@(#)stkrval.c 1.3 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -232,6 +232,7 @@ cstrng:
 #			endif PC
 
 		case FUNC:
+		case FFUNC:
 			/*
 			 * Function call
 			 */
@@ -271,6 +272,7 @@ cstrng:
 			return (NIL);
 
 		case PROC:
+		case FPROC:
 			error("Procedure %s found where expression required", p->symbol);
 			return (NIL);
 		default:

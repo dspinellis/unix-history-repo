@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)nl.c 1.1 %G%";
+static	char sccsid[] = "@(#)nl.c 1.2 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -439,10 +439,10 @@ char	*classes[ ] = {
 	"scalar",
 	"string",
 	"program",
-	"improper"
-#ifdef DEBUG
-	,"variant"
-#endif
+	"improper",
+	"variant",
+	"formal procedure",
+	"formal function"
 };
 
 char	*snark	= "SNARK";
@@ -473,7 +473,9 @@ char	*ctext[] =
 	"STR",
 	"PROG",
 	"IMPROPER",
-	"VARNT"
+	"VARNT",
+	"FPROC",
+	"FFUNC"
 };
 
 char	*stars	= "\t***";
@@ -564,6 +566,8 @@ con:
 			case VAR:
 			case REF:
 			case WITHPTR:
+			case FFUNC:
+			case FPROC:
 				printf("\t%d,%d", cbn, v);
 				break;
 			case SCAL:

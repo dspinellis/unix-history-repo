@@ -1,22 +1,23 @@
-SCCSID = "@(#)pimakefile 1.8 %G%"
+SCCSID = "@(#)pimakefile 1.9 %G%"
 
 MKSTR = /usr/ucb/mkstr
 EYACC = /usr/ucb/eyacc
 RM = -rm -f
-GET = sccs get
+GET = sccs -d${SRCDIR} get
 
 CFLAGS = -O -w
 LDFLAGS = -z
 
-INSTALLDIR = /usr/lib
+SRCDIR = /usr/src/cmd/pc0
+INSTALLDIR = /usr/ucb
 LIBDIR = /usr/lib
 TMPDIR = tmp
 
-ERRORSTRINGS = pc2.0strings
+ERRORSTRINGS = pi2.0strings
 
 SRCS =	ato.c \
 	call.c case.c clas.c const.c conv.c cset.c \
-	error.c fdec.c func.c gen.c hash.c \
+	error.c fdec.c flvalue.c func.c gen.c hash.c \
 	lab.c lookup.c lval.c stklval.c \
 	main.c nl.c proc.c put.c \
 	rec.c rval.c stkrval.c\
@@ -25,17 +26,16 @@ SRCS =	ato.c \
 	TRdata.c \
 	treen.c putn.c yycopy.c \
 	yycosts.c yyerror.c yyget.c yyid.c yylex.c yymain.c yyoptions.c \
-	yypanic.c yyparse.c yyprint.c yyput.c yyrecover.c yyseman.c yytree.c \
-	p2put.c pcforop.c stab.c pcproc.c pcfunc.c pccaseop.c pclval.c
+	yypanic.c yyparse.c yyprint.c yyput.c yyrecover.c yyseman.c yytree.c
 
-HDRS =	0.h OPnames.h align.h iorec.h objfmt.h pstab.h pc.h pcops.h \
-	send.h tree.h whoami.h yy.h
+HDRS =	0.h OPnames.h align.h iorec.h objfmt.h send.h tree.h yy.h \
+	pc.h pcops.h
 
 OTHERS = pas.y opc.c version.c gram pic.c
 
 OBJS =	ato.o \
 	call.o case.o clas.o const.o conv.o cset.o \
-	error.o fdec.o func.o gen.o hash.o \
+	error.o fdec.o flvalue.o func.o gen.o hash.o \
 	lab.o lookup.o lval.o stklval.o \
 	main.o nl.o proc.o put.o \
 	rec.o rval.o stkrval.o\
@@ -45,14 +45,13 @@ OBJS =	ato.o \
 	treen.o putn.o yycopy.o \
 	y.tab.o \
 	yycosts.o yyerror.o yyget.o yyid.o yylex.o yymain.o yyoptions.o \
-	yypanic.o yyparse.o yyprint.o yyput.o yyrecover.o yyseman.o yytree.o \
-	p2put.o pcforop.o stab.o pcproc.o pcfunc.o pccaseop.o pclval.o
+	yypanic.o yyparse.o yyprint.o yyput.o yyrecover.o yyseman.o yytree.o
 
 a.out: ${OBJS} version
 	./version > Version.c
 	${CC} ${CFLAGS} ${LDFLAGS} ${OBJS} Version.c
 
-sources: ${SRCS} ${HDRS} ${OTHERS}
+sources: whoami.h ${SRCS} ${HDRS} ${OTHERS}
 	
 ${SRCS} ${HDRS} ${OTHERS}:
 	${GET} ${REL} $@
@@ -62,6 +61,10 @@ ${SRCS} ${HDRS} ${OTHERS}:
 	${MKSTR} - ${ERRORSTRINGS} ${TMPDIR}/ $*.c
 	cd ${TMPDIR} ; ${CC} ${CFLAGS} -I.. -c $*.c ; mv $*.o  ../$*.o
 	${RM} ${TMPDIR}/$*.c
+
+whoami.h:
+	${GET} ${REL} piwhoami.h
+	mv piwhoami.h whoami.h
 
 y.tab.h: pas.y gram
 	${EYACC} pas.y > /dev/null
@@ -81,7 +84,7 @@ version: version.c
 
 clean:
 	${RM} *.o ${TMPDIR}/*.c
-	${RM} y.tab.h y.tab.c y.tab.out
+	${RM} whoami.h y.tab.h y.tab.c y.tab.out
 	${RM} ${ERRORSTRINGS}
 	${RM} version Version.c
 	${RM} a.out core *.list *.bak
@@ -96,15 +99,14 @@ print:	sources
 	@rm pic
 	@pr 0.h whoami.h main.c pas.y
 	@pr OPnames.h opcode.h tree.h
-	@pr pc.h
 	@pr [a-ln-x]*.c
 	@pr yy.h yy*.c
 
 install: a.out
 	sccs check
 	cp ${ERRORSTRINGS} ${LIBDIR}/${ERRORSTRINGS}
-	cp ${INSTALLDIR}/pc0 ${INSTALLDIR}/pc0.bak
-	cp a.out ${INSTALLDIR}/pc0
+	cp ${INSTALLDIR}/pi ${INSTALLDIR}/pi.bak
+	cp a.out ${INSTALLDIR}/pi
 
 depend:	sources
 	/bin/grep '^#[ 	]*include' *.h \
@@ -171,6 +173,13 @@ fdec.o: objfmt.h
 fdec.o: align.h
 fdec.o: pc.h
 fdec.o: pcops.h
+flvalue.o: whoami.h
+flvalue.o: 0.h
+flvalue.o: tree.h
+flvalue.o: opcode.h
+flvalue.o: objfmt.h
+flvalue.o: pc.h
+flvalue.o: pcops.h
 func.o: whoami.h
 func.o: 0.h
 func.o: tree.h
@@ -208,41 +217,6 @@ nl.o: 0.h
 nl.o: opcode.h
 nl.o: objfmt.h
 opc.o: OPnames.h
-p2put.o: whoami.h
-p2put.o: 0.h
-p2put.o: pcops.h
-p2put.o: pc.h
-pccaseop.o: whoami.h
-pccaseop.o: 0.h
-pccaseop.o: tree.h
-pccaseop.o: objfmt.h
-pccaseop.o: pcops.h
-pccaseop.o: pc.h
-pcforop.o: whoami.h
-pcforop.o: 0.h
-pcforop.o: opcode.h
-pcforop.o: tree.h
-pcforop.o: pc.h
-pcforop.o: pcops.h
-pcfunc.o: whoami.h
-pcfunc.o: 0.h
-pcfunc.o: tree.h
-pcfunc.o: opcode.h
-pcfunc.o: pc.h
-pcfunc.o: pcops.h
-pclval.o: whoami.h
-pclval.o: 0.h
-pclval.o: tree.h
-pclval.o: opcode.h
-pclval.o: objfmt.h
-pclval.o: pc.h
-pclval.o: pcops.h
-pcproc.o: whoami.h
-pcproc.o: 0.h
-pcproc.o: tree.h
-pcproc.o: opcode.h
-pcproc.o: pc.h
-pcproc.o: pcops.h
 pic.o: OPnames.h
 proc.o: whoami.h
 proc.o: 0.h
@@ -266,10 +240,6 @@ rval.o: opcode.h
 rval.o: objfmt.h
 rval.o: pc.h
 rval.o: pcops.h
-stab.o: whoami.h
-stab.o: 0.h
-stab.o: pstab.h
-stab.o: pc.h
 stat.o: whoami.h
 stat.o: 0.h
 stat.o: tree.h

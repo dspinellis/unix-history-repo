@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)put.c 1.2 %G%";
+static	char sccsid[] = "@(#)put.c 1.3 %G%";
 
 #include "whoami.h"
 #include "opcode.h"
@@ -86,6 +86,7 @@ put(a)
 		case O_CASE1OP:
 		case O_CASE2OP:
 		case O_CASE4OP:
+		case O_FRTN:
 		case O_WRITES:
 		case O_WRITEF:
 		case O_MAX:
@@ -241,7 +242,10 @@ around:
 #endif
 			word( ( short ) *( ( long * ) &p[1] ) );
 			return (oldlc);
-		case O_POP:
+		case O_FCALL:
+			if (p[1] == 0)
+				goto longgen;
+			/* and fall through */
 		case O_PUSH:
 			if (p[1] == 0)
 				return (oldlc);
@@ -254,8 +258,8 @@ around:
 			goto longgen;
 		case O_TRA4:
 		case O_CALL:
+		case O_FSAV:
 		case O_GOTO:
-		case O_TRACNT:
 		case O_NAM:
 		case O_READE:
 			/* absolute long addressing */

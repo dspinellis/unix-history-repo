@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)p2put.c 1.1 %G%";
+static	char sccsid[] = "@(#)p2put.c 1.2 %G%";
 
     /*
      *	functions to help pi put out
@@ -452,6 +452,13 @@ p2type( np )
 		     * which return integers (whether you look at them or not)
 		     */
 		return ADDTYPE( ADDTYPE( P2INT , P2FTN ) , P2PTR );
+	    case FFUNC :
+	    case FPROC :
+		    /*
+		     *	formal procedures and functions are pointers
+		     *	to structures which describe their environment.
+		     */
+		return ADDTYPE( P2PTR , P2STRTY );
 	    default :
 		fprintf( stderr , "[p2type] np -> class %d\n" , np -> class );
 		panic( "p2type" );

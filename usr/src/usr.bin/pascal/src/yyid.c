@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)yyid.c 1.1 %G%";
+static	char sccsid[] = "@(#)yyid.c 1.2 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -106,7 +106,9 @@ yybadref(p, line)
 	p->chain = udp;
 }
 
-#define	varkinds	((1<<CONST)|(1<<VAR)|(1<<REF)|(1<<ARRAY)|(1<<PTR)|(1<<RECORD)|(1<<FIELD)|(1<<FUNC)|(1<<FVAR))
+#define	varkinds	((1<<CONST)|(1<<VAR)|(1<<REF)|(1<<ARRAY)|(1<<PTR) \
+			|(1<<RECORD)|(1<<FIELD)|(1<<FUNC)|(1<<FVAR) \
+			|(1<<FFUNC)|(1<<PROC)|(1<<FPROC))
 /*
  * Is the symbol in the p entry of the namelist
  * even possibly a kind kind?  If not, update
@@ -139,11 +141,13 @@ yyidok1(p, kind)
 
 	switch (kind) {
 		case FUNC:
-			if (p->class == FVAR)
-				return(1);
+			return (   p -> class == FUNC
+				|| p -> class == FVAR
+				|| p -> class == FFUNC );
+		case PROC:
+			return ( p -> class == PROC || p -> class == FPROC );
 		case CONST:
 		case TYPE:
-		case PROC:
 		case FIELD:
 			return (p->class == kind);
 		case VAR:
@@ -171,7 +175,11 @@ yyisvar(p, class)
 		 * parameterless functions only.
 		 */
 		case FUNC:
+		case FFUNC:
 			return (class == NIL || (p->type != NIL && p->type->class == class));
+		case PROC:
+		case FPROC:
+			return ( class == NIL );
 	}
 	return (0);
 }
