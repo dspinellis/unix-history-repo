@@ -3,13 +3,13 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	2.1	(Berkeley)	%G%
+#	@(#)Makefile	2.2	(Berkeley)	%G%
 #
 # optional flags are: MEASURE TESTING DEBUG
 
 CFLAGS= -O
 DESTDIR=
-MACHINE= vax
+MACHINE= `machine`
 LIBS=
 PROGRS=	timed timedc
 
@@ -23,14 +23,14 @@ SRCCS=	cmds.c cmdtab.c timedc.c
 
 OBJCS=	cmds.o cmdtab.o timedc.o
 
-COMMS=	byteorder.c measure.c ${MACHINE}/cksum.c
+COMMS=	byteorder.c measure.c cksum.${MACHINE}.c
 
-COMMO=	byteorder.o measure.o cksum.o
+COMMO=	byteorder.o measure.o cksum.${MACHINE}.o
 
 all:	${PROGRS}
 
-cksum.o:
-	cc ${CFLAGS} -c ${MACHINE}/$*.c
+cksum.${MACHINE}.o:
+	cc ${CFLAGS} -c $*.c
 
 timed: 	${OBJDS} ${COMMO}
 	cc ${CFLAGS} ${OBJDS} ${COMMO} ${LIBS} -o timed 
@@ -116,7 +116,8 @@ master.o: /usr/include/sys/types.h /usr/include/stdio.h /usr/include/sys/time.h
 master.o: /usr/include/time.h /usr/include/errno.h /usr/include/syslog.h
 master.o: /usr/include/sys/socket.h /usr/include/netinet/in.h
 master.o: /usr/include/netdb.h /usr/include/arpa/inet.h
-master.o: /usr/include/protocols/timed.h /usr/include/setjmp.h
+master.o: /usr/include/protocols/timed.h /usr/include/sys/file.h
+master.o: /usr/include/setjmp.h /usr/include/utmp.h
 networkdelta.o: networkdelta.c ./globals.h /usr/include/sys/param.h
 networkdelta.o: /usr/include/machine/machparam.h /usr/include/signal.h
 networkdelta.o: /usr/include/sys/types.h /usr/include/stdio.h
@@ -146,9 +147,9 @@ timed.o: /usr/include/time.h /usr/include/errno.h /usr/include/syslog.h
 timed.o: /usr/include/sys/socket.h /usr/include/netinet/in.h
 timed.o: /usr/include/netdb.h /usr/include/arpa/inet.h
 timed.o: /usr/include/protocols/timed.h /usr/include/net/if.h
-timed.o: /usr/include/sys/file.h /usr/include/sys/ioctl.h
-timed.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-timed.o: /usr/include/setjmp.h
+timed.o: /usr/include/net/if_arp.h /usr/include/sys/file.h
+timed.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
+timed.o: /usr/include/sys/ttydev.h /usr/include/setjmp.h
 byteorder.o: byteorder.c ./globals.h /usr/include/sys/param.h
 byteorder.o: /usr/include/machine/machparam.h /usr/include/signal.h
 byteorder.o: /usr/include/sys/types.h /usr/include/stdio.h
@@ -165,7 +166,7 @@ measure.o: /usr/include/netinet/in.h /usr/include/netdb.h
 measure.o: /usr/include/arpa/inet.h /usr/include/protocols/timed.h
 measure.o: /usr/include/netinet/in_systm.h /usr/include/netinet/ip.h
 measure.o: /usr/include/netinet/ip_icmp.h
-cksum.o: vax/cksum.c /usr/include/sys/types.h
+cksum.tahoe.o: cksum.tahoe.c /usr/include/sys/types.h
 # DEPENDENCIES MUST END AT END OF FILE
 # IF YOU PUT STUFF HERE IT WILL GO AWAY
 # see make depend above
