@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)parseaddr.c	4.2		%G%);
+SCCSID(@(#)parseaddr.c	4.3		%G%);
 
 /*
 **  PARSEADDR -- Parse an address
@@ -166,6 +166,7 @@ parseaddr(addr, a, copyf, delim)
 **		addr -- the name to chomp.
 **		delim -- the delimiter for the address, normally
 **			'\0' or ','; \0 is accepted in any case.
+**			If '\t' then we are reading the .cf file.
 **
 **	Returns:
 **		A pointer to a vector of tokens.
@@ -252,13 +253,15 @@ prescan(addr, delim)
 			/* store away any old lookahead character */
 			if (c != NOCHAR)
 			{
-				/* squirrel it away */
+				/* see if there is room */
 				if (q >= &buf[sizeof buf - 5])
 				{
 					usrerr("Address too long");
 					DelimChar = p;
 					return (NULL);
 				}
+
+				/* squirrel it away */
 				*q++ = c;
 			}
 
@@ -266,13 +269,14 @@ prescan(addr, delim)
 			c = *p++;
 			if (c == '\0')
 				break;
+			c &= ~0200;
+
 # ifdef DEBUG
 			if (tTd(22, 101))
 				printf("c=%c, s=%d; ", c, state);
 # endif DEBUG
 
 			/* chew up special characters */
-			c &= ~0200;
 			*q = '\0';
 			if (bslashmode)
 			{
@@ -984,6 +988,7 @@ remotename(name, m, senderaddress, canonical)
 {
 	register char **pvp;
 	char *fancy;
+	register char *p;
 	extern char *macvalue();
 	char *oldg = macvalue('g', CurEnv);
 	static char buf[MAXNAME];
@@ -1072,12 +1077,19 @@ remotename(name, m, senderaddress, canonical)
 
 	/*
 	**  Now restore the comment information we had at the beginning.
+	**	Make sure that any real '$' characters in the input are
+	**	not accidently interpreted as macro expansions by quoting
+	**	them before expansion.
 	*/
 
 	cataddr(pvp, lbuf, sizeof lbuf);
+	for (p = lbuf; *p != '\0'; p++)
+		if (*p == '$')
+			*p |= 0200;
 	define('g', lbuf, CurEnv);
 	expand(fancy, buf, &buf[sizeof buf - 1], CurEnv);
 	define('g', oldg, CurEnv);
+	stripquotes(buf, FALSE);
 
 # ifdef DEBUG
 	if (tTd(12, 1))
