@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)conf.h	5.9 (Berkeley) %G%
+ *	@(#)conf.h	5.10 (Berkeley) %G%
  *
  *  Sendmail
  *  Copyright (c) 1983  Eric P. Allman
