@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)inetd.c	5.31 (Berkeley) %G%";
+static char sccsid[] = "@(#)inetd.c	5.32 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -1026,7 +1026,9 @@ machtime()
 			fprintf(stderr, "Unable to get time of day\n");
 		return (0L);
 	}
-	return (htonl((long)tv.tv_sec + 2208988800));
+#define	OFFSET ((u_long)25567 * 24*60*60)
+	return (htonl((long)(tv.tv_sec + OFFSET)));
+#undef OFFSET
 }
 
 /* ARGSUSED */
