@@ -1,4 +1,4 @@
-/*	in_pcb.c	4.34	82/10/20	*/
+/*	in_pcb.c	4.35	82/10/30	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -78,12 +78,9 @@ in_pcbbind(inp, nam)
 	}
 	lport = sin->sin_port;
 	if (lport) {
-		u_short aport = lport;
+		u_short aport = htons(lport);
 		int wild = 0;
 
-#if vax || pdp11 || ns16032
-		aport = htons(aport);
-#endif
 		/* GROSS */
 		if (aport < IPPORT_RESERVED && u.u_uid != 0)
 			return (EACCES);

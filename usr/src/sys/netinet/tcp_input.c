@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.81	82/10/20	*/
+/*	tcp_input.c	1.82	82/10/30	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -72,9 +72,7 @@ tcp_input(m0)
 		ti->ti_next = ti->ti_prev = 0;
 		ti->ti_x1 = 0;
 		ti->ti_len = (u_short)tlen;
-#if vax || pdp11 || ns16032
 		ti->ti_len = htons((u_short)ti->ti_len);
-#endif
 		if (ti->ti_sum = in_cksum(m, len)) {
 			tcpstat.tcps_badsum++;
 			if (tcpprintfs)
@@ -120,7 +118,6 @@ tcp_input(m0)
 	m->m_off += off;
 	m->m_len -= off;
 
-#if vax || pdp11 || ns16032
 	/*
 	 * Convert TCP protocol specific fields to host format.
 	 */
@@ -128,7 +125,6 @@ tcp_input(m0)
 	ti->ti_ack = ntohl(ti->ti_ack);
 	ti->ti_win = ntohs(ti->ti_win);
 	ti->ti_urp = ntohs(ti->ti_urp);
-#endif
 
 	/*
 	 * Locate pcb for segment.
@@ -756,9 +752,7 @@ tcp_dooptions(tp, om)
 			if (optlen != 4)
 				continue;
 			tp->t_maxseg = *(u_short *)(cp + 2);
-#if vax || pdp11 || ns16032
 			tp->t_maxseg = ntohs((u_short)tp->t_maxseg);
-#endif
 			break;
 		}
 	}

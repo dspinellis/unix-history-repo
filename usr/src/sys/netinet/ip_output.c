@@ -1,4 +1,4 @@
-/*	ip_output.c	1.40	82/10/20	*/
+/*	ip_output.c	1.41	82/10/30	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -92,10 +92,8 @@ gotif:
 	 * If small enough for interface, can just send directly.
 	 */
 	if (ip->ip_len <= ifp->if_mtu) {
-#if vax || pdp11 || ns16032
 		ip->ip_len = htons((u_short)ip->ip_len);
 		ip->ip_off = htons((u_short)ip->ip_off);
-#endif
 		ip->ip_sum = 0;
 		ip->ip_sum = in_cksum(m, hlen);
 		error = (*ifp->if_output)(ifp, m, dst);
@@ -147,18 +145,14 @@ gotif:
 			mhip->ip_off |= IP_MF;
 		}
 		mhip->ip_len += sizeof (struct ip);
-#if vax || pdp11 || ns16032
 		mhip->ip_len = htons((u_short)mhip->ip_len);
-#endif
 		mh->m_next = m_copy(m, off, len);
 		if (mh->m_next == 0) {
 			(void) m_free(mh);
 			error = ENOBUFS;	/* ??? */
 			goto bad;
 		}
-#if vax || pdp11 || ns16032
 		mhip->ip_off = htons((u_short)mhip->ip_off);
-#endif
 		mhip->ip_sum = 0;
 		mhip->ip_sum = in_cksum(mh, hlen);
 		if (error = (*ifp->if_output)(ifp, mh, dst))

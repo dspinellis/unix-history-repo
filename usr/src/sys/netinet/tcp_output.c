@@ -1,4 +1,4 @@
-/*	tcp_output.c	4.47	82/10/17	*/
+/*	tcp_output.c	4.48	82/10/30	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -162,10 +162,8 @@ send:
 	 */
 	ti->ti_seq = tp->snd_nxt;
 	ti->ti_ack = tp->rcv_nxt;
-#if vax || pdp11 || ns16032
 	ti->ti_seq = htonl(ti->ti_seq);
 	ti->ti_ack = htonl(ti->ti_ack);
-#endif
 	/*
 	 * Before ESTABLISHED, force sending of initial options
 	 * unless TCP set to not do any options.
@@ -176,9 +174,7 @@ send:
 		opt = tcp_initopt;
 		optlen = sizeof (tcp_initopt);
 		*(u_short *)(opt + 2) = MIN(so->so_rcv.sb_hiwat / 2, 1024);
-#if vax || pdp11 || ns16032
 		*(u_short *)(opt + 2) = htons(*(u_short *)(opt + 2));
-#endif
 	} else {
 		if (tp->t_tcpopt == 0)
 			goto noopt;
@@ -211,16 +207,10 @@ noopt:
 	if (win < so->so_rcv.sb_hiwat / 4)	/* avoid silly window */
 		win = 0;
 	if (win > 0)
-#if vax || pdp11 || ns16032
 		ti->ti_win = htons((u_short)win);
-#else
-		ti->ti_win = win;
-#endif
 	if (SEQ_GT(tp->snd_up, tp->snd_nxt)) {
 		ti->ti_urp = tp->snd_up - tp->snd_nxt;
-#if vax || pdp11 || ns16032
 		ti->ti_urp = htons(ti->ti_urp);
-#endif
 		ti->ti_flags |= TH_URG;
 	} else
 		/*
@@ -244,9 +234,7 @@ noopt:
 	 */
 	if (len + optlen) {
 		ti->ti_len = sizeof (struct tcphdr) + optlen + len;
-#if vax || pdp11 || ns16032
 		ti->ti_len = htons((u_short)ti->ti_len);
-#endif
 	}
 	ti->ti_sum = in_cksum(m, sizeof (struct tcpiphdr) + (int)optlen + len);
 
