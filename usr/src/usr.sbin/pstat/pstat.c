@@ -11,7 +11,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pstat.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)pstat.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -116,6 +116,10 @@ struct nlist nl[] = {
 	{ "_vx_tty" },
 #define	SNVX	(SNPTY+2)
 	{ "_nvx" },
+#define	SMP	(SNPTY+3)
+	{ "_mp_tty" },
+#define	SNMP	(SNPTY+4)
+	{ "_nmp" },
 #endif
 	{ "" }
 };
@@ -478,6 +482,8 @@ dotty()
 #ifdef tahoe
 	if (nl[SNVX].n_type != 0)
 		dottytype("vx", SVX, SNVX);
+	if (nl[SNMP].n_type != 0)
+		dottytype("mp", SMP, SNMP);
 #endif
 	if (nl[SNPTY].n_type != 0)
 		dottytype("pty", SPTY, SNPTY);
