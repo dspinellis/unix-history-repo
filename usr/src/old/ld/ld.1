@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ld.1	4.1 (Berkeley) %G%
+.\"	@(#)ld.1	5.1 (Berkeley) %G%
 .\"
-.TH LD 1 VAX-11
+.TH LD 1 "18 January 1983"
 .UC 4
 .SH NAME
 ld \- link editor
@@ -216,7 +216,7 @@ a text and data segment each of which have size a multiple of 1024 bytes
 (being padded out with nulls in the file if necessary).
 With this format the first few BSS segment symbols may actually appear
 (from the output of
-.IR size (2))
+.IR size (1))
 to live in the data segment;
 this to avoid wasting the space resulting from data segment size roundup.
 .SH FILES
@@ -232,3 +232,7 @@ a.out	output file
 as(1), ar(1), cc(1), ranlib(1)
 .SH BUGS
 There is no way to force data to be page aligned.
+.I Ld
+pads images which are to be demand loaded from
+the file system to the next
+page boundary to avoid a bug in the system.
