@@ -36,7 +36,7 @@
 
 
 
-SCCSID(@(#)conf.c	3.52		%G%);
+SCCSID(@(#)conf.c	3.53		%G%);
 
 
 
@@ -68,7 +68,7 @@ struct hdrinfo	HdrInfo[] =
 	"received-date",	H_CHECK,		M_LOCAL,
 	"received-from",	H_CHECK,		M_LOCAL,
 	"precedence",		0,			0,
-	"mail-from",		H_FORCE,		0,
+	"received",		H_FORCE,		0,
 	"via",			H_FORCE,		0,
 	NULL,			0,			0,
 };
