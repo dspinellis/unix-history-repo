@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)ttinit.c	3.4 83/08/15";
+static	char *sccsid = "@(#)ttinit.c	3.5 83/08/15";
 #endif
 
 #include "ww.h"
@@ -21,7 +21,7 @@ ttinit()
 		p++;
 	for (q = p; *q && *q != '|' && *q != ':'; q++)
 		;
-	if (q != p && (t = malloc(q - p + 1)) != 0) {
+	if (q != p && (t = malloc((unsigned) (q - p + 1))) != 0) {
 		wwterm = t;
 		while (p < q)
 			*t++ = *p++;
