@@ -1,14 +1,11 @@
 .\" Copyright (c) 1983, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)sccs.1	2.9 (Berkeley) %G%
+.\"	@(#)sccs.1	2.10 (Berkeley) %G%
 .\"
-.Vx
-.Vx
 .Dd 
-.Os
 .Dt SCCS 1
 .Os BSD 4.2
 .Sh NAME
@@ -22,8 +19,8 @@ subsystem
 .Op Fl d Ar path
 .Op Fl p Ar path
 .Ar command
-.Op  flags
-.Ar
+.Op flags
+.Op Ar
 .Sh DESCRIPTION
 .Nm Sccs
 is a front end to the
@@ -69,12 +66,12 @@ several
 .Dq pseudo-commands
 can be issued.
 These are:
-.Tw Fl
-.Tp Ic edit
+.Bl -tag -width deledit
+.It Cm edit
 Equivalent
 to 
 .Dq Li get \-e .
-.Tp Ic delget
+.It Cm delget
 Perform a delta on the named files and
 then get new versions.
 The new versions will have id keywords expanded, and
@@ -97,13 +94,10 @@ and the
 .Fl l ,
 .Fl s ,
 .\" anybody who has a bad xterm which is almost anyone
-.if n \{\
-.	br
-.\}
 and
 .Fl x
 flags will be passed to get.
-.Tp Ic deledit
+.It Cm deledit
 Equivalent
 to
 .Nm delget
@@ -126,7 +120,7 @@ and
 are
 passed to
 .Nm edit .
-.Tp Ic create
+.It Cm create
 Creates
 an
 .Li SCCS
@@ -142,7 +136,7 @@ These should be removed when you are convinced that the
 .Li SCCS
 files
 have been created successfully.
-.Tp Ic fix
+.It Cm fix
 Must
 be followed by a
 .Fl r
@@ -152,7 +146,7 @@ leaves you with a copy of the delta
 with the changes that were in it.  It
 is useful for fixing small compiler bugs, etc.
 Since it doesn't leave audit trails, it should be used carefully.
-.Tp Ic clean
+.It Cm clean
 This routine removes everything from the current directory
 that can be recreated from SCCS files.
 It will not remove any files being edited.
@@ -162,7 +156,7 @@ flag is given, branches are ignored in the determination of
 whether they are being edited; this
 is dangerous if you are keeping the branches in the
 same directory.
-.Tp Ic unedit
+.It Cm unedit
 This
 is the opposite of an
 .Nm edit
@@ -171,21 +165,19 @@ a
 .Dq Li get \-e .
 It should be used with extreme caution, since
 any changes you made since the get will be irretrievably lost.
-.Tp Ic info
+.It Cm info
 Gives a listing of all files being edited.
 If the
 .Fl b
 flag
 is given, branches (i.e.,
-.Cx Li SID
-.Cx \&\'s
-.Cx
+.Li SID Ns \&\'s 
 with two or fewer components)
 are ignored.  If the
 .Fl u
 flag is given (with an optional argument) then
 only files being edited by you (or the named user) are listed.
-.Tp Ic check
+.It Cm check
 Like
 .Nm info
 except that nothing is printed if nothing is being edited, and
@@ -195,7 +187,7 @@ The intent is to have this included in an
 entry in a makefile to insure that everything is included into the
 .Li SCCS
 file before a version is installed.
-.Tp Ic tell
+.It Cm tell
 Gives a newline-separated list of the files being edited
 on the standard output.  Takes the
 .Fl b
@@ -205,7 +197,7 @@ flags like
 .Nm info
 and
 .Nm check .
-.Tp Ic diffs
+.It Cm diffs
 Gives a
 .Nm diff
 listing between the current version of the
@@ -243,11 +235,11 @@ flag is passed to
 .Nm diff
 as
 .Fl c .
-.Tp Ic print
+.It Cm print
 This command prints out verbose information
 about the named files.
 .Pp
-.Tp Fl r
+.It Fl r
 Runs
 .Nm sccs
 as the real user rather than as whatever effective user
@@ -255,7 +247,7 @@ as the real user rather than as whatever effective user
 is
 .Dq Li set user id
 to.
-.Tp Fl d
+.It Fl d
 Specifies a root directory for the
 .Li SCCS
 files.
@@ -266,8 +258,8 @@ is set,
 it will be used to determine the 
 .Fl d
 flag.
-.Tp Fl p
-flag defines the pathname of the directory in which the
+.It Fl p
+Defines the pathname of the directory in which the
 .Li SCCS
 files will be found;
 .Dq Li SCCS
@@ -339,8 +331,8 @@ file if it does not already exist:
 .Dl $(SRCS):
 .Dl \&\tsccs get $(REL) $@
 .Sh ENVIRONMENT
-.Tw Ar
-.Tp Ev PROJECT
+.Bl -tag -width Ar
+.It Ev PROJECT
 The PROJECT environment variable is checked by the
 .Fl d
 flag.  If
@@ -351,7 +343,7 @@ examined for a subdirectory
 or
 .Dq Li source .
 If such a directory is found, it is used.
-.Tp
+.El
 .Sh SEE ALSO
 .Xr what 1
 .Xr admin SCCS ,
@@ -363,12 +355,16 @@ If such a directory is found, it is used.
 .Xr prt SCCS ,
 .Xr rmdel SCCS ,
 .Xr sccsdiff SCCS ,
-.br
-Eric Allman,
-.Em An Introduction to the Source Code Control System
+.Rs
+.%A Eric Allman
+.%T "An Introduction to the Source Code Control System"
+.Re
 .Sh HISTORY
-.Nm Sccs
-appeared in 4.3 BSD.
+The
+.Nm sccs
+command
+appeared in
+.Bx 4.3 .
 .Sh BUGS
 It should be able to take directory arguments on pseudo-commands
 like the
