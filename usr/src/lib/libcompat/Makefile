@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.6 (Berkeley) %G%
+#	@(#)Makefile	5.7 (Berkeley) %G%
 
 LIB=compat
 CFLAGS+=-DLIBC_SCCS -DSYSLIBC_SCCS
@@ -21,14 +21,19 @@ MLINKS+=stty.3 gtty.3
 # compat 4.3 sources
 SRCS+=	ecvt.c gcvt.c lsearch.c rexec.c ruserpass.c sibuf.c sobuf.c strout.c
 
-.if (${MACHINE} == "tahoe")
-SRCS+=	nargs.s
-.elif (${MACHINE} == "vax")
-SRCS+=	nargs.s
+.if	(${MACHINE} == "hp300")
+SRCS+=	insque.s remque.s
+.elif	(${MACHINE} == "i386")
+SRCS+=	insque.c remque.c
+.elif	(${MACHINE} == "tahoe")
+SRCS+=	nargs.s insque.s remque.s
+.elif	(${MACHINE} == "vax")
+SRCS+=	nargs.s insque.s remque.s
 .endif
 
-MAN3+=	ecvt.0 lsearch.0 rexec.0
+MAN3+=	ecvt.0 insque.0 lsearch.0 rexec.0
 
 MLINKS+=ecvt.3 fcvt.3 ecvt.3 gcvt.3
+MLINKS+=insque.3 remque.3
 
 .include <bsd.lib.mk>
