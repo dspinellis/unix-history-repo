@@ -1,4 +1,4 @@
-/*	ufs_lookup.c	4.5	81/03/09	*/
+/*	ufs_lookup.c	4.6	81/04/28	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -32,6 +32,9 @@ int (*func)();
 	int i;
 	dev_t d;
 	off_t eo;
+#ifdef CHAOS
+	extern long cdevpath;
+#endif
 
 	/*
 	 * If name starts with '/' start from
@@ -59,6 +62,13 @@ cloop:
 	if(c == '\0')
 		return(dp);
 
+#ifdef CHAOS
+	if((dp->i_mode & IFMT) == IFCHR &&
+	   (cdevpath & (1 << major(dp->i_un.i_rdev)))) {
+		u.u_dirp--;
+		return(dp);
+	}
+#endif
 	/*
 	 * If there is another component,
 	 * Gather up name into
