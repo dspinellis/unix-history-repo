@@ -1,7 +1,6 @@
-static char sccsid[] = "@(#)nsh.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)nsh.c	4.2	(Berkeley)	%G%";
 
 # include "defs.h"
-# define FREELPR
 /*
 	nsh -c "comand to be executed"
 
@@ -39,7 +38,6 @@ struct {
 	"lpr",		20,	"/usr/bin/lpr",		"/bin/lpr",
 # endif
 	"netlog",	20,	"/usr/bin/netlog",	"/usr/ucb/netlog",
-	"vpr",		20,	"/usr/ucb/vpr",		"/usr/ucb/vpr",
 	"netq",		20,	"/usr/bin/netq",	"/usr/ucb/netq",
 	"news",		20,	"/usr/bin/news",	"/usr/ucb/news",
 	"ps",		20,	"/bin/ps",		"/usr/bin/ps",
@@ -93,7 +91,7 @@ main(argc,argv)
 	/*
 	fprintf(stderr,"%s\n",buf);
 	*/
-	execl("/bin/sh","sh","-c",buf,0);
+	execl(Bsh,"sh","-c",buf,0);
 	fprintf(stderr,"Execute of shell failed.\n");
 	exit(EX_UNAVAILABLE);
 	}
