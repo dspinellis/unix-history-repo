@@ -1,4 +1,4 @@
-/*	ts.c	4.3	81/03/22	*/
+/*	ts.c	4.4	81/12/01	*/
 
 /*
  * TS11 tape driver
@@ -19,7 +19,7 @@ struct	iob	ctsbuf;
 
 u_short	ts_uba;			/* Unibus address of ts structure */
 
-struct device *tsaddr = 0;
+struct tsdevice *tsaddr = 0;
 
 struct ts {
 	struct ts_cmd ts_cmd;
