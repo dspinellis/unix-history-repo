@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)restore.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)restore.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "restore.h"
@@ -190,11 +190,19 @@ nodeupdates(name, ino, type)
 			lookuptype = LINK;
 	}
 	/*
-	 * Check to see if the inode exists.
+	 * Check to see if the inode exists, and if one of its links
+	 * corresponds to the name (if one was found).
 	 */
 	ip = lookupino(ino);
-	if (ip != NIL)
+	if (ip != NIL) {
 		key |= INOFND;
+		for (ep = ip->e_links; ep != NIL; ep = ep->e_links) {
+			if (ep == np) {
+				ip = ep;
+				break;
+			}
+		}
+	}
 	/*
 	 * If both a name and an inode are found, but they do not
 	 * correspond to the same file, then both the inode that has
@@ -319,9 +327,22 @@ nodeupdates(name, ino, type)
 		break;
 
 	/*
-	 * A previously known file which is to be updated.
+	 * A previously known file which is to be updated. If it is a link,
+	 * then all names referring to the previous file must be removed
+	 * so that the subset of them that remain can be recreated.
 	 */
 	case ONTAPE|INOFND|NAMEFND:
+		if (lookuptype == LINK) {
+			removeleaf(np);
+			freeentry(np);
+			ep = addentry(name, ino, type|LINK);
+			if (type == NODE)
+			        newnode(ep);
+			ep->e_flags |= NEW|KEEP;
+			dprintf(stdout, "[%s] %s: %s|LINK\n", keyval(key), name,
+				flagvalues(ep));
+			break;
+		}
 		if (type == LEAF && lookuptype != LINK)
 			np->e_flags |= EXTRACT;
 		np->e_flags |= KEEP;
