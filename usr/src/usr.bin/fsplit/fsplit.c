@@ -275,7 +275,6 @@ char *s;
 	return(1);
 }
 
-		
 scan_name(s, ptr)
 char *s, *ptr;
 {
@@ -295,6 +294,7 @@ char *s, *ptr;
 	*sptr++ = '.';
 	*sptr++ = 'f';
 	*sptr++ = 0;
+	return(1);
 }
 
 char *functs(p)
