@@ -1,12 +1,24 @@
 INSTALLATION GUIDE
-README	5.3	85/01/22
+README	5.4	85/01/28
 
 This version is based on the "rti uucp" that was on the 4.2BSD tape.
 It contains many additional  features and fixes from Usenet,
-Tom Truscott, Guy Harris, and many others.
+Tom Truscott, Guy Harris, Lou Salkind, and many others.
 
 A few new subdirectories have been added. Do a "make mkdirs" to make
 sure that you have all of them.
+
+I recommend that you change the uucp mail handler in your sendmail.cf
+to something like:
+
+	# Muucp, P=/usr/bin/uux, F=sDFMhuU, S=13, R=23, M=100000,
+	# 	A=uux - -r $h!rmail ($u)
+	Muucp, P=/usr/bin/uux, F=sDFMhuU, S=13, R=23, M=100000,
+		A=uux - -r -z -a$f -gC $h!rmail ($u)
+The -a$f provides a return address in case mail fails (So It
+won't go to yourmachine!uucp anymore.) The -gC specifies a grade
+for mail. C is a good choice for mail. News should run at 'd'. This
+way, mail gets sent before news.
 
 The man pages now describe all the options for the various commands.
 make sure you read them. A complete list of differences is too big to consider.
