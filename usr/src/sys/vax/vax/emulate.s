@@ -1,8 +1,8 @@
 /*
- *	@(#)emulate.s	7.2 (Berkeley) %G%
+ *	@(#)emulate.s	7.3 (Berkeley) %G%
  */
 
-#ifdef VAX630
+#if VAX630 || VAX650
 /*
  * String instruction emulation - MicroVAX only.  These routines are called
  * from locore.s when an "emulate" fault occurs on the MicroVAX.  They are

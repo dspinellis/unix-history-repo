@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)machdep.c	7.14 (Berkeley) %G%
+ *	@(#)machdep.c	7.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -72,11 +72,11 @@ startup(firstaddr)
 	register caddr_t v;
 	int maxbufs, base, residual;
 
-#if VAX630
+#if VAX630 || VAX650
 	/*
  	 * Leave last 5k of phys. memory as console work area.
 	 */
-	if (cpu == VAX_630)
+	if (cpu == VAX_630 || cpu == VAX_650)
 		maxmem -= 10;
 #endif
 	/*
@@ -89,7 +89,7 @@ startup(firstaddr)
 	mtpr(TBIA, 0);
 	msgbufmapped = 1;
 
-#if VAX630
+#ifdef QBA
 #include "qv.h"
 #if NQV > 0
 	/*
@@ -663,12 +663,13 @@ tocons(c)
 
 	switch (cpu) {
 
-#if VAX8200 || VAX780 || VAX750 || VAX730 || VAX630
+#if VAX8200 || VAX780 || VAX750 || VAX730 || VAX630 || VAX650
 	case VAX_8200:
 	case VAX_780:
 	case VAX_750:
 	case VAX_730:
 	case VAX_630:
+	case VAX_650:
 		c |= TXDB_CONS;
 		break;
 #endif
@@ -871,12 +872,13 @@ todr()
 
 	switch (cpu) {
 
-#if VAX8600 || VAX8200 || VAX780 || VAX750 || VAX730
+#if VAX8600 || VAX8200 || VAX780 || VAX750 || VAX730 || VAX650
 	case VAX_8600:
 	case VAX_8200:
 	case VAX_780:
 	case VAX_750:
 	case VAX_730:
+	case VAX_650:
 		return (mfpr(TODR));
 #endif
 

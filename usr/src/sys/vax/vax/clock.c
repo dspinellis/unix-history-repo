@@ -1,9 +1,10 @@
+
 /*
  * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)clock.c	7.3 (Berkeley) %G%
+ *	@(#)clock.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -115,7 +116,7 @@ vaxstd_clkstartrt()
 }
 #endif
 
-#if VAX8600 || VAX780 || VAX750 || VAX730
+#if VAX8600 || VAX780 || VAX750 || VAX730 || VAX650
 vaxstd_clkread(base)
 	time_t base;
 {

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)autoconf.c	7.15 (Berkeley) %G%
+ *	@(#)autoconf.c	7.16 (Berkeley) %G%
  */
 
 /*
@@ -154,6 +154,11 @@ VAX 11/78%c, serial# %d(%d), hardware ECO level %d(%d)\n",
 		printf("MicroVAX-II\n");
 		break;
 #endif
+#if VAX650
+	case VAX_650:
+		printf("MicroVAX 3000, ucode rev %d\n", cpusid.cpu650.cp_urev);
+		break;
+#endif
 	}
 	for (ocp = percpu; ocp->pc_cputype; ocp++)
 		if (ocp->pc_cputype == cpusid.cpuany.cp_type) {
@@ -218,7 +223,7 @@ probeio(pcpu)
 
 		switch (iob->io_type) {
 
-#if VAX630
+#if VAX630 || VAX650
 		case IO_QBUS:
 			probeqbus((struct qbus *)iob->io_details);
 			break;

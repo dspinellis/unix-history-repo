@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)genassym.c	7.2 (Berkeley) %G%
+ *	@(#)genassym.c	7.3 (Berkeley) %G%
  */
 
 #define KERNEL
@@ -11,6 +11,7 @@
 #define	VAX750	1
 #define	VAX730	1
 #define	VAX630	1
+#define	VAX650	1
 
 #include "pte.h"
 
