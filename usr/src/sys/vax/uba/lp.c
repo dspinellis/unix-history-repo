@@ -1,12 +1,9 @@
-/*	lp.c	4.8	81/03/02	*/
+/*	lp.c	4.9	81/03/07	*/
 
 #include "lp.h"
-#if NLP11 > 0
+#if NLP > 0
 /*
  * LP-11 Line printer driver
- *
- * This driver is only set up to handle one printer;
- * thats all our user-level spoolers can handle anyways right now.
  *
  * This driver has been modified to work on printers where
  * leaving IENABLE set would cause continuous interrupts.
@@ -19,10 +16,9 @@
 #include "../h/systm.h"
 #include "../h/map.h"
 #include "../h/pte.h"
-#include "../h/uba.h"
+#include "../h/ubavar.h"
 #include "../h/ioctl.h"
 #include "../h/tty.h"
-#include "../h/lpio.h"
 
 #define	LPPRI	(PZERO+8)
 #define	IENABLE	0100
@@ -31,23 +27,33 @@
 #define	LPLWAT	650
 #define	LPHWAT	800
 
-struct lpregs {
+#define MAXCOL	132
+#define CAP	1
+
+#define LPUNIT(dev) (minor(dev) >> 3)
+
+struct lpdevice {
 	short	lpsr;
 	short	lpbuf;
 };
 
-struct {
-	struct	clist outq;
-	int	state;
-	int	physcol;
-	int	logcol;
-	int	physline;
-	struct	lpioctl lpio;
-	struct	buf *inbuf;
-} lp11;
-#define	flags	lpio.lp_flags
-#define	indent	lpio.lp_indent
-#define	maxcol	lpio.lp_maxcol
+struct lp_softc {
+	struct	clist sc_outq;
+	int	sc_state;
+	int	sc_physcol;
+	int	sc_logcol;
+	int	sc_physline;
+	char	sc_flags;
+	int	sc_lpchar;
+	struct	buf *sc_inbuf;
+} lp_softc[NLP];
+
+struct uba_device *lpinfo[NLP];
+
+int lpprobe(), lpattach(), lptout();
+u_short lpstd[] = { 0177514 };
+struct uba_driver lpdriver =
+	{ lpprobe, 0, lpattach, 0, lpstd, "lp", lpinfo };
 
 /* bits for state */
 #define	OPEN		1	/* device is open */
@@ -60,21 +66,32 @@ int	lptout();
 
 /*ARGSUSED*/
 lpopen(dev, flag)
+dev_t dev;
 {
+	register int unit;
+	register struct lpdevice *lpaddr;
+	register struct lp_softc *sc;
+	register struct uba_device *ui;
 
-	if (lp11.state&OPEN || LPADDR->lpsr&ERROR) {
+	if ((unit = LPUNIT(dev)) >= NLP)
+	{
+		u.u_error = ENXIO;
+		return;
+	}
+	sc = &lp_softc[unit];
+	ui = lpinfo[unit];
+	lpaddr = (struct lpdevice *) ui->ui_addr;
+	if (sc->sc_state&OPEN || lpaddr->lpsr&ERROR) {
 		u.u_error = EIO;
 		return;
 	}
-	lp11.state |= OPEN;
-	lp11.inbuf = geteblk();
-	lp11.flags = LPFLAGS;
-	lp11.indent = INDENT;
-	lp11.maxcol = MAXCOL;
+	sc->sc_state |= OPEN;
+	sc->sc_inbuf = geteblk();
+	sc->sc_flags = minor(dev) & 07;
 	spl4();
-	if ((lp11.state&TOUT) == 0) {
-		lp11.state |= TOUT;
-		timeout(lptout, 0, 10*hz);
+	if ((sc->sc_state&TOUT) == 0) {
+		sc->sc_state |= TOUT;
+		timeout(lptout, dev, 10*hz);
 	}
 	spl0();
 	lpcanon('\f');
@@ -82,33 +99,42 @@ lpopen(dev, flag)
 
 /*ARGSUSED*/
 lpclose(dev, flag)
+dev_t dev;
 {
+	register struct lp_softc *sc;
 
+	sc = &lp_softc[LPUNIT(dev)];
 	lpcanon('\f');
-	brelse(lp11.inbuf);
-	lp11.state &= ~OPEN;
+	brelse(sc->sc_inbuf);
+	sc->sc_state &= ~OPEN;
 }
 
-lpwrite()
+lpwrite(dev)
+register dev_t dev;
 {
-	register c, n;
+	register int n;
 	register char *cp;
+	register struct lp_softc *sc;
 
+	sc = &lp_softc[LPUNIT(dev)];
 	while (n = min(BSIZE, u.u_count)) {
-		cp = lp11.inbuf->b_un.b_addr;
+		cp = sc->sc_inbuf->b_un.b_addr;
 		iomove(cp, n, B_WRITE);
 		do
-			lpcanon(*cp++);
+			lpcanon(*cp++, dev);
 		while (--n);
 	}
 }
 
-lpcanon(c)
-register c;
+lpcanon(c, dev)
+register int c;
+register dev_t dev;
 {
 	register int logcol, physcol;
+	register struct lp_softc *sc;
 
-	if (lp11.flags&CAP) {
+	sc = &lp_softc[LPUNIT(dev)];
+	if (sc->sc_flags&CAP) {
 		register c2;
 
 		if (c>='a' && c<='z')
@@ -135,39 +161,39 @@ register c;
 			c2 = '^';
 
 		esc:
-			lpcanon(c2);
-			lp11.logcol--;
+			lpcanon(c2, dev);
+			sc->sc_logcol--;
 			c = '-';
 		}
 	}
-	logcol = lp11.logcol;
-	physcol = lp11.physcol;
+	logcol = sc->sc_logcol;
+	physcol = sc->sc_physcol;
 	if (c == ' ')
 		logcol++;
 	else switch(c) {
 
 	case '\t':
-		logcol = lp11.indent + ((logcol-lp11.indent+8) & ~7);
+		logcol = (logcol-8) & ~7;
 		break;
 
 	case '\f':
-		if (lp11.physline == 0 && physcol == 0)
+		if (sc->sc_physline == 0 && physcol == 0)
 			break;
 		/* fall into ... */
 
 	case '\n':
-		lpoutput(c);
+		lpoutput(c, dev);
 		if (c == '\f')
-			lp11.physline = 0;
+			sc->sc_physline = 0;
 		else
-			lp11.physline++;
+			sc->sc_physline++;
 		physcol = 0;
 		/* fall into ... */
 
 	case '\r':
-		logcol = lp11.indent;
+		logcol = 0;
 		spl4();
-		lpintr();
+		lpintr(dev);
 		spl0();
 		break;
 
@@ -178,123 +204,120 @@ register c;
 
 	default:
 		if (logcol < physcol) {
-			lpoutput('\r');
+			lpoutput('\r', dev);
 			physcol = 0;
 		}
-		if (logcol < lp11.maxcol) {
+		if (logcol < MAXCOL) {
 			while (logcol > physcol) {
 				lpoutput(' ');
 				physcol++;
 			}
-			lpoutput(c);
+			lpoutput(c, dev);
 			physcol++;
 		}
 		logcol++;
 	}
 	if (logcol > 1000)	/* ignore long lines  */
 		logcol = 1000;
-	lp11.logcol = logcol;
-	lp11.physcol = physcol;
+	sc->sc_logcol = logcol;
+	sc->sc_physcol = physcol;
 }
 
-lpoutput(c)
+lpoutput(c, dev)
+dev_t dev;
 {
+	register struct lp_softc *sc;
 
-	if (lp11.outq.c_cc >= LPHWAT) {
+	sc = &lp_softc[LPUNIT(dev)];
+	if (sc->sc_outq.c_cc >= LPHWAT) {
 		spl4();
-		lpintr();				/* unchoke */
-		while (lp11.outq.c_cc >= LPHWAT) {
-			lp11.state |= ASLP;		/* must be ERROR */
-			sleep((caddr_t)&lp11, LPPRI);
+		lpintr(dev);				/* unchoke */
+		while (sc->sc_outq.c_cc >= LPHWAT) {
+			sc->sc_state |= ASLP;		/* must be ERROR */
+			sleep((caddr_t)sc, LPPRI);
 		}
 		spl0();
 	}
-	while (putc(c, &lp11.outq))
+	while (putc(c, &sc->sc_outq))
 		sleep((caddr_t)&lbolt, LPPRI);
 }
 
-int	lpchar = -1;
-
-lpintr()
+lpintr(dev)
+dev_t dev;
 {
 	register int n;
-	int i;
+	register struct lp_softc *sc;
+	register struct lpdevice *lpaddr;
+	register struct uba_device *ui;
 
-	LPADDR->lpsr &= ~IENABLE;
-	n = lp11.outq.c_cc;
-	if (lpchar < 0)
-		lpchar = getc(&lp11);
-	while ((LPADDR->lpsr&DONE) && lpchar >= 0) {
-		LPADDR->lpbuf = lpchar;
-		lpchar = getc(&lp11);
+	sc = &lp_softc[LPUNIT(dev)];
+	ui = lpinfo[LPUNIT(dev)];
+	lpaddr = (struct lpdevice *) ui->ui_addr;
+	lpaddr->lpsr &= ~IENABLE;
+	n = sc->sc_outq.c_cc;
+	if (sc->sc_lpchar < 0)
+		sc->sc_lpchar = getc(&sc->sc_outq);
+	while ((lpaddr->lpsr&DONE) && sc->sc_lpchar >= 0) {
+		lpaddr->lpbuf = sc->sc_lpchar;
+		sc->sc_lpchar = getc(&sc->sc_outq);
 	}
-	lp11.state |= MOD;
-	if (lp11.outq.c_cc > 0 && (LPADDR->lpsr&ERROR)==0)
-		LPADDR->lpsr |= IENABLE;	/* ok and more to do later */
-	if (n>LPLWAT && lp11.outq.c_cc<=LPLWAT && lp11.state&ASLP) {
-		lp11.state &= ~ASLP;
-		wakeup((caddr_t)&lp11);		/* top half should go on */
+	sc->sc_state |= MOD;
+	if (sc->sc_outq.c_cc > 0 && (lpaddr->lpsr&ERROR)==0)
+		lpaddr->lpsr |= IENABLE;	/* ok and more to do later */
+	if (n>LPLWAT && sc->sc_outq.c_cc<=LPLWAT && sc->sc_state&ASLP) {
+		sc->sc_state &= ~ASLP;
+		wakeup((caddr_t)sc);		/* top half should go on */
 	}
 }
 
-lptout()
+lptout(dev)
+register dev_t dev;
 {
-	register short *sr;
+	register struct lp_softc *sc;
+	register struct uba_device *ui;
+	register struct lpdevice *lpaddr;
 
-	if ((lp11.state&MOD) != 0) {
-		lp11.state &= ~MOD;		/* something happened */
-		timeout(lptout, 0, 2*hz);	/* so don't sweat */
+	sc = &lp_softc[LPUNIT(dev)];
+	ui = lpinfo[LPUNIT(dev)];
+	lpaddr = (struct lpdevice *) ui->ui_addr;
+	if ((sc->sc_state&MOD) != 0) {
+		sc->sc_state &= ~MOD;		/* something happened */
+		timeout(lptout, dev, 2*hz);	/* so don't sweat */
 		return;
 	}
-	sr = &LPADDR->lpsr;
-	if ((lp11.state&OPEN) == 0) {
-		lp11.state &= ~TOUT;		/* no longer open */
-		*sr = 0;
+	if ((sc->sc_state&OPEN) == 0) {
+		sc->sc_state &= ~TOUT;		/* no longer open */
+		lpaddr->lpsr = 0;
 		return;
 	}
-	if (lp11.outq.c_cc && (*sr&DONE) && (*sr&ERROR)==0)
-		lpintr();			/* ready to go */
-	timeout(lptout, 0, 10*hz);
+	if (sc->sc_outq.c_cc && (lpaddr->lpsr&DONE) && (lpaddr->lpsr&ERROR)==0)
+		lpintr(dev);			/* ready to go */
+	timeout(lptout, dev, 10*hz);
 }
 
-/*ARGSUSED*/
-lpioctl(dev, cmd, addr, flag)
-	dev_t dev;
-	caddr_t addr;
+lpreset(uban)
+int uban;
 {
-	register int m;
-	struct lpioctl lpio;
+	register struct uba_device *ui;
+	register struct lpdevice *lpaddr;
+	register int unit;
 
-	switch (cmd) {
-
-	case LGETSTATE:
-		copyout((caddr_t)&lp11.lpio, addr, sizeof (lp11.lpio));
-		return;
-
-	case LSETSTATE:
-		m = copyin(addr, (caddr_t)&lpio, sizeof (lpio));
-		if (m < 0) {
-			u.u_error = EFAULT;
-			return;
-		}
-		if (lpio.lp_indent <= 0 || lpio.lp_indent >= lpio.lp_maxcol ||
-		    lpio.lp_ejline <= 2 || lpio.lp_ejline <= lpio.lp_skpline ||
-		    lpio.lp_skpline < 0 || lpio.lp_maxcol <= 10)
-			u.u_error = EINVAL;
-		else
-			lp11.lpio = lpio;
-		return;
-
-	default:
-		u.u_error = ENOTTY;
-		return;
+	for (unit = 0; unit < NLP; unit++)
+	{
+		ui = lpinfo[unit];
+		if (ui == 0 || ui->ui_ubanum != uban || ui->ui_alive == 0)
+			continue;
+		printf(" lp%d", unit);
+		lpaddr = (struct lpdevice *) ui->ui_addr;
+		lpaddr->lpsr |= IENABLE;
 	}
 }
 
-lpreset()
+lpattach(ui)
+struct uba_device *ui;
 {
+	register struct lp_softc *sc;
 
-	printf("lp ");
-	LPADDR->lpsr |= IENABLE;
+	sc = &lp_softc[ui->ui_unit];
+	sc->sc_lpchar = -1;
 }
-
