@@ -1,0 +1,8 @@
+# font family: Modern
+#
+# specify the name mapping from the IP metrics file to Troff metrics format
+#
+XEROX XC1-1-1 Modern			MR    xc1-1-1.map
+XEROX XC1-1-1 Modern-Italic		MI    xc1-1-1.map
+XEROX XC1-1-1 Modern-Bold		MB    xc1-1-1.map
+XEROX XC1-1-1 Modern-Bold-Italic	MX    xc1-1-1.map
