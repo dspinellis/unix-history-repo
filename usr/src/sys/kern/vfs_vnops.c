@@ -1,4 +1,4 @@
-/*	vfs_vnops.c	4.2	%G%	*/
+/*	vfs_vnops.c	4.3	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -10,6 +10,7 @@
 #include "../h/inode.h"
 #include "../h/reg.h"
 #include "../h/acct.h"
+#include "../h/mount.h"
 
 /*
  * Convert a user supplied
@@ -48,6 +49,7 @@ closef(fp)
 register struct file *fp;
 {
 	register struct inode *ip;
+	register struct mount *mp;
 	int flag, mode;
 	dev_t dev;
 	register int (*cfunc)();
@@ -61,7 +63,7 @@ register struct file *fp;
 	ip = fp->f_inode;
 	flag = fp->f_flag;
 	dev = (dev_t)ip->i_un.i_rdev;
-	mode = ip->i_mode;
+	mode = ip->i_mode & IFMT;
 
 	plock(ip);
 	fp->f_count = 0;
@@ -72,7 +74,7 @@ register struct file *fp;
 	}
 	iput(ip);
 
-	switch(mode&IFMT) {
+	switch(mode) {
 
 	case IFCHR:
 	case IFMPC:
@@ -80,6 +82,12 @@ register struct file *fp;
 		break;
 
 	case IFBLK:
+		/*
+		 * We don't want to really close the device if it is mounted
+		 */
+		for (mp = mount; mp < &mount[NMOUNT]; mp++)
+			if (mp->m_bufp != NULL && mp->m_dev == dev)
+				return;
 	case IFMPB:
 		cfunc = bdevsw[major(dev)].d_close;
 		break;
@@ -87,15 +95,22 @@ register struct file *fp;
 		return;
 	}
 
-	if (flag & FMP)
-		goto call;
+	if ((flag & FMP) == 0) {
+		for(fp=file; fp < &file[NFILE]; fp++)
+			if (fp->f_count && (ip=fp->f_inode)->i_un.i_rdev==dev &&
+			    (ip->i_mode&IFMT) == mode)
+				return;
 
-	for(fp=file; fp < &file[NFILE]; fp++)
-		if (fp->f_count && (ip=fp->f_inode)->i_un.i_rdev==dev &&
-		    (ip->i_mode&IFMT) == (mode&IFMT))
-			return;
+		if (mode == IFBLK) {
+			/*
+			 * on last close of a block device (that isn't mounted)
+			 * we must invalidate any in core blocks
+			 */
+			bflush(dev);
+			binval(dev);
+		}
+	}
 
-call:
 	(*cfunc)(dev, flag, fp);
 }
 
