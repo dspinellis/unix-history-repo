@@ -51,6 +51,7 @@
 #define PIO_FONT8x16	_IOW('c', 68, fnt16_t)
 #define GIO_FONT8x16	_IOR('c', 69, fnt16_t)
 #define CONS_GETINFO	_IOR('c', 73, vid_info_t)
+#define CONS_GETVERS	_IOR('c', 74, long)
 #define CONS_80x25TEXT	_IO('c', 102)
 #define CONS_80x50TEXT	_IO('c', 103)
 
