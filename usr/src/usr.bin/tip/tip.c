@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tip.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)tip.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -520,6 +520,7 @@ sname(s)
 }
 
 static char partab[0200];
+static int bits8;
 
 /*
  * Do a write to the remote machine with the correct parity.
@@ -536,10 +537,11 @@ pwrite(fd, buf, n)
 	extern int errno;
 
 	bp = buf;
-	for (i = 0; i < n; i++) {
-		*bp = partab[(*bp) & 0177];
-		bp++;
-	}
+	if (bits8 == 0)
+		for (i = 0; i < n; i++) {
+			*bp = partab[(*bp) & 0177];
+			bp++;
+		}
 	if (write(fd, buf, n) < 0) {
 		if (errno == EIO)
 			abort("Lost carrier.");
@@ -561,6 +563,11 @@ setparity(defparity)
 	if (value(PARITY) == NOSTR)
 		value(PARITY) = defparity;
 	parity = value(PARITY);
+	if (equal(parity, "none")) {
+		bits8 = 1;
+		return;
+	} else
+		bits8 = 0;
 	for (i = 0; i < 0200; i++)
 		partab[i] = evenpartab[i];
 	if (equal(parity, "even"))
@@ -570,7 +577,7 @@ setparity(defparity)
 			partab[i] ^= 0200;	/* reverse bit 7 */
 		return;
 	}
-	if (equal(parity, "none") || equal(parity, "zero")) {
+	if (equal(parity, "zero")) {
 		for (i = 0; i < 0200; i++)
 			partab[i] &= ~0200;	/* turn off bit 7 */
 		return;
