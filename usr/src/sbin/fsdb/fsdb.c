@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fsdb.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)fsdb.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -42,21 +42,14 @@ static char sccsid[] = "@(#)fsdb.c	5.5 (Berkeley) %G%";
 #include <sys/param.h>
 #include <sys/signal.h>
 #include <sys/file.h>
-#include <sys/time.h>
-#include <stdio.h>
-#include <setjmp.h>
-#include <paths.h>
-
-#ifndef NFS
-#include <sys/fs.h>
-#include <sys/inode.h>
 #include <sys/dir.h>
-#else
+#include <sys/time.h>
 #include <sys/vnode.h>
 #include <ufs/fs.h>
 #include <ufs/inode.h>
-#include <ufs/fsdir.h>
-#endif /*NFS */
+#include <stdio.h>
+#include <setjmp.h>
+#include <paths.h>
 
 /*
  * Defines from the 4.3-tahoe file system, for systems with the 4.2 or 4.3
