@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utility.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)utility.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #define PRINTOPTIONS
@@ -422,7 +422,11 @@ putf(cp, where)
 	char *slash;
 	time_t t;
 	char db[100];
+#ifdef	STREAMSPTY
+	extern char *index();
+#else
 	extern char *rindex();
+#endif
 
 	putlocation = where;
 
@@ -529,7 +533,7 @@ printsub(direction, pointer, length)
 	    length -= 2;
 	}
 	if (length < 1) {
-	    sprintf(nfrontp, "(Empty suboption???)");
+	    sprintf(nfrontp, "(Empty suboption??\?)");
 	    nfrontp += strlen(nfrontp);
 	    return;
 	}
@@ -555,7 +559,7 @@ printsub(direction, pointer, length)
 	    sprintf(nfrontp, "TERMINAL-SPEED");
 	    nfrontp += strlen(nfrontp);
 	    if (length < 2) {
-		sprintf(nfrontp, " (empty suboption???)");
+		sprintf(nfrontp, " (empty suboption??\?)");
 		nfrontp += strlen(nfrontp);
 		break;
 	    }
@@ -582,7 +586,7 @@ printsub(direction, pointer, length)
 	    sprintf(nfrontp, "TOGGLE-FLOW-CONTROL");
 	    nfrontp += strlen(nfrontp);
 	    if (length < 2) {
-		sprintf(nfrontp, " (empty suboption???)");
+		sprintf(nfrontp, " (empty suboption??\?)");
 		nfrontp += strlen(nfrontp);
 		break;
 	    }
@@ -609,7 +613,7 @@ printsub(direction, pointer, length)
 	    sprintf(nfrontp, "NAWS");
 	    nfrontp += strlen(nfrontp);
 	    if (length < 2) {
-		sprintf(nfrontp, " (empty suboption???)");
+		sprintf(nfrontp, " (empty suboption??\?)");
 		nfrontp += strlen(nfrontp);
 		break;
 	    }
@@ -641,7 +645,7 @@ printsub(direction, pointer, length)
 	    sprintf(nfrontp, "LINEMODE ");
 	    nfrontp += strlen(nfrontp);
 	    if (length < 2) {
-		sprintf(nfrontp, " (empty suboption???)");
+		sprintf(nfrontp, " (empty suboption??\?)");
 		nfrontp += strlen(nfrontp);
 		break;
 	    }
@@ -660,7 +664,7 @@ printsub(direction, pointer, length)
 	    common:
 		nfrontp += strlen(nfrontp);
 		if (length < 3) {
-		    sprintf(nfrontp, "(no option???)");
+		    sprintf(nfrontp, "(no option??\?)");
 		    nfrontp += strlen(nfrontp);
 		    break;
 		}
@@ -730,7 +734,7 @@ printsub(direction, pointer, length)
 		sprintf(nfrontp, "MODE ");
 		nfrontp += strlen(nfrontp);
 		if (length < 3) {
-		    sprintf(nfrontp, "(no mode???)");
+		    sprintf(nfrontp, "(no mode??\?)");
 		    nfrontp += strlen(nfrontp);
 		    break;
 		}
@@ -862,8 +866,12 @@ printsub(direction, pointer, length)
 	    nfrontp += strlen(nfrontp);
 	    break;
 
-	case TELOPT_ENVIRON:
-	    sprintf(nfrontp, "ENVIRON ");
+	case TELOPT_NEW_ENVIRON:
+	    sprintf(nfrontp, "NEW-ENVIRON ");
+	    goto env_common1;
+	case TELOPT_OLD_ENVIRON:
+	    sprintf(nfrontp, "OLD-ENVIRON");
+	env_common1:
 	    nfrontp += strlen(nfrontp);
 	    switch (pointer[1]) {
 	    case TELQUAL_IS:
@@ -875,18 +883,18 @@ printsub(direction, pointer, length)
 	    case TELQUAL_INFO:
 		sprintf(nfrontp, "INFO ");
 	    env_common:
-	    nfrontp += strlen(nfrontp);
+		nfrontp += strlen(nfrontp);
 		{
 		    register int noquote = 2;
 		    for (i = 2; i < length; i++ ) {
 			switch (pointer[i]) {
-			case ENV_VAR:
+			case NEW_ENV_VAR:
 			    sprintf(nfrontp, "\" VAR " + noquote);
 			    nfrontp += strlen(nfrontp);
 			    noquote = 2;
 			    break;
 
-			case ENV_VALUE:
+			case NEW_ENV_VALUE:
 			    sprintf(nfrontp, "\" VALUE " + noquote);
 			    nfrontp += strlen(nfrontp);
 			    noquote = 2;
@@ -934,7 +942,7 @@ printsub(direction, pointer, length)
 	    nfrontp += strlen(nfrontp);
 	
 	    if (length < 2) {
-		sprintf(nfrontp, " (empty suboption???)");
+		sprintf(nfrontp, " (empty suboption??\?)");
 		nfrontp += strlen(nfrontp);
 		break;
 	    }
@@ -950,7 +958,7 @@ printsub(direction, pointer, length)
 		    sprintf(nfrontp, "%d ", pointer[2]);
 		nfrontp += strlen(nfrontp);
 		if (length < 3) {
-		    sprintf(nfrontp, "(partial suboption???)");
+		    sprintf(nfrontp, "(partial suboption??\?)");
 		    nfrontp += strlen(nfrontp);
 		    break;
 		}
@@ -977,7 +985,7 @@ printsub(direction, pointer, length)
 			sprintf(nfrontp, "%d ", pointer[i]);
 		    nfrontp += strlen(nfrontp);
 		    if (++i >= length) {
-			sprintf(nfrontp, "(partial suboption???)");
+			sprintf(nfrontp, "(partial suboption??\?)");
 			nfrontp += strlen(nfrontp);
 			break;
 		    }
@@ -1015,7 +1023,7 @@ printsub(direction, pointer, length)
 	    sprintf(nfrontp, "ENCRYPT");
 	    nfrontp += strlen(nfrontp);
 	    if (length < 2) {
-		sprintf(nfrontp, " (empty suboption???)");
+		sprintf(nfrontp, " (empty suboption??\?)");
 		nfrontp += strlen(nfrontp);
 		break;
 	    }
@@ -1046,7 +1054,7 @@ printsub(direction, pointer, length)
 							"IS" : "REPLY");
 		nfrontp += strlen(nfrontp);
 		if (length < 3) {
-		    sprintf(nfrontp, " (partial suboption???)");
+		    sprintf(nfrontp, " (partial suboption??\?)");
 		    nfrontp += strlen(nfrontp);
 		    break;
 		}

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sys_term.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)sys_term.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -26,10 +26,11 @@ int	utmp_len = MAXHOSTNAMELEN;	/* sizeof(init_request.host) */
 #else	/* NEWINIT*/
 # ifdef	UTMPX
 # include <utmpx.h>
+struct	utmpx wtmp;
 # else
 # include <utmp.h>
-# endif /* UTMPX */
 struct	utmp wtmp;
+# endif /* UTMPX */
 
 int	utmp_len = sizeof(wtmp.ut_host);
 # ifndef PARENT_DOES_UTMP
@@ -622,6 +623,7 @@ tty_setlinemode(on)
 # endif
 #endif	/* TIOCEXT */
 }
+#endif	/* LINEMODE */
 
 	int
 tty_isecho()
@@ -632,7 +634,6 @@ tty_isecho()
 	return (termbuf.c_lflag & ECHO);
 #endif
 }
-#endif	/* LINEMODE */
 
 	int
 tty_flowmode()
@@ -675,7 +676,6 @@ tty_setecho(on)
 #endif
 }
 
-#if	defined(LINEMODE) && defined(KLUDGELINEMODE)
 	int
 tty_israw()
 {
@@ -685,7 +685,24 @@ tty_israw()
 	return(!(termbuf.c_lflag & ICANON));
 #endif
 }
-#endif	/* defined(LINEMODE) && defined(KLUDGELINEMODE) */
+
+#if	defined (AUTHENTICATION) && defined(NO_LOGIN_F) && defined(LOGIN_R)
+	int
+tty_setraw(on)
+{
+#  ifndef USE_TERMIO
+	if (on)
+		termbuf.sg.sg_flags |= RAW;
+	else
+		termbuf.sg.sg_flags &= ~RAW;
+#  else
+	if (on)
+		termbuf.c_lflag &= ~ICANON;
+	else
+		termbuf.c_lflag |= ICANON;
+#  endif
+}
+#endif
 
 	void
 tty_binaryin(on)
@@ -1103,8 +1120,17 @@ getptyslave()
 #endif	/* !defined(CRAY) || !defined(NEWINIT) */
 	if (net > 2)
 		(void) close(net);
-	if (pty > 2)
+#if	defined(AUTHENTICATION) && defined(NO_LOGIN_F) && defined(LOGIN_R)
+	/*
+	 * Leave the pty open so that we can write out the rlogin
+	 * protocol for /bin/login, if the authentication works.
+	 */
+#else
+	if (pty > 2) {
 		(void) close(pty);
+		pty = -1;
+	}
+#endif
 }
 
 #if	!defined(CRAY) || !defined(NEWINIT)
@@ -1214,12 +1240,22 @@ cleanopen(line)
 #endif	/* !defined(CRAY) || !defined(NEWINIT) */
 
 #if BSD <= 43
+
 	int
 login_tty(t)
 	int t;
 {
-	if (setsid() < 0)
-		fatalperror(net, "setsid()");
+	if (setsid() < 0) {
+#ifdef ultrix
+		/*
+		 * The setsid() may have failed because we
+		 * already have a pgrp == pid.  Zero out
+		 * our pgrp and try again...
+		 */
+		if ((setpgrp(0, 0) < 0) || (setsid() < 0))
+#endif
+			fatalperror(net, "setsid()");
+	}
 # ifdef	TIOCSCTTY
 	if (ioctl(t, TIOCSCTTY, (char *)0) < 0)
 		fatalperror(net, "ioctl(sctty)");
@@ -1233,6 +1269,14 @@ login_tty(t)
 		fatalperror(net, "open(/dev/tty)");
 #  endif
 # else
+	/*
+	 * We get our controlling tty assigned as a side-effect
+	 * of opening up a tty device.  But on BSD based systems,
+	 * this only happens if our process group is zero.  The
+	 * setsid() call above may have set our pgrp, so clear
+	 * it out before opening the tty...
+	 */
+	(void) setpgrp(0, 0);
 	close(open(line, O_RDWR));
 # endif
 	if (t != 0)
@@ -1330,7 +1374,7 @@ startslave(host, autologin, autoname)
 		utmp_sig_notify(pid);
 # endif	/* PARENT_DOES_UTMP */
 	} else {
-		getptyslave();
+		getptyslave(autologin);
 		start_login(host, autologin, autoname);
 		/*NOTREACHED*/
 	}
@@ -1428,11 +1472,12 @@ start_login(host, autologin, name)
 	register char *cp;
 	register char **argv;
 	char **addarg();
+	extern char *getenv();
 #ifdef	UTMPX
 	register int pid = getpid();
 	struct utmpx utmpx;
 #endif
-#ifdef __svr4__
+#ifdef SOLARIS
 	char *term;
 	char termbuf[64];
 #endif
@@ -1465,23 +1510,34 @@ start_login(host, autologin, name)
 	 * -f : force this login, he has already been authenticated
 	 */
 	argv = addarg(0, "login");
+
 #if	!defined(NO_LOGIN_H)
-	argv = addarg(argv, "-h");
-	argv = addarg(argv, host);
-#endif
-#ifdef	__svr4__
+
+# if	defined (AUTHENTICATION) && defined(NO_LOGIN_F) && defined(LOGIN_R)
 	/*
-	 * SVR4 version of -h takes TERM= as second arg, or -
+	 * Don't add the "-h host" option if we are going
+	 * to be adding the "-r host" option down below...
 	 */
-	term = getenv("TERM");
-	if (term == NULL || term[0] == 0) {
-		term = "-";
-	} else {
-		strcpy(termbuf, "TERM=");
-		strncat(termbuf, term, sizeof(termbuf) - 6);
-		term = termbuf;
+	if ((auth_level < 0) || (autologin != AUTH_VALID))
+# endif
+	{
+		argv = addarg(argv, "-h");
+		argv = addarg(argv, host);
+#ifdef	SOLARIS
+		/*
+		 * SVR4 version of -h takes TERM= as second arg, or -
+		 */
+		term = getenv("TERM");
+		if (term == NULL || term[0] == 0) {
+			term = "-";
+		} else {
+			strcpy(termbuf, "TERM=");
+			strncat(termbuf, term, sizeof(termbuf) - 6);
+			term = termbuf;
+		}
+		argv = addarg(argv, term);
+#endif
 	}
-	argv = addarg(argv, term);
 #endif
 #if	!defined(NO_LOGIN_P)
 	argv = addarg(argv, "-p");
@@ -1508,13 +1564,86 @@ start_login(host, autologin, name)
 	if (auth_level >= 0 && autologin == AUTH_VALID) {
 # if	!defined(NO_LOGIN_F)
 		argv = addarg(argv, "-f");
-# endif
 		argv = addarg(argv, name);
+# else
+#  if defined(LOGIN_R)
+		/*
+		 * We don't have support for "login -f", but we
+		 * can fool /bin/login into thinking that we are
+		 * rlogind, and allow us to log in without a
+		 * password.  The rlogin protocol expects
+		 *	local-user\0remote-user\0term/speed\0
+		 */
+
+		if (pty > 2) {
+			register char *cp;
+			char speed[128];
+			int isecho, israw, xpty, len;
+			extern int def_rspeed;
+#  ifndef LOGIN_HOST
+			/*
+			 * Tell login that we are coming from "localhost".
+			 * If we passed in the real host name, then the
+			 * user would have to allow .rhost access from
+			 * every machine that they want authenticated
+			 * access to work from, which sort of defeats
+			 * the purpose of an authenticated login...
+			 * So, we tell login that the session is coming
+			 * from "localhost", and the user will only have
+			 * to have "localhost" in their .rhost file.
+			 */
+#			define LOGIN_HOST "localhost"
+#  endif
+			argv = addarg(argv, "-r");
+			argv = addarg(argv, LOGIN_HOST);
+
+			xpty = pty;
+# ifndef  STREAMSPTY
+			pty = 0;
+# else
+			ttyfd = 0;
+# endif
+			init_termbuf();
+			isecho = tty_isecho();
+			israw = tty_israw();
+			if (isecho || !israw) {
+				tty_setecho(0);		/* Turn off echo */
+				tty_setraw(1);		/* Turn on raw */
+				set_termbuf();
+			}
+			len = strlen(name)+1;
+			write(xpty, name, len);
+			write(xpty, name, len);
+			sprintf(speed, "%s/%d", (cp = getenv("TERM")) ? cp : "",
+				(def_rspeed > 0) ? def_rspeed : 9600);
+			len = strlen(speed)+1;
+			write(xpty, speed, len);
+
+			if (isecho || !israw) {
+				init_termbuf();
+				tty_setecho(isecho);
+				tty_setraw(israw);
+				set_termbuf();
+				if (!israw) {
+					/*
+					 * Write a newline to ensure
+					 * that login will be able to
+					 * read the line...
+					 */
+					write(xpty, "\n", 1);
+				}
+			}
+			pty = xpty;
+		}
+#  else
+		argv = addarg(argv, name);
+#  endif
+# endif
 	} else
 #endif
 	if (getenv("USER")) {
 		argv = addarg(argv, getenv("USER"));
-#if	(defined(CRAY) || defined(__hpux)) && defined(NO_LOGIN_P)
+#if	defined(LOGIN_ARGS) && defined(NO_LOGIN_P)
 		{
 			register char **cpp;
 			for (cpp = environ; *cpp; cpp++)
@@ -1533,6 +1662,10 @@ start_login(host, autologin, name)
 		 */
 		unsetenv("USER");
 	}
+#if	defined(AUTHENTICATION) && defined(NO_LOGIN_F) && defined(LOGIN_R)
+	if (pty > 2)
+		close(pty);
+#endif
 	closelog();
 	execv(_PATH_LOGIN, argv);
 
@@ -1759,7 +1892,8 @@ cleantmp(wtp)
 	struct utmp *utp;
 	static int first = 1;
 	register int mask, omask, ret;
-	extern struct utmp *getutid P((struct utmp *));
+	extern struct utmp *getutid P((const struct utmp *_Id));
+
 
 	mask = sigmask(WJSIGNAL);
 
@@ -1853,6 +1987,7 @@ cleantmpdir(jid, tpath, user)
  */
 
 #ifdef	UTMPX
+	void
 rmut()
 {
 	register f;

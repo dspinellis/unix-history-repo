@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnetd.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -68,9 +68,9 @@ int	registerd_host_only = 0;
  * ptyibuf+1 to be on a full-word boundary.  The following wierdness
  * is simply to make that happen.
  */
-char	ptyibufbuf[BUFSIZ+4];
-char	*ptyibuf = ptyibufbuf+3;
-char	*ptyip = ptyibufbuf+3;
+long	ptyibufbuf[BUFSIZ/sizeof(long)+1];
+char	*ptyibuf = ((char *)&ptyibufbuf[1])-1;
+char	*ptyip = ((char *)&ptyibufbuf[1])-1;
 char	ptyibuf2[BUFSIZ];
 unsigned char ctlbuf[BUFSIZ];
 struct	strbuf strbufc, strbufd;
@@ -555,7 +555,9 @@ usage()
  *	Ask the other end to send along its terminal type and speed.
  * Output is the variable terminaltype filled in.
  */
-static char ttytype_sbbuf[] = { IAC, SB, TELOPT_TTYPE, TELQUAL_SEND, IAC, SE };
+static unsigned char ttytype_sbbuf[] = {
+	IAC, SB, TELOPT_TTYPE, TELQUAL_SEND, IAC, SE
+};
 
     int
 getterminaltype(name)
@@ -583,7 +585,8 @@ getterminaltype(name)
     send_do(TELOPT_TTYPE, 1);
     send_do(TELOPT_TSPEED, 1);
     send_do(TELOPT_XDISPLOC, 1);
-    send_do(TELOPT_ENVIRON, 1);
+    send_do(TELOPT_NEW_ENVIRON, 1);
+    send_do(TELOPT_OLD_ENVIRON, 1);
     while (
 #ifdef	ENCRYPTION
 	   his_do_dont_is_changing(TELOPT_ENCRYPT) ||
@@ -591,7 +594,8 @@ getterminaltype(name)
 	   his_will_wont_is_changing(TELOPT_TTYPE) ||
 	   his_will_wont_is_changing(TELOPT_TSPEED) ||
 	   his_will_wont_is_changing(TELOPT_XDISPLOC) ||
-	   his_will_wont_is_changing(TELOPT_ENVIRON)) {
+	   his_will_wont_is_changing(TELOPT_NEW_ENVIRON) ||
+	   his_will_wont_is_changing(TELOPT_OLD_ENVIRON)) {
 	ttloop();
     }
 #ifdef	ENCRYPTION
@@ -604,22 +608,32 @@ getterminaltype(name)
     }
 #endif	/* ENCRYPTION */
     if (his_state_is_will(TELOPT_TSPEED)) {
-	static char sbbuf[] = { IAC, SB, TELOPT_TSPEED, TELQUAL_SEND, IAC, SE };
+	static unsigned char sb[] =
+			{ IAC, SB, TELOPT_TSPEED, TELQUAL_SEND, IAC, SE };
 
-	bcopy(sbbuf, nfrontp, sizeof sbbuf);
-	nfrontp += sizeof sbbuf;
+	bcopy(sb, nfrontp, sizeof sb);
+	nfrontp += sizeof sb;
     }
     if (his_state_is_will(TELOPT_XDISPLOC)) {
-	static char sbbuf[] = { IAC, SB, TELOPT_XDISPLOC, TELQUAL_SEND, IAC, SE };
+	static unsigned char sb[] =
+			{ IAC, SB, TELOPT_XDISPLOC, TELQUAL_SEND, IAC, SE };
 
-	bcopy(sbbuf, nfrontp, sizeof sbbuf);
-	nfrontp += sizeof sbbuf;
+	bcopy(sb, nfrontp, sizeof sb);
+	nfrontp += sizeof sb;
     }
-    if (his_state_is_will(TELOPT_ENVIRON)) {
-	static char sbbuf[] = { IAC, SB, TELOPT_ENVIRON, TELQUAL_SEND, IAC, SE };
+    if (his_state_is_will(TELOPT_NEW_ENVIRON)) {
+	static unsigned char sb[] =
+			{ IAC, SB, TELOPT_NEW_ENVIRON, TELQUAL_SEND, IAC, SE };
 
-	bcopy(sbbuf, nfrontp, sizeof sbbuf);
-	nfrontp += sizeof sbbuf;
+	bcopy(sb, nfrontp, sizeof sb);
+	nfrontp += sizeof sb;
+    }
+    else if (his_state_is_will(TELOPT_OLD_ENVIRON)) {
+	static unsigned char sb[] =
+			{ IAC, SB, TELOPT_OLD_ENVIRON, TELQUAL_SEND, IAC, SE };
+
+	bcopy(sb, nfrontp, sizeof sb);
+	nfrontp += sizeof sb;
     }
     if (his_state_is_will(TELOPT_TTYPE)) {
 
@@ -634,8 +648,12 @@ getterminaltype(name)
 	while (sequenceIs(xdisplocsubopt, baseline))
 	    ttloop();
     }
-    if (his_state_is_will(TELOPT_ENVIRON)) {
+    if (his_state_is_will(TELOPT_NEW_ENVIRON)) {
 	while (sequenceIs(environsubopt, baseline))
+	    ttloop();
+    }
+    if (his_state_is_will(TELOPT_OLD_ENVIRON)) {
+	while (sequenceIs(oenvironsubopt, baseline))
 	    ttloop();
     }
     if (his_state_is_will(TELOPT_TTYPE)) {
@@ -1382,7 +1400,7 @@ int readstream(p, ibuf, bufsize)
 	int newflow;
 
 	strbufc.maxlen = BUFSIZ;
-	strbufc.buf = ctlbuf;
+	strbufc.buf = (char *)ctlbuf;
 	strbufd.maxlen = bufsize-1;
 	strbufd.len = 0;
 	strbufd.buf = ibuf+1;
