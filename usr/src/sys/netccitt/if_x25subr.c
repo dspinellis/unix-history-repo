@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_x25subr.c	7.13 (Berkeley) %G%
+ *	@(#)if_x25subr.c	7.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -674,7 +674,7 @@ gotspi:	if (info[1])
 	for (lcp = pk_listenhead; lcp; lcp = lcp->lcd_listen)
 		if (lcp->lcd_laddr.x25_udlen == dp->spilen &&
 		    Bcmp(&dp->spi, lcp->lcd_laddr.x25_udata, dp->spilen) == 0) {
-			pk_close(lcp);
+			pk_disconnect(lcp);
 			return 0;
 		}
 	return ESRCH;
