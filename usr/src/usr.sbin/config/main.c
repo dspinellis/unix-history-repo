@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -77,6 +77,7 @@ main(argc, argv)
 	headers();			/* make a lot of .h files */
 	swapconf();			/* swap config files */
 	printf("Don't forget to run \"make depend\"\n");
+	exit(0);
 }
 
 /*
