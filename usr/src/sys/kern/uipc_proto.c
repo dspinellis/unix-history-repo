@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uipc_proto.c	6.4 (Berkeley) %G%
+ *	@(#)uipc_proto.c	6.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -21,7 +21,7 @@ int	raw_init(),raw_usrreq(),raw_input(),raw_ctlinput();
 extern	struct domain unixdomain;		/* or at least forward */
 
 struct protosw unixsw[] = {
-{ SOCK_STREAM,	&unixdomain,	0,		PR_CONNREQUIRED|PR_WANTRCVD,
+{ SOCK_STREAM,	&unixdomain,	0,	PR_CONNREQUIRED|PR_WANTRCVD|PR_RIGHTS,
   0,		0,		0,		0,
   uipc_usrreq,
   0,		0,		0,		0,
