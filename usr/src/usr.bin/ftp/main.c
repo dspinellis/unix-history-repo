@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -42,10 +42,9 @@ static char sccsid[] = "@(#)main.c	5.14 (Berkeley) %G%";
 #include <netdb.h>
 #include <pwd.h>
 
-
 uid_t	getuid();
-int	intr();
-int	lostpeer();
+sig_t	intr();
+sig_t	lostpeer();
 extern	char *home;
 char	*getlogin();
 
@@ -105,9 +104,10 @@ main(argc, argv)
 	fromatty = isatty(fileno(stdin));
 	if (fromatty)
 		verbose++;
-	cpend = 0;           /* no pending replies */
+	cpend = 0;	/* no pending replies */
 	proxy = 0;	/* proxy not active */
-	crflag = 1;    /* strip c.r. on ascii gets */
+	crflag = 1;	/* strip c.r. on ascii gets */
+	sendport = -1;	/* not using ports */
 	/*
 	 * Set up the home directory in case we're globbing.
 	 */
@@ -139,12 +139,14 @@ main(argc, argv)
 	}
 }
 
+sig_t
 intr()
 {
 
 	longjmp(toplevel, 1);
 }
 
+sig_t
 lostpeer()
 {
 	extern FILE *cout;
@@ -483,20 +485,4 @@ help(argc, argv)
 			printf("%-*s\t%s\n", HELPINDENT,
 				c->c_name, c->c_help);
 	}
-}
-
-/*
- * Call routine with argc, argv set from args (terminated by 0).
- */
-/*VARARGS1*/
-call(routine, args)
-	int (*routine)();
-	int args;
-{
-	register int *argp;
-	register int argc;
-
-	for (argc = 0, argp = &args; *argp++ != 0; argc++)
-		;
-	(*routine)(argc, &args);
 }
