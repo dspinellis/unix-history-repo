@@ -1,4 +1,4 @@
-/*	mbuf.h	4.17	83/01/17	*/
+/*	mbuf.h	4.18	83/03/25	*/
 
 /*
  * Constants related to memory allocator.
@@ -97,7 +97,7 @@ struct mbstat {
 	short	m_clusters;	/* clusters obtained from page pool */
 	short	m_clfree;	/* free clusters */
 	short	m_drops;	/* times failed to find space */
-	short	m_mtypes[32];	/* type specific mbuf allocations */
+	short	m_mtypes[256];	/* type specific mbuf allocations */
 };
 
 #ifdef	KERNEL
