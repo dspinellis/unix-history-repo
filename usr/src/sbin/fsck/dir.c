@@ -1,5 +1,5 @@
 #ifndef lint
-static char version[] = "@(#)dir.c	3.5 (Berkeley) %G%";
+static char version[] = "@(#)dir.c	3.6 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -15,6 +15,7 @@ static char version[] = "@(#)dir.c	3.5 (Berkeley) %G%";
 char	*endpathname = &pathname[BUFSIZ - 2];
 char	*lfname = "lost+found";
 struct	dirtemplate emptydir = { 0, DIRBLKSIZ };
+struct	dirtemplate dirhead = { 0, 12, 1, ".", 0, DIRBLKSIZ - 12, 2, ".." };
 
 DIRECT	*fsck_readdir();
 
@@ -237,7 +238,8 @@ mkentry(idesc)
 	dirp = (struct direct *)(((char *)dirp) + oldlen);
 	dirp->d_ino = idesc->id_parent;	/* ino to be entered is in id_parent */
 	dirp->d_reclen = newent.d_reclen;
-	dirp->d_namlen = lftempname(dirp->d_name, idesc->id_parent);
+	dirp->d_namlen = strlen(idesc->id_name);
+	bcopy(idesc->id_name, dirp->d_name, dirp->d_namlen + 1);
 	return (ALTERED|STOP);
 }
 
@@ -260,7 +262,9 @@ linkup(orphan, pdir)
 {
 	register DINODE *dp;
 	int lostdir, len;
+	ino_t oldlfdir;
 	struct inodesc idesc;
+	char tempname[BUFSIZ];
 
 	bzero((char *)&idesc, sizeof(struct inodesc));
 	dp = ginode(orphan);
@@ -285,11 +289,29 @@ linkup(orphan, pdir)
 		idesc.id_number = ROOTINO;
 		idesc.id_filesize = dp->di_size;
 		(void)ckinode(dp, &idesc);
-		lfdir = idesc.id_parent;
-		if (lfdir < ROOTINO || lfdir > imax)
-			lfdir = 0;
+		if (idesc.id_parent >= ROOTINO && idesc.id_parent < imax) {
+			lfdir = idesc.id_parent;
+		} else {
+			pwarn("NO lost+found DIRECTORY");
+			if (preen || reply("CREATE")) {
+				idesc.id_func = mkentry;
+				idesc.id_parent = allocdir(ROOTINO, 0);
+				idesc.id_filesize = dp->di_size;
+				if (idesc.id_parent != 0) {
+					if (makeentry(dp, &idesc) != 0) {
+						lfdir = idesc.id_parent;
+						if (preen)
+							printf(" (CREATED)\n");
+					} else {
+						freedir(idesc.id_parent, ROOTINO);
+						if (preen)
+							printf("\n");
+					}
+				}
+			}
+		}
 		if (lfdir == 0) {
-			pfatal("SORRY. NO lost+found DIRECTORY");
+			pfatal("SORRY. CANNOT CREATE lost+found DIRECTORY");
 			printf("\n\n");
 			return (0);
 		}
@@ -313,6 +335,8 @@ linkup(orphan, pdir)
 	idesc.id_filesize = dp->di_size;
 	idesc.id_parent = orphan;	/* this is the inode to enter */
 	idesc.id_fix = DONTKNOW;
+	idesc.id_name = tempname;
+	len = lftempname(idesc.id_name, orphan);
 	if (makeentry(dp, &idesc) == 0) {
 		pfatal("SORRY. NO SPACE IN lost+found DIRECTORY");
 		printf("\n\n");
@@ -320,7 +344,8 @@ linkup(orphan, pdir)
 	}
 	lncntp[orphan]--;
 	*pathp++ = '/';
-	pathp += lftempname(pathp, orphan);
+	bcopy(idesc.id_name, pathp, len + 1);
+	pathp += len;
 	if (lostdir) {
 		dp = ginode(orphan);
 		idesc.id_type = DATA;
@@ -406,6 +431,67 @@ bad:
 	dp->di_blocks -= btodb(sblock.fs_bsize);
 	freeblk(newblk, sblock.fs_frag);
 	return (0);
+}
+
+/*
+ * allocate a new directory
+ */
+allocdir(parent, request)
+	ino_t parent, request;
+{
+	ino_t ino;
+	char *cp;
+	DINODE *dp;
+
+	ino = allocino(request, IFDIR|0755);
+	dirhead.dot_ino = ino;
+	dirhead.dotdot_ino = parent;
+	dp = ginode(ino);
+	if (getblk(&fileblk, dp->di_db[0], sblock.fs_fsize) == NULL) {
+		freeino(ino);
+		return (0);
+	}
+	bcopy((char *)&dirhead, dirblk.b_buf, sizeof dirhead);
+	for (cp = &dirblk.b_buf[DIRBLKSIZ];
+	     cp < &dirblk.b_buf[sblock.fs_fsize];
+	     cp += DIRBLKSIZ)
+		bcopy((char *)&emptydir, cp, sizeof emptydir);
+	dirty(&fileblk);
+	dp->di_nlink = 2;
+	inodirty();
+	if (ino == ROOTINO) {
+		lncntp[ino] = dp->di_nlink;
+		return(ino);
+	}
+	if (statemap[parent] != DSTATE && statemap[parent] != DFOUND) {
+		freeino(ino);
+		return (0);
+	}
+	statemap[ino] = statemap[parent];
+	if (statemap[ino] == DSTATE) {
+		lncntp[ino] = dp->di_nlink;
+		lncntp[parent]++;
+	}
+	dp = ginode(parent);
+	dp->di_nlink++;
+	inodirty();
+	return (ino);
+}
+
+/*
+ * free a directory inode
+ */
+freedir(ino, parent)
+	ino_t ino, parent;
+{
+	DINODE *dp;
+
+	if (ino != parent) {
+		dp = ginode(parent);
+		dp->di_nlink--;
+		inodirty();
+	}
+	freeino(ino);
 }
 
 /*
