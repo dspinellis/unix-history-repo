@@ -32,7 +32,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)gethostnamadr.c	6.45 (Berkeley) 2/24/91";
+static char sccsid[] = "@(#)gethostnamadr.c	6.48 (Berkeley) 1/10/93";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -162,10 +162,8 @@ getanswer(answer, anslen, iquery)
 		if (iquery && type == T_PTR) {
 			if ((n = dn_expand((u_char *)answer->buf,
 			    (u_char *)eom, (u_char *)cp, (u_char *)bp,
-			    buflen)) < 0) {
-				cp += n;
-				continue;
-			}
+			    buflen)) < 0)
+				break;
 			cp += n;
 			host.h_name = bp;
 			return(&host);
@@ -228,10 +226,10 @@ getanswer(answer, anslen, iquery)
 
 struct hostent *
 gethostbyname(name)
-	char *name;
+	const char *name;
 {
 	querybuf buf;
-	register char *cp;
+	register const char *cp;
 	int n;
 	extern struct hostent *_gethtbyname();
 
@@ -247,15 +245,13 @@ gethostbyname(name)
 				/*
 				 * All-numeric, no dot at the end.
 				 * Fake up a hostent as if we'd actually
-				 * done a lookup.  What if someone types
-				 * 255.255.255.255?  The test below will
-				 * succeed spuriously... ???
+				 * done a lookup.
 				 */
-				if ((host_addr.s_addr = inet_addr(name)) == -1) {
+				if (!inet_aton(name, &host_addr)) {
 					h_errno = HOST_NOT_FOUND;
 					return((struct hostent *) NULL);
 				}
-				host.h_name = name;
+				host.h_name = (char *)name;
 				host.h_aliases = host_aliases;
 				host_aliases[0] = NULL;
 				host.h_addrtype = AF_INET;
