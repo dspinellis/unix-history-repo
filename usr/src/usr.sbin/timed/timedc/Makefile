@@ -1,7 +1,7 @@
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) 5/11/90
 
 PROG=	timedc
-SRCS=	cmds.c cmdtab.c timedc.c byteorder.c measure.c cksum.${MACHINE}.c
+SRCS=	cmds.c cmdtab.c timedc.c byteorder.c measure.c cksum.c
 MAN8=	timedc.0
 BINOWN=	root
 BINMODE=4555

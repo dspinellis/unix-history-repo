@@ -6,12 +6,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmdtab.c	2.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmdtab.c	2.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "timedc.h"
-
-int	clockdiff(), help(), msite(), quit(), testing(), tracing();
 
 char	clockdiffhelp[] =	"measures clock differences between machines";
 char	helphelp[] =		"gets help on commands";
