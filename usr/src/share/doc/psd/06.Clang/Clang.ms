@@ -1,11 +1,37 @@
-.\"	@(#)Clang.ms	6.1 (Berkeley) %G%
+.\"	@(#)Clang.ms	6.2 (Berkeley) %G%
 .\"
-.so /k3/unx/MACROS/cmac1
 .nr Cl 2
-.CH 2 "C LANGUAGE"
-.H 1 "C LANGUAGE"
-.H 2 "LEXICAL CONVENTIONS"
-.P
+.TL
+The C Programming Language - Reference Manual
+.AU
+Dennis M. Ritchie
+.AI
+AT&T Bell Laboratories
+Murray Hill, NJ 07974
+.PP
+This manual is a reprint, with updates to the current C standard, from 
+\fIThe C Programming Language\fR,
+by Brian W. Kernighan and Dennis M. Richie, Prentice-Hall, Inc., 1978.
+.EH 'PS1:1-%''The C Programming Language - Reference Manual'
+.OH 'The C Programming Language - Reference Manual''PS1:1-%'
+.NH 1
+Introduction
+.PP
+This manual describes the C language on the DEC PDP-11\(dg, the DEC VAX-11,
+.FS
+.LP
+\(dg DEC PDP-11, and DEC VAX-11 are trademarks of Digital Equipment Corporation.
+.LP
+\(dd 3B 20 is a trademark of AT&T.
+.FE
+and the AT&T 3B 20\(dd.
+Where differences exist, it concentrates on the VAX, but tries to point
+out implementation-dependent details.  With few execptions, these dependencies
+follow directly from the underlying properties of the hardware; the various
+compilers are generally quite compatible.
+.NH 1 
+Lexical Conventions
+.PP
 There are six classes of tokens\ -\ 
 identifiers, keywords, constants, strings, operators, and other separators.
 Blanks, tabs, new\(hylines,
@@ -15,23 +41,25 @@ tokens.
 Some white space is required to separate
 otherwise adjacent identifiers,
 keywords, and constants.
-.P
+.PP
 If the input stream has been parsed into tokens
 up to a given character, the next token is taken
 to include the longest string of characters
 which could possibly constitute a token.
-.H 3 "Comments"
-.P
+.NH 2 
+Comments
+.PP
 The characters
 .B
 /*
 .R
 introduce a comment which terminates
 with the characters
-\fB*/\fR.
+\fB\(**/\fR.
 Comments do not nest.
-.H 3 "Identifiers (Names)"
-.P
+.NH 2 
+Identifiers (Names)
+.PP
 An identifier is a sequence of letters and digits.
 The first character must be a letter.
 The underscore
@@ -46,20 +74,21 @@ fewer for external names.
 Moreover, some implementations may collapse case
 distinctions for external names.
 The external name sizes include:
-.DS I
-.ft BM
-.nf
-PDP-11               7 characters, 2 cases
-VAX-11            >100 characters, 2 cases
-AT&T 3B 20        >100 characters, 2 cases
-.ft R
+.DS 
+.TS
+l l.
+PDP-11	7 characters, 2 cases
+VAX-11	>100 characters, 2 cases
+AT&T 3B 20	>100 characters, 2 cases
+.TE
 .fi
 .DE
-.H 3 "Keywords"
-.P
+.NH 2
+Keywords
+.PP
 The following identifiers are reserved for use
 as keywords and may not be used otherwise:
-.DS I
+.DS 
 .ta 0.8i 1.6i 2.4i 3.2i 4.0i
 \fBauto	do	for	return	typedef
 break	double	goto	short	union
@@ -69,23 +98,26 @@ continue	external	long	struct	while
 default	float	register	switch\fR
 .ta 0.5i
 .DE
-.P 0
+.PP 
 Some implementations also reserve the words
 .B
-fortran
+fortran, asm, gfloat, hfloat
 .R
 and
-.B asm\fR.
-.H 3 "Constants"
-.P
+.B quad
+.R
+.NH 2
+Constants
+.PP
 There are several kinds
 of constants.
 Each has a type; an introduction to types is given in ``NAMES.''
 Hardware characteristics that affect sizes are summarized in
 ``Hardware Characteristics'' under ``LEXICAL CONVENTIONS.''
-.H 4 "Integer Constants"
+.NH 3 
+Integer Constants
 .br
-.P
+.PP
 An integer constant consisting of a sequence of digits
 is taken
 to be octal if it begins with
@@ -130,9 +162,10 @@ is likewise taken to be
 long\fR.
 .R
 Otherwise, integer constants are \fBint\fR.
-.H 4 "Explicit Long Constants"
+.NH 3 
+Explicit Long Constants
 .br
-.P
+.PP
 A decimal, octal, or hexadecimal integer constant immediately followed
 by
 .B
@@ -147,14 +180,15 @@ is a long constant.
 As discussed below,
 on some machines
 integer and long values may be considered identical.
-.H 4 "Character Constants"
+.NH 3 
+Character Constants
 .br
-.P
+.PP
 A character constant is a character enclosed in single quotes,
-as in \'\fBx\fR'.
+as in '\fBx\fR'.
 The value of a character constant is the numerical value of the
 character in the machine's character set.
-.P
+.PP
 Certain nongraphic characters,
 the single quote
 (\fB'\fR)
@@ -162,20 +196,21 @@ and the backslash
 (\fB\e\fR),
 may be represented according to the following table
 of escape sequences:
-.DS I
-.ft BM
-new\(hyline            NL (LF)      \en
-horizontal tab      HT           \et
-vertical tab        VT           \ev
-backspace           BS           \eb
-carriage return     CR           \er
-form feed           FF           \ef
-backslash           \e            \e\e
-single quote        '            \e'
-bit pattern         \fIddd\fR\^          \e\fIddd\fR\^
-.ft R
+.DS 
+.TS
+l l l.
+new\(hyline	NL (LF)	\en
+horizontal tab	HT	\et
+vertical tab	VT	\ev
+backspace	BS	\eb
+carriage return	CR	\er
+form feed	FF	\ef
+backslash	\e	\e\e
+single quote	'	\e'
+bit pattern	\fIddd\fR\^	\e\fIddd\fR\^
+.TE
 .DE
-.P 0
+.PP 
 The escape
 \e\fIddd\fR
 consists of the backslash followed by 1, 2, or 3 octal digits
@@ -195,9 +230,10 @@ of those specified, the
 behavior is undefined.
 A new-line character is illegal in a character constant.
 The type of a character constant is \fBint\fR.
-.H 4 "Floating Constants"
+.NH 3 
+Floating Constants
 .br
-.P
+.PP
 A floating constant consists of
 an integer part, a decimal point, a fraction part,
 an
@@ -218,15 +254,17 @@ e
 .R
 and the exponent (not both) may be missing.
 Every floating constant has type \fBdouble\fR.
-.H 4 "Enumeration Constants"
+.NH 3 
+Enumeration Constants
 .br
-.P
+.PP
 Names declared as enumerators
 (see ``Structure, Union, and Enumeration Declarations'' under
 ``DECLARATIONS'')
 have type \fBint\fR.
-.H 3 "Strings"
-.P
+.NH 2 
+Strings
+.PP
 A string is a sequence of characters surrounded by
 double quotes,
 as in
@@ -250,7 +288,7 @@ a
 \fB\e\fR;
 in addition, the same escapes as described for character
 constants may be used.
-.P
+.PP
 A
 .B
 \e
@@ -258,81 +296,38 @@ A
 and
 the immediately following new\(hyline are ignored.
 All strings, even when written identically, are distinct.
-.H 3 "Hardware Characteristics"
-.P
-The following figures summarize
+.NH 2 
+Hardware Characteristics
+.PP
+The following figure summarize
 certain hardware properties that vary from machine to machine.
 .DS
 .TS
 center box;
-c s s
-c s s
-l | l1 lp8.
-\fBDEC PDP-11\fR
-(ASCII)
+c cfB s cfB s cfB s
+c c s c s c s
+l | l1 lp8 | l1 lp8 | l1 lp8.
+	DEC PDP\-11	DEC VAX-11	AT&T 3B
+	(ASCII)	(ASCII)	(ASCII)
 .sp
 _
-char	8 bits
-int	16
-short	16
-long	32
-float	32
-double	64
-float range	   \(+-10	\(+-38
-\^	\^
-double range	   \(+-10	\(+-38
-\^	\^
+char	8 bits		8 bits		8bits
+int	16		32		32
+short	16		16		16
+long	32		32		32
+float	32		32		32
+double	64		64		64
+float range	   \(+-10	\(+-38	   \(+-10	\(+-38	    \(+-10	\(+-38
+\^	\^		\^		\^
+double range	   \(+-10	\(+-38	   \(+-10	\(+-38	    \(+-10	\(+-308
+\^	\^		\^		\^
 .TE
 .FG 4 4 1 "DEC PDP-11 HARDWARE CHARACTERISTICS"
 .DE
-.DS
-.TS
-center box;
-c s s
-c s s
-l | l1 lp8.
-\fBDEC VAX-11\fR
-(ASCII)
-.sp
-_
-char	8 bits
-int	32
-short	16
-long	32
-float	32
-double	64
-float range	   \(+-10	\(+-38
-\^	\^
-double range	   \(+-10	\(+-38
-\^	\^
-.TE
-.FG 4 4 1 "DEC VAX-11 HARDWARE CHARACTERISTICS"
-.DE
-.DS
-.TS
-center box;
-c s s
-c s s
-l | l1 lp8.
-\fBAT&T 3B\fR
-(ASCII)
-.sp
-_
-char	8 bits
-int	32
-short	16
-long	32
-float	32
-double	64
-float range	   \(+-10	\(+-38
-\^	\^
-double range	   \(+-10	\(+-308
-\^	\^
-.TE
-.FG 4 4 1 "AT&T 3B HARDWARE CHARACTERISTICS"
-.DE
-.P
-.H 2 "SYNTAX NOTATION"
+.PP
+.NH 1 
+Syntax Notation
+.PP
 Syntactic categories are indicated by
 .I
 italic
@@ -345,16 +340,17 @@ type.
 Alternative categories are listed on separate lines.
 An optional terminal or nonterminal symbol is
 indicated by the subscript ``opt,'' so that
-.DS I
-{ \fIexpression\v'0.5'opt\v'-0.5'\fR }
+.DS
+{ \fIexpression\v'0.5'\s-2opt\s0\v'-0.5'\fR }
 .DE
-.P 0
+.LP
 indicates an optional expression enclosed in braces.
 The syntax is summarized in ``SYNTAX SUMMARY''.
-.H 2 "NAMES"
-.P
+.NH 1 
+Names
+.PP
 The C language bases the interpretation of an
-identifier upon two attributes of the identifier - its
+identifier upon two attributes of the identifier \(mi its
 .I
 storage class
 .R
@@ -366,8 +362,9 @@ of the storage associated with an identifier;
 the type determines
 the meaning of the values
 found in the identifier's storage.
-.H 3 "Storage Class"
-.P
+.NH 2 
+Storage Class
+.PP
 There are four declarable storage classes:
 .BL 6 1
 .LI
@@ -379,7 +376,7 @@ External
 .LI
 Register.
 .LE
-.P 0
+.PP
 Automatic variables are local to each invocation of
 a block (see ``Compound Statement or Block'' in 
 ``STATEMENTS'') and are discarded upon exit from the block.
@@ -393,8 +390,9 @@ functions, even separately compiled functions.
 Register variables are (if possible) stored in the fast registers
 of the machine; like automatic
 variables, they are local to each block and disappear on exit from the block.
-.H 3 "Type"
-.P
+.NH 2 
+Type
+.PP
 The C language supports several
 fundamental
 types of objects.
@@ -408,7 +406,7 @@ its value is equivalent to the integer code for that character.
 Other quantities may be stored into character variables, but
 the implementation is machine dependent.
 In particular, \fBchar\fR may be signed or unsigned by default.
-.P
+.PP
 Up to three sizes of integer, declared
 .B
 short
@@ -427,14 +425,14 @@ or both, equivalent to plain integers.
 ``Plain'' integers have the natural size suggested
 by the host machine architecture.
 The other sizes are provided to meet special needs.
-.P
+.PP
 The properties of \fBenum\fR types (see ``Structure, Union, and Enumeration Declarations''
 under ``DECLARATIONS'')
 are identical to those of
 some integer types.
 The implementation may use the range of values to
-determine how to allot storage.
-.P
+determine how to allocate storage.
+.PP
 Unsigned
 integers, declared
 .B
@@ -446,13 +444,13 @@ where \fIn\fR is the number of bits in the representation.
 (On the
 PDP-11,
 unsigned long quantities are not supported.)
-.P
+.PP
 Single-precision floating point
 (\fBfloat\fR)
 and double precision floating point
 (\fBdouble\fR)
 may be synonymous in some implementations.
-.P
+.PP
 Because objects of the foregoing types can usefully be interpreted
 as numbers, they will be referred to as
 .I
@@ -485,7 +483,7 @@ types will collectively be called
 floating
 .R
 types.
-.P
+.PP
 The
 .B
 void
@@ -494,7 +492,7 @@ type
 specifies an empty set of values.
 It is used as the type returned by functions that
 generate no value.
-.P
+.PP
 Besides the fundamental arithmetic types, there is a
 conceptually infinite class of derived types constructed
 from the fundamental types in the following ways:
@@ -515,12 +513,13 @@ containing a sequence of objects of various types
 \fIUnions\fR
 capable of containing any one of several objects of various types.
 .LE
-.P 0
+.PP
 In general these methods
 of constructing objects can
 be applied recursively.
-.H 2 "OBJECTS AND LVALUES"
-.P
+.NH 1 
+Objects and Lvalues
+.PP
 An
 .I
 object
@@ -541,7 +540,7 @@ E
 .R
 is an expression of pointer type, then
 .B
-*E
+\(**E
 .R
 is an lvalue
 expression referring to the object to which
@@ -562,8 +561,9 @@ an lvalue expression.
 The discussion of each operator
 below indicates whether it expects lvalue operands and whether it
 yields an lvalue.
-.H 2 "CONVERSIONS"
-.P
+.NH 1 
+Conversions
+.PP
 A number of operators may, depending on their operands,
 cause conversion of the value of an operand from one type to another.
 This part explains the result to be expected from such
@@ -573,8 +573,9 @@ The conversions demanded by most ordinary operators are summarized under
 The summary will be supplemented
 as required by the discussion
 of each operator.
-.H 3 "Characters and Integers"
-.P
+.NH 2 
+Characters and Integers
+.PP
 A character or a short integer may be used wherever an
 integer may be used.
 In all cases
@@ -595,7 +596,7 @@ On these machines,
 char
 .R
 variables range in value from
-\-128 to 127.
+\(mi128 to 127.
 The more explicit type
 .B
 unsigned
@@ -604,7 +605,7 @@ unsigned
 char
 .R
 forces the values to range from 0 to 255.
-.P
+.PP
 On machines that treat characters as signed,
 the characters of the
 ASCII
@@ -616,8 +617,8 @@ for example,
 \fB\'\e377\'\fR
 \fRhas the value
 .B
--1\fR.
-.P
+\(mi1\fR.
+.PP
 When a longer integer is converted to a shorter
 integer
 or to a
@@ -626,8 +627,9 @@ char,
 .R
 it is truncated on the left.
 Excess bits are simply discarded.
-.H 3 "Float and Double"
-.P
+.NH 2 
+Float and Double
+.PP
 All floating arithmetic in C is carried out in double precision.
 Whenever a
 .B
@@ -657,21 +659,25 @@ float
 .R
 length.
 This result is undefined if it cannot be represented as a float.
-.H 3 "Floating and Integral"
-.P
+On the VAX, the compiler can be directed to use single percision for expressions
+containing only float and interger operands.
+.NH 2 
+Floating and Integral
+.PP
 Conversions of floating values to integral type
 are rather machine dependent.
 In particular, the direction of truncation of negative numbers
 varies.
 The result is undefined if
 it will not fit in the space provided.
-.P
+.PP
 Conversions of integral values to floating type
 are well behaved.
 Some loss of accuracy occurs
 if the destination lacks sufficient bits.
-.H 3 "Pointers and Integers"
-.P
+.NH 2 
+Pointers and Integers
+.PP
 An expression of integral type may be added to or subtracted from
 a pointer; in such a case,
 the first is converted as
@@ -680,8 +686,9 @@ Two pointers to objects of the same type may be subtracted;
 in this case, the result is converted to an integer
 as specified in the discussion of the subtraction
 operator.
-.H 3 "Unsigned"
-.P
+.NH 2 
+Unsigned
+.PP
 Whenever an unsigned integer and a plain integer
 are combined, the plain integer is converted to unsigned
 and the result is unsigned.
@@ -691,14 +698,15 @@ integer (modulo 2\v'-0.3'\s-2wordsize\s+2\v'0.3').
 In a 2's complement representation,
 this conversion is conceptual; and there is no actual change in the
 bit pattern.
-.P
+.PP
 When an unsigned \fBshort\fR integer is converted to
 \fBlong\fR,
 the value of the result is the same numerically as that of the
 unsigned integer.
 Thus the conversion amounts to padding with zeros on the left.
-.H 3 "Arithmetic Conversions"
-.P
+.NH 2 
+Arithmetic Conversions
+.PP
 A great many operators cause conversions
 and yield result types in a similar way.
 This pattern will be called the ``usual arithmetic conversions.''
@@ -759,8 +767,9 @@ Otherwise, both operands must be
 \fBint\fR,
 and that is the type of the result.
 .LE
-.H 3 "Void"
-.P
+.NH 2 
+Void
+.PP
 The (nonexistent) value of a
 .B
 void
@@ -773,7 +782,7 @@ as an expression statement
 (see ``Expression Statement'' under ``STATEMENTS'')
 or as the left operand
 of a comma expression (see ``Comma Operator'' under ``EXPRESSIONS'').
-.P
+.PP
 An expression may be converted to
 type
 .B
@@ -782,14 +791,15 @@ void
 by use of a cast.
 For example, this makes explicit the discarding of the value
 of a function call used as an expression statement.
-.H 2 "EXPRESSIONS"
-.P
+.NH 1 
+Expressions
+.PP
 The precedence of expression operators is the same
 as the order of the major
 subsections of this section, highest precedence first.
 Thus, for example, the expressions referred to as the operands of
 .B
-+
+\(pl
 .R
 (see ``Additive Operators'')
 are those expressions defined under ``Primary Expressions'',
@@ -802,7 +812,7 @@ discussed therein.
 The precedence and associativity of all the expression
 operators are summarized in the
 grammar of ``SYNTAX SUMMARY''.
-.P
+.PP
 Otherwise, the order of evaluation of expressions
 is undefined.  In particular, the compiler
 considers itself free to
@@ -813,8 +823,8 @@ involve side effects.
 The order in which subexpression evaluation takes place is unspecified.
 Expressions involving a commutative and associative
 operator
-(\fB*,\fR
-\fB+\fR,
+(\fB\(**,\fR
+\fB\(pl\fR,
 \fB&\fR,
 \fB|\fR,
 \fB^\fR)
@@ -822,7 +832,7 @@ may be rearranged arbitrarily even in the presence
 of parentheses;
 to force a particular order of evaluation,
 an explicit temporary must be used.
-.P
+.PP
 The handling of overflow and divide check
 in expression evaluation
 is undefined.
@@ -831,30 +841,31 @@ treatment of
 division by 0 and all floating-point exceptions
 varies between machines and is usually
 adjustable by a library function.
-.H 3 "Primary Expressions"
-.P
+.NH 2 
+Primary Expressions
+.PP
 Primary expressions
 involving \fB\.\fR,
-\fB->\fR,
+\fB\(mi>\fR,
 subscripting, and function calls
 group left to right.
-.DS I
+.DS 
 \fIprimary-expression:
         identifier
         constant
         string
         ( expression )
         primary-expression [ expression ]
-        primary-expression ( expression-list\v'0.5'opt\v'-0.5' )
+        primary-expression ( expression-list\v'0.5'\s-2opt\s0\v'-0.5' )
         primary-expression . identifier
-        primary-expression -> identifier\fR
+        primary-expression \(mi> identifier\fR
 .DE
-.DS I
+.DS 
 \fIexpression-list:
         expression
         expression-list , expression\fR
 .DE
-.P 0
+.PP
 An identifier is a primary expression provided it has been
 suitably declared as discussed below.
 Its type is specified by its declaration.
@@ -870,7 +881,7 @@ Likewise, an identifier which is declared
 ``function returning .\|.\|.'',
 when used except in the function-name position
 of a call, is converted to ``pointer to function returning .\|.\|.''.
-.P
+.PP
 A
 constant is a primary expression.
 Its type may be
@@ -889,7 +900,7 @@ and floating constants have type
 .B
 double\fR.
 .R
-.P
+.PP
 A string is a primary expression.
 Its type is originally ``array of
 \fBchar\fR'',
@@ -902,14 +913,14 @@ result is a pointer to the first character
 in the string.
 (There is an exception in certain initializers;
 see ``Initialization'' under ``DECLARATIONS.'')
-.P
+.PP
 A parenthesized expression is a primary expression
 whose type and value are identical
 to those of the unadorned expression.
 The presence of parentheses does
 not affect whether the expression is an
 lvalue.
-.P
+.PP
 A primary expression followed by an expression in square
 brackets is a primary expression.
 The intuitive meaning is that of a subscript.
@@ -924,23 +935,23 @@ E1[E2]
 is
 identical (by definition) to
 .B
-*((E1)+(E2))\fR.
+\(**((E1)\(plE2))\fR.
 All the clues
 needed to understand
 this notation are contained in this subpart together
 with the discussions
 in ``Unary Operators'' and ``Additive Operators'' on identifiers,
 .B
-* 
+\(** 
 .R
 and
 .B
-+,
+\(pl
 .R
 respectively.
 The implications are summarized under ``Arrays, Pointers, and Subscripting''
 under ``TYPES REVISITED.''
-.P
+.PP
 A function call is a primary expression followed by parentheses
 containing a possibly
 empty, comma-separated list of expressions
@@ -956,7 +967,7 @@ to represent a function returning
 an integer;
 thus in the most common case, integer-valued functions
 need not be declared.
-.P
+.PP
 Any actual arguments of type
 .B
 float
@@ -987,7 +998,7 @@ arguments.
 If conversion is needed, use a cast;
 see ``Unary Operators'' and ``Type Names'' under
 ``DECLARATIONS.''
-.P
+.PP
 In preparing for the call to a function,
 a copy is made of each actual parameter.
 Thus, all argument passing in C is strictly by value.
@@ -1004,17 +1015,17 @@ The order of evaluation of arguments is undefined by the language;
 take note that the various compilers differ.
 Recursive calls to any
 function are permitted.
-.P
+.PP
 A primary expression followed by a dot followed by an identifier
 is an expression.
 The first expression must be a structure or a union, and the identifier
 must name a member of the structure or union.
 The value is the named member of the structure or union, and it is
 an lvalue if the first expression is an lvalue.
-.P
+.PP
 A primary expression followed by an arrow (built from
 .B
--
+\(mi
 .R
 and
 .B
@@ -1030,39 +1041,40 @@ of the structure or union
 to which the pointer expression points.
 Thus the expression
 .B
-E1->MOS
+E1\(mi>MOS
 .R
 is the same as
 .B
-(*E1).MOS\fR.
+(\(**E1).MOS\fR.
 .R
 Structures and unions are discussed in
 ``Structure, Union, and Enumeration Declarations'' under
 ``DECLARATIONS.''
-.H 3 "Unary Operators"
-.P
+.NH 2 
+Unary Operators
+.PP
 Expressions with unary operators
 group right to left.
 .tr ~~
-.DS I
+.DS 
 \fIunary-expression:
-        * expression
+        \(** expression
         & lvalue
-        - expression
+        \(mi expression
         ! expression
-        ~ expression
-        ++ lvalue
-        --lvalue
-        lvalue ++
-        lvalue --
+        \s+2~\s0 expression
+        \(pl\(pl lvalue
+        \(mi\(milvalue
+        lvalue \(pl\(pl
+        lvalue \(mi\(mi
         ( type-name ) expression\fR
         sizeof\fI expression\fR
         sizeof\fI ( type-name )\fR
 .DE
-.P 0
+.PP
 The unary
 .B
-*
+\(**
 .R
 operator
 means
@@ -1075,7 +1087,7 @@ is an lvalue referring to the object to
 which the expression points.
 If the type of the expression is ``pointer to .\|.\|.,''
 the type of the result is ``\|.\|.\|.\|''.
-.P
+.PP
 The result of the unary
 .B
 &
@@ -1085,11 +1097,11 @@ to the object referred to by the
 lvalue.
 If the type of the lvalue is ``\|.\|.\|.\|'',
 the type of the result is ``pointer to .\|.\|.''.
-.P
+.PP
 The result
 of the unary
 .B
--
+\(mi
 .R
 operator
 is the negative of its operand.
@@ -1102,10 +1114,10 @@ the corresponding signed type.
 .tr ~~
 There is no unary
 .B
-+
+\(pl
 .R
 operator.
-.P
+.PP
 The result of the logical negation operator
 .B
 !
@@ -1118,46 +1130,46 @@ int\fR.
 .R
 It is applicable to any arithmetic type
 or to pointers.
-.P
+.PP
 The
 .B
-~
+\s+2~\s0
 .R
 operator yields the one's complement of its operand.
 The usual arithmetic conversions are performed.
 The type of the operand must be integral.
-.P
+.PP
 The object referred to by the lvalue operand of prefix
 .B
-++
+\(pl\(pl
 .R
 is incremented.
 The value is the new value of the operand
 but is not an lvalue.
 The expression
 .B
-++x
+\(pl\(plx
 .R
 is equivalent to
-\fBx=x+1\fR.
+\fBx=x\(pl1\fR.
 See the discussions ``Additive Operators'' and ``Assignment
 Operators'' for information on conversions.
-.P
+.PP
 The lvalue operand of prefix
 .B
---
+\(mi\(mi
 .R
 is decremented
 analogously to the
 prefix
 .B
-++
+\(pl\(pl
 .R
 operator.
-.P
+.PP
 When postfix
 .B
-++
+\(pl\(pl
 .R
 is applied to an lvalue,
 the result is the value of the object referred to by the lvalue.
@@ -1165,26 +1177,26 @@ After the result is noted, the object
 is incremented in the same
 manner as for the prefix
 .B
-++
+\(pl\(pl
 .R
 operator.
 The type of the result is the same as the type of the lvalue expression.
-.P
+.PP
 When postfix
 .B
---
+\(mi\(mi
 .R
 is applied to an lvalue,
 the result is the value of the object referred to by the lvalue.
 After the result is noted, the object
 is decremented in the manner as for the prefix
 .B
---
+\(mi\(mi
 .R
 operator.
 The type of the result is the same as the type of the lvalue
 expression.
-.P
+.PP
 An expression preceded by the parenthesized name of a data type
 causes conversion of the value of the expression to the named type.
 This construction is called a
@@ -1192,7 +1204,7 @@ This construction is called a
 cast\fR.
 .R
 Type names are described in ``Type Names'' under ``Declarations.''
-.P
+.PP
 The
 .B
 sizeof
@@ -1224,7 +1236,7 @@ constant and may
 be used anywhere a constant is required.
 Its major use is in communication with routines
 like storage allocators and I/O systems.
-.P
+.PP
 The
 .B
 sizeof
@@ -1233,7 +1245,7 @@ operator
 may also be applied to a parenthesized type name.
 In that case it yields the size in bytes of an object
 of the indicated type.
-.P
+.PP
 The construction
 \fBsizeof(\fItype\|\fR\^)\fR\^
 is taken to be a unit,
@@ -1241,10 +1253,11 @@ so the expression
 \fBsizeof(\fItype\|\fB)-2\fR
 is the same as
 \fB(sizeof(\fItype\|\fB))-2\fR.
-.H 3 "Multiplicative Operators"
-.P
+.NH 2 
+Multiplicative Operators
+.PP
 The multiplicative operators
-\fB*\fR,
+\fB\(**\fR,
 \fB/\fR,
 and
 .B
@@ -1252,21 +1265,21 @@ and
 .R
 group left to right.
 The usual arithmetic conversions are performed.
-.DS I
+.DS 
 \fImultiplicative expression:
-        expression * expression
+        expression \(** expression
         expression / expression
         expression % expression\fR
 .DE
-.P
+.PP
 The binary
 .B
-*
+\(**
 .R
 operator indicates multiplication.
 The
 .B
-*
+\(**
 .R
 operator is associative,
 and expressions with several multiplications at the same
@@ -1276,7 +1289,7 @@ The binary
 /
 .R
 operator indicates division.
-.P
+.PP
 The binary
 .B
 %
@@ -1284,7 +1297,7 @@ The binary
 operator yields the remainder
 from the division of the first expression by the second.
 The operands must be integral.
-.P
+.PP
 When positive integers are divided, truncation is toward 0;
 but the form of truncation is machine-dependent
 if either operand is negative.
@@ -1292,7 +1305,7 @@ On all machines covered by this manual,
 the remainder has the same sign as the dividend.
 It is always true that
 .B
-(a/b)*b\ +\ a%b
+(a/b)\(**b\ \(pl a%b
 .R
 is equal to
 .B
@@ -1303,28 +1316,29 @@ a
 b
 .R
 is not 0).
-.H 3 "Additive Operators"
-.P
+.NH 2 
+Additive Operators
+.PP
 The additive operators
 .B
-+
+\(pl
 .R
 and
 .B
--
+\(mi
 .R
 group left to right.
 The usual arithmetic conversions are performed.
 There are some additional type possibilities for each operator.
-.DS I
+.DS 
 \fIadditive-expression:
-        expression + expression
-        expression - expression\fR
+        expression \(pl expression
+        expression \(mi expression\fR
 .DE
-.P 0
+.PP
 The result of the
 .B
-+
+\(pl
 .R
 operator is the sum of the operands.
 A pointer to an object in an array and
@@ -1346,23 +1360,23 @@ P
 is a pointer
 to an object in an array, the expression
 .B
-P+1
+P\(pl1
 .R
 is a pointer
 to the next object in the array.
 No further type combinations are allowed for pointers.
-.P
+.PP
 The
 .B
-+
+\(pl
 .R
 operator is associative,
 and expressions with several additions at the same level may
 be rearranged by the compiler.
-.P
+.PP
 The result of the
 .B
--
+\(mi
 .R
 operator is the difference of the operands.
 The usual arithmetic conversions are performed.
@@ -1370,7 +1384,7 @@ Additionally,
 a value of any integral type
 may be subtracted from a pointer,
 and then the same conversions for addition apply.
-.P
+.PP
 If two pointers to objects of the same type are subtracted,
 the result is converted
 (by division by the length of the object)
@@ -1386,8 +1400,9 @@ results unless the pointers point
 to objects in the same array, since pointers, even
 to objects of the same type, do not necessarily differ
 by a multiple of the object length.
-.H 3 "Shift Operators"
-.P
+.NH 2 
+Shift Operators
+.PP
 The shift operators
 .B
 <<
@@ -1404,12 +1419,14 @@ Then the right operand is converted to
 the type of the result is that of the left operand.
 The result is undefined if the right operand is negative
 or greater than or equal to the length of the object in bits.
-.DS I
+On the VAX a negative right operand is interpreted as reversing
+the direction of the shift.
+.DS 
 \fIshift-expression:
         expression << expression
         expression >> expression\fR
 .DE
-.P 0
+.PP
 The value of
 .B
 E1<<E2
@@ -1448,17 +1465,18 @@ is
 \fBunsigned\fR;
 otherwise, it may be
 arithmetic.
-.H 3 "Relational Operators"
-.P
+.NH 2 
+Relational Operators
+.PP
 The relational operators group left to right. 
-.DS I
+.DS 
 \fIrelational-expression:
         expression < expression
         expression > expression
         expression <= expression
         expression >= expression\fR
 .DE
-.P 0
+.PP
 The operators
 .B
 <
@@ -1485,14 +1503,15 @@ the result depends on the relative locations in the address space
 of the pointed-to objects.
 Pointer comparison is portable only when the pointers point to objects
 in the same array.
-.H 3 "Equality Operators"
-.P
-.DS I
+.NH 2 
+Equality Operators
+.PP
+.DS 
 \fIequality-expression:
         expression == expression
         expression != expression\fR
 .DE
-.P
+.PP
 The
 .B
 ==
@@ -1518,7 +1537,7 @@ and
 c<d
 .R
 have the same truth value).
-.P
+.PP
 A pointer may be compared to an integer
 only if the
 integer is the constant 0.
@@ -1526,13 +1545,14 @@ A pointer to which 0 has been assigned is guaranteed
 not to point to any object
 and will appear to be equal to 0.
 In conventional usage, such a pointer is considered to be null.
-.H 3 "Bitwise \s-1AND\s0 Operator"
-.P
-.DS I
+.NH 2 
+Bitwise \s-1AND\s0 Operator
+.PP
+.DS 
 \fIand-expression:
         expression & expression\fR
 .DE
-.P
+.PP
 The
 .B
 &
@@ -1549,12 +1569,13 @@ AND
 function of the operands.
 The operator applies only to integral
 operands.
-.H 3 "Bitwise Exclusive \s-1OR\s0 Operator"
-.DS I
+.NH 2 
+Bitwise Exclusive \s-1OR\s0 Operator
+.DS 
 \fIexclusive-or-expression:
         expression ^ expression\fR
 .DE
-.P
+.PP
 The
 .B
 ^
@@ -1573,12 +1594,13 @@ function of
 the operands.
 The operator applies only to integral
 operands.
-.H 3 "Bitwise Inclusive \s-1OR\s0 Operator"
-.DS I
+.NH 2 
+Bitwise Inclusive \s-1OR\s0 Operator
+.DS 
 \fIinclusive-or-expression:
         expression | expression\fR
 .DE
-.P
+.PP
 The
 .B
 |
@@ -1595,12 +1617,13 @@ OR
 function of its operands.
 The operator applies only to integral
 operands.
-.H 3 "Logical \s-1AND\s0 Operator"
-.DS I
+.NH 2 
+Logical \s-1AND\s0 Operator
+.DS 
 \fIlogical-and-expression:
         expression && expression\fR
 .DE
-.P
+.PP
 The
 .B
 &&
@@ -1616,7 +1639,7 @@ Unlike
 guarantees left to right
 evaluation; moreover, the second operand is not evaluated
 if the first operand is 0.
-.P
+.PP
 The operands need not have the same type, but each
 must have one of the fundamental
 types or be a pointer.
@@ -1624,12 +1647,13 @@ The result is always
 .B
 int\fR.
 .R
-.H 3 "Logical \s-1OR\s0 Operator"
-.DS I
+.NH 2 
+Logical \s-1OR\s0 Operator
+.DS 
 \fIlogical-or-expression:
         expression || expression\fR
 .DE
-.P
+.PP
 The
 .B
 ||
@@ -1645,7 +1669,7 @@ Unlike
 guarantees left to right evaluation; moreover,
 the second operand is not evaluated
 if the value of the first operand is nonzero.
-.P
+.PP
 The operands need not have the same type, but each
 must
 have one of the fundamental types
@@ -1654,12 +1678,13 @@ The result is always
 .B
 int\fR.
 .R
-.H 3 "Conditional Operator"
-.DS I
+.NH 2 
+Conditional Operator
+.DS 
 \fIconditional-expression:
         expression ? expression : expression\fR
 .DE
-.P
+.PP
 Conditional expressions group right to left.
 The first expression is evaluated;
 and if it is nonzero, the result is the value of the
@@ -1674,8 +1699,9 @@ Otherwise, one must be a pointer and the other the constant 0,
 and the result has the type of the pointer.
 Only one of the second and third
 expressions is evaluated.
-.H 3 "Assignment Operators"
-.P
+.NH 2 
+Assignment Operators
+.PP
 There are a number of assignment operators,
 all of which group right to left.
 All require an lvalue as their left operand,
@@ -1685,12 +1711,12 @@ The value is the value stored in the
 left operand after the assignment has taken place.
 The two parts of a compound assignment operator are separate
 tokens.
-.DS I
+.DS 
 \fIassignment-expression:
         lvalue = expression
-        lvalue += expression
-        lvalue -= expression
-        lvalue *= expression
+        lvalue \(pl= expression
+        lvalue \(mi= expression
+        lvalue \(**= expression
         lvalue /= expression
         lvalue %= expression
         lvalue >>= expression
@@ -1699,7 +1725,7 @@ tokens.
         lvalue ^= expression
         lvalue |= expression\fR
 .DE
-.P
+.PP
 In the simple assignment with
 \fB=\fR,
 the value of the expression replaces that of the object
@@ -1714,7 +1740,7 @@ of the same type.
 However, the constant 0 may be assigned to a pointer;
 it is guaranteed that this value will produce a null
 pointer distinguishable from a pointer to any object.
-.P
+.PP
 The behavior of an expression
 of the form
 \fBE1\fR\^ \fIop\fR\^ = \fBE2\fR\^
@@ -1728,21 +1754,22 @@ E1
 is evaluated only once.
 In
 .B
-+=
+\(pl=
 .R
 and
-\fB-=\fR,
+\fB\(mi=\fR,
 the left operand may be a pointer; in which case, the (integral) right
 operand is converted as explained
 in ``Additive Operators.''
 All right operands and all nonpointer left operands must
 have arithmetic type.
-.H 3 "Comma Operator"
-.DS I
+.NH 2 
+Comma Operator
+.DS 
 \fIcomma-expression:
         expression , expression\fR
 .DE
-.P
+.PP
 A pair of expressions separated by a comma is evaluated
 left to right, and the value of the left expression is
 discarded.
@@ -1755,37 +1782,39 @@ to functions (see ``Primary Expressions'') and lists
 of initializers (see ``Initialization'' under ``DECLARATIONS''),
 the comma operator as described in this subpart
 can only appear in parentheses. For example,
-.DS I
-\fBf(a, (t=3, t+2), c)\fR
+.DS 
+\fBf(a, (t=3, t\(pl2), c)\fR
 .DE
-.P 0
+.LP 
 has three arguments, the second of which has the value 5.
-.H 2 "DECLARATIONS"
-.P
+.NH 1 
+Declarations
+.PP
 Declarations are used to specify the interpretation
 which C gives to each identifier; they do not necessarily
 reserve storage associated with the identifier.
 Declarations have the form
-.DS I
+.DS 
 \fIdeclaration:
-        decl-specifiers declarator-list\v'0.5'opt\v'-0.5' ;\fR
+        decl-specifiers declarator-list\v'0.5'\s-2opt\s0\v'-0.5' ;\fR
 .DE
-.P 0
+.PP 
 The declarators in the declarator-list
 contain the identifiers being declared.
 The decl-specifiers
 consist of a sequence of type and storage class specifiers.
-.DS I
+.DS 
 \fIdecl-specifiers:
-        type-specifier decl-specifiers\v'0.5'opt\v'-0.5'
-        sc-specifier decl-specifiers\v'0.5'opt\v'-0.5'\fR
+        type-specifier decl-specifiers\v'0.5'\s-2opt\s0\v'-0.5'
+        sc-specifier decl-specifiers\v'0.5'\s-2opt\s0\v'-0.5'\fR
 .DE
-.P 0
+.PP 
 The list must be self-consistent in a way described below.
-.H 3 "Storage Class Specifiers"
-.P
+.NH 2 
+Storage Class Specifiers
+.PP
 The sc-specifiers are:
-.DS I
+.DS 
 \fIsc-specifier:\fB
         auto
         static
@@ -1793,7 +1822,7 @@ The sc-specifiers are:
         register
         typedef\fR
 .DE
-.P 0
+.PP 
 The
 .B
 typedef
@@ -1802,7 +1831,7 @@ specifier does not reserve storage
 and is called a ``storage class specifier'' only for syntactic convenience.
 See ``Typedef'' for more information.
 The meanings of the various storage classes were discussed in ``Names.''
-.P
+.PP
 The
 \fBauto\fR,
 \fBstatic\fR,
@@ -1820,7 +1849,7 @@ case,
 there must be an external definition (see ``External Definitions'')
 for the given identifiers
 somewhere outside the function in which they are declared.
-.P
+.PP
 A
 .B
 register
@@ -1851,7 +1880,7 @@ Smaller, faster programs can be expected if register declarations
 are used appropriately,
 but future improvements in code generation
 may render them unnecessary.
-.P
+.PP
 At most, one sc-specifier may be given in a declaration.
 If the sc-specifier is missing from a declaration, it
 is taken to be
@@ -1866,10 +1895,11 @@ outside.
 Exception:
 functions are never
 automatic.
-.H 3 "Type Specifiers"
-.P
+.NH 2 
+Type Specifiers
+.PP
 The type-specifiers are
-.DS I
+.DS 
 \fItype-specifier:
         struct-or-union-specifier
         typedef-name
@@ -1887,7 +1917,7 @@ basic-type:\fB
         double
         void\fR
 .DE
-.P 0
+.PP 
 At most one of the words \fBlong\fR or \fBshort\fR
 may be specified in conjunction with \fBint\fR;
 the meaning is the same as if \fBint\fR were not mentioned.
@@ -1897,7 +1927,7 @@ the meaning is the same as \fBdouble\fR.
 The word \fBunsigned\fR may be specified alone, or
 in conjunction with \fBint\fR or any of its short
 or long varieties, or with \fBchar\fR.
-.P
+.PP
 Otherwise, at most on type-specifier may be
 given in a declaration.
 In particular, adjectival use of \fBlong\fR,
@@ -1905,7 +1935,7 @@ In particular, adjectival use of \fBlong\fR,
 with \fBtypedef\fR names.
 If the type-specifier is missing from a declaration,
 it is taken to be \fBint\fR.
-.P
+.PP
 Specifiers for structures, unions, and enumerations are discussed in
 ``Structure, Union, and Enumeration Declarations.''
 Declarations with
@@ -1913,60 +1943,62 @@ Declarations with
 typedef
 .R
 names are discussed in ``Typedef.''
-.H 3 "Declarators"
-.P
+.NH 2 
+Declarators
+.PP
 The declarator-list appearing in a declaration
 is a comma-separated sequence of declarators,
 each of which may have an initializer.
-.DS I
+.DS 
 \fIdeclarator-list:
         init-declarator
         init-declarator , declarator-list
 .DE
-.DS I
+.DS 
 \fIinit-declarator:
-        declarator initializer\v'0.5'opt\v'-0.5'\fR
+        declarator initializer\v'0.5'\s-2opt\s0\v'-0.5'\fR
 .DE
-.P 0
+.PP 
 Initializers are discussed in ``Initialization''.
 The specifiers in the declaration
 indicate the type and storage class of the objects to which the
 declarators refer.
 Declarators have the syntax:
-.DS I
+.DS 
 \fIdeclarator:
         identifier
         ( declarator )
-        * declarator
+        \(** declarator
         declarator ()
-        declarator [ constant-expression\v'0.5'opt\v'-0.5' ]\fR
+        declarator [ constant-expression\v'0.5'\s-2opt\s0\v'-0.5' ]\fR
 .DE
-.P 0
+.PP 
 The grouping is
 the same as in expressions.
-.H 3 "Meaning of Declarators"
-.P
+.NH 2 
+Meaning of Declarators
+.PP
 Each declarator is taken to be
 an assertion that when a construction of
 the same form as the declarator appears in an expression,
 it yields an object of the indicated
 type and storage class.
-.P
+.PP
 Each declarator contains exactly one identifier; it is this identifier that
 is declared.
 If an unadorned identifier appears
 as a declarator, then it has the type
 indicated by the specifier heading the declaration.
-.P
+.PP
 A declarator in parentheses is identical to the unadorned declarator,
 but the binding of complex declarators may be altered by parentheses.
 See the examples below.
-.P
+.PP
 Now imagine a declaration
-.DS I
+.DS 
 \fBT D1\fR
 .DE
-.P 0
+.LP 
 where
 .B
 T
@@ -2003,44 +2035,44 @@ Then if
 D1
 .R
 has the form
-.DS I
-\fB*D\fR
+.DS 
+\fB\(**D\fR
 .DE
-.P 0
+.LP 
 the type of the contained identifier is
 ``\|.\|.\|.\| pointer to
 .B
 T
 .R
 \&.''
-.P
+.PP
 If
 .B
 D1
 .R
 has the form
-.DS I
-\fBD()\fR
+.DS 
+\fBD\|(\|\|)\|\fR
 .DE
-.P 0
+.LP 
 then the contained identifier has the type
 ``\|.\|.\|. function returning
 \fBT\fR.''
-.P
+.LP
 If
 .B
 D1
 .R
 has the form
-.DS I
-\fBD[\fIconstant-expression\fB]\fR
+.DS 
+\fBD\|[\|\fIconstant-expression\fB\|]\fR
 .DE
-.P 0
+.LP 
 or
-.DS I
-\fBD[]\fR
+.DS 
+\fBD\|[\|]\|\fR
 .DE
-.P 0
+.LP 
 then the contained identifier has type
 ``\|.\|.\|.\| array of
 \fBT\fR.''
@@ -2064,11 +2096,11 @@ The first constant expression may also be omitted
 when the declarator is followed by initialization.
 In this case the size is calculated from the number
 of initial elements supplied.
-.P
+.PP
 An array may be constructed from one of the basic types, from a pointer,
 from a structure or union,
 or from another array (to generate a multidimensional array).
-.P
+.PP
 Not all the possibilities
 allowed by the syntax above are actually
 permitted.
@@ -2080,12 +2112,12 @@ there are no arrays of functions although
 there may be arrays of pointers to functions.
 Likewise, a structure or union may not contain a function;
 but it may contain a pointer to a function.
-.P
+.PP
 As an example, the declaration
-.DS I
-\fBint i, *ip, f(), *fip(), (*pfi)();\fR
+.DS 
+\fBint i, \(**ip, f(), \(**fip(), (\(**pfi)();\fR
 .DE
-.P 0
+.LP 
 declares an integer
 \fBi\fR,
 a pointer
@@ -2112,11 +2144,11 @@ returns an integer.
 It is especially useful to compare the last two.
 The binding of
 .B
-*fip()
+\(**fip()
 .R
 is
 .B
-*(fip())\fR.
+\(**(fip())\fR.
 .R
 The declaration suggests,
 and the same construction in an expression
@@ -2127,17 +2159,17 @@ fip\fR.
 Using indirection through the (pointer) result
 to yield an integer.
 In the declarator
-\fB(*pfi)()\fR,
+\fB(\(**pfi)()\fR,
 the extra parentheses are necessary, as they are also
 in an expression, to indicate that indirection through
 a pointer to a function yields a function, which is then called;
 it returns an integer.
-.P
+.PP
 As another example,
-.DS I
-\fBfloat fa[17], *afp[17];\fR
+.DS 
+\fBfloat fa[17], \(**afp[17];\fR
 .DE
-.P 0
+.LP 
 declares an array of
 .B
 float
@@ -2149,10 +2181,10 @@ float
 .R
 numbers.
 Finally,
-.DS I
+.DS 
 \fBstatic int x3d[3][5][7];\fR
 .DE
-.P 0
+.LP 
 declares a static 3-dimensional array of integers,
 with rank 3\(mu5\(mu7.
 In complete detail,
@@ -2176,45 +2208,46 @@ and the last has type
 .B
 int\fR.
 .R
-.H 3 "Structure and Union Declarations"
-.P
+.NH 2 
+Structure and Union Declarations
+.PP
 A structure
 is an object consisting of a sequence of named members.
 Each member may have any type.
 A union is an object which may, at a given time, contain any one
 of several members.
 Structure and union specifiers have the same form.
-.DS I
+.DS 
 \fIstruct-or-union-specifier:
         struct-or-union { struct-decl-list }
         struct-or-union identifier { struct-decl-list }
         struct-or-union identifier
 .DE
-.DS I
+.DS 
 \fIstruct-or-union:\fB
         struct
         union\fR
 .DE
-.P 0
+.PP 
 The
 struct-decl-list
 .ne 4
 is a sequence of declarations for the members of the structure or union:
-.DS I
+.DS 
 \fIstruct-decl-list:
         struct-declaration
         struct-declaration struct-decl-list
 .DE
-.DS I
+.DS 
 \fIstruct-declaration:
         type-specifier struct-declarator-list ;
 .DE
-.DS I
+.DS 
 \fIstruct-declarator-list:
         struct-declarator
         struct-declarator , struct-declarator-list\fR
 .DE
-.P 0
+.PP 
 In the usual case, a struct-declarator is just a declarator
 for a member of a structure or union.
 A structure member may also consist of a specified number of bits.
@@ -2225,13 +2258,13 @@ field ;
 its length,
 a non-negative constant expression,
 is set off from the field name by a colon.
-.DS I
+.DS 
 \fIstruct-declarator:
         declarator
         declarator : constant-expression
         : constant-expression\fR
 .DE
-.P 0
+.PP 
 Within a structure, the objects declared
 have addresses which increase as the declarations
 are read left to right.
@@ -2245,20 +2278,20 @@ they do not straddle words.
 A field which does not fit into the space remaining in a word
 is put into the next word.
 No field may be wider than a word.
-.P
+.PP
 Fields are assigned right to left
 on the
 PDP-11
 and
 VAX-11,
 left to right on the 3B 20.
-.P
+.PP
 A struct-declarator with no declarator, only a colon and a width,
 indicates an unnamed field useful for padding to conform
 to externally-imposed layouts.
 As a special case, a field with a width of 0
 specifies alignment of the next field at an implementation dependant boundary.
-.P
+.PP
 The language does not restrict the types of things that
 are declared as fields,
 but implementations are not required to support any but
@@ -2292,19 +2325,19 @@ and the address-of operator
 .R
 may not be applied to them, so that there are no pointers to
 fields.
-.P
+.PP
 A union may be thought of as a structure all of whose members
 begin at offset 0 and whose size is sufficient to contain
 any of its members.
 At most, one of the members can be stored in a union
 at any time.
-.P
+.PP
 A structure or union specifier of the second form, that is, one of
-.DS I
+.DS 
         \fBstruct \fIidentifier { struct-decl-list \fR}
         \fBunion \fIidentifier { struct-decl-list \fR}
 .DE
-.P 0
+.LP 
 declares the identifier to be the
 .I
 structure tag
@@ -2313,11 +2346,11 @@ structure tag
 of the structure specified by the list.
 A subsequent declaration may then use
 the third form of specifier, one of
-.DS I
+.DS 
         \fBstruct \fIidentifier\fR
         \fBunion \fIidentifier\fR
 .DE
-.P 0
+.PP 
 Structure tags allow definition of self-referential
 structures. Structure tags also
 permit the long part of the declaration to be
@@ -2325,7 +2358,7 @@ given once and used several times.
 It is illegal to declare a structure or union
 which contains an instance of
 itself, but a structure or union may contain a pointer to an instance of itself.
-.P
+.PP
 The third form of a structure or union specifier may be
 used prior to a declaration which gives the complete specification
 of the structure or union in situations in which the size
@@ -2336,33 +2369,33 @@ when a \fBtypedef\fR name is declared to be a synonym
 for a structure or union.
 This, for example, allows the declaration of a pair
 of structures which contain pointers to each other.
-.P
+.PP
 The names of members and tags do not conflict
 with each other or with ordinary variables.
 A particular name may not be used twice
 in the same structure,
 but the same name may be used in several different structures in the same scope.
-.P
+.PP
 A simple but important example of a structure declaration is
 the following binary tree structure:
-.DS I
+.DS 
 \fBstruct tnode 
 {
         char tword[20];
         int count;
-        struct tnode *left;
-        struct tnode *right;
+        struct tnode \(**left;
+        struct tnode \(**right;
 };\fR
 .DE
-.P 0
+.LP 
 which contains an array of 20 characters, an integer, and two pointers
 to similar structures.
 Once this declaration has been given, the
 declaration
-.DS I
-\fBstruct tnode s, *sp;\fR
+.DS 
+\fBstruct tnode s, \(**sp;\fR
 .DE
-.P 0
+.LP 
 declares
 .B
 s
@@ -2375,10 +2408,10 @@ sp
 to be a pointer to a structure
 of the given sort.
 With these declarations, the expression
-.DS I
+.DS 
 \fBsp->count\fR
 .DE
-.P 0
+.LP 
 refers to the
 .B
 count
@@ -2388,18 +2421,18 @@ field of the structure to which
 sp
 .R
 points;
-.DS I
+.DS 
 \fBs.left\fR
 .DE
-.P 0
+.LP 
 refers to the left subtree pointer
 of the structure
 \fBs\fR;
 and
-.DS I
+.DS 
 \fBs.right->tword[0]\fR
 .DE
-.P 0
+.LP 
 refers to the first character of the
 .B
 tword
@@ -2408,11 +2441,12 @@ member of the right subtree of
 .B
 s\fR.
 .R
-.P
-.H 3 "Enumeration Declarations"
-.P
+.PP
+.NH 2 
+Enumeration Declarations
+.PP
 Enumeration variables and constants have integral type.
-.DS I
+.DS 
 \fIenum-specifier:\fB
         enum\fI { enum-list \fR}\fB
         enum \fIidentifier { enum-list \fR}\fB
@@ -2426,7 +2460,7 @@ enumerator:
         identifier
         identifier = constant-expression\fR
 .DE
-.P 0
+.PP 
 The identifiers in an enum-list are declared as constants
 and may appear wherever constants are required.
 If no enumerators with
@@ -2442,10 +2476,10 @@ An enumerator with
 .R
 gives the associated identifier the value
 indicated; subsequent identifiers continue the progression from the assigned value.
-.P
+.PP
 The names of enumerators in the same scope must all be distinct
 from each other and from those of ordinary variables.
-.P
+.PP
 The role of the identifier in the enum-specifier
 is entirely analogous to that of the structure tag
 in a struct-specifier; it names a particular enumeration.
@@ -2453,14 +2487,14 @@ For example,
 .DS L 
 \fBenum color { chartreuse, burgundy, claret=20, winedark };
 \&...
-enum color \(**cp, col;
+enum color \(\(**\(**cp, col;
 \&...
 col = claret;
 cp = &col;
 \&...
-if (\(**cp == burgundy) ...\fR
+if (\(\(**\(**cp == burgundy) ...\fR
 .DE
-.P 0
+.LP 
 makes
 .B
 color
@@ -2477,8 +2511,9 @@ col
 .R
 as an object of that type.
 The possible values are drawn from the set {0,1,20,21}.
-.H 3 "Initialization"
-.P
+.NH 2 
+Initialization
+.PP
 A declarator may specify an initial value for the
 identifier being declared.
 The initializer is preceded by
@@ -2487,20 +2522,20 @@ The initializer is preceded by
 .R
 and
 consists of an expression or a list of values nested in braces.
-.DS I
+.DS 
 \fIinitializer:
         = expression
         = { initializer-list }
         = { initializer-list , }
 .DE
-.DS I
+.DS 
 \fIinitializer-list:
         expression
         initializer-list , initializer-list\fR
         { \fIinitializer-list \fR}
         { \fIinitializer-list\fR , }
 .DE
-.P
+.PP
 All the expressions in an initializer
 for a static or external variable must be constant
 expressions, which are described in ``CONSTANT EXPRESSIONS'',
@@ -2508,12 +2543,12 @@ or expressions which reduce to the address of a previously
 declared variable, possibly offset by a constant expression.
 Automatic or register variables may be initialized by arbitrary
 expressions involving constants and previously declared variables and functions.
-.P
+.PP
 Static and external variables that are not initialized are
 guaranteed to start off as zero.
 Automatic and register variables that are not initialized
 are guaranteed to start off as garbage.
-.P
+.PP
 When an initializer applies to a
 .I
 scalar
@@ -2522,7 +2557,7 @@ scalar
 it consists of a single expression, perhaps in braces.
 The initial value of the object is taken from
 the expression; the same conversions as for assignment are performed.
-.P
+.PP
 When the declared variable is an
 .I
 aggregate
@@ -2536,7 +2571,7 @@ applies recursively to the members of the aggregate.
 If there are fewer initializers in the list than there are members of the aggregate,
 then the aggregate is padded with zeros.
 It is not permitted to initialize unions or automatic aggregates.
-.P
+.PP
 Braces may in some cases be omitted.
 If the initializer begins with a left brace, then
 the succeeding comma-separated list of initializers initializes
@@ -2547,7 +2582,7 @@ then only enough elements from the list are taken to account
 for the members of the aggregate; any remaining members
 are left to initialize the next member of the aggregate of which
 the current aggregate is a part.
-.P
+.PP
 A final abbreviation allows a
 .B
 char
@@ -2555,19 +2590,19 @@ char
 array to be initialized by a string.
 In this case successive characters of the string
 initialize the members of the array.
-.P
+.PP
 For example,
-.DS I
+.DS 
 \fBint x[] = { 1, 3, 5 };\fR
 .DE
-.P 0
+.LP 
 declares and initializes
 .B
 x
 .R
 as a one-dimensional array which has three members, since no size was specified
 and there are three initializers.
-.DS I
+.DS 
 \fBfloat y[4][3] = 
 {
         { 1, 3, 5 },
@@ -2575,7 +2610,7 @@ and there are three initializers.
         { 3, 5, 7 },
 };\fR
 .DE
-.P 0
+.LP 
 is a completely-bracketed initialization:
 1, 3, and 5 initialize the first row of
 the array
@@ -2601,13 +2636,13 @@ y[3]
 .R
 is initialized with 0.
 Precisely, the same effect could have been achieved by
-.DS I
+.DS 
 \fBfloat y[4][3] = 
 {
         1, 3, 5, 2, 4, 6, 3, 5, 7
 };\fR
 .DE
-.P 0
+.PP 
 The initializer for
 .B
 y
@@ -2627,29 +2662,30 @@ and
 y[2]\fR.
 .R
 Also,
-.DS I
+.DS 
 \fBfloat y[4][3] = 
 {
         { 1 }, { 2 }, { 3 }, { 4 }
 };\fR
 .DE
-.P 0
+.LP 
 initializes the first column of
 .B
 y
 .R
 (regarded as a two-dimensional array)
 and leaves the rest 0.
-.P
+.PP
 Finally,
-.DS I
+.DS 
 \fBchar msg[] = "Syntax error on line %s\en";\fR
 .DE
-.P 0
+.LP 
 shows a character array whose members are initialized
 with a string.
-.H 3 "Type Names"
-.P
+.NH 2 
+Type Names
+.PP
 In two contexts (to specify type conversions explicitly
 by means of a cast
 and as an argument of
@@ -2658,25 +2694,25 @@ it is desired to supply the name of a data type.
 This is accomplished using a ``type name'', which in essence
 is a declaration for an object of that type which omits the name of
 the object.
-.DS I
+.DS 
 \fItype-name:
         type-specifier abstract-declarator
 .DE
-.DS I
+.DS 
 \fIabstract-declarator:
         empty
         ( abstract-declarator )
-        * abstract-declarator
+        \(** abstract-declarator
         abstract-declarator ()
-        abstract-declarator\fR\^ [ \fIconstant-expression\v'0.5'opt\v'-0.5' \fR\^]
+        abstract-declarator\fR\^ [ \fIconstant-expression\v'0.5'\s-2opt\s0\v'-0.5' \fR\^]
 .DE
-.P 0
+.PP 
 To avoid ambiguity,
 in the construction
-.DS I
+.DS 
         \fI( abstract-declarator \fR)
 .DE
-.P 0
+.LP 
 the
 abstract-declarator
 is required to be nonempty.
@@ -2687,24 +2723,25 @@ in a declaration.
 The named type is then the same as the type of the
 hypothetical identifier.
 For example,
-.DS I
+.DS 
 \fBint
-int *
-int *[3]
-int (*)[3]
-int *()
-int (*)()
-int (*[3])()\fR
+int \(**
+int \(**[3]
+int (\(**)[3]
+int \(**()
+int (\(**)()
+int (\(**[3])()\fR
 .DE
-.P 0
+.LP 
 name respectively the types ``integer,'' ``pointer to integer,''
 ``array of three pointers to integers,''
 ``pointer to an array of three integers,''
 ``function returning pointer to integer,''
 ``pointer to function returning an integer,''
 and ``array of three pointers to functions returning an integer.''
-.H 3 "Typedef"
-.P
+.NH 2 
+Typedef
+.PP
 Declarations whose ``storage class'' is
 .B
 typedef
@@ -2713,11 +2750,11 @@ do not define storage but instead
 define identifiers which can be used later
 as if they were type keywords naming fundamental
 or derived types.
-.DS I
+.DS 
 \fItypedef-name:\fR
         \fIidentifier\fR
 .DE
-.P 0
+.PP 
 Within the scope of a declaration involving
 \fBtypedef\fR,
 each identifier appearing as part of
@@ -2728,18 +2765,18 @@ associated with the identifier
 in the way described in ``Meaning of Declarators.''
 For example,
 after
-.DS I
-\fBtypedef int MILES, *KLICKSP;
+.DS 
+\fBtypedef int MILES, \(**KLICKSP;
 typedef struct { double re, im; } complex;\fR
 .DE
-.P 0
+.LP 
 the constructions
-.DS I
+.DS 
 \fBMILES distance;
 extern KLICKSP metricp;
-complex z, *zp;\fR
+complex z, \(**zp;\fR
 .DE
-.P 0
+.LP 
 are all legal declarations; the type of
 .B
 distance
@@ -2761,7 +2798,7 @@ The
 zp
 .R
 is a pointer to such a structure.
-.P
+.PP
 The
 .B
 typedef
@@ -2779,43 +2816,46 @@ any other
 int
 .R
 object.
-.H 2 "STATEMENTS"
-.P
+.NH 1 
+Statements
+.PP
 Except as indicated, statements are executed in sequence.
-.H 3 "Expression Statement"
-.P
+.NH 2 
+Expression Statement
+.PP
 Most statements are expression statements, which have
 the form
-.DS I
+.DS 
 \fIexpression \fR;
 .DE
-.P 0
+.PP 
 Usually expression statements are assignments or function
 calls.
-.H 3 "Compound Statement or Block"
-.P
+.NH 2 
+Compound Statement or Block
+.PP
 So that several statements can be used where one is expected,
 the compound statement (also, and equivalently, called ``block'') is provided:
-.DS I
+.DS 
 \fIcompound-statement:
-        { declaration-list\v'0.5'opt\v'-0.5' statement-list\v'0.5'opt\v'-0.5' }
+        { declaration-list\v'0.5'\s-2opt\s0\v'-0.5' statement-list\v'0.5'\s-2opt\s0\v'-0.5' }
 .DE
-.DS I
+.DS 
 \fIdeclaration-list:
         declaration
         declaration declaration-list
 .DE
-.DS I
+.DS 
 \fIstatement-list:
         statement
         statement statement-list\fR
 .DE
-.P 0
+.PP 
 If any of the identifiers
 in the declaration-list were previously declared,
 the outer declaration is pushed down for the duration of the block,
 after which it resumes its force.
-.P
+.PP
 Any initializations of
 .B
 auto
@@ -2841,14 +2881,15 @@ extern
 .R
 declarations do not reserve storage
 so initialization is not permitted.
-.H 3 "Conditional Statement"
-.P
+.NH 2 
+Conditional Statement
+.PP
 The two forms of the conditional statement are
-.DS I
+.DS 
 \fBif\fR\^ ( \fIexpression\fR\^ ) \fIstatement\fR\^
 \fBif\fR\^ ( \fIexpression\fR\^ ) \fIstatement \fBelse \fIstatement\fR\^
 .DE
-.P 0
+.PP 
 In both cases, the expression is evaluated;
 and if it is nonzero, the first substatement
 is executed.
@@ -2864,60 +2905,63 @@ with the last encountered
 .B
 if\fR.
 .R
-.H 3 "While Statement"
-.P
+.NH 2 
+While Statement
+.PP
 The
 .B
 while
 .R
 statement has the form
-.DS I
+.DS 
 \fBwhile\fR\^ ( \fIexpression\fR\^ ) \fIstatement\fR\^
 .DE
-.P 0
+.PP
 The substatement is executed repeatedly
 so long as the value of the
 expression remains nonzero.
 The test takes place before each execution of the
 statement.
-.H 3 "Do Statement"
-.P
+.NH 2 
+Do Statement
+.PP
 The
 .B
 do
 .R
 statement has the form
-.DS I
+.DS 
 \fBdo \fIstatement  \fBwhile\fR\^ ( \fIexpression \fR\^) ;
 .DE
-.P 0
+.PP
 The substatement is executed repeatedly until
 the value of the expression becomes 0.
 The test takes place after each execution of the
 statement.
-.H 3 "For Statement"
-.P
+.NH 2 
+For Statement
+.PP
 The
 .B
 for
 .R
 statement has the form:
-.DS I 
-\fBfor\fI ( exp-1\v'0.5'opt\v'-0.5' ; exp-2\v'0.5'opt\v'-0.5' ; exp-3\v'0.5'opt\v'-0.5' ) statement\fR
+.DS  
+\fBfor\fI ( exp-1\v'0.5'\s-2opt\s0\v'-0.5' ; exp-2\v'0.5'\s-2opt\s0\v'-0.5' ; exp-3\v'0.5'\s-2opt\s0\v'-0.5' ) statement\fR
 .DE
-.P 0
+.PP
 .sp
 Except for the behavior of \fBcontinue\fR,
 this statement is equivalent to
-.DS I
+.DS 
 \fIexp-1 \fR;
 \fBwhile\fR\^ ( \fIexp-2\ ) \fR\^
 {
         \fIstatement
-        exp-3 ;
-}\fR
+        exp-3 ;\fR
+}
 .DE
-.P 0
+.PP
 Thus the first expression specifies initialization
 for the loop; the second specifies
 a test, made before each iteration, such
@@ -2925,7 +2969,7 @@ that the loop is exited when the expression becomes
 0.
 The third expression often specifies an incrementing
 that is performed after each iteration.
-.P
+.PP
 Any or all of the expressions may be dropped.
 A missing
 .I
@@ -2940,8 +2984,9 @@ clause equivalent to
 \fBwhile(1)\fR;
 other missing expressions are simply
 dropped from the expansion above.
-.H 3 "Switch Statement"
-.P
+.NH 2 
+Switch Statement
+.PP
 The
 .B
 switch
@@ -2950,10 +2995,10 @@ statement causes control to be transferred
 to one of several statements depending on
 the value of an expression.
 It has the form
-.DS I
+.DS 
 \fBswitch\fR\^ ( \fIexpression\fR\^ ) \fIstatement\fR\^
 .DE
-.P 0
+.PP
 The usual arithmetic conversion is performed on the
 expression, but the result must be
 .B
@@ -2963,10 +3008,10 @@ The statement is typically compound.
 Any statement within the statement
 may be labeled with one or more case prefixes
 as follows:
-.DS I
+.DS 
 \fBcase \fIconstant-expression \fR:
 .DE
-.P 0
+.LP
 where the constant
 expression
 must be
@@ -2976,13 +3021,13 @@ int\fR.
 No two of the case constants in the same switch
 may have the same value.
 Constant expressions are precisely defined in ``CONSTANT EXPRESSIONS.''
-.P
+.PP
 There may also be at most one statement prefix of the
 form
-.DS I
+.DS 
 \fBdefault :\fR
 .DE
-.P 0
+.PP
 When the
 .B
 switch
@@ -3004,7 +3049,7 @@ If no case matches and if there is no
 then
 none of the statements in the
 switch is executed.
-.P
+.PP
 The prefixes
 .B
 case
@@ -3017,20 +3062,21 @@ do not alter the flow of control,
 which continues unimpeded across such prefixes.
 To exit from a switch, see
 ``Break Statement.''
-.P
+.PP
 Usually, the statement that is the subject of a switch is compound.
 Declarations may appear at the head of this
 statement,
 but
 initializations of automatic or register variables
 are ineffective.
-.H 3 "Break Statement"
-.P
+.NH 2 
+Break Statement
+.PP
 The statement
-.DS I
+.DS 
 \fBbreak ;\fR
 .DE
-.P 0
+.LP
 causes termination of the smallest enclosing
 \fBwhile\fR,
 \fBdo\fR,
@@ -3040,13 +3086,14 @@ or
 statement;
 control passes to the
 statement following the terminated statement.
-.H 3 "Continue Statement"
-.P
+.NH 2 
+Continue Statement
+.PP
 The statement
-.DS I
+.DS 
 \fBcontinue ;\fR
 .DE
-.P 0
+.LP
 causes control to pass to the loop-continuation portion of the
 smallest enclosing
 \fBwhile\fR,
@@ -3055,14 +3102,16 @@ or
 \fBfor\fR
 statement; that is to the end of the loop.
 More precisely, in each of the statements
-.DS I
-\fBwhile (...)        do                  for (...) 
-{                  {                   {
-      ...                ...                 ...
-contin: ;          contin: ;           contin: ;
-}                  } while (...);      }\fR
+.DS 
+.TS
+lw(2i) lw(2i) lw(2i).
+\fBwhile (\|.\|.\|.\|) {	do {	for (\|.\|.\|.\|) {\fR
+     \fIstatement ;	     statement ;	     statement ;\fR
+     \fBcontin: ;	     contin: ;	     contin: ;
+}	} while (...);	}\fR
+.TE
 .DE
-.P 0
+.LP
 a
 .B
 continue
@@ -3076,8 +3125,9 @@ goto\ contin\fR.
 contin:
 .R
 is a null statement, see ``Null Statement''.)
-.H 3 "Return Statement"
-.P
+.NH 2 
+Return Statement
+.PP
 A function returns to its caller by means of
 the
 .B
@@ -3085,11 +3135,11 @@ return
 .R
 statement which has one of the
 forms
-.DS I
+.DS 
 \fBreturn ;
 return \fIexpression \fR;
 .DE
-.P 0
+.PP
 In the first case, the returned value is undefined.
 In the second case, the value of the expression
 is returned to the caller
@@ -3100,25 +3150,27 @@ function in which it appears.
 Flowing off the end of a function is
 equivalent to a return with no returned value.
 The expression may be parenthesized.
-.H 3 "Goto Statement"
-.P
+.NH 2 
+Goto Statement
+.PP
 Control may be transferred unconditionally by means of
 the statement
-.DS I
+.DS 
 \fBgoto \fIidentifier \fR;
 .DE
-.P 0
+.PP
 The identifier must be a label
 (see ``Labeled Statement'')
 located in the current function.
-.H 3 "Labeled Statement"
-.P
+.NH 2 
+Labeled Statement
+.PP
 Any statement may be preceded by
 label prefixes of the form
-.DS I
+.DS 
 \fIidentifier \fR:
 .DE
-.P 0
+.LP
 which serve to declare the identifier
 as a label.
 The only use of a label is as a target of a
@@ -3128,13 +3180,14 @@ goto\fR.
 The scope of a label is the current function,
 excluding any subblocks in which the same identifier has been redeclared.
 See ``SCOPE RULES.''
-.H 3 "Null Statement"
-.P
+.NH 2 
+Null Statement
+.PP
 The null statement has the form
-.DS I
-\fB;\fR
+.DS
+	\fB;\fR
 .DE
-.P 0
+.PP
 A null statement is useful to carry a label just before the
 .B
 }
@@ -3144,8 +3197,9 @@ body to a looping statement such as
 .B
 while\fR.
 .R
-.H 2 "EXTERNAL DEFINITIONS"
-.P
+.NH 1 
+External Definitions
+.PP
 A C program consists of a sequence of external definitions.
 An external definition declares an identifier to
 have storage class
@@ -3169,14 +3223,15 @@ of declarations persists to the end of a block.
 The syntax of external definitions is the same
 as that of all declarations except that
 only at this level may the code for functions be given.
-.H 3 "External Function Definitions"
-.P
+.NH 2 
+External Function Definitions
+.PP
 Function definitions have the form
 .DS
 \fIfunction-definition:
-        decl-specifiers\v'0.5'opt\v'-0.5' function-declarator function-body\fR
+        decl-specifiers\v'0.5'\s-2opt\s0\v'-0.5' function-declarator function-body\fR
 .DE
-.P 0
+.PP
 The only sc-specifiers
 allowed
 among the decl-specifiers
@@ -3192,23 +3247,23 @@ A function declarator is similar to a declarator
 for a ``function returning .\|.\|.\|'' except that
 it lists the formal parameters of
 the function being defined.
-.DS I
+.DS 
 \fIfunction-declarator:
-        declarator ( parameter-list\v'0.5'opt\v'-0.5' )
+        declarator ( parameter-list\v'0.5'\s-2opt\s0\v'-0.5' )
 .DE
-.DS I
+.DS 
 \fIparameter-list:
         identifier
         identifier , parameter-list\fR
 .DE
-.P 0
+.PP
 The function-body
 has the form
-.DS I
+.DS 
 \fIfunction-body:
-        declaration-list\v'0.5'opt\v'-0.5' compound-statement\fR
+        declaration-list\v'0.5'\s-2opt\s0\v'-0.5' compound-statement\fR
 .DE
-.P 0
+.PP
 The identifiers in the parameter list, and only those identifiers,
 may be declared in the declaration list.
 Any identifiers whose type is not given are taken to be
@@ -3220,9 +3275,9 @@ The only storage class which may be specified is
 if it is specified, the corresponding actual parameter
 will be copied, if possible, into a register
 at the outset of the function.
-.P
+.PP
 A simple example of a complete function definition is
-.DS I
+.DS 
 \fBint max(a, b, c)
         int a, b, c;
 {
@@ -3232,7 +3287,7 @@ A simple example of a complete function definition is
         return((m > c) ? m : c);
 }\fR
 .DE
-.P 0
+.PP
 Here
 .B
 int
@@ -3251,7 +3306,7 @@ parameters;
 \fB{\ ...\ }\fR
 is the
 block giving the code for the statement.
-.P
+.PP
 The C program converts all
 .B
 float
@@ -3276,14 +3331,15 @@ is taken to mean
 a pointer to the first element of the array,
 declarations of formal parameters declared ``array of .\|.\|.\|''
 are adjusted to read ``pointer to .\|.\|.\|.''
-.H 3 "External Data Definitions"
-.P
+.NH 2 
+External Data Definitions
+.PP
 An external data definition has the form
-.DS I
+.DS 
 \fIdata-definition:
         declaration\fR
 .DE
-.P 0
+.PP
 The storage class of such data may be
 .B
 extern
@@ -3299,8 +3355,9 @@ auto
 .R
 or
 \fBregister\fR.
-.H 2 "SCOPE RULES"
-.P
+.NH 1 
+Scope Rules
+.PP
 A C program need not all
 be compiled at the same time. The source text of the
 program
@@ -3310,7 +3367,7 @@ libraries.
 Communication among the functions of a program
 may be carried out both through explicit calls
 and through manipulation of external data.
-.P
+.PP
 Therefore, there are two kinds of scopes to consider:
 first, what may be called the
 .UL lexical
@@ -3324,8 +3381,9 @@ associated with external identifiers,
 which is characterized by the rule
 that references to the same external
 identifier are references to the same object.
-.H 3 "Lexical Scope"
-.P
+.NH 2 
+Lexical Scope
+.PP
 The lexical scope of identifiers declared in external definitions
 persists from the definition through
 the end of the source file
@@ -3337,13 +3395,13 @@ The lexical scope of identifiers declared at the head of a block
 persists until the end of the block.
 The lexical scope of labels is the whole of the
 function in which they appear.
-.P
+.PP
 In all cases, however,
 if an identifier is explicitly declared at the head of a block,
 including the block constituting a function,
 any declaration of that identifier outside the block
 is suspended until the end of the block.
-.P
+.PP
 Remember also (see ``Structure, Union, and Enumeration Declarations'' in
 ``DECLARATIONS'') that tags, identifiers associated with
 ordinary variables,
@@ -3361,14 +3419,15 @@ typedef
 names are in the same class as ordinary identifiers.
 They may be redeclared in inner blocks, but an explicit
 type must be given in the inner declaration:
-.DS I
+.DS 
 \fBtypedef float distance;
 \&...
 {
      auto int distance;
      ...\fR
+}
 .DE
-.P 0
+.PP
 The
 .B
 int
@@ -3379,8 +3438,9 @@ a declaration with no declarators and type
 .B
 distance\fR.
 .R
-.H 3 "Scope of Externals"
-.P
+.NH 2 
+Scope of Externals
+.PP
 If a function refers to an identifier declared to be
 \fBextern\fR,
 then somewhere among the files or libraries
@@ -3393,7 +3453,7 @@ so care must be taken that the type and size
 specified in the definition
 are compatible with those specified
 by each function which references the data.
-.P
+.PP
 It is illegal to explicitly initialize any external
 identifier more than once in the set of files and libraries
 comprising a multi-file program.
@@ -3401,7 +3461,7 @@ It is legal to have more than one data definition
 for any external non-function identifier;
 explicit use of \fBextern\fR does not
 change the meaning of an external declaration.
-.P
+.PP
 In restricted environments, the use of the \fBextern\fR
 storage class takes on an additional meaning.
 In these environments, the explicit appearance of the
@@ -3413,7 +3473,7 @@ It is required that there be exactly one definition of
 each external identifier (without \fBextern\fR)
 in the set of files and libraries
 comprising a mult-file program.
-.P
+.PP
 Identifiers declared
 .B
 static
@@ -3425,8 +3485,9 @@ Functions may be declared
 static\fR.
 .R
 .nr Hu 1
-.H 2 "COMPILER CONTROL LINES"
-.P
+.NH 1 
+Compiler Control Lines
+.PP
 The C compiler contains a preprocessor capable
 of macro substitution, conditional compilation,
 and inclusion of named files.
@@ -3442,21 +3503,22 @@ These lines have syntax independent of the rest of the language;
 they may appear anywhere and have effect which lasts (independent of
 scope) until the end of the source program file.
 .nr Hu 1
-.H 3 "Token Replacement"
-.P
+.NH 2 
+Token Replacement
+.PP
 A compiler-control line of the form
-.DS I
-\fB#define \fIidentifier token-string\v'0.5'opt\v'-0.5'\fR
+.DS 
+\fB#define \fIidentifier token-string\v'0.5'\s-2opt\s0\v'-0.5'\fR
 .DE
-.P 0
+.LP
 causes the preprocessor to replace subsequent instances
 of the identifier with the given string of tokens.
 Semicolons in or at the end of the token-string are part of that string.
 A line of the form
 .DS
-\fB#define \fIidentifier(identifier, ... )token-string\v'0.5'opt\v'-0.5'\fR
+\fB#define \fIidentifier(identifier, ... )token-string\v'0.5'\s-2opt\s0\v'-0.5'\fR
 .DE
-.P 0
+.LP
 where there is no space between the first identifier
 and the
 \fB(\fR,
@@ -3480,7 +3542,7 @@ for formal parameters, but
 strings and character constants in the rest of the program are
 not scanned for defined identifiers
 to replacement.
-.P
+.PP
 In both forms the replacement string is rescanned for more
 defined identifiers.
 In both forms
@@ -3490,23 +3552,23 @@ by writing
 \e
 .R
 at the end of the line to be continued.
-.P
+.PP
 This facility is most valuable for definition of ``manifest constants,''
 as in
-.DS I
+.DS 
 \fB#define TABSIZE 100
 .sp
-int table[TABSIZE];\fR
+int table\|[\|TABSIZE\|]\|;\fR
 .DE
-.P 0
+.PP
 A control line of the form
-.DS I
+.DS 
 \fB#undef \fIidentifier\fR
 .DE
-.P 0
+.LP
 causes the
 identifier's preprocessor definition (if any) to be forgotten.
-.P
+.PP
 If a \fB#define\fRd identifier is the subject of a subsequent
 \fB#define\fR with no intervening \fB#undef\fR, then
 the two token-strings are compared textually.
@@ -3514,14 +3576,15 @@ If the two token-strings are not identical
 (all white space is considered as equivalent), then
 the identifier is considered to be redefined.
 .nr Hu 1
-.H 3 "File Inclusion"
-.P
+.NH 2 
+File Inclusion
+.PP
 A compiler control line of
 the form
-.DS I
+.DS 
 \fB#include\fI "filename\|\fR"
 .DE
-.P 0
+.LP
 causes the replacement of that
 line by the entire contents of the file
 .I
@@ -3531,24 +3594,25 @@ The named file is searched for first in the directory
 of the file containing the \fB#include\fR,
 and then in a sequence of specified or standard places.
 Alternatively, a control line of the form
-.DS I
+.DS 
 \fB#include\fI <filename\|\fR>
 .DE
-.P 0
+.LP
 searches only the specified or standard places
 and not the directory of the \fB#include\fR.
 (How the places are specified is not part of the language.)
-.P
+.PP
 \fB#include\fRs
 may be nested.
 .nr Hu 1
-.H 3 "Conditional Compilation"
-.P
+.NH 2 
+Conditional Compilation
+.PP
 A compiler control line of the form
-.DS I
+.DS 
 \fB#if \fIrestricted-constant-expression\fR
 .DE
-.P 0
+.LP
 checks whether the restricted-constant expression evaluates to nonzero.
 (Constant expressions are discussed in ``CONSTANT EXPRESSIONS'';
 the following additional restrictions apply here:
@@ -3557,17 +3621,19 @@ the constant expression may not contain
 sizeof
 .R
 casts, or an enumeration constant.)
-.P
+.PP
 A restricted constant expression may also contain the
 additional unary expression
-.DS I
+.PP
 \fBdefined \fIidentifier\fR
+.LP
 or
-\fBdefined( \fIidentifier\fR
-.DE
+.PP
+\fBdefined( \fIidentifier )\fR
+.LP
 which evaluates to one if the identifier is currently
 defined in the preprocessor and zero if it is not.
-.P
+.PP
 All currently defined identifiers in restricted-constant-expressions
 are replaced by their token-strings (except those identifiers
 modified by \fBdefined\fR) just as in normal text.
@@ -3575,12 +3641,12 @@ The restricted constant expression will be evaluated only
 after all expressions have finished.
 During this evaluation, all undefined (to the procedure)
 identifiers evaluate to zero.
-.P
+.PP
 A control line of the form
-.DS I
+.DS 
 \fB#ifdef \fIidentifier\fR
 .DE
-.P 0
+.LP
 checks whether the identifier is currently defined
 in the preprocessor; i.e., whether it has been the
 subject of a
@@ -3590,25 +3656,28 @@ subject of a
 control line.
 It is equivalent to \fB#ifdef(\fIidentifier\fB)\fR.
 A control line of the form
-.DS I
+.DS 
 \fB#ifndef \fIidentifier\fR
 .DE
-.P 0
+.LP
 checks whether the identifier is currently undefined
 in the preprocessor.
-It is equivalent to \fB#if!defined(\fIidentifier\fB)\fR.
-.P
+It is equivalent to
+.DS
+\fB#if	!\|defined(\fIidentifier\fB)\fR.
+.DE
+.PP
 All three forms are followed by an arbitrary number of lines,
 possibly containing a control line
-.DS I
+.DS 
 \fB#else\fR
 .DE
-.P 0
+.LP
 and then by a control line
-.DS I
+.DS 
 \fB#endif\fR
 .DE
-.P 0
+.PP
 If the checked condition is true,
 then any lines
 between
@@ -3632,25 +3701,27 @@ the
 #endif 
 .R
 are ignored.
-.P
+.PP
 These constructions may be nested.
 .nr Hu 1
-.H 3 "Line Control"
-.P
+.NH 2 
+Line Control
+.PP
 For the benefit of other preprocessors which generate C programs,
 a line of the form
-.DS I
+.DS 
 \fB#line \fIconstant "filename\fR"
 .DE
-.P 0
+.LP
 causes the compiler to believe, for purposes of error
 diagnostics,
 that the line number of the next source line is given by the constant and the current input
 file is named by "\fIfilename\fR".
 If "\fIfilename\fR" is absent, the remembered file name does not change.
 .nr Hu 1
-.H 2 "IMPLICIT DECLARATIONS"
-.P
+.NH 1 
+Implicit Declarations
+.PP
 It is not always necessary to specify
 both the storage class and the type
 of identifiers in a declaration.
@@ -3680,7 +3751,7 @@ it is implicitly declared to be
 .B
 extern\fR.
 .R
-.P
+.PP
 In an expression, an identifier
 followed by
 .B
@@ -3690,21 +3761,23 @@ and not already declared
 is contextually
 declared to be ``function returning
 .B
-int\fR.\'\'
+int\fR.''
 .nr Hu 1
-.H 2 "TYPES REVISITED"
-.P
+.NH 1 
+Types Revisited
+.PP
 This part summarizes the operations
 which can be performed on objects of certain types.
 .nr Hu 1
-.H 3 "Structures and Unions"
-.P
+.NH 2 
+Structures and Unions
+.PP
 Structures and unions may be assigned, passed as arguments to functions,
 and returned by functions.
 Other plausible operators, such as equality comparison
 and structure casts,
 are not implemented.
-.P
+.PP
 In a reference
 to a structure or union member, the
 name on the right
@@ -3721,7 +3794,7 @@ and if the union currently contains one of these structures,
 it is permitted to inspect the common initial part of any of
 the contained structures.
 For example, the following is a legal fragment:
-.DS I
+.DS 
 \fBunion 
 {
         struct 
@@ -3746,40 +3819,41 @@ u.nf.floatnode = 3.14;
 if (u.n.type == FLOAT)
         ... sin(u.nf.floatnode) ...\fR
 .DE
-.P 0
+.PP
 .nr Hu 1
-.H 3 "Functions"
-.P
+.NH 2 
+Functions
+.PP
 There are only two things that
-can be done with a function \*em 
+can be done with a function \fBm\fR,
 call it or take its address.
 If the name of a function appears in an
 expression not in the function-name position of a call,
 a pointer to the function is generated.
 Thus, to pass one function to another, one
 might say
-.DS I
+.DS 
 \fBint f();
 \&...
 g(f);\fR
 .DE
-.P 0
+.PP
 .ne 8
 Then the definition of
 .B
 g
 .R
 might read
-.DS I
+.DS 
 \fBg(funcp)
-        int (*funcp)();
+        int (\(**funcp)();
 {
         ...
-        (*funcp)();
+        (\(**funcp)();
         ...
 }\fR
 .DE
-.P 0
+.PP
 Notice that
 .B
 f
@@ -3795,8 +3869,9 @@ was not followed by
 (.
 .R
 .nr Hu 1
-.H 3 "Arrays, Pointers, and Subscripting"
-.P
+.NH 2 
+Arrays, Pointers, and Subscripting
+.PP
 Every time an identifier of array type appears
 in an expression, it is converted into a pointer
 to the first member of the array.
@@ -3813,11 +3888,11 @@ E1[E2]
 .R
 is identical to
 .B
-*((E1)+(E2))\fR.
+\(**((E1)\(plE2))\fR.
 .R
 Because of the conversion rules
 which apply to
-\fB+\fR,
+\fB\(pl\fR,
 if
 .B
 E1
@@ -3833,7 +3908,7 @@ E1[E2]
 .R
 refers to the
 .B
-E2 -th
+E2-th
 .R
 member of
 .B
@@ -3842,7 +3917,7 @@ E1\fR.
 Therefore,
 despite its asymmetric
 appearance, subscripting is a commutative operation.
-.P
+.PP
 A consistent rule is followed in the case of
 multidimensional arrays.
 If
@@ -3864,19 +3939,19 @@ array with rank
 j\(mu...\(muk.
 If the
 .B
-*
+\(**
 .R
 operator, either explicitly
 or implicitly as a result of subscripting,
 is applied to this pointer,
 the result is the pointed-to (n-1)-dimensional array,
 which itself is immediately converted into a pointer.
-.P
+.PP
 For example, consider
-.DS I
+.DS 
 \fBint x[3][5];\fR
 .DE
-.P 0
+.PP
 Here
 .B
 x
@@ -3891,7 +3966,7 @@ to a pointer to (the first of three) 5-membered arrays of integers.
 In the expression
 \fBx[i]\fR,
 which is equivalent to
-\fB*(x+i)\fR,
+\fB\(**(x\(pli)\fR,
 .B
 x
 .R
@@ -3914,21 +3989,22 @@ yield an array (of five integers) which in turn is converted to
 a pointer to the first of the integers.
 If there is another subscript, the same argument applies
 again; this time the result is an integer.
-.P
+.PP
 Arrays in C are stored
 row-wise (last subscript varies fastest)
 and the first subscript in the declaration helps determine
 the amount of storage consumed by an array.
 Arrays play no other part in subscript calculations.
 .nr Hu 1
-.H 3 "Explicit Pointer Conversions"
-.P
+.NH 2 
+Explicit Pointer Conversions
+.PP
 Certain conversions involving pointers are permitted
 but have implementation-dependent aspects.
 They are all specified by means of an explicit type-conversion
 operator, see ``Unary Operators'' under``EXPRESSIONS'' and
 ``Type Names''under ``DECLARATIONS.''
-.P
+.PP
 A pointer may be converted to any of the integral types large
 enough to hold it.
 Whether an
@@ -3944,11 +4020,11 @@ The mapping function is also machine dependent but is intended
 to be unsurprising to those who know the addressing structure
 of the machine.
 Details for some particular machines are given below.
-.P
+.PP
 An object of integral type may be explicitly converted to a pointer.
 The mapping always carries an integer converted from a pointer back to the same pointer
 but is otherwise machine dependent.
-.P
+.PP
 A pointer to one type may be converted to a pointer to another type.
 The resulting pointer may cause addressing exceptions
 upon use if
@@ -3957,7 +4033,7 @@ It is guaranteed that
 a pointer to an object of a given size may be converted to a pointer to an object
 of a smaller size
 and back again without change.
-.P
+.PP
 For example,
 a storage-allocation routine
 might accept a size (in bytes)
@@ -3967,14 +4043,14 @@ char
 .R
 pointer;
 it might be used in this way.
-.DS I
-\fBextern char *alloc();
-double *dp;
+.DS 
+\fBextern char \(**malloc();
+double \(**dp;
 .sp
-dp = (double *) alloc(sizeof(double));
-*dp = 22.0 / 7.0;\fR
+dp = (double \(**) malloc(sizeof(double));
+\(**dp = 22.0 / 7.0;\fR
 .DE
-.P 0
+.PP
 The
 .B
 alloc
@@ -3987,7 +4063,7 @@ then the
 use
 .R
 of the function is portable.
-.P
+.PP
 The pointer
 representation on the
 PDP-11
@@ -3997,7 +4073,7 @@ The
 .B
 char\fR's
 have no alignment requirements; everything else must have an even address.
-.P
+.PP
 On the
 VAX-11,
 pointers are 32 bits long and measure bytes.
@@ -4009,7 +4085,7 @@ double
 quantities need be aligned only on even 4-byte boundaries.
 Aggregates are aligned on the strictest boundary required by
 any of their constituents.
-.P
+.PP
 The 3B 20 computer has 24-bit pointers placed into 32-bit quantities.
 Most objects are
 aligned on 4-byte boundaries. \fBShort\fRs are aligned in all cases on
@@ -4017,8 +4093,9 @@ aligned on 4-byte boundaries. \fBShort\fRs are aligned in all cases on
 \fBint\fR\^s, \fBlong\fR\^s, \fBfloat\fR\^s, and \fBdouble\fR\^s are aligned on 4-byte
 boundries; but structure members may be packed tighter.
 .nr Hu 1
-.H 2 "CONSTANT EXPRESSIONS"
-.P
+.NH 2
+CONSTANT EXPRESSIONS
+.PP
 In several places C requires expressions that evaluate to
 a constant:
 after
@@ -4035,23 +4112,23 @@ sizeof
 expressions, possibly
 connected by the binary operators
 .ne 10
-.DS I
-+ - * / % & | ^ << >> == != < > <= >= && ||
+.DS 
+\(pl \(mi \(** / % & | ^ << >> == != < > <= >= && ||
 .DE
-.P 0
+.LP
 or by the unary operators
-.DS I
--  ~
+.DS 
+\(mi  \s+2~\s0
 .DE
-.P 0
+.LP
 or by the ternary operator
-.DS I
+.DS 
 ?:
 .DE
-.P 0
+.PP
 Parentheses can be used for grouping
 but not for function calls.
-.P
+.PP
 More latitude is permitted for initializers;
 besides constant expressions as discussed above,
 one can also use floating constants
@@ -4074,13 +4151,14 @@ The basic rule is that initializers must
 evaluate either to a constant or to the address
 of a previously declared external or static object plus or minus a constant.
 .nr Hu 1
-.H 2 "PORTABILITY CONSIDERATIONS"
-.P
+.NH 1 
+Portability Considerations
+.PP
 Certain parts of C are inherently machine dependent.
 The following list of potential trouble spots
 is not meant to be all-inclusive
 but to point out the main ones.
-.P
+.PP
 Purely hardware issues like
 word size and the properties of floating point arithmetic and integer division
 have proven in practice to be not much of a problem.
@@ -4092,7 +4170,7 @@ particularly sign extension
 and the order in which bytes are placed in a word,
 are nuisances that must be carefully watched.
 Most of the others are only minor problems.
-.P
+.PP
 The number of
 .B
 register
@@ -4106,18 +4184,18 @@ excess or invalid
 register
 .R
 declarations are ignored.
-.P
+.PP
 Some difficulties arise only when
 dubious coding practices are used.
 It is exceedingly unwise to write programs
 that depend
 on any of these properties.
-.P
+.PP
 The order of evaluation of function arguments
 is not specified by the language.
 The order in which side effects take place
 is also unspecified.
-.P
+.PP
 Since character constants are really objects of type
 \fBint\fR,
 multicharacter character constants may be permitted.
@@ -4126,7 +4204,7 @@ is very machine dependent
 because the order in which characters
 are assigned to a word
 varies from one machine to another.
-.P
+.PP
 Fields are assigned to words and characters to integers right to left
 on some machines
 and left to right on other machines.
@@ -4144,70 +4222,72 @@ pointer and inspecting the pointed-to storage)
 but must be accounted for when conforming to externally-imposed
 storage layouts.
 .nr Hu 1
-.H 2 "SYNTAX SUMMARY"
-.P
+.NH 1 
+Syntax Summary
+.PP
 This summary of C syntax is intended more for aiding comprehension
 than as an exact statement of the language.
 .nr Hu 1
 .ne 18
-.H 3 "Expressions"
-.P
+.NH 2 
+Expressions
+.PP
 The basic expressions are:
 .tr ~~
-.DS I
-\fIexpression:
-        primary
-        * expression\fR
-        &\fIlvalue
-        - expression
-        ! expression
-        ~ expression
-        ++ lvalue
-        --lvalue
-        lvalue ++
-        lvalue --
-        \fBsizeof\fI expression
-        \fBsizeof (\fItype-name\fB)\fI
-        ( type-name ) expression
-        expression binop expression
-        expression ? expression : expression
-        lvalue asgnop expression
-        expression , expression
+.DS 
+     \fIexpression:
+             primary
+             \(** expression\fR
+             &\fIlvalue
+             \(mi expression
+             ! expression
+             \s+2~\s0 expression
+             \(pl\(pl lvalue
+             \(mi\(milvalue
+             lvalue \(pl\(pl
+             lvalue \(mi\(mi
+             \fBsizeof\fI expression
+             \fBsizeof (\fItype-name\fB)\fI
+             ( type-name ) expression
+             expression binop expression
+             expression ? expression : expression
+             lvalue asgnop expression
+             expression , expression
 .DE
-.DS I
-\fIprimary:
-        identifier
-        constant
-        string
-        ( expression )
-        primary ( expression-list\v'0.5'opt\v'-0.5' )
-        primary [ expression ]
-        primary . identifier
-        primary -> identifier
+.DS 
+     \fIprimary:
+             identifier
+             constant
+             string
+             ( expression )
+             primary ( expression-list\v'0.5'\s-2opt\s0\v'-0.5' )
+             primary [ expression ]
+             primary . identifier
+             primary \(mi identifier
 .DE
-.DS I
-\fIlvalue:
-        identifier
-        primary [ expression ]
-        lvalue . identifier
-        primary -> identifier
-        * expression
-        ( lvalue )\fR
+.DS 
+     \fIlvalue:
+             identifier
+             primary [ expression ]
+             lvalue . identifier
+             primary \(mi identifier
+             \(** expression
+             ( lvalue )\fR
 .DE
-.P 0
-.P
+.PP
+.PP
 The primary-expression operators
-.DS I
-()  []  .  ->
+.DS 
+     ()  []  .  \(mi
 .tr ~~
 .DE
-.P 0
+.LP
 have highest priority and group left to right.
 The unary operators
-.DS I
-*  &  -  !  ~  ++ -- \fBsizeof\fI   ( type-name \fR)
+.DS 
+     \(**  &  \(mi  !  \s+2~\s0  \(pl\(pl \(mi\(mi \fBsizeof\fI   ( type-name \fR)
 .DE
-.P 0
+.LP
 have priority below the primary operators
 but higher than any binary operator
 and group right to left.
@@ -4215,243 +4295,247 @@ Binary operators
 group left to right; they have priority
 decreasing
 as indicated below.
-.DS I
-\fIbinop:\fR
-        *    /    %
-        +    -
-        >>   <<
-        <    >    <=    >=
-        ==   !=
-        &
-        ^
-        |
-        &&
-        ||
+.DS 
+     \fIbinop:\fR
+             \(**    /    %
+             \(pl    \(mi
+             >>   <<
+             <    >    <=    >=
+             ==   !=
+             &
+             ^
+             |
+             &&
+             ||
 .DE
 The conditional operator groups right to left.
-.P
+.PP
 Assignment operators all have the same
 priority and all group right to left.
-.DS I
-\fIasgnop:\fR
-        =  +=  -=  *=  /=  %=  >>=  <<=  &=  ^=  |=
+.DS 
+     \fIasgnop:\fR
+             =  \(pl=  \(mi=  \(**=  /=  %=  >>=  <<=  &=  ^=  |=
 .DE
-.P 0
+.PP
 The comma operator has the lowest priority and groups left to right.
 .nr Hu 1
-.H 3 "Declarations"
-.P
-.DS I
-\fIdeclaration:
-        decl-specifiers init-declarator-list\v'0.5'opt\v'-0.5' ;
+.NH 2 
+Declarations
+.PP
+.DS 
+     \fIdeclaration:
+             decl-specifiers init-declarator-list\v'0.5'\s-2opt\s0\v'-0.5' ;
 .DE
-.DS I
-\fIdecl-specifiers:
-        type-specifier decl-specifiers\v'0.5'opt\v'-0.5'
-        sc-specifier decl-specifiers\v'0.5'opt\v'-0.5'
+.DS 
+     \fIdecl-specifiers:
+             type-specifier decl-specifiers\v'0.5'\s-2opt\s0\v'-0.5'
+             sc-specifier decl-specifiers\v'0.5'\s-2opt\s0\v'-0.5'
 .DE
-.DS I
-\fIsc-specifier:\fB
-        auto
-        static
-        extern
-        register
-        typedef
+.DS 
+     \fIsc-specifier:\fB
+             auto
+             static
+             extern
+             register
+             typedef
 .DE
-.DS I
-\fItype-specifier:
-        struct-or-union-specifier
-        typedef-name
-        enum-specifier
-basic-type-specifier:
-        basic-type
-        basic-type basic-type-specifiers
-basic-type:\fB
-        char
-        short
-        int
-        long
-        unsigned
-        float
-        double
-        void\fR
+.DS 
+     \fItype-specifier:
+             struct-or-union-specifier
+             typedef-name
+             enum-specifier
+     basic-type-specifier:
+             basic-type
+             basic-type basic-type-specifiers
+     basic-type:\fB
+             char
+             short
+             int
+             long
+             unsigned
+             float
+             double
+             void\fR
 .DE
-.DS I
+.DS 
 \fIenum-specifier:\fB
-        enum\fI { enum-list }\fB
-        enum \fIidentifier { enum-list }\fB
-        enum \fIidentifier
+             enum\fI { enum-list }\fB
+             enum \fIidentifier { enum-list }\fB
+             enum \fIidentifier
 .DE
-.DS I
-\fIenum-list:
-        enumerator
-        enum-list , enumerator
+.DS 
+     \fIenum-list:
+             enumerator
+             enum-list , enumerator
 .DE
-.DS I
-\fIenumerator:
-        identifier
-        identifier = constant-expression
+.DS 
+     \fIenumerator:
+             identifier
+             identifier = constant-expression
 .DE
-.DS I
-\fIinit-declarator-list:
-        init-declarator
-        init-declarator , init-declarator-list
+.DS 
+     \fIinit-declarator-list:
+             init-declarator
+             init-declarator , init-declarator-list
 .DE
-.DS I
-\fIinit-declarator:
-        declarator initializer\v'0.5'opt\v'-0.5'
+.DS 
+     \fIinit-declarator:
+             declarator initializer\v'0.5'\s-2opt\s0\v'-0.5'
 .DE
-.DS I
-\fIdeclarator:
-        identifier
-        ( declarator )
-        * declarator
-        declarator ()
-        declarator [ constant-expression\v'0.5'opt\v'-0.5' ]
+.DS 
+     \fIdeclarator:
+             identifier
+             ( declarator )
+             \(** declarator
+             declarator ()
+             declarator [ constant-expression\v'0.5'\s-2opt\s0\v'-0.5' ]
 .DE
-.DS I
-\fIstruct-or-union-specifier:\fB
-        struct\fI { struct-decl-list }\fB
-        struct \fIidentifier { struct-decl-list }\fB
-        struct \fIidentifier\fB
-        union { \fIstruct-decl-list }\fB
-        union \fIidentifier { struct-decl-list }\fB
-        union \fIidentifier
+.DS 
+     \fIstruct-or-union-specifier:\fB
+             struct\fI { struct-decl-list }\fB
+             struct \fIidentifier { struct-decl-list }\fB
+             struct \fIidentifier\fB
+             union { \fIstruct-decl-list }\fB
+             union \fIidentifier { struct-decl-list }\fB
+             union \fIidentifier
 .DE
-.DS I
-\fIstruct-decl-list:
-        struct-declaration
-        struct-declaration struct-decl-list
+.DS 
+     \fIstruct-decl-list:
+             struct-declaration
+             struct-declaration struct-decl-list
 .DE
-.DS I
-\fIstruct-declaration:
-        type-specifier struct-declarator-list ;
+.DS 
+     \fIstruct-declaration:
+             type-specifier struct-declarator-list ;
 .DE
-.DS I
-\fIstruct-declarator-list:
-        struct-declarator
-        struct-declarator , struct-declarator-list
+.DS 
+     \fIstruct-declarator-list:
+             struct-declarator
+             struct-declarator , struct-declarator-list
 .DE
-.DS I
-\fIstruct-declarator:
-        declarator
-        declarator : constant-expression
-        : constant-expression
+.DS 
+     \fIstruct-declarator:
+             declarator
+             declarator : constant-expression
+             : constant-expression
 .DE
-.DS I
-\fIinitializer:
-        = expression
-        = { initializer-list }
-        = { initializer-list , }
+.DS 
+     \fIinitializer:
+             = expression
+             = { initializer-list }
+             = { initializer-list , }
 .DE
-.DS I
-\fIinitializer-list:
-        expression
-        initializer-list , initializer-list
-        { initializer-list }
-        { initializer-list , }
+.DS 
+     \fIinitializer-list:
+             expression
+             initializer-list , initializer-list
+             { initializer-list }
+             { initializer-list , }
 .DE
-.DS I
-\fItype-name:
-        type-specifier abstract-declarator
+.DS 
+     \fItype-name:
+             type-specifier abstract-declarator
 .DE
-.DS I
-\fIabstract-declarator:
-        empty
-        ( abstract-declarator )
-        * abstract-declarator
-        abstract-declarator ()
-        abstract-declarator [ constant-expression\v'0.5'opt\v'-0.5' ]
+.DS 
+     \fIabstract-declarator:
+             empty
+             ( abstract-declarator )
+             \(** abstract-declarator
+             abstract-declarator ()
+             abstract-declarator [ constant-expression\v'0.5'\s-2opt\s0\v'-0.5' ]
 .DE
-.DS I
-\fItypedef-name:
-        identifier
+.DS 
+     \fItypedef-name:
+             identifier
 .nr Hu 1
 .DE
-.H 3 "Statements"
-.P
-.DS I
-\fIcompound-statement:
-        { declaration-list\v'0.5'opt\v'-0.5' statement-list\v'0.5'opt\v'-0.5' }
+.NH 2 
+Statements
+.PP
+.DS 
+     \fIcompound-statement:
+             { declaration-list\v'0.5'\s-2opt\s0\v'-0.5' statement-list\v'0.5'\s-2opt\s0\v'-0.5' }
 .DE
-.DS I
-\fIdeclaration-list:
-        declaration
-        declaration declaration-list
+.DS 
+     \fIdeclaration-list:
+             declaration
+             declaration declaration-list
 .DE
-.DS I
-\fIstatement-list:
-        statement
-        statement statement-list
+.DS 
+     \fIstatement-list:
+             statement
+             statement statement-list
 .DE
-.DS I 
-\fIstatement:
-        compound-statement
-        expression ;
-        \fBif\fI ( expression ) statement
-        \fBif\fI ( expression ) statement  \fBelse\fI statement
-        \fBwhile\fI ( expression ) statement
-        \fBdo\fI statement  \fBwhile\fI ( expression ) ;
-        \fBfor\fI (exp\v'0.3'opt\v'-0.3'\fB;\fIexp\v'0.3'opt\v'-0.3'\fB;\fIexp\v'0.3'opt\v'-0.3'\fI) statement
-        \fBswitch\fI ( expression ) statement
-        \fBcase\fI constant-expression :  statement
-        \fBdefault\fI : statement
-        \fBbreak ;
-        continue ;
-        return ;
-        return\fI expression ;
-        \fBgoto\fI identifier ;
-        identifier : statement
-        ;\fR
+.DS  
+     \fIstatement:
+             compound-statement
+             expression ;
+             \fBif\fI ( expression ) statement
+             \fBif\fI ( expression ) statement  \fBelse\fI statement
+             \fBwhile\fI ( expression ) statement
+             \fBdo\fI statement  \fBwhile\fI ( expression ) ;
+             \fBfor\fI (exp\v'0.3'\s-2opt\s0\v'-0.3'\fB;\fIexp\v'0.3'\s-2opt\s0\v'-0.3'\fB;\fIexp\v'0.3'\s-2opt\s0\v'-0.3'\fI) statement
+             \fBswitch\fI ( expression ) statement
+             \fBcase\fI constant-expression :  statement
+             \fBdefault\fI : statement
+             \fBbreak ;
+             continue ;
+             return ;
+             return\fI expression ;
+             \fBgoto\fI identifier ;
+             identifier : statement
+             ;\fR
 .nr Hu 1
 .DE
-.H 3 "External definitions"
-.P
+.NH 2 
+External definitions
+.PP
 .DS
-\fIprogram:
-        external-definition
-        external-definition program
+     \fIprogram:
+             external-definition
+             external-definition program
 .DE
 .DS
-\fIexternal-definition:
-        function-definition
-        data-definition
+     \fIexternal-definition:
+             function-definition
+             data-definition
 .DE
 .DS
-\fIfunction-definition:
-        decl-specifier\v'0.5'opt\v'-0.5' function-declarator function-body
+     \fIfunction-definition:
+             decl-specifier\v'0.5'\s-2opt\s0\v'-0.5' function-declarator function-body
 .DE
 .DS
-\fIfunction-declarator:
-        declarator ( parameter-list\v'0.5'opt\v'-0.5' )
+     \fIfunction-declarator:
+             declarator ( parameter-list\v'0.5'\s-2opt\s0\v'-0.5' )
 .DE
 .DS
-\fIparameter-list:
-        identifier
-        identifier , parameter-list
+     \fIparameter-list:
+             identifier
+             identifier , parameter-list
 .DE
 .DS
-\fIfunction-body:
-        declaration-list\v'0.5'opt\v'-0.5' compound-statement
+     \fIfunction-body:
+             declaration-list\v'0.5'\s-2opt\s0\v'-0.5' compound-statement
 .DE
 .DS
-\fIdata-definition:
-        \fBextern\fI declaration\fB ;
-        \fBstatic\fI declaration\fB ;
+     \fIdata-definition:
+             \fBextern\fI declaration\fB ;
+             \fBstatic\fI declaration\fB ;
 .DE
-.H 3 "Preprocessor"
+.NH 
+Preprocessor
 .DS
-        \fB#define\fI identifier token-string\v'0.3'opt\v'-0.3'\fB
-        \fB#define\fI identifier\fB(\fIidentifier\fB,...)\fItoken-string\v'0.5'opt\v'-0.5'\fB
-        \fB#undef\fI identifier\fB
-        \fB#include "\fIfilename\|\fB"
-        #include <\fIfilename\|\fB>
-        \fB#if\fI restricted-constant-expression\fB
-        \fB#ifdef\fI identifier\fB
-        \fB#ifndef\fI identifier\fB
-        \fB#else
-        \fB#endif
-        \fB#line\fI constant \fB"\fIfilename\|\fB"
+             \fB#define\fI identifier token-string\v'0.3'\s-2opt\s0\v'-0.3'\fB
+             \fB#define\fI identifier\fB(\fIidentifier\fB,...)\fItoken-string\v'0.5'\s-2opt\s0\v'-0.5'\fB
+             \fB#undef\fI identifier\fB
+             \fB#include "\fIfilename\|\fB"
+             #include <\fIfilename\|\fB>
+             \fB#if\fI restricted-constant-expression\fB
+             \fB#ifdef\fI identifier\fB
+             \fB#ifndef\fI identifier\fB
+             \fB#else
+             \fB#endif
+             \fB#line\fI constant \fB"\fIfilename\|\fB"
 .sp 5
 .DE
 .TC 2 1 3 0
