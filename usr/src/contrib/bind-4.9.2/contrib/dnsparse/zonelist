@@ -1,0 +1,12 @@
+/usr/local/named/conf/zone.ogi,ogi.edu
+/usr/local/named/conf/zone.ogi.admin,admin.ogi.edu
+/usr/local/named/conf/zone.ogi.cbs,cbs.ogi.edu
+/usr/local/named/conf/zone.ogi.cse,cse.ogi.edu
+/usr/local/named/conf/zone.ogi.ese,ese.ogi.edu
+/usr/local/named/conf/zone.ogi.mse,mse.ogi.edu
+/usr/local/named/conf/zone.ogc,ogc.edu
+/usr/local/named/conf/zone.ogc.admin,admin.ogc.edu
+/usr/local/named/conf/zone.ogc.cbs,cbs.ogc.edu
+/usr/local/named/conf/zone.ogc.cse,cse.ogc.edu
+/usr/local/named/conf/zone.ogc.ese,ese.ogc.edu
+/usr/local/named/conf/zone.ogc.mse,mse.ogc.edu
