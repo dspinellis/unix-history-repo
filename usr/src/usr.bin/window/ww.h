@@ -1,5 +1,5 @@
 /*
- *	@(#)ww.h	3.7 83/08/18	
+ *	@(#)ww.h	3.8 83/08/18	
  */
 
 #include <stdio.h>
@@ -31,8 +31,8 @@ struct ww {
 	char ww_index;		/* the index, for wwindex[] */
 	char ww_order;		/* the overlapping order */
 	struct ww_dim ww_w;	/* window dimemsions */
-	short ww_nline;		/* size of the buffer */
-	short ww_scroll;	/* where the window is relative to the buffer */
+	int ww_nline;		/* size of the buffer */
+	int ww_scroll;		/* where the window is relative to the buffer */
 	struct ww_pos ww_cur;	/* the cursor position, relative to ww_w */
 	char **ww_win;		/* the window */
 	union ww_char **ww_buf;	/* the buffer */
