@@ -1,4 +1,4 @@
-/*	ip_output.c	6.3	83/12/15	*/
+/*	ip_output.c	6.4	84/05/25	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -35,12 +35,13 @@ ip_output(m, opt, ro, flags)
 	/*
 	 * Fill in IP header.
 	 */
-	ip->ip_hl = hlen >> 2;
 	if ((flags & IP_FORWARDING) == 0) {
 		ip->ip_v = IPVERSION;
 		ip->ip_off &= IP_DF;
 		ip->ip_id = htons(ip_id++);
-	}
+		ip->ip_hl = hlen >> 2;
+	} else
+		ip->ip_id = htons(ip->ip_id);
 
 	/*
 	 * Route packet.
@@ -66,7 +67,7 @@ ip_output(m, opt, ro, flags)
 			goto gotif;
 		}
 		rtalloc(ro);
-	} else if (ro->ro_rt->rt_flags & RTF_UP == 0) {
+	} else if ((ro->ro_rt->rt_flags & RTF_UP) == 0) {
 		/*
 		 * The old route has gone away; try for a new one.
 		 */
@@ -162,6 +163,8 @@ gotif:
 		} else
 			mh->m_len = sizeof (struct ip);
 		mhip->ip_off = off >> 3;
+		if (ip->ip_off & IP_MF)
+			mhip->ip_off |= IP_MF;
 		if (off + len >= ip->ip_len-hlen)
 			len = mhip->ip_len = ip->ip_len - hlen - off;
 		else {
