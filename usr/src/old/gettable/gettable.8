@@ -2,15 +2,19 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)gettable.8	5.1 (Berkeley) %G%
+.\"	@(#)gettable.8	6.1 (Berkeley) %G%
 .\"
-.TH GETTABLE 8C "4 March 1983"
+.TH GETTABLE 8C ""
 .UC 5
 .SH NAME
 gettable \- get NIC format host tables from a host 
 .SH SYNOPSIS
 .B /etc/gettable
+[
+.B \-v
+]
 .I host
+[ outfile ]
 .SH DESCRIPTION
 .I Gettable
 is a simple program used to obtain the NIC standard
@@ -18,7 +22,17 @@ host tables from a ``nicname'' server.  The indicated
 .I host
 is queried for the tables.  The tables, if retrieved,
 are placed in the file
+.I outfile
+or by default,
 .IR hosts.txt .
+.PP
+The
+.B \-v
+option will get just the version number instead of the complete host table
+and put the output in the file
+.I outfile
+or by default,
+.IR hosts.ver .
 .PP
 .I Gettable
 operates by opening a TCP connection to the port indicated
