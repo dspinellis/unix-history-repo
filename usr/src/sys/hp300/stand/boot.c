@@ -1,10 +1,10 @@
-/*
+/*-
  * Copyright (c) 1982, 1986, 1990 The Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)boot.c	7.2 (Berkeley) %G%
+ *	@(#)boot.c	7.3 (Berkeley) %G%
  */
 
 #include <a.out.h>
