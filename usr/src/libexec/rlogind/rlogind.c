@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	4.11 83/02/21";
+static char sccsid[] = "@(#)rlogind.c	4.12 83/02/28";
 #endif
 
 #include <stdio.h>
@@ -20,7 +20,7 @@ static char sccsid[] = "@(#)rlogind.c	4.11 83/02/21";
 extern	errno;
 int	reapchild();
 struct	passwd *getpwnam();
-char	*crypt(), *rindex(), *index(), *malloc();
+char	*crypt(), *rindex(), *index(), *malloc(), *ntoa();
 struct	sockaddr_in sin = { AF_INET };
 /*
  * remote login server:
@@ -142,8 +142,12 @@ doit(f, fromp)
 	fromp->sin_port = htons((u_short)fromp->sin_port);
 	hp = gethostbyaddr(&fromp->sin_addr, sizeof (struct in_addr),
 		fromp->sin_family);
-	if (hp == 0)
-		fatal(f, "Host name for your address unknown");
+	if (hp == 0) {
+		char buf[BUFSIZ], *cp = (char *)&fromp->sin_addr;
+
+		fatal(f, sprintf(buf, "Host name for your address (%s) unknown",
+			ntoa(fromp->sin_addr)));
+	}
 	if (fromp->sin_family != AF_INET ||
 	    fromp->sin_port >= IPPORT_RESERVED ||
 	    hp == 0)
@@ -360,4 +364,21 @@ rmut()
 	line[strlen("/dev/")] = 'p';
 	chmod(line, 0666);
 	chown(line, 0, 0);
+}
+
+/*
+ * Convert network-format internet address
+ * to base 256 d.d.d.d representation.
+ */
+char *
+ntoa(in)
+	struct in_addr in;
+{
+	static char b[18];
+	register char *p;
+
+	p = (char *)&in;
+#define	UC(b)	(((int)b)&0xff)
+	sprintf(b, "%d.%d.%d.%d", UC(p[0]), UC(p[1]), UC(p[2]), UC(p[3]));
+	return (b);
 }
