@@ -1,7 +1,7 @@
 /*
  * Machine Language Assist for UC Berkeley Virtual Vax/Unix
  *
- *	locore.s		4.15	%G%
+ *	locore.s		4.16	%G%
  */
 
 	.set	HIGH,31		# mask for total disable
@@ -15,41 +15,42 @@
 	.set	UPAGES,6	# size of user area, in pages
 
 /*
- * Produce a core image dump on mag tape
+ * Restart parameter block
+ * This is filled in in machdep.c in startup().
+ * It MUST be page aligned.
+ * When auto-restart occurs, we run restart() in machdep.c, which
+ * takes a core-dump and then cold-starts.
  */ 
-	.globl	doadump
-doadump:
-	movl	sp,dumpstack		# save stack pointer
-	movab	dumpstack,sp		# reinit stack
-	mfpr	$PCBB,-(sp)		# save u-area pointer
-	mfpr	$MAPEN,-(sp)		# save value
-	mfpr	$IPL,-(sp)		# ...
-	mtpr	$0,$MAPEN		# turn off memory mapping
-	mtpr	$HIGH,$IPL		# disable interrupts
-	pushr	$0x3fff			# save regs 0 - 13
-	calls	$0,_dumptrc		# print out trace information, if any
-	calls	$0,_dump		# produce dump
-
-	.data
-	.align	2
-	.globl	dumpstack
-	.space	96*4			# separate stack for tape dumps
-dumpstack: 
+	.globl	_rpb
+_rpb:
+	.space	508
+erpb:
 	.space	4
-	.text
 
 /*
- * Debugging print switches given here so they won't move around
+ * Do a dump.
+ * Called by auto-restart.
+ * May be called manually.
  */
-	.data
 	.align	2
-	.globl	_printsw
-_printsw:
-	.space	4
-	.globl	_coresw
-_coresw:
-	.space	4
-	.text
+	.globl	_doadump
+_doadump:
+	nop; nop				# .word 0x0101
+/* ignore cpu for the time being ... */
+#define	_rpbmap	_Sysmap+4
+	bicl2	$PG_PROT,_rpbmap
+	bisl2	$PG_KW,_rpbmap
+	mtpr	$0,$TBIA
+	movl	sp,erpb
+	movab	erpb,sp
+	mfpr	$PCBB,-(sp)
+	mfpr	$MAPEN,-(sp)
+	mfpr	$IPL,-(sp)
+	mtpr	$0,$MAPEN
+	mtpr	$HIGH,$IPL
+	pushr	$0x3fff
+	calls	$0,_dumpsys
+	halt
 
 /*
  * I/O interrupt vector routines
@@ -475,12 +476,20 @@ _bufmap:
 	.space	4*MAXNBUF*CLSIZE
 	.globl	_buffers
 	.set	_buffers,((_bufmap-_Sysmap)/4)*NBPG+0x80000000
-	.globl	eSysmap
 	.globl	_msgbufmap
 _msgbufmap:
 	.space	4*CLSIZE
 	.globl	_msgbuf
 	.set	_msgbuf,((_msgbufmap-_Sysmap)/4)*NBPG+0x80000000
+	.globl	_camap
+_camap:
+	.globl	_cabase
+	.set	_cabase,((_camap-_Sysmap)/4)*NBPG+0x80000000
+	.space	4*32*CLSIZE
+ecamap:
+	.globl	_calimit
+	.set	_calimit,((ecamap-_Sysmap)/4)*NBPG+0x80000000
+	.globl	eSysmap
 eSysmap:
 	.set	Syssize,(eSysmap-_Sysmap)/4
 	.text
@@ -672,6 +681,20 @@ start:
 	mtpr	$_Sysmap,$P0BR			## set temp P0BR
 	mtpr	$Syssize,$P0LR			## set temp P0LR
 	movl	$_intstack+2048,sp		# set ISP
+/*
+ * Initialize RPB
+ */
+	movab	_rpb,r0
+	movl	r0,(r0)+			# rp_selfref
+	movab	_doadump,r1
+	movl	r1,(r0)+			# rp_dumprout
+	movl	$0x1f,r2
+	clrl	r3
+1:
+	addl2	(r1)+,r3
+	sobgtr	r2,1b
+	movl	r3,(r0)+			# rp_chksum
+
 #if VAX==780
 /*
  * Initialize UBA
@@ -683,16 +706,19 @@ start:
  * Will now see how much memory there really is
  * in 64kb chunks.  Save number of bytes in r7.
  */
-	clrl	r1
+	clrl	r7
 1:
-	jsb	chkadr			# does this addr exist ?
-	beql	1f
-	acbl	$8096*1024-1,$64*1024,r1,1b
+	pushl	$4		# test long word access
+	pushl	r7		# to (r7)
+	calls	$2,_badaddr
+	tstl	r0
+	bneq	1f
+	acbl	$8096*1024-1,$64*1024,r7,1b
+1:
 
-1:
-	movl	r1,r7			# save addr end of mem
 /*
- * calculate size of cmap[] based on available memory, and allocate space for it
+ * calculate size of cmap[] based on available memory,
+ * and allocate space for it
  */
 	movab	_end,r5
 	movl	r5,_cmap
@@ -729,7 +755,7 @@ start:
 	movab	_etext+NBPG-1,r1	# end of kernel text segment
 	bbcc	$31,r1,0f; 0:		# turn off high order bit
 	ashl	$-9,r1,r1		# last page of kernel text
-	clrl	r2			# point at first kernel text page
+	clrl	r2
 1:
 	bisl3	$PG_V|PG_KR,r2,_Sysmap[r2]	# initialize page table entry
 	aoblss	r1,r2,1b		# fill text entries
@@ -860,82 +886,40 @@ sigcode:
 	.word	0x7f
 	callg	(ap),*12(ap)			# registers 0-6 (6==sp/compat)
 	ret
-
-/*
- * address existence check
- *
- *	check address in r1 to see if we can reference it without
- *	destroying everything (like the whole world)
- *
- *	address should be a physical addr if mapping is disabled,
- *	or a virtual addr otherwise
- *
- *	return (in r0) :
- *		0	if address cannot be referenced at all
- *		1	if a byte reference succeeds
- *		2	if a word ref succeeds
- *		3	both byte and word
- *		4	if a long ref succeeds
- *		5,6,7	various other combinations
- *
- *		plus, to make life easy for assembly code hackers,
- *		set the CC to reflect r0
- *
- *	destroys r4 & r5, r1 unaltered
- */
-
-chkadr:
-	mfpr	$IPL,r4
-	mtpr	$HIGH-1,$IPL		# permit mch chk ints only
-					# (the -1 is a hangover, a mch chk
-					# intr will happen anyway)
-	movl	Scbbase+MCKVEC,r5	# save mch chk intr vec
-	movab	9f+INTSTK,Scbbase+MCKVEC # and replace it with something useful
-
-	clrl	r0			# assume no legal references
-
-	pushab	1f			# return addr in case of mch chk
-	tstl	(r1)			# can we ref this as a long ?
-	addl2	$4,r0			# yes - set flag
-1:
-	tstl	(sp)+			# pop retn addr
-
-	pushab	1f
-	tstw	(r1)			# same for word ref
-	addl2	$2,r0
-1:
-	tstl	(sp)+
-
-	pushab	1f
-	tstb	(r1)			# and for byte ref
-	incl	r0
-1:
-	tstl	(sp)+
-
-	movl	r5,Scbbase+MCKVEC	# restore mch chk intr vec
-	mtpr	r4,$IPL			# and intr prio
-	tstl	r0			# just for assembly hackers
-	rsb
-
-	.align	2
-9:					# machine checks come here
-#if VAX==780
-	mtpr	$0,$SBIFS
-#endif
-	addl2	(sp)+,sp		# discard mch check trash
-	movl	8(sp),(sp)		# return to place requested
-	rei
-
-	.globl	_chkadr
-_chkadr:				# C entry to above
-	.word	0
-	movl	4(ap),r1
-	jsb	chkadr
-	ret
-
 /*
  * Primitives
  */ 
+
+/*
+ * badaddr(addr, len)
+ *	see if access addr with a len type instruction causes a machine check
+ *	len is length of access (1=byte, 2=short, 4=long)
+ */
+	.globl	_badaddr
+_badaddr:
+	.word	0
+	movl	$1,r0
+	mfpr	$IPL,r1
+	mtpr	$HIGH,$IPL
+	movl	Scbbase+MCKVEC,r2
+	movl	4(ap),r3
+	movl	8(ap),r4
+	movab	9f+INTSTK,Scbbase+MCKVEC
+	bbc	$1,r4,1f; tstb	(r3)
+1:	bbc	$2,r4,1f; tstw	(r3)
+1:	bbc	$3,r4,1f; tstl	(r3)
+1:	clrl	r0			# made it w/o machine checks
+2:	movl	r2,Scbbase+MCKVEC
+	mtpr	r1,$IPL
+	ret
+	.align	2
+9:
+#if VAX==780
+	mtpr	$0,$SBIFS
+#endif
+	addl2	(sp)+,sp		# discard mchchk trash
+	movab	2b,(sp)
+	rei
 
 _addupc:	.globl	_addupc
 	.word	0x0000
