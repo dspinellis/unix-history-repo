@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)spp_usrreq.c	6.7 (Berkeley) %G%
+ *	@(#)spp_usrreq.c	6.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -54,7 +54,7 @@ spp_input(m, nsp)
 	int dropsocket = 0;
 
 
-	if (nsp==0) {
+	if (nsp == 0) {
 		panic("No nspcb in spp_input\n");
 		return;
 	}
@@ -63,7 +63,7 @@ spp_input(m, nsp)
 	if (cb == 0) goto bad;
 
 	if (m->m_len < sizeof(*si)) {
-		if ((m = m_pullup(m, sizeof(*si)))==0) {
+		if ((m = m_pullup(m, sizeof(*si))) == 0) {
 			spp_istat.hdrops++;
 			return;
 		}
@@ -218,7 +218,7 @@ dropwithreset:
 
 drop:
 bad:
-	if (cb==0 || cb->s_nspcb->nsp_socket->so_options & SO_DEBUG || traceallspps)
+	if (cb == 0 || cb->s_nspcb->nsp_socket->so_options & SO_DEBUG || traceallspps)
 		spp_trace(SA_DROP, (u_char)ostate, cb, &spp_savesi, 0);
 	m_freem(m);
 }
@@ -240,7 +240,7 @@ register struct spidp *si;
 	char wakeup = 0;
 
 
-	if (si==SI(0))
+	if (si == SI(0))
 		goto present;
 	/*
 	 * Update our news from them.
@@ -285,7 +285,7 @@ register struct spidp *si;
 	 */
 	if (SSEQ_LT(si->si_seq,cb->s_ack)) {
 		spp_istat.bdreas++;
-		if (si->si_seq==cb->s_ack-1)
+		if (si->si_seq == cb->s_ack-1)
 			spp_istat.lstdup++;
 		return (1);
 	}
@@ -311,7 +311,7 @@ register struct spidp *si;
 	 */
 
 	for (q = cb->s_q.si_next; q!=&cb->s_q; q = q->si_next) {
-	    if (si->si_seq==SI(q)->si_seq) return (1); /*duplicate */
+	    if (si->si_seq == SI(q)->si_seq) return (1); /*duplicate */
 	    if (SSEQ_LT(si->si_seq,SI(q)->si_seq)) break;
 	}
 	insque(si,q->si_prev);
@@ -324,7 +324,7 @@ present:
 	 * If in packet interface mode, show packet headers.
 	 */
 	for (q = cb->s_q.si_next; q!=&cb->s_q; q = q->si_next) {
-		  if (SI(q)->si_seq==cb->s_ack) {
+		  if (SI(q)->si_seq == cb->s_ack) {
 			cb->s_ack++;
 			m = dtom(q);
 			if (SI(q)->si_cc & SP_OB) {
@@ -443,7 +443,7 @@ register struct nspcb *nsp;
 			if (si->si_seq == badseq)
 				break;
 		 }
-		 if (m==0) return;
+		 if (m == 0) return;
 		 firstbad = m;
 		 /*for (;;) {*/
 			/* calculate length */
@@ -469,12 +469,12 @@ spp_output(cb, m0)
 	register struct sockbuf *sb = &(so->so_snd);
 	register int len = 0;
 	int mtu = cb->s_mtu;
-	int error = 0; u_short lookfor = 0;
+	int error = 0;
+	u_short lookfor = 0;
 	struct mbuf *mprev;
 	extern int idpcksum;
 
-	if (m0)
-	{
+	if (m0) {
 		for (m = m0; m ; m = m->m_next) {
 			mprev = m;
 			len += m->m_len;
@@ -487,7 +487,7 @@ spp_output(cb, m0)
 				int off = 0;
 				while (len > mtu) {
 					m = m_copy(m0, off, mtu);
-					if (m==NULL) {
+					if (m == NULL) {
 						m_freem(m0);
 						return (ENOBUFS);
 					}
@@ -501,11 +501,15 @@ spp_output(cb, m0)
 				}
 			}
 		}
+		/*
+		 * Force length even, by adding a "garbage byte" if
+		 * necessary.
+		 */
 		if (len & 1) {
 			m = mprev;
-			if (m->m_len + m->m_off < MMAXOFF) {
+			if (m->m_len + m->m_off < MMAXOFF)
 				m->m_len++;
-			} else {
+			else {
 				struct mbuf *m1 = m_get(M_DONTWAIT, MT_DATA);
 
 				if (m1 == 0) {
@@ -514,7 +518,7 @@ spp_output(cb, m0)
 				}
 				m1->m_len = 1;
 				m1->m_off = MMAXOFF - 1;
-				mprev->m_next = m1;
+				m->m_next = m1;
 			}
 		}
 		m = m_get(M_DONTWAIT, MT_HEADER);
@@ -533,7 +537,16 @@ spp_output(cb, m0)
 		si = mtod(m, struct spidp *);
 		*si = cb->s_shdr;
 		if ((cb->s_flags & SF_PI) && (cb->s_flags & SF_HO)) {
-			register struct sphdr *sh = mtod(m0, struct sphdr *);
+			register struct sphdr *sh;
+			if (m0->m_len < sizeof (*sh)) {
+				if((m0 = m_pullup(m0, sizeof(*sh))) == NULL) {
+					(void) m_free(m);
+					m_freem(m0);
+					return (EINVAL);
+				}
+				m->m_next = m0;
+			}
+			sh = mtod(m0, struct sphdr *);
 			si->si_dt = sh->sp_dt;
 			si->si_cc |= sh->sp_cc & SP_EM;
 			m0->m_len -= sizeof (*sh);
@@ -549,7 +562,6 @@ spp_output(cb, m0)
 			 * have already guaranted there to be at least
 			 * one garbage byte for the checksum, and
 			 * extra bytes shouldn't hurt!
-			 * 
 			 */
 			if (len > sizeof(*si)) {
 				si->si_cc |= SP_OB;
@@ -571,7 +583,8 @@ spp_output(cb, m0)
 		int credit = ((sb2->sb_mbmax - sb2->sb_mbcnt) / cb->s_mtu);
 		int alo = cb->s_ack + credit;
 
-		if (cb->s_alo < alo) cb->s_alo = alo;
+		if (cb->s_alo < alo)
+			cb->s_alo = alo;
 	}
 
 	if (cb->s_oobflags & SF_SOOB) {
@@ -591,16 +604,17 @@ spp_output(cb, m0)
 		 */
 		if (SSEQ_LT(cb->s_snt, cb->s_ralo))
 			lookfor = cb->s_snt + 1;
-		else if (cb->s_force==(1+TCPT_REXMT)) {
+		else if (cb->s_force == (1+TCPT_REXMT)) {
 			lookfor = cb->s_rack;
 		} else if (SSEQ_LT(cb->s_ralo, cb->s_seq)) {
 			lookfor = 0;
-			if (cb->s_timer[TCPT_PERSIST]==0) {
+			if (cb->s_timer[TCPT_PERSIST] == 0) {
 				spp_setpersist(cb);
+				/* tcp has cb->s_rxtshift = 0; here */
 			}
 		}
 		m = sb->sb_mb;
-		while( m ) {
+		while (m) {
 			si = mtod(m, struct spidp *);
 			m = m->m_act;
 			if (SSEQ_LT(si->si_seq, cb->s_rack)) {
@@ -615,7 +629,8 @@ spp_output(cb, m0)
 				continue;
 			break;
 		}
-		if (si && (si->si_seq != lookfor)) si = 0;
+		if (si && (si->si_seq != lookfor))
+			si = 0;
 	}
 	cb->s_want = lookfor;
 
@@ -624,9 +639,8 @@ spp_output(cb, m0)
 		 * must make a copy of this packet for
 		 * idp_output to monkey with
 		 */
-		 m = dtom(si);
-		 m = m_copy(m, 0, (int)M_COPYALL);
-		 if (m==NULL)
+		 m = m_copy(dtom(si), 0, (int)M_COPYALL);
+		 if (m == NULL)
 			return (ENOBUFS);
 		 m0 = m;
 		 si = mtod(m, struct spidp *);
@@ -660,20 +674,20 @@ spp_output(cb, m0)
 		 * or one of the timers has gone off
 		 * request an ack.
 		 */
-		if (SSEQ_GEQ(cb->s_seq,cb->s_ralo))
+		if (SSEQ_GEQ(cb->s_seq, cb->s_ralo))
 			si->si_cc |= SP_SA;
 		if (cb->s_force) {
 			si->si_cc |= SP_SA;
 			cb->s_force = 0;
 		}
-		/* If this is a new packet (and not a system packet),
+		/*
+		 * If this is a new packet (and not a system packet),
 		 * and we are not currently timing anything,
 		 * time this one and ask for an ack.
 		 */
-		if (SSEQ_LT(cb->s_snt,si->si_seq) &&
-		   (!(si->si_cc & SP_SP))) {
+		if (SSEQ_LT(cb->s_snt, si->si_seq) && (!(si->si_cc & SP_SP))) {
 			cb->s_snt = si->si_seq;
-			if (cb->s_rtt==0) {
+			if (cb->s_rtt == 0) {
 				cb->s_rtseq = si->si_seq;
 				cb->s_rtt = 1;
 				si->si_cc |= SP_SA;
@@ -683,7 +697,7 @@ spp_output(cb, m0)
 			 * and this is a real packet
 			 * then start the retransmit timer
 			 */
-			if (cb->s_timer[TCPT_REXMT]==0) {
+			if (cb->s_timer[TCPT_REXMT] == 0) {
 				TCPT_RANGESET(cb->s_timer[TCPT_REXMT],
 					tcp_beta * cb->s_srtt, TCPTV_MIN,
 					TCPTV_MAX);
@@ -697,7 +711,8 @@ spp_output(cb, m0)
 		if (idpcksum) {
 			si->si_sum = 0;
 			len = ntohs(si->si_len);
-			len = ((len - 1) | 1) + 1;
+			if (len & 1)
+				len++;
 			si->si_sum = ns_cksum(dtom(si), len);
 		} else
 			si->si_sum = 0xffff;
@@ -745,10 +760,10 @@ spp_ctloutput(req, so, level, name, value)
 	switch (req) {
 
 	case PRCO_GETOPT:
-		if (value==NULL)
+		if (value == NULL)
 			return (EINVAL);
 		m = m_get(M_DONTWAIT, MT_DATA);
-		if (m==NULL)
+		if (m == NULL)
 			return (ENOBUFS);
 		switch (name) {
 
@@ -859,7 +874,7 @@ spp_usrreq(so, req, m, nam, rights)
 		{
 			struct mbuf *mm = m_getclr(M_DONTWAIT,MT_PCB);
 
-			if (mm==NULL) {
+			if (mm == NULL) {
 				error = ENOBUFS;
 				break;
 			}
@@ -1043,7 +1058,7 @@ spp_usrreq_sp(so, req, m, nam, rights)
 {
 	int error = spp_usrreq(so, req, m, nam, rights);
 
-	if (req==PRU_ATTACH && error==0) {
+	if (req == PRU_ATTACH && error == 0) {
 		struct nspcb *nsp = sotonspcb(so);
 		((struct sppcb *)nsp->nsp_pcb)->s_flags |=
 					(SF_HI | SF_HO | SF_PI);
