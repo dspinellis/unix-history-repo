@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.10 (Berkeley) %G%
+#	@(#)Makefile	5.11 (Berkeley) %G%
 
 # Change the line below for your time zone (after finding the zone you want in
 # the time zone files, or adding it to a time zone file).
@@ -119,7 +119,7 @@ right_only: leapseconds ${TDATA}
 	    ../obj/zic -d ${TZDIR} -L leapseconds ${TDATA})
 
 other_two: leapseconds ${TDATA}
-	(cd ${.CURDIR}/datfiles;
+	(cd ${.CURDIR}/datfiles; \
 	    ../obj/zic -d ${TZDIR}/posix -L /dev/null ${TDATA})
 	(cd ${.CURDIR}/datfiles; \
 	    ../obj/zic -d ${TZDIR}/right -L leapseconds ${TDATA})
