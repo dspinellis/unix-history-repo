@@ -1,0 +1,203 @@
+.th TBL VI 2/2/75
+.sh NAME
+tbl \*- format tables for nroff or troff
+.sh SYNOPSIS
+.bd tbl
+[ files ] ...
+.sh DESCRIPTION
+.it Tbl
+is an nroff (I)
+or troff(I)
+preprocessor for formatting tables.
+The input files are copied to the standard output,
+except for lines between .TS and .TE
+command lines, which are assumed to describe tables
+and reformatted.
+The first line after .TS specifies
+the various columns: it consists of a list of column
+describers separated by blanks or tabs. Each column
+describer is a character string
+made up of the letters `n', `r', `c', `l' and `s',
+which mean:
+.lp +4 4
+.sp 
+c	center within the column
+.lp +4 4
+.if n .sp 1
+.if t .sp .3
+r	right-adjust
+.lp +4 4
+.if n .sp 1
+.if t .sp .3
+l	left-adjust
+.lp +4 4
+.if n .sp 1
+.if t .sp .3
+n	numerical adjustment: the units digits of numbers are aligned.
+.lp +4 4
+.if n .sp 1
+.if t .sp .3
+s	span the previous entry over this column.
+.if n .sp 1
+.if t .sp .3
+.i0
+.s3
+The column describer
+may be followed
+by an integer
+giving the number of spaces between this column and the next; 3 is default.
+The describer
+`ccr5' indicates that the first two lines in this column are
+centered; the third and remaining lines are right-adjusted; and
+the column should be separated
+from the column to the right by 5 spaces.
+Letting \\t represent a tab (which must be typed as a genuine tab)
+the input
+.s3
+.nf
+	.TS
+	cccl sccn sscn
+	Household Population
+	Town\\tHouseholds
+	\\tNumber\\tSize
+	Bedminster\\t789\\t3.26
+	Bernards Twp.\\t3087\\t3.74
+	Bernardsville\\t2018\\t3.30
+	Bound Brook\\t3425\\t3.04
+	Branchburg\\t1644\\t3.49
+	Bridgewater\\t7897\\t3.81
+	Far Hills\\t240\\t3.19
+	.TE
+.fi
+yields
+.nf
+.TS
+.nr 49 0
+.nr 50 0
+.nr 47 \n(49+\w'Town'+1n
+.if \n(47-\n(50 .nr 50 \n(47
+.nr 47 \n(49+\w''+1n
+.if \n(47-\n(50 .nr 50 \n(47
+.nr 47 \n(49+\w'Bedminster'+1n
+.if \n(47-\n(50 .nr 50 \n(47
+.nr 47 \n(49+\w'Bernards Twp.'+1n
+.if \n(47-\n(50 .nr 50 \n(47
+.nr 47 \n(49+\w'Bernardsville'+1n
+.if \n(47-\n(50 .nr 50 \n(47
+.nr 47 \n(49+\w'Bound Brook'+1n
+.if \n(47-\n(50 .nr 50 \n(47
+.nr 47 \n(49+\w'Branchburg'+1n
+.if \n(47-\n(50 .nr 50 \n(47
+.nr 47 \n(49+\w'Bridgewater'+1n
+.if \n(47-\n(50 .nr 50 \n(47
+.nr 47 \n(49+\w'Far Hills'+1n
+.if \n(47-\n(50 .nr 50 \n(47
+.nr 30 \n(49+\w'Household Population'+1n
+.nr 51 0
+.nr 47 \n(50+\w'789'+4n
+.if \n(47-\n(51 .nr 51 \n(47
+.nr 47 \n(50+\w'3087'+4n
+.if \n(47-\n(51 .nr 51 \n(47
+.nr 47 \n(50+\w'2018'+4n
+.if \n(47-\n(51 .nr 51 \n(47
+.nr 47 \n(50+\w'3425'+4n
+.if \n(47-\n(51 .nr 51 \n(47
+.nr 47 \n(50+\w'1644'+4n
+.if \n(47-\n(51 .nr 51 \n(47
+.nr 47 \n(50+\w'7897'+4n
+.if \n(47-\n(51 .nr 51 \n(47
+.nr 47 \n(50+\w'240'+4n
+.if \n(47-\n(51 .nr 51 \n(47
+.nr 31 \n(50+\w'Households'+4n
+.nr 52 0
+.nr 48 \n(50+\w'Households'+0n
+.if \n(48-\n(52 .nr 52 \n(48
+.nr 48 \n(50+\w'Number'+0n
+.if \n(48-\n(52 .nr 52 \n(48
+.nr 47 \n(51+\w''+1n
+.if \n(47-\n(52 .nr 52 \n(47
+.nr 47 \n(51+\w''+1n
+.if \n(47-\n(52 .nr 52 \n(47
+.nr 47 \n(51+\w''+1n
+.if \n(47-\n(52 .nr 52 \n(47
+.nr 47 \n(51+\w''+1n
+.if \n(47-\n(52 .nr 52 \n(47
+.nr 47 \n(51+\w''+1n
+.if \n(47-\n(52 .nr 52 \n(47
+.nr 47 \n(51+\w''+1n
+.if \n(47-\n(52 .nr 52 \n(47
+.nr 47 \n(51+\w''+1n
+.if \n(47-\n(52 .nr 52 \n(47
+.nr 47 \n(51+\w''+1n
+.if \n(47-\n(52 .nr 52 \n(47
+.nr 53 0
+.nr 47 \n(52+\w'3'+4n
+.if \n(47-\n(53 .nr 53 \n(47
+.nr 47 \n(52+\w'3'+4n
+.if \n(47-\n(53 .nr 53 \n(47
+.nr 47 \n(52+\w'3'+4n
+.if \n(47-\n(53 .nr 53 \n(47
+.nr 47 \n(52+\w'3'+4n
+.if \n(47-\n(53 .nr 53 \n(47
+.nr 47 \n(52+\w'3'+4n
+.if \n(47-\n(53 .nr 53 \n(47
+.nr 47 \n(52+\w'3'+4n
+.if \n(47-\n(53 .nr 53 \n(47
+.nr 47 \n(52+\w'3'+4n
+.if \n(47-\n(53 .nr 53 \n(47
+.nr 54 0
+.nr 48 \n(52+\w'Size'+0n
+.if \n(48-\n(54 .nr 54 \n(48
+.nr 47 \n(53+\w''+1n
+.if \n(47-\n(54 .nr 54 \n(47
+.nr 47 \n(53+\w'.26'+1n
+.if \n(47-\n(54 .nr 54 \n(47
+.nr 47 \n(53+\w'.74'+1n
+.if \n(47-\n(54 .nr 54 \n(47
+.nr 47 \n(53+\w'.30'+1n
+.if \n(47-\n(54 .nr 54 \n(47
+.nr 47 \n(53+\w'.04'+1n
+.if \n(47-\n(54 .nr 54 \n(47
+.nr 47 \n(53+\w'.49'+1n
+.if \n(47-\n(54 .nr 54 \n(47
+.nr 47 \n(53+\w'.81'+1n
+.if \n(47-\n(54 .nr 54 \n(47
+.nr 47 \n(53+\w'.19'+1n
+.if \n(47-\n(54 .nr 54 \n(47
+.if \n(30-\n(54 .nr 54 \n(30
+.if \n(31-\n(54 .nr 54 \n(31
+.fc  @
+.ta \n(54u 
+@Household Population@   
+.ta \n(50u \n(54u 
+@Town@   @Households@   
+.ta \n(50u \n(52u \n(54u 
+@@   @Number@   @Size@   
+.ta \n(50u \n(51u \n(52u \n(53u \n(54u 
+Bedminster@   @789@   @3.26@   
+Bernards Twp.@   @3087@   @3.74@   
+Bernardsville@   @2018@   @3.30@   
+Bound Brook@   @3425@   @3.04@   
+Branchburg@   @1644@   @3.49@   
+Bridgewater@   @7897@   @3.81@   
+Far Hills@   @240@   @3.19@   
+.fc
+.TE
+.fi
+.s3
+.s3
+If no arguments are given,
+.it tbl
+reads the standard input,
+so it may be used as a filter.
+When it is used with
+.it eqn
+or
+.it neqn
+the
+.it tbl
+command should be first, to minimize the volume
+of data passed through
+pipes.
+.sh BUGS
+No column describer may end with `s'.
