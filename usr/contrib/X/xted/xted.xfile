@@ -1,0 +1,5 @@
+ext f
+m ../CLUlib/x xted ~CLU/ted/ted ~CLU/lib/*
+ce ../CLUlib/xdefs ~CLU/ted/ted ~CLU/ted/display
+loc f
+o
