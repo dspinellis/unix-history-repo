@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)function.c	5.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)function.c	5.26 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -57,9 +57,9 @@ find_parsenum(plan, option, vp, endch)
 	char *option, *vp, *endch;
 {
 	long value;
-	char *endchar, *str;	/* pointer to character ending conversion */
+	char *endchar, *str;	/* Pointer to character ending conversion. */
     
-	/* determine comparison from leading + or - */
+	/* Determine comparison from leading + or -. */
 	str = vp;
 	switch (*str) {
 	case '+':
@@ -91,11 +91,20 @@ find_parsenum(plan, option, vp, endch)
 }
 
 /*
+ * The value of n for the inode times (atime, ctime, and mtime) is a range,
+ * i.e. n matches from (n - 1) to n 24 hour periods.  This interacts with
+ * -n, such that "-mtime -1" would be less than 0 days, which isn't what the
+ * user wanted.  Correct so that -1 is "less than 1".
+ */
+#define	TIME_CORRECT(p, ttype)						\
+	if ((p)->type == ttype && (p)->flags == F_LESSTHAN)		\
+		++((p)->t_data);
+
+/*
  * -atime n functions --
  *
  *	True if the difference between the file access time and the
  *	current time is n 24 hour periods.
- *
  */
 int
 f_atime(plan, entry)
@@ -118,6 +127,7 @@ c_atime(arg)
 
 	new = palloc(N_ATIME, f_atime);
 	new->t_data = find_parsenum(new, "-atime", arg, NULL);
+	TIME_CORRECT(new, N_ATIME);
 	return (new);
 }
 /*
@@ -147,6 +157,7 @@ c_ctime(arg)
 
 	new = palloc(N_CTIME, f_ctime);
 	new->t_data = find_parsenum(new, "-ctime", arg, NULL);
+	TIME_CORRECT(new, N_CTIME);
 	return (new);
 }
 
@@ -554,6 +565,7 @@ c_mtime(arg)
 
 	new = palloc(N_MTIME, f_mtime);
 	new->t_data = find_parsenum(new, "-mtime", arg, NULL);
+	TIME_CORRECT(new, N_MTIME);
 	return (new);
 }
 
