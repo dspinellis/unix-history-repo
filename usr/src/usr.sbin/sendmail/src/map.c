@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	6.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	6.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -422,6 +422,7 @@ bt_map_open(map, mode)
 	int mode;
 {
 	DB *db;
+	int i;
 	char buf[MAXNAME];
 
 	if (tTd(27, 2))
@@ -430,7 +431,10 @@ bt_map_open(map, mode)
 	if (mode == O_RDWR)
 		mode |= O_CREAT|O_TRUNC;
 
-	(void) sprintf(buf, "%s.db", map->map_file);
+	(void) strcpy(buf, map->map_file);
+	i = strlen(buf);
+	if (i < 3 || strcmp(&buf[i - 3], ".db") != 0)
+		(void) strcat(buf, ".db");
 	db = dbopen(buf, mode, DBMMODE, DB_BTREE, NULL);
 	if (db == NULL)
 	{
@@ -455,6 +459,7 @@ hash_map_open(map, mode)
 	int mode;
 {
 	DB *db;
+	int i;
 	char buf[MAXNAME];
 
 	if (tTd(27, 2))
@@ -463,7 +468,10 @@ hash_map_open(map, mode)
 	if (mode == O_RDWR)
 		mode |= O_CREAT|O_TRUNC;
 
-	(void) sprintf(buf, "%s.db", map->map_file);
+	(void) strcpy(buf, map->map_file);
+	i = strlen(buf);
+	if (i < 3 || strcmp(&buf[i - 3], ".db") != 0)
+		(void) strcat(buf, ".db");
 	db = dbopen(buf, mode, DBMMODE, DB_HASH, NULL);
 	if (db == NULL)
 	{
