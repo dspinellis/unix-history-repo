@@ -1,9 +1,9 @@
 ; Copyright (c) 1988 The Regents of the University of California.
 ; All rights reserved.
 ;
-; %sccs.include.redist.c%
+; %sccs.include.redist.semicolon%
 ;
-;	@(#)spintasm.asm	4.2 (Berkeley) %G%
+;	@(#)spintasm.asm	4.3 (Berkeley) %G%
 ;
 
 ; The code in this file complete the spint calls
