@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_bio.c	7.25 (Berkeley) %G%
+ *	@(#)vfs_bio.c	7.26 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -573,6 +573,8 @@ mntflushbuf(mountp, flags)
 	register struct vnode *vp;
 	struct vnode *nvp;
 
+	if ((mountp->m_flag & M_MPBUSY) == 0)
+		panic("mntflushbuf: not busy");
 loop:
 	for (vp = mountp->m_mounth; vp; vp = nvp) {
 		nvp = vp->v_mountf;
@@ -650,6 +652,8 @@ mntinvalbuf(mountp)
 	struct vnode *nvp;
 	int dirty = 0;
 
+	if ((mountp->m_flag & M_MPBUSY) == 0)
+		panic("mntinvalbuf: not busy");
 loop:
 	for (vp = mountp->m_mounth; vp; vp = nvp) {
 		nvp = vp->v_mountf;
