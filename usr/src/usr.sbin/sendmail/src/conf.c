@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	5.37 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	5.38 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -663,20 +663,23 @@ setproctitle(fmt, a, b, c)
 	extern char *LastArgv;
 	char buf[MAXLINE];
 
-	(void) sprintf(buf, fmt, a, b, c);
+	p = buf;
 
-	/* make ps print "(sendmail)" */
-	p = Argv[0];
-	*p++ = '-';
+	/* print sendmail: heading for grep */
+	(void) strcpy(p, "sendmail: ");
+	p += strlen(p);
+
+	/* print the argument string */
+	(void) sprintf(p, fmt, a, b, c);
 
 	i = strlen(buf);
-	if (i > LastArgv - p - 2)
+	if (i > LastArgv - Argv[0] - 2)
 	{
-		i = LastArgv - p - 2;
+		i = LastArgv - Argv[0] - 2;
 		buf[i] = '\0';
 	}
-	(void) strcpy(p, buf);
-	p += i;
+	(void) strcpy(Argv[0], buf);
+	p = Argv[i];
 	while (p < LastArgv)
 		*p++ = ' ';
 # endif SETPROCTITLE
