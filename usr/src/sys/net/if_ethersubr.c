@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_ethersubr.c	7.18 (Berkeley) %G%
+ *	@(#)if_ethersubr.c	7.19 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -262,6 +262,10 @@ ether_input(ifp, eh, m)
 	register struct llc *l;
 	int s;
 
+	if ((ifp->if_flags & IFF_UP) == 0) {
+		m_freem(m);
+		return;
+	}
 	ifp->if_lastchange = time;
 	ifp->if_ibytes += m->m_pkthdr.len + sizeof (*eh);
 	if (bcmp((caddr_t)etherbroadcastaddr, (caddr_t)eh->ether_dhost,
