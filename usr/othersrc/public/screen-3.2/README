@@ -1,0 +1,26 @@
+This port of screen3.2 is based on patches by Brad Morrison
+(brad@NeoSoft.com) posted to comp.unix.bsd 18 May 1992.
+
+To install everything, you might use:
+cd /usr/local/bin; ln -s /usr/src/public/screen-3.2/bin/* .
+cd /usr/local/man/cat1; ln -s /usr/src/public/screen-3.2/man/cat1/* .
+
+To recompile, cd to the screen-3.2 directory and type 'make'.  Gcc
+should not report any errors or warnings.
+
+In order to test it, copy .iscreen to your home directory.
+See screen3.2/readme for brief instructions on testing.
+
+The install directories is set to
+/usr/src/public/screen-3.2/{bin,man}, though there are no paths
+compiled into the executables.  The preformatted manpages are in
+man/cat1.  To regenerate the preformatted manual pages, cd to man and
+type 'sh catman'.
+
+Screen 3.2 is under the GNU copyleft and was posted to
+comp.sources.misc as screen-3.2/part* in February of 1992.
+
+Rich Murphey                   409-772-3399
+Physiology & Biophysics F-41   Fax 409-772-3381
+Univ. of Texas Medical Branch  rich@rice.edu
+Galveston, Texas 77555-0641    rich@rice.UUCP
