@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)siovar.h	7.1 (Berkeley) %G%
+ *	@(#)siovar.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -19,6 +19,7 @@
 struct	sio_portc {
 	int	pc_major;
 	int	pc_unit;
+	int	pc_port;
 	struct siodevice *pc_addr;
 	int	(*pc_intr)();
 };
