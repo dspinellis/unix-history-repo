@@ -6,8 +6,10 @@
 #include <sys/socket.h>
 
 #include <net/route.h>
-#include <netxns/xn.h>
-#include <netxns/idp.h>
+#include <netns/ns.h>
+#include <netns/idp.h>
+#define xnnet(p) (*(long *)&(p))
+#define	IDPPORT_RIF	1
 
 #include <stdio.h>
 
@@ -29,6 +31,8 @@
 	(bcmp((caddr_t)(a1), (caddr_t)(a2), sizeof (struct sockaddr)) == 0)
 #define	min(a,b)	((a)>(b)?(b):(a))
 
+struct	sockaddr_ns addr;	/* Daemon's Address */
+int	s;			/* Socket to listen on */
 int	kmem;
 int	supplier;		/* process should supply updates */
 int	install;		/* if 1 call kernel */

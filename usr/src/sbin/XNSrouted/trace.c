@@ -108,7 +108,7 @@ traceaction(fd, action, rt)
 	char *action;
 	struct rt_entry *rt;
 {
-	struct sockaddr_xn *dst, *gate;
+	struct sockaddr_ns *dst, *gate;
 	static struct bits {
 		int	t_bits;
 		char	*t_name;
@@ -132,11 +132,11 @@ traceaction(fd, action, rt)
 	if (fd == NULL)
 		return;
 	fprintf(fd, "%s ", action);
-	dst = (struct sockaddr_xn *)&rt->rt_dst;
-	gate = (struct sockaddr_xn *)&rt->rt_router;
-	fprintf(fd, "dst %s, ", xns_ntoa(&dst->sxn_addr));
+	dst = (struct sockaddr_ns *)&rt->rt_dst;
+	gate = (struct sockaddr_ns *)&rt->rt_router;
+	fprintf(fd, "dst %s, ", xns_ntoa(&dst->sns_addr));
 	fprintf(fd, "router %s, metric %d, flags",
-	     xns_ntoa(&gate->sxn_addr), rt->rt_metric);
+	     xns_ntoa(&gate->sns_addr), rt->rt_metric);
 	cp = " %s";
 	for (first = 1, p = flagbits; p->t_bits > 0; p++) {
 		if ((rt->rt_flags & p->t_bits) == 0)
@@ -206,7 +206,7 @@ dumptrace(fd, dir, ifd)
 
 dumppacket(fd, dir, who, cp, size)
 	FILE *fd;
-	struct sockaddr_xn *who;		/* should be sockaddr */
+	struct sockaddr_ns *who;		/* should be sockaddr */
 	char *dir, *cp;
 	register int size;
 {
@@ -215,10 +215,10 @@ dumppacket(fd, dir, who, cp, size)
 
 	if (msg->rip_cmd && ntohs(msg->rip_cmd) < RIPCMD_MAX)
 		fprintf(fd, "%s %s %s#%x", ripcmds[ntohs(msg->rip_cmd)],
-		    dir, xns_ntoa(&who->sxn_addr), ntohs(who->sxn_addr.xn_socket));
+		    dir, xns_ntoa(&who->sns_addr), ntohs(who->sns_addr.x_port));
 	else {
 		fprintf(fd, "Bad cmd 0x%x %s %s#%x\n", ntohs(msg->rip_cmd),
-		    dir, xns_ntoa(&who->sxn_addr), ntohs(who->sxn_addr.xn_socket));
+		    dir, xns_ntoa(&who->sns_addr), ntohs(who->sns_addr.x_port));
 		fprintf(fd, "size=%d cp=%x packet=%x\n", size, cp, packet);
 		return;
 	}
@@ -233,7 +233,7 @@ dumppacket(fd, dir, who, cp, size)
 			if (size < sizeof (struct netinfo))
 				break;
 			fprintf(fd, "\tnet %#x metric %d\n",
-			     ntohl(xnnet(n->rip_dst)),
+			     ntohl(xnnet(n->rip_dst[0])),
 			     ntohs(n->rip_metric));
 		}
 		break;
@@ -243,15 +243,15 @@ dumppacket(fd, dir, who, cp, size)
 
 char *
 xns_ntoa(addr)
-struct xn_addr *addr;
+struct ns_addr *addr;
 {
     static char buf[100];
 
     sprintf(buf, "%x#%x:%x:%x:%x:%x:%x",
-	ntohl(xnnet(addr->xn_net)),
-	addr->xn_host[0], addr->xn_host[1], 
-	addr->xn_host[2], addr->xn_host[3], 
-	addr->xn_host[4], addr->xn_host[5]);
+	ntohl(xnnet(addr->x_net)),
+	addr->x_host.c_host[0], addr->x_host.c_host[1], 
+	addr->x_host.c_host[2], addr->x_host.c_host[3], 
+	addr->x_host.c_host[4], addr->x_host.c_host[5]);
 	
     return(buf);
 }

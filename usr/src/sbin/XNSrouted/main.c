@@ -14,6 +14,7 @@ static char rcsid[] = "$Header$";
 #include <errno.h>
 #include <nlist.h>
 #include <signal.h>
+#include <syslog.h>
 
 int	supplier = -1;		/* process should supply updates */
 extern int gateway;
@@ -25,13 +26,16 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
+	int cc;
 	struct sockaddr from;
 	u_char retry;
-	int selectbits;
-	struct interface *ifp;
-	extern struct interface *ifnet;
 	
 	argv0 = argv;
+	addr.sns_family = AF_NS;
+	addr.sns_port = htons(IDPPORT_RIF);
+	s = getsocket(SOCK_DGRAM, 0, &addr);
+	if (s < 0)
+		exit(1);
 	argv++, argc--;
 	while (argc > 0 && **argv == '-') {
 		if (strcmp(*argv, "-s") == 0) {
@@ -102,7 +106,7 @@ main(argc, argv)
 		supplier = 0;
 	/* request the state of the world */
 	msg->rip_cmd = htons(RIPCMD_REQUEST);
-	xnnet(msg->rip_nets[0].rip_dst) = htonl(DSTNETS_ALL);
+	xnnet(msg->rip_nets[0].rip_dst[0]) = htonl(DSTNETS_ALL);
 	msg->rip_nets[0].rip_metric =  htons(HOPCNT_INFINITY);
 	toall(sendmsg);
 	signal(SIGALRM, timer);
@@ -111,34 +115,18 @@ main(argc, argv)
 	signal(SIGEMT, fkexit);
 	timer();
 	
-	/*
-	 * Listen for RIF packets on all interfaces
-	 */
-	selectbits = 0;
-	for( ifp = ifnet; ifp!=0; ifp = ifp->int_next) {
-		selectbits |= 1 << ifp->int_ripsock[0];
-		selectbits |= 1 << ifp->int_ripsock[1];
-	}
 
 	for (;;) {
 		int ibits;
 		register int n;
 
-		ibits = selectbits;
+		/*ibits = 1 << s;
 		n = select(20, &ibits, 0, 0, 0);
-		if (n < 0) {
-			if(errno != EINTR) {
-				perror("main:select");
-				exit(1);
-			}
+		if (n < 0)
 			continue;
-		}
-		for( ifp = ifnet; ifp!=0; ifp = ifp->int_next) {
-		    /* take RIF packet off interface */
-		    for(n = 0; n < 2; n++)
-			if(ibits & (1 << ifp->int_ripsock[n]))
-				process(ifp->int_ripsock[n]);
-		}
+		if (ibits & (1 << s)) */
+			process(s);
+		/* handle ICMP redirects */
 	}
 }
 
@@ -158,46 +146,63 @@ process(fd)
 	/* We get the IDP header in front of the RIF packet*/
 	if (tracepackets > 1) {
 	    fprintf(ftrace,"rcv %d bytes on %s ",
-		cc, xns_ntoa(&idp->idp_dst));
-	    fprintf(ftrace," from %s\n", xns_ntoa(&idp->idp_src));
+		cc, xns_ntoa(&idp->idp_dna));
+	    fprintf(ftrace," from %s\n", xns_ntoa(&idp->idp_sna));
 	}
 	
-	if (xnnet(idp->idp_src.xn_net) != xnnet(idp->idp_dst.xn_net)) {
+	if (ns_netof(idp->idp_sna) != ns_netof(idp->idp_dna)) {
 		fprintf(ftrace, "XNSrouted: net of interface (%d) != net on ether (%d)!\n",
-			ntohl(xnnet(idp->idp_dst.xn_net)),
-			ntohs(xnnet(idp->idp_src.xn_net)));
+			ns_netof(idp->idp_dna), ns_netof(idp->idp_sna));
 	}
 			
 	cc -= sizeof (struct idp);
-	if (fromlen != sizeof (struct sockaddr_xn))
-		return;
+	if (fromlen != sizeof (struct sockaddr_ns))
+		fprintf(ftrace, "fromlen is %d instead of %d\n",
+		fromlen, sizeof (struct sockaddr_ns));
 #define	mask(s)	(1<<((s)-1))
 	omask = sigblock(mask(SIGALRM));
 	rip_input(&from, cc);
 	sigsetmask(omask);
 }
 
-getsocket(domain, type, proto, sxn)
-	int domain, type, proto;
-	struct sockaddr_xn *sxn;
+getsocket(type, proto, sns)
+	int type, proto; 
+	struct sockaddr_ns *sns;
 {
-	int retry, s;
+	int domain = sns->sns_family;
+	int retry, s, on = 1;
 
 	retry = 1;
-	while ((s = socket(domain, type, proto, 0)) < 0 && retry) {
+	while ((s = socket(domain, type, proto)) < 0 && retry) {
 		perror("socket");
 		sleep(5 * retry);
 		retry <<= 1;
 	}
 	if (retry == 0)
 		return (-1);
-	while (bind(s, sxn, sizeof (*sxn), 0) < 0 && retry) {
+	while (bind(s, sns, sizeof (*sns), 0) < 0 && retry) {
 		perror("bind");
 		sleep(5 * retry);
 		retry <<= 1;
 	}
 	if (retry == 0)
 		return (-1);
+	if (domain==AF_NS) {
+		struct idp idp;
+		if (setsockopt(s, 0, SO_HEADERS_ON_INPUT, &on, sizeof(on))) {
+			perror("setsockopt SEE HEADERS");
+			exit(1);
+		}
+		idp.idp_pt = NSPROTO_RI;
+		if (setsockopt(s, 0, SO_DEFAULT_HEADERS, &idp, sizeof(idp))) {
+			perror("setsockopt SET HEADERS");
+			exit(1);
+		}
+	}
+	if (setsockopt(s, SOL_SOCKET, SO_BROADCAST, &on, sizeof (on)) < 0) {
+		perror("setsockopt SO_BROADCAST");
+		exit(1);
+	}
 	return (s);
 }
 

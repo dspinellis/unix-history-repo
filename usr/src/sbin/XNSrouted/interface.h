@@ -30,7 +30,6 @@ struct interface {
 	int	int_opackets;			/* output packets sent */
 	char	*int_name;			/* from kernel if structure */
 	u_short	int_transitions;		/* times gone up-down */
-	int	int_ripsock[2];			/* socket to listen for RIP packets on */
 };
 
 /*
