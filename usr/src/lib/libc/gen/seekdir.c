@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)seekdir.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)seekdir.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -31,18 +31,23 @@ seekdir(dirp, loc)
 	register DIR *dirp;
 	long loc;
 {
-	long curloc, base, offset;
+	register struct ddloc *lp;
 	struct dirent *dp;
 	extern long lseek();
 
-	curloc = telldir(dirp);
-	if (loc == curloc)
+	lp = dirp->dd_hash[LOCHASH(loc)];
+	while (lp != NULL) {
+		if (lp->loc_index == loc)
+			break;
+		lp = lp->loc_next;
+	}
+	if (lp == NULL)
 		return;
-	base = loc & ~(DIRBLKSIZ - 1);
-	offset = loc & (DIRBLKSIZ - 1);
-	(void) lseek(dirp->dd_fd, base, 0);
+	if (lp->loc_loc == dirp->dd_loc && lp->loc_seek == dirp->dd_seek)
+		return;
+	(void) lseek(dirp->dd_fd, lp->loc_seek, 0);
 	dirp->dd_loc = 0;
-	while (dirp->dd_loc < offset) {
+	while (dirp->dd_loc < lp->loc_loc) {
 		dp = readdir(dirp);
 		if (dp == NULL)
 			return;

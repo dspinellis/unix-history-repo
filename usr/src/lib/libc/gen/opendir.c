@@ -16,11 +16,13 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)opendir.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)opendir.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
 #include <dirent.h>
+
+char *malloc();
 
 /*
  * open a directory.
@@ -31,6 +33,7 @@ opendir(name)
 {
 	register DIR *dirp;
 	register int fd;
+	register int i;
 
 	if ((fd = open(name, 0)) == -1)
 		return NULL;
@@ -38,7 +41,28 @@ opendir(name)
 		close (fd);
 		return NULL;
 	}
+	/*
+	 * If CLSIZE is an exact multiple of DIRBLKSIZ, use a CLSIZE
+	 * buffer that it cluster boundary aligned.
+	 * Hopefully this can be a big win someday by allowing page trades
+	 * to user space to be done by getdirentries()
+	 */
+	if ((CLSIZE % DIRBLKSIZ) == 0) {
+		dirp->dd_buf = malloc(CLSIZE);
+		dirp->dd_len = CLSIZE;
+	} else {
+		dirp->dd_buf = malloc(DIRBLKSIZ);
+		dirp->dd_len = DIRBLKSIZ;
+	}
+	if (dirp->dd_buf == NULL) {
+		close (fd);
+		return NULL;
+	}
 	dirp->dd_fd = fd;
 	dirp->dd_loc = 0;
+	dirp->dd_seek = 0;
+	dirp->dd_loccnt = 1;
+	for (i = 0; i < NDIRHASH; i++)
+		dirp->dd_hash[i] = NULL;
 	return dirp;
 }

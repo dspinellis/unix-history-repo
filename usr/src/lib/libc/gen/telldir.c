@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)telldir.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)telldir.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -29,7 +29,16 @@ long
 telldir(dirp)
 	DIR *dirp;
 {
-	extern long lseek();
+	register int index;
+	register struct ddloc *lp;
 
-	return (lseek(dirp->dd_fd, 0L, 1) - dirp->dd_size + dirp->dd_loc);
+	if ((lp = (struct ddloc *)malloc(sizeof(struct ddloc))) == NULL)
+		return (-1);
+	index = dirp->dd_loccnt++;
+	lp->loc_index = index;
+	lp->loc_seek = dirp->dd_seek;
+	lp->loc_loc = dirp->dd_loc;
+	lp->loc_next = dirp->dd_hash[LOCHASH(index)];
+	dirp->dd_hash[LOCHASH(index)] = lp;
+	return (index);
 }

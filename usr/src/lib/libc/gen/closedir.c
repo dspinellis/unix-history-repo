@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)closedir.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)closedir.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -29,8 +29,20 @@ void
 closedir(dirp)
 	register DIR *dirp;
 {
+	register struct ddloc *lp, *olp;
+	register int i;
+
 	close(dirp->dd_fd);
 	dirp->dd_fd = -1;
 	dirp->dd_loc = 0;
-	free(dirp);
+	for (i = 0; i < NDIRHASH; i++) {
+		lp = dirp->dd_hash[i];
+		while (lp != NULL) {
+			olp = lp;
+			lp = lp->loc_next;
+			free((caddr_t) olp);
+		}
+	}
+	free(dirp->dd_buf);
+	free((caddr_t)dirp);
 }
