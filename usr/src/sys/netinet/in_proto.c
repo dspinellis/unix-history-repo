@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)in_proto.c	6.8 (Berkeley) %G%
+ *	@(#)in_proto.c	6.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -104,4 +104,23 @@ struct protosw impsw[] = {
 struct domain impdomain =
     { AF_IMPLINK, "imp", 0, 0, 0,
       impsw, &impsw[sizeof (impsw)/sizeof(impsw[0])] };
+#endif
+
+#include "hy.h"
+#if NHY > 0
+/*
+ * HYPERchannel protocol family: raw interface.
+ */
+int	rhy_output();
+
+struct protosw hysw[] = {
+{ SOCK_RAW,	PF_HYLINK,	0,		PR_ATOMIC|PR_ADDR,
+  0,		rhy_output,	0,		0,
+  raw_usrreq,
+  0,		0,		0,		0,
+},
+};
+
+struct domain hydomain =
+    { AF_HYLINK, "hy", hysw, &hysw[sizeof (hysw)/sizeof(hysw[0])] };
 #endif
