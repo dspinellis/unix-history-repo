@@ -13,9 +13,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pmap.c	8.2 (Berkeley) %G%
+ *	@(#)pmap.c	8.3 (Berkeley) %G%
  *
- * from: $Header: pmap.c,v 1.40 93/09/27 19:20:44 torek Exp $
+ * from: $Header: pmap.c,v 1.43 93/10/31 05:34:56 torek Exp $
  */
 
 /*
@@ -41,6 +41,7 @@
 
 #include <sparc/sparc/asm.h>
 #include <sparc/sparc/cache.h>
+#include <sparc/sparc/vaddrs.h>
 
 #ifdef DEBUG
 #define PTE_BITS "\20\40V\37W\36S\35NC\33IO\32U\31M"
@@ -106,7 +107,7 @@ struct pmap_stats {
 int	pmapdebug = 0x0;
 #endif
 
-#define	splpmap() splbio()
+#define	splpmap() splimp()
 
 /*
  * First and last managed physical addresses.
@@ -884,8 +885,15 @@ if(pm==NULL)panic("pv_changepte 1");
 			if (pm->pm_ctx) {
 				extern vm_offset_t pager_sva, pager_eva;
 
+				/*
+				 * Bizarreness:  we never clear PG_W on
+				 * pager pages, nor PG_NC on DVMA pages.
+				 */
 				if (bic == PG_W &&
 				    va >= pager_sva && va < pager_eva)
+					continue;
+				if (bic == PG_NC &&
+				    va >= DVMA_BASE && va < DVMA_END)
 					continue;
 				setcontext(pm->pm_ctxnum);
 				/* XXX should flush only when necessary */
