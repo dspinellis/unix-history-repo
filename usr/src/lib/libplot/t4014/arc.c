@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)arc.c	4.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)arc.c	4.2 (Berkeley) %G%";
 #endif
 
 int del = 20;
@@ -106,8 +106,4 @@ quad(x,y,xp,yp){
 		else return(3);
 	else if(y < yp)return(2);
 	else return(4);
-}
-abs(a){
-	if(a < 0)return(-a);
-	return(a);
 }
