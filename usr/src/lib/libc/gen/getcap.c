@@ -42,7 +42,6 @@ static char sccsid[] = "@(#)getcap.c	5.1 (Berkeley) 8/6/92";
 
 #include <ctype.h>
 #include <db.h>
-#include <errno.h>
 #include <errno.h>	
 #include <fcntl.h>
 #include <limits.h>
@@ -258,6 +257,9 @@ getent(cap, len, db_array, fd, name, depth, nfield)
 			} else {
 				fd = open(*db_p, O_RDONLY, 0);
 				if (fd < 0) {
+					/* No error on unfound file. */
+					if (errno == ENOENT)
+						continue;
 					free(record);
 					return (-2);
 				}
@@ -549,7 +551,7 @@ cdbget(capdbp, bp, name)
 	strcpy(buf, (char *)(data.data));
 	
 	key.data = buf;
-	key.size = data.size - 1;
+	key.size = data.size;
 
 	/*
 	 * Get the record.
