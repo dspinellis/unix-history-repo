@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)look.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)look.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -70,17 +70,21 @@ main(argc, argv)
 	char *argv[];
 {
 	struct stat sb;
-	int ch, fd;
-	char *back, *file, *front, *string;
+	int ch, fd, termchar;
+	char *back, *file, *front, *string, *p;
 
 	file = _PATH_WORDS;
-	while ((ch = getopt(argc, argv, "df")) != EOF)
+	termchar = '\0';
+	while ((ch = getopt(argc, argv, "dft:")) != EOF)
 		switch(ch) {
 		case 'd':
 			dflag = 1;
 			break;
 		case 'f':
 			fflag = 1;
+			break;
+		case 't':
+			termchar = *optarg;
 			break;
 		case '?':
 		default:
@@ -101,6 +105,9 @@ main(argc, argv)
 	default:
 		usage();
 	}
+
+	if (termchar != '\0' && (p = strchr(string, termchar)) != NULL)
+		*++p = '\0';
 
 	if ((fd = open(file, O_RDONLY, 0)) < 0 || fstat(fd, &sb))
 		err("%s: %s", file, strerror(errno));
@@ -189,7 +196,11 @@ binary_search(string, front, back)
 	p = front + (back - front) / 2;
 	SKIP_PAST_NEWLINE(p, back);
 
-	while (p != back) {
+	/*
+	 * If the file changes underneath us, make sure we don't
+	 * infinitely loop.
+	 */
+	while (p < back && back > front) {
 		if (compare(string, p, back) == GREATER)
 			front = p;
 		else
@@ -286,7 +297,7 @@ compare(s1, s2, back)
 static void
 usage()
 {
-	(void)fprintf(stderr, "usage: look [-df] string [file]\n");
+	(void)fprintf(stderr, "usage: look [-df] [-t char] string [file]\n");
 	exit(2);
 }
 
