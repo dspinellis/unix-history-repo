@@ -1,4 +1,4 @@
-/*	llib-lc	1.35	86/03/20	*/
+/*	@(#)llib-lc	1.35 (Berkeley) %G%	*/
 
 /* LINTLIBRARY */
 
@@ -184,8 +184,8 @@ char *	asctime(t) struct tm *t; { return(""); }
 double	atof(s) char *s; { return(1.); }
 int	atoi(s) char *s; { return 1;   }
 long	atol(s) char *s; { return 1L;   }
+int	bcmp(b1, b2, length) char *b1, *b2; { return 0; }
 	bcopy(src, dst, length) char *src, *dst; { ; }
-	bcmp(b1, b2, length) char *b1, *b2; { ; }
 	bzero(b, length) char *b; { ; }
 char *	calloc(n,s) unsigned n, s; { static char c[1]; return(c); }
 void	closedir( p ) DIR *p; {}
