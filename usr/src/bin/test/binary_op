@@ -1,8 +1,19 @@
+# Copyright (c) 1988 The Regents of the University of California.
+# All rights reserved.
+#
+# This code is derived from software contributed to Berkeley by
+# Kenneth Almquist.
+#
+# %sccs.include.redist.sh%
+#
+#      @(#)binary_op	1.2 (Berkeley) %G%
+#
+
+
+#
 # List of binary operators used by test
 #
-# Copyright 1989 by Kenneth Almquist.  All rights reserved.
-# This file is part of ash, which is distributed under the terms specified
-# by the Ash General Public License.  See the file named LICENSE.
+
 
 OR1	 -o	1
 OR2	 |	1
