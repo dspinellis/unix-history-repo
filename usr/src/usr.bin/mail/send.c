@@ -12,7 +12,7 @@
  * Mail to others.
  */
 
-static char *SccsId = "@(#)send.c	2.7 %G%";
+static char *SccsId = "@(#)send.c	2.8 %G%";
 
 /*
  * Send message described by the passed pointer to the
@@ -381,11 +381,11 @@ topdog:
 #ifdef CC
 		submit(getpid());
 #endif CC
-#ifdef DELIVERMAIL
+#ifdef SENDMAIL
 		if ((deliver = value("sendmail")) == NOSTR)
-			deliver = DELIVERMAIL;
+			deliver = SENDMAIL;
 		execv(deliver, namelist);
-#endif DELIVERMAIL
+#endif SENDMAIL
 		execv(MAIL, namelist);
 		perror(MAIL);
 		exit(1);
