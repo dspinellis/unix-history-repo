@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)send.c	5.3 (Berkeley) %G%";
+static char *sccsid = "@(#)send.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include "rcv.h"
@@ -94,7 +94,7 @@ send(mp, obuf, doign)
 					statusput(mp, obuf);
 					dostat = 0;
 				}
-				putc('\n', obuf);	/* add blank line */
+				(void) putc('\n', obuf); /* add blank line */
 				lc++;
 				ishead = 0;
 				ignoring = 0;
@@ -125,7 +125,7 @@ send(mp, obuf, doign)
 			}
 		}
 		if (!ignoring) {
-			fwrite(line, sizeof *line, length, obuf);
+			(void) fwrite(line, sizeof *line, length, obuf);
 			if (ferror(obuf))
 				return -1;
 			lc++;
@@ -200,7 +200,7 @@ mail(people)
 	head.h_cc = NOSTR;
 	head.h_bcc = NOSTR;
 	head.h_seq = 0;
-	mail1(&head);
+	(void) mail1(&head);
 	return(0);
 }
 
@@ -223,7 +223,7 @@ sendmail(str)
 	head.h_cc = NOSTR;
 	head.h_bcc = NOSTR;
 	head.h_seq = 0;
-	mail1(&head);
+	(void) mail1(&head);
 	return(0);
 }
 
@@ -260,7 +260,7 @@ mail1(hp)
 		grabh(hp, GCC);
 	else if (intty) {
 		printf("EOT\n");
-		fflush(stdout);
+		(void) fflush(stdout);
 	}
 
 	/*
@@ -289,8 +289,8 @@ mail1(hp)
 topdog:
 
 		if (fsize(mtf) != 0) {
-			remove(deadletter);
-			exwrite(deadletter, mtf, 1);
+			(void) remove(deadletter);
+			(void) exwrite(deadletter, mtf, 1);
 			rewind(mtf);
 		}
 	}
@@ -323,11 +323,11 @@ topdog:
 		for (t = namelist; *t != NOSTR; t++)
 			printf(" \"%s\"", *t);
 		printf("\n");
-		fflush(stdout);
+		(void) fflush(stdout);
 		return 0;
 	}
 	if ((cp = value("record")) != NOSTR)
-		savemail(expand(cp), mtf);
+		(void) savemail(expand(cp), mtf);
 
 	/*
 	 * Wait, to absorb a potential zombie, then
@@ -343,31 +343,31 @@ topdog:
 	pid = fork();
 	if (pid == -1) {
 		perror("fork");
-		remove(deadletter);
-		exwrite(deadletter, mtf, 1);
+		(void) remove(deadletter);
+		(void) exwrite(deadletter, mtf, 1);
 		goto out;
 	}
 	if (pid == 0) {
 #ifdef SIGTSTP
 		if (remote == 0) {
-			signal(SIGTSTP, SIG_IGN);
-			signal(SIGTTIN, SIG_IGN);
-			signal(SIGTTOU, SIG_IGN);
+			(void) signal(SIGTSTP, SIG_IGN);
+			(void) signal(SIGTTIN, SIG_IGN);
+			(void) signal(SIGTTOU, SIG_IGN);
 		}
 #endif
-		signal(SIGHUP, SIG_IGN);
-		signal(SIGINT, SIG_IGN);
-		signal(SIGQUIT, SIG_IGN);
+		(void) signal(SIGHUP, SIG_IGN);
+		(void) signal(SIGINT, SIG_IGN);
+		(void) signal(SIGQUIT, SIG_IGN);
 		if (!stat(POSTAGE, &sbuf))
 			if ((postage = fopen(POSTAGE, "a")) != NULL) {
-				fprintf(postage, "%s %d %d\n", myname,
+				fprintf(postage, "%s %d %ld\n", myname,
 				    count(to), fsize(mtf));
-				fclose(postage);
+				(void) fclose(postage);
 			}
-		close(0);
-		dup(fileno(mtf));
+		(void) close(0);
+		(void) dup(fileno(mtf));
 		for (i = getdtablesize(); --i > 2;)
-			close(i);
+			(void) close(i);
 #ifdef SENDMAIL
 		if ((deliver = value("sendmail")) == NOSTR)
 			deliver = SENDMAIL;
@@ -386,7 +386,7 @@ out:
 			senderr++;
 		pid = 0;
 	}
-	fclose(mtf);
+	(void) fclose(mtf);
 	return(pid);
 }
 
@@ -437,29 +437,29 @@ infix(hp, fi)
 	}
 	if ((nfi = fopen(tempMail, "r")) == NULL) {
 		perror(tempMail);
-		fclose(nfo);
+		(void) fclose(nfo);
 		return(fi);
 	}
-	remove(tempMail);
-	puthead(hp, nfo, GTO|GSUBJECT|GCC|GNL);
+	(void) remove(tempMail);
+	(void) puthead(hp, nfo, GTO|GSUBJECT|GCC|GNL);
 	c = getc(fi);
 	while (c != EOF) {
-		putc(c, nfo);
+		(void) putc(c, nfo);
 		c = getc(fi);
 	}
 	if (ferror(fi)) {
 		perror("read");
 		return(fi);
 	}
-	fflush(nfo);
+	(void) fflush(nfo);
 	if (ferror(nfo)) {
 		perror(tempMail);
-		fclose(nfo);
-		fclose(nfi);
+		(void) fclose(nfo);
+		(void) fclose(nfi);
 		return(fi);
 	}
-	fclose(nfo);
-	fclose(fi);
+	(void) fclose(nfo);
+	(void) fclose(fi);
 	rewind(nfi);
 	return(nfi);
 }
@@ -485,7 +485,7 @@ puthead(hp, fo, w)
 	if (hp->h_bcc != NOSTR && w & GBCC)
 		fmt("Bcc: ", hp->h_bcc, fo), gotcha++;
 	if (gotcha && w & GNL)
-		putc('\n', fo);
+		(void) putc('\n', fo);
 	return(0);
 }
 
@@ -553,17 +553,17 @@ savemail(name, fi)
 		perror(name);
 		return (-1);
 	}
-	time(&now);
+	(void) time(&now);
 	if ((n = rflag) == NOSTR)
 		n = myname;
 	fprintf(fo, "From %s %s", n, ctime(&now));
 	rewind(fi);
 	while ((i = fread(buf, 1, sizeof buf, fi)) > 0)
-		fwrite(buf, 1, i, fo);
-	putc('\n', fo);
-	fflush(fo);
+		(void) fwrite(buf, 1, i, fo);
+	(void) putc('\n', fo);
+	(void) fflush(fo);
 	if (ferror(fo))
 		perror(name);
-	fclose(fo);
+	(void) fclose(fo);
 	return (0);
 }
