@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)bibargs.c	2.8	%G%";
+static char sccsid[] = "@(#)bibargs.c	2.9	%G%";
 #endif not lint
 /*
         Authored by: Tim Budd, University of Arizona, 1983.
@@ -292,8 +292,12 @@ incfile(np)
 
          case 'D': if ((i = getwrd(line, 1, word)) == 0)
                       error("word expected in definition");
-		   if (wordsearch(word))
+		   if (wordsearch(word)) { /* already there-toss rest of def.*/
+			while(line[strlen(line)-1] == '\\' ) {
+                            if (tfgets(line, LINELENGTH, fd) == NULL) break;
+			}
 			break;
+		   }
                    for (p = &line[i]; *p == ' '; p++) ;
                    for (strcpy(dline, p); dline[strlen(dline)-1] == '\\'; ){
                        dline[strlen(dline)-1] = '\n';
@@ -992,14 +996,14 @@ return(cp);
 {  reg int i, j;
 	char adstr;
 
-   for (i = 0; i < numrefs; i = j) {
+   for (i = 0; i < numrefs-1; i = j) {
       j = i + 1;
       if (strcmp(refinfo[i].ri_cite, refinfo[j].ri_cite)==0) {
          adstr = 'a';
-         for(j = i+1; strcmp(refinfo[i].ri_cite,refinfo[j].ri_cite) == 0; j++) {
+         for(j = i+1;
+	     j<numrefs && strcmp(refinfo[i].ri_cite,refinfo[j].ri_cite) == 0;
+	     j++) {
             adstr = 'a' + (j-i);
-            if (j == numrefs)
-               break;
 	    refinfo[j].ri_disambig[0] = adstr;
             }
 	 refinfo[i].ri_disambig[0] = 'a';
