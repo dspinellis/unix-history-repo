@@ -1,8 +1,19 @@
-#	@(#)TODO	5.4 (Berkeley) %G%
-
-TODO:  =======================
+#	@(#)TODO	5.5 (Berkeley) %G%
 
 Keith:
+	Why not delete the lfs_bmapv call, just mark everything dirty
+		that isn't deleted/truncated?  Get some numbers about
+		what percentage of the stuff that the cleaner thinks
+		might be live is live.  If it's high, get rid of lfs_bmapv.
+	Currently, inodes are being flushed to disk synchronously upon
+		creation -- see ufs_makeinode.  However, only the inode
+		is flushed, the directory "name" is written using VOP_BWRITE,
+		so it's not synchronous.  Possible solutions: 1: get some
+		ordering in the writes so that inode/directory entries get
+		stuffed into the same segment.  2: do both synchronously
+		3: add Mendel's information into the stream so we log
+		creation/deletion of inodes.  4: do some form of partial
+		segment when changing the inode (creation/deletion/rename).
 	Fix i_block increment for indirect blocks.
 	If the file system is tar'd, extracted on top of another LFS, the
 		IFILE ain't worth diddly.  Is the cleaner writing the IFILE?
@@ -17,6 +28,8 @@ Keith:
 		to be written?  (Different numbering of indirect blocks.)
 
 Margo:
+	Fix the use of the dinode spare field to use the generation number
+		instead.
 	Unmount; not doing a bgetvp (VHOLD) in lfs_newbuf call.
 	Document in the README file where the checkpoint information is
 		on disk.
