@@ -12,13 +12,12 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)graph.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)graph.c	4.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
 #include <ctype.h>
 #include <math.h>
-#define	INF	HUGE
 #define	F	.25
 
 struct xy {
@@ -119,8 +118,8 @@ char *argv[];
 	char *p1, *p2;
 	float temp;
 
-	xd.xlb = yd.xlb = INF;
-	xd.xub = yd.xub = -INF;
+	xd.xlb = yd.xlb = 0;
+	xd.xub = yd.xub = 0;
 	while(--argc > 0) {
 		argv++;
 again:		switch(argv[0][0]) {
@@ -332,20 +331,29 @@ float f,t;
 	return(floor(f/t)*t);
 }
 
+/*
+ * Compute upper and lower bounds for the given descriptor.
+ * We may already have one or both.  We assume that if n==0,
+ * v[0].xv is a valid limit value.
+ */
 getlim(p,v)
 register struct xy *p;
 struct val *v;
 {
 	register i;
 
-	i = 0;
-	do {
-		if(!p->xlbf && p->xlb>v[i].xv)
-			p->xlb = v[i].xv;
-		if(!p->xubf && p->xub<v[i].xv)
-			p->xub = v[i].xv;
-		i++;
-	} while(i < n);
+	if (!p->xlbf) {		/* need lower bound */
+		p->xlb = v[0].xv;
+		for (i = 1; i < n; i++)
+			if (p->xlb > v[i].xv)
+				p->xlb = v[i].xv;
+	}
+	if (!p->xubf) {		/* need upper bound */
+		p->xub = v[0].xv;
+		for (i = 1; i < n; i++)
+			if (p->xub < v[i].xv)
+				p->xub = v[i].xv;
+	}
 }
 
 struct z {
