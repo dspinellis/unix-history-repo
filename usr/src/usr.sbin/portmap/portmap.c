@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1984 by Sun Microsystems, Inc.
  *
- *	@(#)portmap.c	5.2 (Berkeley) %G%
+ *	@(#)portmap.c	5.3 (Berkeley) %G%
  */
 
 /* @(#)portmap.c	2.3 88/08/11 4.0 RPCSRC */
@@ -49,6 +49,7 @@ static	char sccsid[] = "@(#)portmap.c 1.32 87/08/06 Copyr 1984 Sun Micro";
 #include <stdlib.h>
 #include <string.h>
 #include <syslog.h>
+#include <unistd.h>
 #include <netdb.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
@@ -56,8 +57,9 @@ static	char sccsid[] = "@(#)portmap.c 1.32 87/08/06 Copyr 1984 Sun Micro";
 #include <sys/signal.h>
 #include <sys/resource.h>
 
-int reg_service();
+void reg_service();
 void reap();
+static void callit();
 struct pmaplist *pmaplist;
 int debugging = 0;
 extern int errno;
@@ -153,7 +155,7 @@ main(argc, argv)
 /* need to override perror calls in rpc library */
 void
 perror(what)
-	char *what;
+	const char *what;
 {
 
 	syslog(LOG_ERR, "%s: %m", what);
@@ -181,6 +183,7 @@ find_service(prog, vers, prot)
 /* 
  * 1 OK, 0 not
  */
+void
 reg_service(rqstp, xprt)
 	struct svc_req *rqstp;
 	SVCXPRT *xprt;
@@ -343,7 +346,7 @@ reg_service(rqstp, xprt)
  */
 #define ARGSIZE 9000
 
-typedef struct encap_parms {
+struct encap_parms {
 	u_long arglen;
 	char *args;
 };
@@ -357,7 +360,7 @@ xdr_encap_parms(xdrs, epp)
 	return (xdr_bytes(xdrs, &(epp->args), &(epp->arglen), ARGSIZE));
 }
 
-typedef struct rmtcallargs {
+struct rmtcallargs {
 	u_long	rmt_prog;
 	u_long	rmt_vers;
 	u_long	rmt_port;
@@ -440,7 +443,7 @@ xdr_len_opaque_parms(xdrs, cap)
  * This now forks so that the program & process that it calls can call 
  * back to the portmapper.
  */
-static
+static void
 callit(rqstp, xprt)
 	struct svc_req *rqstp;
 	SVCXPRT *xprt;
