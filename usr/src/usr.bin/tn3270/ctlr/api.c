@@ -235,6 +235,71 @@ write_keystroke(regs, sregs)
 union REGS *regs;
 struct SREGS *sregs;
 {
+    WriteKeystrokeParms parms;
+
+    movetous((char *)&parms, sregs->es, regs->x.di, sizeof parms);
+
+    if ((parms.rc != 0) || (parms.function_id != 0)) {
+	parms.rc = 0x0c;
+    } else if (parms.session_id != 23) {
+	parms.rc = 0x02;
+    } else if (parms.connectors_task_id != 0) {
+	parms.rc = 0x04;
+    } else {
+	parms.number_of_keys_sent = 0;
+	parms.rc = 0;
+	if (parms.options == OPTION_SINGLE_KEYSTROKE) {
+	    KeystrokeEntry *entry = &parms.keystroke_specifier.keystroke_entry;
+	    
+	    if (AcceptKeystroke(entry->scancode, entry->shift_state) == 0) {
+		parms.rc = 0x10;		/* XXX needs 0x12 too! */
+	    }
+	    parms.number_of_keys_sent++;
+	} else if (parms.options == OPTION_MULTIPLE_KEYSTROKES) {
+	    KeystrokeList
+		list,
+		far *atlist = parms.keystroke_specifier.keystroke_list;
+	    KeystrokeEntry
+		entry[10],		/* 10 at a time */
+		*ourentry,
+		far *theirentry;
+	    int
+		todo;
+
+	    movetous((char *)&list, FP_SEG(atlist),
+				FP_OFF(atlist), sizeof *atlist);
+	    todo = list.length/2;
+	    ourentry = entry+(highestof(entry)+1);
+
+	    while (todo) {
+		if (ourentry > &entry[highestof(entry)]) {
+		    int thistime;
+
+		    thistime = todo;
+		    if (thistime > numberof(entry)) {
+			thistime = numberof(entry);
+		    }
+		    movetous((char *)entry, FP_SEG(theirentry),
+			    FP_OFF(theirentry), thistime*sizeof *theirentry);
+		    theirentry += thistime;
+		    ourentry = entry;
+		}
+		if (AcceptKeystroke(ourentry->scancode,
+						ourentry->shift_state) == 0) {
+		    parms.rc = 0x10;		/* XXX needs 0x12 too! */
+		    break;
+		}
+		parms.number_of_keys_sent++;
+		ourentry++;
+		todo--;
+	    }
+	} else {
+	    parms.rc = 0x01;
+	}
+    }
+    parms.function_id = 0x62;
+
+    movetothem(sregs->es, regs->x.di, (char *)&parms, sizeof parms);
 /* XXX */
 }
 
