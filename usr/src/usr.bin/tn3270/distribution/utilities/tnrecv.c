@@ -1,78 +1,543 @@
-/*
- * getmore - get another buffer from the host.
- */
+#include <stdio.h>
 
-void
-getmore(buffer)
-char	buffer[];
+#include "apilib.h"
+#include "tncomp.h"
+
+
+#include "../api/api.h"
+
+#include "../ctlr/function.h"
+#include "../ctlr/hostctlr.h"
+#include "../ctlr/oia.h"
+#include "../ctlr/screen.h"
+
+#include "../ascii/disp_asc.h"
+#include "../ascii/astosc.h"
+
+#include "../general/general.h"
+
+ScreenImage Host[MAXSCREENSIZE];
+
+static char
+    a_send_sequence[SMALL_LENGTH+1],
+    a_ack_sequence[SMALL_LENGTH+1],
+    a_checksum[SMALL_LENGTH+1],
+    data_array[LARGE_LENGTH+1];
+
+static int
+    verbose,
+    enter_index,
+    clear_index,
+    ScreenSize,
+    session_id;
+
+static unsigned int
+    send_sequence,
+    ack_sequence,
+    checksum;
+
+api_perror(string)
+char *string;
 {
-    static int next_out = 0, next_in = -1;
-
-    while (seq_out != next_out) {
-	set_seq(++next_in);
-	enter_key();
-	wait_for_unlocked();
-	seq_out = get_seq_out();
-	if (seq_out > next_out) {	/* OOPS */
-	    fprintf(stderr, "Sequence number error: expected 0x%d, got 0x%d.\n",
-		    next_out, seq_out);
-	    pf3_key();
-	    exit(3);
-	}
-    }
+    fprintf(stderr, "Error: [0x%x/0x%x:0x%x/0x%x] from %s.\n",
+	api_sup_fcn_id, api_sup_errno,
+	api_fcn_fcn_id, api_fcn_errno, string);
 }
 
 
+char *
+session_type(type)
+int	type;
+{
+    switch (type) {
+    case TYPE_WSCTL:
+	return "work station control";
+    case TYPE_DFT:
+	return "distributed function terminal";
+    case TYPE_CUT:
+	return "control unit terminal";
+    case TYPE_NOTEPAD:
+	return "notepad";
+    case TYPE_PC:
+	return "personal computer";
+    default:
+	return "(UNKNOWN)";
+    }
+}
+
+static int
+wait_for_unlock()
+{
+    OIA oia;
+    ReadOiaGroupParms re;
+
+    do {
+	re.rc = re.function_id = 0;
+	re.session_id = session_id;
+	re.oia_buffer = (char far *) &oia;
+	re.oia_group_number = API_OIA_ALL_GROUPS;
+	if (api_read_oia_group(&re) == -1) {
+	    api_perror("api_read_oia_group");
+	    return -1;
+	} else if (verbose) {
+	    if (IsOiaReady3274(&oia)) {
+		printf("3274 ready, ");
+	    }
+	    if (IsOiaMyJob(&oia)) {
+		printf("my job, ");
+	    }
+	    if (IsOiaInsert(&oia)) {
+		printf("insert mode, ");
+	    }
+	    if (IsOiaSystemLocked(&oia)) {
+		printf("system locked, ");
+	    }
+	    if (IsOiaTWait(&oia)) {
+		printf("terminal wait, ");
+	    }
+	    printf("are some bits from the OIA.\n");
+	}
+    } while (IsOiaSystemLocked(&oia) || IsOiaTWait(&oia));
+    return 0;
+}
+
+static int
+initialize()
+{
+    QuerySessionIdParms id;
+    QuerySessionParametersParms pa;
+    QuerySessionCursorParms cu;
+    ConnectToKeyboardParms conn;
+    DisableInputParms disable;
+    NameArray namearray;
+
+    if (api_init() == 0) {
+	fprintf(stderr, "API function not available.\n");
+	return -1;
+    }
+
+    id.rc = 0;
+    id.function_id = 0;
+    id.option_code = ID_OPTION_BY_NAME;
+    id.data_code = 'E';
+    id.name_array = &namearray;
+    namearray.length = sizeof namearray;
+    if (api_query_session_id(&id)) {
+	api_perror("api_query_session_id");
+    } else if (namearray.number_matching_session == 0) {
+	fprintf(stderr, "query_session_id:  No matching sessions!\n");
+	return -1;
+    } else if (verbose) {
+	printf("Session short name 0x%x, type is ",
+				namearray.name_array_element.short_name);
+	printf("%s", session_type(namearray.name_array_element.type));
+	printf(", session ID is: 0x%x\n",
+				namearray.name_array_element.session_id);
+    }
+    session_id = namearray.name_array_element.session_id;
+
+    pa.rc = pa.function_id = 0;
+    pa.session_id = session_id;
+    if (api_query_session_parameters(&pa) == -1) {
+	api_perror("api_query_session_parameters");
+	return -1;
+    } else if (verbose) {
+	printf("Session type %s, ", session_type(pa.session_type));
+	if (pa.session_characteristics&CHARACTERISTIC_EAB) {
+	    printf(" has EAB, ");
+	}
+	if (pa.session_characteristics&CHARACTERISTIC_PSS) {
+	    printf(" has PSS, ");
+	}
+	printf("%d rows, %d columns ", pa.rows, pa.columns);
+	if (pa.presentation_space) {
+	    printf("presentation space at 0x%x:0x%x.\n",
+		FP_SEG(pa.presentation_space), FP_OFF(pa.presentation_space));
+	} else {
+	    printf("(no direct presentation space access).\n");
+	}
+    }
+    ScreenSize = pa.rows*pa.columns;
+    if (pa.session_characteristics&CHARACTERISTIC_EAB) {
+	fprintf(stderr,
+    "tncomp utilities not designed to work with extended attribute buffers.\n");
+	return -1;
+    }
+
+    if (verbose) {
+	cu.rc = cu.function_id = 0;
+	cu.session_id = session_id;
+	if (api_query_session_cursor(&cu) == -1) {
+	    api_perror("api_query_session_cursor");
+	} else {
+	    printf("cursor");
+	    if (cu.cursor_type&CURSOR_INHIBITED_AUTOSCROLL) {
+		printf(" inhibited autoscroll");
+	    }
+	    if (cu.cursor_type&CURSOR_INHIBITED) {
+		printf(" inhibited");
+	    }
+	    if (cu.cursor_type&CURSOR_BLINKING) {
+		printf(" blinking");
+	    } else {
+		printf(" not blinking");
+	    }
+	    if (cu.cursor_type&CURSOR_BOX) {
+		printf(" box ");
+	    } else {
+		printf(" not box ");
+	    }
+	    printf("at row %d, column %d.\n",
+				cu.row_address, cu.column_address);
+	}
+    }
+
+    conn.rc = conn.function_id = 0;
+    conn.session_id = session_id;
+    conn.event_queue_id = conn.input_queue_id = 0;
+    conn.intercept_options = 0;
+    if (api_connect_to_keyboard(&conn) == -1) {
+	api_perror("api_connect_to_keyboard");
+    } else if (verbose) {
+	if (conn.first_connection_identifier) {
+	    printf("First keyboard connection.\n");
+	} else {
+	    printf("Not first keyboard connection.\n");
+	}
+    }
+
+    disable.rc = disable.function_id = 0;
+    disable.session_id = session_id;
+    disable.connectors_task_id = 0;
+    if (api_disable_input(&disable) == -1) {
+	api_perror("api_disable_input");
+	return -1;
+    } else if (verbose) {
+	printf("Disabled.\n");
+    }
+
+    if ((enter_index = ascii_to_index("ENTER")) == -1) {
+	return -1;
+    }
+    if ((clear_index = ascii_to_index("CLEAR")) == -1) {
+	return -1;
+    }
+
+    return 0;				/* all ok */
+}
+
+static int
+send_key(index)
+int	index;
+{
+    WriteKeystrokeParms wr;
+    extern struct astosc astosc[];
+
+    wait_for_unlock();
+
+    wr.rc = wr.function_id = 0;
+    wr.session_id = session_id;
+    wr.connectors_task_id = 0;
+    wr.options = OPTION_SINGLE_KEYSTROKE;
+    wr.number_of_keys_sent = 0;
+    wr.keystroke_specifier.keystroke_entry.scancode = astosc[index].scancode;
+    wr.keystroke_specifier.keystroke_entry.shift_state
+						= astosc[index].shiftstate;
+    if (api_write_keystroke(&wr) == -1) {
+	api_perror("api_write_keystroke");
+	return -1;
+    } else if (wr.number_of_keys_sent != 1) {
+	fprintf(stderr, "write_keystroke claims to have sent %d keystrokes.\n",
+		    wr.number_of_keys_sent);
+	return -1;
+    } else if (verbose) {
+	printf("Keystroke sent.\n");
+    }
+    return 0;
+}
+
+static int
+terminate()
+{
+    EnableInputParms enable;
+    DisconnectFromKeyboardParms disc;
+
+    enable.rc = enable.function_id = 0;
+    enable.session_id = session_id;
+    enable.connectors_task_id = 0;
+    if (api_enable_input(&enable) == -1) {
+	api_perror("api_enable");
+	return -1;
+    } else if (verbose) {
+	printf("Enabled.\n");
+    }
+
+    disc.rc = disc.function_id = 0;
+    disc.session_id = session_id;
+    disc.connectors_task_id = 0;
+    if (api_disconnect_from_keyboard(&disc) == -1) {
+	api_perror("api_disconnect_from_keyboard");
+	return -1;
+    } else if (verbose) {
+	printf("Disconnected from keyboard.\n");
+    }
+
+    (void) api_finish();
+
+    return 0;
+}
+
+
+static int
+get_screen()
+{
+    CopyStringParms copy;
+    /* Time copy services */
+
+    wait_for_unlock();
+
+    copy.copy_mode = 0;
+    copy.rc = copy.function_id = 0;
+    copy.source.session_id = session_id;
+    copy.source.buffer = 0;
+    copy.source.characteristics = 0;
+    copy.source.session_type = TYPE_DFT;
+    copy.source.begin = 0;
+
+    copy.source_end = ScreenSize;
+
+    copy.target.session_id = 0;
+    copy.target.buffer = (char *) &Host[0];
+    copy.target.characteristics = 0;
+    copy.target.session_type = TYPE_DFT;
+
+    if (api_copy_string(&copy) == -1) {
+	api_perror("api_copy_string");
+	return -1;
+    }
+    return 0;
+}
+put_at(offset, from, length)
+int	offset;
+char	*from;
+int	length;
+{
+    CopyStringParms copy;
+    /* Time copy services */
+
+    wait_for_unlock();
+
+    copy.copy_mode = 0;
+    copy.rc = copy.function_id = 0;
+    copy.source.session_id = 0;
+    copy.source.buffer = from;
+    copy.source.characteristics = 0;
+    copy.source.session_type = TYPE_DFT;
+    copy.source.begin = 0;
+
+    copy.source_end = length-1;
+
+    copy.target.session_id = session_id;
+    copy.target.buffer = 0;
+    copy.target.characteristics = 0;
+    copy.target.session_type = TYPE_DFT;
+    copy.target.begin = offset;
+
+    if (api_copy_string(&copy) == -1) {
+	api_perror("api_copy_string");
+	return -1;
+    }
+    return 0;
+}
+
+static void
+translate(input, output, table, length)
+char *input, *output, table[];
+int length;
+{
+    unsigned char *indices = (unsigned char *) input;
+
+    while (length--) {
+	*output++ = table[*indices++];
+    }
+}
+
+static int
+find_input_area()
+{
+#define	FieldDec()	(0)		/* We don't really use this */
+    register int i, attr;
+
+    for (i = 0; i < MAXSCREENSIZE; ) {
+	if (IsStartField(i)) {
+	    attr = FieldAttributes(i);
+	    i++;
+	    if (!IsProtectedAttr(i, attr)) {
+		return i;
+	    }
+	} else {
+	    i++;
+	}
+    }
+    return -1;
+}
+
+
+static void
+getascii(offset, to, length)
+int	offset;				/* Where in screen */
+char	*to;				/* Where it goes to */
+int	length;				/* Where to put it */
+{
+    translate(Host+offset, to, disp_asc, length);
+}
+
+static int
+putascii(offset, from, length)
+int	offset;				/* Where in screen */
+char	*from;				/* Where it comes from */
+int	length;				/* Where to put it */
+{
+    translate(from, Host+offset, asc_disp, length);
+    if (put_at(offset, (char *) Host+offset, length) == -1) {
+	return -1;
+    }
+    return 0;
+}
+
+static int
+ack()
+{
+    sprintf(a_ack_sequence, "%d", ack_sequence);
+    a_ack_sequence[strlen(a_ack_sequence)] = ' ';
+    translate(a_ack_sequence, a_ack_sequence, asc_disp, SMALL_LENGTH);
+    if (put_at(ACK_SEQUENCE, a_ack_sequence, SMALL_LENGTH) == -1) {
+	return -1;
+    }
+    return 0;
+}
+	
 main(argc, argv)
 int	argc;
 char	*argv[];
 {
+    register int i;
     int data_length, input_length;
     char ascii[8];			/* Lots of room */
-    char data_array[2000];
     FILE *outfile;
+    char *data;
+    extern int optind;
 
-    if (argc < 2) {
+    /* Process any flags */
+    while ((i = getopt(argc, argv, "v")) != EOF) {
+	switch (i) {
+	case 'v':
+	    verbose = 1;
+	}
+    }
+
+    if ((argc-optind) < 2) {
 	fprintf(stderr, "usage: %s local.file remote.file [remote.options]\n");
 	exit(1);
     }
 
     /* Open the local file */
-    if ((outfile = fopen(argv[1], "w") == NULL) {
+    if ((outfile = fopen(argv[optind], "w")) == NULL) {
 	perror("fopen");
 	exit(2);
     }
 
+    optind++;
+
+    if (initialize() == -1) {
+	return -1;
+    }
+
     /* build the command line */
     data = data_array;
-    strcpy(data, "TNCOMP");
+    strcpy(data, "TNCOMP SEND");
     data += strlen(data);
-    while (argc--) {
+    for (; optind < argc; optind++) {
 	*data++ = ' ';
-	strcpy(data, *argv);
-	data += strlen(*argv);
-	argv++;
+	strcpy(data, argv[optind]);
+	data += strlen(argv[optind]);
     }
-
-    /* send it across */
-
-    while (!memcmp(data, " EOF", 4)) {
-	if (data_length == 0) {
-	    data_length = getmore(data_array);
-	    data = data_array;
+    if (verbose) {
+	printf("%s\n", data_array);
+    }
+    if (get_screen() == -1) {
+	return -1;
+    }
+    data_length = strlen(data_array);
+    if ((i = find_input_area()) == -1) {		/* Get an input area */
+	if (send_key(clear_index) == -1) {
+	    return -1;
 	}
-	memcpy(ascii, data, 4);
-	data+= 4;
-	ascii[4] = 0;
-	input_length = atoi(ascii);
-	if ((input_length > 1) || (input_length != 1) || (data[0] != ' ')) {
-	    if (fwrite(data, sizeof (char), input_length, outfile) == NULL) {
-		perror("fwrite");
-		exit(9);
+	if ((i = find_input_area()) == -1) {		/* Try again */
+	    fprintf(stderr, "Unable to enter command line.\n");
+	    return -1;
+	}
+    }
+    if (putascii(i, data_array, data_length) == -1) {
+	return -1;
+    }
+    if (send_key(enter_index) == -1) {
+	return -1;
+    }
+    do {
+	if (get_screen() == -1) {
+	    return -1;
+	}
+	i = find_input_area();
+    } while (i != SEND_SEQUENCE);
+
+    do {
+	/* For each screen */
+	getascii(SEND_SEQUENCE, a_send_sequence, SMALL_LENGTH);
+	send_sequence = atoi(a_send_sequence);
+	getascii(CHECKSUM, a_checksum, SMALL_LENGTH);
+	checksum = atoi(a_checksum);
+	getascii(DATA, data_array, LARGE_LENGTH);
+	data = data_array;
+	if (send_sequence != (ack_sequence+1)) {
+	    ack();
+	    data = "1234";		/* Keep loop from failing */
+	    if (send_key(enter_index) == -1) {
+		return -1;
 	    }
+	    if (get_screen() == -1) {
+		return -1;
+	    }
+	    continue;
 	}
-	printf("\n");
-	data += input_length;
-	data_length -= input_length;
+
+	while (data_length && !memcmp(data, " EOF", 4)) {
+	    memcpy(ascii, data, 4);
+	    data+= 4;
+	    data -= 4;
+	    ascii[4] = 0;
+	    input_length = atoi(ascii);
+	    if ((input_length > 1) || (input_length != 1) || (data[0] != ' ')) {
+		if (fwrite(data, sizeof (char),
+					input_length, outfile) == NULL) {
+		    perror("fwrite");
+		    exit(9);
+		}
+	    }
+	    fprintf(outfile, "\n");
+	    data += input_length;
+	    data_length -= input_length;
+	}
+	if (send_key(enter_index) == -1) {
+	    return -1;
+	}
+	if (get_screen() == -1) {
+	    return -1;
+	}
+    } while (!memcmp(data, " EOF", 4));
+
+    if (terminate() == -1) {
+	return -1;
     }
+    return 0;
 }
