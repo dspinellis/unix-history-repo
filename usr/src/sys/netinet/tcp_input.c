@@ -1,4 +1,4 @@
-/*	tcp_input.c	6.8	84/11/14	*/
+/*	tcp_input.c	6.9	85/02/12	*/
 
 #include "param.h"
 #include "systm.h"
@@ -655,11 +655,9 @@ badurp:							/* XXX */
 	 * case PRU_RCVD).  If a FIN has already been received on this
 	 * connection then we just ignore the text.
 	 */
-	if (TCPS_HAVERCVDFIN(tp->t_state) == 0) {
-		if (ti->ti_len || (tiflags&TH_FIN))
-			tiflags = tcp_reass(tp, ti);
-		else
-			m_freem(m);
+	if ((ti->ti_len || (tiflags&TH_FIN)) &&
+	    TCPS_HAVERCVDFIN(tp->t_state) == 0) {
+		tiflags = tcp_reass(tp, ti);
 		if (tcpnodelack == 0)
 			tp->t_flags |= TF_DELACK;
 		else
