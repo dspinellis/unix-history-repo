@@ -13,14 +13,14 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)chpass.1	5.6 (Berkeley) %G%
+.\"	@(#)chpass.1	5.7 (Berkeley) %G%
 .\"
 .TH CHPASS 1 ""
 .UC 4
 .SH NAME
 chpass \- add or change user database information
 .SH SYNOPSIS
-chpass [ -a list ] [ user ]
+chpass [ -a list ] [ -s shell ] [ user ]
 .SH DESCRIPTION
 .I Chpass
 allows editing of the user database information associated
@@ -81,7 +81,7 @@ entries, and that one by random selection.
 .PP
 The
 .I group
-field is the group that the user will be placed in upon login.
+field is the group that the user will be placed in at login.
 Since this system supports multiple groups (see
 .IR groups (1))
 this field currently has little special meaning.
@@ -116,28 +116,36 @@ a
 style database of user attributes.
 .PP
 The user's home directory is the full UNIX path name where the user
-will be placed on login.
+will be placed at login.
 .PP
 The shell field is the command interpreter the user prefers.
 If the
 .I shell
 field is empty, the Bourne shell (\fI/bin/sh\fP) is assumed.
-.PP
-When altering a login shell, and not the super-user, the user must
-select an approved shell from the list in
+When altering a login shell, and not the super-user, the user
+may not change from a non-standard shell or to a non-standard
+shell.
+Non-standard is defined as a shell not found in
 .IR /etc/shells .
 .PP
 The last four fields are for storing the user's full name, office
 location, and home and work telephone numbers.
 .PP
-The super-user is also allowed to directly supply a user database
+The options are as follows:
+.TP
+.I -a
+The super-user is allowed to directly supply a user database
 entry, in the format specified by
 .IR passwd (5),
-as an argument to the
-.I -a
-option.
+as an argument.
 This argument must be a colon (``:'') separated list of all the
 user database fields, although they may be empty.
+.TP
+.I -s
+The
+.I -s
+option attempts to change the user's shell to
+.IR newsh .
 .PP
 Once the information has been verified,
 .I chpass
