@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)sa.c	4.3 (Berkeley) 83/04/04";
+static	char *sccsid = "@(#)sa.c	4.4 (Berkeley) 83/08/11";
 #endif
 
 /*
@@ -673,7 +673,7 @@ cellcmp(p1, p2)
 {
 	if (ISPROCESS(p1)){
 		if (ISPROCESS(p2))
-			return(cmp(p1, p2));
+			return((*cmp)(p1, p2));
 		return(-1);
 	}
 	if (ISPROCESS(p2))
