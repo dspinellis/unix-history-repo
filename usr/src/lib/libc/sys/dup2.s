@@ -1,11 +1,6 @@
-/* dup2.s 4.1 82/12/04 */
+/* dup2.s 4.2 83/06/27 */
 
 #include "SYS.h"
 
-ENTRY(dup2)
-	bisb2	$0100,4(ap)		/* XXX */
-	chmk	$SYS_dup		/* XXX */
-	jcs	err
+SYSCALL(dup2)
 	ret
-err:
-	jmp	cerror
