@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dir.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)dir.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -174,7 +174,7 @@ static Hash_Table mtimes;   /* Results of doing a last-resort stat in
 			     * be two rules to update a single file, so this
 			     * should be ok, but... */
 
-
+
 /*-
  *-----------------------------------------------------------------------
  * Dir_Init --
@@ -209,7 +209,7 @@ Dir_Init ()
      */
     dot->refCount += 1;
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * DirFindName --
@@ -231,7 +231,7 @@ DirFindName (p, dname)
 {
     return (strcmp (p->name, dname));
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Dir_HasWildcards  --
@@ -261,7 +261,7 @@ Dir_HasWildcards (name)
     }
     return (FALSE);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * DirMatchFiles --
@@ -307,14 +307,14 @@ DirMatchFiles (pattern, p, expansions)
 	     (pattern[0] == '.')))
 	{
 	    (void)Lst_AtEnd(expansions,
-			    (isDot ? Str_New(entry->key.name) :
+			    (isDot ? strdup(entry->key.name) :
 			     Str_Concat(p->name, entry->key.name,
 					STR_ADDSLASH)));
 	}
     }
     return (0);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * DirExpandCurly --
@@ -426,7 +426,7 @@ DirExpandCurly(word, brace, path, expansions)
     }
 }
 
-
+
 /*-
  *-----------------------------------------------------------------------
  * DirExpandInt --
@@ -459,7 +459,7 @@ DirExpandInt(word, path, expansions)
 	Lst_Close(path);
     }
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * DirPrintWord --
@@ -482,7 +482,7 @@ DirPrintWord(word)
 
     return(0);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Dir_Expand  --
@@ -590,7 +590,7 @@ Dir_Expand (word, path, expansions)
 	putchar('\n');
     }
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Dir_FindFile  --
@@ -653,7 +653,7 @@ Dir_FindFile (name, path)
 	    }
 	    hits += 1;
 	    dot->hits += 1;
-	    return (Str_New (name));
+	    return (strdup (name));
     }
     
     if (Lst_Open (path) == FAILURE) {
@@ -764,7 +764,7 @@ Dir_FindFile (name, path)
 		/*
 		 * Checking in dot -- DON'T put a leading ./ on the thing.
 		 */
-		file = Str_New(name);
+		file = strdup(name);
 		checkedDot = TRUE;
 	    }
 	    if (DEBUG(DIR)) {
@@ -860,7 +860,7 @@ Dir_FindFile (name, path)
     }
     
     if (Hash_FindEntry (&p->files, (Address)cp) != (Hash_Entry *)NULL) {
-	return (Str_New (name));
+	return (strdup (name));
     } else {
 	return ((char *) NULL);
     }
@@ -875,7 +875,7 @@ Dir_FindFile (name, path)
 	if (DEBUG(DIR)) {
 	    printf("got it (in mtime cache)\n");
 	}
-	return(Str_New(name));
+	return(strdup(name));
     } else if (stat (name, &stb) == 0) {
 	entry = Hash_CreateEntry(&mtimes, name, (Boolean *)NULL);
 	if (DEBUG(DIR)) {
@@ -883,7 +883,7 @@ Dir_FindFile (name, path)
 		    name);
 	}
 	Hash_SetValue(entry, stb.st_mtime);
-	return (Str_New (name));
+	return (strdup (name));
     } else {
 	if (DEBUG(DIR)) {
 	    printf("failed. Returning NULL\n");
@@ -892,7 +892,7 @@ Dir_FindFile (name, path)
     }
 #endif /* notdef */
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Dir_MTime  --
@@ -956,7 +956,7 @@ Dir_MTime (gn)
     gn->mtime = stb.st_mtime;
     return (gn->mtime);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Dir_AddDir --
@@ -1000,7 +1000,7 @@ Dir_AddDir (path, name)
 	
 	if ((d = opendir (name)) != (DIR *) NULL) {
 	    p = (Path *) malloc (sizeof (Path));
-	    p->name = Str_New (name);
+	    p->name = strdup (name);
 	    p->hits = 0;
 	    p->refCount = 1;
 	    Hash_InitTable (&p->files, -1, HASH_STRING_KEYS);
@@ -1033,7 +1033,7 @@ Dir_AddDir (path, name)
 	}
     }
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Dir_CopyDir --
@@ -1056,7 +1056,7 @@ Dir_CopyDir(p)
 
     return ((ClientData)p);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Dir_MakeFlags --
@@ -1084,7 +1084,7 @@ Dir_MakeFlags (flag, path)
     LstNode	  ln;	  /* the node of the current directory */
     Path	  *p;	  /* the structure describing the current directory */
     
-    str = Str_New ("");
+    str = strdup ("");
     
     if (Lst_Open (path) == SUCCESS) {
 	while ((ln = Lst_Next (path)) != NILLNODE) {
@@ -1097,7 +1097,7 @@ Dir_MakeFlags (flag, path)
     
     return (str);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Dir_Destroy --
@@ -1133,7 +1133,7 @@ Dir_Destroy (p)
 	free((Address)p);
     }
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Dir_ClearPath --
@@ -1159,7 +1159,7 @@ Dir_ClearPath(path)
     }
 }
 	    
-
+
 /*-
  *-----------------------------------------------------------------------
  * Dir_Concat --

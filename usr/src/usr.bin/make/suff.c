@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)suff.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)suff.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -116,8 +116,7 @@ static Suff 	    *suffNull;	/* The NULL suffix for this run */
 static Suff 	    *emptySuff;	/* The empty suffix required for POSIX
 				 * single-suffix transformation rules */
 
-
- 	/*************** Lst Predicates ****************/
+	/*************** Lst Predicates ****************/
 /*-
  *-----------------------------------------------------------------------
  * SuffStrIsPrefix  --
@@ -142,7 +141,7 @@ SuffStrIsPrefix (pref, str)
 
     return (*pref ? NULL : str);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * SuffSuffIsSuffix  --
@@ -175,7 +174,7 @@ SuffSuffIsSuffix (s, str)
 
     return (p1 == s->name - 1 ? p2 : NULL);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * SuffSuffIsSuffixP --
@@ -196,7 +195,7 @@ SuffSuffIsSuffixP(s, str)
 {
     return(!SuffSuffIsSuffix(s, str));
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * SuffSuffHasNameP --
@@ -217,7 +216,7 @@ SuffSuffHasNameP (s, sname)
 {
     return (strcmp (sname, s->name));
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * SuffSuffIsPrefix  --
@@ -240,7 +239,7 @@ SuffSuffIsPrefix (s, str)
 {
     return (SuffStrIsPrefix (s->name, str) == NULL ? 1 : 0);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * SuffGNHasNameP  --
@@ -260,7 +259,7 @@ SuffGNHasNameP (gn, name)
 {
     return (strcmp (name, gn->name));
 }
-
+
  	    /*********** Maintenance Functions ************/
 /*-
  *-----------------------------------------------------------------------
@@ -284,7 +283,7 @@ SuffFree (s)
     free ((Address)s->name);
     free ((Address)s);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * SuffInsert  --
@@ -334,7 +333,7 @@ SuffInsert (l, s)
 	printf("already there\n");
     }
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Suff_ClearSuffixes --
@@ -361,7 +360,7 @@ Suff_ClearSuffixes ()
     sNum = 0;
     suffNull = emptySuff;
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * SuffParseTransform --
@@ -441,7 +440,7 @@ SuffParseTransform(str, srcPtr, targPtr)
 	}
     }
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Suff_IsTransform  --
@@ -464,7 +463,7 @@ Suff_IsTransform (str)
 
     return (SuffParseTransform(str, &src, &targ));
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Suff_AddTransform --
@@ -526,7 +525,7 @@ Suff_AddTransform (line)
 
     return (gn);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Suff_EndTransform --
@@ -587,7 +586,7 @@ Suff_EndTransform(gn)
 
     return(0);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * SuffRebuildGraph --
@@ -659,7 +658,7 @@ SuffRebuildGraph(transform, s)
     }
     return(0);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Suff_AddSuffix --
@@ -685,7 +684,7 @@ Suff_AddSuffix (str)
     if (ln == NILLNODE) {
 	s = (Suff *) malloc (sizeof (Suff));
 
-	s->name =   	Str_New (str);
+	s->name =   	strdup (str);
 	s->nameLen = 	strlen (s->name);
 	s->searchPath = Lst_Init (FALSE);
 	s->children = 	Lst_Init (FALSE);
@@ -701,7 +700,7 @@ Suff_AddSuffix (str)
 	Lst_ForEach (transforms, SuffRebuildGraph, (ClientData)s);
     } 
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Suff_GetPath --
@@ -730,7 +729,7 @@ Suff_GetPath (sname)
 	return (s->searchPath);
     }
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Suff_DoPaths --
@@ -792,7 +791,7 @@ Suff_DoPaths()
 
     Lst_Close (sufflist);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Suff_AddInclude --
@@ -821,7 +820,7 @@ Suff_AddInclude (sname)
 	s->flags |= SUFF_INCLUDE;
     }
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Suff_AddLib --
@@ -851,7 +850,7 @@ Suff_AddLib (sname)
 	s->flags |= SUFF_LIBRARY;
     }
 }
-
+
  	  /********** Implicit Source Search Functions *********/
 /*
  * A structure for passing more than one argument to the Lst-library-invoked
@@ -893,7 +892,7 @@ SuffAddSrc (s, ls)
 	 * that...
 	 */
 	s2 = (Src *) malloc (sizeof (Src));
-	s2->file =  	Str_New(targ->pref);
+	s2->file =  	strdup(targ->pref);
 	s2->pref =  	targ->pref;
 	s2->parent = 	targ;
 	s2->node =  	NILGNODE;
@@ -914,7 +913,7 @@ SuffAddSrc (s, ls)
 
     return(0);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * SuffAddLevel  --
@@ -939,7 +938,7 @@ SuffAddLevel (l, targ)
 
     Lst_ForEach (targ->suff->children, SuffAddSrc, (ClientData)&ls);
 }
-
+
 /*-
  *----------------------------------------------------------------------
  * SuffFreeSrc --
@@ -968,7 +967,7 @@ SuffFreeSrc (s)
     }
     free ((Address)s);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * SuffFindThem --
@@ -1017,7 +1016,7 @@ SuffFindThem (srcs)
     }
     return (rs);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * SuffFindCmds --
@@ -1084,7 +1083,7 @@ SuffFindCmds (targ)
 		     * again (ick)), and return the new structure.
 		     */
 		    ret = (Src *)malloc (sizeof(Src));
-		    ret->file = Str_New(s->name);
+		    ret->file = strdup(s->name);
 		    ret->pref = targ->pref;
 		    ret->suff = suff;
 		    ret->parent = targ;
@@ -1102,7 +1101,7 @@ SuffFindCmds (targ)
     Lst_Close (t->children);
     return ((Src *)NULL);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * SuffExpandChildren --
@@ -1346,7 +1345,7 @@ SuffExpandChildren(cgn, pgn)
 
     return(0);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * SuffApplyTransform --
@@ -1457,7 +1456,7 @@ SuffApplyTransform(tGn, sGn, t, s)
     return(TRUE);
 }
 
-
+
 /*-
  *-----------------------------------------------------------------------
  * SuffFindArchiveDeps --
@@ -1593,7 +1592,7 @@ SuffFindArchiveDeps(gn)
      */
     mem->type |= OP_MEMBER;
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * SuffFindNormalDeps --
@@ -1685,7 +1684,7 @@ SuffFindNormalDeps(gn)
 	     * Allocate a Src structure to which things can be transformed
 	     */
 	    targ = (Src *)malloc(sizeof(Src));
-	    targ->file = Str_New(gn->name);
+	    targ->file = strdup(gn->name);
 	    targ->suff = (Suff *)Lst_Datum(ln);
 	    targ->node = gn;
 	    targ->parent = (Src *)NULL;
@@ -1725,11 +1724,11 @@ SuffFindNormalDeps(gn)
 	}
 	
 	targ = (Src *)malloc(sizeof(Src));
-	targ->file = Str_New(gn->name);
+	targ->file = strdup(gn->name);
 	targ->suff = suffNull;
 	targ->node = gn;
 	targ->parent = (Src *)NULL;
-	targ->pref = Str_New(sopref);
+	targ->pref = strdup(sopref);
 
 	SuffAddLevel(srcs, targ);
 	(void)Lst_AtEnd(targs, (ClientData)targ);
@@ -1940,7 +1939,7 @@ sfnd_return:
 	
     
 
-
+
 /*-
  *-----------------------------------------------------------------------
  * Suff_FindDeps  --
@@ -2017,7 +2016,7 @@ Suff_FindDeps (gn)
 	SuffFindNormalDeps(gn);
     }
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Suff_SetNull --
@@ -2058,7 +2057,7 @@ Suff_SetNull(name)
 		     name);
     }
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Suff_Init --
@@ -2085,7 +2084,7 @@ Suff_Init ()
      */
     emptySuff = suffNull = (Suff *) malloc (sizeof (Suff));
 
-    suffNull->name =   	    Str_New ("");
+    suffNull->name =   	    strdup ("");
     suffNull->nameLen =     0;
     suffNull->searchPath =  Lst_Init (FALSE);
     suffNull->children =    Lst_Init (FALSE);

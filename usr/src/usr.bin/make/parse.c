@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parse.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)parse.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -196,7 +196,7 @@ static struct {
 { ".SUFFIXES",	  Suffixes, 	0 },
 { ".USE",   	  Attribute,   	OP_USE },
 };
-
+
 /*-
  *----------------------------------------------------------------------
  * ParseFindKeyword --
@@ -235,7 +235,7 @@ ParseFindKeyword (str)
     } while (start <= end);
     return (-1);
 }
-
+
 /*-
  *---------------------------------------------------------------------
  * Parse_Error  --
@@ -272,7 +272,7 @@ Parse_Error (type, fmt, arg1, arg2)
 	}
     }
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Parse_AnyExport --
@@ -291,7 +291,7 @@ Parse_AnyExport()
 {
     return (anyExport);
 }
-
+
 /*-
  *---------------------------------------------------------------------
  * ParseLinkSrc  --
@@ -322,7 +322,7 @@ ParseLinkSrc (pgn, cgn)
     }
     return (0);
 }
-
+
 /*-
  *---------------------------------------------------------------------
  * ParseDoOp  --
@@ -398,7 +398,7 @@ ParseDoOp (gn, op)
 
     return (0);
 }
-
+
 /*-
  *---------------------------------------------------------------------
  * ParseDoSrc  --
@@ -445,7 +445,7 @@ ParseDoSrc (tOp, src)
 	 * invoked if the user didn't specify a target on the command
 	 * line. This is to allow #ifmake's to succeed, or something...
 	 */
-	(void) Lst_AtEnd (create, (ClientData)Str_New(src));
+	(void) Lst_AtEnd (create, (ClientData)strdup(src));
 	/*
 	 * Add the name to the .TARGETS variable as well, so the user cna
 	 * employ that, if desired.
@@ -498,7 +498,7 @@ ParseDoSrc (tOp, src)
 	}
     }
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * ParseFindMain --
@@ -526,7 +526,7 @@ ParseFindMain(gn)
 	return (0);
     }
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * ParseAddDir --
@@ -548,7 +548,7 @@ ParseAddDir(path, name)
     Dir_AddDir(path, name);
     return(0);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * ParseClearPath --
@@ -569,7 +569,7 @@ ParseClearPath(path)
     Dir_ClearPath(path);
     return(0);
 }
-
+
 /*-
  *---------------------------------------------------------------------
  * ParseDoDependency  --
@@ -1104,7 +1104,7 @@ ParseDoDependency (line)
     }
 
 }
-
+
 /*-
  *---------------------------------------------------------------------
  * Parse_IsVar  --
@@ -1182,7 +1182,7 @@ Parse_IsVar (line)
 	return (haveName);
     }
 }
-
+
 /*-
  *---------------------------------------------------------------------
  * Parse_DoVar  --
@@ -1431,7 +1431,7 @@ Parse_DoVar (line, ctxt)
 	Var_Set (line, cp, ctxt);
     }
 }
-
+
 /*-
  *---------------------------------------------------------------------
  * ParseAddCmd  --
@@ -1459,7 +1459,7 @@ ParseAddCmd (gn, cmd)
 
     return (0);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * ParseHasCommands --
@@ -1485,7 +1485,7 @@ ParseHasCommands(gn)
     }
     return(0);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Parse_AddIncludeDir --
@@ -1506,7 +1506,7 @@ Parse_AddIncludeDir (dir)
 {
     Dir_AddDir (parseIncPath, dir);
 }
-
+
 /*-
  *---------------------------------------------------------------------
  * ParseDoInclude  --
@@ -1680,7 +1680,7 @@ ParseDoInclude (file)
 	(void) ParseEOF();
     }
 }
-
+
 /*-
  *---------------------------------------------------------------------
  * ParseEOF  --
@@ -1714,7 +1714,7 @@ ParseEOF ()
     free ((Address)ifile);
     return (CONTINUE);
 }
-
+
 /*-
  *---------------------------------------------------------------------
  * ParseReadc  --
@@ -1737,7 +1737,7 @@ static int parseReadChar;
 #define ParseReadc() (getc(curFILE))
 #endif /* notdef */
 
-
+
 /*-
  *---------------------------------------------------------------------
  * ParseReadLine --
@@ -1990,7 +1990,7 @@ test_char:
 	return((char *)NULL);
     }
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * ParseFinishLine --
@@ -2016,7 +2016,7 @@ ParseFinishLine()
     }
 }
 		    
-
+
 /*-
  *---------------------------------------------------------------------
  * Parse_File --
@@ -2190,7 +2190,7 @@ Parse_File(name, stream)
 	exit (1);
     }
 }
-
+
 /*-
  *---------------------------------------------------------------------
  * Parse_Init --
@@ -2231,7 +2231,7 @@ Parse_Init ()
 	}
     }
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Parse_MainName --

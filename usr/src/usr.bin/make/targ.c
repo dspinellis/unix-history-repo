@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)targ.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)targ.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -91,7 +91,7 @@ Targ_Init ()
     allTargets = Lst_Init (FALSE);
     Hash_InitTable (&targets, HTSIZE, HASH_STRING_KEYS);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Targ_NewGN  --
@@ -112,7 +112,7 @@ Targ_NewGN (name)
     register GNode *gn;
 
     gn = (GNode *) malloc (sizeof (GNode));
-    gn->name = Str_New (name);
+    gn->name = strdup (name);
     gn->path = (char *) 0;
     if (name[0] == '-' && name[1] == 'l') {
 	gn->type = OP_LIB;
@@ -135,7 +135,7 @@ Targ_NewGN (name)
 
     return (gn);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Targ_FindNode  --
@@ -179,7 +179,7 @@ Targ_FindNode (name, flags)
 	return ((GNode *) Hash_GetValue (he));
     }
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Targ_FindList --
@@ -231,7 +231,7 @@ Targ_FindList (names, flags)
     Lst_Close (names);
     return (nodes);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Targ_Ignore  --
@@ -254,7 +254,7 @@ Targ_Ignore (gn)
 	return (FALSE);
     }
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Targ_Silent  --
@@ -277,7 +277,7 @@ Targ_Silent (gn)
 	return (FALSE);
     }
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Targ_Precious --
@@ -300,7 +300,7 @@ Targ_Precious (gn)
 	return (FALSE);
     }
 }
-
+
 /******************* DEBUG INFO PRINTING ****************/
 
 static GNode	  *mainTarg;	/* the main target, as set by Targ_SetMain */
@@ -512,7 +512,7 @@ TargPrintNode (gn, pass)
     }
     return (0);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * TargPrintOnlySrc --
@@ -536,7 +536,7 @@ TargPrintOnlySrc(gn)
     }
     return (0);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Targ_PrintGraph --

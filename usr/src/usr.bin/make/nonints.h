@@ -87,7 +87,6 @@ void	Rmt_Exec ();
 int	Rmt_LastID();
 void	Rmt_Done ();
 char *	Str_Concat ();
-char *	Str_New ();
 char **	Str_BreakString ();
 void	Str_FreeVec ();
 char *	Str_FindSubstring();
