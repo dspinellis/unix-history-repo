@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)invite.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)invite.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include "talk_ctl.h"
@@ -92,11 +92,12 @@ re_invite()
 }
 
 static	char *answers[] = {
+	"answer #0",					/* SUCCESS */
 	"Your party is not logged on",			/* NOT_HERE */
-	"Target machine does not recognize us",		/* MACHINE_UNKNOWN */
-	"Target machine can not handle remote talk",	/* UNKNOWN_REQUEST */
 	"Target machine is too confused to talk to us",	/* FAILED */
+	"Target machine does not recognize us",		/* MACHINE_UNKNOWN */
 	"Your party is refusing messages",		/* PERMISSION_REFUSED */
+	"Target machine can not handle remote talk",	/* UNKNOWN_REQUEST */
 	"Target machine indicates protocol mismatch",	/* BADVERSION */
 	"Target machine indicates protocol botch (addr)",/* BADADDR */
 	"Target machine indicates protocol botch (ctl_addr)",/* BADCTLADDR */
