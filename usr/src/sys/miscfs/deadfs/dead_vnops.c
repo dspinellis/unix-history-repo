@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dead_vnops.c	7.13 (Berkeley) %G%
+ *	@(#)dead_vnops.c	7.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -157,6 +157,35 @@ int	dead_print __P((
 		int op, \
 		struct flock *fl, \
 		int flags))) dead_ebadf)
+#define dead_blkatoff ((int (*) __P(( \
+		struct vnode *vp, \
+		off_t offset, \
+		char **res, \
+		struct buf **bpp))) dead_badop)
+#define dead_vget ((int (*) __P(( \
+		struct mount *mp, \
+		ino_t ino, \
+		struct vnode **vpp))) dead_badop)
+#define dead_valloc ((int (*) __P(( \
+		struct vnode *pvp, \
+		int mode, \
+		struct ucred *cred, \
+		struct vnode **vpp))) dead_badop)
+#define dead_vfree ((void (*) __P(( \
+		struct vnode *pvp, \
+		ino_t ino, \
+		int mode))) dead_badop)
+#define dead_truncate ((int (*) __P(( \
+		struct vnode *vp, \
+		u_long length, \
+		int flags))) nullop)
+#define dead_update ((int (*) __P(( \
+		struct vnode *vp, \
+		struct timeval *ta, \
+		struct timeval *tm, \
+		int waitfor))) nullop)
+#define dead_bwrite ((int (*) __P(( \
+		struct buf *bp))) nullop)
 
 struct vnodeops dead_vnodeops = {
 	dead_lookup,	/* lookup */
@@ -192,6 +221,13 @@ struct vnodeops dead_vnodeops = {
 	dead_print,	/* print */
 	dead_islocked,	/* islocked */
 	dead_advlock,	/* advlock */
+	dead_blkatoff,	/* blkatoff */
+	dead_vget,	/* vget */
+	dead_valloc,	/* valloc */
+	dead_vfree,	/* vfree */
+	dead_truncate,	/* truncate */
+	dead_update,	/* update */
+	dead_bwrite,	/* bwrite */
 };
 
 /*

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fifo_vnops.c	7.7 (Berkeley) %G%
+ *	@(#)fifo_vnops.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -66,6 +66,13 @@ struct vnodeops fifo_vnodeops = {
 	fifo_print,		/* print */
 	fifo_islocked,		/* islocked */
 	fifo_advlock,		/* advlock */
+	fifo_blkatoff,		/* blkatoff */
+	fifo_vget,		/* vget */
+	fifo_valloc,		/* valloc */
+	fifo_vfree,		/* vfree */
+	fifo_truncate,		/* truncate */
+	fifo_update,		/* update */
+	fifo_bwrite,		/* bwrite */
 };
 
 /*
