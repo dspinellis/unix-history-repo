@@ -6,7 +6,7 @@
 # include <log.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	1.8	%G%";
+static char	SccsId[] = "@(#)main.c	1.9	%G%";
 
 /*
 **  DELIVERMAIL -- Deliver mail to a set of destinations
@@ -78,15 +78,7 @@ static char	SccsId[] = "@(#)main.c	1.8	%G%";
 **		correct.
 **
 **	Compilation Flags:
-**		BADMAIL -- the mailer used for local mail doesn't
-**			return the standard set of exit codes.  This
-**			causes the name to be looked up before mail
-**			is ever sent.
 **		LOG -- if set, everything is logged.
-**		MESSAGEID -- if set, the Message-Id field is added
-**			to the message header if one does not already
-**			exist.  This can be used to delete duplicate
-**			messages.
 **
 **	Compilation Instructions:
 **		cc -c -O main.c config.c deliver.c parse.c
@@ -110,20 +102,20 @@ static char	SccsId[] = "@(#)main.c	1.8	%G%";
 
 
 
-char	ArpaFmt;	/* mail is expected to be in ARPANET format */
-char	FromFlag;	/* from person is explicitly specified */
-char	Debug;		/* run in debug mode */
-char	MailBack;	/* mail back response on error */
-char	BerkNet;	/* called from BerkNet */
-char	WriteBack;	/* write back response on error */
-char	HasXscrpt;	/* if set, the transcript file exists */
-char	NoAlias;	/* don't do aliasing */
-char	ForceMail;	/* mail even if already sent a copy */
-char	MeToo;		/* send to the sender also if in a group expansion */
-char	SaveFrom;	/* save From lines on the front of messages */
-char	IgnrDot;	/* if set, ignore dot when collecting mail */
-char	Error;		/* set if errors */
-char	SuprErrs;	/* supress errors if set */
+bool	ArpaFmt;	/* mail is expected to be in ARPANET format */
+bool	FromFlag;	/* from person is explicitly specified */
+bool	Debug;		/* run in debug mode */
+bool	MailBack;	/* mail back response on error */
+bool	BerkNet;	/* called from BerkNet */
+bool	WriteBack;	/* write back response on error */
+bool	HasXscrpt;	/* if set, the transcript file exists */
+bool	NoAlias;	/* don't do aliasing */
+bool	ForceMail;	/* mail even if already sent a copy */
+bool	MeToo;		/* send to the sender also if in a group expansion */
+bool	SaveFrom;	/* save From lines on the front of messages */
+bool	IgnrDot;	/* if set, ignore dot when collecting mail */
+bool	Error;		/* set if errors */
+bool	SuprErrs;	/* supress errors if set */
 char	InFileName[] = "/tmp/mailtXXXXXX";
 char	Transcript[] = "/tmp/mailxXXXXXX";
 addrq	From;		/* the from person */
@@ -465,212 +457,6 @@ finis()
 		unlink(Transcript);
 	unlink(InFileName);
 	exit(ExitStat);
-}
-/*
-**  MAKETEMP -- Make temporary file
-**
-**	Creates a temporary file name and copies the standard
-**	input to that file.  While it is doing it, it looks for
-**	"From:" and "Sender:" fields to use as the from-person
-**	(but only if the -a flag is specified).  It prefers to
-**	to use the "Sender:" field -- the protocol says that
-**	"Sender:" must come after "From:", so this works easily.
-**	MIT seems to like to produce "Sent-By:" fields instead
-**	of "Sender:" fields.  We used to catch this, but it turns
-**	out that the "Sent-By:" field doesn't always correspond
-**	to someone real, as required by the protocol.  So we limp
-**	by.....
-**
-**	Parameters:
-**		none
-**
-**	Returns:
-**		Name of temp file.
-**
-**	Side Effects:
-**		Temp file is created and filled.
-**
-**	Called By:
-**		main
-**
-**	Notes:
-**		This is broken off from main largely so that the
-**		temp buffer can be deallocated.
-**
-**	Deficiencies:
-**		It assumes that the From: field will preceed the
-**		Sender: field.  This violates the Arpanet NIC 733
-**		protocol, but seems reasonable in practice.  In
-**		any case, the only problem is that error responses
-**		may be sent to the wrong person.
-*/
-
-char *
-maketemp()
-{
-	register FILE *tf;
-	char buf[MAXFIELD+1];
-	static char fbuf[sizeof buf];
-	extern char *prescan();
-	extern char *matchhdr();
-	register char *p;
-	register bool inheader;
-	bool firstline;
-	char c;
-
-	/*
-	**  Create the temp file name and create the file.
-	*/
-
-	mktemp(InFileName);
-	close(creat(InFileName, 0600));
-	if ((tf = fopen(InFileName, "w")) == NULL)
-	{
-		syserr("Cannot create %s", InFileName);
-		return (NULL);
-	}
-
-	/*
-	**  Copy stdin to temp file & do message editting.
-	**	From person gets copied into fbuf.  At the end of
-	**	this loop, if fbuf[0] == '\0' then there was no
-	**	recognized from person in the message.  We also
-	**	save the message id in MsgId.  The
-	**	flag 'inheader' keeps track of whether we are
-	**	in the header or in the body of the message.
-	**	The flag 'firstline' is only true on the first
-	**	line of a message.
-	**	To keep certain mailers from getting confused,
-	**	and to keep the output clean, lines that look
-	**	like UNIX "From" lines are deleted in the header,
-	**	and prepended with ">" in the body.
-	*/
-
-	inheader = TRUE;
-	firstline = TRUE;
-	fbuf[0] = '\0';
-	while (fgets(buf, sizeof buf, stdin) != NULL)
-	{
-		if (inheader && isalnum(buf[0]))
-		{
-			/* get the rest of this field */
-			while ((c = getc(stdin)) == ' ' || c == '\t')
-			{
-				p = &buf[strlen(buf)];
-				*p++ = c;
-				if (fgets(p, sizeof buf - (p - buf), stdin) == NULL)
-					break;
-			}
-			ungetc(c, stdin);
-		}
-
-		if (!IgnrDot && buf[0] == '.' && (buf[1] == '\n' || buf[1] == '\0'))
-			break;
-
-		/* are we still in the header? */
-		if ((buf[0] == '\n' || buf[0] == '\0') && inheader)
-		{
-			inheader = FALSE;
-			if (MsgId[0] == '\0')
-			{
-				makemsgid();
-# ifdef MESSAGEID
-				fprintf(tf, "Message-Id: <%s>\n", MsgId);
-# endif MESSAGEID
-			}
-# ifdef DEBUG
-			if (Debug)
-				printf("EOH\n");
-# endif DEBUG
-		}
-
-		/* Hide UNIX-like From lines */
-		if (buf[0] == 'F' && buf[1] == 'r' && buf[2] == 'o' &&
-		    buf[3] == 'm' && buf[4] == ' ')
-		{
-			if (firstline && !SaveFrom)
-				continue;
-			fputs(">", tf);
-		}
-
-		if (inheader && !isspace(buf[0]))
-		{
-			/* find out if this is really a header */
-			for (p = buf; *p != ':' && *p != '\0' && !isspace(*p); p++)
-				continue;
-			while (*p != ':' && isspace(*p))
-				p++;
-			if (*p != ':')
-			{
-				inheader = FALSE;
-# ifdef DEBUG
-				if (Debug)
-					printf("EOH?\n");
-# endif DEBUG
-			}
-		}
-
-		if (inheader)
-		{
-			/* find the sender */
-			p = matchhdr(buf, "from");
-			if (p == NULL)
-				p = matchhdr(buf, "sender");
-			if (p != NULL)
-				prescan(p, fbuf, &fbuf[sizeof fbuf - 1], '\0');
-
-			/* find the message id */
-			p = matchhdr(buf, "message-id");
-			if (p != NULL && MsgId[0] == '\0')
-				prescan(p, MsgId, &MsgId[sizeof MsgId - 1], '\0');
-		}
-		fputs(buf, tf);
-		firstline = FALSE;
-		if (ferror(tf))
-		{
-			syserr("Cannot write %s", InFileName);
-			clearerr(tf);
-			break;
-		}
-	}
-	fclose(tf);
-	if (MsgId[0] == '\0')
-		makemsgid();
-	if (freopen(InFileName, "r", stdin) == NULL)
-		syserr("Cannot reopen %s", InFileName);
-	return (ArpaFmt && fbuf[0] != '\0' ? fbuf : NULL);
-}
-/*
-**  MAKEMSGID -- Compute a message id for this process.
-**
-**	This routine creates a message id for a message if
-**	it did not have one already.  If the MESSAGEID compile
-**	flag is set, the messageid will be added to any message
-**	that does not already have one.  Currently it is more
-**	of an artifact, but I suggest that if you are hacking,
-**	you leave it in -- I may want to use it someday if
-**	duplicate messages turn out to be a problem.
-**
-**	Parameters:
-**		none.
-**
-**	Returns:
-**		none.
-**
-**	Side Effects:
-**		Stores a message-id into MsgId.
-**
-**	Called By:
-**		maketemp
-*/
-
-makemsgid()
-{
-	auto long t;
-	extern char *MyLocName;
-
-	time(&t);
-	sprintf(MsgId, "%ld.%d.%s@Berkeley", t, getpid(), MyLocName);
 }
 /*
 **  OPENXSCRPT -- Open transcript file

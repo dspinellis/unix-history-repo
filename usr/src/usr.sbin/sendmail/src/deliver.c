@@ -6,7 +6,7 @@
 # include <log.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	1.4	%G%";
+static char SccsId[] = "@(#)deliver.c	1.5	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a particular address.
@@ -135,12 +135,14 @@ deliver(to, editfcn)
 		}
 	}
 
-# ifdef BADMAIL
 	/*
-	**  If the mailer doesn't return the proper
-	**  exit statuses, check here to see if the
-	**  user exists so that we can give a pretty
-	**  error message.
+	**  See if the user exists.
+	**	Strictly, this is only needed to print a pretty
+	**	error message.
+	**
+	**	>>>>>>>>>> This clause assumes that the local mailer
+	**	>> NOTE >> cannot do any further aliasing; that
+	**	>>>>>>>>>> function is subsumed by delivermail.
 	*/
 
 	if (m == &Mailer[0])
@@ -151,7 +153,6 @@ deliver(to, editfcn)
 			return (EX_NOUSER);
 		}
 	}
-# endif BADMAIL
 
 	/*
 	**  If the mailer wants a From line, insert a new editfcn.
@@ -327,8 +328,7 @@ giveresponse(stat, force, m)
 	else
 		logmsg(LOG_INFO, "%s->%s: %s", From.q_paddr, To, statmsg);
 # endif LOG
-	if (ExitStat == EX_OK)
-		ExitStat = stat;
+	setstat(stat);
 	return (stat);
 }
 /*

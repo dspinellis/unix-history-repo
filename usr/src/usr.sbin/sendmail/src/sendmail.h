@@ -3,11 +3,13 @@
 **
 **	Most of these are actually allocated in globals.c
 **
-**	@(#)sendmail.h	1.4	%G%
+**	@(#)sendmail.h	1.5	%G%
 */
 
 
 
+
+# include "useful.h"
 
 /*
 **  Manifest constants.
@@ -28,43 +30,11 @@
 **	Every mailer known to the system is declared in this
 **	structure.  It defines the pathname of the mailer, some
 **	flags associated with it, and the argument vector to
-**	pass to it.
-**
-**	The flags are as follows:
-**		M_FOPT -- if set, the mailer has a picky "-f"
-**			option.  In this mode, the mailer will only
-**			accept the "-f" option if the sender is
-**			actually "root", "network", and possibly
-**			(but not necessarily) if the -f argument
-**			matches the real sender.  The effect is
-**			that if the "-f" option is given to
-**			delivermail then it will be passed through
-**			(as arguments 1 & 2) to the mailer.
-**		M_ROPT -- identical to M_FOPT, except uses -r instead.
-**			UGH!
-**		M_QUIET -- if set, don't print a message if the mailer
-**			returns bad status.
-**		M_RESTR -- if set, this mailer is restricted to use
-**			by "daemon"; otherwise, we do a
-**			setuid(getuid()) before calling the mailer.
-**		M_HDR -- if set, the mailer wants us to insert a
-**			UNIX "From" line before outputting.
-**		M_NOHOST -- if set, this mailer doesn't care about
-**			the host part (e.g., the local mailer).
-**		M_STRIPQ -- if set, strip quote (`"') characters
-**			out of parameters as you transliterate them
-**			into the argument vector.  For example, the
-**			local mailer is called directly, so these
-**			should be stripped, but the program-mailer
-**			(i.e., csh) should leave them in.
+**	pass to it.  The flags are defined in conf.c
 **
 **	The argument vector is expanded before actual use.  Every-
 **	thing is passed through except for things starting with "$".
-**	"$x" defines some interpolation, as defined by x:
-**		$f	The "from" person.
-**		$h	The host being sent to.
-**		$u	The user being sent to.
-**		$c	The current hop count.
+**	"$x" defines some interpolation, as described in conf.c
 **	"$x" where x is unknown expands to "x", so use "$$" to get "$".
 */
 
@@ -141,19 +111,23 @@ struct parsetab
 **  Global variables.
 */
 
-extern char	ArpaFmt;	/* if set, message is in arpanet fmt */
-extern char	FromFlag;	/* if set, "From" person is explicit */
-extern char	Debug;		/* if set, debugging info */
-extern char	MailBack;	/* mail back response on error */
-extern char	BerkNet;	/* called from BerkNet */
-extern char	WriteBack;	/* write back response on error */
-extern char	NoAlias;	/* if set, don't do any aliasing */
-extern char	ForceMail;	/* if set, mail even if already got a copy */
-extern char	MeToo;		/* send to the sender also */
-extern char	Error;		/* set if errors */
+extern bool	ArpaFmt;	/* if set, message is in arpanet fmt */
+extern bool	FromFlag;	/* if set, "From" person is explicit */
+extern bool	Debug;		/* if set, debugging info */
+extern bool	MailBack;	/* mail back response on error */
+extern bool	BerkNet;	/* called from BerkNet */
+extern bool	WriteBack;	/* write back response on error */
+extern bool	NoAlias;	/* if set, don't do any aliasing */
+extern bool	ForceMail;	/* if set, mail even if already got a copy */
+extern bool	MeToo;		/* send to the sender also */
+extern bool	Error;		/* set if errors */
+extern bool	UseMsgId;	/* put msg-id's in all msgs [conf.c] */
+extern bool	IgnrDot;	/* don't let dot end messages */
+extern bool	SaveFrom;	/* save leading "From" lines */
 extern int	ExitStat;	/* exit status code */
 extern char	InFileName[];	/* input file name */
 extern char	Transcript[];	/* the transcript file name */
+extern char	MsgId[];	/* the message id for this message */
 extern addrq	From;		/* the person it is from */
 extern char	*To;		/* the target person */
 extern int	HopCount;	/* hop count */
@@ -163,7 +137,3 @@ extern int	HopCount;	/* hop count */
 
 # define flagset(bits, word)	((bits) & (word))
 # define setstat(s)		{ if (ExitStat == EX_OK) ExitStat = s; }
-
-# include "useful.h"
-
-# define BADMAIL	YES	/* mail doesn't know about new returncodes */
