@@ -19,7 +19,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ctime.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)ctime.c	5.18 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -689,7 +689,7 @@ const int			lastditch;
 			return -1;
 	}
 	if (*name == '\0')
-		stdoffset = 0;
+		return -1;
 	else {
 		name = getoffset(name, &stdoffset);
 		if (name == NULL)
@@ -903,7 +903,7 @@ tzset()
 		(void) strcpy(lclptr->chars, GMT);
 	} else if (tzload(name, lclptr) != 0)
 		if (name[0] == ':' || tzparse(name, lclptr, FALSE) != 0)
-			(void) tzparse(name, lclptr, TRUE);
+			(void) gmtload(lclptr);
 	settzname();
 }
 

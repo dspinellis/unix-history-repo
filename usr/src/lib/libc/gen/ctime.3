@@ -16,7 +16,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)ctime.3	6.10 (Berkeley) %G%
+.\"	@(#)ctime.3	6.11 (Berkeley) %G%
 .\"
 .TH CTIME 3 ""
 .SH NAME
@@ -257,11 +257,7 @@ If the
 environment variable does not specify a
 .IR tzfile (5)-format
 and cannot be interpreted as a direct specification,
-UTC is used with the standard time abbreviation set to
-the value of the
-.B TZ
-environment variable
-(or to the leading characters of its value if it is lengthy).
+UTC is used.
 .PP
 .I Tzsetwall
 sets things up so that
