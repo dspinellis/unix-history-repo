@@ -14,10 +14,10 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 #
 #
-MDIR=	${DESTDIR}/usr/man/cat4
+MDIR=	${DESTDIR}/usr/share/man/cat4
 OBJS=	bk.0 drum.0 icmp.0 idp.0 imp.0 inet.0 ip.0 kadb.0 lo.0 netintro.0 \
 	ns.0 nsip.0 null.0 pty.0 spp.0 tcp.0 tty.0 udp.0
 
