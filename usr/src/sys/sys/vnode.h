@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode.h	8.16 (Berkeley) %G%
+ *	@(#)vnode.h	8.17 (Berkeley) %G%
  */
 
 #include <sys/lock.h>
@@ -75,7 +75,8 @@ struct vnode {
 	int	v_ralen;			/* Read-ahead length */
 	daddr_t	v_maxra;			/* last readahead block */
 	struct	simplelock v_interlock;		/* lock on usecount and flag */
-	long	v_spare[6];			/* round to 128 bytes */
+	struct	lock *v_vnlock;			/* used for non-locking fs's */
+	long	v_spare[5];			/* round to 128 bytes */
 	enum	vtagtype v_tag;			/* type of underlying data */
 	void 	*v_data;			/* private data for fs */
 };
