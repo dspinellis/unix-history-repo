@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_fork.c	7.7 (Berkeley) %G%
+ *	@(#)kern_fork.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -222,10 +222,8 @@ again:
 #ifdef KTRACE
 	if (rip->p_flag&SKTR) {
 		rpp->p_flag |= SKTR;
-		if ((rpp->p_tracep = rip->p_tracep) != NULL) {
-			igrab(rpp->p_tracep);
-			iunlock(rpp->p_tracep);
-		}
+		if ((rpp->p_tracep = rip->p_tracep) != NULL)
+			VREF(rpp->p_tracep);
 		rpp->p_traceflag = rip->p_traceflag;
 	} else {
 		rpp->p_tracep = NULL;
