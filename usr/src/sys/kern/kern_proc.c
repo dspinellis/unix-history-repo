@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.49	82/12/05	*/
+/*	kern_proc.c	4.50	82/12/09	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -498,7 +498,7 @@ setregs()
 	}
 #endif
 	for (i=0; i<NOFILE; i++) {
-		if (u.u_pofile[i]&EXCLOSE) {
+		if (u.u_pofile[i]&UF_EXCLOSE) {
 			closef(u.u_ofile[i], 1, u.u_pofile[i]);
 			u.u_ofile[i] = NULL;
 			u.u_pofile[i] = 0;
@@ -1007,9 +1007,9 @@ retry:
 		if (fp == NULL)
 			continue;
 		fp->f_count++;
-		if (u.u_pofile[n]&SHLOCK)
+		if (u.u_pofile[n]&UF_SHLOCK)
 			fp->f_inode->i_shlockc++;
-		if (u.u_pofile[n]&EXLOCK)
+		if (u.u_pofile[n]&UF_EXLOCK)
 			fp->f_inode->i_exlockc++;
 	}
 	u.u_cdir->i_count++;

@@ -1,4 +1,4 @@
-/*	sys_generic.c	5.24	82/12/05	*/
+/*	sys_generic.c	5.25	82/12/09	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -494,11 +494,11 @@ ioctl()
 	}
 #endif
 	if (com == FIOCLEX) {
-		u.u_pofile[uap->fdes] |= EXCLOSE;
+		u.u_pofile[uap->fdes] |= UF_EXCLOSE;
 		return;
 	}
 	if (com == FIONCLEX) {
-		u.u_pofile[uap->fdes] &= ~EXCLOSE;
+		u.u_pofile[uap->fdes] &= ~UF_EXCLOSE;
 		return;
 	}
 

@@ -1,4 +1,4 @@
-/*	vfs_syscalls.c	4.42	82/11/13	*/
+/*	vfs_syscalls.c	4.43	82/12/09	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -775,22 +775,22 @@ flock()
 		return;
 	}
 	cmd = uap->how;
-	flags = u.u_pofile[uap->fd] & (SHLOCK|EXLOCK);
+	flags = u.u_pofile[uap->fd] & (UF_SHLOCK|UF_EXLOCK);
 	if (cmd&FUNLOCK) {
 		if (flags == 0) {
 			u.u_error = EINVAL;
 			return;
 		}
 		funlocki(fp->f_inode, flags);
-		u.u_pofile[uap->fd] &= ~(SHLOCK|EXLOCK);
+		u.u_pofile[uap->fd] &= ~(UF_SHLOCK|UF_EXLOCK);
 		return;
 	}
 	/*
 	 * No reason to write lock a file we've already
 	 * write locked, similarly with a read lock.
 	 */
-	if ((flags&EXLOCK) && (cmd&FEXLOCK) ||
-	    (flags&SHLOCK) && (cmd&FSHLOCK))
+	if ((flags&UF_EXLOCK) && (cmd&FEXLOCK) ||
+	    (flags&UF_SHLOCK) && (cmd&FSHLOCK))
 		return;
 	u.u_pofile[uap->fd] = flocki(fp->f_inode, u.u_pofile[uap->fd], cmd);
 }
