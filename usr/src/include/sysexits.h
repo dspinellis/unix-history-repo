@@ -47,11 +47,13 @@
 **		is not really an error.  In sendmail, this means
 **		that a mailer (e.g.) could not create a connection,
 **		and the request should be reattempted later.
+**	EX_PROTOCOL -- the remote system returned something that
+**		was "not possible" during a protocol exchange.
 **
-**	Maintained by IngVAX:eric (eric@berkeley, ucbvax!eric) --
+**	Maintained by Eric Allman (eric@berkeley, ucbvax!eric) --
 **		please mail changes to me.
 **
-**			@(#)sysexits.h	1.3	%G%
+**			@(#)sysexits.h	3.1		%G%
 */
 
 # define EX_OK		0	/* successful termination */
@@ -70,3 +72,4 @@
 # define EX_CANTCREAT	73	/* can't create (user) output file */
 # define EX_IOERR	74	/* input/output error */
 # define EX_TEMPFAIL	75	/* temp failure; user is invited to retry */
+# define EX_PROTOCOL	76	/* remote error in protocol */
