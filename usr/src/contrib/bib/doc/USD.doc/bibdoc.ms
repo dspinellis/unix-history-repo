@@ -1,7 +1,6 @@
-.\"	"@(#)bibdoc.ms	4.3	%G%";
-.if n .ND
+.\"	"@(#)bibdoc.ms	4.4	%G%";
 .TL
-BIB \- A Program for Formatting Bibliographies
+\fBBIB \- A Program for Formatting Bibliographies\fP
 .AU
 Timothy A. Budd
 .AI
@@ -20,7 +19,7 @@ file, and commands are generated to format both citation and the referenced
 item in the bibliography.
 .PP
 An imprecise citation is a list of words surrounded by the characters
-\*(oq[\&.\*(cq \*(oq.]\*(cq.  Words (which are truncated to six letters)
+[\&. .].  Words (which are truncated to six letters)
 in the imprecise citation are matched against entries in the reference file,
 and if an entry is found that matches all words, that reference is used.
 For example:
@@ -36,7 +35,7 @@ For example:
 ..
 .2Q
 .PP
-In Brooks' interesting book [\&. brooks mythical.] various reasons ...
+In Brooks's interesting book [\&. brooks mythical.] various reasons ...
 .2E
 .PP
 Multiple citations are indicated by simply placing a comma in the imprecise
@@ -54,7 +53,7 @@ considerably.  Also additional information can be placed into citations by
 surrounding text with curly braces.
 The additional information is inserted verbatim into the citation,
 e.g. [.dragon {,\ Chapter 6}.].
-Note that it may be desirable to use non breakable spaces, in order that the
+Note that it may be desirable to use non-breakable spaces, in order that the
 citation not be split across a line boundary by \fItroff\fP.
 .2Q
 .PP
@@ -75,10 +74,8 @@ In the first pass,
 references are collected and the location of citations marked.
 In the second pass, these marks are replaced by the appropriate citation,
 and the entire list of references is dumped following a call on the macro
-\&\*(oq.[]\*(cq.
+\&.[].
 This macro is left untouched.
-Most standard document types define this macro to cause a break and
-start a section titled \*(oqReferences\*(cq.
 However, this can be altered to achieve other typographic
 effects.
 .PP
@@ -97,7 +94,7 @@ entry is still not found in the system file, a warning message is produced
 and a blank citation is generated.
 .PP
 The format for entries in the reference file is described more fully in
-the section \*(oqReference File Formats\*(cq.
+the section `Reference File Formats'.
 This format is similar to that used by \fIrefer\fP
 [.lesk refer.] with the following exceptions:
 .IP 1.
@@ -106,9 +103,9 @@ be constructed.
 .IP 2.
 Certain defined names can be used, and will be expanded differently by
 different document styles.  For example, the string CACM is expanded into
-\*(oqCommunications of the ACM\*(cq by some document styles, \*(oqComm.
-ACM\*(cq by others,
-and \*(oqComm. of the Assoc. of Comp. Mach.\*(cq by yet others.
+`Communications of the ACM' by some document styles, `Comm.
+ACM' by others,
+and `Comm. of the Assoc. of Comp. Mach.' by yet others.
 Appendix 1 lists the currently recognized names.
 .IP 3.
 The program automatically abbreviates names, reverses names, and
@@ -146,12 +143,11 @@ In papers with two authors the first two letters are from the first author
 followed by one letter from the second (e.g. HoU). If three or more
 authors are given the first letters from the first three authors are used
 (e.g. AHU).
-Reference entries are sorted by senior author followed by date.
 .IP openn
 same as stdsn, only using an open reference format (each major entry is on
 a new line\u1\d).
 .FS
-1. The open reference format is adapted from \*(oqA Handbook for Scholars\*(cq,
+1. The open reference format is adapted from \fIA Handbook for Scholars\fP,
 by Mare-Claire van Leunen, published by Knopf, 1978.
 .FE
 .IP opena
@@ -169,7 +165,7 @@ to generate references in standard numeric style, but abbreviate first names,
 the following can be used:
 .sp
 .ce
-bib \-tstdn \-a ...
+bib \-tstdn \-aa ...
 .PP
 If two reference items create the same citation string (this can happen
 if two papers authored by the same person in a single year are referred to
@@ -179,10 +175,10 @@ As noted previously, this can be altered by using the F field.
 .PP
 For the purposes of sorting by author, the last name is taken to be the last
 word of the name field.  This means some care must be taken when names contain
-embedded blanks, such as in \*(oqHartley Rogers, Jr.\*(cq
-or \*(oqMary-Claire van Leunen\*(cq.
+embedded blanks, such as in `Hartley Rogers, Jr.'
+or `Mary-Claire van Leunen'.
 In these cases a concealed space (\e\0) should be used, as in
-\*(oqHartley Rogers,\e\0Jr.\*(cq.
+`Hartley Rogers,\e\0Jr.'.
 .PP
 \fIbib\fP knows very little about \fItroff\fP usage or syntax.  This
 can sometimes be useful.  For example, to cause an entry to appear in a
@@ -196,8 +192,8 @@ can be placed in a \fItroff\fP comment.
 .QE
 .PP
 It is also possible to embed \fItroff\fP commands within a reference definition.
-See \*(oqabbreviations\*(cq in the section \*(oqReference Format Designers
-Guide\*(cq for an example.
+See `abbreviations' in the section `Reference Format Designers
+Guide' for an example.
 .PP
 In some styles (superscripts) periods and commas should precede the
 citation while spaces follow.
@@ -207,26 +203,24 @@ appropriate location for the particular reference style being used.
 This movement is not done for citations given in the alternative style.
 .PP
 The following is a complete list of options for \fIbib\fP:
+.IP \-aa 8m
+reduce author's first names to abbreviations.
+.IP \-ar\fInum\fP
+reverse the first \fInum\fP author's names.
+If \fInum\fP is omitted all names are reversed.
+.IP \-ax
+print authors last names in Caps-Small Caps style.  For example Budd becomes
+B\s-2UDD\s+2.
 .IP \-c\fIstr\fP
 build citations according to the template \fIstr\fP.  See the reference
 format designer's guide for more information on templates.
-.IP \-aa
-abbreviate authors names
-.IP \-ax
-places authors names in Caps-Small Caps style.
-For example Budd becomes B\s-2UDD\s+2.
-.IP \-ar\fInum\fP
-reverse the first \fInum\fP authors names.  If \fInum\fP is omitted all authors
-names are reversed.
-The three suffixes may all follow a single '-a', e.g. '-axr'.
 .IP \-ea
 abbreviate editors names
 .IP \-ex
-places editors names in Caps-Small Caps style.
+places editors names in Caps-Small Caps style.  (see \-x )
 .IP \-er\fInum\fP
 reverse the first \fInum\fP editors names.  If \fInum\fP is omitted all editors
 names are reversed.
-As for authors, the three suffixes may all follow a single '-e', e.g. '-exr'.
 .IP \-f
 instead of dumping references following the call on \&.[], dump each
 reference immediately following the line on which the citation is placed
@@ -306,6 +300,7 @@ S	Series title
 T	Title
 V	Volume number
 W	Where the item can be found locally
+X	Annotations (not in all macro styles)
 .QE
 .PP
 Author and editor fields can be repeated, as necessary, but all other fields
@@ -438,7 +433,7 @@ editor of the book goes into the E field.
 %D	1979
 .QE
 .PP
-If a work has more than one editor, they each get their own %E field.
+If a work as more than one editor, they each get their own %E field.
 .Ex
 %A	R. J. Lipton
 %A	L. Snyder
@@ -486,28 +481,22 @@ Compilations
 A compilation is the work of several authors gathered together by an editor
 into a book.  The reference format is the same as for a book, with
 the editor(s) taking the place of the author.
-Note the word \*(oqeditors\*(cq has been added to the last author field.
 .Ex
-%A	R. A. DeMillo
-%A	D. P. Dobkin
-%A	A. K. Jones
-%A	R. J. Lipton,\e\0editors
+%E	R. A. DeMillo
+%E	D. P. Dobkin
+%E	A. K. Jones
+%E	R. J. Lipton
 %T	Foundations of Secure Computation
 %I	ACPRESS
 %D	1978
 .QE
-.PP
-Note: this will not work if names are to be reversed, because the
-word "editors" will appear in the wrong place.
-For this reason, bib has been modified (locally at Berkeley),
-to accept editor entries anywhere author entries are legal.
 .SH
 Technical Reports
 .PP
 A technical report must have a report number.  They usually have authors,
 titles, dates and an issuing institution (the I field is used for this).
 They may also have a city and a government issue number.  Again string
-values (UATR for \*(oqUniversity of Arizona Technical Report\*(cq) will
+values (UATR for `University of Arizona Technical Report') will
 frequently simplify typing references.
 .Ex
 %A	T. A. Budd
@@ -554,8 +543,7 @@ article or as a report.
 Miscellaneous
 .PP
 A miscellaneous object is something that does not fit into any other form.
-It can have any of the the following fields; an author, an editor,
-a title, a date,
+It can have any of the the following fields; an author, a title, a date,
 page numbers, and, most generally, other information (the O field).
 .PP
 Any reference item can contain an F field, and the corresponding text
@@ -582,7 +570,7 @@ interpreted by \fIbib\fP, and a sequence of text lines (usually \fItroff\fP macr
 definitions) which are merely copied to output.
 The format file name is always prefixed with the string bib.
 Thus the format file for a standard document type, such as stdn, is found
-in /usr/lib/bmac/bib.stdn.
+in a file called bib.stdn in the standard library area.
 .PP
 When \fIbib\fP encounters a \-t switch, the user's directory is first searched for
 a format file matching the given name, before the system area is examined.
@@ -601,21 +589,18 @@ line is ignored.
 .sp
 A
 .PP
-The A command controls how authors' names are to be formatted.
-It can be followed by the following character sequences:
-.in +1.0i
-.IP A
-Authors names are to be abbreviated.
-(See abbreviations below).
+The A command controls how authors' names are to be formatted.  It can be
+followed by the following character sequences:
+.QS
+.IP A 8m
+Authors names are to be abbreviated.  (see \*(oqabbreviations\*(cq, below).
 .IP R\fInum\fP
-The first \fInum\fP authors names are to be reversed.
-If \fInum\fP is omitted, all authors names are reversed
-(i.e. T. A. Budd becomes Budd, T. A.).
+The first \fInum\fP authors names are to be reversed.  If \fInum\fP is
+omitted, all authors names are reversed.
 .IP X
-Authors names are to be printed in Caps-Small Caps style
-(i.e., Budd becomes B\s-2UDD\s+2).
-.in -1.0i
-.LP
+Authors names are to be printed in Caps-Small Caps style.
+.QE
+.sp
 E
 .PP
 The E command is equivalent to the A command, except that it controls the
@@ -670,11 +655,22 @@ O
 Contiguous citations are sorted according to the order given by the reference
 list.
 .sp
+R \fInumber\fP
+.PP
+The first \fInumber\fP author's names are reversed on output (i.e. T. A. Budd
+becomes Budd, T. A.).
+If number is omitted all names are reversed.
+.sp
 T \fIstr\fP
 .PP
 The \fIstr\fP is a list of field names.  Each time a definition string for
 a named field is produced, a second string containing just the last character
-will also be generated.  See \*(oqTrailing characters\*(cq, below.
+will also be generated.  See `Trailing characters', below.
+.sp
+X
+.PP
+Authors last names are to be printed in Caps/Small Caps
+format (i.e., Budd becomes B\s-2UDD\s+2).
 .sp 2
 .PP
 The first line in the format file that does not match a format command
@@ -683,8 +679,11 @@ the output.
 .SH
 File Naming Conventions
 .PP
-Standard database format files are kept in a standard library area,
-typically /usr/lib/bmac.  There are three types of files:
+Standard database format files are kept in a standard library area.
+The string BMACLIB in bib.h points to this directory (/usr/lib/bmac in
+the distribution).  In addition, this name is always defined when
+reading format files.
+There are three types of files:
 .IP bib.xxx 10m
 These files contain bib commands to format documents in the xxx style.
 .IP bibinc.xxx
@@ -694,6 +693,10 @@ style database.
 These files are the \fItroff\fP macros to actually implement a style.
 They are generally not examined by \fIbib\fP at all, but are processed
 by troff in response to a .so command.
+.PP
+The first command output by \fIbib\fP defines the string l] to be the
+standard macro database directory.  This allows macro files to be
+independent of where they are actually stored.
 .SH
 Naming Conventions
 .PP
@@ -725,9 +728,6 @@ sign, if present, specifies the sort is to be in decreasing order, rather than
 increasing.  The field character indicates which field in the reference
 is to be compared.  The entire field is used, except in the case of the `A'
 field, in which case only the senior authors last name is used.
-If the author's name is the sort key, and a particular reference has
-no author field, then first the editor's name, then the %F field,
-and then the institution is tried, looking for a usable sort key.
 A positive number following the field character indicates that only the first
 n characters are to be examined in the comparison.  The negative value indicates
 only the last \fIn\fP characters.  Thus, for example, the template AD\-2 indicates
@@ -736,23 +736,38 @@ characters of the date.
 .PP
 The sort algorithm is stable, so that two documents which compare equally
 will be listed in citation order.
+.PP
+Note that in sorting, citation construction, and elsewhere, if an author
+field is not present the senior editor will be used.  If neither author nor
+editor fields are present the institution name will be used.
 .SH
 Citations
 .PP
 A citation template is similar to a sort template, with the following
-exceptions:  The field name \*(oq1\*(cq refers to the number which
+exceptions:  The field name `1' refers to the number which
 represents the position of the reference in the reference list (after sorting).
-The field name \*(oq2\*(cq generates a three character sequence; If the
+The field name `2' generates a three character sequence; If the
 paper being referenced has only one author, this is the first three characters
 of the authors last name.  For two author papers, this is the first two
 characters of the senior author, followed by the first character of the second
 author.  For papers with three or more authors the first letter of the first
 three authors is used.
-Finally each object can be followed by either of the letters `u' or
+The field name `3' is used to specify a format consisting of the authors
+last names, or the senior author followed by the text `et al' if more than
+four authors are listed.  The fields `4' through `9' are reserved to be
+used to specify formats that cannot be produced using templates.  These
+will be implemented either as local modifications to \fIbib\fP or in future
+releases.
+.PP
+In order to postpone the inevitable clash of local changes versus new releases, it is
+suggested that local formatting styles use numbers starting at 9 and working
+downward.
+.PP
+Each object can be followed by either of the letters `u' or
 `l' and the field will be printed in all upper or all lower case,
 respectively.
 .PP
-If necessary for disambiguating, the character \*(oq@\*(cq can be used as
+If necessary for disambiguating, the character `@' can be used as
 a separator between objects in the citation template.  Any text which should
 be inserted into the citation uninterpreted should be surrounded by either
 {} or <> pairs.
@@ -765,9 +780,9 @@ Multiple citations are separated by the string \e*(],.
 The text portion of a format file should contain \fItroff\fP definitions for
 these strings to achieve the appropriate typographic effect.
 .PP
-Citations that are preceded by a period, comma or space are, in addition,
-surrounded by the string values \e*([\&. and \e*(.] or \e*([, and \e*(,]
-or \e*([< and \e*(>].
+Citations that are preceded by a period, comma, space or other puncuation
+are surrounded by string values for formatting the puncuation in the
+approprate location.
 Again, \fItroff\fP commands should be given to insure the appropriate values are
 produced.
 .KS
@@ -782,16 +797,38 @@ l l l.
 [\&.	.]	Period before and after citation
 [,	,]	Comma before and after citation
 [?	?]	Question mark before and after citation
+[!	!]	Exclaimation Point before and after citation
 [:	:]	Colon before and after citation
-[;	;]	Semicolon before and after citation
-[!	!]	Exclamation mark before and after citation
-["	"]	Double quote before and after citation
-['	']	Single quote before and after citation
+[;	;]	Semi-Colon before and after citation
+["	"]	Double Quote before and after citation
+['	']	Single Quote before and after citation
 [<	>]	Space before and after citation
 ],		Multiple citation separator
 ]-		Separator for a range of citations
 .TE
 .KE
+.SH
+Name Formatting
+.PP
+Authors (and editors) names can be abbreviated, reversed, and/or printed
+in Caps-small Caps format.  In producing the string values for an author,
+formatting strings are inserted to give the macro writer greater flexibility
+in producing the final output.  Currently the following strings are used:
+.TS
+center;
+l l.
+a]	gap between sucessive initials
+b]	comma between last name and initial in reversed text
+c]	comma between authors
+n]	\fIand\fP between two authors
+m]	\fIand\fP between last two authors
+p]	period following initial
+.TE
+.PP
+For example, suppose the name `William E. Howden' is abbreviated
+and reversed.  It will come out looking like
+.ce
+Howden\\*(b]W\\*(p]\\*(a]E\\*(p]
 .SH
 Reference Formatting
 .PP
@@ -837,7 +874,7 @@ is converted into the following sequence of commands
 .sp
 .KE
 .PP
-Note that the commands are preceded by a call on the macro \*(oq.[\-\*(cq.
+Note that the commands are preceded by a call on the macro `.[\-'.
 This can be used by the macro routines for initialization, for example to
 delete old string values.  The string [F is the citation value used
 in the document.
@@ -846,8 +883,8 @@ Note that the string CACM has been expanded.
 The strings c], n] and m] are used to separate authors.  c] separates
 the initial authors in multi-author documents (it is usually a comma
 with some space before and after), n] separates authors in two author
-documents (usually \*(oq and \*(cq), and m] separates the last two authors
-in multi-author documents (either \*(oq and \*(cq or \*(oq, and \*(cq).
+documents (usually `\ and\ '), and m] separates the last two authors
+in multi-author documents (either `\ and\ ' or `,\ and\ ').
 .PP
 If abbreviation is specified, the string a] is used to separate initials
 in the authors first name.
@@ -877,7 +914,7 @@ The algorithm used to generate abbreviations from first names is fairly
 simple: Each word in the first name field that begins with a capital
 is reduced to that capital letter followed by a period.
 In some cases, this may not be sufficient.  For example, suppose
-Ole-Johan Dahl should be abbreviated \*(oqO\-J. Dahl\*(cq.  The only
+Ole-Johan Dahl should be abbreviated `O\-J. Dahl'.  The only
 way to achieve this (short of editing the output) is to include \fItroff\fP commands
 in the reference file that alter the strings produced by \fIbib\fP, as in the following
 .QS
@@ -919,8 +956,8 @@ example).
 #
 SAD\-2
 C2D\-2
-I /usr/lib/bmac/bibinc.fullnames
-I /usr/lib/bmac/bibinc.std
+I BMACLIB/bibinc.fullnames
+I BMACLIB/bibinc.std
 .sp
 .ce
 \fBFigure 1\fP
@@ -976,9 +1013,9 @@ D DEC December
  .ds , ,
  .ds >. .
  .ds >, ,
- .ds c[ , \e&
- .ds n[ "" and \&
- .ds m[ , and \&
+ .ds c] , \e&
+ .ds n] "" and \&
+ .ds m] , and \&
    ...
  .de p[   \e" produce reference beginning
  .IP [\e\e$1]\0\0
@@ -1073,12 +1110,6 @@ TOPLAS	ACM Transactions on Programming Languages and Systems
 .sp
 \fBConferences\fP
 POPL	ACM Symposium on Principles of Programming Languages
-POPL5	Conference Record of the Fifth POPL
-POPL6	Conference Record of the Sixth POPL
-POPL7	Conference Record of the Seventh POPL
-POPL8	Conference Record of the Eighth POPL
-POPL9	Conference Record of the Ninth POPL
-POPL10	Conference Record of the Tenth POPL
 STOC	Annual ACM Symposium on Theory of Computing
 FOCS	Annual Symposium on Foundations of Computer Science
 ICSE	International Conference on Software Engineering
@@ -1098,6 +1129,7 @@ PRHALL	Prentice Hall
 SPRINGER	Springer Verlag
 WILEY	John Wiley & Sons
 WINTH	Winthrop Publishers
+.ne 5
 .sp
 \fBMonths of the year\fP
 JAN	January
