@@ -28,7 +28,7 @@ SOFTWARE.
  * ARGO TP
  * $Header: tp_cons.c,v 5.6 88/11/18 17:27:13 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_cons.c,v $
- *	@(#)tp_cons.c	7.4 (Berkeley) %G% *
+ *	@(#)tp_cons.c	7.5 (Berkeley) %G% *
  *
  * Here is where you find the iso- and cons-dependent code.  We've tried
  * keep all net-level and (primarily) address-family-dependent stuff
@@ -250,7 +250,7 @@ tpcons_input(m, faddr, laddr, channel)
 		printf("tpcons_input before tp_input(m 0x%x)\n", m);
 		dump_buf( m, 12+ m->m_len);
 	ENDDEBUG
-	tp_input(m, faddr, laddr, channel, tpcons_output);
+	tp_input(m, faddr, laddr, channel, tpcons_output, 0);
 	return 0;
 }
 
