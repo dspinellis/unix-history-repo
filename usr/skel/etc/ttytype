@@ -1,0 +1,9 @@
+dw console
+vt100 tty00
+vt100 tty01
+vt100 tty02
+vt100 tty03
+vt100 tty04
+vt100 tty05
+vt100 tty06
+vt100 tty07
