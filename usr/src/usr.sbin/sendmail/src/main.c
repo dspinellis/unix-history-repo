@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.8	%G%";
+static char	SccsId[] = "@(#)main.c	3.9	%G%";
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -138,6 +138,7 @@ main(argc, argv)
 	char **argv;
 {
 	register char *p;
+	char *realname;
 	extern char *collect();
 	extern char *getlogin();
 	extern int finis();
@@ -147,7 +148,7 @@ main(argc, argv)
 	extern int errno;
 	char *from;
 	typedef int (*fnptr)();
-	char nbuf[MAXLINE];
+	char nbuf[MAXLINE];		/* holds full name */
 	struct passwd *pw;
 	extern char *newstr();
 	extern char *index();
@@ -332,34 +333,7 @@ main(argc, argv)
 	readcf(cfname);
 
 	/*
-	** Get a temp file.
-	*/
-
-	p = collect();
-	if (from == NULL)
-		from = p;
-
-	/*
-	**  Figure out who it's coming from.
-	**	Under certain circumstances allow the user to say who
-	**	s/he is (using -f or -r).  These are:
-	**	1.  The user's uid is zero (root).
-	**	2.  The user's login name is "network" (mail from
-	**	    a network server).
-	**	3.  The user's login name is "uucp" (mail from the
-	**	    uucp network).
-	**	4.  The address the user is trying to claim has a
-	**	    "!" character in it (since #3 doesn't do it for
-	**	    us if we are dialing out).
-	**	A better check to replace #3 & #4 would be if the
-	**	effective uid is "UUCP" -- this would require me
-	**	to rewrite getpwent to "grab" uucp as it went by,
-	**	make getname more nasty, do another passwd file
-	**	scan, or compile the UID of "UUCP" into the code,
-	**	all of which are reprehensible.
-	**
-	**	Assuming all of these fail, we figure out something
-	**	ourselves.
+	**  Figure out the real user executing us.
 	*/
 
 	errno = 0;
@@ -389,48 +363,79 @@ main(argc, argv)
 	}
 	if (p == NULL || p[0] == '\0' || pw == NULL)
 		finis();
-	errno = 0;
+
+	realname = p;
+
+	/* extract full name from passwd file */
+	if (pw != NULL && pw->pw_gecos != NULL)
+	{
+		register char *nb;
+
+		nb = nbuf;
+		p = pw->pw_gecos;
+		while (*p != '\0' && *p != ',' && *p != ';')
+		{
+			if (*p == '&')
+			{
+				strcpy(nb, realname);
+				*nb = toupper(*nb);
+				while (*nb != '\0')
+					nb++;
+				p++;
+			}
+			else
+				*nb++ = *p++;
+		}
+		*nb = '\0';
+		if (!ArpaFmt && from == NULL && nbuf[0] != '\0')
+			define('x', nbuf);
+	}
+
+	/*
+	** Get a temp file.
+	*/
+
+	p = collect();
+	if (from == NULL)
+		from = p;
+
+	/*
+	**  Figure out who to claim it's coming from.
+	**	Under certain circumstances allow the user to say who
+	**	s/he is (using -f or -r).  These are:
+	**	1.  The user's uid is zero (root).
+	**	2.  The user's login name is "network" (mail from
+	**	    a network server).
+	**	3.  The user's login name is "uucp" (mail from the
+	**	    uucp network).
+	**	4.  The address the user is trying to claim has a
+	**	    "!" character in it (since #3 doesn't do it for
+	**	    us if we are dialing out).
+	**	A better check to replace #3 & #4 would be if the
+	**	effective uid is "UUCP" -- this would require me
+	**	to rewrite getpwent to "grab" uucp as it went by,
+	**	make getname more nasty, do another passwd file
+	**	scan, or compile the UID of "UUCP" into the code,
+	**	all of which are reprehensible.
+	**
+	**	Assuming all of these fail, we figure out something
+	**	ourselves.
+	*/
+
 	if (from != NULL)
 	{
-		if (strcmp(p, "network") != 0 && strcmp(p, "uucp") != 0 &&
+		if (strcmp(realname, "network") != 0 && strcmp(realname, "uucp") != 0 &&
 		    index(from, '!') == NULL && getuid() != 0)
 		{
 			/* network sends -r regardless (why why why?) */
-			/* syserr("%s, you cannot use the -f flag", p); */
+			/* syserr("%s, you cannot use the -f flag", realname); */
 			from = NULL;
 		}
 	}
-	if (from == NULL || from[0] == '\0')
-	{
-		from = newstr(p);
 
-		/* extract full name from passwd file */
-		if (pw != NULL && pw->pw_gecos != NULL)
-		{
-			register char *nb;
+	if (from == NULL)
+		from = newstr(realname);
 
-			nb = nbuf;
-			p = pw->pw_gecos;
-			while (*p != '\0' && *p != ',' && *p != ';')
-			{
-				if (*p == '&')
-				{
-					strcpy(nb, from);
-					*nb = toupper(*nb);
-					while (*nb != '\0')
-						nb++;
-					p++;
-				}
-				else
-					*nb++ = *p++;
-			}
-			*nb = '\0';
-			if (nbuf[0] != '\0')
-				define('x', newstr(nbuf));
-		}
-	}
-	else
-		FromFlag++;
 	SuprErrs = TRUE;
 	if (parse(from, &From, 0) == NULL)
 	{

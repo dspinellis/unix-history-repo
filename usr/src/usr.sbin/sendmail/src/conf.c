@@ -98,7 +98,7 @@
 
 
 
-static char SccsId[] = "@(#)conf.c	3.11	%G%";
+static char SccsId[] = "@(#)conf.c	3.12	%G%";
 
 
 # include <whoami.h>		/* definitions of machine id's at berkeley */
@@ -207,7 +207,7 @@ static char	*BerkArgv[] =
 static struct mailer	BerkMailer =
 {
 	"berk",		"/usr/net/bin/sendberkmail",
-	M_FOPT|M_ARPAFMT|M_STRIPQ,
+	M_FOPT|M_NEEDDATE|M_FULLNAME|M_STRIPQ,
 	EX_UNAVAILABLE,	"$B:$f",	BerkArgv,	NULL,
 };
 
@@ -241,7 +241,7 @@ static char	*UucpArgv[] =
 static struct mailer	UucpMailer =
 {
 	"uucp",		"/usr/bin/uux",
-	M_ROPT|M_STRIPQ|M_ARPAFMT|M_MUSER,
+	M_ROPT|M_STRIPQ|M_NEEDDATE|M_FULLNAME|M_MUSER,
 	EX_NOUSER,	"$U!$f",	UucpArgv,	NULL,
 };
 
@@ -274,6 +274,7 @@ struct hdrinfo	HdrInfo[] =
 {
 	"date",		H_CHECK,		M_NEEDDATE,
 	"from",		H_CHECK,		M_NEEDFROM,
+	"full-name",	H_ACHECK,		M_FULLNAME,
 	"to",		0,			NULL,
 	"cc",		0,			NULL,
 	"subject",	0,			NULL,

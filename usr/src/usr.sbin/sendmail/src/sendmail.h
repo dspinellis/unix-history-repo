@@ -1,7 +1,7 @@
 /*
 **  SENDMAIL.H -- Global definitions for sendmail.
 **
-**	@(#)sendmail.h	3.11	%G%
+**	@(#)sendmail.h	3.12	%G%
 */
 
 
@@ -94,8 +94,9 @@ struct mailer
 # define M_MSGID	002000	/* need Message-Id: field */
 # define M_USR_UPPER	010000	/* preserve user case distinction */
 # define M_HST_UPPER	020000	/* preserve host case distinction */
+# define M_FULLNAME	040000	/* want Full-Name field */
 
-# define M_ARPAFMT	(M_NEEDDATE|M_NEEDFROM)
+# define M_ARPAFMT	(M_NEEDDATE|M_NEEDFROM|M_NEEDDATE)
 
 extern struct mailer *Mailer[];
 
@@ -140,6 +141,7 @@ extern struct hdrinfo	HdrInfo[];
 # define H_DEFAULT	00004	/* if another value is found, drop this */
 # define H_USED		00010	/* indicates that this has been output */
 # define H_CHECK	00020	/* check h_mflags against m_flags */
+# define H_ACHECK	00040	/* ditto, but always (not just default) */
 
 
 /*
