@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	8.29 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	8.30 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -690,7 +690,6 @@ loop:
 		simple_unlock(&mntvnode_slock);
 		error = vget(vp, LK_EXCLUSIVE | LK_NOWAIT | LK_INTERLOCK, p);
 		if (error) {
-			vrele(vp);
 			simple_lock(&mntvnode_slock);
 			if (error == ENOENT)
 				goto loop;
