@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rcmd.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)rcmd.c	5.24 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -20,6 +20,7 @@ static char sccsid[] = "@(#)rcmd.c	5.23 (Berkeley) %G%";
 #include <pwd.h>
 #include <errno.h>
 #include <stdio.h>
+#include <ctype.h>
 #include <unistd.h>
 #include <string.h>
 

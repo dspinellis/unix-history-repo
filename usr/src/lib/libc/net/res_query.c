@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_query.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_query.c	5.10 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -16,6 +16,7 @@ static char sccsid[] = "@(#)res_query.c	5.9 (Berkeley) %G%";
 #include <netdb.h>
 #include <resolv.h>
 #include <stdio.h>
+#include <ctype.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
