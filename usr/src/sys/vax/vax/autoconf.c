@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)autoconf.c	7.5.1.1 (Berkeley) %G%
+ *	@(#)autoconf.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -27,11 +27,6 @@
 #include "conf.h"
 #include "dmap.h"
 #include "reboot.h"
-#ifdef SECSIZE
-#include "file.h"
-#include "ioctl.h"
-#include "disklabel.h"
-#endif SECSIZE
 
 #include "pte.h"
 #include "cpu.h"
@@ -940,7 +935,6 @@ ioaccess(physa, pte, size)
 /*
  * Configure swap space and related parameters.
  */
-#ifndef SECSIZE
 swapconf()
 {
 	register struct swdevt *swp;
@@ -959,63 +953,6 @@ swapconf()
 	if (dumplo < 0)
 		dumplo = 0;
 }
-#else SECSIZE
-swapconf()
-{
-	register struct swdevt *swp;
-	register int nblks;
-	register int bsize;
-	struct partinfo dpart;
-
-	for (swp = swdevt; swp->sw_dev; swp++)
-		if ((nblks = psize(swp->sw_dev, &swp->sw_blksize,
-		    &swp->sw_bshift)) != -1 &&
-		    (swp->sw_nblks == 0 || swp->sw_nblks > nblks))
-			swp->sw_nblks = nblks;
-
-	if (!cold)	/* In case called for addition of another drive */
-		return;
-	if (dumplo == 0) {
-		nblks = psize(dumpdev, (int *)0, (int *)0);
-		if (nblks == -1 || nblks < ctod(physmem))
-			dumplo = 0;
-		else
-			dumplo = nblks - ctod(physmem);
-	}
-}
-
-/*
- * Return size of disk partition in DEV_BSIZE units.
- * If needed, return sector size.
- */
-psize(dev, psize, pshift)
-	register dev_t dev;
-	int *psize, *pshift;
-{
-	register int nblks, bsize, bshift;
-	struct partinfo dpart;
-
-	if ((*bdevsw[major(dev)].d_ioctl)(dev, DIOCGPART,
-	    (caddr_t)&dpart, FREAD) == 0)
-		bsize = dpart.disklab->d_secsize;
-	else
-		bsize = DEV_BSIZE;
-	if (psize)
-		*psize = bsize;
-	bshift = 0;
-	for (nblks = DEV_BSIZE / bsize; nblks > 1; nblks >>= 1)
-		bshift++;
-	if (pshift)
-		*pshift = bshift;
-	nblks = -1;
-	if (bdevsw[major(dev)].d_psize) {
-		nblks = (*bdevsw[major(dev)].d_psize)(dev);
-		if (nblks != -1)
-			nblks >>= bshift;
-	}
-	return (nblks);
-}
-#endif SECSIZE
 
 #define	DOSWAP			/* Change swdevt, argdev, and dumpdev too */
 u_long	bootdev;		/* should be dev_t, but not until 32 bits */
