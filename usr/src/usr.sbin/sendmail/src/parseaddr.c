@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)parseaddr.c	3.73		%G%);
+SCCSID(@(#)parseaddr.c	3.74		%G%);
 
 /*
 **  PARSEADDR -- Parse an address
@@ -958,6 +958,8 @@ printaddr(a, follow)
 **			to.
 **		senderaddress -- if set, uses the sender rewriting rules
 **			rather than the recipient rewriting rules.
+**		canonical -- if set, strip out any comment information,
+**			etc.
 **
 **	Returns:
 **		the text string representing this address relative to
@@ -972,10 +974,11 @@ printaddr(a, follow)
 */
 
 char *
-remotename(name, m, senderaddress)
+remotename(name, m, senderaddress, canonical)
 	char *name;
 	struct mailer *m;
 	bool senderaddress;
+	bool canonical;
 {
 	register char **pvp;
 	char *fancy;
@@ -1000,7 +1003,10 @@ remotename(name, m, senderaddress)
 	**	This will leave the name as a comment and a $g macro.
 	*/
 
-	fancy = crackaddr(name);
+	if (canonical)
+		fancy = "$g";
+	else
+		fancy = crackaddr(name);
 
 	/*
 	**  Turn the name into canonical form.
@@ -1075,39 +1081,4 @@ remotename(name, m, senderaddress)
 		printf("remotename => `%s'\n", buf);
 # endif DEBUG
 	return (buf);
-}
-/*
-**  CANONNAME -- make name canonical
-**
-**	This is used for SMTP and misc. printing.  Given a print
-**	address, it strips out comments, etc.
-**
-**	Parameters:
-**		name -- the name to make canonical.
-**		ruleset -- the canonicalizing ruleset.
-**
-**	Returns:
-**		pointer to canonical name.
-**
-**	Side Effects:
-**		none.
-**
-**	Warning:
-**		result is saved in static buf; future calls will trash it.
-*/
-
-char *
-canonname(name, ruleset)
-	char *name;
-	int ruleset;
-{
-	static char nbuf[MAXNAME];
-	register char **pvp;
-
-	pvp = prescan(name, '\0');
-	rewrite(pvp, 3);
-	rewrite(pvp, ruleset);
-	rewrite(pvp, 4);
-	cataddr(pvp, nbuf, sizeof nbuf);
-	return (nbuf);
 }

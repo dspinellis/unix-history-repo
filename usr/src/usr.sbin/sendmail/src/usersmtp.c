@@ -3,10 +3,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)usersmtp.c	3.37		%G%	(no SMTP));
+SCCSID(@(#)usersmtp.c	3.38		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)usersmtp.c	3.37		%G%);
+SCCSID(@(#)usersmtp.c	3.38		%G%);
 
 
 
@@ -48,7 +48,6 @@ smtpinit(m, pvp)
 {
 	register int r;
 	char buf[MAXNAME];
-	extern char *canonname();
 
 	/*
 	**  Open the connection to the mailer.
@@ -127,12 +126,12 @@ smtpinit(m, pvp)
 	if (CurEnv->e_from.q_mailer == LocalMailer ||
 	    !bitset(M_FROMPATH, m->m_flags))
 	{
-		smtpmessage("MAIL From:<%s>", m, canonname(buf, 1));
+		smtpmessage("MAIL From:<%s>", m, buf);
 	}
 	else
 	{
 		smtpmessage("MAIL From:<@%s%c%s>", m, HostName,
-			buf[0] == '@' ? ',' : ':', canonname(buf, 1));
+			buf[0] == '@' ? ',' : ':', buf);
 	}
 	r = reply(m);
 	if (r < 0 || REPLYTYPE(r) == 4)
@@ -162,9 +161,9 @@ smtprcpt(to, m)
 	register MAILER *m;
 {
 	register int r;
-	extern char *canonname();
+	extern char *remotename();
 
-	smtpmessage("RCPT To:<%s>", m, canonname(to->q_user, 2));
+	smtpmessage("RCPT To:<%s>", m, remotename(to->q_user, m, FALSE, TRUE));
 
 	r = reply(m);
 	if (r < 0 || REPLYTYPE(r) == 4)
