@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwlabel.c	3.3 83/08/16";
+static	char *sccsid = "@(#)wwlabel.c	3.4 83/08/18";
 #endif
 
 #include "ww.h"
@@ -28,7 +28,7 @@ char *l;
 	j = w->ww_w.l + where;
 	j = MAX(j, f->ww_w.l);
 	win = &f->ww_win[i][j - f->ww_w.l];
-	buf = &f->ww_buf[w->ww_scroll + i][j - f->ww_w.l];
+	buf = &f->ww_buf[f->ww_scroll + i][j - f->ww_w.l];
 	i += f->ww_w.t;
 	ns = &wwns[i][j];
 	fmap = &wwfmap[i][j];
