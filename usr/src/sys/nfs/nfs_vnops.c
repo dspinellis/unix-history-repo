@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vnops.c	7.9 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.10 (Berkeley) %G%
  */
 
 /*
@@ -120,44 +120,48 @@ struct vnodeops nfsv2_vnodeops = {
 };
 
 /* Special device vnode ops */
-int	blk_lookup(),
-	blk_open(),
-	blk_read(),
-	blk_write(),
-	blk_ioctl(),
-	blk_select();
+int	spec_lookup(),
+	spec_open(),
+	spec_read(),
+	spec_write(),
+	spec_strategy(),
+	spec_ioctl(),
+	spec_select(),
+	spec_close(),
+	spec_badop(),
+	spec_nullop();
 
-struct vnodeops nfsv2chr_vnodeops = {
-	blk_lookup,
-	vfs_noop,
-	vfs_noop,
-	blk_open,
-	nfs_close,
+struct vnodeops spec_nfsv2nodeops = {
+	spec_lookup,
+	spec_badop,
+	spec_badop,
+	spec_open,
+	spec_close,
 	nfs_access,
 	nfs_getattr,
 	nfs_setattr,
-	blk_read,
-	blk_write,
-	blk_ioctl,
-	blk_select,
-	vfs_noop,
-	vfs_nullop,
-	vfs_noop,
-	nfs_remove,
-	nfs_link,
-	nfs_rename,
-	vfs_noop,
-	vfs_noop,
-	nfs_symlink,
-	vfs_noop,
-	vfs_noop,
-	nfs_abortop,
+	spec_read,
+	spec_write,
+	spec_ioctl,
+	spec_select,
+	spec_badop,
+	spec_nullop,
+	spec_badop,
+	spec_badop,
+	spec_badop,
+	spec_badop,
+	spec_badop,
+	spec_badop,
+	spec_badop,
+	spec_badop,
+	spec_badop,
+	spec_badop,
 	nfs_inactive,
 	nfs_reclaim,
 	nfs_lock,
 	nfs_unlock,
-	vfs_noop,
-	vfs_noop,
+	spec_badop,
+	spec_strategy,
 };
 
 extern u_long nfs_procids[NFS_NPROCS];
@@ -250,7 +254,6 @@ nfs_open(vp, mode, cred)
 /*
  * nfs close vnode op
  * For reg files, invalidate any buffer cache entries.
- * For VCHR, do the device close
  */
 nfs_close(vp, fflags, cred)
 	register struct vnode *vp;
@@ -261,9 +264,9 @@ nfs_close(vp, fflags, cred)
 	dev_t dev;
 	int error = 0;
 
-	nfs_lock(vp);
 	if (vp->v_type == VREG && ((np->n_flag & NMODIFIED) ||
 	   ((np->n_flag & NBUFFERED) && np->n_sillyrename))) {
+		nfs_lock(vp);
 		np->n_flag &= ~(NMODIFIED|NBUFFERED);
 		error = nfs_blkflush(vp, (daddr_t)0, np->n_size, TRUE);
 		if (np->n_flag & NWRITEERR) {
@@ -271,25 +274,8 @@ nfs_close(vp, fflags, cred)
 			if (!error)
 				error = np->n_error ? np->n_error : EIO;
 		}
+		nfs_unlock(vp);
 	}
-	nfs_unlock(vp);
-	if (vp->v_type != VCHR || vp->v_count > 1)
-		return (error);
-	dev = vp->v_rdev;
-	/* XXX what is this doing below the vnode op call */
-	if (setjmp(&u.u_qsave)) {
-		/*
-		 * If device close routine is interrupted,
-		 * must return so closef can clean up.
-		 */
-		error = EINTR;
-	} else
-		error = (*cdevsw[major(dev)].d_close)(dev, fflags, IFCHR);
-	/*
-	 * Most device close routines don't return errors,
-	 * and dup2() doesn't work right on error.
-	 */
-	error = 0;		/* XXX */
 	return (error);
 }
 
@@ -389,10 +375,9 @@ nfs_lookup(vp, ndp)
 		struct vattr vattr;
 		int vpid;
 
-		if (ndp->ni_vp == ndp->ni_rdir && ndp->ni_isdotdot)
-			vdp = vp;
-		else
-			vdp = ndp->ni_vp;
+		if (vp == ndp->ni_rdir && ndp->ni_isdotdot)
+			panic("nfs_lookup: .. through root");
+		vdp = ndp->ni_vp;
 		vpid = vdp->v_id;
 		/*
 		 * See the comment starting `Step through' in ufs/ufs_lookup.c
@@ -400,19 +385,23 @@ nfs_lookup(vp, ndp)
 		 */
 		if (vp == vdp) {
 			VREF(vdp);
+			error = 0;
 		} else if (ndp->ni_isdotdot) {
 			nfs_unlock(vp);
-			nfs_ngrab(VTONFS(vdp));
+			error = vget(vdp);
 		} else {
-			nfs_ngrab(VTONFS(vdp));
+			error = vget(vdp);
 			nfs_unlock(vp);
 		}
-		if (vpid == vdp->v_id &&
-		   !nfs_getattr(vdp, &vattr, ndp->ni_cred)) {
-			nfsstats.lookupcache_hits++;
-			return (0);
+		if (!error) {
+			if (vpid == vdp->v_id &&
+			   !nfs_getattr(vdp, &vattr, ndp->ni_cred)) {
+				nfsstats.lookupcache_hits++;
+				return (0);
+			} else {
+				nfs_nput(vdp);
+			}
 		}
-		nfs_nput(vdp);
 		nfs_lock(vp);
 		ndp->ni_vp = (struct vnode *)0;
 	}
