@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dead_vnops.c	7.23 (Berkeley) %G%
+ *	@(#)dead_vnops.c	7.24 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -258,12 +258,13 @@ dead_bmap(ap)
 		daddr_t  a_bn;
 		struct vnode **a_vpp;
 		daddr_t *a_bnp;
+		int *a_runp;
 	} */ *ap;
 {
 
 	if (!chkvnlock(ap->a_vp))
 		return (EIO);
-	return (VOP_BMAP(ap->a_vp, ap->a_bn, ap->a_vpp, ap->a_bnp));
+	return (VOP_BMAP(ap->a_vp, ap->a_bn, ap->a_vpp, ap->a_bnp, ap->a_runp));
 }
 
 /*
