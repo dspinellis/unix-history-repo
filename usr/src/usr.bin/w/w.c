@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)w.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)w.c	5.18 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -322,12 +322,12 @@ proc_compare(p1, p2)
 	if (p1->p_slptime > p2->p_slptime)
 		return (0);
 	/*
-	 * favor the one sleeping in a "short term" sleep
+	 * favor one sleeping in a non-interruptible sleep
 	 */
-	if (p2->p_pri <= PZERO && p1->p_pri > PZERO)
-		return (1);
-	if (p1->p_pri <= PZERO && p2->p_pri > PZERO)
-		return (0);
+	 if (p1->p_flag&SSINTR && (p2->p_flag&SSINTR) == 0)
+		 return (1);
+	 if (p2->p_flag&SSINTR && (p1->p_flag&SSINTR) == 0)
+		 return (0);
 	return(p2->p_pid > p1->p_pid);		/* tie - return highest pid */
 }
 
