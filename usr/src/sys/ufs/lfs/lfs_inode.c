@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_inode.c	7.82 (Berkeley) %G%
+ *	@(#)lfs_inode.c	7.83 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -44,7 +44,7 @@ lfs_ifind(fs, ino, dip)
 	register struct dinode *ldip;
 
 	for (cnt = INOPB(fs), ldip = dip + (cnt - 1); cnt--; --ldip)
-		if (ldip->di_inum == ino)
+		if (ldip->di_inumber == ino)
 			return (ldip);
 
 	panic("lfs_ifind: dinode %u not found", ino);
@@ -276,8 +276,10 @@ lfs_truncate(ap)
 	}
 
 #ifdef DIAGNOSTIC
-	if (ip->i_blocks < fsbtodb(fs, blocksreleased))
-		panic("lfs_truncate: block count < 0");
+	if (ip->i_blocks < fsbtodb(fs, blocksreleased)) {
+		printf("lfs_truncate: block count < 0\n");
+		blocksreleased = ip->i_blocks;
+	}
 #endif
 	ip->i_blocks -= fsbtodb(fs, blocksreleased);
 	fs->lfs_bfree +=  fsbtodb(fs, blocksreleased);
