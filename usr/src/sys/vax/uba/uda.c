@@ -1,5 +1,5 @@
 /*
- *	@(#)uda.c	7.5 (Berkeley) %G%
+ *	@(#)uda.c	7.6 (Berkeley) %G%
  */
 
 /************************************************************************
@@ -1528,7 +1528,9 @@ udioctl(dev, cmd, data, flag)
 		{
 		struct buf *bp;
 		struct disklabel *dlp;
+#ifdef notdef
 		daddr_t alt, end;
+#endif
 
 		*lp = *(struct disklabel *)data;
 		bp = geteblk(lp->d_secsize);
@@ -1545,6 +1547,7 @@ udioctl(dev, cmd, data, flag)
 			goto bad;
 		}
 		*dlp = *lp;
+#ifdef notdef
 		alt = lp->d_ncylinders * lp->d_secpercyl - lp->d_ntracks + 1;
 		end = alt + 8;
 		for (;;) {
@@ -1560,6 +1563,7 @@ udioctl(dev, cmd, data, flag)
 			bp->b_blkno = alt;
 			alt += 2;
 		}
+#endif
 bad:
 		brelse(bp);
 		}
