@@ -11,7 +11,7 @@
  * Auxiliary functions.
  */
 
-static char *SccsId = "@(#)aux.c	1.3 %G%";
+static char *SccsId = "@(#)aux.c	1.4 %G%";
 
 /*
  * Return a pointer to a dynamic copy of the argument.
@@ -522,7 +522,7 @@ nameof(mp)
 
 	if ((cp = hfield("reply-to", mp)) != NOSTR) {
 		strcpy(namebuf, cp);
-		return(namebuf);
+		return(savestr(namebuf));
 	}
 	ibuf = setinput(mp);
 	copy("", namebuf);
