@@ -1,4 +1,4 @@
-/*	mt.c	4.1	81/12/01	*/
+/*	mt.c	4.2	82/07/15	*/
 
 /*
  * TM78/TU78 tape driver
@@ -9,6 +9,7 @@
 #include "../h/inode.h"
 #include "../h/pte.h"
 #include "../h/mbareg.h"
+#include "../h/fs.h"
 #include "saio.h"
 #include "savax.h"
 

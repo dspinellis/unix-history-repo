@@ -1,4 +1,4 @@
-/*	idc.c	4.1	82/05/27	*/
+/*	idc.c	4.2	82/07/15	*/
 
 /*
  * IDC (RB730)
@@ -12,6 +12,7 @@
 #include "../h/inode.h"
 #include "../h/pte.h"
 #include "../h/ubareg.h"
+#include "../h/fs.h"
 #include "saio.h"
 #include "savax.h"
 

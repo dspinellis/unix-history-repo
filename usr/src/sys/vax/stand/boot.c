@@ -1,4 +1,4 @@
-/*	boot.c	4.7	82/03/07	*/
+/*	boot.c	4.8	82/07/15	*/
 
 #include "../h/param.h"
 #include "../h/inode.h"
@@ -81,8 +81,7 @@ copyunix(howto, io)
 	    (x.a_magic != 0407 && x.a_magic != 0413 && x.a_magic != 0410))
 		_stop("Bad format\n");
 	printf("%d", x.a_text);
-	if ((x.a_magic == 0413 || x.a_magic == 0410) &&
-	    lseek(io, 0x400, 0) == -1)
+	if (x.a_magic == 0413 && lseek(io, 0x400, 0) == -1)
 		goto shread;
 	if (read(io, (char *)0, x.a_text) != x.a_text)
 		goto shread;

@@ -1,9 +1,9 @@
-/*	sys.c	4.5	82/03/07	*/
+/*	sys.c	4.6	82/07/15	*/
 
 #include "../h/param.h"
 #include "../h/inode.h"
 #include "../h/fs.h"
-#include "../h/ndir.h"
+#include "../h/dir.h"
 #include "saio.h"
 
 ino_t	dlook();
@@ -320,10 +320,13 @@ read(fdesc, buf, count)
 	if ((file->i_flgs&F_READ) == 0)
 		return(-1);
 	if ((file->i_flgs & F_FILE) == 0) {
+		if (count % DEV_BSIZE)
+			printf("count=%d?\n", count);
 		file->i_cc = count;
 		file->i_ma = buf;
+		file->i_bn = file->i_boff + (file->i_offset / DEV_BSIZE);
 		i = devread(file);
-		file->i_bn += (count / DEV_BSIZE);
+		file->i_offset += count;
 		return(i);
 	} else {
 		if (file->i_offset+count > file->i_ino.i_size)
@@ -357,10 +360,13 @@ write(fdesc, buf, count)
 		return(-1);
 	if ((file->i_flgs&F_WRITE) == 0)
 		return(-1);
+	if (count % DEV_BSIZE)
+		printf("count=%d?\n", count);
 	file->i_cc = count;
 	file->i_ma = buf;
+	file->i_bn = file->i_boff + (file->i_offset / DEV_BSIZE);
 	i = devwrite(file);
-	file->i_bn += (count / DEV_BSIZE);
+	file->i_offset += count;
 	return(i);
 }
 
@@ -439,7 +445,7 @@ badoff:
 	}
 	file->i_ma = (char *)(&file->i_fs);
 	file->i_cc = SBSIZE;
-	file->i_bn = SBLOCK;
+	file->i_bn = SBLOCK + file->i_boff;
 	file->i_offset = 0;
 	devread(file);
 	if ((i = find(cp, file)) == 0) {

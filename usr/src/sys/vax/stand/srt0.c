@@ -1,4 +1,4 @@
-/*	srt0.c	4.8	81/04/03	*/
+/*	srt0.c	4.9	82/07/15	*/
 
 #include "../h/mtpr.h"
 #define	LOCORE
@@ -79,7 +79,7 @@ _badloc:
 0:
 	.word	8f-0b		# 1 is 780
 	.word	5f-0b		# 2 is 750
-	.word	5f-0b		# 3 is 7ZZ
+	.word	5f-0b		# 3 is 730
 5:
 	mtpr	$0xf,$MCESR
 	brb	1f

@@ -1,4 +1,4 @@
-/*	ts.c	4.4	81/12/01	*/
+/*	ts.c	4.5	82/07/15	*/
 
 /*
  * TS11 tape driver
@@ -9,6 +9,7 @@
 #include "../h/inode.h"
 #include "../h/pte.h"
 #include "../h/ubareg.h"
+#include "../h/fs.h"
 #include "saio.h"
 #include "savax.h"
 
@@ -34,9 +35,10 @@ tsopen(io)
 	long i = 0;
 
 	if (tsaddr == 0)
-		tsaddr = ubamem(io->i_unit, tsstd[0]);
+		tsaddr = (struct tsdevice *)ubamem(io->i_unit, tsstd[0]);
 	tsaddr->tssr = 0;
 	while ((tsaddr->tssr & TS_SSR)==0) {
+		DELAY(10);
 		if (++i > 1000000) {
 			printf("ts: not ready\n");
 			return;
@@ -107,7 +109,7 @@ retry:
 	if (ts.ts_sts.s_xs0 & TS_TMK)
 		return (0);
 	if (tsaddr->tssr & TS_SC) {
-		printf("ts tape error: er=%b, xs0=%b",
+		printf("ts tape error: er=%b, xs0=%b\n",
 		    tsaddr->tssr, TSSR_BITS,
 		    ts.ts_sts.s_xs0, TSXS0_BITS);
 		if (errcnt==10) {

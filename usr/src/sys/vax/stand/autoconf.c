@@ -1,4 +1,4 @@
-/*	autoconf.c	4.4	81/04/03	*/
+/*	autoconf.c	4.5	82/07/15	*/
 
 #include "../h/param.h"
 #include "../h/cpu.h"
@@ -33,11 +33,11 @@ struct	mba_regs *mbaddr750[] = { MTR(4), MTR(5), MTR(6), MTR(7) };
 #undef	UMA
 #undef	MTR
 
-#define	UTR(i)	((struct uba_regs *)(NEX7ZZ+(i)))
-#define	UMA	((caddr_t)UMEM7ZZ)
+#define	UTR(i)	((struct uba_regs *)(NEX730+(i)))
+#define	UMA	((caddr_t)UMEM730)
 
-struct	uba_regs *ubaddr7ZZ[] = { UTR(3) };
-caddr_t	umaddr7ZZ[] = { UMA };
+struct	uba_regs *ubaddr730[] = { UTR(3) };
+caddr_t	umaddr730[] = { UMA };
 
 #undef	UTR
 #undef	UMA
@@ -67,21 +67,25 @@ configure()
 		nuba = 0;
 		break;
 
-	case VAX_7ZZ:
-		ubaddr = ubaddr7ZZ;
-		umaddr = umaddr7ZZ;
+	case VAX_730:
+		ubaddr = ubaddr730;
+		umaddr = umaddr730;
 		nmba = nuba = 0;
 		break;
 	}
 	/*
 	 * Forward into the past...
 	 */
+/*
 	for (i = 0; i < nmba; i++)
 		if (!badloc(mbaddr[i]))
 			mbaddr[i]->mba_cr = MBCR_INIT;
+*/
 	for (i = 0; i < nuba; i++)
 		if (!badloc(ubaddr[i]))
 			ubaddr[i]->uba_cr = UBACR_ADINIT;
+	if (cpu != VAX_780)
+		mtpr(IUR, 0);
 	/* give unibus devices a chance to recover... */
 	if (nuba > 0)
 		DELAY(2000000);
