@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vfsops.c	8.10 (Berkeley) %G%
+ *	@(#)lfs_vfsops.c	8.11 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -416,7 +416,7 @@ lfs_vget(mp, ino, vpp)
 	struct ifile *ifp;
 	struct vnode *vp;
 	struct ufsmount *ump;
-	daddr_t daddr;
+	ufs_daddr_t daddr;
 	dev_t dev;
 	int error;
 

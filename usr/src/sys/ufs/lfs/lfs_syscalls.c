@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_syscalls.c	8.6 (Berkeley) %G%
+ *	@(#)lfs_syscalls.c	8.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -73,7 +73,7 @@ lfs_markv(p, uap, retval)
 	fsid_t fsid;
 	void *start;
 	ino_t lastino;
-	daddr_t b_daddr, v_daddr;
+	ufs_daddr_t b_daddr, v_daddr;
 	u_long bsize;
 	int cnt, error;
 
@@ -109,7 +109,7 @@ lfs_markv(p, uap, retval)
 				if (sp->fip->fi_nblocks == 0) {
 					DEC_FINFO(sp);
 					sp->sum_bytes_left +=
-					    sizeof(FINFO) - sizeof(daddr_t);
+					    sizeof(FINFO) - sizeof(ufs_daddr_t);
 				} else {
 					lfs_updatemeta(sp);
 					BUMP_FIP(sp);
@@ -121,7 +121,7 @@ lfs_markv(p, uap, retval)
 
 			/* Start a new file */
 			CHECK_SEG(sizeof(FINFO));
-			sp->sum_bytes_left -= sizeof(FINFO) - sizeof(daddr_t);
+			sp->sum_bytes_left -= sizeof(FINFO) - sizeof(ufs_daddr_t);
 			INC_FINFO(sp);
 			sp->start_lbp = &sp->fip->fi_blocks[0];
 			sp->vp = NULL;
@@ -187,7 +187,7 @@ lfs_markv(p, uap, retval)
 		if (sp->fip->fi_nblocks == 0) {
 			DEC_FINFO(sp);
 			sp->sum_bytes_left +=
-			    sizeof(FINFO) - sizeof(daddr_t);
+			    sizeof(FINFO) - sizeof(ufs_daddr_t);
 		} else
 			lfs_updatemeta(sp);
 
@@ -244,7 +244,7 @@ lfs_bmapv(p, uap, retval)
 	struct vnode *vp;
 	fsid_t fsid;
 	void *start;
-	daddr_t daddr;
+	ufs_daddr_t daddr;
 	int cnt, error, step;
 
 	if (error = suser(p->p_ucred, &p->p_acflag))
@@ -415,7 +415,7 @@ int
 lfs_fastvget(mp, ino, daddr, vpp, dinp)
 	struct mount *mp;
 	ino_t ino;
-	daddr_t daddr;
+	ufs_daddr_t daddr;
 	struct vnode **vpp;
 	struct dinode *dinp;
 {

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_balloc.c	8.1 (Berkeley) %G%
+ *	@(#)lfs_balloc.c	8.2 (Berkeley) %G%
  */
 #include <sys/param.h>
 #include <sys/buf.h>
@@ -27,14 +27,14 @@ int
 lfs_balloc(vp, iosize, lbn, bpp)
 	struct vnode *vp;
 	u_long iosize;
-	daddr_t lbn;
+	ufs_daddr_t lbn;
 	struct buf **bpp;
 {
 	struct buf *ibp, *bp;
 	struct inode *ip;
 	struct lfs *fs;
 	struct indir indirs[NIADDR+2];
-	daddr_t daddr;
+	ufs_daddr_t daddr;
 	int bb, error, i, num;
 
 	ip = VTOI(vp);

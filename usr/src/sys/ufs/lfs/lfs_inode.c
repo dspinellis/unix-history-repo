@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_inode.c	8.6 (Berkeley) %G%
+ *	@(#)lfs_inode.c	8.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -127,7 +127,7 @@ lfs_truncate(ap)
 {
 	register struct indir *inp;
 	register int i;
-	register daddr_t *daddrp;
+	register ufs_daddr_t *daddrp;
 	register struct vnode *vp = ap->a_vp;
 	off_t length = ap->a_length;
 	struct buf *bp, *sup_bp;
@@ -137,7 +137,7 @@ lfs_truncate(ap)
 	struct lfs *fs;
 	struct indir a[NIADDR + 2], a_end[NIADDR + 2];
 	SEGUSE *sup;
-	daddr_t daddr, lastblock, lbn, olastblock;
+	ufs_daddr_t daddr, lastblock, lbn, olastblock;
 	long off, a_released, blocksreleased, i_released;
 	int e1, e2, depth, lastseg, num, offset, seg, size;
 
@@ -235,7 +235,8 @@ lfs_truncate(ap)
 				    inp->in_lbn, fs->lfs_bsize, NOCRED, &bp))
 					panic("lfs_truncate: bread bno %d",
 					    inp->in_lbn);
-				daddrp = (daddr_t *)bp->b_data + inp->in_off;
+				daddrp = (ufs_daddr_t *)bp->b_data +
+				    inp->in_off;
 				for (i = inp->in_off;
 				    i++ <= a_end[depth].in_off;) {
 					daddr = *daddrp++;
@@ -245,9 +246,9 @@ lfs_truncate(ap)
 				if (inp->in_off == 0)
 					brelse (bp);
 				else {
-					bzero((daddr_t *)bp->b_data +
+					bzero((ufs_daddr_t *)bp->b_data +
 					    inp->in_off, fs->lfs_bsize - 
-					    inp->in_off * sizeof(daddr_t));
+					    inp->in_off * sizeof(ufs_daddr_t));
 					if (e1 = VOP_BWRITE(bp)) 
 						return (e1);
 				}
