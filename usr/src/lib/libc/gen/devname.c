@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)devname.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)devname.c	5.17 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -41,8 +41,10 @@ devname(dev, type)
 
 	/*
 	 * Keys are a mode_t followed by a dev_t.  The former is the type of
-	 * the file (mode & S_IFMT), the latter is the st_rdev field.
+	 * the file (mode & S_IFMT), the latter is the st_rdev field.  Be
+	 * sure to clear any padding that may be found in bkey.
 	 */
+	bzero(&bkey, sizeof(bkey));
 	bkey.dev = dev;
 	bkey.type = type;
 	key.data = &bkey;

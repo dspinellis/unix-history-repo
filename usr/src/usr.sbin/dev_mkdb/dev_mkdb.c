@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dev_mkdb.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)dev_mkdb.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -78,8 +78,11 @@ main(argc, argv)
 
 	/*
 	 * Keys are a mode_t followed by a dev_t.  The former is the type of
-	 * the file (mode & S_IFMT), the latter is the st_rdev field.
+	 * the file (mode & S_IFMT), the latter is the st_rdev field.  Note
+	 * that the structure may contain padding, so we have to clear it
+	 * out here.
 	 */
+	bzero(&bkey, sizeof(bkey));
 	key.data = &bkey;
 	key.size = sizeof(bkey);
 	data.data = buf;
