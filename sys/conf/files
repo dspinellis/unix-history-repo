@@ -1,4 +1,4 @@
-# $Id: files,v 1.8 1993/11/07 07:38:25 wollman Exp $
+# $Id: files,v 1.9 1993/11/07 22:54:36 wollman Exp $
 #
 ddb/db_access.c		optional ddb
 ddb/db_aout.c		optional ddb
@@ -112,6 +112,7 @@ netinet/if_ether.c	optional ether
 netinet/in.c		optional inet
 netinet/in_pcb.c	optional inet
 netinet/in_proto.c	optional inet
+netinet/in_mtudisc.c	optional mtudisc
 netinet/ip_icmp.c	optional inet
 netinet/ip_input.c	optional inet
 netinet/ip_output.c	optional inet
