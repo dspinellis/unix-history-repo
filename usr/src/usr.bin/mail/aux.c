@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)aux.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)aux.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -30,6 +30,27 @@ savestr(str)
 
 	if ((new = salloc(size)) != NOSTR)
 		bcopy(str, new, size);
+	return new;
+}
+
+/*
+ * Make a copy of new argument incorporating old one.
+ */
+char *
+save2str(str, old)
+	char *str, *old;
+{
+	char *new;
+	int newsize = strlen(str) + 1;
+	int oldsize = old ? strlen(old) + 1 : 0;
+
+	if ((new = salloc(newsize + oldsize)) != NOSTR) {
+		if (oldsize) {
+			bcopy(old, new, oldsize);
+			new[oldsize - 1] = ' ';
+		}
+		bcopy(str, new + oldsize, newsize);
+	}
 	return new;
 }
 
@@ -122,7 +143,7 @@ hfield(field, mp)
 	char linebuf[LINESIZE];
 	register int lc;
 	register char *hfield;
-	char *colon;
+	char *colon, *oldhfield = NOSTR;
 
 	ibuf = setinput(mp);
 	if ((lc = mp->m_lines - 1) < 0)
@@ -131,11 +152,11 @@ hfield(field, mp)
 		return NOSTR;
 	while (lc > 0) {
 		if ((lc = gethfield(ibuf, linebuf, lc, &colon)) < 0)
-			return NOSTR;
+			return oldhfield;
 		if (hfield = ishfield(linebuf, colon, field))
-			return savestr(hfield);
+			oldhfield = save2str(hfield, oldhfield);
 	}
-	return NOSTR;
+	return oldhfield;
 }
 
 /*
