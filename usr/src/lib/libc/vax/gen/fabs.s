@@ -1,4 +1,7 @@
-/*	fabs.s	4.2	84/11/01	*/
+#ifndef lint
+	.asciz	"@(#)fabs.s	5.1 (Berkeley) %G%"
+#endif not lint
+
 /* fabs - floating absolute value */
 
 #include "DEFS.h"

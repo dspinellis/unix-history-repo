@@ -1,4 +1,6 @@
-/*	modf.s	4.2	84/11/01	*/
+#ifndef lint
+	.asciz	"@(#)modf.s	5.1 (Berkeley) %G%"
+#endif not lint
 
 /*
  * double modf (value, iptr)
