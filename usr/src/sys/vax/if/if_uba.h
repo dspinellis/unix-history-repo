@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_uba.h	6.3 (Berkeley) %G%
+ *	@(#)if_uba.h	6.4 (Berkeley) %G%
  */
 
 /*
@@ -50,7 +50,9 @@ struct	ifubinfo {
  */
 struct ifrw {
 	caddr_t	ifrw_addr;			/* virt addr of header */
-	int	ifrw_bdp;			/* unibus bdp */
+	short	ifrw_bdp;			/* unibus bdp */
+	short	ifrw_flags;			/* type, etc. */
+#define	IFRW_W	0x01				/* is a transmit buffer */
 	int	ifrw_info;			/* value from ubaalloc */
 	int	ifrw_proto;			/* map register prototype */
 	struct	pte *ifrw_mr;			/* base of map registers */
@@ -68,6 +70,7 @@ struct ifxmt {
 };
 #define	ifw_addr	ifrw.ifrw_addr
 #define	ifw_bdp		ifrw.ifrw_bdp
+#define	ifw_flags	ifrw.ifrw_flags
 #define	ifw_info	ifrw.ifrw_info
 #define	ifw_proto	ifrw.ifrw_proto
 #define	ifw_mr		ifrw.ifrw_mr
