@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.4 (Berkeley) %G%
+#	@(#)Makefile	4.5 (Berkeley) %G%
 #
 # make file for debugger "dbx"
 #
@@ -31,7 +31,9 @@ OBJ = \
     cerror.o \
     check.o \
     coredump.o \
+    debug.o \
     eval.o \
+    fortran.o \
     keywords.o \
     languages.o \
     library.o \
@@ -59,6 +61,7 @@ HDR = \
     check.h \
     coredump.h \
     eval.h \
+    fortran.h \
     keywords.h \
     languages.h \
     lists.h \
