@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: rd.c 1.3 90/10/12$
  *
- *	@(#)rd.c	7.7 (Berkeley) %G%
+ *	@(#)rd.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -396,7 +396,7 @@ int nrdinfo = sizeof(rdinfo) / sizeof(rdinfo[0]);
 struct	buf rdtab[NRD];
 struct	buf rdbuf[NRD];
 
-#define	rdunit(x)	((minor(x) >> 3) & 0xf)
+#define	rdunit(x)	(minor(x) >> 3)
 #define rdpart(x)	(minor(x) & 0x7)
 #define	rdpunit(x)	((x) & 7)
 #define	b_cylin		b_resid
