@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pcproc.c 1.9 %G%";
+static	char sccsid[] = "@(#)pcproc.c 1.10 %G%";
 
 #include "whoami.h"
 #ifdef PC
@@ -213,6 +213,7 @@ pcproc(r)
 					P2PTR|P2STRTY );
 				putop( P2ASSIGN , P2PTR|P2STRTY );
 				putdot( filename , line );
+				output->nl_flags |= NUSED;
 			}
 		} else {
 			putRV( 0, cbn , CURFILEOFFSET , NLOCAL ,
@@ -220,6 +221,7 @@ pcproc(r)
 			putLV( "_output" , 0 , 0 , NGLOBAL , P2PTR|P2STRTY );
 			putop( P2ASSIGN , P2PTR|P2STRTY );
 			putdot( filename , line );
+			output->nl_flags |= NUSED;
 		}
 		/*
 		 * Loop and process each
