@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *      @(#)ns_error.c	7.4 (Berkeley) %G%
+ *      @(#)ns_error.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -39,7 +39,7 @@
 int	ns_errprintfs = 0;
 #endif
 
-ns_error_x(c)
+ns_err_x(c)
 {
 	register u_short *w, *lim, *base = ns_errstat.ns_es_codes;
 	u_short x = c;
