@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)subr.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)subr.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "dumb.h"
@@ -20,8 +20,6 @@ dda_line(ch, x0, y0, x1, y1)
 	int length, i;
 	double deltaX, deltaY;
 	double x, y;
-	double floor();
-	int abs();
 
 	scale(x1, y1);
 
