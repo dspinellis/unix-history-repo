@@ -1,4 +1,4 @@
-/*	param.h	4.3	%G%	*/
+/*	param.h	4.1	11/9/80	*/
 
 /*
  * tunable variables
@@ -6,11 +6,24 @@
  * NB: NBUF must be less than MAXNBUF in locore.s.
  */
 
+#ifdef notdef
+#define	NBUF	64		/* size of buffer cache */
+#define	NINODE	200		/* number of in core inodes */
+#define	NFILE	175		/* number of in core file structures */
+#define	NMOUNT	7		/* number of mountable file systems */
+#define	MSWAPX	7		/* pseudo mount table index for swapdev */
+#define	NPROC	125		/* max number of processes */
+#define	NTEXT	40		/* max number of pure texts */
+#define	NCLIST	250		/* max total clist size */
+#endif
 #define	NBUF	128		/* size of buffer cache */
 #define	NINODE	400		/* number of in core inodes */
 #define	NFILE	350		/* number of in core file structures */
 #define	NMOUNT	15		/* number of mountable file systems */
 #define	MSWAPX	15		/* pseudo mount table index for swapdev */
+#define	NPROC	250		/* max number of processes */
+#define	NTEXT	60		/* max number of pure texts */
+#define	NCLIST	500		/* max total clist size */
 #define	MAXUPRC	25		/* max processes per user */
 #define	SSIZE	4		/* initial stack size (*512 bytes) */
 #define	SINCR	4		/* increment of stack (*512 bytes) */
@@ -18,9 +31,6 @@
 #define	CANBSIZ	256		/* max size of typewriter line */
 #define	SMAPSIZ	(4*NPROC)	/* size of swap allocation area */
 #define	NCALL	40		/* max simultaneous time callouts */
-#define	NPROC	250		/* max number of processes */
-#define	NTEXT	60		/* max number of pure texts */
-#define	NCLIST	500		/* max total clist size */
 #define	HZ	60		/* Ticks/second of the clock */
 #define	TIMEZONE (8*60)		/* Minutes westward from Greenwich */
 #define	DSTFLAG	1		/* Daylight Saving Time applies in this locality */

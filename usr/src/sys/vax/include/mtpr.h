@@ -1,4 +1,4 @@
-/*	mtpr.h	4.1	%G%	*/
+/*	mtpr.h	4.2	%G%	*/
 
 /*
  * VAX processor register numbers
@@ -35,9 +35,7 @@
 #define	PMR	61		/* performance monitor enable */
 #define	SID	62		/* system identification */
 
-/*
- * VAX-11/780 specific registers
- */
+#if VAX==780
 #define	ACCS	40		/* accelerator control and status */
 #define	ACCR	41		/* accelerator maintenance */
 #define	WCSA	44		/* WCS address */
@@ -50,3 +48,17 @@
 #define	SBITA	53		/* SBI timeout address */
 #define	SBIQC	54		/* SBI quadword clear */
 #define	MBRK	60		/* micro-program breakpoint */
+#endif
+
+#if VAX==750
+#define	CSRS	0x1c		/* console storage receive status register */
+#define	CSRD	0x1d		/* console storage receive data register */
+#define	CSTS	0x1e		/* console storage transmit status register */
+#define	CSTD	0x1f		/* console storage transmit data register */
+#define	TBDR	0x24		/* translation buffer disable register */
+#define	CADR	0x25		/* cache disable register */
+#define	MCESR	0x26		/* machine check error summary register */
+#define	CAER	0x27		/* cache error */
+#define	IUR	0x37		/* init unibus register */
+#define	TB	0x3b		/* translation buffer */
+#endif
