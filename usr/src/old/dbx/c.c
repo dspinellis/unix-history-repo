@@ -4,7 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
-static char sccsid[] = "@(#)c.c 5.3 %G%";
+static char sccsid[] = "@(#)c.c 5.1.1.1 %G%";
 /*
  * C-dependent symbol routines.
  */
@@ -442,8 +442,6 @@ Symbol s;
 		} else {
 		    i = pop(long);
 		}
-		i >>= (s->symvalue.field.offset mod BITSPERBYTE);
-		i &= ((1 << len) - 1);
 		t = rtype(s->type);
 		if (t->class == SCAL) {
 		    printEnum(i, t);
@@ -459,18 +457,11 @@ Symbol s;
 	    t = rtype(s->type);
 	    if (t->class == RANGE and istypename(t->type, "char")) {
 		len = size(s);
-		str = (String) (sp -= len);
-		if (s->language != primlang) {
-		    putchar('"');
-		}
-		while (--len > 0 and *str != '\0') {
-		    printchar(*str++);
-		}
-		if (*str != '\0') {	/* XXX - pitch trailing null */
-		    printchar(*str);
-		}
-		if (s->language != primlang) {
-		    putchar('"');
+		sp -= len;
+		if (s->language == primlang) {
+		    printf("%.*s", len, sp);
+		} else {
+		    printf("\"%.*s\"", len, sp);
 		}
 	    } else {
 		printarray(s);
@@ -674,7 +665,7 @@ long i;
     lb = s->symvalue.rangev.lower;
     ub = s->symvalue.rangev.upper;
     if (i < lb or i > ub) {
-	warning("subscript out of range");
+	error("subscript out of range");
     }
     push(long, base + (i - lb) * size(t->type));
 }
