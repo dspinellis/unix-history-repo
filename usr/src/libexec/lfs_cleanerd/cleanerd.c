@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cleanerd.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)cleanerd.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -126,19 +126,22 @@ main(argc, argv)
 	struct statfs *lstatfsp;	/* file system stats */
 	struct timeval timeout;		/* sleep timeout */
 	fsid_t fsid;
-	int i;
+	int i, nodaemon;
 	int opt, cmd_err;
 	char *fs_name;			/* name of filesystem to clean */
 	extern int optind;
 
-	cmd_err = 0;
-	while ((opt = getopt(argc, argv, "sm")) != EOF) {
+	cmd_err = nodaemon = 0;
+	while ((opt = getopt(argc, argv, "smd")) != EOF) {
 		switch (opt) {
 			case 's':	/* small writes */
 				do_small = 1;
 				break;
 			case 'm':
 				do_mmap = 1;
+				break;
+			case 'd':
+				nodaemon = 1;
 				break;
 			default:
 				++cmd_err;
@@ -147,7 +150,7 @@ main(argc, argv)
 	argc -= optind;
 	argv += optind;
 	if (cmd_err || (argc != 1))
-		err(1, "usage: lfs_cleanerd [-sm] fs_name");
+		err(1, "usage: lfs_cleanerd [-smd] fs_name");
 
 	fs_name = argv[0];
 
@@ -158,6 +161,10 @@ main(argc, argv)
 		/* didn't find the filesystem */
 		err(1, "lfs_cleanerd: filesystem %s isn't an LFS!", fs_name);
 	}
+
+	if (!nodaemon)	/* should we become a daemon, chdir to / & close fd's */
+		if (daemon(0, 0) == -1)
+			err(1, "lfs_cleanerd: couldn't become a daemon!");
 
 	timeout.tv_sec = 5*60; /* five minutes */
 	timeout.tv_usec = 0;
