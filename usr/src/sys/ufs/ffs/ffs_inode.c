@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_inode.c	7.43 (Berkeley) %G%
+ *	@(#)ffs_inode.c	7.44 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -55,7 +55,7 @@ ffs_vget(mntp, ino, vpp)
 	struct vnode *vp;
 	union ihead *ih;
 	dev_t dev;
-	int i, error;
+	int i, type, error;
 
 	ump = VFSTOUFS(mntp);
 	dev = ump->um_dev;
@@ -67,7 +67,9 @@ ffs_vget(mntp, ino, vpp)
 		*vpp = NULL;
 		return (error);
 	}
-	ip = VTOI(vp);
+	type = ump->um_devvp->v_tag == VT_MFS ? M_MFSNODE : M_FFSNODE; /* XXX */
+	MALLOC(ip, struct inode *, sizeof(struct inode), type, M_WAITOK);
+	vp->v_data = ip;
 	ip->i_vnode = vp;
 	ip->i_flag = 0;
 	ip->i_devvp = 0;
@@ -94,8 +96,8 @@ ffs_vget(mntp, ino, vpp)
 	    (int)fs->fs_bsize, NOCRED, &bp)) {
 		/*
 		 * The inode does not contain anything useful, so it would
-		 * be misleading to leave it on its hash chain.  Iput() will
-		 * return it to the free list.
+		 * be misleading to leave it on its hash chain. It will be
+		 * returned to the free list by ufs_iput().
 		 */
 		remque(ip);
 		ip->i_forw = ip;
@@ -113,8 +115,8 @@ ffs_vget(mntp, ino, vpp)
 	brelse(bp);
 
 	/*
-	 * Initialize the vnode from the inode, check for aliases.  In all
-	 * cases re-init ip, the underlying vnode/inode may have changed.
+	 * Initialize the vnode from the inode, check for aliases.
+	 * Note that the underlying vnode may have changed.
 	 */
 	if (error = ufs_vinit(mntp, &ffs_specops, FFS_FIFOOPS, &vp)) {
 		ufs_iput(ip);
@@ -124,11 +126,9 @@ ffs_vget(mntp, ino, vpp)
 	/*
 	 * Finish inode initialization now that aliasing has been resolved.
 	 */
-	ip = VTOI(vp);
 	ip->i_fs = fs;
 	ip->i_devvp = ump->um_devvp;
 	VREF(ip->i_devvp);
-
 	/*
 	 * Set up a generation number for this inode if it does not
 	 * already have one. This should only happen on old filesystems.
