@@ -332,13 +332,13 @@ int      wstandout __P((WINDOW *));
 int	 vwprintw __P((WINDOW *, const char *, _BSD_VA_LIST_));
 
 /* Private functions that are needed for user programs prototypes. */
-int      _putchar __P((int));
 int	 __waddbytes __P((WINDOW *, const char *, int, int));
 
 /* Private functions. */
 #ifdef _CURSES_PRIVATE
 
 #define __cputchar _putchar
+void     _putchar __P((int));
 
 void	 __CTRACE __P((const char *, ...));
 u_int	 __hash __P((char *, int));
@@ -365,6 +365,13 @@ extern int	 __endwin;
 extern int	 __pfast;
 extern int	 __rawmode;
 extern int	 __noqch;
+
+int      tputs __P((char *, int, void (*)(int)));
+
+#else
+
+int      tputs __P((char *, int, int (*)(int)));
+
 #endif
 
 /* Termcap functions. */
@@ -373,6 +380,5 @@ int	 tgetnum __P((char *));
 int	 tgetflag __P((char *));
 char	*tgetstr __P((char *, char **));
 char	*tgoto __P((char *, int, int));
-int      tputs __P((char *, int, int (*)(int)));
 
 #endif /* !_CURSES_H_ */

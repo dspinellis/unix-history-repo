@@ -56,7 +56,7 @@ mvcur(ly, lx, y, x)
 
 static void	fgoto __P((int));
 static int	plod __P((int, int));
-static int      plodput __P((int));
+static void     plodput __P((int));
 static int	tabcol __P((int, int));
 
 static int outcol, outline, destcol, destline;
@@ -181,7 +181,7 @@ fgoto(in_refresh)
 
 static int plodcnt, plodflg;
 
-static int
+static void
 plodput(c)
 	int c;
 {
@@ -189,7 +189,6 @@ plodput(c)
 		--plodcnt;
 	else
 		putchar(c);
-	return 0;
 }
 
 static int

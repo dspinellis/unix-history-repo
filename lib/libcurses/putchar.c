@@ -37,7 +37,7 @@ static char sccsid[] = "@(#)putchar.c	8.1 (Berkeley) 6/4/93";
 
 #include <curses.h>
 
-int
+void
 _putchar(ch)
 	int ch;
 {
@@ -46,5 +46,4 @@ _putchar(ch)
 	__CTRACE("_putchar: %s\n", unctrl(ch));
 #endif
 	(void)putchar(ch);
-	return 0;
 }
