@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	8.27 (Berkeley) %G%
+.\"	@(#)op.me	8.28 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:08-%''Sendmail Installation and Operation Guide'
@@ -43,7 +43,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 8.27
+Version 8.28
 .sp
 For Sendmail Version 8.6
 .)l
@@ -780,6 +780,11 @@ This should be a link to /usr/\*(SD/sendmail.
 The system log is supported by the
 .i syslogd \|(8)
 program.
+All messages from
+.i sendmail
+are logged under the
+.sm LOG_MAIL
+facility.
 .sh 3 "Format"
 .pp
 Each line in the system log
@@ -1385,6 +1390,18 @@ All message traffic in and out of
 .i sendmail ,
 including the incoming SMTP traffic,
 will be logged in this file.
+.sh 2 "Dumping State"
+.pp
+You can ask
+.i sendmail
+to log a dump of the open files
+and the connection cache
+by sending it a
+.sm SIGUSR1
+signal.
+The results are logged at
+.sm LOG_DEBUG
+priority.
 .sh 1 "TUNING"
 .pp
 There are a number of configuration parameters
@@ -6779,7 +6796,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 8.27
+.\"Version 8.28
 .\".ce 0
 .bp 2
 .rs
