@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)qdcons.c	7.2 (Berkeley) %G%
+ *	@(#)qdcons.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -59,7 +59,7 @@
 *
 ************************************************************************/
 
-#include "../h/types.h"
+#include "../sys/types.h"
 #include "../vax/cpu.h"
 #define KERNEL
 #include "../vaxuba/qdioctl.h"
