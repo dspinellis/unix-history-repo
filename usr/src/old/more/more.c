@@ -17,7 +17,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)more.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)more.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -179,8 +179,11 @@ char *argv[];
     if (nfiles > 1)
 	prnames++;
     if (!no_intty && nfiles == 0) {
-	fputs("Usage: ",stderr);
-	fputs(argv[0],stderr);
+	char *rindex();
+
+	p = rindex(argv[0], '/');
+	fputs("usage: ",stderr);
+	fputs(p ? p + 1 : argv[0],stderr);
 	fputs(" [-dfln] [+linenum | +/pattern] name1 name2 ...\n",stderr);
 	exit(1);
     }
