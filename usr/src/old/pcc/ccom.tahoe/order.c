@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)order.c	1.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)order.c	1.6 (Berkeley) %G%";
 #endif
 
 # include "pass2.h"
@@ -144,7 +144,7 @@ sucomp( p ) register NODE *p; {
 			sul++;
 		/* ediv uses more regs */
 		if(o==ASG DIV && p->in.left->in.type==UNSIGNED || o==ASG MOD){
-			p->in.su = max(max(sur,sul+(sur!=0)),4+(sul!=0)+(sur!=0));
+			p->in.su = max(max(sul,(sul!=0)+2),sur+1);
 			return;
 			}
 		p->in.su = max(sur,sul+1);
@@ -177,7 +177,7 @@ sucomp( p ) register NODE *p; {
 		if(p->in.left->in.type!=UNSIGNED)
 			break;
 	case MOD:
-		p->in.su = max(max(sul,sur+(sul!=0)),4+(sul!=0)+(sur!=0));
+		p->in.su = max(max(sul,(sul!=0)+2),sur+1);
 		return;
 		}
 	/* binary op, computed by left, then right, then do op */
