@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_prot.c	7.26 (Berkeley) %G%
+ *	@(#)kern_prot.c	7.27 (Berkeley) %G%
  */
 
 /*
@@ -334,6 +334,62 @@ setgroups(p, uap, retval)
 	p->p_flag |= SUGID;
 	return (0);
 }
+
+#if defined(COMPAT_43) || defined(COMPAT_SUNOS)
+struct setreuid_args {
+	int	ruid;
+	int	euid;
+};
+/* ARGSUSED */
+osetreuid(p, uap, retval)
+	register struct proc *p;
+	struct setreuid_args *uap;
+	int *retval;
+{
+	register struct pcred *pc = p->p_cred;
+	struct seteuid_args args;
+
+	/*
+	 * we assume that the intent of setting ruid is to be able to get
+	 * back ruid priviledge. So we make sure that we will be able to
+	 * do so, but do not actually set the ruid.
+	 */
+	if (uap->ruid != -1 && uap->ruid != pc->p_ruid &&
+	    uap->ruid != pc->p_svuid)
+		return (EPERM);
+	if (uap->euid == -1)
+		return (0);
+	args.euid = uap->euid;
+	return (seteuid(p, &args, retval));
+}
+
+struct setregid_args {
+	int	rgid;
+	int	egid;
+};
+/* ARGSUSED */
+osetregid(p, uap, retval)
+	register struct proc *p;
+	struct setregid_args *uap;
+	int *retval;
+{
+	register struct pcred *pc = p->p_cred;
+	struct setegid_args args;
+
+	/*
+	 * we assume that the intent of setting rgid is to be able to get
+	 * back rgid priviledge. So we make sure that we will be able to
+	 * do so, but do not actually set the rgid.
+	 */
+	if (uap->rgid != -1 && uap->rgid != pc->p_rgid &&
+	    uap->rgid != pc->p_svgid)
+		return (EPERM);
+	if (uap->egid == -1)
+		return (0);
+	args.egid = uap->egid;
+	return (setegid(p, &args, retval));
+}
+#endif /* defined(COMPAT_43) || defined(COMPAT_SUNOS) */
 
 /*
  * Check if gid is a member of the group set.
