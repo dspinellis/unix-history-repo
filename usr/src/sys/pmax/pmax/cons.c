@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: cons.c 1.1 90/07/09$
  *
- *	@(#)cons.c	7.1 (Berkeley) %G%
+ *	@(#)cons.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -37,12 +37,23 @@ struct	tty *constty;		/* virtual console output device */
  */
 cngetc()
 {
-	int (*f)() = (int (*)())MACH_MON_GETCHAR;
+	int (*f)();
+#include "dc.h"
+#if NDC > 0
+#include "machine/dc7085cons.h"
+#include "../dev/pdma.h"
+	extern struct pdma dcpdma[];
 
+	/* check to be sure device has been initialized */
+	if (dcpdma[0].p_addr)
+		return (dcKBDGetc());
+	f = (int (*)())MACH_MON_GETCHAR;
 	return (*f)();
+#else
+	f = (int (*)())MACH_MON_GETCHAR;
+	return (*f)();
+#endif
 }
-
-#include "pm.h"
 
 /*
  * Print a character on console.
@@ -50,6 +61,7 @@ cngetc()
 cnputc(c)
 	register int c;
 {
+#include "pm.h"
 #if NPM > 0
 	pmPutc(c);
 #else
