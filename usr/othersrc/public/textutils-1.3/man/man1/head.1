@@ -1,0 +1,51 @@
+.TH HEAD 1L \" -*- nroff -*-
+.SH NAME
+head \- output the first part of files
+.SH SYNOPSIS
+.B head
+[\-c N[bkm]] [\-n N] [\-qv] [\-\-bytes=N[bkm]] [\-\-lines=N]
+[\-\-quiet] [\-\-silent] [\-\-verbose] [file...]
+
+.B head
+[\-Nbcklmqv] [file...]
+.SH DESCRIPTION
+This manual page
+documents the GNU version of
+.BR head .
+.B head
+prints the first part (10 lines by default) of each given file; it
+reads from standard input if no files are given or when a filename of
+`\-' is encountered.  If more than one file is given, it prints a
+header consisting of the file's name enclosed in `==>' and `<=='
+before the output for each file.
+.SS OPTIONS
+.PP
+.B head
+accepts two option formats: the new one, in which numbers are
+arguments to the option letters, and the old one, in which the number
+precedes any option letters.
+.TP
+.I "\-c N, \-\-bytes N"
+Print first N bytes.  N is a nonzero integer, optionally followed by one
+of the following characters to specify a different unit.
+.RS
+.IP b
+512-byte blocks.
+.IP k
+1-kilobyte blocks.
+.IP m
+1-megabyte blocks.
+.RE
+.TP
+.I "\-l, \-n N, \-\-lines N"
+Print first N lines.
+.TP
+.I "\-q, \-\-quiet, \-\-silent"
+Never print filename headers.
+.TP
+.I "\-v, \-\-verbose"
+Always print filename headers.
+.PP
+The long-named options can be introduced with `+' as well as `\-\-',
+for compatibility with previous releases.  Eventually support for `+'
+will be removed, because it is incompatible with the POSIX.2 standard.

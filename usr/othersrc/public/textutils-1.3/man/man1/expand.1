@@ -1,0 +1,40 @@
+.TH EXPAND 1L \" -*- nroff -*-
+.SH NAME
+expand \- convert tabs to spaces
+.SH SYNOPSIS
+.B expand
+[\-tab1[,tab2[,...]]] [\-t tab1[,tab2[,...]]] [\-i]
+[\-\-tabs=tab1[,tab2[,...]]] [\-\-initial] [file...]
+.SH DESCRIPTION
+This manual page
+documents the GNU version of
+.BR expand .
+.B expand
+writes the contents of each given file, or the standard input if none
+are given or when a file named `\-' is given, to the standard output,
+with tab characters converted to the appropriate number of spaces.  By
+default,
+.B expand
+converts all tabs to spaces.  It preserves backspace characters in the
+output; they decrement the column count for tab calculations.  The
+default action is equivalent to \-8 (set tabs every 8 columns).
+.SS OPTIONS
+.TP
+.I "\-, \-t, \-\-tabs tab1[,tab2[,...]]"
+If only one tab stop is given, set the tabs \fItab1\fP spaces apart
+instead of the default 8.  Otherwise, set the tabs at columns
+\fItab1\fP, \fItab2\fP, etc. (numbered from 0) and replace any tabs
+beyond the tabstops given with single spaces.  If the tabstops are
+specified with the
+.I \-t
+or
+.I \-\-tabs
+option, they can be separated by blanks as well as by commas.
+.TP
+.I "\-i, \-\-initial"
+Only convert initial tabs (those that precede all non space or tab
+characters) on each line to spaces.
+.PP
+The long-named options can be introduced with `+' as well as `\-\-',
+for compatibility with previous releases.  Eventually support for `+'
+will be removed, because it is incompatible with the POSIX.2 standard.

@@ -1,0 +1,277 @@
+.TH TR 1L \" -*- nroff -*-
+.SH NAME
+tr \- translate or delete characters
+.SH SYNOPSIS
+.B tr
+[\-cst] [\-\-complement] [\-\-squeeze\-repeats]
+[\-\-truncate\-set1] string1 string2
+.br
+.B tr
+{\-s,\-\-squeeze\-repeats} [\-c] [\-\-complement] string1
+.br
+.B tr
+{\-d,\-\-delete} [\-c] string1
+.br
+.B tr
+{\-d,\-\-delete} {\-s,\-\-squeeze\-repeats} [\-c] [\-\-complement]
+string1 string2
+.SH DESCRIPTION
+.PP
+This manual page documents the GNU version of
+.B tr.
+.B tr
+copies the standard input to the standard output,
+performing one of the following operations:
+.IP
+\(bu translate, and optionally squeeze repeated characters in the result
+.br
+\(bu squeeze repeated characters
+.br
+\(bu delete characters
+.br
+\(bu delete characters, then squeeze repeated characters from the result.
+.PP
+The \fIstring1\fP and (if given) \fIstring2\fP arguments define
+ordered sets of characters, referred to below as set1 and set2.  These
+sets are the characters of the input that
+.B tr
+operates on.  The
+.I \-\-complement
+(\fI\-c\fP) option replaces set1 with its complement (all of the
+characters that are not in set1).
+.SS "SPECIFYING SETS OF CHARACTERS"
+.PP
+The format of the \fIstring1\fP and \fIstring2\fP arguments resembles
+the format of regular expressions; however, they are not regular
+expressions, only lists of characters.  Most characters simply
+represent themselves in these strings, but the strings can contain the
+shorthands listed below, for convenience.  Some of them can be used
+only in \fIstring1\fP or \fIstring2\fP, as noted below.
+.PP
+Backslash excapes.  A backslash followed by a character not listed
+below causes an error message.
+.IP \ea
+Control-G.
+.IP \eb
+Control-H.
+.IP \ef
+Control-L.
+.IP \en
+Control-J.
+.IP \er
+Control-M.
+.IP \et
+Control-I.
+.IP \ev
+Control-K.
+.IP \eooo
+The character with the value given by \fIooo\fP, which is 1 to 3 octal
+digits.
+.IP \e\e
+A backslash.
+.PP
+Ranges.  The notation `\fIm\fP\-\fIn\fP' expands to all of the
+characters from \fIm\fP through \fIn\fP, in ascending order.  \fIm\fP
+should collate before \fIn\fP; if it doesn't, an error results.  As an
+example, `0\-9' is the same as `0123456789'.  Ranges can optionally be
+enclosed in square brackets, which has no effect but is supported for
+compatibility with historical System V versions of
+.BR tr .
+.PP
+Repeated characters.  The notation `[\fIc\fP*\fIn\fP]' in
+\fIstring2\fP expands to \fIn\fP copies of character \fIc\fP.  Thus,
+`[y*6]' is the same as `yyyyyy'.  The notation `[\fIc\fP*]' in
+\fIstring2\fP expands to as many copies of \fIc\fP as are needed to
+make set2 as long as set1.  If \fIn\fP begins with a 0, it is
+interpreted in octal, otherwise in decimal.
+.PP
+Character classes.  The notation `[:\fIclass-name\fP:]' expands to all
+of the characters in the (predefined) class named \fIclass-name\fP.
+The characters expand in no particular order, except for the `upper'
+and `lower' classes, which expand in ascending order.
+When the
+.I \-\-delete
+(\fI\-d\fP) and
+.I \-\-squeeze\-repeats
+(\fI\-s\fP) options are both given, any character class can be used in
+\fIstring2\fP.  Otherwise, only the character classes `lower' and
+`upper' are accepted in \fIstring2\fP, and then only if the
+corresponding character class (`upper' and `lower', respectively) is
+specified in the same relative position in \fIstring1\fP.  Doing this
+specifies case conversion.  The class names are given below; an error
+results when an invalid class name is given.
+.IP alnum
+Letters and digits.
+.IP alpha
+Letters.
+.IP blank
+Horizontal whitespace.
+.IP cntrl
+Control characters.
+.IP digit
+Digits.
+.IP graph
+Printable characters, not including space.
+.IP lower
+Lowercase letters.
+.IP print
+Printable characters, including space.
+.IP punct
+Punctuation characters.
+.IP space
+Horizontal or vertical whitespace.
+.IP upper
+Uppercase letters.
+.IP xdigit
+Hexadecimal digits.
+.PP
+Equivalence classes.  The syntax `[=\fIc\fP=]' expands to all of the
+characters that are equivalent to \fIc\fP, in no particular order.
+Equivalence classes are a recent invention intended to support
+non-English alphabets.  But there seems to be no standard way to
+define them or determine their contents.  Therefore, they are not
+fully implemented in GNU
+.BR tr ;
+each character's equivalence class consists only of that character,
+which makes this a useless construction currently.
+.SS TRANSLATING
+.PP
+.B tr
+performs translation when \fIstring1\fP and \fIstring2\fP are both
+given and the \-\-delete (\fI\-d\fP) option is not given.
+.B tr
+translates each character of its input that is in set1 to the
+corresponding character in set2.  Characters not in set1 are passed
+through unchanged.  When a character appears more than once in set1
+and the corresponding characters in set2 are not all the same, only
+the final one is used.  For example, these two commands are
+equivalent:
+.RS
+.nf
+tr aaa xyz
+tr a z
+.fi
+.RE
+.PP
+A common use of
+.B tr
+is to convert lowercase characters to uppercase.  This can be done in
+many ways.  Here are three of them:
+.RS
+.nf
+tr abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ
+tr a-z A-Z
+tr '[:lower:]' '[:upper:]'
+.fi
+.RE
+.PP
+When
+.B tr
+is performing translation, set1 and set2 should normally have the same
+length.  If set1 is shorter than set2, the extra characters at the end
+of set2 are ignored.
+.PP
+On the other hand, making set1 longer than set2 is not portable;
+POSIX.2 says that the result is undefined.  In this situation, the BSD
+.B tr
+pads set2 to the length of set1 by repeating the last character of
+set2 as many times as necessary.  The System V
+.B tr
+truncates set1 to the length of set2.
+.PP
+By default, GNU
+.B tr
+handles this case like the BSD
+.B tr
+does.  When the \-\-truncate\-set1 (\fI\-t\fP) option is given, GNU
+.B tr
+handles this case like the System V
+.B tr
+instead.  This option is ignored for operations other than
+translation.
+.PP
+Acting like the System V
+.B tr
+in this case breaks the relatively common BSD idiom:
+.RS
+.nf
+tr -cs A-Za-z0-9 '\e012'
+.fi
+.RE
+because it converts only zero bytes (the first element in
+the complement of set1), rather than all non-alphanumerics, to
+newlines.
+.SS "SQUEEZING REPEATS AND DELETING"
+.PP
+When given just the \-\-delete (\fI\-d\fP) option,
+.B tr
+removes any input characters that are
+in set1.
+.PP
+When given just the \-\-squeeze\-repeats (\fI\-s\fP) option,
+.B tr
+replaces each input sequence of a repeated character that is in set1
+with a single occurrence of that character.
+.PP
+When given both the \-\-delete and the \-\-squeeze\-repeats options,
+.B tr
+first performs any deletions using set1, then squeezes repeats from
+any remaining characters using set2.
+.PP
+The \-\-squeeze\-repeats option may also be used when translating, in
+which case
+.B tr
+first peforms translation, then squeezes repeats from any remaining
+characters using set2.
+.PP
+Here are some examples to illustrate various combinations of options:
+.PP
+Remove all zero bytes:
+.RS
+tr -d '\e000'
+.RE
+.PP
+Put all words on lines by themselves.  This converts all
+non-alphanumeric characters to newlines, then squeezes each string of
+repeated newlines into a single newline:
+.RS
+tr -cs '[a-zA-Z0-9]' '[\en*]'
+.RE
+.PP
+Convert each sequence of repeated newlines to a single newline:
+.RS
+tr -s '\en'
+.RE
+.SS "WARNING MESSAGES"
+.PP
+Setting the environment variable POSIXLY_CORRECT turns off several
+warning and error messages, for strict compliance with POSIX.2.  The
+messages normally occur in the following circumstances:
+.PP
+1.  When the
+.I \-\-delete
+option is given but
+.I \-\-squeeze\-repeats
+is not, and \fIstring2\fP is given, GNU
+.B tr
+by default prints a usage message and exits, because \fIstring2\fP would
+not be used.  The POSIX specification says that
+\fIstring2\fP must be ignored in this case.  Silently ignoring
+arguments is a bad idea.
+.PP
+2.  When an ambiguous octal escape is given.  For example, \e400 is
+actually \e40 followed by the digit 0, because the value 400 octal
+does not fit into a single byte.
+.PP
+Note that GNU
+.B tr
+does not provide complete BSD or System V compatibility.  For example,
+there is no option to disable interpretation of the POSIX constructs
+[:alpha:], [=c=], and [c*10].  Also, GNU
+.B tr
+does not delete zero bytes automatically, unlike traditional UNIX
+versions, which provide no way to preserve zero bytes.
+.PP
+The long-named options can be introduced with `+' as well as `\-\-',
+for compatibility with previous releases.  Eventually support for `+'
+will be removed, because it is incompatible with the POSIX.2 standard.

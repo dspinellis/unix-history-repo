@@ -1,0 +1,65 @@
+.TH CUT 1L \" -*- nroff -*-
+.SH NAME
+cut \- remove sections from each line of files
+.SH SYNOPSIS
+.B cut
+{\-b byte-list, \-\-bytes=byte-list} [\-n] [file...]
+
+.B cut
+{\-c character-list, \-\-characters=character-list} [file...]
+
+.B cut
+{\-f field-list, \-\-fields=field-list} [\-d delim] [\-s]
+[\-\-delimiter=delim] [\-\-only-delimited] [file...]
+.SH DESCRIPTION
+This manual page
+documents the GNU version of
+.BR cut .
+.B cut
+prints sections of each line of each input file, or the standard
+input if no files are given.  A file name of `-' means standard input.
+Which sections are printed is selected by the options.
+.SS OPTIONS
+The
+.IR byte-list ,
+.IR character-list ,
+and
+.I field-list
+are one or more numbers or ranges (two numbers separated by a dash)
+separated by commas.  The first byte, character, and field are
+numbered 1.  Incomplete ranges may be given: `\-m' means
+`1\-m'; `n\-' means `n' through end of line or last field.
+.TP
+.I "\-b, \-\-bytes byte-list"
+Print only the bytes in positions listed in
+.IR byte-list .
+Tabs and backspaces are treated like any other character; they take up
+1 byte.
+.TP
+.I "\-c, \-\-characters character-list"
+Print only characters in positions listed in
+.IR character-list .
+The same as \-b for now, but internationalization will change that.
+Tabs and backspaces are treated like any other character; they take up
+1 character.
+.TP
+.I "\-f, \-\-fields field-list"
+Print only the fields listed in
+.IR field-list .
+Fields are separated by a TAB by default.
+.TP
+.I "\-d, \-\-delimiter delim"
+For \-f, fields are separated by the first character in
+.I delim
+instead of by TAB.
+.TP
+.I \-n
+Do not split multibyte characters (no-op for now).
+.TP
+.I "\-s, \-\-only-delimited"
+For \-f, do not print lines that do not contain the field separator
+character.
+.PP
+The long-named options can be introduced with `+' as well as `\-\-',
+for compatibility with previous releases.  Eventually support for `+'
+will be removed, because it is incompatible with the POSIX.2 standard.
