@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	6.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	6.17 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -977,3 +977,25 @@ uname(name)
 	return (-1);
 }
 #endif /* HASUNAME */
+/*
+**  INITGROUPS -- initialize groups
+**
+**	Stub implementation for System V style systems
+*/
+
+#ifndef HASINITGROUPS
+# if !defined(SYSTEM5) || defined(hpux)
+#  define HASINITGROUPS
+# endif
+#endif
+
+#ifndef HASINITGROUPS
+
+initgroups(name, basegid)
+	char *name;
+	int basegid;
+{
+	return 0;
+}
+
+#endif
