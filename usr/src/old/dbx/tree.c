@@ -5,10 +5,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tree.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)tree.c	5.3 (Berkeley) %G%";
 #endif not lint
 
-static char rcsid[] = "$Header: tree.c,v 1.5 84/12/26 10:42:55 linton Exp $";
+static char rcsid[] = "$Header: tree.c,v 1.3 87/07/08 21:38:59 donn Exp $";
 
 /*
  * Parse tree management.
@@ -256,6 +256,7 @@ Node p;
 	case O_TYPERENAME:
 	    r = p;
 	    r->nodetype = newSymbol(nil, 0, PTR, r->nodetype, nil);
+	    r->nodetype->language = p->nodetype->language;
 	    break;
 
 	case O_SYM:

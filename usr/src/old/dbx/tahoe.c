@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tahoe.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)tahoe.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -24,6 +24,7 @@ static char sccsid[] = "@(#)tahoe.c	5.4 (Berkeley) %G%";
 #include "object.h"
 #include "keywords.h"
 #include "ops.h"
+#include "eval.h"
 #include <signal.h>
 
 #ifndef public
@@ -37,40 +38,20 @@ typedef unsigned int Word;
 #define STKP 14
 #define PROGCTR 15
 
+#define CODESTART 0
+#define FUNCOFFSET 2
+
 #define BITSPERBYTE 8
 #define BITSPERWORD (BITSPERBYTE * sizeof(Word))
 
+/*
+ * This magic macro enables us to look at the process' registers
+ * in its user structure.
+ */
+
+#define regloc(reg)	(ctob(UPAGES) + (sizeof(Word) * (reg)))
+
 #define nargspassed(frame) (((argn(-1, frame)&0xffff)-4)/4)
-/*
- * Extract a field's value from the integer i.  The value
- * is placed in i in such as way as the first bit of the
- * field is contained in the first byte of the integer.
- */
-#define	extractfield(i, s) \
-	((i >> BITSPERWORD - ((s)->symvalue.field.offset mod BITSPERBYTE + \
-		(s)->symvalue.field.length)) & \
-	 ((1 << (s)->symvalue.field.length) - 1))
-/*
- * Rearrange the stack so that the top of stack has
- * something corresponding to newsize, whereas before it had
- * something corresponding to oldsize.  If we are expanding
- * then the stack is padded at the front of the data with nulls.
- * If we are contracting, the appropriate amount is shaved off the
- * front by copying up the stack.
- */
-#define	typerename(oldsize, newsize) { \
-	int osize = oldsize; \
-	Stack *osp; \
-\
-	len = newsize - osize; \
-	osp = sp - osize; \
-	if (len > 0) { \
-		mov(osp, osp+len, osize);	/* copy old up and pad */ \
-		bzero(osp, len); \
-	} else if (len < 0) \
-		mov(osp-len, osp, osize+len);	/* copy new size down */ \
-	sp += len; \
-}
 
 #define	SYSBASE	0xc0000000		/* base of system address space */
 #define	physaddr(a)	((a) &~ 0xc0000000)
@@ -81,6 +62,7 @@ typedef unsigned int Word;
 #include <sys/dir.h>
 #include <machine/psl.h>
 #include <sys/user.h>
+#undef DELETE /* XXX */
 #include <sys/vm.h>
 #include <machine/reg.h>
 #include <machine/pte.h>
@@ -515,7 +497,7 @@ public printerror()
  */
 private String illinames[] = {
 	"reserved addressing fault",
-	"priviliged instruction fault",
+	"privileged instruction fault",
 	"reserved operand fault"
 };
 #define	NILLINAMES	(sizeof (illinames) / sizeof (illinames[0]))
@@ -948,7 +930,7 @@ public beginproc(p, argc)
 public integer masterpcbb;
 public integer slr;
 public struct pte *sbr;
-public struct pcb pcb;
+private struct pcb pcb;
 
 public getpcb ()
 {
@@ -1068,4 +1050,56 @@ simple:
 	if (pte.pg_v == 0 && (pte.pg_fod || pte.pg_pfnum == 0))
 		error("page not valid/reclaimable");
 	return ((long)(ptob(pte.pg_pfnum) + (oldaddr & PGOFSET)));
+}
+
+/*
+ * Extract a bit field from an integer.
+ */
+
+public integer extractField (s)
+Symbol s;
+{
+    integer nbytes, nbits, n, r, off, len;
+
+    off = s->symvalue.field.offset;
+    len = s->symvalue.field.length;
+    nbytes = size(s);
+    n = 0;
+    if (nbytes > sizeof(n)) {
+	printf("[bad size in extractField -- word assumed]\n");
+	nbytes = sizeof(n);
+    }
+    popn(nbytes, ((char *) &n) + (sizeof(Word) - nbytes));
+    nbits = nbytes * BITSPERBYTE;
+    r = n >> (nbits - ((off mod nbits) + len));
+    r &= ((1 << len) - 1);
+    return r;
+}
+
+/*
+ * Change the length of a value in memory according to a given difference
+ * in the lengths of its new and old types.
+ */
+
+public loophole (oldlen, newlen)
+integer oldlen, newlen;
+{
+    integer i, n;
+    Stack *oldsp;
+
+    n = newlen - oldlen;
+    oldsp = sp - oldlen;
+    if (n > 0) {
+	for (i = oldlen - 1; i >= 0; i--) {
+	    oldsp[n + i] = oldsp[i];
+	}
+	for (i = 0; i < n; i++) {
+	    oldsp[i] = '\0';
+	}
+    } else {
+	for (i = 0; i < newlen; i++) {
+	    oldsp[i] = oldsp[i - n];
+	}
+    }
+    sp += n;
 }

@@ -5,10 +5,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)vax.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)vax.c	5.4 (Berkeley) %G%";
 #endif not lint
 
-static char rcsid[] = "$Header: machine.c,v 1.5 84/12/26 10:40:05 linton Exp $";
+static char rcsid[] = "$Header: machine.c,v 1.2 87/03/26 14:54:55 donn Exp $";
 
 /*
  * Target machine dependent stuff.
@@ -24,9 +24,10 @@ static char rcsid[] = "$Header: machine.c,v 1.5 84/12/26 10:40:05 linton Exp $";
 #include "source.h"
 #include "mappings.h"
 #include "object.h"
+#include "tree.h"
+#include "eval.h"
 #include "keywords.h"
 #include "ops.h"
-#include <signal.h>
 
 #ifndef public
 typedef unsigned int Address;
@@ -40,40 +41,30 @@ typedef unsigned int Word;
 #define STKP 14
 #define PROGCTR 15
 
+#define CODESTART 0
+#define FUNCOFFSET 2
+
+#define nargspassed(frame) argn(0, frame)
+
 #define BITSPERBYTE 8
 #define BITSPERWORD (BITSPERBYTE * sizeof(Word))
 
-#define nargspassed(frame) argn(0, frame)
 /*
- * Extract a field's value from the integer i.  The value
- * is placed in i in such as way as the first bit of the
- * field is contained in the first byte of the integer.
+ * This magic macro enables us to look at the process' registers
+ * in its user structure.
  */
-#define	extractfield(i, s) \
-	((i >> ((s)->symvalue.field.offset mod BITSPERBYTE)) & \
-	 ((1 << (s)->symvalue.field.length) - 1))
-/*
- * Expand/contract the expression stack to reflect a type
- * rename operation.  We pad with zeros when expanding,
- * otherwise we just pull the stack pointer back.
- */
-#define	typerename(oldsize, newsize) { \
-	int len = newsize - oldsize; \
-	if (len > 0) \
-		bzero(sp, len); \
-	sp += len; \
-}
 
-#define	SYSBASE	0x80000000		/* base of system address space */
-#define	physaddr(a)	((a) & 0x7fffffff)
+#define regloc(reg)	(ctob(UPAGES) + (sizeof(Word) * (reg)))
 
 #include "source.h"
 #include "symbols.h"
+#include <signal.h>
 #include <sys/param.h>
 #include <sys/dir.h>
 #include <machine/psl.h>
 #include <machine/pte.h>
 #include <sys/user.h>
+#undef DELETE /* XXX */
 #include <sys/vm.h>
 #include <machine/reg.h>
 
@@ -82,13 +73,27 @@ Address prtaddr;
 
 #endif
 
-private Address printop();
-
 /*
  * Indices into u. for use in collecting registers values.
  */
-public int rloc[] =
-    { R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, AP, FP, SP, PC };
+public int rloc[] ={
+    R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, AP, FP, SP, PC
+};
+
+private Address printop();
+
+private Optab *ioptab[256];	/* index by opcode to optab */
+
+/*
+ * Initialize the opcode lookup table.
+ */
+public optab_init()
+{
+	register Optab *p;
+
+	for (p = optab; p->iname; p++)
+		ioptab[p->val & 0xff] = p;
+}
 
 /*
  * Decode and print the instructions within the given address range.
@@ -128,19 +133,417 @@ Address addr;
     }
 }
 
-optab_init()
-{
+/*
+ * Print the contents of the addresses within the given range
+ * according to the given format.
+ */
 
+typedef struct {
+    String name;
+    String printfstring;
+    int length;
+} Format;
+
+private Format fmt[] = {
+    { "d", " %d", sizeof(short) },
+    { "D", " %ld", sizeof(long) },
+    { "o", " %o", sizeof(short) },
+    { "O", " %lo", sizeof(long) },
+    { "x", " %04x", sizeof(short) },
+    { "X", " %08x", sizeof(long) },
+    { "b", " \\%o", sizeof(char) },
+    { "c", " '%c'", sizeof(char) },
+    { "s", "%c", sizeof(char) },
+    { "f", " %f", sizeof(float) },
+    { "g", " %g", sizeof(double) },
+    { nil, nil, 0 }
+};
+
+private Format *findformat(s)
+String s;
+{
+    register Format *f;
+
+    f = &fmt[0];
+    while (f->name != nil and not streq(f->name, s)) {
+	++f;
+    }
+    if (f->name == nil) {
+	error("bad print format \"%s\"", s);
+    }
+    return f;
 }
 
 /*
- * Hacked version of adb's VAX instruction decoder.
+ * Retrieve and print out the appropriate data in the given format.
+ * Floats have to be handled specially to allow the compiler to
+ * convert them to doubles when passing to printf.
+ */
+
+private printformat (f, addr)
+Format *f;
+Address addr;
+{
+    union {
+	char charv;
+	short shortv;
+	int intv;
+	float floatv;
+	double doublev;
+    } value;
+
+    value.intv = 0;
+    dread(&value, addr, f->length);
+    if (streq(f->name, "f")) {
+	printf(f->printfstring, value.floatv);
+    } else {
+	printf(f->printfstring, value);
+    }
+}
+
+public Address printdata(lowaddr, highaddr, format)
+Address lowaddr;
+Address highaddr;
+String format;
+{
+    int n;
+    register Address addr;
+    Format *f;
+
+    if (lowaddr > highaddr) {
+	error("first address larger than second");
+    }
+    f = findformat(format);
+    n = 0;
+    for (addr = lowaddr; addr <= highaddr; addr += f->length) {
+	if (n == 0) {
+	    printf("%08x: ", addr);
+	}
+	printformat(f, addr);
+	++n;
+	if (n >= (16 div f->length)) {
+	    printf("\n");
+	    n = 0;
+	}
+    }
+    if (n != 0) {
+	printf("\n");
+    }
+    prtaddr = addr;
+    return addr;
+}
+
+/*
+ * The other approach is to print n items starting with a given address.
+ */
+
+public printndata(count, startaddr, format)
+int count;
+Address startaddr;
+String format;
+{
+    int i, n;
+    Address addr;
+    Format *f;
+    Boolean isstring;
+    char c;
+
+    if (count <= 0) {
+	error("non-positive repetition count");
+    }
+    f = findformat(format);
+    isstring = (Boolean) streq(f->name, "s");
+    n = 0;
+    addr = startaddr;
+    for (i = 0; i < count; i++) {
+	if (n == 0) {
+	    printf("%08x: ", addr);
+	}
+	if (isstring) {
+	    printf("\"");
+	    dread(&c, addr, sizeof(char));
+	    while (c != '\0') {
+		printchar(c);
+		++addr;
+		dread(&c, addr, sizeof(char));
+	    }
+	    printf("\"\n");
+	    n = 0;
+	    addr += sizeof(String);
+	} else {
+	    printformat(f, addr);
+	    ++n;
+	    if (n >= (16 div f->length)) {
+		printf("\n");
+		n = 0;
+	    }
+	    addr += f->length;
+	}
+    }
+    if (n != 0) {
+	printf("\n");
+    }
+    prtaddr = addr;
+}
+
+/*
+ * Print out a value according to the given format.
+ */
+
+public printvalue(v, format)
+long v;
+String format;
+{
+    Format *f;
+    char *p, *q;
+
+    f = findformat(format);
+    if (streq(f->name, "s")) {
+	putchar('"');
+	p = (char *) &v;
+	q = p + sizeof(v);
+	while (p < q) {
+	    printchar(*p);
+	    ++p;
+	}
+	putchar('"');
+    } else {
+	printf(f->printfstring, v);
+    }
+    putchar('\n');
+}
+
+/*
+ * Print out an execution time error.
+ * Assumes the source position of the error has been calculated.
+ *
+ * Have to check if the -r option was specified; if so then
+ * the object file information hasn't been read in yet.
+ */
+
+public printerror()
+{
+    extern Integer sys_nsig;
+    extern String sys_siglist[];
+    integer err;
+
+    if (isfinished(process)) {
+	err = exitcode(process);
+	if (err == 0) {
+	    printf("\"%s\" terminated normally\n", objname);
+	} else {
+	    printf("\"%s\" terminated abnormally (exit code %d)\n",
+		objname, err
+	    );
+	}
+	erecover();
+    }
+    err = errnum(process);
+    putchar('\n');
+    printsig(err);
+    putchar(' ');
+    printloc();
+    putchar('\n');
+    if (curline > 0) {
+	printlines(curline, curline);
+    } else {
+	printinst(pc, pc);
+    }
+    erecover();
+}
+
+/*
+ * Print out a signal.
+ */
+
+private String illinames[] = {
+    "reserved addressing fault",
+    "privileged instruction fault",
+    "reserved operand fault"
+};
+
+private String fpenames[] = {
+    nil,
+    "integer overflow trap",
+    "integer divide by zero trap",
+    "floating overflow trap",
+    "floating/decimal divide by zero trap",
+    "floating underflow trap",
+    "decimal overflow trap",
+    "subscript out of range trap",
+    "floating overflow fault",
+    "floating divide by zero fault",
+    "floating underflow fault"
+};
+
+public printsig (signo)
+integer signo;
+{
+    integer code;
+
+    if (signo < 0 or signo > sys_nsig) {
+	printf("[signal %d]", signo);
+    } else {
+	printf("%s", sys_siglist[signo]);
+    }
+    code = errcode(process);
+    if (signo == SIGILL) {
+	if (code >= 0 and code < sizeof(illinames) / sizeof(illinames[0])) {
+	    printf(" (%s)", illinames[code]);
+	}
+    } else if (signo == SIGFPE) {
+	if (code > 0 and code < sizeof(fpenames) / sizeof(fpenames[0])) {
+	    printf(" (%s)", fpenames[code]);
+	}
+    }
+}
+
+/*
+ * Note the termination of the program.  We do this so as to avoid
+ * having the process exit, which would make the values of variables
+ * inaccessible.  We do want to flush all output buffers here,
+ * otherwise it'll never get done.
+ */
+
+public endprogram()
+{
+    Integer exitcode;
+
+    stepto(nextaddr(pc, true));
+    printnews();
+    exitcode = argn(1, nil);
+    if (exitcode != 0) {
+	printf("\nexecution completed (exit code %d)\n", exitcode);
+    } else {
+	printf("\nexecution completed\n");
+    }
+    getsrcpos();
+    erecover();
+}
+
+/*
+ * Single step the machine a source line (or instruction if "inst_tracing"
+ * is true).  If "isnext" is true, skip over procedure calls.
+ */
+
+private Address getcall();
+
+public dostep(isnext)
+Boolean isnext;
+{
+    register Address addr;
+    register Lineno line;
+    String filename;
+    Address startaddr;
+
+    startaddr = pc;
+    addr = nextaddr(pc, isnext);
+    if (not inst_tracing and nlhdr.nlines != 0) {
+	line = linelookup(addr);
+	while (line == 0) {
+	    addr = nextaddr(addr, isnext);
+	    line = linelookup(addr);
+	}
+	curline = line;
+    } else {
+	curline = 0;
+    }
+    stepto(addr);
+    filename = srcfilename(addr);
+    setsource(filename);
+}
+
+typedef char Bpinst;
+
+#define BP_OP       O_BPT       /* breakpoint trap */
+
+#define BP_ERRNO    SIGTRAP     /* signal received at a breakpoint */
+
+/*
+ * Setting a breakpoint at a location consists of saving
+ * the word at the location and poking a BP_OP there.
+ *
+ * We save the locations and words on a list for use in unsetting.
+ */
+
+typedef struct Savelist *Savelist;
+
+struct Savelist {
+    Address location;
+    Bpinst save;
+    short refcount;
+    Savelist link;
+};
+
+private Savelist savelist;
+
+/*
+ * Set a breakpoint at the given address.  Only save the word there
+ * if it's not already a breakpoint.
+ */
+
+public setbp(addr)
+Address addr;
+{
+    Bpinst w, save;
+    register Savelist newsave, s;
+
+    for (s = savelist; s != nil; s = s->link) {
+	if (s->location == addr) {
+	    s->refcount++;
+	    return;
+	}
+    }
+    iread(&save, addr, sizeof(save));
+    newsave = new(Savelist);
+    newsave->location = addr;
+    newsave->save = save;
+    newsave->refcount = 1;
+    newsave->link = savelist;
+    savelist = newsave;
+    w = BP_OP;
+    iwrite(&w, addr, sizeof(w));
+}
+
+/*
+ * Unset a breakpoint; unfortunately we have to search the SAVELIST
+ * to find the saved value.  The assumption is that the SAVELIST will
+ * usually be quite small.
+ */
+
+public unsetbp(addr)
+Address addr;
+{
+    register Savelist s, prev;
+
+    prev = nil;
+    for (s = savelist; s != nil; s = s->link) {
+	if (s->location == addr) {
+	    iwrite(&s->save, addr, sizeof(s->save));
+	    s->refcount--;
+	    if (s->refcount == 0) {
+		if (prev == nil) {
+		    savelist = s->link;
+		} else {
+		    prev->link = s->link;
+		}
+		dispose(s);
+	    }
+	    return;
+	}
+	prev = s;
+    }
+    panic("unsetbp: couldn't find address %d", addr);
+}
+
+/*
+ * VAX instruction decoder, derived from adb.
  */
 
 private Address printop(addr)
 Address addr;
 {
-    Optab op;
+    register Optab *op;
     VaxOpcode ins;
     unsigned char mode;
     int argtype, amode, argno, argval;
@@ -153,9 +556,9 @@ Address addr;
     printf("%08x  ", addr);
     iread(&ins, addr, sizeof(ins));
     addr += 1;
-    op = optab[ins];
-    printf("%s", op.iname);
-    for (argno = 0; argno < op.numargs; argno++) {
+    op = ioptab[ins];
+    printf("%s", op->iname);
+    for (argno = 0; argno < op->numargs; argno++) {
 	if (indexf == true) {
 	    indexf = false;
 	} else if (argno == 0) {
@@ -163,7 +566,7 @@ Address addr;
 	} else {
 	    printf(",");
 	}
-	argtype = op.argtype[argno];
+	argtype = op->argtype[argno];
 	if (is_branch_disp(argtype)) {
 	    mode = 0xAF + (typelen(argtype) << 5);
 	} else {
@@ -352,316 +755,6 @@ int mode;
 }
 
 /*
- * Print the contents of the addresses within the given range
- * according to the given format.
- */
-
-typedef struct {
-    String name;
-    String printfstring;
-    int length;
-} Format;
-
-private Format fmt[] = {
-    { "d", " %d", sizeof(short) },
-    { "D", " %ld", sizeof(long) },
-    { "o", " %o", sizeof(short) },
-    { "O", " %lo", sizeof(long) },
-    { "x", " %04x", sizeof(short) },
-    { "X", " %08x", sizeof(long) },
-    { "b", " \\%o", sizeof(char) },
-    { "c", " '%c'", sizeof(char) },
-    { "s", "%c", sizeof(char) },
-    { "f", " %f", sizeof(float) },
-    { "g", " %g", sizeof(double) },
-    { nil, nil, 0 }
-};
-
-private Format *findformat(s)
-String s;
-{
-    register Format *f;
-
-    f = &fmt[0];
-    while (f->name != nil and not streq(f->name, s)) {
-	++f;
-    }
-    if (f->name == nil) {
-	error("bad print format \"%s\"", s);
-    }
-    return f;
-}
-
-public Address printdata(lowaddr, highaddr, format)
-Address lowaddr;
-Address highaddr;
-String format;
-{
-    register int n;
-    register Address addr;
-    register Format *f;
-    int value;
-
-    if (lowaddr > highaddr) {
-	error("first address larger than second");
-    }
-    f = findformat(format);
-    n = 0;
-    value = 0;
-    for (addr = lowaddr; addr <= highaddr; addr += f->length) {
-	if (n == 0) {
-	    printf("%08x: ", addr);
-	}
-	dread(&value, addr, f->length);
-	printf(f->printfstring, value);
-	++n;
-	if (n >= (16 div f->length)) {
-	    putchar('\n');
-	    n = 0;
-	}
-    }
-    if (n != 0) {
-	putchar('\n');
-    }
-    prtaddr = addr;
-    return addr;
-}
-
-/*
- * The other approach is to print n items starting with a given address.
- */
-
-public printndata(count, startaddr, format)
-int count;
-Address startaddr;
-String format;
-{
-    register int i, n;
-    register Address addr;
-    register Format *f;
-    register Boolean isstring;
-    char c;
-    union {
-	char charv;
-	short shortv;
-	int intv;
-	float floatv;
-	double doublev;
-    } value;
-
-    if (count <= 0) {
-	error("non-positive repetition count");
-    }
-    f = findformat(format);
-    isstring = (Boolean) streq(f->name, "s");
-    n = 0;
-    addr = startaddr;
-    value.intv = 0;
-    for (i = 0; i < count; i++) {
-	if (n == 0) {
-	    printf("%08x: ", addr);
-	}
-	if (isstring) {
-	    putchar('"');
-	    dread(&c, addr, sizeof(char));
-	    while (c != '\0') {
-		printchar(c);
-		++addr;
-		dread(&c, addr, sizeof(char));
-	    }
-	    putchar('"');
-	    putchar('\n');
-	    n = 0;
-	    addr += sizeof(String);
-	} else {
-	    dread(&value, addr, f->length);
-	    printf(f->printfstring, value);
-	    ++n;
-	    if (n >= (16 div f->length)) {
-		putchar('\n');
-		n = 0;
-	    }
-	    addr += f->length;
-	}
-    }
-    if (n != 0) {
-	putchar('\n');
-    }
-    prtaddr = addr;
-}
-
-/*
- * Print out a value according to the given format.
- */
-
-public printvalue(v, format)
-long v;
-String format;
-{
-    Format *f;
-    char *p, *q;
-
-    f = findformat(format);
-    if (streq(f->name, "s")) {
-	putchar('"');
-	p = (char *) &v;
-	q = p + sizeof(v);
-	while (p < q) {
-	    printchar(*p);
-	    ++p;
-	}
-	putchar('"');
-    } else {
-	printf(f->printfstring, v);
-    }
-    putchar('\n');
-}
-
-/*
- * Print out an execution time error.
- * Assumes the source position of the error has been calculated.
- *
- * Have to check if the -r option was specified; if so then
- * the object file information hasn't been read in yet.
- */
-
-public printerror()
-{
-    extern Integer sys_nsig;
-    extern String sys_siglist[];
-    integer err;
-
-    if (isfinished(process)) {
-	err = exitcode(process);
-	if (err == 0) {
-	    printf("\"%s\" terminated normally\n", objname);
-	} else {
-	    printf("\"%s\" terminated abnormally (exit code %d)\n",
-		objname, err
-	    );
-	}
-	erecover();
-    }
-    if (runfirst) {
-	fprintf(stderr, "Entering debugger ...\n");
-	init();
-    }
-    err = errnum(process);
-    putchar('\n');
-    printsig(err);
-    putchar(' ');
-    printloc();
-    putchar('\n');
-    if (curline > 0) {
-	printlines(curline, curline);
-    } else {
-	printinst(pc, pc);
-    }
-    erecover();
-}
-
-/*
- * Print out a signal.
- */
-
-private String illinames[] = {
-    "reserved addressing fault",
-    "priviliged instruction fault",
-    "reserved operand fault"
-};
-
-private String fpenames[] = {
-    nil,
-    "integer overflow trap",
-    "integer divide by zero trap",
-    "floating overflow trap",
-    "floating/decimal divide by zero trap",
-    "floating underflow trap",
-    "decimal overflow trap",
-    "subscript out of range trap",
-    "floating overflow fault",
-    "floating divide by zero fault",
-    "floating undeflow fault"
-};
-
-public printsig (signo)
-integer signo;
-{
-    integer code;
-
-    if (signo < 0 or signo > sys_nsig) {
-	printf("[signal %d]", signo);
-    } else {
-	printf("%s", sys_siglist[signo]);
-    }
-    code = errcode(process);
-    if (signo == SIGILL) {
-	if (code >= 0 and code < sizeof(illinames) / sizeof(illinames[0])) {
-	    printf(" (%s)", illinames[code]);
-	}
-    } else if (signo == SIGFPE) {
-	if (code > 0 and code < sizeof(fpenames) / sizeof(fpenames[0])) {
-	    printf(" (%s)", fpenames[code]);
-	}
-    }
-}
-
-/*
- * Note the termination of the program.  We do this so as to avoid
- * having the process exit, which would make the values of variables
- * inaccessible.  We do want to flush all output buffers here,
- * otherwise it'll never get done.
- */
-
-public endprogram()
-{
-    Integer exitcode;
-
-    stepto(nextaddr(pc, true));
-    printnews();
-    exitcode = argn(1, nil);
-    if (exitcode != 0) {
-	printf("\nexecution completed (exit code %d)\n", exitcode);
-    } else {
-	printf("\nexecution completed\n");
-    }
-    getsrcpos();
-    erecover();
-}
-
-/*
- * Single step the machine a source line (or instruction if "inst_tracing"
- * is true).  If "isnext" is true, skip over procedure calls.
- */
-
-private Address getcall();
-
-public dostep(isnext)
-Boolean isnext;
-{
-    register Address addr;
-    register Lineno line;
-    String filename;
-    Address startaddr;
-
-    startaddr = pc;
-    addr = nextaddr(pc, isnext);
-    if (not inst_tracing and nlhdr.nlines != 0) {
-	line = linelookup(addr);
-	while (line == 0) {
-	    addr = nextaddr(addr, isnext);
-	    line = linelookup(addr);
-	}
-	curline = line;
-    } else {
-	curline = 0;
-    }
-    stepto(addr);
-    filename = srcfilename(addr);
-    setsource(filename);
-}
-
-/*
  * Compute the next address that will be executed from the given one.
  * If "isnext" is true then consider a procedure call as straight line code.
  *
@@ -714,7 +807,7 @@ Address startaddr;
 Boolean isnext;
 {
     register Address addr;
-    Optab op;
+    register Optab *op;
     VaxOpcode ins;
     unsigned char mode;
     int argtype, amode, argno, argval;
@@ -812,12 +905,12 @@ Boolean isnext;
     }
     if (addrstatus != KNOWN) {
 	addr += 1;
-	op = optab[ins];
-	for (argno = 0; argno < op.numargs; argno++) {
+	op = ioptab[ins];
+	for (argno = 0; argno < op->numargs; argno++) {
 	    if (indexf == true) {
 		indexf = false;
 	    }
-	    argtype = op.argtype[argno];
+	    argtype = op->argtype[argno];
 	    if (is_branch_disp(argtype)) {
 		mode = 0xAF + (typelen(argtype) << 5);
 	    } else {
@@ -947,87 +1040,6 @@ int mode;
     return argval;
 }
 
-#define BP_OP       O_BPT       /* breakpoint trap */
-#define BP_ERRNO    SIGTRAP     /* signal received at a breakpoint */
-
-/*
- * Setting a breakpoint at a location consists of saving
- * the word at the location and poking a BP_OP there.
- *
- * We save the locations and words on a list for use in unsetting.
- */
-
-typedef struct Savelist *Savelist;
-
-struct Savelist {
-    Address location;
-    Byte save;
-    Byte refcount;
-    Savelist link;
-};
-
-private Savelist savelist;
-
-/*
- * Set a breakpoint at the given address.  Only save the word there
- * if it's not already a breakpoint.
- */
-
-public setbp(addr)
-Address addr;
-{
-    Byte w;
-    Byte save;
-    register Savelist newsave, s;
-
-    for (s = savelist; s != nil; s = s->link) {
-	if (s->location == addr) {
-	    s->refcount++;
-	    return;
-	}
-    }
-    iread(&save, addr, sizeof(save));
-    newsave = new(Savelist);
-    newsave->location = addr;
-    newsave->save = save;
-    newsave->refcount = 1;
-    newsave->link = savelist;
-    savelist = newsave;
-    w = BP_OP;
-    iwrite(&w, addr, sizeof(w));
-}
-
-/*
- * Unset a breakpoint; unfortunately we have to search the SAVELIST
- * to find the saved value.  The assumption is that the SAVELIST will
- * usually be quite small.
- */
-
-public unsetbp(addr)
-Address addr;
-{
-    register Savelist s, prev;
-
-    prev = nil;
-    for (s = savelist; s != nil; s = s->link) {
-	if (s->location == addr) {
-	    iwrite(&s->save, addr, sizeof(s->save));
-	    s->refcount--;
-	    if (s->refcount == 0) {
-		if (prev == nil) {
-		    savelist = s->link;
-		} else {
-		    prev->link = s->link;
-		}
-		dispose(s);
-	    }
-	    return;
-	}
-	prev = s;
-    }
-    panic("unsetbp: couldn't find address %d", addr);
-}
-
 /*
  * Enter a procedure by creating and executing a call instruction.
  */
@@ -1071,11 +1083,13 @@ Integer argc;
 public integer masterpcbb;
 public integer slr;
 public struct pte *sbr;
-public struct pcb pcb;
+private struct pcb pcb;
 
 public getpcb ()
 {
-    fseek(corefile, physaddr(masterpcbb), 0);
+    integer i;
+
+    fseek(corefile, masterpcbb & ~0x80000000, 0);
     get(corefile, pcb);
     pcb.pcb_p0lr &= ~AST_CLR;
     printf("p0br %lx p0lr %lx p1br %lx p1lr %lx\n",
@@ -1194,4 +1208,44 @@ simple:
 	error("page no valid or reclamable");
     }
     return (addr&PGOFSET) + ((Address) ptob(pte.pg_pfnum));
+}
+
+/*
+ * Extract a bit field from an integer.
+ */
+
+public integer extractField (s)
+Symbol s;
+{
+    integer n, nbytes, r;
+
+    n = 0;
+    nbytes = size(s);
+    if (nbytes > sizeof(n)) {
+	printf("[bad size in extractField -- word assumed]\n");
+	nbytes = sizeof(n);
+    }
+    popn(nbytes, &n);
+    r = n >> (s->symvalue.field.offset mod BITSPERBYTE);
+    r &= ((1 << s->symvalue.field.length) - 1);
+    return r;
+}
+
+/*
+ * Change the length of a value in memory according to a given difference
+ * in the lengths of its new and old types.
+ */
+
+public loophole (oldlen, newlen)
+integer oldlen, newlen;
+{
+    integer n, i;
+
+    n = newlen - oldlen;
+    if (n > 0) {
+	for (i = 0; i < n; i++) {
+	    sp[i] = '\0';
+	}
+    }
+    sp += n;
 }
