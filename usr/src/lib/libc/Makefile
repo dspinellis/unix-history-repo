@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
 # All library objects contain sccsid strings by default; they may be
 # excluded as a space-saving measure.  To produce a library that does
@@ -10,7 +10,9 @@ CFLAGS+=-DLIBC_SCCS -DSYSLIBC_SCCS
 AINC=	-I${.CURDIR}/${MACHINE}
 
 .include "${.CURDIR}/compat-43/Makefile.inc"
+.include "${.CURDIR}/db/Makefile.inc"
 .include "${.CURDIR}/gen/Makefile.inc"
+.include "${.CURDIR}/locale/Makefile.inc"
 .include "${.CURDIR}/net/Makefile.inc"
 .include "${.CURDIR}/stdio/Makefile.inc"
 .include "${.CURDIR}/stdlib/Makefile.inc"
@@ -18,10 +20,12 @@ AINC=	-I${.CURDIR}/${MACHINE}
 .include "${.CURDIR}/sys/Makefile.inc"
 
 beforeinstall: tags
-	ar ma findiop.o libc.a exit.o
-	ar ma exit.o libc.a fakcu.o
-	ar ma findiop.po libc_p.a exit.po
-	ar ma exit.po libc_p.a fakcu.po
-	install -c -o bin -g bin -m 444 ${.CURDIR}/tags /var/db
+	install -c -o bin -g bin -m 444 ${.CURDIR}/tags /var/db/libc.tags
+
+tags: ${SRCS}
+	cd ${.CURDIR}; ctags ${.ALLSRC:M*.c}
+	cd ${.CURDIR}; egrep -o "^ENTRY(.*)|^SYSCALL(.*)" ${.ALLSRC:M*.s} | \
+	    sed "s;\([^:]*\):\([^(]*\)(\([^, )]*\)\(.*\);\3 \1 /^\2(\3\4$$/;" \
+	    >> tags; sort -o tags tags
 
 .include <bsd.lib.mk>
