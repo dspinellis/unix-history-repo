@@ -1,0 +1,198 @@
+
+
+
+CPIO(1)             UNIX Programmer's Manual		  CPIO(1)
+
+
+
+NNAAMMEE
+     cpio - copy file archives in and out
+
+SSYYNNOOPPSSIISS
+     cpio -o [ acBv ]
+     cpio -i [ BcdmrtuvfsSb6 ] [ patterns ]
+     cpio -p [ adlmruv ] directory
+
+DDEESSCCRRIIPPTTIIOONN
+     Cpio -o (copy out) reads the standard input to obtain a list
+     of path names and copies those files onto the standard out-
+     put together with path name and status information.  Output
+     is padded to a 512-byte boundary.
+
+     Cpio -i (copy in) extracts files from the standard input,
+     which is assumed to be the product of a previous cpio -o.
+     Only files with names that match patterns are selected.
+     Patterns are given in the name-generating notation of sh(1).
+     In patterns, meta-characters ?, *, and [...] match the slash
+     / character.  Multiple patterns may be specified and if no
+     patterns are specified, the default for patterns is * (i.e.,
+     select all files).  The extracted files are conditionally
+     created and copied into the current directory tree based
+     upon the options described below.	The permissions of the
+     files will be those of the previous cpio -o.  The owner and
+     group of the files will be that of the current user unless
+     the user is super-user, which causes cpio to retain the
+     owner and group of the files of the previous cpio -o.
+
+     Cpio -p (pass) reads the standard input to obtain a list of
+     path names of files that are conditionally created and
+     copied into the destination directory tree based upon the
+     options described below.
+
+     The meanings of the available options are:
+
+     a	  Reset access times of input files after they have been
+	  copied.
+
+     B	  Input/output is to be blocked 5,120 bytes to the record
+	  (does not apply to the pass options; meaningful only
+	  with data directed to or from /dev/rmt/??).
+
+     d	  Directories are to be created as needed.
+
+     c	  Write header information in ASCII character form for
+	  portability.
+
+     r	  Interactively rename files.  If the user types a null
+	  line, the files is skipped.
+
+     t	  Print a table of contents of the input.  No files are
+
+
+
+Printed 7/14/88          March 29, 1988                         1
+
+
+
+
+
+
+CPIO(1)             UNIX Programmer's Manual		  CPIO(1)
+
+
+
+	  created.
+
+     u	  Copy unconditionally (normally, an older file will not
+	  replace a newer file with the same name).
+
+     v	  Verbose: causes a list of file names to be printed.
+	  When used with the t option, the table of contents
+	  looks like the output of an ls -l command (see ls(1)).
+
+     l	  Whenever possible, link files rather than copying them.
+	  Usable only with the -p option.
+
+     m	  Retain previous file modification time.  This option is
+	  ineffective on directories that are being copied.
+
+     f	  Copy in all files except those in patterns.
+
+     s	  Swap bytes.  Use only with the -i option.
+
+     S	  Swap halfwords.  Use only with the -i option.
+
+     b	  Swap both bytes and halfwords.  Use only with the -i
+	  option.
+
+     6	  Process an old (i.e., UNIX System Sixth Edition format)
+	  file.  Only useful with -i (copy in).
+
+EEXXAAMMPPLLEESS
+     The first example below copies the contents of a directory
+     into an archive; the second duplicates a directory hierar-
+     chy:
+
+	  ls | cpio -o >/dev/rmt/0m
+
+	  cd olddir
+	  find . -depth -print | cpio -pdl newdir
+
+     The trivial case
+	  ``find . -depth -print | cpio -oB >/dev/fmt/0m''
+     can be handled more efficiently by:
+	  find . -cpio /dev/rmt/0m
+
+
+SSEEEE AALLSSOO
+     ar(1), find(1), ls(1).
+     cpio(4) in the UNIX System User Reference Manual.
+
+BBUUGGSS
+     Path names are restricted to 128 characters.  If there are
+     too many unique linked files, the program runs out of memory
+     to keep track of them and, thereafter, linking information
+     is lost.  Only the super-user can copy special files.  The
+
+
+
+Printed 7/14/88          March 29, 1988                         2
+
+
+
+
+
+
+CPIO(1)             UNIX Programmer's Manual		  CPIO(1)
+
+
+
+     -B option does not work with certain magnetic tape drives.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/14/88          March 29, 1988                         3
+
+
+
