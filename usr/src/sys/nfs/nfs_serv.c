@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_serv.c	7.10 (Berkeley) %G%
+ *	@(#)nfs_serv.c	7.11 (Berkeley) %G%
  */
 
 /*
@@ -71,12 +71,13 @@ nfstype nfs_type[VSOCK+1]={ NFNON, NFREG, NFDIR, NFBLK, NFCHR, NFLNK, NFNON, };
 /*
  * nfs getattr service
  */
-nfsrv_getattr(mrep, md, dpos, cred, xid, mrq)
+nfsrv_getattr(mrep, md, dpos, cred, xid, mrq, repstat)
 	struct mbuf **mrq;
 	struct mbuf *mrep, *md;
 	caddr_t dpos;
 	struct ucred *cred;
 	u_long xid;
+	int *repstat;
 {
 	register struct nfsv2_fattr *fp;
 	struct vattr va;
@@ -89,7 +90,7 @@ nfsrv_getattr(mrep, md, dpos, cred, xid, mrq)
 	caddr_t bpos;
 	int error = 0;
 	char *cp2;
-	struct mbuf *mb, *mb2;
+	struct mbuf *mb, *mb2, *mreq;
 
 	fhp = &nfh.fh_generic;
 	nfsm_srvmtofh(fhp);
@@ -99,32 +100,20 @@ nfsrv_getattr(mrep, md, dpos, cred, xid, mrq)
 	vput(vp);
 	nfsm_reply(NFSX_FATTR);
 	nfsm_build(fp, struct nfsv2_fattr *, NFSX_FATTR);
-	fp->fa_type = vtonfs_type(vap->va_type);
-	fp->fa_mode = vtonfs_mode(vap->va_type, vap->va_mode);
-	fp->fa_nlink = txdr_unsigned(vap->va_nlink);
-	fp->fa_uid = txdr_unsigned(vap->va_uid);
-	fp->fa_gid = txdr_unsigned(vap->va_gid);
-	fp->fa_size = txdr_unsigned(vap->va_size);
-	fp->fa_blocksize = txdr_unsigned(vap->va_blocksize);
-	fp->fa_rdev = txdr_unsigned(vap->va_rdev);
-	fp->fa_blocks = txdr_unsigned(vap->va_bytes / vap->va_blocksize);
-	fp->fa_fsid = txdr_unsigned(vap->va_fsid);
-	fp->fa_fileid = txdr_unsigned(vap->va_fileid);
-	txdr_time(&vap->va_atime, &fp->fa_atime);
-	txdr_time(&vap->va_mtime, &fp->fa_mtime);
-	txdr_time(&vap->va_ctime, &fp->fa_ctime);
+	nfsm_srvfillattr;
 	nfsm_srvdone;
 }
 
 /*
  * nfs setattr service
  */
-nfsrv_setattr(mrep, md, dpos, cred, xid, mrq)
+nfsrv_setattr(mrep, md, dpos, cred, xid, mrq, repstat)
 	struct mbuf **mrq;
 	struct mbuf *mrep, *md;
 	caddr_t dpos;
 	struct ucred *cred;
 	u_long xid;
+	int *repstat;
 {
 	struct vattr va;
 	register struct vattr *vap = &va;
@@ -138,7 +127,7 @@ nfsrv_setattr(mrep, md, dpos, cred, xid, mrq)
 	caddr_t bpos;
 	int error = 0;
 	char *cp2;
-	struct mbuf *mb, *mb2;
+	struct mbuf *mb, *mb2, *mreq;
 
 	fhp = &nfh.fh_generic;
 	nfsm_srvmtofh(fhp);
@@ -161,11 +150,19 @@ nfsrv_setattr(mrep, md, dpos, cred, xid, mrq)
 		vap->va_uid = fxdr_unsigned(uid_t, sp->sa_uid);
 	if (sp->sa_gid != nfs_xdrneg1)
 		vap->va_gid = fxdr_unsigned(gid_t, sp->sa_gid);
-	if (sp->sa_size != nfs_xdrneg1) {
+	if (sp->sa_size != nfs_xdrneg1)
 		vap->va_size = fxdr_unsigned(u_long, sp->sa_size);
+	/*
+	 * The usec field of sa_atime is overloaded with the va_flags field
+	 * for 4.4BSD clients. Hopefully other clients always set both the
+	 * sec and usec fields to -1 when not setting the atime.
+	 */
+	if (sp->sa_atime.tv_sec != nfs_xdrneg1) {
+		vap->va_atime.tv_sec = fxdr_unsigned(long, sp->sa_atime.tv_sec);
+		vap->va_atime.tv_usec = 0;
 	}
-	if (sp->sa_atime.tv_sec != nfs_xdrneg1)
-		fxdr_time(&sp->sa_atime, &vap->va_atime);
+	if (sp->sa_atime.tv_usec != nfs_xdrneg1)
+		vap->va_flags = fxdr_unsigned(u_long, sp->sa_atime.tv_usec);
 	if (sp->sa_mtime.tv_sec != nfs_xdrneg1)
 		fxdr_time(&sp->sa_mtime, &vap->va_mtime);
 	if (error = VOP_SETATTR(vp, vap, cred)) {
@@ -177,32 +174,20 @@ out:
 	vput(vp);
 	nfsm_reply(NFSX_FATTR);
 	nfsm_build(fp, struct nfsv2_fattr *, NFSX_FATTR);
-	fp->fa_type = vtonfs_type(vap->va_type);
-	fp->fa_mode = vtonfs_mode(vap->va_type, vap->va_mode);
-	fp->fa_nlink = txdr_unsigned(vap->va_nlink);
-	fp->fa_uid = txdr_unsigned(vap->va_uid);
-	fp->fa_gid = txdr_unsigned(vap->va_gid);
-	fp->fa_size = txdr_unsigned(vap->va_size);
-	fp->fa_blocksize = txdr_unsigned(vap->va_blocksize);
-	fp->fa_rdev = txdr_unsigned(vap->va_rdev);
-	fp->fa_blocks = txdr_unsigned(vap->va_bytes / vap->va_blocksize);
-	fp->fa_fsid = txdr_unsigned(vap->va_fsid);
-	fp->fa_fileid = txdr_unsigned(vap->va_fileid);
-	txdr_time(&vap->va_atime, &fp->fa_atime);
-	txdr_time(&vap->va_mtime, &fp->fa_mtime);
-	txdr_time(&vap->va_ctime, &fp->fa_ctime);
+	nfsm_srvfillattr;
 	nfsm_srvdone;
 }
 
 /*
  * nfs lookup rpc
  */
-nfsrv_lookup(mrep, md, dpos, cred, xid, mrq)
+nfsrv_lookup(mrep, md, dpos, cred, xid, mrq, repstat)
 	struct mbuf **mrq;
 	struct mbuf *mrep, *md;
 	caddr_t dpos;
 	struct ucred *cred;
 	u_long xid;
+	int *repstat;
 {
 	register struct nfsv2_fattr *fp;
 	struct nameidata nami;
@@ -216,7 +201,7 @@ nfsrv_lookup(mrep, md, dpos, cred, xid, mrq)
 	caddr_t bpos;
 	int error = 0;
 	char *cp2;
-	struct mbuf *mb, *mb2;
+	struct mbuf *mb, *mb2, *mreq;
 	long len;
 	struct vattr va, *vap = &va;
 
@@ -240,32 +225,20 @@ nfsrv_lookup(mrep, md, dpos, cred, xid, mrq)
 	nfsm_reply(NFSX_FH+NFSX_FATTR);
 	nfsm_srvfhtom(fhp);
 	nfsm_build(fp, struct nfsv2_fattr *, NFSX_FATTR);
-	fp->fa_type = vtonfs_type(vap->va_type);
-	fp->fa_mode = vtonfs_mode(vap->va_type, vap->va_mode);
-	fp->fa_nlink = txdr_unsigned(vap->va_nlink);
-	fp->fa_uid = txdr_unsigned(vap->va_uid);
-	fp->fa_gid = txdr_unsigned(vap->va_gid);
-	fp->fa_size = txdr_unsigned(vap->va_size);
-	fp->fa_blocksize = txdr_unsigned(vap->va_blocksize);
-	fp->fa_rdev = txdr_unsigned(vap->va_rdev);
-	fp->fa_blocks = txdr_unsigned(vap->va_bytes / vap->va_blocksize);
-	fp->fa_fsid = txdr_unsigned(vap->va_fsid);
-	fp->fa_fileid = txdr_unsigned(vap->va_fileid);
-	txdr_time(&vap->va_atime, &fp->fa_atime);
-	txdr_time(&vap->va_mtime, &fp->fa_mtime);
-	txdr_time(&vap->va_ctime, &fp->fa_ctime);
+	nfsm_srvfillattr;
 	nfsm_srvdone;
 }
 
 /*
  * nfs readlink service
  */
-nfsrv_readlink(mrep, md, dpos, cred, xid, mrq)
+nfsrv_readlink(mrep, md, dpos, cred, xid, mrq, repstat)
 	struct mbuf **mrq;
 	struct mbuf *mrep, *md;
 	caddr_t dpos;
 	struct ucred *cred;
-	long xid;
+	u_long xid;
+	int *repstat;
 {
 	struct iovec iv[NFS_MAXPATHLEN/MLEN+1];
 	register struct iovec *ivp = iv;
@@ -275,7 +248,7 @@ nfsrv_readlink(mrep, md, dpos, cred, xid, mrq)
 	caddr_t bpos;
 	int error = 0;
 	char *cp2;
-	struct mbuf *mb, *mb2, *mp2, *mp3;
+	struct mbuf *mb, *mb2, *mp2, *mp3, *mreq;
 	struct vnode *vp;
 	nfsv2fh_t nfh;
 	fhandle_t *fhp;
@@ -338,12 +311,13 @@ out:
 /*
  * nfs read service
  */
-nfsrv_read(mrep, md, dpos, cred, xid, mrq)
+nfsrv_read(mrep, md, dpos, cred, xid, mrq, repstat)
 	struct mbuf **mrq;
 	struct mbuf *mrep, *md;
 	caddr_t dpos;
 	struct ucred *cred;
 	u_long xid;
+	int *repstat;
 {
 	struct iovec iv[NFS_MAXDATA/MCLBYTES+1];
 	register struct iovec *ivp = iv;
@@ -354,7 +328,7 @@ nfsrv_read(mrep, md, dpos, cred, xid, mrq)
 	caddr_t bpos;
 	int error = 0;
 	char *cp2;
-	struct mbuf *mb, *mb2;
+	struct mbuf *mb, *mb2, *mreq;
 	struct mbuf *mp2, *mp3;
 	struct vnode *vp;
 	nfsv2fh_t nfh;
@@ -421,20 +395,7 @@ nfsrv_read(mrep, md, dpos, cred, xid, mrq)
 	vput(vp);
 	nfsm_reply(NFSX_FATTR+NFSX_UNSIGNED);
 	nfsm_build(fp, struct nfsv2_fattr *, NFSX_FATTR);
-	fp->fa_type = vtonfs_type(vap->va_type);
-	fp->fa_mode = vtonfs_mode(vap->va_type, vap->va_mode);
-	fp->fa_nlink = txdr_unsigned(vap->va_nlink);
-	fp->fa_uid = txdr_unsigned(vap->va_uid);
-	fp->fa_gid = txdr_unsigned(vap->va_gid);
-	fp->fa_size = txdr_unsigned(vap->va_size);
-	fp->fa_blocksize = txdr_unsigned(vap->va_blocksize);
-	fp->fa_rdev = txdr_unsigned(vap->va_rdev);
-	fp->fa_blocks = txdr_unsigned(vap->va_bytes / vap->va_blocksize);
-	fp->fa_fsid = txdr_unsigned(vap->va_fsid);
-	fp->fa_fileid = txdr_unsigned(vap->va_fileid);
-	txdr_time(&vap->va_atime, &fp->fa_atime);
-	txdr_time(&vap->va_mtime, &fp->fa_mtime);
-	txdr_time(&vap->va_ctime, &fp->fa_ctime);
+	nfsm_srvfillattr;
 	if (uiop->uio_resid > 0) {
 		len -= uiop->uio_resid;
 		if (len > 0) {
@@ -454,11 +415,12 @@ nfsrv_read(mrep, md, dpos, cred, xid, mrq)
 /*
  * nfs write service
  */
-nfsrv_write(mrep, md, dpos, cred, xid, mrq)
+nfsrv_write(mrep, md, dpos, cred, xid, mrq, repstat)
 	struct mbuf *mrep, *md, **mrq;
 	caddr_t dpos;
 	struct ucred *cred;
-	long xid;
+	u_long xid;
+	int *repstat;
 {
 	register struct iovec *ivp;
 	register struct mbuf *mp;
@@ -471,7 +433,7 @@ nfsrv_write(mrep, md, dpos, cred, xid, mrq)
 	caddr_t bpos;
 	int error = 0;
 	char *cp2;
-	struct mbuf *mb, *mb2;
+	struct mbuf *mb, *mb2, *mreq;
 	struct vnode *vp;
 	nfsv2fh_t nfh;
 	fhandle_t *fhp;
@@ -556,20 +518,7 @@ nfsrv_write(mrep, md, dpos, cred, xid, mrq)
 	vput(vp);
 	nfsm_reply(NFSX_FATTR);
 	nfsm_build(fp, struct nfsv2_fattr *, NFSX_FATTR);
-	fp->fa_type = vtonfs_type(vap->va_type);
-	fp->fa_mode = vtonfs_mode(vap->va_type, vap->va_mode);
-	fp->fa_nlink = txdr_unsigned(vap->va_nlink);
-	fp->fa_uid = txdr_unsigned(vap->va_uid);
-	fp->fa_gid = txdr_unsigned(vap->va_gid);
-	fp->fa_size = txdr_unsigned(vap->va_size);
-	fp->fa_blocksize = txdr_unsigned(vap->va_blocksize);
-	fp->fa_rdev = txdr_unsigned(vap->va_rdev);
-	fp->fa_blocks = txdr_unsigned(vap->va_bytes / vap->va_blocksize);
-	fp->fa_fsid = txdr_unsigned(vap->va_fsid);
-	fp->fa_fileid = txdr_unsigned(vap->va_fileid);
-	txdr_time(&vap->va_atime, &fp->fa_atime);
-	txdr_time(&vap->va_mtime, &fp->fa_mtime);
-	txdr_time(&vap->va_ctime, &fp->fa_ctime);
+	nfsm_srvfillattr;
 	nfsm_srvdone;
 }
 
@@ -577,11 +526,12 @@ nfsrv_write(mrep, md, dpos, cred, xid, mrq)
  * nfs create service
  * now does a truncate to 0 length via. setattr if it already exists
  */
-nfsrv_create(mrep, md, dpos, cred, xid, mrq)
+nfsrv_create(mrep, md, dpos, cred, xid, mrq, repstat)
 	struct mbuf *mrep, *md, **mrq;
 	caddr_t dpos;
 	struct ucred *cred;
-	long xid;
+	u_long xid;
+	int *repstat;
 {
 	register struct nfsv2_fattr *fp;
 	struct vattr va;
@@ -594,7 +544,7 @@ nfsrv_create(mrep, md, dpos, cred, xid, mrq)
 	caddr_t bpos;
 	int error = 0;
 	char *cp2;
-	struct mbuf *mb, *mb2;
+	struct mbuf *mb, *mb2, *mreq;
 	struct vnode *vp;
 	nfsv2fh_t nfh;
 	fhandle_t *fhp;
@@ -640,20 +590,7 @@ nfsrv_create(mrep, md, dpos, cred, xid, mrq)
 	nfsm_reply(NFSX_FH+NFSX_FATTR);
 	nfsm_srvfhtom(fhp);
 	nfsm_build(fp, struct nfsv2_fattr *, NFSX_FATTR);
-	fp->fa_type = vtonfs_type(vap->va_type);
-	fp->fa_mode = vtonfs_mode(vap->va_type, vap->va_mode);
-	fp->fa_nlink = txdr_unsigned(vap->va_nlink);
-	fp->fa_uid = txdr_unsigned(vap->va_uid);
-	fp->fa_gid = txdr_unsigned(vap->va_gid);
-	fp->fa_size = txdr_unsigned(vap->va_size);
-	fp->fa_blocksize = txdr_unsigned(vap->va_blocksize);
-	fp->fa_rdev = txdr_unsigned(vap->va_rdev);
-	fp->fa_blocks = txdr_unsigned(vap->va_bytes / vap->va_blocksize);
-	fp->fa_fsid = txdr_unsigned(vap->va_fsid);
-	fp->fa_fileid = txdr_unsigned(vap->va_fileid);
-	txdr_time(&vap->va_atime, &fp->fa_atime);
-	txdr_time(&vap->va_mtime, &fp->fa_mtime);
-	txdr_time(&vap->va_ctime, &fp->fa_ctime);
+	nfsm_srvfillattr;
 	return (error);
 nfsmout:
 	VOP_ABORTOP(ndp);
@@ -663,11 +600,12 @@ nfsmout:
 /*
  * nfs remove service
  */
-nfsrv_remove(mrep, md, dpos, cred, xid, mrq)
+nfsrv_remove(mrep, md, dpos, cred, xid, mrq, repstat)
 	struct mbuf *mrep, *md, **mrq;
 	caddr_t dpos;
 	struct ucred *cred;
-	long xid;
+	u_long xid;
+	int *repstat;
 {
 	struct nameidata nami;
 	register struct nameidata *ndp = &nami;
@@ -676,7 +614,7 @@ nfsrv_remove(mrep, md, dpos, cred, xid, mrq)
 	caddr_t bpos;
 	int error = 0;
 	char *cp2;
-	struct mbuf *mb;
+	struct mbuf *mb, *mreq;
 	struct vnode *vp;
 	nfsv2fh_t nfh;
 	fhandle_t *fhp;
@@ -715,11 +653,12 @@ out:
 /*
  * nfs rename service
  */
-nfsrv_rename(mrep, md, dpos, cred, xid, mrq)
+nfsrv_rename(mrep, md, dpos, cred, xid, mrq, repstat)
 	struct mbuf *mrep, *md, **mrq;
 	caddr_t dpos;
 	struct ucred *cred;
-	long xid;
+	u_long xid;
+	int *repstat;
 {
 	register struct nameidata *ndp;
 	register u_long *p;
@@ -727,7 +666,7 @@ nfsrv_rename(mrep, md, dpos, cred, xid, mrq)
 	caddr_t bpos;
 	int error = 0;
 	char *cp2;
-	struct mbuf *mb;
+	struct mbuf *mb, *mreq;
 	struct nameidata nami, tond;
 	struct vnode *fvp, *tvp, *tdvp;
 	nfsv2fh_t fnfh, tnfh;
@@ -805,11 +744,12 @@ nfsmout:
 /*
  * nfs link service
  */
-nfsrv_link(mrep, md, dpos, cred, xid, mrq)
+nfsrv_link(mrep, md, dpos, cred, xid, mrq, repstat)
 	struct mbuf *mrep, *md, **mrq;
 	caddr_t dpos;
 	struct ucred *cred;
-	long xid;
+	u_long xid;
+	int *repstat;
 {
 	struct nameidata nami;
 	register struct nameidata *ndp = &nami;
@@ -818,7 +758,7 @@ nfsrv_link(mrep, md, dpos, cred, xid, mrq)
 	caddr_t bpos;
 	int error = 0;
 	char *cp2;
-	struct mbuf *mb;
+	struct mbuf *mb, *mreq;
 	struct vnode *vp, *xp;
 	nfsv2fh_t nfh, dnfh;
 	fhandle_t *fhp, *dfhp;
@@ -860,11 +800,12 @@ out1:
 /*
  * nfs symbolic link service
  */
-nfsrv_symlink(mrep, md, dpos, cred, xid, mrq)
+nfsrv_symlink(mrep, md, dpos, cred, xid, mrq, repstat)
 	struct mbuf *mrep, *md, **mrq;
 	caddr_t dpos;
 	struct ucred *cred;
-	long xid;
+	u_long xid;
+	int *repstat;
 {
 	struct vattr va;
 	struct nameidata nami;
@@ -875,7 +816,7 @@ nfsrv_symlink(mrep, md, dpos, cred, xid, mrq)
 	caddr_t bpos;
 	int error = 0;
 	char *cp2;
-	struct mbuf *mb;
+	struct mbuf *mb, *mreq;
 	struct vnode *vp;
 	nfsv2fh_t nfh;
 	fhandle_t *fhp;
@@ -921,11 +862,12 @@ nfsmout:
 /*
  * nfs mkdir service
  */
-nfsrv_mkdir(mrep, md, dpos, cred, xid, mrq)
+nfsrv_mkdir(mrep, md, dpos, cred, xid, mrq, repstat)
 	struct mbuf *mrep, *md, **mrq;
 	caddr_t dpos;
 	struct ucred *cred;
-	long xid;
+	u_long xid;
+	int *repstat;
 {
 	struct vattr va;
 	register struct vattr *vap = &va;
@@ -938,7 +880,7 @@ nfsrv_mkdir(mrep, md, dpos, cred, xid, mrq)
 	caddr_t bpos;
 	int error = 0;
 	char *cp2;
-	struct mbuf *mb, *mb2;
+	struct mbuf *mb, *mb2, *mreq;
 	struct vnode *vp;
 	nfsv2fh_t nfh;
 	fhandle_t *fhp;
@@ -976,20 +918,7 @@ nfsrv_mkdir(mrep, md, dpos, cred, xid, mrq)
 	nfsm_reply(NFSX_FH+NFSX_FATTR);
 	nfsm_srvfhtom(fhp);
 	nfsm_build(fp, struct nfsv2_fattr *, NFSX_FATTR);
-	fp->fa_type = vtonfs_type(vap->va_type);
-	fp->fa_mode = vtonfs_mode(vap->va_type, vap->va_mode);
-	fp->fa_nlink = txdr_unsigned(vap->va_nlink);
-	fp->fa_uid = txdr_unsigned(vap->va_uid);
-	fp->fa_gid = txdr_unsigned(vap->va_gid);
-	fp->fa_size = txdr_unsigned(vap->va_size);
-	fp->fa_blocksize = txdr_unsigned(vap->va_blocksize);
-	fp->fa_rdev = txdr_unsigned(vap->va_rdev);
-	fp->fa_blocks = txdr_unsigned(vap->va_bytes / vap->va_blocksize);
-	fp->fa_fsid = txdr_unsigned(vap->va_fsid);
-	fp->fa_fileid = txdr_unsigned(vap->va_fileid);
-	txdr_time(&vap->va_atime, &fp->fa_atime);
-	txdr_time(&vap->va_mtime, &fp->fa_mtime);
-	txdr_time(&vap->va_ctime, &fp->fa_ctime);
+	nfsm_srvfillattr;
 	return (error);
 nfsmout:
 	VOP_ABORTOP(ndp);
@@ -999,11 +928,12 @@ nfsmout:
 /*
  * nfs rmdir service
  */
-nfsrv_rmdir(mrep, md, dpos, cred, xid, mrq)
+nfsrv_rmdir(mrep, md, dpos, cred, xid, mrq, repstat)
 	struct mbuf *mrep, *md, **mrq;
 	caddr_t dpos;
 	struct ucred *cred;
-	long xid;
+	u_long xid;
+	int *repstat;
 {
 	struct nameidata nami;
 	register struct nameidata *ndp = &nami;
@@ -1012,7 +942,7 @@ nfsrv_rmdir(mrep, md, dpos, cred, xid, mrq)
 	caddr_t bpos;
 	int error = 0;
 	char *cp2;
-	struct mbuf *mb;
+	struct mbuf *mb, *mreq;
 	struct vnode *vp;
 	nfsv2fh_t nfh;
 	fhandle_t *fhp;
@@ -1080,12 +1010,13 @@ out:
  *	to including the status longwords that are not a part of the dir.
  *	"entry" structures, but are in the rpc.
  */
-nfsrv_readdir(mrep, md, dpos, cred, xid, mrq)
+nfsrv_readdir(mrep, md, dpos, cred, xid, mrq, repstat)
 	struct mbuf **mrq;
 	struct mbuf *mrep, *md;
 	caddr_t dpos;
 	struct ucred *cred;
 	u_long xid;
+	int *repstat;
 {
 	register char *bp, *be;
 	register struct mbuf *mp;
@@ -1096,7 +1027,7 @@ nfsrv_readdir(mrep, md, dpos, cred, xid, mrq)
 	caddr_t bpos;
 	int error = 0;
 	char *cp2;
-	struct mbuf *mb, *mb2;
+	struct mbuf *mb, *mb2, *mreq;
 	char *cpos, *cend;
 	int len, nlen, rem, xfer, tsiz, i;
 	struct vnode *vp;
@@ -1252,12 +1183,13 @@ again:
 /*
  * nfs statfs service
  */
-nfsrv_statfs(mrep, md, dpos, cred, xid, mrq)
+nfsrv_statfs(mrep, md, dpos, cred, xid, mrq, repstat)
 	struct mbuf **mrq;
 	struct mbuf *mrep, *md;
 	caddr_t dpos;
 	struct ucred *cred;
 	u_long xid;
+	int *repstat;
 {
 	register struct statfs *sf;
 	register struct nfsv2_statfs *sfp;
@@ -1266,7 +1198,7 @@ nfsrv_statfs(mrep, md, dpos, cred, xid, mrq)
 	caddr_t bpos;
 	int error = 0;
 	char *cp2;
-	struct mbuf *mb, *mb2;
+	struct mbuf *mb, *mb2, *mreq;
 	struct vnode *vp;
 	nfsv2fh_t nfh;
 	fhandle_t *fhp;
@@ -1293,16 +1225,17 @@ nfsrv_statfs(mrep, md, dpos, cred, xid, mrq)
  * Null operation, used by clients to ping server
  */
 /* ARGSUSED */
-nfsrv_null(mrep, md, dpos, cred, xid, mrq)
+nfsrv_null(mrep, md, dpos, cred, xid, mrq, repstat)
 	struct mbuf **mrq;
 	struct mbuf *mrep, *md;
 	caddr_t dpos;
 	struct ucred *cred;
 	u_long xid;
+	int *repstat;
 {
 	caddr_t bpos;
 	int error = 0;
-	struct mbuf *mb;
+	struct mbuf *mb, *mreq;
 
 	error = VNOVAL;
 	nfsm_reply(0);
@@ -1313,16 +1246,17 @@ nfsrv_null(mrep, md, dpos, cred, xid, mrq)
  * No operation, used for obsolete procedures
  */
 /* ARGSUSED */
-nfsrv_noop(mrep, md, dpos, cred, xid, mrq)
+nfsrv_noop(mrep, md, dpos, cred, xid, mrq, repstat)
 	struct mbuf **mrq;
 	struct mbuf *mrep, *md;
 	caddr_t dpos;
 	struct ucred *cred;
 	u_long xid;
+	int *repstat;
 {
 	caddr_t bpos;
 	int error = 0;
-	struct mbuf *mb;
+	struct mbuf *mb, *mreq;
 
 	error = EPROCUNAVAIL;
 	nfsm_reply(0);

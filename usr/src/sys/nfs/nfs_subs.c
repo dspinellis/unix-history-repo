@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_subs.c	7.14 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.15 (Berkeley) %G%
  */
 
 /*
@@ -516,6 +516,7 @@ nfs_init()
 	v_type[5] = VLNK;
 	nfs_xdrneg1 = txdr_unsigned(-1);
 	nfs_nhinit();			/* Init the nfsnode table */
+	nfsrv_initcache();		/* Init the server request cache */
 	rminit(nfsmap, (long)NFS_MAPREG, (long)1, "nfs mapreg", NFS_MSIZ);
 	/* And start timer */
 	nfs_timer();
@@ -659,13 +660,15 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 	vap->va_rdev = rdev;
 	vap->va_bytes = fxdr_unsigned(long, fp->fa_blocks) * vap->va_blocksize;
 	vap->va_bytes1 = 0;
-	vap->va_fsid = fxdr_unsigned(long, fp->fa_fsid);
+	vap->va_fsid = vp->v_mount->m_fsid.val[0];
 	vap->va_fileid = fxdr_unsigned(long, fp->fa_fileid);
-	fxdr_time(&fp->fa_atime, &vap->va_atime);
-	fxdr_time(&fp->fa_ctime, &vap->va_ctime);
+	vap->va_atime.tv_sec = fxdr_unsigned(long, fp->fa_atime.tv_sec);
+	vap->va_atime.tv_usec = 0;
+	vap->va_flags = fxdr_unsigned(u_long, fp->fa_atime.tv_usec);
 	vap->va_mtime = mtime;
-	vap->va_gen = 0;
-	vap->va_flags = 0;
+	vap->va_ctime.tv_sec = fxdr_unsigned(long, fp->fa_ctime.tv_sec);
+	vap->va_ctime.tv_usec = 0;
+	vap->va_gen = fxdr_unsigned(u_long, fp->fa_ctime.tv_usec);
 	np->n_attrstamp = time.tv_sec;
 	*dposp = dpos;
 	*mdp = md;

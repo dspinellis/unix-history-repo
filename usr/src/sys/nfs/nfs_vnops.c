@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vnops.c	7.18 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.19 (Berkeley) %G%
  */
 
 /*
@@ -273,15 +273,14 @@ nfs_close(vp, fflags, cred)
 	register struct nfsnode *np = VTONFS(vp);
 	int error = 0;
 
-	if (vp->v_type == VREG && ((np->n_flag & NMODIFIED) ||
+	if (vp->v_type == VREG && vp->v_blockh && ((np->n_flag & NMODIFIED) ||
 	   ((np->n_flag & NBUFFERED) && np->n_sillyrename))) {
 		nfs_lock(vp);
 		np->n_flag &= ~(NMODIFIED|NBUFFERED);
-		error = nfs_blkflush(vp, (daddr_t)0, np->n_size, TRUE);
+		vinvalbuf(vp, TRUE);
 		if (np->n_flag & NWRITEERR) {
 			np->n_flag &= ~NWRITEERR;
-			if (!error)
-				error = np->n_error ? np->n_error : EIO;
+			error = np->n_error;
 		}
 		nfs_unlock(vp);
 	}
@@ -353,10 +352,12 @@ nfs_setattr(vp, vap, cred)
 		np = VTONFS(vp);
 		if (np->n_flag & NMODIFIED) {
 			np->n_flag &= ~NMODIFIED;
-			nfs_blkflush(vp, (daddr_t)0, np->n_size, TRUE);
+			if (vp->v_blockh)
+				vinvalbuf(vp, TRUE);
 		}
 	}
-	txdr_time(&vap->va_atime, &sp->sa_atime);
+	sp->sa_atime.tv_sec = txdr_unsigned(vap->va_atime.tv_sec);
+	sp->sa_atime.tv_usec = txdr_unsigned(vap->va_flags);
 	txdr_time(&vap->va_mtime, &sp->sa_mtime);
 	nfsm_request(vp);
 	nfsm_loadattr(vp, (struct vattr *)0);
@@ -425,9 +426,9 @@ nfs_lookup(vp, ndp)
 				nfs_nput(vdp);
 			}
 		}
-		nfs_lock(vp);
 		ndp->ni_vp = (struct vnode *)0;
-	}
+	} else
+		nfs_unlock(vp);
 	error = 0;
 	nfsstats.lookupcache_misses++;
 	nfsstats.rpccnt[NFSPROC_LOOKUP]++;
@@ -438,11 +439,9 @@ nfs_lookup(vp, ndp)
 	nfsm_request(vp);
 nfsmout:
 	if (error) {
-		if ((flag == CREATE || flag == RENAME) &&
-			*ndp->ni_next == 0) {
-			if (!lockparent)
-				nfs_unlock(vp);
-		}
+		if (lockparent || (flag != CREATE && flag != RENAME) ||
+		    *ndp->ni_next != 0)
+			nfs_lock(vp);
 		return (ENOENT);
 	}
 	nfsm_disect(fhp,nfsv2fh_t *,NFSX_FH);
@@ -457,6 +456,7 @@ nfsmout:
 			np = VTONFS(vp);
 		} else {
 			if (error = nfs_nget(vp->v_mount, fhp, &np)) {
+				nfs_lock(vp);
 				m_freem(mrep);
 				return (error);
 			}
@@ -464,6 +464,7 @@ nfsmout:
 		}
 		if (error =
 		    nfs_loadattrcache(&newvp, &md, &dpos, (struct vattr *)0)) {
+			nfs_lock(vp);
 			if (newvp != vp)
 				nfs_nput(newvp);
 			else
@@ -472,31 +473,34 @@ nfsmout:
 			return (error);
 		}
 		ndp->ni_vp = newvp;
-		if (!lockparent)
-			nfs_unlock(vp);
+		if (lockparent || vp == newvp)
+			nfs_lock(vp);
 		m_freem(mrep);
 		return (0);
 	}
 
 	if (flag == RENAME && wantparent && *ndp->ni_next == 0) {
 		if (!bcmp(VTONFS(vp)->n_fh.fh_bytes, (caddr_t)fhp, NFSX_FH)) {
+			nfs_lock(vp);
 			m_freem(mrep);
 			return (EISDIR);
 		}
 		if (error = nfs_nget(vp->v_mount, fhp, &np)) {
+			nfs_lock(vp);
 			m_freem(mrep);
 			return (error);
 		}
 		newvp = NFSTOV(np);
 		if (error =
 		    nfs_loadattrcache(&newvp, &md, &dpos, (struct vattr *)0)) {
+			nfs_lock(vp);
 			nfs_nput(newvp);
 			m_freem(mrep);
 			return (error);
 		}
 		ndp->ni_vp = newvp;
-		if (!lockparent)
-			nfs_unlock(vp);
+		if (lockparent)
+			nfs_lock(vp);
 		return (0);
 	}
 
@@ -505,22 +509,22 @@ nfsmout:
 		newvp = vp;
 		np = VTONFS(vp);
 	} else if (ndp->ni_isdotdot) {
-		nfs_unlock(vp);
 		if (error = nfs_nget(vp->v_mount, fhp, &np)) {
 			nfs_lock(vp);
 			m_freem(mrep);
 			return (error);
 		}
-		nfs_lock(vp);
 		newvp = NFSTOV(np);
 	} else {
 		if (error = nfs_nget(vp->v_mount, fhp, &np)) {
+			nfs_lock(vp);
 			m_freem(mrep);
 			return (error);
 		}
 		newvp = NFSTOV(np);
 	}
 	if (error = nfs_loadattrcache(&newvp, &md, &dpos, (struct vattr *)0)) {
+		nfs_lock(vp);
 		if (newvp != vp)
 			nfs_nput(newvp);
 		else
@@ -530,8 +534,8 @@ nfsmout:
 	}
 	m_freem(mrep);
 
-	if (vp != newvp && (!lockparent || *ndp->ni_next != '\0'))
-		nfs_unlock(vp);
+	if (vp == newvp || (lockparent && *ndp->ni_next == '\0'))
+		nfs_lock(vp);
 	ndp->ni_vp = newvp;
 	if (error == 0 && ndp->ni_makeentry)
 		cache_enter(ndp);
@@ -732,10 +736,13 @@ nfs_remove(ndp)
 	if (vp->v_type == VREG) {
 		if (np->n_flag & (NMODIFIED|NBUFFERED)) {
 			np->n_flag &= ~(NMODIFIED|NBUFFERED);
-			nfs_blkflush(vp, (daddr_t)0, np->n_size, TRUE);
+			if (vp->v_blockh)
+				vinvalbuf(vp, TRUE);
 		}
-		if (np->n_flag & NPAGEDON)
+		if (np->n_flag & NPAGEDON) {
+			np->n_flag &= ~NPAGEDON;
 			mpurge(vp);	/* In case cmap entries still ref it */
+		}
 	}
 	if (vp->v_count > 1) {
 		if (!np->n_sillyrename)
@@ -748,6 +755,14 @@ nfs_remove(ndp)
 		nfsm_strtom(ndp->ni_dent.d_name, ndp->ni_dent.d_namlen, NFS_MAXNAMLEN);
 		nfsm_request(ndp->ni_dvp);
 		nfsm_reqdone;
+		/*
+		 * Kludge City: If the first reply to the remove rpc is lost..
+		 *   the reply to the retransmitted request will be ENOENT
+		 *   since the file was in fact removed
+		 *   Therefore, we cheat and return success.
+		 */
+		if (error == ENOENT)
+			error = 0;
 	}
 	if (ndp->ni_dvp == ndp->ni_vp)
 		vrele(ndp->ni_vp);
@@ -1101,6 +1116,7 @@ nfs_statfs(mp, sbp)
 	nfsm_request(vp);
 	nfsm_disect(sfp, struct nfsv2_statfs *, NFSX_STATFS);
 	sbp->f_type = MOUNT_NFS;
+	sbp->f_flags = nmp->nm_flag;
 	sbp->f_bsize = fxdr_unsigned(long, sfp->sf_tsize);
 	sbp->f_fsize = fxdr_unsigned(long, sfp->sf_bsize);
 	sbp->f_blocks = fxdr_unsigned(long, sfp->sf_blocks);
@@ -1108,6 +1124,8 @@ nfs_statfs(mp, sbp)
 	sbp->f_bavail = fxdr_unsigned(long, sfp->sf_bavail);
 	sbp->f_files = 0;
 	sbp->f_ffree = 0;
+	sbp->f_fsid.val[0] = mp->m_fsid.val[0];
+	sbp->f_fsid.val[1] = mp->m_fsid.val[1];
 	bcopy(nmp->nm_path, sbp->f_mntonname, MNAMELEN);
 	bcopy(nmp->nm_host, sbp->f_mntfromname, MNAMELEN);
 	nfsm_reqdone;
@@ -1305,11 +1323,9 @@ nfs_doio(bp)
 	int npf, npf2;
 	int reg;
 	caddr_t vbase;
-	caddr_t addr;
 	unsigned v;
 	struct proc *rp;
 	int o, error;
-	int bcnt;
 	struct uio uio;
 	struct iovec io;
 
@@ -1318,17 +1334,7 @@ nfs_doio(bp)
 	uiop->uio_iov = &io;
 	uiop->uio_iovcnt = 1;
 	uiop->uio_segflg = UIO_SYSSPACE;
-	if (bp->b_flags & B_READ) {
-		io.iov_len = uiop->uio_resid = bp->b_bcount;
-		uiop->uio_offset = bp->b_lblkno * DEV_BSIZE;
-		addr = bp->b_un.b_addr;
-		bcnt = bp->b_bcount;
-	} else {
-		io.iov_len = uiop->uio_resid = bp->b_dirtyend - bp->b_dirtyoff;
-		uiop->uio_offset = (bp->b_lblkno * DEV_BSIZE) + bp->b_dirtyoff;
-		addr = bp->b_un.b_addr+bp->b_dirtyoff;
-		bcnt = bp->b_dirtyend-bp->b_dirtyoff;
-	}
+
 	/*
 	 * For phys i/o, map the b_addr into kernel virtual space using
 	 * the Nfsiomap pte's
@@ -1342,8 +1348,9 @@ nfs_doio(bp)
 		cr->cr_uid = rp->p_uid;
 		cr->cr_gid = 0;		/* Anything ?? */
 		cr->cr_ngroups = 1;
-		o = (int)addr & PGOFSET;
-		npf2 = npf = btoc(bcnt + o);
+		o = (int)bp->b_un.b_addr & PGOFSET;
+		npf2 = npf = btoc(bp->b_bcount + o);
+
 		/*
 		 * Get some mapping page table entries
 		 */
@@ -1352,18 +1359,16 @@ nfs_doio(bp)
 			sleep((caddr_t)&nfsmap_want, PZERO-1);
 		}
 		reg--;
-		/* I know it is always the else, but that may change someday */
-		if ((bp->b_flags & B_PHYS) == 0)
-			pte = kvtopte(addr);
-		else if (bp->b_flags & B_PAGET)
-			pte = &Usrptmap[btokmx((struct pte *)addr)];
+		if (bp->b_flags & B_PAGET)
+			pte = &Usrptmap[btokmx((struct pte *)bp->b_un.b_addr)];
 		else {
-			v = btop(addr);
+			v = btop(bp->b_un.b_addr);
 			if (bp->b_flags & B_UAREA)
 				pte = &rp->p_addr[v];
 			else
 				pte = vtopte(rp, v);
 		}
+
 		/*
 		 * Play vmaccess() but with the Nfsiomap page table
 		 */
@@ -1379,37 +1384,60 @@ nfs_doio(bp)
 			vaddr += NBPG;
 			--npf;
 		}
+
+		/*
+		 * And do the i/o rpc
+		 */
 		io.iov_base = vbase+o;
-	} else {
-		io.iov_base = addr;
-	}
-	if (bp->b_flags & B_READ) {
-		uiop->uio_rw = UIO_READ;
-		bp->b_error = error = nfs_readrpc(vp, uiop, bp->b_rcred);
-	} else {
-		uiop->uio_rw = UIO_WRITE;
-		bp->b_error = error = nfs_writerpc(vp, uiop, bp->b_wcred);
-		if (error) {
-			np = VTONFS(vp);
-			np->n_error = error;
-			np->n_flag |= NWRITEERR;
+		io.iov_len = uiop->uio_resid = bp->b_bcount;
+		uiop->uio_offset = bp->b_lblkno * DEV_BSIZE;
+		if (bp->b_flags & B_READ) {
+			uiop->uio_rw = UIO_READ;
+			nfsstats.read_physios++;
+			bp->b_error = error = nfs_readrpc(vp, uiop, bp->b_rcred);
+		} else {
+			uiop->uio_rw = UIO_WRITE;
+			nfsstats.write_physios++;
+			bp->b_error = error = nfs_writerpc(vp, uiop, bp->b_wcred);
 		}
-		bp->b_dirtyoff = bp->b_dirtyend = 0;
-	}
-	if (error)
-		bp->b_flags |= B_ERROR;
-	bp->b_resid = uiop->uio_resid;
-	/*
-	 * Release pte's used by physical i/o
-	 */
-	if (bp->b_flags & B_PHYS) {
+
+		/*
+		 * Finally, release pte's used by physical i/o
+		 */
 		crfree(cr);
 		rmfree(nfsmap, (long)npf2, (long)++reg);
 		if (nfsmap_want) {
 			nfsmap_want = 0;
 			wakeup((caddr_t)&nfsmap_want);
 		}
+	} else {
+		if (bp->b_flags & B_READ) {
+			io.iov_len = uiop->uio_resid = bp->b_bcount;
+			uiop->uio_offset = bp->b_lblkno * DEV_BSIZE;
+			io.iov_base = bp->b_un.b_addr;
+			uiop->uio_rw = UIO_READ;
+			nfsstats.read_bios++;
+			bp->b_error = error = nfs_readrpc(vp, uiop, bp->b_rcred);
+		} else {
+			io.iov_len = uiop->uio_resid = bp->b_dirtyend
+				- bp->b_dirtyoff;
+			uiop->uio_offset = (bp->b_lblkno * DEV_BSIZE)
+				+ bp->b_dirtyoff;
+			io.iov_base = bp->b_un.b_addr + bp->b_dirtyoff;
+			uiop->uio_rw = UIO_WRITE;
+			nfsstats.write_bios++;
+			bp->b_error = error = nfs_writerpc(vp, uiop, bp->b_wcred);
+			if (error) {
+				np = VTONFS(vp);
+				np->n_error = error;
+				np->n_flag |= NWRITEERR;
+			}
+			bp->b_dirtyoff = bp->b_dirtyend = 0;
+		}
 	}
+	if (error)
+		bp->b_flags |= B_ERROR;
+	bp->b_resid = uiop->uio_resid;
 	biodone(bp);
 	return (error);
 }
@@ -1427,12 +1455,14 @@ nfs_fsync(vp, fflags, cred, waitfor)
 	int waitfor;
 {
 	register struct nfsnode *np = VTONFS(vp);
-	int error;
+	int error = 0;
 
 	if (np->n_flag & NMODIFIED) {
 		np->n_flag &= ~NMODIFIED;
-		error = nfs_blkflush(vp, (daddr_t)0, np->n_size, FALSE);
+		vflushbuf(vp, waitfor == MNT_WAIT ? B_SYNC : 0);
 	}
+	if (!error && (np->n_flag & NWRITEERR))
+		error = np->n_error;
 	return (error);
 }
 
