@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	6.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)newfs.c	6.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -86,10 +86,16 @@ int	Nflag;			/* run without writing file system */
 int	fssize;			/* file system size */
 int	ntracks;		/* # tracks/cylinder */
 int	nsectors;		/* # sectors/track */
-int	nspares = -1;		/* spare sectors per cylinder */
+int	nphyssectors;		/* # sectors/track including spares */
 int	secpercyl;		/* sectors per cylinder */
+int	trackspares = -1;	/* spare sectors per track */
+int	cylspares = -1;		/* spare sectors per cylinder */
 int	sectorsize;		/* bytes/sector */
 int	rpm;			/* revolutions/minute of drive */
+int	interleave;		/* hardware sector interleave */
+int	trackskew = -1;		/* sector 0 skew, per track */
+int	headswitch;		/* head switch time, usec */
+int	trackseek;		/* track-to-track seek, usec */
 int	fsize = DFL_FRAGSIZE;	/* fragment size */
 int	bsize = DFL_BLKSIZE;	/* block size */
 int	cpg = DESCPG;		/* cylinders/cylinder group */
@@ -142,8 +148,8 @@ main(argc, argv)
 				if (argc < 1)
 					fatal("-a: spare sectors per cylinder");
 				argc--, argv++;
-				nspares = atoi(*argv);
-				if (nspares < 0)
+				cylspares = atoi(*argv);
+				if (cylspares < 0)
 					fatal("%s: bad spare sectors per cylinder", *argv);
 				goto next;
 
@@ -193,6 +199,24 @@ main(argc, argv)
 						*argv);
 				goto next;
 
+			case 'k':
+				if (argc < 1)
+					fatal("-k: track skew");
+				argc--, argv++;
+				trackskew = atoi(*argv);
+				if (trackskew < 0)
+					fatal("%s: bad track skew", *argv);
+				goto next;
+
+			case 'l':
+				if (argc < 1)
+					fatal("-l: interleave");
+				argc--, argv++;
+				interleave = atoi(*argv);
+				if (interleave <= 0)
+					fatal("%s: bad interleave", *argv);
+				goto next;
+
 			case 'm':
 				if (argc < 1)
 					fatal("-m: missing free space %%\n");
@@ -215,6 +239,15 @@ main(argc, argv)
 					fatal("%s: bad optimization preference %s",
 					    *argv,
 					    "(options are `space' or `time')");
+				goto next;
+
+			case 'p':
+				if (argc < 1)
+					fatal("-p: spare sectors per track");
+				argc--, argv++;
+				trackspares = atoi(*argv);
+				if (trackspares < 0)
+					fatal("%s: bad spare sectors per track", *argv);
 				goto next;
 
 			case 'r':
@@ -268,6 +301,9 @@ next:
 		fprintf(stderr, "\t-r revolutions/minute\n");
 		fprintf(stderr, "\t-i number of bytes per inode\n");
 		fprintf(stderr, "\t-S sector size\n");
+		fprintf(stderr, "\t-l hardware sector interleave\n");
+		fprintf(stderr, "\t-k sector 0 skew, per track\n");
+		fprintf(stderr, "\t-p spare sectors per track\n");
 		fprintf(stderr, "\t-a spare sectors per cylinder\n");
 		exit(1);
 	}
@@ -332,6 +368,16 @@ next:
 		if (sectorsize <= 0)
 			fatal("%s: no default sector size", argv[1]);
 	}
+	if (trackskew == -1) {
+		trackskew = lp->d_trackskew;
+		if (trackskew < 0)
+			fatal("%s: no default track skew", argv[1]);
+	}
+	if (interleave == 0) {
+		interleave = lp->d_interleave;
+		if (interleave <= 0)
+			fatal("%s: no default interleave", argv[1]);
+	}
 	if (fsize == 0) {
 		fsize = pp->p_fsize;
 		if (fsize <= 0)
@@ -347,13 +393,24 @@ next:
 		fprintf(stderr, "because minfree is less than 10%%\n");
 		opt = FS_OPTSPACE;
 	}
-	if (nspares == -1)
-		nspares = lp->d_sparespercyl;
-	secpercyl = nsectors * ntracks - nspares;
+	if (trackspares == -1) {
+		trackspares = lp->d_sparespertrack;
+		if (trackspares < 0)
+			fatal("%s: no default spares/track", argv[1]);
+	}
+	nphyssectors = nsectors + trackspares;
+	if (cylspares == -1) {
+		cylspares = lp->d_sparespercyl;
+		if (cylspares < 0)
+			fatal("%s: no default spares/cylinder", argv[1]);
+	}
+	secpercyl = nsectors * ntracks - cylspares;
 	if (secpercyl != lp->d_secpercyl)
 		fprintf(stderr, "%s (%d) %s (%d)\n",
 			"Warning: calculated sectors per cylinder", secpercyl,
 			"disagrees with disk label", lp->d_secpercyl);
+	headswitch = lp->d_headswitch;
+	trackseek = lp->d_trkseek;
 	oldpartition = *pp;
 	mkfs(pp, special, fsi, fso);
 	if (!Nflag && bcmp(pp, &oldpartition, sizeof(oldpartition)))
