@@ -1,4 +1,4 @@
-/*	raw_usrreq.c	6.1	83/07/29	*/
+/*	raw_usrreq.c	6.2	84/07/26	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -265,8 +265,10 @@ raw_usrreq(so, req, m, nam, rights)
 		if ((rp->rcb_flags & RAW_DONTROUTE) == 0)
 			if (!equal(rp->rcb_faddr, rp->rcb_route.ro_dst) ||
 			    rp->rcb_route.ro_rt == 0) {
-				if (rp->rcb_route.ro_rt)
-					rtfree(rp->rcb_route.ro_rt);
+				if (rp->rcb_route.ro_rt) {
+					RTFREE(rp->rcb_route.ro_rt);
+					rp->rcb_route.ro_rt = NULL;
+				}
 				rp->rcb_route.ro_dst = rp->rcb_faddr;
 				rtalloc(&rp->rcb_route);
 			}
@@ -282,18 +284,16 @@ raw_usrreq(so, req, m, nam, rights)
 		soisdisconnected(so);
 		break;
 
-	case PRU_CONTROL:
-		m = NULL;
-		error = EOPNOTSUPP;
-		break;
-
 	/*
 	 * Not supported.
 	 */
-	case PRU_ACCEPT:
+	case PRU_CONTROL:
+	case PRU_RCVOOB:
 	case PRU_RCVD:
 	case PRU_SENSE:
-	case PRU_RCVOOB:
+		return(EOPNOTSUPP);
+
+	case PRU_ACCEPT:
 	case PRU_SENDOOB:
 		error = EOPNOTSUPP;
 		break;
