@@ -3,7 +3,7 @@
 # remake options -- this isn't necessary unless you add/delete options
 #
 onintr ifintr
-cp ex_data.c /tmp/$$.c
+cat < ex_data.c > /tmp/$$.c
 ex - /tmp/$$.c <<'%'
 	g/^#include/d
 	w
@@ -38,7 +38,7 @@ ex - /tmp/foo.c <<'X'
 .
 	$s/e[ 	].*[ 	]/e	NOPTS	/
 	0a
-	/*  sccs id   @(#)  ex_vars.h  @(#)makeoptions	6.2 %G%  */
+	/*  sccs id   @(#)  ex_vars.h  @(#)makeoptions	6.3 %G%  */
 .
 	w! ex_vars.h
 	q
