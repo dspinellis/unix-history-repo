@@ -1,10 +1,10 @@
 #ifndef lint
-static char sccsid[] = "@(#)ventel.c	1.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)ventel.c	1.7 (Berkeley) %G%";
 #endif
 
 /*
  * Routines for calling up on a Ventel Modem
- * The Ventel is expected to be strapped for "no echo".
+ * The Ventel is expected to be strapped for local echo (just like uucp)
  */
 #include "tip.h"
 
@@ -13,6 +13,16 @@ static char sccsid[] = "@(#)ventel.c	1.6 (Berkeley) %G%";
 static	int sigALRM();
 static	int timeout = 0;
 static	jmp_buf timeoutbuf;
+
+/*
+ * some sleep calls have been replaced by this macro
+ * because some ventel modems require two <cr>s in less than
+ * a second in order to 'wake up'... yes, it is dirty...
+ */
+#define delay(num,denom) busyloop(CPUSPEED*num/denom)
+#define CPUSPEED 1000000	/* VAX 780 is 1MIPS */
+#define	DELAY(n)	{ register long N = (n); while (--N > 0); }
+busyloop(n) { DELAY(n); }
 
 ven_dialer(num, acu)
 	register char *num;
@@ -38,10 +48,12 @@ ven_dialer(num, acu)
 	ioctl(FD, TIOCHPCL, 0);
 	echo("#k$\r$\n$D$I$A$L$:$ ");
 	for (cp = num; *cp; cp++) {
-		sleep(1);
+		delay(1, 10);
 		write(FD, cp, 1);
 	}
-	echo("\r$\n");
+	delay(1, 10);
+	write(FD, "\r", 1);
+	gobble('\n', line);
 	if (gobble('\n', line))
 		connected = gobble('!', line);
 	ioctl(FD, TIOCFLUSH);
@@ -175,7 +187,7 @@ vensync(fd)
 	 * with DTR, you can always try setting the baud rate to 0.
 	 */
 	ioctl(FD, TIOCCDTR, 0);
-	sleep(2);
+	sleep(1);
 	ioctl(FD, TIOCSDTR, 0);
 	while (already < MAXRETRY) {
 		/*
@@ -184,9 +196,9 @@ vensync(fd)
 		 * so the modem can frame the incoming characters.
 		 */
 		write(fd, "\r", 1);
-		sleep(1);
+		delay(1,10);
 		write(fd, "\r", 1);
-		sleep(3);
+		sleep(2);
 		if (ioctl(fd, FIONREAD, (caddr_t)&nread) < 0) {
 			perror("tip: ioctl");
 			continue;
@@ -202,3 +214,4 @@ vensync(fd)
 	}
 	return (0);
 }
+
