@@ -1,5 +1,5 @@
 /*
- *	@(#)kdb.c	7.1 (Berkeley) %G%
+ *	@(#)kdb.c	7.2 (Berkeley) %G%
  *
  * KDB50/MSCP device driver
  */
@@ -289,8 +289,8 @@ kdbconfig(kdbnum, va, pa, vec)
 	ki->ki_vec = vec;
 	ki->ki_map = (struct map *) malloc(KI_MAPSIZ * sizeof (struct map),
 	    M_DEVBUF, M_NOWAIT);
-	ki->ki_pte = (struct pte *) malloc(KI_PTES * sizeof (struct pte)),
-	    M_DEVBUF, M_NOWAIT;
+	ki->ki_pte = (struct pte *) malloc(KI_PTES * sizeof (struct pte),
+	    M_DEVBUF, M_NOWAIT);
 	if (ki->ki_map == NULL || ki->ki_pte == NULL)
 		return;
 	bzero((caddr_t) ki->ki_map, KI_MAPSIZ * sizeof (struct map));
