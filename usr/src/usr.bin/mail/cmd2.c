@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)cmd2.c	5.2 (Berkeley) %G%";
+static char *sccsid = "@(#)cmd2.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include "rcv.h"
@@ -230,8 +230,12 @@ swrite(str)
 		touch(mesg);
 		mp = &message[mesg-1];
 		mesf = setinput(mp);
-		t = mp->m_lines - 2;
-		readline(mesf, linebuf);
+		t = mp->m_lines - 1;
+		while (t-- > 0) {
+			readline(mesf, linebuf);
+			if (blankline(linebuf))
+				break;
+		}
 		while (t-- > 0) {
 			fgets(linebuf, BUFSIZ, mesf);
 			fputs(linebuf, obuf);
