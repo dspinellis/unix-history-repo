@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)strtok.3	5.1 (Berkeley) %G%
+.\"	@(#)strtok.3	5.2 (Berkeley) %G%
 .\"
 .TH STRTOK 3 ""
 .UC 3
@@ -57,3 +57,7 @@ occurrences of separator characters.  This routine was added to allow
 handling blank fields.
 .SH BUGS
 There is no way to get tokens from multiple strings simultaneously.
+.PP
+.I Strsep
+is used heavily in the C library; calls to it and calls to the C library
+should not be intermixed.
