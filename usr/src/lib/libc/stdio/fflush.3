@@ -1,0 +1,75 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)fflush.3	5.1 (Berkeley) %G%
+.\"
+.TH FFLUSH 3 ""
+.UC 7
+.SH NAME
+fflush, fpurge \- flush a stream
+.SH SYNOPSIS
+.nf
+.ft B
+#include <stdio.h>
+
+int
+fflush(FILE *stream);
+
+int
+fpurge(FILE *stream);
+.ft R
+.fi
+.SH DESCRIPTION
+.I Fflush
+writes any buffered data for the given output
+.I stream
+via the stream's underlying write function.
+The stream remains open.
+.PP
+If the
+.I stream
+argument is NULL,
+.I fflush
+flushes
+.I all
+open output streams.
+.PP
+.I Fpurge
+erases any input or output buffered in the given
+.IR stream .
+For output streams this discards any unwritten output.
+For input streams this discards any input read from the underlying object
+but not yet obtained via
+.IR getc ;
+this includes any text pushed back via
+.IR ungetc .
+.SH "RETURN VALUE"
+Upon successful completion 0 is returned.
+Otherwise,
+.B EOF
+is returned and the global variable
+.I errno
+is set to indicate the error.
+.SH ERRORS
+.TP 15
+[EBADF]
+.I Stream
+is not an open stream, or, in the case of
+.IR fflush ,
+not a stream open for writing.
+.PP
+.I Fflush
+may also fail and set
+.I errno
+for any of the errors specified for the routine
+.IR write (2).
+.SH "SEE ALSO"
+write(2), fopen(3), fclose(3), setbuf(3)
+.SH STANDARDS
+.I Fflush
+conforms to ANSI X3.159-1989 (``ANSI C'').
