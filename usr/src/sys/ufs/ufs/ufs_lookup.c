@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_lookup.c	7.14 (Berkeley) %G%
+ *	@(#)ufs_lookup.c	7.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -68,7 +68,7 @@ ufs_lookup(vp, ndp)
 	register struct nameidata *ndp;
 {
 	register struct vnode *vdp;	/* vnode copy of dp */
-	register struct inode *dp = 0;	/* the directory we are searching */
+	register struct inode *dp;	/* the directory we are searching */
 	register struct fs *fs;		/* file system that directory is in */
 	struct buf *bp = 0;		/* a buffer of directory entries */
 	register struct direct *ep;	/* the current directory entry */
@@ -117,14 +117,15 @@ ufs_lookup(vp, ndp)
 
 		if (error == ENOENT)
 			return (error);
+		if (vp == ndp->ni_rdir && ndp->ni_isdotdot)
+			panic("lookup: .. through root");
 		/*
 		 * Get the next vnode in the path.
 		 * See comment below starting `Step through' for
 		 * an explaination of the locking protocol.
 		 */
 		pdp = dp;
-		if (!(ndp->ni_vp == ndp->ni_rdir && ndp->ni_isdotdot))
-			dp = VTOI(ndp->ni_vp);
+		dp = VTOI(ndp->ni_vp);
 		vdp = ITOV(dp);
 		vpid = vdp->v_id;
 		if (pdp == dp) {
