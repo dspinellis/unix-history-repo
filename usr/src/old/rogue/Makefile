@@ -20,5 +20,5 @@ doc.troff: rogue.doc
 all:	rogue doc.nroff doc.troff
 
 install: rogue
-	install -s -o games -m 4711 rogue $(DESTDIR)
-	install -c -o games -m 644 /dev/null $(SCOREFILE)
+	install -s -o daemon -m 4711 rogue $(DESTDIR)
+	install -c -o daemon -m 644 /dev/null $(SCOREFILE)
