@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)procfs_vfsops.c	8.1 (Berkeley) %G%
+ *	@(#)procfs_vfsops.c	8.2 (Berkeley) %G%
  *
  * From:
  *	$Id: procfs_vfsops.c,v 3.1 1993/12/15 09:40:17 jsp Exp $
@@ -61,8 +61,8 @@ procfs_mount(mp, path, data, ndp, p)
 	(void) copyinstr(path, (caddr_t)mp->mnt_stat.f_mntonname, MNAMELEN, &size);
 	bzero(mp->mnt_stat.f_mntonname + size, MNAMELEN - size);
 
-	size = sizeof("proc") - 1;
-	bcopy("proc", mp->mnt_stat.f_mntfromname, size);
+	size = sizeof("procfs") - 1;
+	bcopy("procfs", mp->mnt_stat.f_mntfromname, size);
 	bzero(mp->mnt_stat.f_mntfromname + size, MNAMELEN - size);
 
 	return (0);
