@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)lcmd.c	3.2 83/08/11";
+static	char *sccsid = "@(#)lcmd.c	3.3 83/08/12";
 #endif
 
 #include "defs.h"
@@ -11,6 +11,7 @@ int l_label();
 int l_terse();
 int l_source();
 int l_write();
+int l_close();
 
 struct lcmd {
 	char *l_name;			/* name of command */
@@ -21,13 +22,14 @@ struct lcmd {
 	int (*l_func)();		/* the function */
 };
 static struct lcmd lcmd[] = {
-	"%",		1, 1, 0, 0, l_select,
-	"escape",	1, 0, 1, 1, l_escape,
-	"label",	1, 0, 2, 2, l_label,
-	"source",	1, 0, 1, 1, l_source,
-	"terse",	1, 0, 0, 1, l_terse,
-	"window",	1, 0, 4, 4, l_window,
-	"write",	2, 0, 2, 2, l_write,
+	"%",		1, 1, 0,  0, l_select,
+	"close",	1, 0, 1, -1, l_close,
+	"escape",	1, 0, 1,  1, l_escape,
+	"label",	1, 0, 2,  2, l_label,
+	"source",	1, 0, 1,  1, l_source,
+	"terse",	1, 0, 0,  1, l_terse,
+	"window",	1, 0, 4,  4, l_window,
+	"write",	2, 0, 2,  2, l_write,
 	0
 };
 
@@ -67,7 +69,7 @@ char *line;
 	if (lp->l_name) {
 		if (lp->l_amin > argc - 1)
 			error("Too few arguments.");
-		else if (lp->l_amax < argc - 1)
+		else if (lp->l_amax >= 0 && lp->l_amax < argc - 1)
 			error("Too many arguments.");
 		else
 			(*lp->l_func)();

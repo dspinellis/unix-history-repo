@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)lcmd1.c	3.2 83/08/11";
+static	char *sccsid = "@(#)lcmd1.c	3.3 83/08/12";
 #endif
 
 #include "defs.h"
@@ -98,6 +98,28 @@ l_write()
 	if ((w = idtowin(argv[1])) == 0)
 		return;
 	(void) write(w->ww_pty, argv[2], strlen(argv[2]));
+}
+
+l_close()
+{
+	register i;
+	register struct ww *w;
+	char didit = 0;
+
+	for (i = 1; i < argc; i++) {
+		if ((w = idtowin(argv[i])) == 0)
+			continue;
+		closewin(w);
+		didit++;
+	}
+	if (selwin == 0) {
+		for (i = 0; i < NWINDOW && window[i] != 0; i++)
+			;
+		if (i < NWINDOW)
+			setselwin(window[i]);
+	}
+	if (didit)
+		reframe();
 }
 
 struct ww *
