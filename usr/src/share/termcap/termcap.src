@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file	@(#)termcap.src	5.26 (Berkeley) %G%
+#	Termcap source file	@(#)termcap.src	5.27 (Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -1017,10 +1017,11 @@ TT|4424|tty4424|teletype 4424M:\
 # Teletype blit.
 TD|dmd|5620|ttydmd|tty5620|5620	terminal 88 columns:\
 	:co#88:li#70:am:bs:pt:cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
-	:cl=\E[H\E[J:cd=\E[J:ce=\E[K:al=\E[L:dl=\E[M:\
-	:im=:ei=:ic=\E[@:dm=:ed=:dc=\E[P:sr=\E[T:sf=\E[S:\
-	:kl=\E[D:kr=\E[C:ku=\E[A:kd=\E[B:kh=\E[H:\
-	:so=\E[7m:se=\E[0m:us=\E[4m:ue=\E[0m:
+	:cl=\E[H\E[J:cd=\E[J:ce=\E[K:al=\E[L:dl=\E[M:do=^J:\
+	:im=:ei=:ic=\E[@:dc=\E[P:sr=\E[T:sf=\E[S:le=^H:kb=^H:\
+	:kl=\E[D:kr=\E[C:ku=\E[A:kd=\E[B:kh=\E[H:ho=\E[H:ll=\E[70;1H:\
+	:AL=\E[%dL:DL=\E[%dM:IC=\E[%d@:DC=\E[%dP:rc=\E8:rs=\Ec:sc=\E7:\
+	:so=\E[7m:se=\E[0m:us=\E[4m:ue=\E[0m:ms:me=\E[0m:mr=\E[7m:
 # # --------------------------------
 #
 # V: VISUAL
@@ -1161,6 +1162,19 @@ Xz|4105|tek4105:\
 	:as=\E[1m:ae=\E[0m:ms:pt:se=\E[0m:so=\E[7m:up=\E[1A:kb=^h:ku=\E[1A:\
 	:kd=\E[1B:kl=\E[1D:kr=\E[1C:ul:us=\E[4m:ue=\E[0m:is=\E%!1\E[?6l\E[0m:\
 	:mr=\E[<3m:md=\E[<4m:mh=\E[<6m:mb=\E[<7m:me=\E[<1m:ti=\E%!1\E[?6l:xt:
+# This entry is from Tek. Inc.  (Brian Biehl)
+Xz|4115|tek4115|Tektronix 4115:\
+	:co#80:li#34:\
+	:al=\E[L:am:bc=\E[D:bs:bt=\E[Z:cd=\E[J:ce=\E[K:\
+	:cl=\E[;H\E[2J:cm=\E[%i%d;%dH:da:db:dc=\E[P:dl=\E[M:do=\E[B:\
+	:ei=\E[4l:eo:ho=\E[;H:im=\E[4h:if=/usr/lib/tabset/vt100:\
+	:is=\E%\0410\E%\014\ELV0\EKA1\ELBB2\ENU@\075\ELLB2\ELM0\ELV1\EKYA?\E%\0411\E[<1l\E[?7h\E[?8h\E[34;1H\E[34B\E[0m:\
+	:kb=^H:ke=\E>:ks=\E=:nd=\E[C:pt:se=\E[m:so=\E[7m:sr=\EM:\
+	:te=\E%\0410\ELBG8\E%\0411\E[34;1H\E[J:
+	:ti=\E%\0410\ELBB2\E%\0411:\
+	:ue=\E[m:up=\E[A:us=\E[4m:\
+	:ve=\E%\0410\ELBG8\E%\0411\E[34;1H:\
+	:vs=\E%\0410\ELBB2\E%\0411:
 # The tek4125 emulates a vt100 incorrectly - the scrolling region
 # command is ignored. The following entry replaces the cs with the
 # needed al, dl, and im; removes some cursor pad commands that the tek4125
@@ -1547,8 +1561,8 @@ vs|xterm|vs100|xterm terminal emulator (X window system):\
 	:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:pt:sf=\n:sr=\EM:\
 	:al=\E[L:dl=\E[M:ic=\E[@:dc=\E[P:\
 	:MT:ks=\E[?1h\E=:ke=\E[?1l\E>:\
-	:is=\E[r\E\E[m\E[2J\E[H\E[?7h\E[?1;3;4;6l:\
-	:rs=\E[r\E<\E[m\E[2J\E[H\E[?7h\E[?1;3;4;6l:
+	:is=\E[r\E\E[m\E[H\E[?7h\E[?1;3;4;6l:\
+	:rs=\E[r\E<\E[m\E[H\E[?7h\E[?1;3;4;6l:xn:
 v2|xterms|vs100s|xterm terminal emulator (small)(X window system):\
 	:co#80:li#24:tc=xterm:
 # vs100 emulator using tsim	(from lai@decwrl)
@@ -1762,6 +1776,14 @@ ku|h19-u|h19u|heathkit with underscore cursor:\
 	:vs@:ve@:tc=h19-b:
 kg|h19-g|h19g|heathkit w/block cursor:\
 	:ve=\Ex4:tc=h19-b:
+# from ucscc!B.fiatlux@ucbvax.berkeley.edu
+zx|ztx|ztx11|zt-1|htx11|ztx-1-a|ztx-10/11:\
+	:al=\EL:am:bs:cd=\EJ:ce=\EK:cl=\EE:cm=\EY%+ %+ :co#80:\
+	:dl=\EM:do=^J:ho=\EH:is=\Ej\EH\Eq\Ek\Ev\Ey1\Ey5\EG\Ey8\Ey9\Ey>:\
+	:k0=\ES:k1=\EB:k2=\EU:k3=\EV:k4=\EW:k5=\EP:k6=\EQ:k7=\ER:kb=^H:kd=\EB:\
+	:kl=\ED:kr=\EC:ku=\EA:le=^H:li#24:nd=\EC:pt:se=\Eq:so=\Es5:\
+	:sr=\EI:sr=\EI:ue=\Eq:up=\EA:us=\Es2:\
+	:es:hs:ts=\Ej\Ex5\Ex1\EY8%+ \Eo:fs=\Ek\Ey5:ds=\Ey1:
 # # --------------------------------
 #
 # l: LEAR SIEGLER (ADM)
@@ -1829,7 +1851,7 @@ m4|microterm|act4|microterm act iv:\
 # The padding on sr and ta for act5 and mime is a guess and not final.
 # The act 5 has hardware tabs, but they are in columns 8, 16, 24, 32, 41 (!)...
 m5|microterm5|act5|microterm act v:\
-	:uc=\EA:sr=3\EH:ku=^Z:kd=^K:kl=^H:kr=^X:ma=^Z^P^Xl^Kj:tc=act4:
+	:uc=^H\EA:sr=3\EH:ku=^Z:kd=^K:kl=^H:kr=^X:ma=^Z^P^Xl^Kj:tc=act4:
 # Act V in split screen mode.  act5s is not tested and said not to work.
 mS|act5s|skinny act5:\
 	:ti=\EP:te=\EQ:li#48:co#39:tc=act5:
@@ -2198,6 +2220,32 @@ ye|w50|wyse50|Wyse 50:\
 #	:hs:ts=\Ef:fs=\Eg:	status line does not work with sysline
 yg|w50-w|w50-132|wyse50-132|Wyse 50-132:\
 	:cm=\Ea%i%dR%dC:co#132:is=\E`;\200\EC\EDF\E0\E'\E(\EA21:tc=w50:
+# wyse 75 series from JLarson.pa@xerox.arpa
+wx|wyse75|wy75|wyse 75 terminal :\
+	:co#80:li#24:cl=50\E[H\E[2J:bs:cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
+	:al=3\E[L:dl=3\E[M:ku=\E[A:kd=\E[B:kr=\E[C:kl=\E[D:\
+	:ic=\E[@:ei=:im=:pt:bw:dc=\E[P:ce=\E[K:ho=\E[H:pt:\
+	:mi:nd=\E[C:bt=\E[Z:us=\E[8p:ue=\E[p:so=\E[5m:se=\E[m:\
+	:md=\E[1p:mr=\E[16p:mb=\E[2p:mk=\E[4p:me=\E[0p:hs:\
+	:ds=\E7\E[>,//\E8:ts=\E7\E[>,^A:fs=^A\E8:
+wx|wyse75-80|wy75-80|wyse 75 terminal with 80-column initialization:\
+	:is=\E[?3l:tc=wy75:
+wl|wyse75-132|wy75-132|wyse 75 terminal with 132 columns :\
+	:is=\E[?3h:co#132:tc=wy75:
+# from ucbvax!ucsfmis!shewmake
+Wc|wy85|wyse85|wyse-85:\
+	:do=^J:co#80:li#24:cl=\E[;H\E[2J:\
+	:le=^H:bs:cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
+	:ce=\E[0K:cd=\E[0J:so=\E[7m:se=\E[27m:\
+	:us=\E[4m:ue=\E[24m:\
+	:is=\E[1;24r\E[24;1H\E[0m:\
+	:ks=\E[?1h\E=:ke=\E[?1l\E>:\
+	:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:kb=^H:\
+	:ho=\E[H:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:kh=\E[H"ta=^I:pt:sr=\EM:\
+	:sc=\E7:rc=\E8:cs=\E[%i%d;%dr:as=^N:ae=^O:bt=\E[Z:\
+	:dc=\E[P:dl=\E[M:al=\E[L:ei=\E[4l:im=\E[4h:\
+	:vb=\E[?5h\E[?5l:\
+	:hs:es:ts=\E7\E[?25l\E[40h\E[25;%dH\E[2K:fs=\E[1;24r\E8\E[?25h:
 #
 # # --------------------------------
 #
@@ -2316,7 +2364,7 @@ zj|lisa|apple lisa xenix console display (white on black):\
 # capabilities of the PC monochrome display, without ANY emulation; most
 # communications packages (but NOT PC/IX connect) do some kind of emulation.
 pc|ibmpc|ibm pc PC/IX:\
-	:li#24:co#80:nl=^J:bl=^G:ta=^I:cr=^M:am:bs:bw:eo:\
+	:li#24:co#80:am:bs:bw:eo:\
 	:cd=\E[J:ce=\E[K:cl=\Ec:cm=\E[%i%2;%2H:do=\E[B:ho=\E[;H:\
 	:nd=\E[C:up=\E[A:so=\E[7m:se=\E[0m:us=\E[4m:ue=\E[0m:
 zk|ibmx|ibmpcx|IBM PC xenix console display:\
@@ -2445,7 +2493,7 @@ Kh|h19kermit|h19k|heathkit emulation provided by Kermit (no auto margin):\
 	:am@:ta@:pt@:xt:da:db:tc=h19-u:
 # rough draft of Amiga termcap by Mike Meyer
 AA|amiga|Amiga ANSI:\
-	:co#80:li#25:am:do=\E[B:bl=^G:ce=\E[K:cd=\E[J:\
+	:co#80:li#25:am:do=\E[B:ce=\E[K:cd=\E[J:\
 	:cl=\E[H\E[J:ku=\E[A:kd=\E[B:kl=\E[C:kr=\E[D:kb=^H:\
 	:al=\E[L:dl=\E[M:le=^H:cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
 	:ce=\E[K:ho=\E[H:dc=\E[P:ic=\E[@:\
@@ -2483,7 +2531,7 @@ zK|fos|fortune|Fortune system:\
 # basis from Peter Harrison, Computer Graphics Lab, San Francisco
 #   ucbvax!ucsfmis!harrison ...uucp / ucbvax!ucsfmis!harrison@BERKELEY ...ARPA
 ba|basis|BASIS108 computer with terminal translation table active:\
-	:cr=^M:do=5000^J:nl=5000*^J:bl=^G:\
+	:do=5000^J:nl=5000*^J:\
 	:cd=\EY:ce=\ET:cl=300\E*:ma=^K^P^R^L^L :\
 	:kb=^H:kl=^H:ku=^K:kr=^L:kd=^J:so=\E(:se=\E):tc=adm3a:
 # From Peter Harrison, Computer Graphics Lab, San Francisco
@@ -2492,14 +2540,13 @@ ba|basis|BASIS108 computer with terminal translation table active:\
 # "These two work.  If you don't have the inverse video chip for the
 # Apple with videx then remove the so and se fields."
 zO|DaleApple|Apple with videx videoterm 80 column board with inverse video:\
-	:cr=^M:do=^J:nl=^J:bl=^G:\
-	:am:le=^H:bs:cd=^K:ce=^]:cl=300^L:cm=^^%r%+ %+ :co#80:ho=^Y:\
+	:do=^J:am:le=^H:bs:cd=^K:ce=^]:cl=300^L:cm=^^%r%+ %+ :co#80:ho=^Y:\
 	:kd=^J:kl=^H:kr=^U:kh=^Y:\
 	:li#24:nd=^\:pt:so=^Z3:se=^Z2:up=^_:xn:
 zJ|ibmaed|IBM Experimental display:\
 	:al=\EN:am:bs:cd=\EJ:ce=\EI:cl=\EH\EK:cm=\EY%+\40%+\40:co#80:\
-	:cr=^M:dc=\EQ:dl=\EO:do=\EB:ei=:ho=\EH:ic=\EP:im=:li#52:\
-	:nd=\EC:nl=^J:ms:so=\E0:se=\E0:us=:ue=:up=\EA:\
+	:dc=\EQ:dl=\EO:do=\EB:ei=:ho=\EH:ic=\EP:im=:li#52:\
+	:nd=\EC:ms:so=\E0:se=\E0:us=:ue=:up=\EA:\
 	:kb=^h:ku=\EA:kd=\EB:kl=\ED:kr=\EC:eo:vb=\EG:pt:
 # funny terminal that the TANDEM uses.
 zA|653|t653x|Tandem 653x multipage terminal:\
