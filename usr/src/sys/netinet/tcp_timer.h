@@ -1,4 +1,4 @@
-/*	tcp_timer.h	4.4	81/12/21	*/
+/*	tcp_timer.h	4.5	82/01/13	*/
 
 /*
  * Definitions of the TCP timers.  These timers are counted
@@ -56,7 +56,9 @@
 						   time before drop conn */
 
 #define	TCPTV_MIN	(  1*PR_SLOWHZ)		/* minimum allowable value */
-#define	TCPTV_MAX	(120*PR_SLOWHZ)		/* maximum allowable value */
+#define	TCPTV_MAX	( 30*PR_SLOWHZ)		/* maximum allowable value */
+
+#define	TCP_LINGERTIME	120			/* linger at most 2 minutes */
 
 #ifdef	TCPTIMERS
 char *tcptimers[] =

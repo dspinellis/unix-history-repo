@@ -1,4 +1,4 @@
-/*	tcp_subr.c	4.11	81/12/21	*/
+/*	tcp_subr.c	4.12	82/01/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -86,15 +86,18 @@ COUNT(TCP_TEMPLATE);
  * In any case the ack and sequence number of the transmitted
  * segment are as specified by the parameters.
  */
-tcp_respond(ti, ack, seq, flags)
+tcp_respond(tp, ti, ack, seq, flags)
+	struct tcpcb *tp;
 	register struct tcpiphdr *ti;
 	tcp_seq ack, seq;
 	int flags;
 {
 	struct mbuf *m;
+	int win = 0;
 
 COUNT(TCP_RESPOND);
-printf("tcp_respond\n");
+	if (tp)
+		win = sbspace(&tp->t_inpcb->inp_socket->so_rcv);
 	if (flags == 0) {
 		m = m_get(0);
 		if (m == 0)
@@ -127,7 +130,11 @@ printf("tcp_respond\n");
 	ti->ti_x2 = 0;
 	ti->ti_off = sizeof (struct tcphdr) >> 2;
 	ti->ti_flags = flags;
-	ti->ti_win = ti->ti_urp = 0;
+	ti->ti_win = win;
+#if vax
+	ti->ti_win = htons(ti->ti_win);
+#endif
+	ti->ti_urp = 0;
 	ti->ti_sum = in_cksum(m, sizeof(struct tcpiphdr));
 	((struct ip *)ti)->ip_len = sizeof(struct tcpiphdr);
 	((struct ip *)ti)->ip_ttl = TCP_TTL;
