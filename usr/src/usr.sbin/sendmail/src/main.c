@@ -15,7 +15,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char	SccsId[] = "@(#)main.c	5.12 (Berkeley) %G%";
+static char	SccsId[] = "@(#)main.c	5.13 (Berkeley) %G%";
 #endif not lint
 
 # define  _DEFINE
@@ -98,6 +98,9 @@ main(argc, argv, envp)
 	char jbuf[30];			/* holds MyHostName */
 	extern bool safefile();
 	extern time_t convtime();
+
+	/* Enforce use of local time */
+	unsetenv("TZ");
 
 	/*
 	**  Be sure we have enough file descriptors.
