@@ -1,0 +1,4570 @@
+Fri Jan 25 16:41:18 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* Version 18.57 released.
+
+Fri Jan 18 02:06:18 1991  Jim Blandy  (jimb at wookumz.ai.mit.edu)
+
+	* version.el (emacs-version): Change version number to 18.56.0.
+
+Wed Jan 16 18:57:23 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* Version 18.56 released.
+
+Tue Jan 15 23:25:27 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* startup.el (command-line-1): Update copyright year.
+
+Wed Jan  9 18:35:06 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* doctex.el (LaTeXify-DOC): Upgrade permission notice that is output.
+
+	* Most files: Upgrade permission notice.
+
+Tue Jan  8 15:02:30 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* rmail.el (rmail-insert-inbox-text): Put .newmail in dir with
+	rmail file.
+
+Fri Jan  4 00:41:56 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* files.el (find-file-noselect): Get rid of automounter prefixes.
+
+Mon Dec 31 23:49:38 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* files.el (revert-buffer): Clear buffer-backed-up if file has changed.
+
+Sun Dec 30 23:10:59 1990  Jim Blandy  (jimb at pogo.ai.mit.edu)
+
+	* startup.el (command-line-1): Avoid binding load-path for -l
+	switch.
+
+Sun Dec 23 17:07:13 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* rmail.el (rmail-convert-to-babyl-format, rmail-nuke-pinhead-header):
+	Accept `remote from ...' at end of UNIX From line.
+
+Sat Dec 22 13:15:09 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* bytecomp.el (byte-compile-form): Handle call to explicit lambda.
+
+	* time.el (display-time): Specify precise directory for wakeup.
+	(display-time-filter): Don't display 0 as load.
+
+Fri Dec 21 11:32:28 1990  Chris Hanson  (cph at kleph)
+
+	* info.el (Info-extract-menu-node-name): Permit \n between colon
+	and start of node name.
+
+Thu Dec 20 21:07:26 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* sort.el (sort-numeric-fields): Fix syntax of chars to be skipped.
+
+Tue Dec 18 20:25:28 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* files.el (hack-local-variables): Match suffix only at eol.
+
+Sun Dec 16 22:49:45 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* rmail.el (rmail-parse-file-inboxes): Look for BABYL OPTIONS in u.c.
+	(rmail-convert-to-babyl-format): Likewise.
+	And don't skip white space after ^_ that ends a babyl format message.
+
+Wed Dec 12 00:11:37 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* rmail.el (rmail-insert-inbox-text): Extra tests for POP.
+
+	* files.el (hack-local-variables): Display local vars at screen top.
+
+Mon Dec 10 12:24:56 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* sendmail.el: Doc fix.
+
+Tue Dec  4 21:01:26 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* server.el (server-process-filter): Don't be confused
+	if input from process is split into multiple chunks.
+
+	* time.el (display-time-filter): Let user specify mail file name.
+
+Thu Nov 29 20:43:40 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* files.el (hack-local-variables): Show buffer when asking question.
+
+	* rmail.el (rmail-insert-inbox-text): Don't give up if movemail fails.
+
+	* cl.el (safe-idiv): Avoid overflow computing s.
+
+Wed Nov 28 17:01:40 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* info.el (Info-extract-menu-item): Try exact match first.
+
+	* rmail.el (rmail-insert-inbox-text): Handle file names for pop.
+
+Mon Nov 26 17:02:13 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* bg-mouse.el (bg-insert-moused-sexp): If before ')', just skip that.
+
+Mon Nov 19 16:24:35 1990  Richard Mlynarik  (mly at august-east)
+
+        * rfc822.el (rfc822-addresses):  Blow out, don't loop, on ")
+        (rfc822-addresses-1) Error if address "phrase" not followed by
+	route-spec
+
+Tue Nov 13 22:29:01 1990  David J. MacKenzie  (djm at apple-gunkies)
+
+	* fortran.el: Use domain format instead of uucp format for bug
+	list address.
+
+Mon Nov 12 17:03:44 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* lisp.el (lisp-complete-symbol): Use emacs-lisp-mode-syntax-table.
+
+Sun Nov 11 17:28:00 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* simple.el (kill-region): Share storage with undo list.
+
+Fri Nov  2 19:19:05 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* files.el (set-visited-file-name): Reject empty string as name.
+
+Thu Nov  1 20:30:50 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* lisp-mode.el (lisp-interaction-mode): Use Emacs Lisp syntax.
+
+Tue Oct 30 15:20:05 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* files.el (delete-auto-save-file-if-necessary):
+	Don't delete if auto-saving in visited file.
+
+Sun Oct 28 16:14:19 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* dabbrev.el (dabbrevs-search): Rename arg nocase to do-case.
+	(dabbrev-expand): Likewise.  Also correct usage in replace-match.
+	Also reinsert original abbrev before copying case pattern.
+
+Thu Oct 25 22:08:34 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* x-win.el (command-switch-alist): Ignore -xrm.
+
+Tue Oct 16 13:32:21 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* files.el (revert-buffer): Discard all undo records.
+	* rmail.el (rmail-expunge, rmail-get-new-mail): Likewise.
+
+Wed Oct 10 18:00:11 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* rmailsum.el (rmail-summary-scroll-msg-up): Make msg visible.
+	(rmail-summary-scroll-msg-down): Likewise.
+
+Tue Oct  9 14:32:00 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* dired.el (dired-compress, dired-uncompress): Put output from
+	subprocess in a buffer to display it.
+
+	* lisp.el (lisp-complete-symbol): Last change clobbered beg.
+
+	* lisp-mode.el (indent-sexp): Make sure outer loop ends at eob.
+
+Mon Oct  8 19:03:01 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* files.el (save-buffers-kill-emacs): process-list is undef on VMS.
+
+Sun Sep 30 15:12:58 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* compile.el (compile1): Make compilation-error-regexp local
+	only after switching modes.
+
+	* bytecomp.el (byte-compile-lambda): Handle string constant as value.
+
+Fri Sep 28 17:52:57 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* mh-e.el: New version from Larus.
+
+Thu Sep 27 21:41:33 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* time.el (display-time-filter): Don't lose if load-average fails.
+
+Wed Sep 26 16:03:59 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* replace.el (occur-mode-goto-occurrence): Fix typo.
+
+Tue Sep 25 21:45:54 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* lisp.el (lisp-complete-symbol): Switch to lisp syntax temporarily.
+	Put output in ` *Completions*' buffer.
+
+Fri Sep 21 16:04:59 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* isearch.el (nonincremental-search): Bind cursor-in-echo-area
+	only as long as necessary.
+
+Thu Sep 20 14:06:22 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* uncompress.el (uncompress-while-visiting): Make buffer writable.
+
+Tue Sep 18 08:53:22 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* doctor.el (doctor-member, doctor-cadr, doctor-caddr): Renamed.
+	(doctor-cddr): Renamed.
+
+Thu Sep 13 22:23:01 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* x-mouse.el (x-mouse-set-point): Compensate for hscroll.
+
+Tue Sep 11 18:14:21 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* loadup.el: Handle dump-emacs-data if defined.
+
+Sat Sep  8 15:30:30 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* ftp.el (ftp-sentinel): Bind buffer-read-only only very locally.
+	(ftp-command): Ignore output lines with no status code.
+
+Fri Sep  7 13:25:37 1990  Chris Hanson  (cph at kleph)
+
+	* scheme.el: Don't treat #| ... |# as comment syntax.  Emacs
+	doesn't handle it correctly, and when `indent-sexp' sees #| it
+	inserts a semicolon in the comment column.
+
+Thu Sep  6 17:04:03 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* simple.el (kill-comment): Eliminate recursive-edit.
+
+Tue Sep  4 18:15:10 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* ftp.el (ftp-write-file): Accept status 125 as normal.
+
+Wed Aug 29 18:19:46 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* rmail.el (rmail-search): Call rmail-maybe-set-message-counters.
+
+Tue Aug 28 13:12:40 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* isearch.el (isearch): Do regexp-quote for what ^W and ^Y get.
+
+Thu Aug 16 13:31:56 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* vi.el (vi-next-line): Use next-line-internal.
+	* vip.el (vip-next-line): Likewise.
+
+	* telnet.el (telnet-mode-map): Take out copy-last-shell-input.
+
+	* time.el (display-time-filter): Check that file is non-empty.
+
+Wed Aug 15 18:31:16 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* x-win.el (x-new-display): Define only for X10.
+
+Thu Aug  9 17:36:45 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* replace.el (occur-mode-goto-occurrence): Calculate from
+	beginning of line in *occur* buffer.
+
+Tue Jul 31 23:21:10 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* files.el (find-alternate-file): Nothing special for read-only buf.
+
+Sun Jul 29 14:18:37 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* time.el (display-time-filter): Compute inbox name from user.
+
+Thu Jul 26 20:44:37 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* help.el (view-lossage): Use insert, not `newline'.
+
+	* info.el (Info-find-node): Set case-fold-search for tag tbl buffer.
+
+Wed Jul 18 16:23:10 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* files.el (save-buffers-kill-emacs): Improve confirmation msg.
+
+Sun Jul 15 22:34:33 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* register.el (view-register): Don't ignore first line of rect.
+
+Wed Jul  4 15:35:44 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* time.el (display-time-filter): Create the string here.
+	The output sent by the subprocess no longer matters.
+	(display-time): Run "wakeup", not "loadst".
+
+Sat Jun 30 13:07:32 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* dbx.el: Use C-x SPC for setting break point.
+
+Wed Jun 27 14:33:55 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* paragraphs.el (start-of-paragraph-text): Avoid infinite loop.
+
+Fri Jun 22 13:30:24 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* rmail.el (rmail): Ignore local variable specs in rmail file.
+
+Wed Jun 20 11:43:17 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* float.el: Provide 'float.
+
+Tue Jun 19 21:06:48 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* page.el (what-page): Reckon from beginning of line.
+
+Tue May 29 13:01:25 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* scheme.el (run-scheme): Autoload deleted.  Done in loaddefs.
+
+Sat May 26 17:44:57 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* compile.el (next-error): Use set-buffer, not switch-to-buffer,
+	before parsing.
+
+Fri May 25 14:14:51 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* files.el (save-buffers-kill-emacs): Fix bugs in  testing
+	for modified buffers.
+
+	* subr.el (undo-start, undo-more): New functions.
+
+Mon May 21 14:53:38 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* time.el (display-time): Local cleanup.
+
+	* simple.el (kill-comment): Local cleanup.
+
+	* buff-menu.el (Buffer-menu-buffer): Simplified.
+	Set Buffer-menu-buffer-column initially.
+
+	* rmail.el (rmail): Don't assume mode of existing buffer is rmail.
+	If not, switch to rmail-mode, unless it is rmail-edit-mode.
+
+Fri May 18 17:59:41 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* lisp-mode.el (indent-sexp): Typo in name inner-loop-done.
+	* c-mode.el (indent-c-exp): Likewise.
+
+Sat May 12 16:53:35 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* info.el (Info-read-subfile): Ignore blank lines in split file list.
+
+Tue May  1 14:49:46 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* replace.el (occur): Avoid infinite loop at end of buffer.
+
+Mon Apr 30 20:54:47 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* float.el (float-to-string):
+	Adjust POWER when rounding makes new digit. 
+
+Sat Apr 28 17:51:24 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* files.el (save-buffers-kill-emacs): Query here about modified
+	buffers and active processes.
+
+Wed Apr 25 17:12:08 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* simple.el (next-line-internal): Handle track-eol more cleanly.
+
+Thu Apr 12 21:48:01 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* startup.el (normal-top-level): Don't check envvar PWD on vms.
+
+Thu Apr  5 16:41:44 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* rmailout.el (rmail-output-to-rmail-file): Set message counters
+	before inserting in a file being visited.
+
+	* startup.el (command-line-1): Always erase *scratch*, not current buf.
+
+Tue Apr  3 04:53:01 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* fill.el (fill-individual-paragraphs): Anchor regexp for MAILP=t.
+
+Sun Mar 18 23:03:33 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* c-mode.el: Doc fix.
+
+Fri Mar  9 18:24:21 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* rnewspost.el (news-mail-reply, news-reply, news-post-news):
+	Include newline before the blank line, when narrowing.
+
+Thu Feb  1 02:21:56 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* texinfmt.el (batch-texinfo-format): Paren error on (setq error 1).
+
+Thu Jan  4 21:09:29 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* doctor.el: Delete spurious symbol at top level.
+
+Sat Dec 16 08:59:00 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* c-mode.el (c-backward-to-noncomment): Stop better at beg of bfr.
+
+Wed Nov  8 15:56:52 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* debug.el (debug): No need to check match-data for invalid markers.
+
+Mon Nov  6 01:20:59 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* server.el (server-done): Add space to error message.
+
+Sat Oct 14 01:56:27 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* paragraphs.el (forward-paragraph): Don't hang at eob.
+
+Tue Aug 15 21:41:10 1989  Richard Stallman  (rms at hobbes.ai.mit.edu)
+
+	* Version 18.55 released.
+
+	* files.el (basic-save-buffer): If rename of precious file fails,
+	don't try to delete it after new version is written.
+
+Wed Aug  9 19:26:25 1989  Chris Hanson  (cph at kleph)
+
+	* xscheme.el: From the RCS change log:
+
+	(1.23) Guarantee that the process-filter's state is correctly
+	updated before calling any code that can possibly allow more input
+	to be read from the process.
+
+	(1.22) Remove filter queuing mechanism.  Rewrite filter state
+	machine to be iterative instead of tail-recursive.  Move all C-c
+	commands to control characters.
+
+	(1.21) Force control-g synchronization always.  Turns out BSD had
+	the same problem as hp-ux.
+
+	(1.20) Don't use second argument to `interrupt-process' and
+	`quit-process'.  Apparently that causes difficulties under Ultrix.
+
+Thu Jul 20 02:02:33 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* info.el (Info-follow-reference): Handle newline and indentation
+	immediately after *note.
+
+	* hideif.el (hif-tokenize): Recognize `defined', not `hif-defined',
+	in the input.
+
+Tue Jul  4 20:27:28 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* mailalias.el (build-mail-aliases): Accept `group' as synonym.
+
+	* nroff-mode.el (electric-nroff-mode): Arg now optional.
+
+	* man.el (insert-man-file): Handle HP's directories with .Z in
+	their names.
+
+Sun Jun 25 12:45:05 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* rmail.el (rmail, rmail-insert-inbox-text): For login name,
+	try LOGNAME, USER, and user-login-name.
+	* mail-utils.el (rmail-dont-reply-to): Likewise.
+
+Tue Jun 20 14:03:54 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* term/x-win.el: If x-sigio-bug is non-nil, don't use interrupts.
+
+Thu Jun  8 12:09:14 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* spell.el (spell-region): Downcase misspelled word.
+
+Tue Jun  6 19:58:01 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* chistory.el (list-command-history): Go to history buffer
+	before examining its text.
+
+Fri Jun  2 16:04:14 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* rmail.el (rmail-convert-to-babyl-format): Generalize time zone fmt.
+	(rmail-nuke-pinhead-header): Likewise.
+
+Wed May 31 18:05:20 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* cmacexp.el (c-macro-expand): Handle \-continuation of macros.
+
+Wed May 17 14:27:38 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* rmail.el (rmail-nuke-pinhead-header): Accept space before
+	numeric time zone in From line.
+
+	* sendmail.el (sendmail-send-it): Always pass -f option.
+
+Fri May 12 22:19:37 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* term/s4.el: Don't define M-9, M-0.
+	Typo in defn of M-N I.
+
+Wed Apr 26 16:17:02 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* Version 18.54 released.
+
+	* term/xterm.el: Set reset-terminal-on-clear.
+
+Wed Apr 12 10:45:30 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* picture.el (picture-tab): Dumb errors in prefix-arg case.
+
+Tue Apr 11 01:04:53 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* lpr.el (print-region-1): For tab-conversion case, insert specd range.
+
+Thu Apr  6 12:27:21 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* startup.el (normal-top-level): Use PWD envvar to set default dir.
+	(command-switch-alist): Doc fix.
+
+	* rmail.el (rmail-convert-to-babyl-format):
+	Bind case-fold-search to t for mmdf case.
+
+	* rmail.el (rmail-convert-to-babyl-format, rmail-nuke-pinhead-header):
+	Accept spaces at end of Unix-style From line.
+
+Sun Apr  2 00:24:51 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* paths.el (rmail-spool-directory): Treat silicon-graphics-unix
+	like usg.
+
+Tue Mar 14 17:23:47 1989  Randall Smith  (randy at sugar-bombs.ai.mit.edu)
+
+	* rmail.el (rmail-convert-to-babyl-format): reset case-fold-search
+	to true in the mmdf case.
+
+Mon Mar 13 16:57:03 1989  Randall Smith  (randy at sugar-bombs.ai.mit.edu)
+
+	* tex-mode.el (TeX-common-initialization): Made lines beginning
+	with % separate paragraphs.
+
+Thu Feb 23 06:47:13 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* Version 18.53 released.
+
+	* tex-mode.el (TeX-start): Wait 1 second for TeX to start.
+	(TeX-common-initialization): Make comment-start-skip find comment
+	at start of a line.
+	(TeX-region): don't include previous line (before start) in the header.
+
+	* autoinsert.el: Change defconst to defvar.
+
+Wed Feb 15 03:55:23 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* dbx.el (run-dbx): Set dbx-process.
+	(dbx-stop-at): Use that to decide where to send the string.
+
+Thu Dec 29 14:23:37 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* compile.el (compilation-sentinel): Set OPOINT, OMAX in proper buffer.
+
+Wed Dec 28 23:07:35 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* debug.el (cancel-debug-on-entry): Paren error in case for macros.
+
+	* spell.el (spell-region): Don't lose if `spell-filter' is local.
+
+	* texinfmt.el (texinfo-format-defun-1): Fix bug in &-kwds in @defun.
+	(texinfo-format-emph): Rescan the argument.
+
+	* lpr.el (print-region-1): sysV wants different options.
+
+	* rmail.el (rmail-convert-to-babyl-format):
+	Do case-significant searches.
+
+Thu Sep  1 14:22:30 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* Version 18.52 released.
+
+	* fortran.el (fortran-split-line): Add space before continuation-char.
+
+Mon Aug 29 15:57:20 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* mh-e.el: New version from Larus.
+
+Sun Aug 21 21:05:08 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* view.el (view-mode): Initially view-scroll-size is nil.
+	(view-scroll-size): If it's nil, return (view-window-size).
+
+Thu Aug 18 14:21:41 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* fill.el (justify-current-line): Skip fill-prefix before whitespace.
+
+	* spell.el (spell-region): Change minibuffer prompt.
+
+Mon Aug 15 19:37:27 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* add-log.el (add-change-log-entry): Log filename is now an arg;
+	prompt for it with `interactive'.
+	(add-change-log-entry-other-window): Always use default log filename
+	and never prompt for anything.
+
+Sat Aug 13 14:59:02 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* simula.el: New version from obh.
+
+	* add-log.el (add-change-log-entry): New arg OTHER-WINDOW.
+	(add-change-log-entry-other-window): New fn.
+	* loaddefs.el: Autoload that fn and put on C-x 4 a.
+
+Thu Aug 11 22:43:01 1988  Chris Hanson  (cph at kleph)
+
+	* xscheme.el (xscheme-cd): New function to guarantee that `cd'
+	happens in Scheme process buffer.
+
+Mon Aug  8 08:09:17 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* life.el, saveconf.el, doctex.el: New files.
+
+	* files.el (create-file-buffer): Avoid empty buffer name for root dir.
+	* dired.el (dired-find-buffer): Let create-file-buffer do more work.
+	(dired-noselect): Use directory-file-name, file-name-as-directory.
+
+Thu Aug  4 15:26:44 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* server.el (server-process-filter): Handle +NNN to specify linenum.
+	(server-visit-files): Arg is now alist of (FILENAME . LINENUM).
+
+	* server.el (server-visit-files): criterion for revert is if either
+	buffer or file has changed.
+
+	* abbrev.el: Doc fix.
+	* files.el:
+
+Wed Aug  3 12:28:05 1988  Robert J. Chassell (bob at frosted-flakes.ai.mit.edu)
+
+	* texinfo.el: Changed fill-colum from 75 to 72.  The larger
+	fill-column causes numerous overfull hboxes in TeX when you are
+	writing Emacs Lisp code that will be formatted as a Texinfo example.
+
+Sun Jul 31 06:46:43 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* rmailsum.el (rmail-new-summary): Always go to line for current msg.
+	(rmail-summary-exit): Delete just current window, and that
+	only if Rmail was already in another window.
+
+Fri Jul 29 13:45:27 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* tags.el: provide 'tags.
+
+Tue Jul 26 16:30:30 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* info.el (Info-follow-reference): Handle extra newlines, tabs or
+	spaces inside of cross-references.
+
+	* outline.el: doc fix.
+
+Sat Jul 23 17:05:13 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* loaddefs.el: autoload texinfo-format-region.
+
+Fri Jul 22 05:11:50 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* simple.el (transpose-subr-1): Error if regions overlap.
+
+	* dired.el (dired-flag-file-deleted): Directories no longer special.
+	* dired.el (dired-do-deletions): If deleting a dir, run `rmdir'.
+
+Tue Jul 19 00:43:31 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* ftp.el (ftp-find-file-or-directory): Typo in arg name.
+
+Mon Jul 18 00:24:40 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* c-fill.el: New file.
+
+	* compile.el (compilation-error-regexp): Exclude colon from filename.
+
+Sun Jul 17 13:43:49 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* view.el: `h' ran undefined command; make it like `?'.
+
+Sat Jul 16 22:25:36 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* spell.el (spell-region): Run spell-filter to alter the text
+	before actual checking.
+
+Fri Jul 15 04:10:30 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* rmailsum.el (rmail-make-basic-summary-line): If sender is self,
+	show recipient instead, with `to:'.
+
+Wed Jul 13 13:36:36 1988  Richard Stallman  (rms at wheat-chex.ai.mit.edu)
+
+	* files.el (auto-save-file-name-p): doc fix.
+
+Tue Jul 12 21:58:17 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* paths.el (rmail-spool-directory): Handle RTU like sysV.
+
+Sun Jul 10 14:43:44 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* compile.el (compile1): use set-buffer, not switch-to-buffer.
+
+	* startup.el (command-line): strip hyphens one by one from TERM type.
+
+Tue Jul  5 15:11:42 1988  Chris Hanson  (cph at kleph)
+
+	* texinfmt.el: Add support for @defun and related commands.
+
+Tue Jul  5 14:00:46 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* loadup.el: Avoid setting the global variable `name'.
+
+Mon Jul  4 12:21:03 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* rmail.el (rmail-make-in-reply-to-field): Use doublequotes, not
+	parens, around sender name in rfc822 mode.
+
+	* info.el (Info-read-subfile):  Don't lose if subfile header isn't
+	same length as main file header.
+
+Sun Jul  3 10:37:05 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* shell.el (shell-send-input): Put bound on search for prompt.
+
+Fri Jul  1 10:07:14 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* autoinsert.el: New file.
+
+	* text-mode.el (center-region): Don't let end-of-region
+	become wrong when insertion/deletion is done.
+
+	* info.el (Info-find-node): Typo in regexp.
+	(Info-following-node-name): At open paren, continue to close.
+
+	* tags.el (list-tags): Terminate scan on end-of-buffer.
+
+Thu Jun 30 10:09:19 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* loaddefs.el (auto-mode-alist): C mode for `.cc'.
+
+Mon Jun 27 12:22:11 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* paths.el (rmail-spool-directory): Treat unisoft like usg.
+
+	* texinfo.el (texinfo-show-structure): New function.
+	(texinfo-insert-*): Several new functions.
+	(texinfo-mode-map): New keymap.
+
+	* dired.el: provide 'dired.
+
+Thu Jun 23 11:02:37 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* files.el (hack-local-variables): Ignore `eval' if running as root.
+
+Wed Jun 22 10:33:39 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* nroff-mode.el (nroff-brace-table): Add G1 vs G2.
+
+Tue Jun 21 04:43:41 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* spell.el (spell-region, spell-string): Fix typo `spell-cmd'.
+
+Sun Jun 19 15:35:21 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* lpr.el (lpr-command): New variable holds the shell command to
+	print a file (normally "lpr").
+
+Wed Jun 15 06:13:32 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* rnewspost.el (news-inews): run news-inews-hook.
+
+	* rmail.el (rmail-show-message): run rmail-show-message-hook.
+
+Sun Jun 12 10:55:47 1988  Richard Stallman  (rms at gluteus.ai.mit.edu)
+
+	* keypad.el: Additional conventional chars added in the comments.
+
+	* text-mode.el: erroneously installed text-mode-syntax-table
+	in current buffer.
+
+Thu Jun  9 05:28:48 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* fill.el (fill-region-as-paragraph): Err if fill-prefix is
+	too long for the fill-column.
+
+	* texinfmt.el (texinfo-format-{region,buffer-1}): Make sure buffer
+	ends in a newline.
+
+Tue Jun  7 12:47:31 1988  Chris Hanson  (cph at kleph)
+
+	* xscheme.el (xscheme-process-filter-alist): add escape sequence
+	which instructs Emacs to change the working directory of the
+	Scheme process buffer.  This change is required for Scheme runtime
+	library version 14.
+
+Thu Jun  2 06:36:43 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* sendmail.el (mail-do-fcc): avoid insert-buffer (too high level).
+
+Tue May 31 18:12:10 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* outline.el: Must put `\(...\)' around outline-regexp
+	when prepending `^'.
+
+Mon May 30 17:30:18 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* fortran.el, hanoi.el, helper.el, info.el, mlconvert.el, modula2.el,
+	rmail.el, sendmail.el, sort.el, underline.el: doc fixes.
+	* loaddefs.el: autoload doc fixes.
+
+Sat May 28 05:19:41 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* help.el (print-help-return-message): Handle pop-up-windows = nil.
+
+	* nroff-mode.el (nroff-brace-table): Add more pairs, for some mm macros
+	(nroff-comment-indent): Recognize ' like period.
+	(nroff-mode): .SK and .OP separate pages.
+
+	* shell.el (lisp-send-defun): Install new, corrected no-process check.
+
+Fri May 27 21:28:20 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* c-mode.el (electric-c-terminator): Tests to distinguish labels
+	from other uses of colon failed if inserting at end of buffer.
+
+Tue May 24 15:09:32 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* texinfmt.el (texinfo-parse-expanded-arg): like texinfo-parse-line-arg
+	but expand commands inside the arg.
+	(texinfo-index): Use that.
+	(@end ifinfo): Discard terminating newline.
+
+Mon May 23 12:45:52 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* files.el (file-name-sans-versions): VMS version can be sep. by `.'.
+	Also delete mysterious line that removes `$__$'.
+
+Sun May 22 14:28:56 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* gdb.el (gdb-filter-accumulate-marker): Empty gdb-filter-accumulate
+	since its contents are now in STRING.
+
+	* rnews.el (news-get-pruned-list-of-files): catch errors for
+	read-protected directories.
+
+Fri May 20 00:54:22 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* meese.el: Bind off buffer-read-only while changing buffer.
+	Don't add protect-innocence-hook twice.
+
+	* sendmail.el (mail-do-fcc): If fcc file is in a buffer, append there.
+
+Mon May 16 21:17:39 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* bibtex.el (bibtex-mode): Delete some keys that were vt100 keypad.
+	(bibtex-DEAthesis): Delete this and its key definition.
+	(bibtex-sun-*): Insert functions.
+
+Sun May 15 19:35:59 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* loaddefs.el: Doc fix.
+
+Thu May 12 17:47:35 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* tex-mode.el (TeX-region): Pass nil to make-shell as startfile arg.
+
+Wed May 11 14:20:41 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* shell.el (make-shell): If PROGRAM is nil, default like M-x shell.
+
+	* tex-mode.el (TeX-region): Used eliminated fn. expand-directory-name.
+
+Tue May 10 21:45:09 1988  Richard Stallman  (rms at corn-chex.ai.mit.edu)
+
+	* shell.el (lisp-send-defun): Undo last change.
+
+	* loaddefs.el (rmail-primary-inbox-list): Doc fix.
+
+Sun May  8 15:15:45 1988  Richard Stallman  (rms at lucky-charms.ai.mit.edu)
+
+	* man.el (manual-entry): Handle section names > 1 letter.
+
+	* paths.el (manual-formatted-*): Add alternative for Xenix.
+
+Fri May  6 10:49:12 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* Version 18.51 released.
+
+	* vms-patch.el (vms-suspend-resume-hook): New fn to find a file
+	after Emacs is resumed on VMS.
+	(vms-suspend-hook): Don't suspend if logical name DONT_SUSPEND_EMACS
+
+	* server.el (server-start): Don't say "restarting" the first time.
+
+	* files.el (revert-buffer): Avoid wta error if autosave turned off.
+
+Tue May  3 08:30:12 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* icon.el: New file.
+
+Mon May  2 17:44:49 1988  Brian Fox  (bfox at rice-krispies.ai.mit.edu)
+
+	* replace.el (perform-replace): Make `y' do what SPC does, `n' do
+	what DEL does, and `q' do what ESC does.  The original set of keys
+	still work.
+
+Sun May  1 17:09:04 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* gdb.el (gdb-filter-insert): Save and restore prev. current buffer.
+	(gdb-filter-accumulate-marker): set-buffer should not be done here.
+
+Thu Apr 28 17:46:02 1988  Chris Hanson  (cph at kleph)
+
+	* xscheme.el: Force use of pipes for communication with inferior
+	Scheme.  This avoids bugs in PTY implementations on various
+	systems.
+
+Mon Apr 25 08:56:41 1988  Chris Hanson  (cph at kleph)
+
+	* scheme.el: Add indentation for `with-values'.
+
+Fri Apr 22 07:12:46 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* shell.el (shell-send-input, lisp-send-defun): Err right away
+	if shell no process.
+
+	* text-mode.el (center-line): doc fix.
+
+Thu Apr 21 01:00:45 1988  Richard Stallman  (rms at corn-chex.ai.mit.edu)
+
+	* texinfmt.el (texinfo-format-region): Select the output buffer
+	at the beginning.  Copy the @setfilename command as well as
+	the specified region.  At end, put point at top.
+	Accept @bye only at beg of line.
+
+Wed Apr 20 19:20:33 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* informat.el (Info-validate): Change message for Next's Previous.
+	Now the word "invalid" must be included in the message string
+	if it is wanted.
+
+Tue Apr 19 00:01:22 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* cl-indent.el (common-lisp-indent-hook): Handle ` like '.
+
+	* gdb.el: Completely rewritten filtering mechanism (by cph).
+	Should look the same to the user.
+
+Mon Apr 18 16:17:42 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* startup.el (command-line): Treat `_' in term-type name like `-'.
+
+	* term/apollo.el: New file, loads vt100.el.
+
+	* dired.el (dired-mode): Allow no arg--to put any old dir into
+	dired mode.  Make it interactive.
+
+	* simple.el (indent-for-comment): If comment-start-skip has \(...\),
+	the delimiter starts where the end of the first pair matches.
+
+	* tex-mode.el (TeX-common-initialization): Add a \(...\) to
+	comment-start-skip so its end is always at start of delimiter.
+
+Thu Apr 14 05:54:37 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* paragraph.el (forward-paragraph): Bug in pragraph-ignore-fill-prefix.
+
+	* terminal.el (te-sentinel): Delete whitespace at end of buffer
+	before inserting the message.
+
+	* debug.el (debug): Bind executing-macro to nil; avoid lossage
+	if enter debugger while kbd macro is running.
+
+	* rmailout.el (rmail-output-to-rmail-file):
+	Error if output file is same as current file.
+
+	* rmailout.el (rmail-output): Don't die if rmail-last-file is nil.
+
+Wed Apr 13 10:48:13 1988  Leonard H. Tower Jr.  (tower at rice-krispies.ai.mit.edu)
+
+	* rnews.el: fixed mis-documentation.
+
+Wed Apr 13 00:55:00 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* dired.el (dired-readin): Print msg on startup and when done.
+
+	* spell.el (spell-command): New var; command to use to invoke
+	the spell program.
+
+	* terminal.el (terminal-emulator): Choose default shell like shell.el.
+	Use /bin/sh for changing env.
+	(te-parse-program-and-args): Use shell-file-name for globbing.
+
+	* dired.el (dired-rename-file): Include old file name in prompt.
+
+	* cal.el (calendar): Convert any nonnull arg to a number.
+
+Tue Apr 12 13:05:18 1988  Chris Hanson  (cph at kleph)
+
+	* xscheme.el: Change to print ";No value" when the value of an
+	expression is undefined.
+
+Sun Apr 10 02:33:43 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* kermit.el: New file.
+
+	* tex-mode.el (TeX-common-initialization): Make TeX-command, etc.,
+	local here rather than in both callers.
+	Provide 'tex-mode.
+	(TeX-start-shell): Make keymap only once, and reuse it.
+	Pass 'nostartfile, not "/dev/null", to `make-shell'.
+	(set-buffer-directory): Use file-name-as-directory.  Don't use...
+	(expand-directory-name): function deleted.
+
+	* simple.el (indent-for-comment): If comment-start-skip matches a
+	string with nonfinal whitespace, the comment delimiter starts
+	after that whitespace (for indentation purposes).
+	Don't modify the buffer if existing indent is correct.
+
+	* cmacexp.el (c-macro-expand): Use cpp to expand macros in the region.
+	* c-mode.el: Autoload that.
+
+	* texinfmt.el (texinfo-format-scan): Guts of texinfo-format-buffer-1
+	split into a new function.
+	Delete handling of C-q, which is not used in Texinfo nowadays.
+	(texinfo-format-region): New function to format a region.
+
+Sat Apr  9 11:48:24 1988  Leonard H. Tower Jr.  (tower at frosted-flakes.ai.mit.edu)
+
+	* rnewspost.el (news-post-news, news-reply) No longer re-inits
+	*post-news* buffer, if buffer-modified-p.
+
+Sat Apr  9 03:09:36 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* spook.el (shuffle-vector): Rewrite by phr.
+
+	* undigest.el (undigestify-rmail-message): Put space before `unseen'.
+
+	* ada.el, c-mode.el, lisp-mode.el, mim-mode.el, modula2.el, prolog.el,
+	scheme.el: Make paragraph-ignore-fill-prefix locally t in these modes.
+	* paragraph.el (forward-paragraph): Ignore fill-prefix if
+	Make paragraph-ignore-fill-prefix is non-nil.
+
+Fri Apr  8 05:39:13 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* man.el, loaddefs.el: Doc fix.
+
+Wed Apr  6 21:06:52 1988  Robert J. Chassell (bob at frosted-flakes.ai.mit.edu)
+
+	* loaddefs.el: added `.texinfo' to the less common extensions
+	section of the auto-mode-alist so that emacs chooses the correct
+	mode for files with this extension.
+
+Fri Apr  1 17:53:57 1988  Richard M. Stallman  (rms at wilson)
+
+	* gdb.el (gdb): Specify -cd option to GDB so GDB will use
+	the same path for the dir as the user is using in Emacs.
+
+Thu Mar 24 01:15:15 1988  Richard M. Stallman  (rms at wilson)
+
+	* spook.el: New file.
+
+	* nroff-mode.el (forward-text-line): either . or ' starts a request.
+	(nroff-mode): In paragraph-{start,separate}, ditto.
+	(electric-nroff-newline): Don't insert extra newlines.
+
+Wed Mar 23 16:21:02 1988  Richard M. Stallman  (rms at wilson)
+
+	* x-mouse.el: Change unshifted clicks for x11.
+	Bind all up-clicks to no-op.
+
+	* term/x-win.el (command-switch-alist): Ignore all X's switches
+	in x11.
+	Don't test fboundness of `x-change-display'.
+	On x11, don't set-input-mode or set term-setup-hook.
+	x-switches feature now broken.
+
+	* term/x11-win.el: Delete this file since X11 is now
+	a subcase of X.
+
+Sun Mar 20 14:23:07 1988  Richard M. Stallman  (rms at wilson)
+
+	* rmailkwd.el (rmail-next-labeled-message): Allow space
+	before the label name (since now they are supposed to be there).
+
+	* paths.el (rmail-primary-inbox-list): Don't define it here.
+	* loaddefs.el: Define it here but set it to nil.
+	* rmail.el (rmail): If it's nil, compute the default here.
+	Now we decide $LOGNAME vs $USER at run time, not build time.
+
+	* lisp-mode.el (lisp-indent-line): 
+	Single-semicolon comment lines should be indented at comment col.
+
+	* cl-indent.el (lisp-indent-do): Smarter version from Kevin Layer.
+
+	* cl.el (setf): Simplify code produced; don't use `apply'
+	and, if handler isn't a macro, don't bind any temp vars.
+
+	* cl.el: Make and doc strings and error messages use GNU style.
+
+Sat Mar 19 17:18:01 1988  Richard M. Stallman  (rms at wilson)
+
+	* hideif.el: New version from liberte@b.cs.uiuc.edu.
+
+	* VMS-oriented bug fixes from David Gentzel.
+
+	* texinfmt.el (texinfo-format-setfilename): expand the filename.
+	(texinfo-do-itemize): Don't indent an empty line.
+	(texinfo-format-printindex): On VMS, use texinfo-sort-region to sort.
+	(texinfo-sort-{region,startkeyfun}): New functions.
+
+	* sort.el: provide 'sort.
+
+	* sendmail.el (mail): Doc fix.
+
+	* help.el (help-with-tutorial): Use expanded file name for making bfr.
+
+	* info.el (Info-find-node): Remove versions from file name.
+	* informat.el (Info-split): Remove versions from file name.
+
+	* bytecomp.el (byte-compile-file, byte-recompile-directory):
+	Remove versions from name of file to write.  Good on VMS.
+	(batch-byte-compile): Likewise.
+
+Fri Mar 18 13:11:35 1988  Chris Hanson  (cph at kleph)
+
+	* term/x11-win.el (command-switch-alist): Option "-rn" mistakenly
+	omitted from this list.
+
+Fri Mar 18 15:42:19 1988  Richard M. Stallman  (rms at wilson)
+
+	* modula2.el: Changes from Michael Schmidt:
+	Better prompting in m2-for.  Variables for program name for
+	compilation and for linking.  Don't assume executable name
+	comes from module name.  m2-toggle knows about .md and .mi files.
+
+	* rmail.el (rmail): Default for C-o is now `xmail';
+	rmail-last-rmail-file now defaults independently to `XMAIL'.
+
+	* lisp-mode.el (lisp-mode): Define C-c C-l as M-x run-lisp.
+
+	* paths.el (rmail-primary-inbox-list): Use rmail-spool-directory
+	as a basis for value of this; avoid redundant decisions.
+
+	* rnews.el (news-update-message-read): typo, cdadr => news-cdadr.
+
+	* gdb.el (gdb): expand `path'; start-process loses if
+	default-directory is not absolute.
+
+	* tags.el (find-tag-tag): Create this function again
+	to hold shared arg-reading code for find-tag and find-tag-other-window.
+	(find-tag, find-tag-other-window): Use find-tag-tag.
+
+	* shell.el (inferior-lisp-mode): lisp-mode-variables needs an arg.
+	Also improve the doc string.
+	* chistory.el (Command-history-setup): Likewise.
+
+Thu Feb 11 01:37:48 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* Version 18.50 released.
+
+	* tex-mode.el (tex-mode): Use the default if file has no tex commands.
+
+	* term/vt200.el: Delete vt200-enable-arrows; leave the standard
+	name enable-arrow-keys. 
+
+	* version.el (emacs-build-system): Store system name on which
+	Emacs was built.
+	* version.el (emacs-version): Print that system name.
+
+	* vip.el: Install version 3.5 sent by author.
+
+	* man.el (nuke-nroff-bs): New regexp for footers on hpux.
+
+Wed Feb 10 12:34:14 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* simple.el (fundamental-mode): Delete fundamental-mode-map.
+
+Mon Feb  8 22:50:08 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* paths.el (rmail-primary-inbox-list): Check separately for which
+	directory and which envvar.
+
+Sat Feb  6 18:31:55 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* loaddefs.el: Autoload `gdb'.
+
+	* gdb.el: New file, interface to GDB.  From Schelter,
+	but rewritten to use the new GDB -fullname feature
+	and the new Emacs overlay-arrow-position feature.
+
+	* dbx.el: New file (Masanobu's version,
+	changed to use overlay-arrow-string).
+
+Thu Feb  4 21:00:23 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* mh-e.el: Version 3.4o from Larus.
+
+Sun Jan 31 18:16:14 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* term/vt125.el, term/vt240.el: New files:
+	Just load vt100.el or vt200.el.
+
+Thu Jan 28 07:21:54 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* tags.el (find-tag-tag): Deleted.
+	* tags.el (find-tag-default): New function returns default tag
+	based on buffer text, or nil.
+	Fix several bugs such as handling of quote-characters,
+	and case of before or after a list or near unbalanced paren.
+
+	* tags.el (find-tag): Use find-tag-default and show default in the
+	prompt while reading the tag.
+
+Sun Jan 24 02:38:17 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* undigest.el (undigestify-rmail-message): Accept "Apparently-To".
+
+Fri Jan 22 22:46:19 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* edt.el (edt-bind-gold-keypad): New fn so that calls to
+	define-keypad-key are deferred till edt-mode is turned on.
+
+Thu Jan 21 23:11:14 1988  Richard Stallman  (rms at frosted-flakes)
+
+	* simple.el (kill-line): doc fix.
+
+Wed Jan 20 03:22:12 1988  Richard Stallman  (rms at frosted-flakes)
+
+	* rmail.el (rmail-get-new-mail): If save fails, recount messages.
+	* rmail.el (rmail-revert): Handle revert-buffer; recount messages.
+	* rmail.el (rmail-variables): Set up to use this.
+	* rmail.el (rmail-convert-file): Babyl-mode conversion code
+	moved here from `rmail'.
+
+	* files.el (revert-buffer): Return t if did revert.
+
+Tue Jan 19 21:54:04 1988  Richard Stallman  (rms at frosted-flakes)
+
+	* sendmail.el (mail-send-and-exit): Don't delete the window
+	unless an rmail-mode buffer is in the next window.
+
+Tue Jan 19 14:03:23 1988  Chris Hanson  (cph at sugar-smacks)
+
+	* xscheme.el: Extensive changes including better documentation, a
+	new major mode `scheme-debugger-mode', and a new format for the
+	modeline when using the Scheme interface.
+
+	The major mode `scheme-debugger-mode' is used when Scheme is
+	running one of the character-driven debugger interfaces.  It is
+	like Scheme mode except that evaluation is disabled, and
+	characters that are normally self-inserting instead are
+	transmitted to the Scheme process.
+
+	The modeline is changed so that information about the state of the
+	Scheme process is shown only in buffers whose major mode is
+	`scheme-mode' or one of the related Scheme major modes.
+	Information about the state of the read-eval-print loop is shown
+	only in the Scheme process buffer.
+
+	All of these changes are upwards compatible with versions of
+	Scheme which ran using the previous interface.  However, some of
+	the features will not be enabled in older Scheme systems.  Newer
+	versions of Scheme (specifically, those newer than release 6.1.1)
+	require the new interface for correct operation.  They will not
+	work correctly with older version of this interface.
+
+	* scheme.el: Minor changes to support "xscheme.el" changes.
+	Mostly this involved adding hooks to existing facilities.
+
+Tue Jan 19 05:07:25 1988  Richard Stallman  (rms at frosted-flakes)
+
+	* c-mode.el (indent-c-exp): Use new state-element from
+	parse-partial-sexp to handle case of (...newline...) {...
+
+Sun Jan 17 21:53:57 1988  Richard Stallman  (rms at frosted-flakes)
+
+	* rmail.el (rmail-display-labels): Preserve buffer bounds correctly.
+	Remove extra spaces from the string before displaying it.
+
+	* rmail.el (rmail-insert-inbox-text): message only if file exists.
+	* rmail.el (rmail-get-new-mail): Don't save if was no new mail.
+
+Fri Jan 15 16:46:17 1988  Richard Stallman  (rms at frosted-flakes)
+
+	* info.el (Info-search): Two bugs in indirect files:
+	Failed to search the indirect table right, and failed
+	to recover if nothing found.
+
+Thu Jan 14 00:23:29 1988  Richard Stallman  (rms at frosted-flakes)
+
+	* loaddefs.el: Make search-... into user variables.
+
+Mon Jan 11 20:46:54 1988  Richard Stallman  (rms at frosted-flakes)
+
+	* rmail.el (rmail-display-label): Put a space before each label
+	name if there wasn't one already.  Turns out valid BABYL format
+	requires a space there.
+
+	* rmailkwd.el (rmail-set-label): Expect and write spaces before labels.
+	Eliminate the loop to delete such spaces.
+
+	* rmail.el (rmail-set-attribute): Expect and write spaces before labels.
+	* rmailsum.el (rmail-summary-by-labels): Expect spaces.
+
+	* info.el (Info-find-node): If filename starts with ./,
+	interpret relative to current directory.
+
+Sun Jan 10 15:51:08 1988  Richard Stallman  (rms at frosted-flakes)
+
+	* undigest.el: If it fails, delete ALL of the temporary copy.
+
+Wed Jan  6 17:20:59 1988  Richard Stallman  (rms at frosted-flakes)
+
+	* paths.el (mh-dir, mh-lib): Add two new alternatives to test for.
+	(For HPUX).
+	* paths.el (manual-formatted-dirlist) [HPUX]:
+	Add a completely new alternative value.
+
+Tue Jan  5 16:56:12 1988  Richard Stallman  (rms at frosted-flakes)
+
+	* simple.el (indent-new-comment-line): In a comment, look back
+	for a line with a nonempty comment and indent the comment text
+	like it.
+
+	* lpr.el (print-buffer-1): Use `untabify' to expand tabs,
+	not the `expand' program.  Fix other bugs with tab-width != 8.
+
+Sat Dec 26 13:27:00 1987  Richard Stallman  (rms at frosted-flakes)
+
+	* c-mode.el (electric-c-terminator, c-indent-line):
+	Don't recognize `case' unless space or tab follows.
+
+Wed Dec 23 17:24:16 1987  Richard Mlynarik  (mly at peduncle)
+
+        * loaddefs.el:
+        Update terminal-emualator documentation.  (This wasn't done
+        after the last edit.)
+
+        * terminal.el:
+        Split out te-stty-string from function terminal-emulator.
+        Run "sh" if no env var SHELL.
+        Add nonstandard (though useful) NF and LP termcap flags.
+        Fix terminal-emulator documentation.  Some comments.
+
+Tue Dec 22 19:34:37 1987  Richard Stallman  (rms at frosted-flakes)
+
+	* rnews.el (news-get-pruned-list-of-files): Don't die on
+	unreadable directory.
+
+Mon Dec 21 19:52:15 1987  Richard Stallman  (rms at frosted-flakes)
+
+	* window.el (split-widow-{vertically,horizontally}):
+	Make the arg optional.
+
+Wed Dec  9 18:32:21 1987  Richard Stallman  (rms at frosted-flakes)
+
+	* picture.el (picture-clear-rectangle): Delete spurious arg.
+
+Tue Dec  8 16:09:28 1987  Richard Stallman  (rms at frosted-flakes)
+
+	* rmailout.el (rmail-output): Don't crash if msg has no From.
+
+	* dabbrev.el (dabbrev-expand): Don't print messages.
+
+	* isearch.el (nonincremental-search): Put onto command-history.
+
+	* simple.el (kill-region): Doc fix.
+
+Sun Dec  6 01:22:27 1987  Richard Stallman  (rms at frosted-flakes)
+
+	* compile.el (compilation-error-regexp): Last alternative
+	could match spuriously; change `.*' to ` *'.  Change may be wrong;
+	nobody knows which program makes error messages this should match.
+
+	* terminal.el: Many fixes: some new termcap entries and fix bugs
+	in others.
+
+	Terminal width and height may be specified.
+	Scrolling is now the default.  Enabling or disabling scrolling
+	during use does not really work because it is necessary to change
+	the termcap entry.
+
+	Do `stty new dec' at startup.  Without this, you get printing
+	terminal echoing which looks very strange with DEL as the erase
+	char.  This may lose on sysV, but the need can't be ignored.
+
+	One known bug remains a mystery: when running `ex', the empty-line
+	command fails to overprint the colon with the text that is
+	printed.  The output Emacs receives contains a crlf in place of a cr.
+
+	* startup.el (command-line-1): Don't insert the startup-message
+	in a buffer other than *scratch*.  Fixes bug with (rmail) in .emacs.
+
+	* files.el (save-buffer): Don't make a backup if arg is 0.
+	Clean up documentation.
+
+	* tags.el (tags-query-replace): Handle prefix arg like query-replace.
+
+	* replace.el ({keep,flush}-lines): Handle matches split across lines.
+
+Sat Dec  5 03:46:16 1987  Richard Stallman  (rms at frosted-flakes)
+
+	* xscheme.el (xscheme-start-process): Put xscheme-mode-string
+	into mode-line-process.
+	* xscheme.el (add-to-global-mode-string): Function eliminated.
+
+	* startup.el: New var window-setup-hook; works like term-setup-hook.
+	* term/x-win.el: Set window-setup-hook instead of term-setup-hook.
+	term-setup-hook now for users only.
+
+Fri Dec  4 19:34:36 1987  Richard Stallman  (rms at frosted-flakes)
+
+	* tags.el (find-tag): Better error message when no tag found
+	for substring.
+
+	* lisp-mode.el (emacs-lisp-mode-syntax-table): New variable.
+	Initialize this instead of lisp-mode-syntax-table.
+	* lisp-mode.el (lisp-mode-variables): New arg; if non-nil,
+	initialize lisp-mode-syntax-table unless already done,
+	and install it.
+	* lisp-mode.el (*-mode): Pass an arg to lisp-mode-variables.
+
+	* lisp-mode.el (eval-last-sexp):  Use emacs-lisp-mode-syntax-table.
+	* lisp-mode.el (eval-print-last-sexp):
+	* debug.el (debugger-mode):
+	* chistory.el (Command-history-setup):
+	* options.el (Edit-options-mode):
+
+Tue Dec  1 00:48:06 1987  Richard Stallman  (rms at frosted-flakes)
+
+	* lisp-mode.el (calculate-lisp-indent): Typo for case within a string.
+	Indent first arg of ordinary function directly under the function
+	name.  Remove a call to parse-partial-sexp that always did
+	nothing.
+
+Wed Nov 25 19:14:29 1987  Richard Stallman  (rms at frosted-flakes)
+
+	* rmail.el (rmail): Widen and goto beginning before checking format.
+
+Sun Nov 22 00:59:46 1987  Richard Stallman  (rms at frosted-flakes)
+
+	* page.el (mark-page): Be more careful about where exactly
+	to put the buffer boundaries.  Widen before searching for a page.
+
+Thu Nov 19 18:31:11 1987  Richard Stallman  (rms at frosted-flakes)
+
+	* startup.el (command-line-1): Don't (goto-line 0).
+
+	* replace.el (occur-mode): Doc fix.
+
+Wed Nov 11 11:22:13 1987  Richard Stallman  (rms at frosted-flakes)
+
+	* dired.el (dired-find-file{,-other-window}): No need to
+	check for a line saying it is a directory, because find-file
+	does that in a better way.
+	* dired.el (dired-view-file): Use file-directory-p to
+	decide whether to call dired.
+
+	* rmail.el (rmail): If buffer already existed and find-file
+	reverts it, recompute the message tables.
+
+Tue Nov  3 07:22:29 1987  Richard Stallman  (rms at frosted-flakes)
+
+	* files.el (hack-local-variables): If selective-display
+	is set, next local-variables line starts with either \n or ^M.
+
+Sat Oct 31 22:09:52 1987  Richard Stallman  (rms at sugar-smacks)
+
+	* mh-e.el (push): Renamed to mh-push.
+
+	* mailalias.el (define-mail-alias): Fix bug when there was
+	multiple whitespace.
+
+Thu Oct 29 20:39:55 1987  Richard Stallman  (rms at frosted-flakes)
+
+	* simple.el (repeat-complex-command, next-complex-command):
+	Rename `arg' to `repeat-complex-command-arg'.
+
+Thu Oct 15 12:46:36 1987  Leonard H. Tower Jr.  (tower at frosted-flakes)
+
+	* rnewspost.el (news-inews):
+	commented out -n and -t args in news-inews.
+
+Wed Oct  7 10:54:14 1987  Richard Stallman  (rms at frosted-flakes)
+
+	* tex-mode.el (TeX-start-shell): Copy the local map
+	before changing it: don't clobber shell-mode's map.
+
+	* rmail.el (rmail-insert-inbox-text): Print the "getting..."
+	message for all files.
+
+Fri Oct  2 00:30:30 1987  Richard Stallman  (rms at frosted-flakes)
+
+	* rnews.el: Rename // to news-/.  Rename cadr, etc. to news-cadr, etc.
+	Rename push to news-push and supply a definition for it.
+
+Wed Sep 30 11:50:10 1987  Richard Stallman  (rms at frosted-flakes)
+
+	* compile.el (compile1): Save the compilation process
+	across the sit-for.
+
+Wed Sep 16 17:19:40 1987  Richard M. Stallman  (rms at prep)
+
+	* Version 18.49 released.
+
+	* debug.el (debugger-mode): mode-class special.
+
+	* buff-menu.el: Typo putting mode-class on `Buffer-menu-mode'.
+
+	* c-mode.el (electric-c-brace): set insertpos after
+	calling newline, since newline might do an auto-fill.
+
+Sat Sep 12 22:47:11 1987  Richard Mlynarik  (mly at prep)
+
+	* loaddefs.el, mail-utils.el (rmail-dont-reply-to):
+	Add new variable `rmail-default-dont-reply-to-names' which is used
+	(together with the user's name) as the default value of
+	rmail-dont-reply-to-names.  This variable replaces the wired-in
+	constant "info-" in `rmail-dont-reply-to' and is intended to be
+	used in the site-init.el file -- eg "all-ai\\>\\|[0-9]ai\\>\\|info-"
+
+Thu Sep 10 18:46:16 1987  Richard M. Stallman  (rms at prep)
+
+	* debug.el (debug): bind default-major-mode normally when
+	creating the backtrace buffer.
+
+	* rmailsum.el (rmail-summary-goto-msg): Avoid error on empty buf.
+
+Mon Sep  7 19:49:56 1987  Richard Mlynarik  (mly at prep)
+
+	* rmailsum (rmail-new-summary): Fix scope of `new-summary-line-count'
+
+	* lisp-mode.el (calculate-lisp-indent):
+	Don't fail on first line of defun.
+
+Sun Aug 30 02:20:48 1987  Richard M. Stallman  (rms at prep)
+
+	* Version 18.48 released.
+
+	* backquote.el: Rename push to bq-push, and likewise for
+	caar, cadr and cdar.  Delete cddr.
+	Definitions for the common-lisp functions
+	were different from those in cl.el and could  interfere.
+
+Wed Aug 19 18:07:39 1987  Richard Mlynarik  (mly at prep)
+
+	* lisp-mode.el (lisp-indent-hook): Fix braino.
+
+Fri Aug 14 17:55:42 1987  Richard M. Stallman  (rms at prep)
+
+	* loaddefs.el (auto-mode-alist): Recognize .emacs file
+	with either Unix or VMS syntax.
+
+	* sun-mouse-fns.el: Renamed to sun-fns.el.
+	* sun-mouse.el, term/sun.el: Rename references too.
+
+	* shell.el (lisp-send-defun-and-go):
+	Call to lisp-send-defun requires an arg.
+
+Fri Jul 31 11:15:46 1987  Leonard H. Tower Jr.  (tower at prep)
+
+	* rnewspost.el (news-setup) commented out Posting-Front-End to
+	save USENET bytes
+
+Wed Jul 29 22:12:12 1987  Richard Mlynarik  (mly at prep)
+
+	* simple.el (negative-argument):
+	Pass explicit ?- to prefix-arg-internal rather than relying on
+	value of last-command-char (broke when this command wasn't
+	assigned to the "-" key)
+
+	* loaddefs.el: Autoload common-lisp-indent-hook.
+
+	* cl-indent.el:
+	New file which understands common lisp special forms and
+	has hairy indentation-specification templates.
+	(setq lisp-indent-hook 'common-lisp-indent-hook)
+	to enable it.
+
+	* lisp-mode.el (lisp-indent-hook):
+	No need to do save-excursion.
+	Deal with case of car of form being a list (which used to be
+	handled by calculate-lisp-indent)
+
+	* lisp-mode.el (calculate-lisp-indent):
+	Call indent-hook even if looking-at a list.
+	Needed for correct indentation of pleblisp FLET, etc.
+
+Sun Jul 26 20:07:49 1987  Richard M. Stallman  (rms at prep)
+
+	* rmailsum.el (rmail-new-summary): Avoid error on empty summary.
+
+	* sendmail.el (mail): Doc fix.
+
+	* c-mode.el (c-backward-to-noncomment): Last change broke it totally.
+
+Sat Jul 25 15:33:26 1987  Richard M. Stallman  (rms at prep)
+
+	* paths.el (term-file-prefix): Make it "[.term]" on VMS
+
+	* mlconvert.el: Add a few simple translations.
+
+	* tags.el (visit-tags-table): Reset tag-table-files.
+
+Sat Jul 18 19:37:10 1987  Richard M. Stallman  (rms at prep)
+
+	* lpr.el (print-region-1): Make program name conditional on
+	system-type; use "lp" on sysV.
+
+	* keypad.el: Use help-for-help on the `?' key.
+	Provide a default for the `D' key.  Change syntax for the
+	control-letters from ^ to `C-'.
+
+	* simple.el (delete-indentation): Do nothing if have arg
+	and on last line of buffer.
+
+	* mailalias.el (define-mail-alias): Call build-mail-aliases
+	if that has not yet been done.
+
+	* mailalias.el (build-mail-aliases): If no newline at eof, invent one.
+
+	* helper.el (Helper-help): Downcase the char before looking in map.
+
+	* informat.el (Info-tagify): The check for a split file
+	searched for the wrong string.
+
+Tue Jun 30 12:37:39 1987  Richard Mlynarik  (mly at prep)
+
+	* info.el (Info-menu):
+	If interactive and point is within a menu item,
+	make that item the default for completing-read.
+
+	* man.el (nuke-nroff-bs):
+	Split this function out from manual-entry for users who need to
+	remove stupid control-h characters from text.
+
+	* mh-e.el: Version 3.4m from Larus.
+	Bug fixes plus draft folders.
+
+Mon Jun 29 01:04:03 1987  Richard M. Stallman  (rms at prep)
+
+	* vms-patch.el (make-legal-file-name): New function converts any
+	string to a similar string that's a legal VMS filename.
+
+	* picture.el: provide 'picture.
+
+	* blackbox.el (bb-init-board):
+	Use (logand (random) 7) instead of remainder by 8.
+
+Thu Jun 25 21:38:21 1987  Richard M. Stallman  (rms at prep)
+
+	* replace.el (perform-replace): Don't exit on no-op comma.
+
+Tue Jun 23 02:09:31 1987  Richard M. Stallman  (rms at prep)
+
+	* c-mode.el (electric-c-terminator):  Bug if auto-fill
+	while doing an auto-newline.  (insertpos off by 1).
+
+	* files.el (set-visited-file-name):
+	Downcase buffer name uniformly on VMS.
+
+Mon Jun 22 22:24:12 1987  Richard M. Stallman  (rms at prep)
+
+	* c-mode.el (c-backward-to-noncomment):
+	Don't loop on lines starting in ` #'.
+
+Thu Jun 18 00:38:46 1987  Richard M. Stallman  (rms at prep)
+
+	* files.el (set-visited-file-name):
+	Downcase the new buffer name on VMS.
+
+Wed Jun 17 00:39:56 1987  Richard M. Stallman  (rms at prep)
+
+	* view.el (View-scroll-lines-forward):
+	If end of buffer is visible, exit view mode.
+
+Mon Jun 15 20:25:55 1987  Richard M. Stallman  (rms at prep)
+
+	* rmail.el (rmail-get-new-mail):
+	If file has changed on disk and is read in again,
+	count its messages again.
+
+Wed Jun 10 21:10:01 1987  Richard M. Stallman  (rms at prep)
+
+	* Version 18.47 released.
+
+	* startup.el (command-line): Old test for su failed.
+	Now assume su if (user-login-name) != (getenv "USER").
+
+Mon Jun  8 19:31:03 1987  Richard M. Stallman  (rms at prep)
+
+	* version 18.46 released.
+
+	* isearch.el (isearch): Typo (3 should be 2) in getting old
+	start-point in reverse regexp search made more liberal.
+
+Mon Jun  8 18:41:28 1987  Chris Hanson  (cph at prep)
+
+	* scheme.el (scheme-mode-syntax-table): Typo.
+
+Thu Jun  4 17:14:54 1987  Richard M. Stallman  (rms at prep)
+
+	* telnet.el: Doc fix.
+
+Sun May 31 01:20:32 1987  Richard M. Stallman  (rms at prep)
+
+	* version 18.45.
+
+	* informat.el (Info-split): Bind case-fold-search to t.
+
+Fri May 29 00:41:16 1987  Richard M. Stallman  (rms at prep)
+
+	* lisp-mode.el: Add some comments.
+
+	* replace.el (list-matching-lines): If run on *Occur* buffer,
+	find nothing, rather than getting infinite loop.
+
+Thu May 28 16:41:41 1987  Richard M. Stallman  (rms at prep)
+
+	* simple.el (backward-delete-char-untabify):
+	Use insert-char to insert the spaces.  Wins for large tab-width.
+
+Thu May 28 15:40:36 1987  Chris Hanson  (cph at prep)
+
+	* xscheme.el (xscheme-send-current-line): Send the line to Scheme
+	AFTER writing the newline which acknowledges the command.
+	Otherwise the process-mark can end up in the wrong place.
+
+Thu May 28 12:24:54 1987  Richard M. Stallman  (rms at prep)
+
+	* texinfmt.el (texinfo-format-printindex): Pass -d to `sort'.
+	This makes entry `Foo' precede `Foo Bar'.
+
+	* vms-patch.el (create-file-buffer): New VMS-override definition
+	downcases the file name.
+
+Wed May 27 12:44:22 1987  Richard M. Stallman  (rms at prep)
+
+	* informat.el (Info-split): Put newlines at end of split files.
+
+	* dabbrev.el (dabbrev-expand): Preserve case in the replacement
+	if that's enabled and the replacement is either all lower case
+	or capitalized.
+	(dabbrevs-search): Don't distinguish possible replacements
+	that match except for case, if new 3rd arg NOCASE is set.
+
+	* ftp.el (various): Ignore errors in accept-process-output.
+
+Mon May 25 23:01:09 1987  Richard M. Stallman  (rms at prep)
+
+	* sun-mouse-fns.el (mouse-scroll-proportional):
+	Scroll proportional to current restrictions.
+	* sun-mouse-fns.el (enable-mouse-in-buffer-list):
+	Make mouse do something on *Buffer List*.
+
+Sat May 23 18:30:02 1987  Richard M. Stallman  (rms at prep)
+
+	* shell.el (kill-output-from-shell): Save final unfinished line.
+
+Thu May 21 17:37:45 1987  Richard M. Stallman  (rms at prep)
+
+	* c-mode.el (calculate-c-indent, indent-c-exp):
+	When using c-continued-statement-offset, if line starts
+	with an open-brace, add c-continued-brace-offset.
+
+Wed May 20 11:38:25 1987  Richard M. Stallman  (rms at prep)
+
+	* isearch.el (isearch): When splitting window, any hscroll
+	stays with the text it applied to.
+
+Tue May 19 10:38:25 1987  Chris Hanson  (cph at prep)
+
+	* scheme.el (scheme-indent-specform):
+	Do not handle first two distinguished forms specially.  All
+	distinguished forms are indented at double scheme-body-indent.
+
+	* scheme.el:
+	Conditionalize MIT-Scheme specific indentation with a flag
+	`scheme-mit-dialect'.  Users of other dialects can set this to
+	false to disable that indentation.
+
+Sat May 16 02:16:31 1987  Richard M. Stallman  (rms at prep)
+
+	* rmailsum.el (rmail-summary-scroll-msg-{up,down}):
+	Simplify, and make ...-down use scroll-other-window
+	so it avoids changing the selected window.
+
+	* tex-mode.el (TeX-common-initialization): Don't give \
+	any special syntax.
+
+	* dired.el (dired-compress): Fix typo in call to `message'.
+
+	* rmailsum.el (rmail-make-basic-summary-line):
+	When searching for header field names, insist they appear
+	at beginning of line.
+
+	* subr.el (one-window-p): If ARG was nil it was
+	really less-than-three-windows-p.
+	* sendmail.el, electric.el, ehelp.el, rmail.el:
+	Delete temporary duplicate definitions of one-window-p.
+
+Wed May 13 10:28:39 1987  Richard M. Stallman  (rms at prep)
+
+	* sendmail.el (mail-setup): New parameter mail-default-reply-to:
+	if non-nil, insert it as a Reply-to field.
+
+	* dired.el (dired-unflag): Doc fix.
+
+	* simple.el (blink-matching-open):
+	Don't use last-input-char; look in the buffer to determine
+	which closeparen is present.
+
+Tue May 12 11:50:22 1987  Richard M. Stallman  (rms at prep)
+
+	* loadefs.el (sentence-end): Treat `}' like `)'.
+
+	* buff-menu.el (buffer-menu-mode):
+	Run buffer-menu-mode-hook.
+
+	* modula2.el (m2-newline): Define this missing function.
+
+	* server.el (server-done): Write MH backup with write-region.
+	loaddefs.el: Autoload server-start, not server-edit.
+	(server-start): Change documentation: this is the main entry.
+
+	* startup.el (command-line): If running under `su',
+	use user's original login name to get init file.
+	Otherwise use $HOME.
+
+Mon May 11 17:25:04 1987  Richard M. Stallman  (rms at prep)
+
+	* isearch.el (isearch): When splitting window for slow search
+	with temp window at the top, prevent scrolling in main window.
+
+	* term/vt200.el: Correct mapping of Insert key.
+
+	* loaddefs.el (run-scheme): Add an autoload.
+
+Wed Apr 29 14:46:12 1987  Richard Mlynarik  (mly at prep)
+
+	* abbrevlist.el (list-one-abbrev-list): Use value returned by sort.
+	(Michael Prange <8704291816.AA13767@prep.ai.mit.edu>)
+
+Wed Apr 29 10:02:00 1987  Leonard H. Tower Jr.  (tower at prep)
+
+	* loaddefs.el
+	Updated rnews documentation and added autoload of news-post-news.
+
+Tue Apr 28 15:24:49 1987  Leonard H. Tower Jr.  (tower at prep)
+
+	* rnewspost.el (news-post-news, news-reply)
+	Fixed news-show-all-headers bug when *news* buffer was on an
+	article that no longer has a file in the news spool directory
+	tree.  Also made both work from almost any buffer in any mode.
+	(Dave Steiner <8704230309.AA03452@topaz.rutgers.edu>)
+
+Tue Apr 28 10:51:16 1987  Richard Mlynarik  (mly at prep)
+
+	* files.el (save-buffer):
+	When saving a large file, print a message.
+
+	* terminal.el (te-newline, te-set-window-start):
+	Don't set-window-start unless
+	(eq (selected-window) (get-buffer-window (current-buffer)))
+
+	* startup.el (command-line): -batch => -no-init-file
+
+Thu Apr 23 17:10:41 1987  Leonard H. Tower Jr.  (tower at prep)
+
+	* rnewspost.el; rnews.el:
+	added (require 'rnews) and (provide 'rnews), respectively.
+
+Thu Apr 23 12:38:37 1987  Chris Hanson  (cph at prep)
+
+	* scheme.el:
+	* xscheme.el:
+	Install new versions of these files to correspond to CScheme
+	release 5.  The old `xscheme.el' will not work correctly with the
+	new CScheme release.  The new `scheme.el' implements the Scheme
+	standard syntax more correctly.
+
+Thu Apr 23 10:42:53 1987  Richard Mlynarik  (mly at prep)
+
+	* loaddefs.el:
+	Autoload `run-prolog'.  ".pl" files are in prolog-mode.
+
+	* prolog.el:  Fix to prolog-indent-level.
+	(Masanobu UMEDA <8704201111.AA10940@flab.flab.fujitsu.junet>)
+
+	* vip.el: Fixes from Masahiko Sato; Version 2.8
+	(ms@sail.stanford.edu <8704231017.AA11075@nttlab.ntt.junet>)
+
+Wed Apr 15 01:29:41 1987  Paul Rubin  (phr at prep)
+
+	* version 18.44 released.
+
+Tue Apr 14 09:55:34 1987  Richard Mlynarik  (mly at prep)
+
+	* mailalias.el (build-mail-aliases):
+	Don't treat "alt" as "alias" (delimit "[ \t]+" not "[ \t]*")
+	(sjk <8704140433.AA00840@cancun.ads.arpa>)
+
+Mon Apr 13 08:53:18 1987  Richard Mlynarik  (mly at prep)
+
+	* loaddefs.el ((query-)replace-regexp documentation):
+	Use \=\<n> in doc strings now that \< is special in
+	substitute-command-keys.
+
+Sat Apr 11 15:30:17 1987  Richard Mlynarik  (mly at prep)
+
+	* server.el: (various):
+	Changes suggested by rlk@athena.mit.edu
+	(<8704032045.AA00797@CHOWPEENTULK.MIT.EDU>)
+
+	* loaddefs.el:
+	Autoload server-edit rather than server-start.
+	[This was later taken out.]
+
+	* dired.el (dired-compress, dired-uncompress):
+	Add "(Un)compressing <file>... done" messages.
+
+	* view.el (view-mode-command-loop):
+	Restore local map of correct buffer, even if user has switched
+	buffers.
+	(jason <19933.545094826@violet.berkeley.edu>)
+
+	* lisp.el (lisp-complete-symbol):
+	Skip over `quote' syntax chars to find real start of symbol.
+	(douglis <8704102143.AA16318@sloth.Berkeley.EDU>)
+
+Fri Apr 10 10:16:51 1987  Richard Mlynarik  (mly at prep)
+
+	* mailalias.el:
+	build-mail-aliases: Hack "\\\n" continuation lines.
+	define-mail-alias: Addresses sent to the mailer should be
+	separated by ", ", not " "!!
+
+Wed Apr  8 13:05:41 1987  Richard Mlynarik  (mly at prep)
+
+	* rfc822.el (rfc822-addresses):
+	Don't loop trying to report that ";" is an invalid address.
+
+Mon Apr  6 09:21:18 1987  Richard Mlynarik  (mly at prep)
+
+	* sun-mouse.el: (sm::window-xy):
+	Agree with `new' args to next-window.
+	(peck@sun.com <8704032106.AA12845@denali.sun.com>)
+
+Fri Apr  3 08:49:27 1987  Richard Mlynarik  (mly at prep)
+
+	* term/vt200.el:  Fix typo. 
+
+Thu Apr  2 12:42:08 1987  Richard Mlynarik  (mly at prep)
+
+	* startup.el (command-line):
+	Default init file is "$HOME/.emacs", not "~$USER/.emacs"
+
+Tue Mar 31 10:03:06 1987  Richard Mlynarik  (mly at prep)
+
+	* edt.el:  Fix typo.
+
+	* mh-e.el (mh-send-letter):
+	"-unique" => "-nopush.
+	(larus <8703311804.AA05788@paris.Berkeley.EDU>)
+
+	* shell.el: Minor doc fixes.
+
+	* rmail.el (rmail-get-new-mail):
+	Handle errors competently. (Don't attempt to
+	handle them, rather than botching the job)
+
+	* rmail.el (rmail-insert-inbox-text):
+	Put ".newmail" file in same directory as rmail-file-name
+	rather than in $HOME.  This allows one to read things in
+	even when out of space on one filesystem.
+	Use expand-file-name rather than (concat file "/...")
+	for system-independence.
+	Collect and report errors from `movemail' (rather than
+	saying "(There is no new mail)"!)
+
+	* rmail.el:
+	rms' changes of the 5th of March never made it in.
+	rmail-undelete-previous-message, rmail-next-undeleted-message:
+	Don't call rmail-show-msg if message is already current.
+	Avoids scrolling.
+
+Sun Mar 22 09:26:51 1987  Richard M. Stallman  (rms at prep)
+
+	* Version 18.41 released.
+
+	* vip.el (vip-mode): Add this function, which loaddefs.el expected.
+	* vip.el (change-mode): Eliminate emacs-mode-line-format;
+	use change-mode-line when reentering emacs-mode.
+
+	* prolog.el (prolog-mode-variables): comment-column=48.
+	* prolog.el (prolog-consult-region): New arg COMPILE (prefix).
+	Before the region, send one of prolog-{consult,compile}-string.
+	After, send prolog-eof-string or else real eof.
+	Get region bounds using interactive r.
+	* prolog.el (prolog-consult-region-and-go): Similar.
+
+	* info.el (Info-find-node): Don't call Info-mode
+	if already in that mode.  Avoids wiping out local variables
+	such as Info-current-file.
+
+Sat Mar 21 13:36:04 1987  Richard M. Stallman  (rms at prep)
+
+	* term/sun.el: Define sun-esc-bracket as nil:
+	don't redefine M-[ by default.
+
+	* informat.el (Info-validate): Don't get error while
+	checking for an indirect info file.
+
+Fri Mar 20 10:20:16 1987  Richard M. Stallman  (rms at prep)
+
+	* dired.el (dired-{un,}compress): Don't specify path
+	for programs compress and uncompress.
+
+Thu Mar 19 14:56:55 1987  Richard Mlynarik  (mly at prep)
+
+	* disassemble.el (disassemble-1):
+	Let print-escape-newlines t around constant printing.
+
+	* terminal.el (terminal-emulator):
+	Quote shell arg as "TERMCAP=foo" not TERMCAP="foo"
+
+Thu Mar 19 14:21:09 1987  Richard M. Stallman  (rms at prep)
+
+	* vip.el (string-tail, change-mode-line):
+	Use string manipulation; flush the temp buffer " *working-space*".
+
+Wed Mar 18 11:36:49 1987  Richard M. Stallman  (rms at prep)
+
+	* Version 18.40 released.
+
+	* files.el (after-find-file): Use directory-file-name where needed.
+
+Wed Mar 18 10:11:51 1987  Richard Mlynarik  (mly at prep)
+
+	* ftp.el (ftp-find-file-or-directory): Paren error.
+
+Tue Mar 17 09:46:29 1987  Richard M. Stallman  (rms at prep)
+
+	* server.el (server-visit-buffers): Don't revert a buffer
+	automatically if the file does not currently exist.
+
+	* mh-e.el (mh-list-to-string, mh-page-digest{,-backwards}):
+	Fixes from Larus.
+
+	* server.el (server-start): Kill old server before
+	clearing out its records.  Delete any old server socket
+	unconditionally.  Mark server process as kill-without-query.
+
+	* files.el (recover-file): Don't try to list directory on vms.
+
+Sat Mar 14 09:39:24 1987  Richard M. Stallman  (rms at prep)
+
+	* Version 18.39 released.
+
+Fri Mar 13 19:34:24 1987  Richard M. Stallman  (rms at prep)
+
+	* dired.el: New commands dired-{un,}compress,
+	dired-byte-compile, dired-ch{mod,own,grp} and subroutine
+	dired-redisplay.  From Jim Cottrell, rbj@icst-cmr.arpa.
+	They are all put on keys.
+
+	* sun-{mouse,mouse-fns,cursors}.el, term/sun.el:
+	New and replacement files from peck@sun.com.
+
+Thu Mar 12 16:17:22 1987  Richard M. Stallman  (rms at prep)
+
+	* server.el (server-visit-files): Before trying
+	find-file-noselect, check for existing buffer, and if it
+	isn't modified, revert it unconditionally. 
+
+	* mh-e.el (mh-send-letter): Considerable rewrite by Larus;
+	don't know why.
+
+Wed Mar 11 18:11:12 1987  Chris Hanson  (cph at prep)
+
+	* sort.el (sort-subr): fix typo in sorting of lists: in case where
+	`sortcar' is not available, and arguments are numbers, was using
+	`cdr' to extract second argument to `sort' (rather than `car').
+
+Wed Mar 11 10:05:35 1987  Richard M. Stallman  (rms at prep)
+
+	* tex-mode.el (TeX-comment-indent): In column 0,
+	don't require indenting at least to column 1.
+
+	* vip.el: New version from Sato; handles the EX commands.
+
+	* server.el: New version frm peck@sun, supporting
+	multiple clients.
+
+Tue Mar 10 16:20:48 1987  Richard M. Stallman  (rms at prep)
+
+	* outline.el (hide-region-body): Exit loop cleanly
+	no matter which stage reaches eob.
+
+Mon Mar  9 10:21:40 1987  Richard M. Stallman  (rms at prep)
+
+	* files.el (hack-local-variables): New optional arg FORCE.
+	If it's nil, and `inhibit-local-variables' is non-nil,
+	then query before installing the file's local variables.
+	* files.el (normal-mode): Pass non-nil FORCE to
+	hack-local-variables if we were called from find-file.
+
+	* shell.el (shell-send-input): Fix typo in condition-case syntax.
+
+	* shell.el (make-shell): Make a TERMCAP env var
+	for term type "emacs" to give the screen width.
+
+Sun Mar  8 08:30:26 1987  Richard M. Stallman  (rms at prep)
+
+	* info.el (Info-mode): Make variables Info-current-*,
+	Info-tag-table-marker and Info-history local in Info-mode.
+
+Fri Mar  6 14:55:31 1987  Richard Mlynarik  (mly at prep)
+
+	* ftp.el:  Paren error.
+
+Thu Mar  5 16:27:47 1987  Richard M. Stallman  (rms at prep)
+
+	* sort.el (sort-reorder-buffer): Fix typo `end'->`last'
+	in insertion of the spacing after the last sort record.
+
+	* rmail.el (rmail-undelete-previous-message):
+	Don't call rmail-show-msg if message is already current.
+	Avoids scrolling.
+
+	* rmail.el (rmail-next-undeleted-message): Likewise.
+
+Wed Mar  4 01:21:22 1987  Richard M. Stallman  (rms at prep)
+
+	* loaddefs.el (auto-mode-alist): Add .article and .letter
+	as text-mode, for rn.
+
+	* ftp.el (ftp-list-directory): New command.
+	* ftp.el (ftp-find-file-or-directory):
+	Guts of ftp-find-file are now here.  3rd arg is t for a file,
+	nil for listing a directory.
+
+	* mailalias.el (expand-mail-aliases): Correct handling of
+	aliases whose expansions use other aliases, and aliases
+	that are self-referent.
+
+	* c-mode.el (calculate-c-indent): Line at beg of buffer
+	needs no indentation.
+
+Tue Mar  3 21:43:01 1987  Richard M. Stallman  (rms at prep)
+
+	* shell.el (shell): New series of variables `explicit-FOO-args'
+	specify args to use when running program FOO as a shell.
+	Supply system-dependent default for explicit-csh-args.
+
+	* mailalias.el (expand-mail-aliases):
+	Fix typo: use build-mail-aliases to gobble redefined mail aliases.
+
+	* loaddefs.el (dired-listing-switches): Doc fix.
+
+Mon Mar  2 15:54:47 1987  Richard Mlynarik  (mly at prep)
+
+	* Version 18.38 released.
+
+	* shell.el (make-shell):
+	Use the "env" program.
+	This both simplifies and shortens the code, and makes it
+	environment-implementation-independent.
+
+Mon Mar  2 08:36:03 1987  Chris Hanson  (cph at prep)
+
+	* page.el (what-page): Reported wrong page number if invoked
+	exactly to the right of a page-delimiter.
+
+Sat Feb 28 14:28:28 1987  Richard M. Stallman  (rms at prep)
+
+	* loaddefs.el (mode-line-modified):
+	New variable for string that indicates modifiedness in mode line.
+
+	* rmail.el (rmail-mode-1): If mode-line-modified is bound,
+	change it rather than mode-line-format.
+	* rmailedit.el (rmail-edit-mode): same thing.
+
+Fri Feb 27 14:06:52 1987  Richard M. Stallman  (rms at prep)
+
+	* info.el (Info-follow-reference): Combine multiple spaces
+	in node name before searching.  Also helps with newline and
+	spaces.
+
+	* texinfmt.el (texinfo-format-buffer-1):
+	Discard everything after the @bye.
+
+Thu Feb 26 22:02:09 1987  Paul Rubin  (phr at prep)
+
+	* texinfmt.el (texinfo-format-emph):
+	Function was accidentally misnamed `texinfo-format'.
+
+Thu Feb 26 02:10:58 1987  Richard M. Stallman  (rms at prep)
+
+	* x-mouse.el (x-help, x-buffer-menu):
+	Install definitions of these commands, possible now that
+	xmenu.c is installed.
+
+Tue Feb 24 13:00:44 1987  Richard M. Stallman  (rms at prep)
+
+	* edt.el (update-mode-line): New function forces mode line update.
+	* edt.el (backup-mode, advance-mode): Call update-mode-line.
+	Also include a space at front of the word that's displayed.
+	function-map => function-keymap.
+	* edt.el: fix calls to define-keypad-key.
+	* edt.el: fix typo `delete-previous-character'.
+
+Sun Feb 22 23:08:54 1987  Richard M. Stallman  (rms at prep)
+
+	* texinfmt.el: Define @cite, @emph and @strong.
+
+Thu Feb 19 16:00:13 1987  Richard Mlynarik  (mly at prep)
+
+	* subr.el:
+	(fset 'set-window-buffer 'show-buffer) =>
+	(fset 'show-buffer 'set-window-buffer)
+
+Thu Feb 19 14:25:04 1987  Richard M. Stallman  (rms at prep)
+
+	* view.el (view-mode): No longer interactive.
+	Much easier than fixing the problems that happen if it is
+	used wrong.
+
+	* files.el (find-alternate-file): Don't offer save if read-only.
+
+Wed Feb 18 19:32:06 1987  Chris Hanson  (cph at prep)
+
+	* simple.el (do-auto-fill): Do not `save-excursion' if
+	do-auto-fill should have exactly the same effect as doing
+	indent-new-comment-line.  Otherwise if a fill-prefix or
+	comment-start is inserted, point will be left at the beginning
+	rather than the end of the inserted prefix.
+
+Wed Feb 18 10:20:23 1987  Richard M. Stallman  (rms at prep)
+
+	* abbrev.el (abbrev-mode): Update the mode line.
+	* simple.el (overwrite-mode): Update the mode line.
+
+	* term/vt100.el: If there are already keymaps on \e[ amd \eO,
+	use them for the CSI-map and SS3-map.
+
+	* texinfmt.el (texinfo-format-center): @center was missing.
+
+	* isearch.el (isearch): If DEL is not special,
+	it terminates the search as a random control character.
+
+Mon Feb 16 14:56:18 1987  Richard M. Stallman  (rms at prep)
+
+	* dabbrev.el: Missing quote in arg to make-variable-buffer-local.
+
+	* man.el (manual-entry):
+	Use insert-man-file instead of insert-file-contents.
+
+	* tex-mode.el (TeX-show-print-queue): Start tex shell
+	if not already done.
+
+	* tex-mode.el (TeX-mode): bound search for % at eol.
+
+Sun Feb 15 18:03:14 1987  Richard M. Stallman  (rms at prep)
+
+	* loaddefs.el (completion-ignored-extensions): Add .bin again;
+	scheme is said to use it.
+
+Fri Feb 13 14:40:51 1987  Richard M. Stallman  (rms at prep)
+
+	* rmail.el (rmail-insert-inbox-text): Do expand-file-name
+	on names of inbox files.
+
+	* loaddefs.el: Add autoload for server-start.
+
+Mon Feb  9 09:53:27 1987  Richard Mlynarik  (mly at prep)
+
+	* Version 18.37 released.
+
+	* rmail.el (rmail-mode-1):
+	Don't rely on mode-line-format being consp.
+
+Sun Feb  8 08:53:07 1987  Richard M. Stallman  (rms at prep)
+
+	* shell.el (inferior-lisp-program): New variable is used
+	as program name when starting inferior Lisp.
+
+	* shell.el (lisp-send-defun): Write the text to a temp file,
+	then send a string saying to load the file.
+	inferior-lisp-load-command controls generation of that string.
+	Prefix arg means bring *lisp* buffer onto the screen
+	and scroll it to the end.
+	inferior-lisp-prompt controls recognition of when prompt
+	arrives, indicating no more output coming so scrolling may be done.
+
+	* server.el (server-start): Make "Server" appear in mode line
+	while actual server operation is going on.
+	Do process-kill-without-query also.
+
+	* server.el (various): Call the buffer " *server*", not "*server*".
+
+	* server.el (server-sentinel): Considerable cleanup.
+	Don't ever switch-to-buffer on *server*.  Do all parsing in it
+	and finding of files without changing displayed buffers;
+	only then display one buffer that merits it.
+	Eliminate variable old-server-edit-buffer.
+
+	* files.el (save-abbrevs): Default value is nil.
+	* abbrev.el (read-abbrev-file): Set save-abbrevs to t.
+
+	* shell.el (make-shell): Change process-environment
+	to specify EMACS=t, TERM=switch and no TERMCAP.
+
+	* debug.el (debug): Bind print-escape-newlines to t
+	while printing the backtrace.
+
+	* subr.el (run-hooks): Each hook value may be a list of functions
+	as well as a single function.
+
+	* files.el (after-find-file): Wait only after serious messages,
+	not "(New file)" or "File is read-only".  And don't redisplay
+	when waiting.
+
+	* mlconvert.el (convert-mocklisp-buffer):
+	Generate mocklisp-style defuns, not Lisp-style,
+	for dummy function ml-foo.  Indent the body.
+
+Sun Feb  8 08:42:44 1987  Daniel LaLiberte  (liberte at b.cs.uiuc.edu)
+
+	* mlconvert.el (convert-mocklisp-buffer):
+	Insert the starting comment and the `require' after
+	encapsulating non-defuns into defuns.
+
+	* mlconvert.el (fix-mlisp-syntax): Detect and fix the
+	^LETTER syntax.
+
+Sat Feb  7 22:27:16 1987  Richard M. Stallman  (rms at prep)
+
+	* mlconvert.el (convert-mocklisp-buffer):
+	Treat | as alphabetic char.  Convert syntax before
+	converting non-defuns to defuns.
+
+Thu Feb  5 07:10:39 1987  Richard Mlynarik  (mly at prep)
+
+	* ftp.el (ftp-find-file):
+	Ignore `125's from server.
+
+Tue Feb  3 05:21:10 1987  Richard Mlynarik  (mly at prep)
+
+	* simple.el (auto-fill-mode):
+	Update mode-line after changing minor mode.
+
+Tue Feb  3 00:10:47 1987  Richard M. Stallman  (rms at prep)
+
+	* mh-e.el (mh-insert-prefix-string):
+	Use explicit loop by lines.
+
+Sun Feb  1 04:39:34 1987  Richard M. Stallman  (rms at prep)
+
+	* loaddefs.el: purecopy many strings found in initial var values.
+	Garbage collect in middle of file to reduce storage required
+	for loading.  Remove ".bin" from completion-ignored-extensions
+	on Unix since only Symbolics customers would benefit from its presence.
+	Symbolics killed the MIT AI lab; don't do business with them.
+
+	* view.el (view-file): Kill the buffer at the end if it was
+	created just for this and was not modified.
+
+	* userlock.el (ask-user-about-supercession-help):
+	Suggest use of revert-buffer.
+
+	* help.el (print-help-return-message): Don't count minibuffer window
+	when deciding whether there is only one window.  Calls one-window-p.
+	* subr.el (one-window-p): New function.
+	* subr.el: Rename some args to reduce number of symbols.
+
+	* electric.el (Electric-pop-up-window):
+	* ehelp.el (with-electric-help):
+	* rmail.el (rmail-forward):
+	* sendmail.el (mail-send-and-exit): Don't count minibuffer window
+	when deciding whether there is only one window.
+	These are done by definining subroutine one-window-p in a way that
+	works in old versions of Emacs.
+
+Fri Jan 30 16:35:48 1987  Richard Mlynarik  (mly at prep)
+
+	* loaddefs.el (completion-ignored-extensions):
+	Add ".lbin"
+
+	* mail-utils.el, loaddefs.el (mail-use-rfc822): Doc typo.
+
+Thu Jan 29 03:44:29 1987  Richard M. Stallman  (rms at prep)
+
+	* rmail.el (rmail-set-message-counters):
+	* rmail.el (rmail-count-new-messages):
+	Don't bind cursor-in-echo-area.
+
+	* debug.el (debug-on-entry): Doc fix.
+
+	* files.el (rename-auto-save-file): Don't rename if new and old
+	names are the same.
+
+Wed Jan 28 17:55:02 1987  Richard M. Stallman  (rms at prep)
+
+	* rmail.el (rmail-mode-1): Don't set mode-line-buffer-identification.
+
+Mon Jan 26 17:15:27 1987  Richard M. Stallman  (rms at prep)
+
+	* simple.el (set-variable): Use documentation-property
+	instead of get, for getting variable documentation.
+
+Sun Jan 25 15:46:01 1987  Richard Mlynarik  (mly at prep)
+
+	* debug.el (debug):
+	Bind cursor-in-echo-area.
+
+Fri Jan 23 13:19:28 1987  Richard M. Stallman  (rms at prep)
+
+	* isearch.el (isearch): In reverse search, wrapping is to end
+	of buffer, not beginning.
+
+	* man.el (manual-entry): Take 1st char of `section' as a
+	substring, not as a char, to pass to `concat'.
+
+	* loaddefs.el (completion-ignored-extensions):
+	Add ".glo", ".idx" and ".lot".
+
+Thu Jan 22 16:09:51 1987  Chris Hanson  (cph at prep)
+
+	* shell.el (shell): Do not pass -T flag to `/bin/sh', only to
+	`/bin/csh'.
+
+Thu Jan 22 15:08:24 1987  Richard M. Stallman  (rms at prep)
+
+	* scribe.el (scribe-mode): Doc fix.
+	* loaddefs.el (scribe-mode): Doc fix.
+
+	* tex-mode.el (tex-mode): Change tex vs latex discrimination
+	to avoid a slow regexp.
+
+Thu Jan 22 13:06:33 1987  Richard Mlynarik  (mly at prep)
+
+	* files.el (find-file-noselect):
+	Call expand-file-name earlier so it is correct in case of errors,
+	file-not-found, etc.
+
+Wed Jan 21 17:00:19 1987  Richard Mlynarik  (mly at prep)
+
+	* yow.el, flame.el, doctor.el:
+	Change calls to (random) (lisp reader doesn't read octal "07777")
+
+Wed Jan 21 02:13:17 1987  Richard M. Stallman  (rms at prep)
+
+	* Version 18.36 released.
+
+Wed Jan 21 02:13:17 1987  Richard M. Stallman  (rms at prep)
+
+	* bytecomp.el (byte-compile-setq-default): New function for
+	special handling needed because setq-default has an unevalled arg.
+
+	* c-mode.el (calculate-c-indent): When finding first statement
+	inside brace-group, `case' is not special unless a colon appears.
+
+	* macros.el (kbd-macro-query): Make C-l call `recenter'.
+
+	* bytecomp.el (byte-compile-setq): Make setq with no args
+	generate a value.
+
+	* bytecomp.el (byte-compile-cond): Notice unconditional clauses
+	and optimize the code generated.
+
+Tue Jan 20 11:48:17 1987  Richard M. Stallman  (rms at prep)
+
+	* bytecomp.el (byte-compile-if): Correct test for else-less if's.
+
+	* sun-mouse.el: Delete code to handle resize-blips
+	since they are unnecessary and no longer generated.
+
+	* sort.el (sort-columns): Pass -t\n instead of -b to `sort'.
+
+Mon Jan 19 12:44:42 1987  Richard M. Stallman  (rms at prep)
+
+	* loaddefs.el (auto-mode-alist): Recognize .lsp as Lisp mode.
+
+Fri Jan 16 18:09:59 1987  Richard Mlynarik  (mly at prep)
+
+	* rmail.el (rmail-count-new-messages),
+	  rmailout.el (rmail-output-to-rmail-file):
+	Add optional arg `nomsg' to former, which latter supplies,
+	so that rmail doesn't report counting one appended message.
+
+Thu Jan 15 22:19:17 1987  Richard M. Stallman  (rms at prep)
+
+	* shell.el (shell): Flush hpux kludge to use "sh" instead of
+	SHELL, and install another kludge to pass -T if on hpux.
+
+Thu Jan 15 17:08:01 1987  Richard Mlynarik  (mly at prep)
+
+	* time.el (display-time-filter):
+	Never eat anything larger than your own head.
+
+Thu Jan 15 16:10:33 1987  Richard M. Stallman  (rms at prep)
+
+	* files.el (after-find-file): Sit for 2 sec after warning msg.
+
+Thu Jan 15 09:07:04 1987  Richard Mlynarik  (mly at prep)
+
+	* rmail.el (rmail-get-new-mail):
+	(or (verify-visited-file-modtime (current-buffer))
+            (find-file (buffer-file-name)))
+
+	* simple.el (append-next-kill):
+	Make this work when not (interactive-p)
+
+Wed Jan 14 16:40:38 1987  Richard Mlynarik  (mly at prep)
+
+	* terminal.el:
+	Can't send ^d chars (004) through the cretinous so-called ptys
+	written by the mindless so-called hackers responsible for un*x
+	(the Operating System of the Future.)
+
+Mon Jan 12 01:08:19 1987  Richard Mlynarik  (mly at prep)
+
+	* files.el (basic-save-buffer):
+	Typo.
+
+Sun Jan 11 16:16:15 1987  Richard Mlynarik  (mly at prep)
+
+	* ebuff-menu (electric-buffer-list):
+	Typo.
+
+	* buff-menu.el (Buffer-menu-select):
+	If the buffer to select is also marked with ">" only make one
+	window for it.
+
+	* terminal.el (te-filter):
+	Save/restore point from te-saved-point to minimise the lossage
+	vandals can inflict.
+
+Fri Jan  9 15:54:00 1987  Richard M. Stallman  (rms at prep)
+
+	* tex-mode.el: New version from Gildea.
+	Many changes.
+
+Fri Jan  9 15:04:45 1987  Richard Mlynarik  (mly at prep)
+
+	* novice.el (disabled-command-hook):
+	cursor-in-echo-area.
+
+Fri Jan  9 10:23:13 1987  Richard M. Stallman  (rms at prep)
+
+	* mh-e.el (mh-send-letter, mh-fully-kill-draft):
+	Two minor fixes from Larus.
+
+	* files.el (basic-save-buffer):  After prompting for
+	filename for non-file buffer, turn on auto-save.
+
+Thu Jan  8 12:05:49 1987  Richard Mlynarik  (mly at prep)
+
+	* files.el (set-visited-filename):
+	(kill-local-variable 'revert-buffer-function)
+
+	* hanoi.el (hanoi0), yow.el, flame.el (psychoanalyze-{pinhead,flamer}):
+	Quit if luser types a char rather than inhibiting redisplay for 20
+	minutes!
+
+Thu Jan  8 00:59:16 1987  Richard M. Stallman  (rms at prep)
+
+	* sort.el (sort-columns): Fix typo in variable name.
+	Also check for presence of tabs and get error.
+
+Wed Jan  7 13:25:01 1987  Richard M. Stallman  (rms at prep)
+
+	* vi.el: New version from wu@crys.wisc.edu.
+	All function and variable names start with `vi'.
+	Some missing vi capabilities now emulated.
+
+	* sun-mouse.el (set-screen-size-and-rdis):
+	was using x as screen height and y as width; exchange.
+
+Tue Jan  6 23:52:52 1987  Richard Mlynarik  (mly at prep)
+
+	* term/x-win.el:
+	Set suspend-hook to get an error.
+
+Tue Jan  6 17:35:37 1987  Richard M. Stallman  (rms at prep)
+
+	* mh-e.el (mh-write-msg-to-file): Generate buffer " *mh-temp*"
+	if it is missing.
+
+Tue Jan  6 11:53:42 1987  Richard Mlynarik  (mly at prep)
+
+	* rmailmsc.el (set-rmail-inbox-list):
+	More informative prompt.
+
+Mon Jan  5 01:15:17 1987  Richard M. Stallman  (rms at prep)
+
+	* paths.el: Prefer Berkeley-style formatted manual directories
+	(/usr/mat/cat1...) to ATT-style ones.  Pyramid has trouble
+	if it uses ATT dirs in BSD universe.
+
+	* vi.el: New version from wu@crys.wisc.edu.
+
+	* Version 18.35 released.
+
+Sun Jan  4 22:11:20 1987  Richard M. Stallman  (rms at prep)
+
+	* picture.el: Fix typo in define-key for C-c<.
+
+Sun Jan  4 21:15:59 1987  Richard Mlynarik  (mly at prep)
+
+	* prolog.el:
+	Don't modify current buffer's syntax-table when loading this file.
+
+Sat Jan  3 19:59:41 1987  Richard M. Stallman  (rms at prep)
+
+	* x-mouse.el: Define names for the button-up events.
+
+Wed Dec 31 04:19:31 1986  Richard M. Stallman  (rms at prep)
+
+	* bytecomp.el (byte-compile-function-form):
+	Was miscompiling (function SYMBOL) by failing to quote SYMBOL.
+
+Sun Dec 28 14:32:22 1986  Richard Mlynarik  (mly at prep)
+
+	* userlock.el:
+	Bind cursor-in-echo-area for read-char.
+
+Wed Dec 24 18:31:50 1986  Richard Mlynarik  (mly at prep)
+
+	* terminal.el:
+	Lots of things changed.
+	Have to start a shell just to call stty since emacs
+	won't set things up correctly!!!  (We end up sometimes
+	execing 5 programs to start up...)	
+	Emulator terminal-type capabilities extended somewhat
+	and `command-set' made somewhat emacs-oid in order to make
+	termscript files easier to understand.
+
+Tue Dec 23 02:11:49 1986  Richard M. Stallman  (rms at prep)
+
+	* macros.el (insert-kbd-macro): Only look for global key bindings
+	since we don't know how to record local ones properly
+	(and in general there is no way to do it).
+
+	* bytecomp.el (byte-compile-find-vars-1):
+	Cons up and return a macroexpanded version of the form
+	being scanned.
+	Don't look inside a call to `function' or `condition-case'.
+	For catch, look only at first argument.
+
+	* bytecomp.el (byte-compile-find-vars):
+	Return (MACROEXPANDEDFORM . VARSUSED).
+
+	* bytecomp.el (byte-compile-top-level):
+	Use the macroexpanded form returned by byte-compile-find-vars
+	for subsequent compilation.  Thus, each macro call is expanded
+	only once.
+
+Mon Dec 22 15:50:58 1986  Richard M. Stallman  (rms at prep)
+
+	* subr.el: Delete nth and copy-keymap (now in fns.c and keymap.c).
+
+Mon Dec 22 14:04:15 1986  Richard Mlynarik  (mly at prep)
+
+	* texinfmt.el (batch-texinfo-format):
+	Was printing message about source file rather than output file.	
+
+Mon Dec 22 13:08:39 1986  Richard M. Stallman  (rms at prep)
+
+	* subr.el: Remove `delete-backward-char-untabify',
+	insert `backward-'delete-char'.
+
+Mon Dec 22 11:06:47 1986  Richard Mlynarik  (mly at prep)
+
+	* simple.el (undo):
+	Was missing local var `modified'
+
+	* subr.el:
+	Make `set-window-buffer' synonym for obfuscatory `show-buffer'
+	Make 'delete-backward-char-untabify' a synonym for
+	`backward-delete-char-untabify' -- the non-conventional naming of
+	the latter confuses people
+
+Sat Dec 20 23:38:00 1986  Richard Mlynarik  (mly at prep)
+
+	* loaddefs.el:
+	Add autoload for sort-regexp-fields.
+
+	* sort.el:
+	Rename skip-fields -> sort-skip-fields to avoid name-conflict
+
+Sat Dec 20 21:51:22 1986  Richard M. Stallman  (rms at prep)
+
+	* isearch.el (isearch): Print message "" only if don't set mark.
+	* isearch.el (isearch-message): Put cursor in echo area instead of
+	ellipsis.
+	* isearch.el (isearch-search): use one string-match to check
+	for all errors that mean "incomplete input".
+
+	* files.el (rename-auto-save-file):
+	Alter auto save file name of current buffer, and rename
+	any existing auto save file.
+
+	* files.el (set-visited-file-name): Use rename-auto-save-file
+	if auto save mode is already on.
+
+	* simple.el (undo): If undo-mode clears modified,
+	delete any auto-save file.
+
+Sat Dec 20 17:04:26 1986  Richard Mlynarik  (mly at prep)
+
+	* fortran.el:
+	Allow fortran-comment-indent-char to be a string of length 1,
+	since that is what is documented in the printed v18 manuals.
+
+	* terminal.el:
+	Print a help message when emulator starts.
+	Fix a bug in te-escape-help.
+
+	* subr.el (read-quoted-char):
+	Document PROMPT arg.
+
+Fri Dec 19 16:26:05 1986  Richard M. Stallman  (rms at prep)
+
+	* lisp.el (lisp-complete-symbol):
+	Don't put pre-completion text on kill ring.
+
+Fri Dec 19 11:31:22 1986  Richard Mlynarik  (mly at prep)
+
+	* ftp.el (read-ftp-user-password):
+	Change prompting for user-name
+
+Thu Dec 18 01:40:37 1986  Richard M. Stallman  (rms at prep)
+
+	* files.el (recover-file): Supply missing arg in call to error.
+
+	* isearch.el: If search-slow-window-lines is negative, put the
+	search window at the top.  Always bind window-min-height to 1.
+
+	* isearch.el: When extending a reverse non-regexp search
+	must not extend past barrier (same idea as below for regexps).
+
+Wed Dec 17 11:44:21 1986  Richard M. Stallman  (rms at prep)
+
+	* isearch.el: Combine code for search-repeat-char and
+	search-reverse-char into one cond clause.
+	If search direction is changing, don't greb prev search-string.
+	Otherwise, do grab it if search-string is currently empty.
+
+	* isearch.el: When extending a reverse regexp search string,
+	criterion for extending current match was one off, and also
+	now won't go into the area beyond where last C-r was typed.
+
+	* replace.el (perform-replace): If user types C-l,
+	clear screen, redisplay, and ask again.
+
+	* isearch.el: In regexp isearch, when a ?, * or | is input,
+	back up start of search.  New local variable `barrier' is
+	position of original command or of last C-s or C-r; it
+	is saved by isearch-push-state.
+
+Mon Dec 15 09:30:22 1986  Richard Mlynarik  (mly at prep)
+
+	* fortran.el:
+	Initialise fortran-mode-abbrev-table correctly.
+
+	* fortran.el:
+	fortran-comment-indent-char should be a character (a fixnum), not
+	a string of length one.
+
+	* rmail.el:
+	Add support for delta-from-UT timezone specs ("EST" = "-0500")
+	Add support for four-character timezone specifications such as NZST
+	[This is actually a bit suspect, since four-character timezone
+	specs violate the rfc822 date format -- one should be using a spec
+	like "+1000" instead]
+
+Fri Dec 12 09:21:03 1986  Richard M. Stallman  (rms at prep)
+
+	* loaddefs.el: Delete incorrect entry for .mss in auto-mode-alist,
+	so correct entry is visible.
+
+	* rmail.el (rmail): Initialize rmail-last-{rmail-,}file here
+	rather than when rmail.el is loaded.
+
+	* Version 18.33 released.
+
+	* rnewspost.el: require sendmail.
+
+	* loaddefs.el: Autoload scribe-mode and use for ".mss" files.
+	Autoload modula-2-mode and prolog-mode as well.
+
+	* sendmail.el (mail-mode): Set buffer-offer-save.
+
+	* files.el (save-some-buffers): If user says `n' to "Save
+	abbrevs?", clear abbrevs-changed so won't ask again. 
+
+	* files.el (buffer-offer-save): New variable, local in all buffers.
+	* files.el (save-some-buffers): New 2nd arg EXITING.
+	If non-nil, offer to save any nonempty modified buffer
+	in which `buffer-offer-save' is non-nil.
+
+	* sup-mouse.el: New file to handle mouse commands on
+	supdup terminals.
+
+Thu Dec 11 17:59:43 1986  Chris Hanson  (cph at prep)
+
+	* man.el: Fix bug in regexp used to nuke footers in hp-ux.
+
+Thu Dec 11 17:52:44 1986  Richard M. Stallman  (rms at prep)
+
+	* keypad.el: Fix typo "kill-linee".
+
+Thu Dec 11 14:19:20 1986  Richard Mlynarik  (mly at prep)
+
+	* isearch.el (isearch):
+	Never set search-last-string to ""
+
+Wed Dec 10 17:28:20 1986  Richard M. Stallman  (rms at prep)
+
+	* help.el (help-for-help): Once long help text is on screen,
+	bind cursor-in-echo-area to t for reading subsequent chars.
+
+	* sort.el (sort-columns): Fix typo (col-beg1 was col-beg
+	and likewise for col-end1).
+
+Tue Dec  9 16:06:45 1986  Richard Mlynarik  (mly at prep)
+
+	* terminal.el, ehelp.el:
+	New files.
+	"terminal" still needs a small amount of documentation.
+
+Sat Dec  6 14:28:39 1986  Richard M. Stallman  (rms at prep)
+
+	* Version 18.32 released.
+
+	* scribe.el: New file containing scribe-mode.
+	* server.el: New file containing server-start
+	(makes existing Emacs process serve as "the editor" for
+	other programs that want to invoke an editor subprocess.)
+
+Fri Dec  5 01:14:16 1986  Richard M. Stallman  (rms at prep)
+
+	* subr.el (substitute-key-definition):  [MLY]
+	The definitions are in the cdr's of alist elts, not the cars.
+
+	* mh-e.el: 3.4h from Larus.
+
+	* rmail.el (rmail-get-new-mail):
+	Never bind make-backup-files to t if it was nil before.
+
+	* keypad.el (function-key-sequence):
+	* macros.el (insert-kbd-macro):
+	* vi.el:
+	Pass local map argument to where-is-internal.
+
+	* c-mode.el (c-backward-to-noncomment): Skip ^L like newline.
+
+	* c-mode.el (calculate-c-indent):
+	When checking for continued previous lines, after skipping one,
+	use c-backward-to-noncomment to find next real text.
+	When classifying top-level lines, ignore page breaks;
+	lines ending in } are not continued lines.
+
+	* rmailkwd.el (rmail-set-label):
+	Delete whitespace only next to commas.
+
+	* rmailkwd.el (rmail-nuke-whitespace): Delete this function.
+
+	* sendmail.el (mail-do-fcc): Delete the entire line of an fcc
+	including the newline after it.  Was failing to do so
+	if the line had a space or tab at the end.
+
+	* c-mode.el (c-indent-line): Don't think that "else_..."
+	is the keyword "else".
+
+	* rmail.el (rmail-search): For reverse search, use
+	re-search-forward to filter messages; then, once a message is found,
+	use re-search-backward to position point within it. 
+
+	* rmail.el (rmail-expunge): Don't bomb if rmail file is empty.
+	* rmail.el (rmail-show-message): If showing message number zero,
+	don't beep, and set point at beginning of it.
+	* rmail.el (rmail-set-message-counters): If no messages, set
+	rmail-current-message to 0.
+
+Thu Dec  4 18:53:38 1986  Richard Mlynarik  (mly at prep)
+
+	* ftp.el (ftp-sentinel):
+	Catch time taken/transfer-rate information.
+
+Tue Dec  2 22:35:00 1986  Richard M. Stallman  (rms at prep)
+
+	* float.el (float-to-string): Don't infinite-loop if arg is zero.
+
+	* float.el (float-regexp): Accept numbers lacking digits before
+	the point.  Accept numbers with a point and no digits after it.
+	Don't get confused by matching just part of the input.
+
+	* float.el (string-to-float): Detect if loading-0s
+	gets to equal the length of digit-string.
+
+Tue Dec  2 15:46:37 1986  Richard Mlynarik  (mly at prep)
+
+	* float.el (extract-match):
+	Convert to new re-register regime
+
+Mon Dec  1 18:08:39 1986  Richard Mlynarik  (mly at prep)
+
+	* mailalias.el (expand-mail-aliases):
+	Check for case of (eq mail-aliases t) -- can happen if mail-mode
+	is entered without calling mail-setup (eg when trying to recover
+	an autosaved mail file)
+
+Wed Nov 26 17:30:21 1986  Richard Mlynarik  (mly at prep)
+
+	* loaddefs.el:
+	mode-line-format should contain (-3 . "%p") rather than "%3p"
+
+	* terminal.el:
+	Use the "env" program
+
+Wed Nov 26 00:07:19 1986  Richard M. Stallman  (rms at prep)
+
+	* compile.el (compile1, compilation_sentinel):
+	Don't make *compilation* read-only.
+
+	* simple.el (next-complex-command): fix one-off about
+	largest allowed value of ARG.  If attempting to move
+	past beginning or end of history, move to the first or
+	last element and then signal an error.
+
+	* terminal.el: New file, like shell-mode modified to
+	simulate a display terminal for the inferior.
+
+Tue Nov 25 00:04:36 1986  Richard M. Stallman  (rms at prep)
+
+	* outline.el (outline-mode): outline-regexp must match at start
+	of line to be a paragraph start.
+
+	* simple.el ({beginning,end}-of-buffer):
+	When buffer-size is large, divide before multiplying
+	to avoid overflow.
+
+	* mailalias.el (expand-mail-aliases):
+	Re-expand the expansions for compatibility with Berkeley mail.
+
+	* ftp.el: New file for visiting remote files using FTP.
+
+Mon Nov 24 14:07:40 1986  Richard M. Stallman  (rms at prep)
+
+	* files.el (find-file-noselect): Due to change in
+	insert-file-contents, need not set buffer-file-name if error.
+
+	* paths.el: Correct manual-formatted-dirlist for USG systems.
+
+	* man.el: Use new subroutine insert-man-file to insert files
+	uncompressing if nec.  Also uncompact compacted files.
+	Detect sysV footers.  Detect headers when section contains a
+	letter (as in 3n).  Delete the vars already moved to paths.el.
+
+	* disass.el: new name for disassemble.el to avoid USG truncation.
+	loaddefs.el changed for this.
+
+Mon Nov 24 02:43:08 1986  Chris Hanson  (cph at prep)
+
+	* term/supdup.el: Add code for hp-ux which has no binding for the
+	TERMCAP environment variable.
+
+Sun Nov 23 00:03:35 1986  Richard M. Stallman  (rms at prep)
+
+	* version 18.31 released.
+
+	* x-mouse.el: New mouse-command keys are C-x C-@.
+
+Sat Nov 22 14:15:11 1986  Richard Mlynarik  (mly at prep)
+
+	* bytecomp.el (byte-recompile-directory):
+	Use third arg to `directory-files'
+
+Sat Nov 22 02:26:22 1986  Richard M. Stallman  (rms at prep)
+
+	* subr.el: Defvars for global-map, ctl-x-map, esc-map
+	and mouse-map, just so they get doc strings.
+
+Fri Nov 21 15:43:49 1986  Richard M. Stallman  (rms at prep)
+
+	* bytecomp.el (byte-compile-file): Bind vms-stmlf-recfm to t
+	around writing the output file.
+
+Fri Nov 21 14:46:37 1986  Leonard H. Tower Jr.  (tower at prep)
+
+	* rnews.el, rnewspost.el (caesar-region, news-caesar-buffer-body)
+	Added former from phr, rename latter and modified it to work with
+	former.  Changed key-bindings for rename.  This gets rid of the
+	interface (which also is ugly) to the UNIX "tr" command.
+
+Fri Nov 21 00:29:13 1986  Richard M. Stallman  (rms at prep)
+
+	* mh-e.el (mh-display-msg):
+	 Pass non-nil 2nd arg to insert-file-contents
+
+Thu Nov 20 23:57:52 1986  Richard M. Stallman  (rms at prep)
+
+	* vip.el (vip-find-char):  Use search-forward instead of
+	* yow.el (snarf-yows):     scan-buffer.  A few other local
+	* man.el (manual-entry):   simplifications.
+
+	* bytecomp.el: Don't open-code scan-buffer.
+
+Thu Nov 20 12:33:31 1986  Richard Mlynarik  (mly at prep)
+
+	* helper.el:
+	Flush Helper-major-mode, Helper-mode-name:
+	there is a much simpler way of doing this
+	(see new Helper-describe-mode)
+	Make it work for Helper-return-blurb to be buffer-local
+	(this is better than binding it dynamically)
+
+	* ebuffer-menu.el, echistory.el, view.el:
+	Flush references to Helper-{major-mode,mode-name}
+
+Wed Nov 19 22:39:57 1986  Richard M. Stallman  (rms at prep)
+
+	* indent.el: Make tab-stop-list a user variable.
+
+	* rmail.el: Undo previous change to rmail-show-message.
+
+Tue Nov 18 08:39:59 1986  Richard Mlynarik  (mly at prep)
+
+	* prolog.el (end-of-prolog-clause):
+	Typo
+
+	* ebuff-menu.el:
+	Make "n" and "p" synonymous with "\C-n" and "\C-p"
+
+	* rmail.el (rmail-show-message):
+	With no interactive argument, just move to beginning of current
+	message (like ".") rather than to message 1.
+
+Sun Nov 16 23:32:19 1986  Richard M. Stallman  (rms at prep)
+
+	* startup.el: expect window-system to be a symbol, not a string,
+	and concatenate "-win" instead of "-windows" to keep
+	file names short.
+
+	* term/x-win.el: New name for term/X-windows.el
+	needed due to change in dispnew.c re window-systems.
+
+Sun Nov 16 11:04:33 1986  Leonard H. Tower Jr.  (tower at prep)
+
+	* rnews.el (news-ignored-headers)
+	removed Organization:, so it's visible to readers.
+
+Fri Nov 14 13:16:48 1986  Richard M. Stallman  (rms at prep)
+
+	* Emacs version 18.30 *
+
+	* rmail.el (rmail-forward):
+	Use mail-other-window unless there is only one window visible.
+	Use of `mail' instead in the case of multiple windows on the
+	screen makes it a nuisance to get back to Rmail.
+
+	* outline.el (outline-regexp): ^L starts a header line.
+
+Thu Nov 13 23:38:57 1986  Richard M. Stallman  (rms at prep)
+
+	* fill.el (fill-region-as-paragraph):
+	If 1st line starts with fill prefix, exclude that fill
+	prefix from the preprocessing before actual filling.
+	Fixes failure to preserve initial whitespace after a fill prefix.
+
+Tue Nov 11 14:57:25 1986  Leonard H. Tower Jr.  (tower at prep)
+
+	* rnews.el (news-show-all-headers)
+	Added code to replace previously deleted (news-get-back).
+
+	* emacsbug.el (report-emacs-bug):
+	Got rid of redundant "on system-name (system-type)" now that
+	(emacs-version) outputs it.
+
+Mon Nov 10 08:54:05 1986  Richard Mlynarik  (mly at prep)
+
+	* dired.el (dired-mode):
+	(run-hooks 'dired-mode-hook)
+
+Sun Nov  9 21:59:30 1986  Richard Mlynarik  (mly at prep)
+
+	* files.el (set-visited-file-name):
+	(kill-local-variable 'write-file-hooks)
+
+Sun Nov  9 14:28:43 1986  Richard M. Stallman  (rms at prep)
+
+	* simple.el (push-mark): Print nothing if minibuffer active.
+
+Sat Nov  8 09:38:18 1986  Richard M. Stallman  (rms at prep)
+
+	* rnews.el (news-set-mode-line):
+	Don't change mode-line-format; instead change mode-line-process
+	and mode-line-buffer-identification.
+	Delete unused function `strcpyn'.
+
+	* echistory.el (electric-command-history):
+	Delete no-op `let'.
+
+	* compile.el (compile1): Flush v17 compatibility code to sett
+	mode-line-format.
+	* info.el (Info-set-mode-line, Info-edit): Ditto.
+	* shell.el (shell-mode, inferior-lisp-mode): Ditto.
+	* telnet.el (telnet-mode): Ditto.
+
+	* c-mode.el (calculate-c-indent): When deciding whether
+	a line is a continuation, ignore label-lines.
+	Also ignore preceding lines that end in commas.  Consequence:
+	if the preceding line is a continuation, our line
+	is indented just like it (as a continuation of the same thing).
+
+	* loadup.el: look for new file "site-load.el" to preload
+	libraries before the DOC file is read.
+
+Fri Nov  7 19:15:57 1986  Richard M. Stallman  (rms at prep)
+
+	* novice.el (disabled-command-hook):
+	Catch errors in `documentation' in case doc file is missing.
+
+	* keypad.el (function-key-sequence):
+	Use cons, not list, to make the definition to search for.
+
+Fri Nov  7 12:30:48 1986  Richard Mlynarik  (mly at prep)
+
+	* sort.el (sort-build-lists):
+	Delete CPH's change.
+	This had already been fixed in a different way.
+
+Fri Nov  7 10:40:40 1986  Richard M. Stallman  (rms at prep)
+
+	* c-mode.el (calculate-c-indent):
+	A line ending in singlequote-colon now does not make the
+	following line be considered a continuation.
+
+Fri Nov  7 09:14:29 1986  Chris Hanson  (cph at prep)
+
+	* sort.el (sort-build-lists):
+	Was not initializing point to the beginning of the region.  As a
+	result, if one tried to sort a region where point was at the end
+	and mark at the beginning, nothing would happen.
+
+Thu Nov  6 19:47:21 1986  Richard M. Stallman  (rms at prep)
+
+	* subr.el (indent-to-column): New alias for indent-to.
+
+Thu Nov  6 18:09:10 1986  Leonard H. Tower Jr.  (tower at prep)
+
+	* rnewspost.el 
+	Finish bringing posting and followups (mostly) up to the News 2.11
+	revision of RFC 850 (exceptions noted in rnewspost.el's header).
+	Added function news-reply-yank-original, to be used in lieu of
+	mail-yank-original.
+
+Thu Nov  6 12:46:57 1986  Richard M. Stallman  (rms at prep)
+
+	* version.el (emacs-version):
+	Include host name and system type.
+
+	* rmail.el: rmail-edit-current-message moved from C-r to w.
+	Doc string of rmail-mode changed.
+
+	* loaddefs.el (auto-mode-alist, completion-ignored-extensions):
+	Ignore ".blg" and ".bbl".  Know modes for ".bbl" and ".bib".
+	Rearrange auto-mode-alist with frequently used elts first.
+
+	* files.el (find-file-noselect):
+	Eliminate incorrect nested or-for-effect within or-for-effect.
+	Bug was it didn't offer to reread a changed file.
+
+Wed Nov  5 16:32:31 1986  Leonard H. Tower Jr.  (tower at prep)
+
+	* rnewspost.el (news-reply)
+	Fixed bug when point was outside of header on invocation.
+	Added References: header line per RFC850.	
+
+Wed Nov  5 12:48:44 1986  Richard M. Stallman  (rms at prep)
+
+	* files.el (file-name-sans-versions):
+	Fix one more typo in name of argument variable.
+
+Wed Nov  5 11:01:57 1986  Richard Mlynarik  (mly at prep)
+
+	* mh-e.el:
+	Version 3.4d from Larus
+
+Wed Nov  5 10:10:53 1986  Richard M. Stallman  (rms at prep)
+
+	* novice.el (disabled-command-hook):
+	Clean up the message in the case of coming from M-x ...
+
+Tue Nov  4 17:55:33 1986  Richard M. Stallman  (rms at prep)
+
+	* various files (dired-mode, Edit-options-mode, rmail-mode,
+	rmail-summary-mode, rmail-edit-mode, Buffer-menu-mode):
+	Give these symbols `special' as a `mode-class' property.
+
+	* dired.el (dired-mode): Take out local value for
+	default-major-mode.  The mode-class property now makes sure
+	new buffers are not made in dired-mode.
+
+Tue Nov  4 16:58:49 1986  Leonard H. Tower Jr.  (tower at prep)
+
+	* rnews.el
+	Add several C-C C-F C-letter fields in RFC 850.
+
+Tue Nov  4 11:56:46 1986  Richard Mlynarik  (mly at prep)
+
+	* paragraphs.el (various):
+	(interactive "*") needed in some places.
+
+Mon Nov  3 23:31:42 1986  Richard M. Stallman  (rms at prep)
+
+	* help.el (variable-at-point):
+	Catch all errors anywhere within.  Fixes bug when
+	`C-h v' was done with point after an `('.
+
+Sun Nov  2 17:30:54 1986  Richard Mlynarik  (mly at prep)
+
+	* files.el (backup-buffer):
+	"neq" isn't defined -- use /=
+
+Sat Nov  1 00:28:14 1986  Richard Mlynarik  (mly at prep)
+
+	* simple.el (open-line):
+	interactive "*"
+
+	* rmail.el (rmail-variables):
+	rmail-keywords should be buffer-local
+
+	* undigest.el:
+	Another broken-un*x-mailer-compensation fix from rlk.
+
+	* file.el (file-name-sans-version):
+	Fix typo in VMS case.
+
+Thu Oct 30 20:12:01 1986  Richard Mlynarik  (mly at prep)
+
+	* xscheme.el:
+	defvar scheme-program-name, not defconst
+
+	* keypad.el (setup-terminal-keypad):
+	Use correct format for indirect keymap entries.
+
+Wed Oct 29 19:07:03 1986  Leonard H. Tower Jr.  (tower at prep)
+
+	* rnews.el, rnewspost.el:
+	Created later from parts of former to speed up initial rnews load
+	(also debugging time).  Added autoloads as appropriate.  The mail and
+	posting commands are most often not used in an rnews session.
+
+Wed Oct 29 18:53:37 1986  Richard Mlynarik  (mly at prep)
+
+	* startup.el (command-line):
+	VMS sys$login:.emacs
+
+Wed Oct 29 14:13:10 1986  Leonard H. Tower Jr.  (tower at prep)
+
+	* rnews.el (news-inews):
+	Added save-excursion call.  Got bury-buffer at right nesting level.
+	Got rid of unneeded code.
+
+	* rnews.el (news-rotate-buffer-body):
+	Added and modified this function written by paul@media-lab.mit.edu.
+	Bound it to C-c C-r in both news and post-news modes.
+
+	* rnews.el:
+	Message text cleanup.
+	
+Wed Oct 29 13:27:26 1986  Richard Mlynarik  (mly at prep)
+
+	* help.el (view-lossage):
+	Use (goto-char (point-min)), not (beginning-of-buffer))
+
+	* electric.el (shrink-window-if-larger-than-buffer):
+	New function.  Perhaps this should be in subr.el?
+
+	* tags.el (find-tag):
+	If arg is "" and interactive, put computed tag into
+	command-history so that repeat-complex-command works.
+
+	* subr.el (momentary-string-display):
+	Avoid losing due to file-locking.
+
+	* files.el (auto-save-mode):
+	Print a confirming message if interactive.
+
+Tue Oct 28 01:12:35 1986  Richard Mlynarik  (mly at prep)
+
+	* undigestify.el:
+	Compensate for broken MH digests
+
+	* tex-mode.el (TeX-region):
+	Call csh with -f flag
+
+	* rmail.el (rmail-forward):
+	Use mail, not mail-other-window.
+
+Mon Oct 27 14:46:48 1986  Richard Mlynarik  (mly at prep)
+
+	* nroff-mode (electric-nroff-mode):
+	Fix bugs.
+
+	* electric.el, ebuff-menu.el, echistory.el:
+	Do the `space to flush' before calling Electric-command-loop
+	Delete the space to flush in electric-command-history.
+
+	* tex-mode.el:
+	defconst -> defvar
+
+Sun Oct 26 01:32:14 1986  Richard Mlynarik  (mly at prep)
+
+	* sendmail.el:
+	(provide 'sendmail)
+
+	* files.el (basic-save-buffer):
+	Set file modes appropriately in file-precious-flag case.
+
+Wed Oct 22 18:00:18 1986  Richard Mlynarik  (mly at prep)
+
+	* Rename term/xterm.el => term/X-windows.el
+
+	* startup.el (command-line):
+	If the variable window-system is non-nil, load
+	(concat term-file-prefix window-system "-windows")
+	rather than (concat term-file-prefix (getenv "TERM"))
+
+	* files.el (basic-save-buffer):
+	Fix write-file-hooks.
+
+	* tex-mode.el (TeX-region):
+	Ensure newline before trailer (from gildea)
+
+Tue Oct 21 11:39:56 1986  Richard Mlynarik  (mly at prep)
+
+	* rmailedit.el (rmail-cease-edit):
+	Don't add edited attribute unless changes were actually made.
+
+	* term/xterm.el (x-handle-switch):
+	command-line-args => command-line-args-left (yet again)
+
+Mon Oct 20 18:40:23 1986  Richard Mlynarik  (mly at prep)
+
+	* sort.el:
+	  Work if (point) > (mark)
+
+	* vip.el  (vi-change-mode-line):
+
+Sat Oct 18 17:02:13 1986  Richard Mlynarik  (mly at prep)
+
+	* add-log.el (add-change-log-entry):
+	If file specified is a directory, then use `ChangeLog' in that
+	directory.
+
+	* sendmail.el (mail-send-and-exit):
+	Don't kill selected-window, if given a prefix arg.
+
+	* files.el (normal-mode):
+	Don't clobber value of major-mode set by way of default-major-mode.
+
+Fri Oct 17 01:06:06 1986  Richard Mlynarik  (mly at prep)
+
+	* help.el, picture.el, simple.el, tags.el, vi.el:
+	Doc/spelling fixes from sjk
+
+	* rmailsum.el:
+	use new mode-line technology
+
+	* rmail.el (rmail-reply):
+	Handle resent-reply-to better.
+
+Wed Oct 15 16:20:03 1986  Richard Mlynarik  (mly at prep)
+
+	* edt.el:
+	(require 'keypad)
+
+	* dired.el (dired-mode):
+	Don't lose finding files from dired when default-major-mode is
+	nil.
+
+Tue Oct 14 18:08:53 1986  Richard Mlynarik  (mly at prep)
+
+	* texinfmt.el:
+	Support for @include from schaefer%andy.bgsu.edu@CSNET-RELAY.ARPA
+
+	* dabbrev.el (dabbrev-expand):
+	Give useful error message.  Use save-excursion.
+	Allow both symbol-constituent and word-constituent chars in the
+	expansion.
+
+	* files.el (save-buffers-kill-emacs):
+	Make arg optional.
+
+Sun Oct 12 02:26:26 1986  Richard Mlynarik  (mly at prep)
+
+	* macros.el (name-last-kbd-macro):
+	Insert omitted argument in error message.
+
+	* userlock.el (ask-user-about-lock-help):
+	Improve help message.
+
+Sat Oct 11 16:33:51 1986  Richard Mlynarik  (mly at prep)
+
+	* files.el (find-backup-file-name):
+	Call make-backup-file-name rather than appending "~"
+
+	* lisp-mode.el:
+	Make `|' have `"' syntax for |WeIrD SymbolS|
+
+Fri Oct 10 14:21:15 1986  Richard Mlynarik  (mly at prep)
+
+	* edt.el, vi.el:
+	typo.
+
+Wed Oct  8 09:56:38 1986  Richard Mlynarik  (mly at prep)
+
+	* bytecomp.el (byte-compile-function-form):
+	Handle "(function symbol)"
+
+	* sendmail.el (mail-position-on-field):
+	Return nil if field wasn't there and we did add (the
+	non-`soft' case)
+
+Tue Oct  7 01:57:31 1986  Richard Mlynarik  (mly at prep)
+
+	* shell.el:
+	Split off shell-set-directory from shell-send-input.
+
+	* dabbrev.el (dabbrev-expand):
+	Fix bugs.  Check whether last-command was a dabbrev-expand.
+	Undo-boundary.
+
+Sat Oct  4 14:50:01 1986  Richard Mlynarik  (mly at prep)
+
+	* info.el (Info-find-node):
+	Bug in case of nodename "*"
+
+	* info.el (Info-search):
+	Hair plus:  make search work with split subfiles.
+	Also, push position on node history if searching puts us in a
+	different node.
+
+	* debug.el (debug):
+	New match-data format.
+
+	* info.el (Info-goto-node):
+	Adjust to new regexp-register scheme.
+
+	* info.el (Info-read-subfile):
+	Node delimiter is \n\^_, not just \^_
+
+	* texinfmt.el (batch-texinfo-format):
+	Wasn't updated when Info-validate was given a required arg.
+
+	* informat.el (Info-validate, Info-tagify):
+	Warn that don't know how to hack indirect files.
+
+	* texinfmt.el, informat.el (batch-{texinfo-format,info-validate}):
+	First elt of command-line-args-left shouldn't be skipped.
+
+Thu Oct  2 21:40:50 1986  Richard Mlynarik  (mly at prep)
+
+	* info.el (Info-find-node):
+	Tag-table position match-data was being clobbered by intervening
+	search for "(indirect)"
+
+Thu Oct  2 01:59:17 1986  Richard M. Stallman  (rms at prep)
+
+	* texinfmt.el: define @smallbook and @tex ... @end tex.
+
+Wed Oct  1 02:02:14 1986  Richard M. Stallman  (rms at prep)
+
+	* lisp.el (lisp-complete-symbol): fix stupid bugs
+	affecting printing completion lists.
+
+	* loaddefs.el: Improve doc of isearch functions.
+
+	* texinfmt.el: Define commands chapheading, (sub)*heading
+	to format in the Info file like chapter and (sub)*section.
+
+	* macros.el (name-last-kbd-macro):
+	Supply (interactive).
+
+	* macros.el (insert-kbd-macro): Fix a few bugs.
+
+Mon Sep 29 00:55:06 1986  Richard M. Stallman  (rms at prep)
+
+	* subr.el (momentary-string-display):
+	Use insert-before-markers to insert the string so that
+	the right cursor position is displayed.
+
+Sat Sep 27 04:56:36 1986  Richard M. Stallman  (rms at prep)
+
+	* vip.el: renamed from vi1.el.  Many cleanup changes.
+	Entry point is now vip-mode, autoloaded from loaddefs.el.
+
+Fri Sep 26 17:47:32 1986  Richard Mlynarik  (mly at prep)
+
+	* files.el (recover-file, find-file-noselect):
+	Add nowarn arg to find-file-noselect, so that recover-file doesn't
+	warn one that one should consider doing m-x recover file.
+
+	* subr.el (mod):
+	Synonym for "%"
+
+	* files.el (recover-file):
+	Call expand-file-name.
+
+	Also, get an error if user specifies an auto-save filename.
+	(Would be able to do something useful if there were a way
+	to get back the original filename from the auto-save filename)
+
+Thu Sep 25 18:35:16 1986  Richard M. Stallman  (rms at prep)
+
+	* man.el (manual-entry): If formatted man file name ends
+	in .Z, uncompress it.
+
+	* macros.el (name-last-kbd-macro):
+	Now in Lisp code and autoloaded.
+	Get an error if name has a definition that's not a kbd macro.
+
+Thu Sep 25 01:17:07 1986  Richard Mlynarik  (mly at prep)
+
+	* replace.el (perform-replace):
+	Make ? (as well as C-h) give help for query-replace(-regexp)
+
+Wed Sep 24 15:22:37 1986  Richard Mlynarik  (mly at prep)
+
+	* simple.el (set-mark):
+	set-mark is in lisp code now (from editfns.c)
+
+	* bytecomp.el:
+	Don't compile (mark) specially -- lisp code shouldn't
+	call this function very freqently.
+
+	* startup.el (command-line-1):
+	(let ((load-path (cons default-directory load-path))) (load ...))
+	so that the "-load" switch can specify a file relative to $cwd
+	now that $cwd isn't a component of emacs' default load-path.
+
+	* man.el (manual-entry)
+	HPUX dain bramage.
+
+Tue Sep 23 20:02:01 1986  Richard M. Stallman  (rms at prep)
+
+	* help.el: New file containing help commands
+	formerly in simple.el.  Installed in loadup.el
+	and ../src/ymakefile.
+
+	* help.el: Move calls to print-help-return-message
+	inside the with-output-to-temp-buffer constructs.
+	Outside, they saw the window state after displaying
+	the buffer and printed the wrong stuff.
+
+	* help.el (print-help-return-message):
+	If the help buffer is already visible, do nothing
+	since it is impossible to bring back the old contents
+	of that buffer in this case.
+
+	If given an argument, apply that argument to the message
+	(and return the result) instead of calling `message' with it.
+
+Tue Sep 23 16:17:48 1986  Richard Mlynarik  (mly at prep)
+
+	* files.el (revert-buffer)
+	Pass noconfirm arg to revert-buffer-function
+	dired.el (dired-revert)  Ignore extra arg.
+
+	* tags.el (visit-tags-table-buffer)
+	noconfirm revert-buffer
+
+Tue Sep 23 14:33:20 1986  Richard M. Stallman  (rms at prep)
+
+	* rmail.el: Define "x" like "e" for consistency with Dired.
+
+	* buff-menu.el (Buffer-menu-other-window):
+	New function on "o" command, acts like "o" in Dired.
+	* buff-menu.el (Buffer-menu-this-window):
+	New function on "f" command, acts like "f" in Dired.
+	* buff-menu.el (Buffer-menu-mode):
+	Update doc for these changes and C-d change.
+
+	* mh-e.el: Version 3.4a from Larus.
+
+Tue Sep 23 11:06:41 1986  Richard Mlynarik  (mly at prep)
+
+	* doctor.el:
+	Heroine isn't a drug.
+
+	* ebuff-menu.el (electric-buffer-list)
+	If no buffers are marked with ">" just select the selected buffer
+	and don't change the window configuration or any other buffers.
+	If more than one buffer is selected, split the screen up between
+	those buffers.
+	Remove after-electric-buffer-menu.  "kill" -> "delete"
+
+	* buff-menu.el
+	Use "D" rather than "K" for buffers to be deleted for
+	consistency with rmail and dired and others.
+
+	Rename "kill" -> "delete" for both function-names and documentation.
+
+	Define C-d as Buffer-menu-delete-backwards. (also in ebuff-menu)
+
+	Save space: Merge buffer-menu-{execute,do-saves,do-kills}
+
+Mon Sep 22 15:54:49 1986  Richard M. Stallman  (rms at prep)
+
+	* macros.el (insert-kbd-macro): New function to insert
+	Lisp code to define a kbd macro as it is now defined.
+	* macros.el ({write,append}-kbd-macro): Commands deleted.
+	* loaddef.el: change autoloads for above changes.
+
+	* simple.el (callers of print-help-return-message):
+	Calling this function is now the last thing done in each caller.
+
+Mon Sep 22 13:18:44 1986  Richard Mlynarik  (mly at prep)
+
+	* loaddefs.el
+	Fix some defvars/defconsts whose doc-string didn't start on the
+	same line (yuck).  Split some of these into a defvar nil followed
+	by a setq.
+
+Sun Sep 21 22:15:02 1986  Richard M. Stallman  (rms at prep)
+
+	* loaddefs.el (auto-mode-alist):
+	Don't use non-saved-text-mode now that it is deleted.
+
+Sun Sep 21 15:56:25 1986  Richard Mlynarik  (mly at prep)
+
+	* disassemble.el, fortran.el
+	Use insert-char.
+
+	* fortran.el (fortran-electric-line-number)):
+	"self-insert-command", not "self-insert"
+
+	* fortran.el (fortran-window-create):
+	Just bind window-min-width, don't set it.
+
+	* fortran.el (fortran-abbrev-start):
+	Don't mark buffer as modified after ";?"
+	fortran-abbrev-help -- do "message...done"
+
+	* files.el (revert-buffer)
+	Check to see if (file-exists-p buffer-auto-save-file-name)
+	even if (recent-auto-save-p) before offering to revert from it.
+
+	* text-mode.el:
+	Remove non-saved-text-mode
+
+	* *-mode.el
+	Fix some initializations of syntax-tables so that user
+	can override them.
+
+Sun Sep 21 14:54:30 1986  Richard M. Stallman  (rms at prep)
+
+	* files.el (recover-file, list-directory):
+	Don't say /bin/ls; let search path be searched for ls.
+
+Sat Sep 20 21:25:01 1986  Richard M. Stallman  (rms at prep)
+
+	* lisp.el (lisp-complete-symbol): New command does
+	completion on a symbol name in the buffer.
+
+	* fortran.el: New file defining fortran-mode,
+	which is autoloaded from loaddefs.
+
+	* abbrevlist.el: New file defining list-one-abbrev-table,
+	a function now used by fortran-mode but not Fortran-specific.
+
+Fri Sep 19 00:52:07 1986  Richard M. Stallman  (rms at prep)
+
+	* subr.el (momentary-string-display):  New function
+	to display a string momentarily in the buffer.
+
+	* loadup.el: Load loaddefs before simple and files
+	because loaddefs makes more garbage.
+
+	* loaddefs.el: Include defvar of ctl-x-4-map
+	needed now that this is loaded before files.el.
+
+Wed Sep 17 20:55:00 1986  Richard Mlynarik  (mly at prep)
+
+	* hanoi.el
+	Vital improvements
+
+Wed Sep 17 12:13:58 1986  Richard M. Stallman  (rms at prep)
+
+	* loaddefs.el: disable C-x p.
+	* loaddefs.el: autoload set-gosmacs-bindings.
+	* gosmacs.el: renamed from gosling.el with many changes
+	(saves old bindings and can restore them as they were).
+
+Wed Sep 17 11:02:39 1986  Richard Mlynarik  (mly at prep)
+
+	* replace.el (occur)
+	Use variable list-matching-lines-default-context-lines if
+	no prefix arg specified.
+	If nlines arg is -ve, include that many lines of preceding
+	context, no lines of following context.
+	Use markers instead of line-numbers.
+	In occur-mode-goto-occurrence, warn about deleted buffer.	
+
+Tue Sep 16 02:07:53 1986  Richard M. Stallman  (rms at prep)
+
+	* simple.el (indent-for-comment):
+	Delete only the spaces before the beginning of the comment starter
+	in case the comment starter contains a leading space.
+
+	* abbrev.el (edit-abbrevs-map): Define C-c C-c like C-x C-s.
+
+	* texinfmt.el: define @r as noop.
+
+	* simple.el (print-help-return-message): New function.
+	Use before doing with-output-to-temp-buffer, and it
+	prints an echo area message about how to restore
+	current screen configuration from the configuration
+	that will obtain after the with-output-to-temp-buffer.
+
+	* simple.el (describe-{key,mode,function,variable}):
+	* simple.el (view-lossage, command-apropos):
+	Ca;; print-help-return-message.
+
+Mon Sep 15 17:49:07 1986  Richard M. Stallman  (rms at prep)
+
+	* sendmail.el (sendmail-send-it):
+	Don't require newline before header-separator;
+	search for regexp and use `^'.
+
+	* mh-e.el: Version 3.4 from Larus.
+	Uses `interactive' properly to read the arguments.
+
+Sun Sep 14 19:44:31 1986  Richard Mlynarik  (mly at prep)
+
+	* files.el (normal-mode)
+	Use shorter error message, so more fits on screen.
+
+Sun Sep 14 14:14:35 1986  Richard M. Stallman  (rms at prep)
+
+	* loadup.el: On VMS, dump under name temacs.dump only.
+
+	* vms-patch.el (make-auto-save-file-name):
+	Append "$" at end as well as "_$" at front.
+
+	* files.el (cd): Don't do file-name-as-directory on VMS.
+
+Sat Sep 13 19:36:01 1986  Richard M. Stallman  (rms at prep)
+
+	* bytecomp.el (byte-compile-file):
+	Don't bomb on defvar with no initial value argument.
+
+	* texinfmt.el (texinfo-format-buffer):
+	Tagify and maybe even split automatically if buffer is big enough.
+	Non-nil arg inhibits this.
+
+	* informat.el (Info-tagify):
+	Don't leave buffer narrowed if it wasn't narrowed to start with.
+
+	* simple.el (comment-column, fill-prefix):
+	Make them buffer-local and fix documentation.
+	* loaddefs.el: make indent-tabs-mode buffer-local.
+
+Fri Sep 12 18:37:08 1986  Richard M. Stallman  (rms at prep)
+
+	* dired.el (dired-add-entry): Go to beginning of line
+	before adding the entry.
+
+Fri Sep 12 02:36:53 1986  Richard Mlynarik  (mly at prep)
+
+	* mlsupport.el:
+	Define ml-substr (used to be in mocklisp.c)
+
+Fri Sep 12 02:07:23 1986  Richard M. Stallman  (rms at prep)
+
+	* time.el: Don't just clobber global-mode-string.
+	Instead, add 'display-time-string as an element
+	and update the time by changing value of that variable.
+
+	* rmail.el (rmail-mode-1): Change only part of mode-line-format
+	Instead set mode-line-buffer-identification.
+
+	* rmail.el (rmail-show-message): Use mode-line-process to
+	display the message numbers and labels.
+
+Thu Sep 11 18:24:28 1986  Richard Mlynarik  (mly at prep)
+
+	* compile.el (compilation-sentinel)
+	Ignore buffer-read-only.
+
+Wed Sep 10 17:40:01 1986  Richard M. Stallman  (rms at prep)
+
+	* picture.el: Convert `Picture' to `picture' in all symbols.
+
+	* subr.el: Define old names send-string and send-region
+	as aliases for new names process-send-...
+
+Tue Sep  9 13:08:12 1986  Richard M. Stallman  (rms at prep)
+
+	* time.el (display-time): variable display-time-interval
+	specifies seconds between updates.
+
+	* loaddefs.el: Put \-newline in doc strings that lacked it.
+
+Mon Sep  8 09:45:01 1986  Richard M. Stallman  (rms at prep)
+
+	* simple.el: Give C-c's keymap a name, mode-specific-map.
+
+	* options.el (list-options): Use user-variable-p to filter
+	the variables and documentation-property to get the strings.
+
+Sat Sep  6 08:52:01 1986  Richard M. Stallman  (rms at prep)
+
+	* tex-mode.el (tex-region):
+	Handle case where specified region extends before header.
+
+Thu Sep  4 17:00:05 1986  Leonard H. Tower Jr.  (tower at prep)
+
+	* rnews.el (news-inews)
+	added -h to call of inews to insert all header fields.
+
+Thu Sep  4 08:37:49 1986  Richard M. Stallman  (rms at prep)
+
+	* files.el (save-buffers-kill-emacs):
+	Prefix arg means save with no query.
+
+	* files.el (backup-buffer): Fix uses of % in message about %backup%.
+
+Wed Sep  3 12:22:06 1986  Leonard H. Tower Jr.  (tower at prep)
+
+	* rnews.el (news-reply-mode-map)
+	Change mail-x field bindings from C-c x to C-c C-f C-x to agree
+	with sendmail.el .
+
+	* sendmail.el (mail-mode-map)
+	Change mail-x field bindings from C-c C-f x to C-c C-f C-x to
+	agree with ../etc/NEWS .
+
+Mon Sep  1 06:17:17 1986  Richard M. Stallman  (rms at prep)
+
+	* info.el (Info-find-node, Info-read-subfile):
+	Now knows how to deal with indirect info files.
+	* info.el: Info-current-file is now the primary
+	place that records which info file is in the *info* buffer,
+	and it is updated as soon as a new file is correctly read.
+	* info.el: New var Info-current-subfile records which
+	subfile is in the *info* buffer, or is nil for an Info file
+	that doesn't have subfiles or if no subfile read in yet.
+
+	* informat.el (Info-split): New function to split
+	an Info file into a bunch of subfiles.  It edits the original
+	file into an indirect file.
+
+	* info.el, loaddefs.el:
+	Autoloads for informat.el moved from info.el to loaddefs.el.
+
+Sun Aug 31 04:21:17 1986  Richard M. Stallman  (rms at prep)
+
+	* page.el (mark-page):
+	* paragraphs.el (mark-paragraph):
+	* x-mouse.el (x-mouse-set-mark):
+	Use push-mark and inhibit the message, instead of set-mark.
+
+	* mh-e.el (mh-position-on-field, mh-exec-lib-cmd-output,
+	  mh-exec-cmd-output): use push-mark instead of set-mark.
+
+	* simple.el (push-mark): optional 2nd arg NOMSG inhibits message.
+
+	* ebuff-menu.el (electric-buffer-list):
+	Was using the mark for internal purposes.
+	Use an anonymous marker instead.
+
+	* bytecomp.el: Stop using the byte-set-mark opcode.
+
+	* replace.el (occur): Put the *Occur* buffer in Occur mode.
+	Remember line number of each occurrence in occur-pos-list
+	Occur mode defines C-c C-c as occur-mode-goto-occurrence,
+	which uses that list to move the cursor in the original buffer
+	(which is saved in occur-buffer).
+
+	* aton.el (occur-menu: File deleted; occur-menu is subsumed by occur.
+
+	* isearch.el (isearch): repeating the search in either direction
+	must set success to t to produce correct echo area text.
+
+	* edt.el: New file.  Autoloadable entry is edt-emulation-on.
+
+	* keypad.el (function-key-sequence): New function
+	finds which key sequence leads to a slot in function-keymap.
+
+Sat Aug 30 00:31:48 1986  Richard M. Stallman  (rms at prep)
+
+	* files.el (backup-buffer): Use "%backup%~", not "%backup%",
+	if cannot write the backup in the usual place.
+
+	* sort.el (sort-columns): Sort into reverse order
+	if have prefix arg.  Args are now the same as for
+	sort-lines, etc.
+
+Thu Aug 28 13:56:56 1986  Richard Mlynarik  (mly at prep)
+
+	* c-mode.el (electric-c-{brace,terminator})
+	c-indent-line takes no args.
+
+Thu Aug 28 01:57:58 1986  Richard M. Stallman  (rms at prep)
+
+	* files.el (backup-buffer): file-precious-flag forces copying.
+
+	* loaddefs.el: Autoload plain-TeX-mode and LaTeX-mode.
+	Define aliases for them.  Fix doc for TeX-mode.
+
+Tue Aug 26 14:25:59 1986  Leonard H. Tower Jr.  (tower at prep)
+
+	* rnews.el:
+	Added autoload of rmail-output and bound it to C-o in
+	news-mode-map.  Also needed defvar of rmail-last-file.
+
+	* rmailout.el (rmail-output):
+	Made rmail-mode specific code dependent on rmail-mode being
+	major-mode.
+
+Mon Aug 25 03:47:24 1986  Richard M. Stallman  (rms at prep)
+
+	* view.el (view-mode):
+	Bind mode-line-buffer-identification;
+	in new versions don't change mode-line-format.
+
+	* dired.el (dired-mode):
+	* info.el (Info-set-mode-line):
+	* x-menu.el (x-menu-mode):
+	Don't change mode-line-format.
+	Use mode-line-buffer-identification instead.
+	* ebuff-menu.el (electric-buffer-menu-mode):
+	Likewise, and also copy the mode-line-format
+	and replace `mode-name in it with "Buffers".
+
+	* info.el (Info-edit): Restore normal mode line
+	by killing the local variables used by Info to change it.
+
+	* echistory.el (electric-command-history):
+	In newer Emacs versions, don't alter mode-line-format.
+
+	* compile.el (compile1, compilation-sentinel):
+	* shell.el (shell-mode, inferior-lisp-mode):
+	* xscheme.el (inferior-scheme-mode):
+	* telnet.el (telnet-mode):
+	If minor-mode-alist is bound, put the %s or process status
+	into mode-line-process instead of changing mode-line-format.
+
+	* sort.el: New file contains buffer-sorting commands.
+	Autoload them in loaddefs.el.
+
+	* files.el (backup-buffer): Obey new variable
+	backup-by-copying-when-mismatch.
+
+	* loaddefs.el: Set default-mode-line-format to use
+	the new list and symbol constructs.  Define minor-mode-alist.
+
+	* rnews.el (news-set-minor-modes):
+	Store the string in news-minor-modes, and set minor-modes
+	only if minor-mode-alist is unbound (Emacs versions < 18.16).
+	* rnews.el (news-mode): In newer Emacses, set mode-name
+	so it displays news-minor-mode.
+
+	* nroff-mode.el (nroff-mode):
+	If minor-mode-alist bound, add an entry for nroff-electric-mode
+	to it, and don't call set-minor-mode.
+
+	* simple.el (overwrite-mode, auto-fill-mode):
+	* abbrev.el (abbrev-mode):
+	Don't call set-minor-mode.
+
+	* simple.el (set-minor-mode): Delete this function.
+
+	* bytecomp.el (byte-compile-file):
+	Put backslash-newline at front of doc string when that is safe.
+	* bytecomp.el (old-file-newer-than-file-p):
+	Deleted this; built-in file-newer-than-file-p is well established.
+
+Sun Aug 24 03:11:41 1986  Richard M. Stallman  (rms at prep)
+
+	* term/xterm.el: Install some changes from rlk.
+	-ib switch and InternalBorder default are handled.
+	Set variable x-processed-defaults when defaults are processed.
+	Use require to load x-mouse.
+	Use message to say why suspend-emacs is disabled.
+
+	* x-mouse.el: Install some changes from rlk.
+
+	* x-menu.el: New file that handles menus on X window system.
+
+	* buff-menu.el (buffer-menu): Put point on third line
+	initially (this line describes the buffer that had been selected).
+
+	* files.el (create-file-buffer):
+	Delete the variable ask-about-buffer-names
+	and simplify this function.
+
+Sat Aug 23 14:57:55 1986  Richard M. Stallman  (rms at prep)
+
+	* files.el (basic-save-buffer):
+	When changing visited name, don't try to rename old auto-save file
+	if it does not exist.
+
+	* c-mode.el (c-indent-command): New definition of TAB,
+	uses c-indent-line as a subroutine.  Handling of prefix arg
+	and indenting an entire expression rigidly is now in this fn.
+
+	* c-mode.el (c-tab-always-indent): If nil, TAB inserts a tab
+	if not in the initial whitespace of the line.
+
+	* c-mode.el (calculate-c-indent):
+	For statements: if prev line ends in `:', this line is still
+	a continuation if the `:' follows a non-symbol-constituent char.
+	For top level: look at previous line that starts in column 0
+	to determine whether this line is at top level or in arg decls.
+	Also notice if line is a continuation.
+
+	* novice.el (disabled-command-hook):
+	If the 'disabled property is a string, include it in the message.
+
+Thu Aug 21 14:50:03 1986  Richard M. Stallman  (rms at prep)
+
+	* bytecomp.el (byte-compile-interactive-p):
+	Remove superfluous compilation of 'nil causing stack overflow.
+
+	* compile.el (compilation-parse-errors):
+	Count lines from the previous error message, not from line 1.
+
+Thu Aug 21 10:45:44 1986  Richard Mlynarik  (mly at prep)
+
+	* debug.el (debug, debugger-eval-expression):
+	Evaluate the expression in the context of the buffer
+	current when the debugger was entered.
+
+Thu Aug 21 02:15:36 1986  Richard M. Stallman  (rms at prep)
+
+	* files.el (after-find-file): Print no message
+	rather than printing a null message.
+
+Wed Aug 20 23:34:04 1986  Richard M. Stallman  (rms at prep)
+
+	* files.el (set-auto-mode): On VMS, turn on case-fold-search
+	while matching auto-mode-alist elements.
+
+Wed Aug 20 12:30:45 1986  Richard M. Stallman  (rms at prep)
+
+	* debug.el (debug): Don't try to restore the match data
+	if it refers to a dead buffer.
+
+	* startup.el (command-line-1):
+	-i FILE or -insert FILE means insert contents of file into buffer.
+
+Tue Aug 19 00:05:15 1986  Richard M. Stallman  (rms at prep)
+
+	* simple.el (describe-variable):
+	Use `documentation-property' instead of `get' to get
+	the `variable-documentation' property.
+
+	* userlock.el: correct spelling "supercession" -> "supersession".
+
+	* files.el (basic-save-file):
+	If file-precious-flag is non-nil, rename the old file
+	before saving, and if saving fails, rename the old file back.
+
+	* rmail.el (rmail-get-new-mail):
+	Do not make a backup file if the rmail file was just visited
+	and hasn't been changed aside from reading the new mail.
+	This preserves the old backup file.
+	* rmail.el (rmail-expunge-and-save): New name for rmail-save.
+	* rmail.el (rmail-mode): Turn on file-precious-flag.
+
+	* dired.el: Define `g' as revert-buffer in dired-mode.
+
+	* c-mode.el (c-mode): Give `&' and `|' "punctuation" syntax.
+
+Mon Aug 18 14:24:55 1986  Richard Mlynarik  (mly at prep)
+
+	* files.el (find-backup-file-name):
+	Don't blow up if (eq version-control 'never)
+
+	* files.el (set-visited-file-name):
+	Use `buffer-auto-save-file-name' not `auto-save-file-name' which
+	is unbound and unused.
+
+Sun Aug 17 18:34:09 1986  Richard M. Stallman  (rms at prep)
+
+	* compile.el (compilation-sentinel):
+	Don't get error if *compilation* has been killed.
+	Include current date/time in message inserted in buffer.
+
+Sun Aug 17 15:07:28 1986  Richard Mlynarik  (mly at prep)
+
+	* files.el (basic-save-buffer)
+	Fix paren error
+
+Sat Aug 16 19:25:09 1986  Richard M. Stallman  (rms at prep)
+
+	* files.el (find-file-noselect):
+	Change find-file-not-found-hook to find-file-not-found-hooks
+	and make it a list of functions to call until one of them
+	returns non-nil.
+	* files.el (normal-mode, after-find-file):
+	Change find-file-hook to find-file-hooks, a list of functions to
+	call.  Call it from after-find-file, not from normal-mode.
+	* files.el (revert-buffer):
+	Restore old point before calling after-find-file.
+	* files.el (basic-save-buffer):
+	Change write-file-hook to write-file-hooks, a list of functions
+	to run until one returns t.  In that case, skip writing the file
+	the usual way.
+
+	* tags.el (visit-tag-table-buffer):
+	Get proper error for empty tag table file;
+	realize that char-after returns nil in that case.
+	Also move error check after auto-revert.
+
+Sat Aug 16 19:21:20 1986  Richard Mlynarik  (mly at prep)
+
+	* subr.el
+	Move copy-alist to c code, moved nth from c code.
+
+Sat Aug 16 19:11:11 1986  Richard M. Stallman  (rms at prep)
+
+	* files.el (normal-mode): initially call fundamental-mode
+	to reinitialize everything.
+
+	* files.el (hack-local-variables):
+	Don't consider suffix as including any leading spaces.
+
+Sat Aug 16 17:05:41 1986  Richard Mlynarik  (mly at prep)
+
+	* informat.el, texinfmt.el
+	Detect and complain about duplicate node-names
+
+Sat Aug 16 16:56:05 1986  Richard M. Stallman  (rms at prep)
+
+	* mh-e.el: 3.3j from Larus.  Changes C-c C-g prefix to C-c C-f.
+
+Fri Aug 15 16:11:37 1986  Richard M. Stallman  (rms at prep)
+
+	* isearch.el:
+	Default for regexp searches is now search-last-regexp.
+	Rename isearch-slow... vars to search-slow...
+	C-s or C-r in failing search wraps around buffer and tries again.
+	New local var `wrapped' records this has happened.
+	Display `Wrapped' in echo area at such times.
+	Record value of `wrapped' on the search state stack.
+	Display shorter string for incomplete regexps.
+	Incomplete regexp no longer implies "failure" of search.
+	Clean up isearch-search considerably.
+	isearch-message computes message in lower case,
+	then case-converts the first char.
+
+	* loaddefs.el: New variable search-last-regexp;
+	default string for isearch-regexp.
+	Rename isearch-... vars to search-...
+
+	* simple.el (next-line, kill-line):
+	* lisp.el (end-of-defun):
+	* picture.el (Picture-clear-line):
+	* replace.el (keep-lines):
+	* indent.el (indent-relative):
+	Use forward-line, not scan-buffer.
+	* fill.el (justify-current-line): Use search-backward
+	not scan-buffer to check whether the line has a space in it.
+
+	* files.el (set-visited-file-name):
+	Rename the auto-save file if appropriate.
+	(make-auto-save-file-name, auto-save-file-name-p):
+	Auto save file for foo is now #foo#.
+	(make-backup-file-name, backup-file-name-p):
+	New functions, used in appropriate places.
+
+	* dired.el (dired-flag-backup-files):
+	Use backup-file-name-p.
+
+	* sendmail.el (mail-mode):
+	Fix documentation of key bindings.
+
+Fri Aug 15 14:45:40 1986  Richard Mlynarik  (mly at prep)
+
+	* man.el (manual-entry)
+	Compensate for Sun wankerism.
+	If would be nice if there were something a little
+	more fine-grained than `system-type' for testing for
+	these cases...
+
+Fri Aug 15 04:11:01 1986  Richard M. Stallman  (rms at prep)
+
+	* startup.el (command-line): No longer necessary to set
+	ctl-arrow from default-ctl-arrow, etc., after init file is run
+	due to changed behavior of those variables.
+
+	* info.el (Info-edit):
+	* rmailedit.el (rmail-edit-mode):
+	Change default-mode-line-format to (default-value 'mode-line-format).
+
+Thu Aug 14 16:17:20 1986  Richard Mlynarik  (mly at prep)
+
+	* man.el (manual-entry):
+	Speed up `\b'-hacking.
+
+Thu Aug 14 01:08:32 1986  Richard M. Stallman  (rms at prep)
+
+	* sendmail.el: Change key bindings.
+        C-c <letter> becomes C-c C-<letter> or C-c C-f <letter>.
+
+	* mh-e.el (mh-position-on-field):
+	mh-header-end -> mh-goto-header-end.
+
+	* novice.el (disabled-command-hook):
+	Print only the first paragraph of the command's documentation.
+	[Test this, once new narrow-to-region doc is installed.]
+
+	* rmailsum.el (rmail-make-basic-summary-line):
+	Don't accept a time zone as a month.
+
+Wed Aug 13 02:01:59 1986  Richard M. Stallman  (rms at prep)
+
+	* mh-e.el: New version 3.3i, moving mode-specific commands
+	to C-c prefix.
+
+	* tex-mode.el: many new features incl. LaTeX mode
+	and some C-c commands.
+
+	* indent.el (indent-relative):
+	Fix lossage if point to indent under was inside a tab.
+
+	* bytecomp.el (byte-compile-substring):
+	Fix dumb error.
+
+	* info.el: Autoload Info-validate.  Fix bug in autoload Info-tagify.
+
+Tue Aug 12 11:30:53 1986  Richard Mlynarik  (mly at prep)
+
+	* rmailedit.el (rmail-cease-edit, rmail-attributes)
+	Add label (well, `attribute,' really) "edited" to message.
+
+	* mlsupport.el (auto-execute)
+	Fix from bap@g.cs.cmu.edu
+
+Mon Aug 11 10:36:51 1986  Richard Mlynarik  (mly at prep)
+
+	* bytecomp.el (byte-compile-form)
+	Compile references to t and nil as constants rather then variable
+	references.
+
+	* bytecomp.el (byte-compile-no-args, ..., byte-compile-three-args)
+	If called with wrong-number-of-args, do a normal function call
+	and get an error at runtime.
+
+	* bytecomp.el (byte-compile-file-form)
+	Process (require ...) at compile-time
+
+	* informat.el, info.el, loaddefs.el
+	Move Info-validate and friends into new file informat.el
+	Add batch-info-validate
+
+	* texinfmt.el, loaddefs.el
+	Add batch-texinfo-format
+
+	* startup.el
+	Add synonym switches "-funcall" "-load" "-user" "-no-init-file"
+	for cryptic "-f" "-l" "-u" "-q"
+
+	* mlsupport.el
+	Make various turds know that inhibit-command-line has gone.
+
+	* bytecomp.el (batch-byte-compile), tex-start.el
+	Because of RMS's change "Mon Jul  7 14:01:51 1986"
+	must use variable command-line-args-left rather than command-line-args.
+
+	Actually, I see no circumstances under which a switch -could- be
+	interested in any command-line-args before the mention of itself,
+	and so think that rebinding command-line-args as appropriate was
+	correct (if perhaps a little confusing to the person who requested
+	that RMS' change be made)
+
+Sun Aug 10 08:02:19 1986  Richard Mlynarik  (mly at prep)
+
+	* info.el (Info-validate)
+	re-search for \\*, not *
+
+Thu Aug  7 10:24:21 1986  Richard Mlynarik  (mly at prep)
+
+	* rfc822.el, loaddefs.el, mail-utils.el
+	Hairy address parser, used only if mail-use-rfc822 is non-nil
+	(It is nil by default, so if one doesn't like or need the hair of
+	this file, then one is never troubled by it)
+
+	* disassemble.el, loaddefs.el
+	Code from doug@csli.stanford.edu modified by mly.
+	RMS -- if this is too random to be in the GNU Emacs
+	distribution, please tell me so.
+
+	* bytecomp.el
+	Compile eql same as eq.
+
+Wed Jul 30 22:03:02 1986  Richard M. Stallman  (rms at prep)
+
+	* outline.el (many functions):
+	New variable outline-regexp controls what is a heading line.
+	It must match at the beginning of a line.  Length of matched text
+	gives the depth of heading within the tree.
+
+	* term/xterm.el (x-get-default-args):
+	Process reversevideo option just once.  (Twice is noop.)
+
+Mon Jul 28 20:24:18 1986  Richard M. Stallman  (rms at prep)
+
+	* term/vt100.el, term/vt200.el:
+	Move (require 'keypad) to top to avoid error.
+
+Fri Jul 18 14:26:00 1986  Leonard H. Tower Jr.  (tower at prep)
+
+	* rnews.el: (news-add-news-group)
+	handle unsubscribed groups better
+
+	* rnews.el: (news-{next,previous}-group)
+	now skip groups with no new messages
+
+Thu Jul 17 19:06:59 1986  Richard M. Stallman  (rms at prep)
+
+	* mh-e.el: Install version 3.3h from Larus.
+
+Tue Jul 15 17:35:34 1986  Richard M. Stallman  (rms at prep)
+
+	* shell.el (shell-send-input):
+	If get error trying to change directory, call
+	shell-set-directory-error-hook with no args.
+
+Sat Jul 12 00:12:37 1986  Richard M. Stallman  (rms at prep)
+
+	* tags.el (list-tags, tags-apropos): Call output buffer *Tags List*.
+
+	* c-mode.el (calculate-c-indent):
+	Better handling of case where first statement at current level
+	starts on same line as a case..: or label.  New local var
+	colon-line-end.
+
+Mon Jul  7 14:01:51 1986  Richard M. Stallman  (rms at prep)
+
+	* startup.el (command-line-1): rename argument variable
+	command-line-args to command-line-args-left.  Don't rebind
+	command-line-args.
+
+Sat Jun 21 01:11:23 1986  Richard M. Stallman  (rms at prep)
+
+	* mh-e.el: Version 3.3g from Larus.
+
+Thu Jun 19 12:35:17 1986  Richard M. Stallman  (rms at prep)
+
+	* isearch.el (isearch): Use slow terminal mode
+	only if current window is > 4 times the slow-terminal lines high.
+
+Tue Jun 17 05:37:59 1986  Richard M. Stallman  (rms at prep)
+
+	* nroff-mode.el: Add elements to nrofff-brace-table.
+
+Mon Jun 16 06:30:54 1986  Richard M. Stallman  (rms at prep)
+
+	* mlconvert.el (convert-mocklisp-buffer):
+	Proper handling of `!' function, via new function ml-not.
+	Proper handling of non-defuns, by putting them inside a
+	dummy defun and calling that function.
+
+Sat Jun 14 22:05:58 1986  Richard M. Stallman  (rms at prep)
+
+	* mh-e.el : Install 3.3f from Larus.
+
+Thu Jun 12 02:47:11 1986  Richard M. Stallman  (rms at prep)
+
+	* startup.el (command-line):
+	Rename default init file to default.el.
+	Don't look for suffixes on .emacs file.
+
+	* keypad.el: New file that defines a standard keypad mode.
+	* term/vt*.el: Rewrite completely to use keypad.el.
+
+Wed Jun 11 16:43:27 1986  Richard M. Stallman  (rms at prep)
+
+	* abbrev.el (abbrev-prefix-mark):
+	Insert a - at the beginning of the abbrev.
+	expand-abbrev will now delete such -'s.
+
+	* userlock.el (ask-user-about-supercession):
+	Ask user what to do if he is modifying a buffer whose
+	file is changed on disk.
+
+Tue Jun 10 04:54:33 1986  Richard M. Stallman  (rms at prep)
+
+	* rmail.el (rmail-reply): For the in-reply-to,
+	try to get the sender's full name from within parentheses.
+
+	* outline.el: pervasive changes; new features, changed keys.
+
+	* files.el (backup-bufer):
+	If cannot write backup under normal name, write it in ~/%backup%.
+	Preserve the last-modified time when backing up by copying.
+
+Mon Jun  9 00:00:24 1986  Richard M. Stallman  (rms at prep)
+
+	* rmail.el (rmail-expunge): Preserve point unless expunging
+	the current message.
+
+	* bytecomp.el (file-newer-than-file-p):
+	Since this is a primitive in version 18, define it
+	only if not defined.
+
+Sun Jun  8 09:43:02 1986  Richard M. Stallman  (rms at prep)
+
+	* files.el (load-file, load-library): two new commands.
+
+	* startup.el (command-line): Eliminate inhibit-command-line
+	since one can just set command-line-args to nil.
+
+	* term/xterm.el: No need to handle -d switch
+	since main() handles it now.
+
+	* tags.el: Display name of file being processed.
+
+	* mh-e.el: Install version 3.3 from Larus.
+
+	* replace.el, loaddefs.el (perform-replace):
+	perform-replace does not print "done"; its callers do.
+
+	* startup.el (command-line):
+	Rename file default-profile to .emacs-df;
+	load it always, unless inhibit-default-init is set to t.
+
+	* telnet.el: Switch to C-c prefix for mode-specific commands.
+
+	* startup.el (command-line): Use just first word of
+	terminal name to make per-terminal library file name.
+
+	* loadup.el: Change name of installed docstr file to
+	DOC-mm.nn.oo from DOC.mm.nn.oo.
+
+	* files.el (file-name-sans-versions): New system-dependent
+	function to remove backup or version suffixes from filename.
+
+Sat Jun  7 16:04:07 1986  Richard M. Stallman  (rms at prep)
+
+	* c-mode.el (electric-c-terminator):
+	Check for point being inside a multi-line string or comment
+	and do nothing.  For colon, check for more than one word
+	before it on the line (with first one not "case") and do nothing.
+
+	* c-mode.el: Don't rebind Linefeed.
+
+	* c-mode.el (calculate-c-indent):
+	If previous line ends in ") {", skip back to matching "("
+	and use that line's indentation as the brace's column.
+
+Fri Jun  6 00:12:48 1986  Richard M. Stallman  (rms at prep)
+
+	* nroff-mode.el (nroff-comment-indent, nroff-mode):
+	Define a comment syntax.  Install comment-indenter
+	as supplied by gildea, but change it not to use
+	insert-before-markers, to avoid display anomalies.
+
+	* files.el (find-file-noselect): Tell revert-buffer not to query.
+	* files.el (revert-buffer): Second arg non-nil means no query.
+
+	* files.el (after-find-file): Warn if auto-save file 
+	exists and is newer than the file visited.
+
+	* files.el (find-alternate-file):
+	Allow replacing a non-file buffer, as long as not modified.
+
+	* files.el (recover-file):
+	Initially show a directory listing of real and auto-save files.
+	Only find the file if user says yes.
+	Print better messages.
+
+	* simple.el (goto-line): Use new interactive code N.
+
+	* subr.el (substitute-key-definition): New function.
+	Replaces all bindings to one function in one map
+	with another function.
+
+	* xterm.el: Use substitute-key-definition to get rid of keys
+	that do suspend-emacs.
+
+Thu Jun  5 00:25:52 1986  Richard M. Stallman  (rms at prep)
+
+	* simple.el (fundamental-mode):
+	Provide a fundamental-mode-map in case user does local-set-key.
+
+	* picture.el (picture-mode):
+	New key bindings for setting insert motion direction:
+	C-c <, C-c >, C-c ^ and C-c . instead of M- chars.
+
+	* rmail.el (rmail-reply): When putting From into In-reply-to,
+	stop at any newline.
+
+	* mail-utils.el (mail-strip-quoted-names):
+	Consider newlines like other whitespace for <...> hacks.
+
+	* bytecomp.el (byte-compile-cond{,-1}):
+	Handling of singleton clauses that are not last.
+	Handling of cond with no clauses.
+
+	* startup.el (command-line): Switch to *scratch* before
+	running initial-major-mode, and do this only if *scratch* exists.
+
+	* compare-w.el: Simplify the handling of `size':
+	always reduce size not to exceed the amount of space
+	left in either buffer.
+
+Wed Jun  4 21:44:40 1986  Richard M. Stallman  (rms at prep)
+
+	* man.el (manual-entry): Use new variables manual-program,
+	manual-formatted-dir-prefix and manual-formatted-dirlist,
+	defined in paths.el.
+
+	* time.el (display-time):
+	Don't expand-file-name of "loadst".  Let start-process search
+	the exec-path for it.
+
+	* texinfmt.el (texinfo-discard-line):
+	Allow and discard spaces at end of line.
+
+	* texinfo.el:
+	Split most of this into new file texinfmt.el.
+
+	* replace.el (perform-replace):
+	Bind help-form only while the read-char is done;
+	don't interfere with recursive edits.
+
+Thu May 29 19:05:19 1986  Richard M. Stallman  (rms at prep)
+
+	* info.el (Info-validate): If file is valid,
+	erase the buffer of problems found previously.
+	Non-re search was used by mistake to search for regexps; fix.
+
+	* nroff-mode.el (electric-nroff-newline):
+	Leave point between the open-directive and the close-directive,
+	as it was supposed to do.
+	Add some directive-pairs to nroff-brace-table.
+
+Wed May 28 03:56:04 1986  Richard M. Stallman  (rms at prep)
+
+	* telnet.el (telnet-initial-filter):
+	If host nonexistent, kill the telnet buffer and get error.
+
+Sun May 25 20:00:21 1986  Richard M. Stallman  (rms at prep)
+
+	* rmail.el (rmail-search): Don't find a match in the current message.
+
+Mon May 19 22:11:52 1986  Richard M. Stallman  (rms at prep)
+
+	* mh-e.el (mh-get-new-mail): Handle error messages reeived from `inc'.
+
+Thu May 15 18:35:25 1986  Richard M. Stallman  (rms at prep)
+
+	* files.el (save-buffer): Switch meanings of one-C-u and two-C-u
+	in the code, so they match the documentation.
+
+Local Variables:
+mode: indented-text
+eval: (auto-fill-mode 1)
+left-margin: 8
+fill-column: 74
+version-control: never
+End:
