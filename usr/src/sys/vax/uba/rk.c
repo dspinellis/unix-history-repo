@@ -1,4 +1,4 @@
-/*	rk.c	4.13	%G%	*/
+/*	rk.c	4.14	%G%	*/
 
 #include "rk.h"
 #if NHK > 0
@@ -463,7 +463,6 @@ rkecc(ui)
 	}
 	ubp->uba_dpr[(um->um_ubinfo>>28)&0x0f] |= UBA_BNE;
 	i = rk->rkec1 - 1;		/* -1 makes 0 origin */
-	printf("mask %x pos %x\n", mask, i+1);
 	bit = i&07;
 	i = (i&~07)>>3;
 	byte = i + o;
