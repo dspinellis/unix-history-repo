@@ -1,0 +1,31 @@
+.TH PASTE 1L \" -*- nroff -*-
+.SH NAME
+paste \- merge lines of files
+.SH SYNOPSIS
+.B paste
+[\-s] [\-d delim-list] [\-\-serial] [\-\-delimiters=delim-list]
+[file...]
+.SH DESCRIPTION
+This manual page
+documents the GNU version of
+.BR paste .
+.B paste
+prints lines consisting of sequentially corresponding lines of each
+given file, separated by TABs, terminated by a newline.  If no files
+are given, the standard input is used.  A file name of `-' means
+standard input.
+.SS OPTIONS
+.TP
+.I "\-s, \-\-serial"
+Paste the lines of one file at a time rather than one line from each file.
+.TP
+.I "\-d, \-\-delimiters delim-list"
+Consecutively use the characters in
+.I delim-list
+instead of TAB to separate merged lines.  When
+.I delim-list
+is exhausted, start again at its beginning.
+.PP
+The long-named options can be introduced with `+' as well as `\-\-',
+for compatibility with previous releases.  Eventually support for `+'
+will be removed, because it is incompatible with the POSIX.2 standard.
