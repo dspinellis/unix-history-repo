@@ -109,6 +109,6 @@ then
   exit 1
 fi
 
-eval -pipe $gcc "$@" $library
+eval $gcc -pipe "$@" $library
 
 
