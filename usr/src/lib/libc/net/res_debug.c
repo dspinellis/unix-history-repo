@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)res_debug.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_debug.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 #if defined(lint) && !defined(DEBUG)
@@ -328,7 +328,6 @@ char *
 p_type(type)
 	int type;
 {
-#ifdef DEBUG
 	switch (type) {
 	case T_A:
 		return("A");
@@ -375,7 +374,6 @@ p_type(type)
 	default:
 		return (sprintf(nbuf, "%d", type));
 	}
-#endif
 }
 
 /*
@@ -385,7 +383,6 @@ char *
 p_class(class)
 	int class;
 {
-#ifdef DEBUG
 
 	switch (class) {
 	case C_IN:		/* internet class */
@@ -395,5 +392,4 @@ p_class(class)
 	default:
 		return (sprintf(nbuf, "%d", class));
 	}
-#endif
 }
