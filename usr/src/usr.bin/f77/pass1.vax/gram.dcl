@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)gram.dcl	5.4 (Berkeley) %G%
+ *	@(#)gram.dcl	5.5 (Berkeley) %G%
  */
 
 /*
@@ -113,20 +113,20 @@ lengspec:
 			$$ = 0;
 			dclerr("length expression is not type integer", PNULL);
 			}
-		else if ( p->constblock.const.ci < 0 )
+		else if ( p->constblock.constant.ci < 0 )
 			{
 			$$ = 0;
 			dclerr("illegal negative length", PNULL);
 			}
 		else if( dblflag )
 			{
-			typlen = p->constblock.const.ci;
+			typlen = p->constblock.constant.ci;
 			if( vartype == TYDREAL && typlen == 4 ) $$ = 8;
 			else if( vartype == TYDCOMPLEX && typlen == 8 ) $$ = 16;
 			else $$ = typlen;
 			}
 		else
-			$$ = p->constblock.const.ci;
+			$$ = p->constblock.constant.ci;
 		}
 	| SSTAR intonlyon SLPAR SSTAR SRPAR intonlyoff
 		{ NO66("length specification *(*)"); $$ = -1; }
