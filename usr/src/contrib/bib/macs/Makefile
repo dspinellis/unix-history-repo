@@ -1,5 +1,5 @@
 #
-#	@(#)Makefile	1.4	85/06/11
+#	@(#)Makefile	1.5	85/06/25
 #
 DEST	      = $(DESTDIR)/usr/lib/bmac
 
@@ -34,7 +34,11 @@ clean:;
 
 depend:;	@mkmf -f $(MAKEFILE)
 
-install:;	@echo Installing $(SRCS) in $(DEST)
+install:	$(DEST)
+		@echo Installing $(SRCS) in $(DEST)
 		-for i in $(SRCS); do rm -f $(DEST)/$$i; cp $$i $(DEST)/$$i; done
+
+$(DEST):
+		mkdir $(DEST)
 
 update:;
