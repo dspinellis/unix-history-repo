@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dir.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)dir.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -597,10 +597,9 @@ getdirblk(blkno, size)
 	daddr_t blkno;
 	long size;
 {
-	static struct bufarea *pbp = 0;
 
-	if (pbp != 0)
-		pbp->b_flags &= ~B_INUSE;
-	pbp = getdatablk(blkno, size);
-	return (pbp);
+	if (pdirbp != 0)
+		pdirbp->b_flags &= ~B_INUSE;
+	pdirbp = getdatablk(blkno, size);
+	return (pdirbp);
 }
