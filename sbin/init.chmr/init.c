@@ -1,9 +1,6 @@
-/*-
- * Copyright (c) 1993 The Regents of the University of California.
+/*
+ * Copyright (c) 1993 Christoph M. Robitschko
  * All rights reserved.
- *
- * This code is derived from software contributed to Berkeley by
- * Christoph Robitschko.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -15,23 +12,20 @@
  *    documentation and/or other materials provided with the distribution.
  * 3. All advertising materials mentioning features or use of this software
  *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
- *    may be used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *      This product includes software developed by Christoph M. Robitschko
+ * 4. The name of the author may not be used to endorse or promote products
+ *    derived from this software withough specific prior written permission
  *
- * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 /*
@@ -53,17 +47,20 @@
 
 #include "init.h"
 #include "prototypes.h"
+#include "libutil.h"
 
 
 /* global variables, preset to their defaults */
-int		debug = DEBUG_LEVEL;
 int		timeout_m2s_TERM = INIT_M2S_TERMTO;
 int		timeout_m2s_KILL = INIT_M2S_KILLTO;
 int		retrytime = RETRYTIME;
 int		startup_single = 0;
 int		checkonly = 0;
-int		force_debug = -1;
 int		force_single = -1;
+#ifdef DEBUG
+int		force_debug = -1;
+int		debug = DEBUG_LEVEL;
+#endif
 #ifdef CONFIGURE
 char		*config_file = INIT_CONFIG;
 #endif
@@ -138,6 +135,7 @@ char		**argv;
 		else if(!strcmp(argv[1], "-f"))		/* Fastboot */
 			RCent = &RCent_fast;
 
+#ifdef DEBUG
 		else if (!strcmp(argv[1], "-d"))	/* Debug level */
 			if (argc > 2) {
 				if ((force_debug = str2u(argv[2])) >= 0) {
@@ -147,6 +145,7 @@ char		**argv;
 					syslog(LOG_ERR, "option -d needs positive integer argument");
 			} else
 				syslog(LOG_ERR, "option -d needs an argument");
+#endif
 #ifdef CONFIGURE
 		else if (!strcmp(argv[1], "-C"))	/* Configuration file */
 			if (argc > 2) {
@@ -185,14 +184,16 @@ char		**argv;
 	checkconf();
 	if (checkonly)
 		exit(0);
-#endif
 
 	/* values configured by command-line arguments take precedence	*/
 	/* over values in the config file				*/
+#  ifdef DEBUG
 	if (force_debug >= 0)
 		debug = force_debug;
+#  endif
 	if (force_single >= 0)
 		startup_single = force_single;
+#endif
 
 	/*
 	 * initialize callout table
@@ -451,8 +452,10 @@ int			status;
 
 	if (status)
 		longjmp(boing_singleuser, 1);
-	else
+	else {
+		logwtmp("~", "reboot", "");
 		longjmp(boing_multiuser, 1);
+	}
 	/* NOTREACHED */
 }
 

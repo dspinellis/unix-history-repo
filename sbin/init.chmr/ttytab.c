@@ -1,9 +1,6 @@
-/*-
- * Copyright (c) 1993 The Regents of the University of California.
+/*
+ * Copyright (c) 1993 Christoph M. Robitschko
  * All rights reserved.
- *
- * This code is derived from software contributed to Berkeley by
- * Christoph Robitschko.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -15,23 +12,20 @@
  *    documentation and/or other materials provided with the distribution.
  * 3. All advertising materials mentioning features or use of this software
  *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
- *    may be used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *      This product includes software developed by Christoph M. Robitschko
+ * 4. The name of the author may not be used to endorse or promote products
+ *    derived from this software withough specific prior written permission
  *
- * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 /*
@@ -159,7 +153,10 @@ char		*argstr;
 	else {
 		if (!(argstr = alloca(strlen(ent->ty_getty) +strlen(tt->name) +2)))
 			goto kaaplotz;
-		sprintf(argstr, "%s %s", ent->ty_getty, tt->name);
+/* 		sprintf(argstr, "%s %s", ent->ty_getty, tt->name); */
+		strcpy(argstr, ent->ty_getty);
+		strcat(argstr, " ");
+		strcat(argstr, tt->name);
 	}
 	if (argv_changed(argstr, (const char **)tt->argv)) {
 		if (tt->argv) {
@@ -305,11 +302,13 @@ end_of_word:
 	argv[argc] = (char *)0;
 	if (rargc)
 		*rargc = argc;
+#ifdef DEBUG
 	if (debug > 5) {
 		for (ra = argv; *ra; ra++)
 			Debug(5, "	\"%s\"", *ra);
 		Debug(5, " ");
 	}
+#endif
 	return(argv);
 
 malloc_fail:
@@ -383,7 +382,9 @@ int		pid;
 		if (tt->intflags & INIT_OPEN) {
 			int	fd;
 			char	*device = alloca(strlen(tt->name) + sizeof("/dev/"));
-			sprintf(device, "/dev/%s", tt->name);
+/* 			sprintf(device, "/dev/%s", tt->name); */
+			strcpy(device, "/dev/");
+			strcat(device, tt->name);
 			(void)revoke (device);
 			closelog();
 			fd = open(device, O_RDWR);

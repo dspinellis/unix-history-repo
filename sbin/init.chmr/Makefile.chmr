@@ -1,14 +1,31 @@
-DEFINES	= -DDEBUG -DCONFIGURE
+# What you can define:
+# -DDEBUG		enables debugging facilities:
+#			you can increment debug level with debug keyword in
+#			config file, -d option, or by sending SIGUSR1 to init.
+#			SIGUSR2 sets debug level to 0.
+# -DUNTRUSTED		debugging code: on SIGINT it execs /sbin/init.ori
+#			(do this only in singleuser mode !)
+# -DCONFIGURE		on startup (and when requested), read /etc/init.conf
+#			and set parameters in it.
+# -DFAKE_SYSLOG		do not use syslog, but write to /dev/console.
+#			This makes it MUCH smaller !
+# -DSMALL		do not use perror, but write error codes.
+#			Makes it even smaller, but requires -DFAKE_SYSLOG.
+# For the floppy version, compile this with -DFAKE_SYSLOG -DSMALL. If compiled
+# with gcc1, it is not bigger than the original init (20k).
+#
+DEFINES	= -DSMALL -DFAKE_SYSLOG
+#DEFINES	= -DDEBUG -DCONFIGURE
 #DEFINES	= -DDEBUG -DUNTRUSTED -DCONFIGURE
 LDFLAGS	= 
 CFLAGS	= -g -O -Wall -pipe
 LIBS	= -lutil
-SRCS	= init.c ttytab.c configure.c cf_table.c utils.c
-OBJS	= init.o ttytab.o configure.o cf_table.o utils.o
+SRCS	= init.c ttytab.c configure.c cf_table.c utils.c fake_syslog.c
+OBJS	= init.o ttytab.o configure.o cf_table.o utils.o fake_syslog.o
 INC	= init.h prototypes.h
 BIN	= /sbin/init
 BAK	= .old
-MAN	= /usr/share/man/cat8/init.0
+MAN	= init.8
 #CC	= /usr/local/gcc-2.3.3/bin/gcc
 MKDEP	= mkdep
 TAGS	= ctags
@@ -20,7 +37,7 @@ all!
 
 
 test!	.test
-	exec make init CC="$(CC)" DEFINES="$(DEFINES) -DTESTRUN" OBJS="$(OBJS) fake_syslog.c"
+	exec make init CC="$(CC)" DEFINES="$(DEFINES) -DTESTRUN"
 
 init:	$(OBJS)
 	$(CC) -o $@ $(LDFLAGS) $(CFLAGS) $(OBJS) $(LIBS)
