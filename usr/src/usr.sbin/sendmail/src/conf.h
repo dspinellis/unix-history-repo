@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	5.23 (Berkeley) %G%
+ *	@(#)conf.h	5.24 (Berkeley) %G%
  */
 
 /*
@@ -31,6 +31,9 @@
 # define QUEUESIZE	600		/* max # of jobs per queue run */
 # define MAXMXHOSTS	10		/* max # of MX records */
 # define SMTPLINELIM	990		/* maximum SMTP line length */
+# ifndef FORK
+# define FORK		vfork		/* function to call to fork mailer */
+# endif
 
 /*
 **  Compilation options.

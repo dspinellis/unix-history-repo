@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	5.52 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	5.53 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -524,11 +524,10 @@ markfailure(e, q, rcode)
 */
 
 # define NFORKTRIES	5
-# ifdef VMUNIX
-# define XFORK	vfork
-# else VMUNIX
-# define XFORK	fork
-# endif VMUNIX
+
+# ifndef FORK
+# define FORK	fork
+# endif
 
 # define DOFORK(fORKfN) \
 {\
@@ -741,11 +740,9 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 	if (strcmp(m->m_mailer, "[IPC]") == 0 ||
 	    strcmp(m->m_mailer, "[TCP]") == 0)
 	{
-#ifdef HOSTINFO
+#ifdef DAEMON
 		register STAB *st;
 		extern STAB *stab();
-#endif HOSTINFO
-#ifdef DAEMON
 		register int i;
 		register u_short port;
 
@@ -756,7 +753,6 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 			port = atoi(pvp[2]);
 		else
 			port = 0;
-#ifdef HOSTINFO
 			/* see if we already know that this host is fried */
 		st = stab(pvp[1], ST_HOST, ST_FIND);
 		if (st == NULL || st->s_host.ho_exitstat == EX_OK)
@@ -766,18 +762,13 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 			i = st->s_host.ho_exitstat;
 			errno = st->s_host.ho_errno;
 		}
-#else HOSTINFO
-		i = makeconnection(pvp[1], port, pmfile, prfile);
-#endif HOSTINFO
 		if (i != EX_OK)
 		{
-#ifdef HOSTINFO
 			/* enter status of this host */
 			if (st == NULL)
 				st = stab(pvp[1], ST_HOST, ST_ENTER);
 			st->s_host.ho_exitstat = i;
 			st->s_host.ho_errno = errno;
-#endif HOSTINFO
 			ExitStat = i;
 			return (-1);
 		}
@@ -821,7 +812,7 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 # ifdef SIGCHLD
 	(void) signal(SIGCHLD, SIG_DFL);
 # endif SIGCHLD
-	DOFORK(XFORK);
+	DOFORK(FORK);
 	/* pid is set by DOFORK */
 	if (pid < 0)
 	{
