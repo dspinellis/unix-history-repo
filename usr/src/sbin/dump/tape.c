@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)tape.c	1.2 (Berkeley) %G%";
+static	char *sccsid = "@(#)tape.c	1.3 (Berkeley) %G%";
 #include "dump.h"
 
 char	tblock[NTREC][BSIZE];
@@ -91,6 +91,7 @@ loop:
 rewind()
 {
 	int	secs;
+	int f;
 #ifdef DEBUG
 	msg("Waiting 10 seconds to rewind.\n");
 	sleep(10);
@@ -98,9 +99,11 @@ rewind()
 	/*
 	 *	It takes about 3 minutes, 25secs to rewind 2300' of tape
 	 */
-	secs = (( (60*3) + 25)*asize)/(2300L*12L*10L);
-	msg("Waiting %d seconds to rewind.\n", secs);
-	sleep(secs);
+	msg("Tape rewinding\n", secs);
+	close(to);
+	while ((f = open(tape, 0)) < 0)
+		sleep (10);
+	close(f);
 #endif
 }
 
