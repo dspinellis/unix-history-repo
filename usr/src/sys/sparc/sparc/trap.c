@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)trap.c	8.4 (Berkeley) %G%
+ *	@(#)trap.c	8.5 (Berkeley) %G%
  *
  * from: $Header: trap.c,v 1.34 93/05/28 04:34:50 torek Exp $
  */
@@ -724,6 +724,10 @@ syscall(code, tf, pc, suncompat)
 		}
 		copywords(ap, args.i, i * 4);
 	}
+#ifdef KTRACE
+	if (KTRPOINT(p, KTR_SYSCALL))
+		ktrsyscall(p->p_tracep, code, callp->sy_narg, args.i);
+#endif
 	rval[0] = 0;
 	rval[1] = tf->tf_out[1];
 	error = (*callp->sy_call)(p, &args, rval);
