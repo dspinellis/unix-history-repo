@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vnops.c	7.37 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.38 (Berkeley) %G%
  */
 
 /*
@@ -1464,20 +1464,22 @@ nfs_strategy(bp)
 nfs_doio(bp)
 	register struct buf *bp;
 {
-	register struct pte *pte, *ppte;
-	register caddr_t vaddr;
 	register struct uio *uiop;
 	register struct vnode *vp;
 	struct nfsnode *np;
 	struct ucred *cr;
-	int npf, npf2;
-	int reg;
-	caddr_t vbase;
-	unsigned v;
 	struct proc *rp;
-	int o, error;
+	int error;
 	struct uio uio;
 	struct iovec io;
+#if !defined(hp300)
+	register struct pte *pte, *ppte;
+	register caddr_t vaddr;
+	int npf, npf2;
+	int reg, o;
+	caddr_t vbase;
+	unsigned v;
+#endif
 
 	vp = bp->b_vp;
 	np = VTONFS(vp);
@@ -1499,6 +1501,10 @@ nfs_doio(bp)
 		cr->cr_uid = rp->p_uid;
 		cr->cr_gid = 0;		/* Anything ?? */
 		cr->cr_ngroups = 1;
+#if defined(hp300)
+		/* mapping was already done by vmapbuf */
+		io.iov_base = bp->b_un.b_addr;
+#else
 		o = (int)bp->b_un.b_addr & PGOFSET;
 		npf2 = npf = btoc(bp->b_bcount + o);
 
@@ -1535,11 +1541,12 @@ nfs_doio(bp)
 			vaddr += NBPG;
 			--npf;
 		}
+		io.iov_base = vbase+o;
+#endif /* !defined(hp300) */
 
 		/*
 		 * And do the i/o rpc
 		 */
-		io.iov_base = vbase+o;
 		io.iov_len = uiop->uio_resid = bp->b_bcount;
 		uiop->uio_offset = bp->b_blkno * DEV_BSIZE;
 		if (bp->b_flags & B_READ) {
@@ -1565,11 +1572,13 @@ nfs_doio(bp)
 		 * Finally, release pte's used by physical i/o
 		 */
 		crfree(cr);
+#if !defined(hp300)
 		rmfree(nfsmap, (long)npf2, (long)++reg);
 		if (nfsmap_want) {
 			nfsmap_want = 0;
 			wakeup((caddr_t)&nfsmap_want);
 		}
+#endif
 	} else {
 		if (bp->b_flags & B_READ) {
 			io.iov_len = uiop->uio_resid = bp->b_bcount;
