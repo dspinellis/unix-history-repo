@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)traverse.c	1.15 (Berkeley) %G%";
+static	char *sccsid = "@(#)traverse.c	1.16 (Berkeley) %G%";
 
 #include "dump.h"
 
@@ -203,18 +203,11 @@ blksout(blkp, frags)
 bitmap(map, typ)
 	char *map;
 {
-	register i, n;
+	register i;
 	char *cp;
 
-	n = -1;
-	for (i = 0; i < msiz; i++)
-		if(map[i])
-			n = i;
-	if (n < 0)
-		return;
-	n++;
 	spcl.c_type = typ;
-	spcl.c_count = howmany(n * sizeof(map[0]), TP_BSIZE);
+	spcl.c_count = howmany(msiz * sizeof(map[0]), TP_BSIZE);
 	spclrec();
 	for (i = 0, cp = map; i < spcl.c_count; i++, cp += TP_BSIZE)
 		taprec(cp);
