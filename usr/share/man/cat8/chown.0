@@ -1,0 +1,56 @@
+CHOWN(8)                  BSD System Manager's Manual                 CHOWN(8)
+
+NNAAMMEE
+     cchhoowwnn - change file owner and group
+
+SSYYNNOOPPSSIISS
+     cchhoowwnn [--HHRRffhh] _o_w_n_e_r [_:_g_r_o_u_p] _f_i_l_e _._._.
+     cchhoowwnn [--HHRRffhh] _:_g_r_o_u_p _f_i_l_e _._._.
+
+DDEESSCCRRIIPPTTIIOONN
+     CChhoowwnn sets the user ID and/or the group ID of the specified files.
+
+     The options are as follows:
+
+     --HH      When encountering a symbolic link on the command line, follow it.
+             All other symbolic links encountered in the traversal are not
+             followed.
+
+     --RR      Change the user ID and/or the group ID for the file hierarchies
+             rooted in the files instead of just the files themselves.
+
+     --ff      Don't report any failure to change file owner or group, nor modi-
+             fy the exit status to reflect such failures.
+
+     --hh      When encountering a symbolic link anywhere in the traversal, fol-
+             low it.
+
+     The ownership of a symbolic link is immutable, so unless the --hh or --HH
+     flag is set, cchhoowwnn on a symbolic link is a no-op.
+
+     The _o_w_n_e_r and _g_r_o_u_p operands are both optional, however, one must be
+     specified.  If the _g_r_o_u_p operand is specified, it must be preceded by a
+     colon (``:'') character.
+
+     The _o_w_n_e_r may be either a numeric user ID or a user name.  If a user name
+     is also a numeric user ID, the operand is used as a user name.  The _g_r_o_u_p
+     may be either a numeric group ID or a group name.  If a group name is al-
+     so a numeric group ID, the operand is used as a group name.
+
+     The ownership of a file may only be altered by a super-user for obvious
+     security reasons.
+
+     The cchhoowwnn utility exits 0 on success, and >0 if an error occurs.
+
+CCOOMMPPAATTIIBBIILLIITTYY
+     Previous versions of the cchhoowwnn utility used the dot (``.'') character to
+     distinguish the group name.  This has been changed to be a colon (``:'')
+     character so that user and group names may contain the dot character.
+
+SSEEEE AALLSSOO
+     chgrp(1),  find(1),  chown(2),  fts(3),  symlink(7)
+
+SSTTAANNDDAARRDDSS
+     The cchhoowwnn command is expected to be POSIX 1003.2 compliant.
+
+4th Berkeley Distribution        June 29, 1993                               1

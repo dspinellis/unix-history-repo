@@ -1,0 +1,51 @@
+QUOTAON(8)                BSD System Manager's Manual               QUOTAON(8)
+
+NNAAMMEE
+     qquuoottaaoonn, qquuoottaaooffff - turn filesystem quotas on and off
+
+SSYYNNOOPPSSIISS
+     qquuoottaaoonn [--gg] [--uu] [--vv] _f_i_l_e_s_y_s_t_e_m _._._.
+     qquuoottaaoonn [--gg] [--uu] [--vv] --aa
+     qquuoottaaooffff [--gg] [--uu] [--vv] _f_i_l_e_s_y_s_t_e_m _._._.
+     qquuoottaaooffff [--gg] [--uu] [--vv] --aa
+
+DDEESSCCRRIIPPTTIIOONN
+     QQuuoottaaoonn announces to the system that disk quotas should be enabled on one
+     or more filesystems.  QQuuoottaaooffff announces to the system that the specified
+     filesystems should have any disk quotas diskquotas turned off.  The
+     filesystems specified must have entries in _/_e_t_c_/_f_s_t_a_b and be mounted.
+     QQuuoottaaoonn expects each filesystem to have quota files named _q_u_o_t_a_._u_s_e_r and
+     _q_u_o_t_a_._g_r_o_u_p which are located at the root of the associated file system.
+     These defaults may be overridden in _/_e_t_c_/_f_s_t_a_b. By default both user and
+     group quotas are enabled.
+
+     Available options:
+
+     --aa      If the --aa flag is supplied in place of any filesystem names,
+             qquuoottaaoonn/quotaoff will enable/disable all the filesystems indicat-
+             ed in _/_e_t_c_/_f_s_t_a_b to be read-write with disk quotas.  By default
+             only the types of quotas listed in _/_e_t_c_/_f_s_t_a_b are enabled.
+
+     --gg      Only group quotas listed in _/_e_t_c_/_f_s_t_a_b should be en-
+             abled/disabled.
+
+     --uu      Only user quotas listed in _/_e_t_c_/_f_s_t_a_b should be enabled/disabled.
+
+     --vv      Causes qquuoottaaoonn and qquuoottaaooffff to print a message for each filesys-
+             tem where quotas are turned on or off.
+
+     Specifying both --gg and --uu is equivalent to the default.
+
+FFIILLEESS
+     quota.user   at the filesystem root with user quotas
+     quota.group  at the filesystem root with group quotas
+     /etc/fstab   filesystem table
+
+SSEEEE AALLSSOO
+     quota(1),  quotactl(2),  fstab(5),  edquota(8),  quotacheck(8),  repquo-
+     ta(8)
+
+HHIISSTTOORRYY
+     The qquuoottaaoonn command appeared in 4.2BSD.
+
+4.2 Berkeley Distribution        June 6, 1993                                1

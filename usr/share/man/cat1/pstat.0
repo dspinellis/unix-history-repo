@@ -1,0 +1,214 @@
+PSTAT(8)                  BSD System Manager's Manual                 PSTAT(8)
+
+NNAAMMEE
+     ppssttaatt - display system data structures
+
+SSYYNNOOPPSSIISS
+     ppssttaatt [--TTffnnssttvv] [--MM _c_o_r_e] [--NN _s_y_s_t_e_m]
+
+DDEESSCCRRIIPPTTIIOONN
+     PPssttaatt displays open file entry, swap space utilization, terminal state,
+     and vnode data structures.  If _c_o_r_e_f_i_l_e is given, the information is
+     sought there, otherwise in _/_d_e_v_/_k_m_e_m. The required namelist is taken from
+     _/_v_m_u_n_i_x unless _s_y_s_t_e_m is specified.  The --nn option specifies that devices
+     should be printed out by major/minor number rather than by name.
+
+     Options are
+
+     --TT      Prints the number of used and free slots in the several system
+             tables and is useful for checking to see how large system tables
+             have become if the system is under heavy load.
+
+     --ff      Print the open file table with these headings:
+
+             LOC     The core location of this table entry.
+
+             TYPE    The type of object the file table entry points to.
+
+             FLG     Miscellaneous state variables encoded thus:
+
+                     R       open for reading
+
+                     W       open for writing
+
+                     A       open for appending
+
+                     S       shared lock present
+
+                     X       exclusive lock present
+
+                     I       signal pgrp when data ready
+
+             CNT     Number of processes that know this open file.
+
+             MSG     Number of messages outstanding for this file.
+
+             DATA    The location of the vnode table entry or socket structure
+                     for this file.
+
+             OFFSET  The file offset (see lseek(2)).
+
+     --ss      Print information about swap space usage on all the swap areas
+             compiled into the kernel.  The first column is the device name of
+             the partition.  The next column is the total space available in
+             the partition.  The _U_s_e_d column indicates the total blocks used
+             so far;  the _A_v_a_i_l_a_b_l_e column indicates how much space is remain-
+             ing on each partition.  The _C_a_p_a_c_i_t_y reports the percentage of
+             space used.
+
+             If more than one partition is configured into the system, totals
+             for all of the statistics will be reported in the final line of
+             the report.
+
+     --tt      Print table for terminals with these headings:
+
+
+             RAW     Number of characters in raw input queue.
+
+             CAN     Number of characters in canonicalized input queue.
+
+             OUT     Number of characters in putput queue.
+
+             MODE    See tty(4).
+
+             ADDR    Physical device address.
+
+             DEL     Number of delimiters (newlines) in canonicalized input
+                     queue.
+
+             COL     Calculated column position of terminal.
+
+             STATE   Miscellaneous state variables encoded thus:
+
+                     T       delay timeout in progress
+
+                     W       waiting for open to complete
+
+                     O       open
+
+                     F       outq has been flushed during DMA
+
+                     C       carrier is on
+
+                     B       busy doing output
+
+                     A       process is awaiting output
+
+                     X       open for exclusive use
+
+                     S       output stopped
+
+                     H       hangup on close
+
+             PGRP    Process group for which this is controlling terminal.
+
+             DISC    Line discipline; blank is old tty OTTYDISC or `new tty'
+                     for NTTYDISC or `net' for NETLDISC (see bk(4)).
+
+     --vv      Print the active vnodes.  Each group of vnodes coresponding to a
+             particular filesystem is preceded by a two line header.  The
+             first line consists of the following:
+
+             *** MOUNT _f_s_t_y_p_e _f_r_o_m on _o_n _f_s_f_l_a_g_s
+
+             where _f_s_t_y_p_e is one of _u_f_s, _n_f_s, _m_f_s, _o_r _p_c; _f_r_o_m is the filesys-
+             tem is mounted from; _o_n is the directory the filesystem is mount-
+             ed on; and _f_s_f_l_a_g_s is a list of optional flags applied to the
+             mount (see mount(8)).  the first part of which are fixed, and the
+             second part are filesystem type specific.  The headers common to
+             all vnodes are:
+
+             ADDR    Location of this vnode.
+
+             TYP     File type.
+
+             VFLAG
+
+                     A list of letters representing vnode flags:
+
+                     R       - VROOT
+
+
+                     T       - VTEXT
+
+                     L       - VXLOCK
+
+                     W       - VXWANT
+
+                     E       - VEXLOCK
+
+                     S       - VSHLOCK
+
+                     T       - VLWAIT
+
+                     A       - VALIASED
+
+                     B       - VBWAIT
+
+             LOC     The core location of this table entry.
+
+             FLAGS   Miscellaneous state variables encoded thus:
+
+                     L       locked
+
+                     U       update time (fs(5))  must be corrected
+
+                     A       access time must be corrected
+
+                     W       wanted by another process (L flag is on)
+
+                     C       changed time must be corrected
+
+                     S       shared lock applied
+
+                     E       exclusive lock applied
+
+                     Z       someone waiting for a lock
+
+                     M       contains modifications
+
+                     R       has a rename in progress
+
+             CNT     Number of open file table entries for this inode.
+
+             DEV     Major and minor device number of file system in which
+                     this inode resides.
+
+             RDC     Reference count of shared locks on the inode.
+
+             WRC     Reference count of exclusive locks on the inode (this may
+                     be > 1 if, for example, a file descriptor is inherited
+                     across a fork).
+
+             INO     I-number within the device.
+
+             MODE    Mode bits, see chmod(2).
+
+             NLK     Number of links to this inode.
+
+             UID     User ID of owner.
+
+             SIZ/DEV
+                     Number of bytes in an ordinary file, or major and minor
+                     device of special file.
+
+FFIILLEESS
+
+
+
+     /vmunix       namelist
+     /dev/kmem     default source of tables
+
+SSEEEE AALLSSOO
+     iostat(1),  ps(1),  systat(1),  vmstat(1),  stat(2),  fs(5),
+
+BBUUGGSS
+     Swap statistics are reported for all swap partitions compiled into the
+     kernel, regardless of whether those partitions are being used.
+
+     Does not understand NFS swap servers.
+
+HHIISSTTOORRYY
+     The ppssttaatt command appeared in 4.0BSD.
+
+4th Berkeley Distribution        June 6, 1993                                4

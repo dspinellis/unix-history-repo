@@ -1,0 +1,64 @@
+VIS(1)                       BSD Reference Manual                       VIS(1)
+
+NNAAMMEE
+     vviiss - display non-printable characters in a visual format
+
+SSYYNNOOPPSSIISS
+     vviiss [--ccbbffllnnoossttww] [--FF _f_o_l_d_w_i_d_t_h] [_f_i_l_e _._._.]
+
+DDEESSCCRRIIPPTTIIOONN
+     VViiss is a filter for converting non-printable characters into a visual
+     representation.  It differs from `cat -v' in that the form is unique and
+     invertible.  By default, all non-graphic characters except space, tab,
+     and newline are encoded.  A detailed description of the various visual
+     formats is given in vis(3).
+
+     Options supported by vviiss:
+
+     --bb      Turns off prepending of backslash before up-arrow control se-
+             quences and meta characters, and disables the doubling of back-
+             slashes.  This produces output which is neither invertible or
+             precise, but does represent a minimum of change to the input.  It
+             is similar to ``cat -v''.
+
+     --cc      Request a format which displays a small subset of the non-
+             printable characters using C-style backslash sequences.
+
+     --FF      Causes vviiss to fold output lines to foldwidth columns (default
+             80), like fold(1),  except that a hidden newline sequence is
+             used, (which is removed when inverting the file back to its orig-
+             inal form with unvis(1)).  If the last character in the encoded
+             file does not end in a newline, a hidden newline sequence is ap-
+             pended to the output.  This makes the output usuable with various
+             editors and other utilities which typically don't work with par-
+             tial lines.
+
+     --ff      Same as --FF.
+
+     --ll      Mark newlines with the visable sequence `\$', followed by the
+             newline.
+
+     --nn      Turns off any encoding, except for the fact that backslashes are
+             still doubled and hidden newline sequences inserted if --ff or --FF
+             is selected.  When combined with the --ff flag, vviiss becomes like an
+             invertible version of the fold(1) utility.  That is, the output
+             can be unfolded by running the output through
+
+     --oo      Request a format which displays non-printable characters as an
+             octal number, \ddd.
+
+     --ss      Only characters considered unsafe to send to a terminal are en-
+             coded.  This flag allows backspace, bell, and carriage return in
+             addition to the default space, tab and newline.  unvis(1).
+
+     --tt      Tabs are also encoded.
+
+     --ww      White space (space-tab-newline) is also encoded.
+
+SSEEEE AALLSSOO
+     unvis(1) vis(3)
+
+HHIISSTTOORRYY
+     The vviiss command appears in 4.4BSD.
+
+4.4BSD                           June 6, 1993                                1

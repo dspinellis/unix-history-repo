@@ -1,0 +1,171 @@
+INETD(8)                  BSD System Manager's Manual                 INETD(8)
+
+NNAAMMEE
+     iinneettdd - internet ``super-server''
+
+SSYYNNOOPPSSIISS
+     iinneettdd [--dd] [--RR _r_a_t_e] [_c_o_n_f_i_g_u_r_a_t_i_o_n _f_i_l_e]
+
+DDEESSCCRRIIPPTTIIOONN
+     IInneettdd should be run at boot time by _/_e_t_c_/_r_c_._l_o_c_a_l (see rc(8)).  It then
+     listens for connections on certain internet sockets.  When a connection
+     is found on one of its sockets, it decides what service the socket corre-
+     sponds to, and invokes a program to service the request.  After the pro-
+     gram is finished, it continues to listen on the socket (except in some
+     cases which will be described below).  Essentially, iinneettdd allows running
+     one daemon to invoke several others, reducing load on the system.
+
+     The options available for iinneettdd::
+
+     --dd      Turns on debugging.
+
+     --RR _r_a_t_e
+             Specifies the maximum number of times a service can be invoked in
+             one minute; the default is 1000.
+
+     Upon execution, iinneettdd reads its configuration information from a configu-
+     ration file which, by default, is _/_e_t_c_/_i_n_e_t_d_._c_o_n_f. There must be an entry
+     for each field of the configuration file, with entries for each field
+     separated by a tab or a space.  Comments are denoted by a ``#'' at the
+     beginning of a line.  There must be an entry for each field.  The fields
+     of the configuration file are as follows:
+
+           service name
+           socket type
+           protocol
+           wait/nowait
+           user
+           server program
+           server program arguments
+
+     There are two types of services that iinneettdd can start: standard and TCP-
+     MUX.  A standard service has a well-known port assigned to it; it may be
+     a service that implements an official Internet standard or is a BSD-
+     specific service.  As described in RFC 1078, TCPMUX services are nonstan-
+     dard services that do not have a well-known port assigned to them.  They
+     are invoked from iinneettdd when a program connects to the ``tcpmux'' well-
+     known port and specifies the service name.  This feature is useful for
+     adding locally-developed servers.
+
+     The _s_e_r_v_i_c_e_-_n_a_m_e entry is the name of a valid service in the file
+     _/_e_t_c_/_s_e_r_v_i_c_e_s. For ``internal'' services (discussed below), the service
+     name _m_u_s_t be the official name of the service (that is, the first entry
+     in _/_e_t_c_/_s_e_r_v_i_c_e_s). For TCPMUX services, the value of the _s_e_r_v_i_c_e_-_n_a_m_e
+     field consists of the string ``tcpmux'' followed by a slash and the lo-
+     cally-chosen service name.  The service names listed in _/_e_t_c_/_s_e_r_v_i_c_e_s and
+     the name ``help'' are reserved.  Try to choose unique names for your TCP-
+     MUX services by prefixing them with your organization's name and suffix-
+     ing them with a version number.
+
+     The _s_o_c_k_e_t_-_t_y_p_e should be one of ``stream'', ``dgram'', ``raw'', ``rdm'',
+     or ``seqpacket'', depending on whether the socket is a stream, datagram,
+     raw, reliably delivered message, or sequenced packet socket.  TCPMUX ser-
+     vices must use ``stream''.
+
+
+     The _p_r_o_t_o_c_o_l must be a valid protocol as given in _/_e_t_c_/_p_r_o_t_o_c_o_l_s. Exam-
+     ples might be ``tcp'' or ``udp''. TCPMUX services must use ``tcp''.
+
+     The _w_a_i_t_/_n_o_w_a_i_t entry is applicable to datagram sockets only (other sock-
+     ets should have a ``nowait'' entry in this space).  If a datagram server
+     connects to its peer, freeing the socket so iinneettdd can received further
+     messages on the socket, it is said to be a ``multi-threaded'' server, and
+     should use the ``nowait'' entry.  For datagram servers which process all
+     incoming datagrams on a socket and eventually time out, the server is
+     said to be ``single-threaded'' and should use a ``wait'' entry.  Com-
+     sat(8) (biff(1))  and talkd(8) are both examples of the latter type of
+     datagram server.  Tftpd(8) is an exception; it is a datagram server that
+     establishes pseudo-connections.  It must be listed as ``wait'' in order
+     to avoid a race; the server reads the first packet, creates a new socket,
+     and then forks and exits to allow iinneettdd to check for new service requests
+     to spawn new servers.  TCPMUX services must use ``nowait''.
+
+     The _u_s_e_r entry should contain the user name of the user as whom the serv-
+     er should run.  This allows for servers to be given less permission than
+     root.
+
+     The _s_e_r_v_e_r_-_p_r_o_g_r_a_m entry should contain the pathname of the program which
+     is to be executed by iinneettdd when a request is found on its socket.  If
+     iinneettdd provides this service internally, this entry should be
+     ``internal''.
+
+     The _s_e_r_v_e_r _p_r_o_g_r_a_m _a_r_g_u_m_e_n_t_s should be just as arguments normally are,
+     starting with argv[0], which is the name of the program.  If the service
+     is provided internally, the word ``internal'' should take the place of
+     this entry.
+
+     IInneettdd provides several ``trivial'' services internally by use of routines
+     within itself.  These services are ``echo'', ``discard'', ``chargen''
+     (character generator), ``daytime'' (human readable time), and ``time''
+     (machine readable time, in the form of the number of seconds since mid-
+     night, January 1, 1900).  All of these services are tcp based.  For de-
+     tails of these services, consult the appropriate RFC from the Network In-
+     formation Center.
+
+     IInneettdd rereads its configuration file when it receives a hangup signal,
+     SIGHUP. Services may be added, deleted or modified when the configuration
+     file is reread.
+
+TTCCPPMMUUXX
+     RFC 1078 describes the TCPMUX protocol: ``A TCP client connects to a for-
+     eign host on TCP port 1.  It sends the service name followed by a car-
+     riage-return line-feed <CRLF>.  The service name is never case sensitive.
+     The server replies with a single character indicating positive (+) or
+     negative (-) acknowledgment, immediately followed by an optional message
+     of explanation, terminated with a <CRLF>.  If the reply was positive, the
+     selected protocol begins; otherwise the connection is closed.''  The pro-
+     gram is passed the TCP connection as file descriptors 0 and 1.
+
+     If the TCPMUX service name begins with a ``+'', iinneettdd returns the posi-
+     tive reply for the program.  This allows you to invoke programs that use
+     stdin/stdout without putting any special server code in them.
+
+     The special service name ``help'' causes iinneettdd to list TCPMUX services in
+     _i_n_e_t_d_._c_o_n_f.
+
+EEXXAAMMPPLLEESS
+     Here are several example service entries for the various types of ser-
+     vices:
+
+     ftp           stream  tcp   nowait root  /usr/libexec/ftpd       ftpd -l
+     ntalk         dgram   udp   wait   root  /usr/libexec/ntalkd     ntalkd
+     tcpmux/+date  stream  tcp   nowait guest /bin/date               date
+     tcpmux/phonebook stream tcp nowait guest /usr/local/bin/phonebook phonebook
+
+EERRRROORR MMEESSSSAAGGEESS
+     IInneettdd logs error messages using syslog(3).  Important error messages and
+     their explanations are:
+
+     _s_e_r_v_i_c_e/_p_r_o_t_o_c_o_l server failing (looping), service terminated.
+     The number of requests for the specified service in the past minute ex-
+     ceeded the limit. The limit exists to prevent a broken program or a mali-
+     cious user from swamping the system.  This message may occur for several
+     reasons: 1) there are lots of hosts requesting the service within a short
+     time period, 2) a 'broken' client program is requesting the service too
+     frequently, 3) a malicious user is running a program to invoke the ser-
+     vice in a 'denial of service' attack, or 4) the invoked service program
+     has an error that causes clients to retry quickly.  Use the [--RR] option,
+     as described above, to change the rate limit.  Once the limit is reached,
+     the service will be reenabled automatically in 10 minutes.
+
+
+     _s_e_r_v_i_c_e/_p_r_o_t_o_c_o_l: No such user '_u_s_e_r', service ignored
+     _s_e_r_v_i_c_e/_p_r_o_t_o_c_o_l: getpwnam: _u_s_e_r: No such user
+     No entry for _u_s_e_r exists in the _p_a_s_s_w_d file. The first message occurs
+     when iinneettdd (re)reads the configuration file. The second message occurs
+     when the service is invoked.
+
+
+     _s_e_r_v_i_c_e: can't set uid _n_u_m_b_e_r
+     _s_e_r_v_i_c_e: can't set gid _n_u_m_b_e_r
+     The user or group ID for the entry's _u_s_e_r is invalid.
+
+SSEEEE AALLSSOO
+     comsat(8),  fingerd(8),  ftpd(8),  rexecd(8),  rlogind(8),  rshd(8),
+     telnetd(8),  tftpd(8)
+
+HHIISSTTOORRYY
+     The iinneettdd command appeared in 4.3BSD. TCPMUX is based on code and docu-
+     mentation by Mark Lottor.
+
+4.4BSD                           June 6, 1993                                3

@@ -1,0 +1,47 @@
+AC(8)                     BSD System Manager's Manual                    AC(8)
+
+NNAAMMEE
+     aacc - display connect time accounting
+
+SSYYNNOOPPSSIISS
+     aacc [--dd] [--pp] [--ww _f_i_l_e] [_u_s_e_r_s _._._.]
+
+DDEESSCCRRIIPPTTIIOONN
+     If the file _/_v_a_r_/_l_o_g_/_w_t_m_p exists, a record of individual login and logout
+     times are written to it by init(8) and login(8) respectively.  The pro-
+     gram aacc examines these records and writes the accumulated connect time
+     for all logins to the standard output.
+
+     Options available:
+
+     --dd      Display the connect times in 24 hour chunks.
+
+     --pp      Display individual user totals.
+
+     --ww _f_i_l_e
+             Read raw connect time data from _f_i_l_e instead of the default file
+             _/_v_a_r_/_l_o_g_/_w_t_m_p.
+
+     _u_s_e_r_s _._._.
+             Display totals for the given indiviuals only.
+
+     If no arguments are given, aacc displays the total amount of login time for
+     all active accounts on the system.
+
+     The default _w_t_m_p file is an infinitely increasing file unless frequently
+     truncated.  This is normally done by the daily daemon scripts scheduled
+     by cron(8) which rename and rotate the _w_t_m_p files before truncating them
+     (and keeping about a weeks worth on hand).  No login times are collected
+     however, if the file does not exist.
+
+FFIILLEESS
+     /var/log/wtmp
+     /var/log/wtmp.[0-7]  rotated files
+
+SSEEEE AALLSSOO
+     init(8),  sa(8),  login(1),  utmp(5).
+
+HHIISSTTOORRYY
+     A aacc command appeared in Version 6 AT&T UNIX.
+
+4th Berkeley Distribution        June 6, 1993                                1

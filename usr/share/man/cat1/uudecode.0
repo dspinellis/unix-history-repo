@@ -1,0 +1,43 @@
+UUENCODE(1)                  BSD Reference Manual                  UUENCODE(1)
+
+NNAAMMEE
+     uuuueennccooddee, uuuuddeeccooddee - encode/decode a binary file
+
+SSYYNNOOPPSSIISS
+     uuuueennccooddee [_f_i_l_e] _n_a_m_e
+     uuuuddeeccooddee [_f_i_l_e _._._.]
+
+DDEESSCCRRIIPPTTIIOONN
+     UUuueennccooddee and uuuuddeeccooddee are used to transmit binary files over transmission
+     mediums that do not support other than simple ASCII data.
+
+     UUuueennccooddee reads _f_i_l_e (or by default the standard input) and writes an en-
+     coded version to the standard output.  The encoding uses only printing
+     ASCII characters and includes the mode of the file and the operand _n_a_m_e
+     for use by uuuuddeeccooddee.
+
+     UUuuddeeccooddee transforms _u_u_e_n_c_o_d_e_d files (or by default, the standard input)
+     into the original form.  The resulting file is named _n_a_m_e and will have
+     the mode of the original file except that setuid and execute bits are not
+     retained.  UUuuddeeccooddee ignores any leading and trailing lines.
+
+EEXXAAMMPPLLEESS
+     The following example packages up a source tree, compresses it, uuencodes
+     it and mails it to a user on another system.  When uuuuddeeccooddee is run on the
+     target system, the file ``src_tree.tar.Z'' will be created which may then
+     be uncompressed and extracted into the original tree.
+
+           tar cf - src_tree | compress |
+           uuencode src_tree.tar.Z | mail sys1!sys2!user
+
+SSEEEE AALLSSOO
+     compress(1),  mail(1),  uucp(1),  uuencode(5),  format(5)
+
+BBUUGGSS
+     The encoded form of the file is expanded by 35% (3 bytes become 4 plus
+     control information).
+
+HHIISSTTOORRYY
+     The uuuueennccooddee command appeared in 4.0BSD.
+
+4th Berkeley Distribution        June 6, 1993                                1

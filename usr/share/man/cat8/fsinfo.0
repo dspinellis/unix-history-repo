@@ -1,0 +1,25 @@
+FSINFO(8)                 BSD System Manager's Manual                FSINFO(8)
+
+NNAAMMEE
+     ffssiinnffoo - co-ordinate site-wide filesystem information
+
+SSYYNNOOPPSSIISS
+     ffssiinnffoo [--vv] [--aa _a_u_t_o_d_i_r] [--bb _b_o_o_t_p_a_r_a_m_s] [--dd _d_u_m_p_s_e_t_s] [--ee _e_x_p_o_r_t_s] [--ff
+            _f_s_t_a_b_s] [--hh _h_o_s_t_n_a_m_e] [--mm _a_u_t_o_m_o_u_n_t_s] [--II _d_i_r] [--DD
+            _s_t_r_i_n_g_[_=_s_t_r_i_n_g_]_]] [--UU _s_t_r_i_n_g_[_=_s_t_r_i_n_g_]_]] _c_o_n_f_i_g _._._.
+
+DDEESSCCRRIIPPTTIIOONN
+     The ffssiinnffoo utility takes a set of system configuration information, and
+     generates a co-ordinated set of amd,  mount and mountd configuration
+     files.
+
+     The ffssiinnffoo command is fully described in the document _A_m_d _- _T_h_e _4_._4_B_S_D
+     _A_u_t_o_m_o_u_n_t_e_r
+
+SSEEEE AALLSSOO
+     amd(8),  mount(8),  mountd(8).
+
+HHIISSTTOORRYY
+     The ffssiinnffoo command first appeared in 4.4BSD.
+
+4.4BSD                           June 28, 1993                               1

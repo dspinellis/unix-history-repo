@@ -1,0 +1,80 @@
+RWHOD(8)                  BSD System Manager's Manual                 RWHOD(8)
+
+NNAAMMEE
+     rrwwhhoodd - system status server
+
+SSYYNNOOPPSSIISS
+     rrwwhhoodd
+
+DDEESSCCRRIIPPTTIIOONN
+     RRwwhhoodd is the server which maintains the database used by the rwho(1) and
+     ruptime(1) programs.  Its operation is predicated on the ability to
+     _b_r_o_a_d_c_a_s_t messages on a network.
+
+     RRwwhhoodd operates as both a producer and consumer of status information.  As
+     a producer of information it periodically queries the state of the system
+     and constructs status messages which are broadcast on a network.  As a
+     consumer of information, it listens for other rrwwhhoodd servers' status mes-
+     sages, validating them, then recording them in a collection of files lo-
+     cated in the directory _/_v_a_r_/_r_w_h_o.
+
+     The server transmits and receives messages at the port indicated in the
+     ``rwho'' service specification; see services(5).  The messages sent and
+     received, are of the form:
+
+           struct  outmp {
+                   char    out_line[8];            /* tty name */
+                   char    out_name[8];            /* user id */
+                   long    out_time;               /* time on */
+           };
+
+           struct  whod {
+                   char    wd_vers;
+                   char    wd_type;
+                   char    wd_fill[2];
+                   int     wd_sendtime;
+                   int     wd_recvtime;
+                   char    wd_hostname[32];
+                   int     wd_loadav[3];
+                   int     wd_boottime;
+                   struct  whoent {
+                           struct  outmp we_utmp;
+                           int     we_idle;
+                   } wd_we[1024 / sizeof (struct whoent)];
+           };
+
+     All fields are converted to network byte order prior to transmission.
+     The load averages are as calculated by the w(1) program, and represent
+     load averages over the 5, 10, and 15 minute intervals prior to a server's
+     transmission; they are multiplied by 100 for representation in an inte-
+     ger.  The host name included is that returned by the gethostname(2) sys-
+     tem call, with any trailing domain name omitted.  The array at the end of
+     the message contains information about the users logged in to the sending
+     machine.  This information includes the contents of the utmp(5) entry for
+     each non-idle terminal line and a value indicating the time in seconds
+     since a character was last received on the terminal line.
+
+     Messages received by the rwho server are discarded unless they originated
+     at an rwho server's port.  In addition, if the host's name, as specified
+     in the message, contains any unprintable ASCII characters, the message is
+     discarded.  Valid messages received by rrwwhhoodd are placed in files named
+     _w_h_o_d_._h_o_s_t_n_a_m_e in the directory _/_v_a_r_/_r_w_h_o. These files contain only the
+     most recent message, in the format described above.
+
+     Status messages are generated approximately once every 3 minutes.  RRwwhhoodd
+     performs an nlist(3) on _/_v_m_u_n_i_x every 30 minutes to guard against the
+     possibility that this file is not the system image currently operating.
+
+SSEEEE AALLSSOO
+     rwho(1),  ruptime(1)
+
+BBUUGGSS
+     There should be a way to relay status information between networks.  Sta-
+     tus information should be sent only upon request rather than continuous-
+     ly.  People often interpret the server dying or network communtication
+     failures as a machine going down.
+
+HHIISSTTOORRYY
+     The rrwwhhoodd command appeared in 4.2BSD.
+
+4.2 Berkeley Distribution        June 6, 1993                                2

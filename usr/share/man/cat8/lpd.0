@@ -1,0 +1,146 @@
+LPD(8)                    BSD System Manager's Manual                   LPD(8)
+
+NNAAMMEE
+     llppdd - line printer spooler daemon
+
+SSYYNNOOPPSSIISS
+     llppdd [--ll] [_p_o_r_t_#]
+
+DDEESSCCRRIIPPTTIIOONN
+     LLppdd is the line printer daemon (spool area handler) and is normally in-
+     voked at boot time from the rc(8) file.  It makes a single pass through
+     the printcap(5) file to find out about the existing printers and prints
+     any files left after a crash. It then uses the system calls listen(2) and
+     accept(2) to receive requests to print files in the queue, transfer files
+     to the spooling area, display the queue, or remove jobs from the queue.
+     In each case, it forks a child to handle the request so the parent can
+     continue to listen for more requests.
+
+     Available options:
+
+     --ll      The --ll flag causes llppdd to log valid requests received from the
+             network. This can be useful for debugging purposes.
+
+     _p_o_r_t_#   The Internet port number used to rendezvous with other processes
+             is normally obtained with getservbyname(3) but can be changed
+             with the _p_o_r_t_# argument.
+
+     Access control is provided by two means. First, all requests must come
+     from one of the machines listed in the file _/_e_t_c_/_h_o_s_t_s_._e_q_u_i_v or
+     _/_e_t_c_/_h_o_s_t_s_._l_p_d. Second, if the rs capability is specified in the printcap
+     entry for the printer being accessed, _l_p_r requests will only be honored
+     for those users with accounts on the machine with the printer.
+
+     The file _m_i_n_f_r_e_e in each spool directory contains the number of disk
+     blocks to leave free so that the line printer queue won't completely fill
+     the disk.  The _m_i_n_f_r_e_e file can be edited with your favorite text editor.
+
+     The daemon begins processing files after it has successfully set the lock
+     for exclusive access (descibed a bit later), and scans the spool directo-
+     ry for files beginning with _c_f. Lines in each _c_f file specify files to be
+     printed or non-printing actions to be performed.  Each such line begins
+     with a key character to specify what to do with the remainder of the
+     line.
+
+     J       Job Name.  String to be used for the job name on the burst page.
+
+     C       Classification.  String to be used for the classification line on
+             the burst page.
+
+     L       Literal.  The line contains identification info from the password
+             file and causes the banner page to be printed.
+
+     T       Title.  String to be used as the title for pr(1).
+
+     H       Host Name.  Name of the machine where lpr was invoked.
+
+     P       Person.  Login name of the person who invoked lpr.  This is used
+             to verify ownership by lprm.
+
+     M       Send mail to the specified user when the current print job com-
+             pletes.
+
+     f       Formatted File.  Name of a file to print which is already format-
+
+
+             ted.
+
+     l       Like ``f'' but passes control characters and does not make page
+             breaks.
+
+     p       Name of a file to print using pr(1) as a filter.
+
+     t       Troff File.  The file contains troff(1) output (cat phototypeset-
+             ter commands).
+
+     n       Ditroff File.  The file contains device independent troff output.
+
+     r       DVI File.  The file contains Tex l output DVI format from Stand-
+             ford).
+
+     g       Graph File.  The file contains data produced by plot(3).
+
+     c       Cifplot File. The file contains data produced by _c_i_f_p_l_o_t.
+
+     v       The file contains a raster image.
+
+     r       The file contains text data with FORTRAN carriage control charac-
+             ters.
+
+     1       Troff Font R. Name of the font file to use instead of the de-
+             fault.
+
+     2       Troff Font I. Name of the font file to use instead of the de-
+             fault.
+
+     3       Troff Font B. Name of the font file to use instead of the de-
+             fault.
+
+     4       Troff Font S. Name of the font file to use instead of the de-
+             fault.
+
+     W       Width. Changes the page width (in characters) used by pr(1) and
+             the text filters.
+
+     I       Indent.  The number of characters to indent the output by (in
+             ascii).
+
+     U       Unlink.  Name of file to remove upon completion of printing.
+
+     N       File name.  The name of the file which is being printed, or a
+             blank for the standard input (when lpr is invoked in a pipeline).
+
+     If a file can not be opened, a message will be logged via syslog(3) using
+     the _L_O_G___L_P_R facility.  LLppdd will try up to 20 times to reopen a file it
+     expects to be there, after which it will skip the file to be printed.
+
+     LLppdd uses flock(2) to provide exclusive access to the lock file and to
+     prevent multiple deamons from becoming active simultaneously.  If the
+     daemon should be killed or die unexpectedly, the lock file need not be
+     removed.  The lock file is kept in a readable ASCII form and contains two
+     lines.  The first is the process id of the daemon and the second is the
+     control file name of the current job being printed.  The second line is
+     updated to reflect the current status of llppdd for the programs lpq(1) and
+     lprm(1).
+
+FFIILLEESS
+     /etc/printcap         printer description file
+     /var/spool/*          spool directories
+     /var/spool/*/minfree  minimum free space to leave
+
+
+     /dev/lp*              line printer devices
+     /dev/printer          socket for local requests
+     /etc/hosts.equiv      lists machine names allowed printer access
+     /etc/hosts.lpd        lists machine names allowed printer access, but not
+                           under same administrative control.
+
+SSEEEE AALLSSOO
+     lpc(8),  pac(1),  lpr(1),  lpq(1),  lprm(1),  syslog(3),  printcap(5)
+
+     _4_._2 _B_S_D _L_i_n_e _P_r_i_n_t_e_r _S_p_o_o_l_e_r _M_a_n_u_a_l.
+
+HHIISSTTOORRYY
+     An llppdd daemon appeared in Version 6 AT&T UNIX.
+
+4.2 Berkeley Distribution        June 6, 1993                                3

@@ -1,0 +1,76 @@
+VACATION(1)                  BSD Reference Manual                  VACATION(1)
+
+NNAAMMEE
+     vvaaccaattiioonn - return ``I am not here'' indication
+
+SSYYNNOOPPSSIISS
+     vvaaccaattiioonn --ii [--rr _i_n_t_e_r_v_a_l]
+     vvaaccaattiioonn [--aa _a_l_i_a_s] _l_o_g_i_n
+
+DDEESSCCRRIIPPTTIIOONN
+     VVaaccaattiioonn returns a message to the sender of a message telling them that
+     you are currently not reading your mail.  The intended use is in a
+     _._f_o_r_w_a_r_d file.  For example, your _._f_o_r_w_a_r_d file might have:
+
+           \eric, "|/usr/bin/vacation -a allman eric"
+     which would send messages to you (assuming your login name was eric) and
+     reply to any messages for ``eric'' or ``allman''.
+
+     Available options:
+
+     --aa _a_l_i_a_s
+             Handle messages for _a_l_i_a_s in the same manner as those received
+             for the user's login name.
+
+     --ii      Initialize the vacation database files.  It should be used before
+             you modify your _._f_o_r_w_a_r_d file.
+
+     --rr      Set the reply interval to _i_n_t_e_r_v_a_l days.  The default is one
+             week.  An interval of ``0'' means that a reply is sent to each
+             message, and an interval of ``infinite'' (actually, any non-
+             numeric character) will never send more than one reply.  It
+             should be noted that intervals of ``0'' are quite dangerous, as
+             it allows mailers to get into ``I am on vacation'' loops.
+
+     No message will be sent unless _l_o_g_i_n (or an _a_l_i_a_s supplied using the --aa
+     option) is part of either the ``To:'' or ``Cc:'' headers of the mail.  No
+     messages from ``???-REQUEST'', ``Postmaster'', ``UUCP'', ``MAILER'', or
+     ``MAILER-DAEMON'' will be replied to (where these strings are case insen-
+     sitive) nor is a notification sent if a ``Precedence: bulk'' or
+     ``Precedence: junk'' line is included in the mail headers.  The people
+     who have sent you messages are maintained as an ndbm(3) database in the
+     file _._v_a_c_a_t_i_o_n_._d_b in your home directory.
+
+     VVaaccaattiioonn expects a file _._v_a_c_a_t_i_o_n_._m_s_g, in your home directory, containing
+     a message to be sent back to each sender.  It should be an entire message
+     (including headers).  For example, it might contain:
+
+           From: eric@CS.Berkeley.EDU (Eric Allman)
+           Subject: I am on vacation
+           Delivered-By-The-Graces-Of: The Vacation program
+           Precedence: bulk
+
+           I am on vacation until July 22.  If you have something urgent,
+           please contact Keith Bostic <bostic@CS.Berkeley.EDU>.
+           --eric
+
+     VVaaccaattiioonn reads the first line from the standard input for a UNIX ``From''
+     line to determine the sender.  Sendmail(8) includes this ``From'' line
+     automatically.
+
+     Fatal errors, such as calling vvaaccaattiioonn with incorrect arguments, or with
+     non-existent _l_o_g_i_n_s, are logged in the system log file, using syslog(8).
+
+FFIILLEESS
+
+
+     ~/.vacation.db   database file
+     ~/.vacation.msg  message to send
+
+SSEEEE AALLSSOO
+     sendmail(8),  syslog(8)
+
+HHIISSTTOORRYY
+     The vvaaccaattiioonn command appeared in 4.3BSD.
+
+4.3 Berkeley Distribution        June 16, 1993                               2

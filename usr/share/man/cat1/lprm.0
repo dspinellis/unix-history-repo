@@ -1,0 +1,76 @@
+LPRM(1)                      BSD Reference Manual                      LPRM(1)
+
+NNAAMMEE
+     llpprrmm - remove jobs from the line printer spooling queue
+
+SSYYNNOOPPSSIISS
+     llpprrmm [--PP_p_r_i_n_t_e_r] [--] [job # ...] [_u_s_e_r _._._.]
+
+DDEESSCCRRIIPPTTIIOONN
+     LLpprrmm will remove a job, or jobs, from a printer's spool queue.  Since the
+     spooling directory is protected from users, using llpprrmm is normally the
+     only method by which a user may remove a job.  The owner of a job is de-
+     termined by the user's login name and host name on the machine where the
+     lpr(1) command was invoked.
+
+     Options and arguments:
+
+     --PP_p_r_i_n_t_e_r
+             Specify the queue associated with a specific _p_r_i_n_t_e_r (otherwise
+             the default printer is used).
+
+     --       If a single `--' is given, llpprrmm will remove all jobs which a user
+             owns.  If the super-user employs this flag, the spool queue will
+             be emptied entirely.
+
+     _u_s_e_r    Causes llpprrmm to attempt to remove any jobs queued belonging to
+             that user (or users).  This form of invoking llpprrmm is useful only
+             to the super-user.
+
+     _j_o_b _#   A user may dequeue an individual job by specifying its job num-
+             ber.  This number may be obtained from the lpq(1) program, e.g.
+
+                   % lpq -l
+
+                   1st:ken                         [job #013ucbarpa]
+                           (standard input)        100 bytes
+                   % lprm 13
+
+     If neither arguments or options are given, LLpprrmm will delete the currently
+     active job if it is owned by the user who invoked llpprrmm.
+
+     LLpprrmm announces the names of any files it removes and is silent if there
+     are no jobs in the queue which match the request list.
+
+     LLpprrmm will kill off an active daemon, if necessary, before removing any
+     spooling files.  If a daemon is killed, a new one is automatically
+     restarted upon completion of file removals.
+
+EENNVVIIRROONNMMEENNTT
+     If the following environment variable exists, it is utilized by llpprrmm.
+
+     PRINTER  If the environment variable PRINTER exists, and a printer has
+              not been specified with the --PP option, the default printer is
+              assumed from PRINTER.
+
+FFIILLEESS
+     /etc/printcap       Printer characteristics file.
+     /var/spool/*        Spooling directories.
+     /var/spool/*/lock   Lock file used to obtain the pid of the current dae-
+                         mon and the job number of the currently active job.
+
+SSEEEE AALLSSOO
+     lpr(1),  lpq(1),  lpd(8)
+
+DDIIAAGGNNOOSSTTIICCSS
+     ``Permission denied" if the user tries to remove files other than his
+     own.
+
+BBUUGGSS
+     Since there are race conditions possible in the update of the lock file,
+     the currently active job may be incorrectly identified.
+
+HHIISSTTOORRYY
+     The llpprrmm command appeared in 3.0BSD.
+
+4.2 Berkeley Distribution        June 6, 1993                                2

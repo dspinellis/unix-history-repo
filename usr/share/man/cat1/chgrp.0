@@ -1,0 +1,57 @@
+CHGRP(1)                     BSD Reference Manual                     CHGRP(1)
+
+NNAAMMEE
+     cchhggrrpp - change group
+
+SSYYNNOOPPSSIISS
+     cchhggrrpp [--HHRRffhh] _g_r_o_u_p _f_i_l_e_s _._._.
+
+DDEESSCCRRIIPPTTIIOONN
+     The chgrp utility sets the group ID of the file named by each _f_i_l_e
+     operand to the _g_r_o_u_p ID specified by the group operand.
+
+     Options:
+
+     --HH      When encountering a symbolic link on the command line, follow it.
+             All other symbolic links encountered in the traversal are not
+             followed.
+
+     --RR      Recursively change file group IDs.  For each _f_i_l_e operand that
+             names a directory, chgrp changes the group of the directory and
+             all files in the file hierarchy below it.  When symbolic links
+             are encountered, their group is changed, but they are not tra-
+             versed.
+
+     --ff      The force option ignores errors, except for usage errors and
+             doesn't query about strange modes (unless the user does not have
+             proper permissions).
+
+     --hh      When encountering a symbolic link anywhere in the traversal, fol-
+             low it.
+
+     The group of a symbolic link is immutable, so unless the --hh or --HH flag is
+     set, cchhggrrpp on a symbolic link is a no-op.
+
+     Operands:
+
+     _g_r_o_u_p  The _g_r_o_u_p can be either a group name from the group database, or a
+            numeric group ID.
+
+     _f_i_l_e   A pathname of a file whose group ID is to be modified.
+
+     The user invoking must belong to the specified group and be the owner of
+     the file, or be the super-user.
+
+     The cchhggrrpp utility exits 0 on success, and >0 if an error occurs.
+
+FFIILLEESS
+     /etc/group  Group ID file
+
+SSEEEE AALLSSOO
+     chown(2),  chown(8),  group(5),  passwd(5),  fts(3),  symlink(7)
+
+SSTTAANNDDAARRDDSS
+     The cchhggrrpp utility is expected to be POSIX 1003.2 compatible.  This manual
+     page is derived from the POSIX 1003.2 manual page.
+
+4.2 Berkeley Distribution        June 29, 1993                               1

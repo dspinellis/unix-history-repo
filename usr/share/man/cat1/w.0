@@ -1,0 +1,76 @@
+W(1)                         BSD Reference Manual                         W(1)
+
+NNAAMMEE
+     ww - who present users are and what they are doing
+
+SSYYNNOOPPSSIISS
+     ww [--hhiinn] [--MM _c_o_r_e] [--NN _s_y_s_t_e_m] [_u_s_e_r]
+
+DDEESSCCRRIIPPTTIIOONN
+     The ww utility prints a summary of the current activity on the system, in-
+     cluding what each user is doing.  The first line displays the current
+     time of day, how long the system has been running, the number of users
+     logged into the system, and the load averages.  The load average numbers
+     give the number of jobs in the run queue averaged over 1, 5 and 15 min-
+     utes.
+
+     The fields output are the user's login name, the name of the terminal the
+     user is on, the host from which the user is logged in, the time the user
+     logged on, the time since the user last typed anything, and the name and
+     arguments of the current process.
+
+     The options are as follows:
+
+     --hh      Suppress the heading.
+
+     --ii      Output is sorted by idle time.
+
+     --MM      Extract values associated with the name list from the specified
+             core instead of the default ``/dev/kmem''.
+
+     --NN      Extract the name list from the specified system instead of the
+             default ``/vmunix''.
+
+     --nn      Show network addresses as numbers (normally ww interprets address-
+             es and attempts to display them symbolically).
+
+     If a _u_s_e_r name is specified, the output is restricted to that user.
+
+FFIILLEESS
+     /var/run/utmp  list of users on the system
+
+SSEEEE AALLSSOO
+     who(1),  finger(1),  ps(1),  uptime(1),
+
+BBUUGGSS
+     The notion of the ``current process'' is muddy.  The current algorithm is
+     ``the highest numbered process on the terminal that is not ignoring in-
+     terrupts, or, if there is none, the highest numbered process on the ter-
+     minal''.  This fails, for example, in critical sections of programs like
+     the shell and editor, or when faulty programs running in the background
+     fork and fail to ignore interrupts.  (In cases where no process can be
+     found, ww prints ``-''.)
+
+     The CPU time is only an estimate, in particular, if someone leaves a
+     background process running after logging out, the person currently on
+     that terminal is ``charged'' with the time.
+
+     Background processes are not shown, even though they account for much of
+     the load on the system.
+
+     Sometimes processes, typically those in the background, are printed with
+     null or garbaged arguments.  In these cases, the name of the command is
+     printed in parentheses.
+
+
+     The ww utility does not know about the new conventions for detection of
+     background jobs.  It will sometimes find a background job instead of the
+     right one.
+
+CCOOMMPPAATTIIBBIILLIITTYY
+     The --ff, --ll, --ss, and --ww flags are no longer supported.
+
+HHIISSTTOORRYY
+     The ww command appeared in UNIX3.0.
+
+4th Berkeley Distribution        June 6, 1993                                2

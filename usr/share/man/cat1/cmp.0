@@ -1,0 +1,47 @@
+CMP(1)                       BSD Reference Manual                       CMP(1)
+
+NNAAMMEE
+     ccmmpp - compare two files
+
+SSYYNNOOPPSSIISS
+     ccmmpp [--ll | --ss] _f_i_l_e_1 _f_i_l_e_2 [_s_k_i_p_1 [_s_k_i_p_2]]
+
+DDEESSCCRRIIPPTTIIOONN
+     The cmp utility compares two files of any type and writes the results to
+     the standard output.  By default, ccmmpp is silent if the files are the
+     same; if they differ, the byte and line number at which the first differ-
+     ence occurred is reported.
+
+     Bytes and lines are numbered beginning with one.
+
+     The following options are available:
+
+     --ll    Print the byte number (decimal) and the differing byte values (oc-
+           tal) for each difference.
+
+     --ss    Print nothing for differing files; return exit status only.
+
+     The optional arguments _s_k_i_p_1 and _s_k_i_p_2 are the byte offsets from the be-
+     ginning of _f_i_l_e_1 and _f_i_l_e_2, respectively, where the comparison will be-
+     gin.  The offset is decimal by default, but may be expressed as an hex-
+     adecimal or octal value by preceding it with a leading ``0x'' or ``0''.
+
+     The ccmmpp utility exits with one of the following values:
+
+     0     The files are identical.
+
+     1     The files are different; this includes the case where one file is
+           identical to the first part of the other.  In the latter case, if
+           the --ss option has not been specified, ccmmpp writes to standard output
+           that EOF was reached in the shorter file (before any differences
+           were found).
+
+     >1    An error occurred.
+
+SSEEEE AALLSSOO
+     diff(1),  diff3(1)
+
+SSTTAANNDDAARRDDSS
+     The ccmmpp utility is expected to be IEEE Std1003.2 (``POSIX'') compatible.
+
+4.4BSD                           June 6, 1993                                1

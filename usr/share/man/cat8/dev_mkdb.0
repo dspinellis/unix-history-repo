@@ -1,0 +1,30 @@
+DEV_MKDB(8)               BSD System Manager's Manual              DEV_MKDB(8)
+
+NNAAMMEE
+     ddeevv__mmkkddbb - create _/_d_e_v database
+
+SSYYNNOOPPSSIISS
+     ddeevv__mmkkddbb
+
+DDEESSCCRRIIPPTTIIOONN
+     The ddeevv__mmkkddbb command creates a db(3) hash access method database in
+     ``_/_v_a_r_/_r_u_n_/_d_e_v_._d_b'' which contains the names of all of the character and
+     block special files in the ``_/_d_e_v'' directory, using the file type and
+     the _s_t___r_d_e_v field as the key.
+
+     Keys are a structure containing a mode_t followed by a dev_t, with any
+     padding zero'd out.  The former is the type of the file (st_mode &
+     S_IFMT), the latter is the st_rdev field.
+
+FFIILLEESS
+     /dev             Device directory.
+     /var/run/dev.db  Database file.
+
+SSEEEE AALLSSOO
+     ps(1),  stat(2),  db(3),  devname(3),  kvm_nlist(3),  ttyname(3),
+     kvm_mkdb(8)
+
+HHIISSTTOORRYY
+     The ddeevv__mmkkddbb command appeared in 4.4BSD.
+
+4.4BSD                           June 6, 1993                                1

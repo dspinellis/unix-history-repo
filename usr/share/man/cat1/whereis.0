@@ -1,0 +1,26 @@
+WHEREIS(1)                   BSD Reference Manual                   WHEREIS(1)
+
+NNAAMMEE
+     wwhheerreeiiss - locate programs
+
+SSYYNNOOPPSSIISS
+     wwhheerreeiiss [_p_r_o_g_r_a_m _._._.]
+
+DDEESSCCRRIIPPTTIIOONN
+     The wwhheerreeiiss utility checks the standard binary directories for the speci-
+     fied programs, printing out the paths of any it finds.
+
+     The path searched is the string returned by the sysctl(8) utility for the
+     ``user.cs_path'' string.
+
+SSEEEE AALLSSOO
+     sysctl(8),
+
+CCOOMMPPAATTIIBBIILLIITTYY
+     The historic flags and arguments for the wwhheerreeiiss utility are no longer
+     available in the version.
+
+HHIISSTTOORRYY
+     The wwhheerreeiiss command appeared in 3.0BSD.
+
+3rd Berkeley Distribution        June 6, 1993                                1

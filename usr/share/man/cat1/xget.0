@@ -1,0 +1,33 @@
+XSEND(1)                     BSD Reference Manual                     XSEND(1)
+
+NNAAMMEE
+     xxsseenndd, xxggeett, eennrroollll - private encrypted mail
+
+SSYYNNOOPPSSIISS
+     xxsseenndd _p_e_r_s_o_n
+     xxggeett
+     eennrroollll
+
+DDEESSCCRRIIPPTTIIOONN
+     The xxsseenndd, xxggeett, and eennrroollll utilities initiate and conduct encrypted mail
+     on top of the regular mail(1) system. To get started, one enrolls with
+     the utility eennrroollll which requests a password which is then required be-
+     fore the enrollee can read mail sent via xxsseenndd.
+
+     XXsseenndd is used just like mail, but will not `cc' messages.  The regular
+     mail(1) facilities delivermail stating when encrypted mail has arrived.
+
+     The xxggeett command is used to read the encrypted mail; it requests the en-
+     rolled password before allowing the receipt of mail sent with xxsseenndd.
+
+FFIILLEESS
+     /var/spool/secretmail/*.key: keys
+     /var/spool/secretmail/*.[0-9]: messages
+
+SSEEEE AALLSSOO
+     mail(1)
+
+HHIISSTTOORRYY
+     The xxsseenndd command appeared in Version 7 AT&T UNIX.
+
+4.4BSD                           June 6, 1993                                1

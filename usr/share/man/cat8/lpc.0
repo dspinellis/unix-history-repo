@@ -1,0 +1,115 @@
+LPC(8)                    BSD System Manager's Manual                   LPC(8)
+
+NNAAMMEE
+     llppcc - line printer control program
+
+SSYYNNOOPPSSIISS
+     llppcc [_c_o_m_m_a_n_d [_a_r_g_u_m_e_n_t _._._.]]
+
+DDEESSCCRRIIPPTTIIOONN
+     LLppcc is used by the system administrator to control the operation of the
+     line printer system.  For each line printer configured in _/_e_t_c_/_p_r_i_n_t_c_a_p,
+     llppcc may be used to:
+
+           ++oo   disable or enable a printer,
+
+           ++oo   disable or enable a printer's spooling queue,
+
+           ++oo   rearrange the order of jobs in a spooling queue,
+
+           ++oo   find the status of printers, and their associated spooling
+               queues and printer dameons.
+
+     Without any arguments, llppcc will prompt for commands from the standard in-
+     put.  If arguments are supplied, llppcc interprets the first argument as a
+     command and the remaining arguments as parameters to the command.  The
+     standard input may be redirected causing llppcc to read commands from file.
+     Commands may be abreviated; the following is the list of recognized com-
+     mands.
+
+     ?? [command ...]
+     hheellpp [command ...]
+             Print a short description of each command specified in the argu-
+             ment list, or, if no arguments are given, a list of the recog-
+             nized commands.
+
+     aabboorrtt { all | printer }
+             Terminate an active spooling daemon on the local host immediately
+             and then disable printing (preventing new daemons from being
+             started by lpr)  for the specified printers.
+
+     cclleeaann { all | printer }
+             Remove any temporary files, data files, and control files that
+             cannot be printed (i.e., do not form a complete printer job) from
+             the specified printer queue(s) on the local machine.
+
+     ddiissaabbllee { all | printer }
+             Turn the specified printer queues off.  This prevents new printer
+             jobs from being entered into the queue by lpr.
+
+     ddoowwnn { all | printer } message ...
+             Turn the specified printer queue off, disable printing and put
+             _m_e_s_s_a_g_e in the printer status file. The message doesn't need to
+             be quoted, the remaining arguments are treated like echo(1).
+             This is normally used to take a printer down and let others know
+             why lpq(1) will indicate the printer is down and print the status
+             message).
+
+     eennaabbllee { all | printer }
+             Enable spooling on the local queue for the listed printers.  This
+             will allow lpr(1) to put new jobs in the spool queue.
+
+     eexxiitt
+     qquuiitt    Exit from lpc.
+
+
+
+     rreessttaarrtt { all | printer }
+             Attempt to start a new printer daemon.  This is useful when some
+             abnormal condition causes the daemon to die unexpectedly leaving
+             jobs in the queue.  Lpq will report that there is no daemon pre-
+             sent when this condition occurs.  If the user is the super-user,
+             try to abort the current daemon first (i.e., kill and restart a
+             stuck daemon).
+
+     ssttaarrtt { all | printer }
+             Enable printing and start a spooling daemon for the listed print-
+             ers.
+
+     ssttaattuuss { all | printer }
+             Display the status of daemons and queues on the local machine.
+
+     ssttoopp { all | printer }
+             Stop a spooling daemon after the current job completes and dis-
+             able printing.
+
+     ttooppqq printer [ jobnum ... ] [ user ... ]
+             Place the jobs in the order listed at the top of the printer
+             queue.
+
+     uupp { all | printer }
+             Enable everything and start a new printer daemon. Undoes the ef-
+             fects of ddoowwnn.
+
+FFIILLEESS
+     /etc/printcap       printer description file
+     /var/spool/*        spool directories
+     /var/spool/*/lock   lock file for queue control
+
+SSEEEE AALLSSOO
+     lpd(8),  lpr(1),  lpq(1),  lprm(1),  printcap(5)
+
+DDIIAAGGNNOOSSTTIICCSS
+     ??AAmmbbiigguuoouuss ccoommmmaanndd
+             abreviation matches more than one command
+
+     ??IInnvvaalliidd ccoommmmaanndd
+             no match was found
+
+     ??PPrriivviilleeggeedd ccoommmmaanndd
+             command can be executed by root only
+
+HHIISSTTOORRYY
+     The llppcc command appeared in 4.2BSD.
+
+4.2 Berkeley Distribution        June 6, 1993                                2

@@ -1,0 +1,46 @@
+LOOK(1)                      BSD Reference Manual                      LOOK(1)
+
+NNAAMMEE
+     llooookk - display lines beginning with a given string
+
+SSYYNNOOPPSSIISS
+     llooookk [--ddff] [--tt _t_e_r_m_c_h_a_r] _s_t_r_i_n_g [_f_i_l_e]
+
+DDEESSCCRRIIPPTTIIOONN
+     The llooookk utility displays any lines in _f_i_l_e which contain _s_t_r_i_n_g as a
+     prefix.  As llooookk performs a binary search, the lines in _f_i_l_e must be
+     sorted.
+
+     If _f_i_l_e is not specified, the file _/_u_s_r_/_s_h_a_r_e_/_d_i_c_t_/_w_o_r_d_s is used, only
+     alphanumeric characters are compared and the case of alphabetic charac-
+     ters is ignored.
+
+     Options:
+
+     --dd      Dictionary character set and order, i.e. only alphanumeric char-
+             acters are compared.
+
+     --ff      Ignore the case of alphabetic characters.
+
+     --tt      Specify a string termination character, i.e. only the characters
+             in _s_t_r_i_n_g up to and including the first occurrence of _t_e_r_m_c_h_a_r
+             are compared.
+
+     The llooookk utility exits 0 if one or more lines were found and displayed, 1
+     if no lines were found, and >1 if an error occurred.
+
+FFIILLEESS
+     /usr/share/dict/words  the dictionary
+
+SSEEEE AALLSSOO
+     grep(1),  sort(1)
+
+CCOOMMPPAATTIIBBIILLIITTYY
+     The original manual page stated that tabs and blank characters partici-
+     pated in comparisons when the --dd option was specified.  This was incor-
+     rect and the current man page matches the historic implementation.
+
+HHIISSTTOORRYY
+     LLooookk appeared in Version 7 AT&T Unix.
+
+4.4BSD                           June 14, 1993                               1
