@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.76 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.77 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1573,7 +1573,7 @@ giveresponse(stat, m, mci, e)
 	register MCI *mci;
 	ENVELOPE *e;
 {
-	register char *statmsg;
+	register const char *statmsg;
 	extern char *SysExMsg[];
 	register int i;
 	extern int N_SysEx;

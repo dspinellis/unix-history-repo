@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)err.c	6.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)err.c	6.19 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -49,10 +49,10 @@ static void fmtmsg();
 void
 /*VARARGS1*/
 #ifdef __STDC__
-syserr(char *fmt, ...)
+syserr(const char *fmt, ...)
 #else
 syserr(fmt, va_alist)
-	char *fmt;
+	const char *fmt;
 	va_dcl
 #endif
 {
@@ -120,10 +120,10 @@ syserr(fmt, va_alist)
 /*VARARGS1*/
 void
 #ifdef __STDC__
-usrerr(char *fmt, ...)
+usrerr(const char *fmt, ...)
 #else
 usrerr(fmt, va_alist)
-	char *fmt;
+	const char *fmt;
 	va_dcl
 #endif
 {
@@ -167,10 +167,10 @@ usrerr(fmt, va_alist)
 /*VARARGS2*/
 void
 #ifdef __STDC__
-message(char *msg, ...)
+message(const char *msg, ...)
 #else
 message(msg, va_alist)
-	char *msg;
+	const char *msg;
 	va_dcl
 #endif
 {
@@ -203,10 +203,10 @@ message(msg, va_alist)
 /*VARARGS2*/
 void
 #ifdef __STDC__
-nmessage(char *msg, ...)
+nmessage(const char *msg, ...)
 #else
 nmessage(msg, va_alist)
-	char *msg;
+	const char *msg;
 	va_dcl
 #endif
 {
