@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)autoconf.c	7.3 (Berkeley) %G%
+ *	@(#)autoconf.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -68,7 +68,7 @@ configure()
 	register int *ip;
 	extern caddr_t Sysbase;
 
-	vbafind(numvba, (caddr_t)&vmem, VMEMmap);
+	vbafind(numvba, (caddr_t)vmem, VMEMmap);
 	numvba++;
 	/*
 	 * Write protect the scb.  It is strange
