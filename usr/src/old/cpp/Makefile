@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	1.7	(Berkeley)	%G%
+#	@(#)Makefile	1.8	(Berkeley)	%G%
 #
 CFLAGS=	-O -Dunix=1 -DFLEXNAMES
 LIBC=	/lib/libc.a
@@ -18,7 +18,8 @@ cpp:	${OBJS} ${LIBC}
 
 cpy.c: cpy.y
 	yacc cpy.y
-	${YYFIX} yyexca yyact yypact yypgo yyr1 yyr2 yychk yydef
+	${YYFIX}  yylhs yylen yydefred yydgoto yysindex yyrindex \
+	    yygindex yytable yycheck
 	mv y.tab.c cpy.c
 
 cpy.o: cpy.c yylex.c
