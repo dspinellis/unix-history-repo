@@ -1,4 +1,4 @@
-/*	printjob.c	4.7	83/06/15	*/
+/*	printjob.c	4.8	83/06/17	*/
 /*
  * printjob -- print jobs in the queue.
  *
@@ -60,11 +60,15 @@ printjob()
 	}
 	if (stat(LO, &stb) == 0 && (stb.st_mode & 0100))
 		exit(0);		/* printing disabled */
-	lfd = open(LO, O_WRONLY|O_CREAT, 0664);
-	if (lfd < 0 || flock(lfd, LOCK_EX|LOCK_NB) < 0) {
+	lfd = open(LO, O_WRONLY|O_CREAT|O_TRUNC, 0644);
+	if (lfd < 0) {
+		log("cannot create %s", LO);
+		exit(1);
+	}
+	if (flock(lfd, LOCK_EX|LOCK_NB) < 0) {
 		if (errno == EWOULDBLOCK)	/* active deamon present */
 			exit(0);
-		log("cannot create %s", LO);
+		log("cannot lock %s", LO);
 		exit(1);
 	}
 	ftruncate(lfd, 0);
@@ -86,6 +90,10 @@ printjob()
 	}
 	if (nitems == 0)		/* no work to do */
 		exit(0);
+	if (stb.st_mode & 01) {		/* reset queue flag */
+		if (fchmod(lfd, stb.st_mode & 0776) < 0)
+			log("cannot chmod %s", LO);
+	}
 	openpr();			/* open printer or remote */
 again:
 	/*
@@ -108,10 +116,20 @@ again:
 		else
 			i = sendit(q->q_name);
 		/*
-		 * Check to see if we are supposed to stop printing.
+		 * Check to see if we are supposed to stop printing or
+		 * if we are to rebuild the queue.
 		 */
-		if (stat(LO, &stb) == 0 && (stb.st_mode & 0100))
-			goto done;
+		if (fstat(lfd, &stb) == 0) {
+			if (stb.st_mode & 0100)
+				goto done;
+			if (stb.st_mode & 01) {
+				for (free((char *) q); nitems--; free((char *) q))
+					q = *qp++;
+				if (fchmod(lfd, stb.st_mode & 0776) < 0)
+					log("cannot chmod %s", LO);
+				break;
+			}
+		}
 		/*
 		 * Check to see if we should try reprinting the job.
 		 */
@@ -866,13 +884,10 @@ init()
 {
 	int status;
 
-	if ((status = pgetent(line, printer)) < 0) {
-		log("can't open printer description file");
-		exit(1);
-	} else if (status == 0) {
-		log("unknown printer");
-		exit(1);
-	}
+	if ((status = pgetent(line, printer)) < 0)
+		fatal("can't open printer description file");
+	else if (status == 0)
+		fatal("unknown printer");
 	if ((LP = pgetstr("lp", &bp)) == NULL)
 		LP = DEFDEVLP;
 	if ((RP = pgetstr("rp", &bp)) == NULL)
@@ -1054,10 +1069,8 @@ setty()
 		}
 		ttybuf.sg_ispeed = ttybuf.sg_ospeed = bp->speed;
 	}
-	if (FC)
-		ttybuf.sg_flags &= ~FC;
-	if (FS)
-		ttybuf.sg_flags |= FS;
+	ttybuf.sg_flags &= ~FC;
+	ttybuf.sg_flags |= FS;
 	if (ioctl(pfd, TIOCSETP, (char *)&ttybuf) < 0) {
 		log("cannot set tty parameters");
 		exit(1);

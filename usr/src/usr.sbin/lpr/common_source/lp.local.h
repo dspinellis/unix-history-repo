@@ -1,4 +1,4 @@
-/*	lp.local.h	4.1	83/04/29	*/
+/*	lp.local.h	4.2	83/06/17	*/
 /*
  * Possibly, local parameters to the spooling system
  */
@@ -32,6 +32,7 @@
 #define DEFRLPR		"/usr/lib/rlpr"
 #define DEFBINDIR	"/usr/ucb"
 #define	DEFMX		1000
+#define DEFMAXCOPIES	0
 #define DEFFF		"\f"
 #define DEFWIDTH	132
 #define DEFLENGTH	66
