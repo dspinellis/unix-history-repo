@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	1.8 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	1.9 (Berkeley) %G%";
 #include "dump.h"
 
 int	notify = 0;	/* notify operator flag */
@@ -157,7 +157,7 @@ main(argc, argv)
 	msg("Dumping %s ", disk);
 	if (dt != 0)
 		msgtail("(%s) ", dt->fs_file);
-	msgtail("to %s", tape);
+	msgtail("to %s\n", tape);
 #ifdef RDUMP
 	msgtail(" on host %s\n", host);
 #endif
