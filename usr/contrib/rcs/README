@@ -1,0 +1,34 @@
+Title:		RCS Revision Control System
+
+Author:		Walter F. Tichy
+
+Address:	Department of Computer Sciences
+		Purdue University
+		West Lafayette, IN 47907
+
+Net address:	wft@purdue	(ARPA)
+
+Description:
+
+The Revision Control System (RCS) manages multiple revisions of text files.
+RCS automates the storing, retrieval, logging, identification, and merging
+of revisions. RCS is useful for text that is revised frequently, for example
+programs, documentation, graphics, papers, form letters, etc.
+
+The sccstorcs command was added in 4.3BSD:
+
+Title:		sccstorcs
+
+Author:		Kenneth L. Greer
+		2065 Alma St.
+		Palo Alto, CA 94301
+
+Net address:	kg.HP-Labs@Rand-Relay
+
+Description:
+
+Sccstorcs builds an RCS Revision Control System file from an SCCS
+Source Code Control System file. The deltas and comments for each
+delta are preserved and installed into the new RCS file in order.
+Also preserved are the user access list and descriptive text, if
+any, from the SCCS file.
