@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)lint.c	1.6	(Berkeley)	%G%";
+static char sccsid[] = "@(#)lint.c	1.7	(Berkeley)	%G%";
 #endif lint
 
 # include "pass1.h"
@@ -949,7 +949,7 @@ isitfloat ( s ) char *s; {
 	/* lint version
 	*/
 	dcon = atof( s );
-	return( FCON );
+	return( DCON );
 	}
 
 fldcon( p ) register NODE *p; {
