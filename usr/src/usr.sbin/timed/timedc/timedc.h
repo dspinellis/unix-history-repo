@@ -4,9 +4,9 @@
  * specifies the terms and conditions for redistribution.
  */
 
-/*	@(#)timedc.h	1.1	(Berkeley)	%G%	*/
+/*	@(#)timedc.h	1.2	(Berkeley)	%G%	*/
 
-#include <sys/types.h>
+#include <sys/param.h>
 #include <stdio.h>
 #include <sys/time.h>
 #include <errno.h>
@@ -16,6 +16,9 @@
 #include <arpa/inet.h>
 
 extern int errno;
+
+#define ON		1
+#define OFF		0
 
 #define MSGS 		4
 #define TRIALS		8
