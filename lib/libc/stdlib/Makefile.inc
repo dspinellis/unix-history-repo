@@ -3,7 +3,7 @@
 # stdlib sources
 .PATH: ${.CURDIR}/${MACHINE}/stdlib ${.CURDIR}/stdlib
 
-SRCS+=	abort.c atexit.c atoi.c atol.c bsearch.c calloc.c div.c exit.c \
+SRCS+=	abort.c atexit.c atoi.c atol.c bsearch.c calloc.c exit.c \
 	getenv.c getopt.c heapsort.c malloc.c multibyte.c \
 	putenv.c qsort.c radixsort.c rand.c random.c setenv.c strtod.c \
 	strtol.c strtoul.c system.c \
