@@ -1,6 +1,6 @@
 %{
 #ifndef lint
-static	char *sccsid = "@(#)gram.y	4.10 (Berkeley) 84/05/03";
+static	char *sccsid = "@(#)gram.y	4.11 (Berkeley) 84/06/28";
 #endif
 
 #include "defs.h"
@@ -283,6 +283,14 @@ again:
 
 		case 'y':
 			yylval.intval = YOUNGER;
+			return(OPTION);
+
+		case 'h':
+			yylval.intval = FOLLOW;
+			return(OPTION);
+
+		case 'i':
+			yylval.intval = IGNLNKS;
 			return(OPTION);
 		}
 	}

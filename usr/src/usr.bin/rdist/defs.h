@@ -1,4 +1,4 @@
-/*	defs.h	4.13	84/05/03	*/
+/*	defs.h	4.14	84/06/28	*/
 
 #include <stdio.h>
 #include <ctype.h>
@@ -15,7 +15,7 @@
 /*
  * The version number should be changed whenever the protocol changes.
  */
-#define VERSION	 2
+#define VERSION	 3
 
 #define	MAILCMD	 "/usr/lib/sendmail -oi -t"
 
@@ -52,6 +52,8 @@
 #define YOUNGER	0x4
 #define COMPARE	0x8
 #define REMOVE	0x10
+#define FOLLOW	0x20
+#define IGNLNKS	0x40
 
 	/* expand type definitions */
 #define E_VARS	0x1
@@ -89,7 +91,15 @@ struct cmd {
 	struct	subcmd *c_cmds;
 	struct	cmd *c_next;
 };
-	
+
+struct linkbuf {
+	ino_t	inum;
+	dev_t	devnum;
+	int	count;
+	char	pathname[BUFSIZ];
+	struct	linkbuf *nextp;
+};
+
 extern int debug;		/* debugging flag */
 extern int nflag;		/* NOP flag, don't execute commands */
 extern int qflag;		/* Quiet. don't print messages */
@@ -99,6 +109,7 @@ extern int nerrs;		/* number of errors seen */
 extern int rem;			/* remote file descriptor */
 extern int iamremote;		/* acting as remote server */
 extern char tmpfile[];		/* file name for logging changes */
+extern struct linkbuf *ihead;	/* list of files with more than one link */
 extern struct passwd *pw;	/* pointer to static area used by getpwent */
 extern struct group *gr;	/* pointer to static area used by getgrent */
 extern char host[];		/* host name of master copy */
