@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.51 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.52 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -62,6 +62,9 @@ sendto(list, copyf, ctladdr, qflags)
 	char delimiter;		/* the address delimiter */
 	int naddrs;
 	char *oldto = e->e_to;
+	static char *bufp = NULL;
+	static int buflen;
+	char buf[MAXNAME + 1];
 	ADDRESS *sibl;		/* sibling pointer in tree */
 	ADDRESS *prev;		/* previous sibling */
 
@@ -90,7 +93,22 @@ sendto(list, copyf, ctladdr, qflags)
 	al = NULL;
 	naddrs = 0;
 
-	for (p = list; *p != '\0'; )
+	if (buf == NULL)
+	{
+		bufp = buf;
+		buflen = sizeof buf - 1;
+	}
+	if (strlen(list) > buflen)
+	{
+		/* allocate additional space */
+		if (bufp != buf)
+			free(bufp);
+		buflen = strlen(list);
+		bufp = malloc(buflen + 1);
+	}
+	strcpy(bufp, list);
+
+	for (p = bufp; *p != '\0'; )
 	{
 		auto char *delimptr;
 		register ADDRESS *a;
