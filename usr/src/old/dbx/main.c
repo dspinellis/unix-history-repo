@@ -11,10 +11,10 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.4 (Berkeley) %G%";
 #endif not lint
 
-static char rcsid[] = "$Header: main.c,v 1.5 84/12/26 10:40:16 linton Exp $";
+static char rcsid[] = "$Header: main.c,v 1.4 87/07/08 21:31:27 donn Exp $";
 
 /*
  * Debugger main routine.
@@ -25,6 +25,7 @@ static char rcsid[] = "$Header: main.c,v 1.5 84/12/26 10:40:16 linton Exp $";
 #include <signal.h>
 #include <errno.h>
 #include "main.h"
+#include "tree.h"
 #include "eval.h"
 #include "debug.h"
 #include "symbols.h"
@@ -41,17 +42,23 @@ static char rcsid[] = "$Header: main.c,v 1.5 84/12/26 10:40:16 linton Exp $";
 
 #define isterm(file)	(interactive or isatty(fileno(file)))
 
-#include <sgtty.h>
-#include <fcntl.h>
+#ifdef IRIS
+#   include <termio.h>
 
-typedef struct {
-    struct sgttyb sg;		/* standard sgttyb structure */
-    struct tchars tc;		/* terminal characters */
-    struct ltchars ltc;		/* local special characters */
-    integer ldisc;		/* line discipline */
-    integer local;		/* TIOCLGET */
-    integer fcflags;		/* fcntl(2) F_GETFL, F_SETFL */
-} Ttyinfo;
+    typedef struct termio Ttyinfo;
+#else
+#   include <sgtty.h>
+#   include <fcntl.h>
+
+    typedef struct {
+	struct sgttyb sg;		/* standard sgttyb structure */
+	struct tchars tc;		/* terminal characters */
+	struct ltchars ltc;		/* local special characters */
+	integer ldisc;			/* line discipline */
+	integer local;			/* TIOCLGET */
+	integer fcflags;		/* fcntl(2) F_GETFL, F_SETFL */
+    } Ttyinfo;
+#endif
 
 #endif
 
@@ -64,8 +71,12 @@ public boolean traceexec;		/* trace execution */
 public boolean tracesyms;		/* print symbols are they are read */
 public boolean traceblocks;		/* trace blocks while reading symbols */
 public boolean vaddrs;			/* map addresses through page tables */
+public boolean quiet;			/* don't print heading */
+public boolean autostrip;		/* strip C++ prefixes */
 
 public File corefile;			/* File id of core dump */
+
+public integer versionNumber = 4;
 
 #define FIRST_TIME 0			/* initial value setjmp returns */
 
@@ -78,6 +89,7 @@ private Ttyinfo ttyinfo;
 private String corename;		/* name of core file */
 
 private catchintr();
+private char **scanargs();
 
 /*
  * Main program.
@@ -87,8 +99,6 @@ main(argc, argv)
 int argc;
 String argv[];
 {
-    register integer i;
-    extern String date;
     extern integer versionNumber;
     char **scanargs();
 
@@ -99,11 +109,14 @@ String argv[];
 
     catcherrs();
     onsyserr(EINTR, nil);
+    onsyserr(EADDRINUSE, nil);
+    onsyserr(ENXIO, nil);
     setbuf(stdout, outbuf);
-    printf("dbx version 3.%d of %s.\nType 'help' for help.\n",
-	versionNumber, date);
-    fflush(stdout);
     argv = scanargs(argc, argv);
+    if (not runfirst and not quiet) {
+	printheading();
+    }
+    openfiles();
     language_init();
     symbols_init();
     process_init();
@@ -128,6 +141,16 @@ String argv[];
     yyparse();
     putchar('\n');
     quit(0);
+}
+
+public printheading ()
+{
+    extern String date;
+
+    printf("dbx version 3.%d of %s.\nType 'help' for help.\n",
+	versionNumber, date
+    );
+    fflush(stdout);
 }
 
 /*
@@ -158,6 +181,7 @@ public init()
 	if (vaddrs) {
 	    coredump_getkerinfo();
 	}
+	getsrcpos();
 	setcurfunc(whatblock(pc));
     } else {
 	setcurfunc(program);
@@ -274,17 +298,13 @@ private catchintr()
  * Scan the argument list.
  */
 
-private char **scanargs(argc, argv)
+private char **scanargs (argc, argv)
 int argc;
 String argv[];
 {
     extern char *optarg;
-    extern int optind;
-    register int i, j;
-    register Boolean foundfile;
-    register File f;
-    int ch;
-    char *tmp;
+    extern integer optind;
+    integer ch;
 
     runfirst = false;
     interactive = false;
@@ -294,16 +314,20 @@ String argv[];
     tracesyms = false;
     traceblocks = false;
     vaddrs = false;
-    foundfile = false;
+    quiet = false;
+    autostrip = true;
     corefile = nil;
     coredump = true;
     sourcepath = list_alloc();
     list_append(list_item("."), nil, sourcepath);
 
-    while ((ch = getopt(argc, argv, "I:bc:eiklnrs")) != EOF)
+    while ((ch = getopt(argc, argv, "I:abc:eiklnqrs")) != EOF)
     switch((char)ch) {
 	case 'I':
 		list_append(list_item(optarg), nil, sourcepath);
+		break;
+	case 'a':
+		autostrip = false;
 		break;
 	case 'b':
 		tracebpts = true;
@@ -330,6 +354,9 @@ String argv[];
 	case 'n':
 		traceblocks = true;
 		break;
+	case 'q':
+		quiet = true;
+		break;
 	case 'r':	/* run program before accepting commands */
 		runfirst = true;
 		coredump = false;
@@ -344,7 +371,6 @@ String argv[];
     argv += optind;
     if (*argv) {
 	objname = *argv;
-	foundfile = true;
 	if (*++argv && coredump) {
 		corename = *argv;
 		corefile = fopen(*argv, "r");
@@ -353,9 +379,18 @@ String argv[];
 		++argv;
 	}
     }
-    if (*argv and not runfirst)
+    if (*argv and not runfirst) {
 	fatal("extraneous argument %s", *argv);
-    if (not foundfile and isatty(0)) {
+    }
+    return argv;
+}
+
+private openfiles ()
+{
+    File f;
+    char *tmp;
+
+    if (objname == nil and isatty(0)) {
 	printf("enter object file name (default is `%s'): ", objname);
 	fflush(stdout);
 	gets(namebuf);
@@ -389,7 +424,6 @@ String argv[];
 	    }
 	}
     }
-    return(argv);
 }
 
 /*
@@ -400,24 +434,40 @@ public savetty(f, t)
 File f;
 Ttyinfo *t;
 {
-    ioctl(fileno(f), TIOCGETP, &(t->sg));
-    ioctl(fileno(f), TIOCGETC, &(t->tc));
-    ioctl(fileno(f), TIOCGLTC, &(t->ltc));
-    ioctl(fileno(f), TIOCGETD, &(t->ldisc));
-    ioctl(fileno(f), TIOCLGET, &(t->local));
-    t->fcflags = fcntl(fileno(f), F_GETFL, 0);
+#   ifdef IRIS
+	ioctl(fileno(f), TCGETA, t);
+#   else
+	ioctl(fileno(f), TIOCGETP, &(t->sg));
+	ioctl(fileno(f), TIOCGETC, &(t->tc));
+	ioctl(fileno(f), TIOCGLTC, &(t->ltc));
+	ioctl(fileno(f), TIOCGETD, &(t->ldisc));
+	ioctl(fileno(f), TIOCLGET, &(t->local));
+	t->fcflags = fcntl(fileno(f), F_GETFL, 0);
+	if ((t->fcflags&FASYNC) != 0) {
+	    /* fprintf(stderr, "[async i/o found set -- reset]\n"); */
+	    t->fcflags &= ~FASYNC;
+	}
+#   endif
 }
 
 public restoretty(f, t)
 File f;
 Ttyinfo *t;
 {
-    ioctl(fileno(f), TIOCSETN, &(t->sg));
-    ioctl(fileno(f), TIOCSETC, &(t->tc));
-    ioctl(fileno(f), TIOCSLTC, &(t->ltc));
-    ioctl(fileno(f), TIOCSETD, &(t->ldisc));
-    ioctl(fileno(f), TIOCLSET, &(t->local));
-    (void) fcntl(fileno(f), F_SETFL, t->fcflags);
+#   ifdef IRIS
+	ioctl(fileno(f), TCSETA, t);
+#   else
+	ioctl(fileno(f), TIOCSETN, &(t->sg));
+	ioctl(fileno(f), TIOCSETC, &(t->tc));
+	ioctl(fileno(f), TIOCSLTC, &(t->ltc));
+	ioctl(fileno(f), TIOCSETD, &(t->ldisc));
+	ioctl(fileno(f), TIOCLSET, &(t->local));
+	if ((t->fcflags&FASYNC) != 0) {
+	    /* fprintf(stderr, "[async i/o not set]\n"); */
+	    t->fcflags &= ~FASYNC;
+	}
+	(void) fcntl(fileno(f), F_SETFL, t->fcflags);
+#   endif
 }
 
 /*

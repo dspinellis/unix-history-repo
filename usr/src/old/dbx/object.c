@@ -5,10 +5,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)object.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)object.c	5.2 (Berkeley) %G%";
 #endif not lint
 
-static char rcsid[] = "$Header: object.c,v 1.6 84/12/26 10:40:51 linton Exp $";
+static char rcsid[] = "$Header: object.c,v 1.5 87/03/26 20:24:58 donn Exp $";
 
 /*
  * Object code interface, mainly for extraction of symbolic information.
@@ -234,7 +234,7 @@ Fileid f;
     struct nlist *namelist;
     register struct nlist *np, *ub;
     register String name;
-    register Boolean afterlg;
+    boolean afterlg, foundstab;
     integer index;
     char *lastchar;
 
@@ -242,6 +242,7 @@ Fileid f;
     namelist = newarr(struct nlist, nlhdr.nsyms);
     read(f, namelist, nlhdr.nsyms * sizeof(struct nlist));
     afterlg = false;
+    foundstab = false;
     ub = &namelist[nlhdr.nsyms];
     curnp = &namelist[0];
     np = curnp;
@@ -275,6 +276,7 @@ Fileid f;
          *
 	 */
 	if ((np->n_type&N_STAB) != 0) {
+	    foundstab = true;
 	    enter_nl(name, np);
 	} else if (name[0] == '-') {
 	    afterlg = true;
@@ -293,6 +295,9 @@ Fileid f;
 	++curnp;
 	np = curnp;
     }
+    if (not foundstab) {
+	warning("no source compiled with -g");
+    }
     dispose(namelist);
 }
 
@@ -309,9 +314,10 @@ public String getcont ()
     ++curnp;
     index = curnp->n_un.n_strx;
     if (index == 0) {
-	panic("continuation followed by empty stab");
+	name = "";
+    } else {
+	name = &stringtab[index - 4];
     }
-    name = &stringtab[index - 4];
     return name;
 }
 
@@ -326,7 +332,8 @@ private initsyms ()
     nesting = 0;
     program = insert(identname("", true));
     program->class = PROG;
-    program->symvalue.funcv.beginaddr = 0;
+    program->language = primlang;
+    program->symvalue.funcv.beginaddr = CODESTART;
     program->symvalue.funcv.inline = false;
     newfunc(program, codeloc(program));
     findbeginning(program);
@@ -436,8 +443,8 @@ register struct nlist *np;
 	    if (index(name, ':') == nil) {
 		if (not warned) {
 		    warned = true;
-		    warning("old style symbol information found in \"%s\"",
-			curfilename());
+		    printf("warning: old style symbol information ");
+		    printf("found in \"%s\"\n", curfilename());
 		}
 	    } else {
 		entersym(name, np);
@@ -526,6 +533,9 @@ Name n;
     f->level = program->level;
     f->symvalue.funcv.src = false;
     f->symvalue.funcv.inline = false;
+    if (f->chain != nil) {
+	panic("chain not nil in deffunc");
+    }
     return f;
 }
 
@@ -541,6 +551,7 @@ Name n;
 
     v = insert(n);
     v->language = findlanguage(".s");
+    v->storage = EXT;
     v->class = VAR;
     v->type = t_int;
     v->level = program->level;
@@ -566,6 +577,30 @@ Address addr;
 	    findbeginning(s);
 	}
     }
+}
+
+/*
+ * Avoid seeing Pascal labels as text symbols.
+ */
+
+private boolean PascalLabel (n)
+Name n;
+{
+    boolean b;
+    register char *p;
+
+    b = false;
+    if (curlang == findlanguage(".p")) {
+	p = ident(n);
+	while (*p != '\0') {
+	    if (*p == '_' and *(p+1) == '$') {
+		b = true;
+		break;
+	    }
+	    ++p;
+	}
+    }
+    return b;
 }
 
 /*
@@ -603,10 +638,12 @@ register struct nlist *np;
 	    }
 	    if (count == 0) {
 		if (t == nil) {
-		    t = deffunc(n);
-		    updateTextSym(t, name, np->n_value);
-		    if (tracesyms) {
-			printdecl(t);
+		    if (not PascalLabel(n)) {
+			t = deffunc(n);
+			updateTextSym(t, name, np->n_value);
+			if (tracesyms) {
+			    printdecl(t);
+			}
 		    }
 		} else {
 		    if (t->class == MODULE) {
@@ -620,7 +657,7 @@ register struct nlist *np;
 		    updateTextSym(t, name, np->n_value);
 		}
 	    }
-	} else if ((np->n_type&N_TYPE) == N_BSS) {
+	} else if ((np->n_type&N_TYPE) == N_BSS or (np->n_type&N_TYPE) == N_DATA) {
 	    find(t, n) where
 		t->class == COMMON
 	    endfind(t);
@@ -714,6 +751,7 @@ register struct nlist *np;
 	t->language = findlanguage(".s");
 	t->type = t_int;
 	t->block = cur;
+	t->storage = EXT;
 	t->level = cur->level;
 	if ((np->n_type&N_TYPE) == N_TEXT) {
 	    t->class = FUNC;
@@ -824,6 +862,10 @@ Address addr;
 	mname = rindex(mname, '/') + 1;
     }
     suffix = rindex(mname, '.');
+    if (suffix > mname && *(suffix-1) == '.') {
+	/* special hack for C++ */
+	--suffix;
+    }
     curlang = findlanguage(suffix);
     if (curlang == findlanguage(".f")) {
 	strip_ = true;

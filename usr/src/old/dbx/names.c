@@ -5,10 +5,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)names.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)names.c	5.2 (Berkeley) %G%";
 #endif not lint
 
-static char rcsid[] = "$Header: names.c,v 1.4 84/12/26 10:40:47 linton Exp $";
+static char rcsid[] = "$Header: names.c,v 1.2 87/03/26 20:16:59 donn Exp $";
 
 /*
  * Name are the internal representation for identifiers.
@@ -37,7 +37,12 @@ struct Name {
 #define ident(n) ((n == nil) ? "(noname)" : n->identifier)
 #endif
 
-#define HASHTABLESIZE 2997
+/*
+ * The hash table is a power of two, in order to make hashing faster.
+ * Using a non-prime is ok since we use chaining instead of re-hashing.
+ */
+
+#define HASHTABLESIZE 8192
 
 private Name nametable[HASHTABLESIZE];
 
@@ -47,7 +52,7 @@ private Name nametable[HASHTABLESIZE];
  * doesn't cause many a page fault.
  */
 
-#define CHUNKSIZE 200
+#define CHUNKSIZE 1000
 
 typedef struct Namepool {
     struct Name name[CHUNKSIZE];
@@ -64,9 +69,8 @@ private Integer nleft = 0;
  * The second argument specifies whether the string should be copied
  * into newly allocated space if not found.
  *
- * Pardon my use of goto's, but it seemed more efficient and less convoluted
- * than adding a collection of boolean variables.  This routine is time
- * critical when starting up the debugger on large programs.
+ * This routine is time critical when starting up the debugger
+ * on large programs.
  */
 
 public Name identname(s, isallocated)
@@ -74,42 +78,37 @@ String s;
 Boolean isallocated;
 {
     register unsigned h;
-    register Char *p, *q;
-    register Name n;
-    register Integer len;
+    register char *p, *q;
+    register Name n, *np;
     Namepool newpool;
 
     h = 0;
     for (p = s; *p != '\0'; p++) {
 	h = (h << 1) ^ (*p);
     }
-    h = h mod HASHTABLESIZE;
-    len = p - s;
-    n = nametable[h];
+    h &= (HASHTABLESIZE-1);
+    np = &nametable[h];
+    n = *np;
     while (n != nil) {
 	p = s;
 	q = n->identifier;
-	for (;;) {
-	    if (*p != *q) {
-		goto nomatch;
-	    } else if (*p == '\0') {
-		goto match;
+	while (*p == *q) {
+	    if (*p == '\0') {
+		return n;
 	    }
 	    ++p;
 	    ++q;
 	}
-    nomatch:
 	n = n->chain;
     }
 
     /*
-     * Now we know that name hasn't been found (otherwise we'd have jumped
-     * down to match), so we allocate a name, store the identifier, and
+     * Now we know that name hasn't been found,
+     * so we allocate a name, store the identifier, and
      * enter it in the hash table.
      */
     if (nleft <= 0) {
 	newpool = new(Namepool);
-	bzero(newpool, sizeof(newpool));
 	newpool->prevpool = namepool;
 	namepool = newpool;
 	nleft = CHUNKSIZE;
@@ -119,7 +118,8 @@ Boolean isallocated;
     if (isallocated) {
 	n->identifier = s;
     } else {
-	n->identifier = newarr(char, len + 1);
+	/* this case doesn't happen very often */
+	n->identifier = newarr(char, strlen(s) + 1);
 	p = s;
 	q = n->identifier;
 	while (*p != '\0') {
@@ -127,13 +127,8 @@ Boolean isallocated;
 	}
 	*q = '\0';
     }
-    n->chain = nametable[h];
-    nametable[h] = n;
-
-    /*
-     * The two possibilities (name known versus unknown) rejoin.
-     */
-match:
+    n->chain = *np;
+    *np = n;
     return n;
 }
 

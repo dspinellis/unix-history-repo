@@ -5,10 +5,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)library.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)library.c	5.2 (Berkeley) %G%";
 #endif not lint
 
-static char rcsid[] = "$Header: library.c,v 1.5 84/12/26 10:39:52 linton Exp $";
+static char rcsid[] = "$Header: library.c,v 1.2 87/03/25 20:50:14 donn Exp $";
 
 /*
  * General purpose routines.
@@ -64,14 +64,16 @@ extern int strlen();
 #define strdup(s)		strcpy(malloc((unsigned) strlen(s) + 1), s)
 #define streq(s1, s2)	(strcmp(s1, s2) == 0)
 
-typedef int INTFUNC();
+typedef int IntFunc();
+
+IntFunc *onsyserr();
 
 typedef struct {
-    INTFUNC *func;
-} ERRINFO;
+    IntFunc *func;
+} ErrInfo;
 
-#define ERR_IGNORE ((INTFUNC *) 0)
-#define ERR_CATCH  ((INTFUNC *) 1)
+#define ERR_IGNORE ((IntFunc *) 0)
+#define ERR_CATCH  ((IntFunc *) 1)
 
 /*
  * Call a program.
@@ -352,13 +354,13 @@ extern _mycerror();
  * Initialize error information, setting defaults for handling errors.
  */
 
-private ERRINFO *errinfo;
+private ErrInfo *errinfo;
 
 private initErrInfo ()
 {
     integer i;
 
-    errinfo = alloc(sys_nerr, ERRINFO);
+    errinfo = alloc(sys_nerr, ErrInfo);
     for (i = 0; i < sys_nerr; i++) {
 	errinfo[i].func = ERR_CATCH;
     }
@@ -373,12 +375,12 @@ private initErrInfo ()
 
 public syserr()
 {
-    ERRINFO *e;
+    register ErrInfo *e;
 
     if (errno < 0 or errno > sys_nerr) {
 	fatal("errno %d", errno);
     } else {
-	if (errinfo == nil(ERRINFO *)) {
+	if (errinfo == nil(ErrInfo *)) {
 	    initErrInfo();
 	}
 	e = &(errinfo[errno]);
@@ -417,17 +419,21 @@ public nocatcherrs()
 }
 
 /*
- * Change the action on receipt of an error.
+ * Change the action on receipt of an error, returning the previous action.
  */
 
-public onsyserr(n, f)
+public IntFunc *onsyserr(n, f)
 int n;
-INTFUNC *f;
+IntFunc *f;
 {
-    if (errinfo == nil(ERRINFO *)) {
+    IntFunc *oldf;
+
+    if (errinfo == nil(ErrInfo *)) {
 	initErrInfo();
     }
+    oldf = errinfo[n].func;
     errinfo[n].func = f;
+    return oldf;
 }
 
 /*
@@ -435,7 +441,44 @@ INTFUNC *f;
  * Like a "perror" for signals.
  */
 
+#ifdef SIGWINCH
 public int sys_nsig = NSIG;
+#else not 4.3 BSD
+/*
+ * This table is correct for 4.2-like systems but will
+ * be inadequate for System V (which is the sort of
+ * Unix that needs it!).
+ */
+public String sys_siglist[] = {
+    "no signal",
+    "hangup",
+    "interrupt",
+    "quit",
+    "illegal instruction",
+    "trace trap",
+    "IOT instruction",
+    "EMT instruction",
+    "floating point exception",
+    "kill",
+    "bus error",
+    "segmentation violation",
+    "bad argument to system call",
+    "broken pipe",
+    "alarm clock",
+    "soft kill",
+    "urgent I/O condition",
+    "stop signal not from tty",
+    "stop signal from tty",
+    "continue",
+    "child termination",
+    "stop (tty input)",
+    "stop (tty output)",
+    "possible input/output",
+    "exceeded CPU time limit",
+    "exceeded file size limit"
+};
+public int sys_nsig = sizeof sys_siglist / sizeof sys_siglist[0];
+#endif
 
 public psignal(s, n)
 String s;
@@ -491,6 +534,7 @@ String s;
     }
     fprintf(stderr, s, a, b, c, d, e, f, g, h, i, j, k, l, m);
     putc('\n', stderr);
+    fflush(stderr);
     if (shouldquit) {
 	quit(1);
     }
@@ -514,6 +558,7 @@ public beginerrmsg()
 public enderrmsg()
 {
     putc('\n', stderr);
+    fflush(stderr);
     erecover();
 }
 
@@ -662,3 +707,41 @@ register unsigned int n;
 	while ((*dest++ = *src++) != '\0');
     }
 }
+
+#ifdef IRIS /* or in general for 4.2 - System V C library interface */
+
+public bcopy (fromaddr, toaddr, n)
+char *fromaddr, *toaddr;
+int n;
+{
+    blt(toaddr, fromaddr, n);
+}
+
+public bzero (addr, n)
+char *addr;
+int n;
+{
+    register char *p, *q;
+
+    p = addr;
+    q = p + n;
+    while (p < q) {
+	*p++ = '\0';
+    }
+}
+
+#include <string.h>
+
+public char *index (s, c)
+char *s, c;
+{
+    return strchr(s, c);
+}
+
+public char *rindex (s, c)
+char *s, c;
+{
+    return strrchr(s, c);
+}
+
+#endif

@@ -5,14 +5,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)modula-2.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)modula-2.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
  * Modula-2 specific symbol routines.
  */
 
-static char rcsid[] = "$Header: modula-2.c,v 1.6 84/12/26 10:40:33 linton Exp $";
+static char rcsid[] = "$Header: modula-2.c,v 1.2 87/03/26 20:12:54 donn Exp $";
 
 #include "defs.h"
 #include "symbols.h"
@@ -90,23 +90,6 @@ register Symbol t1, t2;
     return b;
 }
 
-private boolean rangematch (t1, t2)
-register Symbol t1, t2;
-{
-    boolean b;
-    register Symbol rt1, rt2;
-
-    if (t1->class == RANGE and t2->class == RANGE) {
-	b = (boolean) (
-	    t1->symvalue.rangev.lower == t2->symvalue.rangev.lower and
-	    t1->symvalue.rangev.upper == t2->symvalue.rangev.upper
-	);
-    } else {
-	b = false;
-    }
-    return b;
-}
-
 private boolean nilMatch (t1, t2)
 register Symbol t1, t2;
 {
@@ -138,12 +121,12 @@ register Symbol t1, t2;
 
     b = (boolean) (
 	(
-	    t1->class == DYNARRAY and t1->symvalue.ndims == 1 and
+	    t1->class == OPENARRAY and t1->symvalue.ndims == 1 and
 	    t2->class == ARRAY and
 	    compatible(rtype(t2->chain)->type, t_int) and
 	    compatible(t1->type, t2->type)
 	) or (
-	    t2->class == DYNARRAY and t2->symvalue.ndims == 1 and
+	    t2->class == OPENARRAY and t2->symvalue.ndims == 1 and
 	    t1->class == ARRAY and
 	    compatible(rtype(t1->chain)->type, t_int) and
 	    compatible(t1->type, t2->type)
@@ -199,7 +182,7 @@ Symbol type1, type2;
 	    t2 = tmp;
 	}
 	b = (Boolean) (
-	    builtinmatch(t1, t2) or rangematch(t1, t2) or
+	    builtinmatch(t1, t2) or
 	    nilMatch(t1, t2) or enumMatch(t1, t2) or
 	    openArrayMatch(t1, t2) or stringArrayMatch(t1, t2)
 	);
@@ -268,6 +251,7 @@ Symbol s;
 
 	case RANGE:
 	case ARRAY:
+	case OPENARRAY:
 	case DYNARRAY:
 	case SUBARRAY:
 	case RECORD:
@@ -359,6 +343,14 @@ int n;
 		}
 	    }
 	    printf("] of ");
+	    printtype(t, t->type, n);
+	    break;
+
+	case OPENARRAY:
+	    printf("array of ");
+	    for (i = 1; i < t->symvalue.ndims; i++) {
+		printf("array of ");
+	    }
 	    printtype(t, t->type, n);
 	    break;
 
@@ -619,10 +611,7 @@ integer n;
 
 	case FIELD:
 	    if (isbitfield(s)) {
-		i = 0;
-		popn(size(s), &i);
-		i >>= (s->symvalue.field.offset mod BITSPERBYTE);
-		i &= ((1 << s->symvalue.field.length) - 1);
+		i = extractField(s);
 		t = rtype(s->type);
 		if (t->class == SCAL) {
 		    printEnum(i, t);
@@ -646,6 +635,7 @@ integer n;
 	    }
 	    break;
 
+	case OPENARRAY:
 	case DYNARRAY:
 	    printDynarray(s);
 	    break;
@@ -986,30 +976,38 @@ Node a, slist;
     integer n;
 
     t = rtype(a->nodetype);
-    if (t->class == DYNARRAY or t->class == SUBARRAY) {
-	r = dynref(a, t, slist);
-    } else if (t->class == ARRAY) {
-	r = a;
-	eltype = rtype(t->type);
-	p = slist;
-	t = t->chain;
-	while (p != nil and t != nil) {
-	    esub = p->value.arg[0];
-	    if (not compatible(rtype(t), rtype(esub->nodetype))) {
-		suberror("subscript \"", esub, "\" is the wrong type");
-	    }
-	    r = build(O_INDEX, r, esub);
-	    r->nodetype = eltype;
-	    p = p->value.arg[1];
+    switch (t->class) {
+	case OPENARRAY:
+	case DYNARRAY:
+	case SUBARRAY:
+	    r = dynref(a, t, slist);
+	    break;
+
+	case ARRAY:
+	    r = a;
+	    eltype = rtype(t->type);
+	    p = slist;
 	    t = t->chain;
-	}
-	if (p != nil) {
-	    suberror("too many subscripts for ", a, nil);
-	} else if (t != nil) {
-	    suberror("not enough subscripts for ", a, nil);
-	}
-    } else {
-	suberror("\"", a, "\" is not an array");
+	    while (p != nil and t != nil) {
+		esub = p->value.arg[0];
+		if (not compatible(rtype(t), rtype(esub->nodetype))) {
+		    suberror("subscript \"", esub, "\" is the wrong type");
+		}
+		r = build(O_INDEX, r, esub);
+		r->nodetype = eltype;
+		p = p->value.arg[1];
+		t = t->chain;
+	    }
+	    if (p != nil) {
+		suberror("too many subscripts for ", a, nil);
+	    } else if (t != nil) {
+		suberror("not enough subscripts for ", a, nil);
+	    }
+	    break;
+
+	default:
+	    suberror("\"", a, "\" is not an array");
+	    break;
     }
     return r;
 }
@@ -1111,9 +1109,13 @@ long i;
 	    error("subscript %d out of range [%d..%d]", i, lb, ub);
 	}
 	push(long, base + (i - lb) * size(t->type));
-    } else if (t->class == DYNARRAY and t->symvalue.ndims == 0) {
+    } else if ((t->class == OPENARRAY or t->class == DYNARRAY) and
+	t->symvalue.ndims == 0
+    ) {
 	push(long, base + i * size(t->type));
-    } else if (t->class == DYNARRAY or t->class == SUBARRAY) {
+    } else if (t->class == OPENARRAY or t->class == DYNARRAY or
+	t->class == SUBARRAY
+    ) {
 	push(long, i);
 	sub = (long *) (sp - (t->symvalue.ndims * sizeof(long)));
 	rpush(base, size(t));

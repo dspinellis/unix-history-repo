@@ -11,10 +11,10 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)makedefs.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)makedefs.c	5.2 (Berkeley) %G%";
 #endif not lint
 
-static char rcsid[] = "$Header: makedefs.c,v 1.4 84/12/26 10:40:22 linton Exp $";
+static char rcsid[] = "$Header: makedefs.c,v 1.2 87/03/26 19:14:02 donn Exp $";
 
 /*
  * Create a definitions file (e.g. .h) from an implementation file (e.g. .c).
@@ -37,6 +37,8 @@ static char rcsid[] = "$Header: makedefs.c,v 1.4 84/12/26 10:40:22 linton Exp $"
 #include <signal.h>
 
 #define procedure void
+
+#define streqn(s1, s2, n) (strncmp(s1, s2, n) == 0)
 
 Boolean force;
 Boolean copytext;
@@ -123,16 +125,35 @@ String s;
 copy()
 {
     register char *p;
+    integer nesting;
     char line[1024];
 
     while (gets(line) != NULL) {
-	if (strncmp(line, "#ifndef public", 14) == 0) {
+	if (streqn(line, "#ifndef public", 14)) {
 	    copytext = true;
-	} else if (strncmp(line, "#endif", 6) == 0) {
-	    copytext = false;
-	} else if (strncmp(line, "public", 6) == 0) {
+	    nesting = 1;
+	} else if (streqn(line, "public", 6)) {
 	    copydef(line);
 	} else if (copytext) {
+	    if (streqn(line, "#ifdef", 6) or streqn(line, "#ifndef", 7)) {
+		++nesting;
+		printf("%s\n", line);
+	    } else if (streqn(line, "#endif", 6)) {
+		--nesting;
+		if (nesting <= 0) {
+		    copytext = false;
+		} else {
+		    printf("%s\n", line);
+		}
+	    } else {
+		printf("%s\n", line);
+	    }
+	} else if (
+	    streqn(line, "#ifdef", 6) or
+	    streqn(line, "#ifndef", 7) or
+	    streqn(line, "#else", 5) or
+	    streqn(line, "#endif", 6)
+	) {
 	    printf("%s\n", line);
 	}
     }
