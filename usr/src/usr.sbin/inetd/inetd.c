@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)inetd.c	4.1 (Berkeley) %G%";
+static	char sccsid[] = "@(#)inetd.c	4.2 (Berkeley) %G%";
 #endif
 
 /*
@@ -50,6 +50,7 @@ static	char sccsid[] = "@(#)inetd.c	4.1 (Berkeley) %G%";
 #include <stdio.h>
 #include <signal.h>
 #include <netdb.h>
+#include <syslog.h>
 
 extern	int errno;
 
@@ -123,6 +124,7 @@ nextopt:
 	  }
 	}
 #endif
+	openlog("inetd", LOG_PID, 0);
 	config();
 	signal(SIGHUP, config);
 	signal(SIGCHLD, reapchild);
@@ -146,12 +148,12 @@ nextopt:
 			fprintf(stderr, "someone wants %s\n", sep->se_service);
 		if (sep->se_socktype == SOCK_STREAM) {
 			ctrl = accept(s, 0, 0);
-		if (debug)
-			fprintf(stderr, "accept, ctrl %d\n", ctrl);
+			if (debug)
+				fprintf(stderr, "accept, ctrl %d\n", ctrl);
 			if (ctrl < 0) {
 				if (errno == EINTR)
 					continue;
-				perror("inetd: accept");
+				syslog(LOG_WARNING, "accept: %m");
 				continue;
 			}
 		} else
@@ -186,9 +188,8 @@ nextopt:
 				    getpid(), sep->se_server);
 			execv(sep->se_server, sep->se_argv);
 			if (sep->se_socktype != SOCK_STREAM)
-				recv(0, buf, sizeof (buf));
-			if (debug)
-				fprintf(stderr, "execl failed\n");
+				recv(0, buf, sizeof (buf), 0);
+			syslog(LOG_ERR, "execv %s: %m", sep->se_server);
 			_exit(1);
 		}
 		if (sep->se_socktype == SOCK_STREAM)
@@ -211,8 +212,8 @@ reapchild()
 		for (sep = servtab; sep; sep = sep->se_next)
 			if (sep->se_wait == pid) {
 				if (status.w_status)
-					fprintf(stderr,
-					    "inetd: %s: exit status %d\n",
+					syslog(LOG_WARNING,
+					    "%s: exit status 0x%x",
 					    sep->se_server, status);
 				if (debug)
 					fprintf(stderr, "restored %s, fd %d\n",
@@ -230,8 +231,7 @@ config()
 	int omask;
 
 	if (!setconfig()) {
-		fprintf(stderr, "inetd: ");
-		perror(CONFIG);
+		syslog(LOG_ERR, "%s: %m", CONFIG);
 		return;
 	}
 	for (sep = servtab; sep; sep = sep->se_next)
@@ -260,28 +260,25 @@ config()
 			continue;
 		sp = getservbyname(sep->se_service, sep->se_proto);
 		if (sp == 0) {
-			fprintf(stderr,
-			    "inetd: %s/%s: unknown service\n",
+			syslog(LOG_ERR, "%s/%s: unknown service",
 			    sep->se_service, sep->se_proto);
 			continue;
 		}
 		sep->se_ctrladdr.sin_port = sp->s_port;
 		if ((sep->se_fd = socket(AF_INET, sep->se_socktype, 0)) < 0) {
-			fprintf(stderr, "inetd: %s/%s: ",
+			syslog(LOG_ERR, "%s/%s: socket: %m",
 			    sep->se_service, sep->se_proto);
-			perror("socket");
 			continue;
 		}
 		if (strcmp(sep->se_proto, "tcp") == 0 && (options & SO_DEBUG) &&
 		    setsockopt(sep->se_fd, SOL_SOCKET, SO_DEBUG, 0, 0) < 0)
-			perror("inetd: setsockopt (SO_DEBUG)");
+			syslog(LOG_ERR, "setsockopt (SO_DEBUG): %m");
 		if (setsockopt(sep->se_fd, SOL_SOCKET, SO_REUSEADDR, 0, 0) < 0)
-			perror("inetd: setsockopt (SO_REUSEADDR)");
+			syslog(LOG_ERR, "setsockopt (SO_REUSEADDR): %m");
 		if (bind(sep->se_fd, &sep->se_ctrladdr,
 		    sizeof (sep->se_ctrladdr), 0) < 0) {
-			fprintf(stderr, "inetd: %s/%s: ",
+			syslog(LOG_ERR, "%s/%s: bind: %m",
 			    sep->se_service, sep->se_proto);
-			perror("bind");
 			continue;
 		}
 		if (sep->se_socktype == SOCK_STREAM)
@@ -320,7 +317,7 @@ enter(cp)
 
 	sep = (struct servtab *)malloc(sizeof (*sep));
 	if (sep == (struct servtab *)0) {
-		fprintf(stderr, "Out of memory.\n");
+		syslog(LOG_ERR, "Out of memory.");
 		exit(-1);
 	}
 	*sep = *cp;
@@ -465,7 +462,7 @@ strdup(cp)
 		cp = "";
 	new = malloc(strlen(cp) + 1);
 	if (new == (char *)0) {
-		fprintf(stderr, "Out of memory.\n");
+		syslog(LOG_ERR, "Out of memory.");
 		exit(-1);
 	}
 	strcpy(new, cp);
