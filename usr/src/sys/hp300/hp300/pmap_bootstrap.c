@@ -8,24 +8,17 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pmap_bootstrap.c	7.3 (Berkeley) %G%
+ *	@(#)pmap_bootstrap.c	7.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
-
+#include <sys/msgbuf.h>
 #include <hp300/hp300/pte.h>
 #include <hp300/hp300/clockreg.h>
-
 #include <machine/vmparam.h>
 #include <machine/cpu.h>
 
 #include <vm/vm.h>
-
-/*
- * Allocate various and sundry SYSMAPs used in the days of old VM
- * and not yet converted.  XXX.
- */
-#define BSDVM_COMPAT	1
 
 #define RELOC(v, t)	*((t*)((u_int)&(v) + firstpa))
 
@@ -39,22 +32,22 @@ extern vm_offset_t Umap, CLKbase, MMUbase;
 extern int maxmem, physmem;
 extern vm_offset_t avail_start, avail_end, virtual_avail, virtual_end;
 extern vm_size_t mem_size;
-extern int pmap_aliasmask, protection_codes[];
-#if defined(DYNPGSIZE)
-extern int hppagesperpage;
+extern int protection_codes[];
+#ifdef HAVEVAC
+extern int pmap_aliasmask;
 #endif
-
-#if BSDVM_COMPAT
-#include <sys/msgbuf.h>
 
 /*
- * All those kernel PT submaps that BSD is so fond of
+ * Special purpose kernel virtual addresses, used for mapping
+ * physical pages for a variety of temporary or permanent purposes:
+ *
+ *	CADDR1, CADDR2:	pmap zero/copy operations
+ *	vmmap:		/dev/mem, crash dumps, parity error checking
+ *	ledbase:	SPU LEDs
+ *	msgbufp:	kernel message buffer
  */
-struct pte	*CMAP1, *CMAP2, *mmap;
-caddr_t		CADDR1, CADDR2, vmmap;
-struct pte	*msgbufmap;
+caddr_t		CADDR1, CADDR2, vmmap, ledbase;
 struct msgbuf	*msgbufp;
-#endif
 
 /*
  * Bootstrap the VM system.
@@ -401,57 +394,41 @@ pmap_bootstrap(nextpa, firstpa)
 	RELOC(avail_start, vm_offset_t) = nextpa;
 	RELOC(avail_end, vm_offset_t) =
 		hp300_ptob(RELOC(maxmem, int))
-#if BSDVM_COMPAT
 			/* XXX allow for msgbuf */
-			- hp300_round_page(sizeof(struct msgbuf))
-#endif
-				;
+			- hp300_round_page(sizeof(struct msgbuf));
 	RELOC(mem_size, vm_size_t) = hp300_ptob(RELOC(physmem, int));
 	RELOC(virtual_avail, vm_offset_t) =
 		VM_MIN_KERNEL_ADDRESS + (nextpa - firstpa);
 	RELOC(virtual_end, vm_offset_t) = VM_MAX_KERNEL_ADDRESS;
-#if defined(DYNPGSIZE)
-	RELOC(hppagesperpage, int) = 1;		/* XXX */
-#endif
 
+#ifdef HAVEVAC
 	/*
 	 * Determine VA aliasing distance if any
 	 */
 	if (RELOC(ectype, int) == EC_VIRT)
-		switch (RELOC(machineid, int)) {
-		case HP_320:
+		if (RELOC(machineid, int) == HP_320)
 			RELOC(pmap_aliasmask, int) = 0x3fff;	/* 16k */
-			break;
-		case HP_350:
+		else if (RELOC(machineid, int) == HP_350)
 			RELOC(pmap_aliasmask, int) = 0x7fff;	/* 32k */
-			break;
-		}
+#endif
 
 	/*
 	 * Initialize protection array.
+	 * XXX don't use a switch statement, it might produce an
+	 * absolute "jmp" table.
 	 */
 	{
-		register int *kp, prot;
+		register int *kp;
 
 		kp = &RELOC(protection_codes, int);
-		for (prot = 0; prot < 8; prot++) {
-			switch (prot) {
-			case VM_PROT_NONE | VM_PROT_NONE | VM_PROT_NONE:
-				*kp++ = 0;
-				break;
-			case VM_PROT_READ | VM_PROT_NONE | VM_PROT_NONE:
-			case VM_PROT_READ | VM_PROT_NONE | VM_PROT_EXECUTE:
-			case VM_PROT_NONE | VM_PROT_NONE | VM_PROT_EXECUTE:
-				*kp++ = PG_RO;
-				break;
-			case VM_PROT_NONE | VM_PROT_WRITE | VM_PROT_NONE:
-			case VM_PROT_NONE | VM_PROT_WRITE | VM_PROT_EXECUTE:
-			case VM_PROT_READ | VM_PROT_WRITE | VM_PROT_NONE:
-			case VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE:
-				*kp++ = PG_RW;
-				break;
-			}
-		}
+		kp[VM_PROT_NONE|VM_PROT_NONE|VM_PROT_NONE] = 0;
+		kp[VM_PROT_READ|VM_PROT_NONE|VM_PROT_NONE] = PG_RO;
+		kp[VM_PROT_READ|VM_PROT_NONE|VM_PROT_EXECUTE] = PG_RO;
+		kp[VM_PROT_NONE|VM_PROT_NONE|VM_PROT_EXECUTE] = PG_RO;
+		kp[VM_PROT_NONE|VM_PROT_WRITE|VM_PROT_NONE] = PG_RW;
+		kp[VM_PROT_NONE|VM_PROT_WRITE|VM_PROT_EXECUTE] = PG_RW;
+		kp[VM_PROT_READ|VM_PROT_WRITE|VM_PROT_NONE] = PG_RW;
+		kp[VM_PROT_READ|VM_PROT_WRITE|VM_PROT_EXECUTE] = PG_RW;
 	}
 
 	/*
@@ -489,39 +466,22 @@ pmap_bootstrap(nextpa, firstpa)
 		}
 	}
 
-#if BSDVM_COMPAT
-#define	SYSMAP(c, p, v, n) \
-	RELOC(v, c) = (c)va; va += ((n)*HP_PAGE_SIZE); \
-	RELOC(p, struct pte *) = (struct pte *)pte; pte += (n);
-
 	/*
-	 * Allocate all the submaps we need
+	 * Allocate some fixed, special purpose kernel virtual addresses
 	 */
 	{
 		vm_offset_t va = RELOC(virtual_avail, vm_offset_t);
 
-		pte = &((u_int *)RELOC(Sysmap, struct pte *))[hp300_btop(va)];
-	
-		SYSMAP(caddr_t		,CMAP1		,CADDR1	   ,1	)
-		SYSMAP(caddr_t		,CMAP2		,CADDR2	   ,1	)
-		SYSMAP(caddr_t		,mmap		,vmmap	   ,1	)
-		SYSMAP(struct msgbuf *	,msgbufmap	,msgbufp   ,1	)
-
+		RELOC(CADDR1, caddr_t) = (caddr_t)va;
+		va += HP_PAGE_SIZE;
+		RELOC(CADDR2, caddr_t) = (caddr_t)va;
+		va += HP_PAGE_SIZE;
+		RELOC(vmmap, caddr_t) = (caddr_t)va;
+		va += HP_PAGE_SIZE;
+		RELOC(ledbase, caddr_t) = (caddr_t)va;
+		va += HP_PAGE_SIZE;
+		RELOC(msgbufp, struct msgbuf *) = (struct msgbuf *)va;
+		va += HP_PAGE_SIZE;
 		RELOC(virtual_avail, vm_offset_t) = va;
 	}
-#undef	SYSMAP
-#endif
-}
-
-pmap_showstuff()
-{
-	int i;
-	printf("CADDR1=%x pte at CMAP1=%x\n", CADDR1, CMAP1);
-	printf("CADDR2=%x pte at CMAP2=%x\n", CADDR2, CMAP2);
-	printf("vmmap=%x pte at mmap=%x\n", vmmap, mmap);
-	printf("msgbufp=%x pte at msgbufmap=%x\n", msgbufp, msgbufmap);
-	printf("virtual_avail=%x, virtual_end=%x\n", virtual_avail, virtual_end);
-	for (i = 0; i < 8; i++)
-		printf("%x ", protection_codes[i]);
-	printf("\n");
 }
