@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)defs.h	5.2 (Berkeley) %G%
+ *	@(#)defs.h	5.3 (Berkeley) %G%
  */
 
 /*
@@ -40,7 +40,6 @@ struct s_subst {
 	char *wfile;				/* NULL if no wfile */
 	int wfd;				/* Cached file descriptor */
 	regex_t *re;				/* Regular expression */
-	regmatch_t *pmatch;			/* Array of match strucs */
 	int maxbref;				/* Largest backreference. */
 	u_long linenum;				/* Line number. */
 	char *new;				/* Replacement text */
@@ -91,6 +90,23 @@ struct s_appends {
 	enum {AP_STRING, AP_FILE} type;
 	char *s;
 };
+
+enum e_spflag {
+	APPEND,					/* Append to the contents. */
+	APPENDNL,				/* Append, with newline. */
+	REPLACE,				/* Replace the contents. */
+};
+
+/*
+ * Structure for a space (process, hold, otherwise).
+ */
+typedef struct {
+	char *space;		/* Current space pointer. */
+	size_t len;		/* Current length. */
+	int deleted;		/* If deleted. */
+	char *back;		/* Backing memory. */
+	size_t blen;		/* Backing memory length. */
+} SPACE;
 
 /*
  * Error severity codes:
