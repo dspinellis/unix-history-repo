@@ -1,4 +1,4 @@
-/*	trap.c	4.12	82/03/31	*/
+/*	trap.c	4.13	82/07/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -13,10 +13,31 @@
 #include "../h/pte.h"
 #include "../h/inline.h"
 #include "../h/mtpr.h"
+#include "../h/acct.h"
 
 #define	USER	040		/* user-mode flag added to type */
 
 struct	sysent	sysent[128];
+
+char	*trap_type[] = {
+	"Reserved addressing mode",
+	"Privileged instruction",
+	"Reserved operand",
+	"Breakpoint",
+	"Xfc trap",
+	"Syscall trap",
+	"Arithmetic fault",
+	"Ast trap",
+	"Segmentation fault",
+	"Protection fault",
+	"Trace trap",
+	"Compatibility mode trap",
+/**					these never get to "default" case
+	"Page fault",
+	"Page table fault",
+**/
+};
+#define	TRAP_TYPES	(sizeof trap_type / sizeof trap_type[0])
 
 /*
  * Called from the trap handler when a processor trap occurs.
@@ -39,6 +60,9 @@ unsigned code;
 
 	default:
 		printf("trap type %d, code = %x, pc = %x\n", type, code, pc);
+		type &= ~USER;
+		if ((unsigned)type < TRAP_TYPES)
+			panic(trap_type[type]);
 		panic("trap");
 
 	case PROTFLT + USER:	/* protection fault */
@@ -99,6 +123,7 @@ unsigned code;
 		break;
 
 	case COMPATFLT + USER:	/* compatibility mode fault */
+		u.u_acflag |= ACOMPAT;
 		u.u_code = code;
 		i = SIGILL;
 		break;
@@ -212,10 +237,13 @@ bad:
 }
 
 /*
- * nonexistent system call-- set fatal error code.
+ * nonexistent system call-- signal process (may want to handle it)
+ * flag error if process won't see signal immediately
+ * Q: should we do that all the time ??
  */
 nosys()
 {
-
-	u.u_error = 100;
+	if (u.u_signal[SIGSYS] == SIG_IGN || u.u_signal[SIGSYS] == SIG_HOLD)
+		u.u_error = EINVAL;
+	psignal(u.u_procp, SIGSYS);
 }
