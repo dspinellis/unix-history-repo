@@ -1,97 +1,119 @@
-.\" Copyright (c) 1990 The Regents of the University of California.
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" This code is derived from software contributed to Berkeley by
 .\" Chris Torek.
-.\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)strtoul.3	5.1 (Berkeley) %G%
+.\"     @(#)strtoul.3	5.2 (Berkeley) %G%
 .\"
-.TH STRTOUL 3 ""
-.UC 7
-.SH NAME
-strtoul \- convert a string to an unsigned long integer
-.SH SYNOPSIS
-.B #include <stdlib.h>
-.br
-.B #include <limits.h>
-.PP
-.B "unsigned long strtoul(char *nptr, char **endptr, int base);
-.SH DESCRIPTION
-.B Strtoul
+.Dd 
+.Dt STRTOUL 3
+.Os
+.Sh NAME
+.Nm strtoul
+.Nd convert a string to an unsigned long integer
+.Sh SYNOPSIS
+.Fd #include <stdlib.h>
+.Fd #include <limits.h>
+.Fn strtoul "const char *nptr" "char **endptr" "int base"
+.Sh DESCRIPTION
+The
+.Fn strtoul
+function
 converts the string in
-.I nptr
+.Fa nptr
 to an
-.B "unsigned long"
+.Em unsigned long
 value according to the given
-.IR base ,
+.Fa base ,
 which must be between 2 and 36 inclusive,
 or be the special value 0.
-.PP
+.Pp
 The string may begin with an arbitrary amount of white space
 (as determined by
-.BR isspace ;
-see
-.IR ctype (3)),
-followed by a single optional `+' or `-' sign.
+.Xr isspace 3 )
+followed by a single optional
+.Ql +
+or
+.Ql -
+sign.
 If
-.I base
+.Fa base
 is zero or 16,
-the string may then include a `0x' prefix,
+the string may then include a
+.Ql 0x
+prefix,
 and the number will be read in base 16; otherwise, a zero
-.I base
-is taken as 10 (decimal) unless the next character is `0',
+.Fa base
+is taken as 10 (decimal) unless the next character is
+.Ql 0 ,
 in which case it is taken as 8 (octal).
-.PP
+.Pp
 The remainder of the string is converted to an
-.B "unsigned long"
+.Em unsigned long
 value in the obvious manner,
 stopping at the end of the string
 or at the first character that does not produce a valid digit
 in the given base.
-(In bases above 10, the letter `A' in either upper or lower case
-represents 10, `B' represents 11, and so forth, with `Z' representing 35.)
-.PP
+(In bases above 10, the letter
+.Ql A
+in either upper or lower case
+represents 10,
+.Ql B
+represents 11, and so forth, with
+.Ql Z
+representing 35.)
+.Pp
 If
-.I endptr
+.Fa endptr
 is non nil,
-.B strtoul
+.Fn strtoul
 stores the address of the first invalid character in
-.IR *endptr .
+.Fa *endptr .
 If there were no digits at all, however,
-.B strtoul
+.Fn strtoul
 stores the original value of
-.I nptr
+.Fa nptr
 in
-.IR *endptr .
+.Fa *endptr .
 (Thus, if
-.I *nptr
-is not '\e0' but
-.IR **endptr
-is '\e0' on return, the entire string was valid.)
-.SH RETURN VALUE
-.B Strtoul
+.Fa *nptr
+is not
+.Ql \e0
+but
+.Fa **endptr
+is
+.Ql \e0
+on return, the entire string was valid.)
+.Sh RETURN VALUES
+The
+.Fn strtoul
+function
 returns either the result of the conversion
 or, if there was a leading minus sign,
 the negation of the result of the conversion,
 unless the original (non-negated) value would overflow;
 in the latter case,
-.B strtoul
+.Fn strtoul
 returns
-.B ULONG_MAX
-and sets
-.B errno
+.Dv ULONG_MAX
+and sets the global variable
+.Va errno
 to
-.BR ERANGE .
-.SH ERRORS
-.TP
-[ERANGE]
+.Er ERANGE .
+.Sh ERRORS
+.Bl -tag -width [ERANGE]
+.It Bq Er ERANGE
 The given string was out of range; the value converted has been clamped.
-.SH SEE ALSO
-strtol(3)
-.SH STANDARDS
-.B Strtoul
-conforms to ANSI X3.159-1989 (``ANSI C'').
-.SH BUGS
+.El
+.Sh SEE ALSO
+.Xr strtol 3
+.Sh STANDARDS
+The
+.Fn strtoul
+function
+conforms to
+.St -ansiC .
+.Sh BUGS
 Ignores the current locale.
