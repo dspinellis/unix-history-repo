@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)init.c	6.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)init.c	6.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -403,7 +403,8 @@ disaster(sig)
 int
 getsecuritylevel()
 {
-	int name[2], len, curlevel;
+	int name[2], curlevel;
+	size_t len;
 	extern int errno;
 
 	name[0] = CTL_KERN;
