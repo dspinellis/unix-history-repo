@@ -1,4 +1,4 @@
-# $Id: files,v 1.13 1993/12/19 00:49:35 wollman Exp $
+# $Id: files,v 1.14 1993/12/20 16:16:28 wollman Exp $
 #
 ddb/db_access.c		optional ddb
 ddb/db_aout.c		optional ddb
@@ -29,7 +29,7 @@ kern/imgact_aout.c	standard
 kern/imgact_shell.c	standard
 kern/init_main.c	standard
 kern/init_sysent.c	standard
-kern/kern__physio.c	standard
+kern/kern_physio.c	standard
 kern/kern_acct.c	standard
 kern/kern_clock.c	standard
 kern/kern_descrip.c	standard
