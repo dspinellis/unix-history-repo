@@ -1,4 +1,4 @@
-/*	hp.c	6.4	84/02/06	*/
+/*	hp.c	6.5	84/04/02	*/
 
 /*
  * RP??/RM?? disk driver
@@ -95,7 +95,7 @@ found:
 		hpaddr->hpcs1 = HP_PRESET|HP_GO;
 		if (!ML11)
 			hpaddr->hpof = HPOF_FMT22;
-		hp_type[unit] = hpmaptype(hpaddr, i, unit);
+		hp_type[unit] = hpmaptype(hpaddr, i, UNITTODRIVE(unit));
 		/*
 		 * Read in the bad sector table.
 		 */
