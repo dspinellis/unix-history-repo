@@ -2,9 +2,9 @@ Copyright (c) 1987 Regents of the University of California.
 All rights reserved.  The Berkeley software License Agreement
 specifies the terms and conditions for redistribution.
 
-	@(#)README	1.4 (Berkeley) %G%
+	@(#)README	1.5 (Berkeley) %G%
 
-All files and subdirectories of /usr/dict are recommended for
+All files and subdirectories of /usr/share/dict are recommended for
 rdisting except web2 and web2a (because of their size), and some of
 the files  hlist*  depending on needs of your machine (details below).
 Descriptions of most of these files are given under FILES below.
@@ -27,18 +27,18 @@ rdist.  For machines with other user populations, a file "hlist" is
 provided which only contains the contents of /usr/dict/words.  Managers
 of such machines should rdist this file, and use "spellin" to produce
 files hlist{a,b} which contain the words from
-/usr/dict/{american,british} respectively, plus any other files
+/usr/share/dict/{american,british} respectively, plus any other files
 appropriate to the needs of the majority of their users.  (Some basic
 unix commands and terms that general users are likely to encounter,
-e.g. troff, emacs, tty, have been included in /usr/dict/words.
+e.g. troff, emacs, tty, have been included in /usr/share/dict/words.
 More may be added as suggestions are received.)  Here, for instance is a
 script that might be used to create the hashlists on a particular
-machine, so as to include the words in /usr/dict/special/math, as well
+machine, so as to include the words in /usr/share/dict/special/math, as well
 as two local lists which we will assume are called
 /usr/local/dict/surnames and /usr/local/dict/acronyms.
 
 	#
-	cd /usr/dict
+	cd /usr/share/dict
 	cat american special/math /usr/local/dict/{surnames,acronyms} | \
 		spellin hlist > hlista
 	cat british  special/math /usr/local/dict/{surnames,acronyms} | \
@@ -69,7 +69,7 @@ improvement.
 		18 March, 1987
 
 --------------------------------------------------------------------
-FILES and subdirectories of /usr/dict:
+FILES and subdirectories of /usr/share/dict:
 
     words    -- common words, and important technical terms from all
 	fields, that are spelled the same in British and American usage.
@@ -90,10 +90,10 @@ FILES and subdirectories of /usr/dict:
 	It presently contains:
 
 	special/4bsd -- commands and system calls (from filenames in
-	    /usr/man/man[1238n]), and builtin csh commands (named in
-	    /usr/man/man1/csh.1) of the current version of 4bsd Unix.
+	    /usr/share/man/man[1238n]), and builtin csh commands (named in
+	    /usr/share/man/man1/csh.1) of the current version of 4bsd Unix.
 	    (Supersedes old "/usr/src/usr.bin/spell/local".)
-	special/math -- some mathematical terms not in /usr/dict/words.
+	special/math -- some mathematical terms not in /usr/share/dict/words.
 
 WEB ---- (introduction provided by jaw@riacs) -------------------------
 
