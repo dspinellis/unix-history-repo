@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -221,8 +221,7 @@ map_rewrite(map, s, slen, av)
 			c = *bp++;
 			if (!(isascii(c) && isdigit(c)))
 				continue;
-			c -= 0;
-			for (avp = av; --c >= 0 && *avp != NULL; avp++)
+			for (avp = av; --c >= '0' && *avp != NULL; avp++)
 				continue;
 			if (*avp == NULL)
 				continue;
@@ -265,8 +264,7 @@ map_rewrite(map, s, slen, av)
 				*bp++ = '%';
 				goto pushc;
 			}
-			c -= '0';
-			for (avp = av; --c >= 0 && *avp != NULL; avp++)
+			for (avp = av; --c >= '0' && *avp != NULL; avp++)
 				continue;
 			if (*avp == NULL)
 				continue;
