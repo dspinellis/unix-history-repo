@@ -1,4 +1,6 @@
-static	char *sccsid = "@(#)lex.c 4.3 %G%";
+#ifndef lint
+static	char *sccsid = "@(#)lex.c 4.4 %G%";
+endif
 
 #include "sh.h"
 
@@ -1173,7 +1175,7 @@ bgetc()
 #ifdef FILEC
 	char ttyline[BUFSIZ];
 	register int numleft = 0, roomleft;
-#endif FILEC
+#endif
 
 #ifdef TELL
 	if (cantell) {
@@ -1214,38 +1216,35 @@ again:
 		off = (int) feobp % BUFSIZ;
 #ifdef FILEC
 		roomleft = BUFSIZ - off;
-#endif FILEC
+#endif
 		do
 #ifndef FILEC
-		    c = read(SHIN, fbuf[buf] + off, BUFSIZ - off);
-#else FILEC
-		    if (intty)			/* then use tenex routine */
-		    {
-			c = numleft ? numleft : tenex(ttyline, BUFSIZ);
-			if (c > roomleft)	/* No room in this buffer? */
-			{
-			    /* start with fresh buffer */
-			    feobp = fseekp = fblocks * BUFSIZ;
-			    numleft = c;
-			    goto again;
-			}
-			if (c > 0)
-			    copy (fbuf[buf] + off, ttyline, c);
-			numleft = 0;
-		    }
-		    else
-			c = read(SHIN, fbuf[buf] + off, roomleft);
-#endif FILEC
+			c = read(SHIN, fbuf[buf] + off, BUFSIZ - off);
+#else
+			if (intty) {
+				c = numleft ? numleft : tenex(ttyline, BUFSIZ);
+				if (c > roomleft) {
+					/* start with fresh buffer */
+					feobp = fseekp = fblocks * BUFSIZ;
+					numleft = c;
+					goto again;
+				}
+				if (c > 0)
+					copy(fbuf[buf] + off, ttyline, c);
+				numleft = 0;
+			} else
+				c = read(SHIN, fbuf[buf] + off, roomleft);
+#endif
 		while (c < 0 && errno == EINTR);
 		if (c <= 0)
 			return (-1);
 		feobp += c;
 #ifndef FILEC
 		goto again;
-#else FILEC
+#else
 		if (!intty)
 		    goto again;
-#endif FILEC
+#endif
 	}
 	c = fbuf[buf][(int) fseekp % BUFSIZ];
 	fseekp++;
