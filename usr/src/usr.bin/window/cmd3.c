@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd3.c	1.4 83/07/28";
+static	char *sccsid = "@(#)cmd3.c	1.5 83/07/28";
 #endif
 
 #include "defs.h"
@@ -8,41 +8,34 @@ struct ww *getwin();
 struct ww *openwin();
 char *strtime();
 
-doclose(flag, w)
+doclose(w)
 register struct ww *w;
 {
 	char didit = 0;
+	struct ww *w1;
 
-	switch (flag) {
-	case CLOSE_ONE:
-		if (w == 0)
-			break;
+	if (w != 0) {
 		if (w == selwin)
 			setselwin(0);
 		wwclose(w);
 		didit++;
-		break;
-	case CLOSE_DEAD:
-	case CLOSE_ALL:
+	} else {
 		for (w = wwhead; w;) {
-			if (w != cmdwin
-			    && (w->ww_state == WW_DEAD || flag == CLOSE_ALL)) {
-				struct ww *w1;
-				w = (w1 = w)->ww_next;
-				if (w1 == selwin)
-					setselwin(0);
-				if (w->ww_state == WW_HASPROC && w->ww_pid == 0)
-				{
-					wwprintf(cmdwin, "%d: pid == 0.  ",
-						w->ww_ident);
-				} else {
-					wwclose(w1);
-					didit++;
-				}
-			} else
+			if (w == cmdwin) {
 				w = w->ww_next;
+				continue;
+			}
+			w = (w1 = w)->ww_next;
+			if (w1 == selwin)
+				setselwin(0);
+			if (w->ww_state == WW_HASPROC && w->ww_pid == 0) {
+				wwprintf(cmdwin, "%d: pid == 0.  ",
+					w->ww_ident);
+			} else {
+				wwclose(w1);
+				didit++;
+			}
 		}
-		break;
 	}
 	if (selwin == 0) {
 		for (w = wwhead; w && w == cmdwin; w = w->ww_next)
@@ -76,4 +69,31 @@ register char *esc;
 			escapec = '^';
 	} else
 		escapec = *esc;
+}
+
+dolabel()
+{
+	register struct ww *w;
+	char buf[30];
+	char *malloc();
+
+	if ((w = getwin()) == 0)
+		return;
+	wwprintf(cmdwin, "Label for window %d? ", w->ww_ident);
+	bgets(buf, sizeof buf, cmdwin);
+	setlabel(w, buf);
+	wwputs("\r\n", cmdwin);
+}
+
+setlabel(w, label)
+register struct ww *w;
+char *label;
+{
+	if (w->ww_label != 0)
+		free(w->ww_label);
+	w->ww_label = malloc(strlen(label) + 1);
+	strcpy(w->ww_label, label);
+	wwunframe(w);		/* cover up the old label */
+	wwframe(w);
+	labelwin(w);
 }
