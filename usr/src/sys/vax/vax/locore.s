@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	6.26 (Berkeley) %G%
+ *	@(#)locore.s	6.27 (Berkeley) %G%
  */
 
 #include "psl.h"
@@ -654,7 +654,7 @@ start:
 	movab	_end+NBPG-1,r1; bbcc $31,r1,0f; 0:; ashl $-PGSHIFT,r1,r1
 1:	bisl3	$PG_V|PG_KW,r2,_Sysmap[r2]; aoblss r1,r2,1b
 /* now go to mapped mode */
-	mtpr	$1,$TBIA; mtpr $1,$MAPEN; jmp *$0f; 0:
+	mtpr	$0,$TBIA; mtpr $1,$MAPEN; jmp *$0f; 0:
 /* init mem sizes */
 	ashl	$-PGSHIFT,r7,_maxmem
 	movl	_maxmem,_physmem

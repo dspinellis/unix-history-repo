@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)machdep.c	6.17 (Berkeley) %G%
+ *	@(#)machdep.c	6.18 (Berkeley) %G%
  */
 
 #include "reg.h"
@@ -76,7 +76,7 @@ startup(firstaddr)
 	pte = msgbufmap;
 	for (i = 0; i < btoc(sizeof (struct msgbuf)); i++)
 		*(int *)pte++ = PG_V | PG_KW | (maxmem + i);
-	mtpr(TBIA, 1);
+	mtpr(TBIA, 0);
 
 	/*
 	 * Good {morning,afternoon,evening,night}.
@@ -211,7 +211,7 @@ startup(firstaddr)
 	unixsize = btoc((int)v &~ 0x80000000);
 	if (firstaddr >= physmem - 8*UPAGES)
 		panic("no memory");
-	mtpr(TBIA, 1);			/* After we just cleared it all! */
+	mtpr(TBIA, 0);			/* After we just cleared it all! */
 
 	/*
 	 * Initialize callouts
