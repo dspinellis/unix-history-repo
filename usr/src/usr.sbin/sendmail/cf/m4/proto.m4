@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	6.26 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	6.27 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -79,6 +79,9 @@ CO @ % ifdef(`_NO_UUCP_', `', `!')
 # a class with just dot (for identifying canonical names)
 C..
 
+ifdef(`_OLD_SENDMAIL_', `dnl',
+`# dequoting map
+Kdequote dequote')
 
 ######################
 #   Special macros   #
@@ -543,12 +546,18 @@ R$+			$#local $: $1			regular local names
 
 S5
 
-ifdef(`_MAILER_smtp_',
-`R$+			$: $1 < @ $R >
+# if this is quoted, strip the quotes and try again
+R$+.			$1				strip trailing dots
+R$+			$: $(dequote $1 $)		strip quotes
+R$* $=O $*		$>7 $1 $2 $3			try again
+
+# see if we have a relay or a hub
+R$+			$: $1 < @ $R >
 R$+ < @ >		$: $1 < @ $H >			no relay, try hub
 R$+ < @ $j >		$@ $1				we are relay/hub: local
 R$+ < @ $-:$+ >		$# $2 $@ $3 $: $1		send to relay or hub
-R$+ < @ $+ >		$#relay $@ $2 $: $1		send to relay or hub')')
+ifdef(`_MAILER_smtp_',
+`R$+ < @ $+ >		$#relay $@ $2 $: $1		send to relay or hub')')
 #
 ######################################################################
 ######################################################################
