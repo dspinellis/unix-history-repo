@@ -1,0 +1,160 @@
+#########################################################################
+# This program is copyright (C) 1985, 1986 by Jonathan Payne.  It is    #
+# provided to you without charge for use only on a licensed Unix        #
+# system.  You may copy JOVE provided that this notice is included with #
+# the copy.  You may not sell copies of this program or versions        #
+# modified for use on microcomputer systems, unless the copies are      #
+# included with a Unix system distribution and the source is provided.  #
+#########################################################################
+
+To make JOVE edit Makefile to set the right directories for the binaries,
+online documentation, the man pages, and the TMP files.  (IMPORTANT! read
+the Makefile carefully.)  "tune.c" will be created from "tune.template" by
+MAKE automatically, and it will use the directories you specified in the
+Makefile.  (NOTE:  You should never edit tune.c directly because your
+changes will be undone by the next make.  If you want to make a change to a
+part of tune.c that isn't a directory name, you should edit tune.template.)
+Next you must edit "tune.h" selecting the compile time options you care
+about.  See below for a description of all the compile time options.  You
+can type "make" to compile XJOVE, PORTSRV (this is compiled but not used on
+4.2+ systems), JOVE_RECOVER and TEACHJOVE.  Test them out to see if they
+work.  If they do, type "make install" to install everything where it
+belongs.
+
+Here are some things to consider for deciding where to put the tmp files.
+TMPDIR is where the tmp files get stored, usually /tmp or /tmp/jove.  RECDIR
+is where the tmp files should be moved when the system comes back up (AND A
+CALL TO "jove_recover -syscrash" SHOULD BE PUT IN /etc/rc BEFORE /tmp IS
+CLEARED).  If your system does not remove subdirectories of /tmp on reboot
+(lots do remove them these days) then it makes sense to make RECDIR and
+TMPDIR both be /tmp/jove.  That way you don't need the call to jove_recover
+in /etc/rc.  It's really much easier to create a directory that doesn't get
+clearned upon reboot, and use that instead.  You would probably want to
+clean out that directory periodically with /etc/cron.
+
+For the pdp11 version there is the Ovmakefile.  This has only been tested on
+2.9bsd.  It works pretty well, actually, and it is possible to then turn on
+all the compile time options.
+
+Here's a list of the compile time options and what they mean:
+
+LSRHS	    - This is for the Lincoln-Sudbury Regional High School version
+	      of jove, which is where JOVE originated.
+
+BACKUPFILES - This enables backing up files on write.  I guess lots of
+	      people like this feature.  It enables the feature but you
+	      can still control whether files are backed up with the
+	      make-backup-files variable.
+
+BIFF	    - This enables turning on and off BIFF so your screen doesn't
+	      get messed up with messages from BIFF.
+
+JOB_CONTROL - Versions of UNIX that have the job control facility.
+	      Berkeley 2.9 system, and the 4.1-3 systems I know have
+	      job stopping, so if you're one of those, define
+	      this.  The reason MENLO_JCL is defined when JOB_CONTROL
+	      is that the 2.9 signal.h file only defines all of the job
+	      stopping signals only when MENLO_JCL is defined.
+
+CHDIR	    - This enables the directory commands; PUSHD, POPD, DIRS and
+	      CD.  These simulate the csh commands I think exactly.  As
+	      a side-effect, absolute pathnames are enabled, which means
+	      JOVE parses filenames for "." and ".." and all that to get
+	      at what you REALLY mean.  It's nicer when this is enabled,
+	      but not essential.
+
+SPELL	   - Enables the spell-buffer and parse-spelling-errors commands.
+	     They are nice especially if you have lots of paper writers.
+
+ABBREV	   - Enables word-abbrev-mode which again is nice for paper writers.
+
+LISP	   - Enables Lisp Mode.  This includes code to indent "properly"
+	     for Lisp code and new routines to move over s-expressions.
+	     You probably won't want (or need) this on PDP-11's.
+
+ID_CHAR	   - Enables support for Insert/Delete character on terminals
+	     that have those capabilites.  Couple of problems with this code:
+	     it's large, takes up lots of I space which is a problem for the
+	     smaller computers (pdp11).  Also, it isn't particularly smart
+	     and sometimes does really stupid things.  It sometimes uses
+	     insert/delete character when simply redrawing would have been
+	     faster.  And if you look at code you'll understand why I don't
+	     like it all that much.
+
+CMT_FMT	   - This enables code to format and indent C comments.
+
+BSD4_2     - Obviously, if you're a Berkeley 4.2 system.
+
+BSD4_3	   - If you're running a Berkeley 4.3 (or very late 4.2) system.
+	     This will automatically define BSD4_2, also.
+
+RESHAPING  - This is for BRL or Berkeley 4.3 systems.  It's not something I
+	     dealt with so I can't really describe it.  Got something to do
+	     with reshaping the windows that UNIX knows about.  When you try
+	     to reshape one of those windows, it sends some signal which JOVE
+	     catches and uses to resize its windows.
+
+IPROCS	   - Nice feature which lets you run interactive UNIX commands in
+	     windows.  In particular, there is a an i-shell command built
+	     in which starts up an interactive shell in a window.  This works
+	     only on systems with JOB_CONTROL since it relies on the fancy
+	     signal mechanism.
+
+PIPEPROCS  - If NOT defined, JOVE will use the Berkeley pseudo-ttys when
+	     doing interactive processes.  This is infinitely better,
+	     since you get job control and all that stuff on i-shells.
+	     If defined, the portsrv program will have to be made, and
+	     everything will be done using pipes.
+
+WIRED_TERMS - Include compiled-in hard-wired code for certain terminals,
+	     like the Concept 100.  If you don't have these terminals,
+	     you probably don't need this (but no point in taking it
+	     out unless you're low on space).
+
+MY_MALLOC  - Use the older version of malloc that is more memory efficient
+	     for the VAX.  This is MUCH more efficient than the VAX one.
+	     The VAX version seems to place more importance on the speed
+	     of the allocation than the amount of memory it uses.  Make your
+	     choice ... JOVE hardly ever calls malloc, anyway, relatively
+	     speaking, since it allocates lines in big chunks.  NOTE: This
+	     seems not to work on suns.
+
+To make macro files compatible between machines with different byte order I
+use the ntohl() and htonl() calls that are supplied with (as far as I know)
+4.2 systems.  If you're not running 4.2 a bunch of macros will be defined
+automatically in macros.c.  From Dave Curry:
+	The "#if" gets all the identifiers of backwards (left-endian)
+	machines, the "#else" handles normal (right-endian)
+	machines....  Just add some remark in the READ_ME for people
+	porting to machines other than the Vax or PDP-11 which are
+	left-endian.
+
+"doc/system.rc" and "doc/example.rc" are jove initialization files.
+"system.rc" is the "system" rc file here at UoR, and it gets ready every
+time JOVE starts up FOR EVERYONE.  ("make install" should copy the
+system-wide .joverc to the right place automatically.)  After that JOVE
+reads an initialization file in the user's home directory, and "example.rc"
+is mine.
+
+The files "jove.[1234]" in DOC are the official JOVE manual.  I got
+permission from Richard Stallman to use his manual for the original EMACS,
+modifying it where necessary for JOVE.  Lots of work was done by Brian
+Harvey on this manual.
+
+There are man pages for jove, recover and teachjove.  Teachjove is for
+people who have never used EMACS style editors.  It is an interactive
+tutorial, THE tutorial written by Stallman for the original EMACS, only
+slightly modified for JOVE in the appropriate places.  The man pages are
+completely up to date, thanks to me.
+
+Thanks to Jay Fenlason at Berkeley for writing the original pty code.
+
+Thanks to Dave Curry at Purdue for putting in tons of time and effort
+into getting JOVE ready.  It just wouldn't be working without his help.
+
+Thanks to Jeff Mc Carrell at Berkeley for finding bugs and adding features.
+
+(Thanks to Brian Harvey for teaching me about linked lists ...)
+
+Good luck, have fun.
+	Jonathan Payne (payne@rochester until '88)
