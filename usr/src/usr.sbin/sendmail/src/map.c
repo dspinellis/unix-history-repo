@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.67 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.68 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -122,6 +122,10 @@ map_parseargs(map, ap)
 
 		  case 'A':
 			map->map_mflags |= MF_APPEND;
+			break;
+
+		  case 'q':
+			map->map_mflags |= MF_KEEPQUOTES;
 			break;
 
 		  case 'a':
@@ -1254,9 +1258,22 @@ nis_getcanonname(name, hbsize, statp)
 		return FALSE;
 	}
 
-	if (hbsize >= strlen(cname))
+	if (strchr(cname, '.') != NULL)
 	{
-		strcpy(name, cname);
+		domain = "";
+	}
+	else
+	{
+		domain = macvalue('m', CurEnv);
+		if (domain == NULL)
+			domain = "";
+	}
+	if (hbsize >= strlen(cname) + strlen(domain) + 1)
+	{
+		if (domain[0] == '\0')
+			strcpy(name, vp);
+		else
+			sprintf(name, "%s.%s", vp, domain);
 		*statp = EX_OK;
 		return TRUE;
 	}
@@ -1607,9 +1624,16 @@ nisplus_getcanonname(name, hbsize, statp)
 		if (tTd(38, 20))
 			printf("nisplus_getcanonname(%s), found %s\n",
 				name, vp);
-		domain = macvalue('m', CurEnv);
-		if (domain == NULL)
+		if (strchr(vp, '.') != NULL)
+		{
 			domain = "";
+		}
+		else
+		{
+			domain = macvalue('m', CurEnv);
+			if (domain == NULL)
+				domain = "";
+		}
 		if (hbsize > vsize + (int) strlen(domain) + 1)
 		{
 			if (domain[0] == '\0')
