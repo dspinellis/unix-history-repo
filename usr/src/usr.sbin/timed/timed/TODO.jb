@@ -1,0 +1,51 @@
+===== timed =====
+MAN.	Limit of 30 hosts should be doc'ed.
+
+****	It should be dynamically allocated with no limit.  On a large network,
+	one host could possibly master over many more than 30 hosts.  That will
+	partly depend upon how the multi-network code gets implemented, but the
+	dynamic allocation can be used anyway.
+
+UGLY,CODE. timedc/cmds.c has a lots of repeated code in it.
+
+****	I haven't looked at the code, but if you want to work it over, be my
+	guest.  The first thing I seem to remember is that each command is set
+	up as if it were an individual program taking argc and argv.  A more
+	conventional calling style should be used.  I don't think any of the
+	routines take more than a couple arguments.
+
+UGLY.	fxn definition syntax does't follow convention:
+	has type on same line.
+
+****	I agree that it needs to be fixed at least enough that tags
+	will work on it.  An entire cleanup might be nice later, but
+	is noncritical.
+
+LOBBY(mildly),CODE:	Would be very convenient if date(1) took a
+	+-<number> argument to set the time relatively.  With
+	the advent of timed it is now reasonable to synchronize
+	with WWV, which is nearly impossible to do "by hand"
+	with just an absolute date, and scripts are too slow.
+	format could be +-nn...nn.ss, where the '.' is required
+	to remove ambiguity.
+
+****	If you want to do it go ahead.  It sounds useful.  As far as
+	syntax goes, the normal format for the date should work just
+	fine for this.  If the date is preceeded by a plus or minus,
+	the change is relative, otherwise it is absolute.
+		
+CONF,not in nbsd.	Makefile for m68000 doesn't work right: two modules,
+			not one, and named wrong.
+
+****	Low priority.  This is a VAX distribution right now, so I'm not
+	too concerned about minor configuration problems with m68000 code.
+	We might try to get it fixed before the final tape.  I won't even
+	look at it before the beta tape.
+
+***********************************************************************
+Determine whether microseconds need to be printed in traces or are 
+milliseconds accurate enough.
+
+Fix loop with two gateways sending each other settimes continuously.
+
+Fix problem with two packets while measuring time difference.
