@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_subr.c	7.26 (Berkeley) %G%
+ *	@(#)ffs_subr.c	7.27 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -107,7 +107,7 @@ ffs_checkoverlap(bp, ip)
 		if (ep == bp || (ep->b_flags & B_INVAL) ||
 		    ep->b_vp == NULLVP)
 			continue;
-		if (VOP_BMAP(ep->b_vp, (daddr_t)0, &vp, (daddr_t)0))
+		if (VOP_BMAP(ep->b_vp, (daddr_t)0, &vp, (daddr_t)0, NULL))
 			continue;
 		if (vp != ip->i_devvp)
 			continue;

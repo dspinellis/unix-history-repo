@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	7.108 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.109 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -1583,7 +1583,7 @@ ufs_strategy(ap)
 		panic("ufs_strategy: spec");
 	if (bp->b_blkno == bp->b_lblkno) {
 		if (error =
-		    VOP_BMAP(vp, bp->b_lblkno, NULL, &bp->b_blkno)) {
+		    VOP_BMAP(vp, bp->b_lblkno, NULL, &bp->b_blkno, NULL)) {
 			bp->b_error = error;
 			bp->b_flags |= B_ERROR;
 			biodone(bp);
