@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)quotacheck.8	6.1 (Berkeley) %G%
+.\"	@(#)quotacheck.8	6.2 (Berkeley) %G%
 .\"
 .TH QUOTACHECK 8 ""
 .UC 5
@@ -12,12 +12,16 @@ quotacheck \- file system quota consistency checker
 .B /etc/quotacheck
 [
 .B \-v
+] [
+.B \-p
 ]
 filesystem...
 .br
 .B /etc/quotacheck
 [
 .B \-v
+] [
+.B \-p
 ]
 .B \-a
 .SH DESCRIPTION
@@ -49,6 +53,13 @@ option is supplied,
 will indicate the calculated disc quotas for each
 user on a particular file system.
 .PP
+If the
+.B \-p
+flag is supplied then parallel passes will be run on
+the filesystems required, using the pass numbers in
+/etc/fstab in an identical fashion to
+.IR fsck (8).
+.PP
 .I Quotacheck
 expects each file system to be checked to have a
 quota file named
@@ -75,4 +86,4 @@ is running.
 .DT
 /etc/fstab	default file systems
 .SH "SEE ALSO"
-quota(2), setquota(2), quotaon(8)
+quota(2), setquota(2), quotaon(8), fsck(8)
