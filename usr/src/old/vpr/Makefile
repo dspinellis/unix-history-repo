@@ -33,6 +33,8 @@ rvsort: rvsort.c
 	cc -O -o rvsort rvsort.c
 rvcat: rvcat.c
 	cc -O -o rvcat rvcat.c
+vdmp: vdmp.c
+	cc -O -o vdmp vdmp.c
 
 install: all
 	install -s sidebyside ${DESTDIR}/usr/lib/sidebyside
@@ -49,6 +51,7 @@ install: all
 	install -c vtroff.sh ${DESTDIR}/usr/ucb/vtroff
 	install -s rvsort ${DESTDIR}/usr/lib/rvsort
 	install -s rvcat ${DESTDIR}/usr/lib/rvcat
+	install -s vdmp ${DESTDIR}/usr/lib/vdmp
 	install -s vfontinfo ${DESTDIR}/usr/lib/vfontinfo
 
 clean:
