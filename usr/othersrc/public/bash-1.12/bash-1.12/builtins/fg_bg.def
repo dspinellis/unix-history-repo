@@ -1,0 +1,126 @@
+This file is fg_bg.def, from which is created fg_bg.c.
+It implements the builtins "bg" and "fg" in Bash.
+
+Copyright (C) 1987, 1989, 1991 Free Software Foundation, Inc.
+
+This file is part of GNU Bash, the Bourne Again SHell.
+
+Bash is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free
+Software Foundation; either version 1, or (at your option) any later
+version.
+
+Bash is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+for more details.
+
+You should have received a copy of the GNU General Public License along
+with Bash; see the file COPYING.  If not, write to the Free Software
+Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+
+$PRODUCES fg_bg.c
+
+$BUILTIN fg
+$FUNCTION fg_builtin
+$DEPENDS_ON JOB_CONTROL
+$SHORT_DOC fg [job_spec]
+Place JOB_SPEC in the foreground, and make it the current job.  If
+JOB_SPEC is not present, the shell's notion of the current job is
+used.
+$END
+
+#include <sys/types.h>
+#include <signal.h>
+#include "../shell.h"
+#include "../jobs.h"
+
+extern int job_control;
+static int fg_bg ();
+
+/* How to bring a job into the foreground. */
+int
+fg_builtin (list)
+     WORD_LIST *list;
+{
+  int fg_bit = 1;
+  register WORD_LIST *t = list;
+
+  if (!job_control)
+    return (EXECUTION_SUCCESS);
+
+  /* If the last arg on the line is '&', then start this job in the
+     background.  Else, fg the job. */
+
+  while (t && t->next)
+    t = t->next;
+
+  if (t && strcmp (t->word->word, "&") == 0)
+    fg_bit = 0;
+
+  return (fg_bg (list, fg_bit));
+}
+
+$BUILTIN bg
+$FUNCTION bg_builtin
+$DEPENDS_ON JOB_CONTROL
+$SHORT_DOC bg [job_spec]
+Place JOB_SPEC in the background, as if it had been started with
+`&'.  If JOB_SPEC is not present, the shell's notion of the current
+job is used.
+$END
+
+/* How to put a job into the background. */
+int
+bg_builtin (list)
+     WORD_LIST *list;
+{
+  if (!job_control)
+    return (EXECUTION_SUCCESS);
+
+  return (fg_bg (list, 0));
+}
+
+/* How to put a job into the foreground/background. */
+static int
+fg_bg (list, foreground)
+     WORD_LIST *list;
+     int foreground;
+{
+  extern char *this_command_name;
+  sigset_t set, oset;
+  int job, status = EXECUTION_SUCCESS;
+
+  BLOCK_CHILD (set, oset);
+  job = get_job_spec (list);
+
+  if (job < 0 || job >= job_slots || !jobs[job])
+    {
+      if (job != DUP_JOB)
+	builtin_error ("No such job %s", list ? list->word->word : "");
+
+      goto failure;
+    }
+
+  /* Or if jobs[job]->pgrp == shell_pgrp. */
+  if (jobs[job]->job_control == 0)
+    {
+      builtin_error ("job %%%d started without job control", job + 1);
+      goto failure;
+    }
+
+  status = start_job (job, foreground);
+  if (status >= 0)
+    {
+    /* win: */
+      UNBLOCK_CHILD (oset);
+      return (status);
+    }
+  else
+    {
+    failure:
+      UNBLOCK_CHILD (oset);
+      return (EXECUTION_FAILURE);
+    }
+}
+
