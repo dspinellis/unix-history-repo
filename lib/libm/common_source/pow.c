@@ -177,10 +177,10 @@ static double pow_p(x,y)
 double x,y;
 {
         double c,s,t,z,tx,ty;
+	volatile double errtmp;
 #ifdef tahoe
 	double tahoe_tmp;
 #endif	/* tahoe */
-	double errtmp;
         float sx,sy;
 	long k=0;
         int n,m;
@@ -212,16 +212,20 @@ double x,y;
 	/* compute y*log(x) ~ mlog2 + t + c */
         	s=y*(n+invln2*t);
                 m=s+copysign(half,s);   /* m := nint(y*log(x)) */ 
-		k=y; 
-		if(y > (double)LONG_MIN && y < (double)LONG_MAX
-		  && (double)(long)y==y) {     /* y is an integer */
+
+	   /*
+	    * The case where y is an integer can be handled faster.
+	    * Be careful to avoid overflow while checking if it is an integer.
+	    * XXX - this is probably still wrong - can (long)y*n overflow?
+	    */
+		if(y >= (double)LONG_MIN && y <= (double)LONG_MAX
+		   && (double)(long)y==y) {	/* y is an integer */
 		    k = m-(long)y*n;
 		    sx=t; tx+=(t-sx); }
 		else	{		/* if y is not an integer */    
 		    k =m;
 	 	    tx+=n*ln2lo;
 		    sx=(c=n*ln2hi)+t; tx+=(c-sx)+t; }
-	   /* end of checking whether k==y */
 
                 sy=y; ty=y-sy;          /* y ~ sy + ty */
 #ifdef tahoe
