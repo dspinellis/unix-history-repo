@@ -1,4 +1,4 @@
-# sccsid = "@(#)Makefile	1.11 (Berkeley) %G%"
+#	Makefile	1.12	83/07/03
 #
 #	dump.h			header file
 #	dumpitime.c		reads /etc/ddate
@@ -57,4 +57,4 @@ print:
 
 $(OBJS): dump.h /usr/include/sys/param.h
 $(OBJS): /usr/include/sys/fs.h /usr/include/sys/inode.h
-$(OBJS): /usr/include/dumprestor.h /usr/include/stat.h
+$(OBJS): /usr/include/dumprestor.h /usr/include/sys/stat.h
