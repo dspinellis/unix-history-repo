@@ -1,5 +1,5 @@
 #
-#	Makefile	(CWI)	1.3	87/03/31
+#	Makefile	(CWI)	1.4	88/03/04
 #
 DESTDIR=
 LIBDIR= /usr/local/lib/ditroff/font/devhar
@@ -13,12 +13,15 @@ FONTFILES = B.out BI.out Bs.out DESC.out G3.out I.out R.out RS.out Rs.out\
 
 all:	../../utilities/makedev binaryfonts 
 
+$(LIBDIR):
+	mkdir $(LIBDIR)
+
 binaryfonts:	DESC ${STANDARDFONTS} ${EXTRAFONTS}
 	../../utilities/makedev DESC ${EXTRAFONTS}
 	touch binaryfonts
 	-if test -f MadeMakedev; then rm MadeMakedev ../../utilities/makedev; fi
 
-install:	all
+install:	all $(LIBDIR)
 	for i in ${FONTFILES}; do\
 	install -c -m 644 $$i ${DESTDIR}${LIBDIR}/$$i; done
 
