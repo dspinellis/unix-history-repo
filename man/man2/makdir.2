@@ -1,0 +1,27 @@
+.pa 1
+.he 'MAKDIR (II)'3/15/72'MAKDIR (II)'
+.ti 0
+NAME		makdir  --  make a directory
+.sp
+.ti 0
+SYNOPSIS	sys  makdir; name; mode  / makdir = 14.
+.sp
+.ti 0
+DESCRIPTION	makdir______ creates an empty directory
+whose name is the null-terminated string pointed
+to by name____.
+The mode of the directory is mode____.
+The special entries "." and ".." are not present.
+.sp
+makdir______ may be invoked only by the super-user.
+.sp
+.ti 0
+SEE ALSO	mkdir(I)
+.sp
+.ti 0
+DIAGNOSTICS	Error bit (c-bit)
+is set if the directory already exists
+or if the user is not the super-user.
+.sp
+.ti 0
+BUGS		--
