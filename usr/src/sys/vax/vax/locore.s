@@ -1,4 +1,4 @@
-/*	locore.s	6.24	85/03/11	*/
+/*	locore.s	6.25	85/04/28	*/
 
 #include "psl.h"
 #include "pte.h"
@@ -720,6 +720,33 @@ sigcode:
 	.word	0x3f		# registers 0-5
 	callg	(ap),*16(ap)	# call the signal handler
 	ret			# return to code above
+
+	.set	exec,11
+	.set	exit,1
+	.globl	_icode
+	.globl	_initflags
+	.globl	_szicode
+/*
+ * Icode is copied out to process 1 to exec /etc/init.
+ * If the exec fails, process 1 exits.
+ */
+_icode:
+	pushab	b`argv-l0(pc)
+l0:	pushab	b`init-l1(pc)
+l1:	pushl	$2
+	movl	sp,ap
+	chmk	$exec
+	chmk	$exit
+
+init:	.asciz	"/etc/init"
+	.align	2
+_initflags:
+	.long	0
+argv:	.long	init+5-_icode
+	.long	_initflags-_icode
+	.long	0
+_szicode:
+	.long	_szicode-_icode
 
 /*
  * Primitives

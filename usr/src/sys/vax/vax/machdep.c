@@ -1,4 +1,4 @@
-/*	machdep.c	6.13	85/03/11	*/
+/*	machdep.c	6.14	85/04/28	*/
 
 #include "reg.h"
 #include "pte.h"
@@ -33,20 +33,6 @@
 #include "rpb.h"
 #include "../vaxuba/ubavar.h"
 #include "../vaxuba/ubareg.h"
-
-int	icode[] =
-{
-	0x9f19af9f,	/* pushab [&"init",0]; pushab */
-	0x02dd09af,	/* "/etc/init"; pushl $2 */
-	0xbc5c5ed0,	/* movl sp,ap; chmk */
-	0x2ffe110b,	/* $exec; brb .; "/ */
-	0x2f637465,	/* etc/ */
-	0x74696e69,	/* init" */
-	0x00000000,	/* \0\0\0";  0 */
-	0x00000014,	/* [&"init", */
-	0x00000000,	/* 0] */
-};
-int	szicode = sizeof(icode);
 
 /*
  * Declare these as initialized data so we can patch them.
