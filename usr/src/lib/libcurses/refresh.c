@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)refresh.c	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)refresh.c	5.25 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <curses.h>
@@ -459,7 +459,6 @@ quickch(win)
 				break;
 	} else
 		bot = win->maxy - 1;
-
 #ifdef DEBUG
 	__TRACE("quickch:bsize=%d,starts=%d,startw=%d,curw=%d,curs=%d,top=%d,bot=%d\n", 
 		bsize, starts, startw, curw, curs, top, bot);
@@ -480,14 +479,25 @@ quickch(win)
 		__TRACE("#####################################\n");
 		for (i = 0; i < curscr->maxy; i++) {
 			__TRACE("C: %d:", i);
+			__TRACE(" 0x%x \n", curscr->lines[i]->hash);
 			for (j = 0; j < curscr->maxx; j++) 
 				__TRACE("%c", 
 			           curscr->lines[i]->line[j].ch);
 			__TRACE("\n");
+			for (j = 0; j < curscr->maxx; j++) 
+				__TRACE("%x", 
+			           curscr->lines[i]->line[j].attr);
+			__TRACE("\n");
 			__TRACE("W: %d:", i);
+			__TRACE(" 0x%x \n", win->lines[i]->hash);
+			__TRACE(" 0x%x ", win->lines[i]->flags);
 			for (j = 0; j < win->maxx; j++) 
 				__TRACE("%c", 
 			           win->lines[i]->line[j].ch);
+			__TRACE("\n");
+			for (j = 0; j < win->maxx; j++) 
+				__TRACE("%x", 
+			           win->lines[i]->line[j].attr);
 			__TRACE("\n");
 		}
 #endif 
