@@ -84,7 +84,7 @@ int	xxx;
 extern caseds(), caseas(), casesp(), caseft(), caseps(), casevs(),
 casenr(), caseif(), casepo(), casetl(), casetm(), casebp(), casech(),
 casepn(), tbreak(), caseti(), casene(), casenf(), casece(), casefi(),
-casein(), casell(), casens(), casemk(), casert(), caseam(),
+casein(), casell(), casens(), casemk(), casert(), caseam(), casest(),
 casede(), casedi(), caseda(), casewh(), casedt(), caseit(), caserm(),
 casern(), casead(), casers(), casena(), casepl(), caseta(), casetr(),
 caseul(), caselt(), casenx(), caseso(), caseig(), casetc(), casefc(),
@@ -134,6 +134,7 @@ struct contab {
 	PAIR('m', 'k'), casemk,
 	PAIR('r', 't'), casert,
 	PAIR('a', 'm'), caseam,
+	PAIR('s', 't'), casest,
 	PAIR('d', 'e'), casede,
 	PAIR('d', 'i'), casedi,
 	PAIR('d', 'a'), caseda,
@@ -238,6 +239,8 @@ int	pts	 = PS;	/* hence, this is the size that really exists */
 int	pts1	 = PS;
 int	font	 = FT;
 int	font1	 = FT;
+int	stip	 = ST;
+int	stip1	 = ST;
 int	ls	 = 1;
 int	ls1	 = 1;
 int	ad	 = 1;

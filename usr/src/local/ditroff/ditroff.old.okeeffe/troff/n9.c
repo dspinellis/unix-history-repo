@@ -245,6 +245,7 @@ setdraw()	/* generate internal cookies for a drawing function */
 	/* a x y r:	arc to x,y with radius r (ccw) */
 	/* ~ x y ...:	wiggly line  -or-  */
 	/* g x y ...:	for gremlin-style curves */
+	/* p s x y ...:	for polygons filled with stipple s */
 
 	if (ismot(c = getch()))
 		return;
@@ -257,6 +258,14 @@ setdraw()	/* generate internal cookies for a drawing function */
 		if (cbits(c) != ' ')
 			ch = c;
 		vflag = 0;
+		if (i == 0 && type == DRAWPOLY) {
+			dfact = 1;
+			dx[0] = quant(atoi(), 1);
+			if (dx[0] < 0 || dx[0] > MAXMOT)
+				dx[0] = 0;
+			dy[0] = 0;
+			continue;
+		}
 		dfact = EM;
 		dx[i] = quant(atoi(), HOR);
 		if (dx[i] > MAXMOT)
