@@ -2,11 +2,11 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ch10.n	6.1 (Berkeley) %G%
+.\"	@(#)ch10.n	6.2 (Berkeley) %G%
 .\"
 ." $Header: /na/franz/doc/RCS/ch10.n,v 1.1 83/01/31 07:08:20 jkf Exp $
 .Lc Exception\ Handling 10
-.sh 2 Errset\ and\ Error\ Handler\ Functions 10
+.sh 2 Errset\ and\ Error\ Handler\ Functions \n(ch 1
 .pp
 .Fr
 allows the user to handle in a number of ways the errors
