@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)parseaddr.c	3.41.1.1		%G%);
+SCCSID(@(#)parseaddr.c	3.42		%G%);
 
 /*
 **  PARSE -- Parse an address
@@ -400,7 +400,7 @@ toktype(c)
 	if (firstime)
 	{
 		firstime = FALSE;
-		expand("$o", buf, &buf[sizeof buf - 1], CurEnv);
+		(void) expand("$o", buf, &buf[sizeof buf - 1]);
 		strcat(buf, DELIMCHARS);
 	}
 	if (c == MATCHCLASS || c == MATCHREPL)

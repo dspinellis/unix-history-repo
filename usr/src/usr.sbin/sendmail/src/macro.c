@@ -1,6 +1,8 @@
 # include "sendmail.h"
 
-SCCSID(@(#)macro.c	3.11.1.1		%G%);
+SCCSID(@(#)macro.c	3.12		%G%);
+
+char	*Macro[128];
 
 /*
 **  EXPAND -- macro expand a string using $x escapes.
@@ -10,7 +12,6 @@ SCCSID(@(#)macro.c	3.11.1.1		%G%);
 **		buf -- the place to put the expansion.
 **		buflim -- the buffer limit, i.e., the address
 **			of the last usable position in buf.
-**		e -- envelope in which to work.
 **
 **	Returns:
 **		End of interpolated output.
@@ -19,24 +20,11 @@ SCCSID(@(#)macro.c	3.11.1.1		%G%);
 **		none.
 */
 
-expand(s, buf, buflim, e)
-	register char *s;
-	register char *buf;
-	char *buflim;
-	register ENVELOPE *e;
-{
-	extern char *expand2();
-
-	(void) expand2(s, buf, buflim, e);
-}
-
-
 char *
-expand2(s, buf, buflim, e)
+expand(s, buf, buflim)
 	register char *s;
 	register char *buf;
 	char *buflim;
-	register ENVELOPE *e;
 {
 	register char *q;
 	char xbuf[BUFSIZ];
@@ -69,7 +57,7 @@ expand2(s, buf, buflim, e)
 		{
 		  case CONDIF:		/* see if var set */
 			c = *++s;
-			skipping = e->e_macro[c] == NULL;
+			skipping = Macro[c] == NULL;
 			continue;
 
 		  case CONDELSE:	/* change state of skipping */
@@ -82,7 +70,7 @@ expand2(s, buf, buflim, e)
 
 		  case '$':		/* macro interpolation */
 			c = *++s;
-			q = e->e_macro[c & 0177];
+			q = Macro[c & 0177];
 			if (q == NULL && c != '$')
 				continue;
 			gotone = TRUE;
@@ -120,7 +108,7 @@ expand2(s, buf, buflim, e)
 
 	/* recurse as appropriate */
 	if (gotone)
-		return (expand2(xbuf, buf, buflim, e));
+		return (expand(xbuf, buf, buflim));
 
 	/* copy results out */
 	for (q = buf, xp = xbuf; xp != '\0' && q < buflim-1; )
@@ -142,7 +130,7 @@ expand2(s, buf, buflim, e)
 **		none.
 **
 **	Side Effects:
-**		CurEnv->e_macro[n] is defined.
+**		Macro[n] is defined.
 **
 **	Notes:
 **		There is one macro for each ASCII character,
@@ -197,7 +185,7 @@ define(n, v)
 		printf(")\n");
 	}
 # endif DEBUG
-	CurEnv->e_macro[n & 0177] = v;
+	Macro[n & 0177] = v;
 }
 /*
 **  MACVALUE -- return uninterpreted value of a macro.
@@ -216,5 +204,5 @@ char *
 macvalue(n)
 	char n;
 {
-	return (CurEnv->e_macro[n & 0177]);
+	return (Macro[n & 0177]);
 }

@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)main.c	3.75		%G%);
+SCCSID(@(#)main.c	3.76		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -732,11 +732,11 @@ finis()
 # ifdef QUEUE
 		queueup(InFileName);
 # else QUEUE
-		syserr("finis: trying to queue %s", InFileName);
+		syserr("finis: trying to queue %s", CurEnv->e_df);
 # endif QUEUE
 	}
 	else
-		(void) unlink(InFileName);
+		(void) unlink(CurEnv->e_df);
 	exit(ExitStat);
 }
 /*
