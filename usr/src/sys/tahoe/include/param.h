@@ -1,4 +1,4 @@
-/*	param.h	1.1	86/01/05	*/
+/*	param.h	1.2	86/01/20	*/
 
 /*
  * Machine dependent constants for TAHOE.
@@ -13,7 +13,6 @@
 #define	SSIZE	2			/* initial stack size/NBPG */
 #define	SINCR	2			/* increment of stack/NBPG */
 #define	UPAGES	6			/* pages of u-area (2 stack pages) */
-#define IOBASE	((caddr_t)0xfff00000)	/* base of Versabus address space */
 
 #define	MAXCKEY	255		/* maximal allowed code key */
 #define	MAXDKEY	255		/* maximal allowed data key */

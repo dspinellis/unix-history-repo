@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)genassym.c	1.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)genassym.c	1.4 (Berkeley) %G%";
 #endif
 
 #include "../tahoe/pte.h"
@@ -17,6 +17,8 @@ static char sccsid[] = "@(#)genassym.c	1.3 (Berkeley) %G%";
 #include "text.h"
 #include "mbuf.h"
 #include "msgbuf.h"
+
+#include "../tahoevba/vbaparam.h"
 
 main()
 {
@@ -56,10 +58,9 @@ main()
 	printf("#define\tCLSIZE %d\n", CLSIZE);
 	printf("#define\tSYSPTSIZE %d\n", SYSPTSIZE);
 	printf("#define\tUSRPTSIZE %d\n", USRPTSIZE);
-	printf("#define\tIOSIZE %d\n", IOSIZE);
-	printf("#define\tMAXBPTE %d\n", MAXBPTE);
-	printf("#define\tTBUFSIZ %d\n", TBUFSIZ);
-	printf("#define\tACEBPTE %d\n", ACEBPTE);
+	printf("#define\tVBIOSIZE %d\n", VBIOSIZE);
+	printf("#define\tVBMEMSIZE %d\n", VBMEMSIZE);
+	printf("#define\tVBPTSIZE %d\n", VBPTSIZE);
 	printf("#define\tMSGBUFPTECNT %d\n", btoc(sizeof (struct msgbuf)));
 	printf("#define\tNMBCLUSTERS %d\n", NMBCLUSTERS);
 	printf("#define\tPCB_KSP %d\n", &pcb->pcb_ksp);

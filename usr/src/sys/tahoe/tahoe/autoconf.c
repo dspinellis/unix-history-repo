@@ -1,4 +1,4 @@
-/*	autoconf.c	1.4	86/01/12	*/
+/*	autoconf.c	1.5	86/01/20	*/
 
 /*
  * Setup the system to run on the current machine.
@@ -25,6 +25,7 @@
 #include "dmap.h"
 
 #include "../tahoevba/vbavar.h"
+#include "../tahoevba/vbaparam.h"
 
 /*
  * The following several variables are related to
@@ -35,8 +36,7 @@ int	dkn;		/* number of iostat dk numbers assigned so far */
 int	cold;		/* cold start flag initialized in locore.s */
 
 /*
- * This allocates the space for the per-uba information,
- * such as buffered data path usage.
+ * This allocates the space for the per-vba information.
  */
 struct	vba_hd vba_hd[NVBA];
 
@@ -48,8 +48,8 @@ configure()
 	register int *ip;
 	extern caddr_t Sysbase;
 
-	printf("vba%d at %x\n", numvba, IOBASE);
-	vbafind(numvba, (char *)vmem,(struct pte *)VMEMmap);
+	printf("vba%d at %x\n", numvba, VBIOBASE);
+	vbafind(numvba, vmem, VMEMmap);
 	numvba++;
 	/*
 	 * Write protect the scb.  It is strange
@@ -71,7 +71,7 @@ configure()
  * Make the controllers accessible at physical address phys
  * by mapping kernel ptes starting at pte.
  */
-vbaaccess(pte, iobase, n)
+vbaccess(pte, iobase, n)
 	register struct pte *pte;
 	caddr_t iobase;
 	register int n;
@@ -112,8 +112,8 @@ fixctlrmask()
  */
 vbafind(vban, vumem, memmap)
 	int vban;
-	char *vumem;
-	struct pte *memmap;
+	caddr_t vumem;
+	struct pte memmap[];
 {
 	register int br, cvec;			/* must be r12, r11 */
 	register struct vba_device *ui;
@@ -133,7 +133,7 @@ vbafind(vban, vumem, memmap)
 	 * Make the controllers accessible at physical address phys
 	 * by mapping kernel ptes starting at pte.
 	 */
-	vbaaccess(memmap, IOBASE, (int)IOSIZE);
+	vbaccess(memmap, VBIOBASE, VBIOSIZE);
 	/*
 	 * Setup scb device entries to point into catcher array.
 	 */
@@ -203,7 +203,7 @@ vbafind(vban, vumem, memmap)
 				ui->ui_vbanum = vban;
 				ui->ui_addr = (caddr_t)reg;
 				ui->ui_physaddr =
-				    (caddr_t)IOBASE + (addr&0x0fffff);
+				    (caddr_t)VBIOBASE + (addr&0x0fffff);
 				if (ui->ui_dk && dkn < DK_NDRIVE)
 					ui->ui_dk = dkn++;
 				else
@@ -258,7 +258,7 @@ vbafind(vban, vumem, memmap)
 		ui->ui_alive = 1;
 		ui->ui_vbanum = vban;
 		ui->ui_addr = (caddr_t)reg;
-		ui->ui_physaddr = (caddr_t)IOBASE + (addr&0x0fffff);
+		ui->ui_physaddr = (caddr_t)VBIOBASE + (addr&0x0fffff);
 		ui->ui_dk = -1;
 		/* ui_type comes from driver */
 		udp->ud_dinfo[ui->ui_unit] = ui;
@@ -266,6 +266,52 @@ vbafind(vban, vumem, memmap)
 		break;
 	    }
 	}
+}
+
+/*
+ * Tahoe VERSAbus adapator support routines.
+ */
+
+caddr_t	vbcur = (caddr_t)&vbbase;
+int	vbx = 0;
+/*
+ * Allocate page tables for mapping intermediate i/o buffers.
+ * Called by device drivers during autoconfigure.
+ */
+vbmapalloc(npf, ppte, putl)
+	int npf;
+	struct pte **ppte;
+	caddr_t *putl;
+{
+
+	if (vbcur + npf*NBPG >= (caddr_t)&vbend)
+		panic("vbmapalloc");
+	*ppte = &VBmap[vbx];
+	*putl = vbcur;
+	vbx += npf;
+	vbcur += npf*NBPG;
+}
+
+caddr_t	vbmcur = (caddr_t)&vmem1;
+int	vbmx = 0;
+/*
+ * Allocate page tables and map VERSAbus i/o space.
+ * Called by device drivers during autoconfigure.
+ */
+vbmemalloc(npf, addr, ppte, putl)
+	int npf;
+	caddr_t addr;
+	struct pte **ppte;
+	caddr_t *putl;
+{
+
+	if (vbmcur + npf*NBPG >= (caddr_t)&vmemend)
+		panic("vbmemalloc");
+	*ppte = &VMEMmap1[vbmx];
+	*putl = vbmcur;
+	vbmx += npf;
+	vbmcur += npf*NBPG;
+	vbaccess(*ppte, addr, npf);		/* map i/o space */
 }
 
 /*
