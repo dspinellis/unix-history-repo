@@ -1,4 +1,4 @@
-/*	interface.h	4.2	84/04/09	*/
+/*	interface.h	4.3	85/06/03	*/
 
 /*
  * Routing table management daemon.
@@ -23,7 +23,12 @@ struct interface {
 #define	int_dstaddr	int_intu.intu_dstaddr	/* other end of p-to-p link */
 	int	int_metric;			/* init's routing entry */
 	int	int_flags;			/* see below */
-	int	int_net;			/* network # */
+	/* START INTERNET SPECIFIC */
+	u_long	int_net;			/* network # */
+	u_long	int_netmask;			/* net mask for addr */
+	u_long	int_subnet;			/* subnet # */
+	u_long	int_subnetmask;			/* subnet mask for addr */
+	/* END INTERNET SPECIFIC */
 	struct	ifdebug int_input, int_output;	/* packet tracing stuff */
 	int	int_ipackets;			/* input packets received */
 	int	int_opackets;			/* output packets sent */
@@ -32,7 +37,7 @@ struct interface {
 };
 
 /*
- * 0x1 to 0x100 are reused from the kernel's ifnet definitions,
+ * 0x1 to 0x10 are reused from the kernel's ifnet definitions,
  * the others agree with the RTS_ flags defined elsewhere.
  */
 #define	IFF_UP		0x1		/* interface is up */
@@ -40,7 +45,6 @@ struct interface {
 #define	IFF_DEBUG	0x4		/* turn on debugging */
 #define	IFF_ROUTE	0x8		/* routing entry installed */
 #define	IFF_POINTOPOINT	0x10		/* interface is point-to-point link */
-#define	IFF_LOCAL	0x100		/* local network, host part encoded */
 
 #define	IFF_PASSIVE	0x2000		/* can't tell if up/down */
 #define	IFF_INTERFACE	0x4000		/* hardware interface */
