@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	6.2 (Berkeley) %G%
+ *	@(#)conf.h	6.3 (Berkeley) %G%
  */
 
 /*
@@ -77,6 +77,7 @@
 
 # define LOCKF		1	/* use System V lockf instead of flock */
 # define SYS5TZ		1	/* use System V style timezones */
+# define UNAME		1	/* use System V uname system call */
 
 # endif
 
@@ -114,3 +115,16 @@
 # define VA_END		va_end(ap)
 
 # endif
+
+#ifdef UNAME
+# include <sys/utsname.h>
+# ifdef newstr
+#  undef newstr
+# endif
+#else /* ! UNAME */
+# define NODE_LENGTH 32
+struct utsname
+{
+	char nodename[NODE_LENGTH+1];
+};
+#endif /* UNAME */

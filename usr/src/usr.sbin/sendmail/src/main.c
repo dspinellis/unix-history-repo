@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	6.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	6.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -282,6 +282,7 @@ main(argc, argv, envp)
 		av = myhostname(jbuf, sizeof jbuf);
 		if (jbuf[0] != '\0')
 		{
+			struct	utsname	utsname;
 			extern char *strchr();
 
 			if (tTd(0, 4))
@@ -296,6 +297,19 @@ main(argc, argv, envp)
 				p = newstr(jbuf);
 				define('m', q, CurEnv);
 			}
+			setclass('w', p);
+
+			if (uname(&utsname) >= 0)
+				p = utsname.nodename;
+			else
+			{
+				makelower(jbuf);
+				p = jbuf;
+			}
+			if (tTd(0, 4))
+				printf("UUCP nodename: %s\n", p);
+			p = newstr(p);
+			define('k', p, CurEnv);
 			setclass('w', p);
 		}
 		while (av != NULL && *av != NULL)

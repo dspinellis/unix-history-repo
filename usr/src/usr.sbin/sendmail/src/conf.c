@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	6.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	6.9 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -846,3 +846,62 @@ getdtablesize()
 }
 
 #endif
+/*
+**  UNAME -- get the UUCP name of this system.
+*/
+
+#ifndef UNAME
+
+int
+uname(name)
+	struct utsname *name;
+{
+	FILE *file;
+	char *n;
+
+	name->nodename[0] = '\0';
+
+	if ((file = fopen("/etc/whoami", "r")) != NULL)
+	{
+		(void) fgets(name->nodename, NODE_LENGTH+1, file);
+		(void) fclose(file);
+		n = index(name->nodename, '\n');
+		if (n != NULL)
+			*n = '\0';
+		if (name->nodename[0] != '\0')
+			return (0);
+	}
+
+	if ((file = fopen("/usr/include/whoami.h", "r")) != NULL)
+	{
+		char buf[MAXLINE];
+
+		while (fgets(buf, MAXLINE, file) != NULL)
+			if (sscanf(buf, "#define sysname \"%*[^\"]\"",
+					NODE_LENGTH, name->nodename) > 0)
+				break;
+		(void) fclose(file);
+		if (name->nodename[0] != '\0')
+			return (0);
+	}
+
+#ifdef TRUST_POPEN
+	/*
+	**  Popen is known to have security holes.
+	*/
+
+	if ((file = popen("uuname -l", "r")) != NULL)
+	{
+		(void) fgets(name, NODE_LENGTH+1, file);
+		(void) pclose(file);
+		n = index(name, '\n');
+		if (n != NULL)
+			*n = '\0';
+		if (name->nodename[0])
+			return (0);
+	}
+#endif
+	
+	return (-1);
+}
+#endif /* UNAME */
