@@ -1,32 +1,31 @@
-.\"	@(#)1.t	1.2	(Copyright 1989 M. K. McKusick)	89/02/19
+.\"	@(#)1.t	1.3	(Copyright 1989 M. K. McKusick)	89/02/23
 .NH
 Introduction
 .PP
-.SM CSRG
+The Computer Systems Research Group
+.SM (CSRG)
 has always been a small group of software developers.
-This resource limitation requires careful software-engineering management.
-Careful coordination is needed not only of
+This resource limitation requires careful software-engineering management
+as well as careful coordination of both
 .SM CSRG
-personnel, but also of members of the general community who
+personnel and the members of the general community who
 contribute to the development of the system.
 .PP
-Releases from Berkeley tend to alternate between
-those that introduce major new facilities and those that introduce
-bug fixes and efficiency improvements.
-This alternation allows timely releases,
-while providing for refinement and correction of the new facilities
-and the elimination of performance problems produced by the new facilities.
-The timely followup of releases that include new facilities
-reflects the importance
+Releases from Berkeley alternate between those that introduce
+major new facilities and those that provide bug fixes and efficiency
+improvements.
+This alternation allows timely releases, while providing for refinement,
+tuning, and correction of the new facilities.
+The timely followup of ``cleanup'' releases reflects the importance
 .SM CSRG
-places on providing a reliable and robust system on which its
+places on providing a reliable and robust system upon which its
 user community can depend.
 .PP
-The development of
-.SM BSD
+The development of the Berkeley Software Distribution
+.SM (BSD)
 illustrates an \fIadvantage\fP of having a few
 principal developers:
-The developers all know the whole system thoroughly enough
+the developers all understand the entire system thoroughly enough
 to be able to coordinate their own work with
 that of other people to produce a coherent final system.
 Companies with large development organizations find
