@@ -1,4 +1,4 @@
-/*	up.c	4.3	83/01/16	*/
+/*	up.c	4.3	83/01/17	*/
 
 /*
  * UNIBUS peripheral standalone driver
@@ -6,6 +6,7 @@
  * Also supports header operation and write
  * check for data and/or header.
  */
+
 #include "../h/param.h" 
 #include "../h/inode.h"
 #include "../h/fs.h"
@@ -19,6 +20,13 @@
 #include "saio.h"
 #include "savax.h"
 
+#define MAXBADDESC	126	/* max number of bad sectors recorded */
+#define SECTSIZ		512	/* sector size in bytes */
+#define HDRSIZ		4	/* number of bytes in sector header */
+#define MAXECC		5	/* max number of bad bits accepted in
+				 * a soft ecc error when F_ECCLM is set */
+#define	NUPTYPES	3
+
 u_short	ubastd[] = { 0776700 };
 
 char	up_gottype[MAXNUBA*8] = { 0 };
@@ -28,15 +36,7 @@ short	fj_off[] = { 0, 50, 0, -1, -1, -1, -1, 155 };
 /* this is called upam instead of am because hp.c has a similar array */
 short	upam_off[] = { 0, 32, 0, 668, 723, 778, 668, 98 };
 
-#define	NUPTYPES	3
-
-struct upst {
-	short nsect;
-	short ntrak;
-	short nspc;
-	short ncyl;
-	short *off;
-} upst[NUPTYPES] = {
+struct st upst[NUPTYPES] = {
 	32,	19,	32*19,	823,	up_off,		/* 9300/equiv */
 	32,	10,	32*10,	823,	fj_off,		/* Fuji 160 */
 	32,	16,	32*16,	1024,	upam_off,	/* Capricorn */
@@ -50,36 +50,37 @@ u_char	up_offset[16] = {
 };
 
 struct  dkbad upbad[MAXNUBA*8];		/* bad sector table */
+int 	sectsiz;			/* real sector size */
 
 upopen(io)
 	register struct iob *io;
 {
+	register unit = io->i_unit;
 	register struct updevice *upaddr;
-	register struct upst *st;
+	register struct st *st = &upst[up_type[unit]];
 
 	if (io->i_boff < 0 || io->i_boff > 7 || st->off[io->i_boff] == -1)
 		_stop("up bad unit");
-	upaddr = (struct updevice *)ubamem(io->i_unit, ubastd[0]);
+	upaddr = (struct updevice *)ubamem(unit, ubastd[0]);
 	while ((upaddr->upcs1 & UP_DVA) == 0) /* infinite wait */
 		;
-	st = &upst[up_type[io->i_unit]];
-	if (up_gottype[io->i_unit] == 0) {
+	if (up_gottype[unit] == 0) {
 		register int i;
 		struct iob tio;
 
 		upaddr->uphr = UPHR_MAXTRAK;
 		for (st = upst; st < &upst[NUPTYPES]; st++)
 			if (upaddr->uphr == st->ntrak - 1) {
-				up_type[io->i_unit] = st - upst;
+				up_type[unit] = st - upst;
 				break;
 			}
 		if (st == &upst[NUPTYPES]) {
-			printf("up%d: uphr=%x\n", upaddr->uphr);
+			printf("up%d: uphr=%x\n", unit, upaddr->uphr);
 			_stop("unknown drive type");
 		}
 		upaddr->upcs2 = UPCS2_CLR;
 #ifdef DEBUG
-		printf("Unittype=%d\n",up_type[io->i_unit]);
+		printf("Unittype=%d\n",up_type[unit]);
 #endif
 
 		/*
@@ -100,12 +101,12 @@ upopen(io)
 		}
 		if (i == 5) {
 			printf("Unable to read bad sector table\n");
-			for (i = 0; i < 126; i++) {
-				upbad[io->i_unit].bt_bad[i].bt_cyl = -1;
-				upbad[io->i_unit].bt_bad[i].bt_trksec = -1;
+			for (i = 0; i < MAXBADDESC; i++) {
+				upbad[unit].bt_bad[i].bt_cyl = -1;
+				upbad[unit].bt_bad[i].bt_trksec = -1;
 			}
 		}	
-		up_gottype[io->i_unit] = 1;
+		up_gottype[unit] = 1;
 	}
 	io->i_boff = st->off[io->i_boff] * st->nspc;
 	io->i_flgs &= ~F_TYPEMASK;
@@ -114,20 +115,19 @@ upopen(io)
 upstrategy(io, func)
 	register struct iob *io;
 {
-	int unit, cn, tn, sn;
+	int cn, tn, sn;
+	register unit = io->i_unit;
 	daddr_t bn;
 	int recal, info, waitdry;
 	register struct updevice *upaddr =
-	    (struct updevice *)ubamem(io->i_unit, ubastd[0]);
-	register struct upst *st = &upst[up_type[io->i_unit]];
+	    (struct updevice *)ubamem(unit, ubastd[0]);
+	register struct st *st = &upst[up_type[unit]];
 
-	if (func != READ && func != WRITE) {
-		io->i_error = ECMD;
-		return (-1);
-	}
-	unit = io->i_unit;
+	sectsiz = SECTSIZ;
+	if ((io->i_flgs & (F_HDR|F_CHECK)) != 0)
+		sectsiz += HDRSIZ;
 	io->i_errcnt = 0;
-	recal = 3;
+	recal = 1;
 	upaddr->upcs2 = unit;
 	if ((upaddr->upds & UPDS_VV) == 0) {
 		upaddr->upcs1 = UP_DCLR|UP_GO;
@@ -140,17 +140,21 @@ upstrategy(io, func)
 	upaddr->upwc = -io->i_cc / sizeof (short);
 	upaddr->upba = info;
 readmore: 
-	bn = io->i_bn + btop(io->i_cc + upaddr->upwc*sizeof(short));
+	bn = io->i_bn + (io->i_cc + upaddr->upwc*sizeof(short))/sectsiz;
 	while((upaddr->upds & UPDS_DRY) == 0)
 		;
-	if (upstart(io, bn) != 0) 
+	if (upstart(io, bn) != 0) {
+		ubafree(io, info);
 		return (-1);
+	}
 	do {
 		DELAY(25);
 	} while ((upaddr->upcs1 & UP_RDY) == 0);
 
-	if (((upaddr->upds&UPDS_ERR) | (upaddr->upcs1&UP_TRE)) == 0 )
+	if (((upaddr->upds&UPDS_ERR) | (upaddr->upcs1&UP_TRE)) == 0 ) {
+		ubafree(io, info);
 		return(io->i_cc);
+	}
 
 #ifdef LOGALLERRS
 	printf("uper: (c,t,s)=(%d,%d,%d) cs2=%b er1=%b er2=%b wc=%x\n",
@@ -159,7 +163,7 @@ readmore:
 			UPER1_BITS, upaddr->uper2, UPER2_BITS,-upaddr->upwc);
 #endif
 	waitdry = 0;
-	while ((upaddr->upds & UPDS_DRY) == 0 && ++waitdry < 512)
+	while ((upaddr->upds & UPDS_DRY) == 0 && ++waitdry < sectsiz)
 		DELAY(5);
 	if (++io->i_errcnt > 27) {
 		/*
@@ -167,10 +171,10 @@ readmore:
 		 * 12 with offset positioning) give up.
 		 */
 		io->i_error = EHER;
-hard:
 		if (upaddr->upcs2 & UPCS2_WCE)
 			io->i_error = EWCK;
-		bn = io->i_bn + btop(io->i_cc + upaddr->upwc*sizeof(short));
+hard:
+		bn = io->i_bn + (io->i_cc + upaddr->upwc*sizeof(short))/sectsiz;
 		cn = bn/st->nspc;
 		sn = bn%st->nspc;
 		tn = sn/st->nsect;
@@ -180,6 +184,7 @@ hard:
 		    	upaddr->upcs2, UPCS2_BITS, upaddr->uper1, 
 			UPER1_BITS, upaddr->uper2, UPER2_BITS);
 		upaddr->upcs1 = UP_TRE|UP_DCLR|UP_GO;
+		io->i_errblk = bn;
 		return (io->i_cc + upaddr->upwc*sizeof(short));
 	} else 
 		if (upaddr->uper1&UPER1_WLE) {
@@ -192,7 +197,11 @@ hard:
 		}
 #ifndef NOBADSECT
 	else if (upaddr->uper2 & UPER2_BSE) {
-		if (upecc( io, BSE)) 
+		if (io->i_flgs & F_NBSF) {
+			io->i_error = EBSE;
+			goto hard;
+		}
+		if (upecc( io, BSE) == 0) 
 			goto success;
 		else {
 			io->i_error = EBSE;
@@ -206,11 +215,22 @@ hard:
 		 * If a soft ecc, correct it 
 		 * Otherwise fall through and retry the transfer
 		 */
-		if ((upaddr->uper1&(UPER1_DCK|UPER1_ECH))==UPER1_DCK) {
-			upecc(io, ECC);
-			goto success;
-		} else
-			io->i_active = 0; /* force retry */
+		if ((upaddr->uper1 & UPER1_DCK) != 0) {
+			/*
+			 * If a write check command is active, all
+			 * ecc errors give UPER1_ECH.
+			 */
+			if (((upaddr->uper1 & UPER1_ECH) == 0 )|| 
+			    ((upaddr->upcs2 & UPCS2_WCE) != 0 )) {
+				if (upecc(io, ECC) == 0)
+					goto success;
+				else {
+					io->i_error = EECC;
+					goto hard;
+				}
+			}
+		} 
+		io->i_active = 0; /* else force retry */
 	}
 	/*
 	 * Clear drive error and, every eight attempts,
@@ -293,31 +313,32 @@ upecc(io, flag)
 {
 	register struct updevice *up = 
 		(struct updevice *)ubamem(io->i_unit, ubastd[0]);
-	register struct upst *st;
+	register struct st *st;
 	register int i;
 	caddr_t addr;
-	int bit, byte, npf, mask;
-	int bn, twc, bbn;
+	int bn, twc, npf, mask;
+	daddr_t bbn;
 
 	/*
 	 * Npf is the number of sectors transferred before the sector
 	 * containing the ECC error, bn is the current block number
 	 */
-	npf = btop((up->upwc * sizeof(short)) + io->i_cc);
-	mask = up->upec2;
+	twc = up->upwc;
+	npf = ((twc * sizeof(short)) + io->i_cc)/sectsiz;
 #ifdef UPECCDEBUG
 	printf("npf %d mask 0x%x pos %d wc 0x%x\n",npf,mask,up->upec1,-up->upwc);
 #endif
-	bn = io->i_bn + npf + 1 ;
+	bn = io->i_bn + npf ;
 	st = &upst[up_type[io->i_unit]];
-	twc = up->upwc;
 	io->i_active = 2;
 	/*
 	 * action taken depends on the flag
 	 */
 	if (flag == ECC) {
+		int bit, byte, ecccnt;
+		ecccnt = 0;
 		mask = up->upec2;
-		printf("up%d: soft ecc sn%d\n", io->i_unit, io->i_bn + npf +1);
+		printf("up%d: soft ecc sn%d\n", io->i_unit, io->i_bn + npf );
 		/*
 		 * Compute the
 		 * byte and bit position of the error.  The variable i
@@ -334,35 +355,39 @@ upecc(io, flag)
 		 * Also watch out for end of this block and the end of the whole
 		 * transfer.
 		 */
-		while (i < 512 && (int)ptob(npf)+i < io->i_cc && bit > -11) {
+		while (i < sectsiz && (npf*sectsiz)+i < io->i_cc && bit > -11) {
 			/*
 			 * addr = vax base addr + (number of sectors transferred
 			 *	  before the error sector times the sector size)
 			 *	  + byte number
 			 */
-			addr = io->i_ma + (npf*512) + byte;
+			addr = io->i_ma + (npf*sectsiz) + byte;
 #ifdef UPECCDEBUG
-			printf("addr %x old: %x ",addr, *addr);
+			printf("addr %x old: %x ",addr, (*addr&0xff));
 #endif
-			*addr ^= (mask << bit);
+			if ((io->i_flgs & (F_CHECK|F_HCHECK)) == 0)
+				*addr ^= (mask << bit);
 #ifdef UPECCDEBUG
-			printf("new: %x\n", *addr);
+			printf("new: %x\n", (*addr&0xff));
 #endif
 			byte++;
 			i++;
 			bit -= 8;
+			if ((ecccnt++ >= MAXECC) && ((io->i_flgs&F_ECCLM) != 0))
+				return(1);
 		}
+		return(0);
 #ifndef NOBADSECT
 	} else if (flag == BSE) {
 		/*
-		 * if not in bad sector table, return 0
+		 * if not in bad sector table, return 1 (= hard error)
 		 */
-		if ((bbn = isbad(&upbad[io->i_unit], st, bn)) < 0)
-			return(0);
 		up->upcs1 = UP_TRE|UP_DCLR|UP_GO;
+		if ((bbn = isbad(&upbad[io->i_unit], st, bn)) < 0)
+			return(1);
 		bbn = st->ncyl * st->nspc -st->nsect - 1 - bbn;
-		twc = up->upwc + 512;
-		up->upwc = -(512 / sizeof (short));
+		twc = up->upwc + sectsiz;
+		up->upwc = -(sectsiz / sizeof (short));
 #ifdef UPECCDEBUG
 		printf("revector to block %d\n", bbn);
 #endif
@@ -374,52 +399,21 @@ upecc(io, flag)
 	 	*/
 		while (up->upcs1 & UP_RDY == 0) 
 			;
-		up->upcs1 = UP_TRE|UP_DCLR|UP_GO;
 		if (upstart(io, bbn) != 0)
-			return (0);
-		io->i_errcnt = 0;
+			return (1);		/* error */
+		io->i_errcnt = 0;		/* success */
 		do {
 			DELAY(25);
 		} while ( up->upcs1 & UP_RDY == 0) ;
 		if (up->upds & UPDS_ERR || up->upcs1 & UP_TRE) {
-			up->upwc = twc -512;
-			return (0);
+			up->upwc = twc -sectsiz;
+			return (1);
 		}
 	}
 	if (twc != 0)
 		up->upwc = twc;
-	return (1);
+	return (0);
 }
-
-#ifndef NOBADSECT
-/*
- * Search the bad sector table looking for
- * the specified sector.  Return index if found.
- * Return -1 if not found.
- */
-isbad(bt, st, blno)
-	register struct dkbad *bt;
-	register struct upst *st;
-{
-	register int i;
-	register long blk, bblk;
-	int trk, sec;
-
-	sec = blno % st->nspc;
-	trk = sec / st->nsect;
-	sec %= st->nsect;
-	blk = ((long)(blno/st->nspc) << 16) + (trk << 8) + sec;
-	for (i = 0; i < 126; i++) {
-		bblk = ((long)bt->bt_bad[i].bt_cyl << 16) +
-			bt->bt_bad[i].bt_trksec;
-		if (blk == bblk)
-			return (i);
-		if (blk < bblk || bblk < 0)
-			break;
-	}
-	return (-1);
-}
-#endif
 
 upstart(io, bn)
 	register struct iob *io;
@@ -427,7 +421,7 @@ upstart(io, bn)
 {
 	register struct updevice *upaddr = 
 		(struct updevice *)ubamem(io->i_unit, ubastd[0]);
-	register struct upst *st = &upst[up_type[io->i_unit]];
+	register struct st *st = &upst[up_type[io->i_unit]];
 	int sn, tn;
 
 	sn = bn%st->nspc;
@@ -435,7 +429,7 @@ upstart(io, bn)
 	sn %= st->nsect;
 	upaddr->updc = bn/st->nspc;
 	upaddr->upda = (tn << 8) + sn;
-	switch (io->i_flgs&F_TYPEMASK) {
+	switch (io->i_flgs & F_TYPEMASK) {
 
 	case F_RDDATA:
 		upaddr->upcs1 = UP_RCOM|UP_GO;
@@ -478,5 +472,47 @@ upioctl(io, cmd, arg)
 	caddr_t arg;
 {
 
-	return (ECMD);
+	struct st *st = &upst[up_type[io->i_unit]], *tmp;
+
+	switch(cmd) {
+
+	case SAIODEVDATA:
+		tmp = (struct st *)arg;
+		*tmp = *st;
+		return(0);
+
+	default:
+		return (ECMD);
+	}
+}
+
+/* this routine is common to up & hp, move to separate file */
+
+/*
+ * Search the bad sector table looking for
+ * the specified sector.  Return index if found.
+ * Return -1 if not found.
+ */
+
+isbad(bt, st, blno)
+	register struct dkbad *bt;
+	register struct st *st;
+{
+	register int i;
+	register long blk, bblk;
+	int trk, sec;
+
+	sec = blno % st->nspc;
+	trk = sec / st->nsect;
+	sec %= st->nsect;
+	blk = ((long)(blno/st->nspc) << 16) + (trk << 8) + sec;
+	for (i = 0; i < MAXBADDESC; i++) {
+		bblk = ((long)bt->bt_bad[i].bt_cyl << 16) +
+			bt->bt_bad[i].bt_trksec;
+		if (blk == bblk)
+			return (i);
+		if (blk < bblk || bblk < 0)
+			break;
+	}
+	return (-1);
 }
