@@ -1,0 +1,3412 @@
+\input texinfo  @c -*-texinfo-*-
+@setfilename ../info/termcap
+@settitle The Termcap Library
+@ifinfo
+This file documents the termcap library of the GNU system.
+
+Copyright (C) 1988 Free Software Foundation, Inc.
+
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+@ignore
+Permission is granted to process this file through TeX and print the
+results, provided the printed document carries copying permission
+notice identical to this one except for the removal of this paragraph
+(this paragraph not being relevant to the printed manual).
+
+@end ignore
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided that the entire
+resulting derived work is distributed under the terms of a permission
+notice identical to this one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that this permission notice may be stated in a translation approved
+by the Foundation.
+@end ifinfo
+
+@setchapternewpage odd
+@titlepage
+@sp 6
+@center @titlefont{Termcap}
+@sp 1
+@center The Termcap Library and Data Base
+@sp 4
+@center First Edition
+@sp 1
+@center April 1988
+@sp 5
+@center Richard M. Stallman
+@sp 1
+@center Free Software Foundation
+@page
+@vskip 0pt plus 1filll
+Copyright @copyright{} 1988 Free Software Foundation, Inc.
+
+Published by the Free Software Foundation
+(675 Mass Ave, Cambridge MA 02139).
+Printed copies are available for $10 each.
+
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided that the entire
+resulting derived work is distributed under the terms of a permission
+notice identical to this one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that this permission notice may be stated in a translation approved
+by the Foundation.
+@end titlepage
+@page
+
+@synindex vr fn
+
+@node Top, Introduction, (DIR), (DIR)
+
+@menu
+* Introduction::What is termcap?  Why this manual?
+* Library::     The termcap library functions.
+* Data Base::   What terminal descriptions in @file{/etc/termcap} look like.
+* Capabilities::Definitions of the individual terminal capabilities:
+                 how to write them in descriptions, and how to use
+                 their values to do display updating.
+* Summary::	Brief table of capability names and their meanings.
+* Var Index::   Index of C functions and variables.
+* Cap Index::   Index of termcap capabilities.
+* Index::       Concept index.
+@end menu
+
+@node Introduction, Library, Top, Top
+@unnumbered Introduction
+
+@cindex termcap
+@dfn{Termcap} is a library and data base that enables programs to use
+display terminals in a terminal-independent manner.  It originated in
+Berkeley Unix.
+
+The termcap data base describes the capabilities of hundreds of different
+display terminals in great detail.  Some examples of the information
+recorded for a terminal could include how many columns wide it is, what
+string to send to move the cursor to an arbitrary position (including how
+to encode the row and column numbers), how to scroll the screen up one or
+several lines, and how much padding is needed for such a scrolling
+operation.
+
+The termcap library is provided for easy access this data base in programs
+that want to do terminal-independent character-based display output.
+
+This manual describes the GNU version of the termcap library, which has
+some extensions over the Unix version.  All the extensions are identified
+as such, so this manual also tells you how to use the Unix termcap.
+
+The GNU version of the termcap library is available free as source code,
+for use in free programs, and runs on Unix and VMS systems (at least).  You
+can find it in the GNU Emacs distribution in the files @file{termcap.c} and
+@file{tparam.c}.
+
+This manual was written for the GNU project, whose goal is to develop a
+complete free operating system upward-compatible with Unix for user
+programs.  The project is approximately two thirds complete.  For more
+information on the GNU project, including the GNU Emacs editor and the
+mostly-portable optimizing C compiler, send one dollar to
+
+@display
+Free Software Foundation
+675 Mass Ave
+Cambridge, MA 02139
+@end display
+
+@node Library, Data Base, Introduction, Top
+@chapter The Termcap Library
+
+The termcap library is the application programmer's interface to the
+termcap data base.  It contains functions for the following purposes:
+
+@itemize @bullet
+@item
+Finding the description of the user's terminal type (@code{tgetent}).
+
+@item
+Interrogating the description for information on various topics
+(@code{tgetnum}, @code{tgetflag}, @code{tgetstr}).
+
+@item
+Computing and performing padding (@code{tputs}).
+
+@item
+Encoding numeric parameters such as cursor positions into the
+terminal-specific form required for display commands (@code{tparam},
+@code{tgoto}).
+@end itemize
+
+@menu
+* Preparation:: Preparing to use the termcap library.
+* Find::        Finding the description of the terminal being used.
+* Interrogate:: Interrogating the description for particular capabilities.
+* Initialize::  Initialization for output using termcap.
+* Padding::     Outputting padding.
+* Parameters::  Encoding parameters such as cursor positions.
+@end menu
+
+@node Preparation, Find, Library, Library
+@section Preparing to Use the Termcap Library
+
+To use the termcap library in a program, you need two kinds of preparation:
+
+@itemize @bullet
+@item
+The compiler needs declarations of the functions and variables in the
+library.
+
+On GNU systems, it suffices to include the header file
+@file{termcap.h} in each source file that uses these functions and
+variables.@refill
+
+On Unix systems, there is often no such header file.  Then you must
+explictly declare the variables as external.  You can do likewise for
+the functions, or let them be implicitly declared and cast their
+values from type @code{int} to the appropriate type.
+
+We illustrate the declarations of the individual termcap library
+functions with ANSI C prototypes because they show how to pass the
+arguments.  If you are not using the GNU C compiler, you probably
+cannot use function prototypes, so omit the argument types and names
+from your declarations.
+
+@item
+The linker needs to search the library.  Usually either
+@samp{-ltermcap} or @samp{-ltermlib} as an argument when linking will
+do this.@refill
+@end itemize
+
+@node Find, Interrogate, Preparation, Library
+@section Finding a Terminal Description: @code{tgetent}
+
+@findex tgetent
+An application program that is going to use termcap must first look up the
+description of the terminal type in use.  This is done by calling
+@code{tgetent}, whose declaration in ANSI Standard C looks like:
+
+@example
+int tgetent (char *@var{buffer}, char *@var{termtype});
+@end example
+
+@noindent
+This function finds the description and remembers it internally so that
+you can interrogate it about specific terminal capabilities
+(@pxref{Interrogate}).
+
+The argument @var{termtype} is a string which is the name for the type of
+terminal to look up.  Usually you would obtain this from the environment
+variable @code{TERM} using @code{getenv ("TERM")}.
+
+If you are using the GNU version of termcap, you can alternatively ask
+@code{tgetent} to allocate enough space.  Pass a null pointer for
+@var{buffer}, and @code{tgetent} itself allocates the storage using
+@code{malloc}.  In this case the returned value on success is the address
+of the storage, cast to @code{int}.  But normally there is no need for you
+to look at the address.  Do not free the storage yourself.@refill
+
+With the Unix version of termcap, you must allocate space for the
+description yourself and pass the address of the space as the argument
+@var{buffer}.  There is no way you can tell how much space is needed, so
+the convention is to allocate a buffer 2048 characters long and assume that
+is enough.  (Formerly the convention was to allocate 1024 characters and
+assume that was enough.  But one day, for one kind of terminal, that was
+not enough.)
+
+No matter how the space to store the description has been obtained,
+termcap records its address internally for use when you later interrogate
+the description with @code{tgetnum}, @code{tgetstr} or @code{tgetflag}.  If
+the buffer was allocated by termcap, it will be freed by termcap too if you
+call @code{tgetent} again.  If the buffer was provided by you, you must
+make sure that its contents remain unchanged for as long as you still plan
+to interrogate the description.@refill
+
+The return value of @code{tgetent} is @minus{}1 if there is some difficulty
+accessing the data base of terminal types, 0 if the data base is accessible
+but the specified type is not defined in it, and some other value
+otherwise.
+
+Here is how you might use the function @code{tgetent}:
+
+@example
+#ifdef unix
+static char term_buffer[2048];
+#else
+#define term_buffer 0
+#endif
+
+init_terminal_data ()
+@{
+  char *termtype = getenv ("TERM");
+  int success;
+
+  if (termtype == 0)
+    fatal ("Specify a terminal type with `setenv TERM <yourtype>'.\n");
+
+  success = tgetent (term_buffer, termtype);
+  if (success < 0)
+    fatal ("Could not access the termcap data base.\n");
+  if (success == 0)
+    fatal ("Terminal type `%s' is not defined.\n", termtype);
+@}
+@end example
+
+@noindent
+Here we assume the function @code{fatal} prints an error message and exits.
+
+If the environment variable @code{TERMCAP} is defined, its value is used to
+override the terminal type data base.  The function @code{tgetent} checks
+the value of @code{TERMCAP} automatically.  If the value starts with
+@samp{/} then it is taken as a file name to use as the data base file,
+instead of @file{/etc/termcap} which is the standard data base.  If the
+value does not start with @samp{/} then it is itself used as the terminal
+description, provided that the terminal type @var{termtype} is among the
+types it claims to apply to.  @xref{Data Base}, for information on the
+format of a terminal description.@refill
+
+@node Interrogate, Initialize, Find, Library
+@section Interrogating the Terminal Description
+
+Each piece of information recorded in a terminal description is called a
+@dfn{capability}.  Each defined terminal capability has a two-letter code
+name and a specific meaning.  For example, the number of columns is named
+@samp{co}.  @xref{Capabilities}, for definitions of all the standard
+capability names.
+
+Once you have found the proper terminal description with @code{tgetent}
+(@pxref{Find}), your application program must @dfn{interrogate} it for
+various terminal capabilities.  You must specify the two-letter code of
+the capability whose value you seek.
+
+Capability values can be numeric, boolean (capability is either present or
+absent) or strings.  Any particular capability always has the same value
+type; for example, @samp{co} always has a numeric value, while @samp{am}
+(automatic wrap at margin) is always a flag, and @samp{cm} (cursor motion
+command) always has a string value.  The documentation of each capability
+says which type of value it has.@refill
+
+There are three functions to use to get the value of a capability,
+depending on the type of value the capability has.  Here are their
+declarations in ANSI C:
+
+@findex tgetnum
+@findex tgetflag
+@findex tgetstr
+@example
+int tgetnum (char *@var{name});
+int tgetflag (char *@var{name});
+char *tgetstr (char *@var{name}, char **@var{area});
+@end example
+
+@table @code
+@item tgetnum
+Use @code{tgetnum} to get a capability value that is numeric.  The
+argument @var{name} is the two-letter code name of the capability.  If
+the capability is present, @code{tgetnum} returns the numeric value
+(which is nonnegative).  If the capability is not mentioned in the
+terminal description, @code{tgetnum} returns @minus{}1.
+
+@item tgetflag
+Use @code{tgetflag} to get a boolean value.  If the capability
+@var{name} is present in the terminal description, @code{tgetflag}
+returns 1; otherwise, it returns 0.
+
+@item tgetstr
+Use @code{tgetstr} to get a string value.  It returns a pointer to a
+string which is the capability value, or a null pointer if the
+capability is not present in the terminal description.
+
+There are two ways @code{tgetstr} can find space to store the string value:
+
+@itemize @bullet
+@item
+You can ask @code{tgetstr} to allocate the space.  Pass a null
+pointer for the argument @var{area}, and @code{tgetstr} will use
+@code{malloc} to allocate storage big enough for the value.
+Termcap will never free this storage or refer to it again; you
+should free it when you are finished with it.
+
+This method is more robust, since there is no need to guess how
+much space is needed.  But it is supported only by the GNU
+termcap library.
+
+@item
+You can provide the space.  Provide for the argument @var{area} the
+address of a pointer variable of type @code{char *}.  Before calling
+@code{tgetstr}, initialize the variable to point at available space.
+Then @code{tgetstr} will store the string value in that space and will
+increment the pointer variable to point after the space that has been
+used.  You can use the same pointer variable for many calls to
+@code{tgetstr}.
+
+There is no way to determine how much space is needed for a single
+string, and no way for you to prevent or handle overflow of the area
+you have provided.  However, you can be sure that the total size of
+all the string values you will obtain from the terminal description is
+no greater than the size of the description (unless you get the same
+capability twice).  You can determine that size with @code{strlen} on
+the buffer you provided to @code{tgetent}.  See below for an example.
+
+Providing the space yourself is the only method supported by the Unix
+version of termcap.
+@end itemize
+@end table
+
+Note that you do not have to specify a terminal type or terminal
+description for the interrogation functions.  They automatically use the
+description found by the most recent call to @code{tgetent}.
+
+Here is an example of interrogating a terminal description for various
+capabilities, with conditionals to select between the Unix and GNU methods
+of providing buffer space.
+
+@example
+char *tgetstr ();
+
+char *cl_string, *cm_string;
+int height;
+int width;
+int auto_wrap;
+
+char PC;   /* For tputs.  */
+char *BC;  /* For tgoto.  */
+char *UP;
+
+interrogate_terminal ()
+@{
+#ifdef UNIX
+  /* Here we assume that an explicit term_buffer
+     was provided to tgetent.  */
+  char *buffer
+    = (char *) malloc (strlen (term_buffer));
+#define BUFFADDR &buffer
+#else
+#define BUFFADDR 0
+#endif
+
+  char *temp;
+
+  /* Extract information we will use.  */
+  cl_string = tgetstr ("cl", BUFFADDR);
+  cm_string = tgetstr ("cm", BUFFADDR);
+  auto_wrap = tgetflag ("am");
+  height = tgetnum ("li");
+  width = tgetnum ("co");
+
+  /* Extract information that termcap functions use.  */
+  temp = tgetstr ("pc", BUFFADDR);
+  PC = temp ? *temp : 0;
+  BC = tgetstr ("le", BUFFADDR);
+  UP = tgetstr ("up", BUFFADDR);
+@}
+@end example
+
+@noindent
+@xref{Padding}, for information on the variable @code{PC}.  @xref{Using
+Parameters}, for information on @code{UP} and @code{BC}.
+
+@node Initialize, Padding, Interrogate, Library
+@section Initialization for Use of Termcap
+@cindex terminal flags (kernel)
+
+Before starting to output commands to a terminal using termcap,
+an application program should do two things:
+
+@itemize @bullet
+@item
+Initialize various global variables which termcap library output
+functions refer to.  These include @code{PC} and @code{ospeed} for
+padding (@pxref{Output Padding}) and @code{UP} and @code{BC} for
+cursor motion (@pxref{tgoto}).@refill
+
+@item
+Tell the kernel to turn off alteration and padding of horizontal-tab
+characters sent to the terminal.
+@end itemize
+
+To turn off output processing in Berkeley Unix you would use @code{ioctl}
+with code @code{TIOCLSET} to set the bit named @code{LLITOUT}, and clear
+the bits @code{ANYDELAY} using @code{TIOCSETN}.  In POSIX or System V, you
+must clear the bit named @code{OPOST}.  Refer to the system documentation
+for details.@refill
+
+If you do not set the terminal flags properly, some older terminals will
+not work.  This is because their commands may contain the characters that
+normally signify newline, carriage return and horizontal tab---characters
+which the kernel thinks it ought to modify before output.
+
+When you change the kernel's terminal flags, you must arrange to restore
+them to their normal state when your program exits.  This implies that the
+program must catch fatal signals such as @code{SIGQUIT} and @code{SIGINT}
+and restore the old terminal flags before actually terminating.
+
+Modern terminals' commands do not use these special characters, so if you
+do not care about problems with old terminals, you can leave the kernel's
+terminal flags unaltered.
+
+@node Padding, Parameters, Initialize, Library
+@section Padding
+@cindex padding
+
+@dfn{Padding} means outputting null characters following a terminal display
+command that takes a long time to execute.  The terminal description says
+which commands require padding and how much; the function @code{tputs},
+described below, outputs a terminal command while extracting from it the
+padding information, and then outputs the padding that is necessary.
+
+@menu
+* Why Pad::          Explanation of padding.
+* Describe Padding:: The data base says how much padding a terminal needs.
+* Output Padding::   Using @code{tputs} to output the needed padding.
+@end menu
+
+@node Why Pad, Describe Padding, Padding, Padding
+@subsection Why Pad, and How
+
+Most types of terminal have commands that take longer to execute than they
+do to send over a high-speed line.  For example, clearing the screen may
+take 20msec once the entire command is received.  During that time, on a
+9600 bps line, the terminal could receive about 20 additional output
+characters while still busy clearing the screen.  Every terminal has a
+certain amount of buffering capacity to remember output characters that
+cannot be processed yet, but too many slow commands in a row can cause the
+buffer to fill up.  Then any additional output that cannot be processed
+immediately will be lost.
+
+To avoid this problem, we normally follow each display command with enough
+useless charaters (usually null characters) to fill up the time that the
+display command needs to execute.  This does the job if the terminal throws
+away null characters without using up space in the buffer (which most
+terminals do).  If enough padding is used, no output can ever be lost.  The
+right amount of padding avoids loss of output without slowing down
+operation, since the time used to transmit padding is time that nothing
+else could be done.
+
+The number of padding characters needed for an operation depends on the
+line speed.  In fact, it is proportional to the line speed.  A 9600 baud
+line transmits about one character per msec, so the clear screen command in
+the example above would need about 20 characters of padding.  At 1200 baud,
+however, only about 3 characters of padding are needed to fill up 20msec.
+
+@node Describe Padding, Output Padding, Why Pad, Padding
+@subsection Specifying Padding in a Terminal Description
+
+In the terminal description, the amount of padding required by each display
+command is recorded as a sequence of digits at the front of the command.
+These digits specify the padding time in msec.  They can be followed
+optionally by a decimal point and one more digit, which is a number of
+tenths of msec.
+
+Sometimes the padding needed by a command depends on the cursor position.
+For example, the time taken by an ``insert line'' command is usually
+proportional to the number of lines that need to be moved down or cleared.
+An asterisk (@samp{*}) following the padding time says that the time
+should be multiplied by the number of screen lines affected by the command.
+
+@example
+:al=1.3*\E[L:
+@end example
+
+@noindent
+is used to describe the ``insert line'' command for a certain terminal.
+The padding required is 1.3 msec per line affected.  The command itself is
+@samp{@key{ESC} [ L}.
+
+The padding time specified in this way tells @code{tputs} how many pad
+characters to output.  @xref{Output Padding}.
+
+Two special capability values affect padding for all commands.  These are
+the @samp{pc} and @samp{pb}.  The variable @samp{pc} specifies the
+character to pad with, and @samp{pb} the speed below which no padding is
+needed.  The defaults for these variables, a null character and 0,
+are correct for most terminals.  @xref{Pad Specs}.
+
+@node Output Padding,, Describe Padding, Padding
+@subsection Performing Padding with @code{tputs}
+@cindex line speed
+
+@findex tputs
+Use the termcap function @code{tputs} to output a string containing an
+optional padding spec of the form described above (@pxref{Describe
+Padding}).  The function @code{tputs} strips off and decodes the padding
+spec, outputs the rest of the string, and then outputs the appropriate
+padding.  Here is its declaration in ANSI C:
+
+@example
+char PC;
+short ospeed;
+
+int tputs (char *@var{string}, int @var{nlines}, int (*@var{outfun}) ());
+@end example
+
+Here @var{string} is the string (including padding spec) to be output;
+@var{nlines} is the number of lines affected by the operation, which is
+used to multiply the amount of padding if the padding spec ends with a
+@samp{*}.  Finally, @var{outfun} is a function (such as @code{fputchar})
+that is called to output each character.  When actually called,
+@var{outfun} should expect one argument, a character.
+
+@vindex ospeed
+@vindex PC
+The operation of @code{tputs} is controlled by two global variables,
+@code{ospeed} and @code{PC}.  The value of @code{ospeed} is supposed to be
+the terminal output speed, encoded as in the @code{ioctl} system call which
+gets the speed information.  This is needed to compute the number of
+padding characters.  The value of @code{PC} is the character used for
+padding.
+
+You are responsible for storing suitable values into these variables before
+using @code{tputs}.  The value stored into the @code{PC} variable should be
+taken from the @samp{pc} capability in the terminal description (@pxref{Pad
+Specs}).  Store zero in @code{PC} if there is no @samp{pc}
+capability.@refill
+
+The argument @var{nlines} requires some thought.  Normally, it should be
+the number of lines whose contents will be cleared or moved by the command.
+For cursor motion commands, or commands that do editing within one line,
+use the value 1.  For most commands that affect multiple lines, such as
+@samp{al} (insert a line) and @samp{cd} (clear from the cursor to the end
+of the screen), @var{nlines} should be the screen height minus the current
+vertical position (origin 0).  For multiple insert and scroll commands such
+as @samp{AL} (insert multiple lines), that same value for @var{nlines} is
+correct; the number of lines being inserted is @i{not} correct.@refill
+
+If a ``scroll window'' feature is used to reduce the number of lines
+affected by a command, the value of @var{nlines} should take this into
+account.  This is because the delay time required depends on how much work
+the terminal has to do, and the scroll window feature reduces the work.
+@xref{Scrolling}.
+
+Commands such as @samp{ic} and @samp{dc} (insert or delete characters) are
+problematical because the padding needed by these commands is proportional
+to the number of characters affected, which is the number of columns from
+the cursor to the end of the line.  It would be nice to have a way to
+specify such a dependence, and there is no need for dependence on vertical
+position in these commands, so it is an obvious idea to say that for these
+commands @var{nlines} should really be the number of columns affected.
+However, the definition of termcap clearly says that @var{nlines} is always
+the number of lines affected, even in this case, where it is always 1.  It
+is not easy to change this rule now, because too many programs and terminal
+descriptions have been written to follow it.
+
+Because @var{nlines} is always 1 for the @samp{ic} and @samp{dc} strings,
+there is no reason for them to use @samp{*}, but some of them do.  These
+should be corrected by deleting the @samp{*}.  If, some day, such entries
+have disappeared, it may be possible to change to a more useful convention
+for the @var{nlines} argument for these operations without breaking any
+programs.
+
+@node Parameters,, Padding, Library
+@section Filling In Parameters
+@cindex parameters
+
+Some terminal control strings require numeric @dfn{parameters}.  For
+example, when you move the cursor, you need to say what horizontal and
+vertical positions to move it to.  The value of the terminal's @samp{cm}
+capability, which says how to move the cursor, cannot simply be a string of
+characters; it must say how to express the cursor position numbers and
+where to put them within the command.
+
+The specifications of termcap include conventions as to which string-valued
+capabilities require parameters, how many parameters, and what the
+parameters mean; for example, it defines the @samp{cm} string to take
+two parameters, the vertical and horizontal positions, with 0,0 being the
+upper left corner.  These conventions are described where the individual
+commands are documented.
+
+Termcap also defines a language used within the capability definition for
+specifying how and where to encode the parameters for output.  This language
+uses character sequences starting with @samp{%}.  (This is the same idea as
+@code{printf}, but the details are different.)  The language for parameter
+encoding is described in this section.
+
+A program that is doing display output calls the functions @code{tparam} or
+@code{tgoto} to encode parameters according to the specifications.  These
+functions produce a string containing the actual commands to be output (as
+well a padding spec which must be processed with @code{tputs};
+@pxref{Padding}).
+
+@menu
+* Encode Parameters:: The language for encoding parameters.
+* Using Parameters::  Outputting a string command with parameters.
+@end menu
+
+@node Encode Parameters, Using Parameters, Parameters, Parameters
+@subsection Describing the Encoding
+@cindex %
+
+A terminal command string that requires parameters contains special
+character sequences starting with @samp{%} to say how to encode the
+parameters.  These sequences control the actions of @code{tparam} and
+@code{tgoto}.
+
+The parameters values passed to @code{tparam} or @code{tgoto} are
+considered to form a vector.  A pointer into this vector determines
+the next parameter to be processed.  Some of the @samp{%}-sequences
+encode one parameter and advance the pointer to the next parameter.
+Other @samp{%}-sequences alter the pointer or alter the parameter
+values without generating output.
+
+For example, the @samp{cm} string for a standard ANSI terminal is written
+as @samp{\E[%i%d;%dH}.  (@samp{\E} stands for @key{ESC}.)  @samp{cm} by
+convention always requires two parameters, the vertical and horizontal goal
+positions, so this string specifies the encoding of two parameters.  Here
+@samp{%i} increments the two values supplied, and each @samp{%d} encodes
+one of the values in decimal.  If the cursor position values 20,58 are
+encoded with this string, the result is @samp{\E[21;59H}.
+
+First, here are the @samp{%}-sequences that generate output.  Except for
+@samp{%%}, each of them encodes one parameter and advances the pointer
+to the following parameter.
+
+@table @samp
+@item %%
+Output a single @samp{%}.  This is the only way to represent a literal
+@samp{%} in a terminal command with parameters.  @samp{%%} does not
+use up a parameter.
+
+@item %d
+As in @code{printf}, output the next parameter in decimal.
+
+@item %2
+Like @samp{%02d} in @code{printf}: output the next parameter in
+decimal, and always use at least two digits.
+
+@item %3
+Like @samp{%03d} in @code{printf}: output the next parameter in
+decimal, and always use at least three digits.  Note that @samp{%4}
+and so on are @emph{not} defined.
+
+@item %.
+Output the next parameter as a single character whose ASCII code is
+the parameter value.  Like @samp{%c} in @code{printf}.
+
+@item %+@var{char}
+Add the next parameter to the character @var{char}, and output the
+resulting character.  For example, @samp{%+ } represents 0 as a space,
+1 as @samp{!}, etc.
+@end table
+
+The following @samp{%}-sequences specify alteration of the parameters
+(their values, or their order) rather than encoding a parameter for output.
+They generate no output; they are used only for their side effects
+on the parameters.  Also, they do not advance the ``next parameter'' pointer
+except as explicitly stated.  Only @samp{%i}, @samp{%r} and @samp{%>} are
+defined in standard Unix termcap.  The others are GNU extensions.@refill
+
+@table @samp
+@item %i
+Increment the next two parameters.  This is used for terminals that
+expect cursor positions in origin 1.  For example, @samp{%i%d,%d} would
+output two parameters with @samp{1} for 0, @samp{2} for 1, etc.
+
+@item %r
+Interchange the next two parameters.  This is used for terminals whose
+cursor positioning command expects the horizontal position first.
+
+@item %s
+Skip the next parameter.  Do not output anything.
+
+@item %b
+Back up one parameter.  The last parameter used will become once again
+the next parameter to be output, and the next output command will use
+it.  Using @samp{%b} more than once, you can back up any number of
+parameters, and you can refer to each parameter any number of times.
+
+@item %>@var{c1}@var{c2}
+Conditionally increment the next parameter.  Here @var{c1} and
+@var{c2} are characters which stand for their ASCII codes as numbers.
+If the next parameter is greater than the ASCII code of @var{c1}, the
+ASCII code of @var{c2} is added to it.@refill
+
+@item %a @var{op} @var{type} @var{pos}
+Perform arithmetic on the next parameter, do not use it up, and do not
+output anything.  Here @var{op} specifies the arithmetic operation,
+while @var{type} and @var{pos} together specify the other operand.
+
+Spaces are used above to separate the operands for clarity; the spaces
+don't appear in the data base, where this sequence is exactly five
+characters long.
+
+The character @var{op} says what kind of arithmetic operation to
+perform.  It can be any of these characters:
+
+@table @samp
+@item =
+assign a value to the next parameter, ignoring its old value.
+The new value comes from the other operand.
+
+@item +
+add the other operand to the next parameter.
+
+@item -
+subtract the other operand from the next parameter.
+
+@item *
+multiply the next parameter by the other operand.
+
+@item /
+divide the next parameter by the other operand.
+@end table
+
+The ``other operand'' may be another parameter's value or a constant;
+the character @var{type} says which.  It can be:
+
+@table @samp
+@item p
+Use another parameter.  The character @var{pos} says which
+parameter to use.  Subtract 64 from its ASCII code to get the
+position of the desired parameter relative to this one.  Thus,
+the character @samp{A} as @var{pos} means the parameter after the
+next one; the character @samp{?} means the parameter before the
+next one.
+
+@item c
+Use a constant value.  The character @var{pos} specifies the
+value of the constant.  The 0200 bit is cleared out, so that 0200
+can be used to represent zero.
+@end table
+@end table
+
+The following @samp{%}-sequences are special purpose hacks to compensate
+for the weird designs of obscure terminals.  They modify the next parameter
+or the next two parameters but do not generate output and do not use up any
+parameters.  @samp{%m} is a GNU extension; the others are defined in
+standard Unix termcap.
+
+@table @samp
+@item %n
+Exclusive-or the next parameter with 0140, and likewise the parameter
+after next.
+
+@item %m
+Complement all the bits of the next parameter and the parameter after next.
+
+@item %B
+Encode the next parameter in BCD.  It alters the value of the
+parameter by adding six times the quotient of the parameter by ten.
+Here is a C statement that shows how the new value is computed:
+
+@example
+@var{parm} = (@var{parm} / 10) * 16 + @var{parm} % 10;
+@end example
+
+@item %D
+Transform the next parameter as needed by Delta Data terminals.
+This involves subtracting twice the remainder of the parameter by 16.
+
+@example
+@var{parm} -= 2 * (@var{parm} % 16);
+@end example
+@end table
+
+@node Using Parameters,, Encode Parameters, Parameters
+@subsection Sending Display Commands with Parameters
+
+The termcap library functions @code{tparam} and @code{tgoto} serve as the
+analog of @code{printf} for terminal string parameters.  The newer function
+@code{tparam} is a GNU extension, more general but missing from Unix
+termcap.  The original parameter-encoding function is @code{tgoto}, which
+is preferable for cursor motion.
+
+@menu
+* tparam::   The general case, for GNU termcap only.
+* tgoto::    The special case of cursor motion.
+@end menu
+
+@node tparam, tgoto, Using Parameters, Using Parameters
+@subsubsection @code{tparam}
+
+@findex tparam
+The function @code{tparam} can encode display commands with any number of
+parameters and allows you to specify the buffer space.  It is the preferred
+function for encoding parameters for all but the @samp{cm} capability.  Its
+ANSI C declaration is as follows:
+
+@example
+char *tparam (char *@var{ctlstring}, char *@var{buffer}, int @var{size}, int @var{parm1},...)
+@end example
+
+The arguments are a control string @var{ctlstring} (the value of a terminal
+capability, presumably), an output buffer @var{buffer} and @var{size}, and
+any number of integer parameters to be encoded.  The effect of
+@code{tparam} is to copy the control string into the buffer, encoding
+parameters according to the @samp{%} sequences in the control string.
+
+You describe the output buffer by its address, @var{buffer}, and its size
+in bytes, @var{size}.  If the buffer is not big enough for the data to be
+stored in it, @code{tparam} calls @code{malloc} to get a larger buffer.  In
+either case, @code{tparam} returns the address of the buffer it ultimately
+uses.  If the value equals @var{buffer}, your original buffer was used.
+Otherwise, a new buffer was allocated, and you must free it after you are
+done with printing the results.  If you pass zero for @var{size} and
+@var{buffer}, @code{tparam} always allocates the space with @code{malloc}.
+
+All capabilities that require parameters also have the ability to specify
+padding, so you should use @code{tputs} to output the string produced by
+@code{tparam}.  @xref{Padding}.  Here is an example.
+
+@example
+@{
+  char *buf;
+  char buffer[40];
+
+  buf = tparam (command, buffer, 40, parm);
+  tputs (buf, 1, fputchar);
+  if (buf != buffer)
+    free (buf);
+@}
+@end example
+
+If a parameter whose value is zero is encoded with @samp{%.}-style
+encoding, the result is a null character, which will confuse @code{tputs}.
+This would be a serious problem, but luckily @samp{%.} encoding is used
+only by a few old models of terminal, and only for the @samp{cm}
+capability.  To solve the problem, use @code{tgoto} rather than
+@code{tparam} to encode the @samp{cm} capability.@refill
+
+@node tgoto,, tparam, Using Parameters
+@subsubsection @code{tgoto}
+
+@findex tgoto
+The special case of cursor motion is handled by @code{tgoto}.  There
+are two reasons why you might choose to use @code{tgoto}:
+
+@itemize @bullet
+@item
+For Unix compatibility, because Unix termcap does not have @code{tparam}.
+
+@item
+For the @samp{cm} capability, since @code{tgoto} has a special feature
+to avoid problems with null characters, tabs and newlines on certain old
+terminal types that use @samp{%.} encoding for that capability.
+@end itemize
+
+Here is how @code{tgoto} might be declared in ANSI C:
+
+@example
+char *tgoto (char *@var{cstring}, int @var{hpos}, int @var{vpos})
+@end example
+
+There are three arguments, the terminal description's @samp{cm} string and
+the two cursor position numbers; @code{tgoto} computes the parametrized
+string in an internal static buffer and returns the address of that buffer.
+The next time you use @code{tgoto} the same buffer will be reused.
+
+@vindex UP
+@vindex BC
+Parameters encoded with @samp{%.} encoding can generate null characters,
+tabs or newlines.  These might cause trouble: the null character because
+@code{tputs} would think that was the end of the string, the tab because
+the kernel or other software might expand it into spaces, and the newline
+becaue the kernel might add a carriage-return, or padding characters
+normally used for a newline.  To prevent such problems, @code{tgoto} is
+careful to avoid these characters.  Here is how this works: if the target
+cursor position value is such as to cause a problem (that is to say, zero,
+nine or ten), @code{tgoto} increments it by one, then compensates by
+appending a string to move the cursor back or up one position.
+
+The compensation strings to use for moving back or up are found in global
+variables named @code{BC} and @code{UP}.  These are actual external C
+variables with upper case names; they are declared @code{char *}.  It is up
+to you to store suitable values in them, normally obtained from the
+@samp{le} and @samp{up} terminal capabilities in the terminal description
+with @code{tgetstr}.  Alternatively, if these two variables are both zero,
+the feature of avoiding nulls, tabs and newlines is turned off.
+
+It is safe to use @code{tgoto} for commands other than @samp{cm} only if
+you have stored zero in @code{BC} and @code{UP}.
+
+Note that @code{tgoto} reverses the order of its operands: the horizontal
+position comes before the vertical position in the arguments to
+@code{tgoto}, even though the vertical position comes before the horizontal
+in the parameters of the @samp{cm} string.  If you use @code{tgoto} with a
+command such as @samp{AL} that takes one parameter, you must pass the
+parameter to @code{tgoto} as the ``vertical position''.@refill
+
+@node Data Base, Capabilities, Library, Top
+@chapter The Format of the Data Base
+
+The termcap data base of terminal descriptions is stored in the file
+@file{/etc/termcap}.  It contains terminal descriptions, blank lines, and
+comments.
+
+A terminal description starts with one or more names for the terminal type.
+The information in the description is a series of @dfn{capability names}
+and values.  The capability names have standard meanings
+(@pxref{Capabilities}) and their values describe the terminal.
+
+@menu
+* Format::            Overall format of a terminal description.
+* Capability Format:: Format of capabilities within a description.
+* Naming::            Naming conventions for terminal types.
+* Inheriting::        Inheriting part of a description from
+                        a related terminal type.
+@end menu
+
+@node Format, Capability Format, Data Base, Data Base
+@section Terminal Description Format
+@cindex description format
+
+Aside from comments (lines starting with @samp{#}, which are ignored), each
+nonblank line in the termcap data base is a terminal description.
+A terminal description is nominally a single line, but it can be split
+into multiple lines by inserting the two characters @samp{\ newline}.
+This sequence is ignored wherever it appears in a description.
+
+The preferred way to split the description is between capabilities: insert
+the four characters @samp{: \ newline tab} immediately before any colon.
+This allows each sub-line to start with some indentation.  This works
+because, after the @samp{\ newline} are ignored, the result is @samp{: tab
+:}; the first colon ends the preceding capability and the second colon
+starts the next capability.  If you split with @samp{\ newline} alone, you
+may not add any indentation after them.
+
+Here is a real example of a terminal description:
+
+@example
+dw|vt52|DEC vt52:\
+        :cr=^M:do=^J:nl=^J:bl=^G:\
+        :le=^H:bs:cd=\EJ:ce=\EK:cl=\EH\EJ:cm=\EY%+ %+ :co#80:li#24:\
+        :nd=\EC:ta=^I:pt:sr=\EI:up=\EA:\
+        :ku=\EA:kd=\EB:kr=\EC:kl=\ED:kb=^H:
+@end example
+
+Each terminal description begins with several names for the terminal type.
+The names are separated by @samp{|} characters, and a colon ends the last
+name.  The first name should be two characters long; it exists only for the
+sake of very old Unix systems and is never used in modern systems.  The
+last name should be a fully verbose name such as ``DEC vt52'' or ``Ann
+Arbor Ambassador with 48 lines''.  The other names should include whatever
+the user ought to be able to specify to get this terminal type, such as
+@samp{vt52} or @samp{aaa-48}.  @xref{Naming}, for information on how to
+choose terminal type names.
+
+After the terminal type names come the terminal capabilities, separated by
+colons and with a colon after the last one.  Each capability has a
+two-letter name, such as @samp{cm} for ``cursor motion string'' or @samp{li}
+for ``number of display lines''.
+
+@node Capability Format, Naming, Format, Data Base
+@section Writing the Capabilities
+
+There are three kinds of capabilities: flags, numbers, and strings.  Each
+kind has its own way of being written in the description.  Each defined
+capability has by convention a particular kind of value; for example,
+@samp{li} always has a numeric value and @samp{cm} always a string value.
+
+A flag capability is thought of as having a boolean value: the value is
+true if the capability is present, false if not.  When the capability is
+present, just write its name between two colons.
+
+A numeric capability has a value which is a nonnegative number.  Write the
+capability name, a @samp{#}, and the number, between two colons.  For
+example, @samp{@dots{}:li#48:@dots{}} is how you specify the @samp{li}
+capability for 48 lines.@refill
+
+A string-valued capability has a value which is a sequence of characters.
+Usually these are the characters used to perform some display operation.
+Write the capability name, a @samp{=}, and the characters of the value,
+between two colons.  For example, @samp{@dots{}:cm=\E[%i%d;%dH:@dots{}} is
+how the cursor motion command for a standard ANSI terminal would be
+specified.@refill
+
+Special characters in the string value can be expressed using
+@samp{\}-escape sequences as in C; in addition, @samp{\E} stands for
+@key{ESC}.  @samp{^} is also a kind of escape character; @samp{^} followed
+by @var{char} stands for the control-equivalent of @var{char}.  Thus,
+@samp{^a} stands for the character control-a, just like @samp{\001}.
+@samp{\} and @samp{^} themselves can be represented as @samp{\\} and
+@samp{\^}.@refill
+
+To include a colon in the string, you must write @samp{\072}.  You might
+ask, ``Why can't @samp{\:} be used to represent a colon?''  The reason is
+that the interrogation functions do not count slashes while looking for a
+capability.  Even if @samp{:ce=ab\:cd:} were interpreted as giving the
+@samp{ce} capability the value @samp{ab:cd}, it would also appear to define
+@samp{cd} as a flag.
+
+The string value will often contain digits at the front to specify padding
+(@pxref{Padding}) and/or @samp{%}-sequences within to specify how to encode
+parameters (@pxref{Parameters}).  Although these things are not to be
+output literally to the terminal, they are considered part of the value of
+the capability.  They are special only when the string value is processed
+by @code{tputs}, @code{tparam} or @code{tgoto}.  By contrast, @samp{\} and
+@samp{^} are considered part of the syntax for specifying the characters
+in the string.
+
+Let's look at the VT52 example again:
+
+@example
+dw|vt52|DEC vt52:\
+        :cr=^M:do=^J:nl=^J:bl=^G:\
+        :le=^H:bs:cd=\EJ:ce=\EK:cl=\EH\EJ:cm=\EY%+ %+ :co#80:li#24:\
+        :nd=\EC:ta=^I:pt:sr=\EI:up=\EA:\
+        :ku=\EA:kd=\EB:kr=\EC:kl=\ED:kb=^H:
+@end example
+
+Here we see the numeric-valued capabilities @samp{co} and @samp{li}, the
+flags @samp{bs} and @samp{pt}, and many string-valued capabilities.  Most
+of the strings start with @key{ESC} represented as @samp{\E}.  The rest
+contain control characters represented using @samp{^}.  The meanings of the
+individual capabilities are defined elsewhere (@pxref{Capabilities}).
+
+@node Naming, Inheriting, Capability Format, Data Base
+@section Terminal Type Name Conventions
+@cindex names of terminal types
+
+There are conventions for choosing names of terminal types.  For one thing,
+all letters should be in lower case.  The terminal type for a terminal in
+its most usual or most fundamental mode of operation should not have a
+hyphen in it.
+
+If the same terminal has other modes of operation which require
+different terminal descriptions, these variant descriptions are given
+names made by adding suffixes with hyphens.  Such alternate descriptions
+are used for two reasons:
+
+@itemize @bullet
+@item
+When the terminal has a switch that changes its behavior.  Since the
+computer cannot tell how the switch is set, the user must tell the
+computer by choosing the appropriate terminal type name.
+
+@cindex wrapping
+For example, the VT-100 has a setup flag that controls whether the
+cursor wraps at the right margin.  If this flag is set to ``wrap'',
+you must use the terminal type @samp{vt100-am}.  Otherwise you must
+use @samp{vt100-nam}.  Plain @samp{vt100} is defined as a synonym for
+either @samp{vt100-am} or @samp{vt100-nam} depending on the
+preferences of the local site.@refill
+
+The standard suffix @samp{-am} stands for ``automatic margins''.
+
+@item
+To give the user a choice in how to use the terminal.  This is done
+when the terminal has a switch that the computer normally controls.
+
+@cindex screen size
+For example, the Ann Arbor Ambassador can be configured with many
+screen sizes ranging from 20 to 60 lines.  Fewer lines make bigger
+characters but more lines let you see more of what you are editing.
+As a result, users have different preferences.  Therefore, termcap
+provides terminal types for many screen sizes.  If you choose type
+@samp{aaa-30}, the terminal will be configured to use 30 lines; if you
+choose @samp{aaa-48}, 48 lines will be used, and so on.
+@end itemize
+
+Here is a list of standard suffixes and their conventional meanings:
+
+@table @samp
+@item -w
+Short for ``wide''.  This is a mode that gives the terminal more
+columns than usual.  This is normally a user option.
+
+@item -am
+``Automatic margins''.  This is an alternate description for use when
+the terminal's margin-wrap switch is on; it contains the @samp{am}
+flag.  The implication is that normally the switch is off and the
+usual description for the terminal says that the switch is off.
+
+@item -nam
+``No automatic margins''.  The opposite of @samp{-am}, this names an
+alternative description which lacks the @samp{am} flag.  This implies
+that the terminal is normally operated with the margin-wrap switch
+turned on, and the normal description of the terminal says so.
+
+@item -na
+``No arrows''.  This terminal description initializes the terminal to
+keep its arrow keys in local mode.  This is a user option.
+
+@item -rv
+``Reverse video''.  This terminal description causes text output for
+normal video to appear as reverse, and text output for reverse video
+to come out as normal.  Often this description differs from the usual
+one by interchanging the two strings which turn reverse video on and
+off.@refill
+
+This is a user option; you can choose either the ``reverse video''
+variant terminal type or the normal terminal type, and termcap will
+obey.
+
+@item -s
+``Status''.  Says to enable use of a status line which ordinary output
+does not touch (@pxref{Status Line}).
+
+Some terminals have a special line that is used only as a status line.
+For these terminals, there is no need for an @samp{-s} variant; the
+status line commands should be defined by default.  On other
+terminals, enabling a status line means removing one screen line from
+ordinary use and reducing the effective screen height.  For these
+terminals, the user can choose the @samp{-s} variant type to request
+use of a status line.
+
+@item -@var{nlines}
+Says to operate with @var{nlines} lines on the screen, for terminals
+such as the Ambassador which provide this as an option.  Normally this
+is a user option; by choosing the terminal type, you control how many
+lines termcap will use.
+
+@item -@var{npages}p
+Says that the terminal has @var{npages} pages worth of screen memory,
+for terminals where this is a hardware option.
+
+@item -unk
+Says that description is not for direct use, but only for reference in
+@samp{tc} capabilities.  Such a description is a kind of subroutine,
+because it describes the common characteristics of several variant
+descriptions that would use other suffixes in place of @samp{-unk}.
+@end table
+
+@node Inheriting,, Naming, Data Base
+@section Inheriting from Related Descriptions
+
+@cindex inheritance
+When two terminal descriptions are similar, their identical parts do not
+need to be given twice.  Instead, one of the two can be defined in terms of
+the other, using the @samp{tc} capability.  We say that one description
+@dfn{refers to} the other, or @dfn{inherits from} the other.
+
+The @samp{tc} capability must be the last one in the terminal description,
+and its value is a string which is the name of another terminal type which
+is referred to.  For example,
+
+@example
+N9|aaa|ambassador|aaa-30|ann arbor ambassador/30 lines:\
+        :ti=\E[2J\E[30;0;0;30p:\
+        :te=\E[60;0;0;30p\E[30;1H\E[J:\
+        :li#30:tc=aaa-unk:
+@end example
+
+@noindent
+defines the terminal type @samp{aaa-30} (also known as plain @samp{aaa}) in
+terms of @samp{aaa-unk}, which defines everything about the Ambassador that
+is independent of screen height.  The types @samp{aaa-36}, @samp{aaa-48}
+and so on for other screen heights are likewise defined to inherit from
+@samp{aaa-unk}.
+
+The capabilities overridden by @samp{aaa-30} include @samp{li}, which says
+how many lines there are, and @samp{ti} and @samp{te}, which configure the
+terminal to use that many lines.
+
+The effective terminal description for type @samp{aaa} consists of the text
+shown above followed by the text of the description of @samp{aaa-unk}.  The
+@samp{tc} capability is handled automatically by @code{tgetent}, which
+finds the description thus referenced and combines the two descriptions
+(@pxref{Find}).  Therefore, only the implementor of the terminal
+descriptions needs to think about using @samp{tc}.  Users and application
+programmers do not need to be concerned with it.
+
+Since the reference terminal description is used last, capabilities
+specified in the referring description override any specifications of the
+same capabilities in the reference description.
+
+The referring description can cancel out a capability without specifying
+any new value for it by means of a special trick.  Write the capability in
+the referring description, with the character @samp{@@} after the capability
+name, as follows:
+
+@example
+NZ|aaa-30-nam|ann arbor ambassador/30 lines/no automatic-margins:\
+        :am@@:tc=aaa-30:
+@end example
+
+@node Capabilities, Summary, Data Base, Top
+@chapter Definitions of the Terminal Capabilities
+
+This section is divided into many subsections, each for one aspect of
+use of display terminals.  For writing a display program, you usually need
+only check the subsections for the operations you want to use.  For writing
+a terminal description, you must read each subsection and fill in the
+capabilities described there.
+
+String capabilities that are display commands may require numeric
+parameters (@pxref{Parameters}).  Most such capabilities do not use
+parameters.  When a capability requires parameters, this is explicitly
+stated at the beginning of its definition.  In simple cases, the first or
+second sentence of the definition mentions all the parameters, in the order
+they should be given, using a name
+@iftex
+in italics
+@end iftex
+@ifinfo
+in upper case
+@end ifinfo
+for each one.  For example, the @samp{rp} capability is a command that
+requires two parameters; its definition begins as follows:
+
+@quotation
+String of commands to output a graphic character @var{c}, repeated @var{n}
+times.
+@end quotation
+
+In complex cases or when there are many parameters, they are described
+explicitly.
+
+When a capability is described as obsolete, this means that programs should
+not be written to look for it, but terminal descriptions should still be
+written to provide it.
+
+When a capability is described as very obsolete, this means that it should
+be omitted from terminal descriptions as well.
+
+@menu
+* Basic::             Basic characteristics.
+* Screen Size::       Screen size, and what happens when it changes.
+* Cursor Motion::     Various ways to move the cursor.
+* Scrolling::         Pushing text up and down on the screen.
+* Wrapping::          What happens if you write a character in the last column.
+* Windows::           Limiting the part of the window that output affects.
+* Clearing::          Erasing one or many lines.
+* Insdel Line::       Making new blank lines in mid-screen; deleting lines.
+* Insdel Char::       Inserting and deleting characters within a line.
+* Standout::          Highlighting some of the text.
+* Underlining::       Underlining some of the text.
+* Cursor Visibility:: Making the cursor more or less easy to spot.
+* Bell::              Attracts user's attention; not localized on the screen.
+* Keypad::            Recognizing when function keys or arrows are typed.
+* Meta Key::          @key{META} acts like an extra shift key.
+* Initialization::    Commands used to initialize or reset the terminal.
+* Pad Specs::         Info for the kernel on how much padding is needed.
+* Status Line::       A status line displays ``background'' information.
+* Half-Line::         Moving by half-lines, for superscripts and subscripts.
+* Printer::           Controlling auxiliary printers of display terminals.
+@end menu
+
+@node Basic, Screen Size, Capabilities, Capabilities
+@section Basic Characteristics
+
+This section documents the capabilities that describe the basic and
+nature of the terminal, and also those that are relevant to the output
+of graphic characters.
+
+@table @samp
+@item os
+@kindex os
+@cindex overstrike
+Flag whose presence means that the terminal can overstrike.  This
+means that outputting a graphic character does not erase whatever was
+present in the same character position before.  The terminals that can
+overstrike include printing terminals, storage tubes (all obsolete
+nowadays), and many bit-map displays.
+
+@item eo
+@kindex eo
+Flag whose presence means that outputting a space can erase an
+overstrike.  If this is not present and overstriking is supported,
+output of a space has no effect except to move the cursor.
+
+@item gn
+@kindex gn
+@cindex generic terminal type
+Flag whose presence means that this terminal type is a generic type
+which does not really describe any particular terminal.  Generic types
+are intended for use as the default type assigned when the user
+connects to the system, with the intention that the user should
+specify what type he really has.  One example of a generic type
+is the type @samp{network}.
+
+Since the generic type cannot say how to do anything interesting with
+the terminal, termcap-using programs will always find that the
+terminal is too weak to be supported if the user has failed to specify
+a real terminal type in place of the generic one.  The @samp{gn} flag
+directs these programs to use a different error message: ``You have
+not specified your real terminal type'', rather than ``Your terminal
+is not powerful enough to be used''.
+
+@item hc
+@kindex hc
+Flag whose presence means this is a hardcopy terminal.
+
+@item rp
+@kindex rp
+@cindex repeat output
+String of commands to output a graphic character @var{c}, repeated @var{n}
+times.  The first parameter value is the ASCII code for the desired
+character, and the second parameter is the number of times to repeat the
+character.  Often this command requires padding proportional to the 
+number of times the character is repeated.  This effect can be had by
+using parameter arithmetic with @samp{%}-sequences to compute the
+amount of padding, then generating the result as a number at the front
+of the string so that @code{tputs} will treat it as padding.
+
+@item hz
+@kindex hz
+Flag whose presence means that the ASCII character @samp{~} cannot be
+output on this terminal because it is used for display commands.
+
+Programs handle this flag by checking all text to be output and
+replacing each @samp{~} with some other character(s).  If this is not
+done, the screen will be thoroughly garbled.
+
+The old Hazeltine terminals that required such treatment are probably
+very rare today, so you might as well not bother to support this flag.
+
+@item CC
+@kindex CC
+@cindex command character
+String whose presence means the terminal has a settable command
+character.  The value of the string is the default command character
+(which is usually @key{ESC}).
+
+All the strings of commands in the terminal description should be
+written to use the default command character.  If you are writing an
+application program that changes the command character, use the
+@samp{CC} capability to figure out how to translate all the display
+commands to work with the new command character.
+
+Most programs have no reason to look at the @samp{CC} capability.
+
+@item xb
+@kindex xb
+@cindex Superbee
+Flag whose presence identifies Superbee terminals which are unable to
+transmit the characters @key{ESC} and @kbd{Control-C}.  Programs which
+support this flag are supposed to check the input for the code sequences
+sent by the @key{F1} and @key{F2} keys, and pretend that @key{ESC}
+or @kbd{Control-C} (respectively) had been read.  But this flag is
+obsolete, and not worth supporting.
+@end table
+
+@node Screen Size, Cursor Motion, Basic, Capabilities
+@section Screen Size
+@cindex screen size
+
+A terminal description has two capabilities, @samp{co} and @samp{li},
+that describe the screen size in columns and lines.  But there is more
+to the question of screen size than this.
+
+On some operating systems the ``screen'' is really a window and the
+effective width can vary.  On some of these systems, @code{tgetnum}
+uses the actual width of the window to decide what value to return for
+the @samp{co} capability, overriding what is actually written in the
+terminal description.  On other systems, it is up to the application
+program to check the actual window width using a system call.  For
+example, on BSD 4.3 systems, the system call @code{ioctl} with code
+@code{TIOCGWINSZ} will tell you the current screen size.
+
+On all window systems, termcap is powerless to advise the application
+program if the user resizes the window.  Application programs must
+deal with this possibility in a system-dependent fashion.  On some
+systems the C shell handles part of the problem by detecting changes
+in window size and setting the @code{TERMCAP} environment variable
+appropriately.  This takes care of application programs that are
+started subsequently.  It does not help application programs already
+running.
+
+On some systems, including BSD 4.3, all programs using a terminal get
+a signal named @code{SIGWINCH} whenever the screen size changes.
+Programs that use termcap should handle this signal by using
+@code{ioctl TIOCGWINSZ} to learn the new screen size.
+
+@table @samp
+@item co
+@kindex co
+@cindex screen size
+Numeric value, the width of the screen in character positions.  Even
+hardcopy terminals normally have a @samp{co} capability.
+
+@item li
+@kindex li
+Numeric value, the height of the screen in lines.
+@end table
+
+@node Cursor Motion, Wrapping, Screen Size, Capabilities
+@section Cursor Motion
+@cindex cursor motion
+
+Termcap assumes that the terminal has a @dfn{cursor}, a spot on the screen
+where a visible mark is displayed, and that most display commands take
+effect at the position of the cursor.  It follows that moving the cursor
+to a specified location is very important.
+
+There are many terminal capabilities for different cursor motion
+operations.  A terminal description should define as many as possible, but
+most programs do not need to use most of them.  One capability, @samp{cm},
+moves the cursor to an arbitrary place on the screen; this by itself is
+sufficient for any application as long as there is no need to support
+hardcopy terminals or certain old, weak displays that have only relative
+motion commands.  Use of other cursor motion capabilities is an
+optimization, enabling the program to output fewer characters in some
+common cases.
+
+If you plan to use the relative cursor motion commands in an application
+program, you must know what the starting cursor position is.  To do this,
+you must keep track of the cursor position and update the records each
+time anything is output to the terminal, including graphic characters.
+In addition, it is necessary to know whether the terminal wraps after
+writing in the rightmost column.  @xref{Wrapping}.
+
+One other motion capability needs special mention: @samp{nw} moves the
+cursor to the beginning of the following line, perhaps clearing all the
+starting line after the cursor, or perhaps not clearing at all.  This
+capability is a least common denominator that is probably supported even by
+terminals that cannot do most other things such as @samp{cm} or @samp{do}.
+Even hardcopy terminals can support @samp{nw}.
+
+@table @asis
+@item @samp{cm}
+@kindex cm
+String of commands to position the cursor at line @var{l}, column @var{c}.
+Both parameters are origin-zero, and are defined relative to the
+screen, not relative to display memory.
+
+All display terminals except a few very obsolete ones support @samp{cm},
+so it is acceptable for an application program to refuse to operate on
+terminals lacking @samp{cm}.
+
+@item @samp{ho}
+@kindex ho
+@cindex home position
+String of commands to move the cursor to the upper left corner of the
+screen (this position is called the @dfn{home position}).  In
+terminals where the upper left corner of the screen is not the same as
+the beginning of display memory, this command must go to the upper
+left corner of the screen, not the beginning of display memory.
+
+Every display terminal supports this capability, and many application
+programs refuse to operate if the @samp{ho} capability is missing.
+
+@item @samp{ll}
+@kindex ll
+String of commands to move the cursor to the lower left corner of the
+screen.  On some terminals, moving up from home position does this,
+but programs should never assume that will work.  Just output the
+@samp{ll} string (if it is provided); if moving to home position and
+then moving up is the best way to get there, the @samp{ll} command
+will do that.
+
+@item @samp{cr}
+@kindex cr
+String of commands to move the cursor to the beginning of the line it
+is on.  If this capability is not specified, many programs assume
+they can use the ASCII carriage return character for this.
+
+@item @samp{le}
+@kindex le
+String of commands to move the cursor left one column.  Unless the
+@samp{bw} flag capability is specified, the effect is undefined if the
+cursor is at the left margin; do not use this command there.  If
+@samp{bw} is present, this command may be used at the left margin, and
+it wraps the cursor to the last column of the preceding line.
+
+@item @samp{nd}
+@kindex nd
+String of commands to move the cursor right one column.  The effect is
+undefined if the cursor is at the right margin; do not use this
+command there, not even if @samp{am} is present.
+
+@item @samp{up}
+@kindex up
+String of commands to move the cursor vertically up one line.  The
+effect of sending this string when on the top line is undefined;
+programs should never use it that way.
+
+@item @samp{do}
+@kindex do
+String of commands to move the cursor vertically down one line.  The
+effect of sending this string when on the bottom line is undefined;
+programs should never use it that way.
+
+The original idea was that this string would not contain a newline
+character and therefore could be used without disabling the kernel's usual
+habit of converting of newline into a carriage-return newline sequence.
+But many terminal descriptions do use newline in the @samp{do} string, so
+this is not possible; a program which sends the @samp{do} string must
+disable output conversion in the kernel (@pxref{Initialize}).
+
+@item @samp{bw}
+@kindex bw
+Flag whose presence says that @samp{le} may be used in column zero
+to move to the last column of the preceding line.  If this flag
+is not present, @samp{le} should not be used in column zero.
+
+@item @samp{nw}
+@kindex nw
+String of commands to move the cursor to start of next line, possibly
+clearing rest of line (following the cursor) before moving.
+
+@item @samp{DO}, @samp{UP}, @samp{LE}, @samp{RI}
+@kindex DO
+@kindex LE
+@kindex RI
+@kindex UP
+Strings of commands to move the cursor @var{n} lines down vertically,
+up vertically, or @var{n} columns left or right.  Do not attempt to
+move past any edge of the screen with these commands; the effect of
+trying that is undefined.  Only a few terminal descriptions provide
+these commands, and most programs do not use them.
+
+@item @samp{CM}
+@kindex CM
+String of commands to position the cursor at line @var{l}, column
+@var{c}, relative to display memory.  Both parameters are origin-zero.
+This capability is present only in terminals where there is a
+difference between screen-relative and memory-relative addressing, and
+not even in all such terminals.
+
+@item @samp{ch}
+@kindex ch
+String of commands to position the cursor at column @var{c} in the
+same line it is on.  This is a special case of @samp{cm} in which the
+vertical position is not changed.  The @samp{ch} capability is
+provided only when it is faster to output than @samp{cm} would be in
+this special case.  Programs should not assume most display terminals
+have @samp{ch}.
+
+@item @samp{cv}
+@kindex cv
+String of commands to position the cursor at line @var{l} in the same
+column.  This is a special case of @samp{cm} in which the horizontal
+position is not changed.  The @samp{cv} capability is provided only
+when it is faster to output than @samp{cm} would be in this special
+case.  Programs should not assume most display terminals have
+@samp{cv}.
+
+@item @samp{sc}
+@kindex sc
+String of commands to make the terminal save the current cursor
+position.  Only the last saved position can be used.  If this
+capability is present, @samp{rc} should be provided also.  Most
+terminals have neither.
+
+@item @samp{rc}
+@kindex rc
+String of commands to make the terminal restore the last saved cursor
+position.  If this capability is present, @samp{sc} should be provided
+also.  Most terminals have neither.
+
+@item @samp{ff}
+@kindex ff
+String of commands to advance to the next page, for a hardcopy
+terminal.
+
+@item @samp{ta}
+@kindex ta
+String of commands to move the cursor right to the next hardware tab
+stop column.  Missing if the terminal does not have any kind of
+hardware tabs.  Do not send this command if the kernel's terminal
+modes say that the kernel is expanding tabs into spaces.
+
+@item @samp{bt}
+@kindex bt
+String of commands to move the cursor left to the previous hardware
+tab stop column.  Missing if the terminal has no such ability; many
+terminals do not.  Do not send this command if the kernel's terminal
+modes say that the kernel is expanding tabs into spaces.
+@end table
+
+The following obsolete capabilities should be included in terminal
+descriptions when appropriate, but should not be looked at by new programs.
+
+@table @samp
+@item nc
+@kindex nc
+Flag whose presence means the terminal does not support the ASCII
+carriage return character as @samp{cr}.  This flag is needed because
+old programs assume, when the @samp{cr} capability is missing, that
+ASCII carriage return can be used for the purpose.  We use @samp{nc}
+to tell the old programs that carriage return may not be used.
+
+New programs should not assume any default for @samp{cr}, so they need
+not look at @samp{nc}.  However, descriptions should contain @samp{nc}
+whenever they do not contain @samp{cr}.
+
+@item xt
+@kindex xt
+Flag whose presence means that the ASCII tab character may not be used
+for cursor motion.  This flag exists because old programs assume, when
+the @samp{ta} capability is missing, that ASCII tab can be used for
+the purpose.  We use @samp{xt} to tell the old programs not to use tab.
+
+New programs should not assume any default for @samp{ta}, so they need
+not look at @samp{xt} in connection with cursor motion.  Note that
+@samp{xt} also has implications for standout mode (@pxref{Standout}).
+It is obsolete in regard to cursor motion but not in regard to
+standout.
+
+In fact, @samp{xt} means that the terminal is a Teleray 1061.
+
+@item bc
+@kindex bc
+Very obsolete alternative name for the @samp{le} capability.
+
+@item bs
+@kindex bs
+Flag whose presence means that the ASCII character backspace may be
+used to move the cursor left.  Obsolete; look at @samp{le} instead.
+
+@item nl
+@kindex nl
+Obsolete capability which is a string that can either be used to move
+the cursor down or to scroll.  The same string must scroll when used
+on the bottom line and move the cursor when used on any other line.
+New programs should use @samp{do} or @samp{sf}, and ignore @samp{nl}.
+
+If there is no @samp{nl} capability, some old programs assume they can
+use the newline character for this purpose.  These programs follow a
+bad practice, but because they exist, it is still desirable to define
+the @samp{nl} capability in a terminal description if the best way to
+move down is @emph{not} a newline.
+@end table
+
+@node Wrapping, Scrolling, Cursor Motion, Capabilities
+@section Wrapping
+@cindex wrapping
+
+@dfn{Wrapping} means moving the cursor from the right margin to the left
+margin of the following line.  Some terminals wrap automatically when a
+graphic character is output in the last column, while others do not.  Most
+application programs that use termcap need to know whether the terminal
+wraps.  There are two special flag capabilities to describe what the
+terminal does when a graphic character is output in the last column.
+
+@table @samp
+@item am
+@kindex am
+Flag whose presence means that writing a character in the last column
+causes the cursor to wrap to the beginning of the next line.
+
+If @samp{am} is not present, writing in the last column leaves the
+cursor at the place where the character was written.
+
+Writing in the last column of the last line should be avoided on
+terminals with @samp{am}, as it may or may not cause scrolling to
+occur (@pxref{Scrolling}).  Scrolling is surely not what you would
+intend.
+
+If your program needs to check the @samp{am} flag, then it also needs
+to check the @samp{xn} flag which indicates that wrapping happens in a
+strange way.  Many common terminals have the @samp{xn} flag.
+
+@item xn
+@kindex xn
+Flag whose presence means that the cursor wraps in a strange way.  At
+least two distinct kinds of strange behavior are known; the termcap
+data base does not contain anything to distinguish the two.
+
+On Concept-100 terminals, output in the last column wraps the cursor
+almost like an ordinary @samp{am} terminal.  But if the next thing
+output is a newline, it is ignored.
+
+DEC VT-100 terminals (when the wrap switch is on) do a different
+strange thing: the cursor wraps only if the next thing output is
+another graphic character.  In fact, the wrap occurs when the
+following graphic character is received by the terminal, before the
+character is placed on the screen.
+
+On both of these terminals, after writing in the last column a
+following graphic character will be displayed in the first column of
+the following line.  But the effect of relative cursor motion
+characters such as newline or backspace at such a time depends on the
+terminal.  The effect of erase or scrolling commands also depends on
+the terminal.  You can't assume anything about what they will do on a
+terminal that has @samp{xn}.  So, to be safe, you should never do
+these things at such a time on such a terminal.
+
+To be sure of reliable results on a terminal which has the @samp{xn}
+flag, output a @samp{cm} absolute positioning command after writing in
+the last column.  Another safe thing to do is to output carriage-return
+newline, which will leave the cursor at the beginning of the following
+line.
+@end table
+
+@node Scrolling, Windows, Wrapping, Capabilities
+@section Scrolling
+@cindex scrolling
+
+@dfn{Scrolling} means moving the contents of the screen up or down one or
+more lines.  Moving the contents up is @dfn{forward scrolling}; moving them
+down is @dfn{reverse scrolling}.
+
+Scrolling happens after each line of output during ordinary output on most
+display terminals.  But in an application program that uses termcap for
+random-access output, scrolling happens only when explicitly requested with
+the commands in this section.
+
+Some terminals have a @dfn{scroll region} feature.  This lets you limit
+the effect of scrolling to a specified range of lines.  Lines outside the
+range are unaffected when scrolling happens.  The scroll region feature
+is available if either @samp{cs} or @samp{cS} is present.
+
+@table @samp
+@item sf
+@kindex sf
+String of commands to scroll the screen one line up, assuming it is
+output with the cursor at the beginning of the bottom line.
+
+@item sr
+@kindex sr
+String of commands to scroll the screen one line down, assuming it is
+output with the cursor at the beginning of the top line.
+
+@item SF
+@kindex SF
+String of commands to scroll the screen @var{n} lines up, assuming it
+is output with the cursor at the beginning of the bottom line.
+
+@item SR
+@kindex SR
+String of commands to scroll the screen @var{n} line down, assuming it
+is output with the cursor at the beginning of the top line.
+
+@item cs
+@kindex cs
+String of commands to set the scroll region.  This command takes two
+parameters, @var{start} and @var{end}, which are the line numbers
+(origin-zero) of the first line to include in the scroll region and of
+the last line to include in it.  When a scroll region is set,
+scrolling is limited to the specified range of lines; lines outside
+the range are not affected by scroll commands.
+
+Do not try to move the cursor outside the scroll region.  The region
+remains set until explicitly removed.  To remove the scroll region,
+use another @samp{cs} command specifying the full height of the
+screen.
+
+The cursor position is undefined after the @samp{cs} command is set,
+so position the cursor with @samp{cm} immediately afterward.
+
+@item cS
+@kindex cS
+String of commands to set the scroll region using parameters in
+different form.  The effect is the same as if @samp{cs} were used.
+Four parameters are required:
+
+@enumerate
+@item
+Total number of lines on the screen.
+@item
+Number of lines above desired scroll region.
+@item
+Number of lines below (outside of) desired scroll region.
+@item
+Total number of lines on the screen, the same as the first parameter.
+@end enumerate
+
+This capability is a GNU extension that was invented to allow the Ann
+Arbor Ambassador's scroll-region command to be described; it could
+also be done by putting non-Unix @samp{%}-sequences into a @samp{cs}
+string, but that would have confused Unix programs that used the
+@samp{cs} capability with the Unix termcap.  Currently only GNU Emacs
+uses the @samp{cS} capability.
+
+@item ns
+@kindex ns
+Flag which means that the terminal does not normally scroll for
+ordinary sequential output.  For modern terminals, this means that
+outputting a newline in ordinary sequential output with the cursor on
+the bottom line wraps to the top line.  For some obsolete terminals,
+other things may happen.
+
+The terminal may be able to scroll even if it does not normally do so.
+If the @samp{sf} capability is provided, it can be used for scrolling
+regardless of @samp{ns}.
+
+@item da
+@kindex da
+Flag whose presence means that lines scrolled up off the top of the
+screen may come back if scrolling down is done subsequently.
+
+The @samp{da} and @samp{db} flags do not, strictly speaking, affect
+how to scroll.  But programs that scroll usually need to clear the
+lines scrolled onto the screen, if these flags are present.
+
+@item db
+@kindex db
+Flag whose presence means that lines scrolled down off the bottom of
+the screen may come back if scrolling up is done subsequently.
+
+@item lm
+@kindex lm
+Numeric value, the number of lines of display memory that the terminal
+has.  A value of zero means that the terminal has more display memory
+than can fit on the screen, but no fixed number of lines.  (The number
+of lines may depend on the amount of text in each line.)
+@end table
+
+Any terminal description that defines @samp{SF} should also define @samp{sf};
+likewise for @samp{SR} and @samp{sr}.  However, many terminals can only
+scroll by one line at a time, so it is common to find @samp{sf} and not
+@samp{SF}, or @samp{sr} without @samp{SR}.@refill
+
+Therefore, all programs that use the scrolling facilities should be
+prepared to work with @samp{sf} in the case that @samp{SF} is absent, and
+likewise with @samp{sr}.  On the other hand, an application program that
+uses only @samp{sf} and not @samp{SF} is acceptable, though slow on some
+terminals.@refill
+
+When outputting a scroll command with @code{tputs}, the @var{nlines}
+argument should be the total number of lines in the portion of the screen
+being scrolled.  Very often these commands require padding proportional to
+this number of lines.  @xref{Padding}.
+
+@node Windows, Clearing, Scrolling, Capabilities
+@section Windows
+@cindex window
+
+A @dfn{window}, in termcap, is a rectangular portion of the screen to which
+all display operations are restricted.  Wrapping, clearing, scrolling,
+insertion and deletion all operate as if the specified window were all the
+screen there was.
+
+@table @samp
+@item wi
+@kindex wi
+String of commands to set the terminal output screen window.
+This string requires four parameters, all origin-zero:
+@enumerate
+@item
+The first line to include in the window.
+@item
+The last line to include in the window.
+@item
+The first column to include in the window.
+@item
+The last column to include in the window.
+@end enumerate
+@end table
+
+Most terminals do not support windows.
+
+@node Clearing, Insdel Line, Windows, Capabilities
+@section Clearing Parts of the Screen
+@cindex erasing
+@cindex clearing the screen
+
+There are several terminal capabilities for clearing parts of the screen
+to blank.  All display terminals support the @samp{cl} string, and most
+display terminals support all of these capabilities.
+
+@table @samp
+@item cl
+@kindex cl
+String of commands to clear the entire screen and position the cursor
+at the upper left corner.
+
+@item cd
+@kindex cd
+String of commands to clear the line the cursor is on, and all the
+lines below it, down to the bottom of the screen.  This command string
+should be used only with the cursor in column zero; their effect is
+undefined if the cursor is elsewhere.
+
+@item ce
+@kindex ce
+String of commands to clear from the cursor to the end of the current
+line.
+
+@item ec
+@kindex ec
+String of commands to clear @var{n} characters, starting with the
+character that the cursor is on.  This command string is expected to
+leave the cursor position unchanged.  The parameter @var{n} should never
+be large enough to reach past the right margin; the effect of such a
+large parameter would be undefined.
+@end table
+
+Clear to end of line (@samp{ce}) is extremely important in programs that
+maintain an updating display.  Nearly all display terminals support this
+operation, so it is acceptable for a an application program to refuse to
+work if @samp{ce} is not present.  However, if you do not want this
+limitation, you can accomplish clearing to end of line by outputting spaces
+until you reach the right margin.  In order to do this, you must know the
+current horizontal position.  Also, this technique assumes that writing a
+space will erase.  But this happens to be true on all the display terminals
+that fail to support @samp{ce}.
+
+@node Insdel Line, Insdel Char, Clearing, Capabilities
+@section Insert/Delete Line
+
+@cindex insert line
+@cindex delete line
+@dfn{Inserting a line} means creating a blank line in the middle
+of the screen, and pushing the existing lines of text apart.  In fact,
+the lines above the insertion point do not change, while the lines below
+move down, and one is normally lost at the bottom of the screen.
+
+@dfn{Deleting a line} means causing the line to disappear from the screen,
+closing up the gap by moving the lines below it upward.  A new line
+appears at the bottom of the screen.  Usually this line is blank, but
+on terminals with the @samp{db} flag it may be a line previously moved
+off the screen bottom by scrolling or line insertion.
+
+Insertion and deletion of lines is useful in programs that maintain an
+updating display some parts of which may get longer or shorter.  They are
+also useful in editors for scrolling parts of the screen, and for
+redisplaying after lines of text are killed or inserted.
+
+Many terminals provide commands to insert or delete a single line at the
+cursor position.  Some provide the ability to insert or delete several
+lines with one command, using the number of lines to insert or delete as a
+parameter.  Always move the cursor to column zero before using any of
+these commands.
+
+@table @samp
+@item al
+@kindex al
+String of commands to insert a blank line before the line the cursor
+is on.  The existing line, and all lines below it, are moved down.
+The last line in the screen (or in the scroll region, if one is set)
+disappears and in most circumstances is discarded.  It may not be
+discarded if the @samp{db} is present (@pxref{Scrolling}).
+
+The cursor must be at the left margin before this command is used.
+This command does not move the cursor.
+
+@item dl
+@kindex dl
+String of commands to delete the line the cursor is on.  The following
+lines move up, and a blank line appears at the bottom of the screen
+(or bottom of the scroll region).  If the terminal has the @samp{db}
+flag, a nonblank line previously pushed off the screen bottom may
+reappear at the bottom.
+
+The cursor must be at the left margin before this command is used.
+This command does not move the cursor.
+
+@item AL
+@kindex AL
+String of commands to insert @var{n} blank lines before the line that
+the cursor is on.  It is like @samp{al} repeated @var{n} times, except
+that it is as fast as one @samp{al}.
+
+@item DL
+@kindex DL
+String of commands to delete @var{n} lines starting with the line that
+the cursor is on.  It is like @samp{dl} repeated @var{n} times, except
+that it is as fast as one @samp{dl}.
+@end table
+
+Any terminal description that defines @samp{AL} should also define
+@samp{al}; likewise for @samp{DL} and @samp{dl}.  However, many terminals
+can only insert or delete one line at a time, so it is common to find
+@samp{al} and not @samp{AL}, or @samp{dl} without @samp{DL}.@refill
+
+Therefore, all programs that use the insert and delete facilities should be
+prepared to work with @samp{al} in the case that @samp{AL} is absent, and
+likewise with @samp{dl}.  On the other hand, it is acceptable to write
+an application that uses only @samp{al} and @samp{dl} and does not look
+for @samp{AL} or @samp{DL} at all.@refill
+
+If a terminal does not support line insertion and deletion directly,
+but does support a scroll region, the effect of insertion and deletion
+can be obtained with scrolling.  However, it is up to the individual
+user program to check for this possibility and use the scrolling
+commands to get the desired result.  It is fairly important to implement
+this alternate strategy, since it is the only way to get the effect of
+line insertion and deletion on the popular VT100 terminal.
+
+Insertion and deletion of lines is affected by the scroll region on
+terminals that have a settable scroll region.  This is useful when it is
+desirable to move any few consecutive lines up or down by a few lines.
+@xref{Scrolling}.
+
+The line pushed off the bottom of the screen is not lost if the terminal
+has the @samp{db} flag capability; instead, it is pushed into display
+memory that does not appear on the screen.  This is the same thing that
+happens when scrolling pushes a line off the bottom of the screen.
+Either reverse scrolling or deletion of a line can bring the apparently
+lost line back onto the bottom of the screen.  If the terminal has the
+scroll region feature as well as @samp{db}, the pushed-out line really
+is lost if a scroll region is in effect.
+
+When outputting an insert or delete command with @code{tputs}, the
+@var{nlines} argument should be the total number of lines from the cursor
+to the bottom of the screen (or scroll region).  Very often these commands
+require padding proportional to this number of lines.  @xref{Padding}.
+
+For @samp{AL} and @samp{DL} the @var{nlines} argument should @emph{not}
+depend on the number of lines inserted or deleted; only the total number of
+lines affected.  This is because it is just as fast to insert two or
+@var{n} lines with @samp{AL} as to insert one line with @samp{al}.
+
+@node Insdel Char, Standout, Insdel Line, Capabilities
+@section Insert/Delete Character
+@cindex insert character
+@cindex delete character
+
+@dfn{Inserting a character} means creating a blank space in the middle of a
+line, and pushing the rest of the line rightward.  The character in the
+rightmost column is lost.
+
+@dfn{Deleting a character} means causing the character to disappear from
+the screen, closing up the gap by moving the rest of the line leftward.  A
+blank space appears in the rightmost column.
+
+Insertion and deletion of characters is useful in programs that maintain an
+updating display some parts of which may get longer or shorter.  It is also
+useful in editors for redisplaying the results of editing within a line.
+
+Many terminals provide commands to insert or delete a single character at
+the cursor position.  Some provide the ability to insert or delete several
+characters with one command, using the number of characters to insert or
+delete as a parameter.
+
+@cindex insert mode
+Many terminals provide an insert mode in which outputting a graphic
+character has the added effect of inserting a position for that character.
+A special command string is used to enter insert mode and another is used
+to exit it.  The reason for designing a terminal with an insert mode rather
+than an insert command is that inserting character positions is usually
+followed by writing characters into them.  With insert mode, this is as
+fast as simply writing the characters, except for the fixed overhead of
+entering and leaving insert mode.  However, when the line speed is great
+enough, padding may be required for the graphic characters output in insert
+mode.
+
+Some terminals require you to enter insert mode and then output a special
+command for each position to be inserted.  Or they may require special
+commands to be output before or after each graphic character to be
+inserted.
+
+@cindex delete mode
+Deletion of characters is usually accomplished by a straightforward command
+to delete one or several positions; but on some terminals, it is necessary
+to enter a special delete mode before using the delete command, and leave
+delete mode afterward.  Sometimes delete mode and insert mode are the same
+mode.
+
+Some terminals make a distinction between character positions in which a
+space character has been output and positions which have been cleared.  On
+these terminals, the effect of insert or delete character runs to the first
+cleared position rather than to the end of the line.  In fact, the effect
+may run to more than one line if there is no cleared position to stop the
+shift on the first line.  These terminals are identified by the @samp{in}
+flag capability.
+
+On terminals with the @samp{in} flag, the technique of skipping over
+characters that you know were cleared, and then outputting text later on in
+the same line, causes later insert and delete character operations on that
+line to do nonstandard things.  A program that has any chance of doing this
+must check for the @samp{in} flag and must be careful to write explicit
+space characters into the intermediate columns when @samp{in} is present.
+
+A plethora of terminal capabilities are needed to describe all of this
+complexity.  Here is a list of them all.  Following the list, we present
+an algorithm for programs to use to take proper account of all of these
+capabilities.
+
+@table @samp
+@item im
+@kindex im
+String of commands to enter insert mode.
+
+If the terminal has no special insert mode, but it can insert
+characters with a special command, @samp{im} should be defined with a
+null value, because the @samp{vi} editor assumes that insertion of a
+character is impossible if @samp{im} is not provided.
+
+New programs should not act like @samp{vi}.  They should pay attention
+to @samp{im} only if it is defined.
+
+@item ei
+@kindex ei
+String of commands to leave insert mode.  This capability must be
+present if @samp{im} is.
+
+On a few old terminals the same string is used to enter and exit
+insert mode.  This string turns insert mode on if it was off, and off
+it it was on.  You can tell these terminals because the @samp{ei}
+string equals the @samp{im} string.  If you want to support these
+terminals, you must always remember accurately whether insert mode is
+in effect.  However, these terminals are obsolete, and it is
+reasonable to refuse to support them.  On all modern terminals, you
+can safely output @samp{ei} at any time to ensure that insert mode is
+turned off.
+
+@item ic
+@kindex ic
+String of commands to insert one character position at the cursor.
+The cursor does not move.
+
+If outputting a graphic character while in insert mode is sufficient
+to insert the character, then the @samp{ic} capability should be
+defined with a null value.
+
+If your terminal offers a choice of ways to insert---either use insert
+mode or use a special command---then define @samp{im} and do not define
+@samp{ic}, since this gives the most efficient operation when several
+characters are to be inserted.  @emph{Do not} define both strings, for
+that means that @emph{both} must be used each time insertion is done.
+
+@item ip
+@kindex ip
+String of commands to output following an inserted graphic character
+in insert mode.  Often it is used just for a padding spec, when padding
+is needed after an inserted character (@pxref{Padding}).
+
+@item IC
+@kindex IC
+String of commands to insert @var{n} character positions at and after
+the cursor.  It has the same effect as repeating the @samp{ic} string
+and a space, @var{n} times.
+
+If @samp{IC} is provided, application programs may use it without first
+entering insert mode.
+
+@item mi
+@kindex mi
+Flag whose presence means it is safe to move the cursor while in insert
+mode and assume the terminal remains in insert mode.
+
+@item in
+@kindex in
+Flag whose presence means that the terminal distinguishes between
+character positions in which space characters have been output and
+positions which have been cleared.
+@end table
+
+An application program can assume that the terminal can do character
+insertion if @emph{any one of} the capabilities @samp{IC}, @samp{im},
+@samp{ic} or @samp{ip} is provided.
+
+To insert @var{n} blank character positions, move the cursor to the place
+to insert them and follow this algorithm:
+
+@enumerate
+@item
+If an @samp{IC} string is provided, output it with parameter @var{n}
+and you are finished.  Otherwise (or if you don't want to bother to
+look for an @samp{IC} string) follow the remaining steps.
+
+@item
+Output the @samp{im} string, if there is one, unless the terminal is
+already in insert mode.
+
+@item
+Repeat steps 4 through 6, @var{n} times.
+
+@item
+Output the @samp{ic} string if any.
+
+@item
+Output a space.
+
+@item
+Output the @samp{ip} string if any.
+
+@item
+Output the @samp{ei} string, eventually, to exit insert mode.  There
+is no need to do this right away.  If the @samp{mi} flag is present,
+you can move the cursor and the cursor will remain in insert mode;
+then you can do more insertion elsewhere without reentering insert
+mode.
+@end enumerate
+
+To insert @var{n} graphic characters, position the cursor and follow this
+algorithm:
+
+@enumerate
+@item
+If an @samp{IC} string is provided, output it with parameter @var{n},
+then output the graphic characters, and you are finished.  Otherwise
+(or if you don't want to bother to look for an @samp{IC} string)
+follow the remaining steps.
+
+@item
+Output the @samp{im} string, if there is one, unless the terminal is
+already in insert mode.
+
+@item
+For each character to be output, repeat steps 4 through 6.
+
+@item
+Output the @samp{ic} string if any.
+
+@item
+Output the next graphic character.
+
+@item
+Output the @samp{ip} string if any.
+
+@item
+Output the @samp{ei} string, eventually, to exit insert mode.  There
+is no need to do this right away.  If the @samp{mi} flag is present,
+you can move the cursor and the cursor will remain in insert mode;
+then you can do more insertion elsewhere without reentering insert
+mode.
+@end enumerate
+
+Note that this is not the same as the original Unix termcap specifications
+in one respect: it assumes that the @samp{IC} string can be used without
+entering insert mode.  This is true as far as I know, and it allows you be
+able to avoid entering and leaving insert mode, and also to be able to
+avoid the inserted-character padding after the characters that go into the
+inserted positions.
+
+Deletion of characters is less complicated; deleting one column is done by
+outputting the @samp{dc} string.  However, there may be a delete mode that
+must be entered with @samp{dm} in order to make @samp{dc} work.
+
+@table @samp
+@item dc
+@kindex dc
+String of commands to delete one character position at the cursor.  If
+@samp{dc} is not present, the terminal cannot delete characters.
+
+@item DC
+@kindex DC
+String of commands to delete @var{n} characters starting at the cursor.
+It has the same effect as repeating the @samp{dc} string @var{n} times.
+Any terminal description that has @samp{DC} also has @samp{dc}.
+
+@item dm
+@kindex dm
+String of commands to enter delete mode.  If not present, there is no
+delete mode, and @samp{dc} can be used at any time (assuming there is
+a @samp{dc}).
+
+@item ed
+@kindex ed
+String of commands to exit delete mode.  This must be present if
+@samp{dm} is.
+@end table
+
+To delete @var{n} character positions, position the cursor and follow these
+steps:
+
+@enumerate
+@item
+If the @samp{DC} string is present, output it with parameter @var{n}
+and you are finished.  Otherwise, follow the remaining steps.
+
+@item
+Output the @samp{dm} string, unless you know the terminal is already
+in delete mode.
+
+@item
+Output the @samp{dc} string @var{n} times.
+
+@item
+Output the @samp{ed} string eventually.  If the flag capability
+@samp{mi} is present, you can move the cursor and do more deletion
+without leaving and reentering delete mode.
+@end enumerate
+
+As with the @samp{IC} string, we have departed from the original termcap
+specifications by assuming that @samp{DC} works without entering delete
+mode even though @samp{dc} would not.
+
+If the @samp{dm} and @samp{im} capabilities are both present and have the
+same value, it means that the terminal has one mode for both insertion and
+deletion.  It is useful for a program to know this, because then it can do
+insertions after deletions, or vice versa, without leaving insert/delete
+mode and reentering it.
+
+@node Standout, Underlining, Insdel Char, Capabilities
+@section Standout and Appearance Modes
+@cindex appearance modes
+@cindex standout
+@cindex magic cookie
+
+@dfn{Appearance modes} are modifications to the ways characters are
+displayed.  Typical appearance modes include reverse video, dim, bright,
+blinking, underlined, invisible, and alternate character set.  Each kind of
+terminal supports various among these, or perhaps none.
+
+For each type of terminal, one appearance mode or combination of them that
+looks good for highlighted text is chosen as the @dfn{standout mode}.  The
+capabilities @samp{so} and @samp{se} say how to enter and leave standout
+mode.  Programs that use appearance modes only to highlight some text
+generally use the standout mode so that they can work on as many terminals
+as possible.  Use of specific appearance modes other than ``underlined''
+and ``alternate character set'' is rare.
+
+Terminals that implement appearance modes fall into two general classes as
+to how they do it.
+
+In some terminals, the presence or absence of any appearance mode is
+recorded separately for each character position.  In these terminals, each
+graphic character written is given the appearance modes current at the time
+it is written, and keeps those modes until it is erased or overwritten.
+There are special commands to turn the appearance modes on or off for
+characters to be written in the future.
+
+In other terminals, the change of appearance modes is represented by a
+marker that belongs to a certain screen position but affects all following
+screen positions until the next marker.  These markers are traditionally
+called @dfn{magic cookies}.
+
+The same capabilities (@samp{so}, @samp{se}, @samp{mb} and so on) for
+turning appearance modes on and off are used for both magic-cookie
+terminals and per-character terminals.  On magic cookie terminals, these
+give the commands to write the magic cookies.  On per-character terminals,
+they change the current modes that affect future output and erasure.  Some
+simple applications can use these commands without knowing whether or not
+they work by means of cookies.
+
+However, a program that maintains and updates a display needs to know
+whether the terminal uses magic cookies, and exactly what their effect is.
+This information comes from the @samp{sg} capability.
+
+The @samp{sg} capability is a numeric capability whose presence indicates
+that the terminal uses magic cookies for appearance modes.  Its value is
+the number of character positions that a magic cookie occupies.  Usually
+the cookie occupies one or more character positions on the screen, and these
+character positions are displayed as blank, but in some terminals the
+cookie has zero width.
+
+The @samp{sg} capability describes both the magic cookie to turn standout
+on and the cookie to turn it off.  This makes the assumption that both
+kinds of cookie have the same width on the screen.  If that is not true,
+the narrower cookie must be ``widened'' with spaces until it has the same
+width as the other.
+
+On some magic cookie terminals, each line always starts with normal
+display; in other words, the scope of a magic cookie never extends over
+more than one line.  But on other terminals, one magic cookie affects all
+the lines below it unless explicitly canceled.  Termcap does not define any
+way to distinguish these two ways magic cookies can work.  To be safe, it
+is best to put a cookie at the beginning of each line.
+
+On some per-character terminals, standout mode or other appearance modes
+may be canceled by moving the cursor.  On others, moving the cursor has no
+effect on the state of the appearance modes.  The latter class of terminals
+are given the flag capability @samp{ms} (``can move in standout'').  All
+programs that might have occasion to move the cursor while appearance modes
+are turned on must check for this flag; if it is not present, they should
+reset appearance modes to normal before doing cursor motion.
+
+A program that has turned on only standout mode should use @samp{se} to
+reset the standout mode to normal.  A program that has turned on only
+alternate character set mode should use @samp{ae} to return it to normal.
+If it is possible that any other appearance modes are turned on, use the
+@samp{me} capability to return them to normal.
+
+Note that the commands to turn on one appearance mode, including @samp{so}
+and @samp{mb} @dots{} @samp{mr}, if used while some other appearance modes
+are turned on, may combine the two modes on some terminals but may turn off
+the mode previously enabled on other terminals.  This is because some
+terminals do not have a command to set or clear one appearance mode without
+changing the others.  Programs should not attempt to use appearance modes
+in combination except with @samp{sa}, and when switching from one single
+mode to another should always turn off the previously enabled mode and then
+turn on the new desired mode.
+
+On some old terminals, the @samp{so} and @samp{se} commands may be the same
+command, which has the effect of turning standout on if it is off, or off
+it is on.  It is therefore risky for a program to output extra @samp{se}
+commands for good measure.  Fortunately, all these terminals are obsolete.
+
+Programs that update displays in which standout-text may be replaced with
+non-standout text must check for the @samp{xs} flag.  In a per-character
+terminal, this flag says that the only way to remove standout once written is
+to clear that portion of the line with the @samp{ce} string or something
+even more powerful (@pxref{Clearing}); just writing new characters at those
+screen positions will not change the modes in effect there.  In a magic
+cookie terminal, @samp{xs} says that the only way to remove a cookie is to
+clear a portion of the line that includes the cookie; writing a different
+cookie at the same position does not work.
+
+Such programs must also check for the @samp{xt} flag, which means that the
+terminal is a Teleray 1061.  On this terminal it is impossible to position
+the cursor at the front of a magic cookie, so the only two ways to remove a
+cookie are (1) to delete the line it is on or (2) to position the cursor at
+least one character before it (possibly on a previous line) and output the
+@samp{se} string, which on these terminals finds and removes the next
+@samp{so} magic cookie on the screen.  (It may also be possible to remove a
+cookie which is not at the beginning of a line by clearing that line.)  The
+@samp{xt} capability also has implications for the use of tab characters,
+but in that regard it is obsolete (@xref{Cursor Motion}).
+
+@table @samp
+@item so
+@kindex so
+String of commands to enter standout mode.
+
+@item se
+@kindex se
+String of commands to leave standout mode.
+
+@item sg
+@kindex sg
+Numeric capability, the width on the screen of the magic cookie.  This
+capability is absent in terminals that record appearance modes
+character by character.
+
+@item ms
+@kindex ms
+Flag whose presence means that it is safe to move the cursor while the
+appearance modes are not in the normal state.  If this flag is absent,
+programs should always reset the appearance modes to normal before
+moving the cursor.
+
+@item xs
+@kindex xs
+Flag whose presence means that the only way to reset appearance modes
+already on the screen is to clear to end of line.  On a per-character
+terminal, you must clear the area where the modes are set.  On a magic
+cookie terminal, you must clear an area containing the cookie.
+See the discussion above.
+
+@item xt
+@kindex xt
+Flag whose presence means that the cursor cannot be positioned right
+in front of a magic cookie, and that @samp{se} is a command to delete
+the next magic cookie following the cursor.  See discussion above.
+
+@item mb
+@kindex mb
+String of commands to enter blinking mode.
+
+@item md
+@kindex md
+String of commands to enter double-bright mode.
+
+@item mh
+@kindex mh
+String of commands to enter half-bright mode.
+
+@item mk
+@kindex mk
+String of commands to enter invisible mode.
+
+@item mp
+@kindex mp
+String of commands to enter protected mode.
+
+@item mr
+@kindex mr
+String of commands to enter reverse-video mode.
+
+@item me
+@kindex me
+String of commands to turn off all appearance modes, including
+standout mode and underline mode.  On some terminals it also turns off
+alternate character set mode; on others, it may not.  This capability
+must be present if any of @samp{mb} @dots{} @samp{mr} is present.
+
+@item as
+@kindex as
+String of commands to turn on alternate character set mode.  This mode
+assigns some or all graphic characters an alternate picture on the
+screen.  There is no standard as to what the alternate pictures look
+like.
+
+@item ae
+@kindex ae
+String of commands to turn off alternate character set mode.
+
+@item sa
+@kindex sa
+String of commands to turn on an arbitrary combination of appearance
+modes.  It accepts 9 parameters, each of which controls a particular
+kind of appearance mode.  A parameter should be 1 to turn its appearance
+mode on, or zero to turn that mode off.  Most terminals do not support
+the @samp{sa} capability, even among those that do have various
+appearance modes.
+
+The nine parameters are, in order, @var{standout}, @var{underline},
+@var{reverse}, @var{blink}, @var{half-bright}, @var{double-bright},
+@var{blank}, @var{protect}, @var{alt char set}.
+@end table
+
+@node Underlining, Cursor Visibility, Standout, Capabilities
+@section Underlining
+@cindex underlining
+
+Underlining on most terminals is a kind of appearance mode, much like
+standout mode.  Therefore, it may be implemented using magic cookies or as
+a flag in the terminal whose current state affects each character that is
+output.  @xref{Standout}, for a full explanation.
+
+The @samp{ug} capability is a numeric capability whose presence indicates
+that the terminal uses magic cookies for underlining.  Its value is the
+number of character positions that a magic cookie for underlining occupies;
+it is used for underlining just as @samp{sg} is used for standout.  Aside
+from the simplest applications, it is impossible to use underlining
+correctly without paying attention to the value of @samp{ug}.
+
+@table @samp
+@item us
+@kindex us
+String of commands to turn on underline mode or to output a magic cookie
+to start underlining.
+
+@item ue
+@kindex ue
+String of commands to turn off underline mode or to output a magic
+cookie to stop underlining.
+
+@item ug
+@kindex ug
+Width of magic cookie that represents a change of underline mode;
+or missing, if the terminal does not use a magic cookie for this.
+
+@item ms
+@kindex ms
+Flag whose presence means that it is safe to move the cursor while the
+appearance modes are not in the normal state.  Underlining is an
+appearance mode.  If this flag is absent, programs should always turn
+off underlining before moving the cursor.
+@end table
+
+There are two other, older ways of doing underlining: there can be a
+command to underline a single character, or the output of @samp{_}, the
+ASCII underscore character, as an overstrike could cause a character to be
+underlined.  New programs need not bother to handle these capabilities
+unless the author cares strongly about the obscure terminals which support
+them.  However, terminal descriptions should provide these capabilities
+when appropriate.
+
+@table @samp
+@item uc
+@kindex uc
+String of commands to underline the character under the cursor, and
+move the cursor right.
+
+@item ul
+@kindex ul
+Flag whose presence means that the terminal can underline by
+overstriking an underscore character (@samp{_}); some terminals can do
+this even though they do not support overstriking in general.  An
+implication of this flag is that when outputting new text to overwrite
+old text, underscore characters must be treated specially lest they
+underline the old text instead.
+@end table
+
+@node Cursor Visibility, Bell, Underlining, Capabilities
+@section Cursor Visibility
+@cindex visibility
+
+Some terminals have the ability to make the cursor invisible, or to enhance
+it.  Enhancing the cursor is often done by programs that plan to use the
+cursor to indicate to the user a position of interest that may be anywhere
+on the screen---for example, the Emacs editor enhances the cursor on entry.
+Such programs should always restore the cursor to normal on exit.
+
+@table @samp
+@item vs
+@kindex vs
+String of commands to enhance the cursor.
+
+@item vi
+@kindex vi
+String of commands to make the cursor invisible.
+
+@item ve
+@kindex ve
+String of commands to return the cursor to normal.
+@end table
+
+If you define either @samp{vs} or @samp{vi}, you must also define @samp{ve}.
+
+@node Bell, Keypad, Cursor Visibility, Capabilities
+@section Bell
+@cindex bell
+@cindex visible bell
+
+Here we describe commands to make the terminal ask for the user to pay
+attention to it.
+
+@table @samp
+@item bl
+@kindex bl
+String of commands to cause the terminal to make an audible sound.  If
+this capability is absent, the terminal has no way to make a suitable
+sound.
+
+@item vb
+@kindex vb
+String of commands to cause the screen to flash to attract attention
+(``visible bell'').  If this capability is absent, the terminal has no
+way to do such a thing.
+@end table
+
+@node Keypad, Meta Key, Bell, Capabilities
+@section Keypad and Function Keys
+
+Many terminals have arrow and function keys that transmit specific
+character sequences to the computer.  Since the precise sequences used
+depend on the terminal, termcap defines capabilities used to say what the
+sequences are.  Unlike most termcap string-valued capabilities, these are
+not strings of commands to be sent to the terminal, rather strings that
+are received from the terminal.
+
+Programs that expect to use keypad keys should check, initially, for a
+@samp{ks} capability and send it, to make the keypad actually transmit.
+Such programs should also send the @samp{ke} string when exiting.
+
+@table @asis
+@item @samp{ks}
+@kindex ka@dots{}ku
+String of commands to make the function keys transmit.  If this
+capability is not provided, but the others in this section are,
+programs may assume that the function keys always transmit.
+
+@item @samp{ke}
+String of commands to make the function keys work locally.  This
+capability is provided only if @samp{ks} is.
+
+@item @samp{kl}
+String of input characters sent by typing the left-arrow key.  If this
+capability is missing, you cannot expect the terminal to have a
+left-arrow key that transmits anything to the computer.
+
+@item @samp{kr}
+String of input characters sent by typing the right-arrow key.
+
+@item @samp{ku}
+String of input characters sent by typing the up-arrow key.
+
+@item @samp{kd}
+String of input characters sent by typing the down-arrow key.
+
+@item @samp{kh}
+String of input characters sent by typing the ``home-position'' key.
+
+@item @samp{K1} @dots{} @samp{K5}
+@kindex K1@dots{}K5
+Strings of input characters sent by the five other keys in a 3-by-3
+array that includes the arrow keys, if the keyboard has such a 3-by-3
+array.  Note that one of these keys may be the ``home-position'' key,
+in which case one of these capabilities will have the same value as
+the @samp{kh} key.
+
+@item @samp{k0}
+String of input characters sent by function key 10 (or 0, if the terminal
+has one labeled 0).
+
+@item @samp{k1} @dots{} @samp{k9}
+@kindex k1@dots{}k9
+Strings of input characters sent by function keys 1 through 9,
+provided for those function keys that exist.
+
+@item @samp{kn}
+Number: the number of numbered function keys, if there are more than
+10.
+
+@item @samp{l0} @dots{} @samp{l9}
+@kindex l0@dots{}l9
+Strings which are the labels appearing on the keyboard on the keys
+described by the capabilities @samp{k0} @dots{} @samp{l9}.  These
+capabilities should be left undefined if the labels are @samp{f0} or
+@samp{f10} and @samp{f1} @dots{} @samp{f9}.@refill
+
+@item @samp{kH}
+@kindex kA@dots{}kT
+String of input characters sent by the ``home down'' key, if there is
+one.
+
+@item @samp{kb}
+String of input characters sent by the ``backspace'' key, if there is
+one.
+
+@item @samp{ka}
+String of input characters sent by the ``clear all tabs'' key, if there
+is one.
+
+@item @samp{kt}
+String of input characters sent by the ``clear tab stop this column''
+key, if there is one.
+
+@item @samp{kC}
+String of input characters sent by the ``clear screen'' key, if there is
+one.
+
+@item @samp{kD}
+String of input characters sent by the ``delete character'' key, if
+there is one.
+
+@item @samp{kL}
+String of input characters sent by the ``delete line'' key, if there is
+one.
+
+@item @samp{kM}
+String of input characters sent by the ``exit insert mode'' key, if
+there is one.
+
+@item @samp{kE}
+String of input characters sent by the ``clear to end of line'' key, if
+there is one.
+
+@item @samp{kS}
+String of input characters sent by the ``clear to end of screen'' key,
+if there is one.
+
+@item @samp{kI}
+String of input characters sent by the ``insert character'' or ``enter
+insert mode'' key, if there is one.
+
+@item @samp{kA}
+String of input characters sent by the ``insert line'' key, if there is
+one.
+
+@item @samp{kN}
+String of input characters sent by the ``next page'' key, if there is
+one.
+
+@item @samp{kP}
+String of input characters sent by the ``previous page'' key, if there is
+one.
+
+@item @samp{kF}
+String of input characters sent by the ``scroll forward'' key, if there
+is one.
+
+@item @samp{kR}
+String of input characters sent by the ``scroll reverse'' key, if there
+is one.
+
+@item @samp{kT}
+String of input characters sent by the ``set tab stop in this column''
+key, if there is one.
+
+@item @samp{ko}
+String listing the other function keys the terminal has.  This is a
+very obsolete way of describing the same information found in the
+@samp{kH} @dots{} @samp{kT} keys.  The string contains a list of
+two-character termcap capability names, separated by commas.  The
+meaning is that for each capability name listed, the terminal has a
+key which sends the string which is the value of that capability.  For
+example, the value @samp{:ko=cl,ll,sf,sr:} says that the terminal has
+four function keys which mean ``clear screen'', ``home down'',
+``scroll forward'' and ``scroll reverse''.@refill
+@end table
+
+@node Meta Key, Initialization, Keypad, Capabilities
+@section Meta Key
+
+@cindex meta key
+A Meta key is a key on the keyboard that modifies each character you type
+by controlling the 0200 bit.  This bit is on if and only if the Meta key is
+held down when the character is typed.  Characters typed using the Meta key
+are called Meta characters.  Emacs uses Meta characters as editing
+commands.
+
+@table @samp
+@item km
+@kindex km
+Flag whose presence means that the terminal has a Meta key.
+
+@item mm
+@kindex mm
+String of commands to enable the functioning of the Meta key.
+
+@item mo
+@kindex mo
+String of commands to disable the functioning of the Meta key.
+@end table
+
+If the terminal has @samp{km} but does not have @samp{mm} and @samp{mo}, it
+means that the Meta key always functions.  If it has @samp{mm} and
+@samp{mo}, it means that the Meta key can be turned on or off.  Send the
+@samp{mm} string to turn it on, and the @samp{mo} string to turn it off.
+I do not know why one would ever not want it to be on.
+
+@node Initialization, Pad Specs, Meta Key, Capabilities
+@section Initialization
+@cindex reset
+@cindex initialization
+@cindex tab stops
+
+@table @samp
+@item ti
+@kindex ti
+String of commands to put the terminal into whatever special modes are
+needed or appropriate for programs that move the cursor
+nonsequentially around the screen.  Programs that use termcap to do
+full-screen display should output this string when they start up.
+
+@item te
+@kindex te
+String of commands to undo what is done by the @samp{ti} string.
+Programs that output the @samp{ti} string on entry should output this
+string when they exit.
+
+@item is
+@kindex is
+String of commands to initialize the terminal for each login session.
+
+@item if
+@kindex if
+String which is the name of a file containing the string of commands
+to initialize the terminal for each session of use.  Normally @samp{is}
+and @samp{if} are not both used.
+
+@item i1
+@itemx i3
+@kindex i1
+@kindex i3
+Two more strings of commands to initialize the terminal for each login
+session.  The @samp{i1} string (if defined) is output before @samp{is}
+or @samp{if}, and the @samp{i3} string (if defined) is output after.
+
+The reason for having three separate initialization strings is to make
+it easier to define a group of related terminal types with slightly
+different initializations.  Define two or three of the strings in the
+basic type; then the other types can override one or two of the
+strings.
+
+@item rs
+@kindex rs
+String of commands to reset the terminal from any strange mode it may
+be in.  Normally this includes the @samp{is} string (or other commands
+with the same effects) and more.  What would go in the @samp{rs}
+string but not in the @samp{is} string are annoying or slow commands
+to bring the terminal back from strange modes that nobody would
+normally use.
+
+@item it
+@kindex it
+Numeric value, the initial spacing between hardware tab stop columns
+when the terminal is powered up.  Programs to initialize the terminal
+can use this to decide whether there is a need to set the tab stops.
+If the initial width is 8, well and good; if it is not 8, then the
+tab stops should be set; if they cannot be set, the kernel is told
+to convert tabs to spaces, and other programs will observe this and do
+likewise.
+
+@item ct
+@kindex ct
+String of commands to clear all tab stops.
+
+@item st
+@kindex st
+String of commands to set tab stop at current cursor column on all
+lines.
+@end table
+
+@node Pad Specs, Status Line, Initialization, Capabilities
+@section Padding Capabilities
+@cindex padding
+
+There are two terminal capabilities that exist just to explain the proper
+way to obey the padding specifications in all the command string
+capabilities.  One, @samp{pc}, must be obeyed by all termcap-using
+programs.
+
+@table @samp
+@item pb
+@kindex pb
+Numeric value, the lowest baud rate at which padding is actually
+needed.  Programs may check this and refrain from doing any padding at
+lower speeds.
+
+@item pc
+@kindex pc
+String of commands for padding.  The first character of this string is
+to be used as the pad character, instead of using null characters for
+padding.  If @samp{pc} is not provided, use null characters.  Every
+program that uses termcap must look up this capability and use it to
+set the variable @code{PC} that is used by @code{tputs}.
+@xref{Padding}.
+@end table
+
+Some termcap capabilities exist just to specify the amount of padding that
+the kernel should give to cursor motion commands used in ordinary
+sequential output.
+
+@table @samp
+@item dC
+@kindex dC
+Numeric value, the number of msec of padding needed for the
+carriage-return character.
+
+@item dN
+@kindex dN
+Numeric value, the number of msec of padding needed for the newline
+(linefeed) character.
+
+@item dB
+@kindex dB
+Numeric value, the number of msec of padding needed for the backspace
+character.
+
+@item dF
+@kindex dF
+Numeric value, the number of msec of padding needed for the formfeed
+character.
+
+@item dT
+@kindex dT
+Numeric value, the number of msec of padding needed for the tab
+character.
+@end table
+
+In some systems, the kernel uses the above capabilities; in other systems,
+the kernel uses the paddings specified in the string capabilities
+@samp{cr}, @samp{sf}, @samp{le}, @samp{ff} and @samp{ta}.  Descriptions of
+terminals which require such padding should contain the @samp{dC} @dots{}
+@samp{dT} capabilities and also specify the appropriate padding in the
+corresponding string capabilities.  Since no modern terminals require
+padding for ordinary sequential output, you probably won't need to do
+either of these things.
+
+@node Status Line, Half-Line, Pad Specs, Capabilities
+@section Status Line
+
+@cindex status line
+A @dfn{status line} is a line on the terminal that is not used for ordinary
+display output but instead used for a special message.  The intended use is
+for a continuously updated description of what the user's program is doing,
+and that is where the name ``status line'' comes from, but in fact it could
+be used for anything.  The distinguishing characteristic of a status line
+is that ordinary output to the terminal does not affect it; it changes only
+if the special status line commands of this section are used.
+
+@table @samp
+@item hs
+@kindex hs
+Flag whose presence means that the terminal has a status line.  If a
+terminal description specifies that there is a status line, it must
+provide the @samp{ts} and @samp{fs} capabilities.
+
+@item ts
+@kindex ts
+String of commands to move the terminal cursor into the status line.
+Usually these commands must specifically record the old cursor
+position for the sake of the @samp{fs} string.
+
+@item fs
+@kindex fs
+String of commands to move the cursor back from the status line to its
+previous position (outside the status line).
+
+@item es
+@kindex es
+Flag whose presence means that other display commands work while
+writing the status line.  In other words, one can clear parts of it,
+insert or delete characters, move the cursor within it using @samp{ch}
+if there is a @samp{ch} capability, enter and leave standout mode, and
+so on.
+
+@item ds
+@kindex ds
+String of commands to disable the display of the status line.  This
+may be absent, if there is no way to disable the status line display.
+
+@item ws
+@kindex ws
+Numeric value, the width of the status line.  If this capability is
+absent in a terminal that has a status line, it means the status line
+is the same width as the other lines.
+
+Note that the value of @samp{ws} is sometimes as small as 8.
+@end table
+
+@node Half-Line, Printer, Status Line, Capabilities
+@section Half-Line Motion
+
+Some terminals have commands for moving the cursor vertically by half-lines,
+useful for outputting subscripts and superscripts.  Mostly it is hardcopy
+terminals that have such features.
+
+@table @samp
+@item hu
+@kindex hu
+String of commands to move the cursor up half a line.  If the terminal
+is a display, it is your responsibility to avoid moving up past the
+top line; however, most likely the terminal that supports this is a
+hardcopy terminal and there is nothing to be concerned about.
+
+@item hd
+@kindex hd
+String of commands to move the cursor down half a line.  If the
+terminal is a display, it is your responsibility to avoid moving down
+past the bottom line, etc.
+@end table
+
+@node Printer,, Half-Line, Capabilities
+@section Controlling Printers Attached to Terminals
+@cindex printer
+
+Some terminals have attached hardcopy printer ports.  They may be able to
+copy the screen contents to the printer; they may also be able to redirect
+output to the printer.  Termcap does not have anything to tell the program
+whether the redirected output appears also on the screen; it does on some
+terminals but not all.
+
+@table @samp
+@item ps
+@kindex ps
+String of commands to cause the contents of the screen to be printed.
+If it is absent, the screen contents cannot be printed.
+
+@item po
+@kindex po
+String of commands to redirect further output to the printer.
+
+@item pf
+@kindex pf
+String of commands to terminate redirection of output to the printer.
+This capability must be present in the description if @samp{po} is.
+
+@item pO
+@kindex pO
+String of commands to redirect output to the printer for next @var{n}
+characters of output, regardless of what they are.  Redirection will
+end automatically after @var{n} characters of further output.  Until
+then, nothing that is output can end redirection, not even the
+@samp{pf} string if there is one.  The number @var{n} should not be
+more than 255.
+
+One use of this capability is to send non-text byte sequences (such as
+bit-maps) to the printer.
+@end table
+
+Most terminals with printers do not support all of @samp{ps}, @samp{po} and
+@samp{pO}; any one or two of them may be supported.  To make a program that
+can send output to all kinds of printers, it is necessary to check for all
+three of these capabilities, choose the most convenient of the ones that
+are provided, and use it in its own appropriate fashion.
+
+@node Summary, Var Index, Capabilities, Top
+@chapter Summary of Capability Names
+
+Here are all the terminal capability names in alphabetical order
+with a brief description of each.  For cross references to their definitions,
+see the index of capability names (@pxref{Cap Index}).
+
+@table @samp
+@item ae
+String to turn off alternate character set mode.
+@item al
+String to insert a blank line before the cursor.
+@item AL
+String to insert @var{n} blank lines before the cursor.
+@item am
+Flag: output to last column wraps cursor to next line.
+@item as
+String to turn on alternate character set mode.like.
+@item bc
+Very obsolete alternative name for the @samp{le} capability.
+@item bl
+String to sound the bell.
+@item bs
+Obsolete flag: ASCII backspace may be used for leftward motion.
+@item bt
+String to move the cursor left to the previous hardware tab stop column.
+@item bw
+Flag: @samp{le} at left margin wraps to end of previous line.
+@item CC
+String to change terminal's command character.
+@item cd
+String to clear the line the cursor is on, and following lines.
+@item ce
+String to clear from the cursor to the end of the line.
+@item ch
+String to position the cursor at column @var{c} in the same line.
+@item cl
+String to clear the entire screen and put cursor at upper left corner.
+@item cm
+String to position the cursor at line @var{l}, column @var{c}.
+@item CM
+String to position the cursor at line @var{l}, column
+@var{c}, relative to display memory.
+@item co
+Number: width of the screen.
+@item cr
+String to move cursor sideways to left margin.
+@item cs
+String to set the scroll region.
+@item cS
+Alternate form of string to set the scroll region.
+@item ct
+String to clear all tab stops.
+@item cv
+String to position the cursor at line @var{l} in the same column.
+@item da
+Flag: data scrolled off top of screen may be scrolled back.
+@item db
+Flag: data scrolled off bottom of screen may be scrolled back.
+@item dB
+Obsolete number: msec of padding needed for the backspace character.
+@item dc
+String to delete one character position at the cursor.
+@item dC
+Obsolete number: msec of padding needed for the carriage-return character.
+@item DC
+String to delete @var{n} characters starting at the cursor.
+@item dF
+Obsolete number: msec of padding needed for the formfeed character.
+@item dl
+String to delete the line the cursor is on.
+@item DL
+String to delete @var{n} lines starting with the cursor's line.
+@item dm
+String to enter delete mode.
+@item dN
+Obsolete number: msec of padding needed for the newline character.
+@item do
+String to move the cursor vertically down one line.
+@item DO
+String to move cursor vertically down @var{n} lines.
+@item ds
+String to disable the display of the status line.
+@item dT
+Obsolete number: msec of padding needed for the tab character.
+@item ec
+String of commands to clear @var{n} characters at cursor.
+@item ed
+String to exit delete mode.
+@item ei
+String to leave insert mode.
+@item eo
+Flag: output of a space can erase an overstrike.
+@item es
+Flag: other display commands work while writing the status line.
+@item ff
+String to advance to the next page, for a hardcopy terminal.
+@item fs
+String to move the cursor back from the status line to its
+previous position (outside the status line).
+@item gn
+Flag: this terminal type is generic, not real.
+@item hc
+Flag: hardcopy terminal.
+@item hd
+String to move the cursor down half a line.
+@item ho
+String to position cursor at upper left corner.
+@item hs
+Flag: the terminal has a status line.
+@item hu
+String to move the cursor up half a line.
+@item hz
+Flag: terminal cannot accept @samp{~} as output.
+@item i1
+String to initialize the terminal for each login session.
+@item i3
+String to initialize the terminal for each login session.
+@item ic
+String to insert one character position at the cursor.
+@item IC
+String to insert @var{n} character positions at the cursor.
+@item if
+String naming a file of commands to initialize the terminal.
+@item im
+String to enter insert mode.
+@item in
+Flag: outputting a space is different from moving over empty positions.
+@item ip
+String to output following an inserted character in insert mode.
+@item is
+String to initialize the terminal for each login session.
+@item it
+Number: initial spacing between hardware tab stop columns.
+@item k0
+String of input sent by function key 0 or 10.
+@item k1 @dots{} k9
+Strings of input sent by function keys 1 through 9.
+@item K1 @dots{} K5
+Strings sent by the five other keys in 3-by-3 array with arrows.
+@item ka
+String of input sent by the ``clear all tabs'' key.
+@item kA
+String of input sent by the ``insert line'' key.
+@item kb
+String of input sent by the ``backspace'' key.
+@item kC
+String of input sent by the ``clear screen'' key.
+@item kd
+String of input sent by typing the down-arrow key.
+@item kD
+String of input sent by the ``delete character'' key.
+@item ke
+String to make the function keys work locally.
+@item kE
+String of input sent by the ``clear to end of line'' key.
+@item kF
+String of input sent by the ``scroll forward'' key.
+@item kh
+String of input sent by typing the ``home-position'' key.
+@item kH
+String of input sent by the ``home down'' key.
+@item kI
+String of input sent by the ``insert character'' or ``enter
+insert mode'' key.
+@item kl
+String of input sent by typing the left-arrow key.
+@item kL
+String of input sent by the ``delete line'' key.
+@item km
+Flag: the terminal has a Meta key.
+@item kM
+String of input sent by the ``exit insert mode'' key.
+@item kn
+Numeric value, the number of numbered function keys.
+@item kN
+String of input sent by the ``next page'' key.
+@item ko
+Very obsolete string listing the terminal's named function keys.
+@item kP
+String of input sent by the ``previous page'' key.
+@item kr
+String of input sent by typing the right-arrow key.
+@item kR
+String of input sent by the ``scroll reverse'' key.
+@item ks
+String to make the function keys transmit.
+@item kS
+String of input sent by the ``clear to end of screen'' key.
+@item kt
+String of input sent by the ``clear tab stop this column'' key.
+@item kT
+String of input sent by the ``set tab stop in this column'' key.
+@item ku
+String of input sent by typing the up-arrow key.
+@item l0
+String on keyboard labelling function key 0 or 10.
+@item l1 @dots{} l9
+Strings on keyboard labelling function keys 1 through 9.
+@item le
+String to move the cursor left one column.
+@item LE
+String to move cursor left @var{n} columns.
+@item li
+Number: height of the screen.
+@item ll
+String to position cursor at lower left corner.
+@item lm
+Number: lines of display memory.
+@item mb
+String to enter blinking mode.
+@item md
+String to enter double-bright mode.
+@item me
+String to turn off all appearance modes
+@item mh
+String to enter half-bright mode.
+@item mi
+Flag: cursor motion in insert mode is safe.
+@item mk
+String to enter invisible mode.
+@item mm
+String to enable the functioning of the Meta key.
+@item mo
+String to disable the functioning of the Meta key.
+@item mp
+String to enter protected mode.
+@item mr
+String to enter reverse-video mode.
+@item ms
+Flag: cursor motion in standout mode is safe.
+@item nc
+Obsolete flag: do not use ASCII carriage-return on this terminal.
+@item nd
+String to move the cursor right one column.
+@item nl
+Obsolete alternative name for the @samp{do} and @samp{sf} capabilities.
+@item ns
+Flag: the terminal does not normally scroll for sequential output.
+@item nw
+String to move to start of next line, possibly clearing rest of old line.
+@item os
+Flag: terminal can overstrike.
+@item pb
+Number: the lowest baud rate at which padding is actually needed.
+@item pc
+String containing character for padding.
+@item pf
+String to terminate redirection of output to the printer.
+@item po
+String to redirect further output to the printer.
+@item pO
+String to redirect @var{n} characters ofoutput to the printer.
+@item ps
+String to print the screen on the attached printer.
+@item rc
+String to move to last saved cursor position.
+@item RI
+String to move cursor right @var{n} columns.
+@item rp
+String to output character @var{c} repeated @var{n} times.
+@item rs
+String to reset the terminal from any strange modes.
+@item sa
+String to turn on an arbitrary combination of appearance modes.
+@item sc
+String to save the current cursor position.
+@item se
+String to leave standout mode.
+@item sf
+String to scroll the screen one line up.
+@item SF
+String to scroll the screen @var{n} lines up.
+@item sg
+Number: width of magic standout cookie.  Absent if magic cookies are
+not used.
+@item so
+String to enter standout mode.
+@item sr
+String to scroll the screen one line down.
+@item SR
+String to scroll the screen @var{n} line down.
+@item st
+String to set tab stop at current cursor column on all lines.
+programs.
+@item ta
+String to move the cursor right to the next hardware tab stop column.
+@item te
+String to return terminal to settings for sequential output.
+@item ti
+String to initialize terminal for random cursor motion.
+@item ts
+String to move the terminal cursor into the status line.
+@item uc
+String to underline one character and move cursor right.
+@item ue
+String to turn off underline mode
+@item ug
+Number: width of underlining magic cookie.  Absent if underlining
+doesn't use magic cookies.
+@item ul
+Flag: underline by overstriking with an underscore.
+@item up
+String to move the cursor vertically up one line.
+@item UP
+String to move cursor vertically up @var{n} lines.
+@item us
+String to turn on underline mode
+@item vb
+String to make the screen flash.
+@item ve
+String to return the cursor to normal.
+@item vi
+String to make the cursor invisible.
+@item vs
+String to enhance the cursor.
+@item wi
+String to set the terminal output screen window.
+@item ws
+Number: the width of the status line.
+@item xb
+Flag: superbee terminal.
+@item xn
+Flag: cursor wraps in a strange way.
+@item xs
+Flag: clearing a line is the only way to clear the appearance modes of
+positions in that line (or, only way to remove magic cookies on that
+line).
+@item xt
+Flag: Teleray 1061; several strange characteristics.
+@end table
+
+@node Var Index, Cap Index, Summary, Top
+@unnumbered Variable and Function Index
+
+@printindex fn
+
+@node Cap Index, Index, Var Index, Top
+@unnumbered Capability Index
+
+@printindex ky
+
+@node Index,, Cap Index, Top
+@unnumbered Concept Index
+
+@printindex cp
+
+@contents
+@bye
