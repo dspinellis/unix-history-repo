@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)telnet.c	5.41 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	5.42 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -113,6 +113,7 @@ jmp_buf	toplevel = { 0 };
 jmp_buf	peerdied;
 
 int	flushline;
+int	linemode;
 
 #ifdef	KLUDGELINEMODE
 int	kludgelinemode = 1;
@@ -500,6 +501,11 @@ dontoption(option)
 	}
 
 	if ((will_wont_resp[option] == 0) && my_want_state_is_will(option)) {
+	    switch (option) {
+	    case TELOPT_LINEMODE:
+		linemode = 0;	/* put us back to the default state */
+		break;
+	    }
 	    /* we always accept a DONT */
 	    set_my_want_state_wont(option);
 	    send_wont(option, 0);
@@ -657,8 +663,6 @@ char *cmd;
 	return;
     }
 }
-
-int linemode;
 
 lm_do(cmd, len)
 char *cmd;
