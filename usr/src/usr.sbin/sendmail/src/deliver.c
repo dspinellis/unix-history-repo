@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -489,7 +489,7 @@ deliver(e, firstto)
 #endif
 
 	/* arrange a return receipt if requested */
-	if (e->e_receiptto != NULL && bitnset(M_LOCAL, m->m_flags))
+	if (e->e_receiptto != NULL && bitnset(M_LOCALMAILER, m->m_flags))
 	{
 		e->e_flags |= EF_SENDRECEIPT;
 		/* do we want to send back more info? */
@@ -1679,7 +1679,7 @@ sendall(e, mode)
 			extern char *aliaslookup();
 
 			/* we can only have owners for local addresses */
-			if (!bitnset(M_LOCAL, qq->q_mailer->m_flags))
+			if (!bitnset(M_LOCALMAILER, qq->q_mailer->m_flags))
 				continue;
 
 			/* see if the owner list exists */

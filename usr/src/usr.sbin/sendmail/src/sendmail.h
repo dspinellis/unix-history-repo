@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	6.16 (Berkeley) %G%
+ *	@(#)sendmail.h	6.17 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	6.16		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	6.17		%G%";
 # endif lint
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -162,7 +162,7 @@ typedef struct mailer	MAILER;
 # define M_HST_UPPER	'h'	/* preserve host case distinction */
 		/*	'H'	/* UIUC: MAIL11V3: preview headers */
 # define M_INTERNAL	'I'	/* SMTP to another sendmail site */
-# define M_LOCAL	'l'	/* delivery is to this host */
+# define M_LOCALMAILER	'l'	/* delivery is to this host */
 # define M_LIMITS	'L'	/* must enforce SMTP line limits */
 # define M_MUSER	'm'	/* can handle multiple users at once */
 		/*	'M'	/* CF: include Message-Id: */
