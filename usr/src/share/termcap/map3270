@@ -1,13 +1,20 @@
 #
-# Copyright (c) 1987 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# Copyright (c) 1989 The Regents of the University of California.
+# All rights reserved.
 #
-#	@(#)map3270	1.1 (Berkeley) 11/20/87
+# Redistribution and use in source and binary forms are permitted
+# provided that the above copyright notice and this paragraph are
+# duplicated in all such forms and that any documentation,
+# advertising materials, and other materials related to such
+# distribution and use acknowledge that the software was developed
+# by the University of California, Berkeley.  The name of the
+# University may not be used to endorse or promote products derived
+# from this software without specific prior written permission.
+# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#
-# /etc/map3270 (/usr/new/etc/map3270 before migration)
-# mail corrections and additions to "termcap"
+#	@(#)map3270	5.2 (Berkeley) %G%
 #
 # this file contains mappings between characters entered from the keyboard,
 # and 3270 keys, for use by programs (like tn3270) doing 3270 emulation
