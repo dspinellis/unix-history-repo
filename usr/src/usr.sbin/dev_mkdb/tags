@@ -1,0 +1,3 @@
+Mdev_mkdb	dev_mkdb.c	/^main(argc, argv)$/
+err	dev_mkdb.c	/^err(fmt, va_alist)$/
+usage	dev_mkdb.c	/^usage()$/

@@ -1,0 +1,34 @@
+DECLITERATE	sa.c	/^#define DECLITERATE(allocwalk, walkpointer, ubpoin/
+Dcmp	sa.c	/^Dcmp(p1, p2)$/
+ISPROCESS	sa.c	/^#define	ISPROCESS(tp)	(tp->p.name[0] && (tp->p.nam/
+ISUSER	sa.c	/^#define	ISUSER(tp)	(tp->p.name[0] && (tp->p.name[0/
+Kcmp	sa.c	/^Kcmp(p1, p2)$/
+Msa	sa.c	/^main(argc, argv)$/
+PROCESSITERATE	sa.c	/^#define	PROCESSITERATE(allocwalk, walkpointer, ubp/
+TABCHUNKS	sa.c	/^#define TABCHUNKS(allocwalk, tabptr, size) \\$/
+USERITERATE	sa.c	/^#define	USERITERATE(allocwalk, walkpointer, ubpoin/
+bflgcmp	sa.c	/^bflgcmp(p1, p2)$/
+cellcmp	sa.c	/^cellcmp(p1, p2)$/
+col	sa.c	/^col(n, a, m, cp)$/
+column	sa.c	/^column(n, a, b, c, d, e)$/
+dcmp	sa.c	/^dcmp(p1, p2)$/
+doacct	sa.c	/^doacct(f)$/
+enter	sa.c	/^enter(name)$/
+expand	sa.c	/^expand(t)$/
+finduser	sa.c	/^finduser(uid)$/
+getmaxuid	sa.c	/^getmaxuid()$/
+getnames	sa.c	/^getnames()$/
+htaballoc	sa.c	/^htaballoc()$/
+init	sa.c	/^init()$/
+kcmp	sa.c	/^kcmp(p1, p2)$/
+makekey	sa.c	/^makekey(uid)$/
+ncmp	sa.c	/^ncmp(p1, p2)$/
+optfile	sa.c	/^#define optfile(f) {if (argc < 2) \\$/
+pgtok	sa.c	/^#define	pgtok(x)	((x) * pgdiv)$/
+printmoney	sa.c	/^printmoney()$/
+strip	sa.c	/^strip()$/
+sum	sa.c	/^double sum(p)$/
+taballoc	sa.c	/^taballoc()$/
+tabinit	sa.c	/^tabinit()$/
+tcmp	sa.c	/^tcmp(p1, p2)$/
+wasuser	sa.c	/^wasuser(uid)$/

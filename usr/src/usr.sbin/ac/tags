@@ -1,0 +1,8 @@
+Mac	ac.c	/^main(argc, argv) $/
+among	ac.c	/^among(i)$/
+loop	ac.c	/^loop()$/
+newday	ac.c	/^newday()$/
+pdate	ac.c	/^pdate()$/
+print	ac.c	/^print()$/
+upall	ac.c	/^upall(f)$/
+update	ac.c	/^update(tp, f)$/

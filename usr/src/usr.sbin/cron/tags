@@ -1,0 +1,8 @@
+Mcron	cron.c	/^main(argc, argv)$/
+append	cron.c	/^append(fn)$/
+cmp	cron.c	/^cmp(p, v)$/
+ex	cron.c	/^ex(s)$/
+init	cron.c	/^init()$/
+number	cron.c	/^number(c)$/
+reapchild	cron.c	/^reapchild()$/
+slp	cron.c	/^slp()$/
