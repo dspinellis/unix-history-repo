@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)fio.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)fio.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -142,14 +142,14 @@ putline(obuf, linebuf)
  * buffer.  Return the number of characters read.  Do not
  * include the newline at the end.
  */
-readline(ibuf, linebuf)
+readline(ibuf, linebuf, linesize)
 	FILE *ibuf;
 	char *linebuf;
 {
 	register int n;
 
 	clearerr(ibuf);
-	if (fgets(linebuf, LINESIZE, ibuf) == NULL)
+	if (fgets(linebuf, linesize, ibuf) == NULL)
 		return -1;
 	n = strlen(linebuf);
 	if (n > 0 && linebuf[n - 1] == '\n')
