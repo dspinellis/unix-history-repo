@@ -1,5 +1,5 @@
 #ifndef	lint
-static char *sccsid = "@(#)write.c	4.10 %G%";
+static char *sccsid = "@(#)write.c	4.11 %G%";
 #endif
 /*
  * write to another user
@@ -24,6 +24,7 @@ char	me[NMAX + 1]	= "???";
 char	*him;
 char	*mytty;
 char	histty[32];
+char	ttybuf[32];
 char	*histtya;
 char	*ttyname();
 char	*rindex();
@@ -43,6 +44,7 @@ main(argc, argv)
 	int c1, c2;
 	long clock = time(0);
 	int suser = getuid() == 0;
+	int nomesg = 0;
 	struct tm *localtime();
 	struct tm *localclock = localtime( &clock );
 
@@ -66,10 +68,11 @@ main(argc, argv)
 		perror("write: Can't stat your tty");
 		exit(1);
 	}
-	if (!suser && (stbuf.st_mode&02) == 0) {
+	if ((stbuf.st_mode&02) == 0) {
 		fprintf(stderr,
 			"write: You have write permission turned off\n");
-		exit(1);
+		if (!suser)
+			exit(1);
 	}
 	mytty = rindex(mytty, '/') + 1;
 	if (histtya) {
@@ -100,16 +103,28 @@ main(argc, argv)
 			if (c1 != c2)
 				goto nomat;
 		}
+		if (histtya && strncmp(histtya, ubuf.ut_line,
+		    sizeof(ubuf.ut_line)))
+			continue;
 		logcnt++;
-		if (histty[0]==0) {
-			strcpy(histty, "/dev/");
-			strcat(histty, ubuf.ut_line);
+		if (histty[0]==0 || nomesg && histtya == 0) {
+			strcpy(ttybuf, "/dev/");
+			strcat(ttybuf, ubuf.ut_line);
+			if (histty[0]==0)
+				strcpy(histty, ttybuf);
+			if (access(ttybuf, 0) < 0 || stat(ttybuf, &stbuf) < 0 ||
+			    (stbuf.st_mode&02) == 0)
+				nomesg++;
+			else {
+				strcpy(histty, ttybuf);
+				nomesg = 0;
+			}
 		}
 	nomat:
 		;
 	}
 cont:
-	if (logcnt==0 && histty[0]=='\0') {
+	if (logcnt==0) {
 		fprintf(stderr, "write: %s not logged in\n", him);
 		exit(1);
 	}
@@ -120,10 +135,11 @@ cont:
 		"write: %s logged in more than once ... writing to %s\n",
 			him, histty+5);
 	}
-	if (histty[0] == 0) {
+	if (logcnt == 0) {
 		printf(him);
-		if (logcnt)
-			printf(" not on that tty\n"); else
+		if (histtya)
+			printf(" not on that tty\n");
+		else
 			printf(" not logged in\n");
 		exit(1);
 	}
@@ -133,13 +149,11 @@ cont:
 	}
 	signal(SIGALRM, timout);
 	alarm(5);
-	if ((tf = fopen(histty, "w")) == NULL)
-		goto perm;
+	if ((tf = fopen(histty, "w")) == NULL) {
+		fprintf(stderr, "write: Permission denied\n");
+		exit(1);
+	}
 	alarm(0);
-	if (fstat(fileno(tf), &stbuf) < 0)
-		goto perm;
-	if (!suser && (stbuf.st_mode&02) == 0)
-		goto perm;
 	sigs(eof);
 	{ char hostname[32];
 	  gethostname(hostname, sizeof (hostname));
@@ -187,9 +201,6 @@ cont:
 			}
 		}
 	}
-perm:
-	fprintf(stderr, "write: Permission denied\n");
-	exit(1);
 }
 
 timout()
