@@ -803,7 +803,7 @@ pmap_enter(pmap, va, pa, prot, wired)
 				 * just record page as dirty.
 				 */
 				npte = PG_M;
-				mem->clean = FALSE;
+				mem->clean = TRUE;
 			} else
 #ifdef ATTR
 				if ((pmap_attributes[atop(pa - KERNBASE)] &
