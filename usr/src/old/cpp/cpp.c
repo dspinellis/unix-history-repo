@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cpp.c	1.6 %G%";
+static char sccsid[] = "@(#)cpp.c	1.7 %G%";
 #endif lint
 
 #ifdef FLEXNAMES
@@ -154,6 +154,12 @@ STATIC	int	nd	= 1;
 STATIC	int	pflag;	/* don't put out lines "# 12 foo.c" */
 int	passcom;	/* don't delete comments */
 STATIC	int rflag;	/* allow macro recursion */
+STATIC	int mflag;	/* generate makefile dependencies */
+STATIC	char *infile;	/* name of .o file to build dependencies from */
+STATIC 	FILE *mout;	/* file to place dependencies on */
+#define START 1
+#define CONT  2
+#define BACK  3
 STATIC	int	ifno;
 # define NPREDEF 20
 STATIC	char *prespc[NPREDEF];
@@ -197,7 +203,10 @@ STATIC	struct symtab *uflloc;
 STATIC	int	trulvl;
 STATIC	int	flslvl;
 
-sayline() {
+sayline(where)
+	int where;
+{
+	if (mflag && where==START) fprintf(mout, "%s: %s\n", infile, fnames[ifno]);
 	if (pflag==0) fprintf(fout,"# %d \"%s\"\n", lineno[ifno], fnames[ifno]);
 }
 
@@ -276,7 +285,7 @@ dump() {
 			}
 			if (c==' ' && stopc==0) pblank=p1-1;
 		}
-		if (brk) sayline();
+		if (brk) sayline(CONT);
 		*p2=savc; inp=p2; p1=outp; tgpscan=0;
 	}
 #endif
@@ -336,7 +345,7 @@ refill(p) register char *p; {
 					pperror("missing endif");
 				inp=p; dump(); exit(exfail);
 			}
-			close(fin); fin=fins[--ifno]; dirs[0]=dirnams[ifno]; sayline();
+			close(fin); fin=fins[--ifno]; dirs[0]=dirnams[ifno]; sayline(BACK);
 		}
 	}
 }
@@ -603,7 +612,7 @@ doincl(p) register char *p; {
 	else {
 		lineno[ifno]=1; fnames[ifno]=cp=nfil; while (*cp++); savch=cp;
 		dirnams[ifno]=dirs[0]=trmdir(copy(nfil));
-		sayline();
+		sayline(START);
 		/* save current contents of buffer */
 		while (!eob(p)) p=unfill(p);
 		inctop[ifno]=mactop;
@@ -730,13 +739,13 @@ for (;;) {
 		if (flslvl==0 && np->value!=0) ++trulvl;
 		else ++flslvl;
 	} else if (np==eifloc) {/* endif */
-		if (flslvl) {if (--flslvl==0) sayline();}
+		if (flslvl) {if (--flslvl==0) sayline(CONT);}
 		else if (trulvl) --trulvl;
 		else pperror("If-less endif",0);
 	} else if (np==elsloc) {/* else */
 		if (flslvl) {
 			if (--flslvl!=0) ++flslvl;
-			else {++trulvl; sayline();}
+			else {++trulvl; sayline(CONT);}
 		}
 		else if (trulvl) {++flslvl; --trulvl;}
 		else pperror("If-less else",0);
@@ -1063,6 +1072,7 @@ main(argc,argv)
 # else
 			switch(argv[i][1]) {
 # endif
+				case 'M': mflag++;
 				case 'P': pflag++;
 				case 'E': continue;
 				case 'R': ++rflag; continue;
@@ -1097,6 +1107,7 @@ main(argc,argv)
 						pperror("No source file %s",argv[i]); exit(8);
 					}
 					fnames[ifno]=copy(argv[i]);
+					infile=copy(argv[i]);
 					dirs[0]=dirnams[ifno]=trmdir(argv[i]);
 # ifndef gcos
 /* too dangerous to have file name in same syntactic position
@@ -1114,6 +1125,28 @@ main(argc,argv)
 			}
 		}
 
+	if (mflag) {
+		if (infile==(char *)0) {
+			fprintf(stderr,
+				"no input file specified with -M flag\n");
+			exit(8);
+		}
+		tf=(char *)rindex(infile, '.');
+		if (tf==0) {
+			fprintf(stderr, "missing component name on %s\n",
+				infile);
+			exit(8);
+		}
+		tf[1]='o';
+		tf=(char *)rindex(infile, '/');
+		if (tf!=(char *)0)
+			infile = tf + 1;
+		mout=fout;
+		if (NULL==(fout=fopen("/dev/null", "w"))) {
+			pperror("Can't open /dev/null");
+			exit(8);
+		}
+	}
 	fins[ifno]=fin;
 	exfail = 0;
 		/* after user -I files here are the standard include libraries */
@@ -1191,7 +1224,7 @@ main(argc,argv)
 	pbeg=buffer+NCPS; pbuf=pbeg+BUFSIZ; pend=pbuf+BUFSIZ;
 
 	trulvl = 0; flslvl = 0;
-	lineno[0] = 1; sayline();
+	lineno[0] = 1; sayline(START);
 	outp=inp=pend;
 	control(pend);
 	return (exfail);
