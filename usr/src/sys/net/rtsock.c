@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)rtsock.c	7.9 (Berkeley) %G%
+ *	@(#)rtsock.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -90,12 +90,16 @@ route_output(m, so)
 	register struct mbuf *m;
 	struct socket *so;
 {
-	register struct rt_msghdr *rtm = 0;
+	register struct rt_msghdr *rtm;
 	register struct rtentry *rt = 0;
 	struct rtentry *saved_nrt = 0;
 	struct sockaddr *dst = 0, *gate = 0, *netmask = 0, *genmask = 0;
+	struct sockaddr *ifpaddr = 0;
 	caddr_t cp, lim;
 	int len, error = 0;
+	struct ifnet *ifp = 0;
+	struct	ifaddr *ifa;
+	extern struct ifaddr *ifaof_ifpforaddr(), *ifa_ifwithroute();
 
 #define senderr(e) { error = e; goto flush;}
 	if (m == 0 || m->m_len < sizeof(long))
@@ -135,7 +139,20 @@ route_output(m, so)
 
 	}
 	if ((rtm->rtm_addrs & RTA_GENMASK) && cp < lim)  {
+		struct radix_node *t, *rn_addmask();
 		genmask = (struct sockaddr *)cp;
+		if (*cp)
+			cp += ROUNDUP(netmask->sa_len);
+		else
+			cp += sizeof(long);
+		t = rn_addmask(genmask, 1, 2);
+		if (t && Bcmp(genmask, t->rn_key, *(u_char *)genmask) == 0)
+			genmask = (struct sockaddr *)(t->rn_key);
+		else
+			senderr(ENOBUFS);
+	}
+	if ((rtm->rtm_addrs & RTA_IFP) && cp < lim)  {
+		ifpaddr = (struct sockaddr *)cp;
 	}
 	switch (rtm->rtm_type) {
 	case RTM_ADD:
@@ -147,6 +164,7 @@ route_output(m, so)
 			rt_setmetrics(rtm->rtm_inits,
 				&rtm->rtm_rmx, &saved_nrt->rt_rmx);
 			saved_nrt->rt_refcnt--;
+			saved_nrt->rt_genmask = genmask;
 		}
 		break;
 
@@ -198,17 +216,40 @@ route_output(m, so)
 			break;
 
 		case RTM_CHANGE:
-			if (gate == 0)
+			if (gate == 0 || netmask != 0)
 				senderr(EINVAL);
 			if (gate->sa_len > (len = rt->rt_gateway->sa_len))
 				senderr(EDQUOT);
 			if (rt->rt_ifa && rt->rt_ifa->ifa_rtrequest)
-				rt->rt_ifa->ifa_rtrequest(RTM_CHANGE, rt, gate);
+				rt->rt_ifa->ifa_rtrequest(RTM_DELETE, rt, gate);
+			/* new gateway could require new ifaddr, ifp;
+			   flags may also be different; ifp may be specified
+			   by ll sockaddr when protocol address is ambiguous */
+			if (ifpaddr &&
+			    (ifa = ifa_ifwithnet(ifpaddr)) &&
+			    (ifp = ifa->ifa_ifp) &&
+			    (ifa = ifaof_ifpforaddr(gate, ifp))) {
+				     /* We got it */
+			} else {
+			    ifa = 0; ifp = 0;
+			}
 			Bcopy(gate, rt->rt_gateway, len);
 			rt->rt_gateway->sa_len = len;
-		
 			rt_setmetrics(rtm->rtm_inits,
 				&rtm->rtm_rmx, &rt->rt_rmx);
+			if (ifa == 0)
+			    ifa = ifa_ifwithroute(rt->rt_flags, rt_key(rt),
+						gate);
+			if (ifa) {
+				if (rt->rt_ifa != ifa) {
+				    rt->rt_ifa = ifa;
+				    rt->rt_ifp = ifa->ifa_ifp;
+				}
+			}
+			if (rt->rt_ifa && rt->rt_ifa->ifa_rtrequest)
+			       rt->rt_ifa->ifa_rtrequest(RTM_ADD, rt, gate);
+			if (genmask)
+				rt->rt_genmask = genmask;
 			/*
 			 * Fall into
 			 */
@@ -263,7 +304,7 @@ cleanup:
 	return (error);
 }
 
-static rt_setmetrics(which, in, out)
+rt_setmetrics(which, in, out)
 	u_long which;
 	register struct rt_metrics *in, *out;
 {

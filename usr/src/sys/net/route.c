@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)route.c	7.15 (Berkeley) %G%
+ *	@(#)route.c	7.16 (Berkeley) %G%
  */
 #include "machine/reg.h"
  
@@ -273,6 +273,39 @@ rtioctl(req, data)
 	return (error);
 #endif
 }
+
+struct ifaddr *
+ifa_ifwithroute(flags, dst, gateway)
+int	flags;
+struct sockaddr	*dst, *gateway;
+{
+	struct ifaddr *ifa;
+	if ((flags & RTF_GATEWAY) == 0) {
+		/*
+		 * If we are adding a route to an interface,
+		 * and the interface is a pt to pt link
+		 * we should search for the destination
+		 * as our clue to the interface.  Otherwise
+		 * we can use the local address.
+		 */
+		ifa = 0;
+		if (flags & RTF_HOST) 
+			ifa = ifa_ifwithdstaddr(dst);
+		if (ifa == 0)
+			ifa = ifa_ifwithaddr(gateway);
+	} else {
+		/*
+		 * If we are adding a route to a remote net
+		 * or host, the gateway may still be on the
+		 * other end of a pt to pt link.
+		 */
+		ifa = ifa_ifwithdstaddr(gateway);
+	}
+	if (ifa == 0)
+		ifa = ifa_ifwithnet(gateway);
+	return (ifa);
+}
+
 #define ROUNDUP(a) (1 + (((a) - 1) | (sizeof(long) - 1)))
 
 rtrequest(req, dst, gateway, netmask, flags, ret_nrt)
@@ -318,7 +351,7 @@ rtrequest(req, dst, gateway, netmask, flags, ret_nrt)
 		break;
 
 	case RTM_RESOLVE:
-		if (ret_nrt== 0 || (rt = *ret_nrt) == 0)
+		if (ret_nrt == 0 || (rt = *ret_nrt) == 0)
 			senderr(EINVAL);
 		ifa = rt->rt_ifa;
 		flags = rt->rt_flags & ~RTF_CLONING;
@@ -328,34 +361,11 @@ rtrequest(req, dst, gateway, netmask, flags, ret_nrt)
 		goto makeroute;
 
 	case RTM_ADD:
-		if ((flags & RTF_GATEWAY) == 0) {
-			/*
-			 * If we are adding a route to an interface,
-			 * and the interface is a pt to pt link
-			 * we should search for the destination
-			 * as our clue to the interface.  Otherwise
-			 * we can use the local address.
-			 */
-			ifa = 0;
-			if (flags & RTF_HOST) 
-				ifa = ifa_ifwithdstaddr(dst);
-			if (ifa == 0)
-				ifa = ifa_ifwithaddr(gateway);
-		} else {
-			/*
-			 * If we are adding a route to a remote net
-			 * or host, the gateway may still be on the
-			 * other end of a pt to pt link.
-			 */
-			ifa = ifa_ifwithdstaddr(gateway);
-		}
-		if (ifa == 0) {
-			ifa = ifa_ifwithnet(gateway);
-			if (ifa == 0 && req == RTM_ADD)
-				senderr(ENETUNREACH);
-		}
-    makeroute: len = sizeof (*rt) + ROUNDUP(gateway->sa_len)
-		    + ROUNDUP(dst->sa_len) + ROUNDUP(ifa->ifa_llinfolen);
+		if ((ifa = ifa_ifwithroute(flags, dst, gateway)) == 0)
+			senderr(ENETUNREACH);
+	makeroute:
+		len = sizeof (*rt) + ROUNDUP(gateway->sa_len)
+		    + ROUNDUP(dst->sa_len);
 		R_Malloc(rt, struct rtentry *, len);
 		if (rt == 0)
 			senderr(ENOBUFS);
@@ -378,8 +388,6 @@ rtrequest(req, dst, gateway, netmask, flags, ret_nrt)
 		rt->rt_gateway = (struct sockaddr *)
 					(rn->rn_key + ROUNDUP(dst->sa_len));
 		Bcopy(gateway, rt->rt_gateway, gateway->sa_len);
-		rt->rt_llinfo = ROUNDUP(gateway->sa_len)
-					+ (caddr_t)rt->rt_gateway;
 		if (req == RTM_RESOLVE)
 			rt->rt_rmx = (*ret_nrt)->rt_rmx; /* copy metrics */
 		if (ifa->ifa_rtrequest)
