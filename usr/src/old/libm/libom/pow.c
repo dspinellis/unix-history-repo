@@ -1,4 +1,4 @@
-/*	@(#)pow.c	4.1	%G%	*/
+/*	@(#)pow.c	4.2	%G%	*/
 
 /*
 	computes a^b.
@@ -16,7 +16,9 @@ double arg1, arg2;
 	double temp;
 	long l;
 
+#ifdef vax
 	asm("	bispsw	$0xe0");
+#endif
 	if(arg1 <= 0.) {
 		if(arg1 == 0.) {
 			if(arg2 <= 0.)
