@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.36 (Berkeley) %G%
+		@(#)README	8.37 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -329,7 +329,7 @@ nocanonify	Don't pass addresses to $[ ... $] for canonification.
 		turn off the usual resolver options that do a similar
 		thing.
 
-stickydomain	If set, email sent to "user@local.host" are marked
+stickyhost	If set, email sent to "user@local.host" are marked
 		as "sticky" -- that is, the local addresses aren't
 		matched against UDB and don't go through ruleset 5.
 		This is used if you want a set up where "user" is
@@ -838,10 +838,10 @@ is fairly easy.)  The intent was to locate the default maildrop at
 a site, but allow you to override this by sending to a specific host.
 
 If you decide to set up the user database in this fashion, it is
-imperative that you also specify FEATURE(notsticky) -- otherwise,
+imperative that you not use FEATURE(stickyhost) -- otherwise,
 e-mail sent to Full.Name@local.host.name will be rejected.
 
-To build the internal form of the user databae, use:
+To build the internal form of the user database, use:
 
 	makemap btree /usr/data/base.db < /usr/data/base.txt
 
