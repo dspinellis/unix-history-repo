@@ -1,4 +1,4 @@
-/*	if_enpreg.h	1.2	86/11/29	*/
+/*	if_enpreg.h	1.3	86/12/15	*/
 
 /*	Copyright (c) 1984 by Communication Machinery Corporation
  *
@@ -152,10 +152,7 @@ struct enpdevice {
 #if ENP == 30
 #define ACK_ENP_INTR(addr)	(addr->enp_iow.enp2hst_clear_intr = RESETVAL)
 #define IS_ENP_INTR(addr)	(addr->enp_iow.enp2hst_clear_intr&0x80)
-#else
-#define ACK_ENP_INTR(addr)
-#define IS_ENP_INTR(addr)	(1)
-#endif ENP == 30
+#endif
 
 #ifdef notdef
 #define RESET_ENP(addr)		(addr->enp_iow.hst2enp_reset = 01)
@@ -166,9 +163,9 @@ struct enpdevice {
 #ifdef TAHOE
 #define ENP_GO(addr,start) { \
 	int v = start; \
-	enpcopy(&v, &addr->enp_prog_start, sizeof(v) ); \
+	enpcopy((u_char *)&v, (u_char *)&addr->enp_prog_start, sizeof(v) ); \
 	v = 0x80800000; \
-	enpcopy( &v, &addr->enp_go, sizeof(v) ); \
+	enpcopy((u_char *)&v, (u_char *)&addr->enp_go, sizeof(v) ); \
 }
 #else
 #define ENP_GO(addr,start,intvec ) { \
@@ -209,7 +206,7 @@ typedef struct BCB {
 	struct	BCB *b_link;
 	short	 b_stat;
 	short	 b_len;
-	char	*b_addr;
+	u_char	*b_addr;
 	short	 b_msglen;
 	short	 b_reserved;
 } BCB;

@@ -1,4 +1,4 @@
-/*	Locore.c	1.2	86/01/05	*/
+/*	Locore.c	1.3	86/12/15	*/
 
 #include "../tahoe/mtpr.h"
 #include "../tahoe/trap.h"
@@ -23,6 +23,8 @@
 #include "domain.h"
 #include "map.h"
 
+#include "../tahoe/cpu.h"
+
 /*
  * Pseudo file for lint to show what is used/defined in locore.s.
  */
@@ -35,12 +37,14 @@ int	masterpaddr;		/* p_addr of current process on master cpu */
 struct	user u;
 int	icode[8];
 int	szicode = sizeof (icode);
+long	catcher[191];
 /*
  * Variables declared for savecore, or
  * implicitly, such as by config or the loader.
  */
 char	version[] = "4.2 BSD UNIX ....";
 int	etext;
+int	end;
 
 doadump() { dumpsys(); }
 
@@ -65,9 +69,6 @@ lowinit()
 #ifdef NS
 	extern struct domain nsdomain;
 #endif
-	extern int nport;
-	extern short *swsize;
-	extern int *swpf;
 
 	/* cpp messes these up for lint so put them here */
 	unixdomain.dom_next = domains;
@@ -102,10 +103,8 @@ lowinit()
 	scb = scb;
 	maxmem = physmem = freemem = 0;
 	u = u;
+	fixctlrmask();
 	main(0);
-	swsize = swsize;		/* XXX */
-	swpf = swpf;			/* XXX */
-	nport = nport;			/* XXX */
 
 	/*
 	 * Routines called from interrupt vectors.
@@ -130,14 +129,10 @@ lowinit()
 
 	if (vmemall((struct pte *)0, 0, (struct proc *)0, 0))
 		return;		/* use value */
-	if (zmemall((int (*)())0, 0) == (caddr_t)0)
-		return;		/* use value */
 	boothowto = 0;
-/* the following are not currently used but will soon */
 	if (rmget((struct map *)0, 0, 0) == 0)
 		return;
 	cp = calloc(0); cfreemem(cp, 0);
-/* end not currently used */
 	dumpflag = 0; dumpflag = dumpflag;
 #if !defined(GPROF)
 	cp = (caddr_t)&etext;
@@ -147,7 +142,11 @@ lowinit()
 struct	pte Sysmap[6*NPTEPG];
 caddr_t	Sysbase;
 struct	pte VMEMmap[1];
-int	vmembeg, vmemend;
+caddr_t	vmem, vmembeg, vmemend;
+struct	pte VMEMmap1[1];
+caddr_t	vmem1;
+struct	pte VBmap[1];
+caddr_t	vbbase, vbend;
 struct	pte Usrptmap[USRPTSIZE];
 struct	pte usrpt[USRPTSIZE*NPTEPG];
 struct	pte Forkmap[UPAGES];
@@ -162,37 +161,6 @@ struct	pte Pushmap[UPAGES];
 struct	user pushutl;
 struct	pte Vfmap[UPAGES];
 struct	user vfutl;
-#include "fsd.h"
-#if NVD > 0
-struct	pte VD0map[MAXBPTE+1];
-char	vd0utl[1];
-#endif
-#if NVD > 1
-struct	pte VD1map[MAXBPTE+1];
-char	vd1utl[1];
-#endif
-#if NVD > 2
-struct	pte VD2map[MAXBPTE+1];
-char	vd2utl[1];
-#endif
-#if NVD > 3
-struct	pte VD3map[MAXBPTE+1];
-char	vd3utl[1];
-#endif
-#include "cy.h"
-#if NCY > 0
-struct	pte CY0map[TBUFSIZ+1];
-char	cy0utl[1];
-#endif
-#if NCY > 1
-struct	pte CY1map[TBUFSIZ+1];
-char	cy1utl[1];
-#endif
-#include "ace.h"
-#if NACE > 0
-struct	pte ACE0map[1], ACE1map[1];
-char	ace0utl[1], ace1utl[1];
-#endif
 struct	pte CMAP1[1], CMAP2[1];
 caddr_t	CADDR1, CADDR2;
 struct	pte mmap[1];
@@ -206,10 +174,6 @@ struct	mbuf mbutl[NMBCLUSTERS*CLBYTES/sizeof (struct mbuf)];
 
 /*ARGSUSED*/
 badaddr(addr, len) caddr_t addr; int len; { return (0); }
-#if NCY > 0
-/*ARGSUSED*/
-badcyaddr(addr) caddr_t addr; { return (0); }
-#endif
 /*ARGSUSED*/
 ovbcopy(from, to, len) caddr_t from, to; unsigned len; { }
 copyinstr(udaddr, kaddr, maxlength, lencopied)
@@ -275,11 +239,11 @@ scanc(size, cp, table, mask)
 { return (0); }
 
 /*ARGSUSED*/
-skpc(mask, size, cp) int mask; char *cp; unsigned size; { return (0); }
+skpc(mask, size, cp) int mask; int size; char *cp; { return (0); }
 
 #ifdef notdef
 /*ARGSUSED*/
-locc(mask, size, cp) int mask; char *cp; unsigned size; { return (0); }
+locc(mask, size, cp) int mask; int size; char *cp; { return (0); }
 #endif
 
 /*
@@ -323,5 +287,7 @@ ffs(v) long v; { return (0); }
 
 imin(a, b) int a, b; { return (a < b ? a : b); }
 imax(a, b) int a, b; { return (a > b ? a : b); }
+#ifdef notdef
 unsigned min(a, b) u_int a, b; { return (a < b ? a : b); }
 unsigned max(a, b) u_int a, b; { return (a > b ? a : b); }
+#endif

@@ -1,4 +1,4 @@
-/*	kdbparam.h	7.4	86/11/23	*/
+/*	kdbparam.h	7.5	86/12/15	*/
 
 #include <sys/vm.h>
 
@@ -22,20 +22,20 @@
 
 #define	SETBP(ins)	((BPT<<24) | ((ins) & 0xffffff))
 
-#define	getprevpc(fp)	get((fp)-8, DSP)	/* pc of caller */
-#define	getprevframe(fp) (get((fp), DSP)&~3)	/* fp of caller */
-#define	getnargs(fp)	(((get((fp)-4, DSP)&0xffff)-4)/4)
+#define	getprevpc(fp)	get((off_t)(fp)-8, DSP)	/* pc of caller */
+#define	getprevframe(fp) (get((off_t)(fp), DSP)&~3)	/* fp of caller */
+#define	getnargs(fp)	(((get((off_t)(fp)-4, DSP)&0xffff)-4)/4)
 #define	nextarg(ap)	((ap) + 4)		/* next argument in list */
 #define	NOFRAME		0			/* fp at top of call stack */
 
-#define	issignalpc(pc)	(MAXSTOR < (pc) && (pc) < MAXSTOR+ctob(UPAGES))
-#define	getsignalpc(fp)	get((fp)+44, DSP)	/* pc of caller before signal */
+#define	issignalpc(pc)	((unsigned)MAXSTOR < (pc) && (pc) < (unsigned)KERNBASE)
+#define	getsignalpc(fp)	get((off_t)(fp)+44, DSP)/* pc of caller before signal */
 
 #define leng(a)		((long)((unsigned)(a)))
 #define shorten(a)	(((a) >> 16) & 0xffff)
-#define	itol(a,b)	(((a) << 16) | ((b) & 0xffff))
+#define	itol(a,b)	((long)(((a) << 16) | ((b) & 0xffff)))
 #define	byte(a)		(((a) >> 24) & 0xff)
-#define	btol(a)		((a) << 24)
+#define	btol(a)		((long)((a) << 24))
 
 /* check for address wrap around */
 #define	addrwrap(oaddr,newaddr) \

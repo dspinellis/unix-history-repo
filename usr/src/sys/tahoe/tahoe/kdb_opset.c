@@ -1,4 +1,4 @@
-/*	kdb_opset.c	7.2	86/11/23	*/
+/*	kdb_opset.c	7.3	86/12/15	*/
 
 #include "../kdb/defs.h"
 
@@ -60,7 +60,7 @@ static	char *regname[] = {
 	"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7",
 	"r8", "r9", "r10", "r11", "r12", "fp", "sp", "pc"
 };
-static	POS type, space, incp;
+static	int type, space, incp;
 
 /* set up ioptab */
 kdbsetup()
@@ -76,18 +76,18 @@ snarf(nbytes, idsp)
 {
 	register long value;
 
-	value = chkget(inkdot(incp), idsp);
+	value = (u_int)chkget((off_t)inkdot(incp), idsp);
 	incp += nbytes;
 	return(value>>(4-nbytes)*8);
 }
 
-printins(idsp,ins)
+printins(idsp, ins)
 	register long ins;
 {
 	short argno;		/* argument index */
 	register mode;		/* mode */
 	register r;		/* register name */
-	register d;		/* assembled byte, word, long or float */
+	register long d;	/* assembled byte, word, long or float */
 	register char *ap;
 	register struct optab *ip;
 

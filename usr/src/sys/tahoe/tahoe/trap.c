@@ -1,4 +1,4 @@
-/*	trap.c	1.6	86/11/25	*/
+/*	trap.c	1.7	86/12/15	*/
 
 #include "../tahoe/psl.h"
 #include "../tahoe/reg.h"
@@ -263,7 +263,7 @@ syscall(sp, type, hfs, accmst, acclst, dbl, code, pc, psl)
 		u.u_eosys = NORMALRETURN;
 #ifdef SYSCALLTRACE
 		if (syscalltrace) {
-			register int i;
+			register int a;
 			char *cp;
 
 			if (code >= nsysent)
@@ -271,13 +271,13 @@ syscall(sp, type, hfs, accmst, acclst, dbl, code, pc, psl)
 			else
 				printf("%s", syscallnames[code]);
 			cp = "(";
-			for (i= 0; i < callp->sy_narg; i++) {
-				printf("%s%x", cp, u.u_arg[i]);
+			for (a = 0; a < callp->sy_narg; a++) {
+				printf("%s%x", cp, u.u_arg[a]);
 				cp = ", ";
 			}
-			if (i)
-				putchar(')', 0);
-			putchar('\n', 0);
+			if (a)
+				printf(")");
+			printf("\n");
 		}
 #endif
 		(*callp->sy_call)();

@@ -1,4 +1,10 @@
-/*	kdb_access.c	7.2	86/11/20	*/
+/*
+ * Copyright (c) 1986 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)kdb_access.c	7.3 (Berkeley) %G%
+ */
 
 /*
  * Access data in kernel address space.
@@ -10,12 +16,14 @@
  * Primitives: put a value in a space, get a value from a space
  * and get a word or byte not returning if an error occurred.
  */
+/*ARGSUSED*/
 put(addr, space, value) 
-    off_t addr; { (void) kdbpoke(addr, value); }
+    off_t addr; long value; { (void) kdbpoke((caddr_t)addr, value); }
 
+/*ARGSUSED*/
 u_int
 get(addr, space)
-    off_t addr; { return (kdbpeek(addr)); };
+    off_t addr; { return (kdbpeek((caddr_t)addr)); };
 
 u_int
 chkget(addr, space)

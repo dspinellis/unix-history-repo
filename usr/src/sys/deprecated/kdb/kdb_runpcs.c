@@ -1,4 +1,10 @@
-/*	kdb_runpcs.c	7.2	86/11/23	*/
+/*
+ * Copyright (c) 1986 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)kdb_runpcs.c	7.3 (Berkeley) %G%
+ */
 
 #include "../kdb/defs.h"
 
@@ -40,7 +46,7 @@ runpcs(runmode, execsig)
 	 * continue.
 	 */
 	if (bkpt = scanbkpt(userpc)) {
-		execbkpt(bkpt, execsig);
+		execbkpt(bkpt);
 		/*NOTREACHED*/
 	}
 	setbp();
@@ -59,8 +65,8 @@ static	int execbkptf;
  * next step.  Otherwise return 1 if we stopped because
  * of a breakpoint,
  */
-nextpcs(tracetrap, execsig)
-	int tracetrap, execsig;
+nextpcs(tracetrap)
+	int tracetrap;
 {
 	register BKPTR bkpt;
 	short rc;
@@ -82,16 +88,13 @@ nextpcs(tracetrap, execsig)
 		    ((bkpt->flag = BKPTEXEC) && bkpt->comm[0] != EOR &&
 		    command(bkpt->comm, ':') && --bkpt->count)) {
 			loopcnt++;
-			execbkpt(bkpt, execsig);
-			execsig = 0;
+			execbkpt(bkpt);
 		} else {
 			bkpt->count = bkpt->initcnt;
 			rc = 1;
 		}
-	} else {
-		execsig = 0;
+	} else
 		rc = 0;
-	}
 	if (--loopcnt > 0)
 		runpcs(rc ? CONTIN : SINGLE, 1);
 	return (rc);
@@ -101,7 +104,7 @@ nextpcs(tracetrap, execsig)
 #define BPIN 1
 static	int bpstate = BPOUT;
 
-execbkpt(bkptr,execsig)
+execbkpt(bkptr)
 	BKPTR	bkptr;
 {
 
@@ -125,7 +128,7 @@ scanbkpt(addr)
 
 delbp()
 {
-	register ADDR a;
+	register off_t a;
 	register BKPTR bkptr;
 
 	if (bpstate == BPOUT)
@@ -133,14 +136,14 @@ delbp()
 	for (bkptr = bkpthead; bkptr; bkptr = bkptr->nxtbkpt)
 		if (bkptr->flag) {
 			a = bkptr->loc;
-			put(a, ISP, bkptr->ins);
+			put((off_t)a, ISP, (long)bkptr->ins);
 		}
 	bpstate = BPOUT;
 }
 
 setbp()
 {
-	register ADDR a;
+	register off_t a;
 	register BKPTR bkptr;
 
 	if (bpstate == BPIN)
@@ -149,7 +152,7 @@ setbp()
 		if (bkptr->flag) {
 			a = bkptr->loc;
 			bkptr->ins = get(a, ISP);
-			put(a, ISP, SETBP(bkptr->ins));
+			put(a, ISP, (long)SETBP(bkptr->ins));
 		}
 	bpstate = BPIN;
 }

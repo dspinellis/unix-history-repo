@@ -1,4 +1,4 @@
-/*	kdb_machdep.c	7.2	86/11/21	*/
+/*	kdb_machdep.c	7.3	86/12/15	*/
 
 #include "param.h"
 #include "conf.h"
@@ -186,7 +186,7 @@ static	char *codenames[] = {
  * Announce a trap.
  */
 kdbprinttrap(type, code)
-	int type, code;
+	long type, code;
 {
 
 	extern int TRAP_TYPES;
@@ -265,7 +265,8 @@ kdbpoke(addr, v)
 	long v;
 {
 	register int pn, *pte, opte = 0;
-	extern char Sysbase[], etext;
+	extern caddr_t Sysbase;
+	extern int etext;
 	u_short *wp;
 	u_char *cp;
 
@@ -274,7 +275,7 @@ kdbpoke(addr, v)
 	 * make the page writeable for the duration of
 	 * the access.
 	 */
-	if ((caddr_t)Sysbase <= addr && addr <= (caddr_t)&etext) {
+	if (Sysbase <= addr && addr <= (caddr_t)&etext) {
 		pn = btop((int)addr &~ 0xc0000000);
 		pte = (int *)&Sysmap[pn];
 		opte = *pte;

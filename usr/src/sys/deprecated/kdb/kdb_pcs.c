@@ -1,4 +1,10 @@
-/*	kdb_pcs.c	7.1	86/11/20	*/
+/*
+ * Copyright (c) 1986 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)kdb_pcs.c	7.2 (Berkeley) %G%
+ */
 
 #include "../kdb/defs.h"
 
@@ -12,7 +18,7 @@ BKPTR	bkpthead;
 
 char	*lp;
 char	lastc;
-
+extern	char *kdbmalloc();
 long	loopcnt;
 
 /* sub process control */
@@ -28,7 +34,7 @@ subpcs(modif)
 
 		/* delete breakpoint */
 	case 'd': case 'D':
-		if (bkptr=scanbkpt(dot)) {
+		if (bkptr=scanbkpt((ADDR)dot)) {
 			bkptr->flag=0;
 			return;
 		}
@@ -36,7 +42,7 @@ subpcs(modif)
 
 		/* set breakpoint */
 	case 'b': case 'B':
-		if (bkptr=scanbkpt(dot))
+		if (bkptr=scanbkpt((ADDR)dot))
 			bkptr->flag=0;
 		for (bkptr=bkpthead; bkptr; bkptr=bkptr->nxtbkpt)
 			if (bkptr->flag == 0)
@@ -51,7 +57,7 @@ subpcs(modif)
 		bkptr->loc = dot;
 		bkptr->initcnt = bkptr->count = cntval;
 		bkptr->flag = BKPTSET;
-		check=MAXCOM-1; comptr=bkptr->comm; rdc(); lp--;
+		check=MAXCOM-1; comptr=bkptr->comm; (void) rdc(); lp--;
 		do
 			*comptr++ = readchar();
 		while (check-- && lastc!=EOR);

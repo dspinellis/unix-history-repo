@@ -1,4 +1,4 @@
-/*	mem.c	1.3	86/07/16	*/
+/*	mem.c	1.4	86/12/15	*/
 
 /*
  * Memory special file
@@ -43,7 +43,7 @@ mmrw(dev, uio, rw)
 	register u_int c, v;
 	register struct iovec *iov;
 	int error = 0;
-	extern int vmembeg, vmemend;
+	extern caddr_t vmembeg, vmemend;
 
 
 	while (uio->uio_resid > 0 && error == 0) {

@@ -1,4 +1,4 @@
-/*	machdep.c	1.8	86/11/25	*/
+/*	machdep.c	1.9	86/12/15	*/
 
 #include "param.h"
 #include "systm.h"
@@ -58,7 +58,6 @@ startup(firstaddr)
 	int mapaddr, j;
 	register caddr_t v;
 	int maxbufs, base, residual;
-	extern char etext;
 
 	/*
 	 * Initialize error message buffer (at end of core).
@@ -295,7 +294,7 @@ sendsig(p, sig, mask)
 		scp = (struct sigcontext *)regs[SP] - 1;
 	fp = (struct sigframe *)scp - 1;
 	if ((int)fp <= USRSTACK - ctob(u.u_ssize)) 
-		grow((unsigned)fp);
+		(void) grow((unsigned)fp);
 	if (useracc((caddr_t)fp, sizeof (*fp) + sizeof (*scp), B_WRITE) == 0) {
 		/*
 		 * Process has trashed its stack; give it an illegal

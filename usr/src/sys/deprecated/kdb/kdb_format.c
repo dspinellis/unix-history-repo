@@ -1,4 +1,10 @@
-/*	kdb_format.c	7.3	86/11/23	*/
+/*
+ * Copyright (c) 1986 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)kdb_format.c	7.4 (Berkeley) %G%
+ */
 
 #include "../kdb/defs.h"
 
@@ -42,12 +48,12 @@ scanform(icount,ifp,itype,ptype)
 			if (exact && dot==savdot && 
 			   (cursym->n_type&N_TYPE)==N_TEXT &&
 			   cursym->n_un.n_name[0]=='_' && *fp=='i') {
-				exform(1,"x",itype,ptype);
+				(void) exform(1,"x",itype,ptype);
 				fp++;
 				printc(EOR);
 			} else
 #endif
-				fp=exform(fcount,fp,itype,ptype);
+				fp = exform(fcount,fp,itype,ptype);
 		}
 		dotinc=dot-savdot;
 		dot=savdot;
@@ -62,7 +68,7 @@ scanform(icount,ifp,itype,ptype)
 		if (--icount)
 			dot=inkdot(dotinc);
 		if (mkfault)
-			error(0);
+			error((char *)0);
 	}
 }
 
@@ -97,7 +103,7 @@ exform(fcount,ifp,itype,ptype)
 		if (errflg)
 			return (fp);
 		if (mkfault)
-			error(0);
+			error((char *)0);
 		var[0] = wx;
 		modifier = *fp++;
 		dotinc = (longpr ? sizeof (long):sizeof (short));
@@ -129,9 +135,9 @@ exform(fcount,ifp,itype,ptype)
 
 		case 'c': case 'C':
 			if (modifier == 'C')
-				printesc(byte(w));
+				printesc((int)byte(w));
 			else
-				printc(byte(w));
+				printc((char)byte(w));
 			dotinc=1; break;
 
 		case 'b': case 'B':
@@ -151,7 +157,7 @@ exform(fcount,ifp,itype,ptype)
 			while ((c=byte(get(dot,itype))) && errflg==0) {
 				dot=inkdot(1);
 				if (modifier == 'S')
-					printesc(c);
+					printesc((int)c);
 				else
 					printc(c);
 				endline();
@@ -226,7 +232,7 @@ exform(fcount,ifp,itype,ptype)
 
 static
 printesc(c)
-	register c;
+	register int c;
 {
 
 	c &= STRIP;

@@ -1,4 +1,10 @@
-/*	defs.h	7.3	86/11/23	*/
+/*
+ * Copyright (c) 1986 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)defs.h	7.4 (Berkeley) %G%
+ */
 
 /*
  * adb - string table version; common definitions
@@ -87,7 +93,6 @@ ADDR	maxoff;
 ADDR	localval;
 int	mkfault;
 long	var[36];
-long	maxstor;
 char	*errflg;
 long	dot;
 int	dotinc;
@@ -98,10 +103,10 @@ int	cntflg;
 
 /* result type declarations */
 long	inkdot();
-POS	get();
-POS	chkget();
+u_int	get();
+u_int	chkget();
+u_int	bchkget();
 char	*exform();
-long	round();
 BKPTR	scanbkpt();
 
 struct	nlist *symtab, *esymtab;

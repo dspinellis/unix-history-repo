@@ -1,4 +1,10 @@
-/*	kdb_output.c	7.1	86/11/20	*/
+/*
+ * Copyright (c) 1986 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)kdb_output.c	7.2 (Berkeley) %G%
+ */
 
 #include "../kdb/defs.h"
 
@@ -70,7 +76,6 @@ printf(fmat,a1)
 	char *fptr;
 	register char *s;
 	register long *dptr;
-	double *rptr;
 	register width, prec;
 	char c, adj;
 	int x, n;
@@ -93,35 +98,35 @@ printf(fmat,a1)
 		} else
 			prec = -1;
 		digitptr=digits;
-		rptr=(double *)dptr; x = lx = *dptr++;
+		x = lx = *dptr++;
 		s=0;
 		switch (c = *fptr++) {
 		case 'd':
-			printnum(x, -10); break;
+			printnum((u_long)x, -10); break;
 		case 'u':
-			printnum((unsigned short)x, 10); break;
+			printnum((u_long)x, 10); break;
 		case 'o':
-			printnum((unsigned short)x, 8); break;
+			printnum((u_long)x, 8); break;
 		case 'q':
-			printnum(x, -8); break;
+			printnum((u_long)x, -8); break;
 		case 'x':
-			printnum((unsigned short)x, 16); break;
+			printnum((u_long)x, 16); break;
 		case 'z':
-			printnum((unsigned short)x, -16); break;
+			printnum((u_long)x, -16); break;
 		case 'R':
-			printnum(lx, radix); break;
+			printnum((u_long)lx, radix); break;
 		case 'D':
-			printnum(lx, -10); break;
+			printnum((u_long)lx, -10); break;
 		case 'U':
-			printnum(lx, 10); break;
+			printnum((u_long)lx, 10); break;
 		case 'O':
-			printnum(lx, 8); break;
+			printnum((u_long)lx, 8); break;
 		case 'Q':
-			printnum(lx, -8); break;
+			printnum((u_long)lx, -8); break;
 		case 'X':
-			printnum(lx, 16); break;
+			printnum((u_long)lx, 16); break;
 		case 'Z':
-			printnum(lx, -16); break;
+			printnum((u_long)lx, -16); break;
 		case 'c':
 			printc(x); break;
 		case 's':
@@ -175,7 +180,7 @@ convert(cp)
 
 static
 printnum(n, base)
-	register POS n;
+	register u_long n;
 {
 	register char *dptr;
 	char digs[15];

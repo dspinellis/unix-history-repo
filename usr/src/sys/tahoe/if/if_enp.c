@@ -1,4 +1,4 @@
-/*	if_enp.c	1.2	86/11/29	*/
+/*	if_enp.c	1.3	86/12/15	*/
 
 #include "enp.h"
 #if NENP > 0
@@ -84,9 +84,10 @@ enpprobe(reg, vi)
 	struct enp_softc *es = &enp_softc[vi->ui_unit];
 
 #ifdef lint
+	br = 0; cvec = br; br = cvec;
 	enpintr(0);
 #endif
-	if (badaddr(addr, 2) || badaddr(&addr->enp_ram[0], 2))
+	if (badaddr((caddr_t)addr, 2) || badaddr((caddr_t)&addr->enp_ram[0], 2))
 		return (0);
 	es->es_ivec = --vi->ui_hd->vh_lastiv;
 	addr->enp_state = S_ENPRESET;		/* reset by VERSAbus reset */
@@ -112,7 +113,7 @@ enpattach(ui)
 	/*
 	 * Get station's addresses.
 	 */
-	enpcopy(&addr->enp_addr.e_baseaddr, es->es_enaddr,
+	enpcopy((u_char *)&addr->enp_addr.e_baseaddr, es->es_enaddr,
 	    sizeof (es->es_enaddr));
 	printf("enp%d: hardware address %s\n", ui->ui_unit,
 	    ether_sprintf(es->es_enaddr));
@@ -179,27 +180,27 @@ enpintr(unit)
 	register BCB *bcbp;
 
 	addr = (struct enpdevice *)enpinfo[unit]->ui_addr;
+#if ENP == 30
 	if (!IS_ENP_INTR(addr))
 		return;
 	ACK_ENP_INTR(addr);
-	while ((bcbp = (BCB *)ringget(&addr->enp_tohost )) != 0) {
-		(void) enpread(&enp_softc[unit], bcbp, unit);
-		ringput(&addr->enp_enpfree, bcbp); 
+#endif
+	while ((bcbp = (BCB *)ringget((RING *)&addr->enp_tohost )) != 0) {
+		(void) enpread(&enp_softc[unit], bcbp);
+		(void) ringput((RING *)&addr->enp_enpfree, bcbp); 
 	}
 }
 
 /*
  * Read input packet, examine its packet type, and enqueue it.
  */
-enpread(es, bcbp, unit)
+enpread(es, bcbp)
 	struct enp_softc *es;
 	register BCB *bcbp;
-	int unit;
 {
 	register struct ether_header *enp;
 	struct mbuf *m;
-	long int s;
-	int len, off, resid, enptype;
+	int s, len, off, resid;
 	register struct ifqueue *inq;
 
 	es->es_if.if_ipackets++; 
@@ -298,7 +299,7 @@ enpoutput(ifp, m0, dst)
 	register struct enp_softc *es = &enp_softc[ifp->if_unit];
 	register struct mbuf *m = m0;
 	register struct ether_header *enp;
-	register int off, i;
+	register int off;
 	struct mbuf *mcopy = (struct mbuf *)0;
 	int type, s, error, usetrailers;
 	u_char edst[6];
@@ -430,9 +431,9 @@ enpput(unit, m)
 	u_char *mcp;
 
 	addr = (struct enpdevice *)enpinfo[unit]->ui_addr;
-	if (ringempty(&addr->enp_hostfree)) 
+	if (ringempty((RING *)&addr->enp_hostfree)) 
 		return (1);	
-	bcbp = (BCB *)ringget(&addr->enp_hostfree);
+	bcbp = (BCB *)ringget((RING *)&addr->enp_hostfree);
 	bcbp->b_len = 0;
 	bp = (u_char *)bcbp->b_addr;
 	for (mp = m; mp; mp = mp->m_next) {
@@ -444,9 +445,9 @@ enpput(unit, m)
 		bp += len;
 		bcbp->b_len += len;
 	}
-	bcbp->b_len = max(ETHERMIN, bcbp->b_len);
+	bcbp->b_len = MAX(ETHERMIN, bcbp->b_len);
 	bcbp->b_reserved = 0;
-	if (ringput(&addr->enp_toenp, bcbp) == 1)
+	if (ringput((RING *)&addr->enp_toenp, bcbp) == 1)
 		INTR_ENP(addr);
 	m_freem(m);
 	return (0);
@@ -480,8 +481,6 @@ enpget(rxbuf, totlen, off0, ifp)
 		} else
 			len = totlen;
 		if (len >= NBPG) {
-			struct mbuf *p;
-
 			MCLGET(m);
 			if (m->m_len == CLBYTES)
 				m->m_len = len = MIN(len, CLBYTES);
@@ -501,7 +500,7 @@ enpget(rxbuf, totlen, off0, ifp)
 			len -= sizeof (ifp);
 			ifp = (struct ifnet *)0;
 		}
-		enpcopy(cp, mcp, len);
+		enpcopy(cp, mcp, (u_int)len);
 		cp += len;
 		*mp = m;
 		mp = &m->m_next;
@@ -523,8 +522,8 @@ bad:
 }
 
 enpcopy(from, to, cnt)
-	register char *from, *to;
-	register cnt;
+	register u_char *from, *to;
+	register u_int cnt;
 {
 	register c;
 	register short *f, *t;
@@ -541,12 +540,12 @@ enpcopy(from, to, cnt)
 			*t++ = *f++;
 		cnt &= 1;
 		if (cnt) {			/* odd len */
-			from = (char *)f;
-			to = (char *)t;
+			from = (u_char *)f;
+			to = (u_char *)t;
 			*to = *from;
 		}
 	}
-	while (cnt-- > 0)	/* one of the address(es) must be odd */
+	while ((int)cnt-- > 0)	/* one of the address(es) must be odd */
 		*to++ = *from++;
 }
 
@@ -625,32 +624,25 @@ enpsetaddr(unit, addr, enaddr)
 	cp = &addr->enp_addr.e_baseaddr.ea_addr[0];
 	for (i = 0; i < 6; i++)
 		*cp++ = ~*enaddr++;
-	enpcopy(&addr->enp_addr.e_listsize, &code, sizeof (code)); 
+	enpcopy((u_char *)&addr->enp_addr.e_listsize, (u_char *)&code,
+	    sizeof (code)); 
 	code |= E_ADDR_SUPP;
-	enpcopy(&code, &addr->enp_addr.e_listsize, sizeof (code)); 
+	enpcopy((u_char *)&code, (u_char *)&addr->enp_addr.e_listsize,
+	    sizeof (code)); 
 	enpinit(unit);
 }
 
 /* 
  * Routines to synchronize enp and host.
  */
+#ifdef notdef
 static
 ringinit(rp, size)
 	register RING *rp;
 {
-	register int i;
-	register short *sp; 
 
 	rp->r_rdidx = rp->r_wrtidx = 0;
 	rp->r_size = size;
-}
-
-static
-ringempty(rp)
-	register RING *rp;
-{
-
-	return (rp->r_rdidx == rp->r_wrtidx);
 }
 
 static
@@ -664,14 +656,32 @@ ringfull(rp)
 }
 
 static
+fir(rp)
+	register RING *rp;
+{
+
+	return (rp->r_rdidx != rp->r_wrtidx ? rp->r_slot[rp->r_rdidx] : 0);
+}
+#endif
+
+static
+ringempty(rp)
+	register RING *rp;
+{
+
+	return (rp->r_rdidx == rp->r_wrtidx);
+}
+
+static
 ringput(rp, v)
 	register RING *rp;
+	BCB *v;
 {
 	register int idx;
 
 	idx = (rp->r_wrtidx + 1) & (rp->r_size-1);
 	if (idx != rp->r_rdidx) {
-		rp->r_slot[rp->r_wrtidx] = v;
+		rp->r_slot[rp->r_wrtidx] = (int)v;
 		rp->r_wrtidx = idx;
 		if ((idx -= rp->r_rdidx) < 0)
 			idx += rp->r_size;
@@ -693,14 +703,6 @@ ringget(rp)
 	return (i);
 }
 
-static
-fir(rp)
-	register RING *rp;
-{
-
-	return (rp->r_rdidx != rp->r_wrtidx ? rp->r_slot[rp->r_rdidx] : 0);
-}
-
 /*
  * ENP Ram device.
  */
@@ -719,6 +721,7 @@ enpr_open(dev)
 	return (0);
 }
 
+/*ARGSUSED*/
 enpr_close(dev)
 	dev_t dev;
 {
@@ -736,14 +739,15 @@ enpr_read(dev, uio)
 
 	if (uio->uio_offset > RAM_SIZE)
 		return (ENODEV);
+	iov = uio->uio_iov;
 	if (uio->uio_offset + iov->iov_len > RAM_SIZE)
 		iov->iov_len = RAM_SIZE - uio->uio_offset;
 	addr = (struct enpdevice *)enpinfo[ENPUNIT(dev)]->ui_addr;
-	iov = uio->uio_iov;
-	error = useracc(iov->iov_base, iov->iov_len, 0);
+	error = useracc(iov->iov_base, (unsigned)iov->iov_len, 0);
 	if (error)
 		return (error);
-	enpcopy(&addr->enp_ram[uio->uio_offset], iov->iov_base, iov->iov_len);
+	enpcopy((u_char *)&addr->enp_ram[uio->uio_offset],
+	    (u_char *)iov->iov_base, (u_int)iov->iov_len);
 	uio->uio_resid -= iov->iov_len;
 	iov->iov_len = 0;
 	return (0);
@@ -763,22 +767,23 @@ enpr_write(dev, uio)
 		return (ENODEV);
 	if (uio->uio_offset + iov->iov_len > RAM_SIZE)
 		iov->iov_len = RAM_SIZE - uio->uio_offset;
-	error =  useracc(iov->iov_base, iov->iov_len, 1);
+	error =  useracc(iov->iov_base, (unsigned)iov->iov_len, 1);
 	if (error)
 		return (error);
-	enpcopy(iov->iov_base, &addr->enp_ram[uio->uio_offset], iov->iov_len);
+	enpcopy((u_char *)iov->iov_base,
+	    (u_char *)&addr->enp_ram[uio->uio_offset], (u_int)iov->iov_len);
 	uio->uio_resid -= iov->iov_len;
 	iov->iov_len = 0;
 	return (0);
 }
 
+/*ARGSUSED*/
 enpr_ioctl(dev, cmd, data)
 	dev_t dev;
 	caddr_t data;
 {
 	register struct enpdevice *addr;
 	register unit = ENPUNIT(dev);
-	register struct vba_device *ui;
 
 	addr = (struct enpdevice *)enpinfo[unit]->ui_addr;
 	switch(cmd) {
