@@ -44,7 +44,7 @@ device		st3
 device		cd0
 device		cd1
 
-device		we0 at isa? port 0x300 net irq 10 iomem 0xd0000 iosiz 8192 vector weintr
+device		ed0 at isa? port 0x300 net irq 10 iomem 0xd0000 iosiz 8192 vector weintr
 
 
 pseudo-device	loop
