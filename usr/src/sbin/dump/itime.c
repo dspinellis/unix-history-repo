@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)itime.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)itime.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef sunos
@@ -14,16 +14,12 @@ static char sccsid[] = "@(#)itime.c	5.13 (Berkeley) %G%";
 #include <ctype.h>
 #include <sys/param.h>
 #include <sys/stat.h>
-#include <sys/time.h>
-#include <sys/dir.h>
-#include <sys/vnode.h>
-#include <ufs/inode.h>
 #include <ufs/fs.h>
 #else
 #include <sys/param.h>
 #include <sys/time.h>
-#include <ufs/ufs/dinode.h>
 #endif
+#include <ufs/ufs/dinode.h>
 #include <fcntl.h>
 #include <protocols/dumprestore.h>
 #include <errno.h>
@@ -76,7 +72,7 @@ initdumptimes()
 	}
 	(void) flock(fileno(df), LOCK_SH);
 	readdumptimes(df);
-	fclose(df);
+	(void) fclose(df);
 }
 
 void
@@ -101,7 +97,7 @@ readdumptimes(df)
 	 *	record that we may have to add to the ddate structure
 	 */
 	ddatev = (struct dumpdates **)
-		calloc(nddates + 1, sizeof (struct dumpdates *));
+		calloc((unsigned) (nddates + 1), sizeof (struct dumpdates *));
 	dtwalk = dthead;
 	for (i = nddates - 1; i >= 0; i--, dtwalk = dtwalk->dt_next)
 		ddatev[i] = &dtwalk->dt_value;
@@ -155,7 +151,7 @@ putdumptime()
 	fd = fileno(df);
 	(void) flock(fd, LOCK_EX);
 	fname = disk;
-	free(ddatev);
+	free((char *)ddatev);
 	ddatev = 0;
 	nddates = 0;
 	dthead = 0;
@@ -241,7 +237,7 @@ makedumpdate(ddp, tbuf)
 {
 	char un_buf[128];
 
-	sscanf(tbuf, DUMPINFMT, ddp->dd_name, &ddp->dd_level, un_buf);
+	(void) sscanf(tbuf, DUMPINFMT, ddp->dd_name, &ddp->dd_level, un_buf);
 	ddp->dd_ddate = unctime(un_buf);
 	if (ddp->dd_ddate < 0)
 		return(-1);
