@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tip.h	5.6 (Berkeley) %G%
+ *	@(#)tip.h	5.7 (Berkeley) %G%
  */
 
 /*
@@ -12,6 +12,7 @@
  */
 
 #include <sys/types.h>
+#include <machine/endian.h>
 #include <sys/file.h>
 #include <sys/time.h>
 
@@ -126,13 +127,17 @@ typedef
 #define value(v)	vtable[v].v_value
 
 #define number(v)	((((zzhack *)(&(v))))->zz_number)
-#ifdef vax
+
+#if BYTE_ORDER == LITTLE_ENDIAN
 #define boolean(v)	((((zzhack *)(&(v))))->zz_boolean[0])
 #define character(v)	((((zzhack *)(&(v))))->zz_character[0])
-#else
+#endif
+
+#if BYTE_ORDER == BIG_ENDIAN
 #define boolean(v)	((((zzhack *)(&(v))))->zz_boolean[1])
 #define character(v)	((((zzhack *)(&(v))))->zz_character[3])
 #endif
+
 #define address(v)	((((zzhack *)(&(v))))->zz_address)
 
 /*
