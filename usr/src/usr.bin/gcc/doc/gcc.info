@@ -1,0 +1,137 @@
+Info file gcc.info, produced by Makeinfo, -*- Text -*- from input
+file gcc.texinfo.
+
+This file documents the use and the internals of the GNU compiler.
+
+Copyright (C) 1988, 1989, 1990 Free Software Foundation, Inc.
+
+Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of
+this manual under the conditions for verbatim copying, provided also
+that the sections entitled "GNU General Public License" and "Protect
+Your Freedom--Fight `Look And Feel'" are included exactly as in the
+original, and provided that the entire resulting derived work is
+distributed under the terms of a permission notice identical to this
+one.
+
+Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that the sections entitled "GNU General Public
+License" and "Protect Your Freedom--Fight `Look And Feel'" and this
+permission notice may be included in translations approved by the
+Free Software Foundation instead of in the original English.
+
+Indirect:
+gcc.info-1: 1186
+gcc.info-2: 23280
+gcc.info-3: 58894
+gcc.info-4: 108443
+gcc.info-5: 154505
+gcc.info-6: 201128
+gcc.info-7: 247872
+gcc.info-8: 296504
+gcc.info-9: 341802
+gcc.info-10: 388339
+
+Tag Table:
+(Indirect)
+Node: Top1188
+Node: Copying2562
+Node: Contributors15890
+Node: Boycott18087
+Node: Options23282
+Node: Installation58896
+Node: Other Dir77122
+Node: Sun Install78355
+Node: 3b1 Install80196
+Node: SCO Install81534
+Node: VMS Install82281
+Node: HPUX Install86668
+Node: MIPS Install87612
+Node: Tower Install87919
+Node: Trouble88466
+Node: Service91684
+Node: Incompatibilities92260
+Node: Extensions99246
+Node: Statement Exprs101250
+Node: Naming Types102696
+Node: Typeof103777
+Node: Lvalues105632
+Node: Conditionals107526
+Node: Zero-Length108445
+Node: Variable-Length109118
+Node: Subscripting110884
+Node: Pointer Arith111365
+Node: Initializers111936
+Node: Constructors112378
+Node: Function Attributes113868
+Node: Dollar Signs115567
+Node: Alignment116063
+Node: Inline117390
+Node: Extended Asm120324
+Node: Asm Labels129041
+Node: Explicit Reg Vars130349
+Node: Global Reg Vars131362
+Node: Local Reg Vars135560
+Node: Alternate Keywords137138
+Node: Bugs138295
+Node: Bug Criteria139276
+Node: Bug Reporting142098
+Node: Portability152751
+Node: Interface154507
+Node: Passes158879
+Node: RTL171747
+Node: RTL Objects173577
+Node: Accessors176485
+Node: Flags179767
+Node: Machine Modes184375
+Node: Constants191017
+Node: Regs and Memory193767
+Node: Arithmetic201130
+Node: Comparisons206365
+Node: Bit Fields209166
+Node: Conversions210249
+Node: RTL Declarations212918
+Node: Side Effects213687
+Node: Incdec222963
+Node: Assembler225325
+Node: Insns226842
+Node: Calls236930
+Node: Sharing239031
+Node: Machine Desc241840
+Node: Patterns243476
+Node: Example246757
+Node: RTL Template247874
+Node: Output Template255893
+Node: Output Statement258880
+Node: Constraints261000
+Node: Simple Constraints261926
+Node: Multi-Alternative272329
+Node: Class Preferences275324
+Node: Modifiers276199
+Node: No Constraints279582
+Node: Standard Names280684
+Node: Pattern Ordering295285
+Node: Dependent Patterns296506
+Node: Jump Patterns301233
+Node: Peephole Definitions303594
+Node: Expander Definitions310493
+Node: Machine Macros317410
+Node: Run-time Target318651
+Node: Storage Layout322497
+Node: Registers327640
+Node: Register Classes341804
+Node: Stack Layout351815
+Node: Library Names374134
+Node: Addressing Modes376120
+Node: Delayed Branch382550
+Node: Condition Code385635
+Node: Cross-compilation388341
+Node: Misc392782
+Node: Assembler Format400119
+Node: Config425442
+
+End Tag Table
