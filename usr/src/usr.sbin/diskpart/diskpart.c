@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)diskpart.c	4.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)diskpart.c	4.2 (Berkeley) %G%";
 #endif
 
 /*
@@ -172,6 +172,8 @@ main(argc, argv)
 		exit(0);
 	}
 	if (dflag) {
+		int nparts;
+
 		/*
 		 * In case the disk is in the ``in-between'' range
 		 * where the 'g' partition is smaller than the 'h'
@@ -190,15 +192,20 @@ main(argc, argv)
 		printf("%s:\\\n", dp->d_name);
 		printf("\t:ty=%s:ns#%d:nt#%d:nc#%d:\\\n", dp->d_type,
 			dp->d_nsectors, dp->d_ntracks, dp->d_ncylinders);
+		for (nparts = 0, part = PART('a'); part < NPARTITIONS; part++)
+			if (defpart[def][part] != 0)
+				nparts++;
 		for (part = PART('a'); part < NPARTITIONS; part++) {
 			if (defpart[def][part] == 0)
 				continue;
 			printf("\t:p%c#%d:", 'a' + part, defpart[def][part]);
-			if (defparam[part].p_bsize != 0)
+			if (defparam[part].p_bsize != 0) {
 				printf("b%c#%d:f%c#%d:",
 				  'a' + part, defparam[part].p_bsize,
 				  'a' + part, defparam[part].p_fsize);
-			printf("%s\n", part != NPARTITIONS - 1 ? "\\" : "");
+			}
+			nparts--;
+			printf("%s\n", nparts > 0 ? "\\" : "");
 		}
 		exit(0);
 	}
