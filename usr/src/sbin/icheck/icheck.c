@@ -1,4 +1,5 @@
-static	char *sccsid = "@(#)icheck.c	1.3 (Berkeley) %G%";
+static	char *sccsid = "@(#)icheck.c	1.4 (Berkeley) %G%";
+
 /*
  * icheck
  */
@@ -176,20 +177,20 @@ char *file;
 			bmap[i] = 0;
 		for (c=0; c < sblock.fs_ncg; c++) {
 			cgd = cgtod(c, &sblock);
-			for (d = cgbase(c, &sblock); d < cgd; d++)
-				chk(d, "badcg");
+			for (d = cgbase(c, &sblock); d < cgd; d += FRAG)
+				chk(d, "badcg", 0);
 			d = cgimin(c, &sblock);
 			while (cgd < d) {
-				chk(cgd, "cg");
-				cgd++;
+				chk(cgd, "cg", 0);
+				cgd += FRAG;
 			}
 			d = cgdmin(c, &sblock);
-			for (; cgd < d; cgd++)
-				chk(cgd, "inode");
+			for (; cgd < d; cgd += FRAG)
+				chk(cgd, "inode", 0);
 			if (c == 0) {
-				d += howmany(cssize(&sblock), BSIZE) * FRAG;
-				for (; cgd < d; cgd++)
-					chk(cgd, "csum");
+				d += howmany(cssize(&sblock), FSIZE);
+				for (; cgd < d; cgd += FRAG)
+					chk(cgd, "csum", 0);
 			}
 		}
 	}
@@ -225,12 +226,11 @@ char *file;
 		for (b = 0; b < sblock.fs_fpg; b += FRAG) {
 			if (isblock(cgrp.cg_free, b / FRAG)) {
 				nbfree++;
-				for (d = 0; d < FRAG; d++)
-					chk(cbase+b+d, "block");
+				chk(cbase+b, "block", 0);
 			} else {
 				for (d = 0; d < FRAG; d++)
 					if (isset(cgrp.cg_free, b+d)) {
-						chk(cbase+b+d, "frag");
+						chk(cbase+b+d, "frag", 1);
 						nffree++;
 						szffree++;
 					}
@@ -251,7 +251,7 @@ char *file;
 	printf("files %u (r=%u,d=%u,b=%u,c=%u,mc=%u)\n",
 		i, nrfile, ndfile, nbfile, ncfile, nmcfile);
 #endif
-	n = (nblock + niindir) * FRAG + szfrag + szindir;
+	n = (nblock + nindir + niindir) * FRAG + szfrag + szindir;
 #ifdef STANDALONE
 	printf("used %ld (i=%ld,ii=%ld,b=%ld,f=%ld)\n",
 		n, nindir, niindir, nblock, nfrag);
@@ -265,8 +265,8 @@ char *file;
 #endif
 	if(!dflg) {
 		n = 0;
-		for(d=0; d<sblock.fs_size; d++)
-			if(!duped(d)) {
+		for (d = 0; d < sblock.fs_size; d++)
+			if(!duped(d, 1)) {
 				if(mflg)
 					printf("%ld missing\n", d);
 				n++;
@@ -276,12 +276,12 @@ char *file;
 }
 
 pass1(ip)
-register struct dinode *ip;
+	register struct dinode *ip;
 {
-	daddr_t ind1[NINDIR];
-	daddr_t ind2[NINDIR];
-	register i, j;
-	int k, l, sz, ni, nib, ndb;
+	fsbaddr_t ind1[NINDIR];
+	fsbaddr_t ind2[NINDIR];
+	fsbaddr_t db, ib;
+	register i, j, k;
 
 	i = ip->di_mode & IFMT;
 	if(i == 0) {
@@ -305,69 +305,49 @@ register struct dinode *ip;
 		printf("bad mode %u\n", ino);
 		return;
 	}
-	ndb = howmany(ip->di_size, BSIZE)-1;
-	for(i=0; i<NDADDR; i++) {
-		if(ip->di_db[i] == 0)
+	for (i = 0; i < NDADDR; i++) {
+		db = ip->di_db[i];
+		if (db == 0)
 			continue;
-		if (i==ndb && (ip->di_size&BMASK)) {
-			sz = howmany(ip->di_size - i * BSIZE, FSIZE);
-			for (l = 0; l < sz; l++)
-				chk(ip->di_db[i]+l, "data (frag)");
-			szfrag += sz;
-			nfrag++;
-		} else {
-			for (l = 0; l < FRAG; l++)
-				chk(ip->di_db[i]+l, "data (block)");
-			nblock++;
-		}
+		chk(fsbtodb(db), "data (block)", isfrag(db));
+		nblock++;
 	}
-	for(i=NDADDR; i<NDADDR+NIADDR;i++) {
-		if(ip->di_ib[i] == 0)
+	for(i = 0; i < NIADDR; i++) {
+		ib = ip->di_ib[i];
+		if(ib == 0)
 			continue;
+		if (chk(fsbtodb(ib), "1st indirect", 0))
+			continue;
+		bread(fsbtodb(ib), (char *)ind1, BSIZE);
 		nindir++;
-		if (i==NDADDR) {
-			sz = howmany((ip->di_size-NDADDR*BSIZE),
-			    (NINDIR/FRAG) * BSIZE);
-			if (sz > FRAG)
-				sz = FRAG;
-		} else
-			sz = FRAG;
-		for (j = 0; j < FRAG; j++)
-			if (chk(ip->di_ib[i]+j, "1st indirect"))
+		for (j = 0; j < NINDIR; j++) {
+			ib = ind1[j];
+			if (ib == 0)
 				continue;
-		bread(ip->di_ib[i], (char *)ind1, sz*FSIZE);
-		nib = sz * (NINDIR/FRAG);
-		for(j=0; j<nib; j++) {
-			if(ind1[j] == 0)
-				continue;
-			if(i == NDADDR) {
-				for (l = 0; l < FRAG; l++)
-					chk(ind1[j]+l, "data (large)");
+			if (i == 0) {
+				chk(fsbtodb(ib), "data (large)", isfrag(ib));
 				nblock++;
 				continue;
 			}
+			if (chk(fsbtodb(ib), "2nd indirect", 0))
+				continue;
+			bread(fsbtodb(ib), (char *)ind2, BSIZE);
 			niindir++;
-			for (l = 0; l < FRAG; l++)
-				if(chk(ind1[j], "2nd indirect"))
-					goto skip;
-			bread(ind1[j], (char *)ind2, BSIZE);
-			for(k=0; k<NINDIR; k++) {
-				if(ind2[k] == 0)
+			for (k = 0; k < NINDIR; k++) {
+				ib = ind2[k];
+				if (ib == 0)
 					continue;
-				for (l = 0; l < FRAG; l++)
-					chk(ind1[j]+l, "data (huge)");
+				chk(fsbtodb(ib), "data (huge)", isfrag(ib));
 				nblock++;
-				continue;
 			}
-skip:
-			;
 		}
 	}
 }
 
-chk(bno, s)
-daddr_t bno;
-char *s;
+chk(bno, s, fragflg)
+	daddr_t bno;
+	char *s;
+	int fragflg;
 {
 	register n, cg;
 
@@ -376,7 +356,7 @@ char *s;
 		printf("%ld bad; inode=%u, class=%s\n", bno, ino, s);
 		return(1);
 	}
-	if (duped(bno)) {
+	if (duped(bno, fragflg)) {
 		printf("%ld dup; inode=%u, class=%s\n", bno, ino, s);
 		ndup++;
 	}
@@ -386,25 +366,29 @@ char *s;
 	return(0);
 }
 
-duped(bno)
-daddr_t bno;
+duped(bno, fragflg)
+	daddr_t bno;
+	int fragflg;
 {
-	daddr_t d;
-	register m, n;
-
 	if(dflg)
 		return(0);
-	m = 1 << (bno%BITS);
-	n = (bno/BITS);
-	if(bmap[n] & m)
-		return(1);
-	bmap[n] |= m;
+	if (fragflg) {
+		if (isset(bmap, bno))
+			return(1);
+		setbit(bmap, bno);
+		return (0);
+	}
+	if (bno % FRAG != 0)
+		printf("bad bno %d to duped\n", bno);
+	if (isblock(bmap, bno/FRAG))
+		return (1);
+	setblock(bmap, bno/FRAG);
 	return(0);
 }
 
 bread(bno, buf, cnt)
-daddr_t bno;
-char *buf;
+	daddr_t bno;
+	char *buf;
 {
 	register i;
 
@@ -420,11 +404,9 @@ char *buf;
 }
 
 bwrite(bno, buf, cnt)
-daddr_t bno;
-char *buf;
+	daddr_t bno;
+	char *buf;
 {
-	register i;
-
 	lseek(fi, bno*FSIZE, 0);
 	if (write(fi, buf, cnt) != cnt)
 		printf("write error %d\n", tell(fi)/BSIZE);
@@ -447,7 +429,7 @@ makecg()
 		if (dmax > sblock.fs_size)
 			dmax = sblock.fs_size;
 		cs = &sblock.fs_cs[c];
-		cgrp.cg_time = time(0);
+		cgrp.cg_time = time((long)0);
 		cgrp.cg_magic = CG_MAGIC;
 		cgrp.cg_cgx = c;
 		cgrp.cg_ncyl = sblock.fs_cpg;
@@ -522,7 +504,7 @@ makecg()
 	sblock.fs_ronly = 0;
 	sblock.fs_fmod = 0;
 	bwrite(SBLOCK, (char *)&sblock, sizeof (sblock));
-	lseek(fi, csaddr(&sblock)*FSIZE, 0);
+	lseek(fi, csaddr(&sblock) * FSIZE, 0);
 	if (write(fi,(char *)sblock.fs_cs,cssize(&sblock)) != cssize(&sblock))
 		printf("write error %d\n", tell(fi)/BSIZE);
 }
