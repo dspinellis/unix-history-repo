@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)uuxqt.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)uuxqt.c	5.9 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -17,6 +17,8 @@ static char sccsid[] = "@(#)uuxqt.c	5.8 (Berkeley) %G%";
 #define APPCMD(d) {\
 char *p;\
 for (p = d; *p != '\0';) *cmdp++ = *p++; *cmdp++ = ' '; *cmdp = '\0';}
+
+extern char Filent[LLEN][NAMESIZE];
 
 /*
  *	uuxqt will execute commands set up by a uux command,
@@ -59,10 +61,10 @@ char *nenv[] = {
 main(argc, argv)
 char *argv[];
 {
-	char xcmd[MAXFULLNAME];
+	char xcmd[BUFSIZ*2];
 	int argnok;
 	int notiflg;
-	char xfile[MAXFULLNAME], user[MAXFULLNAME], buf[BUFSIZ];
+	char xfile[MAXFULLNAME], user[MAXFULLNAME], buf[BUFSIZ*2];
 	char lbuf[MAXFULLNAME];
 	char cfile[NAMESIZE], dfile[MAXFULLNAME];
 	char file[NAMESIZE];
@@ -70,7 +72,7 @@ char *argv[];
 	register FILE *xfp, *fp;
 	FILE *dfp;
 	char path[MAXFULLNAME];
-	char cmd[BUFSIZ];
+	char cmd[BUFSIZ*2];
 	char *cmdp, prm[1000], *ptr;
 	char *getprm(), *lastpart();
 	int uid, ret, ret2, badfiles;
@@ -94,6 +96,10 @@ char *argv[];
 			if (Debug <= 0)
 				Debug = 1;
 			break;
+		case 'S':
+			Spool = &argv[1][2];
+			DEBUG(1, "Spool set to %s", Spool);
+			break;
 		default:
 			fprintf(stderr, "unknown flag %s\n", argv[1]);
 				break;
@@ -106,7 +112,11 @@ char *argv[];
 	ASSERT(ret >= 0, "CHDIR FAILED", Spool, ret);
 	strcpy(Wrkdir, Spool);
 	uid = getuid();
-	guinfo(uid, User, path);
+	if (guinfo(uid, User, path) != SUCCESS) {
+		assert("Can't find username for ", "uid", uid);
+		DEBUG(1, "Using username", "uucp");
+		strcpy(User, "uucp");
+	}
 	setgid(getegid());
 	setuid(geteuid());
 
@@ -177,6 +187,7 @@ doprocess:
 	DEBUG(11,"path = %s\n", getenv("PATH"));
 
 	DEBUG(4, "process %s\n", CNULL);
+
 	time(&xstart);
 	while (gtxfile(xfile) > 0) {
 		/* if /etc/nologin exists, exit cleanly */
@@ -204,6 +215,21 @@ doprocess:
 		strcpy(sysout, Myname);
 		badfiles = 0;
 		while (fgets(buf, BUFSIZ, xfp) != NULL) {
+	if(buf[0] != '\0' && buf[0] != '#' &&
+		buf[1] != ' ' && buf[1] != '\0' && buf[1] != '\n') {
+		char *bnp, cfilename[BUFSIZ];
+		DEBUG(4, "uuxqt: buf = %s\n", buf);
+		bnp = rindex(xfile, '/');
+		sprintf(cfilename, "%s/%s", CORRUPT,
+			bnp ? bnp + 1 : xfile);
+		DEBUG(4, "uuxqt: move %s to ", xfile);
+		DEBUG(4, "%s\n", cfilename);
+		xmv(xfile, cfilename);
+		assert("X. FILE CORRUPTED", xfile, 0);
+		fclose(xfp);
+		goto doprocess;
+		
+	}
 			switch (buf[0]) {
 			case X_USER:
 				sscanf(&buf[1], "%s %s", user, Rmtname);
@@ -406,7 +432,7 @@ gtxfile(file)
 register char *file;
 {
 	char pre[3];
-	int rechecked;
+	register int rechecked, i;
 	time_t ystrdy;		/* yesterday */
 	struct stat stbuf;	/* for X file age */
 
@@ -415,14 +441,18 @@ register char *file;
 	pre[2] = '\0';
 	rechecked = 0;
 retry:
-	if (!gtwrkf(Spool, file)) {
+	if (Nfiles-- <= 0) {
+		Nfiles = 0;
 		if (rechecked)
 			return 0;
 		rechecked = 1;
 		DEBUG(4, "iswrk\n", CNULL);
-		if (!iswrk(file, "get", Spool, pre))
-			return 0;
+		return iswrk(file, "get", Spool, pre);
 	}
+	sprintf(file, "%s/%s", Spool, Filent[0]);
+	for (i=0; i<Nfiles;i++)
+		strcpy(Filent[i], Filent[i+1]);
+
 	DEBUG(4, "file - %s\n", file);
 	/* skip spurious subdirectories */
 	if (strcmp(pre, file) == SAME)
@@ -434,19 +464,25 @@ retry:
 	    time(&ystrdy);
 	    ystrdy -= (4 * 3600L);		/* 4 hours ago */
 	    DEBUG(4, "gtxfile: Nfiles > LLEN/2\n", CNULL);
-	    while (gtwrkf(Spool, file) && !gotfiles(file)) {
+	    while (Nfiles-- > 0) {
+		sprintf(file, "%s/%s", Spool, Filent[0]);
+		for (i=0; i<Nfiles; i++)
+			strcpy(Filent[i], Filent[i+1]);
+
+		if (gotfiles(file))
+			return 1;
 		if (stat(subfile(file), &stbuf) == 0)
 		    if (stbuf.st_mtime <= ystrdy) {
 			char *bnp, cfilename[NAMESIZE];
 			DEBUG(4, "gtxfile: move %s to CORRUPT \n", file);
-			unlink(subfile(file));
-			bnp = rindex(subfile(file), '/');
+			bnp = rindex(file, '/');
 			sprintf(cfilename, "%s/%s", CORRUPT,
-				bnp ? bnp + 1 : subfile(file));
-			xmv(subfile(file), cfilename);
-			logent(file, "X. FILE CORRUPTED");
+				bnp ? bnp + 1 : file);
+			xmv(file, cfilename);
+			assert("X. FILE MISSING FILES", file, 0);
 		    }
 	    }
+ 	    Nfiles = 0;
 	    DEBUG(4, "iswrk\n", CNULL);
 	    if (!iswrk(file, "get", Spool, pre))
 		return 0;
@@ -621,7 +657,7 @@ char *cmd;
 notify(user, rmt, cmd, str)
 char *user, *rmt, *cmd, *str;
 {
-	char text[MAXFULLNAME];
+	char text[BUFSIZ*2];
 	char ruser[MAXFULLNAME];
 
 	if (strpbrk(user, BADCHARS) != NULL) {
@@ -675,7 +711,7 @@ char *cmd, *fi, *fo;
 	int status, f;
 	int uid, pid, ret;
 	char path[MAXFULLNAME];
-	char *args[20];
+	char *args[256];
 	extern int errno;
 
 	if (fi == NULL)
@@ -683,7 +719,7 @@ char *cmd, *fi, *fo;
 	if (fo == NULL)
 		fo = DEVNULL;
 
-	getargs(cmd, args, 20);
+	getargs(cmd, args, 256);
 	DEBUG(3, "shio - %s\n", cmd);
 #ifdef SIGCHLD
 	signal(SIGCHLD, SIG_IGN);
