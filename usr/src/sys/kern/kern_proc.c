@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.45	82/10/23	*/
+/*	kern_proc.c	4.46	82/10/31	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -12,7 +12,7 @@
 #include "../h/inode.h"
 #include "../h/seg.h"
 #include "../h/acct.h"
-#include "/usr/include/wait.h"
+#include <wait.h>
 #include "../h/pte.h"
 #include "../h/vm.h"
 #include "../h/text.h"
@@ -263,7 +263,7 @@ execve()
 			if (nc % (CLSIZE*NBPG) == 0) {
 				if (bp)
 					bdwrite(bp);
-				bp = getblk(argdev, bno + nc / NBPG,
+				bp = getblk(argdev, bno + ctod(nc / NBPG),
 				    CLSIZE*NBPG);
 				cp = bp->b_un.b_addr;
 			}
@@ -284,7 +284,8 @@ execve()
 	if (u.u_error) {
 badarg:
 		for (c = 0; c < nc; c += CLSIZE*NBPG)
-			if (bp = baddr(argdev, bno + c / NBPG, CLSIZE*NBPG)) {
+			bp = baddr(argdev, bno + ctod(c / NBPG), CLSIZE*NBPG));
+			if (bp) {
 				bp->b_flags |= B_AGE;		/* throw away */
 				bp->b_flags &= ~B_DELWRI;	/* cancel io */
 				brelse(bp);
@@ -405,7 +406,8 @@ register struct inode *ip;
 	if (pagi == 0)
 		u.u_error =
 		    rdwri(UIO_READ, ip,
-			(char*)ctob(ts), (int)u.u_exdata.ux_dsize,
+			(char *)ctob(dptov(u.u_procp, 0)),
+			(int)u.u_exdata.ux_dsize,
 			(int)(sizeof(u.u_exdata)+u.u_exdata.ux_tsize),
 			0, (int *)0);
 	xalloc(ip, pagi);
@@ -414,9 +416,11 @@ register struct inode *ip;
 		    PG_FTEXT, u.u_procp->p_textp->x_iptr,
 		    (long)(1 + ts/CLSIZE), (int)btoc(u.u_exdata.ux_dsize));
 
+#ifdef vax
 	/* THIS SHOULD BE DONE AT A LOWER LEVEL, IF AT ALL */
 #include "../vax/mtpr.h"		/* XXX */
 	mtpr(TBIA, 0);
+#endif
 
 	if (u.u_error)
 		swkill(u.u_procp, "i/o error mapping pages");
@@ -473,17 +477,33 @@ setregs()
 			continue;
 		}
 	}
+#ifdef vax
 /*
 	for (rp = &u.u_ar0[0]; rp < &u.u_ar0[16];)
 		*rp++ = 0;
 */
-	u.u_ar0[PC] = u.u_exdata.ux_entloc + 2; /* skip over entry mask */
+	u.u_ar0[PC] = u.u_exdata.ux_entloc+2;
+#endif
+#ifdef sun
+	{ register struct regs *r = (struct regs *)u.u_ar0;
+	  for (i = 0; i < 8; i++) {
+		r->r_dreg[i] = 0;
+		if (&r->r_areg[i] != &r->r_sp)
+			r->r_areg[i] = 0;
+	  }
+	  r->r_sr = PSL_USERSET;
+	  r->r_pc = u.u_exdata.ux_entloc;
+	}
+#endif
 	for (i=0; i<NOFILE; i++) {
 		if (u.u_pofile[i]&EXCLOSE) {
 			closef(u.u_ofile[i], 1, u.u_pofile[i]);
 			u.u_ofile[i] = NULL;
 			u.u_pofile[i] = 0;
 		}
+#ifdef SUNMMAP
+		u.u_pofile[i] &= ~UF_MAPPED;
+#endif
 	}
 
 	/*
@@ -492,6 +512,9 @@ setregs()
 	u.u_acflag &= ~AFORK;
 	bcopy((caddr_t)u.u_dent.d_name, (caddr_t)u.u_comm,
 	    (unsigned)(u.u_dent.d_namlen + 1));
+#ifdef sun
+	u.u_eosys = REALLYRETURN;
+#endif
 }
 
 /*
@@ -578,6 +601,9 @@ exit(rv)
 	acct();
 #ifdef QUOTA
 	qclean();
+#endif
+#ifdef sun
+	ctxfree(&u);
 #endif
 	vrelpt(u.u_procp);
 	vrelu(u.u_procp, 0);
