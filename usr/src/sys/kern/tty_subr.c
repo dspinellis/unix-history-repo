@@ -4,13 +4,14 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)tty_subr.c	7.8 (Berkeley) %G%
+ *	@(#)tty_subr.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
 #include "buf.h"
 #include "ioctl.h"
+#include "proc.h"
 #include "tty.h"
 #include "clist.h"
 

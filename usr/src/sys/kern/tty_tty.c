@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tty_tty.c	7.16 (Berkeley) %G%
+ *	@(#)tty_tty.c	7.17 (Berkeley) %G%
  */
 
 /*
@@ -14,8 +14,8 @@
 #include "systm.h"
 #include "conf.h"
 #include "ioctl.h"
-#include "tty.h"
 #include "proc.h"
+#include "tty.h"
 #include "vnode.h"
 #include "file.h"
 
