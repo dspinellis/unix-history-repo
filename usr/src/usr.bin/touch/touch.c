@@ -1,25 +1,47 @@
-#ifndef lint
-static	char sccsid[] = "@(#)touch.c	4.6 (Berkeley) %G%";
-#endif
-
 /*
- *	attempt to set the modify date of a file to the current date.
- *	if the file exists, read and write its first character.
- *	if the file doesn't exist, create it, unless -c option prevents it.
- *	if the file is read-only, -f forces chmod'ing and touch'ing.
+ * Copyright (c) 1988 Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
-#include <stdio.h>
+#ifndef lint
+char copyright[] =
+"@(#) Copyright (c) 1988 Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)touch.c	4.7 (Berkeley) %G%";
+#endif /* not lint */
+
+/*
+ * Attempt to set the modify date of a file to the current date.  If the
+ * file exists, read and write its first character.  If the file doesn't
+ * exist, create it, unless -c option prevents it.  If the file is read-only,
+ * -f forces chmod'ing and touch'ing.
+ */
 #include <sys/types.h>
 #include <sys/file.h>
 #include <sys/stat.h>
+#include <stdio.h>
 
-int	dontcreate;	/* set if -c option */
-int	force;		/* set if -f option */
+static int	dontcreate;	/* set if -c option */
+static int	force;		/* set if -f option */
 
 main(argc, argv)
-	int	argc;
-	char	**argv;
+	int argc;
+	char **argv;
 {
 	extern int optind;
 	int ch, retval;
@@ -46,9 +68,9 @@ main(argc, argv)
 }
 
 touch(filename)
-	char	*filename;
+	char *filename;
 {
-	struct stat	statbuffer;
+	struct stat statbuffer;
 
 	if (stat(filename, &statbuffer) == -1) {
 		if (!dontcreate)
@@ -58,23 +80,24 @@ touch(filename)
 	}
 	if ((statbuffer.st_mode & S_IFMT) != S_IFREG) {
 		fprintf(stderr, "touch: %s: can only touch regular files\n",
-			filename);
+		    filename);
 		return(1);
 	}
 	if (!access(filename, R_OK | W_OK))
 		return(readwrite(filename,statbuffer.st_size));
 	if (force) {
-		int	retval;
+		int retval;
 
-		if (chmod(filename,0666)) {
-			fprintf(stderr, "touch: %s: couldn't chmod: ", filename);
+		if (chmod(filename, 0666)) {
+			fprintf(stderr, "touch: %s: couldn't chmod: ",
+			    filename);
 			perror((char *)NULL);
 			return(1);
 		}
-		retval = readwrite(filename,statbuffer.st_size);
-		if (chmod(filename,statbuffer.st_mode)) {
+		retval = readwrite(filename, statbuffer.st_size);
+		if (chmod(filename, statbuffer.st_mode)) {
 			fprintf(stderr, "touch: %s: couldn't chmod back: ",
-				filename);
+			    filename);
 			perror((char *)NULL);
 			return(1);
 		}
@@ -85,12 +108,12 @@ touch(filename)
 }
 
 readwrite(filename, size)
-	char	*filename;
-	off_t	size;
+	char *filename;
+	off_t size;
 {
-	int	filedescriptor;
-	char	first;
-	off_t	lseek();
+	int filedescriptor;
+	char first;
+	off_t lseek();
 
 	if (size) {
 		filedescriptor = open(filename, O_RDWR, 0);
@@ -117,6 +140,6 @@ error:			fprintf(stderr, "touch: %s: ", filename);
 
 usage()
 {
-	fputs("usage: touch [-cf] file ...\n", stderr);
+	fprintf(stderr, "usage: touch [-cf] file ...\n");
 	exit(1);
 }
