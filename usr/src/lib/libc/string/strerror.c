@@ -6,22 +6,36 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)strerror.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)strerror.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <string.h>
-#include <stdio.h>
 
 char *
-strerror(errnum)
-	int errnum;
+strerror(num)
+	int num;
 {
 	extern int sys_nerr;
 	extern char *sys_errlist[];
-	static char ebuf[40];		/* 64-bit number + slop */
+#define	UPREFIX	"Unknown error: "
+	static char ebuf[40] = UPREFIX;		/* 64-bit number + slop */
+	register unsigned int errnum;
+	register char *p, *t;
+	char tmp[40];
 
-	if ((unsigned int)errnum < sys_nerr)
+	errnum = num;				/* convert to unsigned */
+	if (errnum < sys_nerr)
 		return(sys_errlist[errnum]);
-	(void)sprintf(ebuf, "Unknown error: %d", errnum);
+
+	/* Do this by hand, so we don't include stdio(3). */
+	t = tmp;
+	do {
+		*t++ = "0123456789"[errnum % 10];
+	} while (errnum /= 10);
+	for (p = ebuf + sizeof(UPREFIX) - 1;;) {
+		*p++ = *--t;
+		if (t <= tmp)
+			break;
+	}
 	return(ebuf);
 }
