@@ -2,7 +2,7 @@
 # include "sendmail.h"
 
 #ifndef DAEMON
-SCCSID(@(#)daemon.c	3.52		%G%	(w/o daemon mode));
+SCCSID(@(#)daemon.c	3.53		%G%	(w/o daemon mode));
 #else
 
 #include <sys/socket.h>
@@ -10,7 +10,7 @@ SCCSID(@(#)daemon.c	3.52		%G%	(w/o daemon mode));
 #include <netdb.h>
 #include <wait.h>
 
-SCCSID(@(#)daemon.c	3.52		%G%	(with daemon mode));
+SCCSID(@(#)daemon.c	3.53		%G%	(with daemon mode));
 
 /*
 **  DAEMON.C -- routines to use when running as a daemon.
@@ -398,6 +398,7 @@ makeconnection(host, port, outfile, infile)
 **
 **	Parameters:
 **		hostbuf -- a place to return the name of this host.
+**		size -- the size of hostbuf.
 **
 **	Returns:
 **		A list of aliases for this host.
@@ -407,12 +408,13 @@ makeconnection(host, port, outfile, infile)
 */
 
 char **
-myhostname(hostbuf)
+myhostname(hostbuf, size)
 	char hostbuf[];
+	int size;
 {
 	extern struct hostent *gethostbyname();
 	struct hostent *hp;
-	auto int i = 30;
+	auto int i = size;
 	register char *p;
 
 	gethostname(hostbuf, &i);
@@ -432,11 +434,14 @@ myhostname(hostbuf)
 **  MYHOSTNAME -- stub version for case of no daemon code.
 **
 **	Can't convert to upper case here because might be a UUCP name.
+**
+**	Mark, you can change this to be anything you want......
 */
 
 char **
-myhostname(hostbuf)
+myhostname(hostbuf, size)
 	char hostbuf[];
+	int size;
 {
 	register FILE *f;
 
@@ -444,7 +449,7 @@ myhostname(hostbuf)
 	f = fopen("/usr/include/whoami", "r");
 	if (f != NULL)
 	{
-		(void) fgets(hostbuf, sizeof hostbuf, f);
+		(void) fgets(hostbuf, size, f);
 		fixcrlf(hostbuf, TRUE);
 		(void) fclose(f);
 	}
