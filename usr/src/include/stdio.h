@@ -1,4 +1,4 @@
-/*	stdio.h	1.8	84/11/12	*/
+/*	stdio.h	1.9	84/11/21	*/
 #define	BUFSIZ	1024
 #define	_NFILE	20
 # ifndef FILE
@@ -28,11 +28,12 @@ extern	struct	_iobuf {
 #define	stdin	(&_iob[0])
 #define	stdout	(&_iob[1])
 #define	stderr	(&_iob[2])
-#define	getc(p)		(--(p)->_cnt>=0? *(p)->_ptr++&0377:_filbuf(p))
+#define	getc(p)		(--(p)->_cnt>=0? (int)(*(unsigned char *)(p)->_ptr++):_filbuf(p))
 #define	getchar()	getc(stdin)
 #define putc(x, p)	(--(p)->_cnt >= 0 || ((p)->_flag & _IOLBF) &&\
 		-(p)->_cnt <= (p)->_bufsiz && (x) != '\n' ?\
-		(int)(*(p)->_ptr++ = (unsigned)(x)) : _flsbuf((unsigned)(x), p))
+		(int)(*(unsigned char *)(p)->_ptr++ = (x)) :\
+		_flsbuf((unsigned char)(x), p))
 #define	putchar(x)	putc(x,stdout)
 #define	feof(p)		(((p)->_flag&_IOEOF)!=0)
 #define	ferror(p)	(((p)->_flag&_IOERR)!=0)
