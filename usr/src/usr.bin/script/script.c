@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)script.c	4.4 83/06/10";
+static char *sccsid = "@(#)script.c	4.5 (Berkeley) 83/07/02";
 #endif
 
 /*
@@ -11,7 +11,7 @@ static char *sccsid = "@(#)script.c	4.4 83/06/10";
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <sgtty.h>
-#include <time.h>
+#include <sys/time.h>
 
 char	*getenv();
 char	*ctime();
@@ -96,7 +96,7 @@ doinput()
 	done();
 }
 
-#include <wait.h>
+#include <sys/wait.h>
 
 finish()
 {

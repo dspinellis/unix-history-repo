@@ -1,10 +1,12 @@
-static char *sccsid ="@(#)biff.c	4.1 (Berkeley) %G%";
+#ifndef lint
+static char *sccsid ="@(#)biff.c	4.2 (Berkeley) %G%";
+#endif
 /*
  * biff
  */
 
 #include <sys/types.h>
-#include <stat.h>
+#include <sys/stat.h>
 #include <stdio.h>
 
 char	*ttyname();

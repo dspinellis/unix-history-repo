@@ -1,9 +1,11 @@
-static char *sccsid = "@(#)whereis.c	4.9 (Berkeley) %G%";
+#ifndef lint
+static char *sccsid = "@(#)whereis.c	4.10 (Berkeley) %G%";
+#endif
 
 #include <sys/param.h>
+#include <sys/dir.h>
 #include <stdio.h>
 #include <ctype.h>
-#include <dir.h>
 
 static char *bindirs[] = {
 	"/etc",
