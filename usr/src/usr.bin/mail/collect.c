@@ -11,7 +11,7 @@
  */
 
 #ifdef notdef
-static char sccsid[] = "@(#)collect.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	5.8 (Berkeley) %G%";
 #endif /* notdef */
 
 /*
@@ -92,15 +92,17 @@ collect(hp)
 	 */
 	t = GTO|GSUBJECT|GCC|GNL;
 	getsub = 0;
-	if (intty && sflag == NOSTR && hp->h_subject == NOSTR && value("ask"))
+	if (hp->h_subject == NOSTR && value("interactive") != NOSTR &&
+	    value("ask"))
 		t &= ~GNL, getsub++;
 	if (hp->h_seq != 0) {
 		puthead(hp, stdout, t);
 		fflush(stdout);
 	}
-	escape = ESCAPE;
 	if ((cp = value("escape")) != NOSTR)
 		escape = *cp;
+	else
+		escape = ESCAPE;
 	eof = 0;
 	hadintr = 0;
 
@@ -130,7 +132,8 @@ cont:
 	}
 	for (;;) {
 		if (readline(stdin, linebuf) < 0) {
-			if (intty && value("ignoreeof") != NOSTR) {
+			if (value("interactive") != NOSTR &&
+			    value("ignoreeof") != NOSTR) {
 				if (++eof > 35)
 					break;
 				printf("Use \".\" to terminate letter\n");
@@ -140,10 +143,11 @@ cont:
 		}
 		eof = 0;
 		hadintr = 0;
-		if (intty && equal(".", linebuf) &&
+		if (linebuf[0] == '.' && linebuf[1] == '\0' &&
+		    value("interactive") != NOSTR &&
 		    (value("dot") != NOSTR || value("ignoreeof") != NOSTR))
 			break;
-		if (linebuf[0] != escape || rflag != NOSTR) {
+		if (linebuf[0] != escape || value("interactive") == NOSTR) {
 			if (putline(fp, linebuf) < 0)
 				goto err;
 			continue;
@@ -155,7 +159,6 @@ cont:
 			 * On double escape, just send the single one.
 			 * Otherwise, it's an error.
 			 */
-
 			if (c == escape) {
 				if (putline(fp, &linebuf[1]) < 0)
 					goto err;
@@ -164,91 +167,68 @@ cont:
 			}
 			printf("Unknown tilde escape.\n");
 			break;
-
 		case 'C':
 			/*
 			 * Dump core.
 			 */
-
 			core();
 			break;
-
 		case '!':
 			/*
 			 * Shell escape, send the balance of the
 			 * line to sh -c.
 			 */
-
 			shell(&linebuf[2]);
 			break;
-
 		case ':':
-		case '_':
 			/*
 			 * Escape to command mode, but be nice!
 			 */
-
 			execute(&linebuf[2], 1);
 			goto cont;
-
 		case '.':
 			/*
 			 * Simulate end of file on input.
 			 */
 			goto out;
-
 		case 'q':
-		case 'Q':
 			/*
 			 * Force a quit of sending mail.
 			 * Act like an interrupt happened.
 			 */
-
 			hadintr++;
 			collrub(SIGINT);
 			exit(1);
-
 		case 'h':
 			/*
 			 * Grab a bunch of headers.
 			 */
-			if (!intty || !outtty) {
-				printf("~h: no can do!?\n");
-				break;
-			}
 			grabh(hp, GTO|GSUBJECT|GCC|GBCC);
 			goto cont;
-
 		case 't':
 			/*
 			 * Add to the To list.
 			 */
-
 			hp->h_to = addto(hp->h_to, &linebuf[2]);
 			hp->h_seq++;
 			break;
-
 		case 's':
 			/*
 			 * Set the Subject list.
 			 */
-
 			cp = &linebuf[2];
 			while (isspace(*cp))
 				cp++;
 			hp->h_subject = savestr(cp);
 			hp->h_seq++;
 			break;
-
 		case 'c':
 			/*
 			 * Add to the CC list.
 			 */
-
 			hp->h_cc = addto(hp->h_cc, &linebuf[2]);
 			hp->h_seq++;
 			break;
-
 		case 'b':
 			/*
 			 * Add stuff to blind carbon copies list.
@@ -256,18 +236,15 @@ cont:
 			hp->h_bcc = addto(hp->h_bcc, &linebuf[2]);
 			hp->h_seq++;
 			break;
-
 		case 'd':
 			strcpy(linebuf + 2, deadletter);
 			/* fall into . . . */
-
 		case 'r':
 			/*
 			 * Invoke a file:
 			 * Search for the file name,
 			 * then open it and copy the contents to fp.
 			 */
-
 			cp = &linebuf[2];
 			while (isspace(*cp))
 				cp++;
@@ -301,12 +278,10 @@ cont:
 			fclose(fbuf);
 			printf("%d/%d\n", lc, cc);
 			break;
-
 		case 'w':
 			/*
 			 * Write the message on a file.
 			 */
-
 			cp = &linebuf[2];
 			while (any(*cp, " \t"))
 				cp++;
@@ -319,7 +294,6 @@ cont:
 			rewind(fp);
 			exwrite(cp, fp, 1);
 			break;
-
 		case 'm':
 		case 'f':
 			/*
@@ -328,7 +302,6 @@ cont:
 			 * standard list processing garbage.
 			 * If ~f is given, we don't shift over.
 			 */
-
 			if (!rcvmode) {
 				printf("No messages to send from!?!\n");
 				break;
@@ -339,7 +312,6 @@ cont:
 			if (forward(cp, fp, c) < 0)
 				goto err;
 			goto cont;
-
 		case '?':
 			if ((fbuf = fopen(THELPFILE, "r")) == NULL) {
 				perror(THELPFILE);
@@ -349,31 +321,25 @@ cont:
 				putchar(t);
 			fclose(fbuf);
 			break;
-
 		case 'p':
 			/*
 			 * Print out the current state of the
 			 * message without altering anything.
 			 */
-
 			rewind(fp);
 			printf("-------\nMessage contains:\n");
 			puthead(hp, stdout, GTO|GSUBJECT|GCC|GBCC|GNL);
 			while ((t = getc(fp)) != EOF)
 				putchar(t);
 			goto cont;
-
-		case '^':
 		case '|':
 			/*
 			 * Pipe message through command.
 			 * Collect output as new message.
 			 */
-
 			rewind(fp);
 			fp = mespipe(fp, &linebuf[2]);
 			goto cont;
-
 		case 'v':
 		case 'e':
 			/*
@@ -381,7 +347,6 @@ cont:
 			 * 'e' means to use EDITOR
 			 * 'v' means to use VISUAL
 			 */
-
 			rewind(fp);
 			if ((fp = mesedit(fp, c)) == NULL)
 				goto err;

@@ -11,7 +11,7 @@
  */
 
 #ifdef notdef
-static char sccsid[] = "@(#)lex.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)lex.c	5.11 (Berkeley) %G%";
 #endif /* notdef */
 
 #include "rcv.h"
@@ -135,7 +135,7 @@ jmp_buf	commjmp;
 
 commands()
 {
-	int eofloop, shudprompt, stop();
+	int eofloop, stop();
 	register int n;
 	char linebuf[LINESIZE];
 	int hangup(), contin();
@@ -147,7 +147,6 @@ commands()
 		if (signal(SIGHUP, SIG_IGN) != SIG_IGN)
 			signal(SIGHUP, hangup);
 	}
-	shudprompt = intty && !sourcing;
 	for (;;) {
 		setexit();
 
@@ -160,7 +159,7 @@ commands()
 			return;
 		eofloop = 0;
 top:
-		if (shudprompt) {
+		if (!sourcing && value("interactive") != NOSTR) {
 			setjmp(commjmp);
 			signal(SIGCONT, contin);
 			printf(prompt);
@@ -185,7 +184,8 @@ top:
 					unstack();
 					goto more;
 				}
-				if (value("ignoreeof") != NOSTR && shudprompt) {
+				if (value("interactive") != NOSTR &&
+				    value("ignoreeof") != NOSTR) {
 					if (++eofloop < 25) {
 						printf("Use \"quit\" to quit.\n");
 						goto top;

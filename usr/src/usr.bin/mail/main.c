@@ -17,7 +17,7 @@ char copyright[] =
 #endif /* notdef */
 
 #ifdef notdef
-static char sccsid[] = "@(#)main.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.11 (Berkeley) %G%";
 #endif /* notdef */
 
 #include "rcv.h"
@@ -59,8 +59,8 @@ main(argc, argv)
 	 */
 
 	mypid = getpid();
-	intty = isatty(0);
-	outtty = isatty(1);
+	if (isatty(0))
+		assign("interactive", "");
 	image = -1;
 
 	/*
@@ -177,7 +177,7 @@ main(argc, argv)
 			/*
 			 * We're interactive
 			 */
-			intty = 1;
+			assign("interactive", "");
 			break;
 		case 'c':
 			/*
@@ -311,12 +311,10 @@ setscreensize()
 #ifdef	TIOCGWINSZ
 	struct winsize ws;
 
-	if (ioctl(fileno(stdout), TIOCGWINSZ, (char *) &ws) < 0)
+	if (ioctl(1, TIOCGWINSZ, (char *) &ws) < 0)
 #endif
 		ws.ws_col = ws.ws_row = 0;
-	if (outtty)
-		gtty(1, &tbuf);
-	else
+	if (gtty(1, &tbuf) < 0)
 		tbuf.sg_ospeed = B9600;
 	if (tbuf.sg_ospeed < B1200)
 		screenheight = 9;
