@@ -1,0 +1,198 @@
+
+
+
+BBC(1)                 BSD Reference Manual                BBC(1)
+
+
+NNAAMMEE
+       bbc - check on BBoards
+
+SSYYNNOOPPSSIISS
+       bbc  [bboards ...]   [-topics]  [-check]  [-read] [-quiet]
+            [-verbose]   [-archive]   [-noarchive]    [-protocol]
+            [-noprotocol]  [-mshproc program]  [switches for _m_s_h_-
+            _p_r_o_c] [-rcfile  rcfile]  [-norcfile]  [-file BBoards-
+            file] [-user BBoardsuser] [-host host] [-help]
+
+DDEESSCCRRIIPPTTIIOONN
+       _b_b_c  is  a BBoard reading/checking program that interfaces
+       to the BBoard channel.
+
+       The _b_b_c program has three action switches which direct its
+       operation:
+
+       The  `-read'  switch  invokes the _m_s_h program on the named
+       _B_B_o_a_r_d_s.  If you also specify the `-archive' switch,  then
+       _b_b_c  will  invoke  the  _m_s_h program on the archives of the
+       named _B_B_o_a_r_d_s.  If no _B_B_o_a_r_d_s are  given  on  the  command
+       line, and you specified `-archive', _b_b_c will not read your
+       `bboards' profile entry, but will read the archives of the
+       "system" _B_B_o_a_r_d instead.
+
+       The  `-check'  switch types out status information for the
+       named _B_B_o_a_r_d_s.  _b_b_c can  print  one  of  several  messages
+       depending  on the status of both the BBoard and the user's
+       reading habits.  As with each of these messages, the  num-
+       ber  given  is  the item number of the last item placed in
+       the BBoard.  This number (which is marked in the  messages
+       as  the  "BBoard-Id") is ever increasing.  Hence, when _b_b_c
+       says "n items", it really means that the highest BBoard-Id
+       is  "n".   There  may, or may not actually be "n" items in
+       the BBoard.  Some common messages are:
+
+            BBBBooaarrdd ---- nn iitteemmss uunnsseeeenn
+                 This message tells how many items the  user  has
+                 not  yet  seen.   When invoked with the `-quiet'
+                 switch, this is the only informative  line  that
+                 _b_b_c will possibly print out.
+
+            BBBBooaarrdd ---- eemmppttyy
+                 The BBoard is empty.
+
+            BBBBooaarrdd ---- nn iitteemmss ((nnoonnee sseeeenn))
+                 The  BBoard has items in it, but the user hasn't
+                 seen any.
+
+            BBBBooaarrdd ---- nn iitteemmss ((aallll sseeeenn))
+                 The BBoard is non-empty, and the user  has  seen
+
+
+
+[mh.6]                        MH.6.8                            1
+
+
+
+
+
+
+
+
+BBC(1)                 BSD Reference Manual                BBC(1)
+
+
+                 everything in it.
+
+            BBBBooaarrdd ---- nn iitteemmss sseeeenn oouutt ooff mm
+                 The  BBoard  has at most m-n items that the user
+                 has not seen.
+
+       The `-topics' switch directs  _b_b_c  to  print  three  items
+       about the named _B_B_o_a_r_d_s: it's official name, the number of
+       items present, and the date and time of the  last  update.
+       If  no _B_B_o_a_r_d_s are named, then all BBoards are listed.  If
+       the `-verbose' switch is given, more information  is  out-
+       put.
+
+       The `-quiet' switch specifies that _b_b_c should be silent if
+       no _B_B_o_a_r_d_s are found with new information.  The `-verbose'
+       switch  specifies that _b_b_c is to consider you to be inter-
+       ested in _B_B_o_a_r_d_s that you've already seen everything in.
+
+       To override the default _m_s_h_p_r_o_c and the profile entry, use
+       the  `-mshproc program'  switch.  Any arguments not under-
+       stood by _b_b_c are passed to this program.  The  `-protocol'
+       switch tells _b_b_c that your _m_s_h_p_r_o_c knows about the special
+       _b_b_c protocol for reporting back information.  _m_s_h (1), the
+       default _m_s_h_p_r_o_c, knows all about this.
+
+       The   `-file BBoardsfile'   switch  tells  _b_b_c  to  use  a
+       non-standard _B_B_o_a_r_d_s file  when  performing  its  calcula-
+       tions.   Similarly,  the  `-user BBoardsuser' switch tells
+       _b_b_c  to  use  a  non-standard  username.   Both  of  these
+       switches  are  useful  for  debugging a new _B_B_o_a_r_d_s or _P_O_P
+       file.
+
+       If the local host is configured as an NNTP BBoards client,
+       or  if  the  `-host host'  switch  is given, then _b_b_c will
+       query the NNTP service  host  as  to  the  status  of  the
+       BBoards.   For  NNTP BBoards clients, the `-user user' and
+       the `-rpop' switches are ignored.
+
+       The _._b_b_r_c file in the user's $$HHOOMMEE directory  is  used  to
+       keep   track   of  what  messages  have  been  read.   The
+       `-rcfile rcfile' switch overrides the  use  of  _._b_b_r_c  for
+       this  purpose.   If  the  value given to the switch is not
+       absolute, (i.e., does not begin with a  // ),  it  will  be
+       presumed  to start from the current working directory.  If
+       this switch is not given (or  the  `-norcfile'  switch  is
+       given), then _b_b_c consults the envariable $$MMHHBBBBRRCC, and hon-
+       ors it similarly.
+
+FFIILLEESS
+       $HOME/.mh_profile                         The user profile
+       $HOME/.bbrc                               BBoard "current" message information
+
+
+
+[mh.6]                        MH.6.8                            2
+
+
+
+
+
+
+
+
+BBC(1)                 BSD Reference Manual                BBC(1)
+
+
+PPRROOFFIILLEE CCOOMMPPOONNEENNTTSS
+       Path:                To determine the user's MH directory
+       bboards:             To specify interesting BBoards
+       mshproc:             Program to read a given BBoard
+
+SSEEEE AALLSSOO
+       bbl(1), bboards(1), msh(1)
+
+DDEEFFAAUULLTTSS
+       `-read'
+       `-noarchive'
+       `-protocol'
+       `bboards' defaults to "system"
+       `-file /usr/spool/bboards/BBoards'
+       `-user bboards'
+
+CCOONNTTEEXXTT
+       None
+
+BBUUGGSS
+       The `-user' switch takes effect only if  followed  by  the
+       `-file' switch.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[mh.6]                        MH.6.8                            3
+
+
+
+
+

@@ -1,0 +1,264 @@
+
+
+
+BBL(1)                 BSD Reference Manual                BBL(1)
+
+
+NNAAMMEE
+       bbl - manage a BBoard
+
+SSYYNNOOPPSSIISS
+       bbl  [+folder]  [-shell program]  [-verbose]  [-noverbose]
+            bboard [-help]
+
+DDEESSCCRRIIPPTTIIOONN
+       _b_b_l allows a _B_B_l_e_a_d_e_r to manage a BBoard.  The process  is
+       relatively  simple:  a _B_B_l_e_a_d_e_r invokes the _b_b_l program to
+       set-up an environment in which the messages  contained  in
+       the  BBoard may be accessed as if they were messages in an
+       _M_H folder.
+
+       To do this, _b_b_l, _i_n_c_s the _B_B_o_a_r_d to the folder "+bbl", and
+       _i_n_c_s the archives for the _B_B_o_a_r_d to the folder "+bbl/arc".
+       The _B_B_l_e_a_d_e_r then gets a new shell in  which  _M_H  commands
+       (among  others)  may  be  executed.   When the _B_B_l_e_a_d_e_r is
+       done, CTRL-D is typed, which terminates  the  shell.   _b_b_l
+       then  asks  the  _B_B_l_e_a_d_e_r  as  to how the BBoard should be
+       reconstructed.   Usually,  this  results  in  zeroing  the
+       existing  _B_B_o_a_r_d file, and  _p_a_c_king the "+bbl" folder into
+       the _B_B_o_a_r_d  file.   Similar  actions  are  taken  for  the
+       archive.
+
+       The `-shell' switch specifies what process that _b_b_l should
+       invoke as your command interpreter.  This need  not  be  a
+       rooted  filename.   If  this  switch is not specified, _b_b_l
+       looks at the envariable  $$SSHHEELLLL  for  a  value.   If  this
+       envariable is not set, then _b_b_l uses your login shell.
+
+       The  `-verbose'  switch directs _b_b_l to type the shell com-
+       mands that it executes to get the job done (e.g., _c_h_m_o_d s,
+       _i_n_c s, etc.)
+
+       As  _b_b_l  processing is most likely not intuitively obvious
+       to most prospective BBoard-leaders, a short diatribe is in
+       order.  As pointed out in _B_B_l_e_a_d_e_r(1), a BBoard-leader (of
+       the fictitious BBoard "hacks") has three  primary  mainte-
+       nance functions:
+
+       RReeaadd tthhee BBBBooaarrdd
+            You don't need _b_b_l to do this, use _b_b_c instead.
+
+       RReemmoovvee iinnaapppprroopprriiaattee mmaatteerriiaall
+            Do this by running _b_b_l.  An example of this might be:
+
+             1 % bbl hacks
+             2 [ Working folder is +bbl, Archive folder is +bbl/arc ]
+             3 [ Type CTRL-D to finish ]
+             4 % scan
+
+
+
+[mh.6]                        MH.6.8                            1
+
+
+
+
+
+
+
+
+BBL(1)                 BSD Reference Manual                BBL(1)
+
+
+             5  20 10/14 1345-PDT Silly User        Nonsensical message
+             6  21 10/14 1707-PDT Silly User        Another one
+             7  22 10/14 2144-PDT Reasonable Person Legit message
+             9 % rmm 20 21
+            10 % D
+            11 Incorporate changes? y
+            12 Remove +bbl? y
+            13 Update archives? n
+            14 Remove +bbl/arc? y
+            15 [+inbox now current]
+            16 %
+
+            In item 1,  the  BBoard-Leader  invokes  _b_b_l  on  the
+            BBoard  called  "hacks".  The _b_b_l program responds by
+            typing items 2 and 3 which  tell  the  user  what  _M_H
+            folders are being used and that a sub-shell is now in
+            use (respectively).  The user does a scan of the +bbl
+            folder  (_b_b_l  sets  the  current-folder to be the one
+            with the BBoard in it.)  and finds two messages  that
+            should be removed (numbers 20 and 21).  The user then
+            removes these using the _r_m_m program (item 9) and then
+            types  a  CTRL-D to return to _b_b_l (item 10).  At this
+            point, _b_b_l asks  how  the  BBoard  should  be  recon-
+            structed.   Item  11 asks if the contents of the +bbl
+            folder should OVERWRITE the contents of  the  BBoard.
+            The  user  responds  `yes', that it should (hence the
+            two _r_m_m'd messages disappear).  Next on item 12,  the
+            user  is  asked  if the +bbl folder should be killed,
+            since the BBoards have been successfully updated, the
+            user answers `yes'.  On item 13, the user is asked if
+            the archives should be updated.  Since the user  made
+            no changes, the answer `no' is made.  (The user could
+            have answered `yes' with no disastrous  effects,  but
+            knew  that  nothing  had  been updated).  Finally, on
+            item 14, the user indicates that  the  +bbl/arc  sub-
+            folder should be killed, by answering `yes'.
+
+       AArrcchhiivvee nnoonn--rreecceenntt mmaatteerriiaall
+            Do this by running _b_b_l.  An example of this might be:
+
+             1 % bbl hacks
+             2 [ Working folder is +bbl, Archive folder is +bbl/arc ]
+             3 [ Type CTRL-D to finish ]
+             4 % scan
+             5  11 10/12 1905-PST Marshall Rose   New MMail/BBck
+             6  12 10/12 1916-PST Stephen Willson PATH, nfinger, and ls
+             7  13 10/12 2329-PDT G@UCI-20A       833-5122 hours
+             8  14 10/13 1045-PDT MELLON@UCI-20B  Reporting line
+             9  15 10/13 1112-PST Tim Shimeall    Re: 833-5122 hours
+            10  16 10/13 1045-PDT MELLON@UCI-20B  Reporting line
+            11  17 10/13 2042-PST Dana Roode      Ucifinger
+
+
+
+[mh.6]                        MH.6.8                            2
+
+
+
+
+
+
+
+
+BBL(1)                 BSD Reference Manual                BBL(1)
+
+
+            12  18 10/13 2045-PST Dana Roode      Files in /usr/restores
+            13  19 10/14 1028-PDT WILLSON@UCI-20B Re: term no pause
+            14  20 10/14 1345-PDT Martin Katz     Re: term no pause
+            15  21 10/14 1707-PDT SCRIBE@UCI-20A  Scribe Use
+            16  22 10/14 2144-PDT GFISHER@UCI-20B New Twemacs
+            17  23 10/15 1227-PDT Rob Rittenhouse Re: New Twemacs
+            18 % file +bbl/arc -src +bbl 11-12 17-20 21
+            19 % D
+            20 Incorporate changes? y
+            21 Remove +bbl? y
+            22 Update archives? y
+            23 Remove +bbl/arc? y
+            24 [+inbox now current]
+            25 %
+
+            The important command given is in item 18,  in  which
+            the user _f_i_l_e_s some messages from +bbl into +bbl/arc.
+            When CTRL-D is typed, the user directs _b_b_l to  update
+            both  the  BBoard  and  its  archives, which does the
+            proper action.  As an  alternate  to  this  scenario,
+            some creative _B_B_l_e_a_d_e_r_s might use the _p_i_c_k command to
+            do all of the work:
+
+                 pick -sequence select -before -12 -datefield BB-Posted -zero
+                 pick -sequence select -before -20 -nozero
+                 scan select
+                 refile select +bbl/arc
+
+            In order to facilitate the use  of  automation  shell
+            scripts,  if the standard input for _b_b_l is _n_o_t a tty,
+            then _b_b_l will not ask any questions and will  proceed
+            as  if the user's answer was "yes" for all questions.
+            Hence, _b_b_l may be run under _c_r_o_n (8) to  provide  for
+            automatic archiving.
+
+FFIILLEESS
+       $HOME/.mh_profile                         The user profile
+
+PPRROOFFIILLEE CCOOMMPPOONNEENNTTSS
+       Path:                To determine the user's MH directory
+       incproc:             Program to incorporate a mail drop into a folder
+       packproc:            Program to pack a folder into a msgbox
+       rmfproc:             Program to remove a folder
+
+SSEEEE AALLSSOO
+       bbc(1), bbleader(1), bboards(1)
+
+DDEEFFAAUULLTTSS
+       `+folder' defaults to "bbl"
+       `-nofile'
+       `-shell' defaults to $$SSHHEELLLL or your login shell
+
+
+
+[mh.6]                        MH.6.8                            3
+
+
+
+
+
+
+
+
+BBL(1)                 BSD Reference Manual                BBL(1)
+
+
+CCOONNTTEEXXTT
+       None
+
+HHIISSTTOORRYY
+       In  the  early days of the UCI BBoards facility, _B_B_l_e_a_d_e_r_s
+       actually used to run this program by hand.  Now, this  _b_b_l
+       is  often run automatically by the system to perform auto-
+       matic archiving.
+
+BBUUGGSS
+       Note that _b_b_l executes a lot of _M_H commands, and as  such,
+       each  of these commands can and will read your _._m_h___p_r_o_f_i_l_e
+       for  defaults.   Please   read   the   BBUUGGSS   section   of
+       _m_h_-_p_r_o_f_i_l_e (5) for some hints to help you avoid many silly
+       problems.
+
+       Also, _b_b_l is unforgiving in doing exactly what it is told,
+       so take special care in answering _b_b_l's questions.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[mh.6]                        MH.6.8                            4
+
+
+
+
+

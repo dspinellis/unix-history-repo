@@ -1,0 +1,132 @@
+
+
+
+MHOOK(1)               BSD Reference Manual              MHOOK(1)
+
+
+NNAAMMEE
+       mhook, rcvdist, rcvpack, rcvtty  - MH receive-mail hooks
+
+SSYYNNOOPPSSIISS
+     /usr/contrib/mh-6.8/lib/rcvdist [-form formfile]
+            [switches for _p_o_s_t_p_r_o_c] address ...  [-help]
+
+     /usr/contrib/mh-6.8/lib/rcvpack file [-help]
+
+     /usr/contrib/mh-6.8/lib/rcvtty [command] [-form formatfile]
+            [-format string] [-bell] [-nobell] [-newline]
+            [-nonewline] [-biff] [-help]
+
+DDEESSCCRRIIPPTTIIOONN
+       A receive-mail hook is a program that is run whenever  you
+       receive  a mail message.  You do NNOOTT invoke the hook your-
+       self, rather the hook is invoked on your  behalf  by  your
+       system's  Message  Transport  Agent.   See  _s_l_o_c_a_l (1) for
+       details on how to activate receive-mail hooks on your sys-
+       tem.
+
+       Four  programs  are  currently  available  as  part of _M_H,
+       _r_c_v_d_i_s_t  (redistribute  incoming  messages  to  additional
+       recipients),  _r_c_v_p_a_c_k (save incoming messages in a _p_a_c_k_f'd
+       file), and _r_c_v_t_t_y (notify user of incoming messages).  The
+       fourth  program,  _r_c_v_s_t_o_r_e (1)  is  described  separately.
+       They all reside in the _/_u_s_r_/_c_o_n_t_r_i_b_/_m_h_-_6_._8_/_l_i_b_/ directory.
+
+       The  _r_c_v_d_i_s_t  program will resend a copy of the message to
+       all of the addresses listed on its command line.  It  uses
+       the format string facility described in _m_h_-_f_o_r_m_a_t (5).
+
+       The  _r_c_v_p_a_c_k  program will append a copy of the message to
+       the file listed on its command line.  Its use is obsoleted
+       by the "file" action of _s_l_o_c_a_l.
+
+       The  _r_c_v_t_t_y  program executes the named file with the mes-
+       sage as its standard input, and writes the resulting  out-
+       put on your terminal.
+
+       If  no  file  is specified, or is bogus, etc., then _r_c_v_t_t_y
+       will instead write a one-line scan  listing.   Either  the
+       `-form formatfile'  or `-format string' option may be used
+       to override the default output format (see _m_h_-_f_o_r_m_a_t (5)).
+       A  newline  is  output  before the message output, and the
+       terminal bell is rung after the output.  The  `-nonewline'
+       and `-nobell' options will inhibit these functions.
+
+       In  addition to the standard _m_h_-_f_o_r_m_a_t (5) escapes, _r_c_v_t_t_y
+       also  recognizes  the   following   additional   _c_o_m_p_o_n_e_n_t
+       escapes:
+
+
+
+[mh.6]                        MH.6.8                            1
+
+
+
+
+
+
+
+
+MHOOK(1)               BSD Reference Manual              MHOOK(1)
+
+
+       _E_s_c_a_p_e    _R_e_t_u_r_n_s  _D_e_s_c_r_i_p_t_i_o_n
+       body      string   the (compressed) first part of the body
+       dtimenow  date     the current date
+       folder    string   the name of the current folder
+
+       Normally,  _r_c_v_t_t_y  obeys  write  permission  as granted by
+       _m_e_s_g (1).  With the `-biff' option, _r_c_v_t_t_y will  obey  the
+       notification  status set by _b_i_f_f (1) instead.  If the ter-
+       minal access daemon (TTYD) is available  on  your  system,
+       then  _r_c_v_t_t_y will give its output to the daemon for output
+       instead of writing on the user's terminal.
+
+FFIILLEESS
+       /usr/contrib/mh-6.8/lib/mtstailor         tailor file
+       $HOME/.maildelivery                       The file controlling local delivery
+       /usr/contrib/mh-6.8/lib/maildelivery      Rather than the standard file
+
+SSEEEE AALLSSOO
+       rcvstore (1), mh-format(5), slocal(1)
+
+BBUUGGSS
+       Only two return codes are meaningful, others should be.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[mh.6]                        MH.6.8                            2
+
+
+
+
+

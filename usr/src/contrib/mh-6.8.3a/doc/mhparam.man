@@ -1,0 +1,132 @@
+
+
+
+MHPARAM(1)             BSD Reference Manual            MHPARAM(1)
+
+
+NNAAMMEE
+       mhparam - print MH profile components
+
+SSYYNNOOPPSSIISS
+       mhparam  [components]  [-all]  [-component] [-nocomponent]
+            [-help]
+
+DDEESSCCRRIIPPTTIIOONN
+       _M_h_p_a_r_a_m writes the value of the specified  profile  compo-
+       nent to the standard output separated by newlines.  If the
+       profile component is not present, the  default  value  (or
+       nothing if there is no default) is printed.
+
+       If  more  than  one  component is specified in the `compo-
+       nents' list, the component value is preceded by the compo-
+       nent  name.   If  `-component' is specified, the component
+       name is displayed even when only one component  is  speci-
+       fied.   If `-nocomponent' is specified, the component name
+       is not displayed even when  more  than  one  component  is
+       specified.
+
+       If  `-all'  is specified, all components if the MH profile
+       are displayed and other arguments are ignored.
+
+       Examples:
+
+            % mhparam path
+            Mail
+
+            % mhparam mhlproc
+            /usr/contrib/mh-6.8/lib/mhl
+
+            % mhparam -component path
+            Path:       Mail
+
+            % mhparam AliasFile rmmproc
+            AliasFile:  aliases
+            rmmproc:    rmmproc
+
+            % mhparam -nocomponent AliasFile rmmproc
+            aliases
+            rmmproc
+
+       _M_h_p_a_r_a_m is also useful in back-quoted operations:
+
+            % fgrep cornell.edu `mhpath +`/`mhparam aliasfile`
+
+
+FFIILLEESS
+       $HOME/.mh_profile                         The user profile
+
+
+
+
+[mh.6]                        MH.6.8                            1
+
+
+
+
+
+
+
+
+MHPARAM(1)             BSD Reference Manual            MHPARAM(1)
+
+
+SSEEEE AALLSSOO
+       mh-profile(5)
+
+DDEEFFAAUULLTTSS
+       `-nocomponent' if only one component is specified
+       `-component' if more than one component is specified
+       `components' defaults to none
+
+CCOONNTTEEXXTT
+       None
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[mh.6]                        MH.6.8                            2
+
+
+
+
+

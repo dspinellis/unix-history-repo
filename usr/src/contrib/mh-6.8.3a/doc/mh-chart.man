@@ -1,0 +1,330 @@
+
+
+
+MH-CHART(1)            BSD Reference Manual           MH-CHART(1)
+
+
+NNAAMMEE
+       mh-chart - Chart of MH Commands
+
+SSYYNNOOPPSSIISS
+     ali [-alias aliasfile] [-list] [-nolist] [-normalize]
+          [-nonormalize] [-user] [-nouser] aliases ...  [-help]
+
+     anno [+folder] [msgs] [-component field] [-inplace]
+          [-noinplace] [-date] [-nodate] [-text body] [-help]
+
+     bbc [bboards ...]  [-topics] [-check] [-read] [-quiet]
+          [-verbose] [-archive] [-noarchive] [-protocol]
+          [-noprotocol] [-mshproc program] [switches for _m_s_h_p_r_o_c]
+          [-rcfile rcfile] [-norcfile] [-file BBoardsfile]
+          [-user BBoardsuser] [-host host] [-help]
+
+     burst [+folder] [msgs] [-inplace] [-noinplace] [-quiet]
+          [-noquiet] [-verbose] [-noverbose] [-help]
+
+     comp [+folder] [msg] [-draftfolder +folder]
+          [-draftmessage msg] [-nodraftfolder] [-editor editor]
+          [-noedit] [-file file] [-form formfile] [-use] [-nouse]
+          [-whatnowproc program] [-nowhatnowproc] [-help]
+
+     dist [+folder] [msg] [-annotate] [-noannotate]
+          [-draftfolder +folder] [-draftmessage msg]
+          [-nodraftfolder] [-editor editor] [-noedit]
+          [-form formfile] [-inplace] [-noinplace]
+          [-whatnowproc program] [-nowhatnowproc] [-help]
+
+     /usr/contrib/mh-6.8/lib/fmtdump [-form formatfile]
+          [-format string] [-help]
+
+     folder [+folder] [msg] [-all] [-fast] [-nofast] [-header]
+          [-noheader] [-pack] [-nopack] [-recurse] [-norecurse]
+          [-total] [-nototal] [-print] [-noprint] [-list]
+          [-nolist] [-push] [-pop] [-help]
+
+     folders
+
+     forw [+folder] [msgs] [-annotate] [-noannotate]
+          [-draftfolder +folder] [-draftmessage msg]
+          [-nodraftfolder] [-editor editor] [-noedit]
+          [-filter filterfile] [-form formfile] [-format]
+          [-noformat] [-inplace] [-noinplace] [-mime] [-nomime]
+          [-whatnowproc program] [-nowhatnowproc] [-help]
+
+
+
+
+
+
+
+
+[mh.6]                        MH.6.8                            1
+
+
+
+
+
+
+
+
+MH-CHART(1)            BSD Reference Manual           MH-CHART(1)
+
+
+     forw [+folder] [msgs] [-digest list] [-issue number]
+          [-volume number] [other switches for _f_o_r_w] [-help]
+
+     inc [+folder] [-audit audit-file] [-noaudit] [-changecur]
+          [-nochangecur] [-file name] [-form formatfile]
+          [-format string] [-silent] [-nosilent] [-truncate]
+          [-notruncate] [-width columns] [-host host]
+          [-user user] [-apop] [-noapop] [-rpop] [-norpop]
+          [-pack file] [-nopack] [-help]
+
+     mark [+folder] [msgs] [-sequence name ...]  [-add] [-delete]
+          [-list] [-public] [-nopublic] [-zero] [-nozero] [-help]
+
+     /usr/contrib/mh-6.8/lib/mhl [-bell] [-nobell] [-clear]
+          [-noclear] [-folder +folder] [-form formfile]
+          [-length lines] [-width columns] [-moreproc program]
+          [-nomoreproc] [files ...]  [-help]
+
+     mhmail [ addrs ...  [-body text] [-cc addrs ...]
+          [-from addr] [-subject subject]] [-help]
+
+     mhn [[+folder] [msgs] | [-file file]]
+          [-part number]... [-type content]...
+          [-list [-headers] [-noheaders]
+                 [-realsize] [-norealsize]] [-nolist]
+          [-show [-serialonly] [-noserialonly]
+                 [-form formfile] [-pause] [-nopause]] [-noshow]
+          [-store [-auto] [-noauto]] [-nostore]
+          [-cache] [-nocache] [-rcache policy] [-wcache policy]
+          [-check] [-nocheck]
+          [-ebcdicsafe] [-noebcdicsafe]
+          [-rfc934mode] [-norfc934mode]
+          [-verbose] [-noverbose]
+          [-help]
+
+     mhparam [profile-components] [-components] [-nocomponents]
+          [-all] [-help]
+
+     mhpath [+folder] [msgs] [-help]
+
+     msgchk [-date] [-nodate] [-notify all/mail/nomail]
+          [-nonotify all/mail/nomail] [-host host] [-user user]
+          [-apop] [-noapop] [-rpop] [-norpop] [users ...]
+          [-help]
+
+     msh [-prompt string] [-scan] [-noscan] [-topcur] [-notopcur]
+          [file] [-help]
+
+
+
+
+
+
+
+[mh.6]                        MH.6.8                            2
+
+
+
+
+
+
+
+
+MH-CHART(1)            BSD Reference Manual           MH-CHART(1)
+
+
+     next [+folder] [-header] [-noheader] [-showproc program]
+          [-noshowproc] [switches for _s_h_o_w_p_r_o_c] [-help]
+
+     packf [+folder] [msgs] [-file name] [-help]
+
+     pick [+folder] [msgs] [-and ...] [-or ...] [-not ...]
+          [-lbrace ... -rbrace] [--component pattern]
+          [-after date] [-before date] [-datefield field]
+          [-sequence name ...]  [-public] [-nopublic] [-zero]
+          [-nozero] [-list] [-nolist] [-help]
+
+
+     prev [+folder] [-header] [-noheader] [-showproc program]
+          [-noshowproc] [switches for _s_h_o_w_p_r_o_c] [-help]
+
+     prompter [-erase chr] [-kill chr] [-prepend] [-noprepend]
+          [-rapid] [-norapid] [-doteof] [-nodoteof] file [-help]
+
+     /usr/contrib/mh-6.8/lib/rcvstore [+folder] [-create]
+          [-nocreate] [-sequence name ...]  [-public] [-nopublic]
+          [-zero] [-nozero] [-help]
+
+     refile [msgs] [-draft] [-link] [-nolink] [-preserve]
+          [-nopreserve] [-src +folder] [-file file] +folder ...
+          [-help]
+
+     repl [+folder] [msg] [-annotate] [-noannotate]
+          [-cc all/to/cc/me] [-nocc all/to/cc/me]
+          [-draftfolder +folder] [-draftmessage msg]
+          [-nodraftfolder] [-editor editor] [-noedit]
+          [-fcc +folder] [-filter filterfile] [-form formfile]
+          [-inplace] [-noinplace] [-query] [-noquery]
+          [-whatnowproc program] [-nowhatnowproc]
+          [-width columns] [-help]
+
+     rmf [+folder] [-interactive] [-nointeractive] [-help]
+
+     rmm [+folder] [msgs] [-help]
+
+     scan [+folder] [msgs] [-clear] [-noclear] [-form formatfile]
+          [-format string] [-header] [-noheader] [-width columns]
+          [-reverse] [-noreverse] [-file filename] [-help]
+
+
+
+
+
+
+
+
+
+
+
+
+[mh.6]                        MH.6.8                            3
+
+
+
+
+
+
+
+
+MH-CHART(1)            BSD Reference Manual           MH-CHART(1)
+
+
+     send [-alias aliasfile] [-draft] [-draftfolder +folder]
+          [-draftmessage msg] [-nodraftfolder] [-filter filter-
+          file] [-nofilter] [-format] [-noformat] [-forward]
+          [-noforward] [-mime] [-nomime] [-msgid] [-nomsgid]
+          [-push] [-nopush] [-split seconds] [-verbose]
+          [-noverbose] [-watch] [-nowatch] [-width columns]
+          [file ...]  [-help]
+
+     show [+folder] [msgs] [-draft] [-header] [-noheader]
+          [-showproc program] [-noshowproc] [switches for _s_h_o_w_-
+          _p_r_o_c] [-help]
+
+     sortm [+folder] [msgs] [-datefield field] [-textfield field]
+          [-notextfield] [-limit days] [-nolimit] [-verbose]
+          [-noverbose] [-help]
+
+     vmh [-prompt string] [-vmhproc program] [-novmhproc]
+          [switches for _v_m_h_p_r_o_c] [-help]
+
+     whatnow [-draftfolder +folder] [-draftmessage msg]
+          [-nodraftfolder] [-editor editor] [-noedit]
+          [-prompt string] [file] [-help]
+
+     whom [-alias aliasfile] [-check] [-nocheck] [-draft]
+          [-draftfolder +folder] [-draftmessage msg]
+          [-nodraftfolder] [file] [-help]
+
+     /usr/contrib/mh-6.8/lib/ap [-form formatfile]
+          [-format string] [-normalize] [-nonormalize]
+          [-width columns] addrs ...  [-help]
+
+     /usr/contrib/mh-6.8/lib/conflict [-mail name]
+          [-search directory] [aliasfiles ...]  [-help]
+
+     /usr/contrib/mh-6.8/lib/dp [-form formatfile]
+          [-format string] [-width columns] dates ...  [-help]
+
+     /usr/contrib/mh-6.8/lib/install-mh [-auto] [-compat]
+
+     /usr/contrib/mh-6.8/lib/post [-alias aliasfile]
+          [-filter filterfile] [-nofilter] [-format] [-noformat]
+          [-mime] [-nomime] [-msgid] [-nomsgid] [-verbose]
+          [-noverbose] [-watch] [-nowatch] [-width columns] file
+          [-help]
+
+
+
+
+
+
+
+
+
+
+[mh.6]                        MH.6.8                            4
+
+
+
+
+
+
+
+
+MH-CHART(1)            BSD Reference Manual           MH-CHART(1)
+
+
+     /usr/contrib/mh-6.8/lib/slocal [address info sender]
+          [-addr address] [-info data] [-sender sender]
+          [-user username] [-mailbox mbox] [-file file]
+          [-maildelivery deliveryfile] [-verbose] [-noverbose]
+          [-debug] [-help]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[mh.6]                        MH.6.8                            5
+
+
+
+
+

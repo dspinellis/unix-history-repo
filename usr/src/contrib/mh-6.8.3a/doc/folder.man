@@ -1,0 +1,264 @@
+
+
+
+FOLDER(1)              BSD Reference Manual             FOLDER(1)
+
+
+NNAAMMEE
+       folder, folders - set/list current folder/message
+
+SSYYNNOOPPSSIISS
+       folder   [+folder]   [msg]  [-all]  [-create]  [-nocreate]
+            [-print]  [-fast]  [-nofast]  [-header]   [-noheader]
+            [-recurse]  [-norecurse]  [-total] [-nototal] [-list]
+            [-nolist] [-push] [-pop] [-pack] [-nopack] [-verbose]
+            [-noverbose] [-help]
+
+     folders
+
+DDEESSCCRRIIPPTTIIOONN
+       Since  the _M_H environment is the shell, it is easy to lose
+       track of the current folder from day to day.  When  _f_o_l_d_e_r
+       is  given  the  `-print' switch (the default), _f_o_l_d_e_r will
+       list the current folder, the number of messages in it, the
+       range  of the messages (low-high), and the current message
+       within the folder, and  will  flag  extra  files  if  they
+       exist.  An example of this summary is:
+
+       inbox+            has  16 messages (  3- 22); cur=  5.
+
+       If  a  `+folder'  and/or  `msg'  are  specified, they will
+       become the current folder and/or message.  By  comparison,
+       when  a `+folder' argument is given, this corresponds to a
+       "cd" operation in the _s_h_e_l_l; when no `+folder' argument is
+       given,  this  corresponds  roughly to a "pwd" operation in
+       the _s_h_e_l_l.
+
+       If the specified (or default) folder  doesn't  exist,  the
+       default  action  is  to  query  the user as to whether the
+       folder should be created; when standard  input  is  not  a
+       tty, the answer to the query is assumed to be "yes".
+
+       Specifying `-create' will cause _f_o_l_d_e_r to create new fold-
+       ers without any query.  (This is the easy way to create an
+       empty  folder for use later.)  Specifying `-nocreate' will
+       cause _f_o_l_d_e_r  to  exit  without  creating  a  non-existant
+       folder.
+
+   MMuullttiippllee FFoollddeerrss
+       Specifying  `-all'  will  produce  a summary line for each
+       top-level folder in the user's MH directory, sorted alpha-
+       betically.   (If  _f_o_l_d_e_r  is invoked by a name ending with
+       "s" (e.g.,  _f_o_l_d_e_r_s ),  `-all'  is  assumed).   Specifying
+       `-recurse'  with  `-all'  will also produce a line for all
+       sub-folders.   These  folders  are  all  preceded  by  the
+       read-only  folders,  which  occur as "atr-cur-" entries in
+       the user's _M_H context.  For example,
+
+
+
+
+[mh.6]                        MH.6.8                            1
+
+
+
+
+
+
+
+
+FOLDER(1)              BSD Reference Manual             FOLDER(1)
+
+
+       Folder               # of messages ( range )  cur msg (other files)
+       /fsd/rs/m/tacc    has  35 messages (  1- 35); cur= 23.
+       /rnd/phyl/Mail/EP has  82 messages (  1-108); cur= 82.
+       ff                has  no messages.
+       inbox+            has  16 messages (  3- 22); cur=  5.
+       mh                has  76 messages (  1- 76); cur= 70.
+       notes             has   2 messages (  1-  2); cur=  1.
+       ucom              has 124 messages (  1-124); cur=  6; (others).
+                 TOTAL=      339 messages in 7 folders
+
+       The "+" after inbox  indicates  that  it  is  the  current
+       folder.   The  "(others)" indicates that the folder `ucom'
+       has files which aren't messages.  These files  may  either
+       be  sub-folders,  or  files that don't belong under the MH
+       file naming scheme.
+
+       The header is output if either a  `-all'  or  a  `-header'
+       switch  is  specified; it is suppressed by `-noheader'.  A
+       `-total' switch will produce only the summary line.
+
+       If `-fast' is given, only the folder name (or names in the
+       case  of  `-all') will be listed.  (This is faster because
+       the folders need not be read.)
+
+       If a `+folder' is given  along  with  the  `-all'  switch,
+       _f_o_l_d_e_r  will,  in  addition to setting the current folder,
+       list the top-level folders for the  current  folder  (with
+       `-norecurse')  or  list  all sub-folders under the current
+       folder recursively (with `-recurse').  In this case, if  a
+       `msg' is also supplied, it will become the current message
+       of `+folder'.
+
+       The `-recurse' switch lists each  folder  recursively,  so
+       use  of this option effectively defeats the speed enhance-
+       ment of the `-fast' option,  since  each  folder  must  be
+       searched for subfolders.  Nevertheless, the combination of
+       these options is useful.
+
+
+   CCoommppaaccttiinngg aa FFoollddeerr
+       The `-pack' switch will compress the message names in  the
+       designated  folders,  removing holes in message numbering.
+       The `-verbose' switch directs _f_o_l_d_e_r to tell the user  the
+       general  actions that it is taking to compress the folder.
+
+
+   TThhee FFoollddeerr SSttaacckk
+       The `-push' switch directs  _f_o_l_d_e_r  to  push  the  current
+       folder onto the _f_o_l_d_e_r_-_s_t_a_c_k, and make the `+folder' argu-
+       ment the current folder.  If `+folder' is not  given,  the
+       current  folder  and  the  top  of  the  _f_o_l_d_e_r_-_s_t_a_c_k  are
+
+
+
+[mh.6]                        MH.6.8                            2
+
+
+
+
+
+
+
+
+FOLDER(1)              BSD Reference Manual             FOLDER(1)
+
+
+       exchanged.  This corresponds to the "pushd"  operation  in
+       the _C_S_h_e_l_l.
+
+       The `-pop' switch directs _f_o_l_d_e_r to discard the top of the
+       _f_o_l_d_e_r_-_s_t_a_c_k, after setting the  current  folder  to  that
+       value.   No  `+folder'  argument  is allowed.  This corre-
+       sponds to the "popd" operation in the _C_S_h_e_l_l.  The `-push'
+       switch  and  the `-pop' switch are mutually exclusive: the
+       last occurrence  of  either  one  overrides  any  previous
+       occurrence  of the other.  Both of these switches also set
+       `-list' by default.
+
+       The `-list' switch directs _f_o_l_d_e_r to list the contents  of
+       the  _f_o_l_d_e_r_-_s_t_a_c_k.   No  `+folder'  argument  is  allowed.
+       After a successful `-push' or `-pop', the  `-list'  action
+       is  taken,  unless  a `-nolist' switch follows them on the
+       command line.  This corresponds to the "dirs" operation in
+       the  _C_S_h_e_l_l.   The  `-push',  `-pop', and `-list' switches
+       turn off `-print'.
+
+FFIILLEESS
+       $HOME/.mh_profile                         The user profile
+
+PPRROOFFIILLEE CCOOMMPPOONNEENNTTSS
+       Path:                To determine the user's MH directory
+       Current-Folder:      To find the default current folder
+       Folder-Protect:      To set mode when creating a new folder
+       Folder-Stack:        To determine the folder stack
+
+SSEEEE AALLSSOO
+       refile(1), mhpath(1)
+
+DDEEFFAAUULLTTSS
+       `+folder' defaults to the current folder
+       `msg' defaults to none
+       `-nofast'
+       `-noheader'
+       `-nototal'
+       `-nopack'
+       `-norecurse'
+       `-noverbose'
+       `-print' is the default if no `-list', `-push', or `-pop' is specified
+       `-list' is the default if `-push', or `-pop' is specified
+
+CCOONNTTEEXXTT
+       If `+folder' and/or `msg' are given, they will become  the
+       current folder and/or message.
+
+HHIISSTTOORRYY
+       In  previous  versions of _M_H, the `-fast' switch prevented
+       context changes from occurring  for  the  current  folder.
+
+
+
+[mh.6]                        MH.6.8                            3
+
+
+
+
+
+
+
+
+FOLDER(1)              BSD Reference Manual             FOLDER(1)
+
+
+       This  is  no  longer the case: if `+folder' is given, then
+       _f_o_l_d_e_r will always change the current folder to that.
+
+BBUUGGSS
+       `-all' forces `-header' and `-total'.
+
+       There is no way to restore the default  behavior  (to  ask
+       the  user  whether  to create a non-existant folder) after
+       `-create' or `-nocreate' is given.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[mh.6]                        MH.6.8                            4
+
+
+
+
+
