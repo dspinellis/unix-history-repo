@@ -1,12 +1,18 @@
 #
-#	Makefile	4.2	81/05/14
+#	Makefile	4.3	82/10/27
 #
 DESTDIR= 
-CFLAGS=	-O -w
+DFLAGS = -DADB
+CFLAGS=	-O -w ${DFLAGS}
 CFILES= access.c command.c expr.c format.c input.c main.c message.c \
 	opset.c optab.c output.c pcs.c print.c runpcs.c setup.c sym.c
 OFILES= access.o command.o expr.o format.o input.o main.o message.o \
 	opset.o optab.o output.o pcs.o print.o runpcs.o setup.o sym.o
+
+#
+#	path to the directory containing as
+#
+AS =	/usr/src/bin/as
 
 adb:	${OFILES}
 	${CC} -o adb ${OFILES}
@@ -22,15 +28,18 @@ input.o:	defs.h input.c
 main.o:		defs.h main.c
 message.o:	mac.h mode.h message.c
 	${CC} -c -R message.c
-opset.o:	defs.h opset.c
-optab.o:	defs.h optab.c
-	${CC} -c -R  optab.c
-output.o:	defs.h output.c
 pcs.o:		defs.h pcs.c
 print.o:	defs.h print.c
 runpcs.o:	defs.h runpcs.c
 setup.o:	defs.h setup.c
 sym.o:		defs.h sym.c
+
+opset.o:	defs.h opset.c
+	${CC} ${CFLAGS} -c    -I. -I$(AS) opset.c
+optab.o:	defs.h optab.c instrs.adb
+	${CC} ${CFLAGS} -c -R -I. -I$(AS) optab.c
+instrs.adb: $(AS)/instrs
+	(echo FLAVOR ADB; cat $(AS)/instrs) | awk -f $(AS)/instrs > instrs.adb
 
 install:
 	install -s adb ${DESTDIR}/bin
