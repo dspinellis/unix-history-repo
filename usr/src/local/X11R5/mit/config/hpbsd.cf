@@ -37,8 +37,8 @@ XCOMM operating system:  OSName
 #define CcCmd gcc -fstrength-reduce
 #else
 #define HasVoidSignalReturn YES
-#define CcCmd gcc2
-#define CppCmd /usr/libexec/cpp
+#define CcCmd gcc
+#define CppCmd /usr/libexec/gcc2/cpp
 #define StandardCppDefines -traditional StandardDefines
 #define HasDB YES  /* for Berkeley DB routines */
 #define HasBsearch YES
