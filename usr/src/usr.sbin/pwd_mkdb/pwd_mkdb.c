@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pwd_mkdb.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)pwd_mkdb.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -116,6 +116,17 @@ main(argc, argv)
 		clean = FILE_ORIG;
 	}
 
+	/*
+	 * The databases actually contain three copies of the original data.
+	 * Each password file entry is converted into a rough approximation
+	 * of a ``struct passwd'', with the strings placed inline.  This
+	 * object is then stored as the data for three separate keys.  The
+	 * first key * is the pw_name field prepended by the _PW_KEYBYNAME
+	 * character.  The second key is the pw_uid field prepended by the
+	 * _PW_KEYBYUID character.  The third key is the line number in the
+	 * original file prepended by the _PW_KEYBYNUM character.  (The special
+	 * characters are prepended to ensure that the keys do not collide.)
+	 */
 	data.data = (u_char *)buf;
 	key.data = (u_char *)tbuf;
 	for (cnt = 1; scan(fp, &pwd); ++cnt) {
