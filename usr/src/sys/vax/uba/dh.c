@@ -1,4 +1,4 @@
-/*	dh.c	4.47	82/08/01	*/
+/*	dh.c	4.48	82/08/13	*/
 
 #include "dh.h"
 #if NDH > 0
@@ -21,6 +21,7 @@
 #include "../h/bk.h"
 #include "../h/clist.h"
 #include "../h/file.h"
+#include "../h/uio.h"
 
 /*
  * Definition of the driver for the auto-configuration program.
@@ -308,13 +309,14 @@ dhclose(dev, flag)
 	ttyclose(tp);
 }
 
-dhread(dev)
+dhread(dev, uio)
 	dev_t dev;
+	struct uio *uio;
 {
 	register struct tty *tp;
 
 	tp = &dh11[minor(dev)];
-	(*linesw[tp->t_line].l_read)(tp);
+	return ((*linesw[tp->t_line].l_read)(tp, uio));
 }
 
 dhwrite(dev)

@@ -1,4 +1,4 @@
-/*	dz.c	4.40	82/08/01	*/
+/*	dz.c	4.41	82/08/13	*/
 
 #include "dz.h"
 #if NDZ > 0
@@ -23,6 +23,7 @@
 #include "../h/pdma.h"
 #include "../h/bk.h"
 #include "../h/file.h"
+#include "../h/uio.h"
 
 /*
  * Driver information for auto-configuration stuff.
@@ -257,13 +258,14 @@ dzclose(dev, flag)
 	ttyclose(tp);
 }
  
-dzread(dev)
+dzread(dev, uio)
 	dev_t dev;
+	struct uio *uio;
 {
 	register struct tty *tp;
  
 	tp = &dz_tty[minor(dev)];
-	(*linesw[tp->t_line].l_read)(tp);
+	return ((*linesw[tp->t_line].l_read)(tp, uio));
 }
  
 dzwrite(dev)

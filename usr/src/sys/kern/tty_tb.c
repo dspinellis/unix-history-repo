@@ -1,4 +1,4 @@
-/*	tty_tb.c	4.2	82/08/01	*/
+/*	tty_tb.c	4.3	82/08/13	*/
 
 #include "tb.h"
 #if NTB > 0
@@ -13,6 +13,7 @@
 #include "../h/file.h"
 #include "../h/conf.h"
 #include "../h/buf.h"
+#include "../h/uio.h"
 
 /*
  * Line discipline for RS232 tablets.
@@ -90,8 +91,9 @@ register struct tty *tp;
  * Characters have been buffered in a buffer and
  * decoded. The coordinates are now sluffed back to the user.
  */
-tbread(tp)
-register struct tty *tp;
+tbread(tp, uio)
+	register struct tty *tp;
+	struct uio *uio;
 {
 	register int i;
 	register s;
@@ -99,13 +101,9 @@ register struct tty *tp;
 
 	if ((tp->t_state&TS_CARR_ON)==0)
 		return (-1);
-	if (copyout(&tp->t_rocount, u.u_base, (unsigned)(sizeof tbposition))) {
-		u.u_error = EFAULT;
+	u.u_error = copyuout(uio, &tp->t_rocount, sizeof tbposition);
+	if (u.u_error)
 		return (-1);
-	}
-	u.u_count -= sizeof tbposition;
-	u.u_base += sizeof tbposition;
-	u.u_offset += sizeof tbposition;
 	return (0);
 }
 

@@ -1,4 +1,4 @@
-/*	uda.c	4.6	82/07/15	*/
+/*	uda.c	4.7	82/08/13	*/
 
 #include "ra.h"
 #if NUDA > 0
@@ -27,6 +27,7 @@
 #include "../h/dk.h"
 #include "../h/cpu.h"
 #include "../h/cmap.h"
+#include "../h/uio.h"
 
 int udadebug;
 #define	printd	if(udadebug&1)printf
@@ -115,7 +116,7 @@ udprobe(reg, ctlr)
 
 #ifdef lint
 	br = 0; cvec = br; br = cvec; reg = reg;
-	udread(0); udwrite(0); udreset(0); udintr(0);
+	udread(0, 0); udwrite(0); udreset(0); udintr(0);
 #endif
 	/* SHOULD CHECK THAT IT REALLY IS A UDA */
 	br = 0x15;
@@ -787,15 +788,16 @@ udgetcp(um)
 	return(NULL);
 }
 
-udread(dev)
+udread(dev, uio)
 	dev_t dev;
+	struct uio *uio;
 {
 	register int unit = minor(dev) >> 3;
 
 	if (unit >= NRA)
 		u.u_error = ENXIO;
 	else
-		physio(udstrategy, &rudbuf[unit], dev, B_READ, minphys);
+		physio(udstrategy, &rudbuf[unit], dev, B_READ, minphys, uio);
 }
 
 udwrite(dev)
@@ -806,7 +808,7 @@ udwrite(dev)
 	if (unit >= NRA)
 		u.u_error = ENXIO;
 	else
-		physio(udstrategy, &rudbuf[unit], dev, B_WRITE, minphys);
+		physio(udstrategy, &rudbuf[unit], dev, B_WRITE, minphys, 0);
 }
 
 udreset(uban)

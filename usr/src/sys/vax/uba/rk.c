@@ -1,6 +1,6 @@
 #define	RKDEBUG
 #define RKBDEBUG
-/*	rk.c	4.42	82/07/15	*/
+/*	rk.c	4.43	82/08/13	*/
 
 #include "rk.h"
 #if NHK > 0
@@ -35,6 +35,7 @@ int	rkbdebug;
 #include "../h/cpu.h"
 #include "../h/cmap.h"
 #include "../h/dkbad.h"
+#include "../h/uio.h"
 
 #include "../h/rkreg.h"
 
@@ -513,15 +514,16 @@ rkwait(addr)
 		;
 }
 
-rkread(dev)
+rkread(dev, uio)
 	dev_t dev;
+	struct uio *uio;
 {
 	register int unit = minor(dev) >> 3;
 
 	if (unit >= NRK)
 		u.u_error = ENXIO;
 	else
-		physio(rkstrategy, &rrkbuf[unit], dev, B_READ, minphys);
+		physio(rkstrategy, &rrkbuf[unit], dev, B_READ, minphys, uio);
 }
 
 rkwrite(dev)
@@ -532,7 +534,7 @@ rkwrite(dev)
 	if (unit >= NRK)
 		u.u_error = ENXIO;
 	else
-		physio(rkstrategy, &rrkbuf[unit], dev, B_WRITE, minphys);
+		physio(rkstrategy, &rrkbuf[unit], dev, B_WRITE, minphys, 0);
 }
 
 rkecc(ui, flag)

@@ -1,4 +1,4 @@
-/*	idc.c	4.2	82/07/15	*/
+/*	idc.c	4.3	82/08/13	*/
 
 #include "rb.h"
 #if NIDC > 0
@@ -34,6 +34,7 @@ int *trp = idctrb;
 #include "../h/cpu.h"
 #include "../h/cmap.h"
 #include "../h/dkbad.h"
+#include "../h/uio.h"
 
 #include "../h/idcreg.h"
 
@@ -627,15 +628,16 @@ idcwait(addr, cnt)
 	return (cnt);
 }
 
-idcread(dev)
+idcread(dev, uio)
 	dev_t dev;
+	struct uio *uio;
 {
 	register int unit = minor(dev) >> 3;
 
 	if (unit >= NRB)
 		u.u_error = ENXIO;
 	else
-		physio(idcstrategy, &ridcbuf[unit], dev, B_READ, minphys);
+		physio(idcstrategy, &ridcbuf[unit], dev, B_READ, minphys, uio);
 }
 
 idcwrite(dev)
@@ -646,7 +648,7 @@ idcwrite(dev)
 	if (unit >= NRB)
 		u.u_error = ENXIO;
 	else
-		physio(idcstrategy, &ridcbuf[unit], dev, B_WRITE, minphys);
+		physio(idcstrategy, &ridcbuf[unit], dev, B_WRITE, minphys, 0);
 }
 
 idcecc(ui)

@@ -1,4 +1,4 @@
-/*	ts.c	4.26	82/08/01	*/
+/*	ts.c	4.27	82/08/13	*/
 
 #include "ts.h"
 #if NTS > 0
@@ -24,6 +24,7 @@
 #include "../h/mtio.h"
 #include "../h/cmap.h"
 #include "../h/cpu.h"
+#include "../h/uio.h"
 
 #include "../h/tsreg.h"
 
@@ -689,24 +690,25 @@ tsseteof(bp)
 	sc->sc_nxrec = bdbtofsb(bp->b_blkno);
 }
 
-tsread(dev)
+tsread(dev, uio)
 	dev_t dev;
+	struct uio *uio;
 {
 
-	tsphys(dev);
+	u.u_error = tsphys(dev, uio);
 	if (u.u_error)
 		return;
-	physio(tsstrategy, &rtsbuf[TSUNIT(dev)], dev, B_READ, minphys);
+	physio(tsstrategy, &rtsbuf[TSUNIT(dev)], dev, B_READ, minphys, uio);
 }
 
 tswrite(dev)
 	dev_t dev;
 {
 
-	tsphys(dev);
+	tsphys(dev, 0);
 	if (u.u_error)
 		return;
-	physio(tsstrategy, &rtsbuf[TSUNIT(dev)], dev, B_WRITE, minphys);
+	physio(tsstrategy, &rtsbuf[TSUNIT(dev)], dev, B_WRITE, minphys, 0);
 }
 
 /*
@@ -714,8 +716,9 @@ tswrite(dev)
  * If it does, set up sc_blkno and sc_nxrec
  * so that the tape will appear positioned correctly.
  */
-tsphys(dev)
+tsphys(dev, uio)
 	dev_t dev;
+	struct uio *uio;
 {
 	register int tsunit = TSUNIT(dev);
 	register daddr_t a;
@@ -724,12 +727,16 @@ tsphys(dev)
 
 	if (tsunit >= NTS || (ui=tsdinfo[tsunit]) == 0 || ui->ui_alive == 0) {
 		u.u_error = ENXIO;
-		return;
+		return (ENXIO);
 	}
 	sc = &ts_softc[tsunit];
-	a = bdbtofsb(u.u_offset >> 9);
+	if (uio)
+		a = bdbtofsb(uio->uio_offset >> 9);
+	else
+		a = bdbtofsb(u.u_offset >> 9);
 	sc->sc_blkno = a;
 	sc->sc_nxrec = a + 1;
+	return (0);
 }
 
 tsreset(uban)
