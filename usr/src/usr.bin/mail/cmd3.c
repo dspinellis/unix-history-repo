@@ -9,7 +9,7 @@
  * Still more user commands.
  */
 
-static char *SccsId = "@(#)cmd3.c	1.2 %G%";
+static char *SccsId = "@(#)cmd3.c	1.3 %G%";
 
 /*
  * Process a shell escape by saving signals, ignoring signals,
@@ -470,20 +470,60 @@ null(e)
 }
 
 /*
- * Print out the current edit file, if we are editting.
+ * Print out the current edit file, if we are editing.
  * Otherwise, print the name of the person who's mail
  * we are reading.
  */
 
-file(e)
+file(argv)
+	char **argv;
+{
+	register char *cp;
+	char fname[BUFSIZ];
+
+	if (argv[0] == NOSTR) {
+		if (edit)
+			printf("Reading \"%s\"", editfile);
+		else
+			printf("Reading %s's mail",
+			    rindex(mailname, '/') + 1);
+		printf("; %d message(s)\n", msgCount);
+		return(0);
+	}
+
+	/*
+	 * Acker's!  Must switch to the new file.
+	 * We use a funny interpretation --
+	 *	# -- gets the previous file
+	 *	% -- gets the invoker's post office box
+	 *	%user -- gets someone else's post office box
+	 *	string -- reads the given file
+	 */
+
+	cp = getfilename(argv[0]);
+	if (cp == NOSTR)
+		return(-1);
+	return(setfile(cp, 1));
+}
+
+/*
+ * Evaluate the string given as a new mailbox name.
+ * Ultimately, we want this to support a number of meta characters.
+ * Possibly:
+ *	% -- for my system mail box
+ *	%user -- for user's system mail box
+ *	# -- for previous file
+ *	file name -- for any other file
+ */
+
+char *
+getfilename(name)
+	char *name;
 {
 	register char *cp;
 
-	if (edit)
-		printf("Reading \"%s\"\n", editfile);
-	else
-		printf("Reading %s's mail\n", rindex(mailname, '/') + 1);
-	return(0);
+	cp = expand(name);
+	return(cp);
 }
 
 /*
