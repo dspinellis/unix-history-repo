@@ -1,4 +1,4 @@
-#	Makefile	4.2	83/08/15
+#	Makefile	4.3	85/05/21
 #
 # Possible options:
 #	make		compile source for terminal tables below
@@ -7,7 +7,7 @@
 #	make links	make links for ease of documentation
 #	make clean	remove tab*.o files lying around
 ALL=	37 lpr 300 300-12 302 302-12 382 382-12 450 450-12 833 833-12 \
-	itoh itoh12 nec nec12 nec-t qume qume12 xerox xerox12 \
+	epson itoh itoh12 nec nec12 nec-t qume qume12 xerox xerox12 \
 	x-ecs x-ecs12
 DESTDIR=
 DEST=	${DESTDIR}/usr/lib/term
@@ -26,6 +26,7 @@ lpr:	tablpr.o
 450-12:	tab450-12.o code.300
 833:	tab833.o code.aj833
 833-12: tab833-12.o code.aj833
+epson:	tabepson.o
 itoh:	tabitoh.o code.itoh
 itoh12: tabitoh12.o code.itoh
 nec:	tabnec.o code.nec
