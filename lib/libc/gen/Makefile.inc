@@ -1,9 +1,17 @@
 #	@(#)Makefile.inc	5.21 (Berkeley) 5/24/91
+#
+# PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+# --------------------         -----   ----------------------
+# CURRENT PATCH LEVEL:         1       50000
+# --------------------         -----   ----------------------
+#
+# 10 Oct 92	Rodney W. Grimes	Install a real crypt for passwords
+#
 
 # gen sources
 .PATH: ${.CURDIR}/${MACHINE}/gen ${.CURDIR}/gen ${.CURDIR}/gen/regexp
 
-SRCS+=	alarm.c clock.c closedir.c crypt_dummy.c ctermid.c ctime.c ctype_.c \
+SRCS+=	alarm.c clock.c closedir.c crypt.c ctermid.c ctime.c ctype_.c \
 	difftime.c disklabel.c errlst.c exec.c fnmatch.c frexp.c fstab.c \
 	fts.c getcwd.c getgrent.c getlogin.c getmntinfo.c getpass.c \
 	getpwent.c getsubopt.c getttyent.c getusershell.c glob.c initgroups.c \
