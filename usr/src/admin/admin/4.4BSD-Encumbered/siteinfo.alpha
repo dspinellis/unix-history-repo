@@ -1,4 +1,4 @@
-.\" @(#)siteinfo	1.1 (CSRG - distribution) 6/9/92
+.\" @(#)siteinfo	1.2 (CSRG - distribution) 7/9/92
 .nr PS 11
 .in +4i
 .TS
@@ -19,7 +19,7 @@ Choice of medium:
 .in 0
 .ce 3
 .ps 12
-.B "4.4BSD-Complete"
+.B "4.4BSD-Encumbered"
 .B "Site Information Form"
 .B "PLEASE TYPE"
 .ps 11
