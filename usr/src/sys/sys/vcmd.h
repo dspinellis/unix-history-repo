@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)vcmd.h	7.1 (Berkeley) %G%
+ *	@(#)vcmd.h	7.2 (Berkeley) %G%
  */
 
 #ifndef _IOCTL_
@@ -18,5 +18,5 @@
 #define	VPLOT		0200
 #define	VPRINTPLOT	0400
 
-#define	VGETSTATE	_IOR(v, 0, int)
-#define	VSETSTATE	_IOW(v, 1, int)
+#define	VGETSTATE	_IOR('v', 0, int)
+#define	VSETSTATE	_IOW('v', 1, int)

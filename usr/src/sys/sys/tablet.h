@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tablet.h	7.2 (Berkeley) %G%
+ *	@(#)tablet.h	7.3 (Berkeley) %G%
  */
 
 #ifndef _TABLET_
@@ -47,8 +47,8 @@ struct	polpos {
 	char	p_key;		/* calculator input keyboard */
 };
 
-#define BIOSMODE	_IOW(b, 1, int)		/* set mode bit(s) */
-#define BIOGMODE	_IOR(b, 2, int)		/* get mode bit(s) */
+#define BIOSMODE	_IOW('b', 1, int)	/* set mode bit(s) */
+#define BIOGMODE	_IOR('b', 2, int)	/* get mode bit(s) */
 #define	TBMODE		0xfff0		/* mode bits: */
 #define		TBPOINT		0x0010		/* single point */
 #define		TBRUN		0x0000		/* runs contin. */
@@ -64,6 +64,6 @@ struct	polpos {
 #define		TBHDGHIRES	0x6		/* hdg-1111b, high res */
 #define		TBDIGI		0x7		/* gtco digi-pad, low res */
 #define		TBDIGIHIRES	0x8		/* gtco digi-pad, high res */
-#define BIOSTYPE	_IOW(b, 3, int)		/* set tablet type */
-#define BIOGTYPE	_IOR(b, 4, int)		/* get tablet type*/
+#define BIOSTYPE	_IOW('b', 3, int)	/* set tablet type */
+#define BIOGTYPE	_IOR('b', 4, int)	/* get tablet type*/
 #endif
