@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.64 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.65 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -882,21 +882,41 @@ putline(l, mci)
 {
 	extern void putxline();
 
-	putxline(l, mci, TRUE);
+	putxline(l, mci, PXLF_MAPFROM);
 }
+/*
+**  PUTXLINE -- putline with flags bits.
+**
+**	This routine always guarantees outputing a newline (or CRLF,
+**	as appropriate) at the end of the string.
+**
+**	Parameters:
+**		l -- line to put.
+**		mci -- the mailer connection information.
+**		pxflags -- flag bits:
+**		    PXLF_MAPFROM -- map From_ to >From_.
+**		    PXLF_STRIP8BIT -- strip 8th bit.
+**
+**	Returns:
+**		none
+**
+**	Side Effects:
+**		output of l to fp.
+*/
 
 void
-putxline(l, mci, mapfrom)
+putxline(l, mci, pxflags)
 	register char *l;
 	register MCI *mci;
-	bool mapfrom;
+	int pxflags;
 {
 	register char *p;
 	register char svchar;
 	int slop = 0;
 
 	/* strip out 0200 bits -- these can look like TELNET protocol */
-	if (bitset(MCIF_7BIT, mci->mci_flags))
+	if (bitset(MCIF_7BIT, mci->mci_flags) ||
+	    bitset(PXLF_STRIP8BIT, pxflags))
 	{
 		for (p = l; (svchar = *p) != '\0'; ++p)
 			if (bitset(0200, svchar))
@@ -928,8 +948,9 @@ putxline(l, mci, mapfrom)
 				if (TrafficLogFile != NULL)
 					(void) putc('.', TrafficLogFile);
 			}
-			else if (l[0] == 'F' && slop == 0 && mapfrom &&
-				 strncmp(l, "From ", 5) == 0 &
+			else if (l[0] == 'F' && slop == 0 &&
+				 bitset(PXLF_MAPFROM, pxflags) &&
+				 strncmp(l, "From ", 5) == 0 &&
 				 bitnset(M_ESCFROM, mci->mci_mailer->m_flags))
 			{
 				(void) putc('>', mci->mci_out);
