@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)trsp.c	6.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)trsp.c	6.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/cdefs.h>
@@ -115,11 +115,17 @@ again:
 		system = *argv;
 		argc--, argv++;
 		mask++;
+		/*
+		 * Discard setgid privileges if not the running kernel so that
+		 * bad guys can't print interesting stuff from kernel memory.
+		 */
+		setgid(getgid());
 	}
 	if (argc > 0) {
 		core = *argv;
 		argc--, argv++;
 		mask++;
+		setgid(getgid());
 	}
 	(void) nlist(system, nl);
 	if (nl[0].n_value == 0) {
