@@ -151,7 +151,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 /* This macro determines the number of bytes waiting to be written
    in a FILE buffer.  */
 
-#define PENDING_OUTPUT_COUNT(FILE) ((FILE)->_w - (FILE)->_bf._size)
+#define PENDING_OUTPUT_COUNT(FILE) ((FILE)->_p - (FILE)->_bf._base)
 
 /* Have POSIX setsid().  */
 
@@ -168,6 +168,10 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 /* No special libg for debugging.  */
 
 #define LIBS_DEBUG
+
+/* X11 libraries, use R5.  */
+
+#define LIB_X11_LIB -L/usr/X11R5/lib -lX11
 
 /* Debugging unexec()ed code is hard enough as is, so why
    not make it a little harder.  */
