@@ -1,4 +1,4 @@
-/*	trap.c	4.13	82/07/12	*/
+/*	trap.c	4.14	82/07/18	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -17,7 +17,8 @@
 
 #define	USER	040		/* user-mode flag added to type */
 
-struct	sysent	sysent[128];
+struct	sysent	sysent[];
+int	nsysent;
 
 char	*trap_type[] = {
 	"Reserved addressing mode",
@@ -157,7 +158,7 @@ out:
  */
 /*ARGSUSED*/
 syscall(sp, type, code, pc, psl)
-unsigned code;
+	unsigned code;
 {
 	register int *locr0 = ((int *)&psl)-PS;
 	register caddr_t params;		/* known to be r10 below */
@@ -176,11 +177,11 @@ unsigned code;
 	opc = pc - 2;
 	if (code > 63)
 		opc -= 2;
-	callp = &sysent[code&0177];
+	callp = (code >= nsysent) ? &sysent[63] : &sysent[code];
 	if (callp == sysent) {
 		i = fuword(params);
 		params += NBPW;
-		callp = &sysent[i&0177];
+		callp = (code >= nsysent) ? &sysent[63] : &sysent[code];
 	}
 	if (i = callp->sy_narg * sizeof (int)) {
 		asm("prober $3,r9,(r10)");		/* GROT */
