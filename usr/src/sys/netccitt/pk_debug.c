@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_debug.c	7.5 (Berkeley) %G%
+ *	@(#)pk_debug.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -36,7 +36,8 @@ char   *pk_name[] = {
 	"Call",		"Call-Conf",	"Clear",
 	"Clear-Conf",	"Data",		"Intr",		"Intr-Conf",
 	"Rr",		"Rnr",		"Reset",	"Reset-Conf",
-	"Restart",	"Restart-Conf",	"Invalid"
+	"Restart",	"Restart-Conf",	"Reject",	"Diagnostic",
+	"Invalid"
 };
 
 pk_trace (xcp, m, dir)
