@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	6.34 (Berkeley) %G%
+ *	@(#)conf.h	6.35 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,6 @@
 # include <sys/param.h>
 # include <sys/stat.h>
 # include <fcntl.h>
-# include "cdefs.h"
 
 /*
 **  Table sizes, etc....
@@ -108,6 +107,10 @@
 # define	sleep	sleepX
 #endif
 
+#ifdef BSD4_4
+# include <sys/cdefs.h>
+#endif
+
 /*
 **  Due to a "feature" in some operating systems such as Ultrix 4.3 and
 **  HPUX 8.0, if you receive a "No route to host" message (ICMP message
@@ -147,6 +150,10 @@
 # ifndef EX_CONFIG
 # define EX_CONFIG	78	/* configuration error */
 # endif
+
+#ifndef __P
+# include "cdefs.h"
+#endif
 
 /*
 **  Do some required dependencies
