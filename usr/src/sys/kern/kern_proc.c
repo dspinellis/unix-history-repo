@@ -1,4 +1,4 @@
-/*	kern_proc.c	3.7	%H%	*/
+/*	kern_proc.c	3.8	%H%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -12,7 +12,7 @@
 #include "../h/inode.h"
 #include "../h/seg.h"
 #include "../h/acct.h"
-#include <wait.h>
+#include "/usr/include/wait.h"
 #include "../h/pte.h"
 #include "../h/vm.h"
 #include "../h/text.h"
@@ -99,7 +99,8 @@ exece()
 			if ((nc&BMASK) == 0) {
 				if (bp)
 					bdwrite(bp);
-				bp = getblk(swapdev, (daddr_t)(dbtofsb(swplo+bno)+(nc>>BSHIFT)));
+				bp = getblk(swapdev,
+				    (daddr_t)(dbtofsb(swplo+bno)+(nc>>BSHIFT)));
 				cp = bp->b_un.b_addr;
 			}
 			nc++;
@@ -253,7 +254,8 @@ register struct inode *ip;
 	ds = clrnd(btoc((u.u_exdata.ux_dsize+u.u_exdata.ux_bsize)));
 	ss = clrnd(SSIZE + btoc(nargc));
 	if (overlay) {
-		if ((u.u_procp->p_flag & SPAGI) || u.u_sep==0 && ctos(ts) != ctos(u.u_tsize) || nargc) {
+		if ((u.u_procp->p_flag & SPAGI) ||
+		    u.u_sep==0 && ctos(ts) != ctos(u.u_tsize) || nargc) {
 			u.u_error = ENOMEM;
 			goto bad;
 		}
@@ -506,13 +508,14 @@ done:
 			} else if (q->p_stat == SSTOP) {
 				psignal(q, SIGHUP);
 				psignal(q, SIGCONT);
-				/*
-				 * Protect this process from future
-				 * tty signals, and clear TSTP if pending.
-				 */
-				q->p_pgrp = 0;
-				q->p_sig &= ~(1<<(SIGTSTP-1));
 			}
+			/*
+			 * Protect this process from future
+			 * tty signals, and clear TSTP/TTIN/TTOU if pending.
+			 */
+			q->p_pgrp = 0;
+#define	bit(a)	(1<<(a-1))
+			q->p_sig &= ~(bit(SIGTSTP)|bit(SIGTTIN)|bit(SIGTTOU));
 		}
 	wakeup((caddr_t)p->p_pptr);
 	psignal(p->p_pptr, SIGCHLD);
