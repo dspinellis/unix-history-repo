@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.42 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.43 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1361,7 +1361,7 @@ vsprintf(s, fmt, ap)
 # if defined(IRIX) || defined(apollo) || defined(_SCO_unix_) || defined(UMAXV) || defined(DGUX)
 #  include <sys/statfs.h>
 # else
-#  if (defined(sun) && !defined(BSD)) || defined(__hpux) || defined(_CONVEX_SOURCE) || defined(NeXT) || defined(_AUX_SOURCE)
+#  if (defined(sun) && !defined(BSD)) || defined(__hpux) || defined(_CONVEX_SOURCE) || defined(NeXT) || defined(_AUX_SOURCE) || defined(MACH386)
 #   include <sys/vfs.h>
 #  else
 #   include <sys/mount.h>
@@ -1721,3 +1721,50 @@ setvendor(vendor)
 {
 	return (strcasecmp(vendor, "Berkeley") == 0);
 }
+/*
+**  STRTOL -- convert string to long integer
+**
+**	For systems that don't have it in the C library.
+*/
+
+#ifdef NEEDSTRTOL
+
+long
+strtol(p, ep, b)
+	char *p;
+	char **ep;
+	int b;
+{
+	long l = 0;
+	char c;
+	char maxd;
+	int neg = 1;
+
+	maxd = (b > 10) ? '9' : b + '0';
+
+	if (p && *p == '-') {
+		neg = -1;
+		p++;
+	}
+	while (p && (c = *p)) {
+		if (c >= '0' && c <= maxd) {
+			l = l*b + *p++ - '0';
+			continue;
+		}
+		if (c >= 'A' && c <= 'Z')
+			c -= 'A' + 'a';
+		c = c - 'a' + 10;
+		if (b > c) {
+			l = l*b + c;
+			p++;
+			continue;
+		}
+		break;
+	}
+	l *= neg;
+	if (ep)
+		*ep = p;
+	return l;
+}
+
+#endif
