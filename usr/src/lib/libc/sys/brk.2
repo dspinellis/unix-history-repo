@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)brk.2	6.1 (Berkeley) %G%
+.\"	@(#)brk.2	6.2 (Berkeley) %G%
 .\"
 .TH BRK 2 ""
 .UC 4
@@ -13,11 +13,11 @@ brk, sbrk \- change data segment size
 #include <sys/types.h>
 .PP
 .ft B
-caddr_t brk(addr)
-caddr_t addr;
+char *brk(addr)
+char *addr;
 .PP
 .ft B
-caddr_t sbrk(incr)
+char *sbrk(incr)
 int incr;
 .fi
 .SH DESCRIPTION
