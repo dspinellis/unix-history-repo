@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.25 (Berkeley) %G%
+#	@(#)READ_ME	8.26 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -280,7 +280,7 @@ NeXT
 	message "SYSERR: service "smtp" unknown" logged.  You should
 	be able to work around this by including the line:
 
-		OPort=25
+		OOPort=25
 
 	in your .cf file.
 
@@ -403,4 +403,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.25, last update %G% 10:32:22)
+(Version 8.26, last update %G% 14:18:18)
