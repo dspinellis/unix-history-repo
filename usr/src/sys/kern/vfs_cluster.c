@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_cluster.c	7.36 (Berkeley) %G%
+ *	@(#)vfs_cluster.c	7.37 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -183,7 +183,7 @@ bdwrite(bp)
 	/*
 	 * If this is a tape drive, the write must be initiated.
 	 */
-	if (VOP_IOCTL(bp->b_vp, 0, B_TAPE, 0, NOCRED, p) == 0) {
+	if (VOP_IOCTL(bp->b_vp, 0, (caddr_t)B_TAPE, 0, NOCRED, p) == 0) {
 		bawrite(bp);
 	} else {
 		bp->b_flags |= (B_DONE | B_DELWRI);
@@ -566,6 +566,8 @@ mntflushbuf(mountp, flags)
 		panic("mntflushbuf: not busy");
 loop:
 	for (vp = mountp->mnt_mounth; vp; vp = vp->v_mountf) {
+		if (VOP_ISLOCKED(vp))
+			continue;
 		if (vget(vp))
 			goto loop;
 		vflushbuf(vp, flags);
