@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *      @(#)mount_cd9660.c	8.4 (Berkeley) %G%
+ *      @(#)mount_cd9660.c	8.5 (Berkeley) %G%
  */
 
 #ifndef lint
@@ -19,7 +19,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount_cd9660.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount_cd9660.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -49,9 +49,8 @@ main(argc, argv)
 {
 	struct iso_args args;
 	int ch, mntflags, opts;
-	char *dev, *dir, *options;
+	char *dev, *dir;
 
-	options = NULL;
 	mntflags = opts = 0;
 	while ((ch = getopt(argc, argv, "ego:r")) != EOF)
 		switch (ch) {
@@ -62,7 +61,7 @@ main(argc, argv)
 			opts |= ISOFSMNT_GENS;
 			break;
 		case 'o':
-			getmntopts(options, mopts, &mntflags);
+			getmntopts(optarg, mopts, &mntflags);
 			break;
 		case 'r':
 			opts |= ISOFSMNT_NORRIP;
