@@ -1,4 +1,4 @@
-/*	in_proto.c	6.6	84/08/29	*/
+/*	in_proto.c	6.7	85/06/02	*/
 
 #include "param.h"
 #include "socket.h"
@@ -33,6 +33,10 @@ extern	int raw_usrreq();
 int	rimp_output(), hostslowtimo();
 #endif
 
+#ifdef NSIP
+int	idpip_input();
+#endif
+
 extern	struct domain inetdomain;
 
 struct protosw inetsw[] = {
@@ -56,13 +60,21 @@ struct protosw inetsw[] = {
   raw_usrreq,
   0,		0,		0,		0,
 },
-{ SOCK_RAW,	&inetdomain,	IPPROTO_EGP,	PR_ATOMIC|PR_ADDR,
-  rip_input,	rip_output,	0,	0,
+{ SOCK_RAW,	&inetdomain,	IPPROTO_ICMP,	PR_ATOMIC|PR_ADDR,
+  icmp_input,	rip_output,	0,		0,
   raw_usrreq,
   0,		0,		0,		0,
 },
-{ SOCK_RAW,	&inetdomain,	IPPROTO_ICMP,	PR_ATOMIC|PR_ADDR,
-  icmp_input,	rip_output,	0,		0,
+#ifdef NSIP
+{ SOCK_RAW,	&inetdomain,	IPPROTO_PUP,	PR_ATOMIC|PR_ADDR,
+  idpip_input,	rip_output,	0,		0,
+  raw_usrreq,
+  0,		0,		0,		0,
+},
+#endif
+	/* raw wildcard */
+{ SOCK_RAW,	&inetdomain,	0,		PR_ATOMIC|PR_ADDR,
+  rip_input,	rip_output,	0,	0,
   raw_usrreq,
   0,		0,		0,		0,
 },
