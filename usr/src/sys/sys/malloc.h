@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)malloc.h	7.19 (Berkeley) %G%
+ *	@(#)malloc.h	7.20 (Berkeley) %G%
  */
 
 #define KMEMSTATS
@@ -56,6 +56,7 @@
 #define	M_VMPVENT	35	/* VM phys-virt mapping entry */
 #define	M_VMPAGER	36	/* XXX: VM pager struct */
 #define	M_VMPGDATA	37	/* XXX: VM pager private data */
+#define	M_FILE		38	/* Open file structure */
 #define	M_TEMP		49	/* misc temporary data buffers */
 #define	M_LAST		50
 
@@ -98,7 +99,7 @@
 	"VM pvmap",	/* 35 M_VMPVENT */ \
 	"VM pager",	/* 36 M_VMPAGER */ \
 	"VM pgdata",	/* 37 M_VMPGDATA */ \
-	0, \
+	"open files",	/* 38 M_FILE */ \
 	0, 0, 0, 0, 0, \
 	0, 0, 0, 0, 0, \
 	"temp",		/* 49 M_TEMP */ \
