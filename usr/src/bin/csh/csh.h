@@ -1,4 +1,4 @@
-/* csh.h 4.8 83/06/11 */
+/* csh.h 4.9 83/06/11 */
 
 #include "sh.local.h"
 #include <time.h>
@@ -26,7 +26,13 @@
 typedef	char	bool;
 
 #define	eq(a, b)	(strcmp(a, b) == 0)
+
+/*
+ * For 4.2bsd signals.
+ */
 #define	mask(s)		(1 << ((s)-1))
+#define	sigsys(s, a)	signal(s, a)
+#define	sighold(s)	sigblock(mask(s))
 
 /*
  * Global flags

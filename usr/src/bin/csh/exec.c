@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)exec.c 4.6 %G%";
+static	char *sccsid = "@(#)exec.c 4.7 %G%";
 
 #include "sh.h"
 #include <dir.h>
@@ -93,8 +93,10 @@ doexec(t)
 	 * We must do this AFTER any possible forking (like `foo`
 	 * in glob) so that this shell can still do subprocesses.
 	 */
-	signal(SIGCHLD, SIG_IGN);
-	sigsetmask(0);			/* sanity */
+#ifdef notdef
+	sigsys(SIGCHLD, SIG_IGN);	/* sigsys for vforks sake */
+#endif
+	sigsetmask(0);
 
 	/*
 	 * If no path, no words in path, or a / in the filename

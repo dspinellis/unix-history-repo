@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)func.c 4.9 83/06/10";
+static	char *sccsid = "@(#)func.c 4.10 83/06/11";
 
 #include "sh.h"
 #include <sys/ioctl.h>
@@ -75,16 +75,16 @@ doonintr(v)
 	cp = gointr, gointr = 0, xfree(cp);
 	if (vv == 0) {
 		if (setintr)
-			(void) sigblock(mask(SIGINT));
+			sighold(SIGINT);
 		else
-			signal(SIGINT, SIG_DFL);
+			sigset(SIGINT, SIG_DFL);
 		gointr = 0;
 	} else if (eq((vv = strip(vv)), "-")) {
-		signal(SIGINT, SIG_IGN);
+		sigset(SIGINT, SIG_IGN);
 		gointr = "-";
 	} else {
 		gointr = savestr(vv);
-		signal(SIGINT, pintr);
+		sigset(SIGINT, pintr);
 	}
 }
 
@@ -400,10 +400,10 @@ preread()
 
 	whyles->w_end = -1;
 	if (setintr)
-		(void) sigrelse(mask(SIGINT));
+		sigrelse(SIGINT);
 	search(ZBREAK, 0);
 	if (setintr)
-		sigblock(mask(SIGINT));
+		sighold(SIGINT);
 	whyles->w_end = btell();
 }
 
@@ -453,17 +453,17 @@ dorepeat(v, kp)
 
 	i = getn(v[1]);
 	if (setintr)
-		(void) sigblock(mask(SIGINT));
+		sighold(SIGINT);
 	lshift(v, 2);
 	while (i > 0) {
 		if (setintr)
-			(void) sigrelse(mask(SIGINT));
+			sigrelse(SIGINT);
 		reexecute(kp);
 		--i;
 	}
 	donefds();
 	if (setintr)
-		(void) sigrelse(mask(SIGINT));
+		sigrelse(SIGINT);
 }
 
 doswbrk()
@@ -699,7 +699,7 @@ echo(sep, v)
 	int nonl = 0;
 
 	if (setintr)
-		(void) sigrelse(mask(SIGINT));
+		sigrelse(SIGINT);
 	v++;
 	if (*v == 0)
 		return;
@@ -725,7 +725,7 @@ echo(sep, v)
 	else
 		flush();
 	if (setintr)
-		(void) sigblock(mask(SIGINT));
+		sighold(SIGINT);
 	if (gargv)
 		blkfree(gargv), gargv = 0;
 }
@@ -1008,17 +1008,17 @@ dosuspend()
 	if (loginsh)
 		error("Can't suspend a login shell (yet)");
 	untty();
-	old = signal(SIGTSTP, SIG_DFL);
+	old = sigsys(SIGTSTP, SIG_DFL);
 	kill(0, SIGTSTP);
 	/* the shell stops here */
-	signal(SIGTSTP, old);
+	sigsys(SIGTSTP, old);
 	if (tpgrp != -1) {
 retry:
 		ioctl(FSHTTY, TIOCGPGRP, &ctpgrp);
 		if (ctpgrp != opgrp) {
-			old = signal(SIGTTIN, SIG_DFL);
+			old = sigsys(SIGTTIN, SIG_DFL);
 			kill(0, SIGTTIN);
-			signal(SIGTTIN, old);
+			sigsys(SIGTTIN, old);
 			goto retry;
 		}
 		ioctl(FSHTTY, TIOCSPGRP, &shpgrp);

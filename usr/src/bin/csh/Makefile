@@ -1,5 +1,5 @@
 #
-#	Makefile	4.2	%G%
+#	Makefile	4.3	%G%
 #
 # C Shell with process control; VM/UNIX VAX Makefile
 # Bill Joy UC Berkeley; Jim Kulp IIASA, Austria
@@ -16,10 +16,10 @@ LIBES=
 SCCS=	/usr/local/sccs
 
 # strings.o must be last in OBJS since it can change when previous files compile
-OBJS=	sh.o sh.dol.o sh.err.o sh.exec.o sh.exp.o sh.func.o sh.glob.o \
-	sh.hist.o sh.lex.o sh.misc.o sh.parse.o sh.print.o sh.sem.o sh.set.o \
-	sh.proc.o sh.dir.o sh.time.o alloc.o sh.init.o printf.o \
-	strings.o doprnt.o
+OBJS=	alloc.o doprnt.o printf.o sh.o sh.dir.o sh.dol.o sh.err.o sh.exec.o \
+	sh.exp.o sh.func.o sh.glob.o sh.hist.o sh.init.o sh.lex.o sh.misc.o \
+	sh.parse.o sh.print.o sh.proc.o sh.sem.o sh.set.o sh.sig.o sh.time.o \
+	strings.o
 
 # Special massaging of C files for sharing of strings
 .c.o:
@@ -89,7 +89,7 @@ install: csh sh.local.h
 	install -s csh ${DESTDIR}/bin/csh
 
 clean:
-	${RM} -f a.out strings x.c xs.c csh
+	${RM} -f a.out strings x.c xs.c csh errs
 	${RM} -f *.o sh.prof.c
 
 tags:	/tmp
