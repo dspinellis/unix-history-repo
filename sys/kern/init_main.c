@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)init_main.c	7.41 (Berkeley) 5/15/91
- *	$Id: init_main.c,v 1.13 1993/12/23 09:28:22 davidg Exp $
+ *	$Id: init_main.c,v 1.14 1994/01/14 16:24:45 davidg Exp $
  */
 
 #include "param.h"
@@ -367,6 +367,7 @@ main()
 	/*
 	 * Start update daemon (process 3).
 	 */
+#ifndef LAPTOP
 	if (fork(p, (void *) NULL, rval))
 		panic("fork update");
 	if (rval[1]) {
@@ -377,6 +378,7 @@ main()
 		vfs_update();
 		/*NOTREACHED*/
 	}
+#endif
 
 	/*
 	 * enter scheduling loop
