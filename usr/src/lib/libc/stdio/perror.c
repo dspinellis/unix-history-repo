@@ -1,26 +1,32 @@
-/* @(#)perror.c	4.1 (Berkeley) %G% */
+/* @(#)perror.c	4.2 (Berkeley) %G% */
 /*
  * Print the error indicated
  * in the cerror cell.
  */
+#include <sys/types.h>
+#include <sys/uio.h>
 
 int	errno;
 int	sys_nerr;
 char	*sys_errlist[];
 perror(s)
-char *s;
+	char *s;
 {
-	register char *c;
-	register n;
+	struct iovec iov[4];
+	register struct iovec *v = iov;
 
-	c = "Unknown error";
-	if(errno < sys_nerr)
-		c = sys_errlist[errno];
-	n = strlen(s);
-	if(n) {
-		write(2, s, n);
-		write(2, ": ", 2);
+	if (s && *s) {
+		v->iov_base = s;
+		v->iov_len = strlen(s);
+		v++;
+		v->iov_base = ": ";
+		v->iov_len = 2;
+		v++;
 	}
-	write(2, c, strlen(c));
-	write(2, "\n", 1);
+	v->iov_base = errno < sys_nerr ? sys_errlist[errno] : "Unknown error";
+	v->iov_len = strlen(v->iov_base);
+	v++;
+	v->iov_base = "\n";
+	v->iov_len = 1;
+	writev(2, iov, (v - iov) + 1);
 }
