@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.29 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -490,17 +490,18 @@ rlsesigs()
 
 /* try to guess what style of load average we have */
 #define LA_ZERO		1	/* always return load average as zero */
-#define LA_INT		2	/* read kmem for avenrun; interpret as int */
+#define LA_INT		2	/* read kmem for avenrun; interpret as long */
 #define LA_FLOAT	3	/* read kmem for avenrun; interpret as float */
 #define LA_SUBR		4	/* call getloadavg */
 #define LA_MACH		5	/* MACH load averages (as on NeXT boxes) */
+#define LA_SHORT	6	/* read kmem for avenrun; interpret as short */
 
 /* do guesses based on general OS type */
 #ifndef LA_TYPE
 # define LA_TYPE	LA_ZERO
 #endif
 
-#if (LA_TYPE == LA_INT) || (LA_TYPE == LA_FLOAT)
+#if (LA_TYPE == LA_INT) || (LA_TYPE == LA_FLOAT) || (LA_TYPE == LA_SHORT)
 
 #include <nlist.h>
 
@@ -537,12 +538,12 @@ struct	nlist Nl[] =
 #  define FSHIFT	10
 # endif
 
-# if (LA_TYPE == LA_INT)
+# if (LA_TYPE == LA_INT) || (LA_TYPE == LA_SHORT)
 #  define FSHIFT	8
 # endif
 #endif
 
-#if (LA_TYPE == LA_INT) && !defined(FSCALE)
+#if ((LA_TYPE == LA_INT) || (LA_TYPE == LA_SHORT)) && !defined(FSCALE)
 #  define FSCALE	(1 << FSHIFT)
 #endif
 
@@ -587,7 +588,7 @@ getla()
 			printf("getla: lseek or read: %s\n", errstring(errno));
 		return (-1);
 	}
-#if LA_TYPE == LA_INT
+#if (LA_TYPE == LA_INT) || (LA_TYPE == LA_SHORT)
 	if (tTd(3, 5))
 	{
 		printf("getla: avenrun = %d", avenrun[0]);
