@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_output.c	7.7 (Berkeley) %G%
+ *	@(#)tcp_output.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -328,15 +328,8 @@ send:
 	 * the retransmit.  In persist state, just set snd_max.
 	 */
 	if (tp->t_force == 0 || tp->t_timer[TCPT_PERSIST] == 0) {
-		/*
-		 * Time this transmission if not a retransmission and
-		 * not currently timing anything.
-		 */
-		if (tp->t_rtt == 0 && tp->snd_nxt == tp->snd_max) {
-			tp->t_rtt = 1;
-			tp->t_rtseq = tp->snd_nxt;
-			tcpstat.tcps_segstimed++;
-		}
+		tcp_seq startseq = tp->snd_nxt;
+
 		/*
 		 * Advance snd_nxt over sequence space of this segment.
 		 */
@@ -347,8 +340,18 @@ send:
 			tp->t_flags |= TF_SENTFIN;
 		}
 		tp->snd_nxt += len;
-		if (SEQ_GT(tp->snd_nxt, tp->snd_max))
+		if (SEQ_GT(tp->snd_nxt, tp->snd_max)) {
 			tp->snd_max = tp->snd_nxt;
+			/*
+			 * Time this transmission if not a retransmission and
+			 * not currently timing anything.
+			 */
+			if (tp->t_rtt == 0) {
+				tp->t_rtt = 1;
+				tp->t_rtseq = startseq;
+				tcpstat.tcps_segstimed++;
+			}
+		}
 
 		/*
 		 * Set retransmit timer if not currently set,
