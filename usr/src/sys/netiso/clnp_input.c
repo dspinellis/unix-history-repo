@@ -26,7 +26,7 @@ SOFTWARE.
  */
 /* $Header: /var/src/sys/netiso/RCS/clnp_input.c,v 5.1 89/02/09 16:20:32 hagens Exp $ */
 /* $Source: /var/src/sys/netiso/RCS/clnp_input.c,v $ */
-/*	@(#)clnp_input.c	7.9 (Berkeley) %G% */
+/*	@(#)clnp_input.c	7.10 (Berkeley) %G% */
 
 #ifndef lint
 static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_input.c,v 5.1 89/02/09 16:20:32 hagens Exp $";
@@ -478,16 +478,8 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 		break;
 
 	case CLNP_DT:
- 		if (need_afrin) {
- 			/* NOTE: do this before TP gets the packet so tp ack can use info*/
- 			IFDEBUG(D_INPUT)
- 				printf("clnp_input: Calling tpclnp_ctlinput(%s)\n",
- 					clnp_iso_addrp(&src));
- 			ENDDEBUG
- 			tpclnp_ctlinput1(PRC_QUENCH2, &src);
- 		}
 		(*isosw[clnp_protox[ISOPROTO_TP]].pr_input)(m, &source, &target,
-			clnp->cnf_hdr_len);
+			clnp->cnf_hdr_len, need_afrin);
 		break;
 
  	case CLNP_RAW:
