@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: autoconf.c 1.36 92/12/20$
  *
- *	@(#)autoconf.c	8.1 (Berkeley) %G%
+ *	@(#)autoconf.c	8.2 (Berkeley) %G%
  */
 
 /*
@@ -294,9 +294,19 @@ find_slaves(hc)
 	 * to look at the first 6 slaves.
 	 */
 	if (dr_type(hc->hp_driver, "hpib"))
-		find_busslaves(hc, MAXSLAVES);
+		find_busslaves(hc, 0, MAXSLAVES-1);
 	else if (dr_type(hc->hp_driver, "scsi"))
-		find_busslaves(hc, MAXSLAVES-1);
+#ifdef SCSI_REVPRI
+		/*
+		 * Later releases of the HP boot ROM start searching for
+		 * boot devices starting with slave 6 and working down.
+		 * This is apparently the order in which priority is given
+		 * to slaves on the host adaptor.
+		 */
+		find_busslaves(hc, MAXSLAVES-2, 0);
+#else
+		find_busslaves(hc, 0, MAXSLAVES-2);
+#endif
 }
 
 /*
@@ -308,9 +318,9 @@ find_slaves(hc)
  * unused position instead of where it really is.  To save grief, non-
  * identifing devices should always be fully qualified.
  */
-find_busslaves(hc, maxslaves)
+find_busslaves(hc, startslave, endslave)
 	register struct hp_ctlr *hc;
-	int maxslaves;
+	int startslave, endslave;
 {
 	register int s;
 	register struct hp_device *hd;
@@ -318,12 +328,15 @@ find_busslaves(hc, maxslaves)
 	int new_s, new_c, old_s, old_c;
 	int rescan;
 	
+#define NEXTSLAVE(s) (startslave < endslave ? (s)++ : (s)--)
+#define LASTSLAVE(s) (startslave < endslave ? (s)-- : (s)++)
 #ifdef DEBUG
 	if (acdebug)
 		printf("find_busslaves: for %s%d\n",
 		       hc->hp_driver->d_name, hc->hp_unit);
 #endif
-	for (s = 0; s < maxslaves; s++) {
+	NEXTSLAVE(endslave);
+	for (s = startslave; s != endslave; NEXTSLAVE(s)) {
 		rescan = 1;
 		match_s = NULL;
 		for (hd = hp_dinit; hd->hp_driver; hd++) {
@@ -468,7 +481,7 @@ find_busslaves(hc, maxslaves)
 							hd->hp_alive = -1;
 					}
 				}
-				s--;
+				LASTSLAVE(s);
 				continue;
 			}
 		}
@@ -479,6 +492,8 @@ find_busslaves(hc, maxslaves)
 			if (hd->hp_alive == -1)
 				hd->hp_alive = 0;
 	}
+#undef NEXTSLAVE
+#undef LASTSLAVE
 }
 
 caddr_t
