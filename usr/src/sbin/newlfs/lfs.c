@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lfs.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)lfs.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -299,7 +299,6 @@ make_lfs(fd, lp, partp, minfree, block_size, seg_size)
 	ip = &ifile[LFS_IFILE_INUM];
 	ip->if_version = 1;
 	ip->if_daddr = lfsp->lfs_idaddr;
-	ip->if_st_atime = lfsp->lfs_tstamp;
 
 	/* Initialize the ROOT Directory */
 	sb_addr = make_dinode(ROOTINO, ++dip, 1, sb_addr, lfsp);
@@ -309,7 +308,6 @@ make_lfs(fd, lp, partp, minfree, block_size, seg_size)
 	ip = &ifile[ROOTINO];
 	ip->if_version = 1;
 	ip->if_daddr = lfsp->lfs_idaddr;
-	ip->if_st_atime = lfsp->lfs_tstamp;
 
 	/* Initialize the lost+found Directory */
 	sb_addr = make_dinode(LOSTFOUNDINO, ++dip, 1, sb_addr, lfsp);
@@ -319,7 +317,6 @@ make_lfs(fd, lp, partp, minfree, block_size, seg_size)
 	ip = &ifile[LOSTFOUNDINO];
 	ip->if_version = 1;
 	ip->if_daddr = lfsp->lfs_idaddr;
-	ip->if_st_atime = lfsp->lfs_tstamp;
 
 	/* Make all the other dinodes invalid */
 	for (i = INOPB(lfsp)-3, dip++; i; i--, dip++)
