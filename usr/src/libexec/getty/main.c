@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -220,6 +220,10 @@ main(argc, argv)
 			oflush();
 			alarm(0);
 			signal(SIGALRM, SIG_DFL);
+			if (name[0] == '-') {
+				puts("login names may not start with '-'.");
+				continue;
+			}
 			if (!(upper || lower || digit))
 				continue;
 			allflags = setflags(2);
