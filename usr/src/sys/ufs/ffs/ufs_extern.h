@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_extern.h	7.4 (Berkeley) %G%
+ *	@(#)ufs_extern.h	7.5 (Berkeley) %G%
  */
 
 struct buf;
@@ -35,8 +35,9 @@ int	 ufs_access __P((struct vnode *, int, struct ucred *, struct proc *));
 int	 ufs_advlock __P((struct vnode *, caddr_t, int, struct flock *, int));
 void	 ufs_bufstats __P((void));
 int	 ufs_checkpath __P((struct inode *, struct inode *, struct ucred *));
-int	 ufs_chmod __P((struct vnode *, int, struct proc *));
-int	 ufs_chown __P((struct vnode *, u_int, u_int, struct proc *));
+int	 ufs_chmod __P((struct vnode *, int, struct ucred *, struct proc *));
+int	 ufs_chown
+	    __P((struct vnode *, u_int, u_int, struct ucred *, struct proc *));
 int	 ufs_close __P((struct vnode *, int, struct ucred *, struct proc *));
 int	 ufs_create __P((struct vnode *, struct vnode **,
 			 struct componentname *, struct vattr *));
