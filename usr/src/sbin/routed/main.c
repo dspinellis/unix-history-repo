@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -54,6 +54,7 @@ main(argc, argv)
 	u_char retry;
 	
 	argv0 = argv;
+#if BSD >= 43
 	openlog("routed", LOG_PID | LOG_ODELAY, LOG_DAEMON);
 	setlogmask(LOG_WARNING);
 	sp = getservbyname("router", "udp");
@@ -205,14 +206,18 @@ getsocket(domain, type, sin)
 		syslog(LOG_ERR, "socket: %m");
 		return (-1);
 	}
+#ifdef SO_BROADCAST
 	if (setsockopt(s, SOL_SOCKET, SO_BROADCAST, &on, sizeof (on)) < 0) {
 		syslog(LOG_ERR, "setsockopt SO_BROADCAST: %m");
 		close(s);
 		return (-1);
 	}
+#endif
+#ifdef SO_RCVBUF
 	on = 48*1024;
 	if (setsockopt(s, SOL_SOCKET, SO_RCVBUF, &on, sizeof (on)) < 0)
 		syslog(LOG_ERR, "setsockopt SO_RCVBUF: %m");
+#endif
 	if (bind(s, sin, sizeof (*sin), 0) < 0) {
 		perror("bind");
 		syslog(LOG_ERR, "bind: %m");
