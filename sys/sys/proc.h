@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)proc.h	7.28 (Berkeley) 5/30/91
- *	$Id: proc.h,v 1.5 1993/12/19 00:55:20 wollman Exp $
+ *	$Id: proc.h,v 1.6 1994/01/14 16:25:46 davidg Exp $
  */
 
 #ifndef _PROC_H_
@@ -182,34 +182,35 @@ struct	pcred {
 #define	SSTOP	6		/* process being traced */
 
 /* flag codes */
-#define	SLOAD	0x0000001	/* in core */
-#define	SSYS	0x0000002	/* swapper or pager process */
-#define	SSINTR	0x0000004	/* sleep is interruptible */
-#define	SCTTY	0x0000008	/* has a controlling terminal */
-#define	SPPWAIT	0x0000010	/* parent is waiting for child to exec/exit */
-#define SEXEC	0x0000020	/* process called exec */
-#define	STIMO	0x0000040	/* timing out during sleep */
-#define	SSEL	0x0000080	/* selecting; wakeup/waiting danger */
-#define	SWEXIT	0x0000100	/* working on exiting */
-#define	SNOCLDSTOP 0x0000200	/* no SIGCHLD when children stop */
+#define	SLOAD	0x00000001	/* in core */
+#define	SSYS	0x00000002	/* swapper or pager process */
+#define	SSINTR	0x00000004	/* sleep is interruptible */
+#define	SCTTY	0x00000008	/* has a controlling terminal */
+#define	SPPWAIT	0x00000010	/* parent is waiting for child to exec/exit */
+#define SEXEC	0x00000020	/* process called exec */
+#define	STIMO	0x00000040	/* timing out during sleep */
+#define	SSEL	0x00000080	/* selecting; wakeup/waiting danger */
+#define	SWEXIT	0x00000100	/* working on exiting */
+#define	SNOCLDSTOP \
+		0x00000200	/* no SIGCHLD when children stop */
 /* the following three should probably be changed into a hold count */
-#define	SLOCK	0x0000400	/* process being swapped out */
-#define	SKEEP	0x0000800	/* another flag to prevent swap out */
-#define	SPHYSIO	0x0001000	/* doing physical i/o */
-#define	STRC	0x0004000	/* process is being traced */
-#define	SWTED	0x0008000	/* another tracing flag */
-#define	SADVLCK	0x0040000	/* process may hold a POSIX advisory lock */
+#define	SLOCK	0x00000400	/* process being swapped out */
+#define	SKEEP	0x00000800	/* another flag to prevent swap out */
+#define	SPHYSIO	0x00001000	/* doing physical i/o */
+#define	STRC	0x00004000	/* process is being traced */
+#define	SWTED	0x00008000	/* another tracing flag */
+#define	SADVLCK	0x00040000	/* process may hold a POSIX advisory lock */
 /* the following should be moved to machine-dependent areas */
-#define	SOWEUPC	0x0002000	/* owe process an addupc() call at next ast */
+#define	SOWEUPC	0x00002000	/* owe process an addupc() call at next ast */
 #ifdef HPUXCOMPAT
-#define	SHPUX	0x0010000	/* HP-UX process (HPUXCOMPAT) */
+#define	SHPUX	0x00010000	/* HP-UX process (HPUXCOMPAT) */
 #else
 #define	SHPUX	0		/* not HP-UX process (HPUXCOMPAT) */
 #endif
-/* not currently in use (never set) */
-#define	SPAGE	0x0020000	/* process in page wait state */
+#define	SUGID	0x00020000	/* process has changed [ug]id since exec */
 
-#define SPAGEDAEMON 0x0080000	/* process has been scanned by pageout daemon */
+#define SPAGEDAEMON \
+		0x00080000	/* process has been scanned by pageout daemon */
 
 #ifdef KERNEL
 /*

@@ -19,7 +19,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
  * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
  * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
  * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
@@ -28,7 +28,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	$Id: kern_execve.c,v 1.15 1994/02/04 06:58:11 wollman Exp $
+ *	$Id: kern_execve.c,v 1.16 1994/03/15 01:58:29 wollman Exp $
  */
 
 #include "param.h"
@@ -180,7 +180,7 @@ interpret:
 			(caddr_t)vnodep,		/* vnode */
 			0);				/* offset */
 	if (error) {
-		printf("mmap failed: %d\n",error);
+		uprintf("mmap failed: %d\n",error);
 		goto exec_fail_dealloc;
 	}
 	iparams->image_header = image_header;
@@ -295,6 +295,9 @@ interpret:
 
 	/* clear "fork but no exec" flag, as we _are_ execing */
 	p->p_acflag &= ~AFORK;
+
+	/* clear `set id since last exec' flag */
+	p->p_flag &= ~SUGID;
 
 	/* Set entry address */
 	setregs(p, iparams->entry_addr, stack_base);
