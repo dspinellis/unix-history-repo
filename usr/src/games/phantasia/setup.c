@@ -52,32 +52,12 @@ static char *files[] =		/* all files to create */
 	_PATH_GOLD,
 	_PATH_VOID,
 	_PATH_SCORE,
-#ifdef ENEMY
-	_PATH_ENEMY,
-#endif
 	(char *) NULL
 	};
 
     srandom((unsigned) time((long *) NULL));	/* prime random numbers */
 
     umask(0117);		/* only owner can read/write created files */
-
-    if (getuid() != UID)
-	fprintf(stderr, "Warning: UID (%d) is not equal to current uid.\n", UID);
-
-    /* check Phantasia destination directory */
-    if (stat(_PATH_PHANTDIR, &fbuf) < 0)
-	/* not found */
-	{
-	Error("Cannot stat %s.\n", _PATH_PHANTDIR);
-	exit(1);
-	/*NOTREACHED*/
-	}
-
-    if ((fbuf.st_mode & S_IFDIR) == 0)
-	/* not a directory */
-	Error("%s is not a directory.\n", _PATH_PHANTDIR);
-	/*NOTREACHED*/
 
     /* try to create data files */
     filename = &files[0];
@@ -172,19 +152,7 @@ static char *files[] =		/* all files to create */
     /* report compile-time options */
     printf("Compiled options:\n\n");
     printf("Phantasia destination directory:  %s\n", _PATH_PHANTDIR);
-    printf("Wizard:  %s   UID:  %d\n", WIZARD, UID);
-
-#ifdef ENEMY
-    printf("Enemy list enabled.\n");
-#else
-    printf("Enemy list disabled.\n");
-#endif
-
-#ifdef SHELL
-    printf("Shell escapes enabled.  Default shell:  %s\n", SHELL);
-#else
-    printf("Shell escapes disabled.\n");
-#endif
+    printf("Wizard: root UID: 0\n");
 
 #ifdef BSD41
     printf("Compiled for BSD 4.1\n");
