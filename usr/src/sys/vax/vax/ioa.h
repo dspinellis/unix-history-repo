@@ -1,5 +1,10 @@
-/*
- * @(#)ioa.h	7.2 (Berkeley) %G%
+/*-
+ * Copyright (c) 1982, 1986 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)ioa.h	7.3 (Berkeley) %G%
  */
 
 /****************************************************************
