@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1988 University of Utah.
- * Copyright (c) 1990 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1990, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * the Systems Programming Group of the University of Utah Computer
@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_net.c 1.6 92/12/26$
  *
- *	@(#)hpux_net.c	7.9 (Berkeley) %G%
+ *	@(#)hpux_net.c	8.1 (Berkeley) %G%
  */
 
 /*

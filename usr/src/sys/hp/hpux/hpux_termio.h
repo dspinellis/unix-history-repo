@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1988 University of Utah.
- * Copyright (c) 1990 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1990, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * the Systems Programming Group of the University of Utah Computer
@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_termio.h 1.1 90/07/09$
  *
- *	@(#)hpux_termio.h	7.4 (Berkeley) %G%
+ *	@(#)hpux_termio.h	8.1 (Berkeley) %G%
  */
 
 /* HP-UX termio stuff */
