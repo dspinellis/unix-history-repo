@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hp.c	6.22 (Berkeley) %G%
+ *	@(#)hp.c	6.23 (Berkeley) %G%
  */
 
 #ifdef HPDEBUG
@@ -835,8 +835,16 @@ hpecc(mi, flag)
 	bcr = MASKREG(-mbp->mba_bcr);
 	if (bp->b_flags & B_BAD)
 		npf = bp->b_error;
-	else
-		npf = btodb(bp->b_bcount - bcr + 511);
+	else {
+		npf = bp->b_bcount - bcr;
+		/*
+		 * Watch out for fractional sector at end of transfer;
+		 * want to round up if finished, otherwise round down.
+		 */
+		if (bcr == 0)
+			npf += 511;
+		npf = btodb(npf);
+	}
 	o = (int)bp->b_un.b_addr & PGOFSET;
 	bn = bp->b_blkno;
 	cn = bp->b_cylin;
