@@ -7,15 +7,17 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_bio.c	7.17 (Berkeley) %G%
+ *	@(#)nfs_bio.c	7.18 (Berkeley) %G%
  */
 
 #include "param.h"
-#include "user.h"
+#include "proc.h"
 #include "buf.h"
 #include "vnode.h"
 #include "trace.h"
 #include "mount.h"
+#include "resourcevar.h"
+
 #include "nfsnode.h"
 #include "nfsv2.h"
 #include "nfs.h"
@@ -157,6 +159,7 @@ nfs_write(vp, uio, ioflag, cred)
 	int ioflag;
 	struct ucred *cred;
 {
+	struct proc *p = curproc;		/* XXX */
 	register int biosize;
 	struct buf *bp;
 	struct nfsnode *np = VTONFS(vp);
@@ -180,7 +183,7 @@ nfs_write(vp, uio, ioflag, cred)
 				return (error);
 			uio->uio_offset = np->n_size;
 		}
-		return (nfs_writerpc(vp, uio, cred, u.u_procp));
+		return (nfs_writerpc(vp, uio, cred, p));
 	}
 #ifdef notdef
 	cnt = uio->uio_resid;
@@ -195,8 +198,8 @@ nfs_write(vp, uio, ioflag, cred)
 	 * file servers have no limits, i don't think it matters
 	 */
 	if (uio->uio_offset + uio->uio_resid >
-	      u.u_rlimit[RLIMIT_FSIZE].rlim_cur) {
-		psignal(u.u_procp, SIGXFSZ);
+	      p->p_rlimit[RLIMIT_FSIZE].rlim_cur) {
+		psignal(p, SIGXFSZ);
 		return (EFBIG);
 	}
 	/*
@@ -232,7 +235,7 @@ again:
 				bp->b_dirtyoff = MIN(on, bp->b_dirtyoff);
 				bp->b_dirtyend = MAX((on+n), bp->b_dirtyend);
 			} else {
-				bp->b_proc = u.u_procp;
+				bp->b_proc = p;
 				if (error = bwrite(bp))
 					return (error);
 				goto again;
