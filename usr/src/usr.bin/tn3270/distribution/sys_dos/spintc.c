@@ -1,10 +1,8 @@
-#define	LINT_ARGS
-
 #include <stdio.h>
 #include <dos.h>
 #include <stdlib.h>
 
-#include "../ntn3270/general.h"
+#include "../general.h"
 #include "spint.h"
 
 #define	PSP_ENVIRONMENT		0x2c
