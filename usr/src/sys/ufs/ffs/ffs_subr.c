@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ffs_subr.c	7.2 (Berkeley) %G%
+ *	@(#)ffs_subr.c	7.3 (Berkeley) %G%
  */
 
 #ifdef KERNEL
@@ -139,7 +139,6 @@ syncip(ip)
 			bwrite(bp);
 		}
 	}
-	ip->i_flag |= ICHG;
 	iupdat(ip, &time, &time, 1);
 }
 #endif
