@@ -1,0 +1,79 @@
+# @(#)precedence_test 1.0 91/07/24 Maarten Litmaath
+# test of relative precedences for `&&' and `||' operators
+
+echo "\`Say' echos its argument. Its return value is of no interest."
+case `echo -n` in
+  '') function Say () { echo -n "$*" ; } ;;
+   *) function Say () { echo "$*\c" ; } ;;
+esac
+
+echo "\`Truth' echos its argument and returns a TRUE result."
+function Truth () {
+  Say $1;
+  return 0;
+}
+
+echo "\`False' echos its argument and returns a FALSE result."
+function False () {
+  Say $1;
+  return 1;
+}
+
+echo ""
+
+cmd1='$open $test1 && $test2 $close || $test3'
+cmd2='$test1 || $open $test2 && $test3 $close'
+
+grouping_sh=
+grouping_C='( )'
+
+test3='Say 3'
+
+for i in 1 2
+do
+	eval proto=\$cmd$i
+
+	for test1 in 'Truth 1' 'False 1'
+	do
+		for test2 in 'Truth 2' 'False 2'
+		do
+			for precedence in sh C
+			do
+				eval set x \$grouping_$precedence
+				shift
+				open=${1-' '}
+				close=${2-' '}
+				eval cmd=\""$proto"\"
+				Say "$cmd   output="
+				output=`eval "$cmd"`
+				Say "$output"
+				read correct || {
+					echo 'Input fubar.  Abort.' >&2
+					exit 1
+				}
+				test "X$output" = "X$correct" ||
+					echo "   correct=$correct"
+				echo ''
+			done
+
+			echo ''
+		done
+	done
+done << EOF
+12
+12
+123
+123
+13
+13
+13
+13
+13
+1
+13
+1
+123
+123
+12
+12
+EOF
