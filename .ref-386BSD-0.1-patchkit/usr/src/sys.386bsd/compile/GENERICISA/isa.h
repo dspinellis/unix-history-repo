@@ -1,1 +1,0 @@
-#define NISA 1
