@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty.c	7.33 (Berkeley) %G%
+ *	@(#)tty.c	7.34 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -263,11 +263,6 @@ ttioctl(tp, com, data, flag)
 	case TIOCSETA:
 	case TIOCSETAW:
 	case TIOCSETAF:
-/**** these get removed ****
-	case TIOCSETAS:
-	case TIOCSETAWS:
-	case TIOCSETAFS:
-/***************************/
 #ifdef COMPAT_43
 	case TIOCSETP:
 	case TIOCSETN:
@@ -830,21 +825,6 @@ ttyinput(c, tp)
 	 */
 	if ((tp->t_state&TS_TYPEN) == 0 && (iflag&ISTRIP))
 		c &= 0177;
-    if ((tp->t_lflag&EXTPROC) == 0) {
-	/*
-	 * Check for literal nexting very first
-	 */
-	if (tp->t_state&TS_LNCH) {
-		c |= TTY_QUOTE;
-		tp->t_state &= ~TS_LNCH;
-	}
-	/*
-	 * Scan for special characters.  This code
-	 * is really just a big case statement with
-	 * non-constant cases.  The bottom of the
-	 * case statement is labeled ``endcase'', so goto
-	 * it after a case match, or similar.
-	 */
 
 	/*
 	 * Extensions to POSIX input modes which aren't controlled
@@ -854,46 +834,25 @@ ttyinput(c, tp)
 		if (CCEQ(cc[VLNEXT],c) && (iflag&ISTRIP)) {
 			if (lflag&ECHO)
 				ttyout("^\b", tp); /*XXX - presumes too much */
-			tp->t_state |= TS_LNCH;
-			goto endcase;
 		}
-		if (CCEQ(cc[VFLUSHO],c)) {
-			if (lflag&FLUSHO)
-				tp->t_lflag &= ~FLUSHO;
-			else {
-				ttyflush(tp, FWRITE);
+		/*
+		 * Signals.
+		 */
+		if (lflag&ISIG) {
+			if (CCEQ(cc[VINTR], c) || CCEQ(cc[VQUIT], c)) {
+				if ((lflag&NOFLSH) == 0)
+					ttyflush(tp, FREAD|FWRITE);
 				ttyecho(c, tp);
-				if (tp->t_rawq.c_cc + tp->t_canq.c_cc)
-					ttyretype(tp);
 				tp->t_lflag |= FLUSHO;
 			}
-			goto startoutput;
+			if (CCEQ(cc[VSUSP], c)) {
+				if ((lflag&NOFLSH) == 0)
+					ttyflush(tp, FREAD);
+				ttyecho(c, tp);
+				pgsignal(tp->t_pgrp, SIGTSTP, 1);
+				goto endcase;
+			}
 		}
-	}
-
-	/*
-	 * Signals.
-	 */
-	if (lflag&ISIG) {
-		if (CCEQ(cc[VINTR], c) || CCEQ(cc[VQUIT], c)) {
-			if ((lflag&NOFLSH) == 0)
-				ttyflush(tp, FREAD|FWRITE);
-			ttyecho(c, tp);
-			gsignal(tp->t_pgrp, CCEQ(cc[VINTR],c) ? 
-				SIGINT : SIGQUIT);
-			goto endcase;
-		}
-		if (CCEQ(cc[VSUSP],c)) {
-			if ((lflag&NOFLSH) == 0)
-				ttyflush(tp, FREAD);
-			ttyecho(c, tp);
-			pgsignal(tp->t_pgrp, SIGTSTP, 1);
-			goto endcase;
-		}
-	}
-	/*
-	 * Handle start/stop characters.
-	 */
 	if (iflag&IXON) {
 		if (CCEQ(cc[VSTOP],c)) {
 			if ((tp->t_state&TS_TTSTOP) == 0) {
@@ -911,20 +870,6 @@ ttyinput(c, tp)
 		if (CCEQ(cc[VSTART], c))
 			goto restartoutput;
 	}
-	/*
-	 * IGNCR, ICRNL, & INLCR
-	 */
-	if (c == '\r') {
-		if (iflag&IGNCR)
-			goto endcase;
-		else if (iflag&ICRNL)
-			c = '\n';
-	}
-	else if (c == '\n' && iflag&INLCR)
-		c = '\r';
-	else if (c == '\n' && iflag&INLCR)
-		c = '\r';
-    }
 	/*
 	 * Non canonical mode, don't process line editing
 	 * characters; check high water mark for wakeup.
@@ -946,45 +891,6 @@ ttyinput(c, tp)
 		}
 		goto endcase;
 	}
-    if ((tp->t_lflag&EXTPROC) == 0) {
-	/*
-	 * From here on down canonical mode character
-	 * processing takes place.
-	 */
-
-	/* 
-	 * Oldstyle quoting of erase, kill, and eof chars.
-	 *
-	 * Historically is '\' , but can be changed (read: disabled)
-	 * with the VQUOTE subscript.
-	 */
-
-	/*
-	 * erase (^H / ^?)
-	 */
-	if (CCEQ(cc[VERASE], c)) {
-		if (tp->t_rawq.c_cc)
-			ttyrub(unputc(&tp->t_rawq), tp);
-		goto endcase;
-	}
-		if (lflag&ECHOKE && tp->t_rawq.c_cc == tp->t_rocount &&
-		    (lflag&ECHOPRT) == 0) {
-			while (tp->t_rawq.c_cc)
-				ttyrub(unputc(&tp->t_rawq), tp);
-		} else {
-			ttyecho(c, tp);
-			if (lflag&ECHOK || lflag&ECHOKE)
-				ttyecho('\n', tp);
-			while (getc(&tp->t_rawq) > 0)
-				;
-			tp->t_rocount = 0;
-		}
-		tp->t_state &= ~TS_LOCAL;
-		goto endcase;
-	}
-	/*
-	 * word erase (^W)
-	 */
 			c = unputc(&tp->t_rawq);
 		} while (c != ' ' && c != '\t');
 		(void) putc(c, &tp->t_rawq);
@@ -997,23 +903,6 @@ ttyinput(c, tp)
 		ttyretype(tp);
 		goto endcase;
 	}
-	/*
-	 * reprint line (^R)
-	 */
-	if (CCEQ(cc[VREPRINT], c)) {
-		ttyretype(tp);
-		goto endcase;
-	}
-	/*
-	 * ^T - kernel info and generate SIGINFO
-	 */
-	if (CCEQ(cc[VSTATUS], c)) {
-		pgsignal(tp->t_pgrp, SIGINFO, 1);
-		if ((lflag&NOKERNINFO) == 0)
-			ttyinfo(tp);
-		goto endcase;
-	}
-    }
 	/*
 	 * Check for input buffer overflow
 	 */
@@ -1089,7 +978,7 @@ ttyoutput(c, tp)
 	register c;
 	register struct tty *tp;
 {
-	register char *colp;
+	register short *colp;
 	register ctype;
 	if (!(tp->t_oflag&OPOST)) {
 		if (tp->t_lflag&FLUSHO) 
@@ -1961,6 +1850,11 @@ tputchar(c, tp)
 	return (-1);
 }
 
+/*
+ * Sleep on chan.
+ *
+ * Return ERESTART if tty changed while we napped.
+ */
 ttysleep(tp, chan, pri, wmesg, timo)
 	struct tty *tp;
 	caddr_t chan;
