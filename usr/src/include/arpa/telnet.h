@@ -1,4 +1,4 @@
-/*	telnet.h	4.6	85/03/24	*/
+/*	telnet.h	4.7	85/03/24	*/
 /*
  * Definitions for the TELNET protocol.
  */
@@ -58,14 +58,15 @@ char *telcmds[] = {
 #define TELOPT_EXOPL	255	/* extended-options-list */
 
 #ifdef TELOPTS
-#define	NTELOPTS	25
+#define	NTELOPTS	(1+TELOPT_EOR)
 char *telopts[NTELOPTS] = {
 	"BINARY", "ECHO", "RCP", "SUPPRESS GO AHEAD", "NAME",
 	"STATUS", "TIMING MARK", "RCTE", "NAOL", "NAOP",
 	"NAOCRD", "NAOHTS", "NAOHTD", "NAOFFD", "NAOVTS",
 	"NAOVTD", "NAOLFD", "EXTEND ASCII", "LOGOUT", "BYTE MACRO",
 	"DATA ENTRY TERMINAL", "SUPDUP", "SUPDUP OUTPUT", "SEND LOCATION",
-	"TERMINAL TYPE", "END OF RECORD",
+	    "TERMINAL TYPE",
+	"END OF RECORD",
 };
 #endif
 
