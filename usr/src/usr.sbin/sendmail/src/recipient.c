@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.16 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -684,10 +684,11 @@ include(fname, forwarding, ctladdr, sendq, e)
 	register EVENT *ev = NULL;
 	int nincludes;
 	int ret;
-	ADDRESS *ca;
-	uid_t uid;
-	gid_t gid;
+	register ADDRESS *ca;
+	uid_t saveduid, uid;
+	gid_t savedgid, gid;
 	char *uname;
+	int rval = 0;
 	char buf[MAXLINE];
 
 	if (tTd(27, 2))
@@ -700,10 +701,8 @@ include(fname, forwarding, ctladdr, sendq, e)
 		printaddr(ctladdr, FALSE);
 	}
 
-	/*
-	**  If home directory is remote mounted but server is down,
-	**  this can hang or give errors; use a timeout to avoid this
-	*/
+	if (tTd(27, 9))
+		printf("include: old uid = %d/%d\n", getuid(), geteuid());
 
 	ca = getctladdr(ctladdr);
 	if (ca == NULL)
@@ -711,13 +710,32 @@ include(fname, forwarding, ctladdr, sendq, e)
 		uid = 0;
 		gid = 0;
 		uname = NULL;
+		saveduid = -1;
 	}
 	else
 	{
 		uid = ca->q_uid;
 		gid = ca->q_gid;
 		uname = ca->q_user;
+#ifdef HASSETREUID
+		saveduid = geteuid();
+		savedgid = getegid();
+		if (saveduid == 0)
+		{
+			initgroups(uname, gid);
+			if (uid != 0)
+				(void) setreuid(0, uid);
+		}
+#endif                   
 	}
+
+	if (tTd(27, 9))
+		printf("include: new uid = %d/%d\n", getuid(), geteuid());
+
+	/*
+	**  If home directory is remote mounted but server is down,
+	**  this can hang or give errors; use a timeout to avoid this
+	*/
 
 	if (setjmp(CtxIncludeTimeout) != 0)
 	{
@@ -726,7 +744,8 @@ include(fname, forwarding, ctladdr, sendq, e)
 		usrerr("451 open timeout on %s", fname);
 
 		/* return pseudo-error code */
-		return EOPENTIMEOUT;
+		rval = EOPENTIMEOUT;
+		goto resetuid;
 	}
 	ev = setevent((time_t) 60, includetimeout, 0);
 
@@ -734,7 +753,7 @@ include(fname, forwarding, ctladdr, sendq, e)
 	ret = safefile(fname, uid, gid, uname, forwarding, S_IREAD);
 	if (ret != 0)
 	{
-		/* don't use this .forward file */
+		/* don't use this :include: file */
 		clrevent(ev);
 		if (tTd(27, 4))
 			printf("include: not safe (uid=%d): %s\n",
@@ -825,7 +844,23 @@ include(fname, forwarding, ctladdr, sendq, e)
 	FileName = oldfilename;
 	LineNumber = oldlinenumber;
 	e->e_to = oldto;
-	return 0;
+
+resetuid:
+
+#ifdef HASSETREUID
+	if (saveduid == 0)
+	{
+		if (uid != 0)
+			if (setreuid(-1, 0) < 0 || setreuid(RealUid, 0) < 0)
+				syserr("setreuid(%d, 0) failure (real=%d, eff=%d)",
+					RealUid, getuid(), geteuid());
+		setgid(savedgid);
+	}
+#endif
+
+	if (tTd(27, 9))
+		printf("include: reset uid = %d/%d\n", getuid(), geteuid());
+	return rval;
 }
 
 static
