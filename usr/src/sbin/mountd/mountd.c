@@ -15,7 +15,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mountd.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)mountd.c	5.12 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -403,6 +403,7 @@ get_exportlist()
 	register int i;
 	register struct grouplist *grp;
 	register struct exportlist *ep, *ep2;
+	struct statfs stfsbuf;
 	struct ufs_args args;
 	struct stat sb;
 	FILE *inf;
@@ -537,7 +538,9 @@ get_exportlist()
 			args.exflags = exflags;
 			args.exroot = rootuid;
 			cp = (char *)0;
-			while (mount(MOUNT_UFS, ep->ex_dirp, MNT_UPDATE, &args) < 0) {
+			while (statfs(ep->ex_dirp, &stfsbuf) < 0 ||
+			       mount(MOUNT_UFS, ep->ex_dirp,
+				     stfsbuf.f_flags|MNT_UPDATE, &args) < 0) {
 				if (cp == NULL)
 					cp = ep->ex_dirp + dirplen - 1;
 				else
