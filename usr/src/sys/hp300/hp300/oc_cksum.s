@@ -3,7 +3,7 @@
 |
 | %sccs.include.redist.gas%
 |
-|	@(#)oc_cksum.s	7.1 (Berkeley) %G%
+|	@(#)oc_cksum.s	7.2 (Berkeley) %G%
 |
 |
 | oc_cksum: ones complement 16 bit checksum for MC68020.
@@ -63,7 +63,7 @@
 | enough gain to be worth the effort.
 
 	.data
-	.asciz	"@(#)$Header: oc_cksum.s,v 1.1 89/08/23 12:53:20 mike Exp $"
+	.asciz	"@(#)$Header: oc_cksum.s,v 1.1 90/07/09 16:04:43 mike Exp $"
 	.even
 	.text
 
