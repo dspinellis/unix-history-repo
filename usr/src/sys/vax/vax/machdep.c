@@ -1,4 +1,4 @@
-/*	machdep.c	4.54	82/05/26	*/
+/*	machdep.c	4.52.1.1	82/06/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -157,8 +157,7 @@ startup(firstaddr)
 	maxmem = freemem;
 	printf("avail mem = %d\n", ctob(maxmem));
 	rminit(kernelmap, USRPTSIZE, 1, "usrpt", nproc);
-	rminit(mbmap, (nmbclusters - 1) * CLSIZE, CLSIZE, "mbclusters",
-		nmbclusters/4);
+	rminit(mbmap, nmbclusters-CLSIZE, CLSIZE, "mbclusters", nmbclusters/4);
 
 	/*
 	 * Configure the system.
@@ -406,9 +405,9 @@ memenable()
 			M750_ENA(mcr);
 			break;
 #endif
-#if VAX730
-		case VAX_730:
-			M730_ENA(mcr);
+#if VAX7ZZ
+		case VAX_7ZZ:
+			M7ZZ_ENA(mcr);
 			break;
 #endif
 		}
@@ -449,14 +448,14 @@ memerr()
 			}
 			break;
 #endif
-#if VAX730
-		case VAX_730:
-			if (M730_ERR(mcr)) {
+#if VAX7ZZ
+		case VAX_7ZZ:
+			if (M7ZZ_ERR(mcr)) {
 				struct mcr amcr;
 				amcr.mc_reg[0] = mcr->mc_reg[0];
 				printf("mcr%d: soft ecc addr %x syn %x\n",
-				    m, M730_ADDR(&amcr), M730_SYN(&amcr));
-				M730_INH(mcr);
+				    m, M7ZZ_ADDR(&amcr), M7ZZ_SYN(&amcr));
+				M7ZZ_INH(mcr);
 			}
 			break;
 #endif
@@ -536,7 +535,7 @@ boot(paniced, arghowto)
 		}
 		tocons(TXDB_BOOT);
 	}
-#if defined(VAX750) || defined(VAX730)
+#if defined(VAX750) || defined(VAX7ZZ)
 	if (cpu != VAX_780)
 		{ asm("movl r11,r5"); }		/* boot flags go in r5 */
 #endif
@@ -602,9 +601,9 @@ char *mc780[] = {
 	"ib rds",	"ib rd timo",	0,		"ib cache par"
 };
 #endif
-#if VAX730
-#define	NMC730	12
-char *mc730[] = {
+#if VAX7ZZ
+#define	NMC7ZZ	12
+char *mc7ZZ[] = {
 	"tb par",	"bad retry",	"bad intr id",	"cant write ptem",
 	"unkn mcr err",	"iib rd err",	"nxm ref",	"cp rds",
 	"unalgn ioref",	"nonlw ioref",	"bad ioaddr",	"unalgn ubaddr",
@@ -644,7 +643,7 @@ struct mc750frame {
 	int	mc5_pc;			/* trapped pc */
 	int	mc5_psl;		/* trapped psl */
 };
-struct mc730frame {
+struct mc7ZZframe {
 	int	mc3_bcnt;		/* byte count == 0xc */
 	int	mc3_summary;		/* summary parameter */
 	int	mc3_parm[2];		/* parameter 1 and 2 */
@@ -670,10 +669,10 @@ machinecheck(cmcf)
 		    (type&0xf0) ? " abort" : " fault"); 
 		break;
 #endif
-#if VAX730
-	case VAX_730:
-		if (type < NMC730)
-			printf("%s", mc730[type]);
+#if VAX7ZZ
+	case VAX_7ZZ:
+		if (type < NMC7ZZ)
+			printf("%s", mc7ZZ[type]);
 		printf("\n");
 		break;
 #endif
@@ -710,9 +709,9 @@ machinecheck(cmcf)
 		break;
 		}
 #endif
-#if VAX730
-	case VAX_730: {
-		register struct mc730frame *mcf = (struct mc730frame *)cmcf;
+#if VAX7ZZ
+	case VAX_7ZZ: {
+		register struct mc7ZZframe *mcf = (struct mc7ZZframe *)cmcf;
 		printf("params %x,%x pc %x psl %x mcesr %x\n",
 		    mcf->mc3_parm[0], mcf->mc3_parm[1],
 		    mcf->mc3_pc, mcf->mc3_psl, mfpr(MCESR));
