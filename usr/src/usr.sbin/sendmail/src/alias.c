@@ -25,15 +25,15 @@ ERROR: DBM is no longer supported -- use NDBM instead.
 #ifndef lint
 #ifdef NEWDB
 #ifdef NDBM
-static char sccsid[] = "@(#)alias.c	6.42 (Berkeley) %G% (with NEWDB and NDBM)";
+static char sccsid[] = "@(#)alias.c	6.43 (Berkeley) %G% (with NEWDB and NDBM)";
 #else
-static char sccsid[] = "@(#)alias.c	6.42 (Berkeley) %G% (with NEWDB)";
+static char sccsid[] = "@(#)alias.c	6.43 (Berkeley) %G% (with NEWDB)";
 #endif
 #else
 #ifdef NDBM
-static char sccsid[] = "@(#)alias.c	6.42 (Berkeley) %G% (with NDBM)";
+static char sccsid[] = "@(#)alias.c	6.43 (Berkeley) %G% (with NDBM)";
 #else
-static char sccsid[] = "@(#)alias.c	6.42 (Berkeley) %G% (without NEWDB or NDBM)";
+static char sccsid[] = "@(#)alias.c	6.43 (Berkeley) %G% (without NEWDB or NDBM)";
 #endif
 #endif
 #endif /* not lint */
@@ -71,7 +71,7 @@ ALIASCLASS
 					/* database store func */
 	bool	(*ac_init)__P((ALIASDB *, ENVELOPE *));
 					/* initialization func */
-	void	(*ac_rebuild)__P((ALIASDB *, FILE *, ENVELOPE *));
+	void	(*ac_rebuild)__P((ALIASDB *, FILE *, int, ENVELOPE *));
 					/* initialization func */
 	void	(*ac_close)__P((ALIASDB *, ENVELOPE *));
 					/* close function */
@@ -442,7 +442,6 @@ rebuildaliases(ad, automatic, e)
 	if ((af = fopen(ad->ad_name, "r+")) == NULL)
 	{
 		syserr("554 Can't open %s", ad->ad_name);
-		printf("Can't open %s\n", ad->ad_name);
 		errno = 0;
 		return;
 	}
@@ -466,7 +465,7 @@ rebuildaliases(ad, automatic, e)
 
 	oldsigint = signal(SIGINT, SIG_IGN);
 
-	ad->ad_class->ac_rebuild(ad, af, e);
+	ad->ad_class->ac_rebuild(ad, af, automatic, e);
 
 	/* close the file, thus releasing locks */
 	fclose(af);
@@ -487,6 +486,7 @@ rebuildaliases(ad, automatic, e)
 **	Parameters:
 **		ad -- the alias database descriptor.
 **		af -- file to read the aliases from.
+**		automatic -- set if this was an automatic rebuild.
 **		e -- the current alias file.
 **
 **	Returns:
@@ -498,9 +498,10 @@ rebuildaliases(ad, automatic, e)
 */
 
 static
-readaliases(ad, af, e)
+readaliases(ad, af, automatic, e)
 	register ALIASDB *ad;
 	FILE *af;
+	int automatic;
 	register ENVELOPE *e;
 {
 	register char *p;
@@ -699,7 +700,8 @@ readaliases(ad, af, e)
 
 	e->e_to = NULL;
 	FileName = NULL;
-	message("%s: %d aliases, longest %d bytes, %d bytes total",
+	if (Verbose || !automatic)
+		message("%s: %d aliases, longest %d bytes, %d bytes total",
 			ad->ad_name, naliases, longest, bytes);
 # ifdef LOG
 	if (LogLevel > 7)
@@ -808,9 +810,10 @@ ndbm_ainit(ad, e)
 */
 
 void
-ndbm_arebuild(ad, fp, e)
+ndbm_arebuild(ad, fp, automatic, e)
 	register ALIASDB *ad;
 	FILE *fp;
+	int automatic;
 	ENVELOPE *e;
 {
 	register DBM *db;
@@ -830,7 +833,7 @@ ndbm_arebuild(ad, fp, e)
 	ad->ad_flags |= ADF_WRITABLE|ADF_VALID;
 
 	/* read and store the aliases */
-	readaliases(ad, fp, e);
+	readaliases(ad, fp, automatic, e);
 }
 
 /*
@@ -969,9 +972,10 @@ hash_ainit(ad, e)
 */
 
 void
-hash_arebuild(ad, fp, e)
+hash_arebuild(ad, fp, automatic, e)
 	register ALIASDB *ad;
 	FILE *fp;
+	int automatic;
 	ENVELOPE *e;
 {
 	register DB *db;
@@ -992,7 +996,7 @@ hash_arebuild(ad, fp, e)
 	ad->ad_flags |= ADF_WRITABLE|ADF_VALID;
 
 	/* read and store the aliases */
-	readaliases(ad, fp, e);
+	readaliases(ad, fp, automatic, e);
 }
 
 
@@ -1086,7 +1090,7 @@ stab_ainit(ad, e)
 		return FALSE;
 	}
 
-	readaliases(ad, af, e);
+	readaliases(ad, af, TRUE, e);
 }
 
 
@@ -1095,9 +1099,10 @@ stab_ainit(ad, e)
 */
 
 void
-stab_arebuild(ad, fp, e)
+stab_arebuild(ad, fp, automatic, e)
 	ALIASDB *ad;
 	FILE *fp;
+	int automatic;
 	ENVELOPE *e;
 {
 	if (tTd(27, 2))
@@ -1197,9 +1202,10 @@ nis_ainit(ad, e)
 */
 
 void
-nis_arebuild(ad, fp, e)
+nis_arebuild(ad, fp, automatic, e)
 	ALIASDB *ad;
 	FILE *fp;
+	int automatic;
 	ENVELOPE *e;
 {
 	if (tTd(27, 2))
@@ -1281,10 +1287,17 @@ impl_ainit(ad, e)
 	ALIASDB *ad;
 	ENVELOPE *e;
 {
+	struct stat stb;
+
 	if (tTd(27, 2))
 		printf("impl_ainit(%s)\n", ad->ad_name);
 
-	/* implicit class */
+	if (stat(ad->ad_name, &stb) < 0)
+	{
+		/* no alias file at all */
+		return FALSE;
+	}
+
 #ifdef NEWDB
 	ad->ad_flags |= ADF_IMPLHASH;
 	if (hash_ainit(ad, e))
@@ -1301,7 +1314,9 @@ impl_ainit(ad, e)
 	}
 	ad->ad_flags &= ~ADF_IMPLNDBM;
 #endif
-	syserr("WARNING: cannot open alias database %s", ad->ad_name);
+
+	if (Verbose)
+		message("WARNING: cannot open alias database %s", ad->ad_name);
 
 	if (stab_ainit(ad, e))
 	{
@@ -1316,9 +1331,10 @@ impl_ainit(ad, e)
 */
 
 void
-impl_arebuild(ad, fp, e)
+impl_arebuild(ad, fp, automatic, e)
 	ALIASDB *ad;
 	FILE *fp;
+	int automatic;
 	ENVELOPE *e;
 {
 #ifdef NEWDB
@@ -1368,7 +1384,7 @@ impl_arebuild(ad, fp, e)
 	ad->ad_flags |= ADF_WRITABLE|ADF_VALID;
 
 	/* read and store aliases */
-	readaliases(ad, fp, e);
+	readaliases(ad, fp, automatic, e);
 }
 
 
