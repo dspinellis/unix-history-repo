@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_qe.c	7.12 (Berkeley) %G%
+ *	@(#)if_qe.c	7.13 (Berkeley) %G%
  */
 
 /* from  @(#)if_qe.c	1.15	(ULTRIX)	4/16/86 */
@@ -175,6 +175,7 @@ extern struct snpa_cache all_es, all_is;
 #define NTOT	(NXMT + NRCV)
 
 #define	QETIMEOUT	2		/* transmit timeout, must be > 1 */
+#define QESLOWTIMEOUT	10		/* timeout when no xmits in progress */
 
 /*
  * This constant should really be 60 because the qna adds 4 bytes of crc.
@@ -200,6 +201,7 @@ struct	qe_softc {
 	int	qe_flags;		/* software state		*/
 #define	QEF_RUNNING	0x01
 #define	QEF_SETADDR	0x02
+#define QEF_FASTTIMEO	0x04
 	int	setupaddr;		/* mapping info for setup pkts  */
 	int	ipl;			/* interrupt priority		*/
 	struct	qe_ring *rringaddr;	/* mapping info for rings	*/
@@ -474,6 +476,7 @@ qeinit(unit)
 	sc->qe_flags |= QEF_RUNNING;
 	qesetup( sc );
 	(void) qestart( ifp );
+	sc->qe_if.if_timer = QESLOWTIMEOUT;	/* Start watchdog */
 	splx( s );
 }
 
@@ -542,8 +545,10 @@ qestart(ifp)
 		rp->qe_eomsg = 1;
 		rp->qe_flag = rp->qe_status1 = QE_NOTYET;
 		rp->qe_valid = 1;
-		if (sc->nxmit++ == 0)
+		if (sc->nxmit++ == 0) {
+			sc->qe_flags |= QEF_FASTTIMEO;
 			sc->qe_if.if_timer = QETIMEOUT;
+		}
 
 		/*
 		 * See if the xmit list is invalid.
@@ -573,6 +578,8 @@ qeintr(unit)
 #else
 	(void) splimp();
 #endif
+	if (!(sc->qe_flags & QEF_FASTTIMEO))
+		sc->qe_if.if_timer = QESLOWTIMEOUT; /* Restart timer clock */
 	csr = addr->qe_csr;
 	addr->qe_csr = QE_RCV_ENABLE | QE_INT_ENABLE | QE_XMIT_INT | QE_RCV_INT | QE_ILOOP;
 	if( csr & QE_RCV_INT )
@@ -618,8 +625,10 @@ qetint(unit)
 		 * Init the buffer descriptor
 		 */
 		bzero((caddr_t)rp, sizeof(struct qe_ring));
-		if( --sc->nxmit == 0 )
-			sc->qe_if.if_timer = 0;
+		if( --sc->nxmit == 0 ) {
+			sc->qe_flags &= ~QEF_FASTTIMEO;
+			sc->qe_if.if_timer = QESLOWTIMEOUT;
+		}
 		if( !setupflag ) {
 			/*
 			 * Do some statistics.
@@ -899,8 +908,10 @@ qetimeout(unit)
 	register struct qe_softc *sc;
 
 	sc = &qe_softc[unit];
+#ifdef notdef
 	log(LOG_ERR, "qe%d: transmit timeout, restarted %d\n",
 	     unit, sc->qe_restarts++);
+#endif
 	qerestart(sc);
 }
 /*
