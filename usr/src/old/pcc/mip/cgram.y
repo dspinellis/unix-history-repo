@@ -1,4 +1,4 @@
-/*	cgram.y	4.19	87/12/09	*/
+/*	cgram.y	4.20	87/12/09	*/
 
 /*
  * Grammar for the C compiler.
@@ -57,6 +57,7 @@
 #else
 	static char fakename[24];
 #endif
+	static int nsizeof = 0;
 %}
 
 ext_def_list:	   ext_def_list external_def
@@ -702,8 +703,8 @@ term:		   term INCOP
 						$2,
 						bcon(1)  );
 			    }
-		|  SIZEOF term
-			={  $$ = doszof( $2 ); }
+		|  pushsizeof term  %prec SIZEOF
+			={  $$ = doszof( $2 ); --nsizeof; }
 		|  LP cast_type RP term  %prec INCOP
 			={  $$ = buildtree( CAST, $2, $4 );
 			    $$->in.left->in.op = FREE;
@@ -746,7 +747,8 @@ term:		   term INCOP
 				defid( q, EXTERN );
 				}
 			    $$=buildtree(NAME,NIL,NIL);
-			    stab[$1].suse = -lineno;
+			    if( nsizeof == 0 )
+				stab[$1].suse = -lineno;
 			}
 		|  ICON
 			={  $$=bcon(0);
@@ -774,6 +776,10 @@ cast_type:	  type null_decl
 			$$->in.op = NAME;
 			$1->in.op = FREE;
 			}
+		;
+
+pushsizeof:	  SIZEOF
+			={ ++nsizeof; }
 		;
 
 null_decl:	   /* empty */
