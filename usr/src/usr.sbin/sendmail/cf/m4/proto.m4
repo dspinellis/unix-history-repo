@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(@(#)proto.m4	2.20 (Berkeley) %G%)
+VERSIONID(@(#)proto.m4	2.21 (Berkeley) %G%)
 
 MAILER(local)dnl
 
@@ -260,26 +260,26 @@ R$+ < @ $+ .UUCP >	$#uucp $@ $2 $: $1			user@host.UUCP',
 	`dnl')')
 
 # deal with other remote names
-R$* < @ $* > $*		$# smtp $@ $2 $: $1 < @ $2 > $3		user@host.domain
+R$* < @ $* > $*		$#smtp $@ $2 $: $1 < @ $2 > $3		user@host.domain
 
 ifdef(`_OLD_SENDMAIL_',
 `# forward remaining names to local relay, if any
-R$+			$: $1 < @ $R >
-R$+ < @ >		$# local $: $1
-R$+ < @ $+ >		$# smtp $@ $2 $: $1',
+R$=L			$#local $: $1			special local names
+R$+			$: $1 < @ $R >			append relay
+R$+ < @ >		$#local $: $1			if no relay, local
+R$+ < @ $+ >		$#smtp $@ $2 $: $1',		deliver to relay
 `# handle locally delivered names
-R$=L			$# local $: @ $1		special local names
-R$+			$# local $: $1			regular local names')
+R$=L			$#local $: @ $1			special local names
+R$+			$#local $: $1			regular local names
 
-ifdef(`_OLD_SENDMAIL_', `dnl',
-`#
+#
 # special rewriting after aliases have been expanded
 #
 
 S5
 
 R$+			$: $1 < @ $R >
-R$+ < @ $+ >		$# smtp $@ $2 $: $1		send to relay')
+R$+ < @ $+ >		$#smtp $@ $2 $: $1		send to relay')
 #
 ######################################################################
 ######################################################################
