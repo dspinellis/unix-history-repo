@@ -1,5 +1,14 @@
-/*  VDMP: version 4.7				updated %G%
- *
+/*
+ * Copyright (c) 1983 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)vdmp.c	5.1 (Berkeley) %G%";
+#endif /* not lint */
+
+/*
  *  reads raster file created by cifplot and dumps it onto the
  *  Varian or Versatec plotter.
  *  Assumptions:
@@ -18,7 +27,7 @@
 #define BUFSIZE		1024*128
 #define BLOCK		1024
 
-static char *Sid = "@(#)vdmp.c	4.3\t6/24/83";
+static char *Sid = "@(#)vdmp.c	5.1\t5/15/85";
 
 int	plotmd[] = { VPLOT };
 int	prtmd[]	= { VPRINT };
@@ -127,7 +136,7 @@ account(who, from, acctfile)
 	 * Varian accounting is done by 8.5 inch pages;
 	 * Versatec accounting is by the (12 inch) foot.
 	 */
-	fprintf(a, "t%6.2f\t", (lines / 200.0) / PAGE_LINES);
+	fprintf(a, "t%6.2f\t", (double)lines / (double)PAGE_LINES);
 	if (from != NULL)
 		fprintf(a, "%s:", from);
 	fprintf(a, "%s\n", who);
