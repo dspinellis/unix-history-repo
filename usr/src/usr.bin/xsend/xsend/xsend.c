@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)xsend.c	4.4 %G%";
+static char sccsid[] = "@(#)xsend.c	4.5 %G%";
 #endif
 
 #include "xmail.h"
@@ -74,26 +74,25 @@ main(argc, argv) char **argv;
 #endif
 	run();
 	{
-		char	*tmpname = "/tmp/xsend.XXXXXX";
 		char	hostname[32];
-		FILE	*nf;
+		FILE	*nf, *popen();
 		struct	passwd	*passp;
 
-		mktemp(tmpname);
-		if ((nf = fopen(tmpname, "w")) == NULL)
-			xfatal("cannot create notice file");
+		sprintf(buf, "/bin/mail %s", dest);
+		if ((nf = popen(buf, "w")) == NULL)
+			xfatal("cannot pipe to /bin/mail");
 		passp = getpwuid(getuid());
-		if (passp == 0)
+		if (passp == 0){
+			pclose(nf);
 			xfatal("Who are you?");
+		}
 		gethostname(hostname, sizeof(hostname));
-		fprintf(nf, "Subject: %s@%s sent secret mail\n",
+		fprintf(nf, "Subject: %s@%s sent you secret mail\n",
 			passp->pw_name, hostname);
-		fprintf(nf, "Your secret mail can be read on %s using ``xget''.\n",
+		fprintf(nf,
+		 "Your secret mail can be read on host %s using ``xget''.\n",
 			hostname);
-		fclose(nf);
-		sprintf(buf, "/bin/mail %s < %s", dest, tmpname);
-		system(buf);
-		unlink(tmpname);
+		pclose(nf);
 	}
 	exit(0);
 }
