@@ -1,6 +1,7 @@
-static	char *sccsid = "@(#)dumprmt.c	1.1 (Berkeley) %G%";
-#include "dump.h"
+static	char *sccsid = "@(#)dumprmt.c	1.2 (Berkeley) %G%";
 
+#include <stdio.h>
+#include <sys/param.h>
 #include <sys/mtio.h>
 #include <sys/ioctl.h>
 #include <net/in.h>
@@ -21,28 +22,14 @@ rmthost(host)
 	sigset(SIGPIPE, rmtconnaborted);
 	rmtgetconn();
 	if (rmtape < 0)
-		rmtreconnect();
+		exit(1);
 }
 
 rmtconnaborted()
 {
 
-	msg("Lost connection to tape server.\n");
-	if (rmtape >= 0) {
-		close(rmtape);
-		rmtape = -1;
-	}
-	exit(X_REWRITE);
-}
-
-rmtreconnect()
-{
-
-	do {
-		if (query("Retry conection to remote host?") == 0)
-			exit(X_ABORT);
-		rmtgetconn();
-	} while (rmtape < 0);
+	fprintf(stderr, "Lost connection to remote host.\n");
+	exit(1);
 }
 
 rmtgetconn()
@@ -78,15 +65,19 @@ rmtread(buf, count)
 {
 	char line[30];
 	int n, i, cc;
+	extern errno;
 
 	sprintf(line, "R%d\n", count);
 	n = rmtcall("read", line);
-	if (n < 0)
+	if (n < 0) {
+		errno = n;
 		return (-1);
+	}
 	for (i = 0; i < n; i += cc) {
 		cc = read(rmtape, buf+i, n - i);
-		if (cc <= 0)
+		if (cc <= 0) {
 			rmtconnaborted();
+		}
 	}
 	return (n);
 }
@@ -221,4 +212,11 @@ rmtgets(cp, len)
 	}
 	msg("Protocol to remote tape server botched (in rmtgets).\n");
 	rmtconnaborted();
+}
+
+msg(cp, a1, a2, a3)
+	char *cp;
+{
+
+	fprintf(stderr, cp, a1, a2, a3);
 }
