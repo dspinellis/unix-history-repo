@@ -1,4 +1,4 @@
-/*	sys_generic.c	6.2	84/07/08	*/
+/*	sys_generic.c	6.3	84/08/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -155,8 +155,7 @@ ioctl()
 	char data[IOCPARM_MASK+1];
 
 	uap = (struct a *)u.u_ap;
-	if ((fp = getf(uap->fdes)) == NULL)
-		return;
+	GETF(fp, uap->fdes);
 	if ((fp->f_flag & (FREAD|FWRITE)) == 0) {
 		u.u_error = EBADF;
 		return;
