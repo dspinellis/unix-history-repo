@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)kvm_mkdb.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)kvm_mkdb.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -58,6 +58,7 @@ main(argc, argv)
 	}
 	create_knlist(nlistpath, db);
 	(void)dbm_close(db);
+	(void)strcat(dbtemp, DBM_SUFFIX);
 	if (rename(dbtemp, dbname)) {
 		(void)fprintf(stderr, "kvm_mkdb: %s to %s: %s.\n",
 		    dbtemp, dbname, strerror(errno));
