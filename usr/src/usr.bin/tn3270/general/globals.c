@@ -41,6 +41,12 @@ static	char	sccsid[] = "@(#)globals.c	3.1  10/29/86";
 
 #include	"../general.h"
 
+#if	defined(SLOWSCREEN)
+
+ScreenImage Terminal[MAXSCREENSIZE];
+
+#endif	/* defined(SLOWSCREEN) */
+
 /*
  * init_system()
  *
@@ -55,11 +61,6 @@ init_system()
     OptAlphaInNumeric = OptHome = OptLeftMargin = OptWordWrap = 0;
 
     ClearArray(Host);
-#if	defined(SLOWSCREEN)
-    ClearArray(Terminal);
-#endif	/* defined(SLOWSCREEN) */
-    ClearArray(FieldForward);
-    ClearArray(FieldReverse);
     CursorAddress = BufferAddress = 0;
 
     Lowest = Highest = 0;

@@ -60,13 +60,6 @@ EXTERN int	OptWordWrap;
 #if	defined(INCLUDED_SCREEN)
 EXTERN ScreenImage
 	Host[MAXSCREENSIZE];		/* host view of screen */
-#if	defined(SLOWSCREEN)
-EXTERN ScreenImage
-	Terminal[MAXSCREENSIZE];
-#endif	/* defined(SLOWSCREEN) */
-
-EXTERN char	FieldForward[MAXSCREENSIZE],	/* non-zero for SF, 0..1919 */
-		FieldReverse[MAXSCREENSIZE];	/* non-zero for SF, 1919..0 */
 
 EXTERN char	Orders[256];			/* Non-zero for orders */
 

@@ -63,35 +63,7 @@ register int b;
 }
 
 /*
- * memNIchr(const void *s, int c, size_t n, int and)
- *
- * Like memchr, but the comparison is '((*s)&and) == c'.
- *
- */
-
-unsigned char *
-memNIchr(s, c, n, and)
-char *s;
-int c;
-unsigned int n;
-int and;
-{
-    register unsigned char _c, *_s, _and;
-
-    _and = and;
-    _c = (c&_and);
-    _s = (unsigned char *)s;
-    while (n--) {
-	if (((*_s)&_and) == _c) {
-	    return _s;
-	}
-	_s++;
-    }
-    return 0;
-}
-
-/*
- * memNDchr(const void *s, int c, size_t n, int and)
+ * memNSchr(const void *s, int c, size_t n, int and)
  *
  * Like memchr, but the comparison is '((*s)&and) == c',
  * and we increment our way through s by "stride" ('s += stride').
