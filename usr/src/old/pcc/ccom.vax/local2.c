@@ -1,5 +1,5 @@
 # ifndef lint
-static char *sccsid ="@(#)local2.c	1.19 (Berkeley) %G%";
+static char *sccsid ="@(#)local2.c	1.20 (Berkeley) %G%";
 # endif
 
 # include "pass2.h"
@@ -753,9 +753,32 @@ flshape( p ) register NODE *p; {
 		(p->in.op == OREG && (!R2TEST(p->tn.rval) || tlen(p) == 1)) );
 	}
 
+/* INTEMP shapes must not contain any temporary registers */
 shtemp( p ) register NODE *p; {
+	int r;
+
 	if( p->in.op == STARG ) p = p->in.left;
-	return( p->in.op==NAME || p->in.op ==ICON || p->in.op == OREG || (p->in.op==UNARY MUL && shumul(p->in.left)) );
+
+	switch (p->in.op) {
+	case REG:
+		return( !istreg(p->tn.rval) );
+	case OREG:
+		r = p->tn.rval;
+		if( R2TEST(r) ) {
+			if( istreg(R2UPK1(r)) )
+				return(0);
+			r = R2UPK2(r);
+			}
+		return( !istreg(r) );
+/*
+	case UNARY MUL:
+		p = p->in.left;
+		return( p->in.op != UNARY MUL && shtemp(p) );
+*/
+		}
+
+	if( optype( p->in.op ) != LTYPE ) return(0);
+	return(1);
 	}
 
 shumul( p ) register NODE *p; {
