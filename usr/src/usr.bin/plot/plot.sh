@@ -1,5 +1,5 @@
 #!/bin/sh
-#	@(#)plot.sh	4.2	(Berkeley)	%G%
+#	@(#)plot.sh	4.3	(Berkeley)	%G%
 #
 PATH=/bin:/usr/bin:/usr/ucb
 case $1 in
@@ -14,6 +14,7 @@ case $t in
 -Tver)			exec lpr -Pversatec -g $*;;
 -Tvar)			exec lpr -Pvarian -g $*;;
 -Ttek|-T4014|-T)	exec tek $* ;;
+-T4013)			exec t4013 $* ;;
 -Tbitgraph|-Tbg)	exec bgplot $*;;
 -Tgigi|-Tvt125)		exec gigiplot $*;;
 -Taed)			exec aedplot $*;;
