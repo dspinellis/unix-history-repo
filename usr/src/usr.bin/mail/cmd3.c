@@ -9,7 +9,7 @@
  * Still more user commands.
  */
 
-static char *SccsId = "@(#)cmd3.c	1.12 %G%";
+static char *SccsId = "@(#)cmd3.c	1.13 %G%";
 
 /*
  * Process a shell escape by saving signals, ignoring signals,
@@ -30,12 +30,12 @@ shell(str)
 	if ((Shell = value("SHELL")) == NOSTR)
 		Shell = SHELL;
 	for (t = 2; t < 4; t++)
-		sig[t-2] = signal(t, SIG_IGN);
+		sig[t-2] = sigset(t, SIG_IGN);
 	t = vfork();
 	if (t == 0) {
 		for (t = 2; t < 4; t++)
 			if (sig[t-2] != SIG_IGN)
-				signal(t, SIG_DFL);
+				sigsys(t, SIG_DFL);
 		execl(Shell, Shell, "-c", cmd, 0);
 		perror(Shell);
 		_exit(1);
@@ -45,7 +45,7 @@ shell(str)
 	if (t == -1)
 		perror("fork");
 	for (t = 2; t < 4; t++)
-		signal(t, sig[t-2]);
+		sigset(t, sig[t-2]);
 	printf("!\n");
 	return(0);
 }
@@ -63,12 +63,12 @@ dosh(str)
 	if ((Shell = value("SHELL")) == NOSTR)
 		Shell = SHELL;
 	for (t = 2; t < 4; t++)
-		sig[t-2] = signal(t, SIG_IGN);
+		sig[t-2] = sigset(t, SIG_IGN);
 	t = vfork();
 	if (t == 0) {
 		for (t = 2; t < 4; t++)
 			if (sig[t-2] != SIG_IGN)
-				signal(t, SIG_DFL);
+				sigsys(t, SIG_DFL);
 		execl(Shell, Shell, 0);
 		perror(Shell);
 		_exit(1);
@@ -78,7 +78,7 @@ dosh(str)
 	if (t == -1)
 		perror("fork");
 	for (t = 2; t < 4; t++)
-		signal(t, sig[t-2]);
+		sigsys(t, sig[t-2]);
 	putchar('\n');
 	return(0);
 }
