@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)kpasswdd.c	1.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)kpasswdd.c	1.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -96,7 +96,7 @@ main()
 
 
 	if (rval != KSUCCESS) {
-		syslog(LOG_ERR, "krb_recvauth: %s", krb_err_txt[rval]);
+		syslog(LOG_NOTICE, "krb_recvauth: %s", krb_err_txt[rval]);
 		cleanup();
 		exit(1);
 	}
@@ -168,7 +168,7 @@ main()
 	random_key(kpwd_data.random_key);
 	strcpy(kpwd_data.secure_msg, SECURE_STRING);
 	if (des_write(0, &kpwd_data, sizeof(kpwd_data)) != sizeof(kpwd_data)) {
-		syslog(LOG_ERR, "error writing initial data");
+		syslog(LOG_NOTICE, "error writing initial data");
 		cleanup();
 		exit(1);
 	}
@@ -181,7 +181,7 @@ main()
 	key_sched(kpwd_data.random_key, random_sched);
 	des_set_key(kpwd_data.random_key, random_sched);
 	if (des_read(0, &ud_data, sizeof(ud_data)) != sizeof(ud_data)) {
-		syslog(LOG_ERR, "update aborted");
+		syslog(LOG_NOTICE, "update aborted");
 		cleanup();
 		exit(1);
 	}
@@ -242,7 +242,7 @@ send_ack(remote, msg)
 	int	cc;
 	cc = des_write(remote, msg, strlen(msg) + 1);
 	if (cc <= 0) {
-		syslog(LOG_ERR, "error writing ack");
+		syslog(LOG_NOTICE, "error writing ack");
 		cleanup();
 		exit(1);
 	}
