@@ -1,6 +1,19 @@
 
-	@(#)README	5.1 (Berkeley) %G%
+	@(#)README	5.2 (Berkeley) %G%
 
+Compress version 3.2 enhancements:
+
+    	(a) portability mods for Z8000 and PC/XT
+	(b) default to 'quiet' mode
+	(c) unification of 'force' flags
+	(d) multi-file bug fix for USERMEM code
+	(e) decompress() speedup (5-10%)
+	(f) manual page overhaul
+
+This is the baseline for both BSD 4.3 and netnews 2.10.3 from Rick Adams.
+
+	--jaw  (June 7, 1985)
+-----
 Enclosed is compress version 3.0 with the following changes:
 
 1.	"Block" compression is performed.  After the BITS run out, the
@@ -51,7 +64,7 @@ memory: at least		BITS		cutoff
 The default memory size is 750,000 which gives a maximum BITS=16 and no
 large+fast table.
 
-The maximum bits can be overrulled by specifying "-DBITS=bits" at
+The maximum bits can be overruled by specifying "-DBITS=bits" at
 compilation time.
 
 If your machine doesn't support unsigned characters, define "NO_UCHAR" 
@@ -106,7 +119,7 @@ Here is the README file from the previous version of compress (2.0):
 >		The bug was in the different byte/bit ordering on the
 >		various machines.  This has been fixed.
 >
->		This version is NOT compatible with the original vax posting
+>		This version is NOT compatable with the original vax posting
 >		unless the '-DCOMPATIBLE' option is specified to the C
 >		compiler.  The original posting has a bug which I fixed, 
 >		causing incompatible files.  I recommend you NOT to use this
