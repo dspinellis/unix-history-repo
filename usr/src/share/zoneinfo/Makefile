@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 
 # Change the line below for your time zone (after finding the zone you want in
 # the time zone files, or adding it to a time zone file).
@@ -138,7 +138,7 @@ install: ${MAN} $(DATA) $(REDO)
 	(cd ${.CURDIR}/datfiles; \
 	    ../obj/zic -d $(TZDIR) -p $(POSIXRULES))
 	install -c -o ${BINOWN} -g ${BINGRP} -m 444 tzfile.0 \
-	    ${DESTDIR}/usr/man/cat5
+	    ${DESTDIR}/usr/share/man/cat5
 	install -c -o ${BINOWN} -g ${BINGRP} -m 444 \
 	    ${TZDIR}/${LOCALTIME} ${DESTDIR}/etc/localtime
 	chown -R ${BINOWN}.${BINGRP} $(TZDIR)
