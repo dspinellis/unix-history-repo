@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	8.4 (Berkeley) %G%
+ *	@(#)vfs_subr.c	8.5 (Berkeley) %G%
  */
 
 /*
@@ -210,7 +210,7 @@ getnewvnode(tag, mp, vops, vpp)
 	int (**vops)();
 	struct vnode **vpp;
 {
-	register struct vnode *vp, *vq;
+	register struct vnode *vp;
 	int s;
 
 	if ((vnode_free_list.tqh_first == NULL &&
@@ -268,7 +268,6 @@ insmntque(vp, mp)
 	register struct vnode *vp;
 	register struct mount *mp;
 {
-	register struct vnode *vq;
 
 	/*
 	 * Delete from old mount point vnode list, if on one.
@@ -382,7 +381,6 @@ bgetvp(vp, bp)
 	register struct vnode *vp;
 	register struct buf *bp;
 {
-	register struct vnode *vq;
 
 	if (bp->b_vp)
 		panic("bgetvp: not free");
@@ -551,7 +549,6 @@ vget(vp, lockflag)
 	register struct vnode *vp;
 	int lockflag;
 {
-	register struct vnode *vq;
 
 	if (vp->v_flag & VXLOCK) {
 		vp->v_flag |= VXWANT;
