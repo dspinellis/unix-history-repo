@@ -1,8 +1,10 @@
-/*	autoconf.c	4.14	81/02/26	*/
+/*	autoconf.c	4.15	81/02/26	*/
 
 /*
  * Configure the system for the current machine.
  */
+
+#include "mba.h"
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -23,7 +25,9 @@ int	cold;
 int	nexnum;		/* current nexus number */
 int	dkn;		/* number of dk numbers assigned so far */
 
+#if NMBA > 0
 int	(*mbaintv[4])() =	{ Xmba0int, Xmba1int, Xmba2int, Xmba3int };
+#endif
 #if VAX780
 int	(*ubaintv[4])() =	{ Xua0int, Xua1int, Xua2int, Xua3int };
 caddr_t	umaddr780[4] = {
@@ -32,7 +36,12 @@ caddr_t	umaddr780[4] = {
 };
 #endif
 
-int	c780(), c750();
+#if VAX780
+int	c780();
+#endif
+#if VAX750
+int	c750();
+#endif
 
 struct percpu percpu[] = {
 #if VAX780
@@ -97,6 +106,7 @@ c780(pcpu)
 		switch (nexcsr.nex_type) {
 
 		case NEX_MBA:
+#if NMBA > 0
 			if (nummba >= 4) {
 				printf("5 mba's");
 				goto unsupp;
@@ -104,7 +114,10 @@ c780(pcpu)
 			printf("mba%d at tr%d\n", nummba, nexnum);
 			mbafind(nxv, nxp);
 			nummba++;
-			break;
+#else
+			printf("mba's");
+			goto unsupp;
+#endif
 
 		case NEX_UBA0:
 		case NEX_UBA1:
@@ -172,7 +185,8 @@ c750(pcpu)
 
 	printf("mcr at %x\n", MCR_750);
 	nxaccess((caddr_t)MCR_750, Nexmap[nexnum]);
-	mcraddr[nmcr++] = nxv;
+	mcraddr[nmcr++] = (struct mcr *)nxv;
+#if NMBA > 0
 	for (nexnum = 0; nexnum < NNEX750; nexnum++, nxp++, nxv++) {
 		nxaccess((caddr_t)nxp, Nexmap[nexnum]);
 		if (badaddr((caddr_t)nxv, 4))
@@ -181,6 +195,7 @@ c750(pcpu)
 		mbafind(nxv, nxp);
 		nummba++;
 	}
+#endif
 	printf("uba at %x\n", nxp);
 	nxaccess((caddr_t)nxp, Nexmap[nexnum++]);
 	unifind((struct uba_regs *)nxv++, (struct uba_regs *)nxp,
@@ -189,6 +204,7 @@ c750(pcpu)
 }
 #endif
 
+#if NMBA > 0
 /*
  * Find devices attached to a particular mba
  * and look for each device found in the massbus
@@ -283,6 +299,7 @@ found:
 		(*mi->mi_driver->md_dkinit)(mi);
 	}
 }
+#endif
 
 /*
  * Fixctlrmask fixes the masks of the driver ctlr routines
