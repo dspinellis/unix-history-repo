@@ -1,5 +1,5 @@
 #
-#	@(#)Makefile	4.3 %G%
+#	@(#)Makefile	4.4 %G%
 #
 DESTDIR =
 SRCS = \

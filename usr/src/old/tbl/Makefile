@@ -1,18 +1,36 @@
-#	Makefile	4.2	87/05/31
+#
+# Copyright (c) 1987 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	@(#)Makefile	4.3	(Berkeley)	%G%
+#
+CFLAGS=	-O
+LIBC=	/lib/libc.a
+SRCS=	t0.c t1.c t2.c t3.c t4.c t5.c t6.c t7.c t8.c t9.c tb.c tc.c te.c \
+	tf.c tg.c ti.c tm.c ts.c tt.c tu.c tv.c
+OBJS=	t0.o t1.o t2.o t3.o t4.o t5.o t6.o t7.o t8.o t9.o tb.o tc.o te.o \
+	tf.o tg.o ti.o tm.o ts.o tt.o tu.o tv.o
 
-CFLAGS=-O
-o = t0.o t1.o t2.o t3.o t4.o t5.o t6.o t7.o t8.o t9.o\
-    tb.o tc.o te.o tf.o tg.o ti.o tm.o ts.o tt.o tu.o tv.o
+all: tbl
 
-tbl :	$o
-	$(CC) $o -o tbl
-$o :	t..c
+tbl: ${OBJS} ${LIBC}
+	${CC} -o $@ ${CFLAGS} ${OBJS}
 
-install: 
-	install -s tbl $(DESTDIR)/usr/bin
+clean: FRC
+	rm -f ${OBJS} core tbl
 
-clean :
-	rm -f *.o
+depend: FRC
+	mkdep ${CFLAGS} ${SRCS}
+
+install: FRC
+	install -s -o bin -g bin -m 755 tbl ${DESTDIR}/usr/bin/tbl
+
+lint: FRC
+	lint ${CFLAGS} ${SRCS}
+
+tags: FRC
+	ctags ${SRCS}
 
 test:
 	sh compr sample01
@@ -64,10 +82,35 @@ test:
 	sh compr sample47
 	sh compnr sample48
 	sh compeq /usr/doc/mel/tables
+
 ichk: /usr/bin/tbl
 	/usr/bin/tbl sample1 >junk1
 	cmp -s junk1 out1
-comp: tbl
-	cmp -s tbl /usr/bin/tbl
+FRC:
 
-depend:
+# DO NOT DELETE THIS LINE -- mkdep uses it.
+# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
+
+t0.o: t0.c t..c /usr/include/stdio.h /usr/include/ctype.h
+t1.o: t1.c t..c /usr/include/stdio.h /usr/include/ctype.h /usr/include/signal.h
+t2.o: t2.c t..c /usr/include/stdio.h /usr/include/ctype.h
+t3.o: t3.c t..c /usr/include/stdio.h /usr/include/ctype.h
+t4.o: t4.c t..c /usr/include/stdio.h /usr/include/ctype.h
+t5.o: t5.c t..c /usr/include/stdio.h /usr/include/ctype.h
+t6.o: t6.c t..c /usr/include/stdio.h /usr/include/ctype.h
+t7.o: t7.c t..c /usr/include/stdio.h /usr/include/ctype.h
+t8.o: t8.c t..c /usr/include/stdio.h /usr/include/ctype.h
+t9.o: t9.c t..c /usr/include/stdio.h /usr/include/ctype.h
+tb.o: tb.c t..c /usr/include/stdio.h /usr/include/ctype.h
+tc.o: tc.c t..c /usr/include/stdio.h /usr/include/ctype.h
+te.o: te.c t..c /usr/include/stdio.h /usr/include/ctype.h
+tf.o: tf.c t..c /usr/include/stdio.h /usr/include/ctype.h
+tg.o: tg.c t..c /usr/include/stdio.h /usr/include/ctype.h
+ti.o: ti.c t..c /usr/include/stdio.h /usr/include/ctype.h
+tm.o: tm.c t..c /usr/include/stdio.h /usr/include/ctype.h
+ts.o: ts.c
+tt.o: tt.c t..c /usr/include/stdio.h /usr/include/ctype.h
+tu.o: tu.c t..c /usr/include/stdio.h /usr/include/ctype.h
+tv.o: tv.c t..c /usr/include/stdio.h /usr/include/ctype.h
+
+# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
