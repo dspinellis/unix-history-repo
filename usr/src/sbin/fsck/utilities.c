@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	8.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -213,7 +213,7 @@ ckfini(markclean)
 	int markclean;
 {
 	register struct bufarea *bp, *nbp;
-	int cnt = 0;
+	int ofsmodified, cnt = 0;
 
 	if (fswritefd < 0) {
 		(void)close(fsreadfd);
@@ -239,11 +239,13 @@ ckfini(markclean)
 		errx(EEXIT, "Panic: lost %d buffers", bufhead.b_size - cnt);
 	pbp = pdirbp = (struct bufarea *)0;
 	if (markclean && sblock.fs_clean == 0) {
-		if (debug)
-			pwarn("MARKING FILE SYSTEM CLEAN\n");
 		sblock.fs_clean = 1;
 		sbdirty();
+		ofsmodified = fsmodified;
 		flush(fswritefd, &sblk);
+		fsmodified = ofsmodified;
+		if (!preen)
+			printf("\n***** FILE SYSTEM MARKED CLEAN *****\n");
 	}
 	if (debug)
 		printf("cache missed %ld of %ld (%d%%)\n", diskreads,
