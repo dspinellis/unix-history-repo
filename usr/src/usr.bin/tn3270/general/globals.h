@@ -105,3 +105,9 @@ EXTERN OIA OperatorInformationArea;
 EXTERN int oia_modified;		/* Has the oia been modified */
 
 #endif	/* defined(INCLUDED_OIA) */
+
+#if	defined(INCLUDED_ASTOSC)
+
+EXTERN	struct astosc astosc[256];
+
+#endif	/* defined(INCLUDED_ASTOSC) */
