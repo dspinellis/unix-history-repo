@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)paste.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)paste.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -115,18 +115,20 @@ parallel(argv)
 	}
 
 	for (opencnt = cnt; opencnt;) {
-		for (cnt = -1, output = 0, lp = head; lp; lp = lp->next) {
+		for (output = 0, lp = head; lp; lp = lp->next) {
 			if (!lp->fp) {
-				if (cnt == -1)
-					cnt = 0;
+				if (output && lp->cnt &&
+				    (ch = delim[(lp->cnt - 1) % delimcnt]))
+					putchar(ch);
 				continue;
 			}
 			if (!fgets(buf, sizeof(buf), lp->fp)) {
 				if (!--opencnt)
 					break;
 				lp->fp = NULL;
-				if (cnt == -1)
-					cnt = 0;
+				if (output && lp->cnt &&
+				    (ch = delim[(lp->cnt - 1) % delimcnt]))
+					putchar(ch);
 				continue;
 			}
 			if (!(p = index(buf, '\n'))) {
@@ -136,12 +138,17 @@ parallel(argv)
 				exit(1);
 			}
 			*p = '\0';
-			if (cnt == -1)
-				cnt = 0;
-			else for (; cnt < lp->cnt; ++cnt)
-				if (ch = delim[cnt % delimcnt])
-					putchar(ch);
-			output = 1;
+			/*
+			 * make sure that we don't print any delimiters
+			 * unless there's a non-empty file.
+			 */
+			if (!output) {
+				output = 1;
+				for (cnt = 0; cnt < lp->cnt; ++cnt)
+					if (ch = delim[cnt % delimcnt])
+						putchar(ch);
+			} else if (ch = delim[(lp->cnt - 1) % delimcnt])
+				putchar(ch);
 			(void)printf("%s", buf);
 		}
 		if (output)
