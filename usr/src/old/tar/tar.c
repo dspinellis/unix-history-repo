@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)tar.c	4.10 (Berkeley) 82/09/11";
+static	char *sccsid = "@(#)tar.c	4.11 (Berkeley) 82/10/20";
 
 /*
  * Tape Archival Program
@@ -54,6 +54,7 @@ int	oflag;
 int	pflag;
 int	wflag;
 int	hflag;
+int	Bflag;
 
 int	mt;
 int	term;
@@ -179,6 +180,10 @@ char	*argv[];
 			hflag++;
 			break;
 
+		case 'B':
+			Bflag++;
+			break;
+
 		default:
 			fprintf(stderr, "tar: %c: unknown option\n", *cp);
 			usage();
@@ -234,7 +239,7 @@ char	*argv[];
 usage()
 {
 	fprintf(stderr,
-"tar: usage  tar -{txru}[cvfblmh] [tapefile] [blocksize] file1 file2...\n");
+"tar: usage  tar -{txruB}[cvfblmh] [tapefile] [blocksize] file1 file2...\n");
 	done(1);
 }
 
@@ -963,7 +968,7 @@ readtape(buffer)
 	register int i;
 
 	if (recno >= nblock || first == 0) {
-		if ((i = read(mt, tbuf, TBLOCK*nblock)) < 0) {
+		if ((i = bread(mt, tbuf, TBLOCK*nblock)) < 0) {
 			fprintf(stderr, "Tar: tape read error\n");
 			done(3);
 		}
@@ -1039,4 +1044,26 @@ copy(to, from)
 	do {
 		*to++ = *from++;
 	} while (--i);
+}
+
+bread(fd, buf, size)
+	int fd;
+	char *buf;
+	int size;
+{
+	int count;
+	static int lastread = 0;
+
+	if (!Bflag)
+		return (read(fd, buf, size));
+	for (count = 0; count < size; count += lastread) {
+		if (lastread < 0) {
+			if (count > 0)
+				return (count);
+			return (lastread);
+		}
+		lastread = read(fd, buf, size - count);
+		buf += lastread;
+	}
+	return (count);
 }
