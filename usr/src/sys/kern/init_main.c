@@ -1,4 +1,4 @@
-/*	init_main.c	4.36	82/09/04	*/
+/*	init_main.c	4.37	82/09/06	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -102,15 +102,23 @@ main(firstaddr)
 	if (fs == 0)
 		panic("iinit");
 	bcopy("/", fs->fs_fsmnt, 2);
+
+/* initialize wall clock */
 	clockinit(fs->fs_time);
 	boottime = time;
 
+/* kick off timeout driven events by calling first time */
+	roundrobin();
+	schedcpu();
+	schedpaging();
+
+/* set up the root file system */
 	rootdir = iget(rootdev, fs, (ino_t)ROOTINO);
 	iunlock(rootdir);
 	u.u_cdir = iget(rootdev, fs, (ino_t)ROOTINO);
 	iunlock(u.u_cdir);
-
 	u.u_rdir = NULL;
+
 	u.u_dmap = zdmap;
 	u.u_smap = zdmap;
 
