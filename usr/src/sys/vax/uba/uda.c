@@ -86,15 +86,24 @@ struct size {
 	0,	0,		/* F=blk 412490 thru end */
 	-1,	25916,		/* G=blk 49324 thru 131403 */
 	0,	0,		/* H=blk 131404 thru end */
-}, ra53_sizes[8] = {
-	15884,	0,
-	33440,	15884,
-	-1,	0,
-	0,	0,
-	33440,	0,
-	-1,	33440,
-	-1,	15884,
-	-1,	49324,
+}, rd52_sizes[8] = {
+	15884,	0,		/* A=blk 0 thru 15883 */
+	9766,	15884,		/* B=blk 15884 thru 25649 */
+	-1,	0,		/* C=blk 0 thru end */
+	0,	0,		/* D=unused */
+	0,	0,		/* E=unused */
+	0,	0,		/* F=unused */
+	-1,	25650,		/* G=blk 25650 thru end */
+	0,	0,		/* H=unused */
+}, rd53_sizes[8] = {
+	15884,	0,		/* A=blk 0 thru 15883 */
+	33440,	15884,		/* B=blk 15884 thru 49323 */
+	-1,	0,		/* C=blk 0 thru end */
+	0,	0,		/* D=unused */
+	33440,	0,		/* E=blk 0 thru 33439 */
+	-1,	33440,		/* F=blk 33440 thru end */
+	-1,	49324,		/* G=blk 49324 thru end */
+	-1,	15884,		/* H=blk 15884 thru end */
 }, ra60_sizes[8] = {
 	15884,	0,		/* A=sectors 0 thru 15883 */
 	33440,	15884,		/* B=sectors 15884 thru 49323 */
@@ -925,8 +934,11 @@ udrsp(um, ud, sc, i)
 			case    25:
 				ra_info[ui->ui_unit].ra_sizes = ra25_sizes;
 				break;
+			case    52:
+				ra_info[ui->ui_unit].ra_sizes = rd52_sizes;
+				break;
 			case    53:
-				ra_info[ui->ui_unit].ra_sizes = ra53_sizes;
+				ra_info[ui->ui_unit].ra_sizes = rd53_sizes;
 				break;
 			case    60:
 				ra_info[ui->ui_unit].ra_sizes = ra60_sizes;
