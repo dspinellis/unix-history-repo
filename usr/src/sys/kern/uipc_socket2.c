@@ -1,4 +1,4 @@
-/*	uipc_socket2.c	4.15	81/12/12	*/
+/*	uipc_socket2.c	4.16	81/12/19	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -257,6 +257,10 @@ sbappend(sb, m)
 		np = &n->m_next;
 	}
 	while (m) {
+		if (m->m_len == 0 && (int)m->m_act == 0) {
+			m = m->m_next;
+			continue;
+		}
 		if (n && n->m_off <= MMAXOFF && m->m_off <= MMAXOFF &&
 		   (int)n->m_act == 0 && (int)m->m_act == 0 &&
 		   (n->m_off + n->m_len + m->m_len) <= MMAXOFF) {
@@ -325,7 +329,8 @@ sbflush(sb)
 
 	if (sb->sb_flags & SB_LOCK)
 		panic("sbflush");
-	sbdrop(sb, sb->sb_cc);
+	if (sb->sb_cc)
+		sbdrop(sb, sb->sb_cc);
 	if (sb->sb_cc || sb->sb_mbcnt || sb->sb_mb)
 		panic("sbflush 2");
 }
@@ -355,3 +360,18 @@ sbdrop(sb, len)
 	}
 	sb->sb_mb = m;
 }
+
+/*
+printm(m)
+	struct mbuf *m;
+{
+
+	printf("<");
+	while (m) {
+		printf("%d,", m->m_len);
+		m = m->m_next;
+	}
+	printf(">");
+	printf("\n");
+}
+*/
