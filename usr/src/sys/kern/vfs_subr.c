@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	8.6.1.1 (Berkeley) %G%
+ *	@(#)vfs_subr.c	8.7 (Berkeley) %G%
  */
 
 /*
@@ -23,6 +23,8 @@
 #include <sys/buf.h>
 #include <sys/errno.h>
 #include <sys/malloc.h>
+#include <sys/domain.h>
+#include <sys/mbuf.h>
 
 #include <vm/vm.h>
 #include <sys/sysctl.h>
@@ -273,6 +275,7 @@ newnodes++;
 	if (printcnt-- > 0) vprint("getnewvnode got", vp);
 	return (0);
 }
+
 /*
  * Move a vnode from one mount queue to another.
  */
@@ -690,8 +693,10 @@ void holdrele(vp)
  * system error). If MNT_FORCE is specified, detach any active vnodes
  * that are found.
  */
+#ifdef DIAGNOSTIC
 int busyprt = 0;	/* print out busy vnodes */
 struct ctldebug debug1 = { "busyprt", &busyprt };
+#endif
 
 vflush(mp, skipvp, flags)
 	struct mount *mp;
@@ -748,8 +753,10 @@ loop:
 			}
 			continue;
 		}
+#ifdef DIAGNOSTIC
 		if (busyprt)
 			vprint("vflush: busy vnode", vp);
+#endif
 		busy++;
 	}
 	if (busy)
@@ -1136,4 +1143,190 @@ again:
 
 	*sizep = bp - where;
 	return (0);
+}
+
+/*
+ * Check to see if a filesystem is mounted on a block device.
+ */
+int
+vfs_mountedon(vp)
+	register struct vnode *vp;
+{
+	register struct vnode *vq;
+
+	if (vp->v_specflags & SI_MOUNTEDON)
+		return (EBUSY);
+	if (vp->v_flag & VALIASED) {
+		for (vq = *vp->v_hashchain; vq; vq = vq->v_specnext) {
+			if (vq->v_rdev != vp->v_rdev ||
+			    vq->v_type != vp->v_type)
+				continue;
+			if (vq->v_specflags & SI_MOUNTEDON)
+				return (EBUSY);
+		}
+	}
+	return (0);
+}
+
+/*
+ * Build hash lists of net addresses and hang them off the mount point.
+ * Called by ufs_mount() to set up the lists of export addresses.
+ */
+static int
+vfs_hang_addrlist(mp, nep, argp)
+	struct mount *mp;
+	struct netexport *nep;
+	struct export_args *argp;
+{
+	register struct netcred *np;
+	register struct radix_node_head *rnh;
+	register int i;
+	struct radix_node *rn;
+	struct sockaddr *saddr, *smask = 0;
+	struct domain *dom;
+	int error;
+
+	if (argp->ex_addrlen == 0) {
+		if (mp->mnt_flag & MNT_DEFEXPORTED)
+			return (EPERM);
+		np = &nep->ne_defexported;
+		np->netc_exflags = argp->ex_flags;
+		np->netc_anon = argp->ex_anon;
+		np->netc_anon.cr_ref = 1;
+		mp->mnt_flag |= MNT_DEFEXPORTED;
+		return (0);
+	}
+	i = sizeof(struct netcred) + argp->ex_addrlen + argp->ex_masklen;
+	np = (struct netcred *)malloc(i, M_NETADDR, M_WAITOK);
+	bzero((caddr_t)np, i);
+	saddr = (struct sockaddr *)(np + 1);
+	if (error = copyin(argp->ex_addr, (caddr_t)saddr, argp->ex_addrlen))
+		goto out;
+	if (saddr->sa_len > argp->ex_addrlen)
+		saddr->sa_len = argp->ex_addrlen;
+	if (argp->ex_masklen) {
+		smask = (struct sockaddr *)((caddr_t)saddr + argp->ex_addrlen);
+		error = copyin(argp->ex_addr, (caddr_t)smask, argp->ex_masklen);
+		if (error)
+			goto out;
+		if (smask->sa_len > argp->ex_masklen)
+			smask->sa_len = argp->ex_masklen;
+	}
+	i = saddr->sa_family;
+	if ((rnh = nep->ne_rtable[i]) == 0) {
+		/*
+		 * Seems silly to initialize every AF when most are not
+		 * used, do so on demand here
+		 */
+		for (dom = domains; dom; dom = dom->dom_next)
+			if (dom->dom_family == i && dom->dom_rtattach) {
+				dom->dom_rtattach((void **)&nep->ne_rtable[i],
+					dom->dom_rtoffset);
+				break;
+			}
+		if ((rnh = nep->ne_rtable[i]) == 0) {
+			error = ENOBUFS;
+			goto out;
+		}
+	}
+	rn = (*rnh->rnh_addaddr)((caddr_t)saddr, (caddr_t)smask, rnh,
+		np->netc_rnodes);
+	if (rn == 0 || np != (struct netcred *)rn) { /* already exists */
+		error = EPERM;
+		goto out;
+	}
+	np->netc_exflags = argp->ex_flags;
+	np->netc_anon = argp->ex_anon;
+	np->netc_anon.cr_ref = 1;
+	return (0);
+out:
+	free(np, M_NETADDR);
+	return (error);
+}
+
+/* ARGSUSED */
+static int
+vfs_free_netcred(rn, w)
+	struct radix_node *rn;
+	caddr_t w;
+{
+	register struct radix_node_head *rnh = (struct radix_node_head *)w;
+
+	(*rnh->rnh_deladdr)(rn->rn_key, rn->rn_mask, rnh);
+	free((caddr_t)rn, M_NETADDR);
+	return (0);
+}
+	
+/*
+ * Free the net address hash lists that are hanging off the mount points.
+ */
+static void
+vfs_free_addrlist(nep)
+	struct netexport *nep;
+{
+	register int i;
+	register struct radix_node_head *rnh;
+
+	for (i = 0; i <= AF_MAX; i++)
+		if (rnh = nep->ne_rtable[i]) {
+			(*rnh->rnh_walktree)(rnh, vfs_free_netcred,
+			    (caddr_t)rnh);
+			free((caddr_t)rnh, M_RTABLE);
+			nep->ne_rtable[i] = 0;
+		}
+}
+
+int
+vfs_export(mp, nep, argp)
+	struct mount *mp;
+	struct netexport *nep;
+	struct export_args *argp;
+{
+	int error;
+
+	if (argp->ex_flags & MNT_DELEXPORT) {
+		vfs_free_addrlist(nep);
+		mp->mnt_flag &= ~(MNT_EXPORTED | MNT_DEFEXPORTED);
+	}
+	if (argp->ex_flags & MNT_EXPORTED) {
+		if (error = vfs_hang_addrlist(mp, nep, argp))
+			return (error);
+		mp->mnt_flag |= MNT_EXPORTED;
+	}
+	return (0);
+}
+
+struct netcred *
+vfs_export_lookup(mp, nep, nam)
+	register struct mount *mp;
+	struct netexport *nep;
+	struct mbuf *nam;
+{
+	register struct netcred *np;
+	register struct radix_node_head *rnh;
+	struct sockaddr *saddr;
+
+	np = NULL;
+	if (mp->mnt_flag & MNT_EXPORTED) {
+		/*
+		 * Lookup in the export list first.
+		 */
+		if (nam != NULL) {
+			saddr = mtod(nam, struct sockaddr *);
+			rnh = nep->ne_rtable[saddr->sa_family];
+			if (rnh != NULL) {
+				np = (struct netcred *)
+					(*rnh->rnh_matchaddr)((caddr_t)saddr,
+							      rnh);
+				if (np && np->netc_rnodes->rn_flags & RNF_ROOT)
+					np = NULL;
+			}
+		}
+		/*
+		 * If no address match, use the default if it exists.
+		 */
+		if (np == NULL && mp->mnt_flag & MNT_DEFEXPORTED)
+			np = &nep->ne_defexported;
+	}
+	return (np);
 }
