@@ -1,38 +1,62 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1980, 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@%G
+.\" %sccs.include.redist.man%
 .\"
-.TH MAKE_KEYPAIR 8
-.UC 4
-.SH NAME
-make_keypair
-.SH SYNOPSIS
-.B make_keypair hostname [ hostname ... ] \- generate Kerberos host key pair
-.SH DESCRIPTION
+.\"     @(#)make_keypair.8	1.2 (Berkeley) %G%
+.\"
+.Dd 
+.Dt MAKE_KEYPAIR 8
+.Os
+.Sh NAME
+.Nm make_keypair
+.Nd generate Kerberos host key pair
+.Sh SYNOPSIS
+.Nm make_keypair
+.Ar hostname
+.Op Ar hostname ...
+.Sh DESCRIPTION
 The
-.I make_keypair
+.Nm make_keypair
 command
-is used to create pairs of DES keys for
-each host.
+is used to create pairs of
+.Tn DES
+keys for
+each
+.Ar hostname .
 The keys are used by priviledged programs such as
-.IR register (1)
+.Xr register 1
 to make remote updates to the Kerberos database without
-having to have first acquired a Kerberos ticket granting ticket (TGT).
+having to have first acquired a Kerberos ticket granting ticket
+.Pq Tn TGT .
 The keys created by
-.I make_keypair
+.Nm make_keypair
 are placed (by hand) in the filesystems of the
-kerberos server in /etc/kerberosIV/register_keys,
+kerberos server in
+.Pa /etc/kerberosIV/register_keys ,
 and in the root directory on the clients.
-For example, the file /.update.key128.32.130.3 would
+For example, the file
+.Pa /.update.key128.32.130.3
+would
 contain a copy of the key on the client with
 IP address 128.32.130.3.
 These keys provide a shared secret which may be used to establish
 a secure channel between the client hosts and the Kerberos server.
-.SH FILES
-.br
-/.update.keyxx.xx.xx.xx         shared DES key with server
-/etc/kerberosIV/register_keys	server's key storage directory
-.SH "SEE ALSO"
-register(1), registerd(8), kerberos(1)
+.Sh FILES
+.Bl -tag -width /etc/kerberosIV/register_keysxx -compact
+.It Pa /.update.keyxx.xx.xx.xx
+shared
+.Tn DES
+key with server
+.It Pa /etc/kerberosIV/register_keys
+server's key storage directory
+.El
+.Sh SEE ALSO
+.Xr register 1 ,
+.Xr registerd 8 ,
+.Xr kerberos 1
+.Sh HISTORY
+The
+.Nm
+command
+.Ud
