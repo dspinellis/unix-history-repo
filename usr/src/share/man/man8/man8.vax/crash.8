@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)crash.8	4.1 (Berkeley) %G%
+.\"	@(#)crash.8	5.1 (Berkeley) %G%
 .\"
-.TH CRASH 8 9/1/81
+.TH CRASH 8V 9/1/81
 .UC 4
 .SH NAME
 crash \- what happens when the system crashes
@@ -36,27 +36,27 @@ you are likely to encounter, with some hints as to causes.
 Left unstated in all cases is the possibility that hardware or software
 error produced the message in some unexpected way.
 .TP
-IO err in push
+.B IO err in push
 .ns
 .TP
-hard IO err in swap
+.B hard IO err in swap
 The system encountered an error trying to write to the paging device
 or an error in reading critical information from a disk drive.
 You should fix your disk if it is broken or unreliable.
 .TP
-timeout table overflow
+.B timeout table overflow
 .ns
 This really shouldn't be a panic, but until we fix up the data structure
 involved, running out of entries causes a crash.  If this happens,
 you should make the timeout table bigger.
 .TP
-KSP not valid
+.B KSP not valid
 .ns
 .TP
-SBI fault
+.B SBI fault
 .ns
 .TP
-CHM? in kernel
+.B CHM? in kernel
 These indicate either a serious bug in the system or, more often,
 a glitch or failing hardware.
 If SBI faults recur, check out the hardware or call
@@ -64,17 +64,18 @@ field service.  If the other faults recur, there is likely a bug somewhere
 in the system, although these can be caused by a flakey processor.
 Run processor microdiagnostics.
 .TP
-machine check %x: \fIdescription\fR
+.B machine check %x:
+.I description
 .ns
 .TP
-\0\0\0\fImachine dependent machine-check information\fR
+.I \0\0\0machine dependent machine-check information
 .ns
 We should describe machine checks, and will someday.
 For now, ask someone who knows (like your friendly field service people).
 .TP
-trap type %d, code=%d, pc=%x
+.B trap type %d, code=%d, pc=%x
 A unexpected trap has occurred within the system; the trap types are:
-.PP
+.sp
 .nf
 0	reserved addressing fault
 1	privileged instruction fault
@@ -91,25 +92,23 @@ A unexpected trap has occurred within the system; the trap types are:
 12	page fault
 13	page table fault
 .fi
-.PP
-The favorite trap type in system crashes is trap type 9, indicating
+.sp
+The favorite trap types in system crashes are trap types 8 and 9,
+indicating
 a wild reference.  The code is the referenced address, and the pc at the
 time of the fault is printed.  These problems tend to be easy to track
 down if they are kernel bugs since the processor stops cold, but random
-flakiness seems to cause this sometimes, e.g. we have trapped with
-code 80000800 three times in six months as an instruction fetch went across
-this page boundary in the kernel but have been unable to find any reason
-for this to have happened.
+flakiness seems to cause this sometimes.
 .TP
-init died
+.B init died
 The system initialization process has exited.  This is bad news, as no new
 users will then be able to log in.  Rebooting is the only fix, so the
 system just does it right away.
 .PP
 That completes the list of panic types you are likely to see.
 .PP
-When the system crashes it write (or at least attempts to write)
-a image of the current memory into the back end of the primary swap
+When the system crashes it writes (or at least attempts to write)
+an image of memory into the back end of the primary swap
 area.  After the system is rebooted, the program
 .IR savecore (8)
 runs and preserves a copy of this core image and the current
@@ -118,45 +117,25 @@ system in a specified directory for later perusal.  See
 for details.
 .PP
 To analyze a dump you should begin by running
-.I "ps \-alxk"
-to print the process table at the time of the crash.
-Use
 .IR adb (1)
-to examine
-.IR /vmcore .
-The location
-.I _rpb+0t508
-is the bottom of a stack onto which were pushed the stack pointer
-.BR sp ,
-.B PCBB
-(containing the physical address of a
-.IR u_area ),
-.BR MAPEN ,
-.BR IPL ,
-and registers
-.BR r13 \- r0
-(in that order).
-.BR r13 (fp)
-is the system frame pointer and the stack is used in standard
-.B calls
-format.  Use
-.IR  adb (1)
-to get a reverse calling order.
-In most cases this procedure will give
-an idea of what is wrong.
+with the 
+.B \-k
+flag on the core dump.
+Normally the command
+``*(intstack-4)$c''
+will provide a stack trace from the point of
+the crash and this will provide a clue as to
+what went wrong.
 A more complete discussion
 of system debugging is impossible here.
 See, however,
-.IR analyze (8)
-for some more hints.
+``Using ADB to Debug the UNIX Kernel''.
 .SH "SEE ALSO"
-analyze(8), reboot(8)
+adb(1),
+analyze(8),
+reboot(8)
 .br
 .I "VAX 11/780 System Maintenance Guide"
 for more information about machine checks.
-.SH BUGS
-There should be a better program than
-.IR analyze (8)
-available which prints out more of the system
-state symbolically after a crash to lessen the tedious
-tasks involved in crash analysis.
+.br
+.I "Using ADB to Debug the UNIX Kernel"
