@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_open.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_open.c	5.21 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -120,22 +120,14 @@ slow:			if ((t->bt_rfp = fdopen(rfd, "r")) == NULL)
 			if (fstat(rfd, &sb))
 				goto err;
 			/*
-			 * Kludge -- but we don't know what size an off_t
-			 * is or what size a size_t is, although we do
-			 * know that the former is signed and the latter
-			 * unsigned.
+			 * Kluge -- we'd like to test to see if the file is too
+			 * big to mmap.  Since, we don't know what size or type
+			 * off_t's or size_t's are, what the largest unsigned
+			 * integral type is, or what random insanity the local
+			 * C compiler will perpetrate, doing the comparison in
+			 * a portable way is flatly impossible.  Hope that mmap
+			 * fails if the file is too large.
 			 */
-			if (sizeof(sb.st_size) > sizeof(size_t)) {
-				if (sb.st_size > (off_t)SIZE_T_MAX) {
-					errno = EFBIG;
-					goto err;
-				}
-			} else {
-				if ((size_t)sb.st_size > SIZE_T_MAX) {
-					errno = EFBIG;
-					goto err;
-				}
-			}
 			if (sb.st_size == 0)
 				SET(t, R_EOF);
 			else {
