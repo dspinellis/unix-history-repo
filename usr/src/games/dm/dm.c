@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dm.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)dm.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -73,7 +73,8 @@ static
 play(args)
 	char **args;
 {
-	char pbuf[MAXPATHLEN], *strcpy();
+	extern int errno;
+	char pbuf[MAXPATHLEN], *strcpy(), *strerror();
 
 	(void)strcpy(pbuf, GAMEHIDE);
 	(void)strcpy(pbuf + sizeof(GAMEHIDE) - 1, game);
@@ -81,7 +82,7 @@ play(args)
 		(void)setpriority(PRIO_PROCESS, 0, priority);
 	setgid(getgid());	/* we run setgid kmem; lose it */
 	execv(pbuf, args);
-	perror("dm");
+	(void)fprintf(stderr, "dm: %s: %s\n", pbuf, strerror(errno));
 	exit(1);
 }
 
