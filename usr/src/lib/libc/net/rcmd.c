@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rcmd.c	4.9 %G%";
+static char sccsid[] = "@(#)rcmd.c	4.10 %G%";
 #endif
 
 #include <stdio.h>
@@ -153,14 +153,24 @@ ruserok(rhost, superuser, ruser, luser)
 again:
 	if (hostf) {
 		while (fgets(ahost, sizeof (ahost), hostf)) {
+			register char *p;
 			char *user;
-			if (index(ahost, '\n'))
-				*index(ahost, '\n') = 0;
-			user = index(ahost, ' ');
-			if (user)
-				*user++ = 0;
+
+			p = ahost;
+			while (*p != '\n' && *p != ' ' && *p != '\t' && *p != '\0')
+				p++;
+			if (*p == ' ' || *p == '\t') {
+				*p++ = '\0';
+				while (*p == ' ' || *p == '\t')
+					p++;
+				user = p;
+				while (*p != '\n' && *p != ' ' && *p != '\t' && *p != '\0')
+					p++;
+			} else
+				user = p;
+			*p = '\0';
 			if (!strcmp(rhost, ahost) &&
-			    !strcmp(ruser, user ? user : luser)) {
+			    !strcmp(ruser, *user ? user : luser)) {
 				(void) fclose(hostf);
 				return (0);
 			}
