@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)gethostnamadr.c	6.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)gethostnamadr.c	6.18 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <sys/param.h>
@@ -231,13 +231,49 @@ struct hostent *
 gethostbyname(name)
 	char *name;
 {
+	register char *cp, **domain;
 	int n;
-	querybuf buf;
-	register struct hostent *hp;
+	struct hostent *hp, *gethostdomain();
+	char *hostalias();
 	extern struct hostent *_gethtbyname();
 
+	if (!(_res.options & RES_INIT) && res_init() == -1)
+		return (NULL);
 	errno = 0;
-	n = res_mkquery(QUERY, name, C_IN, T_A, (char *)NULL, 0, NULL,
+	for (cp = name, n = 0; *cp; cp++)
+		if (*cp == '.')
+			n++;
+	if ((n && cp[-1] == '.') || (_res.options & RES_DEFNAMES) == 0) {
+		cp[-1] = 0;
+		hp = gethostdomain(name, (char *)NULL);
+		cp[-1] = '.';
+		return (hp);
+	}
+	if (n == 0 && (cp = hostalias(name)))
+		return (gethostdomain(cp, (char *)NULL));
+	for (domain = _res.dnsrch; *domain; domain++) {
+		hp = gethostdomain(name, *domain);
+		if (hp)
+			return (hp);
+		if (errno == ECONNREFUSED)
+			return (_gethtbyname(name));
+		if (h_errno != HOST_NOT_FOUND ||
+		    (_res.options & RES_DNSRCH) == 0)
+			return (NULL);
+	}
+	return (gethostdomain(name, (char *)NULL));
+}
+
+static struct hostent *
+gethostdomain(name, domain)
+	char *name, *domain;
+{
+	querybuf buf;
+	char nbuf[2*MAXDNAME+2];
+	int n;
+
+	sprintf(nbuf, "%.*s.%.*s", MAXDNAME, name, MAXDNAME, domain);
+	n = res_mkquery(QUERY, nbuf, C_IN, T_A, (char *)NULL, 0, NULL,
 		(char *)&buf, sizeof(buf));
 	if (n < 0) {
 #ifdef DEBUG
@@ -246,10 +282,7 @@ gethostbyname(name)
 #endif
 		return (NULL);
 	}
-	hp = getanswer((char *)&buf, n, 0);
-	if (hp == NULL && errno == ECONNREFUSED)
-		hp = _gethtbyname(name);
-	return(hp);
+	return (getanswer((char *)&buf, n, 0));
 }
 
 struct hostent *
@@ -292,6 +325,27 @@ gethostbyaddr(addr, len, type)
 	return(hp);
 }
 
+char *
+hostalias(name)
+	register char *name;
+{
+	FILE *fp;
+	char *file, *getenv();
+	static char abuf[MAXDNAME];
+	char nbuf[MAXDNAME];
+	int n;
+
+	file = getenv("HOSTALIASES");
+	if (file == NULL || (fp = fopen(file, "r")) == NULL)
+		return (NULL);
+	while ((n = fscanf(fp, "%s %s\n", nbuf, abuf)) != EOF)
+		if (strcmp(nbuf, name) == 0) {
+			fclose(fp);
+			return (abuf);
+		}
+	fclose(fp);
+	return (NULL);
+}
 
 _sethtent(f)
 	int f;
