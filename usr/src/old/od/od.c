@@ -1,8 +1,8 @@
-static char *sccsid = "@(#)od.c	5.9 (Berkeley) %G%";
+static char *sccsid = "@(#)od.c	5.10 (Berkeley) %G%";
 /*
  * od -- octal, hex, decimal, character dump of data in a file.
  *
- * usage:  od [-abBcdDefFhHiIlLopPsvxX] [file] [[+]offset[.][b] [label]]
+ * usage:  od [-abBcdDefFhHiIlLopPs[n]vw[n]xX] [file] [[+]offset[.][b] [label]]
  *
  * where the option flags have the following meaning:
  *   character	object	radix	signed?
@@ -19,23 +19,24 @@ static char *sccsid = "@(#)od.c	5.9 (Berkeley) %G%";
  *	I,l,L	long	 10	yes
  *	o,B	short	  8	 no	(default conversion)
  *	O	long	  8	 no
- *	s	string	 (8)		ASCII graphic strings
+ *	s[n]	string	 (8)		ASCII graphic strings
  *
  *	p				indicate EVEN parity on 'a' conversion
  *	P				indicate ODD parity on 'a' conversion
  *	v				show all data - don't skip like lines.
+ *	w[n]				bytes per display line
  *
  * More than one format character may be given.
  * If {file} is not specified, standard input is read.
  * If {file} is not specified, then {offset} must start with '+'.
- * {Offset} may be HEX (0xnnn), OCTAL (0nn), or decimal (nnn.); the default
- * is the same as the address radix, which will be the same as the first
- * object radix.
+ * {Offset} may be HEX (0xnnn), OCTAL (0nn), or decimal (nnn.).
+ * The default is octal. The same radix will be used to display the address.
  */
 
 #include <stdio.h>
 
-#define DBUF_SIZE      16
+#define DBUF_SIZE	BUFSIZ
+#define BIG_DBUF	32
 #define NO		0
 #define YES		1
 #define EVEN	       -1
@@ -81,13 +82,14 @@ struct dfmt	dble	= {21, sizeof (double), 10,   SIGNED, PADDR,  d_put, 0};
 struct dfmt	string	= { 0,               0,  8,        0,    NO, st_put, 0};
 
 
-char	usage[]	= "usage: od [-abcdfhilopsvx] [file] [[+]offset[.][b] [label]]";
+char	usage[]	="usage: od [-abcdfhilopswvx] [file] [[+]offset[.][b] [label]]";
 char	dbuf[DBUF_SIZE];
 char	lastdbuf[DBUF_SIZE];
-int	addr_base = 8;			/* default address base is OCTAL */
-long	addr;
-long	label = -1L;
-int	_parity = NO;
+int	addr_base	= 8;		/* default address base is OCTAL */
+long	addr		= 0L;		/* current file offset */
+long	label		= -1L;		/* current label; -1 is "off" */
+int	dbuf_size	= 16;		/* file bytes / display line */
+int	_parity		= NO;		/* show parity on ascii bytes */
 char	fmt[]	= "            %s";	/* 12 blanks */
 char	*icvt();
 char	*scvt();
@@ -161,7 +163,6 @@ char	**argv;
 
 	argv++;
 	argc--;
-	max_llen = max_nelm = 0;
 
 	if(argc > 0)
 	{
@@ -232,6 +233,13 @@ char	**argv;
 						d->df_size = MIN_SLEN;
 					showall = YES;
 					continue;
+				case 'w':
+					dbuf_size = 0;
+					while (isdigit(p[1]))
+						dbuf_size = (10 * dbuf_size) + (*++p - '0');
+					if (dbuf_size == 0)
+						dbuf_size = BIG_DBUF;
+					continue;
 				case 'v':
 					showall = YES;
 					continue;
@@ -240,19 +248,6 @@ char	**argv;
 					puts(usage);
 					exit(1);
 				}
-				nelm = DBUF_SIZE / d->df_size;
-				llen = (d->df_field + 1) * nelm;
-				if (llen > max_llen)
-					max_llen = llen;
-				if (nelm > max_nelm)
-					max_nelm = nelm;
-				/*
-				 * nelm will always be a power of 2.
-				 * line length must always be multiple
-				 * of max_nelm.
-				 */
-				nelm = max_nelm - 1;
-				max_llen = (max_llen + nelm) & (~nelm);
 				*(cv++) = d;
 			}
 			argc--;
@@ -264,22 +259,29 @@ char	**argv;
 	 * if nothing spec'd, setup default conversion.
 	 */
 	if(cv == conv_vec)
-	{
 		*(cv++) = &u_s_oct;
-		max_nelm = DBUF_SIZE / u_s_oct.df_size;
-		max_llen = max_nelm * (u_s_oct.df_field + 1);
-	}
+
 	*cv = (struct dfmt *)0;
+
+	/*
+	 * calculate display parameters
+	 */
+	for (cv = conv_vec; d = *cv; cv++)
+	{
+		nelm = (dbuf_size + d->df_size - 1) / d->df_size;
+		llen = nelm * (d->df_field + 1);
+		if (llen > max_llen)
+			max_llen = llen;
+	}
 
 	/*
 	 * setup df_fmt to point to uniform output fields.
 	 */
-	cv = conv_vec;
-	while (d = *cv++)
+	for (cv = conv_vec; d = *cv; cv++)
 	{
 		if (d->df_field)	/* only if external field is known */
 		{
-			nelm = DBUF_SIZE / d->df_size;
+			nelm = (dbuf_size + d->df_size - 1) / d->df_size;
 			field = max_llen / nelm;
 			d->df_fmt = fmt + 12 - (field - d->df_field);
 		}
@@ -317,9 +319,9 @@ char	**argv;
 	 * main dump loop
 	 */
 	same = -1;
-	while ((n = fread(dbuf, 1, DBUF_SIZE, stdin)) > 0)
+	while ((n = fread(dbuf, 1, dbuf_size, stdin)) > 0)
 	{
-		if (same>=0 && bufncmp(dbuf, lastdbuf, DBUF_SIZE) == 0 && !showall)
+		if (same>=0 && bufncmp(dbuf, lastdbuf, dbuf_size) == 0 && !showall)
 		{
 			if (same==0)
 			{
@@ -333,7 +335,7 @@ char	**argv;
 			same = 0;
 			p = dbuf;
 			l = lastdbuf;
-			for (nelm = 0; nelm < DBUF_SIZE; nelm++)
+			for (nelm = 0; nelm < dbuf_size; nelm++)
 			{
 				*l++ = *p;
 				*p++ = '\0';
