@@ -30,16 +30,6 @@ EXTERN int
 	shell_active;
 
 
-#if	defined(INCLUDED_3270)
-#endif
-
-#if	defined(INCLUDED_ASCEBC)
-#endif
-
-#if	defined(INCLUDED_DCTYPE)
-extern char dctype[];		/* 256 byte array */
-#endif
-
 #if	defined(INCLUDED_OPTIONS)
 EXTERN int	OptHome;		/* where home should send us */
 
@@ -106,9 +96,3 @@ EXTERN int
     ps_modified;		/* Has the presentation space been modified */
 
 #endif	/* defined(INCLUDED_OIA) */
-
-#if	defined(INCLUDED_ASTOSC)
-
-EXTERN	struct astosc astosc[256];
-
-#endif	/* defined(INCLUDED_ASTOSC) */

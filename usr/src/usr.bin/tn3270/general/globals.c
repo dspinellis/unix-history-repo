@@ -28,12 +28,9 @@ static	char	sccsid[] = "@(#)globals.c	3.1  10/29/86";
  */
 
 #include	"../ctlr/hostctlr.h"
-#include	"../ascii/ascebc.h"
-#include	"../ctlr/dctype.h"
 #include	"../ctlr/oia.h"
 #include	"../ctlr/options.h"
 #include	"../ctlr/screen.h"
-#include	"../ascii/state.h"
 
 
 #define DEFINING_INSTANCES
