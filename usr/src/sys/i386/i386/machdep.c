@@ -517,7 +517,9 @@ extern int cold;
 	dummy = 0; dummy = dummy;
 	printf("howto %d, devtype %d\n", arghowto, devtype);
 #endif
-pg("pausing (hit any key to reset)");
+#ifdef	notdef
+	pg("pausing (hit any key to reset)");
+#endif
 	reset_cpu();
 	for(;;) ;
 	/*NOTREACHED*/
