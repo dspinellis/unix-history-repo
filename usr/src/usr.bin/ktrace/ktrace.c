@@ -12,108 +12,137 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ktrace.c	1.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)ktrace.c	5.1 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <sys/param.h>
+#include <sys/stat.h>
+#include <sys/file.h>
+#include <sys/time.h>
+#include <sys/errno.h>
+#include <sys/uio.h>
+#include <sys/ktrace.h>
+#include <stdio.h>
 #include "ktrace.h"
 
-#define USAGE \
- "usage: ktrace [-acid] [-f trfile] [-t trpoints] [-p pid] [-g pgid]\n\
-	trops: c = syscalls, n = namei, g = generic-i/o, a = everything\n\
-	ktrace -C (clear everthing)\n"
-	
-
-char	*tracefile = DEF_TRACEFILE;
-int	append, clear, descend, inherit;
-
 main(argc, argv)
-	char *argv[];
+	int argc;
+	char **argv;
 {
 	extern int optind;
 	extern char *optarg;
-	int trpoints = ALL_POINTS;
-	int ops = 0;
-	int pid = 0;
-	int ch;
+	enum { NOTSET, CLEAR, CLEARALL } clear;
+	int append, ch, fd, inherit, ops, pid, pidset, trpoints;
+	char *tracefile;
 
-	while ((ch = getopt(argc,argv,"Cacdp:g:if:t:")) != EOF)
+	clear = NOTSET;
+	append = ops = pidset = 0;
+	trpoints = ALL_POINTS;
+	tracefile = DEF_TRACEFILE;
+	while ((ch = getopt(argc,argv,"aCcdf:g:ip:t:")) != EOF)
 		switch((char)ch) {
+		case 'a':
+			append = 1;
+			break;
 		case 'C':
-			clear = 2;
+			clear = CLEARALL;
 			break;
 		case 'c':
-			clear = 1;
+			clear = CLEAR;
 			break;
 		case 'd':
 			ops |= KTRFLAG_DESCEND;
 			break;
-		case 't':
-			trpoints = getpoints(optarg);
-			if (trpoints < 0) {
-				fprintf(stderr, 
-				    "ktrace: unknown facility in %s\n",
-			 	     optarg);
-				exit(1);
-			}
-			break;
-		case 'p':
-			pid = atoi(optarg);
-			break;
-		case 'g':
-			pid = -atoi(optarg);
-			break;
-		case 'i':
-			inherit++;
-			break;
 		case 'f':
 			tracefile = optarg;
 			break;
-		case 'a':
-			append++;
+		case 'g':
+			pid = -rpid(optarg);
+			pidset = 1;
+			break;
+		case 'i':
+			inherit = 1;
+			break;
+		case 'p':
+			pid = rpid(optarg);
+			pidset = 1;
+			break;
+		case 't':
+			trpoints = getpoints(optarg);
+			if (trpoints < 0) {
+				(void)fprintf(stderr, 
+				    "ktrace: unknown facility in %s\n", optarg);
+				usage();
+			}
 			break;
 		default:
-			fprintf(stderr,"usage: \n",*argv);
-			exit(-1);
+			usage();
 		}
-	argv += optind, argc -= optind;
+	argv += optind;
+	argc -= optind;
 	
+	if (pidset && *argv || !pidset && !*argv)
+		usage();
+			
 	if (inherit)
 		trpoints |= KTRFAC_INHERIT;
-	if (clear) {			/* untrace something */
-		if (clear == 2) {	/* -C */
+
+	if (clear != NOTSET) {
+		if (clear == CLEARALL) {
 			ops = KTROP_CLEAR | KTRFLAG_DESCEND;
 			pid = 1;
-		} else {
+		} else
 			ops |= pid ? KTROP_CLEAR : KTROP_CLEARFILE;
-		}
-		if (ktrace(tracefile, ops, trpoints, pid) < 0) {
-			perror("ktrace");
-			exit(1);
-		}
+
+		if (ktrace(tracefile, ops, trpoints, pid) < 0)
+			error(tracefile);
 		exit(0);
 	}
 
-	if (pid == 0 && !*argv) {	/* nothing to trace */
-		fprintf(stderr, USAGE);
+	if ((fd = open(tracefile, O_CREAT | O_WRONLY | (append ? 0 : O_TRUNC),
+	    DEFFILEMODE)) < 0)
+		error(tracefile);
+	(void)close(fd);
+
+	if (*argv) { 
+		if (ktrace(tracefile, ops, trpoints, getpid()) < 0)
+			error();
+		execvp(argv[0], &argv[0]);
+		error(argv[0]);
 		exit(1);
 	}
-			
-	close(open(tracefile, O_WRONLY | O_CREAT, 0666));
-	if (!append)
-		close(open(tracefile, O_WRONLY | O_TRUNC));
-	if (!*argv) {
-		if (ktrace(tracefile, ops, trpoints, pid) < 0) {
-			perror("ktrace");
-			exit(1);
-		}
-	} else {
-		pid = getpid();
-		if (ktrace(tracefile, ops, trpoints, pid) < 0) {
-			perror("ktrace");
-			exit(1);
-		}
-		execvp(argv[0], &argv[0]);
-		perror("ktrace: exec failed");
-	}
+	else if (ktrace(tracefile, ops, trpoints, pid) < 0)
+		error(tracefile);
 	exit(0);
+}
+
+rpid(p)
+	char *p;
+{
+	static int first;
+
+	if (first++) {
+		(void)fprintf(stderr,
+		    "ktrace: only one -g or -p flag is permitted.\n");
+		usage();
+	}
+	if (!*p) {
+		(void)fprintf(stderr, "ktrace: illegal process id.\n");
+		usage();
+	}
+	return(atoi(p));
+}
+
+error(name)
+	char *name;
+{
+	(void)fprintf(stderr, "ktrace: %s: %s.\n", name, strerror(errno));
+	exit(1);
+}
+
+usage()
+{
+	(void)fprintf(stderr,
+"usage:\tktrace [-aCcid] [-f trfile] [-g pgid] [-p pid] [-t [acgn]\n\tktrace [-aCcid] [-f trfile] [-t [acgn] command\n");
+	exit(1);
 }
