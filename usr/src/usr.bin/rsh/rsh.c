@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rsh.c	4.5 83/01/30";
+static char sccsid[] = "@(#)rsh.c	4.6 83/02/09";
 #endif
 
 #include <sys/types.h>
@@ -53,19 +53,19 @@ main(argc, argv0)
 		asrsh = 1;
 	}
 another:
-	if (!strcmp(*argv, "-l")) {
+	if (argc > 0 && !strcmp(*argv, "-l")) {
 		argv++, argc--;
 		if (argc > 0)
 			user = *argv++, argc--;
 		goto another;
 	}
-	if (!strcmp(*argv, "-n")) {
+	if (argc > 0 && !strcmp(*argv, "-n")) {
 		argv++, argc--;
 		(void) close(0);
 		(void) open("/dev/null", 0);
 		goto another;
 	}
-	if (!strcmp(*argv, "-d")) {
+	if (argc > 0 && !strcmp(*argv, "-d")) {
 		argv++, argc--;
 		options |= SO_DEBUG;
 		goto another;
@@ -74,7 +74,7 @@ another:
 	 * Ignore the -e flag to allow aliases with rlogin
 	 * to work
 	 */
-	if (!strncmp(*argv, "-e", 2)) {
+	if (argc > 0 && !strncmp(*argv, "-e", 2)) {
 		argv++, argc--;
 		goto another;
 	}
