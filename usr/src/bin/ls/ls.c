@@ -46,7 +46,7 @@ time_t	now, sixmonthsago;
 
 char	*dotp = ".";
 
-struct winsize win;
+struct	winsize win;
 int	twidth;
 
 struct	afile *gstat();
@@ -598,10 +598,14 @@ struct	utmp utmp;
 #define	NMAX	(sizeof (utmp.ut_name))
 #define SCPYN(a, b)	strncpy(a, b, NMAX)
 
-#define NUID	2048
+#define NUID	64	/* power of 2 */
+#define UIDMASK	0x3f
 #define NGID	300
 
-char	names[NUID][NMAX+1];
+struct ncache {
+	int	uid;
+	char	name[NMAX+1];
+} nc[NUID];
 char	outrangename[NMAX+1];
 int	outrangeuid = -1;
 char	groups[NGID][NMAX+1];
@@ -612,48 +616,20 @@ char *
 getname(uid)
 {
 	register struct passwd *pw;
-	static init;
 	struct passwd *getpwent();
+	extern int _pw_stayopen;
+	register int cp;
 
-	if (uid >= 0 && uid < NUID && names[uid][0])
-		return (&names[uid][0]);
-	if (uid >= 0 && uid == outrangeuid)
-		return (outrangename);
-rescan:
-	if (init == 2) {
-		if (uid < NUID)
-			return (0);
-		setpwent();
-		while (pw = getpwent()) {
-			if (pw->pw_uid != uid)
-				continue;
-			outrangeuid = pw->pw_uid;
-			SCPYN(outrangename, pw->pw_name);
-			endpwent();
-			return (outrangename);
-		}
-		endpwent();
+	_pw_stayopen = 1;
+	cp = uid & UIDMASK;
+	if (uid >= 0 && nc[cp].uid == uid && nc[cp].name[0])
+		return (nc[cp].name);
+	pw = getpwuid(uid);
+	if (!pw)
 		return (0);
-	}
-	if (init == 0)
-		setpwent(), init = 1;
-	while (pw = getpwent()) {
-		if (pw->pw_uid < 0 || pw->pw_uid >= NUID) {
-			if (pw->pw_uid == uid) {
-				outrangeuid = pw->pw_uid;
-				SCPYN(outrangename, pw->pw_name);
-				return (outrangename);
-			}
-			continue;
-		}
-		if (names[pw->pw_uid][0])
-			continue;
-		SCPYN(names[pw->pw_uid], pw->pw_name);
-		if (pw->pw_uid == uid)
-			return (&names[uid][0]);
-	}
-	init = 2;
-	goto rescan;
+	nc[cp].uid = uid;
+	SCPYN(nc[cp].name, pw->pw_name);
+	return (nc[cp].name);
 }
 
 char *
