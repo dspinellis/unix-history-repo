@@ -1,10 +1,11 @@
-/*	ttychars.h	4.1	82/12/02	*/
+/*	ttychars.h	4.2	82/12/05	*/
 
 /*
  * User visible structures and constants
  * related to terminal handling.
  */
-
+#ifndef _TTYCHARS_
+#define	_TTYCHARS_
 struct ttychars {
 	char	tc_erase;	/* erase last character */
 	char	tc_kill;	/* erase entire line */
@@ -27,8 +28,8 @@ struct ttychars {
 /* default special characters */
 #define	CERASE	'#'
 #define	CKILL	'@'
-#define	CINTR	0177		/* DEL */
-#define	CQUIT	034		/* FS, cntl shift L */
+#define	CINTR	0177		/* DEL, ^? */
+#define	CQUIT	034		/* FS, ^\ */
 #define	CSTART	CTRL(q)
 #define	CSTOP	CTRL(s)
 #define	CEOF	CTRL(d)
@@ -40,3 +41,4 @@ struct ttychars {
 #define	CFLUSH	CTRL(o)
 #define	CWERASE	CTRL(w)
 #define	CLNEXT	CTRL(v)
+#endif
