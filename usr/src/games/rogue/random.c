@@ -1,6 +1,38 @@
+/*
+ * Copyright (c) 1988 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Timothy C. Stoehr.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ */
+
 #ifndef lint
-static char sccsid[] = "@(#)random.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)random.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
+
+/*
+ * random.c
+ *
+ * This source herein may be modified and/or distributed by anybody who
+ * so desires, with the following restrictions:
+ *    1.)  No portion of this notice shall be removed.
+ *    2.)  Credit shall not be taken for the creation of this source.
+ *    3.)  This code is not to be traded, sold, or used for personal
+ *         gain or profit.
+ *
+ */
 
 static long rntb[32] = {
 	         3, 0x9a319039, 0x32d9c024, 0x9b663182, 0x5da1f342, 
