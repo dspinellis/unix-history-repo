@@ -15,7 +15,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)comm.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)comm.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <fcntl.h>
@@ -25,20 +25,24 @@ static char sccsid[] = "@(#)comm.c	8.1 (Berkeley) %G%";
 #include <stdlib.h>
 #include <string.h>
 
-#define	MAXLINELEN	(_POSIX2_LINE_MAX + 1)
+#define	MAXLINELEN	(LINE_MAX + 1)
 
 char *tabs[] = { "", "\t", "\t\t" };
 
-main(argc,argv)
+FILE   *file __P((char *));
+void	show __P((FILE *, char *, char *));
+void	usage __P((void));
+
+int
+main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	register int comp, file1done, file2done, read1, read2;
-	register char *col1, *col2, *col3;
+	int comp, file1done, file2done, read1, read2;
 	int ch, flag1, flag2, flag3;
-	FILE *fp1, *fp2, *file();
+	FILE *fp1, *fp2;
+	char *col1, *col2, *col3;
 	char **p, line1[MAXLINELEN], line2[MAXLINELEN];
-	extern int optind;
 
 	flag1 = flag2 = flag3 = 1;
 	while ((ch = getopt(argc, argv, "-123")) != EOF)
@@ -121,10 +125,12 @@ done:	argc -= optind;
 	exit(0);
 }
 
+void
 show(fp, offset, buf)
 	FILE *fp;
 	char *offset, *buf;
 {
+
 	do {
 		(void)printf("%s%s", offset, buf);
 	} while (fgets(buf, MAXLINELEN, fp));
@@ -137,16 +143,18 @@ file(name)
 	FILE *fp;
 
 	if (!strcmp(name, "-"))
-		return(stdin);
+		return (stdin);
 	if ((fp = fopen(name, "r")) == NULL) {
 		(void)fprintf(stderr, "comm: %s: %s\n", name, strerror(errno));
 		exit(1);
 	}
-	return(fp);
+	return (fp);
 }
 
+void
 usage()
 {
+
 	(void)fprintf(stderr, "usage: comm [-123] file1 file2\n");
 	exit(1);
 }
