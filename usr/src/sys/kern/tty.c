@@ -1,4 +1,4 @@
-/*	tty.c	4.28	82/08/22	*/
+/*	tty.c	4.29	82/09/12	*/
 
 /*
  * TTY subroutines common to more than one line discipline
@@ -16,6 +16,7 @@
 #include "../h/buf.h"
 #include "../h/dk.h"
 #include "../h/uio.h"
+#include "../h/kernel.h"
 
 /*
  * Table giving parity for characters and indicating
