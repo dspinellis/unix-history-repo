@@ -1,4 +1,4 @@
-/*	if_en.c	4.75	82/12/17	*/
+/*	if_en.c	4.76	83/05/10	*/
 
 #include "en.h"
 
@@ -102,21 +102,12 @@ enattach(ui)
 	struct uba_device *ui;
 {
 	register struct en_softc *es = &en_softc[ui->ui_unit];
-	register struct sockaddr_in *sin;
 
 	es->es_if.if_unit = ui->ui_unit;
 	es->es_if.if_name = "en";
 	es->es_if.if_mtu = ENMTU;
-	es->es_if.if_net = ui->ui_flags;
-	es->es_if.if_host[0] =
-	 (~(((struct endevice *)eninfo[ui->ui_unit]->ui_addr)->en_addr)) & 0xff;
-	sin = (struct sockaddr_in *)&es->es_if.if_addr;
-	sin->sin_family = AF_INET;
-	sin->sin_addr = if_makeaddr(es->es_if.if_net, es->es_if.if_host[0]);
-	sin = (struct sockaddr_in *)&es->es_if.if_broadaddr;
-	sin->sin_family = AF_INET;
-	sin->sin_addr = if_makeaddr(es->es_if.if_net, 0);
-	es->es_if.if_flags = IFF_BROADCAST;
+	if (ui->ui_flags)
+		ensetaddr(es, ui->ui_flags);
 	es->es_if.if_init = eninit;
 	es->es_if.if_output = enoutput;
 	es->es_if.if_reset = enreset;
@@ -127,6 +118,31 @@ enattach(ui)
 		es->es_ifuba.ifu_flags &= ~UBA_NEEDBDP;
 #endif
 	if_attach(&es->es_if);
+}
+
+/*
+ * Set interface's Internet address
+ * given the network number.  The station
+ * number, taken from the on-board register,
+ * is used as the local part.
+ */
+ensetaddr(es, net)
+	register struct en_softc *es;
+	int net;
+{
+	struct endevice *enaddr;
+	register struct sockaddr_in *sin;
+
+	es->es_if.if_net = net;
+	enaddr = (struct endevice *)eninfo[es->es_if.if_unit]->ui_addr;
+	es->es_if.if_host[0] = (~enaddr->en_addr) & 0xff;
+	sin = (struct sockaddr_in *)&es->es_if.if_addr;
+	sin->sin_family = AF_INET;
+	sin->sin_addr = if_makeaddr(net, es->es_if.if_host[0]);
+	sin = (struct sockaddr_in *)&es->es_if.if_broadaddr;
+	sin->sin_family = AF_INET;
+	sin->sin_addr = if_makeaddr(net, INADDR_ANY);
+	es->es_if.if_flags |= IFF_BROADCAST;
 }
 
 /*
@@ -155,8 +171,17 @@ eninit(unit)
 	register struct en_softc *es = &en_softc[unit];
 	register struct uba_device *ui = eninfo[unit];
 	register struct endevice *addr;
-	int s;
+	struct sockaddr_in *sin = (struct sockaddr_in *)&es->es_if.if_addr;
+	int net, s;
 
+	net = in_netof(sin->sin_addr);
+	if (net == 0)
+		return;
+	ensetaddr(es, net);
+#ifdef notdef
+	if (es->es_if.if_flags & IFF_UP)
+		return;
+#endif
 	if (if_ubainit(&es->es_ifuba, ui->ui_ubanum,
 	    sizeof (struct en_header), (int)btoc(ENMRU)) == 0) { 
 		printf("en%d: can't initialize\n", unit);
