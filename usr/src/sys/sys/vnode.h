@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode.h	7.64 (Berkeley) %G%
+ *	@(#)vnode.h	7.65 (Berkeley) %G%
  */
 
 #ifndef KERNEL
@@ -335,7 +335,7 @@ int 	bdevvp __P((dev_t dev, struct vnode **vpp));
 int 	getnewvnode __P((enum vtagtype tag,
 	    struct mount *mp, int (**vops)(), struct vnode **vpp));
 int	vinvalbuf __P((struct vnode *vp, int save, struct ucred *cred,
-	    struct proc *p));
+	    struct proc *p, int slpflag, int slptimeo));
 void 	vattr_null __P((struct vattr *vap));
 int 	vcount __P((struct vnode *vp));
 int 	vget __P((struct vnode *vp));
