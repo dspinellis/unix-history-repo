@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- * 		@(#)qdcons.c	1.1  Berkeley  %G%
+ * 		@(#)qdcons.c	1.2  Berkeley  %G%
  *
  *	derived from: @(#)qdcons.c  4.1 (ULTRIX    11/23/87
  */
@@ -35,7 +35,7 @@
 *   of its software on equipment which is not supplied by Digital.	*
 *									*
 *************************************************************************
-*	revision history: (moved into sccs comments)
+* revision history: (should be moved into sccs comments)
 *************************************************************************
 *
 * 09 oct 85  longo  added uVAXII console ROM cursor reset to bottom of

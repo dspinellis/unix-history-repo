@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)prf.c	7.4 (Berkeley) %G%
+ *	@(#)prf.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -115,7 +115,16 @@ putchar(c)
 	register c;
 {
 	register s, timo;
+#if VAX630
+	extern (*v_putc)();
 
+	if (v_putc) {
+		(*v_putc)(c);
+		if (c == '\n')
+			(*v_putc)('\r');
+		return;
+	}
+#endif
 	timo = 30000;
 	/*
 	 * Try waiting for the console tty to come ready,
@@ -138,10 +147,19 @@ putchar(c)
 getchar()
 {
 	register c;
+#if VAX630
+	extern (*v_getc)();
 
+	if (v_getc) {
+		c = (*v_getc)();
+	} else {
+#endif
 	while((mfpr(RXCS)&RXCS_DONE) == 0)
 		;
 	c = mfpr(RXDB)&0177;
+#if VAX630
+	}
+#endif
 	if (c=='\r')
 		c = '\n';
 	if (c != '\b' && c != '\177')

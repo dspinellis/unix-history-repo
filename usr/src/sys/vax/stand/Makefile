@@ -9,7 +9,7 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	7.8 (Berkeley) %G%
+#	@(#)Makefile	7.9 (Berkeley) %G%
 #
 DESTDIR=/
 INCPATH=-I. -I../stand -I../h
@@ -23,11 +23,12 @@ LIBSA=	libsa.a
 
 SRCS=	autoconf.c boot.c bootxx.c cat.c copy.c dev.c drtest.c drtest.c \
 	format.c format.c getfile.c gets.c hp.c hpmaptype.c ht.c idc.c \
-	machdep.c mba.c mt.c prf.c printn.c rk.c rl.c sys.c tm.c tmscp.c \
-	ts.c uba.c uda.c up.c upmaptype.c ut.c conf.c ../vax/dkbad.c
+	machdep.c mba.c mt.c prf.c printn.c qdcons.c qvcons.c qfont.c rk.c \
+	rl.c sys.c tm.c tmscp.c ts.c uba.c uda.c up.c upmaptype.c ut.c conf.c \
+	../vax/dkbad.c
 DUMMIES=confxx.c
-DRIVERS=autoconf.o hp.o hpmaptype.o ht.o idc.o mba.o mt.o rk.o rl.o \
-	tm.o tmscp.o ts.o up.o upmaptype.o uba.o uda.o ut.o
+DRIVERS=autoconf.o hp.o hpmaptype.o ht.o idc.o mba.o mt.o qdcons.o qvcons.o \
+	rk.o rl.o tm.o tmscp.o ts.o up.o upmaptype.o uba.o uda.o ut.o
 
 # These drivers don't have ecc correction and bad sector forwarding;
 # they are placed in the file system boot area for 750's.  If your
@@ -40,7 +41,7 @@ ALL=	boot tpboot cat copy tpcopy format tpformat drtest boothp boothk \
 all: ${ALL}
 
 ${LIBSA}: conf.o dev.o dkbad.o getfile.o gets.o machdep.o prf.o printn.o \
-	sys.o ${DRIVERS}
+	qfont.o sys.o ${DRIVERS}
 	ar crv ${LIBSA} $?
 	ranlib ${LIBSA}
 
@@ -284,17 +285,15 @@ autoconf.o: ../vax/mtpr.h savax.h
 boot.o: boot.c ../h/param.h /usr/include/sys/types.h ../h/signal.h
 boot.o: /usr/include/machine/trap.h /usr/include/machine/machparam.h
 boot.o: /usr/include/machine/endian.h ../h/inode.h ../h/fs.h ../h/vm.h
-boot.o: /usr/include/sys/vmparam.h /usr/include/machine/vmparam.h
-boot.o: /usr/include/sys/vmmac.h /usr/include/sys/vmmeter.h
-boot.o: /usr/include/sys/vmsystm.h ../h/reboot.h /usr/include/a.out.h
+boot.o: ../h/vmparam.h ../h/../machine/vmparam.h ../h/vmmac.h ../h/vmmeter.h
+boot.o: ../h/vmsystm.h ../h/reboot.h /usr/include/a.out.h
 boot.o: /usr/include/sys/exec.h ../stand/saio.h ../stand/saioctl.h
 boot.o: ../stand/saerrno.h
 bootxx.o: bootxx.c ../h/param.h /usr/include/sys/types.h ../h/signal.h
 bootxx.o: /usr/include/machine/trap.h /usr/include/machine/machparam.h
 bootxx.o: /usr/include/machine/endian.h ../h/inode.h ../h/fs.h ../h/vm.h
-bootxx.o: /usr/include/sys/vmparam.h /usr/include/machine/vmparam.h
-bootxx.o: /usr/include/sys/vmmac.h /usr/include/sys/vmmeter.h
-bootxx.o: /usr/include/sys/vmsystm.h ../h/reboot.h /usr/include/a.out.h
+bootxx.o: ../h/vmparam.h ../h/../machine/vmparam.h ../h/vmmac.h ../h/vmmeter.h
+bootxx.o: ../h/vmsystm.h ../h/reboot.h /usr/include/a.out.h
 bootxx.o: /usr/include/sys/exec.h ../stand/saio.h ../stand/saioctl.h
 bootxx.o: ../stand/saerrno.h
 cat.o: ../stand/cat.c
@@ -349,11 +348,10 @@ machdep.o: /usr/include/machine/endian.h ../vax/mtpr.h
 mba.o: mba.c ../machine/pte.h ../h/param.h /usr/include/sys/types.h
 mba.o: ../h/signal.h /usr/include/machine/trap.h
 mba.o: /usr/include/machine/machparam.h /usr/include/machine/endian.h
-mba.o: ../h/inode.h ../h/fs.h ../h/vm.h /usr/include/sys/vmparam.h
-mba.o: /usr/include/machine/vmparam.h /usr/include/sys/vmmac.h
-mba.o: /usr/include/sys/vmmeter.h /usr/include/sys/vmsystm.h ../vax/mtpr.h
-mba.o: ../vaxmba/mbareg.h ../vaxmba/hpreg.h ../stand/saio.h ../stand/saioctl.h
-mba.o: ../stand/saerrno.h savax.h
+mba.o: ../h/inode.h ../h/fs.h ../h/vm.h ../h/vmparam.h
+mba.o: ../h/../machine/vmparam.h ../h/vmmac.h ../h/vmmeter.h ../h/vmsystm.h
+mba.o: ../vax/mtpr.h ../vaxmba/mbareg.h ../vaxmba/hpreg.h ../stand/saio.h
+mba.o: ../stand/saioctl.h ../stand/saerrno.h savax.h
 mt.o: mt.c ../machine/pte.h ../h/param.h /usr/include/sys/types.h ../h/signal.h
 mt.o: /usr/include/machine/trap.h /usr/include/machine/machparam.h
 mt.o: /usr/include/machine/endian.h ../h/inode.h ../h/fs.h ../vaxmba/mtreg.h
@@ -365,6 +363,14 @@ prf.o: /usr/include/machine/endian.h ../vax/mtpr.h ../vax/cons.h
 printn.o: ../stand/printn.c ../h/param.h /usr/include/sys/types.h ../h/signal.h
 printn.o: /usr/include/machine/trap.h /usr/include/machine/machparam.h
 printn.o: /usr/include/machine/endian.h
+qdcons.o: qdcons.c ../h/types.h ../vax/cpu.h ../ultrix/qdioctl.h
+qdcons.o: ../ultrix/../h/ioctl.h ../ultrix/../h/ttychars.h
+qdcons.o: ../ultrix/../h/ttydev.h ../ultrix/qevent.h ../ultrix/qduser.h
+qdcons.o: ../ultrix/qevent.h ../ultrix/qdreg.h
+qvcons.o: qvcons.c ../h/types.h ../ultrix/qvioctl.h ../ultrix/qevent.h
+qvcons.o: ../ultrix/../h/ioctl.h ../ultrix/../h/ttychars.h
+qvcons.o: ../ultrix/../h/ttydev.h ../ultrix/qvreg.h ../vax/cpu.h
+qfont.o: qfont.c
 rk.o: rk.c ../h/param.h /usr/include/sys/types.h ../h/signal.h
 rk.o: /usr/include/machine/trap.h /usr/include/machine/machparam.h
 rk.o: /usr/include/machine/endian.h ../h/inode.h ../h/fs.h ../h/disklabel.h
@@ -397,11 +403,10 @@ ts.o: savax.h
 uba.o: uba.c ../machine/pte.h ../h/param.h /usr/include/sys/types.h
 uba.o: ../h/signal.h /usr/include/machine/trap.h
 uba.o: /usr/include/machine/machparam.h /usr/include/machine/endian.h
-uba.o: ../h/inode.h ../h/vm.h /usr/include/sys/vmparam.h
-uba.o: /usr/include/machine/vmparam.h /usr/include/sys/vmmac.h
-uba.o: /usr/include/sys/vmmeter.h /usr/include/sys/vmsystm.h ../h/fs.h
-uba.o: ../vax/cpu.h ../vaxuba/ubareg.h ../stand/saio.h ../stand/saioctl.h
-uba.o: ../stand/saerrno.h savax.h
+uba.o: ../h/inode.h ../h/vm.h ../h/vmparam.h ../h/../machine/vmparam.h
+uba.o: ../h/vmmac.h ../h/vmmeter.h ../h/vmsystm.h ../h/fs.h ../vax/cpu.h
+uba.o: ../vaxuba/ubareg.h ../stand/saio.h ../stand/saioctl.h ../stand/saerrno.h
+uba.o: savax.h
 uda.o: uda.c ../machine/pte.h ../h/param.h /usr/include/sys/types.h
 uda.o: ../h/signal.h /usr/include/machine/trap.h
 uda.o: /usr/include/machine/machparam.h /usr/include/machine/endian.h
