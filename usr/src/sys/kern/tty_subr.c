@@ -1,4 +1,4 @@
-/*	tty_subr.c	6.4	84/11/15	*/
+/*	tty_subr.c	6.5	84/11/15	*/
 
 #include "param.h"
 #include "systm.h"
@@ -263,37 +263,41 @@ b_to_q(cp, cc, q)
 
 	if (cc <= 0)
 		return(0);
-	acc = cc;
 
-
-	s = spl5();
-	if ((cq = q->c_cl) == NULL || q->c_cc < 0) {
-		if ((bp = cfreelist) == NULL) 
-			goto out;
-		cfreelist = bp->c_next;
-		cfreecount -= CBSIZE;
-		bp->c_next = NULL;
-		q->c_cf = cq = bp->c_info;
-	}
-
-	while (cc) {
+	while (cc > 0) {
+		s = spl6();
+		if ((cq = q->c_cl) == NULL || q->c_cc < 0) {
+			if ((bp = cfreelist) == NULL) {
+				splx(s);
+				break;
+			}
+			q->c_cf = cq = bp->c_info;
+			goto middle;
+		}
 		if (((int)cq & CROUND) == 0) {
-			bp = (struct cblock *) cq - 1;
-			if ((bp->c_next = cfreelist) == NULL) 
-				goto out;
+			bp = &((struct cblock *) cq)[-1];
+			if ((bp->c_next = cfreelist) == NULL) {
+				splx(s);
+				break;
+			}
 			bp = bp->c_next;
+			cq = bp->c_info;
+		middle:
 			cfreelist = bp->c_next;
 			cfreecount -= CBSIZE;
 			bp->c_next = NULL;
-			cq = bp->c_info;
+			acc = MIN (cc, CBSIZE);
 		}
-		*cq++ = *cp++;
-		cc--;
+		else if ((acc = (char *) ((int) &cq[CBSIZE] & ~CROUND) - cq)
+			      > cc)
+			acc = cc;
+		bcopy ((caddr_t)cp, cq, acc);
+		q->c_cl = &cq[acc];
+		q->c_cc += acc;
+		splx(s);
+		cp += acc;
+		cc -= acc;
 	}
-out:
-	q->c_cl = cq;
-	q->c_cc += acc-cc;
-	splx(s);
 	return(cc);
 }
 
