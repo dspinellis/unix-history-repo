@@ -1,4 +1,4 @@
-/*	up.c	4.62	82/12/05	*/
+/*	up.c	4.63	82/12/08	*/
 
 #include "up.h"
 #if NSC > 0
@@ -812,6 +812,7 @@ upecc(ui, flag)
 #endif
 			byte++;
 			i++;
+			bit -= 8;
 		}
 		if (up->upwc == 0)
 			return (0);
