@@ -1,6 +1,7 @@
 #
-#	@(#)Makefile	1.1	(Berkeley)	83/02/11
+#	@(#)Makefile	1.2	(Berkeley)	83/02/11
 #
+DESTDIR=
 SRCS = dc.c dc.h
 all: dc
 
