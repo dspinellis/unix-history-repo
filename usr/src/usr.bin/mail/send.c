@@ -11,7 +11,7 @@
  * Mail to others.
  */
 
-static char *SccsId = "@(#)send.c	1.2 %G%";
+static char *SccsId = "@(#)send.c	1.3 %G%";
 
 /*
  * Send message described by the passed pointer to the
@@ -356,6 +356,7 @@ infix(hp, fi)
 	register FILE *nfo, *nfi;
 	register int c;
 
+	rewind(fi);
 	if ((nfo = fopen(tempMail, "w")) == NULL) {
 		perror(tempMail);
 		return(fi);
@@ -367,7 +368,6 @@ infix(hp, fi)
 	}
 	remove(tempMail);
 	puthead(hp, nfo, GTO|GSUBJECT|GCC|GNL);
-	rewind(fi);
 	c = getc(fi);
 	while (c != EOF) {
 		putc(c, nfo);
@@ -375,7 +375,6 @@ infix(hp, fi)
 	}
 	if (ferror(fi)) {
 		perror("read");
-		fprintf(stderr, "Please notify Kurt Shoens\n");
 		return(fi);
 	}
 	fflush(nfo);
