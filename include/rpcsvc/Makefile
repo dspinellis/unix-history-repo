@@ -1,5 +1,5 @@
 #	from: @(#)Makefile	2.3 88/08/11 4.0 RPCSRC
-#	$Id: Makefile,v 1.9 1993/08/01 05:41:52 mycroft Exp $
+#	$Id: Makefile,v 1.1 1993/09/14 17:42:40 jtc Exp $
 
 .SUFFIXES: .x
 
@@ -32,6 +32,6 @@ install: all
 
 .x.h:
 	@echo generating $@...
-	@PWD=`pwd` ; cd ${.CURDIR} ; ${RPCCOM} -h $*.x -o $$PWD/$@
+	@CURPWD=`pwd` ; cd ${.CURDIR} ; ${RPCCOM} -h $*.x -o $$CURPWD/$@
 
 .include <bsd.prog.mk>
