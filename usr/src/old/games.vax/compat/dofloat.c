@@ -1,5 +1,5 @@
 #ifndef	lint
-static char sccsid[] = "	dofloat.c	4.2	84/05/05	";
+static char sccsid[] = "	dofloat.c	4.3	88/04/24	";
 #endif
 
 /* From Lou Salkind: compat/RCS/dofloat.c,v 1.2 84/01/31 13:33:53 */
@@ -49,7 +49,7 @@ static struct {
 	unsigned ft :1;
 	unsigned fl :1;
 	unsigned fd :1;
-} fps = FALSE;
+} fps;
 
 #define FZ fps.fz
 #define FN fps.fn
@@ -66,6 +66,7 @@ unsigned int instr;
 {
 	int mode, reg, ac;
 	unsigned short * x, * resolve();
+	long fliplong();
 #define DOUBLE (*((double *)x))
 #define FLOAT (*(float *)x)
 #define LONG (*(long *)x)
