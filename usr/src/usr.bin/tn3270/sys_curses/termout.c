@@ -31,7 +31,7 @@ static	char	sccsid[] = "@(#)outbound.c	3.1  10/29/86";
 #include <stdio.h>
 #include <curses.h>
 
-#include "../general.h"
+#include "../general/general.h"
 
 #include "terminal.h"
 
@@ -44,9 +44,9 @@ static	char	sccsid[] = "@(#)outbound.c	3.1  10/29/86";
 #include "../ctlr/outbound.ext"
 #include "../ctlr/screen.h"
 
-#include "../keyboard/map3270.ext"
+#include "../ascii/map3270.ext"
 
-#include "../system/globals.h"
+#include "../general/globals.h"
 
 extern void EmptyTerminal();
 
@@ -762,7 +762,7 @@ BellOff()
 	Lowest = MIN(Lowest, LINES/2);
 	Highest = MAX(Highest, (LINES/2)+3);
 #if	defined(SLOWSCREEN)
-	memset(Terminal+LINES/2, 0, (sizeof Terminal[0])*(3*COLS));
+	memset((char *)(Terminal+LINES/2), 0, (sizeof Terminal[0])*(3*COLS));
 #endif	/* defined(SLOWSCREEN) */
 	touchwin(stdscr);
 	DoARefresh();
