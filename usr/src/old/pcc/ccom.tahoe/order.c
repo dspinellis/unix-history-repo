@@ -1,11 +1,12 @@
 #ifndef lint
-static char sccsid[] = "@(#)order.c	1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)order.c	1.3 (Berkeley) %G%";
 #endif
 
 # include "pass2.h"
 
 int maxargs = { -1 };
 
+/*ARGSUSED*/
 stoasg( p, o ) NODE *p; {
 	/* should the assignment op p be stored,
 	   given that it lies as the right operand of o
@@ -18,6 +19,7 @@ deltest( p ) register NODE *p; {
 	return( p->in.op == REG || p->in.op == NAME || p->in.op == OREG );
 	}
 
+/*ARGSUSED*/
 autoincr( p ) NODE *p; {
 
 	return(0);
@@ -52,6 +54,7 @@ mkadrs(p) register NODE *p; {
 		}
 	}
 
+/*ARGSUSED*/
 notoff( t, r, off, cp) TWORD t; CONSZ off; char *cp; {
 	/* is it legal to make an OREG or NAME entry which has an
 	/* offset of off, (from a register of r), if the
@@ -397,15 +400,17 @@ setasop( p ) register NODE *p; {
 	cerror( "illegal setasop" );
 	}
 
-int crslab = 9999;  /* Honeywell */
+int crslab = 99999;  /* Tahoe */
 
 getlab(){
 	return( crslab-- );
 	}
 
+#ifndef deflab
 deflab( l ){
 	printf( "L%d:\n", l );
 	}
+#endif
 
 genargs( p, ptemp ) register NODE *p, *ptemp; {
 	register NODE *pasg;
