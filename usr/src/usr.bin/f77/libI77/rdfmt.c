@@ -1,5 +1,5 @@
 /*
-char id_rdfmt[] = "@(#)rdfmt.c	1.11";
+char id_rdfmt[] = "@(#)rdfmt.c	1.12";
  *
  * formatted read routines
  */
@@ -139,12 +139,15 @@ done:
 
 LOCAL
 rd_L(n,w,len) uint *n; ftnlen len;
-{	int ch,i,v = -1;
+{	int ch,i,v = -1, period=0;
 	for(i=0;i<w;i++)
 	{	if((ch=(*getn)()) < 0) return(ch);
 		if((ch=low_case[ch])=='t' && v==-1) v=1;
 		else if(ch=='f' && v==-1) v=0;
+		else if(ch=='.' && !period) period++;
+		else if(ch==' ' || ch=='\t') ;
 		else if(ch==',') break;
+		else if(v==-1) return(errno=F_ERLOGIF);
 	}
 	if(v==-1) return(errno=F_ERLOGIF);
 	if(len==sizeof(short)) n->is=v;
