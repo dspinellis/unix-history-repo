@@ -1,7 +1,8 @@
-/* ip_output.c 1.9 81/11/01 */
+/* ip_output.c 1.10 81/11/02 */
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
+#include "../h/mtpr.h"
 #include "../h/socket.h"
 #include "../inet/inet_cksum.h"
 #include "../inet/inet.h"
@@ -119,6 +120,7 @@ COUNT(IP_SEND);
 	else
 		imp_stat.inq_head = m;
 	imp_stat.inq_tail = m;
+	setsoftnet();
 #endif IMPLOOP
 	return (1);
 }
