@@ -12,7 +12,7 @@
  * from this software without specific prior written permission.
  * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #ifndef lint
@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	5.26	(Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	5.27	(Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -38,10 +38,12 @@ static char sccsid[] = "@(#)ftpd.c	5.26	(Berkeley) %G%";
 
 #include <netinet/in.h>
 
+#define	FTP_NAMES
 #include <arpa/ftp.h>
 #include <arpa/inet.h>
 #include <arpa/telnet.h>
 
+#include <ctype.h>
 #include <stdio.h>
 #include <signal.h>
 #include <pwd.h>
@@ -75,6 +77,7 @@ struct	sockaddr_in ctrl_addr;
 struct	sockaddr_in data_source;
 struct	sockaddr_in data_dest;
 struct	sockaddr_in his_addr;
+struct	sockaddr_in pasv_addr;
 
 int	data;
 jmp_buf	errcatch, urgcatch;
@@ -82,6 +85,7 @@ int	logged_in;
 struct	passwd *pw;
 int	debug;
 int	timeout = 900;    /* timeout after 15 minutes of inactivity */
+int	maxtimeout = 7200;/* don't allow idle time to be set beyond 2 hours */
 int	logging;
 int	guest;
 int	type;
@@ -91,6 +95,13 @@ int	mode;
 int	usedefault = 1;		/* for data transfers */
 int	pdata = -1;		/* for passive mode */
 int	transflag;
+off_t	file_size;
+off_t	byte_count;
+#if !defined(CMASK) || CMASK == 0
+#undef CMASK
+#define CMASK 027
+#endif
+int	defumask = CMASK;		/* default umask value */
 char	tmpline[7];
 char	hostname[MAXHOSTNAMELEN];
 char	remotehost[MAXHOSTNAMELEN];
@@ -113,6 +124,7 @@ FILE	*getdatasock(), *dataconn();
 #ifdef SETPROCTITLE
 char	**Argv = NULL;		/* pointer to argument vector */
 char	*LastArgv = NULL;	/* end of argv */
+char	proctitle[BUFSIZ];	/* initial part of title */
 #endif /* SETPROCTITLE */
 
 main(argc, argv, envp)
@@ -164,7 +176,28 @@ main(argc, argv, envp)
 
 		case 't':
 			timeout = atoi(++cp);
+			if (maxtimeout < timeout)
+				maxtimeout = timeout;
 			goto nextopt;
+
+		case 'T':
+			maxtimeout = atoi(++cp);
+			if (timeout > maxtimeout)
+				timeout = maxtimeout;
+			goto nextopt;
+
+		case 'u':
+		    {
+			int val = 0;
+
+			while (*++cp && *cp >= '0' && *cp <= '9')
+				val = val*8 + *cp - '0';
+			if (*cp)
+				fprintf(stderr, "ftpd: Bad value for -u\n");
+			else
+				defumask = val;
+			goto nextopt;
+		    }
 
 		default:
 			fprintf(stderr, "ftpd: Unknown flag -%c ignored.\n",
@@ -186,10 +219,11 @@ nextopt:
 	if (setsockopt(0, SOL_SOCKET, SO_OOBINLINE, (char *)&on, sizeof(on)) < 0)
 		syslog(LOG_ERR, "setsockopt: %m");
 #endif
+#ifdef	F_SETOWN
 	if (fcntl(fileno(stdin), F_SETOWN, getpid()) == -1)
 		syslog(LOG_ERR, "fcntl F_SETOWN: %m");
+#endif
 	dolog(&his_addr);
-	/* do telnet option negotiation here */
 	/*
 	 * Set up default state
 	 */
@@ -226,7 +260,7 @@ sgetsave(s)
 {
 	char *malloc();
 	char *new = malloc((unsigned) strlen(s) + 1);
-	
+
 	if (new == NULL) {
 		perror_reply(421, "Local resource failure: malloc");
 		dologout(1);
@@ -254,7 +288,6 @@ sgetpwnam(name)
 	if (save.pw_name) {
 		free(save.pw_name);
 		free(save.pw_passwd);
-		free(save.pw_comment);
 		free(save.pw_gecos);
 		free(save.pw_dir);
 		free(save.pw_shell);
@@ -262,7 +295,6 @@ sgetpwnam(name)
 	save = *p;
 	save.pw_name = sgetsave(p->pw_name);
 	save.pw_passwd = sgetsave(p->pw_passwd);
-	save.pw_comment = sgetsave(p->pw_comment);
 	save.pw_gecos = sgetsave(p->pw_gecos);
 	save.pw_dir = sgetsave(p->pw_dir);
 	save.pw_shell = sgetsave(p->pw_shell);
@@ -308,8 +340,7 @@ user(name)
 			guest = 1;
 			askpasswd = 1;
 			reply(331, "Guest login ok, send ident as password.");
-		}
-		else
+		} else
 			reply(530, "User %s unknown.", name);
 		return;
 	}
@@ -322,8 +353,10 @@ user(name)
 		endusershell();
 		if (cp == NULL) {
 			reply(530, "User %s access denied.", name);
-			syslog(LOG_ERR, "FTP LOGIN REFUSED FROM %s, %s",
-			    remotehost, name);
+			if (logging)
+				syslog(LOG_NOTICE,
+				    "FTP LOGIN REFUSED FROM %s, %s",
+				    remotehost, name);
 			pw = (struct passwd *) NULL;
 			return;
 		}
@@ -333,8 +366,10 @@ user(name)
 				*cp = '\0';
 			if (strcmp(line, name) == 0) {
 				reply(530, "User %s access denied.", name);
-				syslog(LOG_ERR, "FTP LOGIN REFUSED FROM %s, %s",
-				    remotehost, name);
+				if (logging)
+					syslog(LOG_NOTICE,
+					    "FTP LOGIN REFUSED FROM %s, %s",
+					    remotehost, name);
 				pw = (struct passwd *) NULL;
 				return;
 			}
@@ -389,7 +424,7 @@ pass(passwd)
 			reply(530, "Login incorrect.");
 			pw = NULL;
 			if (login_attempts++ >= 5) {
-				syslog(LOG_ERR,
+				syslog(LOG_NOTICE,
 				    "repeated login failures from %s",
 				    remotehost);
 				exit(0);
@@ -408,21 +443,20 @@ pass(passwd)
 
 	if (guest) {
 		/*
-		 * We MUST do a chdir() after the chroot. Otherwise "."
-		 * will be accessible outside the root!
+		 * We MUST do a chdir() after the chroot. Otherwise
+		 * the old current directory will be accessible as "."
+		 * outside the new root!
 		 */
 		if (chroot(pw->pw_dir) < 0 || chdir("/") < 0) {
 			reply(550, "Can't set guest privileges.");
 			goto bad;
 		}
-	}
-	else if (chdir(pw->pw_dir) < 0) {
+	} else if (chdir(pw->pw_dir) < 0) {
 		if (chdir("/") < 0) {
 			reply(530, "User %s: can't change directory to %s.",
 			    pw->pw_name, pw->pw_dir);
 			goto bad;
-		}
-		else
+		} else
 			lreply(230, "No directory! Logging in with home=/");
 	}
 	if (seteuid((uid_t)pw->pw_uid) < 0) {
@@ -431,15 +465,27 @@ pass(passwd)
 	}
 	if (guest) {
 		reply(230, "Guest login ok, access restrictions apply.");
-		syslog(LOG_INFO, "ANONYMOUS FTP LOGIN FROM %s, %s",
-		    remotehost, passwd);
-	}
-	else {
+#ifdef SETPROCTITLE
+		sprintf(proctitle, "%s: anonymous/%.*s", remotehost,
+		    sizeof(proctitle) - sizeof(remotehost) -
+		    sizeof(": anonymous/"), passwd);
+		setproctitle(proctitle);
+#endif /* SETPROCTITLE */
+		if (logging)
+			syslog(LOG_INFO, "ANONYMOUS FTP LOGIN FROM %s, %s",
+			    remotehost, passwd);
+	} else {
 		reply(230, "User %s logged in.", pw->pw_name);
-		syslog(LOG_INFO, "FTP LOGIN FROM %s, %s",
-		    remotehost, pw->pw_name);
+#ifdef SETPROCTITLE
+		sprintf(proctitle, "%s: %s", remotehost, pw->pw_name);
+		setproctitle(proctitle);
+#endif /* SETPROCTITLE */
+		if (logging)
+			syslog(LOG_INFO, "FTP LOGIN FROM %s, %s",
+			    remotehost, pw->pw_name);
 	}
 	home = pw->pw_dir;		/* home dir for globbing */
+	(void) umask(defumask);
 	return;
 bad:
 	/* Forget all about it... */
@@ -462,6 +508,7 @@ retrieve(cmd, name)
 		(void) sprintf(line, cmd, name), name = line;
 		fin = ftpd_popen(line, "r"), closefunc = ftpd_pclose;
 		st.st_size = -1;
+		st.st_blksize = BUFSIZ;
 	}
 	if (fin == NULL) {
 		if (errno != 0)
@@ -469,18 +516,25 @@ retrieve(cmd, name)
 		return;
 	}
 	if (cmd == 0 &&
-	    (stat(name, &st) < 0 || (st.st_mode&S_IFMT) != S_IFREG)) {
+	    (fstat(fileno(fin), &st) < 0 || (st.st_mode&S_IFMT) != S_IFREG)) {
 		reply(550, "%s: not a plain file.", name);
 		goto done;
 	}
 	if (restart_point) {
 		if (type == TYPE_A) {
-			if (fseek(fin, restart_point, L_SET) < 0) {
-				perror_reply(550, name);
-				goto done;
-			}
-		}
-		else if (lseek(fileno(fin), restart_point, L_SET) < 0) {
+			register int i, n, c;
+
+			n = restart_point;
+			i = 0;
+			while (i++ < n) {
+				if ((c=getc(fin)) == EOF) {
+					perror_reply(550, name);
+					goto done;
+				}
+				if (c == '\n')
+					i++;
+			}	
+		} else if (lseek(fileno(fin), restart_point, L_SET) < 0) {
 			perror_reply(550, name);
 			goto done;
 		}
@@ -519,12 +573,28 @@ store(name, mode, unique)
 	}
 	if (restart_point) {
 		if (type == TYPE_A) {
-			if (fseek(fout, restart_point, L_SET) < 0) {
+			register int i, n, c;
+
+			n = restart_point;
+			i = 0;
+			while (i++ < n) {
+				if ((c=getc(fout)) == EOF) {
+					perror_reply(550, name);
+					goto done;
+				}
+				if (c == '\n')
+					i++;
+			}	
+			/*
+			 * We must do this seek to "current" position
+			 * because we are changing from reading to
+			 * writing.
+			 */
+			if (fseek(fout, 0L, L_INCR) < 0) {
 				perror_reply(550, name);
 				goto done;
 			}
-		}
-		else if (lseek(fileno(fout), restart_point, L_SET) < 0) {
+		} else if (lseek(fileno(fout), restart_point, L_SET) < 0) {
 			perror_reply(550, name);
 			goto done;
 		}
@@ -535,7 +605,7 @@ store(name, mode, unique)
 	if (receive_data(din, fout) == 0) {
 		if (unique)
 			reply(226, "Transfer complete (unique file name:%s).",
-				name);
+			    name);
 		else
 			reply(226, "Transfer complete.");
 	}
@@ -583,6 +653,8 @@ dataconn(name, size, mode)
 	FILE *file;
 	int retry = 0;
 
+	file_size = size;
+	byte_count = 0;
 	if (size != (off_t) -1)
 		(void) sprintf (sizebuf, " (%ld bytes)", size);
 	else
@@ -642,7 +714,7 @@ dataconn(name, size, mode)
 /*
  * Tranfer the contents of "instr" to
  * "outstr" peer using the appropriate
- * encapulation of the date subject
+ * encapsulation of the data subject
  * to Mode, Structure, and Type.
  *
  * NB: Form isn't handled.
@@ -664,16 +736,19 @@ send_data(instr, outstr, blksize)
 
 	case TYPE_A:
 		while ((c = getc(instr)) != EOF) {
+			byte_count++;
 			if (c == '\n') {
-				if (ferror (outstr)) 
+				if (ferror(outstr))
 					goto data_err;
 				(void) putc('\r', outstr);
 			}
 			(void) putc(c, outstr);
 		}
-		transflag = 0;
 		fflush(outstr);
-		if (ferror (instr) || ferror (outstr)) 
+		transflag = 0;
+		if (ferror(instr))
+			goto file_err;
+		if (ferror(outstr))
 			goto data_err;
 		reply(226, "Transfer complete.");
 		return;
@@ -682,19 +757,21 @@ send_data(instr, outstr, blksize)
 	case TYPE_L:
 		if ((buf = malloc((u_int)blksize)) == NULL) {
 			transflag = 0;
-			perror_reply(421, "Local resource failure: malloc");
-			dologout(1);
-			/* NOTREACHED */
+			perror_reply(451, "Local resource failure: malloc");
+			return;
 		}
 		netfd = fileno(outstr);
 		filefd = fileno(instr);
-		while ((cnt = read(filefd, buf, sizeof(buf))) > 0 &&
+		while ((cnt = read(filefd, buf, (u_int)blksize)) > 0 &&
 		    write(netfd, buf, cnt) == cnt)
-			/* LOOP */;
+			byte_count += cnt;
 		transflag = 0;
 		(void)free(buf);
-		if (cnt != 0)
+		if (cnt != 0) {
+			if (cnt < 0)
+				goto file_err;
 			goto data_err;
+		}
 		reply(226, "Transfer complete.");
 		return;
 	default:
@@ -705,9 +782,12 @@ send_data(instr, outstr, blksize)
 
 data_err:
 	transflag = 0;
-	perror_reply(421, "Data connection");
-	dologout(1);
-	/* NOTREACHED */
+	perror_reply(426, "Data connection");
+	return;
+
+file_err:
+	transflag = 0;
+	perror_reply(551, "Error on input file");
 }
 
 /*
@@ -725,11 +805,10 @@ receive_data(instr, outstr)
 	int cnt;
 	char buf[BUFSIZ];
 
-
 	transflag++;
 	if (setjmp(urgcatch)) {
 		transflag = 0;
-		return(-1);
+		return (-1);
 	}
 	switch (type) {
 
@@ -737,12 +816,13 @@ receive_data(instr, outstr)
 	case TYPE_L:
 		while ((cnt = read(fileno(instr), buf, sizeof buf)) > 0) {
 			if (write(fileno(outstr), buf, cnt) != cnt)
-				goto data_err;
+				goto file_err;
+			byte_count += cnt;
 		}
-		if (cnt < 0) 
+		if (cnt < 0)
 			goto data_err;
 		transflag = 0;
-		return 0;
+		return (0);
 
 	case TYPE_E:
 		reply(553, "TYPE E not implemented.");
@@ -751,30 +831,124 @@ receive_data(instr, outstr)
 
 	case TYPE_A:
 		while ((c = getc(instr)) != EOF) {
+			byte_count++;
 			while (c == '\r') {
-				if (ferror (outstr))
+				if (ferror(outstr))
 					goto data_err;
-				if ((c = getc(instr)) != '\n')
+				if ((c = getc(instr)) != '\n') {
 					(void) putc ('\r', outstr);
+					if (c == '\0' || c == EOF)
+						goto contin2;
+				}
 			}
-			(void) putc (c, outstr);
+			(void) putc(c, outstr);
+	contin2:	;
 		}
 		fflush(outstr);
-		if (ferror (instr) || ferror (outstr))
+		if (ferror(instr))
 			goto data_err;
+		if (ferror(outstr))
+			goto file_err;
 		transflag = 0;
 		return (0);
 	default:
 		reply(550, "Unimplemented TYPE %d in receive_data", type);
 		transflag = 0;
-		return 1;
+		return (-1);
 	}
 
 data_err:
 	transflag = 0;
-	perror_reply(421, "Data Connection");
-	dologout(1);
-	/* NOTREACHED */
+	perror_reply(426, "Data Connection");
+	return (-1);
+
+file_err:
+	transflag = 0;
+	perror_reply(452, "Error writing file");
+	return (-1);
+}
+
+statfilecmd(filename)
+	char *filename;
+{
+	char line[BUFSIZ];
+	FILE *fin;
+	int c;
+
+	(void) sprintf(line, "/bin/ls -lgA %s", filename);
+	fin = ftpd_popen(line, "r");
+	lreply(211, "status of %s:", filename);
+	while ((c = getc(fin)) != EOF) {
+		if (c == '\n') {
+			if (ferror(stdout)){
+				perror_reply(421, "control connection");
+				(void) ftpd_pclose(fin);
+				dologout(1);
+				/* NOTREACHED */
+			}
+			if (ferror(fin)) {
+				perror_reply(551, filename);
+				(void) ftpd_pclose(fin);
+				return;
+			}
+			(void) putc('\r', stdout);
+		}
+		(void) putc(c, stdout);
+	}
+	(void) ftpd_pclose(fin);
+	reply(211, "End of Status");
+}
+
+statcmd()
+{
+	struct sockaddr_in *sin;
+	u_char *a, *p;
+
+	lreply(211, "%s FTP server status:", hostname, version);
+	printf("     %s\r\n", version);
+	printf("     Connected to %s", remotehost);
+	if (isdigit(remotehost[0]))
+		printf(" (%s)", inet_ntoa(his_addr.sin_addr));
+	printf("\r\n");
+	if (logged_in) {
+		if (guest)
+			printf("     Logged in anonymously\r\n");
+		else
+			printf("     Logged in as %s\r\n", pw->pw_name);
+	} else if (askpasswd)
+		printf("     Waiting for password\r\n");
+	else
+		printf("     Waiting for user name\r\n");
+	printf("     TYPE: %s", typenames[type]);
+	if (type == TYPE_A || type == TYPE_E)
+		printf(", FORM: %s", formnames[form]);
+	if (type == TYPE_L)
+#if NBBY == 8
+		printf(" %d", NBBY);
+#else
+		printf(" %d", bytesize);	/* need definition! */
+#endif
+	printf("; STRUcture: %s; transfer MODE: %s\r\n",
+	    strunames[stru], modenames[mode]);
+	if (data != -1)
+		printf("     Data connection open\r\n");
+	else if (pdata != -1) {
+		printf("     in Passive mode");
+		sin = &pasv_addr;
+		goto printaddr;
+	} else if (usedefault == 0) {
+		printf("     PORT");
+		sin = &data_dest;
+printaddr:
+		a = (u_char *) &sin->sin_addr;
+		p = (u_char *) &sin->sin_port;
+#define UC(b) (((int) b) & 0xff)
+		printf(" (%d,%d,%d,%d,%d,%d)\r\n", UC(a[0]),
+			UC(a[1]), UC(a[2]), UC(a[3]), UC(p[0]), UC(p[1]));
+#undef UC
+	} else
+		printf("     No data connection\r\n");
+	reply(211, "End of status");
 }
 
 fatal(s)
@@ -836,7 +1010,7 @@ yyerror(s)
 
 	if (cp = index(cbuf,'\n'))
 		*cp = '\0';
-	reply(500, "'%s': command not understood.",cbuf);
+	reply(500, "'%s': command not understood.", cbuf);
 }
 
 delete(name)
@@ -937,14 +1111,16 @@ dolog(sin)
 	else
 		(void) strncpy(remotehost, inet_ntoa(sin->sin_addr),
 		    sizeof (remotehost));
-	if (!logging)
-		return;
-	t = time((time_t *) 0);
-	syslog(LOG_INFO, "connection from %s at %s",
-	    remotehost, ctime(&t));
 #ifdef SETPROCTITLE
-	setproctitle("%s: connected", remotehost);
+	sprintf(proctitle, "%s: connected", remotehost);
+	setproctitle(proctitle);
 #endif /* SETPROCTITLE */
+
+	if (logging) {
+		t = time((time_t *) 0);
+		syslog(LOG_INFO, "connection from %s at %s",
+		    remotehost, ctime(&t));
+	}
 }
 
 /*
@@ -975,12 +1151,19 @@ myoob()
 		dologout(0);
 	}
 	upper(cp);
-	if (strcmp(cp, "ABOR\r\n"))
-		return;
-	tmpline[0] = '\0';
-	reply(426,"Transfer aborted. Data connection closed.");
-	reply(226,"Abort successful");
-	longjmp(urgcatch, 1);
+	if (strcmp(cp, "ABOR\r\n") == 0) {
+		tmpline[0] = '\0';
+		reply(426, "Transfer aborted. Data connection closed.");
+		reply(226, "Abort successful");
+		longjmp(urgcatch, 1);
+	}
+	if (strcmp(cp, "STAT\r\n") == 0) {
+		if (file_size != (off_t) -1)
+			reply(213, "Status: %lu of %lu bytes transferred",
+			    byte_count, file_size);
+		else
+			reply(213, "Status: %lu bytes transferred", byte_count);
+	}
 }
 
 /*
@@ -992,7 +1175,6 @@ myoob()
 passive()
 {
 	int len;
-	struct sockaddr_in tmp;
 	register char *p, *a;
 
 	pdata = socket(AF_INET, SOCK_STREAM, 0);
@@ -1000,21 +1182,21 @@ passive()
 		perror_reply(425, "Can't open passive connection");
 		return;
 	}
-	tmp = ctrl_addr;
-	tmp.sin_port = 0;
+	pasv_addr = ctrl_addr;
+	pasv_addr.sin_port = 0;
 	(void) seteuid((uid_t)0);
-	if (bind(pdata, (struct sockaddr *) &tmp, sizeof(tmp)) < 0) {
+	if (bind(pdata, (struct sockaddr *)&pasv_addr, sizeof(pasv_addr)) < 0) {
 		(void) seteuid((uid_t)pw->pw_uid);
 		goto pasv_error;
 	}
 	(void) seteuid((uid_t)pw->pw_uid);
-	len = sizeof(tmp);
-	if (getsockname(pdata, (struct sockaddr *) &tmp, &len) < 0)
+	len = sizeof(pasv_addr);
+	if (getsockname(pdata, (struct sockaddr *) &pasv_addr, &len) < 0)
 		goto pasv_error;
 	if (listen(pdata, 1) < 0)
 		goto pasv_error;
-	a = (char *) &tmp.sin_addr;
-	p = (char *) &tmp.sin_port;
+	a = (char *) &pasv_addr.sin_addr;
+	p = (char *) &pasv_addr.sin_port;
 
 #define UC(b) (((int) b) & 0xff)
 
@@ -1041,12 +1223,12 @@ gunique(local)
 	static char new[MAXPATHLEN];
 	struct stat st;
 	char *cp = rindex(local, '/');
-	int count=0;
+	int count = 0;
 
 	if (cp)
 		*cp = '\0';
 	if (stat(cp ? local : ".", &st) < 0) {
-		perror_reply(553, local);
+		perror_reply(553, cp ? local : ".");
 		return((char *) 0);
 	}
 	if (cp)
@@ -1093,6 +1275,7 @@ send_file_list(whichfiles)
 
 	if (strpbrk(whichfiles, "~{[*?") != NULL) {
 		extern char **glob(), *globerr;
+
 		globerr = NULL;
 		dirlist = glob(whichfiles);
 		if (globerr != NULL) {
@@ -1107,46 +1290,62 @@ send_file_list(whichfiles)
 		onefile[0] = whichfiles;
 		dirlist = onefile;
 	}
-	
+
+	if (setjmp(urgcatch)) {
+		transflag = 0;
+		return;
+	}
 	while (dirname = *dirlist++) {
 		if (stat(dirname, &st) < 0) {
+			/*
+			 * If user typed "ls -l", etc, and the client
+			 * used NLST, do what the user meant.
+			 */
+			if (dirname[0] == '-' && *dirlist == NULL &&
+			    transflag == 0) {
+				retrieve("/bin/ls %s", dirname);
+				return;
+			}
 			perror_reply(550, whichfiles);
 			if (dout != NULL) {
 				(void) fclose(dout);
+				transflag = 0;
 				data = -1;
 				pdata = -1;
 			}
 			return;
 		}
-			
+
 		if ((st.st_mode&S_IFMT) == S_IFREG) {
 			if (dout == NULL) {
 				dout = dataconn(whichfiles, (off_t)-1, "w");
 				if (dout == NULL)
 					return;
+				transflag++;
 			}
 			fprintf(dout, "%s\n", dirname);
+			byte_count += strlen(dirname) + 1;
 			continue;
-		} else if ((st.st_mode&S_IFMT) != S_IFDIR) 
+		} else if ((st.st_mode&S_IFMT) != S_IFDIR)
 			continue;
 
 		if ((dirp = opendir(dirname)) == NULL)
 			continue;
 
 		while ((dir = readdir(dirp)) != NULL) {
-			char nbuf[BUFSIZ];
+			char nbuf[MAXPATHLEN];
 
 			if (dir->d_name[0] == '.' && dir->d_namlen == 1)
 				continue;
-			if (dir->d_name[0] == '.' && dir->d_name[1] == '.'
-			    && dir->d_namlen == 2)
+			if (dir->d_name[0] == '.' && dir->d_name[1] == '.' &&
+			    dir->d_namlen == 2)
 				continue;
 
-			sprintf(nbuf, "%s/%s", dirname, dir->d_name); 
-			
+			sprintf(nbuf, "%s/%s", dirname, dir->d_name);
+
 			/*
-			 * we have to do a stat to insure it's
-			 * not a directory
+			 * We have to do a stat to insure it's
+			 * not a directory or special file.
 			 */
 			if (stat(nbuf, &st) == 0 &&
 			    (st.st_mode&S_IFMT) == S_IFREG) {
@@ -1155,22 +1354,27 @@ send_file_list(whichfiles)
 						"w");
 					if (dout == NULL)
 						return;
+					transflag++;
 				}
 				if (nbuf[0] == '.' && nbuf[1] == '/')
 					fprintf(dout, "%s\n", &nbuf[2]);
 				else
 					fprintf(dout, "%s\n", nbuf);
+				byte_count += strlen(nbuf) + 1;
 			}
 		}
 		(void) closedir(dirp);
 	}
 
-	if (dout != NULL && ferror(dout) != 0)
-		perror_reply(550, whichfiles);
-	else 
+	if (dout == NULL)
+		reply(550, "No files found.");
+	else if (ferror(dout) != 0)
+		perror_reply(550, "Data connection");
+	else
 		reply(226, "Transfer complete.");
 
-	if (dout != NULL) 
+	transflag = 0;
+	if (dout != NULL)
 		(void) fclose(dout);
 	data = -1;
 	pdata = -1;
