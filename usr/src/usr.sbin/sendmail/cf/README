@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.6 (Berkeley) %G%
+		@(#)README	8.7 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -197,21 +197,24 @@ hosts:
 
 UUCP_RELAY	The host that will forward UUCP-addressed email.
 		If not defined, all UUCP sites must be directly
-		connected.  This can be an SMTP hostname or a
-		mailer:hostname.
+		connected.
 BITNET_RELAY	The host that will forward BITNET-addressed email.
 		If not defined, the .BITNET pseudo-domain won't work.
-		Can be an SMTP hostname or a mailer:hostname.
 CSNET_RELAY	The host that will forward CSNET-addressed email.
 		If not defined, the .CSNET pseudo-domain won't work.
-		Can be an SMTP hostname or a mailer:hostname.
 LOCAL_RELAY	The site that will handle unqualified names -- that
 		is, names with out an @domain extension.  If not set,
 		they are assumed to belong on this machine.  This
 		allows you to have a central site to store a
 		company- or department-wide alias database.  This
 		only works at small sites, and there are better
-		methods.  Can be an SMTP hostname or a mailer:hostname.
+		methods.
+
+Each of these can be either ``mailer:hostname'' (in which case the
+mailer is the internal mailer name, such as ``suucp'' and the hostname
+is the name of the host as appropriate for that mailer) or just a
+``hostname'', in which case a default mailer type (usually ``relay'',
+a variant on SMTP) is used.
 
 The domain file can also be used to define a domain name, if needed
 (using "DD<domain>") and set certain site-wide features.  If all hosts
@@ -299,7 +302,10 @@ nouucp		Don't do anything special with UUCP addresses at all.
 nocanonify	Don't pass addresses to $[ ... $] for canonification.
 		This would generally only be used by sites that only
 		act as mail gateways or which have user agents that do
-		full canonification themselves.
+		full canonification themselves.  You may also want to
+		use "define(`confBIND_OPTS',`-DNSRCH -DEFNAMES')" to
+		turn off the usual resolver options that do a similar
+		thing.
 notsticky	By default, email sent to "user@local.host" are marked
 		as "sticky" -- that is, the local addresses aren't
 		matched against UDB and don't go through ruleset 5.
@@ -542,7 +548,7 @@ using:
 
 	define(`SMART_HOST', mailer:hostname)
 
-In this case, the ``mailer:'' defaults to "suucp".  Any messages that
+In this case, the ``mailer:'' defaults to "relay".  Any messages that
 can't be handled using the usual UUCP rules are passed to this host.
 
 If you are on a local SMTP-based net that connects to the outside
@@ -566,6 +572,42 @@ use:
 
 That is, send directly only to things you found in your DNS lookup;
 anything else goes through SMART_HOST.
+
+
++--------------------+
+| USING MAILERTABLES |
++--------------------+
+
+To use FEATURE(mailertable), you will have to create an external
+database containing the routing information for various domains.
+For example, a mailertable file in text format might be:
+
+	.my.domain		xnet:%1.my.domain
+	uuhost1.my.domain	suucp:uuhost1
+	.bitnet			smtp:relay.bit.net
+
+This should normally be stored in /etc/mailertable.  The actual
+database version of the mailertable is built using:
+
+	makemap hash /etc/mailertable.db < /etc/mailertable
+
+The semantics are simple.  Any LHS entry that does not begin with
+a dot matches the full host name indicated.  LHS entries beginning
+with a dot match anything ending with that domain name -- that is,
+they can be thought of as having a leading "*" wildcard.  Matching
+is done in order of most-to-least qualified -- for example, even
+though ".my.domain" is listed first in the above example, an entry
+of "uuhost1.my.domain" will match the second entry since it is
+more explicit.
+
+The RHS should always be a "mailer:host" pair.  The mailer is the
+configuration name of a mailer (that is, an `M' line in the
+sendmail.cf file).  The "host" will be the hostname passed to
+that mailer.  In domain-based matches (that is, those with leading
+dots) the "%1" may be used to interpolate the wildcarded part of
+the host name.  For example, the first line above sends everything
+addressed to "anything.my.domain" to that same host name, but using
+the (presumably experimental) xnet mailer.
 
 
 +------------------+
@@ -774,6 +816,13 @@ confSMTP_MAILER		esmtp		-	The mailer name used when
 confLOCAL_MAILER	local		-	The mailer name used when
 						local connectivity is required.
 						Almost always "local".
+confRELAY_MAILER	relay		-	The default mailer name used
+						for relaying any mail (e.g.,
+						to a BITNET_RELAY, a
+						SMART_HOST, or whatever).
+						This can reasonably be "suucp"
+						if you are on a UUCP-connected
+						site.
 
 
 +-----------+
