@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwwrite.c	3.14 83/12/02";
+static	char *sccsid = "@(#)wwwrite.c	3.15 83/12/06";
 #endif
 
 #include "ww.h"
@@ -185,11 +185,13 @@ int n;
 			}
 			break;
 		case 2:
-			w->ww_cur.r = w->ww_w.t + (*p++ - ' ') % w->ww_w.nr;
+			w->ww_cur.r = w->ww_w.t +
+				(unsigned)(*p++ - ' ') % w->ww_w.nr;
 			w->ww_wstate = 3;
 			break;
 		case 3:
-			w->ww_cur.c = w->ww_w.l + (*p++ - ' ') % w->ww_w.nc;
+			w->ww_cur.c = w->ww_w.l +
+				(unsigned)(*p++ - ' ') % w->ww_w.nc;
 			w->ww_wstate = 0;
 			break;
 		}
