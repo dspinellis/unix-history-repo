@@ -1,4 +1,4 @@
-/*	if_il.c	4.2	82/05/24	*/
+/*	if_il.c	4.3	82/05/25	*/
 
 #include "il.h"
 #include "imp.h"
@@ -584,6 +584,6 @@ COUNT(ILLHINIT);
 	ifp->if_flags = IFF_UP|IFF_POINTOPOINT;
 	ifp->if_output = looutput;
 	if_attach(ifp);
-	rtinit(&ifp->if_addr, &ifp->if_addr, RTF_UP|RTF_DIRECT);
+	rtinit(&ifp->if_addr, &ifp->if_addr, RTF_UP|RTF_DIRECT|RTF_HOST);
 }
 #endif

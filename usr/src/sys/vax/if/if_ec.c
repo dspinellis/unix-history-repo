@@ -1,4 +1,4 @@
-/*	if_ec.c	4.10	82/05/24	*/
+/*	if_ec.c	4.11	82/05/25	*/
 
 #include "ec.h"
 #include "imp.h"
@@ -763,6 +763,6 @@ COUNT(ECLHINIT);
 	ifp->if_flags = IFF_UP|IFF_POINTOPOINT;
 	ifp->if_output = looutput;
 	if_attach(ifp);
-	rtinit(&ifp->if_addr, &ifp->if_addr, RTF_UP|RTF_DIRECT);
+	rtinit(&ifp->if_addr, &ifp->if_addr, RTF_UP|RTF_DIRECT|RTF_HOST);
 }
 #endif
