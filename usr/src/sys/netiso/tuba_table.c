@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tuba_table.c	7.4 (Berkeley) %G%
+ *	@(#)tuba_table.c	7.5 (Berkeley) %G%
  */
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -79,9 +79,9 @@ tuba_lookup(isoa, wait)
 		== NULL)
 		return (0);
 	bzero((caddr_t)tc, sizeof (*tc));
-	bcopy((caddr_t)EID, (caddr_t)&tc->tc_addr, 1 + EID[0]);
-	rn_insert((caddr_t)&tc->tc_addr, tuba_tree->rnh_treetop,
-		&dupentry, tc->tc_nodes);
+	bcopy((caddr_t)EID, (caddr_t)&tc->tc_EID, sizeof(EID));
+	bcopy((caddr_t)isoa, (caddr_t)&tc->tc_addr, 1 + isoa->isoa_len);
+	rn_insert(tc->tc_EID, tuba_tree->rnh_treetop, &dupentry, tc->tc_nodes);
 	if (dupentry)
 		panic("tuba_lookup 1");
 	tc->tc_time = time.tv_sec;

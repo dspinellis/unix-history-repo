@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tuba_subr.c	7.6 (Berkeley) %G%
+ *	@(#)tuba_subr.c	7.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -41,12 +41,13 @@
 #include <netiso/iso_var.h>
 #include <netiso/tuba_table.h>
 
-static struct	sockaddr_iso null_siso = { sizeof(null_siso), AF_ISO, };
-extern struct	isopcb tuba_isopcb;
-extern int	tuba_table_size;
-extern int	tcppcbcachemiss, tcppredack, tcppreddat, tcprexmtthresh;
-extern struct 	inpcb *tcp_last_inpcb;
-extern struct	tcpiphdr tcp_saveti;
+static	struct	sockaddr_iso null_siso = { sizeof(null_siso), AF_ISO, };
+extern	int	tuba_table_size;
+extern	int	tcppcbcachemiss, tcppredack, tcppreddat, tcprexmtthresh;
+extern	struct	tcpiphdr tcp_saveti;
+struct	inpcb	*tuba_last_inpcb;
+struct	inpcb	tuba_inpcb;
+struct	isopcb	tuba_isopcb;
 /*
  * Tuba initialization
  */
@@ -55,6 +56,7 @@ tuba_init()
 #define TUBAHDRSIZE (3 /*LLC*/ + 9 /*CLNP Fixed*/ + 42 /*Addresses*/ \
 		     + 6 /*CLNP Segment*/ + 20 /*TCP*/)
 
+	tuba_inpcb.inp_next = tuba_inpcb.inp_prev = &tuba_inpcb;
 	tuba_isopcb.isop_next = tuba_isopcb.isop_prev = &tuba_isopcb;
 	tuba_isopcb.isop_faddr = &tuba_isopcb.isop_sfaddr;
 	tuba_isopcb.isop_laddr = &tuba_isopcb.isop_sladdr;
@@ -81,96 +83,47 @@ tuba_getaddr(error, sum, siso, index)
 	} else
 		*error = 1;
 }
-int tuba_noisy = 1;
 
 tuba_output(m, tp)
 	register struct mbuf *m;
 	struct tcpcb *tp;
 {
 	struct isopcb *isop;
-	register struct tcpiphdr *n, *h;
-	struct mbuf *p = m_gethdr(M_DONTWAIT, MT_DATA);
-	u_long sum = 0, i = 0, k1, k2, k3, k4, k5, lindex, findex, len;
+	register struct tcpiphdr *n;
+	u_long sum, i;
 
-	if ((m->m_flags & M_PKTHDR) == 0)
-		panic("tuba_output");
-	if (p == 0)
-		panic("tuba_output 2");
-	m = m_pullup(m, 40);
-	if (m == 0) {
-		printf("heisenberg hit us\n");
-		(void)m_free(p);
-		return (ENOBUFS);
-	}
-	n = mtod(m, struct tcpiphdr *);
-	h = mtod(p, struct tcpiphdr *);
-	lindex = n->ti_src.s_addr;
-	findex = n->ti_dst.s_addr;
-	len = m->m_pkthdr.len;
-	bzero((caddr_t)h, sizeof(*h));
-	h->ti_pr = ISOPROTO_TCP;
-	h->ti_dst.s_addr = findex;
-	h->ti_src.s_addr = lindex;
-	h->ti_len = htons((u_short)len - 20);
-	m->m_data += 20;
-	m->m_len -= 20;
-	k1 = in_cksum(m, len - 20);
-	p->m_len = 20;
-	p->m_next = m;
-	k2 = in_cksum(p, 20);
-	k3 = in_cksum(p, len);
-	m->m_data -= 20;
-	m->m_len += 20;
-
-	if (tuba_noisy) {
-		printf("old ti_sum is 0x%x\n", n->ti_sum);
-		printf("in_cksum for old TCP part is 0x%x\n", k1);
-		printf("in_cksum for ph(idx) is 0x%x\n", k2);
-		printf("in_cksum for ph + TCP is 0x%x\n", k3);
-	}
 	if (tp == 0 || (n = tp->t_template) == 0 || 
 	    (isop = (struct isopcb *)tp->t_tuba_pcb) == 0) {
 		isop = &tuba_isopcb;
 		n = mtod(m, struct tcpiphdr *);
-		tuba_getaddr(&i, &sum, tuba_isopcb.isop_faddr, findex);
-		tuba_getaddr(&i, &sum, tuba_isopcb.isop_laddr, lindex);
+		i = sum = 0;
+		tuba_getaddr(&i, &sum, tuba_isopcb.isop_faddr,
+				n->ti_dst.s_addr);
+		tuba_getaddr(&i, &sum, tuba_isopcb.isop_laddr,
+				n->ti_src.s_addr);
 		goto adjust;
 	}
 	if (n->ti_sum == 0) {
-		tuba_getaddr(&i, &sum, (struct sockaddr_iso *)0, findex);
-		tuba_getaddr(&i, &sum, (struct sockaddr_iso *)0, lindex);
+		i = sum = 0;
+		tuba_getaddr(&i, &sum, (struct sockaddr_iso *)0,
+				n->ti_dst.s_addr);
+		tuba_getaddr(&i, &sum, (struct sockaddr_iso *)0,
+				n->ti_src.s_addr);
 		n->ti_sum = sum;
 		n = mtod(m, struct tcpiphdr *);
 	adjust:
 		if (i) {
 			m_freem(m);
-			(void)m_free(p);
 			return (EADDRNOTAVAIL);
 		}
 		REDUCE(n->ti_sum, n->ti_sum + (0xffff ^ sum));
 	}
-	h->ti_dst.s_addr = tuba_table[findex]->tc_sum_in;
-	h->ti_src.s_addr = tuba_table[lindex]->tc_sum_in;
 	m->m_len -= sizeof (struct ip);
 	m->m_pkthdr.len -= sizeof (struct ip);
 	m->m_data += sizeof (struct ip);
-	k1 = in_cksum(m, len - 20);
-	k2 = in_cksum(p, 20);
-	k3 = in_cksum(p, len);
-	REDUCE(k4, h->ti_dst.s_addr + h->ti_src.s_addr + h->ti_len 
-			+ ntohs((u_short)ISOPROTO_TCP) + (0xffff ^ k1));
-	k4 = 0xffff ^ k4;
-	if (tuba_noisy) {
-		printf("new ti_sum is 0x%x\n", n->ti_sum);
-		printf("adjustment is 0x%x\n", sum);
-		printf("in_cksum for new TCP part is 0x%x\n", k1);
-		printf("in_cksum for ph(EIDSUM) is 0x%x\n", k2);
-		printf("in_cksum for ph + TCP is 0x%x\n", k3);
-		printf("calculated in the funky way is 0x%x\n", k4);
-	}
-	(void)m_free(p);
 	return (clnp_output(m, isop, m->m_pkthdr.len, 0));
 }
+
 
 tuba_refcnt(isop, delta)
 	struct isopcb *isop;
@@ -229,8 +182,6 @@ tuba_pcbconnect(inp, nam)
 		tuba_refcnt(isop, 1);
 	return (error);
 }
-
-tuba_badcksum() {} /* XXX - to set breakpoints */
 
 /*
  * CALLED FROM:
@@ -336,18 +287,17 @@ tuba_tcpinput(m, src, dst, clnp_len, ce_bit)
 	ti->ti_len = htons((u_short)tlen);
 	if (ti->ti_sum = in_cksum(m, m->m_pkthdr.len)) {
 		tcpstat.tcps_rcvbadsum++;
-		tuba_badcksum();
 		goto drop;
 	}
-	if (tuba_noisy)
-		printf("Hurray!\n");
 	ti->ti_src.s_addr = findex;
 	ti->ti_dst.s_addr = lindex;
 	/*
 	 * Now include the rest of TCP input
 	 */
 #define TUBA_INCLUDE
-#define in_pcbconnect	tuba_pcbconnect
+#define	in_pcbconnect	tuba_pcbconnect
+#define	tcb		tuba_inpcb
+#define tcp_last_inpcb	tuba_last_inpcb
 
 #include <netinet/tcp_input.c>
 }
