@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)qsort.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)qsort.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdlib.h>
@@ -35,6 +35,7 @@ static  int		mthresh;		/* MTHRESHold in chars */
  * It's not...
  */
 
+void
 qsort(base, n, size, compar)
 	char	*base;
 	int	n;
