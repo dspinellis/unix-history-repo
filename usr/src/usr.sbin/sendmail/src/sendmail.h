@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	3.78		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.79		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -22,8 +22,7 @@ static char SmailSccsId[] =	"@(#)sendmail.h	3.78		%G%";
 # ifdef LOG
 # include <syslog.h>
 # endif LOG
-
-/*
+/*
 **  Configuration constants.
 **	There shouldn't be much need to change these....
 */
@@ -33,11 +32,9 @@ static char SmailSccsId[] =	"@(#)sendmail.h	3.78		%G%";
 # define MAXFIELD	2500		/* max total length of a hdr field */
 # define MAXPV		40		/* max # of parms to mailers */
 # define MAXHOP		30		/* max value of HopCount */
-# define MAXATOM	30		/* max atoms per address */
+# define MAXATOM	100		/* max atoms per address */
 # define MAXMAILERS	10		/* maximum mailers known to system */
 # define SPACESUB	('.'|0200)	/* substitution for <lwsp> */
-
-extern char	Arpa_Info[];	/* the message number for Arpanet info */
 /*
 **  Address structure.
 **	Addresses are stored internally in this structure.
@@ -409,6 +406,7 @@ extern char	*StatFile;	/* location of statistics summary */
 extern char	*QueueDir;	/* location of queue directory */
 EXTERN char	*ControlFile;	/* when queued, name of control file temp */
 EXTERN char	*MsgId;		/* Message-Id: for this message */
+extern char	Arpa_Info[];	/* the message number for Arpanet info */
 EXTERN time_t	CurTime;	/* time of this message */
 EXTERN jmp_buf	TopFrame;	/* branch-to-top-of-loop-on-error frame */
 EXTERN bool	QuickAbort;	/*  .... but only if we want a quick abort */
