@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rcp.c	4.13 85/02/27";
+static char sccsid[] = "@(#)rcp.c	4.14 85/03/05";
 #endif
 
 /*
@@ -43,7 +43,7 @@ main(argc, argv)
 	char **argv;
 {
 	char *targ, *host, *src;
-	char *suser, *tuser;
+	char *suser, *tuser, *thost;
 	int i;
 	char buf[BUFSIZ], cmd[16];
 	struct servent *sp;
@@ -92,37 +92,45 @@ main(argc, argv)
 		*targ++ = 0;
 		if (*targ == 0)
 			targ = ".";
-		tuser = rindex(argv[argc - 1], '.');
-		if (tuser) {
-			*tuser++ = 0;
-			if (!okname(tuser))
+		thost = index(argv[argc - 1], '@');
+		if (thost) {
+			*thost++ = 0;
+			tuser = argv[argc - 1];
+			if (*tuser == '\0')
+				tuser = pwd->pw_name;
+			else if (!okname(tuser))
 				exit(1);
-		} else
+		} else {
+			thost = argv[argc - 1];
 			tuser = pwd->pw_name;
+		}
 		for (i = 0; i < argc - 1; i++) {
 			src = colon(argv[i]);
 			if (src) {
 				*src++ = 0;
 				if (*src == 0)
 					src = ".";
-				suser = rindex(argv[i], '.');
-				if (suser) {
-					*suser++ = 0;
-					if (!okname(suser))
+				host = index(argv[i], '@');
+				if (host) {
+					*host++ = 0;
+					suser = argv[i];
+					if (*suser == '\0')
+						suser = pwd->pw_name;
+					else if (!okname(suser))
 						continue;
-		(void) sprintf(buf, "rsh %s -l %s -n %s %s '%s.%s:%s'",
-					    argv[i], suser, cmd, src,
-					    argv[argc - 1], tuser, targ);
+		(void) sprintf(buf, "rsh %s -l %s -n %s %s '%s@%s:%s'",
+					    host, suser, cmd, src,
+					    tuser, thost, targ);
 				} else
-		(void) sprintf(buf, "rsh %s -n %s %s '%s.%s:%s'",
+		(void) sprintf(buf, "rsh %s -n %s %s '%s@%s:%s'",
 					    argv[i], cmd, src,
-					    argv[argc - 1], tuser, targ);
+					    tuser, thost, targ);
 				(void) susystem(buf);
 			} else {
 				if (rem == -1) {
 					(void) sprintf(buf, "%s -t %s",
 					    cmd, targ);
-					host = argv[argc - 1];
+					host = thost;
 					rem = rcmd(&host, port, pwd->pw_name, tuser,
 					    buf, 0);
 					if (rem < 0)
@@ -148,19 +156,23 @@ main(argc, argv)
 				*src++ = 0;
 				if (*src == 0)
 					src = ".";
-				suser = rindex(argv[i], '.');
-				if (suser) {
-					*suser++ = 0;
-					if (!okname(suser))
+				host = index(argv[i], '@');
+				if (host) {
+					*host++ = 0;
+					suser = argv[i];
+					if (*suser == '\0')
+						suser = pwd->pw_name;
+					else if (!okname(suser))
 						continue;
-				} else
+				} else {
+					host = argv[i];
 					suser = pwd->pw_name;
+				}
 				(void) sprintf(buf, "%s -f %s", cmd, src);
-				host = argv[i];
 				rem = rcmd(&host, port, pwd->pw_name, suser,
 				    buf, 0);
 				if (rem < 0)
-					exit(1);
+					continue;
 				(void) setreuid(0, userid);
 				sink(1, argv+argc-1);
 				(void) setreuid(userid, 0);
