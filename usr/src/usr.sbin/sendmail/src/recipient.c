@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.31 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.32 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -474,7 +474,6 @@ recipient(a, sendq, e)
 			buildfname(pw->pw_gecos, pw->pw_name, nbuf);
 			if (nbuf[0] != '\0')
 				a->q_fullname = newstr(nbuf);
-#ifndef NEEDGETUSERSHELL
 			if (pw->pw_shell != NULL && pw->pw_shell[0] != '\0')
 			{
 				extern char *getusershell();
@@ -487,7 +486,6 @@ recipient(a, sendq, e)
 				if (p == NULL)
 					a->q_flags |= QBOGUSSHELL;
 			}
-#endif
 			if (!quoted)
 				forward(a, sendq, e);
 		}
