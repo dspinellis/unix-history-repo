@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.46 (Berkeley) %G%
+		@(#)README	8.47 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -156,6 +156,8 @@ LOCAL_MAILER_FLAGS	[rmn] The flags used by the local mailer.  The
 			flags lsDFM are always included.
 LOCAL_MAILER_ARGS	[mail -d $u] The arguments passed to deliver local
 			mail.
+LOCAL_MAILER_MAX	[undefined] If defined, the maximum size of local
+			mail that you are willing to accept.
 LOCAL_SHELL_PATH	[/bin/sh] The shell used to deliver piped email.
 LOCAL_SHELL_FLAGS	[eu] The flags used by the shell mailer.  The
 			flags lsDFM are always included.
@@ -201,6 +203,8 @@ PROCMAIL_MAILER_FLAGS	[Shu] Flags added to Procmail mailer.  Flags
 			``DFMmn'' are always set.
 PROCMAIL_MAILER_ARGS	[procmail -m $h $f $u] The arguments passed to
 			the Procmail mailer.
+PROCMAIL_MAILER_MAX	[undefined] If set, the maximum size message that
+			will be accepted by the procmail mailer.
 
 +---------+
 | DOMAINS |

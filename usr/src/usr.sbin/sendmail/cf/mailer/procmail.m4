@@ -20,7 +20,7 @@ POPDIVERT
 ###   PROCMAIL Mailer specification   ###
 ##################*****##################
 
-VERSIONID(`@(#)procmail.m4	8.1 (Berkeley) %G%')
+VERSIONID(`@(#)procmail.m4	8.2 (Berkeley) %G%')
 
 Mprocmail,	P=PROCMAIL_PATH, F=CONCAT(`DFMmn', PROCMAIL_MAILER_FLAGS), S=11/31, R=21/31,
-		A=PROCMAIL_MAILER_ARGS
+		ifdef(`PROCMAIL_MAILER_MAX', `M=PROCMAIL_MAILER_MAX, ')A=PROCMAIL_MAILER_ARGS
