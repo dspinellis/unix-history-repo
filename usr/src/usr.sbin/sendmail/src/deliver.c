@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.12	%G%";
+static char SccsId[] = "@(#)deliver.c	3.13	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a particular address.
@@ -297,8 +297,6 @@ sendoff(m, pvp, editfcn)
 	}
 # endif DEBUG
 
-	rewind(stdin);
-
 	/* create a pipe to shove the mail through */
 	if (pipe(pvect) < 0)
 	{
@@ -548,7 +546,8 @@ putmessage(fp, m)
 		fprintf(fp, "\n");
 
 	/* output the body of the message */
-	while (!ferror(fp) && (i = read(0, buf, BUFSIZ)) > 0)
+	rewind(stdin);
+	while (!ferror(fp) && (i = fread(buf, 1, BUFSIZ, stdin)) > 0)
 		fwrite(buf, 1, i, fp);
 
 	if (ferror(fp))
