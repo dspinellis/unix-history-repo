@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)machdep.c	7.28 (Berkeley) %G%
+ *	@(#)machdep.c	7.29 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -302,8 +302,10 @@ vmtime(otime, olbolt, oicr)
 /*
  * Clear registers on exec
  */
-setregs(entry)
+/* ARGSUSED */
+setregs(entry, retval)
 	u_long entry;
+	int *retval;
 {
 #ifdef notdef
 	register int *rp;
@@ -413,15 +415,18 @@ sendsig(catcher, sig, mask, code)
  * psl to gain improper priviledges or to cause
  * a machine fault.
  */
-sigreturn()
-{
-	struct a {
+/* ARGSUSED */
+sigreturn(p, uap, retval)
+	struct proc *p;
+	struct args {
 		struct sigcontext *sigcntxp;
-	};
+	} *uap;
+	int *retval;
+{
 	register struct sigcontext *scp;
 	register int *regs = u.u_ar0;
 
-	scp = ((struct a *)(u.u_ap))->sigcntxp;
+	scp = uap->sigcntxp;
 	if (useracc((caddr_t)scp, sizeof (*scp), B_WRITE) == 0)
 		RETURN (EINVAL);
 	if ((scp->sc_ps & (PSL_MBZ|PSL_IPL|PSL_IS)) != 0 ||
@@ -430,7 +435,7 @@ sigreturn()
 	     (scp->sc_ps & (PSL_FPD|PSL_DV|PSL_FU|PSL_IV)) != 0))
 		RETURN (EINVAL);
 	u.u_onstack = scp->sc_onstack & 01;
-	u.u_procp->p_sigmask = scp->sc_mask &~ sigcantmask;
+	p->p_sigmask = scp->sc_mask &~ sigcantmask;
 	regs[FP] = scp->sc_fp;
 	regs[AP] = scp->sc_ap;
 	regs[SP] = scp->sc_sp;
