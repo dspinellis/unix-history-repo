@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cr_put.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)cr_put.c	5.20 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -21,6 +21,14 @@ static char sccsid[] = "@(#)cr_put.c	5.19 (Berkeley) %G%";
  * line numbering and the like).
  */
 
+/* Stub function for the users. */
+int
+mvcur(ly, lx, y, x)
+	int ly, lx, y, x;
+{
+	return (__mvcur(ly, lx, y, x, 0));
+}
+
 static void	fgoto __P((int));
 static int	plod __P((int, int));
 static void	plodput __P((int));
@@ -33,7 +41,6 @@ static int outcol, outline, destcol, destline;
  * terminal boundaries getting the column position implied by wraparound or
  * the lack thereof and rolling up the screen to get destline on the screen.
  */
-
 int
 __mvcur(ly, lx, y, x, in_refresh)
 	int ly, lx, y, x, in_refresh;

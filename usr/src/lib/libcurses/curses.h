@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)curses.h	5.36 (Berkeley) %G%
+ *	@(#)curses.h	5.37 (Berkeley) %G%
  */
 
 #ifndef _CURSES_H_
@@ -153,7 +153,6 @@ extern char	*ttytype;		/* Full name of current terminal. */
 #define	insch(ch)			winsch(stdscr, ch)
 #define	insertln()			winsertln(stdscr)
 #define	move(y, x)			wmove(stdscr, y, x)
-#define mvcur(fx, fy, tx, ty)		__mvcur(fx, fy, tx, ty, 0)
 #define	refresh()			wrefresh(stdscr)
 #define	standend()			wstandend(stdscr)
 #define	standout()			wstandout(stdscr)
@@ -215,6 +214,7 @@ int	 gettmode __P((void));
 void	 idlok __P((WINDOW *, int));
 WINDOW	*initscr __P((void));
 char	*longname __P((char *, char *));
+int	 mvcur __P((int, int, int, int));
 int	 mvprintw __P((int, int, const char *, ...));
 int	 mvscanw __P((int, int, const char *, ...));
 int	 mvwin __P((WINDOW *, int, int));
@@ -265,7 +265,6 @@ int	 vwprintw __P((WINDOW *, const char *, _BSD_VA_LIST_));
 
 /* Private functions that are needed for user programs prototypes. */
 void	 __cputchar __P((int));
-int	 __mvcur __P((int, int, int, int, int));
 int	 __waddbytes __P((WINDOW *, const char *, int, int));
 
 /* Private functions. */
@@ -273,6 +272,7 @@ int	 __waddbytes __P((WINDOW *, const char *, int, int));
 void	 __CTRACE __P((const char *, ...));
 u_int	 __hash __P((char *, int));
 void	 __id_subwins __P((WINDOW *));
+int	 __mvcur __P((int, int, int, int, int));
 void	 __set_subwin __P((WINDOW *, WINDOW *));
 void	 __startwin __P((void));
 void	 __stop_signal_handler __P((int));
