@@ -16,7 +16,7 @@ POPDIVERT
 ###   SMTP Mailer specification   ###
 #####################################
 
-VERSIONID(`@(#)smtp.m4	8.19 (Berkeley) %G%')
+VERSIONID(`@(#)smtp.m4	8.20 (Berkeley) %G%')
 
 Msmtp,		P=[IPC], F=CONCAT(mDFMuX, SMTP_MAILER_FLAGS), S=11/31, R=ifdef(`_ALL_MASQUERADE_', `11/31', `21'), E=\r\n, T=Internet,
 		L=990, ifdef(`SMTP_MAILER_MAX', `M=SMTP_MAILER_MAX, ')A=SMTP_MAILER_ARGS
@@ -32,7 +32,7 @@ Mrelay,		P=[IPC], F=CONCAT(mDFMuXa8, SMTP_MAILER_FLAGS), S=11/31, R=61, E=\r\n, 
 #
 S11
 R$+			$: $>51 $1			sender/recipient common
-R$* :; <@>		$@ $1 :;			list:; special case
+R$* :; <@>		$@				list:; special case
 R$*			$@ $>61 $1			qualify unqual'ed names
 
 
@@ -54,7 +54,7 @@ R$+			$: $1 < @ $j >			add local domain
 #
 S31
 R$+			$: $>51 $1			sender/recipient common
-R$* :; <@>		$@ $1 :;			list:; special case
+R:; <@>			$@				list:; special case
 
 # do special header rewriting
 R$* <@> $*		$@ $1 <@> $2			pass null host through

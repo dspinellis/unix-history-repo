@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.64 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.65 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -415,14 +415,22 @@ S3
 # handle null input (translate to <@> special case)
 R$@			$@ <@>
 
+# strip group: syntax (not inside angle brackets!) and trailing semicolon
+R$*			$: $1 <@>			mark addresses
+R$* < $* > $* <@>	$: $1 < $2 > $3			unmark <addr>
+R$* :: $* <@>		$: $1 :: $2			unmark host::addr
+R$* : $* <@>		$: $2				strip colon if marked
+R$* <@>			$: $1				unmark
+R$* ;			$: $1				strip trailing semi
+
+# null input now results from list:; syntax
+R$@			$@ :; <@>
+
 # basic textual canonicalization -- note RFC733 heuristic here
 R$*<$*>$*<$*>$*		$2$3<$4>$5			strip multiple <> <>
 R$*<$*<$+>$*>$*		<$3>$5				2-level <> nesting
 R$*<>$*			$@ <@>				MAIL FROM:<> case
 R$*<$+>$*		$2				basic RFC821/822 parsing
-
-# handle list:; syntax as special case
-R$*:;$*			$@ $1 :; <@>
 
 # make sure <@a,@b,@c:user@d> syntax is easy to parse -- undone later
 R@ $+ , $+		@ $1 : $2			change all "," to ":"
