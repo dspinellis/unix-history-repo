@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)route.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -30,10 +30,10 @@ static char sccsid[] = "@(#)route.c	5.23 (Berkeley) %G%";
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include "netstat.h"
 
-#define kget(p, d) \
-	(kread((off_t)(p), (char *)&(d), sizeof (d)))
+#define kget(p, d) (kread((off_t)(p), (char *)&(d), sizeof (d)))
 
 /*
  * Definitions for showing gateway flags.
@@ -45,13 +45,17 @@ struct bits {
 	{ RTF_UP,	'U' },
 	{ RTF_GATEWAY,	'G' },
 	{ RTF_HOST,	'H' },
+	{ RTF_REJECT,	'R' },
 	{ RTF_DYNAMIC,	'D' },
 	{ RTF_MODIFIED,	'M' },
+	{ RTF_DONE,	'd' }, /* Completed -- for routing messages only */
+	{ RTF_MASK,	'm' }, /* Mask Present -- for routing messages only */
 	{ RTF_CLONING,	'C' },
 	{ RTF_XRESOLVE,	'X' },
 	{ RTF_LLINFO,	'L' },
-	{ RTF_REJECT,	'R' },
 	{ RTF_STATIC,	'S' },
+	{ RTF_PROTO1,	'1' },
+	{ RTF_PROTO2,	'2' },
 	{ 0 }
 };
 

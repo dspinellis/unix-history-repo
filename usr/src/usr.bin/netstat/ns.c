@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 1985, 1988 Regents of the University of California.
+ * Copyright (c) 1983, 1988 Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ns.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)ns.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -43,6 +43,7 @@ struct	sppcb sppcb;
 struct	socket sockb;
 
 static char *ns_prpr __P((struct ns_addr *));
+static void ns_erputil __P((int, int));
 
 static	int first = 1;
 

@@ -12,23 +12,27 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.29 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
+#include <sys/file.h>
 #include <sys/protosw.h>
 #include <sys/socket.h>
-#include <sys/file.h>
+
+#include <netinet/in.h>
+
+#include <ctype.h>
 #include <errno.h>
-#include <netdb.h>
-#include <nlist.h>
 #include <kvm.h>
 #include <limits.h>
+#include <netdb.h>
+#include <nlist.h>
+#include <paths.h>
 #include <stdio.h>
-#include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
-#include <paths.h>
+#include <unistd.h>
 #include "netstat.h"
 
 struct nlist nl[] = {
@@ -80,6 +84,20 @@ struct nlist nl[] = {
 	{ "_cltb"},
 #define N_CLTPSTAT	23
 	{ "_cltpstat"},
+#define	N_NFILE		24
+	{ "_nfile" },
+#define	N_FILE		25
+	{ "_file" },
+#define N_IGMPSTAT	26
+	{ "_igmpstat" },
+#define N_MRTPROTO	27
+	{ "_ip_mrtproto" },
+#define N_MRTSTAT	28
+	{ "_mrtstat" },
+#define N_MRTTABLE	29
+	{ "_mrttable" },
+#define N_VIFTABLE	30
+	{ "_viftable" },
 
     /* BBN Internet protocol implementation */
 #define	N_TCP		23
@@ -186,13 +204,16 @@ main(argc, argv)
 		prog = argv[0];
 	af = AF_UNSPEC;
 
-	while ((ch = getopt(argc, argv, "Aadf:hI:iM:mN:np:rstuw")) != EOF)
+	while ((ch = getopt(argc, argv, "AaBdf:hI:iM:mN:np:rstuw")) != EOF)
 		switch((char)ch) {
 		case 'A':
 			Aflag = 1;
 			break;
 		case 'a':
 			aflag = 1;
+			break;
+		case 'B':
+			Bflag = 1;
 			break;
 		case 'd':
 			dflag = 1;
@@ -341,6 +362,16 @@ main(argc, argv)
 			routepr((off_t)nl[N_RTREE].n_value);
 		exit(0);
 	}
+	if (Bflag) {
+		if (sflag)
+			mrt_stats((off_t)nl[N_MRTPROTO].n_value,
+			    (off_t)nl[N_MRTSTAT].n_value);
+		else
+			mroutepr((off_t)nl[N_MRTPROTO].n_value,
+			    (off_t)nl[N_MRTTABLE].n_value,
+			    (off_t)nl[N_VIFTABLE].n_value);
+		exit(0);
+	}
 
 
 		if (sflag) {
@@ -377,6 +408,13 @@ plural(n)
 	int n;
 {
 	return (n != 1 ? "s" : "");
+}
+
+char *
+plurales(n)
+	int n;
+{
+	return (n != 1 ? "es" : "");
 }
 
 /*

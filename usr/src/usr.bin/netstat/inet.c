@@ -1,4 +1,4 @@
-    /*
+/*
  * Copyright (c) 1983, 1988 Regents of the University of California.
  * All rights reserved.
  *
@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)inet.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)inet.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -38,14 +38,15 @@ static char sccsid[] = "@(#)inet.c	5.17 (Berkeley) %G%";
 #include <netdb.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 #include "netstat.h"
 
 struct	inpcb inpcb;
 struct	tcpcb tcpcb;
 struct	socket sockb;
 
-char *inetname __P((struct in_addr *));
-void inetprint __P((struct in_addr *, int, char *));
+char	*inetname __P((struct in_addr *));
+void	inetprint __P((struct in_addr *, int, char *));
 
 /*
  * Print a summary of connections related to an Internet
