@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vnops.c	8.22 (Berkeley) %G%
+ *	@(#)union_vnops.c	8.23 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -1283,7 +1283,7 @@ union_inactive(ap)
 	}
 
 	if ((un->un_flags & UN_CACHED) == 0)
-		vgone(ap->a_vp);
+		VOP_REVOKE(ap->a_vp, 0);
 
 	return (0);
 }

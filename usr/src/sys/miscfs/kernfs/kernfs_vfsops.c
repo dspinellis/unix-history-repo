@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kernfs_vfsops.c	8.5 (Berkeley) %G%
+ *	@(#)kernfs_vfsops.c	8.6 (Berkeley) %G%
  */
 
 /*

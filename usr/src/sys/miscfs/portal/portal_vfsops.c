@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)portal_vfsops.c	8.6 (Berkeley) %G%
+ *	@(#)portal_vfsops.c	8.7 (Berkeley) %G%
  *
  * $Id: portal_vfsops.c,v 1.5 1992/05/30 10:25:27 jsp Exp jsp $
  */

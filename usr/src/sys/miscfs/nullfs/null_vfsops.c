@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)null_vfsops.c	8.2 (Berkeley) %G%
+ *	@(#)null_vfsops.c	8.3 (Berkeley) %G%
  *
  * @(#)lofs_vfsops.c	1.2 (Berkeley) 6/18/92
  * $Id: lofs_vfsops.c,v 1.9 1992/05/30 10:26:24 jsp Exp jsp $
