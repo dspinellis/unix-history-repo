@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)5.t	1.4 (Berkeley) %G%
+.\"	@(#)5.t	1.5 (Berkeley) %G%
 .\"
 .\".ds RH "Advanced Topics
 .bp
@@ -85,8 +85,8 @@ then reads the out-of-band byte.
  ...
 oob()
 {
-	int out = FWRITE;
-	char waste[BUFSIZ], mark;
+	int out = FWRITE, mark;
+	char waste[BUFSIZ];
 
 	/* flush local terminal output */
 	ioctl(1, TIOCFLUSH, (char *)&out);
