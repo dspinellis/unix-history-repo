@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ip_output.c	6.9 (Berkeley) %G%
+ *	@(#)ip_output.c	6.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -314,7 +314,7 @@ ip_ctloutput(op, so, level, optname, m)
 	case PRCO_SETOPT:
 		switch (optname) {
 		case IP_OPTIONS:
-			return (ip_pcbopts(inp, *m));
+			return (ip_pcbopts(&inp->inp_options, *m));
 
 		default:
 			error = EINVAL;
@@ -346,23 +346,22 @@ ip_ctloutput(op, so, level, optname, m)
 }
 
 /*
- * Set up IP options in inpcb for insertion in output packets.
- * Store in mbuf, adding pseudo-option with destination address
- * if source routed.
+ * Set up IP options in pcb for insertion in output packets.
+ * Store in mbuf with pointer in pcbopt, adding pseudo-option
+ * with destination address if source routed.
  */
-ip_pcbopts(inp, m)
-	struct inpcb *inp;
-	struct mbuf *m;
+ip_pcbopts(pcbopt, m)
+	struct mbuf **pcbopt;
+	register struct mbuf *m;
 {
 	register cnt, optlen;
 	register u_char *cp;
 	u_char opt;
 
 	/* turn off any old options */
-	if (inp->inp_options)
-		m_free(inp->inp_options);
-	inp->inp_options = 0;
-
+	if (*pcbopt)
+		m_free(*pcbopt);
+	*pcbopt = 0;
 	if (m == (struct mbuf *)0 || m->m_len == 0) {
 		/*
 		 * Only turning off any previous options.
@@ -440,7 +439,7 @@ ip_pcbopts(inp, m)
 			break;
 		}
 	}
-	inp->inp_options = m;
+	*pcbopt = m;
 	return (0);
 
 bad:
