@@ -1,4 +1,4 @@
-/*	proc.h	6.2	84/06/06	*/
+/*	proc.h	6.3	85/05/05	*/
 
 /*
  * One structure allocated per active
@@ -45,6 +45,7 @@ struct	proc {
 	caddr_t p_wchan;	/* event process is awaiting */
 	struct	text *p_textp;	/* pointer to text structure */
 	struct	pte *p_p0br;	/* page table base P0BR */
+	struct	pte *p_p1br;	/* page table base P1BR */
 	struct	proc *p_xlink;	/* linked list of procs sharing same text */
 	short	p_cpticks;	/* ticks of cpu time */
 	float	p_pctcpu;	/* %cpu for this process during p_time */
