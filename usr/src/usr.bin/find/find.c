@@ -1,11 +1,12 @@
 #ifndef	lint
-static char *sccsid = "@(#)find.c	4.20 (Berkeley) %G%";
+static char *sccsid = "@(#)find.c	4.21 (Berkeley) %G%";
 #endif
 
-#include <stdio.h>
 #include <sys/param.h>
 #include <sys/dir.h>
 #include <sys/stat.h>
+#include <stdio.h>
+#include "pathnames.h"
 
 #define A_DAY	86400L /* a day full of seconds */
 #define EQ(x, y)	(strcmp(x, y)==0)
@@ -95,6 +96,8 @@ main(argc, argv)
 	}
 #endif
 	time(&Now);
+	setpassent(1);
+	setgroupent(1);
 #ifdef	SUID_PWD
 	pwd = popen("pwd", "r");
 	fgets(Home, sizeof Home, pwd);
@@ -791,7 +794,7 @@ chgreel(x, fl)
 again:
 	fprintf(stderr, "If you want to go on, type device/file name %s\n",
 		"when ready");
-	devtty = fopen("/dev/tty", "r");
+	devtty = fopen(_PATH_TTY, "r");
 	fgets(str, 20, devtty);
 	str[strlen(str) - 1] = '\0';
 	if(!*str)
@@ -830,7 +833,6 @@ again:
  * provided in the standard 'find'.
  */
 
-#define	FCODES 	"/usr/lib/find/find.codes"
 #define	YES	1
 #define	NO	0
 #define	OFFSET	14
@@ -849,8 +851,8 @@ fastfind ( pathpart )
 	char bigram1[128], bigram2[128];
 	int found = NO;
 
-	if ( (fp = fopen ( FCODES, "r" )) == NULL ) {
-		fprintf ( stderr, "find: can't open %s\n", FCODES );
+	if ( (fp = fopen ( _PATH_FCODES, "r" )) == NULL ) {
+		fprintf ( stderr, "find: can't open %s\n", _PATH_FCODES );
 		exit ( 1 );
 	}
 	for ( i = 0; i < 128; i++ ) 
@@ -973,9 +975,6 @@ getname(uid)
 	register struct passwd *pw;
 	struct passwd *getpwent();
 	register int cp;
-	extern int _pw_stayopen;
-
-	_pw_stayopen = 1;
 
 #if	(((NUID) & ((NUID) - 1)) != 0)
 	cp = uid % (NUID);
@@ -1046,11 +1045,6 @@ getuid(username)
 {
 	register struct passwd *pw;
 	struct passwd *getpwnam();
-#ifndef	NO_PW_STAYOPEN
-	extern int _pw_stayopen;
-
-	_pw_stayopen = 1;
-#endif
 
 	pw = getpwnam(username);
 	if (pw != NULL)
