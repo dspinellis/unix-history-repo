@@ -3,35 +3,26 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)getpwent.3	6.6 (Berkeley) %G%
+.\"	@(#)getpwent.3	6.7 (Berkeley) %G%
 .\"
 .TH GETPWENT 3  ""
 .AT 3
 .SH NAME
-getpwent, getpwnam, getpwuid, setpassent,
-setpwfile, setpwent, endpwent \- get password file entries
+getpwent, getpwnam, getpwuid, setpassent, setpwent,
+endpwent \- get password file entries
 .SH SYNOPSIS
 .nf
-.B #include <sys/types.h>
-.B #include <pwd.h>
-.PP
-.B struct passwd *getpwent()
-.PP
-.B struct passwd *getpwnam(login)
-.B char *login;
-.PP
-.B struct passwd *getpwuid(uid)
-.B uid_t uid;
-.PP
-.B int setpassent(stayopen)
-.B int stayopen;
-.PP
-.B void setpwfile(file)
-.B char *file;
-.PP
-.B int setpwent()
-.PP
-.B void endpwent()
+.ft B
+#include <sys/types.h>
+#include <pwd.h>
+
+struct passwd *getpwent(void);
+struct passwd *getpwnam(char *login);
+struct passwd *getpwuid(uid_t uid);
+int setpassent(int stayopen);
+int setpwent(void);
+void endpwent(void);
+.ft R
 .fi
 .SH DESCRIPTION
 .IR Getpwent ,
@@ -68,34 +59,28 @@ These fields are more completely described in
 and
 .I getpwuid
 search the password database for a matching user name or user uid,
-respectively, returning the first one encountered.  Identical
-user names or user uids may result in undefined behavior.
+respectively, always returning the first one encountered.
 .PP
 .I Getpwent
 sequentially reads the password database and is intended for programs
-that wish to step through the complete list of users.
-.PP
-All three routines will open the password file for reading, if
-necessary.
-.PP
-.I Setpwfile
-changes the default password file to
-.IR file ,
-thus allowing the use of alternate password files.
+that wish to process the complete list of users.
 .PP
 .I Setpassent
-opens the file or rewinds it if it is already open.  If
+accomplishes two purposes.
+First, it causes
+.I getpwent
+to ``rewind'' to the beginning of the database.
+Additionally, if
 .I stayopen
 is non-zero, file descriptors are left open, significantly speeding
-up subsequent calls.  This functionality is unnecessary for
+up subsequent accesses for all of the routines.
+(This latter functionality is unnecessary for
 .I getpwent
-as it doesn't close its file descriptors by default.  It should also
-be noted that it is dangerous for long-running programs to use this
-functionality as the password file may be updated by
-.IR chpass (1),
-.IR passwd (1),
-or
-.IR vipw (8).
+as it doesn't close its file descriptors by default.)
+.PP
+It is dangerous for long-running programs to keep the file descriptors
+open the database will become out of date if it is updated while the
+program is running.
 .PP
 .I Setpwent
 is identical to
@@ -107,30 +92,19 @@ closes any open files.
 .PP
 These routines have been written to ``shadow'' the password file, e.g.
 allow only certain programs to have access to the encrypted password.
-This is done by using the
-.IR mkpasswd (8)
-program, which creates
-.IR ndbm (3)
-databases that correspond to the password file, with the single exception
-that, rather than storing the encrypted password in the database, it stores
-the offset in the password file where the encrypted password may be found.
-.IR Getpwent ,
-.IR getpwnam ,
-and
-.I getpwuid
-will use the
-.I ndbm
-files in preference to the ``real'' password files, only reading the
-password file itself, to obtain the encrypted password, if the process
-is running with an effective user id equivalent to super-user.
-If the password file itself is protected, and the
-.I ndbm
-files are not, this makes the password available only to programs
-running with super-user privileges.
+If the process which calls them has an effective uid of 0, the encrypted
+password will be returned, otherwise, the password field of the retuned
+structure will point to the string ``*''.
 .SH FILES
-/etc/passwd
+/var/db/pwd.db			The insecure password database file
+.br
+/var/db/spwd.db		The secure password database file
+.br
+/etc/master.passwd		The current password file
+.br
+/etc/passwd			A Version 7 format password file
 .SH "SEE ALSO"
-getlogin(3), getgrent(3), ndbm(3), passwd(5)
+getlogin(3), getgrent(3), passwd(5), pwd_mkdb(8), vipw(8)
 .SH DIAGNOSTICS
 The routines
 .IR getpwent ,
@@ -143,27 +117,11 @@ and
 .I setpwent
 return 0 on failure and 1 on success.
 .I Endpwent
-and
-.I setpwfile
-have no return value.
+has no return value.
 .SH BUGS
 All information is contained in a static buffer which is overwritten
-by each new call.  It must be copied elsewhere to be retained.
-.PP
-Intermixing calls to
-.IR getpwent
-with calls to
-.I getpwnam
-or
-.IR getpwuid ,
-or intermixing calls to
-.I getpwnam
-and
-.IR getpwuid ,
-after using
-.I setpassent
-to require that file descriptors be left open, may result
-in undefined behavior.
+by each new call.
+It must be copied elsewhere to be retained.
 .PP
 The routines
 .IR getpwent ,
@@ -173,3 +131,8 @@ and
 .IR setpwent
 are fairly useless in a networked environment and should be
 avoided, if possible.
+.SH COMPATIBILITY
+The historic function
+.IR setpwfile ,
+which allowed the specification of alternate password databases,
+has been deprecated and is no longer available.
