@@ -9,7 +9,7 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
 # -DEGREPSTD=path	location of std egrep (normally /usr/bin/egrep).
 # -DGREPSTD=path	location of std grep (normally /bin/grep).
@@ -20,7 +20,7 @@
 #			 parity-marked search capability, not standard w/grep.
 # -DCHINESE		for systems using EUC Chinese2 codes
 
-CFLAGS=	-g -Dstrrchr=rindex -Dstrchr=index -DNOKANJI \
+CFLAGS=	-O -Dstrrchr=rindex -Dstrchr=index -DNOKANJI \
 	-DEGREPSTD=\"/usr/lib/old.egrep\" -DGREPSTD=\"/usr/lib/old.bin.grep\" \
 	-DFGREPSTD=\"/usr/lib/old.fgrep\"
 LIBC=	/lib/libc.a
