@@ -1,4 +1,4 @@
-#	@(#)bsd.prog.mk	8.1 (Berkeley) %G%
+#	@(#)bsd.prog.mk	5.37 (Berkeley) %G%
 
 .if !defined(NOINCLUDE) && exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
@@ -124,7 +124,7 @@ afterinstall:
 realinstall: _PROGSUBDIR
 .if defined(PROG)
 	install ${STRIP} -o ${BINOWN} -g ${BINGRP} -m ${BINMODE} \
-	    ${PROG} ${DESTDIR}${BINDIR}
+	    ${INSTALLFLAGS} ${PROG} ${DESTDIR}${BINDIR}
 .endif
 .if defined(HIDEGAME)
 	(cd ${DESTDIR}/usr/games; rm -f ${PROG}; ln -s dm ${PROG}; \
