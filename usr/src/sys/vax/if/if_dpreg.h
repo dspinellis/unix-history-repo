@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_dpreg.h	7.1 (Berkeley) %G%
+ *	@(#)if_dpreg.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -20,7 +20,7 @@ struct dpdevice {
 	short	dptdsr;		/* Transmit Data and Status Register */
 };
 
-#define dprdsr	dpun.u_rbuf
+#define dprdsr	dpun.u_rdsr
 #define dpsar	dpun.u_sar
 
 
