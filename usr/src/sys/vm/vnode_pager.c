@@ -9,10 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode_pager.c	8.6 (Berkeley) %G%
+ *	@(#)vnode_pager.c	8.7 (Berkeley) %G%
  */
 
-/*
  * Page to/from files (vnodes).
  *
  * TODO:
@@ -262,8 +261,12 @@ vnode_pager_haspage(pager, offset)
 
 	/*
 	 * Offset beyond end of file, do not have the page
+	 * Lock the vnode first to make sure we have the most recent
+	 * version of the size.
 	 */
+	VOP_LOCK(vnp->vnp_vp);
 	if (offset >= vnp->vnp_size) {
+		VOP_UNLOCK(vnp->vnp_vp);
 #ifdef DEBUG
 		if (vpagerdebug & (VDB_FAIL|VDB_SIZE))
 			printf("vnode_pager_haspage: pg %x, off %x, size %x\n",
@@ -279,7 +282,6 @@ vnode_pager_haspage(pager, offset)
 	 *
 	 * Assumes that the vnode has whole page or nothing.
 	 */
-	VOP_LOCK(vnp->vnp_vp);
 	err = VOP_BMAP(vnp->vnp_vp,
 		       offset / vnp->vnp_vp->v_mount->mnt_stat.f_iosize,
 		       (struct vnode **)0, &bn, NULL);
@@ -484,9 +486,22 @@ vnode_pager_io(vnp, mlist, npages, sync, rw)
 #endif
 	foff = m->offset + m->object->paging_offset;
 	/*
-	 * Return failure if beyond current EOF
+	 * Allocate a kernel virtual address and initialize so that
+	 * we can use VOP_READ/WRITE routines.
 	 */
+	kva = vm_pager_map_pages(mlist, npages, sync);
+	if (kva == NULL)
+		return(VM_PAGER_AGAIN);
+	/*
+	 * After all of the potentially blocking operations have been
+	 * performed, we can do the size checks:
+	 *	read beyond EOF (returns error)
+	 *	short read
+	 */
+	VOP_LOCK(vnp->vnp_vp);
 	if (foff >= vnp->vnp_size) {
+		VOP_UNLOCK(vnp->vnp_vp);
+		vm_pager_unmap_pages(kva, npages);
 #ifdef DEBUG
 		if (vpagerdebug & VDB_SIZE)
 			printf("vnode_pager_io: vp %x, off %d size %d\n",
@@ -498,13 +513,6 @@ vnode_pager_io(vnp, mlist, npages, sync, rw)
 		size = vnp->vnp_size - foff;
 	else
 		size = PAGE_SIZE;
-	/*
-	 * Allocate a kernel virtual address and initialize so that
-	 * we can use VOP_READ/WRITE routines.
-	 */
-	kva = vm_pager_map_pages(mlist, npages, sync);
-	if (kva == NULL)
-		return(VM_PAGER_AGAIN);
 	aiov.iov_base = (caddr_t)kva;
 	aiov.iov_len = size;
 	auio.uio_iov = &aiov;
@@ -519,7 +527,6 @@ vnode_pager_io(vnp, mlist, npages, sync, rw)
 		printf("vnode_pager_io: vp %x kva %x foff %x size %x",
 		       vnp->vnp_vp, kva, foff, size);
 #endif
-	VOP_LOCK(vnp->vnp_vp);
 	if (rw == UIO_READ)
 		error = VOP_READ(vnp->vnp_vp, &auio, 0, p->p_ucred);
 	else
