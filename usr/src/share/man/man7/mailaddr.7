@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)mailaddr.7	6.2 (Berkeley) %G%
+.\"	@(#)mailaddr.7	6.3 (Berkeley) %G%
 .\"
 .TH MAILADDR 7 ""
 .UC 5
@@ -33,7 +33,7 @@ this does not imply any routing.
 Thus,
 although this address is specified as an ARPA address,
 it might travel by an alternate route
-if that was more convenient or efficient.
+if that were more convenient or efficient.
 For example,
 at Berkeley the associated message
 would probably go directly to monet over the Ethernet
@@ -102,7 +102,7 @@ to get to your final destination.
 Domain names (i.e., anything after the ``@'' sign)
 may be given in any mixture of upper and lower case
 with the exception of UUCP hostnames.
-Most hosts accept any mixture of case in user names,
+Most hosts accept any combination of case in user names,
 with the notable exception of MULTICS sites.
 .SS Differences with ARPA Protocols.
 .PP
@@ -148,7 +148,7 @@ through several hosts
 to get it to the final destination.
 Normally this routing is done automatically,
 but sometimes it is desirable to route the message manually.
-An address that shows these relays are termed
+Addresses which show these relays are termed
 ``route-addrs.''
 These use the syntax:
 .PP
