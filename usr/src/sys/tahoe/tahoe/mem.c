@@ -1,22 +1,27 @@
-/*	mem.c	1.4	86/12/15	*/
+/*
+ * Copyright (c) 1988 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)mem.c	7.1 (Berkeley) %G%
+ */
 
 /*
  * Memory special file
  */
 
-#include "../machine/pte.h"
+#include "param.h"
+#include "dir.h"
+#include "user.h"
+#include "conf.h"
+#include "buf.h"
+#include "systm.h"
+#include "vm.h"
+#include "cmap.h"
+#include "uio.h"
 
-#include "../h/param.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/conf.h"
-#include "../h/buf.h"
-#include "../h/systm.h"
-#include "../h/vm.h"
-#include "../h/cmap.h"
-#include "../h/uio.h"
-
-#include "../tahoe/mtpr.h"
+#include "pte.h"
+#include "mtpr.h"
 
 mmread(dev, uio)
 	dev_t dev;

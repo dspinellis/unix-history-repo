@@ -1,9 +1,24 @@
-#ifndef lint
-static char sccsid[] = "@(#)genassym.c	1.7 (Berkeley) %G%";
-#endif
+/*
+ * Copyright (c) 1983, 1988 Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
+ */
 
-#include "../tahoe/pte.h"
-#include "../tahoe/scb.h"
+#ifndef lint
+char copyright[] =
+"@(#) Copyright (c) 1983, 1988 Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)genassym.c	7.1 (Berkeley) %G%";
+#endif /* not lint */
 
 #include "param.h"
 #include "vmmeter.h"
@@ -17,6 +32,9 @@ static char sccsid[] = "@(#)genassym.c	1.7 (Berkeley) %G%";
 #include "text.h"
 #include "mbuf.h"
 #include "msgbuf.h"
+
+#include "pte.h"
+#include "scb.h"
 
 #include "../tahoevba/vbaparam.h"
 

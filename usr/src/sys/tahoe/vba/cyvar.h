@@ -1,4 +1,4 @@
-/*	cyvar.h	1.1	85/07/21	*/
+/*	cyvar.h	7.1	88/05/21	*/
 
 #define TM_ATTENTION(addr,x) 	movob(x,addr)	/* also known as: GO */
 

@@ -1,4 +1,10 @@
-/*	vx.c	1.11	87/09/06	*/
+/*
+ * Copyright (c) 1988 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)vx.c	7.1 (Berkeley) %G%
+ */
 
 #include "vx.h"
 #if NVX > 0
@@ -8,8 +14,6 @@
 #ifdef VXPERF
 #define	DOSCOPE
 #endif
-
-#include "../tahoe/pte.h"
 
 #include "param.h"
 #include "ioctl.h"
@@ -25,6 +29,8 @@
 #include "vm.h"
 #include "kernel.h"
 #include "syslog.h"
+
+#include "../tahoe/pte.h"
 
 #include "../tahoevba/vbavar.h"
 #include "../tahoevba/vxreg.h"

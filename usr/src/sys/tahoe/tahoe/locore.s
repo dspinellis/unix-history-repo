@@ -1,4 +1,10 @@
-/*	locore.s	1.26	88/05/19	*/
+/*
+ * Copyright (c) 1988 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)locore.s	7.1 (Berkeley) %G%
+ */
 
 #include "../tahoe/mtpr.h"
 #include "../tahoe/trap.h"
@@ -7,6 +13,7 @@
 #include "../tahoe/cp.h"
 #include "../tahoe/mem.h"
 #include "../tahoe/SYS.h"
+
 #include "../tahoemath/fp.h"
 
 #include "errno.h"

@@ -1,4 +1,10 @@
-/*	trap.h	1.3	87/07/11	*/
+/*
+ * Copyright (c) 1988 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)trap.h	7.1 (Berkeley) %G%
+ */
 
 /*
  * Trap type values

@@ -1,4 +1,6 @@
-/*	mem.h	1.1	86/01/05	*/
+/*
+ *	@(#)mem.h	7.1 (Berkeley) %G%
+ */
 
 /*
  * Memory controller registers

@@ -1,4 +1,4 @@
-/*	if_enpreg.h	1.4	87/12/22	*/
+/*	if_enpreg.h	7.1	88/05/21	*/
 
 /*	Copyright (c) 1984 by Communication Machinery Corporation
  *

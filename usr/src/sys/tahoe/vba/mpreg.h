@@ -1,4 +1,4 @@
-/*	mpreg.h	1.2	87/12/22	*/
+/*	mpreg.h	7.1	88/05/21	*/
 
 /*
  * MPCC Asynchronous Communications Interface.

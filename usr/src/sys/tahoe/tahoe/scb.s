@@ -1,4 +1,6 @@
-/*	scb.s	1.3	86/11/25	*/
+/*
+ *	@(#)scb.s	7.1 (Berkeley) %G%
+ */
 
 /*
  * System control block

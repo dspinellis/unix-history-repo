@@ -1,4 +1,6 @@
-/*	scope.h	1.3	86/01/12	*/
+/*
+ *	@(#)scope.h	7.1 (Berkeley) %G%
+ */
 
 #ifdef DOSCOPE
 /*  some i/o addresses used to generate pulses for scopes */

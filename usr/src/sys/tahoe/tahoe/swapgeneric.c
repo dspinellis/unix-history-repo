@@ -1,4 +1,4 @@
-/*	swapgeneric.c	1.6	88/02/08	*/
+/*	swapgeneric.c	7.1	88/05/21	*/
 
 #include "../machine/pte.h"
 

@@ -1,4 +1,6 @@
-/*	urem.s	1.1	88/02/08	*/
+/*
+ *	@(#)urem.s	7.1 (Berkeley) %G%
+ */
 
 /*
  * Unsigned remainder.

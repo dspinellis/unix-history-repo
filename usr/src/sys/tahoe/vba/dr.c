@@ -1,4 +1,6 @@
-/*	dr.c	1.6	86/12/15	*/
+/*
+ *	@(#)dr.c	7.1 (Berkeley) %G%
+ */
 
 #include "dr.h"
 #if NDR > 0
