@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)edquota.8	6.6 (Berkeley) %G%
+.\"	@(#)edquota.8	6.7 (Berkeley) %G%
 .\"
 .TH EDQUOTA 8 ""
 .UC 5
@@ -93,7 +93,7 @@ Once the grace period has expired,
 the soft limit is enforced as a hard limit.
 The default grace period for a filesystem is specified in
 .IR /usr/include/ufs/quota.h .
-The \fi-t\fP flag can be used to change the grace period.
+The \fI-t\fP flag can be used to change the grace period.
 By default, or when invoked with the \fI-u\fP flag,
 the grace period is set for all the filesystems with user
 quotas specified in
