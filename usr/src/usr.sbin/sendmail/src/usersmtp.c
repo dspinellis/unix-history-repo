@@ -3,10 +3,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)usersmtp.c	4.9		%G%	(no SMTP));
+SCCSID(@(#)usersmtp.c	4.10		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)usersmtp.c	4.9		%G%);
+SCCSID(@(#)usersmtp.c	4.10		%G%);
 
 
 
@@ -178,6 +178,7 @@ smtpinit(m, pvp)
 	/* signal a temporary failure */
   tempfail:
 	smtpquit(m);
+	CurEnv->e_flags &= ~EF_FATALERRS;
 	return (EX_TEMPFAIL);
 
 	/* signal service unavailable */
