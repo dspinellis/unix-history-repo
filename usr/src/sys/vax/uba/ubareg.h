@@ -1,4 +1,4 @@
-/*	ubareg.h	4.18	81/03/09	*/
+/*	ubareg.h	4.19	81/03/13	*/
 
 /*
  * VAX UNIBUS adapter registers
@@ -116,9 +116,12 @@ struct uba_regs
 #endif
 
 /*
- * For VAXen with specific UBA addresses, give the addresses.
+ * Formulas for locations of the last 8k of UNIBUS memory
+ * for each possible uba.
  */
 #if VAX750
-#define	UBA750	((struct uba_regs *)0xf30000)
-#define	UMEM750	((u_short *)0xfc0000)
+#define	UMEM750(i)	((u_short *)(0xffe000-(i)*0x4000))
+#endif
+#if VAX780
+#define	UMEM780(i)	((u_short *)(0x2013e000+(i)*0x4000))
 #endif
