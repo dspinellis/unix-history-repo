@@ -1,4 +1,4 @@
-.\"	@(#)letter.mips	5.1 (Berkeley) %G%
+.\"	@(#)letter.mips	5.2 (Berkeley) %G%
 .\" use -me
 .if n \{\
 .ND
@@ -25,15 +25,6 @@ MIPS Computer Systems Inc.
 950 DeGuigne Dr.
 MS 5-11
 Sunnyvale, CA 95088
-.sp 2
-.lp
-.nf
-Keith Bostic
-Computer Systems Research Group
-Computer Science Division
-Department of Electrical Engineering and Computer Science
-University of California, Berkeley
-Berkeley, CA 94720
 .sp 3
 .lp
 Dear Mr. Dumas,
