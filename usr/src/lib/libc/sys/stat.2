@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)stat.2	5.1 (Berkeley) %G%
+.\"	@(#)stat.2	6.1 (Berkeley) %G%
 .\"
-.TH STAT 2 "27 July 1983"
+.TH STAT 2 ""
 .UC 4
 .SH NAME
 stat, lstat, fstat \- get file status
@@ -139,14 +139,6 @@ The status information word \fIst_mode\fP has bits:
 The mode bits 0000070 and 0000007 encode group and
 others permissions (see
 .IR chmod (2)).
-.PP
-When
-.I fd
-is associated with a pipe,
-.I fstat
-reports an ordinary file with an i-node number,
-restricted permissions,
-and a not necessarily meaningful length.
 .SH "RETURN VALUE
 Upon successful completion a value of 0 is returned.
 Otherwise, a value of \-1 is returned and
@@ -178,6 +170,9 @@ Search permission is denied for a component of the path prefix.
 or
 .I name
 points to an invalid address.
+.TP 15
+[ELOOP]
+Too many symbolic links were encountered in translating the pathname.
 .PP
 .I Fstat
 will fail if one or both of the following are true:
@@ -189,9 +184,6 @@ is not a valid open file descriptor.
 [EFAULT]
 .I Buf
 points to an invalid address.
-.TP 15
-[ELOOP]
-Too many symbolic links were encountered in translating the pathname.
 .SH CAVEAT
 The fields in the stat structure currently marked 
 .IR st_spare1 ,
@@ -207,7 +199,8 @@ chmod(2), chown(2), utimes(2)
 .SH BUGS
 Applying
 .I fstat
-to a socket returns a zero'd buffer.
+to a socket (and thus to a pipe)
+returns a zero'd buffer, except for the blocksize field.
 .PP
 The list of calls which modify the various fields should be carefully
 checked with reality.
