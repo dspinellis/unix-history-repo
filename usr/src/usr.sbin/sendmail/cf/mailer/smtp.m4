@@ -16,15 +16,15 @@ POPDIVERT
 ###   SMTP Mailer specification   ###
 #####################################
 
-VERSIONID(`@(#)smtp.m4	8.18 (Berkeley) %G%')
+VERSIONID(`@(#)smtp.m4	8.19 (Berkeley) %G%')
 
-Msmtp,		P=[IPC], F=CONCAT(mDFMuX, SMTP_MAILER_FLAGS), S=11/31, R=ifdef(`_ALL_MASQUERADE_', `11/31', `21'), E=\r\n,
+Msmtp,		P=[IPC], F=CONCAT(mDFMuX, SMTP_MAILER_FLAGS), S=11/31, R=ifdef(`_ALL_MASQUERADE_', `11/31', `21'), E=\r\n, T=Internet,
 		L=990, ifdef(`SMTP_MAILER_MAX', `M=SMTP_MAILER_MAX, ')A=SMTP_MAILER_ARGS
-Mesmtp,		P=[IPC], F=CONCAT(mDFMuXa, SMTP_MAILER_FLAGS), S=11/31, R=ifdef(`_ALL_MASQUERADE_', `11/31', `21'), E=\r\n,
+Mesmtp,		P=[IPC], F=CONCAT(mDFMuXa, SMTP_MAILER_FLAGS), S=11/31, R=ifdef(`_ALL_MASQUERADE_', `11/31', `21'), E=\r\n, T=Internet,
 		L=990, ifdef(`SMTP_MAILER_MAX', `M=SMTP_MAILER_MAX, ')A=ESMTP_MAILER_ARGS
-Msmtp8,		P=[IPC], F=CONCAT(mDFMuX8, SMTP_MAILER_FLAGS), S=11/31, R=ifdef(`_ALL_MASQUERADE_', `11/31', `21'), E=\r\n,
+Msmtp8,		P=[IPC], F=CONCAT(mDFMuX8, SMTP_MAILER_FLAGS), S=11/31, R=ifdef(`_ALL_MASQUERADE_', `11/31', `21'), E=\r\n, T=Internet,
 		L=990, ifdef(`SMTP_MAILER_MAX', `M=SMTP_MAILER_MAX, ')A=SMTP8_MAILER_ARGS
-Mrelay,		P=[IPC], F=CONCAT(mDFMuXa8, SMTP_MAILER_FLAGS), S=11/31, R=61, E=\r\n,
+Mrelay,		P=[IPC], F=CONCAT(mDFMuXa8, SMTP_MAILER_FLAGS), S=11/31, R=61, E=\r\n, T=Internet,
 		L=2040, A=RELAY_MAILER_ARGS
 
 #
