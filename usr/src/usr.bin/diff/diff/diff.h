@@ -1,4 +1,4 @@
-/*	diff.h	4.7	85/08/16	*/
+/*	diff.h	4.8	91/03/01	*/
 
 /*
  * diff - common declarations
@@ -80,6 +80,6 @@ struct	stat stb1, stb2;
 char	*malloc(), *talloc(), *ralloc();
 char	*savestr(), *splice(), *splicen();
 char	*mktemp(), *copytemp(), *rindex();
-int	done();
+void	done();
 
 extern	char diffh[], diff[], pr[];
