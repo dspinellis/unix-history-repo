@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rcp.c	4.6 83/07/01";
+static char sccsid[] = "@(#)rcp.c	4.7 83/07/03";
 #endif
 
 /*
@@ -96,7 +96,7 @@ main(argc, argv)
 			if (src) {
 				*src++ = 0;
 				if (*src == 0)
-					*src = ".";
+					src = ".";
 				suser = rindex(argv[i], '.');
 				if (suser) {
 					*suser++ = 0;
