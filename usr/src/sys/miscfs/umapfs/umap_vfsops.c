@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)umap_vfsops.c	8.4 (Berkeley) %G%
+ *	@(#)umap_vfsops.c	8.5 (Berkeley) %G%
  *
  * @(#)null_vfsops.c       1.5 (Berkeley) 7/10/92
  */
@@ -157,7 +157,7 @@ umapfs_mount(mp, path, data, ndp, p)
 	if (UMAPVPTOLOWERVP(umapm_rootvp)->v_mount->mnt_flag & MNT_LOCAL)
 		mp->mnt_flag |= MNT_LOCAL;
 	mp->mnt_data = (qaddr_t) amp;
-	getnewfsid(mp, MOUNT_LOFS);
+	vfs_getnewfsid(mp);
 
 	(void) copyinstr(path, mp->mnt_stat.f_mntonname, MNAMELEN - 1, &size);
 	bzero(mp->mnt_stat.f_mntonname + size, MNAMELEN - size);
@@ -364,7 +364,9 @@ umapfs_vptofh(vp, fhp)
 	return (VFS_VPTOFH(UMAPVPTOLOWERVP(vp), fhp));
 }
 
-int umapfs_init __P((void));
+int umapfs_init __P((struct vfsconf *));
+#define umapfs_sysctl ((int (*) __P((int *, u_int, void *, size_t *, void *, \
+	    size_t, struct proc *)))eopnotsupp)
 
 struct vfsops umap_vfsops = {
 	umapfs_mount,
@@ -378,4 +380,5 @@ struct vfsops umap_vfsops = {
 	umapfs_fhtovp,
 	umapfs_vptofh,
 	umapfs_init,
+	umapfs_sysctl,
 };
