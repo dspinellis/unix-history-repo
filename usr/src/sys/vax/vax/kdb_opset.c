@@ -1,8 +1,13 @@
 /*
- *	@(#)kdb_opset.c	7.5 (Berkeley) %G%
+ *	@(#)kdb_opset.c	7.4 (Berkeley) 5/1/89
  */
 
 #include "../kdb/defs.h"
+
+#include "frame.h"
+
+ADDR	kdbcallpc;
+ADDR	kdblastframe;
 
 /*
  * Instruction printing.
@@ -12,14 +17,15 @@ REGLIST kdbreglist [] = {
 	"p0lr",	&kdbpcb.pcb_p0lr,	"p0br",	(int *)&kdbpcb.pcb_p0br,
 	"ksp",	&kdbpcb.pcb_ksp,	"esp",	&kdbpcb.pcb_esp,
 	"ssp",	&kdbpcb.pcb_ssp,	"psl",	&kdbpcb.pcb_psl,
-	"pc",	&kdbpcb.pcb_pc,	"usp",	&kdbpcb.pcb_usp,
-	"fp",	&kdbpcb.pcb_fp,	"ap",	&kdbpcb.pcb_ap,
+	"pc",	&kdbpcb.pcb_pc,		"usp",	&kdbpcb.pcb_usp,
+	"fp",	&kdbpcb.pcb_fp,		"ap",	&kdbpcb.pcb_ap,
 	"r11",	&kdbpcb.pcb_r11,	"r10",	&kdbpcb.pcb_r10,
-	"r9",	&kdbpcb.pcb_r9,	"r8",	&kdbpcb.pcb_r8,
-	"r7",	&kdbpcb.pcb_r7,	"r6",	&kdbpcb.pcb_r6,
-	"r5",	&kdbpcb.pcb_r5,	"r4",	&kdbpcb.pcb_r4,
-	"r3",	&kdbpcb.pcb_r3,	"r2",	&kdbpcb.pcb_r2,
-	"r1",	&kdbpcb.pcb_r1,	"r0",	&kdbpcb.pcb_r0,
+	"r9",	&kdbpcb.pcb_r9,		"r8",	&kdbpcb.pcb_r8,
+	"r7",	&kdbpcb.pcb_r7,		"r6",	&kdbpcb.pcb_r6,
+	"r5",	&kdbpcb.pcb_r5,		"r4",	&kdbpcb.pcb_r4,
+	"r3",	&kdbpcb.pcb_r3,		"r2",	&kdbpcb.pcb_r2,
+	"r1",	&kdbpcb.pcb_r1,		"r0",	&kdbpcb.pcb_r0,
+	0
 };
 
 /*
@@ -617,5 +623,101 @@ bignumprint(nbytes, optype)
 			}
 		}
 		break;
+	}
+}
+
+kdbstacktrace(dolocals)
+	int dolocals;
+{
+	register ADDR ap, fp;
+	register int i, narg, tramp;
+	struct frame fr;
+
+	if (kdbadrflg) {
+		/*
+		 * Can only find args if called via `calls' (not callg).
+		 * The horrible expression below reads the second
+		 * longword of the given frame address; this contains
+		 * fr_s and fr_spa, plus the register save mask.  The
+		 * memory layout is
+		 *	fp+0x00: call frame structure
+		 *	fp+0x14: saved registers
+		 *	fp+0xMM: stack alignment bytes
+		 *	fp+0xNN: arguments
+		 */
+		fp = kdbadrval;
+		((int *)&fr)[1] = kdbget((off_t)fp + 4, DSP);
+		if (fr.fr_s) {
+			ap = fp + sizeof(fr) + fr.fr_spa;
+			for (i = fr.fr_mask; i != 0; i >>= 1)
+				if (i & 1)
+					ap += 4;
+		} else
+			ap = 0;
+		kdbcallpc = getprevpc(fp);
+	} else {
+		fp = kdbpcb.pcb_fp;
+		ap = kdbpcb.pcb_ap;
+		kdbcallpc = kdbpcb.pcb_pc;
+	}
+
+	kdblastframe = NOFRAME;
+	while (kdbcntval-- && fp != NOFRAME) {
+		char *name;
+
+		kdbchkerr();
+		/* check for pc in pcb (signal trampoline code) */
+		if (issignalpc(kdbcallpc)) {
+			tramp = 1;
+			name = "sigtramp";
+		} else {
+			tramp = 0;
+			(void) kdbfindsym((long)kdbcallpc, ISYM);
+			if (kdbcursym)
+				name = kdbcursym->n_un.n_name;
+			else
+				name = "?";
+		}
+		kdbprintf("%s(", name);
+		if (ap) {
+			/* byte at ap tells how many arguments */
+			narg = kdbget((off_t)ap, DSP) & 0xff;
+			for (i = narg > 10 ? 10 : narg; i;) {
+				ap += 4;
+				kdbprintf("%R", kdbget((off_t)ap, DSP));
+				if (--i != 0)
+					kdbprintc(',');
+			}
+		} else
+			kdbprintc('?');
+		kdbprintf(") at ");
+		kdbpsymoff((long)kdbcallpc, ISYM, "\n");
+
+		if (dolocals) {
+			register ADDR word;
+
+			while (kdblocalsym((long)fp)) {
+				word = kdbget((off_t)kdblocalval, DSP);
+				kdbprintf("%8t%s:%10t",
+				    kdbcursym->n_un.n_name);
+				if (kdberrflg) {
+					kdbprintf("?\n");
+					kdberrflg = 0;
+				} else
+					kdbprintf("%R\n", word);
+			}
+		}
+		if (!tramp) {
+			kdbcallpc = getprevpc(fp);
+			kdblastframe = fp;
+			/* 8 below == offsetof(struct frame, fr_savap) */
+			ap = kdbget((off_t)fp + 8, DSP);
+			fp = getprevframe(fp);
+		} else {
+			kdbcallpc = getsignalpc(kdblastframe);
+			/* ??? WHAT ABOUT ap AND fp ??? */
+		}
+		if (!kdbadrflg && !INSTACK(fp))
+			break;
 	}
 }
