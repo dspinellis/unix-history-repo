@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)fend.c 1.21 %G%";
+static char sccsid[] = "@(#)fend.c 1.22 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -673,6 +673,7 @@ fp_exitcode(eecookiep)
 			fvar -> value[ NL_OFFS ] ,
 			fvar -> extra_flags ,
 			fvartype );
+		putop( P2FORCE , fvartype );
 		break;
 	    default:
 		label = getlab();
@@ -687,13 +688,14 @@ fp_exitcode(eecookiep)
 			fvar -> value[ NL_OFFS ] ,
 			fvar -> extra_flags ,
 			fvartype );
-		putstrop( P2STASG , fvartype , lwidth( fvar -> type ) ,
+		putstrop( P2STASG , ADDTYPE(fvartype, P2PTR) ,
+			lwidth( fvar -> type ) ,
 			align( fvar -> type ) );
 		putdot( filename , line );
-		putleaf( P2ICON , 0 , 0 , fvartype , labelname );
+		putleaf( P2ICON , 0 , 0 , ADDTYPE(fvartype, P2PTR), labelname );
+		putop( P2FORCE , ADDTYPE(fvartype, P2PTR) );
 		break;
 	}
-	putop( P2FORCE , fvartype );
 	putdot( filename , line );
     }
 	/*
@@ -724,6 +726,7 @@ fp_formalentry(eecookiep)
     struct entry_exit_cookie	*eecookiep;
 {
 
+    putprintf("	.align 1", 0);
     putprintf("%s%s:" , 0 , FORMALPREFIX , eecookiep -> extname );
     putprintf("	.word	%s%d", 0, SAVE_MASK_LABEL, eecookiep -> savlabel );
     putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR ) , "_FCALL" );
@@ -907,6 +910,7 @@ fp_exitcode(eecookiep)
 			fvar -> value[ NL_OFFS ] ,
 			fvar -> extra_flags ,
 			fvartype );
+		putop( P2FORCE , fvartype );
 		break;
 	    default:
 		label = getlab();
@@ -918,13 +922,14 @@ fp_exitcode(eecookiep)
 			fvar -> value[ NL_OFFS ] ,
 			fvar -> extra_flags ,
 			fvartype );
-		putstrop( P2STASG , fvartype , lwidth( fvar -> type ) ,
+		putstrop( P2STASG , ADDTYPE(fvartype, P2PTR) ,
+			lwidth( fvar -> type ) ,
 			align( fvar -> type ) );
 		putdot( filename , line );
-		putleaf( P2ICON , 0 , 0 , fvartype , labelname );
+		putleaf( P2ICON , 0 , 0 , ADDTYPE(fvartype, P2PTR), labelname );
+		putop( P2FORCE , ADDTYPE(fvartype, P2PTR) );
 		break;
 	}
-	putop( P2FORCE , fvartype );
 	putdot( filename , line );
     }
 	/*

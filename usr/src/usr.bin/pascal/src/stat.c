@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)stat.c 1.10 %G%";
+static char sccsid[] = "@(#)stat.c 1.11 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -448,8 +448,8 @@ asgnop1(r, p)
 			    putdot( filename , line );
 			    break;
 		    default:
-			    putstrop( P2STASG , p2type( p )
-					, lwidth( p ) , align( p ) );
+			    putstrop(P2STASG, ADDTYPE(p2type(p), P2PTR),
+					lwidth(p), align(p));
 			    putdot( filename , line );
 			    break;
 	    }
