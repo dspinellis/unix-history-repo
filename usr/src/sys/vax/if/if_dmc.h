@@ -1,4 +1,4 @@
-/*	if_dmc.h	4.1	82/02/15	*/
+/*	if_dmc.h	4.2	82/02/21	*/
 
 /*
  * DMC-11 Interface
@@ -26,7 +26,7 @@ struct dmcdevice {
 
 #define	DMCMTU	(2048)
 
-#define RDYSCAN	16	/* loop delay for RDYI after RQI */
+#define	RDYSCAN	16	/* loop delay for RDYI after RQI */
 
 /* defines for bsel0 */
 #define	DMC_BACCI	0
