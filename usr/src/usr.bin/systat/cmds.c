@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -21,7 +21,6 @@ command(cmd)
         register char *cp;
         register struct cmdtab *p;
 	int interval, omask;
-        char *arg;
 	extern (*sigtstpdfl)();
 
 	omask = sigblock(sigmask(SIGALRM));
@@ -96,11 +95,13 @@ command(cmd)
 			}
 			p = curcmd;
 		}
-                curcmd = p;
 		if ((p->c_flags & CF_INIT) == 0) {
-			(*p->c_init)();
-			p->c_flags |= CF_INIT;
+			if ((*p->c_init)())
+				p->c_flags |= CF_INIT;
+			else
+				goto done;
 		}
+                curcmd = p;
 		labels();
                 display();
                 status();

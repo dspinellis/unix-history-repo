@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)netcmds.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)netcmds.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -70,7 +70,6 @@ changeitems(args, onoff)
 	int onoff;
 {
 	register char *cp;
-	register int i;
 	struct servent *sp;
 	struct hostent *hp;
 	struct in_addr in;
@@ -145,7 +144,7 @@ selectport(port, onoff)
 	long port;
 	int onoff;
 {
-	register struct pitem *p, *open;
+	register struct pitem *p;
 
 	if (port == -1) {
 		if (ports == 0)
@@ -154,7 +153,6 @@ selectport(port, onoff)
 		nports = 0;
 		return (1);
 	}
-	open = 0;
 	for (p = ports; p < ports+nports; p++)
 		if (p->port == port) {
 			p->onoff = onoff;

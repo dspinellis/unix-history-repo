@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)disks.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)disks.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include "systat.h"
@@ -38,17 +38,16 @@ dkinit()
 	static char buf[1024];
 
 	if (once)
-		return;
-	once = 1;
+		return(1);
 	nlist("/vmunix", nlst);
 	if (nlst[X_DK_NDRIVE].n_value == 0) {
 		error("dk_ndrive undefined in kernel");
-		return;
+		return(0);
 	}
 	dk_ndrive = getw(nlst[X_DK_NDRIVE].n_value);
 	if (dk_ndrive <= 0) {
 		error("dk_ndrive=%d according to /vmunix", dk_ndrive);
-		return;
+		return(0);
 	}
 	dk_mspw = (float *)calloc(dk_ndrive, sizeof (float));
 	lseek(kmem, nlst[X_DK_MSPW].n_value, L_SET);
@@ -62,7 +61,14 @@ dkinit()
 		if (dk_mspw[i] != 0.0)
 			dk_select[i] = 1;
 	}
-	read_names();
+	if (! read_names()) {
+		free(dr_name);
+		free(dk_select);
+		free(dk_mspw);
+		return(0);
+	}
+	once = 1;
+	return(1);
 }
 
 dkcmd(cmd, args)
@@ -98,7 +104,6 @@ dkcmd(cmd, args)
 
 read_names()
 {
-	static int once = 0;
 	struct mba_device mdev;
 	struct mba_driver mdrv;
 	short two_char;
@@ -112,7 +117,7 @@ read_names()
 	up = (struct uba_device *)nlst[X_UBDINIT].n_value;
 	if (mp == 0 && up == 0) {
 		error("Disk init info not in namelist\n");
-		return;
+		return(0);
 	}
 	if (mp) for (;;) {
 		steal(mp++, mdev);
@@ -136,6 +141,7 @@ read_names()
 		sprintf(dr_name[udev.ui_dk], "%c%c%d",
 		    cp[0], cp[1], udev.ui_unit);
 	}
+	return(1);
 }
 #endif
 
@@ -154,7 +160,7 @@ read_names()
 	mp = (struct mb_device *)nlst[X_MBDINIT].n_value;
 	if (mp == 0) {
 		error("Disk init info not in namelist\n");
-		return;
+		return(0);
 	}
 	for (;;) {
 		steal(mp++, mdev);
@@ -167,6 +173,7 @@ read_names()
 		sprintf(dr_name[mdev.md_dk], "%c%c%d",
 		    cp[0], cp[1], mdev.md_unit);
 	}
+	return(1);
 }
 #endif
 

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)netstat.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)netstat.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -77,7 +77,7 @@ static	char *inetname();
 closenetstat(w)
         WINDOW *w;
 {
-	register struct netinfo *p, *q;
+	register struct netinfo *p;
 
 	endhostent();
 	endnetent();
@@ -105,15 +105,15 @@ static struct nlist nlst[] = {
 
 initnetstat()
 {
-        register  i;
 
 	nlist("/vmunix", nlst);
 	if (nlst[X_TCB].n_value == 0) {
 		error("No symbols in namelist");
-		return;
+		return(0);
 	}
 	netcb.ni_forw = netcb.ni_prev = (struct netinfo *)&netcb;
 	protos = TCP|UDP;
+	return(1);
 }
 
 fetchnetstat()

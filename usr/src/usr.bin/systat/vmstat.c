@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -157,17 +157,19 @@ initkre()
 {
 	char *intrnamebuf, *cp;
 	int i;
+	static int once = 0;
 
 	if (name[0].n_type == 0) {
 		nlist("/vmunix",name);
 		if (name[0].n_type == 0) {
 			error("No namelist");
-			return;
+			return(0);
 		}
 	}
 	hertz = phz ? phz : hz;
-	dkinit();
-	if (dk_ndrive) {
+	if (! dkinit())
+		return(0);
+	if (dk_ndrive && !once) {
 #define	allocate(e, t) \
     s./**/e = (t *)calloc(dk_ndrive, sizeof (t)); \
     s1./**/e = (t *)calloc(dk_ndrive, sizeof (t)); \
@@ -177,6 +179,7 @@ initkre()
 		allocate(dk_wds, long);
 		allocate(dk_seek, long);
 		allocate(dk_xfer, long);
+		once = 1;
 #undef allocate
 	}
 	if (nintr == 0) {
@@ -188,7 +191,14 @@ initkre()
 			name[X_INTRNAMES].n_value);
 		if (intrnamebuf == 0 || intrname == 0 || intrloc == 0) {
 			error("Out of memory\n");
-			return;
+			if (intrnamebuf)
+				free(intrnamebuf);
+			if (intrname)
+				free(intrname);
+			if (intrloc)
+				free(intrloc);
+			nintr = 0;
+			return(0);
 		}
 		lseek(kmem, (long)name[X_INTRNAMES].n_value, L_SET);
 		read(kmem, intrnamebuf, name[X_EINTRNAMES].n_value -
@@ -205,6 +215,7 @@ initkre()
 	}
 	getinfo(&s2, RUN);
 	copyinfo(&s2, &s1);
+	return(1);
 }
 
 fetchkre()
@@ -297,7 +308,7 @@ static	char cpuorder[CPUSTATES] = { CP_SYS, CP_USER, CP_NICE, CP_IDLE };
 showkre()
 {
 	float f1, f2;
-	int psiz, interv, hits, inttotal;
+	int psiz, inttotal;
 	int i, l, c;
 
 	for (i = 0; i < dk_ndrive; i++) {
@@ -475,7 +486,6 @@ showkre()
 cmdkre(cmd, args)
 	char *cmd, *args;
 {
-	static enum state oldstate;
 
 	if (prefix(cmd, "run")) {
 		copyinfo(&s2, &s1);
@@ -624,7 +634,7 @@ allocinfo(s)
 
 	s->intrcnt = (long *) malloc(nintr * sizeof(long));
 	if (s->intrcnt == NULL) {
-		fprintf(stderr, "vsta: out of memory\n");
+		fprintf(stderr, "systat: out of memory\n");
 		exit(2);
 	}
 }
@@ -634,7 +644,7 @@ copyinfo(from, to)
 	register struct Info *from, *to;
 {
 	long *time, *wds, *seek, *xfer;
-	int *intrcnt;
+	long *intrcnt;
 
 	time = to->dk_time; wds = to->dk_wds; seek = to->dk_seek;
 	xfer = to->dk_xfer; intrcnt = to->intrcnt;
