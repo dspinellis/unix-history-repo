@@ -1,4 +1,4 @@
-/*	hp.c	4.5	83/01/27	*/
+/*	hp.c	4.5	83/01/29	*/
 
 /*
  * RP??/RM?? disk driver
@@ -39,15 +39,18 @@ short	ml_off[8] =	{ 0, -1, -1, -1, -1, -1, -1, -1 };
 short	si9775_off[8] =	{ 0, 13, 0, -1, -1, -1, 40, 441 };
 short	si9730_off[8] = { 0, 50, 0, -1, -1, -1, -1, 155 };
 short	hpam_off[8] =	{ 0, 32, 0, 668, 723, 778, 668, 98 };
+short	hpfj_off[8] =	{ 0, 19, 0, -1, -1, -1, 398, 59 };
 /* END SHOULD BE READ IN */
 
 short	hptypes[] =
     { MBDT_RM03, MBDT_RM05, MBDT_RP06, MBDT_RM80, MBDT_RP05, MBDT_RP07,
-      MBDT_ML11A, MBDT_ML11B, -1/*9755*/, -1/*9730*/, -1/*Capr*/, MBDT_RM02, 0};
+      MBDT_ML11A, MBDT_ML11B, -1/*9755*/, -1/*9730*/, -1/*Capr*/,
+      -1/* eagle */, MBDT_RM02, 0};
 
-#define RP06 (hptypes[UNITTODRIVE(unit)] <= MBDT_RP06)
-#define ML11 (hptypes[UNITTODRIVE(unit)] <= MBDT_ML11A)
-#define RM80 (hptypes[UNITTODRIVE(unit)] <= MBDT_RM80)
+#define RP06 (hptypes[hp_type[unit]] <= MBDT_RP06)
+#define ML11 (hptypes[hp_type[unit]] == MBDT_ML11A)
+#define RM80 (hptypes[hp_type[unit]] == MBDT_RM80)
+#define EAGLE (hp_type[unit] == 11)
 
 u_char	hp_offset[16] = {
     HPOF_P400, HPOF_M400, HPOF_P400, HPOF_M400,
@@ -57,18 +60,19 @@ u_char	hp_offset[16] = {
 };
 
 struct st hpst[] = {
-	32,	5,	32*5,	823,	rm3_off,	/* RM03 */
-	32,	19,	32*19,	823,	rm5_off,	/* RM05 */
-	22,	19,	22*19,	815,	hp6_off,	/* RP06 */
-	31,	14, 	31*14,	559,	rm80_off,	/* RM80 */
-	22,	19,	22*19,	411,	hp6_off,	/* RP06 */
-	50,	32,	50*32,	630,	hp7_off,	/* RP07 */
-	1,	1,	1,	1,	ml_off,		/* ML11A */
-	1,	1,	1,	1,	ml_off,		/* ML11B */
-	32,	40,	32*40,	843,	si9775_off,	/* 9775 */
-	32,	10,	32*10,	823,	si9730_off,	/* 9730 */
-	32,	16,	32*16,	1024,	hpam_off,	/* AMPEX capricorn */
-	1,	1,	1,	1,	0,		/* rm02 - not used */
+	32,	5,	32*5,	823,	rm3_off,	0,	/* RM03 */
+	32,	19,	32*19,	823,	rm5_off,	0,	/* RM05 */
+	22,	19,	22*19,	815,	hp6_off,	0,	/* RP06 */
+	31,	14, 	31*14,	559,	rm80_off,	1,	/* RM80 */
+	22,	19,	22*19,	411,	hp6_off,	0,	/* RP06 */
+	50,	32,	50*32,	630,	hp7_off,	0,	/* RP07 */
+	1,	1,	1,	1,	ml_off,		0,	/* ML11A */
+	1,	1,	1,	1,	ml_off,		0,	/* ML11B */
+	32,	40,	32*40,	843,	si9775_off,	0,	/* 9775 */
+	32,	10,	32*10,	823,	si9730_off,	0,	/* 9730 */
+	32,	16,	32*16,	1024,	hpam_off,	0,	/* capricorn */
+	43,	20,	43*20,	842,	hpfj_off,	1,	/* Eagle */
+	1,	1,	1,	1,	0,	0,	/* rm02 - not used */
 };
 struct dkbad hpbad[MAXNMBA*8];
 int sectsiz;
@@ -116,13 +120,13 @@ found:
 			break;
 		}
 
-		case 11:		/* rm02 */
+		case 12:		/* rm02 */
 			hpaddr->hpcs1 = HP_NOP;
 			hpaddr->hphr = HPHR_MAXTRAK;
 			if (MASKREG(hpaddr->hphr) == 15)
 				i = 10;		/* ampex capricorn */
 			else
-				i = 0;		/* rm03 */
+				i = 11;		/* eagle */
 			break;
 		
 		case 6: case 7:		/* ml11a ml11b */
@@ -136,10 +140,10 @@ found:
 		 *	to tio for use during the bb pointer
 		 *	read operation.
 		 */
-		st = &hpst[hp_type[unit]];
+		st = &hpst[i];
 		tio = *io;
 		tio.i_bn = st->nspc * st->ncyl - st->nsect;
-		tio.i_ma = (char *)&hpbad[tio.i_unit];
+		tio.i_ma = (char *)&hpbad[unit];
 		tio.i_cc = sizeof (hpbad);
 		tio.i_flgs |= F_RDDATA;
 		for (i = 0; i < 5; i++) {
@@ -188,7 +192,7 @@ hpstrategy(io, func)
 	membase = io->i_ma;
 	startblock = io->i_bn;
 	hprecal = 0;
-readmore:
+restart:
 	bn = io->i_bn;
 	cn = bn/st->nspc;
 	sn = bn%st->nspc;
@@ -197,6 +201,7 @@ readmore:
 
 	while ((hpaddr->hpds & HPDS_DRY) == 0)
 		;
+	mba->mba_sr = -1;
 	if (hp_type[unit] == 6)		/* ml11 */
 		hpaddr->hpda = bn;
 	else {
@@ -225,9 +230,9 @@ readmore:
 #ifdef HPDEBUG
 	printf("hp error: (cyl,trk,sec)=(%d,%d,%d) ds=%b \n",
 		cn, tn, sn, MASKREG(hpaddr->hpds), HPDS_BITS);
-	printf("er1=%b er2=%b",
-		er1, HPER1_BITS,
-		er2, HPER2_BITS);
+	printf("er1=%b er2=%b", er1, HPER1_BITS, er2, HPER2_BITS);
+	printf("\nbytes left: %d, of 0x%x, da 0x%x",-bytesleft,
+	hpaddr->hpof, hpaddr->hpda);
 	printf("\n");
 #endif
 	if (er1 & HPER1_HCRC) {
@@ -237,7 +242,7 @@ readmore:
 	if (er1&HPER1_WLE) {
 		printf("hp%d: write locked\n", unit);
 		return(-1);
-	} else if ((er1&0xffff) == HPER1_FER && RP06) {
+	} else if (MASKREG(er1) == HPER1_FER && RP06) {
 		goto badsect;
 
 	} else if (++io->i_errcnt > 27 ||
@@ -255,9 +260,14 @@ hard:
 			   er1, HPER1_BITS,
 			   er2, HPER2_BITS);
 		if (hpaddr->hpmr)
-			printf(" mr=%o", hpaddr->hpmr&0xffff);
+			printf(" mr1=%o", MASKREG(hpaddr->hpmr));
 		if (hpaddr->hpmr2)
-			printf(" mr2=%o", hpaddr->hpmr2&0xffff);
+			printf(" mr2=%o", MASKREG(hpaddr->hpmr2));
+#ifdef HPDEBUG
+		printf("dc: %d, da: 0x%x",MASKREG(hpaddr->hpdc),
+					  MASKREG(hpaddr->hpda));
+#endif
+		hpaddr->hpcs1 = HP_DCLR|HP_GO;
 		printf("\n");
 		return(-1);
 
@@ -273,7 +283,7 @@ badsect:
 			io->i_error = EBSE;
 			goto hard;
 		}
-	} else if (RM80 && er2&HPER2_SSE) {
+	} else if ((RM80||EAGLE) && er2&HPER2_SSE) {
 	/* skip sector error */
 		(void) hpecc(io, SSE);
 		startblock++;		/* since one sector was skipped */
@@ -331,14 +341,13 @@ success:		 /* continue with the next block */
 
 try_again:		/* re-read same block */
 		io->i_bn = bn;
-		mba->mba_sr = -1;
 		io->i_ma = membase + (io->i_bn - startblock)*sectsiz;
 		io->i_cc = bytecnt - (io->i_bn - startblock)*sectsiz;
 #ifdef HPDEBUG
 		printf("restart: bl %d, byte %d, mem 0x%x hprecal %d\n",
 			io->i_bn, io->i_cc, io->i_ma, hprecal);
 #endif
-		goto readmore;
+		goto restart;
 	}
 	return (bytecnt);
 }
@@ -352,7 +361,7 @@ hpecc(io, flag)
 	register struct st *st = &hpst[hp_type[unit]];
 	int npf;
 	int bn, cn, tn, sn;
-	int bcr, tad;
+	int bcr;
 
 	if (bcr = MASKREG(mbp->mba_bcr>>16))
 		bcr |= 0xffff0000;		/* sxt */
@@ -402,33 +411,42 @@ hpecc(io, flag)
 
 #ifndef NOBADSECT
 	case BSE:
+		{
+		int bbn;
+		rp->hpcs1 = HP_DCLR | HP_GO;
 #ifdef HPDEBUG
 		printf("hpecc: BSE @ bn %d\n", bn);
 #endif
-		rp->hpcs1 = HP_DCLR | HP_GO;
-		bcr += sectsiz;
-		tad = rp->hpda;
-		if ((bn = isbad(&hpbad[unit], bn/st->nspc,tad>>8,tad&0x7f)) < 0)
-			return(1);
-		bn = st->ncyl*st->nspc - st->nsect - 1 - bn;
 		cn = bn/st->nspc;
 		sn = bn%st->nspc;
 		tn = sn/st->nsect;
-		sn %= st->nsect;
-		io->i_cc = -sectsiz;
-		io->i_ma += ((io->i_bn + npf -1)*sectsiz);
-#ifdef HPDEBUG
-		printf("revector to cn %d tn %d sn %d\n", cn, tn, sn);
-#endif
+		sn = sn%st->nsect;
+		bcr += sectsiz;
+		if ((bbn = isbad(&hpbad[unit], cn, tn, sn)) < 0)
+			return(1);
+		bbn = st->ncyl*st->nspc - st->nsect - 1 - bbn;
+		cn = bbn/st->nspc;
+		sn = bbn%st->nspc;
+		tn = sn/st->nsect;
+		sn = sn%st->nsect;
+		io->i_cc = sectsiz;
+		io->i_ma += npf*sectsiz;
+#ifdef HPDEBUG 
+		printf("revector to cn %d tn %d sn %d mem: 0x%x\n", 
+			cn, tn, sn, io->i_ma);
+#endif 
+		mbp->mba_sr = -1;
 		rp->hpdc = cn;
 		rp->hpda = (tn<<8) + sn;
-		mbp->mba_sr = -1;
 		mbastart(io,io->i_flgs);
 		io->i_errcnt = 0;	/* error has been corrected */
+		while(rp->hpds & HPDS_DRY == 0)
+			;		/* wait for the read to complete */
 		if (rp->hpds&HPDS_ERR)
 			return(1);
 		else
 			return(0);
+		}
 	}
 }
 /*ARGSUSED*/
@@ -451,6 +469,26 @@ hpioctl(io, cmd, arg)
 		}
 		else 
 			return(ECMD);
+
+	case SAIOSSI:			/* set the skip-sector-inhibit flag */
+		if ((drv->mbd_dt&MBDT_TAP) == 0) {
+			if ((io->i_flgs&F_SSI)==0) { /* make sure this is */
+				io->i_flgs |= F_SSI;  /* done only once    */
+				st->nsect++;
+				st->nspc += st->ntrak;
+			}
+			return(0);
+		} else
+			return(ECMD);
+
+	case SAIONOSSI:			/* remove the skip-sector-inh. flag */
+		if (io->i_flgs & F_SSI) {
+			io->i_flgs &= ~F_SSI;
+			drv->mbd_of &= ~HPOF_SSEI;
+			st->nsect--;
+			st->nspc -= st->ntrak;
+		}
+		return(0);
 
 	default:
 		return (ECMD);
