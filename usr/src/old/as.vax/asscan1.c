@@ -2,7 +2,7 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)asscan1.c 4.5 %G%";
+static char sccsid[] = "@(#)asscan1.c 4.6 %G%";
 #endif not lint
 
 #include "asscanl.h"
@@ -161,11 +161,17 @@ inttoktype yylex()
 				else
 					printf("IJXXX or INST0 or INSTn can't get into the itab\n");
 				break;
-		case	STRING:	printf("length %d ", ((u_short *)yylval)[-1]);
+		case	STRING:
+			printf("length %d, seekoffset %d, place 0%o ",
+				((struct strdesc *)yylval)->sd_strlen,
+				((struct strdesc *)yylval)->sd_stroff,
+				((struct strdesc *)yylval)->sd_place
+				);
+			if (((struct strdesc *)yylval)->sd_place & STR_CORE)
 				printf("value\"%*s\"",
-					((u_short *)yylval)[-1],
-					(char *)yylval);
-				break;
+					((struct strdesc *)yylval)->sd_strlen,
+					((struct strdesc *)yylval)->sd_string);
+			break;
 		}  		/*end of the debug switch*/
 		printf("\n");
 		}
