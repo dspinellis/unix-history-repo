@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)rwhod.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)rwhod.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -433,32 +433,6 @@ configure(s)
 		neighbors = np;
 	}
 	return (1);
-}
-
-/*
- * Return the possible subnetwork number from an internet address.
- * If the address is of the form of a subnet address (most significant
- * bit of the host part is set), believe the subnet exists.
- * Otherwise, return the network number.  Any subnet number is only valid
- * if this is a ``local'' net.
- */
-inet_subnetof(in)
-	struct in_addr in;
-{
-	register u_long i = ntohl(in.s_addr);
-
-	if (IN_CLASSA(i)) {
-		if (IN_SUBNETA(i))
-			return ((i & IN_CLASSA_SUBNET) >> IN_CLASSA_SUBNSHIFT);
-		else
-			return ((i & IN_CLASSA_NET) >> IN_CLASSA_NSHIFT);
-	} else if (IN_CLASSB(i)) {
-		if (IN_SUBNETB(i))
-			return ((i & IN_CLASSB_SUBNET) >> IN_CLASSB_SUBNSHIFT);
-		else
-			return ((i & IN_CLASSB_NET) >> IN_CLASSB_NSHIFT);
-	} else
-		return ((i & IN_CLASSC_NET) >> IN_CLASSC_NSHIFT);
 }
 
 #ifdef DEBUG
