@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pm.c	7.2 (Berkeley) %G%
+ *	@(#)pm.c	7.3 (Berkeley) %G%
  *
  *  devGraphics.c --
  *
@@ -42,10 +42,13 @@
 #include "machine/machMon.h"
 #include "machine/dc7085cons.h"
 #include "machine/pmioctl.h"
-#include "machine/pmreg.h"
 
 #include "device.h"
+#include "pmreg.h"
 #include "font.c"
+
+#define MAX_ROW	56
+#define MAX_COL	80
 
 /*
  * Macro to translate from a time struct to milliseconds.
@@ -56,6 +59,7 @@ static u_short	curReg;		/* copy of PCCRegs.cmdr since it's read only */
 static int	isMono;		/* true if B&W frame buffer */
 static int	initialized;	/* true if 'probe' was successful */
 static int	GraphicsOpen;	/* true if the graphics device is open */
+static int	row, col;	/* row and col for console cursor */
 static struct	selinfo pm_selp;/* process waiting for select */
 
 /*
@@ -66,20 +70,6 @@ static struct pmuaccess {
 	pmEvent		events[PM_MAXEVQ];	
 	pmTimeCoord	tcs[MOTION_BUFFER_SIZE];
 } pmu;
-
-static u_char	bg_RGB[3];	/* background color for the cursor */
-static u_char	fg_RGB[3];	/* foreground color for the cursor */
-
-/*
- * The default cursor.
- */
-unsigned short defCursor[32] = { 
-/* plane A */ 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF,
-	      0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF,
-/* plane B */ 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF,
-              0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF
-
-};
 
 /*
  * Font mask bits used by Blitc().
@@ -106,18 +96,24 @@ static unsigned int fontmaskBits[16] = {
 /*
  * Forward references.
  */
+static void Scroll();
+static void Blitc();
+
 static void ScreenInit();
 static void LoadCursor();
 static void RestoreCursorColor();
 static void CursorColor();
+static void PosCursor();
 static void InitColorMap();
 static void VDACInit();
 static void LoadColorMap();
-static void PosCursor();
-static void Scroll();
-static void Blitc();
+static void EnableVideo();
+static void DisableVideo();
 
 extern void dcKBDPutc();
+extern void (*dcDivertXInput)();
+extern void (*dcMouseEvent)();
+extern void (*dcMouseButtons)();
 
 int	pmprobe();
 struct	driver pmdriver = {
@@ -140,329 +136,6 @@ pmprobe(cp)
 	else
 		printf("pm0 (color display)\n");
 	return (1);
-}
-
-/*
- * Test to see if device is present.
- * Return true if found and initialized ok.
- */
-pminit()
-{
-	register PCCRegs *pcc = (PCCRegs *)MACH_CURSOR_REG_ADDR;
-
-	isMono = *(u_short *)MACH_SYS_CSR_ADDR & MACH_CSR_MONO;
-	if (isMono) {
-		/* check for no frame buffer */
-		if (badaddr((char *)MACH_UNCACHED_FRAME_BUFFER_ADDR, 4))
-			return (0);
-	}
-
-	/*
-	 * Initialize the screen.
-	 */
-#ifdef notdef
-	DELAY(100000);		/* why? */
-#endif
-	pcc->cmdr = PCC_FOPB | PCC_VBHI;
-
-	/*
-	 * Initialize the cursor register.
-	 */
-	pcc->cmdr = curReg = PCC_ENPA | PCC_ENPB;
-
-	/*
-	 * Initialize screen info.
-	 */
-	pmu.scrInfo.max_row = 56;
-	pmu.scrInfo.max_col = 80;
-	pmu.scrInfo.max_x = 1024;
-	pmu.scrInfo.max_y = 864;
-	pmu.scrInfo.max_cur_x = 1023;
-	pmu.scrInfo.max_cur_y = 863;
-	pmu.scrInfo.version = 11;
-	pmu.scrInfo.mthreshold = 4;	
-	pmu.scrInfo.mscale = 2;
-	pmu.scrInfo.min_cur_x = -15;
-	pmu.scrInfo.min_cur_y = -15;
-	pmu.scrInfo.qe.timestamp_ms = TO_MS(time);
-	pmu.scrInfo.qe.eSize = PM_MAXEVQ;
-	pmu.scrInfo.qe.eHead = pmu.scrInfo.qe.eTail = 0;
-	pmu.scrInfo.qe.tcSize = MOTION_BUFFER_SIZE;
-	pmu.scrInfo.qe.tcNext = 0;
-
-	/*
-	 * Initialize the color map, the screen, and the mouse.
-	 */
-	InitColorMap();
-	ScreenInit();
-	Scroll();
-
-	initialized = 1;
-	return (1);
-}	
-
-/*
- * ----------------------------------------------------------------------------
- *
- * ScreenInit --
- *
- *	Initialize the screen.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The screen is initialized.
- *
- * ----------------------------------------------------------------------------
- */
-static void
-ScreenInit()
-{
-
-	/*
-	 * Home the cursor.
-	 * We want an LSI terminal emulation.  We want the graphics
-	 * terminal to scroll from the bottom. So start at the bottom.
-	 */
-	pmu.scrInfo.row = 55;
-	pmu.scrInfo.col = 0;
-
-	/*
-	 * Load the cursor with the default values
-	 *
-	 */
-	LoadCursor(defCursor);
-}
-
-/*
- * ----------------------------------------------------------------------------
- *
- * LoadCursor --
- *
- *	Routine to load the cursor Sprite pattern.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The cursor is loaded into the hardware cursor.
- *
- * ----------------------------------------------------------------------------
- */
-static void
-LoadCursor(cur)
-	unsigned short *cur;
-{
-	register PCCRegs *pcc = (PCCRegs *)MACH_CURSOR_REG_ADDR;
-	register int i;
-
-	curReg |= PCC_LODSA;
-	pcc->cmdr = curReg;
-	for (i = 0; i < 32; i++) {
-		pcc->memory = cur[i];
-		MachEmptyWriteBuffer();
-	}
-	curReg &= ~PCC_LODSA;
-	pcc->cmdr = curReg;
-}
-
-/*
- * ----------------------------------------------------------------------------
- *
- * RestoreCursorColor --
- *
- *	Routine to restore the color of the cursor.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- * ----------------------------------------------------------------------------
- */
-static void
-RestoreCursorColor()
-{
-	register VDACRegs *vdac = (VDACRegs *)MACH_COLOR_MAP_ADDR;
-	register int i;
-
-	vdac->overWA = 0x04;
-	MachEmptyWriteBuffer();
-	for (i = 0; i < 3; i++) {  
-		vdac->over = bg_RGB[i];
-		MachEmptyWriteBuffer();
-	}
-
-	vdac->overWA = 0x08;
-	MachEmptyWriteBuffer();
-	vdac->over = 0x00;
-	MachEmptyWriteBuffer();
-	vdac->over = 0x00;
-	MachEmptyWriteBuffer();
-	vdac->over = 0x7f;
-	MachEmptyWriteBuffer();
-
-	vdac->overWA = 0x0c;
-	MachEmptyWriteBuffer();
-	for (i = 0; i < 3; i++) {
-		vdac->over = fg_RGB[i];
-		MachEmptyWriteBuffer();
-	}
-}
-
-/*
- * ----------------------------------------------------------------------------
- *
- * CursorColor --
- *
- *	Set the color of the cursor.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- * ----------------------------------------------------------------------------
- */
-static void
-CursorColor(color)
-	unsigned int color[];
-{
-	register int i, j;
-
-	for (i = 0; i < 3; i++)
-		bg_RGB[i] = (u_char)(color[i] >> 8);
-
-	for (i = 3, j = 0; i < 6; i++, j++)
-		fg_RGB[j] = (u_char)(color[i] >> 8);
-
-	RestoreCursorColor();
-}
-
-/*
- * ----------------------------------------------------------------------------
- *
- * InitColorMap --
- *
- *	Initialize the color map.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The colormap is initialized appropriately whether it is color or 
- *	monochrome.
- *
- * ----------------------------------------------------------------------------
- */
-static void
-InitColorMap()
-{
-	register VDACRegs *vdac = (VDACRegs *)MACH_COLOR_MAP_ADDR;
-	register int i;
-
-	*(char *)MACH_PLANE_MASK_ADDR = 0xff;
-	MachEmptyWriteBuffer();
-
-	if (isMono) {
-		vdac->mapWA = 0; MachEmptyWriteBuffer();
-		for (i = 0; i < 256; i++) {
-			vdac->map = (i < 128) ? 0x00 : 0xff;
-			MachEmptyWriteBuffer();
-			vdac->map = (i < 128) ? 0x00 : 0xff;
-			MachEmptyWriteBuffer();
-			vdac->map = (i < 128) ? 0x00 : 0xff;
-			MachEmptyWriteBuffer();
-		}
-	} else {
-		vdac->mapWA = 0; MachEmptyWriteBuffer();
-		vdac->map = 0; MachEmptyWriteBuffer();
-		vdac->map = 0; MachEmptyWriteBuffer();
-		vdac->map = 0; MachEmptyWriteBuffer();
-
-		for (i = 1; i < 256; i++) {
-			vdac->map = 0xff; MachEmptyWriteBuffer();
-			vdac->map = 0xff; MachEmptyWriteBuffer();
-			vdac->map = 0xff; MachEmptyWriteBuffer();
-		}
-	}
-
-	for (i = 0; i < 3; i++) {
-		bg_RGB[i] = 0x00;
-		fg_RGB[i] = 0xff;
-	}
-	RestoreCursorColor();
-}
-
-/*
- * ----------------------------------------------------------------------------
- *
- * VDACInit --
- *
- *	Initialize the VDAC.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- * ----------------------------------------------------------------------------
- */
-static void
-VDACInit()
-{
-	register VDACRegs *vdac = (VDACRegs *)MACH_COLOR_MAP_ADDR;
-
-	/*
-	 *
-	 * Initialize the VDAC
-	 */
-	vdac->overWA = 0x04; MachEmptyWriteBuffer();
-	vdac->over = 0x00; MachEmptyWriteBuffer();
-	vdac->over = 0x00; MachEmptyWriteBuffer();
-	vdac->over = 0x00; MachEmptyWriteBuffer();
-	vdac->overWA = 0x08; MachEmptyWriteBuffer();
-	vdac->over = 0x00; MachEmptyWriteBuffer();
-	vdac->over = 0x00; MachEmptyWriteBuffer();
-	vdac->over = 0x7f; MachEmptyWriteBuffer();
-	vdac->overWA = 0x0c; MachEmptyWriteBuffer();
-	vdac->over = 0xff; MachEmptyWriteBuffer();
-	vdac->over = 0xff; MachEmptyWriteBuffer();
-	vdac->over = 0xff; MachEmptyWriteBuffer();
-}
-
-/*
- * ----------------------------------------------------------------------------
- *
- * LoadColorMap --
- *
- *	Load the color map.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The color map is loaded.
- *
- * ----------------------------------------------------------------------------
- */
-static void
-LoadColorMap(ptr)
-	ColorMap *ptr;
-{
-	register VDACRegs *vdac = (VDACRegs *)MACH_COLOR_MAP_ADDR;
-
-	if (ptr->index > 256)
-		return;
-
-	vdac->mapWA = ptr->index; MachEmptyWriteBuffer();
-	vdac->map = ptr->Entry.red; MachEmptyWriteBuffer();
-	vdac->map = ptr->Entry.green; MachEmptyWriteBuffer();
-	vdac->map = ptr->Entry.blue; MachEmptyWriteBuffer();
 }
 
 /*
@@ -708,37 +381,6 @@ pmMouseButtons(newRepPtr)
 /*
  *----------------------------------------------------------------------
  *
- * PosCursor --
- *
- *	Postion the cursor.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-static void
-PosCursor(x, y)
-	register int x, y;
-{
-	register PCCRegs *pcc = (PCCRegs *)MACH_CURSOR_REG_ADDR;
-
-	if (y < pmu.scrInfo.min_cur_y || y > pmu.scrInfo.max_cur_y)
-		y = pmu.scrInfo.max_cur_y;
-	if (x < pmu.scrInfo.min_cur_x || x > pmu.scrInfo.max_cur_x)
-		x = pmu.scrInfo.max_cur_x;
-	pmu.scrInfo.cursor.x = x;		/* keep track of real cursor */
-	pmu.scrInfo.cursor.y = y;		/* position, indep. of mouse */
-	pcc->xpos = PCC_X_OFFSET + x;
-	pcc->ypos = PCC_Y_OFFSET + y;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * Scroll --
  *
  *	Scroll the screen.
@@ -764,7 +406,7 @@ Scroll()
 	 * If the mouse is on we don't scroll so that the bit map remains sane.
 	 */
 	if (GraphicsOpen) {
-		pmu.scrInfo.row = 0;
+		row = 0;
 		return;
 	}
 
@@ -773,7 +415,7 @@ Scroll()
 	 *  of text to be memory limited.  Basically the writebuffer is 
 	 *  4 words (32 bits ea.) long so to achieve maximum speed we 
 	 *  read and write in multiples of 4 words. We also limit the 
-	 *  size to be 80 characters for more speed. 
+	 *  size to be MAX_COL characters for more speed. 
 	 */
 	if (isMono) {
 		lineCount = 5;
@@ -809,8 +451,7 @@ Scroll()
 	/* 
 	 * Now zero out the last two lines 
 	 */
-	bzero(MACH_UNCACHED_FRAME_BUFFER_ADDR + (pmu.scrInfo.row * line),
-		3 * line);
+	bzero(MACH_UNCACHED_FRAME_BUFFER_ADDR + (row * line), 3 * line);
 }
 
 /*
@@ -840,8 +481,8 @@ pmPutc(c)
 		 * If the HELP key is pressed, wait for another
 		 * HELP key press to start/stop output.
 		 */
-		if (dcKBDGetc() == LK_HELP) {
-			while (dcKBDGetc() != LK_HELP)
+		if (dcDebugGetc() == LK_HELP) {
+			while (dcDebugGetc() != LK_HELP)
 				;
 		}
 #endif
@@ -882,26 +523,26 @@ Blitc(c)
 
 	switch (c) {
 	case '\t':
-		for (i = 8 - (pmu.scrInfo.col & 0x7); i > 0; i--)
+		for (i = 8 - (col & 0x7); i > 0; i--)
 			Blitc(' ');
 		break;
 
 	case '\r':
-		pmu.scrInfo.col = 0;
+		col = 0;
 		break;
 
 	case '\b':
-		pmu.scrInfo.col--;
-		if (pmu.scrInfo.col < 0)
-			pmu.scrInfo.col = 0;
+		col--;
+		if (col < 0)
+			col = 0;
 		break;
 
 	case '\n':
-		if (pmu.scrInfo.row + 1 >= pmu.scrInfo.max_row)
+		if (row + 1 >= MAX_ROW)
 			Scroll();
 		else
-			pmu.scrInfo.row++;
-		pmu.scrInfo.col = 0;
+			row++;
+		col = 0;
 		break;
 
 	case '\007':
@@ -910,25 +551,24 @@ Blitc(c)
 
 	default:
 		/*
-		 * If the next character will wrap around then 
-		 * increment row counter or scroll screen.
-		 */
-		if (pmu.scrInfo.col >= pmu.scrInfo.max_col) {
-			pmu.scrInfo.col = 0;
-			if (pmu.scrInfo.row + 1 >= pmu.scrInfo.max_row)
-				Scroll();
-			else
-				pmu.scrInfo.row++;
-		}
-		/*
 		 * 0xA1 to 0xFD are the printable characters added with 8-bit
 		 * support.
 		 */
 		if (c < ' ' || c > '~' && c < 0xA1 || c > 0xFD)
 			break;
+		/*
+		 * If the next character will wrap around then 
+		 * increment row counter or scroll screen.
+		 */
+		if (col >= MAX_COL) {
+			col = 0;
+			if (row + 1 >= MAX_ROW)
+				Scroll();
+			else
+				row++;
+		}
 		bRow = (char *)(MACH_UNCACHED_FRAME_BUFFER_ADDR +
-			(pmu.scrInfo.row * 15 & 0x3ff) * ote + 
-			pmu.scrInfo.col * colMult);
+			(row * 15 & 0x3ff) * ote + col * colMult);
 		i = c - ' ';
 		/*
 		 * This is to skip the (32) 8-bit 
@@ -986,10 +626,10 @@ Blitc(c)
 				pInt += 256;
 			}
 		}
-		pmu.scrInfo.col++; /* increment column counter */
+		col++; /* increment column counter */
 	}
 	if (!GraphicsOpen)
-		PosCursor(pmu.scrInfo.col * 8, pmu.scrInfo.row * 15);
+		PosCursor(col * 8, row * 15);
 }
 
 /*ARGSUSED*/
@@ -1031,6 +671,9 @@ pmclose(dev, flag)
 		InitColorMap();
 	ScreenInit();
 	vmUserUnmap();
+	bzero((caddr_t)MACH_UNCACHED_FRAME_BUFFER_ADDR,
+		(isMono ? 1024 / 8 : 1024) * 864);
+	PosCursor(col * 8, row * 15);
 	return (0);
 }
 
@@ -1040,7 +683,6 @@ pmioctl(dev, cmd, data, flag)
 	caddr_t data;
 {
 	register PCCRegs *pcc = (PCCRegs *)MACH_CURSOR_REG_ADDR;
-	extern int dcDivertXInput;
 
 	switch (cmd) {
 	case QIOCGINFO:
@@ -1066,7 +708,7 @@ pmioctl(dev, cmd, data, flag)
 			goto mapError;
 		pmu.scrInfo.planemask = (char *)addr;
 		/*
-		 * Map the bitmap into the user's address space.
+		 * Map the frame buffer into the user's address space.
 		 */
 		addr = vmUserMap(isMono ? 256*1024 : 1024*1024,
 			(unsigned)MACH_UNCACHED_FRAME_BUFFER_ADDR);
@@ -1133,13 +775,15 @@ pmioctl(dev, cmd, data, flag)
 		break;
 
 	case QIOKERNLOOP:
-		printf("pmioctl: QIOKERNLOOP\n"); /* XXX */
-		dcDivertXInput = 1;
+		dcDivertXInput = pmKbdEvent;
+		dcMouseEvent = pmMouseEvent;
+		dcMouseButtons = pmMouseButtons;
 		break;
 
 	case QIOKERNUNLOOP:
-		printf("pmioctl: QIOKERNUNLOOP\n"); /* XXX */
-		dcDivertXInput = 0;
+		dcDivertXInput = (void (*)())0;
+		dcMouseEvent = (void (*)())0;
+		dcMouseButtons = (void (*)())0;
 		break;
 
 	case QIOVIDEOON:
@@ -1159,7 +803,7 @@ pmioctl(dev, cmd, data, flag)
 		break;
 
 	default:
-		printf("pm0: Unknown command %x\n", cmd);
+		printf("pm0: Unknown ioctl command %x\n", cmd);
 		return (EINVAL);
 	}
 	return (0);
@@ -1180,5 +824,370 @@ pmselect(dev, flag, p)
 	}
 
 	return (0);
+}
+
+static u_char	bg_RGB[3];	/* background color for the cursor */
+static u_char	fg_RGB[3];	/* foreground color for the cursor */
+
+/*
+ * The default cursor.
+ */
+unsigned short defCursor[32] = { 
+/* plane A */ 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF,
+	      0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF,
+/* plane B */ 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF,
+              0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF
+
+};
+
+/*
+ * Test to see if device is present.
+ * Return true if found and initialized ok.
+ */
+pminit()
+{
+	register PCCRegs *pcc = (PCCRegs *)MACH_CURSOR_REG_ADDR;
+
+	isMono = *(u_short *)MACH_SYS_CSR_ADDR & MACH_CSR_MONO;
+	if (isMono) {
+		/* check for no frame buffer */
+		if (badaddr((char *)MACH_UNCACHED_FRAME_BUFFER_ADDR, 4))
+			return (0);
+	}
+
+	/*
+	 * Initialize the screen.
+	 */
+	pcc->cmdr = PCC_FOPB | PCC_VBHI;
+
+	/*
+	 * Initialize the cursor register.
+	 */
+	pcc->cmdr = curReg = PCC_ENPA | PCC_ENPB;
+
+	/*
+	 * Initialize screen info.
+	 */
+	pmu.scrInfo.max_row = 56;
+	pmu.scrInfo.max_col = 80;
+	pmu.scrInfo.max_x = 1024;
+	pmu.scrInfo.max_y = 864;
+	pmu.scrInfo.max_cur_x = 1023;
+	pmu.scrInfo.max_cur_y = 863;
+	pmu.scrInfo.version = 11;
+	pmu.scrInfo.mthreshold = 4;	
+	pmu.scrInfo.mscale = 2;
+	pmu.scrInfo.min_cur_x = -15;
+	pmu.scrInfo.min_cur_y = -15;
+	pmu.scrInfo.qe.timestamp_ms = TO_MS(time);
+	pmu.scrInfo.qe.eSize = PM_MAXEVQ;
+	pmu.scrInfo.qe.eHead = pmu.scrInfo.qe.eTail = 0;
+	pmu.scrInfo.qe.tcSize = MOTION_BUFFER_SIZE;
+	pmu.scrInfo.qe.tcNext = 0;
+
+	/*
+	 * Initialize the color map, the screen, and the mouse.
+	 */
+	InitColorMap();
+	ScreenInit();
+	Scroll();
+
+	initialized = 1;
+	return (1);
+}	
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * ScreenInit --
+ *
+ *	Initialize the screen.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The screen is initialized.
+ *
+ * ----------------------------------------------------------------------------
+ */
+static void
+ScreenInit()
+{
+
+	/*
+	 * Home the cursor.
+	 * We want an LSI terminal emulation.  We want the graphics
+	 * terminal to scroll from the bottom. So start at the bottom.
+	 */
+	row = 55;
+	col = 0;
+
+	/*
+	 * Load the cursor with the default values
+	 *
+	 */
+	LoadCursor(defCursor);
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * LoadCursor --
+ *
+ *	Routine to load the cursor Sprite pattern.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The cursor is loaded into the hardware cursor.
+ *
+ * ----------------------------------------------------------------------------
+ */
+static void
+LoadCursor(cur)
+	unsigned short *cur;
+{
+	register PCCRegs *pcc = (PCCRegs *)MACH_CURSOR_REG_ADDR;
+	register int i;
+
+	curReg |= PCC_LODSA;
+	pcc->cmdr = curReg;
+	for (i = 0; i < 32; i++) {
+		pcc->memory = cur[i];
+		MachEmptyWriteBuffer();
+	}
+	curReg &= ~PCC_LODSA;
+	pcc->cmdr = curReg;
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * RestoreCursorColor --
+ *
+ *	Routine to restore the color of the cursor.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+static void
+RestoreCursorColor()
+{
+	register VDACRegs *vdac = (VDACRegs *)MACH_COLOR_MAP_ADDR;
+	register int i;
+
+	vdac->overWA = 0x04;
+	MachEmptyWriteBuffer();
+	for (i = 0; i < 3; i++) {  
+		vdac->over = bg_RGB[i];
+		MachEmptyWriteBuffer();
+	}
+
+	vdac->overWA = 0x08;
+	MachEmptyWriteBuffer();
+	vdac->over = 0x00;
+	MachEmptyWriteBuffer();
+	vdac->over = 0x00;
+	MachEmptyWriteBuffer();
+	vdac->over = 0x7f;
+	MachEmptyWriteBuffer();
+
+	vdac->overWA = 0x0c;
+	MachEmptyWriteBuffer();
+	for (i = 0; i < 3; i++) {
+		vdac->over = fg_RGB[i];
+		MachEmptyWriteBuffer();
+	}
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * CursorColor --
+ *
+ *	Set the color of the cursor.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+static void
+CursorColor(color)
+	unsigned int color[];
+{
+	register int i, j;
+
+	for (i = 0; i < 3; i++)
+		bg_RGB[i] = (u_char)(color[i] >> 8);
+
+	for (i = 3, j = 0; i < 6; i++, j++)
+		fg_RGB[j] = (u_char)(color[i] >> 8);
+
+	RestoreCursorColor();
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * InitColorMap --
+ *
+ *	Initialize the color map.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The colormap is initialized appropriately whether it is color or 
+ *	monochrome.
+ *
+ * ----------------------------------------------------------------------------
+ */
+static void
+InitColorMap()
+{
+	register VDACRegs *vdac = (VDACRegs *)MACH_COLOR_MAP_ADDR;
+	register int i;
+
+	*(char *)MACH_PLANE_MASK_ADDR = 0xff;
+	MachEmptyWriteBuffer();
+
+	if (isMono) {
+		vdac->mapWA = 0; MachEmptyWriteBuffer();
+		for (i = 0; i < 256; i++) {
+			vdac->map = (i < 128) ? 0x00 : 0xff;
+			MachEmptyWriteBuffer();
+			vdac->map = (i < 128) ? 0x00 : 0xff;
+			MachEmptyWriteBuffer();
+			vdac->map = (i < 128) ? 0x00 : 0xff;
+			MachEmptyWriteBuffer();
+		}
+	} else {
+		vdac->mapWA = 0; MachEmptyWriteBuffer();
+		vdac->map = 0; MachEmptyWriteBuffer();
+		vdac->map = 0; MachEmptyWriteBuffer();
+		vdac->map = 0; MachEmptyWriteBuffer();
+
+		for (i = 1; i < 256; i++) {
+			vdac->map = 0xff; MachEmptyWriteBuffer();
+			vdac->map = 0xff; MachEmptyWriteBuffer();
+			vdac->map = 0xff; MachEmptyWriteBuffer();
+		}
+	}
+
+	for (i = 0; i < 3; i++) {
+		bg_RGB[i] = 0x00;
+		fg_RGB[i] = 0xff;
+	}
+	RestoreCursorColor();
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VDACInit --
+ *
+ *	Initialize the VDAC.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+static void
+VDACInit()
+{
+	register VDACRegs *vdac = (VDACRegs *)MACH_COLOR_MAP_ADDR;
+
+	/*
+	 *
+	 * Initialize the VDAC
+	 */
+	vdac->overWA = 0x04; MachEmptyWriteBuffer();
+	vdac->over = 0x00; MachEmptyWriteBuffer();
+	vdac->over = 0x00; MachEmptyWriteBuffer();
+	vdac->over = 0x00; MachEmptyWriteBuffer();
+	vdac->overWA = 0x08; MachEmptyWriteBuffer();
+	vdac->over = 0x00; MachEmptyWriteBuffer();
+	vdac->over = 0x00; MachEmptyWriteBuffer();
+	vdac->over = 0x7f; MachEmptyWriteBuffer();
+	vdac->overWA = 0x0c; MachEmptyWriteBuffer();
+	vdac->over = 0xff; MachEmptyWriteBuffer();
+	vdac->over = 0xff; MachEmptyWriteBuffer();
+	vdac->over = 0xff; MachEmptyWriteBuffer();
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * LoadColorMap --
+ *
+ *	Load the color map.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The color map is loaded.
+ *
+ * ----------------------------------------------------------------------------
+ */
+static void
+LoadColorMap(ptr)
+	ColorMap *ptr;
+{
+	register VDACRegs *vdac = (VDACRegs *)MACH_COLOR_MAP_ADDR;
+
+	if (ptr->index > 256)
+		return;
+
+	vdac->mapWA = ptr->index; MachEmptyWriteBuffer();
+	vdac->map = ptr->Entry.red; MachEmptyWriteBuffer();
+	vdac->map = ptr->Entry.green; MachEmptyWriteBuffer();
+	vdac->map = ptr->Entry.blue; MachEmptyWriteBuffer();
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PosCursor --
+ *
+ *	Postion the cursor.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+PosCursor(x, y)
+	register int x, y;
+{
+	register PCCRegs *pcc = (PCCRegs *)MACH_CURSOR_REG_ADDR;
+
+	if (y < pmu.scrInfo.min_cur_y || y > pmu.scrInfo.max_cur_y)
+		y = pmu.scrInfo.max_cur_y;
+	if (x < pmu.scrInfo.min_cur_x || x > pmu.scrInfo.max_cur_x)
+		x = pmu.scrInfo.max_cur_x;
+	pmu.scrInfo.cursor.x = x;		/* keep track of real cursor */
+	pmu.scrInfo.cursor.y = y;		/* position, indep. of mouse */
+	pcc->xpos = PCC_X_OFFSET + x;
+	pcc->ypos = PCC_Y_OFFSET + y;
 }
 #endif
