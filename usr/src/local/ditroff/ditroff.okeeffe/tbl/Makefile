@@ -1,5 +1,7 @@
-#	@(#)Makefile	1.1 (CWI) 85/10/01
+#	@(#)Makefile	1.2 (CWI) 85/10/02
 #
+DESTDIR=
+BINDIR=/usr/local
 CFLAGS = -O
 HFILES = ext.h defs.h
 SOURCES = checkuse.c delimfields.c getstop.c globals.c horlines.c \
@@ -14,6 +16,9 @@ OBJECTS = checkuse.o delimfields.o getstop.o globals.o horlines.o \
 #
 #
 all: tbl
+
+install: all
+	install -s tbl ${DESTDIR}${BINDIR}/tbl
 
 tbl: ${OBJECTS}
 	cc ${CFLAGS} -o tbl ${OBJECTS}
