@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bzero.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)bzero.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <string.h>
@@ -16,7 +16,7 @@ static char sccsid[] = "@(#)bzero.c	5.5 (Berkeley) %G%";
  */
 void
 bzero(b, length)
-	register char *b;
+	register void *b;
 	register size_t length;
 {
 
