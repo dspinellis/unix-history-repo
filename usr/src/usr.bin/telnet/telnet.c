@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)telnet.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -158,7 +158,7 @@ tn(argc, argv)
 	char *argv[];
 {
 	register int c;
-	register struct hostent *host;
+	register struct hostent *host = 0;
 
 	if (connected) {
 		printf("?Already connected to %s\n", hostname);
@@ -176,20 +176,22 @@ tn(argc, argv)
 		printf("usage: %s host-name [port]\n", argv[0]);
 		return;
 	}
-	host = gethostbyname(argv[1]);
-	if (host) {
-		sin.sin_family = host->h_addrtype;
-		bcopy(host->h_addr, (caddr_t)&sin.sin_addr, host->h_length);
-		hostname = host->h_name;
-	} else {
+	sin.sin_addr.s_addr = inet_addr(argv[1]);
+	if (sin.sin_addr.s_addr != -1) {
 		sin.sin_family = AF_INET;
-		sin.sin_addr.s_addr = inet_addr(argv[1]);
-		if (sin.sin_addr.s_addr == -1) {
+		strcpy(hnamebuf, argv[1]);
+		hostname = hnamebuf;
+	} else {
+		host = gethostbyname(argv[1]);
+		if (host) {
+			sin.sin_family = host->h_addrtype;
+			bcopy(host->h_addr_list[0], (caddr_t)&sin.sin_addr,
+				host->h_length);
+			hostname = host->h_name;
+		} else {
 			printf("%s: unknown host\n", argv[1]);
 			return;
 		}
-		strcpy(hnamebuf, argv[1]);
-		hostname = hnamebuf;
 	}
 	sin.sin_port = sp->s_port;
 	if (argc == 3) {
@@ -219,7 +221,21 @@ tn(argc, argv)
 	signal(SIGINT, intr);
 	signal(SIGPIPE, deadpeer);
 	printf("Trying...\n");
-	if (connect(net, (caddr_t)&sin, sizeof (sin)) < 0) {
+	while (connect(net, (caddr_t)&sin, sizeof (sin)) < 0) {
+		if (host && host->h_addr_list[1]) {
+			int oerrno = errno;
+
+			fprintf(stderr, "telnet: connect to address %s: ",
+				inet_ntoa(sin.sin_addr));
+			errno = oerrno;
+			perror(0);
+			host->h_addr_list++;
+			bcopy(host->h_addr_list[0], (caddr_t)&sin.sin_addr,
+				host->h_length);
+			fprintf(stderr, "Trying %s...\n",
+				inet_ntoa(sin.sin_addr));
+			continue;
+		}
 		perror("telnet: connect");
 		signal(SIGINT, SIG_DFL);
 		return;
