@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	4.14	(Berkeley)	%G%
+#	@(#)Makefile	4.15	(Berkeley)	%G%
 #
 # This makefile is designed to be run in one of three ways:
 #
@@ -34,7 +34,8 @@
 HOSTLOOKUP=named
 DFLMON=mon.o
 DEFS= -DLIBC_SCCS
-LIBCDEFS= HOSTLOOKUP=${HOSTLOOKUP} DFLMON=${DFLMON} DEFS="${DEFS}"
+MACHINE=tahoe
+LIBCDEFS= MACHINE=${MACHINE} HOSTLOOKUP=${HOSTLOOKUP} DFLMON=${DFLMON} DEFS="${DEFS}"
 
 # global flags
 # SRC_MFLAGS are used on makes in command source directories,
