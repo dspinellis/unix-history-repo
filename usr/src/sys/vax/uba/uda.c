@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uda.c	7.28 (Berkeley) %G%
+ *	@(#)uda.c	7.29 (Berkeley) %G%
  */
 
 /*
@@ -245,7 +245,10 @@ udaprobe(reg, ctlr, um)
 	register struct uda_softc *sc;
 	register struct udadevice *udaddr;
 	register struct mscp_info *mi;
-	int timeout, tries, s;
+	int timeout, tries;
+#ifdef QBA
+	int s;
+#endif
 
 #ifdef VAX750
 	/*
@@ -330,7 +333,9 @@ again:
 bad:
 	if (++tries < 2)
 		goto again;
+#ifdef QBA
 	splx(s);
+#endif
 	return (0);
 }
 
@@ -2154,6 +2159,15 @@ struct size {
 	-1,	33440,		/* F=blk 33440 thru end */
 	-1,	49324,		/* G=blk 49324 thru end */
 	-1,	15884,		/* H=blk 15884 thru end */
+}, rd54_sizes[8] = {
+	15884,	0,		/* A=blk 0 thru 15883 */
+	33440,	15884,		/* B=blk 15884 thru 49323 */
+	-1,	0,		/* C=blk 0 thru end */
+	130938,	49324,		/* D=blk 49324 thru 180261 */
+	130938,	180262,		/* E=blk 180262 thru 311199 (end) */
+	0,	0,		/* F=unused */
+	261876,	49324,		/* G=blk 49324 thru 311199 (end) */
+	0,	0,		/* H=unused */
 }, rx50_sizes[8] = {
 	800,	0,		/* A=blk 0 thru 799 */
 	0,	0,
@@ -2185,6 +2199,9 @@ struct	udatypes {
 						rc25_sizes, 42, 4, 302 },
 	{ MSCP_MKDRIVE2('R', 'D', 52), "rd52", rd52_sizes, 18, 7, 480 },
 	{ MSCP_MKDRIVE2('R', 'D', 53), "rd53", rd53_sizes, 18, 8, 963 },
+	{ MSCP_MKDRIVE2('R', 'D', 32), "rd54-from-rd32",
+						rd54_sizes, 17, 15, 1220 },
+	{ MSCP_MKDRIVE2('R', 'D', 54), "rd54", rd54_sizes, 17, 15, 1220 },
 	{ MSCP_MKDRIVE2('R', 'X', 50), "rx50", rx50_sizes, 10, 1, 80 },
 	0
 };
