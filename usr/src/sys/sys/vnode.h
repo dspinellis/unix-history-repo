@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode.h	7.59 (Berkeley) %G%
+ *	@(#)vnode.h	7.60 (Berkeley) %G%
  */
 
 #ifndef KERNEL
@@ -188,7 +188,7 @@ void	lease_updatetime __P((int deltat));
 #define	LEASE_CHECK(vp, p, cred, flag)
 #define	LEASE_UPDATETIME(dt)
 #endif /* NFS */
-#endif
+#endif /* KERNEL */
 
 
 /*
@@ -240,6 +240,7 @@ struct vnodeop_desc {
 	caddr_t	*vdesc_transports;
 };
 
+#ifdef KERNEL
 /*
  * A list of all the operation descs.
  */
@@ -349,3 +350,4 @@ struct vnode *
 void 	vput __P((struct vnode *vp));
 void 	vref __P((struct vnode *vp));
 void 	vrele __P((struct vnode *vp));
+#endif /* KERNEL */
