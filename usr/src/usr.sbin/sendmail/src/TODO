@@ -1,4 +1,12 @@
-(Version 8.36 of %G%)
+(Version 8.37 of %G%)
+
+==============================================================================
+For Release 8.7:
+  - better DSN error codes throughout code
+  - getcanonname needs to be in service switch?
+  - another pass through Sun changes
+  - another pass through documentation
+==============================================================================
 
 Key:
   X -- extension (user visible change)
@@ -39,6 +47,8 @@ E ****	Change userdb code to use underlying maps, at least for
 	out into the config file?)
 
 ? ****	Should $( [1.2.3.4] $) convert the address to a name?
+
+X ***	Multiple queue runners.
 
 E ***	Have recipient lines rewritten by the user database.
 
@@ -90,6 +100,10 @@ E ***	Users in more than one list with different owners get duplicate
 	envelope or the other?
 
 E ***	Mailer flag to turn off MX lookups.
+
+E **	If you get a connection from a host for which you have queued
+	mail, deliver everything to that host.  Intended for dialup SLIP
+	style connections.
 
 X **	Rewriting rules based on incoming mailer.
 
@@ -211,6 +225,8 @@ B **	Include SOCKADDR in MCI struct for logging (currently gives
 
 X **	Allow option to set the characters that are autoquoted in
 	addresses?
+
+X **	Substring map class.
 
 X *	Map that does MB/MR lookups.  Rick McCarty <mccarty@io.com>.
 
