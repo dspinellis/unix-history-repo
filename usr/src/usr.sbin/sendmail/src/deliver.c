@@ -17,7 +17,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	5.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	5.27 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sendmail.h>
@@ -86,7 +86,7 @@ deliver(e, firstto)
 		_res.retrans = 30;
 		_res.retry = 2;
 	}
-#endif NAMED_BIND
+#endif 
 
 	m = to->q_mailer;
 	host = to->q_host;
@@ -950,7 +950,10 @@ giveresponse(stat, m, e)
 	register char *statmsg;
 	extern char *SysExMsg[];
 	register int i;
-	extern int N_SysEx, h_errno;
+	extern int N_SysEx;
+#ifdef NAMED_BIND
+	extern int h_errno;
+#endif
 	char buf[MAXLINE];
 
 #ifdef lint
@@ -974,6 +977,7 @@ giveresponse(stat, m, e)
 	else if (stat == EX_TEMPFAIL)
 	{
 		(void) strcpy(buf, SysExMsg[i]);
+#ifdef NAMED_BIND
 		if (h_errno == TRY_AGAIN)
 		{
 			extern char *errstring();
@@ -981,6 +985,7 @@ giveresponse(stat, m, e)
 			statmsg = errstring(h_errno+MAX_ERRNO);
 		}
 		else
+#endif
 		{
 			if (errno != 0)
 			{
@@ -1042,7 +1047,9 @@ giveresponse(stat, m, e)
 		e->e_message = newstr(&statmsg[4]);
 	}
 	errno = 0;
+#ifdef NAMED_BIND
 	h_errno = 0;
+#endif
 }
 /*
 **  LOGDELIVERY -- log the delivery in the system log
