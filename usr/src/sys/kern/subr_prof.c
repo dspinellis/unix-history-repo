@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)subr_prof.c	7.17 (Berkeley) %G%
+ *	@(#)subr_prof.c	7.18 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -23,13 +23,11 @@
  */
 struct gmonparam _gmonparam = { GMON_PROF_OFF };
 
-u_short	*kcount;
 extern char etext[];
 
 kmstartup()
 {
 	char *cp;
-	int fsize, tsize, ksize;
 	struct gmonparam *p = &_gmonparam;
 	/*
 	 * Round lowpc and highpc to multiples of the density we're using
@@ -40,28 +38,64 @@ kmstartup()
 	p->textsize = p->highpc - p->lowpc;
 	printf("Profiling kernel, textsize=%d [%x..%x]\n",
 	       p->textsize, p->lowpc, p->highpc);
-	ksize = p->textsize / HISTFRACTION;
-	fsize = p->textsize / HASHFRACTION;
+	p->kcountsize = p->textsize / HISTFRACTION;
+	p->fromssize = p->textsize / HASHFRACTION;
 	p->tolimit = p->textsize * ARCDENSITY / 100;
 	if (p->tolimit < MINARCS)
 		p->tolimit = MINARCS;
 	else if (p->tolimit > MAXARCS)
 		p->tolimit = MAXARCS;
-	tsize = p->tolimit * sizeof(struct tostruct);
-	cp = (char *)malloc(ksize + fsize + tsize, M_GPROF, M_NOWAIT);
+	p->tossize = p->tolimit * sizeof(struct tostruct);
+	cp = (char *)malloc(p->kcountsize + p->fromssize + p->tossize,
+	    M_GPROF, M_NOWAIT);
 	if (cp == 0) {
 		printf("No memory for profiling.\n");
 		return;
 	}
-	bzero(cp, ksize + tsize + fsize);
+	bzero(cp, p->kcountsize + p->tossize + p->fromssize);
 	p->tos = (struct tostruct *)cp;
-	cp += tsize;
-	kcount = (u_short *)cp;
-	cp += ksize;
+	cp += p->tossize;
+	p->kcount = (u_short *)cp;
+	cp += p->kcountsize;
 	p->froms = (u_short *)cp;
 	startprofclock(&proc0);
 }
-#endif
+
+/*
+ * Return kernel profiling information.
+ */
+sysctl_doprof(name, namelen, oldp, oldlenp, newp, newlen, p)
+	int *name;
+	u_int namelen;
+	void *oldp;
+	size_t *oldlenp;
+	void *newp;
+	size_t newlen;
+{
+	struct gmonparam *gp = &_gmonparam;
+
+	/* all sysctl names at this level are terminal */
+	if (namelen != 1)
+		return (ENOTDIR);		/* overloaded */
+
+	switch (name[0]) {
+	case GPROF_STATE:
+		return (sysctl_int(oldp, oldlenp, newp, newlen, &gp->state));
+	case GPROF_COUNT:
+		return (sysctl_struct(oldp, oldlenp, newp, newlen,
+		    gp->kcount, gp->kcountsize));
+	case GPROF_FROMS:
+		return (sysctl_struct(oldp, oldlenp, newp, newlen,
+		    gp->froms, gp->fromssize));
+	case GPROF_TOS:
+		return (sysctl_struct(oldp, oldlenp, newp, newlen,
+		    gp->tos, gp->tossize));
+	default:
+		return (EOPNOTSUPP);
+	}
+	/* NOTREACHED */
+}
+#endif /* GPROF */
 
 /*
  * Profiling system call.
