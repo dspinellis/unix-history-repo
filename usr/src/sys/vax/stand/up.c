@@ -1,5 +1,11 @@
-/*	up.c	4.1	82/12/26	*/
+/*	up.c	4.2	82/12/30	*/
 
+/*
+ * UNIBUS peripheral standalone driver
+ * with ECC correction and bad block forwarding.
+ * Also supports header operation and write
+ * check for data and/or header.
+ */
 #include "../h/param.h" 
 #include "../h/inode.h"
 #include "../h/fs.h"
@@ -10,32 +16,32 @@
 #include "../vaxuba/upreg.h"
 #include "../vaxuba/ubareg.h"
 
-#include "nsaio.h"
+#include "saio.h"
 #include "savax.h"
 
-#define updevctl(io, func)  (up_ctl[io->i_unit] = func)
-
-struct  dkbad upbad[MAXNUBA*8];		/* bad block pointers */
 u_short	ubastd[] = { 0776700 };
+
 char	up_gottype[MAXNUBA*8] = { 0 };
 char	up_type[MAXNUBA*8] = { 0 };
-char	up_ctl[MAXNUBA*8]  = { 0 };
 short	up_off[] = { 0, 27, 68, -1, -1, -1, -1, 82 };
 short	fj_off[] = { 0, 50, 0, -1, -1, -1, -1, 155 };
 /* this is called upam instead of am because hp.c has a similar array */
 short	upam_off[] = { 0, 32, 0, 668, 723, 778, 668, 98 };
+
+#define	NUPTYPES	3
+
 struct upst {
 	short nsect;
 	short ntrak;
 	short nspc;
 	short ncyl;
 	short *off;
-} upst[] = {
-/*  sectors,   surfaces,sect/cyl,cylind,		*/
-	32,	19,	32*19,	823,	up_off,
-	32,	10,	32*10,	823,	fj_off,
-	32,	16,	32*16,	1024,	upam_off,
+} upst[NUPTYPES] = {
+	32,	19,	32*19,	823,	up_off,		/* 9300/equiv */
+	32,	10,	32*10,	823,	fj_off,		/* Fuji 160 */
+	32,	16,	32*16,	1024,	upam_off,	/* Capricorn */
 };
+
 u_char	up_offset[16] = {
 	UPOF_P400, UPOF_M400, UPOF_P400, UPOF_M400,
 	UPOF_P800, UPOF_M800, UPOF_P800, UPOF_M800, 
@@ -43,54 +49,66 @@ u_char	up_offset[16] = {
 	0, 0, 0, 0
 };
 
+struct  dkbad upbad[MAXNUBA*8];		/* bad sector table */
+
 upopen(io)
 	register struct iob *io;
 {
-	register struct updevice *upaddr =
-	    (struct updevice *)ubamem(io->i_unit, ubastd[0]);
+	register struct updevice *upaddr;
 	register struct upst *st;
-	struct iob tio;
-	int i = 0;
 
+	if (io->i_boff < 0 || io->i_boff > 7 || st->off[io->i_boff] == -1)
+		_stop("up bad unit");
+	upaddr = (struct updevice *)ubamem(io->i_unit, ubastd[0]);
 	while ((upaddr->upcs1 & UP_DVA) == 0) /* infinite wait */
 		;
 	st = &upst[up_type[io->i_unit]];
 	if (up_gottype[io->i_unit] == 0) {
+		register int i;
+		struct iob tio;
+
 		upaddr->uphr = UPHR_MAXTRAK;
-		if (upaddr->uphr == 9)
-			up_type[io->i_unit] = 1;	/* fuji kludge */
-		else if (upaddr->uphr == 15)
-			up_type[io->i_unit] = 2;	/* capricorn kludge */
+		for (st = upst; st < &upst[NUPTYPES]; st++)
+			if (upaddr->uphr == st->ntrak - 1) {
+				up_type[io->i_unit] = st - upst;
+				break;
+			}
+		if (st == &upst[NUPTYPES]) {
+			printf("up%d: uphr=%x\n", upaddr->uphr);
+			_stop("unknown drive type");
+		}
 		upaddr->upcs2 = UPCS2_CLR;
 #ifdef DEBUG
 		printf("Unittype=%d\n",up_type[io->i_unit]);
 #endif
-		st = &upst[up_type[io->i_unit]];
 
-	/* read in bad block ptrs */
-		tio = *io;		/* copy the contents of the io structure
-					 * to tio for use during the bb pointer
-					 * read operation */
-		tio.i_bn = (st->nspc * st->ncyl - st->nsect);
+		/*
+		 * Read in the bad sector table:
+		 *	copy the contents of the io structure
+		 *	to tio for use during the bb pointer
+		 *	read operation.
+		 */
+		tio = *io;
+		tio.i_bn = st->nspc * st->ncyl - st->nsect;
 		tio.i_ma = (char *)&upbad[tio.i_unit];
-		tio.i_cc = sizeof(upbad);
-		for (i=0; i<5; i++) {
-			if (upstrategy(&tio, READ) == sizeof(upbad)) break;
+		tio.i_cc = sizeof (upbad);
+		tio.i_flgs |= F_RDDATA;
+		for (i = 0; i < 5; i++) {
+			if (upstrategy(&tio, READ) == sizeof (upbad))
+				break;
 			tio.i_bn += 2;
 		}
 		if (i == 5) {
-			printf("Unable to read bad block ptrs\n");
-			for (i=0; i<126; i++) {
+			printf("Unable to read bad sector table\n");
+			for (i = 0; i < 126; i++) {
 				upbad[io->i_unit].bt_bad[i].bt_cyl = -1;
 				upbad[io->i_unit].bt_bad[i].bt_trksec = -1;
 			}
 		}	
 		up_gottype[io->i_unit] = 1;
 	}
-	if (io->i_boff < 0 || io->i_boff > 7 || st->off[io->i_boff] == -1)
-		_stop("up bad unit");
 	io->i_boff = st->off[io->i_boff] * st->nspc;
-	updevctl(io, NORMAL);
+	io->i_flgs &= ~F_TYPEMASK;
 }
 
 upstrategy(io, func)
@@ -103,10 +121,10 @@ upstrategy(io, func)
 	    (struct updevice *)ubamem(io->i_unit, ubastd[0]);
 	register struct upst *st = &upst[up_type[io->i_unit]];
 
-	if (func == READ) 
-		io->i_flgs |= IO_READ;
-	else
-		io->i_flgs |= IO_WRITE;
+	if (func != READ && func != WRITE) {
+		io->i_error = ECMD;
+		return (-1);
+	}
 	unit = io->i_unit;
 	io->i_errcnt = 0;
 	recal = 3;
@@ -123,7 +141,8 @@ upstrategy(io, func)
 	upaddr->upba = info;
 readmore: 
 	bn = io->i_bn + btop(io->i_cc + upaddr->upwc*sizeof(short));
-	while((upaddr->upds & UPDS_DRY) == 0) ;
+	while((upaddr->upds & UPDS_DRY) == 0)
+		;
 	if (upstart(io, bn) != 0) 
 		return (-1);
 	do {
@@ -140,18 +159,17 @@ readmore:
 			UPER1_BITS, upaddr->uper2, UPER2_BITS,-upaddr->upwc);
 #endif
 	waitdry = 0;
-	while ((upaddr->upds & UPDS_DRY) == 0) {
-		if (++waitdry > 512)
-			break;
-	}
+	while ((upaddr->upds & UPDS_DRY) == 0 && ++waitdry < 512)
+		DELAY(5);
 	if (++io->i_errcnt > 27) {
 		/*
 		 * After 28 retries (16 without offset, and
 		 * 12 with offset positioning) give up.
 		 */
-		io->i_error = IOERR_HER;
+		io->i_error = EHER;
 hard:
-		if (upaddr->upcs2 & UPCS2_WCE) io->i_error=IOERR_WCK;
+		if (upaddr->upcs2 & UPCS2_WCE)
+			io->i_error = EWCK;
 		bn = io->i_bn + btop(io->i_cc + upaddr->upwc*sizeof(short));
 		cn = bn/st->nspc;
 		sn = bn%st->nspc;
@@ -165,19 +183,19 @@ hard:
 		return (io->i_cc + upaddr->upwc*sizeof(short));
 	} else 
 		if (upaddr->uper1&UPER1_WLE) {
-		/*
-		 * Give up on write locked devices
-		 * immediately.
-		 */
-		printf("up%d: write locked\n", unit);
-		return(-1);
+			/*
+			 * Give up on write locked devices
+			 * immediately.
+			 */
+			printf("up%d: write locked\n", unit);
+			return(-1);
 		}
 #ifndef NOBADSECT
 	else if (upaddr->uper2 & UPER2_BSE) {
 		if (upecc( io, BSE)) 
 			goto success;
 		else {
-			io->i_error = IOERR_BSE;
+			io->i_error = EBSE;
 			goto hard;
 		}
 	}
@@ -189,11 +207,10 @@ hard:
 		 * Otherwise fall through and retry the transfer
 		 */
 		if ((upaddr->uper1&(UPER1_DCK|UPER1_ECH))==UPER1_DCK) {
-			upecc( io, ECC);
+			upecc(io, ECC);
 			goto success;
-		} else {
+		} else
 			io->i_active = 0; /* force retry */
-		}
 	}
 	/*
 	 * Clear drive error and, every eight attempts,
@@ -220,6 +237,7 @@ hard:
 		upaddr->updc = cn;
 		upaddr->upcs1 = UP_SEEK|UP_GO;
 		goto nextrecal;
+
 	case 2:
 		if (io->i_errcnt < 16 || (func & READ) == 0)
 			goto donerecal;
@@ -229,6 +247,7 @@ hard:
 		recal++;
 		io->i_active = 1;
 		goto readmore;
+
 	donerecal:
 	case 3:
 		recal = 0;
@@ -246,16 +265,15 @@ hard:
 		if (io->i_errcnt >= 16) {
 			upaddr->upof = UPOF_FMT22;
 			upaddr->upcs1 = UP_RTC|UP_GO;
-			while (!upaddr->upds & UPDS_DRY) /* removed PIP test*/
+			while ((upaddr->upds&UPDS_DRY) == 0)
 				DELAY(25);
 		}
 		goto readmore;
 	}
 success:
 	io->i_active = 1;
-	if (upaddr->upwc != 0) {
+	if (upaddr->upwc != 0)
 		goto readmore;
-	}
 	/*
 	 * Release unibus 
 	 */
@@ -269,7 +287,7 @@ success:
  * the transfer may be going to an odd memory address base and/or
  * across a page boundary.
  */
-upecc( io, flag)
+upecc(io, flag)
 	register struct iob *io;
 	int flag;
 {
@@ -318,7 +336,7 @@ upecc( io, flag)
 		 */
 		while (i < 512 && (int)ptob(npf)+i < io->i_cc && bit > -11) {
 			/*
-			 * addr = vax base addr + ( number of sectors transferred
+			 * addr = vax base addr + (number of sectors transferred
 			 *	  before the error sector times the sector size)
 			 *	  + byte number
 			 */
@@ -354,10 +372,11 @@ upecc( io, flag)
 	 	* controller registers in a normal fashion. 
 	 	* The ub-address need not be changed.
 	 	*/
-		while ( up->upcs1 & UP_RDY == 0) 
+		while (up->upcs1 & UP_RDY == 0) 
 			;
 		up->upcs1 = UP_TRE|UP_DCLR|UP_GO;
-		if (upstart(io, bbn) != 0) return (0);
+		if (upstart(io, bbn) != 0)
+			return (0);
 		io->i_errcnt = 0;
 		do {
 			DELAY(25);
@@ -367,20 +386,17 @@ upecc( io, flag)
 			return (0);
 		}
 	}
-	if (twc != 0) {
+	if (twc != 0)
 		up->upwc = twc;
-	}
 	return (1);
 }
 
 #ifndef NOBADSECT
-
 /*
  * Search the bad sector table looking for
  * the specified sector.  Return index if found.
  * Return -1 if not found.
  */
-
 isbad(bt, st, blno)
 	register struct dkbad *bt;
 	register struct upst *st;
@@ -394,7 +410,8 @@ isbad(bt, st, blno)
 	sec %= st->nsect;
 	blk = ((long)(blno/st->nspc) << 16) + (trk << 8) + sec;
 	for (i = 0; i < 126; i++) {
-		bblk = ((long)bt->bt_bad[i].bt_cyl << 16) + bt->bt_bad[i].bt_trksec;
+		bblk = ((long)bt->bt_bad[i].bt_cyl << 16) +
+			bt->bt_bad[i].bt_trksec;
 		if (blk == bblk)
 			return (i);
 		if (blk < bblk || bblk < 0)
@@ -405,11 +422,11 @@ isbad(bt, st, blno)
 #endif
 
 upstart(io, bn)
-register struct iob *io;
-daddr_t bn;
+	register struct iob *io;
+	daddr_t bn;
 {
 	register struct updevice *upaddr = 
-			(struct updevice *)ubamem(io->i_unit, ubastd[0]);
+		(struct updevice *)ubamem(io->i_unit, ubastd[0]);
 	register struct upst *st = &upst[up_type[io->i_unit]];
 	int sn, tn;
 
@@ -418,33 +435,48 @@ daddr_t bn;
 	sn %= st->nsect;
 	upaddr->updc = bn/st->nspc;
 	upaddr->upda = (tn << 8) + sn;
-	switch (up_ctl[io->i_unit]) {
-	case NORMAL:
-		if (io->i_flgs & IO_READ)
-			upaddr->upcs1 = UP_RCOM|UP_GO;
-		else
-			upaddr->upcs1 = UP_WCOM|UP_GO;
+	switch (io->i_flgs&F_TYPEMASK) {
+
+	case F_RDDATA:
+		upaddr->upcs1 = UP_RCOM|UP_GO;
 		break;
-	case HDRIO:	
-		if (io->i_flgs & IO_READ)	
-			upaddr->upcs1 = UP_RHDR|UP_GO;
-		else
-			upaddr->upcs1 = UP_WHDR|UP_GO;
+
+	case F_WRDATA:
+		upaddr->upcs1 = UP_WCOM|UP_GO;
 		break;
-	case WCHECK:
-		/* don't care if read or write, write check is writecheck
-		 * anyhow  */
+
+	case F_HDR|F_RDDATA:	
+		upaddr->upcs1 = UP_RHDR|UP_GO;
+		break;
+
+	case F_HDR|F_WRDATA:
+		upaddr->upcs1 = UP_WHDR|UP_GO;
+		break;
+
+	case F_CHECK|F_WRDATA:
+	case F_CHECK|F_RDDATA:
 		upaddr->upcs1 = UP_WCDATA|UP_GO;
 		break;
-	case WHCHECK:
-		/* don't care if read or write, write check is writecheck
-		 * anyhow  */
+
+	case F_HCHECK|F_WRDATA:
+	case F_HCHECK|F_RDDATA:
 		upaddr->upcs1 = UP_WCHDR|UP_GO;
 		break;
+
 	default:
-		io->i_error = IOERR_CMD;
-		return(1);
+		io->i_error = ECMD;
+		io->i_flgs &= ~F_TYPEMASK;
+		return (1);
 	}
-	return(0) ;
+	return (0);
 }
 
+/*ARGSUSED*/
+upioctl(io, cmd, arg)
+	struct iob *io;
+	int cmd;
+	caddr_t arg;
+{
+
+	return (ECMD);
+}

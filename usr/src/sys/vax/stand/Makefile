@@ -1,4 +1,4 @@
-#	Makefile	4.17	82/12/19
+#	Makefile	4.18	82/12/30
 
 DESTDIR=/
 CFLAGS=	-O -DSTANDALONE ${COPTS} 
@@ -6,11 +6,15 @@ COPTS=	-DVAX780 -DVAX750 -DVAX730
 RELOC=	70000
 SRCS=	sys.c conf.c prf.c machdep.c \
 	autoconf.c hp.c ht.c idc.c mba.c mt.c rk.c tm.c ts.c \
-	up.c uba.c uda.c ut.c
+	up.c uba.c uda.c ut.c \
+	drtest.c upchk.c up.new.c
 DRIVERS=autoconf.o hp.o ht.o idc.o mba.o mt.o rk.o tm.o ts.o \
 	up.o uba.o uda.o ut.o
+NEWDRIVERS=hp.new.o up.new.o
 
-ALL=	/usr/lib/libsa.a srt0.o boot tpboot copy tpcopy boothp boothk bootup
+ALL=	/usr/lib/libsa.a srt0.o boot tpboot copy tpcopy \
+	boothp boothk bootup \
+	updrtest hpdrtest upchk hpchk
 
 all: ${ALL}
 
@@ -18,7 +22,7 @@ all: ${ALL}
 	ar crv /usr/lib/libsa.a $?
 	ranlib /usr/lib/libsa.a
 
-${DRIVERS}: savax.h
+${NEWDRIVERS} ${DRIVERS}: savax.h
 	cc -c -S ${COPTS} $*.c
 	/lib/c2 -i $*.s | as -o $*.o
 	rm $*.s
@@ -66,6 +70,26 @@ bootconf.o: ../h/fs.h saio.h ../vaxmba/mbareg.h
 
 copy:	copy.o srt0.o conf.o /usr/lib/libsa.a
 	ld -N -o copy srt0.o copy.o conf.o -lsa -lc
+
+# eventually we'll merge hpchk and upchk into one program
+#chk:	chk.o srt0.o conf.o hp.new.o up.new.o /usr/lib/libsa.a
+#	ld -N -o chk srt0.o chk.o conf.o hp.new.o up.new.o -lsa -lc
+#
+hpchk:	chk.o srt0.o confhp.o hp.new.o /usr/lib/libsa.a
+	ld -N -o hpchk srt0.o chk.o confhp.o hp.new.o -lsa -lc
+
+upchk:	chk.o srt0.o confup.o up.new.o /usr/lib/libsa.a
+	ld -N -o upchk srt0.o chk.o confup.o up.new.o -lsa -lc
+
+# eventually we'll merge hpdrtest and updrtest into one program
+#drtest:drtest.o srt0.o conf.o hp.new.o up.new.o /usr/lib/libsa.a
+#	ld -N -o drtest srt0.o drtest.o conf.o hp.new.o up.new.o -lsa -lc
+#
+updrtest: drtest.o srt0.o confup.o up.new.o /usr/lib/libsa.a
+	ld -N -o updrtest srt0.o drtest.o confup.o up.new.o -lsa -lc
+
+hpdrtest: drtest.o srt0.o confhp.o hp.new.o /usr/lib/libsa.a
+	ld -N -o hpdrtest srt0.o drtest.o confhp.o hp.new.o -lsa -lc
 
 # bootstrap from ether
 

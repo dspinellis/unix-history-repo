@@ -1,4 +1,4 @@
-/*	sys.c	4.7	82/12/22	*/
+/*	sys.c	4.8	82/12/30	*/
 
 #include "../h/param.h"
 #include "../h/inode.h"
@@ -14,7 +14,7 @@ struct dirstuff {
 };
 
 static
-openi(n,io)
+openi(n, io)
 	register struct iob *io;
 {
 	register struct dinode *dp;
@@ -39,7 +39,7 @@ find(path, file)
 
 	if (path==NULL || *path=='\0') {
 		printf("null path\n");
-		return(0);
+		return (0);
 	}
 
 	openi((ino_t) ROOTINO, file);
@@ -61,10 +61,10 @@ find(path, file)
 			continue;
 		} else {
 			printf("%s not found\n",path);
-			return(0);
+			return (0);
 		}
 	}
-	return(n);
+	return (n);
 }
 
 static daddr_t
@@ -79,7 +79,7 @@ sbmap(io, bn)
 	ip = &io->i_ino;
 	if (bn < 0) {
 		printf("bn negative\n");
-		return((daddr_t)0);
+		return ((daddr_t)0);
 	}
 
 	/*
@@ -87,7 +87,7 @@ sbmap(io, bn)
 	 */
 	if(bn < NDADDR) {
 		nb = ip->i_db[bn];
-		return(nb);
+		return (nb);
 	}
 
 	/*
@@ -113,7 +113,7 @@ sbmap(io, bn)
 	nb = ip->i_ib[NIADDR - j];
 	if (nb == 0) {
 		printf("bn void %D\n",bn);
-		return((daddr_t)0);
+		return ((daddr_t)0);
 	}
 
 	/*
@@ -133,10 +133,10 @@ sbmap(io, bn)
 		nb = bap[i];
 		if(nb == 0) {
 			printf("bn void %D\n",bn);
-			return((daddr_t)0);
+			return ((daddr_t)0);
 		}
 	}
-	return(nb);
+	return (nb);
 }
 
 static ino_t
@@ -150,15 +150,15 @@ dlook(s, io)
 	int len;
 
 	if (s == NULL || *s == '\0')
-		return(0);
+		return (0);
 	ip = &io->i_ino;
 	if ((ip->i_mode&IFMT) != IFDIR) {
 		printf("not a directory\n");
-		return(0);
+		return (0);
 	}
 	if (ip->i_size == 0) {
 		printf("zero length directory\n");
-		return(0);
+		return (0);
 	}
 	len = strlen(s);
 	dirp.loc = 0;
@@ -167,9 +167,9 @@ dlook(s, io)
 		if(dp->d_ino == 0)
 			continue;
 		if (dp->d_namlen == len && !strcmp(s, dp->d_name))
-			return(dp->d_ino);
+			return (dp->d_ino);
 	}
-	return(0);
+	return (0);
 }
 
 /*
@@ -208,28 +208,30 @@ readdir(dirp)
 }
 
 lseek(fdesc, addr, ptr)
-	int	fdesc;
-	off_t	addr;
-	int	ptr;
+	int fdesc, ptr;
+	off_t addr;
 {
 	register struct iob *io;
 
 	if (ptr != 0) {
 		printf("Seek not from beginning of file\n");
-		return(-1);
+		errno = EOFFSET;
+		return (-1);
 	}
 	fdesc -= 3;
 	if (fdesc < 0 || fdesc >= NFILES ||
-	    ((io = &iob[fdesc])->i_flgs & F_ALLOC) == 0)
-		return(-1);
+	    ((io = &iob[fdesc])->i_flgs & F_ALLOC) == 0) {
+		errno = EBADF;
+		return (-1);
+	}
 	io->i_offset = addr;
 	io->i_bn = addr / DEV_BSIZE;
 	io->i_cc = 0;
-	return(0);
+	return (0);
 }
 
 getc(fdesc)
-	int	fdesc;
+	int fdesc;
 {
 	register struct iob *io;
 	register struct fs *fs;
@@ -238,11 +240,13 @@ getc(fdesc)
 
 
 	if (fdesc >= 0 && fdesc <= 2)
-		return(getchar());
+		return (getchar());
 	fdesc -= 3;
 	if (fdesc < 0 || fdesc >= NFILES ||
-	    ((io = &iob[fdesc])->i_flgs&F_ALLOC) == 0)
-		return(-1);
+	    ((io = &iob[fdesc])->i_flgs&F_ALLOC) == 0) {
+		errno = EBADF;
+		return (-1);
+	}
 	p = io->i_ma;
 	if (io->i_cc <= 0) {
 		if ((io->i_flgs & F_FILE) != 0) {
@@ -273,12 +277,12 @@ getc(fdesc)
 	io->i_offset++;
 	c = (unsigned)*p++;
 	io->i_ma = p;
-	return(c);
+	return (c);
 }
 
 /* does this port?
 getw(fdesc)
-	int	fdesc;
+	int fdesc;
 {
 	register w,i;
 	register char *cp;
@@ -288,96 +292,109 @@ getw(fdesc)
 		w = getc(fdesc);
 		if (w < 0) {
 			if (i == 0)
-				return(-1);
+				return (-1);
 			else
-				return(val);
+				return (val);
 		}
 		*cp++ = w;
 	}
-	return(val);
+	return (val);
 }
 */
+int	errno;
 
 read(fdesc, buf, count)
-	int	fdesc;
-	char	*buf;
-	int	count;
+	int fdesc, count;
+	char *buf;
 {
 	register i;
 	register struct iob *file;
 
+	errno = 0;
 	if (fdesc >= 0 & fdesc <= 2) {
 		i = count;
 		do {
 			*buf = getchar();
 		} while (--i && *buf++ != '\n');
-		return(count - i);
+		return (count - i);
 	}
 	fdesc -= 3;
 	if (fdesc < 0 || fdesc >= NFILES ||
-	    ((file = &iob[fdesc])->i_flgs&F_ALLOC) == 0)
-		return(-1);
-	if ((file->i_flgs&F_READ) == 0)
-		return(-1);
+	    ((file = &iob[fdesc])->i_flgs&F_ALLOC) == 0) {
+		errno = EBADF;
+		return (-1);
+	}
+	if ((file->i_flgs&F_READ) == 0) {
+		errno = EBADF;
+		return (-1);
+	}
 	if ((file->i_flgs & F_FILE) == 0) {
 		file->i_cc = count;
 		file->i_ma = buf;
 		file->i_bn = file->i_boff + (file->i_offset / DEV_BSIZE);
 		i = devread(file);
 		file->i_offset += count;
-		return(i);
+		if (i < 0)
+			errno = file->i_error;
+		return (i);
 	} else {
 		if (file->i_offset+count > file->i_ino.i_size)
 			count = file->i_ino.i_size - file->i_offset;
 		if ((i = count) <= 0)
-			return(0);
+			return (0);
 		do {
 			*buf++ = getc(fdesc+3);
 		} while (--i);
-		return(count);
+		return (count);
 	}
 }
 
 write(fdesc, buf, count)
-	int	fdesc;
-	char	*buf;
-	int	count;
+	int fdesc, count;
+	char *buf;
 {
 	register i;
 	register struct iob *file;
 
+	errno = 0;
 	if (fdesc >= 0 && fdesc <= 2) {
 		i = count;
 		while (i--)
 			putchar(*buf++);
-		return(count);
+		return (count);
 	}
 	fdesc -= 3;
 	if (fdesc < 0 || fdesc >= NFILES ||
-	    ((file = &iob[fdesc])->i_flgs&F_ALLOC) == 0)
-		return(-1);
-	if ((file->i_flgs&F_WRITE) == 0)
-		return(-1);
+	    ((file = &iob[fdesc])->i_flgs&F_ALLOC) == 0) {
+		errno = EBADF;
+		return (-1);
+	}
+	if ((file->i_flgs&F_WRITE) == 0) {
+		errno = EBADF;
+		return (-1);
+	}
 	file->i_cc = count;
 	file->i_ma = buf;
 	file->i_bn = file->i_boff + (file->i_offset / DEV_BSIZE);
 	i = devwrite(file);
 	file->i_offset += count;
-	return(i);
+	if (i < 0)
+		errno = file->i_error;
+	return (i);
 }
 
 int	openfirst = 1;
 
 open(str, how)
 	char *str;
-	int	how;
+	int how;
 {
 	register char *cp;
 	int i;
 	register struct iob *file;
 	register struct devsw *dp;
-	int	fdesc;
-	long	atol();
+	int fdesc;
+	long atol();
 
 	if (openfirst) {
 		for (i = 0; i < NFILES; i++)
@@ -397,7 +414,8 @@ gotfile:
 	if (*cp != '(') {
 		printf("Bad device\n");
 		file->i_flgs = 0;
-		return(-1);
+		errno = EDEV;
+		return (-1);
 	}
 	*cp++ = '\0';
 	for (dp = devsw; dp->dv_name; dp++) {
@@ -406,7 +424,8 @@ gotfile:
 	}
 	printf("Unknown device\n");
 	file->i_flgs = 0;
-	return(-1);
+	errno = ENXIO;
+	return (-1);
 gotdev:
 	*(cp-1) = '(';
 	file->i_ino.i_dev = dp-devsw;
@@ -416,13 +435,15 @@ gotdev:
 	if (file->i_unit < 0 || file->i_unit > 31) {
 		printf("Bad unit specifier\n");
 		file->i_flgs = 0;
-		return(-1);
+		errno = EUNIT;
+		return (-1);
 	}
 	if (*cp++ != ',') {
 badoff:
 		printf("Missing offset specification\n");
 		file->i_flgs = 0;
-		return(-1);
+		errno = EOFFSET;
+		return (-1);
 	}
 	file->i_boff = atol(cp);
 	for (;;) {
@@ -437,7 +458,7 @@ badoff:
 		file->i_flgs |= how+1;
 		file->i_cc = 0;
 		file->i_offset = 0;
-		return(fdesc+3);
+		return (fdesc+3);
 	}
 	file->i_ma = (char *)(&file->i_fs);
 	file->i_cc = SBSIZE;
@@ -446,33 +467,72 @@ badoff:
 	devread(file);
 	if ((i = find(cp, file)) == 0) {
 		file->i_flgs = 0;
-		return(-1);
+		errno = ESRCH;
+		return (-1);
 	}
 	if (how != 0) {
 		printf("Can't write files yet.. Sorry\n");
 		file->i_flgs = 0;
-		return(-1);
+		errno = EIO;
+		return (-1);
 	}
 	openi(i, file);
 	file->i_offset = 0;
 	file->i_cc = 0;
 	file->i_flgs |= F_FILE | (how+1);
-	return(fdesc+3);
+	return (fdesc+3);
 }
 
 close(fdesc)
-	int	fdesc;
+	int fdesc;
 {
 	struct iob *file;
 
 	fdesc -= 3;
 	if (fdesc < 0 || fdesc >= NFILES ||
-	    ((file = &iob[fdesc])->i_flgs&F_ALLOC) == 0)
-		return(-1);
+	    ((file = &iob[fdesc])->i_flgs&F_ALLOC) == 0) {
+		errno = EBADF;
+		return (-1);
+	}
 	if ((file->i_flgs&F_FILE) == 0)
 		devclose(file);
 	file->i_flgs = 0;
-	return(0);
+	return (0);
+}
+
+ioctl(fdesc, cmd, arg)
+	int fdesc, cmd;
+	char *arg;
+{
+	register struct iob *file;
+	int error = 0;
+
+	if (fdesc < 0 || fdesc >= NFILES ||
+	    ((file = &iob[fdesc])->i_flgs&F_ALLOC) == 0) {
+		errno = EBADF;
+		return (-1);
+	}
+	switch (cmd) {
+
+	case SAIOHDR:
+		file->i_flgs |= F_HDR;
+		break;
+
+	case SAIOCHECK:
+		file->i_flgs |= F_CHECK;
+		break;
+
+	case SAIOHCHECK:
+		file->i_flgs |= F_HCHECK;
+		break;
+
+	default:
+		error = devioctl(file, cmd, arg);
+		break;
+	}
+	if (error < 0)
+		errno = file->i_error;
+	return (error);
 }
 
 exit()
@@ -481,7 +541,7 @@ exit()
 }
 
 _stop(s)
-	char	*s;
+	char *s;
 {
 	int i;
 
