@@ -1,15 +1,20 @@
-static	char *sccsid = "@(#)comsat.c	4.3 82/03/31";
+#ifndef lint
+static	char *sccsid = "@(#)comsat.c	4.4 82/11/17";
+#endif
+
+#include <sys/types.h>
+#include <sys/socket.h>
+
+#include <netinet/in.h>
 
 #include <stdio.h>
 #include <sgtty.h>
 #include <utmp.h>
-#include <sys/types.h>
-#include <net/in.h>
-#include <sys/socket.h>
 #include <stat.h>
 #include <wait.h>
 #include <signal.h>
 #include <errno.h>
+#include <netdb.h>
 
 /*
  * comsat
@@ -26,6 +31,7 @@ int	nutmp;
 int	uf;
 unsigned utmpmtime;			/* last modification time for utmp */
 int	onalrm();
+struct	servent *sp;
 
 #define NAMLEN (sizeof (uts[0].ut_name) + 1)
 
@@ -36,6 +42,11 @@ char **argv;
 	char buf[BUFSIZ];
 	int s;
 
+	sp = getservbyname("biff", "udp");
+	if (sp == 0) {
+		fprintf(stderr, "comsat: biff/udp: unknown service\n");
+		exit(1);
+	}
 #ifndef DEBUG
 	if (fork())
 		exit();
@@ -51,19 +62,24 @@ char **argv;
 	onalrm();
 	sigset(SIGALRM, onalrm);
 	sigignore(SIGTTOU);
-#if vax
-	sin.sin_port = ((sin.sin_port<<8)&0xff00)|((sin.sin_port>>8)&0xff);
-#endif
-	s = socket(SOCK_DGRAM, 0, &sin, 0);
+	s = socket(AF_INET, SOCK_DGRAM, 0, 0);
 	if (s < 0) {
 		perror("socket");
+		exit(1);
+	}
+#if vax || pdp11
+	sp->s_port = htons((u_short)sp->s_port);
+#endif
+	sin.sin_port = sp->s_port;
+	if (bind(s, &sin, sizeof (sin), 0) < 0) {
+		perror("bind");
 		exit(1);
 	}
 	for (;;) {
 		char msgbuf[100];
 		int cc;
 
-		cc = receive(s, 0, msgbuf, sizeof (msgbuf) - 1);
+		cc = recv(s, msgbuf, sizeof (msgbuf) - 1, 0);
 		if (cc <= 0) {
 			if (errno != EINTR)
 				sleep(1);
