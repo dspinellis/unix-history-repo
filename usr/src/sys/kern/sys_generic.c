@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sys_generic.c	7.23 (Berkeley) %G%
+ *	@(#)sys_generic.c	7.24 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -24,6 +24,7 @@
 /*
  * Read system call.
  */
+/* ARGSUSED */
 read(p, uap, retval)
 	struct proc *p;
 	register struct args {
@@ -76,6 +77,7 @@ read(p, uap, retval)
 /*
  * Scatter read system call.
  */
+/* ARGSUSED */
 readv(p, uap, retval)
 	struct proc *p;
 	register struct args {
