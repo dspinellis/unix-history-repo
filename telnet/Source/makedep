@@ -1,0 +1,26 @@
+
+commands$O:#include <sys/types.h> <sys/socket.h> <netinet/in.h> <signal.h>
+commands$O:#include <netdb.h> <ctype.h> <arpa/telnet.h>
+commands$O: ring.h externs.h defines.h types.h
+main$O:#include <sys/types.h>
+main$O: ring.h externs.h defines.h
+network$O:#include <sys/types.h> <sys/socket.h> <sys/time.h> <errno.h>
+network$O:#include <arpa/telnet.h>
+network$O: ring.h defines.h externs.h fdset.h
+sys_bsd$O:#include <sys/ioctl.h> <sys/types.h> <sys/time.h> <sys/socket.h>
+sys_bsd$O:#include <signal.h> <errno.h>
+sys_bsd$O: ring.h fdset.h defines.h externs.h types.h
+sys_dos$O:#include <time.h> <signal.h> <process.h> <fcntl.h> <io.h> <dos.h>
+sys_dos$O:#include <ctype.h>
+sys_dos$O: externs.h defines.h
+telnet$O:#include <sys/types.h> <signal.h> <curses.h> <arpa/telnet.h>
+telnet$O:#include <strings.h> <string.h>
+telnet$O: ring.h defines.h externs.h types.h general.h
+telnet$O:#include <varargs.h>
+terminal$O:#include <arpa/telnet.h> <sys/types.h>
+terminal$O: ring.h externs.h types.h
+tn3270$O:#include <sys/types.h> <arpa/telnet.h>
+tn3270$O: defines.h ring.h externs.h fdset.h ../ctlr/screen.h
+tn3270$O: ../general/globals.h
+utilities$O:#include <arpa/telnet.h> <sys/types.h> <ctype.h>
+utilities$O: ring.h externs.h
