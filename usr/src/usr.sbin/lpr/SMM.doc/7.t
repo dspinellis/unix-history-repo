@@ -1,9 +1,9 @@
-.\" Copyright (c) 1983 The Regents of the University of California.
-.\" All rights reserved.
+.\" Copyright (c) 1983, 1993
+.\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)7.t	6.6 (Berkeley) %G%
+.\"	@(#)7.t	8.1 (Berkeley) %G%
 .\"
 .NH 1
 Troubleshooting
