@@ -34,6 +34,10 @@ directions below:
 #device snd7 at isa? port 0x300
 #device snd1 at isa? port 0x388
 
+Note for PAS user: you should change snd1 line to
+#device snd1 at isa? port 0x38a
+(next stereo port) to avoid conflict with snd3
+
        Unit numbers are:
                  1 for Yamaha FM synth
                  2 for SB/SB Pro DSP
