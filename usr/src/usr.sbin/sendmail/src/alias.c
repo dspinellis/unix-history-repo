@@ -10,7 +10,7 @@
 # include <pwd.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)alias.c	8.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)alias.c	8.16 (Berkeley) %G%";
 #endif /* not lint */
 
 
@@ -268,6 +268,9 @@ aliaswait(map, ext)
 	if (tTd(27, 3))
 		printf("aliaswait(%s:%s)\n",
 			map->map_class->map_cname, map->map_file);
+	if (bitset(MF_ALIASWAIT, map->map_mflags))
+		return;
+	map->map_mflags |= MF_ALIASWAIT;
 
 	atcnt = SafeAlias * 2;
 	if (atcnt > 0)
@@ -296,12 +299,14 @@ aliaswait(map, ext)
 	{
 		if (tTd(27, 3))
 			printf("aliaswait: not rebuildable\n");
+		map->map_mflags &= ~MF_ALIASWAIT;
 		return;
 	}
 	if (stat(map->map_file, &stb) < 0)
 	{
 		if (tTd(27, 3))
 			printf("aliaswait: no source file\n");
+		map->map_mflags &= ~MF_ALIASWAIT;
 		return;
 	}
 	mtime = stb.st_mtime;
@@ -326,6 +331,7 @@ aliaswait(map, ext)
 			message("Warning: alias database %s out of date", buf);
 		}
 	}
+	map->map_mflags &= ~MF_ALIASWAIT;
 }
 /*
 **  REBUILDALIASES -- rebuild the alias database.
