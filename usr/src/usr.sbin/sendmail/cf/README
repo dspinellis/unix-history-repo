@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.9 (Berkeley) %G%
+		@(#)README	8.10 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -168,23 +168,6 @@ HOSTMAP_SPEC		[dbm -o /etc/hostmap] The value for the builtin
 			to change the class, flags, and filename of
 			the hostmap.  The default flag (-o) makes this
 			map optional.
-
-In addition, the following boolean flags may be defined -- the value
-is ignored.
-
-NEED_DOMAIN		If set, the $j macro is defined as $w.$D.
-			If not set, $j is defined as $w.  If this is
-			set, the domain must be defined using the line
-			DD<domainname> (probably in the domain file,
-			but possibly in the .mc file).  You will only
-			need this if you define your system hostname
-			without a domain (type "hostname" -- if it
-			has no dots in the output, you qualify) AND
-			if you are not running the nameserver AND if
-			the first (canonical) name in /etc/hosts for
-			your machine has no domain -- OR if you are
-			running Ultrix or OSF/1 sendmail.  Either of
-			these is probably a mistake.
 
 +---------+
 | DOMAINS |
@@ -599,6 +582,24 @@ FEATURE(nodns) to avoid having sendmail queue everything waiting
 for the name server to come up.
 
 
++-----------+
+| WHO AM I? |
++-----------+
+
+Normally, the $j macro is automatically defined to be your fully
+qualified domain name (FQDN).  Sendmail does this by getting your
+host name using gethostname and then calling gethostbyname on the
+result.  For example, in some environments gethostname returns
+only the root of the host name (such as "foo"); gethostbyname is
+supposed to return the FQDN ("foo.bar.com").  In some (fairly rare)
+cases, gethostbyname may fail to return the FQDN.  In this case
+you MUST define confDOMAIN_NAME to be your fully qualified domain
+name.  This is usually done using:
+
+	Dmbar.com
+	define(`confDOMAIN_NAME', `$w.$m')dnl
+
+
 +--------------------+
 | USING MAILERTABLES |
 +--------------------+
@@ -649,6 +650,10 @@ a site, but allow you to override this by sending to a specific host.
 If you decide to set up the user database in this fashion, it is
 imperative that you also specify FEATURE(notsticky) -- otherwise,
 e-mail sent to Full.Name@local.host.name will be rejected.
+
+To build the internal form of the user databae, use:
+
+	makemap btree /usr/data/base.db < /usr/data/base.txt
 
 
 +------------------+
@@ -867,6 +872,7 @@ confRELAY_MAILER	relay		-	The default mailer name used
 						This can reasonably be "suucp"
 						if you are on a UUCP-connected
 						site.
+confDOMAIN_NAME		(undefined)	Dj	If defined, sets $j.
 
 
 +-----------+
