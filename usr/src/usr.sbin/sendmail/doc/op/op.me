@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	6.40 (Berkeley) %G%
+.\"	@(#)op.me	6.41 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,7 +40,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 6.40
+Version 6.41
 .sp
 For Sendmail Version 6.53
 .)l
@@ -5949,6 +5949,17 @@ The values of certain macros
 and
 .b $s )
 are passed through to the queue run phase.
+.ip B
+The body type.
+The remainder of the line is a text string defining the body type.
+If this field is missing,
+the body type is assumed to be
+.q "undefined"
+and no special processing is attempted.
+Legal values are
+.q 7BIT
+and
+.q 8BITMIME .
 .pp
 As an example,
 the following is a queue file sent to
@@ -6071,7 +6082,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 6.40
+.\"Version 6.41
 .\".ce 0
 .pn 2
 .bp
