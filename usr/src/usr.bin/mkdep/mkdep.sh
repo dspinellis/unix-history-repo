@@ -15,7 +15,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)mkdep.sh	5.17 (Berkeley) %G%
+#	@(#)mkdep.sh	5.18 (Berkeley) %G%
 #
 PATH=/bin:/usr/bin:/usr/ucb
 export PATH
@@ -78,6 +78,12 @@ awk '{
 END {
 	print rec
 }' > $TMP
+
+if [ $? != 0 ]; then
+	echo 'mkdep: compile failed.'
+	rm -f $TMP
+	exit 1
+fi
 
 if [ $append = 1 ]; then
 	cat $TMP >> $D
