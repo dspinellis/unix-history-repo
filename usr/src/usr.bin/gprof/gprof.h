@@ -125,9 +125,13 @@ off_t	ssiz;			/* size of the string table */
 struct	exec xbuf;		/* exec header of a.out */
 unsigned char	*textspace;		/* text space of a.out in core */
 
-int	zflg;				/* zero time/called functions, too */
-int	cflag;				/* discovered call graph, too */
+    /*
+     *	option flags, from a to z.
+     */
 int	aflag;				/* static functions, too */
+int	bflag;				/* blurbs, too */
+int	cflag;				/* discovered call graph, too */
+int	zflag;				/* zero time/called functions, too */
 
     /*
      * booleans
@@ -166,6 +170,7 @@ struct modebyte {
 int		arccmp();
 arctype		*arclookup();
 		asgnsamples();
+		printblurb();
 		cyclelink();
 		dfn();
 bool		dfn_busy();
