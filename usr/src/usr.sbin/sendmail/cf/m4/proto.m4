@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	6.6 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	6.7 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -488,7 +488,7 @@ R$* < @ $* > $*		$#error $@ NOHOST $: Unrecognized host name $2',
 `dnl')')
 ifdef(`_MAILER_USENET_', `
 # addresses sent to net.group.USENET will get forwarded to a newsgroup
-R$+ . USENET		$# usenet $@ $1 $: $1
+R$+ . USENET		$# usenet $: $1')
 
 ifdef(`_OLD_SENDMAIL_',
 `# forward remaining names to local relay, if any
