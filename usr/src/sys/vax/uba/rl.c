@@ -1,4 +1,4 @@
-/*	rl.c	4.2	83/05/14	*/
+/*	rl.c	4.3	83/05/18	*/
 
 #include "rl.h"
 #if NRL > 0
@@ -732,3 +732,17 @@ rldump(dev)
 {
 	/* don't think there is room on swap for it anyway. */
 }
+ 
+rlsize(dev)
+	dev_t dev;
+{
+	int unit = minor(dev) >> 3;
+	struct uba_device *ui;
+	struct rlst *st;
+
+	if (unit >= NRL || (ui = rldinfo[unit]) == 0 || ui->ui_alive == 0)
+		return (-1);
+	st = &rl02;
+	return (st->sizes[minor(dev) & 07].nblocks);
+}
+#endif

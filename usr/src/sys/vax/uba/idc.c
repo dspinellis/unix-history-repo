@@ -1,4 +1,4 @@
-/*	idc.c	4.13	83/04/30	*/
+/*	idc.c	4.14	83/05/18	*/
 
 #include "rb.h"
 #if NIDC > 0
@@ -855,5 +855,18 @@ idcdump(dev)
 		num -= blk;
 	}
 	return (0);
+}
+ 
+idcsize(dev)
+	dev_t dev;
+{
+	int unit = minor(dev) >> 3;
+	struct uba_device *ui;
+	struct idcst *st;
+
+	if (unit >= NRB || (ui = idcdinfo[unit]) == 0 || ui->ui_alive == 0)
+		return (-1);
+	st = &idcst[ui->ui_type];
+	return (st->sizes[minor(dev) & 07].nblocks);
 }
 #endif

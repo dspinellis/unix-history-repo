@@ -1,4 +1,4 @@
-/*	hp.c	4.74	83/03/27	*/
+/*	hp.c	4.75	83/05/18	*/
 
 #ifdef HPDEBUG
 int	hpdebug;
@@ -892,5 +892,18 @@ hpdump(dev)
 		num -= blk;
 	}
 	return (0);
+}
+
+hpsize(dev)
+	dev_t dev;
+{
+	int unit = minor(dev) >> 3;
+	struct mba_device *mi;
+	struct hpst *st;
+
+	if (unit >= NHP || (mi = hpinfo[unit]) == 0 || mi->mi_alive == 0)
+		return (-1);
+	st = &hpst[mi->mi_type];
+	return ((int)st->sizes[minor(dev) & 07].nblocks);
 }
 #endif
