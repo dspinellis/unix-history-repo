@@ -1,0 +1,111 @@
+/*
+ * Copyright (c) 1986, 1988 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Computer Consoles Inc.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	%W% (Berkeley) %G%
+ */
+
+/*
+ * Exported definitions unique to TAHOE CPU support.
+ */
+#ifdef notyet
+#include "../tahoe/mtpr.h"
+#include "../tahoe/psl.h"
+#else
+#include "mtpr.h"
+#include "psl.h"
+#endif
+
+/*
+ * Arguments to hardclock, softclock and gatherstats
+ * encapsulate the previous machine state in an opaque
+ * clockframe; for tahoe, use just what the hardware
+ * leaves on the stack.
+ */
+typedef struct intrframe {
+	int	pc;
+	int	ps;
+} clockframe;
+
+#define	CLKF_USERMODE(framep)	USERMODE((framep)->ps)
+#define	CLKF_BASEPRI(framep)	BASEPRI((framep)->ps)
+#define	CLKF_PC(framep)		((framep)->pc)
+
+
+/*
+ * Software clock is software interrupt level 8
+ */
+#define	setsoftclock()	mtpr(SIRR, 0x8)
+
+
+#define	uncache(v)	mtpr(PDCS, (caddr_t)(v))
+#define	movow(a,w)	_movow((u_short *)(a), (u_short)(w))
+#define	movob(a,b)	_movob((u_char *)(a), (u_char)(b))
+
+
+/*
+ * Enable realtime clock.
+ */
+#define	enablertclock()	(clk_enable = 1)
+
+#define	resettodr()	/* no todr to set */
+
+
+/*
+ * Preempt the current process if in interrupt from user mode,
+ * or after the current trap/syscall if in system mode.
+ */
+#define	resched()	{ want_resched++; aston(); }
+
+
+/*
+ * Give a profiling tick to the current process from the softclock
+ * interrupt.  On tahoe, request an ast to send us through trap(),
+ * marking the proc as needing a profiling tick.
+ */
+#define	profile_tick(p, framep)	{ (p)->p_flag |= SOWEUPC; aston(); }
+
+int	want_resched;		/* resched() was called */
+long	*user_psl;		/* user mode psl for ast's */
+int	intenable;		/* interrupts enable startup flag */
+int	clk_enable;		/* clock enable startup flag */
+
+
+
+/*
+ * The remainder of this (cache key stuff)
+ * should be moved into a private header file.		XXX
+ */
+#define	MAXCKEY	255		/* maximal allowed code key */
+#define	MAXDKEY	255		/* maximal allowed data key */
+#define	NCKEY	(MAXCKEY+1)	/* # code keys, including 0 (reserved) */
+#define	NDKEY	(MAXDKEY+1)	/* # data keys, including 0 (reserved) */
+
+#ifndef LOCORE
+#ifdef KERNEL
+char	ckey_cache[NCKEY];	/* 1 =>'s key i may be in code cache */
+short	ckey_cnt[NCKEY];	/* code key reference count */
+char	dkey_cache[NDKEY];	/* 1 =>'s key i may be in data cache */
+short	dkey_cnt[NDKEY];	/* data key reference count */
+#endif
+
+/*
+ * Statistics maintained for code and
+ * data cache key allocations algorithms.
+ */
+struct	keystats {
+	long	ks_avail;	/* number of keys currently unallocated */
+	long	ks_dirty;	/* number of keys currently waiting for purge */
+	long	ks_allocs;	/* number of keys allocated */
+	long	ks_allocfree;	/* key allocated from free slot */
+	long	ks_norefs;	/* key marked in use, but refcnt 0 */
+	long	ks_taken;	/* key taken from single process */
+	long	ks_shared;	/* key taken from multiple processes */
+	long	ks_inval;	/* number of times keys exchanged */
+};
+#endif
