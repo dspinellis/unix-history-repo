@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)spp_usrreq.c	6.2 (Berkeley) %G%
+ *	@(#)spp_usrreq.c	6.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -99,6 +99,7 @@ spp_input(m, nsp)
 	cb->s_timer[TCPT_KEEP] = TCPTV_KEEP;
 
 	switch (cb->s_state) {
+
 	case TCPS_LISTEN:{
 		struct mbuf *am;
 		register struct sockaddr_ns *sns;
@@ -264,7 +265,7 @@ register struct spidp *si;
 	 * queue it up, and won't update acknowledge #
 	 */
 	if (si->si_cc & SP_SP)
-		return(0);
+		return (0);
 
 	/*
 	 * If this packet number has a sequence number less
@@ -272,13 +273,13 @@ register struct spidp *si;
 	 * from them, this must be a duplicate, so drop.
 	 */
 	if (SSEQ_LT(si->si_seq,cb->s_ack))
-		return(1);
+		return (1);
 	/*
 	 * If this packet number is higher than that which
 	 * we have allocated refuse it, unless urgent
 	 */
 	if (SSEQ_GT(si->si_seq,cb->s_alo) && (!(si->si_cc & SP_OB))) {
-		return(1);
+		return (1);
 	}
 	/*
 	 * If this packet is urgent, inform process
@@ -294,7 +295,7 @@ register struct spidp *si;
 	 */
 
 	for (q = cb->s_q.si_next; q!=&cb->s_q; q = q->si_next) {
-	    if (si->si_seq==SI(q)->si_seq) return(1); /*duplicate */
+	    if (si->si_seq==SI(q)->si_seq) return (1); /*duplicate */
 	    if (SSEQ_LT(si->si_seq,SI(q)->si_seq)) break;
 	}
 	insque(si,q->si_prev);
@@ -331,7 +332,7 @@ present:
 			break;
 	}
 	if (wakeup) sorwakeup(so);
-	return(0);
+	return (0);
 }
 
 spp_ctlinput(cmd, arg)
@@ -348,6 +349,7 @@ spp_ctlinput(cmd, arg)
 	type = NS_ERR_UNREACH_HOST;
 
 	switch (cmd) {
+
 	case PRC_ROUTEDEAD:
 	case PRC_QUENCH:
 		break;
@@ -367,11 +369,13 @@ spp_ctlinput(cmd, arg)
 		type = ntohs(type);
 	}
 	switch (type) {
+
 	case NS_ERR_UNREACH_HOST:
 	case NS_ERR_NOSOCK:
 		ns_pcbnotify(na, (int)nsctlerrmap[cmd],
 				spp_abort, (long) 0);
 		break;
+
 	case NS_ERR_TOO_BIG:
 		ns_pcbnotify(na, 0, spp_abort, (long)arg);
 	}
@@ -448,15 +452,19 @@ spp_output(cb, m0)
 		if (len > mtu) {
 			if (cb->s_flags & SF_PI) {
 				m_freem(m0);
-				return(EMSGSIZE);
+				return (EMSGSIZE);
 			} else {
 				int off = 0;
 				while (len > mtu) {
 					m = m_copy(m0, off, mtu);
+					if (m==NULL) {
+						m_freem(m0);
+						return (ENOBUFS);
+					}
 					error = spp_output(cb, m);
 					if (error) {
 						m_freem(m0);
-						return(error);
+						return (error);
 					}
 					m_adj(m0, mtu);
 					len -= mtu;
@@ -481,7 +489,7 @@ spp_output(cb, m0)
 		m = m_get(M_DONTWAIT, MT_HEADER);
 		if (m == 0) {
 			m_freem(m0);
-			return(ENOBUFS);
+			return (ENOBUFS);
 		}
 
 		/*
@@ -572,8 +580,10 @@ output:
 		 * idp_output to monkey with
 		 */
 		 m = dtom(si);
-		 m0 = m_copy(m, 0, M_COPYALL);
-		 m = m0;
+		 m = m_copy(m, 0, M_COPYALL);
+		 if (m==NULL)
+			return (ENOBUFS);
+		 m0 = m;
 		 si = mtod(m, struct spidp *);
 	} else if (cb->s_force || cb->s_flags & SF_AK) {
 		/*
@@ -581,7 +591,7 @@ output:
 		 */
 		m = m_get(M_DONTWAIT, MT_HEADER);
 		if (m == 0)
-			return(ENOBUFS);
+			return (ENOBUFS);
 		/*
 		 * Fill in mbuf with extended SP header
 		 * and addresses and length put into network format.
@@ -657,11 +667,11 @@ output:
 		if (traceallspps && sppconsdebug) {
 			printf("spp_out: %x\n", error);
 		}
-		return(error);
+		return (error);
 	}
 	if (so->so_options & SO_DEBUG || traceallspps)
 		spp_trace(SA_OUTPUT, cb->s_state, cb, si, 0);
-	return(error);
+	return (error);
 }
 
 /*ARGSUSED*/
@@ -679,7 +689,7 @@ spp_ctloutput(req, so, level, name, value)
 	if (level != NSPROTO_SPP) {
 		/* This will have to be changed when we do more general
 		   stacking of protocols */
-		return(idp_ctloutput(req, so, level, name, value));
+		return (idp_ctloutput(req, so, level, name, value));
 	}
 	if (nsp == NULL) {
 		error = EINVAL;
@@ -688,16 +698,19 @@ spp_ctloutput(req, so, level, name, value)
 		cb = nstosppcb(nsp);
 
 	switch (req) {
+
 	case PRCO_GETOPT:
-		if (value==NULL) {
-			error = EINVAL;
-			goto release;
-		}
+		if (value==NULL)
+			return (EINVAL);
 		m = m_get(M_DONTWAIT, MT_DATA);
+		if (m==NULL)
+			return (ENOBUFS);
 		switch (name) {
+
 		case SO_HEADERS_ON_INPUT:
 			mask = SF_HI;
 			goto get_flags;
+
 		case SO_HEADERS_ON_OUTPUT:
 			mask = SF_HO;
 		get_flags:
@@ -705,11 +718,13 @@ spp_ctloutput(req, so, level, name, value)
 			m->m_off = MMAXOFF - sizeof(short);
 			*mtod(m, short *) = cb->s_flags & mask;
 			break;
+
 		case SO_LAST_HEADER:
 			m->m_len = sizeof(struct sphdr);
 			m->m_off = MMAXOFF - sizeof(struct sphdr);
 			*mtod(m, struct sphdr *) = cb->s_rhdr;
 			break;
+
 		case SO_DEFAULT_HEADERS:
 			m->m_len = sizeof(struct spidp);
 			m->m_off = MMAXOFF - sizeof(struct sphdr);
@@ -717,6 +732,7 @@ spp_ctloutput(req, so, level, name, value)
 		}
 		*value = m;
 		break;
+
 	case PRCO_SETOPT:
 		switch (name) {
 			int mask, *ok;
@@ -724,6 +740,7 @@ spp_ctloutput(req, so, level, name, value)
 		case SO_HEADERS_ON_INPUT:
 			mask = SF_HI;
 			goto set_head;
+
 		case SO_HEADERS_ON_OUTPUT:
 			mask = SF_HO;
 		set_head:
@@ -735,6 +752,7 @@ spp_ctloutput(req, so, level, name, value)
 					cb->s_flags &= ~mask;
 			} else error = EINVAL;
 			break;
+
 		case SO_DEFAULT_HEADERS:
 			{
 				register struct sphdr *sp
@@ -748,7 +766,7 @@ spp_ctloutput(req, so, level, name, value)
 		break;
 	}
 	release:
-		return(error);
+		return (error);
 }
 
 /*ARGSUSED*/
@@ -780,6 +798,7 @@ spp_usrreq(so, req, m, nam, rights)
 	ostate = cb ? cb->s_state : 0;
 
 	switch (req) {
+
 	case PRU_ATTACH:
 		if (nsp != NULL) {
 			error = EISCONN;
@@ -985,7 +1004,7 @@ spp_usrreq_sp(so, req, m, nam, rights)
 		((struct sppcb *)nsp->nsp_pcb)->s_flags |=
 					(SF_HI | SF_HO | SF_PI);
 	}
-	return(error);
+	return (error);
 }
 
 /*
@@ -1035,7 +1054,7 @@ spp_close(cb)
 	nsp->nsp_pcb = 0;
 	soisdisconnected(so);
 	ns_pcbdetach(nsp);
-	return((struct sppcb *)0);
+	return ((struct sppcb *)0);
 }
 /*
  *	Someday we may do level 3 handshaking
@@ -1046,13 +1065,13 @@ struct sppcb *
 spp_usrclosed(cb)
 	register struct sppcb *cb;
 {
-	return(spp_close(cb));
+	return (spp_close(cb));
 }
 struct sppcb *
 spp_disconnect(cb)
 	register struct sppcb *cb;
 {
-	return(spp_close(cb));
+	return (spp_close(cb));
 }
 /*
  * Drop connection, reporting
