@@ -1,13 +1,11 @@
-/* dver.c	1.4	83/07/05
+/* dver.c	1.5	83/07/08
  *
- * dver.c - Versatec driver for the new troff
+ * Versatec driver for the new troff
  *
- * Authors:	BWK(BELL), VCAT(berkley), and Richard L. Hyde
- *		Many parts where lifted from the above sources.
- * Editor:	Richard L. Hyde
- * 		Dept. of Computer Sciences
- * 		Purdue University
- * Date:	Thu Oct 28 1982
+ * Authors:	BWK(BELL)
+ *		VCAT(berkley)
+ *		Richard L. Hyde, Perdue University
+ *		and David Slattengren, Berkeley
  */
 
  
@@ -78,7 +76,7 @@ x ..\n	device control functions:
 #define  vmot(n)	vgoto(vpos + n)
 
 
-char	SccsId[]= "dver.c	1.4	83/07/05";
+char	SccsId[]= "dver.c	1.5	83/07/08";
 
 int	output	= 0;	/* do we do output at all? */
 int	nolist	= 0;	/* output page list if > 0 */
