@@ -1,4 +1,7 @@
-static	char *sccsid = "@(#)chgrp.c	4.2 82/03/05";
+#ifndef lint
+static	char *sccsid = "@(#)chgrp.c	4.3 82/03/31";
+#endif
+
 /*
  * chgrp gid file ...
  */
@@ -10,68 +13,79 @@ static	char *sccsid = "@(#)chgrp.c	4.2 82/03/05";
 #include <grp.h>
 #include <pwd.h>
 
-struct	group	*gr, *getgrnam(), *getgrgid();
-struct passwd *getpwuid(), *pwd;
-struct	stat	stbuf;
+struct	group *gr, *getgrnam(), *getgrgid();
+struct	passwd *getpwuid(), *pwd;
+struct	stat stbuf;
 int	gid, uid;
 int	status;
-char	ingroup;
+/* VARARGS */
+int	fprintf();
 
 main(argc, argv)
-char *argv[];
+	int argc;
+	char *argv[];
 {
 	register c, i;
-	char	*getlogin(), *name;
 
-	if(argc < 3) {
+	argc--, argv++;
+	if (argc < 2) {
 		printf("usage: chgrp gid file ...\n");
-		exit(4);
+		exit(2);
 	}
 	uid = getuid();
-	if(isnumber(argv[1])) {
+	if (isnumber(argv[0])) {
 		gid = atoi(argv[1]);
-		if (uid && (gr=getgrgid(gid)) == NULL) {
-			printf("unknown group: %s\n",argv[1]);
-			exit(4);
+		gr = getgrgid(gid);
+		if (uid && gr == NULL) {
+			printf("%s: unknown group\n", argv[0]);
+			exit(2);
 		}
 	} else {
-		if((gr=getgrnam(argv[1])) == NULL) {
-			printf("unknown group: %s\n",argv[1]);
-			exit(4);
+		gr = getgrnam(argv[0]);
+		if (gr == NULL) {
+			printf("%s: unknown group\n", argv[0]);
+			exit(2);
 		}
 		gid = gr->gr_gid;
 	}
-	if (!(name = getlogin())) {
-		pwd = getpwuid(uid);
-		name = pwd->pw_name;
+	pwd = getpwuid(uid);
+	if (pwd == NULL) {
+		fprintf(stderr, "Who are you?\n");
+		exit(2);
 	}
-	for (i=0; uid && gr->gr_mem[i]; i++)
-		if (!(strcmp(name, gr->gr_mem[i])))
-			ingroup = 1;
-	if (!ingroup && uid) {
-		printf("illegal group: %s\n",argv[1]);
-		exit(4);
+	if (uid && pwd->pw_gid != gid) {
+		for (i=0; gr->gr_mem[i]; i++)
+			if (!(strcmp(pwd->pw_name, gr->gr_mem[i])))
+				goto ok;
+		fprintf(stderr, "You are not a member of the %s group.\n",
+		    argv[0]);
+		exit(2);
 	}
-	for(c=2; c<argc; c++) {
-		stat(argv[c], &stbuf);
+ok:
+	for (c = 1; c < argc; c++) {
+		if (stat(argv[c], &stbuf)) {
+			perror(argv[c]);
+			continue;
+		}
 		if (uid && uid != stbuf.st_uid) {
-			printf("%s: not owner\n", argv[c]);
+			fprintf(stderr, "You are not the owner of %s\n",
+			    argv[c]);
 			status = 1;
-		} else
-			chown(argv[c], stbuf.st_uid, gid);
+			continue;
+		}
+		if (chown(argv[c], stbuf.st_uid, gid))
+			perror(argv[c]);
 	}
 	exit(status);
 }
 
 isnumber(s)
-char *s;
+	char *s;
 {
-	register c;
+	register int c;
 
-	while(c = *s++)
-		if(!isdigit(c))
-			return(0);
-	return(1);
+	while (c = *s++)
+		if (!isdigit(c))
+			return (0);
+	return (1);
 }
-
-
