@@ -1,0 +1,24 @@
+as atan.s; mv a.out atan.o
+as crypt.s; mv a.out crypt.o
+as dpadd.s; mv a.out dpadd.o
+as ecvt.s; mv a.out ecvt.o
+as exp.s; mv a.out exp.o
+as floor.s; mv a.out floor.o
+as fmod.s; mv a.out fmod.o
+as fp?.s; mv a.out fp.o
+: as fakfp.s: mv a.out fp.o
+as gamma.s; mv a.out gamma.o
+as get.s; mv a.out get.o
+as ldiv.s; mv a.out ldiv.o
+as log.s; mv a.out log.o
+as mesg.s; mv a.out mesg.o
+as pow.s; mv a.out pow.o
+as put.s; mv a.out put.o
+as rand.s; mv a.out rand.o
+as savr5.s; mv a.out savr5.o
+as sin.s; mv a.out sin.o
+as sqrt.s; mv a.out sqrt.o
+as switch.s; mv a.out switch.o
+as ttyn.s; mv a.out ttyn.o
+ar r /lib/liba.a
+rm *.o
