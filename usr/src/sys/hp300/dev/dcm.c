@@ -11,7 +11,7 @@
  *
  * from Utah: $Hdr: dcm.c 1.29 92/01/21$
  *
- *	@(#)dcm.c	7.18 (Berkeley) %G%
+ *	@(#)dcm.c	7.19 (Berkeley) %G%
  */
 
 /*
@@ -580,7 +580,7 @@ dcmreadbuf(unit, dcm, tp)
 #ifdef KGDB
 		if ((makedev(dcmmajor, unit) == kgdb_dev) &&
 		    (head = pp->r_head & RX_MASK) != (pp->r_tail & RX_MASK) &&
-		    dcm->dcm_rfifos[3-port][head>>1].data_char == FRAME_END) {
+		    dcm->dcm_rfifos[3-port][head>>1].data_char == FRAME_START) {
 			pp->r_head = (head + 2) & RX_MASK;
 			kgdb_connect(0);	/* trap into kgdb */
 			return;
