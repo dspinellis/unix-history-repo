@@ -1,4 +1,4 @@
-/* tcp.h 1.3 81/10/21 */
+/* tcp.h 1.4 81/10/21 */
 
 /*
  * Tcp header (fits over ip header).
@@ -19,14 +19,13 @@ struct th {
 	u_char
 		t_x2:4,			/* (unused) */
 		t_off:4;		/* data offset */
-	u_char
-		t_fin:1,		/* fin flag */
-		t_syn:1,		/* syn flag */
-		t_rst:1,		/* reset flag */
-		t_eol:1,		/* eol flag */
-		t_ack:1,		/* ack flag */
-		t_urg:1,		/* urgent flag */
-		t_x3:2;			/* (unused) */
+	u_char	th_flags;
+#define	TH_FIN	001
+#define	TH_SYN	002
+#define	TH_RST	004
+#define	TH_EOL	010
+#define	TH_ACK	020
+#define	TH_URG	040
 	u_short	t_win;			/* window */
 	u_short	t_sum;			/* checksum */
 	u_short	t_urp;			/* urgent pointer */
@@ -63,24 +62,25 @@ struct tcb {
 
 	/* various flags and state variables */
 
-	u_short
-		ack_due:1,		/* must we send ACK */
-		cancelled:1,		/* retransmit timer cancelled */
-		dropped_txt:1,		/* dropped incoming data */
-		fin_rcvd:1,		/* FIN received */
-		force_one:1,		/* force sending of one byte */
-		new_window:1,		/* received new window size */
-		rexmt:1,		/* this msg is a retransmission */
-		snd_fin:1,		/* FIN should be sent */
-		snd_rst:1,		/* RST should be sent */
-		snd_urg:1,		/* urgent data to send */
-		syn_acked:1,		/* SYN has been ACKed */
-		syn_rcvd:1,		/* SYN has been received */
-		usr_closed:1,		/* user has closed connection */
-		waited_2_ml:1,		/* wait time for FIN ACK is up */
-		net_keep:1,		/* don't free this net input */
-		usr_abort:1;		/* user has closed and does not expect
+	u_short	tc_flags;
+#define	TC_ACK_DUE	0x0001		/* must we send ACK */
+#define	TC_CANCELLED	0x0002		/* retransmit timer cancelled */
+#define	TC_DROPPED_TXT	0x0004		/* dropped incoming data */
+#define	TC_FIN_RCVD	0x0008		/* FIN received */
+#define	TC_FORCE_ONE	0x0010		/* force sending of one byte */
+#define	TC_NEW_WINDOW	0x0020		/* received new window size */
+#define	TC_REXMT	0x0040		/* this msg is a retransmission */
+#define	TC_SND_FIN	0x0080		/* FIN should be sent */
+#define	TC_SND_RST	0x0100		/* RST should be sent */
+#define	TC_SND_URG	0x0200		/* urgent data to send */
+#define	TC_SYN_ACKED	0x0400		/* SYN has been ACKed */
+#define	TC_SYN_RCVD	0x0800		/* SYN has been received */
+#define	TC_USR_CLOSED	0x1000		/* user has closed connection */
+#define	TC_WAITED_2_ML	0x2000		/* wait time for FIN ACK is up */
+#define	TC_NET_KEEP	0x4000		/* don't free this net input */
+#define	TC_USR_ABORT	0x8000		/* user has closed and does not expect
 					   to receive any more data */
+
 	u_short	t_lport;		/* local port */
 	u_short	t_fport;		/* foreign port */
 	u_char	t_state;		/* state of this connection */
@@ -129,14 +129,15 @@ struct t_debug {
  * Tcp machine predicates
  */
 #define	ack_ok(x, y) \
-    (!(y)->t_ack || ((x)->iss < (y)->t_ackno && (y)->t_ackno <= (x)->snd_hi))
+    (((y)->th_flags&TH_ACK)==0 || \
+      ((x)->iss < (y)->t_ackno && (y)->t_ackno <= (x)->snd_hi))
 
 #define	syn_ok(x, y) \
-    ((y)->t_syn)
+    ((y)->th_flags&TH_SYN)
 
 #define	ack_fin(x, y) \
     ((x)->seq_fin > (x)->iss && (y)->t_ackno > (x)->seq_fin)
 
 #define	rcv_empty(x) \
-    ((x)->usr_abort || \
+    (((x)->tc_flags&TC_USR_ABORT) || \
       ((x)->t_ucb->uc_rbuf == NULL && (x)->t_rcv_next == (x)->t_rcv_prev))
