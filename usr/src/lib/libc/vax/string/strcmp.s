@@ -1,4 +1,4 @@
-/*	strcmp.s	4.5	84/12/06	*/
+/*	strcmp.s	4.6	85/04/24	*/
 
 /*
  * Compare string s1 lexicographically to string s2.
@@ -15,6 +15,10 @@
 ENTRY(strcmp, 0)
 	movl	4(ap),r1	# r1 = s1
 	movl	8(ap),r3	# r3 = s2
+	subb3	(r3),(r1),r0	# quick check for first char different
+	beql	1f		# have to keep checking
+	cvtbl	r0,r0
+	ret
 1:
 	clrl	r5		# calculate min bytes to next page boundry
 	subb3	r1,$255,r5	# r5 = (bytes - 1) to end of page for s1
