@@ -1,5 +1,5 @@
                                     FreeBSD
-                                Release 1.0 GAMMA
+                                Release 1.0 EPSILON
 
 1. Technical overview
 ---------------------
@@ -11,7 +11,8 @@ NetBSD, CSRG, and the Free Software Foundation.
 
 Many hundreds of bugs from the 386BSD 0.1 distribution were fixed,
 and many out-of-date pieces of software were upgraded to their current
-releases.
+releases in the GAMMA distribution.  This EPSILON distribution fixes
+many of the first-run problems our GAMMA users reported back to us.
 
 Additionally, many packages such as XFree86 1.3, xview 3.2, elm, nntp,
 mh and dozens of other miscellaneous utilities have been ported and
@@ -25,7 +26,10 @@ The core of FreeBSD does not contain DES code which would inhibit its
 being exported outside the United States.  There is an add-on package
 to the core distribution, for use only in the United States, that
 contains the programs that normally use DES.  The auxilliary packages
-provided separately can be used by anyone.
+provided separately can be used by anyone.  Work is in progress to
+provide a freely (from outside the U.S.) exportable European distribution
+of DES for our non U.S. users.
+
 
 2. Supported Configurations
 ---------------------------
@@ -82,7 +86,9 @@ Novell NE2000 ethernet interface.
 Various 2 and 4 port serial/parallel cards.
 
 
-FreeBSD does NOT support IBM's microchannel (MCA) bus.
+FreeBSD currently does NOT support IBM's microchannel (MCA) bus, but
+support is apparently close to materializing.  Details will be posted
+as they develop.
 
 
 3. Obtaining FreeBSD.
@@ -242,4 +248,4 @@ hope you enjoy this release of FreeBSD!
 
 			The FreeBSD Core Group
 
-$Id: RELNOTES.FreeBSD,v 1.8 1993/09/08 00:00:48 nate Exp $
+$Id: RELNOTES.FreeBSD,v 1.9 1993/09/10 04:37:54 nate Exp $
