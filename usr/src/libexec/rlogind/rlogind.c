@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	5.45 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogind.c	5.46 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef KERBEROS
@@ -273,7 +273,9 @@ gotpty:
 	if (fchmod(t, 0))
 		fatal(f, line, 1);
 	(void)signal(SIGHUP, SIG_IGN);
-	vhangup();
+#ifdef	notdef
+vhangup();
+#endif
 	(void)signal(SIGHUP, SIG_DFL);
 	t = open(line, O_RDWR);
 	if (t < 0)
@@ -314,10 +316,16 @@ gotpty:
 #ifdef OLD_LOGIN
 		execl("/bin/login", "login", "-r", hp->h_name, 0);
 #else /* OLD_LOGIN */
-		if (authenticated)
+		if (authenticated) {
+			if (use_kerberos && (pwd->pw_uid == 0))
+				syslog(LOG_INFO|LOG_AUTH,
+				    "ROOT Kerberos login from %s.%s@%s on %s\n",
+				    kdata->pname, kdata->pinst, kdata->prealm,
+				    hp->h_name);
+
 			execl(_PATH_LOGIN, "login", "-p",
 			    "-h", hp->h_name, "-f", lusername, 0);
-		else
+		} else
 			execl(_PATH_LOGIN, "login", "-p",
 			    "-h", hp->h_name, lusername, 0);
 #endif /* OLD_LOGIN */
