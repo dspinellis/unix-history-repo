@@ -1,4 +1,4 @@
-/*	tty.c	3.4	%H%	*/
+/*	tty.c	3.5	%H%	*/
 
 /*
  * general TTY subroutines
@@ -155,6 +155,7 @@ gtty()
  * Do nothing specific version of line
  * discipline specific ioctl command.
  */
+/*ARGSUSED*/
 nullioctl(tp, cmd, addr)
 register struct tty *tp;
 caddr_t addr;
@@ -219,6 +220,7 @@ caddr_t addr;
 {
 	unsigned t;
 	struct sgttyb iocb;
+	struct clist tq;
 	extern int nldisp;
 
 	switch(com) {
@@ -269,10 +271,7 @@ caddr_t addr;
 	 * Set new parameters
 	 */
 	case TIOCSETP:
-	case TIOCSETN: {
-		struct clist tq;
-		register c;
-
+	case TIOCSETN:
 		if (copyin(addr, (caddr_t)&iocb, sizeof(iocb))) {
 			u.u_error = EFAULT;
 			return(1);
@@ -313,7 +312,6 @@ caddr_t addr;
 		tp->t_flags = iocb.sg_flags;
 		(void) spl0();
 		break;
-		}
 
 	/*
 	 * send current parameters to user
