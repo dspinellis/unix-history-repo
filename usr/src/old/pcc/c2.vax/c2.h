@@ -1,5 +1,5 @@
-/*static	char sccsid[] = "@(#)c2.h 4.6 %G%";*/
-/* @(#)c2.h 1.19 80/08/26 13:39:07 */
+/*	c2.h	4.7	83/08/11	*/
+
 /*
  * Header for object code improver
  */
