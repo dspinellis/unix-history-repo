@@ -15,7 +15,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)disklabel.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)disklabel.c	8.4 (Berkeley) %G%";
 /* from static char sccsid[] = "@(#)disklabel.c	1.2 (Symmetric) 11/28/85"; */
 #endif /* not lint */
 
@@ -27,6 +27,7 @@ static char sccsid[] = "@(#)disklabel.c	8.3 (Berkeley) %G%";
 #include <sys/stat.h>
 #define DKTYPENAMES
 #include <sys/disklabel.h>
+#include <ufs/ufs/dinode.h>
 #include <ufs/ffs/fs.h>
 #include <unistd.h>
 #include <string.h>
