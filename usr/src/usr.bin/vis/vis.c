@@ -22,13 +22,13 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)vis.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)vis.c	1.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
-#include <cencode.h>
+#include <vis.h>
 
-int eflags, dflags, invert, strip, fold, foldwidth=80, none;
+int eflags, fold, foldwidth=80, none, markeol, debug;
 
 main(argc, argv) 
 	char *argv[];
@@ -39,59 +39,56 @@ main(argc, argv)
 	FILE *fp;
 	int ch;
 
-	while ((ch = getopt(argc, argv, "nwcgovishfF:")) != EOF)
+	while ((ch = getopt(argc, argv, "nwctsobfF:ld")) != EOF)
 		switch((char)ch) {
 		case 'n':
 			none++;
 			break;
 		case 'w':
-			eflags |= CENC_WHITE;
+			eflags |= VIS_WHITE;
 			break;
 		case 'c':
-			eflags |= CENC_CSTYLE;
+			eflags |= VIS_CSTYLE;
 			break;
-		case 'g':
-			eflags |= CENC_GRAPH;
+		case 't':
+			eflags |= VIS_TAB;
+			break;
+		case 's':
+			eflags |= VIS_SAFE;
 			break;
 		case 'o':
-			eflags |= CENC_OCTAL;
+			eflags |= VIS_OCTAL;
 			break;
-		case 'v':	/* vis -v considered harmful */
-			eflags |= CENC_GRAPH | CENC_OCTAL;
-			break;
-		case 'i':
-			invert++;
+		case 'b':
+			eflags |= VIS_NOSLASH;
 			break;
 		case 'F':
 			if ((foldwidth = atoi(optarg))<5) {
 				fprintf(stderr, 
-				 "vis: can't fold lines to less than 2 cols\n");
+				 "vis: can't fold lines to less than 5 cols\n");
 				exit(1);
 			}
 			/*FALLTHROUGH*/
 		case 'f':
 			fold++;		/* fold output lines to 80 cols */
 			break;		/* using hidden newline */
-		case 's':
-			strip++;
+		case 'l':
+			markeol++;	/* mark end of line with \$ */
 			break;
-		case 'h':
-			dflags |= CDEC_HAT;
+#ifdef DEBUG
+		case 'd':
+			debug++;
 			break;
+#endif
 		case '?':
 		default:
 			fprintf(stderr, 
-		"usage: vis [-nwcgovifsh] [-F foldwidth]\n");
+		"usage: vis [-nwctsobf] [-F foldwidth]\n");
 			exit(1);
 		}
 	argc -= optind;
 	argv += optind;
 
-#define ALL	(CENC_CSTYLE | CENC_GRAPH | CENC_OCTAL)
-	if (none)
-		eflags &= ~ALL;
-	else if (!(eflags&ALL))
-		eflags |= ALL;
 	if (*argv)
 		while (*argv) {
 			if ((fp=fopen(*argv, "r")) != NULL)
@@ -111,85 +108,50 @@ process(fp, filename)
 	char *filename;
 {
 	static int col = 0;
-	register char *cp = "X"+1;	/* so *(cp-1) starts out != '\n' */
-	register int byte = 0;
+	register char *cp = "\0"+1;	/* so *(cp-1) starts out != '\n' */
 	register int c, rachar; 
 	register char nc;
+	char buff[5];
 	
-	/*
-	 * Encode
-	 */
-	if (!invert) {
-		c = getc(fp);
-		while (c != EOF) {
-			rachar = getc(fp);
-			if (strip)
-				c &= 0177;
-			cp = cencode((char)c, eflags|CENC_RACHAR, (char)rachar);
-			if (fold) {
-				/*
-				 * Keep track of printables and
-				 * space chars (like fold(1)).
-				 */
-				for (;;) {
-					switch(*cp) {
-					case '\n':
-					case '\r':
-						col = 0;
-						break;
-					case '\t':
-						col = col + 8 &~ 07;
-						break;
-					case '\b':
-						col = col ? col - 1 : 0;
-						break;
-					default:
-						col += strlen(cp);
-					}
-					if (col > (foldwidth-2)) {
-						printf("\\\n");
-						col = 0;
-					} else
-						break;
-				}
-			}
-			do {
-				putchar(*cp++);
-			} while (*cp);
-			c = rachar;
+	c = getc(fp);
+	while (c != EOF) {
+		rachar = getc(fp);
+		if (none) {
+			cp = buff;
+			*cp++ = c;
+			if (c == '\\')
+				*cp++ = '\\';
+			*cp = '\0';
+		} else if (markeol && c == '\n') {
+			cp = buff;
+			if ((eflags & VIS_NOSLASH) == 0)
+				*cp++ = '\\';
+			*cp++ = '$';
+			*cp++ = '\n';
+			*cp = '\0';
+		} else 
+			(void) vis(buff, (char)c, eflags, (char)rachar);
+
+		cp = buff;
+		if (fold) {
+#ifdef DEBUG
+			if (debug)
+				printf("<%02d,", col);
+#endif
+			col = foldit(cp, col, foldwidth);
+#ifdef DEBUG
+			if (debug)
+				printf("%02d>", col);
+#endif
 		}
-		if (fold && *(cp-1) != '\n')
-			printf("\\\n");
-	/*
-	 * Decode
-	 */
-	} else {
-		while ((c = getc(fp)) != EOF) {
-			byte++;
-		again:
-			switch(cdecode((char)c, &nc, dflags)) {
-			case CDEC_NEEDMORE:
-			case CDEC_NOCHAR:
-				break;
-			case CDEC_OK:
-				putchar(nc);
-				break;
-			case CDEC_OKPUSH:
-				putchar(nc);
-				goto again;
-			case CDEC_SYNBAD:
-				fprintf(stderr, 
-				    "vis: %s: offset: %d: can't decode\n", 
-				    filename, byte);
-				break;
-			default:
-				fprintf(stderr,
-				    "vis: bad return value (can't happen)\n");
-				exit(1);
-			}
-		}
-		if (cdecode((char)0, &nc, CDEC_END) == CDEC_OK)
-			putchar(nc);
+		do {
+			putchar(*cp);
+		} while (*++cp);
+		c = rachar;
 	}
-	exit(0);
+	/*
+	 * terminate partial line with a hidden newline
+	 */
+	if (fold && *(cp-1) != '\n')
+		printf("\\\n");
 }
