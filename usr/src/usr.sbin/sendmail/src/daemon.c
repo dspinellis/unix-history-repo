@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.23 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.24 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.23 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.24 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -574,7 +574,8 @@ getauthinfo(fd)
 	extern char RealUserName[];			/* main.c */
 
 	falen = sizeof fa;
-	if (getpeername(fd, &fa.sa, &falen) < 0 || falen <= 0)
+	if (getpeername(fd, &fa.sa, &falen) < 0 || falen <= 0 ||
+	    fa.sa.sa_family == 0)
 	{
 		RealHostName = "localhost";
 		(void) sprintf(hbuf, "%s@localhost", RealUserName);
