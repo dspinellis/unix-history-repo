@@ -12,8 +12,16 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)printenv.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)printenv.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
+
+#include <sys/types.h>
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+
+void	usage __P((void));
 
 /*
  * printenv
@@ -21,27 +29,45 @@ static char sccsid[] = "@(#)printenv.c	5.4 (Berkeley) %G%";
  * Bill Joy, UCB
  * February, 1979
  */
+int
 main(argc, argv)
 	int argc;
-	char **argv;
+	char *argv[];
 {
 	extern char **environ;
 	register char *cp, **ep;
-	register int len;
+	register size_t len;
+	int ch;
 
-	if (argc < 2) {
+	while ((ch = getopt(argc, argv, "")) != EOF)
+		switch(ch) {
+		case '?':
+		default:
+			usage();
+		}
+	argc -= optind;
+	argv += optind;
+
+	if (argc == 0) {
 		for (ep = environ; *ep; ep++)
-			puts(*ep);
+			(void)printf("%s\n", *ep);
 		exit(0);
 	}
-	len = strlen(*++argv);
+	len = strlen(*argv);
 	for (ep = environ; *ep; ep++)
-		if (!strncmp(*ep, *argv, len)) {
+		if (!memcmp(*ep, *argv, len)) {
 			cp = *ep + len;
 			if (!*cp || *cp == '=') {
-				puts(*cp ? cp + 1 : cp);
+				(void)printf("%s\n", *cp ? cp + 1 : cp);
 				exit(0);
 			}
 		}
+	exit(1);
+}
+
+void
+usage()
+{
+	(void)fprintf(stderr, "usage: printenv [name]\n");
 	exit(1);
 }
