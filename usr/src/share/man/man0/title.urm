@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)title.urm	8.5 (Berkeley) %G%
+.\"	@(#)title.urm	8.6 (Berkeley) %G%
 .\"
 .af % i
 .EH ''''
@@ -789,7 +789,12 @@ Our distribution coordinator, Pauline Schwartz,
 has reliably managed the finances
 and the mechanics of gettings distributions shipped for
 nearly the entire fourteen years of the group's existence.
-However, the vast majority of the distribution comes from the
+Without the help of the lawyers Mary MacDonald, Joel Linzner,
+and Carla Shapiro, the 4.4BSD-Lite distribution might never
+have seen the light of day.
+Much help was provided by Chris Demetriou in getting bug fixes
+from NetBSD integrated back into the 4.4BSD-Lite distribution.
+The vast majority of the 4.4BSD distribution comes from the
 numerous people in the UNIX community
 that provided their time and energy in creating
 the software contributed to this release.
