@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cpu.h	8.2 (Berkeley) %G%
+ *	@(#)cpu.h	8.3 (Berkeley) %G%
  *
  * from: $Header: cpu.h,v 1.12 93/05/25 10:36:34 torek Exp $ (LBL)
  */
