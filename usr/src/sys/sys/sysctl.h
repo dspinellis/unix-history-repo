@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sysctl.h	8.1 (Berkeley) %G%
+ *	@(#)sysctl.h	8.2 (Berkeley) %G%
  */
 
 #ifndef _SYS_SYSCTL_H_
@@ -57,7 +57,7 @@ struct ctlname {
 #define	CTL_UNSPEC	0		/* unused */
 #define	CTL_KERN	1		/* "high kernel": proc, limits */
 #define	CTL_VM		2		/* virtual memory */
-#define	CTL_FS		3		/* file system, mount type is next */
+#define	CTL_VFS		3		/* file system, mount type is next */
 #define	CTL_NET		4		/* network, see socket.h */
 #define	CTL_DEBUG	5		/* debugging parameters */
 #define	CTL_HW		6		/* generic cpu/io */
@@ -69,7 +69,7 @@ struct ctlname {
 	{ 0, 0 }, \
 	{ "kern", CTLTYPE_NODE }, \
 	{ "vm", CTLTYPE_NODE }, \
-	{ "fs", CTLTYPE_NODE }, \
+	{ "vfs", CTLTYPE_NODE }, \
 	{ "net", CTLTYPE_NODE }, \
 	{ "debug", CTLTYPE_NODE }, \
 	{ "hw", CTLTYPE_NODE }, \
