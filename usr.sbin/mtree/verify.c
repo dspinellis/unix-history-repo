@@ -42,6 +42,7 @@ static char sccsid[] = "@(#)verify.c	5.9 (Berkeley) 3/12/91";
 #include <unistd.h>
 #include <errno.h>
 #include <stdio.h>
+#include <fnmatch.h>
 #include "mtree.h"
 
 extern NODE *root;
@@ -98,8 +99,8 @@ vwalk()
 		}
 
 		for (ep = level; ep; ep = ep->next)
-			if (ep->flags & F_MAGIC && fnmatch(ep->name,
-			    p->fts_name, FNM_PATHNAME|FNM_QUOTE) ||
+			if (ep->flags & F_MAGIC && !fnmatch(ep->name,
+			    p->fts_name, FNM_PATHNAME) ||
 			    !strcmp(ep->name, p->fts_name)) {
 				ep->flags |= F_VISIT;
 				if (ep->flags & F_IGN) {
