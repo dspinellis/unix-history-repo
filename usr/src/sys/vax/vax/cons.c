@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)cons.c	7.7 (Berkeley) %G%
+ *	@(#)cons.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -127,7 +127,7 @@ cnrint(dev)
 
 	if (cnpolling)
 		return;
-	c = mfpr(RXDB);
+	c = mfpr(RXDB)&0xff;
 	if (c&RXDB_ID) {
 #if VAX780
 		if (cpu == VAX_780)
@@ -140,6 +140,7 @@ cnrint(dev)
 	if (!kdbrintr(c, tp))
 #endif
 	if ((tp->t_cflag&CSIZE) == CS7) {
+#ifdef notyet
 		if (tp->t_cflag&PARENB) {
 			if ((tp->t_cflag&PARODD) && 
 			    (partab[c&0177]&0200) == (c&0200))
@@ -147,6 +148,7 @@ cnrint(dev)
 			else if ((partab[c&0177]&0200) != (c&0200))
 				c |= TTY_PE;
 		}
+#endif
 		c &= ~0200;
 	}
 	(*linesw[tp->t_line].l_rint)(c, tp);
@@ -227,12 +229,14 @@ cnstart(tp)
 		}
 #else
 	if ((tp->t_cflag&CSIZE) == CS7) {
+#ifdef notyet
 		if (tp->t_cflag&PARENB) {
 			if (tp->t_cflag&PARODD)
 				c = (~(partab[c&0177])&0200)|(c&0177);
 			else
 				c = (partab[c&0177]&0200)|(c&0177);
 		} else
+#endif
 			c &= 0177;
 	}
 #endif
