@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ex_tty.h	7.5 (Berkeley) %G%
+ *	@(#)ex_tty.h	7.6 (Berkeley) %G%
  */
 
 /*
@@ -32,7 +32,7 @@
  * before the capability to say 12 milliseconds per affected whatever
  * (currently always line).  Capabilities where this makes sense say P*.
  */
-var	char	tspace[256];	/* Space for capability strings */
+var	char	tspace[1024];	/* Space for capability strings */
 var	char	*aoftspace;	/* Address of tspace for relocation */
 
 var	char	*AL;		/* P* Add new blank line */
