@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file @(#)termcap.src	1.11	(Berkeley) %G%
+#	Termcap source file @(#)termcap.src	1.12	(Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -1257,15 +1257,15 @@ c8|c108-w|c108-w-8p|concept108-w-8p|concept 108 w/8 pages in wide mode:\
 	:ti=\EU\Ev  8^AD\Ep\r:te=\Ev  ^A0^AD\Ep\r\n:pt@:cm@:\
 	:co#132:tc=c108-8p
 cA|avt|concept avt w/4 or 8 pages, 80 columns:\
-	:is=\E[1*q\E[2!t\E[7!t\E[=4;101;103;119;205l\E[=107;118;207h\E)1\E[1Q\EW\E[7!y\E[!z\E>\E[0\0720\07232!r\E[w\E2\r\n:\
+	:is=\E[1*q\E[2!t\E[7!t\E[=4;101;103;119;205l\E[=107;118;207h\E)1\E[1Q\EW\E[!y\E[!z\E>\E[0\0720\07232!r\E[w\E2\r\n:\
 	:ae=^O:al=\E[L:am:as=^N:bs:bt=\E[Z:cd=\E[J:ce=\E[K:ch=\E[%i%2G:\
 	:cl=\E[H\E[J:cm=\E[%i%2;%2H:co#80:cv=\E[%i%2d:dc=\E[P:dl=\E[M:\
 	:do=\E[B:ei=\E1:eo:ho=\E[H:im=\E1:kb=^H:kd=\E[B:ke=\E[!z:kh=\E[H:\
 	:kl=\E[D:ko=do,ho,nd,up:kr=\E[C:\
 	:ks=\E[!z\E[1;4!z\E[1;8!z\E[1;10!z\E[1;11!z\E[1;12!z\E[1;14!z\E[3;7!z\E[3;9!z:\
 	:ku=\E[A:li#24:mi:nd=\E[C:pt:se=\E[7!{:so=\E[7m:te=\E[w\E2\r\n:\
-	:ti=\E[1;24w\E2\r:ue=\E[4!{:ul:up=\E[A:us=\E[4m:ve=\E[=4;119l:\
-	:vs=\E[=4l\E[=119h:xn:
+	:ti=\E[1;24w\E2\r:ue=\E[4!{:ul:up=\E[A:us=\E[4m:\
+	:ve=\E[=4;119l\E[8V:vs=\E[8U\E[=4l\E[=119h:xn:
 cB|avt-rv|concept avt w/4 or 8 pages, reverse video, 80 columns:\
 	:is=\E[1*q\E[2!t\E[7!t\E[=4;101;103;119l\E[=107;118;205;207h\E)1\E[1Q\EW\E[7!y\E[!z\E>\E[0\0720\07232!r\E[w\E2\r\n:tc=avt
 #
@@ -1920,7 +1920,7 @@ yf|t1061f|teleray 1061 with fast PROMs:\
 	:al=\EL:ip@:dl=\EM:tc=t1061:
 # # --------------------------------
 #
-# z: CADLINK (nad other misc stuff, since M* is full)
+# z: MISC (cont)
 #
 z0|wind:\
 	:bs:cm=\Ep%r%.%.:cl=\En\120\030\Eo:co#80:\
@@ -1959,7 +1959,11 @@ z7|wind50:\
 	:ho=\Ep\200\200:li#50:nd=^L:up=^K:nl=\035:\
 	:kl=\E3:kr=\E4:ku=\E1:kd=\E2:k1=\E5:k2=\E6:k3=\E7:k4=\E8:\
 	:so=\Em\014:se=\Em\003:
-
+z8|v50|visual 50:\
+	:am:bs:al=\EL:dl=\EM:\
+	:cd=\Ek:ce=\EK:cl=^Z:cm=\E=%+\040%+\040:co#80:do=^J:ho=\EH:\
+	:kb=^H:kd=\EB:kh=\EH:kl=\ED:kr=\EC:ku=\EA:li#24:ms:nd=^L:pt:\
+	:so=\EU:se=\ET:up=^K:
 #
 # END OF TERMCAP
 #  ------------------------
