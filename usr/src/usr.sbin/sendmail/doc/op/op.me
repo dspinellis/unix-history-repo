@@ -5,12 +5,12 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)op.me	5.6 (Berkeley) %G%
+.\"	@(#)op.me	5.7 (Berkeley) %G%
 .\"
 .\" eqn % | troff -me
 .\"if n .ls 2
 .\".he 'Sendmail Installation and Operation Guide''%'
-.\".fo 'Version 5.6''Last Mod %G%'
+.\".fo 'Version 5.7''Last Mod %G%'
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
 .oh 'Sendmail Installation and Operation Guide''SMM:07-%'
 .nr si 3n
@@ -40,7 +40,7 @@
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 5.6
+Version 5.7
 .)l
 .sp 2
 .pp
@@ -174,18 +174,77 @@ processed versions of the corresponding
 .q .mc
 file.
 .pp
-Two off the shelf configuration files are supplied
+Three off the shelf configurations are supplied
 to handle the basic cases:
-.i cf.hosttable/arpaproto.cf
-for Arpanet (TCP) sites not running the name server
-and
-.i cf.hosttable/uucpproto.cf
-for UUCP sites.
-These are
-.i not
-in
+.np
+Arpanet (TCP) sites not running the name server
+can use
+.i cf.hosttable/arpaproto.cf .
+For simple sites,
+you should be able to use this file without modification.
+This file is not in
 .i m4
 format.
+.np
+UUCP sites can use
+.i cf.hosttable/uucpproto.cf .
+If your UUCP node name is not the same as your
+system name
+(as printed by the
+.i hostname (1)
+command)
+you may have to modify the
+.b U
+macro.
+This file is not in
+.i m4
+format.
+.np
+A group of machines at a single site
+connected by an ethernet
+with (only) one host connected to the outside world
+via UUCP
+is represented by two configuration files:
+.i cf.hosttable/lanroot.mc
+should be installed on the host with outside connections
+and
+.i cf.hosttable/lanleaf.mc
+should be installed on all other hosts.
+These will require slightly more configuration.
+First, in both files the
+.b D
+macro and
+.b D
+class must be adjusted to indicate your local domain.
+For example,
+if your company is known as
+.q Muse
+you will want to change both of those accordingly.
+(As distributed, they are called XXX.)
+Second,
+in
+.i lanleaf.mc
+you will have to change the
+.b R
+macro to the name of the root host,
+that is,
+the host that runs
+.i lanroot.mc .
+For example,
+they might appear as:
+.(b
+DDMuse
+CDLOCAL Muse
+.sp \n(psu
+DRErato
+.)b
+Internally, the root host will be known as
+.q Erato.Muse
+and other hosts will be known as
+.q Thalia.Muse ,
+.q Clio.Muse ,
+etc.
+.pp
 The file you need should be copied to a file with the same name
 as your system,
 e.g.,
@@ -3930,7 +3989,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 5.6
+.\"Version 5.7
 .\".ce 0
 .pn 2
 .bp
