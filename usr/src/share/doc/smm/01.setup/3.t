@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)3.t	6.13 (Berkeley) %G%
+.\"	@(#)3.t	6.14 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -213,7 +213,7 @@ for possible tuning of the layout.
 Section 4.2 and
 .Xr config (8)
 are required reading.
-.PP
+.LP
 The filesystem in \*(4B has been reorganized in an effort to
 meet several goals:
 .IP 1)
@@ -271,7 +271,6 @@ The reorganized
 filesystem has the following directories:
 .TS
 lfC l.
-lib	(tmac, learn, ms, me, etc)
 calendar	(various useful calendar files)
 dict	(dictionaries)
 doc	(\*(4B manual sources)
@@ -291,7 +290,7 @@ filesystem has the following directories:
 .TS
 lfC l.
 account	(accounting files, formerly \f(CW/usr/adm\fP)
-at	(at spooling area)
+at	(\fIat\fP\|(1) spooling area)
 backups	(backups of system files)
 crash	(crash dumps)
 db	(system-wide databases, e.g. tags)
@@ -563,13 +562,13 @@ _	_	_
 	/etc/aliases.db	database version of the aliases file
 	/etc/amd-home	location database of home directories
 	/etc/amd-vol	location database of exported filesystems
-	/etc/changelist	\f(CW/etc/security\fP files to back up and check
+	/etc/changelist	\f(CW/etc/security\fP files to back up
 	/etc/csh.cshrc	system-wide csh(1) initialization file
 	/etc/csh.login	system-wide csh(1) login file
 	/etc/csh.logout	system-wide csh(1) logout file
-	/etc/disklabels	directory for saving disklabels from disklabel(8)
+	/etc/disklabels	directory for saving disklabels
 	/etc/exports	NFS list of export permissions
-	/etc/ftpwelcome	welcome message displayed for ftp users; see ftpd(8)
+	/etc/ftpwelcome	message displayed for ftp users; see ftpd(8)
 	/etc/kerberosIV	Kerberos directory; see below
 	/etc/man.conf	lists directories searched by \fIman\fP\|(1)
 	/etc/mtree	directory for local mtree files; see mtree(8)
@@ -1254,7 +1253,7 @@ The system security has been greatly enhanced by the
 addition of additional file flags that permit a file to be
 marked as immutable or append only.
 Once set, these flags can only be cleared by the super-user
-when the system is running in insecure mode (normally single user).
+when the system is running in insecure mode (normally, single-user).
 .PP
 An implementation of an auto-mounter daemon,
 .Xr amd ,

@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.t	6.11 (Berkeley) %G%
+.\"	@(#)2.t	6.12 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -17,7 +17,7 @@ This section explains the bootstrap procedure that can be used
 to get the kernel supplied with this distribution running on your machine.
 If you are not currently running \*(Ps you will
 have to do a full bootstrap.
-Chapter 3 describes how to upgrade a \*(Ps system.
+Section 3 describes how to upgrade a \*(Ps system.
 An understanding of the operations used in a full bootstrap
 is very helpful in performing an upgrade as well.
 In either case, it is highly desirable to read and understand
@@ -50,23 +50,40 @@ Bootstrapping from the tape
 .LP
 The set of files on the distribution tape are as follows:
 .IP 1)
-dd (HP300 and DECstation) or dump (SPARC) image of the root filesystem
+A
+.Xr dd (1)
+(HP300),
+.Xr tar (1)
+(DECstation), or
+.Xr dump (8)
+(SPARC) image of the root filesystem
 .IP 2)
-tar image of the
+A
+.Xr tar
+image of the
 .Pn /var
 filesystem
 .IP 3)
-tar image of the
+A
+.Xr tar
+image of the
 .Pn /usr
 filesystem
 .IP 4)
-tar image of
+A
+.Xr tar
+image of
 .Pn /usr/src/sys
 .IP 5)
-tar image of the rest of
+A
+.Xr tar
+image of the rest of
 .Pn /usr/src
 .IP 6)
-(8mm Exabyte tape distributions only) tar image of
+(8mm Exabyte tape distributions only)
+A
+.Xr tar
+image of
 .Pn /usr/src/X11R5
 .LP
 The tape bootstrap procedure used to create a
@@ -432,16 +449,8 @@ Then run the following commands:
 to which you should reply ``yes''.)
 .DE
 .PP
-This will generate many messages regarding the construction
-of the filesystem and the restoration of the tape contents,
-but should eventually stop with the message:
-.DS
- ...
-\fBRoot filesystem extracted\fP
-\fB#\fP
-.DE
-.PP
-You should then shut down the system, and boot on the disk that
+When this completes,
+you should then shut down the system, and boot on the disk that
 you just created following the procedure in step (3) above.
 .NH 4
 Step 5: placing labels on the disks

@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)6.t	6.7 (Berkeley) %G%
+.\"	@(#)6.t	6.8 (Berkeley) %G%
 .\"
 .ds LH "Installing/Operating \*(4B
 .ds CF \*(Dy
@@ -23,6 +23,9 @@ Such a reboot
 can be stopped (after it prints the date) with a ^C (interrupt).
 This will leave the system in single-user mode, with only the console
 terminal active.
+(If the console has been marked ``insecure'' in
+.Pn /etc/ttys
+you must enter the root password to bring the machine to single-user mode.)
 It is also possible to allow the filesystem checks to complete
 and then to return to single-user mode by signaling
 .Xr fsck (8)
@@ -140,7 +143,6 @@ also.
 Thus a typical dump sequence would be:
 .br
 .ne 6
-.KS
 .TS
 center;
 c c c c c
@@ -165,7 +167,6 @@ W3	1	Dec 17, 1992	operator	71K
 D2	3	Dec 18, 1992	operator	13K
 FULL	0	Dec 22, 1992	operator	135K
 .TE
-.KE
 We do weekly dumps often enough that daily dumps always fit on one tape.
 .PP
 Dumping of files by name is best done by
@@ -531,16 +532,12 @@ Files that need periodic attention
 .PP
 We conclude the discussion of system operations by listing
 the files that require periodic attention or are system specific:
-.de BP
-.IP \fB\\$1\fP
-.br
-..
 .TS
 center;
-lb a.
+lfC l.
 /etc/fstab	how disk partitions are used
 /etc/disktab	default disk partition sizes/labels
-/etc/printcap	printer data base
+/etc/printcap	printer database
 /etc/gettytab	terminal type definitions
 /etc/remote	names and phone numbers of remote machines for \fItip\fP(1)
 /etc/group	group memberships
@@ -548,9 +545,9 @@ lb a.
 /etc/master.passwd	password file; each account has a line
 /etc/rc.local	local system restart script; runs reboot; starts daemons
 /etc/inetd.conf	local internet servers
-/etc/hosts	local host name data base
-/etc/networks	network name data base
-/etc/services	network services data base
+/etc/hosts	local host name database
+/etc/networks	network name database
+/etc/services	network services database
 /etc/hosts.equiv	hosts under same administrative control
 /etc/syslog.conf	error log configuration for \fIsyslogd\fP\|(8)
 /etc/ttys	enables/disables ports
