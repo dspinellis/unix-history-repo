@@ -1,4 +1,4 @@
-/*	groups.c	4.5	83/02/15	*/
+/*	groups.c	4.6	83/06/29	*/
 
 /*
  * groups
@@ -9,16 +9,17 @@
 #include <pwd.h>
 
 int	groups[NGROUPS];
-struct	group *gr, *getgrgid();
 
 main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	int ngroups;
+	int ngroups, i;
 	char *sep = "";
-	int i;
+	struct group *gr;
 
+	if (argc > 1)
+		showgroups(argv[1]);
 	ngroups = getgroups(NGROUPS, groups);
 	for (i = 0; i < ngroups; i++) {
 		gr = getgrgid(groups[i]);
@@ -28,6 +29,24 @@ main(argc, argv)
 			printf("%s%s", sep, gr->gr_name);
 		sep = " ";
 	}
+	printf("\n");
+	exit(0);
+}
+
+showgroups(user)
+	register char *user;
+{
+	register struct group *gr;
+	register char **cp;
+	char *sep = "";
+
+	while (gr = getgrent())
+		for (cp = gr->gr_mem; cp && *cp; cp++)
+			if (strcmp(*cp, user) == 0) {
+				printf("%s%s", sep, gr->gr_name);
+				sep = " ";
+				break;
+			}
 	printf("\n");
 	exit(0);
 }
