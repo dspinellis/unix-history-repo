@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	8.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	8.25 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -31,10 +31,9 @@ static char sccsid[] = "@(#)mount.c	8.24 (Berkeley) %G%";
 
 #include "pathnames.h"
 
-int debug, verbose, skipvfs;
+int debug, verbose;
 
-int	badvfsname __P((const char *, const char **));
-int	badvfstype __P((int, const char **));
+int	checkvfsname __P((const char *, const char **));
 char   *catopt __P((char *, const char *));
 struct statfs
        *getmntpt __P((const char *));
@@ -137,7 +136,7 @@ main(argc, argv)
 			while ((fs = getfsent()) != NULL) {
 				if (BADTYPE(fs->fs_type))
 					continue;
-				if (badvfsname(fs->fs_vfstype, vfslist))
+				if (checkvfsname(fs->fs_vfstype, vfslist))
 					continue;
 				if (hasopt(fs->fs_mntops, "noauto"))
 					continue;
@@ -150,7 +149,7 @@ main(argc, argv)
 			if ((mntsize = getmntinfo(&mntbuf, MNT_NOWAIT)) == 0)
 				err(1, "getmntinfo");
 			for (i = 0; i < mntsize; i++) {
-				if (badvfsname(mntbuf[i].f_fstypename, vfslist))
+				if (checkvfsname(mntbuf[i].f_fstypename, vfslist))
 					continue;
 				prmount(&mntbuf[i]);
 			}
@@ -397,54 +396,6 @@ getmntpt(name)
 		    strcmp(mntbuf[i].f_mntonname, name) == 0)
 			return (&mntbuf[i]);
 	return (NULL);
-}
-
-int
-badvfsname(vfsname, vfslist)
-	const char *vfsname;
-	const char **vfslist;
-{
-
-	if (vfslist == NULL)
-		return (0);
-	while (*vfslist != NULL) {
-		if (strcmp(vfsname, *vfslist) == 0)
-			return (skipvfs);
-		++vfslist;
-	}
-	return (!skipvfs);
-}
-
-const char **
-makevfslist(fslist)
-	char *fslist;
-{
-	const char **av;
-	int i;
-	char *nextcp;
-
-	if (fslist == NULL)
-		return (NULL);
-	if (fslist[0] == 'n' && fslist[1] == 'o') {
-		fslist += 2;
-		skipvfs = 1;
-	}
-	for (i = 0, nextcp = fslist; *nextcp; nextcp++)
-		if (*nextcp == ',')
-			i++;
-	if ((av = malloc((size_t)(i + 2) * sizeof(char *))) == NULL) {
-		warn(NULL);
-		return (NULL);
-	}
-	nextcp = fslist;
-	i = 0;
-	av[i++] = nextcp;
-	while ((nextcp = strchr(nextcp, ',')) != NULL) {
-		*nextcp++ = '\0';
-		av[i++] = nextcp;
-	}
-	av[i++] = NULL;
-	return (av);
 }
 
 char *
