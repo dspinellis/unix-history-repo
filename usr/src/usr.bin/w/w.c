@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)w.c	4.3 (Berkeley) %G%";
+static char *sccsid = "@(#)w.c	4.4 (Berkeley) %G%";
 /*
  * w - print system status (who and what)
  *
@@ -479,7 +479,7 @@ cont:
 			szpt = up.u_pcb.pcb_szpt;
 			pr[np].w_seekaddr = ctob(apte.pg_pfnum);
 		}
-		vstodb(0, 1, &up.u_smap, &db, 1);
+		vstodb(0, CLSIZE, &up.u_smap, &db, 1);
 		pr[np].w_lastpg = ctob(db.db_base);
 		if (up.u_ttyp == NULL)
 			continue;
@@ -519,7 +519,7 @@ getargs(p)
 	struct pr *p;
 {
 	int c, addr, nbad;
-	static int abuf[512/sizeof(int)];
+	static int abuf[CLSIZE*NBPG/sizeof(int)];
 	struct pte pagetbl[NPTEPG];
 	register int *ip;
 	register char *cp, *cp1;
@@ -533,8 +533,8 @@ getargs(p)
 		lseek(mem,c,0);
 		if (read(mem,pagetbl,NBPG) != NBPG)
 			return(p->w_comm);
-		if (pagetbl[NPTEPG-1-UPAGES].pg_fod==0 && pagetbl[NPTEPG-1-UPAGES].pg_pfnum) {
-			lseek(mem,ctob(pagetbl[NPTEPG-1-UPAGES].pg_pfnum),0);
+		if (pagetbl[NPTEPG-CLSIZE-UPAGES].pg_fod==0 && pagetbl[NPTEPG-CLSIZE-UPAGES].pg_pfnum) {
+			lseek(mem,ctob(pagetbl[NPTEPG-CLSIZE-UPAGES].pg_pfnum),0);
 			if (read(mem,abuf,sizeof(abuf)) != sizeof(abuf))
 				return(p->w_comm);
 		} else {
@@ -543,15 +543,15 @@ getargs(p)
 				return(p->w_comm);
 		}
 	}
-	abuf[127] = 0;
-	for (ip = &abuf[126]; ip > abuf;) {
+	abuf[sizeof(abuf)/sizeof(abuf[0])-1] = 0;
+	for (ip = &abuf[sizeof(abuf)/sizeof(abuf[0])-2]; ip > abuf;) {
 		/* Look from top for -1 or 0 as terminator flag. */
 		if (*--ip == -1 || *ip == 0) {
 			cp = (char *)(ip+1);
 			if (*cp==0)
 				cp++;
 			nbad = 0;	/* up to 5 funny chars as ?'s */
-			for (cp1 = cp; cp1 < (char *)&abuf[128]; cp1++) {
+			for (cp1 = cp; cp1 < (char *)&abuf[sizeof(abuf)/sizeof(abuf[0])]; cp1++) {
 				c = *cp1&0177;
 				if (c==0)  /* nulls between args => spaces */
 					*cp1 = ' ';
