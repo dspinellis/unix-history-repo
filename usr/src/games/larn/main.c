@@ -109,8 +109,8 @@ main(argc,argv)
 /*
  *	now make scoreboard if it is not there (don't clear) 
  */
-	/* if (access(scorefile,0) == -1) */ /* not there */
-		/* makeboard(); */
+	if (access(scorefile,0) == -1) /* not there */
+		makeboard();
 
 /*
  *	now process the command line arguments 
