@@ -95,9 +95,9 @@ static char sccsid[] = "@(#)keycap.c	1.0 (Contributed to 386bsd) 7/29/92";
 static	FILE *pfp = NULL;	/* keycap data base file pointer */
 static	char *tbuf;
 static	int hopcount;		/* detect infinite loops in keycap, init 0 */
-char	*tskip();
+static char	*tskip();
 char	*tgetstr();
-char	*tdecode();
+static char	*tdecode();
 char	*getenv();
 
 /*

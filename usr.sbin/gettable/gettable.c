@@ -56,7 +56,7 @@ static char sccsid[] = "@(#)gettable.c	5.6 (Berkeley) 3/2/91";
 
 #define	equaln(s1, s2, n)	(!strncmp(s1, s2, n))
 
-struct	sockaddr_in sin;
+struct	sockaddr_in s_in;
 char	buf[BUFSIZ];
 char	*outfile = OUTFILE;
 
@@ -102,19 +102,19 @@ main(argc, argv)
 	host = hp->h_name;
 	if (argc > 0)
 		outfile = *argv;
-	sin.sin_family = hp->h_addrtype;
+	s_in.sin_family = hp->h_addrtype;
 	s = socket(hp->h_addrtype, SOCK_STREAM, 0);
 	if (s < 0) {
 		perror("gettable: socket");
 		exit(4);
 	}
-	if (bind(s, (struct sockaddr *)&sin, sizeof (sin)) < 0) {
+	if (bind(s, (struct sockaddr *)&s_in, sizeof (s_in)) < 0) {
 		perror("gettable: bind");
 		exit(5);
 	}
-	bcopy(hp->h_addr, &sin.sin_addr, hp->h_length);
-	sin.sin_port = sp->s_port;
-	if (connect(s, (struct sockaddr *)&sin, sizeof (sin)) < 0) {
+	bcopy(hp->h_addr, &s_in.sin_addr, hp->h_length);
+	s_in.sin_port = sp->s_port;
+	if (connect(s, (struct sockaddr *)&s_in, sizeof (s_in)) < 0) {
 		perror("gettable: connect");
 		exit(6);
 	}

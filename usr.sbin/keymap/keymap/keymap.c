@@ -545,7 +545,7 @@ mapkey(char *map)
 	    {	
 		ap = standard[k].addr;
 #if XCHAR==u_char
-		if (ap1=kgetstr(code,&(char*)ap)) {
+		if (ap1=kgetstr(code,(char**)&ap)) {
 #else
 ERROR! FIX ME!
 #endif
