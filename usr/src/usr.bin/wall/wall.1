@@ -1,26 +1,37 @@
-.\" Copyright (c) 1987 The Regents of the University of California.
+.\" Copyright (c) 1989, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)wall.1	6.4 (Berkeley) %G%
+.\"     @(#)wall.1	6.5 (Berkeley) %G%
 .\"
-.UC 7
-.TH WALL 1 ""
-.UC 4
-.SH NAME
-wall \- write a message to users
-.SH SYNOPSIS
-.B wall
-[ file ]
-.SH DESCRIPTION
-.I Wall
+.Dd 
+.Dt WALL 1
+.Os BSD 4
+.Sh NAME
+.Nm wall
+.Nd write a message to users
+.Sh SYNOPSIS
+.Nm wall
+.Op Ar file
+.Sh DESCRIPTION
+.Nm Wall
 displays the contents of
-.I file
+.Ar file
 or, by default, its standard input, on the terminals of all
 currently logged in users.
-.PP
-Appropriate permissions are often required to override protections
-user's place on their terminals.
-.SH "SEE ALSO"
-mesg(1), talk(1), write(1), shutdown(8)
+.Pp
+Only the super-user can write on the
+terminals of users who have chosen
+to deny messages or are using a program which
+automatically denies messages.
+.Sh SEE ALSO
+.Xr mesg 1 ,
+.Xr talk 1 ,
+.Xr write 1 ,
+.Xr shutdown 8
+.Sh HISTORY
+A
+.Nm
+command appeared in
+.At v7 .
