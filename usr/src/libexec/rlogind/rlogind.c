@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	4.1 82/04/02";
+static char sccsid[] = "@(#)rlogind.c	4.2 82/10/07";
 #endif
 
 #include <stdio.h>
@@ -13,12 +13,13 @@ static char sccsid[] = "@(#)rlogind.c	4.1 82/04/02";
 #include <signal.h>
 #include <sgtty.h>
 #include <stdio.h>
+#include <netdb.h>
 
 extern	errno;
 struct	passwd *getpwnam();
-char	*crypt(), *rindex(), *index(), *malloc(), *raddr();
+char	*crypt(), *rindex(), *index(), *malloc();
 int	options = SO_ACCEPTCONN|SO_KEEPALIVE;
-struct	sockaddr_in sin = { AF_INET, IPPORT_LOGINSERVER };
+struct	sockaddr_in sin = { AF_INET };
 /*
  * remote login server:
  *	remuser\0
@@ -33,7 +34,13 @@ main(argc, argv)
 	union wait status;
 	int f, debug = 0;
 	struct sockaddr_in from;
+	struct servent *sp;
 
+	sp = getservbyname("login", "tcp");
+	if (sp == 0) {
+		fprintf(stderr, "rlogind: tcp/rlogin: unknown service\n");
+		exit(1);
+	}
 #ifndef DEBUG
 	if (fork())
 		exit(0);
@@ -49,12 +56,20 @@ main(argc, argv)
 	  }
 	}
 #endif
-#if vax
-	sin.sin_port = htons(sin.sin_port);
-#endif
+	sin.sin_port = htons(sp->s_port);
 	argc--, argv++;
 	if (argc > 0 && !strcmp(argv[0], "-d"))
-		options |= SO_DEBUG;
+		options |= SO_DEBUG, argv++, argc--;
+	if (argc > 0) {
+		int port = atoi(argv[0]);
+
+		if (port < 0) {
+			fprintf(stderr, "%s: bad port #\n", argv[0]);
+			exit(1);
+		}
+		sin.sin_port = htons(port);
+		argv++, argc--;
+	}
 	for (;;) {
 		f = socket(SOCK_STREAM, 0, &sin, options);
 		if (f < 0) {
@@ -88,22 +103,22 @@ doit(f, fromp)
 	int f;
 	struct sockaddr_in *fromp;
 {
-	char c, *rhost;
+	char c;
 	int i, p, cc, t;
 	int stop = TIOCPKT_DOSTOP;
+	register struct hostent *hp;
 
 	alarm(60);
 	read(f, &c, 1);
 	if (c != 0)
 		exit(1);
 	alarm(0);
-#if vax
 	fromp->sin_port = htons(fromp->sin_port);
-#endif
-	rhost = raddr(fromp->sin_addr.s_addr);
+	hp = gethostbyaddr(&fromp->sin_addr, sizeof (struct in_addr),
+		fromp->sin_family);
 	if (fromp->sin_family != AF_INET ||
 	    fromp->sin_port >= IPPORT_RESERVED ||
-	    rhost == 0) {
+	    hp == 0) {
 		write(f, "\01Permission denied.\n", 20);
 		exit(1);
 	}
@@ -231,7 +246,7 @@ gotpty:
 	dup2(t, 1);
 	dup2(t, 2);
 	close(t);
-	execl("/bin/login", "login", "-r", rhost, 0);
+	execl("/bin/login", "login", "-r", hp->h_name, 0);
 	perror("/bin/login");
 	exit(1);
 }

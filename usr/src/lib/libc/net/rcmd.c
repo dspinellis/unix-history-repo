@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rcmd.c	4.1 82/04/02";
+static char sccsid[] = "@(#)rcmd.c	4.2 82/10/07";
 #endif
 
 #include <stdio.h>
@@ -7,6 +7,7 @@ static char sccsid[] = "@(#)rcmd.c	4.1 82/04/02";
 #include <sys/socket.h>
 #include <net/in.h>
 #include <errno.h>
+#include <netdb.h>
 
 extern	errno;
 char	*index(), *sprintf();
@@ -22,22 +23,21 @@ rcmd(ahost, rport, locuser, remuser, cmd, fd2p)
 	struct sockaddr_in sin, sin2, from;
 	char c;
 	short port;
+	struct hostent *hp;
 
-	addr = rhost(ahost);
-	if (addr == -1) {
+	hp = gethostbyname(*ahost);
+	if (hp == 0) {
 		fprintf(stderr, "%s: unknown host\n", *ahost);
 		return (-1);
 	}
+	*ahost = hp->h_name;
 retry:
 	s = rresvport(rcmdoptions|SO_KEEPALIVE);
 	if (s < 0)
 		return (-1);
-	sin.sin_family = AF_INET;
-	sin.sin_addr.s_addr = addr;
-	sin.sin_port = rport;
-#ifdef vax
-	sin.sin_port = htons(sin.sin_port);
-#endif
+	sin.sin_family = hp->h_addrtype;
+	bcopy(hp->h_addr, &sin.sin_addr, hp->h_length);
+	sin.sin_port = htons(rport);
 	if (connect(s, &sin) < 0) {
 		if (errno == ECONNREFUSED && timo <= 16) {
 			(void) close(s);
@@ -60,19 +60,14 @@ retry:
 			return (-1);
 		}
 		socketaddr(s2, &sin2);
-		port = sin2.sin_port;
-#if vax
-		port = htons((u_short)port);
-#endif
+		port = htons((u_short)sin2.sin_port);
 		(void) sprintf(num, "%d", port);
 		(void) write(s, num, strlen(num)+1);
 		if (accept(s2, &from) < 0) {
 			perror("accept");
 			goto bad;
 		}
-#if vax
 		from.sin_port = ntohs(from.sin_port);
-#endif
 		if (from.sin_family != AF_INET ||
 		    from.sin_port >= IPPORT_RESERVED) {
 			fprintf(stderr,
@@ -113,11 +108,8 @@ rresvport(options)
 
 	for (;;) {
 		sin.sin_family = AF_INET;
-		sin.sin_port = lport;
+		sin.sin_port = htons(lport);
 		sin.sin_addr.s_addr = 0;
-#ifdef vax
-		sin.sin_port = htons(sin.sin_port);
-#endif
 		s = socket(SOCK_STREAM, 0, &sin, options);
 		if (s >= 0)
 			return (s);
