@@ -1,0 +1,110 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)perror.3	5.1 (Berkeley) %G%
+.\"
+.TH PERROR 3F "13 June 1983"
+.UC 5
+.SH NAME
+perror, gerror, ierrno \- get system error messages
+.SH SYNOPSIS
+.B subroutine perror (string)
+.br
+.B character*(*) string
+.sp 1
+.B subroutine gerror (string)
+.br
+.B character*(*) string
+.sp 1
+.B character*(*) function gerror()
+.sp 1
+.B function ierrno()
+.SH DESCRIPTION
+.I Perror
+will write a message to fortran logical unit 0
+appropriate to the last detected system error.
+.I String
+will be written preceding the standard error message.
+.PP
+.I Gerror
+returns the system error message in character variable
+.I string.
+.I Gerror
+may be called either as a subroutine or as a function.
+.PP
+.I Ierrno
+will return the error number of the last detected system error.
+This number is updated only when an error actually occurs.
+Most routines and I/O statements that might generate such errors
+return an error code after the call;
+that value is a more reliable indicator of what caused the error condition.
+.SH FILES
+.ie \nM /usr/ucb/lib/libU77.a
+.el /usr/lib/libU77.a
+.SH "SEE ALSO"
+intro(2), perror(3)
+.br
+D. L. Wasley, \fIIntroduction to the f77 I/O Library\fR
+.SH BUGS
+.I String
+in the call to
+.I perror
+can be no longer than 127 characters.
+.PP
+The length of the string returned by
+.I gerror
+is determined by the calling program.
+.SH NOTES
+UNIX system error codes are described in
+.IR intro (2).
+The f77 I/O error codes and their meanings are:
+.sp 1
+.in +5
+100	``error in format''
+.br
+101	``illegal unit number''
+.br
+102	``formatted io not allowed''
+.br
+103	``unformatted io not allowed''
+.br
+104	``direct io not allowed''
+.br
+105	``sequential io not allowed''
+.br
+106	``can't backspace file''
+.br
+107	``off beginning of record''
+.br
+108	``can't stat file''
+.br
+109	``no * after repeat count''
+.br
+110	``off end of record''
+.br
+111	``truncation failed''
+.br
+112	``incomprehensible list input''
+.br
+113	``out of free space''
+.br
+114	``unit not connected''
+.br
+115	``read unexpected character''
+.br
+116	``blank logical input field''
+.br
+117	``'new' file exists''
+.br
+118	``can't find 'old' file''
+.br
+119	``unknown system error''
+.br
+120	``requires seek ability''
+.br
+121	``illegal argument''
+.br
+122	``negative repeat count''
+.br
+123	``illegal operation for unit''
