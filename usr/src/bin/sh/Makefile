@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 
 PROG=	sh
 SRCS=	alias.c builtins.c cd.c echo.c error.c eval.c exec.c expand.c \
@@ -12,7 +12,8 @@ CFLAGS+=-DSHELL -I. -I${.CURDIR} -g
 .PATH:	${.CURDIR}/bltin ${.CURDIR}/../../usr.bin/printf
 CLEANFILES+=\
 	builtins.c builtins.h init.c mkinit mknodes mksignames mksyntax \
-	nodes.c nodes.h signames.c signames.h syntax.c syntax.h token.def
+	nodes.c nodes.h signames.c signames.h syntax.c syntax.h token.def \
+	y.tab.h
 
 .depend parser.o: token.def
 token.def: mktokens
