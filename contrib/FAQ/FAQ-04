@@ -16,7 +16,7 @@ XFree86 for your particular graphics card/mouse/etc.
         keep getting errors.  Whats up?
 
 The problem here is due to the current FreeBSD math-emulator.  You need to
-pick up the package in /usr/src/share/FAQ/programs/math-emulator.tar.gz
+pick up the package in /usr/src/contrib/FAQ/programs/math-emulator.tar.gz
 
 Run the install program, recompile your kernel and install the new kernel.
 This is a port of an older Linux math-emulator.  At some point, FreeBSD's

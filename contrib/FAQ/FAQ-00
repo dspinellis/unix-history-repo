@@ -10,12 +10,9 @@ with and you just don't see it here, then please send mail to:
 
 	freebsd-questions@freefall.cdrom.com
 
-Or, if it's a bug you wish to report, to:
-
-	freebsd-bugs@freefall.cdrom.com
 
 Some of the instructions here will also refer to auxilliary utilities
-in the /usr/src/share/FAQ directory.  CDROM purchasers and net folks who've
+in the /usr/src/contrib/FAQ directory.  CDROM purchasers and net folks who've
 grabbed the FreeBSD 1.1 `srcdist' will have these files.  If you don't have
 the source distribution, then you can either grab the whole thing from:
 
@@ -26,5 +23,46 @@ FreeBSD-current distribution in:
 
 	freebsd.cdrom.com:~ftp/pub/FreeBSD/FreeBSD-current/src
 
-Thanks!
+0.0.1 What is FreeBSD?  
+
+FreeBSD is a UN*X type operating system based on William Jolitz's port
+of UCB's Networking Release 2 to the i386, 386BSD.  It is no longer
+safe to say that FreeBSD is only 386BSD with the patchkit applied!  There
+have been large additions and bug fixes made through out the whole system.
+Here are some of the highlights of FreeBSD:
+
+   More robust device drivers and more of them 
+   SysV IPC
+   Shared Libraries (Dynamic)
+   Improved virtual memory code
+   Addition of other utilities and applications
+   
+
+0.0.2 What are the FreeBSD mailing lists, and how can I get on them? 
+
+Here are a list of FreeBSD mailing lists.  For more information, please send
+mail to majordomo@freefall.cdrom.com with a message body of help.
+
+freebsd-hackers:   Useful for persons wishing to work on the internals. 
+freebsd-questions: General questions on FreeBSD. 
+freebsd-bugs:      Where bugs should be sent.
+freebsd-commit:    This list carries the commit messages for freefall.  Useful
+                   for tracking ongoing work.
+freebsd-scsi:      Mailing list for SCSI developers. 
+freebsd-current:   This list is for persons wishing to run FreeBSD-current
+                   and carries announcements and discussions on current.
+
+0.0.3 What are the various FreeBSD news groups? 
+
+Presently there are no groups dedicated to FreeBSD, you may find the 
+following groups useful.  
+
+comp.os.386bsd.announce:     For announcements
+comp.os.386bsd.questions:    For questions
+comp.os.386bsd.development:  For working on the internals
+comp.os.386bsd.bugs:         About bugs
+comp.os.386bsd.misc:         For items that don't fit anywhere else
+
+NOTE: These groups cover the *BSDs (FreeBSD, NetBSD, 386BSD).
+
 

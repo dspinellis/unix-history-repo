@@ -1,56 +1,4 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-onfiguration
+6.0 Kernel Configuration
 
 6.0.1:  When I compile a kernel with multi-port serial code, it tells me
         that only the first port is probed and the rest skiped due to
@@ -70,7 +18,7 @@ device    sio4    at isa? port 0x2b0 tty flags 0x501 vector siointr
 device    sio5    at isa? port 0x2b8 tty flags 0x501 vector siointr
 
 You may also want to look at the multi-port serial FAQ in
-/usr/src/share/FAQ/OTHER-FAQS/multi-port.serial.FAQ.
+/usr/src/contrib/FAQ/OTHER-FAQS/multi-port.serial.FAQ.
 
 
 6.0.2:  FreeBSD is supposed to come with support for QIC-40/80 drives but
@@ -98,10 +46,6 @@ options         SYSVSEM                 # enable for semaphores
 options         SYSVMSG                 # enable for messaging
 
 Recompile and install.
-
-
-
-
 
 
 

@@ -4,7 +4,7 @@
 5.0.1:	I've heard of something called FreeBSD-current.  How do I run it, and
 	where can I get more information?
 
-Read the file /usr/src/share/FAQ/OTHER-FAQS/FreeBSD.current.policy, it
+Read the file /usr/src/contrib/FAQ/OTHER-FAQS/FreeBSD.current.policy, it
 will tell you all you need to know.
 
 
@@ -19,10 +19,10 @@ mail or news).  First, pick up the sup_bin.tgz package from:
 
 	freebsd.cdrom.com:/pub/FreeBSD/packages
 
-Second, read the file /usr/src/share/FAQ/OTHER-FAQS/FreeBSD.sup.faq.
+Second, read the file /usr/src/contrib/FAQ/OTHER-FAQS/FreeBSD.sup.faq.
 
 This file describes how to setup sup on your machine.  You may also
-want to look at `/usr/src/share/FAQ/other/FreeBSD.*.supfile',
+want to look at `/usr/src/contrib/FAQ/other/FreeBSD.*.supfile',
 which are a set of supfiles for supping from freefall.cdrom.com
 
 

@@ -6,7 +6,7 @@
 	man pages! :-) ]
 
 Look at Gary Clark's perl package "AddIt", which may be found in
-/usr/src/share/FAQ/programs/AddIt-0.1B.tar.gz 
+/usr/src/contrib/FAQ/programs/AddIt-0.1B.tar.gz 
 
 
 7.0.2: I'm trying to use my printer and keep running into problems.  I tried
@@ -14,12 +14,12 @@ Look at Gary Clark's perl package "AddIt", which may be found in
 
 Yes, you can pick up Andreas Klemm's apsfilter package from:
 
-	ftp.germany.eu.net:~ftp/pub/comp/i386/Linux/Local.EUnet/People/akl/apsfilter-1.11.gz
+ftp.germany.eu.net:~ftp/pub/comp/i386/Linux/Local.EUnet/People/akl/apsfilter-1.11.gz
 
 This is a compleate package for printing text, PS and DVI files.  It
 requires ghostscript and dvips.  For a smaller package where you just
 want to print simple text files and postscript or just plain want a
-simpler package, look in the file: /usr/src/share/FAQ/programs/printcap01.gz
+simpler package, look in the file: /usr/src/contrib/FAQ/programs/printcap01.gz
 
 This includes a printcap for a epson printer and a filter for postscript.
 

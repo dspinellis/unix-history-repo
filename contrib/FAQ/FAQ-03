@@ -1,0 +1,32 @@
+
+
+3.0 Commercial Applications
+---------------------------
+
+Note:  This section is still very sparse, though we're hoping, of course,
+that companies will add to it! :)  The FreeBSD group has no ties with any
+of the companies listed here but simply lists them as a public service
+(and feels that commercial interest in FreeBSD can have very positive
+effects on FreeBSD's long-term viability).  We encourage commercial software
+vendors to send their entries here for inclusion.
+
+
+3.0.1	Where can I get Motif for FreeBSD?
+
+Sequoia Communications provides commercial quality Motif 1.2.3
+development kits for FreeBSD 1.1 (with full shared library support).
+Due to licensing restrictions from the OSF, and the fact that Sequoia
+needs to make a living, these are NOT FREE, but nonetheless quite reasonably
+priced in comparison to many other commercial Motif distributions.  Send
+electronic mail to `info@seq.com' for further information.
+>>>> please make sure this is correct! 
+
+3.0.8	What about other commercial quality development systems for FreeBSD?
+
+ParcPlace Systems, Inc. provides their excellent "Object Interface & Object
+Builder" GUI development environment free of charge to FreeBSD users.  Using
+OI, you can develop Motif or OpenLook compliant applications in C++ with all
+the benefits of a true GUI object hierarchy.  This will be announced and
+made available as part of the FreeBSD distribution very soon.
+
+
