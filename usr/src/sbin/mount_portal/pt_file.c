@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pt_file.c	1.1 (Berkeley) %G%
+ *	@(#)pt_file.c	1.2 (Berkeley) %G%
  *
  * $Id: pt_file.c,v 1.1 1992/05/25 21:43:09 jsp Exp jsp $
  */
@@ -35,22 +35,23 @@ int *fdp;
 	int gid;
 	char pbuf[MAXPATHLEN];
 	int error;
+	int gidset[NGROUPS];
+	int i;
 
 	pbuf[0] = '/';
 	strcpy(pbuf+1, key + (v[1] ? strlen(v[1]) : 0));
 
 #ifdef DEBUG
-	printf("path = %s, uid = %d, gid = %d\n", pbuf, pcr->pcr_uid, pcr->pcr_gid);
+	printf("path = %s, uid = %d, gid = %d\n", pbuf, pcr->pcr_uid, pcr->pcr_groups[0]);
 #endif
 
-	if (setregid(0, pcr->pcr_gid) < 0)
+	for (i = 0; i < pcr->pcr_ngroups; i++)
+		gidset[i] = pcr->pcr_groups[i];
+
+	if (setgroups(pcr->pcr_ngroups, gidset) < 0)
 		return (errno);
 
-	gid = pcr->pcr_gid;
-	if (setgroups(1, &gid) < 0)
-		return (errno);
-
-	if (setreuid(0, pcr->pcr_uid) < 0)
+	if (seteuid(pcr->pcr_uid) < 0)
 		return (errno);
 
 	fd = open(pbuf, O_RDWR|O_CREAT, 0666);
@@ -59,7 +60,7 @@ int *fdp;
 	else
 		error = 0;
 
-	if (setreuid(0, 0) < 0 || setregid(0, 0) < 0) {
+	if (seteuid((uid_t) 0) < 0) {	/* XXX - should reset gidset too */
 		error = errno;
 		syslog(LOG_ERR, "setcred: %s", strerror(error));
 		if (fd >= 0) {
