@@ -1,4 +1,4 @@
-/*	uipc_socket2.c	6.8	85/06/02	*/
+/*	uipc_socket2.c	6.9	85/06/08	*/
 
 #include "param.h"
 #include "systm.h"
@@ -267,11 +267,9 @@ sowakeup(so, sb)
 
 	sbwakeup(sb);
 	if (so->so_state & SS_ASYNC) {
-		if (so->so_pgrp == 0)
-			return;
-		else if (so->so_pgrp > 0)
-			gsignal(so->so_pgrp, SIGIO);
-		else if ((p = pfind(-so->so_pgrp)) != 0)
+		if (so->so_pgrp < 0)
+			gsignal(-so->so_pgrp, SIGIO);
+		else if (so->so_pgrp > 0 && (p = pfind(so->so_pgrp)) != 0)
 			psignal(p, SIGIO);
 	}
 }
