@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: trap.c 1.32 91/04/06$
  *
- *	@(#)trap.c	7.1 (Berkeley) %G%
+ *	@(#)trap.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -20,6 +20,7 @@
 #include "kernel.h"
 #include "signalvar.h"
 #include "user.h"
+#include "buf.h"
 #ifdef KTRACE
 #include "ktrace.h"
 #endif
@@ -29,7 +30,8 @@
 #include "../include/psl.h"
 #include "../include/reg.h"
 #include "../include/cpu.h"
-#include "pte.h"
+#include "../include/pte.h"
+#include "../include/mips_opcode.h"
 #include "clockreg.h"
 
 #include "vm/vm.h"
@@ -58,6 +60,7 @@ extern void MachUserIntr();
 extern void MachTLBModException();
 extern void MachTLBMissException();
 extern void MemErrorInterrupt();
+extern unsigned MachEmulateBranch();
 
 void (*machExceptionTable[])() = {
 /*
@@ -139,7 +142,7 @@ struct trapdebug {		/* trap history buffer for debugging */
  * ((struct pcb *)UADDR)->pcb_onfault is set, otherwise, return old pc.
  */
 unsigned
-trap(statusReg, causeReg, vadr, pc, args /* XXX */)
+trap(statusReg, causeReg, vadr, pc, args)
 	unsigned statusReg;	/* status register at time of the exception */
 	unsigned causeReg;	/* cause register at time of exception */
 	unsigned vadr;		/* address (if any) the fault occured on */
@@ -369,7 +372,6 @@ trap(statusReg, causeReg, vadr, pc, args /* XXX */)
 		} args;
 		int rval[2];
 		struct sysent *systab;
-		extern unsigned MachEmulateBranch();
 		extern int nsysent;
 #ifdef ULTRIXCOMPAT
 		extern struct sysent ultrixsysent[];
@@ -500,8 +502,49 @@ trap(statusReg, causeReg, vadr, pc, args /* XXX */)
 	    }
 
 	case T_BREAK+T_USER:
-		i = SIGTRAP;
-		break;
+	    {
+		register unsigned va, instr;
+
+		/* compute address of break instruction */
+		va = pc;
+		if ((int)causeReg < 0)
+			va += 4;
+
+		/* read break instruction */
+		instr = fuiword(va);
+#ifdef KADB
+		if (instr == MACH_BREAK_BRKPT || instr == MACH_BREAK_SSTEP)
+			goto err;
+#endif
+		if (p->p_md.md_ss_addr != va || instr != MACH_BREAK_SSTEP) {
+			i = SIGTRAP;
+			break;
+		}
+
+		/* restore original instruction and clear BP  */
+		i = suiword((caddr_t)va, p->p_md.md_ss_instr);
+		if (i < 0) {
+			vm_offset_t sa, ea;
+			int rv;
+
+			sa = trunc_page((vm_offset_t)va);
+			ea = round_page((vm_offset_t)va+sizeof(int)-1);
+			rv = vm_map_protect(&p->p_vmspace->vm_map, sa, ea,
+				VM_PROT_DEFAULT, FALSE);
+			if (rv == KERN_SUCCESS) {
+				i = suiword((caddr_t)va, p->p_md.md_ss_instr);
+				(void) vm_map_protect(&p->p_vmspace->vm_map,
+					sa, ea, VM_PROT_READ|VM_PROT_EXECUTE,
+					FALSE);
+			}
+		}
+		if (i < 0) {
+			i = SIGTRAP;
+			break;
+		}
+		p->p_md.md_ss_addr = 0;
+		goto out;
+	    }
 
 	case T_RES_INST+T_USER:
 		i = SIGILL;
@@ -533,6 +576,42 @@ trap(statusReg, causeReg, vadr, pc, args /* XXX */)
 
 	default:
 	err:
+#ifdef KADB
+	    {
+		extern struct pcb kdbpcb;
+
+		if (USERMODE(statusReg))
+			kdbpcb = p->p_addr->u_pcb;
+		else {
+			kdbpcb.pcb_regs[ZERO] = 0;
+			kdbpcb.pcb_regs[AST] = ((int *)&args)[2];
+			kdbpcb.pcb_regs[V0] = ((int *)&args)[3];
+			kdbpcb.pcb_regs[V1] = ((int *)&args)[4];
+			kdbpcb.pcb_regs[A0] = ((int *)&args)[5];
+			kdbpcb.pcb_regs[A1] = ((int *)&args)[6];
+			kdbpcb.pcb_regs[A2] = ((int *)&args)[7];
+			kdbpcb.pcb_regs[A3] = ((int *)&args)[8];
+			kdbpcb.pcb_regs[T0] = ((int *)&args)[9];
+			kdbpcb.pcb_regs[T1] = ((int *)&args)[10];
+			kdbpcb.pcb_regs[T2] = ((int *)&args)[11];
+			kdbpcb.pcb_regs[T3] = ((int *)&args)[12];
+			kdbpcb.pcb_regs[T4] = ((int *)&args)[13];
+			kdbpcb.pcb_regs[T5] = ((int *)&args)[14];
+			kdbpcb.pcb_regs[T6] = ((int *)&args)[15];
+			kdbpcb.pcb_regs[T7] = ((int *)&args)[16];
+			kdbpcb.pcb_regs[T8] = ((int *)&args)[17];
+			kdbpcb.pcb_regs[T9] = ((int *)&args)[18];
+			kdbpcb.pcb_regs[RA] = ((int *)&args)[19];
+			kdbpcb.pcb_regs[MULLO] = ((int *)&args)[21];
+			kdbpcb.pcb_regs[MULHI] = ((int *)&args)[22];
+			kdbpcb.pcb_regs[PC] = pc;
+			kdbpcb.pcb_regs[SR] = statusReg;
+			bzero((caddr_t)&kdbpcb.pcb_regs[F0], 33 * sizeof(int));
+		}
+		if (kdb(causeReg, vadr, p, !USERMODE(statusReg)))
+			return (kdbpcb.pcb_regs[PC]);
+	    }
+#endif
 		panic("trap");
 	}
 	printf("trap: pid %d %s sig %d adr %x pc %x ra %x\n", p->p_pid,
@@ -547,6 +626,8 @@ out:
 		psig(i);
 	p->p_pri = p->p_usrpri;
 	if (want_resched) {
+		int s;
+
 		/*
 		 * Since we are curproc, clock will normally just change
 		 * our priority without moving us from one queue to another
@@ -555,10 +636,11 @@ out:
 		 * swtch()'ed, we might not be on the queue indicated by
 		 * our priority.
 		 */
-		(void) splclock();
+		s = splclock();
 		setrq(p);
 		p->p_stats->p_ru.ru_nivcsw++;
 		swtch();
+		splx(s);
 		while (i = CURSIG(p))
 			psig(i);
 	}
@@ -575,7 +657,11 @@ out:
 	return (pc);
 }
 
-int temp; /*XXX*/
+#ifdef DS5000
+struct	intr_tab intr_tab[8];
+#endif
+
+int temp; /* XXX ULTRIX compiler bug with -O */
 
 /*
  * Handle an interrupt.
@@ -587,7 +673,6 @@ interrupt(statusReg, causeReg, pc)
 	unsigned causeReg;	/* cause register at time of exception */
 	unsigned pc;		/* program counter where to continue */
 {
-	register int i;
 	register unsigned mask;
 	clockframe cf;
 
@@ -604,22 +689,8 @@ interrupt(statusReg, causeReg, pc)
 
 	cnt.v_intr++;
 	mask = causeReg & statusReg;	/* pending interrupts & enable mask */
-	/*
-	 * Enable hardware interrupts which were enabled but not pending.
-	 * We only respond to software interrupts when returning to spl0.
-	 */
-	splx((statusReg & ~causeReg & MACH_HARD_INT_MASK) |
-		MACH_SR_INT_ENA_CUR);
-	/*
-	 * The first three tests should probably use
-	 * some kind of table generated by 'config'.
-	 */
-	if (mask & MACH_INT_MASK_0)
-		siiintr();
-	if (mask & MACH_INT_MASK_1)
-		leintr();
-	if (mask & MACH_INT_MASK_2)
-		dcintr();
+#ifdef DS3100
+	/* handle clock interrupts ASAP */
 	if (mask & MACH_INT_MASK_3) {
 		register volatile struct chiptime *c =
 			(volatile struct chiptime *)MACH_CLOCK_ADDR;
@@ -628,12 +699,89 @@ interrupt(statusReg, causeReg, pc)
 		cf.pc = pc;
 		cf.ps = statusReg;
 		hardclock(cf);
+		causeReg &= ~MACH_INT_MASK_3;	/* reenable clock interrupts */
 	}
+	/*
+	 * Enable hardware interrupts which were enabled but not pending.
+	 * We only respond to software interrupts when returning to spl0.
+	 */
+	splx((statusReg & ~causeReg & MACH_HARD_INT_MASK) |
+		MACH_SR_INT_ENA_CUR);
+	if (mask & MACH_INT_MASK_0)
+		siiintr(0);
+	if (mask & MACH_INT_MASK_1)
+		leintr(0);
+	if (mask & MACH_INT_MASK_2)
+		dcintr(0);
 	if (mask & MACH_INT_MASK_4)
 		MemErrorInterrupt();
+#endif /* DS3100 */
+#ifdef DS5000
+	/* handle clock interrupts ASAP */
+	if (mask & MACH_INT_MASK_1) {
+		register volatile struct chiptime *c =
+			(volatile struct chiptime *)MACH_CLOCK_ADDR;
+		register unsigned csr;
+		static int warned = 0;
+
+		csr = *(unsigned *)MACH_SYS_CSR_ADDR;
+		if ((csr & MACH_CSR_PSWARN) && !warned) {
+			warned = 1;
+			printf("WARNING: power supply is overheating!\n");
+		} else if (warned && !(csr & MACH_CSR_PSWARN)) {
+			warned = 0;
+			printf("WARNING: power supply is OK again\n");
+		}
+
+		temp = c->regc;	/* clear interrupt bits */
+		cf.pc = pc;
+		cf.ps = statusReg;
+		hardclock(cf);
+		causeReg &= ~MACH_INT_MASK_1;	/* reenable clock interrupts */
+	}
+	if (mask & MACH_INT_MASK_0) {
+		register unsigned csr;
+		register unsigned i, m;
+
+		csr = *(unsigned *)MACH_SYS_CSR_ADDR;
+		m = csr & (csr >> MACH_CSR_IOINTEN_SHIFT) & MACH_CSR_IOINT_MASK;
+#if 0
+		*(unsigned *)MACH_SYS_CSR_ADDR =
+			(csr & ~(MACH_CSR_MBZ | 0xFF)) |
+			(m << MACH_CSR_IOINTEN_SHIFT);
+#endif
+		/*
+		 * Enable hardware interrupts which were enabled but not
+		 * pending. We only respond to software interrupts when
+		 * returning to spl0.
+		 */
+		splx((statusReg & ~causeReg & MACH_HARD_INT_MASK) |
+			MACH_SR_INT_ENA_CUR);
+		for (i = 0; m; i++, m >>= 1) {
+			if (!(m & 1))
+				continue;
+			if (intr_tab[i].func)
+				(*intr_tab[i].func)(intr_tab[i].unit);
+			else
+				printf("spurious interrupt %d\n", i);
+		}
+#if 0
+		*(unsigned *)MACH_SYS_CSR_ADDR =
+			csr & ~(MACH_CSR_MBZ | 0xFF);
+#endif
+	} else {
+		/*
+		 * Enable hardware interrupts which were enabled but not
+		 * pending. We only respond to software interrupts when
+		 * returning to spl0.
+		 */
+		splx((statusReg & ~causeReg & MACH_HARD_INT_MASK) |
+			MACH_SR_INT_ENA_CUR);
+	}
+	if (mask & MACH_INT_MASK_3)
+		MemErrorInterrupt();
+#endif /* DS5000 */
 	if (mask & MACH_INT_MASK_5) {
-		printf("FPU interrupt: PC %x CR %x SR %x\n",
-			pc, causeReg, statusReg); /* XXX */
 		if (!USERMODE(statusReg)) {
 #ifdef DEBUG
 			trapDump("fpintr");
@@ -698,6 +846,8 @@ softintr(statusReg, pc)
 		psig(i);
 	p->p_pri = p->p_usrpri;
 	if (want_resched) {
+		int s;
+
 		/*
 		 * Since we are curproc, clock will normally just change
 		 * our priority without moving us from one queue to another
@@ -706,10 +856,11 @@ softintr(statusReg, pc)
 		 * swtch()'ed, we might not be on the queue indicated by
 		 * our priority.
 		 */
-		(void) splclock();
+		s = splclock();
 		setrq(p);
 		p->p_stats->p_ru.ru_nivcsw++;
 		swtch();
+		splx(s);
 		while (i = CURSIG(p))
 			psig(i);
 	}
@@ -809,6 +960,7 @@ vmUserUnmap()
 static void
 MemErrorInterrupt()
 {
+#ifdef DS3100
 	volatile u_short *sysCSRPtr = (u_short *)MACH_SYS_CSR_ADDR;
 	u_short csr;
 
@@ -820,103 +972,13 @@ MemErrorInterrupt()
 		panic("Mem error interrupt");
 	}
 	*sysCSRPtr = (csr & ~MACH_CSR_MBZ) | 0xff;
+#endif /* DS3100 */
+#ifdef DS5000
+	printf("erradr %x\n", *(unsigned *)MACH_ERROR_ADDR);
+	*(unsigned *)MACH_ERROR_ADDR = 0;
+	MachEmptyWriteBuffer();
+#endif /* DS5000 */
 }
-
-/* machDis.c -
- *
- *     	This contains the routine which disassembles an instruction to find
- *	the target.
- *
- *	Copyright (C) 1989 Digital Equipment Corporation.
- *	Permission to use, copy, modify, and distribute this software and
- *	its documentation for any purpose and without fee is hereby granted,
- *	provided that the above copyright notice appears in all copies.  
- *	Digital Equipment Corporation makes no representations about the
- *	suitability of this software for any purpose.  It is provided "as is"
- *	without express or implied warranty.
- */
-
-#ifndef lint
-static char rcsid[] = "$Header: /sprite/src/kernel/mach/ds3100.md/RCS/machDis.c,v 1.1 89/07/11 17:55:43 nelson Exp $ SPRITE (Berkeley)";
-#endif not lint
-
-/*
- * Define the instruction formats.
- */
-typedef union {
-	unsigned word;
-
-	struct {
-		unsigned imm: 16;
-		unsigned f2: 5;
-		unsigned f1: 5;
-		unsigned op: 6;
-	} IType;
-
-	struct {
-		unsigned target: 26;
-		unsigned op: 6;
-	} JType;
-
-	struct {
-		unsigned funct: 6;
-		unsigned f4: 5;
-		unsigned f3: 5;
-		unsigned f2: 5;
-		unsigned f1: 5;
-		unsigned op: 6;
-	} RType;
-
-	struct {
-		unsigned funct: 6;
-		unsigned fd: 5;
-		unsigned fs: 5;
-		unsigned ft: 5;
-		unsigned fmt: 4;
-		unsigned : 1;		/* always '1' */
-		unsigned op: 6;		/* always '0x11' */
-	} FRType;
-} InstFmt;
-
-/*
- * Opcodes of the branch instructions.
- */
-#define OP_SPECIAL	0x00
-#define OP_BCOND	0x01
-#define OP_J		0x02
-#define	OP_JAL		0x03
-#define OP_BEQ		0x04
-#define OP_BNE		0x05
-#define OP_BLEZ		0x06
-#define OP_BGTZ		0x07
-
-/*
- * Branch subops of the special opcode.
- */
-#define OP_JR		0x08
-#define OP_JALR		0x09
-
-/*
- * Sub-ops for OP_BCOND code.
- */
-#define OP_BLTZ		0x00
-#define OP_BGEZ		0x01
-#define OP_BLTZAL	0x10
-#define OP_BGEZAL	0x11
-
-/*
- * Coprocessor branch masks.
- */
-#define COPz_BC_MASK	0x1a
-#define COPz_BC		0x08
-#define COPz_BC_TF_MASK	0x01
-#define COPz_BC_TRUE	0x01
-#define COPz_BC_FALSE	0x00
-
-/*
- * Coprocessor 1 operation.
- */
-#define OP_COP_1	0x11
 
 /*
  * Return the resulting PC as if the branch was executed.
@@ -928,23 +990,23 @@ MachEmulateBranch(regsPtr, instPC, fpcCSR, allowNonBranch)
 	unsigned fpcCSR;
 	int allowNonBranch;
 {
-	InstFmt *instPtr;
+	InstFmt inst;
 	unsigned retAddr;
 	int condition;
 	extern unsigned GetBranchDest();
 
-#ifdef notdef
+#if 0
 	printf("regsPtr=%x PC=%x Inst=%x fpcCsr=%x\n", regsPtr, instPC,
 		*instPC, fpcCSR);
 #endif
 
-	instPtr = (InstFmt *)instPC;
-	switch ((int)instPtr->JType.op) {
+	inst = *(InstFmt *)instPC;
+	switch ((int)inst.JType.op) {
 	case OP_SPECIAL:
-		switch ((int)instPtr->RType.funct) {
+		switch ((int)inst.RType.func) {
 		case OP_JR:
 		case OP_JALR:
-			retAddr = regsPtr[instPtr->RType.f1];
+			retAddr = regsPtr[inst.RType.rs];
 			break;
 
 		default:
@@ -956,19 +1018,19 @@ MachEmulateBranch(regsPtr, instPC, fpcCSR, allowNonBranch)
 		break;
 
 	case OP_BCOND:
-		switch ((int)instPtr->IType.f2) {
+		switch ((int)inst.IType.rt) {
 		case OP_BLTZ:
 		case OP_BLTZAL:
-			if ((int)(regsPtr[instPtr->RType.f1]) < 0)
-				retAddr = GetBranchDest(instPtr);
+			if ((int)(regsPtr[inst.RType.rs]) < 0)
+				retAddr = GetBranchDest((InstFmt *)instPC);
 			else
 				retAddr = instPC + 8;
 			break;
 
 		case OP_BGEZAL:
 		case OP_BGEZ:
-			if ((int)(regsPtr[instPtr->RType.f1]) >= 0)
-				retAddr = GetBranchDest(instPtr);
+			if ((int)(regsPtr[inst.RType.rs]) >= 0)
+				retAddr = GetBranchDest((InstFmt *)instPC);
 			else
 				retAddr = instPC + 8;
 			break;
@@ -980,53 +1042,57 @@ MachEmulateBranch(regsPtr, instPC, fpcCSR, allowNonBranch)
 
 	case OP_J:
 	case OP_JAL:
-		retAddr = (instPtr->JType.target << 2) | 
+		retAddr = (inst.JType.target << 2) | 
 			((unsigned)instPC & 0xF0000000);
 		break;
 
 	case OP_BEQ:
-		if (regsPtr[instPtr->RType.f1] == regsPtr[instPtr->RType.f2])
-			retAddr = GetBranchDest(instPtr);
+		if (regsPtr[inst.RType.rs] == regsPtr[inst.RType.rt])
+			retAddr = GetBranchDest((InstFmt *)instPC);
 		else
 			retAddr = instPC + 8;
 		break;
 
 	case OP_BNE:
-		if (regsPtr[instPtr->RType.f1] != regsPtr[instPtr->RType.f2])
-			retAddr = GetBranchDest(instPtr);
+		if (regsPtr[inst.RType.rs] != regsPtr[inst.RType.rt])
+			retAddr = GetBranchDest((InstFmt *)instPC);
 		else
 			retAddr = instPC + 8;
 		break;
 
 	case OP_BLEZ:
-		if ((int)(regsPtr[instPtr->RType.f1]) <= 0)
-			retAddr = GetBranchDest(instPtr);
+		if ((int)(regsPtr[inst.RType.rs]) <= 0)
+			retAddr = GetBranchDest((InstFmt *)instPC);
 		else
 			retAddr = instPC + 8;
 		break;
 
 	case OP_BGTZ:
-		if ((int)(regsPtr[instPtr->RType.f1]) > 0)
-			retAddr = GetBranchDest(instPtr);
+		if ((int)(regsPtr[inst.RType.rs]) > 0)
+			retAddr = GetBranchDest((InstFmt *)instPC);
 		else
 			retAddr = instPC + 8;
 		break;
 
-	case OP_COP_1:
-		if ((instPtr->RType.f1 & COPz_BC_MASK) == COPz_BC) {
-			if ((instPtr->RType.f2 & COPz_BC_TF_MASK) ==
-			    COPz_BC_TRUE)
+	case OP_COP1:
+		switch (inst.RType.rs) {
+		case OP_BCx:
+		case OP_BCy:
+			if ((inst.RType.rt & COPz_BC_TF_MASK) == COPz_BC_TRUE)
 				condition = fpcCSR & MACH_FPC_COND_BIT;
 			else
 				condition = !(fpcCSR & MACH_FPC_COND_BIT);
 			if (condition)
-				retAddr = GetBranchDest(instPtr);
+				retAddr = GetBranchDest((InstFmt *)instPC);
 			else
 				retAddr = instPC + 8;
-		} else if (allowNonBranch)
+			break;
+
+		default:
+			if (!allowNonBranch)
+				panic("MachEmulateBranch: Bad coproc branch instruction");
 			retAddr = instPC + 4;
-		else
-			panic("MachEmulateBranch: Bad coproc branch instruction");
+		}
 		break;
 
 	default:
@@ -1034,7 +1100,7 @@ MachEmulateBranch(regsPtr, instPC, fpcCSR, allowNonBranch)
 			panic("MachEmulateBranch: Non-branch instruction");
 		retAddr = instPC + 4;
 	}
-#ifdef notdef
+#if 0
 	printf("Target addr=%x\n", retAddr);
 #endif
 	return (retAddr);
@@ -1045,4 +1111,49 @@ GetBranchDest(InstPtr)
 	InstFmt *InstPtr;
 {
 	return ((unsigned)InstPtr + 4 + ((short)InstPtr->IType.imm << 2));
+}
+
+/*
+ * This routine is called by procxmt() to single step one instruction.
+ * We do this by storing a break instruction after the current instruction,
+ * resuming execution, and then restoring the old instruction.
+ */
+cpu_singlestep(p)
+	register struct proc *p;
+{
+	register unsigned va;
+	register int *locr0 = p->p_regs;
+	int i;
+
+	/* compute next address after current location */
+	va = MachEmulateBranch(locr0, locr0[PC], 0, 1);
+	if (p->p_md.md_ss_addr || p->p_md.md_ss_addr == va ||
+	    !useracc((caddr_t)va, 4, B_READ)) {
+		printf("SS %s (%d): breakpoint already set at %x (va %x)\n",
+			p->p_comm, p->p_pid, p->p_md.md_ss_addr, va); /* XXX */
+		return (EFAULT);
+	}
+	p->p_md.md_ss_addr = va;
+	p->p_md.md_ss_instr = fuiword(va);
+	i = suiword((caddr_t)va, MACH_BREAK_SSTEP);
+	if (i < 0) {
+		vm_offset_t sa, ea;
+		int rv;
+
+		sa = trunc_page((vm_offset_t)va);
+		ea = round_page((vm_offset_t)va+sizeof(int)-1);
+		rv = vm_map_protect(&p->p_vmspace->vm_map, sa, ea,
+			VM_PROT_DEFAULT, FALSE);
+		if (rv == KERN_SUCCESS) {
+			i = suiword((caddr_t)va, MACH_BREAK_SSTEP);
+			(void) vm_map_protect(&p->p_vmspace->vm_map,
+				sa, ea, VM_PROT_READ|VM_PROT_EXECUTE, FALSE);
+		}
+	}
+	if (i < 0)
+		return (EFAULT);
+	printf("SS %s (%d): breakpoint set at %x: %x (pc %x)\n",
+		p->p_comm, p->p_pid, p->p_md.md_ss_addr,
+		p->p_md.md_ss_instr, locr0[PC]); /* XXX */
+	return (0);
 }
