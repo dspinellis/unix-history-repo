@@ -3,21 +3,22 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)fcntl.h	5.1 (Berkeley) %G%
+ *	@(#)fcntl.h	5.2 (Berkeley) %G%
  */
 
 /*
- * Flag values accessible to open(2) and fcntl(2)
- *  (The first three can only be set by open)
+ * Flag values accessible to open(2) and fcntl(2)-- copied from
+ * <sys/file.h>.  (The first three can only be set by open.)
  */
-#define	O_RDONLY	0
-#define	O_WRONLY	1
-#define	O_RDWR		2
-#define	O_NDELAY	FNDELAY	/* Non-blocking I/O */
-#define	O_APPEND	FAPPEND	/* append (writes guaranteed at the end) */
-#define	O_CREAT		FCREAT	/* open with file create */
-#define	O_TRUNC		FTRUNC	/* open with truncation */
-#define	O_EXCL		FEXCL	/* error on create if file exists */
+#define	O_RDONLY	000		/* open for reading */
+#define	O_WRONLY	001		/* open for writing */
+#define	O_RDWR		002		/* open for read & write */
+#define	O_NDELAY	FNDELAY		/* non-blocking open */
+					/* really non-blocking I/O for fcntl */
+#define	O_APPEND	FAPPEND		/* append on each write */
+#define	O_CREAT		FCREAT		/* open with file create */
+#define	O_TRUNC		FTRUNC		/* open with truncation */
+#define	O_EXCL		FEXCL		/* error on create if file exists */
 
 #ifndef	F_DUPFD
 /* fcntl(2) requests */
