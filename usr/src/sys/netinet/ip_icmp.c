@@ -1,4 +1,4 @@
-/*	ip_icmp.c	6.2	83/09/19	*/
+/*	ip_icmp.c	6.3	83/12/15	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
