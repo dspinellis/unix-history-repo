@@ -1,7 +1,7 @@
 # xps
 # kernel ps
 #
-#	@(#)xps	8.1 (Berkeley) %G%
+#	@(#)xps	8.2 (Berkeley) %G%
 
 define xps
 
@@ -25,7 +25,7 @@ define xps
 				printf " (%s)", $p->p_wmesg
 			end
 			printf "\n"
-			set $p = $p->p_nxt
+			set $p = $p->p_next
 		end
 		set $i++
 	end
