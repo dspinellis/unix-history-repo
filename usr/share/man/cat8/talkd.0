@@ -1,0 +1,30 @@
+TALKD(8)                  BSD System Manager's Manual                 TALKD(8)
+
+NNAAMMEE
+     ttaallkkdd - remote user communication server
+
+SSYYNNOOPPSSIISS
+     ttaallkkdd
+
+DDEESSCCRRIIPPTTIIOONN
+     TTaallkkdd is the server that notifies a user that someone else wants to ini-
+     tiate a conversation.  It acts a repository of invitations, responding to
+     requests by clients wishing to rendezvous to hold a conversation.  In
+     normal operation, a client, the caller, initiates a rendezvous by sending
+     a CTL_MSG to the server of type LOOK_UP (see <_p_r_o_t_o_c_o_l_s_/_t_a_l_k_d_._h>). This
+     causes the server to search its invitation tables to check if an invita-
+     tion currently exists for the caller (to speak to the callee specified in
+     the message).  If the lookup fails, the caller then sends an ANNOUNCE
+     message causing the server to broadcast an announcement on the callee's
+     login ports requesting contact.  When the callee responds, the local
+     server uses the recorded invitation to respond with the appropriate ren-
+     dezvous address and the caller and callee client programs establish a
+     stream connection through which the conversation takes place.
+
+SSEEEE AALLSSOO
+     talk(1),  write(1)
+
+HHIISSTTOORRYY
+     The ttaallkkdd command appeared in 4.3BSD.
+
+4.3 Berkeley Distribution        June 4, 1993                                1

@@ -1,0 +1,92 @@
+TERMCAP(3)                  BSD Programmer's Manual                 TERMCAP(3)
+
+NNAAMMEE
+     ttggeetteenntt, ttggeettnnuumm, ttggeettffllaagg, ttggeettssttrr, ttggoottoo, ttppuuttss - terminal independent
+     operation routines
+
+SSYYNNOOPPSSIISS
+     _c_h_a_r _P_C_;
+     _c_h_a_r _*_B_C_;
+     _c_h_a_r _*_U_P_;
+     _s_h_o_r_t _o_s_p_e_e_d_;
+
+     ttggeetteenntt(_c_h_a_r _*_b_p, _c_h_a_r _*_n_a_m_e);
+
+     ttggeettnnuumm(_c_h_a_r _*_i_d);
+
+     ttggeettffllaagg(_c_h_a_r _*_i_d);
+
+     _c_h_a_r _*
+     ttggeettssttrr(_c_h_a_r _*_i_d, _c_h_a_r _*_*_a_r_e_a);
+
+     _c_h_a_r _*
+     ttggoottoo(_c_h_a_r _*_c_m, _d_e_s_t_c_o_l, _d_e_s_t_l_i_n_e);
+
+     ttppuuttss(_r_e_g_i_s_t_e_r _c_h_a_r _*_c_p, _i_n_t _a_f_f_c_n_t, _i_n_t _(_*_o_u_t_c_)_(_));
+
+DDEESSCCRRIIPPTTIIOONN
+     These functions extract and use capabilities from a terminal capability
+     data base, usually _/_u_s_r_/_s_h_a_r_e_/_m_i_s_c_/_t_e_r_m_c_a_p, the format of which is de-
+     scribed in termcap(5).  These are low level routines; see curses(3) for a
+     higher level package.
+
+     The ttggeetteenntt() function extracts the entry for terminal _n_a_m_e into the
+     buffer at _b_p. The _b_p argument should be a character buffer of size 1024
+     and must be retained through all subsequent calls to ttggeettnnuumm(),
+     ttggeettffllaagg(), and ttggeettssttrr().  The ttggeetteenntt() function returns -1 if none of
+     the tteerrmmccaapp data base files could be opened, 0 if the terminal name given
+     does not have an entry, and 1 if all goes well.  It will look in the en-
+     vironment for a TERMCAP variable.  If found, and the value does not begin
+     with a slash, and the terminal type _n_a_m_e is the same as the environment
+     string TERM, the TERMCAP string is used instead of reading a tteerrmmccaapp
+     file.  If it does begin with a slash, the string is used as a path name
+     of the tteerrmmccaapp file to search.  If TERMCAP does not begin with a slash
+     and _n_a_m_e is different from TERM, ttggeetteenntt() searches the files
+     _$_H_O_M_E_/_._t_e_r_m_c_a_p and _/_u_s_r_/_s_h_a_r_e_/_m_i_s_c_/_t_e_r_m_c_a_p, in that order, unless the en-
+     vironment variable TERMPATH exists, in which case it specifies a list of
+     file pathnames (separated by spaces or colons) to be searched instead.
+     Whenever multiple files are searched and a ttcc field occurs in the re-
+     quested entry, the entry it names must be found in the same file or one
+     of the succeeding files.  This can speed up entry into programs that call
+     ttggeetteenntt(), as well as help debug new terminal descriptions or make one
+     for your terminal if you can't write the file _/_u_s_r_/_s_h_a_r_e_/_m_i_s_c_/_t_e_r_m_c_a_p.
+
+     The ttggeettnnuumm() function gets the numeric value of capability _i_d, returning
+     -1 if is not given for the terminal.  The ttggeettffllaagg() function returns 1
+     if the specified capability is present in the terminal's entry, 0 if it
+     is not.  The ttggeettssttrr() function returns the string value of the capabili-
+     ty _i_d, places it in the buffer at _a_r_e_a, and advances the _a_r_e_a pointer.
+     It decodes the abbreviations for this field described in termcap(5),  ex-
+     cept for cursor addressing and padding information.  The ttggeettssttrr() func-
+     tion returns NULL if the capability was not found.
+
+     The ttggoottoo() function returns a cursor addressing string decoded from _c_m
+     to go to column _d_e_s_t_c_o_l in line _d_e_s_t_l_i_n_e. It uses the external variables
+     _U_P (from the uupp capability) and _B_C (if bbcc is given rather than bbss) if
+     necessary to avoid placing \\nn, ^^DD or ^^@@ in the returned string.  (Pro-
+     grams which call ttggoottoo() should be sure to turn off the XTABS bit(s),
+     since ttggoottoo() may now output a tab.  Note that programs using termcap
+     should in general turn off XTABS anyway since some terminals use control-
+     I for other functions, such as nondestructive space.)  If a %% sequence is
+     given which is not understood, then ttggoottoo() returns (OOPS).
+
+     The ttppuuttss() function decodes the leading padding information of the
+     string _c_p; _a_f_f_c_n_t gives the number of lines affected by the operation, or
+     1 if this is not applicable, _o_u_t_c is a routine which is called with each
+     character in turn.  The external variable _o_s_p_e_e_d should contain the out-
+     put speed of the terminal as encoded by stty(3).  The external variable
+     _P_C should contain a pad character to be used (from the capability) if a
+     null (^^@@) is inappropriate.
+
+FFIILLEESS
+     /usr/lib/libtermcap.a    --ll _l_t_e_r_m_c_a_p library (also known as --ll _l_t_e_r_m_l_i_b)
+     /usr/share/misc/termcap  standard terminal capability data base
+     $HOME/.termcap           user's terminal capability data base
+
+SSEEEE AALLSSOO
+     ex(1),  curses(3),  termcap(5)
+
+HHIISSTTOORRYY
+     The ttggeetteenntt functions appeared in 4.0BSD.
+
+4th Berkeley Distribution        June 4, 1993                                2

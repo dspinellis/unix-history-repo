@@ -1,0 +1,123 @@
+BUGFILER(8)               BSD System Manager's Manual              BUGFILER(8)
+
+NNAAMMEE
+     bbuuggffiilleerr - file bug reports in folders automatically
+
+SSYYNNOOPPSSIISS
+     bbuuggffiilleerr [--aarr] [--vv _v_e_r_s_i_o_n]
+
+DDEESSCCRRIIPPTTIIOONN
+     BBuuggffiilleerr is a program to automatically intercept, acknowledge, redis-
+     tribute and store bug reports.  BBuuggffiilleerr is normally invoked by the mail
+     delivery program with a line similar to the following in _/_e_t_c_/_a_l_i_a_s_e_s.
+
+           bugs:   "|bugfiler"
+
+     It should be noted that the login ``bugs'' must exist for the bugfiler to
+     run.  Unless otherwise noted all paths used by bbuuggffiilleerr are relative to
+     the home directory of this login.  BBuuggffiilleerr also expects all of its files
+     and directories to be owned by ``bugs''.
+
+     Available options.
+
+     --aa      Do not send automatic mail acknowledgement to the bug report fil-
+             er.  (The default is to send the acknowledgement with the file
+             _~_b_u_g_s_/_v_e_r_s_i_o_n_/_b_u_g_:_a_c_k appended).
+
+     --rr      Do not redistribute.
+
+     --vv _v_e_r_s_i_o_n
+             Override the _v_e_r_s_i_o_n provided within the bug report itself.
+
+     For the bug report to be correctly filed, it must contain a line in the
+     following format:
+
+           Index:   _f_o_l_d_e_r    _v_e_r_s_i_o_n
+
+     The directories _~_b_u_g_s_/_v_e_r_s_i_o_n and _~_b_u_g_s_/_v_e_r_s_i_o_n_/_f_o_l_d_e_r must exist before
+     bbuuggffiilleerr attempts to store the bug report.  Bug reports will be stored in
+     files named by the concatenation of _v_e_r_s_i_o_n, _f_o_l_d_e_r, and sequential num-
+     bers, i.e. if _v_e_r_s_i_o_n is ``4.3 BSD'' and _f_o_l_d_e_r is ``ucb'' the first bug
+     report will be placed in _~_b_u_g_s_/_4_._3_B_S_D_/_u_c_b_/_1. If _f_o_l_d_e_r contains more than
+     one component only the first one will be used, e.g. if _f_o_l_d_e_r is
+     ``bin/from.c'' or ``bin/adb/con.c'' it will be treated as if it were sim-
+     ply ``bin''.
+
+     If the --rr flag is not supplied, redistribution of the bug reports is done
+     as specified in the file _~_b_u_g_s_/_v_e_r_s_i_o_n_/_b_u_g_:_r_e_d_i_s_t. This file is in the
+     format of the aliases(5) file, including comments and entries requiring
+     multiple lines, with the single exception that the _f_o_l_d_e_r component of
+     the ``Index:'' line replaces the name to alias.  The special folder
+     ``all:'' receives a redistribution of all bug reports sent to this
+     _v_e_r_s_i_o_n. For example, the _b_u_g_:_r_e_d_i_s_t file
+
+           #       bigbug gets a copy of everything
+           all:    bigbug
+           #       ucb folder redistribution list
+           ucb:    karels, kjd@coke.berkeley.edu
+                   ra@beno.css.gov
+
+     will send copies of all bug reports with ``ucb'' as the _f_o_l_d_e_r to bigbug,
+     karels, kjd, and ra.
+
+     Reports that cannot be filed, due to an invalid ``Index:'' line or some
+     other error, are placed in the directory _~_b_u_g_s_/_e_r_r_o_r_s. The bbuuggffiilleerr main-
+     tainer should correct these bug reports and then run bbuuggffiilleerr, with the
+     corrected report as its standard input, as bug reports with errors are
+     neither acknowledged or redistributed.  All reports that bbuuggffiilleerr handles
+     are logged in _~_b_u_g_s_/_l_o_g_.
+
+     Valid bugs are also logged in the file _~_b_u_g_s_/_v_e_r_s_i_o_n_/_s_u_m_m_a_r_y_. This file
+     has an entry for each bug report for _v_e_r_s_i_o_n in the format:
+
+           Filename        Date
+                Subject:
+                Index:
+                Owner:     Bugs Bunny
+                Status:    Received
+
+     Filename is the concatenation of _v_e_r_s_i_o_n, _f_o_l_d_e_r, and a number as de-
+     scribed above.  Date is the date as reported by the system clock, using
+     ctime(3).  The Subject: and Index: lines are The ``Subject:'' and
+     ``Index:'' lines are copies of the ``Subject:'' and ``index:'' lines con-
+     tained in the bug report.  The Owner and Status fields are intended to
+     provide a rudimentary method of tracking the status of bug reports.
+
+     The file _~_b_u_g_s_/_b_u_g_:_l_o_c_k is the focus of all locking for bbuuggffiilleerr. If you
+     wish to manipulate any of the log or error files, rename or remove it and
+     bbuuggffiilleerr will treat all bug reports that it receives as if they were in-
+     correctly formatted, i.e. it will place them in the directory
+     _~_b_u_g_s_/_e_r_r_o_r_s, for later recovery by the bbuuggffiilleerr maintainer.  Obviously,
+     this file must be created when you first install bbuuggffiilleerr.
+
+     All errors that occur before _~_b_u_g_s_/_l_o_g is found are logged into the sys-
+     tem log file, using syslog(8).
+
+FFIILLEESS
+     ~bugs/bug:ack                the acknowledgement message
+     ~bugs/bug:redist             the redistribution list
+     ~bugs/bug:lock               the locking file
+     ~bugs/errors/BUG_??????      bug reports with format errors
+     ~bugs/log                    the log file
+     ~bugs/folder/summary         the summary files
+     /usr/sbin/sendmail           the mail delivery program
+     /usr/share/misc/bugformat    a sample bug report format
+
+SSEEEE AALLSSOO
+     sendbug(1),  aliases(5),  syslog(8)
+
+BBUUGGSS
+     Since mail can be forwarded in a number of different ways, bbuuggffiilleerr does
+     not recognize forwarded mail and will acknowledge to the forwarder in-
+     stead of the original sender unless there is a ``Reply-To'' field in the
+     header.
+
+     This version of bbuuggffiilleerr is not compatible with the version released with
+     4.3BSD in that it doesn't complain to the sender about incorrectly for-
+     matted bug reports.  Frankly, we got tired of the profanity, not to men-
+     tion the extended conversations bbuuggffiilleerr was holding with vacation(1).
+
+HHIISSTTOORRYY
+     The bbuuggffiilleerr command appeared in 4.2BSD.
+
+4.2 Berkeley Distribution        June 4, 1993                                2
