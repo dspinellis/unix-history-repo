@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_init.c	7.3 (Berkeley) %G%
+ *	@(#)vm_init.c	7.4 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -63,7 +63,7 @@ void vm_mem_init()
 	 *	From here on, all physical memory is accounted for,
 	 *	and we use only virtual addresses.
 	 */
-
+	vm_set_page_size();
 	virtual_avail = vm_page_startup(avail_start, avail_end, virtual_avail);
 	/*
 	 * Initialize other VM packages
