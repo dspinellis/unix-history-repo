@@ -488,7 +488,7 @@ int	selwait, nselcoll;
 select(p, uap, retval)
 	register struct proc *p;
 	register struct args {
-		int	nd;
+		u_int	nd;
 		fd_set	*in, *ou, *ex;
 		struct	timeval *tv;
 	} *uap;
@@ -496,7 +496,8 @@ select(p, uap, retval)
 {
 	fd_set ibits[3], obits[3];
 	struct timeval atv;
-	int s, ncoll, ni, error = 0, timo;
+	int s, ncoll, error = 0, timo;
+	u_int ni;
 
 	bzero((caddr_t)ibits, sizeof(ibits));
 	bzero((caddr_t)obits, sizeof(obits));
