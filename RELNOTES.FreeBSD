@@ -92,6 +92,8 @@ Novell NE1000 and NE2000 ethernet interface.
 
 Various 2 and 4 port serial/parallel cards.
 
+Simple (AST-like) multiport serial cards.
+
 Mitsumi CDROM interface and drive.
 
 FreeBSD currently does NOT support IBM's microchannel (MCA) bus, but
@@ -264,4 +266,4 @@ hope you enjoy this release of FreeBSD!
 
 			The FreeBSD Core Group
 
-$Id: RELNOTES.FreeBSD,v 1.19 1994/01/30 01:00:34 wollman Exp $
+$Id: RELNOTES.FreeBSD,v 1.20 1994/01/30 06:17:55 rgrimes Exp $
