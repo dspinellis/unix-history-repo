@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	4.3 %G%";
+static char sccsid[] = "@(#)main.c	4.4 %G%";
 #endif
 
 /*
@@ -73,8 +73,12 @@ main(argc, argv)
 
 		if (fork())
 			exit(0);
-		for (cc = 0; cc < 10; cc++)
-			(void) close(cc);
+		for (t = 0; t < 20; t++)
+			if (t != s)
+#ifdef COMPAT
+			    if (t != snoroute)
+#endif
+				(void) close(cc);
 		(void) open("/", 0);
 		(void) dup2(0, 1);
 		(void) dup2(0, 2);
