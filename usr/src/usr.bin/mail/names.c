@@ -11,7 +11,7 @@
  */
 
 #ifdef notdef
-static char sccsid[] = "@(#)names.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)names.c	5.9 (Berkeley) %G%";
 #endif /* notdef */
 
 /*
@@ -24,18 +24,12 @@ static char sccsid[] = "@(#)names.c	5.8 (Berkeley) %G%";
 #include <sys/wait.h>
 
 /*
- * Set of network separator characters.
- */
-char	*metanet = "!%@";
-
-/*
  * Allocate a single element of a name list,
  * initialize its name field to the passed
  * name and return it.
  */
-
 struct name *
-nalloc(str)
+nalloc(str, ntype)
 	char str[];
 {
 	register struct name *np;
@@ -43,7 +37,7 @@ nalloc(str)
 	np = (struct name *) salloc(sizeof *np);
 	np->n_flink = NIL;
 	np->n_blink = NIL;
-	np->n_type = -1;
+	np->n_type = ntype;
 	np->n_name = savestr(str);
 	return(np);
 }
@@ -51,7 +45,6 @@ nalloc(str)
 /*
  * Find the tail of a list and return it.
  */
-
 struct name *
 tailof(name)
 	struct name *name;
@@ -71,36 +64,21 @@ tailof(name)
  * and make a list of names from it.
  * Return the list or NIL if none found.
  */
-
 struct name *
 extract(line, ntype)
 	char line[];
 {
 	register char *cp;
 	register struct name *top, *np, *t;
-	char nbuf[BUFSIZ], abuf[BUFSIZ];
+	char nbuf[BUFSIZ];
 
-	if (line == NOSTR || strlen(line) == 0)
-		return(NIL);
+	if (line == NOSTR || *line == '\0')
+		return NIL;
 	top = NIL;
 	np = NIL;
 	cp = line;
 	while ((cp = yankword(cp, nbuf)) != NOSTR) {
-		if (np != NIL && equal(nbuf, "at")) {
-			(void) strcpy(abuf, nbuf);
-			if ((cp = yankword(cp, nbuf)) == NOSTR) {
-				(void) strcpy(nbuf, abuf);
-				goto normal;
-			}
-			(void) strcpy(abuf, np->n_name);
-			stradd(abuf, '@');
-			(void) strcat(abuf, nbuf);
-			np->n_name = savestr(abuf);
-			continue;
-		}
-normal:
-		t = nalloc(nbuf);
-		t->n_type = ntype;
+		t = nalloc(nbuf, ntype);
 		if (top == NIL)
 			top = t;
 		else
@@ -108,13 +86,12 @@ normal:
 		t->n_blink = np;
 		np = t;
 	}
-	return(top);
+	return top;
 }
 
 /*
  * Turn a list of names into a string of the same names.
  */
-
 char *
 detract(np, ntype)
 	register struct name *np;
@@ -159,9 +136,8 @@ detract(np, ntype)
 
 /*
  * Grab a single word (liberal word)
- * Throw away things between ()'s.
+ * Throw away things between ()'s, and take anything between <>.
  */
-
 char *
 yankword(ap, wbuf)
 	char *ap, wbuf[];
@@ -169,9 +145,9 @@ yankword(ap, wbuf)
 	register char *cp, *cp2;
 
 	cp = ap;
-	do {
-		while (*cp && any(*cp, " \t,"))
-			cp++;
+	for (;;) {
+		if (*cp == '\0')
+			return NOSTR;
 		if (*cp == '(') {
 			register int nesting = 0;
 
@@ -187,14 +163,19 @@ yankword(ap, wbuf)
 				if (nesting <= 0)
 					break;
 			}
-		}
-		if (*cp == '\0')
-			return(NOSTR);
-	} while (any(*cp, " \t,("));
-	for (cp2 = wbuf; *cp && !any(*cp, " \t,("); *cp2++ = *cp++)
-		;
+		} else if (*cp == ' ' || *cp == '\t' || *cp == ',')
+			cp++;
+		else
+			break;
+	}
+	if (*cp ==  '<')
+		for (cp2 = wbuf; *cp && (*cp2++ = *cp++) != '>';)
+			;
+	else
+		for (cp2 = wbuf; *cp && !any(*cp, " \t,("); *cp2++ = *cp++)
+			;
 	*cp2 = '\0';
-	return(cp);
+	return cp;
 }
 
 /*
@@ -205,7 +186,6 @@ yankword(ap, wbuf)
  * Recipients whose name begins with | are piped through the given
  * program and removed.
  */
-
 struct name *
 outof(names, fo, hp)
 	struct name *names;
@@ -367,19 +347,15 @@ isfileaddr(name)
 {
 	register char *cp;
 
-	if (any('@', name))
-		return(0);
 	if (*name == '+')
-		return(1);
+		return 1;
 	for (cp = name; *cp; cp++) {
-		if (*cp == '.')
-			continue;
-		if (any(*cp, metanet))
-			return(0);
+		if (*cp == '!' || *cp == '%' || *cp == '@')
+			return 0;
 		if (*cp == '/')
-			return(1);
+			return 1;
 	}
-	return(0);
+	return 0;
 }
 
 /*
@@ -451,8 +427,7 @@ gexpand(nlist, gh, metoo, ntype)
 			continue;
 		}
 quote:
-		np = nalloc(cp);
-		np->n_type = ntype;
+		np = nalloc(cp, ntype);
 		/*
 		 * At this point should allow to expand
 		 * to self if only person in group
@@ -468,28 +443,9 @@ skip:
 	return(nlist);
 }
 
-
-
-/*
- * Compute the length of the passed name list and
- * return it.
- */
-
-lengthof(name)
-	struct name *name;
-{
-	register struct name *np;
-	register int c;
-
-	for (c = 0, np = name; np != NIL; c++, np = np->n_flink)
-		;
-	return(c);
-}
-
 /*
  * Concatenate the two passed name lists, return the result.
  */
-
 struct name *
 cat(n1, n2)
 	struct name *n1, *n2;
@@ -510,7 +466,6 @@ cat(n1, n2)
  * Unpack the name list onto a vector of strings.
  * Return an error if the name list won't fit.
  */
-
 char **
 unpack(np)
 	struct name *np;
@@ -520,16 +475,14 @@ unpack(np)
 	int t, extra, metoo, verbose;
 
 	n = np;
-	if ((t = lengthof(n)) == 0)
+	if ((t = count(n)) == 0)
 		panic("No names to unpack");
-
 	/*
 	 * Compute the number of extra arguments we will need.
 	 * We need at least two extra -- one for "mail" and one for
 	 * the terminating 0 pointer.  Additional spots may be needed
 	 * to pass along -f to the host mailer.
 	 */
-
 	extra = 2;
 	extra++;
 	metoo = value("metoo") != NOSTR;
@@ -563,7 +516,6 @@ unpack(np)
  * insertion sorting them, then checking for dups.
  * Return the head of the new list.
  */
-
 struct name *
 elide(names)
 	struct name *names;
@@ -662,7 +614,6 @@ elide(names)
 /*
  * Version of strcmp which ignores case differences.
  */
-
 nstrcmp(s1, s2)
 	register char *s1, *s2;
 {
@@ -679,7 +630,6 @@ nstrcmp(s1, s2)
  * Put another node onto a list of names and return
  * the list.
  */
-
 struct name *
 put(list, node)
 	struct name *list, *node;
@@ -695,17 +645,14 @@ put(list, node)
  * Determine the number of elements in
  * a name list and return it.
  */
-
 count(np)
 	register struct name *np;
 {
-	register int c = 0;
+	register int c;
 
-	while (np != NIL) {
-		c++;
-		np = np->n_flink;
-	}
-	return(c);
+	for (c = 0; np != NIL; c++, np = np->n_flink)
+		;
+	return c;
 }
 
 /*

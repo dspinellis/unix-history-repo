@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)def.h	5.10 (Berkeley) %G%
+ *	@(#)def.h	5.11 (Berkeley) %G%
  */
 
 #include <sys/param.h>		/* includes <sys/types.h> */
@@ -144,12 +144,11 @@ struct headline {
  */
 
 struct header {
-	char	*h_to;			/* Dynamic "To:" string */
-	char	*h_subject;		/* Subject string */
-	char	*h_cc;			/* Carbon copies string */
-	char	*h_bcc;			/* Blind carbon copies */
-	char	*h_smopts;		/* Sendmail options */
-	int	h_seq;			/* Sequence for optimization */
+	struct name *h_to;		/* Dynamic "To:" string */
+	char *h_subject;		/* Subject string */
+	struct name *h_cc;		/* Carbon copies string */
+	struct name *h_bcc;		/* Blind carbon copies */
+	struct name *h_smopts;		/* Sendmail options */
 };
 
 /*
@@ -292,6 +291,7 @@ char	*yankword();
 off_t	fsize();
 struct	cmd	*lex();
 struct	grouphead	*findgroup();
+struct	name	*nalloc();
 struct	name	*cat();
 struct	name	*delname();
 struct	name	*elide();

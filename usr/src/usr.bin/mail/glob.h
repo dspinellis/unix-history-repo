@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)glob.h	5.9 (Berkeley) %G%
+ *	@(#)glob.h	5.10 (Berkeley) %G%
  */
 
 /*
@@ -23,7 +23,6 @@ int	rcvmode;			/* True if receiving mail */
 int	sawcom;				/* Set after first command */
 char	*Tflag;				/* -T temp file for netnews */
 char	nosrc;				/* Don't source /usr/lib/Mail.rc */
-int	selfsent;			/* User sent self something */
 int	senderr;			/* An error while checking */
 int	edit;				/* Indicates editing a file */
 int	readonly;			/* Will be unable to rewrite file */
@@ -36,7 +35,6 @@ FILE	*otf;				/* Output temp file buffer */
 FILE	*pipef;				/* Pipe file we have opened */
 int	image;				/* File descriptor for image of msg */
 FILE	*input;				/* Current command input file */
-char	*sflag;				/* Subject given from non tty */
 char	mailname[PATHSIZE];		/* Name of current file */
 char	prevfile[PATHSIZE];		/* Name of previous file */
 int	uid;				/* The invoker's user id */
