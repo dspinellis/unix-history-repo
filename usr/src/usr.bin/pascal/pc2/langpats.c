@@ -1,7 +1,7 @@
 /* Copyright (c) 1979, 1984 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)langpats.c	2.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)langpats.c	2.2	(Berkeley)	%G%";
 #endif not lint
 
 #include "inline.h"
@@ -350,15 +350,17 @@ struct pats language_ptab[] = {
  * General Pascal library routines
  */
 	{ "_ACTFILE\n",
-"	movl	sp@,a0\n\
+"	movl	sp@+,a0\n\
 	movl	a0@(12),d0\n" },
 
 	{ "_ADDT\n",
-"	movl	a2,sp@-\n\
-	movl	sp@(8),a2\n\
-	movl	sp@(12),a1\n\
-	movl	sp@(4),a0\n\
-	movl	sp@(16),d1\n\
+"	movl	sp@+,a0\n\
+	movl	sp@+,d0\n\
+	movl	sp@+,a1\n\
+	movl	sp@+,d1\n\
+	movl	a0,sp@-\n\
+	movl	a2,sp@-\n\
+	movl	d0,a2\n\
 	subql	#1,d1\n\
 1:\n\
 	movl	a2@+,d0\n\
@@ -366,14 +368,16 @@ struct pats language_ptab[] = {
 	movl	d0,a0@+\n\
 	dbra	d1,1b\n\
 	movl	sp@+,a2\n\
-	movl	sp@,d0\n" },
+	movl	sp@+,d0\n" },
 
 	{ "_SUBT\n",
-"	movl	a2,sp@-\n\
-	movl	sp@(8),a2\n\
-	movl	sp@(12),a1\n\
-	movl	sp@(4),a0\n\
-	movl	sp@(16),d1\n\
+"	movl	sp@+,a0\n\
+	movl	sp@+,d0\n\
+	movl	sp@+,a1\n\
+	movl	sp@+,d1\n\
+	movl	a0,sp@-\n\
+	movl	a2,sp@-\n\
+	movl	d0,a2\n\
 	subql	#1,d1\n\
 1:\n\
 	movl	a1@+,d0\n\
@@ -382,14 +386,16 @@ struct pats language_ptab[] = {
 	movl	d0,a0@+\n\
 	dbra	d1,1b\n\
 	movl	sp@+,a2\n\
-	movl	sp@,d0\n" },
+	movl	sp@+,d0\n" },
 
 	{ "_MULT\n",
-"	movl	a2,sp@-\n\
-	movl	sp@(8),a2\n\
-	movl	sp@(12),a1\n\
-	movl	sp@(4),a0\n\
-	movl	sp@(16),d1\n\
+"	movl	sp@+,a0\n\
+	movl	sp@+,d0\n\
+	movl	sp@+,a1\n\
+	movl	sp@+,d1\n\
+	movl	a0,sp@-\n\
+	movl	a2,sp@-\n\
+	movl	d0,a2\n\
 	subql	#1,d1\n\
 1:\n\
 	movl	a2@+,d0\n\
@@ -397,28 +403,33 @@ struct pats language_ptab[] = {
 	movl	d0,a0@+\n\
 	dbra	d1,1b\n\
 	movl	sp@+,a2\n\
-	movl	sp@,d0\n" },
+	movl	sp@+,d0\n" },
 
 	{ "_IN\n",
-"	movl	sp@,d1\n\
-	subl	sp@(4),d1\n\
-	cmpl	sp@(8),d1\n\
+"	movl	sp@+,d0\n\
+	movl	sp@+,a0\n\
+	movl	sp@+,d1\n\
+	movl	sp@+,a1\n\
+	subl	a0,d0\n\
+	cmpl	d1,d0\n\
 	jhi	1f\n\
-	movl	sp@(12),a0\n\
-	movl	d1,d0\n\
-	lsrl	#3,d0\n\
-	btst	d1,a0@(0,d0:l)\n\
+	movl	d0,d1\n\
+	lsrl	#3,d1\n\
+	btst	d0,a1@(0,d1:l)\n\
 	jeq	1f\n\
 	moveq	#1,d0\n\
 	jra	2f\n\
 1:\n\
 	moveq	#0,d0\n\
 2:\n" },
+
 	{ "_RANG4\n",
-"	movl	sp@,d0\n\
-	cmpl	sp@(4),d0\n\
+"	movl	sp@+,d0\n\
+	movl	sp@+,a0\n\
+	movl	sp@+,a1\n\
+	cmpl	a0,d0\n\
 	jlt	1f\n\
-	cmpl	sp@(8),d0\n\
+	cmpl	a1,d0\n\
 	jle	2f\n\
 1:\n\
 	pea	_ERANG\n\
@@ -426,13 +437,39 @@ struct pats language_ptab[] = {
 	addqw	#4,sp\n\
 2:\n" },
 	{ "_RSNG4\n",
-"	movl	sp@,d0\n\
-	cmpl	sp@(4),d0\n\
+"	movl	sp@+,a0\n\
+	movl	sp@+,a1\n\
+	cmpl	a1,a0\n\
 	jls	1f\n\
 	pea	_ERANG\n\
 	jbsr	_ERROR\n\
 	addqw	#4,sp\n\
 1:\n" },
+
+	{ "_SUBSC\n",
+"	movl	sp@+,d0\n\
+	movl	sp@+,a0\n\
+	movl	sp@+,a1\n\
+	cmpl	a0,d0\n\
+	jlt	1f\n\
+	cmpl	a1,d0\n\
+	jle	2f\n\
+1:\n\
+	pea	_ESUBSC\n\
+	jbsr	_ERROR\n\
+	addqw	#4,sp\n\
+2:\n" },
+
+	{ "_SUBSCZ\n",
+"	movl	sp@+,a0\n\
+	movl	sp@+,a1\n\
+	cmpl	a1,a0\n\
+	jls	1f\n\
+	pea	_ESUBSC\n\
+	jbsr	_ERROR\n\
+	addqw	#4,sp\n\
+1:\n" },
+
 #endif mc68000
 
 	{ "", "" }
