@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)wall.c	4.7 (Berkeley) 83/07/01";
+static char *sccsid = "@(#)wall.c	4.8 (Berkeley) 84/03/30";
 /*
  * wall.c - Broadcast a message to all users.
  *
@@ -8,8 +8,11 @@ static char *sccsid = "@(#)wall.c	4.7 (Berkeley) 83/07/01";
 
 #include <stdio.h>
 #include <utmp.h>
-#include <sys/time.h>
+#include <errno.h>
 #include <signal.h>
+#include <sys/time.h>
+#include <fcntl.h>
+
 #define	USERS	128
 #define IGNOREUSER	"sleeper"
 
@@ -19,52 +22,63 @@ int	msize,sline;
 struct	utmp utmp[USERS];
 char	*strcpy();
 char	*strcat();
-char who[9] = "???";
+char	who[9] = "???";
 long	clock, time();
 struct tm *localtime();
 struct tm *localclock;
 
+extern	errno;
+
 main(argc, argv)
 char *argv[];
 {
-	register i;
-	register char c;
+	register int i, c;
 	register struct utmp *p;
 	FILE *f;
-	FILE *mf;
 
 	gethostname(hostname, sizeof (hostname));
-	if((f = fopen("/etc/utmp", "r")) == NULL) {
+	if ((f = fopen("/etc/utmp", "r")) == NULL) {
 		fprintf(stderr, "Cannot open /etc/utmp\n");
 		exit(1);
 	}
 	clock = time( 0 );
 	localclock = localtime( &clock );
-	mf = stdin;
-	if(argc >= 2) {
+	sline = ttyslot();	/* 'utmp' slot no. of sender */
+	c = fread((char *)utmp, sizeof(struct utmp), USERS, f);
+	fclose(f);
+	if (sline)
+		strncpy(who, utmp[sline].ut_name, sizeof(utmp[sline].ut_name));
+	sprintf(mesg,
+	    "\nBroadcast Message from %s@%s (%.*s) at %d:%02d ...\r\n\n"
+		, who
+		, hostname
+		, sizeof(utmp[sline].ut_line)
+		, utmp[sline].ut_line
+		, localclock -> tm_hour
+		, localclock -> tm_min
+	);
+	msize = strlen(mesg);
+	if (argc >= 2) {
 		/* take message from unix file instead of standard input */
-		if((mf = fopen(argv[1], "r")) == NULL) {
-			fprintf(stderr,"Cannot open %s\n", argv[1]);
+		if (freopen(argv[1], "r", stdin) == NULL) {
+			perror(argv[1]);
 			exit(1);
 		}
 	}
-	while((i = getc(mf)) != EOF) {
+	while ((i = getchar()) != EOF) {
+		if (i == '\n')
+			mesg[msize++] = '\r';
 		if (msize >= sizeof mesg) {
 			fprintf(stderr, "Message too long\n");
 			exit(1);
 		}
 		mesg[msize++] = i;
 	}
-	fclose(mf);
-	sline = ttyslot(2); /* 'utmp' slot no. of sender */
-	fread((char *)utmp, sizeof(struct utmp), USERS, f);
-	fclose(f);
-	if (sline)
-		strncpy(who, utmp[sline].ut_name, sizeof(utmp[sline].ut_name));
-	for(i=0; i<USERS; i++) {
+	fclose(stdin);
+	for (i=0; i<c; i++) {
 		p = &utmp[i];
-		if ((p->ut_name[0] == 0) ||
-		    (strncmp (p->ut_name, IGNOREUSER, sizeof(p->ut_name)) == 0))
+		if (p->ut_name[0] == 0 ||
+		    strncmp(p->ut_name, IGNOREUSER, sizeof(p->ut_name)) == 0)
 			continue;
 		sendmes(p->ut_line);
 	}
@@ -74,50 +88,47 @@ char *argv[];
 sendmes(tty)
 char *tty;
 {
-	register i;
-	char t[50], buf[BUFSIZ];
-	register char *cp;
-	register int c, ch;
-	FILE *f;
+	register f, flags;
+	static char t[50] = "/dev/";
+	int e, i;
 
+	strcpy(t + 5, tty);
+
+	if ((f = open(t, O_WRONLY|O_NDELAY)) < 0) {
+		if (errno != EWOULDBLOCK)
+			perror(t);
+		return;
+	}
+	if ((flags = fcntl(f, F_GETFL, 0)) == -1) {
+		perror(t);
+		return;
+	}
+	if (fcntl(f, F_SETFL, flags | FNDELAY) == -1)
+		goto oldway;
+	i = write(f, mesg, msize);
+	e = errno;
+	(void) fcntl(f, F_SETFL, flags);
+	if (i == msize) {
+		(void) close(f);
+		return;
+	}
+	if (e != EWOULDBLOCK) {
+		errno = e;
+		perror(t);
+		(void) close(f);
+		return;
+	}
+oldway:
 	while ((i = fork()) == -1)
 		if (wait((int *)0) == -1) {
 			fprintf(stderr, "Try again\n");
 			return;
 		}
-	if(i)
+	if (i) {
+		(void) close(f);
 		return;
-	strcpy(t, "/dev/");
-	strcat(t, tty);
-
-	signal(SIGALRM, SIG_DFL);	/* blow away if open hangs */
-	alarm(10);
-
-	if((f = fopen(t, "w")) == NULL) {
-		fprintf(stderr,"cannot open %s\n", t);
-		exit(1);
-	}
-	setbuf(f, buf);
-	fprintf(f,
-	    "\nBroadcast Message from %s!%s (%.*s) at %d:%02d ...\r\n\n"
-		, hostname
-		, who
-		, sizeof(utmp[sline].ut_line)
-		, utmp[sline].ut_line
-		, localclock -> tm_hour
-		, localclock -> tm_min
-	);
-	/* fwrite(mesg, msize, 1, f); */
-	for (cp = mesg, c = msize; c-- > 0; cp++) {
-		ch = *cp;
-		if (ch == '\n')
-			putc('\r', f);
-		putc(ch, f);
 	}
 
-	/*
-	 * Bitchin'.
-	 */
-
+	(void) write(f, mesg, msize);
 	exit(0);
 }
