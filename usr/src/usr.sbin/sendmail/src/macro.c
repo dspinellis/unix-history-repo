@@ -9,13 +9,11 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)macro.c	5.1 (Berkeley) %G%";
+static char	SccsId[] = "@(#)macro.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 # include "sendmail.h"
 # include "conf.h"
-
-SCCSID(@(#)macro.c	5.1		%G%);
 
 /*
 **  EXPAND -- macro expand a string using $x escapes.
