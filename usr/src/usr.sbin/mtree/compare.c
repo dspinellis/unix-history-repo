@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)compare.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)compare.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -99,7 +99,8 @@ typeerr:		LABEL;
 	}
 	if (s->flags & (F_GID | F_GNAME) && s->st_gid != p->fts_statp->st_gid) {
 		LABEL;
-		(void)printf("%sgid (%u, %u", s->st_gid, p->fts_statp->st_gid);
+		(void)printf("%sgid (%u, %u",
+		    tab, s->st_gid, p->fts_statp->st_gid);
 		if (uflag)
 			if (chown(p->fts_accpath, -1, s->st_gid))
 				(void)printf(", not modified: %s)",
