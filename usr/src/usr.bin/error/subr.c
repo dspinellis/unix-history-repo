@@ -1,31 +1,31 @@
-static	char *sccsid = "@(#)subr.c	1.1 (Berkeley) %G%";
+static	char *sccsid = "@(#)subr.c	1.2 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include "error.h"
 /*
- *	go through and arrayify a list of rules
+ *	Arrayify a list of rules
  */
 arrayify(e_length, e_array, header)
-	int			*e_length;
-	struct	error_desc	***e_array;
-	struct	error_desc	*header;
+	int	*e_length;
+	Eptr	**e_array;
+	Eptr	header;
 {
-	register	struct	error_desc	*errorp;
-	register	struct	error_desc	**array;
-	register	int	listlength;
-	register	int	listindex;
+	reg	Eptr	errorp;
+	reg	Eptr	*array;
+	reg	int	listlength;
+	reg	int	listindex;
 
 	for (errorp = header, listlength = 0;
 	     errorp; errorp = errorp->error_next, listlength++)
 		continue;
-	array = (struct error_desc **)Calloc(listlength+1,sizeof (struct error_desc*));
+	array = (Eptr*)Calloc(listlength+1, sizeof (Eptr));
 	for(listindex = 0, errorp = header;
 	    listindex < listlength;
 	    listindex++, errorp = errorp->error_next){
 		array[listindex] = errorp;
 		errorp->error_position = listindex;
 	}
-	array[listindex] = (struct error_desc *)0;
+	array[listindex] = (Eptr)0;
 	*e_length = listlength;
 	*e_array = array;
 }
@@ -58,7 +58,8 @@ char *strsave(instring)
 	char	*instring;
 {
 	char	*outstring;
-	strcpy(outstring = (char *)Calloc(1, strlen(instring) + 1), instring);
+	(void)strcpy(outstring = (char *)Calloc(1, strlen(instring) + 1),
+		instring);
 	return(outstring);
 }
 /*
@@ -66,10 +67,10 @@ char *strsave(instring)
  *		(one based)
  */
 int position(string, ch)
-	register	char	*string;
-	register	char	ch;
+	reg	char	*string;
+	reg	char	ch;
 {
-	register	int	i;
+	reg	int	i;
 	for (i=1; *string; string++, i++){
 		if (*string == ch)
 			return(i);
@@ -83,7 +84,7 @@ char *substitute(string, chold, chnew)
 	char	*string;
 	char	chold, chnew;
 {
-	register	char	*cp = string;
+	reg	char	*cp = string;
 
 	while (*cp){
 		if (*cp == chold){
@@ -140,8 +141,8 @@ boolean persperdexplode(string, r_perd, r_pers)
 	char	*string;
 	char	**r_perd, **r_pers;
 {
-	register	char	*cp;
-	int		length;
+	reg	char	*cp;
+		int	length;
 
 	length = strlen(string);
 	if (   (length >= 4)
@@ -170,8 +171,8 @@ boolean qpersperdexplode(string, r_perd, r_pers)
 	char	*string;
 	char	**r_perd, **r_pers;
 {
-	register	char	*cp;
-	int		length;
+	reg	char	*cp;
+		int	length;
 
 	length = strlen(string);
 	if (   (length >= 4)
@@ -229,10 +230,11 @@ struct	lang_desc lang_table[] = {
 printerrors(look_at_subclass, errorc, errorv)
 	boolean	look_at_subclass;
 	int	errorc;
-	struct	error_desc	*errorv[];
+	Eptr	errorv[];
 {
-	register	int	i;
-	register	struct	error_desc	*errorp;
+	reg	int	i;
+	reg	Eptr	errorp;
+
 	for (errorp = errorv[i = 0]; i < errorc; errorp = errorv[++i]){
 		if (errorp->error_e_class == C_IGNORE)
 			continue;
@@ -269,11 +271,11 @@ wordvbuild(string, r_wordc, r_wordv)
 	int	*r_wordc;
 	char	***r_wordv;
 {
-	register	char 	*cp;
-			char	*saltedbuffer;
-			char	**wordv;
-			int	wordcount;
-			int	wordindex;
+	reg	char 	*cp;
+		char	*saltedbuffer;
+		char	**wordv;
+		int	wordcount;
+		int	wordindex;
 
 	saltedbuffer = strsave(string);
 	for (wordcount = 0, cp = saltedbuffer; *cp; wordcount++){
@@ -314,8 +316,8 @@ int wordvcmp(wordv1, wordc, wordv2)
 	int	wordc;
 	char	**wordv2;
 {
-	register	int i;
-			int	back;
+	reg	int i;
+		int	back;
 	for (i = 0; i < wordc; i++){
 		if (back = strcmp(wordv1[i], wordv2[i])){
 			return(back);
@@ -333,9 +335,9 @@ char	**wordvsplice(emptyhead, wordc, wordv)
 	int	wordc;
 	char	**wordv;
 {
-	register	char	**nwordv;
-	int	nwordc = emptyhead + wordc;
-	register	int	i;
+	reg	char	**nwordv;
+		int	nwordc = emptyhead + wordc;
+	reg	int	i;
 
 	nwordv = (char **)Calloc(nwordc, sizeof (char *));
 	for (i = 0; i < emptyhead; i++)
@@ -345,3 +347,19 @@ char	**wordvsplice(emptyhead, wordc, wordv)
 	}
 	return(nwordv);
 }
+/*
+ *	plural'ize and verb forms
+ */
+static	char	*S = "s";
+static	char	*N = "";
+char *plural(n)
+	int	n;
+{
+	return( n > 1 ? S : N);
+}
+char *verbform(n)
+	int	n;
+{
+	return( n > 1 ? N : S);
+}
+

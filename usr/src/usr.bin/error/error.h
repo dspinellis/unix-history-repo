@@ -1,10 +1,14 @@
 /*
- *  @(#)error.h	1.1 (Berkeley) %G%
+ *  @(#)error.h	1.2 (Berkeley) %G%
  */
 typedef	int	boolean;
+#define	reg	register
 
 #define	TRUE	1
 #define	FALSE	0
+
+#define	true	1
+#define	false	0
 /*
  *	Descriptors for the various languages we know about.
  *	If you touch these, also touch lang_table
@@ -36,7 +40,7 @@ extern	int	language;
  */
 typedef	int	Errorclass;
 
-#define C_FIRST	0		/* first error category */
+#define	C_FIRST	0		/* first error category */
 #define	C_UNKNOWN	0	/* must be zero */
 #define	C_IGNORE	1	/* ignore the message; used for pi */
 #define	C_SYNC		2	/* synchronization errors */
@@ -46,7 +50,7 @@ typedef	int	Errorclass;
 #define	C_NULLED	6	/* refers to special func; so null */
 #define	C_TRUE		7	/* fits into true error format */
 #define	C_DUPL		8	/* sub class only; duplicated error message */
-#define C_LAST	9		/* last error category */
+#define	C_LAST	9		/* last error category */
 
 #define	SORTABLE(x)	(!(NOTSORTABLE(x)))
 #define	NOTSORTABLE(x)	(x <= C_NONSPEC)
@@ -58,17 +62,17 @@ extern	int		class_count[];
 
 #define	nunknown	class_count[C_UNKNOWN]
 #define	nignore		class_count[C_IGNORE]
-#define nsyncerrors	class_count[C_SYNC]
+#define	nsyncerrors	class_count[C_SYNC]
 #define	ndiscard	class_count[C_DISCARD]
 #define	nnonspec	class_count[C_NONSPEC]
 #define	nthisfile	class_count[C_THISFILE]
-#define nnulled		class_count[C_NULLED]
-#define ntrue		class_count[C_TRUE]
+#define	nnulled		class_count[C_NULLED]
+#define	ntrue		class_count[C_TRUE]
 #define	ndupl		class_count[C_DUPL]
 
 /* places to put the error complaints */
 
-#define TOTHEFILE	1	/* touch the file */
+#define	TOTHEFILE	1	/* touch the file */
 #define	TOSTDOUT	2	/* just print them out (ho-hum) */
 
 FILE	*errorfile;	/* where error file comes from */
@@ -79,6 +83,25 @@ extern	char	*processname;
 extern	char	*scriptname;
 
 extern	boolean	query;
+extern	boolean	terse;
+int	inquire();			/* inquire for yes/no */
+/* 
+ *	codes for inquire() to return
+ */
+#define	Q_NO	1			/* 'N' */
+#define	Q_no	2			/* 'n' */
+#define	Q_YES	3			/* 'Y' */
+#define	Q_yes	4			/* 'y' */
+
+int	probethisfile();
+/*
+ *	codes for probethisfile to return
+ */
+#define	F_NOTEXIST	1
+#define	F_NOTREAD	2
+#define	F_NOTWRITE	3
+#define	F_TOUCHIT	4
+
 /*
  *	Describes attributes about a language
  */
@@ -98,7 +121,7 @@ extern struct lang_desc lang_table[];
 #define	PIOUTCOMMENT	"%%%*)\n"
 #define	LISPINCOMMENT	";###"
 #define	ASINCOMMENT	"####"
-#define RIINCOMMENT	CINCOMMENT
+#define	RIINCOMMENT	CINCOMMENT
 #define	RIOUTCOMMENT	COUTCOMMENT
 /*
  *	Defines and resources for determing if a given line
@@ -106,19 +129,22 @@ extern struct lang_desc lang_table[];
  *	be touched, or if the function reference is to a
  *	function the user doesn't want recorded.
  */
-#define IG_FILE1	"llib-lc"
-#define IG_FILE2	"llib-port"
+#define	IG_FILE1	"llib-lc"
+#define	IG_FILE2	"llib-port"
 #define	IG_FILE3	"/usr/lib/llib-lc"
 #define	IG_FILE4	"/usr/lib/llib-port"
 
-#define ERRORNAME	"/.errorrc"
+#define	ERRORNAME	"/.errorrc"
 int	nignored;
 char	**names_ignored;
 /* 
  *	Structure definition for a full error
  */
-struct error_desc{
-	struct	error_desc *error_next;	/*linked together*/
+typedef struct edesc	Edesc;
+typedef	Edesc	*Eptr;
+
+struct edesc{
+	Eptr	error_next;		/*linked together*/
 	int	error_lgtext;		/* how many on the right hand side*/
 	char	**error_text;		/* the right hand side proper*/
 	Errorclass	error_e_class;	/* error category of this error*/
@@ -132,14 +158,14 @@ struct error_desc{
  *	Resources for the true errors
  */
 extern	int	nerrors;
-extern	struct	error_desc	*er_head;
-extern	struct	error_desc	**errors;	
+extern	Eptr	er_head;
+extern	Eptr	*errors;	
 /*
  *	Resources for each of the files mentioned
  */
 extern	int	nfiles;
-extern	struct	error_desc	***files;	/* array of pointers into errors*/
-boolean	*touchedfiles;		/* which files we touched */
+extern	Eptr	**files;	/* array of pointers into errors*/
+boolean	*touchedfiles;			/* which files we touched */
 /*
  *	The langauge the compilation is in, as intuited from
  *	the flavor of error messages analyzed.
@@ -158,3 +184,7 @@ char	next_lastchar();
 char	**wordvsplice();
 int	wordvcmp();
 boolean	persperdexplode();
+/*
+ *	Printing hacks
+ */
+char	*plural(), *verbform();

@@ -1,5 +1,5 @@
 #
-#	@(#)Makefile	1.2 (Berkeley) %G%
+#	@(#)Makefile	1.3 (Berkeley) %G%
 #
 #	error.h			error header file
 #	errorinput.c		does all of the input, and canonicalizes errors
