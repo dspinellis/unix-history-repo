@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode.h	8.3 (Berkeley) %G%
+ *	@(#)vnode.h	8.4 (Berkeley) %G%
  */
 
 #include <sys/queue.h>
@@ -342,7 +342,7 @@ int	vinvalbuf __P((struct vnode *vp, int save, struct ucred *cred,
 	    struct proc *p, int slpflag, int slptimeo));
 void 	vattr_null __P((struct vattr *vap));
 int 	vcount __P((struct vnode *vp));
-int 	vget __P((struct vnode *vp));
+int 	vget __P((struct vnode *vp, int lockflag));
 void 	vgone __P((struct vnode *vp));
 void 	vgoneall __P((struct vnode *vp));
 int	vn_bwrite __P((struct vop_bwrite_args *ap));
