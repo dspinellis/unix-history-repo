@@ -1,42 +1,58 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 
-SRCS=	chared.c common.c el.c emacs.c hist.c history.c key.c map.c \
-	parse.c prompt.c read.c refresh.c search.c sig.c term.c \
-	tokenizer.c tty.c vi.c
-CLEANFILES+=common.h emacs.h fcns.h help.h vi.h
-CFLAGS+=-I. -I${.CURDIR}
+LIB=	edit
+
+OSRCS=	chared.c common.c el.c emacs.c hist.c key.c map.c parse.c \
+	prompt.c read.c refresh.c search.c sig.c term.c tty.c vi.c \
+	help.c fcns.c
+
+# For speed and debugging
+#SRCS=   ${OSRCS} tokenizer.c history.c
+# For protection
+SRCS=	editline.c tokenizer.c history.c
+
+CLEANFILES+=common.h emacs.h fcns.h help.h vi.h help.c fcns.c editline.c
+CFLAGS+=-I. -I${.CURDIR} 
 CFLAGS+=#-DDEBUG_TTY -DDEBUG_KEY -DDEBUG_READ -DDEBUG -DDEBUG_REFRESH
 CFLAGS+=#-DDEBUG_PASTE
 
+AHDR=vi.h emacs.h common.h 
+ASRC=${.CURDIR}/vi.c ${.CURDIR}/emacs.c ${.CURDIR}/common.c
+
 vi.h: vi.c makelist
-	(cd ${.CURDIR} && sh makelist -h vi.c) > $@
+	sh ${.CURDIR}/makelist -h ${.CURDIR}/vi.c > ${.TARGET}
 
 emacs.h: emacs.c makelist
-	(cd ${.CURDIR} && sh makelist -h emacs.c) > $@
+	sh ${.CURDIR}/makelist -h ${.CURDIR}/emacs.c > ${.TARGET}
 
 common.h: common.c makelist
-	(cd ${.CURDIR} && sh makelist -h common.c) > $@
+	sh ${.CURDIR}/makelist -h ${.CURDIR}/common.c > ${.TARGET}
 
-AHDR=vi.h emacs.h common.h 
 fcns.h: ${AHDR} makelist
-	sh ${.CURDIR}/makelist -fh ${AHDR} > $@
+	sh ${.CURDIR}/makelist -fh ${AHDR} > ${.TARGET}
 
 fcns.c: ${AHDR} fcns.h makelist
-	(cd ${.CURDIR} && sh makelist -fc ${AHDR}) > $@
+	sh ${.CURDIR}/makelist -fc ${AHDR} > ${.TARGET}
 
-ASRC=vi.c emacs.c common.c
 help.c: ${ASRC} makelist 
-	(cd ${.CURDIR} && sh makelist -bc ${ASRC}) > $@
+	sh ${.CURDIR}/makelist -bc ${ASRC} > ${.TARGET}
 
-help.h: makelist
-	sh ${.CURDIR}/makelist -bh > $@
+help.h: ${ASRC} makelist
+	sh ${.CURDIR}/makelist -bh ${ASRC} > ${.TARGET}
 
-.depend: vi.h emacs.h common.h fcns.h help.h
+editline.c: ${OSRCS}
+	sh ${.CURDIR}/makelist -e ${.ALLSRC:T} > ${.TARGET}
+
+.depend: vi.h emacs.h common.h fcns.h help.h help.c
+
+
+test:	libedit.a test.o 
+	${CC} ${CFLAGS} ${.ALLSRC} -o ${.TARGET} libedit.a ${LDADD} -ltermcap
 
 beforeinstall:
-        -cd ${.CURDIR}; cmp -s histedit.h ${DESTDIR}/usr/include/histedit.h || \
-	install -c -o ${BINOWN} -g ${BINGRP} -m 444 histedit.h \
-	${DESTDIR}/usr/include
-
+	-cd ${.CURDIR}; cmp -s histedit.h ${DESTDIR}/usr/include/histedit.h > \
+	    /dev/null 2>&1 || \
+	    install -c -o ${BINOWN} -g ${BINGRP} -m 444 histedit.h \
+	    ${DESTDIR}/usr/include
 
 .include <bsd.lib.mk>
