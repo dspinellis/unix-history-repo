@@ -1,5 +1,5 @@
 /*
- *	@(#)uda.c	6.12 (Berkeley) %G%
+ *	@(#)uda.c	6.13 (Berkeley) %G%
  */
 
 /************************************************************************
@@ -32,7 +32,6 @@
  *
  * Restrictions:
  *      Unit numbers must be less than 8.
- *      Partitions A and B must be the same size on all RA drives.
  */
 #include "../machine/pte.h"
 
@@ -96,32 +95,62 @@ struct size {
 	-1,	25916,		/* G=blk 49324 thru 131403 */
 	0,	0,		/* H=blk 131404 thru end */
 }, ra60_sizes[8] = {
-	15884,	0,		/* A=blk 0 thru 15883 */
-	33440,	15884,		/* B=blk 15884 thru 49323 */
-	-1,	0,		/* C=blk 0 thru end */
-	15884,	242606,		/* D=blk 242606 thru 258489 */
-	-1,	258490,		/* E=blk 258490 thru end */
-	0,	0,		/* F=unused */
-	-1,	242606,		/* G=blk 242606 thru end */
-	193282,	49324,		/* H=blk 49324 thru 242605 */
+	15884,	0,		/* A=sectors 0 thru 15883 */
+	33440,	15884,		/* B=sectors 15884 thru 49323 */
+	400176,	0,		/* C=sectors 0 thru 400175 */
+	82080,	49324,		/* 4.2 G => D=sectors 49324 thru 131403 */
+	268772,	131404,		/* 4.2 H => E=sectors 131404 thru 400175 */
+	350852,	49324,		/* F=sectors 49324 thru 400175 */
+	157570,	242606,		/* UCB G => G=sectors 242606 thru 400175 */
+	193282,	49324,		/* UCB H => H=sectors 49324 thru 242605 */
 }, ra80_sizes[8] = {
-	15884,	0,		/* A=blk 0 thru 15883 */
-	33440,	15884,		/* B=blk 15884 thru 49323 */
-	-1,	0,		/* C=blk 0 thru end */
+	15884,	0,		/* A=sectors 0 thru 15883 */
+	33440,	15884,		/* B=sectors 15884 thru 49323 */
+	242606,	0,		/* C=sectors 0 thru 242605 */
 	0,	0,		/* D=unused */
-	0,	0,		/* E=unused */
-	0,	0,		/* F=unused */
-	0,	0,		/* G=unused */
-	193282,	49324,		/* H=blk 49324 thru 242605 */
+	193282,	49324,		/* UCB H => E=sectors 49324 thru 242605 */
+	82080,	49324,		/* 4.2 G => F=sectors 49324 thru 131403 */
+	192696,	49910,		/* G=sectors 49910 thru 242605 */
+	111202,	131404,		/* 4.2 H => H=sectors 131404 thru 242605 */
 }, ra81_sizes[8] ={
-	15884,	0,		/* A=blk 0 thru 15883 */
-	33440,	15884,		/* B=blk 15884 thru 49323 */
-	-1,	0,		/* C=blk 0 thru end */
-	15884,	242606,		/* D=blk 242606 thru 258489 */
-	307200,	258490,		/* E=blk 258490 thru 565689 */
-	-1,	565690,		/* F=blk 565690 thru end */
-	-1,	242606,		/* G=blk 242606 thru end */
-	193282,	49324,		/* H=blk 49324 thru 242605 */
+/*
+ * These are the new standard partition sizes for ra81's.
+ * A COMPAT_42 system is compiled with D, E, and F corresponding
+ * to the 4.2 partitions for G, H, and F respectively.
+ */
+#ifndef	UCBRA
+	15884,	0,		/* A=sectors 0 thru 15883 */
+	66880,	16422,		/* B=sectors 16422 thru 83301 */
+	891072,	0,		/* C=sectors 0 thru 891071 */
+#ifdef COMPAT_42
+	82080,	49324,		/* 4.2 G => D=sectors 49324 thru 131403 */
+	759668,	131404,		/* 4.2 H => E=sectors 131404 thru 891071 */
+	478582,	412490,		/* 4.2 F => F=sectors 412490 thru 891071 */
+#else
+	15884,	375564,		/* D=sectors 375564 thru 391447 */
+	307200,	391986,		/* E=sectors 391986 thru 699185 */
+	191352,	699720,		/* F=sectors 699720 thru 891071 */
+#endif COMPAT_42
+	515508,	375564,		/* G=sectors 375564 thru 891071 */
+	291346,	83538,		/* H=sectors 83538 thru 374883 */
+
+/*
+ * These partitions correspond to the sizes used by sites at Berkeley,
+ * and by those sites that have received copies of the Berkeley driver
+ * with deltas 6.2 or greater (11/15/83).
+ */
+#else UCBRA
+
+	15884,	0,		/* A=sectors 0 thru 15883 */
+	33440,	15884,		/* B=sectors 15884 thru 49323 */
+	891072,	0,		/* C=sectors 0 thru 891071 */
+	15884,	242606,		/* D=sectors 242606 thru 258489 */
+	307200,	258490,		/* E=sectors 258490 thru 565689 */
+	325382,	565690,		/* F=sectors 565690 thru 891071 */
+	648466,	242606,		/* G=sectors 242606 thru 891071 */
+	193282,	49324,		/* H=sectors 49324 thru 242605 */
+
+#endif UCBRA
 };
 
 struct	ra_info {
