@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_utils.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_utils.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -14,7 +14,7 @@ static char sccsid[] = "@(#)rec_utils.c	5.1 (Berkeley) %G%";
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../btree/btree.h"
+#include "recno.h"
 
 /*
  * __REC_RET -- Build return data as a result of search or scan.
@@ -34,6 +34,7 @@ __rec_ret(t, e, data)
 	DBT *data;
 {
 	register RLEAF *rl;
+	register char *p;
 
 	rl = GETRLEAF(e->page, e->index);
 	if (rl->flags & P_BIGDATA) {
@@ -42,9 +43,9 @@ __rec_ret(t, e, data)
 			return (RET_ERROR);
 	} else {
 		if (rl->dsize > t->bt_dbufsz) {
-			if ((t->bt_dbuf =
-			    realloc(t->bt_dbuf, rl->dsize)) == NULL)
+			if ((p = realloc(t->bt_dbuf, rl->dsize)) == NULL)
 				return (RET_ERROR);
+			t->bt_dbuf = p;
 			t->bt_dbufsz = rl->dsize;
 		}
 		bcopy(rl->bytes, t->bt_dbuf, t->bt_dbufsz);
