@@ -1,4 +1,4 @@
-SCCSID = @(#)Makefile 1.8 %G%
+SCCSID = @(#)Makefile 1.9 %G%
 INSTALL = ${DESTDIR}/usr/ucb
 INSTALLIB = ${DESTDIR}/usr/lib
 PX_HEADER = px_header
@@ -46,10 +46,18 @@ pc: pc.c
 LIBRARIES = /usr/lib/libpc.a /lib/libc.a /usr/lib/libm.a /usr/lib/libg.a
 
 pcexterns.o: pcexterns.awk ${LIBRARIES}
-	${NM} /usr/lib/libpc.a | awk -f pcexterns.awk >pcexterns.s
-	${NM} /lib/libc.a | awk -f pcexterns.awk >>pcexterns.s
-	${NM} /usr/lib/libm.a | awk -f pcexterns.awk >>pcexterns.s
-	${NM} /usr/lib/libg.a | awk -f pcexterns.awk >>pcexterns.s
+	${NM} /usr/lib/libpc.a \
+		| awk -f pcexterns.awk \
+		| sort -t\" +1 -2 -u >pcexterns.s
+	${NM} /lib/libc.a \
+		| awk -f pcexterns.awk \
+		| sort -t\" +1 -2 -u >>pcexterns.s
+	${NM} /usr/lib/libm.a \
+		| awk -f pcexterns.awk \
+		| sort -t\" +1 -2 -u >>pcexterns.s
+	${NM} /usr/lib/libg.a \
+		| awk -f pcexterns.awk \
+		| sort -t\" +1 -2 -u >>pcexterns.s
 	as pcexterns.s -o pcexterns.o
 	${RM} pcexterns.s
 
