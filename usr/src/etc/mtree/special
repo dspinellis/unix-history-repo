@@ -1,4 +1,4 @@
-#	@(#)special	8.1 (Berkeley) %G%
+#	@(#)special	5.7 (Berkeley) %G%
 #
 # Hand-crafted mtree specification for the dangerous files.
 #
@@ -38,14 +38,12 @@ special		type=file mode=0600 uname=root gname=wheel
 ..	#mtree
 named.boot	type=file mode=0644 uname=root gname=wheel
 netstart	type=file mode=0744 uname=root gname=wheel
-nfsstart	type=file mode=0744 uname=root gname=wheel
 passwd		type=file mode=644 uname=root gname=wheel
 printcap	type=file mode=0644 uname=root gname=wheel
 rc		type=file mode=0644 uname=root gname=wheel
 rc.local	type=file mode=0644 uname=root gname=wheel
 security	type=file mode=0644 uname=root gname=wheel
 sendmail.cf	type=file mode=0644 uname=root gname=wheel
-sendmail.fc	type=file mode=0644 uname=root gname=wheel
 shells		type=file mode=0644 uname=root gname=wheel
 spwd.db		type=file mode=0600 uname=root gname=wheel
 syslog.conf	type=file mode=0644 uname=root gname=wheel
@@ -120,10 +118,8 @@ at		type=dir mode=0755 uname=root gname=daemon ignore
 backups		type=dir mode=0755 uname=root gname=wheel ignore
 ..	#var/backups
 db		type=dir mode=0755 uname=root gname=wheel ignore
-..	#var/db
 kvm_vmunix.db	type=file mode=0644 uname=root gname=wheel
-local		type=dir mode=0755 uname=root gname=wheel ignore
-..	#var/local
+..	#var/db
 log		type=dir mode=0755 uname=root gname=wheel
 secure		type=file mode=0600 uname=root gname=wheel
 wtmp		type=file mode=0644 uname=root gname=wheel
