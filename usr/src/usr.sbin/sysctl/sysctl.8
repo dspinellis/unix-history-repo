@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)sysctl.8	5.1 (Berkeley) %G%
+.\"	@(#)sysctl.8	5.2 (Berkeley) %G%
 .\"
 .Dd ""
 .Dt SYSCTL 8
@@ -13,11 +13,14 @@
 .Nd get or set kernel state
 .Sh SYNOPSIS
 .Nm sysctl
+.Op Fl n
 .Ar name ...
 .Nm sysctl
-.Op Fl w
+.Op Fl n
+.Fl w
 .Ar name=value ...
 .Nm sysctl
+.Op Fl n
 .Fl aA
 .Sh DESCRIPTION
 The
@@ -37,6 +40,16 @@ Those with string or integer values will be printed as with the
 .Fl a
 flag; for the table values,
 the name of the utility to retrieve them is given.
+.Pp
+The
+.Fl n
+flag specifies that the printing of the field name should be
+suppressed and that only its value should be output.
+This flag is useful for setting shell variables.
+For example, to save the pagesize in variable psize, use:
+.Bd -literal -offset indent -compact
+set psize=`sysctl -n hw.pagesize`
+.Ed
 .Pp
 If just a MIB style name is given,
 the corresponding value is retrieved.
