@@ -1,4 +1,4 @@
-/*	ioctl.h	4.10	81/12/21	*/
+/*	ioctl.h	4.11	82/01/13	*/
 /*
  * ioctl definitions, and special character and local tty definitions
  */
@@ -83,6 +83,7 @@ struct ltchars {
 #define	TIOCGLTC	(('t'<<8)|116)	/* get local special characters */
 #define	TIOCOUTQ	(('t'<<8)|115)	/* number of chars in output queue */
 #define	TIOCSTI		(('t'<<8)|114)	/* simulate a terminal in character */
+#define	TIOCNOTTY	(('t'<<8)|113)	/* get rid of tty association */
 
 #define	OTTYDISC	0		/* old, v7 std tty driver */
 #define	NETLDISC	1		/* line discip for berk net */
@@ -92,6 +93,12 @@ struct ltchars {
 #define	FIONCLEX	(('f'<<8)|2)
 /* another local */
 #define	FIONREAD	(('f'<<8)|127)	/* get # bytes to read */
+#define	FIONBIO		(('f'<<8)|126)
+#define	FIOASYNC	(('f'<<8)|125)
 
 #define	SIOCDONE	(('s'<<8)|0)	/* shutdown read/write on socket */
+#define	SIOCSKEEP	(('s'<<8)|1)	/* set keep alive */
+#define	SIOCGKEEP	(('s'<<8)|2)	/* inspect keep alive */
+#define	SIOCSLINGER	(('s'<<8)|3)	/* set linger time */
+#define	SIOCGLINGER	(('s'<<8)|4)	/* get linger time */
 #endif
