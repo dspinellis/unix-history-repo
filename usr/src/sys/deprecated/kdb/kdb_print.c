@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kdb_print.c	7.12 (Berkeley) %G%
+ *	@(#)kdb_print.c	7.13 (Berkeley) %G%
  */
 
 #include "machine/mtpr.h"
@@ -189,8 +189,7 @@ printtrace(modif)
 				ip = VTOI(vp);
 				if ((ip->i_flag & ILOCKED) == 0)
 					continue;
-				printf("inode %d dev 0x%x type %d\n",
-				    ip->i_number, ip->i_dev, vp->v_type);
+				vprint((char *)0, vp);
 			}
 		}
 		break;
