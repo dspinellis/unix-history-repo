@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)chmod.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)chmod.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -43,6 +43,7 @@ main(argc, argv)
 	register FTSENT *p;
 	register int oct, omode;
 	register char *mode;
+	mode_t *set, *setmode();
 	struct stat sb;
 	int ch, fflag, rflag;
 
@@ -76,7 +77,7 @@ done:	argv += optind;
 		omode = (int)strtol(mode, (char **)NULL, 8);
 		oct = 1;
 	} else {
-		if (setmode(mode) == -1) {
+		if (!(set = setmode(mode))) {
 			(void)fprintf(stderr, "chmod: invalid file mode.\n");
 			exit(1);
 		}
@@ -98,8 +99,8 @@ done:	argv += optind;
 					error(p->path);
 				continue;
 			}
-			if (chmod(p->accpath,
-			    oct ? omode : getmode(p->statb.st_mode) && !fflag))
+			if (chmod(p->accpath, oct ?
+			    omode : getmode(set, p->statb.st_mode) && !fflag))
 				error(p->path);
 		}
 		exit(retval);
@@ -111,7 +112,7 @@ done:	argv += optind;
 	} else
 		while (*++argv)
 			if ((lstat(*argv, &sb) ||
-			    chmod(*argv, getmode(sb.st_mode))) && !fflag)
+			    chmod(*argv, getmode(set, sb.st_mode))) && !fflag)
 				error(*argv);
 	exit(retval);
 }
