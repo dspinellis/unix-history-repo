@@ -10,7 +10,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)scsi.c	7.8 (Berkeley) %G%
+ *	@(#)scsi.c	8.1 (Berkeley) %G%
  */
 
 /*

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ppi.c	7.6 (Berkeley) %G%
+ *	@(#)ppi.c	8.1 (Berkeley) %G%
  */
 
 /*
