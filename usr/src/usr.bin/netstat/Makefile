@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 #
 OBJS=	host.o inet.o if.o main.o mbuf.o route.o unix.o ns.o bbnnet.o
 CFLAGS=-O
@@ -17,3 +17,5 @@ install: netstat
 
 clean:
 	rm -f *.o core a.out errs netstat
+
+depend:

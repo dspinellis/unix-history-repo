@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -30,3 +30,5 @@ clean:
 	for i in ${SUBDIR}; do \
 		(echo $$i; cd $$i; make ${MFLAGS} clean); \
 	done
+
+depend:
