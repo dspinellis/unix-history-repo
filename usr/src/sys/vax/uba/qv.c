@@ -1,5 +1,5 @@
 #ifndef lint
-static	char	*sccsid = "@(#)qv.c	1.3 (Berkeley) %G%";
+static	char	*sccsid = "@(#)qv.c	1.4 (Berkeley) %G%";
 static	char	*osccsid = "@(#)qv.c	1.8 (ULTRIX) 8/21/85";
 #endif lint
 
@@ -334,7 +334,7 @@ qvopen(dev, flag)
 	if (unit >= nqv || (ui = qvinfo[qv])== 0 || ui->ui_alive == 0)
 		return (ENXIO);
 	if (QVCHAN(unit) == QVSPARE
-#ifdef CONS_HACK
+#ifndef CONS_HACK
 	   || QVCHAN(unit) == QVPCONS
 #endif
 	   )
