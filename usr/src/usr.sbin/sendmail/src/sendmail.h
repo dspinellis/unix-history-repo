@@ -1,10 +1,9 @@
 /*
-**  DELIVERMAIL.H -- Global definitions for delivermail.
+**  DLVRMAIL.H -- Global definitions for delivermail.
 **
 **	Most of these are actually allocated in globals.c
 **
-**	History:
-**		12/26/79 -- written.
+**	@(#)sendmail.h	1.3	%G%
 */
 
 

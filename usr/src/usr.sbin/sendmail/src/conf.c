@@ -1,6 +1,8 @@
 # include <stdio.h>
 # include <pwd.h>
 # include "dlvrmail.h"
+
+static char SccsId[] = "@(#)conf.c	1.3	%G%";
 # include <whoami.h>
 
 /*

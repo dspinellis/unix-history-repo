@@ -6,6 +6,8 @@
 # include <log.h>
 # endif LOG
 
+static char SccsId[] = "@(#)deliver.c	1.3	%G%";
+
 /*
 **  DELIVER -- Deliver a message to a particular address.
 **

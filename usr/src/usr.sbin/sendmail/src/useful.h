@@ -1,5 +1,7 @@
 /*
 **  USEFUL.H -- Some useful stuff.
+**
+**	@(#)useful.h	1.2	%G%
 */
 
 # define bool	int
