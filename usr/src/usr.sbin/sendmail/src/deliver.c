@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.121		%G%);
+SCCSID(@(#)deliver.c	3.122		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -81,7 +81,9 @@ deliver(firstto)
 				continue;
 			to->q_flags |= QQUEUEUP|QDONTSEND;
 			CurEnv->e_to = to->q_paddr;
-			giveresponse(EX_TEMPFAIL, TRUE, m);
+			message(Arpa_Info, "queued");
+			if (LogLevel > 4)
+				logdelivery("queued");
 		}
 		CurEnv->e_to = NULL;
 		return (0);
@@ -838,7 +840,7 @@ giveresponse(stat, force, m)
 	}
 	else if (stat == EX_TEMPFAIL)
 	{
-		message(Arpa_Info, "queued");
+		message(Arpa_Info, "deferred");
 	}
 	else
 	{
@@ -876,18 +878,36 @@ giveresponse(stat, force, m)
 		statmsg = buf;
 	}
 
-# ifdef LOG
+	/* log it in the system log */
 	if (LogLevel > ((stat == 0 || stat == EX_TEMPFAIL) ? 3 : 2))
-	{
-		extern char *pintvl();
+		logdelivery(&statmsg[4]);
 
-		syslog(LOG_INFO, "%s: to=%s, delay=%s, stat=%s", CurEnv->e_id,
-		       CurEnv->e_to, pintvl(curtime() - CurEnv->e_ctime, TRUE),
-		       &statmsg[4]);
-	}
-# endif LOG
+	/* set the exit status appropriately */
 	if (stat != EX_TEMPFAIL)
 		setstat(stat);
+}
+/*
+**  LOGDELIVERY -- log the delivery in the system log
+**
+**	Parameters:
+**		stat -- the message to print for the status
+**
+**	Returns:
+**		none
+**
+**	Side Effects:
+**		none
+*/
+
+logdelivery(stat)
+	char *stat;
+{
+	extern char *pintvl();
+
+# ifdef LOG
+	syslog(LOG_INFO, "%s: to=%s, delay=%s, stat=%s", CurEnv->e_id,
+	       CurEnv->e_to, pintvl(curtime() - CurEnv->e_ctime, TRUE), stat);
+# endif LOG
 }
 /*
 **  PUTFROMLINE -- output a UNIX-style from line (or whatever)

@@ -6,7 +6,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)main.c	3.122		%G%);
+SCCSID(@(#)main.c	3.123		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -570,7 +570,9 @@ main(argc, argv)
 			if (!bitset(QDONTSEND, q->q_flags))
 			{
 				CurEnv->e_to = q->q_paddr;
-				giveresponse(EX_TEMPFAIL, TRUE, q->q_mailer);
+				message(Arpa_Info, "queued");
+				if (LogLevel > 4)
+					logdelivery("queued");
 			}
 			CurEnv->e_to = NULL;
 		}
