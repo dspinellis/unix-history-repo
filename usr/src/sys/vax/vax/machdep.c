@@ -1,4 +1,4 @@
-/*	machdep.c	4.15	81/02/25	*/
+/*	machdep.c	4.16	81/02/26	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -24,7 +24,7 @@
 int	coresw = 0;
 int	printsw = 0;
 
-char	version[] = "VM/UNIX (Berkeley Version 4.15) 81/02/25 23:30:34 \n";
+char	version[] = "VM/UNIX (Berkeley Version 4.16) 81/02/26 04:26:10 \n";
 int	icode[] =
 {
 	0x9f19af9f,	/* pushab [&"init",0]; pushab */
@@ -237,7 +237,6 @@ sendsig(p, n)
 
 	regs = u.u_ar0;
 	usp = (int *)regs[SP];
-#ifdef FASTVAX
 	usp -= 5;
 	if ((int)usp <= USRSTACK - ctob(u.u_ssize))
 		(void) grow((unsigned)usp);
@@ -255,27 +254,11 @@ sendsig(p, n)
 	*usp++ = regs[PC];
 	*usp++ = regs[PS];
 	regs[SP] = (int)(usp - 5);
-#else
-	(void) grow((unsigned)(usp-5));
-	if (suword((caddr_t)--usp, regs[PS]))
-		goto bad;
-	if (suword((caddr_t)--usp, regs[PC]))
-		goto bad;
-	if (suword((caddr_t)--usp, (int)p))
-		goto bad;
-	if (suword((caddr_t)--usp, n==SIGILL ? u.u_cfcode : 0))
-		goto bad;
-	if (suword((caddr_t)--usp, n))
-		goto bad;
-	regs[SP] = (int)usp;
-#endif
 	regs[PS] &= ~(PSL_CM|PSL_FPD);
 	regs[PC] = (int)u.u_pcb.pcb_sigc;
 	return;
 
-#ifdef FASTVAX
 asm("bad:");
-#endif
 bad:
 	psignal(u.u_procp, SIGKILL);
 }
@@ -457,38 +440,76 @@ char *mc780[] = {
 };
 
 struct mc780frame {
-	int	mc7_bcnt;
-	int	mc7_summary;
-	int	mc7_cpues;
-	int	mc7_upc;
-	int	mc7_vaviba;
-	int	mc7_dreg;
-	int	mc7_tber0;
-	int	mc7_tber1;
-	int	mc7_timo;
-	int	mc7_parity;
-	int	mc7_sbier;
-	int	mc7_pc;
-	int	mc7_psl;
+	int	mc8_bcnt;
+	int	mc8_summary;
+	int	mc8_cpues;
+	int	mc8_upc;
+	int	mc8_vaviba;
+	int	mc8_dreg;
+	int	mc8_tber0;
+	int	mc8_tber1;
+	int	mc8_timo;
+	int	mc8_parity;
+	int	mc8_sbier;
+	int	mc8_pc;
+	int	mc8_psl;
+};
+struct mc750frame {
+	int	mc5_bcnt;
+	int	mc5_summary;
+	int	mc5_va;
+	int	mc5_errpc;
+	int	mc5_mdr;
+	int	mc5_svmode;
+	int	mc5_rdtimo;
+	int	mc5_tbgpar;
+	int	mc5_cacherr;
+	int	mc5_buserr;
+	int	mc5_mcesr;
+	int	mc5_pc;
+	int	mc5_psl;
 };
 
-machinecheck(mcf)
-	register struct mc780frame *mcf;
+machinecheck(cmcf)
+	caddr_t cmcf;
 {
-	register int type = mcf->mc7_summary;
-	register int sbifs;
+	register int type = ((struct mc780frame *)cmcf)->mc8_summary;
 
 	printf("machine check %x: %s%s\n", type, mc780[type&0xf],
 	    (type&0xf0) ? " abort" : " fault"); 
-	printf("\tcpues %x upc %x va/viba %x dreg %x tber %x %x\n",
-	   mcf->mc7_cpues, mcf->mc7_upc, mcf->mc7_vaviba,
-	   mcf->mc7_dreg, mcf->mc7_tber0, mcf->mc7_tber1);
-	sbifs = mfpr(SBIFS);
-	printf("\ttimo %x parity %x sbier %x pc %x psl %x sbifs %x\n",
-	   mcf->mc7_timo*4, mcf->mc7_parity, mcf->mc7_sbier,
-	   mcf->mc7_pc, mcf->mc7_psl, sbifs);
-	mtpr(SBIFS, sbifs &~ 0x2000000);
-	mtpr(SBIER, mfpr(SBIER) | 0x70c0);
+	switch (cpu) {
+#if VAX780
+	case VAX_780: {
+		register struct mc780frame *mcf = (struct mc780frame *)cmcf;
+		register int sbifs;
+		printf("\tcpues %x upc %x va/viba %x dreg %x tber %x %x\n",
+		   mcf->mc8_cpues, mcf->mc8_upc, mcf->mc8_vaviba,
+		   mcf->mc8_dreg, mcf->mc8_tber0, mcf->mc8_tber1);
+		sbifs = mfpr(SBIFS);
+		printf("\ttimo %x parity %x sbier %x pc %x psl %x sbifs %x\n",
+		   mcf->mc8_timo*4, mcf->mc8_parity, mcf->mc8_sbier,
+		   mcf->mc8_pc, mcf->mc8_psl, sbifs);
+		/* THE FUNNY BITS IN THE FOLLOWING ARE FROM THE ``BLACK */
+		/* BOOK AND SHOULD BE PUT IN AN ``sbi.h'' */
+		mtpr(SBIFS, sbifs &~ 0x2000000);
+		mtpr(SBIER, mfpr(SBIER) | 0x70c0);
+		break;
+	}
+#endif
+#if VAX750
+	case VAX_750: {
+		register struct mc750frame *mcf = (struct mc750frame *)cmcf;
+		printf("\tva %x errpc %x mdr %x smr %x tbgpar %x cacherr %x\n",
+		    mcf->mc5_va, mcf->mc5_errpc, mcf->mc5_mdr, mcf->mc5_svmode,
+		    mcf->mc5_rdtimo, mcf->mc5_tbgpar, mcf->mc5_cacherr);
+		printf("\tbuserr %x mcesr %x pc %x psl %x mcsr %x\n",
+		    mcf->mc5_buserr, mcf->mc5_mcesr, mcf->mc5_pc, mcf->mc5_psl,
+		    mfpr(MCSR));
+		mtpr(MCESR, 0xf);
+		break;
+		}
+#endif
+	}
 	panic("mchk");
 }
 #endif
