@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.9 (Berkeley) %G%
+#	@(#)Makefile	5.10 (Berkeley) %G%
 
 NOOBJ=	oobj
 
@@ -31,8 +31,8 @@ distribution:
 	    mv master.passwd.pag passwd.pag; \
 	    mv master.passwd.dir passwd.dir; \
 	    mv master.passwd.orig passwd)
-	install -c -o ${BINOWN} -g ${BINGRP} -m 555 etc.${MACHINE}/MAKEDEV \
-	    ${DESTDIR}/dev
+	install -c -o ${BINOWN} -g ${BINGRP} -m 555 \
+	     MAKEDEV.local etc.${MACHINE}/MAKEDEV ${DESTDIR}/dev
 	(cd root; \
 		install -c -o root -g wheel -m 644 dot.cshrc \
 		    ${DESTDIR}/root/.cshrc; \
