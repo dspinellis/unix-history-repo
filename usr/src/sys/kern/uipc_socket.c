@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.47	82/08/14	*/
+/*	uipc_socket.c	4.48	82/08/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -121,7 +121,6 @@ soclose(so, exiting)
 	int exiting;
 {
 	int s = splnet();		/* conservative */
-	register struct socket *so2;
 
 	if (so->so_options & SO_ACCEPTCONN) {
 		while (so->so_q0 != so)
@@ -252,16 +251,17 @@ bad:
  * If must go all at once and not enough room now, then
  * inform user that this would block and do nothing.
  */
-sosend(so, asa)
+sosend(so, asa, uio)
 	register struct socket *so;
 	struct sockaddr *asa;
+	struct uio *uio;
 {
 	struct mbuf *top = 0;
 	register struct mbuf *m, **mp = &top;
 	register u_int len;
 	int error = 0, space, s;
 
-	if (sosendallatonce(so) && u.u_count > so->so_snd.sb_hiwat)
+	if (sosendallatonce(so) && uio->uio_resid > so->so_snd.sb_hiwat)
 		return (EMSGSIZE);
 #ifdef notdef
 	/* NEED TO PREVENT BUSY WAITING IN SELECT FOR WRITING */
@@ -299,12 +299,12 @@ again:
 		}
 		mp = &top;
 	}
-	if (u.u_count == 0) {
+	if (uio->uio_resid == 0) {
 		splx(s);
 		goto release;
 	}
 	space = sbspace(&so->so_snd);
-	if (space <= 0 || sosendallatonce(so) && space < u.u_count) {
+	if (space <= 0 || sosendallatonce(so) && space < uio->uio_resid) {
 		if (so->so_state & SS_NBIO)
 			snderr(EWOULDBLOCK);
 		sbunlock(&so->so_snd);
@@ -313,13 +313,22 @@ again:
 		goto restart;
 	}
 	splx(s);
-	while (u.u_count && space > 0) {
+	while (uio->uio_resid > 0 && space > 0) {
+		register struct iovec *iov = uio->uio_iov;
+
+		if (iov->iov_len == 0) {
+			uio->uio_iov++;
+			uio->uio_iovcnt--;
+			if (uio->uio_iovcnt < 0)
+				panic("sosend");
+			continue;
+		}
 		MGET(m, 1);
 		if (m == NULL) {
 			error = ENOBUFS;			/* SIGPIPE? */
 			goto release;
 		}
-		if (u.u_count >= CLBYTES && space >= CLBYTES) {
+		if (iov->iov_len >= CLBYTES && space >= CLBYTES) {
 			register struct mbuf *p;
 			MCLGET(p, 1);
 			if (p == 0)
@@ -329,9 +338,9 @@ again:
 		} else {
 nopages:
 			m->m_off = MMINOFF;
-			len = MIN(MLEN, u.u_count);
+			len = MIN(MLEN, iov->iov_len);
 		}
-		iomove(mtod(m, caddr_t), len, B_WRITE);
+		uiomove(mtod(m, caddr_t), len, UIO_WRITE, uio);
 		m->m_len = len;
 		*mp = m;
 		mp = &m->m_next;
@@ -354,8 +363,7 @@ soreceive(so, asa, uio)
 	register struct iovec *iov;
 	register struct mbuf *m, *n;
 	u_int len;
-	int eor, s, error = 0, resid = uio->uio_resid;
-	int cnt;
+	int eor, s, error = 0;
 
 restart:
 	sblock(&so->so_rcv);
@@ -400,17 +408,16 @@ restart:
 	}
 	eor = 0;
 	do {
-		if (uio->uio_iovcnt == 0)
+		if (uio->uio_resid <= 0)
 			break;
-		iov = uio->uio_iov;
-		len = iov->iov_len;
+		len = uio->uio_resid;
 		so->so_state &= ~SS_RCVATMARK;
 		if (so->so_oobmark && len > so->so_oobmark)
 			len = so->so_oobmark;
 		if (len > m->m_len)
 			len = m->m_len;
 		splx(s);
-		uiomove(mtod(m, caddr_t), len, UIO_WRITETO, uio);
+		uiomove(mtod(m, caddr_t), (int)len, UIO_READ, uio);
 		s = splnet();
 		if (len == m->m_len) {
 			eor = (int)m->m_act;
