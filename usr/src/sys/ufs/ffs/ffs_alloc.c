@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_alloc.c	8.6 (Berkeley) %G%
+ *	@(#)ffs_alloc.c	8.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -349,9 +349,13 @@ ffs_reallocblks(ap)
 	/*
 	 * If the block range spans two block maps, get the second map.
 	 */
-	if (end_lvl == 0 || (idp = &end_ap[end_lvl - 1])->in_off >= len) {
+	if (end_lvl == 0 || (idp = &end_ap[end_lvl - 1])->in_off + 1 >= len) {
 		ssize = len;
 	} else {
+#ifdef DIAGNOSTIC
+		if (start_ap[start_lvl-1].in_lbn == idp->in_lbn)
+			panic("ffs_reallocblk: start == end");
+#endif
 		ssize = len - (idp->in_off + 1);
 		if (bread(vp, idp->in_lbn, (int)fs->fs_bsize, NOCRED, &ebp))
 			goto fail;
