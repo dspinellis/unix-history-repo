@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)kern_malloc.c	7.6 (Berkeley) %G%
+ *	@(#)kern_malloc.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -31,7 +31,8 @@ long wantkmemmap;
 /*
  * Allocate a block of memory
  */
-qaddr_t malloc(size, type, flags)
+qaddr_t
+malloc(size, type, flags)
 	unsigned long size;
 	long type, flags;
 {
@@ -136,7 +137,8 @@ out:
 /*
  * Free a block of memory allocated by malloc.
  */
-void free(addr, type)
+void
+free(addr, type)
 	caddr_t addr;
 	long type;
 {
@@ -148,6 +150,7 @@ void free(addr, type)
 #endif
 
 	kup = btokup(addr);
+	kbp = &bucket[kup->ku_indx];
 	s = splimp();
 	if (1 << kup->ku_indx > MAXALLOCSAVE) {
 		alloc = btokmemx(addr);
@@ -164,11 +167,11 @@ void free(addr, type)
 		if (ksp->ks_inuse == ksp->ks_limit)
 			wakeup((caddr_t)ksp);
 		ksp->ks_inuse--;
+		kbp->kb_total -= 1;
 #endif
 		splx(s);
 		return;
 	}
-	kbp = &bucket[kup->ku_indx];
 #ifdef KMEMSTATS
 	kup->ku_freecnt++;
 	if (kup->ku_freecnt >= kbp->kb_elmpercl)
@@ -193,6 +196,7 @@ void free(addr, type)
 kmeminit()
 {
 	register long indx;
+	int npg;
 
 	if (!powerof2(MAXALLOCSAVE))
 		panic("kmeminit: MAXALLOCSAVE not power of 2");
@@ -200,8 +204,8 @@ kmeminit()
 		panic("kmeminit: MAXALLOCSAVE too big");
 	if (MAXALLOCSAVE < CLBYTES)
 		panic("kmeminit: MAXALLOCSAVE too small");
-	rminit(kmemmap, ekmempt - kmempt, (long)CLSIZE,
-		"malloc map", ekmempt - kmempt);
+	npg = ekmempt - kmempt;
+	rminit(kmemmap, npg, (long)CLSIZE, "malloc map", npg);
 #ifdef KMEMSTATS
 	for (indx = 0; indx < MINBUCKET + 16; indx++) {
 		if (1 << indx >= CLBYTES)
@@ -211,7 +215,6 @@ kmeminit()
 		bucket[indx].kb_highwat = 5 * bucket[indx].kb_elmpercl;
 	}
 	for (indx = 0; indx < M_LAST; indx++)
-		kmemstats[indx].ks_limit =
-			(ekmempt - kmempt) * CLBYTES * 9 / 10;
+		kmemstats[indx].ks_limit = npg * CLBYTES * 8 / 10;
 #endif
 }
