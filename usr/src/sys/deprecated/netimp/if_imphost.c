@@ -1,16 +1,21 @@
-/*	if_imphost.c	4.16	82/12/14	*/
+/*	if_imphost.c	4.17	83/02/23	*/
 
 #include "imp.h"
 #if NIMP > 0
 /*
  * Host table manipulation routines.
  * Only needed when shipping stuff through an IMP.
+ *
+ * Everything in here is called at splimp from
+ * from the IMP protocol code (if_imp.c), or
+ * interlocks with the code at splimp.
  */
-
 #include "../h/param.h"
 #include "../h/mbuf.h"
+
 #include "../netinet/in.h"
 #include "../netinet/in_systm.h"
+
 #include "../netimp/if_imp.h"
 #include "../netimp/if_imphost.h"
 
@@ -30,19 +35,15 @@ hostlookup(addr)
 	register struct host *hp;
 	register struct mbuf *m;
 	register int hash = HOSTHASH(addr);
-	int s = splnet();
 
 	for (m = hosts; m; m = m->m_next) {
 		hp = &mtod(m, struct hmbuf *)->hm_hosts[hash];
 	        if (hp->h_addr.s_addr == addr.s_addr) {
 			hp->h_flags |= HF_INUSE;
-			goto found;
+			return (hp);
 		}
 	}
-	hp = 0;
-found:
-	splx(s);
-	return (hp);
+	return ((struct host *)0);
 }
 
 /*
@@ -57,7 +58,6 @@ hostenter(addr)
 	register struct mbuf *m, **mprev;
 	register struct host *hp, *hp0 = 0;
 	register int hash = HOSTHASH(addr);
-	int s = splnet();
 
 	mprev = &hosts;
 	while (m = *mprev) {
@@ -81,10 +81,8 @@ hostenter(addr)
 	 */
 	if (hp0 == 0) {
 		m = m_getclr(M_DONTWAIT, MT_HTABLE);
-		if (m == 0) {
-			splx(s);
-			return (0);
-		}
+		if (m == NULL)
+			return ((struct host *)0);
 		*mprev = m;
 		hp0 = &mtod(m, struct hmbuf *)->hm_hosts[hash];
 	}
@@ -96,7 +94,6 @@ hostenter(addr)
 
 foundhost:
 	hp->h_flags |= HF_INUSE;
-	splx(s);
 	return (hp);
 }
 
@@ -107,12 +104,10 @@ foundhost:
 hostfree(hp)                               
 	register struct host *hp;
 {
-	int s = splnet();
 
 	hp->h_flags &= ~HF_INUSE;
 	hp->h_timer = HOSTTIMER;
 	hp->h_rfnm = 0;
-	splx(s);
 }
 
 /*
@@ -124,7 +119,6 @@ hostreset(net)
 	register struct mbuf *m;
 	register struct host *hp, *lp;
 	struct hmbuf *hm;
-	int s = splnet();
 
 	for (m = hosts; m; m = m->m_next) {
 		hm = mtod(m, struct hmbuf *);
@@ -138,13 +132,11 @@ hostreset(net)
 			hp++;
 		}
 	}
-	splx(s);
 }
 
 /*
  * Remove a host structure and release
  * any resources it's accumulated.
- * This routine is always called at splnet.
  */
 hostrelease(hp)
 	register struct host *hp;
@@ -204,7 +196,7 @@ hostslowtimo()
 	register struct mbuf *m;
 	register struct host *hp, *lp;
 	struct hmbuf *hm;
-	int s = splnet();
+	int s = splimp();
 
 	for (m = hosts; m; m = m->m_next) {
 		hm = mtod(m, struct hmbuf *);
@@ -217,5 +209,5 @@ hostslowtimo()
 				hostrelease(hp);
 		}
 	}
-	splx(s);
+	splimp(s);
 }
