@@ -1,17 +1,25 @@
-.\"	@(#)t1	5.1 (Berkeley) %G%
+.\"	@(#)t1	6.1 (Berkeley) %G%
 .\"
-.RP
+.EH 'USD:3-%''An Introduction to the UNIX Shell'
+.OH 'An Introduction to the UNIX Shell''USD:3-%'
+.\".RP
 .TL 
 An Introduction to the UNIX Shell
 .AU
 S. R. Bourne
 .AI
 .MH
+.AU
+(Updated for 4.3BSD by Mark Seiden)
 .AB
 .LP
 The
 .ul
-shell
+shell\(dd
+.FS 
+\(dd This paper describes sh(1). If it's the c shell (csh) you're interested in, 
+a good place to begin is William Joy's paper "An Introduction to the C shell" (USD:4).
+.FE
 is a command programming language that provides an interface
 to the
 .UX
