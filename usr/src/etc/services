@@ -1,7 +1,7 @@
 #
 # Network services, Internet style
 #
-#	@(#)services	5.2 (Berkeley) %G%
+#	@(#)services	5.3 (Berkeley) %G%
 #
 echo		7/tcp
 echo		7/udp
@@ -63,3 +63,14 @@ uucp		540/tcp		uucpd		# uucp daemon
 remotefs	556/tcp		rfs_server rfs	# Brunhoff remote filesystem
 
 ingreslock	1524/tcp
+#
+# Kerberos (Project Athena/MIT) services
+#
+kerberos	750/udp		kdc	# Kerberos (server) udp -kfall
+kerberos	750/tcp		kdc	# Kerberos (server) tcp -kfall
+krbupdate	760/tcp		kreg	# Kerberos registration -kfall
+kpasswd		761/tcp		kpwd	# Kerberos "passwd" -kfall
+klogin		543/tcp			# Kerberos rlogin -kfall
+eklogin		2105/tcp		# Kerberos encrypted rlogin -kfall
+kshell		544/tcp		krcmd	# Kerberos remote shell -kfall
+ekshell		545/tcp		krcmd	# Kerberos encrypted remote shell -kfall
