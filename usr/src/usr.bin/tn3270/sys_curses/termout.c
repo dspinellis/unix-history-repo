@@ -51,19 +51,19 @@ extern void EmptyTerminal();
 		terminalCursorAddress:UnLocked? CursorAddress: HighestScreen())
 
 
-static int terminalCursorAddress = 0;	/* where the cursor is on term */
-static int screenInitd = 0; 		/* the screen has been initialized */
-static int screenStopped = 1;		/* the screen has been stopped */
+static int terminalCursorAddress;	/* where the cursor is on term */
+static int screenInitd; 		/* the screen has been initialized */
+static int screenStopped;		/* the screen has been stopped */
 #if	defined(SLOWSCREEN)
 static int max_changes_before_poll;	/* how many characters before looking */
 					/* at terminal and net again */
 #endif	/* defined(SLOWSCREEN) */
 
-static int needToRing = 0;		/* need to ring terinal bell */
+static int needToRing;			/* need to ring terinal bell */
 static char *bellSequence = "\07";	/* bell sequence (may be replaced by
 					 * VB during initialization)
 					 */
-static WINDOW *bellwin;			/* The window the bell message is in */
+static WINDOW *bellwin = 0;		/* The window the bell message is in */
 int	bellwinup = 0;			/* Are we up with it or not */
 
 #if	defined(unix)
@@ -572,10 +572,10 @@ void
 #endif	/* defined(NOT43) */
 	(*TryToSend)() = FastScreen;
 
-/* StartScreen - called to initialize the screen, etc. */
+/* InitTerminal - called to initialize the screen, etc. */
 
 void
-StartScreen()
+InitTerminal()
 {
 #if defined(unix)
     struct sgttyb ourttyb;
@@ -583,6 +583,7 @@ StartScreen()
 		2400, 4800, 9600 };
 #endif
     
+    InitMapping();		/* Go do mapping file (MAP3270) first */
     if (!screenInitd) { 	/* not initialized */
 #if	defined(unix)
 	char KSEbuffer[2050];
@@ -591,26 +592,10 @@ StartScreen()
 	extern char *tgetstr();
 #endif	/* defined(unix) */
 
-	bzero((char *)Host, sizeof Host);
-
-	bzero(Orders, sizeof Orders);
-	Orders[ORDER_SF] = Orders[ORDER_SBA] = Orders[ORDER_IC]
-		= Orders[ORDER_PT] = Orders[ORDER_RA] = Orders[ORDER_EUA]
-		= Orders[ORDER_YALE] = 1;
-
-	DeleteAllFields();
 #if	defined(SLOWSCREEN)
 	bzero((char *)Terminal, sizeof Terminal);
 #endif	/* defined(SLOWSCREEN) */
-	Lowest = HighestScreen()+1;
-	Highest = LowestScreen()-1;
-	terminalCursorAddress =
-		CursorAddress =
-		BufferAddress = SetBufferAddress(0,0);
-	UnLocked = 1;
-	Initialized = 1;
-	OutputClock = 1;
-	TransparentClock = -1;
+	terminalCursorAddress = SetBufferAddress(0,0);
 #if defined(unix)
 	signal(SIGHUP, abort);
 #endif
@@ -660,6 +645,7 @@ StartScreen()
 	screenInitd = 1;
 	screenStopped = 0;		/* Not stopped */
     }
+    Initialized = 1;
 }
 
 
