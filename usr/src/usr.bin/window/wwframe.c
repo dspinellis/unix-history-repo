@@ -1,230 +1,140 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwframe.c	2.1 83/07/30";
+static	char *sccsid = "@(#)wwframe.c	2.1.1.1 83/08/09";
 #endif
 
 #include "ww.h"
 
-#define TOP	0
-#define BOTTOM	1
-#define LEFT	2
-#define RIGHT	3
+char **wwfmap;
+#define U 1
+#define R 2
+#define D 4
+#define L 8
 
-wwframe(w)
-register struct ww *w;
+wwframe(w, wframe)
+register struct ww *w, *wframe;
 {
 	register i;
 	char noleft, noright, notop, nobot;
-	char ulc, top, urc, left, right, llc, bottom, lrc;
-	struct ww_dim oldsize;
-	Pos bstart;
 
-	oldsize = w->ww_w;
-	w->ww_w = w->ww_i = w->ww_o;
-
-	if (w->ww_o.col == 0)
-		noleft = 1;
-	else {
-		noleft = 0;
-		w->ww_i.ncol--;
-		w->ww_i.col++;
-	}
-	/*
-	if (w->ww_o.row == 0)
-		notop++;
-	else
-	*/
-	{
-		notop = 0;
-		w->ww_i.nrow--;
-		w->ww_i.row++;
-	}
-	if (w->ww_o.col + w->ww_o.ncol == wwncol) {
-		noright = 1;
-	/*
-	} else if (wwcheckframe(LEFT, w->ww_o.col + w->ww_o.ncol - 1,
-			w->ww_o.row, w->ww_o.row + w->ww_o.nrow - 1, wwhead)) {
-		noright = 1;
-		w->ww_w.ncol--;
-		w->ww_i.ncol--;
-	} else if (wwcheckframe(LEFT, w->ww_o.col + w->ww_o.ncol,
-			w->ww_o.row, w->ww_o.row + w->ww_o.nrow - 1, wwhead)) {
-		XXXXX
-		w->ww_w.ncol--;
-	*/
-	} else {
-		noright = 0;
-		w->ww_i.ncol--;
-	}
-	if (w->ww_o.row + w->ww_o.nrow == wwnrow) {
-		nobot = 1;
-	} else if (wwcheckframe(TOP, w->ww_o.row + w->ww_o.nrow - 1,
-			w->ww_o.col, w->ww_o.col + w->ww_o.ncol - 1, wwhead)) {
-		nobot = 1;
-		w->ww_w.nrow--;
-		w->ww_i.nrow--;
-	/*
-	} else if (wwcheckframe(TOP, w->ww_o.row + w->ww_o.nrow,
-			w->ww_o.col, w->ww_o.col + w->ww_o.ncol - 1, wwhead)) {
-		XXXXX
-		ww->ww_i.nrow--;
-	*/
-	} else {
-		nobot = 0;
-		w->ww_i.nrow--;
-	}
-
-	if (oldsize.nrow != w->ww_w.nrow || oldsize.ncol != w->ww_w.ncol) {
-		bstart = w->ww_win->w_bstart;
-		if (Wsize(w->ww_win, w->ww_w.ncol, w->ww_w.nrow) != 0) {
-			wwprintf(w, "wwframe: Wsize(%d, %d) failed.\r\n",
-				w->ww_w.ncol, w->ww_w.nrow);
-			return -1;
-		}
-		w->ww_win->w_bstart = bstart;
-	}
-	Wsetmargins(w->ww_win, noleft ? 0 : 1, notop ? 0 : 1,
-		w->ww_i.ncol, w->ww_i.nrow);
-	/* scroll to the old position */
-
-	Wgetframe(&ulc, &top, &urc, &left, &right, &llc, &bottom, &lrc);
+	if (wwfmap == 0
+	    && (wwfmap = wwalloc(wwnrow, wwncol, sizeof (char))) == 0)
+		return -1;
+	noleft = w->ww_w.l == 0;
+	noright = w->ww_w.r >= wwncol;
+	notop = w->ww_w.t == 0;
+	nobot = w->ww_w.b >= wwnrow;
 
 	if (!notop) {
-		Wauxcursor(w->ww_win, 0, 0);
-		if (noleft)
-			Waputc(top, 0, w->ww_win);
-		else
-			Waputc(ulc, 0, w->ww_win);
-		for (i = w->ww_o.ncol - 2; i > 0; i--)
-			Waputc(top, 0, w->ww_win);
-		if (noright)
-			Waputc(top, 0, w->ww_win);
-		else
-			Waputc(urc, 0, w->ww_win);
+		for (i = w->ww_w.l; i < w->ww_w.r; i++)
+			wwframex(w, w->ww_w.t, i, wframe);
 	}
 
 	if (!nobot) {
-		Wauxcursor(w->ww_win, w->ww_o.nrow - 1, 0);
-		if (noleft)
-			Waputc(bottom, 0, w->ww_win);
-		else
-			Waputc(llc, 0, w->ww_win);
-		for (i = w->ww_o.ncol - 2; i > 0; i--)
-			Waputc(bottom, 0, w->ww_win);
-		if (noright)
-			Waputc(bottom, 0, w->ww_win);
-		else
-			Waputc(lrc, 0, w->ww_win);
+		for (i = w->ww_w.l; i < w->ww_w.r; i++)
+			wwframex(w, w->ww_w.b - 1, i, wframe);
 	}
 
 	if (!noleft) {
-		Wauxcursor(w->ww_win, 0, 0);
-		if (notop)
-			Waputc(left, 0, w->ww_win);
-		else
-			Waputc(ulc, 0, w->ww_win);
-		for (i = 1; i < w->ww_o.nrow - 1; i++) {
-			Wauxcursor(w->ww_win, i, 0);
-			Waputc(left, 0, w->ww_win);
-		}
-		Wauxcursor(w->ww_win, w->ww_o.nrow - 1, 0);
-		if (nobot)
-			Waputc(left, 0, w->ww_win);
-		else
-			Waputc(llc, 0, w->ww_win);
+		for (i = w->ww_w.t; i < w->ww_w.b; i++)
+			wwframex(w, i, w->ww_w.l, wframe);
 	}
 
 	if (!noright) {
-		Wauxcursor(w->ww_win, 0, w->ww_o.ncol - 1);
-		if (notop)
-			Waputc(right, 0, w->ww_win);
-		else
-			Waputc(urc, 0, w->ww_win);
-		for (i = 1; i < w->ww_o.nrow - 1; i++) {
-			Wauxcursor(w->ww_win, i, w->ww_o.ncol - 1);
-			Waputc(left, 0, w->ww_win);
-		}
-		Wauxcursor(w->ww_win, w->ww_o.nrow - 1, w->ww_o.ncol - 1);
-		if (nobot)
-			Waputc(right, 0, w->ww_win);
-		else
-			Waputc(lrc, 0, w->ww_win);
+		for (i = w->ww_w.t; i < w->ww_w.b; i++)
+			wwframex(w, i, w->ww_w.r - 1, wframe);
 	}
-
-	return 0;
 }
 
-wwcheckframe(flag, x, a, b, w)
+wwframex(w, r, c, wframe)
+register struct ww *w, *wframe;
+register r, c;
+{
+	char ul, top, ur, right, lr, bottom, ll, left;
+
+	if (w->ww_index != wwsmap[r][c])
+		return;
+	ul = wwframeok(w, r - 1, c - 1);
+	top = wwframeok(w, r - 1, c);
+	ur = wwframeok(w, r - 1, c + 1);
+	right = wwframeok(w, r, c + 1);
+	lr = wwframeok(w, r + 1, c + 1);
+	bottom = wwframeok(w, r + 1, c);
+	ll = wwframeok(w, r + 1, c - 1);
+	left = wwframeok(w, r, c - 1);
+	if (top && ul) {
+		wwframec(r - 1, c - 1, wframe, R);
+		wwframec(r - 1, c, wframe, L);
+	}
+	if (top && ur) {
+		wwframec(r - 1, c, wframe, R);
+		wwframec(r - 1, c + 1, wframe, L);
+	}
+	if (right && ur) {
+		wwframec(r - 1, c + 1, wframe, D);
+		wwframec(r, c + 1, wframe, U);
+	}
+	if (right && lr) {
+		wwframec(r, c + 1, wframe, D);
+		wwframec(r + 1, c + 1, wframe, U);
+	}
+	if (bottom && lr) {
+		wwframec(r + 1, c + 1, wframe, L);
+		wwframec(r + 1, c, wframe, R);
+	}
+	if (bottom && ll) {
+		wwframec(r + 1, c, wframe, L);
+		wwframec(r + 1, c - 1, wframe, R);
+	}
+	if (left && ll) {
+		wwframec(r + 1, c - 1, wframe, U);
+		wwframec(r, c - 1, wframe, D);
+	}
+	if (left && ul) {
+		wwframec(r, c - 1, wframe, U);
+		wwframec(r - 1, c - 1, wframe, D);
+	}
+}
+
+wwframeok(w, r, c)
 register struct ww *w;
 {
-	int xx, aa, bb;
+	register struct ww *w1;
 
-	if (a >= b)
+	if (r < 0 || r >= wwnrow || c < 0 || c >= wwncol)
 		return 1;
-	for (; w; w = w->ww_next) {
-		switch (flag) {
-		case TOP:
-			xx = w->ww_o.row;
-			aa = w->ww_o.col;
-			bb = w->ww_o.col + w->ww_o.ncol - 1;
-			break;
-		case BOTTOM:
-			xx = w->ww_o.row + w->ww_o.nrow - 1;
-			aa = w->ww_o.col;
-			bb = w->ww_o.col + w->ww_o.ncol - 1;
-			break;
-		case LEFT:
-			xx = w->ww_o.col;
-			aa = w->ww_o.row;
-			bb = w->ww_o.row + w->ww_o.nrow - 1;
-			break;
-		case RIGHT:
-			xx = w->ww_o.col + w->ww_o.ncol - 1;
-			aa = w->ww_o.row;
-			bb = w->ww_o.row + w->ww_o.nrow - 1;
-			break;
-		}
-		if (xx != x || aa > b || bb < a)
-			continue;
-		return wwcheckframe(flag, x, a, aa, w->ww_next)
-			&& wwcheckframe(flag, x, bb, b, w->ww_next);
-	}
-	return 0;
+	w1 = wwindex[wwsmap[r][c]];
+	if (w1->ww_hasframe && w1->ww_order <= w->ww_order)
+		return 0;
+	return 1;
 }
 
-wwunframe(w)
-register struct ww *w;
+wwframec(rr, cc, f, code)
+register struct ww *f;
+register rr, cc;
 {
-	char hasbot, hastop, hasright, hasleft;
-	register i;
+	register struct ww *w2;
+	register r, c;
 
-	hastop = w->ww_o.row < w->ww_i.row;
-	hasbot = w->ww_o.row + w->ww_o.nrow > w->ww_i.row + w->ww_i.nrow;
-	hasleft = w->ww_o.col < w->ww_i.col;
-	hasright = w->ww_o.col + w->ww_o.ncol > w->ww_i.col + w->ww_i.ncol;
-
-	if (hastop) {
-		Wauxcursor(w->ww_win, 0, 0);
-		for (i = 0; i < w->ww_o.ncol; i++)
-			Waputc(' ', WBUF, w->ww_win);
-	}
-	if (hasbot) {
-		Wauxcursor(w->ww_win, w->ww_o.nrow - 1, 0);
-		for (i = 0; i < w->ww_o.ncol; i++)
-			Waputc(' ', WBUF, w->ww_win);
-	}
-	if (hasleft)
-		for (i = 0; i < w->ww_o.nrow; i++) {
-			Wauxcursor(w->ww_win, i, 0);
-			Waputc(' ', WBUF, w->ww_win);
+	if (rr < 0 || rr >= wwnrow || cc < 0 || cc >= wwncol)
+		return;
+	w2 = wwindex[wwsmap[rr][cc]];
+	if (w2->ww_order > f->ww_order) {
+		if (w2 != &wwnobody) {
+			r = rr - w2->ww_w.t;
+			c = cc - w2->ww_w.l;
+			if ((w2->ww_win[r][c] |= WWM_COV) == WWM_COV)
+				w2->ww_nvis[r]--;
+			w2->ww_cov[r][c] = f->ww_index;
 		}
-	if (hasright)
-		for (i = 0; i < w->ww_o.nrow; i++) {
-			Wauxcursor(w->ww_win, i, w->ww_o.ncol - 1);
-			Waputc(' ', WBUF, w->ww_win);
-		}
-	w->ww_i.row = w->ww_o.row;
-	w->ww_i.nrow = w->ww_o.nrow;
-	w->ww_i.col = w->ww_o.col;
-	w->ww_i.ncol = w->ww_o.ncol;
-	Wsetmargins(w->ww_win, 0, 0, w->ww_o.ncol, w->ww_o.nrow);
+		wwsmap[rr][cc] = f->ww_index;
+	}
+	code = wwfmap[rr][cc] |= code;
+	r = rr - f->ww_w.t;
+	c = cc - f->ww_w.l;
+	if (f->ww_win[r][c] == WWM_GLS)
+		f->ww_nvis[r]++;
+	f->ww_win[r][c] &= ~WWM_GLS;
+	f->ww_buf[f->ww_scroll + r][c].c_w = tt.tt_frame[code] & WWC_CMASK;
+	if (wwsmap[rr][cc] == f->ww_index)
+		wwns[rr][cc].c_w = tt.tt_frame[code] & WWC_CMASK;
 }

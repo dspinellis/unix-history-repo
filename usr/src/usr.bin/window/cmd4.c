@@ -1,25 +1,27 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd4.c	2.1 83/07/30";
+static	char *sccsid = "@(#)cmd4.c	2.1.1.1 83/08/09";
 #endif
 
 #include "defs.h"
 
-struct ww *getwin();
-struct ww *openwin();
-char *strtime();
-
-doshow()
+c_show()
 {
 	register i;
 	register struct ww *w = 0;
 	char done_it = 0;
 
-	for (i = 1; i < 10; i++) {
-		if ((w = wwfind(i)) == 0)
+	for (i = 0; i < NWINDOW; i++) {
+		if ((w = window[i]) == 0)
 			continue;
 		done_it++;
-		wwsetcurwin(w);
-		wwsetcursor(w->ww_o.row, w->ww_o.col + 1);
+		if (!terse && cmdwin->ww_order < framewin->ww_order) {
+			wwdelete(cmdwin);
+			wwadd(cmdwin, framewin);
+		}
+		wwdelete(w);
+		wwadd(w, framewin);
+		reframe();
+		wwsetcursor(w->ww_w.t - 1, w->ww_w.l + 2);
 		for (;;) {
 			switch (bgetc()) {
 			case '\r':
@@ -32,12 +34,12 @@ doshow()
 				bread();
 				continue;
 			default:
-				if (terse)
-					Ding();
-				else
-					wwputs("\rType return to continue, escape to select.", cmdwin);
-				wwsetcurwin(cmdwin);
-				Ding();
+				wwbell();
+				if (!terse) {
+					(void) wwputs("\rType return to continue, escape to select.", cmdwin);
+					wwdelete(cmdwin);
+					wwadd(cmdwin, &wwhead);
+				}
 				continue;
 			}
 			break;
@@ -45,27 +47,26 @@ doshow()
 	}
 out:
 	if (!done_it) {
-		if (terse)
-			Ding();
-		else
-			wwputs("No windows.  ", cmdwin);
+		error("No windows.");
 	} else {
-		wwsetcurwin(cmdwin);
-		if (!terse)
-			wwputs("\r\n", cmdwin);
+		if (!terse) {
+			wwdelete(cmdwin);
+			wwadd(cmdwin, &wwhead);
+			(void) wwputs("\r\n", cmdwin);
+		}
 	}
 }
 
-docolon()
+c_colon()
 {
 	char buf[512];
 
 	if (terse)
-		Wunhide(cmdwin->ww_win);
-	wwputc(':', cmdwin);
+		wwadd(cmdwin, &wwhead);
+	(void) wwputc(':', cmdwin);
 	bgets(buf, wwncol - 3, cmdwin);
-	wwputs("\r\n", cmdwin);
+	(void) wwputs("\r\n", cmdwin);
 	if (terse)
-		Whide(cmdwin->ww_win);
+		wwdelete(cmdwin);
 	dolongcmd(buf);
 }
