@@ -1,12 +1,15 @@
-.\"	@(#)find.1	5.1 (Berkeley) %G%
+.\"	@(#)find.1	6.1 (Berkeley) %G%
 .\"
-.TH FIND 1  "18 January 1983"
+.TH FIND 1 ""
 .AT 3
 .SH NAME
 find \- find files
 .SH SYNOPSIS
 .B find
 pathname-list  expression
+.br 
+.B find
+name
 .SH DESCRIPTION
 .I Find
 recursively descends
@@ -31,6 +34,20 @@ and
 .I n
 means exactly
 .IR n .
+.PP
+The second simplified form will list all files on the system
+whose pathname contains
+.I name.
+This is similar to
+.sp
+.ti
+find / -mtime +0 -name "*<name>*" -print
+.sp
+but much faster.
+As with
+.B -name
+below, shell syntax may be used for
+.I name.
 .TP 10n
 .BR \-name " filename"
 True if the
@@ -65,12 +82,12 @@ is
 where
 .I c
 is
-.B "b, c, d, f"
+.B "b, c, d, f, l"
 or
-.B l
+.B s
 for
 block special file, character special file,
-directory, plain file, or symbolic link.
+directory, plain file, symbolic link, or socket.
 .TP
 .BR \-links " n"
 True if the file has
@@ -156,17 +173,26 @@ Alternation of primaries
 .RB "(`" \-o "' is the"
 .I or
 operator).
-.SH EXAMPLE
+.SH EXAMPLES
+.PP
+To typeset all variants of manual pages for 'ls':
+.IP 
+vtroff -man `find '*man*/ls.?'`
+.PP
 To remove all files named
 `a.out' or `*.o' that have not been accessed for a week:
 .IP "" .2i
-find / \\( \-name a.out \-o \-name '*.o' \\)
-\-atime +7 \-exec rm {} \\;
+find / \\( \-name a.out \-o \-name '*.o' \\) \-atime +7 \-exec rm {} \\;
 .SH FILES
 /etc/passwd
 .br
 /etc/group
+.br
+/usr/lib/find/find.codes	coded filenames
 .SH "SEE ALSO"
 sh(1), test(1), fs(5)
+.br
+Relevant paper in February, 1983 issue of
+.I ;login:.
 .SH BUGS
-The syntax is painful.
+The syntax (except for the second form), is painful.
