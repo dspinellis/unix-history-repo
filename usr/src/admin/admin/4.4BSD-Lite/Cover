@@ -1,6 +1,9 @@
-.\"	@(#)Cover	1.2 (Berkeley) %G%
+.\"	@(#)Cover	1.3 (Berkeley) %G%
 .\" use -ms
 .\"
+.EQ
+delim ##
+.EN
 .so HEADERS
 .FH
 .sp .75i
@@ -22,9 +25,9 @@ and others, but may be freely redistributed without fee.
 It is available to anyone and requires no previous license
 from AT&T, Novell/USL, or The Regents of the University of California.
 The distribution includes both software developed at Berkeley
-and much software contributed by authors outside of Berkeley.
+and much software contributed by authors outside Berkeley.
 The code in this distribution may be redistributed and used
-in released products without fee, provided that the due credit
+in released products without fee, if the due credit
 requirements described in the license and the source files are met.
 .PP
 This packet is intended to serve two purposes.
@@ -45,9 +48,10 @@ and most of the kernel (the same subsystems that were deleted in Net/2
 are still missing in 4.4BSD-Lite \(em support for executing files,
 doing physical I/O, managing the buffer cache,
 handling process tracing, terminal character I/O, and doing accounting).
-Because of the CSRG will be closing down after this release,
+Because the Computer Systems Research Group has shut down
+(other than a brief reunion to put together this release),
 there will not be anyone available at Berkeley to assist with problems,
-so sites are encouraged to ensure sufficient local expertise to
+so sites are encouraged to ensure enough local expertise to
 find and fix any problems that are encountered.
 .PP
 We have attempted to make the system as compliant with the ANSI C and
@@ -97,7 +101,7 @@ a new virtual filesystem interface supporting filesystem stacking,
 a freely redistributable implementation of NFS,
 a log-structured filesystem,
 enhancement of the local filesystems to support
-files and filesystems that are up to 2^63 bytes in size,
+files and filesystems that are up to #2 sup 63# bytes in size,
 an ISO CDROM 9660 filesystem with Rockridge extensions,
 enhanced security and system management support,
 and the conversion to and addition of the IEEE Std1003.1 (``POSIX'')
@@ -183,7 +187,7 @@ clustering which allows large pieces of files to be
 allocated contiguously resulting in near doubling
 of filesystem throughput.
 The filesystem interface has been extended to allow
-files and filesystems to grow to 2^63 bytes in size.
+files and filesystems to grow to #2 sup 63# bytes in size.
 The quota system has been rewritten to support both
 user and group quotas (simultaneously if desired).
 Quota expiration is based on time rather than
@@ -340,7 +344,7 @@ it is for our use in notifying you of important bug fixes.
 Please note that we cannot ship to post office boxes;
 therefore, please have the technical contact's address
 supplied without use of a post office box.
-.PP
+.LP
 A checklist is included to aid you in assembling this material.
 All the above material must be sent to:
 .DS
