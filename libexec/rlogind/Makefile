@@ -7,10 +7,14 @@ DPADD=	${LIBUTIL}
 LDADD=	-lutil
 .PATH: ${.CURDIR}/../../usr.bin/rlogin
 
-.if exists(/usr/lib/libcrypt.a)
-#CFLAGS+=-DCRYPT -DKERBEROS
-DPADD+= ${LIBCRYPT} #${LIBKRB}
-LDADD+= -lcrypt #-lkrb
+.if exists(${LIBCRYPT})
+DPADD+= ${LIBCRYPT}
+LDADD+= -lcrypt
+.endif
+.if exists(${LIBKRB})
+CFLAGS+=	-DKERBEROS
+DPADD+= ${LIBKRB} ${LIBDES}
+LDADD+= -lkrb -ldes
 .endif
 
 .include <bsd.prog.mk>
