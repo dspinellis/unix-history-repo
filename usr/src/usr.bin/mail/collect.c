@@ -7,7 +7,7 @@
  * ~ escapes.
  */
 
-static char *SccsId = "@(#)collect.c	1.5 %G%";
+static char *SccsId = "@(#)collect.c	1.6 %G%";
 
 #include "rcv.h"
 #include <sys/stat.h>
@@ -44,6 +44,7 @@ collect(hp)
 	register int c, t;
 	char linebuf[LINESIZE], *cp;
 	extern char tempMail[];
+	int notify();
 
 	noreset++;
 	stopdot = (value("dot") != NOSTR) && intty;
@@ -370,6 +371,7 @@ eof:
 	rewind(ibuf);
 	sigset(SIGINT, savesig);
 	sigset(SIGHUP, savehup);
+	sigset(SIGCONT, savecont);
 	noreset = 0;
 	return(ibuf);
 
@@ -460,12 +462,13 @@ mesedit(ibuf, obuf, c)
 	int pid, s;
 	FILE *fbuf;
 	register int t;
-	int (*sig)();
+	int (*sig)(), (*scont)(), foonly();
 	struct stat sbuf;
 	extern char tempMail[], tempEdit[];
 	register char *edit;
 
 	sig = sigset(SIGINT, SIG_IGN);
+	scont = sigset(SIGCONT, foonly);
 	if (stat(tempEdit, &sbuf) >= 0) {
 		printf("%s: file exists\n", tempEdit);
 		goto out;
@@ -535,10 +538,18 @@ mesedit(ibuf, obuf, c)
 fix:
 	perror(tempEdit);
 out:
+	sigset(SIGCONT, scont);
 	sigset(SIGINT, sig);
 	newi = ibuf;
 	return(obuf);
 }
+
+/*
+ * Currently, Berkeley virtual VAX/UNIX will not let you change the
+ * disposition of SIGCONT, except to trap it somewhere new.
+ * Hence, sigset(SIGCONT, foonly) is used to ignore continue signals.
+ */
+foonly() {}
 
 /*
  * Pipe the message through the command.
@@ -736,13 +747,11 @@ collrub(s)
 	register FILE *dbuf;
 	register int c;
 
-	if (s == SIGINT)
-		sigset(SIGCONT, collrub);
 	if (s == SIGINT && hadintr == 0) {
 		hadintr++;
 		clrbuf(stdout);
 		printf("\n(Interrupt -- one more to kill letter)\n");
-		sigset(s, collrub);
+		sigrelse(s);
 		longjmp(coljmp, 1);
 	}
 	fclose(newo);
