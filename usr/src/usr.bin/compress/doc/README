@@ -1,5 +1,5 @@
 
-	@(#)README	5.3 (Berkeley) %G%
+	@(#)README	8.1 (Berkeley) %G%
 
 Compress version 4.0 improvements over 3.0:
 	o compress() speedup (10-50%) by changing division hash to xor
