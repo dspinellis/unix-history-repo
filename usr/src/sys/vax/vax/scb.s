@@ -1,4 +1,4 @@
-/*	scb.s	4.4	%G%	*/
+/*	scb.s	4.5	%G%	*/
 
 /*
  * System control block
@@ -7,7 +7,6 @@
 	.set	HALT,3		# halt if this interrupt occurs
 
 _scb:	.globl	_scb
-_Scbbase: .globl	_Scbbase
 
 #define	STRAY	.long	_Xstray+HALT
 #define	STRAY8	STRAY;STRAY;STRAY;STRAY;STRAY;STRAY;STRAY;STRAY
