@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	6.21 (Berkeley) %G%
+.\"	@(#)op.me	6.22 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,7 +40,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 6.21
+Version 6.22
 .sp
 For Sendmail Version 6.32
 .)l
@@ -738,7 +738,10 @@ This should be a link to /usr/\*(SD/sendmail.
 .sh 1 "NORMAL OPERATIONS"
 .sh 2 "``Quick'' Configuration Startup"
 .pp
-A precompiled (``frozen'') version of the configuration file
+if the
+.sm FROZENCONFIG
+option is included during compilation,
+a precompiled (``frozen'') version of the configuration file
 can be created using the
 .b \-bz
 flag.
@@ -3121,7 +3124,9 @@ i	Deliver interactively (synchronously)
 b	Deliver in background (asynchronously)
 q	Just queue the message (deliver during queue run)
 .)b
-Defaults to ``b''.
+Defaults to ``b'' if no option is specified,
+``i'' if it is specified but given no argument
+(i.e., ``Od'' is equivalent to ``Odi'').
 .ip D
 If set,
 rebuild the alias database if necessary and possible.
@@ -3272,6 +3277,8 @@ Set the macro
 to
 .i value .
 This is intended only for use from the command line.
+.ip n
+Validate the RHS of aliases when rebuilding the alias database.
 .ip o
 Assume that the headers may be in old format,
 i.e.,
@@ -3406,6 +3413,23 @@ Defaults to 1.
 The user database specification.
 .ip v
 Run in verbose mode.
+If this is set,
+.i sendmail
+adjusts options
+.b c
+(don't connect to expensive mailers)
+and
+.b d
+(delivery mode)
+so that all mail is delivered completely
+in a single job
+so that you can see the entire delivery process.
+Option
+.b v
+should
+.i never
+be set in the configuration file;
+it is intended for command line use only.
 .ip x\fILA\fP
 When the system load average exceeds
 .i LA ,
@@ -5763,7 +5787,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 6.21
+.\"Version 6.22
 .\".ce 0
 .pn 2
 .bp
