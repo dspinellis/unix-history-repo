@@ -1,8 +1,8 @@
-.\" Copyright (c) 1980 Regents of the University of California.
+.\" Copyright (c) 1980,1983 Regents of the University of California.
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)format.8	6.2 (Berkeley) %G%
+.\"	@(#)format.8	6.3 (Berkeley) %G%
 .\"
 .TH FORMAT 8V ""
 .UC 4
@@ -60,7 +60,7 @@ may be selected from one of: 0xf00f (RH750 worst case),
 Normally the media worst case pattern is used.
 .PP
 .I Format
-also has an option to perform an extended \*(lqsevere burnin,\*(rq
+also has an option to perform an extended \*(lqsevere burn-in,\*(rq
 which makes a number of passes using different patterns.
 The number of passes can be selected at run time,
 up to a maximum of 46,
@@ -142,7 +142,9 @@ In this example (using a VAX-11/780),
 is loaded from the console floppy;
 on an 11/750
 .I format
-will be loaded from the root file system.
+will be loaded from the root file system with
+.IR boot (8)
+following a \*(lqB/3\*(rq command.
 Boldface means user input.
 As usual, ``#'' and ``@'' may be used to edit input.
 .nf
