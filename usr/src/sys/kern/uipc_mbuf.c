@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uipc_mbuf.c	6.9 (Berkeley) %G%
+ *	@(#)uipc_mbuf.c	6.10 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -25,7 +25,7 @@ mbinit()
 	s = splimp();
 	if (m_clalloc(4096/CLBYTES, MPG_MBUFS, M_DONTWAIT) == 0)
 		goto bad;
-	if (m_clalloc(8*4096/CLBYTES, MPG_CLUSTERS, M_DONTWAIT) == 0)
+	if (m_clalloc(4096/CLBYTES, MPG_CLUSTERS, M_DONTWAIT) == 0)
 		goto bad;
 	splx(s);
 	return;
