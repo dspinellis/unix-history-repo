@@ -3,26 +3,35 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)kvm_mkdb.8	1.2 (Berkeley) %G%
+.\"	@(#)kvm_mkdb.8	5.1 (Berkeley) %G%
 .\"
 .TH kvm_mkdb 8 ""
 .UC 7
 .SH NAME
 kvm_mkdb \- create kernel database
 .SH SYNOPSIS
-.B kvm_mkdb
+.B kvm_mkdb [ file ]
 .SH DESCRIPTION
-.I kvm_mkdb
-creates a database in /var/run containing information about /vmunix and
-possibly other fairly static information about the current system.
-Various library routines consult this database.
-The only information currently stored is the kernel namelist, which is
-used by the
+.I Kvm_mkdb
+creates a
+.IR db(3)
+database in ``/var/run/kvm_vmunix.db'' which contains the
+namelist of
+.I file
+(or, by default,  /vmunix).
+Each symbol is stored with its name as the key and its associated
+nlist structure as the data.
+.PP
+The 
 .IR kvm_nlist (3)
-function.
+library routines use this database.
+.PP
+The text string found at the location referenced by the symbol
+``_version'' is stored as the data associated with the special
+key ``VERSION''.
 .SH FILES
-/vmunix
+/vmunix				Default file read for namelist
 .br
-/var/run/kvm_vmunix.{dir,pag}
+/var/run/kvm_vmunix.db	Database file
 .SH SEE ALSO
-kvm_nlist(3)
+db(3), kvm_nlist(3), nlist(3), dev_mkdb(8)
