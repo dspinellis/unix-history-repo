@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)tcp_output.c	7.14 (Berkeley) %G%
+ *	@(#)tcp_output.c	7.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -300,12 +300,12 @@ send:
 	 * Calculate receive window.  Don't shrink window,
 	 * but avoid silly window syndrome.
 	 */
-	if (win < so->so_rcv.sb_hiwat / 4 && win < tp->t_maxseg)
+	if (win < (long)(so->so_rcv.sb_hiwat / 4) && win < (long)tp->t_maxseg)
 		win = 0;
 	if (win > IP_MAXPACKET)
 		win = IP_MAXPACKET;
-	if (win < (int)(tp->rcv_adv - tp->rcv_nxt))
-		win = (int)(tp->rcv_adv - tp->rcv_nxt);
+	if (win < (long)(tp->rcv_adv - tp->rcv_nxt))
+		win = (long)(tp->rcv_adv - tp->rcv_nxt);
 	if (win > IP_MAXPACKET)
 		win = IP_MAXPACKET;
 	ti->ti_win = htons((u_short)win);
