@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)tar.c	4.18 (Berkeley) %G%";
+static	char *sccsid = "@(#)tar.c	4.19 (Berkeley) %G%";
 #endif
 
 /*
@@ -333,7 +333,10 @@ dorep(argv)
 			cp2++;
 		}
 		putfile(*argv++, cp2, parent);
-		chdir(wdir);
+		if (chdir(wdir) < 0) {
+			fprintf(stderr, "cannot change back?: ");
+			perror(wdir);
+		}
 	}
 	putempty();
 	putempty();
@@ -457,11 +460,17 @@ putfile(longname, shortname, parent)
 			writetape((char *)&dblock);
 		}
 		sprintf(newparent, "%s/%s", parent, shortname);
-		chdir(shortname);
+		if (chdir(shortname) < 0) {
+			perror(shortname);
+			return;
+		}
 		if ((dirp = opendir(".")) == NULL) {
 			fprintf(stderr, "tar: %s: directory read error\n",
 			    longname);
-			chdir(parent);
+			if (chdir(parent) < 0) {
+				fprintf(stderr, "cannot change back?: ");
+				perror(parent);
+			}
 			return;
 		}
 		while ((dp = readdir(dirp)) != NULL && !term) {
@@ -478,7 +487,10 @@ putfile(longname, shortname, parent)
 			seekdir(dirp, i);
 		}
 		closedir(dirp);
-		chdir(parent);
+		if (chdir(parent) < 0) {
+			fprintf(stderr, "cannot change back?: ");
+			perror(parent);
+		}
 		break;
 
 	case S_IFLNK:
