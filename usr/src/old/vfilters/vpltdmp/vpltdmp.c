@@ -5,7 +5,7 @@
 /*	All rights reserved					*/
 /*								*/
 /****************************************************************/
-/*  VPLTDMP: version 4.2			updated %G%
+/*  VPLTDMP: version 4.3			updated %G%
  *
  *  reads raster file created by vplot and dumps it onto the
  *  Varian or Versatec plotter.
@@ -18,16 +18,17 @@
 #define IN	0
 #define OUT	1
 
-static	char *Sid = "@(#)vpltdmp.c	4.2\t%G%";
+static	char *Sid = "@(#)vpltdmp.c	4.3\t%G%";
 
-int	plotmd[] = { VPLOT, 0, 0 };
-int	prtmd[]  = { VPRINT, 0, 0 };
+int	plotmd[] = { VPLOT };
+int	prtmd[]  = { VPRINT };
 
 char	buf[BUFSIZ];		/* output buffer */
 
 int	lines;			/* number of raster lines printed */
-int	varian = 1;		/* default is the varian */
-int	BytesPerLine = 264;	/* Number of bytes per raster line */
+int	varian;			/* 0 for versatec, 1 for varian. */
+int	BYTES_PER_LINE;		/* number of bytes per raster line. */
+int	PAGE_LINES;		/* number of raster lines per page. */
 
 char	*name, *host, *acctfile;
 
@@ -36,14 +37,18 @@ char *argv[];
 {
 	register int n, bytes;
 
-	if (argv[0][strlen(argv[0])-1] == 'W') {
-		varian = 0;
-		BytesPerLine = 880;
-	}
-
 	while (--argc) {
 		if (**++argv == '-') {
 			switch (argv[0][1]) {
+			case 'x':
+				BYTES_PER_LINE = atoi(&argv[0][2]) / 8;
+				varian = BYTES_PER_LINE == 264;
+				break;
+
+			case 'y':
+				PAGE_LINES = atoi(&argv[0][2]);
+				break;
+
 			case 'n':
 				argc--;
 				name = *++argv;
@@ -69,7 +74,7 @@ char *argv[];
 		write(OUT, "", 1);
 		bytes++;
 	}
-	lines = bytes / BytesPerLine;
+	lines = bytes / BYTES_PER_LINE;
 
 	ioctl(OUT, VSETSTATE, prtmd);
 	if (varian)
@@ -93,7 +98,7 @@ account(who, from, acctfile)
 	 * Varian accounting is done by 8.5 inch pages;
 	 * Versatec accounting is by the (12 inch) foot.
 	 */
-	fprintf(a, "t%6.2f\t", (lines / 200.0) / (varian ? 8.5 : 12.0));
+	fprintf(a, "t%6.2f\t", (lines / 200.0) / PAGE_LINES);
 	if (from != NULL)
 		fprintf(a, "%s:", from);
 	fprintf(a, "%s\n", who);
