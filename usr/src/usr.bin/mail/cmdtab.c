@@ -8,7 +8,7 @@
  * Define all of the command names and bindings.
  */
 
-static char *SccsId = "@(#)cmdtab.c	1.5 %G%";
+static char *SccsId = "@(#)cmdtab.c	1.6 %G%";
 
 extern int type(), preserve(), delete(), undelete(), next(), shell(), schdir();
 extern int save(), help(), headers(), pdot(), strace(), respond(), editor();
@@ -32,7 +32,7 @@ struct cmd cmdtab[] = {
 	"dt",		deltype,	W|MSGLIST,	0,	MMNDEL,
 	"undelete",	undelete,	P|MSGLIST,	MDELETED,MMNDEL,
 	"unset",	unset,		M|RAWLIST,	1,	1000,
-	"mail",		sendmail,	M|I|STRLIST,	0,	0,
+	"mail",		sendmail,	R|M|I|STRLIST,	0,	0,
 	"mbox",		stouch,		W|MSGLIST,	0,	0,
 	"!",		shell,		I|STRLIST,	0,	0,
 	"chdir",	schdir,		M|STRLIST,	0,	0,
@@ -51,10 +51,10 @@ struct cmd cmdtab[] = {
 	"headers",	headers,	MSGLIST,	0,	MMNDEL,
 	"help",		help,		M|NOLIST,	0,	0,
 	"=",		pdot,		NOLIST,		0,	0,
-	"Reply",	Respond,	I|MSGLIST,	0,	MMNDEL,
-	"Respond",	Respond,	I|MSGLIST,	0,	MMNDEL,
-	"reply",	respond,	I|MSGLIST,	0,	MMNDEL,
-	"respond",	respond,	I|MSGLIST,	0,	MMNDEL,
+	"Reply",	Respond,	R|I|MSGLIST,	0,	MMNDEL,
+	"Respond",	Respond,	R|I|MSGLIST,	0,	MMNDEL,
+	"reply",	respond,	R|I|MSGLIST,	0,	MMNDEL,
+	"respond",	respond,	R|I|MSGLIST,	0,	MMNDEL,
 	"edit",		editor,		I|MSGLIST,	0,	MMNORM,
 	"echo",		echo,		RAWLIST,	0,	1000,
 	"quit",		edstop,		NOLIST, 	0,	0,
