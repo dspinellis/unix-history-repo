@@ -1,4 +1,4 @@
-#	Makefile	4.6	83/09/21
+#	Makefile	4.7	83/11/10
 #
 ALL=	libplot lib4014 lib300 lib300s lib450 libvt0
 SUBDIRS=plot t4014 t300 t300s t450 vt0
