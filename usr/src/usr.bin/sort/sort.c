@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)sort.c	4.6 (Berkeley) %G%";
+static	char *sccsid = "@(#)sort.c	4.7 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include <signal.h>
@@ -720,7 +720,7 @@ char *pp;
 				else goto ret;
 		}
 	}
-	if(tabchar==0&&fp->bflg[j])
+	if(tabchar==0||fp->bflg[j])
 		while(blank(*p))
 			p++;
 	i = fp->n[j];
