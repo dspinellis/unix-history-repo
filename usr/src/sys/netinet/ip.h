@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ip.h	8.1 (Berkeley) %G%
+ *	@(#)ip.h	8.2 (Berkeley) %G%
  */
 #ifndef BYTE_ORDER
 /*
@@ -76,7 +76,7 @@ struct ip {
 #define	IPTOS_PREC_FLASH		0x60
 #define	IPTOS_PREC_IMMEDIATE		0x40
 #define	IPTOS_PREC_PRIORITY		0x20
-#define	IPTOS_PREC_ROUTINE		0x10
+#define	IPTOS_PREC_ROUTINE		0x00
 
 /*
  * Definitions for options.
