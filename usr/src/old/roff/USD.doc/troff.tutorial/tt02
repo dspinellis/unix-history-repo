@@ -1,6 +1,6 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)tt02	8.1 (Berkeley) %G%
+.\"	@(#)tt02	8.2 (Berkeley) %G%
 .\"
 .NH
 Point Sizes; Line Spacing
@@ -12,45 +12,39 @@ sets the point size.
 One point is 1/72 inch,
 so 6-point characters are at most 1/12 inch high,
 and 36-point characters are \(12 inch.
-There are 15 point sizes, listed below.
+Some sample point sizes are shown below.
+These point sizes are selected to be approximately
+correct after the photo reduction process used to make this book.
 .P1 1
-.ps 6
-6 point: Pack my box with five dozen liquor jugs.
 .ps 7
-.vs 8p
-7 point: Pack my box with five dozen liquor jugs.
-.vs 9p
-.ps 8
-8 point: Pack my box with five dozen liquor jugs.
-.vs 10p
-.ps 9
-9 point: Pack my box with five dozen liquor jugs.
-.vs 11p
-.ps 10
-10 point: Pack my box with five dozen liquor
-.vs 12p
+6 point: Pack my box with five dozen liquor jugs.
+.vs 13p
 .ps 11
-11 point: Pack my box with five dozen 
+9 point: Pack my box with five dozen liquor jugs.
 .vs 14p
 .ps 12
-12 point: Pack my box with five dozen
-.vs 16p
-.ps 14
+10 point: Pack my box with five dozen liquor
+.vs 15p
+.ps 13
+11 point: Pack my box with five dozen 
+.vs 19p
+.ps 17
 14 point: Pack my box with five
-.vs 24p
-\s1616 point\s18 18 point\s20 20 point
-.vs 40p
-\s2222\s24 24\s28 28\s36 36
+.vs 27p
+\s1916 point\s24 20 point
+.vs 47p
+.ps 43p
+\s29 24\s0\s36 30\s0 36
 .ps 10
 .vs 12p
 .P2
 .PP
+Not all point sizes are supported.
 If the number after
 .BD .ps 
-is not one of these
-legal sizes,
+is not a legal size,
 it is rounded up to the next valid value,
-with a maximum of 36.
+with a typical maximum of 72.
 If no number follows
 .BD .ps ,
 .UL troff
@@ -58,7 +52,8 @@ reverts to the previous size, whatever it was.
 .UL troff
 begins with point size 10,
 which is usually fine.
-The original of this document (on 8.5 by 11 inch paper) is in 9 point.
+The original of this document (on 8.5 by 11 inch paper) is in 9 point
+which becomes about 7\(12 points after photo reduction.
 .PP
 The point size can also be changed in the middle of a line
 or even a word
