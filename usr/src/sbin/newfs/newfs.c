@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	4.6 %G%";
+static char sccsid[] = "@(#)newfs.c	4.7 %G%";
 #endif
 
 /*
@@ -16,6 +16,7 @@ static char sccsid[] = "@(#)newfs.c	4.6 %G%";
 #define	BOOTDIR	"/usr/mdec"	/* directory for boot blocks */
 
 int	verbose;		/* show mkfs line before exec */
+int	noboot;			/* do not fill boot blocks */
 int	fssize;			/* file system size */
 int	fsize;			/* fragment size */
 int	bsize;			/* block size */
@@ -23,7 +24,7 @@ int	ntracks;		/* # tracks/cylinder */
 int	nsectors;		/* # sectors/track */
 int	sectorsize;		/* bytes/sector */
 int	cpg;			/* cylinders/cylinder group */
-int	minfree;		/* free space threshold */
+int	minfree = -1;		/* free space threshold */
 int	rpm;			/* revolutions/minute of drive */
 
 char	*av[20];		/* argv array and buffers for exec */
@@ -59,6 +60,10 @@ main(argc, argv)
 
 			case 'v':
 				verbose++;
+				break;
+
+			case 'n':
+				noboot++;
 				break;
 
 			case 's':
@@ -216,7 +221,7 @@ again:
 			fatal("%s: no default revolutions/minute value",
 				argv[1]);
 	}
-	if (minfree == 0)
+	if (minfree < 0)
 		minfree = 10;
 	if (cpg == 0)
 		cpg = 16;
@@ -239,7 +244,7 @@ again:
 		printf("%s\n", cmd);
 	if (status = system(cmd))
 		exit(status);
-	if (*cp == 'a') {
+	if (*cp == 'a' && !noboot) {
 		char type[3];
 
 		cp = rindex(special, '/');
