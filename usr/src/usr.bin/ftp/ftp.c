@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftp.c	5.35 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftp.c	5.36 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -118,7 +118,7 @@ hookup(host, port)
 #ifdef IP_TOS
 	tos = IPTOS_LOWDELAY;
 	if (setsockopt(s, IPPROTO_IP, IP_TOS, (char *)&tos, sizeof(int)) < 0)
-		perror("Notice: set type-of-service failed: %m");
+		perror("ftp: setsockopt TOS (ignored)");
 #endif
 	cin = fdopen(s, "r");
 	cout = fdopen(s, "w");
@@ -985,7 +985,7 @@ noport:
 #ifdef IP_TOS
 	on = IPTOS_THROUGHPUT;
 	if (setsockopt(data, IPPROTO_IP, IP_TOS, (char *)&on, sizeof(int)) < 0)
-		perror("Notice: set type-of-service failed: %m");
+		perror("ftp: setsockopt TOS (ignored)");
 #endif
 	return (0);
 bad:
@@ -1013,7 +1013,7 @@ dataconn(lmode)
 #ifdef IP_TOS
 	tos = IPTOS_THROUGHPUT;
 	if (setsockopt(s, IPPROTO_IP, IP_TOS, (char *)&tos, sizeof(int)) < 0)
-		perror("Notice: set type-of-service failed: %m");
+		perror("ftp: setsockopt TOS (ignored)");
 #endif
 	return (fdopen(data, lmode));
 }
