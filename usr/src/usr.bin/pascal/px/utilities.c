@@ -1,20 +1,17 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)utilities.c 1.7 %G%";
+static char sccsid[] = "@(#)utilities.c 1.8 %G%";
 
 #include	<signal.h>
 #include	"whoami.h"
 #include	"vars.h"
 #include	"objfmt.h"
+#include	<sys/time.h>
+#include	<sys/resource.h>
 
 stats()
 {
-	struct	{
-		long	usr_time;
-		long	sys_time;
-		long	child_usr_time;
-		long	child_sys_time;
-	} tbuf;
+	struct rusage ru;
 	register double l;
 	register long count;
 #	ifdef PROFILE
@@ -32,7 +29,7 @@ stats()
 
 	if (_nodump)
 		return(0);
-	times(&tbuf);
+	getrusage(RUSAGE_SELF, &ru);
 #	ifdef PROFILE
 	datafile = fopen(proffile,"r");
 	if (datafile == NULL)
@@ -44,8 +41,8 @@ stats()
 		profdata.counts[count] += _profcnts[count];
 	profdata.runs += 1;
 	profdata.stmts += _stcnt;
-	profdata.usrtime += tbuf.usr_time;
-	profdata.systime += tbuf.sys_time;
+	profdata.usrtime += ru.ru_utime.tv_sec;
+	profdata.systime += ru.ru_stime.tv_sec;
 	datafile = freopen(proffile,"w",datafile);
 	if (datafile == NULL)
 		goto skipprof;
@@ -55,11 +52,9 @@ stats()
 	fclose(datafile);
 skipprof:
 #	endif PROFILE
-	l = tbuf.usr_time;
-	l = l / HZ;
 	fprintf(stderr,
-		"\n%1ld statements executed in %04.2f seconds cpu time.\n",
-		_stcnt,l);
+		"\n%1ld statements executed in %04d.%02d seconds cpu time.\n",
+		_stcnt, ru.ru_utime.tv_sec, ru.ru_utime.tv_usec / 1000);
 }
 
 backtrace(type)
