@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)fiodefs.h	5.1 (Berkeley) %G%
+ *	@(#)fiodefs.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -18,6 +18,7 @@
 
 #define GLITCH '\2'	/* special quote for Stu, generated in f77pass1 */
 
+#define NAMELIST      -2
 #define LISTDIRECTED  -1
 #define FORMATTED      1
 

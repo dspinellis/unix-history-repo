@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)f_errlist.c	5.1	%G%
+ *	@(#)f_errlist.c	5.2	%G%
  */
 
 /*
@@ -37,6 +37,7 @@ char *f_errlist[] =
 /* 122 */	"negative repeat count",
 /* 123 */	"illegal operation for unit",
 /* 124 */	"invalid data for d,e,f, or g format term",
+/* 125 */	"illegal input for namelist",
 };
 
 int f_nerr = (sizeof(f_errlist)/sizeof(char *));

@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 #
 
 # Makefile for f77 I/O lib, libI77.a
@@ -22,7 +22,8 @@ HDRS	      = f_errno.h \
 		fio.h \
 		fiodefs.h \
 		format.h \
-		lio.h
+		lio.h \
+		nmlio.h
 
 LIBRARY	      = libI77.a
 
@@ -55,13 +56,15 @@ OBJS	      = backspace.o \
 		rfi.o \
 		rsfe.o \
 		rsli.o \
+		rsnmle.o \
 		sue.o \
 		util.o \
 		wdfe.o \
 		wfi.o \
 		wrtfmt.o \
 		wsfe.o \
-		wsli.o
+		wsli.o \
+		wsnmle.o
 
 OLDDIR	      = $(DESTDIR)/usr/old/lib
 
@@ -92,13 +95,15 @@ SRCS	      = backspace.c \
 		rfi.c \
 		rsfe.c \
 		rsli.c \
+		rsnmle.c \
 		sue.c \
 		util.c \
 		wdfe.c \
 		wfi.c \
 		wrtfmt.c \
 		wsfe.c \
-		wsli.c
+		wsli.c \
+		wsnmle.c
 
 all:		$(LIBRARY) $(LIBRARY_P) libI66.o
 
@@ -197,3 +202,5 @@ wrtfmt.o:	fio.h f_errno.h fiodefs.h format.h wrtfmt.c
 err.o:		fio.h f_errno.h fiodefs.h err.c
 fmtlib.o:	fio.h f_errno.h fiodefs.h fmtlib.c
 f77_abort.o:	fio.h f_errno.h fiodefs.h f77_abort.c
+rsnmle.o:	fio.h f_errno.h fiodefs.h lio.h nmlio.h rsnmle.c
+wsnmle.o:	fio.h f_errno.h fiodefs.h lio.h nmlio.h wsnmle.c

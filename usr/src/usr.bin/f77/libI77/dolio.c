@@ -3,11 +3,11 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dolio.c	5.1	%G%
+ *	@(#)dolio.c	5.2	%G%
  */
 
 /*
- * list directed i/o common routines
+ * list directed and namelist i/o common routines
  */
 
 #include "fio.h"
@@ -18,8 +18,7 @@ c_le(a,flag) cilist *a;
 {	int n;
 	lfname = NULL;
 	elist = NO;
-	sequential=external=formatted= LISTDIRECTED;
-	fmtbuf = "ext list io";
+	sequential=external=YES;
 	errflag = a->cierr;
 	endflag = a->ciend;
 	lunit = a->ciunit;

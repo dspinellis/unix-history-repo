@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)lio.h	5.1 (Berkeley) %G%
+ *	@(#)lio.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -52,6 +52,8 @@
 #define width(z) ((z!=0.0 && (abs(z)>=LHIGH || abs(z)<LLOW))?LEW:LFW)
 #define dwidth(z) ((z!=0.0 && (abs(z)>=LDHIGH || abs(z)<LLOW))?LDEW:LDFW)
 #define ERR(x)	if(n=(x)) err(n>0?errflag:endflag,n,"list io")
+#define ERRCHK(x)	if(n=(x)) goto got_err;
+#define chk_len(w) if(recpos+w > line_len) PUT('\n');
 
 typedef union
 {	short	flshort;
