@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rcp.c	4.1 82/04/02";
+static char sccsid[] = "@(#)rcp.c	4.2 82/05/05";
 #endif
 
 #include <stdio.h>
@@ -95,7 +95,7 @@ main(argc, argv)
 					*suser++ = 0;
 					if (!okname(suser))
 						continue;
-		(void) sprintf(buf, "rsh %s -l %s %s %s '%s:%s' </dev/null",
+		(void) sprintf(buf, "rsh %s -L %s %s %s '%s:%s' </dev/null",
 					    argv[i], suser, cmd,
 					    src, argv[argc - 1], targ);
 				} else
@@ -223,7 +223,8 @@ source(argc, argv)
 	char *last, *name;
 	struct stat stb;
 	char buf[BUFSIZ];
-	int x, sizerr, f, i;
+	int x, sizerr, f;
+	off_t i;
 
 	for (x = 0; x < argc; x++) {
 		name = argv[x];
@@ -256,7 +257,7 @@ notreg:
 			last = name;
 		else
 			last++;
-		(void) sprintf(buf, "C%04o %d %s\n",
+		(void) sprintf(buf, "C%04o %D %s\n",
 		    stb.st_mode&07777, stb.st_size, last);
 		(void) write(rem, buf, strlen(buf));
 		if (response() < 0) {
@@ -371,7 +372,8 @@ sink(argc, argv)
 {
 	char *targ;
 	char cmdbuf[BUFSIZ], nambuf[BUFSIZ], buf[BUFSIZ], *cp;
-	int of, mode, i, size, wrerr, exists;
+	int of, mode, wrerr, exists;
+	off_t i, size;
 	char *whopp;
 	struct stat stb; int targisdir = 0;
 #define	SCREWUP(str)	{ whopp = str; goto screwup; }
@@ -555,3 +557,4 @@ mkdir(name, mode)
 	_exit(1);
 	/*NOTREACHED*/
 }
+
