@@ -33,8 +33,8 @@
 #
 #	@(#)sendbug.sh	5.11 (Berkeley) 7/25/90
 #
-#  Modified to support 386bsd bugfiler running at bsd.coe.montana.edu
-#  by Rodney W. Grimes on April 4, 1993.
+#  Modified to support FreeBSD bugfiler running at freefall.cdrom.com
+#  by Rodney W. Grimes on August 3, 1993.
 #
 
 # create a bug report and mail it to 'bugs'.
@@ -46,8 +46,8 @@ TEMP=/tmp/bug$$
 FORMAT=/usr/share/misc/bugformat
 
 # uucp sites should use:
-#	": ${BUGADDR=bsd.coe.montana.edu!386bsd_bugs}" with a suitable path.
-: ${BUGADDR=386bsd_bugs@bsd.coe.montana.edu}
+#	": ${BUGADDR=freefall.cdrom.com!FreeBSD-bugs}" with a suitable path.
+: ${BUGADDR=FreeBSD-bugs@freefall.cdrom.com}
 : ${EDITOR=vi}
 
 trap 'rm -f $TEMP ; exit 1' 1 2 3 13 15

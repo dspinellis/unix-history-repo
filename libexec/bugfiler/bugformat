@@ -1,5 +1,5 @@
 Subject: Short summary of the problem (please make this meaningful!)
-Index: folder 386BSD-0.1.2.3
+Index: folder FreeBSD-current
 
 Description:
 	Detailed description of the problem, suggestion, or complaint.
@@ -28,14 +28,13 @@ first one on the list.  If the place that it appears is not on the list
 use the "misc" value.  If it is a suggestion use the "ideas" value.  If
 it is a manual page problem use the "man" value.
 
-If you're not running 386BSD-0.1.2.3, you should also replace
-"386BSD-0.1.2.3" on the same line with one of the following values.
+If you're not running FreeBSD-current, you should also replace
+"FreeBSD-current" on the same line with one of the following values.
 
-	version ::= 386BSD-0.1 | 386BSD-0.1.1 | 386BSD-0.1.2 | 386BSD-0.1.2.1
-		               | 386BSD-0.1.2.2 | 386BSD-0.1.2.3
+	version ::= FreeBSD-current | FreeBSD-1.0
 
 For example, if your bug concerns the program "/usr/bin/file" and
-you're currently running 386BSD-0.1.2.4, you should replace "folder"
-with "usr.bin/file", and "386BSD-0.1.2.3" with "386BSD-0.1.2.4".
+you're currently running FreeBSD-1.1, you should replace "folder"
+with "usr.bin/file", and "FreeBSD-current" with "FreeBSD-1.1".
 Thus, your Index line would look like this:
-Index: usr.bin/file 386BSD-0.1.2.4
+Index: usr.bin/file FreeBSD-1.1

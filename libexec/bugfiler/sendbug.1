@@ -36,12 +36,12 @@
 .Os BSD 4.2
 .Sh NAME
 .Nm sendbug
-.Nd mail a system bug report to 386bsd_bugs
+.Nd mail a system bug report to FreeBSD-bugs
 .Sh SYNOPSIS
 .Nm sendbug
 .Op Ar address
 .Sh DESCRIPTION
-Bug reports sent to `386bsd_bugs@bsd.coe.montana.edu' are intercepted
+Bug reports sent to `FreeBSD-bugs@freefall.cdrom.com' are intercepted
 by a program which expects bug reports to conform to a standard format.
 .Nm Sendbug
 is a shell script to help the user compose and mail bug reports
@@ -52,7 +52,7 @@ works by invoking the editor specified by the environment variable
 on a temporary copy of the bug report format outline. The user must fill in the
 appropriate fields and exit the editor.
 .Nm Sendbug
-then mails the completed report to `386bsd_bugs@bsd.coe.montana.edu' or the
+then mails the completed report to `FreeBSD-bugs@freefall.cdrom.com' or the
 .Ar address
 specified on the command line.
 .Sh ENVIRONMENT

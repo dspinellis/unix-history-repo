@@ -1,8 +1,8 @@
 #	@(#)Makefile	5.17 (Berkeley) 5/24/90
-# Fixed to use bsd.coe.montana.edu as a bugs host - rgrimes 4/04/93
+# Fixed to use freefall.cdrom.com as a bugs host - rgrimes 93/08/03
 
 PROG=	bugfiler
-CFLAGS+=-I${.CURDIR} -DBUGS_HOME=\"owner-386bsd_bugs@bsd.coe.montana.edu\"
+CFLAGS+=-I${.CURDIR} -DBUGS_HOME=\"owner-FreeBSD-bugs@freefall.cdrom.com\"
 SRCS=	bugfiler.c error.c gethead.c process.c redist.c reply.c
 BINOWN=	root
 BINMODE=4555
