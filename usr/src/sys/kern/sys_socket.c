@@ -4,23 +4,21 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sys_socket.c	7.9 (Berkeley) %G%
+ *	@(#)sys_socket.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
-#include "user.h"
 #include "file.h"
 #include "mbuf.h"
 #include "protosw.h"
 #include "socket.h"
 #include "socketvar.h"
 #include "ioctl.h"
-#include "uio.h"
 #include "stat.h"
 
-#include "../net/if.h"
-#include "../net/route.h"
+#include "net/if.h"
+#include "net/route.h"
 
 int	soo_read(), soo_write(), soo_ioctl(), soo_select(), soo_close();
 struct	fileops socketops =
