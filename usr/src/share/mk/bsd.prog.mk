@@ -1,4 +1,4 @@
-#	@(#)bsd.prog.mk	5.13 (Berkeley) %G%
+#	@(#)bsd.prog.mk	5.14 (Berkeley) %G%
 
 .if exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
@@ -74,7 +74,7 @@ _PROGSUBDIR: .USE
 		else \
 			cd ${.CURDIR}/$${entry}; \
 		fi; \
-		${MAKE} ${.TARGET:realinstall=install}) \
+		${MAKE} ${.TARGET:S/realinstall/install/:S/.depend/depend/}) \
 	done
 .endif
 
@@ -96,7 +96,9 @@ cleandir: _PROGSUBDIR
 .if !target(depend)
 depend: .depend
 .depend: ${SRCS} _PROGSUBDIR
+.if defined(PROG)
 	mkdep ${CFLAGS:M-[ID]*} ${.ALLSRC:M*.c}
+.endif
 .endif
 
 .if !target(install)
@@ -137,13 +139,17 @@ realinstall: beforeinstall
 
 .if !target(lint)
 lint: ${SRCS} _PROGSUBDIR
+.if defined(PROG)
 	@${LINT} ${LINTFLAGS} ${CFLAGS} ${.ALLSRC} | more 2>&1
+.endif
 .endif
 
 .if !target(tags)
 tags: ${SRCS} _PROGSUBDIR
+.if defined(PROG)
 	cd ${.CURDIR}; ctags -f /dev/stdout ${.ALLSRC} | \
 	    sed "s;\${.CURDIR}/;;" > tags
+.endif
 .endif
 
 .if !defined(NOMAN)
