@@ -1,4 +1,4 @@
-/*	rpb.h	4.2	81/02/19	*/
+/*	rpb.h	4.3	81/05/01	*/
 
 /*
  * The restart parameter block, which is a page in (very) low
@@ -13,5 +13,5 @@ struct rpb {
 /* the dump stack grows from the end of the rpb page not to reach here */
 };
 #ifdef KERNEL
-extern	struct rpb rbp;
+extern	struct rpb rpb;
 #endif
