@@ -3,16 +3,16 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)tutor.me	6.9 (Berkeley) %G%
+.\"	@(#)tutor.me	6.10 (Berkeley) %G%
 .\"
-.oh 'Introductory 4.3BSD IPC''PSD:20-%'
-.eh 'PSD:20-%''Introductory 4.3BSD IPC'
+.oh 'Introductory 4.4BSD IPC''PSD:20-%'
+.eh 'PSD:20-%''Introductory 4.4BSD IPC'
 .rs
 .sp 2
 .sz 14
 .ft B
 .ce 2
-An Introductory 4.3BSD
+An Introductory 4.4BSD
 Interprocess Communication Tutorial
 .sz 10
 .sp 2
@@ -31,7 +31,7 @@ University of California, Berkeley
 .sp
 .(c
 .pp
-Berkeley UNIX\(dg 4.3BSD offers several choices for interprocess communication.
+Berkeley UNIX\(dg 4.4BSD offers several choices for interprocess communication.
 To aid the programmer in  developing programs which are comprised of
 cooperating
 processes, the different choices are discussed and a series of example 
@@ -100,7 +100,7 @@ One can ask to read, but insist on not waiting if nothing is immediately
 available.  These new possibilities are allowed in the Berkeley UNIX IPC
 interface.  
 .pp
-Thus Berkeley UNIX 4.3BSD offers several choices for IPC.
+Thus Berkeley UNIX 4.4BSD offers several choices for IPC.
 This paper presents simple examples that illustrate some of
 the choices.
 The reader is presumed to be familiar with the C programming language
@@ -108,7 +108,7 @@ The reader is presumed to be familiar with the C programming language
 but not necessarily with the system calls of the UNIX system or with
 processes and interprocess communication.
 The paper reviews the notion of a process and the types of
-communication that are supported by Berkeley UNIX 4.3BSD.
+communication that are supported by Berkeley UNIX 4.4BSD.
 A series of examples are presented that create processes that communicate
 with one another.  The programs show different ways of establishing
 channels of communication.
@@ -258,7 +258,7 @@ which were concatenated.
 .sh 1 "Socketpairs"
 .r
 .pp
-Berkeley UNIX 4.3BSD provides a slight generalization of pipes.  A pipe is a
+Berkeley UNIX 4.4BSD provides a slight generalization of pipes.  A pipe is a
 pair of connected sockets for one-way stream communication.  One may
 obtain a pair of connected sockets for two-way stream communication
 by calling the routine \fIsocketpair().\fP
@@ -325,7 +325,7 @@ We would like to have two processes separately create sockets
 and then have messages sent between them.  This is often the
 case when providing or using a service in the system.  This is
 also the case when the communicating processes are on separate machines.
-In Berkeley UNIX 4.3BSD one can create individual sockets, give them names and
+In Berkeley UNIX 4.4BSD one can create individual sockets, give them names and
 send messages between them.
 .pp
 Sockets created by different programs use names to refer to one another;
@@ -690,7 +690,7 @@ Figure 9b\ \ Accepting a UNIX domain stream connection
 .sh 1 "Reads, Writes, Recvs, etc."
 .r
 .pp
-UNIX 4.3BSD has several system calls for reading and writing information.
+UNIX 4.4BSD has several system calls for reading and writing information.
 The simplest calls are \fIread() \fP and \fIwrite().\fP \fIWrite()\fP
 takes as arguments the index of a descriptor, a pointer to a buffer 
 containing the data and the size of the data.
@@ -815,7 +815,7 @@ Figure 10\ \ Varieties of read and write commands
 .pp
 This paper has presented examples of some of the forms
 of communication supported by
-Berkeley UNIX 4.3BSD.  These have been presented in an order chosen for
+Berkeley UNIX 4.4BSD.  These have been presented in an order chosen for
 ease of presentation.  It is useful to review these options emphasizing the
 factors that make each attractive.
 .pp
@@ -858,7 +858,7 @@ be added.
 .pp
 An introduction to the UNIX system and programming using UNIX system calls
 can be found in [Kernighan and Pike 1984].
-Further documentation of the Berkeley UNIX 4.3BSD IPC mechanisms can be 
+Further documentation of the Berkeley UNIX 4.4BSD IPC mechanisms can be 
 found in [Leffler et al. 1986].
 More detailed information about particular calls and protocols
 is provided in sections
@@ -910,14 +910,14 @@ Englewood Cliffs, N.J.: Prentice-Hall.
 .sp
 .ls 1
 S.J. Leffler, R.S. Fabry, W.N. Joy, P. Lapsley, S. Miller & C. Torek, 1986,
-.i "An Advanced 4.3BSD Interprocess Communication Tutorial."
+.i "An Advanced 4.4BSD Interprocess Communication Tutorial."
 Computer Systems Research Group,
 Department of Electrical Engineering and Computer Science,
 University of California, Berkeley.
 .sp
 .ls 1
 Computer Systems Research Group, 1986,
-.i "UNIX Programmer's Manual, 4.3 Berkeley Software Distribution."
+.i "UNIX Programmer's Manual, 4.4 Berkeley Software Distribution."
 Computer Systems Research Group,
 Department of Electrical Engineering and Computer Science,
 University of California, Berkeley.
