@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)talk.1	6.1 (Berkeley) %G%
+.\"	@(#)talk.1	6.2 (Berkeley) %G%
 .\"
 .TH TALK 1 ""
 .UC 5
@@ -91,3 +91,8 @@ messages in order to prevent messy output.
 /etc/utmp	to find the recipient's tty
 .SH "SEE ALSO"
 mesg(1), who(1), mail(1), write(1)
+.SH BUGS
+The version of 
+.IR talk (1)
+released with 4.3BSD uses a protocol that is incompatible
+with the protocol used in the version released with 4.2BSD.
