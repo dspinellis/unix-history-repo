@@ -1,4 +1,4 @@
-.\"	@(#)chmod.1	6.1 (Berkeley) %G%
+.\"	@(#)chmod.1	6.2 (Berkeley) %G%
 .\"
 .TH CHMOD 1 ""
 .AT 3
@@ -6,7 +6,7 @@
 chmod \- change mode
 .SH SYNOPSIS
 \fBchmod\fP [
-.B \-R
+.B \-Rf
 ] mode file ...
 .SH DESCRIPTION
 The mode of each named file is changed according to \fImode\fP,
@@ -85,6 +85,13 @@ option is given,
 .I chmod
 recursively descends its directory arguments
 setting the mode for each file as described above.
+.PP
+If the
+.B \-f
+option is given,
+.I chmod
+will not complain if it fails to change the mode
+on a file.
 .SH EXAMPLES
 .LP
 The first example denies write permission to others,
