@@ -12,11 +12,12 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)chroot.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)chroot.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 
+#include <err.h>
 #include <errno.h>
 #include <paths.h>
 #include <stdio.h>
@@ -24,7 +25,6 @@ static char sccsid[] = "@(#)chroot.c	8.1 (Berkeley) %G%";
 #include <string.h>
 #include <unistd.h>
 
-void fatal __P((char *));
 void usage __P((void));
 
 int
@@ -44,29 +44,22 @@ main(argc, argv)
 	argc -= optind;
 	argv += optind;
 
-	if (argc < 2)
+	if (argc < 1)
 		usage();
 
-	if (chdir(argv[1]) || chroot("."))
-		fatal(argv[1]);
-	if (argv[2]) {
-		execvp(argv[2], &argv[2]);
-		fatal(argv[2]);
-	} else {
-		if (!(shell = getenv("SHELL")))
-			shell = _PATH_BSHELL;
-		execlp(shell, shell, "-i", (char *)NULL);
-		fatal(shell);
-	}
-	/* NOTREACHED */
-}
+	if (chdir(argv[0]) || chroot("."))
+		err(1, "%s", argv[0]);
 
-void
-fatal(msg)
-	char *msg;
-{
-	(void)fprintf(stderr, "chroot: %s: %s\n", msg, strerror(errno));
-	exit(1);
+	if (argv[1]) {
+		execvp(argv[1], &argv[1]);
+		err(1, "%s", argv[1]);
+	}
+
+	if (!(shell = getenv("SHELL")))
+		shell = _PATH_BSHELL;
+	execlp(shell, shell, "-i", NULL);
+	err(1, "%s", shell);
+	/* NOTREACHED */
 }
 
 void
