@@ -1,12 +1,13 @@
-SCCSID = "@(#)Makefile 1.3 %G%"
+SCCSID = "@(#)Makefile 1.4 %G%"
 
 CFLAGS = -O
-DEFS = -DVAX -DOBJ -DDEBUG
+DEFS = -DVAX -DOBJ
 DESTDIR =/usr/ucb
 LIBDIR =/usr/lib
 PASCALDIR = /usr/src/cmd/pascal
 LIBPCDIR = /usr/src/lib/libpc
 CC = cc
+OPT = /lib/c2
 AS = as
 RM = rm -f
 
@@ -40,7 +41,7 @@ interp.o interp.s: interp.c
 	${CC} ${DEFS} -S interp.c
 	sed -f interp.sed <interp.s >tmp
 	/usr/lib/pc2 <tmp >interp.s
-	/lib/c2 interp.s tmp
+	${OPT} interp.s tmp
 	mv tmp interp.s
 	as -o interp.o interp.s
 panics.h: panics make.ed1
