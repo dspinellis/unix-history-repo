@@ -1,9 +1,9 @@
-/*	hp.c	4.11	81/02/22	*/
+/*	hp.c	4.12	81/02/23	*/
 
 #include "hp.h"
 #if NHP > 0
 /*
- * RP/RM disk driver
+ * HP disk driver for RP0x+RM0x
  */
 
 #include "../h/param.h"
@@ -91,14 +91,12 @@ struct hpst {
 	31,	14, 	31*14,	559,	rm80_sizes	/* RM80 */
 };
 
-int	hp_offset[16] = {
-	P400, M400, P400, M400,
-	P800, M800, P800, M800,
-	P1200, M1200, P1200, M1200,
-	0, 0, 0, 0,
+u_char	hp_offset[16] = {
+    HP_P400, HP_M400, HP_P400, HP_M400, HP_P800, HP_M800, HP_P800, HP_M800,
+    HP_P1200, HP_M1200, HP_P1200, HP_M1200, 0, 0, 0, 0,
 };
 
-struct	buf	rhpbuf;
+struct	buf	rhpbuf[NHP];
 
 #define	b_cylin b_resid
  
@@ -155,22 +153,22 @@ bad:
 hpustart(mi)
 	register struct mba_info *mi;
 {
-	register struct device *hpaddr = (struct device *)mi->mi_drv;
+	register struct hpdevice *hpaddr = (struct hpdevice *)mi->mi_drv;
 	register struct buf *bp = mi->mi_tab.b_actf;
 	register struct hpst *st;
 	daddr_t bn;
 	int sn, dist, flags;
 
-	if ((hpaddr->hpcs1&DVA) == 0)
+	if ((hpaddr->hpcs1&HP_DVA) == 0)
 		return (MBU_BUSY);
-	if ((hpaddr->hpds & VV) == 0) {
-		hpaddr->hpcs1 = DCLR|GO;
-		hpaddr->hpcs1 = PRESET|GO;
-		hpaddr->hpof = FMT22;
+	if ((hpaddr->hpds & HP_VV) == 0) {
+		hpaddr->hpcs1 = HP_DCLR|HP_GO;
+		hpaddr->hpcs1 = HP_PRESET|HP_GO;
+		hpaddr->hpof = HP_FMT22;
 	}
 	if (mi->mi_tab.b_active || mi->mi_hd->mh_ndrive == 1)
 		return (MBU_DODATA);
-	if ((hpaddr->hpds & (DPR|MOL)) != (DPR|MOL))
+	if ((hpaddr->hpds & (HP_DPR|HP_MOL)) != (HP_DPR|HP_MOL))
 		return (MBU_DODATA);
 	st = &hpst[mi->mi_type];
 	bn = dkblock(bp);
@@ -187,10 +185,10 @@ hpustart(mi)
 	} else
 		hpaddr->hpdc = bp->b_cylin;
 	if (hpseek)
-		hpaddr->hpcs1 = SEEK|GO;
+		hpaddr->hpcs1 = HP_SEEK|HP_GO;
 	else {
 		hpaddr->hpda = sn;
-		hpaddr->hpcs1 = SEARCH|GO;
+		hpaddr->hpcs1 = HP_SEARCH|HP_GO;
 	}
 	return (MBU_STARTED);
 }
@@ -198,7 +196,7 @@ hpustart(mi)
 hpstart(mi)
 	register struct mba_info *mi;
 {
-	register struct device *hpaddr = (struct device *)mi->mi_drv;
+	register struct hpdevice *hpaddr = (struct hpdevice *)mi->mi_drv;
 	register struct buf *bp = mi->mi_tab.b_actf;
 	register struct hpst *st = &hpst[mi->mi_type];
 	daddr_t bn;
@@ -209,9 +207,9 @@ hpstart(mi)
 	tn = sn/st->nsect;
 	sn %= st->nsect;
 	if (mi->mi_tab.b_errcnt >= 16 && (bp->b_flags&B_READ) != 0) {
-		hpaddr->hpof = hp_offset[mi->mi_tab.b_errcnt & 017] | FMT22;
-		hpaddr->hpcs1 = OFFSET|GO;
-		while (hpaddr->hpds & PIP)
+		hpaddr->hpof = hp_offset[mi->mi_tab.b_errcnt & 017] | HP_FMT22;
+		hpaddr->hpcs1 = HP_OFFSET|HP_GO;
+		while (hpaddr->hpds & HP_PIP)
 			;
 		mbclrattn(mi);
 	}
@@ -223,18 +221,18 @@ hpdtint(mi, mbastat)
 	register struct mba_info *mi;
 	int mbastat;
 {
-	register struct device *hpaddr = (struct device *)mi->mi_drv;
+	register struct hpdevice *hpaddr = (struct hpdevice *)mi->mi_drv;
 	register struct buf *bp = mi->mi_tab.b_actf;
 
-	while ((hpaddr->hpds & DRY) == 0)	/* shouldn't happen */
+	while ((hpaddr->hpds & HP_DRY) == 0)	/* shouldn't happen */
 		printf("hp dry not set\n");
-	if (hpaddr->hpds & ERR || mbastat & MBAEBITS)
-		if (++mi->mi_tab.b_errcnt < 28 && (hpaddr->hper1&WLE) == 0) {
-			if ((hpaddr->hper1&0xffff) != DCK) {
-				hpaddr->hpcs1 = DCLR|GO;
+	if (hpaddr->hpds & HP_ERR || mbastat & MBAEBITS)
+		if (++mi->mi_tab.b_errcnt < 28 && (hpaddr->hper1&HP_WLE) == 0) {
+			if ((hpaddr->hper1&0xffff) != HP_DCK) {
+				hpaddr->hpcs1 = HP_DCLR|HP_GO;
 				if ((mi->mi_tab.b_errcnt&07) == 4) {
-					hpaddr->hpcs1 = RECAL|GO;
-					while (hpaddr->hpds & PIP)
+					hpaddr->hpcs1 = HP_RECAL|HP_GO;
+					while (hpaddr->hpds & HP_PIP)
 						;
 					mbclrattn(mi);
 				}
@@ -247,32 +245,42 @@ hpdtint(mi, mbastat)
 		}
 	bp->b_resid = -(mi->mi_mba->mba_bcr) & 0xffff;
 	if (mi->mi_tab.b_errcnt) {
-		hpaddr->hpcs1 = RTC|GO;
-		while (hpaddr->hpds & PIP)
+		hpaddr->hpcs1 = HP_RTC|HP_GO;
+		while (hpaddr->hpds & HP_PIP)
 			;
 		mbclrattn(mi);
 	}
-	hpaddr->hpcs1 = RELEASE|GO;
+	hpaddr->hpcs1 = HP_RELEASE|HP_GO;
 	return (MBD_DONE);
 }
 
 hpread(dev)
+	dev_t dev;
 {
+	register int unit = minor(dev) >> 3;
 
-	physio(hpstrategy, &rhpbuf, dev, B_READ, minphys);
+	if (unit >= NHP)
+		u.u_error = ENXIO;
+	else
+		physio(hpstrategy, &rhpbuf[unit], dev, B_READ, minphys);
 }
 
 hpwrite(dev)
+	dev_t dev;
 {
+	register int unit = minor(dev) >> 3;
 
-	physio(hpstrategy, &rhpbuf, dev, B_WRITE, minphys);
+	if (unit >= NHP)
+		u.u_error = ENXIO;
+	else
+		physio(hpstrategy, &rhpbuf[unit], dev, B_WRITE, minphys);
 }
 
 hpecc(mi)
 	register struct mba_info *mi;
 {
 	register struct mba_regs *mbp = mi->mi_mba;
-	register struct device *rp = (struct device *)mi->mi_drv;
+	register struct hpdevice *rp = (struct hpdevice *)mi->mi_drv;
 	register struct buf *bp = mi->mi_tab.b_actf;
 	register struct hpst *st;
 	register int i;
@@ -282,12 +290,6 @@ hpecc(mi)
 	struct pte mpte;
 	int bcr;
 
-	/*
-	 * Npf is the number of sectors transferred before the sector
-	 * containing the ECC error, and reg is the MBA register
-	 * mapping (the first part of)the transfer.
-	 * O is offset within a memory page of the first byte transferred.
-	 */
 	bcr = mbp->mba_bcr & 0xffff;
 	if (bcr)
 		bcr |= 0xffff0000;		/* sxt */
@@ -298,26 +300,14 @@ hpecc(mi)
 	prdev("ECC", bp->b_dev);
 	mask = rp->hpec2&0xffff;
 	if (mask == 0) {
-		rp->hpof = FMT22;
+		rp->hpof = HP_FMT22;
 		return (0);
 	}
 
-	/*
-	 * Compute the byte and bit position of the error.
-	 * The variable i is the byte offset in the transfer,
-	 * the variable byte is the offset from a page boundary
-	 * in main memory.
-	 */
 	i = (rp->hpec1&0xffff) - 1;		/* -1 makes 0 origin */
 	bit = i&07;
 	i = (i&~07)>>3;
 	byte = i + o;
-	/*
-	 * Correct while possible bits remain of mask.  Since mask
-	 * contains 11 bits, we continue while the bit offset is > -11.
-	 * Also watch out for end of this block and the end of the whole
-	 * transfer.
-	 */
 	while (i < 512 && (int)ptob(npf)+i < bp->b_bcount && bit > -11) {
 		mpte = mbp->mba_map[reg+btop(byte)];
 		addr = ptob(mpte.pg_pfnum) + (byte & PGOFSET);
@@ -329,13 +319,11 @@ hpecc(mi)
 	mi->mi_hd->mh_active++;		/* Either complete or continuing */
 	if (bcr == 0)
 		return (0);
-	/*
-	 * Have to continue the transfer... clear the drive,
-	 * and compute the position where the transfer is to continue.
-	 * We have completed npf+1 sectores of the transfer already;
-	 * restart at offset o of next sector (i.e. in MBA register reg+1).
-	 */
-	rp->hpcs1 = DCLR|GO;
+#ifdef notdef
+	rp->hper1 = 0;
+	rp->hpcs1 = HP_RCOM|HP_GO;
+#else
+	rp->hpcs1 = HP_DCLR|HP_GO;
 	bn = dkblock(bp);
 	st = &hpst[mi->mi_type];
 	cn = bp->b_cylin;
@@ -348,7 +336,8 @@ hpecc(mi)
 	rp->hpda = (tn<<8) + sn;
 	mbp->mba_sr = -1;
 	mbp->mba_var = (int)ptob(reg+1) + o;
-	rp->hpcs1 = RCOM|GO;
+	rp->hpcs1 = HP_RCOM|HP_GO;
+#endif
 	return (1);
 }
 
@@ -359,7 +348,7 @@ hpdump(dev)
 {
 	register struct mba_info *mi;
 	register struct mba_regs *mba;
-	struct device *hpaddr;
+	struct hpdevice *hpaddr;
 	char *start;
 	int num, unit;
 	register struct hpst *st;
@@ -373,17 +362,17 @@ hpdump(dev)
 	}
 #define	phys(a,b)	((b)((int)(a)&0x7fffffff))
 	mi = phys(hpinfo[unit],struct mba_info *);
-	if (mi->mi_alive == 0) {
+	if (mi == 0 || mi->mi_alive == 0) {
 		printf("dna\n");
 		return (-1);
 	}
 	mba = phys(mi->mi_hd, struct mba_hd *)->mh_physmba;
 	mba->mba_cr = MBAINIT;
-	hpaddr = (struct device *)&mba->mba_drv[mi->mi_drive];
-	if ((hpaddr->hpds & VV) == 0) {
-		hpaddr->hpcs1 = DCLR|GO;
-		hpaddr->hpcs1 = PRESET|GO;
-		hpaddr->hpof = FMT22;
+	hpaddr = (struct hpdevice *)&mba->mba_drv[mi->mi_drive];
+	if ((hpaddr->hpds & HP_VV) == 0) {
+		hpaddr->hpcs1 = HP_DCLR|HP_GO;
+		hpaddr->hpcs1 = HP_PRESET|HP_GO;
+		hpaddr->hpof = HP_FMT22;
 	}
 	st = &hpst[mi->mi_type];
 	if (dumplo < 0 || dumplo + num >= st->sizes[minor(dev)&07].nblocks) {
@@ -409,10 +398,10 @@ hpdump(dev)
 		mba->mba_sr = -1;
 		mba->mba_bcr = -(blk*NBPG);
 		mba->mba_var = 0;
-		hpaddr->hpcs1 = WCOM | GO;
-		while ((hpaddr->hpds & DRY) == 0)
+		hpaddr->hpcs1 = HP_WCOM | HP_GO;
+		while ((hpaddr->hpds & HP_DRY) == 0)
 			;
-		if (hpaddr->hpds&ERR) {
+		if (hpaddr->hpds&HP_ERR) {
 			printf("dskerr: (%d,%d,%d) ds=%x er=%x\n",
 			    cn, tn, sn, hpaddr->hpds, hpaddr->hper1);
 			return (-1);
