@@ -1,5 +1,5 @@
 /*
-char id_f_errlist[] = "@(#)f_errlist.c	1.3";
+char id_f_errlist[] = "@(#)f_errlist.c	1.4";
  *
  * f77 I/O error messages
  */
@@ -21,7 +21,7 @@ char *f_errlist[] =
 /* 112 */	"incomprehensible list input",
 /* 113 */	"out of free space",
 /* 114 */	"unit not connected",
-/* 115 */	"read unexpected character",
+/* 115 */	"invalid data for integer format term",
 /* 116 */	"blank logical input field",
 /* 117 */	"'new' file exists",
 /* 118 */	"can't find 'old' file",
@@ -30,6 +30,7 @@ char *f_errlist[] =
 /* 121 */	"illegal argument",
 /* 122 */	"negative repeat count",
 /* 123 */	"illegal operation for unit",
+/* 124 */	"invalid data for d,e,f, or g format term",
 };
 
 int f_nerr = (sizeof(f_errlist)/sizeof(char *));

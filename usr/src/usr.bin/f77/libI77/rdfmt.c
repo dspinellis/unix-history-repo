@@ -1,5 +1,5 @@
 /*
-char id_rdfmt[] = "@(#)rdfmt.c	1.6";
+char id_rdfmt[] = "@(#)rdfmt.c	1.7";
  *
  * formatted read routines
  */
@@ -124,7 +124,7 @@ rd_I(n,w,len) ftnlen len; uint *n;
 					break;
 				}
 			}
-			return(errno=F_ERRDCHR);
+			return(errno=F_ERRICHR);
 		}
 	}
 done:
@@ -167,7 +167,7 @@ rd_F(p,w,d,len) ftnlen len; ufloat *p;
 		{	i=w;
 			break;
 		}
-		else if(ch!='\n') return(errno=F_ERRDCHR);
+		else if(ch!='\n') return(errno=F_ERRFCHR);
 	}
 	if(ch=='.') dot=1;
 	while(i<w && ch!='e' && ch!='d' && ch!='+' && ch!='-')
@@ -197,7 +197,7 @@ rd_F(p,w,d,len) ftnlen len; ufloat *p;
 		else if(ch==',') break;
 		else if(ch==' ') continue;
 		else if(ch=='+') continue;
-		else if(ch!='\n') return(errno=F_ERRDCHR);
+		else if(ch!='\n') return(errno=F_ERRFCHR);
 	}
 	if(!dot)
 		for(i=0;i<d;i++) x /= 10;

@@ -1,5 +1,5 @@
 /*
-char id_f_errno[] = "@(#)f_errno.h	1.5";
+char id_f_errno[] = "@(#)f_errno.h	1.6";
  *
  * f77 I/O error definitions
  */
@@ -26,7 +26,7 @@ extern int f_nerr;
 #define F_ERLIO		112	/* incomprehensible list input */
 #define F_ERSPACE	113	/* out of free space */
 #define F_ERNOPEN	114	/* unit not connected */
-#define F_ERRDCHR	115	/* read unexpected character */
+#define F_ERRICHR	115	/* invalid data for integer format term */
 #define F_ERLOGIF	116	/* blank logical input field */
 #define F_ERNEWF	117	/* 'new' file exists */
 #define F_EROLDF	118	/* can't find 'old' file */
@@ -35,5 +35,6 @@ extern int f_nerr;
 #define F_ERARG		121	/* illegal argument */
 #define F_ERNREP	122	/* negative repeat count */
 #define F_ERILLOP	123	/* illegal operation for channel or device */
+#define F_ERRFCHR	124	/* invalid data for d,e,f, or g format term */
 
 #define F_MAXERR	(f_nerr + F_ER)
