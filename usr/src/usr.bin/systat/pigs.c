@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pigs.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)pigs.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -166,7 +166,7 @@ initpigs()
 		nlist("/vmunix", nlst);
 		if (nlst[X_PROC].n_type == 0) {
 			error("namelist on /vmunix failed");
-			return;
+			return(0);
 		}
 	}
         if (procp == NULL) {
@@ -176,13 +176,14 @@ initpigs()
 	if (kprocp == NULL)
                 kprocp = (struct proc *)calloc(nproc, sizeof (struct proc));
         if (usrpt != NULL)
-		return;
+		return(1);
 	usrpt = (struct pte *)nlst[X_USRPT].n_value;
 	Usrptma = (struct pte *)nlst[X_USRPTMAP].n_value;
 	if (pt == NULL)
 		pt = (struct p_times *)calloc(nproc, sizeof (struct p_times));
 	lseek(kmem, (long)nlst[X_CPTIME].n_value, L_SET);
 	read(kmem, stime, sizeof stime);
+	return(1);
 }
 
 fetchpigs()
@@ -192,7 +193,6 @@ fetchpigs()
         register float time;
         register struct proc *pp;
 	long ctime[CPUSTATES];
-	char buf[25];
 	double t;
 
 	if (nlst[X_PROC].n_type == 0)

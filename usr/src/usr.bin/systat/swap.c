@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)swap.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)swap.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include "systat.h"
@@ -201,7 +201,7 @@ initswap()
 		nlist("/vmunix", nlst);
 		if (nlst[X_PROC].n_type == 0) {
 			error("namelist on /vmunix failed");
-			return;
+			return(0);
 		}
 	}
         if (nswdev == 0) {
@@ -224,11 +224,12 @@ initswap()
 	if (kprocp == NULL)
                 kprocp = (struct proc *)calloc(nproc, sizeof (struct proc));
         if (usrpt != NULL)
-                return;
+                return(1);
 	usrpt = (struct pte *)nlst[X_USRPT].n_value;
 	Usrptma = (struct pte *)nlst[X_USRPTMAP].n_value;
 	if (pt == NULL)
 		pt = (struct p_times *)malloc(nproc * sizeof (struct p_times));
+	return(1);
 }
 
 fetchswap()
@@ -266,7 +267,6 @@ char	*devnames[] =
 
 labelswap()
 {
-	register int i, j;
 	register int row;
 
 	if (nswdev == 0) {

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mbufs.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)mbufs.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include "systat.h"
@@ -107,11 +107,12 @@ initmbufs()
 		nlist("/vmunix", nlst);
 		if (nlst[X_MBSTAT].n_type == 0) {
 			error("namelist on /vmunix failed");
-			return;
+			return(0);
 		}
 	}
 	if (mb == 0)
 		mb = (struct mbstat *)calloc(1, sizeof (*mb));
+	return(1);
 }
 
 fetchmbufs()

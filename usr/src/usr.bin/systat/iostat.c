@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)iostat.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)iostat.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -70,16 +70,16 @@ static  int msps = 0;                   /* default ms/seek shown */
 
 initiostat()
 {
-        register  i;
 
         if (nlst[X_DK_BUSY].n_type == 0) {
                 nlist("/vmunix", nlst);
                 if (nlst[X_DK_BUSY].n_type == 0) {
                         error("Disk init information isn't in namelist");
-                        return;
+                        return(0);
                 }
         }
-	dkinit();
+	if (! dkinit())
+		return(0);
 	if (dk_ndrive) {
 #define	allocate(e, t) \
     s./**/e = (t *)calloc(dk_ndrive, sizeof (t)); \
@@ -90,6 +90,7 @@ initiostat()
 		allocate(dk_xfer, long);
 #undef allocate
 	}
+	return(1);
 }
 
 fetchiostat()
@@ -250,7 +251,6 @@ static
 stats(row, col, dn)
         int row, dn;
 {
-        register i;
         double atime, words, xtime, itime;
 
         atime = s.dk_time[dn];
@@ -323,7 +323,6 @@ histogram(val, colwidth, scale)
 cmdiostat(cmd, args)
         char *cmd, *args;
 {
-        int i;
 
         if (prefix(cmd, "msps"))
                 msps = !msps;
