@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fsck.h	5.16 (Berkeley) %G%
+ *	@(#)fsck.h	5.17 (Berkeley) %G%
  */
 
 #define	MAXDUP		10	/* limit on dup blks (per inode) */
@@ -64,7 +64,7 @@ struct bufarea *getdatablk();
 #define	sblock		(*sblk.b_un.b_fs)
 #define	cgrp		(*cgblk.b_un.b_cg)
 
-enum fixstate {DONTKNOW, NOFIX, FIX};
+enum fixstate {DONTKNOW, NOFIX, FIX, IGNORE};
 
 struct inodesc {
 	enum fixstate id_fix;	/* policy on fixing errors */
