@@ -4,16 +4,31 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_bio.c	7.3 (Berkeley) %G%
+ *	@(#)lfs_bio.c	7.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
 #include <sys/proc.h>
 #include <sys/buf.h>
+#include <sys/vnode.h>
 #include <sys/resourcevar.h>
+#include <sys/mount.h>
+
+#include <ufs/ufs/quota.h>
+#include <ufs/ufs/inode.h>
+#include <ufs/ufs/ufsmount.h>
 
 #include <ufs/lfs/lfs.h>
 #include <ufs/lfs/lfs_extern.h>
+
+/*
+ * LFS block write function.
+ *
+ * XXX
+ * No write cost accounting is done.
+ * This is almost certainly wrong for synchronous operations and NFS.
+ */
+int	locked_queue_count;		/* XXX Count of locked-down buffers. */
 
 int
 lfs_bwrite(bp)
@@ -23,20 +38,54 @@ lfs_bwrite(bp)
 printf("lfs_bwrite\n");
 #endif
 	/*
-	 * LFS version of bawrite, bdwrite, bwrite.  Set the delayed write
-	 * flag and use reassignbuf to move the buffer from the clean list
-	 * to the dirty one, then unlock the buffer.  Note, we set the
-	 * B_LOCKED flag, which causes brelse to move the buffer onto the
-	 * LOCKED free list.  This is necessary, otherwise getnewbuf() would
-	 * try to reclaim them using bawrite, which isn't going to work.
+	 * Set the delayed write flag and use reassignbuf to move the buffer
+	 * from the clean list to the dirty one.
 	 *
-	 * XXX
-	 * No accounting for the cost of the write is currently done.
-	 * This is almost certainly wrong for synchronous operations, i.e. NFS.
+	 * Set the B_LOCKED flag and unlock the buffer, causing brelse to move
+	 * the buffer onto the LOCKED free list.  This is necessary, otherwise
+	 * getnewbuf() would try to reclaim the buffers using bawrite, which
+	 * isn't going to work.
 	 */
+	if (!(bp->b_flags & B_LOCKED))
+		++locked_queue_count;
 	bp->b_flags |= B_DELWRI | B_LOCKED;
 	bp->b_flags &= ~(B_READ | B_DONE | B_ERROR);
 	reassignbuf(bp, bp->b_vp);
 	brelse(bp);
 	return (0);
+}
+
+/*
+ * XXX
+ * This routine flushes buffers out of the B_LOCKED queue when LFS has too
+ * many locked down.  Eventually the pageout daemon will simply call LFS
+ * when pages need to be reclaimed.
+ */
+void
+lfs_flush()
+{
+	register struct mount *mp;
+	struct mount *omp;
+
+	/* 800K in a 4K file system. */
+	if (locked_queue_count < 200)
+		return;
+	mp = rootfs;
+	do {
+		/*
+		 * The lock check below is to avoid races with mount
+		 * and unmount.
+		 */
+		if (mp->mnt_stat.f_type == MOUNT_LFS &&
+		    (mp->mnt_flag & (MNT_MLOCK|MNT_RDONLY|MNT_MPBUSY)) == 0 &&
+		    !vfs_busy(mp)) {
+			lfs_segwrite(mp, 0);
+			omp = mp;
+			mp = mp->mnt_next;
+			vfs_unbusy(omp);
+		} else
+			mp = mp->mnt_next;
+	} while (mp != rootfs);
+	/* Not exact, but it doesn't matter. */
+	locked_queue_count = 0;
 }
