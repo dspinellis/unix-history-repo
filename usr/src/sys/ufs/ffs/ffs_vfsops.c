@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	7.85 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	7.86 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -687,13 +687,9 @@ ffs_vget(mp, ino, vpp)
 	}
 	type = ump->um_devvp->v_tag == VT_MFS ? M_MFSNODE : M_FFSNODE; /* XXX */
 	MALLOC(ip, struct inode *, sizeof(struct inode), type, M_WAITOK);
+	bzero((caddr_t)ip, sizeof(struct inode));
 	vp->v_data = ip;
 	ip->i_vnode = vp;
-	ip->i_flag = 0;
-	ip->i_devvp = 0;
-	ip->i_mode = 0;
-	ip->i_diroff = 0;
-	ip->i_lockf = 0;
 	ip->i_fs = fs = ump->um_fs;
 	ip->i_dev = dev;
 	ip->i_number = ino;
@@ -714,12 +710,10 @@ ffs_vget(mp, ino, vpp)
 	    (int)fs->fs_bsize, NOCRED, &bp)) {
 		/*
 		 * The inode does not contain anything useful, so it would
-		 * be misleading to leave it on its hash chain. It will be
-		 * returned to the free list by vput().
+		 * be misleading to leave it on its hash chain. With mode
+		 * still zero, it will be unlinked and returned to the free
+		 * list by vput().
 		 */
-		ufs_ihashrem(ip);
-
-		/* Unlock and discard unneeded inode. */
 		vput(vp);
 		brelse(bp);
 		*vpp = NULL;
