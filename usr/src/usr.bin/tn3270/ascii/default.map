@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)default.map	1.5 (Berkeley) %G%
+ *	@(#)default.map	4.1 (Berkeley) %G%
  */
 
 /* default.map3270:  This file is the system default for the key sequence

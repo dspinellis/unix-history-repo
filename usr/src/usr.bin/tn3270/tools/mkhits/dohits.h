@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)dohits.h	3.3 (Berkeley) %G%
+ *	@(#)dohits.h	4.1 (Berkeley) %G%
  */
 
 #define	numberof(x)	(sizeof x/sizeof x[0])

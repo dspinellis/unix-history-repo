@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vaxbsubs.s	1.3 (Berkeley) %G%
+ *	@(#)vaxbsubs.s	4.1 (Berkeley) %G%
  */
 
 /* This is taken from bcmp.s from 4.2.

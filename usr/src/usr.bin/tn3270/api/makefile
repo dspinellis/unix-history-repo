@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)makefile	3.5 (Berkeley) %G%
+#	@(#)makefile	4.1 (Berkeley) %G%
 # msdos versus unix defines
 O	= .o
 #PC_O	= .obj

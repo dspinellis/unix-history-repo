@@ -14,7 +14,7 @@
 ; IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 ; WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 ;
-;	@(#)support.asm	3.3 (Berkeley) %G%
+;	@(#)support.asm	4.1 (Berkeley) %G%
 ;
 
 _TEXT	segment	byte public 'CODE'
