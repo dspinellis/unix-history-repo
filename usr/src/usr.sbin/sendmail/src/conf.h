@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.158 (Berkeley) %G%
+ *	@(#)conf.h	8.159 (Berkeley) %G%
  */
 
 /*
@@ -1107,7 +1107,7 @@ extern int	syslog(int, char *, ...);
 /*
 **  Cray Computer Corporation's CSOS
 **
-**	Contributed by Scott Bolte <scott@craycos.com>.
+**	From Scott Bolte <scott@craycos.com>.
 */
 
 #ifdef _CRAYCOM
@@ -1125,6 +1125,8 @@ extern struct group	*getgrent(), *getgrnam(), *getgrgid();
 
 /*
 **  Sony NEWS-OS 4.2.1R and 6.0.3
+**
+**	From Motonori NAKAMURA <motonori@cs.ritsumei.ac.jp>.
 */
 
 #ifdef sony_news
@@ -1156,7 +1158,7 @@ typedef int		(*sigfunc_t)();
 #  define HASSETREUID	1	/* has setreuid(2) call */
 #  define HASSETSID	1	/* has Posix setsid(2) call */
 #  define HASGETUSERSHELL 1	/* DOES have getusershell(3) call in libc */
-#  define LA_TYPE	LA_INT
+#  define LA_TYPE	LA_READKSYM	/* use MIOC_READKSYM ioctl */
 #  define SFS_TYPE	SFS_STATVFS	/* use <sys/statvfs.h> statvfs() impl */
 #  define GIDSET_T	gid_t
 #  define setreuid(r, e)	seteuid(e)
@@ -1176,6 +1178,8 @@ typedef int		(*sigfunc_t)();
 
 /*
 **  Omron LUNA/UNIOS-B 3.0, LUNA2/Mach and LUNA88K Mach
+**
+**	From Motonori NAKAMURA <motonori@cs.ritsumei.ac.jp>.
 */
 
 #ifdef luna
@@ -1213,9 +1217,9 @@ extern int	errno;
 
   
 /*
-**  NEC EWS-UX/V 4.2
+**  NEC EWS-UX/V 4.2 (with /usr/ucb/cc)
 **
-**  with /usr/ucb/cc
+**	From Motonori NAKAMURA <motonori@cs.ritsumei.ac.jp>.
 */
 
 #ifdef nec_ews_svr4
@@ -1224,12 +1228,12 @@ extern int	errno;
 # endif
 # define SYS5SIGNALS	1	/* SysV signal semantics -- reset on each sig */
 # define HASSETSID	1	/* has Posix setsid(2) call */
+# define LA_TYPE	LA_READKSYM	/* use MIOC_READSYM ioctl */
 # define SFS_TYPE	SFS_USTAT	/* use System V ustat(2) syscall */
 # define GIDSET_T	gid_t
 # undef WIFEXITED
 # undef WEXITSTATUS
 # define NAMELISTMASK	0x7fffffff	/* mask for nlist() values */
-# include <sys/ksym.h>		/* for MIOC_READKSYM */
 #endif
 
 
