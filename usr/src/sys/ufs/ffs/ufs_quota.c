@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_quota.c	7.16 (Berkeley) %G%
+ *	@(#)ufs_quota.c	7.17 (Berkeley) %G%
  */
 #include <sys/param.h>
 #include <sys/kernel.h>
@@ -631,19 +631,8 @@ again:
 /*
  * Code pertaining to management of the in-core dquot data structures.
  */
-
-/*
- * Dquot cache - hash chain headers.
- */
-union	dqhead	{
-	union	dqhead	*dqh_head[2];
-	struct	dquot	*dqh_chain[2];
-};
-#define	dqh_forw	dqh_chain[0]
-#define	dqh_back	dqh_chain[1]
-
-union dqhead *dqhashtbl;
-long dqhash;
+struct dquot **dqhashtbl;
+u_long dqhash;
 
 /*
  * Dquot free list.
@@ -658,19 +647,8 @@ long numdquot, desireddquot = DQUOTINC;
 void
 dqinit()
 {
-	register union dqhead *dhp;
-	register long dqhashsize;
 
-	dqhashsize = roundup((desiredvnodes + 1) * sizeof *dhp / 2,
-		NBPG * CLSIZE);
-	dqhashtbl = (union dqhead *)malloc(dqhashsize, M_DQUOT, M_WAITOK);
-	for (dqhash = 1; dqhash <= dqhashsize / sizeof *dhp; dqhash <<= 1)
-		continue;
-	dqhash = (dqhash >> 1) - 1;
-	for (dhp = &dqhashtbl[dqhash]; dhp >= dqhashtbl; dhp--) {
-		dhp->dqh_head[0] = dhp;
-		dhp->dqh_head[1] = dhp;
-	}
+	dqhashtbl = hashinit(desiredvnodes, M_DQUOT, &dqhash);
 }
 
 /*
@@ -685,9 +663,7 @@ dqget(vp, id, ump, type, dqp)
 	register int type;
 	struct dquot **dqp;
 {
-	register struct dquot *dq;
-	register union dqhead *dh;
-	register struct dquot *dp;
+	register struct dquot *dq, *dp, **dpp;
 	register struct vnode *dqvp;
 	struct iovec aiov;
 	struct uio auio;
@@ -701,8 +677,8 @@ dqget(vp, id, ump, type, dqp)
 	/*
 	 * Check the cache first.
 	 */
-	dh = &dqhashtbl[((((int)(dqvp)) >> 8) + id) & dqhash];
-	for (dq = dh->dqh_forw; dq != (struct dquot *)dh; dq = dq->dq_forw) {
+	dpp = &dqhashtbl[((((int)(dqvp)) >> 8) + id) & dqhash];
+	for (dq = *dpp; dq; dq = dq->dq_forw) {
 		if (dq->dq_id != id ||
 		    dq->dq_ump->um_quotas[dq->dq_type] != dqvp)
 			continue;
@@ -711,8 +687,7 @@ dqget(vp, id, ump, type, dqp)
 		 * the structure off the free list.
 		 */
 		if (dq->dq_cnt == 0) {
-			dp = dq->dq_freef;
-			if (dp != NODQUOT)
+			if ((dp = dq->dq_freef) != NODQUOT)
 				dp->dq_freeb = dq->dq_freeb;
 			else
 				dqback = dq->dq_freeb;
@@ -746,14 +721,20 @@ dqget(vp, id, ump, type, dqp)
 		dqfreel = dp;
 		dq->dq_freef = NULL;
 		dq->dq_freeb = NULL;
-		remque(dq);
+		if (dp = dq->dq_forw)
+			dp->dq_back = dq->dq_back;
+		*dq->dq_back = dp;
 	}
 	/*
 	 * Initialize the contents of the dquot structure.
 	 */
 	if (vp != dqvp)
 		VOP_LOCK(dqvp);
-	insque(dq, dh);
+	if (dp = *dpp)
+		dp->dq_back = &dq->dq_forw;
+	dq->dq_forw = dp;
+	dq->dq_back = dpp;
+	*dpp = dq;
 	DQREF(dq);
 	dq->dq_flags = DQ_LOCK;
 	dq->dq_id = id;
@@ -781,9 +762,11 @@ dqget(vp, id, ump, type, dqp)
 	 * quota structure and reflect problem to caller.
 	 */
 	if (error) {
-		remque(dq);
-		dq->dq_forw = dq;	/* on a private, unfindable hash list */
-		dq->dq_back = dq;
+		if (dp = dq->dq_forw)
+			dp->dq_back = dq->dq_back;
+		*dq->dq_back = dp;
+		dq->dq_forw = NULL;
+		dq->dq_back = NULL;
 		dqrele(vp, dq);
 		*dqp = NODQUOT;
 		return (error);
@@ -904,24 +887,25 @@ void
 dqflush(vp)
 	register struct vnode *vp;
 {
-	register union dqhead *dh;
-	register struct dquot *dq, *nextdq;
+	register struct dquot *dq, *dp, **dpp, *nextdq;
 
 	/*
 	 * Move all dquot's that used to refer to this quota
 	 * file off their hash chains (they will eventually
 	 * fall off the head of the free list and be re-used).
 	 */
-	for (dh = &dqhashtbl[dqhash]; dh >= dqhashtbl; dh--) {
-		for (dq = dh->dqh_forw; dq != (struct dquot *)dh; dq = nextdq) {
+	for (dpp = &dqhashtbl[dqhash]; dpp >= dqhashtbl; dpp--) {
+		for (dq = *dpp; dq; dq = nextdq) {
 			nextdq = dq->dq_forw;
 			if (dq->dq_ump->um_quotas[dq->dq_type] != vp)
 				continue;
 			if (dq->dq_cnt)
 				panic("dqflush: stray dquot");
-			remque(dq);
-			dq->dq_forw = dq;
-			dq->dq_back = dq;
+			if (dp = dq->dq_forw)
+				dp->dq_back = dq->dq_back;
+			*dq->dq_back = dp;
+			dq->dq_forw = NULL;
+			dq->dq_back = NULL;
 			dq->dq_ump = (struct ufsmount *)0;
 		}
 	}
