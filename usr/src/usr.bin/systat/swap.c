@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)swap.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)swap.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include "systat.h"
@@ -263,6 +263,9 @@ fetchswap()
 char	*devnames[] =
      { "hp", "ht", "up", "rk", "sw", "tm", "ts", "mt", "tu", "ra", "ut",
        "rb", "rx", "rl" };
+#endif
+#ifdef tahoe
+char	*devnames[] = { "ud", "vd", "xp", "cy", "sw" };
 #endif
 
 labelswap()
