@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fstat.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)fstat.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -632,6 +632,6 @@ lgetw(loc)
 static
 usage()
 {
-	fputs("usage: fstat [-v] [-u user] [-p pid] [filename ...]\n", stderr);
+	fputs("usage: fstat [-u user] [-p pid] [filename ...]\n", stderr);
 	exit(1);
 }
