@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)signal.h	5.5 (Berkeley) %G%
+ *	@(#)signal.h	5.6 (Berkeley) %G%
  */
 
 #ifndef _USER_SIGNAL_H
