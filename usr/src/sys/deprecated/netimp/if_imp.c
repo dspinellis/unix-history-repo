@@ -1,4 +1,4 @@
-/*	if_imp.c	4.5	82/02/16	*/
+/*	if_imp.c	4.6	82/02/16	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -86,10 +86,8 @@ COUNT(IMPATTACH);
 	ifp->if_name = "imp";
 	ifp->if_mtu = IMP_MTU;
 	ifp->if_net = ui->ui_flags;
-#ifdef notdef
-	/* this should get cleaned after we talk to the imp */
-	ifp->if_addr = if_makeaddr(ifp->if_net, ifp->if_host);
-#endif
+	/* this should be found by talking to the imp */
+	ifp->if_addr = 0x4e00000a;;
 	ifp->if_init = impinit;
 	ifp->if_output = impoutput;
 	/* reset is handled at the hardware level */
@@ -578,11 +576,6 @@ COUNT(IMPNOOPS);
 		cp->dl_format = IMP_NFF;
                 cp->dl_link = i;
                 cp->dl_mtype = IMPTYPE_NOOP;
-#ifdef notdef
-		cp->dl_network = sc->imp_if.if_net;	/* XXX */
-		cp->dl_host = sc->imp_if.if_addr.s_host;/* XXX */
-		cp->dl_imp = sc->imp_if.if_addr.s_imp;	/* XXX */
-#endif
 		x = splimp();
 		IF_PREPEND(&sc->imp_if.if_snd, m);
 		splx(x);
