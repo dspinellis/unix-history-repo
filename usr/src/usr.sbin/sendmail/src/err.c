@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)err.c	8.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)err.c	8.18 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -421,6 +421,7 @@ const char *
 errstring(errno)
 	int errno;
 {
+	char *dnsmsg;
 	static char buf[MAXLINE];
 # ifndef ERRLIST_PREDEFINED
 	extern char *sys_errlist[];
@@ -436,6 +437,7 @@ errstring(errno)
 	**	These are 4.2/4.3bsd specific; they should be in daemon.c.
 	*/
 
+	dnsmsg = NULL;
 	switch (errno)
 	{
 # if defined(DAEMON) && defined(ETIMEDOUT)
@@ -472,21 +474,37 @@ errstring(errno)
 
 # ifdef NAMED_BIND
 	  case HOST_NOT_FOUND + E_DNSBASE:
-		return ("Name server: %s: host not found", CurHostName);
+		dnsmsg = "host not found";
+		break;
 
 	  case TRY_AGAIN + E_DNSBASE:
-		return ("Name server: %s: host name lookup failure", CurHostName);
+		dnsmsg = "host name lookup failure";
+		break;
 
 	  case NO_RECOVERY + E_DNSBASE:
-		return ("Name server: %s: non-recoverable error", CurHostName);
+		dnsmsg = "non-recoverable error";
+		break;
 
 	  case NO_DATA + E_DNSBASE:
-		return ("Name server: %s: no data known", CurHostName);
+		dnsmsg = "no data known";
+		break;
 # endif
 
 	  case EPERM:
 		/* SunOS gives "Not owner" -- this is the POSIX message */
 		return "Operation not permitted";
+	}
+
+	if (dnsmsg != NULL)
+	{
+		(void) strcpy(buf, "Name server: ");
+		if (CurHostName != NULL)
+		{
+			(void) strcat(buf, CurHostName);
+			(void) strcat(buf, ": ");
+		}
+		(void) strcat(buf, dnsmsg);
+		return buf;
 	}
 
 	if (errno > 0 && errno < sys_nerr)
