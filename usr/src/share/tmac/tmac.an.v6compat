@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)tmac.an.v6compat	5.1 (Berkeley) %G%
+.\"	@(#)tmac.an.v6compat	6.1 (Berkeley) %G%
 .\"
 .de th
 .if t .so /usr/lib/tmac/tmac.an6t
