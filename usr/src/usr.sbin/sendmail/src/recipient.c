@@ -3,7 +3,7 @@
 # include <sys/stat.h>
 # include "sendmail.h"
 
-static char SccsId[] = "@(#)recipient.c	3.17	%G%";
+static char SccsId[] = "@(#)recipient.c	3.18	%G%";
 
 /*
 **  SENDTO -- Designate a send list.
@@ -131,7 +131,7 @@ recipient(a)
 			a->q_mailer = MN_PROG;
 			m = Mailer[MN_PROG];
 			a->q_user++;
-			if (getctladdr(a) == &From && Debug == 0)
+			if (getctladdr(a) == NULL && Debug == 0)
 			{
 				usrerr("Cannot mail directly to programs");
 				a->q_flags |= QDONTSEND;
@@ -174,7 +174,7 @@ recipient(a)
 		if (strncmp(a->q_user, ":include:", 9) == 0)
 		{
 			a->q_flags |= QDONTSEND;
-			if (getctladdr(a) == &From && Debug == 0)
+			if (getctladdr(a) == NULL && Debug == 0)
 				usrerr("Cannot mail directly to :include:s");
 			else
 			{
@@ -215,7 +215,7 @@ recipient(a)
 		if ((p = rindex(buf, '/')) != NULL)
 		{
 			/* check if writable or creatable */
-			if (getctladdr(a) == &From && Debug == 0)
+			if (getctladdr(a) == NULL && Debug == 0)
 			{
 				usrerr("Cannot mail directly to files");
 				a->q_flags |= QDONTSEND;
@@ -447,7 +447,7 @@ sendtoargv(argv)
 				argv += 2;
 			}
 		}
-		sendto(p, 0, &From);
+		sendto(p, 0, NULL);
 	}
 }
 /*
@@ -471,7 +471,5 @@ getctladdr(a)
 {
 	while (a != NULL && a->q_home == NULL)
 		a = a->q_alias;
-	if (a == NULL)
-		return (&From);
 	return (a);
 }

@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.39	%G%";
+static char SccsId[] = "@(#)deliver.c	3.40	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -713,6 +713,8 @@ mailfile(filename, ctladdr)
 			stb.st_mode = 0;
 		if (bitset(0111, stb.st_mode))
 			exit(EX_CANTCREAT);
+		if (ctladdr == NULL)
+			ctladdr = &From;
 		if (!bitset(S_ISGID, stb.st_mode) || setgid(stb.st_gid) < 0)
 			(void) setgid(ctladdr->q_gid);
 		if (!bitset(S_ISUID, stb.st_mode) || setuid(stb.st_uid) < 0)
