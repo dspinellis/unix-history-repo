@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ik.c	7.3 (Berkeley) %G%
+ *	@(#)ik.c	7.4 (Berkeley) %G%
  */
 
 #include "ik.h"
@@ -308,6 +308,7 @@ ikcommand(dev, com, count)
 {
 	register struct buf *bp;
 	register int s;
+	int error;
 
 	bp = &cikbuf[IKUNIT(dev)];
 	s = splik();
@@ -323,11 +324,11 @@ ikcommand(dev, com, count)
 	bp->b_command = com;
 	bp->b_bcount = count;
 	ikstrategy(bp);
-	biowait(bp);
+	error = biowait(bp);
 	if (bp->b_flags&B_WANTED)
 		wakeup((caddr_t)bp);
 	bp->b_flags &= B_ERROR;
-	return (geterror(bp));
+	return (error);
 }
 
 /*
