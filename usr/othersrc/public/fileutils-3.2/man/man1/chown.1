@@ -1,0 +1,44 @@
+.TH CHOWN 1L \" -*- nroff -*-
+.SH NAME
+chown \- change the user and group ownership of files
+.SH SYNOPSIS
+.B chown
+[\-Rcfv] [\-\-recursive] [\-\-show-changes]
+[\-\-silent] [\-\-quiet] [\-\-verbose] [user][:.][group] file...
+.SH DESCRIPTION
+This manual page
+documents the GNU version of
+.BR chown .
+.B chown
+changes the user and/or group ownership of each given file, according
+to its first non-option argument, which is interpreted as follows.  If
+only a user name (or numeric user ID) is given, that user is made the
+owner of each given file, and the files' group is not changed.  If the
+user name is followed by a colon or dot and a group name (or numeric group ID),
+with no spaces between them, the group ownership of the files is
+changed as well.  If a colon or dot but no group name follows the user name,
+that user is made the owner of the files and the group of the files is
+changed to that user's login group.  If the colon or dot and group are given,
+but the user name is omitted, only the group of the files is changed;
+in this case,
+.B chown
+performs the same function as
+.BR chgrp .
+.SS OPTIONS
+.TP
+.I "\-c, \-\-show-changes"
+Verbosely describe only files whose ownership actually changes.
+.TP
+.I "\-f, \-\-silent, \-\-quiet"
+Do not print error messages about files whose ownership cannot be
+changed.
+.TP
+.I "\-v, \-\-verbose"
+Verbosely describe ownership changes.
+.TP
+.I "\-R, \-\-recursive"
+Recursively change ownership of directories and their contents.
+.PP
+The long-named options can be introduced with `+' as well as `\-\-',
+for compatibility with previous releases.  Eventually support for `+'
+will be removed, because it is incompatible with the POSIX.2 standard.

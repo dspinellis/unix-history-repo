@@ -1,0 +1,125 @@
+.TH CP 1L \" -*- nroff -*-
+.SH NAME
+cp \- copy files
+.SH SYNOPSIS
+.B cp
+[options] source dest
+.br
+.B cp
+[options] source... directory
+.br
+Options:
+.br
+[\-abdfilprsuvxPR] [\-S backup-suffix] [\-V {numbered,existing,simple}]
+[\-\-backup] [\-\-no-dereference] [\-\-force] [\-\-interactive]
+[\-\-one-file-system] [\-\-preserve] [\-\-recursive] [\-\-update]
+[\-\-verbose] [\-\-suffix=backup-suffix]
+[\-\-version-control={numbered,existing,simple}] [\-\-archive] [\-\-path]
+[\-\-link] [\-\-symbolic-link]
+.SH DESCRIPTION
+This manual page
+documents the GNU version of
+.BR cp .
+If the last argument names an existing directory,
+.B cp
+copies each other given file into a file with the same name in that
+directory.  Otherwise, if only two files are given, it copies the
+first onto the second.  It is an error if the last argument is not a
+directory and more than two files are given.  By default, it does not
+copy directories.
+.SS OPTIONS
+.TP
+.I "\-a, \-\-archive"
+Preserve as much as possible of the structure and attributes of the
+original files in the copy.  The same as
+.IR \-dpR .
+.TP
+.I "\-b, \-\-backup"
+Make backups of files that are about to be overwritten or removed.
+.TP
+.I "\-d, \-\-no-dereference"
+Copy symbolic links as symbolic links rather than copying the files
+that they point to, and preserve hard link relationships between
+source files in the copies.
+.TP
+.I "\-f, \-\-force"
+Remove existing destination files.
+.TP
+.I "\-i, \-\-interactive"
+Prompt whether to overwrite existing regular destination files.
+.TP
+.I "\-l, \-\-link"
+Make hard links instead of copies of non-directories.
+.TP
+.I "\-P, \-\-path"
+Form the pathname of each destination file by appending to the target
+directory a slash and the pathname of the source file.  The last
+argument given to
+.B cp
+must be the name of an existing directory.  For example, the command
+`cp \-\-path a/b/c existing_dir' copies the file
+.I a/b/c
+to
+.I existing_dir/a/b/c,
+creating any missing intermediate directories.
+.TP
+.I "\-p, \-\-preserve"
+Preserve the original files' owner, group, permissions, and timestamps.
+.TP
+.I \-r
+Copy directories recursively, copying all non-directories as if they
+were regular files.
+.TP
+.I "\-s, \-\-symbolic-link"
+Make symbolic links instead of copies of non-directories.
+All source files must be absolute pathnames (starting with `/')
+unless the destination files are in the current directory.
+.TP
+.I "\-u, \-\-update"
+Do not copy a nondirectory that has an existing destination with the
+same or newer modification time.
+.TP
+.I "\-v, \-\-verbose"
+Print the name of each file before copying it.
+.TP
+.I "\-x, \-\-one-file-system"
+Skip subdirectories that are on different filesystems from the one
+that the copy started on.
+.TP
+.I "\-R, \-\-recursive"
+Copy directories recursively.
+.TP
+.I "\-S, \-\-suffix backup-suffix"
+The suffix used for making simple backup files can be set with the
+.B SIMPLE_BACKUP_SUFFIX
+environment variable, which can be overridden by this option.  If
+neither of those is given, the default is `~', as it is in Emacs.
+.TP
+.I "\-V, \-\-version-control {numbered,existing,simple}"
+The type of backups made can be set with the
+.B VERSION_CONTROL
+environment variable, which can be overridden by this option.  If
+.B VERSION_CONTROL
+is not set and this option is not given, the default backup type is
+`existing'.  The value of the
+.B VERSION_CONTROL
+environment variable and the argument to this option are like the GNU
+Emacs `version-control' variable; they also recognize synonyms that
+are more descriptive.  The valid values are (unique abbreviations are
+accepted):
+.RS
+.TP
+`t' or `numbered'
+Always make numbered backups.
+.TP
+`nil' or `existing'
+Make numbered backups of files that already
+have them, simple backups of the others.
+.TP
+`never' or `simple'
+Always make simple backups.
+.RE
+.PP
+The long-named options can be introduced with `+' as well as `\-\-',
+for compatibility with previous releases.  Eventually support for `+'
+will be removed, because it is incompatible with the POSIX.2 standard.
