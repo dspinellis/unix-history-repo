@@ -15,7 +15,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)nfsd.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)nfsd.c	5.10 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -40,15 +40,18 @@ static char sccsid[] = "@(#)nfsd.c	5.9 (Berkeley) %G%";
 /* Global defs */
 #ifdef DEBUG
 #define	syslog(e, s)	fprintf(stderr,(s))
-int debug = 1;
+int	debug = 1;
 #else
-int debug = 0;
+int	debug = 0;
 #endif
 struct hadr {
 	u_long	ha_sad;
 	struct hadr *ha_next;
 };
-struct hadr hphead;
+struct	hadr hphead;
+char	**Argv = NULL;		/* pointer to argument vector */
+char	*LastArg = NULL;	/* end of argv */
+void	reapchild();
 
 /*
  * Nfs server daemon mostly just a user context for nfssvc()
@@ -65,22 +68,36 @@ struct hadr hphead;
  * -t - support tcp nfs clients
  * -u - support udp nfs clients
  */
-main(argc, argv)
+main(argc, argv, envp)
 	int argc;
-	char **argv;
+	char *argv[], *envp[];
 {
 	register int i;
 	register char *cp, *cp2;
 	register struct hadr *hp;
 	int udpcnt, sock, msgsock, tcpflag = 0, udpflag = 0, ret, len;
+	int reregister = 0;
 	char opt;
-	union wait chldstat;
 	extern int optind;
 	extern char *optarg;
 	struct sockaddr_in saddr, msk, mtch, peername;
 
-	while ((opt = getopt(argc, argv, "t:u:")) != EOF)
+
+	/*
+	 *  Save start and extent of argv for setproctitle.
+	 */
+
+	Argv = argv;
+	if (envp == 0 || *envp == 0)
+		envp = argv;
+	while (*envp)
+		envp++;
+	LastArg = envp[-1] + strlen(envp[-1]);
+	while ((opt = getopt(argc, argv, "rt:u:")) != EOF)
 		switch (opt) {
+		case 'r':
+			reregister++;
+			break;
 		case 't':
 			tcpflag++;
 			if (cp = index(optarg, ',')) {
@@ -132,8 +149,14 @@ main(argc, argv)
 		default:
 		case '?':
 			usage();
-		};
-	if (optind == 1) {
+		}
+
+	/*
+	 * Default, if neither UDP nor TCP is specified,
+	 * is to support UDP only; a numeric argument indicates
+	 * the number of server daemons to run.
+	 */
+	if (udpflag == 0 && tcpflag == 0) {
 		if (argc > 1)
 			udpcnt = atoi(*++argv);
 		if (udpcnt < 1 || udpcnt > 20)
@@ -141,6 +164,7 @@ main(argc, argv)
 		msk.sin_addr.s_addr = mtch.sin_addr.s_addr = 0;
 		udpflag++;
 	}
+
 	if (debug == 0) {
 		daemon(0, 0);
 		signal(SIGINT, SIG_IGN);
@@ -148,8 +172,28 @@ main(argc, argv)
 		signal(SIGTERM, SIG_IGN);
 		signal(SIGHUP, SIG_IGN);
 	}
+	signal(SIGCHLD, reapchild);
+
+	if (reregister) {
+		if (udpflag && !pmap_set(RPCPROG_NFS, NFS_VER2, IPPROTO_UDP,
+		    NFS_PORT)) {
+			fprintf(stderr,
+			    "Can't register with portmap for UDP\n");
+			exit(1);
+		}
+		if (tcpflag && !pmap_set(RPCPROG_NFS, NFS_VER2, IPPROTO_TCP,
+		    NFS_PORT)) {
+			fprintf(stderr,
+			    "Can't register with portmap for TCP\n");
+			exit(1);
+		}
+		exit(0);
+	}
 	openlog("nfsd:", LOG_PID, LOG_DAEMON);
+#ifdef notdef
+	/* why? unregisters both protocols even if we restart only one */
 	pmap_unset(RPCPROG_NFS, NFS_VER2);
+#endif
 	if (udpflag) {
 		if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
 			syslog(LOG_ERR, "Can't create socket");
@@ -158,7 +202,7 @@ main(argc, argv)
 		saddr.sin_family = AF_INET;
 		saddr.sin_addr.s_addr = INADDR_ANY;
 		saddr.sin_port = htons(NFS_PORT);
-		if (bind(sock, &saddr, sizeof(saddr)) < 0) {
+		if (bind(sock, (struct sockaddr *)&saddr, sizeof(saddr)) < 0) {
 			syslog(LOG_ERR, "Can't bind addr");
 			exit(1);
 		}
@@ -168,10 +212,13 @@ main(argc, argv)
 		}
 	
 		/*
-		 * Send the nfs datagram servers right down into the kernel
+		 * Send the nfs datagram servers
+		 * right down into the kernel
 		 */
 		for (i = 0; i < udpcnt; i++)
 			if (fork() == 0) {
+				setproctitle("nfsd-udp",
+				    (struct sockaddr_in *)NULL);
 				ret = nfssvc(sock, &msk, sizeof(msk),
 						&mtch, sizeof(mtch));
 				if (ret < 0)
@@ -185,14 +232,19 @@ main(argc, argv)
 	 * Now set up the master STREAM server waiting for tcp connections.
 	 */
 	if (tcpflag) {
+		int on = 1;
+
 		if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
 			syslog(LOG_ERR, "Can't create socket");
 			exit(1);
 		}
+		if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
+		    (char *) &on, sizeof(on)) < 0)
+			syslog(LOG_ERR, "setsockopt SO_REUSEADDR: %m");
 		saddr.sin_family = AF_INET;
 		saddr.sin_addr.s_addr = INADDR_ANY;
 		saddr.sin_port = htons(NFS_PORT);
-		if (bind(sock, &saddr, sizeof(saddr)) < 0) {
+		if (bind(sock, (struct sockaddr *)&saddr, sizeof(saddr)) < 0) {
 			syslog(LOG_ERR, "Can't bind addr");
 			exit(1);
 		}
@@ -204,29 +256,20 @@ main(argc, argv)
 			syslog(LOG_ERR, "Can't register with portmap");
 			exit(1);
 		}
+		setproctitle("nfsd-listen", (struct sockaddr_in *)NULL);
 		/*
 		 * Loop forever accepting connections and sending the children
 		 * into the kernel to service the mounts.
 		 */
 		for (;;) {
-			if ((msgsock = accept(sock, (struct sockaddr *)0,
-				(int *)0)) < 0) {
+			len = sizeof(peername);
+			if ((msgsock = accept(sock,
+			    (struct sockaddr *)&peername, &len)) < 0) {
 				syslog(LOG_ERR, "Accept failed: %m");
 				exit(1);
 			}
-			/*
-			 * Grab child termination status' just so defuncts
-			 * are not left lying about.
-			 */
-			while (wait3(&chldstat, WNOHANG, (struct rusage *)0))
-				;
-			len = sizeof(peername);
-			if (getsockname(msgsock, &peername, &len) < 0) {
-				syslog(LOG_ERR, "Getsockname failed\n");
-				exit(1);
-			}
-			if ((peername.sin_addr.s_addr & msk.sin_addr.s_addr)
-				!= mtch.sin_addr.s_addr) {
+			if ((peername.sin_addr.s_addr & msk.sin_addr.s_addr) !=
+			   mtch.sin_addr.s_addr) {
 				hp = hphead.ha_next;
 				while (hp) {
 					if (peername.sin_addr.s_addr ==
@@ -242,6 +285,11 @@ main(argc, argv)
 			}
 			if (fork() == 0) {
 				close(sock);
+				setproctitle("nfsd-tcp", &peername);
+				if (setsockopt(msgsock, SOL_SOCKET,
+				    SO_KEEPALIVE, (char *) &on, sizeof(on)) < 0)
+					syslog(LOG_ERR,
+					    "setsockopt SO_KEEPALIVE: %m");
 				ret = nfssvc(msgsock, &msk, sizeof(msk),
 						&mtch, sizeof(mtch));
 				shutdown(msgsock, 2);
@@ -259,4 +307,30 @@ usage()
 {
 	fprintf(stderr, "nfsd [-t msk,mtch[,addrs]] [-u msk,mtch,numprocs]\n");
 	exit(1);
+}
+
+void
+reapchild()
+{
+
+	while (wait3((int *) NULL, WNOHANG, (struct rusage *) NULL))
+		;
+}
+
+setproctitle(a, sin)
+	char *a;
+	struct sockaddr_in *sin;
+{
+	register char *cp;
+	char buf[80];
+
+	cp = Argv[0];
+	if (sin)
+		(void) sprintf(buf, "%s [%s]", a, inet_ntoa(sin->sin_addr));
+	else
+		(void) sprintf(buf, "%s", a);
+	(void) strncpy(cp, buf, LastArg - cp);
+	cp += strlen(cp);
+	while (cp < LastArg)
+		*cp++ = ' ';
 }
