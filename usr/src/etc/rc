@@ -1,4 +1,4 @@
-#	@(#)rc	5.30 (Berkeley) %G%
+#	@(#)rc	5.31 (Berkeley) %G%
 
 # System startup script run by init on autoboot
 # or after single-user.
@@ -97,7 +97,7 @@ quotacheck -a
 quotaon -a
 
 # build ps databases
-kvm_mkdb /vmunix
+kvm_mkdb
 dev_mkdb
 
 chmod 666 /dev/tty[pqrs]*
