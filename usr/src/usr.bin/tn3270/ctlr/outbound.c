@@ -332,7 +332,6 @@ int	control;				/* this buffer ended block? */
 		    SetHighestLowest(BufferAddress);
 		    NewField(BufferAddress,c);
 		}
-		SetHost(BufferAddress, 0);
 		BufferAddress = ScreenInc(BufferAddress);
 		break;
 	    case ORDER_SBA:
