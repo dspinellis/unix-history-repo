@@ -3,7 +3,7 @@
 #	   tree: distribution tree: /, /usr, /var
 #	   date: Wed Jul 15 13:40:13 1992
 #
-#	@(#)4.4BSD.dist	5.13 (Berkeley) %G%
+#	@(#)4.4BSD.dist	5.14 (Berkeley) %G%
 
 /set type=dir uname=root gname=wheel mode=0755
 # .
@@ -263,12 +263,6 @@ hide            gname=games uname=games mode=0700
 ..
 
 # ./usr/games
-..
-
-
-# ./usr/hosts
-hosts
-# ./usr/hosts
 ..
 
 
