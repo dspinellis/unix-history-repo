@@ -1,12 +1,13 @@
-/* @(#)data.c	4.1 (Berkeley) %G% */
+/* @(#)data.c	4.2 (Berkeley) %G% */
 #include <stdio.h>
-char	_sibuf[BUFSIZ];
-char	_sobuf[BUFSIZ];
+#include <sys/param.h>
+char	_sibuf[MAXBSIZE];
+char	_sobuf[MAXBSIZE];
 
 struct	_iobuf	_iob[_NFILE] ={
-	{ 0, _sibuf, _sibuf, _IOREAD, 0},
-	{ 0, NULL, NULL, _IOWRT, 1},
-	{ 0, NULL, NULL, _IOWRT+_IONBF, 2},
+	{ 0, NULL, NULL, NULL, _IOREAD, 0},
+	{ 0, NULL, NULL, NULL, _IOWRT, 1},
+	{ 0, NULL, NULL, NULL, _IOWRT+_IONBF, 2},
 };
 /*
  * Ptr to end of buffers
