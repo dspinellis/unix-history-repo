@@ -7,9 +7,35 @@
  * the Systems Programming Group of the University of Utah Computer
  * Science Department, and William Jolitz.
  *
- * %sccs.include.redist.c%
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Berkeley and its contributors.
+ * 4. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
  *
- *	@(#)vm_machdep.c	7.3 (Berkeley) %G%
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ *
+ *	@(#)vm_machdep.c	7.3 (Berkeley) 5/13/91
  */
 
 /*
@@ -43,6 +69,7 @@ cpu_fork(p1, p2)
 	register struct user *up = p2->p_addr;
 	int foo, offset, addr, i;
 	extern char kstack[];
+	extern int mvesp();
 
 	/*
 	 * Copy pcb and stack from proc p1 to p2. 
@@ -56,7 +83,7 @@ cpu_fork(p1, p2)
 	 * replacing the bcopy and savectx.
 	 */
 	p2->p_addr->u_pcb = p1->p_addr->u_pcb;
-	offset = (caddr_t)&foo - kstack;
+	offset = mvesp() - (int)kstack;
 	bcopy((caddr_t)kstack + offset, (caddr_t)p2->p_addr + offset,
 	    (unsigned) ctob(UPAGES) - offset);
 	p2->p_regs = p1->p_regs;
@@ -66,12 +93,11 @@ cpu_fork(p1, p2)
 	 * First, fault in a page of pte's to map it.
 	 */
         addr = trunc_page((u_int)vtopte(kstack));
-	(void)vm_fault(&p2->p_vmspace->vm_map,
-		trunc_page((u_int)vtopte(kstack)), VM_PROT_READ, FALSE);
+	(void)vm_map_pageable(&p2->p_vmspace->vm_map, addr, addr+NBPG, FALSE);
 	for (i=0; i < UPAGES; i++)
 		pmap_enter(&p2->p_vmspace->vm_pmap, kstack+i*NBPG,
-			pmap_extract(kernel_pmap, ((int)p2->p_addr)+i*NBPG), VM_PROT_READ, 1);
-
+			pmap_extract(kernel_pmap, ((int)p2->p_addr)+i*NBPG),
+			VM_PROT_READ, 1);
 	pmap_activate(&p2->p_vmspace->vm_pmap, &up->u_pcb);
 
 	/*
