@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)csh.h	5.19 (Berkeley) %G%
+ *	@(#)csh.h	5.20 (Berkeley) %G%
  */
 
 /*
@@ -127,6 +127,7 @@ struct rusage ru0;
  * Miscellany
  */
 Char   *doldol;			/* Character pid for $$ */
+int	backpid;		/* Pid of the last background process */
 int     uid;			/* Invokers uid */
 int     gid;			/* Invokers gid */
 time_t  chktim;			/* Time mail last checked */
@@ -404,7 +405,7 @@ struct varent *adrof1();
  */
 struct wordent *alhistp;	/* Argument list (first) */
 struct wordent *alhistt;	/* Node after last in arg list */
-Char  **alvec;			/* The (remnants of) alias vector */
+Char  **alvec, *alvecp;		/* The (remnants of) alias vector */
 
 /*
  * Filename/command name expansion variables
