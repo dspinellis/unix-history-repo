@@ -1,4 +1,4 @@
-/*	uba.c	4.8	%G%	*/
+/*	uba.c	4.9	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -47,7 +47,6 @@ ubasetup(uban, bp, flags)
 		uh->uh_mrwant++;
 		sleep((caddr_t)uh->uh_map, PSWP);
 	}
-	reg--;
 	bdp = 0;
 	if (flags & UBA_NEEDBDP) {
 		while ((bdp = ffs(uh->uh_bdpfree)) == 0) {
@@ -58,9 +57,10 @@ ubasetup(uban, bp, flags)
 			uh->uh_bdpwant++;
 			sleep((caddr_t)uh->uh_map, PSWP);
 		}
-		uh->uh_bdpfree &= ~ (1<<bdp);
+		uh->uh_bdpfree &= ~(1 << (bdp-1));
 	}
 	splx(a);
+	reg--;
 	ubinfo = (bdp << 28) | (npf << 18) | (reg << 9) | o;
 	io = &uh->uh_uba->uba_map[reg];
 	temp = (bdp << 21) | UBA_MRV;
@@ -140,7 +140,7 @@ ubarelse(uban, amr)
 			break;
 #endif
 		}
-		uh->uh_bdpfree |= 1 << bdp;
+		uh->uh_bdpfree |= 1 << (bdp-1);
 		if (uh->uh_bdpwant) {
 			uh->uh_bdpwant = 0;
 			wakeup((caddr_t)uh->uh_map);
