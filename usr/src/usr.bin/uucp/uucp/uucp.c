@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)uucp.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)uucp.c	5.4 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -11,7 +11,7 @@ static char sccsid[] = "@(#)uucp.c	5.3 (Berkeley) %G%";
  */
 int Uid;
 char *Ropt = " ";
-char Path[100], Optns[10], Ename[8];
+char Path[100], Optns[10], Ename[MAXBASENAME+1];
 char Grade = 'n';
 #ifdef DONTCOPY
 int Copy = 0;
@@ -22,7 +22,7 @@ char Nuser[32];
 
 /* variables used to check if talking to more than one system. */
 int	xsflag = -1;
-char	xsys[8] = 0;
+char	xsys[MAXBASENAME+1] = 0;
 
 long Nbytes = 0;
 #define MAXBYTES 50000	/* maximun number of bytes of data per C. file */
@@ -68,7 +68,7 @@ char *argv[];
 			Optns[1] = 'f';
 			break;
 		case 'e':
-			sprintf(Ename, "%.7s", &argv[1][2]);
+			strncpy(Ename, &argv[1][2], MAXBASENAME);
 			break;
 		case 'g':
 			Grade = argv[1][2];
@@ -96,8 +96,10 @@ char *argv[];
 		--argc;  argv++;
 	}
 	DEBUG(4, "\n\n** %s **\n", "START");
-	if (!avoidgwd)
-		gwd(Wrkdir);
+	if (!avoidgwd) {
+		cp = getwd(Wrkdir);
+		ASSERT(cp != 0, "GETWD FAILED", Wrkdir, cp);
+	}
 	ret = subchdir(Spool);
 	ASSERT(ret >= 0, "CHDIR FAILED", Spool, ret);
 
@@ -121,7 +123,7 @@ char *argv[];
 		if (*sysfl2 == '\0')
 			sysfl2 = Myname;
 		else
-			sprintf(Rmtname, "%.7s", sysfl2);
+			strncpy(Rmtname, sysfl2, MAXBASENAME);
 		if (versys(&sysfl2) != 0) {
 			fprintf(stderr, "bad system name: %s\n", sysfl2);
 			cleanup(1);
@@ -138,8 +140,8 @@ char *argv[];
 		sysfl2 = Myname;
 		strcpy(file2, argv[argc - 1]);
 	}
-	if (strlen(sysfl2) > 7)
-		*(sysfl2 + 7) = '\0';
+	if (strlen(sysfl2) > MAXBASENAME)
+		sysfl2[MAXBASENAME] = '\0';
 
 
 	/*  do each from argument  */
@@ -147,12 +149,12 @@ char *argv[];
 		if ((cp = index(argv[1], '!')) != NULL) {
 			sysfile1 = argv[1];
 			*cp = '\0';
-			if (strlen(sysfile1) > 7)
-				*(sysfile1 + 7) = '\0';
+			if (strlen(sysfile1) > MAXBASENAME)
+				sysfile1[MAXBASENAME] = '\0';
 			if (*sysfile1 == '\0')
 				sysfile1 = Myname;
 			else
-				sprintf(Rmtname, "%.7s", sysfile1);
+				strncpy(Rmtname, sysfile1, MAXBASENAME);
 			if (versys(&sysfile1) != 0) {
 				fprintf(stderr, "bad system name: %s\n", sysfile1);
 				cleanup(0);
@@ -244,12 +246,12 @@ register char *s1, *f1, *s2, *f2;
 		}
 		if ((stbuf.st_mode & ANYREAD) == 0) {
 			fprintf(stderr, "can't read file (%s) mode (%o)\n",
-			  file1, stbuf.st_mode);
+			  file1, (int)stbuf.st_mode);
 			return FAIL;
 		}
 		if (statret == 0 && (stbuf1.st_mode & ANYWRITE) == 0) {
 			fprintf(stderr, "can't write file (%s) mode (%o)\n",
-			  file2, stbuf.st_mode);
+			  file2, (int)stbuf.st_mode);
 			return FAIL;
 		}
 		xcp(file1, file2);
@@ -302,7 +304,7 @@ register char *s1, *f1, *s2, *f2;
 		}
 		if ((stbuf.st_mode & ANYREAD) == 0) {
 			fprintf(stderr, "can't read file (%s) mode (%o)\n",
-			  file1, stbuf.st_mode);
+			  file1, (int)stbuf.st_mode);
 			return FAIL;
 		}
 		if ((Nuser[0] != '\0') && (index(Optns, 'n') == NULL))
@@ -329,7 +331,7 @@ register char *s1, *f1, *s2, *f2;
 		}
 		cfp = gtcfile(s2);
 		fprintf(cfp, "S %s %s %s %s %s %o %s\n", file1, file2,
-			User, Optns, dfile, stbuf.st_mode & 0777, Nuser);
+			User, Optns, dfile, (int)stbuf.st_mode & 0777, Nuser);
 		break;
 	case 3:
 	case 4:
@@ -448,11 +450,11 @@ register char *s1;
 		return;
 
 	if (xsys[0] == '\0') {
-		strncpy(xsys, s1, 7);
+		strncpy(xsys, s1, MAXBASENAME);
 		return;
 	}
 
-	if (strncmp(xsys, s1, 7) == SAME)
+	if (strncmp(xsys, s1, MAXBASENAME) == SAME)
 		return;
 
 	xsflag++;
