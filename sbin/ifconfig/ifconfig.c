@@ -41,7 +41,7 @@ char copyright[] =
 #ifndef lint
 static char sccsid[] = "@(#)ifconfig.c	5.1 (Berkeley) 2/28/91";
 static const char rcsid[] = 
-  "$Id$";
+  "$Id: ifconfig.c,v 1.4 1993/11/08 22:10:50 wollman Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -347,7 +347,7 @@ setifdstaddr(addr, param)
 
 setifflags(vname, value)
 	char *vname;
-	short value;
+	int value;
 {
  	if (ioctl(s, SIOCGIFFLAGS, (caddr_t)&ifr) < 0) {
  		Perror("ioctl (SIOCGIFFLAGS)");
