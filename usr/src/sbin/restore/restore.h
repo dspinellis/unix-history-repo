@@ -14,14 +14,16 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)restore.h	5.3 (Berkeley) %G%
+ *	@(#)restore.h	5.4 (Berkeley) %G%
  */
 
-#include <stdio.h>
 #include <sys/param.h>
-#include <sys/inode.h>
-#include <sys/fs.h>
+#include <sys/time.h>
+#include <sys/vnode.h>
 #include <sys/dir.h>
+#include <ufs/inode.h>
+#include <ufs/fs.h>
+#include <stdio.h>
 
 /*
  * Flags

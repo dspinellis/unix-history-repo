@@ -22,19 +22,19 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)repquota.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)repquota.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
  * Quota report
  */
-#include <stdio.h>
-#include <errno.h>
 #include <sys/param.h>
-#include <sys/quota.h>
 #include <sys/stat.h>
+#include <ufs/quota.h>
 #include <fstab.h>
 #include <pwd.h>
+#include <stdio.h>
+#include <errno.h>
 
 #define LOGINNAMESIZE 8
 struct fileusage {
