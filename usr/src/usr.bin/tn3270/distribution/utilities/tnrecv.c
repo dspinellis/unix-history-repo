@@ -477,11 +477,12 @@ char	*argv[];
     char ascii[8];			/* Lots of room */
     FILE *outfile;
     char *data;
+    char *argv0 = argv[0];
 
     argc--;
     argv++;
     /* Process any flags */
-    while (argv[0][0] == '-') {
+    while (argc && (argv[0][0] == '-')) {
 	switch (argv[0][1]) {
 	case 'v':
 	    verbose = 1;
@@ -495,7 +496,9 @@ char	*argv[];
     }
 
     if ((argc) < 2) {
-	fprintf(stderr, "usage: %s local.file remote.file [remote.options]\n");
+	fprintf(stderr,
+		"usage: %s [-b] [-v] local.file remote.file [remote.options]\n",
+			argv0);
 	exit(1);
     }
 
