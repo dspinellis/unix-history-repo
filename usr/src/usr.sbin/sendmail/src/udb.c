@@ -8,9 +8,9 @@
 
 #ifndef lint
 #ifdef USERDB
-static char sccsid [] = "@(#)udb.c	5.15 (Berkeley) %G% (with USERDB)";
+static char sccsid [] = "@(#)udb.c	5.16 (Berkeley) %G% (with USERDB)";
 #else
-static char sccsid [] = "@(#)udb.c	5.15 (Berkeley) %G% (without USERDB)";
+static char sccsid [] = "@(#)udb.c	5.16 (Berkeley) %G% (without USERDB)";
 #endif
 #endif
 
@@ -99,9 +99,9 @@ struct option
 int	UdbPort = 1616;
 int	UdbTimeout = 10;
 
-STATIC struct udbent	UdbEnts[MAXUDBENT + 1];
-STATIC int		UdbSock = -1;
-STATIC bool		UdbInitialized = FALSE;
+struct udbent	UdbEnts[MAXUDBENT + 1];
+int		UdbSock = -1;
+bool		UdbInitialized = FALSE;
 
 int
 udbexpand(a, sendq)
@@ -400,7 +400,7 @@ udbsender(sender)
 
 #define MAXUDBOPTS	27
 
-STATIC int
+int
 _udbx_init()
 {
 	register char *p;
