@@ -1,4 +1,4 @@
-/*	ffs_vnops.c	6.17	85/03/19	*/
+/*	ffs_vnops.c	6.18	85/05/22	*/
 
 #include "param.h"
 #include "systm.h"
@@ -514,7 +514,7 @@ readlink()
 	if (ip == NULL)
 		return;
 	if ((ip->i_mode&IFMT) != IFLNK) {
-		u.u_error = ENXIO;
+		u.u_error = EINVAL;
 		goto out;
 	}
 	u.u_error = rdwri(UIO_READ, ip, uap->buf, uap->count, 0, 0, &resid);
@@ -536,7 +536,7 @@ chmod()
 
 	if ((ip = owner(uap->fname, FOLLOW)) == NULL)
 		return;
-	chmod1(ip, uap->fmode);
+	u.u_error = chmod1(ip, uap->fmode);
 	iput(ip);
 }
 
@@ -559,7 +559,7 @@ fchmod()
 	if (u.u_uid != ip->i_uid && !suser())
 		return;
 	ILOCK(ip);
-	chmod1(ip, uap->fmode);
+	u.u_error = chmod1(ip, uap->fmode);
 	IUNLOCK(ip);
 }
 
@@ -572,9 +572,12 @@ chmod1(ip, mode)
 	register int mode;
 {
 
+	if (ip->i_fs->fs_ronly)
+		return (EROFS);
 	ip->i_mode &= ~07777;
 	if (u.u_uid) {
-		mode &= ~ISVTX;
+		if ((ip->i_mode & IFMT) != IFDIR)
+			mode &= ~ISVTX;
 		if (!groupmember(ip->i_gid))
 			mode &= ~ISGID;
 	}
@@ -582,6 +585,7 @@ chmod1(ip, mode)
 	ip->i_flag |= ICHG;
 	if (ip->i_flag&ITEXT && (ip->i_mode&ISVTX)==0)
 		xrele(ip);
+	return (0);
 }
 
 /*
@@ -638,6 +642,8 @@ chown1(ip, uid, gid)
 	register long change;
 #endif
 
+	if (ip->i_fs->fs_ronly)
+		return (EROFS);
 	if (uid == -1)
 		uid = ip->i_uid;
 	if (gid == -1)
@@ -677,6 +683,11 @@ utimes()
 
 	if ((ip = owner(uap->fname, FOLLOW)) == NULL)
 		return;
+	if (ip->i_fs->fs_ronly) {
+		u.u_error = EROFS;
+		iput(ip);
+		return;
+	}
 	u.u_error = copyin((caddr_t)uap->tptr, (caddr_t)tv, sizeof (tv));
 	if (u.u_error == 0) {
 		ip->i_flag |= IACC|IUPD|ICHG;
