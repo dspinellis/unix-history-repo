@@ -1,4 +1,4 @@
-/* tcp_input.c 1.9 81/10/30 */
+/* tcp_input.c 1.10 81/10/30 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -103,7 +103,7 @@ found:
 
 	case LISTEN:
 		if ((n->th_flags&TH_ACK) || !syn_ok(tp, n)) {
-			send_rst(tp, n);
+			tcp_sndrst(tp, n);
 			goto badseg;
 		}
 		if (n->th_flags&TH_RST)
@@ -112,11 +112,11 @@ found:
 
 	case SYN_SENT:
 		if (!ack_ok(tp, n) || !syn_ok(tp, n)) {
-			send_rst(tp, n);			/* 71,72,75 */
+			tcp_sndrst(tp, n);			/* 71,72,75 */
 			goto badseg;
 		}
 		if (n->th_flags&TH_RST) {
-			t_close(tp, URESET);			/* 70 */
+			tcp_close(tp, URESET);			/* 70 */
 			tp->t_state = CLOSED;
 			goto badseg;
 		}
@@ -140,7 +140,7 @@ found:
 			goto badseg;
 
 		default:
-			t_close(tp, URESET);			/* 66 */
+			tcp_close(tp, URESET);			/* 66 */
 			tp->t_state = CLOSED;
 			goto badseg;
 		}
@@ -149,11 +149,11 @@ found:
 	case SYN_RCVD:
 common:
 		if (ack_ok(tp, n) == 0) {
-			send_rst(tp, n);			/* 74 */
+			tcp_sndrst(tp, n);			/* 74 */
 			goto badseg;
 		}
 		if (syn_ok(tp, n) && n->t_seq != tp->irs) {
-			send_null(tp);				/* 74 */
+			tcp_sndnull(tp);				/* 74 */
 			goto badseg;
 		}
 		goto goodseg;
@@ -206,7 +206,7 @@ goodseg:
 		}
 		tp->t_fport = n->t_src;
 		tp->t_ucb->uc_template = tcp_template(tp);
-		rcv_ctldat(tp, n, 1);
+		tcp_ctldat(tp, n, 1);
 		if (tp->tc_flags&TC_FIN_RCVD) {
 			tp->t_finack = T_2ML;			/* 3 */
 			tp->tc_flags &= ~TC_WAITED_2_ML;
@@ -222,7 +222,7 @@ goodseg:
 			nstate = EFAILEC;
 			goto done;
 		}
-		rcv_ctldat(tp, n, 1);
+		tcp_ctldat(tp, n, 1);
 		if (tp->tc_flags&TC_FIN_RCVD) {
 			if (n->th_flags&TH_ACK) {
 				if (n->t_ackno > tp->iss)
@@ -255,7 +255,7 @@ goodseg:
 	case FIN_W2:
 	case TIME_WAIT:
 input:
-		rcv_ctldat(tp, n, 1);				/* 39 */
+		tcp_ctldat(tp, n, 1);				/* 39 */
 		present_data(tp);
 		switch (tp->t_state) {
 
@@ -297,11 +297,11 @@ input:
 		if (n->th_flags&TH_FIN) {
 			if ((n->th_flags&TH_ACK) &&
 			    n->t_ackno <= tp->seq_fin) {
-				rcv_ctldat(tp, n, 0);		/* 30 */
+				tcp_ctldat(tp, n, 0);		/* 30 */
 				tp->t_finack = T_2ML;
 				tp->tc_flags &= ~TC_WAITED_2_ML;
 			} else
-				send_ctl(tp);			/* 31 */
+				tcp_sndctl(tp);			/* 31 */
 			goto done;
 		}
 		goto input;
@@ -309,7 +309,7 @@ input:
 	case CLOSING1:
 		j = ack_fin(tp, n);
 		if (n->th_flags&TH_FIN) {
-			rcv_ctldat(tp, n, 0);
+			tcp_ctldat(tp, n, 0);
 			tp->t_finack = T_2ML;
 			tp->tc_flags &= ~TC_WAITED_2_ML;
 			if (j)
@@ -319,7 +319,7 @@ input:
 		if (j) {
 			if (tp->tc_flags&TC_WAITED_2_ML)
 				if (rcv_empty(tp)) {
-					t_close(tp, UCLOSED);	/* 15 */
+					tcp_close(tp, UCLOSED);	/* 15 */
 					nstate = CLOSED;
 				} else
 					nstate = RCV_WAIT;	/* 18 */
@@ -332,14 +332,14 @@ input:
 	case CLOSING2:
 		if (ack_fin(tp, n)) {
 			if (rcv_empty(tp)) {			/* 16 */
-				t_close(tp, UCLOSED);
+				tcp_close(tp, UCLOSED);
 				nstate = CLOSED;
 			} else
 				nstate = RCV_WAIT;		/* 19 */
 			goto done;
 		}
 		if (n->th_flags&TH_FIN) {
-			send_ctl(tp);				/* 31 */
+			tcp_sndctl(tp);				/* 31 */
 			goto done;
 		}
 		goto input;
@@ -347,7 +347,7 @@ input:
 	case RCV_WAIT:
 		if ((n->th_flags&TH_FIN) && (n->th_flags&TH_ACK) &&
 		    n->t_ackno <= tp->seq_fin) {
-			rcv_ctldat(tp, n, 0);
+			tcp_ctldat(tp, n, 0);
 			tp->t_finack = T_2ML;
 			tp->tc_flags &= ~TC_WAITED_2_ML;	/* 30 */
 		}
@@ -410,7 +410,7 @@ notwanted:
 	netstat.t_badsegs++;
 }
 
-rcv_ctldat(tp, n, dataok)
+tcp_ctldat(tp, n, dataok)
 	register struct tcb *tp;
 	register struct th *n;
 {
@@ -486,7 +486,7 @@ COUNT(RCV_CTLDAT);
 	if (dataok) {
 /* text */
 		if (n->t_len != 0)
-			rcv_text(tp, n);
+			tcp_text(tp, n);
 /* urg */
 		if (n->th_flags&TH_URG) {
 			unsigned urgent;
@@ -536,7 +536,7 @@ COUNT(RCV_CTLDAT);
 /* respond */
 	sent = 0;
 	if (tp->tc_flags&TC_ACK_DUE)
-		sent = send_ctl(tp);
+		sent = tcp_sndctl(tp);
 	else if (tp->tc_flags&TC_NEW_WINDOW) {
 		seq_t last = tp->snd_off;
 		up = tp->t_ucb;
@@ -556,7 +556,7 @@ COUNT(RCV_CTLDAT);
 	}
 }
 
-rcv_text(tp, n)
+tcp_text(tp, n)
 	register struct tcb *tp;
 	register struct th *n;
 {
