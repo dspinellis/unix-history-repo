@@ -1,29 +1,15 @@
 /*-
- * Copyright (c) 1983 The Regents of the University of California.
+ * Copyright (c) 1990 The Regents of the University of California.
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms are permitted
- * provided that: (1) source distributions retain this entire copyright
- * notice and comment, and (2) distributions including binaries display
- * the following acknowledgement:  ``This product includes software
- * developed by the University of California, Berkeley and its contributors''
- * in the documentation or other materials provided with the distribution
- * and in all advertising materials mentioning features or use of this
- * software. Neither the name of the University nor the names of its
- * contributors may be used to endorse or promote products derived
- * from this software without specific prior written permission.
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * %sccs.include.redist.c%
  */
 
-#include "SYS.h"
-
 #if defined(LIBC_SCCS) && !defined(lint)
-	ASMSTR "@(#)_getlogin.s	5.4 (Berkeley) 5/30/90"
+	.asciz "@(#)_getlogin.s	5.2 (Berkeley) %G%"
 #endif /* LIBC_SCCS and not lint */
 
-/* internal version of getlogin() */
+#include "SYS.h"
 
 PSEUDO(_getlogin,getlogin)	/* _getlogin(buf, buflen) */
 	ret
