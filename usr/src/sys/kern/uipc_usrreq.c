@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)uipc_usrreq.c	7.3 (Berkeley) %G%
+ *	@(#)uipc_usrreq.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -610,9 +610,9 @@ restart:
 					continue;
 				fp->f_flag |= FMARK;
 			}
-			if (fp->f_type != DTYPE_SOCKET)
+			if (fp->f_type != DTYPE_SOCKET ||
+			    (so = (struct socket *)fp->f_data) == 0)
 				continue;
-			so = (struct socket *)fp->f_data;
 			if (so->so_proto->pr_domain != &unixdomain ||
 			    (so->so_proto->pr_flags&PR_RIGHTS) == 0)
 				continue;
