@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)subr_prof.c	7.9 (Berkeley) %G%
+ *	@(#)subr_prof.c	7.10 (Berkeley) %G%
  */
 
 #ifdef GPROF
@@ -51,7 +51,7 @@ kmstartup()
 	}
 	bzero(sbuf, ssiz);
 	fromssize = s_textsize / HASHFRACTION;
-	froms = (u_short *)malloc(fromssize, M_GPROF, M_WAITOK);
+	froms = (u_short *)malloc(fromssize, M_GPROF, M_NOWAIT);
 	if (froms == 0) {
 		printf("No space for monitor buffer(s)\n");
 		free(sbuf, M_GPROF);
@@ -79,14 +79,6 @@ kmstartup()
 	((struct phdr *)sbuf)->ncnt = ssiz;
 	kcount = (u_short *)(((int)sbuf) + sizeof (struct phdr));
 }
-
-/*
- * Special, non-profiled versions
- */
-#if defined(hp300) && !defined(__GNUC__)
-#define splhigh	_splhigh
-#define splx	_splx
-#endif
 
 /*
  * This routine is massaged so that it may be jsb'ed to on vax.
@@ -148,10 +140,7 @@ mcount()
 	asm("	movl -8(r11),r11");	/* frompcindex = 1 callf frame back */
 #endif
 #if defined(hp300)
-	asm("	.text");		/* make sure we're in text space */
-	asm("	movl a6@(4),a5");	/* selfpc = pc pushed by mcount jsr */
-	asm("	movl a6@(8),a4");	/* frompcindex = pc pushed by jsr into
-					   self, stack frame not yet built */
+	Fix Me!!
 #endif
 #endif /* not __GNUC__ */
 #endif /* not lint */
@@ -160,7 +149,7 @@ mcount()
 	 * this requires that splhigh() and splx() below
 	 * do NOT call mcount!
 	 */
-#if defined(hp300) && defined(__GNUC__)
+#if defined(hp300)
 	asm("movw	sr,%0" : "=g" (s));
 	asm("movw	#0x2700,sr");
 #else
@@ -243,7 +232,7 @@ mcount()
 
 	}
 done:
-#if defined(hp300) && defined(__GNUC__)
+#if defined(hp300)
 	asm("movw	%0,sr" : : "g" (s));
 #else
 	splx(s);
