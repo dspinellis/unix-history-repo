@@ -1,11 +1,11 @@
-/*	tm.c	4.6	%G%	*/
+/*	tm.c	4.7	%G%	*/
 
 #include "tm.h"
 #if NTM > 0
 /*
  * TM tape driver
  */
-
+#define	DELAY(N)		{ register int d; d = N; while (--d > 0); }
 #include "../h/param.h"
 #include "../h/buf.h"
 #include "../h/dir.h"
@@ -439,7 +439,7 @@ tmioctl(dev, cmd, addr, flag)
 	struct mtop mtop;
 	struct mtget mtget;
 	/* we depend of the values and order of the MT codes here */
-	static tmops[] = {WEOF, SFORW, SREV, SFORW, SREV, REW, OFFL};
+	static tmops[] = {WEOF, SFORW, SREV, SFORW, SREV, REW, OFFL, NOP};
 
 	switch(cmd) {
 		case MTIOCTOP:	/* tape operation */
@@ -456,7 +456,7 @@ tmioctl(dev, cmd, addr, flag)
 			callcount = 1;
 			fcount = mtop.mt_count;
 			break;
-		case MTREW: case MTOFFL:
+		case MTREW: case MTOFFL: case MTNOP:
 			callcount = 1;
 			fcount = 1;
 			break;
@@ -500,13 +500,15 @@ twall(start, num)
 #endif
 	int blk, bdp;
 
-	TMPHYS->tmcs = DCLR | GO;
 #if VAX==780
 	up->uba_cr = ADINIT;
 	up->uba_cr = IFS|BRIE|USEFIE|SUEFIE;
 	while ((up->uba_cnfgr & UBIC) == 0)
 		;
 #endif
+	DELAY(1000000);
+	twait();
+	TMPHYS->tmcs = DCLR | GO;
 	while (num > 0) {
 		blk = num > DBSIZE ? DBSIZE : num;
 		tmdwrite(start, blk);
@@ -533,7 +535,7 @@ register buf, num;
 	*io = 0;
 	TMPHYS->tmbc = -(num*NBPG);
 	TMPHYS->tmba = 0;
-	TMPHYS->tmcs = WCOM | GO | D800;
+	TMPHYS->tmcs = WCOM | GO;
 }
 
 twait()
@@ -556,6 +558,6 @@ teof()
 {
 
 	twait();
-	TMPHYS->tmcs = WEOF | GO | D800;
+	TMPHYS->tmcs = WEOF | GO;
 }
 #endif
