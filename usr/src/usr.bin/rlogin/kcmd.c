@@ -1,13 +1,13 @@
 /*
- * Copyright (c) 1983 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1983, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  */
 
 #ifndef lint
 static char Xsccsid[] = "derived from @(#)rcmd.c 5.17 (Berkeley) 6/27/88";
-static char sccsid[] = "@(#)kcmd.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)kcmd.c	8.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>

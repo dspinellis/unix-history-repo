@@ -1,9 +1,9 @@
-.\" Copyright (c) 1983, 1990 The Regents of the University of California.
-.\" All rights reserved.
+.\" Copyright (c) 1983, 1990, 1993
+.\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)rlogin.1	6.19.1.1 (Berkeley) %G%
+.\"	@(#)rlogin.1	8.1 (Berkeley) %G%
 .\"
 .Dd 
 .Dt RLOGIN 1
@@ -13,7 +13,7 @@
 .Nd remote login
 .Sh SYNOPSIS
 .Ar rlogin
-.Op Fl 8EKLd
+.Op Fl 8EKLdx
 .Op Fl e Ar char
 .Op Fl k Ar realm
 .Op Fl l Ar username
@@ -75,6 +75,17 @@ in realm
 .Ar realm
 instead of the remote host's realm as determined by
 .Xr krb_realmofhost  3  .
+.It Fl x
+The
+.Fl x
+option turns on
+.Tn DES
+encryption for all data passed via the
+rlogin session.
+This may impact response time and
+.Tn CPU
+utilization, but provides
+increased security.
 .El
 .Pp
 A line of the form ``<escape char>.'' disconnects from the remote host.
