@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_ether.h	8.2 (Berkeley) %G%
+ *	@(#)if_ether.h	8.3 (Berkeley) %G%
  */
 
 /*
@@ -116,7 +116,6 @@ u_char	ether_ipmulticast_min[6];
 u_char	ether_ipmulticast_max[6];
 struct	ifqueue arpintrq;
 
-struct	llinfo_arp *arptnew __P((struct in_addr *));
 struct	llinfo_arp llinfo_arp;		/* head of the llinfo queue */
 
 void	arp_rtrequest __P((int, struct rtentry *, struct sockaddr *));
