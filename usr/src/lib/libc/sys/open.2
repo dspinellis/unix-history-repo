@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)open.2	6.1 (Berkeley) %G%
+.\"	@(#)open.2	6.2 (Berkeley) %G%
 .\"
 .TH OPEN 2 ""
 .UC 4
@@ -85,21 +85,28 @@ simultaneously.
 The named file is opened unless one or more of the
 following are true:
 .TP 15
-[EPERM]
-The pathname contains a character with the high-order bit set.
-.TP 15
 [ENOTDIR]
 A component of the path prefix is not a directory.
+.TP 15
+[EINVAL]
+The pathname contains a character with the high-order bit set.
+.TP 15
+[ENAMETOOLONG]
+A component of a pathname exceeded 255 characters,
+or an entire path name exceeded 1023 characters.
 .TP 15
 [ENOENT]
 O_CREAT is not set and the named file does not exist.
 .TP 15
 [EACCES]
-A component of the path prefix denies search permission.
+Search permission is denied for a component of the path prefix.
 .TP 15
 [EACCES]
 The required permissions (for reading and/or writing)
 are denied for the named flag.
+.TP 15
+[ELOOP]
+Too many symbolic links were encountered in translating the pathname.
 .TP 15
 [EISDIR]
 The named file is a directory, and the arguments specify
@@ -117,6 +124,14 @@ The named file is a character special or block
 special file, and the device associated with this special file
 does not exist.
 .TP 15
+[ENXIO]
+The O_NDELAY flag is given, and the file is a communications device
+on which their is no carrier present.
+.TP 15
+[EIO]
+An I/O error occurred while making the directory entry or
+allocating the inode for O_CREAT.
+.TP 15
 [ETXTBSY]
 The file is a pure procedure (shared text) file that is being
 executed and the \fIopen\fP call requests write access.
@@ -125,15 +140,8 @@ executed and the \fIopen\fP call requests write access.
 .I Path
 points outside the process's allocated address space.
 .TP 15
-[ELOOP]
-Too many symbolic links were encountered in translating the pathname.
-.TP 15
 [EEXIST]
 O_EXCL was specified and the file exists.
-.TP 15
-[ENXIO]
-The O_NDELAY flag is given, and the file is a communications device
-on which their is no carrier present.
 .TP 15
 [EOPNOTSUPP]
 An attempt was made to open a socket (not currently implemented).

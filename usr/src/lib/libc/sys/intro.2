@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)intro.2	6.1 (Berkeley) %G%
+.\"	@(#)intro.2	6.2 (Berkeley) %G%
 .\"
 .TH INTRO 2 ""
 .UC 4
@@ -118,12 +118,13 @@ access the arguments of a system call.
 A plain file was mentioned where a block device was required,
 e.g. in
 .IR mount .
-.en 16 EBUSY "Mount device busy
+.en 16 EBUSY "Device busy
 An attempt to mount a device that was already mounted or
 an attempt was made to dismount a device
 on which there is an active file
 directory.
 (open file, current directory, mounted-on file, active text segment).
+A request was made to an exclusive access device that was already in use.
 .en 17 EEXIST "File exists
 An existing file was mentioned in an inappropriate context,
 e.g.

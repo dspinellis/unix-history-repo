@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)symlink.2	6.1 (Berkeley) %G%
+.\"	@(#)symlink.2	6.2 (Berkeley) %G%
 .\"
 .TH SYMLINK 2 ""
 .UC 5
@@ -33,24 +33,33 @@ and a \-1 value is returned.
 The symbolic link is made unless on or more of the
 following are true:
 .TP 15
-[EPERM]
-Either
-.I name1
-or
-.I name2
-contains a character with the high-order bit set.
-.TP 15
-[ENOENT]
-One of the pathnames specified was too long.
-.TP 15
 [ENOTDIR]
 A component of the \fIname2\fP prefix is not a directory.
+.TP 15
+[EINVAL]
+Either \fIname1\fP or \fIname2\fP
+contains a character with the high-order bit set.
+.TP 15
+[ENAMETOOLONG]
+A component of either pathname exceeded 255 characters,
+or the entire length of either path name exceeded 1023 characters.
+.TP 15
+[ENOENT]
+The named file does not exist.
+.TP 15
+[EACCES]
+A component of the \fIname2\fP path prefix denies search permission.
+.TP 15
+[ELOOP]
+Too many symbolic links were encountered in translating the pathname.
 .TP 15
 [EEXIST]
 \fIName2\fP already exists.
 .TP 15
-[EACCES]
-A component of the \fIname2\fP path prefix denies search permission.
+[EIO]
+An I/O error occurred while making the directory entry for \fIname2\fP,
+or allocating the inode for \fIname2\fP,
+or writing out the link contents of \fIname2\fP.
 .TP 15
 [EROFS]
 The file \fIname2\fP would reside on a read-only file system.
@@ -60,8 +69,5 @@ The file \fIname2\fP would reside on a read-only file system.
 or
 .I name2
 points outside the process's allocated address space.
-.TP 15
-[ELOOP]
-Too may symbolic links were encountered in translating the pathname.
 .SH "SEE ALSO"
 link(2), ln(1), unlink(2)

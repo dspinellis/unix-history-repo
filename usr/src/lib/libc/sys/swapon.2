@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)swapon.2	6.1 (Berkeley) %G%
+.\"	@(#)swapon.2	6.2 (Berkeley) %G%
 .\"
 .TH SWAPON 2 ""
 .UC 4
@@ -24,6 +24,31 @@ configuration time.  The size of the swap area on
 .I special 
 is calculated at the time the device is first made available
 for swapping.
+.SH ERRORS
+.I Swapon
+succeeds unless:
+.TP 15
+[ENOTDIR]
+A component of the path prefix is not a directory.
+.TP 15
+[EINVAL]
+The pathname contains a character with the high-order bit set.
+.TP 15
+[ENAMETOOLONG]
+A component of a pathname exceeded 255 characters,
+or an entire path name exceeded 1023 characters.
+.TP 15
+[ENOENT]
+The named device does not exist.
+.TP 15
+[EACCES]
+Search permission is denied for a component of the path prefix.
+.TP 15
+[ELOOP]
+Too many symbolic links were encountered in translating the pathname.
+.TP 15
+[EPERM]
+The caller is not the super-user.
 .SH "SEE ALSO"
 swapon(8), config(8)
 .SH BUGS

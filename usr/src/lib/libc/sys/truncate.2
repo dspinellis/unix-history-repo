@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)truncate.2	6.1 (Berkeley) %G%
+.\"	@(#)truncate.2	6.2 (Berkeley) %G%
 .\"
 .TH TRUNCATE 2 ""
 .UC 5
@@ -41,20 +41,24 @@ specifies the error.
 .I Truncate
 succeeds unless:
 .TP 15
-[EPERM]
+[ENOTDIR]
+A component of the path prefix is not a directory.
+.TP 15
+[EINVAL]
 The pathname contains a character with the high-order bit set.
 .TP 15
-[ENOENT]
-The pathname was too long.
-.TP 15
-[ENOTDIR]
-A component of the path prefix of \fIpath\fP is not a directory.
+[ENAMETOOLONG]
+A component of a pathname exceeded 255 characters,
+or an entire path name exceeded 1023 characters.
 .TP 15
 [ENOENT]
 The named file does not exist.
 .TP 15
 [EACCES]
-A component of the \fIpath\fP prefix denies search permission.
+Search permission is denied for a component of the path prefix.
+.TP 15
+[ELOOP]
+Too many symbolic links were encountered in translating the pathname.
 .TP 15
 [EISDIR]
 The named file is a directory.
@@ -64,6 +68,9 @@ The named file resides on a read-only file system.
 .TP 15
 [ETXTBSY]
 The file is a pure procedure (shared text) file that is being executed.
+.TP 15
+[EIO]
+An I/O error occurred updating the inode.
 .TP 15
 [EFAULT]
 .I Name

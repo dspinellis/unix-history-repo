@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)rename.2	6.1 (Berkeley) %G%
+.\"	@(#)rename.2	6.2 (Berkeley) %G%
 .\"
 .TH RENAME 2 ""
 .UC 5
@@ -61,21 +61,37 @@ indicates the reason for the failure.
 will fail and neither of the argument files will be
 affected if any of the following are true:
 .TP 15
-[ENOTDIR]
-A component of either path prefix is not a directory.
+[EINVAL]
+Either pathname contains a character with the high-order bit set.
+.TP 15
+[ENAMETOOLONG]
+A component of either pathname exceeded 255 characters,
+or the entire length of either path name exceeded 1023 characters.
 .TP 15
 [ENOENT]
-A component of either path prefix does not exist.
+A component of the \fIfrom\fP path does not exist,
+or a path prefix of \fIto\fP does not exist.
 .TP 15
 [EACCES]
 A component of either path prefix denies search permission.
 .TP 15
-[ENOENT]
-The file named by \fIfrom\fP does not exist.
+[EACCES]
+The requested link requires writing in a directory with a mode
+that denies write permission.
 .TP 15
-[EPERM]
-The file named by \fIfrom\fP is a directory and the effective
-user ID is not super-user.
+[ELOOP]
+Too many symbolic links were encountered in translating either pathname.
+.TP 15
+[ENOTDIR]
+A component of either path prefix is not a directory.
+.TP 15
+[ENOTDIR]
+.I From
+is a directory, but \fIto\fP is not a directory.
+.TP 15
+[EISDIR]
+.I To
+is a directory, but \fIfrom\fP is not a directory.
 .TP 15
 [EXDEV]
 The link named by \fIto\fP and the file named by \fIfrom\fP
@@ -83,9 +99,8 @@ are on different logical devices (file systems).  Note that this error
 code will not be returned if the implementation permits cross-device
 links.
 .TP 15
-[EACCES]
-The requested link requires writing in a directory with a mode
-that denies write permission.
+[EIO]
+An I/O error occurred while making or updating a directory entry.
 .TP 15
 [EROFS]
 The requested link requires writing in a directory on a read-only file
@@ -98,6 +113,11 @@ points outside the process's allocated address space.
 [EINVAL]
 .I From
 is a parent directory of
-.IR to .
+.IR to ,
+or an attempt is made to rename ``.'' or ``..''.
+.TP 15
+[ENOTEMPTY]
+.I To
+is a directory and is not empty.
 .SH "SEE ALSO"
 open(2)

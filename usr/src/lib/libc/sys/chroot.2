@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)chroot.2	6.1 (Berkeley) %G%
+.\"	@(#)chroot.2	6.2 (Berkeley) %G%
 .\"
 .TH CHROOT 2 ""
 .UC 5
@@ -38,25 +38,24 @@ one or more of the following are true:
 [ENOTDIR]
 A component of the path name is not a directory.
 .TP 15
-[ENOENT]
-The pathname was too long.
+[EINVAL]
+The pathname contains a character with the high-order bit set.
 .TP 15
-[EPERM]
-The argument contains a byte with the high-order bit set.
+[ENAMETOOLONG]
+A component of a pathname exceeded 255 characters,
+or an entire path name exceeded 1023 characters.
 .TP 15
 [ENOENT]
 The named directory does not exist.
 .TP 15
 [EACCES]
-Search permission is denied for any component of
-the path name.
+Search permission is denied for any component of the path name.
+.TP 15
+[ELOOP]
+Too many symbolic links were encountered in translating the pathname.
 .TP 15
 [EFAULT]
 .I Path
 points outside the process's allocated address space.
-.TP 15
-[ELOOP]
-Too many symbolic links were encountered in translating
-the pathname.
 .SH "SEE ALSO"
 chdir(2)

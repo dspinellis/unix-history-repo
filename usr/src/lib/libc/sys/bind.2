@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)bind.2	6.1 (Berkeley) %G%
+.\"	@(#)bind.2	6.2 (Berkeley) %G%
 .\"
 .TH BIND 2 ""
 .UC 5
@@ -73,5 +73,33 @@ has inadequate permission to access it.
 [EFAULT]
 The \fIname\fP parameter is not in a valid part of the user
 address space.
+.PP
+The following errors are specific to binding names in the UNIX domain.
+These errors may not apply in future versions of the UNIX ipc domain.
+.TP 15
+[ENOTDIR]
+A component of the path prefix is not a directory.
+.TP 15
+[EINVAL]
+The pathname contains a character with the high-order bit set.
+.TP 15
+[ENAMETOOLONG]
+A component of a pathname exceeded 255 characters,
+or an entire path name exceeded 1023 characters.
+.TP 15
+[ENOENT]
+A prefix component of the path name does not exist.
+.TP 15
+[ELOOP]
+Too many symbolic links were encountered in translating the pathname.
+.TP 15
+[EIO]
+An I/O error occurred while making the directory entry or allocating the inode.
+.TP 15
+[EROFS]
+The name would reside on a read-only file system.
+.TP 15
+[EISDIR]
+A null pathname was specified.
 .SH SEE ALSO
 connect(2), listen(2), socket(2), getsockname(2)
