@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -166,12 +166,15 @@ main(argc, argv)
 		tname = argv[1];
 	for (;;) {
 		int ldisp = OTTYDISC;
+		int off = 0;
 
 		gettable(tname, tabent, tabstrs);
 		if (OPset || EPset || APset)
 			APset++, OPset++, EPset++;
 		setdefaults();
 		ioctl(0, TIOCFLUSH, 0);		/* clear out the crap */
+		ioctl(0, FIONBIO, &off);	/* turn off non-blocking mode */
+		ioctl(0, FIOASYNC, &off);	/* ditto for asynchronous mode */
 		if (IS)
 			tmode.sg_ispeed = speed(IS);
 		else if (SP)
@@ -236,6 +239,7 @@ main(argc, argv)
 				env[i] = environ[i];
 			makeenv(&env[i]);
 			execle(LO, "login", "-p", name, (char *) 0, env);
+			syslog(LOG_ERR, "%s: %m", LO);
 			exit(1);
 		}
 		alarm(0);
