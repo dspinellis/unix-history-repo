@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -26,6 +26,7 @@ static char sccsid[] = "@(#)vmstat.c	5.3 (Berkeley) %G%";
 #include <sys/dir.h>
 #include <sys/inode.h>
 #include <sys/namei.h>
+#include <sys/text.h>
 
 struct nlist nl[] = {
 #define	X_CPTIME	0
@@ -71,10 +72,18 @@ struct nlist nl[] = {
 #define	X_XSTATS	20
 	{ "_xstats" },
 #ifdef vax
-#define X_MBDINIT	21
+#define X_MBDINIT	(X_XSTATS+1)
 	{ "_mbdinit" },
-#define X_UBDINIT	22
+#define X_UBDINIT	(X_XSTATS+2)
 	{ "_ubdinit" },
+#endif
+#ifdef sun
+#define X_MBDINIT	(X_XSTATS+1)
+	{ "_mbdinit" },
+#endif
+#ifdef tahoe
+#define	X_VBDINIT	(X_XSTATS+1)
+	{ "_vbdinit" },
 #endif
 	{ "" },
 };
@@ -93,10 +102,6 @@ int	firstfree, maxfree;
 int	hz;
 int	phz;
 int	HZ;
-
-#ifdef vax
-#define	INTS(x)	((x) - (hz + phz))
-#endif
 
 struct {
 	int	busy;
@@ -306,6 +311,7 @@ loop:
 	for (i = 0; i < dk_ndrive; i++)
 		if (dr_select[i])
 			stats(i);
+#define	INTS(x)	((x) - (hz + phz))
 	printf("%4d%4d%4d", INTS(rate.v_intr/nintv), rate.v_syscall/nintv,
 	    rate.v_swtch/nintv);
 	for(i=0; i<CPUSTATES; i++) {
@@ -365,23 +371,6 @@ dotimes()
 	printf("average: %8.1f msec / page in\n", s.pgintime/(sum.v_pgin*10.0));
 }
 
-/* SHOULD BE AVAILABLE IN <sys/text.h> */
-/*
- * Statistics
- */
-struct xstats {
-	u_long	alloc;			/* calls to xalloc */
-	u_long	alloc_inuse;		/*	found in use/sticky */
-	u_long	alloc_cachehit;		/*	found in cache */
-	u_long	alloc_cacheflush;	/*	flushed cached text */
-	u_long	alloc_unused;		/*	flushed unused cached text */
-	u_long	free;			/* calls to xfree */
-	u_long	free_inuse;		/*	still in use/sticky */
-	u_long	free_cache;		/*	placed in cache */
-	u_long	free_cacheswap;		/*	swapped out to place in cache */
-};
-/* END SHOULD BE AVAILABLE... */
-
 dosum()
 {
 	struct nchstats nchstats;
@@ -400,8 +389,9 @@ dosum()
 	printf("%9d pages paged in\n", sum.v_pgpgin);
 	printf("%9d pages paged out\n", sum.v_pgpgout);
 	printf("%9d sequential process pages freed\n", sum.v_seqfree);
+#define	nz(x)	((x) ? (x) : 1)
 	printf("%9d total reclaims (%d%% fast)\n", sum.v_pgrec,
-	    (sum.v_fastpgrec * 100) / (sum.v_pgrec == 0 ? 1 : sum.v_pgrec));
+	    (sum.v_fastpgrec * 100) / nz(sum.v_pgrec));
 	printf("%9d reclaims from free list\n", sum.v_pgfrec);
 	printf("%9d intransit blocking page faults\n", sum.v_intrans);
 	printf("%9d zero fill pages created\n", sum.v_nzfod / CLSIZE);
@@ -428,7 +418,6 @@ dosum()
 	nchtotal = nchstats.ncs_goodhits + nchstats.ncs_badhits +
 	    nchstats.ncs_falsehits + nchstats.ncs_miss + nchstats.ncs_long;
 	printf("%9d total name lookups", nchtotal);
-#define	nz(x)	((x) ? (x) : 1)
 	printf(" (cache hits %d%% system %d%% per-process)\n",
 	    nchstats.ncs_goodhits * 100 / nz(nchtotal),
 	    nchstats.ncs_pass2 * 100 / nz(nchtotal));
@@ -566,6 +555,68 @@ read_names()
 		steal(udrv.ud_dname, two_char);
 		sprintf(dr_name[udev.ui_dk], "%c%c%d",
 		    cp[0], cp[1], udev.ui_unit);
+	}
+}
+#endif
+
+#ifdef sun
+#include <sundev/mbvar.h>
+
+read_names()
+{
+	struct mb_device mdev;
+	register struct mb_device *mp;
+	struct mb_driver mdrv;
+	short two_char;
+	char *cp = (char *) &two_char;
+
+	mp = (struct mb_device *) nl[X_MBDINIT].n_value;
+	if (mp == 0) {
+		fprintf(stderr, "vmstat: Disk init info not in namelist\n");
+		exit(1);
+	}
+	for (;;) {
+		steal(mp++, mdev);
+		if (mdev.md_driver == 0)
+			break;
+		if (mdev.md_dk < 0 || mdev.md_alive == 0)
+			continue;
+		steal(mdev.md_driver, mdrv);
+		steal(mdrv.mdr_dname, two_char);
+		sprintf(dr_name[mdev.md_dk], "%c%c%d",
+		     cp[0], cp[1], mdev.md_unit);
+	}
+}
+#endif
+
+#ifdef tahoe
+#include <tahoevba/vbavar.h>
+
+/*
+ * Read the drive names out of kmem.
+ */
+read_names()
+{
+	struct vba_device udev, *up;
+	struct vba_driver udrv;
+	short two_char;
+	char *cp = (char *)&two_char;
+
+	up = (struct vba_device *) nl[X_VBDINIT].n_value;
+	if (up == 0) {
+		fprintf(stderr, "vmstat: Disk init info not in namelist\n");
+		exit(1);
+	}
+	for (;;) {
+		steal(up++, udev);
+		if (udev.ui_driver == 0)
+			break;
+		if (udev.ui_dk < 0 || udev.ui_alive == 0)
+			continue;
+		steal(udev.ui_driver, udrv);
+		steal(udrv.ud_dname, two_char);
+		sprintf(dr_name[udev.ui_dk], "%c%c%d",
+		     cp[0], cp[1], udev.ui_unit);
 	}
 }
 #endif
