@@ -863,7 +863,10 @@ int main(argc, argv)
 	} else				/* file names in commandline */
 	for (; optind < argc; optind++) {
 	    char *name = argv[optind];	/* next file name            */
-	    infile[0] = fopen(name, "r");
+	    if(name[1] == 0 && name[0] == '-')
+		infile[0] = stdin;
+	    else
+	    	infile[0] = fopen(name, "r");
 	    if (!infile[0]) cantread(name);
 	    sp = -1;			/* stack pointer initialized */
 	    fp = 0; 			/* frame pointer initialized */
