@@ -1,4 +1,4 @@
-/*	ioctl.h	4.17	82/02/18	*/
+/*	ioctl.h	4.18	82/03/03	*/
 /*
  * ioctl definitions, and special character and local tty definitions
  */
@@ -132,4 +132,7 @@ struct ltchars {
 #define	SIOCATMARK	(('s'<<8)|7)	/* at out of band mark? */
 #define	SIOCSPGRP	(('s'<<8)|8)	/* set process group */
 #define	SIOCGPGRP	(('s'<<8)|9)	/* get process group */
+#define	SIOCADDRT	(('s'<<8)|10)	/* add a routing table entry */
+#define	SIOCDELRT	(('s'<<8)|11)	/* delete a routing table entry */
+#define	SIOCCHGRT	(('s'<<8)|12)	/* change a routing table entry */
 #endif
