@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)sys_process.c	7.23 (Berkeley) %G%
+ *	@(#)sys_process.c	7.24 (Berkeley) %G%
  */
 
 #define IPCREG
@@ -114,7 +114,7 @@ procxmt(p)
 	if (ipc.ip_lock != p->p_pid)
 		return (0);
 	p->p_slptime = 0;
-	p->p_addr->u_kproc.kp_proc.p_regs = p->p_regs;	/* u.u_ar0 */
+	p->p_addr->u_kproc.kp_proc.p_md.md_regs = p->p_md.md_regs; /* u.u_ar0 */
 	i = ipc.ip_req;
 	ipc.ip_req = 0;
 	switch (i) {
@@ -182,9 +182,9 @@ procxmt(p)
 		poff = (int *)PHYSOFF(kstack, i);
 #endif
 		for (i=0; i<NIPCREG; i++)
-			if (poff == &p->p_regs[ipcreg[i]])
+			if (poff == &p->p_md.md_regs[ipcreg[i]])
 				goto ok;
-		if (poff == &p->p_regs[PS]) {
+		if (poff == &p->p_md.md_regs[PS]) {
 			ipc.ip_data |= PSL_USERSET;
 			ipc.ip_data &= ~PSL_USERCLR;
 #ifdef PSL_CM_CLR
@@ -209,14 +209,14 @@ procxmt(p)
 	case PT_STEP:			/* single step the child */
 	case PT_CONTINUE:		/* continue the child */
 		if ((int)ipc.ip_addr != 1)
-			p->p_regs[PC] = (int)ipc.ip_addr;
+			p->p_md.md_regs[PC] = (int)ipc.ip_addr;
 		if ((unsigned)ipc.ip_data > NSIG)
 			goto error;
 		p->p_xstat = ipc.ip_data;	/* see issig */
 #ifdef PSL_T
 		/* need something more machine independent here... */
 		if (i == PT_STEP) 
-			p->p_regs[PS] |= PSL_T;
+			p->p_md.md_regs[PS] |= PSL_T;
 #endif
 		wakeup((caddr_t)&ipc);
 		return (1);
