@@ -4,11 +4,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_socket.c	7.27 (Berkeley) %G%
+ *	@(#)uipc_socket.c	7.28 (Berkeley) %G%
  */
 
 #include "param.h"
-#include "user.h"
 #include "proc.h"
 #include "file.h"
 #include "malloc.h"
@@ -18,7 +17,7 @@
 #include "protosw.h"
 #include "socket.h"
 #include "socketvar.h"
-#include "time.h"
+#include "resourcevar.h"
 
 /*
  * Socket operation routines.
@@ -26,11 +25,6 @@
  * sys_socket.c or from a system process, and
  * implement the semantics of socket operations by
  * switching out to the protocol specific routines.
- *
- * TODO:
- *	test socketpair
- *	clean up async
- *	out-of-band is a kludge
  */
 /*ARGSUSED*/
 socreate(dom, aso, type, proto)
@@ -38,6 +32,7 @@ socreate(dom, aso, type, proto)
 	register int type;
 	int proto;
 {
+	struct proc *p = curproc;		/* XXX */
 	register struct protosw *prp;
 	register struct socket *so;
 	register int error;
@@ -53,7 +48,7 @@ socreate(dom, aso, type, proto)
 	MALLOC(so, struct socket *, sizeof(*so), M_SOCKET, M_WAIT);
 	bzero((caddr_t)so, sizeof(*so));
 	so->so_type = type;
-	if (u.u_uid == 0)
+	if (p->p_ucred->cr_uid == 0)
 		so->so_state = SS_PRIV;
 	so->so_proto = prp;
 	error =
@@ -286,6 +281,7 @@ sosend(so, addr, uio, top, control, flags)
 	struct mbuf *control;
 	int flags;
 {
+	struct proc *p = curproc;		/* XXX */
 	struct mbuf **mp;
 	register struct mbuf *m;
 	register long space, len, resid;
@@ -299,7 +295,7 @@ sosend(so, addr, uio, top, control, flags)
 	dontroute =
 	    (flags & MSG_DONTROUTE) && (so->so_options & SO_DONTROUTE) == 0 &&
 	    (so->so_proto->pr_flags & PR_ATOMIC);
-	u.u_ru.ru_msgsnd++;
+	p->p_stats->p_ru.ru_msgsnd++;
 	if (control)
 		clen = control->m_len;
 #define	snderr(errno)	{ error = errno; splx(s); goto release; }
@@ -451,6 +447,7 @@ soreceive(so, paddr, uio, mp0, controlp, flagsp)
 	struct mbuf **controlp;
 	int *flagsp;
 {
+	struct proc *p = curproc;		/* XXX */
 	register struct mbuf *m, **mp;
 	register int flags, len, error, s, offset;
 	struct protosw *pr = so->so_proto;
@@ -550,7 +547,7 @@ restart:
 		goto restart;
 	}
 dontblock:
-	u.u_ru.ru_msgrcv++;
+	p->p_stats->p_ru.ru_msgrcv++;
 	nextrecord = m->m_nextpkt;
 	if (pr->pr_flags & PR_ADDR) {
 #ifdef DIAGNOSTIC
