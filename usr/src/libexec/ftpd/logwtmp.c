@@ -12,13 +12,12 @@
  * from this software without specific prior written permission.
  * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- * static char sccsid[] = "@(#)logwtmp.c	5.2 (Berkeley) 9/20/88";
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)logwtmp.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)logwtmp.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
