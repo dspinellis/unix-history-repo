@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_sig.c	7.55 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.56 (Berkeley) %G%
  */
 
 #define	SIGPROP		/* include signal properties table */
@@ -27,7 +27,6 @@
 #include <machine/cpu.h>
 
 #include <vm/vm.h>
-#include <sys/kinfo_proc.h>
 #include <sys/user.h>		/* for coredump */
 
 /*
