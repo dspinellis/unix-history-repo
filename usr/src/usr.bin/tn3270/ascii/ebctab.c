@@ -20,11 +20,11 @@ unsigned char	ebcasc[NEBCASC][NEBC] = {
 /* 40 */   ' ',  ' ',  ' ',  ' ',  ' ',  ' ',  ' ',  ' ',
 
 /* 48 */   ' ',  ' ', 
-#if	!defined(msdos)
+#if	!defined(MSDOS)
         /* 4A */       '\\',
-#else	/* !defined(msdos) */
+#else	/* !defined(MSDOS) */
         /* 4A */       '\233',		/* PC cent sign */
-#endif	/* !defined(msdos) */
+#endif	/* !defined(MSDOS) */
         /* 4B */              '.',  '<',  '(',  '+',  '|',
 
 /* 50 */   '&',  ' ',  ' ',  ' ',  ' ',  ' ',  ' ',  ' ',
