@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid[] = "@(#)expr.c	5.5 (Berkeley) %G%";
+static char *sccsid[] = "@(#)expr.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -16,6 +16,10 @@ static char *sccsid[] = "@(#)expr.c	5.5 (Berkeley) %G%";
  * University of Utah CS Dept modification history:
  *
  * $Log:	expr.c,v $
+ * Revision 5.9  86/02/20  23:38:31  donn
+ * Fix memory management problem with reordering of array dimension and
+ * substring code in mklhs().
+ * 
  * Revision 5.8  85/12/20  21:37:58  donn
  * Fix bug in mklhs() that caused the 'first character' substring parameter
  * to be evaluated twice.
@@ -1342,11 +1346,11 @@ if(p->fcharp || p->lcharp)
 				|| (p->fcharp->tag == TPRIM
 				   && p->fcharp->primblock.argsp != NULL))
 					{
-					ep = fixtype(p->fcharp);
+					ep = fixtype(cpexpr(p->fcharp));
 					p->fcharp = (expptr) mktemp(ep->headblock.vtype, ENULL);
 					}
 				s->vleng = mkexpr(OPMINUS, p->lcharp,
-					mkexpr(OPMINUS, p->fcharp, ICON(1) ));
+				 mkexpr(OPMINUS, cpexpr(p->fcharp), ICON(1) ));
 				}
 			}
 		else
@@ -1365,6 +1369,7 @@ s->memoffset = fixtype( s->memoffset );
 if(ep)
 	/* this code depends on memoffset being evaluated before vleng */
 	s->memoffset = mkexpr(OPCOMMA, mkexpr(OPASSIGN, cpexpr(p->fcharp), ep), s->memoffset);
+frexpr(p->fcharp);
 free( (charptr) p );
 return( (expptr) s );
 }
