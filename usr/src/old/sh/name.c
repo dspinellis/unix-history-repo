@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)name.c	4.2 %G%";
+static char sccsid[] = "@(#)name.c	4.3 %G%";
 #endif
 
 #
@@ -285,7 +285,7 @@ VOID	printflg(n)
 	FI
 }
 
-VOID	getenv()
+VOID	setupenv()
 {
 	REG STRING	*e=environ;
 
