@@ -1,29 +1,14 @@
-#	@(#)bsd.man.mk	5.1 (Berkeley) %G%
+#	@(#)bsd.man.mk	5.2 (Berkeley) %G%
 
 .if exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
 .endif
 
-MANDIR?=	/usr/share/man/cat
 MANGRP?=	bin
 MANOWN?=	bin
 MANMODE?=	444
 
-BINGRP?=	bin
-BINOWN?=	bin
-BINMODE?=	555
-
-LIBDIR?=	/usr/lib
-LINTLIBDIR?=	/usr/libdata/lint
-LIBGRP?=	bin
-LIBOWN?=	bin
-LIBMODE?=	444
-
-INCOWN?=	bin
-INCGRP?=	bin
-INCMODE?=	444
-
-STRIP?=		-s
+MANDIR?=	/usr/share/man/cat
 
 MINSTALL=	install -c -o ${MANOWN} -g ${MANGRP} -m ${MANMODE}
 
@@ -54,18 +39,6 @@ maninstall:
 .endif
 .if defined(MAN8) && !empty(MAN8)
 	${MINSTALL} ${MAN8} ${DESTDIR}${MANDIR}8${MANSUBDIR}
-.endif
-.if defined(LINKS) && !empty(LINKS)
-	@set ${LINKS}; \
-	while test $$# -ge 2; do \
-		l=${DESTDIR}$$1; \
-		shift; \
-		t=${DESTDIR}$$1; \
-		shift; \
-		echo $$t -\> $$l; \
-		rm -f $$t; \
-		ln $$l $$t; \
-	done; true
 .endif
 .if defined(MLINKS) && !empty(MLINKS)
 	@set ${MLINKS}; \
