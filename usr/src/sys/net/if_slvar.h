@@ -1,12 +1,19 @@
-/*	@(#)if_slvar.h	7.6 (Berkeley) %G% */
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)if_slvar.h	7.7 (Berkeley) %G%
+ *
+ * $Header: if_slvar.h,v 1.3 89/05/31 02:25:18 van Exp $
+ */
 
 /*
  * Definitions for SLIP interface data structures
  * 
- * (this exists so programs like slstats can get at the definition
+ * (This exists so programs like slstats can get at the definition
  *  of sl_softc.)
- *
- * $Header: if_slvar.h,v 1.3 89/05/31 02:25:18 van Exp $
  */
 struct sl_softc {
 	struct	ifnet sc_if;		/* network-visible interface */
