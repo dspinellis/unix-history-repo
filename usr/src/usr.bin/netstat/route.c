@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)route.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -27,7 +27,9 @@ static char sccsid[] = "@(#)route.c	5.14 (Berkeley) %G%";
 #include <sys/mbuf.h>
 
 #include <net/if.h>
+#define  KERNEL
 #include <net/route.h>
+#undef KERNEL
 #include <netinet/in.h>
 
 #include <netns/ns.h>
@@ -38,6 +40,8 @@ extern	int kmem;
 extern	int nflag;
 extern	char *routename(), *netname(), *ns_print(), *plural();
 extern	char *malloc();
+#define kget(p, d) \
+	(klseek(kmem, (off_t)(p), 0), read(kmem, (char *)&(d), sizeof (d)))
 
 /*
  * Definitions for showing gateway flags.
@@ -57,19 +61,23 @@ struct bits {
 /*
  * Print routing tables.
  */
-routepr(hostaddr, netaddr, hashsizeaddr)
-	off_t hostaddr, netaddr, hashsizeaddr;
+routepr(hostaddr, netaddr, hashsizeaddr, treeaddr)
+	off_t hostaddr, netaddr, hashsizeaddr, treeaddr;
 {
 	struct mbuf mb;
-	register struct rtentry *rt;
+	register struct ortentry *rt;
 	register struct mbuf *m;
-	register struct bits *p;
 	char name[16], *flags;
 	struct mbuf **routehash;
-	struct ifnet ifnet;
 	int hashsize;
 	int i, doinghost = 1;
 
+	printf("Routing tables\n");
+	printf("%-16.16s %-18.18s %-6.6s  %6.6s%8.8s  %s\n",
+		"Destination", "Gateway",
+		"Flags", "Refs", "Use", "Interface");
+	if (treeaddr)
+		return treestuff(treeaddr);
 	if (hostaddr == 0) {
 		printf("rthost: symbol not in namelist\n");
 		return;
@@ -82,77 +90,18 @@ routepr(hostaddr, netaddr, hashsizeaddr)
 		printf("rthashsize: symbol not in namelist\n");
 		return;
 	}
-	klseek(kmem, hashsizeaddr, 0);
-	read(kmem, (char *)&hashsize, sizeof (hashsize));
+	kget(hashsizeaddr, hashsize);
 	routehash = (struct mbuf **)malloc( hashsize*sizeof (struct mbuf *) );
 	klseek(kmem, hostaddr, 0);
 	read(kmem, (char *)routehash, hashsize*sizeof (struct mbuf *));
-	printf("Routing tables\n");
-	printf("%-16.16s %-18.18s %-6.6s  %6.6s%8.8s  %s\n",
-		"Destination", "Gateway",
-		"Flags", "Refs", "Use", "Interface");
 again:
 	for (i = 0; i < hashsize; i++) {
 		if (routehash[i] == 0)
 			continue;
 		m = routehash[i];
 		while (m) {
-			struct sockaddr_in *sin;
-
-			klseek(kmem, (off_t)m, 0);
-			read(kmem, (char *)&mb, sizeof (mb));
-			rt = mtod(&mb, struct rtentry *);
-			if ((unsigned)rt < (unsigned)&mb ||
-			    (unsigned)rt >= (unsigned)(&mb + 1)) {
-				printf("???\n");
-				return;
-			}
-
-			switch(rt->rt_dst.sa_family) {
-			case AF_INET:
-				sin = (struct sockaddr_in *)&rt->rt_dst;
-				printf("%-16.16s ",
-				    (sin->sin_addr.s_addr == 0) ? "default" :
-				    (rt->rt_flags & RTF_HOST) ?
-				    routename(sin->sin_addr) :
-					netname(sin->sin_addr, 0L));
-				sin = (struct sockaddr_in *)&rt->rt_gateway;
-				printf("%-18.18s ", routename(sin->sin_addr));
-				break;
-			case AF_NS:
-				printf("%-16s ",
-				    ns_print((struct sockaddr_ns *)&rt->rt_dst));
-				printf("%-18s ",
-				    ns_print((struct sockaddr_ns *)&rt->rt_gateway));
-				break;
-			default:
-				{
-				u_short *s = (u_short *)rt->rt_dst.sa_data;
-				printf("(%d)%x %x %x %x %x %x %x ",
-				    rt->rt_dst.sa_family,
-				    s[0], s[1], s[2], s[3], s[4], s[5], s[6]);
-				s = (u_short *)rt->rt_gateway.sa_data;
-				printf("(%d)%x %x %x %x %x %x %x ",
-				    rt->rt_gateway.sa_family,
-				    s[0], s[1], s[2], s[3], s[4], s[5], s[6]);
-				}
-			}
-			for (flags = name, p = bits; p->b_mask; p++)
-				if (p->b_mask & rt->rt_flags)
-					*flags++ = p->b_val;
-			*flags = '\0';
-			printf("%-6.6s %6d %8d ", name,
-				rt->rt_refcnt, rt->rt_use);
-			if (rt->rt_ifp == 0) {
-				putchar('\n');
-				m = mb.m_next;
-				continue;
-			}
-			klseek(kmem, (off_t)rt->rt_ifp, 0);
-			read(kmem, (char *)&ifnet, sizeof (ifnet));
-			klseek(kmem, (off_t)ifnet.if_name, 0);
-			read(kmem, name, 16);
-			printf(" %.15s%d\n", name, ifnet.if_unit);
+			kget(m, mb);
+			p_rtentry((struct rtentry *)(mb.m_dat));
 			m = mb.m_next;
 		}
 	}
@@ -163,6 +112,182 @@ again:
 		goto again;
 	}
 	free((char *)routehash);
+	return;
+}
+
+static union {
+	struct	sockaddr u_sa;
+	u_short	u_data[128];
+} pt_u;
+static struct rtentry rtentry;
+
+treestuff(rtree)
+off_t rtree;
+{
+	struct radix_node_head *rnh, head;
+	    
+	for (kget(rtree, rnh); rnh; rnh = head.rnh_next) {
+		kget(rnh, head);
+		if (head.rnh_af == 0) {
+			printf("Netmasks:\n");
+			p_tree(head.rnh_treetop, 0);
+		} else {
+			printf("\nRoute Tree for Protocol Family %d:\n",
+								head.rnh_af);
+			p_tree(head.rnh_treetop, 1);
+		}
+	}
+}
+
+p_tree(rn, do_rtent)
+struct radix_node *rn;
+{
+	struct radix_node rnode;
+	register u_short *s, *slim;
+	int len;
+
+again:
+	kget(rn, rnode);
+	if (rnode.rn_b < 0) {
+		if (rnode.rn_flags & RNF_ROOT)
+			printf("(root node)\n");
+		else if (do_rtent) {
+			kget(rn, rtentry);
+			p_rtentry(&rtentry);
+		} else {
+			kget(rnode.rn_key, pt_u);
+			printf("(%d) ",pt_u.u_sa.sa_family);
+			if ((len = pt_u.u_sa.sa_len) == 0 || len > MAXKEYLEN)
+				len = MAXKEYLEN;
+			s = pt_u.u_data + 1;
+			for (slim = s + ((len - 1)/2); s < slim; s++)
+				printf("%x ", *s);
+			putchar('\n');
+		}
+		if (rn = rnode.rn_dupedkey)
+			goto again;
+	} else {
+		p_tree(rnode.rn_l, do_rtent);
+		p_tree(rnode.rn_r, do_rtent);
+	}
+}
+
+struct sockaddr *
+kgetsa(dst)
+register struct sockaddr *dst;
+{
+	kget(dst, pt_u.u_sa);
+	if (pt_u.u_sa.sa_len > sizeof (pt_u.u_sa)) {
+		klseek(kmem, (off_t)dst, 0);
+		read(kmem, pt_u.u_data, pt_u.u_sa.sa_len);
+	}
+	return (&pt_u.u_sa);
+}
+
+p_rtentry(rt)
+register struct rtentry *rt;
+{
+	char name[16], *flags;
+	register struct bits *p;
+	register struct sockaddr_in *sin;
+	struct ifnet ifnet;
+
+	sin = (struct sockaddr_in *)kgetsa(rt_key(rt));
+	switch(sin->sin_family) {
+	case AF_INET:
+		printf("%-16.16s ",
+		    (sin->sin_addr.s_addr == 0) ? "default" :
+		    (rt->rt_flags & RTF_HOST) ?
+		    routename(sin->sin_addr) :
+			netname(sin->sin_addr, 0L));
+		sin = (struct sockaddr_in *)kgetsa(rt->rt_gateway);
+		printf("%-18.18s ", routename(sin->sin_addr));
+		break;
+	case AF_NS:
+		printf("%-16s ",
+		    ns_print((struct sockaddr_ns *)sin));
+		printf("%-18s ",
+		    ns_print((struct sockaddr_ns *)kgetsa(rt->rt_gateway)));
+		break;
+	default:
+		{
+		u_short *s = (u_short *)pt_u.u_sa.sa_data;
+		printf("(%d)%x %x %x %x %x %x %x ",
+		    sin->sin_family,
+		    s[0], s[1], s[2], s[3], s[4], s[5], s[6]);
+		(void) kgetsa(rt->rt_gateway);
+		printf("(%d)%x %x %x %x %x %x %x ",
+		    sin->sin_family,
+		    s[0], s[1], s[2], s[3], s[4], s[5], s[6]);
+		}
+	}
+	for (flags = name, p = bits; p->b_mask; p++)
+		if (p->b_mask & rt->rt_flags)
+			*flags++ = p->b_val;
+	*flags = '\0';
+	printf("%-6.6s %6d %8d ", name,
+		rt->rt_refcnt, rt->rt_use);
+	if (rt->rt_ifp == 0) {
+		putchar('\n');
+		return;
+	}
+	kget(rt->rt_ifp, ifnet);
+	klseek(kmem, (off_t)ifnet.if_name, 0);
+	read(kmem, name, 16);
+	printf(" %.15s%d\n", name, ifnet.if_unit);
+}
+
+p_ortentry(rt)
+register struct ortentry *rt;
+{
+	char name[16], *flags;
+	register struct bits *p;
+	register struct sockaddr_in *sin;
+	struct ifnet ifnet;
+
+	switch(rt->rt_dst.sa_family) {
+	case AF_INET:
+		sin = (struct sockaddr_in *)&rt->rt_dst;
+		printf("%-16.16s ",
+		    (sin->sin_addr.s_addr == 0) ? "default" :
+		    (rt->rt_flags & RTF_HOST) ?
+		    routename(sin->sin_addr) :
+			netname(sin->sin_addr, 0L));
+		sin = (struct sockaddr_in *)&rt->rt_gateway;
+		printf("%-18.18s ", routename(sin->sin_addr));
+		break;
+	case AF_NS:
+		printf("%-16s ",
+		    ns_print((struct sockaddr_ns *)&rt->rt_dst));
+		printf("%-18s ",
+		    ns_print((struct sockaddr_ns *)&rt->rt_gateway));
+		break;
+	default:
+		{
+		u_short *s = (u_short *)rt->rt_dst.sa_data;
+		printf("(%d)%x %x %x %x %x %x %x ",
+		    rt->rt_dst.sa_family,
+		    s[0], s[1], s[2], s[3], s[4], s[5], s[6]);
+		s = (u_short *)rt->rt_gateway.sa_data;
+		printf("(%d)%x %x %x %x %x %x %x ",
+		    rt->rt_gateway.sa_family,
+		    s[0], s[1], s[2], s[3], s[4], s[5], s[6]);
+		}
+	}
+	for (flags = name, p = bits; p->b_mask; p++)
+		if (p->b_mask & rt->rt_flags)
+			*flags++ = p->b_val;
+	*flags = '\0';
+	printf("%-6.6s %6d %8d ", name,
+		rt->rt_refcnt, rt->rt_use);
+	if (rt->rt_ifp == 0) {
+		putchar('\n');
+		return;
+	}
+	kget(rt->rt_ifp, ifnet);
+	klseek(kmem, (off_t)ifnet.if_name, 0);
+	read(kmem, name, 16);
+	printf(" %.15s%d\n", name, ifnet.if_unit);
 }
 
 char *
