@@ -1,5 +1,5 @@
 /*
- *	@(#)kdb_opset.c	7.1 (Berkeley) %G%
+ *	@(#)kdb_opset.c	7.2 (Berkeley) %G%
  */
 
 #include "../kdb/defs.h"
@@ -8,8 +8,8 @@
  * Instruction printing.
  */
 REGLIST reglist [] = {
-	"p1lr",	&pcb.pcb_p1lr,	"p1br",	&pcb.pcb_p1br,
-	"p0lr",	&pcb.pcb_p0lr,	"p0br",	&pcb.pcb_p0br,
+	"p1lr",	&pcb.pcb_p1lr,	"p1br",	(int *)&pcb.pcb_p1br,
+	"p0lr",	&pcb.pcb_p0lr,	"p0br",	(int *)&pcb.pcb_p0br,
 	"ksp",	&pcb.pcb_ksp,	"esp",	&pcb.pcb_esp,
 	"ssp",	&pcb.pcb_ssp,	"psl",	&pcb.pcb_psl,
 	"pc",	&pcb.pcb_pc,	"usp",	&pcb.pcb_usp,
@@ -147,6 +147,8 @@ struct insttab {
 /*
  * Definitions for the escape bytes
  */
+#define	CORE	0
+#define	NEW	1
 #define	ESCD	0xfd
 #define	ESCF	0xff
 #define	mapescbyte(b)	((b) == ESCD ? 1 : (b) == ESCF ? 2 : 0)
@@ -202,6 +204,7 @@ static	char *fltimm[] = {
 "64.0", "72.0", "80.0", "88.0", "96.0", "104.0", "112.0", "120.0"
 };
 
+static	int type, space, incp;
 static	long insoutvar[36];
 /*
  * Definitions for registers and for operand classes
@@ -419,10 +422,12 @@ static numberp snarf(nbytes)
 		backnumber.num_uchar[i] = snarfuchar();
 	return(&backnumber);
 }
+
 /*
  * Read one single character, and advance the dot
  */
-u_char snarfuchar()
+static u_char
+snarfuchar()
 {
 	u_char	back;
 	/*
@@ -432,6 +437,7 @@ u_char snarfuchar()
 	incp += 1;
 	return(back);
 }
+
 /*
  * normal operand; return non zero pointer to register
  * name if this is an index instruction.
@@ -524,7 +530,8 @@ dispaddress(valuep, mode)
 /*
  * get a register name
  */
-char *insregname(regnumber)
+static char *
+insregname(regnumber)
 	int	regnumber;
 {
 	char	*r;

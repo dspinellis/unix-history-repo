@@ -1,12 +1,13 @@
 /*
- *	@(#)kdbparam.h	7.1 (Berkeley) %G%
+ *	@(#)kdbparam.h	7.2 (Berkeley) %G%
  */
-
-#include <sys/vm.h>
 
 #define DBNAME "kdb\n"
 #define LPRMODE "%R"
 #define OFFMODE "+%R"
+
+#define	KDB_IPL		0xf	/* highest priority software interrupt */
+#define	setsoftkdb()	mtpr(SIRR, KDB_IPL)
 
 #define	MAXINT	0x7fffffff
 #define	MAXSTOR (KERNBASE - ctob(UPAGES))
