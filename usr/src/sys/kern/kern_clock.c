@@ -1,4 +1,4 @@
-/*	%H%	3.16	kern_clock.c	*/
+/*	%H%	3.17	kern_clock.c	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -126,6 +126,11 @@ out:
 		}
 		if (s > u.u_vm.vm_maxrss)
 			u.u_vm.vm_maxrss = s;
+		if ((u.u_vm.vm_utime+u.u_vm.vm_stime+1)/HZ > u.u_limit[LIM_CPU]) {
+			psignal(u.u_procp, SIGXCPU);
+			if (u.u_limit[LIM_CPU] < INFINITY - 5)
+				u.u_limit[LIM_CPU] += 5;
+		}
 	}
 	if (USERMODE(ps)) {
 		u.u_vm.vm_utime++;
@@ -237,8 +242,6 @@ out:
 			(void) setpri(pp);
 			pp->p_pri = pp->p_usrpri;
 #endif
-			if ((u.u_vm.vm_utime+u.u_vm.vm_stime)/HZ > u.u_limit[LIM_CPU])
-				psignal(pp, SIGXCPU);
 		}
 	}
 	if (!BASEPRI(ps))
