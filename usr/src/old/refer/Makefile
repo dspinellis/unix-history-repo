@@ -1,7 +1,7 @@
-#	@(#)Makefile	4.6	(Berkeley)	87/05/01
+#	@(#)Makefile	4.7	(Berkeley)	87/05/06
 #
 DESTDIR=
-CFLAGS = -O
+CFLAGS=	-O
 
 all:	mkey inv hunt refer addbib lookbib sortbib
 
@@ -52,18 +52,97 @@ install: all
 	install -c indxbib.sh $(DESTDIR)/usr/bin/indxbib
 	install lookbib $(DESTDIR)/usr/bin/lookbib
 	install -c tmac.bib $(DESTDIR)/usr/lib/tmac
-	(cd /usr/dict/papers; sh runinv)
+	(cd /usr/dict/papers; /bin/sh runinv)
 
 clean:
 	rm -f ${all} *.o errs core
 
-glue3.o: refer..c
-hunt2.o: refer..c
-hunt3.o: refer..c
-refer0.o: refer..c
-refer1.o: refer..c
-refer2.o: refer..c
-refer3.o: refer..c
-refer4.o: refer..c
-refer6.o: refer..c
-refer5.o: refer..c
+depend: ${SOURCES}
+	cc -M ${CFLAGS} *.c | sed -e 's, ./, ,g' | \
+	    awk ' { if ($$1 != prev) \
+		{ if (rec != "") print rec; rec = $$0; prev = $$1; } \
+		else { if (length(rec $$2) > 78) { print rec; rec = $$0; } \
+		else rec = rec " " $$2 } } \
+		END { print rec } ' >makedep
+	echo '/^# DO NOT DELETE THIS LINE/+2,$$d' >eddep
+	echo '$$r makedep' >>eddep
+	echo 'w' >>eddep
+	ed - Makefile < eddep
+	rm eddep makedep
+	echo '# DEPENDENCIES MUST END AT END OF FILE' >> Makefile
+	echo '# IF YOU PUT STUFF HERE IT WILL GO AWAY' >> Makefile
+	echo '# see make depend above' >> Makefile
+
+# DO NOT DELETE THIS LINE -- make depend uses it
+
+addbib.o: addbib.c /usr/include/stdio.h /usr/include/ctype.h
+addbib.o: /usr/include/signal.h
+annobib.o: annobib.c /usr/include/stdio.h
+deliv1.o: deliv1.c /usr/include/stdio.h
+deliv2.o: deliv2.c /usr/include/stdio.h
+flagger.o: flagger.c /usr/include/stdio.h
+glue1.o: glue1.c /usr/include/stdio.h
+glue2.o: glue2.c
+glue3.o: glue3.c refer..c /usr/include/stdio.h /usr/include/ctype.h
+glue3.o: /usr/include/assert.h
+glue4.o: glue4.c /usr/include/stdio.h /usr/include/ctype.h
+glue5.o: glue5.c /usr/include/stdio.h /usr/include/ctype.h
+hunt1.o: hunt1.c /usr/include/stdio.h /usr/include/assert.h
+hunt2.o: hunt2.c refer..c /usr/include/stdio.h /usr/include/ctype.h
+hunt2.o: /usr/include/assert.h
+hunt3.o: hunt3.c refer..c /usr/include/stdio.h /usr/include/ctype.h
+hunt3.o: /usr/include/assert.h
+hunt5.o: hunt5.c /usr/include/stdio.h /usr/include/sys/types.h
+hunt5.o: /usr/include/sys/stat.h
+hunt6.o: hunt6.c /usr/include/stdio.h /usr/include/assert.h
+hunt7.o: hunt7.c /usr/include/stdio.h /usr/include/assert.h
+hunt8.o: hunt8.c /usr/include/stdio.h /usr/include/assert.h
+hunt9.o: hunt9.c
+inv1.o: inv1.c /usr/include/stdio.h /usr/include/assert.h
+inv2.o: inv2.c /usr/include/stdio.h /usr/include/assert.h
+inv3.o: inv3.c
+inv5.o: inv5.c /usr/include/stdio.h
+inv6.o: inv6.c /usr/include/stdio.h /usr/include/assert.h
+kaiser.o: kaiser.c /usr/include/stdio.h /usr/include/ctype.h
+lookbib.o: lookbib.c /usr/include/stdio.h /usr/include/ctype.h
+mkey1.o: mkey1.c /usr/include/stdio.h
+mkey2.o: mkey2.c /usr/include/stdio.h /usr/include/ctype.h
+mkey3.o: mkey3.c /usr/include/stdio.h
+refer..o: refer..c /usr/include/stdio.h /usr/include/ctype.h
+refer..o: /usr/include/assert.h
+refer0.o: refer0.c refer..c /usr/include/stdio.h /usr/include/ctype.h
+refer0.o: /usr/include/assert.h
+refer1.o: refer1.c /usr/include/signal.h refer..c /usr/include/stdio.h
+refer1.o: /usr/include/ctype.h /usr/include/assert.h
+refer2.o: refer2.c refer..c /usr/include/stdio.h /usr/include/ctype.h
+refer2.o: /usr/include/assert.h
+refer3.o: refer3.c refer..c /usr/include/stdio.h /usr/include/ctype.h
+refer3.o: /usr/include/assert.h
+refer4.o: refer4.c refer..c /usr/include/stdio.h /usr/include/ctype.h
+refer4.o: /usr/include/assert.h
+refer5.o: refer5.c refer..c /usr/include/stdio.h /usr/include/ctype.h
+refer5.o: /usr/include/assert.h
+refer6.o: refer6.c refer..c /usr/include/stdio.h /usr/include/ctype.h
+refer6.o: /usr/include/assert.h
+refer7.o: refer7.c refer..c /usr/include/stdio.h /usr/include/ctype.h
+refer7.o: /usr/include/assert.h
+refer8.o: refer8.c refer..c /usr/include/stdio.h /usr/include/ctype.h
+refer8.o: /usr/include/assert.h
+shell.o: shell.c
+sortbib.o: sortbib.c /usr/include/stdio.h /usr/include/signal.h
+thash.o: thash.c /usr/include/stdio.h
+tick.o: tick.c /usr/include/stdio.h /usr/include/sys/types.h
+tick.o: /usr/include/sys/timeb.h
+types.o: types.c
+what..o: what..c /usr/include/stdio.h /usr/include/ctype.h
+what..o: /usr/include/sys/types.h /usr/include/sys/stat.h /usr/include/assert.h
+what1.o: what1.c what..c /usr/include/stdio.h /usr/include/ctype.h
+what1.o: /usr/include/sys/types.h /usr/include/sys/stat.h /usr/include/assert.h
+what2.o: what2.c /usr/include/stdio.h /usr/include/ctype.h
+what3.o: what3.c what..c /usr/include/stdio.h /usr/include/ctype.h
+what3.o: /usr/include/sys/types.h /usr/include/sys/stat.h /usr/include/assert.h
+what4.o: what4.c what..c /usr/include/stdio.h /usr/include/ctype.h
+what4.o: /usr/include/sys/types.h /usr/include/sys/stat.h /usr/include/assert.h
+# DEPENDENCIES MUST END AT END OF FILE
+# IF YOU PUT STUFF HERE IT WILL GO AWAY
+# see make depend above
