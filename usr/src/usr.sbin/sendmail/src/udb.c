@@ -8,9 +8,9 @@
 
 #ifndef lint
 #ifdef USERDB
-static char sccsid [] = "@(#)udb.c	5.3 (Berkeley) %G% (with USERDB)";
+static char sccsid [] = "@(#)udb.c	5.4 (Berkeley) %G% (with USERDB)";
 #else
-static char sccsid [] = "@(#)udb.c	5.3 (Berkeley) %G% (without USERDB)";
+static char sccsid [] = "@(#)udb.c	5.4 (Berkeley) %G% (without USERDB)";
 #endif
 #endif
 
@@ -38,6 +38,9 @@ static char sccsid [] = "@(#)udb.c	5.3 (Berkeley) %G% (without USERDB)";
 **		Modifies sendq.
 */
 
+int	UdbPort = 1616;
+int	UdbTimeout = 10;
+
 struct udbent
 {
 	char	*udb_spec;		/* string version of spec */
@@ -47,11 +50,9 @@ struct udbent
 		/* type UE_REMOTE -- do remote call for lookup */
 		struct
 		{
-			int		_udb_addrlen;	/* length of addr */
 			struct sockaddr_in _udb_addr;	/* address */
 			int		_udb_timeout;	/* timeout */
 		} udb_remote;
-#define udb_addrlen	udb_u.udb_remote._udb_addrlen
 #define udb_addr	udb_u.udb_remote._udb_addr
 #define udb_timeout	udb_u.udb_remote._udb_timeout
 
@@ -81,6 +82,8 @@ struct udbent
 
 #define MAXUDBENT	10	/* maximum number of UDB entries */
 
+struct udbent	UdbEnts[MAXUDBENT + 1];
+int		UdbSock = -1;
 
 void
 udbexpand(a, sendq)
@@ -89,16 +92,13 @@ udbexpand(a, sendq)
 {
 	int i;
 	register char *p;
-	auto char *class;
-	auto char *list;
 	DBT key;
 	DBT info;
-	register char *bp;
 	static bool firstcall = TRUE;
-	static int udbsock = -1;
 	bool breakout;
 	register struct udbent *up;
-	struct udbent udbents[MAXUDBENT + 1];
+	int keylen;
+	char keybuf[128];
 	char buf[8192];
 
 	if (tTd(28, 1))
@@ -113,73 +113,27 @@ udbexpand(a, sendq)
 	/* on first call, locate the database */
 	if (firstcall)
 	{
+		extern void _udbx_init();
+
+		_udbx_init();
 		firstcall = FALSE;
-		p = UdbSpec;
-		up = udbents;
-		for (;;)
-		{
-			char *spec;
-			auto int rcode;
-			int nmx;
-			char *mxhosts[MAXMXHOSTS + 1];
-
-			while (*p == ' ' || *p == '\t' || *p == ',')
-				p++;
-			if (*p == '\0')
-				break;
-			spec = p;
-			p = index(p, ',');
-			if (*p != '\0')
-				*p++ = '\0';
-			switch (*spec)
-			{
-			  case '*':	/* search remote database */
-				expand("\001j", buf, &buf[sizeof(buf) - 1], CurEnv);
-				nmx = getmxrr(spec + 1, mxhosts, buf, &rcode);
-				for (i = 0; i < nmx; i++)
-				{
-					register struct hostent *h;
-
-					h = gethostbyname(mxhosts[i]);
-					if (h == NULL)
-						continue;
-					up->udb_type = UDB_REMOTE;
-					up->udb_addr.sin_family = h->h_addrtype;
-					up->udb_addrlen = h->h_length;
-					bcopy(h->h_addr_list[0],
-					      (char *) &up->udb_addr.sin_addr,
-					      h->h_length);
-					up++;
-				}
-
-				/* set up a datagram socket */
-				if (udbsock < 0)
-				{
-					udbsock = socket(AF_INET, SOCK_DGRAM, 0);
-					(void) fcntl(udbsock, F_SETFD, 1);
-				}
-				break;
-
-			  case '@':	/* forward to remote host */
-				up->udb_type = UDB_FORWARD;
-				up->udb_fwdhost = spec + 1;
-				up++;
-				break;
-
-			  case '/':	/* look up remote name */
-				up->udb_dbp = dbopen(spec, O_RDONLY, 0644, DB_BTREE, NULL);
-				if (up->udb_dbp == NULL)
-					break;
-				up->udb_type = UDB_LOOKUP;
-				up++;
-				break;
-			}
-		}
-		up->udb_type = UDB_EOLIST;
 	}
 
+	/* if name is too long, assume it won't match */
+	if (strlen(a->q_user) > sizeof keybuf - 12)
+		return;
+
+	/* if name begins with a colon, it indicates our metadata */
+	if (a->q_user[0] == ':')
+		return;
+
+	/* build actual database key */
+	(void) strcpy(keybuf, a->q_user);
+	(void) strcat(keybuf, ":maildrop");
+	keylen = strlen(keybuf);
+
 	breakout = FALSE;
-	for (up = udbents; !breakout; up++)
+	for (up = UdbEnts; !breakout; up++)
 	{
 		char *user;
 		struct timeval timeout;
@@ -196,37 +150,47 @@ udbexpand(a, sendq)
 		switch (up->udb_type)
 		{
 		  case UDB_LOOKUP:
-			key.data = a->q_user;
-			key.size = strlen(key.data);
-			i = (*up->udb_dbp->get)(up->udb_dbp, &key, &info, 0);
+			key.data = keybuf;
+			key.size = keylen;
+			i = (*up->udb_dbp->seq)(up->udb_dbp, &key, &info, R_CURSOR);
 			if (i != 0 || info.size <= 0)
 			{
 				if (i < 0)
 					syserr("udbexpand: db-get stat %s");
 				if (tTd(28, 2))
-					printf("expand: no match on %s\n", key.data);
+					printf("expand: no match on %s\n", keybuf);
 				continue;
 			}
 
-			/* extract the class (first string) and data (second string) */
-			class = info.data;
-			i = strlen((char *) info.data) + 1;
-			p = (char *) info.data + i;
-			i = info.size - i;
+			/* there is at least one match -- start processing */
+			breakout = TRUE;
+			do
+			{
+				if (info.size < sizeof buf)
+					user = buf;
+				else
+					user = xalloc(info.size + 1);
+				bcopy(info.data, user, info.size);
+				user[info.size] = '\0';
 
-			/* use internal buffer if it will fit; otherwise malloc */
-			if (i < sizeof buf)
-				user = buf;
-			else
-				user = xalloc(i + 1);
-			bcopy(p, user, i);
-			user[i] = '\0';
+				message(Arpa_Info, "expanded to %s", user);
+				AliasLevel++;
+				sendtolist(user, a, sendq);
+				AliasLevel--;
+
+				if (user != buf)
+					free(user);
+
+				/* get the next record */
+				i = (*up->udb_dbp->seq)(up->udb_dbp, &key, &info, R_NEXT);
+			} while (i == 0 && key.size == keylen &&
+					bcmp(key.data, keybuf, keylen) == 0);
 			break;
 
 		  case UDB_REMOTE:
-			if (sendto(udbsock, a->q_user, strlen(a->q_user), 0,
+			if (sendto(UdbSock, keybuf, keylen, 0,
 				   (struct sockaddr *) &up->udb_addr,
-				   up->udb_addrlen) < 0)
+				   sizeof up->udb_addr) < 0)
 			{
 				continue;
 			}
@@ -235,27 +199,49 @@ udbexpand(a, sendq)
 			do
 			{
 				FD_ZERO(&fdset);
-				FD_SET(udbsock, &fdset);
+				FD_SET(UdbSock, &fdset);
 				i = select(FD_SETSIZE, &fdset, NULL, NULL, &timeout);
-			} while (i > 0 && !FD_ISSET(udbsock, &fdset));
+			} while (i > 0 && !FD_ISSET(UdbSock, &fdset));
 			if (i <= 0)
 				continue;
-			i = recvfrom(udbsock, buf, sizeof buf - 1, 0, NULL, NULL);
+			i = recvfrom(UdbSock, buf, sizeof buf - 1, 0, NULL, NULL);
 			if (i < 0)
 				continue;
-			class = buf;
-			user = &buf[strlen(buf)];
-			buf[i] = '\0';
+			if (buf[0] != ' ' && buf[0] != '-')
+				continue;
+			breakout = TRUE;
+			while (buf[0] == ' ' || buf[0] == '-')
+			{
+				user = &buf[1];
+				buf[i] = '\0';
+				message(Arpa_Info, "expanded to %s", user);
+				AliasLevel++;
+				sendtolist(user, a, sendq);
+				AliasLevel--;
+
+				/* try for next record */
+				if (buf[0] == ' ')
+					break;
+				i = recvfrom(UdbSock, buf, sizeof buf - 1, 0, NULL, NULL);
+				if (i < 0)
+					break;
+			}
 			break;
 
 		  case UDB_FORWARD:
-			class = "forward";
 			i = strlen(up->udb_fwdhost) + strlen(a->q_user) + 1;
 			if (i < sizeof buf)
 				user = buf;
 			else
 				user = xalloc(i + 1);
 			(void) sprintf(user, "%s@%s", a->q_user, up->udb_fwdhost);
+			message(Arpa_Info, "expanded to %s", user);
+			AliasLevel++;
+			sendtolist(user, a, sendq);
+			AliasLevel--;
+			if (user != buf)
+				free(user);
+			breakout = TRUE;
 			break;
 
 		  case UDB_EOLIST:
@@ -266,25 +252,139 @@ udbexpand(a, sendq)
 			/* unknown entry type */
 			continue;
 		}
+	}
+}
 
-		if (tTd(28, 1))
-			printf("Class %s: %s\n", class, user);
+void
+_udbx_init()
+{
+	register char *p;
+	int i;
+	register struct udbent *up;
+	char buf[8192];
 
-		/* do special processing based on class */
-		if (strcmp(class, "user") == 0 || strcmp(class, "forward") == 0)
+	p = UdbSpec;
+	up = UdbEnts;
+	for (;;)
+	{
+		char *spec;
+		auto int rcode;
+		int nmx;
+		register struct hostent *h;
+		char *mxhosts[MAXMXHOSTS + 1];
+
+		while (*p == ' ' || *p == '\t' || *p == ',')
+			p++;
+		if (*p == '\0')
+			break;
+		spec = p;
+		p = index(p, ',');
+		if (*p != '\0')
+			*p++ = '\0';
+		switch (*spec)
 		{
-			message(Arpa_Info, "expanded to (%s) %s", class, user);
-			AliasLevel++;
-			sendtolist(user, a, sendq);
-			AliasLevel--;
-			breakout = TRUE;
+		  case '+':	/* search remote database */
+			h = gethostbyname(spec + 1);
+			if (h == NULL)
+				continue;
+			up->udb_type = UDB_REMOTE;
+			up->udb_addr.sin_family = h->h_addrtype;
+			up->udb_addr.sin_len = h->h_length;
+			bcopy(h->h_addr_list[0],
+			      (char *) &up->udb_addr.sin_addr,
+			      h->h_length);
+			up->udb_addr.sin_port = UdbPort;
+			up->udb_timeout = UdbTimeout;
+			up++;
+
+			/* set up a datagram socket */
+			if (UdbSock < 0)
+			{
+				UdbSock = socket(AF_INET, SOCK_DGRAM, 0);
+				(void) fcntl(UdbSock, F_SETFD, 1);
+			}
+			break;
+
+		  case '*':	/* search remote database (expand MX) */
+			nmx = getmxrr(spec + 1, mxhosts, "", &rcode);
+			if (tTd(28, 16))
+			{
+				int i;
+
+				printf("getmxrr(%s): %d", spec + 1, nmx);
+				for (i = 0; i <= nmx; i++)
+					printf(" %s", mxhosts[i]);
+				printf("\n");
+			}
+			for (i = 0; i < nmx; i++)
+			{
+				h = gethostbyname(mxhosts[i]);
+				if (h == NULL)
+					continue;
+				up->udb_type = UDB_REMOTE;
+				up->udb_addr.sin_family = h->h_addrtype;
+				up->udb_addr.sin_len = h->h_length;
+				bcopy(h->h_addr_list[0],
+				      (char *) &up->udb_addr.sin_addr,
+				      h->h_length);
+				up->udb_addr.sin_port = UdbPort;
+				up->udb_timeout = UdbTimeout;
+				up++;
+			}
+
+			/* set up a datagram socket */
+			if (UdbSock < 0)
+			{
+				UdbSock = socket(AF_INET, SOCK_DGRAM, 0);
+				(void) fcntl(UdbSock, F_SETFD, 1);
+			}
+			break;
+
+		  case '@':	/* forward to remote host */
+			up->udb_type = UDB_FORWARD;
+			up->udb_fwdhost = spec + 1;
+			up++;
+			break;
+
+		  case '/':	/* look up remote name */
+			up->udb_dbp = dbopen(spec, O_RDONLY, 0644, DB_BTREE, NULL);
+			if (up->udb_dbp == NULL)
+				break;
+			up->udb_type = UDB_LOOKUP;
+			up++;
+			break;
 		}
+	}
+	up->udb_type = UDB_EOLIST;
 
-		/* free memory if we allocated it */
-		if (up->udb_type == UDB_FORWARD || up->udb_type == UDB_LOOKUP)
+	if (tTd(28, 4))
+	{
+		for (up = UdbEnts; ; up++)
 		{
-			if (user != buf)
-				free(user);
+			switch (up->udb_type)
+			{
+			  case UDB_EOLIST:
+				return;
+
+			  case UDB_REMOTE:
+				printf("REMOTE: addr %s, timeo %d\n",
+					inet_ntoa(up->udb_addr.sin_addr),
+					up->udb_timeout);
+				break;
+
+			  case UDB_LOOKUP:
+				printf("LOOKUP\n");
+				break;
+
+			  case UDB_FORWARD:
+				printf("FORWARD: host %s\n",
+					up->udb_fwdhost);
+				break;
+
+			  default:
+				printf("UNKNOWN\n");
+				break;
+			}
 		}
 	}
 }
