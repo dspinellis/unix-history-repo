@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)logger.c	6.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)logger.c	6.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -47,7 +47,7 @@ main(argc, argv)
 	char *tag, buf[1024], *getlogin();
 
 	tag = NULL;
-	while ((ch = getopt(argc, argv, "f:ip:t:")) != EOF)
+	while ((ch = getopt(argc, argv, "f:ip:st:")) != EOF)
 		switch((char)ch) {
 		case 'f':		/* file to log */
 			if (freopen(optarg, "r", stdin) == NULL) {
@@ -61,6 +61,9 @@ main(argc, argv)
 			break;
 		case 'p':		/* priority */
 			pri = pencode(optarg);
+			break;
+		case 's':		/* log to standard error */
+			logflags |= LOG_PERROR;
 			break;
 		case 't':		/* tag */
 			tag = optarg;
