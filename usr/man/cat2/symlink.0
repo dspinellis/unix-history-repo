@@ -1,0 +1,132 @@
+
+
+
+SYMLINK(2)	    UNIX Programmer's Manual	       SYMLINK(2)
+
+
+
+NNAAMMEE
+     symlink - make symbolic link to a file
+
+SSYYNNOOPPSSIISS
+     ssyymmlliinnkk((nnaammee11,, nnaammee22))
+     cchhaarr **nnaammee11,, **nnaammee22;;
+
+DDEESSCCRRIIPPTTIIOONN
+     A symbolic link _n_a_m_e_2 is created to _n_a_m_e_1 (_n_a_m_e_2 is the name
+     of the file created, _n_a_m_e_1 is the string used in creating
+     the symbolic link).  Either name may be an arbitrary path
+     name; the files need not be on the same file system.
+
+RREETTUURRNN VVAALLUUEE
+     Upon successful completion, a zero value is returned.  If an
+     error occurs, the error code is stored in _e_r_r_n_o and a -1
+     value is returned.
+
+EERRRROORRSS
+     The symbolic link is made unless on or more of the following
+     are true:
+
+     [ENOTDIR]	    A component of the _n_a_m_e_2 prefix is not a
+		    directory.
+
+     [EINVAL]	    Either _n_a_m_e_1 or _n_a_m_e_2 contains a character
+		    with the high-order bit set.
+
+     [ENAMETOOLONG] A component of either pathname exceeded 255
+		    characters, or the entire length of either
+		    path name exceeded 1023 characters.
+
+     [ENOENT]	    The named file does not exist.
+
+     [EACCES]	    A component of the _n_a_m_e_2 path prefix denies
+		    search permission.
+
+     [ELOOP]	    Too many symbolic links were encountered in
+		    translating the pathname.
+
+     [EEXIST]	    _N_a_m_e_2 already exists.
+
+     [EIO]	    An I/O error occurred while making the direc-
+		    tory entry for _n_a_m_e_2, or allocating the inode
+		    for _n_a_m_e_2, or writing out the link contents
+		    of _n_a_m_e_2.
+
+     [EROFS]	    The file _n_a_m_e_2 would reside on a read-only
+		    file system.
+
+     [ENOSPC]	    The directory in which the entry for the new
+		    symbolic link is being placed cannot be
+
+
+
+Printed 7/9/88		 August 26, 1985			1
+
+
+
+
+
+
+SYMLINK(2)	    UNIX Programmer's Manual	       SYMLINK(2)
+
+
+
+		    extended because there is no space left on
+		    the file system containing the directory.
+
+     [ENOSPC]	    The new symbolic link cannot be created
+		    because there there is no space left on the
+		    file system that will contain the symbolic
+		    link.
+
+     [ENOSPC]	    There are no free inodes on the file system
+		    on which the symbolic link is being created.
+
+     [EDQUOT]	    The directory in which the entry for the new
+		    symbolic link is being placed cannot be
+		    extended because the user's quota of disk
+		    blocks on the file system containing the
+		    directory has been exhausted.
+
+     [EDQUOT]	    The new symbolic link cannot be created
+		    because the user's quota of disk blocks on
+		    the file system that will contain the sym-
+		    bolic link has been exhausted.
+
+     [EDQUOT]	    The user's quota of inodes on the file system
+		    on which the symbolic link is being created
+		    has been exhausted.
+
+     [EIO]	    An I/O error occurred while making the direc-
+		    tory entry or allocating the inode.
+
+     [EFAULT]	    _N_a_m_e_1 or _n_a_m_e_2 points outside the process's
+		    allocated address space.
+
+SSEEEE AALLSSOO
+     link(2), ln(1), unlink(2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 August 26, 1985			2
+
+
+

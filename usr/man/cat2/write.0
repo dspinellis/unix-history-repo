@@ -1,0 +1,198 @@
+
+
+
+WRITE(2)	    UNIX Programmer's Manual		 WRITE(2)
+
+
+
+NNAAMMEE
+     write, writev - write output
+
+SSYYNNOOPPSSIISS
+     cccc == wwrriittee((dd,, bbuuff,, nnbbyytteess))
+     iinntt cccc,, dd;;
+     cchhaarr **bbuuff;;
+     iinntt nnbbyytteess;;
+
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+     ##iinncclluuddee <<ssyyss//uuiioo..hh>>
+
+     cccc == wwrriitteevv((dd,, iioovv,, iioovvccnntt))
+     iinntt cccc,, dd;;
+     ssttrruucctt iioovveecc **iioovv;;
+     iinntt iioovvccnntt;;
+
+DDEESSCCRRIIPPTTIIOONN
+     _W_r_i_t_e attempts to write _n_b_y_t_e_s of data to the object refer-
+     enced by the descriptor _d from the buffer pointed to by _b_u_f.
+     _W_r_i_t_e_v performs the same action, but gathers the output data
+     from the _i_o_v_c_n_t buffers specified by the members of the _i_o_v
+     array: iov[0], iov[1], ..., iov[iovcnt-1].
+
+     For _w_r_i_t_e_v, the _i_o_v_e_c structure is defined as
+
+	  struct iovec {
+	       caddr_t	 iov_base;
+	       int  iov_len;
+	  };
+
+     Each _i_o_v_e_c entry specifies the base address and length of an
+     area in memory from which data should be written.	_W_r_i_t_e_v
+     will always write a complete area before proceeding to the
+     next.
+
+     On objects capable of seeking, the _w_r_i_t_e starts at a posi-
+     tion given by the pointer associated with _d, see _l_s_e_e_k(2).
+     Upon return from _w_r_i_t_e, the pointer is incremented by the
+     number of bytes actually written.
+
+     Objects that are not capable of seeking always write from
+     the current position.  The value of the pointer associated
+     with such an object is undefined.
+
+     If the real user is not the super-user, then _w_r_i_t_e clears
+     the set-user-id bit on a file.  This prevents penetration of
+     system security by a user who "captures" a writable set-
+     user-id file owned by the super-user.
+
+     When using non-blocking I/O on objects such as sockets that
+     are subject to flow control, _w_r_i_t_e and _w_r_i_t_e_v may write
+
+
+
+Printed 7/9/88		  May 14, 1986				1
+
+
+
+
+
+
+WRITE(2)	    UNIX Programmer's Manual		 WRITE(2)
+
+
+
+     fewer bytes than requested; the return value must be noted,
+     and the remainder of the operation should be retried when
+     possible.
+
+RREETTUURRNN VVAALLUUEE
+     Upon successful completion the number of bytes actually
+     written is returned.  Otherwise a -1 is returned and the
+     global variable _e_r_r_n_o is set to indicate the error.
+
+EERRRROORRSS
+     _W_r_i_t_e and _w_r_i_t_e_v will fail and the file pointer will remain
+     unchanged if one or more of the following are true:
+
+     [EBADF]	    _D is not a valid descriptor open for writing.
+
+     [EPIPE]	    An attempt is made to write to a pipe that is
+		    not open for reading by any process.
+
+     [EPIPE]	    An attempt is made to write to a socket of
+		    type SOCK_STREAM that is not connected to a
+		    peer socket.
+
+     [EFBIG]	    An attempt was made to write a file that
+		    exceeds the process's file size limit or the
+		    maximum file size.
+
+     [EFAULT]	    Part of _i_o_v or data to be written to the file
+		    points outside the process's allocated
+		    address space.
+
+     [EINVAL]	    The pointer associated with _d was negative.
+
+     [ENOSPC]	    There is no free space remaining on the file
+		    system containing the file.
+
+     [EDQUOT]	    The user's quota of disk blocks on the file
+		    system containing the file has been
+		    exhausted.
+
+     [EIO]	    An I/O error occurred while reading from or
+		    writing to the file system.
+
+     [EWOULDBLOCK]  The file was marked for non-blocking I/O, and
+		    no data could be written immediately.
+
+     In addition, _w_r_i_t_e_v may return one of the following errors:
+
+     [EINVAL]	    _I_o_v_c_n_t was less than or equal to 0, or
+		    greater than 16.
+
+     [EINVAL]	    One of the _i_o_v__l_e_n values in the _i_o_v array
+		    was negative.
+
+
+
+Printed 7/9/88		  May 14, 1986				2
+
+
+
+
+
+
+WRITE(2)	    UNIX Programmer's Manual		 WRITE(2)
+
+
+
+     [EINVAL]	    The sum of the _i_o_v__l_e_n values in the _i_o_v
+		    array overflowed a 32-bit integer.
+
+SSEEEE AALLSSOO
+     fcntl(2), lseek(2), open(2), pipe(2), select(2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 14, 1986				3
+
+
+

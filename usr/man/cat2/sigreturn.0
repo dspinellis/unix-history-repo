@@ -1,0 +1,66 @@
+
+
+
+SIGRETURN(2)	    UNIX Programmer's Manual	     SIGRETURN(2)
+
+
+
+NNAAMMEE
+     sigreturn - return from signal
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssiiggnnaall..hh>>
+
+     ssttrruucctt    ssiiggccoonntteexxtt {{
+	  iinntt  sscc__oonnssttaacckk;;
+	  iinntt  sscc__mmaasskk;;
+	  iinntt  sscc__sspp;;
+	  iinntt  sscc__ffpp;;
+	  iinntt  sscc__aapp;;
+	  iinntt  sscc__ppcc;;
+	  iinntt  sscc__ppss;;
+     }};;
+
+     ssiiggrreettuurrnn((ssccpp));;
+     ssttrruucctt ssiiggccoonntteexxtt **ssccpp;;
+
+DDEESSCCRRIIPPTTIIOONN
+     _S_i_g_r_e_t_u_r_n allows users to atomically unmask, switch stacks,
+     and return from a signal context.	The processes signal mask
+     and stack status are restored from the context.  The system
+     call does not return; the users stack pointer, frame
+     pointer, argument pointer, and processor status longword are
+     restored from the context.  Execution resumes at the speci-
+     fied pc.  This system call is used by the trampoline code,
+     and _l_o_n_g_j_m_p(3) when returning from a signal to the previ-
+     ously executing program.
+
+NNOOTTEESS
+     This system call is not available in 4.2BSD, hence it should
+     not be used if backward compatibility is needed.
+
+RREETTUURRNN VVAALLUUEE
+     If successful, the system call does not return.  Otherwise,
+     a value of -1 is returned and _e_r_r_n_o is set to indicate the
+     error.
+
+EERRRROORRSS
+     _S_i_g_r_e_t_u_r_n will fail and the process context will remain
+     unchanged if one of the following occurs.
+
+     [EFAULT]	    _S_c_p points to memory that is not a valid part
+		    of the process address space.
+
+     [EINVAL]	    The process status longword is invalid or
+		    would improperly raise the privilege level of
+		    the process.
+
+SSEEEE AALLSSOO
+     sigvec(2), setjmp(3)
+
+
+
+Printed 7/9/88		  June 30, 1985                         1
+
+
+

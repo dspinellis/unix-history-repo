@@ -1,0 +1,66 @@
+
+
+
+GETHOSTID(2)	    UNIX Programmer's Manual	     GETHOSTID(2)
+
+
+
+NNAAMMEE
+     gethostid, sethostid - get/set unique identifier of current
+     host
+
+SSYYNNOOPPSSIISS
+     hhoossttiidd == ggeetthhoossttiidd(())
+     lloonngg hhoossttiidd;;
+
+     sseetthhoossttiidd((hhoossttiidd))
+     lloonngg hhoossttiidd;;
+
+DDEESSCCRRIIPPTTIIOONN
+     _S_e_t_h_o_s_t_i_d establishes a 32-bit identifier for the current
+     processor that is intended to be unique among all UNIX sys-
+     tems in existence.  This is normally a DARPA Internet
+     address for the local machine.  This call is allowed only to
+     the super-user and is normally performed at boot time.
+
+     _G_e_t_h_o_s_t_i_d returns the 32-bit identifier for the current pro-
+     cessor.
+
+SSEEEE AALLSSOO
+     hostid(1), gethostname(2)
+
+BBUUGGSS
+     32 bits for the identifier is too small.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		November 28, 1985			1
+
+
+

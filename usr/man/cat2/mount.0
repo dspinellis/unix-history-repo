@@ -1,0 +1,198 @@
+
+
+
+MOUNT(2)	    UNIX Programmer's Manual		 MOUNT(2)
+
+
+
+NNAAMMEE
+     mount, umount - mount or remove file system
+
+SSYYNNOOPPSSIISS
+     mmoouunntt((ssppeecciiaall,, nnaammee,, rrwwffllaagg))
+     cchhaarr **ssppeecciiaall,, **nnaammee;;
+     iinntt rrwwffllaagg;;
+
+     uummoouunntt((ssppeecciiaall))
+     cchhaarr **ssppeecciiaall;;
+
+DDEESSCCRRIIPPTTIIOONN
+     _M_o_u_n_t announces to the system that a removable file system
+     has been mounted on the block-structured special file _s_p_e_-
+     _c_i_a_l; from now on, references to file _n_a_m_e will refer to the
+     root file on the newly mounted file system.  _S_p_e_c_i_a_l and
+     _n_a_m_e are pointers to null-terminated strings containing the
+     appropriate path names.
+
+     _N_a_m_e must exist already. _N_a_m_e must be a directory.  Its old
+     contents are inaccessible while the file system is mounted.
+
+     The _r_w_f_l_a_g argument determines whether the file system can
+     be written on; if it is 0 writing is allowed, if non-zero no
+     writing is done.  Physically write-protected and magnetic
+     tape file systems must be mounted read-only or errors will
+     occur when access times are updated, whether or not any
+     explicit write is attempted.
+
+     _U_m_o_u_n_t announces to the system that the _s_p_e_c_i_a_l file is no
+     longer to contain a removable file system.  The associated
+     file reverts to its ordinary interpretation.
+
+RREETTUURRNN VVAALLUUEE
+     _M_o_u_n_t returns 0 if the action occurred, -1 if _s_p_e_c_i_a_l is
+     inaccessible or not an appropriate file, if _n_a_m_e does not
+     exist, if _s_p_e_c_i_a_l is already mounted, if _n_a_m_e is in use, or
+     if there are already too many file systems mounted.
+
+     _U_m_o_u_n_t returns 0 if the action occurred; -1 if if the spe-
+     cial file is inaccessible or does not have a mounted file
+     system, or if there are active files in the mounted file
+     system.
+
+EERRRROORRSS
+     _M_o_u_n_t will fail when one of the following occurs:
+
+     [ENAMETOOLONG] A component of either pathname exceeded 255
+		    characters, or the entire length of either
+		    path name exceeded 1023 characters.
+
+     [ELOOP]	    Too many symbolic links were encountered in
+
+
+
+Printed 7/9/88		 August 26, 1985			1
+
+
+
+
+
+
+MOUNT(2)	    UNIX Programmer's Manual		 MOUNT(2)
+
+
+
+		    translating either pathname.
+
+     [EPERM]	    The caller is not the super-user.
+
+     [ENOENT]	    A component of _n_a_m_e does not exist.
+
+     [ENODEV]	    A component of _s_p_e_c_i_a_l does not exist.
+
+     [ENOTBLK]	    _S_p_e_c_i_a_l is not a block device.
+
+     [ENXIO]	    The major device number of _s_p_e_c_i_a_l is out of
+		    range (this indicates no device driver exists
+		    for the associated hardware).
+
+     [ENOTDIR]	    A component of _n_a_m_e is not a directory, or a
+		    path prefix of _s_p_e_c_i_a_l is not a directory.
+
+     [EINVAL]	    Either pathname contains a character with the
+		    high-order bit set.
+
+     [EINVAL]	    The super block for the file system had a bad
+		    magic number or an out of range block size.
+
+     [EBUSY]	    Another process currently holds a reference
+		    to _n_a_m_e, or _s_p_e_c_i_a_l is already mounted.
+
+     [EMFILE]	    No space remains in the mount table.
+
+     [ENOMEM]	    Not enough memory was available to read the
+		    cylinder group information for the file sys-
+		    tem.
+
+     [EIO]	    An I/O error occurred while reading the super
+		    block or cylinder group information.
+
+     [EFAULT]	    _S_p_e_c_i_a_l or _n_a_m_e points outside the process's
+		    allocated address space.
+
+     _U_m_o_u_n_t may fail with one of the following errors:
+
+     [ENOTDIR]	    A component of the path prefix is not a
+		    directory.
+
+     [EINVAL]	    The pathname contains a character with the
+		    high-order bit set.
+
+     [ENAMETOOLONG] A component of a pathname exceeded 255 char-
+		    acters, or an entire path name exceeded 1023
+		    characters.
+
+     [ELOOP]	    Too many symbolic links were encountered in
+		    translating the pathname.
+
+
+
+Printed 7/9/88		 August 26, 1985			2
+
+
+
+
+
+
+MOUNT(2)	    UNIX Programmer's Manual		 MOUNT(2)
+
+
+
+     [EPERM]	    The caller is not the super-user.
+
+     [ENODEV]	    _S_p_e_c_i_a_l does not exist.
+
+     [ENOTBLK]	    _S_p_e_c_i_a_l is not a block device.
+
+     [ENXIO]	    The major device number of _s_p_e_c_i_a_l is out of
+		    range (this indicates no device driver exists
+		    for the associated hardware).
+
+     [EINVAL]	    The requested device is not in the mount
+		    table.
+
+     [EBUSY]	    A process is holding a reference to a file
+		    located on the file system.
+
+     [EIO]	    An I/O error occurred while writing the super
+		    block or other cached file system informa-
+		    tion.
+
+     [EFAULT]	    _S_p_e_c_i_a_l points outside the process's allo-
+		    cated address space.
+
+SSEEEE AALLSSOO
+     mount(8), umount(8)
+
+BBUUGGSS
+     Some of the error codes need translation to more obvious
+     messages.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 August 26, 1985			3
+
+
+

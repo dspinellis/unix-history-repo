@@ -1,0 +1,66 @@
+
+
+
+UMASK(2)	    UNIX Programmer's Manual		 UMASK(2)
+
+
+
+NNAAMMEE
+     umask - set file creation mode mask
+
+SSYYNNOOPPSSIISS
+     oouummaasskk == uummaasskk((nnuummaasskk))
+     iinntt oouummaasskk,, nnuummaasskk;;
+
+DDEESSCCRRIIPPTTIIOONN
+     _U_m_a_s_k sets the process's file mode creation mask to _n_u_m_a_s_k
+     and returns the previous value of the mask.  The low-order 9
+     bits of _n_u_m_a_s_k are used whenever a file is created, clearing
+     corresponding bits in the file mode (see _c_h_m_o_d(2)).  This
+     clearing allows each user to restrict the default access to
+     his files.
+
+     The value is initially 022 (write access for owner only).
+     The mask is inherited by child processes.
+
+RREETTUURRNN VVAALLUUEE
+     The previous value of the file mode mask is returned by the
+     call.
+
+SSEEEE AALLSSOO
+     chmod(2), mknod(2), open(2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		   May 9, 1985				1
+
+
+

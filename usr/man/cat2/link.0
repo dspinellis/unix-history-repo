@@ -1,0 +1,132 @@
+
+
+
+LINK(2)             UNIX Programmer's Manual		  LINK(2)
+
+
+
+NNAAMMEE
+     link - make a hard link to a file
+
+SSYYNNOOPPSSIISS
+     lliinnkk((nnaammee11,, nnaammee22))
+     cchhaarr **nnaammee11,, **nnaammee22;;
+
+DDEESSCCRRIIPPTTIIOONN
+     A hard link to _n_a_m_e_1 is created; the link has the name
+     _n_a_m_e_2.  _N_a_m_e_1 must exist.
+
+     With hard links, both _n_a_m_e_1 and _n_a_m_e_2 must be in the same
+     file system.  Unless the caller is the super-user, _n_a_m_e_1
+     must not be a directory.  Both the old and the new _l_i_n_k
+     share equal access and rights to the underlying object.
+
+RREETTUURRNN VVAALLUUEE
+     Upon successful completion, a value of 0 is returned.  Oth-
+     erwise, a value of -1 is returned and _e_r_r_n_o is set to indi-
+     cate the error.
+
+EERRRROORRSS
+     _L_i_n_k will fail and no link will be created if one or more of
+     the following are true:
+
+     [ENOTDIR]	    A component of either path prefix is not a
+		    directory.
+
+     [EINVAL]	    Either pathname contains a character with the
+		    high-order bit set.
+
+     [ENAMETOOLONG] A component of either pathname exceeded 255
+		    characters, or entire length of either path
+		    name exceeded 1023 characters.
+
+     [ENOENT]	    A component of either path prefix does not
+		    exist.
+
+     [EACCES]	    A component of either path prefix denies
+		    search permission.
+
+     [EACCES]	    The requested link requires writing in a
+		    directory with a mode that denies write per-
+		    mission.
+
+     [ELOOP]	    Too many symbolic links were encountered in
+		    translating one of the pathnames.
+
+     [ENOENT]	    The file named by _n_a_m_e_1 does not exist.
+
+     [EEXIST]	    The link named by _n_a_m_e_2 does exist.
+
+
+
+
+Printed 7/9/88		 August 26, 1985			1
+
+
+
+
+
+
+LINK(2)             UNIX Programmer's Manual		  LINK(2)
+
+
+
+     [EPERM]	    The file named by _n_a_m_e_1 is a directory and
+		    the effective user ID is not super-user.
+
+     [EXDEV]	    The link named by _n_a_m_e_2 and the file named by
+		    _n_a_m_e_1 are on different file systems.
+
+     [ENOSPC]	    The directory in which the entry for the new
+		    link is being placed cannot be extended
+		    because there is no space left on the file
+		    system containing the directory.
+
+     [EDQUOT]	    The directory in which the entry for the new
+		    link is being placed cannot be extended
+		    because the user's quota of disk blocks on
+		    the file system containing the directory has
+		    been exhausted.
+
+     [EIO]	    An I/O error occurred while reading from or
+		    writing to the file system to make the direc-
+		    tory entry.
+
+     [EROFS]	    The requested link requires writing in a
+		    directory on a read-only file system.
+
+     [EFAULT]	    One of the pathnames specified is outside the
+		    process's allocated address space.
+
+SSEEEE AALLSSOO
+     symlink(2), unlink(2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 August 26, 1985			2
+
+
+

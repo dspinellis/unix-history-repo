@@ -1,0 +1,66 @@
+
+
+
+CLOSE(2)	    UNIX Programmer's Manual		 CLOSE(2)
+
+
+
+NNAAMMEE
+     close - delete a descriptor
+
+SSYYNNOOPPSSIISS
+     cclloossee((dd))
+     iinntt dd;;
+
+DDEESSCCRRIIPPTTIIOONN
+     The _c_l_o_s_e call deletes a descriptor from the per-process
+     object reference table.  If this is the last reference to
+     the underlying object, then it will be deactivated.  For
+     example, on the last close of a file the current _s_e_e_k
+     pointer associated with the file is lost; on the last close
+     of a _s_o_c_k_e_t(2) associated naming information and queued data
+     are discarded; on the last close of a file holding an
+     advisory lock the lock is released (see further _f_l_o_c_k(2)).
+
+     A close of all of a process's descriptors is automatic on
+     _e_x_i_t, but since there is a limit on the number of active
+     descriptors per process, _c_l_o_s_e is necessary for programs
+     that deal with many descriptors.
+
+     When a process forks (see _f_o_r_k(2)), all descriptors for the
+     new child process reference the same objects as they did in
+     the parent before the fork.  If a new process is then to be
+     run using _e_x_e_c_v_e(2), the process would normally inherit
+     these descriptors.  Most of the descriptors can be rear-
+     ranged with _d_u_p_2(2) or deleted with _c_l_o_s_e before the _e_x_e_c_v_e
+     is attempted, but if some of these descriptors will still be
+     needed if the execve fails, it is necessary to arrange for
+     them to be closed if the execve succeeds.	For this reason,
+     the call ``fcntl(d, F_SETFD, 1)'' is provided, which
+     arranges that a descriptor will be closed after a successful
+     execve; the call ``fcntl(d, F_SETFD, 0)'' restores the
+     default, which is to not close the descriptor.
+
+RREETTUURRNN VVAALLUUEE
+     Upon successful completion, a value of 0 is returned.  Oth-
+     erwise, a value of -1 is returned and the global integer
+     variable _e_r_r_n_o is set to indicate the error.
+
+EERRRROORRSS
+     _C_l_o_s_e will fail if:
+
+     [EBADF]	    _D is not an active descriptor.
+
+SSEEEE AALLSSOO
+     accept(2), flock(2), open(2), pipe(2), socket(2), socket-
+     pair(2), execve(2), fcntl(2)
+
+
+
+
+
+
+Printed 7/9/88		  May 22, 1986				1
+
+
+

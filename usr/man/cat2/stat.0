@@ -1,0 +1,198 @@
+
+
+
+STAT(2)             UNIX Programmer's Manual		  STAT(2)
+
+
+
+NNAAMMEE
+     stat, lstat, fstat - get file status
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+     ##iinncclluuddee <<ssyyss//ssttaatt..hh>>
+
+     ssttaatt((ppaatthh,, bbuuff))
+     cchhaarr **ppaatthh;;
+     ssttrruucctt ssttaatt **bbuuff;;
+
+     llssttaatt((ppaatthh,, bbuuff))
+     cchhaarr **ppaatthh;;
+     ssttrruucctt ssttaatt **bbuuff;;
+
+     ffssttaatt((ffdd,, bbuuff))
+     iinntt ffdd;;
+     ssttrruucctt ssttaatt **bbuuff;;
+
+DDEESSCCRRIIPPTTIIOONN
+     _S_t_a_t obtains information about the file _p_a_t_h.  Read, write
+     or execute permission of the named file is not required, but
+     all directories listed in the path name leading to the file
+     must be reachable.
+
+     _L_s_t_a_t is like _s_t_a_t except in the case where the named file
+     is a symbolic link, in which case _l_s_t_a_t returns information
+     about the link, while _s_t_a_t returns information about the
+     file the link references.
+
+     _F_s_t_a_t obtains the same information about an open file refer-
+     enced by the argument descriptor, such as would be obtained
+     by an _o_p_e_n call.
+
+     _B_u_f is a pointer to a _s_t_a_t structure into which information
+     is placed concerning the file.  The contents of the struc-
+     ture pointed to by _b_u_f
+
+	  struct stat {
+	       dev_t  st_dev; /* device inode resides on */
+	       ino_t  st_ino; /* this inode's number */
+	       u_short	      st_mode;/* protection */
+	       short  st_nlink;/* number or hard links to the file */
+	       uid_t  st_uid; /* user-id of owner */
+	       gid_t  st_gid; /* group-id of owner */
+	       dev_t  st_rdev;/* the device type, for inode that is device */
+	       off_t  st_size;/* total size of file */
+	       time_t st_atime;/* file last access time */
+	       int    st_spare1;
+	       time_t st_mtime;/* file last modify time */
+	       int    st_spare2;
+	       time_t st_ctime;/* file last status change time */
+
+
+
+Printed 7/9/88		October 25, 1987			1
+
+
+
+
+
+
+STAT(2)             UNIX Programmer's Manual		  STAT(2)
+
+
+
+	       int    st_spare3;
+	       long   st_blksize;/* optimal blocksize for file system i/o ops */
+	       long   st_blocks;/* actual number of blocks allocated */
+	       long   st_spare4[2];
+	 };
+
+     st_atime	 Time when file data was last accessed.  Changed
+		 by the following system calls: _m_k_n_o_d(2),
+		 _u_t_i_m_e_s(2), and _r_e_a_d(2).  For reasons of effi-
+		 ciency, st_atime is not set when a directory is
+		 searched, although this would be more logical.
+
+     st_mtime	 Time when data was last modified.  It is not set
+		 by changes of owner, group, link count, or mode.
+		 Changed by the following system calls: _m_k_n_o_d(2),
+		 _u_t_i_m_e_s(2), _w_r_i_t_e(2).
+
+     st_ctime	 Time when file status was last changed.  It is
+		 set both both by writing and changing the i-
+		 node.	Changed by the following system calls:
+		 _c_h_m_o_d(2) _c_h_o_w_n(2), _l_i_n_k(2), _m_k_n_o_d(2), _r_e_n_a_m_e(2),
+		 _u_n_l_i_n_k(2), _u_t_i_m_e_s(2), _w_r_i_t_e(2).
+
+     The status information word _s_t__m_o_d_e has bits:
+	  #define S_IFMT  0170000  /* type of file */
+	  #define    S_IFDIR	   0040000/* directory */
+	  #define    S_IFCHR	   0020000/* character special */
+	  #define    S_IFBLK	   0060000/* block special */
+	  #define    S_IFREG	   0100000/* regular */
+	  #define    S_IFLNK	   0120000/* symbolic link */
+	  #define    S_IFSOCK	   0140000/* socket */
+	  #define S_ISUID 0004000  /* set user id on execution */
+	  #define S_ISGID 0002000  /* set group id on execution */
+	  #define S_ISVTX 0001000  /* save swapped text even after use */
+	  #define S_IREAD 0000400  /* read permission, owner */
+	  #define S_IWRITE	   0000200/* write permission, owner */
+	  #define S_IEXEC 0000100  /* execute/search permission, owner */
+
+     The mode bits 0000070 and 0000007 encode group and others
+     permissions (see _c_h_m_o_d(2)).
+
+RREETTUURRNN VVAALLUUEE
+     Upon successful completion a value of 0 is returned.  Other-
+     wise, a value of -1 is returned and _e_r_r_n_o is set to indicate
+     the error.
+
+EERRRROORRSS
+     _S_t_a_t and _l_s_t_a_t will fail if one or more of the following are
+     true:
+
+     [ENOTDIR]	    A component of the path prefix is not a
+		    directory.
+
+
+
+Printed 7/9/88		October 25, 1987			2
+
+
+
+
+
+
+STAT(2)             UNIX Programmer's Manual		  STAT(2)
+
+
+
+     [EINVAL]	    The pathname contains a character with the
+		    high-order bit set.
+
+     [ENAMETOOLONG] A component of a pathname exceeded 255 char-
+		    acters, or an entire path name exceeded 1023
+		    characters.
+
+     [ENOENT]	    The named file does not exist.
+
+     [EACCES]	    Search permission is denied for a component
+		    of the path prefix.
+
+     [ELOOP]	    Too many symbolic links were encountered in
+		    translating the pathname.
+
+     [EFAULT]	    _B_u_f or _n_a_m_e points to an invalid address.
+
+     [EIO]	    An I/O error occurred while reading from or
+		    writing to the file system.
+
+     _F_s_t_a_t will fail if one or both of the following are true:
+
+     [EBADF]	    _F_i_l_d_e_s is not a valid open file descriptor.
+
+     [EFAULT]	    _B_u_f points to an invalid address.
+
+     [EIO]	    An I/O error occurred while reading from or
+		    writing to the file system.
+
+CCAAVVEEAATT
+     The fields in the stat structure currently marked _s_t__s_p_a_r_e_1,
+     _s_t__s_p_a_r_e_2, and _s_t__s_p_a_r_e_3 are present in preparation for
+     inode time stamps expanding to 64 bits.  This, however, can
+     break certain programs that depend on the time stamps being
+     contiguous (in calls to _u_t_i_m_e_s(2)).
+
+SSEEEE AALLSSOO
+     chmod(2), chown(2), utimes(2)
+
+BBUUGGSS
+     Applying _f_s_t_a_t to a socket (and thus to a pipe) returns a
+     zero'd buffer, except for the blocksize field, and a unique
+     device and inode number.
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		October 25, 1987			3
+
+
+

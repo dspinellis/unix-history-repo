@@ -1,0 +1,132 @@
+
+
+
+GETITIMER(2)	    UNIX Programmer's Manual	     GETITIMER(2)
+
+
+
+NNAAMMEE
+     getitimer, setitimer - get/set value of interval timer
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ttiimmee..hh>>
+
+     ##ddeeffiinnee IITTIIMMEERR__RREEAALL      00    //** rreeaall ttiimmee iinntteerrvvaallss **//
+     ##ddeeffiinnee IITTIIMMEERR__VVIIRRTTUUAALL   11    //** vviirrttuuaall ttiimmee iinntteerrvvaallss **//
+     ##ddeeffiinnee IITTIIMMEERR__PPRROOFF      22    //** uusseerr aanndd ssyysstteemm vviirrttuuaall ttiimmee **//
+
+     ggeettiittiimmeerr((wwhhiicchh,, vvaalluuee))
+     iinntt wwhhiicchh;;
+     ssttrruucctt iittiimmeerrvvaall **vvaalluuee;;
+
+     sseettiittiimmeerr((wwhhiicchh,, vvaalluuee,, oovvaalluuee))
+     iinntt wwhhiicchh;;
+     ssttrruucctt iittiimmeerrvvaall **vvaalluuee,, **oovvaalluuee;;
+
+DDEESSCCRRIIPPTTIIOONN
+     The system provides each process with three interval timers,
+     defined in <_s_y_s/_t_i_m_e._h>.  The _g_e_t_i_t_i_m_e_r call returns the
+     current value for the timer specified in _w_h_i_c_h in the struc-
+     ture at _v_a_l_u_e.  The _s_e_t_i_t_i_m_e_r call sets a timer to the
+     specified _v_a_l_u_e (returning the previous value of the timer
+     if _o_v_a_l_u_e is nonzero).
+
+     A timer value is defined by the _i_t_i_m_e_r_v_a_l structure:
+
+	  struct itimerval {
+	       struct	 timeval it_interval;	  /* timer interval */
+	       struct	 timeval it_value;   /* current value */
+	  };
+
+     If _i_t__v_a_l_u_e is non-zero, it indicates the time to the next
+     timer expiration. If _i_t__i_n_t_e_r_v_a_l is non-zero, it specifies a
+     value to be used in reloading _i_t__v_a_l_u_e when the timer
+     expires.  Setting _i_t__v_a_l_u_e to 0 disables a timer.	Setting
+     _i_t__i_n_t_e_r_v_a_l to 0 causes a timer to be disabled after its
+     next expiration (assuming _i_t__v_a_l_u_e is non-zero).
+
+     Time values smaller than the resolution of the system clock
+     are rounded up to this resolution (on the VAX, 10 mil-
+     liseconds).
+
+     The ITIMER_REAL timer decrements in real time.  A SIGALRM
+     signal is delivered when this timer expires.
+
+     The ITIMER_VIRTUAL timer decrements in process virtual time.
+     It runs only when the process is executing.  A SIGVTALRM
+     signal is delivered when it expires.
+
+
+
+
+
+Printed 7/9/88		December 18, 1986			1
+
+
+
+
+
+
+GETITIMER(2)	    UNIX Programmer's Manual	     GETITIMER(2)
+
+
+
+     The ITIMER_PROF timer decrements both in process virtual
+     time and when the system is running on behalf of the pro-
+     cess.  It is designed to be used by interpreters in statist-
+     ically profiling the execution of interpreted programs.
+     Each time the ITIMER_PROF timer expires, the SIGPROF signal
+     is delivered.  Because this signal may interrupt in-progress
+     system calls, programs using this timer must be prepared to
+     restart interrupted system calls.
+
+NNOOTTEESS
+     Three macros for manipulating time values are defined in
+     <_s_y_s/_t_i_m_e._h>.  _T_i_m_e_r_c_l_e_a_r sets a time value to zero, _t_i_m_e_r_-
+     _i_s_s_e_t tests if a time value is non-zero, and _t_i_m_e_r_c_m_p com-
+     pares two time values (beware that >= and <= do not work
+     with this macro).
+
+RREETTUURRNN VVAALLUUEE
+     If the calls succeed, a value of 0 is returned.  If an error
+     occurs, the value -1 is returned, and a more precise error
+     code is placed in the global variable _e_r_r_n_o.
+
+EERRRROORRSS
+     The possible errors are:
+
+     [EFAULT]	    The _v_a_l_u_e parameter specified a bad address.
+
+     [EINVAL]	    A _v_a_l_u_e parameter specified a time was too
+		    large to be handled.
+
+SSEEEE AALLSSOO
+     select(2), sigvec(2), gettimeofday(2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		December 18, 1986			2
+
+
+

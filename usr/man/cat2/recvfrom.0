@@ -1,0 +1,132 @@
+
+
+
+RECV(2)             UNIX Programmer's Manual		  RECV(2)
+
+
+
+NNAAMMEE
+     recv, recvfrom, recvmsg - receive a message from a socket
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+     ##iinncclluuddee <<ssyyss//ssoocckkeett..hh>>
+
+     cccc == rreeccvv((ss,, bbuuff,, lleenn,, ffllaaggss))
+     iinntt cccc,, ss;;
+     cchhaarr **bbuuff;;
+     iinntt lleenn,, ffllaaggss;;
+
+     cccc == rreeccvvffrroomm((ss,, bbuuff,, lleenn,, ffllaaggss,, ffrroomm,, ffrroommlleenn))
+     iinntt cccc,, ss;;
+     cchhaarr **bbuuff;;
+     iinntt lleenn,, ffllaaggss;;
+     ssttrruucctt ssoocckkaaddddrr **ffrroomm;;
+     iinntt **ffrroommlleenn;;
+
+     cccc == rreeccvvmmssgg((ss,, mmssgg,, ffllaaggss))
+     iinntt cccc,, ss;;
+     ssttrruucctt mmssgghhddrr **mmssgg;;
+     iinntt ffllaaggss;;
+
+DDEESSCCRRIIPPTTIIOONN
+     _R_e_c_v, _r_e_c_v_f_r_o_m, and _r_e_c_v_m_s_g are used to receive messages
+     from a socket.
+
+     The _r_e_c_v call is normally used only on a _c_o_n_n_e_c_t_e_d socket
+     (see _c_o_n_n_e_c_t(2)), while _r_e_c_v_f_r_o_m and _r_e_c_v_m_s_g may be used to
+     receive data on a socket whether it is in a connected state
+     or not.
+
+     If _f_r_o_m is non-zero, the source address of the message is
+     filled in.  _F_r_o_m_l_e_n is a value-result parameter, initialized
+     to the size of the buffer associated with _f_r_o_m, and modified
+     on return to indicate the actual size of the address stored
+     there.  The length of the message is returned in _c_c.  If a
+     message is too long to fit in the supplied buffer, excess
+     bytes may be discarded depending on the type of socket the
+     message is received from (see _s_o_c_k_e_t(2)).
+
+     If no messages are available at the socket, the receive call
+     waits for a message to arrive, unless the socket is non-
+     blocking (see _i_o_c_t_l(2)) in which case a _c_c of -1 is returned
+     with the external variable errno set to EWOULDBLOCK.
+
+     The _s_e_l_e_c_t(2) call may be used to determine when more data
+     arrives.
+
+     The _f_l_a_g_s argument to a recv call is formed by _o_r'ing one or
+     more of the values,
+
+
+
+Printed 7/9/88		  July 21, 1987                         1
+
+
+
+
+
+
+RECV(2)             UNIX Programmer's Manual		  RECV(2)
+
+
+
+	  #define  MSG_OOB	   0x1	  /* process out-of-band data */
+	  #define  MSG_PEEK	   0x2	  /* peek at incoming message */
+
+     The _r_e_c_v_m_s_g call uses a _m_s_g_h_d_r structure to minimize the
+     number of directly supplied parameters.  This structure has
+     the following form, as defined in <_s_y_s/_s_o_c_k_e_t._h>:
+
+	  struct msghdr {
+	       caddr_t	 msg_name;	/* optional address */
+	       int  msg_namelen;	/* size of address */
+	       struct	 iovec *msg_iov;	  /* scatter/gather array */
+	       int  msg_iovlen;         /* # elements in msg_iov */
+	       caddr_t	 msg_accrights;      /* access rights sent/received */
+	       int  msg_accrightslen;
+	  };
+
+     Here _m_s_g__n_a_m_e and _m_s_g__n_a_m_e_l_e_n specify the destination
+     address if the socket is unconnected; _m_s_g__n_a_m_e may be given
+     as a null pointer if no names are desired or required.  The
+     _m_s_g__i_o_v and _m_s_g__i_o_v_l_e_n describe the scatter gather loca-
+     tions, as described in _r_e_a_d(2).  A buffer to receive any
+     access rights sent along with the message is specified in
+     _m_s_g__a_c_c_r_i_g_h_t_s, which has length _m_s_g__a_c_c_r_i_g_h_t_s_l_e_n.	Access
+     rights are currently limited to file descriptors, which each
+     occupy the size of an iinntt.  If access rights are not being
+     transferred, the _m_s_g__a_c_c_r_i_g_h_t_s field should be set to NULL.
+
+RREETTUURRNN VVAALLUUEE
+     These calls return the number of bytes received, or -1 if an
+     error occurred.
+
+EERRRROORRSS
+     The calls fail if:
+
+     [EBADF]		 The argument _s is an invalid descriptor.
+
+     [ENOTSOCK]          The argument _s is not a socket.
+
+     [EWOULDBLOCK]	 The socket is marked non-blocking and
+			 the receive operation would block.
+
+     [EINTR]		 The receive was interrupted by delivery
+			 of a signal before any data was avail-
+			 able for the receive.
+
+     [EFAULT]		 The data was specified to be received
+			 into a non-existent or protected part of
+			 the process address space.
+
+SSEEEE AALLSSOO
+     fcntl(2), read(2), send(2), select(2), getsockopt(2),
+     socket(2)
+
+
+
+Printed 7/9/88		  July 21, 1987                         2
+
+
+

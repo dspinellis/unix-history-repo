@@ -1,0 +1,132 @@
+
+
+
+TRUNCATE(2)	    UNIX Programmer's Manual	      TRUNCATE(2)
+
+
+
+NNAAMMEE
+     truncate - truncate a file to a specified length
+
+SSYYNNOOPPSSIISS
+     ttrruunnccaattee((ppaatthh,, lleennggtthh))
+     cchhaarr **ppaatthh;;
+     ooffff__tt lleennggtthh;;
+
+     ffttrruunnccaattee((ffdd,, lleennggtthh))
+     iinntt ffdd;;
+     ooffff__tt lleennggtthh;;
+
+DDEESSCCRRIIPPTTIIOONN
+     _T_r_u_n_c_a_t_e causes the file named by _p_a_t_h or referenced by _f_d
+     to be truncated to at most _l_e_n_g_t_h bytes in size.  If the
+     file previously was larger than this size, the extra data is
+     lost.  With _f_t_r_u_n_c_a_t_e, the file must be open for writing.
+
+RREETTUURRNN VVAALLUUEESS
+     A value of 0 is returned if the call succeeds.  If the call
+     fails a -1 is returned, and the global variable _e_r_r_n_o speci-
+     fies the error.
+
+EERRRROORRSS
+     _T_r_u_n_c_a_t_e succeeds unless:
+
+     [ENOTDIR]	    A component of the path prefix is not a
+		    directory.
+
+     [EINVAL]	    The pathname contains a character with the
+		    high-order bit set.
+
+     [ENAMETOOLONG] A component of a pathname exceeded 255 char-
+		    acters, or an entire path name exceeded 1023
+		    characters.
+
+     [ENOENT]	    The named file does not exist.
+
+     [EACCES]	    Search permission is denied for a component
+		    of the path prefix.
+
+     [EACCES]	    The named file is not writable by the user.
+
+     [ELOOP]	    Too many symbolic links were encountered in
+		    translating the pathname.
+
+     [EISDIR]	    The named file is a directory.
+
+     [EROFS]	    The named file resides on a read-only file
+		    system.
+
+     [ETXTBSY]	    The file is a pure procedure (shared text)
+
+
+
+Printed 7/9/88		 March 29, 1986                         1
+
+
+
+
+
+
+TRUNCATE(2)	    UNIX Programmer's Manual	      TRUNCATE(2)
+
+
+
+		    file that is being executed.
+
+     [EIO]	    An I/O error occurred updating the inode.
+
+     [EFAULT]	    _P_a_t_h points outside the process's allocated
+		    address space.
+
+     _F_t_r_u_n_c_a_t_e succeeds unless:
+
+     [EBADF]	    The _f_d is not a valid descriptor.
+
+     [EINVAL]	    The _f_d references a socket, not a file.
+
+     [EINVAL]	    The _f_d is not open for writing.
+
+SSEEEE AALLSSOO
+     open(2)
+
+BBUUGGSS
+     These calls should be generalized to allow ranges of bytes
+     in a file to be discarded.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 March 29, 1986                         2
+
+
+

@@ -1,0 +1,66 @@
+
+
+
+GETGROUPS(2)	    UNIX Programmer's Manual	     GETGROUPS(2)
+
+
+
+NNAAMMEE
+     getgroups - get group access list
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ppaarraamm..hh>>
+
+     nnggrroouuppss == ggeettggrroouuppss((ggiiddsseettlleenn,, ggiiddsseett))
+     iinntt nnggrroouuppss,, ggiiddsseettlleenn,, **ggiiddsseett;;
+
+DDEESSCCRRIIPPTTIIOONN
+     _G_e_t_g_r_o_u_p_s gets the current group access list of the user
+     process and stores it in the array _g_i_d_s_e_t.  The parameter
+     _g_i_d_s_e_t_l_e_n indicates the number of entries that may be placed
+     in _g_i_d_s_e_t.  _G_e_t_g_r_o_u_p_s returns the actual number of groups
+     returned in _g_i_d_s_e_t.  No more than NGROUPS, as defined in
+     <_s_y_s/_p_a_r_a_m._h>, will ever be returned.
+
+RREETTUURRNN VVAALLUUEE
+     A successful call returns the number of groups in the group
+     set.  A value of -1 indicates that an error occurred, and
+     the error code is stored in the global variable _e_r_r_n_o.
+
+EERRRROORRSS
+     The possible errors for _g_e_t_g_r_o_u_p are:
+
+     [EINVAL]	    The argument _g_i_d_s_e_t_l_e_n is smaller than the
+		    number of groups in the group set.
+
+     [EFAULT]	    The argument _g_i_d_s_e_t specifies an invalid
+		    address.
+
+SSEEEE AALLSSOO
+     setgroups(2), initgroups(3)
+
+BBUUGGSS
+     The _g_i_d_s_e_t array should be of type ggiidd__tt, but remains
+     integer for compatibility with earlier systems.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 April 10, 1987                         1
+
+
+

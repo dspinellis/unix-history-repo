@@ -1,0 +1,66 @@
+
+
+
+VFORK(2)	    UNIX Programmer's Manual		 VFORK(2)
+
+
+
+NNAAMMEE
+     vfork - spawn new process in a virtual memory efficient way
+
+SSYYNNOOPPSSIISS
+     ppiidd == vvffoorrkk(())
+     iinntt ppiidd;;
+
+DDEESSCCRRIIPPTTIIOONN
+     _V_f_o_r_k can be used to create new processes without fully
+     copying the address space of the old process, which is
+     horrendously inefficient in a paged environment.  It is use-
+     ful when the purpose of _f_o_r_k(2) would have been to create a
+     new system context for an _e_x_e_c_v_e.	_V_f_o_r_k differs from _f_o_r_k
+     in that the child borrows the parent's memory and thread of
+     control until a call to _e_x_e_c_v_e(2) or an exit (either by a
+     call to _e_x_i_t(2) or abnormally.) The parent process is
+     suspended while the child is using its resources.
+
+     _V_f_o_r_k returns 0 in the child's context and (later) the pid
+     of the child in the parent's context.
+
+     _V_f_o_r_k can normally be used just like _f_o_r_k. It does not work,
+     however, to return while running in the childs context from
+     the procedure that called _v_f_o_r_k since the eventual return
+     from _v_f_o_r_k would then return to a no longer existent stack
+     frame.  Be careful, also, to call __e_x_i_t rather than _e_x_i_t if
+     you can't _e_x_e_c_v_e, since _e_x_i_t will flush and close standard
+     I/O channels, and thereby mess up the parent processes stan-
+     dard I/O data structures.	(Even with _f_o_r_k it is wrong to
+     call _e_x_i_t since buffered data would then be flushed twice.)
+
+SSEEEE AALLSSOO
+     fork(2), execve(2), sigvec(2), wait(2),
+
+DDIIAAGGNNOOSSTTIICCSS
+     Same as for _f_o_r_k.
+
+BBUUGGSS
+     This system call will be eliminated when proper system shar-
+     ing mechanisms are implemented. Users should not depend on
+     the memory sharing semantics of _v_f_o_r_k as it will, in that
+     case, be made synonymous to _f_o_r_k.
+
+     To avoid a possible deadlock situation, processes that are
+     children in the middle of a _v_f_o_r_k are never sent SIGTTOU or
+     SIGTTIN signals; rather, output or _i_o_c_t_ls are allowed and
+     input attempts result in an end-of-file indication.
+
+
+
+
+
+
+
+
+Printed 7/9/88		  June 30, 1985                         1
+
+
+

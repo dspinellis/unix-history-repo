@@ -1,0 +1,132 @@
+
+
+
+SEND(2)             UNIX Programmer's Manual		  SEND(2)
+
+
+
+NNAAMMEE
+     send, sendto, sendmsg - send a message from a socket
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+     ##iinncclluuddee <<ssyyss//ssoocckkeett..hh>>
+
+     cccc == sseenndd((ss,, mmssgg,, lleenn,, ffllaaggss))
+     iinntt cccc,, ss;;
+     cchhaarr **mmssgg;;
+     iinntt lleenn,, ffllaaggss;;
+
+     cccc == sseennddttoo((ss,, mmssgg,, lleenn,, ffllaaggss,, ttoo,, ttoolleenn))
+     iinntt cccc,, ss;;
+     cchhaarr **mmssgg;;
+     iinntt lleenn,, ffllaaggss;;
+     ssttrruucctt ssoocckkaaddddrr **ttoo;;
+     iinntt ttoolleenn;;
+
+     cccc == sseennddmmssgg((ss,, mmssgg,, ffllaaggss))
+     iinntt cccc,, ss;;
+     ssttrruucctt mmssgghhddrr **mmssgg;;
+     iinntt ffllaaggss;;
+
+DDEESSCCRRIIPPTTIIOONN
+     _S_e_n_d, _s_e_n_d_t_o, and _s_e_n_d_m_s_g are used to transmit a message to
+     another socket.  _S_e_n_d may be used only when the socket is in
+     a _c_o_n_n_e_c_t_e_d state, while _s_e_n_d_t_o and _s_e_n_d_m_s_g may be used at
+     any time.
+
+     The address of the target is given by _t_o with _t_o_l_e_n specify-
+     ing its size.  The length of the message is given by _l_e_n.
+     If the message is too long to pass atomically through the
+     underlying protocol, then the error EMSGSIZE is returned,
+     and the message is not transmitted.
+
+     No indication of failure to deliver is implicit in a _s_e_n_d.
+     Return values of -1 indicate some locally detected errors.
+
+     If no messages space is available at the socket to hold the
+     message to be transmitted, then _s_e_n_d normally blocks, unless
+     the socket has been placed in non-blocking I/O mode.  The
+     _s_e_l_e_c_t(2) call may be used to determine when it is possible
+     to send more data.
+
+     The _f_l_a_g_s parameter may include one or more of the follow-
+     ing:
+
+	  #define  MSG_OOB	   0x1	  /* process out-of-band data */
+	  #define  MSG_DONTROUTE   0x4	  /* bypass routing, use direct interface */
+     The flag MSG_OOB is used to send "out-of-band" data on sock-
+     ets that support this notion (e.g. SOCK_STREAM); the
+
+
+
+Printed 7/9/88		  July 21, 1987                         1
+
+
+
+
+
+
+SEND(2)             UNIX Programmer's Manual		  SEND(2)
+
+
+
+     underlying protocol must also support "out-of-band" data.
+     MSG_DONTROUTE is usually used only by diagnostic or routing
+     programs.
+
+     See _r_e_c_v(2) for a description of the _m_s_g_h_d_r structure.
+
+RREETTUURRNN VVAALLUUEE
+     The call returns the number of characters sent, or -1 if an
+     error occurred.
+
+EERRRROORRSS
+     [EBADF]		 An invalid descriptor was specified.
+
+     [ENOTSOCK]          The argument _s is not a socket.
+
+     [EFAULT]		 An invalid user space address was speci-
+			 fied for a parameter.
+
+     [EMSGSIZE]          The socket requires that message be sent
+			 atomically, and the size of the message
+			 to be sent made this impossible.
+
+     [EWOULDBLOCK]	 The socket is marked non-blocking and
+			 the requested operation would block.
+
+     [ENOBUFS]		 The system was unable to allocate an
+			 internal buffer.  The operation may
+			 succeed when buffers become available.
+
+     [ENOBUFS]		 The output queue for a network interface
+			 was full.  This generally indicates that
+			 the interface has stopped sending, but
+			 may be caused by transient congestion.
+
+SSEEEE AALLSSOO
+     fcntl(2), recv(2), select(2), getsockopt(2), socket(2),
+     write(2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  July 21, 1987                         2
+
+
+

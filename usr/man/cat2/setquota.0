@@ -1,0 +1,132 @@
+
+
+
+SETQUOTA(2)	    UNIX Programmer's Manual	      SETQUOTA(2)
+
+
+
+NNAAMMEE
+     setquota - enable/disable quotas on a file system
+
+SSYYNNOOPPSSIISS
+     sseettqquuoottaa((ssppeecciiaall,, ffiillee))
+     cchhaarr **ssppeecciiaall,, **ffiillee;;
+
+DDEESSCCRRIIPPTTIIOONN
+     Disc quotas are enabled or disabled with the _s_e_t_q_u_o_t_a call.
+     _S_p_e_c_i_a_l indicates a block special device on which a mounted
+     file system exists.  If _f_i_l_e is nonzero, it specifies a file
+     in that file system from which to take the quotas.  If _f_i_l_e
+     is 0, then quotas are disabled on the file system.  The
+     quota file must exist; it is normally created with the _q_u_o_-
+     _t_a_c_h_e_c_k(8) program.
+
+     Only the super-user may turn quotas on or off.
+
+SSEEEE AALLSSOO
+     quota(2), quotacheck(8), quotaon(8)
+
+RREETTUURRNN VVAALLUUEE
+     A 0 return value indicates a successful call.  A value of -1
+     is returned when an error occurs and _e_r_r_n_o is set to indi-
+     cate the reason for failure.
+
+EERRRROORRSS
+     _S_e_t_q_u_o_t_a will fail when one of the following occurs:
+
+     [ENOTDIR]	    A component of either path prefix is not a
+		    directory.
+
+     [EINVAL]	    Either pathname contains a character with the
+		    high-order bit set.
+
+     [EINVAL]	    The kernel has not been compiled with the
+		    QUOTA option.
+
+     [ENAMETOOLONG] A component of either pathname exceeded 255
+		    characters, or the entire length of either
+		    path name exceeded 1023 characters.
+
+     [ENODEV]	    _S_p_e_c_i_a_l does not exist.
+
+     [ENOENT]	    _F_i_l_e does not exist.
+
+     [ELOOP]	    Too many symbolic links were encountered in
+		    translating either pathname.
+
+     [EPERM]	    The caller is not the super-user.
+
+     [ENOTBLK]	    _S_p_e_c_i_a_l is not a block device.
+
+
+
+Printed 7/9/88		  July 9, 1988				1
+
+
+
+
+
+
+SETQUOTA(2)	    UNIX Programmer's Manual	      SETQUOTA(2)
+
+
+
+     [ENXIO]	    The major device number of _s_p_e_c_i_a_l is out of
+		    range (this indicates no device driver exists
+		    for the associated hardware).
+
+     [EROFS]	    _F_i_l_e resides on a read-only file system.
+
+     [EACCES]	    Search permission is denied for a component
+		    of either path prefix.
+
+     [EACCES]	    _F_i_l_e resides on a file system different from
+		    _s_p_e_c_i_a_l.
+
+     [EACCES]	    _F_i_l_e is not a plain file.
+
+     [EIO]	    An I/O error occurred while reading from or
+		    writing to the file containing the quotas.
+
+     [EFAULT]	    _S_p_e_c_i_a_l or _p_a_t_h points outside the process's
+		    allocated address space.
+
+BBUUGGSS
+     The error codes are in a state of disarray; too many errors
+     appear to the caller as one value.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  July 9, 1988				2
+
+
+

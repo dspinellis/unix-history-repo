@@ -1,0 +1,132 @@
+
+
+
+LSEEK(2)	    UNIX Programmer's Manual		 LSEEK(2)
+
+
+
+NNAAMMEE
+     lseek - move read/write pointer
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ffiillee..hh>>
+
+     ##ddeeffiinnee LL__SSEETT   00 //** sseett tthhee sseeeekk ppooiinntteerr **//
+     ##ddeeffiinnee LL__IINNCCRR  11 //** iinnccrreemmeenntt tthhee sseeeekk ppooiinntteerr **//
+     ##ddeeffiinnee LL__XXTTNNDD  22 //** eexxtteenndd tthhee ffiillee ssiizzee **//
+
+     ppooss == llsseeeekk((dd,, ooffffsseett,, wwhheennccee))
+     ooffff__tt ppooss;;
+     iinntt dd;;
+     ooffff__tt ooffffsseett;;
+     iinntt wwhheennccee;;
+
+DDEESSCCRRIIPPTTIIOONN
+     The descriptor _d refers to a file or device open for reading
+     and/or writing.  _L_s_e_e_k sets the file pointer of _d as fol-
+     lows:
+
+	  If _w_h_e_n_c_e is L_SET, the pointer is set to _o_f_f_s_e_t bytes.
+
+	  If _w_h_e_n_c_e is L_INCR, the pointer is set to its current
+	  location plus _o_f_f_s_e_t.
+
+	  If _w_h_e_n_c_e is L_XTND, the pointer is set to the size of
+	  the file plus _o_f_f_s_e_t.
+
+     Upon successful completion, the resulting pointer location
+     as measured in bytes from beginning of the file is returned.
+     Some devices are incapable of seeking.  The value of the
+     pointer associated with such a device is undefined.
+
+NNOOTTEESS
+     Seeking far beyond the end of a file, then writing, creates
+     a gap or "hole", which occupies no physical space and reads
+     as zeros.
+
+RREETTUURRNN VVAALLUUEE
+     Upon successful completion, the current file pointer value
+     is returned.  Otherwise, a value of -1 is returned and _e_r_r_n_o
+     is set to indicate the error.
+
+EERRRROORRSS
+     _L_s_e_e_k will fail and the file pointer will remain unchanged
+     if:
+
+     [EBADF]	    _F_i_l_d_e_s is not an open file descriptor.
+
+     [ESPIPE]	    _F_i_l_d_e_s is associated with a pipe or a socket.
+
+
+
+
+Printed 7/9/88		February 24, 1986			1
+
+
+
+
+
+
+LSEEK(2)	    UNIX Programmer's Manual		 LSEEK(2)
+
+
+
+     [EINVAL]	    _W_h_e_n_c_e is not a proper value.
+
+SSEEEE AALLSSOO
+     dup(2), open(2)
+
+BBUUGGSS
+     This document's use of _w_h_e_n_c_e is incorrect English, but
+     maintained for historical reasons.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		February 24, 1986			2
+
+
+
