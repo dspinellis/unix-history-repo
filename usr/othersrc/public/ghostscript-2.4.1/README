@@ -1,0 +1,319 @@
+   Copyright (C) 1989, 1992 Aladdin Enterprises.  All rights reserved.
+   Distributed by Free Software Foundation, Inc.
+
+This file is part of Ghostscript.
+
+Ghostscript is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY.  No author or distributor accepts responsibility
+to anyone for the consequences of using it or for whether it serves any
+particular purpose or works at all, unless he says so in writing.  Refer
+to the Ghostscript General Public License for full details.
+
+Everyone is granted permission to copy, modify and redistribute
+Ghostscript, but only under the conditions described in the Ghostscript
+General Public License.  A copy of this license is supposed to have been
+given to you along with Ghostscript so you can know your rights and
+responsibilities.  It should be in a file named COPYING.  Among other
+things, the copyright notice and this notice must be preserved on all
+copies.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+*****************************************************
+* This file describes version 2.4.1 of Ghostscript. *
+*****************************************************
+
+********
+******** An overview of Ghostscript ********
+********
+
+Ghostscript is the name of a set of software that provides:
+
+	- An interpreter for the Ghostscript language, which very
+closely resembles the PostScript (TM) language; and
+
+	- A set of C procedures (the Ghostscript library) that
+implement the graphics capabilities that appear as primitive
+operations in the Ghostscript language.
+
+The Ghostscript language interpreter and library are written entirely
+in C, with some assembly-language accelerators for MS-DOS platforms.
+Currently, Ghostscript is known to run on the following platform
+families:
+
+	- IBM PC and compatibles with EGA, VGA, SuperVGA, or compatible
+	  graphics under MS-DOS 3.1, 3.3, or 5.0;
+
+	- A wide variety of Unix systems using X Windows version 11,
+	  release 3, 4, and 5, including Sun-3, Sun-4, Sun-386i,
+	  Sun SPARCStation 1; generic 80386 machines running 386/ix;
+	  H-P 9000/300 and 9000/800; DECStation 2100 and 3100; VAX
+	  running Ultrix; Sequent Symmetry; Convex C1 and C2;
+	  Tektronix 4300; SGI Iris Indigo;
+
+	- Sun workstations (Sun-3, SPARC, Sun-386i) running SunView;
+
+	- VAX, VMS with X11R3/4/5, gcc and DEC C compiler (DEC C compiler
+	  version 3.1 or later is required).
+
+It is very likely that Ghostscript will run under other versions of
+MS-DOS, and other versions of Unix that support X11, but it has not
+been tested in these environments.  Ghostscript does NOT run well on
+PC-compatibles with Hercules display cards: text and graphics output
+interfere with each other.
+
+Ghostscript has also been ported to the Apple Macintosh and to the
+Acorn Archimedes.  For information on the Macintosh port, contact
+Martin Fong (fong@erg.sri.com).  For information on the Archimedes
+port, contact David Elworthy (David.Elworthy@cl.cam.ac.uk).
+
+********
+******** Documentation overview ********
+********
+
+All the file names mentioned in the documentation, except for README,
+are in lower case, which is the usual convention for Unix systems.
+On MS-DOS systems, all file names are actually upper-case.
+
+Files of interest to most users (both previous and new)
+-------------------------------------------------------
+
+> README - this file.
+
+> readme.doc - information about problems and new features in the
+current release.
+
+If you have used a previous release of Ghostscript, you should also
+read any more recent sections of history.doc.
+
+Files of particular interest to new users
+-----------------------------------------
+
+> fonts.doc - information about the fonts distributed with Ghostscript.
+
+> language.doc - A description of the Ghostscript language.
+
+> make.doc - how to install, compile and link Ghostscript.
+
+> psfiles.doc - information about the .ps files distributed with
+Ghostscript (other than fonts).
+
+> use.doc - information about to use Ghostscript.
+
+Files of interest to fewer users
+--------------------------------
+
+> drivers.doc - the interface between Ghostscript and device drivers.
+
+> hershey.doc - information about the Hershey fonts, which are the
+basis of some of the Ghostscript fonts.
+
+> history.doc - history of changes in Ghostscript releases.
+
+> humor.doc - a humorous comment on Ghostscript contributed by a net.person.
+
+> lib.doc - information about the Ghostscript library.
+
+> man.doc - a possible Un*x 'man' page for Ghostscript.
+
+********
+******** Trouble reporting ********
+********
+
+If you have problems with Ghostscript, and you have access to Usenet
+news, we suggest you post your question to gnu.ghostscript.bug.
+There are hundreds of Ghostscript user sites all over the world, and
+often another user will be able to help you.
+
+If you wish to contact Aladdin Enterprises directly, you may reach us
+at:
+
+	Aladdin Enterprises
+	P.O. box 60264
+	Palo Alto, CA 94306
+	(415)322-0103
+	...{uunet,decwrl}!aladdin!ghost
+	ghost@aladdin.com
+
+If you call on the phone, you will usually be talking to an answering
+machine.  In this case, please leave a message with your name and
+phone number and the best time for us to return the call.
+
+Because Ghostscript is distributed so widely, Aladdin Enterprises
+doesn't have the resources to respond to everyone by e-mail.  We only
+promise to respond to e-mail from the following classes of users:
+
+	- Beta testers who have actually given us at least one report on
+	some beta version supplied to them.
+
+	- People developing drivers that are for, or applications that
+	are based on, Ghostscript and that will be made freely available.
+
+	- People who express serious interest in commercial licensing
+	of Ghostscript.
+
+	- Commercial licensees.
+
+We also appreciate and welcome detailed, well-documented bug reports
+from anyone, especially if they include a fix.
+
+We do read gnu.ghostscript.bug and respond to significant problems
+reported there, as time permits.
+
+If you report a problem by e-mail, please specify which version of
+Ghostscript you are running, and the hardware, operating system,
+window system, and C compiler you are using, and be as specific as
+you can about the problem -- this will help us a lot in tracking it
+down.  We want Ghostscript to be a high-quality product, and will do
+our best to fix any reported problem.
+
+Given the choice between the Internet and the UUCP address, remember
+that the Internet is not to be used for general commercial traffic:
+if you aren't sure whether you or your organization can use the
+Internet, use UUCP.
+
+Aladdin Enterprises owns or has access to the following hardware and
+software:
+
+	80486 PC, MS-DOS 5.0, Borland C++ 3.0 (and several older versions);
+	  color SuperVGA display; Epson-compatible printer
+	  (the printer also is compatible with the IBM Proprinter);
+	  various H-P printers; Canon BubbleJet.
+
+	SPARCstation, SunOS 4.0, cc and gcc, X11R5 and SunView;
+	  both monochrome and color displays.
+
+	DECstation, Ultrix.
+
+If your problem turns out to be specific to some other hardware or
+software configuration, it may take longer to track down, since we
+will have to rely on other users to help.
+
+********
+******** Things you can do to help ********
+********
+
+There are some projects that users could do that are somewhat
+decoupled from the main body of the code, and that would help improve
+Ghostscript:
+
+	- Ghostscript needs some good, free, Type 1 (outline) fonts.
+Karl Berry is working on this, but it might go faster if he got some
+knowledgeable assistance.  Contact karl@cs.umb.edu if you want to
+help with this.
+
+	- Several people have asked for a program that will take
+PostScript code and reconstruct some reasonable ASCII form of the
+input, if this is possible.  Ghostscript's -dASCIIOUT switch does a
+fair job of extracting the strings and their placement on the page,
+but that's only the easy half of the job: a second pass is needed to
+figure out, at a minimum, where paragraph breaks are (based on Y
+positioning), and where spaces go (based on X positioning).  Contact
+ghost@aladdin.com if you want to help by doing this.
+
+	- Adobe has donated the specification of the Display
+PostScript C API to the X distribution.  Implementing this API for
+Ghostscript might make Ghostscript a lot more useful, since it would
+then be "plug compatible" with Display PostScript in an important
+way.  This might not be a very big project.  Contact
+ghost@aladdin.com if you would like to help with this.
+
+	- On gray-scale displays, it might be worthwhile implementing
+anti-aliased fonts.  To do this, one would modify the renderer so
+that it cached a high-resolution bitmap, and then did the
+anti-aliasing as it copied the bitmap to the device.  This would
+allow simulating fractional-pixel positioning, which is one of the
+great benefits of anti-aliased fonts.  Contact ghost@aladdin.com if
+this is of interest to you.
+
+Another thing we need a volunteer to help with is maintaining the
+SunView driver.  Since nearly all SunView sites have switched to
+OpenWindows or plain X Windows, we (Aladdin Enterprises) plan to stop
+updating it sometime fairly soon.  Please contact ghost@aladdin.com
+if you are willing to help with this.
+
+********
+******** Authors ********
+********
+
+Ghostscript was originally created, and is still primarily developed
+and maintained, by L. Peter Deutsch, proprietor of Aladdin
+Enterprises.
+
+The following users (in alphabetical order) have contributed
+substantially to improving Ghostscript:
+
+	Hitoshi Aida (for help with the SunView driver),
+	William Bader (for several drivers and bug reports),
+	Karl Berry and Kathy Hargreaves (for helping create the fonts
+	  distributed with Ghostscript),
+	Phil Conrad (for originating the PPM utilities and the PCX and
+	  GIF drivers, and lots of bug reports),
+	Michel Dagenais (for major help with the DeskJet driver),
+	Gershon Elber (for improvements to the BGI driver),
+	Mike Ferrara (for help with the LaserJet driver and HP-UX),
+	J Greely (for help with the PostScript-to-ASCII filter),
+	Paul Haeberli (for the ideas behind better color selection
+	  and trapezoid fill algorithms),
+	Alfred Kayser (for the DeskJet 500C driver and beta testing),
+	Richard Keeney (for help with the SunView driver),
+	Eleftherios Koutsofios (for help with the SunView driver),
+	Markku Koppinen (for a better circle-to-curve algorithm),
+	Jim Mayer (for improving the DeskJet driver),
+	Richard Mlynarik (for many improvements and suggestions),
+	Ulrich Mueller (for the LN03 driver),
+	Daniel Newman (for major help with VMS),
+	Roque Donizete de Oliveira (for testing and debugging),
+	Marc Paquette (for the original PaintJet driver),
+	Hal Peterson (for major help with BDF fonts),
+	Tom Quinn (for the Canon LBP-8II driver),
+	Jerry Roylance (for help with statusdict),
+	Dave St. Clair (for the color Epson/Fujitsu driver),
+	Jan Sanislo (for two subtle but vital fixes),
+	Clemens Schrimpe (for help with accented characters),
+	Mike Smolenski (for the Sony drivers),
+	Andreas Stolcke (for help with the SunView driver),
+	Snoopy (for major help with Hershey fonts, and many other
+	  contributions),
+	Michael Sweet (for help with the high-density Epson driver),
+	Gregg Townsend (for the low-resolution dithering algorithm),
+	Christian Tschudin (for fixes to the virtual memory package,
+	  and for the original BubbleJet driver),
+	Jos Vos (for the original PBM/PGM/PPM driver),
+	Allan Wax (for the AT&T 6300 modification to the BGI driver),
+	Elizabeth Zwicky (for some very challenging examples).
+
+The following people have also helped out by beta testing, by
+reporting bugs, or in other ways:
+
+	Vikas Aggarwal, Michael Almond,
+	Malcolm Bennett,
+	Jim Collins,
+	Peter da Silva, Art Dederick, Paul DuBois,
+	Toerless Eckert,
+	Mark Friedman, Richard Foulk,
+	Glenn Geers, Dave Goldblatt, Dirk Grunwald,
+	Lars Haakedal, Adam Hammer, George Hartzell, Thomas Hiller,
+	  Mike Hoffmann,
+	Brad Jones, Terry Jones,
+	David Keppel,
+	Russell Lang, Anthony Lee, John Lundin Jr., Lee McLoughlin,
+	Stergios Marinopoulos, Herb Martin, David Maynard,
+	  Doug McDonald, Rich Murphey,
+	Russ Nelson,
+	Peter Phillips,
+	Mark Rawling, Philippe Robert, Tomas Rokicki, Wolfgang Rupprecht,
+	Bill Schelter, Bakul Shah,
+	Erik Talvola, Tim Theisen,
+	Amanda Walker, Peter Wan, Carsten Wiethoff, Carl Witty,
+	Frank Yellin,
+	Jamie Zawinski.
+
+If your name appears on the above list and I've forgotten a
+particular contribution you made, or if it doesn't appear at all,
+please forgive me: just remind me, and you will be properly
+acknowledged in the next release.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+PostScript is a trademark of Adobe Systems, Incorporated.
