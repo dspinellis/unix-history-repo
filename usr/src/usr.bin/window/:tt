@@ -1,0 +1,7 @@
+./"init"16t"end"16t"setinsert"16t"setmodes"n4p
++/"move"16t"insline"16t"delline"16t"delchar"n4p
++/"write"16t"putc"16t"blank"n3p
++/"clreol"16t"clreos"16t"clear"n3p
++/"nrow"16t"ncol"16t"availmodes"16t"wrap"n2pb16tb++
++/"frame"
+*./16b
