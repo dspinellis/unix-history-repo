@@ -1,8 +1,8 @@
-#	Makefile	1.1	86/03/02
+#	Makefile	1.2	86/07/31
 #
 DESTDIR=
-CFLAGS=	-g
-LDFLAGS=-g
+CFLAGS=	-O
+LDFLAGS=
 
 c2:	c20.o c21.o c22.o c23.o
 	$(CC) $(LDFLAGS) -o c2 c2?.o
