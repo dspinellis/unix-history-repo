@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)mount.8	6.8 (Berkeley) %G%
+.\"	@(#)mount.8	6.9 (Berkeley) %G%
 .\"
 .TH MOUNT 8 ""
 .UC 4
@@ -47,9 +47,14 @@ special node
 .B umount
 [
 .B \-a
+] [
+.B \-f
 ]
 .br
 .B umount
+[
+.B \-f
+]
 special | node
 .br
 .SH DESCRIPTION
@@ -144,6 +149,12 @@ Set initial nfs timeout to \fI#\fP in 0.1 sec intervals.
 announces to the system that the removable file system \fInode\fP
 or whatever removable file system was previously mounted on device
 \fIspecial\fP should be removed.
+If the \fI-f\fP option is specified for
+.IR umount ,
+the file system is forcibly unmounted.
+Active special devices continue to work,
+but all other files return errors if further accesses are attempted.
+The root file system cannot be forcibly unmounted.
 .PP
 If the \fI-a\fP option is present for either
 .I mount
