@@ -1,4 +1,4 @@
-/* vsort.c	1.11	84/05/24
+/* vsort.c	1.11	84/05/29
  *
  *	Sorts and shuffles ditroff output for versatec wide printer.  It
  *	puts pages side-by-side on the output, and fits as many as it can
@@ -19,6 +19,7 @@
 #define	NVLIST	3000	/* size of list of vertical spans */
 #define	OBUFSIZ	250000	/* size of character buffer before sorting */
 #define	SLOP	1000	/* extra bit of buffer to allow for passing OBUFSIZ */
+#define MAXVECT	200	/* maximum number of points (vectors) in a polygon */
 
 #ifndef FONTDIR
 #define FONTDIR "/usr/lib/font"
@@ -34,7 +35,8 @@
 
 #define hgoto(n)	if((hpos = leftmarg + n) > maxh) maxh = hpos
 #define hmot(n)		if((hpos += n) > maxh) maxh = hpos
-#define vmot(n)		vgoto(vpos + n)
+#define vmot(n)		vpos += (n)
+#define vgoto(n)	vpos = (n)
 
 
 #ifdef DEBUGABLE
@@ -47,6 +49,7 @@ int	size	= 10;	/* current size (points) */
 int	up	= 0;	/* number of pixels that the current size pushes up */
 int	down	= 0;	/* # of pixels that the current size will hang down */
 int	font	= 1;	/* current font */
+int	stip	= 1;	/* current stipple */
 char *	fontdir = FONTDIR;	/* place to find DESC.out file */
 int	thick	= 3;	/* line thickness */
 int	style	= -1;	/* line style bit-mask */
@@ -63,12 +66,13 @@ struct vlist {
 	unsigned short	v;	/* vertical position of this spread */
 	unsigned short	h;	/* horizontal position */
 	unsigned short	t;	/* line thickness */
-	short	st;	/* style mask */
+	short	st;		/* style mask */
 	unsigned short	u;	/* upper extent of height */
 	unsigned short	d;	/* depth of height */
-	unsigned char	s;	/* point size */
+	unsigned short	s;	/* point size */
 	unsigned char	f;	/* font number */
-	char	*p;	/* text pointer to this spread */
+	unsigned char	l;	/* stipple number */
+	char	*p;		/* text pointer to this spread */
 };
 
 struct	vlist	vlist[NVLIST + 1];
@@ -92,6 +96,7 @@ char *argv[];
 	vlp->v = vlp->d = vlp->u = vlp->h = 0;
 	vlp->s = size;
 	vlp->f = font;
+	vlp->l = stip;
 	vlp->st = style;
 	vlp->t = thick;
 
@@ -137,12 +142,19 @@ register FILE *fp;
 	register int k;
 	register char c;
 
-	while ((c = getc(fp)) == ' ')
+	while (isspace(c = getc(fp)))
 	    ;
 	k = 0;
-	do {
-	    k = 10 * k + (*op++ = c) - '0';
-	} while (isdigit(c = getc(fp)));
+	if (c == '-') {
+	    c = getc(fp);
+	    do {
+		k = 10 * k - ((*op++ = c) - '0');
+	    } while (isdigit(c = getc(fp)));
+	} else {
+	    do {
+		k = 10 * k + (*op++ = c) - '0';
+	    } while (isdigit(c = getc(fp)));
+	}
 	ungetc(c, fp);
 	return (k);
 }
@@ -154,12 +166,19 @@ register FILE *fp;
 	register int k;
 	register char c;
 
-	while ((c = getc(fp)) == ' ')
+	while (isspace(c = getc(fp)))
 	    ;
 	k = 0;
-	do {
-	    k = 10 * k + c - '0';
-	} while (isdigit(c = getc(fp)));
+	if (c == '-') {
+	    c = getc(fp);
+	    do {
+		k = 10 * k - (c - '0');
+	    } while (isdigit(c = getc(fp)));
+	} else {
+	    do {
+		k = 10 * k + c - '0';
+	    } while (isdigit(c = getc(fp)));
+	}
 	ungetc(c, fp);
 	return (k);
 }
@@ -170,7 +189,6 @@ register FILE *fp;
 {
 	register int c;
 	int m, n, m1, n1;
-	char buf[SLOP];
 
 	while ((c = getc(fp)) != EOF) {
 #ifdef DEBUGABLE
@@ -214,7 +232,7 @@ register FILE *fp;
 			*op++ = c;
 			do
 			    *op++ = c = getc(fp);
-			while (c != ' ' && c != '\n' && c != EOF);
+			while (c != EOF && !isspace(c));
 			break;
 		case 't':	/* straight text */
 			setlimit(vpos - up, vpos + down);
@@ -223,84 +241,176 @@ register FILE *fp;
 			op += strlen(op);
 			break;
 		case 'D':	/* draw function */
-			if (fgets(buf, SLOP, fp) == NULL)
-			    error(FATAL, "unexpected end of input");
-			switch (buf[0]) {
+			switch (c = getc(fp)) {
 			case 's':	/* "style" */
-				sscanf(buf+1, "%d", &style);
-				sprintf(op, "D%s", buf);
-				op += strlen(op);
+				sprintf(op, "Ds ");
+				op += 3;
+				style = getnumber(fp);
 				break;
+
 			case 't':	/* thickness */
-				sscanf(buf+1, "%d", &thick);
-				sprintf(op, "D%s", buf);
-				op += strlen(op);
+				sprintf(op, "Dt ");
+				op += 3;
+				thick = getnumber(fp);
 				break;
+
 			case 'l':	/* draw a line */
-				sscanf(buf+1, "%d %d", &n, &m);
+				n = ngetnumber(fp);
+				m = ngetnumber(fp);
 				if (m < 0) {
 				    setlimit(vpos+m-thick/2, vpos+thick/2);
 				} else {
 				    setlimit(vpos-(1+thick/2),vpos+1+m+thick/2);
 				}
-				sprintf(op, "D%s", buf);
+				sprintf(op, "Dl %d %d", n, m);
 				op += strlen(op);
 				hmot(n);
 				vmot(m);
 				break;
-			case 'c':	/* circle */
+
 			case 'e':	/* ellipse */
-				sscanf(buf+1, "%d", &n);
-				setlimit(vpos-(n+thick)/2, vpos+(n+thick)/2);
-				sprintf(op, "D%s", buf);
+				n = ngetnumber(fp);
+				m = ngetnumber(fp);
+				setlimit(vpos-(m+thick)/2, vpos+(m+thick)/2);
+				sprintf(op, "De %d %d", n, m);
 				op += strlen(op);
 				hmot(n);
 				break;
+
+			case 'c':	/* circle */
+				n = ngetnumber(fp);
+				setlimit(vpos-(n+thick)/2, vpos+(n+thick)/2);
+				sprintf(op, "Dc %d", n);
+				op += strlen(op);
+				hmot(n);
+				break;
+
 			case 'a':	/* arc */
-				sscanf(buf+1, "%d %d %d %d", &n, &m, &n1, &m1);
+				n = getnumber(fp);
+				m = getnumber(fp);
+				n1 = getnumber(fp);
+				m1 = getnumber(fp);
 				arcbounds(n, m, n1, m1);
-				sprintf(op, "D%s", buf);
+				sprintf(op, "Da %d %d %d %d", n, m, n1, m1);
 				op += strlen(op);
 				hmot(n + n1);
 				vmot(m + m1);
 				break;
-			case '~':	/* wiggly line */
-			case 'g':	/* gremlin curve */
-			    {
-				register char *pop;
 
-				startspan(vpos);	/* always put curve */
-				*op++ = 'D';		 /* on its own span */
-				pop = op;	   /* pop -> start of points */
-				do {			  /* read in rest of */
-				    sprintf(op, "%s", buf);   /* point input */
-				    op += strlen(op);
-				    if (*(op - 1) != '\n')
-					if (fgets(buf, SLOP, fp) == NULL)
-					    error(FATAL, "unexpected end of input");
-				} while (*(op - 1) != '\n');
+			case 'P':
+			case 'p':
+			    {
+				register int nvect;
+				int member;
+				int border;
+				int x[MAXVECT];
+				int y[MAXVECT];
+
+
+				border = (c == 'p');	/* type of polygon */
+				member = ngetnumber(fp);/* and member number */
+
+				nvect = 1;		/* starting point for */
+				x[1] = hpos;		/* points on polygon */
+				y[1] = vpos;
 				m = n = vpos;		/* = max/min vertical */
 							/* position for curve */
-				while (*++pop == ' ');	/* skip '~' & blanks */
-				do {			/* calculate minimum */
-				    hpos += atoi(pop);		/* vertical */
-				    while (isdigit(*++pop));	/* position */
-				    while (*++pop == ' ');
-				    vpos += atoi(pop);
-				    while (isdigit(*++pop));
-				    while (*pop == ' ') pop++;
-				    if (vpos < n) n = vpos;
-				    else if (vpos > m) m = vpos;
-				} while (*pop != '\n');
+				{
+				    register int h;
+				    register int v;
 
-				vlp->u = n < 0 ? 0 : n;
-				vlp->d = m;
-				startspan(vpos);
+
+				    h = hpos;	/* calculate max and minimum */
+				    v = vpos;		/* vertical position */
+							/*    and get points */
+				    do {
+					h += ngetnumber(fp);
+					v += ngetnumber(fp);
+
+					if (v < n) n = v;
+					else if (v > m) m = v;
+
+					if (nvect < (MAXVECT-1))/* keep the */
+					    nvect++;		/* points in */
+					x[nvect] = h;		/* bounds */
+					y[nvect] = v;		/* of arrays */
+					c = getc(fp);
+				    } while (c != '\n' && c != EOF);
+				}
+				if (border) {		/* output border as a */
+				    register int *x1;	/*  bunch of lines */
+				    register int *x2;	/*  instead of having */
+				    register int *y1;	/*  the filter do it */
+				    register int *y2;
+				    register int extra = thick/2;
+
+				    x1 = &(x[0]);	/* x1, y1, x2, y2 are */
+				    x2 = &(x[1]);	/* for indexing along */
+				    y1 = &(y[0]);	/* coordinate arrays */
+				    y2 = &(y[1]);
+				    for (border = 0; ++border < nvect; ) {
+					if (*++y1 > *++y2) {
+					   setlimit(*y2-extra, vpos+extra);
+					} else {
+					   setlimit(vpos-(1+extra),*y2+1+extra);
+						/* the extra 1's are to force */
+						/* setlimit to know this is a */
+						/* real entry (making sure it */
+						/* doesn't get vpos as limit */
+					}
+					sprintf(op, "Dl %d %d\n",
+						c = *++x2 - *++x1, *y2 - *y1);
+					op += strlen(op);
+					hmot(c);	/* update vpos for */
+					vgoto(*y2);	/* the setlimit call */
+				    }
+				} else {
+				    register int *x1;	/* x1, x2, are for */
+				    register int *x2;	/* indexing points */
+				    register int i;	/* random int */
+
+				    x1 = &(x[0]);
+				    x2 = &(x[1]);
+				    for (i = 0; ++i < nvect; ) {
+					hmot(*++x2 - *++x1);
+				    }
+				    vgoto(y[nvect]);
+				    sprintf(op, "H%dV%d", hpos, vpos);
+				    op += strlen(op);
+				}
+				if (member) {
+				    polygon(member, nvect, x, y, m, n);
+				}
 			    }
 			    break;
 
+			case '~':	/* wiggly line */
+			case 'g':	/* gremlin curve */
+			    startspan(vpos);		/* always put curve */
+			    sprintf(op, "D%c ", c);	/* on its own span */
+			    op += 3;
+
+			    m = n = vpos;		/* = max/min vertical */
+			    do {			/* position for curve */
+				hpos += getnumber(fp);
+				*op++ = ' ';
+				vpos += getnumber(fp);
+				*op++ = ' ';
+
+				if (vpos < n) n = vpos;
+				else if (vpos > m) m = vpos;
+
+				c = getc(fp);
+			    } while (c != '\n' && c != EOF);
+
+			    vlp->u = n < 0 ? 0 : n;
+			    vlp->d = m;
+			    *op++ = '\n';
+			    startspan(vpos);
+			    break;
+
 			default:
-				error(FATAL,"unknown drawing command %s\n",buf);
+				error(FATAL,"unknown drawing command %c", c);
 				break;
 			}
 			break;
@@ -314,10 +424,13 @@ register FILE *fp;
 			*op++ = c;
 			font = getnumber(fp);
 			break;
-		case 'H':	/* absolute horizontal motion */
+		case 'i':
 			*op++ = c;
+			stip = getnumber(fp);
+			break;
+		case 'H':	/* absolute horizontal motion */
 			hgoto(ngetnumber(fp));
-			sprintf(op, "%d", hpos);
+			sprintf(op, "H%d", hpos);
 			op += strlen(op);	/* reposition by page offset */
 			break;
 		case 'h':	/* relative horizontal motion */
@@ -327,10 +440,12 @@ register FILE *fp;
 		case 'w':	/* useless */
 			break;
 		case 'V':	/* absolute vertical motion */
-			vgoto(ngetnumber(fp));
+			*op++ = c;
+			vgoto(getnumber(fp));
 			break;
 		case 'v':
-			vmot(ngetnumber(fp));
+			*op++ = c;
+			vmot(getnumber(fp));
 			break;
 		case 'p':	/* new page */
 			t_page(ngetnumber(fp));
@@ -372,7 +487,7 @@ register FILE *fp;
  | Side Efct:	may start new span.
  *----------------------------------------------------------------------------*/
 
-#define diffspan(x,y)	((x)/((int)(BAND * INCH)) != (y)/((int)(BAND * INCH)))
+#define diffspan(x,y)	((x)/NLINES != (y)/NLINES)
 
 setlimit(newup, newdown)
 register int newup;
@@ -485,8 +600,8 @@ oflush()	/* sort, then dump out contents of obuf */
 		if(dbg>1)fprintf(stderr,"u=%d, d=%d,%.60s\n",vp->u,vp->d,vp->p);
 #endif
 		if (vp->u <= botv && vp->d >= topv) {
-		    printf("H%dV%ds%df%d\nDs%d\nDt%d\n%s",
-			    vp->h, vp->v, vp->s, vp->f, vp->st, vp->t, vp->p);
+		    printf("H%dV%ds%df%d\ni%d\nDs%d\nDt%d\n%s",
+			 vp->h,vp->v,vp->s,vp->f,vp->l,vp->st,vp->t,vp->p);
 		}
 		notdone |= vp->d > botv;	/* not done if there's still */
 	    }					/* something to put lower */
@@ -504,6 +619,7 @@ oflush()	/* sort, then dump out contents of obuf */
 	vlp->d = vpos;
 	vlp->s = size;
 	vlp->f = font;
+	vlp->l = stip;
 	vlp->st = style;
 	vlp->t = thick;
 	*op = 0;
@@ -559,16 +675,6 @@ t_pop()	/* pop to previous state */
 }
 
 
-	/* vertical motion:  start new vertical span if necessary */
-vgoto(n)
-register int n;
-{
-	sprintf (op, "V%d", n);
-	op += strlen(op);
-	vpos = n;
-}
-
-
 /*----------------------------------------------------------------------------*
  | Routine:	t_page
  |
@@ -620,7 +726,281 @@ register int n;
 	vlp->h = hpos;
 	vlp->s = size;
 	vlp->f = font;
+	vlp->l = stip;
 	vlp->st = style;
 	vlp->t = thick;
 	nvlist++;
 }
+
+
+#define MAXX	0x7fff
+#define MINX	0x8000
+
+typedef struct poly {
+	struct poly *next;	/* doublely-linked lists of vectors */
+	struct poly *prev;
+	int param;	/* bressenham line algorithm parameter */
+	short dx;	/* delta-x for calculating line */
+	short dy;	/* delta-y for calculating line */
+	short currx;	/* current x in this vector */
+	short endy;	/* where vector ends */
+} polyvector;
+
+
+/*----------------------------------------------------------------------------*
+ | Routine:	polygon ( member, num_vectors, x_coor, y_coor, maxy, miny )
+ |
+ | Results:	outputs commands to draw a polygon starting at (x[1], y[1])
+ |		going through each of (x_coordinates, y_coordinates), and
+ |		filled with "member" stipple pattern.
+ |
+ |		A scan-line algorithm is simulated and pieces of the
+ |		polygon are put out that fit on bands of the versatec
+ |		output filter.
+ |
+ |		The format of the polygons put out are:
+ |			'Dp member num miny maxy [p dx dy curx endy]'
+ |		where "num" is the number of [..] entries in that
+ |		section of the polygon.
+ *----------------------------------------------------------------------------*/
+
+polygon(member, nvect, x, y, maxy, miny)
+int member;
+int nvect;
+int x[];
+int y[];
+int maxy;
+int miny;
+{
+    int nexty;			/* at what x value the next vector starts */
+    register int active;	/* number of vectors in active list */
+    int firsttime;		/* force out a polgon the first time through */
+    polyvector *activehead;		/* doing fill, is active edge list */
+    polyvector *waitinghead;		/* edges waiting to be active */
+    register polyvector *vectptr;	/* random vector */
+    register int i;			/* random register */
+
+
+				/* allocate space for raster-fill algorithm*/
+    vectptr = (polyvector *) malloc(sizeof(polyvector) * (nvect + 4));
+    if (vectptr == (polyvector *) NULL) {
+	error(!FATAL, "unable to allocate space for polygon");
+	return;
+    }
+
+    waitinghead = vectptr;
+    vectptr->param = miny - 1;
+    (vectptr++)->prev = NULL;		/* put dummy entry at start */
+    waitinghead->next = vectptr;
+    vectptr->prev = waitinghead;
+    i = 1;					/* starting point of coords */
+    if (y[1] != y[nvect] || x[1] != x[nvect]) {
+	y[0] = y[nvect];			/* close polygon if it's not */
+	x[0] = x[nvect];
+	i = 0;
+    }
+    active = 0;
+    while (i < nvect) {		/* set up the vectors */
+	register int j;			/* indexes to work off of */
+	register int k;
+
+	j = i;			/* j "points" to the higher (lesser) point */
+	k = ++i;
+	if (y[j] == y[k])		/* ignore horizontal lines */
+	    continue;
+
+	if (y[j] > y[k]) {
+	    j++;
+	    k--;
+	}
+	active++;
+	vectptr->next = vectptr + 1;
+	vectptr->param = y[j];		/* starting point of vector */
+	vectptr->dx = x[k] - x[j];	/* line-calculating parameters */
+	vectptr->dy = y[k] - y[j];
+	vectptr->currx = x[j];		/* starting point */
+	(vectptr++)->endy = y[k];	/* ending point */
+	vectptr->prev = vectptr - 1;
+    }
+					/* if no useable vectors, quit */
+    if (active < 2)
+	goto leavepoly;
+
+    vectptr->param = maxy + 1;		/* dummy entry at end, too */
+    vectptr->next = NULL;
+
+    activehead = ++vectptr;		/* two dummy entries for active list */
+    vectptr->currx = MINX;		/* head */
+    vectptr->endy = maxy + 1;
+    vectptr->param = vectptr->dx = vectptr->dy = 0;
+    activehead->next = ++vectptr;
+    activehead->prev = vectptr;
+    vectptr->prev = activehead;		/* tail */
+    vectptr->next = activehead;
+    vectptr->currx = MAXX;
+    vectptr->endy = maxy + 1;
+    vectptr->param = vectptr->dx = vectptr->dy = 0;
+
+					/* if there's no need to break the */
+					/* polygon into pieces, don't bother */
+    if (diffspan(miny, maxy)) {
+	active = 0;			/* will keep track of # of vectors */
+	firsttime = 1;
+    } else {				/*   in the active list */
+	startspan(miny);
+	sprintf(op, "Dq %d %d %d %d", member, active, miny, maxy);
+	op += strlen(op);
+	for (vectptr = waitinghead->next; active--; vectptr++) {
+	    sprintf(op, " %d %d %d %d %d",
+		vectptr->param, vectptr->dx, vectptr->dy,
+		vectptr->currx, vectptr->endy);
+	    op += strlen(op);
+	}
+	*(op++) = '\n';
+	goto leavepoly;
+    }
+			/* main loop -- gets vectors off the waiting list, */
+			/* then displays spans while updating the vectors in */
+    			/* the active list */
+    while (miny <= maxy) {
+	i = maxy + 1;		/* this is the NEXT time to get a new vector */
+	for (vectptr = waitinghead->next; vectptr != NULL; ) {
+	    if (miny == vectptr->param) {
+				/* the entry in waiting list (vectptr) is */
+				/*   ready to go into active list.  Need to */
+				/*   convert some vector stuff and sort the */
+				/*   entry into the list. */
+		register polyvector *p;	/* random vector pointers */
+		register polyvector *v;
+
+							/* convert this */
+		if (vectptr->dx < 0)			/* entry to active */
+		    vectptr->param = -((vectptr->dx >> 1) + (vectptr->dy >> 1));
+		else
+		    vectptr->param = (vectptr->dx >> 1) - (vectptr->dy >> 1);
+
+		p = vectptr;			/* remove from the */
+		vectptr = vectptr->next;	/* waiting list */
+		vectptr->prev = p->prev;
+		p->prev->next = vectptr;
+						/* find where it goes */
+						/* in the active list */
+						/* (sorted smallest first) */
+		for (v = activehead->next; v->currx < p->currx; v = v->next)
+		    ;
+		p->next = v;		/* insert into active list */
+		p->prev = v->prev;	/* before the one it stopped on */
+		v->prev = p;
+		p->prev->next = p;
+		active++;
+	    } else {
+		if (i > vectptr->param) {
+		    i = vectptr->param;
+		}
+		vectptr = vectptr->next;
+	    }
+	}
+	nexty = i;
+
+					/* print the polygon while there */
+					/* are no more vectors to add */
+	while (miny < nexty) {
+					/* remove any finished vectors */
+	    vectptr = activehead->next;
+	    do {
+		if (vectptr->endy <= miny) {
+		    vectptr->prev->next = vectptr->next;
+		    vectptr->next->prev = vectptr->prev;
+		    active--;
+		}
+	    } while ((vectptr = vectptr->next) != activehead);
+
+					/* output a polygon for this band */
+	    if (firsttime || !(miny % NLINES)) {
+		register int numwait;	/* number in the waiting list */
+		register int newmaxy;	/* max for this band (bottom or maxy)*/
+
+
+		startspan(miny);
+		if ((newmaxy = (miny / NLINES) * NLINES + (NLINES - 1)) > maxy)
+		    newmaxy = maxy;
+
+					/* count up those vectors that WILL */
+					/* become active in this band */
+		for (numwait = 0, vectptr = waitinghead->next;
+				vectptr != NULL; vectptr = vectptr->next) {
+		    if (vectptr->param <= newmaxy)
+			numwait++;
+		}
+
+		sprintf(op,"Dq %d %d %d %d",member,active+numwait,miny,newmaxy);
+		op += strlen(op);
+		for (i = active, vectptr = activehead->next; i--;
+						vectptr = vectptr->next) {
+		    sprintf(op, " %d %d %d %d %d",
+			    vectptr->param, vectptr->dx, -vectptr->dy,
+			    vectptr->currx, vectptr->endy);
+		    op += strlen(op);
+		}
+		for (vectptr = waitinghead->next; vectptr != NULL;
+						vectptr = vectptr->next) {
+		    if (vectptr->param <= newmaxy) {
+			sprintf(op, " %d %d %d %d %d",
+				vectptr->param, vectptr->dx, vectptr->dy,
+				vectptr->currx, vectptr->endy);
+			op += strlen(op);
+		    }
+		}
+		*(op++) = '\n';
+		firsttime = 0;
+	    }
+
+					/* update the vectors */
+	    vectptr = activehead->next;
+	    do {
+		if (vectptr->dx > 0) {
+		    while (vectptr->param >= 0) {
+			vectptr->param -= vectptr->dy;
+			vectptr->currx++;
+		    }
+		    vectptr->param += vectptr->dx;
+		} else if (vectptr->dx < 0) {
+		    while (vectptr->param >= 0) {
+			vectptr->param -= vectptr->dy;
+			vectptr->currx--;
+		    }
+		    vectptr->param -= vectptr->dx;
+		}
+					/* must sort the vectors if updates */
+					/* caused them to cross */
+					/* also move to next vector here */
+		if (vectptr->currx < vectptr->prev->currx) {
+		    register polyvector *v;		/* vector to move */
+		    register polyvector *p;	/* vector to put it after */
+
+		    v = vectptr;
+		    p = v->prev;
+		    while (v->currx < p->currx)	/* find the */
+			p = p->prev;		/* right vector */
+
+		    vectptr = vectptr->next;	/* remove from spot */
+		    vectptr->prev = v->prev;
+		    v->prev->next = vectptr;
+
+		    v->prev = p;		/* put in new spot */
+		    v->next = p->next;
+		    p->next = v;
+		    v->next->prev = v;
+		} else {
+		    vectptr = vectptr->next;
+		}
+	    } while (vectptr != activehead);
+
+	    ++miny;
+	} /* while (miny < nexty) */
+    } /* while (miny <= maxy) */
+
+leavepoly:
+    startspan(vpos);	/* make sure stuff after polygon is at correct vpos */
+    free(waitinghead);
+}  /* polygon function */
