@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)externs.h	1.9 (Berkeley) %G%
+ *	@(#)externs.h	1.10 (Berkeley) %G%
  */
 
 #include <stdio.h>
@@ -64,11 +64,27 @@ extern jmp_buf
     toplevel;		/* For error conditions. */
 
 extern void
+    command(),
 #if	!defined(NOT43)
     dosynch(),
 #endif	/* !defined(NOT43) */
+    Dump(),
+    init_3270(),
+    printoption(),
+    printsub(),
     setconnmode(),
-    setcommandmode();
+    setcommandmode(),
+    setneturg(),
+    sys_telnet_init(),
+    telnet(),
+    TerminalFlushOutput(),
+    TerminalNewMode(),
+    TerminalRestoreState(),
+    TerminalSaveState(),
+    tninit(),
+    upcase(),
+    willoption(),
+    wontoption();
 
 #if	defined(NOT43)
 extern int

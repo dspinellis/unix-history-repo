@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)ring.h	1.6 (Berkeley) %G%
+ *	@(#)ring.h	1.7 (Berkeley) %G%
  */
 
 /*
@@ -59,4 +59,25 @@ extern int
 	ring_full_count(Ring *ring),
 	ring_full_consecutive(Ring *ring);
 
+#else /* LINT_ARGS */
+extern int
+	ring_init();
+
+extern void
+    ring_supply_data(),
+    ring_consume_data();
+
+extern void
+    ring_supplied(),
+    ring_consumed();
+
+extern void
+    ring_clear_mark(),
+    ring_mark();
+
+extern int
+    ring_empty_count(),
+    ring_empty_consecutive(),
+    ring_full_count(),
+    ring_full_consecutive();
 #endif	/* defined(LINT_ARGS) */

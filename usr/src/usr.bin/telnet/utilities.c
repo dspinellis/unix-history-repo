@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	1.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	1.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	TELOPTS
@@ -171,7 +171,8 @@ int	length;			/* length of suboption data */
 		break;
 	    default:
 		fprintf(NetTrace,
-				"- unknown qualifier %d (0x%x).\n", pointer[1]);
+				"- unknown qualifier %d (0x%x).\n",
+				pointer[1], pointer[1]);
 	    }
 	    break;
 	default:

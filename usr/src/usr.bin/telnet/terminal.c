@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)terminal.c	1.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)terminal.c	1.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <arpa/telnet.h>
@@ -31,7 +31,9 @@ char
     termFlushChar,
     termIntChar,
     termKillChar,
+#if	defined(MSDOS)
     termLiteralNextChar,
+#endif	/* defined(MSDOS) */
     termQuitChar;
 
 /*
@@ -40,8 +42,12 @@ char
 
 init_terminal()
 {
-    ring_init(&ttyoring, ttyobuf, sizeof ttyobuf);
-    ring_init(&ttyiring, ttyibuf, sizeof ttyibuf);
+    if (ring_init(&ttyoring, ttyobuf, sizeof ttyobuf) != 1) {
+	exit(1);
+    }
+    if (ring_init(&ttyiring, ttyibuf, sizeof ttyibuf) != 1) {
+	exit(1);
+    }
     autoflush = TerminalAutoFlush();
 }
 

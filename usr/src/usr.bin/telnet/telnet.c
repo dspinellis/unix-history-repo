@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)telnet.c	5.31 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	5.32 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -69,8 +69,10 @@ int
 	crmod,
 	netdata,	/* Print out network data flow */
 	crlf,		/* Should '\r' be mapped to <CR><LF> (or <CR><NUL>)? */
+#if	defined(TN3270)
 	noasynch = 0,	/* User specified "-noasynch" on command line */
 	askedSGA = 0,	/* We have talked about suppress go ahead */
+#endif	/* defined(TN3270) */
 	telnetport,
 	SYNCHing,	/* we are in TELNET SYNCH mode */
 	flushout,	/* flush output */
@@ -157,6 +159,7 @@ init_telnet()
 
 #include <varargs.h>
 
+/*VARARGS*/
 static void
 printring(va_alist)
 va_dcl
@@ -719,7 +722,6 @@ int
 Scheduler(block)
 int	block;			/* should we block in the select ? */
 {
-    register int c;
 		/* One wants to be a bit careful about setting returnValue
 		 * to one, since a one implies we did some useful work,
 		 * and therefore probably won't be called to block next
@@ -765,6 +767,8 @@ int	block;			/* should we block in the select ? */
     if (ring_full_count(&ttyiring)) {
 #   if defined(TN3270)
 	if (In3270) {
+	    int c;
+
 	    c = DataFromTerminal(ttyiring.consume,
 					ring_full_consecutive(&ttyiring));
 	    if (c) {
@@ -803,7 +807,7 @@ telnet()
 	    willoption(TELOPT_SGA, 0);
 	}
 	if (!myopts[TELOPT_TTYPE]) {
-	    dooption(TELOPT_TTYPE, 0);
+	    dooption(TELOPT_TTYPE);
 	}
     }
 #   endif /* !defined(TN3270) */
@@ -865,6 +869,7 @@ telnet()
 #   endif /* !defined(TN3270) */
 }
 
+#if	0	/* XXX - this not being in is a bug */
 /*
  * nextitem()
  *
@@ -905,6 +910,7 @@ char	*current;
 	return current+2;
     }
 }
+#endif	/* 0 */
 
 /*
  * netclear()

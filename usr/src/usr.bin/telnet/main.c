@@ -17,7 +17,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	1.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	1.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -51,7 +51,7 @@ tninit()
  */
 
 
-void
+int
 main(argc, argv)
 	int argc;
 	char *argv[];
@@ -96,9 +96,13 @@ main(argc, argv)
     if (argc != 1) {
 	if (setjmp(toplevel) != 0)
 	    Exit(0);
-	tn(argc, argv);
+	if (tn(argc, argv) == 1) {
+	    return 0;
+	} else {
+	    return 1;
+	}
     }
-    setjmp(toplevel);
+    (void) setjmp(toplevel);
     for (;;) {
 #if	!defined(TN3270)
 	command(1);
