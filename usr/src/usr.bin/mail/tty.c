@@ -8,7 +8,7 @@
 
 #include "rcv.h"
 
-static char *SccsId = "@(#)tty.c	2.5 %G%";
+static char *SccsId = "@(#)tty.c	2.6 %G%";
 
 static	int	c_erase;		/* Current erase char */
 static	int	c_kill;			/* Current kill char */
@@ -154,6 +154,7 @@ readtty(pr, src)
 # ifdef VMUNIX
 	sigset(SIGCONT, ttycont);
 # endif VMUNIX
+	clearerr(stdin);
 	while (cp2 < canonb + BUFSIZ) {
 		c = getc(stdin);
 		if (c == EOF || c == '\n')
