@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)udp_usrreq.c	6.15 (Berkeley) %G%
+ *	@(#)udp_usrreq.c	6.16 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -41,8 +41,9 @@ udp_init()
 int	udpcksum = 1;
 struct	sockaddr_in udp_in = { AF_INET };
 
-udp_input(m0)
+udp_input(m0, ifp)
 	struct mbuf *m0;
+	struct ifnet *ifp;
 {
 	register struct udpiphdr *ui;
 	register struct inpcb *inp;
@@ -106,7 +107,8 @@ udp_input(m0)
 		if (in_broadcast(ui->ui_dst))
 			goto bad;
 		*(struct ip *)ui = ip;
-		icmp_error((struct ip *)ui, ICMP_UNREACH, ICMP_UNREACH_PORT);
+		icmp_error((struct ip *)ui, ICMP_UNREACH, ICMP_UNREACH_PORT,
+		    ifp);
 		return;
 	}
 
