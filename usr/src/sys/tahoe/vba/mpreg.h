@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mpreg.h	7.2 (Berkeley) %G%
+ *	@(#)mpreg.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -40,19 +40,27 @@
 
 #define NMPPROTO	5	/* max protocols supported by MPCC */
 
-#define MPINSET        8
-#define MPOUTSET       8
+#define MPINSET		8
+#define MPOUTSET	8
+
+/*
+ * Host Interface semaphores
+ */
+#define MPSEMA_AVAILABLE	1
+#define MPSEMA_WORK		4
+
+/*
+ * Host Interface imok values
+ */
+#define MPIMOK_ALIVE	0x01
+#define MPIMOK_DEAD	0x80
 
 /*
  * Host Interface Structure
  */
 struct his {
 	u_char	semaphore;
-#define MPSEMA_AVAILABLE	1
-#define MPSEMA_WORK		4
 	u_char	imok;
-#define MPIMOK_ALIVE	0x01
-#define MPIMOK_DEAD	0x80
 	u_char	brdnum;		/* Virtual brd number for protocol */
 	u_char	unused;
 	struct {
@@ -180,7 +188,7 @@ struct	mblok {
 
 /* Defines for flags */
 #define MP_PROGRESS	1	/* Open or Close is in progress */
-#define MP_PORTUP	2	/* link is up for port */
+#define MP_IOCTL	2	/* IOCTL is in progress */
 #define MP_REMBSY	4	/* remote station busy */
 
 /*
@@ -233,14 +241,14 @@ struct	mblok {
  * Modem control signal control structure.
  */
 struct mdmctl {
-        u_char	mc_rngdsr;	/* ring or dsr */
-        u_char	mc_rts;		/* request to send */
-        u_char	mc_rate;
-        u_char	mc_dcd;		/* data carrier detect */
-        u_char	mc_sectx;	/* secondary transmit */
-        u_char	mc_cts;		/* clear to send */
-        u_char	mc_secrx;	/* secondary receive */
-        u_char	mc_dtr;		/* data terminal ready */
+	u_char	mc_rngdsr;	/* ring or dsr */
+	u_char	mc_rts;		/* request to send */
+	u_char	mc_rate;
+	u_char	mc_dcd;		/* data carrier detect */
+	u_char	mc_sectx;	/* secondary transmit */
+	u_char	mc_cts;		/* clear to send */
+	u_char	mc_secrx;	/* secondary receive */
+	u_char	mc_dtr;		/* data terminal ready */
 };
 
 /* defines for modem control lines */
@@ -349,17 +357,6 @@ struct asyncparam {
 #define A_SECRX		00100
 #define A_DTR		00200
 
-/* error messages printed at console , board & port # filled in later */
-#define A_INVSTS	"\n#### Invalid Status Event "
-#define A_INVCMD	"\n#### Invalid Event From the MPCC " 
-#define A_NORBUF	"\n#### No More Available Receive Buffers "
-#define A_NOEBUF	"\n#### No More Available Event Buffers "
-#define A_OVRN		"\n#### Overrun Error Detected "
-#define A_OVRF		"\n#### Overflow Error Detected "
-#define A_NOXBUF	"\n#### No More Available Transmit Event Buffers "
-#define A_XSIZE		"\n#### Transmit Data Block Size Exceeds Event Data Buffer Size "
-#define A_NOFREIN	"\n#### No Available Inbound Entries to Send Close Event "
-
 #define DCDASRT		100	/* data carrier detect asserted */
 #define DTRASRT		101	/* data terminal ready asserted */
 #define RNGASRT		102	/* ring indicator asserted */
@@ -384,44 +381,54 @@ struct asyncparam {
 #define MDM_ON	1
 
 /* Modem on/off flags */
-#define MMOD_OFF 0
-#define MMOD_ON 1
+#define MMOD_OFF	0
+#define MMOD_ON		1
 
 /* defintions for DL interface */
 
-#define MPDLBUFSIZE       1024
+#define MPDLBUFSIZE	1024
 
-
-/*      mpdlioctl command defines       */
+/* mpdlioctl command defines */
 
 struct protports {
 	char protoport[MPMAXPORT];
-} ;
+};
 
 struct abdcf {
-        short   xmtbsz;         /* transmit buffer size - should */
-                                /* equal # of chars in a cblock  */
+	short xmtbsz;		/* transmit buffer size - should */
+				/* equal # of chars in a cblock  */
 };
 
 struct bdcf {
-	char    loadname[NMPPROTO+1];
-	char    protoports[MPMAXPORT];
-	char    fccstimer;      /* powerfail timer */
-	char    fccsports;      /* ports to affect */
-	char    fccssoc;        /* ports which will 'switch on close' */
+	char loadname[NMPPROTO+1];
+	char protoports[MPMAXPORT];
+	char fccstimer;		/* powerfail timer */
+	char fccsports;		/* ports to affect */
+	char fccssoc;		/* ports which will 'switch on close' */
 };
 
 
 /* These ioctls are for the dlmpcc command */
-#define MPIOPORTMAP         _IOW('m',1, struct protports)
-#define MPIOHILO            _IOW('m',3, short)
-#define MPIOENDCODE         _IO('m',4)
-#define MPIOASYNCNF         _IOW('m',7, struct abdcf)
-#define MPIOENDDL           _IO('m',10)
-#define MPIOSTARTDL         _IO('m',11)
-#define MPIORESETBOARD      _IO('m',12)
+#define MPIOPORTMAP		_IOW('m',1, struct protports)
+#define MPIOHILO		_IOW('m',3, short)
+#define MPIOENDCODE		_IO('m',4)
+#define MPIOASYNCNF		_IOW('m',7, struct abdcf)
+#define MPIOENDDL		_IO('m',10)
+#define MPIOSTARTDL		_IO('m',11)
+#define MPIORESETBOARD		_IO('m',12)
 
-/*      mpdlwrite opcode defines        */
+/* mpdlwrite opcode defines */
 
-#define MPDLCMD_NORMAL          1
+#define MPDLCMD_NORMAL	1
 
+/* error messages printed at console , board & port # filled in later */
+
+#define A_INVSTS	"Invalid Status Event "
+#define A_INVCMD	"Invalid Event From the MPCC " 
+#define A_NORBUF	"No More Available Receive Buffers "
+#define A_NOEBUF	"No More Available Event Buffers "
+#define A_OVRN		"Overrun Error Detected "
+#define A_OVRF		"Overflow Error Detected "
+#define A_NOXBUF	"No More Available Transmit Event Buffers "
+#define A_XSIZE		"Transmit Data Block Size Exceeds Event Data Buffer Size "
+#define A_NOFREIN	"No Available Inbound Entries to Send Close Event "
