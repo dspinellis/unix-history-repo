@@ -8,7 +8,7 @@
 
 #include "param.h"
 #include "systm.h"
-#include "user.h"
+#include "syscontext.h"
 #include "ioctl.h"
 #include "file.h"
 #include "proc.h"
@@ -22,61 +22,64 @@
 #include "../vaxuba/ubareg.h"
 #include "../vaxuba/ubavar.h"
 
-resuba()
+/* ARGSUSED */
+resuba(p, uap, retval)
+	struct proc *p;
+	struct args {
+		int	value;
+	} *uap;
+	int *retval;
 {
+	int error;
 
-	if (u.u_error = suser(u.u_cred, &u.u_acflag))
-		return;
-	if (u.u_arg[0] < numuba)
-		ubareset(u.u_arg[0]);
+	if (error = suser(u.u_cred, &u.u_acflag))
+		RETURN (error);
+	if (uap->value < numuba)
+		ubareset(uap->value);
+	RETURN (0);
 }
 
 #ifdef TRACE
 int	nvualarm;
 
-vtrace()
-{
-	register struct a {
+vtrace(p, uap, retval)
+	struct proc *p;
+	register struct args {
 		int	request;
 		int	value;
 	} *uap;
+	int *retval;
+{
 	int vdoualarm();
 
-	uap = (struct a *)u.u_ap;
 	switch (uap->request) {
 
 	case VTR_DISABLE:		/* disable a trace point */
 	case VTR_ENABLE:		/* enable a trace point */
 		if (uap->value < 0 || uap->value >= TR_NFLAGS)
-			u.u_error = EINVAL;
-		else {
-			u.u_r.r_val1 = traceflags[uap->value];
-			traceflags[uap->value] = uap->request;
-		}
+			RETURN (EINVAL);
+		*retval = traceflags[uap->value];
+		traceflags[uap->value] = uap->request;
 		break;
 
 	case VTR_VALUE:		/* return a trace point setting */
 		if (uap->value < 0 || uap->value >= TR_NFLAGS)
-			u.u_error = EINVAL;
-		else
-			u.u_r.r_val1 = traceflags[uap->value];
+			RETURN (EINVAL);
+		*retval = traceflags[uap->value];
 		break;
 
 	case VTR_UALARM:	/* set a real-time ualarm, less than 1 min */
-		if (uap->value <= 0 || uap->value > 60 * hz ||
-		    nvualarm > 5)
-			u.u_error = EINVAL;
-		else {
-			nvualarm++;
-			timeout(vdoualarm, (caddr_t)u.u_procp->p_pid,
-			    uap->value);
-		}
+		if (uap->value <= 0 || uap->value > 60 * hz || nvualarm > 5)
+			RETURN (EINVAL);
+		nvualarm++;
+		timeout(vdoualarm, (caddr_t)p->p_pid, uap->value);
 		break;
 
 	case VTR_STAMP:
-		trace(TR_STAMP, uap->value, u.u_procp->p_pid);
+		trace(TR_STAMP, uap->value, p->p_pid);
 		break;
 	}
+	RETURN (0);
 }
 
 vdoualarm(arg)
