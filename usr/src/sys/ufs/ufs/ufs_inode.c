@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_inode.c	7.41 (Berkeley) %G%
+ *	@(#)ufs_inode.c	7.42 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -20,7 +20,7 @@
 #include <ufs/ufs/ufs_extern.h>
 
 u_long	nextgennumber;		/* Next generation number to assign. */
-int	prtactive;		/* 1 => print out reclaim of active vnodes */
+int	prtactive = 0;		/* 1 => print out reclaim of active vnodes */
 
 int
 ufs_init()
@@ -52,58 +52,6 @@ ufs_iput(ip)
 		panic("iput");
 	IUNLOCK(ip);
 	vrele(ITOV(ip));
-}
-
-/*
- * Last reference to an inode, write the inode out and if necessary,
- * truncate and deallocate the file.
- */
-int
-ufs_inactive(vp, p)
-	struct vnode *vp;
-	struct proc *p;
-{
-	register struct inode *ip;
-	struct ufsmount *ump;
-	int mode, error;
-
-	if (prtactive && vp->v_usecount != 0)
-		vprint("ufs_inactive: pushing active", vp);
-
-	/* Get rid of inodes related to stale file handles. */
-	ip = VTOI(vp);
-	if (ip->i_mode == 0) {
-		if ((vp->v_flag & VXLOCK) == 0)
-			vgone(vp);
-		return (0);
-	}
-
-	error = 0;
-	ump = VFSTOUFS(vp->v_mount);
-	ILOCK(ip);
-	if (ip->i_nlink <= 0 && (vp->v_mount->mnt_flag & MNT_RDONLY) == 0) {
-#ifdef QUOTA
-		if (!getinoquota(ip))
-			(void)chkiq(ip, -1, NOCRED, 0);
-#endif
-		error = (ump->um_itrunc)(ip, (u_long)0, 0);
-		mode = ip->i_mode;
-		ip->i_mode = 0;
-		ip->i_rdev = 0;
-		ip->i_flag |= IUPD|ICHG;
-		(ump->um_ifree)(ip, ip->i_number, mode);
-	}
-	if (ip->i_flag&(IUPD|IACC|ICHG|IMOD))
-		(ump->um_iupdat)(ip, &time, &time, 0);
-	IUNLOCK(ip);
-	ip->i_flag = 0;
-	/*
-	 * If we are done with the inode, reclaim it
-	 * so that it can be reused immediately.
-	 */
-	if (vp->v_usecount == 0 && ip->i_mode == 0)
-		vgone(vp);
-	return (error);
 }
 
 /*
