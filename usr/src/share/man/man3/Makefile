@@ -1,7 +1,7 @@
-#	@(#)Makefile	5.16.1.1 (Berkeley) %G%
+#	@(#)Makefile	5.17 (Berkeley) %G%
 
-MAN3=	assert.0 bitstring.0 end.0 intro.0 stdarg.0
-MLINKS+=end.3 edata.3 end.3 etext.3
+MAN3=	assert.0 bitstring.0 end.0 intro.0 moncontrol.0 stdarg.0
+MLINKS+=end.3 edata.3 end.3 etext.3 moncontrol.3 monstartup.3
 MLINKS+=stdarg.3 varargs.3
 
 all: ${MAN3}
