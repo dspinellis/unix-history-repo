@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)gmon.c	4.8 (Berkeley) %G%";
+static	char *sccsid = "@(#)gmon.c	4.9 (Berkeley) %G%";
 
 #ifdef DEBUG
 #include <stdio.h>
@@ -48,7 +48,7 @@ monstartup(lowpc, highpc)
 	write( 2 , MSG , sizeof(MSG) );
 	return;
     }
-    froms = (unsigned short *) sbrk( s_textsize );
+    froms = (unsigned short *) sbrk( s_textsize / HASHFRACTION );
     if ( froms == (unsigned short *) -1 ) {
 	write( 2 , MSG , sizeof(MSG) );
 	froms = 0;
@@ -82,6 +82,7 @@ _mcleanup()
 {
     int			fd;
     int			fromindex;
+    int			endfrom;
     char		*frompc;
     int			toindex;
     struct rawarc	rawarc;
@@ -95,11 +96,12 @@ _mcleanup()
 	fprintf( stderr , "[mcleanup] sbuf 0x%x ssiz %d\n" , sbuf , ssiz );
 #   endif DEBUG
     write( fd , sbuf , ssiz );
-    for ( fromindex = 0 ; fromindex < s_textsize>>1 ; fromindex++ ) {
+    endfrom = s_textsize / (HASHFRACTION * sizeof(*froms));
+    for ( fromindex = 0 ; fromindex < endfrom ; fromindex++ ) {
 	if ( froms[fromindex] == 0 ) {
 	    continue;
 	}
-	frompc = s_lowpc + (fromindex<<1);
+	frompc = s_lowpc + (fromindex * HASHFRACTION * sizeof(*froms));
 	for (toindex=froms[fromindex]; toindex!=0; toindex=tos[toindex].link) {
 #	    ifdef DEBUG
 		fprintf( stderr ,
@@ -160,7 +162,7 @@ mcount()
 		goto done;
 	}
 	frompcindex =
-	    &froms[(((long)frompcindex) + sizeof(*froms) - 1) / sizeof(*froms)];
+	    &froms[((long)frompcindex) / (HASHFRACTION * sizeof(*froms))];
 	toindex = *frompcindex;
 	if (toindex == 0) {
 		/*
