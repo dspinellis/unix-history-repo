@@ -1,0 +1,73 @@
+0/1 RF0
+100000 - error
+040000 - freeze
+020000 - write check error
+010000 - data parity error
+004000 - non-existent disk
+002000 - write lock out
+001000 - missed transfer
+000400 - disk clear
+000200 - control ready
+000100 - interrupt enable
+000040 - extend memory
+000020 - extend memory
+000010 - maintenance
+000004 - function
+000002 - function
+000001 - go
+
+1/n - RKn
+100000 - drive error
+040000 - overrun
+020000 - write violation
+010000 - seek error
+004000 - programming error
+002000 - non-existent memory
+001000 - data late
+000400 - timing error
+000200 - non-existent disk
+000100 - non-existent cylinder
+000040 - non-existent sector
+000020 -
+000010 -
+000004 -
+000002 - checksum error
+000001 - write check error
+
+2/n TCn
+100000 - end zone
+040000 - parity error
+020000 - mark track error
+010000 - illegal operation
+004000 - selection error
+002000 - block missed
+001000 - data missed
+000400 - non-existent memory
+000200 - tape is up to speed
+000100 - clock simulates timing
+000040 - maintenance mark track
+000020 - data track
+000010 - data track
+000004 - data track
+000002 - extended data
+000001 - extended data
+
+3/n MTn - no messages
+
+4/n RPn
+100000 - write protect violation
+040000 - file unsafe violation
+020000 - non-existent cylinder
+010000 - non-existent track
+004000 - non-existent sector
+002000 - program error
+001000 - format error
+000400 - mode error
+000200 - longitudinal parity error
+000100 - word parity error
+000040 - checksum error
+000020 - timing error
+000010 - write check error
+000004 - non-existent memory
+000002 - end of pack
+000001 - disk error
