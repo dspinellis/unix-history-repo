@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.13 (Berkeley) %G%
+#	@(#)Makefile	5.14 (Berkeley) %G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -29,13 +29,17 @@ NSTD=	expr
 
 # Programs that must run setuid to root
 #
-SETUID=	chgrp df login mail passwd rcp su
+SETUID=	chgrp login mail passwd rcp su
+
+# Programs that run set-group-id operator
+#
+OPERATOR= df
 
 # Programs that must run set-group-id kmem.
 #
 KMEM=	ps
 
-all:	${SUBDIR} ${STD} ${NSTD} ${SETUID} ${KMEM} cp mv strip
+all:	${SUBDIR} ${STD} ${NSTD} ${SETUID} ${OPERATOR} ${KMEM} cp mv strip
 
 ${SUBDIR}: FRC
 	cd $@; make ${MFLAGS}
@@ -43,7 +47,7 @@ ${SUBDIR}: FRC
 FRC:
 	
 
-${STD} ${SETUID} mv cp strip:
+${STD} ${SETUID} ${OPERATOR} mv cp strip:
 	${CC} ${CFLAGS} -o $@ $@.c
 
 # take care with cp, strip, and mv, install uses them
@@ -60,6 +64,8 @@ install:
 	-for i in ${STD} ${NSTD}; do (install -s $$i ${DESTDIR}/bin/$$i); done
 	-for i in ${SETUID}; do \
 		(install -o root -m 4755 -s $$i ${DESTDIR}/bin/$$i); done
+	-for i in ${OPERATOR}; do \
+		(install -g operator -m 2755 -s $$i ${DESTDIR}/bin/$$i); done
 	-for i in ${KMEM}; do \
 		(install -g kmem -m 2755 -s $$i ${DESTDIR}/bin/$$i); done
 	rm -f ${DESTDIR}/bin/[; ln ${DESTDIR}/bin/test ${DESTDIR}/bin/[
@@ -70,10 +76,10 @@ install:
 clean:
 	rm -f a.out core *.s *.o errs
 	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} clean); done
-	rm -f ${STD} ${NSTD} ${KMEM} ${SETUID} expr.c cp mv strip
+	rm -f ${STD} ${NSTD} ${KMEM} ${OPERATOR} ${SETUID} expr.c cp mv strip
 
 depend:
-	for i in ${STD} ${NSTD} ${KMEM} ${SETUID} cp mv strip; do \
+	for i in ${STD} ${NSTD} ${KMEM} ${OPERATOR} ${SETUID} cp mv strip; do \
 	    cc -M ${INCPATH} $$i.c | sed 's/\.o//' | \
 	    awk ' { if ($$1 != prev) \
 		{ if (rec != "") print rec; rec = $$0; prev = $$1; } \
