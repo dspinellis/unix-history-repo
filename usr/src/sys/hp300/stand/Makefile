@@ -1,4 +1,4 @@
-#	@(#)Makefile	7.12 (Berkeley) %G%
+#	@(#)Makefile	7.13 (Berkeley) %G%
 
 DESTDIR=
 STAND=	../../stand
@@ -107,28 +107,23 @@ installboot: installboot.c
 
 # utilities
 
-clean:
-	rm -f *.o *.exe *.i errs make.out
+clean cleandir:
+	rm -f .depend *.o *.exe *.i errs make.out
 	rm -f a.out boot cat tpboot tpcopy copy tpformat
 	rm -f boot[a-z]? boot[a-wyz][a-z].c conf[a-wyz][a-z].c
 	rm -f format drtest core sboot bootconf.c nboot.c
 	rm -f libdrive.a mkboot tboot tcopy dboot nboot installboot *.lif
 	cd libsa; make cleandir
 
-lint:
-	lint ${INCPATH} -hxbn boot.c ${SRCS} | \
-	    grep -v 'possible pointer alignment' | \
-	    grep -v 'struct/union .* never defined'
-
-install: mkboot installboot ${ALL}
+install:
 	./mkboot dboot diskboot.lif
 	./mkboot nboot ndiskboot.lif
 	./mkboot tboot tcopy tapeboot.lif
-	install -c -s installboot ${DESTDIR}/usr/mdec
-	install -c -m 644 diskboot.lif ${DESTDIR}/usr/mdec/bootrd
+	install -s -o bin -g bin -m 555 installboot ${DESTDIR}/usr/mdec
+	install -o bin -g bin -m 444 diskboot.lif ${DESTDIR}/usr/mdec/bootrd
 	rm -f ${DESTDIR}/usr/mdec/bootsd
 	ln ${DESTDIR}/usr/mdec/bootrd ${DESTDIR}/usr/mdec/bootsd
-	install -c -m 644 tapeboot.lif ${DESTDIR}/usr/mdec/bootct
+	install -o bin -g bin -m 444 tapeboot.lif ${DESTDIR}/usr/mdec/bootct
 #	mv diskboot.lif ndiskboot.lif tapeboot.lif ${DESTDIR}/sys/hpdist/tp
 
 depend: ${SRCS}
