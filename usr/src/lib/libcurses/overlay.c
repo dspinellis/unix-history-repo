@@ -1,4 +1,4 @@
-# include	"curses.h"
+# include	"curses.ext"
 # include	<ctype.h>
 
 # define	min(a,b)	(a < b ? a : b)
@@ -7,7 +7,7 @@
 /*
  *	This routine writes win1 on win2 non-destructively.
  *
- * %G% (Berkeley) @(#)overlay.c	1.1
+ * %G% (Berkeley) @(#)overlay.c	1.2
  */
 overlay(win1, win2)
 reg WINDOW	*win1, *win2; {
