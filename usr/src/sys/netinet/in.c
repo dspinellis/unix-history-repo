@@ -193,6 +193,7 @@ in_control(so, cmd, data, ifp)
 
 	case SIOCSIFADDR:
 	case SIOCSIFNETMASK:
+	case SIOCSIFDSTADDR:
 		if (!suser())
 			return (u.u_error);
 
@@ -223,7 +224,6 @@ in_control(so, cmd, data, ifp)
 		break;
 
 	case SIOCSIFBRDADDR:
-	case SIOCSIFDSTADDR:
 		if (!suser())
 			return (u.u_error);
 		/* FALLTHROUGH */
