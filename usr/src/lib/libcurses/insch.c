@@ -1,16 +1,17 @@
 /*
- * Copyright (c) 1981, 1993
+ * Copyright (c) 1981, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)insch.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)insch.c	8.2 (Berkeley) %G%";
 #endif	/* not lint */
 
-#include <curses.h>
 #include <string.h>
+
+#include "curses.h"
 
 /*
  * winsch --
