@@ -1,4 +1,4 @@
-/*	kern_clock.c	4.9	%G%	*/
+/*	kern_clock.c	4.10	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -166,10 +166,10 @@ softclock(pc, ps)
 	/*
 	 * Drain silos.
 	 */
-#if NDH11 > 0
+#if NDH > 0
 	s = spl5(); dhtimer(); splx(s);
 #endif
-#if NDZ11 > 0
+#if NDZ > 0
 	s = spl5(); dztimer(); splx(s);
 #endif
 
