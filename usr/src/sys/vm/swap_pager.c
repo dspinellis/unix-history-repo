@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: swap_pager.c 1.4 91/04/30$
  *
- *	@(#)swap_pager.c	7.9 (Berkeley) %G%
+ *	@(#)swap_pager.c	7.10 (Berkeley) %G%
  */
 
 /*
@@ -440,7 +440,6 @@ swap_pager_io(swp, m, flags)
 	vm_page_t m;
 	int flags;
 {
-	USES_VOP_STRATEGY;
 	register struct buf *bp;
 	register sw_blk_t swb;
 	register int s;
