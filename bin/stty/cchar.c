@@ -102,7 +102,7 @@ csearch(argvp, ip)
 	if (!arg)
 		err("option requires an argument -- %s\n%s", name, usage);
 
-#define CHK(s)  (*name == s[0] && !strcmp(name, s))
+#define CHK(s)  (*arg == s[0] && !strcmp(arg, s))
 	if (CHK("undef") || CHK("<undef>"))
 		ip->t.c_cc[cp->sub] = _POSIX_VDISABLE;
 	else if (arg[0] == '^')
