@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount_null.c	8.2 (Berkeley) %G%
+ *	@(#)mount_null.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -50,7 +50,7 @@ main(argc, argv)
 		usage();
 
 	if (realpath(argv[0], target) == 0) {
-		(void)fprintf(stderr, "mount_lofs: %s: %s\n",
+		(void)fprintf(stderr, "mount_null: %s: %s\n",
 				target, strerror(errno));
 		exit(1);
 	}
