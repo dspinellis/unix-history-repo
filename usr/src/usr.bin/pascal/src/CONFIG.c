@@ -4,7 +4,7 @@
      *	editing config.c won't work
      */
 
-static	char *sccsid = "@(#)CONFIG.c	2.2 (Berkeley) 82/04/01";
+static	char *sccsid = "@(#)CONFIG.c	2.3 (Berkeley) 82/04/01";
 
     /*
      *	the version of translator
@@ -17,7 +17,7 @@ char	*version = "VERSION (DATE)";
      *	(in case of execution as a.something)
      */
 char	*err_file = "LIBDIR/ERRORSTRINGS";
-int	err_pathlen = sizeof("LIBDIR/");
+int	err_pathlen = sizeof("LIBDIR/")-1;
 
     /*
      *	the location of the short explanation
@@ -25,7 +25,7 @@ int	err_pathlen = sizeof("LIBDIR/");
      *	the null at the end is so pix can change it to pi'x' from pi.
      */
 char	*how_file = "LIBDIR/HOWFILE\0";
-int	how_pathlen = sizeof("LIBDIR/");
+int	how_pathlen = sizeof("LIBDIR/")-1;
     
     /*
      *	things about the interpreter.
