@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1982, 1986, 1988, 1990, 1993
+ * Copyright (c) 1982, 1986, 1988, 1990, 1993, 1995
  *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)udp_usrreq.c	8.5 (Berkeley) %G%
+ *	@(#)udp_usrreq.c	8.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -111,7 +111,7 @@ udp_input(m, iphlen)
 	/*
 	 * Checksum extended UDP header and data.
 	 */
-	if (udpcksum && uh->uh_sum) {
+	if (uh->uh_sum) {
 		((struct ipovly *)ip)->ih_next = 0;
 		((struct ipovly *)ip)->ih_prev = 0;
 		((struct ipovly *)ip)->ih_x1 = 0;
