@@ -1,9 +1,20 @@
 #
-# Copyright (c) 1987 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# Copyright (c) 1987 The Regents of the University of California.
+# All rights reserved.
 #
-#	@(#)Makefile	5.3	(Berkeley)	%G%
+# Redistribution and use in source and binary forms are permitted
+# provided that the above copyright notice and this paragraph are
+# duplicated in all such forms and that any documentation,
+# advertising materials, and other materials related to such
+# distribution and use acknowledge that the software was developed
+# by the University of California, Berkeley.  The name of the
+# University may not be used to endorse or promote products derived
+# from this software without specific prior written permission.
+# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+# WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+#
+#	@(#)Makefile	5.4 (Berkeley) %G%
 #
 CFLAGS=	-O -DCM_N -DCM_GT -DCM_B -DCM_D
 LIBC=	/lib/libc.a
@@ -29,13 +40,16 @@ test:
 	${CC} ${CFLAGS} -o tc2 tc2.c termcap.a
 	${CC} ${CFLAGS} -o tc3 tc3.c termcap.a
 
-clean: FRC
+clean:
 	rm -f ${OBJS} core profiled/*.o termcap.a termcap_p.a
 
-depend: FRC
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
+depend:
 	mkdep ${CFLAGS} ${SRCS}
 
-install: FRC
+install:
 	install -o bin -g bin -m 644 termcap.a ${DESTDIR}/usr/lib/libtermcap.a
 	rm -f ${DESTDIR}/usr/lib/libtermlib.a
 	ln ${DESTDIR}/usr/lib/libtermcap.a ${DESTDIR}/usr/lib/libtermlib.a
@@ -45,21 +59,8 @@ install: FRC
 	ln ${DESTDIR}/usr/lib/libtermcap_p.a ${DESTDIR}/usr/lib/libtermlib_p.a
 	ranlib ${DESTDIR}/usr/lib/libtermcap_p.a
 
-lint: FRC
+lint:
 	lint ${CFLAGS} ${SRCS}
 
-tags: FRC
+tags:
 	ctags ${SRCS}
-
-FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-termcap.o: termcap.c /usr/include/ctype.h
-tgoto.o: tgoto.c
-tputs.o: tputs.c /usr/include/sgtty.h /usr/include/sys/ioctl.h
-tputs.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-tputs.o: /usr/include/ctype.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
