@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dhu.c	4.8 (Berkeley) %G%
+ *	@(#)dhu.c	4.9 (Berkeley) %G%
  */
 
 /*
@@ -376,8 +376,6 @@ dhuioctl(dev, cmd, data, flag)
 {
 	register struct tty *tp;
 	register int unit = UNIT(dev);
-	register dhu = unit>>4;
-	register bit = (1<<(unit&0xf));
 	int error;
 
 	tp = &dhu_tty[unit];
@@ -662,7 +660,7 @@ dhumctl(dev, bits, how)
 	int bits, how;
 {
 	register struct dhudevice *dhuaddr;
-	register int unit, mbits, lcr;
+	register int unit, mbits;
 	int s;
 
 	unit = UNIT(dev);
@@ -711,7 +709,6 @@ dhureset(uban)
 	register struct uba_device *ui;
 	register struct dhudevice *addr;
 	int i;
-	register int s;
 
 	for (dhu = 0; dhu < NDHU; dhu++) {
 		ui = dhuinfo[dhu];

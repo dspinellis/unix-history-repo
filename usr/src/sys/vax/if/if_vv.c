@@ -133,7 +133,7 @@ extern struct ifnet loif;
 struct	vv_softc {
 	struct	ifnet vs_if;		/* network-visible interface */
 	struct	ifuba vs_ifuba;		/* UNIBUS resources */
-	int	vs_host;
+	u_short	vs_host;		/* this interface address */
 	short	vs_oactive;		/* is output active */
 	short	vs_olen;		/* length of last output */
 	u_short	vs_lastx;		/* address of last packet sent */
@@ -321,7 +321,7 @@ vvidentify(unit)
 	register struct vv_header *v;
 	register int ubainfo;
 	register int i, successes, failures, waitcount;
-	u_short shost = -1;
+	u_short shost = 0xffff;
 
 	vs = &vv_softc[unit];
 	ui = vvinfo[unit];
@@ -429,7 +429,7 @@ gotit:			/* we got something--is it any good? */
 
 			/* check message type, catch our node address */
 			if ((v->vh_type & 0xff) == RING_DIAGNOSTICS) {
-				if (shost == -1) {
+				if (shost == 0xffff) {
 					shost = v->vh_shost & 0xff;
 					/* send to ourself now */
 					((struct vv_header *)
@@ -452,7 +452,7 @@ in %s mode\n",
 			    0xffff & addr->vvocsr, VV_OBITS);
 			addr->vvicsr = VV_RST;	/* kill the sick board */
 			addr->vvocsr = VV_RST;
-			shost = -1;
+			shost = 0xffff;
 			goto done;
 		}
 	}

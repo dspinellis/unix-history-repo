@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ut.c	6.6 (Berkeley) %G%
+ *	@(#)ut.c	6.7 (Berkeley) %G%
  */
 
 #include "tj.h"
@@ -586,7 +586,7 @@ ignoreerr:
 
 	case SCOM:		/* motion commands update current position */
 		if (bp == &cutbuf[UTUNIT(bp->b_dev)])
-		switch (bp->b_command) {
+		switch ((int)bp->b_command) {
 
 		case UT_SFORW:
 			sc->sc_blkno -= bp->b_repcnt;

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tm.c	6.8 (Berkeley) %G%
+ *	@(#)tm.c	6.9 (Berkeley) %G%
  */
 
 #include "te.h"
@@ -690,7 +690,7 @@ ignoreerr:
 		 * For forward/backward space record update current position.
 		 */
 		if (bp == &ctmbuf[TMUNIT(bp->b_dev)])
-		switch (bp->b_command) {
+		switch ((int)bp->b_command) {
 
 		case TM_SFORW:
 			sc->sc_blkno -= bp->b_repcnt;

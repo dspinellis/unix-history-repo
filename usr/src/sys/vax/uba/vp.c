@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)vp.c	6.6 (Berkeley) %G%
+ *	@(#)vp.c	6.7 (Berkeley) %G%
  */
 
 #include "vp.h"
@@ -258,7 +258,6 @@ vpioctl(dev, cmd, data, flag)
 	register caddr_t data;
 	int flag;
 {
-	register int m;
 	register struct vp_softc *sc = &vp_softc[VPUNIT(dev)];
 	register struct vpdevice *vpaddr =
 	    (struct vpdevice *)vpdinfo[VPUNIT(dev)]->ui_addr;
