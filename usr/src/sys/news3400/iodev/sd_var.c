@@ -9,7 +9,7 @@
  *
  * from: $Hdr: sd_var.c,v 4.300 91/06/09 06:38:23 root Rel41 $ SONY
  *
- *	@(#)sd_var.c	7.2 (Berkeley) %G%
+ *	@(#)sd_var.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -22,8 +22,6 @@
 
 #include "sd.h"
 #if NSD > 0
-
-#include <machine/fix_machine_type.h>
 
 #include <sys/param.h>
 #include <sys/buf.h>

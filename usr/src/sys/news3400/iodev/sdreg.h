@@ -9,7 +9,7 @@
  *
  * from: $Hdr: sdreg.h,v 4.300 91/06/09 06:38:28 root Rel41 $ SONY
  *
- *	@(#)sdreg.h	7.2 (Berkeley) %G%
+ *	@(#)sdreg.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -21,8 +21,6 @@
 
 #ifndef __SDREG__
 #define __SDREG__ 1
-
-#include <machine/fix_machine_type.h>
 
 #define	MAXSLAVE	8
 #define	PNUM		8

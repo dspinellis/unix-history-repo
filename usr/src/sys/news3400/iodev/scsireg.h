@@ -9,7 +9,7 @@
  *
  * from: $Hdr: scsireg.h,v 4.300 91/06/09 06:38:12 root Rel41 $ SONY
  *
- *	@(#)scsireg.h	7.2 (Berkeley) %G%
+ *	@(#)scsireg.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -18,8 +18,6 @@
 
 #ifndef __SCSIREG__
 #define __SCSIREG__ 1
-
-#include <machine/fix_machine_type.h>
 
 /*
  *	initiator status byte bit image
@@ -262,32 +260,18 @@ struct scsi {
 /*
  *	scsi map table format
  */
-#if defined(news800) || defined(news1800)
-#define	NSCMAP	510
-#endif /* defined(news800) || defined(news1800) */
-
-#if defined(news1200) || defined(news1700)
-#define	NSCMAP	129
-#endif /* news1200 || news1700 */
-
 #ifdef news3400
 #define	NSCMAP	120
-#endif /* news3400 */
+#endif
 
 #ifdef news3800
 #define	NSCMAP	129
-#endif /* news3800 */
+#endif
 
 struct sc_map {
 /*000*/	unsigned	mp_offset;
 /*004*/	unsigned	mp_pages;
 /*008*/	unsigned	mp_addr[NSCMAP];
-#if defined(news800) || defined(news1800)
-/*800*/
-#endif /* defined(news800) || defined(news1800) */
-#if defined(news1200) || defined(news1700)
-/*20c*/
-#endif /* news1200 || news1700 */
 };
 
 
@@ -516,16 +500,6 @@ struct sc_rab {
 #  define	ipc_phys(x)	(caddr_t)((int)(x) & ~0x80000000)
 # endif
 
-# ifdef news800
-#  define	splsc		spl3
-#  define	splscon		spl2
-# endif
-
-# ifdef news1800
-#  define	splsc		spl5
-#  define	splscon		spl4
-# endif
-
 # ifdef news3800
 #  define	splsc		spl4
 #  define	splscon		spl3
@@ -547,13 +521,11 @@ struct sc_rab {
 #define	SCSI_INTEN	1
 #define	SCSI_INTDIS	0
 
-
 struct scintsw {
 /*00*/	int	(*sci_inthandler)();	/* pointer to interrupt handler */
 /*04*/	int	sci_ctlr;		/* controller number */
 /*08*/
 };
-
 
 struct sc_data {
 /*00*/	caddr_t	scd_scaddr;		/* pointer to struct scsi */

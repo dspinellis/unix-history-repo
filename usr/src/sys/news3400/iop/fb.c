@@ -9,10 +9,8 @@
  *
  * from: $Hdr: fb.c,v 4.300 91/06/27 20:43:06 root Rel41 $ SONY
  *
- *	@(#)fb.c	7.2 (Berkeley) %G%
+ *	@(#)fb.c	7.3 (Berkeley) %G%
  */
-
-#include <machine/fix_machine_type.h>
 
 #include "fb.h"
 #if NFB > 0

@@ -9,14 +9,13 @@
  *
  * from: $Hdr: iop.c,v 4.300 91/06/09 06:42:37 root Rel41 $ SONY
  *
- *	@(#)iop.c	7.2 (Berkeley) %G%
+ *	@(#)iop.c	7.3 (Berkeley) %G%
  */
 
 /*
  *	iop.c / hb.c	ver 0.0
  */
 
-#include <machine/fix_machine_type.h>
 #include <machine/machConst.h>
 
 #include <sys/param.h>
@@ -32,8 +31,6 @@
 
 #include <machine/pte.h>
 #include <machine/cpu.h>
-
-#ifndef news700
 
 #include <news3400/iodev/scsireg.h>
 
@@ -94,11 +91,7 @@ iopgo(ii, map)
 	register int unit;
 	int s;
 
-#ifdef PMAXSPL
-	s = Mach_spl3();
-#else
 	s = spl6();
-#endif
 	if (map)
 		(void)iopsetup(im->im_tab.b_actf->b_actf, map, NSCMAP);
 	splx(s);
@@ -217,8 +210,6 @@ scsend(chan, flag, sc)
 	}
 }
 #endif /* CPU_SINGLE */
-
-#endif /* !news700 */
 
 #ifdef CPU_SINGLE
 /*kos000*/

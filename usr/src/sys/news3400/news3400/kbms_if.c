@@ -7,12 +7,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kbms_if.c	7.2 (Berkeley) %G%
+ *	@(#)kbms_if.c	7.3 (Berkeley) %G%
  */
 
 /* Keyboard Mouse Gate-array control routine */
 
-#include <machine/fix_machine_type.h>
 #include <machine/adrsmap.h>
 
 #include "ms.h"
@@ -21,7 +20,7 @@
 #include <sys/param.h>
 #include <news3400/sio/scc.h>
 
-#if defined(news1200) || defined(news3200)
+#if defined(news3200)
 #include <sys/time.h>
 #include <news3400/iop/mouse.h>
 #endif
@@ -114,11 +113,6 @@ kbm_open(chan)
 	*kbm->reset_port = (u_char)0;
 	*kbm->intr_port = (u_char)1;
 #endif
-#ifdef news1200
-	*kbm->init1_port = kbm->init1;
-	*kbm->init2_port = kbm->init2;
-	*kbm->buzzf_port = kbm->buzzf;
-#endif
 	kbd_flush();
 }
 
@@ -200,19 +194,6 @@ kbm_write(chan, buf, count)
 {
 	register u_char *port = Kbm_port[chan].buzz_port;
 	int c_save = count;
-
-#ifdef news1200
-	*port = count;
-#endif
-
-#ifdef news1700
-	if (buf == NULL)
-		while (--count >= 0)
-			*port = 0xff;
-	else
-		while (--count >= 0)
-			*port = *buf++;
-#endif
 
 #ifdef news3400
 	*port = count / 3;

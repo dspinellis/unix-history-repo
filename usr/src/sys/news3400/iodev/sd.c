@@ -9,7 +9,7 @@
  *
  * from: $Hdr: sd.c,v 4.300 91/06/27 20:42:56 root Rel41 $ SONY
  *
- *	@(#)sd.c	7.4 (Berkeley) %G%
+ *	@(#)sd.c	7.5 (Berkeley) %G%
  */
 #define	dkblock(bp)	bp->b_blkno
 
@@ -19,8 +19,6 @@
 
 #include "sd.h"
 #if NSD > 0
-
-#include <machine/fix_machine_type.h>
 
 #include <sys/param.h>
 #include <sys/buf.h>
@@ -56,9 +54,6 @@
 #include <news3400/iodev/scu.h>
 #include <news3400/iodev/dkio.h>
 #include <news3400/iodev/sdreg.h>
-/* #ifdef DISKINFO KU:XXX */
-#include <news3400/iodev/diskinfo.h>
-/* #endif /* DISKINFO */
 
 #define	sce_sdecode	sce_hdecode
 
@@ -683,53 +678,6 @@ loop_tst:
 	return (1);
 }
 
-#ifdef NEWSOS4
-static
-sd_setup_cmds(ii, sc)
-	register struct iop/**/_device *ii;
-	register struct scsi *sc;
-{
-	register struct sddevinfo *sdi;
-	register struct sc_extnd *sce;
-	struct sc_ureq **p;
-	struct sc_ureq *scu;
-	int error;
-	extern struct sc_ureq scu_rsense;
-
-	if ((p = sddevinfo[ii->ii_type].setup_cmds) == NULL)
-		return (0);
-
-	/*
-	 * Do setup commands
-	 */
-	while (scu = *p) {
-		bcopy((caddr_t)scu, sdtmp, sizeof(struct sc_ureq));
-		scu = (struct sc_ureq *)sdtmp;
-		scu->scu_cdb[1] |= (ii->ii_slave & 0x07) << 5;
-		error = sd_scu_exec((ii->ii_unit << 3), scu, sc);
-		if (error != 0)
-			return (-1);
-		if ((scu->scu_istatus != INST_EP)
-		    || (scu->scu_tstatus != TGST_GOOD)) {
-			bcopy((caddr_t)&scu_rsense, sdtmp, sizeof(struct sc_ureq));
-			scu = (struct sc_ureq *)sdtmp;
-			scu->scu_cdb[1] |= (ii->ii_slave & 0x07) << 5;
-			sce = (scu->scu_addr == NULL) ?
-				(struct sc_extnd *)scu->scu_param :
-				(struct sc_extnd *)scu->scu_addr;
-			if (sd_scu_exec((ii->ii_unit << 3), scu, sc) == 0) {
-				/* UNIT ATTENTION */
-				/* retry same command */
-				if (sce->sce_skey == 0x06)
-					continue;
-			}
-		}
-		p++;
-	}
-	return (1);
-}
-#endif /* NEWSOS4 */
-
 static
 sd_other_pages(ii, sc)
 	register struct iop/**/_device *ii;
@@ -941,14 +889,6 @@ sdattach(ii)
 		timeout(sdwatch, (caddr_t)0, hz);
 		timeout(sdstop, (caddr_t)0, hz);
 	}
-
-#ifdef NEWSOS4
-	/*
-	 * Do setup commands
-	 */
-	if (sd_setup_cmds(ii, get_scsi(ii->ii_intr)) < 0)
-		printf("sd%d: setup failure\n", ii->ii_unit);
-#endif
 
 	/*
 	 * initialize open flag
@@ -1535,9 +1475,6 @@ sdrpartinfo(ii)
 	struct sdc_softc *sdc;
 	struct sdd_softc *sdd;
 	struct sddevinfo *sdi;
-#ifdef DISKINFO
-	struct diskinfo *dip;
-#endif
 	struct scsi uscsi;
 	int s;
 
@@ -1581,9 +1518,6 @@ sdrpartinfo(ii)
 
 	fsp = (struct firstsector *)sdtmp;
 	dlp = (struct disklabel *)(sdtmp + LABELOFFSET);
-#ifdef DISKINFO
-	dip = &fsp->diskinfo;
-#endif
 
 	s = splclock();
 	hsp = &sdstdrv[unit];
@@ -1594,12 +1528,6 @@ sdrpartinfo(ii)
 	    && ((ii->ii_flags & SD_F_IGNLABEL) == 0)) {
 		sdlabel[unit] = *dlp;
 		disklabel2sdst(unit, dlp, hsp);
-#ifdef DISKINFO
-	} else if ((dip->di_magic == DISKINFO_MAGIC)
-		    && ((ii->ii_flags & SD_F_IGNLABEL) == 0)) {
-		diskinfo2sdst(unit, dip, hsp);
-		diskinfo2disklabel(unit, dip, &sdlabel[unit]);
-#endif
 	} else {
 		if ((ii->ii_type == UNKNOWN_DISK)
 				|| (sdi->sdstp->sizes == calc_disk_sizes)) {
@@ -1729,97 +1657,6 @@ disklabel2sdst(unit, dlp, st)
 			printf(Pr_Part_Fmt, unit, pname[i], stsz(i), stof(i));
 	}
 }
-
-#ifdef DISKINFO
-static
-diskinfo2sdst(unit, dip, st)
-	int unit;
-	register struct diskinfo *dip;
-	register struct sdst *st;
-{
-	register int i;
-	int msg_header_printed;
-
-	msg_header_printed = 0;
-
-	st->nsect = dip->di_dkst.dks_nsect;	/* # sectors/track */
-	st->ntrak = dip->di_dkst.dks_ntrak;	/* # tracks/cylinder */
-	st->nspc = dip->di_dkst.dks_nsect * dip->di_dkst.dks_ntrak;
-						/* # sectors/cylinder */
-	st->ncyl = dip->di_dkst.dks_ncyl;	/* # cylinders */
-	st->rps = dip->di_dkst.dks_rps;		/* # revolutions / second */
-	st->sizes = sdsizedrv[unit];		/* partition table */
-
-	check_sdst(unit, st);
-
-	for (i = 0; i < PNUM; i++) {
-		if (msg_header_printed == 0) {
-			if (((stsz(i) != 0) || (stof(i) != 0))
-			    && ((stsz(i) != disz(i)) || (stof(i) != diof(i)))) {
-				msg_header_printed = 1;
-			}
-		}
-	}
-
-	for (i = 0; i < PNUM; i++) {
-		stsz(i) = disz(i);
-		stof(i) = diof(i);
-	}
-
-	if (msg_header_printed) {
-		printf(Warn_Part, unit);
-		for (i = 0; i < PNUM; i++)
-			printf(Pr_Part_Fmt, unit, pname[i], stsz(i), stof(i));
-	}
-}
-
-static
-diskinfo2disklabel(unit, dip, dlp)
-	int unit;
-	register struct diskinfo *dip;
-	register struct disklabel *dlp;
-{
-	register int i;
-
-	dlp->d_type = DTYPE_SCSI;			/* drive type */
-	dlp->d_secsize = sdd_softc[unit].sdd_sectsize;	/* # of bytes per sector */
-	dlp->d_nsectors = dip->di_dkst.dks_nsect;	/* # sectors/track */
-	dlp->d_ntracks = dip->di_dkst.dks_ntrak;	/* # tracks/cylinder */
-	dlp->d_ncylinders = dip->di_dkst.dks_ncyl;	/* # cylinders */
-	dlp->d_secpercyl = dip->di_dkst.dks_nsect * dip->di_dkst.dks_ntrak;
-							/* # sectors/cylinder */
-	dlp->d_rpm = dip->di_dkst.dks_rps * 60;		/* # revolutions / second */
-	dlp->d_bbsize = BBSIZE;	/*XXX*/	/* size of boot area at sn0, bytes */
-	dlp->d_sbsize = SBSIZE;	/*XXX*/	/* max size of fs superblock, bytes */
-
-	for (i = 0; i < PNUM; i++) {
-		dlsz(i) = disz(i);
-		dlof(i) = diof(i);
-	}
-}
-#endif /* DISKINFO */
-
-/* #ifdef DISKINFO KU:XXX */
-static
-disklabel2diskinfo(unit, dlp, dip)
-	int unit;
-	register struct disklabel *dlp;
-	register struct diskinfo *dip;
-{
-	register int i;
-
-	dip->di_magic = DISKINFO_MAGIC;
-	dip->di_dkst.dks_nsect = dlp->d_nsectors;	/* # sectors/track */
-	dip->di_dkst.dks_ntrak = dlp->d_ntracks;	/* # tracks/cylinder */
-	dip->di_dkst.dks_ncyl = dlp->d_ncylinders;	/* # cylinders */
-	dip->di_dkst.dks_rps = dlp->d_rpm / 60;		/* # revolutions/second */
-
-	for (i = 0; i < PNUM; i++) {
-		disz(i) = dlsz(i);
-		diof(i) = dlof(i);
-	}
-}
-/* #endif /* DISKINFO */
 
 static
 sdst2disklabel(unit, st, dlp)
@@ -3160,6 +2997,20 @@ sdwrite(dev, uio, flag)
 
 #define MAXBL 256
 
+struct Partinfo {
+/*00*/	daddr_t dp_nblocks;		/* partition size (sector #) */
+/*04*/	daddr_t dp_blkoff;		/* partition start block */
+/*08*/
+};
+
+struct dkst {
+/*00*/	int dks_ncyl;			/* # cylinders / drive */
+/*04*/	int dks_ntrak;			/* # tracks / cylinder */
+/*08*/	int dks_nsect;			/* # sectors / track */
+/*0c*/	int dks_rps;			/* # revolutions / second */
+/*10*/
+};
+
 /*ARGSUSED*/
 sdioctl(dev, cmd, data, flag)
 	dev_t dev;
@@ -3288,8 +3139,6 @@ sdioctl(dev, cmd, data, flag)
 		}
 
 		*(struct disklabel *)(sdtmp + LABELOFFSET) = sdlabel[unit];
-		disklabel2diskinfo(unit, &sdlabel[unit],
-				    &((struct firstsector *)sdtmp)->diskinfo);
 
 		/**** WRITE sector 0 ****/
 

@@ -9,12 +9,10 @@
  *
  * from: $Hdr: fbreg.h,v 4.300 91/06/27 20:43:07 root Rel41 $ SONY
  *
- *	@(#)fbreg.h	7.2 (Berkeley) %G%
+ *	@(#)fbreg.h	7.3 (Berkeley) %G%
  */
 
 #ifdef KERNEL
-
-#include <machine/fix_machine_type.h>
 
 struct fb_softc {
 	int	fbs_state;
@@ -23,15 +21,6 @@ struct fb_softc {
 	int	fbs_flag;
 };
 
-#ifdef news700
-#define	splfb		spl4
-#endif
-#if defined(news800) || defined(news1800)
-#define	splfb		spl5
-#endif
-#if defined(news1200) || defined(news1700)
-#define	splfb		spl3
-#endif
 #if defined(news3200) || defined(news3400)
 #define	splfb		spl3
 #endif
@@ -73,19 +62,19 @@ struct fbreg {
 	u_char	fb_unit;	/* unit no */
 
 	union {
-	    lBitblt	_fb_bitblt;	/* bitblt command */
-	    lBatchBitblt _fb_batchbitblt; /* batch bitblt command */
-	    lTileBitblt	_fb_tilebitblt;	/* tile bitblt command */
-	    lBitblt3	_fb_bitblt3;	/* 3 operand bitblt command */
-	    lPrimLine	_fb_polyline;	/* (disjoint) polyline */
-	    lPrimRect	_fb_rectangle;	/* rectangle */
-	    lPrimFill	_fb_fillscan;	/* fill pattern */
-	    lPrimMarker	_fb_polymarker;	/* polymarker */
-	    lPrimText	_fb_text;	/* text display */
-	    lPrimDot	_fb_polydot;	/* polydot */
-	    lScrType	_fb_scrtype;	/* screen type */
-	    lCursor2	_fb_cursor;	/* cursor area */
-	    lPalette	_fb_palette;	/* get/set palette */
+	    lBitblt	_fb_bitblt;		/* bitblt command */
+	    lBatchBitblt _fb_batchbitblt;	/* batch bitblt command */
+	    lTileBitblt	_fb_tilebitblt;		/* tile bitblt command */
+	    lBitblt3	_fb_bitblt3;		/* 3 operand bitblt command */
+	    lPrimLine	_fb_polyline;		/* (disjoint) polyline */
+	    lPrimRect	_fb_rectangle;		/* rectangle */
+	    lPrimFill	_fb_fillscan;		/* fill pattern */
+	    lPrimMarker	_fb_polymarker;		/* polymarker */
+	    lPrimText	_fb_text;		/* text display */
+	    lPrimDot	_fb_polydot;		/* polydot */
+	    lScrType	_fb_scrtype;		/* screen type */
+	    lCursor2	_fb_cursor;		/* cursor area */
+	    lPalette	_fb_palette;		/* get/set palette */
 	    lPoint	_fb_point;
 	    int		_fb_data;
 	    lVideoCtl	_fb_videoctl;
@@ -93,6 +82,7 @@ struct fbreg {
 	    lFbIoctl	_fb_ioctl;
 	} fb_un;
 };
+
 #define fb_bitblt	fb_un._fb_bitblt
 #define fb_batchbitblt	fb_un._fb_batchbitblt
 #define fb_tilebitblt	fb_un._fb_tilebitblt
@@ -162,8 +152,8 @@ struct fbreg {
 #define FB_ROK		0	/* OK */
 #define FB_RERROR	1	/* some error occurred */
 
-#define	FBUNIT(dev) (minor(dev) & 0x7f)
-#define	FBVIDEO(dev) (minor(dev) & 0x80)
+#define	FBUNIT(dev)	(minor(dev) & 0x7f)
+#define	FBVIDEO(dev)	(minor(dev) & 0x80)
 
 #define FBPRI	(PRIBIO+1)
 
