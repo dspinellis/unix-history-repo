@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)1.2.t	6.2 (Berkeley) %G%
+.\"	@(#)1.2.t	6.3 (Berkeley) %G%
 .\"
 .sh "Memory management\(dg
 .NH 3
@@ -50,15 +50,16 @@ Protection and sharing options are defined in <mman.h> as:
 /* mapping type; choose one */
 #define MAP_FILE	0x01	/* mapped from a file */
 #define MAP_SWAP	0x02	/* mapped from swap space */
-#define MAP_MEMORY	0x04	/* mapped from device memory */
+#define MAP_MEMORY	0x03	/* mapped from device memory */
 
 /* sharing types; choose one */
-#define	MAP_SHARED	0x10	/* share changes */
-#define	MAP_PRIVATE	0x20	/* changes are private */
+#define	MAP_SHARED	0x04	/* share changes */
+#define	MAP_PRIVATE	0x00	/* changes are private */
 
 /* other flags */
-#define MAP_FIXED	0x40	/* map region must be allocated at addr */
-#define MAP_EXTEND	0x80	/* for MAP_FILE, the file may be extended */
+#define MAP_FIXED	0x10	/* map region must be allocated at addr */
+#define MAP_EXTEND	0x20	/* for MAP_FILE, the file may be extended */
+#define MAP_HASSEMPHORE	0x40	/* region may contain semaphores */
 .DE
 The cpu-dependent size of a page is returned by the
 \fIgetpagesize\fP system call:
@@ -155,10 +156,10 @@ caddr_t addr;
 .DE
 \fIAddr\fP must lie within a MAP_SHARED region with at least modes
 PROT_READ and PROT_WRITE.
+The MAP_HASSEMAPHORE flag must have been specified when the region was created.
 The process will remain in a sleeping state
 until some other process issues an \fImwakeup\fP for the same byte
-within the region (possibly from a different virtual address)
-using the call:
+within the region using the call:
 .DS
 mwakeup(addr)
 caddr_t addr;
