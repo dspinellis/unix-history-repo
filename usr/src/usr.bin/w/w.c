@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)w.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)w.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -102,18 +102,18 @@ char	*ctime();
 char	*rindex();
 FILE	*popen();
 struct	tm *localtime();
+time_t	findidle();
 
 int	debug;			/* true if -d flag: debugging output */
 int	header = 1;		/* true if -h flag: don't print heading */
 int	lflag = 1;		/* true if -l flag: long style output */
 int	login;			/* true if invoked as login shell */
-int	idle;			/* number of minutes user is idle */
+time_t	idle;			/* number of minutes user is idle */
 int	nusers;			/* number of users logged in now */
 char *	sel_user;		/* login of particular user selected */
 char firstchar;			/* first char of name of prog invoked as */
 time_t	jobtime;		/* total cpu time visible */
 time_t	now;			/* the current time of day */
-struct	tm *nowt;		/* current time as time struct */
 struct	timeval boottime;
 time_t	uptime;			/* time of last reboot & elapsed time since */
 int	np;			/* number of processes currently active */
@@ -193,11 +193,10 @@ main(argc, argv)
 		readpr();
 
 	ut = fopen("/etc/utmp","r");
+	time(&now);
 	if (header) {
 		/* Print time of day */
-		time(&now);
-		nowt = localtime(&now);
-		prtat(nowt);
+		prtat(&now);
 
 		/*
 		 * Print how long system has been up.
@@ -356,10 +355,13 @@ putline()
 
 	if (lflag)
 		/* print when the user logged in */
-		prtat(localtime(&utmp.ut_time));
+		prtat(&utmp.ut_time);
 
 	/* print idle time */
-	prttime(idle," ");
+	if (idle >= 36 * 60)
+		printf("%2ddays ", (idle + 12 * 60) / (24 * 60));
+	else
+		prttime(idle," ");
 
 	if (lflag) {
 		/* print CPU time for all processes & children */
@@ -391,8 +393,12 @@ findidle()
 	return(diff);
 }
 
+#define	HR	(60 * 60)
+#define	DAY	(24 * HR)
+#define	MON	(30 * DAY)
+
 /*
- * prttime prints a time in hours and minutes.
+ * prttime prints a time in hours and minutes or minutes and seconds.
  * The character string tail is printed at the end, obvious
  * strings to pass are "", " ", or "am".
  */
@@ -400,36 +406,42 @@ prttime(tim, tail)
 	time_t tim;
 	char *tail;
 {
-	register int didhrs = 0;
 
 	if (tim >= 60) {
 		printf("%3d:", tim/60);
-		didhrs++;
-	} else {
-		printf("    ");
-	}
-	tim %= 60;
-	if (tim > 0 || didhrs) {
-		printf(didhrs&&tim<10 ? "%02d" : "%2d", tim);
-	} else {
-		printf("  ");
-	}
+		tim %= 60;
+		printf("%02d", tim);
+	} else if (tim > 0)
+		printf("    %2d", tim);
+	else
+		printf("      ");
 	printf("%s", tail);
 }
 
-/* prtat prints a 12 hour time given a pointer to a time of day */
-prtat(p)
-	struct tm *p;
-{
-	register int t, pm;
+char *weekday[] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
+char *month[] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+		"Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
 
-	t = p -> tm_hour;
-	pm = (t > 11);
-	if (t > 11)
-		t -= 12;
-	if (t == 0)
-		t = 12;
-	prttime(t*60 + p->tm_min, pm ? "pm" : "am");
+/* prtat prints a 12 hour time given a pointer to a time of day */
+prtat(time)
+	long *time;
+{
+	struct tm *p;
+	register int hr, pm;
+
+	p = localtime(time);
+	hr = p->tm_hour;
+	pm = (hr > 11);
+	if (hr > 11)
+		hr -= 12;
+	if (hr == 0)
+		hr = 12;
+	if (now - *time <= 18 * HR)
+		prttime(hr * 60 + p->tm_min, pm ? "pm" : "am");
+	else if (now - *time <= 7 * DAY)
+		printf(" %s%2d%s", weekday[p->tm_wday], hr, pm ? "pm" : "am");
+	else
+		printf(" %2d%s%2d", p->tm_mday, month[p->tm_mon], p->tm_year);
 }
 
 /*
