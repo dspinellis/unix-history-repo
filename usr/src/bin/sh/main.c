@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <signal.h>
@@ -160,11 +160,10 @@ cmdloop(top) {
 	union node *n;
 	struct stackmark smark;
 	int inter;
-	int numeof;
+	int numeof = 0;
 
 	TRACE(("cmdloop(%d) called\n", top));
 	setstackmark(&smark);
-	numeof = 0;
 	for (;;) {
 		if (pendingsigs)
 			dotrap();
@@ -188,6 +187,7 @@ cmdloop(top) {
 			numeof++;
 		} else if (n != NULL && nflag == 0) {
 			job_warning = (job_warning == 2) ? 1 : 0;
+			numeof = 0;
 			evaltree(n, 0);
 		}
 		popstackmark(&smark);
