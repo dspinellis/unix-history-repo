@@ -1,4 +1,4 @@
-#	@(#)TODO	5.9 (Berkeley) %G%
+#	@(#)TODO	5.10 (Berkeley) %G%
 
 NOTE: Changed the lookup on a page of inodes to search from the back
 in case the same inode gets written twice on the same page.
@@ -12,6 +12,21 @@ Keith:
 		that isn't deleted/truncated?  Get some numbers about
 		what percentage of the stuff that the cleaner thinks
 		might be live is live.  If it's high, get rid of lfs_bmapv.
+
+	There is a nasty problem in that it may take *more* room to write
+	the data to clean a segment than is returned by the new segment
+	because of indirect blocks in segment 2 being dirtied by the data
+	being copied into the log from segment 1.  The suggested solution
+	at this point is to detect it when we have no space left on the
+	filesystem, write the extra data into the last segment (leaving
+	no clean ones), make it a checkpoint and shut down the file system
+	for fixing by a utility reading the raw partition.  Argument is
+	that this should never happen and is practically impossible to fix
+	since the cleaner would have to theoretically build a model of the
+	entire filesystem in memory to detect the condition occurring.
+	A file coalescing cleaner will help avoid the problem, and one
+	that reads/writes from the raw disk could fix it.
+
 DONE	Currently, inodes are being flushed to disk synchronously upon
 		creation -- see ufs_makeinode.  However, only the inode
 		is flushed, the directory "name" is written using VOP_BWRITE,
