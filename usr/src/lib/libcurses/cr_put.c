@@ -11,7 +11,7 @@ int		plodput();
  * as formatting of lines (printing of control characters,
  * line numbering and the like).
  *
- * %G% (Berkeley) @(#)cr_put.c	1.3
+ * %G% (Berkeley) @(#)cr_put.c	1.4
  */
 
 /*
@@ -223,11 +223,10 @@ plod(cnt)
 	}
 	else
 	/*
-	 * No home and no up means it's impossible, so we return an
-	 * incredibly big number to make cursor motion win out.
+	 * No home and no up means it's impossible.
 	 */
 		if (!UP && destline < outline)
-			return (500);
+			return -1;
 	if (GT)
 		i = destcol % HARDTABS + destcol / HARDTABS;
 	else
@@ -350,7 +349,7 @@ dontcr:
 			if (plodflg)	/* avoid a complex calculation */
 				plodcnt--;
 			else {
-				i = _win->_y[outline-_win->_begy][outcol-_win->_begx];
+				i = curscr->_y[outline][outcol];
 				if ((i&_STANDOUT) == (curscr->_flags&_STANDOUT))
 					putchar(i);
 				else
