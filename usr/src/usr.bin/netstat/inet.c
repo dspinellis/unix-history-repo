@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)inet.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)inet.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -44,8 +44,8 @@ struct	inpcb inpcb;
 struct	tcpcb tcpcb;
 struct	socket sockb;
 
-static char *inetname __P((struct in_addr *));
-static void inetprint __P((struct in_addr *, int, char *));
+char *inetname __P((struct in_addr *));
+void inetprint __P((struct in_addr *, int, char *));
 
 /*
  * Print a summary of connections related to an Internet
@@ -327,7 +327,7 @@ icmp_stats(off, name)
  * Pretty print an Internet address (net address + port).
  * If the nflag was specified, use numbers instead of names.
  */
-static void
+void
 inetprint(in, port, proto)
 	register struct in_addr *in;
 	int port;
@@ -354,7 +354,7 @@ inetprint(in, port, proto)
  * If the nflag has been supplied, give
  * numeric value, otherwise try for symbolic name.
  */
-static char *
+char *
 inetname(inp)
 	struct in_addr *inp;
 {
