@@ -1,4 +1,4 @@
-/*	vfs_lookup.c	6.5	84/01/04	*/
+/*	vfs_lookup.c	6.6	84/02/15	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -583,12 +583,12 @@ found:
 					goto bad;
 				}
 				/*
-				 * If directory is setuid, then user must own
+				 * If directory is "sticky", then user must own
 				 * the directory, or the file in it, else he
 				 * may not delete it (unless he's root). This
 				 * implements append-only directories.
 				 */
-				if ((u.u_pdir->i_mode & ISUID) &&
+				if ((u.u_pdir->i_mode & ISVTX) &&
 				    u.u_uid != 0 &&
 				    u.u_uid != u.u_pdir->i_uid &&
 				    dp->i_uid != u.u_uid) {
