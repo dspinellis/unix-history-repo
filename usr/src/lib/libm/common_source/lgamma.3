@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)lgamma.3	6.4 (Berkeley) %G%
+.\"     @(#)lgamma.3	6.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt LGAMMA 3
@@ -22,8 +22,9 @@ Lgamma returns ln\||\(*G(x)| where
 .Bd -unfilled -offset indent
 \(*G(x) = \(is\d\s8\z0\s10\u\u\s8\(if\s10\d t\u\s8x\-1\s10\d e\u\s8\-t\s10\d dt	for x > 0 and
 .br
-\(*G(x) = \(*p/(\(*G(1\-x)\|sin(\(*px))	for x < 1.  \}
+\(*G(x) = \(*p/(\(*G(1\-x)\|sin(\(*px))	for x < 1.
 .Ed
+.\}
 .if n \
 Lgamma returns ln\||\(*G(x)|.
 .ta
@@ -109,6 +110,7 @@ double x;
 	return (lgamma(x));
 }
 .Ed
+.El
 .Sh DIAGNOSTICS
 The reserved operand is returned on a
 .Tn VAX
