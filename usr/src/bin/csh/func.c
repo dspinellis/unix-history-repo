@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)func.c	5.35 (Berkeley) %G%";
+static char sccsid[] = "@(#)func.c	5.36 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -1090,7 +1090,7 @@ doumask(v, t)
     (void) umask(i);
 }
 
-typedef int RLIM_TYPE;
+typedef quad_t RLIM_TYPE;
 
 static struct limits {
     int     limconst;
