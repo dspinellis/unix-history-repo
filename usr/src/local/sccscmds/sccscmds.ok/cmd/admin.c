@@ -1,7 +1,7 @@
 # include "../hdr/defines.h"
 # include "../hdr/had.h"
 
-SCCSID(@(#)admin.c	4.1);
+static char Sccsid[] = "@(#)admin.c	4.2	%G%";
 
 /*
 	Program to create new SCCS files and change parameters
@@ -33,9 +33,9 @@ char *ifile, *tfile;
 char *z;	/* for validation program name */
 char had[26], had_flag[26], rm_flag[26];
 char	*Comments, *Mrs;
-char Valpgm[]		"/usr/local/val";
+char Valpgm[] = "/usr/local/val";
 int irel, fexists, num_files;
-int	VFLAG	0;
+int	VFLAG = 0;
 int	Domrs;
 char *Sflags[];
 char *anames[MAXNAMES], *enames[MAXNAMES];
@@ -232,8 +232,8 @@ char *argv[];
 	Change flags for 'fatal' so that it will return to this
 	routine (main) instead of terminating processing.
 	*/
-	Fflags =& ~FTLEXIT;
-	Fflags =| FTLJMP;
+	Fflags &= ~FTLEXIT;
+	Fflags |= FTLJMP;
 
 	/*
 	Call 'admin' routine for each file argument.
@@ -514,7 +514,7 @@ char *afile;
 
 			gpkt.p_wrttn = 1;	/* don't write previous line */
 
-			cp =+ 2;	/* point to flag character */
+			cp += 2;	/* point to flag character */
 			k = *cp - 'a';
 
 			if (!had_flag[k] && !rm_flag[k]) {

@@ -1,6 +1,6 @@
 # include "../hdr/defines.h"
 
-SCCSID(@(#)bdiff.c	4.2);
+static char Sccsid[] = "@(#)bdiff.c	4.3	%G%";
 
 /*
 	This program segments two files into pieces of <= seglim lines
@@ -22,8 +22,8 @@ SCCSID(@(#)bdiff.c	4.2);
 
 int seglim;	/* limit of size of file segment to be generated */
 
-char diff[]	"/bin/diff";
-char tempskel[] "/tmp/bdXXXXX";		/* used to generate temp file names */
+char diff[] = "/bin/diff";
+char tempskel[] = "/tmp/bdXXXXX";		/* used to generate temp file names */
 char tempfile[32];
 char otmp[32], ntmp[32];
 int linenum;
@@ -66,13 +66,13 @@ char *argv[];
 
 	if (argc > 3) {
 		if (argv[3][0] == '-' && argv[3][1] == 's')
-			Fflags =& ~FTLMSG;
+			Fflags &= ~FTLMSG;
 		else {
 			if ((seglim = patoi(argv[3])) == -1)
 				fatal("non-numeric limit (bd4)");
 			if (argc == 5 && argv[4][0] == '-' &&
 					argv[4][1] == 's')
-				Fflags =& ~FTLMSG;
+				Fflags &= ~FTLMSG;
 		}
 	}
 
@@ -226,7 +226,7 @@ char *argv[];
 			if (status&~0x100)
 				fatal(sprintf(Error,"'%s' failed (bd6)",diff));
 		}
-		linenum =+ seglim;
+		linenum += seglim;
 
 		/*
 		Remove temporary files.
@@ -300,7 +300,7 @@ char *lp;
 
 		default:
 			lp = satoi(lp,&num);
-			num =+ linenum;
+			num += linenum;
 			printf("%d",num);
 		}
 	}

@@ -1,6 +1,6 @@
 # include	"../hdr/defines.h"
 
-SCCSID(@(#)help.c	4.1);
+static char Sccsid[] = "@(#)help.c	4.2	%G%";
 
 /*
 	Program to locate helpful info in an ascii file.
@@ -39,8 +39,8 @@ SCCSID(@(#)help.c	4.1);
 
 	If the argument is omitted, the program requests it.
 */
-char	oldfile[]	"/usr/local/lib/sccs.hf";
-char	helpdir[]	"/usr/local/lib/help/";
+char	oldfile[] = "/usr/local/lib/sccs.hf";
+char	helpdir[] = "/usr/local/lib/help/";
 char	hfile[64];
 FILE	*iop;
 char	line [512];

@@ -1,7 +1,7 @@
 # include	"../hdr/defines.h"
 # include	"../hdr/had.h"
 
-SCCSID(@(#)comb.c	4.2);
+static char Sccsid[] = "@(#)comb.c	4.3	%G%";
 USXALLOC();
 
 struct packet gpkt;
@@ -68,8 +68,8 @@ register char *argv[];
 	if (HADP && HADC)
 		fatal("can't have both -p and -c (cb2)");
 	setsig();
-	Fflags =& ~FTLEXIT;
-	Fflags =| FTLJMP;
+	Fflags &= ~FTLEXIT;
+	Fflags |= FTLJMP;
 	iop = stdout;
 	for (i = 1; i < argc; i++)
 		if (p=argv[i])

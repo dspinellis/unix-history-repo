@@ -1,7 +1,7 @@
 # include "../hdr/defines.h"
 # include "../hdr/had.h"
 
-SCCSID(@(#)prt.c	4.1);
+static char Sccsid[] = "@(#)prt.c	4.2	%G%";
 
 /*
 	Program to print parts or all of an SCCS file.
@@ -38,7 +38,7 @@ long cutoff;
 long revcut;
 int linenum;
 char *ysid;
-char *flagdesc[26] {	"",
+char *flagdesc[26] = {	"",
 			"branch",
 			"ceiling",
 			"default SID",
@@ -145,8 +145,8 @@ char *argv[];
 	Change flags for 'fatal' so that it will return to this
 	routine (main) instead of terminating processing.
 	*/
-	Fflags =& ~FTLEXIT;
-	Fflags =| FTLJMP;
+	Fflags &= ~FTLEXIT;
+	Fflags |= FTLJMP;
 
 	/*
 	Call 'prt' routine for each file argument.
@@ -336,7 +336,7 @@ getdel(delp,lp)
 register struct delent *delp;
 register char *lp;
 {
-	lp =+ 2;
+	lp += 2;
 	NONBLANK(lp);
 	delp->type = *lp++;
 	NONBLANK(lp);

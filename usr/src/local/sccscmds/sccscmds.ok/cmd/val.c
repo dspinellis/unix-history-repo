@@ -47,7 +47,7 @@ struct delent {		/* structure for delta table entry */
 	char *pred;
 } del;
 
-SCCSID(@(#)val.c	4.2);
+static char Sccsid[] = "@(#)val.c	4.3	%G%";
 
 /* This is the main program that determines whether the command line
  * comes from the standard input or read off the original command
@@ -68,7 +68,7 @@ char	*argv[];
 			if (line[0] != '\n') {
 				repl (line,'\n','\0');
 				process(line);
-				ret_code =| inline_err;
+				ret_code |= inline_err;
 			}
 		}
 	}
@@ -126,7 +126,7 @@ char	*p_line;
 		testklt = 1;
 		NONBLANK(p_line);
 		if (*p_line == '-') {
-			p_line =+ 1;
+			p_line += 1;
 			c = *p_line;
 			p_line++;
 			switch (c) {
@@ -147,14 +147,14 @@ char	*p_line;
 					p_line = getval(p_line,name);
 					break;
 				default:
-					inline_err =| UNKDUP_ERR;
+					inline_err |= UNKDUP_ERR;
 			}
 			/*
 			use 'had' array and determine if the keyletter
 			was given twice.
 			*/
 			if (had[c - 'a']++ && testklt++)
-				inline_err =| UNKDUP_ERR;
+				inline_err |= UNKDUP_ERR;
 		}
 		else {
 			/*
@@ -168,7 +168,7 @@ char	*p_line;
 	check if any files were named as arguments
 	*/
 	if (num_files == 0)
-		inline_err =| FILARG_ERR;
+		inline_err |= FILARG_ERR;
 	/*
 	check for error in command line.
 	*/
@@ -188,7 +188,7 @@ char	*p_line;
 		*/
 		sprintf(path,"%s",filelist[j]);
 		validate(path,sid,type,name);
-		inline_err =| infile_err;
+		inline_err |= infile_err;
 		/*
 		check for error from 'validate' and call 'report'
 		depending on 'silent' flag.
@@ -223,14 +223,14 @@ char	*c_name;
 	infile_err = goods = goodt = goodn = hadmflag = 0;
 	sinit(&gpkt,c_path);
 	if (!sccsfile(c_path) || (gpkt.p_iop = fopen(c_path,"r")) == NULL)
-		infile_err =| FILENAM_ERR;
+		infile_err |= FILENAM_ERR;
 	else {
 		l = get_line(&gpkt);		/* read first line in file */
 		/*
 		check that it is header line.
 		*/
 		if (*l++ != CTLCHAR || *l++ != HEAD)
-			infile_err =| CORRUPT_ERR;
+			infile_err |= CORRUPT_ERR;
 
 		else {
 			/*
@@ -243,14 +243,14 @@ char	*c_name;
 				check for invalid or ambiguous SID.
 				*/
 				if (invalid(c_sid))
-					infile_err =| INVALSID_ERR;
+					infile_err |= INVALSID_ERR;
 			/*
 			read delta table checking for errors and/or
 			SID.
 			*/
 			if (do_delt(&gpkt,goods,c_sid)) {
 				fclose(gpkt.p_iop);
-				infile_err =| CORRUPT_ERR;
+				infile_err |= CORRUPT_ERR;
 				return;
 			}
 
@@ -266,36 +266,36 @@ char	*c_name;
 					NONBLANK(l);
 					repl(l,'\n','\0');
 					if (*l == TYPEFLAG) {
-						l =+ 2;
+						l += 2;
 						if (equal(c_type,l))
 							goodt++;
 					}
 					else if (*l == MODFLAG) {
 						hadmflag++;
-						l =+ 2;
+						l += 2;
 						if (equal(c_name,l))
 							goodn++;
 					}
 				}
 				if (*(--l) != BUSERTXT) {
 					fclose(gpkt.p_iop);
-					infile_err =| CORRUPT_ERR;
+					infile_err |= CORRUPT_ERR;
 					return;
 				}
 				/*
 				check if 'y' flag matched '-y' arg value.
 				*/
 				if (!goodt && HADY)
-					infile_err =| TYPE_ERR;
+					infile_err |= TYPE_ERR;
 				/*
 				check if 'm' flag matched '-m' arg value.
 				*/
 				if (HADM && !hadmflag) {
 					if (!equal(auxf(sname(c_path),'g'),c_name))
-						infile_err =| NAME_ERR;
+						infile_err |= NAME_ERR;
 				}
 				else if (HADM && hadmflag && !goodn)
-						infile_err =| NAME_ERR;
+						infile_err |= NAME_ERR;
 			}
 			else read_to(BUSERTXT,&gpkt);
 			read_to(EUSERTXT,&gpkt);
@@ -456,13 +456,13 @@ register struct packet *pkt;
 	if ((n = fgets(pkt->p_line,sizeof(pkt->p_line),pkt->p_iop)) != NULL) {
 		pkt->p_slnno++;
 		for (p = pkt->p_line; *p; )
-			pkt->p_chash =+ *p++;
+			pkt->p_chash += *p++;
 	}
 	else {
 		if (!pkt->p_chkeof)
-			infile_err =| CORRUPT_ERR;
+			infile_err |= CORRUPT_ERR;
 		if (pkt->do_chksum && (pkt->p_chash ^ pkt->p_ihash)&0xFFFF)
-			infile_err =| CORRUPT_ERR;
+			infile_err |= CORRUPT_ERR;
 	}
 	return(n);
 }
@@ -498,7 +498,7 @@ register struct packet *pkt;
 			continue;
 		else {
 			if (!((iord = *p++) == INS || iord == DEL || iord == END)) {
-				infile_err =| CORRUPT_ERR;
+				infile_err |= CORRUPT_ERR;
 				return(0);
 			}
 			NONBLANK(p);
@@ -512,7 +512,7 @@ register struct packet *pkt;
 		}
 	}
 	if (pkt->p_q)
-		infile_err =| CORRUPT_ERR;
+		infile_err |= CORRUPT_ERR;
 	return(0);
 }
 
@@ -529,7 +529,7 @@ int iord;
 		if (cur->q_sernum <= ser)
 			break;
 	if (cur->q_sernum == ser)
-		infile_err =| CORRUPT_ERR;
+		infile_err |= CORRUPT_ERR;
 	prev->q_next = q = alloc(sizeof(*q));
 	q->q_next = cur;
 	q->q_sernum = ser;
@@ -562,7 +562,7 @@ int ser;
 		setkeep(pkt);
 	}
 	else
-		infile_err =| CORRUPT_ERR;
+		infile_err |= CORRUPT_ERR;
 }
 
 
@@ -671,7 +671,7 @@ register char *d_sid;
 	if (pkt->p_line[1] != BUSERNAM)
 		return(1);
 	if (HADR && !goods && !(infile_err & INVALSID_ERR))
-		infile_err =| NONEXSID_ERR;
+		infile_err |= NONEXSID_ERR;
 	return(0);
 }
 
