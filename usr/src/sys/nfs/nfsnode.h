@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfsnode.h	7.21 (Berkeley) %G%
+ *	@(#)nfsnode.h	7.22 (Berkeley) %G%
  */
 
 /*
@@ -123,7 +123,7 @@ int	nfs_advlock __P((struct vop_advlock_args *));
 int	nfs_blkatoff __P((struct vop_blkatoff_args *));
 int	nfs_vget __P((struct vop_vget_args *));
 int	nfs_valloc __P((struct vop_valloc_args *));
-void	nfs_vfree __P((struct vop_vfree_args *));
+int	nfs_vfree __P((struct vop_vfree_args *));
 int	nfs_truncate __P((struct vop_truncate_args *));
 int	nfs_update __P((struct vop_update_args *));
 int	bwrite();		/* NFS needs a bwrite routine */
