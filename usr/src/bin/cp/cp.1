@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)cp.1	6.16 (Berkeley) %G%
+.\"	@(#)cp.1	6.17 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CP 1
@@ -43,6 +43,9 @@ The following options are available:
 .It Fl H
 When encountering a symbolic link on the command line, follow it.  All other
 symbolic links encountered in the traversal are not followed.
+Provided for the
+.Fl R
+option which does not follow symbolic links by default.
 .It Fl R
 If
 .Ar source_file
@@ -118,18 +121,24 @@ conditions must be fulfilled or both bits are removed.
 .Pp
 Appropriate permissions are required for file creation or overwriting.
 .Pp
-Symbolic links are not followed unless the
+Symbolic links are always followed unless the 
+.Fl R 
+flag is set in which case symbolic links are not followed by default.  
+However, the
 .Fl H
 or 
 .Fl h
-options are specified, in which case the behavior is as detailed above.
+flags (in conjuction with the
+.Fl R
+flag) cause symbolic link following as detailed above.
 .Pp
 .Nm Cp
 exits 0 on success, >0 if an error occurred.
 .Sh SEE ALSO
 .Xr mv 1 ,
 .Xr rcp 1 ,
-.Xr umask 2
+.Xr umask 2 , 
+.Xr fts 3
 .Sh HISTORY
 The
 .Nm cp
