@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_le.c	7.13 (Berkeley) %G%
+ *	@(#)if_le.c	7.14 (Berkeley) %G%
  */
 
 #include "le.h"
@@ -48,6 +48,12 @@
 #include <netns/ns_if.h>
 #endif
 
+#if defined (CCITT) && defined (LLC)
+#include <sys/socketvar.h>
+#include <netccitt/x25.h>
+extern llc_ctlinput(), cons_rtrequest();
+#endif
+
 #include <machine/cpu.h>
 #include <hp300/hp300/isr.h>
 #include <machine/mtpr.h>
@@ -70,7 +76,7 @@ struct	driver ledriver = {
 struct	isr le_isr[NLE];
 int	ledebug = 0;		/* console error messages */
 
-int	leintr(), leinit(), leioctl(), lestart(), ether_output();
+int	leintr(), leinit(), leioctl(), lestart(), ether_output(), lereset();
 struct	mbuf *m_devget();
 extern	struct ifnet loif;
 
@@ -172,6 +178,7 @@ leattach(hd)
 	ifp->if_name = "le";
 	ifp->if_mtu = ETHERMTU;
 	ifp->if_init = leinit;
+	ifp->if_reset = lereset;
 	ifp->if_ioctl = leioctl;
 	ifp->if_output = ether_output;
 	ifp->if_start = lestart;
@@ -749,6 +756,17 @@ leioctl(ifp, cmd, data)
 			break;
 		}
 		break;
+
+#if defined (CCITT) && defined (LLC)
+	case SIOCSIFCONF_X25:
+		ifp -> if_flags |= IFF_UP;
+		ifa -> ifa_rtrequest = cons_rtrequest;
+		error = x25_llcglue(PRC_IFUP, ifa -> ifa_addr);
+		if (error == 0)
+			leinit(ifp -> if_unit);
+		break;
+#endif /* CCITT && LLC */
+
 
 	case SIOCSIFFLAGS:
 		if ((ifp->if_flags & IFF_UP) == 0 &&
