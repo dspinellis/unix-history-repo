@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 #
 COMMON=	../common_source
 CFLAGS=	-O -DVMUNIX -I${COMMON}
@@ -29,7 +29,7 @@ MAN=	troff.0
 all: troff
 
 troff: ${OBJS} ${LIBC}
-	${CC} -o $@ ${CFLAGS} ${OBJS}
+	${CC} -o $@ ${CFLAGS} ${OBJS} -lcompat
 
 hytab.o: ${COMMON}/hytab.c
 	${CC} -R -c ${COMMON}/hytab.c
