@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_pcb.c	7.15 (Berkeley) %G%
+ *	@(#)tp_pcb.c	7.16 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -655,6 +655,7 @@ tp_attach(so, protocol)
 	tpcb->tp_cong_win = 1;	
 	tpcb->tp_state = TP_CLOSED;
 	tpcb->tp_vers  = TP_VERSION;
+	tpcb->tp_notdetached = 1;
 
 		   /* Spec says default is 128 octets,
 			* that is, if the tpdusize argument never appears, use 128.
@@ -770,6 +771,12 @@ tp_detach(tpcb)
 	if (tpcb->tp_rsyq)
 		tp_rsyflush(tpcb);
 
+	if (tpcb->tp_next) {
+		remque(tpcb);
+		tpcb->tp_next = tpcb->tp_prev = 0;
+	}
+	tpcb->tp_notdetached = 0;
+
 	IFDEBUG(D_CONN)
 		printf("calling (...nlproto->...)(0x%x, so 0x%x)\n", 
 			tpcb->tp_npcb, so);
@@ -785,6 +792,16 @@ tp_detach(tpcb)
 		printf("after xxx_pcbdetach\n");
 	ENDDEBUG
 
+	if (tpcb->tp_state == TP_LISTENING) {
+		register struct tp_pcb **tt;
+		for (tt = &tp_listeners; *tt; tt = &((*tt)->tp_nextlisten))
+			if (*tt == tpcb)
+				break;
+		if (*tt)
+			*tt = tpcb->tp_nextlisten;
+		else
+			printf("tp_detach from listen: should panic\n");
+	}
 	if( tpcb->tp_refp->tpr_state == REF_OPENING ) {
 		/* no connection existed here so no reference timer will be called */
 		IFDEBUG(D_CONN)

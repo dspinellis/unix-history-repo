@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_pcb.h	7.12 (Berkeley) %G%
+ *	@(#)tp_pcb.h	7.13 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -252,7 +252,8 @@ struct tp_pcb {
 #define USES_PDN(t)			(((t)->tp_flags & TPF_NLQOS_PDN) != 0)
 
 		tp_oktonagle:1,			/* Last unsent packet that may be append to */
-		tp_unused:15;
+		tp_notdetached:1,		/* Call tp_detach before freeing XXXXXXX */
+		tp_unused:14;
 
 
 #ifdef TP_PERF_MEAS
