@@ -1,4 +1,4 @@
-/*	tty_pty.c	6.7	84/09/10	*/
+/*	tty_pty.c	6.8	84/12/20	*/
 
 /*
  * Pseudo-teletype Driver
@@ -342,7 +342,7 @@ ptcwrite(dev, uio)
 			break;
 		iov = uio->uio_iov;
 		if (iov->iov_len == 0) {
-			while (pti->pt_flags&PF_REMOTE && tp->t_rawq.c_cc != 0)
+			while ((pti->pt_flags&PF_REMOTE) && tp->t_rawq.c_cc != 0)
 				sleep((caddr_t)&tp->t_rawq.c_cf, TTIPRI);
 			if (pti->pt_flags&PF_REMOTE) {
 				(void) putc(0, &tp->t_rawq);
