@@ -1,0 +1,110 @@
+
+
+# DO NOT DELETE THIS LINE -- g++dep uses it.
+# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
+
+PlotFile.o : PlotFile.C \
+  PlotFile.h \
+  fstream.h \
+  iostream.h \
+  streambuf.h 
+SFile.o : SFile.C \
+  SFile.h \
+  fstream.h \
+  iostream.h \
+  streambuf.h 
+editbuf.o : editbuf.C \
+  ioprivate.h \
+  streambuf.h \
+  editbuf.h \
+  fstream.h \
+  iostream.h \
+  streambuf.h
+filebuf.o : filebuf.C \
+  ioprivate.h \
+  streambuf.h 
+fstream.o : fstream.C \
+  ioprivate.h \
+  streambuf.h \
+  fstream.h \
+  iostream.h \
+  streambuf.h
+igetline.o : igetline.C \
+  iostream.h \
+  streambuf.h 
+igetsb.o : igetsb.C \
+  ioprivate.h \
+  streambuf.h \
+  iostream.h \
+  streambuf.h
+indstream.o : indstream.C \
+  indstream.h \
+  iostream.h \
+  streambuf.h 
+iostream.o : iostream.C \
+  ioprivate.h \
+  streambuf.h \
+  iostream.h \
+  streambuf.h \
+  floatio.h
+makebuf.o : makebuf.C \
+  ioprivate.h \
+  streambuf.h \
+  fstream.h \
+  iostream.h \
+  streambuf.h 
+parsestream.o : parsestream.C \
+  ioprivate.h \
+  streambuf.h \
+  parsestream.h
+procbuf.o : procbuf.C \
+  ioprivate.h \
+  streambuf.h \
+  procbuf.h \
+  streambuf.h 
+sbufvform.o : sbufvform.C \
+  ioprivate.h \
+  streambuf.h \
+  floatio.h
+sbufvscan.o : sbufvscan.C \
+  ioprivate.h \
+  streambuf.h \
+  floatio.h
+sgetline.o : sgetline.C \
+  ioprivate.h \
+  streambuf.h 
+stdstrbufs.o : stdstrbufs.C \
+  ioprivate.h \
+  streambuf.h 
+stdstreams.o : stdstreams.C \
+  ioprivate.h \
+  streambuf.h \
+  iostream.h \
+  streambuf.h
+stream.o : stream.C \
+  ioprivate.h \
+  streambuf.h \
+  stream.h \
+  iostream.h \
+  streambuf.h \
+  strstream.h
+streambuf.o : streambuf.C \
+  ioprivate.h \
+  streambuf.h 
+strstream.o : strstream.C \
+  ioprivate.h \
+  streambuf.h \
+  strstream.h \
+  iostream.h \
+  streambuf.h
+stdiostream.o : stdiostream.C \
+  stdiostream.h \
+  streambuf.h
+dtoa.o : dtoa.C \
+  ioprivate.h \
+  streambuf.h
+outfloat.o : outfloat.C \
+  ioprivate.h \
+  streambuf.h
+
+# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
