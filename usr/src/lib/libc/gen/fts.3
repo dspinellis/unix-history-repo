@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)fts.3	5.12 (Berkeley) %G%
+.\"     @(#)fts.3	5.13 (Berkeley) %G%
 .\"
 .Dd 
 .Dt FTS 3
@@ -126,15 +126,6 @@ A directory which cannot be read.
 An error return; the external variable
 .Va errno
 will be set to indicate the error.
-.It Dv FTS_DOT
-A file named
-.Ql \&.
-or
-.Ql ..
-which was not specified as a file name to
-.Fn fts_open
-(see
-.Dv FTS_SEEDOT ) .
 .It Dv FTS_DP
 A directory being visited in post-order.
 The contents of the
@@ -361,7 +352,7 @@ By default, unless they are specified as path arguments to
 .Fn fts_open ,
 any files named
 .Ql \&.
-and
+or
 .Ql ..
 encountered in the file hierarchy are
 ignored.
