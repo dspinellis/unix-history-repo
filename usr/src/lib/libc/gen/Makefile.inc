@@ -1,6 +1,6 @@
-#	@(#)Makefile.inc	5.27 (Berkeley) %G%
+#	@(#)Makefile.inc	5.28 (Berkeley) %G%
 
-# gen sources
+# machine-independent gen sources
 .PATH: ${.CURDIR}/${MACHINE}/gen ${.CURDIR}/gen ${.CURDIR}/gen/regexp
 
 SRCS+=	alarm.c assert.c clock.c closedir.c crypt.c ctermid.c ctime.c \
@@ -20,25 +20,15 @@ SRCS+=	alarm.c assert.c clock.c closedir.c crypt.c ctermid.c ctime.c \
 # gen/regexp sources
 SRCS+=	regerror.c regexp.c regsub.c
 
-.if   (${MACHINE} == "hp300" || ${MACHINE} == "luna68k")
-SRCS+=	_setjmp.s alloca.s fabs.s ldexp.s modf.s setjmp.s
-SRCS+=	adddf3.s addsf3.s ashlsi3.s ashrsi3.s cmpdf2.s cmpsf2.s divdf3.s \
-	divsf3.s divsi3.s extendsfdf2.s fixdfsi.s fixunsdfsi.s \
-	floatsidf.s lshlsi3.s lshrsi3.s modsi3.s muldf3.s mulsf3.s mulsi3.s \
-	negdf2.s negsf2.s saveregs.c subdf3.s subsf3.s truncdfsf2.s udivsi3.s \
-	umodsi3.s umulsi3.s
-.elif (${MACHINE} == "i386")
-SRCS+=	_setjmp.s alloca.s fabs.s ldexp.c modf.s setjmp.s
-SRCS+=	divsi3.s fixdfsi.s fixunsdfsi.s udivsi3.s
-.elif (${MACHINE} == "mips")
-SRCS+=	_setjmp.s insque.s ldexp.s modf.s remque.s setjmp.s
-.elif (${MACHINE} == "tahoe")
-CFLAGS+=-I/sys
-SRCS+=	_setjmp.s alloca.s fabs.s ldexp.s modf.s setjmp.s
-SRCS+=	udiv.s urem.s
-.elif (${MACHINE} == "vax")
-SRCS+=	_setjmp.s alloca.s fabs.s ldexp.s modf.s setjmp.s
-SRCS+=	udiv.s urem.s
+# machine-dependent gen sources
+.include "${.CURDIR}/${MACHINE}/gen/Makefile.inc"
+
+.if (${MACHINE} == "mips" || ${MACHINE} == "tahoe" || ${MACHINE} == "vax")
+errlst.o errlst.po:
+	${CC} -S ${CFLAGS} ${.IMPSRC}
+	ed - < ${.CURDIR}/${MACHINE}/:errfix errlst.s
+	${AS} -o ${.TARGET} errlst.s
+	rm -f errlst.s
 .endif
 
 MAN3+=	alarm.0 clock.0 crypt.0 ctermid.0 ctime.0 ctype.0 directory.0 \
@@ -46,13 +36,12 @@ MAN3+=	alarm.0 clock.0 crypt.0 ctermid.0 ctime.0 ctype.0 directory.0 \
 	getgrent.0 getgrouplist.0 getmntinfo.0 getnetgrent.0 getpass.0 \
 	getpwent.0 getttyent.0 getusershell.0 glob.0 initgroups.0 isalnum.0 \
 	isalpha.0 isascii.0 isblank.0 iscntrl.0 isdigit.0 isgraph.0 isinf.0 \
-	islower.0 isprint.0 ispunct.0 isspace.0 isupper.0 isxdigit.0 \
-	ldexp.0 modf.0 nice.0 nlist.0 pause.0 popen.0 psignal.0 \
-	raise.0 regexp.0 scandir.0 setjmp.0 setmode.0 setuid.0 \
-	siginterrupt.0 signal.0 sigsetops.0 sleep.0 syslog.0 \
-	tcsendbreak.0 tcsetpgrp.0 tcgetpgrp.0 tcsetattr.0 time.0 \
-	times.0 timezone.0 tolower.0 toupper.0 ttyname.0 tzset.0 \
-	ualarm.0 unvis.0 usleep.0 utime.0 valloc.0 vis.0
+	islower.0 isprint.0 ispunct.0 isspace.0 isupper.0 isxdigit.0 ldexp.0 \
+	modf.0 nice.0 nlist.0 pause.0 popen.0 psignal.0 raise.0 regexp.0 \
+	scandir.0 setjmp.0 setmode.0 setuid.0 siginterrupt.0 signal.0 \
+	sigsetops.0 sleep.0 syslog.0 tcgetpgrp.0 tcsendbreak.0 tcsetattr.0 \
+	tcsetpgrp.0 time.0 times.0 timezone.0 tolower.0 toupper.0 ttyname.0 \
+	tzset.0 ualarm.0 unvis.0 usleep.0 utime.0 valloc.0 vis.0
 
 MLINKS=	crypt.3 encrypt.3 crypt.3 setkey.3
 MLINKS+=ctime.3 asctime.3 ctime.3 difftime.3 ctime.3 gmtime.3 \
@@ -97,11 +86,3 @@ MLINKS+=tcsetattr.3 tcgetattr.3 tcsetattr.3 cfsetospeed.3 \
 	tcsetattr.3 cfmakeraw.3
 MLINKS+=ttyname.3 isatty.3 ttyname.3 ttyslot.3
 MLINKS+=tzset.3 tzsetwall.3
-
-.if (${MACHINE} == "mips" || ${MACHINE} == "tahoe" || ${MACHINE} == "vax")
-errlst.o errlst.po:
-	${CC} -S ${CFLAGS} ${.IMPSRC}
-	ed - < ${.CURDIR}/${MACHINE}/:errfix errlst.s
-	${AS} -o ${.TARGET} errlst.s
-	rm -f errlst.s
-.endif

@@ -1,6 +1,6 @@
-#	@(#)Makefile.inc	5.6 (Berkeley) %G%
+#	@(#)Makefile.inc	5.7 (Berkeley) %G%
 
-# net sources
+# machine-independent net sources
 .PATH: ${.CURDIR}/${MACHINE}/net ${.CURDIR}/net
 
 SRCS+=	gethostnamadr.c getnetbyaddr.c getnetbyname.c getnetent.c \
@@ -11,17 +11,8 @@ SRCS+=	gethostnamadr.c getnetbyaddr.c getnetbyname.c getnetent.c \
 	res_debug.c res_init.c res_mkquery.c res_query.c res_send.c \
 	send.c sethostent.c
 
-.if   (${MACHINE} == "hp300" || ${MACHINE} == "luna68k")
-SRCS+=	htonl.s htons.s ntohl.s ntohs.s
-.elif (${MACHINE} == "i386")
-SRCS+=	htonl.s htons.s ntohl.s ntohs.s
-.elif (${MACHINE} == "mips")
-SRCS+=	htonl.s htons.s
-.elif (${MACHINE} == "tahoe")
-SRCS+=	htonl.s htons.s ntohl.s ntohs.s
-.elif (${MACHINE} == "vax")
-SRCS+=	htonl.s htons.s ntohl.s ntohs.s
-.endif
+# machine-dependent net sources
+.include "${.CURDIR}/${MACHINE}/net/Makefile.inc"
 
 MAN3+=	byteorder.0 gethostbyname.0 getnetent.0 getprotoent.0 getservent.0 \
 	inet.0 ns.0 rcmd.0 resolver.0 \
