@@ -5,8 +5,8 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)sh.dol.c	5.5 (Berkeley) 1/15/88";
-#endif
+static char sccsid[] = "@(#)dol.c	5.7 (Berkeley) %G%";
+#endif /* not lint */
 
 #include "sh.h"
 
