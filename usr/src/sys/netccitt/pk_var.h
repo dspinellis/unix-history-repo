@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_var.h	7.9 (Berkeley) %G%
+ *	@(#)pk_var.h	7.10 (Berkeley) %G%
  */
 
 
@@ -131,6 +131,16 @@ struct llinfo_x25 {
 #define LXF_VALID	0x1		/* Circuit is live, etc. */
 #define LXF_RTHELD	0x2		/* this lcb references rtentry */
 #define LXF_LISTEN	0x4		/* accepting incoming calls */
+
+/*
+ * miscellenous debugging info
+ */
+struct mbuf_cache {
+	int	mbc_size;
+	int	mbc_num;
+	int	mbc_oldsize;
+	struct	mbuf **mbc_cache;
+};
 
 #if defined(KERNEL) && defined(CCITT)
 struct	pkcb *pkcbhead;		/* head of linked list of networks */
