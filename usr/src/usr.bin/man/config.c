@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)config.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)config.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -69,16 +69,18 @@ cadd(add1, len1, add2)
 	char *add1, *add2;
 	register size_t len1;
 {
-	static size_t buflen;
+	static size_t buflen, boff;
 	static char *bp, *endp;
 	register size_t len2;
 
 	len2 = add2 ? strlen(add2) : 0;
 	if (bp == NULL || bp + len1 + len2 + 2 >= endp) {
 		buflen += MAX(len1 + len2 + 2, 1024);
+		boff = bp ? bp - pathbuf : 0;
 		if ((pathbuf = realloc(pathbuf, buflen)) == NULL)
 			enomem();
-		endp = (bp = pathbuf) + buflen;
+		bp = pathbuf + boff;
+		endp = pathbuf + buflen;
 	}
 	bcopy(add1, bp, len1);
 	bp += len1;
