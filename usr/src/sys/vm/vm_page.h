@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_page.h	7.9 (Berkeley) %G%
+ *	@(#)vm_page.h	7.10 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -81,8 +81,6 @@ struct vm_page {
 	u_short		flags;		/* see below */
 
 	vm_offset_t	phys_addr;	/* physical address of page */
-	vm_prot_t	page_lock;	/* Uses prohibited by data manager */
-	vm_prot_t	unlock_request;	/* Outstanding unlock request */
 };
 
 /*
@@ -99,10 +97,9 @@ struct vm_page {
 #define	PG_TABLED	0x0040		/* page is in VP table (O) */
 #define	PG_COPYONWRITE	0x0080		/* must copy page before changing (O) */
 #define	PG_FICTITIOUS	0x0100		/* physical page doesn't exist (O) */
-#define	PG_ABSENT	0x0200		/* virtual page doesn't exist (O) */
-#define	PG_FAKE		0x0400		/* page is placeholder for pagein (O) */
-#define	PG_FILLED	0x0800		/* client flag to set when filled */
-#define	PG_DIRTY	0x1000		/* client flag to set when dirty */
+#define	PG_FAKE		0x0200		/* page is placeholder for pagein (O) */
+#define	PG_FILLED	0x0400		/* client flag to set when filled */
+#define	PG_DIRTY	0x0800		/* client flag to set when dirty */
 #define	PG_PAGEROWNED	0x4000		/* DEBUG: async paging op in progress */
 #define	PG_PTPAGE	0x8000		/* DEBUG: is a user page table page */
 
@@ -196,8 +193,6 @@ simple_lock_data_t	vm_page_queue_free_lock;
 #define	VM_PAGE_INIT(mem, object, offset) { \
 	(mem)->flags = PG_BUSY | PG_CLEAN | PG_FAKE; \
 	vm_page_insert((mem), (object), (offset)); \
-	(mem)->page_lock = VM_PROT_NONE; \
-	(mem)->unlock_request = VM_PROT_NONE; \
 	(mem)->wire_count = 0; \
 }
 
