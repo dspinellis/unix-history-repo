@@ -2,7 +2,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)gettytab	5.5 (Berkeley) %G%
+#	@(#)gettytab	5.6 (Berkeley) %G%
 #
 #
 # Most of the table entries here are just copies of the
@@ -83,12 +83,14 @@ X|Xwindow|X window system:\
 	:fd@:nd@:cd@:rw:sp#9600:
 
 #
-# Fast dialup terminals, 1200/300 rotary (can start either way)
+# Fast dialup terminals, 2400/1200/300 rotary (can start either way)
 #
+D2400|Fast-Dial-1200:\
+	:nx=D1200:tc=2400-baud:
 3|D1200|Fast-Dial-1200:\
 	:nx=D300:tc=1200-baud:
 5|D300|Fast-Dial-300:\
-	:nx=D1200:tc=300-baud:
+	:nx=D2400:tc=300-baud:
 
 #
 # Wierdo special case for fast crt's with hardcopy devices
