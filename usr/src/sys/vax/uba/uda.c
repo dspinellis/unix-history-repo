@@ -1,5 +1,5 @@
 /*
- *	@(#)uda.c	7.3 (Berkeley) %G%
+ *	@(#)uda.c	7.4 (Berkeley) %G%
  */
 
 /************************************************************************
@@ -298,17 +298,19 @@ udopen(dev, flag, fmt)
 	dev_t dev;
 	int flag, fmt;
 {
-	register int unit;
+	int unit;
 	register struct uba_device *ui;
 	register struct uda_softc *sc;
 	register struct disklabel *lp;
 	register struct partition *pp;
-	struct ra_info *ra = &ra_info[unit];
-	int s, i, part, mask = 1 << part;
+	register struct ra_info *ra;
+	int s, i, part, mask, error;
 	daddr_t start, end;
 
 	unit = udunit(dev);
 	part = udpart(dev);
+	mask = 1 << part;
+	ra = &ra_info[unit];
 	if (unit >= NRA || (ui = uddinfo[unit]) == 0 || ui->ui_alive == 0)
 		return (ENXIO);
 	sc = &uda_softc[ui->ui_ctlr];
@@ -330,11 +332,14 @@ udopen(dev, flag, fmt)
 			return (EIO);
 		}
 	}
-	(void) splx(s);
-	if (ui->ui_flags == 0)
-		rainit(ui, flag);
-	if (ui->ui_flags == 0)
-		return(ENXIO);  /* Didn't go online */
+	while (ra->rastate != OPEN && ra->rastate != OPENRAW &&
+	    ra->rastate != CLOSED)
+		sleep((caddr_t)ra, PZERO+1);
+	splx(s);
+	if (ui->ui_flags == 0 ||
+	    (ra->rastate != OPEN && ra->rastate != OPENRAW))
+		if (error = rainit(ui, flag))
+			return (error);
 
 	if (part >= lp->d_npartitions)
 		return (ENXIO);
@@ -475,59 +480,69 @@ rainit(ui, flags)
 	register struct disklabel *lp;
 	register struct uda_softc *sc;
 	register unit = ui->ui_unit;
+	register struct ra_info *ra = &ra_info[unit];
 	struct udadevice *udaddr;
 	char *msg, *readdisklabel();
-	int s, i, error = 0;
+	int s, i;
 	extern int cold;
 
 	lp = &udlabel[unit];
 	sc = &uda_softc[ui->ui_ctlr];
 
-	/* check to see if the device is really there. */
-	/* this code was taken from Fred Canters 11 driver */
-	udaddr = (struct udadevice *) ui->ui_mi->um_addr;
+	if (ui->ui_flags == 0) {
+		/* check to see if the device is really there. */
+		/* this code was taken from Fred Canters 11 driver */
+		udaddr = (struct udadevice *) ui->ui_mi->um_addr;
 
-	ra_info[unit].rastate = WANTOPEN;
-	s = spl5();
-	while(0 ==(mp = udgetcp(ui->ui_mi))){
-		uda_cp_wait++;
-		sleep((caddr_t)&uda_cp_wait,PSWP+1);
-		uda_cp_wait--;
-	}
-	mp->mscp_opcode = M_OP_ONLIN;
-	mp->mscp_unit = ui->ui_slave;
-		/* need to sleep on something */
-	mp->mscp_cmdref = (long) & ra_info[unit].ratype;
+		ra->rastate = WANTOPEN;
+		s = spl5();
+		while(0 ==(mp = udgetcp(ui->ui_mi))){
+			uda_cp_wait++;
+			sleep((caddr_t)&uda_cp_wait,PSWP+1);
+			uda_cp_wait--;
+		}
+		mp->mscp_opcode = M_OP_ONLIN;
+		mp->mscp_unit = ui->ui_slave;
+			/* need to sleep on something */
+		mp->mscp_cmdref = (long)ra;
 #ifdef	DEBUG
-	printd("uda: bring unit %d online\n",unit);
+		printd("uda: bring unit %d online\n",unit);
 #endif	
-	*((long *) mp->mscp_dscptr ) |= UDA_OWN | UDA_INT ;
-	i = udaddr->udaip;
+		*((long *) mp->mscp_dscptr ) |= UDA_OWN | UDA_INT ;
+		i = udaddr->udaip;
 #ifdef	lint
-	i = i;
+		i = i;
 #endif
-		/* make sure we wake up */
-	if (cold) {
-		(void) splx(s);
-		for (i = 10*1000; ra_info[unit].rastate == WANTOPEN && --i; )
-			DELAY(1000);
-	} else {
-		timeout(wakeup,(caddr_t) mp->mscp_cmdref,10 * hz);
-		sleep((caddr_t) mp->mscp_cmdref,PSWP+1); /*wakeup in udrsp() */
-		(void) splx(s);
+			/* make sure we wake up */
+		if (cold) {
+			(void) splx(s);
+			for (i = 10*1000; ra->rastate == WANTOPEN && --i; )
+				DELAY(1000);
+		} else {
+			timeout(wakeup, (caddr_t)ra, 10 * hz);
+			sleep((caddr_t)ra, PSWP+1);
+			/*wakeup in udrsp() */
+			(void) splx(s);
+		}
+		if (ra->rastate != OPENRAW) {
+			ra->rastate = CLOSED;
+			return (EIO);
+		}
 	}
-	if (ra_info[unit].rastate != OPENRAW)
-		return (EIO);
+
+	lp->d_secsize = DEV_BSIZE;
+	lp->d_secperunit = ra->radsize;
 
 	if (flags & O_NDELAY)
 		return (0);
-	ra_info[unit].rastate = RDLABEL;
+	ra->rastate = RDLABEL;
 	/*
 	 * Set up default sizes until we've read the label,
 	 * or longer if there isn't one there.
+	 * Set secpercyl, as readdisklabel wants to compute b_cylin
+	 * (although we don't need it).
 	 */
-	lp->d_secsize = DEV_BSIZE;
-	lp->d_secperunit = ra_info[unit].radsize;
+	lp->d_secpercyl = 1;
 	lp->d_npartitions = 1;
 	lp->d_partitions[0].p_size = lp->d_secperunit;
 	lp->d_partitions[0].p_offset = 0;
@@ -535,18 +550,18 @@ rainit(ui, flags)
 	 * Read pack label.
 	 */
 	if (msg = readdisklabel(udminor(unit, 0), udstrategy, lp)) {
-		log(LOG_ERR, "ra%d: no disk label\n", unit);
+		log(LOG_ERR, "ra%d: %s\n", unit, msg);
 #ifdef COMPAT_42
 		if (udmaptype(unit, lp))
-			ra_info[unit].rastate = OPEN;
+			ra->rastate = OPEN;
 		else
-#else
-			ra_info[unit].rastate = OPENRAW;
+			ra->rastate = OPENRAW;
 #endif
-		ra_info[unit].rastate = OPENRAW;
+		ra->rastate = OPENRAW;
 	} else
-		ra_info[unit].rastate = OPEN;
-	return (error);
+		ra->rastate = OPEN;
+	wakeup((caddr_t)ra);
+	return (0);
 }
 
 udstrategy(bp)
@@ -1017,8 +1032,8 @@ udrsp(um, ud, sc, i)
 				um->um_tab.b_actl->b_forw = dp;
 			um->um_tab.b_actl = dp;
 			ui->ui_flags = 1;       /* mark it online */
-			ra_info[unit].radsize=(daddr_t)mp->mscp_untsize;
 			ra_info[unit].rastate = OPENRAW;
+			ra_info[unit].radsize=(daddr_t)mp->mscp_untsize;
 #ifdef	DEBUG
 			printd("uda: unit %d online\n", mp->mscp_unit);
 #endif			
