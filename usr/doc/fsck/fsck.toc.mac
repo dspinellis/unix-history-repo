@@ -1,0 +1,49 @@
+.if t .nr W 6i+\w'\s-2\ \0\0\s+2'u
+.ev 0
+.if t .ll 6i+\w'\s-2\ \0\0\s+2'u
+.if t .lt 6i+\w'\s-2\ \0\0\s+2'u
+.if t .ta 6i
+.if n .ta 81n
+.ev
+.ev 1
+.if t .ll 6i+\w'\s-2\ \0\0\s+2'u
+.if t .lt 6i+\w'\s-2\ \0\0\s+2'u
+.if t .ta 6i
+.if n .ta 81n
+.ev
+.ev 2
+.if t .ll 6i+\w'\s-2\ \0\0\s+2'u
+.if t .lt 6i+\w'\s-2\ \0\0\s+2'u
+.if t .ta 6i
+.if n .ta 81n
+.ev
+.ds :? FSCK
+.PH ""
+.OH "'\s9\f2\*(:?\fP''\\\\nP\s0'"
+.EH "'\s9\\\\nP''\f2\*(:?\^\fP\s0'"
+.nr P 17
+.de x
+.DS
+.B "\&\s-1\\$1\s+1"
+.if n .SP 1
+.if t .SP .5
+.S -2
+.nf
+.cs 2 36
+\!.cs 2 36
+..
+.de y
+.fi
+.cs 2
+\!.cs 2
+.S
+.DE
+..
+.br
+.bp
+.rs
+.SP 3
+.ce 2
+INDEX OF MESSAGES
+(Alphabetically within each section)
+.SP 1
