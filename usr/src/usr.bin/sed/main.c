@@ -16,7 +16,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -221,11 +221,13 @@ again:
  * Like fgets, but go through the list of files chaining them together.
  * Set len to the length of the line.
  */
-char *
-mf_fgets(lenp)
-	size_t *lenp;
+int
+mf_fgets(sp, spflag)
+	SPACE *sp;
+	enum e_spflag spflag;
 {
 	static FILE *f;		/* Current open file */
+	size_t len;
 	char c, *p;
 
 	if (f == NULL)
@@ -233,7 +235,7 @@ mf_fgets(lenp)
 		for (;;) {
 			if (files == NULL) {
 				lastline = 1;
-				return (NULL);
+				return (0);
 			}
 			if (files->fname == NULL) {
 				f = stdin;
@@ -253,13 +255,19 @@ mf_fgets(lenp)
 		}
 
 	if (lastline) {
-		*lenp = 0;
-		return (NULL);
+		sp->len = 0;
+		return (0);
 	}
 
-	p = fgetline(f, lenp);
+	/*
+	 * Use fgetline so that we can handle essentially infinite input
+	 * data.  Can't use the pointer into the stdio buffer as the process
+	 * space because the ungetc() can cause it to move.
+	 */
+	p = fgetline(f, &len);
 	if (ferror(f))
 		err(FATAL, "%s: %s", fname, strerror(errno ? errno : EIO));
+	cspace(sp, p, len, spflag);
 
 	linenum++;
 	/* Advance to next non-empty file */
@@ -268,7 +276,7 @@ mf_fgets(lenp)
 		files = files->next;
 		if (files == NULL) {
 			lastline = 1;
-			return (p);
+			return (1);
 		}
 		if (files->fname == NULL) {
 			f = stdin;
@@ -280,7 +288,7 @@ mf_fgets(lenp)
 		}
 	}
 	(void)ungetc(c, f);
-	return (p);
+	return (1);
 }
 
 /*
