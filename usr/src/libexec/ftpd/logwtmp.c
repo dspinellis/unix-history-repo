@@ -18,7 +18,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)logwtmp.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)logwtmp.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -29,8 +29,13 @@ static char sccsid[] = "@(#)logwtmp.c	5.2 (Berkeley) %G%";
 
 #define	WTMPFILE	"/usr/adm/wtmp"
 
-static int fd;
+static int fd = -1;
 
+/*
+ * Modified version of logwtmp that holds wtmp file open
+ * after first call, for use with ftp (which may chroot
+ * after login, but before logout).
+ */
 logwtmp(line, name, host)
 	char *line, *name, *host;
 {
@@ -39,9 +44,9 @@ logwtmp(line, name, host)
 	time_t time();
 	char *strncpy();
 
-	if (!fd && (fd = open(WTMPFILE, O_WRONLY|O_APPEND, 0)) < 0)
+	if (fd < 0 && (fd = open(WTMPFILE, O_WRONLY|O_APPEND, 0)) < 0)
 		return;
-	if (!fstat(fd, &buf)) {
+	if (fstat(fd, &buf) == 0) {
 		(void)strncpy(ut.ut_line, line, sizeof(ut.ut_line));
 		(void)strncpy(ut.ut_name, name, sizeof(ut.ut_name));
 		(void)strncpy(ut.ut_host, host, sizeof(ut.ut_host));

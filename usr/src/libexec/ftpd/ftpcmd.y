@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1985 Regents of the University of California.
+ * Copyright (c) 1985, 1988 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ftpcmd.y	5.13 (Berkeley) %G%
+ *	@(#)ftpcmd.y	5.14 (Berkeley) %G%
  */
 
 /*
@@ -25,7 +25,7 @@
 %{
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpcmd.y	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpcmd.y	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -55,7 +55,6 @@ extern  int pdata;
 extern	char hostname[];
 extern	char *globerr;
 extern	int usedefault;
-extern	int unique;
 extern  int transflag;
 extern  char tmpline[];
 char	**glob();
@@ -63,8 +62,8 @@ char	**glob();
 static	int cmd_type;
 static	int cmd_form;
 static	int cmd_bytesz;
-char cbuf[512];
-char *fromname;
+char	cbuf[512];
+char	*fromname;
 
 char	*index();
 %}
@@ -99,31 +98,7 @@ cmd_list:	/* empty */
 
 cmd:		USER SP username CRLF
 		= {
-			extern struct passwd *sgetpwnam();
-
-			logged_in = 0;
-			if (strcmp((char *) $3, "ftp") == 0 ||
-			  strcmp((char *) $3, "anonymous") == 0) {
-				if ((pw = sgetpwnam("ftp")) != NULL) {
-					guest = 1;
-					reply(331,
-				  "Guest login ok, send ident as password.");
-				}
-				else {
-					reply(530, "User %s unknown.", $3);
-				}
-			} else if (checkuser((char *) $3)) {
-				guest = 0;
-				pw = sgetpwnam((char *) $3);
-				if (pw == NULL) {
-					reply(530, "User %s unknown.", $3);
-				}
-				else {
-				    reply(331, "Password required for %s.", $3);
-				}
-			} else {
-				reply(530, "User %s access denied.", $3);
-			}
+			user((char *) $3);
 			free((char *) $3);
 		}
 	|	PASS SP password CRLF
@@ -134,10 +109,10 @@ cmd:		USER SP username CRLF
 	|	PORT SP host_port CRLF
 		= {
 			usedefault = 0;
-			if (pdata > 0) {
+			if (pdata >= 0) {
 				(void) close(pdata);
+				pdata = -1;
 			}
-			pdata = -1;
 			reply(200, "PORT command successful.");
 		}
 	|	PASV CRLF
@@ -213,14 +188,14 @@ cmd:		USER SP username CRLF
 	|	STOR check_login SP pathname CRLF
 		= {
 			if ($2 && $4 != NULL)
-				store((char *) $4, "w");
+				store((char *) $4, "w", 0);
 			if ($4 != NULL)
 				free((char *) $4);
 		}
 	|	APPE check_login SP pathname CRLF
 		= {
 			if ($2 && $4 != NULL)
-				store((char *) $4, "a");
+				store((char *) $4, "a", 0);
 			if ($4 != NULL)
 				free((char *) $4);
 		}
@@ -320,11 +295,8 @@ cmd:		USER SP username CRLF
 		}
 	|	STOU check_login SP pathname CRLF
 		= {
-			if ($2 && $4 != NULL) {
-				unique++;
-				store((char *) $4, "w");
-				unique = 0;
-			}
+			if ($2 && $4 != NULL)
+				store((char *) $4, "w", 1);
 			if ($4 != NULL)
 				free((char *) $4);
 		}
@@ -355,7 +327,11 @@ rcmd:		RNFR check_login SP pathname CRLF
 username:	STRING
 	;
 
-password:	STRING
+password:	/* empty */
+		= {
+			$$ = (int) "";
+		}
+	|	STRING
 	;
 
 byte_size:	NUMBER
@@ -465,7 +441,7 @@ pathname:	pathstring
 		 * processing, but only gives a 550 error reply.
 		 * This is a valid reply in some cases but not in others.
 		 */
-		if ($1 && strncmp((char *) $1, "~", 1) == 0) {
+		if (logged_in && $1 && strncmp((char *) $1, "~", 1) == 0) {
 			$$ = (int)*glob((char *) $1);
 			if (globerr != NULL) {
 				reply(550, globerr);
@@ -499,7 +475,9 @@ extern jmp_buf errcatch;
 #define	ARGS	1	/* expect miscellaneous arguments */
 #define	STR1	2	/* expect SP followed by STRING */
 #define	STR2	3	/* expect STRING */
-#define	OSTR	4	/* optional STRING */
+#define	OSTR	4	/* optional SP then STRING */
+#define	ZSTR1	5	/* SP then optional STRING */
+#define	ZSTR2	6	/* optional STRING after SP */
 
 struct tab {
 	char	*name;
@@ -511,7 +489,7 @@ struct tab {
 
 struct tab cmdtab[] = {		/* In order defined in RFC 765 */
 	{ "USER", USER, STR1, 1,	"<sp> username" },
-	{ "PASS", PASS, STR1, 1,	"<sp> password" },
+	{ "PASS", PASS, ZSTR1, 1,	"<sp> password" },
 	{ "ACCT", ACCT, STR1, 0,	"(specify account)" },
 	{ "REIN", REIN, ARGS, 0,	"(reinitialize server state)" },
 	{ "QUIT", QUIT, ARGS, 1,	"(terminate service)", },
@@ -536,7 +514,7 @@ struct tab cmdtab[] = {		/* In order defined in RFC 765 */
 	{ "RNTO", RNTO, STR1, 1,	"<sp> file-name" },
 	{ "ABOR", ABOR, ARGS, 1,	"(abort operation)" },
 	{ "DELE", DELE, STR1, 1,	"<sp> file-name" },
-	{ "CWD",  CWD,  OSTR, 1,	"[ <sp> directory-name]" },
+	{ "CWD",  CWD,  OSTR, 1,	"[ <sp> directory-name ]" },
 	{ "XCWD", CWD,	OSTR, 1,	"[ <sp> directory-name ]" },
 	{ "LIST", LIST, OSTR, 1,	"[ <sp> path-name ]" },
 	{ "NLST", NLST, OSTR, 1,	"[ <sp> path-name ]" },
@@ -587,46 +565,48 @@ getline(s, n, iop)
 		*cs++ = tmpline[c];
 		if (tmpline[c] == '\n') {
 			*cs++ = '\0';
-			if (debug) {
-				syslog(LOG_DEBUG, "FTPD: command: %s", s);
-			}
+			if (debug)
+				syslog(LOG_DEBUG, "command: %s", s);
 			tmpline[0] = '\0';
 			return(s);
 		}
-		if (c == 0) {
+		if (c == 0)
 			tmpline[0] = '\0';
-		}
 	}
-	while (--n > 0 && (c = getc(iop)) != EOF) {
-		while ((0377&c) == IAC) {
-			switch (0377&(c = getc(iop))) {
+	while ((c = getc(iop)) != EOF) {
+		c &= 0377;
+		if (c == IAC) {
+		    if ((c = getc(iop)) != EOF) {
+			c &= 0377;
+			switch (c) {
 			case WILL:
 			case WONT:
 				c = getc(iop);
-				printf("%c%c%c", IAC, WONT, 0377&c);
+				printf("%c%c%c", IAC, DONT, 0377&c);
 				(void) fflush(stdout);
-				break;
+				continue;
 			case DO:
 			case DONT:
 				c = getc(iop);
-				printf("%c%c%c", IAC, DONT, 0377&c);
+				printf("%c%c%c", IAC, WONT, 0377&c);
 				(void) fflush(stdout);
+				continue;
+			case IAC:
 				break;
 			default:
-				break;
+				continue;	/* ignore command */
 			}
-			c = getc(iop); /* try next character */
+		    }
 		}
-		*cs++ = 0377&c;
-		if ((0377&c) == '\n')
+		*cs++ = c;
+		if (--n <= 0 || c == '\n')
 			break;
 	}
 	if (c == EOF && cs == s)
 		return (NULL);
 	*cs++ = '\0';
-	if (debug) {
-		syslog(LOG_DEBUG, "FTPD: command: %s", s);
-	}
+	if (debug)
+		syslog(LOG_DEBUG, "command: %s", s);
 	return (s);
 }
 
@@ -642,7 +622,7 @@ toolong()
 	(void) time(&now);
 	if (logging) {
 		syslog(LOG_INFO,
-			"FTPD: User %s timed out after %d seconds at %s",
+			"User %s timed out after %d seconds at %s",
 			(pw ? pw -> pw_name : "unknown"), timeout, ctime(&now));
 	}
 	dologout(1);
@@ -667,14 +647,12 @@ yylex()
 				dologout(0);
 			}
 			(void) alarm(0);
-			if ((cp = index(cbuf, '\r'))) {
+			if ((cp = index(cbuf, '\r')))
 				*cp++ = '\n'; *cp = '\0';
-			}
 			if ((cp = strpbrk(cbuf, " \n")))
 				cpos = cp - cbuf;
-			if (cpos == 0) {
+			if (cpos == 0)
 				cpos = 4;
-			}
 			c = cbuf[cpos];
 			cbuf[cpos] = '\0';
 			upper(cbuf);
@@ -700,12 +678,20 @@ yylex()
 			/* FALL THRU */
 
 		case STR1:
+		case ZSTR1:
 			if (cbuf[cpos] == ' ') {
 				cpos++;
-				state = STR2;
+				state++;
 				return (SP);
 			}
 			break;
+
+		case ZSTR2:
+			if (cbuf[cpos] == '\n') {
+				state = CMD;
+				return (CRLF);
+			}
+			/* FALL THRU */
 
 		case STR2:
 			cp = &cbuf[cpos];
