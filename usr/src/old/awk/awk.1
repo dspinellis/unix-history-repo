@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)awk.1	6.5 (Berkeley) %G%
+.\"	@(#)awk.1	6.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt AWK 1
@@ -13,9 +13,7 @@
 .Nd pattern scanning and processing language
 .Sh SYNOPSIS
 .Nm awk
-.Oo
-.Op Fl \&F Ar \&c
-.Oo
+.Op Fl F Ar c
 .Op Fl f Ar prog_file
 .Op Ar prog
 .Ar
@@ -38,19 +36,17 @@ specified as
 .Fl f
 .Ar file .
 .Pp
-.Tw Ds
-.Tp Cx Fl F
-.Ar c
-.Cx
+.Bl -tag -width flag
+.It Fl F Ns Ar c 
 Specify a field separator of
 .Ar c .
-.Tp Fl f
+.It Fl f
 Use 
 .Ar prog_file
 as an input
 .Ar prog
 (an awk script).
-.Tp
+.El
 .Pp
 Files are read in order;
 if there are no files, the standard input is read.
@@ -77,8 +73,7 @@ a missing pattern always matches.
 .Pp
 An action is a sequence of statements.
 A statement can be one of the following:
-.Pp
-.Ds I
+.Bd -unfilled -offset indent
 if ( conditional ) statement [ else statement ]
 while ( conditional ) statement
 for ( expression ; conditional ; expression ) statement
@@ -90,7 +85,7 @@ print [ expression-list ] [ >expression ]
 printf format [, expression-list ] [ >expression ]
 next	# skip remaining patterns on this input line
 exit	# skip the rest of the input
-.De
+.Ed
 .Pp
 Statements are terminated by
 semicolons, newlines or right braces.
@@ -102,10 +97,7 @@ The C operators ++, \-\-, +=, \-=, *=, /=, and %=
 are also available in expressions.
 Variables may be scalars, array elements
 (denoted
-.Cx x
-.Op i
-.Cx )
-.Cx
+.x Ns Ns Op i ) 
 or fields.
 Variables are initialized to the null string.
 Array subscripts may be any string,
@@ -141,16 +133,13 @@ The last truncates its argument to an integer.
 The function
 .Fn substr s m n
 returns the
-.Cx Ar n
-.Cx \-
-.Cx character
-.Cx
+.Ar n Ns \- character 
 substring of
 .Ar s
 that begins at position
 .Ar m .
 The
-.Fn sprintf fmt expr expr \&...
+.Fn sprintf fmt expr expr ...
 function
 formats the expressions
 according to the
@@ -177,11 +166,10 @@ between an occurrence of the first pattern
 and the next occurrence of the second.
 .Pp
 A relational expression is one of the following:
-.Pp
-.Ds I
+.Bd -unfilled -offset indent
 expression matchop regular-expression
 expression relop expression
-.De
+.Ed
 .Pp
 where a relop is any of the six relational operators in C,
 and a matchop is either ~ (for contains)
@@ -210,26 +198,26 @@ the program with
 .Dl BEGIN { FS = "c" }
 .Pp
 or by using the
-.Cx Fl F
-.Ar c
-.Cx
+.Fl F Ns Ns Ar c 
 option.
 .Pp
 Other variable names with special meanings
 include
-.Dp Li NF
+.Pp
+.Bl -tag -width "file name" -compact
+.It Li NF
 the number of fields in the current record;
-.Dp Li NR
+.It Li NR
 the ordinal number of the current record;
-.Dp Li FILENAME
+.It Li FILENAME
 the name of the current input file;
-.Dp Li OFS
+.It Li OFS
 the output field separator (default blank);
-.Dp Li ORS
+.It Li ORS
 the output record separator (default newline);
-.Dp Li OFMT
+.It Li OFMT
 the output format for numbers (default "%.6g").
-.Dp
+.El
 .Pp
 .Sh EXAMPLES
 .Pp
@@ -242,11 +230,10 @@ Print first two fields in opposite order:
 .Dl { print $2, $1 }
 .Pp
 Add up first column, print sum and average:
-.Pp
-.Ds I
+.Bd -literal -offset indent
 	{ s += $1 }
 END	{ print "sum is", s, " average is", s/NR }
-.De
+.Ed
 .Pp
 Print fields in reverse order:
 .Pp
@@ -263,14 +250,24 @@ Print all lines whose first field is different from previous one:
 .Xr lex 1 ,
 .Xr sed 1
 .Pp
-A. V. Aho, B. W. Kernighan, P. J. Weinberger,
-.Em Awk \- a pattern scanning and processing language
+.Rs
+.%A A. V. Aho
+.%A B. W. Kernighan
+.%A P. J. Weinberger
+.%T "Awk \- a pattern scanning and processing language"
+.Re
 .Sh HISTORY
-.Nm Awk
-appeared in Version 7 AT&T UNIX.  A much improved
+The version of
+.Nm awk
+this man page describes
+appeared in Version
+.At v7 .
+A much improved
 and true to the book version of
 .Nm awk
-appeared in the AT&T Toolchest in the late 1980's.
+appeared in the
+.Tn AT&T
+Toolchest in the late 1980's.
 The version of
 .Nm awk
 this manual page describes
