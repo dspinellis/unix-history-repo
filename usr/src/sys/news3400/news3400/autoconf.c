@@ -12,7 +12,7 @@
  *
  * from: Utah $Hdr: autoconf.c 1.31 91/01/21$
  *
- *	@(#)autoconf.c	7.1 (Berkeley) %G%
+ *	@(#)autoconf.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -49,11 +49,7 @@
  */
 int	cold = 1;	/* if 1, still working on cold-start */
 int	dkn;		/* number of iostat dk numbers assigned so far */
-#ifdef __GNUC__
-int	cpuspeed = 12;	/* approx # instr per usec. */
-#else
 int	cpuspeed = 6;	/* approx # instr per usec. */
-#endif
 
 struct idrom	idrom;
 
