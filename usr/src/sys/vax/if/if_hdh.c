@@ -1,4 +1,4 @@
-/*	@(#)if_hdh.c	7.3 (Berkeley) %G% */
+/*	@(#)if_hdh.c	7.4 (Berkeley) %G% */
 
 
 /************************************************************************\
@@ -207,13 +207,14 @@ caddr_t reg;
  * the back pointers to common data structures.
  */
 hdhattach(ui)
-	struct uba_device *ui;
+	register struct uba_device *ui;
 {
 	register struct hdh_softc *sc = &hdh_softc[ui->ui_unit];
 	register struct impcb *ip;
 
-	if ((sc->hdh_imp = impattach(ui, hdhreset)) == 0)
-		return;;
+	if ((sc->hdh_imp = impattach(ui->ui_driver->ud_dname, ui->ui_unit,
+	    hdhreset)) == 0)
+		return;
 	ip = &sc->hdh_imp->imp_cb;
 	ip->ic_init = hdhinit;
 	ip->ic_output = hdhoutput;
@@ -238,6 +239,7 @@ int unit, uban;
 		return;
 	printf(" hdh%d", unit);
 	sc->hdh_imp->imp_if.if_flags &= ~IFF_RUNNING;
+	sc->hdh_imp->imp_cb.ic_oactive = 0;
 	sc->hdh_flags = 0;
 	(*sc->hdh_imp->imp_if.if_init)(sc->hdh_imp->imp_if.if_unit);
 }
