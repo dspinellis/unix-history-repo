@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_subr.c	7.3 (Berkeley) %G%
+ *	@(#)pk_subr.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -21,6 +21,8 @@
 #include "errno.h"
 #include "time.h"
 #include "kernel.h"
+
+#include "../net/if.h"
 
 #include "x25.h"
 #include "pk.h"
@@ -39,31 +41,32 @@ struct	x25_packet *pk_template ();
  *
  */
 
+struct pklcd *
 pk_attach (so)
 struct socket *so;
 {
 	register struct pklcd *lcp;
-	register struct mbuf *m;
-	register int error;
+	register int error = ENOBUFS;
 
-	if (error = soreserve (so, pk_sendspace, pk_recvspace))
-		return (error);
+	MALLOC(lcp, struct pklcd *, sizeof(*lcp), M_PCB, M_NOWAIT);
+	if (lcp) {
+		bzero((caddr_t)lcp, sizeof(*lcp));
+		if (so) {
+			error = soreserve (so, pk_sendspace, pk_recvspace);
+			so -> so_snd.sb_mbmax = pk_sendspace;
+			lcp -> lcd_so = so;
+			if (so -> so_options & SO_ACCEPTCONN)
+				lcp -> lcd_state = LISTEN;
+			else
+				lcp -> lcd_state = READY;
+		}
 
-	/* Hopefully we can remove this when SEQ_PKT is available (4.3?) */
-	so -> so_snd.sb_mbmax = pk_sendspace;
-
-	if ((m = m_getclr (M_DONTWAIT, MT_PCB)) == 0)
-		return (ENOBUFS);
-	lcp = mtod (m, struct pklcd *);
-	so -> so_pcb = (caddr_t) lcp;
-	lcp -> lcd_so = so;
-
-	if (so -> so_options & SO_ACCEPTCONN)
-		lcp -> lcd_state = LISTEN;
-	else
-		lcp -> lcd_state = READY;
-
-	return (0);
+	}
+	if (so) {
+		so -> so_pcb = (caddr_t) lcp;
+		so -> so_error = error;
+	}
+	return (lcp);
 }
 
 /* 
@@ -211,7 +214,6 @@ int restart_cause;
  *  This procedure frees up the Logical Channel Descripter.
  */
 
-static
 pk_freelcd (lcp)
 register struct pklcd *lcp;
 {
@@ -221,16 +223,10 @@ register struct pklcd *lcp;
 	if (lcp -> lcd_template)
 		m_freem (dtom (lcp -> lcd_template));
 
-	if (lcp -> lcd_craddr)
-		m_freem (dtom (lcp -> lcd_craddr));
-
-	if (lcp -> lcd_ceaddr)
-		m_freem (dtom (lcp -> lcd_ceaddr));
-
 	if (lcp -> lcd_lcn > 0)
 		lcp -> lcd_pkp -> pk_chan[lcp -> lcd_lcn] = NULL;
 
-	m_freem (dtom (lcp));
+	free((caddr_t)lcp, M_PCB);
 }
 
 
@@ -244,10 +240,10 @@ pk_bind (lcp, nam)
 struct pklcd *lcp;
 struct mbuf *nam;
 {
-	register struct sockaddr_x25 *sa;
 	register struct pkcb *pkp;
 	register struct mbuf *m;
 	register struct pklcd *pp;
+	register struct sockaddr_x25 *sa;
 
 	if (nam == NULL)
 		return (EADDRNOTAVAIL);
@@ -275,9 +271,8 @@ struct mbuf *nam;
 			min (pp->lcd_ceaddr->x25_udlen, sa->x25_udlen)) == 0)
 			return (EADDRINUSE);
 
-	if ((m = m_copy (nam, 0, (int)M_COPYALL)) == 0)
-		return (ENOBUFS);
-	lcp -> lcd_ceaddr = mtod (m, struct sockaddr_x25 *);
+	lcp -> lcd_laddr = *sa;
+	lcp -> lcd_ceaddr = &lcp -> lcd_laddr;
 	return (0);
 }
 
@@ -313,20 +308,24 @@ register struct sockaddr_x25 *sa;
 	lcp -> lcd_stime = time.tv_sec;
 }
 
-pk_connect (lcp, nam)
+pk_connect (lcp, nam, sa)
 register struct pklcd *lcp;
+register struct sockaddr_x25 *sa;
 struct mbuf *nam;
 {
 	register struct pkcb *pkp;
-	register struct sockaddr_x25 *sa;
 	register struct mbuf *m;
+	register struct ifnet *ifp;
 
-	if (checksockaddr (nam))
-		return (EINVAL);
-	sa = mtod (nam, struct sockaddr_x25 *);
+	if (sa == 0) {
+		if (checksockaddr (nam))
+			return (EINVAL);
+		sa = mtod (nam, struct sockaddr_x25 *);
+	}
 	if (sa -> x25_addr[0] == '\0')
 		return (EDESTADDRREQ);
-	for (pkp = pkcbhead; ; pkp = pkp->pk_next) {
+	if (lcp->lcd_pkp == 0)
+	    for (pkp = pkcbhead; ; pkp = pkp->pk_next) {
 		if (pkp == 0)
 			return (ENETUNREACH);
 		/*
@@ -343,16 +342,14 @@ struct mbuf *nam;
 		return (ENETDOWN);
 	if ((lcp -> lcd_lcn = pk_getlcn (pkp)) == 0)
 		return (EMFILE);
-	if ((m = m_copy (nam, 0, (int)M_COPYALL)) == 0)
-		return (ENOBUFS);
-	lcp -> lcd_ceaddr = mtod (m, struct sockaddr_x25 *);
+	lcp -> lcd_faddr = *sa;
+	lcp -> lcd_ceaddr = & lcp->lcd_faddr;
 	pk_assoc (pkp, lcp, lcp -> lcd_ceaddr);
 	if (lcp -> so)
 		soisconnecting (lcp -> lcd_so);
 	lcp -> lcd_template = pk_template (lcp -> lcd_lcn, X25_CALL);
-	pk_callrequest (lcp, m, pkp -> pk_xcp);
-	pk_output (lcp);
-	return (0);
+	pk_callrequest (lcp, lcp -> lcd_ceaddr, pkp -> pk_xcp);
+	return (*pkp -> pk_start)(lcp);
 }
 
 /* 
@@ -360,13 +357,12 @@ struct mbuf *nam;
  *  address, facilities fields and the user data field.
  */
 
-pk_callrequest (lcp, nam, xcp)
+pk_callrequest (lcp, sa, xcp)
 struct pklcd *lcp;
-struct mbuf *nam;
+register struct sockaddr_x25 *sa;
 register struct x25config *xcp;
 {
 	register struct x25_calladdr *a;
-	register struct sockaddr_x25 *sa = mtod (nam, struct sockaddr_x25 *);
 	register struct mbuf *m = dtom (lcp -> lcd_template);
 	unsigned posn = 0;
 	octet *cp;

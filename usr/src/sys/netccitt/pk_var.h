@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_var.h	7.3 (Berkeley) %G%
+ *	@(#)pk_var.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -56,14 +56,16 @@ struct pklcd {
 	char	lcd_flags;		/* copy of sockaddr_x25 op_flags */
 	struct	x25_packet *lcd_template;/* Address of current packet */
 	struct	socket *lcd_so;		/* Socket addr for connection */
-	struct	sockaddr_x25 *lcd_craddr;/* Calling address */
-	struct	sockaddr_x25 *lcd_ceaddr;/* Called address */
+	struct	sockaddr_x25 *lcd_craddr;/* Calling address pointer */
+	struct	sockaddr_x25 *lcd_ceaddr;/* Called address pointer */
 	time_t	lcd_stime;		/* time circuit established */
 	long    lcd_txcnt;		/* Data packet transmit count */
 	long    lcd_rxcnt;		/* Data packet receive count */
 	short   lcd_intrcnt;		/* Interrupt packet transmit count */
 	struct	pklcd *lcd_listen;	/* Next lcd on listen queue */
-	struct	pkcb *lcd_pkp;		/* network this lcd is attached to */
+	struct	pkcb *lcd_pkp;		/* Network this lcd is attached to */
+	struct	sockaddr_x25 lcd_faddr	/* Remote Address (Calling) */
+	struct	sockaddr_x25 lcd_laddr	/* Local Address (Called) */
 };
 
 #define X25_DG_CIRCUIT	0x10		/* lcd_flag: used for datagrams */
@@ -77,9 +79,10 @@ struct pklcd {
 struct	pkcb {
 	struct	pkcb *pk_next;
 	struct	x25_ifaddr *pk_ia;	/* backpointer to ifaddr */
-	short	pk_state;		/* packet level status */
-	int	(*pk_output) ();	/* link level output procedure */
+	int	(*pk_lloutput) ();	/* link level output procedure */
+	int	(*pk_start) ();		/* connect, confirm method */
 	struct	x25config *pk_xcp;	/* network specific configuration */
+	short	pk_state;		/* packet level status */
 	struct	x25config pk_xc;	/* network specific configuration */
 	struct	pklcd **pk_chan;	/* actual size == xc_maxlcn+1 */
 #define	pk_maxlcn pk_xc.xc_maxlcn	/* local copy of xc_maxlcn */
@@ -130,6 +133,7 @@ struct rtextension_x25 {
 #ifdef KERNEL
 struct	pkcb *pkcbhead;		/* head of linked list of networks */
 struct	pklcd *pk_listenhead;
+struct	pklcd *pk_attach();
 
 char	*pk_name[], *pk_state[];
 int	pk_t20, pk_t21, pk_t22, pk_t23;

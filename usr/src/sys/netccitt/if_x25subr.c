@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_x25subr.c	7.3 (Berkeley) %G%
+ *	@(#)if_x25subr.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -56,8 +56,8 @@ struct	sockaddr *dst;
 register struct	rtentry *rt;
 {
 	register struct mbuf *m;
-	struct rtextension_x25 *rtx;
-	struct pq *pq;
+	register struct rtextension_x25 *rtx;
+	register struct pq *pq;
 	struct pklcd *lcp;
 	struct x25_ifaddr *ia;
 	struct mbuf    *prev;
@@ -96,10 +96,10 @@ register struct	rtentry *rt;
 	if (rtx->rtx_lcd == 0) {
 		int x25_ifinput();
 
-		m = m_getclr(M_DONTWAIT, MT_PCB);
-		if (m == 0)
+		lcp = pk_attach((struct socket *)0);
+		if (lcp == 0)
 			senderr(ENOBUFS);
-		rtx->rtx_lcd = lcp = mtod(m, struct pklcd *);
+		rtx->rtx_lcd = lcp;
 		rtx->rtx_rt = rt;
 		rtx->rtx_ia = ia;
 		lcp->lcd_upq.pq_next = (caddr_t)rtx;
@@ -155,7 +155,8 @@ register struct	rtentry *rt;
 	case XRS_FREE:
 		lcp->lcd_downq.pq_data = m;
 		lcp->lcd_pkcb = &(rtx->rtx_ia->ia_pkcb);
-		pk_connect(lcp, rt->rt_gateway);
+		pk_connect(lcp, (struct mbuf *)0,
+				(struct sockaddr_x25 *)rt->rt_gateway);
 		break;
 		/* FALLTHROUGH */
 	default:
@@ -385,7 +386,7 @@ struct sockaddr *dst;
 
 	case caseof(XRS_RESOLVING, RTM_CHANGE):
 		lcp->lcd_pkcb = &(ia->ia_pkcb);
-		pk_connect(lcp, nam);
+		pk_connect(lcp, (struct mbuf *)0, sa);
 		break;
 	}
 	if (rt->rt_ifp->if_type == IFT_DDN)
