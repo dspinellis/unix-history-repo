@@ -1,4 +1,4 @@
-/*	gettytab.h	4.1	83/07/06	*/
+/*	gettytab.h	4.2	83/07/07	*/
 
 /*
  * Getty description definitions.
@@ -77,8 +77,11 @@ struct gettyflags {
 #define	HT	gettyflags[0].value
 #define	NL	gettyflags[1].value
 #define	EP	gettyflags[2].value
+#define	EPset	gettyflags[2].set
 #define	OP	gettyflags[3].value
+#define	OPset	gettyflags[2].set
 #define	AP	gettyflags[4].value
+#define	APset	gettyflags[2].set
 #define	EC	gettyflags[5].value
 #define	CO	gettyflags[6].value
 #define	CB	gettyflags[7].value
@@ -92,6 +95,7 @@ struct gettyflags {
 #define	IG	gettyflags[15].value
 #define	PS	gettyflags[16].value
 #define	HC	gettyflags[17].value
+#define UB	gettyflags[18].value
 
 int	getent();
 long	getnum();
