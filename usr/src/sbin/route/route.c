@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.41 (Berkeley) %G%";
+static char sccsid[] = "@(#)route.c	5.42 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -22,6 +22,7 @@ static char sccsid[] = "@(#)route.c	5.41 (Berkeley) %G%";
 #include <sys/mbuf.h>
 #include <sys/kinfo.h>
 
+#include <net/if.h>
 #include <net/route.h>
 #include <net/if_dl.h>
 #include <netinet/in.h>
@@ -68,8 +69,8 @@ struct	rt_metrics rt_metrics;
 u_long  rtm_inits;
 struct	in_addr inet_makeaddr();
 char	*routename(), *netname();
-void	flushroutes(), newroute(), monitor(), sockaddr();
-void	print_getmsg(), print_rtmsg(), pmsg_common(), sodump(), bprintf();
+void	flushroutes(), newroute(), monitor(), sockaddr(), sodump(), bprintf();
+void	print_getmsg(), print_rtmsg(), pmsg_common(), pmsg_addrs();
 int	getaddr(), rtmsg(), x25_makemask();
 extern	char *inet_ntoa(), *iso_ntoa(), *link_ntoa();
 
@@ -114,7 +115,7 @@ main(argc, argv)
 	if (argc < 2)
 		usage((char *)NULL);
 
-	while ((ch = getopt(argc, argv, "nqtv")) != EOF)
+	while ((ch = getopt(argc, argv, "nqdtv")) != EOF)
 		switch(ch) {
 		case 'n':
 			nflag = 1;
@@ -127,6 +128,9 @@ main(argc, argv)
 			break;
 		case 't':
 			tflag = 1;
+			break;
+		case 'd':
+			debugonly = 1;
 			break;
 		case '?':
 		default:
@@ -216,9 +220,13 @@ bad:			usage(*argv);
 	if ((rlen = getkerninfo(KINFO_RT_DUMP, buf, &needed, 0)) < 0)
 		quit("actual retrieval of routing table");
 	lim = buf + rlen;
+	if (verbose)
+		(void) printf("Examining routing table from getkerninfo\n");
 	seqno = 0;		/* ??? */
 	for (next = buf; next < lim; next += rtm->rtm_msglen) {
 		rtm = (struct rt_msghdr *)next;
+		if (verbose)
+			print_rtmsg(rtm, rtm->rtm_msglen);
 		if ((rtm->rtm_flags & RTF_GATEWAY) == 0)
 			continue;
 		if (af) {
@@ -227,6 +235,8 @@ bad:			usage(*argv);
 			if (sa->sa_family != af)
 				continue;
 		}
+		if (debugonly)
+			continue;
 		rtm->rtm_type = RTM_DELETE;
 		rtm->rtm_seq = seqno;
 		rlen = write(s, next, rtm->rtm_msglen);
@@ -897,7 +907,7 @@ monitor()
 	for(;;) {
 		n = read(s, msg, 2048);
 		(void) printf("got message of size %d\n", n);
-		print_rtmsg((struct rt_msghdr *)msg);
+		print_rtmsg((struct rt_msghdr *)msg, n);
 	}
 }
 
@@ -1025,20 +1035,30 @@ char *msgtypes[] = {
 	"RTM_LOCK: fix specified metrics",
 	"RTM_OLDADD: caused by SIOCADDRT",
 	"RTM_OLDDEL: caused by SIOCDELRT",
+	"RTM_RESOLVE: Route created by cloning",
+	"RTM_NEWADDR: address being added to iface",
+	"RTM_DELADDR: address being removed from iface",
+	"RTM_IFINFO: iface status change",
 	0,
 };
 
 char metricnames[] =
-"\010rttvar\7rtt\6ssthresh\5sendpipe\4recvpipe\3expire\2hopcount\1mtu";
+"\011pksent\010rttvar\7rtt\6ssthresh\5sendpipe\4recvpipe\3expire\2hopcount\1mtu";
 char routeflags[] = 
 "\1UP\2GATEWAY\3HOST\4REJECT\5DYNAMIC\6MODIFIED\7DONE\010MASK_PRESENT\011CLONING\012XRESOLVE\013LLINFO\014STATIC\017PROTO2\020PROTO1";
-
+char ifnetflags[] = 
+"\1UP\2BROADCAST\3DEBUG\4LOOPBACK\5PTP\6NOTRAILERS\7RUNNING\010NOARP\011PPROMISC\012ALLMULTI\013OACTIVE\014SIMPLEX\015LINK0\016LINK1\017LINK2";
+char addrnames[] =
+"\1DST\2GATEWAY\3NETMASK\4GENMASK\5IFP\6IFA\7AUTHOR\010BRD";
 
 void
 print_rtmsg(rtm, msglen)
 	register struct rt_msghdr *rtm;
 	int msglen;
 {
+	struct if_msghdr *ifm;
+	struct ifa_msghdr *ifam;
+
 	if (verbose == 0)
 		return;
 	if (rtm->rtm_version != RTM_VERSION) {
@@ -1046,11 +1066,27 @@ print_rtmsg(rtm, msglen)
 		    rtm->rtm_version);
 		return;
 	}
-	(void) printf("%s\npid: %d, len %d, seq %d, errno %d, flags:",
-		msgtypes[rtm->rtm_type], rtm->rtm_pid, rtm->rtm_msglen,
-		rtm->rtm_seq, rtm->rtm_errno); 
-	bprintf(stdout, rtm->rtm_flags, routeflags);
-	pmsg_common(rtm);
+	(void)printf("%s: len %d, ", msgtypes[rtm->rtm_type], rtm->rtm_msglen);
+	switch (rtm->rtm_type) {
+	case RTM_IFINFO:
+		ifm = (struct if_msghdr *)rtm;
+		(void) printf("if# %d, flags:", ifm->ifm_index);
+		bprintf(stdout, ifm->ifm_flags, ifnetflags);
+		pmsg_addrs((char *)(ifm + 1), ifm->ifm_addrs);
+		break;
+	case RTM_NEWADDR:
+	case RTM_DELADDR:
+		(void) printf("flags:");
+		ifam = (struct ifa_msghdr *)rtm;
+		bprintf(stdout, ifam->ifam_flags, routeflags);
+		pmsg_addrs((char *)(ifam + 1), ifam->ifam_addrs);
+		break;
+	default:
+		(void) printf("pid: %d, seq %d, errno %d, flags:",
+			rtm->rtm_pid, rtm->rtm_seq, rtm->rtm_errno); 
+		bprintf(stdout, rtm->rtm_flags, routeflags);
+		pmsg_common(rtm);
+	}
 }
 
 void
@@ -1140,13 +1176,12 @@ print_getmsg(rtm, msglen)
 	printf("%8d%c\n", rtm->rtm_rmx.rmx_expire, lock(EXPIRE));
 #undef lock
 #undef msec
-#define	RTA_IGN	(RTA_DST|RTA_GATEWAY|RTA_NETMASK|RTA_IFP|RTA_IFA)
+#define	RTA_IGN	(RTA_DST|RTA_GATEWAY|RTA_NETMASK|RTA_IFP|RTA_IFA|RTA_BRD)
 	if (verbose)
 		pmsg_common(rtm);
 	else if (rtm->rtm_addrs &~ RTA_IGN) {
 		(void) printf("sockaddrs: ");
-		bprintf(stdout, rtm->rtm_addrs,
-		    "\1DST\2GATEWAY\3NETMASK\4GENMASK\5IFP\6IFA\7AUTHOR");
+		bprintf(stdout, rtm->rtm_addrs, addrnames);
 		putchar('\n');
 	}
 #undef	RTA_IGN
@@ -1156,26 +1191,32 @@ void
 pmsg_common(rtm)
 	register struct rt_msghdr *rtm;
 {
-	char *cp;
-	register struct sockaddr *sa;
-	int i;
-
 	(void) printf("\nlocks: ");
 	bprintf(stdout, rtm->rtm_rmx.rmx_locks, metricnames);
 	(void) printf(" inits: ");
 	bprintf(stdout, rtm->rtm_inits, metricnames);
+	pmsg_addrs(((char *)(rtm + 1)), rtm->rtm_addrs);
+}
+
+void
+pmsg_addrs(cp, addrs)
+	char	*cp;
+	int	addrs;
+{
+	register struct sockaddr *sa;
+	int i;
+	 
+	if (addrs == 0)
+		return;
 	(void) printf("\nsockaddrs: ");
-	bprintf(stdout, rtm->rtm_addrs,
-	    "\1DST\2GATEWAY\3NETMASK\4GENMASK\5IFP\6IFA\7AUTHOR");
+	bprintf(stdout, addrs, addrnames);
 	(void) putchar('\n');
-	cp = ((char *)(rtm + 1));
-	if (rtm->rtm_addrs)
-		for (i = 1; i; i <<= 1)
-			if (i & rtm->rtm_addrs) {
-				sa = (struct sockaddr *)cp;
-				(void) printf(" %s", routename(sa));
-				ADVANCE(cp, sa);
-			}
+	for (i = 1; i; i <<= 1)
+		if (i & addrs) {
+			sa = (struct sockaddr *)cp;
+			(void) printf(" %s", routename(sa));
+			ADVANCE(cp, sa);
+		}
 	(void) putchar('\n');
 	(void) fflush(stdout);
 }
