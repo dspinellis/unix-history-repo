@@ -4,11 +4,12 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sys_socket.c	7.12 (Berkeley) %G%
+ *	@(#)sys_socket.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
+#include "proc.h"
 #include "file.h"
 #include "mbuf.h"
 #include "protosw.h"
@@ -118,7 +119,8 @@ soo_select(fp, which, p)
 			splx(s);
 			return (1);
 		}
-		sbselqueue(&so->so_rcv, p);
+		selrecord(p, &so->so_rcv.sb_sel);
+		so->so_rcv.sb_flags |= SB_SEL;
 		break;
 
 	case FWRITE:
@@ -126,16 +128,17 @@ soo_select(fp, which, p)
 			splx(s);
 			return (1);
 		}
-		sbselqueue(&so->so_snd, p);
+		selrecord(p, &so->so_snd.sb_sel);
+		so->so_snd.sb_flags |= SB_SEL;
 		break;
 
 	case 0:
-		if (so->so_oobmark ||
-		    (so->so_state & SS_RCVATMARK)) {
+		if (so->so_oobmark || (so->so_state & SS_RCVATMARK)) {
 			splx(s);
 			return (1);
 		}
-		sbselqueue(&so->so_rcv, p);
+		selrecord(p, &so->so_rcv.sb_sel);
+		so->so_rcv.sb_flags |= SB_SEL;
 		break;
 	}
 	splx(s);

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tty_pty.c	7.23 (Berkeley) %G%
+ *	@(#)tty_pty.c	7.24 (Berkeley) %G%
  */
 
 /*
@@ -17,10 +17,10 @@
 #include "param.h"
 #include "systm.h"
 #include "ioctl.h"
+#include "proc.h"
 #include "tty.h"
 #include "conf.h"
 #include "file.h"
-#include "proc.h"
 #include "uio.h"
 #include "kernel.h"
 #include "vnode.h"
@@ -40,7 +40,7 @@
 struct	tty pt_tty[NPTY];
 struct	pt_ioctl {
 	int	pt_flags;
-	struct	proc *pt_selr, *pt_selw;
+	struct	selinfo pt_selr, pt_selw;
 	u_char	pt_send;
 	u_char	pt_ucntl;
 	struct	clist pt_ioc;
@@ -214,19 +214,11 @@ ptcwakeup(tp, flag)
 	struct pt_ioctl *pti = &pt_ioctl[minor(tp->t_dev)];
 
 	if (flag & FREAD) {
-		if (pti->pt_selr) {
-			selwakeup(pti->pt_selr, pti->pt_flags & PF_RCOLL);
-			pti->pt_selr = 0;
-			pti->pt_flags &= ~PF_RCOLL;
-		}
+		selwakeup(&pti->pt_selr);
 		wakeup((caddr_t)&tp->t_outq.c_cf);
 	}
 	if (flag & FWRITE) {
-		if (pti->pt_selw) {
-			selwakeup(pti->pt_selw, pti->pt_flags & PF_WCOLL);
-			pti->pt_selw = 0;
-			pti->pt_flags &= ~PF_WCOLL;
-		}
+		selwakeup(&pti->pt_selw);
 		wakeup((caddr_t)&tp->t_rawq.c_cf);
 	}
 }
@@ -394,7 +386,6 @@ ptcselect(dev, rw, p)
 {
 	register struct tty *tp = &pt_tty[minor(dev)];
 	struct pt_ioctl *pti = &pt_ioctl[minor(dev)];
-	struct proc *prev;
 	int s;
 
 	if ((tp->t_state&TS_CARR_ON) == 0)
@@ -420,10 +411,7 @@ ptcselect(dev, rw, p)
 		     pti->pt_flags&PF_TIOC && pti->pt_ioc.c_cc ||
 		     pti->pt_flags&PF_UCNTL && pti->pt_ucntl))
 			return (1);
-		if ((prev = pti->pt_selr) && prev->p_wchan == (caddr_t)&selwait)
-			pti->pt_flags |= PF_RCOLL;
-		else
-			pti->pt_selr = p;
+		selrecord(p, &pti->pt_selr);
 		break;
 
 
@@ -439,10 +427,7 @@ ptcselect(dev, rw, p)
 				    return (1);
 			}
 		}
-		if ((prev = pti->pt_selw) && prev->p_wchan == (caddr_t)&selwait)
-			pti->pt_flags |= PF_WCOLL;
-		else
-			pti->pt_selw = p;
+		selrecord(p, &pti->pt_selw);
 		break;
 
 	}
