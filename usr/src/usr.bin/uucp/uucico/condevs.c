@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)condevs.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)condevs.c	5.18 (Berkeley) %G%";
 #endif
 
 extern int errno;
