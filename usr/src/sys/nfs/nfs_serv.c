@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_serv.c	7.65 (Berkeley) %G%
+ *	@(#)nfs_serv.c	7.66 (Berkeley) %G%
  */
 
 /*
@@ -762,6 +762,11 @@ nfsrv_create(nfsd, mrep, md, dpos, cred, nam, mrq)
 		} else
 			fxdr_hyper(&sp->sa_nqsize, &vap->va_size);
 		if (vap->va_size != -1) {
+			if (error = nfsrv_access(vp, VWRITE, cred,
+			    (nd.ni_cnd.cn_flags & RDONLY), nfsd->nd_procp)) {
+				vput(vp);
+				nfsm_reply(0);
+			}
 			nqsrv_getl(vp, NQL_WRITE);
 			if (error = VOP_SETATTR(vp, vap, cred, nfsd->nd_procp)) {
 				vput(vp);
