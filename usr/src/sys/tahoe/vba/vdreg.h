@@ -1,4 +1,4 @@
-/*	vdreg.h	1.6	86/10/28	*/
+/*	vdreg.h	1.7	87/01/11	*/
 
 /*
  * VDDC (Versabus Direct Disk Controller) definitions.
@@ -60,6 +60,13 @@
 #define	SFTERR		0x400000	/* Soft Error (retry succesful) */
 #define	ANYERR		0x800000	/* Any Error */
 #define INVCMD		0x1000000	/* Programmer error */
+/*
+ * DCB status codes.
+ */
+#define	DCBABT		0x10000000	/* DCB Aborted */
+#define	DCBUSC		0x20000000	/* DCB Unsuccesfully Completed */
+#define	DCBCMP		0x40000000	/* DCB Complete */
+#define	DCBSTR		0x80000000	/* DCB Started */
 
 /* hard error */
 #define	HTYPES \
@@ -74,15 +81,7 @@
 #define	ERRBITS	"\20\1HCRC\2HCMP\3WPT\4CTLR\5DSEEK\6UCDATA\7NOTCYL\10DRVNRDY\
 \11ALTACC\12SEEKSTRT\13INVDADR\14DNEMEM\15PAR\16DCOMP\17DDIRDY\20OPABRT\
 \21DSERLY\22DSLATE\23TOPLUS\24TOPMNUS\25CPDCRT\26HRDERR\27SFTERR\30ANYERR\
-\31INVCMD"
-
-/*
- * DCB status codes.
- */
-#define	DCBABT		0x10000000	/* DCB Aborted */
-#define	DCBUSC		0x20000000	/* DCB Unsuccesfully Completed */
-#define	DCBCMP		0x40000000	/* DCB Complete */
-#define	DCBSTR		0x80000000	/* DCB Started */
+\31INVCMD\35ABORTED\36FAIL\37COMPLETE\40STARTED"
 
 /*
  * MDCB status codes.
@@ -386,8 +385,8 @@ typedef struct {
 /* physical information for known disk drives.  */
 #ifdef VDGENDATA
 long	vddcaddr[] =
-  { 0xf2000, 0xf2100, 0xf2200, 0xf2300, 0xf2400, 0xf2500, 0xf2600, 0xf2700, 0 };
-long	vdtimeout = 0;
+  { 0xffff2000, 0xffff2100, 0xffff2200, 0xffff2300, 0xffff2400, 0xffff2500,
+    0xffff2600, 0xffff2700, 0 };
 
 fs_tab	vdst[] = {
 	{512, 48, 24, 711, 0, 3600, 30240,	"CDC xsd",
@@ -476,8 +475,8 @@ fs_tab	vdst[] = {
 		{177232, 71440},	/* g cyl 583 - 817 */
 		{213104, 35568}}	/* h cyl 701 - 817 */
 	},
-	{512, 32, 10, 823, 0, 3600, 20160, "CDC fsd",	/* 160 Mb FSD */
-	    "160 Mb Control Data Winchester drive",
+	{512, 32, 10, 823, 0, 3600, 20160, "fsd",	/* 160 Mb FSD */
+	    "160 Mb Winchester drive",
 		{ 0x0d9b366c, 0x1b366cd8, 0x366cd9b0, 0x6cd9b360,
 		  0xd9b366c0, 0xb366cd80, 0x66cd9b00, 0xcd9b3600,
 		  0x9b366300, 0x366cd800, 0x6cd9b000, 0xd9b36000,
@@ -498,7 +497,6 @@ int	nvddrv = (sizeof (vdst) / sizeof (fs_tab));
 #else
 #ifdef STANDALONE
 extern long	vddcaddr[];
-extern long	vdtimeout;
 extern fs_tab	vdst[];
 extern int	nvddrv;
 #endif
