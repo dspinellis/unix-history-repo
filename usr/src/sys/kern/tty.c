@@ -1,4 +1,4 @@
-/*	tty.c	4.27	82/08/13	*/
+/*	tty.c	4.28	82/08/22	*/
 
 /*
  * TTY subroutines common to more than one line discipline
@@ -1060,8 +1060,9 @@ loop:
  * calculated the tty-structure given as argument.
  */
 caddr_t
-ttwrite(tp)
+ttwrite(tp, uio)
 	register struct tty *tp;
+	struct uio *uio;
 {
 #ifdef vax
 	/*
@@ -1076,7 +1077,7 @@ ttwrite(tp)
 	char obuf[OBUFSIZ];
 	register c;
 	int hiwat = TTHIWAT(tp);
-	int cnt = u.u_count;
+	int cnt = uio->uio_resid;
 
 	if ((tp->t_state&TS_CARR_ON)==0)
 		return (NULL);
@@ -1093,10 +1094,19 @@ loop:
 		gsignal(u.u_procp->p_pgrp, SIGTTOU);
 		sleep((caddr_t)&lbolt, TTIPRI);
 	}
-	while (u.u_count) {
-		cc = MIN(u.u_count, OBUFSIZ);
+	while (uio->uio_resid > 0) {
+		cc = uio->uio_iov->iov_len;
+		if (cc == 0) {
+			uio->uio_iovcnt--;
+			uio->uio_iov++;
+			if (uio->uio_iovcnt < 0)
+				panic("ttwrite");
+			continue;
+		}
+		if (cc > OBUFSIZ)
+			cc = OBUFSIZ;
 		cp = obuf;
-		iomove(cp, (unsigned)cc, B_WRITE);
+		u.u_error = uiomove(cp, cc, UIO_WRITE, uio);
 		if (u.u_error)
 			break;
 		if (tp->t_outq.c_cc > hiwat)
@@ -1164,16 +1174,17 @@ loop:
 
 ovhiwat:
 	(void) spl5();
-	u.u_base -= cc;
-	u.u_offset -= cc;
-	u.u_count += cc;
+	uio->uio_iov->iov_base -= cc;
+	uio->uio_iov->iov_len += cc;
+	uio->uio_resid += cc;
+	uio->uio_offset -= cc;
 	if (tp->t_outq.c_cc <= hiwat) {
 		(void) spl0();
 		goto loop;
 	}
 	ttstart(tp);
 	if (tp->t_state & TS_NBIO) {
-		if (u.u_count == cnt)
+		if (uio->uio_resid == cnt)
 			u.u_error = EWOULDBLOCK;
 		return (NULL);
 	}
