@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	6.12 (Berkeley) %G%
+ *	@(#)sendmail.h	6.13 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	6.12		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	6.13		%G%";
 # endif lint
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -119,6 +119,7 @@ typedef struct address ADDRESS;
 # define QQUEUEUP	000020	/* queue for later transmission */
 # define QSENT		000040	/* has been successfully delivered */
 # define QNOTREMOTE	000100	/* not an address for remote forwarding */
+# define QSELFREF	000200	/* this address references itself */
 # define QPSEUDO	000040	/* only on the list for verification */
 /*
 **  Mailer definition structure.
