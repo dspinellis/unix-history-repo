@@ -1,4 +1,4 @@
-#	Makefile	5.3	86/08/01
+#	Makefile	5.4	86/08/01
 #
 DESTDIR=
 FLAGS=	-I.. ${DEFS}
@@ -49,29 +49,29 @@ depend:
 
 # DO NOT DELETE THIS LINE -- make depend uses it
 
-addd.o: addd.s /usr/include/tahoemath/fp.h ./DEFS.h
-addf.o: addf.s /usr/include/tahoemath//fp.h ./DEFS.h
-cmpd.o: cmpd.s ./DEFS.h
-cmpf.o: cmpf.s ./DEFS.h
-cvtdl.o: cvtdl.s /usr/include/tahoemath/fp.h ./DEFS.h
-cvtfl.o: cvtfl.s /usr/include/tahoemath/fp.h ./DEFS.h
-cvtld.o: cvtld.s /usr/include/tahoemath/fp.h ./DEFS.h
-cvtlf.o: cvtlf.s /usr/include/tahoemath/fp.h ./DEFS.h
-cvtud.o: cvtud.s /usr/include/tahoemath/fp.h ./DEFS.h
-cvtuf.o: cvtuf.s /usr/include/tahoemath/fp.h ./DEFS.h
-divd.o: divd.s /usr/include/tahoemath/fp.h ./DEFS.h
-divf.o: divf.s /usr/include/tahoemath/fp.h ./DEFS.h
-fnorm.o: fnorm.s /usr/include/tahoemath/fp.h ./DEFS.h
-fp_exp.o: fp_exp.s /usr/include/tahoemath/fp.h ./DEFS.h
-modf.o: modf.s /usr/include/tahoemath/fp.h ./DEFS.h
-muld.o: muld.s /usr/include/tahoemath/fp.h ./DEFS.h
-mulf.o: mulf.s /usr/include/tahoemath/fp.h ./DEFS.h
-negd.o: negd.s /usr/include/tahoemath/fp.h ./DEFS.h
-negf.o: negf.s /usr/include/tahoemath/fp.h ./DEFS.h
-sfnorm.o: sfnorm.s /usr/include/tahoemath/fp.h ./DEFS.h
-sfp_exp.o: sfp_exp.s /usr/include/tahoemath/fp.h ./DEFS.h
-subd.o: subd.s /usr/include/tahoemath/fp.h ./DEFS.h
-subf.o: subf.s /usr/include/tahoemath/fp.h ./DEFS.h
+addd.o: addd.s /usr/include/tahoemath/fp.h ../DEFS.h
+addf.o: addf.s /usr/include/tahoemath//fp.h ../DEFS.h
+cmpd.o: cmpd.s ../DEFS.h
+cmpf.o: cmpf.s ../DEFS.h
+cvtdl.o: cvtdl.s /usr/include/tahoemath/fp.h ../DEFS.h
+cvtfl.o: cvtfl.s /usr/include/tahoemath/fp.h ../DEFS.h
+cvtld.o: cvtld.s /usr/include/tahoemath/fp.h ../DEFS.h
+cvtlf.o: cvtlf.s /usr/include/tahoemath/fp.h ../DEFS.h
+cvtud.o: cvtud.s /usr/include/tahoemath/fp.h ../DEFS.h
+cvtuf.o: cvtuf.s /usr/include/tahoemath/fp.h ../DEFS.h
+divd.o: divd.s /usr/include/tahoemath/fp.h ../DEFS.h
+divf.o: divf.s /usr/include/tahoemath/fp.h ../DEFS.h
+fnorm.o: fnorm.s /usr/include/tahoemath/fp.h ../DEFS.h
+fp_exp.o: fp_exp.s /usr/include/tahoemath/fp.h ../DEFS.h
+modf.o: modf.s /usr/include/tahoemath/fp.h ../DEFS.h
+muld.o: muld.s /usr/include/tahoemath/fp.h ../DEFS.h
+mulf.o: mulf.s /usr/include/tahoemath/fp.h ../DEFS.h
+negd.o: negd.s /usr/include/tahoemath/fp.h ../DEFS.h
+negf.o: negf.s /usr/include/tahoemath/fp.h ../DEFS.h
+sfnorm.o: sfnorm.s /usr/include/tahoemath/fp.h ../DEFS.h
+sfp_exp.o: sfp_exp.s /usr/include/tahoemath/fp.h ../DEFS.h
+subd.o: subd.s /usr/include/tahoemath/fp.h ../DEFS.h
+subf.o: subf.s /usr/include/tahoemath/fp.h ../DEFS.h
 # DEPENDENCIES MUST END AT END OF FILE
 # IF YOU PUT STUFF HERE IT WILL GO AWAY
 # see make depend above
