@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)va.4	6.1 (Berkeley) %G%
+.\"	@(#)va.4	6.2 (Berkeley) %G%
 .\"
 .TH VA 4 ""
 .UC 4
@@ -16,11 +16,8 @@ va \- Benson-Varian interface
 (\fBNOTE: the configuration description, while counter-intuitive,
 is actually as shown above\fP.)
 .PP
-The Benson-Varian printer/plotter in normally used with the programs
-.IR vpr (1),
-.IR vprint (1)
-or
-.IR vtroff (1).
+The Benson-Varian printer/plotter in normally used with the line printer
+system.
 This description is designed for those who wish to drive the Benson-Varian
 directly.
 .PP
@@ -47,6 +44,8 @@ if there is a daemon active.
 You can see if there is an active daemon by doing a
 .IR lpq (1)
 and seeing if there are any files being printed.
+Printing should be turned off using
+.IR lpc (8).
 .PP
 To set the Benson-Varian into plot mode include the file
 .RI < sys/vcmd.h >
@@ -78,33 +77,12 @@ by sending it a FF after putting it back into print mode, i.e. by
 	ioctl(fileno(va), VSETSTATE, prtmd);
 	write(fileno(va), "\ef\e0", 2);
 .fi
-.PP
-.BR N.B. :
-If you use the standard I/O library with the Benson-Varian you
-.B must
-do
-.IP
-setbuf(vp, vpbuf);
-.PP
-where
-.I vpbuf
-is declared
-.IP
-\fBchar\fR vpbuf[BUFSIZ];
-.PP
-otherwise the standard I/O library, thinking that the Benson-Varian
-is a terminal (since it is a character special file) will not adequately buffer
-the data you are sending to the Benson-Varian.
-This will cause it to run
-.B extremely
-slowly and tend to grind the system to a halt.
 .SH FILES
 /dev/va0
 .SH SEE ALSO
 vfont(5),
 lpr(1),
 lpd(8),
-vtroff(1),
 vp(4)
 .SH DIAGNOSTICS
 The following error numbers are significant at the
