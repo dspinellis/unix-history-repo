@@ -23,7 +23,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.23 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -301,7 +301,13 @@ main(argc, argv, envp)
 			switch (p[2])
 			{
 			  case MD_DAEMON:
-# ifndef DAEMON
+# ifdef DAEMON
+				if (getuid() != 0) {
+					usrerr("Permission denied");
+					exit (EX_USAGE);
+				}
+				(void) unsetenv("HOSTALIASES");
+# else
 				usrerr("Daemon mode not implemented");
 				ExitStat = EX_USAGE;
 				break;
@@ -400,6 +406,11 @@ main(argc, argv, envp)
 
 		  case 'q':	/* run queue files at intervals */
 # ifdef QUEUE
+			if (getuid() != 0) {
+				usrerr("Permission denied");
+				exit (EX_USAGE);
+			}
+			(void) unsetenv("HOSTALIASES");
 			queuemode = TRUE;
 			QueueIntvl = convtime(&p[2]);
 # else QUEUE
