@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)shutdown.c	4.18 (Berkeley) 83/06/02";
+static	char *sccsid = "@(#)shutdown.c	4.19 (Berkeley) 83/06/17";
 #endif
 
 #include <stdio.h>
@@ -305,8 +305,8 @@ warn(term, sdt, now, type)
 
 	if (shutter)
 		fprintf(term,
-	    "\007\007\t*** %sSystem shutdown message from %s!%s ***\r\n\n",
-		    type, hostname, shutter);
+	    "\007\007\t*** %sSystem shutdown message from %s@%s ***\r\n\n",
+		    type, shutter, hostname);
 	else
 		fprintf(term,
 		    "\007\007\t*** %sSystem shutdown message (%s) ***\r\n\n",
