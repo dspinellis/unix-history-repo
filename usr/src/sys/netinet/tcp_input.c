@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.56	82/03/03	*/
+/*	tcp_input.c	1.57	82/03/09	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -602,8 +602,7 @@ step6:
 	if ((ti->ti_len || (tiflags&TH_FIN)) &&
 	    TCPS_HAVERCVDFIN(tp->t_state) == 0) {
 		off += sizeof (struct ip);		/* drop IP header */
-		m->m_off += off;
-		m->m_len -= off;
+		m_drop(m, off);
 		tiflags = tcp_reass(tp, ti);
 		if (tcpnodelack == 0)
 			tp->t_flags |= TF_DELACK;
