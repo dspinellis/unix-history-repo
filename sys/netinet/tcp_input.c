@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tcp_input.c	7.25 (Berkeley) 6/30/90
- *	$Id: tcp_input.c,v 1.5 1994/01/24 05:12:32 davidg Exp $
+ *	$Id: tcp_input.c,v 1.6 1994/01/24 07:17:08 davidg Exp $
  */
 
 #include "param.h"
@@ -1163,6 +1163,14 @@ dodata:							/* XXX */
 #endif
 
 	/*
+	 * If this is a small packet, then ACK now - with Nagel
+	 *	congestion avoidance sender won't send more until
+	 *	he gets an ACK.
+	 */
+	if (ti->ti_len && ((unsigned)ti->ti_len < tp->t_maxseg))
+		tp->t_flags |= TF_ACKNOW;
+
+	/*
 	 * Return any desired output.
 	 */
 	if (needoutput || (tp->t_flags & TF_ACKNOW))
@@ -1482,20 +1490,22 @@ tcp_mss(tp, offer)
 			bufsize = so->so_snd.sb_hiwat;
 		if (bufsize < mss)
 			mss = bufsize;
-		else {
+		else
 			bufsize = min(bufsize, SB_MAX) / mss * mss;
-			(void) sbreserve(&so->so_snd, bufsize);
-		}
+
+		(void) sbreserve(&so->so_snd, bufsize);
 		tp->t_maxseg = mss;
 
 #ifdef RTV_RPIPE
 		if ((bufsize = rt->rt_rmx.rmx_recvpipe) == 0)
 #endif
 			bufsize = so->so_rcv.sb_hiwat;
-		if (bufsize > mss) {
+		if (bufsize < mss)
+			bufsize = mss;
+		else
 			bufsize = min(bufsize, SB_MAX) / mss * mss;
-			(void) sbreserve(&so->so_rcv, bufsize);
-		}
+
+		(void) sbreserve(&so->so_rcv, bufsize);
 	}
 	tp->snd_cwnd = mss;
 
