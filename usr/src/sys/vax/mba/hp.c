@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hp.c	7.6 (Berkeley) %G%
+ *	@(#)hp.c	7.7 (Berkeley) %G%
  */
 
 #ifdef HPDEBUG
@@ -113,9 +113,9 @@ struct	hpsoftc {
 	u_char	sc_recal;	/* recalibrate state */
 	u_char	sc_doseeks;	/* perform explicit seeks */
 	int	sc_state;	/* open fsm */
-	long	sc_openpart;	/* bit mask of open subunits */
-	long	sc_copenpart;	/* bit mask of open character subunits */
-	long	sc_bopenpart;	/* bit mask of open block subunits */
+	u_long	sc_openpart;	/* bit mask of open subunits */
+	u_long	sc_copenpart;	/* bit mask of open character subunits */
+	u_long	sc_bopenpart;	/* bit mask of open block subunits */
 	daddr_t	sc_mlsize;	/* ML11 size */
 	int	sc_blkdone;	/* amount sucessfully transfered */
 	daddr_t	sc_badbn;	/* replacement block number */
@@ -204,8 +204,7 @@ hpopen(dev, flags, fmt)
 	 * unless one is the "raw" partition (whole disk).
 	 */
 #define	RAWPART		2		/* 'c' partition */	/* XXX */
-	if ((sc->sc_openpart & (1 << part)) == 0 &&
-	    part != RAWPART) {
+	if ((sc->sc_openpart & mask) == 0 && part != RAWPART) {
 		pp = &lp->d_partitions[part];
 		start = pp->p_offset;
 		end = pp->p_offset + pp->p_size;
@@ -796,43 +795,16 @@ hpioctl(dev, cmd, data, flag)
 		if ((flag & FWRITE) == 0)
 			error = EBADF;
 		else
-			*lp = *(struct disklabel *)data;
+			error = setdisklabel(lp, (struct disklabel *)data,
+			    hpsoftc[unit].sc_openpart);
 		break;
 
 	case DIOCWDINFO:
-		if ((flag & FWRITE) == 0) {
+		if ((flag & FWRITE) == 0)
 			error = EBADF;
-			break;
-		}
-		{
-		struct buf *bp;
-		struct disklabel *dlp;
-
-		*lp = *(struct disklabel *)data;
-		bp = geteblk(lp->d_secsize);
-		bp->b_dev = makedev(major(dev), hpminor(hpunit(dev), 0));
-		bp->b_blkno = LABELSECTOR;
-		bp->b_bcount = lp->d_secsize;
-		bp->b_flags = B_READ;
-		dlp = (struct disklabel *)(bp->b_un.b_addr + LABELOFFSET);
-		hpstrategy(bp);
-		biowait(bp);
-		if (bp->b_flags & B_ERROR) {
-			error = u.u_error;		/* XXX */
-			u.u_error = 0;
-			goto bad;
-		}
-		*dlp = *lp;
-		bp->b_flags = B_WRITE;
-		hpstrategy(bp);
-		biowait(bp);
-		if (bp->b_flags & B_ERROR) {
-			error = u.u_error;		/* XXX */
-			u.u_error = 0;
-		}
-bad:
-		brelse(bp);
-		}
+		else if ((error = setdisklabel(lp, (struct disklabel *)data,
+			    hpsoftc[unit].sc_openpart)) == 0)
+			error = writedisklabel(dev, hpstrategy, lp);
 		break;
 
 #ifdef notyet

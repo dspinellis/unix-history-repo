@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uda.c	7.8 (Berkeley) %G%
+ *	@(#)uda.c	7.9 (Berkeley) %G%
  *
  */
 
@@ -534,7 +534,7 @@ udaattach(ui)
 		dk_mspw[ui->ui_dk] = 1.0 / (60 * 31 * 256);	/* approx */
 	udaip[ui->ui_ctlr][ui->ui_slave] = ui;
 	if (uda_rainit(ui, 0))
-		printf("ra%d: offline", unit);
+		printf("ra%d: offline\n", unit);
 	else {
 		printf("ra%d: %s\n", unit, udalabel[unit].d_typename);
 #ifdef notyet
@@ -1604,63 +1604,16 @@ udaioctl(dev, cmd, data, flag)
 		if ((flag & FWRITE) == 0)
 			error = EBADF;
 		else
-			*lp = *(struct disklabel *)data;
+			error = setdisklabel(lp, (struct disklabel *)data,
+			    ra_info[unit].ra_openpart);
 		break;
 
-	case DIOCWDINFO: {
-		struct buf *bp;
-		struct disklabel *dlp;
-#ifdef notdef
-		daddr_t alt, end;
-#endif
-
-		if ((flag & FWRITE) == 0) {
+	case DIOCWDINFO:
+		if ((flag & FWRITE) == 0)
 			error = EBADF;
-			break;
-		}
-		*lp = *(struct disklabel *)data;
-		bp = geteblk(lp->d_secsize);
-		bp->b_dev = makedev(major(dev), udaminor(udaunit(dev), 0));
-		bp->b_bcount = lp->d_secsize;
-		bp->b_blkno = LABELSECTOR;
-		bp->b_flags = B_READ;
-		dlp = (struct disklabel *)(bp->b_un.b_addr + LABELOFFSET);
-		udastrategy(bp);
-		biowait(bp);
-		if (bp->b_flags & B_ERROR) {
-			error = u.u_error;		/* XXX */
-			u.u_error = 0;
-			goto bad;
-		}
-		*dlp = *lp;
-#ifdef notdef
-		alt = lp->d_ncylinders * lp->d_secpercyl - lp->d_ntracks + 1;
-		end = alt + 8;
-		for (;;) {
-			bp->b_flags = B_WRITE;
-			udastrategy(bp);
-			biowait(bp);
-			if (bp->b_flags & B_ERROR) {
-				error = u.u_error;	/* XXX */
-				u.u_error = 0;
-			}
-			if (bp->b_blkno >= end)
-				break;
-			bp->b_blkno = alt;
-			alt += 2;
-		}
-#else
-		bp->b_flags = B_WRITE;
-		udastrategy(bp);
-		biowait(bp);
-		if (bp->b_flags & B_ERROR) {
-			error = u.u_error;		/* XXX */
-			u.u_error = 0;
-		}
-#endif
-bad:
-		brelse(bp);
-		}
+		else if ((error = setdisklabel(lp, (struct disklabel *)data,
+			    ra_info[unit].ra_openpart)) == 0)
+			error = writedisklabel(dev, udastrategy, lp);
 		break;
 
 #ifdef notyet
