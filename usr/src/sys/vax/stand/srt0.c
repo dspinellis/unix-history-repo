@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)srt0.c	6.3 (Berkeley) %G%
+ *	@(#)srt0.c	6.4 (Berkeley) %G%
  */
 
 #include "../vax/mtpr.h"
@@ -13,6 +13,7 @@
 /*
  * Startup code for standalone system
  * Non-relocating version -- for programs which are loaded by boot
+ * Relocating version for boot*
  */
 
 	.globl	_end
@@ -77,7 +78,11 @@ aedata:	.long	_edata
 
 __rtt:
 	.word	0x0
+#ifdef	REL
+	halt
+#else
 	jmp	start
+#endif
 
 	.globl	_badloc
 _badloc:
