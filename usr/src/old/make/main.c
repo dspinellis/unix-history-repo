@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	4.8 (Berkeley) 86/01/09";
+static	char *sccsid = "@(#)main.c	4.9 (Berkeley) 87/05/21";
 # include "defs"
 /*
 command make to update programs.
@@ -13,6 +13,7 @@ Flags:	'd'  print out debugging comments
 	't'   touch (update time of) files but don't issue command
 	'q'   don't do anything, but check if object is up to date;
 	      returns exit code 0 if up to date, -1 if not
+	'e'  environment variables have precedence over makefiles
 */
 
 struct nameblock *mainname	= NULL;
@@ -38,6 +39,7 @@ int questflag	= NO;
 int ndocoms	= NO;
 int ignerr	= NO;    /* default is to stop on error */
 int okdel	= YES;
+int doenvlast	= NO;
 int inarglist;
 #ifdef pwb
 char *prompt	= ">";	/* other systems -- pick what you want */
@@ -142,6 +144,10 @@ for (i=1; i<argc; ++i)
 				++descset;
 				break;
 
+			case 'e':
+				doenvlast = YES;
+				break;
+
 			default:
 				onechar[0] = c;	/* to make lint happy */
 				fatal1("Unknown flag argument %s", onechar);
@@ -155,6 +161,8 @@ if (strcmp(options, "-") == 0)
 	*options = '\0';
 setvar("MFLAGS", options);		/* MFLAGS=options to make */
 
+setvar("MACHINE", MACHINE);
+
 if( !descset )
 #ifdef unix
 	if( rddescf("makefile") )  rddescf("Makefile");
@@ -162,6 +170,9 @@ if( !descset )
 #ifdef gcos
 	rddescf("makefile");
 #endif
+
+if (doenvlast == YES)
+	readenv();
 
 if(prtrflag) printdesc(NO);
 
@@ -281,6 +292,9 @@ if( !firstrd++ )
 	if( !noruleflag )
 		rdd1( (FILE *) NULL);
 
+	if (doenvlast == NO)
+		readenv();
+
 #ifdef pwb
 		{
 		char *nlog, s[BUFSIZ];
@@ -378,4 +392,21 @@ for(p = firstname; p; p = p->nxtnameblock)
 	}
 printf("\n");
 fflush(stdout);
+}
+
+readenv()
+{
+	register char **ep, *p;
+	extern char **environ;
+
+	for(ep = environ ; *ep ; ++ep) {
+		for (p = *ep; *p; p++) {
+			if (isalnum(*p))
+				continue;
+			if (*p == '=') {
+				eqsign(*ep);
+			}
+			break;
+		}
+	}
 }

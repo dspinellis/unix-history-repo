@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)misc.c	4.3 (Berkeley) 85/08/30";
+static	char *sccsid = "@(#)misc.c	4.4 (Berkeley) 87/05/21";
 #include "defs"
 
 FSTATIC struct nameblock *hashtab[HASHSIZE];
@@ -212,17 +212,19 @@ if(p->noreset == 0)
 eqsign(a)   /*look for arguments with equal signs but not colons */
 char *a;
 {
-register char *s, *t;
+register char *s, *t, c;
 
 while(*a == ' ') ++a;
 for(s=a  ;   *s!='\0' && *s!=':'  ; ++s)
 	if(*s == '=')
 		{
 		for(t = a ; *t!='=' && *t!=' ' && *t!='\t' ;  ++t );
+		c = *t;
 		*t = '\0';
 
 		for(++s; *s==' ' || *s=='\t' ; ++s);
 		setvar(a, copys(s));
+		*t = c;
 		return(YES);
 		}
 
