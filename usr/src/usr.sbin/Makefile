@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.7 (Berkeley) %G%
+#	@(#)Makefile	5.8 (Berkeley) %G%
 
 # BROKEN pstat
 SUBDIR=	ac accton amd arp chown chroot config cron dev_mkdb diskpart \
@@ -10,6 +10,8 @@ SUBDIR=	ac accton amd arp chown chroot config cron dev_mkdb diskpart \
 .if   make(clean) || make(cleandir)
 SUBDIR+=bad144 dlmpcc flcopy rxformat timed
 .elif ${MACHINE} == "hp300"
+SUBDIR+=timed
+.elif ${MACHINE} == "luna68k"
 SUBDIR+=timed
 .elif ${MACHINE} == "tahoe"
 SUBDIR+=dlmpcc timed
