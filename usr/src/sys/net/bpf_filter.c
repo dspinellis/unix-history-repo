@@ -47,6 +47,22 @@ static char rcsid[] =
 		 *((u_char *)p+3)<<0)
 #endif
 
+#ifdef KERNEL
+#include <sys/mbuf.h>
+#define MINDEX(m, k) \
+{ \
+	register int len = m->m_len; \
+ \
+	while (k >= len) { \
+		k -= len; \
+		m = m->m_next; \
+		if (m == 0) \
+			return 0; \
+		len = m->m_len; \
+	} \
+}
+#endif
+
 /*
  * Execute the filter program starting at pc on the packet p
  * wirelen is the length of the original packet
@@ -91,8 +107,20 @@ bpf_filter(pc, p, wirelen, buflen)
 
 		case BPF_LD|BPF_W|BPF_ABS:
 			k = pc->k;
-			if (k + sizeof(long) > buflen)
+			if (k + sizeof(long) > buflen) {
+#ifdef KERNEL
+				register struct mbuf *m;
+
+				if (buflen != 0)
+					return 0;
+				m = (struct mbuf *)p;
+				MINDEX(m, k);
+				A = EXTRACT_LONG(mtod(m, char *) + k);
+				break;
+#else
 				return 0;
+#endif
+			}
 #ifdef ALIGN
 			if (((int)(p + k) & 3) != 0)
 				A = EXTRACT_LONG(&p[k]);
@@ -103,15 +131,39 @@ bpf_filter(pc, p, wirelen, buflen)
 
 		case BPF_LD|BPF_H|BPF_ABS:
 			k = pc->k;
-			if (k + sizeof(short) > buflen)
+			if (k + sizeof(short) > buflen) {
+#ifdef KERNEL
+				register struct mbuf *m;
+
+				if (buflen != 0)
+					return 0;
+				m = (struct mbuf *)p;
+				MINDEX(m, k);
+				A = EXTRACT_SHORT(mtod(m, char *) + k);
+				break;
+#else
 				return 0;
+#endif
+			}
 			A = EXTRACT_SHORT(&p[k]);
 			break;
 
 		case BPF_LD|BPF_B|BPF_ABS:
 			k = pc->k;
-			if (k >= buflen)
+			if (k >= buflen) {
+#ifdef KERNEL
+				register struct mbuf *m;
+
+				if (buflen != 0)
+					return 0;
+				m = (struct mbuf *)p;
+				MINDEX(m, k);
+				A = mtod(m, char *)[k];
+				break;
+#else
 				return 0;
+#endif
+			}
 			A = p[k];
 			break;
 
@@ -125,8 +177,20 @@ bpf_filter(pc, p, wirelen, buflen)
 
 		case BPF_LD|BPF_W|BPF_IND:
 			k = X + pc->k;
-			if (k + sizeof(long) > buflen)
+			if (k + sizeof(long) > buflen) {
+#ifdef KERNEL
+				register struct mbuf *m;
+
+				if (buflen != 0)
+					return 0;
+				m = (struct mbuf *)p;
+				MINDEX(m, k);
+				A = EXTRACT_LONG(mtod(m, char *) + k);
+				break;
+#else
 				return 0;
+#endif
+			}
 #ifdef ALIGN
 			if (((int)(p + k) & 3) != 0)
 				A = EXTRACT_LONG(&p[k]);
@@ -137,16 +201,59 @@ bpf_filter(pc, p, wirelen, buflen)
 
 		case BPF_LD|BPF_H|BPF_IND:
 			k = X + pc->k;
-			if (k + sizeof(short) > buflen)
+			if (k + sizeof(short) > buflen) {
+#ifdef KERNEL
+				register struct mbuf *m;
+
+				if (buflen != 0)
+					return 0;
+				m = (struct mbuf *)p;
+				MINDEX(m, k);
+				A = EXTRACT_SHORT(mtod(m, char *) + k);
+				break;
+#else
 				return 0;
+#endif
+			}
 			A = EXTRACT_SHORT(&p[k]);
 			break;
 
 		case BPF_LD|BPF_B|BPF_IND:
 			k = X + pc->k;
-			if (k >= buflen)
+			if (k >= buflen) {
+#ifdef KERNEL
+				register struct mbuf *m;
+
+				if (buflen != 0)
+					return 0;
+				m = (struct mbuf *)p;
+				MINDEX(m, k);
+				A = mtod(m, char *)[k];
+				break;
+#else
 				return 0;
+#endif
+			}
 			A = p[k];
+			break;
+
+		case BPF_LDX|BPF_MSH|BPF_B:
+			k = pc->k;
+			if (k >= buflen) {
+#ifdef KERNEL
+				register struct mbuf *m;
+
+				if (buflen != 0)
+					return 0;
+				m = (struct mbuf *)p;
+				MINDEX(m, k);
+				X = (mtod(m, char *)[k] & 0xf) << 2;
+				break;
+#else
+				return 0;
+#endif
+			}
+			X = (p[pc->k] & 0xf) << 2;
 			break;
 
 		case BPF_LD|BPF_IMM:
@@ -155,12 +262,6 @@ bpf_filter(pc, p, wirelen, buflen)
 
 		case BPF_LDX|BPF_IMM:
 			X = pc->k;
-			break;
-
-		case BPF_LDX|BPF_MSH|BPF_B:
-			if (pc->k >= buflen)
-				return 0;
-			X = (p[pc->k] & 0xf) << 2;
 			break;
 
 		case BPF_LD|BPF_MEM:
