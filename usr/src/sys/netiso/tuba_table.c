@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tuba_table.c	7.8 (Berkeley) %G%
+ *	@(#)tuba_table.c	7.9 (Berkeley) %G%
  */
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -57,16 +57,16 @@ tuba_table_init()
 }
 
 int
-tuba_lookup(isoa, wait)
-	register struct iso_addr *isoa;
+tuba_lookup(siso, wait)
+	register struct sockaddr_iso *siso;
 {
 	struct radix_node *rn, *rn_match();
 	register struct tuba_cache *tc;
 	struct tuba_cache **new;
 	int dupentry = 0, sum_a = 0, sum_b = 0, old_size, i;
 
-	if ((rn = rn_match((caddr_t)isoa, tuba_tree->rnh_treetop)) &&
-	    ((rn->rn_flags & RNF_ROOT) == 0)) {
+	if ((rn = rn_match((caddr_t)&siso->siso_addr, tuba_tree->rnh_treetop))
+	     && ((rn->rn_flags & RNF_ROOT) == 0)) {
 		tc = (struct tuba_cache *)rn;
 		tc->tc_time = time.tv_sec;
 		return (tc->tc_index);
@@ -75,8 +75,8 @@ tuba_lookup(isoa, wait)
 		== NULL)
 		return (0);
 	bzero((caddr_t)tc, sizeof (*tc));
-	bcopy((caddr_t)isoa, (caddr_t)&tc->tc_siso.siso_addr,
-		1 + isoa->isoa_len);
+	bcopy(siso->siso_data, tc->tc_siso.siso_data,
+		tc->tc_siso.siso_nlen =  siso->siso_nlen);
 	rn_insert((caddr_t)&tc->tc_siso.siso_addr,
 		  tuba_tree->rnh_treetop, &dupentry, tc->tc_nodes);
 	if (dupentry)
@@ -84,7 +84,7 @@ tuba_lookup(isoa, wait)
 	tc->tc_siso.siso_family = AF_ISO;
 	tc->tc_siso.siso_len = sizeof(tc->tc_siso);
 	tc->tc_time = time.tv_sec;
-	for (i = sum_a = isoa->isoa_len; --i >= 0; )
+	for (i = sum_a = tc->tc_siso.siso_nlen; --i >= 0; )
 		(i & 1 ? sum_a : sum_b) += tc->tc_siso.siso_data[i];
 	REDUCE(tc->tc_sum, (sum_a << 8) + sum_b);
 	HTONS(tc->tc_sum);
@@ -103,7 +103,7 @@ tuba_lookup(isoa, wait)
 	if (new == 0) {
 		tuba_table_size = old_size;
 		rn_delete((caddr_t)&tc->tc_siso.siso_addr,
-			  (caddr_t)0, tuba_tree);
+			  (caddr_t)0, tuba_tree->rnh_treetop);
 		free((caddr_t)tc, M_RTABLE);
 		return (0);
 	}
