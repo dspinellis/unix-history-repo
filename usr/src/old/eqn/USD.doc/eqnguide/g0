@@ -1,6 +1,6 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)g0	8.1 (Berkeley) %G%
+.\"	@(#)g0	8.2 (Berkeley) %G%
 .\"
 .EH 'USD:24-%''Typesetting Mathematics _ User\'s Guide'
 .OH 'Typesetting Mathematics _ User\'s Guide''USD:24-%'
@@ -16,7 +16,8 @@ Typesetting Mathematics _ User's Guide
 .AU 2C-518 6021
 Brian W. Kernighan and Lorinda L. Cherry
 .AI
-.MH
+AT&T Bell Laboratories
+Murray Hill, NJ
 .AB
 .in
 .ll
@@ -84,4 +85,3 @@ and
 terminals
 and Model 37 teletypes.
 .AE
-.CS 11 0 11 0 0 3
