@@ -1,4 +1,4 @@
-/*	dmf.c	4.17	83/05/14	*/
+/*	dmf.c	4.18	83/05/14	*/
 
 #include "dmf.h"
 #if NDMF > 0
@@ -415,8 +415,8 @@ dmfparam(unit)
 		lpar |= BITS7|PENABLE;
 		/* CHECK FOR XON/XOFF AND SET lcr |= DMF_AUTOX; */
 	}
-	if ((tp->t_flags&EVENP) == 0)
-		lpar |= OPAR;
+	if (tp->t_flags&EVENP)
+		lpar |= EPAR;
 	if ((tp->t_ospeed) == B110)
 		lpar |= TWOSB;
 	lpar |= (unit&07);
