@@ -1,26 +1,22 @@
-/*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1980 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
  */
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1980 Regents of the University of California.\n\
+"@(#) Copyright (c) 1980 The Regents of the University of California.\n\
  All rights reserved.\n";
-#endif not lint
+#endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.11 (Berkeley) %G%";
-#endif not lint
-
-/*
- * getty -- adapt to terminal speed on dialup, and call login
- *
- * Melbourne getty, June 83, kre.
- */
+static char sccsid[] = "@(#)main.c	5.12 (Berkeley) %G%";
+#endif /* not lint */
 
 #define USE_OLD_TTY
+
 #include <sys/param.h>
 #include <sys/signal.h>
 #include <sys/file.h>
@@ -28,11 +24,11 @@ static char sccsid[] = "@(#)main.c	5.11 (Berkeley) %G%";
 #include <ctype.h>
 #include <setjmp.h>
 #include <syslog.h>
+#include <unistd.h>
 #include <ctype.h>
+#include <string.h>
 #include "gettytab.h"
 #include "pathnames.h"
-
-extern	char **environ;
 
 struct	sgttyb tmode = {
 	0, 0, CERASE, CKILL, 0
@@ -46,10 +42,7 @@ struct	ltchars ltc = {
 	CFLUSH, CWERASE, CLNEXT
 };
 
-int	crmod;
-int	upper;
-int	lower;
-int	digit;
+int crmod, digit, lower, upper;
 
 char	hostname[MAXHOSTNAMELEN];
 char	name[16];
@@ -111,8 +104,10 @@ interrupt()
 }
 
 main(argc, argv)
-	char *argv[];
+	int argc;
+	char **argv;
 {
+	extern	char **environ;
 	char *tname;
 	long allflags;
 	int repcnt = 0;
@@ -174,7 +169,7 @@ main(argc, argv)
 		setdefaults();
 		ioctl(0, TIOCFLUSH, 0);		/* clear out the crap */
 		ioctl(0, FIONBIO, &off);	/* turn off non-blocking mode */
-		ioctl(0, FIOASYNC, &off);	/* ditto for asynchronous mode */
+		ioctl(0, FIOASYNC, &off);	/* ditto for async mode */
 		if (IS)
 			tmode.sg_ispeed = speed(IS);
 		else if (SP)
@@ -261,8 +256,8 @@ main(argc, argv)
 
 getname()
 {
+	register int c;
 	register char *np;
-	register c;
 	char cs;
 
 	/*
@@ -283,14 +278,11 @@ getname()
 		PF = 0;
 	}
 	ioctl(0, TIOCSETP, &tmode);
-	crmod = 0;
-	upper = 0;
-	lower = 0;
-	digit = 0;
+	crmod = digit = lower = upper = 0;
 	np = name;
 	for (;;) {
 		oflush();
-		if (read(0, &cs, 1) <= 0)
+		if (read(STDIN_FILENO, &cs, 1) <= 0)
 			exit(0);
 		if ((c = cs&0177) == 0)
 			return (0);
@@ -301,9 +293,9 @@ getname()
 			break;
 		}
 		if (islower(c))
-			lower++;
+			lower = 1;
 		else if (isupper(c))
-			upper++;
+			upper = 1;
 		else if (c == ERASE || c == '#' || c == '\b') {
 			if (np > name) {
 				np--;
@@ -334,7 +326,7 @@ getname()
 	signal(SIGINT, SIG_IGN);
 	*np = 0;
 	if (c == '\r')
-		crmod++;
+		crmod = 1;
 	if (upper && !lower && !LC || UC)
 		for (np = name; *np; np++)
 			if (isupper(*np))
@@ -377,11 +369,10 @@ putpad(s)
 		return;
 
 	/*
-	 * Round up by a half a character frame,
-	 * and then do the delay.
+	 * Round up by a half a character frame, and then do the delay.
 	 * Too bad there are no user program accessible programmed delays.
-	 * Transmitting pad characters slows many
-	 * terminals down and also loads the system.
+	 * Transmitting pad characters slows many terminals down and also
+	 * loads the system.
 	 */
 	mspc10 = tmspc10[tmode.sg_ospeed];
 	pad += mspc10 / 2;
@@ -392,7 +383,6 @@ putpad(s)
 puts(s)
 	register char *s;
 {
-
 	while (*s)
 		putchr(*s++);
 }
@@ -413,13 +403,13 @@ putchr(cc)
 		if (obufcnt >= OBUFSIZ)
 			oflush();
 	} else
-		write(1, &c, 1);
+		write(STDOUT_FILENO, &c, 1);
 }
 
 oflush()
 {
 	if (obufcnt)
-		write(1, outbuf, obufcnt);
+		write(STDOUT_FILENO, outbuf, obufcnt);
 	obufcnt = 0;
 }
 
@@ -434,10 +424,9 @@ prompt()
 putf(cp)
 	register char *cp;
 {
-	char *slash;
-	char datebuffer[60];
 	extern char editedhost[];
-	extern char *rindex();
+	time_t t;
+	char *slash, db[100];
 
 	while (*cp) {
 		if (*cp != '%') {
@@ -459,8 +448,10 @@ putf(cp)
 			break;
 
 		case 'd':
-			get_date(datebuffer);
-			puts(datebuffer);
+			(void)time(&t);
+			(void)strftime(db,
+			    sizeof(db), "%l:main.cP on %A, %d %B %Y", &t);
+			puts(db);
 			break;
 
 		case '%':
