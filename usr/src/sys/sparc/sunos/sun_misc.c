@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sun_misc.c	7.1 (Berkeley) %G%
+ *	@(#)sun_misc.c	7.2 (Berkeley) %G%
  *
  * from: $Header: sun_misc.c,v 1.12 92/07/12 13:26:10 torek Exp $
  */
@@ -35,9 +35,10 @@
 #include "signalvar.h"
 #include "socket.h"
 #include "vnode.h"
-#include "specdev.h"
 #include "uio.h"
 #include "wait.h"
+
+#include "miscfs/specfs/specdev.h"
 
 #include "vm/vm.h"
 
