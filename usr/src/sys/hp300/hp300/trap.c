@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: trap.c 1.28 89/09/25$
  *
- *	@(#)trap.c	7.3 (Berkeley) %G%
+ *	@(#)trap.c	7.4 (Berkeley) %G%
  */
 
 #include "cpu.h"
@@ -595,7 +595,7 @@ syscall(code, frame)
 		error = notimp(code, callp->sy_narg);
 	else
 #endif
-	error = (*(callp->sy_call))(&u);
+	error = (*callp->sy_call)(u.u_procp, u.u_ap, &u.u_r.r_val1);
 	error = u.u_error;		/* XXX */
 	if (error == ERESTART)
 		frame.f_pc = opc;
