@@ -8,6 +8,9 @@
 # 11 Apr 93	Rodney W. Grimes	Added conditional for profiled
 #					library LINKS
 
+#SHLIB_MAJOR= 0
+#SHLIB_MINOR= 0
+
 LIB=	termcap
 CFLAGS+=-DCM_N -DCM_GT -DCM_B -DCM_D
 SRCS=	termcap.c tgoto.c tputs.c

@@ -1,5 +1,8 @@
 #	@(#)Makefile	5.10 (Berkeley) 6/24/90
 
+#SHLIB_MAJOR= 0
+#SHLIB_MINOR= 0
+
 LIB=	curses
 SRCS=	addbytes.c addch.c addstr.c box.c clear.c clrtobot.c clrtoeol.c \
 	cr_put.c cr_tty.c curses.c delch.c deleteln.c delwin.c endwin.c \

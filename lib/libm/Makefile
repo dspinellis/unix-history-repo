@@ -9,6 +9,9 @@
 # tahoe		- for the tahoe double format.
 # vax		- for the vax D_floating format
 
+#SHLIB_MAJOR= 0
+#SHLIB_MINOR= 0
+
 LIB=	m
 CFLAGS+=-I${.CURDIR}/common_source
 
