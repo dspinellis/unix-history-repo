@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)profile.h	7.1 (Berkeley) %G%
+ *	@(#)profile.h	7.2 (Berkeley) %G%
  */
 
 #define	_MCOUNT_DECL static inline void _mcount
@@ -25,6 +25,6 @@ extern void mcount() asm("mcount"); void mcount() { \
 	 * have to chase a6 to find caller's raddr. \
 	 */ \
 	asm("movl (%%ebp),%0" : "=r" (frompcindex)); \
-	frompcindex = ((unsigned short **)frompcindex)[1]; \
+	frompcindex = ((int *)frompcindex)[1]; \
 	_mcount(frompcindex, selfpc); \
 }
