@@ -1,8 +1,14 @@
-#ifndef lint
-static char sccsid[] = "@(#)open.c	4.1 (Berkeley) %G%";
-#endif
+/*-
+ * Copyright (c) 1983 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
+ */
 
-#
+#ifndef lint
+static char sccsid[] = "@(#)open.c	4.2 (Berkeley) %G%";
+#endif /* not lint */
+
 #include <sgtty.h>
 /* gsi plotting output routines */
 # define DOWN 012

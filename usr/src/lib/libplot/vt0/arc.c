@@ -1,6 +1,13 @@
+/*-
+ * Copyright (c) 1983 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
+ */
+
 #ifndef lint
-static char sccsid[] = "@(#)arc.c	4.1 (Berkeley) %G%";
-#endif
+static char sccsid[] = "@(#)arc.c	4.2 (Berkeley) %G%";
+#endif /* not lint */
 
 extern vti;
 arc(xi,yi,x0,y0,x1,y1){
