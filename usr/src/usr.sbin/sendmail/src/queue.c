@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	6.53 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	6.54 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	6.53 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	6.54 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -181,7 +181,7 @@ notemp:
 	fprintf(tfp, "S%s\n", e->e_from.q_paddr);
 
 	/* output list of error recipients */
-	printctladdr(NULL, tfp);
+	printctladdr(NULL, NULL);
 	for (q = e->e_errorqueue; q != NULL; q = q->q_next)
 	{
 		if (!bitset(QDONTSEND|QBADADDR, q->q_flags))
@@ -326,9 +326,9 @@ printctladdr(a, tfp)
 	extern ADDRESS *getctladdr();
 
 	/* initialization */
-	if (a == NULL)
+	if (a == NULL || tfp == NULL)
 	{
-		if (lastctladdr != NULL)
+		if (lastctladdr != NULL && tfp != NULL)
 			fprintf(tfp, "C\n");
 		lastctladdr = NULL;
 		lastuid = 0;
@@ -465,7 +465,7 @@ runqueue(forkflag)
 	**  Make sure the alias database is open.
 	*/
 
-	initaliases(AliasFile, FALSE, e);
+	initaliases(FALSE, e);
 
 	/*
 	**  Start making passes through the queue.
