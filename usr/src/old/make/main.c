@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	4.6 (Berkeley) 84/11/26";
+static	char *sccsid = "@(#)main.c	4.7 (Berkeley) 85/08/30";
 # include "defs"
 /*
 command make to update programs.
@@ -283,7 +283,7 @@ if( !firstrd++ )
 
 #ifdef pwb
 		{
-		char *nlog, s[100];
+		char *nlog, s[BUFSIZ];
 		nlog = logdir();
 		if ( (k=fopen( concat(nlog,"/makecomm",s), "r")) != NULL)
 			rdd1(k);

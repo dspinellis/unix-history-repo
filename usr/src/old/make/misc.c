@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)misc.c	4.2 (Berkeley) 82/10/19";
+static	char *sccsid = "@(#)misc.c	4.3 (Berkeley) 85/08/30";
 #include "defs"
 
 FSTATIC struct nameblock *hashtab[HASHSIZE];
@@ -153,7 +153,7 @@ register char *a,*b;
 {
 static depth	= 0;
 register char *s;
-char vname[100];
+char vname[BUFSIZ];
 struct varblock *varptr(), *vbp;
 char closer;
 

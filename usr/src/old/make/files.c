@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)files.c	4.10 (Berkeley) 85/04/16";
+static	char *sccsid = "@(#)files.c	4.11 (Berkeley) 85/08/30";
 #include <fcntl.h>
 
 /* UNIX DEPENDENT PROCEDURES */
@@ -191,14 +191,14 @@ struct depblock *nextdbl;  /* final value for chain */
 DIR *dirf;
 register int i;
 int nread, cldir;
-char *dirname, *dirpref, *endir, *filepat, *p, temp[100];
-char fullname[100], *p1, *p2;
+char *dirname, *dirpref, *endir, *filepat, *p, temp[BUFSIZ];
+char fullname[BUFSIZ], *p1, *p2;
 struct nameblock *q;
 struct depblock *thisdbl;
 struct dirhdr *od;
 struct pattern *patp;
 struct varblock *cp, *varptr();
-char *path, pth[100], *strcpy();
+char *path, pth[BUFSIZ], *strcpy();
 struct direct *dptr;
 
 
@@ -625,7 +625,7 @@ char *s, *d;
 {
 	register char *r, *q;
 	struct nameblock *pn;
-	char name[100];
+	char name[BUFSIZ];
 
 	while (*s) {
 		if (isspace(*s)) *d++ = *s++;

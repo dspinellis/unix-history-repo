@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)gcos.c	4.2 (Berkeley) 85/04/16";
+static	char *sccsid = "@(#)gcos.c	4.3 (Berkeley) 85/08/30";
 /* GCOS DEPENDENT PROCEDURES */
 
 
@@ -189,8 +189,8 @@ struct depblock *nextdbl;  /* final value for chain */
 {
 int dirf;
 int i, nread;
-char *dirname, *dirpref, *endir, *filepat, *p, temp[100];
-char fullname[100], *p1, *p2, *copys();
+char *dirname, *dirpref, *endir, *filepat, *p, temp[BUFSIZ];
+char fullname[BUFSIZ], *p1, *p2, *copys();
 struct nameblock *q;
 struct depblock *thisdbl;
 struct pattern *patp;
