@@ -2,13 +2,13 @@
 # include "sendmail.h"
 
 #ifndef DAEMON
-SCCSID(@(#)daemon.c	3.10		%G%	(w/o daemon mode));
+SCCSID(@(#)daemon.c	3.11		%G%	(w/o daemon mode));
 #else
 
 # include <sys/socket.h>
 # include <net/in.h>
 
-SCCSID(@(#)daemon.c	3.10		%G%	(with daemon mode));
+SCCSID(@(#)daemon.c	3.11		%G%	(with daemon mode));
 
 /*
 **  DAEMON.C -- routines to use when running as a daemon.
@@ -124,6 +124,7 @@ getconnection()
 	*/
 
 	SendmailAddress.sin_addr.s_addr = 0;
+	SendmailAddress.sin_port = IPPORT_SMTP;
 
 	/*
 	**  Try to actually open the connection.
@@ -149,6 +150,7 @@ getconnection()
 **
 **	Parameters:
 **		host -- the name of the host.
+**		port -- the port number to connect to.
 **		outfile -- a pointer to a place to put the outfile
 **			descriptor.
 **		infile -- ditto for infile.
@@ -161,8 +163,9 @@ getconnection()
 **		none.
 */
 
-makeconnection(host, outfile, infile)
+makeconnection(host, port, outfile, infile)
 	char *host;
+	int port;
 	FILE **outfile;
 	FILE **infile;
 {
@@ -174,6 +177,9 @@ makeconnection(host, outfile, infile)
 
 	if ((SendmailAddress.sin_addr.s_addr = rhost(&host)) == -1)
 		return (EX_NOHOST);
+	if (port == 0)
+		port = IPPORT_SMTP;
+	SendmailAddress.sin_port = port;
 
 	/*
 	**  Try to actually open the connection.
