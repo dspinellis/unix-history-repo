@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vm_mmap.c 1.6 91/10/21$
  *
- *	@(#)vm_mmap.c	7.21 (Berkeley) %G%
+ *	@(#)vm_mmap.c	7.22 (Berkeley) %G%
  */
 
 /*
@@ -526,6 +526,13 @@ vm_mmap(map, addr, size, prot, flags, handle, foff)
 				vm_object_deallocate(object);
 			goto out;
 		}
+		/*
+		 * The object of unnamed anonymous regions was just created
+		 * find it for pager_cache.
+		 */
+		if (handle == NULL)
+			object = vm_object_lookup(pager);
+
 		/*
 		 * Don't cache anonymous objects.
 		 * Loses the reference gained by vm_pager_allocate.
