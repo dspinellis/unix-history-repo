@@ -1,4 +1,4 @@
-SCCSID = "@(#)Makefile	1.7 (Berkeley) %G%"
+SCCSID = "@(#)Makefile	1.8 (Berkeley) %G%"
 DESTDIR=
 ED=	-ex
 AS=	-as
@@ -12,15 +12,17 @@ BINDIR=	../pxp
 #
 LOCOBJ=	Version.o call.o case.o const.o cset.o error.o fdec.o func.o \
 	lab.o lval.o main.o nl.o pmon.o pp.o proc.o rec.o rval.o stat.o \
-	string.o subr.o type.o var.o y.tab.o yycomm.o yyerror.o yyget.o \
+	string.o subr.o type.o var.o y.tab.o yycomm.o yyerror.o \
 	yymain.o yyput.o
 #
 # Files which are shared with pi and pc0
 #
-SRCOBJ=	TRdata.o hash.o tree.o treen.o yycopy.o yycosts.o yyid.o yylex.o \
-	yypanic.o yyparse.o yyprint.o yyrecover.o yyseman.o yytree.o
-SRCSRC=	TRdata.c hash.c tree.c treen.c yycopy.c yycosts.c yyid.c yylex.c \
-	yypanic.c yyparse.c yyprint.c yyrecover.c yyseman.c yytree.c
+SRCOBJ=	TRdata.o hash.o tree.o treen.o yycopy.o yycosts.o yyget.o \
+	yyid.o yylex.o yypanic.o yyparse.o yyprint.o yyrecover.o \
+	yyseman.o yytree.o
+SRCSRC=	TRdata.c hash.c tree.c treen.c yycopy.c yycosts.c yyget.c \
+	yyid.c yylex.c yypanic.c yyparse.c yyprint.c yyrecover.c \
+	yyseman.c yytree.c
 
 all: a.out
 
@@ -123,9 +125,9 @@ subr.o: subr.c
 type.o: type.c
 var.o: var.c
 version.o: version.c
+y.tab.o: y.tab.c
 yycomm.o: yycomm.c
 yyerror.o: yyerror.c
-yyget.o: yyget.c
 yymain.o: yymain.c
 yyput.o: yyput.c
 TRdata.o: ../src/TRdata.c
@@ -134,6 +136,7 @@ tree.o: ../src/tree.c
 treen.o: ../src/treen.c
 yycopy.o: ../src/yycopy.c
 yycosts.o: ../src/yycosts.c
+yyget.o: ../src/yyget.c
 yyid.o: ../src/yyid.c
 yylex.o: ../src/yylex.c
 yypanic.o: ../src/yypanic.c
@@ -150,11 +153,15 @@ hash.o: 0.h
 hash.o: ../src/yy.h
 tree.o: whoami.h
 tree.o: 0.h
+yycopy.o: whoami.h
 yycopy.o: 0.h
 yycopy.o: ../src/yy.h
 yycosts.o: whoami.h
 yycosts.o: 0.h
 yycosts.o: ../src/yy.h
+yyget.o: whoami.h
+yyget.o: 0.h
+yyget.o: ../src/yy.h
 yyid.o: whoami.h
 yyid.o: 0.h
 yyid.o: ../src/yy.h
@@ -187,6 +194,7 @@ const.o: 0.h
 const.o: ../src/tree.h
 cset.o: 0.h
 cset.o: ../src/tree.h
+error.o: whoami.h
 error.o: 0.h
 error.o: ../src/yy.h
 fdec.o: 0.h
@@ -214,15 +222,20 @@ type.o: 0.h
 type.o: ../src/tree.h
 var.o: 0.h
 var.o: ../src/tree.h
+y.tab.o: whoami.h
+y.tab.o: 0.h
+y.tab.o: ../src/yy.h
+y.tab.o: ../src/tree.h
 yycomm.o: whoami.h
 yycomm.o: 0.h
 yycomm.o: ../src/yy.h
+yyerror.o: whoami.h
 yyerror.o: 0.h
 yyerror.o: ../src/yy.h
-yyget.o: 0.h
-yyget.o: ../src/yy.h
+yymain.o: whoami.h
 yymain.o: 0.h
 yymain.o: ../src/yy.h
+yyput.o: whoami.h
 yyput.o: 0.h
 yyput.o: ../src/tree.h
 yyput.o: ../src/yy.h
