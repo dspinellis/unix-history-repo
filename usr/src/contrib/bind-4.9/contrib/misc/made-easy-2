@@ -1,0 +1,58 @@
+Newsgroups: comp.protocols.tcp-ip.domains
+Path: pa.dec.com!decwrl!uunet!news.tele.fi!sunic!aun.uninett.no!humpty.edb.tih.no!mads
+From: mads@edb.tih.no (Mads Eilertsen)
+Subject: Re: DNS Made Easy (Well that was the plan anyway)
+Message-ID: <1993May13.201037.12163@edb.tih.no>
+Sender: newsadm@edb.tih.no (News Administrator)
+Nntp-Posting-Host: skylark.edb.tih.no
+Organization: Trondheim College of Engineering, Norway
+X-Newsreader: TIN [version 1.1 PL9]
+References: <1st8h3$laa@uniwa.uwa.edu.au>
+Distribution: inet
+Date: Thu, 13 May 1993 20:10:37 GMT
+Lines: 44
+
+
+Craig Richmond - division (craig@ecel.uwa.edu.au) wrote:
+: Being authoritive means that if a server is asked about something in that
+: domain, it can say with no ambiguity whether or not a given piece of
+: information is true.
+
+
+The fine document should probably say something about zones.
+
+To be precise, name servers are authoritative for zones, not domains.
+The server beeing authoritative for the au -zone- is probably not
+authoritative for all the data in the entire au domain name space.
+It's authoritative only for the parts of the au name space that isn't
+delegated to other servers. Those remaining contiguous parts comprises
+the au -zone-.
+See the nutshell book "DNS and BIND", Chap. 2, "Name Servers".
+
+
+: My local machine knows about all the name server information, but no other
+: sites know about me?
+
+: Find an upstream nameserver (one that has an SOA for something in your
+: domain) and ask them to be a secondary name server for you.  eg if you are
+: ecel.uwa.edu.au, ask someone who has an SOA for the domain uwa.edu.au.
+
+And also make sure their server actually delegates authority for
+ecel.uwa.edu.au to your server.  Just putting up a secondary name server
+ain't sufficient.  For "outside" sites to reach your domain information,
+the upstream server must delegate authority to your server for your zones.
+
+[...] when you are allocated a B class subnet for example, you get all of
+: the IP numbers in the domain 130.95.
+
+Similarly, you should make sure that the name server authoritative for
+the 95.in-addr.arpa zone delegates authority for 130.95.in-addr.arpa
+to your name server.  Or else reverse lookups won't work for the
+outside world.
+
+I believe delegation is an important feature of DNS and probably
+ought to be mentioned in your document in some way.
+
+
+Mads E. Eilertsen   
+Trondheim College of Engineering, Dept. of Computer Science, Norway
