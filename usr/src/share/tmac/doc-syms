@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)doc-syms	5.5 (Berkeley) %G%
+.\"     @(#)doc-syms	5.6 (Berkeley) %G%
 .\"
 .\"     %beginstrip%
 .\" NS Ux macro - UNIX
@@ -11,15 +11,19 @@
 .nr cF \\n(.f
 .nr cZ \\n(.s
 .ds aa \&\f\\n(cF\s\\n(cZ
+.as b1 \&\\*(tNUNIX\\*(aa
+.rm aa
 .if \\n(aC==0 \{\
-.       ie \\n(.$==0 \&U\\*(tNNIX\\*(aa
-.       el .aV \\$1 \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
+.       if \\n(.$>0 .aV \\$1 \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
 .\}
-.if \\n(aC>\\n(aP \{\
-.       as b1 \&U\\*(tNNIX\\*(aa
+.ie \\n(aC>\\n(aP \{\
 .       nr aP \\n(aP+1
-.       nR
+.       ie \\n(C\\n(aP==1 \{\
+.               \\*(A\\n(aP
+.       \}
+.       el .nR
 .\}
+.el .aZ
 ..
 .\" NS Bx macro -BSD UNIX (fix smaller nroff version)
 .de Bx
@@ -27,7 +31,7 @@
 .nr cZ \\n(.s
 .ds aa \&\f\\n(cF\s\\n(cZ
 .if \\n(aC==0 \{\
-.       ie \\n(.$==0 \&\\*(tNBSD\\*(aa U\\*(tNNIX\\*(aa
+.       ie \\n(.$==0 \&\\*(tNBSD\\*(aa \\*(tNUNIX\\*(aa
 .       el .aV \\$1 \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
 .\}
 .if "\\$1"-alpha" \{\
@@ -100,6 +104,7 @@
 .	if "\\$1"v7"  \&Version 7 \\*(tNAT&T UNIX\\*(aa\\$2
 .	if "\\$1"V"  \&\\*(tNAT&T\\*(aa System V \\*(tNUNIX\\*(aa\\$2
 .	if "\\$1"V.1"  \&\\*(tNAT&T\\*(aa System V.1 \\*(tNUNIX\\*(aa\\$2
+.	if "\\$1"V.4"  \&\\*(tNAT&T\\*(aa System V.4 \\*(tNUNIX\\*(aa\\$2
 .\}
 .if \\n(.$==1 \{\
 .	if "\\$1"32v" \&Version 32V \\*(tNAT&T UNIX\\*(aa
@@ -107,6 +112,7 @@
 .	if "\\$1"v7"  \&Version 7 \\*(tNAT&T UNIX\\*(aa
 .	if "\\$1"V"  \&\\*(tNAT&T\\*(aa System V \\*(tNUNIX\\*(aa
 .	if "\\$1"V.1"  \&\\*(tNAT&T\\*(aa System V.1 \\*(tNUNIX\\*(aa
+.	if "\\$1"V.4"  \&\\*(tNAT&T\\*(aa System V.4 \\*(tNUNIX\\*(aa
 .\}
 ..
 .\" The Bt macro should go away now
@@ -135,7 +141,7 @@
 .		ds A8 \\$8
 .		ds A9 \\$9
 .		nr fV \\n(.$
-.		fV 
+.		fV
 .	\}
 .\}
 .if \\n(aC>\\n(aP \{\

@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)doc-ditroff	5.7 (Berkeley) %G%
+.\"     @(#)doc-ditroff	5.8 (Berkeley) %G%
 .\"
 .\" tmac.mdoc-ditroff
 .\"     %beginstrip%
@@ -36,7 +36,7 @@
 .ds nO \fR\s10
 .ds nT \s0
 .ds pA \fC\s10
-.ds Pu \fR[.,:;(\^)[\^]\fR]
+.ds Pu \fR{\ .\ ,\ :\ ;\ (\ )\ [\ ]\ \fR}
 .ds rA \fR\s10
 .ds rT \f(CO\s10
 .ds sH \fB\s10
@@ -188,10 +188,10 @@
 .\}
 ..
 .\" NS Sh macro - Section Headers
-.\" NS nS register - Section Header SYNOPSIS flag 
-.\" NS nF register - Section Header FILES flag 
-.\" NS nA register - Section Header SEE ALSO flag 
-.\" NS nT register - Section Header STANDARDS flag 
+.\" NS nS register - Section Header SYNOPSIS flag
+.\" NS nF register - Section Header FILES flag
+.\" NS nA register - Section Header SEE ALSO flag
+.\" NS nT register - Section Header STANDARDS flag
 .de Sh
 .nr nS 0
 .nr sE 0
