@@ -6,12 +6,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)aux.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)aux.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
-#include <sys/stat.h>
-#include <sys/time.h>
+#include "extern.h"
 
 /*
  * Mail -- a mail program
@@ -37,15 +36,32 @@ savestr(str)
 /*
  * Announce a fatal error and die.
  */
+#if __STDC__
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
 
-/*VARARGS1*/
-panic(fmt, a, b)
+void
+#if __STDC__
+panic(const char *fmt, ...)
+#else
+panic(fmt, va_alist)
 	char *fmt;
+        va_dcl
+#endif
 {
-	fprintf(stderr, "panic: ");
-	fprintf(stderr, fmt, a, b);
-	putc('\n', stderr);
-	fflush(stdout);
+	va_list ap;
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
+	(void)fprintf(stderr, "panic: ");
+	vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	(void)fprintf(stderr, "\n");
+	fflush(stderr);
 	abort();
 }
 
@@ -54,6 +70,7 @@ panic(fmt, a, b)
  * Touched messages have the effect of not being sent
  * back to the system mailbox on exit.
  */
+void
 touch(mp)
 	register struct message *mp;
 {
@@ -67,6 +84,7 @@ touch(mp)
  * Test to see if the passed file name is a directory.
  * Return true if it is.
  */
+int
 isdir(name)
 	char name[];
 {
@@ -80,6 +98,7 @@ isdir(name)
 /*
  * Count the number of arguments in the given string raw list.
  */
+int
 argcount(argv)
 	char **argv;
 {
@@ -125,6 +144,7 @@ hfield(field, mp)
  * "colon" is set to point to the colon in the header.
  * Must deal with \ continuations & other such fraud.
  */
+int
 gethfield(f, linebuf, rem, colon)
 	register FILE *f;
 	char linebuf[];
@@ -204,6 +224,7 @@ ishfield(linebuf, colon, field)
 /*
  * Copy a string, lowercasing it as we go.
  */
+void
 istrcpy(dest, src)
 	register char *dest, *src;
 {
@@ -234,6 +255,7 @@ struct sstack {
  * Set the global flag "sourcing" so that others will realize
  * that they are no longer reading from a tty (in all probability).
  */
+int
 source(arglist)
 	char **arglist;
 {
@@ -266,6 +288,7 @@ source(arglist)
  * Pop the current input back to the previous level.
  * Update the "sourcing" flag as appropriate.
  */
+int
 unstack()
 {
 	if (ssp <= 0) {
@@ -289,6 +312,7 @@ unstack()
  * Touch the indicated file.
  * This is nifty for the shell.
  */
+void
 alter(name)
 	char *name;
 {
@@ -308,6 +332,7 @@ alter(name)
  * Examine the passed line buffer and
  * return true if it is all blanks and tabs.
  */
+int
 blankline(linebuf)
 	char linebuf[];
 {
@@ -327,6 +352,7 @@ blankline(linebuf)
 char *
 nameof(mp, reptype)
 	register struct message *mp;
+	int reptype;
 {
 	register char *cp, *cp2;
 
@@ -484,6 +510,7 @@ skin(name)
 char *
 name1(mp, reptype)
 	register struct message *mp;
+	int reptype;
 {
 	char namebuf[LINESIZE];
 	char linebuf[LINESIZE];
@@ -539,8 +566,10 @@ newname:
 /*
  * Count the occurances of c in str
  */
+int
 charcount(str, c)
 	char *str;
+	int c;
 {
 	register char *cp;
 	register int i;
@@ -554,6 +583,7 @@ charcount(str, c)
 /*
  * Are any of the characters in the two strings the same?
  */
+int
 anyof(s1, s2)
 	register char *s1, *s2;
 {
@@ -567,8 +597,9 @@ anyof(s1, s2)
 /*
  * Convert c to upper case
  */
+int
 raise(c)
-	register c;
+	register int c;
 {
 
 	if (islower(c))
@@ -592,6 +623,7 @@ copy(s1, s2)
 /*
  * See if the given header field is supposed to be ignored.
  */
+int
 isign(field, ignore)
 	char *field;
 	struct ignoretab ignore[2];
@@ -611,6 +643,7 @@ isign(field, ignore)
 		return (member(realfld, ignore));
 }
 
+int
 member(realfield, table)
 	register char *realfield;
 	struct ignoretab *table;

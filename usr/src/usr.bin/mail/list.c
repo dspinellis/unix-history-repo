@@ -6,11 +6,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)list.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)list.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
 #include <ctype.h>
+#include "extern.h"
 
 /*
  * Mail -- a mail program
@@ -24,10 +25,10 @@ static char sccsid[] = "@(#)list.c	5.14 (Berkeley) %G%";
  *
  * Returns the count of messages picked up or -1 on error.
  */
-
+int
 getmsglist(buf, vector, flags)
 	char *buf;
-	int *vector;
+	int *vector, flags;
 {
 	register int *ip;
 	register struct message *mp;
@@ -83,8 +84,10 @@ struct coltab {
 
 static	int	lastcolmod;
 
+int
 markall(buf, f)
 	char buf[];
+	int f;
 {
 	register char **np;
 	register int i;
@@ -313,7 +316,9 @@ number:
  * Turn the character after a colon modifier into a bit
  * value.
  */
+int
 evalcol(col)
+	int col;
 {
 	register struct coltab *colp;
 
@@ -330,7 +335,9 @@ evalcol(col)
  * If f is MDELETED, then either kind will do.  Otherwise, the message
  * has to be undeleted.
  */
+int
 check(mesg, f)
+	int mesg, f;
 {
 	register struct message *mp;
 
@@ -350,7 +357,7 @@ check(mesg, f)
  * Scan out the list of string arguments, shell style
  * for a RAWLIST.
  */
-
+int
 getrawlist(line, argv, argc)
 	char line[];
 	char **argv;
@@ -460,6 +467,7 @@ struct lex {
 	0,	0
 };
 
+int
 scan(sp)
 	char **sp;
 {
@@ -561,8 +569,9 @@ scan(sp)
 /*
  * Unscan the named token by pushing it onto the regret stack.
  */
-
+void
 regret(token)
+	int token;
 {
 	if (++regretp >= REGDEP)
 		panic("Too many regrets");
@@ -575,7 +584,7 @@ regret(token)
 /*
  * Reset all the scanner global variables.
  */
-
+void
 scaninit()
 {
 	regretp = -1;
@@ -585,8 +594,9 @@ scaninit()
  * Find the first message whose flags & m == f  and return
  * its message number.
  */
-
+int
 first(f, m)
+	int f, m;
 {
 	register struct message *mp;
 
@@ -607,9 +617,10 @@ first(f, m)
  * See if the passed name sent the passed message number.  Return true
  * if so.
  */
-
+int
 matchsender(str, mesg)
 	char *str;
+	int mesg;
 {
 	register char *cp, *cp2, *backup;
 
@@ -637,9 +648,10 @@ matchsender(str, mesg)
  */
 
 char lastscan[128];
-
+int
 matchsubj(str, mesg)
 	char *str;
+	int mesg;
 {
 	register struct message *mp;
 	register char *cp, *cp2, *backup;
@@ -674,8 +686,9 @@ matchsubj(str, mesg)
 /*
  * Mark the named message by setting its mark bit.
  */
-
+void
 mark(mesg)
+	int mesg;
 {
 	register int i;
 
@@ -688,8 +701,9 @@ mark(mesg)
 /*
  * Unmark the named message.
  */
-
+void
 unmark(mesg)
+	int mesg;
 {
 	register int i;
 
@@ -702,8 +716,9 @@ unmark(mesg)
 /*
  * Return the message number corresponding to the passed meta character.
  */
-
+int
 metamess(meta, f)
+	int meta, f;
 {
 	register int c, m;
 	register struct message *mp;
