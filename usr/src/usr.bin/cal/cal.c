@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cal.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)cal.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -317,37 +317,36 @@ ascii_day(p, day)
 	register int display, val;
 	static char *aday[] = {
 		"",
-		" 1 ", " 2 ", " 3 ", " 4 ", " 5 ", " 6 ", " 7 ",
-		" 8 ", " 9 ", "10 ", "11 ", "12 ", "13 ", "14 ",
-		"15 ", "16 ", "17 ", "18 ", "19 ", "20 ", "21 ",
-		"22 ", "23 ", "24 ", "25 ", "26 ", "27 ", "28 ",
-		"29 ", "30 ", "31 ",
+		" 1", " 2", " 3", " 4", " 5", " 6", " 7",
+		" 8", " 9", "10", "11", "12", "13", "14",
+		"15", "16", "17", "18", "19", "20", "21",
+		"22", "23", "24", "25", "26", "27", "28",
+		"29", "30", "31",
 	};
 
 	if (day == SPACE) {
 		memset(p, ' ', julian ? J_DAY_LEN : DAY_LEN);
 		return;
 	}
-	if (!julian) {
+	if (julian) {
+		if (val = day / 100) {
+			day %= 100;
+			*p++ = val + '0';
+			display = 1;
+		} else {
+			*p++ = ' ';
+			display = 0;
+		}
+		val = day / 10;
+		if (val || display)
+			*p++ = val + '0';
+		else
+			*p++ = ' ';
+		*p++ = day % 10 + '0';
+	} else {
 		*p++ = aday[day][0];
 		*p++ = aday[day][1];
-		*p = aday[day][2];
-		return;
 	}
-	if (val = day / 100) {
-		day %= 100;
-		*p++ = val + '0';
-		display = 1;
-	} else {
-		*p++ = ' ';
-		display = 0;
-	}
-	val = day / 10;
-	if (val || display)
-		*p++ = val + '0';
-	else
-		*p++ = ' ';
-	*p++ = day % 10 + '0';
 	*p = ' ';
 }
 
