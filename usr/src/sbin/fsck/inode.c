@@ -6,13 +6,13 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)inode.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)inode.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
-#include <ufs/dinode.h>
-#include <ufs/fs.h>
-#include <ufs/dir.h>
+#include <ufs/ufs/dinode.h>
+#include <ufs/ufs/dir.h>
+#include <ufs/ffs/fs.h>
 #include <pwd.h>
 #include <stdlib.h>
 #include <string.h>

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkfs.c	6.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkfs.c	6.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifndef STANDALONE
@@ -18,11 +18,10 @@ static char sccsid[] = "@(#)mkfs.c	6.18 (Berkeley) %G%";
 #include <sys/time.h>
 #include <sys/wait.h>
 #include <sys/resource.h>
-#include <ufs/dinode.h>
-#include <ufs/fs.h>
-#include <ufs/dir.h>
+#include <ufs/ufs/dinode.h>
+#include <ufs/ufs/dir.h>
+#include <ufs/ffs/fs.h>
 #include <sys/disklabel.h>
-#include <machine/endian.h>
 
 /*
  * make file system for cylinder-group style file systems

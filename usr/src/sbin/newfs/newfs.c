@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	6.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)newfs.c	6.29 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifndef lint
@@ -20,12 +20,12 @@ char copyright[] =
  */
 #include <sys/param.h>
 #include <sys/stat.h>
-#include <ufs/fs.h>
-#include <ufs/dir.h>
 #include <sys/ioctl.h>
 #include <sys/disklabel.h>
 #include <sys/file.h>
 #include <sys/mount.h>
+#include <ufs/ufs/dir.h>
+#include <ufs/ffs/fs.h>
 
 #include <errno.h>
 #if __STDC__
