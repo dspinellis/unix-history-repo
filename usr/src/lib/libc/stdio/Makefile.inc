@@ -1,10 +1,10 @@
-#	@(#)Makefile.inc	8.1 (Berkeley) %G%
+#	@(#)Makefile.inc	8.2 (Berkeley) %G%
 
 # stdio sources
 .PATH: ${.CURDIR}/stdio
 
 SRCS+=	clrerr.c fclose.c fdopen.c feof.c ferror.c fflush.c fgetc.c \
-	fgetline.c fgetpos.c fgets.c fileno.c findfp.c flags.c fopen.c \
+	fgetln.c fgetpos.c fgets.c fileno.c findfp.c flags.c fopen.c \
 	fprintf.c fpurge.c fputc.c fputs.c fread.c freopen.c fscanf.c \
 	fseek.c fsetpos.c ftell.c funopen.c fvwrite.c fwalk.c fwrite.c \
 	getc.c getchar.c gets.c getw.c makebuf.c mktemp.c perror.c \
@@ -14,7 +14,7 @@ SRCS+=	clrerr.c fclose.c fdopen.c feof.c ferror.c fflush.c fgetc.c \
 	vfscanf.c vprintf.c vscanf.c vsnprintf.c vsprintf.c vsscanf.c \
 	wbuf.c wsetup.c zopen.c
 
-MAN3+=	fclose.0 ferror.0 fflush.0 fgetline.0 fgets.0 fopen.0 fputs.0 \
+MAN3+=	fclose.0 ferror.0 fflush.0 fgetln.0 fgets.0 fopen.0 fputs.0 \
 	fread.0 fseek.0 funopen.0 getc.0 mktemp.0 printf.0 putc.0 remove.0 \
 	scanf.0 setbuf.0 stdio.0 tmpnam.0 ungetc.0 zopen.0
 

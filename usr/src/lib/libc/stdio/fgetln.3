@@ -3,21 +3,21 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)fgetln.3	8.1 (Berkeley) %G%
+.\"     @(#)fgetln.3	8.2 (Berkeley) %G%
 .\"
 .Dd 
-.Dt FGETLINE 3
+.Dt FGETLN 3
 .Os
 .Sh NAME
-.Nm fgetline
+.Nm fgetln
 .Nd get a line from a stream
 .Sh SYNOPSIS
 .Fd #include <stdio.h>
 .Ft char *
-.Fn fgetline "FILE *stream" "size_t *len"
+.Fn fgetln "FILE *stream" "size_t *len"
 .Sh DESCRIPTION
 The
-.Fn fgetline
+.Fn fgetln
 function
 returns a pointer to the next line from the stream referenced by
 .Fa stream .
@@ -45,7 +45,7 @@ Otherwise,
 .Dv NULL
 is returned.
 The
-.Fn fgetline
+.Fn fgetln
 function
 does not distinguish between end-of-file and error; the routines
 .Xr feof 3
@@ -75,7 +75,7 @@ is not a stream open for reading.
 .El
 .Pp
 The
-.Fn fgetline
+.Fn fgetln
 function
 may also fail and set
 .Va errno
@@ -93,5 +93,5 @@ or
 .Xr putc 3
 .Sh HISTORY
 The
-.Fn fgetline
+.Fn fgetln
 function first appeared in 4.4BSD.
