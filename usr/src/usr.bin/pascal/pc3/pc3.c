@@ -1,6 +1,6 @@
     /* Copyright (c) 1980 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pc3.c 1.2 %G%";
+static	char sccsid[] = "@(#)pc3.c 1.3 %G%";
 
     /*
      *	     Pc3 is a pass in the Berkeley Pascal compilation
@@ -85,15 +85,12 @@ main( argc , argv )
     {
 	struct fileinfo	ofile;
 
-	argc--;
-	argv++;
-	while ( argc-- ) {
+	while ( ++argv , --argc ) {
 #	    ifdef DEBUG
 		fprintf( stderr , "[main] *argv = %s\n" , *argv );
 #	    endif DEBUG
 	    ofile.name = *argv;
 	    checkfile( &ofile );
-	    argv++;
 	}
 	exit( errors );
     }
@@ -161,7 +158,7 @@ checknl( ofilep )
     {
     
 	long			red;
-	struct exec		aexec;
+	struct exec		oexec;
 	off_t			symoff;
 	long			numsyms;
 	register struct nlist	*nlp;
@@ -169,18 +166,18 @@ checknl( ofilep )
 	long			strsize;
 	long			sym;
 
-	red = fread( (char *) &aexec , 1 , sizeof aexec , ofilep -> file );
-	if ( red != sizeof aexec ) {
+	red = fread( (char *) &oexec , 1 , sizeof oexec , ofilep -> file );
+	if ( red != sizeof oexec ) {
 	    error( WARNING , "error reading struct exec: %s"
 		    , ofilep -> name );
 	    return;
 	}
-	if ( N_BADMAG( aexec ) ) {
+	if ( N_BADMAG( oexec ) ) {
 	    return;
 	}
-	symoff = N_SYMOFF( aexec ) - sizeof aexec;
+	symoff = N_SYMOFF( oexec ) - sizeof oexec;
 	fseek( ofilep -> file , symoff , 1 );
-	numsyms = aexec.a_syms / sizeof ( struct nlist );
+	numsyms = oexec.a_syms / sizeof ( struct nlist );
 	if ( numsyms == 0 ) {
 	    error( WARNING , "no name list: %s" , ofilep -> name );
 	    return;
@@ -290,31 +287,30 @@ checksymbol( nlp , ofilep )
 		case N_PGVAR:
 		case N_PGFUN:
 		case N_PGPRC:
-			/* and fall through */
-		case N_PEFUN:
-		case N_PEPRC:
+			symbolp -> sym_un.sym_str.rfilep = ifilep;
+			symbolp -> sym_un.sym_str.rline = nlp -> n_value;
 			symbolp -> sym_un.sym_str.fromp = pfilep;
 			symbolp -> sym_un.sym_str.fromi = ifilep;
 			symbolp -> sym_un.sym_str.iline = nlp -> n_value;
-			if (  symbolp -> type != N_PEFUN
-			   && symbolp -> type != N_PEPRC ) {
-			    symbolp -> sym_un.sym_str.rfilep = ifilep;
-			    symbolp -> sym_un.sym_str.rline = nlp -> n_value;
-			} else {
-			    symbolp -> sym_un.sym_str.rfilep = NIL;
-			    symbolp -> sym_un.sym_str.rline = 0;
-				/*
-				 *	functions can only be declared external
-				 *	in included files.
-				 */
-			    if ( pfilep == ifilep ) {
-				error( WARNING
-					, "%s, line %d: %s %s must be declared in included file"
-					, pfilep -> name , nlp -> n_value
-					, classify( symbolp -> type )
-					, symbolp -> name );
-			    }
+			return;
+		case N_PEFUN:
+		case N_PEPRC:
+			symbolp -> sym_un.sym_str.rfilep = NIL;
+			symbolp -> sym_un.sym_str.rline = 0;
+			    /*
+			     *	functions can only be declared external
+			     *	in included files.
+			     */
+			if ( pfilep == ifilep ) {
+			    error( WARNING
+				    , "%s, line %d: %s %s must be declared in included file"
+				    , pfilep -> name , nlp -> n_value
+				    , classify( symbolp -> type )
+				    , symbolp -> name );
 			}
+			symbolp -> sym_un.sym_str.fromp = pfilep;
+			symbolp -> sym_un.sym_str.fromi = ifilep;
+			symbolp -> sym_un.sym_str.iline = nlp -> n_value;
 			return;
 		case N_PSO:
 			pfilep = symbolp;
@@ -433,7 +429,6 @@ included:
      *	search is by rehashing within each table,
      *	traversing chains to next table if unsuccessful.
      */
-
 struct symbol *
 entersymbol( name )
     char	*name;
@@ -507,7 +502,6 @@ entersymbol( name )
     /*
      *	allocate a symbol from the dynamically allocated symbol table.
      */
-
 struct symbol *
 symbolalloc()
     {
@@ -556,7 +550,6 @@ hashstring( string )
      *	search is by rehashing within each table,
      *	traversing chains to next table if unsuccessful.
      */
-
 char *
 enterstring( string )
     char	*string;
@@ -626,7 +619,6 @@ enterstring( string )
     /*
      *	copy a string to the dynamically allocated character table.
      */
-
 char *
 charalloc( length )
     register long	length;
