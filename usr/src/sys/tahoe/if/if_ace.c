@@ -1,4 +1,4 @@
-/*	if_ace.c	1.5	86/01/21	*/
+/*	if_ace.c	1.6	86/01/21	*/
 
 /*
  * ACC VERSAbus Ethernet controller
@@ -490,7 +490,7 @@ aceoutput(ifp, m0, dst)
 		if (!arpresolve(&is->is_ac, m, &idst, edst))
 			return (0);	/* if not yet resolved */
 		if (!bcmp((caddr_t)edst, (caddr_t)etherbroadcastaddr,
-		    sizeof(edst)))
+		    sizeof (edst)))
 			mcopy = m_copy(m, 0, (int)M_COPYALL);
 		off = ntohs((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
 		/* need per host negotiation */
@@ -787,20 +787,20 @@ aceioctl(ifp, cmd, data)
 #endif
 #ifdef NS
 		case AF_NS: {
-			struct ns_addr *ina = &(IA_SNS(ifa)->sns_addr);
+			struct ns_addr *ina = &IA_SNS(ifa)->sns_addr;
+			struct ace_softc *is = &ace_softc[ifp->if_unit];
 
 			if (!ns_nullhost(*ina)) {
 				ifp->if_flags &= ~IFF_RUNNING;
-				sin = (struct sockaddr_in *)&ifr->ifr_addr;
 				addr = (struct acedevice *)
-				    (aceinfo[ifp->if_unit]->ui_addr);
+				    aceinfo[ifp->if_unit]->ui_addr;
 				movow(&addr->csr, CSR_RESET);
 				DELAY(10000);
 				/* set station address & copy addr to arp */
 				acesetetaddr(ifp->if_unit, addr, 
 				    ina->x_host.c_host);
 			} else
-				ina->x_host = *(union ns_host *)(es->es_addr);
+				ina->x_host = *(union ns_host *)is->is_addr;
 			aceinit(ifp->if_unit);
 			break;
 		}
