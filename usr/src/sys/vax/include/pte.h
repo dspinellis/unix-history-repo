@@ -1,4 +1,4 @@
-/*	pte.h	6.3	84/12/20	*/
+/*	pte.h	6.4	85/04/18	*/
 
 /*
  * VAX page table entry
@@ -30,8 +30,8 @@ unsigned int	pg_pfnum:21,
 };
 struct fpte
 {
-unsigned int	pg_blkno:20,		/* file system block number */
-		pg_fileno:5,		/* file mapped from or TEXT or ZERO */
+unsigned int	pg_blkno:24,		/* file system block number */
+		pg_fileno:1,		/* file mapped from or TEXT or ZERO */
 		pg_fod:1,		/* is fill on demand (=1) */
 		:1,
 		pg_prot:4,
