@@ -1,4 +1,4 @@
-/*	uba.c	4.60	82/12/22	*/
+/*	uba.c	4.61	83/03/25	*/
 
 #include "../machine/pte.h"
 
@@ -324,7 +324,7 @@ ubareset(uban)
 	wakeup((caddr_t)&uh->uh_mrwant);
 	printf("uba%d: reset", uban);
 	ubainit(uh->uh_uba);
-	for (cdp = cdevsw; cdp->d_open; cdp++)
+	for (cdp = cdevsw; cdp < cdevsw + nchrdev; cdp++)
 		(*cdp->d_reset)(uban);
 #ifdef INET
 	ifubareset(uban);
