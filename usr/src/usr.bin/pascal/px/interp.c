@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)interp.c 1.14 %G%";
+static char sccsid[] = "@(#)interp.c 1.15 %G%";
 
 #include <math.h>
 #include "whoami.h"
@@ -217,6 +217,7 @@ interpreter(base)
 			continue;
 		case O_FCALL:
 			pc.cp++;
+ 			tcp = popaddr(); /* ptr to display save area */
 			tfp = (struct formalrtn *)popaddr();
 			stp = (struct stack *)
 				pushsp((long)(sizeof(struct stack)));
@@ -226,7 +227,7 @@ interpreter(base)
 			pc.cp = tfp->fentryaddr;/* calc new entry point */
 			_dp = &_display.frame[tfp->fbn];/* new display ptr */
 			blkcpy(tfp->fbn * sizeof(struct disp),
-				&_display.frame[1], &tfp->fdisp[tfp->fbn]);
+ 				&_display.frame[1], tcp);
 			blkcpy(tfp->fbn * sizeof(struct disp),
 				&tfp->fdisp[0], &_display.frame[1]);
 			continue;
@@ -236,13 +237,16 @@ interpreter(base)
 				tl = *pc.usp++;
 			tcp = pushsp((long)(0));
 			tfp = *(struct formalrtn **)(tcp + tl);
+ 			tcp1 = *(char **)
+ 			    (tcp + tl + sizeof(struct formalrtn *));
 			if (tl != 0) {
-				blkcpy(tl, tcp,
-				    tcp + sizeof(struct formalrtn *));
+				blkcpy(tl, tcp, tcp + sizeof(struct formalrtn *)
+				    + sizeof(char *));
 			}
-			popsp((long)(sizeof(struct formalrtn *)));
+ 			popsp((long)
+ 			    (sizeof(struct formalrtn *) + sizeof (char *)));
 			blkcpy(tfp->fbn * sizeof(struct disp),
-			    &tfp->fdisp[tfp->fbn], &_display.frame[1]);
+ 			    tcp1, &_display.frame[1]);
 			continue;
 		case O_FSAV:
 			tfp = (struct formalrtn *)popaddr();
