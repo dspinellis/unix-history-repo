@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogin.c	5.36 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogin.c	5.37 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -103,7 +103,7 @@ main(argc, argv)
 	long omask;
 	int argoff, ch, dflag, one, uid;
 	char *host, *p, *user, term[1024];
-	void lostpeer();
+	void lostpeer(), copytochild(), writeroob();
 	u_char getescape();
 	char *getenv();
 
@@ -213,6 +213,14 @@ main(argc, argv)
 	(void)signal(SIGPIPE, lostpeer);
 	/* will use SIGUSR1 for window size hack, so hold it off */
 	omask = sigblock(sigmask(SIGURG) | sigmask(SIGUSR1));
+	/*
+	 * We set SIGURG and SIGUSR1 below so that an
+	 * incoming signal will be held pending rather than being
+	 * discarded. Note that these routines will be ready to get
+	 * a signal by the time that they are unblocked below.
+	 */
+	(void)signal(SIGURG, copytochild);
+	(void)signal(SIGUSR1, writeroob);
 
 #ifdef KERBEROS
 try_connect:
@@ -279,7 +287,7 @@ doit(omask)
 	long omask;
 {
 	struct sgttyb sb;
-	void catch_child(), copytochild(), exit(), writeroob();
+	void catch_child(), exit();
 
 	(void)ioctl(0, TIOCGETP, (char *)&sb);
 	defflags = sb.sg_flags;
@@ -313,11 +321,11 @@ doit(omask)
 
 	/*
 	 * We may still own the socket, and may have a pending SIGURG (or might
-	 * receive one soon) that we really want to send to the reader.  Set a
-	 * trap that simply copies such signals to the child.
+	 * receive one soon) that we really want to send to the reader.  When
+	 * one of these comes in, the trap copytochild simply copies such
+	 * signals to the child. We can now unblock SIGURG and SIGUSR1
+	 * that were set above.
 	 */
-	(void)signal(SIGURG, copytochild);
-	(void)signal(SIGUSR1, writeroob);
 	(void)sigsetmask(omask);
 	(void)signal(SIGCHLD, catch_child);
 	writer();
