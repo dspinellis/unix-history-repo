@@ -1,5 +1,5 @@
 #ifndef lint
-static char SccsId[] =	"@(#)syslog.c	4.1 (Berkeley) %G%";
+static char SccsId[] =	"@(#)syslog.c	4.2 (Berkeley) %G%";
 #endif
 
 /*
