@@ -1,4 +1,4 @@
-/*	ht.c	1.2	%G%	*/
+/*	ht.c	1.3	%G%	*/
 
 /*
  * TJU16 tape driver
@@ -6,6 +6,7 @@
 
 #include "../h/param.h"
 #include "../h/inode.h"
+#include "../h/pte.h"
 #include "../h/mba.h"
 #include "saio.h"
 
@@ -23,8 +24,8 @@ struct	device
 	int	httc;
 };
 
-#define	HTADDR	((struct device *)(PHYSMBA1 + MBA_ERB))
-#define	HTMBA	1
+#define	HTMBA		PHYSMBA1
+#define	HTMBANUM	1
 
 #define	GO	01
 #define	WCOM	060
@@ -66,8 +67,8 @@ register struct iob *io;
 	register skip;
 	int i;
 
-	if ((mbaact&(1<<HTMBA)) == 0)
-		mbainit(HTMBA);
+	if ((mbaact&(1<<HTMBANUM)) == 0)
+		mbainit(HTMBANUM);
 	htinit();
 	htstrategy(io, REW);
 	skip = io->i_boff;
@@ -93,6 +94,7 @@ register struct iob *io;
 {
 	register int unit, den, errcnt, ds;
 	short fc;
+	register struct device *htp = mbadev(HTMBA,0);
 
 	unit = io->i_unit;
 	errcnt = 0;
@@ -102,20 +104,20 @@ retry:
 	else
 		den = P800;
 	htquiet();
-	if((HTADDR->httc&03777) != den)
-		HTADDR->httc = den;
-	HTADDR->htfc = -io->i_cc;
+	if((htp->httc&03777) != den)
+		htp->httc = den;
+	htp->htfc = -io->i_cc;
 	if (func == SREV) {
-		HTADDR->htfc = -1;
-		HTADDR->htcs1 = SREV | GO;
+		htp->htfc = -1;
+		htp->htcs1 = SREV | GO;
 		return(0);
 	}
 	if (func == READ || func == WRITE)
-		mbastart(io, HTADDR, func);
+		mbastart(io, htp, func);
 	else
-		HTADDR->htcs1 = func | GO;
+		htp->htcs1 = func | GO;
 	htquiet();
-	ds = HTADDR->htds & TM;
+	ds = htp->htds & TM;
 	if (ds&TM) {
 		htinit();
 		return(0);
@@ -123,7 +125,8 @@ retry:
 	if (ds&ERR) {
 		if (errcnt == 0)
 			printf("tape error: ds=%x, er=%x, mbasr=%x",
-			    HTADDR->htds, HTADDR->hter, PHYSMBA1->mba_sr);
+			    htp->htds, htp->hter,
+			    HTMBA->mba_sr);
 		htinit();
 		if (errcnt == 10) {
 			printf("\n");
@@ -135,21 +138,22 @@ retry:
 	}
 	if (errcnt)
 		printf(" recovered by retry\n");
-	fc = HTADDR->htfc;
+	fc = htp->htfc;
 	return(io->i_cc+fc);
 }
 
 htinit()
 {
 
-	HTADDR->htcs1 = DCLR|GO;
+	mbadev(HTMBA,0)->htcs1 = DCLR|GO;
 }
 
 htquiet()
 {
 	register int s;
+	register struct device *htp = mbadev(HTMBA,0);
 
 	do
-		s = HTADDR->htds;
+		s = htp->htds;
 	while ((s & RDY) == 0);
 }
