@@ -1,4 +1,4 @@
-/*	autoconf.c	4.20	81/03/03	*/
+/*	autoconf.c	4.21	81/03/06	*/
 
 /*
  * Initialize the devices for the current machine.
@@ -34,6 +34,10 @@ caddr_t	umaddr780[4] = {
 	(caddr_t) 0x2013e000, (caddr_t) 0x2017e000,
 	(caddr_t) 0x201be000, (caddr_t) 0x201fe000
 };
+#endif
+
+#if VAX780
+char	nexflt_bits[] = NEXFLT_BITS;
 #endif
 
 #if VAX780
@@ -247,13 +251,12 @@ mbafind(nxv, nxp)
 				dt = mbd->mbd_dt;
 				if ((dt & MBDT_SPR) == 0)
 					continue;
-				dt &= MBDT_TYPE;
 				fnd.mi_slave = sn;
 				mbaconfig(&fnd, dt);
 			}
 		} else {
 			fnd.mi_slave = -1;
-			mbaconfig(&fnd, dt&MBDT_TYPE);
+			mbaconfig(&fnd, dt);
 		}
 	}
 	mdp->mba_cr = MBAINIT;
@@ -278,15 +281,18 @@ mbaconfig(ni, type)
 			continue;
 		tp = mi->mi_driver->md_type;
 		for (mi->mi_type = 0; *tp; tp++, mi->mi_type++)
-			if (*tp == type)
+			if (*tp == (type&MBDT_TYPE))
 				goto found;
 		continue;
 found:
 #define	match(fld)	(ni->fld == mi->fld || mi->fld == '?')
 		if (!match(mi_slave) || !match(mi_drive) || !match(mi_mbanum))
 			continue;
-		printf("%c%d at mba%d drive %d\n",
+		printf("%c%d at mba%d drive %d",
 		    mi->mi_name, mi->mi_unit, ni->mi_mbanum, ni->mi_drive);
+		if (type & MBDT_TAP)
+			printf(" slave %d", ni->ni_slave);
+		printf("\n");
 		mi->mi_alive = 1;
 		mh = &mba_hd[ni->mi_mbanum];
 		mi->mi_hd = mh;
