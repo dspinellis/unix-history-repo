@@ -1,4 +1,4 @@
-.\" @(#)License	1.9 (CSRG - distribution) %G%
+.\" @(#)License	1.10 (CSRG - distribution) %G%
 .ND
 .po +0.34375i
 .nr PO +0.34375i
@@ -116,7 +116,8 @@ Distribution is, and shall at all times remain the property of THE
 REGENTS.  LICENSEE shall have no right,
 title or interest therein or thereto except as expressly set forth in
 this Agreement.  The version of Fourth Berkeley Distribution
-licensed hereunder is release 4.4BSD-Encumbered.
+licensed hereunder is alpha release 4.4BSD-Encumbered and
+any subsequently modified versions of said alpha release.
 .PP
 \04.\ \ \fBAT&T Proprietary Software. \fR LICENSEE and THE REGENTS 
 agree that the Fourth Berkeley Software
