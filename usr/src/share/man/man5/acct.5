@@ -1,4 +1,4 @@
-.\"	@(#)acct.5	6.1 (Berkeley) %G%
+.\"	@(#)acct.5	6.2 (Berkeley) %G%
 .\"
 .TH ACCT 5 ""
 .AT 3
@@ -9,7 +9,7 @@ acct \- execution accounting file
 .SH DESCRIPTION
 The
 .IR acct (2)
-system call makes entries in an accounting file
+system call arranges for entries to be made in an accounting file
 for each process that terminates.
 The accounting file is a sequence of entries whose layout,
 as defined by the include file is:
@@ -19,7 +19,7 @@ as defined by the include file is:
 .so /usr/include/sys/acct.h
 .fi
 .PP
-If the process does an
+If the process was created by an
 .IR execve (2),
 the first 10 characters of the filename appear in
 .I ac_comm.
