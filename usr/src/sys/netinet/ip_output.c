@@ -1,4 +1,4 @@
-/*	ip_output.c	6.6	84/08/29	*/
+/*	ip_output.c	6.7	85/03/18	*/
 
 #include "param.h"
 #include "mbuf.h"
@@ -11,6 +11,7 @@
 
 #include "in.h"
 #include "in_systm.h"
+#include "in_var.h"
 #include "ip.h"
 #include "ip_var.h"
 
@@ -40,8 +41,7 @@ ip_output(m, opt, ro, flags)
 		ip->ip_off &= IP_DF;
 		ip->ip_id = htons(ip_id++);
 		ip->ip_hl = hlen >> 2;
-	} else
-		ip->ip_id = htons(ip->ip_id);
+	}
 
 	/*
 	 * Route packet.
@@ -59,11 +59,13 @@ ip_output(m, opt, ro, flags)
 		 * short circuit routing lookup.
 		 */
 		if (flags & IP_ROUTETOIF) {
-			ifp = if_ifonnetof(in_netof(ip->ip_dst));
-			if (ifp == 0) {
+			struct in_ifaddr *ia;
+			ia = in_iaonnetof(in_netof(ip->ip_dst));
+			if (ia == 0) {
 				error = ENETUNREACH;
 				goto bad;
 			}
+			ifp = ia->ia_ifp;
 			goto gotif;
 		}
 		rtalloc(ro);
@@ -72,6 +74,7 @@ ip_output(m, opt, ro, flags)
 		 * The old route has gone away; try for a new one.
 		 */
 		rtfree(ro->ro_rt);
+		ro->ro_rt = NULL;
 		rtalloc(ro);
 	}
 	if (ro->ro_rt == 0 || (ifp = ro->ro_rt->rt_ifp) == 0) {
@@ -82,22 +85,12 @@ ip_output(m, opt, ro, flags)
 	if (ro->ro_rt->rt_flags & (RTF_GATEWAY|RTF_HOST))
 		dst = (struct sockaddr_in *)&ro->ro_rt->rt_gateway;
 gotif:
-#ifndef notdef
-	/*
-	 * If source address not specified yet, use address
-	 * of outgoing interface.
-	 */
-	if (in_lnaof(ip->ip_src) == INADDR_ANY)
-		ip->ip_src.s_addr =
-		    ((struct sockaddr_in *)&ifp->if_addr)->sin_addr.s_addr;
-#endif
-
 	/*
 	 * Look for broadcast address and
 	 * and verify user is allowed to send
 	 * such a packet.
 	 */
-	if (in_lnaof(dst->sin_addr) == INADDR_ANY) {
+	if (in_broadcast(dst->sin_addr)) {
 		if ((ifp->if_flags & IFF_BROADCAST) == 0) {
 			error = EADDRNOTAVAIL;
 			goto bad;
@@ -185,9 +178,6 @@ gotif:
 		if (error = (*ifp->if_output)(ifp, mh, (struct sockaddr *)dst))
 			break;
 	}
-	m_freem(m);
-	goto done;
-
 bad:
 	m_freem(m);
 done:
