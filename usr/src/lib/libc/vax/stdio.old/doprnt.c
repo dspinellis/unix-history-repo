@@ -1,4 +1,4 @@
-/* @(#)doprnt.c	4.3 (Berkeley) %G% */
+/* @(#)doprnt.c	4.4 (Berkeley) %G% */
 	# C library -- conversions
 
 .globl	__doprnt
@@ -45,6 +45,11 @@ strtab:		# translate table for detecting null and percent
 	.byte	208,209,210,211,212,213,214,215,216,217,218,219,220,221,222,223
 	.byte	224,225,226,227,228,229,230,231,232,233,234,235,236,237,238,239
 	.byte	240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255
+
+	.align	1
+__doprnt:
+	.word	0xfc0			# uses r11-r6
+	jbr	doit
 
 strfoo:
 	clrl r4					# fix interrupt race
@@ -109,9 +114,7 @@ prdone:
 	movl nchar,r0
 	ret
 
-	.align	1
-__doprnt:
-	.word	0xfc0			# uses r11-r6
+doit:
 	movab -256(sp),sp		# work space
 	movl 4(ap),r11			# addr of format string
 	movl 12(ap),fdesc		# output FILE ptr
