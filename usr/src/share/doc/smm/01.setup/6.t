@@ -3,19 +3,17 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)6.t	6.13 (Berkeley) %G%
+.\"	@(#)6.t	6.14 (Berkeley) %G%
 .\"
 .ds LH "Installing/Operating \*(4B
 .ds CF \*(Dy
-.NH 1
-System Operation
+.Sh 1 "System operation"
 .PP
 This section describes procedures used to operate a \*(4B UNIX system.
 Procedures described here are used periodically, to reboot the system,
 analyze error messages from devices, do disk backups, monitor
 system performance, recompile system software and control local changes.
-.NH 2
-Bootstrap and shutdown procedures
+.Sh 2 "Bootstrap and shutdown procedures"
 .PP
 In a normal reboot, the system checks the disks and comes up multi-user
 without intervention at the console.
@@ -45,7 +43,7 @@ See
 .Xr init (8)
 and
 .Xr ttys (5) for more details.
-Note, however, that this does not cause a filesystem check to be performed.
+Note, however, that this does not cause a filesystem check to be done.
 Unless the system was taken down cleanly, you should run
 ``fsck \-p'' or force a reboot with
 .Xr reboot (8)
@@ -72,8 +70,7 @@ should do this by:
 Each system shutdown, crash, processor halt and reboot
 is recorded in the system log
 with its cause.
-.NH 2
-Device errors and diagnostics
+.Sh 2 "Device errors and diagnostics"
 .PP
 When serious errors occur on peripherals or in the system, the system
 prints a warning diagnostic on the console.
@@ -98,8 +95,7 @@ If errors occur suggesting hardware problems, you should contact
 your hardware support group or field service.  It is a good idea to
 examine the error log file regularly
 (e.g. with the command \fItail \-r /var/log/messages\fP).
-.NH 2
-Filesystem checks, backups and disaster recovery
+.Sh 2 "Filesystem checks, backups, and disaster recovery"
 .PP
 Periodically (say every week or so in the absence of any problems)
 and always (usually automatically) after a crash,
@@ -109,7 +105,7 @@ by
 The procedures of
 .Xr reboot (8)
 should be used to get the system to a state where a filesystem
-check can be performed manually or automatically.
+check can be done manually or automatically.
 .PP
 Dumping of the filesystems should be done regularly,
 since once the system is going it is easy to
@@ -198,8 +194,7 @@ and
 .Xr quot (8),
 combined with threatening
 messages of the day, and personal letters.
-.NH 2
-Moving filesystem data
+.Sh 2 "Moving filesystem data"
 .PP
 If you have the resources,
 the best way to move a filesystem
@@ -255,8 +250,7 @@ drivers they should also be added to the standalone system in
 and the default disk partition tables in
 .Pn /etc/disktab
 should be modified.
-.NH 2
-Monitoring System Performance
+.Sh 2 "Monitoring system performance"
 .PP
 The
 .Xr systat
@@ -303,54 +297,46 @@ jobs such as editors swap out.
 If you expect to be in a memory-poor environment
 for an extended period you might consider administratively
 limiting system load.
-.NH 2
-Recompiling and reinstalling system software
+.Sh 2 "Recompiling and reinstalling system software"
 .PP
 It is easy to regenerate either the entire system or a single utility,
 and it is a good idea to try rebuilding pieces of the system to build
 confidence in the procedures.
-.PP
+.LP
 In general, there are six well-known targets supported by
-all of the makefiles on the system:
-.IP \(bu
-all
-This is the default target, the same as if no target is specified.
+all the makefiles on the system:
+.IP all 9
+This entry is the default target, the same as if no target is specified.
 This target builds the kernel, binary or library, as well as its
 associated manual pages.
 This target \fBdoes not\fP build the dependency files.
 Some of the utilities require that a \fImake depend\fP be done before
 a \fImake all\fP can succeed.
-.IP \(bu
-depend
+.IP depend
 Build the include file dependency file, ``.depend'', which is
 read by
 .Xr make .
 See
 .Xr mkdep (1)
 for further details.
-.IP \(bu
-install
+.IP install
 Install the kernel, binary or library, as well as its associated
 manual pages.
 See
 .Xr install (1)
 for further details.
-.IP \(bu
-clean
+.IP clean
 Remove the kernel, binary or library, as well as any object files
 created when building it.
-.IP \(bu
-cleandir
+.IP cleandir
 The same as clean, except that the dependency files and formatted
 manual pages are removed as well.
-.IP \(bu
-obj
+.IP obj
 Build a shadow directory structure in the area referenced by
 .Pn /usr/obj
 and create a symbolic link in the current source directory to
 referenced it, named ``obj''.
-Once this shadow structure has been created, all of the files
-created by
+Once this shadow structure has been created, all the files created by
 .Xr make
 will live in the shadow structure, and
 .Pn /usr/src
@@ -358,7 +344,7 @@ may be mounted read-only by multiple machines.
 Doing a \fImake obj\fP in
 .Pn /usr/src
 will build the shadow directory structure for everything on the
-system except for the contributed, deprecated and kernel software.
+system except for the contributed, old, and kernel software.
 .PP
 The system consists of three major parts:
 the kernel itself, found in
@@ -370,20 +356,42 @@ and the user programs (the rest of
 .PP
 Deprecated software, found in
 .Pn /usr/src/old ,
-often has old style makefiles, as well as not compiling under \*(4B
-at all.
+often has old style makefiles;
+some of it does not compile under \*(4B at all.
 .PP
 Contributed software, found in
 .Pn /usr/src/contrib ,
-usually doesn't support the ``cleandir'', ``depend'', or ``obj'' targets.
+usually does not support the ``cleandir'', ``depend'', or ``obj'' targets.
 .PP
-The kernel doesn't support the ``obj'' shadow structure.
+The kernel does not support the ``obj'' shadow structure.
 All kernels are compiled in subdirectories of
-.Pn /usr/src/compile .
+.Pn /usr/src/sys/compile
+which is usually abbreviated as
+.Pn /sys/compile .
 If you want to mount your source tree read-only,
-.Pn /usr/src/compile
-will have to be on a separate file system from
+.Pn /usr/src/sys/compile
+will have to be on a separate filesystem from
 .Pn /usr/src .
+Separation from
+.Pn /usr/src
+can be done by making
+.Pn /usr/src/sys/compile
+a symbolic link that references
+.Pn /usr/obj/sys/compile .
+If it is a symbolic link, the \fIS\fP variable in the kernel
+Makefile must be changed from
+.Pn \&../..
+to the absolute pathname needed to locate the kernel sources, usually
+.Pn /usr/src/sys .
+The symbolic link created by
+.Xr config (8)
+for
+.Pn machine
+must also be manually changed to an absolute pathname.
+Finally, the
+.Pn /usr/src/sys/libkern/obj
+directory must be located in
+.Pn /usr/obj/sys/libkern .
 .PP
 Each of the standard utilities and libraries may be built and
 installed by changing directories into the correct location and
@@ -394,7 +402,7 @@ doing:
 .DE
 Note, if system include files have changed between compiles,
 .Xr make
-will not perform the correct dependency checks if the dependency
+will not do the correct dependency checks if the dependency
 files have not been built using the ``depend'' target.
 .PP
 The entire library and utility suite for the system may be recompiled
@@ -413,7 +421,7 @@ resides with the
 .Xr whereis (1)
 command, then change to the corresponding source directory and build
 it with the Makefile in the directory.
-For instance, to recompile ``passwd'', 
+For instance, to recompile ``passwd'',
 all one has to do is:
 .DS
 \fB#\fP \fIwhereis passwd\fP
@@ -445,7 +453,7 @@ directory for more information.
 If you modify the C library or system include files, to change a
 system call for example, and want to rebuild and install everything,
 you have to be a little careful.
-You must insure that the include files are installed before anything
+You must ensure that the include files are installed before anything
 is compiled, and that the libraries are installed before the remainder
 of the source, otherwise the loaded images will not contain the new
 routine from the library.
@@ -470,8 +478,7 @@ following commands should be executed:
 Alternatively, the \fImake build\fP command described above will
 accomplish the same tasks.
 This takes several hours on a reasonably configured machine.
-.NH 2
-Making local modifications
+.Sh 2 "Making local modifications"
 .PP
 The source for locally written commands is normally stored in
 .Pn /usr/src/local ,
@@ -483,7 +490,7 @@ and
 .Pn /bin
 to correspond to the distribution tape (and to the manuals that
 people can buy).
-People using local commands should be made aware that they aren't
+People using local commands should be made aware that they are not
 in the base manual.
 Manual pages for local commands should be installed in
 .Pn /usr/local/man/cat[1-8].
@@ -492,8 +499,7 @@ The
 command automatically finds manual pages placed in
 /usr/local/man/cat[1-8] to encourage this practice (see
 .Xr man.conf (5)).
-.NH 2
-Accounting
+.Sh 2 "Accounting"
 .PP
 UNIX optionally records two kinds of accounting information:
 connect time accounting and process resource accounting.  The connect
@@ -518,8 +524,7 @@ This is done by adding lines to
 see
 .Xr cron (8)
 for details.
-.NH 2
-Resource control
+.Sh 2 "Resource control"
 .PP
 Resource control in the current version of UNIX is more
 elaborate than in most UNIX systems.  The disk quota
@@ -553,7 +558,7 @@ Individual quotas are applied by using the quota editor
 .Xr edquota (8).
 Users may view their quotas (but not those of other users) with the
 .Xr quota (1)
-program.  The 
+program. The
 .Xr repquota (8)
 program may be used to summarize the quotas and current
 space usage on a particular filesystem or filesystems.
@@ -572,8 +577,7 @@ exceeded the system will generate a message on the user's terminal.
 .PP
 Consult the auxiliary document, ``Disc Quotas in a UNIX Environment'' (SMM:4)
 and the appropriate manual entries for more information.
-.NH 2
-Network troubleshooting
+.Sh 2 "Network troubleshooting"
 .PP
 If you have anything more than a trivial network configuration,
 from time to time you are bound to run into problems.  Before
@@ -598,8 +602,7 @@ Most of the servers distributed with the system
 accept a \fB\-d\fP option forcing
 all sockets to be created with debugging turned on.
 Consult the appropriate manual pages for more information.
-.NH 2
-Files that need periodic attention
+.Sh 2 "Files that need periodic attention"
 .PP
 We conclude the discussion of system operations by listing
 the files that require periodic attention or are system specific:
@@ -629,3 +632,6 @@ lfC l.
 /var/log/messages	system error log
 /var/log/wtmp	login session accounting
 .TE
+.pn 2
+.bp
+.PX
