@@ -1,3 +1,7 @@
+
+-1.  The machine-independent routines for the functions found in the subdirectory
+     VAX are now in /usr/lib/libom.  To compile with these routines use -lom.
+
 K.C. Ng, March 7, 1985
 Revised on 5/10/85, 5/13/85.
 
@@ -14,7 +18,7 @@ Revised on 5/10/85, 5/13/85.
     erf.c    floor.c    gamma.c         j0.c      j1.c      jn.c
 
   ( new files for 4.3BSD, total 27 )
-    E.c			Read_me		atanh.c		pow.c
+    E.c			README		atanh.c		pow.c
     IEEE/atan2.c	VAX/atan2.s	atrig.c		sinh.c
     IEEE/cabs.c		VAX/cabs.s	cosh.c		tanh.c
     IEEE/cbrt.c		VAX/cbrt.s	exp.c
