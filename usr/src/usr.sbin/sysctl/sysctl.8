@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)sysctl.8	5.5 (Berkeley) %G%
+.\"	@(#)sysctl.8	5.6 (Berkeley) %G%
 .\"
 .Dd ""
 .Dt SYSCTL 8
@@ -101,6 +101,7 @@ privilege can change the value.
 .It kern.vdisable	integer	no
 .It kern.boottime	struct	no
 .It vm.loadavg	struct	no
+.It machdep.console_device	dev_t	no
 .It net.inet.ip.forwarding	integer	yes
 .It net.inet.ip.redirect	integer	yes
 .It net.inet.ip.ttl	integer	yes
