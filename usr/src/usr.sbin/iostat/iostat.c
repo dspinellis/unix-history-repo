@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)iostat.c	4.13 (Berkeley) 85/04/25";
+static	char *sccsid = "@(#)iostat.c	4.14 (Berkeley) 86/10/19";
 #endif
 
 /*
@@ -13,7 +13,7 @@ static	char *sccsid = "@(#)iostat.c	4.13 (Berkeley) 85/04/25";
 #include <sys/types.h>
 #include <sys/file.h>
 #include <sys/buf.h>
-#include <sys/dk.h>
+#include <sys/dkstat.h>
 
 struct nlist nl[] = {
 	{ "_dk_busy" },
@@ -42,9 +42,13 @@ struct nlist nl[] = {
 #define	X_DK_NDRIVE	11
 #ifdef vax
 	{ "_mbdinit" },
-#define X_MBDINIT	12
+#define X_MBDINIT	(X_DK_NDRIVE+1)
 	{ "_ubdinit" },
-#define X_UBDINIT	13
+#define X_UBDINIT	(X_DK_NDRIVE+2)
+#endif
+#ifdef tahoe
+#define	X_VBDINIT	(X_DK_NDRIVE+1)
+	{ "_vbdinit" },
 #endif
 	{ 0 },
 };
@@ -319,6 +323,38 @@ read_names()
 		steal(udrv.ud_dname, two_char);
 		sprintf(dr_name[udev.ui_dk], "%c%c%d",
 		    cp[0], cp[1], udev.ui_unit);
+	}
+}
+#endif
+
+#ifdef tahoe
+#include <tahoevba/vbavar.h>
+
+/*
+ * Read the drive names out of kmem.
+ */
+read_names()
+{
+	struct vba_device udev, *up;
+	struct vba_driver udrv;
+	short two_char;
+	char *cp = (char *)&two_char;
+
+	up = (struct vba_device *) nl[X_VBDINIT].n_value;
+	if (up == 0) {
+		fprintf(stderr, "vmstat: Disk init info not in namelist\n");
+		exit(1);
+	}
+	for (;;) {
+		steal(up++, udev);
+		if (udev.ui_driver == 0)
+			break;
+		if (udev.ui_dk < 0 || udev.ui_alive == 0)
+			continue;
+		steal(udev.ui_driver, udrv);
+		steal(udrv.ud_dname, two_char);
+		sprintf(dr_name[udev.ui_dk], "%c%c%d",
+		     cp[0], cp[1], udev.ui_unit);
 	}
 }
 #endif
