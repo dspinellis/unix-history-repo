@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readmsg.c	2.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)readmsg.c	2.6 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -355,6 +355,7 @@ struct sockaddr_in *addr;
 			inet_ntoa(addr->sin_addr));
 		break;
 
+	case TSP_SETTIME:
 	case TSP_ADJTIME:
 	case TSP_SETDATE:
 	case TSP_SETDATEREQ:
