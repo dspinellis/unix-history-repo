@@ -1,4 +1,4 @@
-/*	vfs_lookup.c	6.16	85/01/10	*/
+/*	vfs_lookup.c	6.17	85/01/10	*/
 
 #include "param.h"
 #include "systm.h"
@@ -1248,5 +1248,17 @@ nchinval(dev)
 		ncp->nc_prev = &nchhead;
 		nxtcp->nc_prev = &ncp->nc_nxt;
 		nchhead = ncp;
+	}
+}
+
+/*
+ * Name cache invalidation of all entries.
+ */
+cacheinvalall()
+{
+	register struct nch *ncp;
+
+	for (ncp = nch; ncp < &nch[nchsize]; ncp++) {
+		ncp->nc_id = 0;
 	}
 }
