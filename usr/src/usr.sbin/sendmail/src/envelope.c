@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	8.42 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	8.43 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -125,8 +125,7 @@ dropenvelope(e)
 		    bitset(QPINGONFAILURE, q->q_flags))
 		{
 			failure_return = TRUE;
-			if (q->q_owner == NULL &&
-			    strcmp(e->e_from.q_paddr, "<>") != 0)
+			if (q->q_owner == NULL && !emptyaddr(&e->e_from))
 				(void) sendtolist(e->e_from.q_paddr, NULL,
 						  &e->e_errorqueue, e);
 		}

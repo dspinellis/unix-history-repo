@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.38 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.39 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -231,7 +231,7 @@ savemail(e)
 				(void) sendtolist("postmaster",
 					  NULLADDR, &e->e_errorqueue, e);
 			}
-			if (strcmp(e->e_from.q_paddr, "<>") != 0)
+			if (!emptyaddr(&e->e_from))
 			{
 				(void) sendtolist(e->e_from.q_paddr,
 					  NULLADDR, &e->e_errorqueue, e);
