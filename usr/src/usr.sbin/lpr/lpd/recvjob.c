@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recvjob.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)recvjob.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -15,8 +15,8 @@ static char sccsid[] = "@(#)recvjob.c	5.13 (Berkeley) %G%";
  */
 
 #include "lp.h"
-#include <ufs/fs.h>
 #include "pathnames.h"
+#include <sys/mount.h>
 
 char	*sp = "";
 #define ack()	(void) write(1, sp, 1);
@@ -24,10 +24,7 @@ char	*sp = "";
 char    tfname[40];		/* tmp copy of cf before linking */
 char    dfname[40];		/* data files */
 int	minfree;		/* keep at least minfree blocks available */
-char	*ddev;			/* disk device (for checking free space) */
-int	dfd;			/* file system device descriptor */
 
-char	*find_dev();
 void	rcleanup();
 
 recvjob()
@@ -66,45 +63,12 @@ recvjob()
 		}
 	} else if (stat(SD, &stb) < 0)
 		frecverr("%s: %s: %m", printer, SD);
-	minfree = read_number("minfree");
-	ddev = find_dev(stb.st_dev, S_IFBLK);
-	if ((dfd = open(ddev, O_RDONLY)) < 0)
-		syslog(LOG_WARNING, "%s: %s: %m", printer, ddev);
+	minfree = 2 * read_number("minfree");	/* scale KB to 512 blocks */
 	signal(SIGTERM, rcleanup);
 	signal(SIGPIPE, rcleanup);
 
 	if (readjob())
 		printjob();
-}
-
-char *
-find_dev(dev, type)
-	register dev_t dev;
-	register int type;
-{
-	register DIR *dfd = opendir(_PATH_DEV);
-	struct direct *dir;
-	struct stat stb;
-	char devname[MAXNAMLEN+6];
-	char *dp;
-
-	strcpy(devname, _PATH_DEV);
-	while ((dir = readdir(dfd))) {
-		strcpy(devname + 5, dir->d_name);
-		if (stat(devname, &stb))
-			continue;
-		if ((stb.st_mode & S_IFMT) != type)
-			continue;
-		if (dev == stb.st_rdev) {
-			closedir(dfd);
-			dp = (char *)malloc(strlen(devname)+1);
-			strcpy(dp, devname);
-			return(dp);
-		}
-	}
-	closedir(dfd);
-	frecverr("cannot find device %d, %d", major(dev), minor(dev));
-	/*NOTREACHED*/
 }
 
 /*
@@ -199,7 +163,7 @@ readfile(file, size)
 	register int i, j, amt;
 	int fd, err;
 
-	fd = open(file, O_CREAT|O_EXECL|O_WRONLY, FILMOD);
+	fd = open(file, O_CREAT|O_EXCL|O_WRONLY, FILMOD);
 		frecverr("illegal path name");
 	if (fd < 0)
 		frecverr("%s: %m", file);
@@ -255,14 +219,14 @@ chksize(size)
 	int size;
 {
 	int spacefree;
-	struct fs fs;
+	struct statfs sfb;
 
-	if (dfd < 0 || lseek(dfd, (long)(SBOFF), 0) < 0)
-		return(1);
-	if (read(dfd, (char *)&fs, sizeof fs) != sizeof fs)
-		return(1);
-	spacefree = freespace(&fs, fs.fs_minfree) * fs.fs_fsize / 1024;
-	size = (size + 1023) / 1024;
+	if (statfs(".", &sfb) < 0) {
+		syslog(LOG_ERR, "%s: %m", "statfs(\".\")");
+		return (1);
+	}
+	spacefree = sfb.f_bavail * (sfb.f_fsize / 512);
+	size = (size + 511) / 512;
 	if (minfree + size > spacefree)
 		return(0);
 	return(1);
