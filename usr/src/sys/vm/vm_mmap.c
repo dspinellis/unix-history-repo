@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vm_mmap.c 1.6 91/10/21$
  *
- *	@(#)vm_mmap.c	8.8 (Berkeley) %G%
+ *	@(#)vm_mmap.c	8.9 (Berkeley) %G%
  */
 
 /*
@@ -404,18 +404,19 @@ munmap(p, uap, retval)
 }
 
 void
-munmapfd(fd)
+munmapfd(p, fd)
+	struct proc *p;
 	int fd;
 {
 #ifdef DEBUG
 	if (mmapdebug & MDB_FOLLOW)
-		printf("munmapfd(%d): fd %d\n", curproc->p_pid, fd);
+		printf("munmapfd(%d): fd %d\n", p->p_pid, fd);
 #endif
 
 	/*
 	 * XXX should vm_deallocate any regions mapped to this file
 	 */
-	curproc->p_fd->fd_ofileflags[fd] &= ~UF_MAPPED;
+	p->p_fd->fd_ofileflags[fd] &= ~UF_MAPPED;
 }
 
 struct mprotect_args {
