@@ -1,5 +1,5 @@
 #
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 #
 COMFLAGS=-DBSD4_2 -O -DSACREDMEM=256000
 BIN=${DESTDIR}/usr/ucb
@@ -24,3 +24,5 @@ install: compress
 clean:
 	rm -f compress core errs
 #	rm -f compress USERMEM core errs
+
+depend:
