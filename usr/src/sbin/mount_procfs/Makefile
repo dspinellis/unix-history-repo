@@ -1,6 +1,7 @@
-#	@(#)Makefile	8.1 (Berkeley) %G%
+#	@(#)Makefile	8.2 (Berkeley) %G%
 
 PROG=	mount_procfs
-MAN8=	mount_procfs.0
+#MAN8=	mount_procfs.0
+NOMAN=	noman
 
 .include <bsd.prog.mk>
