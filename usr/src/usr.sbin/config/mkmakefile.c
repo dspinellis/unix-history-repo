@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkmakefile.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkmakefile.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -285,7 +285,8 @@ nextopt:
 invis:
 	while ((wd = get_word(fp)) != 0)
 		;
-	tp = new_fent();
+	if (tp == 0)
+		tp = new_fent();
 	tp->f_fn = this;
 	tp->f_type = INVISIBLE;
 	tp->f_needs = needs;
@@ -320,7 +321,8 @@ save:
 	}
 	if (eq(devorprof, "profiling-routine") && profiling == 0)
 		goto next;
-	tp = new_fent();
+	if (tp == 0)
+		tp = new_fent();
 	tp->f_fn = this;
 	if (eq(devorprof, "device-driver"))
 		tp->f_type = DRIVER;
