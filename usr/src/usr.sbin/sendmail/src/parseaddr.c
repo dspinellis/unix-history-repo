@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	8.67 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	8.68 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1156,7 +1156,7 @@ rewrite(pvp, ruleset, reclevel, e)
 						stat);
 
 				/* should recover if stat == EX_TEMPFAIL */
-				if (stat == EX_TEMPFAIL || stat == EX_UNAVAILABLE)
+				if (stat == EX_TEMPFAIL)
 				{
 					rstat = EX_TEMPFAIL;
 					if (tTd(50, 1))
