@@ -1,8 +1,26 @@
-.TH PING 8 "May 25, 1989"
+.\" Copyright (c) 1985 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)ping.8	6.5 (Berkeley) %G%
+.\"
+.TH PING 8 ""
+.UC 6
 .SH NAME
 ping \- send ICMP ECHO_REQUEST packets to network hosts
 .SH SYNOPSIS
-.B /etc/ping
+.B ping
 [
 .B -dfnqrvR
 ][
@@ -16,203 +34,200 @@ preload][
 pattern][
 .B -s
 packetsize]
-.B [-h]
-.B host
 .SH DESCRIPTION
-The DARPA Internet is a large and complex aggregation of
-network hardware, connected together by gateways.
-Tracking a single-point hardware or software failure
-can often be difficult.
 .I Ping
 uses the
 ICMP protocol's mandatory ECHO_REQUEST datagram to elicit an
 ICMP ECHO_RESPONSE from a host or gateway.
 ECHO_REQUEST datagrams (``pings'') have an IP and ICMP header,
-followed by a \fBstruct timeval\fR, and then an arbitrary number
-of ``pad'' bytes used to fill out the packet.
-Default datagram length is 64 bytes, but this may be changed
-using the \fI-s\fR option.
+followed by a
+.I struct timeval
+and then an arbitrary number of ``pad'' bytes used to fill out the
+packet.
+The options are as follows:
 Other options are:
 .TP
-.B \-d
+.I "-c count"
+Stop after sending (and receiving)
+.I count
+ECHO_RESPONSE packets.
+.TP
+.I -d
 Set the SO_DEBUG option on the socket being used.
 .TP
-.B \-f
-Flood ping.  Outputs packets as fast as they come back or one hundred times
-per second, whichever is more.  For every ECHO_REQUEST sent a period '.'
-is printed, while for ever ECHO_REPLY received a backspace is printed.
+.I -f
+Flood ping.
+Outputs packets as fast as they come back or one hundred times per second,
+whichever is more.
+For every ECHO_REQUEST sent a period ``.'' is printed, while for ever
+ECHO_REPLY received a backspace is printed.
 This provides a rapid display of how many packets are being dropped.
-\fIThis can be very hard on a network and should be used with caution.\fR
+Only the super-user may use this option.
+.I "This can be very hard on a network and should be used with caution."
 .TP
-.B \-h
-You may use this flag to specify the host, or leave it off if the host
-is the last token on the command line.
-.TP
-.B \-n
-Numeric output only.  No attempt will be made to lookup symbolic
-names for host addresses.
-.TP
-.B \-q
-Quiet output.  Nothing is displayed except the summary lines at the
-beginning and at the end.
-.TP
-.B \-r
-Bypass the normal routing tables and send directly to a host on an attached
-network.
-If the host is not on a directly-attached network,
-an error is returned.
-This option can be used to ping a local host through an interface
-that has no route through it (e.g., after the interface was dropped by
-.I routed(8C)
-).
-.TP
-.B \-v
-Verbose output.  ICMP packets other than ECHO_RESPONSE that are received
-are listed.
-.TP
-.B \-R
-Record Route.  Includes the RECORD_ROUTE option in the ECHO_REQUEST
-packet and displays the route buffer on returned packets.  Note that
-the IP header is only large enough for nine such routes.  Many hosts
-ignore or discard this option.
-.TP
-.B \-c \fIcount\fR
-Stop after receiving \fIcount\fR ECHO_RESPONSE packets.
-.TP
-.B \-i \fIwait\fR
-.br
-Wait \fIwait\fR seconds between sending each packet.
+.I "-i wait"
+Wait
+.I wait seconds between sending each packet.
 The default is to wait for one second between each packet.
-This option is incompatible with the \fB-f\fR option.
+This option is incompatible with the
+.I -f
+option.
 .TP
-.B \-l \fIpreload\fR
+.I -l preload
 If
 .I preload
-is given,
+is specified,
 .I ping
-sends that many packets as fast as possible before
-falling into its normal mode of behavior.
+sends that many packets as fast as possible before falling into its normal
+mode of behavior.
 .TP
-.B \-p \fIpattern\fR
-You may specify up to 16 "pad" bytes to fill out the packet you send.
+.I -n
+Numeric output only.
+No attempt will be made to lookup symbolic names for host addresses.
+.TP
+.I "-p pattern"
+You may specify up to 16 ``pad'' bytes to fill out the packet you send.
 This is useful for diagnosing data-dependent problems in a network.
-For example, "-p ff" will cause the sent packet to be filled with all ones.
+For example, ``-p ff'' will cause the sent packet to be filled with all
+ones.
 .TP
-.B \-s \fIpacketsize\fR
+.I -q
+Quiet output.
+Nothing is displayed except the summary lines at startup time and
+when finished.
+.TP
+.B -R
+Record route.
+Includes the RECORD_ROUTE option in the ECHO_REQUEST packet and displays
+the route buffer on returned packets.
+Note that the IP header is only large enough for nine such routes.
+Many hosts ignore or discard this option.
+.TP
+.I -r
+Bypass the normal routing tables and send directly to a host on an attached
+network.
+If the host is not on a directly-attached network, an error is returned.
+This option can be used to ping a local host through an interface
+that has no route through it (e.g., after the interface was dropped by
+.IR routed (8)).
+.TP
+.I "-s packetsize"
 Specifies the number of data bytes to be sent.  
 The default is 56, which translates into 64 ICMP data bytes when combined
 with the 8 bytes of ICMP header data.
+.TP
+.I -v
+Verbose output.
+ICMP packets other than ECHO_RESPONSE that are received are listed.
 .PP
-When using \fIping\fR for fault isolation, it should first be run on the local
-host, to verify that the local network interface is up and running.
-Then, hosts and gateways further and further away
-should be ``pinged''.
-\fIPing\fR sends one datagram per second (or per \fIwait\fR seconds), and
-prints one line of output for every ECHO_RESPONSE returned.
-If an optional
-.I count
-is given, only that number of requests is sent.
+When using
+.I ping
+for fault isolation, it should first be run on the local host, to verify
+that the local network interface is up and running.
+Then, hosts and gateways further and further away should be ``pinged''.
 Round-trip times and packet loss statistics are computed.
-If duplicate packets are received, they are not included in the
-packet loss calculation, although the
-round trip time of these packets is used in calculating the 
-minimun/average/maximum round-trip time numbers.
-When all responses have been received or the program times out (with a
-.I count
-specified), or if the program is terminated with a SIGINT, a brief
-summary is displayed.
+If duplicate packets are received, they are not included in the packet
+loss calculation, although the round trip time of these packets is used
+in calculating the minimum/average/maximum round-trip time numbers.
+When the specified number of packets have been sent (and received) or
+if the program is terminated with a SIGINT, a brief summary is displayed.
 .PP
-This program is intended for use in network testing, measurement
-and management.
-It should be used primarily for manual fault isolation.
-Because of the load it could impose on the network,
-it is unwise to use
+This program is intended for use in network testing, measurement and
+management.
+Because of the load it can impose on the network, it is unwise to use
 .I ping
 during normal operations or from automated scripts.
-.SH ICMP Packet Details
+.SH ICMP PACKET DETAILS
 An IP header without options is 20 bytes.
 An ICMP ECHO_REQUEST packet contains an additional 8 bytes worth
-of ICMP header followed by an arbitrary amount of data.  When a
+of ICMP header followed by an arbitrary amount of data.
+When a
 .I packetsize
-is given, this indicated the size of this extra blob of data (the
-default is 56).  Thus the amount of data received inside of an IP
-packet of type ICMP ECHO_REPLY will always be 8 bytes more than
-the requested data space (the ICMP header).
+is given, this indicated the size of this extra piece of data (the
+default is 56).
+Thus the amount of data received inside of an IP packet of type ICMP
+ECHO_REPLY will always be 8 bytes more than the requested data space
+(the ICMP header).
 .PP
 If the data space is at least eight bytes large,
 .I ping
 uses the first eight bytes of this space to include a timestamp which
-it uses in the computation of round trip times.  This explains why if
-less than eight bytes of pad are requested, no round trip times are given.
-.SH Duplicate and Damaged packets
-\fIPing\fR will report duplicate and damaged packets.
+it uses in the computation of round trip times.
+If less than eight bytes of pad are specified, no round trip times are
+given.
+.SH DUPLICATE AND DAMAGED PACKETS
+.I Ping
+will report duplicate and damaged packets.
 Duplicate packets should never occur, and seem to be caused by
 inappropriate link-level retransmissions.
-The author has seen duplicates in many situations and has never known them
-to be a good thing, although the presence of low levels of
-duplicates may not always be cause for alarm.
-Network maintainers ignore them at
-their own risk as they have been known to be harbingers of severe
-network problems.
+Duplicates may occur in many situations and are rarely (if ever) a
+good sign, although the presence of low levels of duplicates may not
+always be cause for alarm.
 .PP
-Damaged packets are obviously serious cause for alarm and most likely
-indicate broken hardware somewhere in the \fIping\fR packet's path
-(in the network or in the hosts).
-.SH Trying Different Data Patterns
-It should go without saying that the (inter)network layer 
-\fIshould\fR never treat packets differently depending on the
-data contained in the data portion.
+Damaged packets are obviously serious cause for alarm and often
+indicate broken hardware somewhere in the
+.I ping
+packet's path (in the network or in the hosts).
+.SH TRYING DIFFERENT DATA PATTERNS
+The (inter)network layer should never treat packets differently depending
+on the data contained in the data portion.
 Unfortunately, data-dependent problems have been known to sneak into
 networks and remain undetected for long periods of time.
 In many cases the particular pattern that will have problems is something
-that doesn't have "enough" transitions, such as all ones or all zeros,
-or a pattern right at the edge, such as almost all zeros.
+that doesn't have sufficient ``transitions'', such as all ones or all
+zeros, or a pattern right at the edge, such as almost all zeros.
 It isn't necessarily enough to specify a data pattern of all zeros (for
-example) on the command line (as in \fB-p 00\fR), because the pattern
-that is of interest is at the data link level, and the relationship
-between what you type and what the controllers transmit can be
-complicated.
+example) on the command line because the pattern that is of interest is
+at the data link level, and the relationship between what you type and
+what the controllers transmit can be complicated.
 .PP
-This means that if you have a data-dependent problem you will have
-to be prepared to do a lot of testing to find it. 
+This means that if you have a data-dependent problem you will probably
+have to do a lot of testing to find it.
 If you are lucky, you may manage to find a file that either can't be sent
 across your network or that takes much longer to transfer than other
 similar length files.
 You can then examine this file for repeated patterns that you can test
 using the \fI-p\fR option of \fIping\fR.
-.SH TTL Details
+.SH TTL DETAILS
 The TTL value of an IP packet represents the maximum number of IP routers
 that the packet can go through before being thrown away.
-In current practice you can expect each router in the Internet to decrement the
-TTL field by exactly one.
+In current practice you can expect each router in the Internet to decrement
+the TTL field by exactly one.
 .PP
-The TCP/IP specification says that the TTL field for TCP packets should
+The TCP/IP specification states that the TTL field for TCP packets should
 be set to 60, but many systems use smaller values (4.3 BSD uses 30, 4.2 used
 15).
 .PP
 The maximum possible value of this field is 255, and most Unix systems set
 the TTL field of ICMP ECHO_REQUEST packets to 255.
-This is why you will find you can "ping" some hosts, but not reach them with
-telnet or ftp.
+This is why you will find you can ``ping'' some hosts, but not reach them
+with
+.I telnet
+or
+.IR ftp .
 .PP
 In normal operation ping prints the ttl value from the packet it receives.
 When a remote system receives a ping packet, it can do one of three things
 with the TTL field in its response:
 .TP
-.B (1)
-Not change it; this is what Berkeley Unix systems did until 4.3 BSD tahoe
-level releases.
+--
+Not change it; this is what Berkeley Unix systems did before the 4.3BSD-tahoe
+release.
 In this case the TTL value in the received packet will be 255 minus the
 number of routers in the round-trip path.
 .TP
-.B (2)
-Set it to 255; this is what Berkeley Unix systems have done since the 4.3
-tahoe release.
-In this case the TTL value in the received packet will be 255 minus the number
-of routers in the path \fIfrom\fR the remote system \fIto\fR the
-\fIping\fRing host.
+--
+Set it to 255; this is what current Berkeley Unix systems do.
+In this case the TTL value in the received packet will be 255 minus the
+number of routers in the path
+.I from
+the remote system
+.I to
+the
+.IR ping ing
+host.
 .TP
-.B (3)
+--
 Set it to some other value.
 Some machines use the same value for ICMP packets that they use for
 TCP packets, for example either 30 or 60.
@@ -220,14 +235,11 @@ Others may use completely wild values.
 .SH BUGS
 Many Hosts and Gateways ignore the RECORD_ROUTE option.
 .PP
-The maximum IP header length is too small for options like
-RECORD_ROUTE to be completely useful.  There's not much that
-we can do about that however.
+The maximum IP header length is too small for options like RECORD_ROUTE to
+be completely useful.
+There's not much that that can be done about this, however.
 .PP
-Flood pinging is not recommended in general, and flood pinging the broadcast
-address should only be done under very controlled conditions.
-.SH AUTHOR
-Mike Muuss
+Flood pinging is not recommended in general, and flood pinging the
+broadcast address should only be done under very controlled conditions.
 .SH SEE ALSO
-netstat(1),
-ifconfig(8C)
+netstat(1), ifconfig(8), routed(8)
