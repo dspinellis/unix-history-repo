@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)mbuf.c	4.2 82/12/05";
+static char sccsid[] = "@(#)mbuf.c	4.3 82/12/06";
 #endif
 
 #include <sys/param.h>
@@ -34,6 +34,5 @@ mbpr(mbaddr)
 	totmem = mbstat.m_mbufs * MSIZE + mbstat.m_clusters * CLBYTES;
 	totfree = mbstat.m_mbfree * MSIZE + mbstat.m_clusters * CLBYTES;
 	printf("\t%dKbytes allocated to network (%d%% in use)\n",
-		totmem / 1024,
-		(totmem - totfree + totmem - 1) / totmem);
+		totmem / 1024, (totmem - totfree) * 100 / totmem);
 }
