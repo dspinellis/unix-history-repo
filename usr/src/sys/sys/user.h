@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)user.h	7.2 (Berkeley) %G%
+ *	@(#)user.h	7.3 (Berkeley) %G%
  */
 
 #ifdef KERNEL
@@ -56,6 +56,7 @@ struct	user {
 	gid_t	u_gid;			/* effective group id */
 	gid_t	u_rgid;			/* real group id */
 	gid_t	u_groups[NGROUPS];	/* groups, 0 terminated */
+#define u_cred u_uid
 
 /* 1.2 - memory management */
 	size_t	u_tsize;		/* text size (clicks) */
