@@ -1,5 +1,5 @@
 #ifndef lint
-    static	char *sccsid = "@(#)printgprof.c	1.3 (Berkeley) %G%";
+    static	char *sccsid = "@(#)printgprof.c	1.4 (Berkeley) %G%";
 #endif lint
 
 #include "gprof.h"
@@ -115,7 +115,6 @@ printgprof()
     nltype	**timesortnlp;
     int		index;
     nltype	*parentp;
-    nltype	*childp;
 
 	/*
 	 *	Now, sort by time + childtime.
@@ -256,11 +255,11 @@ printname( selfp )
 	    }
 #	endif DEBUG
     }
-    if ( selfp -> index != 0 ) {
-	printf( "\t[%d]" , selfp -> index );
-    }
     if ( selfp -> cycleno != 0 ) {
-	printf( " <cycle %d>" , selfp -> cycleno );
+	printf( "\t<cycle %d>" , selfp -> cycleno );
+    }
+    if ( selfp -> index != 0 ) {
+	printf( " [%d]" , selfp -> index );
     }
 }
 
@@ -425,7 +424,7 @@ sortmembers( cyclep )
      *	major sort is on time + childtime,
      *	next is sort on ncalls + selfcalls.
      */
-long
+int
 membercmp( this , that )
     nltype	*this;
     nltype	*that;
