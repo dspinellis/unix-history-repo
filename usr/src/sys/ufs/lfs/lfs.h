@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs.h	7.5 (Berkeley) %G%
+ *	@(#)lfs.h	7.6 (Berkeley) %G%
  */
 
 typedef struct buf	BUF;
@@ -166,8 +166,6 @@ struct ifile {
 typedef struct _cleanerinfo {
 	u_long	clean;			/* K: number of clean segments */
 	u_long	dirty;			/* K: number of dirty segments */
-	u_long	last_seg;		/* K: index of last seg written */
-	time_t	last_time;		/* K: timestamp of last seg written */
 } CLEANERINFO;
 
 #define	CLEANSIZE_SU(fs) \
