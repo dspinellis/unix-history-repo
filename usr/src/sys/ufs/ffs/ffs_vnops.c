@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ffs_vnops.c	7.16 (Berkeley) %G%
+ *	@(#)ffs_vnops.c	7.17 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -146,7 +146,6 @@ ufs_mknod(ndp, vap, cred)
 		ITOV(ip)->v_rdev = ip->i_rdev = vap->va_rdev;
 		ip->i_flag |= IACC|IUPD|ICHG;
 	}
-	iput(ip);
 	/*
 	 * Remove inode so that it will be reloaded by iget and
 	 * checked to see if it is an alias of an existing entry
@@ -155,6 +154,8 @@ ufs_mknod(ndp, vap, cred)
 	remque(ip);
 	ip->i_forw = ip;
 	ip->i_back = ip;
+	ITOV(ip)->v_type = VNON;
+	iput(ip);
 	return (0);
 }
 
