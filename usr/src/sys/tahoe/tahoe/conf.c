@@ -1,4 +1,4 @@
-/*	conf.c	1.9	87/03/28	*/
+/*	conf.c	1.10	87/11/17	*/
 
 #include "param.h"
 #include "systm.h"
@@ -100,27 +100,22 @@ struct	tty pt_tty[];
 #define	ptsstop		nulldev
 #endif
 
-#include "vbsc.h"
-#if NVBSC > 0
-int	bscopen(), bscclose(), bscread(), bscwrite(), bscioctl();
-int	bsmopen(),bsmclose(),bsmread(),bsmwrite(),bsmioctl();
-int	bstopen(),bstclose(),bstread(),bstioctl();
+#if NMP > 0
+int	mpopen(), mpclose(), mpread(), mpwrite(), mpioctl(), mpstop();
+int	mpdlopen(), mpdlclose(), mpdlwrite(), mpdlioctl();
+extern	struct tty mp_tty[];
 #else
-#define bscopen		nodev
-#define bscclose	nodev
-#define bscread		nodev
-#define bscwrite	nodev
-#define bscioctl	nodev
-#define bsmopen		nodev
-#define bsmclose	nodev
-#define bsmread		nodev
-#define bsmwrite	nodev
-#define bsmioctl	nodev
-#define bstopen		nodev
-#define bstclose	nodev
-#define bstread		nodev
-#define bstwrite	nodev
-#define bstioctl	nodev
+#define	mpopen		nodev
+#define	mpclose		nodev
+#define	mpread		nodev
+#define	mpwrite		nodev
+#define	mpioctl		nodev
+#define	mpstop		nodev
+#define	mpdlopen	nodev
+#define	mpdlclose	nodev
+#define	mpdlwrite	nodev
+#define	mpdlioctl	nodev
+#define	mp_tty		0
 #endif
 
 #if NII > 0
@@ -204,14 +199,14 @@ struct cdevsw	cdevsw[] =
 	ptcopen,	ptcclose,	ptcread,	ptcwrite,	/*10*/
 	ptyioctl,	nulldev,	nodev,		pt_tty,
 	ptcselect,	nodev,
-	bscopen,	bscclose,	bscread,	bscwrite,	/*11*/
-	bscioctl,	nodev,		nulldev,	0,
-	nodev,		nodev,
-	bsmopen,	bsmclose,	bsmread,	bsmwrite,	/*12*/
-	bsmioctl,	nodev,		nulldev,	0,
-	nodev,		nodev,
-	bstopen,	bstclose,	bstread,	nodev,		/*13*/
-	bstioctl,	nodev,		nulldev,	0,
+	mpdlopen,	mpdlclose,	nodev,		mpdlwrite,	/*11*/
+	mpdlioctl,	nodev,		nulldev,	0,
+	seltrue,	nodev,
+	mpopen,		mpclose,	mpread,		mpwrite,	/*12*/
+	mpioctl,	mpstop,		nulldev,	mp_tty,
+	ttselect,	nodev,
+	nodev,		nodev,		nodev,		nodev,		/*13*/
+	nodev,		nodev,		nulldev,	0,
 	nodev,		nodev,
 	iiopen,		iiclose,	nulldev,	nulldev,	/*14*/
 	iiioctl,	nulldev,	nulldev,	0,
