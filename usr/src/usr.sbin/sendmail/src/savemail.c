@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	6.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	6.8 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/types.h>
@@ -199,7 +199,8 @@ savemail(e)
 
 			if (state == ESM_MAIL)
 			{
-				if (e->e_errorqueue == NULL)
+				if (e->e_errorqueue == NULL &&
+				    strcmp(e->e_from.q_paddr, "<>") != 0)
 					(void) sendtolist(e->e_from.q_paddr,
 							  (ADDRESS *) NULL,
 							  &e->e_errorqueue, e);
@@ -210,6 +211,12 @@ savemail(e)
 							  (ADDRESS *) NULL,
 							  &e->e_errorqueue, e);
 				q = e->e_errorqueue;
+				if (q == NULL)
+				{
+					/* this is an error-error */
+					state = ESM_USRTMP;
+					break;
+				}
 			}
 			else
 			{
@@ -405,7 +412,8 @@ returntosender(msg, returnq, sendbody, e)
 
 	/* fake up an address header for the from person */
 	expand("\201n", buf, &buf[sizeof buf - 1], e);
-	ee->e_sender = ee->e_returnpath = newstr(buf);
+	ee->e_returnpath = "<>";
+	ee->e_sender = newstr(buf);
 	if (parseaddr(buf, &ee->e_from, -1, '\0', e) == NULL)
 	{
 		syserr("Can't parse myself!");
