@@ -1,4 +1,4 @@
-static char sccsid[] = "@(#)dcheck.c 2.2 %G%";
+static	char *sccsid = "@(#)dcheck.c	2.3 (Berkeley) %G%";
 /*
  * dcheck - check directory consistency
  */
@@ -9,12 +9,13 @@ static char sccsid[] = "@(#)dcheck.c 2.2 %G%";
 #include <sys/param.h>
 #include <sys/inode.h>
 #include <sys/fs.h>
+#include <dir.h>
 #else
 #include "../h/param.h"
 #include "../h/inode.h"
 #include "../h/fs.h"
+#include "../h/ndir.h"
 #endif
-#include <dir.h>
 #include <stdio.h>
 
 union {
@@ -97,11 +98,6 @@ char *file;
 		return;
 	}
 	nfiles = sblock.fs_ipg * sblock.fs_ncg;
-	if (nfiles > 65535) {
-		printf("%s: preposterous number of files\n", file);
-		nerror++;
-		return;
-	}
 	ecount = (ino_t *)malloc((nfiles+1) * sizeof (*ecount));
 	if (ecount == 0) {
 		printf("%s: not enough core for %d files\n", file, nfiles);
