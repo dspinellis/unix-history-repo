@@ -1,4 +1,18 @@
-static char *sccsid = "@(#)cmp.c	4.5 (Berkeley) %G%";
+/*
+ * Copyright (c) 1987 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+char copyright[] =
+"@(#) Copyright (c) 1987 Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* !lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)cmp.c	4.5 (Berkeley) %G%";
+#endif /* !lint */
 
 #include <sys/param.h>
 #include <sys/file.h>
@@ -14,7 +28,7 @@ static char *sccsid = "@(#)cmp.c	4.5 (Berkeley) %G%";
 
 static int	fd1,			/* descriptor, file 1 */
 		fd2,			/* descriptor, file 2 */
-		silent = NO;		/* if silent on error */
+		silent = NO;		/* if silent run */
 static short	all = NO;		/* if report all differences */
 static	u_char	buf1[MAXBSIZE],		/* read buffers */
 		buf2[MAXBSIZE];
@@ -35,7 +49,7 @@ char	**argv;
 			case 'l':		/* print all differences */
 				all = YES;
 				break;
-			case 's':		/* silent return */
+			case 's':		/* silent run */
 				silent = YES;
 				break;
 			case '?':
@@ -150,16 +164,15 @@ cmp()
 						printf("%6ld %3o %3o\n",byte,*C1,*C2);
 				}
 			}
-			else
-				for (C1 = buf1,C2 = buf2;;++C1,++C2) {
-					++byte;
-					if (*C1 != *C2) {
-						printf("%s %s differ: char %ld, line %ld\n",file1,file2,byte,line);
-						exit(DIFF);
-					}
-					if (*C1 == '\n')
-						++line;
+			else for (C1 = buf1,C2 = buf2;;++C1,++C2) {
+				++byte;
+				if (*C1 != *C2) {
+					printf("%s %s differ: char %ld, line %ld\n",file1,file2,byte,line);
+					exit(DIFF);
 				}
+				if (*C1 == '\n')
+					++line;
+			}
 		}
 		else {
 			byte += len2;
@@ -167,9 +180,9 @@ cmp()
 			 * here's the real performance problem, we've got to
 			 * count the stupid lines, which means that -l is a
 			 * *much* faster version, i.e., unless you really
-			 * *want* to know the line number, run -sl.
+			 * *want* to know the line number, run -s or -l.
 			 */
-			if (!all)
+			if (!silent && !all)
 				for (C1 = buf1,cnt = len2;cnt--;)
 					if (*C1++ == '\n')
 						++line;
