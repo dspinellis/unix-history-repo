@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)ttgeneric.c	3.11 83/08/18";
+static	char *sccsid = "@(#)ttgeneric.c	3.12 83/08/23";
 #endif
 
 #include "ww.h"
@@ -48,6 +48,8 @@ char gen_OS;
 char gen_BS;
 int gen_CO;
 int gen_LI;
+int gen_UG;
+int gen_SG;
 
 #define pc(c) putchar('c')
 #define ps(s) fputs((s), stdout)
@@ -303,6 +305,8 @@ tt_generic()
 	gen_BS = tgetflag("bs");
 	gen_CO = tgetnum("co");
 	gen_LI = tgetnum("li");
+	gen_UG = tgetnum("ug");
+	gen_SG = tgetnum("sg");
 
 	if (gen_CL == 0 || gen_CM == 0 || gen_OS)
 		return -1;
@@ -336,6 +340,10 @@ tt_generic()
 		tt.tt_clreos = gen_clreos;
 	if (gen_CL)
 		tt.tt_clear = gen_clear;
+	if (gen_SG > 0)
+		gen_SO = 0;
+	if (gen_UG > 0)
+		gen_US = 0;
 	if (gen_SO)
 		tt.tt_availmodes |= WWM_REV;
 	if (gen_US)
