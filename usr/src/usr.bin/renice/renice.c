@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)renice.c	4.3 (Berkeley) 83/07/02";
+static	char *sccsid = "@(#)renice.c	4.4 (Berkeley) 83/07/24";
 #endif
 
 #include <sys/time.h>
@@ -19,14 +19,9 @@ main(argc, argv)
 	int who = 0, prio, errs = 0;
 
 	argc--, argv++;
-	if (argc < 2)
-		usage();
-	if (strcmp(*argv, "-g") == 0) {
-		which = PRIO_PGRP;
-		argv++, argc--;
-	} else if (strcmp(*argv, "-u") == 0) {
-		which = PRIO_USER;
-		argv++, argc--;
+	if (argc < 1) {
+		fprintf(stderr, "usage: renice priority [ who ... ]\n");
+		exit(1);
 	}
 	prio = atoi(*argv);
 	argc--, argv++;
@@ -35,8 +30,20 @@ main(argc, argv)
 	if (prio < PRIO_MIN)
 		prio = PRIO_MIN;
 	if (argc == 0)
-		errs += donice(which, 0, prio);
+		exit(donice(which, 0, prio));
 	for (; argc > 0; argc--, argv++) {
+		if (strcmp(*argv, "-g") == 0) {
+			which = PRIO_PGRP;
+			continue;
+		}
+		if (strcmp(*argv, "-u") == 0) {
+			which = PRIO_USER;
+			continue;
+		}
+		if (strcmp(*argv, "-p") == 0) {
+			which = PRIO_PROCESS;
+			continue;
+		}
 		if (which == PRIO_USER) {
 			register struct passwd *pwd = getpwnam(*argv);
 			
@@ -62,9 +69,10 @@ main(argc, argv)
 donice(which, who, prio)
 	int which, who, prio;
 {
-	int oldprio = getpriority(which, who);
+	int oldprio;
 	extern int errno;
 
+	errno = 0, oldprio = getpriority(which, who);
 	if (oldprio == -1 && errno) {
 		fprintf(stderr, "renice: %d: ", who);
 		perror("getpriority");
@@ -77,12 +85,4 @@ donice(which, who, prio)
 	}
 	printf("%d: old priority %d, new priority %d\n", who, oldprio, prio);
 	return (0);
-}
-
-usage()
-{
-	fprintf(stderr, "usage: renice priority [ pid .... ]\n");
-	fprintf(stderr, "or, renice -g priority [ pgrp .... ]\n");
-	fprintf(stderr, "or, renice -u priority [ user .... ]\n");
-	exit(1);
 }
