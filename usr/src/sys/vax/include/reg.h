@@ -3,9 +3,10 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)reg.h	6.2 (Berkeley) %G%
+ *	@(#)reg.h	6.3 (Berkeley) %G%
  */
 
+/*
  * Location of the users' stored
  * registers relative to R0.
  * Usage is u.u_ar0[XX].

@@ -3,9 +3,10 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dkio.h	6.2 (Berkeley) %G%
+ *	@(#)dkio.h	6.3 (Berkeley) %G%
  */
 
+/*
  * Structures and definitions for disk io control commands
  *
  * THIS WHOLE AREA NEEDS MORE THOUGHT.  FOR NOW JUST IMPLEMENT
