@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)machdep.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)machdep.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /* Included in this file are all system dependent routines.  Extensive use
@@ -59,6 +59,7 @@ static char sccsid[] = "@(#)machdep.c	5.1 (Berkeley) %G%";
 #include <sys/types.h>
 #include <sys/file.h>
 #include <sys/stat.h>
+#include <pwd.h>
 
 #ifdef UNIX_BSD4_2
 #include <sys/time.h>
@@ -356,11 +357,11 @@ char *fname;
 char *
 md_gln()
 {
-	char *getlogin();
-	char *t;
+	struct passwd *p, *getpwuid();
 
-	t = getlogin();
-	return(t);
+	if (!(p = getpwuid(getuid())))
+		return((char *)NULL);
+	return(p->pw_name);
 }
 
 /* md_sleep:
