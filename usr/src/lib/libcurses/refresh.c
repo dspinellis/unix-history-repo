@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)refresh.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)refresh.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <curses.h>
@@ -19,7 +19,8 @@ WINDOW *_win;
 
 static void	domvcur __P((int, int, int, int));
 static int	makech __P((WINDOW *, int));
-
+static void	quickch __P((WINDOW *));	
+static void	scrolln __P((WINDOW*, int, int));
 /*
  * wrefresh --
  *	Make the current screen look like "win" over the area coverd by
@@ -29,6 +30,7 @@ int
 wrefresh(win)
 	register WINDOW *win;
 {
+	register LINE *wlp;
 	register int retval;
 	register short wy;
 
@@ -47,6 +49,11 @@ wrefresh(win)
 	_win = win;
 	curwin = (win == curscr);
 
+	for (wy = 0; wy < win->maxy; wy++) {
+		wlp = win->lines[wy];
+		if (wlp->flags & __ISDIRTY)
+			wlp->hash = __hash(wlp->line, win->maxx);
+	}
 	if (win->flags & __CLEAROK || curscr->flags & __CLEAROK || curwin) {
 		if ((win->flags & __FULLWIN) || curscr->flags & __CLEAROK) {
 			tputs(CL, 0, __cputchar);
@@ -72,11 +79,17 @@ wrefresh(win)
 	__TRACE("wrefresh: (%0.2o): curwin = %d\n", win, curwin);
 	__TRACE("wrefresh: \tfirstch\tlastch\n");
 #endif
+
+#ifndef NOQCH
+	if (!__noqch)
+    		quickch(win);
+#endif
 	for (wy = 0; wy < win->maxy; wy++) {
 #ifdef DEBUG
 		__TRACE("%d\t%d\t%d\n",
 		    wy, win->lines[wy]->firstch, win->lines[wy]->lastch);
 #endif
+		curscr->lines[wy]->hash = win->lines[wy]->hash;
 		if (win->lines[wy]->flags & __ISDIRTY)
 			if (makech(win, wy) == ERR)
 				return (ERR);
@@ -97,7 +110,9 @@ wrefresh(win)
 #endif
 	}
 	
+#ifdef DEBUG
 	__TRACE("refresh: ly=%d, lx=%d\n", ly, lx);
+#endif
 	if (win == curscr)
 		domvcur(ly, lx, win->cury, win->curx);
 	else {
@@ -305,4 +320,93 @@ domvcur(oy, ox, ny, nx)
 		curscr->flags &= ~__WSTANDOUT;
 	}
 	mvcur(oy, ox, ny, nx);
+}
+
+
+/*
+ * Quickch() attempts to detect a pattern in the change of the window
+ * inorder to optimize the change, e.g., scroll n lines as opposed to 
+ * repainting the screen line by line.
+ */
+
+static void
+quickch(win)
+	WINDOW *win;
+{
+#define THRESH		win->maxy / 2
+
+	register LINE *wlp, *clp;
+	register int bsize, curs, curw, starts, startw, i;
+
+	for (bsize = win->maxy; bsize >= THRESH; bsize--)
+		for (startw = 0; startw <= win->maxy - bsize; startw++)
+			for (starts = 0; starts <= win->maxy - bsize; 
+			     starts++) {
+				for (curw = startw, curs = starts;
+				     curs < starts + bsize; curw++, curs++)
+					if (win->lines[curw]->hash !=
+					    curscr->lines[curs]->hash)
+						break;
+				if (curs == starts + bsize)
+					goto done;
+			}
+ done:
+	/* Did not find anything or block is in correct place already. */
+	if (bsize < THRESH || starts == startw)	
+		return;
+
+#ifdef DEBUG
+	__TRACE("quickch:bsize=%d,starts=%d,startw=%d,curw=%d,curs=%d\n", 
+		bsize, starts, startw, curw, curs);
+#endif
+	scrolln(win, starts, startw);
+	
+	/* Mark the block as clean and retain consistency. */
+	for (i = startw; i < startw + bsize; i++) {
+		wlp = win->lines[i];
+		clp = curscr->lines[i];
+		wlp->flags &= ~(__ISDIRTY | __ISPASTEOL);
+		bcopy(wlp->line, clp->line, win->maxx);
+		clp->hash = wlp->hash;
+	}
+
+}
+
+static void
+scrolln(win, starts, startw)
+	WINDOW *win;
+	int starts, startw;
+{
+	int i, oy, ox, n;
+
+	oy = curscr->cury;
+	ox = curscr->curx;
+	n = starts - startw;
+
+	if (n > 0) {
+		mvcur(oy, ox, startw, 0);
+		if (DL)
+			tputs(tscroll(DL, n), 0, __cputchar);
+		else
+			for(i = 0; i < n; i++)
+				tputs(dl, 0, __cputchar);
+		mvcur(startw, 0, oy, ox);
+	} else {
+		/* Delete the bottom lines */
+		mvcur(oy, 0, win->maxy + n, 0);		/* n < 0 */
+		if (DL)
+			tputs(tscroll(DL, -n), 0, __cputchar);
+		else
+			for(i = n; i < 0; i++)
+				tputs(dl, 0, __cputchar);
+		mvcur(win->maxy + n, 0, starts,  0);
+
+		/* Scroll the block down */
+		if (AL)
+			tputs(tscroll(AL, -n), 0, __cputchar);
+		else
+			for(i = n; i < 0; i++)
+				tputs(al, 0, __cputchar);
+		mvcur(starts, 0, oy, ox);
+	}
 }
