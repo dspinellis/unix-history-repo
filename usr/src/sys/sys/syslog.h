@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)syslog.h	4.11 (Berkeley) %G%
+ *	@(#)syslog.h	4.12 (Berkeley) %G%
  */
 
 /*
@@ -49,7 +49,7 @@
  * arguments to setlogmask.
  */
 #define	LOG_MASK(pri)	(1 << (pri))		/* mask for one priority */
-#define	LOG_UPTO(pri)	(1 << ((pri) + 1) - 1)	/* all priorities through pri */
+#define	LOG_UPTO(pri)	((1 << ((pri)+1)) - 1)	/* all priorities through pri */
 
 /*
  *  Option flags for openlog.
