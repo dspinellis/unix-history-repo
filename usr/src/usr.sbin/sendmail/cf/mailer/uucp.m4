@@ -16,19 +16,32 @@ POPDIVERT
 ###   UUCP Mailer specification   ###
 #####################################
 
-VERSIONID(`@(#)uucp.m4	8.8 (Berkeley) %G%')
+VERSIONID(`@(#)uucp.m4	8.9 (Berkeley) %G%')
 
-# old UUCP mailer
+#
+#  There are innumerable variations on the UUCP mailer.  It really
+#  is rather absurd.
+#
+
+# old UUCP mailer (two names)
 Muucp,		P=UUCP_MAILER_PATH, F=CONCAT(DFMhuU, UUCP_MAILER_FLAGS), S=12, R=22, M=UUCP_MAX_SIZE,
 		A=UUCP_MAILER_ARGS
+Muucp-old,	P=UUCP_MAILER_PATH, F=CONCAT(DFMhuU, UUCP_MAILER_FLAGS), S=12, R=22, M=UUCP_MAX_SIZE,
+		A=UUCP_MAILER_ARGS
 
-# smart UUCP mailer (handles multiple addresses)
+# smart UUCP mailer (handles multiple addresses) (two names)
 Msuucp,		P=UUCP_MAILER_PATH, F=CONCAT(mDFMhuU, UUCP_MAILER_FLAGS), S=12, R=22, M=UUCP_MAX_SIZE,
+		A=UUCP_MAILER_ARGS
+Muucp-new,	P=UUCP_MAILER_PATH, F=CONCAT(mDFMhuU, UUCP_MAILER_FLAGS), S=12, R=22, M=UUCP_MAX_SIZE,
 		A=UUCP_MAILER_ARGS
 
 ifdef(`_MAILER_smtp_',
 `# domain-ized UUCP mailer
 Muucp-dom,	P=UUCP_MAILER_PATH, F=CONCAT(mDFMhu, UUCP_MAILER_FLAGS), S=52/31, R=ifdef(`_ALL_MASQUERADE_', `11/31', `21'), M=UUCP_MAX_SIZE,
+		A=UUCP_MAILER_ARGS
+
+# domain-ized UUCP mailer with UUCP-style sender envelope
+Muucp-uudom,	P=UUCP_MAILER_PATH, F=CONCAT(mDFMhu, UUCP_MAILER_FLAGS), S=72/31, R=ifdef(`_ALL_MASQUERADE_', `11/31', `21'), M=UUCP_MAX_SIZE,
 		A=UUCP_MAILER_ARGS')
 
 
@@ -63,7 +76,8 @@ R$* < @ $- . UUCP >		$2 ! $1			convert to UUCP format
 R$* < @ $+ >			$2 ! $1			convert to UUCP format
 
 
-#
+ifdef(`_MAILER_smtp_',
+`#
 #  envelope sender rewriting for uucp-dom mailer
 #
 S52
@@ -74,13 +88,23 @@ R<@>				$n			errors to mailer-daemon
 # pass everything to standard SMTP mailer rewriting
 R$*				$@ $>11 $1
 
+#
+#  envelope sender rewriting for uucp-uudom mailer
+#
+S72
+
+R$+				$: $>12 $1		uucp-ify
+R $=w ! $+			$2			prepare for following
+R $+				$: $M ! $1		prepend masquerade name
+R ! $+				$: $j ! $1		in case $M undefined')
+
 
 PUSHDIVERT(4)
 # resolve locally connected UUCP links
 R< @ $=Z . UUCP. > : $+		$#uucp-dom $@ $1 $: $2	@host.UUCP: ...
 R$+ < @ $=Z . UUCP. >		$#uucp-dom $@ $2 $: $1	user@host.UUCP
-R< @ $=Y . UUCP. > : $+		$#suucp $@ $1 $: $2	@host.UUCP: ...
-R$+ < @ $=Y . UUCP. >		$#suucp $@ $2 $: $1	user@host.UUCP
-R< @ $=U . UUCP. > : $+		$#uucp $@ $1 $: $2	@host.UUCP: ...
-R$+ < @ $=U . UUCP. >		$#uucp $@ $2 $: $1	user@host.UUCP
+R< @ $=Y . UUCP. > : $+		$#uucp-new $@ $1 $: $2	@host.UUCP: ...
+R$+ < @ $=Y . UUCP. >		$#uucp-new $@ $2 $: $1	user@host.UUCP
+R< @ $=U . UUCP. > : $+		$#uucp-old $@ $1 $: $2	@host.UUCP: ...
+R$+ < @ $=U . UUCP. >		$#uucp-old $@ $2 $: $1	user@host.UUCP
 POPDIVERT
