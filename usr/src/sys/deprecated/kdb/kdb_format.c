@@ -1,4 +1,4 @@
-/*	kdb_format.c	7.1	86/11/20	*/
+/*	kdb_format.c	7.2	86/11/20	*/
 
 #include "../kdb/defs.h"
 
@@ -78,27 +78,27 @@ exform(fcount,ifp,itype,ptype)
 	register long savdot, wx;
 	register char *fp;
 	char c, modifier, longpr;
-	union{	/* compatible with both VAX and TAHOE */
-		double	d;
-		int	s[4];
-	} fw;
 
 	while (fcount>0) {
 	  	fp = ifp; c = *fp;
-		longpr=(c>='A')&&(c<='Z')||(c=='f')||(c=='4')||(c=='p');
-		if (itype==NSP || *fp=='a') {
-			wx=dot; w=dot;
+		longpr = (isupper(c) || c=='f' || c=='4' || c=='p');
+		if (itype != NSP && *fp != 'a') {
+			wx = get(dot, itype);
+			w = shorten(wx);
 		} else {
-			wx=get(dot,itype);
-			w=shorten(wx);
+			wx = w = dot;
+			if (itype == NSP &&
+			    (c == 'b' || c == 'B' ||
+			     c == 'c' || c == 'C' || c == '1'))
+				w = btol(wx);
 		}
 		if (errflg)
 			return (fp);
 		if (mkfault)
 			error(0);
-		var[0]=wx;
+		var[0] = wx;
 		modifier = *fp++;
-		dotinc=(longpr?4:2);
+		dotinc = (longpr ? sizeof (long):sizeof (short));
 
 		if (charpos()==0 && modifier!='a')
 			printf("%16m");
@@ -126,17 +126,17 @@ exform(fcount,ifp,itype,ptype)
 			printf("%-16U",wx); break;
 
 		case 'c': case 'C':
-			if (modifier=='C')
-				printesc(byte(wx));
+			if (modifier == 'C')
+				printesc(byte(w));
 			else
-				printc(byte(wx));
+				printc(byte(w));
 			dotinc=1; break;
 
 		case 'b': case 'B':
-			printf("%-8o", byte(wx)); dotinc=1; break;
+			printf("%-8o", byte(w)); dotinc=1; break;
 
 		case '1':
-			printf("%-8R", byte(wx)); dotinc=1; break;
+			printf("%-8R", byte(w)); dotinc=1; break;
 
 		case 'w': case '2':
 			printf("%-8R", w); break;
@@ -191,23 +191,6 @@ exform(fcount,ifp,itype,ptype)
 
 		case 'D':
 			printf("%-16D", wx); break;
-
-		case 'f':
-			fw.d = 0;
-			fw.s[0] = w;
-			fw.s[1] = wx&0xffff;
-			printf("%-16.9f", fw.d);
-			dotinc=4; break;
-
-		case 'F':	/* may be done with one get call on TAHOE */
-			fw.s[0] = w;
-			fw.s[1] = wx&0xffff;
-			fw.s[2]=shorten(get(inkdot(4),itype));
-			fw.s[3]=shorten(get(inkdot(6),itype));
-			if (errflg)
-				return (fp);
-			printf("%-32.18F", fw.d);
-			dotinc=8; break;
 
 		case 'n': case 'N':
 			printc('\n'); dotinc=0; break;
