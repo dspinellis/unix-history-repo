@@ -1,0 +1,238 @@
+This file is setattr.def, from which is created setattr.c.
+It implements the builtins "export" and "readonly", in Bash.
+
+Copyright (C) 1987, 1989, 1991 Free Software Foundation, Inc.
+
+This file is part of GNU Bash, the Bourne Again SHell.
+
+Bash is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free
+Software Foundation; either version 1, or (at your option) any later
+version.
+
+Bash is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+for more details.
+
+You should have received a copy of the GNU General Public License along
+with Bash; see the file COPYING.  If not, write to the Free Software
+Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+
+$PRODUCES setattr.c
+
+#include "../shell.h"
+
+$BUILTIN export
+$FUNCTION export_builtin
+$SHORT_DOC export [-n] [-p] [-f] [name ...]
+NAMEs are marked for automatic export to the environment of
+subsequently executed commands.  If the -f option is given,
+the NAMEs refer to functions.  If no NAMEs are given, or if `-p'
+is given, a list of all names that are exported in this shell is
+printed.  An argument of `-n' says to remove the export property
+from subsequent NAMEs.  An argument of `--' disables further option
+processing.
+$END
+
+/* For each variable name in LIST, make that variable appear in the
+   environment passed to simple commands.  If there is no LIST, then
+   print all such variables.  An argument of `-n' says to remove the
+   exported attribute from variables named in LIST.  An argument of
+  -f indicates that the names present in LIST refer to functions. */
+export_builtin (list)
+     register WORD_LIST *list;
+{
+  return (set_or_show_attributes (list, att_exported));
+}
+
+$BUILTIN readonly
+$FUNCTION readonly_builtin
+$SHORT_DOC readonly [-p] [-f] [name ...]
+The given NAMEs are marked readonly and the values of these NAMEs may
+not be changed by subsequent assignment.  If the -f option is given,
+then functions corresponding to the NAMEs are so marked.  If no
+arguments are given, or if `-p' is given, a list of all readonly names
+is printed.  An argument of `--' disables further option processing.
+$END
+
+/* For each variable name in LIST, make that variable readonly.  Given an
+   empty LIST, print out all existing readonly variables. */
+readonly_builtin (list)
+     register WORD_LIST *list;
+{
+  return (set_or_show_attributes (list, att_readonly));
+}
+
+/* For each variable name in LIST, make that variable have the specified
+   ATTRIBUTE.  An arg of `-n' says to remove the attribute from the the
+   remaining names in LIST. */
+int
+set_or_show_attributes (list, attribute)
+     register WORD_LIST *list;
+     int attribute;
+{
+  register SHELL_VAR *var;
+  int assign, undo = 0, functions_only = 0;
+  extern int array_needs_making;
+
+  /* Read arguments from the front of the list. */
+  while (list)
+    {
+      register char *name = list->word->word;
+
+      if (strcmp (name, "-n") == 0)
+	{
+	  undo = 1;
+	  list = list->next;
+	}
+      else if (strcmp (name, "-f") == 0)
+	{
+	  functions_only = 1;
+	  list = list->next;
+	}
+      else if (strcmp (name, "-p") == 0)
+	{
+	  list = list->next;
+	  continue;
+	}
+      else if (strcmp (name, "--") == 0)
+	{
+	  list = list->next;
+	  break;
+	}
+      else if (*name == '-')
+	{
+	  bad_option (name);
+	  return (EXECUTION_FAILURE);
+	}
+      else
+	break;
+    }
+
+  if (list)
+    {
+      if (attribute & att_exported)
+	array_needs_making = 1;
+
+      while (list)
+	{
+	  register char *name = list->word->word;
+
+	  if (functions_only)
+	    {
+	      var = find_function (name);
+	      if (!var)
+		{
+		  builtin_error ("%s: not a function", name);
+		}
+	      else
+		{
+		  if (undo)
+		    var->attributes &= ~attribute;
+		  else
+		    var->attributes |= attribute;
+		}
+	      list = list->next;
+	      if (attribute == att_exported)
+		array_needs_making++;
+	      continue;
+	    }
+
+	  assign = assignment (name);
+	  if (assign)
+	    {
+	      /* This word has already been expanded once with command
+		 and parameter expansion.  Call do_assignment_no_expand (),
+		 which does not do command or parameter substitution. */
+	      do_assignment_no_expand (name);
+	      name[assign] = '\0';
+	    }
+
+	  if (undo)
+	    {
+	      var = find_variable (name);
+	      if (var)
+		var->attributes &= ~attribute;
+	    }
+	  else
+	    {
+	      SHELL_VAR *find_tempenv_variable (), *tv;
+
+	      if (tv = find_tempenv_variable (name))
+		{
+		  var = bind_variable (tv->name, tv->value);
+		  dispose_variable (tv);
+		}
+	      else
+		var = find_variable (name);
+
+	      if (!var)
+		{
+		  var = bind_variable (name, (char *)NULL);
+		  var->attributes |= att_invisible;
+		}
+
+	      var->attributes |= attribute;
+	    }
+	  array_needs_making++;	/* XXX */
+	  list = list->next;
+	}
+    }
+  else
+    {
+      SHELL_VAR **variable_list;
+      register int i;
+
+      if ((attribute & att_function) || functions_only)
+	{
+	  variable_list = all_shell_functions ();
+	  if (attribute != att_function)
+	    attribute &= ~att_function;	/* so declare -xf works, for example */
+	}
+      else
+	variable_list = all_shell_variables ();
+
+      if (variable_list)
+	{
+	  for (i = 0; var = variable_list[i]; i++)
+	    {
+	      if ((var->attributes & attribute) && !invisible_p (var))
+		{
+		  char flags[6];
+
+		  flags[0] = '\0';
+
+		  if (exported_p (var))
+		    strcat (flags, "x");
+
+		  if (readonly_p (var))
+		    strcat (flags, "r");
+
+		  if (function_p (var))
+		    strcat (flags, "f");
+
+		  if (integer_p (var))
+		    strcat (flags, "i");
+
+		  if (flags[0])
+		    {
+		      printf ("declare -%s ", flags);
+
+		      if (!function_p (var))
+			printf ("%s=%s\n", var->name, value_cell (var));
+		      else
+			{
+			  char *named_function_string ();
+
+			  printf ("%s\n", named_function_string
+				  (var->name, function_cell (var), 1));
+			}
+		    }
+		}
+	    }
+	  free (variable_list);
+	}
+    }
+  return (EXECUTION_SUCCESS);
+}
