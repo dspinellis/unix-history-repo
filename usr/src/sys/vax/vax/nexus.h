@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)nexus.h	6.4 (Berkeley) %G%
+ *	@(#)nexus.h	6.5 (Berkeley) %G%
  */
 
 /*
@@ -105,3 +105,8 @@ struct nexus nexus[MAXNNEXUS];
 #define	NEX_MEM64U	0x6a		/* 64K chips, non-interleaved, upper */
 #define	NEX_MEM64UI	0x6b		/* 64K chips, ext-interleaved, upper */
 #define	NEX_MEM64I	0x6c		/* 64K chips, interleaved */
+#define	NEX_MEM256L	0x70		/* 256K chips, non-interleaved, lower */
+#define	NEX_MEM256LI	0x71		/* 256K chips, ext-interleaved, lower */
+#define	NEX_MEM256U	0x72		/* 256K chips, non-interleaved, upper */
+#define	NEX_MEM256UI	0x73		/* 256K chips, ext-interleaved, upper */
+#define	NEX_MEM256I	0x74		/* 256K chips, interleaved */
