@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cpp.c	1.5 %G%";
+static char sccsid[] = "@(#)cpp.c	1.6 %G%";
 #endif lint
 
 #ifdef FLEXNAMES
@@ -34,7 +34,7 @@ char cinit;
 
 /* some code depends on whether characters are sign or zero extended */
 /*	#if '\377' < 0		not used here, old cpp doesn't understand */
-#if pdp11 | vax
+#if pdp11 | vax | mc68000
 #define COFF 128
 #else
 #define COFF 0
@@ -107,6 +107,8 @@ char *ptrtab;
 #define eob(a) ((a)>=pend)
 #define bob(a) (pbeg>=(a))
 
+# define cputc(a,b)	if(!flslvl) putc(a,b)
+
 char buffer[NCPS+BUFSIZ+BUFSIZ+NCPS];
 
 # define SBSIZE 60000		/* std = 12000, wnj aug 1979 */
@@ -150,7 +152,7 @@ STATIC	int	fin	= STDIN;
 STATIC	FILE	*fout	= stdout;
 STATIC	int	nd	= 1;
 STATIC	int	pflag;	/* don't put out lines "# 12 foo.c" */
-	int	passcom;	/* don't delete comments */
+int	passcom;	/* don't delete comments */
 STATIC	int rflag;	/* allow macro recursion */
 STATIC	int	ifno;
 # define NPREDEF 20
@@ -175,7 +177,7 @@ static jmp_buf env;
 extern FILE *_f[];
 # define symsiz 500
 # else
-# define symsiz 1500		/* std = 500, wnj aug 1979 */
+# define symsiz 2000		/* std = 500, wnj aug 1979 */
 # endif
 STATIC	struct symtab stab[symsiz];
 
@@ -387,7 +389,7 @@ again:
 						if (!passcom) {inp=p; p=refill(p);}
 						else if ((p-inp)>=BUFSIZ) {/* split long comment */
 							inp=p; p=refill(p);	/* last char written is '*' */
-							putc('/',fout);	/* terminate first part */
+							cputc('/',fout);	/* terminate first part */
 							/* and fake start of 2nd */
 							outp=inp=p-=3; *p++='/'; *p++='*'; *p++='*';
 						} else p=refill(p);
@@ -398,7 +400,7 @@ again:
 					if (!passcom) {inp=p; p=refill(p);}
 					else if ((p-inp)>=BUFSIZ) {/* split long comment */
 						inp=p; p=refill(p);
-						putc('*',fout); putc('/',fout);
+						cputc('*',fout); cputc('/',fout);
 						outp=inp=p-=2; *p++='/'; *p++='*';
 					} else p=refill(p);
 				} else ++p; /* ignore null byte */
@@ -883,8 +885,10 @@ char *
 subst(p,sp) register char *p; struct symtab *sp; {
 	static char match[]="%s: argument mismatch";
 	register char *ca,*vp; int params;
-	char *actual[MAXFRM]; /* actual[n] is text of nth actual */
-	char acttxt[BUFSIZ]; /* space for actuals */
+	char *actual[MAXFRM]; /* actual[n] is text of nth actual   */
+	char actused[MAXFRM]; /* for newline processing in actuals */
+	char acttxt[BUFSIZ];  /* space for actuals */
+	int  nlines = 0;
 
 	if (0==(vp=sp->value)) return(p);
 	if ((p-macforw)<=macdam) {
@@ -923,8 +927,10 @@ subst(p,sp) register char *p; struct symtab *sp; {
 						pperror("%s: actuals too long",sp->name);
 				}
 				if (pa>= &actual[MAXFRM]) ppwarn(match,sp->name);
-				else *pa++=ca;
+				else { actused[pa-actual]=0; *pa++=ca; }
 			}
+			nlines = lineno[ifno] - maclin;
+			lineno[ifno] = maclin; /* don't count newlines here */
 		}
 		if (params!=0) ppwarn(match,sp->name);
 		while (--params>=0) *pa++=""+1;	/* null string for missing actuals */
@@ -939,9 +945,19 @@ subst(p,sp) register char *p; struct symtab *sp; {
 			ca=actual[*--vp-1];
 			while (*--ca) {
 				if (bob(p)) {outp=inp=p; p=unfill(p);}
-				*--p= *ca;
+				/* Actuals with newlines confuse line numbering */
+				if (*ca == '\n' && actused[*vp-1])
+					if (*(ca-1) == '\\') ca--;
+					else *--p = ' ';
+				else { *--p= *ca; if (*ca == '\n') nlines--; }
 			}
-		} else break;
+			actused[*vp-1] = 1;
+		} else {
+			if (nlines > 0 )
+				while (nlines-- > 0)
+					*--p = '\n';
+			break;
+		}
 	}
 	outp=inp=p;
 	return(p);
