@@ -1,4 +1,4 @@
-/*	vm_machdep.c	1.10	88/01/07	*/
+/*	vm_machdep.c	1.11	88/05/06	*/
 
 #include "param.h"
 #include "systm.h"
@@ -171,8 +171,8 @@ pagemove(from, to, size)
 
 	if (size % CLBYTES)
 		panic("pagemove");
-	fpte = &Sysmap[btop(from - KERNBASE)];
-	tpte = &Sysmap[btop(to - KERNBASE)];
+	fpte = kvtopte(from);
+	tpte = kvtopte(to);
 	while (size > 0) {
 		*tpte++ = *fpte;
 		*(int *)fpte++ = 0;
