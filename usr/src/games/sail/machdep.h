@@ -1,8 +1,9 @@
 /*
- * sccsid = "@(#)machdep.h	1.6 %G%";
+ * sccsid = "@(#)machdep.h	1.7 %G%";
  */
 #define LOGFILE "/usr/games/lib/shipslog"
 #define DRIVER "/usr/games/.driver"
+#define DEBUGDRIVER "driver"
 #define DRIVERNAME ".driver"
 #define UCBCORY
 #define SAILLOGDEF 0		/* don't look up usernames */

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)pl_1.c	1.5 83/05/20";
+static	char *sccsid = "@(#)pl_1.c	1.6 83/05/20";
 #endif
 
 #include "player.h"
@@ -327,8 +327,8 @@ unfoulplayer()
 	}
 }
 
-initialize(nodriver, randomize)
-char randomize, nodriver;
+initialize(nodriver, randomize, debug)
+char randomize, nodriver, debug;
 {
 	char comm[80], file[25], capn;
 	char message[60];
@@ -499,7 +499,10 @@ reprint:
 		char num[10];
 		sprintf(num, "%d", game);
 		if (!fork()) {
-			execl(DRIVER, DRIVERNAME, num, 0);
+			if (debug)
+				execl(DEBUGDRIVER, DRIVERNAME, num, 0);
+			else
+				execl(DRIVER, DRIVERNAME, num, 0);
 			perror(DRIVER);
 			kill(pid, SIGKILL);
 			exit(1);
@@ -561,7 +564,8 @@ char ** argv;
 	int ta;
 	char message[60], ch;
 	int uid;
-	char nodrive = 0, randomize = 0, *badstring();
+	char nodrive = 0, randomize = 0, debug = 0;
+	char *badstring();
 	extern char _sobuf[];
 
 	setbuf(stdout, _sobuf);
@@ -577,6 +581,9 @@ char ** argv;
 		case 'd':
 			nodrive = 1;
 			break;
+		case 'D':
+			debug++;
+			break;
 		case 'x':
 			randomize = 1;
 			break;
@@ -588,7 +595,7 @@ char ** argv;
 		game = atoi(*argv);
 	else
 		game = -1;
-	initialize(nodrive, randomize);
+	initialize(nodrive, randomize, debug);
 	Signal("Aye aye, Sir", 0, 0);
 	for(;;) {
 		move(scroll++,0);
