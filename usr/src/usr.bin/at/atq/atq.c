@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)atq.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)atq.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -203,7 +203,6 @@ char **namelist;
 						   spooling area was updated */
 	int powner();				/* print the name of the owner
 						   of the job */
-	int getid();				/* get uid of a person */
 	char **ptr;				/* scratch pointer */
 	struct stat stbuf;			/* buffer for file stats */
 
@@ -309,24 +308,6 @@ char *file;
 
 }
 	
-
-/*
- * Get the uid of a person using his/her login name. Return -1 if no
- * such account name exists.
- */
-getid(name)
-char *name;
-{
-
-	struct passwd *pwdinfo;			/* password info structure */
-
-
-	if ((pwdinfo = getpwnam(name)) == 0)
-		return(-1);
-
-	return(pwdinfo->pw_uid);
-}
-
 /*
  * Print the time the spooling area was updated.
  */
