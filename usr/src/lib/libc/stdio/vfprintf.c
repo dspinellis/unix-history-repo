@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vfprintf.c	5.47 (Berkeley) %G%";
+static char sccsid[] = "@(#)vfprintf.c	5.48 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -30,89 +30,8 @@ static char sccsid[] = "@(#)vfprintf.c	5.47 (Berkeley) %G%";
 #include "local.h"
 #include "fvwrite.h"
 
-/*
- * Define FLOATING_POINT to get floating point.
- * Define CSH to get a csh-specific version (grr).
- */
-#ifndef CSH
+/* Define FLOATING_POINT to get floating point. */
 #define	FLOATING_POINT
-#endif
-
-/* end of configuration stuff */
-
-
-#ifdef CSH
-/*
- * C shell hacks.  Ick, gag.
- */
-#undef BUFSIZ
-#include "sh.h"
-
-#if __STDC__
-int
-printf(const char *fmt, ...) {
-	FILE f;
-	va_list ap;
-	int ret;
-
-	va_start(ap, fmt);
-	f._flags = __SWR;
-	f._write = NULL;
-	ret = vfprintf(&f, fmt, ap);
-	va_end(ap);
-	return ret;
-}
-#else
-int
-printf(fmt, args)
-	char *fmt;
-{
-	FILE f;
-
-	f._flags = __SWR;
-	f._write = NULL;
-	return (vfprintf(&f, fmt, &args));
-}
-#endif
-
-int
-__sprint(fp, uio)
-	FILE *fp;
-	register struct __suio *uio;
-{
-	register char *p;
-	register int n, ch, iovcnt;
-	register struct __siov *iov;
-
-	/* must allow sprintf to work, might as well allow others too */
-	if (fp->_write || fp->_flags & __SSTR) {
-		if (uio->uio_resid == 0) {
-			uio->uio_iovcnt = 0;
-			return (0);
-		}
-		n = __sfvwrite(fp, uio);
-		uio->uio_resid = 0;
-		uio->uio_iovcnt = 0;
-		return (n);
-	}
-	iov = uio->uio_iov;
-	for (iovcnt = uio->uio_iovcnt; --iovcnt >= 0; iov++) {
-		for (p = iov->iov_base, n = iov->iov_len; --n >= 0;) {
-#ifdef CSHPUTCHAR
-			ch = *p++;
-			CSHPUTCHAR;	/* this horrid macro uses `ch' */
-#else
-#undef putchar
-			putchar(*p++);
-#endif
-		}
-	}
-	uio->uio_resid = 0;
-	uio->uio_iovcnt = 0;
-	return (0);
-}
-
-#else /* CSH */
 
 /*
  * Flush out all the vectors defined by the given uio,
@@ -169,8 +88,6 @@ __sbprintf(fp, fmt, ap)
 		fp->_flags |= __SERR;
 	return (ret);
 }
-
-#endif /* CSH */
 
 
 #ifdef FLOATING_POINT
@@ -297,7 +214,6 @@ vfprintf(fp, fmt0, ap)
 	    flags&SHORTINT ? (u_long)(u_short)va_arg(ap, int) : \
 	    (u_long)va_arg(ap, u_int))
 
-#ifndef CSH
 	/* sorry, fprintf(read_only_file, "") returns EOF, not 0 */
 	if (cantwrite(fp))
 		return (EOF);
@@ -306,7 +222,6 @@ vfprintf(fp, fmt0, ap)
 	if ((fp->_flags & (__SNBF|__SWR|__SRW)) == (__SNBF|__SWR) &&
 	    fp->_file >= 0)
 		return (__sbprintf(fp, fmt0, ap));
-#endif /* CSH */
 
 	fmt = (char *)fmt0;
 	uio.uio_iov = iovp = iov;
