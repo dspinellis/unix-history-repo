@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)c.c 1.4 %G%";
+static char sccsid[] = "@(#)c.c 1.5 %G%";
 
 /*
  * C-dependent symbol routines.
@@ -47,8 +47,6 @@ public c_init()
 
 /*
  * Test if two types are compatible.
- *
- * Integers and reals are not compatible since they cannot always be mixed.
  */
 
 public Boolean c_typematch(type1, type2)
@@ -64,7 +62,7 @@ Symbol type1, type2;
     } else {
 	t1 = rtype(t1);
 	t2 = rtype(t2);
-	if (t1->type == t_int or t1->type == t_char) {
+	if (t1->type == t_char or t1->type == t_int or t1->type == t_real) {
 	    tmp = t1;
 	    t1 = t2;
 	    t2 = tmp;
@@ -76,6 +74,8 @@ Symbol type1, type2;
 	    ) or (
 		isrange(t1, "char") and
 		(t2->type == t_char or t2->type == t_int)
+	    ) or (
+		t1->class == RANGE and isdouble(t1) and t2->type == t_real
 	    ) or (
 		t1->type == t2->type and (
 		    (t1->class == t2->class) or
