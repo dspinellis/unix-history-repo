@@ -1,0 +1,90 @@
+Mmain	main.c	?^main(argc,argv)$?
+Mokplay	okplay.c	?^}$?
+advmotd	okplay.c	?^advmotd()$?
+alloc	v6io.c	?^alloc(nbytes)$?
+at	subr.c	?^at(objj)$?
+badmove	subr.c	?^badmove()                                       /*?
+bitset	subr.c	?^bitset(l,n)$?
+bug	subr.c	?^bug(n)$?
+carry	vocab.c	?^carry(object,where)$?
+caveclose	subr.c	?^caveclose()                             /* 11000 *?
+checkhints	subr.c	?^checkhints()                                    /*?
+ciao	wizard.c	?^ciao(cmdfile)$?
+closing	subr.c	?^closing()                               /* 10000 *?
+confirm	io.c	?^confirm(mesg)                           /* confirm?
+copystr	vocab.c	?^copystr(w1,w2)                          /* copy on?
+dark	subr.c	?^dark(foo)$?
+datime	wizard.c	?^datime(d,t)$?
+die	done.c	?^die(entry)                                      /*?
+done	done.c	?^done(entry)     /* entry=1 means goto 13000 */  /*?
+doseek	io.c	?^doseek(offset)  /* do 2 seeks to get to right plac?
+drop	vocab.c	?^drop(object,where)$?
+dropper	subr.c	?^dropper()                                       /*?
+dstroy	vocab.c	?^dstroy(object)$?
+fcreat	v6io.c	?^fcreat(filename, iobuf)$?
+fdwarf	subr.c	?^fdwarf()		/* 71 */$?
+flush	v6io.c	?^flush()$?
+fopen	v6io.c	?^fopen(filename, iobuf)$?
+forced	subr.c	?^forced(locc)$?
+getc	v6io.c	?^getc(iobuf)$?
+getcmd	save.c	?^getcmd(command)         /* get command name (where?
+getin	io.c	?^getin(wrd1,wrd2)                        /* get com?
+here	subr.c	?^here(objj)$?
+holiday	okplay.c	?^holiday(mo,da)$?
+init	init.c	?^init(command)                           /* everyth?
+juggle	vocab.c	?^juggle(object)$?
+length	vocab.c	?^length(str)                             /* include?
+linkdata	init.c	?^linkdata()                              /*  second?
+liq	subr.c	?^liq(foo)$?
+liq2	subr.c	?^liq2(pbotl)$?
+liqloc	subr.c	?^liqloc(locc)     /* may want to clean this one up ?
+march	subr.c	?^march()                                        /* ?
+mback	subr.c	?^mback()                                         /*?
+move	vocab.c	?^move(object,where)$?
+mspeak	io.c	?^mspeak(msg)$?
+next	io.c	?^next()                                  /* next ch?
+notinprime	okplay.c	?^notinprime()$?
+offlush	v6io.c	?^offlush(iobuf)$?
+okplay	okplay.c	?^okplay()$?
+pct	subr.c	?^pct(n)$?
+poof	wizard.c	?^poof()$?
+prht	vocab.c	?^prht()                                  /* print h?
+pspeak	io.c	?^pspeak(msg,skip) /* read, decrypt an print a ptext?
+put	vocab.c	?^put(object,where,pval)$?
+putc	v6io.c	?^putc(c, iobuf)$?
+ran	wizard.c	?^ran(range)                              /* uses un?
+rdata	io.c	?^rdata()                                 /* read al?
+rdesc	io.c	?^rdesc(sect)                             /* read de?
+rdflt	io.c	?^rdflt()                                 /* default?
+rhints	io.c	?^rhints()$?
+rliq	io.c	?^rliq()                                  /* liquid ?
+rlocs	io.c	?^rlocs()                                 /* initial?
+rnum	io.c	?^rnum()                                  /* read in?
+rspeak	io.c	?^rspeak(msg)$?
+rtrav	io.c	?^rtrav()                                 /* read tr?
+rvoc	io.c	?^rvoc()$?
+save	save.c	?^save(cmdfile,outfile)                   /* save co?
+score	done.c	?^score()                                         /*?
+seek	v6io.c	?^seek(fd, offset, ptrname)$?
+speak	io.c	?^speak(msg)       /* read, decrypt, and print a mes?
+specials	subr.c	?^specials()                                      /*?
+start	wizard.c	?^start(n)$?
+startup	init.c	?^startup()$?
+toting	subr.c	?^toting(objj)$?
+trapdel	init.c	?^trapdel()                               /* come he?
+trbridge	subr.c	?^trbridge()                                      /*?
+trdrop	subr.c	?^trdrop()                                        /*?
+trfeed	subr.c	?^trfeed()                                        /*?
+trfill	subr.c	?^trfill()                                        /*?
+trkill	subr.c	?^trkill()                                /* 9120   ?
+tropen	subr.c	?^tropen()                                        /*?
+trsay	subr.c	?^trsay()                                         /*?
+trtake	subr.c	?^trtake()                                        /*?
+trtoss	subr.c	?^trtoss()                                /* 9170: t?
+twrite	io.c	?^twrite(loq)                             /* travel ?
+vocab	vocab.c	?^vocab(word,type,value)                  /* look up?
+weq	vocab.c	?^weq(w1,w2)                              /* compare?
+wizard	wizard.c	?^wizard()                /* not as complex as adven?
+xsave	xsave.c	?^xsave(cmdfile,outfile)                   /* save c?
+yes	io.c	?^yes(x,y,z)                              /* confirm?
+yesm	io.c	?^yesm(x,y,z)                             /* confirm?
