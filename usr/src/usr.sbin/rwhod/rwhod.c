@@ -22,12 +22,13 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rwhod.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)rwhod.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
+#include <sys/signal.h>
 #include <sys/ioctl.h>
 #include <sys/file.h>
 
@@ -35,14 +36,14 @@ static char sccsid[] = "@(#)rwhod.c	5.11 (Berkeley) %G%";
 #include <netinet/in.h>
 
 #include <nlist.h>
-#include <stdio.h>
-#include <signal.h>
 #include <errno.h>
 #include <utmp.h>
 #include <ctype.h>
 #include <netdb.h>
 #include <syslog.h>
 #include <protocols/rwhod.h>
+#include <stdio.h>
+#include "pathnames.h"
 
 /*
  * Alarm interval. Don't forget to change the down time check in ruptime
@@ -51,8 +52,6 @@ static char sccsid[] = "@(#)rwhod.c	5.11 (Berkeley) %G%";
 #define AL_INTERVAL (3 * 60)
 
 struct	sockaddr_in sin = { AF_INET };
-
-extern	errno;
 
 char	myname[32];
 
@@ -84,8 +83,8 @@ struct	servent *sp;
 int	s, utmpf, kmemf = -1;
 
 #define	WHDRSIZE	(sizeof (mywd) - sizeof (mywd.wd_we))
-#define	RWHODIR		"/usr/spool/rwho"
 
+extern int errno;
 int	onalrm();
 char	*strcpy(), *malloc();
 long	lseek();
@@ -98,8 +97,7 @@ main()
 	struct stat st;
 	char path[64];
 	int on = 1;
-	char *cp;
-	extern char *index();
+	char *cp, *index(), *strerror();
 
 	if (getuid()) {
 		fprintf(stderr, "rwhod: not super user\n");
@@ -126,8 +124,9 @@ main()
 	  }
 	}
 #endif
-	if (chdir(RWHODIR) < 0) {
-		perror(RWHODIR);
+	if (chdir(_PATH_RWHODIR) < 0) {
+		(void)fprintf(stderr, "rwhod: %s: %s\n",
+		    _PATH_RWHODIR, strerror(errno));
 		exit(1);
 	}
 	(void) signal(SIGHUP, getkmem);
@@ -142,13 +141,9 @@ main()
 	if ((cp = index(myname, '.')) != NULL)
 		*cp = '\0';
 	strncpy(mywd.wd_hostname, myname, sizeof (myname) - 1);
-	utmpf = open("/etc/utmp", O_RDONLY);
+	utmpf = open(_PATH_UTMP, O_RDONLY|O_CREAT, 0644);
 	if (utmpf < 0) {
-		(void) close(creat("/etc/utmp", 0644));
-		utmpf = open("/etc/utmp", O_RDONLY);
-	}
-	if (utmpf < 0) {
-		syslog(LOG_ERR, "/etc/utmp: %m");
+		syslog(LOG_ERR, "%s: %m", _PATH_UTMP);
 		exit(1);
 	}
 	getkmem();
@@ -264,13 +259,14 @@ int	alarmcount;
 
 onalrm()
 {
+	register struct neighbor *np;
+	register struct whoent *we = mywd.wd_we, *wlast;
 	register int i;
 	struct stat stb;
-	register struct whoent *we = mywd.wd_we, *wlast;
 	int cc;
 	double avenrun[3];
-	time_t now = time(0);
-	register struct neighbor *np;
+	time_t now = time((time_t *)NULL);
+	char *strerror();
 
 	if (alarmcount % 10 == 0)
 		getkmem();
@@ -293,7 +289,8 @@ onalrm()
 		(void) lseek(utmpf, (long)0, L_SET);
 		cc = read(utmpf, (char *)utmp, stb.st_size);
 		if (cc < 0) {
-			perror("/etc/utmp");
+			fprintf(stderr, "rwhod: %s: %s\n",
+			    _PATH_UTMP, strerror(errno));
 			goto done;
 		}
 		wlast = &mywd.wd_we[1024 / sizeof (struct whoent) - 1];
@@ -338,8 +335,8 @@ onalrm()
 	for (np = neighbors; np != NULL; np = np->n_next)
 		(void) sendto(s, (char *)&mywd, cc, 0,
 			np->n_addr, np->n_addrlen);
-	if (utmpent && chdir(RWHODIR)) {
-		syslog(LOG_ERR, "chdir(%s): %m", RWHODIR);
+	if (utmpent && chdir(_PATH_RWHODIR)) {
+		syslog(LOG_ERR, "chdir(%s): %m", _PATH_RWHODIR);
 		exit(1);
 	}
 done:
@@ -352,7 +349,7 @@ getkmem()
 	static time_t vmunixctime;
 	struct stat sb;
 
-	if (stat("/vmunix", &sb) < 0) {
+	if (stat(_PATH_UNIX, &sb) < 0) {
 		if (vmunixctime)
 			return;
 	} else {
@@ -364,14 +361,14 @@ getkmem()
 	if (kmemf >= 0)
 		(void) close(kmemf);
 loop:
-	if (nlist("/vmunix", nl)) {
-		syslog(LOG_WARNING, "/vmunix namelist botch");
+	if (nlist(_PATH_UNIX, nl)) {
+		syslog(LOG_WARNING, "%s: namelist botch", _PATH_UNIX);
 		sleep(300);
 		goto loop;
 	}
-	kmemf = open("/dev/kmem", O_RDONLY);
+	kmemf = open(_PATH_KMEM, O_RDONLY, 0);
 	if (kmemf < 0) {
-		syslog(LOG_ERR, "/dev/kmem: %m");
+		syslog(LOG_ERR, "%s: %m", _PATH_KMEM);
 		exit(1);
 	}
 	(void) lseek(kmemf, (long)nl[NL_BOOTTIME].n_value, L_SET);

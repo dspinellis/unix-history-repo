@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)rshd.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -37,6 +37,7 @@ static char sccsid[] = "@(#)rshd.c	5.20 (Berkeley) %G%";
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/file.h>
+#include <sys/signal.h>
 #include <sys/time.h>
 
 #include <netinet/in.h>
@@ -46,9 +47,9 @@ static char sccsid[] = "@(#)rshd.c	5.20 (Berkeley) %G%";
 #include <stdio.h>
 #include <errno.h>
 #include <pwd.h>
-#include <signal.h>
 #include <netdb.h>
 #include <syslog.h>
+#include "pathnames.h"
 
 int	errno;
 int	keepalive = 1;
@@ -109,7 +110,7 @@ char	username[20] = "USER=";
 char	homedir[64] = "HOME=";
 char	shell[64] = "SHELL=";
 char	*envinit[] =
-	    {homedir, shell, "PATH=/usr/ucb:/bin:/usr/bin:", username, 0};
+	    {homedir, shell, _PATH_DEFPATH, username, 0};
 char	**environ;
 
 doit(fromp)
@@ -305,7 +306,7 @@ doit(fromp)
 		exit(1);
 	}
 
-	if (pwd->pw_uid && !access("/etc/nologin", F_OK)) {
+	if (pwd->pw_uid && !access(_PATH_NOLOGIN, F_OK)) {
 		error("Logins currently disabled.\n");
 		exit(1);
 	}
@@ -364,7 +365,7 @@ doit(fromp)
 		close(pv[1]);
 	}
 	if (*pwd->pw_shell == '\0')
-		pwd->pw_shell = "/bin/sh";
+		pwd->pw_shell = _PATH_BSHELL;
 	(void) setgid((gid_t)pwd->pw_gid);
 	initgroups(pwd->pw_name, pwd->pw_gid);
 	(void) setuid((uid_t)pwd->pw_uid);
