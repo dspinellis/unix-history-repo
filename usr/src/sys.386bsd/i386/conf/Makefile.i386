@@ -18,6 +18,14 @@
 # -DTRACE	compile in kernel tracing hooks
 # -DQUOTA	compile in file system quotas
 #
+# PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+# --------------------         -----   ----------------------
+# CURRENT PATCH LEVEL:         1       00001
+# --------------------         -----   ----------------------
+#
+# 29 Jun 92	Chris G. Demetriou	Fix vers.o for kernel profiling and
+#						plain old link
+#
 TOUCH=	touch -f -c
 LD=	/usr/bin/ld
 CC=	cc 
@@ -38,8 +46,14 @@ DRIVER_C_C= ${CC} -c ${CFLAGS} ${PROF} ${PARAM} $<
 SYSTEM_OBJS=locore.o ${OBJS} param.o ioconf.o conf.o
 SYSTEM_DEP=Makefile symbols.sort ${SYSTEM_OBJS}
 SYSTEM_LD_HEAD= 	@echo loading $@; rm -f $@
-SYSTEM_LD= @${LD} -z -T FE000000 -o $@ -X ${SYSTEM_OBJS}
+SYSTEM_LD= @${LD} -z -T FE000000 -o $@ -X vers.o ${SYSTEM_OBJS}
 SYSTEM_LD_TAIL= @echo rearranging symbols; symorder symbols.sort $@; size $@; chmod 755 $@
+
+GPROF.EX=	/usr/src/lib/csu.i386/gprof.ex
+PROFILE_C=	${CC} -S -c ${CFLAGS} $< ; \
+		ex - $*.s < ${GPROF.EX} ; \
+		${AS} -o $@ $*.s ; \
+		rm -f $*.s
 
 %OBJS
 
@@ -119,6 +133,10 @@ param.c: $S/conf/param.c
 
 param.o: param.c Makefile
 	${CC} -c ${CFLAGS} ${PARAM} param.c
+
+newvers:
+	sh $S/conf/newvers.sh ${KERN_IDENT} ${IDENT}
+	cc ${CFLAGS} -c vers.c
 
 %RULES
 
