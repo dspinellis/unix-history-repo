@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)doc	5.10 (Berkeley) %G%
+.\"     @(#)doc	5.11 (Berkeley) %G%
 .\"
 .\" .mdoc-parse - attempt to parse troff request arguments
 .\"     %beginstrip%
@@ -2250,7 +2250,6 @@
 .		aV \\$1 \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
 .	\}
 .\}
-.\}
 .if \\n(aC>\\n(aP \{\
 .	nr aP \\n(aP+1
 .	as b1 \\*(sX
@@ -2635,7 +2634,8 @@
 .		f\\n(C\\n(aP
 .	\}
 .	el \{\
-.		as b1 \|\\*(rp
+.		ie \\n(nS>0 .as b1 \|\\*(rp\fR;\fP
+.		el .as b1 \|\\*(rp
 .		aZ
 .	\}
 .	if \\n(nS>0 \{\
@@ -2649,7 +2649,8 @@
 .\" NS f3 macro - punctuation
 .\" NS f4 macro - write out function
 .de f1
-.as b1 \\*(rp\f\\n(cF\s\\n(cZ
+.ie \\n(nS>0 .as b1 \\*(rp\fR;\fP\f\\n(cF\s\\n(cZ
+.el .as b1 \\*(rp\f\\n(cF\s\\n(cZ
 .\\*(A\\n(aP
 ..
 .de f2
@@ -2673,19 +2674,22 @@
 .	f\\n(C\\n(aP
 .\}
 .el  \{\
-.	as b1 \\*(rp\f\\n(cF\s\\n(cZ
+.	ie \\n(nS>0 .as b1 \\*(rp\fR;\fP\f\\n(cF\s\\n(cZ
+.	el .as b1 \\*(rp\f\\n(cF\s\\n(cZ
 .	aZ
 .\}
 ..
 .de f3
-.as b1 \\*(rp\f\\n(cF\s\\n(cZ\\*(A\\n(aP
+.ie \\n(nS>0 .as b1 \\*(rp\f\\n(cF\s\\n(cZ\\*(A\\n(aP
+.el .as b1 \\*(rp\f\\n(cF\s\\n(cZ\\*(A\\n(aP
 .ie \\n(aC>\\n(aP \{\
 .	No
 .\}
 .el .aZ
 ..
 .de f4
-.as b1 \\*(rp\f\\n(cF\s\\n(cZ\\*(S\\n(aP\\*(A\\n(aP
+.ie \\n(nS>0 .as b1 \\*(rp\fR;\fP\f\\n(cF\s\\n(cZ\\*(S\\n(aP\\*(A\\n(aP
+.el .as b1 \\*(rp\f\\n(cF\s\\n(cZ\\*(S\\n(aP\\*(A\\n(aP
 .ie \\n(aC>\\n(aP \{\
 .	nr aP \\n(aP+1
 .	No
@@ -2776,7 +2780,8 @@
 .\}
 .nr fC 0
 .nr oM \\n(oM-1
-.as b1 \|\\*(rp
+.ie \\n(nS>0 .as b1 \|\\*(rp\fR;\fP
+.el .as b1 \|\\*(rp
 .ie \\n(aC>\\n(aP \{\
 .	nr aP \\n(aP+1
 .	\\*(A\\n(aP

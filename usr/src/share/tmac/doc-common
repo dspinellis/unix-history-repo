@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)doc-common	5.7 (Berkeley) %G%
+.\"     @(#)doc-common	5.8 (Berkeley) %G%
 .\"
 .\"     %beginstrip%
 .nr %A 1
@@ -16,7 +16,6 @@
 .nr Ad 12n
 .nr Ac 3
 .nr Ao 12n
-.nr Ap 2
 .nr An 12n
 .nr Aq 12n
 .nr Ar 12n
@@ -24,18 +23,14 @@
 .nr Bl 1
 .nr Bo 12n
 .nr Bq 12n
-.nr Bx 12n
 .nr Cd 12n
 .nr Cm 10n
-.nr Co 15n
-.nr Cx 20n
 .nr Dc 3
 .nr Do 10n
 .nr Dq 12n
 .nr Ds 6n
 .nr Dq 12n
 .nr Dv 12n
-.nr tI \n(Dsu
 .nr Ec 3
 .nr El 1
 .nr Eo 12n
@@ -43,13 +38,11 @@
 .nr Em 10n
 .nr Er 12n
 .nr Ev 15n
-.nr Ex 10n
 .nr Fa 12n
 .nr Fl 10n
 .nr Fc 3
 .nr Fo 16n
 .nr Fn 16n
-.nr Hl 1
 .nr I1 6n
 .nr I2 12n
 .nr I3 18n
@@ -68,26 +61,16 @@
 .nr Po 12n
 .nr Pq 12n
 .nr Ql 16n
-.nr Qc 3
-.nr Qo 12n
-.nr Qq 12n
 .nr Sc 3
 .nr So 12n
 .nr Sq 12n
 .nr Sy 6n
 .nr Sx 16n
-.nr Ra 1
-.nr Rj 1
-.nr Rn 1
-.nr Ro 1
-.nr Rr 1
-.nr Rt 1
 .nr Rv 1
 .nr Tn 10n
 .nr Ta 1
 .nr Tv 1
 .nr Tx 22n
-.nr Ux 10n
 .nr Va 12n
 .nr Xc 3
 .nr Xo 1
@@ -131,9 +114,9 @@
 .	ds cH \\$2
 .\" .	if "\\$3"" \{\
 .		if \\$2>=1 .if \\$2<=8 \{\
-.			ds vT UNIX Reference Manual
-.			if \\$2>1 .if \\$2<6 .ds vT UNIX Programmer's Manual
-.			if "\\$2"8" .ds vT UNIX System Manager's Manual
+.			ds vT BSD Reference Manual
+.			if \\$2>1 .if \\$2<6 .ds vT BSD Programmer's Manual
+.			if "\\$2"8" .ds vT BSD System Manager's Manual
 .			nr sN \\$2
 .		\}
 .		if "\\$2"unass"  .ds vT DRAFT
@@ -142,17 +125,17 @@
 .\" .	\}
 .\}
 .if !"\\$3"" \{\
-.	if "\\$3"USD"   .ds vT UNIX User's Supplementary Documents
-.	if "\\$3"PS1"   .ds vT UNIX Programmers's Supplementary Documents
-.	if "\\$3"AMD"   .ds vT UNIX Ancestral Manual Documents
-.	if "\\$3"SMM"   .ds vT UNIX System Manager's Manual
-.	if "\\$3"URM"   .ds vT UNIX Reference Manual
-.	if "\\$3"PRM"   .ds vT UNIX Programmers's Manual
-.	if "\\$3"IND"   .ds vT UNIX Manual Master Index
-.\" .	if "\\$3"CON"   .ds vT UNIX Contributed Software Manual
-.\" .	if "\\$3"IMP"	.ds vT UNIX Implementation Notes
-.\" .	if "\\$3"HOW"	.ds vT UNIX How Pocket Manual
-.	if "\\$3"LOCAL" .ds vT UNIX Local Manual
+.	if "\\$3"USD"   .ds vT BSD User's Supplementary Documents
+.	if "\\$3"PS1"   .ds vT BSD Programmers's Supplementary Documents
+.	if "\\$3"AMD"   .ds vT BSD Ancestral Manual Documents
+.	if "\\$3"SMM"   .ds vT BSD System Manager's Manual
+.	if "\\$3"URM"   .ds vT BSD Reference Manual
+.	if "\\$3"PRM"   .ds vT BSD Programmers's Manual
+.	if "\\$3"IND"   .ds vT BSD Manual Master Index
+.\" .	if "\\$3"CON"   .ds vT BSD Contributed Software Manual
+.\" .	if "\\$3"IMP"	.ds vT BSD Implementation Notes
+.\" .	if "\\$3"HOW"	.ds vT BSD How Pocket Manual
+.	if "\\$3"LOCAL" .ds vT BSD Local Manual
 .	if "\\$3"tahoe" .as vT \ (Tahoe Architecture)
 .	if "\\$3"vax" .as vT \ (VAX Architecture)
 .	if "\\$3"hp300" .as vT \ (HP300 Architecture)
@@ -168,7 +151,7 @@
 .de Os
 .ds oS Null
 .if "\\$1"" \{\
-.	ds oS BSD Experimental
+.	ds oS 4.4BSD PRERELEASE
 .\}
 .if "\\$2"" \{\
 .	ds aa Non-Null
@@ -195,7 +178,7 @@
 .	if "\\$2"4.3R" .ds oS 4.3-Reno Berkeley Distribution
 .	if "\\$2"4.3t" .ds oS 4.3-Tahoe Berkeley Distribution
 .	if "\\$2"4.3r" .ds oS 4.3-Reno Berkeley Distribution
-.	if "\\$2"4.4"  .ds oS BSD Experimental
+.	if "\\$2"4.4"  .ds oS 4.4BSD PRERELEASE
 .\}
 .if "\\*(oS"Null" .ds oS \0\\$1
 .if "\\*(aa"Non-Null" .as oS \0\\$2
@@ -247,7 +230,6 @@
 .	\}
 .	ev
 .\}
-.\" .tm IN 444 fM .k == \\n(.k and nl == \\n(nl
 ..
 .de lM
 .fl

@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)doc-ditroff	5.8 (Berkeley) %G%
+.\"     @(#)doc-ditroff	5.9 (Berkeley) %G%
 .\"
 .\" tmac.mdoc-ditroff
 .\"     %beginstrip%
@@ -164,7 +164,7 @@
 .	if (\\n(aP>0) \{\
 .		ds A\\n(aP Li
 .		nr aP \\n(aP -1
-.	\}		
+.	\}
 .	if (\\n(aP==0) \{\
 .		rm C0 C1 C2 C3 C4 C5 C6 C7 C8 C9
 .		rm S1 S2 S3 S4 S5 S6 S7 S8 S9
