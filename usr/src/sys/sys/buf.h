@@ -1,4 +1,4 @@
-/*	buf.h	3.2	%H%	*/
+/*	buf.h	3.3	%H%	*/
 
 /*
  * Each buffer in the pool is usually doubly linked into 2 lists:
@@ -67,22 +67,22 @@ unsigned minphys();
  * These flags are kept in b_flags.
  */
 #define	B_WRITE	 0x0000	/* non-read pseudo-flag */
-#define	B_READ	 0x0001	/* read when I/O occurs */
-#define	B_DONE	 0x0002	/* transaction finished */
-#define	B_ERROR	 0x0004	/* transaction aborted */
-#define	B_BUSY	 0x0008	/* not on av_forw/back list */
-#define	B_PHYS	 0x0010	/* Physical IO potentially using UNIBUS map */
-#define	B_MAP	 0x0020	/* This block has the UNIBUS map allocated */
-#define	B_WANTED 0x0040	/* issue wakeup when BUSY goes off */
-#define	B_AGE	 0x0080	/* delayed write for correct aging */
-#define	B_ASYNC	 0x0100	/* don't wait for I/O completion */
-#define	B_DELWRI 0x0200	/* don't write till block leaves available list */
-#define	B_TAPE	 0x0400	/* this is a magtape (no bdwrite) */
-#define	B_UAREA  0x0800	/* add u-area to a swap operation */
-#define	B_PAGET	 0x1000	/* page in/out of page table space */
-#define	B_DIRTY	 0x2000	/* dirty page to be pushed out async */
-#define	B_PGIN	 0x4000 /* page in flag to swap(), for counting */
-#define	B_CACHE	 0x8000	/* did bread find this block in the cache? */
+#define	B_READ		0x0001	/* read when I/O occurs */
+#define	B_DONE		0x0002	/* transaction finished */
+#define	B_ERROR		0x0004	/* transaction aborted */
+#define	B_BUSY		0x0008	/* not on av_forw/back list */
+#define	B_PHYS		0x0010	/* physical IO */
+#define	B_MAP		0x0020	/* UNIBUS map allocated */
+#define	B_WANTED	0x0040	/* issue wakeup when BUSY goes off */
+#define	B_AGE		0x0080	/* delayed write for correct aging */
+#define	B_ASYNC		0x0100	/* don't wait for I/O completion */
+#define	B_DELWRI	0x0200	/* write at exit of avail list */
+#define	B_TAPE		0x0400	/* this is a magtape (no bdwrite) */
+#define	B_UAREA		0x0800	/* add u-area to a swap operation */
+#define	B_PAGET		0x1000	/* page in/out of page table space */
+#define	B_DIRTY		0x2000	/* dirty page to be pushed out async */
+#define	B_PGIN		0x4000	/* pagein op, so swap() can count it */
+#define	B_CACHE		0x8000	/* did bread find us in the cache ? */
 
 /*
  * special redeclarations for
