@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dz.c	7.8 (Berkeley) %G%
+ *	@(#)dz.c	7.9 (Berkeley) %G%
  */
 
 #include "dz.h"
@@ -166,6 +166,7 @@ dzopen(dev, flag)
 	tp->t_param = dzparam;
 	tp->t_dev = dev;
 	if ((tp->t_state & TS_ISOPEN) == 0) {
+		tp->t_state |= TS_WOPEN;
 		ttychars(tp);
 #ifndef PORTSELECTOR
 		if (tp->t_ispeed == 0) {
@@ -189,9 +190,8 @@ dzopen(dev, flag)
 	while ((flag&O_NONBLOCK) == 0 && (tp->t_cflag&CLOCAL) == 0 &&
 	       (tp->t_state & TS_CARR_ON) == 0) {
 		tp->t_state |= TS_WOPEN;
-		if ((error = tsleep((caddr_t)&tp->t_rawq, TTIPRI | PCATCH,
-				    ttopen, 0)) ||
-		    (error = ttclosed(tp)))
+		if (error = ttysleep(tp, (caddr_t)&tp->t_rawq, TTIPRI | PCATCH,
+		    ttopen, 0))
 			break;
 	}
 	(void) spl0();

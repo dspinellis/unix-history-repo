@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dh.c	7.13 (Berkeley) %G%
+ *	@(#)dh.c	7.14 (Berkeley) %G%
  */
 
 #include "dh.h"
@@ -214,7 +214,6 @@ dhopen(dev, flag)
 	tp->t_oproc = dhstart;
 	tp->t_param = dhparam;
 	tp->t_dev = dev;
-	tp->t_state |= TS_WOPEN;
 	/*
 	 * While setting up state for this uba and this dh,
 	 * block uba resets which can clear the state.
@@ -239,6 +238,7 @@ dhopen(dev, flag)
 	 * If this is first open, initialize tty state to default.
 	 */
 	if ((tp->t_state&TS_ISOPEN) == 0) {
+		tp->t_state |= TS_WOPEN;
 		ttychars(tp);
 #ifndef PORTSELECTOR
 		if (tp->t_ispeed == 0) {
@@ -723,6 +723,7 @@ dmopen(dev, flag)
 	addr = (struct dmdevice *)ui->ui_addr;
 	s = spl5();
 	for (;;) {
+		tp->t_state |= TS_WOPEN;
 		addr->dmcsr &= ~DM_SE;
 		while (addr->dmcsr & DM_BUSY)
 			;
@@ -734,9 +735,8 @@ dmopen(dev, flag)
 		if (tp->t_state&TS_CARR_ON || flag&O_NONBLOCK || 
 		    tp->t_cflag&CLOCAL)
 			break;
-		if ((error = tsleep((caddr_t)&tp->t_rawq, TTIPRI | PCATCH,
-				    ttopen, 0)) ||
-		    (error = ttclosed(tp)))
+		if (error = ttysleep(tp, (caddr_t)&tp->t_rawq, TTIPRI | PCATCH,
+		    ttopen, 0))
 			break;
 	}
 	splx(s);
