@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)pxerrors.c 1.1 %G%";
+static char sccsid[] = "@(#)pxerrors.c 1.2 %G%";
 
 /*
  * px error messages
@@ -46,5 +46,5 @@ char *pxerrmsg[] ={
 	"statement limit exceeded",
 	"runtime stack overflow",
 	"interrupt",
-	"overflow in arithmetic operation",
+	"overflow, underflow, or divide by zero in arithmetic operation",
 };
