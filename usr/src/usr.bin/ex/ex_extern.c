@@ -1,4 +1,4 @@
-static char *sccs_id = "@(#)ex_extern.c	7.1	%G%";
+static char *sccs_id = "@(#)ex_extern.c	7.2	%G%";
 /*
  * Provide defs of the global variables.
  * This crock is brought to you by the turkeys
@@ -7,7 +7,7 @@ static char *sccs_id = "@(#)ex_extern.c	7.1	%G%";
  * book says!"
  */
 
-# define extern 	/* nothing */
+# define var 	/* nothing */
 # include "ex.h"
 # include "ex_argv.h"
 # include "ex_re.h"
@@ -16,5 +16,3 @@ static char *sccs_id = "@(#)ex_extern.c	7.1	%G%";
 # include "ex_tune.h"
 # include "ex_vars.h"
 # include "ex_vis.h"
-
-short tfile = -1;

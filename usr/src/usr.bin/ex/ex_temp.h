@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-/* sccs id:	@(#)ex_temp.h	7.1	%G%  */
+/* sccs id:	@(#)ex_temp.h	7.2	%G%  */
 /*
  * The editor uses a temporary file for files being edited, in a structure
  * similar to that of ed.  The first block of the file is used for a header
@@ -64,23 +64,23 @@
  * spends (spent) roughly 30% of its time in the system read routine,
  * this can be a big help.
  */
-extern bool	hitin2;		/* Last read hit was ibuff2 not ibuff */
-extern bool	ichang2;	/* Have actually changed ibuff2 */
-extern bool	ichanged;	/* Have actually changed ibuff */
-extern short	iblock;		/* Temp file block number of ibuff (or -1) */
-extern short	iblock2;	/* Temp file block number of ibuff2 (or -1) */
-extern short	ninbuf;		/* Number useful chars left in input buffer */
-extern short	nleft;		/* Number usable chars left in output buffer */
-extern short	oblock;		/* Temp file block number of obuff (or -1) */
+var bool	hitin2;		/* Last read hit was ibuff2 not ibuff */
+var bool	ichang2;	/* Have actually changed ibuff2 */
+var bool	ichanged;	/* Have actually changed ibuff */
+var short	iblock;		/* Temp file block number of ibuff (or -1) */
+var short	iblock2;	/* Temp file block number of ibuff2 (or -1) */
+var short	ninbuf;		/* Number useful chars left in input buffer */
+var short	nleft;		/* Number usable chars left in output buffer */
+var short	oblock;		/* Temp file block number of obuff (or -1) */
 #ifndef VMUNIX
-extern short	tline;		/* Current temp file ptr */
+var short	tline;		/* Current temp file ptr */
 #else
-extern int	tline;
+var int	tline;
 #endif
 
-extern char	ibuff[BUFSIZ];
-extern char	ibuff2[BUFSIZ];
-extern char	obuff[BUFSIZ];
+var char	ibuff[BUFSIZ];
+var char	ibuff2[BUFSIZ];
+var char	obuff[BUFSIZ];
 
 /*
  * Structure of the descriptor block which resides
@@ -108,7 +108,7 @@ struct 	header {
 	char	Savedfile[FNSIZE];	/* The current file name */
 	short	Blocks[LBLKS];		/* Blocks where line pointers stashed */
 }; 
-extern struct 	header H;
+var struct 	header H;
 
 #define	uid		H.Uid
 #define	flines		H.Flines

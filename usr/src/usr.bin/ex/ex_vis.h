@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-/* sccs id:	@(#)ex_vis.h	7.1	%G%  */
+/* sccs id:	@(#)ex_vis.h	7.2	%G%  */
 /*
  * Ex version 3
  * Mark Horton, UCB
@@ -17,8 +17,8 @@
  * line is longer than 80.
  */
 
-extern short	bastate;
-extern short	state;
+var short	bastate;
+var short	state;
 
 #define	VISUAL		0
 #define	CRTOPEN		1
@@ -38,20 +38,20 @@ extern short	state;
  * If WBOT!=WECHO then WECHO will be the last line on the screen
  * and WBOT is the line before it.
  */
-extern short	basWTOP;
-extern short	basWLINES;
-extern short	WTOP;
-extern short	WBOT;
-extern short	WLINES;
-extern short	WCOLS;
-extern short	WECHO;
+var short	basWTOP;
+var short	basWLINES;
+var short	WTOP;
+var short	WBOT;
+var short	WLINES;
+var short	WCOLS;
+var short	WECHO;
 
 /*
  * When we are dealing with the echo area we consider the window
  * to be "split" and set the variable splitw.  Otherwise, moving
  * off the bottom of the screen into WECHO causes a screen rollup.
  */
-extern bool	splitw;
+var bool	splitw;
 
 /*
  * Information about each line currently on the screen includes
@@ -66,7 +66,7 @@ struct vlinfo {
 	short	vdepth;		/* Depth of displayed line */ /*mjm: was char */
 	short	vflags;		/* Is line potentially dirty ? */
 };
-extern struct vlinfo  vlinfo[TUBELINES + 2];
+var struct vlinfo  vlinfo[TUBELINES + 2];
 
 #define	DEPTH(c)	(vlinfo[c].vdepth)
 #define	LINE(c)		(vlinfo[c].vliny)
@@ -93,8 +93,8 @@ extern struct vlinfo  vlinfo[TUBELINES + 2];
  * Vcline is intimately tied to the current value of dot,
  * and when command mode is used as a subroutine fancy footwork occurs.
  */
-extern short	vcline;
-extern short	vcnt;
+var short	vcline;
+var short	vcnt;
 
 /*
  * To allow many optimizations on output, an exact image of the terminal
@@ -104,8 +104,8 @@ extern short	vcnt;
  * data itself.  It is also rearranged during insert mode across line
  * boundaries to make incore work easier.
  */
-extern char	*vtube[TUBELINES];
-extern char	*vtube0;
+var char	*vtube[TUBELINES];
+var char	*vtube0;
 
 /*
  * The current cursor position within the current line is kept in
@@ -115,9 +115,9 @@ extern char	*vtube0;
  * lines to mark the other end of the affected area, or the target
  * for a motion.
  */
-extern char	*cursor;
-extern char	*wcursor;
-extern line	*wdot;
+var char	*cursor;
+var char	*wcursor;
+var line	*wdot;
 
 /*
  * Undo information is saved in a LBSIZE buffer at "vutmp" for changes
@@ -133,8 +133,8 @@ extern line	*wdot;
 #define	VMCHNG	4
 #define	VMANYINS 5
 
-extern short	vundkind;	/* Which kind of undo - from above */
-extern char	*vutmp;		/* Prev line image when "VCHNG" */
+var short	vundkind;	/* Which kind of undo - from above */
+var char	*vutmp;		/* Prev line image when "VCHNG" */
 
 /*
  * State information for undoing of macros.  The basic idea is that
@@ -148,7 +148,7 @@ extern char	*vutmp;		/* Prev line image when "VCHNG" */
 #define VC_ONECHANGE	2	/* In a macro, one change so far */
 #define VC_MANYCHANGE	3	/* In a macro, at least 2 changes so far */
 
-extern short	vch_mac;	/* Change state - one of the above */
+var short	vch_mac;	/* Change state - one of the above */
 
 /*
  * For U undo's the line is grabbed by "vmove" after it first appears
@@ -157,9 +157,9 @@ extern short	vch_mac;	/* Change state - one of the above */
  * are made, i.e. after a 'J' join.  This is because a 'JU' would
  * lose completely the text of the line just joined on.
  */
-extern char	*vUNDcurs;	/* Cursor just before 'U' */
-extern line	*vUNDdot;	/* The line address of line saved in vUNDsav */
-extern line	vUNDsav;	/* Grabbed initial "*dot" */
+var char	*vUNDcurs;	/* Cursor just before 'U' */
+var line	*vUNDdot;	/* The line address of line saved in vUNDsav */
+var line	vUNDsav;	/* Grabbed initial "*dot" */
 
 #define	killU()		vUNDdot = NOLINE
 
@@ -189,8 +189,8 @@ extern line	vUNDsav;	/* Grabbed initial "*dot" */
  * is actually needed is recorded in heldech, which says that a clear
  * of the echo area was actually held off.
  */
-extern short	hold;
-extern short	holdupd;	/* Hold off update when echo line is too long */
+var short	hold;
+var short	holdupd;	/* Hold off update when echo line is too long */
 
 #define	HOLDAT		1
 #define	HOLDDOL		2
@@ -203,43 +203,43 @@ extern short	holdupd;	/* Hold off update when echo line is too long */
 /*
  * Miscellaneous variables
  */
-extern short	CDCNT;		/* Count of ^D's in insert on this line */
-extern char	DEL[VBSIZE];	/* Last deleted text */
-extern bool	HADUP;		/* This insert line started with ^ then ^D */
-extern bool	HADZERO;	/* This insert line started with 0 then ^D */
-extern char	INS[VBSIZE];	/* Last inserted text */
-extern int	Vlines;		/* Number of file lines "before" vi command */
-extern int	Xcnt;		/* External variable holding last cmd's count */
-extern bool	Xhadcnt;	/* Last command had explicit count? */
-extern short	ZERO;
-extern short	dir;		/* Direction for search (+1 or -1) */
-extern short	doomed;		/* Disply chars right of cursor to be killed */
-extern bool	gobblebl;	/* Wrapmargin space generated nl, eat a space */
-extern bool	hadcnt;		/* (Almost) internal to vmain() */
-extern bool	heldech;	/* We owe a clear of echo area */
-extern bool	insmode;	/* Are in character insert mode */
-extern char	lastcmd[5];	/* Chars in last command */
-extern int	lastcnt;	/* Count for last command */
-extern char	*lastcp;	/* Save current command here to repeat */
-extern bool	lasthad;	/* Last command had a count? */
-extern short	lastvgk;	/* Previous input key, if not from keyboard */
-extern short	lastreg;	/* Register with last command */
-extern char	*ncols['z'-'a'+2];	/* Cursor positions of marks */
-extern char	*notenam;	/* Name to be noted with change count */
-extern char	*notesgn;	/* Change count from last command */
-extern char	op;		/* Operation of current command */
-extern short	Peekkey;	/* Peek ahead key */
-extern bool	rubble;		/* Line is filthy (in hardcopy open), redraw! */
-extern int	vSCROLL;	/* Number lines to scroll on ^D/^U */
-extern char	*vglobp;	/* Untyped input (e.g. repeat insert text) */
-extern char	vmacbuf[VBSIZE];   /* Text of visual macro, hence nonnestable */
-extern char	*vmacp;		/* Like vglobp but for visual macros */
-extern char	*vmcurs;	/* Cursor for restore after undo d), e.g. */
-extern short	vmovcol;	/* Column to try to keep on arrow keys */
-extern bool	vmoving;	/* Are trying to keep vmovcol */
-extern short	vreg;		/* Reg for this command */   /* mjm: was char */
-extern short	wdkind;		/* Liberal/conservative words? */
-extern char	workcmd[5];	/* Temporary for lastcmd */
+var short	CDCNT;		/* Count of ^D's in insert on this line */
+var char	DEL[VBSIZE];	/* Last deleted text */
+var bool	HADUP;		/* This insert line started with ^ then ^D */
+var bool	HADZERO;	/* This insert line started with 0 then ^D */
+var char	INS[VBSIZE];	/* Last inserted text */
+var int	Vlines;		/* Number of file lines "before" vi command */
+var int	Xcnt;		/* External variable holding last cmd's count */
+var bool	Xhadcnt;	/* Last command had explicit count? */
+var short	ZERO;
+var short	dir;		/* Direction for search (+1 or -1) */
+var short	doomed;		/* Disply chars right of cursor to be killed */
+var bool	gobblebl;	/* Wrapmargin space generated nl, eat a space */
+var bool	hadcnt;		/* (Almost) internal to vmain() */
+var bool	heldech;	/* We owe a clear of echo area */
+var bool	insmode;	/* Are in character insert mode */
+var char	lastcmd[5];	/* Chars in last command */
+var int	lastcnt;	/* Count for last command */
+var char	*lastcp;	/* Save current command here to repeat */
+var bool	lasthad;	/* Last command had a count? */
+var short	lastvgk;	/* Previous input key, if not from keyboard */
+var short	lastreg;	/* Register with last command */
+var char	*ncols['z'-'a'+2];	/* Cursor positions of marks */
+var char	*notenam;	/* Name to be noted with change count */
+var char	*notesgn;	/* Change count from last command */
+var char	op;		/* Operation of current command */
+var short	Peekkey;	/* Peek ahead key */
+var bool	rubble;		/* Line is filthy (in hardcopy open), redraw! */
+var int	vSCROLL;	/* Number lines to scroll on ^D/^U */
+var char	*vglobp;	/* Untyped input (e.g. repeat insert text) */
+var char	vmacbuf[VBSIZE];   /* Text of visual macro, hence nonnestable */
+var char	*vmacp;		/* Like vglobp but for visual macros */
+var char	*vmcurs;	/* Cursor for restore after undo d), e.g. */
+var short	vmovcol;	/* Column to try to keep on arrow keys */
+var bool	vmoving;	/* Are trying to keep vmovcol */
+var short	vreg;		/* Reg for this command */   /* mjm: was char */
+var short	wdkind;		/* Liberal/conservative words? */
+var char	workcmd[5];	/* Temporary for lastcmd */
 
 
 /*
