@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)checknr.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)checknr.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -116,23 +116,23 @@ char *knowncmds[MAXCMDS] = {
 "MT", "ND", "NE", "NH", "NL", "NP", "NS", "OF", "OH", "OK", "OP", "P",
 "P1", "PF", "PH", "PP", "PT", "PX", "PY", "QE", "QP", "QS", "R",  "RA",
 "RC", "RE", "RL", "RP", "RQ", "RS", "RT", "S",  "S0", "S2", "S3", "SA",
-"SG", "SH", "SK", "SM", "SP", "SY", "TA", "TB", "TC", "TD", "TE", "TH",
-"TL", "TM", "TP", "TQ", "TR", "TS", "TX", "UL", "US", "UX", "VL", "WC",
-"WH", "XA", "XD", "XE", "XF", "XK", "XP", "XS", "[",  "[-", "[0", "[1",
-"[2", "[3", "[4", "[5", "[<", "[>", "[]", "]",  "]-", "]<", "]>", "][",
-"ab", "ac", "ad", "af", "am", "ar", "as", "b",  "ba", "bc", "bd", "bi",
-"bl", "bp", "br", "bx", "c.", "c2", "cc", "ce", "cf", "ch", "cs", "ct",
-"cu", "da", "de", "di", "dl", "dn", "ds", "dt", "dw", "dy", "ec", "ef",
-"eh", "el", "em", "eo", "ep", "ev", "ex", "fc", "fi", "fl", "fo", "fp",
-"ft", "fz", "hc", "he", "hl", "hp", "ht", "hw", "hx", "hy", "i",  "ie",
-"if", "ig", "in", "ip", "it", "ix", "lc", "lg", "li", "ll", "ln", "lo",
-"lp", "ls", "lt", "m1", "m2", "m3", "m4", "mc", "mk", "mo", "n1", "n2",
-"na", "ne", "nf", "nh", "nl", "nm", "nn", "np", "nr", "ns", "nx", "of",
-"oh", "os", "pa", "pc", "pi", "pl", "pm", "pn", "po", "pp", "ps", "q",
-"r",  "rb", "rd", "re", "rm", "rn", "ro", "rr", "rs", "rt", "sb", "sc",
-"sh", "sk", "so", "sp", "ss", "st", "sv", "sz", "ta", "tc", "th", "ti",
-"tl", "tm", "tp", "tr", "u",  "uf", "uh", "ul", "vs", "wh", "xp", "yr",
-0
+"SG", "SH", "SK", "SM", "SP", "SY", "T&", "TA", "TB", "TC", "TD", "TE",
+"TH", "TL", "TM", "TP", "TQ", "TR", "TS", "TX", "UL", "US", "UX", "VL",
+"WC", "WH", "XA", "XD", "XE", "XF", "XK", "XP", "XS", "[",  "[-", "[0",
+"[1", "[2", "[3", "[4", "[5", "[<", "[>", "[]", "]",  "]-", "]<", "]>",
+"][", "ab", "ac", "ad", "af", "am", "ar", "as", "b",  "ba", "bc", "bd",
+"bi", "bl", "bp", "br", "bx", "c.", "c2", "cc", "ce", "cf", "ch", "cs",
+"ct", "cu", "da", "de", "di", "dl", "dn", "ds", "dt", "dw", "dy", "ec",
+"ef", "eh", "el", "em", "eo", "ep", "ev", "ex", "fc", "fi", "fl", "fo",
+"fp", "ft", "fz", "hc", "he", "hl", "hp", "ht", "hw", "hx", "hy", "i",
+"ie", "if", "ig", "in", "ip", "it", "ix", "lc", "lg", "li", "ll", "ln",
+"lo", "lp", "ls", "lt", "m1", "m2", "m3", "m4", "mc", "mk", "mo", "n1",
+"n2", "na", "ne", "nf", "nh", "nl", "nm", "nn", "np", "nr", "ns", "nx",
+"of", "oh", "os", "pa", "pc", "pi", "pl", "pm", "pn", "po", "pp", "ps",
+"q",  "r",  "rb", "rd", "re", "rm", "rn", "ro", "rr", "rs", "rt", "sb",
+"sc", "sh", "sk", "so", "sp", "ss", "st", "sv", "sz", "ta", "tc", "th",
+"ti", "tl", "tm", "tp", "tr", "u",  "uf", "uh", "ul", "vs", "wh", "xp",
+"yr", 0
 };
 
 int	lineno;		/* current line number in input file */
