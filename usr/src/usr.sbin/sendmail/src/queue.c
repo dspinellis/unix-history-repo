@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.56 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.57 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.56 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.57 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -1391,11 +1391,11 @@ readqf(e)
 			break;
 
 		  case 'O':		/* original MTS from ESMTP */
-			e->e_omts = newstr(&bp[2]);
+			e->e_omts = newstr(&bp[1]);
 			break;
 
 		  case 'Z':		/* original envelope id from ESMTP */
-			e->e_envid = newstr(&bp[2]);
+			e->e_envid = newstr(&bp[1]);
 			break;
 
 		  case '$':		/* define macro */
