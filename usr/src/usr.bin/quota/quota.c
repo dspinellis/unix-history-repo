@@ -381,28 +381,29 @@ getprivs(id, quotatype)
 	int quotatype;
 {
 	register struct fstab *fs;
-	char qfilename[MAXPATHLEN + 1];
 	register struct quotause *qup, *quptail;
 	struct quotause *quphead;
+	char *qfpathname;
 	int qcmd, fd;
 
 	setfsent();
 	quphead = (struct quotause *)0;
 	qcmd = QCMD(Q_GETQUOTA, quotatype);
 	while (fs = getfsent()) {
-		if (!hasquota(fs->fs_mntops, quotatype))
+		if (strcmp(fs->fs_vfstype, "ufs"))
 			continue;
-		sprintf(qfilename, "%s/%s.%s", fs->fs_file, qfname,
-		    qfextension[quotatype]);
-		if ((fd = open(qfilename, O_RDONLY)) < 0) {
-			perror(qfilename);
+		if (!hasquota(fs, quotatype, &qfpathname))
 			continue;
-		}
 		if ((qup = (struct quotause *)malloc(sizeof *qup)) == NULL) {
 			fprintf(stderr, "quota: out of memory\n");
 			exit(2);
 		}
-		if (quotactl(qfilename, qcmd, id, &qup->dqblk) != 0) {
+		if (quotactl(fs->fs_file, qcmd, id, &qup->dqblk) != 0) {
+			if ((fd = open(qfpathname, O_RDONLY)) < 0) {
+				perror(qfpathname);
+				free(qup);
+				continue;
+			}
 			lseek(fd, (long)(id * sizeof(struct dqblk)), L_SET);
 			switch (read(fd, &qup->dqblk, sizeof(struct dqblk))) {
 			case 0:			/* EOF */
@@ -419,13 +420,13 @@ getprivs(id, quotatype)
 
 			default:		/* ERROR */
 				fprintf(stderr, "quota: read error");
-				perror(qfilename);
+				perror(qfpathname);
 				close(fd);
 				free(qup);
 				continue;
 			}
+			close(fd);
 		}
-		close(fd);
 		strcpy(qup->fsname, fs->fs_file);
 		if (quphead == NULL)
 			quphead = qup;
@@ -441,28 +442,39 @@ getprivs(id, quotatype)
 /*
  * Check to see if a particular quota is to be enabled.
  */
-hasquota(options, type)
-	char *options;
+hasquota(fs, type, qfnamep)
+	register struct fstab *fs;
 	int type;
+	char **qfnamep;
 {
 	register char *opt;
-	char buf[BUFSIZ];
-	char *strtok();
+	char *cp, *index(), *strtok();
 	static char initname, usrname[100], grpname[100];
+	static char buf[BUFSIZ];
 
 	if (!initname) {
 		sprintf(usrname, "%s%s", qfextension[USRQUOTA], qfname);
 		sprintf(grpname, "%s%s", qfextension[GRPQUOTA], qfname);
 		initname = 1;
 	}
-	strcpy(buf, options);
+	strcpy(buf, fs->fs_mntops);
 	for (opt = strtok(buf, ","); opt; opt = strtok(NULL, ",")) {
+		if (cp = index(opt, '='))
+			*cp++ = '\0';
 		if (type == USRQUOTA && strcmp(opt, usrname) == 0)
-			return(1);
+			break;
 		if (type == GRPQUOTA && strcmp(opt, grpname) == 0)
-			return(1);
+			break;
 	}
-	return (0);
+	if (!opt)
+		return (0);
+	if (cp) {
+		*qfnamep = cp;
+		return (1);
+	}
+	(void) sprintf(buf, "%s/%s.%s", fs->fs_file, qfname, qfextension[type]);
+	*qfnamep = buf;
+	return (1);
 }
 
 alldigits(s)
