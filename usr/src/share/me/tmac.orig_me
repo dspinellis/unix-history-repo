@@ -12,14 +12,14 @@
 .\"*		1919 Addison Street Suite 304				*
 .\"*		Berkeley, California  94704				*
 .\"*									*
-.\"*	VERSION 2.15	First Release: 11 Sept 1978			*
+.\"*	VERSION 2.16	First Release: 11 Sept 1978			*
 .\"*	See file \*(||/revisions for revision history			*
 .\"*									*
 .\"*	Documentation is available.					*
 .\"*									*
 .\"**********************************************************************
 .\"
-.\"	@(#)tmac.orig_me	2.15	%G%
+.\"	@(#)tmac.orig_me	2.16	%G%
 .\"	%beginstrip%
 .\"
 .\"	Code on .de commands:
@@ -216,6 +216,8 @@
 .nr _B \\n(_bu
 .ch @f
 .wh -\\n(_bu @f
+.nr _b +(\\n(ppu*\\n($ru)	\" add 1 paragraph v in case of sweep past
+.if \n@>2 .tm @n .p=\\n(.p bm=\\n(bm _b=\\n(_b _B=\\n(_B
 .nr ?f 0			\" reset footnote flag
 .if \\n(?o \
 \{\
@@ -250,7 +252,9 @@
 .ns
 ..
 .de @f			\" --- footer
-.if \n@>1 .tm >> @f %=\\n% nl=\\n(nl ?a=\\n(?a ?b=\\n(?b
+.if \n@>1 .tm >> @f %=\\n% nl=\\n(nl ?a=\\n(?a ?b=\\n(?b ?f=\\n(?f
+.if \n@>2 .nr VL \\n(.pu-\\n(nlu
+.if \n@>2 .tm @f bm=\\n(bm _B=\\n(_B _b=\\n(_b .p-nl=\\n(VL
 .ec
 .if \\n(?T \
 \{\
@@ -278,9 +282,11 @@
 .nf
 .ls 1
 .in 0
+.if \n@>2 .tm @o last printed text = \\n(nl placing @r trap at -\\n(_B
 .wh -\\n(_Bu @r
 .|f
 .fi
+.if \n@>2 .tm @o triggered @r (?o) = \\n(?o
 .if \\n(?o \
 .	di			\" just in case triggered @r
 .	if \\n(dn=0 \
