@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ffs_vnops.c	7.3 (Berkeley) %G%
+ *	@(#)ffs_vnops.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -600,8 +600,13 @@ chown()
 		int	uid;
 		int	gid;
 	} *uap = (struct a *)u.u_ap;
+	register struct nameidata *ndp = &u.u_nd;
 
-	if ((ip = owner(uap->fname, NOFOLLOW)) == NULL)
+	ndp->ni_nameiop = LOOKUP | NOFOLLOW;
+	ndp->ni_segflg = UIO_USERSPACE;
+	ndp->ni_dirp = uap->fname;
+	ip = namei(ndp);
+	if (ip == NULL)
 		return;
 	u.u_error = chown1(ip, uap->uid, uap->gid);
 	iput(ip);
@@ -647,9 +652,13 @@ chown1(ip, uid, gid)
 		uid = ip->i_uid;
 	if (gid == -1)
 		gid = ip->i_gid;
-	if (uid != ip->i_uid && !suser())
-		return (u.u_error);
-	if (gid != ip->i_gid && !groupmember((gid_t)gid) && !suser())
+	/*
+	 * If we don't own the file, are trying to change the owner
+	 * of the file, or are not a member of the target group,
+	 * the caller must be superuser or the call fails.
+	 */
+	if ((u.u_uid != ip->i_uid || uid != ip->i_uid ||
+	    !groupmember((gid_t)gid)) && !suser())
 		return (u.u_error);
 #ifdef QUOTA
 	if (ip->i_uid == uid)		/* this just speeds things a little */
