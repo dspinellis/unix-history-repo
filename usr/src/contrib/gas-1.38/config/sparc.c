@@ -1,3 +1,14 @@
+/*-
+ * This code is derived from software copyrighted by the Free Software
+ * Foundation.
+ *
+ * Modified 1993 by Chris Torek at Lawrence Berkeley Laboratory.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)sparc.c	5.2 (Berkeley) %G%";
+#endif /* not lint */
+
 /* sparc.c -- Assemble for the SPARC
    Copyright (C) 1989 Free Software Foundation, Inc.
 
@@ -121,14 +132,10 @@ struct sparc_it {
 } the_insn, set_insn;
 
 #ifdef __STDC__
-#if 0
 static void print_insn(struct sparc_it *insn);
-#endif
 static int getExpression(char *str);
 #else
-#if 0
 static void print_insn();
-#endif
 static int getExpression();
 #endif
 static char *expr_end;
@@ -381,6 +388,11 @@ md_assemble(str)
     case SPECIAL_CASE_SET:
 	special_case = 0;
 	assert(the_insn.reloc == RELOC_HI22);
+	if (the_insn.exp.X_seg == SEG_ABSOLUTE &&
+	    the_insn.exp.X_add_symbol == 0 &&
+	    the_insn.exp.X_subtract_symbol == 0 &&
+	    (the_insn.exp.X_add_number & 0x3ff) == 0)
+		return;
 	toP = frag_more(4);
 	rsd = (the_insn.opcode >> 25) & 0x1f;
 	the_insn.opcode = 0x80102000 | (rsd << 25) | (rsd << 14);
@@ -531,6 +543,7 @@ sparc_ip(str)
 		break;
 
 	    case 'r':   /* next operand must be a register */
+	    case 'R':
 	    case '1':
 	    case '2':
 	    case 'd':
@@ -619,6 +632,10 @@ sparc_ip(str)
 
 		    case 'r':
 			opcode |= (mask << 25) | (mask << 14);
+			continue;
+
+		    case 'R':
+			opcode |= (mask << 25) | mask;
 			continue;
 		    }
 		}
@@ -960,11 +977,7 @@ md_number_to_imm(buf,val,n, fixP, seg_type)
     fixS *fixP;
     int seg_type;
 {
-    /* if (seg_type != N_TEXT || fixP->fx_r_type == NO_RELOC) { */
-    if (  (seg_type != N_TEXT && fixP->fx_r_type > RELOC_DISP32 )
-      || fixP->fx_r_type == NO_RELOC) {
-      /* should never get here for current relocs ... */
-
+    if (seg_type != N_TEXT || fixP->fx_r_type == NO_RELOC) {
 	switch (n) {
 	case 1:
 		*buf = val;
@@ -999,10 +1012,10 @@ md_number_to_imm(buf,val,n, fixP, seg_type)
     switch (fixP->fx_r_type) {
 
     case RELOC_32:
-	buf[0] = 0; /* val >> 24; */
-	buf[1] = 0; /* val >> 16; */
-	buf[2] = 0; /* val >> 8; */
-	buf[3] = 0; /* val; */
+	buf[0] = val >> 24;
+	buf[1] = val >> 16;
+	buf[2] = val >> 8;
+	buf[3] = val;
 	break;
 
 #if 0
