@@ -1,0 +1,21 @@
+#print
+The "mv" command changes the names of files.
+For example, "mv bob bill" changes the name
+of file "bob" to be "bill".  If there was already
+a file named "bill", the old version is destroyed.
+
+There is a file in
+the current directory whose name begins with
+the letter "g", like "grant" or "grover".
+Find out what the file name really is, and
+then change that file to have the name "john".
+Then type "ready".
+#create george
+this should become john
+#user
+test -r john
+#log
+#next
+3.1a 10
+3.2a 5
+3.3a 2
