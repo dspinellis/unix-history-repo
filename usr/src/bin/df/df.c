@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)df.c	5.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)df.c	5.27 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -169,9 +169,9 @@ prtstat(sfsp, maxwidth)
 	used = sfsp->f_blocks - sfsp->f_bfree;
 	availblks = sfsp->f_bavail + used;
 	printf("   %8ld%8ld%8ld",
-	    sfsp->f_blocks * sfsp->f_fsize / (kflag ? 1024 : 512),
-	    used * sfsp->f_fsize / (kflag ? 1024 : 512),
-	    sfsp->f_bavail * sfsp->f_fsize / (kflag ? 1024 : 512));
+	    sfsp->f_blocks * sfsp->f_bsize / (kflag ? 1024 : 512),
+	    used * sfsp->f_bsize / (kflag ? 1024 : 512),
+	    sfsp->f_bavail * sfsp->f_bsize / (kflag ? 1024 : 512));
 	printf("%6.0f%%",
 	    availblks == 0 ? 100.0 : (double)used / (double)availblks * 100.0);
 	if (iflag) {
@@ -225,8 +225,8 @@ ufs_df(file, maxwidth)
 	sfsp = &statfsbuf;
 	sfsp->f_type = MOUNT_UFS;
 	sfsp->f_flags = 0;
-	sfsp->f_fsize = sblock.fs_fsize;
-	sfsp->f_bsize = sblock.fs_bsize;
+	sfsp->f_bsize = sblock.fs_fsize;
+	sfsp->f_iosize = sblock.fs_bsize;
 	sfsp->f_blocks = sblock.fs_dsize;
 	sfsp->f_bfree = sblock.fs_cstotal.cs_nbfree * sblock.fs_frag +
 		sblock.fs_cstotal.cs_nffree;

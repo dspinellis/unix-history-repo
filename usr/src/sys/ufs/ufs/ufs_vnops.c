@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	7.68 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.69 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -234,7 +234,7 @@ ufs_getattr(vp, vap, cred, p)
 	else if (vp->v_type == VCHR)
 		vap->va_blocksize = MAXBSIZE;
 	else
-		vap->va_blocksize = vp->v_mount->mnt_stat.f_bsize;
+		vap->va_blocksize = vp->v_mount->mnt_stat.f_iosize;
 	vap->va_bytes = dbtob(ip->i_blocks);
 	vap->va_bytes_rsv = 0;
 	vap->va_type = vp->v_type;
@@ -993,7 +993,7 @@ ufs_mkdir(ndp, vap, p)
 		dp->i_flag |= ICHG;
 		goto bad;
 	}
-	if (DIRBLKSIZ > VFSTOUFS(dvp->v_mount)->um_mountp->mnt_stat.f_fsize)
+	if (DIRBLKSIZ > VFSTOUFS(dvp->v_mount)->um_mountp->mnt_stat.f_bsize)
 		panic("ufs_mkdir: blksize"); /* XXX should grow with balloc() */
 	else {
 		ip->i_size = DIRBLKSIZ;
