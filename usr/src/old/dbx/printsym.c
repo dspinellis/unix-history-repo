@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)printsym.c 1.8 %G%";
+static char sccsid[] = "@(#)printsym.c 1.9 %G%";
 
 /*
  * Printing of symbolic information.
@@ -188,7 +188,6 @@ Symbol s;
 		    switch (t->class) {
 			case FILET:
 			case SET:
-			case VARNT:
 			case BADUSE:
 			    b = false;
 			    break;
