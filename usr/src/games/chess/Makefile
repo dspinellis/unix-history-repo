@@ -29,7 +29,7 @@
 #
 NEW=move.o
 CFLAGS= -O -DNEWMOVE=12
-all : gnuchess gnuchessr
+all : gnuchess #gnuchessr
 MAN=	chess.0
 
 gnuchess: gnuchess.o uxdsp.o $(NEW)
