@@ -3,13 +3,6 @@ net/if.c		standard
 net/raw_cb.c		standard
 net/raw_usrreq.c	standard
 net/route.c		standard
-netdecnet/nsp_input.c	optional decnet
-netdecnet/nsp_output.c	optional decnet
-netdecnet/nsp_subr.c	optional decnet
-netdecnet/nsp_usrreq.c	optional decnet
-netdecnet/tp_input.c	optional decnet
-netdecnet/tp_output.c	optional decnet
-netdecnet/tp_usrreq.c	optional decnet
 netimp/if_imp.c		optional imp inet
 netimp/if_imphost.c	optional imp inet
 netimp/raw_imp.c	optional imp inet
@@ -49,6 +42,7 @@ sys/kern_subr.c		standard
 sys/kern_synch.c	standard
 sys/kern_time.c		standard
 sys/kern_xxx.c		standard
+sys/log.c		standard
 sys/quota_kern.c	standard
 sys/quota_subr.c	standard
 sys/quota_sys.c		standard
