@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)cons.c	7.3 (Berkeley) %G%
+ *	@(#)cons.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -73,6 +73,7 @@ cnclose(dev)
 		return ((*consops->d_close)(dev));
 	(*linesw[tp->t_line].l_close)(tp);
 	ttyclose(tp);
+	return (0);
 }
 
 /*ARGSUSED*/
@@ -256,8 +257,7 @@ cngetc()
 	register int c, s;
 
 	s = splhigh();
-	while (c == 0 ||
-	    (mfpr(RXCS)&RXCS_DONE) == 0 || (c = mfpr(RXDB)&0177) < 0)
+	while ((mfpr(RXCS)&RXCS_DONE) == 0 || (c = mfpr(RXDB)&0177) <= 0)
 		;
 	if (c == '\r')
 		c = '\n';
