@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)1.1.t	8.3 (Berkeley) %G%
+.\"	@(#)1.1.t	8.4 (Berkeley) %G%
 .\"
 .Sh 2 "Processes and protection
 .Sh 3 "Host identifiers
@@ -147,12 +147,12 @@ the effective user ID is set to the owner of the file;
 if the set-group-ID mode bit is set,
 the effective group ID is set to the group of the file.
 Whether changed or not, the effective user ID is then copied to the
-saved user Id, and the effective group Id is copied to the
-saved group Id.
+saved user ID, and the effective group ID is copied to the
+saved group ID.
 .Sh 3 "User and group IDs
 .PP
 Each process in the system has associated with it three user IDs:
-a \fIreal user ID\fP, a \fIeffective user ID\fP, and a \fIsaved user ID\fP,
+a \fIreal user ID\fP, an \fIeffective user ID\fP, and a \fIsaved user ID\fP,
 all 32-bit unsigned integers (type \fBuid_t\fP).
 Each process has a \fIreal group ID\fP
 and a set of \fIaccess group IDs\fP,
