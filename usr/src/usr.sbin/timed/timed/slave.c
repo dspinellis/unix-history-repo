@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)slave.c	2.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)slave.c	2.10 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -481,8 +481,6 @@ loop:
 			    } else {
 				if (msg->tsp_hopcnt-- <= 0)
 				    break;
-				(void)strcpy(loopname, msg->tsp_name);
-				rloopseq = msg->tsp_seq;
 				bytenetorder(msg);
 				ntp = nettab;
 				for (; ntp != NULL; ntp = ntp->next)
