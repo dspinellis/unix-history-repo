@@ -1,5 +1,7 @@
-/* Copyright (c) 1980 Regents of the University of California */
-/* "@(#)asscan.h 4.3 %G%" */
+/*
+ *	Copyright (c) 1982 Regents of the University of California
+ *	@(#)asscan.h 4.4 %G%
+ */
 /*
  *	The character scanner is called to fill up one token buffer
  *
@@ -35,7 +37,8 @@ struct tokbufdesc{
  *	to various size things.
  */
 
-typedef char toktype;
+typedef int inttoktype;
+typedef char bytetoktype;
 
 typedef char *ptrall;			/*all uses will be type cast*/
 typedef short lgtype;			/*for storing length of strings or skiping*/
@@ -49,13 +52,14 @@ typedef short lgtype;			/*for storing length of strings or skiping*/
 #define	puchar(ptr,val)		*ptr++  = val
 
 #define	pshort(ptr,val)		*(short *)ptr=val,	ptr += sizeof(short)
-#define	pushort(ptr,val)	*(unsigned short *)ptr=val,	ptr += sizeof(short)
+#define	pushort(ptr,val)	*(u_short *)ptr=val,	ptr += sizeof(short)
 #define	pint(ptr,val)		*(int *)ptr  = val,	ptr += sizeof(int)
-#define	puint(ptr,val)		*(unsigned int *)ptr=val,	ptr += sizeof(int)
+#define	puint(ptr,val)		*(u_int int *)ptr=val,	ptr += sizeof(int)
 #define	plong(ptr,val)		*(long *)ptr  = val,	ptr += sizeof(long)
-#define	pulong(ptr,val)		*(unsigned long *)ptr=val,	ptr += sizeof(long)
-#define	pfloat(ptr,val)		*(float *)ptr  = val,	ptr += sizeof (float)
-#define	pdouble(ptr,val)	*(double *)ptr  = val,	ptr += sizeof (double)
+#define	pulong(ptr,val)		*(u_int long *)ptr=val,	ptr += sizeof(long)
+#define	pnumber(ptr,val)	*(Bignum*)ptr=val,	ptr += sizeof(Bignum)
+#define	popcode(ptr,val)	*(struct Opcode*)ptr=val,	ptr += sizeof(struct Opcode)
+
 #define	pptr(ptr,val)		*(int *)ptr  = (val),	ptr += sizeof(ptrall)
 #define	ptoken(ptr,val)		*ptr++  = val
 #define	pstrlg(ptr,val)		*(lgtype *)ptr  = val,	ptr += sizeof(short)
@@ -65,13 +69,14 @@ typedef short lgtype;			/*for storing length of strings or skiping*/
 #define	guchar(val, ptr)	val = *ptr++
 
 #define	gshort(val, ptr)	val = *(short *)ptr , ptr += sizeof (short)
-#define	gushort(val, ptr)	val = *(unsigned short *)ptr , ptr += sizeof (short)
+#define	gushort(val, ptr)	val = *(u_short *)ptr , ptr += sizeof (short)
 #define	gint(val, ptr)		val = *(int *)ptr, ptr += sizeof (int)
-#define	guint(val, ptr)		val = *(unsigend int *)ptr, ptr += sizeof (int)
+#define	guint(val, ptr)		val = *(u_int *)ptr, ptr += sizeof (int)
 #define	glong(val, ptr)		val = *(long *)ptr, ptr += sizeof (long)
-#define	gulong(val, ptr)	val = *(unsigned long *)ptr, ptr += sizeof (long)
-#define	gfloat(val, ptr)	val = *(float *)ptr, ptr += sizeof (float)
-#define	gdouble(val, ptr)	val = *(double *)ptr, ptr += sizeof (double)
+#define	gulong(val, ptr)	val = *(u_int *)ptr, ptr += sizeof (long)
+#define	gnumber(val, ptr)	val = *(Bignum *)ptr, ptr += sizeof(Bignum)
+#define	gopcode(val, ptr)	val = *(struct Opcode *)ptr, ptr += sizeof(struct Opcode)
+
 #define	gptr(val, ptr)		val = *(int *)ptr, ptr += sizeof (ptrall)
 #define	gtoken(val, ptr)	val = *ptr++
 #define	gstrlg(val, ptr)	val = *(lgtype *)ptr, ptr += sizeof (short)

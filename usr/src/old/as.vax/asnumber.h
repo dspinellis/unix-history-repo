@@ -1,6 +1,6 @@
 /*
  *	Copyright (c) 1982 Regents of the University of California
- *	@(#)asnumber.h 4.2 %G%
+ *	@(#)asnumber.h 4.3 %G%
  */
 
 union Ib_int{		/* byte */

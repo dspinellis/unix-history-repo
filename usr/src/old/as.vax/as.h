@@ -1,9 +1,13 @@
-/* Copyright (c) 1980 Regents of the University of California */
-/* "@(#)as.h 4.8 %G%" */
+/*
+ *	Copyright (c) 1982 Regents of the University of California
+ *	@(#)as.h 4.9 %G%
+ */
 #ifdef VMS
 # define	vax	1
 # define	VAX	1
 #endif VMS
+
+#define	reg	register
 
 #include <sys/types.h>
 #ifdef UNIX
@@ -88,35 +92,18 @@
 #define	AIMM	7	/* $ expr */
 #define	ASTAR	8	/* * */
 #define	AINDX	16	/* [%r] */
+/*
+ *	Definitions for the things found in ``instrs''
+ */
+#define	INSTTAB 1
+#include "instrs.h"
 
 /*
- * Argument access types used to test validity of operands to operators
+ *	Tells outrel what it is relocating
+ *	RELOC_PCREL is an implicit argument to outrel; it is or'ed in
+ *	with a TYPX
  */
-#define	ACCR	(1<<3)				/* read */
-#define	ACCW	(2<<3)				/* write */
-#define	ACCB	(4<<3)				/* branch displacement */
-#define	ACCA	(8<<3)				/* address only */
-#define	ACCM	(ACCR | ACCW)			/* modify */
-#define	ACCI	(ACCB | ACCR)			/* XFC code */
-
-#define ACCESSMASK	(ACCA | ACCR | ACCW | ACCB)	/* the mask */
-
-/*
- *	Argument data types
- *	Also used to tell outrel what it is relocating
- *	(possibly in combination with RELOC_PCREL and TYPNONE)
- */
-#define	TYPB		0	/* byte */
-#define	TYPW		1	/* word */
-#define	TYPL		2	/* long */
-#define	TYPQ		3	/* quad */
-#define	TYPF		4	/* floating */
-#define	TYPD		5	/* double floating */
-#define	TYPNONE		6	/* when nothing */
-#define	RELOC_PCREL	8	/* implicit argument to outrel; ==> PCREL */
-
-#define	TYPMASK	7
-
+#define	RELOC_PCREL	(1<<TYPLG)
 /*
  *	reference types for loader
  */
@@ -125,21 +112,25 @@
 #define	LEN2	4
 #define	LEN4	6
 #define	LEN8	8
+#define	LEN16	10
 
 extern	int	reflen[];	/* {LEN*+PCREL} ==> number of bytes */
 extern	int	lgreflen[];	/* {LEN*+PCREL} ==> lg number of bytes */
-extern	int	len124[];	/* {1,2,4,8} ==> {LEN1, LEN2, LEN4, LEN8} */
-extern	char	mod124[];	/* {1,2,4,8} ==> {bits to construct operands */
-extern	int	type_124[];	/* {1,2,4,8} ==> {TYPB, TYPW, TYPL, TYPQ} */
-extern	int	ty_NORELOC[];	/* {TYPB..TYPD} ==> {1 if relocation not OK */
-extern	int	ty_LEN[];	/* {TYPB..TYPD} ==> {LEN1..LEN8} */
-extern	int	ty_nbyte[];	/* {TYPB..TYPD} ==> {1,2,4,8} */
-extern	int	ty_nlg[];	/* {TYPB..TYPD} ==> lg{1,2,4,8} */
+extern	int	len124[];	/* {1,2,4,8,16} ==> {LEN1, LEN2, LEN4, LEN8} */
+extern	char	mod124[];	/* {1,2,4,8,16} ==> {bits to construct operands */
+extern	int	type_124[];	/* {1,2,4,8,16} ==> {TYPB,TYPW,TYPL,TYPQ,TYPO} */
+extern	int	ty_NORELOC[];	/* {TYPB..TYPH} ==> {1 if relocation not OK */
+extern	int	ty_float[];	/* {TYPB..TYPH} ==> {1 if floating number */
+extern	int	ty_LEN[];	/* {TYPB..TYPH} ==> {LEN1..LEN16} */
+extern	int	ty_nbyte[];	/* {TYPB..TYPH} ==> {1,2,4,8,16} */
+extern	int	ty_nlg[];	/* {TYPB..TYPH} ==> lg{1,2,4,8,16} */
+extern	char	*ty_string[];	/* {TYPB..TYPH} ==> printable */
 
 #define	TMPC	7	
-#define	HW	01
-#define	FW	03
-#define	DW	07
+#define	HW	0x1
+#define	FW	0x3
+#define	DW	0x7
+#define	OW	0xF
 
 #ifdef UNIX
 #  include <pagsiz.h>
@@ -248,8 +239,10 @@ struct symtab{
 struct	instab{
 	struct	nlist	s_nm;		/* instruction name, type (opcode) */
 	u_char	s_tag;			
-	char	s_pad[3];		/* round to 20 bytes */
+	u_char	s_eopcode;
+	char	s_pad[2];		/* round to 20 bytes */
 };
+typedef	struct	instab	*Iptr;
 /*
  *	The fields nm.n_desc and nm.n_value total 6 bytes; this is
  *	just enough for the 6 bytes describing the argument types.
@@ -260,23 +253,71 @@ struct	instab{
  *	Instab is cleverly declared to look very much like the combination of
  *	a struct symtab and a struct nlist.
  */
+/*
+ *	With the 1981 VAX architecture reference manual,
+ *	DEC defined and named two byte opcodes. 
+ *	In addition, DEC defined four new one byte instructions for
+ *	queue manipulation.
+ *	The assembler was patched in 1982 to reflect this change.
+ *
+ *	The two byte opcodes are preceded with an escape byte
+ *	(usually an ESCD) and an opcode byte.
+ *	For one byte opcodes, the opcode is called the primary opcode.
+ *	For two byte opcodes, the second opcode is called the primary opcode.
+ *
+ *	We store the primary opcode in I_popcode,
+ *	and the escape opcode in I_eopcode.
+ *
+ *	For one byte opcodes in the basic arhitecture,
+ *		I_eopcode is CORE
+ *	For one byte opcodes in the new architecture definition,
+ *		I_eopcode is NEW
+ *	For the two byte opcodes, I_eopcode is the escape byte.
+ *
+ *	The assembler checks if a NEW or two byte opcode is used,
+ *	and issues a warning diagnostic.
+ */
+/*
+ *	For upward compatability reasons, we can't have the two opcodes
+ *	forming an operator specifier byte(s) be physically adjacent
+ *	in the instruction table.
+ *	We define a structure and a constructor that is used in
+ *	the instruction generator.
+ */
+struct Opcode{
+	u_char	Op_eopcode;
+	u_char	Op_popcode;
+};
+
+#define	BADPOINT	0xAAAAAAAA
+/*
+ *	See if a structured opcode is bad
+ */
+#define	ITABCHECK(o)	((itab[o.Op_eopcode] != (Iptr*)BADPOINT) && (itab[o.Op_eopcode][o.Op_popcode] != (Iptr)BADPOINT))
+/*
+ *	Index the itab by a structured opcode
+ */
+#define	ITABFETCH(o)	itab[o.Op_eopcode][o.Op_popcode]
+
 struct	Instab{
 #ifdef FLEXNAMES
 	char	*I_name;
 #else not FLEXNAMES
 	char	I_name[NCPS];
 #endif
-	u_char	I_opcode;
+	u_char	I_popcode;		/* basic op code */
 	char	I_nargs;
 	char	I_args[6];
 	u_char	I_s_tag;
-	char	I_pad[3];		/* round to 20 bytes */
+	u_char	I_eopcode;
+	char	I_pad[2];		/* round to 20 bytes */
 };
 /*
  *	Redefinitions of fields in the struct nlist for instructions so that
  *	one saves typing, and conforms to the old naming conventions
  */
-#define	i_opcode	s_nm.n_type	/* use the same field as symtab.type */
+#define	i_popcode	s_nm.n_type	/* use the same field as symtab.type */
+#define	i_eopcode	s_eopcode
 #define	i_nargs		s_nm.n_other	/* number of arguments */
 #define	fetcharg(ptr, n) ((struct Instab *)ptr)->I_args[n]
 
@@ -287,53 +328,36 @@ struct	arg {				/*one argument to an instruction*/
 	char	a_dispsize;		/*usually d124, unless have B^, etc*/
 	struct	exp *a_xp;
 };
-
+/*
+ *	Definitions for numbers and expressions.
+ */
+#include "asnumber.h"
 struct	exp {
-	long	e_xvalue;		/* MUST be the first field (look at union Double) */
-	long	e_yvalue;		/* MUST be second field; least sig word of a double */
+	Bignum	e_number;	/* 128 bits of #, plus tag */
 	char	e_xtype;
 	char	e_xloc;
-	struct	symtab *e_xname;
+	struct	symtab		*e_xname;
 };
+#define	e_xvalue	e_number.num_num.numIl_int.Il_long
 
-#define doub_MSW e_xvalue
-#define doub_LSW e_yvalue
+#define		MINLIT		0
+#define		MAXLIT		63
 
-union	Double {
-	struct{
-		long	doub_MSW;
-		long	doub_LSW;
-	} dis_dvalue;
-	double	dvalue;
-};
+#define		MINBYTE		-128
+#define		MAXBYTE		127
+#define		MINUBYTE	0
+#define		MAXUBYTE	255
 
-struct	Quad {
-	long	quad_low_long;
-	long	quad_high_long;
-};
+#define		MINWORD		-32768
+#define		MAXWORD		32767
+#define		MINUWORD	0
+#define		MAXUWORD	65535
 
-/*
- *	Magic layout macros
- */
-#define 	MINBYTE	-128
-#define		MAXBYTE	127
-#define		MINWORD	-32768
-#define		MAXWORD	32767
-
-#define		LITFLTMASK 0x000043F0	/*really magic*/
-/*
- *		Is the floating point double word in xp a
- *		short literal floating point number?
- */
-#define 	slitflt(xp) \
-			(    (xp->doub_LSW == 0) \
-			 &&  ( (xp->doub_MSW & LITFLTMASK) \
-			      == xp->doub_MSW) )
-/*
- *	If it is a slitflt, then extract the 6 interesting bits
- */
-#define		extlitflt(xp) \
-			xp->doub_MSW >> 4
+#define		ISLIT(x)	(((x) >= MINLIT) && ((x) <= MAXLIT))
+#define		ISBYTE(x)	(((x) >= MINBYTE) && ((x) <= MAXBYTE))
+#define		ISUBYTE(x)	(((x) >= MINUBYTE) && ((x) <= MAXUBYTE))
+#define		ISWORD(x)	(((x) >= MINWORD) && ((x) <= MAXWORD))
+#define		ISUWORD(x)	(((x) >= MINUWORD) && ((x) <= MAXUWORD))
 
 	extern	struct	arg	arglist[NARG];	/*building operands in instructions*/
 	extern	struct	exp	explist[NEXP];	/*building up a list of expressions*/
@@ -397,13 +421,17 @@ struct	Quad {
 
 	extern	int	passno;			/* 1 or 2 */
 
-	extern	int	anyerrs;		/*errors assembling arguments*/
+	extern	int	anyerrs;		/*errors as'ing arguments*/
+	extern	int	anywarnings;		/*warnings as'ing arguments*/
 	extern	int	silent;			/*don't mention the errors*/
 	extern	int	savelabels;		/*save labels in a.out*/
 	extern	int	orgwarn;		/* questionable origin ? */
 	extern	int	useVM;			/*use virtual memory temp file*/
 	extern	int	jxxxJUMP;		/*use jmp instead of brw for jxxx */
 	extern	int	readonlydata;		/*initialized data into text space*/
+	extern	int	nGHnumbers;		/* GH numbers used */
+	extern	int	nGHopcodes;		/* GH opcodes used */
+	extern	int	nnewopcodes;		/* new opcodes used */
 #ifdef DEBUG
 	extern	int	debug;
 	extern	int	toktrace;
@@ -411,7 +439,7 @@ struct	Quad {
 	/*
 	 *	Information about the instructions
 	 */
-	extern	struct	instab	*itab[NINST];	/*maps opcodes to instructions*/
+	extern	struct	instab	**itab[NINST];	/*maps opcodes to instructions*/
 	extern  readonly struct Instab instab[];
 
 	extern	int	curlen;			/*current literal storage size*/
@@ -420,9 +448,20 @@ struct	Quad {
 	struct	symtab	**lookup();		/*argument in yytext*/
 	struct 	symtab	*symalloc();
 
+	char	*Calloc();
+	char	*ClearCalloc();
+
 #define outb(val) {dotp->e_xvalue++; if (passno==2) bputc((val), (txtfil));}
 
 #define outs(cp, lg) dotp->e_xvalue += (lg); if (passno == 2) bwrite((cp), (lg), (txtfil))
+
+#ifdef UNIX
+#define	Outb(o)	outb(o)
+#endif UNIX
+
+#ifdef VMS
+#define	Outb(o)	{*vms_obj_ptr++=-1;*vms_obj_ptr++=(char)o;dotp->e_xvalue+=1;}
+#endif VMS
 
 /*
  *	Most of the time, the argument to flushfield is a power of two constant,

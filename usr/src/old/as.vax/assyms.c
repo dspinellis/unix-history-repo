@@ -1,5 +1,10 @@
-/* Copyright (c) 1980 Regents of the University of California */
-static	char sccsid[] = "@(#)assyms.c 4.6 %G%";
+/*
+ *	Copyright (c) 1982 Regents of the University of California
+ */
+#ifndef lint
+static char sccsid[] = "@(#)assyms.c 4.7 %G%";
+#endif not lint
+
 #include <stdio.h>
 #include <ctype.h>
 #include "as.h"
@@ -25,7 +30,7 @@ struct	symtab		**symptrub;
  */
 struct	hashdallop	*htab;
 
-struct	instab		*itab[NINST];	/*maps opcodes to instructions*/
+Iptr	*itab[NINST];	/*maps opcodes to instructions*/
 /*
  *	Counts what went into the symbol table, so that the
  *	size of the symbol table can be computed.
@@ -34,7 +39,6 @@ int	nsyms;		/* total number in the symbol table */
 int	njxxx;		/* number of jxxx entrys */
 int	nforgotten;	/* number of symbols erroneously entered */
 int	nlabels;	/* number of label entries */
-int	hshused;	/* number of hash slots used */
 
 /*
  *	Managers of the symbol literal storage.
@@ -65,14 +69,18 @@ symtabinit()
  */
 syminstall()
 {
-	register	struct	instab	*ip;
+	register	Iptr	ip;
 	register	struct	symtab	**hp;
 	register	char	*p1, *p2;
+	register	int	i;
+
+	for (i = 0; i < NINST; i++)
+		itab[i] = (Iptr*)BADPOINT;
 
 #ifdef FLEXNAMES
-	for (ip = (struct instab *)instab; ip->s_name != 0; ip++) {
+	for (ip = (Iptr)instab; ip->s_name != 0; ip++) {
 #else not FLEXNAMES
-	for (ip = (struct instab *)instab; ip->s_name[0] != '\0'; ip++){
+	for (ip = (Iptr)instab; ip->s_name[0] != '\0'; ip++){
 #endif not FLEXNAMES
 		p1 = ip->s_name;
 		p2 = yytext;
@@ -84,7 +92,14 @@ syminstall()
 			    && (ip->s_tag!=INST0)
 			    && (ip->s_tag!=0))
 				continue; /* was pseudo-op */
-			itab[ip->i_opcode & 0xFF] = ip;
+			if (itab[ip->i_eopcode] == (Iptr*)BADPOINT){
+				itab[ip->i_eopcode] =
+					(Iptr*)ClearCalloc(256, sizeof(Iptr));
+				for (i = 0; i < 256; i++)
+					itab[ip->i_eopcode][i] =
+						(Iptr)BADPOINT;
+			}
+			itab[ip->i_eopcode][ip->i_popcode] = ip;
 		}
 	}
 }	/*end of syminstall*/
@@ -161,7 +176,8 @@ char *Calloc(number, size)
 	int	number, size;
 {
 	register	char *newstuff;
-	newstuff = (char *)sbrk(number*size);
+	char	*sbrk();
+	newstuff = sbrk(number*size);
 	if ((int)newstuff == -1){
 		yyerror("Ran out of Memory");
 		delexit();
@@ -174,6 +190,9 @@ char *ClearCalloc(number, size)
 {
 	register	char	*newstuff;		/* r11 */
 	register	int	length = number * size;	/* r10 */
+#ifdef lint
+	length = length;
+#endif length
 	newstuff = Calloc(number, size);
 	asm("movc5 $0, (r0), $0, r10, (r11)");
 	return(newstuff);
@@ -517,7 +536,7 @@ initoutrel()
 
 outrel(xp, reloc_how)
 	register	struct	exp	*xp;
-	int		reloc_how;	/* TYPB..TYPD + (possibly)RELOC_PCREL */
+	int		reloc_how;	/* TYPB..TYPH + (possibly)RELOC_PCREL */
 {
 	struct		relocation_info	reloc;
 	register	int	x_type_mask;	
@@ -534,7 +553,7 @@ outrel(xp, reloc_how)
 
 	if ( (x_type_mask != XABS) || pcrel ) {
 		if (ty_NORELOC[reloc_how])
-			yyerror("Illegal Relocation of float, double or quad.");
+			yyerror("Illegal Relocation of floating or large int number.");
 		reloc = pcrel ? r_can_1PC : r_can_0PC;
 		reloc.r_address = dotp->e_xvalue -
 		    ( (dotp < &usedot[NLOC] || readonlydata) ? 0 : datbase );
@@ -570,7 +589,21 @@ outrel(xp, reloc_how)
 	dotp->e_xvalue += ty_nbyte[reloc_how];
 	if (pcrel)
 		xp->e_xvalue -= dotp->e_xvalue;
-	bwrite((char *)&(xp->e_xvalue), ty_nbyte[reloc_how], txtfil);
+	switch(reloc_how){
+	case TYPO:
+	case TYPQ:
+
+	case TYPF:
+	case TYPD:
+	case TYPG:
+	case TYPH:
+		bignumwrite(xp->e_number, reloc_how);
+		break;
+
+	default:
+		bwrite((char *)&(xp->e_xvalue), ty_nbyte[reloc_how], txtfil);
+		break;
+	}
 }
 /*
  *	Flush out all of the relocation information.
@@ -673,7 +706,7 @@ int symwrite(symfile)
 		sp->s_type = (sp->s_ptype != 0) ? sp->s_ptype : (sp->s_type & (~XFORW));
 		if (readonlydata && (sp->s_type&~N_EXT) == N_DATA)
 			sp->s_type = N_TEXT | (sp->s_type & N_EXT);
-		bwrite(&sp->s_nm, sizeof (struct nlist), symfile);
+		bwrite((char *)&sp->s_nm, sizeof (struct nlist), symfile);
 #ifdef FLEXNAMES
 		sp->s_name = name;		/* restore pointer */
 #endif FLEXNAMES
@@ -686,7 +719,7 @@ int symwrite(symfile)
 	 *	Pass 2 through the string pool
 	 */
 	symsout = 0;
-	bwrite(&stroff, sizeof (stroff), symfile);
+	bwrite((char *)&stroff, sizeof (stroff), symfile);
 	stroff = sizeof (stroff);
 	symsout = 0;
 	DECLITERATE(allocwalk, sp, ub)
