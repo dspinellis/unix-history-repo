@@ -1,6 +1,5 @@
-.\" @(#)Add.Reno.86.for	1.2 (CSRG - distribution) 4/23/91
+.\" @(#)Add.Reno.86.for	1.4 (CSRG - distribution) 1/9/92
 .ND
-.OF '23 April 1991'''
 .nh
 .nr LL 6.75i
 .ce 5
