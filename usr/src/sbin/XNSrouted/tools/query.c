@@ -14,7 +14,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)query.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)query.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -37,7 +37,7 @@ int	timedout, timeout();
 char	packet[MAXPACKETSIZE];
 extern int errno;
 struct sockaddr_ns	myaddr = {AF_NS};
-char ns_ntoa();
+char *ns_ntoa();
 struct ns_addr ns_addr();
 main(argc, argv)
 int argc;
