@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)dumpoptr.c	1.4 (Berkeley) %G%";
+static	char *sccsid = "@(#)dumpoptr.c	1.5 (Berkeley) %G%";
 #include "dump.h"
 
 /*
@@ -276,67 +276,100 @@ msgtail(fmt, a1, a2, a3, a4, a5)
  *	we don't actually do it
  */
 
+struct fstab *
+allocfsent(fs)
+	register struct fstab *fs;
+{
+	register struct fstab *new;
+	register char *cp;
+	char *malloc();
+
+	new = (struct fstab *)malloc(sizeof (*fs));
+	cp = malloc(strlen(fs->fs_file) + 1);
+	strcpy(cp, fs->fs_file);
+	new->fs_file = cp;
+	cp = malloc(strlen(fs->fs_type) + 1);
+	strcpy(cp, fs->fs_type);
+	new->fs_type = cp;
+	cp = malloc(strlen(fs->fs_spec) + 1);
+	strcpy(cp, fs->fs_spec);
+	new->fs_spec = cp;
+	new->fs_passno = fs->fs_passno;
+	new->fs_freq = fs->fs_freq;
+	return (new);
+}
+
+struct	pfstab {
+	struct	pfstab *pf_next;
+	struct	fstab *pf_fstab;
+};
+
+static	struct pfstab *table = NULL;
+
 getfstab()
 {
-	register	struct	fstab	*dt;
-			struct	fstab	*fsp;
+	register struct fstab *fs;
+	register struct pfstab *pf;
 
-	nfstab = 0;
 	if (setfsent() == 0) {
 		msg("Can't open %s for dump table information.\n", FSTAB);
-	} else {
-		for (nfstab = 0, dt = fstab; nfstab < MAXFSTAB;){
-			if ( (fsp = getfsent()) == 0)
-				break;
-			if (   (strcmp(fsp->fs_type, FSTAB_RW) == 0)
-			    || (strcmp(fsp->fs_type, FSTAB_RO) == 0) ){
-				*dt = *fsp;
-				nfstab++; 
-				dt++;
-			}
-		}
-		endfsent();
+		return;
 	}
+	while (fs = getfsent()) {
+		if (strcmp(fs->fs_type, FSTAB_RW) &&
+		    strcmp(fs->fs_type, FSTAB_RO) &&
+		    strcmp(fs->fs_type, FSTAB_RQ))
+			continue;
+		fs = allocfsent(fs);
+		pf = (struct pfstab *)malloc(sizeof (*pf));
+		pf->pf_fstab = fs;
+		pf->pf_next = table;
+		table = pf;
+	}
+	endfsent();
 }
 
 /*
- *	Search in the fstab for a file name.
- *	This file name can be either the special or the path file name.
+ * Search in the fstab for a file name.
+ * This file name can be either the special or the path file name.
  *
- *	The entries in the fstab are the BLOCK special names, not the
- *	character special names.
- *	The caller of fstabsearch assures that the character device
- *	is dumped (that is much faster)
+ * The entries in the fstab are the BLOCK special names, not the
+ * character special names.
+ * The caller of fstabsearch assures that the character device
+ * is dumped (that is much faster)
  *
- *	The file name can omit the leading '/'.
+ * The file name can omit the leading '/'.
  */
-struct	fstab	*fstabsearch(key)
-	char	*key;
+struct fstab *
+fstabsearch(key)
+	char *key;
 {
-	register	struct	fstab *dt;
-			int	i;
-			int	keylength;
-			char	*rawname();
+	register struct pfstab *pf;
+	register struct fstab *fs;
+	register int i, keylength;
+	char *rawname();
 
-	keylength = min(strlen(key), sizeof (dt->fs_file));
-	for (i = 0, dt = fstab; i < nfstab; i++, dt++){
-		if (strncmp(dt->fs_file, key, keylength) == 0)
-			return(dt);
-		if (strncmp(dt->fs_spec, key, keylength) == 0)
-			return(dt);
-		if (strncmp(rawname(dt->fs_spec), key, keylength) == 0)
-			return(dt);
-
+	if (table == NULL)
+		return ((struct fstab *)0);
+	keylength = min(strlen(key), sizeof (table->pf_fstab->fs_file));
+	for (pf = table; pf; pf = pf->pf_next) {
+		fs = pf->pf_fstab;
+		if (strncmp(fs->fs_file, key, keylength) == 0)
+			return (fs);
+		if (strncmp(fs->fs_spec, key, keylength) == 0)
+			return (fs);
+		if (strncmp(rawname(fs->fs_spec), key, keylength) == 0)
+			return (fs);
 		if (key[0] != '/'){
-			if (   (dt->fs_spec[0] == '/')
-			    && (strncmp(dt->fs_spec+1, key, keylength) == 0))
-				return(dt);
-			if (   (dt->fs_file[0] == '/')
-			    && (strncmp(dt->fs_file+1, key, keylength) == 0))
-				return(dt);
+			if (*fs->fs_spec == '/' &&
+			    strncmp(fs->fs_spec + 1, key, keylength) == 0)
+				return (fs);
+			if (*fs->fs_file == '/' &&
+			    strncmp(fs->fs_file + 1, key, keylength) == 0)
+				return (fs);
 		}
 	}
-	return(0);
+	return (0);
 }
 
 /*
