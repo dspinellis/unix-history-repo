@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_lock.c	8.13 (Berkeley) %G%
+ *	@(#)kern_lock.c	8.14 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -448,6 +448,8 @@ _simple_lock(alp, id, l)
 		}
 	}
 	alp->lock_data = 1;
+	if (curproc)
+		curproc->p_simple_locks++;
 }
 
 int
@@ -476,6 +478,8 @@ _simple_lock_try(alp, id, l)
 		return (0);
 
 	alp->lock_data = 1;
+	if (curproc)
+		curproc->p_simple_locks++;
 	return (1);
 }
 
@@ -500,5 +504,7 @@ _simple_unlock(alp, id, l)
 		}
 	}
 	alp->lock_data = 0;
+	if (curproc)
+		curproc->p_simple_locks--;
 }
 #endif /* DEBUG && NCPUS == 1 */
