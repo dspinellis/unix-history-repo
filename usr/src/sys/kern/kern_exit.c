@@ -1,4 +1,4 @@
-/*	kern_exit.c	4.4	83/06/14	*/
+/*	kern_exit.c	4.5	83/06/16	*/
 
 #include "../machine/reg.h"
 #include "../machine/psl.h"
@@ -73,11 +73,9 @@ exit(rv)
 	}
 	for (i = 0; i < NOFILE; i++) {
 		struct file *f;
-		int po;
 
 		f = u.u_ofile[i];
 		u.u_ofile[i] = NULL;
-		po = u.u_pofile[i];
 		u.u_pofile[i] = 0;
 		closef(f);
 	}
