@@ -29,6 +29,14 @@
  * The other files also don't care about ST(x) etc - they just get addresses
  * to 80-bit temporary reals, and do with them as they please. I wanted to
  * hide most of the 387-specific things here.
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00046
+ * --------------------         -----   ----------------------
+ *
+ * 19 Sep 92	Ishii Masahiro		Fix 0x1fd instruction
+ *		kym@bingsuns.cc.binghamton.edu		Fix fscale
  */
 
 #include "machine/cpu.h"
@@ -163,7 +171,7 @@ math_emulate(struct trapframe * info)
 			/* incomplete and totally inadequate -wfj */
 			Fscale(PST(0), PST(1), &tmp);
 			real_to_real(&tmp,&ST(0));
-			/* fall into .. */
+			return(0);			/* 19 Sep 92*/
 		case 0x1fc:
 			frndint(PST(0),&tmp);
 			real_to_real(&tmp,&ST(0));
@@ -1387,6 +1395,10 @@ void Fscale(const temp_real *a, const temp_real *b, temp_real *c)
 	temp_int ti;
 
 	*c = *a;
+	if(!c->a && !c->b) {				/* 19 Sep 92*/
+		c->exponent = 0;
+		return;
+	}
 	real_to_int(b, &ti);
 	if(ti.sign)
 		c->exponent -= ti.a;
