@@ -1,0 +1,10 @@
+./"link"16t"rlink"16t"time"n2XY
++/"cgx"16t"ncyl"8t"niblk"8t"ndblk"nXxxX
++/"csum"n
++$<<csum
++/"rotor"16t"frotor"16t"irotor"nXXX
++/"cg_frsum"n8X
++/"cg_btot"n32X
++/"cg_b"n256x
++/"cg_iused"n64X
++/"magic"nX
