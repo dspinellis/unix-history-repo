@@ -1,0 +1,7 @@
+* Null bytes are not handled properly (changing this would require major
+  internal changes -- for example, no C library support could be used to
+  handle strings).
+
+* There are cases where route-addrs do not get angle brackets around them,
+  such as in the "-r" flag on mailers or in the From_ line created when
+  mailing to files.
