@@ -16,7 +16,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dd.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)dd.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -185,7 +185,7 @@ dd_in()
 {
 	register int flags, n;
 
-	for(flags = ddflags;;) {
+	for (flags = ddflags;;) {
 		if (cpy_cnt && (st.in_full + st.in_part) >= cpy_cnt)
 			return;
 
@@ -241,7 +241,7 @@ dd_in()
 			++st.in_full;
 
 		/* Handle partial input blocks. */
-		} else if (n != in.dbsz) {
+		} else {
 			/* If sync, use the entire block. */
 			if (ddflags & C_SYNC)
 				in.dbcnt += in.dbrcnt = in.dbsz;
@@ -319,7 +319,10 @@ dd_out(force)
 	outp = out.db;
 	for (n = force ? out.dbcnt : out.dbsz;; n = out.dbsz) {
 		for (cnt = n;; cnt -= nw) {
-			outp += nw = write(out.fd, outp, cnt);
+			nw = write(out.fd, outp, cnt);
+			if (nw < 0)
+				err("%s: %s", out.name, strerror(errno));
+			outp += rw;
 			st.bytes += nw;
 			if (nw == n) {
 				if (n != out.dbsz)
@@ -328,8 +331,6 @@ dd_out(force)
 					++st.out_full;
 				break;
 			}
-			if (nw < 0)
-				err("%s: %s", out.name, strerror(errno));
 			++st.out_part;
 			if (nw == cnt)
 				break;
