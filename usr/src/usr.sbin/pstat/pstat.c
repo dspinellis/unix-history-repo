@@ -11,7 +11,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pstat.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)pstat.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -589,7 +589,7 @@ struct tty *atp;
 	printf("%2d %2d/%-2d ", line, major(tp->t_dev), minor(tp->t_dev));
 	switch (tp->t_line) {
 
-#ifdef notdef
+#ifdef BERKNET_WAS_A_LONG_TIME_AGO
 	case NETLDISC:
 		if (tp->t_rec)
 			printf("%4d%4d", 0, tp->t_inbuf);
@@ -616,9 +616,11 @@ struct tty *atp;
 		printf("term\n");
 		break;
 
+#ifdef BERKNET_WAS_A_LONG_TIME_AGO
 	case NETLDISC:
 		printf("berknet\n");
 		break;
+#endif
 
 	case TABLDISC:
 		printf("tab\n");
