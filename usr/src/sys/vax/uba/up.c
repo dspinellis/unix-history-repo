@@ -1,4 +1,4 @@
-/*	%H%	3.16	%G%	*/
+/*	%H%	3.17	%G%	*/
 
 /*
  * Emulex UNIBUS disk driver with overlapped seeks and ECC recovery.
@@ -193,7 +193,7 @@ struct	buf	rupbuf;			/* Buffer for raw i/o */
 /* Other bits of upcs1 */
 #define	IE	0100		/* Controller wide interrupt enable */
 #define	TRE	040000		/* Transfer error */
-#define	RDY	020		/* Transfer terminated */
+#define	RDY	0200		/* Transfer terminated */
 
 /* Drive status bits of upds */
 #define	PIP	020000		/* Positioning in progress */
@@ -396,7 +396,7 @@ search:
 	 * Mark this unit busy.
 	 */
 	unit += DK_N;
-	if (unit <= DK_NMAX) {
+	if (unit <= DK_NMAX && DK_N+NUP <= DK_NMAX) {
 		dk_busy |= 1<<unit;
 		dk_numb[unit]++;
 	}
