@@ -1,4 +1,4 @@
-/* tcp.h 1.20 82/01/17 */
+/* tcp.h 1.21 82/01/18 */
 
 typedef	u_long	tcp_seq;
 /*
@@ -38,6 +38,6 @@ struct tcphdr {
  * exists; peer should ack with TCPOPT_OOBACK in segment.
  */
 #define	TCPOPT_WILLOOB	64		/* bytes: 64, 2 */
-#define	TCPOPT_OOBDATA	65		/* bytes: 65, 4, seq#, data */
+#define	TCPOPT_OOBDATA	65		/* bytes: 65, 8, seq#, data, markseq */
 #define	TCPOPT_OOBACK	66		/* bytes: 66, 3, ack# */
 #endif

@@ -1,4 +1,4 @@
-/* tcp_usrreq.c 1.48 82/01/17 */
+/* tcp_usrreq.c 1.49 82/01/18 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -204,38 +204,29 @@ COUNT(TCP_USRREQ);
 /* END UNIMPLEMENTED HOOKS */
 
 	case PRU_RCVOOB:
-#if TCPTRUEOOB
-		if (tp->t_flags & TF_DOOOB) {
-			if ((tp->t_oobflags & TCPOOB_HAVEDATA) == 0) {
-				error = EWOULDBLOCK;
-				break;
-			}
-			*mtod(m, caddr_t) = tp->t_iobc;
-			tp->t_oobflags &= ~TCPOOB_HAVEDATA;
-			break;
-		}
-#endif
 		if (so->so_oobmark == 0 &&
 		    (so->so_state & SS_RCVATMARK) == 0) {
 			error = EINVAL;
 			break;
 		}
-		if (so->so_rcv.sb_cc < so->so_oobmark) {
+		if ((tp->t_oobflags & TCPOOB_HAVEDATA) == 0) {
 			error = EWOULDBLOCK;
-			return;
+			break;
 		}
-		{ struct mbuf *n = so->so_rcv.sb_mb;
-		  int cnt = so->so_oobmark;
-		  while (cnt > n->m_len) {
-			cnt -= n->m_len;
-			n = n->m_next;
-		  }
-		  *mtod(m, caddr_t) = *(mtod(n, caddr_t) + cnt);
-		}
-		tp->t_oobflags &= ~TCPOOB_HAVEDATA;
+		*mtod(m, caddr_t) = tp->t_iobc;
 		break;
 
 	case PRU_SENDOOB:
+#ifdef TCPTRUEOOB
+		if (tp->t_flags & TF_DOOOB) {
+			tp->t_oobseq++;
+			tp->t_oobc = *mtod(m, caddr_t);
+			tp->t_oobmark = tp->snd_una + so->so_snd.sb_cc;
+printf("sendoob seq now %x oobc %x\n", tp->t_oobseq, tp->t_oobc);
+			tp->t_oobflags |= TCPOOB_NEEDACK;
+			(void) tcp_output(tp);
+		}
+#endif
 		if (sbspace(&so->so_snd) < -512) {
 			error = ENOBUFS;
 			break;
@@ -246,15 +237,9 @@ COUNT(TCP_USRREQ);
 		if (tp->t_flags & TF_PUSH)
 			tp->snd_end = tp->snd_una + so->so_snd.sb_cc;
  */
-#ifdef TCPTRUEOOB
-		if (tp->t_flags & TF_DOOOB) {
-			tp->t_oobseq++;
-			tp->t_oobc = *mtod(m, caddr_t);
-printf("sendoob seq now %x oobc %x\n", tp->t_oobseq, tp->t_oobc);
-			tp->t_oobflags |= TCPOOB_NEEDACK;
-		}
-#endif
-		tp->t_force = 1; (void) tcp_output(tp); tp->t_force = 0;
+		tp->t_force = 1;
+		(void) tcp_output(tp);
+		tp->t_force = 0;
 		break;
 
 	/*

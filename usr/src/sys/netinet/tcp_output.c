@@ -1,4 +1,4 @@
-/*	tcp_output.c	4.29	82/01/17	*/
+/*	tcp_output.c	4.30	82/01/18	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -182,10 +182,14 @@ printf("tp %x send OOBACK for %x\n", tp->t_iobseq);
 		if (tp->t_oobflags&TCPOOB_NEEDACK) {
 printf("tp %x send OOBDATA seq %x data %x\n", tp->t_oobseq, tp->t_oobc);
 			*opt++ = TCPOPT_OOBDATA;
-			*opt++ = 4;
+			*opt++ = 8;
 			*opt++ = tp->t_oobseq;
 			*opt++ = tp->t_oobc;
-			m0->m_len += 4;
+			*(tcp_seq *)opt = tp->t_oobmark - tp->snd_nxt;
+#ifdef vax
+			*(tcp_seq *)opt = htonl((unsigned)*(tcp_seq *)opt);
+#endif
+			m0->m_len += 8;
 			TCPT_RANGESET(tp->t_timer[TCPT_OOBREXMT],
 			    tcp_beta * tp->t_srtt, TCPTV_MIN, TCPTV_MAX);
 		}
