@@ -1,7 +1,6 @@
-#	@(#)Makefile	5.7 (Berkeley) %G%
+#	@(#)Makefile	5.8 (Berkeley) %G%
 
 PROG=	enpload
-CFLAGS+=-I/sys
 MAN8=	enpload.0
 
 install:
