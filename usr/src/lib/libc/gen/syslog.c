@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)syslog.c	5.30 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslog.c	5.31 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -35,7 +35,7 @@ syslog(pri, fmt, args)
 	int pri, args;
 	char *fmt;
 {
-	return(vsyslog(pri, fmt, &args));
+	vsyslog(pri, fmt, &args);
 }
 
 vsyslog(pri, fmt, ap)
@@ -50,10 +50,8 @@ vsyslog(pri, fmt, ap)
 	char tbuf[2048], fmt_cpy[1024], *stdp, *ctime();
 
 	/* check for invalid bits or no priority set */
-	if (!LOG_PRI(pri) || (pri &~ (LOG_PRIMASK|LOG_FACMASK))) {
-		errno = EINVAL;
-		return(-1);
-	}
+	if (!LOG_PRI(pri) || (pri &~ (LOG_PRIMASK|LOG_FACMASK)))
+		return;
 
 	saved_errno = errno;
 
@@ -116,27 +114,24 @@ vsyslog(pri, fmt, ap)
 	/* get connected, output the message to the local logger */
 	if ((connected || !openlog(LogTag, LogStat | LOG_NDELAY, 0)) &&
 	    send(LogFile, tbuf, cnt, 0) >= 0)
-		return(0);
+		return;
 
 	/* see if should attempt the console */
 	if (!(LogStat&LOG_CONS))
-		return(-1);
+		return;
 
 	/*
 	 * Output the message to the console; don't worry about blocking,
 	 * if console blocks everything will.  Make sure the error reported
 	 * is the one from the syslogd failure.
 	 */
-	saved_errno = errno;
 	if ((fd = open(_PATH_CONSOLE, O_WRONLY, 0)) >= 0) {
 		(void)strcat(tbuf, "\r\n");
 		cnt += 2;
 		p = index(tbuf, '>') + 1;
 		(void)write(fd, p, cnt - (p - tbuf));
 		(void)close(fd);
-	} else
-		errno = saved_errno;
-	return(-1);
+	}
 }
 
 static struct sockaddr SyslogAddr;	/* AF_UNIX address of local logger */
@@ -145,8 +140,6 @@ openlog(ident, logstat, logfac)
 	char *ident;
 	int logstat, logfac;
 {
-	int saved_errno;
-
 	if (ident != NULL)
 		LogTag = ident;
 	LogStat = logstat;
@@ -159,30 +152,23 @@ openlog(ident, logstat, logfac)
 		    sizeof(SyslogAddr.sa_data));
 		if (LogStat & LOG_NDELAY) {
 			if ((LogFile = socket(AF_UNIX, SOCK_DGRAM, 0)) == -1)
-				return(-1);
+				return;
 			(void)fcntl(LogFile, F_SETFD, 1);
 		}
 	}
 	if (LogFile != -1 && !connected)
 		if (connect(LogFile, &SyslogAddr, sizeof(SyslogAddr)) == -1) {
-			saved_errno = errno;
 			(void)close(LogFile);
-			errno = saved_errno;
 			LogFile = -1;
-			return(-1);
 		} else
 			connected = 1;
-	return(0);
 }
 
 closelog()
 {
-	int rval;
-
-	rval = close(LogFile);
+	(void)close(LogFile);
 	LogFile = -1;
 	connected = 0;
-	return(rval);
 }
 
 static int	LogMask = 0xff;		/* mask of priorities to be logged */

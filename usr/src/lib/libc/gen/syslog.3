@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)syslog.3	6.15 (Berkeley) %G%
+.\"	@(#)syslog.3	6.16 (Berkeley) %G%
 .\"
 .TH SYSLOG 3 ""
 .UC 5
@@ -13,13 +13,17 @@ syslog, vsyslog, openlog, closelog, setlogmask \- control system log
 .nf
 .ft B
 #include <syslog.h>
+void
 syslog(int priority, char *message, [, arg ] ... );
 
-include <varargs.h>
+#include <varargs.h>
+void
 vsyslog(int priority, char *message, va_list args);
 
+void
 openlog(char *ident, int logopt, int facility);
 
+void
 closelog(void);
 
 setlogmask(int maskpri);
@@ -214,50 +218,15 @@ syslog(LOG_INFO|LOG_LOCAL2, "foobar error: %m");
 .fi
 .SH RETURNS
 The routines
-.I closelog ,
-.I openlog ,
-.I syslog
+.IR closelog ,
+.IR openlog ,
+.IR syslog
 and
 .I vsyslog
-return 0 upon successful completion.
-Otherwise, -1 is returned and
-.I errno
-is set to indicate the error.
+return no value.
 .PP
 The routine
 .I setlogmask
-always returns the previous log mask level, never returning
-an error.
-.SH ERRORS
-The routines
-.I syslog
-and
-.I vsyslog
-may fail and set errno for any of the errors specified for the library
-routines
-.IR connect (2),
-.IR send (2) ,
-and
-.IR socket (2), 
-or the following:
-.TP
-[EINVAL]
-The
-.I priority
-parameter was invalid.
-.PP
-The routine
-.I openlog
-may fail and set errno for any of the errors specified for the library
-routines
-.IR connect (2)
-and
-.IR socket (2).
-.PP
-The routine
-.I closelog
-may fail and set errno for any of the errors specified for the library
-routine
-.IR close (2).
+always returns the previous log mask level.
 .SH "SEE ALSO"
 logger(1), syslogd(8)
