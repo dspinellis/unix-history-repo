@@ -1,4 +1,5 @@
-/* Copyright (c) 1979 Regents of the University of California */
+/* Copyright (c) 1980 Regents of the University of California */
+static char *sccsid = "@(#)ex.c	4.2 %G%";
 #include "ex.h"
 #include "ex_argv.h"
 #include "ex_temp.h"
@@ -95,6 +96,9 @@ main(ac, av)
 	normf = tty;
 #endif
 	ppid = getpid();
+#ifdef HORSE
+	horse(ac, av);
+#endif
 	/*
 	 * Defend against d's, v's, w's, and a's in directories of
 	 * path leading to our true name.
@@ -471,6 +475,9 @@ setrupt()
 preserve()
 {
 
+#ifdef VMUNIX
+	tflush();
+#endif
 	synctmp();
 	pid = fork();
 	if (pid < 0)
