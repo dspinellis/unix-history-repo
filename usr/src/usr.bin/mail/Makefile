@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.13 (Berkeley) %G%
+#	@(#)Makefile	5.14 (Berkeley) %G%
 #
 CFLAGS=	-O -R -DUSE_OLD_TTY
 LIBC=	/lib/libc.a
@@ -24,44 +24,34 @@ SRCS=	version.c aux.c cmd1.c cmd2.c cmd3.c cmdtab.c collect.c edit.c fio.c \
 OBJS=	version.o aux.o cmd1.o cmd2.o cmd3.o cmdtab.o collect.o edit.o fio.o \
 	getname.o head.o v7.local.o lex.o list.o main.o names.o popen.o \
 	quit.o send.o strings.o temp.o tty.o vars.o flsbuf.o
-FSRCS=	fmt.c head.c
-FOBJS=	fmt.o head.o
 FILES=	Mail.help Mail.rc Mail.tildehelp
-MAN=	mail.0 fmt.0
+MAN=	mail.0
 
-all: mail fmt
+all: mail
 
 mail: ${OBJS} ${LIBC}
 	${CC} -o $@ ${OBJS}
 
-fmt: ${FOBJS} ${LIBC}
-	${CC} -o $@ ${FOBJS}
-
 clean:
-	rm -f ${FOBJS} ${OBJS} mail a.out fmt core
+	rm -f ${OBJS} mail a.out core
 
 cleandir: clean
 	rm -f ${MAN} tags .depend
 
 depend:
-	mkdep fmt.c ${SRCS}
+	mkdep ${SRCS}
 
 install: ${MAN}
 	install -s -o bin -g bin -m 755 mail ${DESTDIR}/usr/bin
-	install -s -o bin -g bin -m 755 fmt ${DESTDIR}/usr/bin
 	cd misc; install -c -o bin -g bin -m 444 ${FILES} \
 	    ${DESTDIR}/usr/share/misc
 	rm -f ${DESTDIR}/usr/bin/Mail
 	ln ${DESTDIR}/usr/bin/mail ${DESTDIR}/usr/bin/Mail
-	install -c -o bin -g bin -m 444 mail.0 fmt.0 ${DESTDIR}/usr/man/cat1
 	rm -f ${DESTDIR}/usr/man/cat1/Mail.0
 	ln ${DESTDIR}/usr/man/cat1/mail.0 ${DESTDIR}/usr/man/cat1/Mail.0
 
 lint:
 	lint ${CFLAGS} ${SRCS}
-	lint ${CFLAGS} fmt.c head.c
 
 tags:
 	ctags ${SRCS}
-	ctags -a fmt.c
-	sort -o tags tags
