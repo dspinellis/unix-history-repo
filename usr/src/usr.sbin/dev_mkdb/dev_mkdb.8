@@ -1,27 +1,47 @@
 .\" Copyright (c) 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)dev_mkdb.8	5.3 (Berkeley) %G%
+.\"	@(#)dev_mkdb.8	5.4 (Berkeley) %G%
 .\"
-.TH dev_mkdb 8 ""
-.UC 7
-.SH NAME
-dev_mkdb \- create /dev database
-.SH SYNOPSIS
-.B dev_mkdb
-.SH DESCRIPTION
-.I Dev_mkdb
-creates a
-.IR db (3)
-database in ``/var/run/dev.db'' which lists the name and
-.I st_rdev
-field of all of the character and block special files in the ``/dev''
+.Dd 
+.Os
+.Dt DEV_MKDB 8
+.Sh NAME
+.Nm dev_mkdb
+.Nd create
+.Pa /dev
+database
+.Sh SYNOPSIS
+.Nm dev_mkdb
+.Sh DESCRIPTION
+The
+.Nm dev_mkdb
+command creates a
+.Xr db 3
+database in
+.Dq Pa /var/run/dev.db
+which lists the name and
+.Fa st_rdev
+field of all of the character and block special files in the
+.Dq Pa /dev
 directory.
-.SH FILES
-/dev					Device directory
-.br
-/var/run/dev.db		Database file
-.SH SEE ALSO
-ps(1), db(3), kvm_nlist(3), ttyname(3), kvm_mkdb(8)
+.Sh FILES
+.Bl -tag -width /var/run/dev.db -compact
+.It Pa /dev
+Device directory.
+.It Pa /var/run/dev.db
+Database file.
+.El
+.Sh SEE ALSO
+.Xr ps 1 ,
+.Xr db 3 ,
+.Xr kvm_nlist 3 ,
+.Xr ttyname 3 ,
+.Xr kvm_mkdb 8
+.Sh HISTORY
+The
+.Nm dev_mkdb
+command is
+.Ud .
