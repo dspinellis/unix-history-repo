@@ -19,7 +19,7 @@ static char sccsid[] = "@(#)apropos.c	5.2 (Berkeley) %G%";
 #include <ctype.h>
 
 #define	DEF_PATH	"/usr/man"		/* default man path */
-#define	MAXLINELEN	500			/* max line handled */
+#define	MAXLINELEN	1000			/* max line handled */
 #define	NO		0			/* no/false */
 #define	WHATIS		"whatis"		/* database name */
 #define	YES		1			/* yes/true */
@@ -72,10 +72,10 @@ main(argc, argv)
 		fprintf(stderr, "%s: out of space.\n", myname);
 		exit(1);
 	}
-	bzero(found, argc * sizeof(int));	/* calloc is silly */
+	bzero((char *)found, argc * sizeof(int));	/* calloc is silly */
 
 	if (!isapropos)
-		for (C = argv; *C; ++C) {	/* trim full paths */
+		for (C = argv; *C; ++C) {		/* trim full paths */
 			if (beg = rindex(*C, '/'))
 				*C = beg + 1;
 		}
