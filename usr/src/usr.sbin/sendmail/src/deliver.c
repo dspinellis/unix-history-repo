@@ -17,7 +17,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	5.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	5.34 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1178,7 +1178,7 @@ putbody(fp, m, e)
 		while (!ferror(fp) && fgets(buf, sizeof buf, e->e_dfp) != NULL)
 		{
 			if (buf[0] == 'F' && bitnset(M_ESCFROM, m->m_flags) &&
-			    strncmp(buf, "From", 4) == 0)
+			    strncmp(buf, "From ", 5) == 0)
 				(void) putc('>', fp);
 			putline(buf, fp, m);
 		}
