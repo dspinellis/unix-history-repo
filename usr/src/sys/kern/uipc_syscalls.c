@@ -1,4 +1,4 @@
-/*	uipc_syscalls.c	4.9	81/11/26	*/
+/*	uipc_syscalls.c	4.10	81/12/02	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -25,7 +25,7 @@
  *	SO_INTNOTIFY
  */
 
-static	struct sockproto localproto = { PF_LOCAL, 0 };
+static	struct sockproto localproto = { PF_UNIX, 0 };
 /*
  * Pipe system call interface.
  */
@@ -278,7 +278,7 @@ COUNT(SDISCONNECT);
 		splx(s);
 		return;
 	}
-	while (so->so_state & SS_ISDISCONNECTING)
+	while ((so->so_state & SS_ISDISCONNECTING) && so->so_error == 0)
 		sleep((caddr_t)&so->so_timeo, PZERO+1);
 	u.u_error = so->so_error;
 	so->so_error = 0;

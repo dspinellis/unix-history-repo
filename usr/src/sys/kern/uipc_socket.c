@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.15	81/11/26	*/
+/*	uipc_socket.c	4.16	81/12/02	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -138,11 +138,11 @@ sosplice(pso, so)
 {
 
 COUNT(SOSPLICE);
-	if (pso->so_proto->pr_family != PF_LOCAL) {
+	if (pso->so_proto->pr_family != PF_UNIX) {
 		struct socket *tso;
 		tso = pso; pso = so; so = tso;
 	}
-	if (pso->so_proto->pr_family != PF_LOCAL)
+	if (pso->so_proto->pr_family != PF_UNIX)
 		return (EOPNOTSUPP);
 	/* check types and buffer space */
 	/* merge buffers */
@@ -264,14 +264,18 @@ COUNT(SOSEND);
 
 	s = splnet();
 again:
+	if (so->so_error) {
+		error = so->so_error;
+		so->so_error = 0;
+		splx(s);
+		goto release;
+	}
 	if ((so->so_state & SS_ISCONNECTED) == 0) {
 		if (so->so_proto->pr_flags & PR_CONNREQUIRED)
 			snderr(ENOTCONN);
 		if (asa == 0)
 			snderr(EDESTADDRREQ);
 	}
-	if (so->so_error)
-		snderr(so->so_error);
 	if (top) {
 		error = (*so->so_proto->pr_usrreq)(so, PRU_SEND, top, asa);
 		if (error) {
@@ -343,6 +347,12 @@ restart:
 
 #define	rcverr(errno)	{ error = errno; splx(s); goto release; }
 	if (so->so_rcv.sb_cc == 0) {
+		if (so->so_error) {
+			error = so->so_error;
+			so->so_error = 0;
+			splx(s);
+			goto release;
+		}
 		if (so->so_state & SS_CANTRCVMORE) {
 			splx(s);
 			goto release;
@@ -351,7 +361,7 @@ restart:
 		    (so->so_proto->pr_flags & PR_CONNREQUIRED))
 			rcverr(ENOTCONN);
 		if (so->so_options & SO_NBIO)
-			rcverr (EWOULDBLOCK);
+			rcverr(EWOULDBLOCK);
 		sbunlock(&so->so_rcv);
 		sbwait(&so->so_rcv);
 		splx(s);
