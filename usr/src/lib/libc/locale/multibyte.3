@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)multibyte.3	5.1 (Berkeley) %G%
+.\"	@(#)multibyte.3	5.2 (Berkeley) %G%
 .\"
 .Dd ""
 .Dt MULTIBYTE 3
@@ -196,7 +196,11 @@ not counting any terminating null byte.
 If any invalid multibyte characters are encountered,
 both functions return \-1.
 .Sh "SEE ALSO
-.Xr setlocale 3
+.Xr euc 4 ,
+.Xr mbrune 3 ,
+.Xr rune 3 ,
+.Xr setlocale 3 ,
+.Xr utf2 4
 .Sh STANDARDS
 The
 .Fn mblen ,
@@ -207,18 +211,5 @@ and
 .Fn wctomb
 functions conform to
 .St -ansiC .
-.Sh HISTORY
-The
-.Fn mblen ,
-.Fn mbstowcs ,
-.Fn mbtowc ,
-.Fn wcstombs
-and
-.Fn wctomb
-functions are
-.Ud
 .Sh BUGS
-The current implementation supports only the
-.Li "\&""C""
-locale.
-No multibyte or wide character encodings are recognized.
+The current implementation does not support shift states.
