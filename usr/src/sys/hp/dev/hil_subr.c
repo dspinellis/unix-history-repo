@@ -1,13 +1,13 @@
 /*-
  * Copyright (c) 1988 University of Utah.
- * Copyright (c) 1982, 1986, 1991 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1982, 1986, 1991, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.proprietary.c%
  *
  * from: Utah $Hdr: hil_subr.c 1.1 91/11/19$
  *
- *	@(#)hil_subr.c	7.3 (Berkeley) %G%
+ *	@(#)hil_subr.c	8.1 (Berkeley) %G%
  */
 
 #include <sys/param.h>
