@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)df.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)df.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -30,9 +30,11 @@ static char sccsid[] = "@(#)df.c	5.7 (Berkeley) %G%";
  */
 #include <stdio.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <sys/mount.h>
 #include "pathnames.h"
 
+char	*getmntpt();
 int	iflag;
 #ifdef COMPAT_43
 int	oflag;
@@ -45,6 +47,8 @@ main(argc, argv)
 	extern int errno, optind;
 	int ch, i;
 	long mntsize;
+	char *mntpt;
+	struct stat stbuf;
 	struct statfs statfsbuf, *mntbuf;
 
 	while ((ch = getopt(argc, argv, "io")) != EOF)
@@ -76,37 +80,77 @@ main(argc, argv)
 	}
 #endif /* COMPAT_43 */
 	if (!*argv) {
-		if ((mntsize = getfsstat(0, 0)) < 0) {
-			perror("df");
-			exit(1);
-		}
-		mntbuf = 0;
-		do {
-			if (mntbuf)
-				free(mntbuf);
-			i = (mntsize + 1) * sizeof(struct statfs);
-			if ((mntbuf = (struct statfs *)malloc(i)) == 0) {
-				fprintf(stderr,
-					"no space for mount table buffer\n");
-				exit(1);
-			}
-			if ((mntsize = getfsstat(mntbuf, i)) < 0) {
-				perror("df");
-				exit(1);
-			}
-		} while (i == mntsize * sizeof(struct statfs));
+		mntsize = getmntinfo(&mntbuf);
 		for (i = 0; i < mntsize; i++)
 			prtstat(&mntbuf[i]);
 		exit(0);
 	}
 	for (; *argv; argv++) {
-		if (statfs(*argv, &statfsbuf) < 0) {
-			perror(*argv);
+		if (stat(*argv, &stbuf) < 0) {
+			if ((mntpt = getmntpt(*argv)) == 0)
+				continue;
+		} else if ((stbuf.st_mode & S_IFMT) == S_IFBLK) {
+			if ((mntpt = getmntpt(*argv)) == 0)
+				continue;
+		} else
+			mntpt = *argv;
+		if (statfs(mntpt, &statfsbuf) < 0) {
+			perror(mntpt);
 			continue;
 		}
 		prtstat(&statfsbuf);
 	}
 	exit(0);
+}
+
+getmntinfo(mntbufp)
+	struct statfs **mntbufp;
+{
+	int i;
+	static long mntsize;
+	static struct statfs *mntbuf = 0;
+	char *malloc();
+
+	if (mntbuf) {
+		*mntbufp = mntbuf;
+		return (mntsize);
+	}
+	if ((mntsize = getfsstat((struct statfs *)0, 0)) < 0) {
+		perror("df");
+		exit(1);
+	}
+	mntbuf = 0;
+	do {
+		if (mntbuf)
+			free((char *)mntbuf);
+		i = (mntsize + 1) * sizeof(struct statfs);
+		if ((mntbuf = (struct statfs *)malloc((unsigned)i)) == 0) {
+			fprintf(stderr,
+				"no space for mount table buffer\n");
+			exit(1);
+		}
+		if ((mntsize = getfsstat(mntbuf, i)) < 0) {
+			perror("df");
+			exit(1);
+		}
+	} while (i == mntsize * sizeof(struct statfs));
+	*mntbufp = mntbuf;
+	return (mntsize);
+}
+
+char *
+getmntpt(name)
+	char *name;
+{
+	long mntsize, i;
+	struct statfs *mntbuf;
+
+	mntsize = getmntinfo(&mntbuf);
+	for (i = 0; i < mntsize; i++) {
+		if (!strcmp(mntbuf[i].f_mntfromname, name))
+			return (mntbuf[i].f_mntonname);
+	}
+	return (0);
 }
 
 /*
@@ -141,14 +185,10 @@ prtstat(sfsp)
  */
 #include <sys/param.h>
 #include <ufs/fs.h>
-#include <sys/stat.h>
 #include <errno.h>
 #include <fstab.h>
-#include <mtab.h>
 
-struct	mtab mtab[NMOUNT];
 char	root[32];
-char	*mpath();
 
 union {
 	struct fs iu_fs;
@@ -164,15 +204,7 @@ olddf(argv)
 {
 	struct fstab *fsp;
 	char *strerror();
-	int i;
 
-	if ((i = open(_PATH_MTAB, 0)) < 0) {
-		fprintf(stderr, "df: %s: %s\n", _PATH_MTAB,
-			strerror(errno));
-		exit(1);
-	}
-	(void) read(i, (char *)mtab, sizeof (mtab));
-	(void) close(i);
 	sync();
 	if (!*argv) {
 		if (setfsent() == 0)
@@ -203,7 +235,7 @@ dfree(file, infsent)
 	struct statfs statfsbuf;
 	register struct statfs *sfsp;
 	struct fstab *fsp;
-	char *strerror();
+	char *mntpt, *strerror();
 
 	if (stat(file, &stbuf) == 0 &&
 	    (stbuf.st_mode&S_IFMT) != S_IFCHR &&
@@ -252,7 +284,9 @@ found:
 	sfsp->f_ffree = sblock.fs_cstotal.cs_nifree;
 	sfsp->f_fsid.val[0] = 0;
 	sfsp->f_fsid.val[1] = 0;
-	bcopy((caddr_t)mpath(file), (caddr_t)&sfsp->f_mntonname[0], MNAMELEN);
+	if ((mntpt = getmntpt(file)) == 0)
+		mntpt = "";
+	bcopy((caddr_t)mntpt, (caddr_t)&sfsp->f_mntonname[0], MNAMELEN);
 	bcopy((caddr_t)file, (caddr_t)&sfsp->f_mntfromname[0], MNAMELEN);
 	prtstat(sfsp);
 	(void) close(fi);
@@ -277,41 +311,5 @@ bread(off, buf, cnt)
 		return (0);
 	}
 	return (1);
-}
-
-/*
- * Given a name like /dev/rrp0h, returns the mounted path, like /usr.
- */
-char *
-mpath(file)
-	char *file;
-{
-	register struct mtab *mp;
-
-	if (eq(file, root))
-		return ("/");
-	for (mp = mtab; mp < mtab + NMOUNT; mp++)
-		if (eq(file, mp->m_dname))
-			return (mp->m_path);
-	return "";
-}
-
-eq(f1, f2)
-	char *f1, *f2;
-{
-
-	if (strncmp(f1, _PATH_DEV, sizeof(_PATH_DEV) - 1) == 0)
-		f1 += 5;
-	if (strncmp(f2, _PATH_DEV, sizeof(_PATH_DEV) - 1) == 0)
-		f2 += 5;
-	if (!strcmp(f1, f2))
-		return (1);
-	if (*f1 == 'r' && !strcmp(f1+1, f2))
-		return (1);
-	if (*f2 == 'r' && !strcmp(f1, f2+1))
-		return (1);
-	if (*f1 == 'r' && *f2 == 'r' && strcmp(f1+1, f2+1) == 0)
-		return (1);
-	return (0);
 }
 #endif /* COMPAT_43 */
