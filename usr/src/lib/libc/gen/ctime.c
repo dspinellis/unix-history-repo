@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ctime.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)ctime.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -204,7 +204,7 @@ time_t *tim;
 
 /*
  * The argument is a 0-origin day number.
- * The value is the day number of the first
+ * The value is the day number of the last
  * Sunday on or before the day.
  */
 static
