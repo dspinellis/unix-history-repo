@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.91 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.92 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -775,8 +775,6 @@ writable(filename, ctladdr, flags)
 	}
 	else if (bitset(SFF_RUNASREALUID, flags))
 	{
-		extern char RealUserName[];
-
 		euid = RealUid;
 		egid = RealGid;
 		uname = RealUserName;

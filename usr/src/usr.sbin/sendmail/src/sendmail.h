@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.137 (Berkeley) %G%
+ *	@(#)sendmail.h	8.138 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.137		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.138		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -968,8 +968,9 @@ EXTERN bool	HasEightBits;	/* has at least one eight bit input byte */
 EXTERN time_t	SafeAlias;	/* interval to wait until @:@ in alias file */
 EXTERN FILE	*InChannel;	/* input connection */
 EXTERN FILE	*OutChannel;	/* output connection */
-EXTERN uid_t	RealUid;	/* when Daemon, real uid of caller */
-EXTERN gid_t	RealGid;	/* when Daemon, real gid of caller */
+EXTERN char	*RealUserName;	/* real user name of caller */
+EXTERN uid_t	RealUid;	/* real uid of caller */
+EXTERN gid_t	RealGid;	/* real gid of caller */
 EXTERN uid_t	DefUid;		/* default uid to run as */
 EXTERN gid_t	DefGid;		/* default gid to run as */
 EXTERN char	*DefUser;	/* default user to run as (from DefUid) */
