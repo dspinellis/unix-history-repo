@@ -1,5 +1,5 @@
 
-/*	vmmeter.h	4.4	%G%	*/
+/*	vmmeter.h	4.5	%G%	*/
 
 /*
  * Virtual memory related instrumentation
@@ -16,6 +16,8 @@ struct vmmeter
 	unsigned v_pswpout;	/* pages swapped out */
 	unsigned v_pgin;	/* pageins */
 	unsigned v_pgout;	/* pageouts */
+	unsigned v_pgpgin;	/* pages paged in */
+	unsigned v_pgpgout;	/* pages paged out */
 	unsigned v_intrans;	/* intransit blocking page faults */
 	unsigned v_pgrec;	/* total page reclaims */
 	unsigned v_xsfrec;	/* found in free list rather than on swapdev */
