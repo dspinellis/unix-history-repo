@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: srt0.c 1.8 88/12/03$
  *
- *	@(#)srt0.c	7.1 (Berkeley) %G%
+ *	@(#)srt0.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -25,11 +25,12 @@
 	.globl	_configure
 	.globl	_openfirst
 	.globl	__rtt
-	.globl	_lowram,_howto,_devtype
+	.globl	_lowram,_howto,_devtype,_internalhpib
 
 	STACK =    0xfffff000	| below the ROM page
 	BOOTTYPE = 0xfffffdc0
 	LOWRAM =   0xfffffdce
+	SYSFLAG =  0xfffffed2	| system flags
 	MSUS =	   0xfffffedc	| MSUS (?) structure
 	VECTORS =  0xfffffee0	| beginning of jump vectors
 	NMIRESET = 0xffffff9c	| reset vector
@@ -56,6 +57,10 @@ vecloop:
 	dbf	d0,vecloop	| go til done
 	movl	#NMIRESET,a0	| NMI keyboard reset addr
 	movl	#nmi,a0@	| catch in reset routine
+	btst	#5,SYSFLAG	| do we have an internal HP-IB?
+	jeq	boottype	| yes, continue
+	clrl	_internalhpib	| no, clear the internal address
+boottype:
 	cmpw	#12,BOOTTYPE	| is this a reboot (REQ_REBOOT)?
 	jne	notreboot	| no, skip
 	movl	#MAXADDR,a0	| find last page

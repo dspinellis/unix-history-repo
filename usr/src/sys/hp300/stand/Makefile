@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.c%
 #
-#	@(#)Makefile	7.1 (Berkeley) %G%
+#	@(#)Makefile	7.2 (Berkeley) %G%
 #
 LIBDIR=/lib
 DESTDIR=
@@ -17,7 +17,7 @@ CC=cc -Dconst=__const__ -Dvolatile=__volatile__ \
 AS=as
 
 INCPATH=-I. -I../sys -I..
-CONS= -DDCACONSOLE -DITECONSOLE
+CONS= -DDCACONSOLE -DITECONSOLE -DDCMCONSOLE
 DEFS= -DSTANDALONE ${CONS} # -DROMPRF # -DDEBUG
 COPTS=
 CFLAGS=	-O ${INCPATH} ${DEFS} ${COPTS}
@@ -26,10 +26,10 @@ RELOC=	FFF80000
 
 SRCS=	sys.c conf.c prf.c machdep.c autoconf.c \
 	hpib.c nhpib.c fhpib.c rd.c ct.c scsi.c sd.c hil.c \
-	cons.c ite.c ite_subr.c ite_dv.c ite_gb.c ite_rb.c ite_tc.c dca.c
+	cons.c ite.c ite_subr.c ite_dv.c ite_gb.c ite_rb.c ite_tc.c dca.c dcm.c
 DUMMIES=
 DRIVERS=autoconf.o hpib.o nhpib.o fhpib.o rd.o ct.o scsi.o sd.o hil.o \
-	cons.o ite.o ite_subr.o ite_dv.o ite_gb.o ite_rb.o ite_tc.o dca.o
+	cons.o ite.o ite_subr.o ite_dv.o ite_gb.o ite_rb.o ite_tc.o dca.o dcm.o
 LIBSA=	libsa.a
 
 ALL=	dboot nboot tboot tcopy
@@ -137,7 +137,7 @@ install: mkboot installboot ${ALL}
 
 depend:
 	for i in ${SRCS} ${DUMMIES}; do \
-	    ${CC} -M ${INCPATH} $$i | \
+	    ${CC} -M ${INCPATH} ${DEFS} $$i | \
 	    awk ' { if ($$1 != prev) { print rec; rec = $$0; prev = $$1; } \
 		else { if (length(rec $$2) > 78) { print rec; rec = $$0; } \
 		else rec = rec " " $$2 } } \
