@@ -5,9 +5,9 @@
 #  old make program (I recommend that you get and port the new make if you
 #  are going to be doing any signficant work on sendmail).
 #
-#  This has been tested on Solaris 2.3.
+#  This has been tested on Solaris 2.4.
 #
-#	@(#)Makefile.SunOS.5.4	8.9 (Berkeley) %G%
+#	@(#)Makefile.SunOS.5.4	8.10 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -26,8 +26,7 @@ CC=	gcc
 DBMDEF=	-DNDBM -DNIS -DNISPLUS
 
 # environment definitions (e.g., -D_AIX3)
-# include -DSOLARIS_2_3 for version 2.3 and higher
-ENVDEF=	-DSOLARIS_2_3
+ENVDEF=	-DSOLARIS=204
 
 # see also conf.h for additional compilation flags
 
