@@ -1,4 +1,4 @@
-/*	tty.c	4.33	82/10/31	*/
+/*	tty.c	4.34	82/11/22	*/
 
 /*
  * TTY subroutines common to more than one line discipline
@@ -264,6 +264,7 @@ ttioctl(tp, com, data, flag)
 	case TIOCLBIS:
 	case TIOCLBIC:
 	case TIOCLSET:
+	case TIOCSTI:
 		while (tp->t_line == NTTYDISC &&
 		   u.u_procp->p_pgrp != tp->t_pgrp && tp == u.u_ttyp &&
 		   (u.u_procp->p_flag&SVFORK) == 0 &&
@@ -451,6 +452,16 @@ ttioctl(tp, com, data, flag)
 			ttstart(tp);
 		}
 		splx(s);
+		break;
+
+	/*
+	 * Simulate typing of a character at the terminal.
+	 */
+	case TIOCSTI:
+		if (u.u_uid && u.u_ttyp != tp)
+			return (EACCES);
+		else
+			(*linesw[tp->t_line].l_rint)(*(char *)data, tp);
 		break;
 
 	default:
