@@ -1,4 +1,4 @@
-/*	ip_icmp.c	6.3	84/01/11	*/
+/*	ip_icmp.c	6.4	84/01/31	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -123,7 +123,7 @@ icmp_input(m)
 	if (icmpprintfs)
 		printf("icmp_input from %x, len %d\n", ip->ip_src, icmplen);
 #endif
-	if (icmplen < sizeof(struct ip) + ICMP_MINLEN) {
+	if (icmplen < ICMP_MINLEN) {
 		icmpstat.icps_tooshort++;
 		goto free;
 	}
