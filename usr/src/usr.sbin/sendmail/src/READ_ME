@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.59 (Berkeley) %G%
+#	@(#)READ_ME	8.60 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -224,6 +224,10 @@ NEEDVPRINTF	Define this if your standard C library does not define
 		vprintf(3).  Note that the resulting fake implementation
 		is not very elegant and may not even work on some
 		architectures.
+NEEDFSYNC	Define this if your standard C library does not define
+		fsync(2).  This will try to simulate the operation using
+		fcntl(2); if that is not available it does nothing, which
+		isn't great, but at least it compiles and runs.
 HASGETUSERSHELL	Define this to 1 if you have getusershell(3) in your
 		standard C library.  If this is not defined, or is defined
 		to be 0, sendmail will scan the /etc/shells file (no
@@ -835,4 +839,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.59, last update %G% 09:33:14)
+(Version 8.60, last update %G% 16:50:01)
