@@ -1,6 +1,6 @@
 #ifndef lint
 static char sccsid[] =
-"@(#)jn.c	4.2 (Berkeley) 8/21/85; 1.2 (ucb.elefunt) %G%";
+"@(#)jn.c	4.2 (Berkeley) 8/21/85; 1.3 (ucb.elefunt) %G%";
 #endif not lint
 
 /*
@@ -36,7 +36,7 @@ static char sccsid[] =
 */
 
 #include <math.h>
-#ifdef VAX
+#if defined(VAX)
 #include <errno.h>
 #else	/* IEEE double */
 static double zero = 0.e0;
@@ -92,7 +92,7 @@ yn(n,x) int n; double x;{
 	double y0(), y1();
 
 	if (x <= 0) {
-#ifdef VAX
+#if defined(VAX)
 		extern double infnan();
 		return(infnan(EDOM));	/* NaN */
 #else	/* IEEE double */

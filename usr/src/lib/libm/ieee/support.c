@@ -13,7 +13,7 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)support.c	1.1 (Berkeley) 5/23/85; 1.4 (ucb.elefunt) %G%";
+"@(#)support.c	1.1 (Berkeley) 5/23/85; 1.5 (ucb.elefunt) %G%";
 #endif not lint
 
 /* 
@@ -55,7 +55,7 @@ static char sccsid[] =
  */
 
 
-#ifdef VAX      /* VAX D format */
+#if (defined(VAX)||defined(TAHOE))      /* VAX D format */
     static unsigned short msign=0x7fff , mexp =0x7f80 ;
     static short  prep1=57, gap=7, bias=129           ;   
     static double novf=1.7E38, nunf=3.0E-39, zero=0.0 ;
@@ -73,13 +73,13 @@ double x; int N;
 
 #ifdef NATIONAL
         unsigned short *px=(unsigned short *) &x + 3;
-#else /* VAX, SUN, ZILOG */
+#else /* VAX, SUN, ZILOG, TAHOE */
         unsigned short *px=(unsigned short *) &x;
 #endif
 
         if( x == zero )  return(x); 
 
-#ifdef VAX
+#if (defined(VAX)||defined(TAHOE))
         if( (k= *px & mexp ) != ~msign ) {
             if( N<-260) return(nunf*nunf); else if(N>260) return(novf+novf);
 #else   /* IEEE */
@@ -109,12 +109,12 @@ double x,y;
 #ifdef NATIONAL
         unsigned short  *px=(unsigned short *) &x+3,
                         *py=(unsigned short *) &y+3;
-#else /* VAX, SUN, ZILOG */
+#else /* VAX, SUN, ZILOG,TAHOE */
         unsigned short  *px=(unsigned short *) &x,
                         *py=(unsigned short *) &y;
 #endif
 
-#ifdef VAX
+#if (defined(VAX)||defined(TAHOE))
         if ( (*px & mexp) == 0 ) return(x);
 #endif
 
@@ -128,11 +128,11 @@ double x;
 
 #ifdef NATIONAL
         short *px=(short *) &x+3, k;
-#else /* VAX, SUN, ZILOG */
+#else /* VAX, SUN, ZILOG, TAHOE */
         short *px=(short *) &x, k;
 #endif
 
-#ifdef VAX
+#if (defined(VAX)||defined(TAHOE))
         return (int)(((*px&mexp)>>gap)-bias);
 #else /* IEEE */
         if( (k= *px & mexp ) != mexp )
@@ -152,7 +152,7 @@ double x;
 finite(x)
 double x;    
 {
-#ifdef VAX
+#if (defined(VAX)||defined(TAHOE))
         return(1.0);
 #else  /* IEEE */
 #ifdef NATIONAL
@@ -175,7 +175,7 @@ double x,p;
               *pp=(unsigned short *) &p  +3,
               *pd=(unsigned short *) &dp +3,
               *pt=(unsigned short *) &tmp+3;
-#else /* VAX, SUN, ZILOG */
+#else /* VAX, SUN, ZILOG, TAHOE */
         unsigned short
               *px=(unsigned short *) &x  , 
               *pp=(unsigned short *) &p  ,
@@ -185,14 +185,14 @@ double x,p;
 
         *pp &= msign ;
 
-#ifdef VAX
+#if (defined(VAX)||defined(TAHOE))
         if( ( *px & mexp ) == ~msign )
 #else /* IEEE */
         if( ( *px & mexp ) == mexp )
 #endif
 		return  (x-p)-(x-p);	/* create nan if x is inf */
 	if(p==zero) return zero/zero;
-#ifdef VAX
+#if (defined(VAX)||defined(TAHOE))
         if( ( *pp & mexp ) == ~msign )
 #else /* IEEE */
         if( ( *pp & mexp ) == mexp )
@@ -217,7 +217,7 @@ double x,p;
                         tmp = dp ;
                         *pt += k ;
 
-#ifdef VAX
+#if (defined(VAX)||defined(TAHOE))
                         if( x < tmp ) *pt -= 128 ;
 #else /* IEEE */
                         if( x < tmp ) *pt -= 16 ;
@@ -240,7 +240,7 @@ double x;
         double logb(),scalb();
         double t,zero=0.0;
         int m,n,i,finite();
-#ifdef VAX
+#if (defined(VAX)||defined(TAHOE))
         int k=54;
 #else   /* IEEE */
         int k=51;
@@ -313,7 +313,7 @@ double x,y;
 
 #ifdef NATIONAL		/* order of words in floating point number */
 	static n0=3,n1=2,n2=1,n3=0;
-#else /* VAX, SUN, ZILOG */
+#else /* VAX, SUN, ZILOG, TAHOE */
 	static n0=0,n1=1,n2=2,n3=3;
 #endif
 

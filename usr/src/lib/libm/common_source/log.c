@@ -13,7 +13,7 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)log.c	4.5 (Berkeley) 8/21/85; 1.3 (ucb.elefunt) %G%";
+"@(#)log.c	4.5 (Berkeley) 8/21/85; 1.4 (ucb.elefunt) %G%";
 #endif not lint
 
 /* LOG(X)
@@ -67,7 +67,7 @@ static char sccsid[] =
  * shown.
  */
 
-#ifdef VAX	/* VAX D format */
+#if (defined(VAX)||defined(TAHOE))	/* VAX D format */
 #include <errno.h>
 
 /* static double */
@@ -94,7 +94,7 @@ double x;
 	double logb(),scalb(),copysign(),log__L(),s,z,t;
 	int k,n,finite();
 
-#ifndef VAX
+#if (!defined(VAX)&&!defined(TAHOE))
 	if(x!=x) return(x);	/* x is NaN */
 #endif
 	if(finite(x)) {
@@ -117,7 +117,7 @@ double x;
 	/* end of if (x > zero) */
 
 	   else {
-#ifdef VAX
+#if (defined(VAX)||defined(TAHOE))
 		extern double infnan();
 		if ( x == zero )
 		    return (infnan(-ERANGE));	/* -INF */

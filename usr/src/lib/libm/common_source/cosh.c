@@ -13,7 +13,7 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)cosh.c	1.2 (Berkeley) 8/21/85; 1.3 (ucb.elefunt) %G%";
+"@(#)cosh.c	1.2 (Berkeley) 8/21/85; 1.4 (ucb.elefunt) %G%";
 #endif not lint
 
 /* COSH(X)
@@ -63,7 +63,7 @@ static char sccsid[] =
  * shown.
  */
 
-#ifdef VAX
+#if (defined(VAX)||defined(TAHOE))
 /* static double  */
 /* mln2hi =  8.8029691931113054792E1     , Hex  2^  7   *  .B00F33C7E22BDB */
 /* mln2lo = -4.9650192275318476525E-16   , Hex  2^-50   * -.8F1B60279E582A */
@@ -81,7 +81,7 @@ mln2lo =  2.3747039373786107478E-14   , /*Hex  2^-45   *  1.ABC9E3B39803F */
 lnovfl =  7.0978271289338397310E2     ; /*Hex  2^  9   *  1.62E42FEFA39EF */
 #endif
 
-#ifdef VAX
+#if (defined(VAX)||defined(TAHOE))
 static max = 126                      ;
 #else	/* IEEE double */
 static max = 1023                     ;
@@ -93,7 +93,7 @@ double x;
 	static double half=1.0/2.0,one=1.0, small=1.0E-18; /* fl(1+small)==1 */
 	double scalb(),copysign(),exp(),exp__E(),t;
 
-#ifndef VAX
+#if (!defined(VAX)&&!defined(TAHOE))
 	if(x!=x) return(x);	/* x is NaN */
 #endif
 	if((x=copysign(x,one)) <= 22)

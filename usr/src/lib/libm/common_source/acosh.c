@@ -13,7 +13,7 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)acosh.c	1.2 (Berkeley) 8/21/85; 1.2 (ucb.elefunt) %G%";
+"@(#)acosh.c	1.2 (Berkeley) 8/21/85; 1.3 (ucb.elefunt) %G%";
 #endif not lint
 
 /* ACOSH(X)
@@ -53,7 +53,7 @@ static char sccsid[] =
  * shown.
  */
 
-#ifdef VAX	/* VAX D format */
+#if (defined(VAX)||defined(TAHOE))	/* VAX D format */
 /* static double */
 /* ln2hi  =  6.9314718055829871446E-1    , Hex  2^  0   *  .B17217F7D00000 */
 /* ln2lo  =  1.6465949582897081279E-12   ; Hex  2^-39   *  .E7BCD5E4F1D9CC */
@@ -72,7 +72,7 @@ double x;
 {	
 	double log1p(),sqrt(),t,big=1.E20; /* big+1==big */
 
-#ifndef VAX
+#if (!defined(VAX)&&!defined(TAHOE))
 	if(x!=x) return(x);	/* x is NaN */
 #endif
 
