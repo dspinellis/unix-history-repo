@@ -1,4 +1,4 @@
-/*	copy.c	4.4	83/02/20	*/
+/*	copy.c	4.5	83/02/24	*/
 
 /*
  * Copy from to in 10K units.
@@ -29,6 +29,11 @@ main()
 		if (rcc < sizeof (buffer))
 			printf("Record %d: read short; expected %d, got %d\n",
 				record, sizeof (buffer), rcc);
+		/*
+		 * For bug in ht driver.
+		 */
+		if (rcc > sizeof (buffer))
+			rcc = sizeof (buffer);
 		wcc = write(to, buffer, rcc);
 		if (wcc < 0) {
 			printf("Record %d: write error: errno=%d\n",
