@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)termios.4	8.2 (Berkeley) %G%
+.\"	@(#)termios.4	8.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt TERMIOS 4
@@ -200,7 +200,7 @@ when this limit is exceeded depends on the setting of the
 flag in the termios
 .Fa c_iflag .
 If this flag is set, the terminal
-is a sent an
+is sent an
 .Tn ASCII
 .Dv BEL
 character each time a character is received
@@ -926,8 +926,7 @@ characters are transmitted are implementation defined.
 .Pp
 If
 .Dv IMAXBEL
-is set and the input queue is full, subsequent input
-shall causes an
+is set and the input queue is full, subsequent input shall cause an
 .Tn ASCII
 .Dv BEL
 character to be transmitted to the
