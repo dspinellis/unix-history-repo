@@ -23,7 +23,7 @@
  * from: $Header: /sprite/src/kernel/vm/ds3100.md/vmPmaxAsm.s,
  *	v 1.1 89/07/10 14:27:41 nelson Exp $ SPRITE (DECWRL)
  *
- *	@(#)locore.s	7.9 (Berkeley) %G%
+ *	@(#)locore.s	7.10 (Berkeley) %G%
  */
 
 /*
@@ -39,9 +39,15 @@
 #include <machine/reg.h>
 #include <machine/machAsmDefs.h>
 #include <machine/pte.h>
-#include <machine/endian.h>
 #include <machine/adrsmap.h>
 #include "assym.h"
+
+/* #include <machine/endian.h> */
+/* common endian.h includes function declarations */
+#define	LITTLE_ENDIAN	1234	/* LSB first: i386, vax */
+#define	BIG_ENDIAN	4321	/* MSB first: 68000, ibm, net */
+#define	PDP_ENDIAN	3412	/* LSB first in word, MSW first in long */
+#define	BYTE_ORDER	BIG_ENDIAN
 
 /*
  * Amount to take off of the stack for the benefit of the debugger.
