@@ -1,4 +1,4 @@
-#	@(#)POSIX	5.4 (Berkeley) %G%
+#	@(#)POSIX	5.5 (Berkeley) %G%
 
 Comments on the IEEE P1003.2 Draft 12
      Part 2: Shell and Utilities
@@ -170,3 +170,22 @@ All uses of "POSIX" refer to section 4.55, Draft 12 of POSIX 1003.2.
 22.	Historic implementations of sed ignore the RE delimiter characters
 	within character classes.  This is not specified in POSIX.  This
 	implementation follows historic practice.
+
+23.	Historic implementations handle empty RE's in a special way: the
+	empty RE is interpreted as if it were the last RE encountered,
+	whether in an address or elsewhere.  POSIX does not document this
+	behavior.  For example the command:
+
+		sed -e /abc/s//XXX/
+
+	substitutes XXX for the pattern abc.  The semantics of "the last
+	RE" can be defined in two different ways:
+
+	1. The last RE encountered when compiling (lexical/static scope).
+	2. The last RE encountered while running (dynamic scope).
+
+	While many historical implementations fail on programs depending
+	on scope differences, the SunOS version exhibited dynamic scope
+	behaviour.  This implementation also uses does dynamic scoping, as
+	this seems the natural way to interact with an editor, and in order
+	to remain consistent with historical practice.
