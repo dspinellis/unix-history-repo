@@ -1,4 +1,4 @@
-/*	machdep.c	1.2	86/12/18	*/
+/*	machdep.c	1.3	87/10/27	*/
 
 #include "../tahoe/mem.h"
 #include "../tahoe/mtpr.h"
@@ -42,6 +42,31 @@ ENTRY(badaddr, R5|R4|R3|R2|R1)
 	bbc	$0,r4,1f; tstb	(r3)
 1:	bbc	$1,r4,1f; tstw	(r3)
 1:	bbc	$2,r4,1f; tstl	(r3)
+1:	clrl	r0			# made it w/o machine checks
+2:	movl	r2,*$BERVEC
+	mtpr	r1,$IPL
+	mtpr	r5,$SCBB
+	ret
+
+/*
+ * wbadaddr(addr, len, value)
+ *	see if write of value to addr with a len type instruction causes
+ *	a machine check
+ *	len is length of access (1=byte, 2=short, 4=long)
+ *	r0 = 0 means good(exists); r0 =1 means does not exist.
+ */
+ENTRY(wbadaddr, R5|R4|R3|R2|R1)
+	mfpr	$IPL,r1
+	mtpr	$HIGH,$IPL
+	mfpr	$SCBB,r5
+	mtpr	$0,$SCBB
+	movl	*$BERVEC,r2
+	movl	4(fp),r3
+	movl	8(fp),r4
+	movab	9f,*$BERVEC
+	bbc	$0,r4,1f; movb	15(fp), (r3)
+1:	bbc	$1,r4,1f; movw	14(fp), (r3)
+1:	bbc	$2,r4,1f; movl	12(fp), (r3)
 1:	clrl	r0			# made it w/o machine checks
 2:	movl	r2,*$BERVEC
 	mtpr	r1,$IPL
