@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)psignal.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)psignal.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -22,7 +22,7 @@ psignal(sig, s)
 	unsigned int sig;
 	const char *s;
 {
-	register char *c;
+	register const char *c;
 	register int n;
 
 	if (sig < NSIG)
