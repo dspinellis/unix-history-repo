@@ -7,11 +7,14 @@
 #
 #	This has been tested on Ultrix 4.2A and 4.3A.
 #
-#	@(#)Makefile.ULTRIX	8.8 (Berkeley) %G%
+#	@(#)Makefile.ULTRIX	8.9 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
 O=	-O
+
+# native compiler requires -Olimit to optimize properly
+CC=	cc -Olimit 900
 
 # define the database mechanisms available for map & alias lookups:
 #	-DNDBM -- use new DBM
@@ -24,7 +27,7 @@ DBMDEF=	-DNDBM -DNEWDB -DNIS
 
 # environment definitions (e.g., -D_AIX3)
 # On Ultrix 4.4 and later, you can set IDENTPROTO=1.
-ENVDEF=	-Olimit 900 -DIDENTPROTO=0
+ENVDEF=	-DIDENTPROTO=0
 
 # see also conf.h for additional compilation flags
 
