@@ -1,4 +1,4 @@
-/*	if_imp.c	6.4	85/03/19	*/
+/*	if_imp.c	6.5	85/05/27	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -380,7 +380,7 @@ impnotify(what, cp, hp, ifp)
 	if (cp->dl_link != IMPLINK_IP)
 		raw_ctlinput(what, (caddr_t)&in);
 	else
-		ip_ctlinput(what, (caddr_t)&in);
+		pfctlinput(what, (caddr_t)&in);
 	if (hp) {
 		hp->h_flags |= (1 << what);
 		hostfree(hp);
