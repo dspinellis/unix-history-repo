@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)stty.1	6.3 (Berkeley) %G%
+.\"	@(#)stty.1	6.4 (Berkeley) %G%
 .\"
 .TH STTY 1 ""
 .UC 4
@@ -288,10 +288,15 @@ Set terminal baud rate to the number given, if possible.
 The terminal size is recorded as having
 .I n
 rows.
+.TP 10
 .BI columns \ n\fR
 The terminal size is recorded as having
 .I n
 columns.
+.TP 10
+.BI cols \ n\fR
+is an alias for
+.IR columns .
 .PP
 A teletype driver which supports the job control processing of
 .IR csh (1)
