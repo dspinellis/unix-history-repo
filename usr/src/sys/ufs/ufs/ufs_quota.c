@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_quota.c	7.2 (Berkeley) %G%
+ *	@(#)ufs_quota.c	7.3 (Berkeley) %G%
  */
 #include "param.h"
 #include "time.h"
@@ -747,8 +747,8 @@ dqget(vp, id, ump, type, dqp)
 	auio.uio_segflg = UIO_SYSSPACE;
 	auio.uio_rw = UIO_READ;
 	error = VOP_READ(dqvp, &auio, 0, ump->um_cred[type]);
-	if (auio.uio_resid && error == 0)
-		error = EIO;
+	if (auio.uio_resid == sizeof(struct dqblk) && error == 0)
+		bzero((caddr_t)&dq->dq_dqb, sizeof(struct dqblk));
 	if (vp != dqvp)
 		VOP_UNLOCK(dqvp);
 	if (dq->dq_flags & DQ_WANT)
