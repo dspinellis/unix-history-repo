@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)login.c	4.17 82/05/19";
+static	char *sccsid = "@(#)login.c	4.18 82/06/27";
 /*
  * login [ name ]
  * login -r
@@ -297,6 +297,7 @@ normal:
 		close(f);
 	}
 	chown(ttyn, pwd->pw_uid, pwd->pw_gid);
+	chmod(ttyn, 622);
 	setgid(pwd->pw_gid);
 	strncpy(name, utmp.ut_name, NMAX);
 	name[NMAX] = '\0';
