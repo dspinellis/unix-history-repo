@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)boot.c	6.9 (Berkeley) %G%
+ *	@(#)boot.c	6.10 (Berkeley) %G%
  */
 
 #include "../h/param.h"
@@ -62,7 +62,7 @@ main()
 #else
 	type = (devtype >> B_TYPESHIFT) & B_TYPEMASK;
 	unit = (devtype >> B_UNITSHIFT) & B_UNITMASK;
-	unit += 8 * (devtype >> B_ADAPTORSHIFT) & B_ADAPTORMASK;
+	unit += 8 * ((devtype >> B_ADAPTORSHIFT) & B_ADAPTORMASK);
 	part = (devtype >> B_PARTITIONSHIFT) & B_PARTITIONMASK;
 	if ((howto & RB_ASKNAME) == 0) {
 		if (type >= 0 && type <= MAXTYPE && devname[type][0]) {
