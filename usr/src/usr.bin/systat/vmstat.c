@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -16,11 +16,8 @@ static char sccsid[] = "@(#)vmstat.c	5.2 (Berkeley) %G%";
 
 #include <ctype.h>
 #include <utmp.h>
-#include <nlist.h>
 
-#include <sys/param.h>
 #include <sys/vm.h>
-#include <sys/file.h>
 #include <sys/buf.h>
 #include <sys/stat.h>
 #include <sys/dir.h>
@@ -53,16 +50,8 @@ closekre(w)
         wrefresh(w);
 }
 
-#if DK_NDRIVE > 6
-#undef DK_NDRIVE
-#define	DK_NDRIVE 6
-#endif
-
-char	*fread();
 long	time();
 float	cputime();
-char	*asctime();
-struct	tm *localtime();
 struct	utmp utmp;
 
 static struct nlist name[] = {
@@ -102,13 +91,7 @@ static struct nlist name[] = {
 #define	X_INTRCNT	16
 	{ "_eintrcnt" },
 #define	X_EINTRCNT	17
-#ifdef vax
-	{ "_ubdinit" },
-#define X_UBDINIT	18
-	{ "_mbdinit" },
-#define X_MBDINIT	19
-#endif
-	{ 0 },
+	{ "" },
 };
 
 static struct Info {
@@ -117,10 +100,10 @@ static struct Info {
 	struct	vmtotal Total;
 	struct	vmmeter Sum;
 	struct	forkstat Forkstat;
-	long	dk_time[DK_NDRIVE];
-	long	dk_wds[DK_NDRIVE];
-	long	dk_seek[DK_NDRIVE];
-	long	dk_xfer[DK_NDRIVE];
+	long	*dk_time;
+	long	*dk_wds;
+	long	*dk_seek;
+	long	*dk_xfer;
 	int	dk_busy;
 	long	tk_nin;
 	long	tk_nout;
@@ -147,7 +130,6 @@ static	char **intrname;
 static	int nextintsrow;
 
 static	enum state { BOOT, TIME, RUN } state = TIME;
-static	enum { NONE, SOME } dr_state[DK_NDRIVE];
 
 /*
  * These constants define where the major pieces are laid out
@@ -184,16 +166,19 @@ initkre()
 		}
 	}
 	hertz = phz ? phz : hz;
-	if (ndrives == 0) {
-#ifdef vax
-                read_names(name[X_MBDINIT].n_value, name[X_UBDINIT].n_value);
-#endif
+	dkinit();
+	if (dk_ndrive) {
+#define	allocate(e, t) \
+    s./**/e = (t *)calloc(dk_ndrive, sizeof (t)); \
+    s1./**/e = (t *)calloc(dk_ndrive, sizeof (t)); \
+    s2./**/e = (t *)calloc(dk_ndrive, sizeof (t)); \
+    z./**/e = (t *)calloc(dk_ndrive, sizeof (t));
+		allocate(dk_time, long);
+		allocate(dk_wds, long);
+		allocate(dk_seek, long);
+		allocate(dk_xfer, long);
+#undef allocate
 	}
-	for (i = 0; i < DK_NDRIVE; i++)
-		if (dk_mspw[i] == 0.0)
-			dr_state[i] = NONE;
-		else
-			dr_state[i] = SOME;
 	if (nintr == 0) {
 		nintr = (name[X_EINTRCNT].n_value -
 			name[X_INTRCNT].n_value) / sizeof (long);
@@ -231,6 +216,8 @@ fetchkre()
 	buf[16] = '\0';
 	getinfo(&s, state);
 }
+
+#define	MAXDRIVES	6		/* max # to display */
 
 labelkre()
 {
@@ -286,8 +273,8 @@ labelkre()
 	mvprintw(DISKROW + 3, DISKCOL, " blks");
 	mvprintw(DISKROW + 4, DISKCOL, " msps");
 	j = 0;
-	for (i = 0; i < DK_NDRIVE; i++)
-		if (dr_state[i] == SOME) {
+	for (i = 0; i < dk_ndrive && j < MAXDRIVES; i++)
+		if (dk_select[i]) {
 			mvprintw(DISKROW, DISKCOL + 5 + 5 * j,
 				"  %3.3s", dr_name[j]);
 			j++;
@@ -313,7 +300,7 @@ showkre()
 	int psiz, interv, hits, inttotal;
 	int i, l, c;
 
-	for (i = 0; i < DK_NDRIVE; i++) {
+	for (i = 0; i < dk_ndrive; i++) {
 		X(dk_xfer); X(dk_seek); X(dk_wds); X(dk_time);
 	}
 	Y(tk_nin); Y(tk_nout);
@@ -469,10 +456,10 @@ showkre()
 		, 2
 		, 1
 	);
-	c = 1;
-	for (i = 0; i < DK_NDRIVE; i++)
-		if (dr_state[i] == SOME)
-			dinfo(i, c++);
+	c = 0;
+	for (i = 0; i < dk_ndrive && c < MAXDRIVES; i++)
+		if (dk_select[i])
+			dinfo(i, ++c);
 
 	putint(s.nchcount, NAMEIROW + 2, NAMEICOL, 9);
 	putint(nchtotal.ncs_goodhits, NAMEIROW + 2, NAMEICOL + 9, 9);
@@ -509,7 +496,7 @@ cmdkre(cmd, args)
 			getinfo(&s1, RUN);
 		return (1);
 	}
-	return (0);
+	return (dkcmd(cmd, args));
 }
 
 /* calculate number of users on the system */
@@ -606,27 +593,24 @@ getinfo(s, st)
 	read(kmem, s->time, sizeof s->time);
 	if (st != TIME) {
 		lseek(kmem, (long)name[X_SUM].n_value, L_SET);
-		read(kmem, &s->Rate, sizeof &s->Rate);
+		read(kmem, &s->Rate, sizeof s->Rate);
 	} else {
 		lseek(kmem, (long)name[X_RATE].n_value,L_SET);
 		read(kmem, &s->Rate, sizeof s->Rate);
 	}
 	lseek(kmem, (long)name[X_TOTAL].n_value, L_SET);
 	read(kmem, &s->Total, sizeof s->Total);
-	lseek(kmem, (long)name[X_DK_BUSY].n_value,  L_SET);
- 	read(kmem, &s->dk_busy, sizeof s->dk_busy);
+	s->dk_busy = getw(name[X_DK_BUSY].n_value);
  	lseek(kmem, (long)name[X_DK_TIME].n_value,  L_SET);
- 	read(kmem, s->dk_time, sizeof s->dk_time);
+ 	read(kmem, s->dk_time, dk_ndrive * sizeof (long));
  	lseek(kmem, (long)name[X_DK_XFER].n_value,  L_SET);
- 	read(kmem, s->dk_xfer, sizeof s->dk_xfer);
+ 	read(kmem, s->dk_xfer, dk_ndrive * sizeof (long));
  	lseek(kmem, (long)name[X_DK_WDS].n_value,  L_SET);
- 	read(kmem, s->dk_wds, sizeof s->dk_wds);
- 	lseek(kmem, (long)name[X_TK_NIN].n_value,  L_SET);
- 	read(kmem, &s->tk_nin, sizeof s->tk_nin);
- 	lseek(kmem, (long)name[X_TK_NOUT].n_value,  L_SET);
- 	read(kmem, &s->tk_nout, sizeof s->tk_nout);
+ 	read(kmem, s->dk_wds, dk_ndrive * sizeof (long));
 	lseek(kmem, (long)name[X_DK_SEEK].n_value,  L_SET);
-	read(kmem, s->dk_seek, sizeof s->dk_seek);
+	read(kmem, s->dk_seek, dk_ndrive * sizeof (long));
+	s->tk_nin = getw(name[X_TK_NIN].n_value);
+	s->tk_nout = getw(name[X_TK_NOUT].n_value);
 	lseek(kmem, (long)name[X_NCHSTATS].n_value,  L_SET);
 	read(kmem, &s->nchstats, sizeof s->nchstats);
 	lseek(kmem, (long)name[X_INTRCNT].n_value,  L_SET);
@@ -647,14 +631,19 @@ allocinfo(s)
 
 static
 copyinfo(from, to)
-	struct Info *from, *to;
+	register struct Info *from, *to;
 {
-	register int i, *fip = from->intrcnt, *tip = to->intrcnt;
+	long *time, *wds, *seek, *xfer;
+	int *intrcnt;
 
+	time = to->dk_time; wds = to->dk_wds; seek = to->dk_seek;
+	xfer = to->dk_xfer; intrcnt = to->intrcnt;
 	*to = *from;
-	to->intrcnt = tip;
-	for (i = 0; i < nintr; i++)
-		*tip++ = *fip++;
+	bcopy(from->dk_time, to->dk_time = time, dk_ndrive * sizeof (long));
+	bcopy(from->dk_wds, to->dk_wds = wds, dk_ndrive * sizeof (long));
+	bcopy(from->dk_seek, to->dk_seek = seek, dk_ndrive * sizeof (long));
+	bcopy(from->dk_xfer, to->dk_xfer = xfer, dk_ndrive * sizeof (long));
+	bcopy(from->intrcnt, to->intrcnt = intrcnt, nintr * sizeof (int));
 }
 
 static
