@@ -1,7 +1,8 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 
-PROG=	diction
+PROG=	dprog
 BINDIR=	/usr/libexec
+MAN1=	diction.0
 MLINKS=	diction.1 explain.1
 
 beforeinstall:
