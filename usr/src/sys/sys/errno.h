@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)errno.h	7.1 (Berkeley) %G%
+ *	@(#)errno.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -20,7 +20,7 @@
 #define	ENOEXEC		8		/* Exec format error */
 #define	EBADF		9		/* Bad file number */
 #define	ECHILD		10		/* No children */
-#define	EAGAIN		11		/* No more processes */
+					/* 11 - was EAGAIN */
 #define	ENOMEM		12		/* Not enough core */
 #define	EACCES		13		/* Permission denied */
 #define	EFAULT		14		/* Bad address */
@@ -50,6 +50,7 @@
 /* non-blocking and interrupt i/o */
 #define	EWOULDBLOCK	35		/* Operation would block */
 #define	EDEADLK		EWOULDBLOCK	/* ditto */
+#define EAGAIN		EWOULDBLOCK	/* or No Resources (fork failed) */
 #define	EINPROGRESS	36		/* Operation now in progress */
 #define	EALREADY	37		/* Operation already in progress */
 
