@@ -242,6 +242,32 @@ ucbra81|UCBRA81|DEC UCBRA81 Winchester:\
 	:pg#648466:bg#4096:fg#1024:\
 	:ph#193282:bh#4096:fh#512:
 #
+# RC25
+rc25|RC25:\
+	:ty=winchester:ns#42:nt#4:nc#302:so:\
+	:pa#15884:ba#8192:fa#1024:\
+	:pb#10032:bb#4096:fb#512:\
+	:pc#50902:bc#4096:fc#512:\
+	:pg#24986:bg#4096:fg#512:\
+#
+#  Disks on RQDX Q-bus controllers
+rd52|RD52|DEC RD52 on Microvax:\
+	:ty=winchester:ns#18:nt#7:nc#480:so:\
+	:pa#15884:ba#4096:fa#1024:\
+	:pb#9766:bb#4096:fb#512:\
+	:pc#60480:bc#4096:fc#512:\
+	:pg#34830:bg#4096:fg#512:\
+#
+rd53|RD53|DEC RD53 on Microvax:\
+	:ty=winchester:ns#18:nt#8:nc#963:so:\
+	:pa#15884:ba#8192:fa#1024:\
+	:pb#33440:bb#4096:fb#512:\
+	:pc#138672:bc#4096:fc#512:\
+	:pe#33440:be#4096:fe#512:\
+	:pf#105232:bf#4096:ff#512:\
+	:pg#89348:bg#4096:fg#512:
+	:ph#122788:bh#4096:fh#512:\
+#
 # RX02 floppy disk drives
 #
 rx02|RX02|DEC RX02:\
