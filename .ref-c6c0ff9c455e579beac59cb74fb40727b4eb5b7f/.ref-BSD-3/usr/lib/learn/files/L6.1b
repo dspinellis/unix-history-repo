@@ -1,0 +1,14 @@
+#print
+Will the file name "abcd"
+be matched by "a*d"?  Again,
+if you are not sure, you can experiment
+in this directory with commands like
+"ls" and "ls a*d".
+#create abcd
+#copyin
+#user
+#uncopyin
+#match yes
+#log
+#next
+6.1c

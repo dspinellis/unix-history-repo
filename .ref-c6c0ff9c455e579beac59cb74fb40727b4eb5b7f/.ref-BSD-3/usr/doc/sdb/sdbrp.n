@@ -1,0 +1,543 @@
+.RP
+.TL
+Sdb: A Symbolic Debugger
+.AU "HO 4F-605" 5337
+Howard P. Katseff
+.AI
+.HO
+.OK
+UNIX
+C programming
+Program testing
+.AB
+Sdb is a symbolic debugging program currently implemented for the
+language C on the UNIX/32V\s-2\u\(dg\d\s+2 Operating System.
+.FS
+\(dg\dUNIX is a trademark of Bell Laboratories
+.FE
+Sdb allows one to interact with a debugged program at the
+C language level.
+When debugging a core image from an aborted program,
+sdb reports which line in the C program caused the error
+and allows all variables,
+including array and structure elements,
+to be accessed symbolically
+and displayed in the correct format.
+.PP
+One may place breakpoints at selected statements 
+or single step on a line by line basis.
+To facilitate specification of lines in the program without
+a source listing,
+a mechanism for examining the source text is also included in sdb.
+.PP
+Procedures may be called directly from the debugger.
+This feature is useful both for testing individual procedures
+and for calling user-provided routines which provide formatted
+printout of structured data.
+.AE
+.CS 6 4 10 0 0 2
+.NH
+Introduction
+.PP
+This document describes a symbolic debugger, sdb, as implemented
+for C programs on the UNIX/V32\s-2\u\(dg\d\s+2 Operating System.
+.FS
+\(dg\dUNIX is a trademark of Bell Laboratories
+.FE
+Sdb is useful both for examining core images of aborted programs
+and for providing an environment in which execution of a program 
+can be monitored and controlled.
+.NH
+Examining core images
+.PP
+In order to use sdb,
+it is necessary to compile the C program with the `\(mig' flag.
+This causes the compiler to generate additional information
+about the variables and statements of the compiled program.
+When the debug flag is specified,
+sdb can be used to obtain a trace of the called procedures
+at the time of the abort and interactively display the
+values of variables.
+.NH 2
+Invoking sdb
+.PP
+A typical sequence of shell commands for debugging a core image is:
+.DS
+% cc \(mig foo.c \(mio foo
+% foo
+Bus error \(mi core dumped
+% sdb foo
+main:25:      x[i] = 0;
+\v'.25m'*\v'-.25m'
+.DE
+.PP
+The program foo was compiled with the `\(mig' flag and then executed.
+An error occurred which caused a core dump.
+Sdb is then invoked to examine the core dump to determine the
+cause of the error.
+It reports that the Bus error occurred in procedure main at line 25
+(line numbers are always relative to the beginning of the file)
+and outputs the source text of the offending line.
+Sdb then prompts the user with a `\v'.25m'*\v'-.25m'' indicating that it awaits
+a command.
+.PP
+It is useful to know that sdb has a notion of current
+procedure and current line.
+In this example, they are initially set to `main' and `25'
+respectively.
+.PP
+In the above example sdb was called with one argument, `foo'.
+In general it takes three arguments on the command line.
+The first is the name of the executable file which is to be
+debugged;
+It defaults to a.out when not specified.
+The second is the name of the core file, defaulting to core
+and the third is the name of the directory containing the source
+of the program being debugged.
+Sdb currently requires all source to reside in a single directory.
+The default is the working directory.
+In the example
+the second and third arguments defaulted to the correct values,
+so only the first was specified.
+.PP
+It is possible that the error occurred in a procedure which was
+not compiled with the debug flag.
+In this case, sdb prints the procedure name and the address at
+which the error occurred.
+The current line and procedure are set to the first line in main.
+Sdb will complain if main was not compiled with `\(mig'
+but debugging can continue for those routines compiled with the
+debug flag.
+.NH 2
+Printing a stack trace
+.PP
+It is often useful to obtain a listing of the procedure calls
+which led to the error.
+This is obtained with the
+.B t
+command.
+For example:
+.DS
+\v'.25m'*\v'-.25m't
+sub(2,3)     [foo.c:25]
+inter(16012)     [foo.c:96]
+main(1,2147483584, 2147483592)     [foo.c:15]
+.DE
+This indicates that the error occurred within the procedure sub
+at line 25 in file foo.c.
+Sub was called with the arguments 2 and 3 for inter at line 96.
+Inter was called from main at line 16.
+Main is always called by the shell with three arguments,
+often referred to as
+.I argc,
+.I argp
+and
+.I envp.
+Arguments in the call trace are always printed in decimal.
+.NH 2
+Examining variables
+.PP
+Sdb can be used to display variables in the stopped program.
+Variables are displayed by typing their name followed by a slash,
+so
+.DS
+\v'.25m'*\v'-.25m'errflg/
+.DE
+causes sdb to display the value of variable errflg.
+Unless otherwise specified,
+variables are assumed to be either local to or accessible from
+the current procedure.
+To specify a different procedure, use the form
+.DS
+\v'.25m'*\v'-.25m'sub:i/
+.DE
+to display variable i in procedure sub.
+Section 3.2 will explain how to change the current procedure.
+.PP
+Sdb normally displays the variable in a format determined by
+its type as declared in the C program.
+To request a different format, a specifier is placed after
+the slash.
+The specifier consists of an optional length specification
+followed by the format.
+The length specifiers are
+.nr PD 0
+.DS
+.IP \fBb\fP
+one byte
+.IP \fBh\fP
+two bytes  (half word)
+.IP \fBl\fP
+four bytes  (long word)
+.DE
+.nr PD 0.3v
+The lengths are only effective with the formats
+\fBd\fP, \fBo\fP, \fBx\fP and \fBu\fP.
+If no length is specified, the word length of the host machine,
+four for the DEC VAX-11/780\s-2\u\(dg\d\s+2, is used.
+.FS
+\(dg\dDEC and VAX are trademarks of Digital Equipment Corporation
+.FE
+There are a number of format specifiers available:
+.nr PD 0
+.DS
+.DS
+.IP \fBc\fR
+character
+.IP \fBd\fP
+decimal
+.IP \fBu\fP
+decimal unsigned
+.IP \fBo\fP
+octal
+.IP \fBx\fP
+hexadecimal
+.IP \fBf\fP
+32 bit single precision floating point
+.IP \fBg\fP
+64 bit double precision floating point
+.IP \fBs\fP
+Assume variable is a string pointer and print characters until a null is 
+reached.
+.IP \fBa\fP
+Print characters starting at the variable's address until a null
+is reached.
+.DE
+.DE
+.nr PD 0.3v
+As an example,
+variable i can be displayed in hexadecimal with the following command
+.DS
+\v'.25m'*\v'-.25m'i/x
+.DE
+.PP
+Sdb also knows about structures, one dimensional arrays and
+pointers
+so that all of the following commands work.
+.DS
+\v'.25m'*\v'-.25m'array[2]/
+\v'.25m'*\v'-.25m'sym.id/
+\v'.25m'*\v'-.25m'psym\(mi>usage/
+\v'.25m'*\v'-.25m'xsym[20].p\(mi>usage/
+.DE
+The only restriction is that array subscripts must be numbers.
+Note that, as a special case
+.DS
+\v'.25m'*\v'-.25m'psym\(mi>/d
+.DE
+displays the location pointed to by psym in decimal.
+.PP
+Core locations can also be displayed by specifying their absolute
+addresses. The command
+.DS
+\v'.25m'*\v'-.25m'1024/
+.DE
+displays location 1024 in decimal.
+As in C,
+numbers may also be specified in octal or hexadecimal so the above
+command is equivalent to both of
+.DS
+\v'.25m'*\v'-.25m'02000/
+\v'.25m'*\v'-.25m'0x400/
+.DE
+It is possible to intermix numbers and variables, so that
+.DS
+\v'.25m'*\v'-.25m'1000.x/
+.DE
+refers to an element of a structure starting at address 1000 and
+.DS
+\v'.25m'*\v'-.25m'1000\(mi>x/
+.DE
+refers to an element of a structure whose address is at 1000.
+.PP
+The address of a variable is printed with the `=' command, so
+.DS
+\v'.25m'*\v'-.25m'i=
+.DE
+displays the address of i.
+Another feature whose usefulness will become apparent later is
+the command
+.DS
+\v'.25m'*\v'-.25m'./
+.DE
+which redisplays the last variable typed.
+.NH 
+Source file display and manipulation
+.PP
+Sdb has been designed to make it easy to debug a program without
+constant reference to a current source listing.
+Facilities are provided which perform context searches
+within the source files of the program being debugged
+and to display selected portions of the source files.
+The commands are similar to those of the UNIX editor ed and ex [1].
+Like these editors,
+sdb has a notion of current file and line within the file.
+Sdb also knows how the lines of a file are partitioned into
+procedures, so that it also has a notion of current procedure.
+As noted in other parts of this document,
+the current procedure is used by a number of sdb commands.
+.NH 2
+Displaying the source file
+.PP
+Four command exist for displaying lines in the source file.
+They are useful for perusing through the source program
+and for determining the context of the current line.
+The commands are
+.DS
+.IP \fBw\fP
+Window. Print a window of 10 lines around the current line.
+.IP \fBz\fP
+Print 10 lines starting at the current line.
+Advance the current line by 10.
+.IP
+.ti 0
+\fBcontrol-D\fP
+.br
+.sp -1
+Scroll.
+Print the next 10 lines and advance the current line by 10.
+This command is used to cleanly display longs segments of the program.
+.DE
+.PP
+There is also a 
+.B p
+command which prints the current line.
+When a line from a file is printed, it is preceded by its line number.
+This not only gives an indication of its relative position in the file,
+but is also used as input by some sdb commands.
+.NH 2
+Changing the current source file or procedure
+.PP
+The 
+.B e
+command is used to change the current source file.
+Either of the forms
+.DS
+\v'.25m'*\v'-.25m'e procedure
+\v'.25m'*\v'-.25m'e file.c
+.DE
+may be used.
+The first causes the file containing the named procedure
+to become the current file 
+and the current line becomes the first line of the procedure.
+The other form causes the named file to become current.
+In this case the current line is set to the first line of the named file.
+Finally,
+an
+.B e
+command with no argument causes the current procedure and file named
+to be printed.
+.NH 2
+Changing the current line in the source file
+.PP
+As mentioned in section 3.1,
+the
+.B z
+and
+.B control-D
+commands have a side effect of changing the current line in the
+source file.
+This section describes other commands which change the current line.
+.PP
+There are two commands for searching for regular expressions in
+source files. 
+They are
+.DS
+\v'.25m'*\v'-.25m'/regular expression/
+\v'.25m'*\v'-.25m'?regular expression?
+.DE
+The first command searches forward through the file for a line containing
+a string which matches the regular expression and the second searches
+backwards.
+The trailing `/' and `?' may be omitted from these commands.
+Regular expression matching is identical to that of ed.
+.PP
+The
+.B +
+and
+.B \(mi
+commands
+may be used to move the current line forwards or backwards by a
+specified number of lines.
+Typing a newline advances the current line by one
+and
+typing a number causes that line to become the current line
+in the file.
+These commands may be catenated with the display commands so that
+.DS
+\v'.25m'*\v'-.25m'+15z
+.DE
+advances the current line by 15 and then prints 10 lines.
+.NH
+A controlled environment for program testing
+.PP
+One very useful feature of sdb
+is breakpoint debugging.
+After entering the debugger,
+certain lines in the source program may be specified to be 
+.I breakpoints.
+The program is then started with a sdb command.
+Execution of the program proceeds as normal until
+it is about to execute one of the lines at which a breakpoint has
+been set.
+The program stops and sdb reports which breakpoint the
+program is stopped at.
+Now, sdb commands may be used to display 
+the trace of procedure calls and the values of variables.
+If the user is satisfied that the program is working correctly
+to this point, some breakpoints can be deleted and others set,
+and then program execution may be continued from the point where it stopped.
+.PP
+A useful alternative to setting breakpoints is single stepping.
+Sdb can be requested to execute the next line of the program
+and them stop.
+This feature is especially useful for testing new programs,
+so they can be verified on a statement by statement basis.
+Note that if an attempt is made to single step through a
+procedure which has not been compiled with the `\(mig' flag,
+execution proceeds until a statement in a procedure compiled
+with the debug flag is reached.
+.PP
+The current implementation of single
+stepping is rather slow.
+While this is not a problem when stepping through a single statement,
+it may result in long delays while stepping through procedures not
+compiled with the debug flag.
+This problem is partially alleviated with the 
+.B n
+command which quickly single steps until the 
+positionally next statement is reached.
+.NH 2
+Setting and deleting breakpoints
+.PP
+Breakpoints can be set at any line in a procedure which contains
+executable code.
+The command format is:
+.DS
+\v'.25m'*\v'-.25m'12b
+\v'.25m'*\v'-.25m'proc:12b
+\v'.25m'*\v'-.25m'proc:b
+.DE
+The first form sets a breakpoint at line 12 in the current procedure.
+The line numbers are relative to the beginning of the file,
+as printed by the source file display commands.
+The second form sets a breakpoint at line 12 of procedure proc and the third
+sets a breakpoint at the first line of proc.
+.PP
+Breakpoints are deleted similarly with the commands:
+.DS
+\v'.25m'*\v'-.25m'12d
+\v'.25m'*\v'-.25m'proc:12d
+\v'.25m'*\v'-.25m'proc:d
+.DE
+In addition,
+if the command 
+.B d
+is given alone,
+the breakpoints are deleted interactively.
+Each breakpoint location is printed and a line is read from the
+user.
+If the line begins with a `y' or `d', the breakpoint is deleted.
+.PP
+A list of the current breakpoints is printed in response to
+a 
+.B b
+command.
+Beware that breakpoints do strange things if the debugged program
+is being run elsewhere at the same time.
+.NH 2
+Running the program
+.PP
+The
+.B r
+command is used to begin program execution.
+It restarts the program as if it were invoked from the shell.
+The command
+.DS
+\v'.25m'*\v'-.25m'r args
+.DE
+runs the program with the given arguments,
+as if they had been typed on the shell command line.
+.PP
+Execution is continued after a breakpoint with the
+.B c
+command
+and single stepping is accomplished with \fBs\fP.
+The 
+.B n
+command is used to run the program until it reaches the positionally
+next statement.
+.PP
+Program execution can also be stopped with the RUBOUT key.
+The debugger is entered as if a breakpoint was encountered
+so that execution may be continued with
+\fBc\fP, \fBs\fP or \fBn\fP.
+.NH 2
+Calling procedures
+.PP
+It is possible to call any of the procedures of the program from
+the debugger.
+This feature is useful both for testing individual procedures
+with different arguments and for calling a procedure which
+prints structured data in a nice way.
+There are two ways to call a procedure:
+.DS
+\v'.25m'*\v'-.25m'proc(arg1, arg2, ...)
+\v'.25m'*\v'-.25m'proc(arg1, arg2, ...)/
+.DE
+The first simply executes the procedure.
+The second is intended for calling functions:
+It executes the procedure and prints the value that it returns.
+The value is printed in decimal unless some other 
+format is specified.
+Arguments to procedures may be integer, character or string constants,
+or values of variables which are accessible from the current
+procedure.
+.PP
+An unfortunate bug in the current implementation is that
+if a procedure is called when the program is
+.I not
+stopped at a breakpoint
+(such as when a core image is being debugged),
+static variables  are reinitialized before the procedure is
+restarted.
+This makes it impossible to use a procedure which
+formats data from a dump.
+.NH
+Other commands
+.PP
+To exit the debugger, use the
+.B q
+command.
+.PP
+The
+.B !
+command is identical to that in ed and is used to have the shell
+execute a command.
+.PP
+It is possible to change the values of variables when the program
+is stopped at a breakpoint. This is done with the command
+.DS
+\v'.25m'*\v'-.25m'variable!value
+.DE
+which sets the variable to the given value.
+The value may be a number, character constant or the name of
+another variable.
+.SH
+Acknowledgments
+.PP
+I would like to thank Bill Joy and Chuck Haley
+for their comments and constructive criticisms.
+.SH
+Reference
+.IP [1]
+William N. Joy, Ex Reference Manual, Computer Science Division,
+University of California, Berkeley, November 1977.
+.LP
+.SG HO-1353-hpk-sdb
+.bp
+.SH
+Appendix 1.  Example of usage.
+.bp
+.SH
+Appendix 2.  Manual pages.

@@ -1,0 +1,45 @@
+.if t .ds s \d*\u
+.if n .ds s *
+.TH FREXP 3
+.SH NAME
+frexp, ldexp, modf \- split into mantissa and exponent
+.SH SYNOPSIS
+.B double frexp(value, eptr)
+.br
+.B double value;
+.br
+.B int *eptr;
+.PP
+.B double ldexp(value, exp)
+.br
+.B double value;
+.PP
+.B double modf(value, iptr)
+.br
+.B double value, *iptr;
+.SH DESCRIPTION
+.I Frexp
+returns the mantissa of a double 
+.I value
+as a double quantity,
+.I x,
+of magnitude less than 1
+and stores an integer 
+.I n
+such that
+.I value
+=
+\fIx\fP\|\(**\|2\u\fIn\fP\d
+indirectly through 
+.I eptr.
+.PP
+.I Ldexp
+returns the quantity
+\fIvalue\|\(**\|2\u\fIexp\fP\d.
+.PP
+.I Modf
+returns the positive fractional part of
+.I value
+and stores the integer part indirectly
+through 
+.I iptr.

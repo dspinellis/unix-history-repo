@@ -1,0 +1,130 @@
+.TH VMSTAT 1 11/13/79
+.UC
+.SH NAME
+vmstat \- report virtual memory statistics
+.SH SYNOPSIS
+.B vmstat
+[
+.B \-fs
+]
+[ interval [ count ] ]
+.SH DESCRIPTION
+.I Vmstat
+delves into the system and reports certain statistics kept about
+process, virtual memory, disk and cpu activity.
+If given a
+.B \-f
+argument, it reports on the number of
+.I forks
+and
+.I vforks
+since system startup and the number of pages of virtual memory involved in each
+kind of fork.
+If given a
+.B \-s
+argument, it prints the contents
+of the
+.I sum
+structure, given the total number of several kinds of paging related
+events which have occurred since boot.
+.PP
+If none of these options are given,
+.I vmstat
+will report in a (usually) iterative fashion on the virtual memory
+activity in the system.
+In this case, the optional
+.I interval
+argument causes
+.I vmstat
+to report once each
+.I interval
+seconds;
+``vmstat 5'' will print what the system is doing every five seconds;
+this is a good choice of printing interval since this is how often
+the statistics are sampled in the system.
+If a
+.I count
+is given, the statistics are repeated
+.I count
+times.
+The fields are:
+.PP
+Procs: information about numbers of processes in various states.
+.sp .1i
+.ta +1i
+.nf
+RQ	in run queue
+DW	sleeping on short event (disk wait)
+PW	in page wait
+SL	sleeping for short time, and in main memory
+SW	runnable or sleeping for a short time, but swapped out
+.fi
+.sp .1i
+Virtual: information about the state of virtual memory in the system.
+.sp .1i
+.ta +1i
+.nf
+AVM	active virtual pages
+TX	percentage of active pages which were shared text pages
+.fi
+.sp .1i
+Real: information about the state of real memory in the system.
+.sp .1i
+.ta +1i
+.nf
+USE	page frames in use for data+text+stack of active processes
+TX	percentage of USE which is text (shared program) pages
+FRE	size of the free list
+.fi
+.sp .1i
+Fault: information about page faults and paging activity.
+These are averaged each five seconds, and given in units per second.
+.sp .1i
+.ta +1i
+.nf
+RE	page reclaims (simulating reference bits)
+PI	pages paged in
+PO	dirty page write back rate (pages per second)
+FR	rate at which free list is replenished (pages per second)
+SR	scan rate: pageout daemon rpm (this is in revs/minute)
+.fi
+.sp .1i
+Swp: information about the activity of the swap daemon (process 0).
+.sp .1i
+.ta +1i
+.nf
+I	process swap in rate (processes per 10 seconds)
+O	process swap out rate (processes per 10 seconds)
+.fi
+.sp .1i
+Disk: operations per second (this field is system dependent).
+.sp .1i
+.ta +1i
+.nf
+RP	/usr (user) file transactions and root file activity
+RM	paging and /tmp (temporary) file activity
+.fi
+.sp .1i
+Cpu: cpu context switch rate and breakdown of cpu 
+usage by percentage in last few seconds.
+.sp .1i
+.ta +1i
+.nf
+CS	cpu context switch rate in switches per second
+.sp .1i
+US	user time
+SY	system time
+ID	cpu idle
+.fi
+.PP
+Any time not accounted for by US+SY+ID is given to low priority jobs.
+.SH FILES
+/dev/kmem, /vmunix
+.SH SEE ALSO
+The section on configuration in
+.I "Setting up the Virtual Memory Extensions to the UNIX System"
+by O. Babaoglu and W. Joy
+.SH AUTHORS
+William Joy and Ozalp Babaoglu
+.SH BUGS
+So many numbers print out that its sometimes hard to figure out what to watch.

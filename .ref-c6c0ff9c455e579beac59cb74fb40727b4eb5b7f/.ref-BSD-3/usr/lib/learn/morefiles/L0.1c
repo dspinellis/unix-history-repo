@@ -1,0 +1,13 @@
+#print
+How many characters are there in the file whose name begins
+with "r"?  Type "answer N", where N is the number of characters
+you found.
+#create ref
+hello world
+#copyin
+#user
+#uncopyin
+#match 12
+#log
+#next
+0.1d 10

@@ -1,0 +1,33 @@
+.ps 14
+.lg 0
+.nh
+.na
+Bocklin font, 14 and 28 point only.
+.sp 1i
+14 point
+
+ABCDE FGHIJ KLMNO PQRST UVWXYZ abcde fghij klmno pqrst uvwxyz 01234 56789
+.sp
+! " # $ % & ' ( ) : * - = [ ] { } ^ ~ _ \e | @ ` ; + / ? . > , < 
+.sp
+If time be of all things the most precious, wasting time must be,
+as Poor Richard says, the greatest prodigality; since, as he elsewhere
+tells us, lost time is never found again; and what we call time enough,
+always proves little enough: Let us then up and be doing, and doing
+to the purpose; so by diligence shall we do more with less perplexity.
+.sp 1i
+.ps 28
+.vs 32
+28 point
+
+ABCDE FGHIJ KLMNO PQRST UVWXYZ abcde fghij klmno pqrst uvwxyz 01234 56789 
+.sp
+! " # $ % & ' ( ) : * - = [ ] { } ^ ~ _ \e | @ ` ; + / ? . > , < 
+.sp
+If time be of all things the most precious, wasting time must be,
+as Poor Richard says, the greatest prodigality; since, as he elsewhere
+tells us, lost time is never found again; and what we call time enough,
+always proves little enough: Let us then up and be doing, and doing
+to the purpose; so by diligence shall we do more with less perplexity.
+
+    . . . ...  Periods . . ...

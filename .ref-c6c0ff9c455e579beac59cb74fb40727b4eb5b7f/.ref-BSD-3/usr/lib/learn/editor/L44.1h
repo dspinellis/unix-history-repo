@@ -1,0 +1,29 @@
+#print
+The next trick is to substitute a "\" into a line.
+The same idea holds: simply double the backslash,
+but this time on the right side of the "s" command.
+
+In the file "prog.c", convert every
+   'n'
+into
+   "\n"
+Re-write the file, and type "ready".
+#create Ref
+  x = "\n";
+  y = 'nop';
+  z = 'lmn';
+  q = "n";
+  r = "\n"+1;
+  s = "\n" - "\n";
+#create prog.c
+  x = 'n';
+  y = 'nop';
+  z = 'lmn';
+  q = "n";
+  r = 'n'+1;
+  s = 'n' - 'n';
+#user
+#cmp Ref prog.c
+#log
+#next
+44.1i 10

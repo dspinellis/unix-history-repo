@@ -1,0 +1,83 @@
+To convert two pass to 1 pass operation:
+(I suggest that you use a subdirectory, since
+it is hard to repair some of this damage once done)
+
+I assume that you have new copies of the machine-independent
+files.  The file cl is no longer used, and there is no
+use of lex at all.  The file scan.c contains the new
+lexical analyzer.  Moreover, the file comm2.c is no longer
+used when the passes are loaded together.
+These changes may affect local procedures for searching, printing,
+diffing, etc. the compiler.
+
+I suggest that you take the makefile in /usr/n as well, to help you
+along.
+
+The conversion process, as well as I understand it is as follows.
+
+1.  Make a subdirectory, and put in it the old machine dependent files
+macdefs, mac2defs, local.c, order.c, code.c, local2.c, and table.c.
+Put in all the new machine independent stuff, including the new makefile
+
+2.  Insert the line # define ONEPASS into macdefs
+Change LABFMT by deleting the \n.
+
+3.  In all the machine dependent source files local.c,
+code.c, order.c, local2.c, and table.c, remove the includes of
+manifest and macdefs; these are now included by mfile1 and mfile2.
+
+4.  The main routine for pass 2 (probably on local2.c)
+should be deleted; it probably only does a call to mainp2.
+If it does anything else of interest,
+let me know.
+
+5.  On the file local.c, in the routine `ecode',
+replace the lines
+     printf( ".%d\t%s\n", lineno, ftitle );
+     prtree( p );
+by
+     p2tree( p );
+     p2compile( p );
+
+6.  In code.c, in the function bccode, replace the line
+     printf( "[\t%d\t%d\t%d\t\n", ftnno, XXXX, YYYY );
+by
+     p2bbeg( XXXX, YYYY );
+Also, in efcode, replace the line which prints out the "]..."
+with
+     p2bend();
+
+7.  In code.c and local.c, look at all remaining printfs.  Lines
+which go onto the intermediate file all had ")" at the head.
+All of these must be clobbered.  Thus, a line which read
+     printf( ")    xxx yyy\n)   zzz  www\n" );
+must be changed to read
+     printf( "    xxx yyy\n   zzz  www\n" );
+This is tedious, although a few cleverly chosen ed commands
+will probably do the trick.
+
+8.  Say make, and stand back.  The result is a
+single program called comp.
+You may experience loading errors as a result of having used the
+same external names in the first and second pass.  Look at the
+beginning of mfile2 to get a hint about one way to deal with
+this problem (add stuff to mac2defs to change the names).
+The other way to deal with it is just fix it...
+
+9.  As a side-effect of other changes, the meaning of the arguments
+to match has changed slightly; ASG OPANY, as it always
+did, matches any assignment op except ++, --, and = itself.
+OPANY, on the other hand, matches only ops which are not assignment
+ops.  In table.c, there must be explicit rewriting rule entries for
+++, --, and =.  In most cases with which I am familiar, this should
+be true already, and no change is needed.
+
+10. Usage is  /lib/cpp x.c | comp
+which produces assembler output on the std. output.
+research!/usr/bin/ncc gives the interdata compiler, with many
+bells and whistles, as a Bourne shell script.
+regression tests, and checks that this compiler
+produces the same output as the earlier one, are
+both wise.
+
+Good Luck!

@@ -1,0 +1,193 @@
+.TH BC 1 
+.SH NAME
+bc \- arbitrary-precision arithmetic language
+.SH SYNOPSIS
+.B bc
+[
+.B \-c
+] [
+.B \-l
+] [ file ... ]
+.SH DESCRIPTION
+.I Bc
+is an interactive processor for a language which resembles
+C but provides unlimited precision arithmetic.
+It takes input from any files given, then reads
+the standard input.
+The
+.B \-l
+argument stands for the name
+of an arbitrary precision math library.
+The syntax for 
+.I bc
+programs is as follows;
+L means letter a-z,
+E means expression, S means statement.
+.HP 6
+Comments
+.br
+are enclosed in /* and */.
+.HP 6
+Names
+.br
+simple variables: L
+.br
+array elements: L [ E ]
+.br
+The words `ibase', `obase', and `scale'
+.HP 6
+Other operands
+.br
+arbitrarily long numbers with optional sign and decimal point.
+.br
+( E )
+.br
+sqrt ( E )
+.br
+length ( E )	number of significant decimal digits
+.br
+scale ( E )	number of digits right of decimal point
+.br
+L ( E , ... , E )
+.HP 6
+Operators
+.br
++  \-  *  /  %  ^
+(% is remainder; ^ is power)
+.br
+++   \-\-         (prefix and postfix; apply to names)
+.br
+==  <=  >=  !=  <  >
+.br
+=  =+  =\-  =*  =/  =%  =^
+.br
+.HP 6
+Statements
+.br
+E
+.br
+{ S ; ... ; S }
+.br
+if ( E ) S
+.br
+while ( E ) S
+.br
+for ( E ; E ; E ) S
+.br
+null statement
+.br
+break
+.br
+quit
+.HP 6
+Function definitions
+.br
+define L ( L ,..., L ) {
+.br
+	auto L, ... , L
+.br
+	S; ... S
+.br
+	return ( E )
+.br
+}
+.HP 6
+Functions in 
+.B \-l
+math library
+.br
+s(x)	sine
+.br
+c(x)	cosine
+.br
+e(x)	exponential
+.br
+l(x)	log
+.br
+a(x)	arctangent
+.br
+j(n,x)	Bessel function
+.PP
+.DT
+All function arguments are passed by value.
+.PP
+The value of a statement that is an expression is printed
+unless the main operator is an assignment.
+Either semicolons or newlines may separate statements.
+Assignment to
+.I scale
+influences the number of digits to be retained on arithmetic
+operations in the manner of
+.IR dc (1).
+Assignments to
+.I ibase
+or
+.I obase
+set the input and output number radix respectively.
+.PP
+The same letter may be used as an array, a function,
+and a simple variable simultaneously.
+All variables are global to the program.
+`Auto' variables are pushed down during function calls.
+When using arrays as function arguments
+or defining them as automatic variables
+empty square brackets must follow the array name.
+.PP
+For example
+.PP
+.nf
+scale = 20
+define e(x){
+	auto a, b, c, i, s
+	a = 1
+	b = 1
+	s = 1
+	for(i=1; 1==1; i++){
+		a = a*x
+		b = b*i
+		c = a/b
+		if(c == 0) return(s)
+		s = s+c
+	}
+}
+.PP
+.fi
+defines a function to compute an approximate value of
+the exponential function and
+.PP
+.nf
+	for(i=1; i<=10; i++) e(i)
+.fi
+.PP
+prints approximate values of the exponential function of
+the first ten integers.
+.PP
+.I Bc
+is actually a preprocessor for
+.IR dc (1),
+which it invokes automatically, unless the
+.B \-c
+(compile only)
+option is present.
+In this case the
+.I dc
+input is sent to the standard output instead.
+.SH FILES
+.ta \w'/usr/lib/lib.b 'u
+/usr/lib/lib.b	mathematical library
+.br
+dc(1)	desk calculator proper
+.SH "SEE ALSO"
+dc(1)
+.br
+L. L. Cherry and R. Morris,
+.I
+BC \- An arbitrary precision desk-calculator language
+.SH BUGS
+No &&, \(or\|\(or, or ! operators.
+.br
+.I For
+statement must have all three E's.
+.br
+.I Quit
+is interpreted when read, not when executed.

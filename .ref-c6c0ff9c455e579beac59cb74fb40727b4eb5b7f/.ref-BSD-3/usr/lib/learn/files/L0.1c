@@ -1,0 +1,27 @@
+#print
+The computer keeps track of information in "files."
+A file might contain a letter to a friend,
+or a memo (or part of it) that you are typing,
+or any number of other things.
+You can list the names of your files
+by typing the command "ls".
+Try "ls" now; then type "ready".
+Remember that each command must go on a separate line
+and each line must be ended with RETURN.
+#create letter
+Dear John:
+ 
+I'm terribly sorry...
+#create memo
+This is a memo.
+#create memo1
+Another memo.
+#copyin
+#user
+#uncopyin
+grep '^ls' .copy >/dev/null
+#bad "ls"
+Don't type the quotes, please. Try again.
+#log
+#next
+0.1d 10

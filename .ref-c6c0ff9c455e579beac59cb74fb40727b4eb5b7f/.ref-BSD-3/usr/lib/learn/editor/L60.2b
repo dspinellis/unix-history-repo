@@ -1,0 +1,109 @@
+#print
+You can of course combine many files.  Make a file
+"total" which contains the pieces "first", "second",
+"third", and "fourth" in that order.  Then type "ready".
+#create Ref
+   It has been already observed that the federal government
+ought to possess the power of providing for the support
+of the national forces; in which proposition was intended
+to be included the expense of raising troops, of building
+and equipping fleets, and all other expenses in any wise
+connected with military arrangements and operations.  But
+these are not the only objects to which the jurisdiction of
+the Union in respect to revenue must necessarily be empowered
+to extend.  It must embrace a provision for the
+support of the national civil list; for the payment of the
+national debts contracted, or that may be contracted;
+and, in general, for all those matters which will call for
+disbursements out of the national treasury.  The conclusion
+is that there must be interwoven in the frame of the
+government a general power of taxation, in one shape or
+another.
+   Money is, with propriety, considered as the vital principle
+of the body politic; as that which sustains its life and
+motion and enables it to perform its most essential functions.
+A complete power, therefore, to procure a regular
+and adequate supply of revenue, as far as the resources
+of the community will permit, may be regarded
+as an indispensable ingredient in every constitution.
+From a deficiency in this particular, one of two evils
+must ensue:  either the people must be subjected to
+continual plunder, as a substitute for a more eligible
+mode of supplying the public wants, or the government
+must sink into a fatal atrophy, and, in a short course of
+time, perish.
+   In the Ottoman or Turkish empire the sovereign,
+though in other respects absolute master of the lives and
+fortunes of his subjects, has no right to impose a new tax.
+The consequence is that he permits the bashaws or governors
+of provinces to pillage the people at discretion,
+and, in turn, squeezes out of them the sums of which he
+stands in need to satisfy his own exigencies and those of
+the state.  In America, from a like cause, the government
+of the Union has gradually dwindled into a state of decay,
+approaching nearly to annihilation.  Who can doubt that
+the happiness of the people in both countries would be
+promoted by competent authorities in the proper hands
+to provide the revenues which the necessities of the public
+might require?
+   The present Confederation, feeble as it is, intended to
+repose in the United States an unlimited power of providing
+for the pecuniary wants of the Union.  But proceeding
+upon an erroneous principle, it has been done in
+such a manner as entirely to have frustrated the intention.
+#create first
+   It has been already observed that the federal government
+ought to possess the power of providing for the support
+of the national forces; in which proposition was intended
+to be included the expense of raising troops, of building
+and equipping fleets, and all other expenses in any wise
+connected with military arrangements and operations.  But
+these are not the only objects to which the jurisdiction of
+the Union in respect to revenue must necessarily be empowered
+to extend.  It must embrace a provision for the
+support of the national civil list; for the payment of the
+national debts contracted, or that may be contracted;
+and, in general, for all those matters which will call for
+disbursements out of the national treasury.  The conclusion
+is that there must be interwoven in the frame of the
+government a general power of taxation, in one shape or
+another.
+#create fourth
+   The present Confederation, feeble as it is, intended to
+repose in the United States an unlimited power of providing
+for the pecuniary wants of the Union.  But proceeding
+upon an erroneous principle, it has been done in
+such a manner as entirely to have frustrated the intention.
+#create second
+   Money is, with propriety, considered as the vital principle
+of the body politic; as that which sustains its life and
+motion and enables it to perform its most essential functions.
+A complete power, therefore, to procure a regular
+and adequate supply of revenue, as far as the resources
+of the community will permit, may be regarded
+as an indispensable ingredient in every constitution.
+From a deficiency in this particular, one of two evils
+must ensue:  either the people must be subjected to
+continual plunder, as a substitute for a more eligible
+mode of supplying the public wants, or the government
+must sink into a fatal atrophy, and, in a short course of
+time, perish.
+#create third
+   In the Ottoman or Turkish empire the sovereign,
+though in other respects absolute master of the lives and
+fortunes of his subjects, has no right to impose a new tax.
+The consequence is that he permits the bashaws or governors
+of provinces to pillage the people at discretion,
+and, in turn, squeezes out of them the sums of which he
+stands in need to satisfy his own exigencies and those of
+the state.  In America, from a like cause, the government
+of the Union has gradually dwindled into a state of decay,
+approaching nearly to annihilation.  Who can doubt that
+the happiness of the people in both countries would be
+promoted by competent authorities in the proper hands
+to provide the revenues which the necessities of the public
+might require?
+#user
+#cmp total Ref
+#next
+60.2c 5
