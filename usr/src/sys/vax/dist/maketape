@@ -1,0 +1,17 @@
+#! /bin/sh
+#	@(#)maketape	4.1	%G%
+#
+trap "rm -f /tmp/tape.$$; exit" 0 1 2 3 13 15
+arpa rewind
+date
+cd /tp
+tp cmf /tmp/tape.$$ boot copy
+cd /usr/mdec
+cat tsboot htboot tmboot mtboot noboot noboot noboot /tmp/tape.$$ | \
+	arpa dd of=/dev/rmt12 bs=512 conv=sync
+cd /
+sync
+dd if=/dev/rhp0a bs=8k count=130 | \
+	arpa dd of=/dev/rmt12 ibs=20b obs=20b
+/etc/rdump 0uf arpa:/dev/rmt12 /
+arpa rewind
