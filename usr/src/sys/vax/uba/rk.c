@@ -1,12 +1,12 @@
-/*	rk.c	4.7	%G%	*/
+/*	rk.c	4.8	%G%	*/
 
 #include "rk.h"
 #if NRK11 > 0
-
-int	rkflags;
-int	rkerrs;
+int	rkflags,rkerrs;		/* GROT */
 /*
  * RK11/RK07 disk driver
+ *
+ * This driver mimics up.c; see it for an explanation of common code.
  */
 #define	DELAY(i)		{ register int j; j = i; while (--j > 0); }
 #include "../h/param.h"
@@ -56,7 +56,7 @@ struct	uba_dinfo *rkip[NRK11][4];
 
 u_short	rkstd[] = { 0777440, 0 };
 struct	uba_driver hkdriver =
-  { rkprobe, rkslave, rkattach, rkdgo, rkstd, "rk", rkdinfo, "hk", rkminfo };
+ { rkprobe, rkslave, rkattach, rkdgo, rkstd, "rk", rkdinfo, "hk", rkminfo, 1 };
 struct	buf rkutab[NRK07];
 short	rkcyl[NRK07];
 
@@ -105,6 +105,9 @@ rkslave(ui, reg)
 
 	rkaddr->rkcs1 = RK_CDT;
 	rkaddr->rkcs2 = ui->ui_slave;
+	rkwait(rkaddr);
+/* SHOULD TRY THIS BY PULLING A PLUG */
+/* A DELAY OR SOMETHING MAY BE NEEDED */
 	if (rkaddr->rkcs2&RK_NED) {
 		rkaddr->rkcs1 = RK_CDT|RK_CCLR;
 		return (0);
@@ -312,12 +315,15 @@ hkintr(rk11)
 			u_short er = rkaddr->rker;
 			if (sc->sc_recal)
 				printf("recal CERR\n");
-			rkerrs++;
-			if (rkflags&1)
-			printf("%d ds %o cs2 %o er %o\n", um->um_tab.b_errcnt,
-			    ds, cs2, er);
+			rkerrs++;				/* GROT */
+			if (rkflags&1)				/* GROT */
+			printf("%d ds %o cs2 %o er %o\n",	/* GROT */
+			    um->um_tab.b_errcnt, ds, cs2, er);	/* GROT */
 			if (er & RK_WLE)	
 				printf("rk%d is write locked\n", dkunit(bp));
+/* THIS DOESN'T SEEM TO HAPPEN */
+/* OR WAS SOMETHING BROKEN WHEN WE TRIED */
+/* SPINNING A DRIVE DOWN ? */
 			if (ds & RKDS_HARD)
 				printf("rk%d is down\n", dkunit(bp));
 			if (++um->um_tab.b_errcnt > 28 ||
@@ -326,7 +332,7 @@ hkintr(rk11)
 			else
 				um->um_tab.b_active = 0;
 			if (um->um_tab.b_errcnt > 27)
-				deverror(bp, cs2, (ds<<8)|er);
+				deverror(bp, cs2, (ds<<16)|er);
 			if (cs2&RK_MDS) {
 				rkaddr->rkcs2 = RK_SCLR;
 				goto retry;
@@ -452,6 +458,9 @@ rkecc(ui)
 	um->um_tab.b_active++;	/* Either complete or continuing... */
 	if (rk->rkwc == 0)
 		return (0);
+#ifdef notdef
+	rk->rkcs1 |= RK_GO;
+#else
 	rk->rkcs1 = RK_CDT|RK_CCLR;
 	rk->rkcs2 = ui->ui_slave;
 	rk->rkcs1 = RK_CDT|RK_DCLR|RK_GO;
@@ -471,14 +480,10 @@ rkecc(ui)
 	cmd = (ubaddr >> 8) & 0x300;
 	cmd |= RK_CDT|RK_IE|RK_GO|RK_READ;
 	rk->rkcs1 = cmd;
+#endif
 	return (1);
 }
 
-/*
- * Reset driver after UBA init.
- * Cancel software state of all pending transfers
- * and restart all units and the controller.
- */
 rkreset(uban)
 {
 	register struct uba_minfo *um;
@@ -515,12 +520,6 @@ rkreset(uban)
 	}
 }
 
-/*
- * Wake up every second and if an interrupt is pending
- * but nothing has happened increment a counter.
- * If nothing happens for 20 seconds, reset the controller
- * and begin anew.
- */
 rkwatch()
 {
 	register struct uba_minfo *um;
@@ -535,8 +534,8 @@ rkwatch()
 		sc = &rk_softc[rk11];
 		if (um->um_tab.b_active == 0) {
 			for (unit = 0; unit < NRK07; unit++)
-				if (rkdinfo[unit]->ui_mi == um &&
-				    rkutab[unit].b_active)
+				if (rkutab[unit].b_active &&
+				    rkdinfo[unit]->ui_mi == um)
 					goto active;
 			sc->sc_wticks = 0;
 			continue;
