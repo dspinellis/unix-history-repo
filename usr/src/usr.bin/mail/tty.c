@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tty.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)tty.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -41,7 +41,7 @@ grabh(hp, gflags)
 	sig_t savettou;
 	sig_t savettin;
 	int errs;
-	int ttyint();
+	void ttyint();
 
 	savetstp = signal(SIGTSTP, SIG_DFL);
 	savettou = signal(SIGTTOU, SIG_DFL);
@@ -128,7 +128,7 @@ readtty(pr, src)
 	char ch, canonb[BUFSIZ];
 	int c;
 	register char *cp, *cp2;
-	int ttystop();
+	void ttystop();
 
 	fputs(pr, stdout);
 	fflush(stdout);
@@ -222,6 +222,7 @@ redo:
 /*
  * Receipt continuation.
  */
+void
 ttystop(s)
 {
 	sig_t old_action = signal(s, SIG_DFL);
@@ -234,8 +235,8 @@ ttystop(s)
 }
 
 /*ARGSUSED*/
+void
 ttyint(s)
 {
-
 	longjmp(intjmp, 1);
 }

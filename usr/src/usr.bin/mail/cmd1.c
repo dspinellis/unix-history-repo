@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmd1.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmd1.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -262,8 +262,8 @@ type1(msgvec, doign, page)
 	register struct message *mp;
 	register char *cp;
 	int nlines;
-	int brokpipe();
 	FILE *obuf;
+	void brokpipe();
 
 	obuf = stdout;
 	if (setjmp(pipestop))
@@ -312,6 +312,7 @@ close_pipe:
  * probably caused by quitting more.
  */
 
+void
 brokpipe()
 {
 	longjmp(pipestop, 1);

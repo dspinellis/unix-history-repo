@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lex.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)lex.c	5.23 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -137,7 +137,7 @@ commands()
 	int eofloop = 0;
 	register int n;
 	char linebuf[LINESIZE];
-	int intr(), stop(), hangup(), contin();
+	void intr(), stop(), hangup();
 
 	if (!sourcing) {
 		if (signal(SIGINT, SIG_IGN) != SIG_IGN)
@@ -459,6 +459,7 @@ isprefix(as1, as2)
 int	inithdr;			/* am printing startup headers */
 
 /*ARGSUSED*/
+void
 intr(s)
 {
 
@@ -482,6 +483,7 @@ intr(s)
 /*
  * When we wake up after ^Z, reprint the prompt.
  */
+void
 stop(s)
 {
 	sig_t old_action = signal(s, SIG_DFL);
@@ -500,6 +502,7 @@ stop(s)
  * Branch here on hangup signal and simulate "exit".
  */
 /*ARGSUSED*/
+void
 hangup(s)
 {
 
