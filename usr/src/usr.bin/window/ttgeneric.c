@@ -30,7 +30,9 @@ short ansi_frame[16] = {
 	'q'|G,	'j'|G,	'q'|G,	'v'|G,
 	'k'|G,	'u'|G,	'w'|G,	'n'|G
 };
-#define ANSI_AS "\033(0"	/* ) */
+struct tt_str ansi_AS = {
+	"\033(0", 3
+};
 
 struct tt_str *gen_CM;
 struct tt_str *gen_IM;
@@ -67,6 +69,7 @@ char gen_AM;
 char gen_OS;
 char gen_BS;
 char gen_DB;
+char gen_XN;
 int gen_CO;
 int gen_LI;
 int gen_UG;
@@ -157,7 +160,9 @@ register char c;
 	} else
 		ttputc(c);
 	if (++tt.tt_col == gen_CO)
-		if (gen_AM)
+		if (gen_XN)
+			tt.tt_col = tt.tt_row = -10;
+		else if (gen_AM)
 			tt.tt_col = 0, tt.tt_row++;
 		else
 			tt.tt_col--;
@@ -185,7 +190,9 @@ gen_write(p, n)
 		ttwrite(p, n);
 	}
 	if (tt.tt_col == gen_CO)
-		if (gen_AM)
+		if (gen_XN)
+			tt.tt_col = tt.tt_row = -10;
+		else if (gen_AM)
 			tt.tt_col = 0, tt.tt_row++;
 		else
 			tt.tt_col--;
@@ -322,6 +329,7 @@ tt_generic()
 	gen_OS = tgetflag("os");
 	gen_BS = tgetflag("bs");
 	gen_DB = tgetflag("db");
+	gen_XN = tgetflag("xn");
 	gen_CO = tgetnum("co");
 	gen_LI = tgetnum("li");
 	gen_UG = tgetnum("ug");
@@ -352,7 +360,7 @@ tt_generic()
 		tt.tt_clreos = gen_clreos;
 	if (gen_SG > 0)
 		gen_SO = 0;
-	if (gen_UG > 0)
+	if (gen_UG > 0 || gen_US && gen_SO && ttstrcmp(gen_US, gen_SO) == 0)
 		gen_US = 0;
 	if (gen_SO)
 		tt.tt_availmodes |= WWM_REV;
@@ -375,7 +383,7 @@ tt_generic()
 	tt.tt_clear = gen_clear;
 	tt.tt_setinsert = gen_setinsert;
 	tt.tt_setmodes = gen_setmodes;
-	tt.tt_frame = gen_AS && !strncmp(gen_AS->ts_str, ANSI_AS, gen_AS->ts_n)
-		? ansi_frame : gen_frame;
+	tt.tt_frame = gen_AS && ttstrcmp(gen_AS, &ansi_AS) == 0 ?
+		ansi_frame : gen_frame;
 	return 0;
 }

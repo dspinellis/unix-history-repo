@@ -67,3 +67,14 @@ tttgoto(s, col, row)
 	for (p += s->ts_n; *--p == 0;)
 		ttputc(0);
 }
+
+ttstrcmp(a, b)
+	register struct tt_str *a, *b;
+{
+	int n, r;
+
+	if (r = bcmp(a->ts_str, b->ts_str,
+			(n = a->ts_n - b->ts_n) < 0 ? a->ts_n : b->ts_n))
+		return r;
+	return n;
+}
