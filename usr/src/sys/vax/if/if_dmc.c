@@ -1,4 +1,4 @@
-/*	if_dmc.c	4.23	83/02/20	*/
+/*	if_dmc.c	4.24	83/02/20	*/
 
 #include "dmc.h"
 #if NDMC > 0
@@ -9,6 +9,8 @@ int dmcdebug = 0;
  *
  * TODO
  *	allow more than one outstanding read or write.
+ *
+ * UNTESTED WITH 4.1C
  */
 #include "../machine/pte.h"
 
