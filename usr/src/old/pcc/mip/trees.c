@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)trees.c	4.27 (Berkeley) %G%";
+static char *sccsid ="@(#)trees.c	4.28 (Berkeley) %G%";
 #endif
 
 # include "pass1.h"
@@ -1150,10 +1150,11 @@ tymatch(p)  register NODE *p; {
 	else t = INT;
 
 #ifdef tahoe
-	if( asgop(o) ){
+	if( asgop(o) )
 #else
-	if( o == ASSIGN || o == CAST || o == RETURN ){
+	if( o == ASSIGN || o == CAST || o == RETURN )
 #endif
+	{
 		tu = p->in.left->in.type;
 		t = t1;
 		}
