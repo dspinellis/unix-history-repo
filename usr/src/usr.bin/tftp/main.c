@@ -1,4 +1,6 @@
-/*	main.c	4.6	83/06/12	*/
+#ifndef lint
+static char sccsid[] = "@(#)main.c	4.7 (Berkeley) %G%";
+#endif
 
 /*
  * TFTP User Program -- Command Interface.

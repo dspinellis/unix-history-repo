@@ -1,4 +1,4 @@
-    /* sccsid:  @(#)vax.h	1.2 (Berkeley) %G% */
+/*	vax.h	1.3	83/08/11	*/
 
     /*
      *	opcode of the `calls' instruction

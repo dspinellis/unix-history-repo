@@ -1,4 +1,4 @@
-/*	@(#)indent_globs.h	4.1	(Berkeley)	%G%	*/
+/*	indent_globs.h	4.2	83/08/11	*/
 
 /*
 

@@ -1,6 +1,5 @@
-/*
- *	@(#)pathnames.h	4.1 %G%
- */
+/*	pathnames.h	4.2	83/08/11	*/
+
 /*
  * Local definitions for msgs.
  */

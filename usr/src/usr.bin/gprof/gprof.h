@@ -1,4 +1,4 @@
-    /* sccsid:  @(#)gprof.h	1.18 (Berkeley) %G% */
+/*	gprof.h	1.19	83/08/11	*/
 
 #include <stdio.h>
 #include <sys/types.h>

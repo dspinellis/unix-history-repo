@@ -1,4 +1,7 @@
-/*	bugfiler.c	4.3	83/08/05	*/
+#ifndef lint
+static char sccsid[] = "@(#)bugfiler.c	4.4 (Berkeley) %G%";
+#endif
+
 /*
  * Bug report processing program.
  * It is designed to be invoked by alias(5) and to be compatible with mh.

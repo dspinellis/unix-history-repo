@@ -1,4 +1,7 @@
-/*	fed.c	4.1	83/03/09	*/
+#ifndef lint
+static char sccsid[] = "@(#)fed.c	4.2 (Berkeley) %G%";
+#endif
+
 /*
  *	Font editor for the HP 2648.
  *
