@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vfsops.c	1.5 (Berkeley) %G%
+ *	@(#)union_vfsops.c	1.6 (Berkeley) %G%
  */
 
 /*
@@ -24,6 +24,7 @@
 #include <sys/mount.h>
 #include <sys/namei.h>
 #include <sys/malloc.h>
+#include <sys/filedesc.h>
 #include "union.h"
 
 /*
@@ -83,6 +84,7 @@ union_mount(mp, path, data, ndp, p)
 	ndp->ni_dvp = NULL;
 
 	if (upperrootvp->v_type != VDIR) {
+		vrele(lowerrootvp);
 		vrele(upperrootvp);
 		return (EINVAL);
 	}
@@ -104,10 +106,21 @@ union_mount(mp, path, data, ndp, p)
 	 */
 	um->um_cred = crdup(p->p_ucred);
 	um->um_cred->cr_uid = p->p_cred->p_ruid;
+	um->um_cmode = UN_DIRMODE &~ p->p_fd->fd_cmask;
 
+	/*
+	 * Depending on what you think the MNT_LOCAL flag might mean,
+	 * you may want the && to be || on the conditional below.
+	 * At the moment it has been defined that the filesystem is
+	 * only local if it is all local, ie the MNT_LOCAL flag implies
+	 * that the entire namespace is local.  If you think the MNT_LOCAL
+	 * flag implies that some of the files might be stored locally
+	 * then you will want to change the conditional.
+	 */
 	if ((lowerrootvp->v_mount->mnt_flag & MNT_LOCAL) &&
 	    (upperrootvp->v_mount->mnt_flag & MNT_LOCAL))
 		mp->mnt_flag |= MNT_LOCAL;
+
 	/*
 	 * Copy in the upper layer's RDONLY flag.  This is for the benefit
 	 * of lookup() which explicitly checks the flag, rather than asking
@@ -206,7 +219,7 @@ union_unmount(mp, mntflags, p)
 	 */
 	free(mp->mnt_data, M_UFSMNT);	/* XXX */
 	mp->mnt_data = 0;
-	return 0;
+	return (0);
 }
 
 int

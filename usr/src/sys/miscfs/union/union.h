@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union.h	1.5 (Berkeley) %G%
+ *	@(#)union.h	1.6 (Berkeley) %G%
  */
 
 struct union_args {
@@ -19,12 +19,8 @@ struct union_mount {
 	struct vnode	*um_uppervp;
 	struct vnode	*um_lowervp;
 	struct ucred	*um_cred;	/* Credentials of user calling mount */
+	int		um_cmode;	/* cmask from mount process */
 };
-
-/* begin XXX */
-#define VT_UNION VT_LOFS
-/*#define MOUNT_UNION 15*/
-/* end XXX */
 
 #ifdef KERNEL
 
@@ -46,6 +42,7 @@ struct union_node {
 	struct vnode	        *un_lowervp;	/* underlying object */
 	struct vnode		*un_dirvp;	/* Parent dir of uppervp */
 	char			*un_path;	/* saved component name */
+	int			un_open;	/* # of opens on lowervp */
 	int			un_flags;
 	pid_t			un_pid;
 };
@@ -59,8 +56,10 @@ extern int union_allocvp __P((struct vnode **, struct mount *,
 				struct vnode *));
 extern int union_copyfile __P((struct proc *, struct ucred *,
 				struct vnode *, struct vnode *));
+extern int union_mkshadow __P((struct union_mount *, struct vnode *,
+				struct componentname *, struct vnode **));
 extern int union_vn_create __P((struct vnode **, struct union_node *,
-				int, struct proc *));
+				struct proc *));
 
 #define	MOUNTTOUNIONMOUNT(mp) ((struct union_mount *)((mp)->mnt_data))
 #define	VTOUNION(vp) ((struct union_node *)(vp)->v_data)

@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_subr.c	1.5 (Berkeley) %G%
+ *	@(#)union_subr.c	1.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -19,6 +19,7 @@
 #include <sys/namei.h>
 #include <sys/malloc.h>
 #include <sys/file.h>
+#include <sys/filedesc.h>
 #include "union.h" /*<miscfs/union/union.h>*/
 
 #ifdef DIAGNOSTIC
@@ -46,6 +47,8 @@ union_init()
  * layer object to be created at a later time.  (uppervp)
  * and (lowervp) reference the upper and lower layer objects
  * being mapped.  either, but not both, can be nil.
+ * the reference is either maintained in the new union_node
+ * object which is allocated, or they are vrele'd.
  *
  * all union_nodes are maintained on a singly-linked
  * list.  new nodes are only allocated when they cannot
@@ -102,11 +105,15 @@ loop:
 				if (un->un_uppervp)
 					vrele(un->un_uppervp);
 				un->un_uppervp = uppervp;
+			} else if (uppervp) {
+				vrele(uppervp);
 			}
 			if (lowervp != un->un_lowervp) {
 				if (un->un_lowervp)
 					vrele(un->un_lowervp);
 				un->un_lowervp = lowervp;
+			} else if (lowervp) {
+				vrele(lowervp);
 			}
 			*vpp = UNIONTOV(un);
 			return (0);
@@ -140,6 +147,7 @@ loop:
 	un->un_next = 0;
 	un->un_uppervp = uppervp;
 	un->un_lowervp = lowervp;
+	un->un_open = 0;
 	un->un_flags = 0;
 	if (uppervp == 0 && cnp) {
 		un->un_path = malloc(cnp->cn_namelen+1, M_TEMP, M_WAITOK);
@@ -190,9 +198,6 @@ union_freevp(vp)
 			break;
 		}
 	}
-
-	if (un->un_path)
-		FREE(un->un_path, M_TEMP);
 
 	FREE(vp->v_data, M_TEMP);
 	vp->v_data = 0;
@@ -273,6 +278,86 @@ union_copyfile(p, cred, fvp, tvp)
 }
 
 /*
+ * Create a shadow directory in the upper layer.
+ * The new vnode is returned locked.
+ *
+ * (um) points to the union mount structure for access to the
+ * the mounting process's credentials.
+ * (dvp) is the directory in which to create the shadow directory.
+ * it is unlocked on entry and exit.
+ * (cnp) is the componentname to be created.
+ * (vpp) is the returned newly created shadow directory, which
+ * is returned locked.
+ */
+int
+union_mkshadow(um, dvp, cnp, vpp)
+	struct union_mount *um;
+	struct vnode *dvp;
+	struct componentname *cnp;
+	struct vnode **vpp;
+{
+	int error;
+	struct vattr va;
+	struct proc *p = cnp->cn_proc;
+	struct componentname cn;
+
+	/*
+	 * policy: when creating the shadow directory in the
+	 * upper layer, create it owned by the current user,
+	 * group from parent directory, and mode 777 modified
+	 * by umask (ie mostly identical to the mkdir syscall).
+	 * (jsp, kb)
+	 * TODO: create the directory owned by the user who
+	 * did the mount (um->um_cred).
+	 */
+
+	/*
+	 * A new componentname structure must be faked up because
+	 * there is no way to know where the upper level cnp came
+	 * from or what it is being used for.  This must duplicate
+	 * some of the work done by NDINIT, some of the work done
+	 * by namei, some of the work done by lookup and some of
+	 * the work done by VOP_LOOKUP when given a CREATE flag.
+	 * Conclusion: Horrible.
+	 *
+	 * The pathname buffer will be FREEed by VOP_MKDIR.
+	 */
+	cn.cn_pnbuf = malloc(cnp->cn_namelen+1, M_NAMEI, M_WAITOK);
+	bcopy(cnp->cn_nameptr, cn.cn_pnbuf, cnp->cn_namelen+1);
+
+	cn.cn_nameiop = CREATE;
+	cn.cn_flags = (LOCKPARENT|HASBUF|SAVENAME|ISLASTCN);
+	cn.cn_proc = cnp->cn_proc;
+	cn.cn_cred = cnp->cn_cred;
+	cn.cn_nameptr = cn.cn_pnbuf;
+	cn.cn_namelen = cnp->cn_namelen;
+	cn.cn_hash = cnp->cn_hash;
+	cn.cn_consume = cnp->cn_consume;
+
+	if (error = relookup(dvp, vpp, &cn))
+		return (error);
+
+	if (*vpp) {
+		VOP_ABORTOP(dvp, &cn);
+		VOP_UNLOCK(dvp);
+		vrele(*vpp);
+		*vpp = NULLVP;
+		return (EEXIST);
+	}
+
+	VATTR_NULL(&va);
+	va.va_type = VDIR;
+	va.va_mode = UN_DIRMODE &~ p->p_fd->fd_cmask;
+
+	/* LEASE_CHECK: dvp is locked */
+	LEASE_CHECK(dvp, p, p->p_ucred, LEASE_WRITE);
+
+	VREF(dvp);
+	error = VOP_MKDIR(dvp, vpp, &cn, &va);
+	return (error);
+}
+
+/*
  * union_vn_create: creates and opens a new shadow file
  * on the upper union layer.  this function is similar
  * in spirit to calling vn_open but it avoids calling namei().
@@ -281,10 +366,9 @@ union_copyfile(p, cred, fvp, tvp)
  * whereas relookup is told where to start.
  */
 int
-union_vn_create(vpp, un, cmode, p)
+union_vn_create(vpp, un, p)
 	struct vnode **vpp;
 	struct union_node *un;
-	int cmode;
 	struct proc *p;
 {
 	struct vnode *vp;
@@ -294,6 +378,7 @@ union_vn_create(vpp, un, cmode, p)
 	int fmode = FFLAGS(O_WRONLY|O_CREAT|O_TRUNC|O_EXCL);
 	int error;
 	int hash;
+	int cmode = UN_FILEMODE &~ p->p_fd->fd_cmask;
 	char *cp;
 	struct componentname cn;
 
