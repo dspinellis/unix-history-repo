@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -30,7 +30,7 @@ static char sccsid[] = "@(#)mount.c	5.4 (Berkeley) %G%";
 #define	MTAB	"/etc/mtab"
 
 static struct mtab mtab[NMOUNT];
-static int fake, rval, verbose;
+static int fake, verbose;
 
 main(argc, argv)
 	int argc;
@@ -41,7 +41,7 @@ main(argc, argv)
 	register struct mtab *mp;
 	register struct fstab *fs;
 	register int cnt;
-	int all, ch, fd;
+	int all, ch, fd, rval;
 	char *type;
 
 	all = 0;
@@ -78,9 +78,10 @@ main(argc, argv)
 	}
 
 	if (all) {
+		rval = 0;
 		while ((fs = getfsent()))
 			if (strcmp(fs->fs_file, "/") && !BADTYPE(fs->fs_type))
-				mountfs(fs->fs_spec, fs->fs_file,
+				rval |= mountfs(fs->fs_spec, fs->fs_file,
 				    type ? type : fs->fs_type);
 		exit(rval);
 	}
@@ -109,15 +110,14 @@ main(argc, argv)
 			    "mount: %s has unknown file system type.\n", *argv);
 			exit(1);
 		}
-		mountfs(fs->fs_spec, fs->fs_file, type ? type : fs->fs_type);
-		exit(rval);
+		exit(mountfs(fs->fs_spec, fs->fs_file,
+		    type ? type : fs->fs_type));
 	}
 
 	if (argc != 2)
 		usage();
 
-	mountfs(argv[0], argv[1], type ? type : "rw");
-	exit(rval);
+	exit(mountfs(argv[0], argv[1], type ? type : "rw"));
 }
 
 static
@@ -132,8 +132,7 @@ mountfs(spec, name, type)
 	char *index(), *rindex(), *strcpy();
 
 	if (!fake) {
-		if (mount(spec, name, type)) {
-			rval = 1;
+		if (mount(spec, name, !strcmp(type, FSTAB_RO))) {
 			fprintf(stderr, "%s on %s: ", spec, name);
 			switch (errno) {
 			case EMFILE:
@@ -146,7 +145,7 @@ mountfs(spec, name, type)
 				perror((char *)NULL);
 				break;
 			}
-			return;
+			return(1);
 		}
 
 		/* we don't do quotas.... */
@@ -196,6 +195,7 @@ mountfs(spec, name, type)
 	if (write(fd, (char *)mtab, cnt) != cnt)
 		mtaberr();
 	(void)close(fd);
+	return(0);
 }
 
 static
@@ -221,6 +221,6 @@ mtaberr()
 static
 usage()
 {
-	fprintf(stderr, "usage: mount [-arw]\nor mount [-rw] special | node\nor mount [-rw] special node\n");
+	fprintf(stderr, "usage: mount [-afrw]\nor mount [-frw] special | node\nor mount [-frw] special node\n");
 	exit(1);
 }
