@@ -1,0 +1,68 @@
+.\" Contributed to 386bsd 0.1 and later versions
+.\"
+.\"	Copyright 1992 by Holger Veit
+.\"	May be freely used with Bill Jolitz's port of 
+.\"	386bsd and may be included in a 386bsd collection
+.\"	as long as binary and source are available and reproduce the above
+.\"	copyright.
+.\"	 
+.\"	You may freely modify this code and contribute improvements based
+.\"	on this code as long as you don't claim to be the original author.
+.\"	Commercial use of this source requires permittance of the copyright 
+.\"	holder. A general license for 386bsd will override this restriction.
+.\"
+.\"	Use at your own risk. The copyright holder or any person who makes
+.\"	this code available for the public (administrators of public archives
+.\"	for instance) are not responsible for any harm to hardware or software
+.\"	that might happen due to wrong application or program faults.
+.\"
+.\"	You must have the codriver driver in the same package generated
+.\"	into the 386bsd kernel, otherwise this program does not work.
+.\"
+.\"     @(#)whichcons.3	1.0 (contributed to 386bsd) 01/10/93
+.\"
+.Dd JAnuary 10, 1993
+.Dt CONSUTIL 3
+.Os 386bsd 0.2
+.Sh NAME
+.Nm whichcons
+.Nd determine the actual console type
+.Sh SYNOPSIS
+.Fn int whichcons()
+.Sh DESCRIPTION
+.Fn Whichcons
+tries to identify the console driver built into the kernel.
+Currently there are different, concurring console drivers with different
+features. To allow an application program to adapt to
+specific properties of a driver,
+.Fn whichcons
+can be used to find out the actual driver.
+.Sh RETURN VALUES
+On successful execution, 
+.Fn Whichcons
+returns a positive integer, describing the detected driver.
+The following codes are defined:
+.Bl -tag -width 000 -compact
+.It 0
+unknown driver
+.It 1
+PCCONS driver (obsolete)
+.It 2
+PCCONS driver, patched for X11
+.It 3
+CODRV driver, version 0.1.0 or 0.1.1 (obsolete)
+.It 4
+CODRV driver, version 0.1.2 and later
+.It 5
+PCCONS driver with improved X11 support
+.El
+.Sh SEE ALSO
+.Xr co 4
+.Sh HISTORY
+The
+.Nm
+The 
+.Fn whichcons
+call is an intermediate feature and will exist as long there are 
+concurrent console driver version in the experimental 386bsd 0.X
+operating system.

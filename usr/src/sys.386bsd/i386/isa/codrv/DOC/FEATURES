@@ -1,0 +1,16 @@
+New features:
+
+1. Virtual consoles
+2. Modified ioctl interface (mostly video functions)
+3. Terminal emulation moved out of co_vga.c. Another terminal emulator
+   may be easily integrated (see co_pc3.c for more info)
+4. Ioctl interface moved out of co_cons.c, co_kbd.c and co_vga.c. Other
+   ioctl call sets (SYSV) may be easily integrated.
+6. Preparation for multibyte characters (not fully finished)
+7. Preparation for graphics console support (not finished)
+8. New keyboard layer with support, allows to switch between two
+   sets of key layouts.
+9. Low level keyboard support totally rewritten, should be more stable now.
+10. Many bug fixes
+11. Many new bugs :-)
+12. Hotkeys are now programmable

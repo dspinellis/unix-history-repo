@@ -1,0 +1,137 @@
+.\" Contributed to 386bsd 0.1 and later versions
+.\"
+.\"	Copyright 1992 by Holger Veit
+.\"	May be freely used with Bill Jolitz's port of 
+.\"	386bsd and may be included in a 386bsd collection
+.\"	as long as binary and source are available and reproduce the above
+.\"	copyright.
+.\"	 
+.\"	You may freely modify this code and contribute improvements based
+.\"	on this code as long as you don't claim to be the original author.
+.\"	Commercial use of this source requires permittance of the copyright 
+.\"	holder. A general license for 386bsd will override this restriction.
+.\"
+.\"	Use at your own risk. The copyright holder or any person who makes
+.\"	this code available for the public (administrators of public archives
+.\"	for instance) are not responsible for any harm to hardware or software
+.\"	that might happen due to wrong application or program faults.
+.\"
+.\"	You must have the codriver driver in the same package generated
+.\"	into the 386bsd kernel, otherwise this program does not work.
+.\"
+.\"     @(#)keycap.3	1.0 (contributed to 386bsd) 10/25/92
+.\"
+.Dd October 25, 1992
+.Dt CONSUTIL 3
+.Os 386bsd 0.2
+.Sh NAME
+.Nm kgetent ,
+.Nm kgetnum ,
+.Nm kgetflag ,
+.Nm kgetstr
+.Nd keyboard independent operation routines
+.Sh SYNOPSIS
+.Fn kgetent "char *bp" "char *name"
+.Fn kgetnum "char *id"
+.Fn kgetflag "char *id"
+.Ft char *
+.Fn kgetstr "char *id" "char *area"
+.Sh DESCRIPTION
+These functions extract and use capabilities from a keyboard capability data
+base, usually
+.Pa /usr/share/misc/keycap ,
+the format of which is described in
+.Xr keycap 5 .
+.Pp
+The
+.Fn kgetent
+function
+extracts the entry for a keyboard entry
+.Fa name
+into the buffer at
+.Fa bp .
+The
+.Fa bp
+argument
+should be a character buffer of size
+1024 and must be retained through all subsequent calls to
+.Fn kgetnum ,
+.Fn kgetflag ,
+and
+.Fn kgetstr .
+The
+.Fn kgetent
+function
+returns \-1 if none of the
+.Nm keycap
+data base files could be opened,
+0 if the keyboard name given does not have an entry,
+and 1 if all goes well.
+It will look in the environment for a
+.Ev KEYCAP
+variable.
+If found, and the value does not begin with a slash, 
+and the keyboard type
+.Fa name
+is the same as the environment string
+.Ev KEYBOARD ,
+the
+.Ev KEYCAP
+string is used instead of reading a
+.Nm keycap
+file.
+If it does begin with a slash, the string is used as a path name
+of the
+.Nm keycap
+file to search.
+If
+.Ev KEYCAP
+does not begin with a slash,
+.Fn kgetent
+searches the file
+.Pp
+The
+.Fn kgetnum
+function
+gets the numeric value of capability
+.Fa id ,
+returning \-1 if is not given for the keyboard
+The
+.Fn kgetflag
+function
+returns 1 if the specified capability is present in
+the keyboard's entry, 0 if it is not.
+The
+.Fn kgetstr
+function
+returns the string value of the capability
+.Fa id ,
+places it in the buffer at
+.Fa area ,
+and advances the
+.Fa area
+pointer.
+It decodes the abbreviations for this field described in
+.Xr keycap 5 .
+The
+.Fn kgetstr
+function
+returns
+.Dv NULL
+if the capability was not found.
+.Pp
+.Sh FILES
+.Bl -tag -width /usr/share/misc/keycap -compact
+.It Pa /usr/lib/libconsutil.a
+.Fl l Ar consutil
+keycap utilities library
+.It Pa /usr/share/misc/keycap
+standard keyboard capability data base
+.El
+.Sh SEE ALSO
+.Xr co 4 ,
+.Xr keycap 5
+.Sh HISTORY
+The
+.Nm
+keyboard capability data base is a new feature of 386bsd 0.2 and later.

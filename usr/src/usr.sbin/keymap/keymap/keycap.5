@@ -1,0 +1,208 @@
+.\" Copyright (c) 1983, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. All advertising materials mentioning features or use of this software
+.\"    must display the following acknowledgement:
+.\"	This product includes software developed by the University of
+.\"	California, Berkeley and its contributors.
+.\" 4. Neither the name of the University nor the names of its contributors
+.\"    may be used to endorse or promote products derived from this software
+.\"    without specific prior written permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\"     @(#)keycap.5	1.1 (Contributed to 386bsd) 4/27/93
+.\"
+.Dd April 27, 1993
+.Dt KEYCAP 5
+.Os 386bsd
+.Sh NAME
+.Nm keycap
+.Nd keyboard configuration data base
+.Sh SYNOPSIS
+.Nm keycap
+.Sh DESCRIPTION
+The
+.Nm keycap
+file describes national keyboard mappings for the console driver
+.Xr co 4 .
+This file is accessed by the 
+.Xr keymap 8
+utility.
+Each entry in the data base
+is used to describe one class of keyboards.
+.Pp
+There is a default keyboard class,
+.Em default ,
+which corresponds to the standard builtin mapping of the 
+.Xr co 4
+driver.
+.Sh CAPABILITIES
+Refer to
+.Xr termcap 5
+for a description of the file layout.
+The
+.Em default
+column below lists defaults obtained if there is
+no entry in the table obtained, nor one in the special
+.Em default
+table.
+.Bl -column Symbol D0..D127 -column Type false
+.It Symbol	Type	Default	Description
+.It "ag 	num	0	key number of the ALTGRLOCK key
+.It "A1..A127	str	0	map a string to the ALTGR key layer
+.It "C1..C127	str	none	map a string to the CTRL key layer
+.It "ca	num	0	key number of the CAPS LOCK key
+.It "de	bool	false	sets the default mapping (top precedence)
+.It "D0..D127	bool	false	disables the given key (1..127) entirely
+.It "fn0	str	none	pathname of first loadable font
+.It "fn1	str	none	pathname of second loadable font
+.It "fe0	num	none	font encoding first font
+.It "fe1	num	none	font encoding second font
+.It "h1..h9	num	0	key numbers of the SHIFT keys (up to 9)
+.It "K1..K127	str	none	map a string to the UNSHIFTED key
+.It "l0	bool	false	clears the ALTGR map
+.It "l1..l9	num	0	key numbers of the ALTGR keys (up to 9)	
+.It "la	num	0	defines the operation of the CAPSLOCK LED
+.It "m1..m9	num	0	key numbers of the META Keys (up to 9)
+.It "M1..M127	str	0	map a string to the META key layer
+.It "nl	num	0	key number of the NUM LOCK key
+.It "p1..p9	num	0	key number of a diacritical prefix
+.It "S1..S127	str	none	map a string to the SHIFTED key layer
+.It "sc	num	0	key number of the SCROLL LOCK key
+.It "sh	num	0	key number of the SHIFT LOCK key
+.It "t0	bool	false	clears the CTRL map
+.It "t1..t9	num	0	key numbers of the CTRL keys (up to 9)
+.It "tc	str	none	allows extension of capabilities
+.It "X1..X127	str	none	map a string to the SHIFTED-ALTGR key layer
+.El
+.Pp
+The
+.Em tc=capability
+entry allows the extension of a keyboard entry. If, for instance,
+the keyboard type 
+.Em foo , 
+differs from the similar type
+.Em bar
+in that the first has the capslock function on key 55, you might write
+an entry for 
+.Em foo 
+in the following way:
+.Pp
+.Bd -literal
+foo|the foo keyboard:\e
+	ca#55:tc=bar:
+.Ed
+.Sh String Entries for the keys (K*,S*,C*,A*):
+These allow mappings of strings to keys. Examples:
+.Pp
+.Bl -tag -width K123=abcdef -compact
+.It Em K123=abcdef
+maps the string "abcdef" to key 123
+.It Em K123=^D
+maps CTRL-D to key 123
+.It Em K123=\e072
+maps the colon \: to key 123 (only way to do it)
+.It Em K123=\e176
+maps the tilde \~ to key 123 (only way to do it)
+.It Em K123=\e077
+maps the question mark ? to key 123 (only way to do it)
+.El
+.Pp
+The maximum allowed length of string is 15 bytes.
+.Pp
+.Sh Special alphabetic characters (new since 0.1.2):
+The CAPSLOCK key if present on your keyboard influences alphabetic
+keys only. This is obvious for the Latin alphabet only. If you use
+another than the latin alphabet, the alphabetic characters must
+be identified otherwise. If a key string starts with a tilde \~
+the following code inherits the ALPHA attribute, i.e. it is
+influenced by the CAPSLOCK key. 
+.Pp
+.Sh Locking keys (new since 0.1.2):
+The ALTGR key layer (A,X) has its own LOCK key which can be
+assigned with the 
+.Em ag
+capability. To have an indicator which
+layer is currently active, the CAPSLOCK LED may be redefined
+to follow the ALTGRLOCK key
+.Em (la#2) 
+rather than the CAPSLOCK key
+.Em (la#0) 
+or SHIFTLOCK key
+.Em (la#1).
+.Pp
+.Sh Special hotkeys (new since 0.1.2):
+The
+.Xr co 4
+driver has support for some hotkeys that are processed
+.Em before 
+the normal character interpretation. Hotkey functions can be assigned to
+any key like any standard string. To encode them, a two character
+sequence starting with a question mark ? is used. Any of the six layers
+K,S,A,C,X,M can be used, with the M (META) layer denoting SYSKEY,
+and the X layer denoting CTRL-ALT. SYSKEY is a prefix key.
+Note that a hotkey mapped to some key layer will suppress the
+underlying standard function. The following table shows the hotkeys, 
+their encoding, their default mapping and their meaning:
+
+.Bl -column Name VTY-PREV  -column Encoding ?X -column Default CTRL-ALT-DEL
+.It "Name     Encoding  Default	        Description
+.It "---         ?-     none            deletes a default hotkey
+.It "RESET       ?R     CTRL-ALT-DEL    do a CPU reset
+.It "DEBUG       ?D     CTRL-ALT-ESC    call the kernel debugger (if conf'd)
+.It "VTY-PREV    ?P     none            switch to previous vty in sequence
+.It "VTY-NEXT    ?N     none            switch to previous vty in sequence
+.It "VTY-0       ?0     CTRL-ALT-F1     switch to vty 0
+.It "...         ..     ...             ...
+.It "VTY-9       ?9     CTRL-ALT-F10    switch to vty 9 (if conf'd)
+.It "VTY-10      ?A     CTRL-ALT-F11    switch to vty 10 (if conf'd)
+.It "VTY-11      ?B     CTRL-ALT-F12    switch to vty 11 (if conf'd)
+.El
+.Pp
+.Sh Diacritical Prefixes:
+Normally, keys like ` ' ^ ~ have their regular meaning and return the
+corresponding ASCII code. If the corresponding key gets the 
+.Em diacritical prefix attribute , 
+it behaves different: Returning the ASCII code is retained
+until a second character. If this is a character, which may have an
+additional diacritical mark, then the corresponding diacritical character
+is returned. If the character is a blank, the original ASCII code of the
+prefix is returned. Otherwise the prefix is absorbed. Example:
+To get the A with an accent grave, press first ` , then A.
+In the data base, these diacritical keys are entered by their corresponding
+octal number.
+.Pp
+.Sh SEE ALSO
+.Xr co 4 ,
+.Xr keymap 8.
+.Sh BUGS
+In general, the database is downward compatible to keycap 0.1.1 and 
+pccons clones, but there is no guarantee that it works as expected.
+Upgrade to the new
+.Xr co 4
+driver (release 0.1.2 or later) to get full support for all the features.
+Furthermore, there is no good way to express ISO-LATIN1 or other
+characters >127 other than by their octal representation.
+.Sh HISTORY
+The
+.Nm keycap
+file format is a new feature of 386bsd 0.1 and later.

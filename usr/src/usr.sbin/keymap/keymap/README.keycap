@@ -1,0 +1,214 @@
+This file is a preliminary explanation of the keycap data base format.
+
+Read termcap(5) first to get a feeling what you have to do.
+
+There are numeric entries, boolean entries and string entries.
+
+Boolean entries:
+
+	de		Sets the default mapping built into the kernel
+	t0		Clears the CTRL map
+	l0		Clears the ALTGR map
+	D1..D127	Disables the given key (1..127) entirely
+
+Numeric Entries:
+These are entered as 'xx#num', e.g.  l1#60 sets an ALT function to key 60.
+
+	m1..m9		Key numbers of the META Keys (you may have up to 9 keys
+			with this function, which is overdimensioned)
+	l1..l9		Key numbers of the ALTGR keys (up to 9)	
+	h1..h9		Key numbers of the SHIFT keys (up to 9)
+	t1..t9		Key numbers of the CTRL keys (up to 9)
+	ca		Key number of the CAPS LOCK key
+	sh		Key number of the SHIFT LOCK key
+	nl		Key number of the NUM LOCK key
+	sc		Key number of the SCROLL LOCK key
+	ag		Key number of the ALTGR LOCK key
+	p1-p9		Key number of a diacritical prefix (see below)
+	la		Behaviour of the CAPS LED:
+			0: Standard: CAPS LED follows CAPS LOCK
+			1: CAPS LED follows SHIFT LOCK
+			2: CAPS LED follows ALTGR LOCK
+	ck		Key number of the COMPOSE key (not yet)
+
+Please note that the default mapping already has all these keys (except 
+ALTGR, ALTGR LOCK and SHIFT LOCK) in the proper locations.
+
+String entries:
+These are associated with a key number. They consist of a 
+letter and upto three digits, describing the key number, followed by an
+equal symbol (=) and a string of up to 15(16) characters. The string is 
+delimited by a colon (:), which begins the next entry.
+If the first character is a tilde (~), this key is influenced by
+one of the CAPS LOCK keys. This is default for the letters A-Z, but
+can be extended to national letter keys.
+This means that the colon and the tilde, if in the first position cannot be
+entered directly. Instead, there is an octal escape, like in the C language.
+The escape starts with the character backslash \ and is followed by exactly
+three octal characters. The usual symbols \\, \n, \r, \t, \f are also
+recognized.
+
+The following key declarators exist:
+
+K1..K127	strings to be emitted without any modifier key (first key layer)
+S1..S127	strings to be emitted with SHIFT	(first key layer)
+C1..C127	strings to be emitted with CTRL
+M1..M127	strings to be emitted with META
+
+A1..A127	strings to be emitted with ALTGR	(second key layer)
+X1..X127	strings to be emitted with ALTGRLOCK	(second key layer)
+
+Other string entries:
+	fn0=path	Pathname of an ISO-LATIN1 font 
+	fn1=path	Pathname of an additional font
+
+
+Diacritical prefixes:
+Normally, keys like ` ' ^ ~ have their regular meaning and return the
+corresponding ASCII code. If the corresponding key gets the "diacritical
+prefix attribute", it behaves different: Returning the ASCII code is retained
+until a second character. If this is a character, which may have an
+additional diacritical mark, then the corresponding diacritical character
+is returned. If the character is a blank, the original ASCII code of the
+prefix is returned. Otherwise the prefix is absorbed. Example:
+To get the A with an accent grave, press first ` , then A.
+
+Compose key:
+	not yet, but RSN.
+
+
+
+See /usr/share/misc/keycap for examples.
+
+
+The default mapping is the following:
+
+keynum	key type	unshift	shift	ctrl
+/*  1*/	KBD_ASCII,	"`",	"~",	"`",
+/*  2*/	KBD_ASCII,	"1",	"!",	"!",
+/*  3*/	KBD_ASCII,	"2",	"@",	"\000",	
+/*  4*/	KBD_ASCII,	"3",	"#",	"#",
+/*  5*/	KBD_ASCII,	"4",	"$",	"$",
+/*  6*/	KBD_ASCII,	"5",	"%",	"%",
+/*  7*/	KBD_ASCII,	"6",	"^",	"\036",
+/*  8*/	KBD_ASCII,	"7",	"&",	"&",
+/*  9*/	KBD_ASCII,	"8",	"*",	"\010",
+/* 10*/	KBD_ASCII,	"9",	"(",	"(",
+/* 11*/	KBD_ASCII,	"0",	")",	")",
+/* 12*/	KBD_ASCII,	"-",	"_",	"\037",
+/* 13*/	KBD_ASCII,	"=",	"+",	"+",
+/* 14*/	KBD_NONE,	"",	"",	"",
+/* 15*/	KBD_ASCII,	"\177",	"\177",	"\010",
+/* 16*/	KBD_ASCII,	"\t",	"\177\t","\t",
+/* 17*/	KBD_ASCII,	"q",	"Q",	"\021",
+/* 18*/	KBD_ASCII,	"w",	"W",	"\027",
+/* 19*/	KBD_ASCII,	"e",	"E",	"\005",
+/* 20*/	KBD_ASCII,	"r",	"R",	"\022",
+/* 21*/	KBD_ASCII,	"t",	"T",	"\024",
+/* 22*/	KBD_ASCII,	"y",	"Y",	"\031",
+/* 23*/	KBD_ASCII,	"u",	"U",	"\025",
+/* 24*/	KBD_ASCII,	"i",	"I",	"\011",
+/* 25*/	KBD_ASCII,	"o",	"O",	"\017",
+/* 26*/	KBD_ASCII,	"p",	"P",	"\020",
+/* 27*/	KBD_ASCII,	"[",	"{",	"\033",
+/* 28*/	KBD_ASCII,	"]",	"}",	"\035",
+/* 29*/	KBD_ASCII,	"\\",	"|",	"\034",
+/* 30*/	KBD_CAPS,	"",	"",	"",
+/* 31*/	KBD_ASCII,	"a",	"A",	"\001",
+/* 32*/	KBD_ASCII,	"s",	"S",	"\023",
+/* 33*/	KBD_ASCII,	"d",	"D",	"\004",
+/* 34*/	KBD_ASCII,	"f",	"F",	"\006",
+/* 35*/	KBD_ASCII,	"g",	"G",	"\007",
+/* 36*/	KBD_ASCII,	"h",	"H",	"\010",
+/* 37*/	KBD_ASCII,	"j",	"J",	"\n",
+/* 38*/	KBD_ASCII,	"k",	"K",	"\013",
+/* 39*/	KBD_ASCII,	"l",	"L",	"\014",
+/* 40*/	KBD_ASCII,	";",	":",	";",
+/* 41*/	KBD_ASCII,	"'",	"\"",	"'",
+/* 42*/	KBD_ASCII,	"\\",	"|",	"\034",		/* special */
+/* 43*/	KBD_ASCII,	"\r",	"\r",	"\n",		/* RETURN */
+/* 44*/	KBD_SHIFT,	"",	"",	"",		/* SHIFT left */
+/* 45*/	KBD_NONE,	"",	"",	"",
+/* 46*/	KBD_ASCII,	"z",	"Z",	"\032",
+/* 47*/	KBD_ASCII,	"x",	"X",	"\030",
+/* 48*/	KBD_ASCII,	"c",	"C",	"\003",
+/* 49*/	KBD_ASCII,	"v",	"V",	"\026",
+/* 50*/	KBD_ASCII,	"b",	"B",	"\002",
+/* 51*/	KBD_ASCII,	"n",	"N",	"\016",
+/* 52*/	KBD_ASCII,	"m",	"M",	"\r",
+/* 53*/	KBD_ASCII,	",",	"<",	"<",
+/* 54*/	KBD_ASCII,	".",	">",	">",
+/* 55*/	KBD_ASCII,	"/",	"?",	"\177",
+/* 56*/	KBD_NONE,	"",	"",	"",
+/* 57*/	KBD_SHIFT,	"",	"",	"",		/* SHIFT right */
+/* 58*/	KBD_CTL,	"",	"",	"",		/* CTL left */
+/* 59*/	KBD_NONE,	"",	"",	"",
+/* 60*/	KBD_META,	"",	"",	"",		/* ALT left */
+/* 61*/	KBD_ASCII,	" ",	" ",	" ",		/* SPACE */
+/* 62*/	KBD_META,	"",	"",	"",		/* ALT right */
+/* 63*/	KBD_NONE,	"",	"",	"",
+/* 64*/	KBD_CTL,	"",	"",	"",		/* CTL right */
+/* 65*/	KBD_NONE,	"",	"",	"",
+/* 66*/	KBD_NONE,	"",	"",	"",
+/* 67*/	KBD_NONE,	"",	"",	"",
+/* 68*/	KBD_NONE,	"",	"",	"",
+/* 69*/	KBD_NONE,	"",	"",	"",
+/* 70*/	KBD_NONE,	"",	"",	"",
+/* 71*/	KBD_NONE,	"",	"",	"",
+/* 72*/	KBD_NONE,	"",	"",	"",
+/* 73*/	KBD_NONE,	"",	"",	"",
+/* 74*/	KBD_NONE,	"",	"",	"",
+/* 75*/	KBD_FUNC,	"\033[L",	"\033|a",	"\033|b", /* INS */
+/* 76*/	KBD_FUNC,	"\177",	 	"\033|c", 	"\033|d", /* DEL */
+/* 77*/	KBD_NONE,	"",	"",	"",
+/* 78*/	KBD_NONE,	"",	"",	"",
+/* 79*/	KBD_FUNC,	"\033[D",	"\033|e",	"\033|f", /* CU <- */
+/* 80*/	KBD_FUNC,	"\033[H",	"\033|g",	"\033|h", /* HOME */
+/* 81*/	KBD_FUNC,	"\033[F",	"\033|i",	"\033|j", /* END */
+/* 82*/	KBD_NONE,	"",	"",	"",
+/* 83*/	KBD_FUNC,	"\033[A",	"\033|k",	"\033|l", /* CU ^ */
+/* 84*/	KBD_FUNC,	"\033[B",	"\033|m",	"\033|n", /* CU v */
+/* 85*/	KBD_FUNC,	"\033[I",	"\033|o",	"\033|p", /* PG UP */
+/* 86*/	KBD_FUNC,	"\033[G",	"\033|q",	"\033|r", /* PG DN */
+/* 87*/	KBD_NONE,	"",	"",	"",
+/* 88*/	KBD_NONE,	"",	"",	"",
+/* 89*/	KBD_FUNC,	"\033[C",	"\033|s",	"\033|t", /* CU -> */
+/* 90*/	KBD_NUM,	"",	"",	"",
+/* 91*/	KBD_KP,		"7",	"\033[H",	"7",
+/* 92*/	KBD_KP,		"4",	"\033[D",	"4",
+/* 93*/	KBD_KP,		"1",	"\033[F",	"1",
+/* 94*/	KBD_NONE,	"",	"",	"",
+/* 95*/	KBD_KP,		"/",	"/",	"/",
+/* 96*/	KBD_KP,		"8",	"\033[A",	"8",
+/* 97*/	KBD_KP,		"5",	"\033[E",	"5",
+/* 98*/	KBD_KP,		"2",	"\033[B",	"2",
+/* 99*/	KBD_KP,		"0",	"\033[L",	"0",
+/*100*/	KBD_KP,		"*",	"*",		"*",
+/*101*/	KBD_KP,		"9",	"\033[I",	"9",
+/*102*/	KBD_KP,		"6",	"\033[C",	"6",
+/*103*/	KBD_KP,		"3",	"\033[G",	"3",
+/*104*/	KBD_KP,		".",	"\177",		".",
+/*105*/	KBD_KP,		"-",	"-",		"-",
+/*106*/	KBD_KP,		"+",	"+",		"+",
+/*107*/	KBD_NONE,	"",	"",	"",
+/*108*/	KBD_ASCII,	"\r",	"\r",	"\n",		/* RETURN */
+/*109*/	KBD_NONE,	"",	"",	"",
+/*110*/	KBD_ASCII,	"\033",	"\033",	"\033",
+/*111*/	KBD_NONE,	"",	"",	"",
+/*112*/	KBD_FUNC,	"\033[M",	"\033[Y",	"\033[k",	/* F1 */
+/*113*/	KBD_FUNC,	"\033[N",	"\033[Z",	"\033[l",	/* F2 */
+/*114*/	KBD_FUNC,	"\033[O",	"\033[a",	"\033[m",	/* F3 */
+/*115*/	KBD_FUNC,	"\033[P",	"\033[b",	"\033[n",	/* F4 */
+/*116*/	KBD_FUNC,	"\033[Q",	"\033[c",	"\033[o",	/* F5 */
+/*117*/	KBD_FUNC,	"\033[R",	"\033[d",	"\033[p",	/* F6 */
+/*118*/	KBD_FUNC,	"\033[S",	"\033[e",	"\033[q",	/* F7 */
+/*119*/	KBD_FUNC,	"\033[T",	"\033[f",	"\033[r",	/* F8 */
+/*120*/	KBD_FUNC,	"\033[U",	"\033[g",	"\033[s",	/* F9 */
+/*121*/	KBD_FUNC,	"\033[V",	"\033[h",	"\033[t",	/* F10 */
+/*122*/	KBD_FUNC,	"\033[W",	"\033[i",	"\033[u",	/* F11 */
+/*123*/	KBD_FUNC,	"\033[X",	"\033[j",	"\033[v",	/* F12 */
+/*124*/	KBD_KP,		"\033[w",	"\033[x",	"\033[y",
+/*125*/	KBD_SCROLL,	"",	"",	"",
+/*126*/	KBD_BREAK,	"",	"",	"",
+/*127*/	KBD_NONE,	"",	"",	"",
+

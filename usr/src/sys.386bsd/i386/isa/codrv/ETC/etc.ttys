@@ -1,0 +1,57 @@
+#
+#	@(#)ttys	5.1 (Berkeley) 4/17/89
+#
+# name	getty			type	status		comments
+#
+# Console (=ttyv0)
+# don't do a getty on /dev/console, and don't pass
+# /dev/console as the video device to the xserver
+ttyv0	"/usr/libexec/getty Pc"	pc3	on secure
+#
+# Serial lines
+# maybe your lines are called different
+ttyd0	"/usr/libexec/getty std.9600"	esprit	off secure
+ttyd1	"/usr/libexec/getty std.9600"	esprit	on secure
+#
+# VTYs
+ttyv1	"/usr/libexec/getty Pc" pc3	on secure
+ttyv2	"/usr/libexec/getty Pc" pc3	on secure
+ttyv3	"/usr/libexec/getty Pc" pc3	on secure
+#ttyv4	"/usr/libexec/getty Pc" pc3	on secure
+#ttyv5	"/usr/libexec/getty Pc" pc3	on secure
+#ttyv6	"/usr/libexec/getty Pc" pc3	on secure
+#ttyv7	"/usr/libexec/getty Pc" pc3	on secure
+#
+# PTYs
+ttyp0	none			network
+ttyp1	none			network
+ttyp2	none			network
+ttyp3	none			network
+ttyp4	none			network
+ttyp5	none			network
+ttyp6	none			network
+ttyp7	none			network
+ttyp8	none			network
+ttyp9	none			network
+ttypa	none			network
+ttypb	none			network
+ttypc	none			network
+ttypd	none			network
+ttype	none			network
+ttypf	none			network
+ttyq0	none			network
+ttyq1	none			network
+ttyq2	none			network
+ttyq3	none			network
+ttyq4	none			network
+ttyq5	none			network
+ttyq6	none			network
+ttyq7	none			network
+ttyq8	none			network
+ttyq9	none			network
+ttyqa	none			network
+ttyqb	none			network
+ttyqc	none			network
+ttyqd	none			network
+ttyqe	none			network
+ttyqf	none			network

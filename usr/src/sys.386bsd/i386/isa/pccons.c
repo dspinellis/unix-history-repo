@@ -37,7 +37,7 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         5       00083
+ * CURRENT PATCH LEVEL:         6       00162
  * --------------------         -----   ----------------------
  *
  * 15 Aug 92	Pace Willisson		Patches for X server
@@ -50,6 +50,9 @@
  *					minor. 
  * 14 Mar 93	Chris G. Demetriou	Moved pg() to i386/cons.c, code
  *					cleanup, removed ctl-alt-del.
+ * 22 Apr 93	Holger Veit		Added cons_highlight/cons_normal
+ *					to eliminate ESC sequence in 
+ *					init_main.c
  */
 static char rcsid[] = "$Header: /usr/bill/working/sys/i386/isa/RCS/pccons.c,v 1.2 92/01/21 14:35:28 william Exp $";
 
@@ -1683,6 +1686,22 @@ dprintf(flgs, fmt /*, va_alist */)
 }
 
 consinit() {}
+
+/* -hv- 22-Apr-93: to make init_main more portable */
+void cons_highlight() 
+{
+	/* pc text attribute */
+	vs.kern_fg_at = 0x0f;
+	vs.kern_bg_at = 0x00;
+}
+
+void cons_normal() 
+{
+	/* reset to normal attributes */
+	vs.bg_at = BG_BLACK;
+	/* we are in kernel mode */
+	vs.fg_at = vs.color? FG_LIGHTGREY: FG_UNDERLINE;
+}
 
 int pcmmap(dev_t dev, int offset, int nprot)
 {

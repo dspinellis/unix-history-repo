@@ -1,0 +1,134 @@
+.\" Contributed to 386bsd 0.1 and later versions
+.\"
+.\"	Copyright 1992 by Holger Veit
+.\"	May be freely used with Bill Jolitz's port of 
+.\"	386bsd and may be included in a 386bsd collection
+.\"	as long as binary and source are available and reproduce the above
+.\"	copyright.
+.\"	 
+.\"	You may freely modify this code and contribute improvements based
+.\"	on this code as long as you don't claim to be the original author.
+.\"	Commercial use of this source requires permittance of the copyright 
+.\"	holder. A general license for 386bsd will override this restriction.
+.\"
+.\"	Use at your own risk. The copyright holder or any person who makes
+.\"	this code available for the public (administrators of public archives
+.\"	for instance) are not responsible for any harm to hardware or software
+.\"	that might happen due to wrong application or program faults.
+.\"
+.\"	You must have the codriver driver in the same package generated
+.\"	into the 386bsd kernel, otherwise this program does not work.
+.\"
+.\"     @(#)vgafont.5	1.0 (contributed to 386bsd) 10/25/92
+.\"
+.Dd October 25, 1992
+.Dt CONSOLE 5
+.Os
+.Sh NAME
+.Nm vgafont
+.Nd setfont bdf font format
+.Sh DESCRIPTION
+This document describes the differences between the font format loadable by 
+the
+.Xr setfont 3
+routine and the original bdf (bitmap distribution format) as used by
+the X11 Windows System Release 5.
+.Pp
+In general, 
+.Fn setfont
+understands all keywords of the bdf file, but only uses a subset of them.
+.Pp
+The main restriction for usability of fonts is that the console is 
+operated in text mode whereas the X11 Windows system uses 
+graphics to display a character. Thus, a usable
+font underlies the following limits:
+.Pp
+.Bl -enum -compact
+.It
+The bitmap of a character must be smaller than 8x16. Note that this fits for
+a 3x5 font for instance; it is, however, not recommended to load such small
+fonts, because this font is displayed in a 8x16 pixel map anyway, and thus
+might look quite funny.
+.It
+The font should have fixed width, however, proportional fonts may be
+loaded into the fixed grid, but look quite ugly then.
+.It
+A character set may contain a maximum of 256 entries. Together with the
+facility of the console driver to load two fonts, there may be 512 different
+characters displayed simultaneously. This is sufficient for most 
+latin character sets (if you want to do word processing or TeX, use a
+graphical video system).
+.It
+X11 uses a 16 bit encoding scheme similiar to the ISO 10646-1 Draft standard
+to express a character code. 386bsd is currently based on a 8 bit scheme.
+To allow more than 256 character codes and retaining 8 bit compatibility,
+the console driver uses a pair of special codes to switch between fonts.
+The code 
+.Em 0x0e (SO)
+enables the second font, the code
+.Em 0x0f (SI)
+switches back to the first (default) font. If no second font is loaded,
+SI and SO are ignored.
+.Pp
+This handling of fonts and encoding is experimental, and may be modified
+in the future, if a better scheme (UniCode, or ISO-DIS 10646 1.2) is 
+available and standardized.
+.Pp
+.Sh EXAMPLE
+The following is a sample bdf font skeleton which is accepted by 
+.Fn setfont .
+It should not be misunderstood as an official description of the bdf font 
+format.
+.Pp
+.Bd -literal
+COMMENT	This is a comment and may occur anywhere
+STARTFONT 2.1	ignored
+FONT vga	ignored
+SIZE 16 75 75	first number used as box length
+FONTBOUNDINGBOX 8 16 0 -4	first two numbers used as box size
+STARTPROPERTIES 3	ignored
+FONT_DESCENT 4	ignored
+FONT_ASCENT 12	ignored
+DEFAULT_CHAR 0	used to fill empty slots
+ENDPROPERTIES	used
+CHARS 256	used
+STARTCHAR C0000	ignored
+ENCODING 0	used
+SWIDTH 666 0	ignored
+DWIDTH 8 0	ignored
+BBX 8 16 0 -4	used
+BITMAP		used
+00		bitmap must fit length and width
+00
+00
+7c
+c6
+c6
+de
+de
+de
+dc
+c0
+7c
+00
+00
+00
+00
+ENDCHAR		used
+... Startchar-Endchar repeated
+ENDFONT		used
+.Ed
+.Pp
+.Sh Files
+.Bl -tag -width *.bdf -compact
+.It Pa *.bdf
+bdf font file
+.El
+.Sh SEE ALSO
+.Xr co 4 ,
+.Xr keycap 5
+.Sh HISTORY
+The bdf font format is part of the MIT X11 distribution.
+.Sh BUGS
+The problem of languages writing right-to-left is not yet handled. Currently,
+words in such a language must be prepared as an inverse character string.

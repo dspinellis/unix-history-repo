@@ -34,10 +34,11 @@
 # 
 #  PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
 #  --------------------         -----   ----------------------
-#  CURRENT PATCH LEVEL:         1       00156
+#  CURRENT PATCH LEVEL:         2       00162
 #  --------------------         -----   ----------------------
 # 
 #  27 Apr 93	Bruce Evans		A real termcap entry for pc3
+#  26 May 93	Holger Veit		Codrv termcap entries (pc3n, pc3nc)
 
 #	Termcap source file
 #	John Kunze, Berkeley
@@ -3281,6 +3282,23 @@ pc3|ibmpc3|IBM PC 386BSD Console:\
 	:te=\E[m:\
 	:ti=\E[m:\
 	:up=\E[A:
+# Codrv 0.1.2
+pc3n|ibmpc3|386BSD Console:\
+	:C2:Nf#16:Nb#8:Cf=\E[3;%p2%{16}%*%p1%+%dx:\
+	:gs=:ge=:g2=\315\272\310\312\274\314\316\271\311\313\273:cu=\333:\
+	:f1=\E[M:f2=\E[N:f3=\E[O:f4=\E[P:f5=\E[Q:\
+	:f6=\E[R:f7=\E[S:f8=\E[T:f9=\E[U:f0=\E[V:\
+	:kN=\E[G:kP=\E[I:kH=\E[F:kI=\E[L:\
+	:kC=\E[E:kD=\177:al=\E[L:dl=\E[M:\
+	:DC=\E[%dP:IC=\E[%d@:dc=\E[P:ic=\E[@:\
+	:AL=\E[%dL:DL=\E[%dM:dl=\E[M:al=\E[L:tc=pc3:
+# Codrv 0.1.2 + cyrillic koi8 mappings -vak-
+pc3nc|ibmpc3c|386BSD Console with cyrillics:\
+	:gs=:ge=:g1=\210\211\212\213\214\215\216\217\220\221\222:\
+	:g2=\223\224\225\226\227\230\231\232\233\234\235:\
+	:CY:Cs=:Ce=:Ct=/usr/local/lib/cyrkbd/koi8pc:cu=\E[7m\201\E[m:\
+	:kB=\E[z:kD=\E[K:\
+	:li#25:sr=\E[T:sf=\E[S:tc=pc3n:
 zk|ibmx|ibmpcx|IBM PC xenix console display:\
 	:al=\E[L:am:bs:cd=\E[J:ce=\E[K:cl=^L:cm=\E[%d;%dH:co#80:\
 	:dc=\E[P:dl=\E[M:do=\E[B:ei=:ho=\E[H:ic=\E[@:im=:li#25:\
