@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.68 (Berkeley) %G%
+ *	@(#)sendmail.h	8.69 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.68		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.69		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -531,6 +531,7 @@ NAMECANON
 
 # define MAPCLASS	struct _mapclass
 # define MAP		struct _map
+# define MAXMAPACTIONS	3		/* size of map_actions array */
 
 
 /*
@@ -554,8 +555,8 @@ MAP
 	char		*map_domain;	/* the (nominal) NIS domain */
 	char		*map_rebuild;	/* program to run to do auto-rebuild */
 	time_t		map_mtime;	/* last database modification time */
-	MAP		*map_stack[MAXMAPSTACK]; /* list for stacked maps */
-	short		map_return[3];	/* return bitmaps for stacked maps */
+	MAP		*map_stack[MAXMAPSTACK];   /* list for stacked maps */
+	short		map_return[MAXMAPACTIONS]; /* return bitmaps for stacked maps */
 };
 
 /* bit values for map_flags */
@@ -852,7 +853,7 @@ EXTERN bool	ForkQueueRuns;	/* fork for each job when running the queue */
 EXTERN bool	AutoRebuild;	/* auto-rebuild the alias database as needed */
 EXTERN bool	CheckAliases;	/* parse addresses during newaliases */
 EXTERN bool	NoAlias;	/* suppress aliasing */
-EXTERN bool	UseNameServer;	/* use internet domain name server */
+EXTERN bool	UseNameServer;	/* using DNS -- interpret h_errno & MX RRs */
 EXTERN bool	SevenBitInput;	/* force 7-bit data on input */
 EXTERN bool	HasEightBits;	/* has at least one eight bit input byte */
 EXTERN time_t	SafeAlias;	/* interval to wait until @:@ in alias file */
