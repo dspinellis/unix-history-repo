@@ -10,7 +10,7 @@
 # include <string.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)mime.c	8.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)mime.c	8.19.1.1 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -28,6 +28,9 @@ static char sccsid[] = "@(#)mime.c	8.19 (Berkeley) %G%";
 **	a file-to-file translator, which did not fit within my
 **	design bounds, but it was a useful base for understanding
 **	the problem.
+**
+**	Also, I looked at John G. Meyer's "part.[ch]" code.  Some
+**	ideas have been loosely borrowed.
 */
 
 
@@ -45,6 +48,26 @@ static char	*MimeBoundaryNames[] =
 {
 	"SYNTAX",	"NOTSEP",	"INTERMED",	"FINAL"
 };
+
+/*
+**  Pseudo-file structure for reading up to MIME boundaries.
+*/
+
+#define MFILE	struct _mfile
+
+MFILE
+{
+	FILE	*mf_fp;		/* underlying file */
+	u_char	*mf_buf;	/* a cache buffer */
+	u_char	*mf_bp;		/* current pointer into mf_buf */
+	int	mf_cnt;		/* number of characters left in mf_buf */
+	int	mf_bsize;	/* size of mf_buf */
+	int	(*mf_fill)();	/* buffer fill routine */
+	char	mf_boundaries[MAXMIMENESTING + 1];
+				/* current boundaries */
+};
+
+#define mime_getc(mf)	((mf)->mf_cnt-- > 0 : *(mf)->mf_ptr++ : mf->mf_fill(mf))
 /*
 **  MIME8TO7 -- output 8 bit body in 7 bit format
 **
@@ -61,8 +84,36 @@ static char	*MimeBoundaryNames[] =
 **		mci -- mailer connection information.
 **		header -- the header for this body part.
 **		e -- envelope.
-**		boundaries -- the currently pending message boundaries.
-**			NULL if we are processing the outer portion.
+**		flags -- to tweak processing.
+**
+**	Returns:
+**		none.
+*/
+
+int
+mime8to7(mci, header, e, flags)
+	register MCI *mci;
+	HDR *header;
+	register ENVELOPE *e;
+	int flags;
+{
+	MFILE mfile;
+
+	mfile.mf_fp = e->e_dfp;
+	mfile.mf_cnt = mfile.mf_size = 0;
+
+	(void) mime8to7x(mci, header, e, &mfile, flags);
+	if (mfile.mf_buf != NULL)
+		free(mfile.mf_buf);
+}
+/*
+**  MIME8TO7X -- internal interface for mime8to7.
+**
+**	Parameters:
+**		mci -- mailer connection information.
+**		header -- the header for this body part.
+**		e -- envelope.
+**		mf -- the file from which to read.
 **		flags -- to tweak processing.
 **
 **	Returns:
@@ -79,7 +130,7 @@ struct args
 };
 
 int
-mime8to7(mci, header, e, boundaries, flags)
+mime8to7x(mci, header, e, boundaries, flags)
 	register MCI *mci;
 	HDR *header;
 	register ENVELOPE *e;
@@ -276,7 +327,7 @@ mime8to7(mci, header, e, boundaries, flags)
 			putheader(mci, hdr, e);
 			if (tTd(43, 101))
 				putline("+++after putheader", mci);
-			bt = mime8to7(mci, hdr, e, boundaries, flags);
+			bt = mime8to7x(mci, hdr, e, boundaries, flags);
 		}
 		sprintf(buf, "--%s--", bbuf);
 		putline(buf, mci);
@@ -428,7 +479,8 @@ mime8to7(mci, header, e, boundaries, flags)
 			printf("  ...Content-Transfer-Encoding: base64\n");
 		putline("", mci);
 		mci->mci_flags &= ~MCIF_INHEADER;
-		while ((c1 = mime_getchar_crlf(e->e_dfp, boundaries, &bt)) != EOF)
+		mf->mf_fill = mime_fill_crlf;
+		while ((c1 = mime_getc(mf)) != EOF)
 		{
 			if (linelen > 71)
 			{
@@ -440,7 +492,7 @@ mime8to7(mci, header, e, boundaries, flags)
 			linelen += 4;
 			*bp++ = Base64Code[(c1 >> 2)];
 			c1 = (c1 & 0x03) << 4;
-			c2 = mime_getchar_crlf(e->e_dfp, boundaries, &bt);
+			c2 = mime_getc(mf);
 			if (c2 == EOF)
 			{
 				*bp++ = Base64Code[c1];
@@ -451,7 +503,7 @@ mime8to7(mci, header, e, boundaries, flags)
 			c1 |= (c2 >> 4) & 0x0f;
 			*bp++ = Base64Code[c1];
 			c1 = (c2 & 0x0f) << 2;
-			c2 = mime_getchar_crlf(e->e_dfp, boundaries, &bt);
+			c2 = mime_getc(mf);
 			if (c2 == EOF)
 			{
 				*bp++ = Base64Code[c1];
@@ -489,7 +541,8 @@ mime8to7(mci, header, e, boundaries, flags)
 		mci->mci_flags &= ~MCIF_INHEADER;
 		fromstate = 0;
 		c2 = '\n';
-		while ((c1 = mime_getchar(e->e_dfp, boundaries, &bt)) != EOF)
+		mf->mf_fill = mime_fill_nl;
+		while ((c1 = mime_getc(mf)) != EOF)
 		{
 			if (c1 == '\n')
 			{
@@ -700,6 +753,515 @@ mime_getchar_crlf(fp, boundaries, btp)
 		return '\r';
 	}
 	return c;
+}
+/*
+**  MIME7TO8 -- convert 7 bit MIME message to 8 bit
+*/
+
+char	QPdecoder[256] =
+{
+    /*	nul soh stx etx eot enq ack bel  bs  ht  nl  vt  np  cr  so  si   */
+	-1, -1, -1, -1, -1, -1, -1, -1,  -1, -1, 16, -1, -1, 16, -1, -1,
+    /*	dle dc1 dc2 dc3 dc4 nak syn etb  can em  sub esc fs  gs  rs  us   */
+	-1, -1, -1, -1, -1, -1, -1, -1,  -1, -1, -1, -1, -1, -1, -1, -1,
+    /*  sp  !   "   #   $   %   &   '    (   )   *   +   ,   -   .   /    */
+	-1, -1, -1, -1, -1, -1, -1, -1,  -1, -1, -1, -1, -1, -1, -1, -1,
+    /*	0   1   2   3   4   5   6   7    8   9   :   ;   <   =   >   ?    */
+	0,  1,  2,  3,  4,  5,  6,  7,   8,  9,  -1, -1, -1, -1, -1, -1,
+    /*	@   A   B   C   D   E   F   G    H   I   J   K   L   M   N   O    */
+	-1, 10, 11, 12, 13, 14, 15, -1,  -1, -1, -1, -1, -1, -1, -1, -1,
+    /*  P   Q   R   S   T   U   V   W    X   Y   Z   [   \   ]   ^   _    */
+	-1, -1, -1, -1, -1, -1, -1, -1,  -1, -1, -1, -1, -1, -1, -1, -1,
+    /*	`   a   b   c   d   e   f   g    h   i   j   k   l   m   n   o    */
+	-1, 10, 11, 12, 13, 14, 15, -1,  -1, -1, -1, -1, -1, -1, -1, -1,
+    /*  p   q   r   s   t   u   v   w    x   y   z   {   |   }   ~   del  */
+	-1, -1, -1, -1, -1, -1, -1, -1,  -1, -1, -1, -1, -1, -1, -1, -1,
+
+    /*	nul soh stx etx eot enq ack bel  bs  ht  nl  vt  np  cr  so  si   */
+	-1, -1, -1, -1, -1, -1, -1, -1,  -1, -1, -1, -1, -1, -1, -1, -1,
+    /*	dle dc1 dc2 dc3 dc4 nak syn etb  can em  sub esc fs  gs  rs  us   */
+	-1, -1, -1, -1, -1, -1, -1, -1,  -1, -1, -1, -1, -1, -1, -1, -1,
+    /*  sp  !   "   #   $   %   &   '    (   )   *   +   ,   -   .   /    */
+	-1, -1, -1, -1, -1, -1, -1, -1,  -1, -1, -1, -1, -1, -1, -1, -1,
+    /*	0   1   2   3   4   5   6   7    8   9   :   ;   <   =   >   ?    */
+	-1, -1, -1, -1, -1, -1, -1, -1,  -1, -1, -1, -1, -1, -1, -1, -1,
+    /*	@   A   B   C   D   E   F   G    H   I   J   K   L   M   N   O    */
+	-1, -1, -1, -1, -1, -1, -1, -1,  -1, -1, -1, -1, -1, -1, -1, -1,
+    /*  P   Q   R   S   T   U   V   W    X   Y   Z   [   \   ]   ^   _    */
+	-1, -1, -1, -1, -1, -1, -1, -1,  -1, -1, -1, -1, -1, -1, -1, -1,
+    /*	`   a   b   c   d   e   f   g    h   i   j   k   l   m   n   o    */
+	-1, -1, -1, -1, -1, -1, -1, -1,  -1, -1, -1, -1, -1, -1, -1, -1,
+    /*  p   q   r   s   t   u   v   w    x   y   z   {   |   }   ~   del  */
+	-1, -1, -1, -1, -1, -1, -1, -1,  -1, -1, -1, -1, -1, -1, -1, -1,
+};
+
+
+int
+mime7to8(mci, header, e, boundaries, flags)
+	register MCI *mci;
+	HDR *header;
+	register ENVELOPE *e;
+	char **boundaries;
+	int flags;
+{
+	register char *p;
+	int linelen;
+	int bt;
+	off_t offset;
+	int i;
+	char *type;
+	char *subtype;
+	char *cte;
+	char **pvp;
+	int argc = 0;
+	char *bp;
+	struct args argv[MAXMIMEARGS];
+	char bbuf[128];
+	char buf[MAXLINE];
+	char pvpbuf[MAXLINE];
+	extern char MimeTokenTab[256];
+
+	if (tTd(43, 1))
+	{
+		printf("mime7to8: flags = %x, boundaries =", flags);
+		if (boundaries[0] == NULL)
+			printf(" <none>");
+		else
+		{
+			for (i = 0; boundaries[i] != NULL; i++)
+				printf(" %s", boundaries[i]);
+		}
+		printf("\n");
+	}
+	p = hvalue("Content-Transfer-Encoding", header);
+	if (p == NULL ||
+	    (pvp = prescan(p, '\0', pvpbuf, sizeof pvpbuf, NULL,
+			   MimeTokenTab)) == NULL ||
+	    pvp[0] == NULL)
+	{
+		cte = NULL;
+	}
+	else
+	{
+		cataddr(pvp, NULL, buf, sizeof buf, '\0');
+		cte = newstr(buf);
+	}
+
+	type = subtype = NULL;
+	p = hvalue("Content-Type", header);
+	if (p == NULL)
+	{
+		if (bitset(M87F_DIGEST, flags))
+			p = "message/rfc822";
+		else
+			p = "text/plain";
+	}
+	if (p != NULL &&
+	    (pvp = prescan(p, '\0', pvpbuf, sizeof pvpbuf, NULL,
+			   MimeTokenTab)) != NULL &&
+	    pvp[0] != NULL)
+	{
+		if (tTd(43, 40))
+		{
+			for (i = 0; pvp[i] != NULL; i++)
+				printf("pvp[%d] = \"%s\"\n", i, pvp[i]);
+		}
+		type = *pvp++;
+		if (*pvp != NULL && strcmp(*pvp, "/") == 0 &&
+		    *++pvp != NULL)
+		{
+			subtype = *pvp++;
+		}
+
+		/* break out parameters */
+		while (*pvp != NULL && argc < MAXMIMEARGS)
+		{
+			/* skip to semicolon separator */
+			while (*pvp != NULL && strcmp(*pvp, ";") != 0)
+				pvp++;
+			if (*pvp++ == NULL || *pvp == NULL)
+				break;
+
+			/* extract field name */
+			argv[argc].field = *pvp++;
+
+			/* see if there is a value */
+			if (*pvp != NULL && strcmp(*pvp, "=") == 0 &&
+			    (*++pvp == NULL || strcmp(*pvp, ";") != 0))
+			{
+				argv[argc].value = *pvp;
+				argc++;
+			}
+		}
+	}
+
+	/* check for disaster cases */
+	if (type == NULL)
+		type = "-none-";
+	if (subtype == NULL)
+		subtype = "-none-";
+
+	/* don't propogate some flags more than one level into the message */
+	flags &= ~M87F_DIGEST;
+
+	/*
+	**  Check for cases that can not be encoded.
+	**
+	**	For example, you can't encode certain kinds of types
+	**	or already-encoded messages.  If we find this case,
+	**	just copy it through.
+	*/
+
+	sprintf(buf, "%s/%s", type, subtype);
+	if (wordinclass(buf, 'n') || (cte != NULL && !wordinclass(cte, 'e')))
+		flags |= M87F_NO8BIT;
+
+	/*
+	**  Multipart requires special processing.
+	**
+	**	Do a recursive descent into the message.
+	*/
+
+	if (strcasecmp(type, "multipart") == 0 && !bitset(M87F_NO8BIT, flags))
+	{
+		int blen;
+
+		if (strcasecmp(subtype, "digest") == 0)
+			flags |= M87F_DIGEST;
+
+		for (i = 0; i < argc; i++)
+		{
+			if (strcasecmp(argv[i].field, "boundary") == 0)
+				break;
+		}
+		if (i >= argc)
+		{
+			syserr("mime7to8: Content-Type: %s missing boundary", p);
+			p = "---";
+		}
+		else
+		{
+			p = argv[i].value;
+			stripquotes(p);
+		}
+		blen = strlen(p);
+		if (blen > sizeof bbuf - 1)
+		{
+			syserr("mime7to8: multipart boundary \"%s\" too long",
+				p);
+			blen = sizeof bbuf - 1;
+		}
+		strncpy(bbuf, p, blen);
+		bbuf[blen] = '\0';
+		if (tTd(43, 1))
+			printf("mime7to8: multipart boundary \"%s\"\n", bbuf);
+		for (i = 0; i < MAXMIMENESTING; i++)
+			if (boundaries[i] == NULL)
+				break;
+		if (i >= MAXMIMENESTING)
+			syserr("mime7to8: multipart nesting boundary too deep");
+		else
+		{
+			boundaries[i] = bbuf;
+			boundaries[i + 1] = NULL;
+		}
+
+		/* skip the early "comment" prologue */
+		putline("", mci);
+		while (fgets(buf, sizeof buf, e->e_dfp) != NULL)
+		{
+			bt = mimeboundary(buf, boundaries);
+			if (bt != MBT_NOTSEP)
+				break;
+			putxline(buf, mci, PXLF_MAPFROM|PXLF_STRIP8BIT);
+			if (tTd(43, 99))
+				printf("  ...%s", buf);
+		}
+		if (feof(e->e_dfp))
+			bt = MBT_FINAL;
+		while (bt != MBT_FINAL)
+		{
+			auto HDR *hdr = NULL;
+
+			sprintf(buf, "--%s", bbuf);
+			putline(buf, mci);
+			if (tTd(43, 35))
+				printf("  ...%s\n", buf);
+			collect(e->e_dfp, FALSE, FALSE, &hdr, e);
+			if (tTd(43, 101))
+				putline("+++after collect", mci);
+			putheader(mci, hdr, e);
+			if (tTd(43, 101))
+				putline("+++after putheader", mci);
+			bt = mime7to8(mci, hdr, e, boundaries, flags);
+		}
+		sprintf(buf, "--%s--", bbuf);
+		putline(buf, mci);
+		if (tTd(43, 35))
+			printf("  ...%s\n", buf);
+		boundaries[i] = NULL;
+
+		/* skip the late "comment" epilogue */
+		while (fgets(buf, sizeof buf, e->e_dfp) != NULL)
+		{
+			bt = mimeboundary(buf, boundaries);
+			if (bt != MBT_NOTSEP)
+				break;
+			putxline(buf, mci, PXLF_MAPFROM|PXLF_STRIP8BIT);
+			if (tTd(43, 99))
+				printf("  ...%s", buf);
+		}
+		if (feof(e->e_dfp))
+			bt = MBT_FINAL;
+		if (tTd(43, 3))
+			printf("\t\t\tmime7to8=>%s (multipart)\n",
+				MimeBoundaryNames[bt]);
+		return bt;
+	}
+
+	/*
+	**  Message/* types -- recurse exactly once.
+	*/
+
+	if (strcasecmp(type, "message") == 0)
+	{
+		if (strcasecmp(subtype, "rfc822") != 0)
+		{
+			flags |= M87F_NO8BIT;
+		}
+		else
+		{
+			register char *q;
+			auto HDR *hdr = NULL;
+
+			putline("", mci);
+
+			collect(e->e_dfp, FALSE, FALSE, &hdr, e);
+			if (tTd(43, 101))
+				putline("+++after collect", mci);
+			putheader(mci, hdr, e);
+			if (tTd(43, 101))
+				putline("+++after putheader", mci);
+			bt = mime7to8(mci, hdr, e, boundaries, flags);
+			return bt;
+		}
+	}
+
+	/*
+	**  Non-compound body type.
+	**
+	**	First scan to see if it is legally translatable.  This
+	**	means:
+	**
+	**	  * No long lines.
+	**	  * No bare CR or NL bytes.
+	**
+	**	We'll also check to see if there are any 8-bit characters
+	**	so we can make a good choice of final encoding method.
+	*/
+
+	nodecode = FALSE;
+	has8bit = FALSE;
+	if (cte != NULL && strcasecmp(cte, "base64") == 0)
+		mf->mf_fill = mime_fill_base64;
+	else if (cte != NULL && strcasecmp(cte, "quoted-printable") != 0)
+		mf->mf_fill = mime_fill_qp;
+	else
+		nodecode = TRUE;
+
+	maxlinelen = 0;
+	if (!nodecode)
+	{
+		offset = mime_tell(mfp);
+		if (offset == -1)
+			syserr("mime7to8: cannot ftell on df%s", e->e_id);
+
+		linelen = 0;
+		while (!nodecode && (c = mime_getc(mfp)) != EOF)
+		{
+			if (bitset(0x80, c))
+				has8bit = TRUE;
+			else if (c == '\n' || c == '\0')
+				nodecode = TRUE;
+			else if (c == '\r')
+			{
+				c = mime_getc(mfp);
+				if (c == '\n')
+				{
+					if (linelen > maxlinelen)
+						maxlinelen = linelen;
+					linelen = 0;
+					continue;
+				}
+				nodecode = TRUE;
+			}
+			else
+				linelen++;
+		}
+		if (linelen != 0 || maxlinelen > mci->mci_mailer->m_maxline)
+			nodecode = TRUE;
+		if (mime_seek(mfp, offset, SEEK_SET) < 0)
+			syserr("mime7to8: cannot fseek on df%s", e->e_id)
+		else
+			mime_clearerr(mfp);
+		mime_flush(mfp);
+	}
+
+	if (tTd(43, 8))
+	{
+		printf("mime7to8: cte=%s, maxlinelen=%d, nodecode=%d, has8bit=%d\n",
+			cte == NULL ? "[none]" : cte,
+			maxlinelen, nodecode, has8bit);
+	}
+
+	if (!nodecode)
+	{
+		/*
+		**  Convert to 8-bit.  We know it will be well-behaved.
+		*/
+
+		if (has8bit)
+			p = "8bit";
+		else
+			p = "7bit";
+	}
+	else
+	{
+		p = cte;
+		mfp->mf_fill = mime_fill;
+	}
+	if (p != NULL)
+	{
+		sprintf(buf, "Content-Transfer-Encoding: %s", p);
+		putline(buf, mci);
+	}
+	putline("", mci);
+	mci->mci_flags &= ~MCIF_INHEADER;
+
+	p = buf;
+	linelen = 0;
+	while ((c = mime_getc(mfp)) != EOF)
+	{
+		while (c == '\r')
+		{
+			c = mime_getc(mfp);
+			if (c == '\n')
+			{
+				*p = '\0';
+				putline(buf, mci);
+				linelen = fromstate = 0;
+				p = buf;
+				continue;
+			}
+			*p++ = '\r';
+		}
+		if (mci->mci_mailer->m_linelimit > 0 &&
+		    linelen > mci->mci_mailer->m_linelimit - 1)
+		{
+			/* line wrap */
+			putc('!', mci->mci_out);
+			fputs(mci->mci_mailer->m_eol, mci->mci_out);
+			linelen = 0;
+		}
+		if (linelen == 0 && c == '.' &&
+		    bitnset(M_XDOT, mci->mci_mailer->m_flags))
+		{
+			putc('.', mci->mci_out);
+			linelen++;
+		}
+		if (linelen == fromstate && c == "From "[fromstate])
+		{
+			if (fromstate == 4)
+			{
+				/* hide From_? */
+				if (bitnset(M_ESCFROM, mci->mci_mailer->m_flags))
+				{
+					putc('>', mci->mci_out);
+					linelen++;
+				}
+				fputs("From ", mci->mci_out);
+				fromstate = -1;
+			}
+			fromstate++;
+			linelen++;
+			continue;
+		}
+		if (fromstate != 0)
+		{
+			p = "From ";
+			while (--fromstate >= 0)
+				putc(*p++, mci->mci_out);
+		}
+		putc(c, mci->mci_out);
+		linelen++;
+	}
+	if (tTd(43, 3))
+		printf("\t\t\tmime7to8=>%s (basic)\n", MimeBoundaryNames[bt]);
+	return bt;
+}
+/*
+**  MIME_FILL_QP -- fill buffer doing Quoted-Printable decoding
+**
+**	Parameters:
+**		mfp -- MIME file pointer.
+**
+**	Returns:
+**		The next character in the input stream.
+*/
+
+int
+mime_fill_qp(mfp)
+	register MFILE;
+{
+	int c;
+
+	/* first do the raw buffer fill */
+	if (mime_fill_nl(mfp) == EOF)
+		return EOF;
+
+	/* now scan the buffer converting =XX */
+	ip = op = mfp->mf_buf;
+	il = mfp->mf_cnt;
+	while (--il >= 0)
+	{
+		if (*ip != '=')
+		{
+			*op++ = *ip++;
+			continue;
+		}
+
+		/* special handling for "=" sign */
+		if (il >= 2 && !bitset(0x80, ip[1] | ip[2]) &&
+		    isxdigit(ip[1]) && isxdigit(ip[2]))
+		{
+			/* this is an escape sequence */
+			/* ASCII dependence ahead.... */
+			if (isdigit(*++ip))
+				c = *ip - '0';
+			else
+				c = (*ip & 07) + 9;
+			c <<= 4;
+			if (isdigit(*++ip))
+				c |= *ip - '0';
+			else
+				c |= (*ip & 07) + 9;
+			*op++ = c;
+		}
+		else if ((il == 2 && ip[1] == '\r' && ip[2] == '\n') ||
+			 (il == 1 && ip[1] == '\n'))
+		{
+			/* this is a hidden newline */
+			break;
+		}
+
+		/* bogus `=' -- what to do?  treat it as normal */
+		*op++ = *ip++;
+	}
+
+	/* adjust buffer count to match reality */
+	if ((mfp->mf_cnt = op - mfp->mf_buf - 1) <= 0)
+		return EOF;
+	return *mfp->mf_bp++;
 }
 /*
 **  MIMEBOUNDARY -- determine if this line is a MIME boundary & its type
