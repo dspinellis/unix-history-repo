@@ -2,7 +2,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_usrreq.c	7.26 (Berkeley) %G%
+ *	@(#)uipc_usrreq.c	7.27 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -735,5 +735,5 @@ unp_discard(fp)
 
 	fp->f_msgcount--;
 	unp_rights--;
-	(void) closef(fp);
+	(void) closef(fp, (struct proc *)NULL);
 }
