@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_map.h	8.2 (Berkeley) %G%
+ *	@(#)vm_map.h	8.3 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -150,7 +150,7 @@ typedef struct {
 
 /* XXX: number of kernel maps and entries to statically allocate */
 #define MAX_KMAP	10
-#define	MAX_KMAPENT	250
+#define	MAX_KMAPENT	500
 
 #ifdef KERNEL
 boolean_t	 vm_map_check_protection __P((vm_map_t,
