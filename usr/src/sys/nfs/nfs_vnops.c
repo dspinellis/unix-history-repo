@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vnops.c	7.31 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.32 (Berkeley) %G%
  */
 
 /*
@@ -29,6 +29,7 @@
 #include "param.h"
 #include "user.h"
 #include "proc.h"
+#include "kernel.h"
 #include "mount.h"
 #include "buf.h"
 #include "vm.h"
@@ -752,6 +753,7 @@ nfs_create(ndp, vap)
 	nfsm_request(ndp->ni_dvp, nonidempotent[NFSPROC_CREATE]);
 	nfsm_mtofh(ndp->ni_dvp, ndp->ni_vp);
 	nfsm_reqdone;
+	VTONFS(ndp->ni_dvp)->n_direofstamp = 0;
 	nfs_nput(ndp->ni_dvp);
 	return (error);
 }
@@ -808,6 +810,7 @@ nfs_remove(ndp)
 		nfsm_strtom(ndp->ni_dent.d_name, ndp->ni_dent.d_namlen, NFS_MAXNAMLEN);
 		nfsm_request(ndp->ni_dvp, nonidempotent[NFSPROC_REMOVE]);
 		nfsm_reqdone;
+		VTONFS(ndp->ni_dvp)->n_direofstamp = 0;
 		/*
 		 * Kludge City: If the first reply to the remove rpc is lost..
 		 *   the reply to the retransmitted request will be ENOENT
@@ -847,6 +850,7 @@ nfs_removeit(ndp)
 	nfsm_strtom(ndp->ni_dent.d_name, ndp->ni_dent.d_namlen, NFS_MAXNAMLEN);
 	nfsm_request(ndp->ni_dvp, nonidempotent[NFSPROC_REMOVE]);
 	nfsm_reqdone;
+	VTONFS(ndp->ni_dvp)->n_direofstamp = 0;
 	return (error);
 }
 
@@ -874,6 +878,8 @@ nfs_rename(sndp, tndp)
 	nfsm_strtom(tndp->ni_dent.d_name,tndp->ni_dent.d_namlen,NFS_MAXNAMLEN);
 	nfsm_request(sndp->ni_dvp, nonidempotent[NFSPROC_RENAME]);
 	nfsm_reqdone;
+	VTONFS(sndp->ni_dvp)->n_direofstamp = 0;
+	VTONFS(tndp->ni_dvp)->n_direofstamp = 0;
 	if (sndp->ni_vp->v_type == VDIR) {
 		if (tndp->ni_vp != NULL && tndp->ni_vp->v_type == VDIR)
 			cache_purge(tndp->ni_dvp);
@@ -913,6 +919,8 @@ nfs_renameit(sndp, tndp)
 	nfsm_strtom(tndp->ni_dent.d_name,tndp->ni_dent.d_namlen,NFS_MAXNAMLEN);
 	nfsm_request(sndp->ni_dvp, nonidempotent[NFSPROC_RENAME]);
 	nfsm_reqdone;
+	VTONFS(sndp->ni_dvp)->n_direofstamp = 0;
+	VTONFS(tndp->ni_dvp)->n_direofstamp = 0;
 	return (error);
 }
 
@@ -942,6 +950,7 @@ nfs_link(vp, ndp)
 	nfsm_request(vp, nonidempotent[NFSPROC_LINK]);
 	nfsm_reqdone;
 	VTONFS(vp)->n_attrstamp = 0;
+	VTONFS(ndp->ni_dvp)->n_direofstamp = 0;
 	if (ndp->ni_dvp != vp)
 		nfs_unlock(vp);
 	nfs_nput(ndp->ni_dvp);
@@ -985,6 +994,7 @@ nfs_symlink(ndp, vap, nm)
 	txdr_time(&vap->va_mtime, &sp->sa_mtime);	/* or VNOVAL ?? */
 	nfsm_request(ndp->ni_dvp, nonidempotent[NFSPROC_SYMLINK]);
 	nfsm_reqdone;
+	VTONFS(ndp->ni_dvp)->n_direofstamp = 0;
 	nfs_nput(ndp->ni_dvp);
 	/*
 	 * Kludge: Map EEXIST => 0 assuming that it is a reply to a retry.
@@ -1025,6 +1035,7 @@ nfs_mkdir(ndp, vap)
 	nfsm_request(ndp->ni_dvp, nonidempotent[NFSPROC_MKDIR]);
 	nfsm_mtofh(ndp->ni_dvp, ndp->ni_vp);
 	nfsm_reqdone;
+	VTONFS(ndp->ni_dvp)->n_direofstamp = 0;
 	nfs_nput(ndp->ni_dvp);
 	/*
 	 * Kludge: Map EEXIST => 0 assuming that you have a reply to a retry.
@@ -1060,6 +1071,7 @@ nfs_rmdir(ndp)
 	nfsm_strtom(ndp->ni_dent.d_name, ndp->ni_dent.d_namlen, NFS_MAXNAMLEN);
 	nfsm_request(ndp->ni_dvp, nonidempotent[NFSPROC_RMDIR]);
 	nfsm_reqdone;
+	VTONFS(ndp->ni_dvp)->n_direofstamp = 0;
 	cache_purge(ndp->ni_dvp);
 	cache_purge(ndp->ni_vp);
 	nfs_nput(ndp->ni_vp);
@@ -1078,10 +1090,11 @@ nfs_rmdir(ndp)
  * order so that it looks more sensible. This appears consistent with the
  * Ultrix implementation of NFS.
  */
-nfs_readdir(vp, uiop, cred)
+nfs_readdir(vp, uiop, cred, eofflagp)
 	register struct vnode *vp;
 	struct uio *uiop;
 	struct ucred *cred;
+	int *eofflagp;
 {
 	register long len;
 	register struct direct *dp;
@@ -1096,77 +1109,124 @@ nfs_readdir(vp, uiop, cred)
 	struct mbuf *md2;
 	caddr_t dpos2;
 	int siz;
-	int more_dirs;
+	int more_dirs = 1;
 	off_t off, savoff;
 	struct direct *savdp;
+	struct nfsmount *nmp;
+	struct nfsnode *np = VTONFS(vp);
+	long tresid;
 
-	nfsstats.rpccnt[NFSPROC_READDIR]++;
-	nfsm_reqhead(nfs_procids[NFSPROC_READDIR], cred, xid);
-	nfsm_fhtom(vp);
-	nfsm_build(p, u_long *, 2*NFSX_UNSIGNED);
-	*p++ = txdr_unsigned(uiop->uio_offset);
-	*p = txdr_unsigned(uiop->uio_resid);
-	nfsm_request(vp, nonidempotent[NFSPROC_READDIR]);
-	siz = 0;
-	nfsm_disect(p, u_long *, NFSX_UNSIGNED);
-	more_dirs = fxdr_unsigned(int, *p);
+	/*
+	 * First, check for hit on the EOF offset cache
+	 */
+	if (uiop->uio_offset != 0 && uiop->uio_offset == np->n_direofoffset &&
+	    (time.tv_sec - np->n_direofstamp) < NFS_ATTRTIMEO) {
+		*eofflagp = 1;
+		nfsstats.direofcache_hits++;
+		return (0);
+	}
 
-	/* Save the position so that we can do nfsm_mtouio() later */
-	dpos2 = dpos;
-	md2 = md;
-
-	/* loop thru the dir entries, doctoring them to 4bsd form */
-	savoff = off = 0;
-	savdp = dp = NULL;
-	while (more_dirs && siz < uiop->uio_resid) {
-		savoff = off;		/* Hold onto offset and dp */
-		savdp = dp;
-		nfsm_disecton(p, u_long *, 2*NFSX_UNSIGNED);
-		dp = (struct direct *)p;
-		dp->d_ino = fxdr_unsigned(u_long, *p++);
-		len = fxdr_unsigned(int, *p);
-		if (len <= 0 || len > NFS_MAXNAMLEN) {
-			error = EBADRPC;
-			m_freem(mrep);
-			goto nfsmout;
-		}
-		dp->d_namlen = (u_short)len;
-		nfsm_adv(len);		/* Point past name */
-		tlen = nfsm_rndup(len);
-		if (tlen != len) {	/* If name not on rounded boundary */
-			*dpos = '\0';	/* Null-terminate */
-			nfsm_adv(tlen - len);
-			len = tlen;
-		}
-		nfsm_disecton(p, u_long *, 2*NFSX_UNSIGNED);
-		off = fxdr_unsigned(off_t, *p);
-		*p++ = 0;		/* Ensures null termination of name */
+	nmp = vfs_to_nfs(vp->v_mount);
+	tresid = uiop->uio_resid;
+	/*
+	 * Loop around doing readdir rpc's of size uio_resid or nm_rsize,
+	 * whichever is smaller, truncated to a multiple of DIRBLKSIZ.
+	 * The stopping criteria is EOF or less than DIRBLKSIZ of the
+	 * request left.
+	 */
+	while (more_dirs && uiop->uio_resid >= DIRBLKSIZ) {
+		nfsstats.rpccnt[NFSPROC_READDIR]++;
+		nfsm_reqhead(nfs_procids[NFSPROC_READDIR], cred, xid);
+		nfsm_fhtom(vp);
+		nfsm_build(p, u_long *, 2*NFSX_UNSIGNED);
+		*p++ = txdr_unsigned(uiop->uio_offset);
+		*p = txdr_unsigned(((uiop->uio_resid > nmp->nm_rsize) ?
+			nmp->nm_rsize : uiop->uio_resid) & ~(DIRBLKSIZ-1));
+		nfsm_request(vp, nonidempotent[NFSPROC_READDIR]);
+		siz = 0;
+		nfsm_disect(p, u_long *, NFSX_UNSIGNED);
 		more_dirs = fxdr_unsigned(int, *p);
-		dp->d_reclen = len+4*NFSX_UNSIGNED;
-		siz += dp->d_reclen;
+	
+		/* Save the position so that we can do nfsm_mtouio() later */
+		dpos2 = dpos;
+		md2 = md;
+	
+		/* loop thru the dir entries, doctoring them to 4bsd form */
+		savoff = off = 0;
+		savdp = dp = NULL;
+		while (more_dirs && siz < uiop->uio_resid) {
+			savoff = off;		/* Hold onto offset and dp */
+			savdp = dp;
+			nfsm_disecton(p, u_long *, 2*NFSX_UNSIGNED);
+			dp = (struct direct *)p;
+			dp->d_ino = fxdr_unsigned(u_long, *p++);
+			len = fxdr_unsigned(int, *p);
+			if (len <= 0 || len > NFS_MAXNAMLEN) {
+				error = EBADRPC;
+				m_freem(mrep);
+				goto nfsmout;
+			}
+			dp->d_namlen = (u_short)len;
+			nfsm_adv(len);		/* Point past name */
+			tlen = nfsm_rndup(len);
+			/*
+			 * This should not be necessary, but some servers have
+			 * broken XDR such that these bytes are not null filled.
+			 */
+			if (tlen != len) {
+				*dpos = '\0';	/* Null-terminate */
+				nfsm_adv(tlen - len);
+				len = tlen;
+			}
+			nfsm_disecton(p, u_long *, 2*NFSX_UNSIGNED);
+			off = fxdr_unsigned(off_t, *p);
+			*p++ = 0;	/* Ensures null termination of name */
+			more_dirs = fxdr_unsigned(int, *p);
+			dp->d_reclen = len+4*NFSX_UNSIGNED;
+			siz += dp->d_reclen;
+		}
+		/*
+		 * If at end of rpc data, get the eof boolean
+		 */
+		if (!more_dirs) {
+			nfsm_disecton(p, u_long *, NFSX_UNSIGNED);
+			more_dirs = (fxdr_unsigned(int, *p) == 0);
+
+			/*
+			 * If at EOF, cache directory offset
+			 */
+			if (!more_dirs) {
+				np->n_direofoffset = off;
+				np->n_direofstamp = time.tv_sec;
+			}
+		}
+		/*
+		 * If there is too much to fit in the data buffer, use savoff and
+		 * savdp to trim off the last record.
+		 * --> we are not at eof
+		 */
+		if (siz > uiop->uio_resid) {
+			off = savoff;
+			siz -= dp->d_reclen;
+			dp = savdp;
+			more_dirs = 0;	/* Paranoia */
+		}
+		if (siz > 0) {
+			md = md2;
+			dpos = dpos2;
+			nfsm_mtouio(uiop, siz);
+			uiop->uio_offset = off;
+		} else
+			more_dirs = 0;	/* Ugh, never happens, but in case.. */
+		m_freem(mrep);
 	}
-	/*
-	 * If at end of rpc data, get the eof boolean
-	 */
-	if (!more_dirs)
-		nfsm_disecton(p, u_long *, NFSX_UNSIGNED);
-	/*
-	 * If there is too much to fit in the data buffer, use savoff and
-	 * savdp to trim off the last record.
-	 * --> we are not at eof
-	 */
-	if (siz > uiop->uio_resid) {
-		off = savoff;
-		siz -= dp->d_reclen;
-		dp = savdp;
+nfsmout:
+	if (tresid == uiop->uio_resid) {
+		*eofflagp = 1;
+		nfsstats.direofcache_misses++;
+	} else {
+		*eofflagp = 0;
 	}
-	if (siz > 0) {
-		md = md2;
-		dpos = dpos2;
-		nfsm_mtouio(uiop, siz);
-		uiop->uio_offset = off;
-	}
-	nfsm_reqdone;
 	return (error);
 }
 

@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_node.c	7.22 (Berkeley) %G%
+ *	@(#)nfs_node.c	7.23 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -139,6 +139,7 @@ loop:
 	nfs_lock(vp);
 	bcopy((caddr_t)fhp, (caddr_t)&np->n_fh, NFSX_FH);
 	np->n_attrstamp = 0;
+	np->n_direofstamp = 0;
 	np->n_sillyrename = (struct sillyrename *)0;
 	np->n_size = 0;
 	np->n_mtime = 0;
