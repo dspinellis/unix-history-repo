@@ -560,6 +560,18 @@ hpdtint(mi, mbsr)
 		    er1 & HPER1_HARD ||
 		    sc->sc_hdr ||
 		    (!ML11 && (er2 & HPER2_HARD))) {
+ 			/*
+ 			 * If HCRC the header is screwed up and the sector
+ 			 * might be in the bad sector table,
+ 			 * better check..
+			 * Note: If the header is screwed up on a skip sector
+			 * track, then the appropriate replacement sector
+			 * cannot be found!
+ 			 */
+ 			if (er1&HPER1_HCRC && !ML11){
+ 				if (hpecc(mi, BSE))
+ 					return(MBD_RESTARTED);
+ 			}
 hard:
 			if (ML11)
 				bp->b_blkno = hpaddr->hpda&0xffff;
@@ -764,6 +776,9 @@ hpecc(mi, flag)
 		if (hpbdebug)
 		printf("hpecc, BSE: bn %d cn %d tn %d sn %d\n", bn, cn, tn, sn);
 #endif
+ 		if (rp->hpof&HPOF_SSEI)		/* make sure isbad gets the
+ 						 * proper sector number to look
+ 			sn++;			 * up!		*/
 		if ((bn = isbad(&hpbad[mi->mi_unit], cn, tn, sn)) < 0)
 			return(0);
 		bp->b_flags |= B_BAD;
@@ -774,6 +789,7 @@ hpecc(mi, flag)
 		tn = sn/st->nsect;
 		sn %= st->nsect;
 		mbp->mba_bcr = -512;
+ 		rp->hpof &= ~HPOF_SSEI;
 #ifdef HPBDEBUG
 		if (hpbdebug)
 		printf("revector to cn %d tn %d sn %d\n", cn, tn, sn);
