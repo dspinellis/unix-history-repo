@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rtsock.c	8.4 (Berkeley) %G%
+ *	@(#)rtsock.c	8.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
