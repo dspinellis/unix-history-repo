@@ -1,20 +1,12 @@
 /*
- * rmail: front end for mail to stack up those stupid >From ... remote from ...
- * lines and make a correct return address.  This works with the -f option
- * to /usr/lib/sendmail so it won't work on systems without sendmail.
- * However, it ought to be easy to modify a standard /bin/mail to do the
- * same thing.
- *
- * NOTE: Rmail is SPECIFICALLY INTENDED for ERNIE COVAX because of its
- * physical position as a gateway between the uucp net and the arpanet.
- * By default, other sites will probably want /bin/rmail to be a link
- * to /bin/mail, as it was intended by BTL.  However, other than the
- * (somewhat annoying) loss of information about when the mail was
- * originally sent, rmail should work OK on other systems running uucp.
- * If you don't run uucp you don't even need any rmail.
- */
+** rmail: front end for mail to stack up those stupid >From ... remote from ...
+** lines and make a correct return address.  This works with the -f option
+** to /usr/lib/sendmail so it won't work on systems without sendmail.
+** However, it ought to be easy to modify a standard /bin/mail to do the
+** same thing.
+*/
 
-static char	SccsId[] =	"@(#)rmail.c	3.4	%G%";
+static char	SccsId[] =	"@(#)rmail.c	3.5	%G%";
 
 # include <stdio.h>
 # include <sysexits.h>
@@ -39,6 +31,7 @@ main(argc, argv)
 	char junk[512];	/* scratchpad */
 	char cmd[2000];
 	register char *cp;
+	register char *uf;	/* ptr into ufrom */
 
 # ifdef DEBUG
 	if (argc > 1 && strcmp(argv[1], "-T") == 0)
@@ -62,11 +55,23 @@ main(argc, argv)
 			break;
 		(void) sscanf(lbuf, "%s %s", junk, ufrom);
 		cp = lbuf;
+		uf = ufrom;
 		for (;;)
 		{
 			cp = index(cp+1, 'r');
 			if (cp == NULL)
+			{
+				register char *p = rindex(uf, '!');
+
+				if (p != NULL)
+				{
+					*p = '\0';
+					strcpy(sys, uf);
+					uf = p + 1;
+					break;
+				}
 				cp = "remote from somewhere";
+			}
 #ifdef DEBUG
 			if (Debug)
 				printf("cp='%s'\n", cp);
@@ -74,12 +79,13 @@ main(argc, argv)
 			if (strncmp(cp, "remote from ", 12)==0)
 				break;
 		}
-		(void) sscanf(cp, "remote from %s", sys);
+		if (cp != NULL)
+			(void) sscanf(cp, "remote from %s", sys);
 		strcat(from, sys);
 		strcat(from, "!");
 #ifdef DEBUG
 		if (Debug)
-			printf("ufrom='%s', sys='%s', from now '%s'\n", ufrom, sys, from);
+			printf("ufrom='%s', sys='%s', from now '%s'\n", uf, sys, from);
 #endif
 	}
 	strcat(from, ufrom);
