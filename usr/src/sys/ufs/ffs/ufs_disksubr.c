@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ufs_disksubr.c	7.3 (Berkeley) %G%
+ *	@(#)ufs_disksubr.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -136,10 +136,10 @@ readdisklabel(dev, strat, lp)
 		lp->d_partitions[0].p_size = 0x1fffffff;
 	lp->d_partitions[0].p_offset = 0;
 
-	bp = geteblk(DEV_BSIZE);		/* max sector size */
+	bp = geteblk(lp->d_secsize);
 	bp->b_dev = dev;
 	bp->b_blkno = LABELSECTOR;
-	bp->b_bcount = DEV_BSIZE;
+	bp->b_bcount = lp->d_secsize;
 	bp->b_flags = B_BUSY | B_READ;
 	bp->b_cylin = LABELSECTOR / lp->d_secpercyl;
 	(*strat)(bp);
@@ -147,15 +147,22 @@ readdisklabel(dev, strat, lp)
 	if (bp->b_flags & B_ERROR) {
 		u.u_error = 0;		/* XXX */
 		msg = "I/O error";
-	} else {
-		dlp = (struct disklabel *)(bp->b_un.b_addr + LABELOFFSET);
-		if (dlp->d_magic != DISKMAGIC || dlp->d_magic2 != DISKMAGIC)
-			msg = "no disk label";
-		else if (dkcksum(dlp) != 0)
+	} else for (dlp = (struct disklabel *)bp->b_un.b_addr;
+	    dlp <= (struct disklabel *)(bp->b_un.b_addr+DEV_BSIZE-sizeof(*dlp));
+	    dlp = (struct disklabel *)((char *)dlp + sizeof(long))) {
+		if (dlp->d_magic != DISKMAGIC || dlp->d_magic2 != DISKMAGIC) {
+			if (msg == NULL)
+				msg = "no disk label";
+		} else if (dkcksum(dlp) != 0)
 			msg = "disk label corrupted";
-		else
+		else {
 			*lp = *dlp;
+			msg = NULL;
+			break;
+		}
 	}
+	if (lp->d_npartitions > MAXPARTITIONS)
+		lp->d_npartitions = MAXPARTITIONS;
 	bp->b_flags = B_INVAL | B_AGE;
 	brelse(bp);
 	return (msg);
