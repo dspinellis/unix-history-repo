@@ -4,20 +4,13 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)a.out.h	5.8 (Berkeley) %G%
+ *	@(#)a.out.h	5.9 (Berkeley) %G%
  */
 
 #ifndef	_AOUT_H_
 #define	_AOUT_H_
 
 #include <sys/exec.h>
-
-#if defined(hp300) || defined(i386) || defined(mips)
-#define	__LDPGSZ	4096
-#endif
-#if defined(tahoe) || defined(vax)
-#define	__LDPGSZ	1024
-#endif
 
 /* Valid magic number check. */
 #define	N_BADMAG(ex) \
