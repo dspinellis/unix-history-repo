@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)d.t	5.1 (Berkeley) %G%
+.\"	@(#)d.t	6.1 (Berkeley) %G%
 .\"
 .nr H2 1
 .ds RH "Out of band data
