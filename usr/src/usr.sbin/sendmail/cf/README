@@ -1,4 +1,4 @@
-@(#)README	2.3 (Berkeley) %G%
+@(#)README	2.4 (Berkeley) %G%
 
 This document describes the sendmail configuration files being used
 at Berkeley.  There have been several previous versions.  This file
@@ -206,9 +206,9 @@ RULESETS (* means built in to sendmail)
    2 *	Recipient rewriting
    3 *	Canonicalization
    4 *	Post cleanup
-   5	Back compatibility for UUCP
+   5 *	Local address rewrite (after aliasing)
    6	Bottom half of Ruleset 3
-   7	--unused--
+   7	Back compatibility for UUCP
    8	"host dependent cleanup" -- unused?
    9	change rightmost % to @ -- needed?
 
@@ -225,7 +225,7 @@ MACROS
    A
    B	Bitnet Relay
    C	CSNET Relay
-   D
+   D	The local domain -- usually not needed
    E
    F
    G
@@ -257,7 +257,7 @@ CLASSES
    C
    D
    E
-   F
+   F	hosts we forward for
    G
    H
    I
@@ -278,6 +278,7 @@ CLASSES
    X	UUCP hosts connected to relay $X
    Y	locally connected smart UUCP hosts
    Z
+   .	the class containing only a dot
 
 
 M4 DIVERSIONS
@@ -287,7 +288,7 @@ M4 DIVERSIONS
    3	Local Ruleset 3 additions
    4	UUCP Ruleset 0 additions
    5	locally interpreted names (overrides $R)
-   6
+   6	local configuration (at top of file)
    7	mailer definitions
-   8
+   8	special local name recognition (late in ruleset 3)
    9
