@@ -1,4 +1,4 @@
-/*	vmparam.h	6.4	85/03/07	*/
+/*	vmparam.h	6.5	85/03/07	*/
 
 /*
  * Machine dependent constants for VAX
@@ -19,21 +19,37 @@
 #define	HIGHPAGES	UPAGES
 
 /*
- * Virtual memory related constants
+ * Virtual memory related constants, all in clicks
  */
-#define	SLOP	32
-#define	MAXTSIZ		(6*2048-SLOP)		/* max text size (clicks) */
-#ifndef MAXDSIZ
-#define	MAXDSIZ		(12*1024-32-SLOP)	/* max data size (clicks) */
+#define	MAXTSIZ		(6*CLSIZE*1024)		/* max text size */
+#ifndef DFLDSIZ
+#define	DFLDSIZ		(6*1024*1024/NBPG)	/* initial data size limit */
 #endif
-#define	MAXSSIZ		(12*1024-32-SLOP)	/* max stack size (clicks) */
+#ifndef MAXDSIZ
+#define	MAXDSIZ		(16*1024*1024/NBPG)	/* max data size */
+#endif
+#ifndef	DFLSSIZ
+#define	DFLSSIZ		(512*1024/NBPG)		/* initial stack size limit */
+#endif
+#ifndef	MAXSSIZ
+#define	MAXSSIZ		MAXDSIZ			/* max stack size */
+#endif
+
+/*
+ * Default sizes of swap allocation chunks (see dmap.h).
+ * The actual values may be changed in vminit() based on MAXDSIZ.
+ * With MAXDSIZ of 16Mb and NDMAP of 38, dmmax will be 1024.
+ */
+#define	DMMIN	32			/* smallest swap allocation */
+#define	DMMAX	4096			/* largest potential swap allocation */
+#define	DMTEXT	1024			/* swap allocation for text */
 
 /*
  * Sizes of the system and user portions of the system page table.
  */
 /* SYSPTSIZE IS SILLY; IT SHOULD BE COMPUTED AT BOOT TIME */
 #define	SYSPTSIZE	((20+MAXUSERS)*NPTEPG)
-#define	USRPTSIZE 	(8*NPTEPG)
+#define	USRPTSIZE 	(32*NPTEPG)
 
 /*
  * The size of the clock loop.
