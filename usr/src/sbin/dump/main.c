@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	1.5 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	1.6 (Berkeley) %G%";
 #include "dump.h"
 
 int	notify = 0;	/* notify operator flag */
@@ -152,7 +152,7 @@ main(argc, argv)
 	esize = 0;
 	sblock = (struct fs *)buf;
 	sync();
-	bread(SBLOCK, sblock, MAXBSIZE);
+	bread(SBLOCK, sblock, SBSIZE);
 	if (sblock->fs_magic != FS_MAGIC) {
 		msg("bad sblock magic number\n");
 		dumpabort();
