@@ -1,4 +1,13 @@
-/* @(#)qvreg.h	1.3 (ULTRIX) 8/21/85 */
+/*
+ * Copyright (c) 1982, 1986 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ * 		@(#)qvreg.h	1.2  Berkeley  %G%
+ *
+ *	derived from: @(#)qvreg.h	1.3 (ULTRIX) 8/21/85 
+ */
+
 /*
  * QVSS definitions.
  */
@@ -24,7 +33,6 @@ struct qvdevice {
 /*
  * csr bit definations
  */
-
 #define	QV_19INCH	0x1
 #define QV_VIDEO_ENA	0x4
 #define QV_CUR_MODE	0x8
@@ -41,7 +49,6 @@ struct qvdevice {
 /*
  * Lk201 keyboard 
  */
-
 #define LK_UPDOWN 	0x86		/* bits for setting lk201 modes */
 #define LK_AUTODOWN 	0x82
 #define LK_DOWN 	0x80
@@ -69,7 +76,6 @@ struct qvdevice {
 /*
  * Keycodes for special keys and functions
  */
-
 #define SHIFT	0xae
 #define LOCK	0xb0
 #define REPEAT	0xb4
