@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-SCCSID(@(#)savemail.c	3.44		%G%);
+SCCSID(@(#)savemail.c	3.45		%G%);
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -241,6 +241,7 @@ returntosender(msg, returnto, sendbody)
 	ee = newenvelope(&errenvelope);
 	ee->e_puthdr = putheader;
 	ee->e_putbody = errbody;
+	queuename(ee, '\0');
 	addheader("date", "$b", ee);
 	addheader("from", "$g (Mail Delivery Subsystem)", ee);
 	addheader("to", returnto->q_paddr, ee);
