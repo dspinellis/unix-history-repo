@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd2.c	3.17 84/01/11";
+static	char *sccsid = "@(#)cmd2.c	3.18 84/01/12";
 #endif
 
 #include "defs.h"
@@ -37,6 +37,7 @@ char *help_longcmd[] = {
 	":label {1-9} string   Label window {1-9}.",
 	":source filename      Execute commands in ``filename''.",
 	":terse [off]          Turn on (or off) terse mode.",
+	":unset variable       Deallocate ``variable''.",
 	":window row col nrow ncol [nline label]",
 	"                      Open a window at ``row'', ``col''",
 	"                      of size ``nrow'', ``ncol'',",
