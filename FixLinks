@@ -4,49 +4,7 @@
 # import/ checkout.  These need to be made by the Makefiles, this
 # is just here as a stop gap solution.
 #
-# $Header: /a/cvs/386BSD/src/FixLinks,v 1.7 1993/08/05 18:40:33 conklin Exp $
+#	$Id$
 #
-# $Log: FixLinks,v $
-# Revision 1.7  1993/08/05  18:40:33  conklin
-# Commented out more links that are no longer needed.
-#
-# Revision 1.6  1993/08/03  01:40:19  rgrimes
-# Commented out many of the links that are no longer needed.
-#
-# Revision 1.5  1993/07/08  17:58:20  nate
-# Removed Fixed Links
-#
-# Revision 1.4  1993/07/03  02:01:30  root
-# Updated since the links for the gnu stuff are no longer needed.
-#
-# Revision 1.3  1993/06/21  19:47:32  root
-# Added rcs -> ../gnu/rcs
-#
-# Revision 1.2  1993/06/20  12:02:09  rgrimes
-# Put back in the ones that usr.bin/Makefile should do, it needs fixed
-# as it does not work for a make obj.
-#
-# Revision 1.1  93/06/19  14:50:18  rgrimes
-# Added my silly little FixLinks script until someone fixes all
-# the make files.
-# 
 
-pushd sys/netccitt ; ln -s x25.h x25_sockaddr.h ; popd
-pushd lib/libc/db ; ln -s VERSION README ; popd
-pushd lib/libc/db/PORT ; ln -s include sys ; popd
-#pushd libexec/uucp ; ln -s sys1.unx sys1.c ; popd
-#pushd libexec/uucp ; ln -s sys3.unx sys3.c ; popd
-#pushd libexec/uucp ; ln -s sys4.unx sys4.c ; popd
-#pushd libexec/uucp ; ln -s sys5.unx sys5.c ; popd
-#pushd libexec/uucp ; ln -s sys6.unx sys6.c ; popd
-#pushd libexec/uucp ; ln -s sys7.unx sys7.c ; popd
-#pushd libexec/uucp ; ln -s sysh.unx sysdep.h ; popd
-#pushd usr.bin/yacc/test ; ln -s ../../../libexec/ftpd/ftpcmd.y ftp.y ; popd
-#pushd usr.sbin/named ; ln -s /usr/include/arpa/nameser.h nameser.h ; popd
-#pushd usr.sbin/named ; ln -s /usr/include/resolv.h resolv.h ; popd
-#pushd usr.sbin/sendmail ; ln -s ../../libexec/mail.local mail.local ; popd
-#pushd usr.sbin/sendmail ; ln -s ../../bin/rmail rmail ; popd
-#pushd share/doc/usd/10.etiq ; ln -s ../../smm/10.newsop/tmac.n tmac.n ; popd
-#pushd share/doc/usd/09.newsread ; ln -s ../../smm/10.newsop/tmac.n tmac.n ; popd
-#pushd games/chess ; ln -s DOCUMENTATION/MAN-PAGE chess.6 ; popd
 pushd games/fortune/datfiles ; ln -s fortunes-o.real.rot13 fortunes-o ; popd
