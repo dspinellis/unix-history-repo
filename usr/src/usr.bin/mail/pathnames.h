@@ -5,7 +5,7 @@
  */
  
 /*
- * Sccs Id = "@(#)pathnames.h	2.3 %G%";
+ * Sccs Id = "@(#)pathnames.h	2.4 %G%";
  */
 
 #define	GETHOST				/* System has gethostname syscall */
@@ -16,7 +16,7 @@
 #endif	GETHOST
 
 #define	MAIL		"/bin/mail"	/* Name of mail sender */
-#define DELIVERMAIL	"/etc/delivermail"
+#define SENDMAIL	"/usr/lib/sendmail"
 					/* Name of classy mail deliverer */
 #define	EDITOR		"/usr/ucb/ex"	/* Name of text editor */
 #define	VISUAL		"/usr/ucb/vi"	/* Name of display editor */

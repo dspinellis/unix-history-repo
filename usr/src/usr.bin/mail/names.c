@@ -8,7 +8,7 @@
 
 #include "rcv.h"
 
-static char *SccsId = "@(#)names.c	2.6 %G%";
+static char *SccsId = "@(#)names.c	2.7 %G%";
 
 /*
  * Allocate a single element of a name list,
@@ -180,7 +180,7 @@ verify(names)
 	register struct name *np, *top, *t, *x;
 	register char *cp;
 
-#ifdef DELIVERMAIL
+#ifdef SENDMAIL
 	return(names);
 #else
 	top = names;
@@ -563,12 +563,12 @@ unpack(np)
 	extra = 2;
 	if (rflag != NOSTR)
 		extra += 2;
-#ifdef DELIVERMAIL
+#ifdef SENDMAIL
 	extra++;
 	metoo = value("metoo") != NOSTR;
 	if (metoo)
 		extra++;
-#endif DELIVERMAIL
+#endif SENDMAIL
 	if (hflag)
 		extra += 2;
 	top = (char **) salloc((t + extra) * sizeof cp);
@@ -578,11 +578,11 @@ unpack(np)
 		*ap++ = "-r";
 		*ap++ = rflag;
 	}
-#ifdef DELIVERMAIL
+#ifdef SENDMAIL
 	*ap++ = "-i";
 	if (metoo)
 		*ap++ = "-m";
-#endif DELIVERMAIL
+#endif SENDMAIL
 	if (hflag) {
 		*ap++ = "-h";
 		sprintf(hbuf, "%d", hflag);
