@@ -4,11 +4,12 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_conf.c	7.6 (Berkeley) %G%
+ *	@(#)vfs_conf.c	7.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
 #include <sys/mount.h>
+#include <sys/vnode.h>
 
 #ifdef FFS
 #include <ufs/ffs/ffs_extern.h>
