@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)pc.c 3.10 %G%";
+static	char sccsid[] = "@(#)pc.c 3.11 %G%";
 #include <stdio.h>
 #include <signal.h>
 #include <wait.h>
@@ -202,25 +202,20 @@ main(argc, argv)
 		if (dosys(pc1, pc1args, 0, tfile[1]))
 			continue;
 		unlink(tfile[0]);
-		if (Sflag && !Oflag)
+		tfile[0] = tname[0];
+		if (Oflag) {
+			if (dosys(c2, c2args, tfile[1], tfile[0]))
+				continue;
+			unlink(tfile[1]);
+			tfile[1] = tfile[0];
+			tfile[0] = tname[1];
+		}
+		if (Sflag)
 			tfile[0] = setsuf(argp, 's');
-		else
-			tfile[0] = tname[0];
 		if (dosys(pc2, pc2args, tfile[1], tfile[0]))
 			continue;
 		unlink(tfile[1]);
 		tfile[1] = 0;
-		if (Oflag) {
-			if (Sflag)
-				tfile[1] = setsuf(argp, 's');
-			else
-				tfile[1] = tname[1];
-			if (dosys(c2, c2args, tfile[0], tfile[1]))
-				continue;
-			unlink(tfile[0]);
-			tfile[0] = tfile[1];
-			tfile[1] = 0;
-		}
 		if (Sflag) {
 			tfile[0] = 0;
 			continue;

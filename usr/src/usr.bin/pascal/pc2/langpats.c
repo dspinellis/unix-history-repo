@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)langpats.c 1.5 %G%";
+static char sccsid[] = "@(#)langpats.c 1.6 %G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -55,7 +55,6 @@ struct pats {
 
 	{ "2,_blkclr\n",
 "	movl	4(sp),r3\n\
-	subl3	r3,r3,-4(sp)\n\
 	jbr	2f\n\
 1:\n\
 	subl2	r0,(sp)\n\
@@ -269,8 +268,6 @@ struct pats {
 struct pats		*htbl[HSHSIZ];
 
 
-#define	CHK(c)	if (*cp++ != c) goto copy;
-
 #define HASH(cp, hp) {\
 	hash = 0; rehash = 1; ccp = cp; \
 	do	{ \
@@ -293,9 +290,10 @@ main(argc, argv)
 {
 	register struct pats	*pp;
 	register struct pats	**hp;
-	register char		*cp, *ccp;
+	register char		*cp, *ccp, *lp;
 	register int		hash, rehash, size;
 	char			line[BUFSIZ];
+	extern char		*index();
 
 	if (argc > 1)
 		freopen(argv[1], "r", stdin);
@@ -314,19 +312,28 @@ main(argc, argv)
 	 * check each line and replace as appropriate
 	 */
 	while (fgets(line, BUFSIZ, stdin)) {
-		for (cp = line; *cp && *cp == '\t'; )
+		lp = index(line, ':');
+		for (cp = (lp != NULL) ? ++lp : line; *cp == '\t'; )
 			cp++;
-		CHK('c'); CHK('a'); CHK('l'); CHK('l'); CHK('s');
-		CHK('\t'); CHK('$');
+		if (strcmpn(cp, "calls\t$", 7) != 0) {
+			fputs(line, stdout);
+			continue;
+		}
+		cp += 7;
 		HASH(cp, hp);
 		while (*hp) {
-			if (RELEQ(size, (*hp)->name, cp)) {
+			if (strcmpn((*hp)->name, cp, size)==NULL) {
+				fprintf(stderr, "name = %s\n", (*hp)->name);
+				if (lp != NULL) {
+					*lp++ = '\n';
+					*lp = '\0';
+					fputs(line, stdout);
+				}
 				fputs((*hp)->replace, stdout);
 				goto nextline;
 			}
 			REHASH(hp);
 		}
-copy:
 		fputs(line, stdout);
 nextline:;
 	}
