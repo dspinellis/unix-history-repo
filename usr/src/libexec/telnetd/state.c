@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)state.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)state.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -14,10 +14,10 @@ static char sccsid[] = "@(#)state.c	8.1 (Berkeley) %G%";
 #include <libtelnet/auth.h>
 #endif
 
-char	doopt[] = { IAC, DO, '%', 'c', 0 };
-char	dont[] = { IAC, DONT, '%', 'c', 0 };
-char	will[] = { IAC, WILL, '%', 'c', 0 };
-char	wont[] = { IAC, WONT, '%', 'c', 0 };
+unsigned char	doopt[] = { IAC, DO, '%', 'c', 0 };
+unsigned char	dont[] = { IAC, DONT, '%', 'c', 0 };
+unsigned char	will[] = { IAC, WILL, '%', 'c', 0 };
+unsigned char	wont[] = { IAC, WONT, '%', 'c', 0 };
 int	not42 = 1;
 
 /*
@@ -426,7 +426,7 @@ send_do(option, init)
 			set_his_want_state_will(option);
 		do_dont_resp[option]++;
 	}
-	(void) sprintf(nfrontp, doopt, option);
+	(void) sprintf(nfrontp, (char *)doopt, option);
 	nfrontp += sizeof (dont) - 2;
 
 	DIAG(TD_OPTIONS, printoption("td: send do", option));
@@ -529,7 +529,8 @@ willoption(option)
 		case TELOPT_NAWS:
 		case TELOPT_TSPEED:
 		case TELOPT_XDISPLOC:
-		case TELOPT_ENVIRON:
+		case TELOPT_NEW_ENVIRON:
+		case TELOPT_OLD_ENVIRON:
 			changeok++;
 			break;
 
@@ -645,7 +646,7 @@ send_dont(option, init)
 		set_his_want_state_wont(option);
 		do_dont_resp[option]++;
 	}
-	(void) sprintf(nfrontp, dont, option);
+	(void) sprintf(nfrontp, (char *)dont, option);
 	nfrontp += sizeof (doopt) - 2;
 
 	DIAG(TD_OPTIONS, printoption("td: send dont", option));
@@ -743,7 +744,11 @@ wontoption(option)
 			settimer(xdisplocsubopt);
 			break;
 
-		case TELOPT_ENVIRON:
+		case TELOPT_OLD_ENVIRON:
+			settimer(oenvironsubopt);
+			break;
+
+		case TELOPT_NEW_ENVIRON:
 			settimer(environsubopt);
 			break;
 
@@ -791,7 +796,7 @@ send_will(option, init)
 		set_my_want_state_will(option);
 		will_wont_resp[option]++;
 	}
-	(void) sprintf(nfrontp, will, option);
+	(void) sprintf(nfrontp, (char *)will, option);
 	nfrontp += sizeof (doopt) - 2;
 
 	DIAG(TD_OPTIONS, printoption("td: send will", option));
@@ -920,7 +925,10 @@ dooption(option)
 		case TELOPT_TSPEED:
 		case TELOPT_LFLOW:
 		case TELOPT_XDISPLOC:
-		case TELOPT_ENVIRON:
+#ifdef	TELOPT_ENVIRON
+		case TELOPT_NEW_ENVIRON:
+#endif
+		case TELOPT_OLD_ENVIRON:
 		default:
 			break;
 		}
@@ -947,7 +955,7 @@ send_wont(option, init)
 		set_my_want_state_wont(option);
 		will_wont_resp[option]++;
 	}
-	(void) sprintf(nfrontp, wont, option);
+	(void) sprintf(nfrontp, (char *)wont, option);
 	nfrontp += sizeof (wont) - 2;
 
 	DIAG(TD_OPTIONS, printoption("td: send wont", option));
@@ -1039,11 +1047,11 @@ dontoption(option)
 }  /* end of dontoption */
 
 #ifdef	ENV_HACK
-int env_var = -1;
-int env_value = -1;
+int env_ovar = -1;
+int env_ovalue = -1;
 #else	/* ENV_HACK */
-# define env_var ENV_VAR
-# define env_value ENV_VALUE
+# define env_ovar OLD_ENV_VAR
+# define env_ovalue OLD_ENV_VALUE
 #endif	/* ENV_HACK */
 
 /*
@@ -1222,25 +1230,42 @@ suboption()
 	break;
     }  /* end of case TELOPT_XDISPLOC */
 
-    case TELOPT_ENVIRON: {
+#ifdef	TELOPT_NEW_ENVIRON
+    case TELOPT_NEW_ENVIRON:
+#endif
+    case TELOPT_OLD_ENVIRON: {
 	register int c;
 	register char *cp, *varp, *valp;
 
 	if (SB_EOF())
 		return;
 	c = SB_GET();
-	if (c == TELQUAL_IS)
-		settimer(environsubopt);
-	else if (c != TELQUAL_INFO)
+	if (c == TELQUAL_IS) {
+		if (subchar == TELOPT_OLD_ENVIRON)
+			settimer(oenvironsubopt);
+		else
+			settimer(environsubopt);
+	} else if (c != TELQUAL_INFO) {
 		return;
+	}
 
+#ifdef	TELOPT_NEW_ENVIRON
+	if (subchar == TELOPT_NEW_ENVIRON) {
+	    while (!SB_EOF()) {
+		c = SB_GET();
+		if ((c == NEW_ENV_VAR) || (c == ENV_USERVAR))
+			break;
+	    }
+	} else
+#endif
+	{
 #ifdef	ENV_HACK
-	/*
-	 * We only want to do this if we haven't already decided
-	 * whether or not the other side has its VALUE and VAR
-	 * reversed.
-	 */
-	if (env_var < 0) {
+	    /*
+	     * We only want to do this if we haven't already decided
+	     * whether or not the other side has its VALUE and VAR
+	     * reversed.
+	     */
+	    if (env_ovar < 0) {
 		register int last = -1;		/* invalid value */
 		int empty = 0;
 		int got_var = 0, got_value = 0, got_uservar = 0;
@@ -1262,29 +1287,29 @@ suboption()
 		while (!SB_EOF()) {
 			c = SB_GET();
 			switch(c) {
-			case ENV_VAR:
-				if (last < 0 || last == ENV_VAR
-				    || (empty && (last == ENV_VALUE)))
-					goto env_var_ok;
+			case OLD_ENV_VAR:
+				if (last < 0 || last == OLD_ENV_VAR
+				    || (empty && (last == OLD_ENV_VALUE)))
+					goto env_ovar_ok;
 				got_var++;
-				last = ENV_VAR;
+				last = OLD_ENV_VAR;
 				break;
-			case ENV_VALUE:
-				if (last < 0 || last == ENV_VALUE
-				    || (empty && (last == ENV_VAR)))
-					goto env_var_wrong;
+			case OLD_ENV_VALUE:
+				if (last < 0 || last == OLD_ENV_VALUE
+				    || (empty && (last == OLD_ENV_VAR)))
+					goto env_ovar_wrong;
 				got_value++;
-				last = ENV_VALUE;
+				last = OLD_ENV_VALUE;
 				break;
 			case ENV_USERVAR:
 				/* count strings of USERVAR as one */
 				if (last != ENV_USERVAR)
 					got_uservar++;
 				if (empty) {
-					if (last == ENV_VALUE)
-						goto env_var_ok;
-					if (last == ENV_VAR)
-						goto env_var_wrong;
+					if (last == OLD_ENV_VALUE)
+						goto env_ovar_ok;
+					if (last == OLD_ENV_VAR)
+						goto env_ovar_wrong;
 				}
 				last = ENV_USERVAR;
 				break;
@@ -1299,10 +1324,10 @@ suboption()
 			empty = 1;
 		}
 		if (empty) {
-			if (last == ENV_VALUE)
-				goto env_var_ok;
-			if (last == ENV_VAR)
-				goto env_var_wrong;
+			if (last == OLD_ENV_VALUE)
+				goto env_ovar_ok;
+			if (last == OLD_ENV_VAR)
+				goto env_ovar_wrong;
 		}
 		/*
 		 * Ok, the first thing was a USERVAR, and there
@@ -1320,26 +1345,27 @@ suboption()
 		 * USERVARS, the client has reversed definitions.
 		 */
 		if (got_uservar + got_var == got_value) {
-	    env_var_ok:
-			env_var = ENV_VAR;
-			env_value = ENV_VALUE;
+	    env_ovar_ok:
+			env_ovar = OLD_ENV_VAR;
+			env_ovalue = OLD_ENV_VALUE;
 		} else if (got_uservar + got_value == got_var) {
-	    env_var_wrong:
-			env_var = ENV_VALUE;
-			env_value = ENV_VAR;
+	    env_ovar_wrong:
+			env_ovar = OLD_ENV_VALUE;
+			env_ovalue = OLD_ENV_VAR;
 			DIAG(TD_OPTIONS, {sprintf(nfrontp,
 				"ENVIRON VALUE and VAR are reversed!\r\n");
 				nfrontp += strlen(nfrontp);});
 
 		}
-	}
-	SB_RESTORE();
+	    }
+	    SB_RESTORE();
 #endif
 
-	while (!SB_EOF()) {
+	    while (!SB_EOF()) {
 		c = SB_GET();
-		if ((c == env_var) || (c == ENV_USERVAR))
+		if ((c == env_ovar) || (c == ENV_USERVAR))
 			break;
+	    }
 	}
 
 	if (SB_EOF())
@@ -1350,20 +1376,20 @@ suboption()
 
 	while (!SB_EOF()) {
 		c = SB_GET();
-#ifdef	ENV_HACK
-		if (c == env_var)
-			c = ENV_VAR;
-		else if (c == env_value)
-			c = ENV_VALUE;
-#endif
+		if (subchar == TELOPT_OLD_ENVIRON) {
+			if (c == env_ovar)
+				c = NEW_ENV_VAR;
+			else if (c == env_ovalue)
+				c = NEW_ENV_VALUE;
+		}
 		switch (c) {
 
-		case ENV_VALUE:
+		case NEW_ENV_VALUE:
 			*cp = '\0';
 			cp = valp = (char *)subpointer;
 			break;
 
-		case ENV_VAR:
+		case NEW_ENV_VAR:
 		case ENV_USERVAR:
 			*cp = '\0';
 			if (valp)
@@ -1390,7 +1416,7 @@ suboption()
 	else
 		unsetenv(varp);
 	break;
-    }  /* end of case TELOPT_ENVIRON */
+    }  /* end of case TELOPT_NEW_ENVIRON */
 #if	defined(AUTHENTICATION)
     case TELOPT_AUTHENTICATION:
 	if (SB_EOF())
@@ -1494,7 +1520,7 @@ send_status()
 	 * WILL/DO, and the "want_state" will be WONT/DONT.  We
 	 * need to go by the latter.
 	 */
-	for (i = 0; i < NTELOPTS; i++) {
+	for (i = 0; i < (unsigned char)NTELOPTS; i++) {
 		if (my_want_state_is_will(i)) {
 			ADD(WILL);
 			ADD_DATA(i);

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ext.h	8.1 (Berkeley) %G%
+ *	@(#)ext.h	8.2 (Berkeley) %G%
  */
 
 /*
@@ -132,7 +132,7 @@ extern int
 	getnpty P((void)),
 #ifndef convex
 	getpty P((int *)),
-#endif convex
+#endif
 	login_tty P((int)),
 	spcset P((int, cc_t *, cc_t **)),
 	stilloob P((int)),
@@ -186,6 +186,7 @@ extern struct {
 	ttypesubopt,		/* ttype subopt is received */
 	tspeedsubopt,		/* tspeed subopt is received */
 	environsubopt,		/* environ subopt is received */
+	oenvironsubopt,		/* old environ subopt is received */
 	xdisplocsubopt,		/* xdisploc subopt is received */
 	baseline,		/* time started to do timed action */
 	gotDM;			/* when did we last see a data mark */
