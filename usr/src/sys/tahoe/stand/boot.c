@@ -1,4 +1,4 @@
-/*	boot.c	1.2	86/07/16	*/
+/*	boot.c	1.3	86/11/25	*/
 
 #include "../machine/mtpr.h"
 
@@ -19,16 +19,13 @@
 
 /* Types in r10 specifying major device */
 char	devname[][2] = {
-#ifdef notyet
 	0, 0,		/* 0 = ud */
-	'd','k',	/* 1 = vd */
+	'd','k',	/* 1 = vd/dk */
 	0, 0,		/* 2 = xp */
 	'c','y',	/* 3 = cy */
-#else
-	'd','k',	/* default = vd */
-#endif
 };
 #define	MAXTYPE	(sizeof(devname) / sizeof(devname[0]))
+#define	DEV_DFLT	1		/* vd/dk */
 
 #define	UNIX	"vmunix"
 char line[100];
@@ -51,6 +48,8 @@ main()
 #ifdef JUSTASK
 	howto = RB_ASKNAME|RB_SINGLE;
 #else
+	if ((devtype & B_MAGICMASK) != B_DEVMAGIC)
+		devtype = DEV_DFLT << B_TYPESHIFT;	/* unit, partition 0 */
 	type = (devtype >> B_TYPESHIFT) & B_TYPEMASK;
 	unit = (devtype >> B_UNITSHIFT) & B_UNITMASK;
 	unit += 8 * ((devtype >> B_ADAPTORSHIFT) & B_ADAPTORMASK);
@@ -65,7 +64,9 @@ main()
 				*cp++ = unit / 10 + '0';
 			*cp++ = unit % 10 + '0';
 			*cp++ = ',';
-			*cp++ = part + '0';
+			if (part >= 10)
+				*cp++ = part / 10 + '0';
+			*cp++ = part % 10 + '0';
 			*cp++ = ')';
 			strcpy(cp, UNIX);
 		} else
