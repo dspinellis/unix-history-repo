@@ -11,11 +11,9 @@
  * %sccs.include.redist.c%
  *
  * from: Utah $Hdr: clock.c 1.18 91/01/21$
- * OMRON: $Id: clock.c,v 1.1 92/05/27 14:24:06 moti Exp $
+ * from: hp300/hp300/clock.c	7.17 (Berkeley) 12/27/92
  *
- * from: hp300/hp300/clock.c    7.14 (Berkeley) 7/8/92
- *
- *	@(#)clock.c	7.4 (Berkeley) %G%
+ *	@(#)clock.c	7.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>

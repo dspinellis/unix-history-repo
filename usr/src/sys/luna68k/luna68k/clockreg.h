@@ -11,11 +11,9 @@
  * %sccs.include.redist.c%
  *
  * from: Utah $Hdr: clockreg.h 1.14 91/01/18$
- * OMRON: $Id: clockreg.h,v 1.1 92/05/27 14:24:52 moti Exp $
+ * from: hp300/hp300/clockreg.h	7.4 (Berkeley) 12/27/92
  *
- * from: hp300/hp300/clockreg.h	7.3 (Berkeley) 5/7/91
- *
- *	@(#)clockreg.h	7.2 (Berkeley) %G%
+ *	@(#)clockreg.h	7.3 (Berkeley) %G%
  */
 
 /*
