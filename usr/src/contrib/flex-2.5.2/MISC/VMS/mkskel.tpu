@@ -1,0 +1,45 @@
+!  mkskel.tpu
+!       usage:
+!  edit/TPU/noDisplay/noSection/Command=mkskel.tpu flex.skl /Output=skel.c
+!
+!  Create a C source file from the flex skeleton data.  Copy the file,
+!       changing backslash (\) to doubled backslash (\\) and quote (")
+!       to backslash quote (\").  For each line, insert space+space+quote
+!       at the beginning and quote+comma at the end.  Bracket the updated
+!       text with several lines of prologue and epilogue.
+!
+   skelfile := CREATE_BUFFER("file", GET_INFO(COMMAND_LINE, "file_name"));
+   SET(NO_WRITE, skelfile);
+   target := '"' | '\';                         !do this once, outside loops
+   POSITION(BEGINNING_OF(skelfile));            !start here
+   rest_of_line := CREATE_RANGE(MARK(NONE), MARK(NONE));  !also outside loops
+   LOOP
+      EXITIF MARK(NONE) = END_OF(skelfile);     !are we done yet?
+      COPY_TEXT('  "');  start_pos := MARK(NONE);
+      POSITION(LINE_END);  end_pos := MARK(NONE);
+      MODIFY_RANGE(rest_of_line, start_pos, end_pos);
+      LOOP
+	 next_match := SEARCH_QUIETLY(target, FORWARD, EXACT, rest_of_line);
+	 EXITIF next_match = 0;
+	 POSITION(BEGINNING_OF(next_match));
+	 COPY_TEXT('\');  MOVE_HORIZONTAL(1);   !past the matched character
+	 MODIFY_RANGE(rest_of_line, MARK(NONE), end_pos);
+      ENDLOOP;
+      POSITION(LINE_END);  COPY_TEXT('",');
+      MOVE_VERTICAL(1);  POSITION(LINE_BEGIN);  !go to next line
+   ENDLOOP;
+
+   POSITION(BEGINNING_OF(skelfile));            !insert five line prologue
+   COPY_TEXT('/* File created from flex.skl via mkskel.tpu */');   SPLIT_LINE;
+								   SPLIT_LINE;
+   COPY_TEXT('#include "flexdef.h"');                              SPLIT_LINE;
+								   SPLIT_LINE;
+   COPY_TEXT('const char *skel[] = {');                            SPLIT_LINE;
+
+   POSITION(END_OF(skelfile));                  !append two line epilogue
+   COPY_TEXT('  0');                                               SPLIT_LINE;
+   COPY_TEXT('};');                                             !! SPLIT_LINE;
+
+   WRITE_FILE(skelfile, GET_INFO(COMMAND_LINE, "output_file"));
+   QUIT
+!--<eof>--
