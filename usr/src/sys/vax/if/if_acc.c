@@ -1,4 +1,4 @@
-/*	if_acc.c	4.28	82/10/23	*/
+/*	if_acc.c	4.29	82/10/24	*/
 
 #include "acc.h"
 #ifdef NACC > 0
@@ -21,7 +21,7 @@
 
 #include "../vax/cpu.h"
 #include "../vax/mtpr.h"
-#include "../vaxif/if_acc.h"
+#include "../vaxif/if_accreg.h"
 #include "../vaxif/if_uba.h"
 #include "../vaxuba/ubareg.h"
 #include "../vaxuba/ubavar.h"

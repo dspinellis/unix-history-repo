@@ -1,4 +1,4 @@
-/*	if_vv.c	4.8	82/10/10	*/
+/*	if_vv.c	4.9	82/10/24	*/
 
 /*
  * Proteon 10 Meg Ring Driver.
