@@ -1,0 +1,141 @@
+#! /bin/csh -f
+#  NOTE:  USING C SHELL, not bourne shell.
+# Filter for straight ascii text
+# arguments:
+# ascf -w90 -l160 -i0 -n <user> -h <Proc.Host> -J<filename> -C<subm.Host> 
+#	-D<Other parms> -D<more parms>
+echo $* >> /tmp/kk$$
+
+umask 077
+set TMP=/tmp/maha$$ ERR=/tmp/mahaE$$ noglob
+onintr cleanup
+
+# Figure out which printer:
+switch ( $0 )
+case *.dp :
+	set PTR=diderot
+	set STAT=/usr/spool/dpd/status
+	set ACCT=/usr/adm/dpacct
+breaksw
+case *.op :
+	set PTR=darwin
+	set STAT=/usr/spool/opd/status
+	set ACCT=/usr/adm/opacct
+breaksw
+endsw
+
+echo "Formatting job." > $STAT
+chmod a+r $STAT
+
+#Set defaults, then Parse the parameters:
+set UPARM=
+set FNAME=stdin
+
+while ( $#argv > 0 )
+  switch ( "$argv[1]" )
+    case -D* :			# -D<uparms>	from lpr -D option
+	set T=(`echo $argv[1] | sed -e 's/^-D//'`)
+	set UPARM=($UPARM $T)
+    breaksw
+    case -J* :			# -J<filename>	lpd supplies or from lpr -J opt
+	set FNAME=(`echo $argv[1] | sed -e 's/^-J//'`)
+    breaksw
+    case -h :			# -h <host>	lpd supplies
+	shift argv
+	set HOST=(`echo $argv[1] | sed -e 's/.berkeley.edu//'`)
+    breaksw
+    case -n :			# -n <user>	lpd supplies
+	shift argv
+	set USER=$argv[1]
+    breaksw
+    default:
+    breaksw
+  endsw
+  shift argv
+end
+
+# Now get ready to scan any user-specified arguments.  Mainly we must sort
+# out which goto maha and which to xnsprint.  The proper quotation for passing
+# arguments looks something like this:
+#	lpr -Puxp -D'-c2 -h "This is a heading" -b "A Banner" -R'
+
+eval set argv = \( $UPARM \)
+unset BANNER UNAME UPARM
+set COPYS="1" UPARM
+
+while ( $#argv > 0 )
+  switch ( "$argv[1]" )
+    case -P:			# -P <printer>	(Invalid!  Eat it.)
+	if ( $#argv > 1) shift argv
+    case -P*:			# -P<printer>	(Invalid!  Eat it.)
+    breaksw
+    case -c:			# -c <copies>	(Pass to xnsprint)
+	if ( $#argv > 1) shift argv
+	set COPYS = ($argv[1])
+    breaksw
+    case -c*:			# -c<copies>	(Pass to xnsprint)
+	set COPYS=(`echo $argv[1] | sed -e 's/^-c//'`)
+    breaksw
+    case -b:			# -b <banner>	(pass to xnsprint)
+	if ( $#argv > 1) shift argv
+	set BANNER = ($argv[1])
+    breaksw
+    case -b*:			# -b<banner>	(Pass to xnsprint)
+	set BANNER =(`echo $argv[1] | sed -e 's/^-b//'`)
+    breaksw
+    case -n:			# -n <name>	(pass to xnsprint)
+	if ( $#argv > 1) shift argv
+	set UNAME = ($argv[1])
+    breaksw
+    case -n*:			# -n<name>	(Pass to xnsprint)
+	set UNAME =(`echo $argv[1] | sed -e 's/^-n//'`)
+    breaksw
+  default:
+# quote each argument to keep 'em from coming unglued.
+	set UPARM = ( $UPARM \"$argv[1]\" )
+  endsw
+  shift argv
+end
+
+set NAME=${USER}@${HOST}
+
+# Supply some defaults incase the user didn't.
+if ( ! $?UNAME) set UNAME = $NAME
+if ( ! $?BANNER) set BANNER = $FNAME
+#umask 002
+
+# Pass user arguments in the environment.  maha will pair up quotes.
+# (Otherwise would have to 'eval' maha cmd to get the csh to parse quotes.)
+setenv MAHA "-h$FNAME -2 -r -t -fterminal/8 $UPARM"
+
+/usr/local/maha -o $TMP >& $ERR
+
+goto retry
+retry:
+if ( -e $TMP ) then
+    eval /usr/new/xnsprint -P $PTR -a$STAT -c \"$COPYS\" -n \"$UNAME\" -b \"$BANNER\" -q $TMP 
+    switch ($status)
+    case 132:
+	    echo xnsprint lost courier connection
+	    goto retry
+    case 1:
+    case 2:
+    case 3:
+	    echo Encountered network problems, trying again. > $STAT
+	    goto retry
+    endsw
+    /usr/local/lib/ipcount -d -n $USER -h $HOST $ACCT < $TMP
+else
+  echo "daemon: Can't find maha output; Skipping xnsprint" >> $ERR
+endif
+
+if ( ! -z $ERR ) then
+  /usr/ucb/Mail -s "Maha Error Output" $NAME < $ERR
+endif
+
+rm -f $TMP $ERR
+exit 0
+
+cleanup:
+rm -f $TMP $ERR
+exit 1
