@@ -1,0 +1,56 @@
+.th PROFIL II 5/15/74
+.sh NAME
+profil \*- execution time profile
+.sh SYNOPSIS
+(profil = 44.; not in assembler)
+.br
+.ft B
+sys	profil; buff; bufsiz; offset; scale
+.s3
+profil(buff, bufsiz, offset, scale)
+.br
+char buff[ ];
+.br
+int bufsiz, offset, scale;
+.ft R
+.sh DESCRIPTION
+.it Buff
+points to an area of core whose length (in bytes) is given by
+.it bufsiz.
+After this call, the user's program counter (pc)
+is examined each clock tick (60th second);
+.it offset
+is subtracted from it, and the result multiplied by
+.it scale.
+If the resulting number corresponds to a word
+inside
+.it buff,
+that word is incremented.
+.s3
+The scale is interpreted as an unsigned,
+fixed-point fraction with binary point at the
+left: 177777(8) gives a 1-1 mapping of pc's to words
+in
+.it buff;
+77777(8) maps each pair of instruction words
+together.
+2(8) maps all instructions onto the beginning of
+.it buff
+(producing a non-interrupting core clock).
+.s3
+Profiling is turned off by giving a
+.it scale
+of 0 or 1.
+It is rendered
+ineffective by giving a
+.it bufsiz
+of 0.
+Profiling is also turned off when an
+.it exec
+is executed but remains on in child and parent both
+after a
+.it fork.
+.sh "SEE ALSO"
+monitor (III), prof (I)
+.sh DIAGNOSTICS
+\*-

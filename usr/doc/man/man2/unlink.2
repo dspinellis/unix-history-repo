@@ -1,0 +1,35 @@
+.th UNLINK II 8/5/73
+.sh NAME
+unlink \*- remove directory entry
+.sh SYNOPSIS
+(unlink = 10.)
+.br
+.ft B
+sys  unlink; name
+.s3
+unlink(name)
+.br
+char *name;
+.ft R
+.sh DESCRIPTION
+.it Name
+points to a null-terminated string.
+.it Unlink
+removes the entry for the file pointed to by
+.it name
+from its directory.
+If this entry was the last link to the file,
+the contents of the file are freed and the file is destroyed.
+If, however, the file was open in any process, the actual
+destruction is delayed until it is closed, even though
+the directory entry has disappeared.
+.sh "SEE ALSO"
+rm (I), rmdir (I), link (II)
+.sh DIAGNOSTICS
+The error bit
+(c-bit) is set to indicate that the file does not
+exist or that its directory cannot be written.
+Write permission is not required on the file itself.
+It is also illegal to unlink a directory
+(except for the super-user).
+From C, a \*-1 return indicates an error.

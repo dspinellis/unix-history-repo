@@ -1,0 +1,29 @@
+.th GETGID II 5/15/74
+.sh NAME
+getgid  \*-  get group identifications
+.sh SYNOPSIS
+(getgid = 47.; not in assembler)
+.br
+.ft B
+sys getgid
+.ft B
+.s3
+getgid( )
+.ft R
+.sh DESCRIPTION
+.it Getgid
+returns a word (in r0),
+the low byte of which contains
+the real group ID of
+the current process.
+The high byte contains the effective group ID
+of the current process.
+The real group ID identifies the group of the person who is logged in,
+in contradistinction to the effective group ID, which
+determines his access permission at the moment.
+It is thus useful to programs which operate using
+the ``set group ID'' mode, to find out who invoked them.
+.sh "SEE ALSO"
+setgid (II)
+.sh DIAGNOSTICS
+\*-

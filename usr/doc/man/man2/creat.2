@@ -1,0 +1,65 @@
+.th CREAT II 8/5/73
+.sh NAME
+creat  \*-  create a new file
+.sh SYNOPSIS
+(creat = 8.)
+.br
+.ft B
+sys creat; name; mode
+.br
+.ft R
+(file descriptor in r0)
+.ft B
+.s3
+creat(name, mode)
+.br
+char *name;
+.ft R
+.sh DESCRIPTION
+.it Creat
+creates a new file or prepares to rewrite an existing
+file called 
+.it name,
+given as the address of a null-terminated string.
+If the file did not exist, it is given
+mode
+.it mode.
+See
+.it chmod
+(II) for the
+construction of the
+.it mode
+argument.
+.s3
+If the file did exist, its mode and owner remain unchanged
+but it is truncated to 0 length.
+.s3
+The file is also opened for writing, and its file descriptor
+is returned (in r0).
+.s3
+The
+.it mode
+given is arbitrary; it need not allow
+writing.
+This feature is used by programs which deal with temporary
+files of fixed names.
+The creation is done with
+a mode that forbids writing.
+Then if a second
+instance of the program attempts a
+.it creat,
+an error is
+returned and the program knows that the name is unusable
+for the moment.
+.sh "SEE ALSO"
+write (II), close (II), stat (II)
+.sh DIAGNOSTICS
+The error bit
+(c-bit) may be set if: a needed directory is not searchable;
+the file does not exist and the directory
+in which it is to be created is not writable; the file
+does exist and is unwritable;
+the file is a directory;
+there are already too many files open.
+.s3
+From C, a \*-1 return indicates an error.

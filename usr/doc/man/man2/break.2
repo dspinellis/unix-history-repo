@@ -1,0 +1,58 @@
+.th BREAK II 8/5/73
+.sh NAME
+break, brk, sbrk \*- change core allocation
+.sh SYNOPSIS
+(break = 17.)
+.br
+.ft B
+sys break; addr
+.s3
+char *brk(addr)
+.s3
+char *sbrk(incr)
+.ft R
+.sh DESCRIPTION
+.it Break
+sets the system's idea of the lowest location not used by the program
+(called the break)
+to
+.it addr
+(rounded up to the next multiple of 64 bytes).
+Locations not less than
+.it addr
+and below the stack pointer
+are not in the address space and will thus
+cause a memory violation if accessed.
+.s3
+From C,
+.it brk
+will set the break to
+.it addr.
+The old break is returned.
+.s3
+In the alternate entry
+.it sbrk,
+.it incr
+more bytes are added to the
+program's data space and a pointer to the
+start of the new area is returned.
+.s3
+When a program begins execution via
+.it exec
+the break is set at the
+highest location defined by the program
+and data storage areas.
+Ordinarily, therefore, only programs with growing
+data areas need to use
+.it break.
+.sh "SEE ALSO"
+exec (II), alloc (III), end (III)
+.sh DIAGNOSTICS
+The c-bit is set if the program requests more
+memory than the system limit
+or if more than 8 segmentation
+registers would be required to implement the break.
+From C, \*-1 is returned for these errors.
+.sh BUGS
+Setting the break in the range
+0177700 to 0177777 is the same as setting it to zero.

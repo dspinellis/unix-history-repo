@@ -1,0 +1,35 @@
+.th INDIR II 8/5/73
+.sh NAME
+indir \*- indirect system call
+.sh SYNOPSIS
+(indir = 0.; not in assembler)
+.br
+.ft B
+sys indir; syscall
+.ft R
+.sh DESCRIPTION
+The system call at the location
+.it syscall
+is executed.
+Execution resumes after the
+.it indir
+call.
+.s3
+The main purpose of
+.it indir
+is to allow a program to
+store arguments in system calls and execute them
+out of line in the data segment.
+This preserves the purity of the text segment.
+.s3
+If
+.it indir
+is executed indirectly,
+it is a no-op.
+If the instruction at the indirect
+location is not a system call,
+the executing process will get a fault.
+.sh "SEE ALSO"
+\*-
+.sh DIAGNOSTICS
+\*-

@@ -1,0 +1,175 @@
+.th EXEC II 8/5/73
+.sh NAME
+exec, execl, execv  \*-  execute a file
+.sh SYNOPSIS
+(exec = 11.)
+.br
+.ft B
+sys exec; name; args
+.br
+.li
+...
+.br
+name: <...\\0>
+.br
+.li
+...
+.br
+args: arg0; arg1; ...; 0
+.br
+arg0: <...\\0>
+.br
+arg1: <...\\0>
+.br
+   ...
+.s3
+execl(name, arg0, arg1, ..., argn, 0)
+.br
+char *name, *arg0, *arg1, ..., *argn;
+.s3
+execv(name, argv)
+.br
+char *name;
+.br
+char *argv[ ];
+.ft R
+.sh DESCRIPTION
+.it Exec
+overlays the calling process with the named file, then
+transfers to the
+beginning of the core image of the file.
+There can be no return from the file; the calling
+core image is lost.
+.s3
+Files remain open across
+.it exec
+calls.
+Ignored signals remain ignored across
+.it exec,
+but
+signals that are caught are reset
+to their default values.
+.s3
+Each user has a
+.it real
+user ID and group ID and an
+.it effective
+user ID and group ID.
+The
+real
+ID
+identifies the person using the system;
+the
+effective
+ID
+determines his access privileges.
+.it Exec
+changes the effective user and group ID to
+the owner of the executed file if the file has the ``set-user-ID''
+or ``set-group-ID''
+modes.
+The
+real
+user ID is not affected.
+.s3
+The form of this call differs somewhat depending
+on whether it is called from assembly language or C;
+see below for the C version.
+.s3
+The first argument to
+.it exec
+is a pointer to the name of the file
+to be executed.
+The second is the address of a null-terminated list of pointers to
+arguments to be passed to the file.
+Conventionally, the first argument is the name of the
+file.
+Each pointer addresses a string terminated by a null byte.
+.s3
+Once the called file starts execution, the arguments are available
+as follows.
+The stack pointer points to a word containing the number of arguments.
+Just above
+this number is a list of pointers to the argument strings.
+The arguments are placed as high as possible in core.
+.s3
+  sp\*>	nargs
+.br
+	arg0
+.br
+	...
+.br
+	argn
+.br
+	\*-1
+.s3
+ arg0:	<arg0\\0>
+.br
+	...
+.br
+ argn:	<argn\\0>
+.s3
+From C, two interfaces are available.
+.it execl
+is useful when a known file with known arguments is
+being called;
+the arguments to
+.it execl
+are the character strings
+constituting the file and the arguments; as in
+the basic call, the first argument is conventionally
+the same as the file name (or its last component).
+A 0 argument must end the argument list.
+.s3
+The
+.it execv
+version is useful when the number of arguments is unknown
+in advance;
+the arguments to
+.it execv
+are the name of the file to be
+executed and a vector of strings containing
+the arguments.
+The last argument string must be followed
+by a 0 pointer.
+.s3
+When a C program is executed,
+it is called as follows:
+.s3
+	main(argc, argv)
+.br
+	int argc;
+.br
+	char **argv;
+.s3
+where \fIargc\fR is the argument count
+and \fIargv\fR is an array of character pointers
+to the arguments themselves.
+As indicated, \fIargc\fR is conventionally at least one
+and the first member of the array points to a
+string containing the name of the file.
+.s3
+.it Argv
+is not directly usable in another
+.it execv,
+since
+.it argv[argc]
+is \*-1 and not 0.
+.sh "SEE ALSO"
+fork (II)
+.sh DIAGNOSTICS
+If the file cannot be found,
+if it is not executable,
+if it does not have a valid header (407, 410, or 411 octal as first word),
+if maximum memory is exceeded,
+or if the arguments require more than 512 bytes
+a return from
+.it exec
+constitutes the diagnostic;
+the error bit (c-bit) is set.
+Even for the super-user,
+at least one of the execute-permission bits must be set for
+a file to be executed.
+From C the returned value is \*-1.
+.sh BUGS
+Only 512 characters of arguments are allowed.

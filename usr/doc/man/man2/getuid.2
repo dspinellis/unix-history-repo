@@ -1,0 +1,29 @@
+.th GETUID II 5/15/74
+.sh NAME
+getuid  \*-  get user identifications
+.sh SYNOPSIS
+(getuid = 24.)
+.br
+.ft B
+sys getuid
+.ft B
+.s3
+getuid( )
+.ft R
+.sh DESCRIPTION
+.it Getuid
+returns a word (in r0),
+the low byte of which contains
+the real user ID of
+the current process.
+The high byte contains the effective user ID
+of the current process.
+The real user ID identifies the person who is logged in,
+in contradistinction to the effective user ID, which
+determines his access permission at the moment.
+It is thus useful to programs which operate using
+the ``set user ID'' mode, to find out who invoked them.
+.sh "SEE ALSO"
+setuid (II)
+.sh DIAGNOSTICS
+\*-
