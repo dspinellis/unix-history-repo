@@ -1,11 +1,12 @@
-.\" Copyright (c) 1990, 1993
+.\" Copyright (c) 1990, 1993, 1994
 .\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" This manual is derived from one contributed to Berkeley by
 .\" Michael Rendell of Memorial University of Newfoundland.
+.\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)tsort.1	8.1 (Berkeley) %G%
+.\"     @(#)tsort.1	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt TSORT 1
@@ -15,6 +16,7 @@
 .Nd topological sort of a directed graph
 .Sh SYNOPSIS
 .Nm tsort
+.Op Fl l
 .Op Ar file
 .Sh DESCRIPTION
 .Nm Tsort
@@ -35,6 +37,13 @@ This is useful when a node is not connected to any other nodes.
 If the graph contains a cycle (and therefore cannot be properly sorted),
 one of the arcs in the cycle is ignored and the sort continues.
 Cycles are reported on standard error.
+.Pp
+The options are as follows:
+.Bl -tag -width Ds
+.It Fl l 
+Search for and display the longest cycle.
+Can take a very long time.
+.El
 .Sh SEE ALSO
 .Xr ar 1
 .Sh HISTORY
