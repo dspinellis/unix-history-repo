@@ -78,3 +78,5 @@ lpr:
 clean:
 	rm -f ${OBJS} ${POBJS} core ? a.out errs mille lint.out mille.ar \
 		tags pmb
+
+depend:

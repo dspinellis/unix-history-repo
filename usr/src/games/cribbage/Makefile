@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 #
 # make file for cribbage
 #
@@ -31,6 +31,8 @@ tags: ${HDRS} ${CFILES}
 	ctags -u $?
 	ed - tags < :ctfix
 	sort tags -o tags
+
+depend:
 
 clean:
 	rm -f ${OBJS} ? a.out core crib.instr cribbage errs
