@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash.c	5.23 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -85,8 +85,8 @@ __hash_open(file, flags, mode, info)
 	 * But, the field in the hashp structure needs to be accurate so that
 	 * we can check accesses.
 	 */
-	hashp->flags = flags =
-	    flags & (O_CREAT | O_EXCL | O_RDONLY | O_RDWR | O_TRUNC | O_WRONLY);
+	hashp->flags = flags = flags & (O_CREAT | O_EXCL | O_EXLOCK | 
+	    O_RDONLY | O_RDWR | O_SHLOCK | O_TRUNC | O_WRONLY);
 	if (flags & O_WRONLY)
 		flags = (flags & ~O_WRONLY) | O_RDWR;
 
