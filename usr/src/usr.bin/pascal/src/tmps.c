@@ -1,9 +1,10 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)tmps.c 1.6 %G%";
+static char sccsid[] = "@(#)tmps.c 1.7 %G%";
 
 #include "whoami.h"
 #include "0.h"
+#include "objfmt.h"
 #ifdef PC
 #   include "pc.h"
 #endif PC
@@ -14,24 +15,24 @@ static char sccsid[] = "@(#)tmps.c 1.6 %G%";
  * where they are to be put.
  */
 #ifdef PC
-#ifdef VAX
+#ifdef vax
 #    define MAXREGS 6
 #    define MINREGSIZE 4
 #    define MAXREGSIZE 4
 #    define FIRSTREG 6
-#else
-#ifdef PDP11
+#endif vax
+#ifdef pdp11
 #    define MAXREGS 3
 #    define MINREGSIZE 2
 #    define MAXREGSIZE 2
 #    define FIRSTREG 2
-#else
+#endif pdp11
+#if (!(vax || pdp11))
 #    define MAXREGS 0
 #    define MINREGSIZE 0
 #    define MAXREGSIZE 0
 #    define FIRSTREG 0
-#endif PDP11
-#endif VAX
+#endif
 #endif PC
 
 /*
@@ -94,7 +95,7 @@ tmpfree(restore)
 }
 
 #ifdef PC
-#ifdef VAX
+#ifdef vax
 /*
  * create a save mask for registers which have been used
  * in this level
@@ -111,5 +112,5 @@ savmask()
 		mask |= 1 << (FIRSTREG + i);
 	return mask;
 }
-#endif VAX
+#endif vax
 #endif PC
