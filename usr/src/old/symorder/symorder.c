@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)symorder.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)symorder.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -106,7 +106,12 @@ main(argc, argv)
 		fprintf(stderr,"symorder: Out of core, no space for strings\n");
 		exit(1);
 	}
-	if (fread(strings, 1, symsize, f) != symsize) {
+	/*
+	 * Need to subtract four from symsize here since
+	 * symsize includes itself, and we've already read
+	 * it.  (6/30/85 chris@maryland)
+	 */
+	if (fread(strings, 1, symsize - 4, f) != symsize - 4) {
 		fprintf(stderr, "symorder: Truncated strings "); 
 		perror(argv[2]);
 		exit(1);
@@ -156,7 +161,7 @@ main(argc, argv)
 		fprintf(stderr, "symorder: Write failed "); perror(argv[2]);
 		exit(1);
 	}
-	if (write(o, newstrings, symsize) != symsize) {
+	if (write(o, newstrings, symsize - 4) != symsize - 4) {
 		fprintf(stderr, "symorder: Write failed "); perror(argv[2]);
 		exit(1);
 	}
