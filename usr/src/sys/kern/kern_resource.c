@@ -1,4 +1,4 @@
-/*	kern_resource.c	4.20	83/02/10	*/
+/*	kern_resource.c	4.21	83/05/23	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -35,7 +35,7 @@ getpriority()
 			p = pfind(uap->who);
 		if (p == 0)
 			return;
-		u.u_r.r_val1 = u.u_procp->p_nice;
+		u.u_r.r_val1 = p->p_nice;
 		u.u_error = 0;
 		break;
 
