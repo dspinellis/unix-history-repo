@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-/* sccs id:	@(#)ex_tune.h	7.1	%G%  */
+/* sccs id:	@(#)ex_tune.h	7.2	%G%  */
 /*
  * Definitions of editor parameters and limits
  */
