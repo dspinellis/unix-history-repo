@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)macros	6.5 (Berkeley) %G%
+.\"	@(#)macros	6.6 (Berkeley) %G%
 .\"
 .\" this is the uncommented version.  The commented one is in "macros.coms"
 .ie t .ds _ \d\(mi\u
@@ -14,7 +14,7 @@
 .ie n .ds f \fI
 .el .ds f \fB
 .ds tc \*ftermcap\fP(5)
-.ds Es This returns CURSES_ERR if it would cause the screen to scroll illegally.
+.ds Es This returns ERR if it would cause the screen to scroll illegally.
 .ds Nm This has no associated \*(lq\fBmv\fP\*(rq command.
 .ie t .ds m \fB\s-2\(dg\s+2\fP
 .el .ds m [*]
