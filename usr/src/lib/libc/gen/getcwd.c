@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getcwd.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)getcwd.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -77,7 +77,7 @@ getwd(store)
 		closedir(dir);
 		*pu = '\0';
 		if (lstat(up, &s)) {
-err:			(void)sprintf(path, "getwd: %s", strerror(errno));
+err:			(void)sprintf(store, "getwd: %s", strerror(errno));
 			return((char *)NULL);
 		}
 	}
