@@ -13,9 +13,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cache.c	8.1 (Berkeley) %G%
+ *	@(#)cache.c	8.2 (Berkeley) %G%
  *
- * from: $Header: cache.c,v 1.10 93/07/18 06:23:51 torek Exp $ (LBL)
+ * from: $Header: cache.c,v 1.12 93/10/31 05:27:47 torek Exp $ (LBL)
  */
 
 /*
@@ -43,18 +43,19 @@ struct cachestats cachestats;
 void
 cache_enable()
 {
-	register u_int i, lim, ls;
+	register u_int i, lim, ls, ts;
 
-	i = AC_CACHETAGS;
-	lim = i + cacheinfo.c_totalsize;
 	ls = cacheinfo.c_linesize;
-	for (; i < lim; i += ls)
+	ts = cacheinfo.c_totalsize;
+	for (i = AC_CACHETAGS, lim = i + ts; i < lim; i += ls)
 		sta(i, ASI_CONTROL, 0);
 
 	stba(AC_SYSENABLE, ASI_CONTROL,
 	    lduba(AC_SYSENABLE, ASI_CONTROL) | SYSEN_CACHE);
 	cacheinfo.c_enabled = 1;
-	printf("cache enabled\n");
+
+	printf("%d byte (%d/line) write-through %cw flush cache enabled\n",
+	    ts, ls, cacheinfo.c_hwflush ? 'h' : 's');
 }
 
 

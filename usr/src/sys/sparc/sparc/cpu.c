@@ -13,9 +13,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cpu.c	8.3 (Berkeley) %G%
+ *	@(#)cpu.c	8.4 (Berkeley) %G%
  *
- * from: $Header: cpu.c,v 1.16.1.1 93/09/30 22:38:50 torek Exp $ (LBL)
+ * from: $Header: cpu.c,v 1.18 93/10/31 05:28:13 torek Exp $ (LBL)
  */
 
 #include <sys/param.h>
@@ -143,11 +143,6 @@ cpu_attach(parent, dev, aux)
 		printf("%s: cache chip bug; trap page uncached\n",
 		    dev->dv_xname);
 	}
-
-	printf("%s: %d byte write-through, %d bytes/line, %cw flush ",
-	    dev->dv_xname, cacheinfo.c_totalsize, l,
-	    cacheinfo.c_hwflush ? 'h' : 's');
-	cache_enable();
 }
 
 /*
@@ -215,8 +210,9 @@ static struct info fpu_types[] = {
 	{ 1, 0x0, ANY, 4, "L64804" },
 
 	/*
-	 * Vendor 1, IU ROSS0/1.
+	 * Vendor 1, IU ROSS0/1 or Pinnacle.
 	 */
+	{ 1, 0x1, 0xf, 0, "on-chip" },		/* Pinnacle (shhh) */
 	{ 1, 0x1, ANY, 0, "L64812 or ACT8847" },
 	{ 1, 0x1, ANY, 1, "L64814" },
 	{ 1, 0x1, ANY, 2, "TMS390C602A" },
