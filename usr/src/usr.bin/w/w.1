@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)w.1	6.7 (Berkeley) %G%
+.\"     @(#)w.1	6.8 (Berkeley) %G%
 .\"
 .Dd 
 .Dt W 1
@@ -13,32 +13,28 @@
 .Nd "who present users are and what they are doing"
 .Sh SYNOPSIS
 .Nm w
-.Op Fl fhls
+.Op Fl hi
 .Op Ar user
 .Sh DESCRIPTION
 .Nm W
 prints a summary of the current activity on the system,
 including what each user is doing.
-The heading shows the current time of day,
-how long the system has been up,
-the number of users logged into the system,
-and the load averages.
+The heading shows the current time of day, how long the system has been up,
+the number of users logged into the system, and the load averages.
 The load average numbers give the number of jobs in the run queue
 averaged over 1, 5 and 15 minutes.
 .Pp
 The fields output are:
-the user's login name,
-the name of the tty(terminal) the user is on,
-the host from which the user is logged in,
-the time the user logged on,
+the user's login name, the name of the terminal (tty) the user is on,
+the host from which the user is logged in, the time the user logged on,
 the time since the user last typed anything,
 the
 .Tn CPU
 time used by all processes and their children on that tty,
 the
 .Tn CPU
-time used by the currently active processes, and
-the name and arguments of the current process.
+time used by the currently active processes, and the name and arguments
+of the current process.
 .Pp
 Available options are:
 .Bl -tag -width Ds
@@ -46,18 +42,15 @@ Available options are:
 Suppress the heading.
 .It Fl i
 Output is sorted by idle time.
-.It Fl flsuw
-These flags are no longer supported.
 .El
+.Pp
 If a
 .Ar user
 name is given, the output is restricted to that user.
-.El
 .Sh FILES
 .Bl -tag -width /var/run/utmp -compact
 .It Pa /var/run/utmp
-.It Pa /dev/kmem
-.It Pa /dev/drum
+list of users on the system
 .El
 .Sh SEE ALSO
 .Xr who 1 ,
@@ -67,14 +60,12 @@ name is given, the output is restricted to that user.
 The notion of the
 .Dq current process
 is muddy.
-The current algorithm is
-``the highest numbered process on
-the terminal that is not ignoring interrupts,
-or, if there is none, the highest numbered process on the terminal''.
-This fails, for example, in critical sections of programs
-like the shell and editor,
-or when faulty programs running in the background
-fork and fail to ignore interrupts.
+The current algorithm is ``the highest numbered process on the terminal that
+is not ignoring interrupts, or, if there is none, the highest numbered
+process on the terminal''.
+This fails, for example, in critical sections of programs like the shell
+and editor, or when faulty programs running in the background fork and fail
+to ignore interrupts.
 (In cases where no process can be found,
 .Nm w
 prints
@@ -98,8 +89,16 @@ In these cases, the name of the command is printed in parentheses.
 .Nm W
 does not know about the new conventions for detection of background jobs.
 It will sometimes find a background job instead of the right one.
+.Sh COMPATIBILITY
+The
+.Fl f ,
+.Fl l ,
+.Fl s ,
+and
+.Fl w
+flags are no longer supported.
 .Sh HISTORY
 The
 .Nm
 command appeared in
-.Bx 3.0 .
+.Ux 3.0 .
