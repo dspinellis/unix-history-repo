@@ -1,4 +1,4 @@
-/*	ht.c	4.23	82/07/13	*/
+/*	ht.c	4.24	82/07/15	*/
 
 #include "tu.h"
 #if NHT > 0
@@ -82,17 +82,18 @@ htattach(mi)
 
 }
 
-htslave(mi, ms)
+htslave(mi, ms, sn)
 	struct mba_device *mi;
 	struct mba_slave *ms;
+	int sn;
 {
 	register struct tu_softc *sc = &tu_softc[ms->ms_unit];
 	register struct htdevice *htaddr = (struct htdevice *)mi->mi_drv;
 
-	htaddr->httc = ms->ms_slave;
+	htaddr->httc = sn;
 	if (htaddr->htdt & HTDT_SPR) {
 		sc->sc_mi = mi;
-		sc->sc_slave = ms->ms_slave;
+		sc->sc_slave = sn;
 		tutoht[ms->ms_unit] = mi->mi_unit;
 		return (1);
 	} else
