@@ -1,4 +1,4 @@
-/*	lfs_inode.c	6.8	84/07/15	*/
+/*	lfs_inode.c	6.9	84/07/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -107,7 +107,6 @@ iget(dev, fs, ino)
 	register struct buf *bp;
 	register struct dinode *dp;
 	register struct inode *iq;
-	struct inode *xp;
 
 
 loop:
@@ -174,14 +173,7 @@ loop:
 	ip->i_dev = dev;
 	ip->i_fs = fs;
 	ip->i_number = ino;
-	ip->i_id = ++nextinodeid;	/* also used in rename */
-	/*
-	 * At an absurd rate of 100 calls/second,
-	 * this should occur once every 8 months.
-	 */
-	if (nextinodeid < 0)
-		for (nextinodeid = 0, xp = inode; xp < inodeNINODE; xp++)
-			xp->i_id = 0;
+	cacheinval(ip);
 	ip->i_flag = ILOCKED;
 	ip->i_count++;
 	ip->i_lastr = 0;
