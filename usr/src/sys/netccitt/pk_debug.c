@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_debug.c	7.6 (Berkeley) %G%
+ *	@(#)pk_debug.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -62,4 +62,52 @@ char *dir;
 	for (s = (char *) xp, i = 0; i < 5; ++i, ++s)
 		printf ("%x ", (int) * s & 0xff);
 	printf ("\n");
+}
+
+mbuf_cache(c, m)
+register struct mbuf_cache *c;
+struct mbuf *m;
+{
+	register struct mbuf **mp;
+
+	if (c->mbc_size != c->mbc_oldsize) {
+		unsigned zero_size, copy_size;
+		unsigned new_size = c->mbc_size * sizeof(m);
+		caddr_t cache = (caddr_t)c->mbc_cache;
+
+		if (new_size) {
+			c->mbc_cache = (struct mbuf **)
+				malloc(new_size, M_MBUF, M_NOWAIT);
+			if (c->mbc_cache == 0) {
+				c->mbc_cache = (struct mbuf **)cache;
+				return;
+			}
+			c->mbc_num %= c->mbc_size;
+		} else
+			c->mbc_cache = 0;
+		if (c->mbc_size < c->mbc_oldsize) {
+			register struct mbuf **mplim;
+			mp = c->mbc_size + (struct mbuf **)cache;
+			mplim = c->mbc_oldsize + (struct mbuf **)cache;
+			while (mp < mplim)
+				m_freem(*mp++);
+			zero_size = 0;
+		} else
+			zero_size = (c->mbc_size - c->mbc_oldsize) * sizeof(m);
+		copy_size = new_size - zero_size;
+		c->mbc_oldsize = c->mbc_size;
+		if (copy_size)
+			bcopy(cache, (caddr_t)c->mbc_cache, copy_size);
+		if (cache)
+			free(cache, M_MBUF);
+		if (zero_size)
+			bzero(copy_size + (caddr_t)c->mbc_cache, zero_size);
+	}
+	if (c->mbc_size == 0)
+		return;
+	mp = c->mbc_cache + c->mbc_num;
+	c->mbc_num = (1 + c->mbc_num) % c->mbc_size;
+	if (*mp)
+		m_freem(*mp);
+	*mp = m_copym(m, 0, M_COPYALL, M_DONTWAIT);
 }
