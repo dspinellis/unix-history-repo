@@ -107,7 +107,7 @@ bar graphs of the amount of time executing in user mode (``user''),
 in user mode running low priority processes (``nice''), in 
 system mode (``system''), and idle (``idle'').  Statistics
 on disk throughput show, for each drive, kilobytes of data transferred,
-number disk transaction performed, and average seek time
+number of disk transactions performed, and average seek time
 (in milliseconds).  This information may be displayed as
 bar graphs or as rows of numbers which scroll downward.  Bar
 graphs are shown by default; commands specific to this display  
@@ -137,10 +137,10 @@ device interrupts, system name translation cacheing, disk i/o, etc.
 .IP
 The upper left quadrant of the screen shows the number
 of users logged in and the load average over the last one, five,
-and fifteen minute interval.
+and fifteen minute intervals.
 Below this line are statistics on memory utilization.
 The first row of the table reports memory usage only among
-active process, that is process that have run in the previous 
+active processes, that is processes that have run in the previous 
 twenty seconds.
 The second row reports on memory usage of all processes.
 The first column reports on the number of physical pages
@@ -157,12 +157,12 @@ Below the memory display is the disk usage display.
 It reports the number of seeks, transfers, and number
 of kilobyte blocks transferred per second averaged over the
 refresh period of the display (by default, five seconds).
-For some disks it also reports the average millisecond per seek.
+For some disks it also reports the average milliseconds per seek.
 Note that the system only keeps statistics on at most four disks.
 .IP
 Below the disk display is a list of the
 average number of processes (over the last refresh interval)
-that are runable (`r'), in page wait (`p'),
+that are runnable (`r'), in page wait (`p'),
 in disk wait other than paging (`d'),
 sleeping (`s'), and swapped out but desiring to run (`w').
 Below the queue length listing is a numerical listing and
@@ -171,7 +171,7 @@ system (shown as `='), user (shown as `>'),
 nice (shown as `-'), and idle time (shown as ` ').
 .IP
 At the bottom left are statistics on name translations.
-It lists the number names translated in the previous interval,
+It lists the number of names translated in the previous interval,
 the number and percentage of the translations that were
 handled by the system wide name translation cache, and
 the number and percentage of the translations that were
@@ -265,7 +265,7 @@ The following commands are specific to the
 .I vmstat
 display; the minimum unambiguous prefix may be supplied.
 .IP boot
-Display cummulative statistics since the system was booted.
+Display cumulative statistics since the system was booted.
 .IP run
 Display statistics as a running total from the point this
 command is given.
@@ -321,7 +321,8 @@ spaces.
 Display information about the connections associated with the
 specified hosts or ports.  As for 
 .IR ignore ,
-items may be names or numbers.
+.I items
+may be names or numbers.
 .IP "show [ports|hosts]"
 Show, on the command line, the currently selected protocols,
 hosts, and ports.  Hosts and ports which are being ignored
@@ -329,9 +330,9 @@ are prefixed with a `!'.  If
 .I ports
 or
 .I hosts
-are supplied as an argument to 
+is supplied as an argument to 
 .IR show ,
-then only the request information will be displayed.
+then only the requested information will be displayed.
 .IP "reset"
 Reset the port, host, and protocol matching mechanisms to the default
 (any protocol, port, or host).
@@ -353,11 +354,11 @@ written by Bill Reeves.
 Takes 2-10 percent of the cpu.  Certain displays presume
 a 24 line by 80 character terminal.  The swap space display
 should account for space allocated to the user structure and
-page tables.   The
+page tables.  The
 .I vmstat
 display looks out of place because it is (it was added in as
-a separate display rather than create a new program). 
+a separate display rather than create a new program).
 .PP
 The whole
-thing is pretty hoakey, it was included in the distribution under
+thing is pretty hokey and was included in the distribution under
 serious duress.
