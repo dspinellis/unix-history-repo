@@ -11,9 +11,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.52 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.53 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.52 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.53 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -714,7 +714,7 @@ gothostent:
 		  case AF_INET:
 			bcopy(hp->h_addr,
 				&addr.sin.sin_addr,
-				sizeof addr.sin.sin_addr);
+				IPADDRSIZE);
 			break;
 #endif
 
@@ -844,7 +844,7 @@ gothostent:
 			  case AF_INET:
 				bcopy(hp->h_addr_list[i++],
 				      &addr.sin.sin_addr,
-				      sizeof addr.sin.sin_addr);
+				      IPADDRSIZE);
 				break;
 #endif
 
@@ -1155,7 +1155,7 @@ host_map_lookup(map, name, av, statp)
 	int *statp;
 {
 	register struct hostent *hp;
-	u_long in_addr;
+	struct in_addr in_addr;
 	char *cp;
 	int i;
 	register STAB *s;
@@ -1278,10 +1278,10 @@ host_map_lookup(map, name, av, statp)
 	if ((cp = strchr(name, ']')) == NULL)
 		return (NULL);
 	*cp = '\0';
-	in_addr = inet_addr(&name[1]);
+	in_addr.s_addr = inet_addr(&name[1]);
 
 	/* nope -- ask the name server */
-	hp = gethostbyaddr((char *)&in_addr, sizeof(struct in_addr), AF_INET);
+	hp = gethostbyaddr((char *)&in_addr, IPADDRSIZE, AF_INET);
 	s->s_namecanon.nc_errno = errno;
 #if NAMED_BIND
 	s->s_namecanon.nc_herrno = h_errno;
@@ -1390,7 +1390,7 @@ hostnamebyanyaddr(sap)
 #ifdef NETINET
 	  case AF_INET:
 		hp = gethostbyaddr((char *) &sap->sin.sin_addr,
-			sizeof sap->sin.sin_addr,
+			IPADDRSIZE,
 			AF_INET);
 		break;
 #endif
