@@ -2,7 +2,7 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)asparse.c 4.17 %G%";
+static char sccsid[] = "@(#)asparse.c 4.18 %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -139,25 +139,18 @@ restlab:
 			shift;
 			flushfield(NBPW/4);
 			if ((np->s_type&XTYPE)!=XUNDEF) {
-				if(  (np->s_type&XTYPE)!=dotp->e_xtype 
-				   || np->s_value!=dotp->e_xvalue
-				   || (  (passno==1)
-				       &&(np->s_index != dotp->e_xloc)
-				      )
-				  ){
-#ifndef DEBUG
-					if (FETCHNAME(np)[0] != 'L')
-#endif not DEBUG
-					{
-						if (passno == 1)
-						  yyerror("%s redefined",
+				if (  (np->s_type&XTYPE) != dotp->e_xtype 
+				   || np->s_value != dotp->e_xvalue
+				   || (   passno == 1
+				       && np->s_index != dotp->e_xloc) ) {
+					if (passno == 1)
+						yyerror("%s redefined",
 							FETCHNAME(np));
-						else
-						  yyerror("%s redefined: PHASE ERROR, 1st: %d, 2nd: %d",
+					else
+						yyerror("%s redefined: PHASE ERROR, 1st: %d, 2nd: %d",
 							FETCHNAME(np),
 							np->s_value,
 							dotp->e_xvalue);
-					}
 				}
 			}
 			np->s_type &= ~(XTYPE|XFORW);
@@ -171,7 +164,7 @@ restlab:
 				np->s_tag = LABELID;
 			}
 		}	/*end of this being a label*/
-	}	/*end of to consuming all labels, NLs and SEMIS */ 
+	}	/*end of consuming all labels, NLs and SEMIS */ 
 
 	xp = explist;
 	ap = arglist;
