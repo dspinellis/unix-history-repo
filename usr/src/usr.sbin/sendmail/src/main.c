@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.104 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.105 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -1561,6 +1561,8 @@ testmodeline(line, e)
 	register char *p;
 	char *q;
 	auto char *delimptr;
+	int mid;
+	ADDRESS a;
 	extern bool invalidaddr();
 	extern char *crackaddr();
 
@@ -1569,17 +1571,16 @@ testmodeline(line, e)
 	  case '#':
 		return;
 
-	  case '?':		/* try crackaddr */
-		q = crackaddr(&line[1]);
-		xputs(q);
-		printf("\n");
-		return;
-
 	  case '.':		/* config-style settings */
 		switch (line[1])
 		{
 		  case 'D':
-			define(line[2], newstr(&line[3]), e);
+			p = strchr(line, '\n');
+			if (p != NULL)
+				*p = '\0';
+			mid = macid(&line[2], &delimptr);
+			if (mid != '\0')
+				define(mid, newstr(delimptr), e);
 			break;
 
 		  case 'C':
@@ -1655,6 +1656,20 @@ testmodeline(line, e)
 		}
 		return;
 
+	  case '$':
+		mid = macid(&line[1], NULL);
+		if (mid == '\0')
+			return;
+		p = macvalue(mid, e);
+		if (p == NULL)
+			printf("Undefined\n");
+		else
+		{
+			xputs(p);
+			printf("\n");
+		}
+		return;
+
 	  case '/':		/* miscellaneous commands */
 		p = strchr(line, '\n');
 		if (p != NULL)
@@ -1686,6 +1701,21 @@ testmodeline(line, e)
 #else
 			printf("No MX code compiled in\n");
 #endif
+		}
+		else if (strcasecmp(&line[1], "try") == 0)
+		{
+			q = crackaddr(p);
+			printf("Cracked address = ");
+			xputs(q);
+			printf("\n");
+			if (parseaddr(p, &a, RF_COPYNONE, '\0', NULL, e) == NULL)
+				printf("Cannot parse\n");
+			else if (a.q_host != NULL && a.q_host[0] != '\0')
+				printf("mailer %s, host %s, user %s\n",
+					a.q_mailer->m_name, a.q_host, a.q_user);
+			else
+				printf("mailer %s, user %s\n",
+					a.q_mailer->m_name, a.q_user);
 		}
 		else
 		{
