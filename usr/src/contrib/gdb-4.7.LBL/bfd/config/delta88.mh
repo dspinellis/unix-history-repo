@@ -1,0 +1,4 @@
+CC=gcc -Wall -ansi 
+RANLIB=echo
+HDEFINES=-DUSG 
+INSTALL=cp
