@@ -6,12 +6,22 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
+#ifdef sunos
+#include <stdio.h>
+#include <ctype.h>
+#include <sys/stat.h>
+#include <sys/time.h>
+#include <sys/dir.h>
+#include <sys/vnode.h>
+#include <ufs/inode.h>
+#else
 #include <sys/param.h>
 #include <sys/wait.h>
 #include <ufs/dinode.h>
+#endif
 #include <ufs/fs.h>
 #include <signal.h>
 #include <fcntl.h>
