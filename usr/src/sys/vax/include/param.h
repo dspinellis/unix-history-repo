@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)param.h	6.3 (Berkeley) %G%
+ *	@(#)param.h	6.4 (Berkeley) %G%
  */
 
 /*
@@ -45,4 +45,12 @@
 #define	USERMODE(ps)	(((ps) & PSL_CURMOD) == PSL_CURMOD)
 #define	BASEPRI(ps)	(((ps) & PSL_IPL) == 0)
 
+#ifdef KERNEL
+#ifndef LOCORE
+int	cpuspeed;
+#endif
+#define	DELAY(n)	{ register int N = cpuspeed * (n); while (--N > 0); }
+
+#else KERNEL
 #define	DELAY(n)	{ register int N = (n); while (--N > 0); }
+#endif KERNEL

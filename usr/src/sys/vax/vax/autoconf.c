@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)autoconf.c	6.14 (Berkeley) %G%
+ *	@(#)autoconf.c	6.15 (Berkeley) %G%
  */
 
 /*
@@ -59,6 +59,7 @@ int	cold;		/* if 1, still working on cold-start */
 int	nexnum;		/* current nexus number */
 int	nsbi;		/* current sbi number */
 int	dkn;		/* number of iostat dk numbers assigned so far */
+int	cpuspeed = 1;	/* relative cpu speed */
 
 /*
  * Addresses of the (locore) routines which bootstrap us from
@@ -105,6 +106,7 @@ configure()
 	cpusid.cpusid = mfpr(SID);
 	for (ocp = percpu; ocp->pc_cputype; ocp++)
 		if (ocp->pc_cputype == cpusid.cpuany.cp_type) {
+			cpuspeed = ocp->pc_cpuspeed;
 			probeioa(ocp);
 			/*
 			 * Write protect the scb and UNIBUS interrupt vectors.

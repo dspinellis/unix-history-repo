@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)cpudata.c	6.4 (Berkeley) %G%
+ *	@(#)cpudata.c	6.5 (Berkeley) %G%
  */
 
 #include "pte.h"
@@ -101,16 +101,16 @@ short ioa730[] = { IOA_XXX730 };
 
 struct percpu percpu[] = {
 #if VAX8600
-	{ VAX_8600, 2, ioaaddr8600, 512, (short *)0 },
+	{ VAX_8600, 4, 2, ioaaddr8600, 512, (short *)0 },
 #endif
 #if VAX780
-	{ VAX_780, 1, (caddr_t *)0, 0, ioa780 },
+	{ VAX_780, 2, 1, (caddr_t *)0, 0, ioa780 },
 #endif
 #if VAX750
-	{ VAX_750, 1, (caddr_t *)0, 0, ioa750 },
+	{ VAX_750, 1, 1, (caddr_t *)0, 0, ioa750 },
 #endif
 #if VAX730
-	{ VAX_730, 1, (caddr_t *)0, 0, ioa730 },
+	{ VAX_730, 1, 1, (caddr_t *)0, 0, ioa730 },
 #endif
 	0,
 };
