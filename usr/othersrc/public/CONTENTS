@@ -1,0 +1,35 @@
+This directory contains publically accessible software that has
+been made to function with 386BSD Release 0.1 . The work to accomplish
+these various ports of software has been contributed by many tireless
+volunteers, and amounts to a major body of valuable code that is
+directly usable by those running 386BSD. It is provided as a
+convience to 386BSD users, and as a place to focus further development
+of these and still more future public access software.
+
+These packages are provided as-is, and many are undergoing continual
+development. They vary greatly in terms of quality, performance,
+and "support". Some are in daily use by maintainers with 386BSD,
+others are barely used, and we don't have a clear idea as to which
+is which.
+
+This is *not* a general purpose software repository, this is solely
+aimed at 386BSD. If you are interested in these packages running
+on other platforms than 386BSD, you should contact the packages
+maintainers. [Note to new package porters: please include mail
+addresses, names and phone numbers for this purpose]. As a result,
+to save space we may omit parts not relevant to 386BSD. Otherwise,
+we'd get to gigabyte size in no time at all, and lose the point of
+being a 386BSD clearing house.
+
+If you find a bug or make an improvement, please inform the
+maintainers and us of it. We reccomend sending new contributions
+via the U.S. Mail on a floppy or tape to us at 447 61ST Street,
+Oakland, CA 94609. Likewise with any new contributions, which
+*should* be posted to the network news at the same time. Please
+realize we have limited resources with our project, and it may take
+a while before we can respond to your contribution.
+
+If you have a great interest in maintaining a certain package on
+386BSD that is important to you, please also contact us. We'll put
+you in contact with those involved, and gratefully allow your
+particapation with us on those packages.
