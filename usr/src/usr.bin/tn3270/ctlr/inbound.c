@@ -916,6 +916,7 @@ int	count;				/* how much data there is */
 	    case FCN_DISC:
 		StopScreen(1);
 		suspend();
+		setconnmode();
 		ConnectScreen();
 		break;
 #endif	/* defined(FCN_DISC) */
