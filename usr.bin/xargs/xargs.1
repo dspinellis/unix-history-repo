@@ -35,127 +35,138 @@
 .\"
 .\"	@(#)xargs.1	5.5 (Berkeley) 6/27/91
 .\"
-.TH XARGS 1 "June 27, 1991"
-.UC 7
-.SH NAME
-xargs \- construct argument list(s) and execute utility.
-.SH SYNOPSIS
-.ft B
-xargs [\-ft] [[\-x] \-n number] [\-s size] [utility [argument ...]]
-.ft R
-.SH DESCRIPTION
+.Dd June 27, 1991
+.Dt XARGS 1
+.Os
+.Sh NAME
+.Nm xargs
+.Nd construct argument list(s) and execute utility.
+.Sh SYNOPSIS
+.Nm xargs 
+.Op Fl t
+.Oo
+.Op Fl x
+.Fl n Ar number
+.Oc
+.Op Fl s Ar size
+.Oo
+.Ar utility
+.Op Ar argument Ar ...
+.Oc
+.Sh DESCRIPTION
 The
-.I xargs
+.Nm xargs
 utility reads space, tab, newline and end-of-file delimited arguments
 from the standard input and executes the specified
-.I utility
+.Ar utility
 with them as arguments.
-.PP
+.Pp
 The utility and any arguments specified on the command line are given
 to the
-.I utility
+.Ar utility
 upon each invocation, followed by some number of the arguments read
 from standard input.
 The
-.I utility
+.Ar utility
 is repeatedly executed until standard input is exhausted.
-.PP
-Spaces, tabs and newlines may be embedded in arguments using single (`` ' '')
-or double (``"'') quotes or backslashes (``\e'').
+.Pp
+Spaces, tabs and newlines may be embedded in arguments using single 
+or double quotes or backslashes.
 Single quotes escape all non-single quote characters, excluding newlines,
 up to the matching single quote.
 Double quotes escape all non-double quote characters, excluding newlines,
 up to the matching double quote.
 Any single character, including newlines, may be escaped by a backslash.
-.PP
+.Pp
 The options are as follows:
-.TP
-\-f
-Force
-.I xargs
-to ignore the exit status returned by
-.IR utility .
-By default,
-.I xargs
-will exit immediately if
-.I utility
-exits with a non-zero exit status.
-This does not include ignoring
-.I utility
-exiting due to a signal or without calling
-.IR exit (2).
-.TP
-\-n number
+.Bl -tag -width indent
+.It Fl n Ar number
 Set the maximum number of arguments taken from standard input for each
 invocation of the utility.
 An invocation of
-.I utility
+.Ar utility
 will use less than
-.I number
+.Ar number
 standard input arguments if the number of bytes accumulated (see the
-.I \-s
+.Fl s
 option) exceeds the specified
-.I size
+.Ar size
 or there are fewer than
-.I number
+.Ar number
 arguments remaining for the last invocation of
-.IR utility .
+.Ar utility .
 The current default value for
-.I number
+.Ar number
 is 5000.
-.TP
-\-s size
+.It Fl s Ar size
 Set the maximum number of bytes for the command line length provided to
-.IR utility .
+.Ar utility .
 The sum of the length of the utility name and the arguments passed to
-.I utility
+.Ar utility
 (including NULL terminators) will be less than or equal to this number.
 The current default value for
-.I size
-is ARG_MAX - 2048.
-.TP
-\-t
+.Ar size
+is 
+.Dv ARG_MAX 
+- 2048.
+.It Fl t
 Echo the command to be executed to standard error immediately before it
 is executed.
-.TP
-\-x
+.It Fl x
 Force
-.I xargs
+.Nm xargs
 to terminate immediately if a command line containing
-.I number
+.Ar number
 arguments will not fit in the specified (or default) command line length.
-.PP
+.El
+.Pp
 If no
-.I utility
+.Ar utility
 is specified,
-.IR echo (1)
+.Xr echo 1
 is used.
-.PP
+.Pp
 Undefined behavior may occur if
-.I utility
+.Ar utility
 reads from the standard input.
-.PP
-.I Xargs
-exits with an exit status of 0 if no error occurs.
-If
-.I utility
-cannot be invoked, is terminated by a signal or terminates without
-calling
-.IR exit (2),
-.I xargs
-exits with an exit status of 127.
-If
-.I utility
-exits with an exit status other than 0,
-.I xargs
-exits with that exit status.
-Otherwise,
-.I xargs
-exits with an exit status of 1.
-.SH "SEE ALSO"
-.IR echo (1),
-.IR find (1)
-.SH STANDARDS
+.Sh DIAGNOSTICS
+.Nm xargs
+exits with one of the following values:
+.Bl -tag -width Ds -compact
+.It 0
+All invocations of
+.Ar utility
+returned a zero exit status.
+.It 123
+One or more invocations of
+.Ar utility
+returned a nonzero exit status.
+.It 124
 The
-.I xargs
-utility is expected to be POSIX 1003.2 compliant.
+.Ar utility
+exited with a 255 exit status.
+.It 125
+The
+.Ar utility
+was killed or stopped by a signal.
+.It 126
+The
+.Ar utility
+was found but could not be invoked.
+.It 127
+The
+.Ar utility
+could not be found.
+.It 1
+Some other error occured.
+.El
+.Sh "SEE ALSO"
+.Xr echo 1 ,
+.Xr find 1
+.Sh STANDARDS
+.Nm xargs
+is expected to be
+.St -p1003.2
+compliant.
+.Sh HISTORY
+The meaning of 123, 124, and 125 exit values were taken from GNU xargs.
