@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -31,8 +31,9 @@ int	writesize;		/* size of malloc()ed buffer for tape */
 long	lastspclrec = -1;	/* tape block number of last written header */
 int	trecno = 0;		/* next record to write in current block */
 extern	long blocksperfile;	/* number of blocks per output file */
-extern int ntrec;		/* blocking factor on tape */
-extern int cartridge;
+long	blocksthisvol;		/* number of blocks on current output file */
+extern	int ntrec;		/* blocking factor on tape */
+extern	int cartridge;
 char	*nexttape;
 #ifdef RDUMP
 extern char *host;
@@ -138,7 +139,7 @@ tperror()
 		quit("Cannot recover\n");
 		/* NOTREACHED */
 	}
-	msg("write error %d blocks into volume %d\n", blockswritten, tapeno);
+	msg("write error %d blocks into volume %d\n", blocksthisvol, tapeno);
 	broadcast("DUMP WRITE ERROR!\n");
 	if (!query("Do you want to restart?"))
 		dumpabort();
@@ -174,8 +175,9 @@ flushtape()
 	trecno = 0;
 	asize += tenths;
 	blockswritten += ntrec;
+	blocksthisvol += ntrec;
 	if (!pipeout && (blocksperfile ?
-	    (blockswritten >= blocksperfile) : (asize > tsize))) {
+	    (blocksthisvol >= blocksperfile) : (asize > tsize))) {
 		close_rewind();
 		startnewtape();
 	}
@@ -193,7 +195,7 @@ trewind()
 		close(slavefd[f]);
 	while (wait((int *)NULL) >= 0)	/* wait for any signals from slaves */
 		/* void */;
-	msg("Tape rewinding\n");
+	msg("Closing %s\n", tape);
 #ifdef RDUMP
 	if (host) {
 		rmtclose();
@@ -213,12 +215,13 @@ void
 close_rewind()
 {
 	trewind();
+	if (nexttape)
+		return;
 	if (!nogripe) {
 		msg("Change Volumes: Mount volume #%d\n", tapeno+1);
 		broadcast("CHANGE DUMP VOLUMES!\7\7\n");
 	}
-	while (nexttape == 0 &&
-	    !query("Is the new volume mounted and ready to go?"))
+	while (!query("Is the new volume mounted and ready to go?"))
 		if (query("Do you want to abort?")) {
 			dumpabort();
 			/*NOTREACHED*/
@@ -317,15 +320,19 @@ startnewtape()
 		/*
 		 * If we have a name like "/dev/rmt0,/dev/rmt1",
 		 * use the name before the comma first, and save
-		 * the second name for next time.
+		 * the remaining names for subsequent volumes.
 		 */
-		if (nexttape && *nexttape)
-			tape = nexttape;
-		if (p = index(tape, ',')) {
-			*p = '\0';
-			nexttape = p + 1;
-		} else
-			nexttape = NULL;
+		tapeno++;		/* current tape sequence */
+		if (nexttape || index(tape, ',')) {
+			if (nexttape && *nexttape)
+				tape = nexttape;
+			if (p = index(tape, ',')) {
+				*p = '\0';
+				nexttape = p + 1;
+			} else
+				nexttape = NULL;
+			msg("Dumping volume %d on %s\n", tapeno, tape);
+		}
 #ifdef RDUMP
 		while ((tapefd = (host ? rmtopen(tape, 2) :
 			pipeout ? 1 : open(tape, O_WRONLY|O_CREAT, 0666))) < 0)
@@ -342,7 +349,7 @@ startnewtape()
 		enslave();  /* Share open tape file descriptor with slaves */
 
 		asize = 0;
-		tapeno++;		/* current tape sequence */
+		blocksthisvol = 0;
 		newtape++;		/* new tape signal */
 		blks = 0;
 		if (spcl.c_type != TS_END)
@@ -356,7 +363,7 @@ startnewtape()
 		writeheader(curino);
 		spcl.c_flags &=~ DR_NEWHEADER;
 		if (tapeno > 1)
-			msg("Tape %d begins with blocks from inode %d\n",
+			msg("Volume %d begins with blocks from inode %d\n",
 				tapeno, curino);
 	}
 }
@@ -473,6 +480,7 @@ doslave(cmd, prev, next)
 	register int cmd, prev[2], next[2];
 {
 	register int nread, toggle = 0;
+	int nwrite;
 #ifndef __STDC__
 	int read();
 #endif
@@ -501,11 +509,17 @@ doslave(cmd, prev, next)
 		flock(prev[toggle], LOCK_EX);	/* Wait our turn */
 
 #ifdef RDUMP
-		if ((host ? rmtwrite(tblock[0], writesize)
-			: write(tapefd, tblock[0], writesize)) != writesize) {
+		if ((nwrite = (host ? rmtwrite(tblock[0], writesize)
+			: write(tapefd, tblock[0], writesize))) != writesize) {
 #else RDUMP
-		if (write(tapefd, tblock[0], writesize) != writesize) {
+		if ((nwrite = write(tapefd, tblock[0], writesize))
+		    != writesize) {
 #endif RDUMP
+			if (nwrite == -1) 
+				perror("write");
+			else
+				msg("short write: got %d instead of %d\n",
+				    nwrite, writesize);
 			kill(master, SIGUSR1);
 			for (;;)
 				sigpause(0);
