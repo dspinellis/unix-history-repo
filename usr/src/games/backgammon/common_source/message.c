@@ -1,4 +1,4 @@
-static char sccsid[] = "	message.c	1.1	82/05/11	";
+static char sccsid[] = "	message.c	4.1	82/05/11	";
 
 char	*message[] = {
 	"Last update on Tuesday, September 16, 1980.",
