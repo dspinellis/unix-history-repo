@@ -1,6 +1,4 @@
-/*	vm_machdep.c	1.9	87/04/06	*/
-
-#include "../machine/pte.h"
+/*	vm_machdep.c	1.10	88/01/07	*/
 
 #include "param.h"
 #include "systm.h"
@@ -13,6 +11,7 @@
 #include "text.h"
 #include "kernel.h"
 
+#include "pte.h"
 #include "cpu.h"
 #include "mtpr.h"
 
@@ -30,34 +29,6 @@ setredzone(pte, vaddr)
 	if (vaddr)
 		mtpr(TBIS, vaddr + sizeof (struct user) + NBPG - 1);
 }
-
-#ifndef mapin
-mapin(pte, v, pfnum, count, prot)
-	struct pte *pte;
-	u_int v, pfnum;
-	int count, prot;
-{
-
-	while (count > 0) {
-		*(int *)pte++ = pfnum | prot;
-		mtpr(TBIS, ptob(v));
-		v++;
-		pfnum++;
-		count--;
-	}
-}
-#endif
-
-#ifdef notdef
-/*ARGSUSED*/
-mapout(pte, size)
-	register struct pte *pte;
-	int size;
-{
-
-	panic("mapout");
-}
-#endif
 
 /*
  * Check for valid program size
@@ -284,7 +255,7 @@ dkeyinval(p)
 	s = spl8();
 	if (--dkey_cnt[p->p_dkey] != 0)
 		dkey_cnt[p->p_dkey] = 0;
-	if (p == u.u_procp) {
+	if (p == u.u_procp && !noproc) {
 		p->p_dkey = getdatakey();
 		mtpr(DCK, p->p_dkey);
 	} else
