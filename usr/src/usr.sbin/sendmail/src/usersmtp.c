@@ -4,7 +4,7 @@
 # include <stdio.h>
 # include <useful.h>
 
-static char	SccsId[] =	"@(#)usersmtp.c	3.2	%G%";
+static char	SccsId[] =	"@(#)usersmtp.c	3.3	%G%";
 
 /*
 **  TCP -- TCP/Ethernet/ARPAnet mailer
@@ -21,13 +21,12 @@ FILE	*InConnection;
 FILE	*OutConnection;
 bool	Verbose;
 bool	Debug;
+int	Status;			/* exit status */
 
 main(argc, argv)
 	int argc;
 	char **argv;
 {
-	register int stat;
-
 	while (argc > 1 && argv[1][0] == '-')
 	{
 		register char *p = *++argv;
@@ -53,27 +52,31 @@ main(argc, argv)
 	}
 
 	if (openconnection(argv[2]) < 0)
-		exit(EX_TEMPFAIL);
+		exit(Status);
 
-	stat = runsmtp(argv[1], &argv[3]);
+	Status = runsmtp(argv[1], &argv[3]);
+
+	closeconnection();
 
 	if (Debug)
-		printf("Finishing with stat %d\n", stat);
+		printf("Finishing with stat %d\n", Status);
 
-	exit(stat);
+	exit(Status);
 }
 /*
 **  OPENCONNECTION -- open connection to SMTP socket
 **
 **	Parameters:
-**		none.
+**		host -- the name of the host to connect to.  This
+**			will be replaced by the canonical name of
+**			the host.
 **
 **	Returns:
-**		file pointer of connection.
-**		NULL on error.
+**		File descriptor of connection.
+**		-1 on error.
 **
 **	Side Effects:
-**		none.
+**		sets 'Status' to represent the problem on error.
 */
 
 openconnection(host)
@@ -90,19 +93,59 @@ openconnection(host)
 	if (Debug)
 		printf("Creating connection to \"%s\" on %s\n", cmdbuf, host);
 
+	/* verify host name */
+	if (rhost(&host) < 0)
+	{
+		if (Debug)
+			printf("Unknown host %s\n", host);
+		Status = EX_NOHOST;
+		return (-1);
+	}
+
 	/* create connection (we hope) */
 	fd = rexec(&host, SHELLSERVER, cmdbuf, MailUser, MailPassword);
 	if (fd < 0)
+	{
+		Status = EX_TEMPFAIL;
 		return (-1);
+	}
 	InConnection = fdopen(fd, "r");
 	OutConnection = fdopen(fd, "w");
 	if (InConnection == NULL || OutConnection == NULL)
+	{
+		Status = EX_SOFTWARE;
 		return (-1);
+	}
 
 	if (Debug)
 		printf("Connection open to %s\n", host);
 
 	return (0);
+}
+/*
+**	CLOSECONNECTION -- close the connection to the SMTP server.
+**
+**	This routine also sends a handshake.
+**
+**	Parameters:
+**		none.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		Closes the connection.
+*/
+
+closeconnection()
+{
+	register int r;
+
+	message("QUIT");
+	r = reply();
+
+	if (Debug)
+		printf("Closing connection, reply = %d\n", r);
 }
 /*
 **  RUNSMTP -- run the SMTP protocol over connection.
@@ -118,6 +161,8 @@ openconnection(host)
 **		Sends the mail via SMTP.
 */
 
+# define REPLYTYPE(r)	((r) / 100)
+
 runsmtp(fr, tolist)
 	char *fr;
 	char **tolist;
@@ -126,29 +171,50 @@ runsmtp(fr, tolist)
 	register char **t;
 	char buf[MAXLINE];
 
-	/* get greeting message */
+	/*
+	**  Get the greeting message.
+	**	This should appear spontaneously.
+	*/
+
 	r = reply();
-	if (r / 100 != 2)
+	if (REPLYTYPE(r) != 2)
 		return (EX_TEMPFAIL);
 
-	/* send the mail command */
-	message("MAIL From:<%s>\r\n", fr);
+	/*
+	**  Send the MAIL command.
+	**	Designates the sender.
+	*/
+
+	message("MAIL From:<%s>", fr);
 	r = reply();
+	if (REPLYTYPE(r) == 4)
+		return (EX_TEMPFAIL);
 	if (r != 250)
 		return (EX_SOFTWARE);
 
-	/* send the recipients */
+	/*
+	**  Send the recipients.
+	*/
+
 	for (t = tolist; *t != NULL; t++)
 	{
-		message("MRCP To:<%s>\r\n", *t);
+		message("MRCP To:<%s>", *t);
 		r = reply();
+		if (REPLYTYPE(r) == 4)
+			return (EX_TEMPFAIL);
 		if (r != 250)
 			return (EX_NOUSER);
 	}
 
-	/* send the data */
-	message("DATA\r\n");
+	/*
+	**  Send the data.
+	**	Dot hiding is done here.
+	*/
+
+	message("DATA");
 	r = reply();
+	if (REPLYTYPE(r) == 4)
+		return (EX_TEMPFAIL);
 	if (r != 354)
 		return (EX_SOFTWARE);
 	while (fgets(buf, sizeof buf, stdin) != NULL)
@@ -158,25 +224,23 @@ runsmtp(fr, tolist)
 
 		if (p != NULL)
 			*p = '\0';
-		if (buf[0] == '.')
-			message(".");
-		message("%s\r\n", buf);
+		message("%s%s", buf[0] == '.' ? "." : "", buf);
 	}
-	message(".\r\n");
+	message(".");
 	r = reply();
+	if (REPLYTYPE(r) == 4)
+		return (EX_TEMPFAIL);
 	if (r != 250)
 		return (EX_SOFTWARE);
 
-	/* force delivery */
-	message("DOIT\r\n");
+	/*
+	**  Make the actual delivery happen.
+	*/
+
+	message("DOIT");
 	r = reply();
 	if (r != 250)
 		return (EX_TEMPFAIL);
-
-	message("QUIT\r\n");
-	r = reply();
-	if (r != 221)
-		return (EX_SOFTWARE);
 
 	return (EX_OK);
 }
@@ -238,6 +302,7 @@ message(f, a, b, c)
 	char buf[100];
 
 	sprintf(buf, f, a, b, c);
+	strcat(buf, "\r\n");
 	if (Debug)
 		fputs(buf, stdout);
 	fputs(buf, OutConnection);
