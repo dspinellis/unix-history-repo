@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)BUFF.c 1.2 %G%";
+static char sccsid[] = "@(#)BUFF.c 1.3 %G%";
 
 #include "h00vars.h"
 
@@ -14,7 +14,7 @@ BUFF(amount)
 
 	curfile = OUTPUT;
 	if (amount == 0)
-		setbuf(0, ACTFILE(curfile));
+		setbuf(ACTFILE(curfile), 0);
 	else if (amount == 2)
-		setbuf(_sobuf, ACTFILE(curfile));
+		setbuf(ACTFILE(curfile), _sobuf);
 }
