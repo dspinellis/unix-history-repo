@@ -116,19 +116,16 @@ useracc(addr, len, rw)
 	vm_prot_t prot = rw == B_READ ? VM_PROT_READ : VM_PROT_WRITE;
 
 	/*
-	 * XXX - specially disallow access to user page tables - they are
-	 * in the map.
-	 *
-	 * XXX - don't specially disallow access to the user area - treat
-	 * it as incorrectly as elsewhere.
+	 * XXX - check separately to disallow access to user area and user
+	 * page tables - they are in the map.
 	 *
 	 * XXX - VM_MAXUSER_ADDRESS is an end address, not a max.  It was
-	 * only used (as an end address) in trap.c.  Use it as an end
-	 * address here too.
+	 * once only used (as an end address) in trap.c.  Use it as an end
+	 * address here too.  This bogusness has spread.  I just fixed
+	 * where it was used as a max in vm_mmap.c.
 	 */
-	if ((vm_offset_t) addr >= VM_MAXUSER_ADDRESS 
-	    || (vm_offset_t) addr + len > VM_MAXUSER_ADDRESS
-	    || (vm_offset_t) addr + len <= (vm_offset_t) addr) {
+	if ((vm_offset_t) addr + len > /* XXX */ VM_MAXUSER_ADDRESS
+	    || (vm_offset_t) addr + len < (vm_offset_t) addr) {
 		printf("address wrap\n");
 		return (FALSE);
 	}

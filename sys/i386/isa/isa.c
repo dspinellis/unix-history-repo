@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)isa.c	7.2 (Berkeley) 5/13/91
- *	$Id: isa.c,v 1.17 1994/04/21 14:20:07 sos Exp $
+ *	$Id: isa.c,v 1.18 1994/05/17 13:58:30 jkh Exp $
  */
 
 /*
@@ -594,14 +594,18 @@ isa_freephysmem(caddr_t va, unsigned length) {
 	
 /*
  * Handle a NMI, possibly a machine check.
+ * This is generally one of two things, either an memory parity error
+ * or a bus master timeout failure.  A bus-master timeout is indicated
+ * by bit 4 of port 0x461 going high.
+ *
  * return true to panic system, false to ignore.
  */
 int
 isa_nmi(cd) 
 	int cd;
 {
-
-	log(LOG_CRIT, "\nNMI port 61 %x, port 70 %x\n", inb(0x61), inb(0x70));
+	log(LOG_CRIT, "\nNMI port 61 %x, port 70 %x, port 461 %x\n",
+                      inb(0x61), inb(0x70), inb(0x461));
 	return(0);
 }
 

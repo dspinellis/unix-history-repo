@@ -37,7 +37,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vnode_pager.c	7.5 (Berkeley) 4/20/91
- *	$Id: vnode_pager.c,v 1.19 1994/06/16 08:53:55 davidg Exp $
+ *	$Id: vnode_pager.c,v 1.20 1994/06/16 10:09:47 davidg Exp $
  */
 
 /*
@@ -1354,8 +1354,16 @@ retryoutput:
 
 		s = splbio();
 		if (fbp = incore(vp, filblock)) {
-			/* printf("invalidating: %d\n", filblock); */
 			fbp = getblk(vp, filblock, fbp->b_bufsize);
+			if (fbp->b_flags & B_DELWRI) {
+				if (fbp->b_bufsize <= NBPG)
+					fbp->b_flags &= ~B_DELWRI;
+				else {
+					bwrite(fbp);
+					fbp = getblk(vp, filblock,
+						     fbp->b_bufsize);
+				}
+			}
 			fbp->b_flags |= B_INVAL;
 			brelse(fbp);
 		}
