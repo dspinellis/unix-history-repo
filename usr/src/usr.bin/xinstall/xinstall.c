@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)xinstall.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)xinstall.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -33,9 +33,7 @@ static char sccsid[] = "@(#)xinstall.c	5.13 (Berkeley) %G%";
 #include <pwd.h>
 #include <stdio.h>
 #include <ctype.h>
-
-#define	YES	1			/* yes/true */
-#define	NO	0			/* no/false */
+#include <paths.h>
 
 #define	PERROR(head, msg) { \
 	fputs(head, stderr); \
@@ -60,7 +58,7 @@ main(argc, argv)
 	while ((ch = getopt(argc, argv, "cg:m:o:s")) != EOF)
 		switch((char)ch) {
 		case 'c':
-			docopy = YES;
+			docopy = 1;
 			break;
 		case 'g':
 			group = optarg;
@@ -72,7 +70,7 @@ main(argc, argv)
 			owner = optarg;
 			break;
 		case 's':
-			dostrip = YES;
+			dostrip = 1;
 			break;
 		case '?':
 		default:
@@ -96,7 +94,7 @@ main(argc, argv)
 	no_target = stat(to_name = argv[argc - 1], &to_sb);
 	if (!no_target && (to_sb.st_mode & S_IFMT) == S_IFDIR) {
 		for (; *argv != to_name; ++argv)
-			install(*argv, to_name, YES);
+			install(*argv, to_name, 1);
 		exit(0);
 	}
 
@@ -120,7 +118,7 @@ main(argc, argv)
 		/* unlink now... avoid ETXTBSY errors later */
 		(void)unlink(to_name);
 	}
-	install(*argv, to_name, NO);
+	install(*argv, to_name, 0);
 	exit(0);
 }
 
@@ -136,8 +134,8 @@ install(from_name, to_name, isdir)
 	int devnull, from_fd, to_fd;
 	char *C, *rindex();
 
-	/* if try to install "/dev/null" to a directory, fails */
-	if (isdir || strcmp(from_name, "/dev/null")) {
+	/* if try to install NULL file to a directory, fails */
+	if (isdir || strcmp(from_name, _PATH_DEVNULL)) {
 		if (stat(from_name, &from_sb)) {
 			fprintf(stderr, "install: can't find %s.\n", from_name);
 			exit(1);
@@ -151,10 +149,10 @@ install(from_name, to_name, isdir)
 			(void)sprintf(pathbuf, "%s/%s", to_name, (C = rindex(from_name, '/')) ? ++C : from_name);
 			to_name = pathbuf;
 		}
-		devnull = NO;
+		devnull = 0;
 	}
 	else
-		devnull = YES;
+		devnull = 1;
 
 	/* unlink now... avoid ETXTBSY errors later */
 	(void)unlink(to_name);
