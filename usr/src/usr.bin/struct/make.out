@@ -1,0 +1,82 @@
+cc -O -c 1.recog.c
+"1.recog.c", line 14: warning: illegal combination of pointer and integer, op =
+"1.recog.c", line 14: warning: illegal combination of pointer and integer, op =
+"1.recog.c", line 37: warning: illegal combination of pointer and integer, op =
+"1.recog.c", line 105: warning: illegal combination of pointer and integer, op =
+"1.recog.c", line 127: warning: illegal combination of pointer and integer, op =
+"1.recog.c", line 162: warning: illegal combination of pointer and integer, op =
+"1.recog.c", line 163: warning: illegal combination of pointer and integer, op =
+"1.recog.c", line 183: warning: illegal combination of pointer and integer, op =
+"1.recog.c", line 187: warning: illegal combination of pointer and integer, op =
+"1.recog.c", line 243: warning: illegal combination of pointer and integer, op =
+"1.recog.c", line 308: warning: illegal combination of pointer and integer, op =
+"1.recog.c", line 309: warning: illegal combination of pointer and integer, op =
+"1.recog.c", line 317: warning: illegal combination of pointer and integer, op =
+"1.recog.c", line 319: warning: illegal combination of pointer and integer, op =
+cc -O -c 1.tables.c
+cc -O -c 2.dfs.c
+"2.dfs.c", line 40: warning: illegal combination of pointer and integer, op =
+"2.dfs.c", line 50: warning: illegal combination of pointer and integer, op =
+"2.dfs.c", line 53: warning: illegal combination of pointer and integer, op =
+"2.dfs.c", line 54: warning: illegal combination of pointer and integer, op =
+cc -O -c 2.dom.c
+cc -O -c 2.head.c
+cc -O -c 2.inarc.c
+"2.inarc.c", line 36: warning: illegal combination of pointer and integer, op =
+cc -O -c 2.main.c
+"2.main.c", line 21: warning: illegal combination of pointer and integer, op =
+"2.main.c", line 26: warning: illegal combination of pointer and integer, op =
+"2.main.c", line 30: warning: illegal combination of pointer and integer, op =
+cc -O -c 2.tree.c
+cc -O -c 3.branch.c
+cc -O -c 3.flow.c
+cc -O -c 3.loop.c
+cc -O -c 3.main.c
+"3.main.c", line 18: warning: illegal combination of pointer and integer, op =
+cc -O -c 3.reach.c
+"3.reach.c", line 40: warning: illegal combination of pointer and integer, op =
+"3.reach.c", line 53: warning: illegal combination of pointer and integer, op =
+"3.reach.c", line 61: warning: illegal combination of pointer and integer, op =
+"3.reach.c", line 87: warning: illegal combination of pointer and integer, op RETURN
+cc -O -c 3.then.c
+cc -O -c 4.brace.c
+cc -O -c 4.form.c
+cc -O -c 4.main.c
+"4.main.c", line 10: warning: illegal combination of pointer and integer, op =
+cc -O -c 4.out.c
+cc -o structure main.o 0.*.o 1.*.o 2.*.o 3.*.o 4.*.o 
+yacc -d beauty.y
+
+conflicts: 3 shift/reduce, 4 reduce/reduce
+mv y.tab.c beauty.c
+cc -O -c beauty.c
+"beauty.c", line 122: warning: illegal combination of pointer and integer, op =
+"beauty.y", line 128: warning: illegal combination of pointer and integer, op =
+cc -O -c tree.c
+"tree.c", line 12: warning: illegal combination of pointer and integer, op =
+"tree.c", line 16: warning: illegal combination of pointer and integer, op =
+"tree.c", line 18: warning: illegal combination of pointer and integer, op RETURN
+"tree.c", line 39: warning: old-fashioned initialization: use =
+"tree.c", line 40: warning: old-fashioned initialization: use =
+"tree.c", line 41: warning: old-fashioned initialization: use =
+"tree.c", line 75: warning: illegal combination of pointer and integer, op =
+"tree.c", line 79: warning: illegal combination of pointer and integer, op =
+"tree.c", line 80: warning: illegal combination of pointer and integer, op =
+"tree.c", line 82: warning: illegal combination of pointer and integer, op RETURN
+"tree.c", line 89: warning: illegal combination of pointer and integer, op =
+"tree.c", line 94: warning: illegal combination of pointer and integer, op =
+"tree.c", line 95: warning: illegal combination of pointer and integer, op =
+"tree.c", line 98: warning: illegal combination of pointer and integer, op RETURN
+"tree.c", line 109: warning: illegal combination of pointer and integer, op =
+"tree.c", line 110: warning: illegal combination of pointer and integer, op =
+"tree.c", line 111: warning: illegal combination of pointer and integer, op RETURN
+lex  lextab.l
+cc -O -c lex.yy.c
+"lex.yy.c", line 58: warning: illegal combination of pointer and integer, op =
+"lex.yy.c", line 178: warning: illegal combination of pointer and integer, op =
+"lex.yy.c", line 180: warning: illegal combination of pointer and integer, op =
+"lex.yy.c", line 197: warning: illegal combination of pointer and integer, op =
+rm lex.yy.c
+mv lex.yy.o lextab.o
+cc -O -c bdef.c
+cc -O beauty.o tree.o lextab.o bdef.o -o beautify -lln
