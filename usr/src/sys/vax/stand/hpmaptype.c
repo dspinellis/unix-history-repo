@@ -1,4 +1,4 @@
-/*	hpmaptype.c	4.5	83/02/27	*/
+/*	hpmaptype.c	4.6	83/03/01	*/
 
 /*
  * RP??/RM?? drive type mapping routine.
@@ -29,19 +29,33 @@ short	eagle_off[8] =	{ 0, 17, 0, 391, 408, 728, 391, 87 };
 /* END SHOULD BE READ IN */
 
 struct st hpst[] = {
+#define	HPDT_RM03	0
 	32,	5,	32*5,	823,	rm03_off,	/* RM03 */
+#define	HPDT_RM05	1
 	32,	19,	32*19,	823,	rm05_off,	/* RM05 */
+#define	HPDT_RP06	2
 	22,	19,	22*19,	815,	rp06_off,	/* RP06 */
+#define	HPDT_RM80	3
 	31,	14, 	31*14,	559,	rm80_off,	/* RM80 */
-	22,	19,	22*19,	411,	rp06_off,	/* RP06 */
+#define	HPDT_RP05	4
+	22,	19,	22*19,	411,	rp06_off,	/* RP05 */
+#define	HPDT_RP07	5
 	50,	32,	50*32,	630,	rp07_off,	/* RP07 */
+#define	HPDT_ML11A	6
 	1,	1,	1,	1,	ml_off,		/* ML11A */
+#define	HPDT_ML11B	7
 	1,	1,	1,	1,	ml_off,		/* ML11B */
+#define	HPDT_9775	8
 	32,	40,	32*40,	843,	cdc9775_off,	/* 9775 */
+#define	HPDT_9730	9
 	32,	10,	32*10,	823,	cdc9730_off,	/* 9730 */
+#define	HPDT_CAP	10
 	32,	16,	32*16,	1024,	capricorn_off,	/* Ampex capricorn */
+#define	HPDT_EAGLE	11
 	48,	20,	43*20,	842,	eagle_off,	/* Fuji Eagle */
+#define	HPDT_RM02	12
 	1,	1,	1,	1,	0,		/* rm02 - not used */
+#define	HPDT_9300	13
 	32,	19,	32*19,	815,	rm05_off,	/* Ampex 9300 */
 
 };
@@ -59,17 +73,17 @@ hpmaptype(hpaddr, type, unit)
 	 * Handle SI model byte stuff when
 	 * we think it's an RM03 or RM05.
 	 */
-	if (type == 0 || type == 1) {
+	if (type == HPDT_RM03 || type == HPDT_RM05) {
 		hpsn = hpaddr->hpsn;
 		if ((hpsn & SIMB_LU) != unit)
 			return (type);
 		switch ((hpsn & SIMB_MB) &~ (SIMB_S6|SIRM03|SIRM05)) {
 
 		case SI9775D:
-			return (8);
+			return (HPDT_9775);
 
 		case SI9730D:
-			return (9);
+			return (HPDT_9730);
 
 		/*
 		 * Beware, since the only have SI controller we
@@ -78,16 +92,16 @@ hpmaptype(hpaddr, type, unit)
 		 * on a 9766 you lose the last 8 cylinders (argh).
 		 */
 		case SI9766:
-			return (13);
+			return (HPDT_9300);
 
 		case SI9762:
-			return (0);
+			return (HPDT_RM03);
 
 		case SICAPD:
-			return (10);
+			return (HPDT_CAP);
 
 		case SI9751D:
-			return (11);
+			return (HPDT_EAGLE);
 		}
 		return (type);
 	}
@@ -96,21 +110,21 @@ hpmaptype(hpaddr, type, unit)
 	 * drive type by checking the holding
 	 * register for the disk geometry.
 	 */
-	if (type == 13) {
+	if (type == HPDT_RM02) {
 		int newtype = type;
 
 		hpaddr->hpcs1 = HP_NOP;
 		hpaddr->hphr = HPHR_MAXTRAK;
 		ntracks = MASKREG(hpaddr->hphr) + 1;
 		if (ntracks == 16) {
-			newtype = 10;	/* AMPEX capricorn */
+			newtype = HPDT_CAP;	/* AMPEX capricorn */
 			goto done;
 		}
 		hpaddr->hpcs1 = HP_NOP;
 		hpaddr->hphr = HPHR_MAXSECT;
 		ntracks = MASKREG(hpaddr->hphr) + 1;
 		if (ntracks == 48) {
-			newtype = 11;	/* 48 sector Eagle */
+			newtype = HPDT_EAGLE;	/* 48 sector Eagle */
 			goto done;
 		}
 		printf("RM02 with %d sectors/track?\n", ntracks);
@@ -121,7 +135,7 @@ hpmaptype(hpaddr, type, unit)
 	/*
 	 * ML11's all map to the same type.
 	 */
-	if (type == 6 || type == 7)
-		return (6);
+	if (type == HPDT_ML11A || type == HPDT_ML11B)
+		return (HPDT_ML11A);
 	return (type);
 }
