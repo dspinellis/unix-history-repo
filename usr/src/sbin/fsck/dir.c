@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dir.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)dir.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -451,11 +451,11 @@ expanddir(dp)
 	dp->di_blocks += btodb(sblock.fs_bsize);
 	bp = getdirblk(dp->di_db[lastbn + 1],
 		dblksize(&sblock, dp, lastbn + 1));
-	if (bp->b_errs != NULL)
+	if (bp->b_errs)
 		goto bad;
 	bcopy(bp->b_un.b_buf, firstblk, DIRBLKSIZ);
 	bp = getdirblk(newblk, sblock.fs_bsize);
-	if (bp->b_errs != NULL)
+	if (bp->b_errs)
 		goto bad;
 	bcopy(firstblk, bp->b_un.b_buf, DIRBLKSIZ);
 	for (cp = &bp->b_un.b_buf[DIRBLKSIZ];
@@ -465,7 +465,7 @@ expanddir(dp)
 	dirty(bp);
 	bp = getdirblk(dp->di_db[lastbn + 1],
 		dblksize(&sblock, dp, lastbn + 1));
-	if (bp->b_errs != NULL)
+	if (bp->b_errs)
 		goto bad;
 	bcopy((char *)&emptydir, bp->b_un.b_buf, sizeof emptydir);
 	pwarn("NO SPACE LEFT IN %s", pathname);
@@ -502,7 +502,7 @@ allocdir(parent, request, mode)
 	dirhead.dotdot_ino = parent;
 	dp = ginode(ino);
 	bp = getdirblk(dp->di_db[0], sblock.fs_fsize);
-	if (bp->b_errs != NULL) {
+	if (bp->b_errs) {
 		freeino(ino);
 		return (0);
 	}
