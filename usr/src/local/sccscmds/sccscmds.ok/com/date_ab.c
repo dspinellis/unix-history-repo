@@ -1,6 +1,7 @@
 # include	"../hdr/macros.h"
+# include	<tzfile.h>
 
-static char Sccsid[] = "@(#)date_ab.c	4.4	%G%";
+static char Sccsid[] = "@(#)date_ab.c	4.5	%G%";
 
 /*
 	Function to convert date in the form "yymmddhhmmss" to
@@ -13,6 +14,9 @@ static char Sccsid[] = "@(#)date_ab.c	4.4	%G%";
 
 	Function returns -1 if bad time is given (i.e., "730229").
 */
+
+#define	dysize(year)	(isleap(year) ? DAYS_PER_LYEAR : DAYS_PER_NYEAR)
+
 char *Datep;
 
 
