@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwenviron.c	3.6 83/12/03";
+static	char *sccsid = "@(#)wwenviron.c	3.7 84/01/11";
 #endif
 
 #include "ww.h"
@@ -63,11 +63,10 @@ register struct ww *wp;
 		*q = 0;
 		environ = env;
 	}
-	*termcap = sprintf(tbuf, "TERMCAP=%sco#%d:li#%d:",
-		WWT_TERMCAP, wp->ww_w.nc, wp->ww_w.nr);
-	if (wwavailmodes & WWM_REV)
-		(void) strcat(tbuf, WWT_REV);
-	if (wwavailmodes & WWM_UL)
-		(void) strcat(tbuf, WWT_UL);
-	(void) strcat(tbuf, wwkeys);
+	*termcap = sprintf(tbuf, "TERMCAP=%sco#%d:li#%d:%s%s%s%s",
+		WWT_TERMCAP, wp->ww_w.nc, wp->ww_w.nr,
+		wwavailmodes & WWM_REV ? WWT_REV : "",
+		wwavailmodes & WWM_UL ? WWT_UL : "",
+		wwavailmodes & WWM_GRP ? WWT_GRP : "",
+		wwkeys);
 }
