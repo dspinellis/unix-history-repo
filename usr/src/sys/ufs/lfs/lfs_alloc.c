@@ -4,20 +4,20 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_alloc.c	7.23 (Berkeley) %G%
+ *	@(#)lfs_alloc.c	7.24 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
 #include "buf.h"
-#include "user.h"
+#include "proc.h"
 #include "vnode.h"
 #include "kernel.h"
 #include "syslog.h"
-#include "cmap.h"
-#include "../ufs/quota.h"
-#include "../ufs/inode.h"
-#include "../ufs/fs.h"
+
+#include "quota.h"
+#include "inode.h"
+#include "fs.h"
 
 extern u_long		hashalloc();
 extern ino_t		ialloccg();
@@ -58,7 +58,7 @@ alloc(ip, lbn, bpref, size, bnp)
 	register struct fs *fs;
 	register struct buf *bp;
 	int cg, error;
-	struct ucred *cred = u.u_cred;		/* XXX */
+	struct ucred *cred = curproc->p_ucred;		/* XXX */
 	
 	*bnp = 0;
 	fs = ip->i_fs;
@@ -120,7 +120,7 @@ realloccg(ip, lbprev, bpref, osize, nsize, bpp)
 	struct buf *bp, *obp;
 	int cg, request, error;
 	daddr_t bprev, bno;
-	struct ucred *cred = u.u_cred;		/* XXX */
+	struct ucred *cred = curproc->p_ucred;		/* XXX */
 	
 	*bpp = 0;
 	fs = ip->i_fs;
@@ -872,7 +872,7 @@ blkfree(ip, bno, size)
 	struct buf *bp;
 	int error, cg, blk, frags, bbase;
 	register int i;
-	struct ucred *cred = u.u_cred;	/* XXX */
+	struct ucred *cred = curproc->p_ucred;	/* XXX */
 
 	fs = ip->i_fs;
 	if ((unsigned)size > fs->fs_bsize || fragoff(fs, size) != 0) {

@@ -4,29 +4,29 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vnops.c	7.57 (Berkeley) %G%
+ *	@(#)lfs_vnops.c	7.58 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
-#include "user.h"
+#include "namei.h"
+#include "resourcevar.h"
 #include "kernel.h"
 #include "file.h"
 #include "stat.h"
 #include "buf.h"
 #include "proc.h"
-#include "socket.h"
-#include "socketvar.h"
 #include "conf.h"
 #include "mount.h"
 #include "vnode.h"
 #include "specdev.h"
 #include "fcntl.h"
 #include "malloc.h"
-#include "../ufs/lockf.h"
-#include "../ufs/quota.h"
-#include "../ufs/inode.h"
-#include "../ufs/fs.h"
+
+#include "lockf.h"
+#include "quota.h"
+#include "inode.h"
+#include "fs.h"
 
 /*
  * Global vfs data structures for ufs
@@ -112,8 +112,7 @@ int	spec_lookup(),
 	spec_select(),
 	ufsspec_close(),
 	spec_advlock(),
-	spec_badop(),
-	nullop();
+	spec_badop();
 
 struct vnodeops spec_inodeops = {
 	spec_lookup,		/* lookup */
@@ -401,6 +400,7 @@ ufs_setattr(vp, vap, cred)
 	register struct vattr *vap;
 	register struct ucred *cred;
 {
+	struct proc *p = curproc;		/* XXX */
 	register struct inode *ip = VTOI(vp);
 	int error = 0;
 
@@ -417,7 +417,7 @@ ufs_setattr(vp, vap, cred)
 	 * Go through the fields and update iff not VNOVAL.
 	 */
 	if (vap->va_uid != (u_short)VNOVAL || vap->va_gid != (u_short)VNOVAL)
-		if (error = chown1(vp, vap->va_uid, vap->va_gid, cred))
+		if (error = chown1(vp, vap->va_uid, vap->va_gid, p))
 			return (error);
 	if (vap->va_size != VNOVAL) {
 		if (vp->v_type == VDIR)
@@ -427,7 +427,7 @@ ufs_setattr(vp, vap, cred)
 	}
 	if (vap->va_atime.tv_sec != VNOVAL || vap->va_mtime.tv_sec != VNOVAL) {
 		if (cred->cr_uid != ip->i_uid &&
-		    (error = suser(cred, &u.u_acflag)))
+		    (error = suser(cred, &p->p_acflag)))
 			return (error);
 		if (vap->va_atime.tv_sec != VNOVAL)
 			ip->i_flag |= IACC;
@@ -438,10 +438,10 @@ ufs_setattr(vp, vap, cred)
 			return (error);
 	}
 	if (vap->va_mode != (u_short)VNOVAL)
-		error = chmod1(vp, (int)vap->va_mode, cred);
+		error = chmod1(vp, (int)vap->va_mode, p);
 	if (vap->va_flags != VNOVAL) {
 		if (cred->cr_uid != ip->i_uid &&
-		    (error = suser(cred, &u.u_acflag)))
+		    (error = suser(cred, &p->p_acflag)))
 			return (error);
 		if (cred->cr_uid == 0) {
 			ip->i_flags = vap->va_flags;
@@ -458,16 +458,17 @@ ufs_setattr(vp, vap, cred)
  * Change the mode on a file.
  * Inode must be locked before calling.
  */
-chmod1(vp, mode, cred)
+chmod1(vp, mode, p)
 	register struct vnode *vp;
 	register int mode;
-	struct ucred *cred;
+	struct proc *p;
 {
+	register struct ucred *cred = p->p_ucred;
 	register struct inode *ip = VTOI(vp);
 	int error;
 
 	if (cred->cr_uid != ip->i_uid &&
-	    (error = suser(cred, &u.u_acflag)))
+	    (error = suser(cred, &p->p_acflag)))
 		return (error);
 	if (cred->cr_uid) {
 		if (vp->v_type != VDIR && (mode & ISVTX))
@@ -487,13 +488,14 @@ chmod1(vp, mode, cred)
  * Perform chown operation on inode ip;
  * inode must be locked prior to call.
  */
-chown1(vp, uid, gid, cred)
+chown1(vp, uid, gid, p)
 	register struct vnode *vp;
 	uid_t uid;
 	gid_t gid;
-	struct ucred *cred;
+	struct proc *p;
 {
 	register struct inode *ip = VTOI(vp);
+	register struct ucred *cred = p->p_ucred;
 	uid_t ouid;
 	gid_t ogid;
 	int error = 0;
@@ -513,7 +515,7 @@ chown1(vp, uid, gid, cred)
 	 */
 	if ((cred->cr_uid != ip->i_uid || uid != ip->i_uid ||
 	    !groupmember((gid_t)gid, cred)) &&
-	    (error = suser(cred, &u.u_acflag)))
+	    (error = suser(cred, &p->p_acflag)))
 		return (error);
 	ouid = ip->i_uid;
 	ogid = ip->i_gid;
@@ -656,6 +658,7 @@ ufs_write(vp, uio, ioflag, cred)
 	int ioflag;
 	struct ucred *cred;
 {
+	struct proc *p = curproc;		/* XXX */
 	register struct inode *ip = VTOI(vp);
 	register struct fs *fs;
 	struct buf *bp;
@@ -692,8 +695,8 @@ ufs_write(vp, uio, ioflag, cred)
 	 */
 	if (vp->v_type == VREG &&
 	    uio->uio_offset + uio->uio_resid >
-	      u.u_rlimit[RLIMIT_FSIZE].rlim_cur) {
-		psignal(u.u_procp, SIGXFSZ);
+	      p->p_rlimit[RLIMIT_FSIZE].rlim_cur) {
+		psignal(p, SIGXFSZ);
 		return (EFBIG);
 	}
 	resid = uio->uio_resid;
@@ -894,6 +897,7 @@ ufs_link(vp, ndp)
 ufs_rename(fndp, tndp)
 	register struct nameidata *fndp, *tndp;
 {
+	struct proc *p = curproc;		/* XXX */
 	register struct inode *ip, *xp, *dp;
 	struct dirtemplate dirbuf;
 	int doingdirectory = 0, oldparent = 0, newparent = 0;
@@ -970,7 +974,7 @@ ufs_rename(fndp, tndp)
 				iput(xp);
 			if (error = checkpath(ip, dp, tndp->ni_cred))
 				goto out;
-			if (error = namei(tndp))
+			if (error = namei(tndp, p))
 				goto out;
 			xp = NULL;
 			if (tndp->ni_vp)
@@ -1092,7 +1096,7 @@ ufs_rename(fndp, tndp)
 	 */
 	fndp->ni_nameiop &= ~(MODMASK | OPMASK);
 	fndp->ni_nameiop |= DELETE | LOCKPARENT | LOCKLEAF;
-	(void)namei(fndp);
+	(void)namei(fndp, p);
 	if (fndp->ni_vp != NULL) {
 		xp = VTOI(fndp->ni_vp);
 		dp = VTOI(fndp->ni_dvp);
@@ -1189,6 +1193,7 @@ ufs_mkdir(ndp, vap)
 	struct nameidata *ndp;
 	struct vattr *vap;
 {
+	struct proc *p = curproc;		/* XXX */
 	register struct inode *ip, *dp;
 	struct inode *tip;
 	struct vnode *dvp;
@@ -1273,7 +1278,7 @@ ufs_mkdir(ndp, vap)
 	if (error = direnter(ip, ndp)) {
 		ndp->ni_nameiop &= ~(MODMASK | OPMASK);
 		ndp->ni_nameiop |= LOOKUP | LOCKLEAF | NOCACHE;
-		error = namei(ndp);
+		error = namei(ndp, p);
 		if (!error) {
 			iput(dp);
 			dp = VTOI(ndp->ni_vp);

@@ -4,24 +4,23 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_inode.c	7.37 (Berkeley) %G%
+ *	@(#)ffs_inode.c	7.38 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
 #include "mount.h"
-#include "user.h"
 #include "proc.h"
 #include "file.h"
 #include "buf.h"
-#include "cmap.h"
 #include "vnode.h"
-#include "../ufs/quota.h"
-#include "../ufs/inode.h"
-#include "../ufs/fs.h"
-#include "../ufs/ufsmount.h"
 #include "kernel.h"
 #include "malloc.h"
+
+#include "quota.h"
+#include "inode.h"
+#include "fs.h"
+#include "ufsmount.h"
 
 #define	INOHSZ	512
 #if	((INOHSZ&(INOHSZ-1)) == 0)
@@ -646,14 +645,13 @@ ilock(ip)
 
 	while (ip->i_flag & ILOCKED) {
 		ip->i_flag |= IWANT;
-		if (ip->i_spare0 == u.u_procp->p_pid)
+		if (ip->i_spare0 == curproc->p_pid)
 			panic("locking against myself");
-		ip->i_spare1 = u.u_procp->p_pid;
+		ip->i_spare1 = curproc->p_pid;
 		(void) sleep((caddr_t)ip, PINOD);
 	}
 	ip->i_spare1 = 0;
-	ip->i_spare0 = u.u_procp->p_pid;
-	u.u_spare[0]++;
+	ip->i_spare0 = curproc->p_pid;
 	ip->i_flag |= ILOCKED;
 }
 
@@ -667,7 +665,6 @@ iunlock(ip)
 	if ((ip->i_flag & ILOCKED) == 0)
 		vprint("iunlock: unlocked inode", ITOV(ip));
 	ip->i_spare0 = 0;
-	u.u_spare[0]--;
 	ip->i_flag &= ~ILOCKED;
 	if (ip->i_flag&IWANT) {
 		ip->i_flag &= ~IWANT;

@@ -4,12 +4,12 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	7.50 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	7.51 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
-#include "user.h"
+#include "namei.h"
 #include "proc.h"
 #include "kernel.h"
 #include "vnode.h"
@@ -21,13 +21,14 @@
 #include "ioctl.h"
 #include "errno.h"
 #include "malloc.h"
-#include "../ufs/quota.h"
-#include "../ufs/fs.h"
-#include "../ufs/ufsmount.h"
-#include "../ufs/inode.h"
 #include "ioctl.h"
 #include "disklabel.h"
 #include "stat.h"
+
+#include "quota.h"
+#include "fs.h"
+#include "ufsmount.h"
+#include "inode.h"
 
 /*
  * ufs vfs operations.
@@ -402,26 +403,25 @@ ufs_quotactl(mp, cmds, uid, arg)
 	uid_t uid;
 	caddr_t arg;
 {
-	register struct nameidata *ndp = &u.u_nd;
 	struct ufsmount *ump = VFSTOUFS(mp);
-	struct proc *p = u.u_procp;	/* XXX */
+	struct proc *p = curproc;	/* XXX */
 	int cmd, type, error;
 
 #ifndef QUOTA
 	return (EOPNOTSUPP);
 #else
 	if (uid == -1)
-		uid = p->p_ruid;
+		uid = p->p_cred->p_ruid;
 	cmd = cmds >> SUBCMDSHIFT;
 
 	switch (cmd) {
 	case Q_GETQUOTA:
 	case Q_SYNC:
-		if (uid == p->p_ruid)
+		if (uid == p->p_cred->p_ruid)
 			break;
 		/* fall through */
 	default:
-		if (error = suser(ndp->ni_cred, &u.u_acflag))
+		if (error = suser(p->p_ucred, &p->p_acflag))
 			return (error);
 	}
 
@@ -432,7 +432,7 @@ ufs_quotactl(mp, cmds, uid, arg)
 	switch (cmd) {
 
 	case Q_QUOTAON:
-		return (quotaon(ndp, mp, type, arg));
+		return (quotaon(p, mp, type, arg));
 
 	case Q_QUOTAOFF:
 		if (vfs_busy(mp))
@@ -737,7 +737,7 @@ getmdev(devvpp, fname, ndp)
 	ndp->ni_nameiop = LOOKUP | FOLLOW;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = fname;
-	if (error = namei(ndp))
+	if (error = namei(ndp, curproc))		/* XXX */
 		return (error);
 	vp = ndp->ni_vp;
 	if (vp->v_type != VBLK) {

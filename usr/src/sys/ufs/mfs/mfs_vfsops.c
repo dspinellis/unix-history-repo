@@ -4,22 +4,23 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mfs_vfsops.c	7.17 (Berkeley) %G%
+ *	@(#)mfs_vfsops.c	7.18 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "time.h"
 #include "kernel.h"
-#include "user.h"
 #include "proc.h"
 #include "buf.h"
 #include "mount.h"
+#include "signalvar.h"
 #include "vnode.h"
-#include "../ufs/quota.h"
-#include "../ufs/inode.h"
-#include "../ufs/ufsmount.h"
-#include "../ufs/mfsnode.h"
-#include "../ufs/fs.h"
+
+#include "quota.h"
+#include "inode.h"
+#include "ufsmount.h"
+#include "mfsnode.h"
+#include "fs.h"
 
 extern struct vnodeops mfs_vnodeops;
 
@@ -90,7 +91,7 @@ mfs_mount(mp, path, data, ndp)
 	mfsp->mfs_baseoff = args.base;
 	mfsp->mfs_size = args.size;
 	mfsp->mfs_vnode = devvp;
-	mfsp->mfs_pid = u.u_procp->p_pid;
+	mfsp->mfs_pid = curproc->p_pid;
 	mfsp->mfs_buflist = (struct buf *)0;
 	if (error = mountfs(devvp, mp)) {
 		mfsp->mfs_buflist = (struct buf *)-1;
@@ -129,7 +130,7 @@ mfs_start(mp, flags)
 	register struct mfsnode *mfsp = VTOMFS(vp);
 	register struct buf *bp;
 	register caddr_t base;
-	struct proc *p = u.u_procp;
+	struct proc *p = curproc;
 	int error = 0;
 
 	base = mfsp->mfs_baseoff;

@@ -7,25 +7,21 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_lockf.c	7.2 (Berkeley) %G%
+ *	@(#)ufs_lockf.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
-#include "user.h"
 #include "kernel.h"
 #include "file.h"
 #include "proc.h"
-#include "socketvar.h"
-#include "socket.h"
 #include "vnode.h"
-#include "ioctl.h"
-#include "tty.h"
 #include "malloc.h"
 #include "fcntl.h"
-#include "../ufs/lockf.h"
-#include "../ufs/quota.h"
-#include "../ufs/inode.h"
+
+#include "lockf.h"
+#include "quota.h"
+#include "inode.h"
 
 /*
  * This variable controls the maximum number of processes that will

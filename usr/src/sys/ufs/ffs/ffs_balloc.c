@@ -4,19 +4,19 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_balloc.c	7.11 (Berkeley) %G%
+ *	@(#)ffs_balloc.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
-#include "user.h"
 #include "buf.h"
 #include "proc.h"
 #include "file.h"
 #include "vnode.h"
-#include "../ufs/quota.h"
-#include "../ufs/inode.h"
-#include "../ufs/fs.h"
+
+#include "quota.h"
+#include "inode.h"
+#include "fs.h"
 
 /*
  * Bmap defines the structure of file system storage

@@ -4,17 +4,18 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_lookup.c	7.27 (Berkeley) %G%
+ *	@(#)ufs_lookup.c	7.28 (Berkeley) %G%
  */
 
 #include "param.h"
-#include "user.h"
+#include "namei.h"
 #include "buf.h"
 #include "file.h"
 #include "vnode.h"
-#include "../ufs/quota.h"
-#include "../ufs/inode.h"
-#include "../ufs/fs.h"
+
+#include "quota.h"
+#include "inode.h"
+#include "fs.h"
 
 struct	nchstats nchstats;
 int	dirchk = 1;

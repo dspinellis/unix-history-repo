@@ -7,23 +7,22 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_quota.c	7.6 (Berkeley) %G%
+ *	@(#)ufs_quota.c	7.7 (Berkeley) %G%
  */
 #include "param.h"
-#include "time.h"
 #include "kernel.h"
 #include "systm.h"
-#include "ucred.h"
 #include "namei.h"
-#include "errno.h"
 #include "malloc.h"
 #include "file.h"
+#include "proc.h"
 #include "vnode.h"
 #include "mount.h"
-#include "../ufs/fs.h"
-#include "../ufs/quota.h"
-#include "../ufs/inode.h"
-#include "../ufs/ufsmount.h"
+
+#include "fs.h"
+#include "quota.h"
+#include "inode.h"
+#include "ufsmount.h"
 
 /*
  * Quota name to error message mapping.
@@ -320,8 +319,8 @@ chkdquot(ip)
 /*
  * Q_QUOTAON - set up a quota file for a particular file system.
  */
-quotaon(ndp, mp, type, fname)
-	register struct nameidata *ndp;
+quotaon(p, mp, type, fname)
+	struct proc *p;
 	struct mount *mp;
 	register int type;
 	caddr_t fname;
@@ -331,13 +330,14 @@ quotaon(ndp, mp, type, fname)
 	struct vnode *nextvp;
 	struct dquot *dq;
 	int error;
-	
+	struct nameidata nd;
+
 	vpp = &ump->um_quotas[type];
-	ndp->ni_segflg = UIO_USERSPACE;
-	ndp->ni_dirp = fname;
-	if (error = vn_open(ndp, FREAD|FWRITE, 0))
+	nd.ni_segflg = UIO_USERSPACE;
+	nd.ni_dirp = fname;
+	if (error = vn_open(&nd, p, FREAD|FWRITE, 0))
 		return (error);
-	vp = ndp->ni_vp;
+	vp = nd.ni_vp;
 	if (vp->v_type != VREG) {
 		vrele(vp);
 		return (EACCES);
@@ -356,8 +356,8 @@ quotaon(ndp, mp, type, fname)
 	 * Save the credential of the process that turned on quotas.
 	 * Set up the time limits for this quota.
 	 */
-	crhold(ndp->ni_cred);
-	ump->um_cred[type] = ndp->ni_cred;
+	crhold(p->p_ucred);
+	ump->um_cred[type] = p->p_ucred;
 	ump->um_btime[type] = MAX_DQ_TIME;
 	ump->um_itime[type] = MAX_IQ_TIME;
 	if (dqget(NULLVP, 0, ump, type, &dq) == 0) {
