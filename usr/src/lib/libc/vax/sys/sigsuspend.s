@@ -16,7 +16,7 @@
  */
 
 #if defined(SYSLIBC_SCCS) && !defined(lint)
-	.asciz "@(#)sigsuspend.s	5.1 (Berkeley) %G%"
+	.asciz "@(#)sigsuspend.s	5.2 (Berkeley) %G%"
 #endif /* SYSLIBC_SCCS and not lint */
 
 #include "SYS.h"
@@ -25,7 +25,7 @@ err:
 	jmp	cerror
 
 ENTRY(sigsuspend)
-	movl	*4(fp),4(fp)		# indirect to mask arg
+	movl	*4(ap),4(ap)		# indirect to mask arg
 	chmk	$SYS_sigsuspend
 	jcs	err
 	clrl	r0			# shouldn't happen
