@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	8.6 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.7 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	8.6 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.7 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -708,8 +708,14 @@ reply(m, mci, e, timeout, pfunc)
 #ifdef XDEBUG
 			{
 				char wbuf[MAXLINE];
-				sprintf(wbuf, "%s... reply(%s) during %s",
-					e->e_to, mci->mci_host, SmtpPhase);
+				char *p = wbuf;
+				if (e->e_to != NULL)
+				{
+					sprintf(p, "%s... ", e->e_to);
+					p += strlen(p);
+				}
+				sprintf(p, "reply(%s) during %s",
+					mci->mci_host, SmtpPhase);
 				checkfd012(wbuf);
 			}
 #endif
