@@ -1,4 +1,4 @@
-/*	machdep.c	4.62	82/10/04	*/
+/*	machdep.c	4.63	82/10/05	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -240,8 +240,8 @@ clockinit(base)
 	 * Have been told that VMS keeps time internally with base TODRZERO.
 	 * If this is correct, then this routine and VMS should maintain
 	 * the same date, and switching shouldn't be painful.
-	 * We must correct for the fact that VMS keeps local time
-	 * while UNIX wants GMT.
+	 * (Unfortunately, VMS keeps local time, so when you run UNIX
+	 * and VMS, VMS runs on GMT...).
 	 */
 	if (todr < TODRZERO) {
 		printf("WARNING: todr too small");
