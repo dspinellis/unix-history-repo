@@ -1,0 +1,4 @@
+Mxargs	xargs.c	/^main(argc, argv)$/
+err	xargs.c	/^err(fmt, va_alist)$/
+run	xargs.c	/^run(argv)$/
+usage	xargs.c	/^usage()$/

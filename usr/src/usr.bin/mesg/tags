@@ -1,0 +1,2 @@
+Mmesg	mesg.c	/^main(argc, argv)$/
+newmode	mesg.c	/^newmode(m)$/

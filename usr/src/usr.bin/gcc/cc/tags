@@ -1,0 +1,36 @@
+Mcc	cc.c	/^main (argc, argv)$/
+SWITCH_TAKES_ARG	cc.c	/^#define SWITCH_TAKES_ARG(CHAR)      \\$/
+WORD_SWITCH_TAKES_ARG	cc.c	/^#define WORD_SWITCH_TAKES_ARG(STR) (!strcmp (STR, /
+_obstack_allocated_p	../cc1/obstack.c	/^_obstack_allocated_p (h, obj)$/
+_obstack_begin	../cc1/obstack.c	/^_obstack_begin (h, size, alignment, chunkfun, free/
+_obstack_free	../cc1/obstack.c	/^_obstack_free (h, obj)$/
+_obstack_newchunk	../cc1/obstack.c	/^_obstack_newchunk (h, length)$/
+choose_temp_base	cc.c	/^choose_temp_base ()$/
+clear_args	cc.c	/^clear_args ()$/
+clear_failure_queue	cc.c	/^clear_failure_queue ()$/
+concat	cc.c	/^concat (s1, s2, s3)$/
+delete_failure_queue	cc.c	/^delete_failure_queue ()$/
+delete_temp_files	cc.c	/^delete_temp_files ()$/
+do_spec	cc.c	/^do_spec (spec)$/
+do_spec_1	cc.c	/^do_spec_1 (spec, inswitch)$/
+error	cc.c	/^error (va_alist) $/
+execute	cc.c	/^execute ()$/
+fancy_abort	cc.c	/^fancy_abort ()$/
+fatal	cc.c	/^fatal (va_alist)$/
+fatal_error	cc.c	/^fatal_error (signum)$/
+find_exec_file	cc.c	/^find_exec_file (prog)$/
+find_file	cc.c	/^find_file (name)$/
+give_switch	cc.c	/^give_switch (switchnum)$/
+handle_braces	cc.c	/^handle_braces (p)$/
+perror_exec	cc.c	/^perror_exec (name)$/
+perror_with_name	cc.c	/^perror_with_name (name)$/
+pexecute	cc.c	/^pexecute (func, program, argv, not_last)$/
+pfatal_with_name	cc.c	/^pfatal_with_name (name)$/
+process_command	cc.c	/^process_command (argc, argv)$/
+record_temp_file	cc.c	/^record_temp_file (filename, always_delete, fail_de/
+save_string	cc.c	/^save_string (s, len)$/
+store_arg	cc.c	/^store_arg (arg, delete_always, delete_failure)$/
+validate_all_switches	cc.c	/^validate_all_switches ()$/
+validate_switches	cc.c	/^validate_switches (start)$/
+xmalloc	cc.c	/^xmalloc (size)$/
+xrealloc	cc.c	/^xrealloc (ptr, size)$/

@@ -1,0 +1,9 @@
+Mid	id.c	/^main(argc, argv)$/
+current	id.c	/^current()$/
+err	id.c	/^err(fmt, va_alist)$/
+gcmp	id.c	/^gcmp(a, b)$/
+sgroup	id.c	/^sgroup(pw)$/
+ugroup	id.c	/^ugroup(pw)$/
+usage	id.c	/^usage()$/
+user	id.c	/^user(pw)$/
+who	id.c	/^who(u)$/

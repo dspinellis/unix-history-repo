@@ -1,0 +1,4 @@
+Mtouch	touch.c	/^main(argc, argv)$/
+readwrite	touch.c	/^readwrite(filename, size)$/
+touch	touch.c	/^touch(filename)$/
+usage	touch.c	/^usage()$/

@@ -1,0 +1,225 @@
+ADD_REG	config/m68k.c	/^#define ADD_REG(x)	{     if(x==FPI) cur_regs|=(1<</
+IS_COMMENT	app.c	/^#define IS_COMMENT(c)			(lex [c] & LEX_IS_COMMENT_/
+IS_LINE_COMMENT	app.c	/^#define IS_LINE_COMMENT(c)		(lex [c] & LEX_IS_LINE/
+IS_LINE_SEPERATOR	app.c	/^#define IS_LINE_SEPERATOR(c)		(lex [c] & LEX_IS_LI/
+IS_SYMBOL_COMPONENT	app.c	/^#define IS_SYMBOL_COMPONENT(c)		(lex [c] & LEX_IS_/
+IS_WHITESPACE	app.c	/^#define IS_WHITESPACE(c)		(lex [c] & LEX_IS_WHITES/
+LOCAL_LABEL	write.c	/^#define LOCAL_LABEL(name) (name[0] =='.' \\$/
+Mapp	app.c	/^main()$/
+Mas	as.c	/^main(argc,argv)$/
+Mhash	hash.c	/^main()$/
+Mm68k	config/m68k.c	/^main()$/
+SKIP_W	config/m68k.c	/^#define SKIP_W()	{ ss++; if(*ss==' ') ss++;}$/
+SKIP_WHITE	config/m68k.c	/^#define SKIP_WHITE()	{ str++; if(*str==' ') str++;/
+TAB	config/m68k.c	/^#define TAB(x,y)	(((x)<<2)+(y))$/
+TABTYPE	config/m68k.c	/^#define TABTYPE(xy)     ((xy) >> 2)$/
+_obstack_allocated_p	obstack.c	/^_obstack_allocated_p (h, obj)$/
+_obstack_begin	obstack.c	/^_obstack_begin (h, size, alignment, chunkfun, free/
+_obstack_free	obstack.c	/^_obstack_free (h, obj)$/
+_obstack_newchunk	obstack.c	/^_obstack_newchunk (h, length)$/
+abort	config/m68k.c	/^abort()$/
+add_exp	config/m68k.c	/^#define add_exp(beg,end) (\\$/
+add_fix	config/m68k.c	/^#define add_fix(width,exp,pc_rel) {\\$/
+add_frag	config/m68k.c	/^#define add_frag(add,off,type)  {\\$/
+adds	config/m68k.c	/^#define adds(exp)	((exp)->e_exp.X_add_symbol)$/
+addword	config/m68k.c	/^#define addword(w)	the_ins.opcode[the_ins.numo++]=/
+append	append.c	/^append (charPP, fromP, length)$/
+applicatee	hash.c	/^applicatee(string,value)$/
+as_1_char	input-scrub.c	/^as_1_char (c,stream)$/
+as_bad	messages.c	/^as_bad(Format,args)$/
+as_fatal	messages.c	/^as_fatal (Format, args)$/
+as_howmuch	input-scrub.c	/^as_howmuch (stream)$/
+as_perror	messages.c	/^as_perror(gripe, filename)$/
+as_warn	app.c	/^as_warn(str)$/
+as_where	input-scrub.c	/^as_where()$/
+atof_generic	atof-generic.c	/^atof_generic ($/
+atof_ieee	config/atof-ieee.c	/^atof_ieee (str, what_kind, words)$/
+bcopy	append.c	/^#define bcopy(from,to,n) memcpy(to,from,n)$/
+big_cons	read.c	/^big_cons(nbytes)		\/* worker to do .quad etc state/
+bignum_copy	bignum-copy.c	/^bignum_copy (in, in_length, out, out_length)$/
+bump_line_counters	input-scrub.c	/^bump_line_counters ()$/
+bzero	app.c	/^#define bzero(s,n) memset(s,0,n)$/
+clean_up_expression	expr.c	/^clean_up_expression (expressionP)$/
+colon	symbols.c	/^colon (sym_name)		\/* just seen "x:" - rattle symb/
+cons	read.c	/^cons(nbytes)			\/* worker to do .byte etc statemen/
+crack_operand	config/m68k.c	/^crack_operand(str,opP)$/
+demand_copy_C_string	read.c	/^demand_copy_C_string (len_pointer)$/
+demand_copy_string	read.c	/^demand_copy_string (lenP)$/
+demand_empty_rest_of_line	read.c	/^demand_empty_rest_of_line()$/
+destroy	hash.c	/^destroy(string,value)$/
+do_scrub_begin	app.c	/^do_scrub_begin()$/
+do_scrub_next_char	app.c	/^do_scrub_next_char(get,unget)$/
+dummy1	flonum-const.c	/^dummy1()$/
+dummy2	hex-value.c	/^dummy2()$/
+dummy3	version.c	/^dummy3()$/
+emit_relocations	write.c	/^emit_relocations (fixP, segment_address_in_file)$/
+equals	read.c	/^equals(sym_name)$/
+expr	expr.c	/^expr (rank, resultP)$/
+expr_part	expr.c	/^expr_part (symbol_1_PP, symbol_2_P)$/
+filestab	input-scrub.c	/^filestab()$/
+fixup_segment	write.c	/^fixup_segment (fixP, this_segment_type)$/
+float_cons	read.c	/^float_cons(float_type)		\/* Worker to do .float et/
+flonum_copy	flonum-copy.c	/^flonum_copy (in, out)$/
+flonum_multip	flonum-mult.c	/^flonum_multip (a, b, product)$/
+frag_align	frags.c	/^frag_align (alignment, fill_character)$/
+frag_grow	frags.c	/^frag_grow (nchars)$/
+frag_more	frags.c	/^frag_more (nchars)$/
+frag_new	frags.c	/^frag_new (old_frags_var_max_size)$/
+frag_var	frags.c	/^frag_var (type, max_chars, var, subtype, symbol, o/
+frag_variant	frags.c	/^frag_variant (type, max_chars, var, subtype, symbo/
+frag_wane	frags.c	/^frag_wane (fragP)$/
+funcstab	input-scrub.c	/^funcstab(func)$/
+gen_to_words	config/atof-ieee.c	/^gen_to_words(words,precision,exponent_bits)$/
+get_absolute_expression	read.c	/^get_absolute_expression ()$/
+get_absolute_expression_and_terminator	read.c	/^get_absolute_expression_and_terminator( val_pointe/
+get_known_segmented_expression	read.c	/^get_known_segmented_expression ( expP )$/
+get_num	config/m68k.c	/^get_num(exp,ok)$/
+get_regs	config/m68k.c	/^get_regs(i,str,opP)$/
+get_segmented_expression	read.c	/^get_segmented_expression ( expP )$/
+get_symbol_end	expr.c	/^get_symbol_end()$/
+getone	config/m68k.c	/^#define getone(x)	((((x)->m_opcode)>>16)&0xffff)$/
+gettwo	config/m68k.c	/^#define gettwo(x)	(((x)->m_opcode)&0xffff)$/
+got_sig	as.c	/^got_sig(sig)$/
+grow_bignum	read.c	/^grow_bignum()			\/* Extend bignum by 1 char. *\/$/
+hash_apply	hash.c	/^hash_apply(handle,function)$/
+hash_ask	hash.c	/^hash_ask(handle,string,access)$/
+hash_code	hash.c	/^hash_code(handle,string)$/
+hash_delete	hash.c	/^hash_delete(handle,string)$/
+hash_die	hash.c	/^hash_die(handle)$/
+hash_find	hash.c	/^hash_find(handle,string)	\/* return char* or NULL /
+hash_grow	hash.c	/^hash_grow(handle)			\/* make a hash table grow *\//
+hash_insert	hash.c	/^hash_insert(handle,string,value)$/
+hash_jam	hash.c	/^hash_jam(handle,string,value)$/
+hash_new	hash.c	/^hash_new()			\/* create a new hash table *\/$/
+hash_replace	hash.c	/^hash_replace(handle,string,value)$/
+hash_say	hash.c	/^hash_say(handle,buffer,bufsiz)$/
+ignore_rest_of_line	read.c	/^ignore_rest_of_line()		\/* For suspect lines: give/
+index	config/m68k.c	/^char *index(s,c)$/
+input_file_begin	input-file.c	/^input_file_begin ()$/
+input_file_buffer_size	input-file.c	/^input_file_buffer_size ()$/
+input_file_end	input-file.c	/^input_file_end ()$/
+input_file_give_next_buffer	input-file.c	/^input_file_give_next_buffer (where)$/
+input_file_is_open	input-file.c	/^input_file_is_open ()$/
+input_file_open	input-file.c	/^input_file_open (filename, preprocess, debugging)$/
+input_scrub_begin	input-scrub.c	/^input_scrub_begin ()$/
+input_scrub_end	input-scrub.c	/^input_scrub_end ()$/
+input_scrub_new_file	input-scrub.c	/^input_scrub_new_file (filename)$/
+input_scrub_next_buffer	input-scrub.c	/^input_scrub_next_buffer (bufp)$/
+insop	config/m68k.c	/^#define insop(w)	{int z;\\$/
+install_gen_operand	config/m68k.c	/^install_gen_operand(mode,val)$/
+install_operand	config/m68k.c	/^install_operand(mode,val)$/
+int_to_gen	config/atof-ieee.c	/^int_to_gen(x)$/
+is_dnrange	write.c	/^is_dnrange(f1,f2)$/
+is_it_end_of_statement	read.c	/^is_it_end_of_statement()$/
+is_label	config/m68k.c	/^is_label(str)$/
+isbyte	config/m68k.c	/^#define isbyte(x)	((x)>=-128 && (x)<=255)$/
+islive	hash.c	/^#define islive(ptr) (ptr->hash_string && ptr->hash/
+islong	config/m68k.c	/^#define islong(x)	(1)$/
+issbyte	config/m68k.c	/^#define issbyte(x)	((x)>=-128 && (x)<=127)$/
+issword	config/m68k.c	/^#define issword(x)	((x)>=-32768 && (x)<=32767)$/
+isubyte	config/m68k.c	/^#define isubyte(x)	((x)>=0 && (x)<=255)$/
+isuword	config/m68k.c	/^#define isuword(x)	((x)>=0 && (x)<=65535)$/
+isvar	config/m68k.c	/^#define isvar(exp)	((exp) && (adds(exp) || subs(ex/
+isword	config/m68k.c	/^#define isword(x)	((x)>=-32768 && (x)<=65535)$/
+linestab	input-scrub.c	/^linestab()$/
+local_colon	symbols.c	/^local_colon (n)$/
+local_label_name	symbols.c	/^local_label_name(n, augend)$/
+lose	as.c	/^lose()$/
+m68_ip	config/m68k.c	/^m68_ip (instring)$/
+m68k_ip_op	config/m68k.c	/^m68k_ip_op(str,opP)$/
+m68k_reg_parse	config/m68k.c	/^m68k_reg_parse(ccp)$/
+make_invalid_floating_point_number	config/atof-ieee.c	/^make_invalid_floating_point_number (words)$/
+md_assemble	config/m68k.c	/^md_assemble(str)$/
+md_atof	config/m68k.c	/^md_atof(type,litP,sizeP)$/
+md_begin	config/m68k.c	/^md_begin()$/
+md_convert_frag	config/m68k.c	/^md_convert_frag(fragP)$/
+md_create_long_jump	config/m68k.c	/^md_create_long_jump(ptr,from_addr,to_addr,frag,to_/
+md_create_short_jump	config/m68k.c	/^md_create_short_jump(ptr,from_addr,to_addr,frag,to/
+md_end	config/m68k.c	/^md_end()$/
+md_estimate_size_before_relax	config/m68k.c	/^md_estimate_size_before_relax(fragP,segtype)$/
+md_number_to_chars	config/m68k.c	/^md_number_to_chars(buf,val,n)$/
+md_number_to_disp	config/m68k.c	/^md_number_to_disp(buf,val,n)$/
+md_number_to_field	config/m68k.c	/^md_number_to_field(buf,val,fix)$/
+md_number_to_imm	config/m68k.c	/^md_number_to_imm(buf,val,n)$/
+md_parse_option	config/m68k.c	/^md_parse_option(argP,cntP,vecP)$/
+md_ri_to_chars	config/m68k.c	/^md_ri_to_chars(ri_p, ri)$/
+min	hash.c	/^#define min(a, b)	((a) < (b) ? (a) : (b))$/
+mklower	config/m68k.c	/^#define mklower(c) (mklower_table[(unsigned char)(/
+new_logical_line	input-scrub.c	/^new_logical_line (fname, line_number)$/
+next_bits	config/atof-ieee.c	/^next_bits (number_of_bits)$/
+next_char_of_string	read.c	/^next_char_of_string ()$/
+notend	config/m68k.c	/^#define notend(s) ( !(notend_table[(unsigned char)/
+offs	config/m68k.c	/^#define offs(exp)	((exp)->e_exp.X_add_number)$/
+operand	expr.c	/^operand (expressionP)$/
+output_file_append	output-file.c	/^output_file_append (where, length, filename)$/
+output_file_close	output-file.c	/^output_file_close (filename)$/
+output_file_create	output-file.c	/^output_file_create (name)$/
+panic	config/m68k.c	/^panic(format,args)$/
+perform_an_assembly_pass	as.c	/^perform_an_assembly_pass (argc, argv)$/
+pobegin	read.c	/^pobegin()$/
+print_frags	config/m68k.c	/^print_frags()$/
+print_gen	config/atof-ieee.c	/^print_gen(gen)$/
+pseudo_set	read.c	/^pseudo_set (symbolP)$/
+read_a_source_file	read.c	/^read_a_source_file (buffer)$/
+read_begin	read.c	/^read_begin()$/
+relax_align	write.c	/^relax_align (address, alignment)$/
+relax_segment	write.c	/^relax_segment (segment_frag_root, segment_type)$/
+reverse_16_bits	config/m68k.c	/^reverse_16_bits(in)$/
+reverse_8_bits	config/m68k.c	/^reverse_8_bits(in)$/
+s_abort	read.c	/^s_abort()$/
+s_align	read.c	/^s_align()$/
+s_comm	read.c	/^s_comm()$/
+s_const	read.c	/^s_const()$/
+s_data	read.c	/^s_data()$/
+s_data1	config/m68k.c	/^s_data1()$/
+s_data2	config/m68k.c	/^s_data2()$/
+s_desc	read.c	/^s_desc()$/
+s_even	config/m68k.c	/^s_even()$/
+s_file	read.c	/^s_file()$/
+s_fill	read.c	/^s_fill()$/
+s_gdbbeg	read.c	/^s_gdbbeg()$/
+s_gdbblock	read.c	/^s_gdbblock()$/
+s_gdbend	read.c	/^s_gdbend()$/
+s_gdbline	read.c	/^s_gdbline()$/
+s_gdblinetab	read.c	/^s_gdblinetab()$/
+s_gdbsym	read.c	/^s_gdbsym()$/
+s_globl	read.c	/^s_globl()$/
+s_int	read.c	/^s_int()$/
+s_lcomm	read.c	/^s_lcomm()$/
+s_line	read.c	/^s_line()$/
+s_long	read.c	/^s_long()$/
+s_lsym	read.c	/^s_lsym()$/
+s_org	read.c	/^s_org()$/
+s_proc	config/m68k.c	/^s_proc()$/
+s_set	read.c	/^s_set()$/
+s_space	read.c	/^s_space()$/
+s_text	read.c	/^s_text()$/
+scrub_from_file	app.c	/^scrub_from_file()$/
+scrub_from_string	app.c	/^scrub_from_string()$/
+scrub_to_file	app.c	/^scrub_to_file(ch)$/
+scrub_to_string	app.c	/^scrub_to_string(ch)$/
+seen_at_least_1_file	input-scrub.c	/^seen_at_least_1_file ()		\/* TRUE if we opened any/
+seg	config/m68k.c	/^#define seg(exp)	((exp)->e_exp.X_seg)$/
+setbuffer	input-file.c	/^#define setbuffer(stream, buf, size) setvbuf((stre/
+stab	read.c	/^stab (what)$/
+stabd	read.c	/^stabd(line)$/
+stabf	read.c	/^stabf(func)$/
+stabs	read.c	/^stabs(file)$/
+stralloc	as.c	/^stralloc (str)$/
+stringer	read.c	/^stringer(append_zero)		\/* Worker to do .ascii etc/
+subs	config/m68k.c	/^#define subs(exp)	((exp)->e_exp.X_subtract_symbol)/
+subseg_change	subsegs.c	/^subseg_change (seg, subseg)$/
+subseg_new	subsegs.c	/^subseg_new (seg, subseg)	\/* begin assembly for a /
+subsegs_begin	subsegs.c	/^subsegs_begin()$/
+symbol_begin	symbols.c	/^symbol_begin()$/
+symbol_find	symbols.c	/^symbol_find (name)$/
+symbol_find_or_make	symbols.c	/^symbol_find_or_make (name)$/
+symbol_new	symbols.c	/^symbol_new (name, type, other, desc, value, frag)$/
+symbol_table_insert	symbols.c	/^symbol_table_insert (symbolP)$/
+try_index	config/m68k.c	/^try_index(s,opP)$/
+unget_bits	config/atof-ieee.c	/^unget_bits(num)$/
+what	hash.c	/^what(description)$/
+whattable	hash.c	/^whattable()			\/* determine number: what hash tabl/
+write_object_file	write.c	/^write_object_file()$/
+xmalloc	xmalloc.c	/^char * xmalloc(n)$/
+xrealloc	xrealloc.c	/^xrealloc (ptr, n)$/
