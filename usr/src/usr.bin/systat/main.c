@@ -1,46 +1,60 @@
-/*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1980, 1992 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
  */
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1980 Regents of the University of California.\n\
+"@(#) Copyright (c) 1980, 1992 The Regents of the University of California.\n\
  All rights reserved.\n";
-#endif not lint
+#endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.10 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)main.c	5.11 (Berkeley) %G%";
+#endif /* not lint */
 
+#include <sys/param.h>
+
+#include <nlist.h>
+#include <signal.h>
+#include <stdio.h>
 #include "systat.h"
-#include <varargs.h>
+#include "extern.h"
 
 static struct nlist nlst[] = {
 #define X_FIRST		0
 #define	X_HZ		0
 	{ "_hz" },
-#define	X_PHZ		1
-	{ "_phz" },
+#define	X_STATHZ		1
+	{ "_stathz" },
 	{ "" }
 };
 
-int	naptime = 5;
+static int     dellave;
 
-void	die(), display(), suspend();
-
+kvm_t *kd;
 sig_t	sigtstpdfl;
-int     dellave;
+double avenrun[3];
+int     col;
+int	naptime = 5;
+int     verbose = 1;                    /* to report kvm read errs */
+int     hz, stathz;
+char    c;
+char    *namp;
+char    hostname[MAXHOSTNAMELEN];
+WINDOW  *wnd;
+int     CMDLINE;
 
 static	WINDOW *wload;			/* one line window for load average */
 
-int     verbose = 1;                    /* to report kvm read errs */
-
+void
 main(argc, argv)
 	int argc;
 	char **argv;
 {
+	char errbuf[80];
 
 	argc--, argv++;
 	while (argc > 0) {
@@ -61,7 +75,15 @@ main(argc, argv)
 		}
 		argc--, argv++;
 	}
-	kvm_nlist(nlst);
+	kd = kvm_openfiles(NULL, NULL, NULL, O_RDONLY, errbuf);
+	if (kd == NULL) {
+		error("%s", errbuf);
+		exit(1);
+	}
+	if (kvm_nlist(kd, nlst)) {
+		nlisterr(nlst);
+		exit(1);
+	}
 	if (nlst[X_FIRST].n_type == 0) {
 		fprintf(stderr, "Couldn't namelist.\n");
 		exit(1);
@@ -81,16 +103,16 @@ main(argc, argv)
 	wnd = (*curcmd->c_open)();
 	if (wnd == NULL) {
 		fprintf(stderr, "Couldn't initialize display.\n");
-		die();
+		die(0);
 	}
 	wload = newwin(1, 0, 3, 20);
 	if (wload == NULL) {
 		fprintf(stderr, "Couldn't set up load average window.\n");
-		die();
+		die(0);
 	}
 	gethostname(hostname, sizeof (hostname));
 	NREAD(X_HZ, &hz, LONG);
-	NREAD(X_PHZ, &phz, LONG);
+	NREAD(X_STATHZ, &stathz, LONG);
 	(*curcmd->c_init)();
 	curcmd->c_flags |= CF_INIT;
 	labels();
@@ -99,13 +121,14 @@ main(argc, argv)
 
 	signal(SIGALRM, display);
 	sigtstpdfl = signal(SIGTSTP, suspend);
-	display();
+	display(0);
 	noecho();
 	crmode();
 	keyboard();
 	/*NOTREACHED*/
 }
 
+void
 labels()
 {
 	if (curcmd->c_flags & CF_LOADAV) {
@@ -121,7 +144,8 @@ labels()
 }
 
 void
-display()
+display(signo)
+	int signo;
 {
 	register int i, j;
 
@@ -155,6 +179,7 @@ display()
 	alarm(naptime);
 }
 
+void
 load()
 {
 
@@ -165,7 +190,8 @@ load()
 }
 
 void
-die()
+die(signo)
+	int signo;
 {
 	move(CMDLINE, 0);
 	clrtoeol();
@@ -174,17 +200,52 @@ die()
 	exit(0);
 }
 
-error(va_alist)
+#if __STDC__
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
+
+#if __STDC__
+void
+error(const char *fmt, ...)
+#else
+void
+error(fmt, va_alist)
+	char *fmt;
 	va_dcl
+#endif
 {
 	va_list ap;
-	char *fmt, msg[200];
-
+#if __STDC__
+	va_start(ap, fmt);
+#else
 	va_start(ap);
-	fmt = va_arg(ap, char *);
-	(void) vsnprintf(msg, sizeof msg, fmt, ap);
+#endif
+	(void) vfprintf(stderr, fmt, ap);
 	va_end(ap);
-	mvaddstr(CMDLINE, 0, msg);
+	if (wnd) {
+		clrtoeol();
+		refresh();
+	} else
+		fprintf(stderr, "\n");
+}
+
+void
+nlisterr(nl)
+	struct nlist nl[];
+{
+	int i, n;
+
+	n = 0;
+	clear();
+	mvprintw(2, 10, "systat: nlist: can't find following symbols:");
+	for (i = 0; nl[i].n_name != NULL && *nl[i].n_name != '\0'; i++)
+		if (nl[i].n_value == 0)
+			mvprintw(2 + ++n, 10, "%s", nl[i].n_name);
+	move(CMDLINE, 0);
 	clrtoeol();
 	refresh();
+	endwin();
+	exit(1);
 }
