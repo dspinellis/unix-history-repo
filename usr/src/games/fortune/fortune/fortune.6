@@ -16,7 +16,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)fortune.6	6.5 (Berkeley) %G%
+.\"	@(#)fortune.6	6.6 (Berkeley) %G%
 .\"
 .TH FORTUNE 6 ""
 .UC 4
@@ -65,6 +65,21 @@ for a description of patterns.
 .TP
 .B \-o
 Choose from an alternate list of potentially offensive aphorisms.
+.ft B
+Please, please, please do not request a potentially offensive fortune
+if you do not believe, deep down in your heart, that you are willing
+to be offended.
+.ft R
+.PP
+.in +5
+\&... let us keep in mind the basic governing philosophy
+of The Brotherhood, as handsomely summarized in these words:
+we believe in healthy, hearty laughter -- at the expense of
+the whole human race, if needs be.
+Needs be.
+.br
+.in +10
+-- H. Allen Smith, "Rude Jokes"
 .TP
 .B \-s
 Short apothegms only.
@@ -85,8 +100,6 @@ You can specify a specific file, a directory which contains one or
 more files, or the special word
 .B all
 which says to use all the standard databases.
-The files must be created using
-.B strfile (8) .
 Any of these may be preceded by a percentage, which is a number
 .I N
 between 0 and 100 inclusive, followed by a
