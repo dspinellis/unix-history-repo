@@ -1,15 +1,15 @@
-SCCSID = @(#)Makefile	1.13 (Berkeley) %G%
+SCCSID = @(#)Makefile	1.14 (Berkeley) %G%
 
 DFLAGS = 
 CFLAGS = -O ${DFLAGS}
-LINTFLAGS = -x -a -n
+LINTFLAGS = -x -a -n ${DFLAGS}
 
 RM=	/bin/rm -f
 INSTALL=cp
 
 GPROFHDRS =	gprof.h
-GPROFSRCS =	gprof.c arcs.c dfn.c lookup.c printgprof.c calls.c
-GPROFOBJS =	gprof.o arcs.o dfn.o lookup.o printgprof.o calls.o
+GPROFSRCS =	gprof.c arcs.c dfn.c lookup.c printgprof.c calls.c printlist.c
+GPROFOBJS =	gprof.o arcs.o dfn.o lookup.o printgprof.o calls.o printlist.o
 
 gprof: ${GPROFOBJS}
 	cc -o gprof ${CFLAGS} ${GPROFOBJS}
@@ -33,7 +33,7 @@ print:
 	@ pr -f flat.blurb callg.blurb
 
 lint:
-	lint ${CFLAGS} ${LINTFLAGS} ${GPROFSRCS}
+	lint ${LINTFLAGS} ${DFLAGS} ${GPROFSRCS}
 
 gprof.o: gprof.c gprof.h gcrt0.h
 arcs.o: arcs.c gprof.h gcrt0.h
@@ -41,3 +41,4 @@ lookup.o: lookup.c gprof.h gcrt0.h
 dfn.o: dfn.c gprof.h gcrt0.h
 printgprof.o: printgprof.c gprof.h gcrt0.h
 calls.o: calls.c gprof.h gcrt0.h
+printlist.o: printlist.c gprof.h gcrt0.h

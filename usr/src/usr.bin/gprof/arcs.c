@@ -1,5 +1,5 @@
 #ifndef lint
-    static	char *sccsid = "@(#)arcs.c	1.6 (Berkeley) %G%";
+    static	char *sccsid = "@(#)arcs.c	1.7 (Berkeley) %G%";
 #endif lint
 
 #include "gprof.h"
@@ -51,6 +51,16 @@ addarc( parentp , childp , count )
     childp -> parents = arcp;
 }
 
+    /*
+     *	the code below topologically sorts the graph (collapsing cycles),
+     *	and propagates time bottom up and flags top down.
+     */
+
+    /*
+     *	the topologically sorted name list pointers
+     */
+nltype	**topsortnlp;
+
 topcmp( npp1 , npp2 )
     nltype	**npp1;
     nltype	**npp2;
@@ -58,12 +68,10 @@ topcmp( npp1 , npp2 )
     return (*npp1) -> toporder - (*npp2) -> toporder;
 }
 
-
 doarcs()
 {
     nltype	*parentp;
     arctype	*arcp;
-    nltype	**topsortnlp;
     long	index;
 
 	/*
@@ -81,14 +89,19 @@ doarcs()
 	} else {
 	    parentp -> selfcalls = 0;
 	}
-	if ( cflag ) {
-	    findcalls( parentp , parentp -> value , (parentp+1) -> value );
-	}
+	parentp -> printflag = FALSE;
 	parentp -> toporder = 0;
 	parentp -> cycleno = 0;
 	parentp -> cyclehead = parentp;
 	parentp -> cnext = 0;
+	if ( cflag ) {
+	    findcalls( parentp , parentp -> value , (parentp+1) -> value );
+	}
     }
+	/*
+	 *	time for functions which print is accumulated here.
+	 */
+    printtime = 0.0;
 	/*
 	 *	topologically order things
 	 *	from each of the roots of the call graph
@@ -126,15 +139,28 @@ doarcs()
 #   endif DEBUG
 	/*
 	 *	starting from the topological bottom, 
-	 *	propogate children times
+	 *	propogate children times up to parents.
 	 */
-    for ( index = 0 ; index < nname ; index += 1 ) {
-	propagate( topsortnlp[ index ] );
-    }
+    dotime();
+	/*
+	 *	starting from the topological top,
+	 *	propagate print flags to children.
+	 */
+    doflags();
     printgprof();
 }
 
-propagate( parentp )
+dotime()
+{
+    int	index;
+
+    cycletime();
+    for ( index = 0 ; index < nname ; index += 1 ) {
+	timepropagate( topsortnlp[ index ] );
+    }
+}
+
+timepropagate( parentp )
     nltype	*parentp;
 {
     arctype	*arcp;
@@ -144,7 +170,7 @@ propagate( parentp )
 	/*
 	 *	gather time from children of this parent.
 	 */
-    for ( arcp = parentp->children ; arcp ; arcp = arcp->arc_childlist ) {
+    for ( arcp = parentp -> children ; arcp ; arcp = arcp -> arc_childlist ) {
 	childp = arcp -> arc_childp;
 #	ifdef DEBUG
 	    if ( debug & ARCDEBUG ) {
@@ -227,14 +253,9 @@ propagate( parentp )
 cyclelink()
 {
     register nltype	*nlp;
-    register nltype	*parentp;
-    register nltype	*childp;
     register nltype	*cyclenlp;
     int			cycle;
-    arctype		*arcp;
-    long		ncall;
-    double		time;
-    long		callsamong;
+    nltype		*memberp;
 
 	/*
 	 *	Count the number of cycles, and initialze the cycle lists
@@ -279,6 +300,26 @@ cyclelink()
 		printf( " is the head of cycle %d\n" , cycle );
 	    }
 #	endif DEBUG
+	for ( memberp = nlp ; memberp ; memberp = memberp -> cnext ) { 
+	    memberp -> cycleno = cycle;
+	    memberp -> cyclehead = cyclenlp;
+	}
+    }
+}
+
+cycletime()
+{
+    int			cycle;
+    nltype		*cyclenlp;
+    nltype		*parentp;
+    nltype		*childp;
+    arctype		*arcp;
+    long		ncall;
+    double		time;
+    long		callsamong;
+
+    for ( cycle = 1 ; cycle <= ncycle ; cycle += 1 ) {
+	cyclenlp = &cyclenl[ cycle ];
 	    /*
 	     *	n-squaredly (in the size of the cycle)
 	     *	find all the call within the cycle 
@@ -289,10 +330,8 @@ cyclelink()
 	     *	self-recursive calls outside cycles (sigh).
 	     */
 	callsamong = 0;
-	for ( parentp = nlp ; parentp ; parentp = parentp -> cnext ) {
-	    parentp -> cycleno = cycle;
-	    parentp -> cyclehead = cyclenlp;
-	    for ( childp = nlp ; childp ; childp = childp -> cnext ) {
+	for ( parentp = cyclenlp->cnext; parentp; parentp = parentp->cnext ) {
+	    for ( childp = cyclenlp->cnext; childp; childp = childp -> cnext ) {
 		if ( parentp == childp ) {
 		    continue;
 		}
@@ -315,7 +354,7 @@ cyclelink()
 	     */
 	ncall = -callsamong;
 	time = 0.0;
-	for ( parentp = nlp ; parentp ; parentp = parentp -> cnext ) {
+	for ( parentp = cyclenlp->cnext; parentp; parentp = parentp->cnext ) {
 	    ncall += parentp -> ncall;
 	    time += parentp -> time;
 	}
@@ -329,5 +368,112 @@ cyclelink()
 	cyclenlp -> selfcalls = callsamong;
 	cyclenlp -> time = time;
 	cyclenlp -> childtime = 0.0;
+    }
+}
+
+    /*
+     *	in one top to bottom pass over the topologically sorted namelist
+     *	set the print flags and sum up the time that will be shown in the
+     *	graph profile.
+     */
+doflags()
+{
+    int		index;
+    nltype	*childp;
+    nltype	*oldhead;
+
+    oldhead = 0;
+    for ( index = nname-1 ; index >= 0 ; index -= 1 ) {
+	childp = topsortnlp[ index ];
+	    /*
+	     *	if we haven't done this function or cycle,
+	     *	calculate its printflag.
+	     *	this way, we are linear in the number of arcs
+	     *	since we do all members of a cycle (and the cycle itself)
+	     *	as we hit the first member of the cycle.
+	     */
+	if ( childp -> cyclehead != oldhead ) {
+	    oldhead = childp -> cyclehead;
+	    parentprint( childp );
+	}
+	if ( ! childp -> printflag ) {
+		/*
+		 *	-f function says print the sucker
+		 *	-e function says don't print it (leave it non-printing)
+		 *	no -f's at all says print everything
+		 */
+	    if ( fflag && onflist( childp -> name ) ) {
+		childp -> printflag = TRUE;
+		printtime += childp -> time + childp -> childtime;
+		continue;
+	    }
+	    if ( eflag && onelist( childp -> name ) ) {
+		continue;
+	    }
+	    if ( !fflag ) {
+		childp -> printflag = TRUE;
+		printtime += childp -> time + childp -> childtime;
+		continue;
+	    }
+	    continue;
+	}
+	    /*
+	     *	this function has printing parents:
+	     *	maybe someone wants to shut it up.
+	     */
+	if ( eflag && onelist( childp -> name ) ) {
+	    childp -> printflag = FALSE;
+	    continue;
+	}
+    }
+}
+
+    /*
+     *	check if any parent of this child
+     *	(or outside parents of this cycle)
+     *	have their print flags on and set the 
+     *	print flag of the child (cycle) appropriately.
+     */
+parentprint( childp )
+    nltype	*childp;
+{
+    nltype	*headp;
+    nltype	*memp;
+    arctype	*arcp;
+
+    headp = childp -> cyclehead;
+    if ( childp == headp ) {
+	    /*
+	     *	just a regular child, check its parents
+	     */
+	for ( arcp = childp->parents ; arcp ; arcp = arcp->arc_parentlist ) {
+	    if ( arcp -> arc_parentp -> printflag ) {
+		childp -> printflag = TRUE;
+		break;
+	    }
+	}
+	return;
+    }
+	/*
+	 *	its a member of a cycle, look at all parents from 
+	 *	outside the cycle
+	 */
+    for ( memp = headp -> cnext ; memp ; memp = memp -> cnext ) {
+	for ( arcp = memp -> parents ; arcp ; arcp = arcp -> arc_parentlist ) {
+	    if ( arcp -> arc_parentp -> cyclehead == headp ) {
+		continue;
+	    }
+	    if ( arcp -> arc_parentp -> printflag ) {
+		goto set;
+	    }
+	}
+    }
+    return;
+	/*
+	 *	the cycle has a printing parent:  set the cycle
+	 */
+set:
+    for ( memp = headp ; memp ; memp = memp -> cnext ) {
+	memp -> printflag = TRUE;
     }
 }

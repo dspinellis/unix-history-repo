@@ -1,5 +1,5 @@
 #ifndef lint
-    static	char *sccsid = "@(#)vax.c	1.1 (Berkeley) %G%";
+    static	char *sccsid = "@(#)vax.c	1.2 (Berkeley) %G%";
 #endif not lint
 
 #include	"gprof.h"
@@ -14,6 +14,7 @@ nltype	indirectchild = {
 	(double) 0.0 ,			/* cumulative ticks in children */
 	(long) 0 ,			/* how many times called */
 	(long) 0 ,			/* how many calls to self */
+	(bool) 0 ,			/* print flag */
 	(int) 0 ,			/* index in the graph list */
 	(int) 0 , 			/* graph call chain top-sort order */
 	(int) 0 ,			/* internal number of cycle on */

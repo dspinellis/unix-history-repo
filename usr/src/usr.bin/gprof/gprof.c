@@ -1,15 +1,18 @@
 #ifndef lint
-    static	char *sccsid = "@(#)gprof.c	1.11 (Berkeley) %G%";
+    static	char *sccsid = "@(#)gprof.c	1.12 (Berkeley) %G%";
 #endif lint
 
 #include "gprof.h"
 
 char	*whoami = "gprof";
 
+char	*defaultes[] = { "mcount" , "__mcleanup" , 0 };
+
 main(argc, argv)
-	int argc;
-	char **argv;
+    int argc;
+    char **argv;
 {
+    char	**sp;
 
     --argc;
     argv++;
@@ -17,7 +20,17 @@ main(argc, argv)
     while ( *argv != 0 && **argv == '-' ) {
 	(*argv)++;
 	switch ( **argv ) {
+	case 'a':
+	    aflag = TRUE;
+	    break;
+	case 'b':
+	    bflag = TRUE;
+	    break;
+	case 'c':
+	    cflag = TRUE;
+	    break;
 	case 'd':
+	    dflag = TRUE;
 	    (*argv)++;
 	    debug |= atoi( *argv );
 	    debug |= ANYDEBUG;
@@ -25,20 +38,19 @@ main(argc, argv)
 		printf( "[main] debug = %d\n" , debug );
 #	    endif DEBUG
 	    break;
-	case 'a':
-	    aflag++;
+	case 'e':
+	    eflag = TRUE;
+	    addelist( *++argv );
 	    break;
-	case 'b':
-	    bflag++;
-	    break;
-	case 'c':
-	    cflag++;
+	case 'f':
+	    fflag = TRUE;
+	    addflist( *++argv );
 	    break;
 	case 's':
-	    sflag++;
+	    sflag = TRUE;
 	    break;
 	case 'z':
-	    zflag++;
+	    zflag = TRUE;
 	    break;
 	}
 	argv++;
@@ -54,6 +66,13 @@ main(argc, argv)
 	argv++;
     } else {
 	gmonname = GMONNAME;
+    }
+	/*
+	 *	turn off default functions
+	 */
+    for ( sp = &defaultes[0] ; *sp ; sp++ ) {
+	eflag = TRUE;
+	addelist( *sp );
     }
 	/*
 	 *	get information about a.out file.
