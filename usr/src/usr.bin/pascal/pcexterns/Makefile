@@ -1,15 +1,17 @@
-SCCSID = @(#)Makefile 1.3 %G%
+SCCSID = @(#)Makefile 1.4 %G%
 INSTALL = ${DESTDIR}/usr/ucb
 INSTALLIB = ${DESTDIR}/usr/lib
 PX_HEADER = px_header
+NM = nm -go
+RM = rm -f
 CFLAGS = -O
 
-all: pix px_header pc pc2 pc3 pmerge
+all: pix px_header pc pc2 pc3 pmerge pcexterns.o
 
 install: all pxref.p
 	dd if=px_header of=${INSTALLIB}/${PX_HEADER} conv=sync
 	cp pc pix ${INSTALL}
-	cp how* pc2 pc3 ${INSTALLIB}
+	cp how* pc2 pc3 pcexterns.o ${INSTALLIB}
 	strip ${INSTALLLIB}/pc2
 	strip ${INSTALLLIB}/pc3
 	cp pmerge ${INSTALL}/pmerge
@@ -41,8 +43,16 @@ pxref: pxref.p
 pc: pc.c
 	${CC} -O -d2 -o pc pc.c
 
+pcexterns.o: /usr/lib/libpc.a /lib/libc.a /usr/lib/libm.a /usr/lib/libg.a
+	${NM} /usr/lib/libpc.a | awk -f pcexterns.awk >pcexterns.s
+	${NM} /lib/libc.a | awk -f pcexterns.awk >>pcexterns.s
+	${NM} /usr/lib/libm.a | awk -f pcexterns.awk >>pcexterns.s
+	${NM} /usr/lib/libg.a | awk -f pcexterns.awk >>pcexterns.s
+	as pcexterns.s -o pcexterns.o
+	${RM} pcexterns.s
+
 clean:
-	rm -f pix px_header pxref pmerge pc pc2 pc3
+	${RM} pix px_header pxref pmerge pc pc2 pc3 pcexterns.s pcexterns.o
 
 print:
 	@pr READ_ME makefile
