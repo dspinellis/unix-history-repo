@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pl_7.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)pl_7.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include "player.h"
@@ -207,7 +207,7 @@ register n;
 				*p++ = c;
 				(void) waddch(scroll_w, c);
 			} else
-				(void) putchar(CTRL(g));
+				(void) putchar(CTRL('g'));
 		}
 	}
 }

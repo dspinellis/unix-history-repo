@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)move.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)move.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*************************************************************************
@@ -403,8 +403,8 @@ char *s;{
 		case '\b':
 			bs();
 			break;
-		case CTRL(g):
-			outch(CTRL(g));
+		case CTRL('g'):
+			outch(CTRL('g'));
 			break;
 		default:
 			if (s[0] < ' ')break;
