@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)err.c	8.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)err.c	8.30 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -27,8 +27,11 @@ static char sccsid[] = "@(#)err.c	8.29 (Berkeley) %G%";
 **	be used lightly.
 **
 **	Parameters:
-**		f -- the format string
-**		a, b, c, d, e -- parameters
+**		fmt -- the format string.  If it does not begin with
+**			a three-digit SMTP reply code, either 554 or
+**			451 is assumed depending on whether errno
+**			is set.
+**		(others) -- parameters
 **
 **	Returns:
 **		none
@@ -81,6 +84,14 @@ syserr(fmt, va_alist)
 	VA_END;
 	puterrmsg(MsgBuf);
 
+	/* save this message for mailq printing */
+	if (!panic)
+	{
+		if (CurEnv->e_message != NULL)
+			free(CurEnv->e_message);
+		CurEnv->e_message = newstr(MsgBuf + 4);
+	}
+
 	/* determine exit status if not already set */
 	if (ExitStat == EX_OK)
 	{
@@ -129,7 +140,9 @@ syserr(fmt, va_alist)
 **	This is much like syserr except it is for user errors.
 **
 **	Parameters:
-**		fmt, a, b, c, d -- printf strings
+**		fmt -- the format string.  If it does not begin with
+**			a three-digit SMTP reply code, 501 is assumed.
+**		(others) -- printf strings
 **
 **	Returns:
 **		none
@@ -159,6 +172,14 @@ usrerr(fmt, va_alist)
 	VA_END;
 	puterrmsg(MsgBuf);
 
+	/* save this message for mailq printing */
+	if (MsgBuf[0] == '5' || (CurEnv->e_message == NULL && MsgBuf[0] == '4'))
+	{
+		if (CurEnv->e_message != NULL)
+			free(CurEnv->e_message);
+		CurEnv->e_message = newstr(MsgBuf + 4);
+	}
+
 # ifdef LOG
 	if (LogLevel > 3 && LogUsrErrs)
 		syslog(LOG_NOTICE, "%s: %s",
@@ -175,7 +196,7 @@ usrerr(fmt, va_alist)
 **	Parameters:
 **		msg -- the message (printf fmt) -- it can begin with
 **			an SMTP reply code.  If not, 050 is assumed.
-**		a, b, c, d, e -- printf arguments
+**		(others) -- printf arguments
 **
 **	Returns:
 **		none
@@ -201,6 +222,14 @@ message(msg, va_alist)
 	fmtmsg(MsgBuf, CurEnv->e_to, "050", 0, msg, ap);
 	VA_END;
 	putoutmsg(MsgBuf, FALSE);
+
+	/* save this message for mailq printing */
+	if (MsgBuf[0] == '5' || (CurEnv->e_message == NULL && MsgBuf[0] == '4'))
+	{
+		if (CurEnv->e_message != NULL)
+			free(CurEnv->e_message);
+		CurEnv->e_message = newstr(MsgBuf + 4);
+	}
 }
 /*
 **  NMESSAGE -- print message (not necessarily an error)
@@ -208,10 +237,10 @@ message(msg, va_alist)
 **	Just like "message" except it never puts the to... tag on.
 **
 **	Parameters:
-**		num -- the default ARPANET error number (in ascii)
 **		msg -- the message (printf fmt) -- if it begins
-**			with three digits, this number overrides num.
-**		a, b, c, d, e -- printf arguments
+**			with a three digit SMTP reply code, that is used,
+**			otherwise 050 is assumed.
+**		(others) -- printf arguments
 **
 **	Returns:
 **		none
@@ -416,13 +445,6 @@ fmtmsg(eb, to, num, eno, fmt, ap)
 	{
 		(void) sprintf(eb, ": %s", errstring(eno));
 		eb += strlen(eb);
-	}
-
-	if (num[0] == '5' || (CurEnv->e_message == NULL && num[0] == '4'))
-	{
-		if (CurEnv->e_message != NULL)
-			free(CurEnv->e_message);
-		CurEnv->e_message = newstr(meb);
 	}
 }
 /*
