@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)dumpfs.c	2.2 (Berkeley) %G%";
+static	char *sccsid = "@(#)dumpfs.c	2.3 (Berkeley) %G%";
 
 #ifndef SIMFS
 #include <sys/param.h>
@@ -48,8 +48,10 @@ main(argc, argv)
 	    afs.fs_bsize, afs.fs_bshift, afs.fs_bmask);
 	printf("fsize\t%d\tshift\t%d\tmask\t0x%08x\n",
 	    afs.fs_fsize, afs.fs_fshift, afs.fs_fmask);
-	printf("frag\t%d\tminfree\t%d%%\n", afs.fs_frag, afs.fs_minfree);
-	printf("rotdelay %dms\trps\t%d\n", afs.fs_rotdelay, afs.fs_rps);
+	printf("frag\t%d\tminfree\t%d%%\tmaxbpg\t%d\n",
+	    afs.fs_frag, afs.fs_minfree, afs.fs_maxbpg);
+	printf("maxcontig %d\trotdelay %dms\trps\t%d\n",
+	    afs.fs_maxcontig, afs.fs_rotdelay, afs.fs_rps);
 	printf("csaddr\t%d\tcssize\t%d\n", afs.fs_csaddr, afs.fs_cssize);
 	printf("ntrak\t%d\tnsect\t%d\tspc\t%d\tncyl\t%d\n",
 	    afs.fs_ntrak, afs.fs_nsect, afs.fs_spc, afs.fs_ncyl);
