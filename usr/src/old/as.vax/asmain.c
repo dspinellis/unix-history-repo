@@ -1,8 +1,17 @@
 /*
- *	Copyright (c) 1982 Regents of the University of California
+ * Copyright (c) 1982 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
  */
+
 #ifndef lint
-static char sccsid[] = "@(#)asmain.c 4.15 %G%";
+char copyright[] =
+"@(#) Copyright (c) 1982 Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif not lint
+
+#ifndef lint
+static char sccsid[] = "@(#)asmain.c	5.1 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -16,7 +25,7 @@ static char sccsid[] = "@(#)asmain.c 4.15 %G%";
 
 #include <sys/stat.h>
 
-#define	unix_lang_name "VAX/UNIX Assembler V%G% 4.15"
+#define	unix_lang_name "VAX/UNIX Assembler V%G% 5.1"
 /*
  *	variables to manage reading the assembly source files
  */
