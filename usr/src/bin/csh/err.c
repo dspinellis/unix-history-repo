@@ -6,14 +6,19 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)err.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)err.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #define _h_tc_err		/* Don't redefine the errors	 */
-#include "sh.h"
+#include "csh.h"
+#include "extern.h"
+#if __STDC__
+#include <stdarg.h>
+#else
 #include <varargs.h>
+#endif
 
-char   *seterr = (char *) 0;	/* Holds last error if there was one */
+char   *seterr = NULL;	/* Holds last error if there was one */
 
 #define ERR_FLAGS	0xf0000000
 #define ERR_NAME	0x10000000
@@ -252,19 +257,25 @@ static char *errorlist[] =
  * e.g. in process.
  */
 void
-/*VARARGS1*/
+#if __STDC__
+seterror(int id, ...)
+#else
 seterror(id, va_alist)
-    int     id;
-
-va_dcl
+     int id;
+     va_dcl
+#endif
 {
     if (seterr == 0) {
-	va_list va;
 	char    berr[BUFSIZ];
+	va_list va;
 
+#if __STDC__
+	va_start(va, id);
+#else
+	va_start(va);
+#endif
 	if (id < 0 || id > sizeof(errorlist) / sizeof(errorlist[0]))
 	    id = ERR_INVALID;
-	va_start(va);
 	xvsprintf(berr, errorlist[id], va);
 	va_end(va);
 
@@ -291,11 +302,13 @@ va_dcl
  * place error unwinds are ever caught.
  */
 void
-/*VARARGS*/
+#if __STDC__
+stderror(int id, ...)
+#else
 stderror(id, va_alist)
     int     id;
-
-va_dcl
+    va_dcl
+#endif
 {
     va_list va;
     register Char **v;
@@ -327,7 +340,11 @@ va_dcl
 	    /* Old error. */
 	    xprintf("%s.\n", seterr);
 	else {
+#if __STDC__
+	    va_start(va, id);
+#else
 	    va_start(va);
+#endif
 	    xvprintf(errorlist[id], va);
 	    va_end(va);
 	    xprintf(".\n");

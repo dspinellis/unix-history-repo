@@ -6,11 +6,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lex.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)lex.c	5.13 (Berkeley) %G%";
 
 #endif				/* not lint */
 
-#include "sh.h"
+#include "csh.h"
+#include "extern.h"
 
 /*
  * These lexical routines read input and form lists of words.
@@ -101,7 +102,7 @@ lex(hp)
     register struct wordent *wdp;
     int     c;
 
-    lineloc = btell();
+    lineloc = fseekp;
     hp->next = hp->prev = hp;
     hp->word = STRNULL;
     alvecp = 0, hadhist = 0;
@@ -1192,7 +1193,7 @@ setexclp(cp)
 
 void
 unreadc(c)
-    Char    c;
+    int    c;
 {
     peekread = c;
 }
@@ -1467,15 +1468,6 @@ bseek(l)
 #endif
     }
 }
-
-/* any similarity to bell telephone is purely accidental */
-#ifndef btell
-off_t
-btell()
-{
-    return (fseekp);
-}
-#endif
 
 void
 btoeof()

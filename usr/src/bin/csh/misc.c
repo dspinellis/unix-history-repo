@@ -6,10 +6,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)misc.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)misc.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
-#include "sh.h"
+#include "csh.h"
+#include "extern.h"
 
 static int renum();
 
@@ -44,7 +45,7 @@ strsave(s)
     char   *n;
     register char *p;
 
-    if (s == 0)
+    if (s == NULL)
 	s = "";
     for (p = s; *p++;);
     n = p = (char *) xmalloc((size_t) ((p - s) * sizeof(char)));

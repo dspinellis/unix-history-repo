@@ -6,10 +6,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dol.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)dol.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
-#include "sh.h"
+#include "csh.h"
+#include "extern.h"
 
 /*
  * These routines perform variable substitution and quoting via ' and ".

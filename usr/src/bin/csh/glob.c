@@ -6,10 +6,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)glob.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)glob.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
-#include "sh.h"
+#include "csh.h"
+#include "extern.h"
 #include <glob.h>
 
 static int noglob, nonomatch;
@@ -602,7 +603,7 @@ backeval(cp, literal)
 	(void) signal(SIGTSTP, SIG_IGN);
 	(void) signal(SIGTTIN, SIG_IGN);
 	(void) signal(SIGTTOU, SIG_IGN);
-	execute(t, -1);
+	execute(t, -1, NULL, NULL);
 	exitstat();
     }
     xfree((ptr_t) cp);

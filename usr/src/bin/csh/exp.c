@@ -6,10 +6,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)exp.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)exp.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
-#include "sh.h"
+#include "csh.h"
+#include "dir.h"
+#include "extern.h"
 
 #define IGNORE	1	/* in ignore, it means to ignore value, just parse */
 #define NOGLOB	2	/* in ignore, it means not to globone */
@@ -584,7 +586,7 @@ evalav(v)
     t = syntax(paraml1.next, &paraml1, 0);
     if (seterr)
 	stderror(ERR_OLD);
-    execute(t, -1);
+    execute(t, -1, NULL, NULL);
     freelex(&paraml1), freesyn(t);
 }
 

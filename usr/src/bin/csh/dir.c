@@ -6,14 +6,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dir.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)dir.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
-#include "sh.h"
-#include "sh.dir.h"
-/*
- * C Shell - directory management
- */
+#include "csh.h"
+#include "dir.h"
+#include "extern.h"
+
+/* Directory management. */
 
 static struct directory *dfind();
 static Char *dfollow();

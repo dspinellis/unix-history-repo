@@ -6,14 +6,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)const.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)const.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
  * tc.const.c: String constants for csh.
  */
 
-#include "sh.h"
+#include "csh.h"
 
 Char STR0[]             = { '0', '\0' };
 Char STR1[]             = { '1', '\0' };

@@ -6,10 +6,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)char.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)char.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
-#include "sh.char.h"
+#include "char.h"
 
 unsigned short _cmap[256] = {
 /*	nul		soh		stx		etx	*/
