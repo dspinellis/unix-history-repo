@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uio.h	8.4 (Berkeley) %G%
+ *	@(#)uio.h	8.5 (Berkeley) %G%
  */
 
 #ifndef _SYS_UIO_H_
@@ -19,18 +19,16 @@ struct iovec {
 	size_t	 iov_len;	/* Length. */
 };
 
-#ifdef KERNEL
 enum	uio_rw { UIO_READ, UIO_WRITE };
 
-/*
- * Segment flag values.
- */
+/* Segment flag values. */
 enum uio_seg {
 	UIO_USERSPACE,		/* from user data space */
 	UIO_SYSSPACE,		/* from system space */
 	UIO_USERISPACE		/* from user I space */
 };
 
+#ifdef KERNEL
 struct uio {
 	struct	iovec *uio_iov;
 	int	uio_iovcnt;
