@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)forop.c 1.13 %G%";
+static char sccsid[] = "@(#)forop.c 1.14 %G%";
 
 #include	"whoami.h"
 #include	"0.h"
@@ -13,10 +13,44 @@ static char sccsid[] = "@(#)forop.c 1.13 %G%";
 #endif PC
 
     /*
-     *	forop for pc:
-     *	    this evaluates the initial and termination expressions,
-     *	    checks them to see if the loop executes at all, and then
-     *	    does the assignment and the loop.
+     *	for-statements.
+     *
+     *	the relevant quote from the standard:  6.8.3.9:
+     *	``The control-variable shall be an entire-variable whose identifier
+     *	is declared in the variable-declaration-part of the block closest-
+     *	containing the for-statement.  The control-variable shall possess
+     *	an ordinal-type, and the initial-value and the final-value shall be
+     *	of a type compatible with this type.  The statement of a for-statement
+     *	shall not contain an assigning-reference to the control-variable
+     *	of the for-statement.  The value of the final-value shall be 
+     *	assignment-compatible with the control-variable when the initial-value
+     *	is assigned to the control-variable.  After a for-statement is
+     *	executed (other than being left by a goto-statement leading out of it)
+     *	the control-variable shall be undefined.  Apart from the restrictions
+     *	imposed by these requirements, the for-statement
+     *		for v := e1 to e2 do body
+     *	shall be equivalent to
+     *		begin
+     *		    temp1 := e1;
+     *		    temp2 := e2;
+     *		    if temp1 <= temp2 then begin
+     *			v := temp1;
+     *			body;
+     *			while v <> temp2 do begin
+     *			    v := succ(v);
+     *			    body;
+     *			end
+     *		    end
+     *		end
+     *	where temp1 and temp2 denote auxiliary variables that the program
+     *	does not otherwise contain, and that possess the type possessed by
+     *	the variable v if that type is not a subrange-type;  otherwise the
+     *	host type possessed by the variable v.''
+     *
+     *	The Berkeley Pascal systems try to do all that without duplicating
+     *	the body, and shadowing the control-variable in (possibly) a
+     *	register variable.
+     *
      *	arg here looks like:
      *	arg[0]	T_FORU or T_FORD
      *	   [1]	lineof "for"
@@ -37,21 +71,21 @@ forop( arg )
 	struct nl	*forvar;
 	struct nl	*fortype;
 #ifdef PC
-	int		forctype;	/* p2type(fortype) */
+	int		forp2type;
 #endif PC
 	int		forwidth;
 	int		*init;
 	struct nl	*inittype;
 	struct nl	*initnlp;	/* initial value namelist entry */
-	char		forflags;
 	int		*term;
 	struct nl	*termtype;
 	struct nl	*termnlp;	/* termination value namelist entry */
+	struct nl	*shadownlp;	/* namelist entry for the shadow */
 	int		*stat;
 	int		goc;		/* saved gocnt */
 	int		again;		/* label at the top of the loop */
 	int		after;		/* label after the end of the loop */
-	struct nl	shadow_nl;	/* saved namelist entry for loop var */
+	struct nl	saved_nl;	/* saved namelist entry for loop var */
 
 	goc = gocnt;
 	forvar = NIL;
@@ -84,7 +118,7 @@ nogood:
 	if ( forvar == NIL ) {
 	    goto nogood;
 	}
-	shadow_nl = *forvar;
+	saved_nl = *forvar;
 	if ( lhs[3] != NIL ) {
 	    error("For variable %s must be unqualified", forvar->symbol);
 	    goto nogood;
@@ -96,10 +130,10 @@ nogood:
 	if ( opt('s') &&
 	    ( ( bn != cbn ) ||
 #ifdef OBJ
-		( whereis( bn , forvar->value[NL_OFFS] , 0 ) == PARAMVAR )
+		(whereis(bn, forvar->value[NL_OFFS], 0) == PARAMVAR)
 #endif OBJ
 #ifdef PC
-		( whereis( bn , forvar->value[NL_OFFS] , forvar -> extra_flags )
+		(whereis(bn, forvar->value[NL_OFFS], forvar->extra_flags)
 		    == PARAMVAR )
 #endif PC
 	    ) ) {
@@ -124,24 +158,23 @@ nogood:
 	    forvar = NIL;
 	    goto nogood;
 	}
-	    /*
-	     * allocate space for the initial and termination expressions
-	     * the initial is tentatively placed in a register as it will
-	     * shadow the for loop variable in the body of the loop.
-	     */
 	forwidth = lwidth(fortype);
-	initnlp = tmpalloc(forwidth, fortype, REGOK);
-	termnlp = tmpalloc(forwidth, fortype, NOREG);
 #	ifdef PC
-	    forctype = p2type(fortype);
+	    forp2type = p2type(fortype);
+#	endif PC
+	    /*
+	     *	allocate temporaries for the initial and final expressions
+	     *	and maybe a register to shadow the for variable.
+	     */
+	initnlp = tmpalloc(sizeof(long), nl+T4INT, NOREG);
+	termnlp = tmpalloc(sizeof(long), nl+T4INT, NOREG);
+	shadownlp = tmpalloc(forwidth, fortype, REGOK);
+#	ifdef PC
 		/*
 		 * compute and save the initial expression
 		 */
 	    putRV( 0 , cbn , initnlp -> value[ NL_OFFS ] ,
-		    initnlp -> extra_flags , forctype );
-	    if ( opt( 't' ) ) {
-		precheck( fortype , "_RANG4" , "_RSNG4" );
-	    }
+		    initnlp -> extra_flags , P2INT );
 #	endif PC
 #	ifdef OBJ
 	    put(2, O_LV | cbn<<8+INDX, initnlp -> value[ NL_OFFS ] );
@@ -157,24 +190,17 @@ nogood:
 	    goto byebye;
 	}
 #	ifdef PC
-	    if ( opt( 't' ) ) {
-		postcheck(fortype, inittype);
-	    }
-	    sconv(p2type(inittype), forctype);
-	    putop( P2ASSIGN , forctype );
+	    sconv(p2type(inittype), P2INT);
+	    putop( P2ASSIGN , P2INT );
 	    putdot( filename , line );
 		/*
 		 * compute and save the termination expression
 		 */
 	    putRV( 0 , cbn , termnlp -> value[ NL_OFFS ] ,
-		    termnlp -> extra_flags , forctype );
-	    if ( opt( 't' ) ) {
-		precheck( fortype , "_RANG4" , "_RSNG4" );
-	    }
+		    termnlp -> extra_flags , P2INT );
 #	endif PC
 #	ifdef OBJ
-	    rangechk(fortype, inittype);
-	    gen(O_AS2, O_AS2, forwidth, lwidth(inittype));
+	    gen(O_AS2, O_AS2, sizeof(long), width(inittype));
 		/*
 		 * compute and save the termination expression
 		 */
@@ -190,77 +216,123 @@ nogood:
 	    goto byebye;
 	}
 #	ifdef PC
-	    if ( opt( 't' ) ) {
-		postcheck(fortype, termtype);
-	    }
-	    sconv(p2type(termtype), forctype);
-	    putop( P2ASSIGN , forctype );
+	    sconv(p2type(termtype), P2INT);
+	    putop( P2ASSIGN , P2INT );
 	    putdot( filename , line );
 		/*
 		 * we can skip the loop altogether if !( init <= term )
 		 */
 	    after = getlab();
 	    putRV( 0 , cbn , initnlp -> value[ NL_OFFS ] ,
-		    initnlp -> extra_flags , forctype );
+		    initnlp -> extra_flags , P2INT );
 	    putRV( 0 , cbn , termnlp -> value[ NL_OFFS ] ,
-		    termnlp -> extra_flags , forctype );
-	    putop( ( arg[0] == T_FORU ? P2LE : P2GE ) , forctype );
+		    termnlp -> extra_flags , P2INT );
+	    putop( ( arg[0] == T_FORU ? P2LE : P2GE ) , P2INT );
 	    putleaf( P2ICON , after , 0 , P2INT , 0 );
 	    putop( P2CBRANCH , P2INT );
 	    putdot( filename , line );
 		/*
+		 * okay, so we have to execute the loop body,
+		 * but first, if checking is on,
+		 * check that the termination expression
+		 * is assignment compatible with the control-variable.
+		 */
+	    if (opt('t')) {
+		precheck(fortype, "_RANG4", "_RSNG4");
+		putRV(0, cbn, termnlp -> value[NL_OFFS],
+		    termnlp -> extra_flags, P2INT);
+		postcheck(fortype, nl+T4INT);
+		putdot(filename, line);
+	    }
+		/*
+		 * assign the initial expression to the shadow
+		 * checking the assignment if necessary.
+		 */
+	    putRV(0, cbn, shadownlp -> value[NL_OFFS],
+		shadownlp -> extra_flags, forp2type);
+	    if (opt('t')) {
+		precheck(fortype, "_RANG4", "_RSNG4");
+		putRV(0, cbn, initnlp -> value[NL_OFFS],
+		    initnlp -> extra_flags, P2INT);
+		postcheck(fortype, nl+T4INT);
+	    } else {
+		putRV(0, cbn, initnlp -> value[NL_OFFS],
+		    initnlp -> extra_flags, P2INT);
+	    }
+	    sconv(P2INT, forp2type);
+	    putop(P2ASSIGN, forp2type);
+	    putdot(filename, line);
+		/*
 		 * put down the label at the top of the loop
 		 */
 	    again = getlab();
 	    putlab( again );
 		/*
-		 * okay, then we have to execute the body, but first,
-		 * assign the initial expression to the for variable.
-		 * see the note in asgnop1 about why this is an rvalue.
+		 * each time through the loop
+		 * assign the shadow to the for variable.
 		 */
-	    lvalue( lhs , NOUSE , RREQ );
-	    putRV( 0 , cbn , initnlp -> value[ NL_OFFS ] ,
-		    initnlp -> extra_flags , forctype );
-	    putop( P2ASSIGN , p2type( fortype ) );
-	    putdot( filename , line );
+	    lvalue(lhs, NOUSE, RREQ);
+	    putRV(0, cbn, shadownlp -> value[NL_OFFS],
+		    shadownlp -> extra_flags, forp2type);
+	    putop(P2ASSIGN, forp2type);
+	    putdot(filename, line);
 #	endif PC
 #	ifdef OBJ
-	    rangechk(fortype, termtype);
-	    gen(O_AS2, O_AS2, forwidth, lwidth(termtype));
+	    gen(O_AS2, O_AS2, sizeof(long), width(termtype));
 		/*
 		 * we can skip the loop altogether if !( init <= term )
 		 */
-	    stackRV(initnlp);
-	    stackRV(termnlp);
-	    gen(NIL, arg[0] == T_FORU ? T_LE : T_GE, lwidth(nl+T4INT),
-			lwidth(nl+T4INT));
+	    put(2, O_RV4 | cbn<<8+INDX, initnlp -> value[ NL_OFFS ] );
+	    put(2, O_RV4 | cbn<<8+INDX, termnlp -> value[ NL_OFFS ] );
+	    gen(NIL, arg[0] == T_FORU ? T_LE : T_GE, sizeof(long),
+			sizeof(long));
 	    after = getlab();
 	    put(2, O_IF, after);
+		/*
+		 * okay, so we have to execute the loop body,
+		 * but first, if checking is on,
+		 * check that the termination expression
+		 * is assignment compatible with the control-variable.
+		 */
+	    if (opt('t')) {
+		put(2, O_LV | cbn<<8+INDX, shadownlp -> value[ NL_OFFS ] );
+		put(2, O_RV4 | cbn<<8+INDX, termnlp -> value[ NL_OFFS ] );
+		rangechk(fortype, nl+T4INT);
+		gen(O_AS2, O_AS2, forwidth, sizeof(long));
+	    }
+		/*
+		 * assign the initial expression to the shadow
+		 * checking the assignment if necessary.
+		 */
+	    put(2, O_LV | cbn<<8+INDX, shadownlp -> value[ NL_OFFS ] );
+	    put(2, O_RV4 | cbn<<8+INDX, initnlp -> value[ NL_OFFS ] );
+	    rangechk(fortype, nl+T4INT);
+	    gen(O_AS2, O_AS2, forwidth, sizeof(long));
 		/*
 		 * put down the label at the top of the loop
 		 */
 	    again = getlab();
 	    putlab( again );
 		/*
-		 * okay, then we have to execute the body, but first,
-		 * assign the initial expression to the for variable.
+		 * each time through the loop
+		 * assign the shadow to the for variable.
 		 */
-	    lvalue( lhs , NOUSE , LREQ );
-	    stackRV(initnlp);
-	    gen(O_AS2, O_AS2, forwidth, lwidth(nl+T4INT));
+	    lvalue(lhs, NOUSE, RREQ);
+	    stackRV(shadownlp);
+	    gen(O_AS2, O_AS2, forwidth, sizeof(long));
 #	endif OBJ
 	    /*
 	     *	shadowing the real for variable
-	     *	with the initail expression temporary:
-	     *	save the real for variable's offset, flags
-	     *	(including nl_block).
-	     *	replace them with the initial expression's offset,
-	     *	and mark it as being a for variable.
+	     *	with the shadow temporary:
+	     *	save the real for variable flags (including nl_block).
+	     *	replace them with the shadow's offset,
+	     *	and mark the for variable as being a for variable.
 	     */
-	shadow_nl.nl_flags = forvar -> nl_flags;
-	*forvar = *initnlp;
-	forvar -> symbol = shadow_nl.symbol;
-	forvar -> nl_next = shadow_nl.nl_next;
+	shadownlp -> nl_flags = forvar -> nl_flags;
+	*forvar = *shadownlp;
+	forvar -> symbol = saved_nl.symbol;
+	forvar -> nl_next = saved_nl.nl_next;
+	forvar -> type = saved_nl.type;
 	forvar -> value[ NL_FORV ] = FORVAR;
 	    /*
 	     * and don't forget ...
@@ -288,10 +360,11 @@ nogood:
 		}
 	    }
 	    /*rvalue( lhs , NIL , RREQ );*/
-	    putRV( 0 , cbn , initnlp -> value[ NL_OFFS ] ,
-		    initnlp -> extra_flags , forctype );
+	    putRV( 0 , cbn , shadownlp -> value[ NL_OFFS ] ,
+		    shadownlp -> extra_flags , forp2type );
+	    sconv(forp2type, P2INT);
 	    putRV( 0 , cbn , termnlp -> value[ NL_OFFS ] ,
-		    termnlp -> extra_flags , forctype );
+		    termnlp -> extra_flags , P2INT );
 	    putop( ( arg[ 0 ] == T_FORU ? P2LT : P2GT ) , P2INT );
 	    putleaf( P2ICON , after , 0 , P2INT , 0 );
 	    putop( P2CBRANCH , P2INT );
@@ -299,25 +372,20 @@ nogood:
 		/*
 		 * okay, so we have to do it again,
 		 * but first, increment the for variable.
-		 * there it is again, an rvalue on the lhs of an assignment.
+		 * no need to rangecheck it, since we checked the
+		 * termination value before we started.
 		 */
 	    /*lvalue( lhs , MOD , RREQ );*/
-	    putRV( 0 , cbn , initnlp -> value[ NL_OFFS ] ,
-		    initnlp -> extra_flags , forctype );
-	    if ( opt( 't' ) ) {
-		precheck( fortype , "_RANG4" , "_RSNG4" );
-	    }
+	    putRV( 0 , cbn , shadownlp -> value[ NL_OFFS ] ,
+		    shadownlp -> extra_flags , forp2type );
 	    /*rvalue( lhs , NIL , RREQ );*/
-	    putRV( 0 , cbn , initnlp -> value[ NL_OFFS ] ,
-		    initnlp -> extra_flags , forctype );
-	    sconv(forctype, P2INT);
+	    putRV( 0 , cbn , shadownlp -> value[ NL_OFFS ] ,
+		    shadownlp -> extra_flags , forp2type );
+	    sconv(forp2type, P2INT);
 	    putleaf( P2ICON , 1 , 0 , P2INT , 0 );
 	    putop( ( arg[0] == T_FORU ? P2PLUS : P2MINUS ) , P2INT );
-	    if ( opt( 't' ) ) {
-		postcheck(fortype, nl+T4INT);
-	    }
-	    sconv(P2INT, forctype);
-	    putop( P2ASSIGN , forctype );
+	    sconv(P2INT, forp2type);
+	    putop( P2ASSIGN , forp2type );
 	    putdot( filename , line );
 		/*
 		 * and do it all again
@@ -333,31 +401,24 @@ nogood:
 		 * okay, so we have to do it again.
 		 * Luckily we have a magic opcode which increments the
 		 * index variable, checks the limit falling through if
-		 * it has been reached, else range checking the result
-		 * updating the index variable, and returning to the top
-		 * of the loop.
+		 * it has been reached, else updating the index variable,
+		 * and returning to the top of the loop.
 		 */
 	    putline();
-	    stackRV(termnlp);
-	    put(2, O_LV | cbn<<8+INDX, initnlp -> value[ NL_OFFS ] );
-	    if (forwidth <= 2)
-		    put(4,
-			(arg[0] == T_FORU ? O_FOR1U : O_FOR1D) + (forwidth>>1),
-			(int)fortype->range[0], (int)fortype->range[1], again);
-	    else
-		    put(4, (arg[0] == T_FORU ? O_FOR4U : O_FOR4D),
-			    fortype->range[0], fortype->range[1], again);
+	    put(2, O_RV4 | cbn<<8+INDX, termnlp -> value[ NL_OFFS ] );
+	    put(2, O_LV | cbn<<8+INDX, shadownlp -> value[ NL_OFFS ] );
+	    put(2, (arg[0] == T_FORU ? O_FOR1U : O_FOR1D) + (forwidth >> 1),
+		    again);
 		/*
 		 * and here we are
 		 */
 	    patch( after );
 #	endif OBJ
-	/* and fall through */
 byebye:
 	noreach = 0;
 	if (forvar != NIL) {
-	    shadow_nl.nl_flags |= forvar -> nl_flags & (NUSED|NMOD);
-	    *forvar = shadow_nl;
+	    saved_nl.nl_flags |= forvar -> nl_flags & (NUSED|NMOD);
+	    *forvar = saved_nl;
 	}
 	if ( goc != gocnt ) {
 	    putcnt();
