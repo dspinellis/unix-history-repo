@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parse.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)parse.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -1485,11 +1485,8 @@ ParseDoInclude (file)
     }
 
     if ((*file != '"') && (*file != '<')) {
-	/*
-	 * XXX: Should give some sort of error message, I suppose, but because
-	 * # is used for both comments and directives, we can't be sure if
-	 * the thing might not just be a comment, so we just return...
-	 */
+	Parse_Error (PARSE_FATAL,
+	    ".include filename must be delimited by '\"' or '<'");
 	return;
     }
 
