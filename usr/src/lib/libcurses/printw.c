@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)printw.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)printw.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -42,6 +42,7 @@ va_dcl {
 	WINDOW	*win;
 	int	ret;
 
+	va_start(ap);
 	win = va_arg(ap, WINDOW *);
 	ret = _sprintw(win, ap);
 	va_end(ap);
