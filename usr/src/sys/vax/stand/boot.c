@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)boot.c	7.1 (Berkeley) %G%
+ *	@(#)boot.c	7.2 (Berkeley) %G%
  */
 
 #include "../h/param.h"
@@ -20,64 +20,31 @@
  * boot comes from.
  */
 
-/* Types in r10 specifying major device */
-char	devname[][2] = {
-	'h','p',	/* 0 = hp */
-	0,0,		/* 1 = ht */
-	'u','p',	/* 2 = up */
-	'h','k',	/* 3 = hk */
-	0,0,		/* 4 = sw */
-	0,0,		/* 5 = tm */
-	0,0,		/* 6 = ts */
-	0,0,		/* 7 = mt */
-	0,0,		/* 8 = tu */
-	'r','a',	/* 9 = ra */
-	'u','t',	/* 10 = ut */
-	'r','b',	/* 11 = rb */
-	0,0,		/* 12 = uu */
-	0,0,		/* 13 = rx */
-	'r','l',	/* 14 = rl */
-};
-#define	MAXTYPE	(sizeof(devname) / sizeof(devname[0]))
-
-#define	UNIX	"vmunix"
+#define	UNIX	"/vmunix"
 char line[100];
 
 int	retry = 0;
+unsigned bootdev;
+extern	unsigned opendev;
 
 main()
 {
 	register unsigned howto, devtype;	/* howto=r11, devtype=r10 */
-	int io, i;
-	register type, part, unit;
-	register char *cp;
-	long atol();
+	int io, type;
 
 #ifdef lint
 	howto = 0; devtype = 0;
 #endif
+	bootdev = devtype;
 	printf("\nBoot\n");
 #ifdef JUSTASK
 	howto = RB_ASKNAME|RB_SINGLE;
 #else
-	type = (devtype >> B_TYPESHIFT) & B_TYPEMASK;
-	unit = (devtype >> B_UNITSHIFT) & B_UNITMASK;
-	unit += 8 * ((devtype >> B_ADAPTORSHIFT) & B_ADAPTORMASK);
-	part = (devtype >> B_PARTITIONSHIFT) & B_PARTITIONMASK;
 	if ((howto & RB_ASKNAME) == 0) {
-		if (type >= 0 && type <= MAXTYPE && devname[type][0]) {
-			cp = line;
-			*cp++ = devname[type][0];
-			*cp++ = devname[type][1];
-			*cp++ = '(';
-			if (unit >= 10)
-				*cp++ = unit / 10 + '0';
-			*cp++ = unit % 10 + '0';
-			*cp++ = ',';
-			*cp++ = part + '0';
-			*cp++ = ')';
-			strcpy(cp, UNIX);
-		} else
+		type = (devtype >> B_TYPESHIFT) & B_TYPEMASK;
+		if ((unsigned)type < ndevs && devsw[type].dv_name[0])
+			strcpy(line, UNIX);
+		else
 			howto = RB_SINGLE|RB_ASKNAME;
 	}
 #endif
@@ -85,35 +52,16 @@ main()
 		if (howto & RB_ASKNAME) {
 			printf(": ");
 			gets(line);
+			if (line[0] == 0) {
+				strcpy(line, UNIX);
+				printf(": %s\n", line);
+			}
 		} else
 			printf(": %s\n", line);
 		io = open(line, 0);
 		if (io >= 0) {
-			if (howto & RB_ASKNAME) {
-				/*
-				 * Build up devtype register to pass on to
-				 * booted program.
-				 */ 
-				cp = line;
-				for (i = 0; i <= MAXTYPE; i++)
-					if ((devname[i][0] == cp[0]) && 
-					    (devname[i][1] == cp[1]))
-					    	break;
-				if (i <= MAXTYPE) {
-					devtype = i << B_TYPESHIFT;
-					cp += 3;
-					i = *cp++ - '0';
-					if (*cp >= '0' && *cp <= '9')
-						i = i * 10 + *cp++ - '0';
-					cp++;
-					devtype |= ((i % 8) << B_UNITSHIFT);
-					devtype |= ((i / 8) << B_ADAPTORSHIFT);
-					devtype |= atol(cp) << B_PARTITIONSHIFT;
-				}
-			}
-			devtype |= B_DEVMAGIC;
 			loadpcs();
-			copyunix(howto, devtype, io);
+			copyunix(howto, opendev, io);
 			close(io);
 			howto = RB_SINGLE|RB_ASKNAME;
 		}

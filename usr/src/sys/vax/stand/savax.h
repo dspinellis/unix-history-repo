@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)savax.h	7.1 (Berkeley) %G%
+ *	@(#)savax.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -24,8 +24,8 @@
 
 int	cpu;		/* see <sys/cpu.h> */
 
-#define	MAXNMBA	4
-#define	MAXNUBA	4
+#define	MAXNMBA	8
+#define	MAXNUBA	8
 struct	mba_regs **mbaddr;
 int	mbaact;
 caddr_t	*umaddr;
@@ -39,12 +39,8 @@ struct	uba_regs **ubaddr;
 
 #define	UNITTOUBA(unit)		((unit)>>3)
 #define	ubauba(unit)		(ubaddr[UNITTOUBA(unit)])
-#define	ubamem(unit, off)	((umaddr[UNITTOUBA(unit)]+ubdevreg(off)))
-
-#define	PHYSUBA0	0x20006000
-#define	PHYSMBA0	0x20010000
-#define	PHYSMBA1	0x20012000
-#define	PHYSUMEM	0x2013e000
+#define	ubamem(unit, off)	(umaddr[UNITTOUBA(unit)] + \
+					(0760000 | ubdevreg(off)))
 
 /*
  * RM03/5 (4-byte header plus CRC) format information:

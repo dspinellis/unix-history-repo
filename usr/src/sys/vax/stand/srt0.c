@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)srt0.c	7.1 (Berkeley) %G%
+ *	@(#)srt0.c	7.2 (Berkeley) %G%
  */
 
 #include "../vax/mtpr.h"
@@ -84,14 +84,17 @@ __rtt:
 	jmp	start
 #endif
 
-	.globl	_badloc
-_badloc:
+	.globl	_badaddr
+_badaddr:
 	.word	0
 	movl	$1,r0
 	movl	4(ap),r3
+	movl	8(ap),r4
 	movl	$4,r2
 	movab	9f,(r2)
-	tstl	(r3)
+	bbc	$0,r4,1f; tstb	(r3)
+1:	bbc	$1,r4,1f; tstw	(r3)
+1:	bbc	$2,r4,1f; tstl	(r3)
 1:	clrl	r0			# made it w/o machine checks
 2:	movl	$4,r2
 	clrl	(r2)

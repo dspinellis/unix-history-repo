@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)saio.h	7.1 (Berkeley) %G%
+ *	@(#)saio.h	6.4 (Berkeley) 11/8/85
  */
 
 /*
@@ -64,18 +64,7 @@ struct devsw {
 };
 
 struct devsw devsw[];
-
-/*
- * Drive description table.
- * Returned from SAIODEVDATA call.
- */
-struct st {
-	short	nsect;		/* # sectors/track */
-	short	ntrak;		/* # tracks/surfaces/heads */
-	short	nspc;		/* # sectors/cylinder */
-	short	ncyl;		/* # cylinders */
-	short	*off;		/* partition offset table (cylinders) */
-};
+int ndevs;
 
 /*
  * Request codes. Must be the same a F_XXX above
@@ -115,7 +104,7 @@ extern	int errno;	/* just like unix */
 #define	SAIODOBAD	(('d'<<8)|5)	/* enable bad sector forwarding */
 #define	SAIOECCLIM	(('d'<<8)|6)	/* set limit to ecc correction, bits */
 #define	SAIORETRIES	(('d'<<8)|7)	/* set retry count for unit */
-#define	SAIODEVDATA	(('d'<<8)|8)	/* get device data */
+#define	SAIODEVDATA	(('d'<<8)|8)	/* get pointer to pack label */
 #define	SAIOSSI		(('d'<<8)|9)	/* set skip sector inhibit */
 #define	SAIONOSSI	(('d'<<8)|10)	/* inhibit skip sector handling */
 #define	SAIOSSDEV	(('d'<<8)|11)	/* is device skip sector type? */

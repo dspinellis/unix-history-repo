@@ -3,17 +3,20 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hpmaptype.c	7.1 (Berkeley) %G%
+ *	@(#)hpmaptype.c	7.1 (Berkeley) 6/5/86
  */
 
 /*
  * RP??/RM?? drive type mapping routine.
+ * Used for compatibility with unlabeled disks.
  */
+#ifdef COMPAT_42
 #include "../machine/pte.h"
 
 #include "../h/param.h"
 #include "../h/inode.h"
 #include "../h/fs.h"
+#include "../h/disklabel.h"
 
 #include "../vaxmba/hpreg.h"
 #include "../vaxmba/mbareg.h"
@@ -21,19 +24,28 @@
 #include "saio.h"
 #include "savax.h"
 
-/* THIS SHOULD BE READ IN OFF THE PACK, PER DRIVE */
+/*
+ * Drive description table.
+ */
+struct st {
+	short	nsect;		/* # sectors/track */
+	short	ntrak;		/* # tracks/surfaces/heads */
+	short	nspc;		/* # sectors/cylinder */
+	short	ncyl;		/* # cylinders */
+	short	*off;		/* partition offset table (cylinders) */
+};
+
 short	rp06_off[8] =	{ 0, 38, 0, -1, -1, -1, 118, -1 };
 short	rm03_off[8] =	{ 0, 100, 0, -1, -1, -1, 309, -1 };
 short	rm05_off[8] =	{ 0, 27, 0, 562, 589, 681, 562, 82 };
 short	rm80_off[8] =	{ 0, 37, 0, -1, -1, -1, 115, -1 };
 short	rp07_off[8] = 	{ 0, 10, 0, 235, 245, 437, 235, 52 };
 short	ml_off[8] =	{ 0, -1, -1, -1, -1, -1, -1, -1 };
-short	cdc9775_off[8] = { 0, 13, 0, -1, -1, -1, 294, 66 };
+/*short	cdc9775_off[8] = { 0, 13, 0, -1, -1, -1, 294, 66 };*/
 short	cdc9730_off[8] = { 0, 50, 0, -1, -1, -1, 155, -1 };
 short	capricorn_off[8] = { 0, 32, 0, 668, 723, 778, 668, 98 };
 short	eagle_off[8] =	{ 0, 17, 0, 391, 408, 728, 391, 87 };
 short	fj2361_off[8] = { 0, 13, 0, 294, 307, 547, 294, 66 };
-/* END SHOULD BE READ IN */
 
 /*
  * hptypes is used to translate Massbus drive type and other information
@@ -77,7 +89,7 @@ struct st hpst[] = {
 #define	HPDT_ML11B	7
 	1,	1,	1,	1,	ml_off,		/* ML11B */
 #define	HPDT_9775	8
-	32,	40,	32*40,	843,	cdc9775_off,	/* 9775 */
+	32,	40,	32*40,	843,	fj2361_off,	/* 9775 */
 #define	HPDT_9730	9
 	32,	10,	32*10,	823,	cdc9730_off,	/* 9730 */
 #define	HPDT_CAP	10
@@ -97,42 +109,56 @@ struct st hpst[] = {
 
 #define	MASKREG(reg)	((reg)&0xffff)
 
-hpmaptype(hpaddr, type, unit)
+hpmaptype(hpaddr, type, unit, lp)
 	register struct hpdevice *hpaddr;
-	unsigned type;
+	register unsigned type;
 	int unit;
+	register struct disklabel *lp;
 {
+	register i;
+	register struct st *st;
 	int hpsn;
 
+	for (i = 0; hptypes[i]; i++)
+		if (hptypes[i] == type)
+			goto found;
+	_stop("unknown drive type");
+
+found:
+	type = i;
 	/*
 	 * Handle SI model byte stuff when
 	 * we think it's an RM03 or RM05.
 	 */
 	if (type == HPDT_RM03 || type == HPDT_RM05) {
 		hpsn = hpaddr->hpsn;
-		if ((hpsn & SIMB_LU) != unit)
-			return (type);
+		if ((hpsn & SIMB_LU) == unit)
 		switch ((hpsn & SIMB_MB) &~ (SIMB_S6|SIRM03|SIRM05)) {
 
 		case SI9775D:
-			return (HPDT_9775);
+			type = HPDT_9775;
+			break;
 
 		case SI9730D:
-			return (HPDT_9730);
+			type = HPDT_9730;
+			break;
 
 		case SI9766:
-			return (HPDT_9766);
+			type = HPDT_9766;
+			break;
 
 		case SI9762:
-			return (HPDT_RM03);
+			type = HPDT_RM03;
+			break;
 
 		case SICAPD:
-			return (HPDT_CAP);
+			type = HPDT_CAP;
+			break;
 
 		case SI9751D:
-			return (HPDT_EAGLE);
+			type = HPDT_EAGLE;
+			break;
 		}
-		return (type);
 	}
 	/*
 	 * RM02: EMULEX controller.  Map to correct
@@ -140,7 +166,7 @@ hpmaptype(hpaddr, type, unit)
 	 * register for the disk geometry.
 	 */
 	if (type == HPDT_RM02) {
-		int newtype, nsectors, ntracks, ncyl;
+		int nsectors, ntracks, ncyl;
 
 		hpaddr->hpcs1 = HP_NOP;
 		hpaddr->hphr = HPHR_MAXTRAK;
@@ -153,25 +179,39 @@ hpmaptype(hpaddr, type, unit)
 		hpaddr->hpcs1 = HP_NOP;
 		hpaddr->hphr = HPHR_MAXCYL;
 		ncyl = MASKREG(hpaddr->hphr) + 1;
-		for (newtype = 0; newtype < NTYPES; newtype++)
-			if (hpst[newtype].nsect == nsectors &&
-			    hpst[newtype].ntrak == ntracks &&
-			    hpst[newtype].ncyl == ncyl)
+		for (type = 0; type < NTYPES; type++)
+			if (hpst[type].nsect == nsectors &&
+			    hpst[type].ntrak == ntracks &&
+			    hpst[type].ncyl == ncyl)
 				break;
 
-		if (newtype >= NTYPES) {
-			printf("RM02 with %d sectors, %d tracks, %d cylinders?\n",
+		if (type >= NTYPES) {
+			printf("%d sectors, %d tracks, %d cyl?\n",
 				nsectors, ntracks, ncyl);
-			newtype = type;
+			type = HPDT_RM02;
 		}
 	done:
 		hpaddr->hpcs1 = HP_DCLR|HP_GO;
-		return (newtype);
 	}
+	
 	/*
-	 * ML11's all map to the same type.
+	 * set up minimal disk label.
 	 */
-	if (type == HPDT_ML11A || type == HPDT_ML11B)
-		return (HPDT_ML11A);
-	return (type);
+	st = &hpst[type];
+	lp->d_nsectors = st->nsect;
+	lp->d_ntracks = st->ntrak;
+	lp->d_secpercyl = st->nspc;
+	lp->d_ncylinders = st->ncyl;
+	lp->d_secperunit = st->nspc * st->ncyl;
+	lp->d_npartitions = 8;
+	for (i = 0; i < 8; i++) {
+		if (st->off[i] == -1)
+			lp->d_partitions[i].p_size = 0;
+		else {
+			lp->d_partitions[i].p_offset = st->off[i] *
+			    lp->d_secpercyl;
+			lp->d_partitions[i].p_size = lp->d_secperunit;
+		}
+	}
 }
+#endif COMPAT_42
