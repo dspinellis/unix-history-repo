@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ip.h	7.6.1.2 (Berkeley) %G%
+ *	@(#)ip.h	7.8 (Berkeley) %G%
  */
 #ifndef BYTE_ORDER
 /*
@@ -125,7 +125,7 @@ struct	ip_timestamp {
 /* flag bits for ipt_flg */
 #define	IPOPT_TS_TSONLY		0		/* timestamps only */
 #define	IPOPT_TS_TSANDADDR	1		/* timestamps and addresses */
-#define	IPOPT_TS_PRESPEC	2		/* specified modules only */
+#define	IPOPT_TS_PRESPEC	3		/* specified modules only */
 
 /* bits for security (not byte swapped) */
 #define	IPOPT_SECUR_UNCLASS	0x0000
