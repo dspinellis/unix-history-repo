@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)getgroups.2	8.1 (Berkeley) %G%
+.\"     @(#)getgroups.2	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt GETGROUPS 2
@@ -15,7 +15,7 @@
 .Fd #include <sys/param.h>
 .Fd #include <unistd.h>
 .Ft int
-.Fn getgroups "int gidsetlen" "int *gidset"
+.Fn getgroups "int gidsetlen" "gid_t *gidset"
 .Sh DESCRIPTION
 .Fn Getgroups
 gets the current group access list of the user process
@@ -57,12 +57,6 @@ an invalid address.
 .Sh SEE ALSO
 .Xr setgroups 2 ,
 .Xr initgroups 3
-.Sh BUGS
-The
-.Fa gidset
-array should be of type
-.Vt gid_t ,
-but remains integer for compatibility with earlier systems.
 .Sh HISTORY
 The
 .Nm
