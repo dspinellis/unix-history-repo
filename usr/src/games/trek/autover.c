@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)autover.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)autover.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	"trek.h"
@@ -39,7 +39,7 @@ autover()
 	double			dist;
 	register int		course;
 
-	printf("RED ALERT:  The %s is in a supernova quadrant\n", Ship.shipname);
+	printf("\07RED ALERT:  The %s is in a supernova quadrant\n", Ship.shipname);
 	printf("***  Emergency override attempts to hurl %s to safety\n", Ship.shipname);
 	/* let's get our ass out of here */
 	Ship.warp = 6.0 + 2.0 * franf();
