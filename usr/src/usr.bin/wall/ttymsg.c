@@ -16,19 +16,21 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ttymsg.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ttymsg.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <sys/file.h>
+#include <sys/signal.h>
 #include <dirent.h>
 #include <errno.h>
 #include <paths.h>
 
 /*
  * display the contents of a uio structure on a terminal.  Used by
- * wall(1) and syslogd(8).
+ * wall(1) and syslogd(8).  Forks and finishes in child if write
+ * would block, waiting at most five minutes.
  */
 char *
 ttymsg(iov, iovcnt, line, nonblock)
@@ -47,12 +49,14 @@ ttymsg(iov, iovcnt, line, nonblock)
 	 * open will fail on slip lines or exclusive-use lines
 	 * if not running as root; not an error.
 	 */
-	(void)strcpy(device + sizeof(_PATH_DEV) - 1, line);
+	(void) strcpy(device + sizeof(_PATH_DEV) - 1, line);
 	if ((fd = open(device, O_WRONLY|(nonblock ? O_NONBLOCK : 0), 0)) < 0)
-		if (errno != EBUSY && errno != EPERM)
-			goto bad;
-		else
-			return(NULL);
+		if (errno != EBUSY && errno != EPERM) {
+			(void) sprintf(errbuf, "open %s: %s\n", device,
+			    strerror(errno));
+			return (errbuf);
+		} else
+			return (NULL);
 
 	for (cnt = total = 0; cnt < iovcnt; ++cnt)
 		total += iov[cnt].iov_len;
@@ -60,11 +64,16 @@ ttymsg(iov, iovcnt, line, nonblock)
 	for (;;)
 		if ((wret = writev(fd, iov, iovcnt)) < 0)
 			if (errno == EWOULDBLOCK) {
-				if (fork())
-					goto bad;
+				if (fork()) {
+					(void) close(fd);
+					return (NULL);
+				}
 				/* wait at most 5 minutes */
-				(void)alarm((u_int)(60 * 5));
-				(void)ttymsg(iov, iovcnt, line, 0);
+				(void) signal(SIGALRM, SIG_DFL);
+				(void) signal(SIGTERM, SIG_DFL); /* XXX */
+				(void) sigsetmask(0);
+				(void) alarm((u_int)(60 * 5));
+				(void) ttymsg(iov, iovcnt, line, 0);
 				exit(0);
 			} else {
 				/*
@@ -73,10 +82,10 @@ ttymsg(iov, iovcnt, line, nonblock)
 				 */
 				if (errno == ENODEV)
 					break;
-bad:				(void)sprintf(errbuf, "%s: %s\n", device,
-				    strerror(errno));
-				(void)close(fd);
-				return(errbuf);
+				(void) sprintf(errbuf, "writing %s: %s\n",
+				    device, strerror(errno));
+				(void) close(fd);
+				return (errbuf);
 			}
 		else if (wret) {
 			if (wret == total)
@@ -91,6 +100,6 @@ bad:				(void)sprintf(errbuf, "%s: %s\n", device,
 				iov->iov_len -= wret;
 			}
 		}
-	(void)close(fd);
-	return(NULL);
+	(void) close(fd);
+	return (NULL);
 }
