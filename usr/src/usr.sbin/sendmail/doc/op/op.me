@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	6.17 (Berkeley) %G%
+.\"	@(#)op.me	6.18 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,7 +40,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 6.17
+Version 6.18
 .sp
 For Sendmail Version 6.27
 .)l
@@ -1837,7 +1837,7 @@ but is not otherwise necessary.
 Version level 1 configurations
 turn DNSRCH and DEFNAMES off when doing delivery lookups,
 but leave them on everywhere else.
-Release 6 of
+Version 6 of
 .i sendmail
 ignores them when doing canonification lookups
 (that is, when using $[ ... $]),
@@ -2053,6 +2053,17 @@ the rule will match, and the values passed to the RHS will be:
 $1	UCBARPA
 $2	eric
 .)b
+.pp
+Additionally, the LHS can include
+.b $@
+to match zero tokens.
+This is
+.i not
+bound to a
+.b $ \c
+.i N
+on the RHS, and is normally only used when it stands alone
+in order to match the null input.
 .sh 4 "The right hand side"
 .pp
 When the left hand side of a rewriting rule matches,
@@ -5099,7 +5110,7 @@ substantial performance improvements can be expected for queue processing.
 If two hosts with different names in a single message
 happen to have the same set of MX hosts,
 they can be sent in the same transaction.
-Release 6 notices this and tries to batch the messages.
+Version 6 notices this and tries to batch the messages.
 .sh 2 "Eight-Bit Clean"
 .pp
 Previous versions of
@@ -5234,9 +5245,17 @@ mailer flag will strip all comments
 from addresses;
 this should only be used as a last resort
 when dealing with cranky mailers.
+.sh 2 "New LHS Token"
+.pp
+Version 6 allows
+.b $@
+on the Left Hand Side of an
+.q R
+line to match zero tokens.
+This is intended to be used to match the null input.
 .sh 2 "Bigger Defaults"
 .pp
-Release 6 allows up to 100 rulesets instead of 30.
+Version 6 allows up to 100 rulesets instead of 30.
 It is recommended that rulesets 0\-9 be reserved for
 .i sendmail 's
 dedicated use in future releases.
@@ -5247,7 +5266,7 @@ The number of queued messages that can be handled at one time
 has been raised from 600 to 1000.
 .sh 2 "Different Default Tuning Parameters"
 .pp
-Release 6 has changed the default parameters
+Version 6 has changed the default parameters
 for tuning queue costs
 to make the number of recipients more important
 than the size of the message (for small messages).
@@ -5661,7 +5680,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 6.17
+.\"Version 6.18
 .\".ce 0
 .pn 2
 .bp
