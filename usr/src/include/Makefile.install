@@ -1,113 +1,54 @@
-#
-# Copyright (c) 1983, 1986, 1989 The Regents of the University of California.
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms are permitted
-# provided that the above copyright notice and this paragraph are
-# duplicated in all such forms and that any documentation,
-# advertising materials, and other materials related to such
-# distribution and use acknowledge that the software was developed
-# by the University of California, Berkeley.  The name of the
-# University may not be used to endorse or promote products derived
-# from this software without specific prior written permission.
-# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
-#
-#	@(#)Makefile.install	5.6 (Berkeley) %G%
+#	@(#)Makefile.install	5.7 (Berkeley) %G%
 #
 # Makefile for /usr/include, used to convert system include subdirectories
-# between symbolic links and copies of kernel headers.
-# May also be used to update copies from kernel header files.
+# between symbolic links and copies of kernel headers.  May also be used to
+# update copies from kernel header files.
 #
-# The ``rm -rf''s used below are safe because rm doesn't
-# follow symbolic links.
+# The ``rm -rf''s used below are safe because rm doesn't follow symbolic
+# links.
 #
-DESTDIR=
-MACHDEP.vax=	vaxif vaxmba vaxuba
-MACHDEP.tahoe=	tahoeif tahoevba
-NETDIRS=	net netimp netinet netns
-SYSDIRS=	sys ${NETDIRS} ${MACHINE}
+
 SYS=/sys
+DIRS=	sys net netimp netinet netns ${MACHINE}
+.if (${MACHINE} == "tahoe")
+DIRS+=	tahoeif tahoevba
+.elif (${MACHINE} == "vax")
+DIRS+=	vaxif vaxmba vaxuba
+.endif
 
 all:
 	@echo "\"make symlinks\", \"make copies\", or \"make update\" only"
 	@false
 
-symlinks: symlinks.${MACHINE}
-	for i in ${SYSDIRS}; do \
-		rm -rf $$i; \
-		ln -s ${SYS}/$$i $$i; \
-	done
+copies:
 	rm -rf machine
 	ln -s ${MACHINE} machine
+	-for i in ${DIRS}; do \
+		rm -rf $$i; \
+		(cd ${SYS}; tar cf - $$i/*.h) | tar xpfB -; \
+	done
 
-symlinks.vax:
-	for i in ${MACHDEP.vax}; do \
+symlinks:
+	rm -rf machine
+	ln -s ${MACHINE} machine
+	for i in ${DIRS}; do \
 		rm -rf $$i; \
 		ln -s ${SYS}/$$i $$i; \
 	done
 
-symlinks.tahoe:
-	for i in ${MACHDEP.tahoe}; do \
-		rm -rf $$i; \
-		ln -s ${SYS}/$$i $$i; \
-	done
-
-copies: copies.${MACHINE}
-	-for i in ${SYSDIRS}; do \
-		rm -rf $$i; \
-		(cd ${SYS}; tar cf - $$i/*.h) | tar xpfB -; \
-	done
-	rm -f machine
+update:
+	rm -rf machine
 	ln -s ${MACHINE} machine
-
-copies.vax:
-	-for i in ${MACHDEP.vax}; do \
-		rm -rf $$i; \
-		(cd ${SYS}; tar cf - $$i/*.h) | tar xpfB -; \
-	done
-
-copies.tahoe:
-	-for i in ${MACHDEP.tahoe}; do \
-		rm -rf $$i; \
-		(cd ${SYS}; tar cf - $$i/*.h) | tar xpfB -; \
-	done
-
-update: update.${MACHINE}
-	-for i in ${SYSDIRS}; do \
+	-for i in ${DIRS}; do \
 		if [ ! -d $$i ]; \
 		then \
 			mkdir $$i; \
 		fi; \
 		for j in `cd ${SYS}/$$i; echo *.[ih]`; do \
 			cmp -s ${SYS}/$$i/$$j $$i/$$j || \
-			install -c -m 444 ${SYS}/$$i/$$j $$i/$$j; \
-		done; \
-	done
-	rm -f machine
-	ln -s ${MACHINE} machine
-
-update.vax:
-	-for i in ${MACHDEP.vax}; do \
-		if [ ! -d $$i ]; \
-		then \
-			mkdir $$i; \
-		fi; \
-		for j in `cd ${SYS}/$$i; echo *.[ih]`; do \
-			cmp -s ${SYS}/$$i/$$j $$i/$$j || \
-			install -c -m 444 ${SYS}/$$i/$$j $$i/$$j; \
+			install -c -o ${BINOWN} -g ${BINGRP} -m 444 \
+			    ${SYS}/$$i/$$j $$i/$$j; \
 		done; \
 	done
 
-update.tahoe:
-	-for i in ${MACHDEP.tahoe}; do \
-		if [ ! -d $$i ]; \
-		then \
-			mkdir $$i; \
-		fi; \
-		for j in `cd ${SYS}/$$i; echo *.[ih]`; do \
-			cmp -s ${SYS}/$$i/$$j $$i/$$j || \
-			install -c -m 444 ${SYS}/$$i/$$j $$i/$$j; \
-		done; \
-	done
+clean cleandir depend lint tags:
