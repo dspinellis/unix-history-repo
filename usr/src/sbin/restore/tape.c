@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include "restore.h"
@@ -458,6 +458,7 @@ getfile(f1, f2)
 	off_t size = spcl.c_dinode.di_size;
 	static char clearedbuf[MAXBSIZE];
 	char buf[MAXBSIZE / TP_BSIZE][TP_BSIZE];
+	char junk[TP_BSIZE];
 
 	if (checktype(&spcl, TS_END) == GOOD)
 		panic("ran off end of tape\n");
@@ -486,8 +487,12 @@ loop:
 			(*f2)(clearedbuf, size > TP_BSIZE ?
 				(long) TP_BSIZE : size);
 		}
-		if ((size -= TP_BSIZE) <= 0)
+		if ((size -= TP_BSIZE) <= 0) {
+			for (i++; i < spcl.c_count; i++)
+				if (spcl.c_addr[i])
+					readtape(junk);
 			break;
+		}
 	}
 	if (readhdr(&spcl) == GOOD && size > 0) {
 		if (checktype(&spcl, TS_ADDR) == GOOD)
