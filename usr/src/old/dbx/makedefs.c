@@ -4,7 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
-static char sccsid[] = "@(#)makedefs.c 5.3 %G%";
+static char sccsid[] = "@(#)makedefs.c 5.4 %G%";
 
 static char rcsid[] = "$Header: makedefs.c,v 1.2 87/03/26 19:14:02 donn Exp $";
 
@@ -27,6 +27,7 @@ static char rcsid[] = "$Header: makedefs.c,v 1.2 87/03/26 19:14:02 donn Exp $";
 
 #include "defs.h"
 #include <signal.h>
+#include "pathnames.h"
 
 #define procedure void
 
@@ -69,7 +70,7 @@ String argv[];
 	if (force) {
 	    tmpname = argv[index + 1];
 	} else {
-	    tmpname = mktemp("/tmp/makedefsXXXXXX");
+	    tmpname = mktemp(_PATH_TMP);
 	}
 	tmp = freopen(tmpname, "w", stdout);
 	if (tmp == nil) {

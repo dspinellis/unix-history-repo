@@ -1,8 +1,8 @@
 #
-#	@(#)Makefile	1.23	(Berkeley)	%G%
+#	@(#)Makefile	1.24	(Berkeley)	%G%
 #
-M=../../lib/mip
-P=../../lib/pcc
+M=../../libexec/mip
+P=../../libexec/pcc
 CFLAGS=-O
 LINTLIBS=llib-port.ln llib-lc.ln llib-lcurses.ln llib-ldbm.ln llib-lm.ln \
 	llib-lmp.ln llib-lplot.ln llib-ltermcap.ln
@@ -102,12 +102,11 @@ lintall:
 		$M/pftn.c $M/trees.c $M/optim.c lint.c
 
 install: all SHELL ${MAN}
-	install -s -o bin -g bin -m 755 lpass1 ${DESTDIR}/usr/lib/lint/lint1
-	install -s -o bin -g bin -m 755 lpass2 ${DESTDIR}/usr/lib/lint/lint2
-	install -c -o bin -g bin -m 444 llib-* ${DESTDIR}/usr/lib/lint
-	-rm -f ${DESTDIR}/usr/lib/lint/llib-ltermlib*
-	ln -s llib-ltermcap ${DESTDIR}/usr/lib/lint/llib-ltermlib
-	ln -s llib-ltermcap.ln ${DESTDIR}/usr/lib/lint/llib-ltermlib.ln
+	install -s -o bin -g bin -m 755 lpass1 lpass2 /usr/libexec
+	install -c -o bin -g bin -m 444 llib-* /usr/libdata/lint
+	rm -f /usr/libdata/llib-ltermlib*
+	ln -s llib-ltermcap /usr/libdata/llib-ltermlib
+	ln -s llib-ltermcap.ln /usr/libdata/llib-ltermlib.ln
 	install -c -o bin -g bin -m 755 SHELL ${DESTDIR}/usr/bin/lint
 	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
 

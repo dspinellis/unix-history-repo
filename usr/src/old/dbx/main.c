@@ -4,7 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
-static char sccsid[] = "@(#)main.c 5.4 %G%";
+static char sccsid[] = "@(#)main.c 5.5 %G%";
 /*
  * Debugger main routine.
  */
@@ -25,6 +25,7 @@ static char sccsid[] = "@(#)main.c 5.4 %G%";
 #include "object.h"
 #include "mappings.h"
 #include "coredump.h"
+#include "pathnames.h"
 
 #ifndef public
 
@@ -207,7 +208,7 @@ String outfile;
     String tmpfile;
     extern String mktemp();
 
-    tmpfile = mktemp("/tmp/dbxXXXX");
+    tmpfile = mktemp(_PATH_TMP);
     setout(tmpfile);
     status();
     alias(nil, nil, nil);
@@ -384,10 +385,10 @@ private openfiles ()
     }
     if (coredump and corefile == nil) {
 	if (vaddrs) {
-	    corename = "/dev/mem";
+	    corename = _PATH_MEM;
 	    corefile = fopen(corename, "r");
 	    if (corefile == nil) {
-		panic("can't open /dev/mem");
+		panic("can't open %s", _PATH_MEM);
 	    }
 	} else {
 	    corename = "core";

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static	char sccsid[] = "@(#)f77.c	5.4 (Berkeley) %G%";
+static	char sccsid[] = "@(#)f77.c	5.5 (Berkeley) %G%";
 #endif
 
 /*
@@ -81,11 +81,11 @@ static	char sccsid[] = "@(#)f77.c	5.4 (Berkeley) %G%";
  */
 
 char *xxxvers = "\n@(#) F77 DRIVER, VERSION 4.2,   1984 JULY 28\n";
-#include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/signal.h>
 #include <ctype.h>
-#include <signal.h>
+#include <stdio.h>
 
 #ifdef	SIGPROF
 /*
@@ -100,7 +100,7 @@ char *xxxvers = "\n@(#) F77 DRIVER, VERSION 4.2,   1984 JULY 28\n";
 
 #include "defines.h"
 #include "machdefs.h"
-#include "drivedefs.h"
+#include "pathnames.h"
 #include "version.h"
 
 static FILEP diagfile	= {stderr} ;
@@ -118,8 +118,8 @@ static char *ldname	= LDNAME ;
 static char *footname	= FOOTNAME;
 static char *proffoot	= PROFFOOT;
 static char *macroname	= "m4";
-static char *shellname	= "/bin/sh";
-static char *cppname	= "/lib/cpp";
+static char *shellname	= _PATH_BSHELL;
+static char *cppname	= _PATH_CPP;
 static char *aoutname	= "a.out" ;
 static char *temppref	= TEMPPREF;
 
@@ -902,7 +902,7 @@ sys(str)
 char *str;
 {
 register char *s, *t;
-char *argv[100], path[100];
+char *argv[100];
 char *inname, *outname;
 int append;
 int waitpid;
@@ -951,12 +951,6 @@ if(argc == 1)   /* no command */
 	return(-1);
 argv[argc] = 0;
 
-s = path;
-t = "/usr/bin/";
-while(*t)
-	*s++ = *t++;
-for(t = argv[1] ; *s++ = *t++ ; )
-	;
 if((waitpid = fork()) == 0)
 	{
 	if(inname)
@@ -967,11 +961,9 @@ if((waitpid = fork()) == 0)
 			fatalstr("Cannot open %s", outname);
 	enbint(SIG_DFL);
 
-	texec(path+9, argv);  /* command */
-	texec(path+4, argv);  /*  /bin/command */
-	texec(path  , argv);  /* /usr/bin/command */
+	texec(argv[1], argv);
 
-	fatalstr("Cannot load %s",path+9);
+	fatalstr("Cannot load %s", argv[1]);
 	}
 
 return( await(waitpid) );
@@ -1230,7 +1222,7 @@ if(fn!=NULL && *fn!='\0')
 LOCAL fname(name, suff)
 char *name, *suff;
 {
-sprintf(name, "/tmp/%s%d.%s", temppref, pid, suff);
+sprintf(name, "%s/%s%d.%s", _PATH_TMP, temppref, pid, suff);
 }
 
 

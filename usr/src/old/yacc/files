@@ -1,5 +1,5 @@
 /*
- *	@(#)files	4.1	(Berkeley)	83/02/11
+ *	@(#)files	4.2	(Berkeley)	89/05/10
  */
 	/* this file has the location of the parser, and the size of the progam desired */
 	/* It may also contain definitions to override various defaults: for example,
@@ -10,8 +10,6 @@
 #ifndef WORD32
 #define WORD32
 #endif
-	/* location of the parser text file */
-# define PARSER "/usr/lib/yaccpar"
 
 	/* basic size of the Yacc implementation */
 # define HUGE

@@ -22,17 +22,18 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
 #include <ctype.h>
 #include <signal.h>
 #include "error.h"
+#include "pathnames.h"
 
 int	nerrors = 0;
 Eptr	er_head;
-Eptr	*errors;	
+Eptr	*errors;
 
 int	nfiles = 0;
 Eptr	**files;	/* array of pointers into errors*/
@@ -40,7 +41,7 @@ int	language = INCC;
 
 char	*currentfilename = "????";
 char	*processname;
-char	im_on[] = "/dev/tty";	/* my tty name */
+char	im_on[] = _PATH_TTY;	/* my tty name */
 
 boolean	query = FALSE;		/* query the operator if touch files */
 boolean	notouch = FALSE;	/* don't touch ANY files */

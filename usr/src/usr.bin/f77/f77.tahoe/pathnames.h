@@ -22,26 +22,27 @@
 	Wrong Definitions File!
 #endif
 
-#define PASS1NAME	"/usr/lib/f77pass1"
-#define PASS2NAME	"/lib/f1"
+#define	PASS1NAME	"/usr/libexec/f77pass1"
+#define	PASS2NAME	"/usr/libexec/f1"
 #ifdef INLINE
-#define	PASS2INAME	"/usr/lib/if1"
-#endif INLINE
-#define PASS2OPT	"/lib/c2"
-#define ASMNAME		"/bin/as"
-#define LDNAME		"/bin/ld"
+#define	PASS2INAME	"/usr/libexec/if1"
+#endif
+#define	PASS2OPT	"/usr/libexec/c2"
+#define	ASMNAME		"/usr/bin/as"
+#define	LDNAME		"/usr/bin/ld"
+#define	_PATH_UBIN	"/usr/bin"
 #define	CATNAME		"/bin/cat"
-#define FOOTNAME	"/lib/crt0.o"
-#define PROFFOOT	"/lib/mcrt0.o"
+#define FOOTNAME	"/usr/lib/crt0.o"
+#define	PROFFOOT	"/usr/lib/mcrt0.o"
 #define	GPRFFOOT	"/usr/lib/gcrt0.o"
-#define TEMPPREF	"fort"
+#define	TEMPPREF	"fort"
 
 static char *liblist [ ] =
 		{ "/usr/lib/libU77.a", 
 		  "/usr/lib/libF77.a", 
 		  "/usr/lib/libI77.a", 
 		  "/usr/lib/libm.a", 
-		  "/lib/libc.a",NULL };
+		  "/usr/lib/libc.a",NULL };
 static char *p_liblist [ ] =
 		{ "/usr/lib/libU77_p.a", 
 		  "/usr/lib/libF77_p.a", 
@@ -49,3 +50,8 @@ static char *p_liblist [ ] =
 		  "/usr/lib/libF77_p.a", 
 		  "/usr/lib/libm_p.a", 
 		  "/usr/lib/libc_p.a",NULL };
+
+#include <paths.h>
+
+#define	_PATH_BSHELL	"/bin/sh"
+#define	_PATH_CPP	"/usr/bin/cpp"

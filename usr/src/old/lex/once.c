@@ -1,4 +1,4 @@
-/*	once.c	4.1	83/08/11	*/
+/*	once.c	4.2	89/05/10	*/
 	/* because of external definitions, this code should occur only once */
 # ifdef ASCII
 int ctable[2*NCH] = {
@@ -55,8 +55,8 @@ char *pushptr = pushc;
 char *slptr = slist;
 
 # if (unix || ibm)
-char *cname = "/usr/lib/lex/ncform";
-char *ratname = "/usr/lib/lex/nrform";
+char *cname = _PATH_NCFORM;
+char *ratname = _PATH_NRFORM;
 # endif
 
 # ifdef gcos

@@ -1,8 +1,9 @@
 #ifndef lint
-static char sccsid[] = "@(#)y1.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)y1.c	4.2	(Berkeley)	%G%";
 #endif not lint
 
 # include "dextern"
+# include "pathnames.h"
 
 	/* variables used locally */
 
@@ -67,8 +68,8 @@ main(argc,argv) int argc; char *argv[]; {
 others(){ /* put out other arrays, copy the parsers */
 	register c, i, j;
 
-	finput = fopen( PARSER, "r" );
-	if( finput == NULL ) error( "cannot find parser %s", PARSER );
+	finput = fopen( _PATH_PARSER, "r" );
+	if( finput == NULL ) error( "cannot find parser %s", _PATH_PARSER);
 
 	warray( "yyr1", levprd, nprod );
 

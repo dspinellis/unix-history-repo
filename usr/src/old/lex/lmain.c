@@ -1,7 +1,8 @@
 #ifndef lint
-static char sccsid[] = "@(#)lmain.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)lmain.c	4.4 (Berkeley) %G%";
 #endif
 
+# include "pathnames.h"
 # include "ldefs.c"
 # include "once.c"
 
@@ -100,7 +101,7 @@ main(argc,argv)
 # ifdef DEBUG
 	free3core();
 # endif
-	if (ZCH>NCH) cname="/usr/lib/lex/ebcform";
+	if (ZCH>NCH) cname=_PATH_EBCFORM;
 	fother = fopen(ratfor?ratname:cname,"r");
 	if(fother == NULL)
 		error("Lex driver missing, file %s",ratfor?ratname:cname);
