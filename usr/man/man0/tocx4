@@ -1,0 +1,21 @@
+cat(4) cat: phototypesetter interface.
+dc(4) dc: DC-11 communications interface.
+dh(4) dh: DH-11 communications multiplexer.
+dn(4) dn: DN-11 ACU interface.
+dp(4) dp: DP-11 201 data-phone interface.
+dz(4) dz: DZ-11 communications multiplexer.
+hp(4) hp: RH-11/RP04, RP05, RP06, RM03 moving-head disk.
+hs(4) hs: RH11/RS03-RS04 fixed-head disk file.
+ht(4) ht: RH-11/TE-16 magtape interface.
+kl(4) kl: KL-11 or DL-11 asynchronous interface.
+lp(4) lp: line printer.
+mem(4) mem, kmem: main memory.
+null(4) null: data sink.
+pc(4) pc: PC-11 paper tape reader/punch.
+rf(4) rf: RF11/RS11 fixed-head disk file.
+rk(4) rk: RK-11/RK03 or RK05 disk.
+rp(4) rp: RP-11/RP03 moving-head disk.
+tc(4) tc: TC-11/TU56 DECtape.
+tm(4) tm: TM-11/TU-10 magtape interface.
+tty(4) tty: general terminal interface.
+vp(4) vp: Versatec printer-plotter.
