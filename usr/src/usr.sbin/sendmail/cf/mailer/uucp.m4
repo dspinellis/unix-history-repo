@@ -1,8 +1,8 @@
 PUSHDIVERT(-1)
 #
 # Copyright (c) 1983 Eric P. Allman
-# Copyright (c) 1988 The Regents of the University of California.
-# All rights reserved.
+# Copyright (c) 1988, 1993
+#	The Regents of the University of California.  All rights reserved.
 #
 # %sccs.include.redist.sh%
 #
@@ -14,7 +14,7 @@ POPDIVERT
 ###   UUCP Mailer specification   ###
 #####################################
 
-VERSIONID(`@(#)uucp.m4	6.12 (Berkeley) %G%')
+VERSIONID(`@(#)uucp.m4	8.1 (Berkeley) %G%')
 
 Msuucp,		P=UUCP_MAILER_PATH, F=CONCAT(mDFMhuU, UUCP_MAILER_FLAGS), S=12, R=22, M=100000,
 		A=uux - -r -z -a$f -gC $h!rmail ($u)

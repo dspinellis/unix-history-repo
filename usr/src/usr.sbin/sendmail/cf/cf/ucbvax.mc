@@ -1,14 +1,14 @@
 divert(-1)
 #
 # Copyright (c) 1983 Eric P. Allman
-# Copyright (c) 1988 The Regents of the University of California.
-# All rights reserved.
+# Copyright (c) 1988, 1993
+#	The Regents of the University of California.  All rights reserved.
 #
 # %sccs.include.redist.sh%
 #
 
 include(`../m4/cf.m4')
-VERSIONID(`@(#)ucbvax.mc	6.4 (Berkeley) %G%')
+VERSIONID(`@(#)ucbvax.mc	8.1 (Berkeley) %G%')
 OSTYPE(bsd4.3)
 DOMAIN(cs.hidden)
 FEATURE(use_cw_file)
