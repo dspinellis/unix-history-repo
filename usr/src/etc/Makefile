@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.6 (Berkeley) %G%
+#	@(#)Makefile	5.7 (Berkeley) %G%
 
 NOOBJ=	oobj
 
@@ -16,6 +16,7 @@ BIN2=	motd
 DOT=	dot.cshrc dot.login dot.profile
 MTREE=	BSD.root.dist BSD.usr.dist BSD.var.dist
 KRB=	README krb.conf krb.realms
+NAMEDB=	localhost.rev named.boot root.cache
 
 all clean cleandir depend etc install lint:
 
@@ -33,6 +34,8 @@ distribution:
 	cd root; install -c -o root -g wheel -m 644 ${DOT} ${DESTDIR}/root
 	cd mtree; install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${MTREE} \
 	    ${DESTDIR}/etc/mtree
+	cd namedb; install -c -o ${BINOWN} -g ${BINGRP} -m 644 ${NAMEDB} \
+	    ${DESTDIR}/etc/namedb
 	cd kerberosIV; install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${KRB} \
 	    ${DESTDIR}/etc/kerberosIV
 	install -c -o ${BINOWN} -g operator -m 664 /dev/null \
