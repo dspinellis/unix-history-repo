@@ -111,9 +111,6 @@ int num_source_filenames = 0;
    start and end boundaries).  */
 int sdb_label_count = 0;
 
-/* Next label # for each statment for Silicon Graphics IRIS systems. */
-int sym_lineno = 0;
-
 /* Non-zero if inside of a function, because the stupid MIPS asm can't
    handle .files inside of functions.  */
 int inside_function = 0;
@@ -3482,7 +3479,7 @@ mips_output_filename (stream, name)
 	fprintf (stream, "\t#@stabs\n");
     }
 
-  else if (!TARGET_GAS && write_symbols == DBX_DEBUG)
+  else if (write_symbols == DBX_DEBUG)
     {
       ASM_GENERATE_INTERNAL_LABEL (ltext_label_name, "Ltext", 0);
       fprintf (stream, "%s \"%s\",%d,0,0,%s\n", ASM_STABS_OP,
@@ -3524,11 +3521,9 @@ mips_output_lineno (stream, line)
      FILE *stream;
      int line;
 {
-  if (!TARGET_GAS && write_symbols == DBX_DEBUG)
+  if (write_symbols == DBX_DEBUG)
     {
-      ++sym_lineno;
-      fprintf (stream, "$LM%d:\n\t%s %d,0,%d,$LM%d\n",
-	       sym_lineno, ASM_STABN_OP, N_SLINE, line, sym_lineno);
+      fprintf (stream, "\t%s %d,0,%d\n", ASM_STABD_OP, N_SLINE, line);
     }
 
   else
