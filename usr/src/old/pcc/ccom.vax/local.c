@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)local.c	1.9 (Berkeley) %G%";
+static char *sccsid ="@(#)local.c	1.10 (Berkeley) %G%";
 #endif lint
 
 # include "pass1.h"
@@ -185,6 +185,7 @@ clocal(p) NODE *p; {
 	return(p);
 	}
 
+/*ARGSUSED*/
 andable( p ) NODE *p; {
 	return(1);  /* all names can have & taken on them */
 	}
@@ -209,6 +210,7 @@ cisreg( t ) TWORD t; { /* is an automatic variable of type t OK for a register v
 	return(0);
 	}
 
+/*ARGSUSED*/
 NODE *
 offcon( off, t, d, s ) OFFSZ off; TWORD t; {
 
@@ -219,7 +221,7 @@ offcon( off, t, d, s ) OFFSZ off; TWORD t; {
 	register NODE *p;
 
 	/* t, d, and s are the type, dimension offset, and sizeoffset */
-	/* in general they  are necessary for offcon, but not on H'well */
+	/* in general they  are necessary for offcon, but not on VAX */
 
 	p = bcon(0);
 	p->tn.lval = off/SZCHAR;
@@ -371,6 +373,7 @@ commdec( id ){ /* make a common declaration for id, if reasonable */
 	printf( "\n" );
 	}
 
+/*ARGSUSED*/
 isitlong( cb, ce ){ /* is lastcon to be long or short */
 	/* cb is the first character of the representation, ce the last */
 
