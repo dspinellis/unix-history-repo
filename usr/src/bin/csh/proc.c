@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)proc.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)proc.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -675,8 +675,9 @@ pprint(pp, flag)
 		case PINTERRUPTED:
 		case PSTOPPED:
 		case PSIGNALED:
-		    if ((flag & (REASON | AREASON)) && reason != SIGINT
-			&& reason != SIGPIPE)
+		    if ((flag & REASON) || 
+			((flag & AREASON) && reason != SIGINT 
+			 && reason != SIGPIPE))
 			xprintf(format, mesg[pp->p_reason].pname);
 		    break;
 
@@ -684,7 +685,7 @@ pprint(pp, flag)
 		case PAEXITED:
 		    if (flag & REASON)
 			if (pp->p_reason)
-			    xprintf("Exit %-16d", pp->p_reason);
+			    xprintf("Exit %-18d", pp->p_reason);
 			else
 			    xprintf(format, "Done");
 		    break;
