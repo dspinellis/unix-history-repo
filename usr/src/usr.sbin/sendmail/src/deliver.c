@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.4	%G%";
+static char SccsId[] = "@(#)deliver.c	3.5	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a particular address.
@@ -414,7 +414,7 @@ putmessage(fp, m)
 	{
 		extern char *FullName;
 
-		p = translate("$f", Mailer[From.q_mailer], From.q_paddr, (char *) NULL, (char *) NULL);
+		p = translate("$g", Mailer[From.q_mailer], From.q_paddr, (char *) NULL, (char *) NULL);
 		if (FullName != NULL)
 			fprintf(fp, "From: %s <%s>\n", FullName, p);
 		else
@@ -751,59 +751,55 @@ translate(s, m, from, user, host)
 	char *user;
 	char *host;
 {
-	register char *q;
 	char buf[MAXNAME];
-	register char *bp;
-	char *stack = NULL;
 	char pbuf[10];
 	extern char *newstr();
 	extern char *Macro[];
 	extern char *sprintf();
+	extern char *trans2();
 
-	bp = buf;
-restart:
+	/* predefine system macros */
+	Macro['f'] = From.q_paddr;
+	Macro['g'] = m->m_from;
+	Macro['u'] = user;
+	Macro['h'] = host;
+	sprintf(pbuf, "%d", HopCount);
+	Macro['c'] = pbuf;
+
+	trans2(s, buf, &buf[sizeof buf - 1]);
+
+# ifdef DEBUG
+	if (Debug)
+		printf("translate ==> '%s'\n", buf);
+# endif DEBUG
+
+	return (newstr(buf));
+}
+
+/*
+**  TRANS2 -- internal routine to translate.
+*/
+
+char *
+trans2(s, bp, buflim)
+	register char *s;
+	register char *bp;
+	char *buflim;
+{
+	register char *q;
+	extern char *Macro[];
 
 # ifdef DEBUG
 	if (Debug)
 		printf("translate(%s)\n", s);
 # endif DEBUG
+
 	for (; *s != '\0'; s++)
 	{
 		/* q will be the interpolated quantity */
 		q = NULL;
 		if (*s == '$')
-		{
-			if (isupper(*++s))
-				q = Macro[*s - 'A'];
-			else
-			{
-				switch (*s)
-				{
-				  case 'f':	/* from person */
-					if (stack == NULL && m != NULL)
-					{
-						stack = s;
-						s = m->m_from;
-						goto restart;
-					}
-					q = from;
-					break;
-
-				  case 'u':	/* user */
-					q = user;
-					break;
-
-				  case 'h':	/* host */
-					q = host;
-					break;
-
-				  case 'c':	/* hop count */
-					sprintf(pbuf, "%d", HopCount);
-					q = pbuf;
-					break;
-				}
-			}
-		}
+			q = Macro[*++s];
 
 		/*
 		**  Interpolate q or output one character
@@ -811,29 +807,12 @@ restart:
 		*/
 
 		if (q != NULL)
-		{
-			while (bp < &buf[sizeof buf - 1] && (*bp++ = *q++) != '\0')
-				continue;
-			bp--;
-		}
-		else if (bp < &buf[sizeof buf - 1])
+			bp = trans2(q, bp, buflim);
+		else if (bp < buflim - 1)
 			*bp++ = *s;
 	}
-	if (stack != NULL)
-	{
-		s = stack;
-		s++;
-		stack = NULL;
-		goto restart;
-	}
-	*bp++ = '\0';
-	if (bp >= &buf[sizeof buf - 1])
-		return (NULL);
-# ifdef DEBUG
-	if (Debug)
-		printf("translate ==> '%s'\n", buf);
-# endif DEBUG
-	return (newstr(buf));
+	*bp = '\0';
+	return (bp);
 }
 /*
 **  MAILFILE -- Send a message to a file.
