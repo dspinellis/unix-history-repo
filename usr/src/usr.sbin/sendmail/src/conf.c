@@ -36,7 +36,7 @@
 
 
 
-SCCSID(@(#)conf.c	3.48		%G%);
+SCCSID(@(#)conf.c	3.49		%G%);
 
 
 
@@ -109,6 +109,7 @@ char	*XcriptFile =	"/tmp/mailxXXXXXX";	/* template for transcript */
 int	DefUid =	1;		/* the uid to execute mailers as */
 int	DefGid =	1;		/* ditto for gid */
 time_t	TimeOut =	3*24*60*60L;	/* default timeout for queue files */
+char	*TextTimeOut =	"three days";	/* text of above for error messages */
 int	ReadTimeout =	10*60;		/* timeout on external reads */
 
 

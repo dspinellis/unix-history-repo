@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.22		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.23		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.22		%G%);
+SCCSID(@(#)queue.c	3.23		%G%);
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -574,6 +574,9 @@ readqf(cf)
 timeout(w)
 	register WORK *w;
 {
+	char buf[MAXLINE];
+	extern char *TextTimeOut;
+
 # ifdef DEBUG
 	if (Debug > 0)
 		printf("timeout(%s)\n", w->w_name);
