@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_alloc.c	7.28 (Berkeley) %G%
+ *	@(#)lfs_alloc.c	7.29 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -28,13 +28,13 @@
 ino_t
 lfs_ialloc(fs, pip, ipp, cred)
 	LFS *fs;
-	struct inode *pip, **ipp;
-	struct ucred *cred;
+	INODE *pip, **ipp;
+	UCRED *cred;
 {
+	BUF *bp;
 	IFILE *ifp;
-	struct buf *bp;
-	struct inode *ip;
-	struct vnode *vp;
+	INODE *ip;
+	VNODE *vp;
 	ino_t new_ino;
 	int error;
 
@@ -55,8 +55,8 @@ printf("lfs_ialloc: next free %d\n", new_ino);
 		panic("lfs_ialloc: corrupt free list");
 
 	/* Remove from free list, set the access time. */
-	ifp->if_st_atime = time.tv_sec;
 	fs->lfs_free = ifp->if_nextfree;
+	ifp->if_st_atime = time.tv_sec;
 	brelse(bp);
 
 	error = lfs_vcreate(ITOV(pip)->v_mount, new_ino, &vp);
@@ -81,11 +81,11 @@ printf("lfs_ialloc: next free %d\n", new_ino);
 
 void
 lfs_ifree(ip)
-	struct inode *ip;
+	INODE *ip;
 {
+	BUF *bp;
 	IFILE *ifp;
 	LFS *fs;
-	struct buf *bp;
 	ino_t ino;
 
 printf("lfs_ifree: free %d\n", ip->i_number);
@@ -106,7 +106,7 @@ itod(fs, ino)
 	LFS *fs;
 	ino_t ino;
 {
-	struct buf *bp;
+	BUF *bp;
 	IFILE *ifp;
 	daddr_t iaddr;
 
@@ -115,17 +115,18 @@ printf("itod: ino %d\n", ino);
 
 	if (ifp->if_daddr == LFS_UNUSED_DADDR)
 		panic("itod: unused daddr");
-printf("itod: about to return %lx\n", ifp->if_daddr);
-	return (ifp->if_daddr);
+	iaddr = ifp->if_daddr;
+	brelse(bp);
+	return (iaddr);
 }
 
-struct dinode *
+DINODE *
 lfs_ifind(fs, ino, page)
 	LFS *fs;
 	ino_t ino;
 	void *page;
 {
-	register struct dinode *dip;
+	register DINODE *dip;
 	register int cnt;
 
 printf("lfs_ifind: inode %d\n", ino);
@@ -143,12 +144,12 @@ printf("lfs_ifind: inode %d\n", ino);
  * Create a new vnode/inode and initialize the fields we can.
  */
 lfs_vcreate(mp, ino, vpp)
-	struct mount *mp;
+	MOUNT *mp;
 	ino_t ino;
-	struct vnode **vpp;
+	VNODE **vpp;
 {
-	struct inode *ip;
-	struct ufsmount *ump;
+	INODE *ip;
+	UFSMOUNT *ump;
 	int error, i;
 
 printf("lfs_vcreate: ino %d\n", ino);
@@ -167,11 +168,30 @@ printf("lfs_vcreate: ino %d\n", ino);
 	ip->i_lfs = ump->um_lfs;
 	ip->i_lockf = 0;
 	ip->i_mode = 0;
-	ip->i_number = ino;
+	ip->i_number = ip->i_din.di_inum = ino;
 	ip->i_vnode = *vpp;
 #ifdef QUOTA
 	for (i = 0; i < MAXQUOTAS; i++)
 		ip->i_dquot[i] = NODQUOT;
 #endif
 	return (0);
+}
+
+/* 
+ * Return the current version number for a specific inode.
+ */
+u_long
+lfs_getversion(fs, ino)
+	LFS *fs;
+	ino_t ino;
+{
+	IFILE *ifp;
+	BUF *bp;
+	int version;
+
+printf("lfs_getversion: %d\n", ino);
+	LFS_IENTRY(ifp, fs, ino, bp);
+	version = ifp->if_version;
+	brelse(bp);
+	return(version);
 }
