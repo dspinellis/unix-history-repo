@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	1.17 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	1.18 (Berkeley) %G%";
 #include "dump.h"
 
 int	notify = 0;	/* notify operator flag */
@@ -16,7 +16,7 @@ main(argc, argv)
 	char	*argv[];
 {
 	char		*arg;
-	int		i;
+	int		bflag = 0, i;
 	float		fetapes;
 	register	struct	fstab	*dt;
 
@@ -65,6 +65,8 @@ main(argc, argv)
 			argv++;
 			argc--;
 			density = atoi(*argv) / 10;
+			if (density >= 625 && !bflag)
+				ntrec = HIGHDENSITYTREC;
 		}
 		break;
 
@@ -81,6 +83,7 @@ main(argc, argv)
 		if(argc > 1) {
 			argv++;
 			argc--;
+			bflag++;
 			ntrec = atol(*argv);
 		}
 		break;
