@@ -9,13 +9,13 @@
  * All advertising materials mentioning features or use of this software
  * must display the following acknowledgement:
  *	This product includes software developed by the University of
- *	California, Lawrence Berkeley Laboratories.
+ *	California, Lawrence Berkeley Laboratory.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)locore2.c	7.3 (Berkeley) %G%
+ *	@(#)locore2.c	7.4 (Berkeley) %G%
  *
- * from: $Header: locore2.c,v 1.7 92/06/20 08:47:28 mccanne Exp $ (LBL)
+ * from: $Header: locore2.c,v 1.8 92/11/26 03:05:01 mccanne Exp $ (LBL)
  */
 
 /*
