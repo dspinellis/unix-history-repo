@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	8.28 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	8.29 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -690,6 +690,7 @@ loop:
 		simple_unlock(&mntvnode_slock);
 		error = vget(vp, LK_EXCLUSIVE | LK_NOWAIT | LK_INTERLOCK, p);
 		if (error) {
+			vrele(vp);
 			simple_lock(&mntvnode_slock);
 			if (error == ENOENT)
 				goto loop;
@@ -756,14 +757,7 @@ ffs_vget(mp, ino, vpp)
 	type = ump->um_devvp->v_tag == VT_MFS ? M_MFSNODE : M_FFSNODE; /* XXX */
 	MALLOC(ip, struct inode *, sizeof(struct inode), type, M_WAITOK);
 	bzero((caddr_t)ip, sizeof(struct inode));
-#ifdef DEBUG
-	/*
-	 * Set two second timeout, after which die assuming a hung lock.
-	 */
-	lockinit(&ip->i_lock, PINOD, "inode", 200, 0);
-#else
 	lockinit(&ip->i_lock, PINOD, "inode", 0, 0);
-#endif
 	vp->v_data = ip;
 	ip->i_vnode = vp;
 	ip->i_fs = fs = ump->um_fs;
