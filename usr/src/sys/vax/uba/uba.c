@@ -1,4 +1,4 @@
-/*	uba.c	4.54	82/10/21	*/
+/*	uba.c	4.55	82/10/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -11,6 +11,7 @@
 #include "../h/proc.h"
 #include "../h/conf.h"
 #include "../h/dk.h"
+#include "../h/kernel.h"
 
 #include "../vax/cpu.h"
 #include "../vax/mtpr.h"
@@ -118,7 +119,7 @@ ubasetup(uban, bp, flags)
 	o = (int)bp->b_un.b_addr & PGOFSET;
 	npf = btoc(bp->b_bcount + o) + 1;
 	a = spl6();
-	while ((reg = rmalloc(uh->uh_map, npf)) == 0) {
+	while ((reg = rmalloc(uh->uh_map, (long)npf)) == 0) {
 		if (flags & UBA_CANTWAIT) {
 			splx(a);
 			return (0);
@@ -130,7 +131,7 @@ ubasetup(uban, bp, flags)
 	if (flags & UBA_NEEDBDP) {
 		while ((bdp = ffs(uh->uh_bdpfree)) == 0) {
 			if (flags & UBA_CANTWAIT) {
-				rmfree(uh->uh_map, npf, reg);
+				rmfree(uh->uh_map, (long)npf, (long)reg);
 				splx(a);
 				return (0);
 			}
@@ -239,7 +240,7 @@ ubarelse(uban, amr)
 	npf = (mr >> 18) & 0x3ff;
 	reg = ((mr >> 9) & 0x1ff) + 1;
 	s = spl6();
-	rmfree(uh->uh_map, npf, reg);
+	rmfree(uh->uh_map, (long)npf, (long)reg);
 	splx(s);
 
 	/*
@@ -279,7 +280,7 @@ ubainitmaps(uhp)
 	register struct uba_hd *uhp;
 {
 
-	rminit(uhp->uh_map, NUBMREG, 1, "uba", UAMSIZ);
+	rminit(uhp->uh_map, (long)NUBMREG, (long)1, "uba", UAMSIZ);
 	switch (cpu) {
 #if VAX780
 	case VAX_780:
