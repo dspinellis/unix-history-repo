@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	4.49	83/06/12	*/
+/*	udp_usrreq.c	4.50	83/06/14	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -262,6 +262,10 @@ udp_usrreq(so, req, m, nam, rights)
 			soisconnected(so);
 		break;
 
+	case PRU_CONNECT2:
+		error = EOPNOTSUPP;
+		break;
+
 	case PRU_ACCEPT:
 		error = EOPNOTSUPP;
 		break;
@@ -316,14 +320,16 @@ udp_usrreq(so, req, m, nam, rights)
 		in_setsockaddr(inp, nam);
 		break;
 
-	default:
-		printf("request %d\n", req);
-
 	case PRU_CONTROL:
-		return (EOPNOTSUPP);
+		m = NULL;
+		error = EOPNOTSUPP;
+		break;
+
+	case PRU_SENSE:
+		m = NULL;
+		/* fall thru... */
 
 	case PRU_RCVD:
-	case PRU_SENSE:
 	case PRU_RCVOOB:
 	case PRU_SENDOOB:
 	case PRU_FASTTIMO:
@@ -332,6 +338,9 @@ udp_usrreq(so, req, m, nam, rights)
 	case PRU_PROTOSEND:
 		error =  EOPNOTSUPP;
 		break;
+
+	default:
+		panic("udp_usrreq");
 	}
 release:
 	if (m != NULL)
