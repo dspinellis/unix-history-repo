@@ -1,4 +1,4 @@
-SCCSID = "@(#)pimakefile 1.43 %G%"
+SCCSID = "@(#)pimakefile 1.44 %G%"
 
 INSTALLDIR = ${DESTDIR}/usr/ucb
 INSTALLNAME = ${INSTALLDIR}/pi
@@ -13,7 +13,7 @@ EYACC = /usr/ucb/eyacc
 RM = -rm -f
 GET = sccs -d${SRCDIR} get
 
-CFLAGS = -O -w
+CFLAGS = -O
 LDFLAGS = -z
 
 SRCDIR = /usr/src/cmd/pc0
