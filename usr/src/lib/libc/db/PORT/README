@@ -1,4 +1,4 @@
-#	@(#)README	5.3 (Berkeley) %G%
+#	@(#)README	8.1 (Berkeley) %G%
 
 This is the directory to use for creating a library of the dbopen(3)
 routines.  The Makefile builds the base system.  By changing it and
