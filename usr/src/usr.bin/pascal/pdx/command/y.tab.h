@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)y.tab.h	5.2 (Berkeley) %G%
+ *	@(#)y.tab.h	5.3 (Berkeley) %G%
  */
 
 typedef union  {
@@ -59,3 +59,4 @@ extern YYSTYPE yylval;
 # define OR 296
 # define NOT 297
 # define UNARYSIGN 298
+# define GRIPE 299
