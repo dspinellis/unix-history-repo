@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)traverse.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)traverse.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include "dump.h"
@@ -241,8 +241,11 @@ spclrec()
 	spcl.c_checksum = 0;
 	ip = (int *)&spcl;
 	s = 0;
-	for(i = 0; i < sizeof(union u_spcl)/sizeof(int); i++)
-		s += *ip++;
+	i = sizeof(union u_spcl) / (4*sizeof(int));
+	while (--i >= 0) {
+		s += *ip++; s += *ip++;
+		s += *ip++; s += *ip++;
+	}
 	spcl.c_checksum = CHECKSUM - s;
 	taprec((char *)&spcl);
 }
