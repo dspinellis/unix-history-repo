@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)inet.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)inet.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -145,23 +145,34 @@ inet_rtflags(sin)
  * Send it only if dst is on the same logical network,
  * or the route turns out to be for the net (aka subnet 0).
  */
-inet_sendsubnet(rtsin, dst)
-	struct sockaddr_in *rtsin, *dst;
+inet_sendsubnet(rt, dst)
+	struct rt_entry *rt;
+	struct sockaddr_in *dst;
 {
-	register u_long rt = ntohl(rtsin->sin_addr.s_addr);
+	register u_long r =
+	    ntohl(((struct sockaddr_in *)&rt->rt_dst)->sin_addr.s_addr);
 	register u_long d = ntohl(dst->sin_addr.s_addr);
 
-	if (IN_CLASSA(rt)) {
-		if ((rt & IN_CLASSA_HOST) == 0)
+	if (IN_CLASSA(r)) {
+		if ((r & IN_CLASSA_NET) == (d & IN_CLASSA_NET)) {
+			if ((r & IN_CLASSA_HOST) == 0)
+				return ((rt->rt_state & RTS_INTERNAL) == 0);
 			return (1);
-		return ((rt & IN_CLASSA_NET) == (d & IN_CLASSA_NET));
-	} else if (IN_CLASSB(rt)) {
-		if ((rt & IN_CLASSB_HOST) == 0)
+		}
+		return ((r & IN_CLASSA_HOST) == 0);
+	} else if (IN_CLASSB(r)) {
+		if ((r & IN_CLASSB_NET) == (d & IN_CLASSB_NET)) {
+			if ((r & IN_CLASSB_HOST) == 0)
+				return ((rt->rt_state & RTS_INTERNAL) == 0);
 			return (1);
-		return ((rt & IN_CLASSB_NET) == (d & IN_CLASSB_NET));
+		}
+		return ((r & IN_CLASSB_HOST) == 0);
 	} else {
-		if ((rt & IN_CLASSC_HOST) == 0)
+		if ((r & IN_CLASSC_NET) == (d & IN_CLASSC_NET)) {
+			if ((r & IN_CLASSC_HOST) == 0)
+				return ((rt->rt_state & RTS_INTERNAL) == 0);
 			return (1);
-		return ((rt & IN_CLASSC_NET) == (d & IN_CLASSC_NET));
+		}
+		return ((r & IN_CLASSC_HOST) == 0);
 	}
 }

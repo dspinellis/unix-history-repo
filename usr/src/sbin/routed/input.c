@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)input.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)input.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -92,6 +92,11 @@ rip_input(from, size)
 		/* verify message came from a privileged port */
 		if ((*afp->af_portcheck)(from) == 0)
 			return;
+		if (if_iflookup(from) == 0) {
+			syslog(LOG_ERR, "trace command from unknown router, %s",
+			   (*afswitch[from->sa_family].af_format)(from));
+			return;
+		}
 		packet[size] = '\0';
 		if (msg->rip_cmd == RIPCMD_TRACEON)
 			traceon(msg->rip_tracefile);
@@ -119,10 +124,16 @@ rip_input(from, size)
 		 * If from other end of a point-to-point link that isn't
 		 * in the routing tables, (re-)add the route.
 		 */
-		if ((rt = rtfind(from)) && (rt->rt_state & RTS_INTERFACE))
+		if ((rt = rtfind(from)) &&
+		    (rt->rt_state & (RTS_INTERFACE | RTS_REMOTE)))
 			rt->rt_timer = 0;
 		else if (ifp = if_ifwithdstaddr(from))
 			addrouteforif(ifp);
+		else if (if_iflookup(from) == 0) {
+			syslog(LOG_ERR, "packet from unknown router, %s",
+			   (*afswitch[from->sa_family].af_format)(from));
+			return;
+		}
 		size -= 4 * sizeof (char);
 		n = msg->rip_nets;
 		for (; size > 0; size -= sizeof (struct netinfo), n++) {
@@ -154,6 +165,10 @@ rip_input(from, size)
 			}
 			rt = rtlookup(&n->rip_dst);
 			if (rt == 0) {
+				rt = rtfind(&n->rip_dst);
+				if (rt && equal(from, &rt->rt_router) &&
+				    rt->rt_metric == n->rip_metric)
+					continue;
 				if (n->rip_metric < HOPCNT_INFINITY)
 				    rtadd(&n->rip_dst, from, n->rip_metric, 0);
 				continue;

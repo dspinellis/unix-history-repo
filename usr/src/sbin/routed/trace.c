@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)trace.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)trace.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -13,6 +13,7 @@ static char sccsid[] = "@(#)trace.c	5.2 (Berkeley) %G%";
  */
 #define	RIPCMDS
 #include "defs.h"
+#include <sys/stat.h>
 
 #define	NRECORDS	50		/* size of circular trace buffer */
 #ifdef DEBUG
@@ -55,8 +56,11 @@ iftraceinit(ifp, ifd)
 traceon(file)
 	char *file;
 {
+	struct stat stbuf;
 
 	if (ftrace != NULL)
+		return;
+	if (stat(file, &stbuf) >= 0 && (stbuf.st_mode & S_IFMT) != S_IFREG)
 		return;
 	ftrace = fopen(file, "a");
 	if (ftrace == NULL)
@@ -127,6 +131,9 @@ traceaction(fd, action, rt)
 		{ RTS_REMOTE,	"REMOTE" },
 		{ RTS_INTERFACE,"INTERFACE" },
 		{ RTS_CHANGED,	"CHANGED" },
+		{ RTS_INTERNAL,	"INTERNAL" },
+		{ RTS_EXTERNAL,	"EXTERNAL" },
+		{ RTS_SUBNET,	"SUBNET" },
 		{ 0 }
 	};
 	register struct bits *p;

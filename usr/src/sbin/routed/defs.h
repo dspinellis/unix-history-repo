@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)defs.h	5.2 (Berkeley) %G%
+ *	@(#)defs.h	5.3 (Berkeley) %G%
  */
 
 /*
@@ -34,7 +34,6 @@
  */
 #define	CHECK_INTERVAL	(1*60)
 
-#define	LOOPBACKNET	0x7f000000	/* 127.0.0.0 */
 #define equal(a1, a2) \
 	(bcmp((caddr_t)(a1), (caddr_t)(a2), sizeof (struct sockaddr)) == 0)
 #define	min(a,b)	((a)>(b)?(b):(a))
