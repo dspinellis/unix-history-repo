@@ -1,7 +1,10 @@
-.\"     @(#)A.t	1.2     89/02/23
+.\"     @(#)A.t	1.3     89/02/24
 .\" run with ditroff -ms
 .nr PS 18
 .nr VS 22
+.nr HM 1.75i
+.nr FM 2i
+.nr LL 5.75i
 .nr PO 1.25i
 .LP
 .ce 100
@@ -17,8 +20,6 @@ February 23, 1989
 .LP
 \fBPrincipal Investigators\fP
 .LP
-Marshall K. McKusick	(415)-642-4948	mckusick@okeeffe.berkeley.edu
-.LP
 Susan L. Graham		(415)-642-2059	graham@renoir.berkeley.edu
 .LP
 Domenico Ferrari		(415)-642-3806	ferrari@ernie.berkeley.edu
@@ -31,9 +32,9 @@ Diane Leite			(415)-642-8882	dianel@willow.berkeley.edu
 .LP
 \fBResearch Investigators\fP
 .LP
-Michael J. Karels		(415)-642-4948	karels@okeeffe.berkeley.edu
+Marshall K. McKusick	(415)-642-4948	mckusick@okeeffe.berkeley.edu
 .LP
-Keith Sklower		(415)-642-9587	sklower@okeeffe.berkeley.edu
+Michael J. Karels		(415)-642-4948	karels@okeeffe.berkeley.edu
 .sp 5
 .LP
 The mailing address for all personnel above is:

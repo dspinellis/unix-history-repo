@@ -1,25 +1,6 @@
-.\"     @(#)I.t	1.5     89/02/24
+.\"     @(#)I.t	1.6     89/02/24
 .LP
 \fB\s+4I. Accomplishments of the Berkeley UNIX Project\fP\s-4
-.PP
-The investigators in this proposal have been involved in the
-Berkeley UNIX project for many years.
-Professor Susan L. Graham  has experience as Project Director
-for the \s-2DARPA\s+2 tasking contract for 
-\fIProductivity Engineering in the \s-2UNIX\s+2 Environment\fP,
-which has provided research and/or infrastructure support to most
-members of the Computer Science Division at various times.
-Professor Graham serves on the departmental Computer Needs and
-Resources committee.
-Professor Domenico Ferrari is a former departmental
-Associate Chair for Computer Science.
-Dr. Marshall Kirk McKusick has been the Research Computer Scientist
-associated with the project since 1984.
-Michael Karels has been the Principal Programmer associated with
-the project since 1983.
-Diane Leite was formerly on the staff of the campus Sponsored
-Projects Office and is familiar with the various campus and government
-procedures.
 .PP
 The last major release of Berkeley UNIX,
 in June, 1986, was 4.3BSD [CSRG86].
@@ -230,4 +211,25 @@ and new kernels
 will accommodate both formats.
 The filesystem check facility, \fIfsck\fP, has also been modified to check
 either type.
+.sp
+.LP
+\fB\s+2I.3 Personnel\fP\s-2
+.PP
+The investigators in this proposal have been involved in the
+Berkeley UNIX project for many years.
+Professor Susan L. Graham  has experience as Project Director
+for the \s-2DARPA\s+2 tasking contract for 
+\fIProductivity Engineering in the \s-2UNIX\s+2 Environment\fP,
+which has provided research and/or infrastructure support to most
+members of the Computer Science Division at various times.
+Professor Domenico Ferrari is a former departmental
+Associate Chair for Computer Science.
+Dr. Marshall Kirk McKusick has been the Research Computer Scientist
+associated with the project since 1984.
+Michael Karels has been the Principal Programmer associated with
+the project since 1983.
+Diane Leite has been on the staff of the Electronics Research Laboratory
+for seven years
+and is familiar with the various campus and government
+procedures.
 .bp
