@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)expand.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)expand.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -300,7 +300,7 @@ patherr1:
 	closedir(dirp);
 patherr2:
 	strcat(path, ": ");
-	strcat(path, sys_errlist[errno]);
+	strcat(path, strerror(errno));
 	yyerror(path);
 }
 
