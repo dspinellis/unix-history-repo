@@ -1,0 +1,64 @@
+.th WRITE I 8/5/73
+.sh NAME
+write  \*-  write to another user
+.sh SYNOPSIS
+.bd write
+user [ ttyno ]
+.sh DESCRIPTION
+.it Write
+copies lines from your typewriter to that of
+another user.
+When first called,
+it sends the message
+.s3
+     message from yourname...
+.s3
+The recipient of the message should write back at this point.
+Communication continues until an end of file is
+read from the typewriter or an interrupt is sent.
+At that point
+.it write
+writes `EOT' on the other terminal and exits.
+.s3
+If you want to write to a user who is logged in more than once,
+the
+.it ttyno
+argument may be used to indicate the last character
+of the appropriate typewriter name.
+.s3
+Permission to write may be denied or granted by use of the
+.it mesg
+command.
+At the outset writing is allowed.
+Certain commands, in particular
+.it roff
+and
+.it pr,
+disallow
+messages in order to prevent messy output.
+.s3
+If the character `!' is found at the beginning of a line,
+.it write
+calls the shell
+to execute the rest of the
+line as a command.
+.s3
+The following protocol is suggested for using
+.it write:
+when you first write to another user, wait for him to
+write back before starting to send.
+Each party should end each message with a distinctive
+signal
+(
+.bd (o)
+for `over' is conventional) that the other may reply.
+.bd (oo)
+(for `over and out') is suggested when conversation
+is about to be terminated.
+.sh FILES
+/etc/utmp	to find user
+.br
+/bin/sh	to execute `!'
+.sh "SEE ALSO"
+mesg (I), who (I), mail (I)
+.sh BUGS
