@@ -1,4 +1,4 @@
-static char sccsid[] = "@(#)v6mail.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)v6mail.c	4.2	(Berkeley)	%G%";
 
 /*
  * Version 6 Cory mail--
@@ -23,7 +23,7 @@ static char sccsid[] = "@(#)v6mail.c	4.1	(Berkeley)	%G%";
  *		sends mail from the network
  *
  *	mail -d people
- *		don't call delivermail, send mail directly
+ *		don't call sendmail, send mail directly
  *	mail msgs
  *		send to "msgs"
  *	mail filename
@@ -168,7 +168,7 @@ static char sccsid[] = "@(#)v6mail.c	4.1	(Berkeley)	%G%";
 char	lettmp[]  = "/tmp/MaXXXXX";	/* keep letter before sending it */
 char	preptmp[] = "/tmp/mbXXXXX";	/* if prepending msg, use this file */
 int	chew;				/* if true, strip extra from lines */
-int	dflag;				/* if true, don't call delivermail */
+int	dflag;				/* if true, don't call sendmail */
 char	shopcnt[30] = "0";		/* hop count parameter for rmt mail */
 int	errs;				/* no of errs in sending */
 char	deleteonly;			/* if true, just delete mailbox */
@@ -310,18 +310,18 @@ char **argv, *from;
 	char *getdate();
 	FILE *fdout;
 
-# ifdef DELIVERM
+# ifdef SENDMAIL
 	/*
-	**  Ship off to delivermail if appropriate (and possible)
+	**  Ship off to sendmail if appropriate (and possible)
 	*/
 
 	if (!dflag)
 	{
-		argv[0] = "-delivermail";
+		argv[0] = "-sendmail";
 		argv[argc] = 0;
-		execv("/etc/delivermail", argv);
+		execv("/usr/lib/sendmail", argv);
 		/* oops...  better just deliver it. */
-		fprintf(stderr, "Not using delivermail\n");
+		fprintf(stderr, "Not using sendmail\n");
 		errno = 0;
 		argv[argc] = (char *)-1;
 	}
@@ -402,7 +402,7 @@ char *fromaddr;
 
 	stripmach(&person);
 	if(person[0] == ':')person++;
-	/* delivermail provides these services */
+	/* sendmail provides these services */
 	if(any(':',person)
 # ifdef MSGSCMD
 		|| strcmp(person,"msgs") == 0
