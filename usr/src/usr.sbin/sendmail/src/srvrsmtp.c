@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	6.58 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.59 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	6.58 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.59 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -111,7 +111,7 @@ smtp(e)
 	}
 	settime(e);
 	CurHostName = RealHostName;
-	setproctitle("srvrsmtp %s startup", CurHostName);
+	setproctitle("server %s startup", CurHostName);
 	expand("\201e", inp, &inp[sizeof inp], e);
 	message("220-%s", inp);
 	message("220 ESMTP spoken here");
@@ -139,9 +139,10 @@ smtp(e)
 		(void) fflush(stdout);
 
 		/* read the input line */
-		SmtpPhase = "srvrsmtp cmd read";
-		setproctitle("srvrsmtp %s cmd read", CurHostName);
-		p = sfgets(inp, sizeof inp, InChannel, TimeOuts.to_nextcommand);
+		SmtpPhase = "server cmd read";
+		setproctitle("server %s cmd read", CurHostName);
+		p = sfgets(inp, sizeof inp, InChannel, TimeOuts.to_nextcommand,
+				SmtpPhase);
 
 		/* handle errors */
 		if (p == NULL)
@@ -203,12 +204,12 @@ smtp(e)
 			if (c->cmdcode == CMDEHLO)
 			{
 				protocol = "ESMTP";
-				SmtpPhase = "EHLO";
+				SmtpPhase = "server EHLO";
 			}
 			else
 			{
 				protocol = "SMTP";
-				SmtpPhase = "HELO";
+				SmtpPhase = "server HELO";
 			}
 			sendinghost = newstr(p);
 			if (strcasecmp(p, RealHostName) != 0)
@@ -223,7 +224,7 @@ smtp(e)
 			break;
 
 		  case CMDMAIL:		/* mail -- designate sender */
-			SmtpPhase = "MAIL";
+			SmtpPhase = "server MAIL";
 
 			/* check for validity of this command */
 			if (!gothello)
@@ -395,7 +396,7 @@ smtp(e)
 				usrerr("503 Need MAIL before RCPT");
 				break;
 			}
-			SmtpPhase = "RCPT";
+			SmtpPhase = "server RCPT";
 			if (setjmp(TopFrame) > 0)
 			{
 				e->e_flags &= ~EF_FATALERRS;
@@ -430,7 +431,7 @@ smtp(e)
 			break;
 
 		  case CMDDATA:		/* data -- text of mail */
-			SmtpPhase = "DATA";
+			SmtpPhase = "server DATA";
 			if (!gotmail)
 			{
 				message("503 Need MAIL command");
@@ -826,7 +827,7 @@ runinchild(label, e)
 			auto int st;
 
 			/* parent -- wait for child to complete */
-			setproctitle("srvrsmtp %s child wait", CurHostName);
+			setproctitle("server %s child wait", CurHostName);
 			st = waitfor(childpid);
 			if (st == -1)
 				syserr("%s: lost child", label);

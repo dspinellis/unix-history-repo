@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	6.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	6.20 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -629,6 +629,7 @@ xfclose(fp, a, b)
 **		siz -- size of buf.
 **		fp -- file to read from.
 **		timeout -- the timeout before error occurs.
+**		during -- what we are trying to read (for error messages).
 **
 **	Returns:
 **		NULL on error (including timeout).  This will also leave
@@ -642,11 +643,12 @@ xfclose(fp, a, b)
 static jmp_buf	CtxReadTimeout;
 
 char *
-sfgets(buf, siz, fp, timeout)
+sfgets(buf, siz, fp, timeout, during)
 	char *buf;
 	int siz;
 	FILE *fp;
 	time_t timeout;
+	char *during;
 {
 	register EVENT *ev = NULL;
 	register char *p;
@@ -659,11 +661,12 @@ sfgets(buf, siz, fp, timeout)
 		{
 # ifdef LOG
 			syslog(LOG_NOTICE,
-			    "timeout waiting for input from %s\n",
-			    CurHostName? CurHostName: "local");
+			    "timeout waiting for input from %s during %s\n",
+			    CurHostName? CurHostName: "local", during);
 # endif
 			errno = 0;
-			usrerr("451 timeout waiting for input");
+			usrerr("451 timeout waiting for input during %s",
+				during);
 			buf[0] = '\0';
 			return (NULL);
 		}
