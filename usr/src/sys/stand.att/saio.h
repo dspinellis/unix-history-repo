@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)saio.h	7.12 (Berkeley) %G%
+ *	@(#)saio.h	7.13 (Berkeley) %G%
  */
 
 #include "saioctl.h"
@@ -24,7 +24,7 @@
 #define	NULL	0
 
 /*
- * Io block: includes an inode, cells for the use of seek, etc.,
+ * Io block: includes an dinode, cells for the use of seek, etc.,
  * and a buffer.
  */
 struct iob {
@@ -34,9 +34,10 @@ struct iob {
 	int	i_unit;		/* pseudo device unit */
 	int	i_part;		/* disk partition */
 	daddr_t	i_boff;		/* block offset on device */
-	struct	inode i_ino;	/* inode, if file */
+	struct	dinode i_ino;	/* dinode, if file */
 	daddr_t	i_cyloff;	/* cylinder offset on device */
 	off_t	i_offset;	/* seek offset in file */
+	dev_t	i_dev;		/* associated device */
 	daddr_t	i_bn;		/* 1st block # of next read */
 	char	*i_ma;		/* memory address of i/o buffer */
 	int	i_cc;		/* character count of transfer */
