@@ -1,5 +1,9 @@
-#	@(#)gettytab	4.7 (Berkeley) 85/02/05
-
+# Copyright (c) 1980 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	@(#)gettytab	5.1 (Berkeley) %G%
+#
 #
 # Most of the table entries here are just copies of the
 # old getty table, it is by no means certain, or even likely,
