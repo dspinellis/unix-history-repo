@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty_tty.c	7.12 (Berkeley) %G%
+ *	@(#)tty_tty.c	7.13 (Berkeley) %G%
  */
 
 /*
@@ -41,12 +41,11 @@ cttyopen(dev, flag, mode, p)
 }
 
 /*ARGSUSED*/
-cttyread(dev, uio, flag, p)
+cttyread(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
-	struct proc *p;
 {
-	register struct vnode *ttyvp = cttyvp(p);
+	register struct vnode *ttyvp = cttyvp(uio->uio_procp);
 	int error;
 
 	if (ttyvp == NULL)
@@ -58,12 +57,11 @@ cttyread(dev, uio, flag, p)
 }
 
 /*ARGSUSED*/
-cttywrite(dev, uio, flag, p)
+cttywrite(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
-	struct proc *p;
 {
-	register struct vnode *ttyvp = cttyvp(p);
+	register struct vnode *ttyvp = cttyvp(uio->uio_procp);
 	int error;
 
 	if (ttyvp == NULL)
