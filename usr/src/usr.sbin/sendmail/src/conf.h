@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.159 (Berkeley) %G%
+ *	@(#)conf.h	8.160 (Berkeley) %G%
  */
 
 /*
@@ -77,6 +77,14 @@
 
 # ifndef DSN
 #  define DSN		1	/* include delivery status notification code */
+# endif
+
+# ifndef MIME8TO7
+#  define MIME8TO7	1	/* 8->7 bit MIME conversions */
+# endif
+
+# ifndef MIME7TO8
+#  define MIME7TO8	1	/* 7->8 bit MIME conversions */
 # endif
 
 /*

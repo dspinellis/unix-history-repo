@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.150 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.151 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -2287,6 +2287,7 @@ putbody(mci, e, separator)
 	}
 	rewind(e->e_dfp);
 
+#if MIME8TO7
 	if (bitset(MCIF_CVT8TO7, mci->mci_flags))
 	{
 		char *boundaries[MAXMIMENESTING + 1];
@@ -2311,6 +2312,7 @@ putbody(mci, e, separator)
 		mime8to7(mci, e->e_header, e, boundaries, M87F_OUTER);
 	}
 	else
+#endif
 	{
 		int ostate;
 		register char *bp;

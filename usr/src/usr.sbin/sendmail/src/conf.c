@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.163 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.164 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -184,7 +184,11 @@ setdefaults(e)
 	LogLevel = 9;				/* option L */
 	inittimeouts(NULL);			/* option r */
 	PrivacyFlags = 0;			/* option p */
+#if MIME8TO7
 	MimeMode = MM_CVTMIME|MM_PASS8BIT;	/* option 8 */
+#else
+	MimeMode = MM_PASS8BIT;
+#endif
 	for (i = 0; i < MAXTOCLASS; i++)
 	{
 		TimeOuts.to_q_return[i] = 5 DAYS;	/* option T */
