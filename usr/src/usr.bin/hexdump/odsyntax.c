@@ -6,10 +6,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)odsyntax.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)odsyntax.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include "hexdump.h"
 
@@ -165,5 +166,103 @@ oldsyntax(argc, argvp)
 		add("\"%07.7_ao  \" 8/2 \"%06o \" \"\\n\"");
 	}
 
+	argc -= optind;
 	*argvp += optind;
+
+	odoffset(argc, argvp);
+}
+
+#define	ishexdigit(c) \
+	(c >= '0' && c <= '9' || c >= 'a' && c <= 'f' || c >= 'A' && c <= 'F')
+
+odoffset(argc, argvp)
+	int argc;
+	char ***argvp;
+{
+	extern off_t skip;
+	register char *num, *p;
+	int base;
+	char *end;
+
+	/*
+	 * The offset syntax of od(1) was genuinely bizarre.  First, if
+	 * it started with a plus it had to be an offset.  Otherwise, if
+	 * there were at least two arguments, a number or lower-case 'x'
+	 * followed by a number makes it an offset.  By default it was
+	 * octal; if it started with 'x' or '0x' it was hex.  If it ended
+	 * in a '.', it was decimal.  If a 'b' or 'B' was appended, it
+	 * multiplied the number by 512 or 1024 byte units.  There was
+	 * no way to assign a block count to a hex offset.
+	 *
+	 * We assumes it's a file if the offset is bad.
+	 */
+	p = **argvp;
+	if (*p != '+' && (argc < 2 ||
+	    (!isdigit(p[0]) && (p[0] != 'x' || !ishexdigit(p[1])))))
+		return;
+
+	base = 0;
+	/*
+	 * skip over leading '+', 'x[0-9a-fA-f]' or '0x', and
+	 * set base.
+	 */
+	if (p[0] == '+')
+		++p;
+	if (p[0] == 'x' && ishexdigit(p[1])) {
+		++p;
+		base = 16;
+	} else if (p[0] == '0' && p[1] == 'x') {
+		p += 2;
+		base = 16;
+	}
+
+	/* skip over the number */
+	if (base == 16)
+		for (num = p; ishexdigit(*p); ++p);
+	else
+		for (num = p; isdigit(*p); ++p);
+
+	/* check for no number */
+	if (num == p)
+		return;
+
+	/* if terminates with a '.', base is decimal */
+	if (*p == '.') {
+		if (base)
+			return;
+		base = 10;
+	}
+
+	skip = strtol(num, &end, base ? base : 8);
+
+	/* if end isn't the same as p, we got a non-octal digit */
+	if (end != p)
+		skip = 0;
+	else {
+		if (*p) {
+			if (*p == 'b')
+				skip *= 512;
+			else if (*p == 'B')
+				skip *= 1024;
+			++p;
+		}
+		if (*p)
+			skip = 0;
+		else {
+			++*argvp;
+			/*
+			 * If the offset uses a non-octal base, the base of
+			 * the offset is changed as well.  This isn't pretty,
+			 * but it's easy.
+			 */
+#define	TYPE_OFFSET	7
+			if (base == 16) {
+				fshead->nextfu->fmt[TYPE_OFFSET] = 'x';
+				fshead->nextfs->nextfu->fmt[TYPE_OFFSET] = 'x';
+			} else if (base == 10) {
+				fshead->nextfu->fmt[TYPE_OFFSET] = 'd';
+				fshead->nextfs->nextfu->fmt[TYPE_OFFSET] = 'd';
+			}
+		}
+	}
 }
