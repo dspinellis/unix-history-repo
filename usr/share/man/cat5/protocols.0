@@ -1,0 +1,34 @@
+PROTOCOLS(5)                BSD Programmer's Manual               PROTOCOLS(5)
+
+NNAAMMEE
+     pprroottooccoollss - protocol name data base
+
+DDEESSCCRRIIPPTTIIOONN
+     The pprroottooccoollss file contains information regarding the known protocols
+     used in the DARPA Internet.  For each protocol a single line should be
+     present with the following information:
+
+           official protocol name
+           protocol number
+           aliases
+
+     Items are separated by any number of blanks and/or tab characters.  A
+     ``#'' indicates the beginning of a comment; characters up to the end of
+     the line are not interpreted by routines which search the file.
+
+     Protocol names may contain any printable character other than a field de-
+     limiter, newline, or comment character.
+
+FFIILLEESS
+     /etc/protocols  The pprroottooccoollss file resides in _/_e_t_c.
+
+SSEEEE AALLSSOO
+     getprotoent(3)
+
+BBUUGGSS
+     A name server should be used instead of a static file.
+
+HHIISSTTOORRYY
+     The pprroottooccoollss file format appeared in 4.2BSD.
+
+4.2 Berkeley Distribution        June 5, 1993                                1

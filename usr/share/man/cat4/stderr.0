@@ -1,0 +1,39 @@
+FD(4)                       BSD Programmer's Manual                      FD(4)
+
+NNAAMMEE
+     ffdd, ssttddiinn, ssttddoouutt, ssttddeerrrr - file descriptor files
+
+DDEESSCCRRIIPPTTIIOONN
+     The files _/_d_e_v_/_f_d_/_0 through _/_d_e_v_/_f_d_/_# refer to file descriptors which can
+     be accessed through the file system.  If the file descriptor is open and
+     the mode the file is being opened with is a subset of the mode of the ex-
+     isting descriptor, the call:
+
+           fd = open("/dev/fd/0", mode);
+
+     and the call:
+
+           fd = fcntl(0, F_DUPFD, 0);
+
+     are equivalent.
+
+     Opening the files _/_d_e_v_/_s_t_d_i_n, _/_d_e_v_/_s_t_d_o_u_t and _/_d_e_v_/_s_t_d_e_r_r is equivalent
+     to the following calls:
+
+           fd = fcntl(STDIN_FILENO,  F_DUPFD, 0);
+           fd = fcntl(STDOUT_FILENO, F_DUPFD, 0);
+           fd = fcntl(STDERR_FILENO, F_DUPFD, 0);
+
+     Flags to the open(2) call other than O_RDONLY, O_WRONLY and O_RDWR are
+     ignored.
+
+FFIILLEESS
+     /dev/fd/#
+     /dev/stdin
+     /dev/stdout
+     /dev/stderr
+
+SSEEEE AALLSSOO
+     tty(4)
+
+4.4BSD                           June 9, 1993                                1

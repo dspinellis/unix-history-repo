@@ -1,0 +1,38 @@
+LO(4)                       BSD Programmer's Manual                      LO(4)
+
+NNAAMMEE
+     lloo - software loopback network interface
+
+SSYYNNOOPPSSIISS
+     ppsseeuuddoo--ddeevviiccee
+     lloooopp
+
+DDEESSCCRRIIPPTTIIOONN
+     The lloooopp interface is a software loopback mechanism which may be used for
+     performance analysis, software testing, and/or local communication.  As
+     with other network interfaces, the loopback interface must have network
+     addresses assigned for each address family with which it is to be used.
+     These addresses may be set or changed with the SIOCSIFADDR ioctl(2).  The
+     loopback interface should be the last interface configured, as protocols
+     may use the order of configuration as an indication of priority.  The
+     loopback should _n_e_v_e_r be configured first unless no hardware interfaces
+     exist.
+
+DDIIAAGGNNOOSSTTIICCSS
+     lloo%%dd:: ccaann''tt hhaannddllee aaff%%dd..  The interface was handed a message with ad-
+     dresses formatted in an unsuitable address family; the packet was
+     dropped.
+
+SSEEEE AALLSSOO
+     intro(4),  inet(4),  ns(4)
+
+HHIISSTTOORRYY
+     The lloo device appeared in 4.2BSD.
+
+BBUUGGSS
+     Previous versions of the system enabled the loopback interface automati-
+     cally, using a nonstandard Internet address (127.1).  Use of that address
+     is now discouraged; a reserved host address for the local network should
+     be used instead.
+
+4.2 Berkeley Distribution        June 5, 1993                                1

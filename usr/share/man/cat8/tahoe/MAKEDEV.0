@@ -1,0 +1,66 @@
+
+
+
+MAKEDEV(8)         BSD System Manager's Manual         MAKEDEV(8)
+
+
+NNAAMMEE
+       MAKEDEV - create system and device special files
+
+SSYYNNOOPPSSIISS
+       MAKEDEV name ...
+
+DDEESSCCRRIIPPTTIIOONN
+       The shell script _M_A_K_E_D_E_V, found in the ``/dev'' directory,
+       is used to create the  common  special  files.   See  _s_p_e_-
+       _c_i_a_l(8) for a more complete discussion of special files.
+
+       _M_A_K_E_D_E_V  takes  any  number  of device names as arguments,
+       where the  names  are  the  common  abbreviation  for  the
+       device.   There  are  two  special  devices,  ``std''  and
+       ``local''.  The former creates the  standard  devices  for
+       the  architecture.   The latter is for devices specific to
+       the   local   site,   and   executes   the   shell    file
+       ``MAKEDEV.local''.
+
+       The  Tahoe supports the following devices.  Where a device
+       name is followed by a hash sign  (``#''),  the  hash  sign
+       must be replaced by a unit number.
+
+       std       the  standard  devices (CP, console, drum, fd/*,
+                 klog, kmem, mem, null,  remote,  stderr,  stdin,
+                 stdout, tty, vmem)
+       local     configuration specific devices
+       cy#       Cipher
+       dk#       VDDC or SMDE disk on Versabus
+       dr#       IKON DR-11W
+       enp#      CMC Ethernet interface for loading RAM
+       hd#       VDDC or SMDE disk on VME
+       ik#       IKON DR-11W w/ E&S PS300
+       mp#       MPCC
+       pty#      set of 32 master and slave pseudo terminals
+       vx#       VIOC
+
+FFIILLEESS
+       /dev      The special file directory.
+
+SSEEEE AALLSSOO
+       _m_k_n_o_d(1), _i_n_t_r_o(4), _c_o_n_f_i_g(8), _s_p_e_c_i_a_l(8)
+
+
+
+
+
+
+
+
+
+
+
+
+4.4 Berkeley Distribution  June 5, 1993                         1
+
+
+
+
+

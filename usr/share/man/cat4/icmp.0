@@ -1,0 +1,51 @@
+ICMP(4)                     BSD Programmer's Manual                    ICMP(4)
+
+NNAAMMEE
+     iiccmmpp - Internet Control Message Protocol
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ssoocckkeett..hh>>
+     ##iinncclluuddee <<nneettiinneett//iinn..hh>>
+
+     _i_n_t
+     ssoocckkeett(_A_F___I_N_E_T, _S_O_C_K___R_A_W, _p_r_o_t_o);
+
+DDEESSCCRRIIPPTTIIOONN
+     ICMP is the error and control message protocol used by IP and the Inter-
+     net protocol family.  It may be accessed through a ``raw socket'' for
+     network monitoring and diagnostic functions.  The _p_r_o_t_o parameter to the
+     socket call to create an ICMP socket is obtained from getprotobyname(3).
+     ICMP sockets are connectionless, and are normally used with the sendto
+     and recvfrom calls, though the connect(2) call may also be used to fix
+     the destination for future packets (in which case the read(2) or recv(2)
+     and write(2) or send(2) system calls may be used).
+
+     Outgoing packets automatically have an IP header prepended to them (based
+     on the destination address).  Incoming packets are received with the IP
+     header and options intact.
+
+DDIIAAGGNNOOSSTTIICCSS
+     A socket operation may fail with one of the following errors returned:
+
+     [EISCONN]        when trying to establish a connection on a socket which
+                      already has one, or when trying to send a datagram with
+                      the destination address specified and the socket is al-
+                      ready connected;
+
+     [ENOTCONN]       when trying to send a datagram, but no destination ad-
+                      dress is specified, and the socket hasn't been connect-
+                      ed;
+
+     [ENOBUFS]        when the system runs out of memory for an internal data
+                      structure;
+
+     [EADDRNOTAVAIL]  when an attempt is made to create a socket with a net-
+                      work address for which no network interface exists.
+
+SSEEEE AALLSSOO
+     send(2),  recv(2),  intro(4),  inet(4),  ip(4)
+
+HHIISSTTOORRYY
+     The iiccmmpp protocol appeared in 4.3BSD.
+
+4.3 Berkeley Distribution        June 5, 1993                                1

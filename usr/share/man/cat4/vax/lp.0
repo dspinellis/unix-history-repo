@@ -1,0 +1,38 @@
+LP(4)             BSD Programmer's Manual (VAX Architecture)             LP(4)
+
+NNAAMMEE
+     llpp - line printer
+
+SSYYNNOOPPSSIISS
+     ddeevviiccee llpp00 aatt uubbaa00 ccssrr 00117777551144 vveeccttoorr llppiinnttrr
+
+DDEESSCCRRIIPPTTIIOONN
+     The llpp device supports DEC and DEC compatible printers on the LP-11 par-
+     allel interface.
+
+     The unit number of the printer is specified by the minor device after re-
+     moving the low 3 bits, which act as per-device parameters.  Currently on-
+     ly the lowest of the low three bits is interpreted: if it is set, the de-
+     vice is assumed to have a 64-character set or half-ASCII mode, rather
+     than a full 96-character set.
+
+     If the 64-character set is assumed, any lower case characters are mapped
+     to upper case; left curly and right curly braces are mapped to left and
+     right parentheses over laid with a hyphen; grave accents are mapped to
+     acute accents with overlaid with a hyphen; the pipe bar character is
+     mapped to an exclamation sign overlaid with a hyphen; and the tilde char-
+     acter is mapped to a carat overlaid with a hyphen.
+
+     The default page width is 132 columns; longer lines are truncated.  This
+     may be overridden by specifying, for example, `flags 256'.
+
+FFIILLEESS
+     /dev/lp
+
+SSEEEE AALLSSOO
+     lpr(1)
+
+HHIISSTTOORRYY
+     A llpp driver appeared in Version 6 AT&T UNIX.
+
+4th Berkeley Distribution        June 5, 1993                                1

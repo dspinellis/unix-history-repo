@@ -1,0 +1,109 @@
+HK(4)                       BSD Programmer's Manual                      HK(4)
+
+NNAAMMEE
+     hhkk - RK6-11/ RK06 and RK07 disk interface
+
+SSYYNNOOPPSSIISS
+     ccoonnttrroolllleerr hhkk00 aatt uubbaa?? ccssrr 00117777444400 vveeccttoorr rrkkiinnttrr
+     ddiisskk rrkk00 aatt hhkk00 ddrriivvee 00
+
+DDEESSCCRRIIPPTTIIOONN
+     The hhkk driver is a typical block-device disk driver; block device I/O is
+     described in physio(4).
+
+     The script MAKEDEV(8) should be used to create the special files; if a
+     special file needs to be created by hand consult mknod(8).
+
+DDIISSKK SSUUPPPPOORRTT
+     Special file names begin with `hk' and `rhk' for the block and character
+     files respectively. The second component of the name, a drive unit number
+     in the range of zero to seven, is represented by a `?' in the disk lay-
+     outs below. The last component is the file system partition which is des-
+     ignated by a letter from `a' to `h'. and corresponds to a minor device
+     number set: zero to seven, eight to 15, 16 to 23 and so forth for drive
+     zero, drive two and drive three respectively.  The location and size (in
+     sectors) of the partitions for the RK06 and RK07 drives are as follows:
+
+     RK07 partitions:
+     ddiisskk      ssttaarrtt    lleennggtthh       ccyyll
+               hk?a     0            15884     0-240
+               hk?b     15906        10032     241-392
+               hk?c     0            53790     0-814
+               hk?d     25938        15884     393-633
+               hk?f     41844        11792     634-814
+               hk?g     25938        27786     393-813
+
+     RK06 partitions
+     ddiisskk      ssttaarrtt    lleennggtthh       ccyyll
+               hk?a     0            15884     0-240
+               hk?b     15906        11154     241-409
+               hk?c     0            27126     0-410
+
+     On a dual RK-07 system partition hk?a is used for the root for one drive
+     and partition hk?g for the /usr file system.  If large jobs are to be run
+     using hk?b on both drives as swap area provides a 10Mbyte paging area.
+     Otherwise partition hk?c on the other drive is used as a single large
+     file system.
+
+FFIILLEESS
+     /dev/hk[0-7][a-h]   block files
+     /dev/rhk[0-7][a-h]  raw files
+
+DDIIAAGGNNOOSSTTIICCSS
+     hhkk%%dd%%cc:: hhaarrdd eerrrroorr %%ssiinngg ffssbbnn %%dd[[--%%dd]] ccss22==%%bb ddss==%%bb eerr==%%bb..  An unrecover-
+     able error occurred during transfer of the specified filesystem block
+     number(s), which are logical block numbers on the indicated partition.
+     The contents of the cs2, ds and er registers are printed in octal and
+     symbolically with bits decoded.  The error was either unrecoverable, or a
+     large number of retry attempts (including offset positioning and drive
+     recalibration) could not recover the error.
+
+     rrkk%%dd:: wwrriittee lloocckkeedd..  The write protect switch was set on the drive when a
+     write was attempted.  The write operation is not recoverable.
+
+
+
+
+     rrkk%%dd:: nnoott rreeaaddyy..  The drive was spun down or off line when it was ac-
+     cessed.  The i/o operation is not recoverable.
+
+     rrkk%%dd:: nnoott rreeaaddyy ((ccaammee bbaacckk!!))..  The drive was not ready, but after print-
+     ing the message about being not ready (which takes a fraction of a sec-
+     ond) was ready.  The operation is recovered if no further errors occur.
+
+     rrkk%%dd%%cc:: ssoofftt eecccc rreeaaddiinngg ffssbbnn %%dd[[--%%dd]]..  A recoverable ECC error occurred
+     on the specified sector(s) in the specified disk partition.  This happens
+     normally a few times a week.  If it happens more frequently than this the
+     sectors where the errors are occurring should be checked to see if cer-
+     tain cylinders on the pack, spots on the carriage of the drive or heads
+     are indicated.
+
+     hhkk%%dd:: lloosstt iinntteerrrruupptt..  A timer watching the controller detected no inter-
+     rupt for an extended period while an operation was outstanding.  This in-
+     dicates a hardware or software failure.  There is currently a hard-
+     ware/software problem with spinning down drives while they are being ac-
+     cessed which causes this error to occur.  The error causes a UNIBUS re-
+     set, and retry of the pending operations.  If the controller continues to
+     lose interrupts, this error will recur a few seconds later.
+
+SSEEEE AALLSSOO
+     hp(4),  uda(4),  up(4),  syslogd(8)
+
+HHIISSTTOORRYY
+     The hhkk driver appeared in 4.1BSD.
+
+BBUUGGSS
+     The write function scribbles on the tail of incomplete blocks.
+
+     DEC-standard error logging should be supported.
+
+     A program to analyze the logged error information (even in its present
+     reduced form) is needed.
+
+     The partition tables for the file systems should be read off of each
+     pack, as they are never quite what any single installation would prefer,
+     and this would make packs more portable.
+
+     The RK07 g partition size in rk.c disagrees with that in _/_e_t_c_/_d_i_s_k_t_a_b_.
+
+4th Berkeley Distribution        June 5, 1993                                2

@@ -1,0 +1,106 @@
+PASSWD(5)                   BSD Programmer's Manual                  PASSWD(5)
+
+NNAAMMEE
+     ppaasssswwdd - format of the password file
+
+DDEESSCCRRIIPPTTIIOONN
+     The ppaasssswwdd files are files consisting of newline separated records, one
+     per user, containing ten colon (``:'') separated fields.  These fields
+     are as follows:
+
+           name      User's login name.
+
+           password  User's _e_n_c_r_y_p_t_e_d password.
+
+           uid       User's id.
+
+           gid       User's login group id.
+
+           class     User's general classification (unused).
+
+           change    Password change time.
+
+           expire    Account expiration time.
+
+           gecos     General information about the user.
+
+           home_dir  User's home directory.
+
+           shell     User's login shell.
+
+     The _n_a_m_e field is the login used to access the computer account, and the
+     _u_i_d field is the number associated with it.  They should both be unique
+     across the system (and often across a group of systems) since they con-
+     trol file access.
+
+     While it is possible to have multiple entries with identical login names
+     and/or identical user id's, it is usually a mistake to do so.  Routines
+     that manipulate these files will often return only one of the multiple
+     entries, and that one by random selection.
+
+     The login name must never begin with a hyphen (``-''); also, it is
+     strongly suggested that neither upper-case characters or dots (``.'') be
+     part of the name, as this tends to confuse mailers.  No field may contain
+     a colon (``:'') as this has been used historically to separate the fields
+     in the user database.
+
+     The password field is the _e_n_c_r_y_p_t_e_d form of the password.  If the
+     _p_a_s_s_w_o_r_d field is empty, no password will be required to gain access to
+     the machine.  This is almost invariably a mistake.  Because these files
+     contain the encrypted user passwords, they should not be readable by any-
+     one without appropriate privileges.
+
+     The group field is the group that the user will be placed in upon login.
+     Since this system supports multiple groups (see groups(1))  this field
+     currently has little special meaning.
+
+     The _c_l_a_s_s field is currently unused.  In the near future it will be a key
+     to a termcap(5) style database of user attributes.
+
+     The _c_h_a_n_g_e field is the number in seconds, GMT, from the epoch, until the
+     password for the account must be changed.  This field may be left empty
+     to turn off the password aging feature.
+
+     The _e_x_p_i_r_e field is the number in seconds, GMT, from the epoch, until the
+     account expires.  This field may be left empty to turn off the account
+     aging feature.
+
+     The _g_e_c_o_s field normally contains comma (``,'') separated subfields as
+     follows:
+
+           name      user's full name
+           office         user's office number
+           wphone         user's work phone number
+           hphone         user's home phone number
+
+     This information is used by the finger(1) program.
+
+     The user's home directory is the full UNIX path name where the user will
+     be placed on login.
+
+     The shell field is the command interpreter the user prefers.  If there is
+     nothing in the _s_h_e_l_l field, the Bourne shell (_/_b_i_n_/_s_h) is assumed.
+
+SSEEEE AALLSSOO
+     chpass(1),  login(1),  passwd(1),  getpwent(3),  adduser(8),
+     pwd_mkdb(8),  vipw(8)
+
+BBUUGGSS
+     User information should (and eventually will) be stored elsewhere.
+
+CCOOMMPPAATTIIBBIILLIITTYY
+     The password file format has changed since 4.3BSD.  The following awk
+     script can be used to convert your old-style password file into a new
+     style password file.  The additional fields ``class'', ``change'' and
+     ``expire'' are added, but are turned off by default.  Class is currently
+     not implemented, but change and expire are; to set them, use the current
+     day in seconds from the epoch + whatever number of seconds of offset you
+     want.
+
+           BEGIN { FS = ":"}
+           { print $1 ":" $2 ":" $3 ":" $4 "::0:0:" $5 ":" $6 ":" $7 }
+
+HHIISSTTOORRYY
+     A ppaasssswwdd file format appeared in Version 6 AT&T UNIX.
+
+4.4BSD                           June 5, 1993                                2

@@ -1,0 +1,37 @@
+SERVICES(5)                 BSD Programmer's Manual                SERVICES(5)
+
+NNAAMMEE
+     sseerrvviicceess - service name data base
+
+DDEESSCCRRIIPPTTIIOONN
+     The sseerrvviicceess file contains information regarding the known services
+     available in the DARPA Internet.  For each service a single line should
+     be present with the following information:
+
+           official service name
+           port number
+           protocol name
+           aliases
+
+     Items are separated by any number of blanks and/or tab characters.  The
+     port number and protocol name are considered a single _i_t_e_m; a ``/'' is
+     used to separate the port and protocol (e.g. ``512/tcp'').  A ``#'' indi-
+     cates the beginning of a comment; subsequent characters up to the end of
+     the line are not interpreted by the routines which search the file.
+
+     Service names may contain any printable character other than a field de-
+     limiter, newline, or comment character.
+
+FFIILLEESS
+     /etc/services  The sseerrvviicceess file resides in _/_e_t_c.
+
+SSEEEE AALLSSOO
+     getservent(3)
+
+BBUUGGSS
+     A name server should be used instead of a static file.
+
+HHIISSTTOORRYY
+     The sseerrvviicceess file format appeared in 4.2BSD.
+
+4.2 Berkeley Distribution        June 5, 1993                                1

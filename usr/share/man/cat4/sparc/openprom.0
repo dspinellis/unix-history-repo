@@ -1,0 +1,79 @@
+OPENPROM(4)      BSD Programmer's Manual (SPARC Architecture)      OPENPROM(4)
+
+NNAAMMEE
+     ooppeennpprroomm - OPENPROM and EEPROM interface
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<mmaacchhiinnee//ooppeennpprroommiioo..hh>>
+
+DDEESSCCRRIIPPTTIIOONN
+     The file //ddeevv//ooppeennpprroomm is an interface to the SPARC OPENPROM, including
+     the EEPROM area.  This interface is highly stylized; ioctls are used for
+     all operations.  These ioctls refer to ``nodes'', which are simply
+     ``magic'' integer values describing data areas.  Occasionally the number
+     0 may be used or returned instead, as described below.  A special distin-
+     guished ``options'' node holds the EEPROM settings.
+
+     The calls that take and/or return a node use a pointer to an int variable
+     for this purpose; others use a pointer to an struct opiocdesc descriptor,
+     which contains a node and two counted strings.  The first string is com-
+     prised of the fields op_namelen (an int) and op_name (a char *), giving
+     the name of a field.  The second string is comprised of the fields
+     op_buflen and op_buf, used analogously.  These two counted strings work
+     in a ``value-result'' fashion.  At entry to the ioctl, the counts are ex-
+     pected to reflect the buffer size; on return, the counts are updated to
+     reflect the buffer contents.
+
+     The following ioctls are supported:
+
+     OPIOCGETOPTNODE  Takes nothing, and fills in the options node number.
+
+     OPIOCGETNEXT     Takes a node number and returns the number of the fol-
+                      lowing node.  The node following the last node is number
+                      0; the node following number 0 is the first node.
+
+     OPIOCGETCHILD    Takes a node number and returns the number of the first
+                      ``child'' of that node.  This child may have siblings;
+                      these can be discovered by using OPIOCGETNEXT.
+
+     OPIOCGET         Fills in the value of the named property for the given
+                      node.  If no such property is associated with that node,
+                      the value length is set to -1.  If the named property
+                      exists but has no value, the value length is set to 0.
+
+     OPIOCSET         Writes the given value under the given name.  The OPEN-
+                      PROM may refuse this operation; in this case EINVAL is
+                      returned.
+
+     OPIOCNEXTPROP    Finds the property whose name follows the given name in
+                      OPENPROM internal order.  The resulting name is returned
+                      in the value field.  If the named property is the last,
+                      the ``next'' name is the empty string.  As with
+                      OPIOCGETNEXT, the next name after the empty string is
+                      the first name.
+
+FFIILLEESS
+     _/_d_e_v_/_o_p_e_n_p_r_o_m
+
+EERRRROORRSS
+     The following may result in rejection of an operation:
+
+     [EINVAL]      The given node number is not zero and does not correspond
+                   to any valid node, or is zero where zero is not allowed.
+
+     [EBADF]       The requested operation requires permissions not specified
+
+                   at the call to ooppeenn().
+
+     [ENAMETOOLONG]
+                   The given name or value field exceeds the maximum allowed
+                   length (8191 bytes).
+
+SSEEEE AALLSSOO
+     ioctl(2)
+
+BBUUGGSS
+     Due to limitations within the OPENPROM itself, these functions run at el-
+     evated priority and may adversely affect system performance.
+
+4.4BSD                           June 5, 1993                                2

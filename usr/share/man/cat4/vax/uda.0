@@ -1,0 +1,443 @@
+UDA(4)            BSD Programmer's Manual (VAX Architecture)            UDA(4)
+
+NNAAMMEE
+     uuddaa - UDA50 disk controller interface
+
+SSYYNNOOPPSSIISS
+     ccoonnttrroolllleerr uuddaa00 aatt uubbaa00 ccssrr 00117722115500 vveeccttoorr uuddaaiinnttrr
+     ddiisskk rraa00 aatt uuddaa00 ddrriivvee 00
+     ooppttiioonnss MMSSCCPP__PPAARRAANNOOIIAA
+
+DDEESSCCRRIIPPTTIIOONN
+     This is a driver for the DEC UDA50 disk controller and other compatible
+     controllers.  The UDA50 communicates with the host through a packet pro-
+     tocol known as the Mass Storage Control Protocol (MSCP). Consult the file
+     <_v_a_x_/_m_s_c_p_._h> for a detailed description of this protocol.
+
+     The uuddaa driver is a typical block-device disk driver; see physio(4) for a
+     description of block I/O. The script MAKEDEV(8) should be used to create
+     the uuddaa special files; should a special file need to be created by hand,
+     consult mknod(8).
+
+     The MSCP_PARANOIA option enables runtime checking on all transfer comple-
+     tion responses from the controller.  This increases disk I/O overhead and
+     may be undesirable on slow machines, but is otherwise recommended.
+
+     The first sector of each disk contains both a first-stage bootstrap pro-
+     gram and a disk label containing geometry information and partition lay-
+     outs (see disklabel(5)).  This sector is normally write-protected, and
+     disk-to-disk copies should avoid copying this sector.  The label may be
+     updated with disklabel(8),  which can also be used to write-enable and
+     write-disable the sector.  The next 15 sectors contain a second-stage
+     bootstrap program.
+
+DDIISSKK SSUUPPPPOORRTT
+     During autoconfiguration, as well as when a drive is opened after all
+     partitions are closed, the first sector of the drive is examined for a
+     disk label.  If a label is found, the geometry of the drive and the par-
+     tition tables are taken from it.  If no label is found, the driver con-
+     figures the type of each drive when it is first encountered.  A default
+     partition table in the driver is used for each type of disk when a pack
+     is not labelled.  The origin and size (in sectors) of the default pseudo-
+     disks on each drive are shown below.  Not all partitions begin on cylin-
+     der boundaries, as on other drives, because previous drivers used one
+     partition table for all drive types.  Variants of the partition tables
+     are common; check the driver and the file _/_e_t_c_/_d_i_s_k_t_a_b (disktab(5))  for
+     other possibilities.
+
+     Special file names begin with `ra' and `rra' for the block and character
+     files respectively. The second component of the name, a drive unit number
+     in the range of zero to seven, is represented by a `?' in the disk lay-
+     outs below. The last component of the name is the file system partition
+     designated by a letter from `a' to `h' and which corresponds to a minor
+     device number set: zero to seven, eight to 15, 16 to 23 and so forth for
+     drive zero, drive two and drive three respectively, (see physio(4)).  The
+     location and size (in sectors) of the partitions:
+
+     RA60 partitions
+     ddiisskk      ssttaarrtt    lleennggtthh
+               ra?a     0            15884
+               ra?b     15884        33440
+               ra?c     0            400176
+               ra?d     49324        82080     same as 4.2BSD ra?g
+               ra?e     131404       268772    same as 4.2BSD ra?h
+               ra?f     49324        350852
+               ra?g     242606       157570
+               ra?h     49324        193282
+
+     RA70 partitions
+     ddiisskk      ssttaarrtt    lleennggtthh
+               ra?a     0            15884
+               ra?b     15972        33440
+               ra?c     0            547041
+               ra?d     34122        15884
+               ra?e     357192       55936
+               ra?f     413457       133584
+               ra?g     341220       205821
+               ra?h     49731        29136
+
+     RA80 partitions
+     ddiisskk      ssttaarrtt    lleennggtthh
+               ra?a     0            15884
+               ra?b     15884        33440
+               ra?c     0            242606
+               ra?e     49324        193282    same as old Berkeley ra?g
+               ra?f     49324        82080     same as 4.2BSD ra?g
+               ra?g     49910        192696
+               ra?h     131404       111202    same as 4.2BSD
+
+     RA81 partitions
+     ddiisskk      ssttaarrtt    lleennggtthh
+               ra?a     0            15884
+               ra?b     16422        66880
+               ra?c     0            891072
+               ra?d     375564       15884
+               ra?e     391986       307200
+               ra?f     699720       191352
+               ra?g     375564       515508
+               ra?h     83538        291346
+
+     RA81 partitions with 4.2BSD-compatible partitions
+     ddiisskk      ssttaarrtt    lleennggtthh
+               ra?a     0            15884
+               ra?b     16422        66880
+               ra?c     0            891072
+               ra?d     49324        82080     same as 4.2BSD ra?g
+               ra?e     131404       759668    same as 4.2BSD ra?h
+               ra?f     412490       478582    same as 4.2BSD ra?f
+               ra?g     375564       515508
+               ra?h     83538        291346
+
+     RA82 partitions
+     ddiisskk      ssttaarrtt    lleennggtthh
+               ra?a     0            15884
+               ra?b     16245        66880
+               ra?c     0            1135554
+               ra?d     375345       15884
+               ra?e     391590       307200
+               ra?f     669390       466164
+               ra?g     375345       760209
+               ra?h     83790        291346
+
+     The ra?a partition is normally used for the root file system, the ra?b
+     partition as a paging area, and the ra?c partition for pack-pack copying
+     (it maps the entire disk).
+
+FFIILLEESS
+     /dev/ra[0-9][a-f]
+     /dev/rra[0-9][a-f]
+
+DDIIAAGGNNOOSSTTIICCSS
+
+
+     ppaanniicc:: uuddaassllaavvee  No command packets were available while the driver was
+     looking for disk drives.  The controller is not extending enough credits
+     to use the drives.
+
+     uuddaa%%dd:: nnoo rreessppoonnssee ttoo GGeett UUnniitt SSttaattuuss rreeqquueesstt  A disk drive was found,
+     but did not respond to a status request.  This is either a hardware prob-
+     lem or someone pulling unit number plugs very fast.
+
+     uuddaa%%dd:: uunniitt %%dd ooffff lliinnee  While searching for drives, the controller found
+     one that seems to be manually disabled.  It is ignored.
+
+     uuddaa%%dd:: uunnaabbllee ttoo ggeett uunniitt ssttaattuuss  Something went wrong while trying to
+     determine the status of a disk drive.  This is followed by an error de-
+     tail.
+
+     uuddaa%%dd:: uunniitt %%dd,, nneexxtt %%dd  This probably never happens, but I wanted to
+     know if it did.  I have no idea what one should do about it.
+
+     uuddaa%%dd:: ccaannnnoott hhaannddllee uunniitt nnuummbbeerr %%dd ((mmaaxx iiss %%dd))  The controller found a
+     drive whose unit number is too large.  Valid unit numbers are those in
+     the range [0..7].
+
+     rraa%%dd:: ddoonn''tt hhaavvee aa ppaarrttiittiioonn ttaabbllee ffoorr %%ss;; uussiinngg ((ss,,tt,,cc))==((%%dd,,%%dd,,%%dd))  The
+     controller found a drive whose media identifier (e.g. `RA 25') does not
+     have a default partition table.  A temporary partition table containing
+     only an `a' partition has been created covering the entire disk, which
+     has the indicated numbers of sectors per track (s), tracks per cylinder
+     (t), and total cylinders (c).  Give the pack a label with the disklabel
+     utility.
+
+     uuddaa%%dd:: uubbaalllloocc mmaapp ffaaiilleedd  Unibus resource map allocation failed during
+     initialisation.  This can only happen if you have 496 devices on a
+     Unibus.
+
+     uuddaa%%dd:: ttiimmeeoouutt dduurriinngg iinniitt  The controller did not initialise within ten
+     seconds.  A hardware problem, but it sometimes goes away if you try
+     again.
+
+     uuddaa%%dd:: iinniitt ffaaiilleedd,, ssaa==%%bb  The controller refused to initalise.
+
+     uuddaa%%dd:: ccoonnttrroolllleerr hhuunngg  The controller never finished initialisation.
+     Retrying may sometimes fix it.
+
+     rraa%%dd:: ddrriivvee wwiillll nnoott ccoommee oonn lliinnee  The drive will not come on line, prob-
+     ably because it is spun down.  This should be preceded by a message giv-
+     ing details as to why the drive stayed off line.
+
+     uuddaa%%dd:: ssttiillll hhuunngg  When the controller hangs, the driver occasionally
+     tries to reinitialise it.  This means it just tried, without success.
+
+     ppaanniicc:: uuddaassttaarrtt:: bbpp====NNUULLLL  A bug in the driver has put an empty drive
+     queue on a controller queue.
+
+     uuddaa%%dd:: ccoommmmaanndd rriinngg ttoooo ssmmaallll  If you increase NCMDL2, you may see a per-
+     formance improvement.  (See _/_s_y_s_/_v_a_x_u_b_a_/_u_d_a_._c.)
+
+     ppaanniicc:: uuddaassttaarrtt  A drive was found marked for status or on-line functions
+     while performing status or on-line functions.  This indicates a bug in
+     the driver.
+
+     uuddaa%%dd:: ccoonnttrroolllleerr eerrrroorr,, ssaa==00%%oo ((%%ss))  The controller reported an error.
+     The error code is printed in octal, along with a short description if the
+     code is known (see the _U_D_A_5_0 _M_a_i_n_t_e_n_a_n_c_e _G_u_i_d_e, DEC part number AA-M185B-
+     TC, pp. 18-22).  If this occurs during normal operation, the driver will
+     reset it and retry pending I/O. If it occurs during configuration, the
+     controller may be ignored.
+
+     uuddaa%%dd:: ssttrraayy iinnttrr  The controller interrupted when it should have stayed
+     quiet.  The interrupt has been ignored.
+
+     uuddaa%%dd:: iinniitt sstteepp %%dd ffaaiilleedd,, ssaa==%%bb  The controller reported an error dur-
+     ing the named initialisation step.  The driver will retry initialisation
+     later.
+
+     uuddaa%%dd:: vveerrssiioonn %%dd mmooddeell %%dd  An informational message giving the revision
+     level of the controller.
+
+     uuddaa%%dd:: DDMMAA bbuurrsstt ssiizzee sseett ttoo %%dd  An informational message showing the DMA
+     burst size, in words.
+
+     ppaanniicc:: uuddaaiinnttrr  Indicates a bug in the generic MSCP code.
+
+     uuddaa%%dd:: ddrriivveerr bbuugg,, ssttaattee %%dd  The driver has a bogus value for the con-
+     troller state.  Something is quite wrong.  This is immediately followed
+     by a `panic: udastate'.
+
+     uuddaa%%dd:: ppuurrggee bbddpp %%dd  A benign message tracing BDP purges.  I have been
+     trying to figure out what BDP purges are for.  You might want to comment
+     out this call to log() in /sys/vaxuba/uda.c.
+
+     uuddaa%%dd:: SSEETTCCTTLLRRCC ffaaiilleedd:: ``ddeettaaiill''  The Set Controller Characteristics com-
+     mand (the last part of the controller initialisation sequence) failed.
+     The _d_e_t_a_i_l message tells why.
+
+     uuddaa%%dd:: aatttteemmpptt ttoo bbrriinngg rraa%%dd oonn lliinnee ffaaiilleedd::  ``ddeettaaiill''  The drive could
+     not be brought on line.  The _d_e_t_a_i_l message tells why.
+
+     uuddaa%%dd:: rraa%%dd:: uunnkknnoowwnn ttyyppee %%dd  The type index of the named drive is not
+     known to the driver, so the drive will be ignored.
+
+     rraa%%dd:: cchhaannggeedd ttyyppeess!! wwaass %%dd nnooww %%dd  A drive somehow changed from one kind
+     to another, e.g., from an RA80 to an RA60. The numbers printed are the
+     encoded media identifiers (see <_v_a_x_/_m_s_c_p_._h> for the encoding).  The driv-
+     er believes the new type.
+
+     rraa%%dd:: uuddaa%%dd,, uunniitt %%dd,, ssiizzee == %%dd sseeccttoorrss  The named drive is on the indi-
+     cated controller as the given unit, and has that many sectors of user-
+     file area.  This is printed during configuration.
+
+     uuddaa%%dd:: aatttteemmpptt ttoo ggeett ssttaattuuss ffoorr rraa%%dd ffaaiilleedd::  ``ddeettaaiill''  A status request
+     failed.  The _d_e_t_a_i_l message should tell why.
+
+     rraa%%dd:: bbaadd bblloocckk rreeppoorrtt:: %%dd  The drive has reported the given block as
+     bad.  If there are multiple bad blocks, the drive will report only the
+     first; in this case this message will be followed by `+ others'.  Get DEC
+     to forward the block with EVRLK.
+
+     rraa%%dd:: sseerriioouuss eexxcceeppttiioonn rreeppoorrtteedd  I have no idea what this really means.
+
+     ppaanniicc:: uuddaarreeppllaaccee  The controller reported completion of a REPLACE opera-
+     tion.  The driver never issues any REPLACEs, so something is wrong.
+
+     ppaanniicc:: uuddaabbbb  The controller reported completion of bad block related
+     I/O. The driver never issues any such, so something is wrong.
+
+     uuddaa%%dd:: lloosstt iinntteerrrruupptt  The controller has gone out to lunch, and is being
+     reset to try to bring it back.
+
+     ppaanniicc:: mmssccpp__ggoo:: AAEEBB__MMAAXX__BBPP ttoooo ssmmaallll  You defined AVOID_EMULEX_BUG and
+     increased NCMDL2 and Emulex has new firmware.  Raise AEB_MAX_BP or turn
+     off AVOID_EMULEX_BUG.
+
+     uuddaa%%dd:: uunniitt %%dd:: uunnkknnoowwnn mmeessssaaggee ttyyppee 00xx%%xx iiggnnoorreedd  The controller re-
+     sponded with a mysterious message type. See _/_s_y_s_/_v_a_x_/_m_s_c_p_._h for a list of
+     known message types.  This is probably a controller hardware problem.
+
+     uuddaa%%dd:: uunniitt %%dd oouutt ooff rraannggee  The disk drive unit number (the unit plug)
+     is higher than the maximum number the driver allows (currently 7).
+
+     uuddaa%%dd:: uunniitt %%dd nnoott ccoonnffiigguurreedd,, mmeessssaaggee iiggnnoorreedd  The named disk drive has
+     announced its presence to the controller, but was not, or cannot now be,
+     configured into the running system.  _M_e_s_s_a_g_e is one of `available atten-
+     tion' (an `I am here' message) or `stray response op 0x%x status 0x%x'
+     (anything else).
+
+     rraa%%dd:: bbaadd llbbnn ((%%dd))??  The drive has reported an invalid command error,
+     probably due to an invalid block number.  If the lbn value is very much
+     greater than the size reported by the drive, this is the problem.  It is
+     probably due to an improperly configured partition table.  Other invalid
+     commands indicate a bug in the driver, or hardware trouble.
+
+     rraa%%dd:: dduupplliiccaattee OONNLLIINNEE iiggnnoorreedd  The drive has come on-line while already
+     on-line.  This condition can probably be ignored (and has been).
+
+     rraa%%dd:: iioo ddoonnee,, bbuutt nnoo bbuuffffeerr??  Hardware trouble, or a bug; the drive has
+     finished an I/O request, but the response has an invalid (zero) command
+     reference number.
+
+     EEmmuulleexx SSCC4411//MMSS ssccrreewwuupp:: uuddaa%%dd,, ggoott %%dd ccoorrrreecctt,, tthheenn cchhaannggeedd 00xx%%xx ttoo
+     00xx%%xx  You turned on AVOID_EMULEX_BUG, and the driver successfully avoided
+     the bug.  The number of correctly-handled requests is reported, along
+     with the expected and actual values relating to the bug being avoided.
+
+     ppaanniicc:: uunnrreeccoovveerraabbllee EEmmuulleexx ssccrreewwuupp  You turned on AVOID_EMULEX_BUG, but
+     Emulex was too clever and avoided the avoidance.  Try turning on
+     MSCP_PARANOIA instead.
+
+     uuddaa%%dd:: bbaadd rreessppoonnssee ppaacckkeett iiggnnoorreedd  You turned on MSCP_PARANOIA, and the
+     driver caught the controller in a lie.  The lie has been ignored, and the
+     controller will soon be reset (after a `lost' interrupt).  This is fol-
+     lowed by a hex dump of the offending packet.
+
+     rraa%%dd:: bboogguuss RREEPPLLAACCEE eenndd  The drive has reported finishing a bad sector
+     replacement, but the driver never issues bad sector replacement commands.
+     The report is ignored.  This is likely a hardware problem.
+
+     rraa%%dd:: uunnkknnoowwnn ooppccooddee 00xx%%xx ssttaattuuss 00xx%%xx iiggnnoorreedd  The drive has reported
+     something that the driver cannot understand.  Perhaps DEC has been inven-
+     tive, or perhaps your hardware is ill.  This is followed by a hex dump of
+     the offending packet.
+
+     rraa%%dd%%cc:: hhaarrdd eerrrroorr %%ssiinngg ffssbbnn %%dd [[ooff %%dd--%%dd]] ((rraa%%dd bbnn %%dd ccnn %%dd ttnn %%dd ssnn
+     %%dd))..  An unrecoverable error occurred during transfer of the specified
+     filesystem block number(s), which are logical block numbers on the indi-
+     cated partition.  If the transfer involved multiple blocks, the block
+     range is printed as well.  The parenthesized fields list the actual disk
+     sector number relative to the beginning of the drive, as well as the
+     cylinder, track and sector number of the block.
+
+     uuddaa%%dd:: %%ss eerrrroorr ddaattaaggrraamm  The controller has reported some kind of error,
+     either `hard' (unrecoverable) or `soft' (recoverable).  If the controller
+     is going on (attempting to fix the problem), this message includes the
+     remark `(continuing)'.  Emulex controllers wrongly claim that all soft
+     errors are hard errors.  This message may be followed by one of the fol-
+     lowing 5 messages, depending on its type, and will always be followed by
+     a failure detail message (also listed below).
+
+
+
+           mmeemmoorryy aaddddrr 00xx%%xx  A host memory access error; this is the address
+           that could not be read.
+
+           uunniitt %%dd:: lleevveell %%dd rreettrryy %%dd,, %%ss %%dd  A typical disk error; the retry
+           count and error recovery levels are printed, along with the block
+           type (`lbn', or logical block; or `rbn', or replacement block) and
+           number.  If the string is something else, DEC has been clever, or
+           your hardware has gone to Australia for vacation (unless you live
+           there; then it might be in New Zealand, or Brazil).
+
+           uunniitt %%dd:: %%ss %%dd  Also a disk error, but an `SDI' error, whatever
+           that is.  (I doubt it has anything to do with Ronald Reagan.)  This
+           lists the block type (`lbn' or `rbn') and number.  This is followed
+           by a second message indicating a microprocessor error code and a
+           front panel code.  These latter codes are drive-specific, and are
+           intended to be used by field service as an aid in locating failing
+           hardware.  The codes for RA81s can be found in the _R_A_8_1 _M_a_i_n_t_e_n_a_n_c_e
+           _G_u_i_d_e, DEC order number AA-M879A-TC, in appendices E and F.
+
+           uunniitt %%dd:: ssmmaallll ddiisskk eerrrroorr,, ccyyll %%dd  Yet another kind of disk error,
+           but for small disks.  (`That's what it says, guv'nor.  Dunnask me
+           what it means.')
+
+           uunniitt %%dd:: uunnkknnoowwnn eerrrroorr,, ffoorrmmaatt 00xx%%xx  A mysterious error: the given
+           format code is not known.
+
+     The detail messages are as follows:
+
+
+           ssuucccceessss ((%%ss)) ((ccooddee 00,, ssuubbccooddee %%dd))  Everything worked, but the con-
+           troller thought it would let you know that something went wrong.
+           No matter what subcode, this can probably be ignored.
+
+           iinnvvaalliidd ccoommmmaanndd ((%%ss)) ((ccooddee 11,, ssuubbccooddee %%dd))  This probably cannot oc-
+           cur unless the hardware is out; %s should be `invalid msg length',
+           meaning some command was too short or too long.
+
+           ccoommmmaanndd aabboorrtteedd ((uunnkknnoowwnn ssuubbccooddee)) ((ccooddee 22,, ssuubbccooddee %%dd))  This should
+           never occur, as the driver never aborts commands.
+
+           uunniitt oofffflliinnee ((%%ss)) ((ccooddee 33,, ssuubbccooddee %%dd))  The drive is offline, ei-
+           ther because it is not around (`unknown drive'), stopped (`not
+           mounted'), out of order (`inoperative'), has the same unit number
+           as some other drive (`duplicate'), or has been disabled for diag-
+           nostics (`in diagnosis').
+
+           uunniitt aavvaaiillaabbllee ((uunnkknnoowwnn ssuubbccooddee)) ((ccooddee 44,, ssuubbccooddee %%dd))  The con-
+           troller has decided to report a perfectly normal event as an error.
+           (Why?)
+
+           mmeeddiiaa ffoorrmmaatt eerrrroorr ((%%ss)) ((ccooddee 55,, ssuubbccooddee %%dd))  The drive cannot be
+           used without reformatting.  The Format Control Table cannot be read
+           (`fct unread - edc'), there is a bad sector header (`invalid sector
+           header'), the drive is not set for 512-byte sectors (`not 512 sec-
+           tors'), the drive is not formatted (`not formatted'), or the FCT
+           has an uncorrectable ECC error (`fct ecc').
+
+           wwrriittee pprrootteecctteedd ((%%ss)) ((ccooddee 66,, ssuubbccooddee %%dd))  The drive is write pro-
+           tected, either by the front panel switch (`hardware') or via the
+           driver (`software').  The driver never sets software write protect.
+
+           ccoommppaarree eerrrroorr ((uunnkknnoowwnn ssuubbccooddee)) ((ccooddee 77,, ssuubbccooddee %%dd))  A compare op-
+           eration showed some sort of difference.  The driver never uses com-
+           pare operations.
+
+           ddaattaa eerrrroorr ((%%ss)) ((ccooddee 77,, ssuubbccooddee %%dd))  Something went wrong reading
+           or writing a data sector.  A `forced error' is a software-asserted
+           error used to mark a sector that contains suspect data.  Rewriting
+           the sector will clear the forced error.  This is normally set only
+           during bad block replacment, and the driver does no bad block re-
+           placement, so these should not occur.  A `header compare' error
+           probably means the block is shot.  A `sync timeout' presumably has
+           something to do with sector synchronisation.  An `uncorrectable
+           ecc' error is an ordinary data error that cannot be fixed via ECC
+           logic.  A `%d symbol ecc' error is a data error that can be (and
+           presumably has been) corrected by the ECC logic.  It might indicate
+           a sector that is imperfect but usable, or that is starting to go
+           bad.  If any of these errors recur, the sector may need to be re-
+           placed.
+
+           hhoosstt bbuuffffeerr aacccceessss eerrrroorr ((%%ss)) ((ccooddee %%dd,, ssuubbccooddee %%dd))  Something went
+           wrong while trying to copy data to or from the host (Vax).  The
+           subcode is one of `odd xfer addr', `odd xfer count', `non-exist.
+           memory', or `memory parity'.  The first two could be a software
+           glitch; the last two indicate hardware problems.
+
+           ccoonnttrroolllleerr eerrrroorr ((%%ss)) ((ccooddee %%dd,, ssuubbccooddee %%dd))  The controller has de-
+           tected a hardware error in itself.  A `serdes overrun' is a seri-
+           aliser / deserialiser overrun; `edc' probably stands for `error de-
+           tection code'; and `inconsistent internal data struct' is obvious.
+
+           ddrriivvee eerrrroorr ((%%ss)) ((ccooddee %%dd,, ssuubbccooddee %%dd))  Either the controller or
+           the drive has detected a hardware error in the drive.  I am not
+           sure what an `sdi command timeout' is, but these seem to occur be-
+           nignly on occasion.  A `ctlr detected protocol' error means that
+           the controller and drive do not agree on a protocol; this could be
+           a cabling problem, or a version mismatch.  A `positioner' error
+           means the drive seek hardware is ailing; `lost rd/wr ready' means
+           the drive read/write logic is sick; and `drive clock dropout' means
+           that the drive clock logic is bad, or the media is hopelessly
+           scrambled.  I have no idea what `lost recvr ready' means.  A `drive
+           detected error' is a catch-all for drive hardware trouble; `ctlr
+           detected pulse or parity' errors are often caused by cabling prob-
+           lems.
+
+SSEEEE AALLSSOO
+     disklabel(5),  disklabel(8)
+
+HHIISSTTOORRYY
+     The uuddaa driver appeared in 4.2BSD.
+
+4th Berkeley Distribution        June 5, 1993                                7

@@ -1,0 +1,104 @@
+RB(4)            BSD Programmer's Manual (HP300 Architecture)            RB(4)
+
+NNAAMMEE
+     rrbb - HP98720 ``Renaissance'' device interface
+
+DDEESSCCRRIIPPTTIIOONN
+     This driver is for the HP98720 and 98721 graphics device, also known as
+     the Renaissance.  This driver has not been tested with all possible com-
+     binations of frame buffer boards and scan boards installed in the device.
+     The driver merely checks for the existence of the device and does minimal
+     set up.
+
+     The Renaissance can be configured at either the ``internal'' address
+     (frame buffer address 0x200000, control register space address 0x560000)
+     or at an external select code less than 32.  At the internal address it
+     will be the ``preferred'' console device (see cons(4)).  The hardware in-
+     stallation manual describes the procedure for setting these values.
+
+     A user process communicates to the device initially by means of ioctl(2)
+     calls.  For the HP-UX ioctl(2) calls supported, refer to HP-UX manuals.
+     The BSD calls supported are:
+
+     GRFIOCGINFO
+             Get Graphics Info
+
+             Get info about device, setting the entries in the _g_r_f_i_n_f_o struc-
+             ture, as defined in <_h_p_d_e_v_/_g_r_f_i_o_c_t_l_._h>. For the standard 98720,
+             the number of planes should be 4.  The number of colors would
+             therefore be 15, excluding black.  If one 98722A frame buffer
+             board is installed, there will still be 4 planes, with the 4
+             planes on the colormap board becoming overlay planes.  With each
+             additional 98722 frame buffer board 4 planes will be added up to
+             a maximum of 32 planes total.
+
+     GRFIOCON
+             Graphics On
+
+             Turn graphics on by enabling CRT output.  The screen will come
+             on, displaying whatever is in the frame buffer, using whatever
+             colormap is in place.
+
+     GRFIOCOFF
+             Graphics Off
+
+             Turn graphics off by disabling output to the CRT. The frame
+             buffer contents are not affected.
+
+     GRFIOCMAP
+             Map Device to user space
+
+             Map in control registers and framebuffer space. Once the device
+             file is mapped, the frame buffer structure is accessible.  The
+             structure describing the 98720 is defined in _h_p_d_e_v_/_g_r_f___r_b_r_e_g_._h.
+
+EEXXAAMMPPLLEE
+     This is a short segment of code showing how the device is opened and
+     mapped into user process address space assuming that it is grf0:
+
+     struct rboxfb *rbox;
+     u_char *Addr, frame_buffer;
+     struct grfinfo gi;
+     int disp_fd;
+
+     disp_fd = open("/dev/grf0",1);
+
+     if (ioctl (disp_fd, GRFIOCGINFO, &gi) < 0) return -1;
+
+     (void) ioctl (disp_fd, GRFIOCON, 0);
+
+     Addr = (u_char *) 0;
+     if (ioctl (disp_fd, GRFIOCMAP, &Addr) < 0) {
+             (void) ioctl (disp_fd, GRFIOCOFF, 0);
+             return -1;
+     }
+     rbox = (rboxfb *) Addr;                         /* Control Registers   */
+     frame_buffer = (u_char *) Addr + gi.gd_regsize; /* Frame buffer memory */
+
+FFIILLEESS
+     /dev/grf?          BSD special file
+     /dev/crt98720
+     /dev/ocrt98720     HP-UX _s_t_a_r_b_a_s_e special files
+     /dev/MAKEDEV.hpux  script for creating HP-UX special files
+
+DDIIAAGGNNOOSSTTIICCSS
+     None under BSD. The HP-UX CE.utilities must be used.
+
+EERRRROORRSS
+     [ENODEV]  no such device.
+
+     [EBUSY]   Another process has the device open.
+
+     [EINVAL]  Invalid ioctl specification.
+
+SSEEEE AALLSSOO
+     ioctl(2),  grf(4).
+
+     For extensive code examples using the Renaissance, see the X device de-
+     pendent source.
+
+BBUUGGSS
+     Not tested for all configurations of scan board and frame buffer memory
+     boards.
+
+4.4BSD                           June 9, 1993                                2

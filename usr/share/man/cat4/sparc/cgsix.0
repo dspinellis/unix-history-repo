@@ -1,0 +1,16 @@
+CGSIX(4)         BSD Programmer's Manual (SPARC Architecture)         CGSIX(4)
+
+NNAAMMEE
+     ccggssiixx - accelerated 8-bit color frame buffer
+
+SSYYNNOOPPSSIISS
+     ccggssiixx** aatt ssbbuuss?? sslloott ?? ooffffsseett ??
+
+DDEESSCCRRIIPPTTIIOONN
+     The ccggssiixx is a memory based color frame buffer.  It supports the minimal
+     ioctl's needed to run X11.
+
+SSEEEE AALLSSOO
+     bwtwo(4),  cgthree(4)
+
+4.4BSD                         February 16, 1994                             1

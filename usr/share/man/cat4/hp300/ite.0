@@ -1,0 +1,58 @@
+ITE(4)           BSD Programmer's Manual (HP300 Architecture)           ITE(4)
+
+NNAAMMEE
+     iittee - HP Internal Terminal Emulator
+
+DDEESSCCRRIIPPTTIIOONN
+     TTY special files of the form ``ttye?''  are interfaces to the HP ITE for
+     bit-mapped displays as implemented under BSD. An ITE is the main system
+     console on most HP300 workstations and is the mechanism through which a
+     user communicates with the machine.  If more than one display exists on a
+     system, any or all can be used as ITEs with the limitation that only the
+     first one opened will have a keyboard (since only one keyboard is sup-
+     ported).
+
+     ITE devices use the HP-UX `300h' termcap(5) or terminfo(5) entries.  How-
+     ever, as currently implemented, the ITE does not support the full range
+     of HP-UX capabilities for this device.  Missing are multiple colors, un-
+     derlining, blinking, softkeys, programmable tabs, scrolling memory and
+     keyboard arrow keys.  The keyboard does not have any of the international
+     character support of HP's NLS system.  It does use the left and right
+     _e_x_t_e_n_d _c_h_a_r keys as meta keys, in that it will set the eighth bit of the
+     character code.
+
+     Upon booting, the kernel will first look for an ITE device to use as the
+     system console (_/_d_e_v_/_c_o_n_s_o_l_e). If a display exists at any hardware ad-
+     dress, it will be the console.  The kernel looks for, in order: a 98544,
+     98545, or 98547 Topcat display, a 98700 Gatorbox at a supported address
+     (see gb(4)),  or a 98720 Renaissance at a supported address (see rb(4)).
+     Currently there is no ITE support for the 98548, 98549, 98550 and 98556
+     boards.
+
+     When activated as an ITE (special file opened), all displays go through a
+     standard initialization sequence.  The frame buffer is cleared, the ROM
+     fonts are unpacked and loaded into off-screen storage and a cursor ap-
+     pears.  The ITE initialization routine also sets the colormap entry used
+     to white.  Variable colors are not used, mainly for reasons of simplici-
+     ty.  The font pixels are all set to 0xff and the colormap entry corre-
+     sponding to all planes is set to R=255, G=255 and B=255.  The actual num-
+     ber of planes used to display the characters depends on the hardware in-
+     stalled.  Finally, if the keyboard HIL device is not already assigned to
+     another ITE device, it is placed in ``cooked'' mode and assigned to this
+     ITE.
+
+     On most systems, a display is used both as an ITE (_/_d_e_v_/_t_t_y_e_? aka
+     _/_d_e_v_/_c_o_n_s_o_l_e) and as a graphics device (/dev/grf?). In this environment,
+     there is some interaction between the two uses that should be noted.  For
+     example, opening _/_d_e_v_/_g_r_f_0 will deactivate the ITE, that is, write over
+     whatever may be on the ITE display.  When the graphics application is
+     finished and _/_d_e_v_/_g_r_f_0 closed, the ITE will be reinitialized with the
+     frame buffer cleared and the ITE colormap installed.
+
+DDIIAAGGNNOOSSTTIICCSS
+     None under BSD.
+
+SSEEEE AALLSSOO
+     grf(4),  hil(4),  gb(4),  rb(4),  tc(4)
+
+4.4BSD                           June 9, 1993                                1

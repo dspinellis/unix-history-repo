@@ -1,0 +1,62 @@
+ACCT(5)                     BSD Programmer's Manual                    ACCT(5)
+
+NNAAMMEE
+     aacccctt - execution accounting file
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//aacccctt..hh>>
+
+DDEESSCCRRIIPPTTIIOONN
+     The kernel maintains the following _a_c_c_t information structure for all
+     processes. If a process terminates, and accounting is enabled, the kernel
+     calls the acct(2) function call to prepare and append the record to the
+     accounting file.
+
+     /*
+      * Accounting structures; these use a comp_t type which is a 3 bits base 8
+      * exponent, 13 bit fraction ``floating point'' number.  Units are 1/AHZ
+      * seconds.
+      */
+     typedef u_short comp_t;
+
+     struct acct {
+             char    ac_comm[10];    /* name of command */
+             comp_t  ac_utime;       /* user time */
+             comp_t  ac_stime;       /* system time */
+             comp_t  ac_etime;       /* elapsed time */
+             time_t  ac_btime;       /* starting time */
+             uid_t   ac_uid;         /* user id */
+             gid_t   ac_gid;         /* group id */
+             short   ac_mem;         /* memory usage average */
+             comp_t  ac_io;          /* count of IO blocks */
+             dev_t   ac_tty;         /* controlling tty */
+     #define AFORK   0x01            /* forked but not execed */
+     #define ASU     0x02            /* used super-user permissions */
+     #define ACOMPAT 0x04            /* used compatibility mode */
+     #define ACORE   0x08            /* dumped core */
+     #define AXSIG   0x10            /* killed by a signal */
+             char    ac_flag;        /* accounting flags */
+     };
+
+     /*
+      * 1/AHZ is the granularity of the data encoded in the comp_t fields.
+      * This is not necessarily equal to hz.
+      */
+     #define AHZ     64
+
+     #ifdef KERNEL
+     struct vnode    *acctp;
+     #endif
+
+     If a terminated process was created by an execve(2),  the name of the ex-
+     ecuted file (at most ten characters of it) is saved in the field _a_c___c_o_m_m
+     and its status is saved by setting one of more of the following flags in
+     _a_c___f_l_a_g_: AFORK, ASU, ACOMPAT, ACORE and ASIG.
+
+SSEEEE AALLSSOO
+     acct(2),  execve(2),  sa(8)
+
+HHIISSTTOORRYY
+     A aacccctt file format appeared in Version 7 AT&T UNIX.
+
+4.4BSD                           June 5, 1993                                1
