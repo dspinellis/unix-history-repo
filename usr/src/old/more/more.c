@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)more.c	4.22 (Berkeley) 85/02/21";
+static	char *sccsid = "@(#)more.c	4.23 (Berkeley) 85/04/10";
 #endif
 
 /*
@@ -146,11 +146,12 @@ char *argv[];
      */
     if(clreol)
     {
-	if ((*Home == '\0') || (*eraseln == '\0') || (*EodClr == '\0'))
-	    clreol = 0;
+        if((Home == NULL) || (*Home == '\0') ||
+	   (eraseln == NULL) || (*eraseln == '\0') ||
+           (EodClr == NULL) || (*EodClr == '\0') )
+	      clreol = 0;
 	else noscroll = 1;
     }
-
     if (dlines == 0)
 	dlines = Lpp - (noscroll ? 1 : 2);
     left = dlines;
