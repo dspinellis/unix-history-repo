@@ -172,6 +172,12 @@ void strstreambuf::init_static(char *ptr, int size, char *pstart)
     _len = egptr() - ptr;
 }
 
+void strstreambuf::init_static (const char *ptr, int size)
+{
+  init_static((char*)ptr, size, NULL);
+  xsetflags(_S_NO_WRITES);
+}
+
 strstreambuf::~strstreambuf()
 {
     if (_base && !(_flags & _S_USER_BUF))

@@ -279,7 +279,7 @@ literal:
 		 * that suppress this.
 		 */
 		if ((flags & NOSKIP) == 0) {
-		    n = *_gptr;
+		    n = (unsigned char)*_gptr;
 		    while (isspace(n)) {
 			_gptr++;
 			nread++;
@@ -339,7 +339,7 @@ literal:
 			/* take only those things in the class */
 			if (flags & SUPPRESS) {
 				n = 0;
-				while (ccltab[*_gptr]) {
+				while (ccltab[(unsigned char)*_gptr]) {
 				    n++, _gptr++;
 				    if (--width == 0)
 					break;
@@ -354,7 +354,7 @@ literal:
 					goto match_failure;
 			} else {
 			    p0 = p = va_arg(ap, char *);
-			    while (ccltab[*_gptr]) {
+			    while (ccltab[(unsigned char)*_gptr]) {
 				*p++ = *_gptr++;
 				if (--width == 0)
 				    break;
@@ -380,7 +380,7 @@ literal:
 				width = ~0;
 			if (flags & SUPPRESS) {
 				n = 0;
-				while (!isspace(*_gptr)) {
+				while (!isspace((unsigned char)*_gptr)) {
 					n++, _gptr++;
 					if (--width == 0)
 						break;
@@ -392,7 +392,7 @@ literal:
 				nread += n;
 			} else {
 				p0 = p = va_arg(ap, char *);
-				while (!isspace(*_gptr)) {
+				while (!isspace((unsigned char)*_gptr)) {
 					*p++ = *_gptr++;
 					if (--width == 0)
 						break;
@@ -413,7 +413,7 @@ literal:
 				width = sizeof(buf) - 1;
 			flags |= SIGNOK | NDIGITS | NZDIGITS;
 			for (p = buf; width; width--) {
-				c = *_gptr;
+				c = (unsigned char)*_gptr;
 				/*
 				 * Switch on the character; `goto ok'
 				 * if we accept it as a part of number.
@@ -544,7 +544,7 @@ literal:
 				width = sizeof(buf) - 1;
 			flags |= SIGNOK | NDIGITS | DPTOK | EXPOK;
 			for (p = buf; width; width--) {
-				c = *_gptr;
+				c = (unsigned char)*_gptr;
 				/*
 				 * This code mimicks the integer conversion
 				 * code, but is much simpler.

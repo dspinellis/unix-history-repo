@@ -236,13 +236,10 @@ extern int re_match (struct re_pattern_buffer *, char *, int, int,
 extern int re_match_2 (struct re_pattern_buffer *, char *, int,
 		       char *, int, int, struct re_registers *, int);
 
+#if 0
 /* 4.2 bsd compatibility.  */
-#if !defined (__386BSD__)
 extern char *re_comp (char *);
 extern int re_exec (char *);
-#else
-extern char *re_comp (const char *);
-extern int re_exec (const char *);
 #endif
 
 #else /* !__STDC__ */
@@ -254,9 +251,11 @@ extern void re_compile_fastmap ();
 extern int re_search (), re_search_2 ();
 extern int re_match (), re_match_2 ();
 
+#if 0
 /* 4.2 bsd compatibility.  */
 extern char *re_comp ();
 extern int re_exec ();
+#endif
 
 #endif /* __STDC__ */
 

@@ -30,8 +30,8 @@ class strstreambuf : public backupbuf {
     _free_type _free_buffer;
     void init_dynamic(_alloc_type alloc, _free_type free,
 		      int initial_size = 128);
-    void init_const() { xsetflags(_S_NO_WRITES); }
     void init_static(char *ptr, int size, char *pstart);
+    void init_static(const char *ptr, int size);
   protected:
     int is_static() const { return _allocate_buffer == (_alloc_type)0; }
     virtual int overflow(int = EOF);
@@ -48,14 +48,14 @@ class strstreambuf : public backupbuf {
     strstreambuf(unsigned char *ptr, int size, unsigned char *pstart = NULL)
 	{ init_static((char*)ptr, size, (char*)pstart); }
     strstreambuf(const char *ptr, int size)
-	{ init_static((char*)ptr, size, NULL); init_const(); }
+	{ init_static(ptr, size); }
     strstreambuf(const unsigned char *ptr, int size)
-	{ init_static((char*)ptr, size, NULL); init_const(); }
+	{ init_static((const char*)ptr, size); }
 #ifndef _G_BROKEN_SIGNED_CHAR
     strstreambuf(signed char *ptr, int size, signed char *pstart = NULL)
 	{ init_static((char*)ptr, size, (char*)pstart); }
     strstreambuf(const signed char *ptr, int size)
-	{ init_static((char*)ptr, size, NULL); init_const(); }
+	{ init_static((const char*)ptr, size); }
 #endif
     // Note: frozen() is always true if is_static().
     int frozen() { return _flags & _S_USER_BUF ? 1 : 0; }

@@ -1,7 +1,7 @@
 /* AUTOMATICALLY GENERATED; DO NOT EDIT! */ 
 #ifndef _G_config_h
 #define _G_config_h
-#define _G_LIB_VERSION "2.3.90"
+#define _G_LIB_VERSION "2.4"
 #define _G_NAMES_HAVE_UNDERSCORE 1
 #define _G_DOLLAR_IN_LABEL 1
 #define _G_HAVE_ST_BLKSIZE 1

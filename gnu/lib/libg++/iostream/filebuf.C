@@ -305,8 +305,11 @@ int filebuf::sync()
 	streampos delta = gptr() - egptr();
 	if (in_backup())
 	    delta -= eGptr() - Gbase();
-	if (sys_seek(delta, ios::cur) == EOF)
-	    return EOF;
+	_G_fpos_t new_pos = sys_seek(delta, ios::cur);
+	if (new_pos == EOF)
+	  return EOF;
+	_fb._offset = new_pos;
+	setg(eback(), gptr(), gptr());
     }
     // FIXME: Cleanup - can this be shared?
 //    setg(base(), ptr, ptr);

@@ -197,17 +197,16 @@ public:
 
 // coercion & conversion
 
-  int             fits_in_long() const;
-  int             fits_in_double() const;
+  int             fits_in_long() const { return Iislong(rep); }
+  int             fits_in_double() const { return Iisdouble(rep); }
 
-#ifdef __GNUC__
-  // There two operators cause a number of ambiguities, and will
-  //  probably be removed in a future version.
-                  operator long() const;
-                  operator double() const;
+#if 0
+  // There two operators cause a number of ambiguities.
+                  operator long() const { return Itolong(rep); }
+                  operator double() const { return Itodouble(rep); }
 #endif
-  long		  as_long() const;
-  double	  as_double() const;
+  long		  as_long() const { return Itolong(rep); }
+  double	  as_double() const { return Itodouble(rep); }
 
   friend char*    Itoa(const Integer& x, int base = 10, int width = 0);
   friend Integer  atoI(const char* s, int base = 10);
@@ -308,43 +307,9 @@ inline void Integer::operator = (long y)
   rep = Icopy_long(rep, y); 
 }
 
-inline long Integer::as_long() const
-{ 
-  return Itolong(rep);
-}
-
-#ifdef __GNUC__
-inline Integer::operator long() const
-{ 
-  return Itolong(rep);
-}
-#endif
-
 inline int Integer::initialized() const
 {
   return rep != 0;
-}
-
-inline int Integer::fits_in_long() const
-{
-  return Iislong(rep);
-}
-
-inline double Integer::as_double() const
-{ 
-  return Itodouble(rep);
-}
-
-#ifdef __GNUC__
-inline Integer::operator double() const
-{ 
-  return Itodouble(rep);
-}
-#endif
-
-inline int Integer::fits_in_double() const
-{
-  return Iisdouble(rep);
 }
 
 // procedural versions

@@ -43,7 +43,7 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 #define Fix32_fs 	((double)((unsigned long)(1 << 31)))
 
 #define Fix32_msb	((unsigned long)(1 << 31))
-#define Fix32_m_max	((1 << 31) - 1)
+#define Fix32_m_max	((long)((1 << 31) - 1))
 #define Fix32_m_min	((long)(1 << 31))
 
 #define Fix32_mult	Fix32_fs

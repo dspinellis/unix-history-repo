@@ -224,7 +224,7 @@ enum regexpcode
 
 /* Store NUMBER in two contiguous bytes starting at DESTINATION.  */
 #define STORE_NUMBER(destination, number)				\
-  { (destination)[0] = (number) & 0377;					\
+  { (destination)[0] = (char)((number) & 0377);				\
     (destination)[1] = (number) >> 8; }
   
 /* Same as STORE_NUMBER, except increment the destination pointer to
@@ -2551,16 +2551,12 @@ bcmp_translate (char *s1, char *s2, int len, unsigned char *translate)
 
 /* Entry points compatible with 4.2 BSD regex library.  */
 
-#ifndef emacs
+#if 0
 
 static struct re_pattern_buffer re_comp_buf;
 
 char *
-#ifndef __386BSD__
 re_comp (char *s)
-#else
-re_comp (const char *s)
-#endif
 {
   if (!s)
     {
@@ -2581,11 +2577,7 @@ re_comp (const char *s)
 }
 
 int
-#ifndef __386BSD__
 re_exec (char *s)
-#else
-re_exec (const char *s)
-#endif
 {
   int len = strlen (s);
   return 0 <= re_search (&re_comp_buf, s, len, 0, len,
