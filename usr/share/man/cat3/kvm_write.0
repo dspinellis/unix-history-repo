@@ -1,0 +1,34 @@
+KVM_READ(3)                 BSD Programmer's Manual                KVM_READ(3)
+
+NNAAMMEE
+     kkvvmm__rreeaadd, kkvvmm__wwrriittee - read or write kernel virtual memory
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<kkvvmm..hh>>
+
+     _s_s_i_z_e___t
+     kkvvmm__rreeaadd(_k_v_m___t _*_k_d, _u___l_o_n_g _a_d_d_r, _v_o_i_d _*_b_u_f, _s_i_z_e___t _n_b_y_t_e_s);
+
+     _s_s_i_z_e___t
+     kkvvmm__wwrriittee(_k_v_m___t _*_k_d, _u___l_o_n_g _a_d_d_r, _c_o_n_s_t _v_o_i_d _*_b_u_f, _s_i_z_e___t _n_b_y_t_e_s);
+
+DDEESSCCRRIIPPTTIIOONN
+     The kkvvmm__rreeaadd() and kkvvmm__wwrriittee() functions are used to read and write ker-
+     nel virtual memory (or a crash dump file). See kkvvmm__ooppeenn(_3) or
+     kkvvmm__ooppeennffiilleess(_3) for information regarding opening kernel virtual memory
+     and crash dumps.
+
+     The kkvvmm__rreeaadd() function transfers _n_b_y_t_e_s bytes of data from the kernel
+     space address _a_d_d_r to _b_u_f. Conversely, kkvvmm__wwrriittee() transfers data from
+     _b_u_f to _a_d_d_r. Unlike their SunOS counterparts, these functions cannot be
+     used to read or write process address spaces.
+
+RREETTUURRNN VVAALLUUEESS
+     Upon success, the number of bytes actually transferred is returned.  Oth-
+     erwise, -1 is returned.
+
+SSEEEE AALLSSOO
+     kvm(3),  kvm_close(3),  kvm_getargv(3),  kvm_getenvv(3),  kvm_geterr(3),
+     kvm_getprocs(3),  kvm_nlist(3),  kvm_open(3),  kvm_openfiles(3)
+
+4.4BSD                           June 4, 1993                                1
