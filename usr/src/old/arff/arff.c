@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)arff.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)arff.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -65,6 +65,12 @@ struct	rt_dir {
 	char		_dirpad[6];
 };
 
+#define rd_numseg rt_axhead.rt_numseg
+#define rd_nxtseg rt_axhead.rt_nxtseg
+#define rd_lstseg rt_axhead.rt_lstseg
+#define rd_entpad rt_axhead.rt_entpad
+#define rd_stfile rt_axhead.rt_stfile
+
 typedef struct fldope {
 	int	startad;
 	int	count;
@@ -85,7 +91,13 @@ extern char *val;
 extern char table[256];
 struct rt_dir rt_dir[RT_DIRSIZE] = {
 	{ 4, 0, 1, 0, 14 },
-	{ { 0, RT_NULL, { 0, 0, 0 }, 494, 0 },
+	{ { 0, RT_NULL, { 0, 0, 0 }, 486, 0 },
+	  { 0, RT_ESEG } }
+};
+
+struct rt_dir rt_nulldir = {
+	{ 0, 0, 0, 0, 0 },
+	{ { 0, RT_NULL, { 0, 0, 0 }, 0, 0 },
 	  { 0, RT_ESEG } }
 };
 
@@ -97,9 +109,8 @@ int	dirdirty;
 char	*rt_last;
 char	*defdev = "/dev/floppy";
 
-char *opt = "vf";
+char *opt = "vfbcm";
 
-int	signum[] = {SIGHUP, SIGINT, SIGQUIT, 0};
 extern long lseek();
 int	rcmd(), dcmd(), xcmd(), tcmd();
 
@@ -107,7 +118,6 @@ int	(*comfun)();
 char	flg[26];
 char	**namv;
 int	namc;
-int	file;
 
 main(argc, argv)
 	char *argv[];
@@ -123,6 +133,7 @@ main(argc, argv)
 		case 'v':
 		case 'u':
 		case 'w':
+		case 'b':
 			flg[*cp-'a']++;
 			continue;
 		case 'c':
@@ -201,13 +212,6 @@ notfound()
 	return (n);
 }
 
-mesg(c)
-{
-	if (flag(v))
-		if (c != 'c' || flag(v) > 1)
-			printf("%c - %s\n", c, file);
-}
-
 tcmd()
 {
 	register char *de, *last;
@@ -221,13 +225,13 @@ tcmd()
 		for (i = 0; i < namc; i++)
 			if (dope = lookup(namv[i])) {
 				rde = dope->rtdope;
-				rtls(rde);
+				(void) rtls(rde);
 				namv[i] = 0;
 			}
 		return;
 	}
 	for (segnum = 0; segnum != -1;
-	  segnum = rt_dir[segnum].rt_axhead.rt_nxtseg - 1) {
+	  segnum = rt_dir[segnum].rd_nxtseg - 1) {
 		last = rt_last + segnum*2*RT_BLOCK;
 		for (de = ((char *)&rt_dir[segnum])+10; de <= last; 
 		    de += rt_entsiz)
@@ -293,7 +297,7 @@ xcmd()
 		return;
 	}
 	for (segnum = 0; segnum != -1;
-	     segnum = rt_dir[segnum].rt_axhead.rt_nxtseg-1)
+	     segnum = rt_dir[segnum].rd_nxtseg-1)
 		for (last = rt_last+(segnum*2*RT_BLOCK),
 		     de = ((char *)&rt_dir[segnum])+10; de <= last; 
 		     de += rt_entsiz) {
@@ -305,7 +309,7 @@ xcmd()
 			case RT_TEMP:
 			case RT_FILE:
 				sunrad50(name,rt(de)->rt_name);
-				rtx(name);
+				(void) rtx(name);
 
 			case RT_NULL:
 			default:
@@ -327,7 +331,7 @@ rtx(name)
 
 	if (dope = lookup(name)) {
 		if (flag(v))
-			rtls(dope->rtdope);
+			(void) rtls(dope->rtdope);
 		else
 			printf("x - %s\n",name);
 
@@ -337,10 +341,10 @@ rtx(name)
 		startad = dope->startad;
 		for( ; count > 0 ; count -= 512) {
 			lread(startad, 512, buff);
-			write(file, buff, 512);
+			(void) write(file, buff, 512);
 			startad += 512;
 		}
-		close(file);
+		(void) close(file);
 		return (0);
 	}
 	return (1);
@@ -367,11 +371,11 @@ rt_init()
 			goto ignore;
 		tty = open("/dev/tty", O_RDWR);
 #define SURE	"Are you sure you want to clobber the floppy? "
-		write(tty, SURE, sizeof (SURE));
-		read(tty, response, sizeof (response));
+		(void) write(tty, SURE, sizeof (SURE));
+		(void) read(tty, response, sizeof (response));
 		if (*response != 'y')
 			exit(50);
-		close(tty);
+		(void) close(tty);
 ignore:
 		;
 	}
@@ -386,7 +390,7 @@ ignore:
 		floppydes = fileno(temp_floppydes);
 	if (!flag(c)) {
 		lread(6*RT_BLOCK, 2*RT_BLOCK, (char *)&rt_dir[0]);
-		dirnum = rt_dir[0].rt_axhead.rt_numseg;
+		dirnum = rt_dir[0].rd_numseg;
 		/* check for blank/uninitialized diskette */
 		if (dirnum <= 0) {
 			fprintf(stderr,"arff: bad directory format\n");
@@ -398,11 +402,23 @@ ignore:
 		}
 		for (i = 1; i < dirnum; i++)
 			lread((6+2*i)*RT_BLOCK, 2*RT_BLOCK, (char *)&rt_dir[i]);
-	} else
+	} else {
 		dirnum = 1;
+		if (flag(b)) {
+			rt_dir[0].rd_numseg = 31;
+			rt_dir[0].rd_stfile = 68;
+			rt_dir[0].rt_ents[0].rt_len = 20480 - 68;
+		}
+	}
 
-	rt_entsiz = 2*rt_dir[0].rt_axhead.rt_entpad + 14;
-	rt_entsiz = 14;			/* assume rt_entpad = 0 ??? */
+	rt_entsiz = 2*rt_dir[0].rd_entpad + 14;
+	/*
+	 * We assume that the directory entries have no padding.  This
+	 * may not be a valid assumption, but there are numerous point
+	 * in the code where it assumes it is an rt_ent structure and
+	 * not an rt_entsiz sized structure.
+	 */
+	rt_entsiz = 14;
 	rt_last = ((char *) &rt_dir[0]) + 10 + 1014/rt_entsiz*rt_entsiz; 
 	rt_nleft = 0;
 	
@@ -423,7 +439,7 @@ lookup(name)
 	char *name;
 {
 	unsigned short rname[3];
-	register char *de, *last;
+	register char *de;
 	int segnum;
 	register index;
 
@@ -434,10 +450,9 @@ lookup(name)
 	 */
 	rt_init();
 	for (segnum = 0; segnum != -1;
-	     segnum = rt_dir[segnum].rt_axhead.rt_nxtseg - 1)
+	     segnum = rt_dir[segnum].rd_nxtseg - 1)
 	{
 		index = 0;
-		last = rt_last + segnum*2*RT_BLOCK;
 		for (de=((char *)&rt_dir[segnum])+10; 
 		     rt(de)->rt_stat != RT_ESEG; de += rt_entsiz)
 			switch(rt(de)->rt_stat) {
@@ -447,7 +462,7 @@ lookup(name)
 				if(samename(rname,rt(de)->rt_name)) {
 					result.count = rt(de)->rt_len * 512;
 					result.startad = 512*
-						(rt_dir[segnum].rt_axhead.rt_stfile + index);
+					    (rt_dir[segnum].rd_stfile + index);
 					result.rtdope = (struct rt_ent *) de;
 					return (&result);
 				}
@@ -570,7 +585,6 @@ sunrad50(name, rname)
 		cp[-1] = 0;
 }
 
-static char *oval = " ABCDEFGHIJKLMNOPQRSTUVWXYZ$.@0123456789";
 static char *val = " abcdefghijklmnopqrstuvwxyz$.@0123456789";
 
 static char table[256] = {
@@ -623,7 +637,7 @@ lread(startad, count, obuff)
 
 	rt_init();
 	while ((count -= size) >= 0) {
-		lseek(floppydes, flag(m) ?
+		(void) lseek(floppydes, flag(m) ?
 			(long)startad : trans(startad), 0);
 		if (read(floppydes, obuff, size) != size)
 			fprintf(stderr, "arff: read error block %d\n",
@@ -643,7 +657,7 @@ lwrite(startad, count, obuff)
 
 	rt_init();
 	while ((count -= size) >= 0) {
-		lseek(floppydes, flag(m) ?
+		(void) lseek(floppydes, flag(m) ?
 			(long)startad : trans(startad), 0);
 		if (write(floppydes, obuff, size) != size)
 			fprintf(stderr, "arff: write error block %d\n",
@@ -672,45 +686,52 @@ rtr(name)
 	struct stat buf;
 	register struct stat *bufp = &buf;
 	int segnum;
-	register char *last;
+	char type;
 
 	if (stat(name, bufp) < 0) {
 		perror(name);
 		return (-1);
 	}
+	type = 'a';
 	if (dope = lookup(name)) {
 		/* can replace, no problem */
 		de = dope->rtdope;
-		if (bufp->st_size <= (de->rt_len * 512))
-			printf("r - %s\n",name),
+		if (bufp->st_size <= (de->rt_len * 512)) {
+			printf("r - %s\n",name);
 			toflop(name, bufp->st_size, dope);
-		else {
-			fprintf(stderr,
-			  "%s will not fit in currently used file on floppy\n",
-			  name);
-			return (-1);
+			goto found;
+		} else {
+			de = dope->rtdope;
+			type = 'r';
+			de->rt_stat = RT_NULL;
+			de->rt_name[0] = 0;
+			de->rt_name[1] = 0;
+			de->rt_name[2] = 0;
+			*((u_short *)&(de->rt_date)) = 0;
+			scrunch();
 		}
-		goto found;
 	}
 	/*
 	 * Search for vacant spot
 	 */
 	for (segnum = 0; segnum != -1;
-	     segnum = rt_dir[segnum].rt_axhead.rt_nxtseg - 1)
+	     segnum = rt_dir[segnum].rd_nxtseg - 1)
 	{
-		last = rt_last + segnum*2*RT_BLOCK;
 		for (de = rt_dir[segnum].rt_ents;
 		    rt(de)->rt_stat != RT_ESEG; de++)
 			if ((de)->rt_stat == RT_NULL) {
 				if (bufp->st_size <= (de->rt_len*512)) {
-					printf("a - %s\n",name),
+					printf("%c - %s\n", type, name),
 					mkent(de, segnum, bufp,name);
 					goto found;
 				}
 				continue;
 			}
 	}
-	printf("%s: no slot for file\n", name);
+	if (type = 'r')
+		printf("%s: no slot for file, file deleted\n",name);
+	else
+		printf("%s: no slot for file\n", name);
 	return (-1);
 
 found:
@@ -738,12 +759,54 @@ mkent(de, segnum, bufp, name)
 	if (de->rt_len == count)
 		goto overwrite;
 	if ((char *)rt_curend[segnum] == (rt_last + (segnum*2*RT_BLOCK))) {
-		/* no entries left on segment */
-		if (flag(o))
-			goto overwrite;
-		fprintf(stderr, "Directory segment #%d full on  %s\n",
-			segnum+1, defdev);
-		exit(1);
+		/* no entries left on segment, trying adding new segment */
+		if (rt_dir[0].rd_numseg > rt_dir[0].rd_lstseg) {
+			short newseg;
+			register int i;
+			int maxseg;
+			short size;
+
+			newseg = rt_dir[0].rd_lstseg++;
+			rt_dir[newseg] = rt_nulldir;
+			rt_dir[newseg].rd_nxtseg = rt_dir[segnum].rd_nxtseg;
+			rt_dir[segnum].rd_nxtseg = newseg + 1;
+			rt_dir[newseg].rd_entpad = rt_dir[0].rd_entpad;
+			rt_dir[newseg].rd_numseg = rt_dir[0].rd_numseg;
+			size = 0;
+			maxseg = 0;
+			for(i = newseg - 1; i >= 0; i--) {
+				workp = rt_curend[i] - 1;
+				if (workp->rt_stat != RT_NULL)
+					continue;
+				if (workp->rt_len < size)
+					continue;
+				size = workp->rt_len;
+				maxseg = i;
+			}
+			size = 0;
+			for (workp = &rt_dir[maxseg].rt_ents[0]; 
+			    workp->rt_stat != RT_ESEG; workp++) {
+				size += workp->rt_len;
+			}
+			workp--;
+			rt_dir[newseg].rt_ents[0].rt_len = workp->rt_len;
+			rt_dir[newseg].rd_stfile = 
+			    rt_dir[maxseg].rd_stfile + size - workp->rt_len;
+			workp->rt_len = 0;
+			rt_curend[newseg] = &rt_dir[newseg].rt_ents[1];
+			lwrite(6*RT_BLOCK, 2*RT_BLOCK, (char *)&rt_dir[0]);
+			if (segnum != 0)
+				lwrite((6+segnum*2)*RT_BLOCK, 2*RT_BLOCK,
+				    (char *)&rt_dir[segnum]);
+			lwrite((6+newseg*2)*RT_BLOCK, 2*RT_BLOCK,
+			    (char *)&rt_dir[newseg]);
+			segnum = newseg;
+			de = &rt_dir[newseg].rt_ents[0];
+		} else {
+			fprintf(stderr, "All directory segments full on  %s\n",
+				defdev);
+			exit(1);
+		}
 	}	
 	/* copy directory entries up */
 	for (workp = rt_curend[segnum]+1; workp > de; workp--)
@@ -780,12 +843,12 @@ toflop(name, ocount, dope)
 		exit(1);
 	}
 	for( ; count >= 512; count -= 512) {
-		read(file, buff, 512);
+		(void) read(file, buff, 512);
 		lwrite(startad, 512, buff);
 		startad += 512;
 	}
-	read(file, buff, count);
-	close(file);
+	(void) read(file, buff, count);
+	(void) close(file);
 	if (count <= 0)
 		return;
 	for (n = count; n < 512; n ++)
@@ -840,7 +903,7 @@ scrunch()
 	register segnum;
 
 	for (segnum = 0; segnum != -1;
-	     segnum = rt_dir[segnum].rt_axhead.rt_nxtseg - 1) {
+	     segnum = rt_dir[segnum].rd_nxtseg - 1) {
 		for (de = rt_dir[segnum].rt_ents; de <= rt_curend[segnum]; de++)
 			if (de->rt_stat == RT_NULL &&
 			    (de+1)->rt_stat == RT_NULL) {
