@@ -2,15 +2,15 @@
  * Copyright (c) 1992 Regents of the University of California.
  * All rights reserved.
  *
- * This code is derived from software developed by the Computer Systems
- * Engineering group at Lawrence Berkeley Laboratory under DARPA
- * contract BG 91-66 and contributed to Berkeley.
+ * This software was developed by the Computer Systems Engineering group
+ * at Lawrence Berkeley Laboratory under DARPA contract BG 91-66 and
+ * contributed to Berkeley.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)subr_autoconf.c	7.2 (Berkeley) %G%
+ *	@(#)subr_autoconf.c	7.3 (Berkeley) %G%
  *
- * from: $Header: subr_autoconf.c,v 1.3 91/11/23 00:53:49 torek Exp $ (LBL)
+ * from: $Header: subr_autoconf.c,v 1.6 92/06/11 17:56:19 torek Exp $ (LBL)
  */
 
 #include "sys/param.h"
@@ -25,6 +25,35 @@ extern struct cfdata cfdata[];		/* from ioconf.c */
 
 #define	ROOT ((struct device *)NULL)
 
+struct matchinfo {
+	cfmatch_t fn;
+	struct	device *parent;
+	void	*aux;
+	struct	cfdata *match;
+	int	pri;
+};
+
+/*
+ * Apply the matching function and choose the best.  This is used
+ * a few times and we want to keep the code small.
+ */
+static void
+mapply(m, cf)
+	register struct matchinfo *m;
+	register struct cfdata *cf;
+{
+	register int pri;
+
+	if (m->fn != NULL)
+		pri = (*m->fn)(m->parent, cf, m->aux);
+	else
+		pri = (*cf->cf_driver->cd_match)(m->parent, cf, m->aux);
+	if (pri > m->pri) {
+		m->match = cf;
+		m->pri = pri;
+	}
+}
+
 /*
  * Iterate over all potential children of some device, calling the given
  * function (default being the child's match function) for each one.
@@ -37,19 +66,24 @@ extern struct cfdata cfdata[];		/* from ioconf.c */
  * can be ignored).
  */
 struct cfdata *
-config_search(fn, dev, aux)
-	register cfmatch_t fn;
-	register struct device *dev;
-	register void *aux;
+config_search(fn, parent, aux)
+	cfmatch_t fn;
+	register struct device *parent;
+	void *aux;
 {
-	register struct cfdata *cf, *pcf, *match = NULL;
+	register struct cfdata *cf, *pcf;
 	register short *p;
-	register int pri, bestpri = 0;
+	struct matchinfo m;
 
+	m.fn = fn;
+	m.parent = parent;
+	m.aux = aux;
+	m.match = NULL;
+	m.pri = 0;
 	for (cf = cfdata; cf->cf_driver; cf++) {
 		/*
 		 * Skip cf if no longer eligible, or if a root entry.
-		 * Otherwise scan through parents for one matching `dev'
+		 * Otherwise scan through parents for one matching `parent'
 		 * (and alive), and try match function.
 		 */
 		if (cf->cf_fstate == FSTATE_FOUND ||
@@ -57,21 +91,11 @@ config_search(fn, dev, aux)
 			continue;
 		while (*p >= 0) {
 			pcf = &cfdata[*p++];
-			if (pcf->cf_fstate != FSTATE_FOUND ||
-			    pcf->cf_driver->cd_name != dev->dv_name ||
-			    pcf->cf_unit != dev->dv_unit)
-				continue;
-			if (fn != NULL)
-				pri = (*fn)(dev, cf, aux);
-			else
-				pri = (*cf->cf_driver->cd_match)(dev, cf, aux);
-			if (pri > bestpri) {
-				match = cf;
-				bestpri = pri;
-			}
+			if (parent->dv_cfdata == pcf)
+				mapply(&m, cf);
 		}
 	}
-	return (match);
+	return (m.match);
 }
 
 /*
@@ -84,28 +108,23 @@ config_rootsearch(fn, rootname, aux)
 	register char *rootname;
 	register void *aux;
 {
-	register struct cfdata *cf, *match = NULL;
-	register int pri, bestpri = 0;
+	register struct cfdata *cf;
+	struct matchinfo m;
 
-	for (cf = cfdata; cf->cf_driver; cf++) {
-		/*
-		 * Look at root entries for matching name.
-		 * We do not bother with found-state here
-		 * since only one root should ever be searched.
-		 */
-		if (cf->cf_parents != NULL || cf->cf_unit != 0 ||
-		    strcmp(cf->cf_driver->cd_name, rootname) != 0)
-			continue;
-		if (fn != NULL)
-			pri = (*fn)(ROOT, cf, aux);
-		else
-			pri = (*cf->cf_driver->cd_match)(ROOT, cf, aux);
-		if (pri > bestpri) {
-			match = cf;
-			bestpri = pri;
-		}
-	}
-	return (match);
+	m.fn = fn;
+	m.parent = ROOT;
+	m.aux = aux;
+	m.match = NULL;
+	m.pri = 0;
+	/*
+	 * Look at root entries for matching name.  We do not bother
+	 * with found-state here since only one root should ever be searched.
+	 */
+	for (cf = cfdata; cf->cf_driver; cf++)
+		if (cf->cf_parents == NULL && cf->cf_unit == 0 &&
+		    strcmp(cf->cf_driver->cd_name, rootname) == 0)
+			mapply(&m, cf);
+	return (m.match);
 }
 
 static char *msgs[3] = { "", " not configured\n", " unsupported\n" };
@@ -181,26 +200,34 @@ config_attach(parent, cf, aux, print)
 	register struct cfdriver *cd;
 	register size_t lname, lunit;
 	register char *xunit;
+	int myunit;
 	char num[10];
+	static struct device **nextp = &alldevs;
 
 	cd = cf->cf_driver;
 	if (cd->cd_devsize < sizeof(struct device))
 		panic("config_attach");
+	myunit = cf->cf_unit;
 	if (cf->cf_fstate == FSTATE_NOTFOUND)
 		cf->cf_fstate = FSTATE_FOUND;
+	else
+		cf->cf_unit++;
 
 	/* compute length of name and decimal expansion of unit number */
 	lname = strlen(cd->cd_name);
-	xunit = number(&num[sizeof num], cf->cf_unit);
+	xunit = number(&num[sizeof num], myunit);
 	lunit = &num[sizeof num] - xunit;
 
 	/* get memory for all device vars, plus expanded name */
 	dev = (struct device *)malloc(cd->cd_devsize + lname + lunit,
 	    M_DEVBUF, M_WAITOK);		/* XXX cannot wait! */
 	bzero(dev, cd->cd_devsize);
+	*nextp = dev;			/* link up */
+	nextp = &dev->dv_next;
+	dev->dv_class = cd->cd_class;
+	dev->dv_cfdata = cf;
 	dev->dv_name = cd->cd_name;
-	dev->dv_unit = cf->cf_unit;
-	dev->dv_flags = cf->cf_flags;
+	dev->dv_unit = myunit;
 	dev->dv_xname = (char *)dev + cd->cd_devsize;
 	bcopy(dev->dv_name, dev->dv_xname, lname);
 	bcopy(xunit, dev->dv_xname + lname, lunit);
@@ -239,6 +266,8 @@ config_attach(parent, cf, aux, print)
 		}
 		cd->cd_devs = nsp;
 	}
+	if (cd->cd_devs[dev->dv_unit])
+		panic("config_attach: duplicate %s", dev->dv_xname);
 	cd->cd_devs[dev->dv_unit] = dev;
 	(*cd->cd_attach)(parent, dev, aux);
 }
