@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ioctl.h	7.11 (Berkeley) %G%
+ *	@(#)ioctl.h	7.12 (Berkeley) %G%
  */
 
 /*
@@ -121,6 +121,7 @@ struct ttysize {
 #define		TIOCPKT_START		0x08	/* start output */
 #define		TIOCPKT_NOSTOP		0x10	/* no more ^S, ^Q */
 #define		TIOCPKT_DOSTOP		0x20	/* now do ^S ^Q */
+#define		TIOCPKT_IOCTL		0x40	/* state change of pty driver */
 #define	TIOCSTOP	_IO('t', 111)		/* stop output, like ^S */
 #define	TIOCSTART	_IO('t', 110)		/* start output, like ^Q */
 #define	TIOCMSET	_IOW('t', 109, int)	/* set all modem bits */
@@ -134,6 +135,8 @@ struct ttysize {
 #define		UIOCCMD(n)	_IO('u', n)		/* usr cntl op "n" */
 #define	TIOCCONS	_IOW('t', 98, int)		/* become virtual console */
 #define	TIOCSCTTY	_IO('t', 97)		/* become controlling tty */
+#define	TIOCEXT		_IOW('t', 96, int)	/* pty: external processing */
+#define	TIOCSIG		_IO('t', 95)		/* pty: generate signal */
 
 #define TTYDISC		0		/* termios tty line discipline */
 #define	TABLDISC	3		/* tablet discipline */
