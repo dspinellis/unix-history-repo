@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_vnops.c	7.40 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.41 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -574,11 +574,13 @@ chown1(vp, uid, gid, cred)
 		}
 		(void) chkdq(ip, change, cred, FORCE|CHOWN);
 		(void) chkiq(ip, 1, cred, FORCE|CHOWN);
+		(void) getinoquota(ip);
 	}
-	if (error)
-		return (error);
+	return (error);
 good:
-#endif
+	if (getinoquota(ip))
+		panic("chown: lost quota");
+#endif /* QUOTA */
 	if (ouid != uid || ogid != gid)
 		ip->i_flag |= ICHG;
 	if (ouid != uid && cred->cr_uid != 0)
