@@ -11,14 +11,14 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)man.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)man.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
 #include <sys/file.h>
 #include <ctype.h>
 
-#define	DEF_PAGER	"more -s"
+#define	DEF_PAGER	"/usr/ucb/more -s"
 #define	DEF_PATH	"/usr/man:/usr/local/man"
 #define	LOCAL_PATH	"/usr/local/man"
 #define	LOCAL_NAME	"local"
@@ -66,7 +66,7 @@ main(argc, argv)
 {
 	int	section;
 	char	**arg_start, **arg,
-		*getenv();
+		*getenv(), *malloc();
 
 	arg_start = argv;
 	for (--argc, ++argv; argc && (*argv)[0] == '-'; --argc, ++argv)
@@ -114,7 +114,33 @@ main(argc, argv)
 	if (!nomore)
 		if (!isatty(1))
 			nomore = YES;
-		else if (!(pager = getenv("PAGER")))
+		else if (pager = getenv("PAGER")) {
+			register char	*C;
+
+			/*
+			 * if the user uses "more", we make it "more -s"
+			 * watch out for PAGER = "mypager /usr/ucb/more"
+			 */
+			for (C = pager; *C && !isspace(*C); ++C);
+			for (; C > pager && *C != '/'; --C);
+			if (C != pager)
+				++C;
+			/* make sure it's "more", not "morex" */
+			if (!strncmp(C, "more", 4) && (!C[4] || isspace(C[4]))) {
+				C += 4;
+				/*
+				 * sizeof is 1 more than # of chars, so,
+				 * allocate for the rest of the PAGER
+				 * environment variable, a space, and the EOS.
+				 */
+				if (!(pager = malloc((u_int)(strlen(C) + sizeof(DEF_PAGER) + 1)))) {
+					fputs("man: out of space.\n", stderr);
+					exit(1);
+				}
+				(void)sprintf(pager, "%s %s", DEF_PAGER, C);
+			}
+		}
+		else
 			pager = DEF_PAGER;
 	if (!(machine = getenv("MACHINE")))
 		machine = MACHINE;
