@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)times.h	7.2 (Berkeley) %G%
+ *	@(#)times.h	7.3 (Berkeley) %G%
  */
 
 #include <machine/machtypes.h>
@@ -21,8 +21,10 @@ struct tms {
 	clock_t tms_cstime;	/* System CPU time of terminated child procs */
 };
 
+#ifndef KERNEL
 #if __STDC__ || c_plusplus
 clock_t times(struct tms *);
 #else
 clock_t times();
+#endif
 #endif
