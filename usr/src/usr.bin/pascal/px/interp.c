@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)interp.c 1.24 %G%";
+static char sccsid[] = "@(#)interp.c 1.25 %G%";
 
 #include <math.h>
 #include "whoami.h"
@@ -193,7 +193,7 @@ interpreter(base)
 			stp->file = curfile;	/* save active file */
 			tcp = pushsp(tl1);	/* tcp = new top of stack */
 			if (_runtst)		/* zero stack frame */
-				blkclr(tl1, tcp);
+				blkclr(tcp, tl1);
 			tcp += (int)tl1;	/* offsets of locals are neg */
 			_dp->locvars = tcp;	/* set new display pointer */
 			_dp->stp = stp;
@@ -241,10 +241,10 @@ interpreter(base)
 			stp->dp = _dp;
 			pc.cp = tfp->fentryaddr;/* calc new entry point */
 			_dp = &_display.frame[tfp->fbn];/* new display ptr */
-			blkcpy(tfp->fbn * sizeof(struct disp),
- 				&_display.frame[1], tcp);
-			blkcpy(tfp->fbn * sizeof(struct disp),
-				&tfp->fdisp[0], &_display.frame[1]);
+ 			blkcpy(&_display.frame[1], tcp,
+				tfp->fbn * sizeof(struct disp));
+			blkcpy(&tfp->fdisp[0], &_display.frame[1],
+				tfp->fbn * sizeof(struct disp));
 			continue;
 		case O_FRTN:
 			tl = *pc.cp++;		/* tl = size of return obj */
@@ -255,13 +255,13 @@ interpreter(base)
  			tcp1 = *(char **)
  			    (tcp + tl + sizeof(struct formalrtn *));
 			if (tl != 0) {
-				blkcpy(tl, tcp, tcp + sizeof(struct formalrtn *)
-				    + sizeof(char *));
+				blkcpy(tcp, tcp + sizeof(struct formalrtn *)
+				    + sizeof(char *), tl);
 			}
  			popsp((long)
  			    (sizeof(struct formalrtn *) + sizeof (char *)));
-			blkcpy(tfp->fbn * sizeof(struct disp),
- 			    tcp1, &_display.frame[1]);
+ 			blkcpy(tcp1, &_display.frame[1],
+			    tfp->fbn * sizeof(struct disp));
 			continue;
 		case O_FSAV:
 			tfp = (struct formalrtn *)popaddr();
@@ -269,8 +269,8 @@ interpreter(base)
 			tcp = base + *pc.lp++;	/* calc new entry point */
 			tcp += sizeof(short);
 			tfp->fentryaddr = base + *(long *)tcp;
-			blkcpy(tfp->fbn * sizeof(struct disp),
-				&_display.frame[1], &tfp->fdisp[0]);
+			blkcpy(&_display.frame[1], &tfp->fdisp[0],
+				tfp->fbn * sizeof(struct disp));
 			pushaddr(tfp);
 			continue;
 		case O_SDUP2:
@@ -329,7 +329,7 @@ interpreter(base)
 			tl = (-tl + 1) & ~1;
 			tcp = pushsp(tl);
 			if (_runtst)
-				blkclr(tl, tcp);
+				blkclr(tcp, tl);
 			continue;
 		case O_IF:
 			pc.cp++;
@@ -547,7 +547,7 @@ interpreter(base)
 				tl = *pc.usp++;
 			tl1 = (tl + 1) & ~1;
 			tcp = pushsp((long)(0));
-			blkcpy(tl, tcp, *(char **)(tcp + tl1));
+			blkcpy(tcp, *(char **)(tcp + tl1), tl);
 			popsp(tl1 + sizeof(char *));
 			continue;
 		case O_INX2P2:
@@ -876,7 +876,7 @@ interpreter(base)
 			tcp += *pc.sp++;
 			tl = *pc.usp++;
 			tcp1 = pushsp((tl + 1) & ~1);
-			blkcpy(tl, tcp, tcp1);
+			blkcpy(tcp, tcp1, tl);
 			continue;
 		case O_LV:
 			tcp = _display.raw[*pc.ucp++];
@@ -911,7 +911,7 @@ interpreter(base)
 			tcp += (int)*pc.lp++;
 			tl = *pc.usp++;
 			tcp1 = pushsp((tl + 1) & ~1);
-			blkcpy(tl, tcp, tcp1);
+			blkcpy(tcp, tcp1, tl);
 			continue;
 		case O_LLV:
 			tcp = _display.raw[*pc.ucp++];
@@ -947,7 +947,7 @@ interpreter(base)
 				tl = *pc.usp++;
 			tcp = popaddr();
 			tcp1 = pushsp((tl + 1) & ~1);
-			blkcpy(tl, tcp, tcp1);
+			blkcpy(tcp, tcp1, tl);
 			continue;
 		case O_CON1:
 			push2((short)(*pc.cp++));
@@ -977,7 +977,7 @@ interpreter(base)
 				tl = *pc.usp++;
 			tl = (tl + 1) & ~1;
 			tcp = pushsp(tl);
-			blkcpy(tl, pc.cp, tcp);
+			blkcpy(pc.cp, tcp, tl);
 			pc.cp += (int)tl;
 			continue;
 		case O_CONG:
@@ -986,7 +986,7 @@ interpreter(base)
 				tl = *pc.usp++;
 			tl1 = (tl + 1) & ~1;
 			tcp = pushsp(tl1);
-			blkcpy(tl1, pc.cp, tcp);
+			blkcpy(pc.cp, tcp, tl1);
 			pc.cp += (int)((tl + 2) & ~1);
 			continue;
 		case O_LVCON:
@@ -1078,7 +1078,8 @@ interpreter(base)
 			pc.cp++;
 			_cntrs = *pc.lp++;
 			_rtns = *pc.lp++;
-			NEWZ(&_pcpcount, (_cntrs + 1) * sizeof(long));
+			NEW(&_pcpcount, (_cntrs + 1) * sizeof(long));
+			blkclr(_pcpcount, (_cntrs + 1) * sizeof(long));
 			continue;
 		case O_COUNT:
 			pc.cp++;
@@ -1189,7 +1190,7 @@ interpreter(base)
 			continue;
 		case O_ASRT:
 			pc.cp++;
-			ASRT();
+			ASRTS();
 			popsp((long)(sizeof(long)+sizeof(char *)));
 			continue;
 		case O_FOR1U:
@@ -1463,11 +1464,10 @@ interpreter(base)
 			if (tl == 0)
 				tl = *pc.usp++;
 			tcp = popaddr();	/* ptr to ptr being new'ed */
-			if (_runtst) {
-				NEWZ(tcp, tl);
-				continue;
-			}
 			NEW(tcp, tl);
+			if (_runtst) {
+				blkclr(*tcp, tl);
+			}
 			continue;
 		case O_DISPOSE:
 			tl = *pc.cp++;		/* tl = size being disposed */
