@@ -1,0 +1,52 @@
+#!	/bin/csh -f 
+#
+#	this tests if C rounds the return value to single precision in
+#	functions of type float. (see sec. 9.10 of C ref. manual).
+#
+cat << 'EOT' >! /tmp/test_fltc.c
+float temp;
+
+float f1_(arg1,arg2)
+float *arg1, *arg2;
+{
+	/* force float by storing in global */
+	temp =  *arg1 / *arg2;
+	return temp;
+}
+
+float f2_(arg1,arg2)
+float *arg1, *arg2;
+{
+	/* should round since function is type float */
+	return  *arg1 / *arg2;
+}
+
+
+float f3_(arg1,arg2)
+float *arg1, *arg2;
+{
+	/* use a cast to try to force rounding */
+	return ((float) (*arg1 / *arg2));
+}
+
+'EOT'
+cat << 'EOT' >! /tmp/test_fltf.f
+	integer f2ok, f3ok
+	data f2ok/0/, f3ok/0/
+
+	do 20 i = 1,10
+	do 10 j = 1,10
+	x = 0.1d0*i
+	y = 0.1d0*j
+	temp = f1(x,y)
+	if( f2(x,y).eq.temp) f2ok = f2ok + 1
+	if( f3(x,y).eq.temp) f3ok = f3ok + 1
+10	continue
+20	continue
+	print *, "out of 100 tries, f2 was ok", f2ok, "times"
+	print *, "out of 100 tries, f3 was ok", f3ok, "times"
+	end
+'EOT'
+pushd /tmp
+f77 test_fltc.c test_fltf.f -o test_flt
+test_flt
