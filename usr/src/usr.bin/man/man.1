@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"     @(#)man.1	6.10 (Berkeley) %G%
+.\"     @(#)man.1	6.11 (Berkeley) %G%
 .\"
 .TH MAN 1 "%Q"
 .UC 4
@@ -44,6 +44,10 @@ The supplied
 must be a colon (``:'') separated list of directories.
 This search path may also be set using the environment variable
 .IR MANPATH .
+The subdirectories to be searched as well as their search order
+is specified by the ``_subdir'' line in the
+.I man
+configuration file.
 .TP
 m
 Augment the list of standard directories which
@@ -76,7 +80,7 @@ will search.
 The
 .I man
 configuration file (see
-.IR man.conf (5))
+.IR man_conf (5))
 specifies the possible
 .I section
 values that are currently available.
@@ -102,6 +106,10 @@ The standard search path used by
 may be overridden by specifying a path in the MANPATH environment
 variable.
 The format of the path is a colon (``:'') separated list of directories.
+The subdirectories to be searched as well as their search order
+is specified by the ``_subdir'' line in the
+.I man
+configuration file.
 .TP
 PAGER
 Any value of the environment variable
@@ -109,9 +117,10 @@ Any value of the environment variable
 will be used instead of the standard pagination program
 .IR more (1).
 .SH FILES
-/etc/man.conf	man configuration file
+/etc/man.conf	man configuration file (see
+.IR man_conf (5))
 .SH "SEE ALSO"
-apropos(1), machine(1), whatis(1), whereis(1), man.conf(5)
+apropos(1), machine(1), whatis(1), whereis(1), man_conf(5)
 .SH BUGS
 The on-line manual pages are, by necessity, forgiving toward stupid
 display devices, causing some manual pages to not be as good as their
