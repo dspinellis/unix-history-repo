@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)sleep.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)sleep.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <unistd.h>
@@ -21,6 +21,7 @@ static char sccsid[] = "@(#)sleep.c	5.6 (Berkeley) %G%";
 
 void usage __P((void));
 
+int
 main(argc, argv)
 	int argc;
 	char *argv[];
@@ -47,6 +48,6 @@ main(argc, argv)
 void
 usage()
 {
-	(void)fprintf(stderr, "usage: sleep time\n");
+	(void)fprintf(stderr, "usage: sleep seconds\n");
 	exit(1);
 }
