@@ -10,7 +10,7 @@
  * File I/O.
  */
 
-static char *SccsId = "@(#)fio.c	1.5 %G%";
+static char *SccsId = "@(#)fio.c	1.6 %G%";
 
 /*
  * Set up the input pointers while copying the mail file into
@@ -38,7 +38,7 @@ setptr(ibuf)
 	maybe = 1;
 	flag = MUSED|MNEW;
 	for (;;) {
-		if ((count = readline(ibuf, linebuf)) == 0) {
+		if ((count = freadline(ibuf, linebuf)) == 0) {
 			this.m_flag = flag;
 			flag = MUSED|MNEW;
 			this.m_offset = offsetof(offset);
@@ -54,7 +54,7 @@ setptr(ibuf)
 			close(mestmp);
 			return;
 		}
-		if (putline(otf, linebuf) < 0) {
+		if (fputs(linebuf, otf) == NULL || putc('\n', otf) == EOF) {
 			perror("/tmp");
 			exit(1);
 		}
@@ -118,6 +118,38 @@ putline(obuf, linebuf)
 	if (ferror(obuf))
 		return(-1);
 	return(c+1);
+}
+
+/*
+ * Quickly read a line from the specified input into the line
+ * buffer; return characters read.
+ */
+
+freadline(ibuf, linebuf)
+	register FILE *ibuf;
+	register char *linebuf;
+{
+	register int c;
+	register char *cp;
+
+	c = getc(ibuf);
+	cp = linebuf;
+	while (c != '\n' && c != EOF) {
+		if (c == 0) {
+			c = getc(ibuf);
+			continue;
+		}
+		if (cp - linebuf >= BUFSIZ-1) {
+			*cp = 0;
+			return(cp - linebuf + 1);
+		}
+		*cp++ = c;
+		c = getc(ibuf);
+	}
+	if (c == EOF && cp == linebuf)
+		return(0);
+	*cp = 0;
+	return(cp - linebuf + 1);
 }
 
 /*
