@@ -1,4 +1,4 @@
-(Version 8.16 of %G%)
+(Version 8.17 of %G%)
 
 Key:
   X -- extension (user visible change)
@@ -63,6 +63,9 @@ X ****	"quote" map (inverse of dequote).  Lets you turn node::user
 	into "node::user"@DECNET.gateway
 
 X ****	Named rulesets.
+
+X ***	Extend I option to allow setting of retry and timeout values.
+	drl@vuse.vanderbilt.edu (David R. Linn).
 
 X ***	Total connection cache lifespan timeout -- a way to give a
 	timeout on connections regardless of whether they are active
