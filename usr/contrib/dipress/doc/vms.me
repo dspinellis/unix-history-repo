@@ -1,0 +1,78 @@
+.bp
+.sh 1 "Using this toolkit on VMS"
+.lp
+The sources for the Interpress utilities may also be compiled and linked on a
+VMS system with the VMS VAX-11 C compiler.  The following instructions describe
+the files which can be moved and the compile and link order.
+.lp
+[include]
+.RS
+.lp
+all .h files
+.RE
+.lp
+[libip]
+.RS
+.ip "literal.c" 20
+- cc literal.c
+.ip "operator.c" 20
+- cc operator.c
+.RE
+.lp
+[charset]
+.RS
+.ip "charset.c" 20
+- cc charset.c
+.br
+link charset,[libip]literal,[libip]operator
+.RE
+.lp
+[iptotext]
+.RS
+.ip "iptotext.c" 20
+- cc iptotext.c
+.br
+link iptotext
+.RE
+.lp
+[maha]
+.RS
+.ip "maha.c" 20
+- cc maha.c
+.br
+- link maha,[libip]literal,[libip]operator
+.sp
+(NOTE:  Like the UNIX version of maha, the output file
+is spooled directly to the printer.  This section
+of code will have to be modified depending upon
+your own requirements.
+The VMS symbol MAHAENV has been substituted for
+the UNIX environment variable MAHA due to 
+restrictions in VMS symbol names.  This symbol
+can be used to store commonly used command
+line arguments.)
+.RE
+.lp
+[texttoip]
+.RS
+.ip "textlex.c" 20
+- cc textlex.c
+.sp
+(NOTE:  This is the output from running lex on textlex.l.
+It is necessary to modify this file for VMS
+as described in the file textlex.c)
+.ip "texttoip.c" 20
+- cc texttoip.c
+.br
+link texttoip,textlex,[libip]literal
+.RE
+.lp
+The resulting executables can be run by establishing VMS symbols as follows:
+.(l
+	charset == "$dev:[dir]charset.exe"
+	iptotext == "$dev:[dir]iptotext.exe"
+	maha == "$dev:[dir]maha.exe"
+	texttoip == "$dev:[dir]texttoip.exe"
+.)l
+Following this, the utilities can be invoked identically
+to their UNIX counterparts.
