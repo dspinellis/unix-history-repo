@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)inet.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)inet.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -22,6 +22,7 @@ static char sccsid[] = "@(#)inet.c	5.19 (Berkeley) %G%";
 #include <netinet/in_pcb.h>
 #include <netinet/ip_icmp.h>
 #include <netinet/icmp_var.h>
+#include <netinet/igmp_var.h>
 #include <netinet/ip_var.h>
 #include <netinet/tcp.h>
 #include <netinet/tcpip.h>
@@ -162,6 +163,7 @@ tcp_stats(off, name)
 		"\t\t%d packet%s (%d byte%s) received in-sequence\n");
 	p2(tcps_rcvduppack, tcps_rcvdupbyte,
 		"\t\t%d completely duplicate packet%s (%d byte%s)\n");
+	p(tcps_pawsdrop, "\t\t%d old duplicate packet%s\n");
 	p2(tcps_rcvpartduppack, tcps_rcvpartdupbyte,
 		"\t\t%d packet%s with some dup. data (%d byte%s duped)\n");
 	p2(tcps_rcvoopack, tcps_rcvoobyte,
@@ -201,6 +203,7 @@ udp_stats(off, name)
 	char *name;
 {
 	struct udpstat udpstat;
+	u_long delivered;
 
 	if (off == 0)
 		return;
@@ -208,11 +211,23 @@ udp_stats(off, name)
 	printf("%s:\n", name);
 #define	p(f, m) if (udpstat.f || sflag <= 1) \
     printf(m, udpstat.f, plural(udpstat.f))
-	p(udps_hdrops, "\t%u incomplete header%s\n");
-	p(udps_badlen, "\t%u bad data length field%s\n");
-	p(udps_badsum, "\t%u bad checksum%s\n");
-	p(udps_noport, "\t%u no port%s\n");
-	p(udps_noportbcast, "\t%u (arrived as bcast) no port%s\n");
+	p(udps_ipackets, "\t%u datagram%s received\n");
+	p(udps_hdrops, "\t%u with incomplete header\n");
+	p(udps_badlen, "\t%u with bad data length field\n");
+	p(udps_badsum, "\t%u with bad checksum\n");
+	p(udps_noport, "\t%u dropped due to no socket\n");
+	p(udps_noportbcast, "\t%u broadcast/multicast datagram%s dropped due to no socket\n");
+	p(udps_fullsock, "\t%u dropped due to full socket buffers\n");
+	delivered = udpstat.udps_ipackets -
+		    udpstat.udps_hdrops -
+		    udpstat.udps_badlen -
+		    udpstat.udps_badsum -
+		    udpstat.udps_noport -
+		    udpstat.udps_noportbcast -
+		    udpstat.udps_fullsock;
+	if (delivered || sflag <= 1)
+		printf("\t%u delivered\n", delivered);
+	p(udps_opackets, "\t%u datagram%s output\n");
 #undef p
 #ifdef sun
 	printf("\t%d socket overflow%s\n",
@@ -244,12 +259,24 @@ ip_stats(off, name)
 	p(ips_toosmall, "\t%u with data size < data length\n");
 	p(ips_badhlen, "\t%u with header length < data size\n");
 	p(ips_badlen, "\t%u with data length < header length\n");
+	p(ips_badoptions, "\t%u with bad options\n");
+	p(ips_badvers, "\t%u with incorrect version number\n");
 	p(ips_fragments, "\t%u fragment%s received\n");
 	p(ips_fragdropped, "\t%u fragment%s dropped (dup or out of space)\n");
 	p(ips_fragtimeout, "\t%u fragment%s dropped after timeout\n");
+	p(ips_reassembled, "\t%u packet%s reassembled ok\n");
+	p(ips_delivered, "\t%u packet%s for this host\n");
+	p(ips_noproto, "\t%u packet%s for unknown/unsupported protocol\n");
 	p(ips_forward, "\t%u packet%s forwarded\n");
 	p(ips_cantforward, "\t%u packet%s not forwardable\n");
 	p(ips_redirectsent, "\t%u redirect%s sent\n");
+	p(ips_localout, "\t%u packet%s sent from this host\n");
+	p(ips_rawout, "\t%u packet%s sent with fabricated ip header\n");
+	p(ips_odropped, "\t%u output packet%s dropped due to no bufs, etc.\n");
+	p(ips_noroute, "\t%u output packet%s discarded due to no route\n");
+	p(ips_fragmented, "\t%u output datagram%s fragmented\n");
+	p(ips_ofragments, "\t%u fragment%s created\n");
+	p(ips_cantfrag, "\t%u datagram%s that can't be fragmented\n");
 #undef p
 #endif
 }
@@ -322,6 +349,38 @@ icmp_stats(off, name)
 		}
 	p(icps_reflect, "\t%u message response%s generated\n");
 #undef p
+}
+
+/*
+ * Dump IGMP statistics structure.
+ */
+void
+igmp_stats(off, name)
+	u_long off;
+	char *name;
+{
+	struct igmpstat igmpstat;
+
+	if (off == 0)
+		return;
+	kread(off, (char *)&igmpstat, sizeof (igmpstat));
+	printf("%s:\n", name);
+
+#define	p(f, m) if (igmpstat.f || sflag <= 1) \
+    printf(m, igmpstat.f, plural(igmpstat.f))
+#define	py(f, m) if (igmpstat.f || sflag <= 1) \
+    printf(m, igmpstat.f, igmpstat.f != 1 ? "ies" : "y")
+	p(igps_rcv_total, "\t%u message%s received\n");
+        p(igps_rcv_tooshort, "\t%u message%s received with too few bytes\n");
+        p(igps_rcv_badsum, "\t%u message%s received with bad checksum\n");
+        py(igps_rcv_queries, "\t%u membership quer%s received\n");
+        py(igps_rcv_badqueries, "\t%u membership quer%s received with invalid field(s)\n");
+        p(igps_rcv_reports, "\t%u membership report%s received\n");
+        p(igps_rcv_badreports, "\t%u membership report%s received with invalid field(s)\n");
+        p(igps_rcv_ourreports, "\t%u membership report%s received for groups to which we belong\n");
+        p(igps_snd_reports, "\t%u membership report%s sent\n");
+#undef p
+#undef py
 }
 
 /*
