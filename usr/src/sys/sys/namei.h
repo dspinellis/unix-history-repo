@@ -1,4 +1,4 @@
-/*	namei.h	6.3	84/01/04	*/
+/*	namei.h	6.4	84/06/27	*/
 
 struct namidata {
 	int	ni_offset;
@@ -20,16 +20,17 @@ enum nami_op { NAMI_LOOKUP, NAMI_CREATE, NAMI_DELETE };
  * This structure describes the elements in the cache of recent
  * names looked up by namei.
  */
-#define	NCHNAMLEN	15	/* maximum name segment length we bother with */
 struct	nch {
-	struct	nch	*nc_forw, *nc_back;	/* hash chain, MUST BE FIRST */
-	struct	nch	*nc_nxt, **nc_prev;	/* LRU chain */
-	struct	inode	*nc_ip;			/* inode the name refers to */
-	ino_t		 nc_ino;		/* ino of parent of name */
-	dev_t		 nc_dev;		/* dev of parent of name */
-	dev_t		 nc_idev;		/* dev of the name ref'd */
-	char		 nc_nlen;		/* length of name */
-	char		 nc_name[NCHNAMLEN];	/* segment name */
+	struct	nch *nc_forw, *nc_back;	/* hash chain, MUST BE FIRST */
+	struct	nch *nc_nxt, **nc_prev;	/* LRU chain */
+	struct	inode *nc_ip;		/* inode the name refers to */
+	ino_t	nc_ino;			/* ino of parent of name */
+	dev_t	nc_dev;			/* dev of parent of name */
+	dev_t	nc_idev;		/* dev of the name ref'd */
+	long	nc_id;			/* referenced inode's id */
+	char	nc_nlen;		/* length of name */
+#define	NCHNAMLEN	15	/* maximum name segment length we bother with */
+	char	nc_name[NCHNAMLEN];	/* segment name */
 };
 struct	nch *nch;
 int	nchsize;
@@ -40,6 +41,7 @@ int	nchsize;
 struct	nchstats {
 	long	ncs_goodhits;		/* hits that we can reall use */
 	long	ncs_badhits;		/* hits we must drop */
+	long	ncs_falsehits;		/* hits with id mismatch */
 	long	ncs_miss;		/* misses */
 	long	ncs_long;		/* long names that ignore cache */
 	long	ncs_pass2;		/* names found with passes == 2 */
