@@ -5,10 +5,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)stabstring.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)stabstring.c	5.2 (Berkeley) %G%";
 #endif not lint
 
-static char rcsid[] = "$Header: stabstring.c,v 1.6 84/12/26 10:42:17 linton Exp $";
+static char rcsid[] = "$Header: stabstring.c,v 1.4 87/12/01 01:41:33 donn Exp $";
 
 /*
  * String information interpretation
@@ -112,12 +112,21 @@ private Char *curchar;
     } \
 }
 
-#define chkcont(ptr) \
+#ifdef sun
+#    define chkcont(ptr) \
+{ \
+    if (*ptr == '\\' or *ptr == '?') { \
+	ptr = getcont(); \
+    } \
+}
+#else if notsun
+#    define chkcont(ptr) \
 { \
     if (*ptr == '?') { \
 	ptr = getcont(); \
     } \
 }
+#endif
 
 #define newSym(s, n) \
 { \
@@ -138,6 +147,7 @@ private Char *curchar;
 #define makeParameter(s, n, cl, off) \
 { \
     newSym(s, n); \
+    s->storage = STK; \
     s->class = cl; \
     s->symvalue.offset = off; \
     curparam->chain = s; \
@@ -149,14 +159,54 @@ public entersym (name, np)
 String name;
 struct nlist *np;
 {
-    Symbol s, t;
-    char *p;
+    Symbol s;
+    register char *p, *q, *r;
     register Name n;
     char c;
 
     p = index(name, ':');
     *p = '\0';
     c = *(p+1);
+    if (autostrip and streq(language_name(curlang), "c++")) {
+	/*
+	 * Strip off redundant prefixes from C++ names.
+	 * Static variables are prefixed with _static_.
+	 * Formal arguments of functions are prefixed with _au0_.
+	 * Automatic variables are prefixed with _au[1-9][0-9]*_.
+	 * Class members are prefixed with _T_, where T is a class tag.
+	 */
+	if (strncmp("_static_", name, 8) == 0 and name[8] != '\0') {
+	    name += 8;
+	}
+	q = name;
+	if (*q++ == '_' and *q++ == 'a' and *q++ == 'u' and isdigit(*q++)) {
+	    while (isdigit(*q))
+		++q;
+	    if (*q++ == '_' and *q != '\0')
+		name = q;
+	}
+	q = name;
+	if (*q++ == '_' and c == EXTFUNCTION) {
+	    /*
+	     * Punt on static class members, for speed.
+	     */
+	    for (r = q; (r = index(r, '_')) != nil; ++r) {
+		if (r == q) {
+		    continue;
+		}
+		*r = '\0';
+		s = lookup(identname(q, true));
+		if (s != nil and s->class == TYPE) {
+		    char *newname = r + 1;
+		    if (*newname != '\0') {
+			name = newname;
+			break;
+		    }
+		}
+		*r = '_';
+	    }
+	}
+    }
     n = identname(name, true);
     chkUnnamedBlock();
     curchar = p + 2;
@@ -218,6 +268,7 @@ struct nlist *np;
 		exitblock();
 	    }
 	    makeVariable(s, n, np->n_value);
+	    s->storage = EXT;
 	    s->level = program->level;
 	    s->block = curmodule;
 	    getExtRef(s);
@@ -231,11 +282,20 @@ struct nlist *np;
 
 	case REGVAR:
 	    makeVariable(s, n, np->n_value);
-	    s->level = -(s->level);
+	    s->storage = INREG;
 	    break;
 
 	case VALUEPARAM:
 	    makeParameter(s, n, VAR, np->n_value);
+#	    ifdef IRIS
+		/*
+		 * Bug in SGI C compiler -- generates stab offset
+		 * for parameters with size added in.
+		 */
+		if (curlang == findlanguage(".c")) {
+		    s->symvalue.offset -= size(s);
+		}
+#	    endif
 	    break;
 
 	case VARIABLEPARAM:
@@ -245,6 +305,7 @@ struct nlist *np;
 	default:	/* local variable */
 	    --curchar;
 	    makeVariable(s, n, np->n_value);
+	    s->storage = STK;
 	    break;
     }
     if (tracesyms) {
@@ -540,6 +601,7 @@ integer off;
     endfind(s);
     if (s == nil) {
 	makeVariable(s, n, off);
+	s->storage = EXT;
 	s->level = program->level;
 	s->block = curmodule;
 	getExtRef(s);
@@ -648,7 +710,8 @@ private ownVariable (s, addr)
 Symbol s;
 Address addr;
 {
-    s->level = 1;
+    s->storage = EXT;
+    /* s->level = 1; */
     if (curcomm) {
 	if (commchain != nil) {
 	    commchain->symvalue.common.chain = s;
@@ -668,9 +731,14 @@ Address addr;
 private getType (s)
 Symbol s;
 {
-    s->type = constype(nil);
+    Symbol t, addtag();
+
     if (s->class == TAG) {
-	addtag(s);
+	t = addtag(s);
+	t->type = constype(nil);
+	s->type = t->type;
+    } else {
+	s->type = constype(nil);
     }
 }
 
@@ -749,8 +817,11 @@ Symbol type;
 		break;
 
 	    case T_OPENARRAY:
+		consDynarray(t, OPENARRAY);
+		break;
+
 	    case T_DYNARRAY:
-		consDynarray(t);
+		consDynarray(t, DYNARRAY);
 		break;
 
 	    case T_SUBARRAY:
@@ -784,7 +855,7 @@ Symbol type;
 	    case T_FUNCVAR:
 		t->class = FFUNC;
 		t->type = constype(nil);
-		if (not streq(language_name(curlang), "c")) {
+		if (streq(language_name(curlang), "modula-2")) {
 		    skipchar(curchar, ',');
 		    consParamlist(t);
 		}
@@ -879,10 +950,11 @@ private Rangetype getRangeBoundType ()
  * Construct a dynamic array descriptor.
  */
 
-private consDynarray (t)
+private consDynarray (t, c)
 register Symbol t;
+Symclass c;
 {
-    t->class = DYNARRAY;
+    t->class = c;
     t->symvalue.ndims = getint();
     skipchar(curchar, ',');
     t->type = constype(nil);
@@ -906,6 +978,7 @@ Symclass class;
     t->symvalue.offset = getint();
     d = curblock->level + 1;
     u = t;
+    chkcont(curchar);
     cur = curchar;
     while (*cur != ';' and *cur != '\0') {
 	p = index(cur, ':');
@@ -913,6 +986,37 @@ Symclass class;
 	    panic("index(\"%s\", ':') failed", curchar);
 	}
 	*p = '\0';
+	if (
+	    autostrip and
+	    *cur == '_' and
+	    streq(language_name(curlang), "c++")
+	) {
+	    /*
+	     * Strip off redundant prefixes from C++ names.
+	     * Class members are prefixed with _T_, where T is a class tag.
+	     */
+	    register char *q, *r;
+	    Symbol s;
+
+	    /*
+	     * The slow way...  Check for members defined in the base class.
+	     */
+	    for (q = cur + 1, r = q; (r = index(r, '_')) != nil; ++r) {
+		if (r == q) {
+		    continue;
+		}
+		*r = '\0';
+		s = lookup(identname(q, true));
+		if (s != nil and s->class == TYPE) {
+		    char *newcur = r + 1;
+		    if (*newcur != '\0') {
+			cur = newcur;
+			break;
+		    }
+		}
+		*r = '_';
+	    }
+	}
 	name = identname(cur, true);
 	u->chain = newSymbol(name, d, FIELD, nil, nil);
 	cur = p + 1;
@@ -948,7 +1052,7 @@ Symbol t;
     t->class = SCAL;
     count = 0;
     u = t;
-    while (*curchar != ';' and *curchar != '\0') {
+    while (*curchar != ';' and *curchar != '\0' and *curchar != ',') {
 	p = index(curchar, ':');
 	assert(p != nil);
 	*p = '\0';
@@ -1098,16 +1202,21 @@ private integer getint ()
  * in the same block.
  */
 
-private addtag (s)
+private Symbol addtag (s)
 register Symbol s;
 {
     register Symbol t;
     char buf[100];
 
-    sprintf(buf, "$$%.90s", ident(s->name));
-    t = insert(identname(buf, false));
+    if (streq(language_name(curlang), "c++")) {
+	t = insert(s->name);
+	t->class = TYPE;
+    } else {
+	sprintf(buf, "$$%.90s", ident(s->name));
+	t = insert(identname(buf, false));
+	t->class = TAG;
+    }
     t->language = s->language;
-    t->class = TAG;
-    t->type = s->type;
     t->block = s->block;
+    return t;
 }
