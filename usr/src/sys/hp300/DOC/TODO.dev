@@ -1,3 +1,5 @@
+[ this is old -- mike ]
+
 Oh, where do I begin...
 
 1. Integrate 98628A (single port buffered RS232) driver.
@@ -8,3 +10,8 @@ Oh, where do I begin...
 6. HP-IB (SCSI?) improvement: attempt to get more activity on a single
    bus (e.g. overlap seeks with transfers).
 7. Support for more modern (post-DaVinci) displays.
+
+----
+Mike Hibler
+University of Utah CSS group
+mike@cs.utah.edu
