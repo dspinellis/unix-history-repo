@@ -1,4 +1,4 @@
-/*	mbuf.h	6.3	85/03/07	*/
+/*	mbuf.h	6.4	85/05/05	*/
 
 /*
  * Constants related to memory allocator.
@@ -89,7 +89,12 @@ struct mbuf {
 	  } \
 	  (n) = (m)->m_next; (m)->m_next = mfree; \
 	  (m)->m_off = 0; (m)->m_act = 0; mfree = (m); \
-	  splx(ms); }
+	  splx(ms); \
+	  if (m_want) { \
+		  m_want = 0; \
+		  wakeup((caddr_t)mfree); \
+	  } \
+	}
 
 /*
  * Mbuf statistics.
@@ -109,6 +114,7 @@ struct	mbstat mbstat;
 int	nmbclusters;
 struct	mbuf *mfree, *mclfree;
 char	mclrefcnt[NMBCLUSTERS];
+int	m_want;
 struct	mbuf *m_get(),*m_getclr(),*m_free(),*m_more(),*m_copy(),*m_pullup();
 caddr_t	m_clalloc();
 #endif
