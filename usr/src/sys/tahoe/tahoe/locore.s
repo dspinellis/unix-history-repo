@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	7.7 (Berkeley) %G%
+ *	@(#)locore.s	7.8 (Berkeley) %G%
  */
 
 #include "../tahoe/mtpr.h"
@@ -612,7 +612,7 @@ _/**/mname:	.globl	_/**/mname;		\
 	/*
 	 * Used by the nfs_strategy() routine for physical I/O
 	 */
-	SYSMAP(Nfsiomap, nfsiobuf	,MAXPHYS/NBPG+1 )
+	SYSMAP(Nfsiomap ,nfsiobuf	,MAXPHYS/NBPG+1 )
 #endif /* NFS */
 	/*
 	 * Enlarge kmempt as needed for bounce buffers allocated
