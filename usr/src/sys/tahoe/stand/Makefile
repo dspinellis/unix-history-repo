@@ -1,4 +1,4 @@
-#	@(#)Makefile	7.18 (Berkeley) %G%
+#	@(#)Makefile	7.19 (Berkeley) %G%
 
 DESTDIR=
 STAND=	../../stand
@@ -87,6 +87,7 @@ ncy.o: ncy.c
 
 clean:
 	rm -f ${ALL} *.o *.map *.bak a.out ncy.c libdrive.a
+	cd ${STAND}; make clean
 	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} clean); done
 
 cleandir: clean
