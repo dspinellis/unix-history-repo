@@ -1,103 +1,148 @@
-.\" Copyright (c) 1988 The Regents of the University of California.
+.\" Copyright (c) 1988, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)su.1	6.11 (Berkeley) %G%
+.\"     @(#)su.1	6.11 (Berkeley) %G%
 .\"
-.TH SU 1 ""
-.UC
-.SH NAME
-su \- substitute user id
-.SH SYNOPSIS
-.nf
-.ft B
-su [ -Kflm ] [ login ]
-.ft R
-.nf
-.SH DESCRIPTION
-.I Su
+.Dd 
+.Dt SU 1
+.Os BSD 4.4
+.Sh NAME
+.Nm su
+.Nd substitute user identity
+.Sh SYNOPSIS
+.Nm su
+.Op Fl Kflm
+.Op Ar login
+.Sh DESCRIPTION
+.Nm Su
 requests the Kerberos password for
-.I login
-(or for ``\fIlogin\fP.root'', if no login is provided), and switches to
+.Ar login
+(or for
+.Dq Ar login Ns .root ,
+if no login is provided), and switches to
 that user and group ID after obtaining a Kerberos ticket granting ticket.
-A shell is then invoked.
-.I Su
+A shell is then executed.
+.Nm Su
 will resort to the local password file to find the password for
-.I login
+.Ar login
 if there is a Kerberos error.
 If
-.I su
+.Nm su
 is executed by root, no password is requested and a shell
-with the appropriate user ID is invoked; no additional Kerberos tickets
+with the appropriate user ID is executed; no additional Kerberos tickets
 are obtained.
-.PP
+.Pp
 By default, the environment is unmodified with the exception of
-.IR USER ,
-.IR HOME ,
+.Ev USER ,
+.Ev HOME ,
 and
-.IR SHELL .
-.I HOME
+.Ev SHELL .
+.Ev HOME
 and
-.I SHELL
+.Ev SHELL
 are set to the target login's default values.
-.I USER
+.Ev USER
 is set to the target login, unless the target login has a user ID of 0,
 in which case it is unmodified.
 The invoked shell is the target login's.
 This is the traditional behavior of
-.IR su .
-.PP
+.Nm su .
+.Pp
 The options are as follows:
-.TP
-\-K
+.Bl -tag -width Ds
+.It Fl K
 Do not attempt to use Kerberos to authenticate the user.
-.TP
-\-f
+.It Fl f
 If the invoked shell is
-.IR csh (1),
-this option prevents it from reading the ``.cshrc'' file.
-.TP
-\-l
+.Xr csh 1 ,
+this option prevents it from reading the
+.Dq Pa .cshrc
+file.
+.It Fl l
 Simulate a full login.
 The environment is discarded except for
-.IR HOME ,
-.IR SHELL ,
-.IR PATH ,
-.IR TERM ,
+.Ev HOME ,
+.Ev SHELL ,
+.Ev PATH ,
+.Ev TERM ,
 and
-.IR USER .
-.I HOME
+.Ev USER .
+.Ev HOME
 and
-.I SHELL
+.Ev SHELL
 are modified as above.
-.I USER
+.Ev USER
 is set to the target login.
-.I PATH
-is set to ``/bin:/usr/bin''.
-.I TERM
+.Ev PATH
+is set to
+.Dq Pa /bin:/usr/bin .
+.Ev TERM
 is imported from your current environment.
 The invoked shell is the target login's, and
-.I su
+.Nm su
 will change directory to the target login's home directory.
-.TP
-\-m
+.It Fl m
 Leave the environment unmodified.
 The invoked shell is your login shell, and no directory changes are made.
 As a security precaution, if the target user's shell is a non-standard
-shell (as defined by \fIgetusershell\fP(3)) and the caller's real uid is
+shell (as defined by
+.Xr getusershell 3 )
+and the caller's real uid is
 non-zero,
-.I su
+.Nm su
 will fail.
-.PP
-The \-l and \-m options are mutually exclusive; the last one specified
+.El
+.Pp
+The
+.Fl l
+and
+.Fl m
+options are mutually exclusive; the last one specified
 overrides any previous ones.
-.PP
-Only users in group 0 (normally ``wheel'') can
-.I su
-to ``root''.
-.PP
+.Pp
+Only users in group 0 (normally
+.Dq wheel )
+can
+.Nm su
+to
+.Dq root .
+.Pp
 By default (unless the prompt is reset by a startup file) the super-user
-prompt is set to ``#'' to remind one of its awesome power.
-.SH "SEE ALSO"
-csh(1), login(1), sh(1), kinit(1), kerberos(1), passwd(5), group(5), environ(7)
+prompt is set to
+.Dq Sy \&#
+to remind one of its awesome power.
+.Sh SEE ALSO
+.Xr csh 1 ,
+.Xr login 1 ,
+.Xr sh 1 ,
+.Xr kinit 1 ,
+.Xr kerberos 1 ,
+.Xr passwd 5 ,
+.Xr group 5 ,
+.Xr environ 7
+.Sh ENVIRONMENT
+Environment variables used by
+.Nm su :
+.Bl -tag -width HOME
+.It Ev HOME
+Default home directory of real user ID unless modified as
+specified above.
+.It Ev PATH
+Default search path of real user ID unless modified as specified above.
+.It Ev TERM
+Provides terminal type which may be retained for the substituted
+user ID.
+.It Ev USER
+The user ID is always the effective ID (the target user ID) after an
+.Nm su
+unless the user ID is 0 (root).
+.El
+.Sh HISTORY
+A
+.Nm
+command appeared in
+.At v7 .
+The version desribed
+here is an adaptation of the MIT Athena Kerberos command.
