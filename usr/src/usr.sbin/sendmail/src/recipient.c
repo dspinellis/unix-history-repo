@@ -2,7 +2,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)recipient.c	3.37		%G%);
+SCCSID(@(#)recipient.c	3.38		%G%);
 
 /*
 **  SENDTO -- Designate a send list.
@@ -293,8 +293,7 @@ recipient(a, sendq)
 				usrerr("Cannot mail directly to :include:s");
 			else
 			{
-				if (Verbose)
-					message(Arpa_Info, "including file %s", &a->q_user[9]);
+				message(Arpa_Info, "including file %s", &a->q_user[9]);
 				include(&a->q_user[9], " sending", a, sendq);
 			}
 		}
@@ -430,7 +429,6 @@ finduser(name)
 		fullname(pw, buf);
 		if (index(buf, ' ') != NULL && sameword(buf, name))
 		{
-			if (Verbose)
 				message(Arpa_Info, "sending to %s <%s>",
 				    buf, pw->pw_name);
 			return (pw);
@@ -547,8 +545,7 @@ include(fname, msg, ctladdr, sendq)
 		if (buf[0] == '\0')
 			continue;
 		CurEnv->e_to = oldto;
-		if (Verbose)
-			message(Arpa_Info, "%s to %s", msg, buf);
+		message(Arpa_Info, "%s to %s", msg, buf);
 		AliasLevel++;
 		sendto(buf, 1, ctladdr, 0);
 		AliasLevel--;

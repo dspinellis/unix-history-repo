@@ -4,9 +4,9 @@
 # include "sendmail.h"
 
 # ifdef DBM
-SCCSID(@(#)alias.c	3.34		%G%	(with DBM));
+SCCSID(@(#)alias.c	3.35		%G%	(with DBM));
 # else DBM
-SCCSID(@(#)alias.c	3.34		%G%	(without DBM));
+SCCSID(@(#)alias.c	3.35		%G%	(without DBM));
 # endif DBM
 
 /*
@@ -97,8 +97,7 @@ alias(a, sendq)
 		printf("%s (%s, %s) aliased to %s\n",
 		    a->q_paddr, a->q_host, a->q_user, p);
 # endif
-	if (Verbose)
-		message(Arpa_Info, "aliased to %s", p);
+	message(Arpa_Info, "aliased to %s", p);
 	AliasLevel++;
 	a->q_child = sendto(p, 1, a, 0);
 	AliasLevel--;
@@ -191,12 +190,15 @@ initaliases(aliasfile, init)
 		    ((stb.st_mode & 0666) == 0666 || stb.st_uid == geteuid()))
 		{
 			init = TRUE;
-			if (Verbose)
-				message(Arpa_Info, "rebuilding alias database");
+			message(Arpa_Info, "rebuilding alias database");
 		}
 		else
 		{
+			bool oldverb = Verbose;
+
+			Verbose = TRUE;
 			message(Arpa_Info, "Warning: alias database out of date");
+			Verbose = oldverb;
 		}
 	}
 # endif DBM
@@ -454,8 +456,7 @@ readaliases(aliasfile, init)
 	}
 	(void) fclose(af);
 	CurEnv->e_to = NULL;
-	if (Verbose)
-		message(Arpa_Info, "%d aliases, longest %d bytes, %d bytes total",
+	message(Arpa_Info, "%d aliases, longest %d bytes, %d bytes total",
 			naliases, longest, bytes);
 }
 /*
