@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)inode.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)inode.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -27,6 +27,17 @@ static char sccsid[] = "@(#)inode.c	5.11 (Berkeley) %G%";
 #include "fsck.h"
 
 struct bufarea *pbp = 0;
+/*
+ * Inode cache data structures.
+ */
+struct inoinfo {
+	struct	inoinfo *i_next;	/* next entry in hash chain */
+	ino_t	i_number;		/* inode number of this entry */
+	size_t	i_size;			/* size of inode */
+	u_int	i_numblks;		/* size of block array */
+	daddr_t	i_blks[1];		/* actually longer */
+} **inphead;
+long hashsize;
 
 ckinode(dp, idesc)
 	struct dinode *dp;
@@ -188,6 +199,73 @@ ginode(inumber)
 	return (&pbp->b_un.b_dinode[inumber % INOPB(&sblock)]);
 }
 
+cacheino(dp, inumber)
+	register struct dinode *dp;
+	ino_t inumber;
+{
+	register struct inoinfo *inp;
+	struct inoinfo **inpp;
+	unsigned int blks;
+
+	if (inphead == NULL) {
+		hashsize = sblock.fs_cstotal.cs_ndir;
+		inphead = (struct inoinfo **)malloc(hashsize * sizeof(daddr_t));
+		if (inphead == NULL)
+			return;
+		bzero((char *)inphead, hashsize * sizeof(daddr_t));
+	}
+	blks = howmany(dp->di_size, sblock.fs_bsize);
+	if (blks > NDADDR)
+		blks = NDADDR + NIADDR;
+	inp = (struct inoinfo *)
+		malloc(sizeof(*inp) + (blks - 1) * sizeof(daddr_t));
+	if (inp == NULL)
+		return;
+	inpp = &inphead[inumber % hashsize];
+	inp->i_next = *inpp;
+	*inpp = inp;
+	inp->i_number = inumber;
+	inp->i_size = dp->di_size;
+	inp->i_numblks = blks * sizeof(daddr_t);
+	bcopy((char *)&dp->di_db[0], (char *)&inp->i_blks[0], inp->i_numblks);
+}
+
+struct dinode *
+getcacheino(inumber)
+	ino_t inumber;
+{
+	register struct inoinfo *inp;
+	static struct dinode dino;
+	register struct dinode *dp = &dino;
+
+	for (inp = inphead[inumber % hashsize]; inp; inp = inp->i_next) {
+		if (inp->i_number != inumber)
+			continue;
+		dp->di_size = inp->i_size;
+		bcopy((char *)&inp->i_blks[0], (char *)&dp->di_db[0],
+			inp->i_numblks);
+		return (dp);
+	}
+	return (ginode(inumber));
+}
+
+inocleanup()
+{
+	register struct inoinfo *inp, **inpp;
+	struct inoinfo *inpnext;
+
+	if (inphead == NULL)
+		return;
+	for (inpp = &inphead[hashsize - 1]; inpp >= inphead; inpp--) {
+		for (inp = *inpp; inp; inp = inpnext) {
+			inpnext = inp->i_next;
+			free(inp);
+		}
+	}
+	free(inphead);
+	inphead = NULL;
+}
+	
 inodirty()
 {
 	

@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)fsck.h	5.10 (Berkeley) %G%
+ *	@(#)fsck.h	5.11 (Berkeley) %G%
  */
 
 #define	MAXDUP		10	 /* limit on dup blks (per inode) */
@@ -176,6 +176,7 @@ struct	dinode zino;
 
 time_t time();
 struct dinode *ginode();
+struct dinode *getcacheino();
 struct bufarea *getblk();
 ino_t allocino();
 int findino();
