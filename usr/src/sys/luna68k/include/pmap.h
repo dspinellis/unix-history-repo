@@ -12,7 +12,7 @@
  *
  * from: hp300/include/pmap.h	7.11 (Berkeley) 12/27/92
  *
- *	@(#)pmap.h	7.4 (Berkeley) %G%
+ *	@(#)pmap.h	7.5 (Berkeley) %G%
  */
 
 #ifndef	_PMAP_MACHINE_
@@ -104,6 +104,7 @@ pv_entry_t	pv_table;		/* array of entries, one per page */
 #define pa_to_pvh(pa)		(&pv_table[pa_index(pa)])
 
 #define	pmap_resident_count(pmap)	((pmap)->pm_stats.resident_count)
+#define	pmap_wired_count(pmap)		((pmap)->pm_stats.wired_count)
 
 extern	struct pte *Sysmap;
 extern	char *vmmap;			/* map for mem, dumps, etc. */
