@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_syscalls.c	7.26 (Berkeley) %G%
+ *	@(#)nfs_syscalls.c	7.26.1.1 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -272,6 +272,12 @@ nfssvc(p, uap, retval)
 			m_freem(nam);
 			break;
 		};
+#ifdef DIAGNOSTIC
+		if (p->p_spare[0])
+			panic("nfssvc: M_NAMEI");
+		if (p->p_spare[1])
+			panic("nfssvc: STARTSAVE");
+#endif
 	}
 bad:
 	return (error);
