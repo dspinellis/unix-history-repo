@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -420,7 +420,7 @@ double
 getpmem(k)
 	KINFO *k;
 {
-	extern int ecmx, nlistread;
+	extern int mempages, nlistread;
 	static int failure;
 	struct proc *p;
 	struct eproc *e;
@@ -438,14 +438,14 @@ getpmem(k)
 		return (0.0);
 #ifndef NEWVM
 	szptudot = UPAGES + clrnd(ctopt(p->p_dsize + p->p_ssize + e->e_xsize));
-	fracmem = ((float)p->p_rssize + szptudot)/CLSIZE/ecmx;
+	fracmem = ((float)p->p_rssize + szptudot)/CLSIZE/mempages;
 	if (p->p_textp && e->e_xccount)
-		fracmem += ((float)e->e_xrssize)/CLSIZE/e->e_xccount/ecmx;
+		fracmem += ((float)e->e_xrssize)/CLSIZE/e->e_xccount/mempages;
 #else /* NEWVM */
 	/* XXX want pmap ptpages, segtab, etc. (per architecture) */
 	szptudot = UPAGES;
 	/* XXX don't have info about shared */
-	fracmem = ((float)e->e_vm.vm_rssize + szptudot)/CLSIZE/ecmx;
+	fracmem = ((float)e->e_vm.vm_rssize + szptudot)/CLSIZE/mempages;
 #endif /* NEWVM */
 	return (100.0 * fracmem);
 }
