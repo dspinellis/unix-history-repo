@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)acutab.c	4.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)acutab.c	4.8 (Berkeley) %G%";
 #endif
 
 #include "tip.h"
@@ -10,6 +10,7 @@ extern int df02_dialer(), df03_dialer(), df_disconnect(), df_abort(),
 	   biz22f_dialer(), biz22_disconnect(), biz22_abort(),
 	   biz22w_dialer(),
 	   ven_dialer(), ven_disconnect(), ven_abort(),
+	   hay_dialer(), hay_disconnect(), hay_abort(),
 	   v3451_dialer(), v3451_disconnect(), v3451_abort(),
 	   v831_dialer(), v831_disconnect(), v831_abort(),
 	   dn_dialer(), dn_disconnect(), dn_abort();
@@ -35,6 +36,9 @@ acu_t acutable[] = {
 #ifdef VENTEL
 	"ventel",ven_dialer,	ven_disconnect,		ven_abort,
 #endif
+#ifdef HAYES
+	"hayes",hay_dialer,	hay_disconnect,		hay_abort,
+#endif
 #ifdef V3451
 #ifndef V831
 	"vadic",v3451_dialer,	v3451_disconnect,	v3451_abort,
@@ -49,3 +53,4 @@ acu_t acutable[] = {
 #endif
 	0,	0,		0,			0
 };
+

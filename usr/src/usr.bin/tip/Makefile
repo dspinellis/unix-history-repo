@@ -1,4 +1,4 @@
-#	Makefile	4.12	83/10/30
+#	Makefile	4.13	85/04/11
 #
 # make file for intermachine communications package
 #
@@ -32,7 +32,7 @@
 ADM=	usr/adm
 OWNER=	uucp
 GROUP=	daemon
-CONFIG=	-DV831 -DVENTEL
+CONFIG=	-DV831 -DVENTEL -DHAYES
 CFLAGS=	-O -DDEFBR=300 -DDEFFS=BUFSIZ -DACULOG -DPRISTINE
 LDFLAGS=
 OBJS=	acu.o cmds.o cmdtab.o cu.o hunt.o \
