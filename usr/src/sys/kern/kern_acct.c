@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_acct.c	7.15 (Berkeley) %G%
+ *	@(#)kern_acct.c	7.16 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -92,7 +92,7 @@ acctwatch(resettime)
 	struct statfs sb;
 
 	if (savacctp) {
-		(void)VFS_STATFS(savacctp->v_mount, &sb);
+		(void)VFS_STATFS(savacctp->v_mount, &sb, (struct proc *)0);
 		if (sb.f_bavail > acctresume * sb.f_blocks / 100) {
 			acctp = savacctp;
 			savacctp = NULL;
@@ -102,7 +102,7 @@ acctwatch(resettime)
 	}
 	if (acctp == NULL)
 		return;
-	(void)VFS_STATFS(acctp->v_mount, &sb);
+	(void)VFS_STATFS(acctp->v_mount, &sb, (struct proc *)0);
 	if (sb.f_bavail <= acctsuspend * sb.f_blocks / 100) {
 		savacctp = acctp;
 		acctp = NULL;
@@ -152,8 +152,9 @@ acct(p)
 	else
 		ap->ac_tty = NODEV;
 	ap->ac_flag = p->p_acflag;
-	return (vn_rdwr(UIO_WRITE, vp, (caddr_t)ap, sizeof (acctbuf),
-	    (off_t)0, UIO_SYSSPACE, IO_UNIT|IO_APPEND, p->p_ucred, (int *)0));
+	return (vn_rdwr(UIO_WRITE, vp, (caddr_t)ap, sizeof (acctbuf), (off_t)0,
+		UIO_SYSSPACE, IO_UNIT|IO_APPEND, p->p_ucred, (int *)0,
+		(struct proc *)0));
 }
 
 /*

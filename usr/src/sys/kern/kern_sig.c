@@ -3,13 +3,14 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_sig.c	7.28 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.29 (Berkeley) %G%
  */
 
 #define	SIGPROP		/* include signal properties table */
 #include "param.h"
 #include "signalvar.h"
 #include "resourcevar.h"
+#include "namei.h"
 #include "inode.h"
 #include "proc.h"
 #include "systm.h"
@@ -997,7 +998,7 @@ coredump(p)
 		return (EFAULT);
 	}
 	itrunc(ip, (u_long)0);
-	VOP_SETATTR(vp, &vattr, cred);
+	VOP_SETATTR(vp, &vattr, cred, p);
 	p->p_acflag |= ACORE;
 	bcopy(p, &u.u_kproc.kp_proc, sizeof(struct proc));
 	fill_eproc(p, &u.u_kproc.kp_eproc);
