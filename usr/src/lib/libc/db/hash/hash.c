@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash.c	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash.c	5.25 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -663,7 +663,7 @@ hash_seq(dbp, key, data, flag)
 		hashp->cpage = NULL;
 	}
 
-	for (bp = NULL; !bp || !bp[0]; ++hashp->cbucket) {
+	for (bp = NULL; !bp || !bp[0]; ) {
 		if (!(bufp = hashp->cpage)) {
 			for (bucket = hashp->cbucket;
 			    bucket <= hashp->MAX_BUCKET;
@@ -696,8 +696,10 @@ hash_seq(dbp, key, data, flag)
 			bp = (u_short *)(bufp->page);
 			hashp->cndx = 1;
 		}
-		if (!bp[0])
+		if (!bp[0]) {
 			hashp->cpage = NULL;
+			++hashp->cbucket;
+		}
 	}
 	ndx = hashp->cndx;
 	if (bp[ndx + 1] < REAL_KEY) {
