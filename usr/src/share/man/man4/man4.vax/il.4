@@ -2,21 +2,22 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)il.4	6.2 (Berkeley) %G%
+.\"	@(#)il.4	6.3 (Berkeley) %G%
 .\"
 .TH IL 4 ""
 .UC 5
 .SH NAME
 il \- Interlan NI1010 10 Mb/s Ethernet interface
 .SH SYNOPSIS
-.B "device il0 at uba0 csr 161000 vector ilrint ilcint"
+.B "device il0 at uba0 csr 164000 vector ilrint ilcint"
 .SH DESCRIPTION
 The
 .I il
 interface provides access to a 10 Mb/s Ethernet network through
-an Interlan controller.
+an Interlan 1010 or 1010A controller.
 .PP
-The host's Internet address is specified at boot time with an SIOCSIFADDR
+Each of the host's network addresses
+is specified at boot time with an SIOCSIFADDR
 ioctl.  The
 .I il
 interface employs the address resolution protocol described in
@@ -25,8 +26,10 @@ to dynamically map between Internet and Ethernet addresses on the local
 network.
 .PP
 The interface normally tries to use a ``trailer'' encapsulation
-to minimize copying data on input and output.  This may be
-disabled, on a per-interface basis, by setting the IFF_NOTRAILERS
+to minimize copying data on input and output.
+The use of trailers is negotiated with ARP.
+This negotiation may be disabled, on a per-interface basis,
+by setting the IFF_NOTRAILERS
 flag with an SIOCSIFFLAGS ioctl.
 .SH DIAGNOSTICS
 \fBil%d: input error\fP.  The hardware indicated an error
@@ -58,4 +61,3 @@ See the hardware manual for details.
 \fBil%d: verifying setaddr, csr=%b\fP.
 .SH SEE ALSO
 intro(4N), inet(4F), arp(4P)
-.SH BUGS
