@@ -6,11 +6,12 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_close.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_close.c	5.9 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 #include <sys/uio.h>
+#include <sys/mman.h>
 
 #include <errno.h>
 #include <limits.h>
@@ -41,13 +42,19 @@ __rec_close(dbp)
 
 	/* Committed to closing. */
 	t = dbp->internal;
-	rval = ISSET(t, BTF_RINMEM) ? 0 :
-	    t->bt_rfp == NULL ? close(t->bt_rfd) : fclose(t->bt_rfp);
+
+	rval = RET_SUCCESS;
+	if (ISSET(t, BTF_MEMMAPPED) && munmap(t->bt_smap, t->bt_msize))
+		rval = RET_ERROR;
+
+	if (!ISSET(t, BTF_RINMEM) &&
+	    ISSET(t, BTF_CLOSEFP) ? fclose(t->bt_rfp) : close(t->bt_rfd))
+		rval = RET_ERROR;
 
 	if (__bt_close(dbp) == RET_ERROR)
-		return (RET_ERROR);
+		rval = RET_ERROR;
 
-	return (rval ? RET_ERROR : RET_SUCCESS);
+	return (rval);
 }
 
 /*
@@ -76,7 +83,7 @@ __rec_sync(dbp)
 		return (RET_SUCCESS);
 
 	/* Read any remaining records into the tree. */
-	if (t->bt_irec(t, MAX_REC_NUMBER) == RET_ERROR)
+	if (!ISSET(t, BTF_EOF) && t->bt_irec(t, MAX_REC_NUMBER) == RET_ERROR)
 		return (RET_ERROR);
 
 	/* Rewind the file descriptor. */
@@ -101,7 +108,7 @@ __rec_sync(dbp)
 	t->bt_rcursor = scursor;
 	if (status == RET_ERROR)
 		return (RET_ERROR);
-	if ((off = lseek(t->bt_rfd, (off_t)0, SEEK_CUR)) != 0)
+	if ((off = lseek(t->bt_rfd, (off_t)0, SEEK_CUR)) == -1)
 		return (RET_ERROR);
 	if (ftruncate(t->bt_rfd, off))
 		return (RET_ERROR);
