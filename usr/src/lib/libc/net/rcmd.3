@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)rcmd.3	6.11 (Berkeley) %G%
+.\"     @(#)rcmd.3	6.12 (Berkeley) %G%
 .\"
 .Dd 
 .Dt RCMD 3
@@ -19,6 +19,8 @@
 .Fn rcmd "char **ahost" "int inport" "const char *locuser" "const char *remuser" "const char *cmd" "int *fd2p"
 .Ft int
 .Fn rresvport "int *port"
+.Ft int
+.Fn iruserok "u_long raddr" "int superuser" "const char *ruser" "const char *luser"
 .Ft int
 .Fn ruserok "const char *rhost" "int superuser" "const char *ruser" "const char *luser"
 .Sh DESCRIPTION
@@ -104,33 +106,45 @@ in the range 0 to 1023.  Only the super-user
 is allowed to bind an address of this sort to a socket.
 .Pp
 The
+.Fn iruserok
+and
 .Fn ruserok
-argument
-takes a remote host's name, as returned by the
-.Xr gethostbyaddr 3
-routine, two user names and a flag indicating whether
-the local user's name is that of the super-user.  Then,
-if the user is
+functions take a remote host's IP address or name, as returned by the
+.Xr gethostbyname 3
+routines, two user names and a flag indicating whether the local user's
+name is that of the super-user.
+Then, if the user is
 .Em NOT
-the super-user, it checks the files
-.Pa /etc/hosts.equiv .
+the super-user, it checks the
+.Pa /etc/hosts.equiv
+file.
 If that lookup is not done, or is unsuccessful, the
 .Pa .rhosts
 in the local user's home directory is checked to see if the request for
-service is allowed.  If this file is owned by anyone other than the
-user or the super-user, or if it is writeable by anyone other than the
-owner, the check automatically fails.  A 0 is returned if the machine
-name is listed in the
+service is allowed.
+.Pp
+If this file does not exist, is not a regular file, is owned by anyone
+other than the user or the super-user, or is writeable by anyone other
+than the owner, the check automatically fails.
+Zero is returned if the machine name is listed in the
 .Dq Pa hosts.equiv
-file, or the host and remote
-user name are found in the
+file, or the host and remote user name are found in the
 .Dq Pa .rhosts
 file; otherwise
+.Fn iruserok
+and
 .Fn ruserok
-returns \-1.
+return \-1.
 If the local domain (as obtained from
 .Xr gethostname 2 )
 is the same as the remote domain, only the machine name need be specified.
+.Pp
+The
+.Fn iruserok
+function is strongly preferred for security reasons.
+It requires trusting the local DNS at most, while the
+.Fn ruserok
+function requires trusting the entire DNS, which can be spoofed.
 .Sh DIAGNOSTICS
 The
 .Fn rcmd
