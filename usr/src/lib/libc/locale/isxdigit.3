@@ -7,7 +7,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)isxdigit.3	5.3 (Berkeley) %G%
+.\"     @(#)isxdigit.3	5.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt ISXDIGIT 3
@@ -23,6 +23,15 @@
 The
 .Fn isxdigit
 function tests for any hexadecimal-digit character.
+In the ASCII character set, this includes the following characters:
+.sp
+.Bl -column \&000_``0''__ \&000_``0''__ \&000_``0''__ \&000_``0''__ \&000_``0''__
+.It \&060\ ``0'' \t061\ ``1'' \t062\ ``2'' \t063\ ``3'' \t064\ ``4''
+.It \&065\ ``5'' \t066\ ``6'' \t067\ ``7'' \t070\ ``8'' \t071\ ``9''
+.It \&101\ ``A'' \t102\ ``B'' \t103\ ``C'' \t104\ ``D'' \t105\ ``E''
+.It \&106\ ``F'' \t141\ ``a'' \t142\ ``b'' \t143\ ``c'' \t144\ ``d''
+.It \&145\ ``e'' \t146\ ``f''
+.El
 .Sh RETURN VALUES
 The
 .Fn isxdigit
