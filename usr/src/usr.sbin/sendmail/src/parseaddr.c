@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	5.13.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	5.13.1.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -89,6 +89,8 @@ parseaddr(addr, a, copyf, delim, e)
 		extern char *DelimChar;		/* parseaddr.c */
 		char savec;
 		bool invalid;
+		extern char *finddelim();
+		extern bool invalidaddr();
 
 		DelimChar = finddelim(addr, delim);
 		savec = *DelimChar;
@@ -536,8 +538,7 @@ toktype(c)
 		expand("\001o", buf, &buf[sizeof buf - 1], CurEnv);
 		(void) strcat(buf, DELIMCHARS);
 	}
-	if (c == MATCHCLASS || c == MATCHREPL || c == MATCHNCLASS ||
-	    c == MATCHMAP   || c == MATCHNMAP)
+	if (c == MATCHCLASS || c == MATCHREPL || c == MATCHNCLASS)
 		return (ONE);
 #ifdef MACVALUE
 	if (c == MACVALUE)
@@ -612,8 +613,6 @@ static char control_init_data[] = {
 #endif /* MACVALUE */
 	MATCHNCLASS,	OP_NONZLEN,
 	MATCHCLASS,	OP_NONZLEN|OP_VARLEN|OP_CLASS,
-	MATCHNMAP,	OP_NONZLEN,
-	MATCHMAP,	OP_NONZLEN|OP_VARLEN|OP_CLASS
 };
 
 static int nrw;
@@ -647,19 +646,6 @@ _rewrite(pvp, ruleset)
 	struct match mlist[MAXMATCH+1];	/* stores match on LHS */
 	struct match *old_mlp;		/* to save our place */
 	bool extend_match;	/* extend existing match during backup */
-
-	/* test entry which should be nonzero */
-	if (control_opts[MATCHMAP] == 0)
-	{
-		/* First time through, initialize table */
-		int	c, i;
-
-		for (i = 0; i < sizeof control_init_data; )
-		{
-			c = control_init_data[i++];
-			control_opts[c] = control_init_data[i++];
-		}
-	}
 
 	if (OpMode == MD_TEST || tTd(21, 2))
 	{
@@ -840,16 +826,6 @@ _rewrite(pvp, ruleset)
 					if (s != NULL && bitnset(rp[1], s->s_class))
 						goto backup;
 					break;
-
-				    case MATCHNMAP:
-					/* match any token not in a DBM map */
-					if ((rp = mapkey(rp[1], ap, 0, NULL)) != NULL)
-					{
-						free(rp);
-						goto backup;
-					}
-					break;
-
 				}
 
 				avp = mlp->last;
@@ -922,11 +898,6 @@ _rewrite(pvp, ruleset)
 					    case MATCHCLASS:
 						s = stab(tokbuf, ST_CLASS, ST_FIND);
 						if (s != NULL && bitnset(rp[1], s->s_class))
-							goto have_match;
-						break;
-
-					    case MATCHMAP:
-						if (mapkey(rp[1], tokbuf, sizeof(tokbuf)-1, NULL))
 							goto have_match;
 						break;
 					}
@@ -1208,13 +1179,6 @@ backup:
 			if (map == NULL)
 				syserr("rewrite: map %s not found", mapname);
 
-			/* read database name if that's what we're up for */
-			if (begintype == KEYBEGIN)
-			{
-				if (*++rvp != NULL)
-					db = **rvp;
-			}
-
 			/* extract the match part */
 			key_rvp = ++rvp;
 			while (*rvp != NULL && **rvp != endtoken)
@@ -1258,9 +1222,7 @@ backup:
 			rvp = avp - 1;
 			for (xpvp = pvpb1; *xpvp != NULL; xpvp++)
 			{
-				if (defaultpart && (begintype == HOSTBEGIN ?
-				    **xpvp == HOSTEND :
-				    **xpvp == KEYEND))
+				if (defaultpart && **xpvp == HOSTEND)
 				{
 					defaultpart = FALSE;
 					rvp = avp - 1;
@@ -1490,8 +1452,8 @@ buildaddr(tv, a)
 
 	/* rewrite according recipient mailer rewriting rules */
 	rewrite(++tv, 2);
-	if (m->m_re_rwset > 0)
-		rewrite(tv, m->m_re_rwset);
+	if (m->m_r_rwset > 0)
+		rewrite(tv, m->m_r_rwset);
 	rewrite(tv, 4);
 
 	/* save the result for the command line/RCPT argument */
@@ -1649,8 +1611,6 @@ printaddr(a, follow)
 **			rather than the recipient rewriting rules.
 **		canonical -- if set, strip out any comment information,
 **			etc.
-**		headeraddress -- if set, use header specific rewriting
-**			rulesets and uurelativize if M_RELATIVIZE is set.
 **
 **	Returns:
 **		the text string representing this address relative to
@@ -1670,7 +1630,6 @@ remotename(name, m, senderaddress, canonical, e)
 	MAILER *m;
 	bool senderaddress;
 	bool canonical;
-	bool headeraddress;
 	register ENVELOPE *e;
 {
 	register char **pvp;
@@ -1684,9 +1643,7 @@ remotename(name, m, senderaddress, canonical, e)
 		printf("remotename(%s)\n", name);
 
 	/* don't do anything if we are tagging it as special */
-	if ((senderaddress ?
-	     (headeraddress ? m->m_sh_rwset : m->m_se_rwset) :
-	     (headeraddress ? m->m_rh_rwset : m->m_re_rwset)) < 0)
+	if ((senderaddress ? m->m_s_rwset : m->m_r_rwset) < 0)
 		return (name);
 
 	/*
@@ -1740,33 +1697,15 @@ remotename(name, m, senderaddress, canonical, e)
 
 	if (senderaddress)
 	{
-		if (headeraddress)
-		{
-			rewrite(pvp, SplitRewriting ? 5 : 1);
-			if (m->m_sh_rwset > 0)
-				rewrite(pvp, m->m_sh_rwset);
-		}
-		else
-		{
-			rewrite(pvp, 1);
-			if (m->m_se_rwset > 0)
-				rewrite(pvp, m->m_se_rwset);
-		}
+		rewrite(pvp, 1);
+		if (m->m_s_rwset > 0)
+			rewrite(pvp, m->m_s_rwset);
 	}
 	else
 	{
-		if (headeraddress)
-		{
-			rewrite(pvp, SplitRewriting ? 6 : 2);
-			if (m->m_rh_rwset > 0)
-				rewrite(pvp, m->m_rh_rwset);
-		}
-		else
-		{
-			rewrite(pvp, 2);
-			if (m->m_re_rwset > 0)
-				rewrite(pvp, m->m_re_rwset);
-		}
+		rewrite(pvp, 2);
+		if (m->m_r_rwset > 0)
+			rewrite(pvp, m->m_r_rwset);
 	}
 
 	/*
@@ -1777,14 +1716,6 @@ remotename(name, m, senderaddress, canonical, e)
 	*/
 
 	rewrite(pvp, 4);
-
-	/*
-	**  Check if we're supposed to do make the address
-	**  UUCP !-relative to the rcpt host vs ourselves.
-	*/
-
-	if (headeraddress && bitnset(M_RELATIVIZE, m->m_flags))
-		uurelativize("\001k", "\001h", pvp);
 
 	/*
 	**  Now restore the comment information we had at the beginning.
