@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)spp_usrreq.c	6.13 (Berkeley) %G%
+ *	@(#)spp_usrreq.c	6.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -641,17 +641,17 @@ spp_output(cb, m0)
 	} else {
 		/*
 		 * Decide what to transmit:
-		 * If we have a new packet, send that
-		 * (So long as it is in our allocation)
 		 * If it is time to retransmit a packet,
 		 * send that.
+		 * If we have a new packet, send that
+		 * (So long as it is in our allocation)
 		 * Otherwise, see if it time to bang on them
 		 * to ask for our current allocation.
 		 */
-		if (SSEQ_LT(cb->s_snt, cb->s_ralo))
-			lookfor = cb->s_snt + 1;
-		else if (cb->s_force == (1+TCPT_REXMT)) {
+		if (cb->s_force == (1+TCPT_REXMT)) {
 			lookfor = cb->s_rack;
+		} else if (SSEQ_LT(cb->s_snt, cb->s_ralo)) {
+			lookfor = cb->s_snt + 1;
 		} else if (SSEQ_LT(cb->s_ralo, cb->s_seq)) {
 			lookfor = 0;
 			if (cb->s_timer[TCPT_PERSIST] == 0) {
@@ -774,10 +774,9 @@ spp_output(cb, m0)
 		if (traceallspps && sppconsdebug) {
 			printf("spp_out: %x\n", error);
 		}
-		return (error);
+		if (so->so_options & SO_DEBUG || traceallspps)
+			spp_trace(SA_OUTPUT, cb->s_state, cb, si, 0);
 	}
-	if (so->so_options & SO_DEBUG || traceallspps)
-		spp_trace(SA_OUTPUT, cb->s_state, cb, si, 0);
 	return (error);
 }
 
