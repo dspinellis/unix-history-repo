@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	5.41 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	5.42 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -28,7 +28,7 @@ static char sccsid[] = "@(#)ls.c	5.41 (Berkeley) %G%";
 #include "ls.h"
 
 int (*sortfcn)(), (*printfcn)();
-int lstat(), strlen();
+int lstat();
 char *emalloc();
 
 int termwidth = 80;		/* default terminal width */
@@ -66,7 +66,7 @@ main(argc, argv)
 	struct winsize win;
 	int ch;
 	char *p, *getenv();
-	int acccmp(), bcopy(), modcmp(), namecmp(), prcopy(), printcol();
+	int acccmp(), modcmp(), namecmp(), prcopy(), printcol();
 	int printlong(), printscol(), revacccmp(), revmodcmp(), revnamecmp();
 	int revstatcmp(), statcmp();
 
