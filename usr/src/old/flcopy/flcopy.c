@@ -1,4 +1,8 @@
-static char *sccsid ="@(#)flcopy.c	4.4 (Berkeley) %G%";
+#ifndef lint
+static char *sccsid ="@(#)flcopy.c	4.5 (Berkeley) %G%";
+#endif
+
+#include <sys/file.h>
 
 int	floppydes;
 char	*flopname = "/dev/floppy";
@@ -16,18 +20,30 @@ main(argc, argv)
 	register char *cp;
 
 	while ((cp = *++argv), --argc > 0) {
-		if (*cp++!='-')
-			continue;
-		while (*cp)
+		while (*cp) {
 			switch(*cp++) {
+
+			case '-':
+				continue;
 
 			case 'h':
 				hflag++;
 				printf("Halftime!\n");
-				if ((file = open("floppy", 0)) < 0)
-					printf("can't open \"floppy\"\n"),
-				exit(1);
+				if ((file = open("floppy", 0)) < 0) {
+					printf("can't open \"floppy\"\n");
+					exit(1);
+				}
 				continue;
+
+			case 'f':
+				if (argc < 1) {
+					printf(
+					    "flcopy: -f: missing file name\n");
+					exit(1);
+				}
+				flopname = *++argv;
+				argc--;
+				break;
 
 			case 't':
 				if (*cp >= '0' && *cp <= '9')
@@ -47,11 +63,11 @@ main(argc, argv)
 			case 'r':
 				rflag++;
 			}
+			break;
+		}
 	}
 	if (!hflag) {
-		file = creat("floppy", 0666);
-		close(file);
-		file = open("floppy", 2);
+		file = open("floppy", O_RDWR|O_CREAT|O_TRUNC, 0666);
 		if (file < 0) {
 			printf("can't open \"floppy\"\n");
 			exit(1);
