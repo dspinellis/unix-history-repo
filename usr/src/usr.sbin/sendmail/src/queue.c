@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.45 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.46 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.45 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.46 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -142,6 +142,7 @@ queueup(df)
 	fprintf(tfp, "T%ld\n", e->e_ctime);
 
 	/* output inode number of data file */
+	/* XXX should probably include device major/minor too */
 	fprintf(tfp, "I%ld\n", e->e_dfino);
 
 	/* output last delivery time */
