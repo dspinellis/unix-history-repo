@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.15 (Berkeley) %G%
+#	@(#)Makefile	5.16 (Berkeley) %G%
 
 #	dump.h			header file
 #	itime.c			reads /etc/dumpdates
@@ -21,7 +21,5 @@ BINGRP=	tty
 BINMODE=6555
 MAN8=	dump.0
 MLINKS+=dump.8 rdump.8
-
-all: dump
 
 .include <bsd.prog.mk>
