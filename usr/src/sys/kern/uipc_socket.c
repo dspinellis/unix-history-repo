@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.29	82/01/19	*/
+/*	uipc_socket.c	4.30	82/01/24	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -303,7 +303,7 @@ again:
 		goto release;
 	}
 	space = sbspace(&so->so_snd);
-	if (space == 0 || sosendallatonce(so) && space < u.u_count) {
+	if (space <= 0 || sosendallatonce(so) && space < u.u_count) {
 		if (so->so_options & SO_NONBLOCKING)
 			snderr(EWOULDBLOCK);
 		sbunlock(&so->so_snd);
