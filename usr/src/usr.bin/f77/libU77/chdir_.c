@@ -1,5 +1,5 @@
 /*
-char id_chdir[] = "@(#)chdir_.c	1.2";
+char id_chdir[] = "@(#)chdir_.c	1.3";
  *
  * change default directory
  *
@@ -12,12 +12,16 @@ char id_chdir[] = "@(#)chdir_.c	1.2";
  */
 
 #include "../libI77/f_errno.h"
+#include <sys/param.h>
+#ifndef	MAXPATHLEN
+#define MAXPATHLEN	128
+#endif
 
 long chdir_(dname, dnamlen)
 char *dname;
 long dnamlen;
 {
-	char buf[128];
+	char buf[MAXPATHLEN];
 
 	if (dnamlen >= sizeof buf)
 		return((long)(errno=F_ERARG));
