@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ip_input.c	6.15 (Berkeley) %G%
+ *	@(#)ip_input.c	6.16 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -177,7 +177,7 @@ next:
 	 * to be sent and the original packet to be freed).
 	 */
 	ip_nhops = 0;		/* for source routed packets */
-	if (hlen > sizeof (struct ip) && ip_dooptions(ip))
+	if (hlen > sizeof (struct ip) && ip_dooptions(ip, ifp))
 		goto next;
 
 	/*
@@ -495,8 +495,9 @@ struct in_ifaddr *ip_rtaddr();
  * possibly discarding it if bad options
  * are encountered.
  */
-ip_dooptions(ip)
-	struct ip *ip;
+ip_dooptions(ip, ifp)
+	register struct ip *ip;
+	struct ifnet *ifp;
 {
 	register u_char *cp;
 	int opt, optlen, cnt, off, code, type = ICMP_PARAMPROB;
@@ -655,7 +656,7 @@ ip_dooptions(ip)
 	}
 	return (0);
 bad:
-	icmp_error(ip, type, code);
+	icmp_error(ip, type, code, ifp);
 	return (1);
 }
 
@@ -942,5 +943,5 @@ ip_forward(ip, ifp)
 		break;
 	}
 sendicmp:
-	icmp_error(ip, type, code, dest);
+	icmp_error(ip, type, code, ifp, dest);
 }
