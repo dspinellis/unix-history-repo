@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)reverse.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)reverse.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -88,8 +88,8 @@ r_reg(fp, style, off, sbp)
 	if (!(size = sbp->st_size))
 		return;
 
-	if ((p = mmap(NULL,
-	    size, PROT_READ, MAP_FILE, fileno(fp), (off_t)0)) == (caddr_t)-1) {
+	if ((p = mmap(NULL, (size_t)size,
+	    PROT_READ, MAP_FILE, fileno(fp), (off_t)0)) == (caddr_t)-1) {
 		err(0, "%s", strerror(errno));
 		return;
 	}
