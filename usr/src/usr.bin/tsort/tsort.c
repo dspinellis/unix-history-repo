@@ -15,12 +15,13 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tsort.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)tsort.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
 
@@ -64,38 +65,56 @@ typedef struct _buf {
 	int b_bsize;
 } BUF;
 
-NODE *add_node(), *find_node();
-void add_arc(), no_memory(), remove_node(), tsort();
-char *grow_buf(), *malloc();
-
-extern int errno;
 NODE *graph;
 NODE *hashtable[HASHSIZE];
 NODE **cycle_buf;
 NODE **longest_cycle;
 
+void	 add_arc __P((char *, char *));
+NODE	*add_node __P((char *));
+void	 err __P((const char *, ...));
+int	 find_cycle __P((NODE *, NODE *, int, int));
+NODE	*find_node __P((char *));
+void	*grow_buf __P((void *, int));
+int	 hash_string __P((char *));
+void	 remove_node __P((NODE *));
+void	 tsort __P((void));
+void	 usage __P((void));
+
+int
 main(argc, argv)
 	int argc;
-	char **argv;
+	char *argv[];
 {
 	register BUF *b;
 	register int c, n;
 	FILE *fp;
-	int bsize, nused;
+	int bsize, ch, nused;
 	BUF bufs[2];
 
-	if (argc < 2)
+	while ((ch = getopt(argc, argv, "")) != EOF)
+		switch(ch) {
+		case '?':
+		default:
+			usage();
+		}
+	argc -= optind;
+	argv += optind;
+
+	switch(argc) {
+	case 0:
 		fp = stdin;
-	else if (argc == 2) {
-		(void)fprintf(stderr, "usage: tsort [ inputfile ]\n");
-		exit(1);
-	} else if (!(fp = fopen(argv[1], "r"))) {
-		(void)fprintf(stderr, "tsort: %s.\n", strerror(errno));
-		exit(1);
+		break;
+	case 1:
+		if ((fp = fopen(*argv, "r")) == NULL)
+			err("%s: %s", *argv, strerror(errno));
+		break;
+	default:
+		usage();
 	}
 
 	for (b = bufs, n = 2; --n >= 0; b++)
-		b->b_buf = grow_buf((char *)NULL, b->b_bsize = 1024);
+		b->b_buf = grow_buf(NULL, b->b_bsize = 1024);
 
 	/* parse input and build the graph */
 	for (n = 0, c = getc(fp);;) {
@@ -109,10 +128,8 @@ main(argc, argv)
 		bsize = b->b_bsize;
 		do {
 			b->b_buf[nused++] = c;
-			if (nused == bsize) {
-				bsize *= 2;
-				b->b_buf = grow_buf(b->b_buf, bsize);
-			}
+			if (nused == bsize)
+				b->b_buf = grow_buf(b->b_buf, bsize *= 2);
 			c = getc(fp);
 		} while (c != EOF && !isspace(c));
 
@@ -123,10 +140,8 @@ main(argc, argv)
 		n = !n;
 	}
 	(void)fclose(fp);
-	if (n) {
-		(void)fprintf(stderr, "tsort: odd data count.\n");
-		exit(1);
-	}
+	if (n)
+		err("odd data count");
 
 	/* do the sort */
 	tsort();
@@ -134,16 +149,14 @@ main(argc, argv)
 }
 
 /* double the size of oldbuf and return a pointer to the new buffer. */
-char *
+void *
 grow_buf(bp, size)
-	char *bp;
+	void *bp;
 	int size;
 {
-	char *realloc();
-
-	if (!(bp = realloc(bp, (u_int)size)))
-		no_memory();
-	return(bp);
+	if ((bp = realloc(bp, (u_int)size)) == NULL)
+		err("%s", strerror(errno));
+	return (bp);
 }
 
 /*
@@ -178,13 +191,14 @@ add_arc(s1, s2)
 		if (!n1->n_arcsize)
 			n1->n_arcsize = 10;
 		bsize = n1->n_arcsize * sizeof(*n1->n_arcs) * 2;
-		n1->n_arcs = (NODE **)grow_buf((char *)n1->n_arcs, bsize);
+		n1->n_arcs = grow_buf(n1->n_arcs, bsize);
 		n1->n_arcsize = bsize / sizeof(*n1->n_arcs);
 	}
 	n1->n_arcs[n1->n_narcs++] = n2;
 	++n2->n_refcnt;
 }
 
+int
 hash_string(s)
 	char *s;
 {
@@ -192,7 +206,7 @@ hash_string(s)
 
 	for (hash = 0, i = 1; *s; s++, i++)
 		hash += *s * i;
-	return(hash % HASHSIZE);
+	return (hash % HASHSIZE);
 }
 
 /*
@@ -207,8 +221,8 @@ find_node(name)
 
 	for (n = hashtable[hash_string(name)]; n; n = n->n_hash)
 		if (!strcmp(n->n_name, name))
-			return(n);
-	return((NODE *)NULL);
+			return (n);
+	return (NULL);
 }
 
 /* Add a node to the graph and return a pointer to it. */
@@ -219,12 +233,13 @@ add_node(name)
 	register NODE *n;
 	int hash;
 
-	if (!(n = (NODE *)malloc(sizeof(NODE))) || !(n->n_name = strdup(name)))
-		no_memory();
+	if ((n = malloc(sizeof(NODE))) == NULL ||
+	    (n->n_name = strdup(name)) == NULL)
+		err("%s", strerror(errno));
 
 	n->n_narcs = 0;
 	n->n_arcsize = 0;
-	n->n_arcs = (NODE **)NULL;
+	n->n_arcs = NULL;
 	n->n_refcnt = 0;
 	n->n_flags = 0;
 
@@ -238,7 +253,7 @@ add_node(name)
 	hash = hash_string(name);
 	n->n_hash = hashtable[hash];
 	hashtable[hash] = n;
-	return(n);
+	return (n);
 }
 
 /* do topological sort on graph */
@@ -280,7 +295,7 @@ tsort()
 			longest_cycle =
 			    (NODE **)malloc((u_int)sizeof(NODE *) * cnt);
 			if (!cycle_buf || !longest_cycle)
-				no_memory();
+				err("%s", strerror(errno));
 		}
 		for (n = graph; n; n = n->n_next)
 			if (!(n->n_flags & NF_ACYCLIC)) {
@@ -288,10 +303,10 @@ tsort()
 					register int i;
 
 					(void)fprintf(stderr,
-					    "tsort: cycle in data.\n");
+					    "tsort: cycle in data\n");
 					for (i = 0; i < cnt; i++)
 						(void)fprintf(stderr,
-				"tsort: %s.\n", longest_cycle[i]->n_name);
+				"tsort: %s\n", longest_cycle[i]->n_name);
 					remove_node(n);
 					break;
 				} else
@@ -299,11 +314,8 @@ tsort()
 					n->n_flags  = NF_ACYCLIC;
 			}
 
-		if (!n) {
-			(void)fprintf(stderr,
-			    "tsort: internal error -- could not find cycle.\n");
-			exit(1);
-		}
+		if (!n)
+			err("internal error -- could not find cycle");
 	}
 }
 
@@ -325,6 +337,7 @@ remove_node(n)
 }
 
 /* look for the longest cycle from node from to node to. */
+int
 find_cycle(from, to, longest_len, depth)
 	NODE *from, *to;
 	int depth, longest_len;
@@ -337,7 +350,7 @@ find_cycle(from, to, longest_len, depth)
 	 * to be acyclic
 	 */
 	if (from->n_flags & (NF_MARK|NF_ACYCLIC))
-		return(0);
+		return (0);
 	from->n_flags = NF_MARK;
 
 	for (np = from->n_arcs, i = from->n_narcs; --i >= 0; np++) {
@@ -356,12 +369,41 @@ find_cycle(from, to, longest_len, depth)
 		}
 	}
 	from->n_flags &= ~NF_MARK;
-	return(longest_len);
+	return (longest_len);
 }
 
 void
-no_memory()
+usage()
 {
-	(void)fprintf(stderr, "tsort: %s.\n", strerror(ENOMEM));
+	(void)fprintf(stderr, "usage: tsort [file]\n");
 	exit(1);
+}
+
+#if __STDC__
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
+
+void
+#if __STDC__
+err(const char *fmt, ...)
+#else
+err(fmt, va_alist)
+	char *fmt;
+        va_dcl
+#endif
+{
+	va_list ap;
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
+	(void)fprintf(stderr, "tsort: ");
+	(void)vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	(void)fprintf(stderr, "\n");
+	exit(1);
+	/* NOTREACHED */
 }
