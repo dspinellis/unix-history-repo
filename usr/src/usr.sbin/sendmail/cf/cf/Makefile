@@ -1,4 +1,4 @@
-#	@(#)Makefile	8.3 (Berkeley) %G%
+#	@(#)Makefile	8.4 (Berkeley) %G%
 
 M4=	m4
 #M4=	/usr/src/usr.bin/m4/obj/m4
@@ -18,6 +18,7 @@ ALL=	cs-hidden.cf cs-exposed.cf \
 	sunos3.5-cs-exposed.cf sunos3.5-cs-hidden.cf \
 	sunos4.1-cs-exposed.cf sunos4.1-cs-hidden.cf \
 	ultrix4.1-cs-exposed.cf ultrix4.1-cs-hidden.cf \
+	osf1-cs-exposed.cf osf1-cs-hidden.cf \
 	mail.cs.cf mail.eecs.cf ucbvax.cf vangogh.cf \
 	chez.cf knecht.cf cogsci.cf alpha.cf s2k.cf auspex.cf \
 	python.cf \
