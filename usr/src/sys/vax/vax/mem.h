@@ -1,4 +1,4 @@
-/*	mem.h	4.5	81/03/07	*/
+/*	mem.h	4.6	81/03/21	*/
 
 /*
  * Memory controller registers
@@ -18,15 +18,6 @@ struct	mcr {
 #define	MAXNMCR		4
 #else
 #define	MAXNMCR		1
-#endif
-
-#if VAX750
-/*
- * For the 11/750 the memory controller is at the following address.
- * On 11/780, memory controllers are located at one or more
- * places in nexus space.
- */
-#define	MCR_750		((struct nexus *)0xf20000)
 #endif
 
 /*
@@ -64,10 +55,24 @@ struct	mcr {
 #define	M750_ADDR(mcr)	(((mcr)->mc_reg[0] >> 8) & 0x7fff)
 #endif
 
+#if VAX730
+#define	M730_CRD	0x40000000	/* crd, in [1] */
+#define	M730_FTBPE	0x20000000	/* force tbuf parity error, in [1] */
+#define	M730_ENACRD	0x10000000	/* enable crd interrupt, in [1] */
+#define	M730_MME	0x08000000	/* mem-man enable (ala ipr), in [1] */
+#define	M730_DM		0x04000000	/* diagnostic mode, in [1] */
+#define	M730_DISECC	0x02000000	/* disable ecc, in [1] */
+
+#define	M730_INH(mcr)	((mcr)->mc_reg[1] = M730_MME)
+#define	M730_ENA(mcr)	((mcr)->mc_reg[1] = (M730_MME|M730_ENACRD))
+#define	M730_ERR(mcr)	((mcr)->mc_reg[1] & M730_CRD)
+#define	M730_SYN(mcr)	((mcr)->mc_reg[0] & 0x7f)
+#define	M730_ADDR(mcr)	(((mcr)->mc_reg[0] >> 8) & 0x7fff)
+#endif
+
 #define	MEMINTVL	(60*60*10)		/* 10 minutes */
 
 #ifdef	KERNEL
 int	nmcr;
 struct	mcr *mcraddr[MAXNMCR];
 #endif
-
