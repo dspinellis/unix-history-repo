@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)inet.c	4.12 83/05/30";
+static char sccsid[] = "@(#)inet.c	4.13 83/09/16";
 #endif
 
 #include <sys/types.h>
@@ -242,7 +242,8 @@ icmp_stats(off, name)
 		}
 	printf("\t%d message%s < minimum length\n",
 		icmpstat.icps_tooshort, plural(icmpstat.icps_tooshort));
-	printf("\t%d bad checksum%s\n", icmpstat.icps_checksum);
+	printf("\t%d bad checksum%s\n",
+		icmpstat.icps_checksum, plural(icmpstat.icps_checksum));
 	printf("\t%d message%s with bad length\n",
 		icmpstat.icps_badlen, plural(icmpstat.icps_badlen));
 	printf("\t%d message response%s generated\n",
