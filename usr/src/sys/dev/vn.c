@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vn.c 1.1 91/04/30$
  *
- *	@(#)vn.c	7.7 (Berkeley) %G%
+ *	@(#)vn.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -316,9 +316,8 @@ vnioctl(dev, cmd, data, flag, p)
 		 * weed out directories, sockets, etc. so we don't
 		 * have to worry about them.
 		 */
-		nd.ni_segflg = UIO_USERSPACE;
-		nd.ni_dirp = vio->vn_file;
-		if (error = vn_open(&nd, p, FREAD|FWRITE, 0))
+		NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, vio->vn_file, p);
+		if (error = vn_open(&nd, FREAD|FWRITE, 0))
 			return(error);
 		if (error = VOP_GETATTR(nd.ni_vp, &vattr, p->p_ucred, p)) {
 			VOP_UNLOCK(nd.ni_vp);
