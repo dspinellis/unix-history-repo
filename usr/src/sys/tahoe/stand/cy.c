@@ -1,4 +1,4 @@
-/*	cy.c	7.3	86/12/19	*/
+/*	cy.c	7.4	87/02/17	*/
 
 /*
  * Cypher tape driver. Stand alone version.
@@ -11,44 +11,29 @@
 #include "fs.h"
 
 #include "saio.h"
-#include "cyvar.h"
 
+#define CYERROR
+#include "../tahoevba/cyreg.h"
 #include "../tahoevba/vbaparam.h"
 
+/*
+ * NB: this driver assumes unit 0 throughout.
+ */
 long	cystd[] = { 0xf4000, 0 };
 #define	CYADDR(i)	(cystd[i] + (int)VBIOBASE)
 
-struct scp {
-	char sysbus;		/* width of system bus 0=8;1=16 */
-	char nu1;
-	char pt_scb[4];
-} *SCP;
+struct	cyscp *cyscp[] = { (struct cyscp *)0xc06, (struct cyscp *)0 };
+#define	CYSCP(i)	(cyscp[i])
 
-struct scb {
-	char sysblk[1];	/* 0x03 fixed value code */
-	char nu2[1];
-	char pt_ccb[4];
-} scb;
-
-struct ccb {
-	char ccw[1];		/* 0x11 normal; 0x09 clear non_vect interrupt */
-	char gate[1];		/* This is "the" GATE */
-	char pt_tpb[4];
-} ccb;
-
-struct tpb {
-	long cmd;		/* COMMAND (input) */
-	char control[2];	/* CONTROL (input) */
-	short count;		/* RETURN COUNT (output) */
-	short size;		/* BUFFER SIZE (input/output) */
-	short rec_over;	/* RECORDS/OVERRUN (input/output) */
-	char pt_data[4];	/* pointer to ->SOURCE/DEST (input) */
-	char status[2];	/* STATUS (output) */
-	char pt_link[4];
-} tpb;
-
-struct	tpb cycool;		/* tape parameter block to clear interrupts */
+struct	cyscp *SCP;
+struct	cyscb scb;
+struct	cyccb ccb;
+struct	cytpb tpb;
+struct	cytpb cycool;		/* tape parameter block to clear interrupts */
+#ifdef notdef
 int	cyblocksize = 1024;	/* foreign tape size as found in open routine */
+#endif
+int	cybufsize;		/* controller buffer size */
 long	cyblock;		/* next block number for i/o */
 
 /*
@@ -59,67 +44,76 @@ cyopen(io)
 {
 	register ctlradr = CYADDR(0);
 
-	SCP = (struct scp *)0xc06;		/* absolute - for setup */
-	TM_RESET(ctlradr,0xff);	/* reset the controller */
+	if (io->i_unit != 0)
+		_stop("Only 1 cypher supported\n");
+	SCP = CYSCP(0);				/* absolute - for setup */
+	CY_RESET(ctlradr);			/* reset the controller */
 	/*
 	 * Initialize the system configuration pointer
 	 */
-	SCP->sysbus = 1;			/* system width = 16 bits. */
+	SCP->csp_buswidth = 1;			/* system width = 16 bits. */
+	SCP->csp_unused = 0;
 	/* initialize the pointer to the system configuration block */
-	set_pointer((long)&scb.sysblk[0],(char *)SCP->pt_scb);
+	cyldmba(SCP->csp_scb, (caddr_t)&scb);
 	/*
 	 * Initialize the system configuration block.
 	 */
-	scb.sysblk[0] = 0x3;		/* fixed value */
+	scb.csb_fixed = CSB_FIXED;		/* fixed value */
 	/* initialize the pointer to the channel control block */
-	set_pointer((long)&ccb.ccw[0],(char *)scb.pt_ccb);
+	cyldmba(scb.csb_ccb, (caddr_t)&ccb);
 	/*
 	 * Initialize the channel control block.
 	 */
-	ccb.ccw[0] = 0x11;		/* normal interrupts */
+	ccb.cbcw = CBCW_IE;		/* normal interrupts */
 	/* initialize the pointer to the tape parameter block */
-	set_pointer((long)&tpb,(char *)ccb.pt_tpb);
+	cyldmba(ccb.cbtpb, (caddr_t)&tpb);
 	/*
-	 * set the command to be NO_OP.
+	 * set the command to be CY_NOP.
 	 */
-	tpb.cmd = NO_OP;
-	tpb.control[0] = CW_BL;		/* TPB not used on first attention */
-	tpb.control[1] = CW_16bits;
-	ccb.gate[0] = GATE_CLOSED;	
-	TM_ATTENTION(ctlradr, 0xff);	/* execute! */
+	tpb.tpcmd = CY_NOP;
+	/*
+	 * TPB not used on first attention
+	 */
+	tpb.tpcontrol = CYCW_LOCK | CYCW_16BITS;
+	ccb.cbgate = GATE_CLOSED;	
+	CY_GO(ctlradr);			/* execute! */
 	cywait(10*1000);
 	/*
-	 * set the command to be CONFIGURE.
+	 * set the command to be CY_CONFIGURE.
+	 * NO interrupt on completion.
 	 */
-	tpb.cmd = CONFIG;
-	tpb.control[0] = CW_BL;		/* NO interrupt on completion */
-	tpb.control[1] = CW_16bits;
-	tpb.status[0] = tpb.status[1] = 0;
-	ccb.gate[0] = GATE_CLOSED;	
-	TM_ATTENTION(ctlradr, 0xff);	/* execute! */
+	tpb.tpcmd = CY_CONFIG;
+	tpb.tpcontrol = CYCW_LOCK | CYCW_16BITS;
+	tpb.tpstatus = 0;
+	ccb.cbgate = GATE_CLOSED;	
+	CY_GO(ctlradr);			/* execute! */
 	cywait(10*1000);
-	uncache(&tpb.status[1]);
-	if (tpb.status[1] & CS_ERm) {
+	uncache(&tpb.tpstatus);
+	if (tpb.tpstatus & CYS_ERR) {
 		printf("Cypher initialization error!\n");
-		(void) cy_decode_error(tpb.status[1]&CS_ERm);
+		cy_print_error(tpb.tpstatus);
 		_stop("");
 	}
-	if (cycmd(io, REWD_TA) == -1)
+	uncache(&tpb.tpcount);
+	cybufsize = tpb.tpcount;
+	if (cycmd(io, CY_REW) == -1)
 		_stop("Rewind failed!\n");
 	while (io->i_boff > 0) {
-		if (cycmd(io, SRFM_FD) == -1)
+		if (cycmd(io, CY_FSF) == -1)
 			_stop("cy: seek failure!\n");
 		io->i_boff--;
 	}
+#ifdef notdef
 #ifdef NOBLOCK
 	if (io->i_flgs & F_READ) {
-		cyblocksize = cycmd(io, READ_FO);
+		cyblocksize = cycmd(io, CY_READFORN);
 		if (cyblocksize == -1)
 			_stop("Read foreign tape failed\n");
 		cyblock++;		/* XXX force backspace record */
-		if (cycmd(io, SPACE) == -1)
+		if (cycmd(io, CY_SFORW) == -1)
 			_stop("Backspace after read foreign failed\n");
 	}
+#endif
 #endif
 }
 
@@ -127,9 +121,11 @@ cyclose(io)
 	register struct iob *io;
 {
 
-	if (io->i_flgs & F_WRITE)	/* if writing, write file mark */
-		cycmd(io, WRIT_FM);
-	cycmd(io, REWD_TA);
+	if (io->i_flgs & F_WRITE) {	/* if writing, write file marks */
+		cycmd(io, CY_WEOF);
+		cycmd(io, CY_WEOF);
+	}
+	cycmd(io, CY_REW);
 }
 
 cystrategy(io, func)
@@ -138,9 +134,9 @@ cystrategy(io, func)
 {
 
 #ifndef NOBLOCK
-	if (func != SPACE && func != REWD_TA && io->i_bn != cyblock) {
-		cycmd(io, SPACE);
-		tpb.rec_over = 0;
+	if (func != CY_SFORW && func != CY_REW && io->i_bn != cyblock) {
+		cycmd(io, CY_SFORW);
+		tpb.tprec = 0;
 	}
 	if (func == READ || func == WRITE) {
 		struct iob liob;
@@ -166,51 +162,53 @@ cycmd(io, func)
 {
 	register ctlradr = CYADDR(0);
 	int timeout = 0;
+	int err;
 	short j;
 
-	cywait(9000); 
-	tpb.control[0] = CW_BL;
-	tpb.control[1] = CW_16bits;
-	tpb.status[0] = tpb.status[1] = 0;
-	tpb.count = 0;
-	set_pointer((long)&tpb, (char *)ccb.pt_tpb);
-	tpb.cmd = func;
+	cywait(9000); 			/* shouldn't be needed */
+	tpb.tpcontrol = CYCW_LOCK | CYCW_16BITS;
+	tpb.tpstatus = 0;
+	tpb.tpcount = 0;
+	cyldmba(ccb.cbtpb, (caddr_t)&tpb);
+	tpb.tpcmd = func;
 	switch (func) {
 	case READ:
+#ifdef notdef
 		if (io->i_cc > cyblocksize)
-			tpb.size = TM_SHORT(cyblocksize);
+			tpb.tpsize = htoms(cyblocksize);
 		else
-			tpb.size = TM_SHORT(io->i_cc);
-		set_pointer((long)io->i_ma,(char *)tpb.pt_data);
-		tpb.cmd = READ_TA;
+#endif
+		tpb.tpsize = htoms(io->i_cc);
+		cyldmba(tpb.tpdata, io->i_ma);
+		tpb.tpcmd = CY_RCOM;
 		cyblock++;
 		break;
 	case WRITE:
-		tpb.cmd = WRIT_TA;
-		tpb.size = TM_SHORT(io->i_cc);
-		set_pointer((long)io->i_ma, (char *)tpb.pt_data);
+		tpb.tpcmd = CY_WCOM;
+		tpb.tpsize = htoms(io->i_cc);
+		cyldmba(tpb.tpdata, io->i_ma);
 		cyblock++;
 		break;
-	case SPACE:
+	case CY_SFORW:
 		if ((j = io->i_bn - cyblock) < 0) {
 			j = -j;
-			tpb.control[1] |= CW_R;
+			tpb.tpcontrol |= CYCW_REV;
 			cyblock -= j;
 		} else
 			cyblock += j;
-		tpb.rec_over = TM_SHORT(j);
+		tpb.tprec = htoms(j);
 		timeout = 60*5;
 		break;
-	case SRFM_FD:
-		tpb.rec_over = TM_SHORT(1);
+	case CY_FSF:
+		tpb.tprec = htoms(1);
 		/* fall thru... */
-	case REWD_TA:
+	case CY_REW:
 		cyblock = 0;
 		timeout = 60*5;
 		break;
 	}
-	ccb.gate[0] = GATE_CLOSED;
-	TM_ATTENTION(ctlradr, 0xff);	/* execute! */
+	ccb.cbgate = GATE_CLOSED;
+	CY_GO(ctlradr);			/* execute! */
 	if (timeout == 0)
 		timeout = 10;
 	cywait(timeout*1000);
@@ -218,84 +216,32 @@ cycmd(io, func)
 	 * First we clear the interrupt and close the gate.
 	 */
 	mtpr(PADC, 0);
-	ccb.gate[0] = GATE_CLOSED;
-	set_pointer((int)&cycool, (char *)ccb.pt_tpb);
-	cycool.cmd = NO_OP;	/* no operation */
-	cycool.control[0] = CW_BL;	/* No INTERRUPTS */
-	cycool.control[1] = 0;
-	TM_ATTENTION(ctlradr, 0xff);	/* cool it ! */
+	ccb.cbgate = GATE_CLOSED;
+	cyldmba(ccb.cbtpb, (caddr_t)&cycool);
+	cycool.tpcontrol = CYCW_LOCK;	/* No INTERRUPTS */
+	CY_GO(ctlradr);
 	cywait(20000); 
-	uncache(&tpb.status[1]); 
-	if (tpb.status[1] & CS_ERm && cy_decode_error(tpb.status[1]&CS_ERm)) {
+	uncache(&tpb.tpstatus); 
+	if (err = (tpb.tpstatus & CYS_ERR) &&
+	    err != CYER_FM && (err != CYER_STROBE || tpb.tpcmd != CY_RCOM)) {
+		cy_print_error(tpb.tpstatus);
 		io->i_error = EIO;
 		return (-1);
 	}
-	uncache(&tpb.count);
-	return ((int)TM_SHORT(tpb.count));
+	uncache(&tpb.tpcount);
+	return ((int)htoms(tpb.tpcount));
 }
 	
-cyprint_error(message)
-	char *message;
-{
-
-	printf("cy0: %s.\n", message);
-}
-
-cy_decode_error(status)
+cy_print_error(status)
 	int status;
 {
-	switch(status) {
-	case ER_TO1:
-	case ER_TO2:
-	case ER_TO3:
-	case ER_TO4:
-	case ER_TO5:
-		cyprint_error("Drive timed out during transfer");
-		break;
-	case ER_TO6:	
-		cyprint_error("Non-existant system memory reference");
-		break;
-	case ER_DIAG:
-	case ER_JUMP:
-		cyprint_error("Controller micro diagnostics failed");
-		break;
-	case ER_HARD:
-		cyprint_error("Unrecoverable media error");
-		break;
-	case ER_TOF:
-		if (tpb.cmd == WRIT_TA)
-			cyprint_error("Unsatisfactory media");
-		else
-			return (0);	/* short read */
-		break;
-	case ER_FIFO:
-		cyprint_error("Data transfer over run");
-		break;
-	case ER_TRN:
-		cyprint_error("Drive is not ready");
-		break;
-	case ER_PRO:
-		cyprint_error("Tape is write protected");
-		break;
-	case ER_PSUM:
-		cyprint_error("Checksum error in controller proms");
-		break;
-	case ER_PARI:
-		cyprint_error("Unrecoverable tape parity error");
-		break;
-	case ER_BLAN:
-		cyprint_error("Blank tape found where data was expected");
-		break;
-	case ER_ER:
-		cyprint_error("Unrecoverable hardware error");
-		break;
-	case ER_FMAR:		/* file mark */
-		return (0);
-	default:
-		printf("cy: unknown error: status %x.\n", status);
-		break;
-	}
-	return (-1);
+	register char *message;
+
+	if ((status & CYS_ERR) < NCYERROR)
+		message = cyerror[status & CYS_ERR];
+	else
+		message = "unknown error";
+	printf("cy0: %s, status=%b.\n", message, status, CYS_BITS);
 }
 
 cywait(timeout)
@@ -304,23 +250,23 @@ cywait(timeout)
 
 	do {
 		DELAY(1000);
-		uncache(&ccb.gate[0]);
-	} while (ccb.gate[0] != GATE_OPEN && --timeout > 0);
+		uncache(&ccb.cbgate);
+	} while (ccb.cbgate != GATE_OPEN && --timeout > 0);
 	if (timeout <= 0)
 		_stop("cy: Transfer timeout");
 }
 
 /*
- *  Set a TAPEMASTER pointer (first parameter), into the
- *  4 bytes array pointed by the second parameter.
+ * Load a 20 bit pointer into a Tapemaster pointer.
  */
-set_pointer(pointer,dest)
-	long pointer;
-	char * dest;
+cyldmba(reg, value)
+	register caddr_t reg;
+	caddr_t value;
 {
+	register int v = (int)value;
 
-	*dest++ = pointer & 0xff;		/* low byte - offset */
-	*dest++ = (pointer >> 8) & 0xff;	/* high byte - offset */
-	*dest++ = 0; 
-	*dest   = (pointer & 0xf0000) >> 12;	/* base */
+	*reg++ = v;
+	*reg++ = v >> 8;
+	*reg++ = 0;
+	*reg = (v&0xf0000) >> 12;
 }
