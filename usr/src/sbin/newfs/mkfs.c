@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkfs.c	6.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkfs.c	6.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifndef STANDALONE
@@ -103,7 +103,6 @@ union {
 struct dinode zino[MAXBSIZE / sizeof(struct dinode)];
 
 int	fsi, fso;
-time_t	utime;
 daddr_t	alloc();
 
 mkfs(pp, fsys, fi, fo)
@@ -117,6 +116,7 @@ mkfs(pp, fsys, fi, fo)
 	long mapcramped, inodecramped;
 	long postblsize, rotblsize, totalsbsize;
 	int ppid, status;
+	time_t utime;
 	void started();
 
 #ifndef STANDALONE
@@ -566,7 +566,7 @@ next:
 	if (!mfs)
 		printf("super-block backups (for fsck -b #) at:");
 	for (cylno = 0; cylno < sblock.fs_ncg; cylno++) {
-		initcg(cylno);
+		initcg(cylno, utime);
 		if (mfs)
 			continue;
 		if (cylno % 9 == 0)
@@ -581,7 +581,7 @@ next:
 	 * Now construct the initial file system,
 	 * then write out the super-block.
 	 */
-	fsinit();
+	fsinit(utime);
 	sblock.fs_time = utime;
 	wtfs(SBOFF / sectorsize, sbsize, (char *)&sblock);
 	for (i = 0; i < sblock.fs_cssize; i += sblock.fs_bsize)
@@ -620,8 +620,9 @@ next:
 /*
  * Initialize a cylinder group.
  */
-initcg(cylno)
+initcg(cylno, utime)
 	int cylno;
+	time_t utime;
 {
 	daddr_t cbase, d, dlower, dupper, dmax;
 	long i, j, s;
@@ -754,7 +755,8 @@ struct direct lost_found_dir[] = {
 #endif
 char buf[MAXBSIZE];
 
-fsinit()
+fsinit(utime)
+	time_t utime;
 {
 	int i;
 
