@@ -1,7 +1,8 @@
 # include	"../hdr/macros.h"
 # include	"dir.h"
+
 #define IROOT 2
-SCCSID(@(#)curdir.c	4.1);
+SCCSID(@(#)curdir.c	4.2);
 /*
 	current directory.
 	Places the full pathname of the current directory in `str'.
@@ -22,9 +23,8 @@ SCCSID(@(#)curdir.c	4.1);
 static char *curdirp;
 
 struct mtab {
-	char	m_devstr[6];
-	char	m_spcl[32];
 	char	m_dir[32];
+	char	m_spcl[32];
 };
 
 static struct mtab mtab;
@@ -34,7 +34,6 @@ char *str;
 {
 	register int n;
 
-	copy("/dev//",mtab.m_devstr);
 	curdirp = str;
 	n = findir(0);
 	return(n+chdir(str));
@@ -80,9 +79,12 @@ findir(flag)
 			return(0);
 		}
 		if ((fd = open("/etc/mtab", 0))<0) return(-1);
-		while (read(fd,mtab.m_spcl,64) == 64) {
-			if (stat(mtab.m_devstr,&s)<0)
-				QUIT;
+		while (read(fd,&mtab,64) == 64) {
+			char devstr[40];
+			strcpy(devstr, "/dev/");
+			strcat(devstr, mtab.m_spcl);
+			if (stat(devstr,&s)<0)
+				continue;
 			if (s.st_rdev != dev) continue;
 			for (tp = mtab.m_dir; *curdirp = *tp++; curdirp++);
 			ADDSLASH;
