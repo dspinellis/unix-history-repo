@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rlogin.c	4.8 83/01/18";
+static char sccsid[] = "@(#)rlogin.c	4.9 83/02/09";
 #endif
 
 #include <sys/types.h>
@@ -49,24 +49,24 @@ main(argc, argv)
 	if (!strcmp(host, "rlogin"))
 		host = *argv++, --argc;
 another:
-	if (!strcmp(*argv, "-d")) {
+	if (argc > 0 && !strcmp(*argv, "-d")) {
 		argv++, argc--;
 		options |= SO_DEBUG;
 		goto another;
 	}
-	if (!strcmp(*argv, "-l")) {
+	if (argc > 0 && !strcmp(*argv, "-l")) {
 		argv++, argc--;
 		if (argc == 0)
 			goto usage;
 		name = *argv++; argc--;
 		goto another;
 	}
-	if (!strncmp(*argv, "-e", 2)) {
+	if (argc > 0 && !strncmp(*argv, "-e", 2)) {
 		cmdchar = argv[0][2];
 		argv++, argc--;
 		goto another;
 	}
-	if (!strcmp(*argv, "-8")) {
+	if (argc > 0 && !strcmp(*argv, "-8")) {
 		eight = 1;
 		argv++, argc--;
 		goto another;
@@ -243,17 +243,17 @@ top:
 
 oob()
 {
-	int out = 1+1;
+	int out = 1+1, atmark;
 	char waste[BUFSIZ], mark;
 
 	signal(SIGURG, oob);
 	ioctl(1, TIOCFLUSH, (char *)&out);
 	for (;;) {
-		if (ioctl(rem, SIOCATMARK, &mark) < 0) {
+		if (ioctl(rem, SIOCATMARK, &atmark) < 0) {
 			perror("ioctl");
 			break;
 		}
-		if (mark)
+		if (atmark)
 			break;
 		(void) read(rem, waste, sizeof (waste));
 	}
