@@ -562,7 +562,8 @@ main(argc, argv)
 int argc;
 char ** argv;
 {
-    register int crew, aheadfirst, ta, ma, n;
+    register int crew, aheadfirst, ma, n;
+    int ta;
     char message[60], ch;
     int uid;
     char nodrive = 0, randomize = 0, *badstring();
