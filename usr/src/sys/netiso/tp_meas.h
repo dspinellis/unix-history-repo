@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_meas.h	7.5 (Berkeley) %G%
+ *	@(#)tp_meas.h	7.6 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -65,4 +65,4 @@ extern struct tp_Meas tp_Meas[];
 #define TPtime_open_X		0x28 /* xtd format */
 #define TPtime_close		0x09
 
-#endif TP_PERF_MEAS
+#endif /* TP_PERF_MEAS */

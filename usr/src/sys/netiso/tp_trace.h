@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_trace.h	7.7 (Berkeley) %G%
+ *	@(#)tp_trace.h	7.8 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -123,7 +123,7 @@ struct	tp_Trace {
 #define tpt_window tpt_stuff.tpt_Time.tptv_window
 #define tpt_size tpt_stuff.tpt_Time.tptv_size
 
-#endif defined(TP_TRACEFILE)||!defined(KERNEL)
+#endif /* defined(TP_TRACEFILE)||!defined(KERNEL) */
 
 
 #ifdef TPPT
@@ -152,7 +152,7 @@ int tp_Tracen = 0;
 #define ENDTRACE  }
 
 
-#else  TPPT
+#else  /* TPPT */
 
 /***********************************************
  * NO TPPT TRACE STUFF
@@ -165,8 +165,8 @@ int tp_Tracen = 0;
 #define IFTRACE(ascii)	 if (0) {
 #define ENDTRACE	 }
 
-#endif TPPT
+#endif /* TPPT */
 
 
 
-#endif __TP_TRACE__
+#endif /* __TP_TRACE__ */

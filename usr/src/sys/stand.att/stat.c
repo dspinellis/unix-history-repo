@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stat.c	7.3 (Berkeley) %G%
+ *	@(#)stat.c	7.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -45,4 +45,4 @@ stat(str, sb)
 	close(fd);
 	return(rv);
 }
-#endif SMALL
+#endif /* SMALL */

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_tpdu.h	7.4 (Berkeley) %G%
+ *	@(#)tp_tpdu.h	7.5 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -60,7 +60,7 @@ SOFTWARE.
 #else
 #define	BYTE_ORDER	BIG_ENDIAN	/* mc68000, tahoe, most others */
 #endif
-#endif BYTE_ORDER
+#endif /* BYTE_ORDER */
 
 /* This much of a tpdu is the same for all types of tpdus  (except
  * DT tpdus in class 0; their exceptions are handled by the data
@@ -267,4 +267,4 @@ struct tpdu {
 	union 	tpdu_fixed_rest _tpdufr;
 };
 
-#endif __TP_TPDU__
+#endif /* __TP_TPDU__ */

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)clnp_stat.h	7.4 (Berkeley) %G%
+ *	@(#)clnp_stat.h	7.5 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -71,7 +71,7 @@ struct clnp_stat {
 
 #ifdef INCSTAT
 #undef INCSTAT
-#endif INCSTAT
+#endif /* INCSTAT */
 #define INCSTAT(x) clnp_stat./**/x/**/++
 
-#endif __CLNP_STAT__
+#endif /* __CLNP_STAT__ */

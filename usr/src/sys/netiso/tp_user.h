@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_user.h	7.13 (Berkeley) %G%
+ *	@(#)tp_user.h	7.14 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -133,4 +133,4 @@ struct tp_disc_reason {
  */
 
 
-#endif __TP_USER__
+#endif /* __TP_USER__ */

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)clnp_input.c	7.15 (Berkeley) %G%
+ *	@(#)clnp_input.c	7.16 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -74,7 +74,7 @@ int	esis_input();
 
 #ifdef	ISO_X25ESIS
 int	x25esis_input();
-#endif	ISO_X25ESIS
+#endif	/* ISO_X25ESIS */
 
 /*
  * FUNCTION:		clnp_init
@@ -410,7 +410,7 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 			if (need_afrin)
 				INCSTAT(cns_congest_rcvd);
 		}
-#endif	DECBIT
+#endif	/* DECBIT */
 
 		if (errcode != 0) {
 			clnp_discard(m, (char)errcode);
@@ -522,4 +522,4 @@ struct snpa_hdr	*shp;	/* subnetwork header */
  		break;
 	}
 }
-#endif ISO
+#endif /* ISO */

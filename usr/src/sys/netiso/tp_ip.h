@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_ip.h	7.4 (Berkeley) %G%
+ *	@(#)tp_ip.h	7.5 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -62,4 +62,4 @@ SOFTWARE.
 struct inpcb tp_inpcb;	
 	/* queue of active inpcbs for tp ; for tp with dod ip */
 
-#endif __TP_IP__
+#endif /* __TP_IP__ */

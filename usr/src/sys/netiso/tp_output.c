@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_output.c	7.17 (Berkeley) %G%
+ *	@(#)tp_output.c	7.18 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -585,7 +585,7 @@ tp_ctloutput(cmd, so, level, optname, mp)
 #else
 		error = EOPNOTSUPP;
 		goto done;
-#endif TP_PERF_MEAS
+#endif /* TP_PERF_MEAS */
 		
 	case TPOPT_CDDATA_CLEAR: 
 		if (cmd == PRCO_GETOPT) {
@@ -650,9 +650,9 @@ tp_ctloutput(cmd, so, level, optname, mp)
 		}
 		if( tpcb->tp_perf_on ) 
 			error = tp_setup_perf(tpcb);
-#else  TP_PERF_MEAS
+#else  /* TP_PERF_MEAS */
 		error = EOPNOTSUPP;
-#endif TP_PERF_MEAS
+#endif /* TP_PERF_MEAS */
 		break;
 
 	default:

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_seq.h	7.5 (Berkeley) %G%
+ *	@(#)tp_seq.h	7.6 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -95,4 +95,4 @@ SOFTWARE.
 #define IN_SWINDOW(tpcb, seq, lwe, uwe)\
 	( SEQ_GT(tpcb, seq, lwe) && SEQ_LEQ(tpcb, seq, uwe) )
 
-#endif __TP_SEQ__
+#endif /* __TP_SEQ__ */

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)spp_usrreq.c	7.16 (Berkeley) %G%
+ *	@(#)spp_usrreq.c	7.17 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -1775,4 +1775,4 @@ spp_timers(cb, timer)
 #ifndef lint
 int SppcbSize = sizeof (struct sppcb);
 int NspcbSize = sizeof (struct nspcb);
-#endif lint
+#endif /* lint */

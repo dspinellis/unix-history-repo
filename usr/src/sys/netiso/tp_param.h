@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_param.h	7.12 (Berkeley) %G%
+ *	@(#)tp_param.h	7.13 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -188,18 +188,18 @@ extern int N_TPREF;
  *****************************************************/
 #ifndef		TRUE
 #define		TRUE				1
-#endif		TRUE
+#endif		/* TRUE */
 
 #ifndef		FALSE
 #define		FALSE				0
-#endif		FALSE
+#endif		/* FALSE */
 
 #define		TP_LOCAL				22
 #define		TP_FOREIGN				33
 
 #ifndef 	EOK
 #define 	EOK 	0
-#endif  	EOK
+#endif  	/* EOK */
 
 #define 	TP_CLASS_0 	(1<<0)
 #define 	TP_CLASS_1 	(1<<1)
@@ -212,7 +212,7 @@ extern int N_TPREF;
 
 #ifndef 	MNULL
 #define 	MNULL				(struct mbuf *)0
-#endif 	MNULL
+#endif 	/* MNULL */
 	/* if ../sys/mbuf.h gets MT_types up to 0x40, these will 
 	 * have to be changed:
 	 */
@@ -319,7 +319,7 @@ bcopy((caddr_t)&(((struct tp_vbp *)(src))->tpv_val),(caddr_t)&(dst),sizeof(type)
     } else \
         (tpcb)->tp_lcredit = xxi; \
 } }
-#endif ARGO_DEBUG
+#endif /* ARGO_DEBUG */
 
 #ifdef KERNEL
 extern int tp_rttadd, tp_rttdiv;
@@ -335,7 +335,7 @@ extern int tp_rttadd, tp_rttdiv;
 #define ATTR(X) ev_union.EV_ ## X
 #endif /* defined(__STDC__) || defined(__cplusplus) */
 
-#endif  tp_NSTATES 
-#endif KERNEL
+#endif  /* tp_NSTATES  */
+#endif /* KERNEL */
 
-#endif __TP_PARAM__
+#endif /* __TP_PARAM__ */

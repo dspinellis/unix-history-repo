@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_meas.c	7.5 (Berkeley) %G%
+ *	@(#)tp_meas.c	7.6 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -98,4 +98,4 @@ Tpmeas(ref, kind, timev, seq, win, size)
 	tpm->tpm_size = size;
 }
 
-#endif TP_PERF_MEAS
+#endif /* TP_PERF_MEAS */

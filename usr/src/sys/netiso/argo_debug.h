@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)argo_debug.h	7.4 (Berkeley) %G%
+ *	@(#)argo_debug.h	7.5 (Berkeley) %G%
  */
 
 /*****************************************************************
@@ -51,14 +51,14 @@ SOFTWARE.
  * lint can't handle the flaky vacuous definitions 
  * of IFDEBUG, ENDDEBUG, etc.
  */
-#endif	defined(lint)
+#endif	/* defined(lint) */
 
 /***********************************************
  * DEBUG ON:
  **********************************************/
 #ifndef ARGO_DEBUG
 #define ARGO_DEBUG
-#endif ARGO_DEBUG
+#endif /* ARGO_DEBUG */
 
 
 #ifdef ARGO_DEBUG
@@ -78,7 +78,7 @@ unsigned char	argo_debug[128];
 	if(argo_debug[ascii]) { 
 #define ENDDEBUG  ; }
 
-#else  ARGO_DEBUG
+#else  /* ARGO_DEBUG */
 
 /***********************************************
  * DEBUG OFF:
@@ -86,11 +86,11 @@ unsigned char	argo_debug[128];
 
 #ifndef STAR
 #define STAR *
-#endif	STAR
+#endif	/* STAR */
 #define IFDEBUG(ascii)	 //*beginning of comment*/STAR
 #define ENDDEBUG	 STAR/*end of comment*//
 
-#endif ARGO_DEBUG
+#endif /* ARGO_DEBUG */
 
 /***********************************************
  * ASSERT 
@@ -100,15 +100,15 @@ unsigned char	argo_debug[128];
 #ifndef lint
 #define ASSERT(phrase) \
 if( !(phrase) ) printf("ASSERTION NOT VALID at line %d file %s\n",__LINE__,__FILE__)
-#else lint
+#else /* lint */
 #define ASSERT(phrase) /* phrase */
-#endif lint
+#endif /* lint */
 
-#else ARGO_DEBUG
+#else /* ARGO_DEBUG */
 
 #define ASSERT(phrase) /* phrase */
 
-#endif ARGO_DEBUG
+#endif /* ARGO_DEBUG */
 
 
 /***********************************************
@@ -252,7 +252,7 @@ void dump_mbuf();
 #define 	TPMT_PCB	0x23
 #define 	TPMT_PERF	0x45
 
-#else ARGO_DEBUG
+#else /* ARGO_DEBUG */
 
 #define 	TPMT_DATA	MT_DATA
 #define 	TPMT_RCVRTC	MT_DATA
@@ -265,6 +265,6 @@ void dump_mbuf();
 #define 	TPMT_PCB	MT_PCB
 #define 	TPMT_PERF	MT_PCB
 
-#endif ARGO_DEBUG
+#endif /* ARGO_DEBUG */
 
-#endif __ARGO_DEBUG__
+#endif /* __ARGO_DEBUG__ */

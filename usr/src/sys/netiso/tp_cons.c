@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_cons.c	7.11 (Berkeley) %G%
+ *	@(#)tp_cons.c	7.12 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -278,5 +278,5 @@ tpcons_dg_output(chan, m0, datalen)
 {
 	return tpcons_output(((struct pklcd *)chan)->lcd_upnext, m0, datalen, 0);
 }
-#endif TPCONS
-#endif ISO
+#endif /* TPCONS */
+#endif /* ISO */

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_clnp.h	7.4 (Berkeley) %G%
+ *	@(#)tp_clnp.h	7.5 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -49,7 +49,7 @@ SOFTWARE.
 
 #ifndef SOCK_STREAM
 #include <sys/socket.h>
-#endif SOCK_STREAM
+#endif /* SOCK_STREAM */
 
 #ifndef RTFREE
 #include <net/route.h>
@@ -65,4 +65,4 @@ SOFTWARE.
 struct isopcb tp_isopcb;	
 	/* queue of active inpcbs for tp ; for tp with dod ip */
 
-#endif __TP_CLNP__
+#endif /* __TP_CLNP__ */

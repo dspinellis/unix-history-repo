@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)idp_usrreq.c	7.12 (Berkeley) %G%
+ *	@(#)idp_usrreq.c	7.13 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -227,7 +227,7 @@ idp_output(nsp, m0)
 		}
 	}
 	nsp->nsp_lastdst = idp->idp_dna;
-#endif ancient_history
+#endif /* ancient_history */
 	if (noIdpRoute) ro = 0;
 	return (ns_output(m, ro, so->so_options & SO_BROADCAST));
 }
@@ -331,7 +331,7 @@ idp_ctloutput(req, so, level, name, value)
 		case SO_NSIP_ROUTE:
 			error = nsip_route(*value);
 			break;
-#endif NSIP
+#endif /* NSIP */
 		default:
 			error = EINVAL;
 		}
