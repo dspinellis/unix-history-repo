@@ -58,6 +58,7 @@ unsigned long	a_drsize;	/* data relocation size */
 #define	OMAGIC		0407	/* old impure format */
 #define	NMAGIC		0410	/* read-only text */
 #define	ZMAGIC		0413	/* demand load format */
+#define QMAGIC          0314    /* "compact" demand load format -- DEPRICATE */
 
 /* a_mid */
 #define	MID_ZERO	0	/* unknown - implementation dependent */
