@@ -1,6 +1,6 @@
 # include	"../hdr/defines.h"
 
-SCCSID(@(#)pf_ab.c	1.2	%G%);
+SCCSID(@(#)pf_ab.c	1.3	%G%);
 
 pf_ab(s,pp,all)
 char *s;
@@ -24,15 +24,15 @@ int all;
 	++p;
 	p = sid_ab(p,&pp->pf_nsid);
 	++p;
-	i = index(p," ");
+	xp = index(p,' ');
 	pp->pf_user[0] = 0;
-	if (((unsigned)i) < SZLNAM) {
-		move(p,pp->pf_user,i);
+	if ((unsigned)(i = xp-p) < SZLNAM) {
+		bcopy(p,pp->pf_user,i);
 		pp->pf_user[i] = 0;
 	}
 	else
 		fatal("bad p-file format (co17)");
-	p = p + i + 1;
+	p = xp + 1;
 	date_ab(p,&pp->pf_date);
 	p = Datep;
 	pp->pf_ilist = 0;

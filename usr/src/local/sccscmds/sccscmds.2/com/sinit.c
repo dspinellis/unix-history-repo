@@ -12,7 +12,7 @@ register char *file;
 	extern	char	*satoi();
 	register char *p;
 
-	zero(pkt,sizeof(*pkt));
+	bzero(pkt,sizeof(*pkt));
 	if (size(file) > FILESIZE)
 		fatal("too long (co7)");
 	if (!sccsfile(file))

@@ -7,8 +7,9 @@ register char *p;
 register struct deltab *dt;
 struct packet *pkt;
 {
-	extern	char	*satoi();
+	extern	char *satoi(), *index();
 	int n;
+	register char *cp;
 	extern char *Datep;
 
 	if (*p++ != CTLCHAR)
@@ -23,11 +24,11 @@ struct packet *pkt;
 	date_ab(p,&dt->d_datetime);
 	p = Datep;
 	NONBLANK(p);
-	if ((n = index(p," ")) < 0)
+	if ((cp = index(p,' ')) == 0)
 		fmterr(pkt);
-	move(p,dt->d_pgmr,n);
-	dt->d_pgmr[n] = 0;
-	p =+ n + 1;
+	bcopy(p,dt->d_pgmr,cp-p);
+	dt->d_pgmr[cp-p] = 0;
+	p = cp + 1;
 	NONBLANK(p);
 	p = satoi(p,&dt->d_serial);
 	NONBLANK(p);
