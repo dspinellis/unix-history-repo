@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_lookup.c	7.10 (Berkeley) %G%
+ *	@(#)ufs_lookup.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -122,7 +122,7 @@ ufs_lookup(vp, ndp)
 		pdp = dp;
 		dp = VTOI(vdp);
 		if (pdp == dp) {
-			vdp->v_count++;
+			VREF(vdp);
 		} else if (ndp->ni_isdotdot) {
 			IUNLOCK(pdp);
 			igrab(dp);
@@ -379,7 +379,7 @@ found:
 			ndp->ni_count = ndp->ni_offset - prevoff;
 		vdp = ITOV(dp);
 		if (dp->i_number == ndp->ni_dent.d_ino) {
-			vdp->v_count++;
+			VREF(vdp);
 		} else {
 			pdp = dp;
 			if (error = iget(dp, ndp->ni_dent.d_ino, &tdp))
@@ -459,7 +459,7 @@ found:
 		ndp->ni_vp = ITOV(tdp);
 	} else if (dp->i_number == ndp->ni_dent.d_ino) {
 		vdp = ITOV(dp);
-		vdp->v_count++;	/* we want ourself, ie "." */
+		VREF(vdp);	/* we want ourself, ie "." */
 		ndp->ni_vp = vdp;
 	} else {
 		if (error = iget(dp, ndp->ni_dent.d_ino, &tdp))

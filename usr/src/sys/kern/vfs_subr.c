@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_subr.c	7.4 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -190,10 +190,10 @@ nddup(ndp, newndp)
 
 	ndinit(newndp);
 	newndp->ni_cdir = ndp->ni_cdir;
-	newndp->ni_cdir->v_count++;
+	VREF(newndp->ni_cdir);
 	newndp->ni_rdir = ndp->ni_rdir;
 	if (newndp->ni_rdir)
-		newndp->ni_rdir->v_count++;
+		VREF(newndp->ni_rdir);
 	newndp->ni_cred = ndp->ni_cred;
 	crhold(newndp->ni_cred);
 }
