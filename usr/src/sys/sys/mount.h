@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount.h	8.2 (Berkeley) %G%
+ *	@(#)mount.h	8.3 (Berkeley) %G%
  */
 
 #ifndef KERNEL
@@ -63,7 +63,8 @@ struct statfs {
 #define MOUNT_NULL	9
 #define MOUNT_UMAP	10
 #define MOUNT_KERNFS	11
-#define	MOUNT_MAXTYPE	11
+#define MOUNT_PROCFS	12
+#define MOUNT_MAXTYPE	12
 
 #define INITMOUNTNAMES { \
 	"none",		/*  0 MOUNT_NONE */ \
@@ -78,7 +79,8 @@ struct statfs {
 	"null",		/*  9 MOUNT_NULL */ \
 	"umap",		/* 10 MOUNT_UMAP */ \
 	"kernfs",	/* 11 MOUNT_KERNFS */ \
-	0,		/* 12 MOUNT_SPARE */ \
+	"procfs",	/* 12 MOUNT_PROCFS */ \
+	0,		/* 13 MOUNT_SPARE */ \
 }
 
 /*
