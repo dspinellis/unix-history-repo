@@ -3,7 +3,7 @@
 # include <sys/stat.h>
 # include <sysexits.h>
 
-static char SccsId[] = "@(#)sccs.c 1.7 delta %G% 20:24:38 get %H% %T%";
+static char SccsId[] = "@(#)sccs.c 1.8 delta %G% 20:53:30 get %H% %T%";
 
 # define bitset(bit, word)	((bit) & (word))
 
@@ -21,6 +21,7 @@ struct sccsprog
 
 /* values for sccsoper */
 # define PROG		0	/* call a program */
+# define CMACRO		1	/* command substitution macro */
 
 /* bits for sccsflags */
 # define NO_SDOT	0001	/* no s. on front of args */
@@ -37,6 +38,7 @@ struct sccsprog SccsProg[] =
 	"prt",		PROG,	0,			"/usr/sccs/prt",
 	"rmdel",	PROG,	REALUSER,		"/usr/sccs/rmdel",
 	"what",		PROG,	NO_SDOT,		"/usr/sccs/what",
+	"del",		CMACRO,	0,			"delta/get",
 	NULL,		-1,	0,			NULL
 };
 
@@ -83,15 +85,18 @@ main(argc, argv)
 	if (SccsPath[0] == '\0')
 		SccsPath = ".";
 
-	command(argv);
+	command(argv, FALSE);
 	exit(EX_OK);
 }
 
-command(argv)
+command(argv, forkflag)
 	char **argv;
+	bool forkflag;
 {
 	register struct sccsprog *cmd;
 	register char *p;
+	register char *q;
+	char buf[40];
 
 	/*
 	**  Look up command.
@@ -117,8 +122,19 @@ command(argv)
 	switch (cmd->sccsoper)
 	{
 	  case PROG:		/* call an sccs prog */
-		callprog(cmd->sccspath, cmd->sccsflags, argv, FALSE);
-		fprintf(stderr, "Sccs internal error: callprog\n");
+		callprog(cmd->sccspath, cmd->sccsflags, argv, forkflag);
+		break;
+
+	  case CMACRO:		/* command macro */
+		for (p = cmd->sccspath; *p != '\0'; p++)
+		{
+			for (q = buf; *p != '/' && *p != '\0'; p++, q++)
+				*q = *p;
+			*q = '\0';
+			argv[0] = buf;
+			command(argv, *p != '\0');
+		}
+		fprintf(stderr, "Sccs internal error: CMACRO\n");
 		exit(EX_SOFTWARE);
 
 	  default:
@@ -138,6 +154,7 @@ callprog(progpath, flags, argv, forkflag)
 	char *newargv[1000];
 	extern char *makefile();
 	register int i;
+	auto int st;
 
 	if (*argv == NULL)
 		return (-1);
@@ -174,7 +191,10 @@ callprog(progpath, flags, argv, forkflag)
 			exit(EX_OSERR);
 		}
 		else if (i > 0)
-			return (i);
+		{
+			wait(&st);
+			return (st);
+		}
 	}
 
 	/*
