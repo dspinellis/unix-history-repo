@@ -1,4 +1,4 @@
-/*	route.c	4.6	82/03/31	*/
+/*	route.c	4.7	82/05/04	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -29,6 +29,8 @@ rtalloc(ro)
 
 COUNT(RTALLOC);
 	if (ro->ro_rt && ro->ro_rt->rt_ifp)			/* XXX */
+		return;
+	if (af >= AF_MAX)
 		return;
 	(*afswitch[af].af_hash)(dst, &h);
 	rtmin = 0, hash = h.afh_hosthash;
@@ -92,6 +94,8 @@ rtrequest(req, new)
 	int af = sa->sa_family, doinghost, s, error = 0;
 
 COUNT(RTREQUEST);
+	if (af >= AF_MAX)
+		return (EAFNOSUPPORT);
 	(*afswitch[af].af_hash)(sa, &h);
 	hash = h.afh_hosthash;
 	mprev = &rthost[hash % RTHASHSIZ];

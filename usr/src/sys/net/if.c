@@ -1,4 +1,4 @@
-/*	if.c	4.14	82/04/24	*/
+/*	if.c	4.15	82/05/04	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -94,8 +94,11 @@ if_ifwithnet(addr)
 {
 	register struct ifnet *ifp;
 	register int af = addr->sa_family;
-	register int (*netmatch)() = afswitch[af].af_netmatch;
+	register int (*netmatch)();
 
+	if (af >= AF_MAX)
+		return (0);
+	netmatch = afswitch[af].af_netmatch;
 	for (ifp = ifnet; ifp; ifp = ifp->if_next) {
 		if (af != ifp->if_addr.sa_family)
 			continue;
