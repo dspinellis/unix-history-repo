@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ufs_inode.c	6.16 (Berkeley) %G%
+ *	@(#)ufs_inode.c	6.17 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -14,6 +14,7 @@
 #include "inode.h"
 #include "fs.h"
 #include "buf.h"
+#include "cmap.h"
 #ifdef QUOTA
 #include "quota.h"
 #endif
@@ -382,7 +383,7 @@ itrunc(oip, length)
 	register struct fs *fs;
 	register struct inode *ip;
 	struct buf *bp;
-	int offset, lbn, osize, size, error, count, level, s;
+	int offset, lbn, osize, size, count, level, s;
 	long nblocks, blocksreleased = 0;
 	register int i;
 	dev_t dev;
@@ -485,15 +486,15 @@ itrunc(oip, length)
 	 * All whole direct blocks or frags.
 	 */
 	for (i = NDADDR - 1; i > lastblock; i--) {
-		register int size;
+		register int bsize;
 
 		bn = ip->i_db[i];
 		if (bn == 0)
 			continue;
 		ip->i_db[i] = 0;
-		size = (off_t)blksize(fs, ip, i);
-		free(ip, bn, size);
-		blocksreleased += btodb(size);
+		bsize = (off_t)blksize(fs, ip, i);
+		free(ip, bn, bsize);
+		blocksreleased += btodb(bsize);
 	}
 	if (lastblock < 0)
 		goto done;
