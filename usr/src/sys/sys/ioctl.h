@@ -1,4 +1,4 @@
-/*	ioctl.h	4.22	82/10/31	*/
+/*	ioctl.h	4.23	82/11/22	*/
 /*
  * ioctl definitions, and special character and local tty definitions
  */
@@ -110,6 +110,7 @@ struct ltchars {
 #define	TIOCSPGRP	_IOW(t, 118, int)	/* set pgrp of tty */
 #define	TIOCSLTC	_IOW(t,117,struct ltchars)/* set local special chars */
 #define	TIOCGLTC	_IOR(t,116,struct ltchars)/* get local special chars */
+#define	TIOCSTI		_IOW(t, 114, char)	/* simulate terminal input */
 #define	TIOCNOTTY	_IO(t, 113)		/* void tty association */
 #define	TIOCPKT		_IOW(t, 112, int)	/* pty: set/clear packet mode */
 #define		TIOCPKT_DATA		0x00	/* data packet */
