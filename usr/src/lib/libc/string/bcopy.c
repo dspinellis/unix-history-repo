@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bcopy.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)bcopy.c	5.11 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/cdefs.h>
@@ -50,7 +50,7 @@ bcopy(src0, dst0, length)
 	register size_t t;
 
 	if (length == 0 || dst == src)		/* nothing to do */
-		return;
+		goto done;
 
 	/*
 	 * Macros: loop-t-times; and loop-t-times, t>0
@@ -104,13 +104,10 @@ bcopy(src0, dst0, length)
 		t = length & wmask;
 		TLOOP(*--dst = *--src);
 	}
-#ifdef MEMCOPY
-	return(dst0);
-#else
-#ifdef MEMMOVE
-	return(dst0);
+done:
+#if defined(MEMCOPY) || defined(MEMMOVE)
+	return (dst0);
 #else
 	return;
-#endif
 #endif
 }
