@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-/* sccs id:	@(#)ex_tty.h	7.3	%G%  */
+/* sccs id:	@(#)ex_tty.h	7.4	%G%  */
 /*
  * Capabilities from termcap
  *
@@ -110,6 +110,7 @@ var	bool	UPPERCASE;	/* Ick! */
 extern	short	LINES;		/* Number of lines on screen */
 extern	short	COLUMNS;
 var	short	OCOLUMNS;	/* Save COLUMNS for a hack in open mode */
+var	struct winsize winsz;	/* Save window size for stopping comparisons */
 
 var	short	outcol;		/* Where the cursor is */
 var	short	outline;
