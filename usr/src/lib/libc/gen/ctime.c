@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ctime.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)ctime.c	5.23 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -1108,9 +1108,7 @@ register struct tm * const		tmp;
 		days = days - (long) ip[tmp->tm_mon];
 	tmp->tm_mday = (int) (days + 1);
 	tmp->tm_isdst = 0;
-#ifdef TM_GMTOFF
-	tmp->TM_GMTOFF = offset;
-#endif /* defined TM_GMTOFF */
+	tmp->tm_gmtoff = offset;
 }
 
 /*
