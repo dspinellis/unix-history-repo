@@ -1,4 +1,4 @@
-#	@(#)bsd.README	5.1 (Berkeley) %G%
+#	@(#)bsd.README	5.2 (Berkeley) %G%
 
 This is the README file for the new make "include" files for the BSD
 source tree.  The files are installed in /usr/share/mk, and are, by
@@ -138,7 +138,7 @@ It has seven targets:
 		build the program and its manual page
 	clean:
 		remove the program, any object files and the files a.out,
-		Errs, errs, mklog, and core.
+		Errs, errs, mklog, and core.${PROG}.
 	cleandir:
 		remove all of the files removed by the target clean, as
 		well as .depend, tags, and any manual pages.
