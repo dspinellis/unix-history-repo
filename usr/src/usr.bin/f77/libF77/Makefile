@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.8 (Berkeley) %G%
+#	@(#)Makefile	5.9 (Berkeley) %G%
 #
 # Makefile for f77 math & startup lib, libF77.a
 
@@ -54,12 +54,12 @@ all: Version ${LIBRARY} ${LIBRARY_P}
 
 ${LIBRARY}: ${OBJS}
 		@echo "Loading ${LIBRARY} ... "
-		@ar cru ${LIBRARY} ${OBJS) Version
+		@ar cru ${LIBRARY} ${OBJS} Version
 		ranlib ${LIBRARY}
 
 ${LIBRARY_P}: ${OBJS}
 		@echo "Loading ${LIBRARY_P} ... "
-		@cd profiled; ar cru ../${LIBRARY_P} ${OBJS) Version
+		@cd profiled; ar cru ../${LIBRARY_P} ${OBJS} Version
 		ranlib ${LIBRARY_P}
 
 Version: ${SRCS} mkvers
