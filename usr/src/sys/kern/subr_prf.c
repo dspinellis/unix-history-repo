@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)subr_prf.c	7.8 (Berkeley) %G%
+ *	@(#)subr_prf.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -320,10 +320,10 @@ panic(s)
 	printf("panic: %s\n", s);
 #ifdef KDB
 	if (boothowto & RB_KDB) {
-		int s = splnet();	/* below kdb pri */
+		int x = splnet();	/* below kdb pri */
 
 		setsoftkdb();
-		splx(s);
+		splx(x);
 	}
 #endif
 	boot(bootopt);
