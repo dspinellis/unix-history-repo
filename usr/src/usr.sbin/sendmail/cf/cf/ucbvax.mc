@@ -8,17 +8,15 @@ divert(-1)
 #
 
 include(`../m4/cf.m4')
-VERSIONID(`@(#)ucbvax.mc	6.1 (Berkeley) %G%')
+VERSIONID(`@(#)ucbvax.mc	6.2 (Berkeley) %G%')
 OSTYPE(bsd4.3)
 DOMAIN(cs.hidden)
+FEATURE(use_cw_file)
 MAILER(local)
 MAILER(smtp)
 MAILER(uucp)
 undefine(`UUCP_RELAY')dnl
 DDBerkeley.EDU
-
-# names for which we act as a local forwarding agent
-CF CS ucbarpa arpa ucbernie ernie renoir
 
 # local UUCP connections, and our local uucp name
 SITECONFIG(uucp.ucbvax, ucbvax, U)
@@ -58,13 +56,9 @@ LOCAL_RULE_0
 # make sure we handle the local domain as absolute
 R$* <  @ $* $D > $*		$: $1 < @ $2 $D . > $3
 
-# handle names we forward for as though they were local, so we will use UDB
-R< @ $=F . $D . > : $*		$@ $>7 $2		@here:... -> ...
+# handle Berkeley.EDU as local, so we will use UDB
 R< @ $D . > : $*		$@ $>7 $1		@here:... -> ...
-R$* $=O $* < @ $=F . $D . >	$@ $>7 $1 $2 $3		...@here -> ...
 R$* $=O $* < @ $D . >		$@ $>7 $1 $2 $3		...@here -> ...
-
-R$* < @ $=F . $D . >		$#local $: $1		use UDB
 
 # handle local UUCP connections in the Berkeley.EDU domain
 R$+<@cnmat.$D . >		$#uucp$@cnmat$:$1
