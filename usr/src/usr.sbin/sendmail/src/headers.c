@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	6.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	6.22 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -105,7 +105,7 @@ chompheader(line, def, e)
 	p = "resent-from";
 	if (!bitset(EF_RESENT, e->e_flags))
 		p += 7;
-	if (!def && !QueueRun && strcmp(fname, p) == 0)
+	if (!def && !bitset(EF_QUEUERUN, e->e_flags) && strcmp(fname, p) == 0)
 	{
 		if (e->e_from.q_paddr != NULL &&
 		    strcmp(fvalue, e->e_from.q_paddr) == 0)
@@ -214,7 +214,6 @@ isheader(s)
 **
 **	Parameters:
 **		e -- the envelope to process.
-**		queuejob -- set if running a queued job.
 **
 **	Returns:
 **		none.
@@ -225,9 +224,8 @@ isheader(s)
 **		Aborts the message if the hop count is exceeded.
 */
 
-eatheader(e, queuejob)
+eatheader(e)
 	register ENVELOPE *e;
-	bool queuejob;
 {
 	register HDR *h;
 	register char *p;
@@ -278,7 +276,7 @@ eatheader(e, queuejob)
 		}
 
 		/* save the message-id for logging */
-		if (!queuejob && h->h_value != NULL &&
+		if (!bitset(EF_QUEUERUN, e->e_flags) && h->h_value != NULL &&
 		    strcmp(h->h_field, "message-id") == 0)
 		{
 			msgid = h->h_value;
@@ -308,7 +306,7 @@ eatheader(e, queuejob)
 	p = hvalue("precedence", e);
 	if (p != NULL)
 		e->e_class = priencode(p);
-	if (!queuejob)
+	if (!bitset(EF_QUEUERUN, e->e_flags))
 		e->e_msgpriority = e->e_msgsize
 				 - e->e_class * WkClassFact
 				 + e->e_nrcpts * WkRecipFact;
@@ -330,7 +328,7 @@ eatheader(e, queuejob)
 	*/
 
 # ifdef LOG
-	if (!queuejob && LogLevel > 4)
+	if (!bitset(EF_QUEUERUN, e->e_flags) && LogLevel > 4)
 	{
 		char *name;
 		char hbuf[MAXNAME];

@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	6.36 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	6.37 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	6.36 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	6.37 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -132,6 +132,16 @@ queueup(df)
 	/* message from envelope, if it exists */
 	if (e->e_message != NULL)
 		fprintf(tfp, "M%s\n", e->e_message);
+
+	/* send various flag bits through */
+	p = buf;
+	if (bitset(EF_WARNING, e->e_flags))
+		*p++ = 'w';
+	if (bitset(EF_RESPONSE, e->e_flags))
+		*p++ = 'r';
+	*p++ = '\0';
+	if (buf[0] != '\0')
+		fprintf(tfp, "F%s\n", buf);
 
 	/* $r and $s macro values */
 	if ((p = macvalue('r', e)) != NULL)
@@ -689,7 +699,7 @@ dowork(w, e)
 		/* set basic modes, etc. */
 		(void) alarm(0);
 		clearenvelope(e, FALSE);
-		QueueRun = TRUE;
+		e->e_flags |= EF_QUEUERUN;
 		e->e_errormode = EM_MAIL;
 		e->e_id = &w->w_name[2];
 # ifdef LOG
@@ -810,6 +820,7 @@ readqf(e)
 	ctladdr = NULL;
 	while ((bp = fgetfolded(buf, sizeof buf, qfp)) != NULL)
 	{
+		register char *p;
 		struct stat st;
 
 		if (tTd(40, 4))
@@ -860,6 +871,22 @@ readqf(e)
 
 		  case 'P':		/* message priority */
 			e->e_msgpriority = atol(&bp[1]) + WkTimeFact;
+			break;
+
+		  case 'F':		/* flag bits */
+			for (p = &bp[1]; *p != '\0'; p++)
+			{
+				switch (*p)
+				{
+				  case 'w':	/* warning sent */
+					e->e_flags |= EF_WARNING;
+					break;
+
+				  case 'r':	/* response */
+					e->e_flags |= EF_RESPONSE;
+					break;
+				}
+			}
 			break;
 
 		  case '$':		/* define macro */
@@ -979,6 +1006,7 @@ printqueue()
 		struct stat st;
 		auto time_t submittime = 0;
 		long dfsize = -1;
+		int flags = 0;
 		char message[MAXLINE];
 		extern bool shouldqueue();
 		extern bool lockfile();
@@ -1002,21 +1030,25 @@ printqueue()
 		while (fgets(buf, sizeof buf, f) != NULL)
 		{
 			register int i;
+			register char *p;
 
 			fixcrlf(buf, TRUE);
 			switch (buf[0])
 			{
 			  case 'M':	/* error message */
 				if ((i = strlen(&buf[1])) >= sizeof message)
-					i = sizeof message;
+					i = sizeof message - 1;
 				bcopy(&buf[1], message, i);
 				message[i] = '\0';
 				break;
 
 			  case 'S':	/* sender name */
 				if (Verbose)
-					printf("%8ld %10ld %.12s %.38s", dfsize,
-					    w->w_pri, ctime(&submittime) + 4,
+					printf("%8ld %10ld%c%.12s %.38s",
+					    dfsize,
+					    w->w_pri,
+					    bitset(EF_WARNING, flags) ? '+' : ' ',
+					    ctime(&submittime) + 4,
 					    &buf[1]);
 				else
 					printf("%8ld %.16s %.45s", dfsize,
@@ -1046,6 +1078,17 @@ printqueue()
 				if (stat(&buf[1], &st) >= 0)
 					dfsize = st.st_size;
 				break;
+
+			  case 'F':	/* flag bits */
+				for (p = &buf[1]; *p != '\0'; p++)
+				{
+					switch (*p)
+					{
+					  case 'w':
+						flags |= EF_WARNING;
+						break;
+					}
+				}
 			}
 		}
 		if (submittime == (time_t) 0)
