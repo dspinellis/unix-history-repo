@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.47 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.48 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -421,8 +421,8 @@ R$* < @ [ $+ ] > $*		$: $1 < @@ [ $2 ] > $3		mark [a.b.c.d]
 R$* < @@ $=w > $*		$: $1 < @ $j . > $3		self-literal
 R$* < @@ $+ > $*		$@ $1 < @ $2 > $3		canon IP addr
 ifdef(`DOMAIN_TABLE', `
-# look up unqualified domains in the domain table
-R$* < @ $- > $*			$: $1 < @ $(domaintable $2 $) > $3',
+# look up domains in the domain table
+R$* < @ $+ > $*			$: $1 < @ $(domaintable $2 $) > $3',
 `dnl')
 undivert(2)dnl
 
