@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lfs.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)lfs.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -224,10 +224,12 @@ make_lfs(fd, lp, partp, minfree, block_size, seg_size)
 
 	/* 
 	 * The number of free blocks is set from the number of segments times
-	 * the segment size.  Then we'll subtract off the room for the
+	 * the segment size - 2 (that we never write because we need to make
+	 * sure the cleaner can run).  Then we'll subtract off the room for the
 	 * superblocks ifile entries and segment usage table.
 	 */
-	lfsp->lfs_bfree = fsbtodb(lfsp, lfsp->lfs_nseg * lfsp->lfs_ssize);
+	lfsp->lfs_dsize = fsbtodb(lfsp, (lfsp->lfs_nseg - 2) * lfsp->lfs_ssize);
+	lfsp->lfs_bfree = lfsp->lfs_dsize;
 	lfsp->lfs_segtabsz = SEGTABSIZE_SU(lfsp);
 	lfsp->lfs_cleansz = CLEANSIZE_SU(lfsp);
 	if ((lfsp->lfs_tstamp = time(NULL)) == -1)
