@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tu.c	6.5 (Berkeley) %G%
+ *	@(#)tu.c	6.6 (Berkeley) %G%
  */
 
 #if defined(VAX750) || defined(VAX730)
@@ -149,6 +149,7 @@ ok:
  * Close the TU58, but make sure all
  * outstanding i/o is complete first..
  */
+/* ARGSUSED */
 tuclose(dev, flag)
 	dev_t dev;
 	int flag;
