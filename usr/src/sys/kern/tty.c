@@ -1,4 +1,4 @@
-/*	tty.c	3.10	%G%	*/
+/*	tty.c	3.11	%G%	*/
 
 /*
  * general TTY subroutines
@@ -90,8 +90,7 @@ register struct tty *tp;
 	}
 	tp->t_state &= ~WOPEN;
 	tp->t_state |= ISOPEN;
-	if (tp->t_line != OKILDISC)
-		tp->t_line = 0;		/* conservative */
+	tp->t_line = 0;		/* conservative */
 }
 
 /*
@@ -134,8 +133,7 @@ register struct tty *tp;
 	tp->t_pgrp = 0;
 	wflushtty(tp);
 	tp->t_state = 0;
-	if (tp->t_line != OKILDISC)
-		tp->t_line = 0;
+	tp->t_line = 0;
 }
 
 /*
