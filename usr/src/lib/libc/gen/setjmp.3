@@ -7,7 +7,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)setjmp.3	6.7 (Berkeley) %G%
+.\"     @(#)setjmp.3	6.8 (Berkeley) %G%
 .\"
 .Dd 
 .Dt SETJMP 3
@@ -46,7 +46,7 @@ functions save their calling environment in
 .Fa env .
 Each of these functions returns 0.
 .Pp
-The corresponding 
+The corresponding
 .Fn longjmp
 functions restore the environment saved by their most recent respective
 invocations
@@ -60,7 +60,7 @@ call had just returned  the value specified by
 .Fa val ,
 instead of 0.
 .Pp
-Pairs of calls may be intermixed, i.e. both 
+Pairs of calls may be intermixed, i.e. both
 .Fn sigsetjmp
 and
 .Fn siglongjmp
@@ -69,9 +69,9 @@ and
 and
 .Fn longjmp
 combinations may be used in the same program, however, individual
-calls may not, i.e. the 
+calls may not, i.e. the
 .Fa env
-argument to 
+argument to
 .Fn sigsetjmp
 may not be passed to
 .Fn longjmp .
@@ -94,15 +94,15 @@ invocation and
 call are indeterminate.
 .Pp
 The
-.Pa setjmp/longjmp
+.Fn setjmp Ns / Ns Fn longjmp
 pairs save and restore the signal mask while
-.Pa _setjmp/_longjmp
+.Fn _setjmp Ns / Ns Fn _longjmp
 pairs save and restore only the register set and the stack.
-(See 
+(See
 .Fn sigmask 2 . )
 .Pp
 The
-.Pa sigsetjmp/siglongjmp
+.Fn sigsetjmp Ns / Ns Fn siglongjmp
 function
 pairs save and restore the signal mask if the argument
 .Fa savemask
@@ -111,7 +111,7 @@ is non-zero, otherwise only the register set and the stack are saved.
 If the contents of the
 .Fa env
 are corrupted, or correspond to an environment that has already returned,
-the 
+the
 .Fn longjmp
 routine calls the routine
 .Fn longjmperror 3 .
@@ -119,13 +119,13 @@ If
 .Fn longjmperror
 returns the program is aborted (see
 .Xr abort 2 ) .
-The default version of 
+The default version of
 .Fn longjmperror
 prints the message
 .Dq Li longjmp botch
 to standard error and returns.
 User programs wishing to exit more gracefully should write their own
-versions of 
+versions of
 .Fn longjmperror .
 .Sh SEE ALSO
 .Xr sigaction 2 ,
@@ -138,7 +138,3 @@ and
 .Fn longjmp
 functions conform to
 .St -ansiC .
-.\" .Sh HISTORY
-.\ The
-.\ .Nm
-.\ function appeared in Version 7 AT&T UNIX.
