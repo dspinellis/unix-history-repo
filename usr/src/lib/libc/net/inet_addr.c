@@ -1,8 +1,8 @@
-/*	inet_addr.c	4.4	82/10/07	*/
+/*	inet_addr.c	4.5	82/11/14	*/
 
 #include <sys/types.h>
 #include <ctype.h>
-#include <net/in.h>
+#include <netinet/in.h>
 
 /*
  * Internet address interpretation routine.
