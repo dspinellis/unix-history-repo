@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stdio.h	5.10 (Berkeley) %G%
+ *	@(#)stdio.h	5.11 (Berkeley) %G%
  */
 
 #ifndef	_STDIO_H_
@@ -76,10 +76,10 @@ typedef	struct __sFILE {
 
 	/* operations */
 	void	*_cookie;	/* cookie passed to io functions */
-	int	(*_close) __P((void *_cookie));
-	int	(*_read)  __P((void *_cookie, char *_buf, int _n));
-	fpos_t	(*_seek)  __P((void *_cookie, fpos_t _offset, int _whence));
-	int	(*_write) __P((void *_cookie, const char *_buf, int _n));
+	int	(*_close) __P((void *));
+	int	(*_read)  __P((void *, char *, int));
+	fpos_t	(*_seek)  __P((void *, fpos_t, int));
+	int	(*_write) __P((void *, const char *, int));
 
 	/* separate buffer for long sequences of ungetc() */
 	struct	__sbuf _ub;	/* ungetc buffer */
@@ -173,17 +173,17 @@ int	 fflush __P((FILE *));
 int	 fgetc __P((FILE *));
 int	 fgetpos __P((FILE *, fpos_t *));
 char	*fgets __P((char *, size_t, FILE *));
-FILE	*fopen __P((const char *_name, const char *_type));
+FILE	*fopen __P((const char *, const char *));
 int	 fprintf __P((FILE *, const char *, ...));
 int	 fputc __P((int, FILE *));
 int	 fputs __P((const char *, FILE *));
-int	 fread __P((void *, size_t _size, size_t _n, FILE *));
-FILE	*freopen __P((const char *_name, const char *_type, FILE *_stream));
+int	 fread __P((void *, size_t, size_t, FILE *));
+FILE	*freopen __P((const char *, const char *, FILE *));
 int	 fscanf __P((FILE *, const char *, ...));
 int	 fseek __P((FILE *, long, int));
 int	 fsetpos __P((FILE *, const fpos_t *));
 long	 ftell __P((const FILE *));
-int	 fwrite __P((const void *, size_t _size, size_t _n, FILE *));
+int	 fwrite __P((const void *, size_t, size_t, FILE *));
 int	 getc __P((FILE *));
 int	 getchar __P((void));
 char	*gets __P((char *));
@@ -193,7 +193,7 @@ int	 putc __P((int, FILE *));
 int	 putchar __P((int));
 int	 puts __P((const char *));
 int	 remove __P((const char *));
-int	 rename  __P((const char *_old, const char *_new));
+int	 rename  __P((const char *, const char *));
 void	 rewind __P((FILE *));
 int	 scanf __P((const char *, ...));
 void	 setbuf __P((FILE *, char *));
@@ -220,16 +220,18 @@ char	*ctermid __P((char *));
 FILE	*fdopen __P((int, const char *));
 int	 fileno __P((FILE *));
 __END_DECLS
+#endif /* not ANSI */
 
 /*
  * Routines that are purely local.
  */
+#if !defined (_ANSI_SOURCE) && !defined(_POSIX_SOURCE)
 __BEGIN_DECLS
 char	*fgetline __P((FILE *, size_t *));
 int	 fpurge __P((FILE *));
 int	 getw __P((FILE *));
 int	 pclose __P((FILE *));
-FILE	*popen __P((const char *_name, const char *_type));
+FILE	*popen __P((const char *, const char *));
 int	 putw __P((int, FILE *));
 void	 setbuffer __P((FILE *, char *, int));
 int	 setlinebuf __P((FILE *));
@@ -241,15 +243,15 @@ __END_DECLS
  * Stdio function-access interface.
  */
 __BEGIN_DECLS
-FILE	*funopen __P((const void *_cookie,
-		int (*readfn)(void *_cookie, char *_buf, int _n),
-		int (*writefn)(void *_cookie, const char *_buf, int _n),
-		fpos_t (*seekfn)(void *_cookie, fpos_t _off, int _whence),
-		int (*closefn)(void *_cookie)));
+FILE	*funopen __P((const void *,
+		int (*)(void *, char *, int),
+		int (*)(void *, const char *, int),
+		fpos_t (*)(void *, fpos_t, int),
+		int (*)(void *)));
 __END_DECLS
 #define	fropen(cookie, fn) funopen(cookie, fn, 0, 0, 0)
 #define	fwopen(cookie, fn) funopen(cookie, 0, fn, 0, 0)
-#endif /* !ANSI_SOURCE */
+#endif /* neither ANSI nor POSIX */
 
 /*
  * Functions internal to the implementation.
