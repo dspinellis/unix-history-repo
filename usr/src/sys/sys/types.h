@@ -1,4 +1,4 @@
-/*	types.h	6.2	84/06/09	*/
+/*	types.h	6.3	85/03/07	*/
 
 #ifndef _TYPES_
 #define	_TYPES_
@@ -36,6 +36,8 @@ typedef	int	size_t;
 typedef	int	time_t;
 typedef	short	dev_t;
 typedef	int	off_t;
+typedef	u_short	uid_t;
+typedef	u_short	gid_t;
 
 typedef	struct	fd_set { int fds_bits[1]; } fd_set;
 #endif
