@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	4.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	4.6 (Berkeley) %G%";
 #endif
 
 /*
@@ -111,10 +111,8 @@ main(argc, argv)
 	msg->rip_vers = RIPVERSION;
 	msg->rip_nets[0].rip_dst.sa_family = AF_UNSPEC;
 	msg->rip_nets[0].rip_metric = HOPCNT_INFINITY;
-#ifdef notyet
 	msg->rip_nets[0].rip_dst.sa_family = htons(AF_UNSPEC);
 	msg->rip_nets[0].rip_metric = htonl(HOPCNT_INFINITY);
-#endif
 	toall(sendmsg);
 	sigset(SIGALRM, timer);
 	timer();
