@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkmakefile.c	5.35 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkmakefile.c	5.36 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -558,8 +558,9 @@ do_systemspec(f, fl, first)
 	fprintf(f, "\t${SYSTEM_LD} swap%s.o\n", fl->f_fn);
 	fprintf(f, "\t${SYSTEM_LD_TAIL}\n\n");
 	do_swapspec(f, fl->f_fn);
-	for (fl = fl->f_next; fl && fl->f_type == SWAPSPEC; fl = fl->f_next)
-		;
+	for (fl = fl->f_next; fl; fl = fl->f_next)
+		if (fl->f_type != SWAPSPEC)
+			break;
 	return (fl);
 }
 
