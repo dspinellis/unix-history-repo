@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hp.c	7.5 (Berkeley) %G%
+ *	@(#)hp.c	7.6 (Berkeley) %G%
  */
 
 #ifdef HPDEBUG
@@ -521,7 +521,7 @@ hpustart(mi)
 		dist = sn - (MASKREG(hpaddr->hpla) >> 6) - 1;
 		if (dist < 0)
 			dist += lp->d_nsectors;
-		if (dist > lp->d_maxdist || dist < lp->d_mindist)
+		if (dist <= lp->d_maxdist && dist >= lp->d_mindist)
 			return (MBU_DODATA);
 	} else
 		hpaddr->hpdc = bp->b_cylin;
@@ -866,7 +866,7 @@ bad:
 		error = ENOTTY;
 		break;
 	}
-	return (0);
+	return (error);
 }
 
 hpformat(bp)
@@ -1102,7 +1102,7 @@ struct	size {
 	15884,	118,		/* D=cyl 118 thru 155 */
 	55936,	156,		/* E=cyl 156 thru 289 */
 	219384,	290,		/* F=cyl 290 thru 814 */
-	291280,	118,		/* G=cyl 118 thru 814 */
+	291192,	118,		/* G=cyl 118 thru 814 */
 	0,	0,
 }, rp05_sizes[8] = {
 	15884,	0,		/* A=cyl 0 thru 37 */
