@@ -1,13 +1,31 @@
-/*	if_vv.c	6.6	84/08/29	*/
+/*	if_vv.c	6.7	85/05/22	*/
 
 #include "vv.h"
 
 /*
- * Proteon 10 Meg Ring Driver.
- * This device is called "vv" because its "real name",
- * V2LNI won't work if shortened to the obvious "v2".
- * Hence the subterfuge.
+ * Proteon proNET-10 and proNET-80 token ring driver.
+ * The name of this device driver derives from the old MIT
+ * name of V2LNI for the proNET hardware, would would abbreviate
+ * to "v2", but this won't work right. Thus the name is "vv".
  *
+ * This driver is compatible with the proNET 10 meagbit and
+ * 80 megabit token ring interfaces (models p1000 and p1080).
+ *
+ * TRAILERS: You must turn off trailers via ifconfig if you want to share
+ * a ring with software using the following protocol types:
+ *  3: Address Resolution Protocol
+ *  4: HDLC (old Proteon drivers)
+ *  5: VAX Debugging Protocol (never used)
+ * This is because the protocol type values chosen for trailers
+ * conflict with these protocols. It's too late to change either now.
+ *
+ * HARDWARE COMPATABILITY: This driver requires that the HSBU (p1001)
+ * have a serial number >= 040, which is about March, 1982. Older
+ * HSBUs do not carry across 64kbyte boundaries. The old warning
+ * about use without Wire Centers applies only to CTL (p1002) cards with
+ * serial <= 057, which have not received ECO 176-743, which was
+ * implemented in March, 1982. Most such CTLs have received this ECO,
+ * but they are only compatible with the old HSBUs (<=039) anyways.
  */
 #include "../machine/pte.h"
 
@@ -37,25 +55,50 @@
 #include "../vaxuba/ubavar.h"
 
 /*
- * N.B. - if WIRECENTER is defined wrong, it can well break
- * the hardware!!
+ * 80 megabit configuration
+ * Uncomment the next line if you are using the 80 megabit system. The
+ * only change is the disposition of packets with parity/link_data_error
+ * indication.
  */
-#define	WIRECENTER
+/* #define PRONET80 */
 
-#ifdef WIRECENTER
-#define	VV_CONF	VV_HEN		/* drive wire center relay */
-#else
-#define	VV_CONF	VV_STE		/* allow operation without wire center */
+/*
+ *    maximum transmission unit definition --
+ *        you can set VVMTU at anything from 576 to 2024.
+ *        1536 is a popular "large" value, because it is a multiple
+ *	  of 512, which the trailer scheme likes.
+ *        The absolute maximum size is 2024, which is enforced.
+ */
+
+#define VVMTU (1024)
+
+#define VVMRU (VVMTU + 16)
+#define VVBUFSIZE (VVMRU + sizeof(struct vv_header))
+#if VVMTU>2024
+#undef VVMTU
+#undef VVMRU
+#undef VVBUFSIZE
+#define VVBUFSIZE (2046)
+#define VVMRU (VVBUFSIZE - sizeof (struct vv_header))
+#define VVMTU (VVMRU - 16)
 #endif
 
-#define	VVMTU	(1024+512)
-#define VVMRU	(1024+512+16)	/* space for trailer */
-
+/*
+ *   debugging and tracing stuff
+ */
 int	vv_tracehdr = 0;	/* 1 => trace headers (slowly!!) */
+#ifndef proteon
 int	vv_logreaderrors = 1;	/* 1 => log all read errors */
+#else proteon
+int	vv_logerrors = 0;	/* 1 => log all i/o errors */
+#endif proteon
 
-#define vvtracehdr	if (vv_tracehdr) vvprt_hdr
+#define vvtracehdr  if (vv_tracehdr) vvprt_hdr
+#define vvprintf    if (vv_logerrors && vs->vs_if.if_flags & IFF_DEBUG) printf
 
+/*
+ * externals, types, etc.
+ */
 int	vvprobe(), vvattach(), vvreset(), vvinit();
 int	vvidentify(), vvstart(), vvxint(), vvwatchdog();
 int	vvrint(), vvoutput(), vvioctl(), vvsetaddr();
@@ -64,6 +107,11 @@ u_short vvstd[] = { 0 };
 struct	uba_driver vvdriver =
 	{ vvprobe, 0, vvattach, 0, vvstd, "vv", vvinfo };
 #define	VVUNIT(x)	minor(x)
+
+#define LOOPBACK		/* use loopback for packets meant for us */
+#ifdef	LOOPBACK
+extern struct ifnet loif;
+#endif
 
 /*
  * Software status of each interface.
@@ -86,10 +134,18 @@ struct	vv_softc {
 	u_short	vs_lastr;		/* address of last packet received */
 	short	vs_tries;		/* transmit current retry count */
 	short	vs_init;		/* number of ring inits */
-	short	vs_nottaken;		/* number of packets refused */
+	short	vs_refused;		/* number of packets refused */
 	short	vs_timeouts;		/* number of transmit timeouts */
+	short	vs_otimeout;		/* number of output timeouts */
+	short	vs_ibadf;		/* number of input bad formats */
+	short	vs_parity;		/* number of parity errors on 10 meg, */
+					/* link data errors on 80 meg */
 } vv_softc[NVV];
 
+/*
+ * probe the interface to see that the registers exist, and then
+ * cause an interrupt to find its vector
+ */
 vvprobe(reg)
 	caddr_t reg;
 {
@@ -100,18 +156,19 @@ vvprobe(reg)
 	br = 0; cvec = br; br = cvec;
 #endif
 	addr = (struct vvreg *)reg;
+
 	/* reset interface, enable, and wait till dust settles */
 	addr->vvicsr = VV_RST;
 	addr->vvocsr = VV_RST;
 	DELAY(100000);
+
 	/* generate interrupt by doing 1 word DMA from 0 in uba space!! */
-	addr->vvocsr = VV_IEN;		/* enable interrupt */
 	addr->vvoba = 0;		/* low 16 bits */
 	addr->vvoea = 0;		/* extended bits */
 	addr->vvowc = -1;		/* for 1 word */
-	addr->vvocsr |= VV_DEN;		/* start the DMA */
+	addr->vvocsr = VV_IEN | VV_DEN;	/* start the DMA, with interrupt */
 	DELAY(100000);
-	addr->vvocsr = 0;
+	addr->vvocsr = VV_RST;		/* clear out the CSR */
 	if (cvec && cvec != 0x200)
 		cvec -= 4;		/* backup so vector => receive */
 	return(1);
@@ -178,12 +235,14 @@ vvinit(unit)
 	vs = &vv_softc[unit];
 	ui = vvinfo[unit];
 	sin = (struct sockaddr_in *)&vs->vs_if.if_addr;
+
 	/*
 	 * If the network number is still zero, we've been
 	 * called too soon.
 	 */
 	if (in_netof(sin->sin_addr) == 0)
 		return;
+
 	addr = (struct vvreg *)ui->ui_addr;
 	if (if_ubainit(&vs->vs_ifuba, ui->ui_ubanum,
 	    sizeof (struct vv_header), (int)btoc(VVMTU)) == 0) {
@@ -191,27 +250,36 @@ vvinit(unit)
 		vs->vs_if.if_flags &= ~IFF_UP;
 		return;
 	}
+
 	/*
 	 * Now that the uba is set up, figure out our address and
 	 * update complete our host address.
 	 */
-	if ((vs->vs_if.if_host[0] = vvidentify(unit)) == 0) {
+	if ((vs->vs_if.if_host[0] = vvidentify(unit)) == -1) {
 		vs->vs_if.if_flags &= ~IFF_UP;
 		return;
 	}
 	printf("vv%d: host %d\n", unit, vs->vs_if.if_host[0]);
 	sin->sin_addr = if_makeaddr(vs->vs_if.if_net, vs->vs_if.if_host[0]);
+
 	/*
-	 * Reset the interface, and join the ring
+	 * Reset the interface, and stay in the ring
 	 */
-	addr->vvocsr = VV_RST | VV_CPB;		/* clear packet buffer */
-	addr->vvicsr = VV_RST | VV_CONF;	/* close logical relay */
+	addr->vvocsr = VV_RST;			/* take over output */
+	addr->vvocsr = VV_CPB;			/* clear packet buffer */
+	addr->vvicsr = VV_RST | VV_HEN;		/* take over input, */
+						/* keep relay closed */
 	DELAY(500000);				/* let contacts settle */
-	vs->vs_init = 0;
-	vs->vs_nottaken = 0;
+
+	vs->vs_init = 0;			/* clear counters, etc. */
+	vs->vs_refused = 0;
 	vs->vs_timeouts = 0;
+	vs->vs_otimeout = 0;
+	vs->vs_ibadf = 0;
+	vs->vs_parity = 0;
 	vs->vs_lastx = 256;			/* an invalid address */
 	vs->vs_lastr = 256;			/* an invalid address */
+
 	/*
 	 * Hang a receive and start any
 	 * pending writes by faking a transmit complete.
@@ -220,8 +288,8 @@ vvinit(unit)
 	ubainfo = vs->vs_ifuba.ifu_r.ifrw_info;
 	addr->vviba = (u_short)ubainfo;
 	addr->vviea = (u_short)(ubainfo >> 16);
-	addr->vviwc = -(sizeof (struct vv_header) + VVMTU) >> 1;
-	addr->vvicsr = VV_IEN | VV_CONF | VV_DEN | VV_ENB;
+	addr->vviwc = -(VVBUFSIZE) >> 1;
+	addr->vvicsr = VV_IEN | VV_HEN | VV_DEN | VV_ENB;
 	vs->vs_oactive = 1;
 	vs->vs_if.if_flags |= IFF_UP | IFF_RUNNING;
 	vvxint(unit);
@@ -230,8 +298,20 @@ vvinit(unit)
 }
 
 /*
- * Return our host address.
+ * Do a moderately thorough self-test in all three modes. Mostly
+ * to keeps defective nodes off the ring, rather than to be especially
+ * thorough. The key issue is to detect any cable breaks before joining
+ * the ring. Return our node address on success, return -1 on failure.
+ *
  */
+
+/* the three self-test modes */
+static u_short vv_modes[] = {
+	VV_STE|VV_LPB,			/* digital loopback */
+	VV_STE,				/* analog loopback */
+	VV_HEN				/* network mode */
+};
+
 vvidentify(unit)
 	int unit;
 {
@@ -240,15 +320,20 @@ vvidentify(unit)
 	register struct vvreg *addr;
 	register struct mbuf *m;
 	register struct vv_header *v;
-	register int ubainfo, attempts, waitcount;
+	register int ubainfo;
+	register int i, successes, failures, waitcount;
+	u_short shost = -1;
 
-	/*
-	 * Build a multicast message to identify our address
-	 */
 	vs = &vv_softc[unit];
 	ui = vvinfo[unit];
 	addr = (struct vvreg *)ui->ui_addr;
-	attempts = 0;		/* total attempts, including bad msg type */
+
+	/*
+	 * Build a multicast message to identify our address
+	 * We need do this only once, since nobody else is about to use
+	 * the intermediate transmit buffer (ifu_w.ifrw_addr) that
+	 * if_ubainit() aquired for us.
+	 */
 	m = m_get(M_DONTWAIT, MT_HEADER);
 	if (m == NULL) {
 		printf("vv%d: can't initialize, m_get() failed\n", unit);
@@ -261,70 +346,126 @@ vvidentify(unit)
 	v->vh_dhost = VV_BROADCAST;	/* multicast destination address */
 	v->vh_shost = 0;		/* will be overwritten with ours */
 	v->vh_version = RING_VERSION;
-	v->vh_type = RING_WHOAMI;
+	v->vh_type = RING_DIAGNOSTICS;
 	v->vh_info = 0;
-	/* map xmit message into uba */
-	vs->vs_olen =  if_wubaput(&vs->vs_ifuba, m);
-	if (vs->vs_ifuba.ifu_flags & UBA_NEEDBDP)
-		UBAPURGE(vs->vs_ifuba.ifu_uba, vs->vs_ifuba.ifu_w.ifrw_bdp);
-	/*
-	 * Reset interface, establish Digital Loopback Mode, and
-	 * send the multicast (to myself) with Input Copy enabled.
-	 */
-retry:
-	ubainfo = vs->vs_ifuba.ifu_r.ifrw_info;
-	addr->vvicsr = VV_RST;
-	addr->vviba = (u_short) ubainfo;
-	addr->vviea = (u_short) (ubainfo >> 16);
-	addr->vviwc = -(sizeof (struct vv_header) + VVMTU) >> 1;
-	addr->vvicsr = VV_STE | VV_DEN | VV_ENB | VV_LPB;
+	/* map xmit message into uba, copying to intermediate buffer */
+	vs->vs_olen = if_wubaput(&vs->vs_ifuba, m);
 
-	/* let flag timers fire so ring will initialize */
-	DELAY(2000000);			/* about 2 SECONDS on a 780!! */
-
-	addr->vvocsr = VV_RST | VV_CPB;	/* clear packet buffer */
-	ubainfo = vs->vs_ifuba.ifu_w.ifrw_info;
-	addr->vvoba = (u_short) ubainfo;
-	addr->vvoea = (u_short) (ubainfo >> 16);
-	addr->vvowc = -((vs->vs_olen + 1) >> 1);
-	addr->vvocsr = VV_CPB | VV_DEN | VV_INR | VV_ENB;
 	/*
-	 * Wait for receive side to finish.
-	 * Extract source address (which will be our own),
-	 * and post to interface structure.
+	 * For each of the modes (digital, analog, network), go through
+	 * a self-test that requires me to send VVIDENTSUCC good packets
+	 * in VVIDENTRETRY attempts. Use broadcast destination to find out
+	 * who I am, then use this as my address to check my address match
+	 * logic. Only data checked is the vh_type field.
 	 */
-	DELAY(10000);
-	for (waitcount = 0; (addr->vvicsr & VV_RDY) == 0; waitcount++) {
-		if (waitcount < 10) {
-			DELAY(1000);
+
+	for (i = 0; i < 3; i++) {
+		successes = 0;	/* clear successes for this mode */
+		failures = 0;	/* and clear failures, too */
+
+		/* take over device, and leave ring */
+		addr->vvicsr = VV_RST;
+		addr->vvocsr = VV_RST;
+		addr->vvicsr = vv_modes[i];	/* test mode */
+
+		/*
+		 * let the flag and token timers pop so that the init ring bit
+		 * will be allowed to work, by waiting about 1 second
+		 */
+		DELAY(1000000L);
+
+		/*
+		 * retry loop
+ 		 */
+		while ((successes < VVIDENTSUCC) && (failures < VVIDENTRETRY))
+		{
+			/* start a receive */
+			ubainfo = vs->vs_ifuba.ifu_r.ifrw_info;
+			addr->vvicsr = VV_RST | vv_modes[i]; /* abort last */
+			addr->vviba = (u_short) ubainfo;
+			addr->vviea = (u_short) (ubainfo >> 16);
+			addr->vviwc = -(VVBUFSIZE) >> 1;
+			addr->vvicsr = vv_modes[i] | VV_DEN | VV_ENB;
+
+			/* purge stale data from BDP */
+			if (vs->vs_ifuba.ifu_flags & UBA_NEEDBDP)
+				UBAPURGE(vs->vs_ifuba.ifu_uba,
+				    vs->vs_ifuba.ifu_w.ifrw_bdp);
+
+			/* do a transmit */
+			ubainfo = vs->vs_ifuba.ifu_w.ifrw_info;
+			addr->vvocsr = VV_RST;	/* abort last try */
+			addr->vvoba = (u_short) ubainfo;
+			addr->vvoea = (u_short) (ubainfo >> 16);
+			addr->vvowc = -((vs->vs_olen + 1) >> 1);
+			addr->vvocsr = VV_CPB | VV_DEN | VV_INR | VV_ENB;
+
+			/* poll receive side for completion */
+			DELAY(10000);		/* give it a chance */
+			for (waitcount = 0; waitcount < 10; waitcount++) {
+				if (addr->vvicsr & VV_RDY)
+					goto gotit;
+				DELAY(1000);
+			}
+			failures++;		/* no luck */
 			continue;
+
+gotit:			/* we got something--is it any good? */
+			if ((addr->vvicsr & (VVRERR|VV_LDE)) ||
+			    (ADDR->vvocsr & (VVXERR|VV_RFS))) {
+				failures++;
+				continue;
+			}
+
+			/* Purge BDP before looking at received packet */
+			if (vs->vs_ifuba.ifu_flags & UBA_NEEDBDP)
+				UBAPURGE(vs->vs_ifuba.ifu_uba,
+				    vs->vs_ifuba.ifu_r.ifrw_bdp);
+			m = if_rubaget(&vs->vs_ifuba,
+			    sizeof(struct vv_header), 0);
+			if (m != NULL)
+				m_freem(m);
+			
+			v = (struct vv_header *)(vs->vs_ifuba.ifu_r.ifrw_addr);
+
+			/* check message type, catch our node address */
+			if ((v->vh_type & 0xff) == RING_DIAGNOSTICS) {
+				if (shost == -1) {
+					shost = v->vh_shost & 0xff;
+					/* send to ourself now */
+					((struct vv_header *)
+					    (vs->vs_ifuba.ifu_r.ifrw_addr))
+					    ->vh_dhost = shost;
+				}
+				successes++;
+				v->vh_type = 0;  /* clear to check again */
+			}
 		}
-		if (attempts++ < VVIDENTRETRY)
-			goto retry;
+
+		if (failures >= VVIDENTRETRY)
+		{
+			printf("vv%d: failed self-test after %d tries \
+in %s mode\n",
+			    unit, VVIDENTRETRY, i == 0 ? "digital loopback" :
+			    (i == 1 ? "analog loopback" : "network"));
+			printf("vv%d: icsr = %b, ocsr = %b\n",
+			    unit, 0xffff & addr->vvicsr, VV_IBITS,
+			    0xffff & addr->vvocsr, VV_OBITS);
+			addr->vvicsr = VV_RST;	/* kill the sick board */
+			addr->vvocsr = VV_RST;
+			shost = -1;
+			goto done;
+		}
 	}
-	/* deallocate mbuf used for send packet */
+
+done:
+	/* deallocate mbuf used for send packet (won't be one, anyways) */
 	if (vs->vs_ifuba.ifu_xtofree) {
 		m_freem(vs->vs_ifuba.ifu_xtofree);
 		vs->vs_ifuba.ifu_xtofree = 0;
 	}
-	if (attempts >= VVIDENTRETRY) {
-		printf("vv%d: can't initialize after %d tries, icsr = %b\n",
-		    unit, VVIDENTRETRY, 0xffff&(addr->vvicsr), VV_IBITS);
-		return (0);
-	}
-	/* Purge BDP before looking at packet we just received */
-	if (vs->vs_ifuba.ifu_flags & UBA_NEEDBDP)
-		UBAPURGE(vs->vs_ifuba.ifu_uba, vs->vs_ifuba.ifu_r.ifrw_bdp);
-	m = if_rubaget(&vs->vs_ifuba, sizeof(struct vv_header), 0);
-	if (m != NULL)
-		m_freem(m);
-	/*
-	 * Check message type before we believe the source host address
-	 */
-	v = (struct vv_header *)(vs->vs_ifuba.ifu_r.ifrw_addr);
-	if (v->vh_type != RING_WHOAMI)
-		goto retry;
-	return(v->vh_shost);
+
+	return(shost);
 }
 
 /*
@@ -371,10 +512,15 @@ restart:
 	 *
 	 * Make sure this packet will fit in the interface.
 	 */
-	if (vs->vs_olen > VVMTU + sizeof (struct vv_header)) {
-		printf("vv%d vs_olen: %d > VVMTU\n", unit, vs->vs_olen);
+	if (vs->vs_olen > VVBUFSIZE) {
+		printf("vv%d vs_olen: %d > VVBUFSIZE\n", unit, vs->vs_olen);
 		panic("vvdriver vs_olen botch");
 	}
+
+	vs->vs_if.if_timer = VVTIMEOUT;
+	vs->vs_oactive = 1;
+
+	/* ship it */
 	if (vs->vs_ifuba.ifu_flags & UBA_NEEDBDP)
 		UBAPURGE(vs->vs_ifuba.ifu_uba, vs->vs_ifuba.ifu_w.ifrw_bdp);
 	addr = (struct vvreg *)ui->ui_addr;
@@ -382,13 +528,16 @@ restart:
 	addr->vvoba = (u_short) ubainfo;
 	addr->vvoea = (u_short) (ubainfo >> 16);
 	addr->vvowc = -((vs->vs_olen + 1) >> 1);
+	addr->vvowc = -((vs->vs_olen + 1) >> 1); /* extra byte is garbage */
+	if (addr->vvocsr & VV_NOK)
+		vs->vs_init++;			/* count ring inits */
 	addr->vvocsr = VV_IEN | VV_CPB | VV_DEN | VV_INR | VV_ENB;
 	vs->vs_if.if_timer = VVTIMEOUT;
 	vs->vs_oactive = 1;
 }
 
 /*
- * VVLNI transmit interrupt
+ * proNET transmit interrupt
  * Start another output if more data to send.
  */
 vvxint(unit)
@@ -405,29 +554,35 @@ vvxint(unit)
 	addr = (struct vvreg *)ui->ui_addr;
 	oc = 0xffff & (addr->vvocsr);
 	if (vs->vs_oactive == 0) {
-		printf("vv%d: stray interrupt vvocsr = %b\n", unit,
+		vvprintf("vv%d: stray interrupt vvocsr = %b\n", unit,
 		    oc, VV_OBITS);
 		return;
 	}
-	if (oc &  (VV_OPT | VV_RFS)) {
-		vs->vs_if.if_collisions++;
+
+	/*
+	 * we retransmit on soft error
+	 * TODO: sort retransmits to end of queue if possible!
+	 */
+	if (oc & (VV_OPT | VV_RFS)) {
 		if (vs->vs_tries++ < VVRETRY) {
 			if (oc & VV_OPT)
-				vs->vs_init++;
-			if (oc & VV_RFS)
-				vs->vs_nottaken++;
+				vs->vs_otimeout++;
+			if (oc & VV_RFS) {
+				vs->vs_if.if_collisions++;
+				vs->vs_refused++;
+			}
 			vvstart(unit);		/* restart this message */
 			return;
 		}
-		if (oc & VV_OPT)
-			printf("vv%d: output timeout\n", unit);
 	}
 	vs->vs_if.if_opackets++;
 	vs->vs_oactive = 0;
 	vs->vs_tries = 0;
+
 	if (oc & VVXERR) {
 		vs->vs_if.if_oerrors++;
 		printf("vv%d: error vvocsr = %b\n", unit, 0xffff & oc,
+		vvprintf("vv%d: error vvocsr = %b\n", unit, 0xffff & oc,
 		    VV_OBITS);
 	}
 	if (vs->vs_ifuba.ifu_xtofree) {
@@ -449,8 +604,7 @@ vvwatchdog(unit)
 	register int s;
 
 	vs = &vv_softc[unit];
-	if (vs->vs_if.if_flags & IFF_DEBUG)
-		printf("vv%d: lost a transmit interrupt.\n", unit);
+	vvprintf("vv%d: lost a transmit interrupt.\n", unit);
 	vs->vs_timeouts++;
 	s = splimp();
 	vvstart(unit);
@@ -458,7 +612,7 @@ vvwatchdog(unit)
 }
 
 /*
- * V2lni interface receiver interrupt.
+ * proNET interface receiver interrupt.
  * If input error just drop packet.
  * Otherwise purge input buffered data path and examine
  * packet to determine type.  If can't determine length
@@ -480,20 +634,44 @@ vvrint(unit)
 	vs = &vv_softc[unit];
 	vs->vs_if.if_ipackets++;
 	addr = (struct vvreg *)vvinfo[unit]->ui_addr;
+
 	/*
 	 * Purge BDP; drop if input error indicated.
 	 */
 	if (vs->vs_ifuba.ifu_flags & UBA_NEEDBDP)
 		UBAPURGE(vs->vs_ifuba.ifu_uba, vs->vs_ifuba.ifu_r.ifrw_bdp);
+
+	/*
+	 * receive errors?
+	 */
 	if (addr->vvicsr & VVRERR) {
-		if (vv_logreaderrors && vs->vs_if.if_flags & IFF_DEBUG)
-			printf("vv%d: VVRERR, vvicsr = %b\n", unit,
-			    0xffff&(addr->vvicsr), VV_IBITS);
+		vvprintf("vv%d: receive error, vvicsr = %b\n", unit,
+		    0xffff&(addr->vvicsr), VV_IBITS);
+		if (addr->vvicsr & VV_BDF)
+			vs->vs_ibadf++;
 		goto dropit;
 	}
 
 	/*
-	 * Get packet length from word count residue
+	 * parity errors?
+	 */
+	if (addr->vvicsr & VV_LDE) {
+		/* we don't have to clear it because the receive command */
+		/* writes 0 to parity bit */
+		vs->vs_parity++;
+#ifndef PRONET80
+		/*
+		 * only on 10 megabit proNET is VV_LDE an end-to-end parity
+		 * bit. On 80 megabit, it returns to the intended use of
+		 * node-to-node parity. End-to-end parity errors on 80 megabit
+		 * give VV_BDF.
+		 */
+		goto dropit;
+#endif
+	}
+
+	/*
+	 * Get packet length from residual word count
 	 *
 	 * Compute header offset if trailer protocol
 	 *
@@ -505,33 +683,40 @@ vvrint(unit)
 	 */
 	vv = (struct vv_header *)(vs->vs_ifuba.ifu_r.ifrw_addr);
 	vvtracehdr("vi", vv);
-	resid = addr->vviwc;
+	resid = addr->vviwc & 01777;	/* only low 10 bits valid */
 	if (resid)
-		resid |= 0176000;		/* ugly!!!! */
-	len = (((sizeof (struct vv_header) + VVMRU) >> 1) + resid) << 1;
+		resid |= 0176000;	/* high 6 bits are undefined */
+	len = ((VVBUFSIZE >> 1) + resid) << 1;
 	len -= sizeof(struct vv_header);
-	if (len > VVMRU || len <= 0) {
-		if (vv_logreaderrors && vs->vs_if.if_flags & IFF_DEBUG)
-			printf("vv%d: len too big, len = %d, vvicsr = %b\n",
+
+	if ((addr->vvicsr & VV_DPR) || len > VVMRU || len <= 0) {
+		vvprintf("vv%d: len too long or short, \
+len = %d, vvicsr = %b\n",
 			    unit, len, 0xffff&(addr->vvicsr), VV_IBITS);
 		goto dropit;
 	}
+
+	/* check the protocol header version */
+	if (vv->vh_version != RING_VERSION) {
+		vvprintf("vv%d: bad protocol header version %d\n",
+		    unit, vv->vh_version & 0xff);
+		goto dropit;
+	}
+
 #define	vvdataaddr(vv, off, type)	((type)(((caddr_t)((vv)+1)+(off))))
 	if (vv->vh_type >= RING_IPTrailer &&
 	     vv->vh_type < RING_IPTrailer+RING_IPNTrailer) {
 		off = (vv->vh_type - RING_IPTrailer) * 512;
 		if (off > VVMTU) {
-			if (vv_logreaderrors && vs->vs_if.if_flags & IFF_DEBUG)
-				printf("vv%d: VVMTU, off = %d, vvicsr = %b\n",
+			vvprintf("vv%d: off > VVMTU, off = %d, vvicsr = %b\n",
 				    unit, off, 0xffff&(addr->vvicsr), VV_IBITS);
 			goto dropit;
 		}
 		vv->vh_type = *vvdataaddr(vv, off, u_short *);
 		resid = *(vvdataaddr(vv, off+2, u_short *));
 		if (off + resid > len) {
-			if (vv_logreaderrors && vs->vs_if.if_flags & IFF_DEBUG)
-				printf(
-				    "vv%d: off = %d, resid = %d, vvicsr = %b\n",
+			vvprintf("vv%d: trailer packet too short\n", unit);
+			vvprintf("vv%d: off = %d, resid = %d, vvicsr = %b\n",
 				    unit, off, resid,
 				    0xffff&(addr->vvicsr), VV_IBITS);
 			goto dropit;
@@ -539,16 +724,16 @@ vvrint(unit)
 		len = off + resid;
 	} else
 		off = 0;
+
 	if (len == 0) {
-		if (vv_logreaderrors && vs->vs_if.if_flags & IFF_DEBUG)
-			printf("vv%d: len is zero, vvicsr = %b\n", unit,
+		vvprintf("vv%d: len is zero, vvicsr = %b\n", unit,
 			    0xffff&(addr->vvicsr), VV_IBITS);
 		goto dropit;
 	}
+
 	m = if_rubaget(&vs->vs_ifuba, len, off);
 	if (m == NULL) {
-		if (vv_logreaderrors && vs->vs_if.if_flags & IFF_DEBUG)
-			printf("vv%d: if_rubaget failed, vvicsr = %b\n", unit,
+		vvprintf("vv%d: if_rubaget() failed, vvicsr = %b\n", unit,
 			    0xffff&(addr->vvicsr), VV_IBITS);
 		goto dropit;
 	}
@@ -559,6 +744,7 @@ vvrint(unit)
 
 	/* Keep track of source address of this packet */
 	vs->vs_lastr = vv->vh_shost;
+
 	/*
 	 * Demultiplex on packet type
 	 */
@@ -571,7 +757,7 @@ vvrint(unit)
 		break;
 #endif
 	default:
-		printf("vv%d: unknown pkt type 0x%x\n", unit, vv->vh_type);
+		vvprintf("vv%d: unknown pkt type 0x%x\n", unit, vv->vh_type);
 		m_freem(m);
 		goto setup;
 	}
@@ -590,9 +776,8 @@ setup:
 	ubainfo = vs->vs_ifuba.ifu_r.ifrw_info;
 	addr->vviba = (u_short) ubainfo;
 	addr->vviea = (u_short) (ubainfo >> 16);
-	addr->vviwc = -(sizeof (struct vv_header) + VVMTU) >> 1;
-	addr->vvicsr = VV_RST | VV_CONF;
-	addr->vvicsr |= VV_IEN | VV_DEN | VV_ENB;
+	addr->vviwc = -(VVBUFSIZE) >> 1;
+	addr->vvicsr = VV_HEN | VV_IEN | VV_DEN | VV_ENB;
 	return;
 
 	/*
@@ -604,7 +789,7 @@ dropit:
 }
 
 /*
- * V2lni output routine.
+ * proNET output routine.
  * Encapsulate a packet of type family for the local net.
  * Use trailer local net encapsulation if enough data in first
  * packet leaves a multiple of 512 bytes of data in remainder.
@@ -627,8 +812,10 @@ vvoutput(ifp, m0, dst)
 	unit = ifp->if_unit;
 	addr = (struct vvreg *)vvinfo[unit]->ui_addr;
 	vs = &vv_softc[unit];
+
 	/*
-	 * Check to see if the input side has wedged.
+	 * Check to see if the input side has wedged due the UBA
+	 * vectoring through 0.
 	 *
 	 * We are lower than device ipl when we enter this routine,
 	 * so if the interface is ready with an input packet then
@@ -639,8 +826,7 @@ vvoutput(ifp, m0, dst)
 	 */
 	s = vs->vs_if.if_ipackets;
 	if (addr->vvicsr & VV_RDY && s == vs->vs_if.if_ipackets) {
-		if (vs->vs_if.if_flags & IFF_DEBUG)
-			printf("vv%d: lost a receive interrupt, icsr = %b\n",
+		vvprintf("vv%d: lost a receive interrupt, icsr = %b\n",
 			    unit, 0xffff&(addr->vvicsr), VV_IBITS);
 		s = splimp();
 		vvrint(unit);
@@ -652,12 +838,20 @@ vvoutput(ifp, m0, dst)
 #ifdef INET
 	case AF_INET:
 		dest = ((struct sockaddr_in *)dst)->sin_addr.s_addr;
+#ifdef LOOPBACK
+		if ((dest == ((struct sockaddr_in *)&ifp->if_addr)->sin_addr.s_addr) &&
+		   ((loif.if_flags & IFF_UP) != 0))
+			return(looutput(&loif, m0, dst));
+#endif LOOPBACK
 		if ((dest = in_lnaof(*((struct in_addr *)&dest))) >= 0x100) {
 			error = EPERM;
 			goto bad;
 		}
 		off = ntohs((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
-		/* Need per host negotiation. */
+		/*
+		 * Trailerize, if the configuration allows it.
+		 * TODO: Need per host negotiation.
+		 */
 		if ((ifp->if_flags & IFF_NOTRAILERS) == 0)
 		if (off > 0 && (off & 0x1ff) == 0 &&
 		    m->m_off >= MMINOFF + 2 * sizeof (u_short)) {
@@ -809,24 +1003,3 @@ vvprt_hdr(s, v)
 		0xff & (int)(v->vh_version), 0xff & (int)(v->vh_type),
 		0xffff & (int)(v->vh_info));
 }
-
-#ifdef notdef
-/*
- * print "l" hex bytes starting at "s"
- */
-vvprt_hex(s, l)
-	char *s;
-	int l;
-{
-	register int i;
-	register int z;
-
-	for (i=0 ; i < l; i++) {
-		z = 0xff & (int)(*(s + i));
-		printf("%c%c ",
-		"0123456789abcdef"[(z >> 4) & 0x0f],
-		"0123456789abcdef"[z & 0x0f]
-		);
-	}
-}
-#endif
