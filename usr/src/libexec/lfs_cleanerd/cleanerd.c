@@ -12,19 +12,20 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cleanerd.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)cleanerd.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/mount.h>
 #include <sys/time.h>
+
 #include <ufs/ufs/dinode.h>
 #include <ufs/lfs/lfs.h>
-#include <machine/param.h>
+
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <signal.h>
 
 #include "clean.h"
 char *special = "cleanerd";
@@ -91,7 +92,7 @@ cost_benefit(fsp, su)
 	gettimeofday(&t, NULL);
 
 	live = su->su_nbytes;	
-	age = t.tv_sec - su->su_lastmod < 0 ? 0 : t.tv_sec - su->su_lastmod;
+	age = t.tv_sec < su->su_lastmod ? 0 : t.tv_sec - su->su_lastmod;
 	
 	lfsp = &fsp->fi_lfs;
 	if (live == 0) 
@@ -128,7 +129,6 @@ main(argc, argv)
 	int count;			/* number of file systems */
 	int i, nclean;
 	int opt, cmd_err;
-	extern char *optarg;
 
 	cmd_err = 0;
 	while ((opt = getopt(argc, argv, "sm")) != EOF) {
@@ -446,11 +446,11 @@ sig_report(sig)
 		"segs_empty     ", cleaner_stats.segs_empty,
 		"seg_error      ", cleaner_stats.segs_error);
 	if (sig == SIGUSR2) {
-		cleaner_stats.blocks_read == 0;
-		cleaner_stats.blocks_written == 0;
-		cleaner_stats.segs_cleaned == 0;
-		cleaner_stats.segs_empty == 0;
-		cleaner_stats.segs_error == 0;
+		cleaner_stats.blocks_read = 0;
+		cleaner_stats.blocks_written = 0;
+		cleaner_stats.segs_cleaned = 0;
+		cleaner_stats.segs_empty = 0;
+		cleaner_stats.segs_error = 0;
 	}
 	if (sig == SIGINT)
 		exit(0);
