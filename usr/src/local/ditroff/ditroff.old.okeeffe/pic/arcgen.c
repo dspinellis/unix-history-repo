@@ -1,3 +1,5 @@
+/*	arcgen.c	(Berkeley)	1.2	86/03/11	*/
+
 #include	<stdio.h>
 #include	"pic.h"
 #include	"y.tab.h"
@@ -92,8 +94,12 @@ struct obj *arcgen(type)	/* handles circular and (eventually) elliptical arcs */
 		dx2 = (tox - fromx) / 2;
 		dy2 = (toy - fromy) / 2;
 		phi = atan2(dy2, dx2) + (cw ? -PI2 : PI2);
-		for (r=prevrad; (d = r*r - (dx2*dx2+dy2*dy2)) <= 0.0; r *= 2)
-			;	/* this kludge gets around too-small radii */
+		r = prevrad;
+		if ((d = r*r - (dx2*dx2+dy2*dy2)) < 0.0) {
+				/* this kludge gets around too-small radii */
+			r = sqrt(dx2*dx2+dy2*dy2);	/* smallest radius */
+			d = 0;
+		}
 		prevrad = r;
 		ht = sqrt(d);
 		curx = fromx + dx2 + ht * cos(phi);
