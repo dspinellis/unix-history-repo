@@ -1,5 +1,5 @@
 /*
- *	@(#)emulate.s	7.1 (Berkeley) %G%
+ *	@(#)emulate.s	7.2 (Berkeley) %G%
  */
 
 #ifdef VAX630
@@ -55,26 +55,22 @@
 _EMcrc:
 	argl(1,r11)		# (1) table address == r11
 	argl(2,r0)		# (2) initial crc == r0
-	toarg(r8,1)		# save r8 in arg1 spot
-	argl(4,r8)		# (4) source address == r8
-	toarg(r1,4)		# save r1 in arg4 spot
-	tstl	arg3		# (3) source length == "arg3"
+	argl(4,r3)		# (4) source address == r3
+	arguw(3,r2)		# (3) source length == r2
 	jeql	Lcrc_out
 Lcrc_loop:
-	xorb2	(r8)+,r0
+	xorb2	(r3)+,r0
 	extzv	$0,$4,r0,r10
 	extzv	$4,$28,r0,r1
 	xorl3	r1,(r11)[r10],r0
 	extzv	$0,$4,r0,r10
 	extzv	$4,$28,r0,r1
 	xorl3	r1,(r11)[r10],r0
-	decl	arg3
-	jneq	Lcrc_loop
+	sobgtr	r2,Lcrc_loop
 	tstl	r0
 Lcrc_out:
 	savepsl
-	argl(1,r8)
-	argl(4,r1)
+	clrl	r1
 	return
 
 
@@ -94,13 +90,11 @@ Lmovtc_loop:
 	movzbl	(r1)+,r2
 	movb	(r3)[r2],(r5)+
 	decl	r0
-	decl	r4
-	jeql	Lmovtc_out
-	jbr	Lmovtc_loop
+	sobgtr	r4,Lmovtc_loop
+	jbr	Lmovtc_out
 Lmovtc_2loop:
 	movb	r11,(r5)+
-	decl	r4
-	jneq	Lmovtc_2loop
+	sobgtr	r4,Lmovtc_2loop
 Lmovtc_out:
 	cmpl	r4,r0
 	savepsl
@@ -128,8 +122,7 @@ Lmovtuc_loop:
 	movzbl	(r1)+,r2
 	movb	(r3)[r2],(r5)+
 	decl	r0
-	decl	r4
-	jneq	Lmovtuc_loop
+	sobgtr	r4,Lmovtuc_loop
 Lmovtuc_out:
 	cmpl	r4,r0
 	savepsl
@@ -160,12 +153,12 @@ Lmatchc_2loop:
 	jeql	Lmatchc_2loop
 Lmatchc_fail:
 	incl	r3
-	decl	r2
-	jneq	Lmatchc_loop
+	sobgtr	r2,Lmatchc_loop
 	movl	r10,r1
 	subl3	r10,r11,r0
 	jbr	Lmatchc_out
 Lmatchc_succ:	
+	movl	r1,r3
 	movl	r11,r1
 	clrl	r0
 Lmatchc_out:
@@ -177,8 +170,8 @@ Lmatchc_out:
 	.globl	_EMspanc
 _EMspanc:
 	argl(2,r1)		# (2) string address == r1
-	argl(3,r3)		# (3) table address == r3
 	argub(4,r2)		# (4) character-mask == r2
+	argl(3,r3)		# (3) table address == r3
 	arguw(1,r0)		# (1) string length == r0
 	jeql	Lspanc_out
 Lspanc_loop:
@@ -187,8 +180,7 @@ Lspanc_loop:
 	bicb3	r11,r2,r11
 	jeql	Lspanc_out
 	incl	r1
-	decl	r0
-	jneq	Lspanc_loop
+	sobgtr	r0,Lspanc_loop
 Lspanc_out:
 	savepsl
 	clrl	r2
@@ -199,8 +191,8 @@ Lspanc_out:
 	.globl	_EMscanc
 _EMscanc:
 	argl(2,r1)		# (2) string address == r1
-	argl(3,r3)		# (3) table address == r3
 	argub(4,r2)		# (4) character-mask == r2
+	argl(3,r3)		# (3) table address == r3
 	arguw(1,r0)		# (1) string length == r0
 	jeql	Lscanc_out
 Lscanc_loop:
@@ -209,8 +201,7 @@ Lscanc_loop:
 	bicb3	r11,r2,r11
 	jneq	Lscanc_out
 	incl	r1
-	decl	r0
-	jneq	Lscanc_loop
+	sobgtr	r0,Lscanc_loop
 Lscanc_out:
 	savepsl
 	clrl	r2
@@ -223,15 +214,14 @@ _EMskpc:
 	argub(1,r11)		# (1) character == r11
 	argl(3,r1)		# (3) string address == r1
 	arguw(2,r0)		# (2) string length == r0
-	incl	r0
+	jeql	Lskpc_out	# forget zero length strings
 Lskpc_loop:
-	decl	r0
-	jeql	Lskpc_out
-	cmpb	(r1)+,r11
-	jeql	Lskpc_loop
-	decl	r1
-	tstl	r0
+	cmpb	(r1),r11
+	jneq	Lskpc_out
+	incl	r1
+	sobgtr	r0,Lskpc_loop
 Lskpc_out:
+	tstl	r0		# be sure of condition codes
 	savepsl
 	return
 
@@ -242,15 +232,14 @@ _EMlocc:
 	argub(1,r11)		# (1) character == r11
 	argl(3,r1)		# (3) string address == r1
 	arguw(2,r0)		# (2) string length == r0
-	incl	r0
+	jeql	Lskpc_out	# forget zero length strings
 Llocc_loop:
-	decl	r0
+	cmpb	(r1),r11
 	jeql	Llocc_out
-	cmpb	(r1)+,r11
-	jneq	Llocc_loop
-	decl	r1
-	tstl	r0
+	incl	r1
+	sobgtr  r0,Llocc_loop
 Llocc_out:
+	tstl	r0		# be sure of condition codes
 	savepsl
 	return
 
@@ -267,8 +256,7 @@ Lcmpc3_loop:
 	jneq	Lcmpc3_out
 	incl	r1
 	incl	r3
-	decl	r0
-	jneq	Lcmpc3_loop
+	sobgtr	r0,Lcmpc3_loop
 Lcmpc3_out:
 	savepsl
 	movl	r0,r2
@@ -292,8 +280,7 @@ Lcmpc5_loop:
 	incl	r1
 	incl	r3
 	decl	r2
-	decl	r0
-	jneq	Lcmpc5_loop
+	sobgtr	r0,Lcmpc5_loop
 Lcmpc5_str2:
 	tstl	r2
 	jeql	Lcmpc5_out
@@ -301,15 +288,13 @@ Lcmpc5_str2loop:
 	cmpb	r11,(r3)
 	jneq	Lcmpc5_out
 	incl	r3
-	decl	r2
-	jneq	Lcmpc5_str2loop
+	sobgtr	r2,Lcmpc5_str2loop
 	jbr	Lcmpc5_out
 Lcmpc5_str1loop:
 	cmpb	(r1),r11
 	jneq	Lcmpc5_out
 	incl	r1
-	decl	r0
-	jneq	Lcmpc5_str1loop
+	sobgtr	r0,Lcmpc5_str1loop
 Lcmpc5_out:
 	savepsl
 	return
@@ -511,8 +496,7 @@ L143:
 L144:
 	insv	r9,$4,$4,(r3)
 	bisl2	r9,r2
-	decl	r11		# while (--source length)
-	jneq	Laddp4_same_loop
+	sobgtr	r11,Laddp4_same_loop	# while (--source length)
 	argl(4,r10)		# r10 = destination address of MSNibble
 	jbr	Laddp4_same_carry
 Laddp4_same_cloop:
@@ -580,8 +564,7 @@ _EMmovp:
 Lmovp_copy:
 	bisb2	(r10),r2	# keep track of non-zero source
 	movb	(r10)+,(r3)+	# move two nibbles
-	decl	r11		# loop for length of source
-	jneq	Lmovp_copy
+	sobgtr	r11,Lmovp_copy	# loop for length of source
 Lmovp_zlen:
 	extzv	$4,$4,(r10),r0	# look at least significant nibble
 	bisl2	r0,r2
@@ -794,8 +777,7 @@ Le_blank_zero:
 	subl2	r11,r5			# to back up over output and replace
 L200:
 	putfill				# with fill character
-	decl	r11
-	jneq	L200
+	sobgtr	r11,L200
 	jbr	Ledit_case
 
 Le_adjust_input:
@@ -827,8 +809,7 @@ Le_fill:
 	jeql	Ledit_case
 Le_fill_loop:
 	putfill
-	decl	r1
-	jneq	Le_fill_loop
+	sobgtr	r1,Le_fill_loop
 	jbr	Ledit_case
 
 Le_move:
@@ -853,8 +834,7 @@ L218:
 L219:					# else put fill character
 	putfill
 L220:
-	decl	r1
-	jneq	L214
+	sobgtr	r1,L214
 	jbr	Ledit_case
 
 Le_float:				# move with floating sign character
@@ -882,8 +862,7 @@ L225:
 L227:
 	putfill
 L228:
-	decl	r1
-	jneq	L221
+	sobgtr	r1,L221
 	jbr	Ledit_case
 
 
@@ -899,6 +878,7 @@ _EMashp:
 	argl(6,r6)		# (6) destination address == r6
 			# we need arg6 for later
 			# arg1 is used for temporary storage
+			# arg2 holds "even or odd" destination length
 			# arg4 is used as general storage
 			# arg5 is used as general storage
 	ashl	$-1,r3,r0	# destination length is number of bytes
@@ -915,8 +895,12 @@ _EMashp:
 	jbr	L245
 Lashp_neg:
 	movb	NEGATIVE,(r6)
-L245:				# r3<0> counts digits going into destination
-	bisl2	$1,r3		#	and is flip-flop for which nibble to
+L245:
+	clrl	arg2		# arg2 is 1 if dstlen is even, 0 if odd
+	blbs	r3,L246
+	incl	arg2
+	bisl2	$1,r3		# r3<0> counts digits going into destination
+L246:				#	and is flip-flop for which nibble to
 	tstl	r11		#	write in destination (1 = high, 0 = low)
 	jgeq	Lashp_left	#	(it must start out odd)
 	addl2	r11,r10		# scale is negative (right shift)
@@ -943,9 +927,8 @@ Lashp_zloop:
 	jlbs	r3,L257		# don't need to clear high nibble twice
 	clrb	-(r6)		# clear low (and high) nib of next byte in dest
 L257:
-	decl	r3		# move to next nibble in destination, but
-	jneq	L258		#	don't go beyond the end.
-	incl	r3
+	sobgtr	r3,L258		# move to next nibble in destination, but
+	incl	r3		#	don't go beyond the end.
 L258:
 	decl	r11
 Lashp_left:			# while scale is positive
@@ -956,7 +939,7 @@ Lashp_noround:
 Lashp_shift:
 	clrl	arg4		# arg4 will be used for result condition codes
 	tstl	r10
-	jeql	Lashp_sethigh
+	jeql	Lashp_round
 Lashp_shloop:
 	jlbc	r11,L260
 	extzv	$4,$4,(r1),r0
@@ -978,40 +961,44 @@ L262:				# else
 L263:
 	bisl2	arg5,arg4	# remember if result was nonzero in arg4
 	decl	r3		# move to next nibble early to check
-	jgeq	Lashp_noovfl	# if we've moved passed destination limits
-	clrl	r3		#	test the result for possible overflow
-	tstl	arg5		#	ignore zero nibbles
-	jeql	L265		#	if the nibble was non-zero, overflow
+	cmpl	r3,arg2		# if we've moved passed destination limits
+	jgeq	Lashp_noovfl	#	test the result for possible overflow
+	movl	arg2,r3		#	ignore zero nibbles
+	tstl	arg5		#	if the nibble was non-zero, overflow
+	jeql	L265
 	jbr	Lashp_overfl
 Lashp_noovfl:			# else
 	jlbs	r3,L264
 	insv	arg5,$4,$4,(r6)	# put the result into destination (high or low)
 	jbr	L265
 L264:
-	decl	r6
-	insv	arg5,$0,$4,(r6)
+	movb	arg5,-(r6)
 L265:
-	decl	r10		# loop for length of source
-	jneq	Lashp_shloop
+	sobgtr	r10,Lashp_shloop	# loop for length of source
 
-Lashp_sethigh:
-	jlbc	r3,L266		# if we haven't set the high nibble,
-	insv	r2,$4,$4,(r6)	# carry the round into the high nibble
-	clrl	r2
+Lashp_round:
+	tstl	r2		# take care of round out of high nibble
+	jeql	Lashp_zeroround
+	decl	r3
+	cmpl	r3,arg2		# if we've moved passed destination limits
+	jlss	Lashp_overfl	#	then overflow
+	jlbs	r3,L266
+	insv	arg5,$4,$4,(r6)	# put the round into destination (high or low)
+	jbr	Lashp_zeroround
 L266:
+	movb	arg5,-(r6)
+
+Lashp_zeroround:
 	argl(1,r10)		# r10 = address of destination LSNibble
 	argl(6,r3)		# r3 = address of destination MSNibble
 	movl	arg4,r11	# r11 = non-zero if destination == non-zero
 	savepsl
 	jbr	L267
 Lashp_zerofill:
-	cvtlb	r2,-(r6)	# fill up MSNs of destination with carry or zero
-	clrl	r2
+	clrb	-(r6)		# fill up MSNs of destination with zeros
 L267:
 	cmpl	r3,r6
 	jneq	Lashp_zerofill
-	tstl	r2		# if carry beyond destination, overflow
-	jneq	Lashp_overfl
 	extzv	$0,$4,(r10),r0	# test for negative result
 	cmpl	r0,NEGATIVE
 	jneq	Lashp_out
@@ -1099,8 +1086,7 @@ Lcvtpl_loop:			# for source length
 	extzv	$0,$4,(r10),r0
 	addl2	r0,r3		# destination += low nibble
 	incl	r10
-	decl	r11
-	jneq	Lcvtpl_loop
+	sobgtr	r11,Lcvtpl_loop
 Lcvtpl_zero:			# least significant byte
 	mull2	$10,r3
 	extzv	$4,$4,(r10),r0
