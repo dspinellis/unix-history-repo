@@ -15,80 +15,15 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)wargames.sh	5.2 (Berkeley) %G%
+#	@(#)wargames.sh	5.3 (Berkeley) %G%
 #
 echo -n "Would you like to play a game? "
 read x
 
-case $x in
-
-adventure)
+if [ -f /usr/games/$x ] ; then
+	tput cl
 	exec /usr/games/$x
-	;;
-
-backgammon)
-	exec /usr/games/$x
-	;;
-
-boggle)
-	exec /usr/games/$x
-	;;
-
-canfield)
-	exec /usr/games/$x
-	;;
-
-chess)
-	exec /usr/games/$x
-	;;
-
-cribbage)
-	exec /usr/games/$x
-	;;
-
-fish)
-	exec /usr/games/$x
-	;;
-
-fortune)
-	exec /usr/games/$x
-	;;
-
-hangman)
-	exec /usr/games/$x
-	;;
-
-mille)
-	exec /usr/games/$x
-	;;
-
-monop)
-	exec /usr/games/$x
-	;;
-
-rogue)
-	exec /usr/games/$x
-	;;
-
-snake)
-	exec /usr/games/$x
-	;;
-
-
-trek)
-	exec /usr/games/$x
-	;;
-
-wump)
-	exec /usr/games/$x
-	;;
-
-zork)
-	exec /usr/games/$x
-	;;
-
-*)
-	echo "Funny, the only way to win is not to play at all"
-	;;
-esac
+else
+	echo "Funny, the only way to win is not to play at all."
+fi
 exit 0
