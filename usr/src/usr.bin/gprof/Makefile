@@ -1,4 +1,4 @@
-SCCSID = @(#)Makefile	1.5 (Berkeley) %G%
+SCCSID = @(#)Makefile	1.6 (Berkeley) %G%
 
 DFLAGS = 
 CFLAGS = ${DFLAGS}
@@ -39,32 +39,32 @@ p.gprof: ${PGPROF}
 	/bin/ld -X gmcrt0.o -o p.gprof ${PGPROF} -lcp
 
 p.gprof.o: gprof.c gprof.h
-	cp gprof.c p.gprof.c
+	cat gprof.c > p.gprof.c
 	cc -c -p ${CFLAGS} p.gprof.c
 	rm p.gprof.c
 
 p.arcs.o: arcs.c gprof.h
-	cp arcs.c p.arcs.c
+	cat arcs.c > p.arcs.c
 	cc -c -p ${CFLAGS} p.arcs.c
 	rm p.arcs.c
 
 p.dfn.o: dfn.c gprof.h
-	cp dfn.c p.dfn.c
+	cat dfn.c > p.dfn.c
 	cc -c -p ${CFLAGS} p.dfn.c
 	rm p.dfn.c
 
 p.lookup.o: lookup.c gprof.h
-	cp lookup.c p.lookup.c
+	cat lookup.c > p.lookup.c
 	cc -c -p ${CFLAGS} p.lookup.c
 	rm p.lookup.c
 
 p.printgprof.o: printgprof.c gprof.h
-	cp printgprof.c p.printgprof.c
+	cat printgprof.c > p.printgprof.c
 	cc -c -p ${CFLAGS} p.printgprof.c
 	rm p.printgprof.c
 
 p.calls.o: calls.c calls.h gprof.h
-	cp calls.c p.calls.c
+	cat calls.c > p.calls.c
 	cc -c -p ${CFLAGS} p.calls.c
 	rm p.calls.c
 
