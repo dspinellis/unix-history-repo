@@ -1,4 +1,4 @@
-/*	uipc_mbuf.c	1.18	81/11/30	*/
+/*	uipc_mbuf.c	1.19	81/12/09	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -11,13 +11,102 @@
 #include "../net/in_systm.h"		/* XXX */
 #include "../h/vm.h"
 
+mbinit()
+{
+	register struct mbuf *m;
+	register i;
+
+COUNT(MBINIT);
+	if (m_reserve(32) == 0)
+		goto bad;
+	if (m_clalloc(4, MPG_MBUFS) == 0)
+		goto bad;
+	if (m_clalloc(32, MPG_CLUSTERS) == 0)
+		goto bad;
+	return;
+bad:
+	panic("mbinit");
+}
+
+caddr_t
+m_clalloc(ncl, how)
+	register int ncl;
+	int how;
+{
+	int npg, mbx;
+	register struct mbuf *m;
+	register int i;
+	int s;
+
+COUNT(M_CLALLOC);
+	npg = ncl * CLSIZE;
+	mbx = rmalloc(mbmap, npg);
+printf("ncl %d how %d npg %d mbx %d\n", ncl, how, npg, mbx);
+	if (mbx == 0)
+		return (0);
+	m = cltom(mbx / CLSIZE);
+	if (memall(&Mbmap[mbx], ncl * CLSIZE, proc, CSYS) == 0)
+		return (0);
+	vmaccess(&Mbmap[mbx], (caddr_t)m, npg);
+printf("m %x &Mbmap[mbx] %x\n", m, &Mbmap[mbx]);
+	switch (how) {
+
+	case MPG_CLUSTERS:
+		s = splimp();
+		for (i = 0; i < ncl; i++) {
+			m->m_off = 0;
+			m->m_next = mclfree;
+			mclfree = m;
+			m += CLBYTES / sizeof (*m);
+			nmclfree++;
+		}
+		mbstat.m_clusters += ncl;
+		splx(s);
+		break;
+
+	case MPG_MBUFS:
+		for (i = ncl * CLBYTES / sizeof (*m); i > 0; i--) {
+			m->m_off = 0;
+			(void) m_free(m);
+			m++;
+		}
+		mbstat.m_clusters += ncl;
+	}
+	return ((caddr_t)m);
+}
+
+m_pgfree(addr, n)
+	caddr_t addr;
+	int n;
+{
+
+COUNT(M_PGFREE);
+	printf("m_pgfree %x %d\n", addr, n);
+}
+
+m_expand()
+{
+
+COUNT(M_EXPAND);
+	if (mbstat.m_bufs >= mbstat.m_hiwat)
+		return (0);
+	if (m_clalloc(1, MPG_MBUFS) == 0)
+		goto steal;
+	return (1);
+steal:
+	/* should ask protocols to free code */
+	return (0);
+}
+
+/* NEED SOME WAY TO RELEASE SPACE */
+
+/*
+ * Space reservation routines
+ */
 m_reserve(mbufs)
 	int mbufs;
 {
 
-/*
-	printf("reserve %d\n", mbufs);
-*/
 	if (mbstat.m_lowat + (mbufs>>1) > (NMBCLUSTERS-32) * CLBYTES) 
 		return (0);
 	mbstat.m_hiwat += mbufs;
@@ -29,13 +118,15 @@ m_release(mbufs)
 	int mbufs;
 {
 
-/*
-	printf("release %d\n", mbufs);
-*/
 	mbstat.m_hiwat -= mbufs;
 	mbstat.m_lowat = mbstat.m_hiwat >> 1;
 }
 
+/*
+ * Space allocation routines.
+ * These are also available as macros
+ * for critical paths.
+ */
 struct mbuf *
 m_get(canwait)
 	int canwait;
@@ -106,15 +197,9 @@ COUNT(M_FREEM);
 	splx(s);
 }
 
-/*ARGSUSED*/
-m_pullup(m, len)
-	struct mbuf *m;
-	int len;
-{
-
-	return (0);
-}
-
+/*
+ * Mbuffer utility routines.
+ */
 struct mbuf *
 m_copy(m, off, len)
 	register struct mbuf *m;
@@ -167,115 +252,6 @@ nospace:
 	m_freem(top);
 	return (0);
 }
-
-mbinit()
-{
-	register struct mbuf *m;
-	register i;
-
-COUNT(MBUFINIT);
-	m = (struct mbuf *)&mbutl[0];  /* ->start of buffer virt mem */
-	(void) vmemall(&Mbmap[0], 2, proc, CSYS);
-	vmaccess(&Mbmap[0], (caddr_t)m, 2);
-	for (i=0; i < CLBYTES / sizeof (struct mbuf); i++) {
-		m->m_off = 0;
-		(void) m_free(m);
-		m++;
-	}
-	(void) m_pgalloc(3);
-	mbstat.m_pages = 4;
-	mbstat.m_bufs = 32;
-	mbstat.m_lowat = 16;
-	mbstat.m_hiwat = 32;
-	{ int j,k,n;
-	n = 32;
-	k = n << 1;
-	if ((i = rmalloc(mbmap, n)) == 0)
-		panic("mbinit");
-	j = i<<1;
-	m = cltom(i);
-	/* should use vmemall sometimes */
-	if (memall(&Mbmap[j], k, proc, CSYS) == 0) {
-		printf("botch\n");
-		return;
-	}
-	vmaccess(&Mbmap[j], (caddr_t)m, k);
-	for (j=0; j < n; j++) {
-		m->m_off = 0;
-		m->m_next = mclfree;
-		mclfree = m;
-		m += CLBYTES / sizeof (*m);
-		nmclfree++;
-	}
-	}
-}
-
-m_pgalloc(n)
-	register int n;
-{
-	register i, j, k;
-	register struct mbuf *m;
-	int bufs, s;
-
-COUNT(M_PGALLOC);
-	k = n << 1;
-	if ((i = rmalloc(mbmap, n)) == 0)
-		return (0);
-	j = i<<1;
-	m = cltom(i);
-	/* should use vmemall sometimes */
-	if (memall(&Mbmap[j], k, proc, CSYS) == 0)
-		return (0);
-	vmaccess(&Mbmap[j], (caddr_t)m, k);
-	bufs = n << 3;
-	s = splimp();
-	for (j=0; j < bufs; j++) {
-		m->m_off = 0;
-		(void) m_free(m);
-		m++;
-	}
-	splx(s);
-	mbstat.m_pages += n;
-	return (1);
-}
-
-/*ARGSUSED*/
-m_pgfree(addr, n)
-	caddr_t addr;
-	int n;
-{
-
-COUNT(M_PGFREE);
-	printf("m_pgfree %x %d\n", addr, n);
-}
-
-m_expand()
-{
-	register i;
-	int need, needp, needs;
-
-COUNT(M_EXPAND);
-	needs = need = mbstat.m_hiwat - mbstat.m_bufs;
-	needp = need >> 3;
-	if (m_pgalloc(needp))
-		return (1);
-	for (i=0; i < needp; i++, need -= CLBYTES / sizeof (struct mbuf))
-		if (m_pgalloc(1) == 0)
-			goto steal;
-	return (need < needs);
-steal:
-	/* while (not enough) ask protocols to free code */
-	;
-	return (0);
-}
-
-#ifdef notdef
-m_relse()
-{
-
-COUNT(M_RELSE);
-}
-#endif
 
 m_cat(m, n)
 	register struct mbuf *m, *n;
@@ -335,4 +311,13 @@ COUNT(M_ADJ);
 			}
 		}
 	}
+}
+
+/*ARGSUSED*/
+m_pullup(m, len)
+	struct mbuf *m;
+	int len;
+{
+
+	return (0);
 }
