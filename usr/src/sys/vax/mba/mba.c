@@ -1,4 +1,4 @@
-/*	mba.c	6.1	83/07/29	*/
+/*	mba.c	6.2	84/08/29	*/
 
 #include "mba.h"
 #if NMBA > 0
@@ -7,20 +7,20 @@
  */
 #include "../machine/pte.h"
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/dk.h"
-#include "../h/buf.h"
-#include "../h/conf.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/proc.h"
-#include "../h/map.h"
+#include "param.h"
+#include "systm.h"
+#include "dk.h"
+#include "buf.h"
+#include "conf.h"
+#include "dir.h"
+#include "user.h"
+#include "proc.h"
+#include "map.h"
 #include "../vax/mtpr.h"
-#include "../h/vm.h"
+#include "vm.h"
 
-#include "../vaxmba/mbareg.h"
-#include "../vaxmba/mbavar.h"
+#include "mbareg.h"
+#include "mbavar.h"
 
 char	mbsr_bits[] = MBSR_BITS;
 /*

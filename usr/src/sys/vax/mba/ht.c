@@ -1,4 +1,4 @@
-/*	ht.c	6.2	83/09/26	*/
+/*	ht.c	6.3	84/08/29	*/
 
 #include "tu.h"
 #if NHT > 0
@@ -13,23 +13,23 @@
  */
 #include "../machine/pte.h"
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/buf.h"
-#include "../h/conf.h"
-#include "../h/dir.h"
-#include "../h/file.h"
-#include "../h/user.h"
-#include "../h/map.h"
-#include "../h/ioctl.h"
-#include "../h/mtio.h"
-#include "../h/cmap.h"
-#include "../h/uio.h"
+#include "param.h"
+#include "systm.h"
+#include "buf.h"
+#include "conf.h"
+#include "dir.h"
+#include "file.h"
+#include "user.h"
+#include "map.h"
+#include "ioctl.h"
+#include "mtio.h"
+#include "cmap.h"
+#include "uio.h"
 
 #include "../vax/cpu.h"
-#include "../vaxmba/mbareg.h"
-#include "../vaxmba/mbavar.h"
-#include "../vaxmba/htreg.h"
+#include "mbareg.h"
+#include "mbavar.h"
+#include "htreg.h"
 
 struct	buf	rhtbuf[NHT];
 struct	buf	chtbuf[NHT];
