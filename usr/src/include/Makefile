@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.42 (Berkeley) %G%
+#	@(#)Makefile	5.43 (Berkeley) %G%
 #
 # Doing a make install builds /usr/include
 #
@@ -8,11 +8,12 @@
 all clean cleandir depend lint tags:
 
 FILES=	a.out.h ar.h assert.h bitstring.h ctype.h db.h dirent.h disktab.h \
-	fstab.h fts.h glob.h grp.h kvm.h limits.h math.h memory.h mp.h \
-	ndbm.h netdb.h nlist.h paths.h pcc.h pwd.h ranlib.h regexp.h \
+	fstab.h fts.h glob.h grp.h kvm.h limits.h locale.h math.h memory.h \
+	mp.h ndbm.h netdb.h nlist.h paths.h pcc.h pwd.h ranlib.h regexp.h \
 	resolv.h setjmp.h sgtty.h stab.h stdarg.h stddef.h stdio.h \
 	stdlib.h string.h strings.h struct.h sysexits.h time.h ttyent.h \
 	tzfile.h unistd.h utime.h utmp.h varargs.h vfont.h vis.h
+
 MFILES=	float.h frame.h
 LFILES=	errno.h fcntl.h signal.h syslog.h termios.h
 
