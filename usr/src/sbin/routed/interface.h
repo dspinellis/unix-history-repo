@@ -1,4 +1,4 @@
-/*	interface.h	4.1	83/01/11	*/
+/*	interface.h	4.2	84/04/09	*/
 
 /*
  * Routing table management daemon.
@@ -32,17 +32,19 @@ struct interface {
 };
 
 /*
- * 0x1 to 0x10 are reused from the kernel's ifnet definitions,
- * the others agree with the RTS_ flags defined below
+ * 0x1 to 0x100 are reused from the kernel's ifnet definitions,
+ * the others agree with the RTS_ flags defined elsewhere.
  */
 #define	IFF_UP		0x1		/* interface is up */
 #define	IFF_BROADCAST	0x2		/* broadcast address valid */
 #define	IFF_DEBUG	0x4		/* turn on debugging */
 #define	IFF_ROUTE	0x8		/* routing entry installed */
 #define	IFF_POINTOPOINT	0x10		/* interface is point-to-point link */
-#define	IFF_PASSIVE	0x20		/* can't tell if up/down */
-#define	IFF_INTERFACE	0x40		/* hardware interface */
-#define	IFF_REMOTE	0x80		/* interface isn't on this machine */
+#define	IFF_LOCAL	0x100		/* local network, host part encoded */
+
+#define	IFF_PASSIVE	0x2000		/* can't tell if up/down */
+#define	IFF_INTERFACE	0x4000		/* hardware interface */
+#define	IFF_REMOTE	0x8000		/* interface isn't on this machine */
 
 struct	interface *if_ifwithaddr();
 struct	interface *if_ifwithnet();
