@@ -7,7 +7,7 @@
 #
 #  This has been tested on DomainOS 10.3.5
 #
-#	@(#)Makefile.DomainOS	8.2 (Berkeley) %G%
+#	@(#)Makefile.DomainOS	8.3 (Berkeley) %G%
 #
 #
 
@@ -88,9 +88,6 @@ unistd.h:
 dirent.h:
 	echo "#include <sys/dir.h>" > dirent.h
 	echo "#define dirent	direct" >> dirent.h
-
-getloadavg.o: getloadavg.c
-	${CC} -I. -A xansi $O ${INCDIRS} -c getloadavg.c
 
 aliases.0: aliases.5
 	nroff -h -mandoc aliases.5 > aliases.0
