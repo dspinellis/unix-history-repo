@@ -1,3 +1,154 @@
+8.4/8.4		93/07/22
+	Add option `w'.  If you receive a message that comes to you because
+		you are the best (lowest preference) target of an MX, and
+		you haven't explicitly recognized the source MX host in
+		your .cf file, this option will cause you to try the target
+		host directly (as if there were no MX for it at all).  If
+		`w' is not set, this case is a configuration error.
+		Beware: if `w' is set, senders may get bogus errors like
+		"message timed out" or "host unknown" for problems that
+		are really configuration errors.  This option is
+		disrecommended, provided only for compatibility with
+		UIUC sendmail.
+	Fix a problem that caused the incoming socket to be left open
+		when sendmail forks after the DATA command.  This caused
+		calling systems to wait in FIN_WAIT_2 state until the
+		entire list was processed and the child closed -- a
+		potentially prodigious amount of time.  Problem noted
+		by Neil Rickert.
+	Fix problem (created in 6.64) that caused mail sent to multiple
+		addresses, one of which was a bad address, to completely
+		suppress the sending of the message.  This changes
+		handling of EF_FATALERRS somewhat, and adds an
+		EF_GLOBALERRS flag.  This also fixes a potential problem
+		with duplicate error messages if there is a syntax error
+		in the header of a message that isn't noticed until late
+		in processing.  Original problem pointed out by Josh Smith
+		of Harvey Mudd College.  This release includes quite a bit
+		of dickering with error handling (see below).
+	Back out SMTP transaction if MAIL gets nested 501 error.  This
+		will only hurt already-broken software and should help
+		humans.
+	Fix a problem that broke aliases when neither NDBM nor NEWDB were
+		compiled in.  It would never read the alias file.
+	Repair unbalanced `)' and `>' (the "open" versions are already
+		repaired).
+	Logging of "done" in dropenvelope() was incorrect: it would
+		log this even when the queue file still existed.  Change
+		this to only log "done" (at log level 11) when the
+		queue file is actually removed.  From John Myers.
+	Log "lost connection" in server SMTP at log level 20 if there
+		is no pending transaction.  Some senders just close the
+		connection rather than sending QUIT.
+	Fix a bug causing getmxrr to add a dot to the end of unqualified
+		domains that do not have MX records -- this would cause
+		the subsequent host name lookup to fail.  The problem
+		only occurred if you had FEATURE(nocanonify) set.
+		Problem noted by Rick McCarty of Texas Instruments.
+	Fix invocation of setvbuf when passed a -X flag -- I had
+		unwittingly used an ANSI C extension, and this caused
+		core dumps on some machines.
+	Diagnose self-destructive alias loops on RCPT as well as EXPN.
+		Previously it just gave an empty send queue, which
+		then gave either "Need RCPT (recipient)" at the DATA
+		(confusing, since you had given an RCPT command which
+		returned 250) or just dropped the email, depending on
+		whether you were running VERBose mode.  Now it usually
+		diagnoses this case as "aliasing/forwarding loop broken".
+		Unfortunately, it still doesn't adequately diagnose
+		some true error conditions.
+	Add internal concept of "warning messages" using 6xx codes.
+		These are not reported only to Postmaster.  Unbalanced
+		parens, brackets, and quotes are printed as 653 codes.
+		They are always mapped to 5xx codes before use in SMTP.
+	Clean up error messages to tell both the actual address that
+		failed and the alias they arose from.  This makes it
+		somewhat easier to diagnose problems.  Difficulty noted
+		by Motonori Nakamura.
+	Fix a problem that inappropriately added a ctladdr to addresses
+		that shouldn't have had one during a queue run.  This
+		caused error messages to be handled differently during
+		a queue run than a direct run.
+	Don't print the qf name and line number if you get errors during
+		the direct run of the queue from srvrsmtp -- this was
+		just extra stuff for users to crawl through.
+	Put command line flags on second line of pid file so you can
+		auto-restart the daemon with all appropriate arguments.
+		Use "kill `head -1 /etc/sendmail.pid`" to stop the
+		daemon, and "eval `tail -1 /etc/sendmail.pid`" to
+		restart it.
+	Remove the ``setuid(getuid())'' in main -- this caused the
+		IDENT daemon to screw up.  This required that I change
+		HASSETEUID to HASSETREUID and complicate the mode
+		changing somewhat because both Ultrix and SunOS seem
+		to have a bug causing seteuid() to set the saved uid
+		as well as the effective.  The program test/t_setreuid.c
+		will test to see if your implementation of setreuid(2)
+		is appropriately functional.
+	The FallBackMX (option V) handling failed to properly identify
+		fallback to yourself -- most of the code was there,
+		but it wasn't being enabled.  Problem noted by Murray
+		Kucherawy of the University of Waterloo.
+	Change :include: open timeout from ETIMEDOUT to an internal
+		code EOPENTIMEOUT; this avoids adding "during SmtpPhase
+		with CurHostName" in error messages, which can be
+		confusing.  Reported by Jonathan Kamens of OpenVision
+		Technologies.
+	Back out setpgrp (setpgid on POSIX systems) call to reset the
+		process group id.  The original fix was to get around
+		some problems with recalcitrant MUAs, but it breaks
+		any call from a shell that creates a process group id
+		different from the process id.  I could try to fix
+		this by diddling the tty owner (using tcsetpgrp or
+		equivalent) but this is too likely to break other
+		things.
+	Portability changes:
+		Support -M as equivalent to -oM on Ultrix -- apparently
+			DECnet calls sendmail with -MrDECnet -Ms<HOST> -bs
+			instead of using standard flags.  Oh joy.  This
+			behaviour reported by Jon Giltner of University
+			of Colorado.
+		SGI IRIX  -- this includes several changes that should
+			help other strict ANSI compilers.
+		SCO Unix -- from Murray Kucherawy of HookUp Communication
+			Corporation.
+		Solaris running the Sun C compiler (which despite the
+			documentation apparently doesn't define
+			__STDC__ by default).
+		ConvexOS from Eric Schnoebelen of Convex.
+		Sony NEWS workstations and Omron LUNA workstations from
+			Motonori Nakamura.
+	CONFIG: add confTRY_NULL_MX_LIST to set option `w'.
+	CONFIG: delete `C' and `e' from default SMTP mailers flags;
+		several people have made a good argument that this
+		creates more problems than it solves (although this
+		may prove painful in the short run).
+	CONFIG: generalize all the relays to accept a "mailer:host"
+		format.
+	CONFIG: move local processing in ruleset 0 into a new ruleset
+		98 (8 on old sendmail).  Domain literal [a.b.c.d]
+		addresses are also passed through this ruleset.
+	CONFIG: if neither SMART_HOST nor MAILER(smtp) were defined,
+		internet-style addresses would "fall off the end" of
+		ruleset zero and be interpreted as local -- however,
+		the angle brackets confused the recursive call.
+		These are now diagnosed as "Unrecognized host name".
+	CONFIG: USENET rules weren't included in S0 because of a mistaken
+		ifdef(`_MAILER_USENET_') instead of
+		ifdef(`_MAILER_usenet_').  Problem found by Rein Tollevik
+		of SINTEF RUNIT, Oslo.
+	CONFIG: move up LOCAL_RULE_0 processing so that it happens very
+		early in ruleset 0; this allows .mc authors to bypass
+		things like the "short circuit" code for local addresses.
+		Prompted by a comment by Bill Wisner of The Well.
+	CONFIG: add confSMTP_MAILER to define the mailer used (smtp or
+		esmtp) to send SMTP mail.  This allows you to default
+		to esmtp but use a mailertable or other override to
+		deal with broken servers.  This logic was pointed out
+		to me by Bill Wisner.  Ditto for confLOCAL_MAILER.
+	Changes to cf/sh/makeinfo.sh to make it portable to SVR4
+		environments.  Ugly as sin.
+
 8.3/8.3		93/07/13
 	Fix setuid problems introduced in 8.2 that caused messages
 		like "Cannot create qfXXXXXX: Invalid argument"
