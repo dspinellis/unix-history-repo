@@ -15,21 +15,25 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	5.48 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	5.49 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <dirent.h>
+#include <unistd.h>
+#include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 #include <stdio.h>
 #include "ls.h"
+#include "extern.h"
 
-int (*sortfcn)(), (*printfcn)();
-int lstat();
-char *emalloc();
+static void	displaydir __P((LS *, int));
+static void	doargs __P((int, char **));
+static void	subdir __P((LS *));
+static int	tabdir __P((LS *, LS **, char **));
 
 int termwidth = 80;		/* default terminal width */
 
@@ -59,19 +63,16 @@ int f_timesort;			/* sort by time vice name */
 int f_total;			/* if precede with "total" line */
 int f_type;			/* add type character for non-regular files */
 
-int (*statfcn)(), stat(), lstat();
+void (*printfcn)();
+int (*statfcn)(), (*sortfcn)();
 
 main(argc, argv)
 	int argc;
 	char **argv;
 {
-	extern int optind, stat();
 	struct winsize win;
 	int ch;
-	char *p, *getenv();
-	int acccmp(), modcmp(), namecmp(), prcopy(), printcol();
-	int printlong(), printscol(), revacccmp(), revmodcmp(), revnamecmp();
-	int revstatcmp(), statcmp();
+	char *p;
 
 	/* terminal defaults to -Cq, non-terminal defaults to -1 */
 	if (isatty(1)) {
@@ -227,6 +228,7 @@ main(argc, argv)
 static char path[MAXPATHLEN + 1];
 static char *endofpath = path;
 
+static void
 doargs(argc, argv)
 	int argc;
 	char **argv;
@@ -246,16 +248,16 @@ doargs(argc, argv)
 	for (dircnt = regcnt = 0; *argv; ++argv) {
 		if (statfcn(*argv, &sb) &&
 		    (statfcn == lstat || lstat(*argv, &sb))) {
-			(void)fprintf(stderr,
-			    "ls: %s: %s\n", *argv, strerror(errno));
-			if (errno == ENOENT)
+			if (errno == ENOENT) {
+				warn("%s: %s", *argv, strerror(errno));
 				continue;
-			exit(1);
+			}
+			err("%s: %s", *argv, strerror(errno));
 		}
 		if (S_ISDIR(sb.st_mode) && !f_listdir) {
 			if (!dstats)
-				dstatp = dstats = (LS *)emalloc((u_int)argc *
-				    (sizeof(LS)));
+				dstatp = dstats =
+				    emalloc((u_int)argc * (sizeof(LS)));
 			dstatp->name = *argv;
 			dstatp->lstat = sb;
 			++dstatp;
@@ -263,8 +265,8 @@ doargs(argc, argv)
 		}
 		else {
 			if (!rstats) {
-				rstatp = rstats = (LS *)emalloc((u_int)argc *
-				    (sizeof(LS)));
+				rstatp = rstats =
+				    emalloc((u_int)argc * (sizeof(LS)));
 				blocks = 0;
 				maxlen = -1;
 			}
@@ -311,15 +313,13 @@ doargs(argc, argv)
 			    *endofpath = *p++; ++endofpath);
 			subdir(dstats);
 			f_newline = 1;
-			if (++cnt < dircnt && chdir(top)) {
-				(void)fprintf(stderr, "ls: %s: %s\n",
-				    top, strerror(errno));
-				exit(1);
-			}
+			if (++cnt < dircnt && chdir(top))
+				err("%s: %s", top, strerror(errno));
 		}
 	}
 }
 
+static void
 displaydir(stats, num)
 	LS *stats;
 	register int num;
@@ -357,6 +357,7 @@ displaydir(stats, num)
 	}
 }
 
+static void
 subdir(lp)
 	LS *lp;
 {
@@ -370,21 +371,19 @@ subdir(lp)
 		(void)printf("%s:\n", path);
 
 	if (chdir(lp->name)) {
-		(void)fprintf(stderr, "ls: %s: %s\n", lp->name,
-		     strerror(errno));
+		warn("%s: %s", lp->name, strerror(errno));
 		return;
 	}
 	if (num = tabdir(lp, &stats, &names)) {
 		displaydir(stats, num);
-		(void)free((char *)stats);
-		(void)free((char *)names);
+		free(stats);
+		free(names);
 	}
-	if (chdir("..")) {
-		(void)fprintf(stderr, "ls: ..: %s\n", strerror(errno));
-		exit(1);
-	}
+	if (chdir(".."))
+		err("..: %s", strerror(errno));
 }
 
+static int
 tabdir(lp, s_stats, s_names)
 	LS *lp, **s_stats;
 	char **s_names;
@@ -393,13 +392,12 @@ tabdir(lp, s_stats, s_names)
 	register int cnt, maxentry, maxlen;
 	register char *p, *names;
 	struct dirent *dp;
-	u_long blocks;
 	LS *stats;
+	u_long blocks;
 
 	if (!(dirp = opendir("."))) {
-		(void)fprintf(stderr, "ls: %s: %s\n", lp->name,
-		    strerror(errno));
-		return(0);
+		warn("%s: %s", lp->name, strerror(errno));
+		return (0);
 	}
 	blocks = maxentry = maxlen = 0;
 	stats = NULL;
@@ -418,9 +416,9 @@ tabdir(lp, s_stats, s_names)
 				    emalloc((u_int)lp->lstat.st_size);
 #define	DEFNUM	256
 			maxentry += DEFNUM;
-			if (!(*s_stats = stats = (LS *)realloc((char *)stats,
+			if (!(*s_stats = stats = realloc((char *)stats,
 			    (u_int)maxentry * sizeof(LS))))
-				nomem();
+				err("%s", strerror(errno));
 		}
 		if (f_needstat && statfcn(dp->d_name, &stats[cnt].lstat) &&
 		    statfcn == stat && lstat(dp->d_name, &stats[cnt].lstat)) {
@@ -429,8 +427,7 @@ tabdir(lp, s_stats, s_names)
 			 * gone away.  Flush stdout so the messages line up.
 			 */
 			(void)fflush(stdout);
-			(void)fprintf(stderr,
-			    "ls: %s: %s\n", dp->d_name, strerror(errno));
+			warn("%s: %s", dp->d_name, strerror(errno));
 			continue;
 		}
 		stats[cnt].name = names;
@@ -466,8 +463,8 @@ tabdir(lp, s_stats, s_names)
 		stats[0].lstat.st_btotal = blocks;
 		stats[0].lstat.st_maxlen = maxlen;
 	} else if (stats) {
-		(void)free((char *)stats);
-		(void)free((char *)names);
+		free(stats);
+		free(names);
 	}
-	return(cnt);
+	return (cnt);
 }
