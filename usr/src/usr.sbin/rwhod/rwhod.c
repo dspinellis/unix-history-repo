@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rwhod.c	4.23 (Berkeley) 84/07/04";
+static char sccsid[] = "@(#)rwhod.c	4.24 (Berkeley) 84/07/06";
 #endif
 
 #include <sys/types.h>
@@ -18,13 +18,14 @@ static char sccsid[] = "@(#)rwhod.c	4.23 (Berkeley) 84/07/04";
 #include <utmp.h>
 #include <ctype.h>
 #include <netdb.h>
+#include <syslog.h>
 #include "rwhod.h"
 
 /*
  * Alarm interval. Don't forget to change the down time check in ruptime
  * if this is changed.
  */
-#define AL_INTERVAL (5 * 60)
+#define AL_INTERVAL (3 * 60)
 
 struct	sockaddr_in sin = { AF_INET };
 
@@ -75,6 +76,10 @@ main()
 	int addr;
 	struct hostent *hp;
 
+	if (getuid()) {
+		fprintf(stderr, "rwhod: not super user\n");
+		exit(1);
+	}
 	sp = getservbyname("who", "udp");
 	if (sp == 0) {
 		fprintf(stderr, "rwhod: udp/who: unknown service\n");
@@ -98,15 +103,12 @@ main()
 #endif
 	(void) chdir("/dev");
 	(void) signal(SIGHUP, getkmem);
-	if (getuid()) {
-		fprintf(stderr, "rwhod: not super user\n");
-		exit(1);
-	}
+	openlog("rwhod", LOG_PID, 0);
 	/*
 	 * Establish host name as returned by system.
 	 */
 	if (gethostname(myname, sizeof (myname) - 1) < 0) {
-		perror("gethostname");
+		syslog(LOG_ERR, "gethostname: %m");
 		exit(1);
 	}
 	strncpy(mywd.wd_hostname, myname, sizeof (myname) - 1);
@@ -116,23 +118,23 @@ main()
 		utmpf = open("/etc/utmp", O_RDONLY);
 	}
 	if (utmpf < 0) {
-		perror("rwhod: /etc/utmp");
+		syslog(LOG_ERR, "/etc/utmp: %m");
 		exit(1);
 	}
 	getkmem();
 	if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-		perror("rwhod: socket");
+		syslog(LOG_ERR, "socket: %m");
 		exit(1);
 	}
 	hp = gethostbyname(myname);
 	if (hp == NULL) {
-		fprintf(stderr, "%s: don't know my own name\n", myname);
+		syslog(LOG_ERR, "%s: don't know my own name", myname);
 		exit(1);
 	}
 	sin.sin_family = hp->h_addrtype;
 	sin.sin_port = sp->s_port;
 	if (bind(s, &sin, sizeof (sin)) < 0) {
-		perror("rwhod: bind");
+		syslog(LOG_ERR, "bind: %m");
 		exit(1);
 	}
 	if (!configure(s))
@@ -147,17 +149,17 @@ main()
 			&from, &len);
 		if (cc <= 0) {
 			if (cc < 0 && errno != EINTR)
-				perror("rwhod: recv");
+				syslog(LOG_WARNING, "recv: %m");
 			continue;
 		}
 		if (from.sin_port != sp->s_port) {
-			fprintf(stderr, "rwhod: %d: bad from port\n",
+			syslog(LOG_WARNING, "%d: bad from port",
 				ntohs(from.sin_port));
 			continue;
 		}
 #ifdef notdef
 		if (gethostbyname(wd.wd_hostname) == 0) {
-			fprintf(stderr, "rwhod: %s: unknown host\n",
+			syslog(LOG_WARNING, "%s: unknown host",
 				wd.wd_hostname);
 			continue;
 		}
@@ -167,15 +169,14 @@ main()
 		if (wd.wd_type != WHODTYPE_STATUS)
 			continue;
 		if (!verify(wd.wd_hostname)) {
-			fprintf(stderr, "rwhod: malformed host name from %x\n",
+			syslog(LOG_WARNING, "malformed host name from %x",
 				from.sin_addr);
 			continue;
 		}
 		(void) sprintf(path, "%s/whod.%s", RWHODIR, wd.wd_hostname);
 		whod = creat(path, 0666);
 		if (whod < 0) {
-			fprintf(stderr, "rwhod: ");
-			perror(path);
+			syslog(LOG_WARNING, "%s: %m", path);
 			continue;
 		}
 #if vax || pdp11
@@ -302,21 +303,15 @@ getkmem()
 	if (kmemf >= 0)
 		(void) close(kmemf);
 loop:
-	for (nlp = &nl[sizeof (nl) / sizeof (nl[0])]; --nlp >= nl; ) {
-		nlp->n_value = 0;
-		nlp->n_type = 0;
-	}
-	nlist("/vmunix", nl);
-	if (nl[0].n_value == 0) {
-		fprintf(stderr, "/vmunix namelist botch\n");
+	if (nlist("/vmunix", nl)) {
+		syslog(LOG_WARNING, "/vmunix namelist botch");
 		sleep(300);
 		goto loop;
 	}
 	kmemf = open("/dev/kmem", O_RDONLY);
 	if (kmemf < 0) {
-		perror("/dev/kmem");
-		sleep(300);
-		goto loop;
+		syslog(LOG_ERR, "/dev/kmem: %m");
+		exit(1);
 	}
 	(void) lseek(kmemf, (long)nl[NL_BOOTTIME].n_value, L_SET);
 	(void) read(kmemf, (char *)&mywd.wd_boottime,
@@ -341,7 +336,7 @@ configure(s)
 	ifc.ifc_len = sizeof (buf);
 	ifc.ifc_buf = buf;
 	if (ioctl(s, SIOCGIFCONF, (char *)&ifc) < 0) {
-		perror("rwhod: ioctl (get interface configuration)");
+		syslog(LOG_ERR, "ioctl (get interface configuration)");
 		return (0);
 	}
 	ifr = ifc.ifc_req;
@@ -371,7 +366,7 @@ configure(s)
 		}
 		bcopy((char *)&ifr->ifr_addr, np->n_addr, np->n_addrlen);
 		if (ioctl(s, SIOCGIFFLAGS, (char *)&ifreq) < 0) {
-			perror("rwhod: ioctl (get interface flags)");
+			syslog(LOG_ERR, "ioctl (get interface flags)");
 			free((char *)np);
 			continue;
 		}
@@ -382,7 +377,7 @@ configure(s)
 		np->n_flags = ifreq.ifr_flags;
 		if (np->n_flags & IFF_POINTOPOINT) {
 			if (ioctl(s, SIOCGIFDSTADDR, (char *)&ifreq) < 0) {
-				perror("rwhod: ioctl (get dstaddr)");
+				syslog(LOG_ERR, "ioctl (get dstaddr)");
 				free((char *)np);
 				continue;
 			}
