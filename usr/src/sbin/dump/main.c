@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "dump.h"
@@ -19,6 +19,7 @@ int	density = 0;	/* density in bytes/0.1" */
 int	ntrec = NTREC;	/* # tape blocks in each tape record */
 int	cartridge = 0;	/* Assume non-cartridge tape */
 long	dev_bsize = 1;	/* recalculated below */
+long	blocksperfile;	/* output blocks per file */
 #ifdef RDUMP
 char	*host;
 int	rmthost();
@@ -98,6 +99,20 @@ main(argc, argv)
 			argc--;
 			bflag++;
 			ntrec = atol(*argv);
+			if (ntrec <= 0) {
+				fprintf(stderr,
+				    "bad number of blocks per write \"%s\"\n",
+				    *arg);
+				Exit(X_ABORT);
+			}
+		}
+		break;
+
+	case 'B':			/* blocks per output file */
+		if(argc > 1) {
+			argv++;
+			argc--;
+			blocksperfile = atol(*argv);
 		}
 		break;
 
@@ -127,7 +142,7 @@ main(argc, argv)
 		break;
 
 	default:
-		fprintf(stderr, "bad key '%c%'\n", arg[-1]);
+		fprintf(stderr, "bad key '%c'\n", arg[-1]);
 		Exit(X_ABORT);
 	}
 	if(argc > 1) {
@@ -140,18 +155,23 @@ main(argc, argv)
 		tape = "standard output";
 	}
 
-	/*
-	 * Determine how to default tape size and density
-	 *
-	 *         	density				tape size
-	 * 9-track	1600 bpi (160 bytes/.1")	2300 ft.
-	 * 9-track	6250 bpi (625 bytes/.1")	2300 ft.
- 	 * cartridge	8000 bpi (100 bytes/.1")	1700 ft. (450*4 - slop)
-	 */
-	if (density == 0)
-		density = cartridge ? 100 : 160;
-	if (tsize == 0)
- 		tsize = cartridge ? 1700L*120L : 2300L*120L;
+	if (blocksperfile)
+		blocksperfile = blocksperfile / ntrec * ntrec; /* round down */
+	else {
+		/*
+		 * Determine how to default tape size and density
+		 *
+		 *         	density				tape size
+		 * 9-track	1600 bpi (160 bytes/.1")	2300 ft.
+		 * 9-track	6250 bpi (625 bytes/.1")	2300 ft.
+		 * cartridge	8000 bpi (100 bytes/.1")	1700 ft.
+		 *						(450*4 - slop)
+		 */
+		if (density == 0)
+			density = cartridge ? 100 : 160;
+		if (tsize == 0)
+			tsize = cartridge ? 1700L*120L : 2300L*120L;
+	}
 
 #ifdef RDUMP
 	{ char *index();
@@ -167,18 +187,18 @@ main(argc, argv)
 	}
 	setuid(getuid());	/* rmthost() is the only reason to be setuid */
 #endif
-	if (signal(SIGHUP, sighup) == SIG_IGN)
-		signal(SIGHUP, SIG_IGN);
-	if (signal(SIGTRAP, sigtrap) == SIG_IGN)
-		signal(SIGTRAP, SIG_IGN);
-	if (signal(SIGFPE, sigfpe) == SIG_IGN)
-		signal(SIGFPE, SIG_IGN);
-	if (signal(SIGBUS, sigbus) == SIG_IGN)
-		signal(SIGBUS, SIG_IGN);
-	if (signal(SIGSEGV, sigsegv) == SIG_IGN)
-		signal(SIGSEGV, SIG_IGN);
-	if (signal(SIGTERM, sigterm) == SIG_IGN)
-		signal(SIGTERM, SIG_IGN);
+	if (signal(SIGHUP, SIG_IGN) != SIG_IGN)
+		signal(SIGHUP, sighup);
+	if (signal(SIGTRAP, SIG_IGN) != SIG_IGN)
+		signal(SIGTRAP, sigtrap);
+	if (signal(SIGFPE, SIG_IGN) != SIG_IGN)
+		signal(SIGFPE, sigfpe);
+	if (signal(SIGBUS, SIG_IGN) != SIG_IGN)
+		signal(SIGBUS, sigbus);
+	if (signal(SIGSEGV, SIG_IGN) != SIG_IGN)
+		signal(SIGSEGV, sigsegv);
+	if (signal(SIGTERM, SIG_IGN) != SIG_IGN)
+		signal(SIGTERM, sigterm);
 	
 
 	if (signal(SIGINT, interrupt) == SIG_IGN)
@@ -259,40 +279,51 @@ main(argc, argv)
 	bmapest(clrmap);
 	bmapest(nodmap);
 
-	if (cartridge) {
-		/* Estimate number of tapes, assuming streaming stops at
-		   the end of each block written, and not in mid-block.
-		   Assume no erroneous blocks; this can be compensated for
-		   with an artificially low tape size. */
-		fetapes = 
-		(	  esize		/* blocks */
-			* TP_BSIZE	/* bytes/block */
-			* (1.0/density)	/* 0.1" / byte */
-		  +
-			  esize		/* blocks */
-			* (1.0/ntrec)	/* streaming-stops per block */
-			* 15.48		/* 0.1" / streaming-stop */
-		) * (1.0 / tsize );	/* tape / 0.1" */
-	} else {
-		/* Estimate number of tapes, for old fashioned 9-track tape */
-		int tenthsperirg = (density == 625) ? 3 : 7;
-		fetapes =
-		(	  esize		/* blocks */
-			* TP_BSIZE	/* bytes / block */
-			* (1.0/density)	/* 0.1" / byte */
-		  +
-			  esize		/* blocks */
-			* (1.0/ntrec)	/* IRG's / block */
-			* tenthsperirg	/* 0.1" / IRG */
-		) * (1.0 / tsize );	/* tape / 0.1" */
+	if (pipeout)
+		esize += 10;	/* 10 trailer blocks */
+	else {
+		if (blocksperfile)
+			fetapes = esize / blocksperfile;
+		else if (cartridge) {
+			/* Estimate number of tapes, assuming streaming stops at
+			   the end of each block written, and not in mid-block.
+			   Assume no erroneous blocks; this can be compensated
+			   for with an artificially low tape size. */
+			fetapes = 
+			(	  esize		/* blocks */
+				* TP_BSIZE	/* bytes/block */
+				* (1.0/density)	/* 0.1" / byte */
+			  +
+				  esize		/* blocks */
+				* (1.0/ntrec)	/* streaming-stops per block */
+				* 15.48		/* 0.1" / streaming-stop */
+			) * (1.0 / tsize );	/* tape / 0.1" */
+		} else {
+			/* Estimate number of tapes, for old fashioned 9-track
+			   tape */
+			int tenthsperirg = (density == 625) ? 3 : 7;
+			fetapes =
+			(	  esize		/* blocks */
+				* TP_BSIZE	/* bytes / block */
+				* (1.0/density)	/* 0.1" / byte */
+			  +
+				  esize		/* blocks */
+				* (1.0/ntrec)	/* IRG's / block */
+				* tenthsperirg	/* 0.1" / IRG */
+			) * (1.0 / tsize );	/* tape / 0.1" */
+		}
+		etapes = fetapes;		/* truncating assignment */
+		etapes++;
+		/* count the nodemap on each additional tape */
+		for (i = 1; i < etapes; i++)
+			bmapest(nodmap);
+		esize += i + 10;	/* headers + 10 trailer blocks */
 	}
-	etapes = fetapes;		/* truncating assignment */
-	etapes++;
-	/* count the nodemap on each additional tape */
-	for (i = 1; i < etapes; i++)
-		bmapest(nodmap);
-	esize += i + 10;	/* headers + 10 trailer blocks */
-	msg("estimated %ld tape blocks on %3.2f tape(s).\n", esize, fetapes);
+	if (pipeout)
+		msg("estimated %ld tape blocks.\n", esize);
+	else
+		msg("estimated %ld tape blocks on %3.2f tape(s).\n",
+		    esize, fetapes);
 
 	alloctape();			/* Allocate tape buffer */
 
@@ -311,7 +342,11 @@ main(argc, argv)
 	for(i=0; i<ntrec; i++)
 		spclrec();
 #endif
-	msg("DUMP: %ld tape blocks on %d tape(s)\n",spcl.c_tapea,spcl.c_volume);
+	if (pipeout)
+		msg("DUMP: %ld tape blocks\n",spcl.c_tapea);
+	else
+		msg("DUMP: %ld tape blocks on %d volumes(s)\n",
+		    spcl.c_tapea, spcl.c_volume);
 	msg("DUMP IS DONE\n");
 
 	putitime();
