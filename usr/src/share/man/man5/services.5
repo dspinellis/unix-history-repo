@@ -37,8 +37,8 @@ are considered a single
 a ``/'' is used to
 separate the port and protocol (e.g. ``512/tcp'').
 A ``#'' indicates the beginning of
-a comment; characters up to the end of the line are
-not interpreted by routines which search the file.
+a comment; subsequent characters up to the end of the line are
+not interpreted by the routines which search the file.
 .PP
 Service names may contain any printable
 character other than a field delimiter, newline,
@@ -49,4 +49,3 @@ or comment character.
 getservent(3N)
 .SH BUGS
 A name server should be used instead of a static file.
-A binary indexed file format should be available for fast access.
