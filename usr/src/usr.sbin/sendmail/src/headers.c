@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	6.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	6.19 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -400,7 +400,7 @@ eatheader(e, queuejob)
 		sprintf(sbuf, "from=%.200s, size=%ld, class=%d, pri=%ld, nrcpts=%d, msgid=%.100s",
 		    e->e_from.q_paddr, e->e_msgsize, e->e_class,
 		    e->e_msgpriority, e->e_nrcpts, msgid);
-		syslog(LOG_INFO, "%s: %s, received from %s",
+		syslog(LOG_INFO, "%s: %s, relay=%s",
 		    e->e_id, sbuf, name);
 	}
 # endif /* LOG */
