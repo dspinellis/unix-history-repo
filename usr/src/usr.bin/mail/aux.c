@@ -10,7 +10,7 @@
  * Auxiliary functions.
  */
 
-static char *SccsId = "@(#)aux.c	2.9 %G%";
+static char *SccsId = "@(#)aux.c	2.10 %G%";
 
 /*
  * Return a pointer to a dynamic copy of the argument.
@@ -616,12 +616,10 @@ name1(mp, reptype)
 	register FILE *ibuf;
 	int first = 1;
 
-#ifndef SENDMAIL
 	if ((cp = hfield("from", mp)) != NOSTR)
 		return(cp);
 	if (reptype == 0 && (cp = hfield("sender", mp)) != NOSTR)
 		return(cp);
-#endif
 	ibuf = setinput(mp);
 	copy("", namebuf);
 	if (readline(ibuf, linebuf) <= 0)
