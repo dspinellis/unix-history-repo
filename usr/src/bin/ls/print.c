@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -79,17 +79,17 @@ printlong(stats, num)
 
 printcol(stats, num)
 	LS *stats;
-	register int num;
+	int num;
 {
 	extern int termwidth;
-	int row, col;
-	int colwidth;		/* width of a printing column */
-	int numcols;		/* number of columns */
-	int numrows;		/* number of rows */
+	register int chcnt;	/* total row character count printed */
+	register int col, row;	/* row/column counters */
+	register int colwidth;	/* width of a printing column */
 	int base;		/* subscript for leftmost column */
-	int chcnt;		/* character count printed */
-	int newcnt;
-	int curcol;
+	int endcol;		/* last column for this entry */
+	int numcols;		/* total number of columns */
+	int numrows;		/* total number of rows */
+	int cnt;
 
 	colwidth = stats[0].lstat.st_flags;
 	if (f_inode)
@@ -98,7 +98,7 @@ printcol(stats, num)
 		colwidth += 5;
 	if (f_type)
 		colwidth += 1;
-	colwidth += 3;
+	colwidth += 2;
 
 	numcols = termwidth / colwidth;
 	numrows = num / numcols;
@@ -107,23 +107,18 @@ printcol(stats, num)
 
 #define	TAB	8
 	for (row = 0; row < numrows; ++row) {
-		curcol = colwidth;
-		chcnt = 0;
-		for (base = row, col = 0; col < numcols; ++col) {
+		endcol = colwidth;
+		for (base = row, chcnt = col = 0; col < numcols; ++col) {
 			chcnt += printaname(stats + base);
 			if ((base += numrows) >= num)
 				break;
-			for (;;) {
-				newcnt = (chcnt + TAB & ~(TAB - 1));
-				if (newcnt > curcol) {
-					break;
-				}
+			while ((cnt = (chcnt + TAB & ~(TAB - 1))) <= endcol) {
 				(void)putchar('\t');
-				chcnt = newcnt;
+				chcnt = cnt;
 			}
-			for (; chcnt < curcol; ++chcnt)
+			for (; chcnt < endcol; ++chcnt)
 				(void)putchar(' ');
-			curcol += colwidth;
+			endcol += colwidth;
 		}
 		putchar('\n');
 	}
