@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)var.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)var.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include "whoami.h"
@@ -142,7 +142,7 @@ var(vline, vidl, vtype)
 #		else
 		(void) enter(defnl((char *) vidl->list_node.list, VAR, np, o2));
 #		endif
-		if ( np -> nl_flags & NFILES ) {
+		if ( np != NLNIL && (np -> nl_flags & NFILES) ) {
 		    dfiles[ cbn ] = TRUE;
 		}
 #		ifdef PC

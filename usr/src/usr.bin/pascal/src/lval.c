@@ -361,6 +361,8 @@ arycod(np, el)
 			return (i-1);
 		}
 		p = p->chain;
+		if (p == NLNIL)
+			return (0);
 		if (constsub = constval(el[1])) {
 		    ap = con.ctype;
 		    sub = con.crval;
