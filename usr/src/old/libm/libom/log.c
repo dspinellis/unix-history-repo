@@ -1,4 +1,4 @@
-/*	@(#)log.c	4.1	%G%	*/
+/*	@(#)log.c	4.2	%G%	*/
 
 /*
 	log returns the natural logarithm of its floating
@@ -19,7 +19,7 @@ static double	ln10	= 2.302585092994045684;
 static double	sqrto2	= 0.707106781186547524e0;
 static double	p0	= -.240139179559210510e2;
 static double	p1	= 0.309572928215376501e2;
-static double	p2	= -.963769093368686593e1;
+static double	p2	= -.963769093377840513e1;
 static double	p3	= 0.421087371217979714e0;
 static double	q0	= -.120069589779605255e2;
 static double	q1	= 0.194809660700889731e2;
