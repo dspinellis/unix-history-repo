@@ -12,7 +12,7 @@
  *
  * from:hp300/hp300/autoconf.c	7.9 (Berkeley) 12/27/92
  *
- *	@(#)autoconf.c	7.9 (Berkeley) %G%
+ *	@(#)autoconf.c	7.10 (Berkeley) %G%
  */
 
 /*
@@ -462,12 +462,20 @@ same_hw_device(hw, hd)
 find_devs()
 {
 	register struct hp_hw *hw = sc_table;
-	
+
+#include "bmc.h"
+#if NBMC > 0
 	setup_hw(hw, (char *) 0x51000004, 0x5, D_BMC,      0x5);
 	hw->hw_secid = 0; hw++;
-	
+#endif	
 	setup_hw(hw, (char *) 0x51000000, 0x5, D_SIO,      0x5);
 	hw->hw_secid = 0; hw++;
+#if NBMC == 0
+#if NSIO > 1
+	setup_hw(hw, (char *) 0x51000004, 0x5, D_SIO,      0x5);
+	hw->hw_secid = 0; hw++;
+#endif	
+#endif	
 	
 	setup_hw(hw, (char *) 0xe1000000, 0xe, C_SCSI,     0xe);
 	hw++;
