@@ -1,4 +1,4 @@
-/*	vfs_syscalls.c	4.32	82/08/10	*/
+/*	vfs_syscalls.c	4.33	82/08/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -535,11 +535,7 @@ readlink()
 		goto out;
 	}
 	uap = (struct a *)u.u_ap;
-	u.u_offset = 0;
-	u.u_base = uap->buf;
-	u.u_count = uap->count;
-	u.u_segflg = 0;
-	readi(ip);
+	u.u_error = readip1(ip, uap->buf, uap->count, 0, 0, 0);
 out:
 	iput(ip);
 	u.u_r.r_val1 = uap->count - u.u_count;
