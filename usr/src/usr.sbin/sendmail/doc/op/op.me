@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	8.24 (Berkeley) %G%
+.\"	@(#)op.me	8.25 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:08-%''Sendmail Installation and Operation Guide'
@@ -43,7 +43,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 8.24
+Version 8.25
 .sp
 For Sendmail Version 8.6
 .)l
@@ -4637,22 +4637,6 @@ and
 .pp
 RFC822
 describes the format of the mail message itself.
-.i Sendmail
-follows this RFC closely,
-to the extent that many of the standards described in this document
-can not be changed without changing the code.
-In particular,
-the following characters have special interpretations:
-.(b
-< > ( ) " \e
-.)b
-Any attempt to use these characters for other than their RFC822
-purpose in addresses is probably doomed to disaster.
-.pp
-RFC819
-describes the specifics of the domain-based addressing.
-This is touched on in RFC822 as well.
-Essentially each host is given a name
 which is a right-to-left dot qualified pseudo-path
 from a distinguished root.
 The elements of the path need not be physical hosts;
@@ -6756,7 +6740,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 8.24
+.\"Version 8.25
 .\".ce 0
 .bp 2
 .ce
