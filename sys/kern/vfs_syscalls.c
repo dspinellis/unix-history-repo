@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vfs_syscalls.c	7.74 (Berkeley) 6/21/91
- *	$Id: vfs_syscalls.c,v 1.15 1994/05/23 01:00:03 ache Exp $
+ *	$Id: vfs_syscalls.c,v 1.16 1994/05/26 04:46:47 ache Exp $
  */
 
 #include "param.h"
@@ -1662,7 +1662,6 @@ rename(p, uap, retval)
 	}
 	if (fvp == tdvp)
 		error = EINVAL;
-#if 0
 	/*
 	 * If source is the same as the destination (that is the
 	 * same inode number with the same name in the same directory),
@@ -1672,15 +1671,6 @@ rename(p, uap, retval)
 	    fromnd.ni_namelen == tond.ni_namelen &&
 	    !bcmp(fromnd.ni_ptr, tond.ni_ptr, fromnd.ni_namelen))
 		error = -1;
-#else
-	/*
-	 * If the source is the same as the destination (that is, if they
-	 * are links to the same vnode), then there is nothing to do.
-	 * POSIX standard.
-	 */
-	if (fvp == tvp)
-		error = -1;
-#endif
 out:
 	if (!error) {
 		error = VOP_RENAME(&fromnd, &tond, p);
