@@ -33,6 +33,8 @@
    extern int foot, sort, personal;
    extern int hyphen, ordcite;
    extern char sortstr[], pfile[], citetemplate[];
+   char *bibfname;		/* file name currently reading */
+   char *biblineno;		/* line number in that file */
 
 
 main(argc, argv)
@@ -66,8 +68,10 @@ main(argc, argv)
                arguments are read by doargs (bibargs.c)
     */
 
-   if (doargs(argc, argv, DEFSTYLE ) == 0)
+   if (doargs(argc, argv, DEFSTYLE ) == 0){
+      bibfname = "<stdin>";
       rdtext(stdin);
+   }
 
    /*
     sort references, make citations, add disambiguating characters
@@ -109,6 +113,7 @@ main(argc, argv)
    FILE *fd;
 {  char lastc, c, d;
 
+   biblineno = 0;
    lastc = 0;
    while (getch(c, fd) != EOF)
       if (c == '[' || c == '{')
@@ -169,6 +174,8 @@ main(argc, argv)
       else {
          if (lastc) putc(lastc, tfd);
          lastc = c;
+	 if (c == '\n')
+		biblineno++;
          }
    if (lastc) putc(lastc, tfd);
 }
@@ -289,7 +296,7 @@ main(argc, argv)
       return(refspos[numrefs]);
       }
    else {
-      fprintf(stderr,"no reference matching %s\n", huntstr);
+      bibwarning("no reference matching %s\n", huntstr);
       return( (long) -1 );
       }
 }
@@ -346,7 +353,7 @@ main(argc, argv)
       if (*p == '\n')
          if (*(p+1) == '\n') { /* end */
             if (*(p+2) != 0)
-               fprintf(stderr,"multiple references match %s\n",huntstr);
+               bibwarning("multiple references match %s\n", huntstr);
             *(p+1) = 0;
             break;
             }
@@ -728,7 +735,7 @@ int  fn, footrefs[];
          putc(c, ofd);
       }
    if (dumped == false)
-      fprintf(stderr,"Warning: references never dumped\n");
+      bibwarning("Warning: references never dumped\n", (char *)0);
 }
 
 
@@ -763,4 +770,14 @@ int  fn, footrefs[];
          }
       }
    fprintf(ofd,".][\n");
+}
+/*
+ *	print out a warning message
+ */
+bibwarning(msg, arg)
+	char	*msg;
+	char	*arg;
+{
+	fprintf(stderr, "`%s', line %d: ", bibfname, biblineno);
+	fprintf(stderr, msg, arg);
 }
