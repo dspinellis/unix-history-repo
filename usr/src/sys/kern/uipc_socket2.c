@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uipc_socket2.c	6.15 (Berkeley) %G%
+ *	@(#)uipc_socket2.c	6.16 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -330,16 +330,16 @@ bad:
 
 /*
  * Allot mbufs to a sockbuf.
+ * Attempt to scale cc so that mbcnt doesn't become limiting
+ * if buffering efficiency is near the normal case.
  */
 sbreserve(sb, cc)
 	struct sockbuf *sb;
 {
 
-	if ((unsigned) cc > SB_MAX)
+	if ((unsigned) cc > (unsigned)SB_MAX * CLBYTES / (2 * MSIZE + CLBYTES))
 		return (0);
-	/* someday maybe this routine will fail... */
 	sb->sb_hiwat = cc;
-	/* * 2 implies names can be no more than 1 mbuf each */
 	sb->sb_mbmax = MIN(cc * 2, SB_MAX);
 	return (1);
 }
