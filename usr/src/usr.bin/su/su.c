@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)su.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)su.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -37,6 +37,7 @@ struct	passwd *pwd;
 char	*crypt();
 char	*getpass();
 char	*getenv();
+char	*getlogin();
 
 main(argc,argv)
 	int argc;
@@ -45,6 +46,7 @@ main(argc,argv)
 	char *password;
 	char buf[1000];
 	FILE *fp;
+	register char *p;
 
 	openlog("su", LOG_ODELAY, LOG_AUTH);
 
@@ -91,6 +93,7 @@ again:
 		setpriority(PRIO_PROCESS, 0, -2);
 	}
 
+#define Getlogin()  (((p = getlogin()) && *p) ? p : buf)
 	if (pwd->pw_passwd[0] == '\0' || getuid() == 0)
 		goto ok;
 	password = getpass("Password:");
@@ -98,14 +101,14 @@ again:
 		fprintf(stderr, "Sorry\n");
 		if (pwd->pw_uid == 0) {
 			syslog(LOG_CRIT, "BAD SU %s on %s",
-					getlogin(), ttyname(2));
+					Getlogin(), ttyname(2));
 		}
 		exit(2);
 	}
 ok:
 	endpwent();
 	if (pwd->pw_uid == 0) {
-		syslog(LOG_NOTICE, "%s on %s", getlogin(), ttyname(2));
+		syslog(LOG_NOTICE, "%s on %s", Getlogin(), ttyname(2));
 		closelog();
 	}
 	if (setgid(pwd->pw_gid) < 0) {
