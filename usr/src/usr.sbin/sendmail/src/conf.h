@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.179 (Berkeley) %G%
+ *	@(#)conf.h	8.180 (Berkeley) %G%
  */
 
 /*
@@ -1298,6 +1298,7 @@ extern int	errno;
 
 /* general System V Release 4 defines */
 #ifdef __svr4__
+# include <sys/mkdev.h>
 # define SYSTEM5	1
 # define USESETEUID	1	/* has useable seteuid(2) call */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
