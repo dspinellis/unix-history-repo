@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)canfield.c 4.8 %G%";
+static char sccsid[] = "@(#)canfield.c 4.9 %G%";
 
 /*
  * The canfield program
@@ -1244,8 +1244,6 @@ suspend()
 
 	move(21, 0);
 	refresh();
-	endwin();
-	fflush(stdout);
 #ifdef SIGTSTP
 	kill(getpid(), SIGTSTP);
 #else
@@ -1256,7 +1254,6 @@ suspend()
 #endif
 	raw();
 	noecho();
-	wrefresh(curscr);
 }
 
 /*
@@ -1597,7 +1594,6 @@ main(argc, argv)
 	signal(SIGHUP, cleanup);
 	signal(SIGTERM, cleanup);
 	initscr();
-	signal(SIGTSTP, SIG_DFL);		/* avoid tstp in curses */
 	raw();
 	noecho();
 	initall();
