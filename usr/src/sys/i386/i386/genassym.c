@@ -7,17 +7,16 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)genassym.c	5.11 (Berkeley) %G%
+ *	@(#)genassym.c	5.12 (Berkeley) %G%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)genassym.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)genassym.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sys/param.h"
 #include "sys/buf.h"
 #include "sys/vmmeter.h"
-#include "sys/cmap.h"
 #include "sys/map.h"
 #include "sys/proc.h"
 #include "sys/user.h"
