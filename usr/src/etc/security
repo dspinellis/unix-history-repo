@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)security	5.17 (Berkeley) %G%
+#	@(#)security	5.18 (Berkeley) %G%
 #
 
 # Script to check basic system security.  Checks included are:
@@ -477,7 +477,9 @@ if [ -s $TMP1 ] ; then
 	fi
 fi
 
-# Check the system binaries.
+# Check special files.
+# Check system binaries.
+#
 # Create the mtree tree specifications using:
 #
 #	mtree -cx -pDIR -kcksum,gid,mode,nlink,size,link,time,uid > DIR.secure
@@ -488,7 +490,6 @@ fi
 # the hacker can modify the tree specification to match the replaced binary.
 # For details on really protecting yourself against modified binaries, see
 # the mtree(8) manual page.
-# Check for special files.
 
 if cd /etc/mtree; then
 	mtree -e -p / -f /etc/mtree/special > $OUTPUT
