@@ -2,7 +2,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	1.15 (Berkeley) %G%
+#	@(#)Makefile	1.16 (Berkeley) %G%
 #
 # make file for pdx
 #
@@ -38,7 +38,7 @@ LDFLAGS	= # -i for pdp-11
 	@echo "compiling $*.c"
 	@csh -f -c ' \
 	    set a=$*.c; \
-	    if ($$a:h != $$a) chdir $$a:h; \
+	    if ($$a:h != $$a) cd $$a:h; \
 	    ${CC} ${CFLAGS} -c $$a:t \
 	'
 
@@ -158,11 +158,11 @@ profile: ${OBJS}
 	@cc ${LDFLAGS} -p ${OBJS} ${LIB}
 
 ${COMMAND}y.tab.o: ${COMMAND}grammar.yacc
-	chdir ${COMMAND}; yacc -d grammar.yacc; cc -c ${CFLAGS} y.tab.c
+	cd ${COMMAND}; yacc -d grammar.yacc; cc -c ${CFLAGS} y.tab.c
 	${RM} ${COMMAND}y.tab.c
 
 ${COMMAND}lex.yy.o: ${COMMAND}token.lex ${COMMAND}y.tab.h
-	chdir ${COMMAND}; lex token.lex; cc -c ${CFLAGS} lex.yy.c
+	cd ${COMMAND}; lex token.lex; cc -c ${CFLAGS} lex.yy.c
 	${RM} ${COMMAND}lex.yy.c
 
 ${BPOBJ}:	${BREAKPOINT}bp.rep
