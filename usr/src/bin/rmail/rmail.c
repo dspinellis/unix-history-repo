@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1981, 1988 The Regents of the University of California.
+ * Copyright (c) 1988, 1993 The Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
@@ -7,211 +7,327 @@
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1981, 1988 The Regents of the University of California.\n\
+"@(#) Copyright (c) 1988, 1993 The Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rmail.c	4.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)rmail.c	5.1 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
  * RMAIL -- UUCP mail server.
  *
- *	This program reads the >From ... remote from ... lines that
- *	UUCP is so fond of and turns them into something reasonable.
- *	It calls sendmail giving it a -f option built from these lines. 
+ * This program reads the >From ... remote from ... lines that UUCP is so
+ * fond of and turns them into something reasonable.  It then execs sendmail
+ * with various options built from these lines. 
+ *
+ * The expected syntax is:
+ *
+ *	 <user> := [-a-z0-9]+
+ *	 <date> := ctime format
+ *	 <site> := [-a-z0-9!]+
+ * <blank line> := "^\n$"
+ *	 <from> := "From" <space> <user> <space> <date>
+ *		  [<space> "remote from" <space> <site>]
+ *    <forward> := ">" <from>
+ *	    msg := <from> <forward>* <blank-line> <body>
+ *
+ * The output of rmail(8) compresses the <forward> lines into a single
+ * from path.
+ *
+ * The err(3) routine is included here deliberately to make this code
+ * a bit more portable.
  */
-
-#include <sysexits.h>
-#include <sys/types.h>
-#include <sys/file.h>
+#include <sys/param.h>
 #include <sys/stat.h>
-#include <stdio.h>
+#include <sys/wait.h>
+
+#include <ctype.h>
+#include <fcntl.h>
 #include <paths.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sysexits.h>
+#include <unistd.h>
 # include "conf.h"
 
-typedef char bool;
-#define TRUE	1
-#define FALSE	0
+void err __P((int, const char *, ...));
+void usage __P((void));
 
-extern char *index();
-extern char *rindex();
-
-char *Domain = "UUCP";		/* Default "Domain" */
-
+int
 main(argc, argv)
 	int argc;
-	char **argv;
+	char *argv[];
 {
-	char lbuf[1024];	/* one line of the message */
-	char from[512];		/* accumulated path of sender */
-	char ufrom[512];	/* user on remote system */
-	char sys[512];		/* a system in path */
-	char fsys[512];		/* first system in path */
-	char junk[1024];	/* scratchpad */
-	char *args[100];	/* arguments to mailer command */
-	register char *cp;
-	register char *uf = NULL;	/* ptr into ufrom */
-	int i;
-	long position;
-	struct stat sbuf;
-#ifdef DEBUG
-	bool Debug;
+	extern char *optarg;
+	extern int errno, optind;
+	FILE *fp;
+	struct stat sb;
+	size_t fplen, fptlen, len;
+	off_t offset;
+	int ch, debug, i, pdes[2], pid, status;
+	char *addrp, *domain, *p, *t;
+	char *from_path, *from_sys, *from_user;
+	char *args[100], buf[2048], lbuf[2048];
 
-	if (argc > 1 && strcmp(argv[1], "-T") == 0) {
-		Debug = TRUE;
-		argc--;
-		argv++;
-	}
-#endif
-
-	if (argc < 2) {
-		fprintf(stderr, "Usage: rmail user ...\n");
-		exit(EX_USAGE);
-	}
-	if (argc > 2 && strncmp(argv[1], "-D", 2) == 0) {
-		Domain = &argv[1][2];
-		argc -= 2;
-		argv += 2;
-	}
-	from[0] = '\0';
-	fsys[0] = '\0';
-	(void) strcpy(ufrom, _PATH_DEVNULL);
-
-	for (position = 0;; position = ftell(stdin)) {
-		if (fgets(lbuf, sizeof lbuf, stdin) == NULL)
-			exit(EX_DATAERR);
-		if (strncmp(lbuf, "From ", 5) != 0 &&
-		    strncmp(lbuf, ">From ", 6) != 0)
+	debug = 0;
+	domain = "UUCP";		/* Default "domain". */
+	while ((ch = getopt(argc, argv, "D:T")) != EOF)
+		switch (ch) {
+		case 'T':
+			debug = 1;
 			break;
-		(void) sscanf(lbuf, "%s %s", junk, ufrom);
-		cp = lbuf;
-		uf = ufrom;
-		for (;;) {
-			cp = index(cp + 1, 'r');
-			if (cp == NULL) {
-				register char *p = rindex(uf, '!');
+		case 'D':
+			domain = optarg;
+			break;
+		case '?':
+		default:
+			usage();
+		}
+	argc -= optind;
+	argv += optind;
 
-				if (p != NULL) {
-					*p = '\0';
-					(void) strcpy(sys, uf);
-					uf = p + 1;
-					break;
-				}
-				(void) strcpy(sys, "");
-				break;	/* no "remote from" found */
-			}
-#ifdef DEBUG
-			if (Debug)
-				printf("cp='%s'\n", cp);
-#endif
-			if (strncmp(cp, "remote from ", 12) == 0)
+	if (argc < 1)
+		usage();
+
+	from_path = from_sys = from_user = NULL;
+	for (offset = 0;;) {
+
+		/* Get and nul-terminate the line. */
+		if (fgets(lbuf, sizeof(lbuf), stdin) == NULL)
+			exit (EX_DATAERR);
+		if ((p = strchr(lbuf, '\n')) == NULL)
+			err(EX_DATAERR, "line too long");
+		*p = '\0';
+
+		/* Parse lines until reach a non-"From" line. */
+		if (!strncmp(lbuf, "From ", 5))
+			addrp = lbuf + 5;
+		else if (!strncmp(lbuf, ">From ", 6))
+			addrp = lbuf + 6;
+		else if (offset == 0)
+			err(EX_DATAERR,
+			    "missing or empty From line: %s", lbuf);
+		else {
+			*p = '\n';
+			break;
+		}
+
+		if (*addrp == '\0')
+			err(EX_DATAERR, "corrupted From line: %s", lbuf);
+
+		/* Use the "remote from" if it exists. */
+		for (p = addrp; (p = strchr(p + 1, 'r')) != NULL;)
+			if (!strncmp(p, "remote from ", 12)) {
+				for (t = p += 12; *t && !isspace(*t); ++t);
+				*t = '\0';
+				if (debug)
+					(void)fprintf(stderr,
+					    "remote from: %s\n", p);
 				break;
+			}
+
+		/* Else use the string up to the last bang. */
+		if (p == NULL)
+			if (*addrp == '!')
+				err(EX_DATAERR,
+				    "bang starts address: %s", addrp);
+			else if ((t = strrchr(addrp, '!')) != NULL) {
+				*t = '\0';
+				p = addrp;
+				addrp = t + 1;
+				if (*addrp == '\0')
+					err(EX_DATAERR,
+					    "corrupted From line: %s", lbuf);
+				if (debug)
+					(void)fprintf(stderr, "bang: %s\n", p);
+			}
+
+		/* 'p' now points to any system string from this line. */
+		if (p != NULL) {
+			/* Nul terminate it as necessary. */
+			for (t = p; *t && !isspace(*t); ++t);
+			*t = '\0';
+
+			/* If the first system, copy to the from_sys string. */
+			if (from_sys == NULL) {
+				if ((from_sys = strdup(p)) == NULL)
+					err(EX_TEMPFAIL, NULL);
+				if (debug)
+					(void)fprintf(stderr,
+					    "from_sys: %s\n", from_sys);
+			}
+
+			/* Concatenate to the path string. */
+			len = t - p;
+			if (from_path == NULL) {
+				fplen = 0;
+				if ((from_path = malloc(fptlen = 256)) == NULL)
+					err(EX_TEMPFAIL, NULL);
+			}
+			if (fplen + len + 2 > fptlen) {
+				fptlen += MAX(fplen + len + 2, 256);
+				if ((from_path =
+				    realloc(from_path, fptlen)) == NULL)
+					err(EX_TEMPFAIL, NULL);
+			}
+			memmove(from_path + fplen, p, len);
+			fplen += len;
+			from_path[fplen++] = '!';
+			from_path[fplen] = '\0';
 		}
-		if (cp != NULL)
-			(void) sscanf(cp, "remote from %s", sys);
-		if (fsys[0] == '\0')
-			(void) strcpy(fsys, sys);
-		if (sys[0]) {
-			(void) strcat(from, sys);
-			(void) strcat(from, "!");
+
+		/* Save off from user's address; the last one wins. */
+		for (p = addrp; *p && !isspace(*p); ++p);
+		*p = '\0';
+		if (from_user != NULL)
+			free(from_user);
+		if ((from_user = strdup(addrp)) == NULL)
+			err(EX_TEMPFAIL, NULL);
+
+		if (debug) {
+			if (from_path != NULL)
+				(void)fprintf(stderr,
+				    "from_path: %s\n", from_path);
+			(void)fprintf(stderr, "from_user: %s\n", from_user);
 		}
-#ifdef DEBUG
-		if (Debug)
-			printf("ufrom='%s', sys='%s', from now '%s'\n", uf, sys, from);
-#endif
+
+		if (offset != -1)
+			offset = (off_t)ftell(stdin);
 	}
-	if (uf == NULL) {	/* No From line was provided */
-		fprintf(stderr, "No From line in rmail\n");
-		exit(EX_DATAERR);
+
+	i = 0;
+	args[i++] = _PATH_SENDMAIL;	/* Build sendmail's argument list. */
+	args[i++] = "-oee";		/* No errors, just status. */
+	args[i++] = "-odq";		/* Queue it, don't try to deliver. */
+	args[i++] = "-oi";		/* Ignore '.' on a line by itself. */
+
+	if (from_sys != NULL) {		/* Set sender's host name. */
+		if (strchr(from_sys, '.') == NULL)
+			(void)snprintf(buf, sizeof(buf),
+			    "-oMs%s.%s", from_sys, domain);
+		else
+			(void)snprintf(buf, sizeof(buf), "-oMs%s", from_sys);
+		if ((args[i++] = strdup(buf)) == NULL)
+			 err(EX_TEMPFAIL, NULL);
 	}
-	(void) strcat(from, uf);
-	(void) fstat(0, &sbuf);
-	(void) lseek(0, position, L_SET);
+					/* Set protocol used. */
+	(void)snprintf(buf, sizeof(buf), "-oMr%s", domain);
+	if ((args[i++] = strdup(buf)) == NULL)
+		err(EX_TEMPFAIL, NULL);
+
+					/* Set name of ``from'' person. */
+	(void)snprintf(buf, sizeof(buf), "-f%s%s", from_path, from_user);
+	if ((args[i++] = strdup(buf)) == NULL)
+		err(EX_TEMPFAIL, NULL);
 
 	/*
-	 * Now we rebuild the argument list and chain to sendmail. Note that
-	 * the above lseek might fail on irregular files, but we check for
-	 * that case below. 
+	 * Don't copy arguments beginning with - as they will be
+	 * passed to sendmail and could be interpreted as flags.
 	 */
-	i = 0;
-	args[i++] = _PATH_SENDMAIL;
-	args[i++] = "-oee";		/* no errors, just status */
-	args[i++] = "-odq";		/* queue it, don't try to deliver */
-	args[i++] = "-oi";		/* ignore '.' on a line by itself */
-	if (fsys[0] != '\0') {		/* set sender's host name */
-		static char junk2[512];
+	do {
+		if (**argv == '-')
+			err(EX_USAGE, "dash precedes argument: %s", *argv);
+	} while ((args[i++] = *argv++) != NULL);
 
-		if (index(fsys, '.') == NULL) {
-			(void) strcat(fsys, ".");
-			(void) strcat(fsys, Domain);
-		}
-		(void) sprintf(junk2, "-oMs%s", fsys);
-		args[i++] = junk2;
-	}
-					/* set protocol used */
-	(void) sprintf(junk, "-oMr%s", Domain);
-	args[i++] = junk;
-	if (from[0] != '\0') {		/* set name of ``from'' person */
-		static char junk2[512];
-
-		(void) sprintf(junk2, "-f%s", from);
-		args[i++] = junk2;
-	}
-	for (; *++argv != NULL; i++) {
-		/*
-		 * don't copy arguments beginning with - as they will
-		 * be passed to sendmail and could be interpreted as flags
-		 * should be fixed in sendmail by using getopt(3), and
-		 * just passing "--" before regular args.
-		 */
-		if (**argv != '-')
-			args[i] = *argv;
-	}
-	args[i] = NULL;
-#ifdef DEBUG
-	if (Debug) {
-		printf("Command:");
+	if (debug) {
+		(void)fprintf(stderr, "Sendmail arguments:\n");
 		for (i = 0; args[i]; i++)
-			printf(" %s", args[i]);
-		printf("\n");
+			(void)fprintf(stderr, "\t%s\n", args[i]);
 	}
-#endif
-	if ((sbuf.st_mode & S_IFMT) != S_IFREG) {
-		/*
-		 * If we were not called with standard input on a regular
-		 * file, then we have to fork another process to send the
-		 * first line down the pipe. 
-		 */
-		int pipefd[2];
-#ifdef DEBUG
-		if (Debug)
-			printf("Not a regular file!\n");
-#endif
-		if (pipe(pipefd) < 0)
-			exit(EX_OSERR);
-		if (fork() == 0) {
-			/*
-			 * Child: send the message down the pipe. 
-			 */
-			FILE *out;
 
-			out = fdopen(pipefd[1], "w");
-			close(pipefd[0]);
-			fputs(lbuf, out);
-			while (fgets(lbuf, sizeof lbuf, stdin))
-				fputs(lbuf, out);
-			(void) fclose(out);
-			exit(EX_OK);
-		}
-		/*
-		 * Parent: call sendmail with pipe as standard input 
-		 */
-		close(pipefd[1]);
-		dup2(pipefd[0], 0);
+	/*
+	 * If called with a regular file as standard input, seek to the right
+	 * position in the file and just exec sendmail.  Could probably skip
+	 * skip the stat, but it's not unreasonable to believe that a failed
+	 * seek will cause future reads to fail.
+	 */
+	if (!fstat(STDIN_FILENO, &sb) && S_ISREG(sb.st_mode)) {
+		if (lseek(STDIN_FILENO, offset, SEEK_SET) != offset)
+			err(EX_TEMPFAIL, "stdin seek");
+		execv(_PATH_SENDMAIL, args);
+		err(EX_OSERR, "%s", _PATH_SENDMAIL);
 	}
-	execv(_PATH_SENDMAIL, args);
-	fprintf(stderr, "Exec of %s failed!\n", _PATH_SENDMAIL);
-	exit(EX_OSERR);
+
+	if (pipe(pdes) < 0)
+		err(EX_OSERR, NULL);
+
+	switch (pid = vfork()) {
+	case -1:				/* Err. */
+		err(EX_OSERR, NULL);
+	case 0:					/* Child. */
+		if (pdes[0] != STDIN_FILENO) {
+			(void)dup2(pdes[0], STDIN_FILENO);
+			(void)close(pdes[0]);
+		}
+		(void)close(pdes[1]);
+		execv(_PATH_SENDMAIL, args);
+		_exit(127);
+		/* NOTREACHED */
+	}
+
+	if ((fp = fdopen(pdes[1], "w")) == NULL)
+		err(EX_OSERR, NULL);
+	(void)close(pdes[0]);
+
+	/* Copy the file down the pipe. */
+	do {
+		(void)fprintf(fp, "%s", lbuf);
+	} while (fgets(lbuf, sizeof(lbuf), stdin) != NULL);
+
+	if (ferror(stdin))
+		err(EX_TEMPFAIL, "stdin: %s", strerror(errno));
+
+	if (fclose(fp))
+		err(EX_OSERR, NULL);
+
+	if ((waitpid(pid, &status, 0)) == -1)
+		err(EX_OSERR, "%s", _PATH_SENDMAIL);
+
+	if (!WIFEXITED(status))
+		err(EX_OSERR,
+		    "%s: did not terminate normally", _PATH_SENDMAIL);
+
+	if (WEXITSTATUS(status))
+		err(status, "%s: terminated with %d (non-zero) status",
+		    _PATH_SENDMAIL, WEXITSTATUS(status));
+	exit(EX_OK);
+}
+
+void
+usage()
+{
+	(void)fprintf(stderr, "usage: rmail [-T] [-D domain] user ...\n");
+	exit(EX_USAGE);
+}
+
+#ifdef __STDC__
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
+
+void
+#ifdef __STDC__
+err(int eval, const char *fmt, ...)
+#else
+err(eval, fmt, va_alist)
+	int eval;
+	const char *fmt;
+	va_dcl
+#endif
+{
+	va_list ap;
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
+	(void)fprintf(stderr, "rmail: ");
+	(void)vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	(void)fprintf(stderr, "\n");
+	exit(eval);
 }
