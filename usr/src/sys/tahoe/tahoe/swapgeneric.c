@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)swapgeneric.c	7.5 (Berkeley) %G%
+ *	@(#)swapgeneric.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -86,10 +86,10 @@ gotit:
 		for (ui = vbdinit; ui->ui_driver; ui++) {
 			if (ui->ui_alive == 0)
 				continue;
-			if (ui->ui_unit == 0 && ui->ui_driver ==
+			if (ui->ui_unit == unit && ui->ui_driver ==
 			    (struct vba_driver *)gc->gc_driver) {
-				printf("root on %s0\n",
-				    ui->ui_driver->ud_dname);
+				printf("root on %s%d\n",
+				    ui->ui_driver->ud_dname, unit);
 				goto found;
 			}
 		}
