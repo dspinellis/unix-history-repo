@@ -1,0 +1,1 @@
+cc -O -DUCB_NTTY tset.c -o tset -ltermlib
