@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vnops.c	8.11 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	8.12 (Berkeley) %G%
  */
 
 /*
@@ -65,6 +65,7 @@ struct vnodeopv_entry_desc nfsv2_vnodeop_entries[] = {
 	{ &vop_lease_desc, nfs_lease_check },	/* lease */
 	{ &vop_ioctl_desc, nfs_ioctl },		/* ioctl */
 	{ &vop_select_desc, nfs_select },	/* select */
+	{ &vop_revoke_desc, nfs_revoke },	/* revoke */
 	{ &vop_mmap_desc, nfs_mmap },		/* mmap */
 	{ &vop_fsync_desc, nfs_fsync },		/* fsync */
 	{ &vop_seek_desc, nfs_seek },		/* seek */
@@ -118,6 +119,7 @@ struct vnodeopv_entry_desc spec_nfsv2nodeop_entries[] = {
 	{ &vop_lease_desc, spec_lease_check },	/* lease */
 	{ &vop_ioctl_desc, spec_ioctl },	/* ioctl */
 	{ &vop_select_desc, spec_select },	/* select */
+	{ &vop_revoke_desc, spec_revoke },	/* revoke */
 	{ &vop_mmap_desc, spec_mmap },		/* mmap */
 	{ &vop_fsync_desc, nfs_fsync },		/* fsync */
 	{ &vop_seek_desc, spec_seek },		/* seek */
@@ -169,6 +171,7 @@ struct vnodeopv_entry_desc fifo_nfsv2nodeop_entries[] = {
 	{ &vop_lease_desc, fifo_lease_check },	/* lease */
 	{ &vop_ioctl_desc, fifo_ioctl },	/* ioctl */
 	{ &vop_select_desc, fifo_select },	/* select */
+	{ &vop_revoke_desc, fifo_revoke },	/* revoke */
 	{ &vop_mmap_desc, fifo_mmap },		/* mmap */
 	{ &vop_fsync_desc, nfs_fsync },		/* fsync */
 	{ &vop_seek_desc, fifo_seek },		/* seek */
