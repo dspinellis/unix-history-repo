@@ -1,4 +1,4 @@
-/*	up.c	4.36	81/04/02	*/
+/*	up.c	4.37	81/04/09	*/
 
 #include "up.h"
 #if NSC > 0
@@ -142,9 +142,7 @@ upslave(ui, reg)
 upattach(ui)
 	register struct uba_device *ui;
 {
-#ifdef notdef
 	register struct updevice *upaddr;
-#endif
 
 	if (upwstart == 0) {
 		timeout(upwatch, (caddr_t)0, hz);
@@ -154,15 +152,21 @@ upattach(ui)
 		dk_mspw[ui->ui_dk] = .0000020345;
 	upip[ui->ui_ctlr][ui->ui_slave] = ui;
 	up_softc[ui->ui_ctlr].sc_ndrive++;
-#ifdef notdef
 	upaddr = (struct updevice *)ui->ui_addr;
 	upaddr->upcs1 = 0;
 	upaddr->upcs2 = ui->ui_slave;
-	upaddr->uphr = -1;
-	/* ... */
-	if (upaddr-> ... == 10)
-		ui->ui_type = 1;
-#endif
+	upaddr->uphr = UPHR_MAXTRAK;
+	if (upaddr->uphr == 10)
+		ui->ui_type = 1;		/* fujitsu hack */
+	upaddr->upcs2 = UPCS2_CLR;
+/*
+	upaddr->uphr = UPHR_MAXCYL;
+	printf("maxcyl %d\n", upaddr->uphr);
+	upaddr->uphr = UPHR_MAXTRAK;
+	printf("maxtrak %d\n", upaddr->uphr);
+	upaddr->uphr = UPHR_MAXSECT;
+	printf("maxsect %d\n", upaddr->uphr);
+*/
 }
  
 upstrategy(bp)
