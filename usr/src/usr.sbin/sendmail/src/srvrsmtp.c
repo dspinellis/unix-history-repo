@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-static char	SccsId[] =	"@(#)srvrsmtp.c	3.8.1.1	%G%";
+static char	SccsId[] =	"@(#)srvrsmtp.c	3.9	%G%";
 
 /*
 **  SMTP -- run the SMTP protocol.
@@ -43,7 +43,6 @@ static struct cmd	CmdTab[] =
 	"data",		CMDDATA,
 	"rset",		CMDRSET,
 	"vrfy",		CMDVRFY,
-	"expn",		CMDVRFY,
 	"help",		CMDHELP,
 	"noop",		CMDNOOP,
 	"quit",		CMDQUIT,
@@ -62,10 +61,9 @@ smtp()
 	extern bool sameword();
 	bool hasmail;			/* mail command received */
 	int rcps;			/* number of recipients */
-	extern ADDRESS *sendto();
-	ADDRESS *a;
+	bool hasdata;			/* has mail data */
 
-	hasmail = FALSE;
+	hasmail = hasdata = FALSE;
 	rcps = 0;
 	message("220", "%s Sendmail at your service", HostName);
 	for (;;)
@@ -105,7 +103,8 @@ smtp()
 		switch (c->cmdcode)
 		{
 		  case CMDHELO:		/* hello -- introduce yourself */
-			message("250", "%s Hello %s, pleased to meet you", HostName, p);
+			message("250", "%s Hello %s, pleased to meet you",
+				HostName, p);
 			break;
 
 		  case CMDMAIL:		/* mail -- designate sender */
@@ -141,11 +140,7 @@ smtp()
 				Errors++;
 				break;
 			}
-			a = sendto(p, 1, (ADDRESS *) NULL, 0);
-# ifdef DEBUG
-			if (Debug > 1)
-				printaddr(a, TRUE);
-# endif DEBUG
+			sendto(p, 1, (ADDRESS *) NULL);
 			if (Errors == 0)
 			{
 				message("250", "Recipient ok");
@@ -191,9 +186,7 @@ smtp()
 			finis();
 
 		  case CMDVRFY:		/* vrfy -- verify address */
-			a = sendto(p, 1, (ADDRESS *) NULL, QPSEUDO);
-			if (Errors == 0)
-				paddrtree(a);
+			message("502", "Command not implemented");
 			break;
 
 		  case CMDHELP:		/* help -- give user info */
@@ -349,56 +342,4 @@ help(topic)
 	else
 		message("214", "End of HELP info");
 	(void) fclose(hf);
-}
-/*
-**  PADDRTREE -- print address tree
-**
-**	Used by VRFY and EXPD to dump the tree of addresses produced.
-**
-**	Parameters:
-**		a -- address of root.
-**
-**	Returns:
-**		none.
-**
-**	Side Effects:
-**		prints the tree in a nice order.
-*/
-
-paddrtree(a)
-	register ADDRESS *a;
-{
-	static ADDRESS *prev;
-	static int lev;
-
-	if (a == NULL)
-		return;
-	lev++;
-	if (!bitset(QDONTSEND, a->q_flags))
-	{
-		if (prev != NULL)
-		{
-			if (prev->q_fullname != NULL)
-				message("250-", "%s <%s>", prev->q_fullname, prev->q_paddr);
-			else
-				message("250-", "<%s>", prev->q_paddr);
-		}
-		prev = a;
-	}
-	paddrtree(a->q_child);
-	paddrtree(a->q_sibling);
-	if (--lev <= 0)
-	{
-		if (prev != NULL)
-		{
-			/* last one */
-			if (prev->q_fullname != NULL)
-				message("250", "%s <%s>", prev->q_fullname, prev->q_paddr);
-			else
-				message("250", "<%s>", prev->q_paddr);
-			prev = NULL;
-		}
-		else
-			message("550", "User unknown");
-	}
 }

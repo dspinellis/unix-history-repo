@@ -2,7 +2,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-static char SccsId[] = "@(#)recipient.c	3.28.1.1	%G%";
+static char SccsId[] = "@(#)recipient.c	3.29	%G%";
 
 /*
 **  SENDTO -- Designate a send list.
@@ -10,21 +10,14 @@ static char SccsId[] = "@(#)recipient.c	3.28.1.1	%G%";
 **	The parameter is a comma-separated list of people to send to.
 **	This routine arranges to send to all of them.
 **
-**	The `ctladdr' is the address that expanded to be this one,
-**	e.g., in an alias expansion.  This is used for a number of
-**	purposed, most notably inheritance of uid/gid for protection
-**	purposes.  It is also used to detect self-reference in group
-**	expansions and the like.
-**
 **	Parameters:
 **		list -- the send list.
 **		copyf -- the copy flag; passed to parse.
 **		ctladdr -- the address template for the person to
 **			send to -- effective uid/gid are important.
-**		qflags -- special flags to set in the q_flags field.
 **
 **	Returns:
-**		pointer to chain of addresses.
+**		none
 **
 **	Side Effects:
 **		none.
@@ -32,20 +25,16 @@ static char SccsId[] = "@(#)recipient.c	3.28.1.1	%G%";
 
 # define MAXRCRSN	10
 
-ADDRESS *
-sendto(list, copyf, ctladdr, qflags)
+sendto(list, copyf, ctladdr)
 	char *list;
 	int copyf;
 	ADDRESS *ctladdr;
-	u_short qflags;
 {
 	register char *p;
 	bool more;		/* set if more addresses to send to */
 	ADDRESS *al;		/* list of addresses to send to */
 	bool firstone;		/* set on first address sent */
 	bool selfref;		/* set if this list includes ctladdr */
-	ADDRESS *sibl;		/* sibling pointer in tree */
-	ADDRESS *prev;		/* previous sibling */
 
 # ifdef DEBUG
 	if (Debug > 1)
@@ -83,9 +72,6 @@ sendto(list, copyf, ctladdr, qflags)
 			continue;
 		a->q_next = al;
 		a->q_alias = ctladdr;
-		if (ctladdr != NULL)
-			a->q_flags |= ctladdr->q_flags & ~QPRIMARY;
-		a->q_flags |= qflags;
 
 		/* see if this should be marked as a primary address */
 		if (ctladdr == NULL ||
@@ -105,71 +91,19 @@ sendto(list, copyf, ctladdr, qflags)
 		ctladdr->q_flags |= QDONTSEND;
 
 	/* arrange to send to everyone on the local send list */
-	prev = sibl = NULL;
-	if (ctladdr != NULL)
-		prev = ctladdr->q_child;
 	while (al != NULL)
 	{
 		register ADDRESS *a = al;
-		extern ADDRESS *recipient();
 
 		al = a->q_next;
-		sibl = recipient(a);
-		if (sibl != NULL)
-		{
-			extern ADDRESS *addrref();
+		recipient(a);
 
-			/* inherit full name */
-			if (sibl->q_fullname == NULL && ctladdr != NULL)
-				sibl->q_fullname = ctladdr->q_fullname;
-
-			/* link tree together (but only if the node is new) */
-			if (sibl == a)
-			{
-				sibl->q_sibling = prev;
-				prev = sibl;
-			}
-		}
+		/* arrange to inherit full name */
+		if (a->q_fullname == NULL && ctladdr != NULL)
+			a->q_fullname = ctladdr->q_fullname;
 	}
 
 	To = NULL;
-	if (ctladdr != NULL)
-		ctladdr->q_child = prev;
-	return (prev);
-}
-/*
-**  ADDRREF -- return pointer to address that references another address.
-**
-**	Parameters:
-**		a -- address to check.
-**		r -- reference to find.
-**
-**	Returns:
-**		address of node in tree rooted at 'a' that references
-**			'r'.
-**		NULL if no such node exists.
-**
-**	Side Effects:
-**		none.
-*/
-
-ADDRESS *
-addrref(a, r)
-	register ADDRESS *a;
-	register ADDRESS *r;
-{
-	register ADDRESS *q;
-
-	while (a != NULL)
-	{
-		if (a->q_child == r || a->q_sibling == r)
-			return (a);
-		q = addrref(a->q_child, r);
-		if (q != NULL)
-			return (q);
-		a = a->q_sibling;
-	}
-	return (NULL);
 }
 /*
 **  RECIPIENT -- Designate a message recipient
@@ -180,13 +114,12 @@ addrref(a, r)
 **		a -- the (preparsed) address header for the recipient.
 **
 **	Returns:
-**		pointer to address actually inserted in send list.
+**		none.
 **
 **	Side Effects:
 **		none.
 */
 
-ADDRESS *
 recipient(a)
 	register ADDRESS *a;
 {
@@ -211,7 +144,7 @@ recipient(a)
 	if (AliasLevel > MAXRCRSN)
 	{
 		usrerr("aliasing/forwarding loop broken");
-		return (NULL);
+		return;
 	}
 
 	/*
@@ -255,13 +188,11 @@ recipient(a)
 				printaddr(q, FALSE);
 			}
 # endif DEBUG
-			if (Verbose && !bitset(QDONTSEND|QPSEUDO, a->q_flags))
+			if (Verbose && !bitset(QDONTSEND, a->q_flags))
 				message(Arpa_Info, "duplicate suppressed");
 			if (!bitset(QPRIMARY, q->q_flags))
 				q->q_flags |= a->q_flags;
-			if (!bitset(QPSEUDO, a->q_flags))
-				q->q_flags &= ~QPSEUDO;
-			return (q);
+			return;
 		}
 	}
 
@@ -312,7 +243,7 @@ recipient(a)
 		strcpy(buf, a->q_user);
 		for (p = buf; *p != '\0' && !quoted; p++)
 		{
-			if (!isascii(*p) && (*p & 0377) != (SPACESUB) & 0377)
+			if (!isascii(*p) && (*p & 0377) != (SPACESUB & 0377))
 				quoted = TRUE;
 		}
 		stripquotes(buf, TRUE);
@@ -358,7 +289,7 @@ recipient(a)
 				a->q_uid = pw->pw_uid;
 				a->q_gid = pw->pw_gid;
 				a->q_flags |= QGOODUID;
-				fullname(pw, nbuf);
+				buildfname(pw->pw_gecos, pw->pw_name, nbuf);
 				if (nbuf[0] != '\0')
 					a->q_fullname = newstr(nbuf);
 				if (!quoted)
@@ -366,8 +297,6 @@ recipient(a)
 			}
 		}
 	}
-
-	return (a);
 }
 /*
 **  FINDUSER -- find the password entry for a user.
@@ -407,17 +336,17 @@ finduser(name)
 	setpwent();
 	while ((pw = getpwent()) != NULL)
 	{
-		extern bool sameword();
 		char buf[MAXNAME];
+		extern bool sameword();
 
 		if (strcmp(pw->pw_name, name) == 0)
 			return (pw);
-		fullname(pw, buf);
+		buildfname(pw->pw_gecos, pw->pw_name, buf);
 		if (index(buf, ' ') != NULL && sameword(buf, name))
 		{
 			if (Verbose)
-				message(Arpa_Info, "sending to %s <%s>",
-				    buf, pw->pw_name);
+				message(Arpa_Info, "sending to login name %s",
+				    pw->pw_name);
 			return (pw);
 		}
 	}
@@ -532,7 +461,7 @@ include(fname, msg, ctladdr)
 		if (Verbose)
 			message(Arpa_Info, "%s to %s", msg, buf);
 		AliasLevel++;
-		sendto(buf, 1, ctladdr, 0);
+		sendto(buf, 1, ctladdr);
 		AliasLevel--;
 	}
 
@@ -575,7 +504,7 @@ sendtoargv(argv)
 				argv += 2;
 			}
 		}
-		sendto(p, 0, (ADDRESS *) NULL, 0);
+		sendto(p, 0, (ADDRESS *) NULL);
 	}
 }
 /*
