@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)mkfs.c	2.6 (Berkeley) %G%";
+static	char *sccsid = "@(#)mkfs.c	2.7 (Berkeley) %G%";
 
 /*
  * make file system for cylinder-group style file systems
@@ -216,12 +216,19 @@ main(argc, argv)
 	for (sblock.fs_fshift = 0, i = sblock.fs_fsize; i > 1; i >>= 1)
 		sblock.fs_fshift++;
 	sblock.fs_frag = numfrags(&sblock, sblock.fs_bsize);
+	for (sblock.fs_fragshift = 0, i = sblock.fs_frag; i > 1; i >>= 1)
+		sblock.fs_fragshift++;
 	if (sblock.fs_frag > MAXFRAG) {
 		printf("fragment size %d is too small, minimum with block size %d is %d\n",
 		    sblock.fs_fsize, sblock.fs_bsize,
 		    sblock.fs_bsize / MAXFRAG);
 		exit(1);
 	}
+	sblock.fs_nindir = sblock.fs_bsize / sizeof(daddr_t);
+	sblock.fs_inopb = sblock.fs_bsize / sizeof(struct dinode);
+	sblock.fs_nspf = sblock.fs_fsize / DEV_BSIZE;
+	for (sblock.fs_fsbtodb = 0, i = sblock.fs_nspf; i > 1; i >>= 1)
+		sblock.fs_fsbtodb++;
 	sblock.fs_sblkno =
 	    roundup(howmany(BBSIZE + SBSIZE, sblock.fs_fsize), sblock.fs_frag);
 	sblock.fs_cblkno = (daddr_t)(sblock.fs_sblkno +
@@ -413,6 +420,13 @@ next:
 	sblock.fs_csaddr = cgdmin(&sblock, 0);
 	sblock.fs_cssize =
 	    fragroundup(&sblock, sblock.fs_ncg * sizeof(struct csum));
+	i = sblock.fs_bsize / sizeof(struct csum);
+	sblock.fs_csmask = ~(i - 1);
+	for (sblock.fs_csshift = 0; i > 1; i >>= 1)
+		sblock.fs_csshift++;
+	i = sizeof(struct fs) +
+		howmany(sblock.fs_spc * sblock.fs_cpc, NSPB(&sblock));
+	sblock.fs_sbsize = fragroundup(&sblock, i);
 	fscs = (struct csum *)calloc(1, sblock.fs_cssize);
 	sblock.fs_magic = FS_MAGIC;
 	sblock.fs_rotdelay = ROTDELAY;
@@ -801,18 +815,6 @@ wtfs(bno, size, bf)
 		exit(1);
 	}
 }
-
-#ifndef STANDALONE
-/*
- * copy a block
- */
-bcopy(from, to, size)
-	char *from, *to;
-	int size;
-{
-	asm("	movc3	12(ap),*4(ap),*8(ap)");
-}
-#endif
 
 /*
  * check if a block is available
