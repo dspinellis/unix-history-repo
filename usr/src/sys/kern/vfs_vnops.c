@@ -1,4 +1,4 @@
-/*	vfs_vnops.c	4.8	81/03/09	*/
+/*	vfs_vnops.c	4.9	81/04/28	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -58,21 +58,20 @@ register struct file *fp;
 		fp->f_count--;
 		return;
 	}
-	ip = fp->f_inode;
 	flag = fp->f_flag;
+	if (flag & FPORT) {
+		ptclose(fp);
+		fp->f_count = 0;
+		return;
+	}
+	ip = fp->f_inode;
 	dev = (dev_t)ip->i_un.i_rdev;
 	mode = ip->i_mode & IFMT;
-
 	plock(ip);
-	fp->f_count = 0;
-	if(flag & FPIPE) {
-		ip->i_mode &= ~(IREAD|IWRITE);
-		wakeup((caddr_t)ip+1);
-		wakeup((caddr_t)ip+2);
-	}
 	iput(ip);
+	fp->f_count = 0;
 
-	switch(mode) {
+	switch (mode) {
 
 	case IFCHR:
 	case IFMPC:
@@ -95,7 +94,8 @@ register struct file *fp;
 
 	if ((flag & FMP) == 0) {
 		for(fp=file; fp < fileNFILE; fp++)
-			if (fp->f_count && (ip=fp->f_inode)->i_un.i_rdev==dev &&
+			if (fp->f_count && (ip = fp->f_inode) &&
+			    ip->i_un.i_rdev == dev &&
 			    (ip->i_mode&IFMT) == mode)
 				return;
 		if (mode == IFBLK) {
