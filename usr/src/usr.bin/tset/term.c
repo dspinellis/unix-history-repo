@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)term.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)term.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -74,7 +74,10 @@ found:	if ((p = getenv("TERMCAP")) != NULL && *p != '/')
 	 * If the first character is '?', ask the user.
 	 */
 	if (ttype[0] == '?')
-		ttype = askuser(ttype + 1);
+		if (ttype[1] != '\0')
+			ttype = askuser(ttype + 1);
+		else
+			ttype = askuser(NULL);
 
 	/* Find the termcap entry.  If it doesn't exist, ask the user. */
 	while ((rval = tgetent(tbuf, ttype)) == 0) {
@@ -118,6 +121,9 @@ askuser(dflt)
 
 		if (p = index(answer, '\n'))
 			*p = '\0';
-		return (answer[0] ? answer : dflt);
+		if (answer[0])
+			return (answer);
+		if (dflt != NULL)
+			return (dflt);
 	}
 }
