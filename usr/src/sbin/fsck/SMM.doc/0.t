@@ -1,14 +1,14 @@
-.\" Copyright (c) 1982 Regents of the University of California.
+.\" Copyright (c) 1986 Regents of the University of California.
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)0.t	4.2 (Berkeley) %G%
+.\"	@(#)0.t	4.3 (Berkeley) %G%
 .\"
 .if n .ND
 .TL
 Fsck \- The UNIX\(dg File System Check Program
-.sp
-Revised July 16, 1985
+.EH 'SMM:5-%''The \s-2UNIX\s+2 File System Check Program'
+.OH 'The \s-2UNIX\s+2 File System Check Program''SMM:5-%'
 .AU
 Marshall Kirk McKusick
 .AI
@@ -65,22 +65,12 @@ by
 .I fsck.
 Both the program and the interaction between the
 program and the operator are described.
+.sp 2
+.LP
+Revised July 16, 1985
 .AE
 .LP
-.de PT
-.lt \\n(LLu
-.pc %
-.nr PN \\n%
-.tl '\\*(LH'\\*(CH'\\*(RH'
-.lt \\n(.lu
-..
-.af PN i
-.ds LH Fsck
-.ds RH Contents
-.bp 1
-..if t .ds CF July 16, 1985
-..if t .ds LF CSRG TR/9
-..if t .ds RF McKusick, et. al.
+.bp
 .ce
 .B "TABLE OF CONTENTS"
 .LP
@@ -91,23 +81,23 @@ program and the operator are described.
 .sp .5v
 .nf
 .B "2.  Overview of the file system
-\0.1.    Superblock
-\0.2.    Summary Information
-\0.3.    Cylinder groups
-\0.4.    Fragments
-\0.5.    Updates to the file system
+2.1.    Superblock
+2.2.    Summary Information
+2.3.    Cylinder groups
+2.4.    Fragments
+2.5.    Updates to the file system
 .LP
 .sp .5v
 .nf
 .B "3.  Fixing corrupted file systems
-\0.1.    Detecting and correcting corruption
-\0.2.    Super block checking
-\0.3.    Free block checking
-\0.4.    Checking the inode state
-\0.5.    Inode links
-\0.6.    Inode data size
-\0.7.    Checking the data associated with an inode
-\0.8.    File system connectivity
+3.1.    Detecting and correcting corruption
+3.2.    Super block checking
+3.3.    Free block checking
+3.4.    Checking the inode state
+3.5.    Inode links
+3.6.    Inode data size
+3.7.    Checking the data associated with an inode
+3.8.    File system connectivity
 .LP
 .sp .5v
 .nf
@@ -120,25 +110,14 @@ program and the operator are described.
 .sp .5v
 .nf
 .B "4.  Appendix A
-\0.1.     Conventions
-\0.2.     Initialization
-\0.3.     Phase 1 - Check Blocks and Sizes
-\0.4.     Phase 1b - Rescan for more Dups
-\0.5.     Phase 2 - Check Pathnames
-\0.6.     Phase 3 - Check Connectivity
-\0.7.     Phase 4 - Check Reference Counts
-\0.8.     Phase 5 - Check Cyl groups
-\0.9.     Cleanup
+4.1.     Conventions
+4.2.     Initialization
+4.3.     Phase 1 - Check Blocks and Sizes
+4.4.     Phase 1b - Rescan for more Dups
+4.5.     Phase 2 - Check Pathnames
+4.6.     Phase 3 - Check Connectivity
+4.7.     Phase 4 - Check Reference Counts
+4.8.     Phase 5 - Check Cyl groups
+4.9.     Cleanup
 .ds RH Introduction
-.af PN 1
-.bp 1
-.de _d
-.if t .ta .6i 2.1i 2.6i
-.\" 2.94 went to 2.6, 3.64 to 3.30
-.if n .ta .84i 2.6i 3.30i
-..
-.de _f
-.if t .ta .5i 1.25i 2.5i
-.\" 3.5i went to 3.8i
-.if n .ta .7i 1.75i 3.8i
-..
+.bp
