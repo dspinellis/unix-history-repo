@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_inode.c	7.26 (Berkeley) %G%
+ *	@(#)ufs_inode.c	7.27 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -121,6 +121,7 @@ loop:
 	ip->i_flag = 0;
 	ip->i_devvp = 0;
 	ip->i_mode = 0;
+	ip->i_diroff = 0;
 #ifdef QUOTA
 	ip->i_dquot = NODQUOT;
 #endif
@@ -579,8 +580,6 @@ indirtrunc(ip, bn, lastbn, level, countp)
 		*countp = 0;
 		return (error);
 	}
-	if ((bp->b_flags & B_CACHE) == 0)
-		reassignbuf(bp, ITOV(ip));
 	bap = bp->b_un.b_daddr;
 	MALLOC(copy, daddr_t *, fs->fs_bsize, M_TEMP, M_WAITOK);
 	bcopy((caddr_t)bap, (caddr_t)copy, (u_int)fs->fs_bsize);
