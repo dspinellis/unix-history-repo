@@ -4,7 +4,7 @@
 static	char copyright[] =
 	    "@(#)Copyright (c) 1979 Regents of the University of California";
 
-static char sccsid[] = "@(#)main.c 2.1 %G%";
+static char sccsid[] = "@(#)main.c 1.9.1.1 %G%";
 #endif
 
 #include "whoami.h"
@@ -163,6 +163,9 @@ main(argc, argv)
 			    case 'z':
 				    monflg = TRUE;
 				    continue;
+			    case 'L':
+				    togopt( 'L' );
+				    continue;
 			    default:
     usage:
 				    Perror( "Usage", usageis);
@@ -263,6 +266,9 @@ main(argc, argv)
 		    case 'z':
 			    monflg = TRUE;
 			    break;
+		    case 'L':
+			    togopt( 'L' );
+			    break;
 		    default:
 usage:
 			    Perror( "Usage", usageis);
@@ -291,7 +297,7 @@ usage:
 		perror( pcname );
 		pexit( NOSTART );
 	    }
-	    stabsource( filename );
+	    stabsource( filename, TRUE );
 #	endif PC
 #	ifdef PTREE
 #	    define	MAXpPAGES	16
