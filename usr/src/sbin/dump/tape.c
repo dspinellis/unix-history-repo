@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	5.23.1.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef sunos
@@ -348,6 +348,21 @@ close_rewind()
 		}
 }
 
+#ifdef ROLLDEBUG
+int do_sum(block)
+     union u_spcl *block;
+
+{
+	char sum = 0;
+	int i;
+
+	for (i = 0; i < TP_BSIZE; i++) {
+		sum = sum ^ block->dummy[i];
+	}
+	return(sum);
+}
+#endif
+
 void
 rollforward()
 {
@@ -355,6 +370,9 @@ rollforward()
 	register struct slave *tslp;
 	int i, size, savedtapea, got;
 	union u_spcl *ntb, *otb;
+#ifdef ROLLDEBUG
+	int j; 
+#endif
 	tslp = &slaves[SLAVES];
 	ntb = (union u_spcl *)tslp->tblock[1];
 
@@ -371,8 +389,19 @@ rollforward()
 		/*
 		 * For each request in the current slave, copy it to tslp. 
 		 */
+#ifdef ROLLDEBUG
+		printf("replaying reqs to slave %d (%d)\n", slp - &slaves[0],
+		    slp->pid);
+		j = 0;
+#endif
 
 		for (p = slp->req; p->count > 0; p += p->count) {
+#ifdef ROLLDEBUG
+			printf("    req %d count %d dblk %d\n",
+			       j++, p->count, p->dblk);
+			if (p->dblk == 0)
+				printf("\tsum %x\n", do_sum(otb));
+#endif
 			*q = *p;
 			if (p->dblk == 0)
 				*ntb++ = *otb++; /* copy the datablock also */
@@ -403,6 +432,17 @@ rollforward()
 			dumpabort();
 		}
 		slp->sent = 1;
+#ifdef ROLLDEBUG
+		printf("after the shift:\n");
+		j = 0;
+		for (p = tslp->req; p->count > 0; p += p->count) {
+			printf("    req %d count %d dblk %d\n",
+			       j++, p->count, p->dblk);
+			if (p->dblk == 0) {
+				/* dump block also */
+			}
+		}
+#endif
 		if (++slp >= &slaves[SLAVES])
 			slp = &slaves[0];
 
@@ -704,6 +744,11 @@ doslave(cmd, slave_number)
 #ifndef __STDC__
 	int read();
 #endif
+#ifdef ROLLDEBUG
+	int dodump = 2;
+	FILE *out;
+	char name[64];
+#endif
 
 	/*
 	 * Need our own seek pointer.
@@ -720,11 +765,18 @@ doslave(cmd, slave_number)
 		quit("master/slave protocol botched - didn't get pid of next slave.\n");
 	}
 
+#ifdef ROLLDEBUG
+	sprintf(name, "slave.%d", slave_number);
+	out = fopen(name, "w");
+#endif
 	/*
 	 * Get list of blocks to dump, read the blocks into tape buffer
 	 */
 	while ((nread = atomic(read, cmd, (char *)slp->req, reqsiz)) == reqsiz) {
 		register struct req *p = slp->req;
+#ifdef ROLLDEBUG
+		int req_count = 0;
+#endif
 
 		for (trecno = 0; trecno < ntrec;
 		     trecno += p->count, p += p->count) {
@@ -737,7 +789,25 @@ doslave(cmd, slave_number)
 				    TP_BSIZE) != TP_BSIZE)
 				       quit("master/slave protocol botched.\n");
 			}
+#ifdef ROLLDEBUG
+			if (dodump) {
+				(void) fprintf(out, "    req %d count %d dblk %d\n",
+					req_count++, p->count, p->dblk);
+				if (p->dblk == 0) {
+					(void) fprintf(out, "\tsum %x\n",
+						do_sum(slp->tblock[trecno]));
+				}
+			}
+#endif
 		}
+#ifdef ROLLDEBUG
+		if (dodump) {
+			(void) fprintf(out, "\n");
+		}
+		if (--dodump == 0) {
+			(void) fclose(out);
+		}
+#endif
 		if (setjmp(jmpbuf) == 0) {
 			ready = 1;
 			if (!caught)
