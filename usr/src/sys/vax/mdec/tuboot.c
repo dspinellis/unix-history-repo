@@ -1,4 +1,4 @@
-/*	tuboot.c	6.1	83/07/29	*/
+/*	tuboot.c	4.6	83/08/01	*/
 
 /*
  * VAX tu58 console cassette boot block
@@ -55,9 +55,11 @@
 	.set	TU_READY,7	/* bit position of CSRS ready bit */
 	.set	TU_PACKETLEN,8	/* length of readcom block */
 /* local stack variables */
-	.set	ext,-4				/* file ext. */
-	.set	name,-20			/* 12 bytes for full name */
-	.set	rt_name,-20-FNSIZ		/* rad50 file name */
+	.set	ext,-4			/* file ext. */
+	.set	name,-20		/* 12 bytes for full name */
+	.set	rt_name,-20-FNSIZ	/* rad50 file name */
+/* reboot flags for boot */
+	.set	RB_ASK,3		/* ask name and come up single user */
 
 /* 
  * Initialization.
@@ -203,6 +205,7 @@ filok:
  */
 	addl3	$20,fp,ap		/* ?? */
 	clrl	r5
+	movl	$RB_ASK,r11
 	calls	$0,(r5)
 bad:
 	brw	start
@@ -364,7 +367,7 @@ readcom:
 					/* byte count and block number follow */
 
 ermsg:
-	.asciz	"tu err\r\n"
+	.asciz	"tuerr\r\n"
 end:
 
 /*
