@@ -1,4 +1,6 @@
-/* Font translation to vfonts (RST format) from character format.
+/* ch2vft.c	1.2	84/02/16
+ *
+ * Font translation to vfonts (RST format) from character format.
  *
  *	Use:	ch2vft  [ -i ]  charfile  > vfontfile
  *
@@ -16,6 +18,7 @@
 
 #define RES		200	/* for vfont, resolution is 200 */
 #define MAXLINE		200
+#define GLYPHSPACE	(MAXLINE * MAXLINE)
 #define MAGICNO		0436
 #define DIRSIZ		256	/* vfonts MUST have 256 entries */
 #define DIMLIMIT	128
@@ -36,7 +39,7 @@ FILE *	filep;
 char	ibuff[MAXLINE];
 char	ebuff[MAXLINE];
 char *	glyphs[DIRSIZ];
-char	charbits[20000];	/* place to store bits for a glyph */
+char	charbits[GLYPHSPACE];	/* place to store bits for a glyph */
 
 
 main(argc,argv)
@@ -112,9 +115,11 @@ char **argv;
 	    width = strlen(chp) - 1;
 	    minh = width;
 	    maxh = 0;
-	    minv = -1;
+	    refv = minv = -1;
 
 	    for (length = 0; *chp != '\n'; length++) {
+		if ((length + 1) * width > GLYPHSPACE)
+		    error ("out of glyph space");
 		for (j = 0; j < width; j++, chp++) {
 		    switch (*chp) {
 			case '.':
@@ -128,10 +133,9 @@ char **argv;
 				refh = j;
 				refv = length;
 			case '@':
-			case 'a':
 			case '*':
 				maxv = length;
-				if (minv == -1) minv = length;
+				if (minv < 0) minv = length;
 				if (j < minh) minh = j;
 				if (j > maxh) maxh = j;
 				break;
@@ -142,6 +146,12 @@ char **argv;
 		if (fgets(chp, MAXLINE, filep) == NULL)
 			error("unexpected end of input");
 	    } /* for length */
+
+	    if (refv < 0) error("no reference point in glyph %d.", code);
+	    if (minv < 0) {
+		minv = maxv = refv;
+		minh = maxh = refh;
+	    }
 	    g[i].up = bound(refv - minv);
 	    g[i].down = bound(maxv + 1 - refv);
 	    g[i].right = bound(maxh + 1 - refh);
@@ -199,7 +209,7 @@ int usize;
 		buf += tsize;
 		tsize = usize > BUFSIZ ? BUFSIZ : usize;
 		if ((tsize = write(1, buf, tsize)) < 0) {
-			perror("ch2rst: write failed");
+			perror("ch2vft: write failed");
 			exit(-1);
 		}
 		usize -= tsize;
