@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_node.c	7.44 (Berkeley) %G%
+ *	@(#)nfs_node.c	7.45 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -206,7 +206,14 @@ nfs_lock(ap)
 		struct vnode *a_vp;
 	} */ *ap;
 {
+	register struct vnode *vp = ap->a_vp;
 
+	while (vp->v_flag & VXLOCK) {
+		vp->v_flag |= VXWANT;
+		sleep((caddr_t)vp, PINOD);
+	}
+	if (vp->v_tag == VT_NON)
+		return (ENOENT);
 	return (0);
 }
 
