@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rmt.c	4.4 (Berkeley) 84/11/15";
+static char sccsid[] = "@(#)rmt.c	4.5 (Berkeley) 84/12/19";
 #endif
 
 /*
@@ -8,6 +8,7 @@ static char sccsid[] = "@(#)rmt.c	4.4 (Berkeley) 84/11/15";
 #include <stdio.h>
 #include <sgtty.h>
 #include <sys/types.h>
+#include <sys/socket.h>
 #include <sys/mtio.h>
 #include <errno.h>
 
@@ -47,6 +48,8 @@ main(argc, argv)
 			exit(1);
 		(void) setbuf(debug, (char *)0);
 	}
+	n = MAXRECSIZ;
+	(void) setsockopt(0, SOL_SOCKET, SO_RCVBUF, &n, sizeof (n));
 top:
 	errno = 0;
 	rval = 0;
