@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)main.c	3.80		%G%);
+SCCSID(@(#)main.c	3.81		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -646,6 +646,7 @@ setfrom(from, realname)
 	char frombuf[MAXNAME];
 	extern char **prescan();
 	extern char *index();
+	extern char *macvalue();
 
 	if (realname == NULL)
 		realname = CurEnv->e_from.q_paddr;
@@ -707,7 +708,8 @@ setfrom(from, realname)
 	**  Set up the $r and $s macros to show who it came from.
 	*/
 
-	if (CurEnv->e_from.q_host != NULL && CurEnv->e_from.q_host[0] != '\0')
+	if (macvalue('s') == NULL && CurEnv->e_from.q_host != NULL &&
+	    CurEnv->e_from.q_host[0] != '\0')
 	{
 		define('s', CurEnv->e_from.q_host);
 
