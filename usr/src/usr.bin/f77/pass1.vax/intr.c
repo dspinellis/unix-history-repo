@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)intr.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)intr.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -34,7 +34,7 @@ static char sccsid[] = "@(#)intr.c	5.2 (Berkeley) %G%";
  * Changes to distinguish explicit from implicit conversions with intrconv().
  * 
  * Revision 1.2  84/12/15  01:02:33  donn
- * Added a case for an integer*4 result from len() in inline().  Previously
+ * Added a case for an integer*4 result from len() in Inline().  Previously
  * only -i2 provoked len() inline, sigh.
  * 
  */
@@ -355,7 +355,7 @@ int i, rettype;
 Addrp ap;
 register struct Specblock *sp;
 register struct Chain *cp;
-expptr inline(), mkcxcon(), mkrealcon();
+expptr Inline(), mkcxcon(), mkrealcon();
 expptr q, ep;
 int mtype;
 int op;
@@ -496,7 +496,7 @@ switch(f1field)
 			&& (!dblflag || f3field != 26 || mtype != TYDREAL ) )
 				goto badtype;
 		fixargs(YES, argsp);
-		if(q = inline(sp-spectab, mtype, argsp->listp))
+		if(q = Inline(sp-spectab, mtype, argsp->listp))
 			{
 			frchain( &(argsp->listp) );
 			free( (charptr) argsp);
@@ -640,7 +640,7 @@ fatali("intraddr: impossible f1=%d\n", (int) packed.bits.f1);
 
 
 
-expptr inline(fno, type, args)
+expptr Inline(fno, type, args)
 int fno;
 int type;
 struct Chain *args;
