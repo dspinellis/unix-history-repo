@@ -1,4 +1,6 @@
-static	char *sccsid = "@(#)icheck.c	1.6 (Berkeley) %G%";
+/*###1 [lint] static variable sccsid unused%%%*/
+/*###1 [lint] sccsid defined( icheck.c(1) ), but never used%%%*/
+static	char *sccsid = "@(#)icheck.c	1.7 (Berkeley) %G%";
 
 /*
  * icheck
@@ -30,7 +32,6 @@ struct	dinode	itab[MAXIPG];
 daddr_t	blist[NB];
 char	*bmap;
 
-int	sflg;
 int	mflg;
 int	dflg;
 int	fi;
@@ -81,10 +82,6 @@ char *argv[];
 			mflg++;
 			continue;
 
-		case 's':
-			sflg++;
-			continue;
-
 		case 'b':
 			for(i=0; i<NB; i++) {
 				n = atol(argv[1]);
@@ -121,7 +118,7 @@ char *file;
 	daddr_t d, cgd, cbase, b;
 	long n;
 
-	fi = open(file, sflg?2:0);
+	fi = open(file, 0);
 	if (fi < 0) {
 		printf("cannot open %s\n", file);
 		nerror |= 04;
@@ -150,6 +147,8 @@ char *file;
 		return;
 	}
 	for (n = 0; n < howmany(cssize(&sblock), BSIZE); n++) {
+/*###148 [lint] calloc value declared inconsistently llib-lc(58) :: icheck.c(148)%%%*/
+/*###148 [lint] calloc value used inconsistently llib-lc(58) :: icheck.c(148)%%%*/
 		sblock.fs_csp[n] = (struct csum *)calloc(1, BSIZE);
 		bread(csaddr(&sblock) + (n * FRAG),
 		      (char *)sblock.fs_csp[n], BSIZE);
@@ -164,7 +163,6 @@ char *file;
 	if (bmap==NULL) {
 		printf("Not enough core; duplicates unchecked\n");
 		dflg++;
-		sflg = 0;
 	}
 	ino = 0;
 	cginit = 1;
@@ -204,15 +202,6 @@ char *file;
 	sync();
 #endif
 	bread(SBLOCK, (char *)&sblock, sizeof(sblock));
-	if (sflg) {
-		makecg();
-		close(fi);
-#ifndef STANDALONE
-		if (bmap)
-			free(bmap);
-#endif
-		return;
-	}
 	nffree = 0;
 	nbfree = 0;
 	for (c = 0; c < sblock.fs_ncg; c++) {
@@ -414,119 +403,9 @@ bread(bno, buf, cnt)
 	register i;
 
 	lseek(fi, bno*FSIZE, 0);
+/*###402 [lint] lseek value declared inconsistently llib-lc(31) :: icheck.c(402)%%%*/
 	if ((i = read(fi, buf, cnt)) != cnt) {
-		if (sflg) {
-			printf("No update\n");
-			sflg = 0;
-		}
 		for(i=0; i<BSIZE; i++)
 			buf[i] = 0;
-	}
-}
-
-bwrite(bno, buf, cnt)
-	daddr_t bno;
-	char *buf;
-{
-	lseek(fi, bno*FSIZE, 0);
-	if (write(fi, buf, cnt) != cnt)
-		printf("write error %d\n", tell(fi)/BSIZE);
-}
-
-makecg()
-{
-	int c;
-	daddr_t dbase, d, dmin, dmax;
-	long i, j, s;
-	register struct csum *cs;
-
-	sblock.fs_nbfree = 0;
-	sblock.fs_nffree = 0;
-	for (c = 0; c < sblock.fs_ncg; c++) {
-		bread(cgimin(c,&sblock), (char *)itab,
-		    sblock.fs_ipg * sizeof (struct dinode));
-		dbase = cgbase(c, &sblock);
-		dmax = dbase + sblock.fs_fpg;
-		if (dmax > sblock.fs_size)
-			dmax = sblock.fs_size;
-		cs = &sblock.fs_cs(c);
-		cgrp.cg_time = time((long)0);
-		cgrp.cg_magic = CG_MAGIC;
-		cgrp.cg_cgx = c;
-		cgrp.cg_ncyl = sblock.fs_cpg;
-		cgrp.cg_niblk = sblock.fs_ipg;
-		cgrp.cg_ndblk = dmax - dbase;
-		cgrp.cg_ndir = 0;
-		cgrp.cg_nffree = 0;
-		cgrp.cg_nbfree = 0;
-		cgrp.cg_nifree = 0;
-		for (i = 0; i < sblock.fs_ipg; i++)
-		switch (itab[i].di_mode&IFMT) {
-
-		case 0:
-			cgrp.cg_nifree++;
-			clrbit(cgrp.cg_iused, i);
-			continue;
-
-		case IFDIR:
-			cgrp.cg_ndir++;
-			/* fall into ... */
-
-		default:
-			setbit(cgrp.cg_iused, i);
-			continue;
-		}
-		while (i < MAXIPG) {
-			clrbit(cgrp.cg_iused, i);
-			i++;
-		}
-		for (s = 0; s < MAXCPG; s++)
-			for (i = 0; i < NRPOS; i++)
-				cgrp.cg_b[s][i] = 0;
-		dmin = cgdmin(c, &sblock) - dbase;
-		if (c == 0)
-			dmin += howmany(cssize(&sblock), BSIZE) * FRAG;
-		for (d = 0; d < dmin; d++)
-			clrbit(cgrp.cg_free, d);
-#define	getbmap(i) isset(bmap, i)
-		for (; (d + FRAG) <= dmax - dbase; d += FRAG) {
-			j = 0;
-			for (i = 0; i < FRAG; i++) {
-				if (!getbmap(dbase+d+i)) {
-					setbit(cgrp.cg_free, d+i);
-					j++;
-				} else
-					clrbit(cgrp.cg_free, d+i);
-			}
-			if (j == FRAG) {
-				cgrp.cg_nbfree++;
-				s = d * NSPF;
-				cgrp.cg_b[s/sblock.fs_spc]
-				  [s%sblock.fs_nsect*NRPOS/sblock.fs_nsect]++;
-			} else
-				cgrp.cg_nffree += j;
-		}
-		for (; d < dmax - dbase; d++) {
-			if (!getbmap(dbase+d)) {
-				setbit(cgrp.cg_free, d);
-				cgrp.cg_nffree++;
-			} else
-				clrbit(cgrp.cg_free, d);
-		}
-		for (; d < MAXBPG; d++)
-			clrbit(cgrp.cg_free, d);
-		sblock.fs_nffree += cgrp.cg_nffree;
-		sblock.fs_nbfree += cgrp.cg_nbfree;
-		cs->cs_ndir = cgrp.cg_ndir;
-		cs->cs_nifree = cgrp.cg_nifree;
-		cs->cs_nbfree = cgrp.cg_nbfree;
-		bwrite(cgtod(c, &sblock), (char *)&cgrp, sblock.fs_cgsize);
-	}
-	sblock.fs_ronly = 0;
-	sblock.fs_fmod = 0;
-	bwrite(SBLOCK, (char *)&sblock, sizeof (sblock));
-	for (i = 0; i < howmany(cssize(&sblock), BSIZE); i++) {
-		bwrite(csaddr(&sblock) + (i * FRAG),
-		      (char *)sblock.fs_csp[i], BSIZE);
 	}
 }
