@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)window.1	6.5 (Berkeley) %G%
+.\"	@(#)window.1	6.6 (Berkeley) %G%
 .\"
 .TH WINDOW 1 ""
 .UC 6
@@ -37,7 +37,7 @@ input from the keyboard, but all windows can simultaneously send output
 to the display.
 .PP
 Windows can overlap and are framed as necessary.  Each window
-is named by one of the digits ``1'' to ``9''.  This one character
+is named by one of the digits ``1'' to ``9''.  This one-character
 identifier, as well as a user definable label string, are displayed
 with the window on the top edge of its frame.  A window can be
 designated to be in the \fIforeground\fP, in which case it will always be
@@ -422,7 +422,7 @@ is the current window.
 .TP
 .B escape([escapec])
 Set the escape character to \fIescape-char\fP.  Returns the old
-escape character as a one character string.  Default is no
+escape character as a one-character string.  Default is no
 change.  \fPEscapec\fP can be a string of a single character, or
 in the form \fI^X\fP, meaning control-\fIX\fP.
 .TP
