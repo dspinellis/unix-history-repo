@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.57 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.58 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -880,6 +880,17 @@ putline(l, mci)
 	register char *l;
 	register MCI *mci;
 {
+	extern void putxline();
+
+	putxline(l, mci, TRUE);
+}
+
+void
+putxline(l, mci, mapfrom)
+	register char *l;
+	register MCI *mci;
+	bool mapfrom;
+{
 	register char *p;
 	register char svchar;
 	int slop = 0;
@@ -916,6 +927,14 @@ putline(l, mci)
 				(void) putc('.', mci->mci_out);
 				if (TrafficLogFile != NULL)
 					(void) putc('.', TrafficLogFile);
+			}
+			else if (l[0] == 'F' && slop == 0 && mapfrom &&
+				 strncmp(l, "From ", 5) == 0 &
+				 bitnset(M_ESCFROM, mci->mci_mailer->m_flags))
+			{
+				(void) putc('>', mci->mci_out);
+				if (TrafficLogFile != NULL)
+					(void) putc('>', TrafficLogFile);
 			}
 			fputs(l, mci->mci_out);
 			(void) putc('!', mci->mci_out);

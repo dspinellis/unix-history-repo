@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.84.1.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.127 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -2211,7 +2211,7 @@ putfromline(mci, e)
 	}
 # endif /* UGLYUUCP */
 	expand(template, buf, &buf[sizeof buf - 1], e);
-	putline(buf, mci);
+	putxline(buf, mci, FALSE);
 }
 /*
 **  PUTBODY -- put the body of a message.

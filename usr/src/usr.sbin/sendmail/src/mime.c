@@ -10,7 +10,7 @@
 # include <string.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)mime.c	8.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)mime.c	8.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -71,8 +71,7 @@ static int	MimeBoundaryType;	/* internal linkage */
 int
 mime8to7(mci, header, e, boundary)
 	register MCI *mci;
-	HDR *header;
-	register ENVELOPE *e;
+	HDR *header; register ENVELOPE *e;
 	char *boundary;
 {
 	register char *p;
@@ -162,42 +161,46 @@ mime8to7(mci, header, e, boundary)
 	**	encoding.
 	*/
 
-	/* remember where we were */
-	offset = ftell(e->e_dfp);
-	if (offset == -1)
-		syserr("mime8to7: cannot ftell on %s", e->e_df);
-
-	/* do a scan of this body type to count character types */
 	sectionsize = sectionhighbits = 0;
-	while (fgets(buf, sizeof buf, e->e_dfp) != NULL)
+	if (p == NULL || strcasecmp(p, "message/rfc822") != 0)
 	{
-		bt = mimeboundary(buf, boundary);
-		if (bt != MBT_NOTSEP)
-			break;
-		for (p = buf; *p != '\0'; p++)
+		/* remember where we were */
+		offset = ftell(e->e_dfp);
+		if (offset == -1)
+			syserr("mime8to7: cannot ftell on %s", e->e_df);
+
+		/* do a scan of this body type to count character types */
+		while (fgets(buf, sizeof buf, e->e_dfp) != NULL)
 		{
-			/* count bytes with the high bit set */
-			sectionsize++;
-			if (bitset(0200, *p))
-				sectionhighbits++;
+			bt = mimeboundary(buf, boundary);
+			if (bt != MBT_NOTSEP)
+				break;
+			for (p = buf; *p != '\0'; p++)
+			{
+				/* count bytes with the high bit set */
+				sectionsize++;
+				if (bitset(0200, *p))
+					sectionhighbits++;
+			}
+
+			/*
+			**  Heuristic: if 1/4 of the first 4K bytes are 8-bit,
+			**  assume base64.  This heuristic avoids double-reading
+			**  large graphics or video files.
+			*/
+
+			if (sectionsize >= 4096 &&
+			    sectionhighbits > sectionsize / 4)
+				break;
 		}
+		if (feof(e->e_dfp))
+			bt = MBT_FINAL;
 
-		/*
-		**  Heuristic: if 1/4 of the first 4K bytes are 8-bit,
-		**  assume base64.  This heuristic avoids double-reading
-		**  large graphics or video files.
-		*/
-
-		if (sectionsize >= 4096 && sectionhighbits > sectionsize / 4)
-			break;
+		/* return to the original offset for processing */
+		/* XXX use relative seeks to handle >31 bit file sizes? */
+		if (fseek(e->e_dfp, offset, SEEK_SET) < 0)
+			syserr("mime8to7: cannot fseek on %s", e->e_df);
 	}
-	if (feof(e->e_dfp))
-		bt = MBT_FINAL;
-
-	/* return to the original offset for processing */
-	/* XXX use relative seeks to handle >31 bit file sizes? */
-	if (fseek(e->e_dfp, offset, SEEK_SET) < 0)
-		syserr("mime8to7: cannot fseek on %s", e->e_df);
 
 	/*
 	**  Heuristically determine encoding method.
@@ -279,11 +282,12 @@ mime8to7(mci, header, e, boundary)
 	{
 		/* use quoted-printable encoding */
 		int c1, c2;
+		int fromstate;
 
 		putline("Content-Transfer-Encoding: quoted-printable", mci);
 		putline("", mci);
 		mci->mci_flags &= ~MCIF_INHEADER;
-		linelen = 0;
+		linelen = fromstate = 0;
 		c2 = '\n';
 		while ((c1 = mime_getchar(e->e_dfp, boundary)) != EOF)
 		{
@@ -300,11 +304,17 @@ mime8to7(mci, header, e, boundary)
 								mci->mci_out);
 				}
 				fputs(mci->mci_mailer->m_eol, mci->mci_out);
-				linelen = 0;
+				linelen = fromstate = 0;
 				c2 = c1;
 				continue;
 			}
-			if (c2 == ' ' || c2 == '\t')
+			if (c2 == ' ' && linelen == 4 && fromstate == 4 &&
+			    bitnset(M_ESCFROM, mci->mci_mailer->m_flags))
+			{
+				fputs("=20", mci->mci_out);
+				linelen += 3;
+			}
+			else if (c2 == ' ' || c2 == '\t')
 			{
 				fputc(c2, mci->mci_out);
 				linelen++;
@@ -313,7 +323,7 @@ mime8to7(mci, header, e, boundary)
 			{
 				fputc('=', mci->mci_out);
 				fputs(mci->mci_mailer->m_eol, mci->mci_out);
-				linelen = 0;
+				linelen = fromstate = 0;
 				c2 = '\n';
 			}
 			if (c2 == '\n' && c1 == '.' &&
@@ -331,6 +341,8 @@ mime8to7(mci, header, e, boundary)
 			}
 			else if (c1 != ' ' && c1 != '\t')
 			{
+				if (linelen < 4 && c1 == "From"[linelen])
+					fromstate++;
 				fputc(c1, mci->mci_out);
 				linelen++;
 			}
@@ -340,15 +352,28 @@ mime8to7(mci, header, e, boundary)
 		/* output any saved character */
 		if (c2 == ' ' || c2 == '\t')
 		{
-			fputc(c2, mci->mci_out);
-			linelen++;
+			fputc('=', mci->mci_out);
+			fputc(Base16Code[(c2 >> 4) & 0x0f], mci->mci_out);
+			fputc(Base16Code[c2 & 0x0f], mci->mci_out);
+			linelen += 3;
 		}
 	}
 	if (linelen > 0)
 		fputs(mci->mci_mailer->m_eol, mci->mci_out);
 	return MimeBoundaryType;
 }
-
+/*
+**  MIME_GETCHAR -- get a character for MIME processing
+**
+**	Treats boundaries as EOF.
+**
+**	Parameters:
+**		fp -- the input file.
+**		boundary -- the current MIME boundary.
+**
+**	Returns:
+**		The next character in the input stream.
+*/
 
 int
 mime_getchar(fp, boundary)
@@ -366,24 +391,32 @@ mime_getchar(fp, boundary)
 		buflen--;
 		return *bp++;
 	}
+	bp = buf;
+	buflen = 0;
 	c = fgetc(fp);
+	if (c == '\n')
+	{
+		/* might be part of a MIME boundary */
+		*bp++ = c;
+		atbol = TRUE;
+		c = fgetc(fp);
+	}
+	if (c != EOF)
+		*bp++ = c;
 	if (atbol && c == '-' && boundary != NULL)
 	{
 		/* check for a message boundary */
-		bp = buf;
 		c = fgetc(fp);
 		if (c != '-')
 		{
 			if (c != EOF)
-			{
-				*bp = c;
-				buflen++;
-			}
-			return '-';
+				*bp++ = c;
+			buflen = bp - buf - 1;
+			bp = buf;
+			return *bp++;
 		}
 
 		/* got "--", now check for rest of separator */
-		*bp++ = '-';
 		*bp++ = '-';
 		while (bp < &buf[sizeof buf - 1] &&
 		       (c = fgetc(fp)) != EOF && c != '\n')
@@ -404,13 +437,13 @@ mime_getchar(fp, boundary)
 		atbol = c == '\n';
 		if (c != EOF)
 			*bp++ = c;
-		buflen = bp - buf - 1;
-		bp = buf;
-		return *bp++;
 	}
 
-	atbol = c == '\n';
-	return c;
+	buflen = bp - buf - 1;
+	if (buflen < 0)
+		return EOF;
+	bp = buf;
+	return *bp++;
 }
 /*
 **  MIMEBOUNDARY -- determine if this line is a MIME boundary & its type
@@ -442,6 +475,8 @@ mimeboundary(line, boundary)
 			boundary, line);
 	i = strlen(line);
 	if (line[i - 1] == '\n')
+		i--;
+	while (line[i - 1] == ' ' || line[i - 1] == '\t')
 		i--;
 	if (i > 2 && strncmp(&line[i - 2], "--", 2) == 0)
 	{
