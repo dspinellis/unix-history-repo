@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)genassym.c	7.6 (Berkeley) %G%
+ *	@(#)genassym.c	7.7 (Berkeley) %G%
  */
 
 #define KERNEL
@@ -40,7 +40,7 @@ main()
 	printf("#define\tP_LINK %d\n", &p->p_link);
 	printf("#define\tP_RLINK %d\n", &p->p_rlink);
 	printf("#define\tP_VMSPACE %d\n", &p->p_vmspace);
-	printf("#define\tPMAP %d\n", &vms->vm_map.pmap);
+	printf("#define\tVM_PMAP %d\n", &vms->vm_pmap);
 	printf("#define\tPM_STCHG %d\n", &pmap->pm_stchanged);
 	printf("#define\tP_ADDR %d\n", &p->p_addr);
 	printf("#define\tP_PRI %d\n", &p->p_pri);
@@ -145,10 +145,9 @@ main()
 	printf("#define\tPCB_USP %d\n", &pcb->pcb_usp);
 	printf("#define\tPCB_REGS %d\n", pcb->pcb_regs);
 	printf("#define\tPCB_CMAP2 %d\n", &pcb->pcb_cmap2);
-	printf("#define\tPCB_SSWAP %d\n", &pcb->pcb_sswap);
-	printf("#define\tPCB_SIGC %d\n", pcb->pcb_sigc);
 	printf("#define\tPCB_ONFAULT %d\n", &pcb->pcb_onfault);
 	printf("#define\tPCB_FPCTX %d\n", &pcb->pcb_fpregs);
+	printf("#define\tSIZEOF_PCB %d\n", sizeof(struct pcb));
 	printf("#define\tSP %d\n", SP);
 	printf("#define\tB_READ %d\n", B_READ);
 	printf("#define\tENOENT %d\n", ENOENT);
@@ -165,13 +164,8 @@ main()
 	printf("#define\tSYS_exit %d\n", SYS_exit);
 	printf("#define\tSYS_execve %d\n", SYS_execve);
 	printf("#define\tSYS_sigreturn %d\n", SYS_sigreturn);
-	for (i = 0; i < 32; i++) {
-		if ((1 << i) & SPTECHG)
-			printf("#define\tSPTECHGB %d\n", i);
-		if ((1 << i) & PCB_AST)
-			printf("#define\tPCB_ASTB %d\n", i);
+	for (i = 0; i < 32; i++)
 		if ((1 << i) & PCB_HPUXTRACE)
 			printf("#define\tPCB_TRCB %d\n", i);
-	}
 	exit(0);
 }
