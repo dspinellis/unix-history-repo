@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)sh.1	8.5 (Berkeley) %G%
+.\"	@(#)sh.1	8.6 (Berkeley) %G%
 .\"
 .na
 .TH SH 1
@@ -1002,6 +1002,12 @@ that can't be performed by a separate process. In addition to these, there are s
 be builtin for efficiency (e.g. printf(1), echo(1), test(1),
 etc).
 .TP
+:
+A null command that returns a 0 (true) exit value.
+.TP
+\&. file
+The commands in the specified file are read and executed by the shell.
+.TP
 alias  [ name[=string] ...  ]
 If name=string is specified, the shell defines the
 alias ``name'' with value ``string''.  If just ``name''
@@ -1029,9 +1035,6 @@ the directory that it actually switched to if this is
 different from the name that the user gave.  These
 may be different either because the CDPATH mechanism
 was used or because a symbolic link was crossed.
-.TP
-\&. file
-The commands in the specified file are read and executed by the shell.
 .TP
 eval string...
 Concatenate all the arguments with spaces.  Then
