@@ -1,7 +1,7 @@
-#	Makefile	4.3	83/11/10
+#	Makefile	4.4	83/11/11
 #
 CFLAGS=	-O
-OBJS=	box.o circle.o arc.o dot.o erase.o line.o linemod.o point.o \
+OBJS=	box.o circle.o arc.o cont.o dot.o erase.o line.o linemod.o point.o \
 	label.o move.o open.o close.o space.o
 
 ../libplotbg:	${OBJS}
