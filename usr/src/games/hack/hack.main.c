@@ -13,6 +13,8 @@
 
 extern char *getlogin(), *getenv();
 extern char plname[PL_NSIZ], pl_character[PL_CSIZ];
+extern struct permonst mons[CMNUM+2];
+extern char genocided[], fut_geno[];
 
 int (*afternmv)();
 int (*occupation)();
@@ -216,8 +218,6 @@ char *argv[];
 			}
 		if(sfoo = getenv("GENOCIDED")){
 			if(*sfoo == '!'){
-				extern struct permonst mons[CMNUM+2];
-				extern char genocided[], fut_geno[];
 				register struct permonst *pm = mons;
 				register char *gp = genocided;
 
