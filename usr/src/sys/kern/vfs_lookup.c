@@ -1,4 +1,4 @@
-/*	vfs_lookup.c	4.13	82/03/13	*/
+/*	vfs_lookup.c	4.14	82/03/31	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -83,6 +83,7 @@ dirloop:
 	if ((dp->i_mode&IFMT) != IFDIR)
 		u.u_error = ENOTDIR;
 	(void) access(dp, IEXEC);
+dirloop2:
 	for (i=0; *cp!='\0' && *cp!='/'; i++) {
 #ifdef notdef
 		if (i >= DIRSIZ) {
@@ -174,7 +175,7 @@ dirloop:
 						ilock(dp);
 						dp->i_count++;
 						cp -= 2;     /* back over .. */
-						goto dirloop;
+						goto dirloop2;
 					}
 			}
 		}
