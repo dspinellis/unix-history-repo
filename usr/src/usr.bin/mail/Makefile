@@ -1,7 +1,7 @@
 #
 # Unix version 7.
 #
-# Sccs Id = "@(#)Makefile	2.8 %G%";
+# Sccs Id = "@(#)Makefile	2.9 %G%";
 #
 
 CFLAGS=-O -DVMUNIX -DV7
@@ -85,11 +85,6 @@ config.o:	config.c
 
 cmdtab.o: cmdtab.c
 	$(CC) -R -c $(CFLAGS) cmdtab.c
-
-errlst.o: errlst.c
-	${CC} -E ${CFLAGS} errlst.c | ${XSTR} -c -
-	${CC} ${CFLAGS} -R -c x.c
-	mv x.o errlst.o
 
 #
 # Make the version file.  /tmp is always changing.
