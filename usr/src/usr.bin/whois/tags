@@ -1,0 +1,2 @@
+Mwhois	whois.c	/^main(argc, argv)$/
+usage	whois.c	/^usage()$/

@@ -1,0 +1,2 @@
+Msoelim	soelim.c	/^main(argc, argv)$/
+process	soelim.c	/^int process(file)$/
