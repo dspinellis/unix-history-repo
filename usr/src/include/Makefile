@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.9 (Berkeley) 85/08/08
+#	@(#)Makefile	5.10 (Berkeley) 86/01/10
 #
 # Doing a make install builds /usr/include
 #
@@ -66,7 +66,7 @@ symlinks:
 	ln -s /sys/h ${DESTDIR}/usr/include/sys
 
 copies:
-	for i in ${SYSDIRS}; do \
+	-for i in ${SYSDIRS}; do \
 		rm -rf ${DESTDIR}/usr/include/$$i; \
 		cd /sys; \
 		tar cf - $$i/*.h | (cd ${DESTDIR}/usr/include; tar xpfB -); \
@@ -74,7 +74,7 @@ copies:
 	rm -rf ${DESTDIR}/usr/include/sys;
 	mkdir ${DESTDIR}/usr/include/sys; 
 	chmod 775 ${DESTDIR}/usr/include/sys;
-	(cd /sys/h; tar cf - *.h | (cd ${DESTDIR}/usr/include/sys; tar xpfB -))
+	-(cd /sys/h; tar cf - *.h | (cd ${DESTDIR}/usr/include/sys; tar xpfB -))
 
 tags:
 	cwd=/usr/include; \
