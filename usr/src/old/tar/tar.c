@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)tar.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)tar.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -512,8 +512,6 @@ putfile(longname, shortname, parent)
 			return;
 		}
 		while ((dp = readdir(dirp)) != NULL && !term) {
-			if (dp->d_ino == 0)
-				continue;
 			if (!strcmp(".", dp->d_name) ||
 			    !strcmp("..", dp->d_name))
 				continue;
@@ -750,7 +748,7 @@ doxtract(argv)
 			nread = readtbuf(&bufp, nwant);
 			if (write(ofile, bufp, (int)min(nread, bytes)) < 0) {
 				fprintf(stderr,
-				    "tar: %s: HELP - extract write error",
+				    "tar: %s: HELP - extract write error: ",
 				    dblock.dbuf.name);
 				perror("");
 				done(2);
@@ -1358,7 +1356,7 @@ dodirtimes(hp)
 	int savndir;
 
 	/* Find common prefix */
-	while (*p == *q) {
+	while (*p == *q && *p) {
 		if (*p++ == '/')
 			++ndir;
 		q++;
