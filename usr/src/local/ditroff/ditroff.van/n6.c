@@ -285,7 +285,7 @@ tchar mot()
 
 	j = HOR;
 	getch(); /*eat delim*/
-	if (n = atoi()) {
+	if (n = (int)atoi0()) {
 		if (vflag)
 			j = VERT;
 		i = makem(quant(n, j));
@@ -385,7 +385,7 @@ bd0:
 bd1:
 	skip();
 	noscale++;
-	bdtab[j] = atoi();
+	bdtab[j] = (int)atoi0();
 	noscale = 0;
 }
 
@@ -428,7 +428,7 @@ tchar xlss()
 
 	getch();
 	dfact = lss;
-	i = quant(atoi(), VERT);
+	i = quant((int)atoi0(), VERT);
 	dfact = 1;
 	getch();
 	if (i >= 0)

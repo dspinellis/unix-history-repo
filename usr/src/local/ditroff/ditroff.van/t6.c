@@ -613,7 +613,7 @@ tchar mot()
 
 	j = HOR;
 	getch(); /*eat delim*/
-	if (n = atoi()) {
+	if (n = (int)atoi0()) {
 		if (vflag)
 			j = VERT;
 		i = makem(quant(n, j));
@@ -703,7 +703,7 @@ caselg()
 	lg = 1;
 	if (skip())
 		return;
-	lg = atoi();
+	lg = (int)atoi0();
 }
 
 
@@ -805,9 +805,9 @@ casecs()
 	if (!(i = getrq()) || (i = findft(i)) < 0)
 		goto rtn;
 	skip();
-	cstab[i] = atoi();
+	cstab[i] = (int)atoi0();
 	skip();
-	j = atoi();
+	j = (int)atoi0();
 	if (nonumb)
 		ccstab[i] = 0;
 	else
@@ -842,7 +842,7 @@ bd0:
 bd1:
 	skip();
 	noscale++;
-	bdtab[j] = atoi();
+	bdtab[j] = (int)atoi0();
 	noscale = 0;
 }
 
@@ -873,7 +873,7 @@ casess()
 
 	noscale++;
 	skip();
-	if (i = atoi()) {
+	if (i = (int)atoi0()) {
 		spacesz = i & 0177;
 		zapwcache(0);
 		sps = width(' ' | chbits);
@@ -894,7 +894,7 @@ tchar xlss()
 
 	getch();
 	dfact = lss;
-	i = quant(atoi(), VERT);
+	i = quant((int)atoi0(), VERT);
 	dfact = 1;
 	getch();
 	if (i >= 0)

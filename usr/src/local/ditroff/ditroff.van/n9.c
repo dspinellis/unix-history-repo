@@ -36,7 +36,7 @@ setline()
 	delim = cbits(c);
 	vflag = 0;
 	dfact = EM;
-	length = quant(atoi(), HOR);
+	length = quant((int)atoi0(), HOR);
 	dfact = 1;
 	if (!length) {
 		eat(delim);
@@ -184,7 +184,7 @@ setvline()
 	delim = cbits(c);
 	dfact = lss;
 	vflag++;
-	i = quant(atoi(), VERT);
+	i = quant((int)atoi0(), VERT);
 	dfact = 1;
 	if (!i) {
 		eat(delim);
@@ -263,7 +263,7 @@ setdraw()	/* generate internal cookies for a drawing function */
 			ch = c;
 		vflag = 0;
 		dfact = EM;
-		dx[i] = quant(atoi(), HOR);
+		dx[i] = quant((int)atoi0(), HOR);
 		if (dx[i] > MAXMOT)
 			dx[i] = MAXMOT;
 		else if (dx[i] < -MAXMOT)
@@ -274,7 +274,7 @@ setdraw()	/* generate internal cookies for a drawing function */
 		}
 		vflag = 1;
 		dfact = lss;
-		dy[i] = quant(atoi(), VERT);
+		dy[i] = quant((int)atoi0(), VERT);
 		if (dy[i] > MAXMOT)
 			dy[i] = MAXMOT;
 		else if (dy[i] < -MAXMOT)

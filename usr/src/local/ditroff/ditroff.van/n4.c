@@ -661,7 +661,7 @@ casenr()
 		goto rtn;
 	numtab[i].val = j;
 	skip();
-	j = atoi();
+	j = (int)atoi0();
 	if (nonumb)
 		goto rtn;
 	numtab[i].inc = j;
@@ -739,7 +739,7 @@ int	*n;
 		else 
 			ch = ii;
 	}
-	i = atoi();
+	i = (int)atoi0();
 	if (n && f)
 		i = *n + f * i;
 	i = quant(i, res);
