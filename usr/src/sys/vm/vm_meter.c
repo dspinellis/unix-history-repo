@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vm_meter.c	7.6 (Berkeley) %G%
+ *	@(#)vm_meter.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -405,9 +405,10 @@ next:
 			switch (p->p_stat) {
 
 			case SSLEEP:
-			case SSTOP:
-				if (p->p_pri <= PZERO && p->p_stat == SSLEEP)
+				if (p->p_pri <= PZERO && p->p_slptime == 0)
 					nrun++;
+				/* fall through */
+			case SSTOP:
 				if (p->p_flag & SPAGE)
 					total.t_pw++;
 				else if (p->p_flag & SLOAD) {
