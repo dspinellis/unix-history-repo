@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)uusnap.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)uusnap.c	5.9	(Berkeley) %G%";
 #endif
 
 /*
@@ -21,10 +21,6 @@ static char sccsid[] = "@(#)uusnap.c	5.8 (Berkeley) %G%";
 #include <sys/dir.h>
 #endif
 #include <ctype.h>
-
-#ifndef	SYSBUF
-char SYSBUF[BUFSIZ];
-#endif
 
 #define	NSYSTEM	300				/* max # of systems queued */
 
@@ -52,10 +48,10 @@ struct	scnt	sys[NSYSTEM];			/* Systems queued */
 int xqtisrunning = 0;
 
 main()
-{	register int i, j, nlen = 0;
+{	
+	register int i, j, nlen = 0;
 	time_t	curtime, t;
 
-	setbuf(stdout, SYSBUF);
 	scandir(CMDSDIR, "C.", CMDSLEN, NULL, CMDTYPE);
 	scandir(DATADIR, "D.", DATALEN, NULL, DATTYPE);
 	scandir(XEQTDIR, "X.", XEQTLEN, 'X', XEQTYPE);
@@ -158,18 +154,9 @@ char *dnam, *prfx, fchr;
 		strcpy(fnam, &dentp->d_name[plen]);
 		fnamlen = strlen(fnam);
 		if(flen > 0) {
-			char c;
 			fnamlen -= flen;
-			c = fnam[fnamlen];
-			if (islower(c))
-				c = toupper(c);
-			if (type == DATTYPE && (c != 'S' && c != 'B')) {
-				fnamlen -= 2;	/* For Honey DanBer */
-				fnam[fnamlen] = NULL;
-			} else {
-				fnam[fnamlen] = NULL;
-				fnamlen = MAXBASENAME; /* yes, after = NULL*/
-			}
+			fnam[fnamlen] = NULL;
+			fnamlen = MAXBASENAME; /* yes, after = NULL*/
 		} else {
 			for(; fnamlen>0; --fnamlen) {
 				if(fnam[fnamlen] == fchr) {
