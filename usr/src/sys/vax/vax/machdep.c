@@ -1,4 +1,4 @@
-/*	machdep.c	4.49	82/01/16	*/
+/*	machdep.c	4.50	82/01/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -496,7 +496,7 @@ boot(paniced, arghowto)
 	howto = 0; devtype = 0;
 	printf("howto %d, devtype %d\n", arghowto, devtype);
 #endif
-	(void) spl4();
+	(void) spl1();
 	howto = arghowto;
 	if ((howto&RB_NOSYNC)==0 && waittime < 0 && bfreelist[0].b_forw) {
 		register int cnt;
