@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	6.21 (Berkeley) %G%
+ *	@(#)conf.h	6.22 (Berkeley) %G%
  */
 
 /*
@@ -20,10 +20,10 @@
 **	There shouldn't be much need to change these....
 */
 
-# define MAXLINE	1024		/* max line length */
+# define MAXLINE	2048		/* max line length */
 # define MAXNAME	256		/* max length of a name */
 # define MAXPV		40		/* max # of parms to mailers */
-# define MAXATOM	100		/* max atoms per address */
+# define MAXATOM	200		/* max atoms per address */
 # define MAXMAILERS	25		/* maximum mailers known to system */
 # define MAXRWSETS	100		/* max # of sets of rewriting rules */
 # define MAXPRIORITIES	25		/* max values for Precedence: field */
@@ -33,7 +33,7 @@
 # define MEMCHUNKSIZE	1024		/* chunk size for memory allocation */
 # define MAXUSERENVIRON	100		/* max envars saved, must be >= 3 */
 # define MAXIPADDR	16		/* max # of IP addrs for this host */
-# define PSBUFSIZE	(MAXNAME * 4)	/* size of prescan buffer */
+# define PSBUFSIZE	(MAXLINE + MAXATOM)	/* size of prescan buffer */
 
 # ifndef QUEUESIZE
 # define QUEUESIZE	1000		/* max # of jobs per queue run */
