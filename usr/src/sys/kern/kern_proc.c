@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.22	82/02/15	*/
+/*	kern_proc.c	4.23	82/02/27	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -49,7 +49,7 @@ exece()
 	char cfname[DIRSIZ];
 	char cfarg[SHSIZE];
 
-	if ((ip = namei(uchar, 0)) == NULL)
+	if ((ip = namei(uchar, 0, 1)) == NULL)
 		return;
 	bno = 0;
 	bp = 0;
@@ -154,7 +154,7 @@ exece()
 		bcopy((caddr_t)u.u_dbuf, (caddr_t)cfname, DIRSIZ);
 		indir = 1;
 		iput(ip);
-		ip = namei(schar, 0);
+		ip = namei(schar, 0, 1);
 		if (ip == NULL)
 			return;
 		goto again;

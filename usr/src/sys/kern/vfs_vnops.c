@@ -1,4 +1,4 @@
-/*	vfs_vnops.c	4.21	82/02/15	*/
+/*	vfs_vnops.c	4.22	82/02/27	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -203,11 +203,12 @@ access(ip, mode)
  * return inode pointer.
  */
 struct inode *
-owner()
+owner(follow)
+	int follow;
 {
 	register struct inode *ip;
 
-	ip = namei(uchar, 0);
+	ip = namei(uchar, 0, follow);
 	if (ip == NULL)
 		return (NULL);
 	if (u.u_uid == ip->i_uid)

@@ -1,4 +1,4 @@
-/*	ufs_inode.c	4.8	82/02/15	*/
+/*	ufs_inode.c	4.9	82/02/27	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -276,7 +276,7 @@ itrunc(ip)
 	struct inode itmp;
 
 	i = ip->i_mode & IFMT;
-	if (i!=IFREG && i!=IFDIR)
+	if (i!=IFREG && i!=IFDIR && i!=IFLNK)
 		return;
 
 	/*

@@ -1,4 +1,4 @@
-/*	dinode.h	4.9	81/11/14	*/
+/*	dinode.h	4.10	82/02/27	*/
 
 /*
  * The I node is the focus of all file activity in UNIX.
@@ -71,8 +71,7 @@ struct	inode *namei();
 #define		IFDIR		0040000		/* directory */
 #define		IFBLK		0060000		/* block special */
 #define		IFREG		0100000		/* regular */
-#define		IFSYMREG	0110000		/* regular symbolic link */
-#define		IFSYMDIR	0130000		/* directory symbolic link */
+#define		IFLNK		0120000		/* symbolic link */
 #define		IFPORTAL	0140000		/* portal */
 #define	ISUID	04000		/* set user id on execution */
 #define	ISGID	02000		/* set group id on execution */
