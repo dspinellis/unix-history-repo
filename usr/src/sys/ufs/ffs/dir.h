@@ -12,10 +12,13 @@
  * from this software without specific prior written permission.
  * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)dir.h	7.5 (Berkeley) %G%
+ *	@(#)dir.h	7.6 (Berkeley) %G%
  */
+
+#ifndef _DIR_
+#define	_DIR_
 
 /*
  * A directory consists of some number of blocks of DIRBLKSIZ
@@ -49,7 +52,7 @@ struct	direct {
 	u_long	d_ino;			/* inode number of entry */
 	u_short	d_reclen;		/* length of this record */
 	u_short	d_namlen;		/* length of string in d_name */
-	char	d_name[MAXNAMLEN + 1];	/* name must be no longer than this */
+	char	d_name[MAXNAMLEN + 1];	/* name with length <= MAXNAMLEN */
 };
 
 /*
@@ -85,6 +88,7 @@ struct dirtemplate {
  * and is provided solely (and temporarily) for backward compatibility.
  */
 #ifndef KERNEL
+#define d_fileno d_ino		/* compatibility with POSIX */
 #ifndef DEV_BSIZE
 #define	DEV_BSIZE	512
 #endif
@@ -110,3 +114,4 @@ extern	void seekdir();
 #define rewinddir(dirp)	seekdir((dirp), (long)0)
 extern	void closedir();
 #endif /* not KERNEL */
+#endif /* _DIR_ */
