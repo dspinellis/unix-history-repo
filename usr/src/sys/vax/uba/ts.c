@@ -1,4 +1,4 @@
-/*	ts.c	4.22	82/02/03	*/
+/*	ts.c	4.23	82/02/03	*/
 
 #include "ts.h"
 #if NTS > 0
@@ -86,6 +86,7 @@ struct	ts_softc {
 	struct	ts_sts sc_sts;	/* status packet, for returned status */
 	struct	ts_char sc_char; /* characteristics packet */
 	struct	ts_softc *sc_ubaddr; /* Unibus address of ts_softc structure */
+	u_short	sc_uba;		/* Unibus addr of cmd pkt for tsdb */
 	short	sc_mapped;	/* is ts_sfotc mapped in Unibus space? */
 } ts_softc[NTS];
 
