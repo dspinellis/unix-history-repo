@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	6.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	6.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -52,6 +52,8 @@ char	*DelimChar;		/* set to point to the delimiter */
 **			+1 -- copy everything.
 **		delim -- the character to terminate the address, passed
 **			to prescan.
+**		delimptr -- if non-NULL, set to the location of the
+**			delim character that was found.
 **		e -- the envelope that will contain this address.
 **
 **	Returns:
@@ -67,14 +69,16 @@ char	*DelimChar;		/* set to point to the delimiter */
 # define DELIMCHARS	"\201()<>,;\\\"\r\n"	/* word delimiters */
 
 ADDRESS *
-parseaddr(addr, a, copyf, delim, e)
+parseaddr(addr, a, copyf, delim, delimptr, e)
 	char *addr;
 	register ADDRESS *a;
 	int copyf;
 	char delim;
+	char **delimptr;
 	register ENVELOPE *e;
 {
 	register char **pvp;
+	auto char *delimptrbuf;
 	char pvpbuf[PSBUFSIZE];
 
 	/*
@@ -108,7 +112,10 @@ parseaddr(addr, a, copyf, delim, e)
 			return (NULL);
 	}
 
-	pvp = prescan(addr, delim, pvpbuf);
+	if (delimptr == NULL)
+		delimptr = &delimptrbuf;
+
+	pvp = prescan(addr, delim, pvpbuf, delimptr);
 	if (pvp == NULL)
 	{
 		if (tTd(20, 1))
@@ -148,7 +155,7 @@ parseaddr(addr, a, copyf, delim, e)
 	**  transport them out.
 	*/
 
-	allocaddr(a, copyf, addr);
+	allocaddr(a, copyf, addr, *delimptr);
 
 	/*
 	**  Compute return value.
@@ -196,6 +203,7 @@ invalidaddr(addr)
 **		a -- the address to reallocate.
 **		copyf -- the copy flag (see parseaddr for description).
 **		paddr -- the printname of the address.
+**		delimptr -- a pointer to the address delimiter.  Must be set.
 **
 **	Returns:
 **		none.
@@ -204,20 +212,21 @@ invalidaddr(addr)
 **		Copies portions of a into local buffers as requested.
 */
 
-allocaddr(a, copyf, paddr)
+allocaddr(a, copyf, paddr, delimptr)
 	register ADDRESS *a;
 	int copyf;
 	char *paddr;
+	char *delimptr;
 {
 	register MAILER *m = a->q_mailer;
 
 	if (copyf > 0 && paddr != NULL)
 	{
-		char savec = *DelimChar;
+		char savec = *delimptr;
 
-		*DelimChar = '\0';
+		*delimptr = '\0';
 		a->q_paddr = newstr(paddr);
-		*DelimChar = savec;
+		*delimptr = savec;
 	}
 	else
 		a->q_paddr = paddr;
@@ -329,13 +338,12 @@ invalidaddr(addr)
 **			If '\t' then we are reading the .cf file.
 **		pvpbuf -- place to put the saved text -- note that
 **			the pointers are static.
+**		delimptr -- if non-NULL, set to the location of the
+**			terminating delimiter.
 **
 **	Returns:
 **		A pointer to a vector of tokens.
 **		NULL on error.
-**
-**	Side Effects:
-**		sets DelimChar to point to the character matching 'delim'.
 */
 
 /* states and character types */
@@ -366,10 +374,11 @@ static short StateTab[NSTATES][NSTATES] =
 # define NOCHAR		-1	/* signal nothing in lookahead token */
 
 char **
-prescan(addr, delim, pvpbuf)
+prescan(addr, delim, pvpbuf, delimptr)
 	char *addr;
 	char delim;
 	char pvpbuf[];
+	char **delimptr;
 {
 	register char *p;
 	register char *q;
@@ -414,7 +423,8 @@ prescan(addr, delim, pvpbuf)
 				if (q >= &pvpbuf[PSBUFSIZE - 5])
 				{
 					usrerr("553 Address too long");
-					DelimChar = p;
+					if (delimptr != NULL)
+						*delimptr = p;
 					return (NULL);
 				}
 
@@ -489,7 +499,8 @@ prescan(addr, delim, pvpbuf)
 				if (cmntcnt <= 0)
 				{
 					usrerr("553 Unbalanced ')'");
-					DelimChar = p;
+					if (delimptr != NULL)
+						*delimptr = p;
 					return (NULL);
 				}
 				else
@@ -504,7 +515,8 @@ prescan(addr, delim, pvpbuf)
 				if (anglecnt <= 0)
 				{
 					usrerr("553 Unbalanced '>'");
-					DelimChar = p;
+					if (delimptr != NULL)
+						*delimptr = p;
 					return (NULL);
 				}
 				anglecnt--;
@@ -556,14 +568,17 @@ prescan(addr, delim, pvpbuf)
 			if (avp >= &av[MAXATOM])
 			{
 				syserr("553 prescan: too many tokens");
-				DelimChar = p;
+				if (delimptr != NULL)
+					*delimptr = p;
 				return (NULL);
 			}
 			*avp++ = tok;
 		}
 	} while (c != '\0' && (c != delim || anglecnt > 0));
 	*avp = NULL;
-	DelimChar = --p;
+	p--;
+	if (delimptr != NULL)
+		*delimptr = p;
 	if (tTd(22, 12))
 	{
 		printf("prescan==>");
@@ -1845,7 +1860,7 @@ remotename(name, m, senderaddress, header, canonical, e)
 	**	domain will be appended.
 	*/
 
-	pvp = prescan(name, '\0', pvpbuf);
+	pvp = prescan(name, '\0', pvpbuf, NULL);
 	if (pvp == NULL)
 		return (name);
 	rewrite(pvp, 3);
@@ -1992,6 +2007,7 @@ maplocaluser(a, sendq, e)
 {
 	register char **pvp;
 	register ADDRESS *a1 = NULL;
+	auto char *delimptr;
 	char pvpbuf[PSBUFSIZE];
 
 	if (tTd(29, 1))
@@ -1999,7 +2015,7 @@ maplocaluser(a, sendq, e)
 		printf("maplocaluser: ");
 		printaddr(a, FALSE);
 	}
-	pvp = prescan(a->q_user, '\0', pvpbuf);
+	pvp = prescan(a->q_user, '\0', pvpbuf, &delimptr);
 	if (pvp == NULL)
 		return;
 
@@ -2020,6 +2036,6 @@ maplocaluser(a, sendq, e)
 		printaddr(a, FALSE);
 	}
 	a1->q_alias = a;
-	allocaddr(a1, 1, NULL);
+	allocaddr(a1, 1, NULL, delimptr);
 	(void) recipient(a1, sendq, e);
 }

@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	6.21 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	6.22 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	6.21 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	6.22 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -974,7 +974,7 @@ readqf(e)
 			break;
 
 		  case 'S':		/* sender */
-			setsender(newstr(&bp[1]), e);
+			setsender(newstr(&bp[1]), e, NULL);
 			break;
 
 		  case 'D':		/* data file name */

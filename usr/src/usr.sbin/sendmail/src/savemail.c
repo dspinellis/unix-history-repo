@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	6.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	6.18 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <pwd.h>
@@ -232,7 +232,7 @@ savemail(e)
 			}
 			else
 			{
-				if (parseaddr("postmaster", q, 0, '\0', e) == NULL)
+				if (parseaddr("postmaster", q, 0, '\0', NULL, e) == NULL)
 				{
 					syserr("553 cannot parse postmaster!");
 					ExitStat = EX_SOFTWARE;
@@ -410,7 +410,7 @@ returntosender(msg, returnq, sendbody, e)
 	for (q = returnq; q != NULL; q = q->q_next)
 	{
 		if (!DontPruneRoutes && pruneroute(q->q_paddr))
-			parseaddr(q->q_paddr, q, 0, '\0', e);
+			parseaddr(q->q_paddr, q, 0, '\0', NULL, e);
 
 		if (q->q_alias == NULL)
 			addheader("to", q->q_paddr, ee);
@@ -432,7 +432,7 @@ returntosender(msg, returnq, sendbody, e)
 		ee->e_returnpath = "<>";
 	else
 		ee->e_returnpath = ee->e_sender;
-	if (parseaddr(buf, &ee->e_from, -1, '\0', e) == NULL)
+	if (parseaddr(buf, &ee->e_from, -1, '\0', NULL, e) == NULL)
 	{
 		syserr("553 Can't parse myself!");
 		ExitStat = EX_SOFTWARE;

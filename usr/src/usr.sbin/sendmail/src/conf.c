@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	6.30 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	6.31 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -1019,7 +1019,9 @@ initgroups(name, basegid)
 **	Only implemented if you have statfs.
 **
 **	Parameters:
-**		none.
+**		msize -- the size to check against.  If zero, we don't yet
+**			know how big the message will be, so just check for
+**			a "reasonable" amount.
 **
 **	Returns:
 **		TRUE if there is enough space.
@@ -1054,7 +1056,8 @@ initgroups(name, basegid)
 #endif
 
 bool
-enoughspace()
+enoughspace(msize)
+	long msize;
 {
 #if defined(HASSTATFS) || defined(HASUSTAT)
 # if defined(HASUSTAT)
@@ -1069,15 +1072,17 @@ enoughspace()
 	struct statfs fs;
 #  endif
 # endif
+	long blocksneeded;
 	extern int errno;
 	extern char *errstring();
 
-	if (MinBlocksFree <= 0)
+	if (MinBlocksFree <= 0 && msize <= 0)
 	{
 		if (tTd(4, 80))
 			printf("enoughspace: no threshold\n");
 		return TRUE;
 	}
+
 # if defined(HASUSTAT)
 	if (stat(QueueDir, &statbuf) == 0 && ustat(statbuf.st_dev, &fs) == 0)
 # else
@@ -1093,21 +1098,27 @@ enoughspace()
 # endif
 	{
 		if (tTd(4, 80))
-			printf("enoughspace: bavail=%ld, min=%ld\n",
-				fs.f_bavail, MinBlocksFree);
-		if (fs.f_bavail < MinBlocksFree)
+			printf("enoughspace: bavail=%ld, need=%ld\n",
+				fs.f_bavail, msize);
+
+		/* convert msize to block count */
+		msize = msize / fs.f_bsize + 1;
+		if (MinBlocksFree >= 0)
+			msize += MinBlocksFree;
+
+		if (fs.f_bavail < msize)
 		{
 #ifdef LOG
 			if (LogLevel > 0)
 				syslog(LOG_ALERT, "%s: low on space (have %ld, need %ld)",
-					QueueDir, fs.f_bavail, MinBlocksFree);
+					QueueDir, fs.f_bavail, msize);
 #endif
 			return FALSE;
 		}
 	}
 	else if (tTd(4, 80))
-		printf("enoughspace: min=%ld: %s\n",
-			MinBlocksFree, errstring(errno));
+		printf("enoughspace failure: min=%ld, need=%ld: %s\n",
+			MinBlocksFree, msize, errstring(errno));
 #endif
 	return TRUE;
 }

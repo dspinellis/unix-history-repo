@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	6.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	6.14 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -819,7 +819,6 @@ commaize(h, p, fp, oldstyle, m, e)
 		register int c;
 		char savechar;
 		extern char *remotename();
-		extern char *DelimChar;		/* defined in prescan */
 
 		/*
 		**  Find the end of the name.  New style names
@@ -835,15 +834,14 @@ commaize(h, p, fp, oldstyle, m, e)
 		name = p;
 		for (;;)
 		{
-			char *oldp;
+			auto char *oldp;
 			char pvpbuf[PSBUFSIZE];
 			extern char **prescan();
 
-			(void) prescan(p, oldstyle ? ' ' : ',', pvpbuf);
-			p = DelimChar;
+			(void) prescan(p, oldstyle ? ' ' : ',', pvpbuf, &oldp);
+			p = oldp;
 
 			/* look to see if we have an at sign */
-			oldp = p;
 			while (*p != '\0' && isascii(*p) && isspace(*p))
 				p++;
 
