@@ -1,4 +1,4 @@
-/* @(#)vs.c	7.1 (MIT) %G% */
+/* @(#)vs.c	7.2 (MIT) %G% */
  /****************************************************************************
  *									    *
  *  Copyright (c) 1983, 1984 by						    *
@@ -231,7 +231,7 @@ int flag;
 	vsp->vsBuff_ubinfo = ubasetup(uip->ui_ubanum, &vsbuf, UBA_CANTWAIT);
 
 	vsb->vsioa.reloc = (int) (vsp->offset.fparm_all
-			+ (vsp->vsBuff_ubinfo & 0x3ffff));
+			+ UBAI_ADDR(vsp->vsBuff_ubinfo));
 	return(0);
 }
 
