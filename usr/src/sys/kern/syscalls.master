@@ -1,4 +1,4 @@
-	@(#)syscalls.master	7.28 (Berkeley) %G%
+	@(#)syscalls.master	7.29 (Berkeley) %G%
 ; System call name/number master file.
 ; Processed to created init_sysent.c, syscalls.c and syscall.h.
 
@@ -202,7 +202,7 @@
 153	UNIMPL	0 nosys
 154	UNIMPL	0 nosys
 #ifdef NFS
-155	STD	5 nfssvc
+155	STD	2 nfssvc
 #else
 155	UNIMPL	0 nosys
 #endif
@@ -210,11 +210,10 @@
 157	STD	2 statfs
 158	STD	2 fstatfs
 159	UNIMPL	0 nosys
+160	UNIMPL	0 nosys
 #ifdef NFS
-160	STD	0 async_daemon
 161	STD	2 getfh
 #else
-160	UNIMPL	0 nosys
 161	UNIMPL	0 nosys
 #endif
 162	UNIMPL	0 nosys
