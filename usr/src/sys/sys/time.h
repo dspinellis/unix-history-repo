@@ -1,4 +1,4 @@
-/*	time.h	6.1	83/07/29	*/
+/*	time.h	6.2	85/03/13	*/
 
 /*
  * Structure returned by gettimeofday(2) system call,
@@ -44,22 +44,6 @@ struct	itimerval {
 	struct	timeval it_value;	/* current value */
 };
 
-/*
- * Structure returned by gmtime and localtime calls (see ctime(3)).
- */
-struct tm {
-	int	tm_sec;
-	int	tm_min;
-	int	tm_hour;
-	int	tm_mday;
-	int	tm_mon;
-	int	tm_year;
-	int	tm_wday;
-	int	tm_yday;
-	int	tm_isdst;
-};
-
 #ifndef KERNEL
-extern	struct tm *gmtime(), *localtime();
-extern	char *asctime(), *ctime();
+#include <time.h>
 #endif
