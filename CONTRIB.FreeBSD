@@ -81,6 +81,7 @@ Poul-Henning Kamp <phk@login.dkuug.dk>
 Rod Shady <rls@id.net>
 Sascha Wildner <swildner@channelz.GUN.de>
 Sean Eric Fagan <sef@kithrup.com>
+Serge V. Vakulenko <vak@zebub.msk.su>
 Steven Wallace <swallace@ece.uci.edu>
 Søren Schmidt <sos@login.dkuug.dk>
 Terry Lee <terry@uivlsi.csl.uiuc.edu>
@@ -180,4 +181,4 @@ Wolfgang Solfrank <ws@tools.de>
 Wolfgang Stanglmeier <wolf@dentaro.GUN.de>
 Yuval Yarom <yval@cs.huji.ac.il>
 
-$Id: CONTRIB.FreeBSD,v 1.30 1994/02/14 13:09:14 rgrimes Exp $
+$Id: CONTRIB.FreeBSD,v 1.31 1994/02/14 23:05:37 nate Exp $
