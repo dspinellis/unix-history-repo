@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.37		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.38		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.37		%G%);
+SCCSID(@(#)queue.c	3.38		%G%);
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -225,6 +225,9 @@ reordersig(parent)
 	{
 		/* we are in a child doing queueing */
 		ReorderQueue = TRUE;
+
+		/* arrange to get this signal again */
+		setevent(QueueIntvl, reordersig, FALSE);
 	}
 	else
 	{
@@ -245,13 +248,9 @@ reordersig(parent)
 			(void) wait(&st);
 			runqueue(TRUE);
 		}
+		else
+			setevent(QueueIntvl, reordersig, TRUE);
 	}
-
-	/*
-	**  Arrange to get this signal again.
-	*/
-
-	setevent(QueueIntvl, reordersig, parent);
 }
 /*
 **  ORDERQ -- order the work queue.
@@ -456,8 +455,8 @@ dowork(w)
 		CurEnv->e_id = &w->w_name[strlen(QueueDir) + 3];
 # ifdef LOG
 		if (LogLevel > 11)
-			syslog(LOG_DEBUG, "dowork, pid=%d, id=%s", getpid(),
-			       CurEnv->e_id);
+			syslog(LOG_DEBUG, "%s: dowork, pid=%d", CurEnv->e_id,
+			       getpid());
 # endif LOG
 
 		/* don't use the headers from sendmail.cf... */
