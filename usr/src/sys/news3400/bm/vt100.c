@@ -9,7 +9,7 @@
  *
  * from: $Hdr: vt100.c,v 4.300 91/06/09 06:14:56 root Rel41 $ SONY
  *
- *	@(#)vt100.c	7.3 (Berkeley) %G%
+ *	@(#)vt100.c	7.4 (Berkeley) %G%
  */
 
 #include <machine/fix_machine_type.h>
@@ -40,7 +40,7 @@
 #endif
 
 #ifdef CPU_SINGLE
-#include <nes3400/sio/scc.h>
+#include <news3400/sio/scc.h>
 #endif
 
 extern Key_string key_str;
