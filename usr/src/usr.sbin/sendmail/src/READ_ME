@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.96 (Berkeley) %G%
+#	@(#)READ_ME	8.97 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -482,6 +482,13 @@ the header files you used -- some people have used the 4.9 headers
 and linked with BIND 4.8 or vice versa, and it doesn't work.
 Unfortunately, it doesn't fail in an obvious way -- things just
 subtly don't work.
+
+WILDCARD MX RECORDS ARE A BAD IDEA!  The only situation in which they
+work reliably is if you have two versions of DNS, one in the real world
+which has a wildcard pointing to your firewall, and a completely
+different version of the database internally that does not include
+wildcard MX records that match your domain.  ANYTHING ELSE WILL GIVE
+YOU HEADACHES!
 
 
 +-------------------------------------+
@@ -1070,4 +1077,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.96, last update %G% 12:37:34)
+(Version 8.97, last update %G% 18:11:35)
