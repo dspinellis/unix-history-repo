@@ -553,6 +553,13 @@ struct SREGS *sregs;
 {
     if (regs->h.ah == NAME_RESOLUTION) {
 	name_resolution(regs, sregs);
+#if	defined(unix)
+    } else if (regs->h.ah == PS_OR_OIA_MODIFIED) {
+	while ((oia_modified == 0) && (ps_modified == 0)) {
+	    (void) Scheduler(1);
+	}
+	oia_modified = ps_modified = 0;
+#endif	/* defined(unix) */
     } else if (regs->h.ah != 0x09) {
 	regs->h.ch = 0x12;
 	regs->h.cl = 0x0f;		/* XXX Invalid environmental access */
