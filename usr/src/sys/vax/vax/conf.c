@@ -1,4 +1,4 @@
-/*	conf.c	4.65	83/03/28	*/
+/*	conf.c	4.66	83/04/15	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -226,7 +226,7 @@ struct	tty dh11[];
 #define	dmfioctl	nodev
 #define	dmfstop	nodev
 #define	dmfreset	nulldev
-#define	dmf11	0
+#define	dmf_tty	0
 #else
 int	dmfopen(),dmfclose(),dmfread(),dmfwrite(),dmfioctl(),dmfstop(),dmfreset();
 struct	tty dmf_tty[];
@@ -466,7 +466,7 @@ struct cdevsw	cdevsw[] =
 	ptyioctl,	nulldev,	nodev,		pt_tty,
 	ptcselect,	nodev,
 	dmfopen,	dmfclose,	dmfread,	dmfwrite,	/*22*/
-	dmfioctl,	dmfstop,	dmfreset,	0,
+	dmfioctl,	dmfstop,	dmfreset,	dmf_tty,
 	ttselect,	nodev,
 	idcopen,	nulldev,	idcread,	idcwrite,	/*23*/
 	nodev,		nodev,		idcreset,	0,
