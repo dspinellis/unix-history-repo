@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)put.c 1.1 %G%";
+static	char sccsid[] = "@(#)put.c 1.2 %G%";
 
 #include "whoami.h"
 #include "opcode.h"
@@ -225,7 +225,7 @@ around:
 			 */
 			lc++;
 			if ((unsigned) lc & 1)
-				casewrd = *( ( long * ) &p[1] );
+				casewrd = *( ( long * ) &p[1] ) & 0377;
 			else {
 				lc -= 2;
 				word (   casewrd
