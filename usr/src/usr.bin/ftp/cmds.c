@@ -21,6 +21,7 @@ static char sccsid[] = "@(#)cmds.c	8.4 (Berkeley) %G%";
 
 #include <ctype.h>
 #include <err.h>
+#include <glob.h>
 #include <netdb.h>
 #include <signal.h>
 #include <stdio.h>
@@ -34,6 +35,7 @@ static char sccsid[] = "@(#)cmds.c	8.4 (Berkeley) %G%";
 
 jmp_buf	jabort;
 char   *mname;
+char   *home = "/";
 
 /*
  * `Another' gets another argument, and stores the new argc and argv.
@@ -483,6 +485,8 @@ mput(argc, argv)
 	}
 	for (i = 1; i < argc; i++) {
 		char **cpp, **gargs;
+		glob_t gl;
+		int gflags;
 
 		if (!doglob) {
 			if (mflag && confirm(argv[0], argv[i])) {
@@ -501,16 +505,15 @@ mput(argc, argv)
 			}
 			continue;
 		}
-		gargs = ftpglob(argv[i]);
-		if (globerr != NULL) {
-			printf("%s\n", globerr);
-			if (gargs) {
-				blkfree(gargs);
-				free((char *)gargs);
-			}
+
+		memset(&gl, 0, sizeof(gl));
+		gflags = GLOB_BRACE|GLOB_QUOTE|GLOB_TILDE;
+		if (glob(argv[i], gflags, NULL, &gl) || gl.gl_pathc == 0) {
+			warnx("%s: not found", argv[i]);
+			globfree(&gl);
 			continue;
 		}
-		for (cpp = gargs; cpp && *cpp != NULL; cpp++) {
+		for (cpp = gl.gl_pathv; cpp && *cpp != NULL; cpp++) {
 			if (mflag && confirm(argv[0], *cpp)) {
 				tp = (ntflag) ? dotrans(*cpp) : *cpp;
 				tp = (mapflag) ? domap(tp) : tp;
@@ -526,10 +529,7 @@ mput(argc, argv)
 				}
 			}
 		}
-		if (gargs != NULL) {
-			blkfree(gargs);
-			free((char *)gargs);
-		}
+		globfree(&gl);
 	}
 	(void) signal(SIGINT, oldintr);
 	mflag = 0;
@@ -984,7 +984,10 @@ lcd(argc, argv)
 		code = -1;
 		return;
 	}
-	printf("Local directory now %s\n", getwd(buf));
+	if (getwd(buf) != NULL)
+		printf("Local directory now %s\n", buf);
+	else
+		warnx("getwd: %s", buf);
 	code = 0;
 }
 
@@ -1512,27 +1515,20 @@ int
 globulize(cpp)
 	char **cpp;
 {
-	char **globbed;
+	glob_t gl;
 
 	if (!doglob)
 		return (1);
-	globbed = ftpglob(*cpp);
-	if (globerr != NULL) {
-		printf("%s: %s\n", *cpp, globerr);
-		if (globbed) {
-			blkfree(globbed);
-			free((char *)globbed);
-		}
+
+	memset(&gl, 0, sizeof(gl));
+	if (glob(*cpp, GLOB_BRACE|GLOB_QUOTE|GLOB_TILDE, NULL, &gl) ||
+	    gl.gl_pathc == 0) {
+		warnx("%s: not found", *cpp);
+		globfree(&gl);
 		return (0);
 	}
-	if (globbed) {
-		*cpp = *globbed++;
-		/* don't waste too much memory */
-		if (globbed) {
-			blkfree(globbed);
-			free((char *)*globbed);
-		}
-	}
+	*cpp = strdup(gl.gl_pathv[0]);	/* XXX - wasted memory */
+	globfree(&gl);
 	return (1);
 }
 
@@ -1541,7 +1537,7 @@ account(argc,argv)
 	int argc;
 	char **argv;
 {
-	char acct[50], *getpass(), *ap;
+	char acct[50], *ap;
 
 	if (argc > 1) {
 		++argv;
