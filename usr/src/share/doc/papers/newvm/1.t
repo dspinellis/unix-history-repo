@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)1.t	1.1 (Berkeley) %G%
+.\"	@(#)1.t	1.2 (Berkeley) %G%
 .\"
 .NH
 Motivations for a New Virtual Memory System
@@ -35,20 +35,21 @@ Although processes logically allocate contiguous areas of swap space,
 the actual allocation is done in (possibly) discontinuous blocks.
 .PP
 Memory pages are used in a sort of shell game to contain the
-contents of recent accessed addresses.
+contents of recent accessed locations.
 As processes first touch an address
 a new page is allocated and filled either with initialized data or
 zeros (for new stack and break pages).
 As the supply of free pages begins to run out, dirty pages are
-pushed to previously allocated swap space so that they can be reused
+pushed to the previously allocated swap space so that they can be reused
 to contain newly faulted pages.
 If a previously accessed page that has been pushed to swap is once
-again touched, a free page is reallocated and filled from the swap area.
+again touched, a free page is reallocated and filled from the swap area
+[Babaoglu79], [Someren84].
 .SH
-Design Assumptions
+Design Assumptions for 4.3BSD Virtual Memory
 .PP
 The design criterion for the current virtual memory implementation
-were made in 1978.
+were made in 1979.
 At that time the cost of memory was about a thousand times greater per
 byte than magnetic disks.
 Most machines were used as centralized time sharing machines.
@@ -61,7 +62,7 @@ The primary motivation for virtual memory was to allow the
 system to run individual programs whose address space exceeded
 the memory capacity of the machine.
 Thus the virtual memory capability allowed programs to be run that
-could not have been run in the swap based systems.
+could not have been run on a swap based system.
 Equally important in the large central timesharing environment
 was the ability to allow the sum of the memory requirements of
 all active processes to exceed the amount of physical memory on
@@ -72,7 +73,7 @@ to two times the physical memory on the machine.
 .PP
 At the time that the virtual memory system was designed most
 machines ran with little or no networking.
-Thus all the file systems were contained on disks that were
+All the file systems were contained on disks that were
 directly connected to the machine.
 Similarly all the disk space devoted to swap space was also
 directly connected.
@@ -87,7 +88,7 @@ file system.
 New Influences
 .PP
 In the ten years since the current virtual memory system was designed,
-several technological advances have occurred.
+many technological advances have occurred.
 One effect of the technological revolution is that the
 micro-processor has become powerful enough to allow users to have their
 own personal workstations.
@@ -142,8 +143,8 @@ The new design should have only a single memory pool so that any
 free memory can be used to cache recently accessed files.
 .PP
 Another portion of the memory will be used to keep track of the contents
-of the blocks on swap space analogously to the way that memory pages are
-handled.
+of the blocks on the locally attached swap space analogously
+to the way that memory pages are handled.
 Thus inactive swap blocks can also be used to cache less recently used
 file data.
 Since the swap disk is locally attached, it can be much more quickly
@@ -180,7 +181,7 @@ region for its stack.
 In addition to these regions, a process may allocate new ones.
 The regions may not overlap and the system may impose an alignment
 constraint, but the size of the region should not be limited
-beyond the constraints of the size of the address space.
+beyond the constraints of the size of the virtual address space.
 .PP
 Each new region may be mapped either as private or shared.
 When it is privately mapped, changes to the contents of the region
@@ -195,7 +196,7 @@ It may map some memory hardware on the machine such as a frame buffer.
 Since the hardware is responsible for storing the data,
 such regions must be exclusive use if they are privately mapped.
 .PP
-A region can map a part or all of a file.
+A region can map all or part of a file.
 As the pages are first accessed, the region is filled in with the
 appropriate part of the file.
 If the region is mapped read-write and shared, changes to the
@@ -222,7 +223,7 @@ is much higher than simply zeroing memory.
 If several processes wish to share a region,
 then they must have some way of rendezvousing.
 For a mapped file this is easy,
-the name of the file is used as the common name.
+the name of the file is used as the rendezvous point.
 However, processes may not need the semantics of mapped files
 nor be willing to pay the overhead associated with them.
 For anonymous memory they must use some other rendezvous point.
@@ -235,7 +236,7 @@ they would do with a mapped file.
 .SH
 Shared memory as high speed IPC
 .PP
-A primary use envisioned for shared memory is to
+The primary use envisioned for shared memory is to
 provide a high speed interprocess communication mechanism 
 between cooperating processes.
 Existing IPC mechanisms (\fIi.e.\fP pipes, sockets, or streams)
@@ -252,7 +253,7 @@ However, to maintain all but the simplist of data structures,
 the processes must serialize their modifications to shared
 data structures if they are to avoid corrupting them.
 This serialization is typically done with semaphores.
-Unfortunately, the implementation of semaphores is typically
+Unfortunately, most implementations of semaphores are
 done with system calls. 
 Thus processes are once again limited by the need to do two
 system calls per transaction, one to lock the semaphore, the
@@ -312,7 +313,7 @@ inspected to see if the desired ones are available.
 If they are available, they are set, the guardian semaphore
 is released and the process proceeds.
 If one or more of the requested set is not available,
-the guardian semaphore is released and the process selects one of the
+the guardian semaphore is released and the process selects an
 unavailable to semaphores to wait for.
 On being reawakened, the whole selection process must be repeated.
 .PP
@@ -325,10 +326,27 @@ The insight that is critical is that the process and the kernel agree
 on the physical byte of memory that is being used for the semaphore.
 The system call to put a process to sleep takes a pointer to the
 to the desired semaphore as its argument so that once inside
-the kernel it can repeat the test-and-set. If the lock has cleared
+the kernel, the kernel can repeat the test-and-set.
+If the lock has cleared
 (and possibly the wakeup issued) between the time that the process
 did the test-and-set and eventually got into the sleep request system call
-then the processor immediately resumes the process rather than putting
+then the kernel immediately resumes the process rather than putting
 it to sleep.
-Thus the only problem to solve is how the processor interlocks between testing
-a semaphore and going to sleep that we already know how to deal with.
+Thus the only problem to solve is how the kernel interlocks between testing
+a semaphore and going to sleep;
+this problem has already been solved on existing systems.
+.NH
+References
+.sp
+.IP [Babaoglu79] 20
+Babaoglu, O., and Joy, W.,
+``Data Structures Added in the Berkeley Virtual Memory Extensions
+to the UNIX Operating System''
+Computer Systems Research Group, Dept of EECS, University of California,
+Berkeley, CA 94720, USA, November 1979.
+.IP [Someren84] 20
+Someren, J. van,
+``Paging in Berkeley UNIX'',
+Laboratorium voor schakeltechniek en techneik v.d. 
+informatieverwerkende machines,
+Codenummer 051560-44(1984)01, February 1984.

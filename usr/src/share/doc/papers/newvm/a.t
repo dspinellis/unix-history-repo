@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)a.t	1.1 (Berkeley) %G%
+.\"	@(#)a.t	1.2 (Berkeley) %G%
 .\"
 .sp 2
 .ne 2i
@@ -22,17 +22,23 @@ Protection and sharing options are defined in \fI<sys/mman.h>\fP as:
 #define	PROT_READ	0x04	/* pages can be read */
 #define	PROT_WRITE	0x02	/* pages can be written */
 #define	PROT_EXEC	0x01	/* pages can be executed */
-
+.DE
+.sp
+.DS
 /* flags contain mapping type, sharing type and options */
 /* mapping type; choose one */
 #define MAP_FILE	0x0001	/* mapped from a file or device */
 #define MAP_ANON	0x0002	/* allocated from memory, swap space */
 #define MAP_TYPE	0x000f	/* mask for type field */
-
+.DE
+.sp
+.DS
 /* sharing types; choose one */
 #define	MAP_SHARED	0x0010	/* share changes */
 #define	MAP_PRIVATE	0x0000	/* changes are private */
-
+.DE
+.sp
+.DS
 /* other flags */
 #define MAP_FIXED	0x0020	/* map addr must be exactly as requested */
 #define MAP_NOEXTEND	0x0040	/* for MAP_FILE, don't change file size */
@@ -76,9 +82,9 @@ mapping a regular file or character-special device memory,
 and MAP_ANON, which maps memory not associated with any specific file.
 The file descriptor used for creating MAP_ANON regions is used only
 for naming, and may be given as \-1 if no name
-is associated with the region\(dd.
+is associated with the region\(dg.
 .FS
-\(dd The current design does not allow a process
+\(dg The current design does not allow a process
 to specify the location of swap space.
 In the future we may define an additional mapping type, MAP_SWAP,
 in which the file descriptor argument specifies a file
@@ -112,7 +118,7 @@ munmap(addr, len);
 caddr_t addr; int len;
 .DE
 This call deletes the region containing the address range given,
-and causes further references to addresses within the region
+and causes further references to addresses within the range
 to generate invalid memory references.
 .SH
 Page protection control
@@ -172,9 +178,7 @@ and \fImset\fP returns true immediately.
 Otherwise, if the \fIwait\fP flag is zero,
 failure is returned.
 If \fIwait\fP is true and the previous value is non-zero,
-the ``want'' flag is set and the test-and-set is retried;
-if the lock is still unavailable \fImset\fP relinquishes the processor
-until notified that it should retry.
+\fImset\fP relinquishes the processor until notified that it should retry.
 .LP
 To release a lock a process calls:
 .DS
@@ -182,20 +186,22 @@ mclear(sem)
 semaphore *sem;
 .DE
 \fIMclear\fP indivisibly tests and clears the semaphore \fIsem\fP.
-If the ``want'' flag is zero in the previous value,
+If the ``WANT'' flag is zero in the previous value,
 \fImclear\fP returns immediately.
-If the ``want'' flag is non-zero in the previous value,
+If the ``WANT'' flag is non-zero in the previous value,
 \fImclear\fP arranges for waiting processes to retry before returning.
 .PP
 Two routines provide services analogous to the kernel
 \fIsleep\fP and \fIwakeup\fP functions interpreted in the domain of
 shared memory.
-A process may relinquish the processor by calling \fImsleep\fP:
+A process may relinquish the processor by calling \fImsleep\fP
+with a set semaphore:
 .DS
 msleep(sem)
 semaphore *sem;
 .DE
-The process will remain in a sleeping state
+If the semaphore is still set when it is checked by the kernel,
+the process will be put in a sleeping state
 until some other process issues an \fImwakeup\fP for the same semaphore
 within the region using the call:
 .DS
