@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	TELOPTS
@@ -350,10 +350,14 @@ printsub(direction, pointer, length)
 		break;
 	    }
 	    switch (pointer[1]) {
-	    case 0:
+	    case LFLOW_OFF:
 		fprintf(NetTrace, " OFF"); break;
-	    case 1:
+	    case LFLOW_ON:
 		fprintf(NetTrace, " ON"); break;
+	    case LFLOW_RESTART_ANY:
+		fprintf(NetTrace, " RESTART-ANY"); break;
+	    case LFLOW_RESTART_XON:
+		fprintf(NetTrace, " RESTART-XON"); break;
 	    default:
 		fprintf(NetTrace, " %d (unknown)", pointer[1]);
 	    }
