@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ping.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)ping.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -528,8 +528,7 @@ pr_pack(buf, cc, from)
 	/* Display any IP options */
 	cp = (u_char *)buf + sizeof(struct ip);
 
-	/* ANSI C will force hlen to unsigned! */
-	for (; hlen > sizeof(struct ip); --hlen, ++cp)
+	for (; hlen > (int)sizeof(struct ip); --hlen, ++cp)
 		switch (*cp) {
 		case IPOPT_EOL:
 			hlen = 0;
