@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)lcmd2.c	3.5 %G%";
+static char sccsid[] = "@(#)lcmd2.c	3.6 %G%";
 #endif
 
 #include "defs.h"
@@ -23,7 +23,7 @@ struct value *v, *a;
 	wwprintf(w, "ttflush\twrite\terror\tzero\tchar\n");
 	wwprintf(w, "%d\t%d\t%d\t%d\t%d\n",
 		wwnflush, wwnwr, wwnwre, wwnwrz, wwnwrc);
-	wwprintf(w, "wwwrite\tattmpt\tchar\n");
+	wwprintf(w, "wwwrite\tattempt\tchar\n");
 	wwprintf(w, "%d\t%d\t%d\n",
 		wwnwwr, wwnwwra, wwnwwrc);
 	wwprintf(w, "wwupdat\tline\tmiss\tmajor\tmiss\n");
