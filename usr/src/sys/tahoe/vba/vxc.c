@@ -1,4 +1,4 @@
-/*	vxc.c	1.1	85/07/21	*/
+/*	vxc.c	1.2	86/01/05	*/
 
 #include "vx.h"
 #if NVX > 0
@@ -12,17 +12,17 @@
 #include "../h/errno.h"
 #include "../h/time.h"
 #include "../h/kernel.h"
-#include "../vba/vioc.h"
+#include "../h/proc.h"
+#include "../tahoevba/vioc.h"
 #include "../sna/snadebug.h"
 #ifdef VXPERF
-#include "../vba/scope.h"
+#include "../tahoevba/scope.h"
 #endif VXPERF
 
 #define CMDquals 0
 #define RSPquals 1
 #define UNSquals 2
 
-long reinit = 0;
 extern	struct	vcx	vcx[] ;
 extern	struct	tty	vx_tty[];
 struct	vcmds	v_cmds[NVIOCX] ;
@@ -59,10 +59,10 @@ register caddr_t cmdad ;		/* command address */
 		 * When the vioc is resetting, don't process
 		 * anything other than LIDENT commands.
 		 */
-		register struct vxcmd *cp = (struct vxcmd *)
-				((char *)cmdad - sizeof(cp->c_fwd));
-		if (cp->cmd != LIDENT) {
-			vrelease(xp, cp);
+		register struct vxcmd *cmdp = (struct vxcmd *)
+				((char *)cmdad - sizeof(cmdp->c_fwd));
+		if (cmdp->cmd != LIDENT) {
+			vrelease(xp, cmdp);
 			return(0);
 		}
 	}
@@ -83,6 +83,7 @@ register caddr_t cmdad ;		/* command address */
 		vinthandl(n, ((V_BSY | CMDquals) << 8) | V_INTR ) ;
 	}
 	splx(s) ;
+	return(1);
 }
 
 /*
@@ -136,7 +137,7 @@ register n ;		/* VIOC number */
 				cp1 = vobtain(&vcx[n]);
 				*cp1 = *cp0;
 				vxintr4 &= ~VXERR4;
-				vcmd(n,&cp1->cmd);
+				(void) vcmd(n,&cp1->cmd);
 			}
 		}
 #endif
@@ -146,7 +147,7 @@ register n ;		/* VIOC number */
 	if( ++cp->v_itrempt >= VC_IQLEN ) cp->v_itrempt = 0 ;
 	vintempt(n) ;
 	splx(s);
-	vcmd(n, 0);	/* queue next cmd, if any */
+	(void) vcmd(n, (caddr_t)0);	/* queue next cmd, if any */
 }
 
 /*
@@ -189,7 +190,7 @@ register n ;
 				cmd[k] = resp[k+4];
 		}
 		resp[1] = 0;
-		vxxint(n, cmd) ;
+		vxxint(n, (struct vxcmd *)cmd) ;
 		if ((&vcx[n])->v_state == V_RESETTING) return;
 	}
 	else {
@@ -281,7 +282,7 @@ register int n ;
 		if(cp->v_empty == cp->v_fill || vp->v_vcbsy&V_BSY)
 			break;
 		(&vcx[n])->v_mricmd = (caddr_t)cp->cmdbuf[cp->v_empty];
-		phys = vtoph(0, cp->cmdbuf[cp->v_empty]) ; /* should be a sys address */
+		phys = vtoph((struct proc *)0, (unsigned)cp->cmdbuf[cp->v_empty]) ; /* should be a sys address */
 		vp->v_vcp[0] = ((short *)&phys)[0];
 		vp->v_vcp[1] = ((short *)&phys)[1];
 		vp->v_vcbsy = V_BSY ;
@@ -336,8 +337,8 @@ vxstreset(n)
 	 * reset, reinitialize the free command list, reset the vioc
 	 * and start a timer to check on the progress of the reset.
 	 */
-	bzero(&v_cmds[n], sizeof(struct vcmds));
-	bzero(xp, sizeof(struct vcx));
+	bzero((caddr_t)&v_cmds[n], (unsigned)sizeof (struct vcmds));
+	bzero((caddr_t)xp, (unsigned)sizeof (struct vcx));
 
 	/*
 	 * Setting V_RESETTING prevents others from issuing
@@ -368,14 +369,12 @@ vxstreset(n)
 vxinreset(vioc)
 caddr_t vioc;
 {
-	register struct vcx *xp;
-	register struct	vblok *vp ;
 	register int n = (int)vioc;
+	register struct	vblok *vp ;
 	int s = spl8();
 printf("vxinreset ");
 
 	vp = VBAS(n);
-	xp = &vcx[n];
 
 	/*
 	 * See if the vioc has reset.
@@ -390,7 +389,7 @@ printf("vxinreset ");
 	 * Send a LIDENT to the vioc and mess with carrier flags
 	 * on parallel printer ports.
 	 */
-	vxinit(n, 0);
+	vxinit(n, (long)0);
 	splx(s);
 }
 
@@ -409,7 +408,9 @@ register struct vxcmd *cp;
 	register struct	vblok *vp ;
 	register struct tty *tp;
 	register int i;
+#ifdef notdef
 	register int on;
+#endif
 	extern int vxrestart();
 	int s = spl8();
 printf("vxfnreset ");
@@ -453,7 +454,7 @@ printf("vxfnreset ");
 		 * If carrier has changed while we were resetting,
 		 * take appropriate action.
 		 */
-/*
+#ifdef notdef
 		on = vp->v_dcd & 1<<i;
 		if (on && (tp->t_state&TS_CARR_ON) == 0) {
 			tp->t_state |= TS_CARR_ON ;
@@ -470,7 +471,7 @@ printf("vxfnreset ");
 				}
 			}
 		}
-*/
+#endif
 	}
 
 	xp->v_state |= V_RESETTING;
@@ -529,7 +530,6 @@ dev_t dev;
 vxfreset(n)
 register int n;
 {
-	register struct vblok *vp;
 
 	if (n < 0 || n > NVX || VBAS(n) == NULL)
 		return(ENODEV);

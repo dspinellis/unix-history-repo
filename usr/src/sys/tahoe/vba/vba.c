@@ -1,20 +1,26 @@
-/*	vba.c	1.1	85/07/21	*/
+/*	vba.c	1.2	86/01/05	*/
 
-#include "../h/param.h"
-#include "../h/buf.h"
-#include "../h/cmap.h"
-#include "../h/conf.h"
-#include "../h/dir.h"
-#include "../h/dk.h"
-#include "../h/map.h"
-#include "../machine/mtpr.h"
-#include "../machine/pte.h"
-#include "../h/systm.h"
-#include "../vba/vbavar.h"
-#include "../h/user.h"
-#include "../h/vmmac.h"
-#include "../h/proc.h"
+#include "../tahoe/mtpr.h"
+#include "../tahoe/pte.h"
 
+#include "param.h"
+#include "buf.h"
+#include "cmap.h"
+#include "conf.h"
+#include "dir.h"
+#include "dk.h"
+#include "map.h"
+#include "systm.h"
+#include "user.h"
+#include "vmparam.h"
+#include "vmmac.h"
+#include "proc.h"
+
+#include "../tahoevba/vbavar.h"
+
+/*
+ * Tahoe VERSAbus adapator support routines.
+ */
 
 /*
  * Next piece of logic takes care of unusual cases when less (or more) than
@@ -32,10 +38,6 @@
  *	3) The virtual address for I/O is not in the system space.
  */
 
-buf_setup(bp, sectsize)
-struct	buf *bp;
-long	sectsize;	/* This disk's physical sector size */
-{
 /*
  * IO buffer preparation for possible buffered transfer.
  * The relevant page table entries are kept in the 'buf' structure,
@@ -43,30 +45,27 @@ long	sectsize;	/* This disk's physical sector size */
  * routine, when user's data has to be moved to the intermediate
  * buffer.
  */
+vbasetup(bp, sectsize)
+	register struct buf *bp;
+	int sectsize;	/* This disk's physical sector size */
+{
 	caddr_t	source_pte_adr;
+	register int v;
 
 	if ((((int)bp->b_un.b_addr & PGOFSET) + bp->b_bcount) > NBPG ||
-			(bp->b_bcount % sectsize) != 0 ||
-			((int)bp->b_un.b_addr & 0xc0000000) != 0xc0000000) {
+	    (bp->b_bcount % sectsize) != 0 ||
+	    ((int)bp->b_un.b_addr & 0xc0000000) != 0xc0000000) {
 		bp->b_flags |= B_NOT1K;
-		if (bp->b_flags & B_DIRTY)
-			source_pte_adr = (caddr_t)vtopte(&proc[2], 
-						btop(bp->b_un.b_addr));
-			else source_pte_adr = (caddr_t)vtopte(bp->b_proc, 
-						btop(bp->b_un.b_addr));
+		v = btop(bp->b_un.b_addr);
+		source_pte_adr = (caddr_t)(bp->b_flags&B_DIRTY ?
+		    vtopte(&proc[2], v) : vtopte(bp->b_proc, v));
 		bp->b_ptecnt = (bp->b_bcount + NBPG -1 +
-			((int)bp->b_un.b_addr & PGOFSET)) / NBPG;
-		bcopy (source_pte_adr, bp->b_upte, bp->b_ptecnt*4);
+		    ((int)bp->b_un.b_addr & PGOFSET)) / NBPG;
+		bcopy(source_pte_adr, (caddr_t)bp->b_upte,
+		    (unsigned)bp->b_ptecnt*4);
 	}
 }
 
-int mapbusy;		/* semaphore on the system IOmap buffer */
-
-get_ioadr(bp, buffer, map, utl)
-struct buf *bp;
-char	*buffer;	/* Driver's own intermediate buffer. */
-long	*map;		/* A bunch of system pte's */
-struct	user *utl;	/* The system address mapped through 'map' */
 /*
  * This routine is usually called by the 'start' routine. It
  * returns the physical address of the first byte for IO, to
@@ -74,72 +73,63 @@ struct	user *utl;	/* The system address mapped through 'map' */
  * needed and a write out is done, now is the time to get the
  * original user's data in the buffer.
  */
+vbastart(bp, v, map, utl)
+	struct buf *bp;
+	caddr_t v;		/* Driver's own intermediate buffer. */
+	long *map;		/* A bunch of system pte's */
+	caddr_t utl;	/* The system address mapped through 'map' */
 {
 	register phadr, i;
 
 	if (bp->b_flags & B_NOT1K) {
-		phadr = vtoph (bp->b_proc, buffer);
-		if ( (bp->b_flags & B_READ) == 0) {
+		phadr = vtoph(bp->b_proc, (unsigned)v);
+		if ((bp->b_flags & B_READ) == 0) {
 			for (i=0; i<bp->b_ptecnt; i++) {
 				map[i] = bp->b_upte[i] 
 					& ~PG_PROT | PG_V | PG_KR;
-				mtpr ((caddr_t)utl + i*NBPG, TBIS);
-				mtpr ((caddr_t)utl + i*NBPG, P1DC);
+				mtpr(TBIS, utl + i*NBPG);
+				mtpr(P1DC, utl + i*NBPG);
 			}
-			bcopy (((int)bp->b_un.b_addr & PGOFSET) + 
-					(caddr_t)utl, buffer,bp->b_bcount);
+			bcopy(((int)bp->b_un.b_addr & PGOFSET) + utl,
+			    v, (unsigned)bp->b_bcount);
 		}
-	} 
-	else
-		phadr = vtoph (bp->b_proc, bp->b_un.b_addr);
+	} else
+		phadr = vtoph(bp->b_proc, (unsigned)bp->b_un.b_addr);
 	return (phadr);
 }
 
-end_transfer(bp, buffer, map, utl)
-register struct buf *bp;
-char	*buffer;	/* Driver's own intermediate buffer. */
-long	*map;	/* A bunch of system pte's */
-struct	user *utl;	/* The system address mapped through 'map' */
-{
 /*
  * Called by the driver's interrupt routine, after the data is
  * realy in or out. If that was a read, and the NOT1K flag was on,
  * now is the time to move the data back into user's space. 
- * Mostly analogous to the get_ioadr routine, but in the reverse direction.
+ * Similar to the vbastart routine, but in the reverse direction.
  */
+vbadone(bp, v, map, utl)
+	register struct buf *bp;
+	caddr_t v;	/* Driver's own intermediate buffer. */
+	long *map;	/* A bunch of system pte's */
+	caddr_t utl;	/* The system address mapped through 'map' */
+{
 	register i, cnt;
 
 	if (bp->b_flags & B_READ)
 		if (bp->b_flags & B_NOT1K) {
 			for (cnt = bp->b_bcount ; cnt >= 0; cnt -= NBPG) {
-				mtpr ((int)buffer + cnt-1, P1DC);
-				mtpr ((caddr_t)bp->b_un.b_addr + cnt-1, P1DC);
+				mtpr(P1DC, (int)v + cnt-1);
+				mtpr(P1DC, (caddr_t)bp->b_un.b_addr + cnt-1);
 			}
-			if ( ((int)buffer & PGOFSET) != 0)
-				mtpr (buffer, P1DC);
-			if ( ((int)bp->b_un.b_addr & PGOFSET) != 0)
-				mtpr ((caddr_t)bp->b_un.b_addr, P1DC);
+			if (((int)v & PGOFSET) != 0)
+				mtpr(P1DC, v);
+			if (((int)bp->b_un.b_addr & PGOFSET) != 0)
+				mtpr(P1DC, (caddr_t)bp->b_un.b_addr);
 			for (i=0; i<bp->b_ptecnt; i++) {
 				map[i] = bp->b_upte[i] 
 					& ~PG_PROT | PG_V | PG_KW;
-				mtpr ((caddr_t)utl + i*NBPG, TBIS);
+				mtpr(TBIS, utl + i*NBPG);
 			}
-			bcopy (buffer, 
-				((int)bp->b_un.b_addr & PGOFSET) + 
-					(caddr_t)utl, bp->b_bcount);
-		}
-		else
-			mtpr (bp->b_un.b_addr, P1DC);
+			bcopy(v, ((int)bp->b_un.b_addr & PGOFSET)+utl,
+			    (unsigned)bp->b_bcount);
+		} else
+			mtpr(P1DC, bp->b_un.b_addr);
 	bp->b_flags &= ~B_NOT1K;
 }
-
-movob (byte, address)
-{
-	asm(" movob 7(fp),*8(fp);");
-}
-
-movow (word, address)
-{
-	asm(" movow 6(fp),*8(fp);");
-}
-

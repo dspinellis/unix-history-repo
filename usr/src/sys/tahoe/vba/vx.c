@@ -1,10 +1,11 @@
-/*	vx.c	1.1	85/07/21	*/
+/*	vx.c	1.2	86/01/05	*/
 
 #include "vx.h"
 #if NVX > 0
 /*
  *	VIOC-X driver
  */
+#include "../tahoe/pte.h"
 
 #include "../h/param.h"
 #include "../h/ioctl.h"
@@ -12,15 +13,17 @@
 #include "../h/dir.h"
 #include "../h/user.h"
 #include "../h/map.h"
-#include "../machine/pte.h"
 #include "../h/buf.h"
-#include "../vba/vbavar.h"
 #include "../h/conf.h"
 #include "../h/file.h"
 #include "../h/uio.h"
-#include "../vba/vioc.h"
+#include "../h/proc.h"
+#include "../h/vm.h"
+
+#include "../tahoevba/vbavar.h"
+#include "../tahoevba/vioc.h"
 #ifdef VXPERF
-#include "../vba/scope.h"
+#include "../tahoevba/scope.h"
 #endif VXPERF
 #include "vbsc.h"
 #if NVBSC > 0
@@ -48,7 +51,6 @@ extern long reinit;
 
 int	vxstart() ;
 int	ttrstrt() ;
-caddr_t vtoph();
 struct	vxcmd	*vobtain() ;
 struct	vxcmd	*nextcmd() ;
 
@@ -60,7 +62,7 @@ int	vxprobe(), vxattach(), vxrint();
 struct	vba_device *vxinfo[NVIOCX];
 long	vxstd[] = { 0 };
 struct	vba_driver vxdriver =
-	{ vxprobe, 0, vxattach, 0, vxstd, "vioc ", vxinfo };
+	{ vxprobe, 0, vxattach, 0, vxstd, "vx", vxinfo };
 
 char vxtype[NVIOCX];	/* 0: viox-x/vioc-b; 1: vioc-bop */
 char vxbbno = -1;
@@ -76,28 +78,32 @@ vxprobe(reg)
 
 #ifdef lint
 	br = 0; cvec = br; br = cvec;
+	vackint(0); vunsol(0); vcmdrsp(0); vxfreset(0);
 #endif
 
-	if(badaddr(vp, 1))
-		return(0);
-	vp->v_fault = 0 ;
-	vp->v_vioc = V_BSY ;
-	vp->v_hdwre = V_RESET ;		/* reset interrupt */
-
+	if (badaddr((caddr_t)vp, 1))
+		return (0);
+	vp->v_fault = 0;
+	vp->v_vioc = V_BSY;
+	vp->v_hdwre = V_RESET;		/* reset interrupt */
 	DELAY(4000000);
-	return ( vp->v_fault == VREADY);
+	if (vp->v_fault != VREADY)
+		return (0);
+	return (sizeof (*vp));
 }
 
 vxattach(ui)
 	register struct vba_device *ui;
 {
+
 	VIOCBAS[ui->ui_unit] = ui->ui_addr;
-	vxinit(ui->ui_unit,1);
+	vxinit(ui->ui_unit,(long)1);
 }
 
 /*
  * Open a VX line.
  */
+/*ARGSUSED*/
 vxopen(dev, flag)
 {
 	register struct tty *tp;	/* pointer to tty struct for port */
@@ -146,7 +152,7 @@ vxopen(dev, flag)
 	d = spl8();
 	if( !vcmodem(dev,VMOD_ON) )
 		while( (tp->t_state&TS_CARR_ON) == 0 )
-			sleep(&tp->t_canq,TTIPRI);
+			sleep((caddr_t)&tp->t_canq,TTIPRI);
 	jj= (*linesw[tp->t_line].l_open)(dev,tp); /*let tty.c finish the open */
 	splx(d);	/* 1/2/85 : assures open complete */
 	return (jj);
@@ -155,6 +161,7 @@ vxopen(dev, flag)
 /*
  * Close a VX line.
  */
+/*ARGSUSED*/
 vxclose(dev, flag)
 dev_t dev;
 int  flag;
@@ -244,7 +251,6 @@ register n;				/* mux number */
 		c = kp->v_usdata[0] << 6;
 		sp = (short *)((char *)kp + SILOBAS + c);
 	}
-nextsilo:
 	i = *(savsilo = sp);
 	if (i == 0) return(1);
 	if(xp->v_vers == V_NEW)
@@ -351,8 +357,8 @@ int wait;			/* nonzero if we should wait for finish */
 	cp->par[5] = 0x4;			/* 1 stop bit */
 	cp->par[6] = tp->t_ospeed;
 
-	if (vcmd(xp->v_nbr, &cp->cmd) && wait)
-		sleep(cp,TTIPRI);
+	if (vcmd(xp->v_nbr, (caddr_t)&cp->cmd) && wait)
+		sleep((caddr_t)cp,TTIPRI);
 	splx(s);
 }
 
@@ -391,7 +397,7 @@ register struct vxcmd	*cp;	/* command structure */
 	case XMITDTA: case XMITIMM:
 		break;
 	case LPARAX:
-		wakeup(cp);
+		wakeup((caddr_t)cp);
 	default:	/* MDMCTL or FDTATOX */
 		vrelease(xp, cp);
 		if (xp->v_state & V_RESETTING) {
@@ -432,7 +438,7 @@ register struct vxcmd	*cp;	/* command structure */
 		if(vxstart(tp) && (cp = nextcmd(xp)) != NULL)
 		{
 			xp->v_xmtcnt++;
-			vcmd(n, &cp->cmd);
+			vcmd(n, (caddr_t)&cp->cmd);
 			return ;
 		}
 		xp->v_actport[(vp->line & 017) - xp->v_loport] = 0 ;
@@ -444,12 +450,12 @@ register struct vxcmd	*cp;	/* command structure */
 		if(vxstart(tp) && (cp = nextcmd(xp)) != NULL)
 		{
 			xp->v_xmtcnt++;
-			vcmd(n, &cp->cmd);
+			vcmd(n, (caddr_t)&cp->cmd);
 		}
 	if( (cp = nextcmd(xp)) != NULL )		/* command to send ? */
 	{
 		xp->v_xmtcnt++;
-		vcmd(n,&cp->cmd);
+		vcmd(n, (caddr_t)&cp->cmd);
 	}
 	xp->v_actflg = 0;
 }
@@ -466,7 +472,7 @@ register struct vcx	*xp;
 	s = spl8();
 	if((cp = nextcmd(xp)) != NULL) {
 		xp->v_xmtcnt++;
-		vcmd(xp->v_nbr, &cp->cmd);
+		vcmd(xp->v_nbr, (caddr_t)&cp->cmd);
 	}
 	splx(s);
 }
@@ -477,7 +483,7 @@ register struct vcx	*xp;
 vxstart(tp)
 register struct tty *tp;
 {
-	register short nch;
+	register short n;
 	register struct	vcx	*xp;
 	register char *outb;
 	register full = 0;
@@ -507,10 +513,10 @@ register struct tty *tp;
 #endif VXPERF
 		if(!(tp->t_flags&(RAW|LITOUT)))  
 			full = 0200;
-		if((nch = ndqb(&tp->t_outq, full)) == 0)   {
+		if((n = ndqb(&tp->t_outq, full)) == 0)   {
 			if(full) {
-				nch = getc(&tp->t_outq);
-				timeout(ttrstrt, (caddr_t)tp, (nch&0177) +6);
+				n = getc(&tp->t_outq);
+				timeout(ttrstrt, (caddr_t)tp, (n&0177) +6);
 				tp->t_state |= TS_TIMEOUT;
 				full = 0;
 			}
@@ -522,7 +528,7 @@ register struct tty *tp;
 			else
 				k = xp->v_actflg ;
 
-			full = vsetq(xp, port, outb, nch);
+			full = vsetq(xp, port, outb, n);
 
 			if( (k&1) == 0 ) {	/* not called from vxxint */
 				if(full || xp->v_xmtcnt == 0) {
@@ -530,7 +536,7 @@ register struct tty *tp;
 					xp->v_xmtcnt++;
 					vcmd(xp->v_nbr, outb );
 				} else
-					timeout(vxforce,xp,3);
+					timeout(vxforce,(caddr_t)xp,3);
 			}
 		}
 	}
@@ -570,16 +576,16 @@ long wait;
 	register struct	vxcmd	*cp;	/* pointer to a command buffer */
 	register char	*resp;		/* pointer to response buffer */
 	register int	j;
-	register struct	vcmds	*cpp;
 	char type;
+#if NVBSC > 0
 	register struct	bsc	*bp;	/* bsc change */
 	extern	 struct	bsc	bsc[];
+#endif
 
 
 	kp = VBAS(i);		/* get base adr of cntl blok for VIOC */
 
 	xp = &vcx[i];		/* index info/command buffers */
-	cpp = &v_cmds[i];
 	type = kp->v_ident;
 	vxtype[i] =  0;		/* Type is Viox-x */
 	switch(type) {
@@ -661,7 +667,7 @@ long wait;
 	cp->par[3] = cp->par[0] + 2;	/* unsol intr vector */
 	cp->par[4] = 15;	/* max ports, no longer used */
 	cp->par[5] = 0;		/* set 1st port number */
-	vcmd(i, &cp->cmd);	/* initialize the VIOC-X */
+	vcmd(i, (caddr_t)&cp->cmd);	/* initialize the VIOC-X */
 
 	if (!wait) return;
 	while(cp->cmd == LIDENT);    /* wait for command completion */
@@ -750,7 +756,7 @@ register struct	vcx	*xp;
  * assemble transmits into a multiple command.
  * up to 8 transmits to 8 lines can be assembled together
  */
-vsetq(xp ,d ,addr, cnt)
+vsetq(xp ,d ,addr, n)
 register struct	vcx	*xp;
 caddr_t	addr;
 {
@@ -775,20 +781,21 @@ caddr_t	addr;
 	}
 
 	mp = (struct vxmit *)(cp->par + (cp->cmd & 07)*sizvxmit);
-	mp->bcount = cnt-1;
+	mp->bcount = n-1;
 
 	mp->line = d;
-	if((xp->v_vers == V_NEW) && (cnt <= 6)) {
+	if((xp->v_vers == V_NEW) && (n <= 6)) {
 		cp->cmd = XMITIMM ;
 		p = addr;
-		/* bcopy(addr, &(char *)mp->ostream, cnt) ; */
+		/* bcopy(addr, &(char *)mp->ostream, n) ; */
 	} else {
-		addr = vtoph(0, (caddr_t)addr) ; /* should be a sys address */
+		addr = (caddr_t)vtoph((struct proc *)0, (unsigned)addr);
+				/* should be a sys address */
 		p = (char *)&addr;
-		cnt = sizeof addr;
+		n = sizeof addr;
 		/* mp->ostream = addr ; */
 	}
-	for(i=0; i<cnt; i++)
+	for(i=0; i<n; i++)
 		mp->ostream[i] = *p++;
 	if(xp->v_vers == V_NEW)
 		return(1) ;

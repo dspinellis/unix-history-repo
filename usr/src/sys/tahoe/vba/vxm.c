@@ -1,4 +1,4 @@
-/*	vxm.c	1.1	85/07/21	*/
+/*	vxm.c	1.2	86/01/05	*/
 
 #include "vx.h"
 #if NVX > 0
@@ -11,7 +11,7 @@
 #include "../h/ioctl.h"
 #include "../h/tty.h"
 #include "../h/conf.h"
-#include "../vba/vioc.h"
+#include "../tahoevba/vioc.h"
 #include "vbsc.h"
 #if NVBSC > 0
 #include "../bsc/bscio.h"
@@ -51,7 +51,7 @@ dev_t dev ;
 	cp->cmd = MDMCTL ;
 	cp->par[0] = (flag == VMOD_ON) ? V_ENAB : V_DISAB ;
 	cp->par[1] = port;
-	vcmd(xp->v_nbr, &cp->cmd) ;
+	vcmd(xp->v_nbr, (caddr_t)&cp->cmd) ;
 	port -= xp->v_loport ;
 	if((kp->v_dcd >> port) & 1) {
 		if(flag == VMOD_ON)
@@ -132,7 +132,7 @@ register n ;	/* viocx number */
 					cmdp = vobtain(xp);
 					cmdp->cmd = FDTATOX ;
 					cmdp->par[1] = port ;
-					vcmd(n, &cmdp->cmd);
+					vcmd(n, (caddr_t)&cmdp->cmd);
 				}
 			}
 			if((tp->t_flags&NOHANG)==0) {

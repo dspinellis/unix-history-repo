@@ -1,4 +1,4 @@
-/*	scat_vddc.c	1.1	85/07/21	*/
+/*	scat_vddc.c	1.2	86/01/05	*/
 
 #include "fsd.h"
 #if NVD > 0
@@ -15,15 +15,15 @@
 #include "../h/dir.h"
 #include "../h/dk.h"
 #include "../h/map.h"
-#include "../machine/mtpr.h"
-#include "../machine/pte.h"
+#include "../tahoe/mtpr.h"
+#include "../tahoe/pte.h"
 #include "../h/systm.h"
-#include "../vba/vbavar.h"
+#include "../tahoevba/vbavar.h"
 #include "../h/user.h"
 #include "../h/vmmac.h"
 #include "../h/proc.h"
 #include "../h/uio.h"
-#include "../vba/vddc.h"
+#include "../tahoevba/vddc.h"
 
 int	vddebug = 1;	/* if = 1, error messages are printed on the console */
 int	vdintflg = 0;	/* if = 1, interrupts are handled by the driver, 

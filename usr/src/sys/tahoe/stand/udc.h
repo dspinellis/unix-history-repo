@@ -1,4 +1,4 @@
-/*	udc.h	1.1	85/07/21	*/
+/*	udc.h	1.2	86/01/05	*/
 
 struct UDPAC {		/* UDC command packet */
 	char _stx  ;
@@ -89,8 +89,8 @@ struct	size
 int dummy;
 extern char vmem[][16*NBPG];
 
-#define	IOaddr(off)	(char *)((int)vmem + ((off) & 0x0fffff))
+#define	IOaddr(off)	(caddr_t)((int)vmem + ((off) & 0x0fffff))
 
 int	iospace_mapped;
-#define	scope_out(x)	if(iospace_mapped) movob (0, IOaddr(OUT/**/x))
+#define	scope_out(x)	if(iospace_mapped) movob(IOaddr(OUT/**/x),0)
 #define	scope_in(x)	if(iospace_mapped) dummy =  *IOaddr(IN/**/x)
