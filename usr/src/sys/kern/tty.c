@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty.c	6.20 (Berkeley) %G%
+ *	@(#)tty.c	6.21 (Berkeley) %G%
  */
 
 #include "../machine/reg.h"
@@ -262,18 +262,16 @@ ttioctl(tp, com, data, flag)
 	case TIOCLSET:
 	case TIOCSTI:
 	case TIOCSWINSZ:
-#define bit(a) (1<<(a-1))
 		while (tp->t_line == NTTYDISC &&
 		   u.u_procp->p_pgrp != tp->t_pgrp && tp == u.u_ttyp &&
 		   (u.u_procp->p_flag&SVFORK) == 0 &&
-		   !(u.u_procp->p_sigignore & bit(SIGTTOU)) &&
-		   !(u.u_procp->p_sigmask & bit(SIGTTOU))) {
+		   !(u.u_procp->p_sigignore & sigmask(SIGTTOU)) &&
+		   !(u.u_procp->p_sigmask & sigmask(SIGTTOU))) {
 			gsignal(u.u_procp->p_pgrp, SIGTTOU);
 			sleep((caddr_t)&lbolt, TTOPRI);
 		}
 		break;
 	}
-#undef	bit
 
 	/*
 	 * Process the ioctl.
@@ -1075,10 +1073,9 @@ loop:
 	/*
 	 * Hang process if it's in the background.
 	 */
-#define bit(a) (1<<(a-1))
 	if (tp == u.u_ttyp && u.u_procp->p_pgrp != tp->t_pgrp) {
-		if ((u.u_procp->p_sigignore & bit(SIGTTIN)) ||
-		   (u.u_procp->p_sigmask & bit(SIGTTIN)) ||
+		if ((u.u_procp->p_sigignore & sigmask(SIGTTIN)) ||
+		   (u.u_procp->p_sigmask & sigmask(SIGTTIN)) ||
 		    u.u_procp->p_flag&SVFORK)
 			return (EIO);
 		gsignal(u.u_procp->p_pgrp, SIGTTIN);
@@ -1086,7 +1083,6 @@ loop:
 		goto loop;
 	}
 	t_flags = tp->t_flags;
-#undef	bit
 
 	/*
 	 * In raw mode take characters directly from the
@@ -1210,16 +1206,14 @@ loop:
 	/*
 	 * Hang the process if it's in the background.
 	 */
-#define bit(a) (1<<(a-1))
 	if (u.u_procp->p_pgrp != tp->t_pgrp && tp == u.u_ttyp &&
 	    (tp->t_flags&TOSTOP) && (u.u_procp->p_flag&SVFORK)==0 &&
-	    !(u.u_procp->p_sigignore & bit(SIGTTOU)) &&
-	    !(u.u_procp->p_sigmask & bit(SIGTTOU))) {
+	    !(u.u_procp->p_sigignore & sigmask(SIGTTOU)) &&
+	    !(u.u_procp->p_sigmask & sigmask(SIGTTOU))) {
 		gsignal(u.u_procp->p_pgrp, SIGTTOU);
 		sleep((caddr_t)&lbolt, TTIPRI);
 		goto loop;
 	}
-#undef	bit
 
 	/*
 	 * Process the user's data in at most OBUFSIZ
