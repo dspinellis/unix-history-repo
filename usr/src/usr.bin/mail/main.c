@@ -17,7 +17,7 @@ char copyright[] =
 #endif /* notdef */
 
 #ifdef notdef
-static char sccsid[] = "@(#)main.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.7 (Berkeley) %G%";
 #endif /* notdef */
 
 #include "rcv.h"
@@ -203,7 +203,12 @@ main(argc, argv)
 			mustsend++;
 			break;
 		case '?':
-			fputs("Usage: XXX\n", stderr);
+			fputs("\
+Usage: mail [-iInv] [-s subject] [-c cc-addr] [-b bcc-addr] to-addr ...\n\
+            [- sendmail-options ...]\n\
+       mail [-iInNv] -f [name]\n\
+       mail [-iInNv] [-u user]\n",
+				stderr);
 			exit(1);
 		}
 	}
