@@ -1,6 +1,6 @@
-.\"	@(#)ed.1	4.1 (Berkeley) %G%
+.\"	@(#)ed.1	5.1 (Berkeley) %G%
 .\"
-.TH ED 1 9/14/79
+.TH ED 1 "14 September 1979"
 .AT 3
 .if t .ds q \(aa
 .if n .ds q '
@@ -10,10 +10,6 @@ ed \- text editor
 .B ed
 [
 .B \-
-] [
-.BR \-p [prompt]
-] [
-.B \-u
 ] [
 .B \-x
 ] [ name ]
@@ -31,20 +27,6 @@ command (see below)\| on the named file; that is to say,
 the file is read into
 .I ed's
 buffer so that it can be edited.
-If
-.B \-p
-is present,
-.I ed
-prompts for commands
-with `* '
-(or
-.I prompt
-if given.)
-If
-.B \-u
-is present,
-all lower case text in the buffer
-is converted to upper case.
 If 
 .B \-x
 is present, an
@@ -725,10 +707,10 @@ A Tutorial Introduction to the ED Text Editor
 B. W. Kernighan,
 .I Advanced editing on UNIX
 .br
-sed(1), crypt(1)
+ex(1), sed(1), crypt(1)
 .SH DIAGNOSTICS
 `?name' for inaccessible file;
-`?self-explanitory message'
+`?self-explanatory message'
 for other errors.
 .PP
 To protect against throwing away valuable work,
