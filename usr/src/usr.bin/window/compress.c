@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)compress.c	3.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)compress.c	3.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -621,9 +621,9 @@ cc_compress_phase1(output, tokens, ntoken, flag)
 	register struct cc **output;
 	struct cc **tokens;
 {
-	register int i = 0;
 	register struct cc **pp;
 #ifdef STATS
+	register int i = 0;
 	int nt = 0, cc = 0, nc = 0;
 #endif
 
