@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cntrl.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)cntrl.c	5.9 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -193,12 +193,12 @@ top:
 		mailopt = index(W_OPTNS, 'm') != NULL;
 		ntfyopt = index(W_OPTNS, 'n') != NULL;
 
-		if (narg < 5) {
+		if (narg < 5 || W_TYPE[1] != '\0') {
 			char *bnp;
 			bnp = rindex(Wfile, '/');
 			sprintf(rqstr, "%s/%s", CORRUPT, bnp ? bnp + 1 : Wfile);
 			xmv(Wfile, rqstr);
-			logent(Wfile, "CMD FILE CORRUPTED");
+			assert("CMD FILE CORRUPTED", Wfile, narg);
 			Wfile[0] = '\0';
 			goto top;
 		}
@@ -300,7 +300,7 @@ process:
 			TransferSucceeded = 1;
 		}
 		if (role == MASTER) {
-			notify(mailopt, W_USER, W_FILE1, Rmtname, &msg[1]);
+			notify(mailopt, W_USER, W_FILE2, Rmtname, &msg[1]);
 		}
 		if (msg[2] == 'M') {
 			extern int Nfiles;
@@ -390,10 +390,9 @@ process:
 				RMESG(HUP, msg, 1);
 				goto process;
 			}
-			notify(mailopt, W_USER, W_FILE1, Rmtname, &msg[1]);
+			notify(mailopt, W_USER, W_FILE2, Rmtname, &msg[1]);
 			ASSERT(role == MASTER, "WRONG ROLE - SN", CNULL, role);
-			if (msg[1] != '4')
-				unlinkdf(W_DFILE);
+			unlinkdf(W_DFILE);
 			goto top;
 		}
 
@@ -431,7 +430,7 @@ process:
 			bnp = rindex(Wfile, '/');
 			sprintf(rqstr, "%s/%s", CORRUPT, bnp ? bnp + 1 : Wfile);
 			xmv(Wfile, rqstr);
-			logent(Wfile, "CMD FILE CORRUPTED");
+			assert("CMD FILE CORRUPTED",Wfile, i);
 			Wfile[0] = '\0';
 			goto top;
 		}
@@ -541,7 +540,7 @@ process:
 			USRF( 1 << i );
 			fclose(fp);
 			fp = NULL;
-			notify(mailopt, W_USER, W_FILE1, Rmtname, &msg[1]);
+			notify(mailopt, W_USER, W_FILE2, Rmtname, &msg[1]);
 			ASSERT(role == MASTER, "WRONG ROLE - RN", CNULL, role);
 			unlinkdf(Dfile);
 			goto top;
@@ -606,7 +605,7 @@ process:
 			bnp = rindex(Wfile, '/');
 			sprintf(rqstr, "%s/%s", CORRUPT, bnp ? bnp + 1 : Wfile);
 			xmv(Wfile, rqstr);
-			logent(Wfile, "CMD FILE CORRUPTED");
+			assert("CMD FILE CORRUPTED", Wfile, i);
 			Wfile[0] = '\0';
 			goto top;
 		}
