@@ -119,7 +119,7 @@ depend:
 
 spintc$O: ../general/general.h spint.h
 system$O: ../general/general.h ../ctlr/api.h spint.h ../general/globals.h
-termout$O: ../general/general.h ../telnet.ext ../ascii/disp_asc.h
+termout$O: ../general/general.h ../telnet.ext ../api/disp_asc.h
 termout$O: ../ascii/map3270.ext ../ctlr/hostctlr.h ../ctlr/inbound.ext
 termout$O: ../ctlr/oia.h ../ctlr/options.ext ../ctlr/outbound.ext
 termout$O: ../ctlr/screen.h ../general/globals.h video.h
