@@ -1,4 +1,4 @@
-.\"	@(#)ae2	5.1 (Berkeley) %G%
+.\"	@(#)ae2	6.1 (Berkeley) %G%
 .\"
 .NH
 SPECIAL CHARACTERS
@@ -63,7 +63,11 @@ If you list a line that contains some of these,
 will print each tab as
 .UL \z\(mi>
 and each backspace as
-.UL \z\(mi< .
+.UL \z\(mi< .\(dg
+.FS
+\(dg These composite characters are created by overstriking a minus
+and a > or <, so they only appear as < or > on display terminals.
+.FE
 This makes it much easier to correct the sort of typing mistake
 that inserts extra spaces adjacent to tabs,
 or inserts a backspace followed by a space.
@@ -225,11 +229,11 @@ a single character, as in
 .P1
 x+y
 x\-y
-x\*By
+x\*(BLy
 x\*.y
 .P2
 and so on.
-(We will use \*B to stand for a space whenever we need to
+(We will use \*(BL to stand for a space whenever we need to
 make it visible.)
 .PP
 Since `\*.' matches a single character,
@@ -446,7 +450,7 @@ Now is the
 and you wish to add the word `time' to the end.
 Use the $ like this:
 .P1
-s/$/\*Btime/
+s/$/\*(BLtime/
 .P2
 to get
 .P1
@@ -523,7 +527,7 @@ more easily.
 The other use of `^' is of course to enable you to insert
 something at the beginning of a line:
 .P1
-s/^/\*B/
+s/^/\*(BL/
 .P2
 places a space at the beginning of the current line.
 .PP
@@ -571,13 +575,13 @@ stands for as many consecutive occurrences of that
 character as possible.
 To refer to all the spaces at once, say
 .P1
-s/x\*B*y/x\*By/
+s/x\*(BL*y/x\*(BLy/
 .P2
 The construction
-`\*B*'
+`\*(BL*'
 means
 `as many spaces as possible'.
-Thus `x\*B*y' means `an x, as many spaces as possible, then a y'.
+Thus `x\*(BL*y' means `an x, as many spaces as possible, then a y'.
 .PP
 The star can be used with any character, not just space.
 If the original example was instead
@@ -587,7 +591,7 @@ If the original example was instead
 then all `\-' signs can be replaced by a single space
 with the command
 .P1
-s/x-*y/x\*By/
+s/x-*y/x\*(BLy/
 .P2
 .PP
 Finally, suppose that the line was
@@ -597,7 +601,7 @@ Finally, suppose that the line was
 Can you see what trap lies in wait for the unwary?
 If you blindly type
 .P1
-s/x\*.*y/x\*By/
+s/x\*.*y/x\*(BLy/
 .P2
 what will happen?
 The answer, naturally, is that it depends.
@@ -616,7 +620,7 @@ If the line was, for example, like this:
 .P2
 then saying
 .P1
-s/x\*.*y/x\*By/
+s/x\*.*y/x\*(BLy/
 .P2
 will take everything from the
 .ul
@@ -631,7 +635,7 @@ The solution, of course, is to turn off the special meaning of
 `\*.' with
 `\*e\*.':
 .P1
-s/x\*e\*.*y/x\*By/
+s/x\*e\*.*y/x\*(BLy/
 .P2
 Now everything works, for `\*e\*.*' means `as many
 .ul
@@ -649,7 +653,7 @@ Now is the time\*.
 .P2
 use `\*.*' to eat up everything after the `for':
 .P1
-s/\*Bfor\*.*/\*./
+s/\*(BLfor\*.*/\*./
 .P2
 .PP
 There are a couple of additional pitfalls associated with `*' that you should be aware of.
@@ -665,7 +669,7 @@ For example, if our line contained
 .P2
 and we said
 .P1
-s/x\*B*y/x\*By/
+s/x\*(BL*y/x\*(BLy/
 .P2
 the
 .ul
@@ -677,7 +681,7 @@ and does not touch the later one that actually contains some intervening spaces.
 .PP
 The way around this, if it matters, is to specify a pattern like
 .P1
-/x\*B\*B*y/
+/x\*(BL\*(BL*y/
 .P2
 which says `an x, a space, then as many more spaces as possible, then a y',
 in other words, one or more spaces.
@@ -890,7 +894,7 @@ formatting command `.ul'.
 .P2
 The command
 .P1
-s/\*Bvery\*B/\*e
+s/\*(BLvery\*(BL/\*e
 \&.ul\*e
 very\*e
 /
@@ -917,7 +921,7 @@ instead of
 Given the lines
 .P1
 Now is
-\*Bthe time
+\*(BLthe time
 .P2
 and supposing that dot is set to the first of them,
 then the command
@@ -989,7 +993,7 @@ and so on.
 .PP
 The command
 .P1
-1,$s/^\*e([^,]*\*e),\*B*\*e(\*.*\*e)/\*e2\*B\*e1/
+1,$s/^\*e([^,]*\*e),\*(BL*\*e(\*.*\*e)/\*e2\*(BL\*e1/
 .P2
 although hard to read, does the job.
 The first \*e(...\*e) matches the last name,
