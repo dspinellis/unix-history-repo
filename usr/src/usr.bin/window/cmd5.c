@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd5.c	3.3 83/08/31";
+static	char *sccsid = "@(#)cmd5.c	3.4 83/09/01";
 #endif
 
 #include "defs.h"
@@ -11,7 +11,6 @@ c_move(w)
 register struct ww *w;
 {
 	int col, row;
-	int tmp;
 	struct ww *back = w->ww_back;
 
 	col = w->ww_w.l;
