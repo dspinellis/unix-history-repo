@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1994 The Regents of the University of California.
- * Copyright (c) 1994 Jan-Simon Pendry.
+ * Copyright (c) 1994, 1995 The Regents of the University of California.
+ * Copyright (c) 1994, 1995 Jan-Simon Pendry.
  * All rights reserved.
  *
  * This code is derived from software donated to Berkeley by
@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vfsops.c	8.17 (Berkeley) %G%
+ *	@(#)union_vfsops.c	8.18 (Berkeley) %G%
  */
 
 /*
@@ -304,7 +304,7 @@ union_unmount(mp, mntflags, p)
 	/*
 	 * And blow it away for future re-use
 	 */
-	VOP_REVOKE(um_rootvp, 0);
+	vgone(um_rootvp);
 	/*
 	 * Finally, throw away the union_mount structure
 	 */
