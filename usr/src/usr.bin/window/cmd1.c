@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd1.c	3.18 83/12/17";
+static	char *sccsid = "@(#)cmd1.c	3.19 84/01/13";
 #endif
 
 #include "defs.h"
@@ -72,19 +72,6 @@ c_window()
 		(char *) 0);
 }
 
-findid()
-{
-	register i;
-
-	for (i = 0; i < NWINDOW && window[i] != 0; i++)
-		;
-	if (i >= NWINDOW) {
-		error("Too many windows.");
-		return -1;
-	}
-	return i;
-}
-
 getpos(row, col, minrow, mincol, maxrow, maxcol)
 register int *row, *col;
 int minrow, mincol;
@@ -146,43 +133,4 @@ int maxrow, maxcol;
 		}
 	}
 	return oldrow != *row || oldcol != *col;
-}
-
-struct ww *
-openwin(id, row, col, nrow, ncol, nline, label)
-int id, nrow, ncol, row, col;
-char *label;
-{
-	register struct ww *w;
-
-	if (id < 0 && (id = findid()) < 0)
-		return 0;
-	if (row + nrow <= 0 || row > wwnrow - 1
-	    || col + ncol <= 0 || col > wwncol - 1) {
-		error("Illegal window position.");
-		return 0;
-	}
-	if ((w = wwopen(WWO_PTY, nrow, ncol, row, col, nline)) == 0) {
-		error("%s.", wwerror());
-		return 0;
-	}
-	w->ww_id = id;
-	window[id] = w;
-	w->ww_hasframe = 1;
-	w->ww_altpos.r = 1;
-	w->ww_altpos.c = 0;
-	if (label != 0 && setlabel(w, label) < 0)
-		error("No memory for label.");
-	wwcursor(w, 1);
-	wwadd(w, framewin);
-	selwin = w;
-	reframe();
-	wwupdate();
-	wwflush();
-	if (wwspawn(w, shell, shellname, (char *)0) < 0) {
-		c_close(w);
-		error("%s: %s.", shell, wwerror());
-		return 0;
-	}
-	return w;
 }
