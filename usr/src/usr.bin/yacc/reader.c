@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)reader.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)reader.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -1230,7 +1230,7 @@ loop:
 	    c = *cptr;
 	    if (c == '$')
 	    {
-		fprintf(f, "yyval.%s ", tag);
+		fprintf(f, "yyval.%s", tag);
 		++cptr;
 		FREE(d_line);
 		goto loop;
@@ -1239,7 +1239,7 @@ loop:
 	    {
 		i = get_number();
 		if (i > n) dollar_warning(d_lineno, i);
-		fprintf(f, "yyvsp[%d].%s ", i - n, tag);
+		fprintf(f, "yyvsp[%d].%s", i - n, tag);
 		FREE(d_line);
 		goto loop;
 	    }
@@ -1247,7 +1247,7 @@ loop:
 	    {
 		++cptr;
 		i = -get_number() - n;
-		fprintf(f, "yyvsp[%d].%s ", i, tag);
+		fprintf(f, "yyvsp[%d].%s", i, tag);
 		FREE(d_line);
 		goto loop;
 	    }
@@ -1260,10 +1260,10 @@ loop:
 	    {
 		tag = plhs[nrules]->tag;
 		if (tag == 0) untyped_lhs();
-		fprintf(f, "yyval.%s ", tag);
+		fprintf(f, "yyval.%s", tag);
 	    }
 	    else
-		fprintf(f, "yyval ");
+		fprintf(f, "yyval");
 	    cptr += 2;
 	    goto loop;
 	}
@@ -1277,7 +1277,7 @@ loop:
 		    unknown_rhs(i);
 		tag = pitem[nitems + i - n - 1]->tag;
 		if (tag == 0) untyped_rhs(i, pitem[nitems + i - n - 1]->name);
-		fprintf(f, "yyvsp[%d].%s ", i - n, tag);
+		fprintf(f, "yyvsp[%d].%s", i - n, tag);
 	    }
 	    else
 	    {
