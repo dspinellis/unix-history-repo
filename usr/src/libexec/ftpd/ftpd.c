@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -937,8 +937,10 @@ receive_data(instr, outstr)
 			goto file_err;
 		transflag = 0;
 		if (bare_lfs) {
-			lreply(230, "WARNING! %d bare linefeeds received in ASCII mode", bare_lfs);
-			printf("   File may not have transferred correctly.\r\n");
+			lreply(226,
+		"WARNING! %d bare linefeeds received in ASCII mode",
+			    bare_lfs);
+		(void)printf("   File may not have transferred correctly.\r\n");
 		}
 		return (0);
 	default:
