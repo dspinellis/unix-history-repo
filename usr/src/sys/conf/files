@@ -1,3 +1,4 @@
+machine/vnode_if.c	standard
 kern/init_main.c	standard
 kern/init_sysent.c	standard
 kern/kern_acct.c	standard
@@ -44,7 +45,6 @@ kern/vfs_lookup.c	standard
 kern/vfs_subr.c		standard
 kern/vfs_syscalls.c	standard
 kern/vfs_vnops.c	standard
-kern/vnode_if.c		standard
 kern/uipc_domain.c	standard
 kern/uipc_mbuf.c	standard
 kern/uipc_proto.c	standard
