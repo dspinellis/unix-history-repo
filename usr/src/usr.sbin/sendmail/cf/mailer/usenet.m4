@@ -9,12 +9,13 @@ PUSHDIVERT(-1)
 
 ifdef(`USENET_MAILER_PATH',, `define(`USENET_MAILER_PATH', /usr/lib/news/inews)')
 ifdef(`USENET_MAILER_FLAGS',, `define(`USENET_MAILER_FLAGS', `rlsDFMmn')')
+ifdef(`USENET_MAILER_ARGS',, `define(`USENET_MAILER_ARGS', `-m -h -n')')
 POPDIVERT
 ####################################
 ###  USENET Mailer specification ###
 ####################################
 
-VERSIONID(`@(#)usenet.m4	6.1 (Berkeley) %G%')
+VERSIONID(`@(#)usenet.m4	6.2 (Berkeley) %G%')
 
 Musenet,	P=USENET_MAILER_PATH, F=USENET_MAILER_FLAGS, S=10, R=20,
-		A=inews -m -h -n $u
+		A=inews USENET_MAILER_ARGS $u
