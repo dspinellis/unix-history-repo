@@ -1,7 +1,7 @@
 /*
  * Style guide for BSD's KNF (Kernel Normal Form).
  *
- *	@(#)style	1.8 (Berkeley) %G%
+ *	@(#)style	1.9 (Berkeley) %G%
  */
 
 /*
@@ -82,19 +82,29 @@ main(argc, argv)
 {
 	extern char *optarg;
 	extern int optind;
+	long num;
 	int ch;
+	char *ep;
 
 	/*
 	 * For consistency, getopt should be used to parse options.
 	 * Options should be sorted in the getopt call and the switch
 	 * statement, unless they fall through.  Elements in a switch
 	 * statement that fall through should have a FALLTHROUGH comment.
+	 * Numerical arguments should be checked for accuracy.
 	 */
-	while ((ch = getopt(argc, argv, "ab")) != EOF)
+	while ((ch = getopt(argc, argv, "abn")) != EOF)
 		switch (ch) {		/* Indent the switch. */
 		case 'a':		/* Don't indent the case. */
+			aflag = 1;
 			/* FALLTHROUGH */
 		case 'b':
+			bflag = 1;
+			break;
+		case 'n':
+			num = strtol(optarg, &ep, 10);
+                        if (num <= 0 || *ep)
+                                err("illegal number -- %s", optarg);
 			break;
 		case '?':
 		default:
