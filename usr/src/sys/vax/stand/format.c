@@ -1,9 +1,9 @@
-/*	format.c	6.1	83/07/29	*/
+/*	format.c	6.2	83/09/18	*/
 
 /* 
  * Standalone program to do media checking
  * and record bad block information on any 
- * disk with the appropriate driver.
+ * disk with the appropriate driver and RM03-style headers.
  */
 #include "../h/param.h"
 #include "../h/fs.h"
@@ -36,10 +36,10 @@ struct	dkbad sstab;		/* skip sector table */
 #define	NERRORS		6
 static char *
 errornames[NERRORS] = {
-#define	FE_WCE		0
-	"Write check",
-#define	FE_BSE		1
+#define	FE_BSE		0
 	"Bad sector",
+#define	FE_WCE		1
+	"Write check",
 #define	FE_ECC		2
 	"ECC",
 #define	FE_HARD		3
@@ -222,7 +222,7 @@ writebb(fd, nsects, dbad, st, sw)
 		bb_buf.header2 = btp->bt_trksec;
 		bn = st->nspc * btp->bt_cyl +
 		     st->nsect * (btp->bt_trksec >> 8) +
-		     (btp->bt_trksec & 0x1f);
+		     (btp->bt_trksec & 0xff);
 		lseek(fd, bn * SECTSIZ, 0);
 		ioctl(fd, SAIOHDR, (char *)0);
 		write(fd, &bb_buf, sizeof (bb_buf));
@@ -232,7 +232,7 @@ writebb(fd, nsects, dbad, st, sw)
 		 * If skip sector, mark all remaining
 		 * sectors on the track.
 		 */
-		for (j = (btp->bt_trksec & 0x1f) + 1; j < st->nsect; j++) {
+		for (j = (btp->bt_trksec & 0xff) + 1; j < st->nsect; j++) {
 			bb_buf.header1 = j | HDR1_FMT22 | HDR1_SSF;
 			ioctl(fd, SAIOHDR, (char *)0);
 			write(fd, &bb_buf, sizeof (bb_buf));
@@ -258,8 +258,9 @@ recorderror(fd, bn, st)
 		printf("Too many skip sector errors\n");
 		return;
 	}
-	if (errno <= ECMD || errno > EHER)
+	if (errno < EBSE || errno > EHER)
 		return;
+	errno -= EBSE;
 	errors[errno]++;
 	cn = bn / st->nspc;
 	sn = bn % st->nspc;
@@ -280,7 +281,7 @@ recorderror(fd, bn, st)
 		cn = -cn;
 	}
 	/* record the bad sector address and continue */
-	dkbad.bt_bad[errors[FE_TOTAL]++].bt_cyl = cn;
+	dkbad.bt_bad[errors[FE_TOTAL]].bt_cyl = cn;
 	dkbad.bt_bad[errors[FE_TOTAL]++].bt_trksec = (tn << 8) + sn;
 }
 
