@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)spec_vnops.c	7.50 (Berkeley) %G%
+ *	@(#)spec_vnops.c	7.51 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -373,7 +373,7 @@ spec_fsync(ap)
 	register struct vnode *vp = ap->a_vp;
 	register struct buf *bp;
 	struct buf *nbp;
-	int s, error, allerror = 0;
+	int s;
 
 	if (vp->v_type == VCHR)
 		return (0);
@@ -391,8 +391,7 @@ loop:
 		bremfree(bp);
 		bp->b_flags |= B_BUSY;
 		splx(s);
-		if (error = bawrite(bp))
-			allerror = error;
+		bawrite(bp);
 		goto loop;
 	}
 	if (ap->a_waitfor == MNT_WAIT) {
@@ -408,7 +407,7 @@ loop:
 #endif
 	}
 	splx(s);
-	return (allerror);
+	return (0);
 }
 
 /*
