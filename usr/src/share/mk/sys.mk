@@ -2,21 +2,24 @@ unix=		We run UNIX.
 LIBC=		/lib/libc.a
 SHELL=		/bin/sh
 
-.MAIN: all
-
 .SUFFIXES: .out .a .ln .o .c .F .f .e .r .y .l .s .cl .p .h \
-		.c,v .y,v .l,v .s,v .h,v .8 .7 .6 .5 .4 .3 .2 .1 .0
+		.8 .7 .6 .5 .4 .3 .2 .1 .0
+
+# for RCS
+#.SUFFIXES: .out .a .ln .o .c .F .f .e .r .y .l .s .cl .p .h \
+#		.c,v .y,v .l,v .s,v .h,v .8 .7 .6 .5 .4 .3 .2 .1 .0
+
 .INCLUDES:	.h
 .LIBS:		.a
-.NULL:		.out
+#.NULL:		.out
 
-AR=		ar
+AR=		/usr/bin/ar
 ARFLAGS=	rl
 
-AS=		as
+AS=		/usr/bin/as
 AFLAGS=
 
-CC=		cc
+CC=		/usr/bin/cc
 CFLAGS=		-O
 
 CI=		ci
@@ -24,33 +27,33 @@ CIFLAGS=
 CO=		co
 COFLAGS=
 
-CPP=		newcpp
+CPP=		/usr/bin/newcpp
 
-FC=		f77
+FC=		/usr/bin/f77
 FFLAGS=
 EFLAGS=
 
-LEX=		lex
+LEX=		/usr/bin/lex
 LFLAGS=
 
-LINT=		lint
+LINT=		/usr/bin/lint
 LINTFLAGS=	-chapbx
 
-MAKE=		make
+MAKE=		/usr/src/usr.bin/pmake/obj/pmake
 
-NROFF=		nroff
+NROFF=		/usr/bin/nroff
 
-PC=		pc
+PC=		/usr/bin/pc
 PFLAGS=
 
-RC=		f77
+RC=		/usr/bin/f77
 RFLAGS=
 
-YACC=		yacc
+YACC=		/usr/bin/yacc
 YFLAGS=
 
-.c,v.c .y,v.y .l,v.l .s,v.s .h,v.h:
-	${CO} ${COFLAGS} ${.IMPSRC} ${.TARGET}
+#.c,v.c .y,v.y .l,v.l .s,v.s .h,v.h:
+#	${CO} ${COFLAGS} ${.IMPSRC} ${.TARGET}
 
 .c.o:
 	${CC} ${.INCLUDES} ${CFLAGS} -c ${.IMPSRC}
@@ -105,10 +108,3 @@ YFLAGS=
 
 .8.0 .7.0 .6.0 .5.0 .4.0 .3.0 .2.0 .1.0:
 	${NROFF} -man -h ${.IMPSRC} > ${.TARGET}
-
-DEPENDFILE=	.depend
-.if exists(${DEPENDFILE})
-.include ".depend"
-.endif
-
-
