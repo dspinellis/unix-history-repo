@@ -1,4 +1,4 @@
-/*	uipc_socket2.c	4.26	82/10/03	*/
+/*	uipc_socket2.c	4.27	82/10/05	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -422,7 +422,6 @@ sbappendaddr(sb, asa, m0)
 	m = m_get(M_DONTWAIT);
 	if (m == 0)
 		return (0);
-	m->m_off = MMINOFF;
 	m->m_len = sizeof (struct sockaddr);
 	msa = mtod(m, struct sockaddr *);
 	*msa = *asa;
