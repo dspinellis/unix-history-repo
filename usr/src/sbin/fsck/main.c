@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	1.3 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	1.4 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include "../h/param.h"
@@ -1433,6 +1433,7 @@ makecg()
 		cgrp.cg_nbfree = 0;
 		cgrp.cg_nifree = 0;
 		cgrp.cg_rotor = 0;
+		cgrp.cg_irotor = 0;
 		inum = sblock.fs_ipg * c;
 		for (i = 0; i < sblock.fs_ipg; inum++, i++)
 		switch (getstate()) {

@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)mkfs.c	1.3 (Berkeley) %G%";
+static	char *sccsid = "@(#)mkfs.c	1.4 (Berkeley) %G%";
 
 /*
  * make file system for cylinder-group style file systems
@@ -334,6 +334,7 @@ initcg(c)
 	acg.cg_nbfree = 0;
 	acg.cg_nifree = 0;
 	acg.cg_rotor = 0;
+	acg.cg_irotor = 0;
 	i = 0;
 	d = cgimin(c,&sblock);
 	while (i < sblock.fs_ipg) {
