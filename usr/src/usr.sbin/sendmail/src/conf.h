@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.36 (Berkeley) %G%
+ *	@(#)conf.h	8.37 (Berkeley) %G%
  */
 
 /*
@@ -13,6 +13,7 @@
 */
 
 # include <sys/param.h>
+# include <sys/types.h>
 # include <sys/stat.h>
 # include <sys/file.h>
 # include <sys/wait.h>
@@ -370,6 +371,29 @@ typedef int		pid_t;
 #endif
 
 
+/*
+**  Encore UMAX V
+**
+**	Not extensively tested.
+*/
+
+#ifdef UMAXV
+# include <limits.h>
+# define HASUNAME	1	/* use System V uname(2) system call */
+# define HASSTATFS	1	/* has the statfs(2) syscall */
+# define HASSETVBUF	1	/* we have setvbuf(3) in libc */
+# define HASINITGROUPS	1	/* has initgroups(3) call */
+# define SYS5SIGNALS	1	/* SysV signal semantics -- reset on each sig */
+# define SYS5SETPGRP	1	/* use System V setpgrp(2) syscall */
+# define FORK		fork	/* no vfork(2) primitive available */
+# define MAXPATHLEN	PATH_MAX
+extern struct passwd	*getpwent(), *getpwnam(), *getpwuid();
+extern struct group	*getgrent(), *getgrnam(), *getgrgid();
+# undef WIFEXITED
+# undef WEXITSTATUS
+#endif
+
+
 
 /**********************************************************************
 **  End of Per-Operating System defines
@@ -391,6 +415,7 @@ typedef int		pid_t;
 # ifdef SYSTEM5
 # define HASUNAME	1	/* use System V uname(2) system call */
 # define HASUSTAT	1	/* use System V ustat(2) syscall */
+# define SYS5SETPGRP	1	/* use System V setpgrp(2) syscall */
 # ifndef LA_TYPE
 #  define LA_TYPE	LA_INT
 # endif

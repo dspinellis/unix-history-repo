@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.39 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.40 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -559,6 +559,23 @@ holdsigs()
 
 rlsesigs()
 {
+}
+/*
+**  INIT_MD -- do machine dependent initializations
+**
+**	Systems that have global modes that should be set should do
+**	them here rather than in main.
+*/
+
+#ifdef _AUX_SOURCE
+# include	<compat.h>
+#endif
+
+init_md()
+{
+#ifdef _AUX_SOURCE
+	setcompat(getcompat() | COMPAT_BSDPROT);
+#endif
 }
 /*
 **  GETLA -- get the current load average
@@ -1141,7 +1158,7 @@ setsid __P ((void))
 		(void) close(fd);
 	}
 #endif /* TIOCNOTTY */
-# ifdef SYSTEM5
+# ifdef SYS5SETPGRP
 	return setpgrp();
 # else
 	return setpgid(0, getpid());
@@ -1300,7 +1317,7 @@ vsprintf(s, fmt, ap)
 #endif
 
 #ifdef HASSTATFS
-# if defined(IRIX) || defined(apollo) || defined(_SCO_unix_)
+# if defined(IRIX) || defined(apollo) || defined(_SCO_unix_) || defined(UMAXV)
 #  include <sys/statfs.h>
 # else
 #  if (defined(sun) && !defined(BSD)) || defined(__hpux) || defined(_CONVEX_SOURCE) || defined(NeXT) || defined(_AUX_SOURCE)
@@ -1340,7 +1357,7 @@ freespace(dir, bsize)
 # if defined(HASUSTAT)
 	if (stat(dir, &statbuf) == 0 && ustat(statbuf.st_dev, &fs) == 0)
 # else
-#  if defined(IRIX) || defined(apollo)
+#  if defined(IRIX) || defined(apollo) || defined(UMAXV)
 	if (statfs(dir, &fs, sizeof fs, 0) == 0)
 #  else
 #   if defined(ultrix)
