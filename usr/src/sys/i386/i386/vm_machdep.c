@@ -7,7 +7,9 @@
  * the Systems Programming Group of the University of Utah Computer
  * Science Department, and William Jolitz.
  *
- *	@(#)vm_machdep.c	7.5 (Berkeley) %G%
+ * %sccs.include.redist.c%
+ *
+ *	@(#)vm_machdep.c	7.6 (Berkeley) %G%
  *	Utah $Hdr: vm_machdep.c 1.16.1.1 89/06/23$
  */
 
