@@ -194,7 +194,7 @@ another:
 		exit(1);
 	}
 #ifdef	KERBEROS
-	sp = getservbyname("klogin", "tcp");
+	sp = getservbyname((encrypt ? "eklogin" : "klogin"), "tcp");
 	if(sp == NULL) {
 		use_kerberos = 0;
 		old_warning("klogin service unknown");
