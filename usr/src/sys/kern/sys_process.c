@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sys_process.c	7.12 (Berkeley) %G%
+ *	@(#)sys_process.c	7.13 (Berkeley) %G%
  */
 
 #define IPCREG
@@ -97,7 +97,6 @@ procxmt(p)
 	register int i, *poff;
 	register struct text *xp;
 	struct vattr vattr;
-	struct vnode *vp;
 
 	if (ipc.ip_lock != p->p_pid)
 		return (0);
@@ -135,9 +134,9 @@ procxmt(p)
 		 * If text, must assure exclusive use
 		 */
 		if (xp = p->p_textp) {
-			vp = xp->x_vptr;
-			VOP_GETATTR(vp, &vattr, u.u_cred);
-			if (xp->x_count!=1 || (vattr.va_mode & VSVTX))
+			if (xp->x_count != 1 ||
+			    VOP_GETATTR(xp->x_vptr, &vattr, u.u_cred) ||
+			    (vattr.va_mode & VSVTX))
 				goto error;
 			xp->x_flag |= XTRC;
 		}
@@ -217,7 +216,7 @@ procxmt(p)
 
 	case PT_KILL:			/* kill the child process */
 		wakeup((caddr_t)&ipc);
-		exit(p, p->p_xstat);
+		exit(p, (int)p->p_xstat);
 
 	default:
 	error:
