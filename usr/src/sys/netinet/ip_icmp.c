@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ip_icmp.c	6.16 (Berkeley) %G%
+ *	@(#)ip_icmp.c	6.17 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -97,21 +97,18 @@ icmp_error(oip, type, code, ifp, dest)
 	nip->ip_len = htons((u_short)nip->ip_len);
 
 	/*
-	 * Now, copy old ip header in front of icmp
-	 * message.  This allows us to reuse any source
-	 * routing info present.
+	 * Now, copy old ip header in front of icmp message.
 	 */
 	if (m->m_len + oiplen > MLEN)
 		oiplen = sizeof(struct ip);
 	if (m->m_len + oiplen > MLEN)
 		panic("icmp len");
 	m->m_off -= oiplen;
+	m->m_len += oiplen;
 	nip = mtod(m, struct ip *);
 	bcopy((caddr_t)oip, (caddr_t)nip, oiplen);
-	nip->ip_len = m->m_len + oiplen;
+	nip->ip_len = m->m_len;
 	nip->ip_p = IPPROTO_ICMP;
-	/* icmp_send adds ip header to m_off and m_len, so we deduct here */
-	m->m_off += oiplen;
 	icmp_reflect(nip, ifp);
 
 free:
@@ -166,6 +163,8 @@ icmp_input(m, ifp)
 		icmpstat.icps_checksum++;
 		goto free;
 	}
+	m->m_len += hlen;
+	m->m_off -= hlen;
 
 #ifdef ICMPPRINTFS
 	/*
@@ -219,11 +218,11 @@ icmp_input(m, ifp)
 		icmpsrc.sin_addr = icp->icmp_ip.ip_dst;
 		if (ctlfunc = inetsw[ip_protox[icp->icmp_ip.ip_p]].pr_ctlinput)
 			(*ctlfunc)(code, (struct sockaddr *)&icmpsrc);
-		goto free;
+		break;
 
 	badcode:
 		icmpstat.icps_badcode++;
-		goto free;
+		break;
 
 	case ICMP_ECHO:
 		icp->icmp_type = ICMP_ECHOREPLY;
@@ -232,7 +231,7 @@ icmp_input(m, ifp)
 	case ICMP_TSTAMP:
 		if (icmplen < ICMP_TSLEN) {
 			icmpstat.icps_badlen++;
-			goto free;
+			break;
 		}
 		icp->icmp_type = ICMP_TSTAMPREPLY;
 		icp->icmp_rtime = iptime();
@@ -249,7 +248,7 @@ icmp_input(m, ifp)
 
 	case ICMP_MASKREQ:
 		if (icmplen < ICMP_MASKLEN || (ia = ifptoia(ifp)) == 0)
-			goto free;
+			break;
 		icp->icmp_type = ICMP_IREQREPLY;
 		icp->icmp_mask = ia->ia_netmask;
 		if (ip->ip_src.s_addr == 0) {
@@ -258,12 +257,17 @@ icmp_input(m, ifp)
 			else if (ia->ia_ifp->if_flags & IFF_POINTOPOINT)
 			    ip->ip_src = satosin(&ia->ia_dstaddr)->sin_addr;
 		}
-		goto reflect;
+reflect:
+		ip->ip_len += hlen;	/* since ip_input deducts this */
+		icmpstat.icps_reflect++;
+		icmpstat.icps_outhist[icp->icmp_type]++;
+		icmp_reflect(ip, ifp);
+		return;
 
 	case ICMP_REDIRECT:
 		if (icmplen < ICMP_ADVLENMIN || icmplen < ICMP_ADVLEN(icp)) {
 			icmpstat.icps_badlen++;
-			goto free;
+			break;
 		}
 		/*
 		 * Short circuit routing redirects to force
@@ -295,29 +299,28 @@ icmp_input(m, ifp)
 			pfctlinput(PRC_REDIRECT_HOST,
 			  (struct sockaddr *)&icmpsrc);
 		}
-		/* FALL THROUGH */
+		break;
 
+	/*
+	 * No kernel processing for the following;
+	 * just fall through to send to raw listener.
+	 */
 	case ICMP_ECHOREPLY:
 	case ICMP_TSTAMPREPLY:
 	case ICMP_IREQREPLY:
 	case ICMP_MASKREPLY:
-		icmpsrc.sin_addr = ip->ip_src;
-		icmpdst.sin_addr = ip->ip_dst;
-		raw_input(dtom(icp), &icmproto, (struct sockaddr *)&icmpsrc,
-		  (struct sockaddr *)&icmpdst);
-		return;
-
 	default:
-		goto free;
+		break;
 	}
-reflect:
-	ip->ip_len += hlen;		/* since ip_input deducts this */
-	icmpstat.icps_reflect++;
-	icmpstat.icps_outhist[icp->icmp_type]++;
-	icmp_reflect(ip, ifp);
+
+	icmpsrc.sin_addr = ip->ip_src;
+	icmpdst.sin_addr = ip->ip_dst;
+	raw_input(m, &icmproto, (struct sockaddr *)&icmpsrc,
+	    (struct sockaddr *)&icmpdst);
 	return;
+
 free:
-	m_freem(dtom(ip));
+	m_freem(m);
 }
 
 /*
@@ -330,6 +333,7 @@ icmp_reflect(ip, ifp)
 	register struct in_ifaddr *ia;
 	struct in_addr t;
 	struct mbuf *m, *opts = 0, *ip_srcroute();
+	int optlen = (ip->ip_hl << 2) - sizeof(struct ip);
 
 	t = ip->ip_dst;
 	ip->ip_dst = ip->ip_src;
@@ -352,22 +356,12 @@ icmp_reflect(ip, ifp)
 		t = IA_SIN(ia)->sin_addr;
 	ip->ip_src = t;
 
-	if ((ip->ip_hl << 2) > sizeof(struct ip)) {
-		int optlen = (ip->ip_hl << 2) - sizeof(struct ip);
-
+	if (optlen > 0) {
 		/*
 		 * Retrieve any source routing from the incoming packet
-		 * and strip out other options.  Adjust the IP
-		 * and mbuf lengths.  The length of the options is added
-		 * to the mbuf here, as it was already subtracted
-		 * in icmp_input, and ip_stripoptions will subtract it again.
-		 * Adjust the mbuf offset to point to the new location
-		 * of the icmp header.
+		 * and strip out other options.  Adjust the IP length.
 		 */
 		opts = ip_srcroute();
-		m = dtom(ip);
-		m->m_off -= optlen;
-		m->m_len += optlen;
 		ip->ip_len -= optlen;
 		ip_stripoptions(ip, (struct mbuf *)0);
 	}
@@ -402,6 +396,8 @@ icmp_send(ip, opts)
 
 	m = dtom(ip);
 	hlen = ip->ip_hl << 2;
+	m->m_off += hlen;
+	m->m_len -= hlen;
 	icp = mtod(m, struct icmp *);
 	icp->icmp_cksum = 0;
 	icp->icmp_cksum = in_cksum(m, ip->ip_len - hlen);
