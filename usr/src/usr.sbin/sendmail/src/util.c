@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)util.c	5.9 (Berkeley) %G%";
+static char	SccsId[] = "@(#)util.c	5.10 (Berkeley) %G%";
 #endif not lint
 
 # include <stdio.h>
@@ -241,9 +241,7 @@ char
 lower(c)
 	register char c;
 {
-	if (isascii(c) && isupper(c))
-		c = c - 'A' + 'a';
-	return (c);
+	return(isascii(c) && isupper(c) ? tolower(c) : c);
 }
 /*
 **  XPUTS -- put string doing control escapes.
@@ -312,40 +310,7 @@ makelower(p)
 		return;
 	for (; (c = *p) != '\0'; p++)
 		if (isascii(c) && isupper(c))
-			*p = c - 'A' + 'a';
-}
-/*
-**  SAMEWORD -- return TRUE if the words are the same
-**
-**	Ignores case.
-**
-**	Parameters:
-**		a, b -- the words to compare.
-**
-**	Returns:
-**		TRUE if a & b match exactly (modulo case)
-**		FALSE otherwise.
-**
-**	Side Effects:
-**		none.
-*/
-
-bool
-sameword(a, b)
-	register char *a, *b;
-{
-	char ca, cb;
-
-	do
-	{
-		ca = *a++;
-		cb = *b++;
-		if (isascii(ca) && isupper(ca))
-			ca = ca - 'A' + 'a';
-		if (isascii(cb) && isupper(cb))
-			cb = cb - 'A' + 'a';
-	} while (ca != '\0' && ca == cb);
-	return (ca == cb);
+			*p = tolower(c);
 }
 /*
 **  FULLNAME -- extract full name from a passwd file entry.
