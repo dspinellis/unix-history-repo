@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_input.c	7.10 (Berkeley) %G%
+ *	@(#)pk_input.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -101,6 +101,7 @@ pkintr ()
 	}
 }
 struct mbuf *pk_bad_packet;
+struct mbuf_cache pk_input_cache = {0 };
 /* 
  *  X.25 PACKET INPUT
  *
@@ -122,6 +123,8 @@ struct x25config *xcp;
 	static struct x25config *lastxcp;
 	static struct pkcb *lastpkp;
 
+	if (pk_input_cache.mbc_size || pk_input_cache.mbc_oldsize)
+		mbuf_cache(&pk_input_cache, m);
 	if (xcp == lastxcp)
 		pkp = lastpkp;
 	else {
@@ -189,7 +192,7 @@ struct x25config *xcp;
 	 *  Incoming Call packet received. 
 	 */
 	case CALL + LISTEN: 
-		incoming_call (pkp, m);
+		pk_incoming_call (pkp, m);
 		break;
 
 	/* 	
@@ -207,7 +210,7 @@ struct x25config *xcp;
 	 */
 	case CALL_ACCEPTED + SENT_CALL: 
 		MCHTYPE(m, MT_CONTROL);
-		call_accepted (lcp, m);
+		pk_call_accepted (lcp, m);
 		break;
 
 	/* 
@@ -542,8 +545,7 @@ struct x25config *xcp;
  * sockets awaiting connections.
  */
 
-static
-incoming_call (pkp, m0)
+pk_incoming_call (pkp, m0)
 struct mbuf *m0;
 struct pkcb *pkp;
 {
@@ -579,7 +581,7 @@ struct pkcb *pkp;
 		u++;
 
 	facp = u;
-	parse_facilities (u, sa);
+	pk_parse_facilities (u, sa);
 	u += *u + 1;
 	sa -> x25_udlen = min (16, ((octet *)xp) + len - u);
 	if (sa -> x25_udlen < 0)
@@ -713,8 +715,7 @@ struct socket *so;
 	}
 }
 
-static
-call_accepted (lcp, m)
+pk_call_accepted (lcp, m)
 struct pklcd *lcp;
 struct mbuf *m;
 {
@@ -733,15 +734,14 @@ struct mbuf *m;
 		fcp = (octet *) ap -> address_field + (ap -> calling_addrlen +
 			ap -> called_addrlen + 1) / 2;
 		if (fcp + *fcp <= ((octet *)xp) + len)
-			parse_facilities (fcp, lcp -> lcd_ceaddr);
+			pk_parse_facilities (fcp, lcp -> lcd_ceaddr);
 	}
 	pk_assoc (lcp -> lcd_pkp, lcp, lcp -> lcd_ceaddr);
 	if (lcp -> lcd_so == 0 && lcp -> lcd_upper)
 		lcp -> lcd_upper(lcp, m);
 }
 
-static
-parse_facilities (fcp, sa)
+pk_parse_facilities (fcp, sa)
 register octet *fcp;
 register struct sockaddr_x25 *sa;
 {
