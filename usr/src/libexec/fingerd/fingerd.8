@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)fingerd.8	6.4 (Berkeley) %G%
+.\"     @(#)fingerd.8	6.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt FINGERD 8
@@ -13,10 +13,13 @@
 .Nd remote user information server
 .Sh SYNOPSIS
 .Nm fingerd
+.Op Fl s
+.Op Fl l
+.Op Fl p Ar filename
 .Sh DESCRIPTION
 .Nm Fingerd
 is a simple protocol based on
-.%T RFC742
+.%T RFC1196
 that provides an interface to the
 Name and Finger programs at several network sites.
 The program is supposed to return a friendly,
@@ -59,6 +62,33 @@ in the command line include both
 and
 .Dq user names .
 If a name is ambiguous, all possible derivations are returned.
+.Pp
+The following options may be passed to
+.Nm fingerd
+as server program arguments in
+.Pa /etc/inetd.conf :
+.Bl -tag -width Ds
+.It Fl s
+Enable secure mode.
+Queries without a user name are rejected and
+forwarding of queries to other remote hosts is denied.
+.It Fl l
+Enable logging.
+The name of the host originating the query is reported via
+.Xr syslog 3
+at LOG_NOTICE priority.
+.It Fl p
+Use an alternate program as the local information provider.
+The default local program
+executed by
+.Nm fingerd
+is 
+.Xr finger 1 .
+By specifying a customized local server,
+this option allows a system manager
+to have more control over what information is
+provided to remote sites.
+.El
 .Sh SEE ALSO
 .Xr finger 1
 .Sh BUGS
