@@ -74,6 +74,8 @@ printone:
 		}
 		if (op->otype == ONOFF) {
 			op->ovalue = 1 - no;
+			if (op == &options[PROMPT])
+				oprompt = 1 - no;
 			goto next;
 		}
 		if (no)

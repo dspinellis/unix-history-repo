@@ -35,6 +35,7 @@ char	*CD;			/* P* Clear to end of display */
 char	*CE;			/* P  Clear to end of line */
 char	*CL;			/* P* Clear screen */
 char	*CM;			/* P  Cursor motion */
+char	*xCR;			/* P  Carriage return */
 char	*DC;			/* P* Delete character */
 char	*DL;			/* P* Delete line sequence */
 char	*DM;			/*    Delete mode (enter)  */
@@ -56,6 +57,7 @@ char	*KS;			/*    Keypad start xmitting */
 char	*KU;			/*    Keypad up arrow */
 char	*LL;			/*    Quick to last line, column 0 */
 char	*ND;			/*    Non-destructive space */
+char	*xNL;			/*    Line feed (new line) */
 char	PC;			/*    Pad character */
 char	*SE;			/*    Standout end (may leave space) */
 char	*SF;			/* P  Scroll forwards */
@@ -80,10 +82,13 @@ bool	HZ;			/* Hazeltine ~ braindamage */
 bool	IN;			/* Insert-null blessing */
 bool	MI;			/* can move in insert mode */
 bool	NC;			/* No Cr - \r snds \r\n then eats \n (dm2500) */
+bool	NS;			/* No scroll - linefeed at bottom won't scroll */
 bool	OS;			/* Overstrike works */
 bool	UL;			/* Underlining works even though !os */
+bool	XB;			/* Beehive (no escape key, simulate with f1) */
 bool	XN;			/* A newline gets eaten after wrap (concept) */
 bool	XT;			/* Tabs are destructive */
+bool	XX;			/* Tektronix 4025 insert line */
 	/* X? is reserved for severely nauseous glitches */
 	/* If there are enough of these we may need bit masks! */
 
@@ -102,12 +107,42 @@ short	outline;
 short	destcol;		/* Where the cursor should be */
 short	destline;
 
-#ifdef 	TIOCSETC
-struct	tchars ottyc, nttyc;	/* For V7 character masking */
+/*
+ * There are several kinds of tty drivers to contend with.  These include:
+ * (1)	V6:		no CBREAK, no ioctl.  (Include PWB V1 here).
+ * (2)	V7 research:	has CBREAK, has ioctl, and has the tchars (TIOCSETC)
+ *			business to change start, stop, etc. chars.
+ * (3)	USG V2:		Basically like V6 but RAW mode is like V7 RAW.
+ *			(We treat it as V6.)
+ * (4)	USG V3:		equivalent to V7 but totally incompatible.
+ * (5)  Berkeley:	has ltchars in addition to all of V7.
+ *
+ * The following attempts to decide what we are on, and declare
+ * some variables in the appropriate format.  The wierd looking one (ttymode)
+ * is the thing we pass to sTTY and family to turn "RAW" mode on or off
+ * when we go into or out of visual mode.  In V7/V6 it's just the flags word
+ * to stty.  In USG V3 it's the whole tty structure.
+ */
+#ifdef	USG3TTY			/* USG V3 */
+  struct	termio tty;	/* Use this one structure to change modes */
+  typedef	struct termio ttymode;	/* Mode to contain tty flags */
+
+#else				/* All others */
+  struct	sgttyb tty;	/* Always stty/gtty using this one structure */
+  typedef	int ttymode;	/* Mode to contain tty flags */
+# ifdef 	TIOCSETC	/* V7 */
+   struct	tchars ottyc, nttyc;	/* For V7 character masking */
+# endif
+# ifdef		TIOCLGET	/* Berkeley */
+   struct	ltchars olttyc, nlttyc;	/* More of tchars style stuff */
+# endif
+
 #endif
-struct	sgttyb tty;		/* Always stty/gtty using this one structure */
-bool	normtty;		/* Have to restor normal mode from normf */
-int	normf;			/* Restore tty flags to this (someday) */
+
+ttymode	normf;			/* Restore tty flags to this (someday) */
+bool	normtty;		/* Have to restore normal mode from normf */
+
+ttymode ostart(), setty(), unixex();
 
 short	WBOT;
 short	WECHO;
@@ -128,5 +163,11 @@ struct maps {
 };
 struct maps arrows[MAXNOMACS];	/* macro defs - 1st 5 built in */
 struct maps immacs[MAXNOMACS];	/* for while in insert mode */
+struct maps abbrevs[MAXNOMACS];	/* for word abbreviations */
+int	ldisc;			/* line discipline for ucb tty driver */
 char	mapspace[MAXCHARMACS];
 char	*msnext;	/* next free location in mapspace */
+int	maphopcnt;	/* check for infinite mapping loops */
+bool	anyabbrs;	/* true if abbr or unabbr has been done */
+char	ttynbuf[20];	/* result of ttyname() */
+int	ttymesg;	/* original mode of users tty */

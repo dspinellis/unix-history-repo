@@ -12,6 +12,7 @@ short	ospeed = -1;
 gettmode()
 {
 
+#ifndef USG3TTY
 	if (gtty(1, &tty) < 0)
 		return;
 	if (ospeed != tty.sg_ospeed)
@@ -21,17 +22,29 @@ gettmode()
 	UPPERCASE = (tty.sg_flags & LCASE) != 0;
 	GT = (tty.sg_flags & XTABS) != XTABS && !XT;
 	NONL = (tty.sg_flags & CRMOD) == 0;
+#else
+	if (ioctl(1, TCGETA, &tty) < 0)
+		return;
+	if (ospeed != tty.c_cflag & CBAUD)
+		value(SLOWOPEN) = (tty.c_cflag & CBAUD) < B1200;
+	ospeed = tty.c_cflag & CBAUD;
+	normf = tty;
+	UPPERCASE = (tty.c_iflag & IUCLC) != 0;
+	GT = (tty.c_oflag & TABDLY) != TAB3 && !XT;
+	NONL = (tty.c_oflag & OCRNL) == 0;
+#endif
 }
 
 char *xPC;
 char **sstrs[] = {
-	&AL, &BC, &BT, &CD, &CE, &CL, &CM, &DC, &DL, &DM, &DO, &ED, &EI,
+	&AL, &BC, &BT, &CD, &CE, &CL, &CM, &xCR, &DC, &DL, &DM, &DO, &ED, &EI,
 	&F0, &F1, &F2, &F3, &F4, &F5, &F6, &F7, &F8, &F9,
 	&HO, &IC, &IM, &IP, &KD, &KE, &KH, &KL, &KR, &KS, &KU, &LL,
-	&ND, &xPC, &SE, &SF, &SO, &SR, &TA, &TE, &TI, &UP, &VB, &VS, &VE
+	&ND, &xNL, &xPC, &SE, &SF, &SO, &SR, &TA, &TE, &TI, &UP, &VB, &VS, &VE
 };
 bool *sflags[] = {
-	&AM, &BS, &DA, &DB, &EO, &HC, &HZ, &IN, &MI, &NC, &OS, &UL, &XN, &XT
+	&AM, &BS, &DA, &DB, &EO, &HC, &HZ, &IN, &MI, &NC, &NS, &OS, &UL,
+	&XB, &XN, &XT, &XX
 };
 char **fkeys[10] = {
 	&F0, &F1, &F2, &F3, &F4, &F5, &F6, &F7, &F8, &F9
@@ -39,7 +52,7 @@ char **fkeys[10] = {
 setterm(type)
 	char *type;
 {
-	char *cgoto();
+	char *tgoto();
 	register int unknown, i;
 	register int l;
 	char ltcbuf[TCBUFSIZE];
@@ -73,13 +86,36 @@ setterm(type)
 	arrows[3].cap = KR; arrows[3].mapto = "l"; arrows[3].descr = "right";
 	arrows[4].cap = KH; arrows[4].mapto = "H"; arrows[4].descr = "home";
 
+#ifdef TIOCLGET
+	/*
+	 * Now map users susp char to ^Z, being careful that the susp
+	 * overrides any arrow key, but only for hackers (=new tty driver).
+	 */
+	{
+		static char sc[2];
+		int i, fnd;
+
+		ioctl(0, TIOCGETD, &ldisc);
+		if (ldisc == NTTYDISC) {
+			sc[0] = olttyc.t_suspc;
+			sc[1] = 0;
+			if (olttyc.t_suspc == CTRL(z)) {
+				for (i=0; i<=4; i++)
+					if (arrows[i].cap[0] == CTRL(z))
+						addmac(sc, NULL, NULL, arrows);
+			} else
+				addmac(sc, "\32", "susp", arrows);
+		}
+	}
+#endif
+
 	options[WINDOW].ovalue = options[WINDOW].odefault = l - 1;
 	if (defwind) options[WINDOW].ovalue = defwind;
 	options[SCROLL].ovalue = options[SCROLL].odefault = HC ? 11 : ((l-1) / 2);
 	COLUMNS = tgetnum("co");
-	if (COLUMNS <= 20)
+	if (COLUMNS <= 4)
 		COLUMNS = 1000;
-	if (cgoto()[0] == 'O')	/* OOPS */
+	if (tgoto(CM, 2, 2)[0] == 'O')	/* OOPS */
 		CA = 0, CM = 0;
 	else
 		CA = 1, costCM = strlen(tgoto(CM, 8, 10));
@@ -89,11 +125,6 @@ setterm(type)
 	if (i <= 0)
 		LINES = 2;
 	/* proper strings to change tty type */
-#ifdef notdef
-	/* Taken out because we don't allow it. See ex_set.c for reasons. */
-	if (inopen)
-		putpad(VE);
-#endif
 	termreset();
 	gettmode();
 	value(REDRAW) = AL && DL;
@@ -108,13 +139,13 @@ zap()
 	register bool **fp;
 	register char ***sp;
 
- 	namp = "ambsdadbeohchzinmincosulxnxt";
+ 	namp = "ambsdadbeohchzinmincnsosulxbxnxtxx";
 	fp = sflags;
 	do {
 		*(*fp++) = tgetflag(namp);
 		namp += 2;
 	} while (*namp);
-	namp = "albcbtcdceclcmdcdldmdoedeik0k1k2k3k4k5k6k7k8k9hoicimipkdkekhklkrkskullndpcsesfsosrtatetiupvbvsve";
+	namp = "albcbtcdceclcmcrdcdldmdoedeik0k1k2k3k4k5k6k7k8k9hoicimipkdkekhklkrkskullndnlpcsesfsosrtatetiupvbvsve";
 	sp = sstrs;
 	do {
 		*(*sp++) = tgetstr(namp, &aoftspace);

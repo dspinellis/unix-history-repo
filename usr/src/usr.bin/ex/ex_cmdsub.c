@@ -3,6 +3,7 @@
 #include "ex_argv.h"
 #include "ex_temp.h"
 #include "ex_tty.h"
+#include "ex_vis.h"
 
 /*
  * Command mode subroutines implementing
@@ -12,6 +13,7 @@
 
 bool	endline = 1;
 line	*tad1;
+static	jnoop();
 
 /*
  * Append after line a lines returned by function f.
@@ -213,7 +215,11 @@ join(c)
 	strcLIN(genbuf);
 	delete(0);
 	jcount = 1;
+	if (FIXUNDO)
+		undap1 = undap2 = addr1;
 	ignore(append(jnoop, --addr1));
+	if (FIXUNDO)
+		vundkind = VMANY;
 }
 
 static
@@ -524,6 +530,7 @@ badtag:
 		io = open(fn, 0);
 		if (io<0)
 			continue;
+		tfcount++;
 		while (getfile() == 0) {
 #endif
 			/* loop for each tags file entry */
@@ -541,7 +548,7 @@ badtag:
 #endif
 			while (*cp && *lp == *cp)
 				cp++, lp++;
-			if (*lp || !iswhite(*cp)) {
+			if ((*lp || !iswhite(*cp)) && (value(TAGLENGTH)==0 || lp-lasttag < value(TAGLENGTH))) {
 #ifdef VMUNIX
 				if (*lp > *cp)
 					bot = mid + 1;
@@ -560,6 +567,10 @@ badtag:
 #else
 			close(io);
 #endif
+			/* Rest of tag if abbreviated */
+			while (!iswhite(*cp))
+				cp++;
+
 			/* name of file */
 			while (*cp && iswhite(*cp))
 				cp++;
@@ -582,7 +593,7 @@ badtags:
 				 */
 				names['t'-'a'] = *dot &~ 01;
 				if (inopen) {
-					extern char *ncols['z'-'a'+1];
+					extern char *ncols['z'-'a'+2];
 					extern char *cursor;
 
 					ncols['t'-'a'] = cursor;
@@ -985,7 +996,11 @@ undo(c)
 		} else
 			undkind = UNDCHANGE;
 	}
-	if (dot == zero && dot != dol)
+	/*
+	 * Defensive programming - after a munged undadot.
+	 * Also handle empty buffer case.
+	 */
+	if ((dot <= zero || dot > dol) && dot != dol)
 		dot = one;
 #ifdef TRACE
 	if (trace)
@@ -1034,22 +1049,25 @@ somechange()
  * Map command:
  * map src dest
  */
-mapcmd(un)
+mapcmd(un, ab)
 	int un;	/* true if this is unmap command */
+	int ab;	/* true if this is abbr command */
 {
-	char lhs[10], rhs[100];	/* max sizes resp. */
+	char lhs[100], rhs[100];	/* max sizes resp. */
 	register char *p;
 	register char c;
 	char *dname;
 	struct maps *mp;	/* the map structure we are working on */
 
-	mp = exclam() ? immacs : arrows;
+	mp = ab ? abbrevs : exclam() ? immacs : arrows;
 	if (skipend()) {
 		int i;
 
 		/* print current mapping values */
 		if (peekchar() != EOF)
 			ignchar();
+		if (un)
+			error("Missing lhs");
 		if (inopen)
 			pofix();
 		for (i=0; mp[i].mapto; i++)
@@ -1069,15 +1087,14 @@ mapcmd(un)
 		c = getchar();
 		if (c == CTRL(v)) {
 			c = getchar();
-		} else if (any(c, " \t")) {
-			if (un)
-				eol();	/* will usually cause an error */
-			else
-				break;
-		} else if (endcmd(c)) {
+		} else if (!un && any(c, " \t")) {
+			/* End of lhs */
+			break;
+		} else if (endcmd(c) && c!='"') {
 			ungetchar(c);
 			if (un) {
 				newline();
+				*p = 0;
 				addmac(lhs, NOSTR, NOSTR, mp);
 				return;
 			} else
@@ -1093,7 +1110,7 @@ mapcmd(un)
 		c = getchar();
 		if (c == CTRL(v)) {
 			c = getchar();
-		} else if (endcmd(c)) {
+		} else if (endcmd(c) && c!='"') {
 			ungetchar(c);
 			break;
 		}
@@ -1134,6 +1151,10 @@ addmac(src,dest,dname,mp)
 {
 	register int slot, zer;
 
+#ifdef TRACE
+	if (trace)
+		fprintf(trace, "addmac(src='%s', dest='%s', dname='%s', mp=%x\n", src, dest, dname, mp);
+#endif
 	if (dest && mp==arrows) {
 		/* Make sure user doesn't screw himself */
 		/*
@@ -1170,7 +1191,7 @@ addmac(src,dest,dname,mp)
 	zer = -1;
 	for (slot=0; mp[slot].mapto; slot++) {
 		if (mp[slot].cap) {
-			if (eq(src, mp[slot].cap))
+			if (eq(src, mp[slot].cap) || eq(src, mp[slot].mapto))
 				break;	/* if so, reuse slot */
 		} else {
 			zer = slot;	/* remember an empty slot */

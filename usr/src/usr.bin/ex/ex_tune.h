@@ -10,10 +10,10 @@
  * "/usr/lib/..." here, "/lib" will be tried only for strings.
  */
 #include "local/uparm.h"
-#define	EXRECOVER	libpath(ex3.3recover)
-#define	EXPRESERVE	libpath(ex3.3preserve)
+#define	EXRECOVER	libpath(ex3.4recover)
+#define	EXPRESERVE	libpath(ex3.4preserve)
 #ifndef VMUNIX
-#define	EXSTRINGS	libpath(ex3.3strings)
+#define	EXSTRINGS	libpath(ex3.4strings)
 #endif
 
 /*
@@ -35,9 +35,11 @@
 #ifdef VMUNIX
 #define	LBSIZE		1024
 #define	ESIZE		512
+#define CRSIZE		1024
 #else
 #define	LBSIZE		512		/* Line length */
 #define	ESIZE		128		/* Size of compiled re */
+#define CRSIZE		512
 #endif
 #define	RHSSIZE		256		/* Size of rhs of substitute */
 #define	NBRA		9		/* Number of re \( \) pairs */
@@ -106,5 +108,5 @@
  * Attention is the interrupt character (normally 0177 -- delete).
  * Quit is the quit signal (normally FS -- control-\) and quits open/visual.
  */
-#define	ATTN	0177
+#define	ATTN	(-2)
 #define	QUIT	('\\' & 037)

@@ -4,7 +4,7 @@
 #endif
 
 /*
- * Ex version 3.1
+ * Ex version 3 (see exact version in ex_cmds.c, search for /Version/)
  *
  * Mark Horton, UC Berkeley
  * Bill Joy, UC Berkeley
@@ -29,24 +29,39 @@
  *
  * Please forward bug reports to
  *
- *	Bill Joy
+ *	Mark Horton
  *	Computer Science Division, EECS
  *	EVANS HALL
  *	U.C. Berkeley 94704
  *	(415) 642-4948
  *	(415) 642-1024 (dept. office)
  *
- * or to wnj@mit-mc on the ARPA-net.  I would particularly like to hear
+ * or to csvax.mark@berkeley on the ARPA-net.  I would particularly like to hear
  * of additional terminal descriptions you add to the termcap data base.
  */
 
 #include <sys/types.h>
 #include <ctype.h>
 #include <errno.h>
-#include <sgtty.h>
 #include <signal.h>
 #include <setjmp.h>
 #include <sys/stat.h>
+
+/*
+ *	The following little dance copes with the new USG tty handling.
+ *	This stuff has the advantage of considerable flexibility, and
+ *	the disadvantage of being incompatible with anything else.
+ *	The presence of the symbol USG3TTY will indicate the new code:
+ *	in this case, we define CBREAK (because we can simulate it exactly),
+ *	but we won't actually use it, so we set it to a value that will
+ *	probably blow the compilation if we goof up.
+ */
+#ifdef USG3TTY
+#include <termio.h>
+#define CBREAK xxxxx
+#else
+#include <sgtty.h>
+#endif
 
 extern	int errno;
 
@@ -142,6 +157,9 @@ int	chng;			/* Warn "No write" */
 char	*Command;
 short	defwind;		/* -w# change default window size */
 int	dirtcnt;		/* When >= MAXDIRT, should sync temporary */
+#ifdef TIOCLGET
+bool	dosusp;			/* Do SIGTSTP in visual when ^Z typed */
+#endif
 bool	edited;			/* Current file is [Edited] */
 line	*endcore;		/* Last available core location */
 bool	endline;		/* Last cmd mode command ended with \n */
@@ -154,6 +172,7 @@ char	genbuf[LBSIZE];		/* Working buffer when manipulating linebuf */
 bool	hush;			/* Command line option - was given, hush up! */
 char	*globp;			/* (Untyped) input string to command mode */
 bool	holdcm;			/* Don't cursor address */
+bool	inappend;		/* in ex command append mode */
 bool	inglobal;		/* Inside g//... or v//... */
 char	*initev;		/* Initial : escape for visual */
 bool	inopen;			/* Inside open or visual */
@@ -173,6 +192,7 @@ line	names['z'-'a'+2];	/* Mark registers a-z,' */
 int	notecnt;		/* Count for notify (to visual from cmd) */
 bool	numberf;		/* Command should run in number mode */
 char	obuf[BUFSIZ];		/* Buffer for tty output */
+short	oprompt;		/* Saved during source */
 short	ospeed;			/* Output speed (from gtty) */
 int	otchng;			/* Backup tchng to find changes in macros */
 short	peekc;			/* Peek ahead character (cmd mode input) */
@@ -277,6 +297,20 @@ line	*undadot;		/* If we saved all lines, dot reverts here */
 #define	UNDPUT		4
 
 /*
+ * Various miscellaneous flags and buffers needed by the encryption routines.
+ */
+#define	KSIZE   9       /* key size for encryption */
+#define	KEYPROMPT       "Key: "
+int	xflag;		/* True if we are in encryption mode */
+int	xtflag;		/* True if the temp file is being encrypted */
+int	kflag;		/* True if the key has been accepted */
+char	perm[768];
+char	tperm[768];
+char	*key;
+char	crbuf[CRSIZE];
+char	*getpass();
+
+/*
  * Function type definitions
  */
 #define	NOSTR	(char *) 0
@@ -333,6 +367,7 @@ int	numbline();
 int	(*oldquit)();
 int	onhup();
 int	onintr();
+int	onsusp();
 int	putch();
 int	shift();
 int	termchar();

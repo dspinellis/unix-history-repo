@@ -137,7 +137,15 @@ choice:
 
 		case 'a':
 
-			if (peekchar() == 'r') {
+			switch(peekchar()) {
+			case 'b':
+/* abbreviate */
+				tail("abbreviate");
+				setnoaddr();
+				mapcmd(0, 1);
+				anyabbrs = 1;
+				continue;
+			case 'r':
 /* args */
 				tail("args");
 				setnoaddr();
@@ -153,9 +161,12 @@ choice:
 			setdot();
 			aiflag = exclam();
 			newline();
+			vmacchng(0);
 			deletenone();
 			setin(addr2);
+			inappend = 1;
 			ignore(append(gettty, addr2));
+			inappend = 0;
 			nochng();
 			continue;
 
@@ -165,6 +176,7 @@ choice:
 /* copy */
 			case 'o':
 				tail("copy");
+				vmacchng(0);
 				move();
 				continue;
 
@@ -213,9 +225,12 @@ changdir:
 /* change */
 			aiflag = exclam();
 			setCNL();
+			vmacchng(0);
 			setin(addr1);
 			delete(0);
+			inappend = 1;
 			ignore(append(gettty, addr1 - 1));
+			inappend = 0;
 			nochng();
 			continue;
 
@@ -227,6 +242,7 @@ changdir:
 			tail("delete");
 			c = cmdreg();
 			setCNL();
+			vmacchng(0);
 			if (c)
 				YANKreg(c);
 			delete(0);
@@ -237,6 +253,7 @@ changdir:
 /* ex */
 		case 'e':
 			tail(peekchar() == 'x' ? "ex" : "edit");
+editcmd:
 			if (!exclam() && chng)
 				c = 'E';
 			filename(c);
@@ -281,9 +298,12 @@ doecmd:
 			nonzero();
 			aiflag = exclam();
 			newline();
+			vmacchng(0);
 			deletenone();
 			setin(addr2);
+			inappend = 1;
 			ignore(append(gettty, addr2 - 1));
+			inappend = 0;
 			if (dot == zero && dol > zero)
 				dot = one;
 			nochng();
@@ -296,6 +316,7 @@ doecmd:
 			setcount();
 			nonzero();
 			newline();
+			vmacchng(0);
 			if (given < 2 && addr2 != dol)
 				addr2++;
 			join(c);
@@ -332,7 +353,7 @@ casek:
 /* map */
 					tail2of("map");
 					setnoaddr();
-					mapcmd(0);
+					mapcmd(0, 0);
 					continue;
 				}
 /* mark */
@@ -341,6 +362,7 @@ casek:
 			}
 /* move */
 			tail("move");
+			vmacchng(0);
 			move();
 			continue;
 
@@ -379,6 +401,7 @@ casek:
 				setdot();
 				c = cmdreg();
 				eol();
+				vmacchng(0);
 				if (c)
 					putreg(c);
 				else
@@ -429,8 +452,11 @@ quit:
 				if (!ateopr())
 					vnfl();
 				else {
+					tostop();
+					/* replaced by tostop
 					putpad(VE);
 					putpad(KE);
+					*/
 				}
 				flush();
 				setty(normf);
@@ -447,8 +473,9 @@ quit:
 				case 'w':
 					tail2of("rewind");
 					setnoaddr();
-					ignore(quickly());
 					eol();
+					ckaw();
+					ignore(quickly());
 					erewind();
 					next();
 					c = 'e';
@@ -489,6 +516,7 @@ quit:
 			if (savedfile[0] == 0 && dol == zero)
 				c = 'e';
 			pastwh();
+			vmacchng(0);
 			if (peekchar() == '!') {
 				setdot();
 				ignchar();
@@ -538,6 +566,21 @@ quit:
 				eol();
 				source(file, 0);
 				continue;
+#ifdef TIOCLGET
+/* stop */
+			case 't':
+				tail("stop");
+				if (!ldisc)
+					error("Old tty driver|Not using new tty driver/shell");
+				c = exclam();
+				eol();
+				if (!c)
+					ckaw();
+				eol();
+				onsusp();
+				continue;
+#endif
+
 			}
 			/* fall into ... */
 
@@ -549,6 +592,7 @@ quit:
 			Command = "substitute";
 			if (c == 's')
 				tail(Command);
+			vmacchng(0);
 			if (!substitute(c))
 				pflag = 0;
 			continue;
@@ -565,17 +609,26 @@ quit:
 				continue;
 			}
 			tail("t");
+			vmacchng(0);
 			move();
 			continue;
 
 		case 'u':
 			if (peekchar() == 'n') {
-/* unmap */
 				ignchar();
-				if (peekchar() == 'm') {
+				switch(peekchar()) {
+/* unmap */
+				case 'm':
 					tail2of("unmap");
 					setnoaddr();
-					mapcmd(1);
+					mapcmd(1, 0);
+					continue;
+/* unabbreviate */
+				case 'a':
+					tail2of("unabbreviate");
+					setnoaddr();
+					mapcmd(1, 1);
+					anyabbrs = 1;
 					continue;
 				}
 /* undo */
@@ -597,13 +650,17 @@ quit:
 				tail("version");
 				setNAEOL();
 				/* should use SCCS subst here */
-				printf("Version 3.3, February 2, 1980");
+				printf("Version 3.4, June 24, 1980");
 				noonl();
 				continue;
 
 /* visual */
 			case 'i':
 				tail("visual");
+				if (inopen) {
+					c = 'e';
+					goto editcmd;
+				}
 				vop();
 				pflag = 0;
 				nochng();
@@ -649,6 +706,7 @@ wq:
 			c = cmdreg();
 			setcount();
 			eol();
+			vmacchng(0);
 			if (c)
 				YANKreg(c);
 			else
@@ -714,6 +772,11 @@ caseline:
 			plines(addr1, addr2, 1);
 			continue;
 
+/* " */
+		case '"':
+			comment();
+			continue;
+
 /* # */
 		case '#':
 numberit:
@@ -735,6 +798,7 @@ numberit:
 /* ! */
 		case '!':
 			if (addr2 != 0) {
+				vmacchng(0);
 				unix0(0);
 				setdot();
 				filter(2);
@@ -744,7 +808,7 @@ numberit:
 				putpad(TE);
 				flush();
 				unixwt(1, unixex("-c", uxb, 0, 0));
-				vcontin(0);
+				vclrech(1);	/* vcontin(0); */
 				nochng();
 			}
 			continue;
@@ -756,6 +820,7 @@ numberit:
 			for (cnt = 1; peekchar() == c; cnt++)
 				ignchar();
 			setCNL();
+			vmacchng(0);
 			shift(c, cnt);
 			continue;
 

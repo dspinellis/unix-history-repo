@@ -104,7 +104,7 @@ out:
 	}
 }
 
-bool	xflag;
+bool	cflag;
 int	scount, slines, stotal;
 
 substitute(c)
@@ -145,7 +145,7 @@ substitute(c)
 			addr2 += n;
 		}
 	}
-	if (stotal == 0 && !inglobal && !xflag)
+	if (stotal == 0 && !inglobal && !cflag)
 		error("Fail|Substitute pattern match failed");
 	snote(stotal, slines);
 	return (stotal);
@@ -157,7 +157,7 @@ compsub(ch)
 	static int gsubf;
 
 	if (!value(EDCOMPATIBLE))
-		gsubf = xflag = 0;
+		gsubf = cflag = 0;
 	uselastre = 0;
 	switch (ch) {
 
@@ -174,7 +174,7 @@ compsub(ch)
 		uselastre = 1;
 		comprhs(seof);
 		gsubf = 0;
-		xflag = 0;
+		cflag = 0;
 		break;
 
 	case '~':
@@ -184,6 +184,8 @@ compsub(ch)
 	redo:
 		if (re.Expbuf[0] == 0)
 			error("No previous re|No previous regular expression");
+		if (subre.Expbuf[0] == 0)
+			error("No previous substitute re|No previous substitute to repeat");
 		break;
 	}
 	for (;;) {
@@ -195,7 +197,7 @@ compsub(ch)
 			continue;
 
 		case 'c':
-			xflag = !xflag;
+			cflag = !cflag;
 			continue;
 
 		case 'r':
@@ -307,7 +309,7 @@ confirmed(a)
 {
 	register int c, ch;
 
-	if (xflag == 0)
+	if (cflag == 0)
 		return (1);
 	pofix();
 	pline(lineno(a));
@@ -522,7 +524,7 @@ complex:
 		if (c == eof || c == EOF) {
 			if (bracketp != bracket)
 cerror("Unmatched \\(|More \\('s than \\)'s in regular expression");
-			*ep++ = CEOF;
+			*ep++ = CEOFC;
 			if (c == EOF)
 				ungetchar(c);
 			return (eof);
@@ -647,7 +649,7 @@ cerror("Bad \\n|\\n in regular expression with n greater than the number of \\('
 		case '\n':
 			if (oknl) {
 				ungetchar(c);
-				*ep++ = CEOF;
+				*ep++ = CEOFC;
 				return (eof);
 			}
 cerror("Badly formed re|Missing closing delimiter for regular expression");
@@ -701,10 +703,6 @@ execute(gf, addr)
 	if (gf) {
 		if (circfl)
 			return (0);
-#ifdef notdef
-		if (loc1 == loc2)
-			loc2++;
-#endif
 		locs = p1 = loc2;
 	} else {
 		if (addr == zero)
@@ -783,7 +781,7 @@ advance(lp, ep)
 			continue;
 		return (0);
 
-	case CEOF:
+	case CEOFC:
 		loc2 = lp;
 		return (1);
 

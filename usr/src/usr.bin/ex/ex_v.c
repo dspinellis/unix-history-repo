@@ -53,7 +53,7 @@ oop()
 {
 	register char *ic;
 	char atube[TUBESIZE + LBSIZE];
-	register int f;
+	register ttymode f;
 
 	ovbeg();
 	if (peekchar() == '/') {
@@ -128,7 +128,7 @@ ovbeg()
 }
 
 ovend(f)
-	int f;
+	ttymode f;
 {
 
 	splitw++;
@@ -153,7 +153,7 @@ vop()
 {
 	register int c;
 	char atube[TUBESIZE + LBSIZE];
-	register int f;
+	register ttymode f;
 
 	if (!CA && UP == NOSTR) {
 		if (initev) {
@@ -174,6 +174,11 @@ toopen:
 		if (initev)
 			goto toopen;
 		error("Visual requires clear screen capability");
+	}
+	if (NS && !SF) {
+		if (initev)
+			goto toopen;
+		error("Visual requires scrolling");
 	}
 	ovbeg();
 	bastate = VISUAL;
@@ -258,6 +263,8 @@ undvis()
 	undap1 = one;
 	undap2 = dol + 1;
 	undkind = UNDALL;
+	if (undadot <= zero || undadot > dol)
+		undadot = zero+1;
 }
 
 /*

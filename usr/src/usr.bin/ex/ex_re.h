@@ -59,7 +59,7 @@ char	rhsbuf[RHSSIZE];	/* Rhs of last substitute */
 #define	CCL	8
 #define	NCCL	12
 #define	CDOL	16
-#define	CEOF	17
+#define	CEOFC	17
 #define	CKET	18
 #define	CCHR	20
 #define	CBRC	24

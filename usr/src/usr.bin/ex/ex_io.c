@@ -6,7 +6,7 @@
 #include "ex_vis.h"
 
 /*
- * File input/output, unix escapes, source, filtering preserve and recover
+ * File input/output, source, preserve and recover
  */
 
 /*
@@ -16,6 +16,7 @@
 int	altdot;
 int	oldadot;
 bool	wasalt;
+short	isalt;
 
 long	cntch;			/* Count of characters on unit io */
 #ifndef VMUNIX
@@ -42,8 +43,11 @@ filename(comm)
 		if (savedfile[0] == 0 && comm != 'f')
 			error("No file|No current filename");
 		CP(file, savedfile);
-		wasalt = 0;
+		wasalt = (isalt > 0) ? isalt-1 : 0;
+		isalt = 0;
 		oldadot = altdot;
+		if (c == 'e' || c == 'E')
+			altdot = lineDOT();
 		if (d == EOF)
 			ungetchar(d);
 	} else {
@@ -84,6 +88,8 @@ filename(comm)
 	if (file[0] != 0) {
 		lprintf("\"%s\"", file);
 		if (comm == 'f') {
+			if (value(READONLY))
+				printf(" [Read only]");
 			if (!edited)
 				printf(" [Not edited]");
 			if (tchng)
@@ -138,7 +144,7 @@ getargs()
 		switch (c) {
 
 		case '\\':
-			if (any(peekchar(), "#%"))
+			if (any(peekchar(), "#%|"))
 				c = getchar();
 			/* fall into... */
 
@@ -322,6 +328,8 @@ rop(c)
 		error(" Directory");
 
 	case S_IFREG:
+		if (xflag)
+			break;
 		i = read(io, (char *) &magic, sizeof(magic));
 		lseek(io, 0l, 0);
 		if (i != sizeof(magic))
@@ -462,7 +470,8 @@ bool dofname;	/* if 1 call filename, else use savedfile */
 	switch (c) {
 
 	case 0:
-		if (!exclam && !value(WRITEANY)) switch (edfile()) {
+		if (!exclam && (!value(WRITEANY) || value(READONLY)))
+		switch (edfile()) {
 		
 		case NOTEDF:
 			if (nonexist)
@@ -481,7 +490,14 @@ bool dofname;	/* if 1 call filename, else use savedfile */
 			close(io);
 			break;
 
+		case EDF:
+			if (value(READONLY))
+				error(" File is read only");
+			break;
+
 		case PARTBUF:
+			if (value(READONLY))
+				error(" File is read only");
 			error(" Use \"w!\" to write partial buffer");
 		}
 cre:
@@ -540,318 +556,6 @@ edfile()
 }
 
 /*
- * First part of a shell escape,
- * parse the line, expanding # and % and ! and printing if implied.
- */
-unix0(warn)
-	bool warn;
-{
-	register char *up, *fp;
-	register short c;
-	char printub, puxb[UXBSIZE + sizeof (int)];
-
-	printub = 0;
-	CP(puxb, uxb);
-	c = getchar();
-	if (c == '\n' || c == EOF)
-		error("Incomplete shell escape command@- use 'shell' to get a shell");
-	up = uxb;
-	do {
-		switch (c) {
-
-		case '\\':
-			if (any(peekchar(), "%#!"))
-				c = getchar();
-		default:
-			if (up >= &uxb[UXBSIZE]) {
-tunix:
-				uxb[0] = 0;
-				error("Command too long");
-			}
-			*up++ = c;
-			break;
-
-		case '!':
-			fp = puxb;
-			if (*fp == 0) {
-				uxb[0] = 0;
-				error("No previous command@to substitute for !");
-			}
-			printub++;
-			while (*fp) {
-				if (up >= &uxb[UXBSIZE])
-					goto tunix;
-				*up++ = *fp++;
-			}
-			break;
-
-		case '#':
-			fp = altfile;
-			if (*fp == 0) {
-				uxb[0] = 0;
-				error("No alternate filename@to substitute for #");
-			}
-			goto uexp;
-
-		case '%':
-			fp = savedfile;
-			if (*fp == 0) {
-				uxb[0] = 0;
-				error("No filename@to substitute for %%");
-			}
-uexp:
-			printub++;
-			while (*fp) {
-				if (up >= &uxb[UXBSIZE])
-					goto tunix;
-				*up++ = *fp++ | QUOTE;
-			}
-			break;
-		}
-		c = getchar();
-	} while (c == '|' || !endcmd(c));
-	if (c == EOF)
-		ungetchar(c);
-	*up = 0;
-	if (!inopen)
-		resetflav();
-	if (warn)
-		ckaw();
-	if (warn && hush == 0 && chng && xchng != chng && value(WARN) && dol > zero) {
-		xchng = chng;
-		vnfl();
-		printf(mesg("[No write]|[No write since last change]"));
-		noonl();
-		flush();
-	} else
-		warn = 0;
-	if (printub) {
-		if (uxb[0] == 0)
-			error("No previous command@to repeat");
-		if (inopen) {
-			splitw++;
-			vclean();
-			vgoto(WECHO, 0);
-		}
-		if (warn)
-			vnfl();
-		if (hush == 0)
-			lprintf("!%s", uxb);
-		if (inopen && Outchar != termchar) {
-			vclreol();
-			vgoto(WECHO, 0);
-		} else
-			putnl();
-		flush();
-	}
-}
-
-/*
- * Do the real work for execution of a shell escape.
- * Mode is like the number passed to open system calls
- * and indicates filtering.  If input is implied, newstdin
- * must have been setup already.
- */
-unixex(opt, up, newstdin, mode)
-	char *opt, *up;
-	int newstdin, mode;
-{
-	int pvec[2], f;
-
-	signal(SIGINT, SIG_IGN);
-	if (inopen)
-		f = setty(normf);
-	if ((mode & 1) && pipe(pvec) < 0) {
-		/* Newstdin should be io so it will be closed */
-		if (inopen)
-			setty(f);
-		error("Can't make pipe for filter");
-	}
-#ifndef VFORK
-	pid = fork();
-#else
-	pid = vfork();
-#endif
-	if (pid < 0) {
-		if (mode & 1) {
-			close(pvec[0]);
-			close(pvec[1]);
-		}
-		setrupt();
-		error("No more processes");
-	}
-	if (pid == 0) {
-		if (mode & 2) {
-			close(0);
-			dup(newstdin);
-			close(newstdin);
-		}
-		if (mode & 1) {
-			close(pvec[0]);
-			close(1);
-			dup(pvec[1]);
-			if (inopen) {
-				close(2);
-				dup(1);
-			}
-			close(pvec[1]);
-		}
-		if (io)
-			close(io);
-		if (tfile)
-			close(tfile);
-#ifndef VMUNIX
-		close(erfile);
-#endif
-		signal(SIGHUP, oldhup);
-		signal(SIGQUIT, oldquit);
-		if (ruptible)
-			signal(SIGINT, SIG_DFL);
-		execl(svalue(SHELL), "sh", opt, up, (char *) 0);
-		printf("No %s!\n", svalue(SHELL));
-		error(NOSTR);
-	}
-	if (mode & 1) {
-		io = pvec[0];
-		close(pvec[1]);
-	}
-	if (newstdin)
-		close(newstdin);
-	return (f);
-}
-
-/*
- * Wait for the command to complete.
- * F is for restoration of tty mode if from open/visual.
- * C flags suppression of printing.
- */
-unixwt(c, f)
-	bool c;
-	int f;
-{
-
-	waitfor();
-	if (inopen)
-		setty(f);
-	setrupt();
-	if (!inopen && c && hush == 0) {
-		printf("!\n");
-		flush();
-		termreset();
-		gettmode();
-	}
-}
-
-/*
- * Setup a pipeline for the filtration implied by mode
- * which is like a open number.  If input is required to
- * the filter, then a child editor is created to write it.
- * If output is catch it from io which is created by unixex.
- */
-filter(mode)
-	register int mode;
-{
-	static int pvec[2];
-	register int f;
-	register int lines = lineDOL();
-
-	mode++;
-	if (mode & 2) {
-		signal(SIGINT, SIG_IGN);
-		if (pipe(pvec) < 0)
-			error("Can't make pipe");
-		pid = fork();
-		io = pvec[0];
-		if (pid < 0) {
-			setrupt();
-			close(pvec[1]);
-			error("No more processes");
-		}
-		if (pid == 0) {
-			setrupt();
-			io = pvec[1];
-			close(pvec[0]);
-			putfile();
-			exit(0);
-		}
-		close(pvec[1]);
-		io = pvec[0];
-		setrupt();
-	}
-	f = unixex("-c", uxb, (mode & 2) ? pvec[0] : 0, mode);
-	if (mode == 3) {
-		delete(0);
-		addr2 = addr1 - 1;
-	}
-	if (mode & 1) {
-		if(FIXUNDO)
-			undap1 = undap2 = addr2+1;
-		ignore(append(getfile, addr2));
-	}
-	close(io);
-	io = -1;
-	unixwt(!inopen, f);
-	netchHAD(lines);
-}
-
-/*
- * Set up to do a recover, getting io to be a pipe from
- * the recover process.
- */
-recover()
-{
-	static int pvec[2];
-
-	if (pipe(pvec) < 0)
-		error(" Can't make pipe for recovery");
-	pid = fork();
-	io = pvec[0];
-	if (pid < 0) {
-		close(pvec[1]);
-		error(" Can't fork to execute recovery");
-	}
-	if (pid == 0) {
-		close(2);
-		dup(1);
-		close(1);
-		dup(pvec[1]);
-	        close(pvec[1]);
-		execl(EXRECOVER, "exrecover", svalue(DIRECTORY), file, (char *) 0);
-		close(1);
-		dup(2);
-		error(" No recovery routine");
-	}
-	close(pvec[1]);
-}
-
-/*
- * Wait for the process (pid an external) to complete.
- */
-waitfor()
-{
-
-	do
-		rpid = wait(&status);
-	while (rpid != pid && rpid != -1);
-	status = (status >> 8) & 0377;
-}
-
-/*
- * The end of a recover operation.  If the process
- * exits non-zero, force not edited; otherwise force
- * a write.
- */
-revocer()
-{
-
-	waitfor();
-	if (pid == rpid && status != 0)
-		edited = 0;
-	else
-		change();
-}
-
-/*
  * Extract the next line from the io stream.
  */
 static	char *nextip;
@@ -868,12 +572,23 @@ getfile()
 			ninbuf = read(io, genbuf, LBSIZE) - 1;
 			if (ninbuf < 0) {
 				if (lp != linebuf) {
+					lp++;
 					printf(" [Incomplete last line]");
 					break;
 				}
 				return (EOF);
 			}
 			fp = genbuf;
+			while(fp < &genbuf[ninbuf]) {
+				if (*fp++ & 0200) {
+					if (kflag)
+						crblock(perm, genbuf, ninbuf+1,
+cntch);
+					break;
+				}
+			}
+			fp = genbuf;
+			cntch += ninbuf+1;
 		}
 		if (lp >= &linebuf[LBSIZE]) {
 			error(" Line too long");
@@ -891,7 +606,6 @@ getfile()
 		}
 		*lp++ = c;
 	} while (c != '\n');
-	cntch += lp - linebuf;
 	*--lp = 0;
 	nextip = fp;
 	cntln++;
@@ -920,6 +634,8 @@ putfile()
 		for (;;) {
 			if (--nib < 0) {
 				nib = fp - genbuf;
+                		if(kflag)
+                                        crblock(perm, genbuf, nib, cntch);
 				if (write(io, genbuf, nib) != nib) {
 					wrerror();
 				}
@@ -934,6 +650,8 @@ putfile()
 		}
 	} while (a1 <= addr2);
 	nib = fp - genbuf;
+	if(kflag)
+		crblock(perm, genbuf, nib, cntch);
 	if (write(io, genbuf, nib) != nib) {
 		wrerror();
 	}
@@ -957,7 +675,8 @@ wrerror()
  * Source command, handles nested sources.
  * Traps errors since it mungs unit 0 during the source.
  */
-static	short slevel;
+short slevel;
+short ttyindes;
 
 source(fil, okfail)
 	char *fil;
@@ -965,12 +684,13 @@ source(fil, okfail)
 {
 	jmp_buf osetexit;
 	register int saveinp, ointty, oerrno;
-	int oprompt;
 
 	signal(SIGINT, SIG_IGN);
 	saveinp = dup(0);
 	if (saveinp < 0)
 		error("Too many nested sources");
+	if (slevel <= 0)
+		ttyindes = saveinp;
 	close(0);
 	if (open(fil, 0) < 0) {
 		oerrno = errno;
