@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)autoconf.c	7.7 (Berkeley) %G%
+ *	@(#)autoconf.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -625,7 +625,7 @@ unifind(uhp0, pumem)
 	u_short *reg, *ap, addr;
 	struct uba_driver *udp;
 	int i, (**ivec)();
-	caddr_t ualloc, zmemall();
+	caddr_t ualloc;
 	extern int catcher[256];
 #ifdef DW780
 	struct uba_regs *vubp = uhp->uh_uba;
@@ -690,9 +690,10 @@ unifind(uhp0, pumem)
 	 * One day, someone will make a unibus with something other than
 	 * an 8K i/o address space, & screw this totally.
 	 */
-	ualloc = zmemall(memall, 8*1024);
+	ualloc = (caddr_t)malloc(ctob(8*1024), M_TEMP, M_NOWAIT);
 	if (ualloc == (caddr_t)0)
 		panic("no mem for unifind");
+	bzero(ualloc, ctob(8*1024));
 
 	/*
 	 * Map the first page of UNIBUS i/o
@@ -888,7 +889,7 @@ unifind(uhp0, pumem)
 	printf("\n");
 #endif
 
-	wmemfree(ualloc, 8*1024);
+	free(ualloc, M_TEMP);
 }
 
 /*
