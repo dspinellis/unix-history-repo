@@ -7,7 +7,7 @@ extern char	*getenv();
 /*
  *	This routine initializes the current and standard screen.
  *
- * %G% (Berkeley) @(#)initscr.c	1.4
+ * @(#)initscr.c	1.4 (Berkeley) %G%
  */
 WINDOW *
 initscr() {
@@ -52,7 +52,8 @@ initscr() {
 # endif
 	if ((curscr = newwin(LINES, COLS, 0, 0)) == ERR)
 		return ERR;
-	curscr->_clear = TRUE;
+	clearok(curscr, TRUE);
+	curscr->_flags &= ~_FULLLINE;
 	if (stdscr != NULL) {
 # ifdef DEBUG
 		fprintf(outf, "INITSCR: stdscr = 0%o\n", stdscr);

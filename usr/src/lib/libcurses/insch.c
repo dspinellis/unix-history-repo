@@ -4,7 +4,7 @@
  *	This routine performs an insert-char on the line, leaving
  * (_cury,_curx) unchanged.
  *
- * @(#)insch.c	1.2 (Berkeley) %G%
+ * @(#)insch.c	1.3 (Berkeley) %G%
  */
 winsch(win, c)
 reg WINDOW	*win;
@@ -19,10 +19,7 @@ char		c; {
 	while (temp1 > end)
 		*temp1-- = *temp2--;
 	*temp1 = c;
-	win->_lastch[win->_cury] = win->_maxx - 1;
-	if (win->_firstch[win->_cury] == _NOCHANGE ||
-	    win->_firstch[win->_cury] > win->_curx)
-		win->_firstch[win->_cury] = win->_curx;
+	touchline(win, win->_cury, win->_curx, win->_maxx - 1);
 	if (win->_cury == LINES - 1 && win->_y[LINES-1][COLS-1] != ' ')
 		if (win->_scroll) {
 			wrefresh(win);
