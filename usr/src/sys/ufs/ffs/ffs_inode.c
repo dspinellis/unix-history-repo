@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_inode.c	7.62 (Berkeley) %G%
+ *	@(#)ffs_inode.c	7.63 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -128,7 +128,6 @@ ffs_truncate(ap)
 	struct timeval tv;
 	register int i;
 	int aflags, error, allerror;
-	struct inode tip;
 	off_t osize;
 
 	oip = VTOI(ovp);
@@ -198,8 +197,9 @@ ffs_truncate(ap)
 	 * will be returned to the free list.  lastiblock values are also
 	 * normalized to -1 for calls to ffs_indirtrunc below.
 	 */
-	tip = *oip;
-	tip.i_size = osize;
+	MALLOC(ip, struct inode *, sizeof(*ip), M_FFSNODE, M_WAITOK);
+	*ip = *oip;
+	ip->i_size = osize;
 	for (level = TRIPLE; level >= SINGLE; level--)
 		if (lastiblock[level] < 0) {
 			oip->i_ib[level] = 0;
@@ -219,7 +219,6 @@ ffs_truncate(ap)
 	indir_lbn[SINGLE] = -NDADDR;
 	indir_lbn[DOUBLE] = indir_lbn[SINGLE] - NINDIR(fs) - 1;
 	indir_lbn[TRIPLE] = indir_lbn[DOUBLE] - NINDIR(fs) * NINDIR(fs) - 1;
-	ip = &tip;
 	ITOV(ip)->v_data = ip;
 	for (level = TRIPLE; level >= SINGLE; level--) {
 		bn = ip->i_ib[level];
@@ -285,15 +284,19 @@ ffs_truncate(ap)
 		}
 	}
 done:
-	ITOV(ip)->v_data = oip;
-/* BEGIN PARANOIA */
+#ifdef DIAGNOSTIC
 	for (level = SINGLE; level <= TRIPLE; level++)
 		if (ip->i_ib[level] != oip->i_ib[level])
 			panic("itrunc1");
 	for (i = 0; i < NDADDR; i++)
 		if (ip->i_db[i] != oip->i_db[i])
 			panic("itrunc2");
-/* END PARANOIA */
+	if (length == 0 &&
+	    (ovp->v_dirtyblkhd.le_next || ovp->v_cleanblkhd.le_next))
+		panic("itrunc3");
+#endif /* DIAGNOSTIC */
+	ITOV(ip)->v_data = oip;
+	FREE(ip, M_FFSNODE);
 	oip->i_blocks -= blocksreleased;
 	if (oip->i_blocks < 0)			/* sanity */
 		oip->i_blocks = 0;
