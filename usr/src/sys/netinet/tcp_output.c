@@ -62,6 +62,7 @@ again:
 	sendalot = 0;
 	off = tp->snd_nxt - tp->snd_una;
 	win = MIN(tp->snd_wnd, tp->snd_cwnd);
+
 	/*
 	 * If in persist timeout with window of 0, send 1 byte.
 	 * Otherwise, if window is small but nonzero
@@ -69,7 +70,9 @@ again:
 	 * and go to transmit state.
 	 */
 	if (tp->t_force) {
-		if (win == 0) 
+if (win == 0 && off)
+log(7, "persist offset %d\n", off);
+		if (win == 0)
 			win = 1;
 		else {
 			tp->t_timer[TCPT_PERSIST] = 0;
@@ -78,8 +81,6 @@ again:
 	}
 
 	len = MIN(so->so_snd.sb_cc, win) - off;
-	if (len < 0)
-		return (0);	/* ??? */	/* past FIN */
 	if (len > tp->t_maxseg) {
 		len = tp->t_maxseg;
 		/*
@@ -90,17 +91,36 @@ again:
 			sendalot = 1;
 	}
 
-	win = sbspace(&so->so_rcv);
 	flags = tcp_outflags[tp->t_state];
-	if (tp->snd_nxt + len < tp->snd_una + so->so_snd.sb_cc)
+	if (SEQ_LT(tp->snd_nxt + len, tp->snd_una + so->so_snd.sb_cc))
 		flags &= ~TH_FIN;
-	if (flags & (TH_SYN|TH_RST|TH_FIN))
-		goto send;
+
+	if (len < 0) {
+		/*
+		 * If closing and all data acked, len will be -1;
+		 * retransmit FIN if necessary.
+		 * Otherwise, window shrank after we sent into it.
+		 * If window shrank to 0, cancel pending retransmit
+		 * and pull snd_nxt back to (closed) window.
+		 * We will enter persist state below.
+		 */
+		if (flags & TH_FIN)
+			len = 0;
+		else if (win == 0) {
+			tp->t_timer[TCPT_REXMT] = 0;
+			tp->snd_nxt = tp->snd_una;
+			len = 0;
+		} else
+			return (0);
+	}
+	win = sbspace(&so->so_rcv);
 
 	/*
 	 * Send if we owe peer an ACK.
 	 */
-	if (tp->t_flags&TF_ACKNOW)
+	if (tp->t_flags & TF_ACKNOW)
+		goto send;
+	if (flags & (TH_SYN|TH_RST|TH_FIN))
 		goto send;
 	if (SEQ_GT(tp->snd_up, tp->snd_una))
 		goto send;
@@ -127,15 +147,7 @@ again:
 			goto send;
 		if (SEQ_LT(tp->snd_nxt, tp->snd_max))
 			goto send;
-	} else
-		/*
-		 * If window shrank after we sent into it,
-		 * cancel pending retransmit.  We will enter
-		 * persist state below.
-		 */
-		if (off == 0 && SEQ_LT(tp->snd_nxt, tp->snd_max))
-			tp->t_timer[TCPT_REXMT] = 0;
-
+	}
 
 	/*
 	 * Compare available window to amount of window
@@ -310,8 +322,8 @@ send:
 		 * Set retransmit timer if not currently set,
 		 * and not doing an ack or a keep-alive probe.
 		 * Initial value for retransmit timer is tcp_beta*tp->t_srtt.
-		 * Initialize shift counter which is used for exponential
-		 * backoff of retransmit time.
+		 * Initialize shift counter which is used for backoff
+		 * of retransmit time.
 		 */
 		if (tp->t_timer[TCPT_REXMT] == 0 &&
 		    tp->snd_nxt != tp->snd_una) {
