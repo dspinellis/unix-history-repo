@@ -1,0 +1,758 @@
+Mon Mar 16 00:15:11 1992  David J. MacKenzie  (djm@wookumz.gnu.ai.mit.edu)
+
+	* Version 1.3.
+
+	* memcmp.c (memcmp): Different decl if ANSI C.
+
+	* sort.c (numcompare, checkfp): Add parens to placate gcc2.
+
+	* sort.c (mergefps): For -u, output the first, not last, of
+	the lines that compare equal.  From Mike Haertel.
+
+Tue Mar 10 10:51:38 1992  David J. MacKenzie  (djm@nutrimat.gnu.ai.mit.edu)
+
+	* tr.c: Remove initial capitals and periods from error messages.
+
+Sun Mar  8 22:03:45 1992  David J. MacKenzie  (djm@nutrimat.gnu.ai.mit.edu)
+
+	* sum.c (main): Add -r option for SYSV compat.
+
+Thu Feb 27 22:26:25 1992  David J. MacKenzie  (djm@wookumz.gnu.ai.mit.edu)
+
+	* sort.c (compare): If -s given, leave lines in their original order.
+	(main): Recognize -s.
+	(usage): Document -s.
+	From Mike Haertel.
+
+Tue Feb 18 20:29:45 1992  Randall Smith  (randy at geech.gnu.ai.mit.edu)
+
+	* sort.c (sort): Check for complete parsing of buffer into
+	lines before nixing temp files.
+
+Mon Feb 17 10:35:58 1992  David J. MacKenzie  (djm at wookumz.gnu.ai.mit.edu)
+
+	* sum.c (sysv_sum_file): Use %lu instead of %u to print a
+	long.  Not that it matters for GNU . . .	
+
+	* tr.c (unquote, make_printable_str): Use \007 instead of ANSI \a.
+	(append_normal_char, append_range, append_char_class,
+	append_repeated_char, append_equiv_class, spec_init):
+	Initialize `next' field of new `struct List_element'.
+	From rommel@informatik.tu-muenchen.de (Kai-Uwe Rommel).
+
+Sat Feb  8 17:16:49 1992  David J. MacKenzie  (djm at apple-gunkies.gnu.ai.mit.edu)
+
+	* join.c (get_line): Renamed from getline to avoid GNU libc conflict.
+
+Sun Feb  2 21:22:01 1992  David J. MacKenzie  (djm at wookumz.gnu.ai.mit.edu)
+
+	* Version 1.2.
+
+	* nl.c: Support multiple files and "-" for stdin.
+	(main): Check for read and write errors.
+	(nl_file): New function.
+
+Wed Jan 29 10:09:10 1992  David J. MacKenzie  (djm at wookumz.gnu.ai.mit.edu)
+
+	* tr.c (main): -t option was called -b in getopt spec.
+	(validate): Don't warn that set1 is longer than set2.
+
+	* tr.c: Rename --sysv-string2-truncate to --truncate-string1.
+
+Fri Jan 17 16:29:05 1992  David J. MacKenzie  (djm at wookumz.gnu.ai.mit.edu)
+
+	* nl.c: New program from bin-src.
+
+	* nl.c (main): Use a struct linebuffer for line_buf.
+	(process_file): Use readline instead of fgets, to preserve NULs.
+	(check_section): Use memcmp instead of strncmp.
+	(proc_text): Print line_buf with fwrite instead of printf.
+
+	* nl.c (main): Usage message if too many args given.  Check
+	for error in closing input file.  Lengths of section delimiter
+	strings were 1 too large.  Take separator_str into account in
+	length of print_no_line_fmt.
+	(build_print_fmt): Allocate space for print_fmt, in case
+	separator_str is long.
+	(proc_text): A blank line is one that contains nothing, not
+	even nonprinting characters.
+
+Fri Jan 17 01:04:22 1992  David J. MacKenzie  (djm at wookumz.gnu.ai.mit.edu)
+
+	* All programs: Document `--' instead of `+' to introduce
+	long-named options, in usage messages.
+
+	* sum.c (bsd_sum_file): Renamed from sum_file.
+	(sysv_sum_file): New function.
+	(main): Recognize an option to select between the algorithms.
+
+Sun Jan  5 17:41:18 1992  Jim Meyering (meyering at churchy.gnu.ai.mit.edu)
+
+	* pr.c (close_file, print_page): Fixed bug that had the command
+	yes |head |pr -t printing "yyyyyyyyyy".
+	* (print_page): Fixed bug that had pr -3 -a printing two too few
+	trailer lines per page.
+	* (main): Added restriction that -a and -m are incompatible.
+	Although the POSIX spec doesn't explicitly say they shouldn't
+	be used together, it says -a modifies the -column option and
+	that -column shouldn't be used with -m.
+
+Thu Jan  2 15:23:59 1992  David J. MacKenzie  (djm at albert.gnu.ai.mit.edu)
+
+	* nl.c: Include regex.h after, not before, sys/types.h.
+
+Thu Jan  2 12:18:10 1992  Tom Lord  (lord at geech.gnu.ai.mit.edu)
+
+	* sort.c (fillbuf) return bytes buffered instead of bytes read.
+
+Fri Dec 27 22:53:36 1991  Jim Kingdon  (kingdon at geech.gnu.ai.mit.edu)
+
+	* sort.c (LINEALLOC): New #define.
+	(struct lines): New field ``limit''.
+	(initlines): Set it from new arg ``limit''.
+	(sort, mergefps, checkfp): Pass new arg to initlines().
+	(findlines): Don't realloc past lines->limit.
+
+Tue Dec 24 01:24:03 1991  David J. MacKenzie  (djm at wookumz.gnu.ai.mit.edu)
+
+	* tac.c, sort.c, csplit.c, system.h: Change POSIX ifdefs to
+	HAVE_UNISTD_H and _POSIX_VERSION.
+
+	* xwrite.c: Change POSIX ifdef to HAVE_UNISTD_H.
+
+Sat 14 Dec 1991 11:46:42  Jim Meyering  (meyering at wombat)
+
+	* tr.c: Fixed an inaccurate comment on posix_pedantic.
+
+Thu 12 Dec 1991 21:15:20  Jim Meyering  (meyering at hal)
+
+	* tr.c: Changed underscores to hyphens in long option name
+	"sysv_string2_truncate".
+
+Wed Dec 11 13:33:34 1991  David J. MacKenzie  (djm at wookumz.gnu.ai.mit.edu)
+
+	* tac.c (main): Set obscure_syntax to tell re_search to
+	allocate memory for the group registers.
+
+Fri Dec  6 18:26:27 1991  David J. MacKenzie  (djm at wookumz.gnu.ai.mit.edu)
+
+	* tac.c, sort.c, csplit.c [POSIX]:  Use sigaction instead of
+	signal, which POSIX doesn't have.
+	* sort.c: Replace inthandler and huphandler with sighandler.
+	* csplit.c (main): Only handle signals if they were not being
+	ignored.
+
+	* tr.c: POSIX_ME_HARDER -> POSIXLY_CORRECT.
+
+Wed Dec  4 00:47:47 1991  Jim Meyering  (meyering at wombat)
+
+	* tr.c (unquote): Reformat code so it doesn't go beyond column 80.
+	* tr.c (squeeze_filter): Comment a little on why it's better
+	to step through the input by two.
+	* tr.c (set_initialize): Write a comment describing the function.
+	* tr.c: Eliminated the variable `portability_warnings' and replaced
+	references to it by references to `!posix_pedantic'.  One of the
+	uses of portability_warnings had been wrong.
+
+Tue Dec  3 14:03:35 1991  David J. MacKenzie  (djm at wookumz.gnu.ai.mit.edu)
+
+	* tr.c: New program.
+
+Sun Dec  1 15:07:35 1991  David J. MacKenzie  (djm at wookumz.gnu.ai.mit.edu)
+
+	* linebuffer.[ch] (freebuffer): New function (used by cron).
+
+Thu Oct 17 22:30:22 1991  David J. MacKenzie  (djm at wookumz.gnu.ai.mit.edu)
+
+	* system.h, configure, Makefile.in: Don't include memory.h if
+	STDC_HEADERS, removing need for MEMORY_H_MISSING.
+
+Thu 17 Oct 1991 16:53:07  Jim Meyering  (meyering at wombat)
+
+	* pr.c (print_page): REALLY fixed `extra newline at EOF' problem.
+	Somehow, part of my patch didn't make it last time.
+
+Sat Oct 12 12:04:47 1991  David J. MacKenzie  (djm at churchy.gnu.ai.mit.edu)
+
+	* tail.c (pipe_lines, pipe_bytes): Initialize `first->next'.
+
+	* cmp.c (cmp): Print EOF message to stderr, not stdout, for
+	POSIX 1003.2.11.2.
+
+	* sort.c (xfwrite): fwrite never returns < 0, so check if
+	number written is number we asked to write.
+	(fillbuf, main): fread never returns < 0, so check ferror instead.
+	From Rainer Orth.
+
+Tue Oct  8 18:07:08 1991  Jim Meyering  (meyering at churchy)
+
+	* pr.c (print_page): Really fixed `extra newline at EOF' problem.
+	* (store_columns): Fixed bug that caused `pr -b -2' to coredump
+	on files of certain lengths.
+
+Fri Oct  4 22:30:25 1991  Jim Meyering  (meyering at churchy)
+
+	* pr.c (print_page): Fixed to not add single spurious newline
+	at EOF when using -t.
+
+Wed Oct  2 01:02:05 1991  David J. MacKenzie  (djm at apple-gunkies)
+
+	* pr.c (print_page): Don't pad the page if -t given.
+
+	* csplit.c (load_buffer), sort.c (mergefps): Use bcopy, not memcpy.
+
+	* memchr.c (memchr): Fix typo.
+
+Thu Sep 26 12:35:00 1991  David J. MacKenzie  (djm at churchy.gnu.ai.mit.edu)
+
+	* Version 1.1.
+
+	* configure, system.h: Include memory.h if it works.
+
+	* split.c: Allow `b' unit as well as `k' and `m'.
+
+	* head.c, tail.c: Replace -b +blocks option with specifying
+	units (b, k, or m) after the number.
+	(parse_unit): New function.
+
+	* fold.c (main): Check that -w arg is a number.
+
+	* cut.c: +delimiter takes an arg.
+
+Mon Sep 16 14:52:38 1991  David J. MacKenzie  (djm at churchy.gnu.ai.mit.edu)
+
+	* pr.c (close_file): Don't close an already closed file.
+
+Thu Sep 12 00:14:43 1991  David J. MacKenzie  (djm at wookumz.gnu.ai.mit.edu)
+
+	* memchr.c: New file.
+	* configure: Check if it's needed.
+
+	* csplit.c, gcsplit.1: New program.
+
+	* pr.c (cleanup): Only free buffers if they were allocated.
+
+	* sort.c [!USG && !STDC_HEADERS]: Declare memchr.
+
+Wed Sep 11 20:54:16 1991  Jim Meyering  (meyering at churchy)
+
+	* pr.c: The following 3 bugs appeared (at least) when printing
+	a  single file with the options `-3 -f'.
+	* (print_white_space): Single spaces were being replaced
+	with tabs.
+	* (print_page): Some lines were getting too much white space
+	at the beginning because spaces_not_printed wasn't being reset
+	to 0.
+	* (read_line): The single space between a truncated column
+	on its left and the column on its right was omitted.  Fixed
+	so that previous value of input_position is restored before
+	returning FALSE.
+
+Sat Sep  7 03:22:18 1991  David J. MacKenzie  (djm at wookumz.gnu.ai.mit.edu)
+
+	* configure: Only remove /etc from PATH when it's not part of
+	a larger name.
+
+Wed Sep  4 17:09:24 1991  David J. MacKenzie  (djm at apple-gunkies)
+
+	* linebuffer.c (readline): Fix incorrect recalculation of `end'.
+
+	* head.c, tail.c: Replace `mode' variables and bitmasks with
+	separate variables for each option.
+
+Mon Sep  2 04:00:37 1991  David J. MacKenzie  (djm at apple-gunkies)
+
+	* wc.c: New program.
+
+Sun Sep  1 01:18:38 1991  David J. MacKenzie  (djm at apple-gunkies)
+
+	* fold.c (fold_file): Read in an int, not a char, for EOF
+	comparison. 
+
+	* configure: Check whether st_blksize is missing.
+
+	* tac.c (save_stdin): Put copy of pipe input in TMPDIR if
+	defined, instead of /tmp.
+
+Thu Aug 29 14:48:15 1991  David J. MacKenzie  (djm at wookumz.gnu.ai.mit.edu)
+
+	* xwrite.c [POSIX]: unistd.h might require sys/types.h.
+
+Wed Aug 28 11:57:39 1991  David J. MacKenzie  (djm at wookumz.gnu.ai.mit.edu)
+
+	* paste.c (main): Consider -d "" to be like -d "\0",
+	for POSIX (if I read it right).
+
+	* sort.c, join.c: New programs.
+
+	* cut.c (set_field): Allow blanks as well as commas to
+	separate numbers in ranges.
+
+Sun Aug 25 19:57:40 1991  Jim Meyering  (meyering at apple-gunkies)
+
+	* pr.c: Failure to open an input file is no longer a fatal error.
+	A message is printed for each failed open.  When printing
+	in parallel, each failed open results in one fewer output column.
+	Added POSIX -r option to suppress the message.
+	* pr.c: Added variables: failed_opens, ignore_failed_opens.
+        These changes were based in part on work by David MacKenzie.
+
+Sat Aug 24 15:27:39 1991  Jim Meyering  (meyering at pogo)
+
+	* pr.c: Complain if user gives both -m and -[0-9]+ options.
+
+Wed Aug 21 22:04:57 1991  David J. MacKenzie  (djm at apple-gunkies)
+
+	* Version 1.0.
+
+Mon Aug 19 00:16:51 1991  David J. MacKenzie  (djm at wookumz.gnu.ai.mit.edu)
+
+	* expand.c: Rename some variables.
+	(expand): Don't access value off end of array.
+	* unexpand.c: Rename some variables.
+	(unexpand): Don't access value off end of array.
+	Instead of copying tabs verbatim and flushing pending spaces
+	when one is reached, count them as the proper number of
+	pending spaces.  Instead of changing tabs to single spaces if
+	the tabstop list is exhausted, print the rest of the line
+	unchanged (for POSIX).
+
+Sat Aug 17 01:49:41 1991  David J. MacKenzie  (djm at wookumz.gnu.ai.mit.edu)
+
+	* cut.c (cut_file), paste.c (paste_parallel, paste_serial):
+	Clear EOF and error conditions on stdin so it can be reused.
+
+	* expand.c, unexpand.c (parse_tabstops): Allow blanks as well
+	as commas to separate tabstops, for POSIX.
+	* expand.c (expand), unexpand.c (unexpand): Don't line-buffer
+	the output; send it directly to stdout.
+	* unexpand.c (main): Make -t stupidly imply -a for POSIX.
+	(unexpand): If a tab stop list was given and we move past its end,
+	copy the rest of the line verbatim.
+
+	* split.c (convint): New function to allow 'm' and 'k' after
+	byte counts.
+	(main): Use it.  Change -c option to -b for POSIX.
+
+Fri Aug  9 02:47:02 1991  David J. MacKenzie  (djm at wookumz.gnu.ai.mit.edu)
+
+	* pr.c: Protect isdigit with isascii, if required.
+
+Tue Aug  6 21:42:25 1991  David J. MacKenzie  (djm at wheat-chex)
+
+	Most of the following is from Paul Eggert:
+	* cat.c (main): If stdin is read, check close at end.
+	* cmp.c (main): Check for stdin being closed.
+	Check for close errors on stdin and stdout.
+	(cmp): Return a value instead of exiting.
+	* cut.c (cut_file): New function, from code in main.
+	Check for read errors.
+	(main): Check for close errors.
+	* expand.c, unexpand.c (main): Check for close errors.
+	(next_file): Go to next file if one can't be opened.
+	Check for close errors.
+	* head.c (main), tail.c (main): If stdin was read, check for
+	close errors.
+	* head.c (head_file), tail.c (tail_file): Check for close errors.
+	* paste.c (main, paste_parallel, paste_serial), tac.c (main):
+	Check for close errors.  Close stdin if it was read.
+	* split.c (main): Check for close errors.
+
+	* configure, Makefile.in's: Support +srcdir option.
+	Make config.status.  Fix up clean targets.
+
+Wed Jul 31 01:32:59 1991  David J. MacKenzie  (djm at hal)
+
+	* linebuffer.h (struct linebuffer): Add a field to indicate
+	the number of valid chars in the line.
+	* linebuffer.c (initbuffer, readline): Fill it in.
+	* uniq.c, comm.c: Use it.
+
+	* pr.c (main): Check stdin and stdout fclose for errors.
+	(init_parameters): If there's no room for header and footer,
+	omit them rather than dying (for POSIX).
+	(init_header): Take a file descriptor as additional arg.
+	(init_fps): Change callers.  Note when stdin is read.
+	(open_file): For filename "-" use stdin.
+	(close_file): Don't close stdin.  Check close for errors.
+	(print_char, char_to_clump): Use isprint instead of explicit
+	comparisons.
+
+	* memcmp.c: New file (needed for comm).
+	* bcopy.c: New file (needed for fold).
+	* system.h: Don't define bcopy as memcpy.
+	* configure: Check for bcopy and memcmp.
+
+	* uniq.c (main): Use "-" instead of NULL to mean stdin or
+	stdout.
+	(check_file): Use "-" instead of NULL to mean stdin or stdout.
+	Check readline return instead of for NUL character to
+	detect eof.
+	Check fclose for errors.
+	(find_field): Use linebuffer length, not NULs, to detect end
+	of line.
+	(different): New function, replaces compare.  Uses memcmp
+	instead of strncmp.
+	(writeline): Use fwrite instead of fputs so NULs are preserved.
+
+	* comm.c (compare_files): Return an error indication.
+	Don't take a filename of NULL to mean stdin.
+	Use memcmp instead of strcmp to allow for NULs.
+	Check fclose for errors.
+	(writeline): Use fwrite instead of fputs so NULs are preserved.
+
+	* sum.c (sum_file): Take an arg indicating whether to print
+	the filename, and don't take NULL meaning stdin.  Set a flag
+	when we read stdin.  Check fclose return for errors.
+	(main): If stdin was read, check fclose return for errors.
+	Use filename of "-" if no args given.
+
+Thu Jul 25 15:17:10 1991  David J. MacKenzie  (djm at wookumz.gnu.ai.mit.edu)
+
+	* fold.c: Rewritten from scratch for POSIX.
+
+Wed Jul 24 01:55:41 1991  David J. MacKenzie  (djm at wookumz.gnu.ai.mit.edu)
+
+	* split.c (line_bytes_split): Use xmalloc instead of alloca.
+	* system.h: Don't declare alloca.
+
+	* tac.c, tail.c: Use SEEK_ instead of L_ for lseek.
+	* system.h: Define SEEK_ macros if not defined.
+
+	* pr.c: Rename variable `truncate' to avoid library function conflict.
+
+Tue Jul 23 13:21:48 1991  David J. MacKenzie  (djm at wookumz.gnu.ai.mit.edu)
+
+	* linebuffer.c, linebuffer.h: New files.
+	* comm.c, uniq.c (initbuffer, readline): Functions
+	removed (use versions in linebuffer.c).
+
+Mon Jul 22 13:23:53 1991  David J. MacKenzie  (djm at wookumz.gnu.ai.mit.edu)
+
+	* sum.c (sumfile): Always print 5 digits for second number, too.
+	Interpret "-" to mean stdin.
+
+Sat Jul 20 14:24:40 1991  David J. MacKenzie  (djm at bleen)
+
+	* uniq.c: Use isblank instead of isspace, to support POSIX.2.
+	* comm.c, pr.c, uniq.c (concat, fatal, error,
+	pfatal_with_name, xmalloc, xrealloc): Functions removed.
+
+Sat Jul 13 02:04:53 1991  David J. MacKenzie  (djm at geech.gnu.ai.mit.edu)
+
+	* nl.c: Add long-named options.  Doc fixes.
+
+Sat Jul  6 02:19:09 1991  David J. MacKenzie  (djm at geech.gnu.ai.mit.edu)
+
+	* expand.c, unexpand.c [STDC_HEADERS]: Include stdlib.h.
+
+	* xwrite.c [POSIX]: Include unistd.h.
+	[STDC_HEADERS]: Don't declare errno.
+
+Sun Jun 30 23:35:16 1991  David J. MacKenzie  (djm at geech.gnu.ai.mit.edu)
+
+	* uniq.c: Add long-named options.  Remove marginally useful -z
+	option (zero padded repeat counts).
+
+Thu Jun 27 16:31:45 1991  David J. MacKenzie  (djm at geech.gnu.ai.mit.edu)
+
+	* tail.c (tail_file), tac.c (save_stdin, tac_file), split.c
+	(cwrite), head.c (head_file), cat.c (main): Check close return
+	value for delayed error report due to NFS.
+
+Tue Jun 11 00:12:15 1991  David J. MacKenzie  (djm at geech.gnu.ai.mit.edu)
+
+	* cat.c: Replace "uchar" with "unsigned char", to avoid
+	problems with various systems' typedefs.
+
+Thu Jun  6 12:54:26 1991  David J. MacKenzie  (djm at geech.gnu.ai.mit.edu)
+
+	* cat.c (cat): Interpret ENOTTY return from FIONREAD ioctl to mean
+	operation is unsupported, for HP-UX 7.0.
+
+Sun Apr 14 21:49:17 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* sum.c: Always print five digits for first number.
+
+Fri Mar 15 16:16:54 1991  David J. MacKenzie  (djm at geech.ai.mit.edu)
+
+	* cat.c, cmp.c: Don't use fileno(); not needed.
+
+Thu Jan 10 02:16:55 1991  David J. MacKenzie  (djm at albert.ai.mit.edu)
+
+	* tac.c, tail.c: Change _POSIX_SOURCE to POSIX.
+
+Thu Dec 27 00:06:45 1990  David J. MacKenzie  (djm at egypt)
+
+	* cut.c (cut_file_bytes, cut_file_fields): Make inbufp and
+	outbufp global.
+	(enlarge_line): Adjust inbufp and outbufp.
+
+Sun Sep  9 16:54:19 1990  David J. MacKenzie  (djm at albert.ai.mit.edu)
+
+	* cat.c: Declare free returning void, not int, so it
+	doesn't bomb on Xenix.
+
+Mon Sep  3 22:23:57 1990  David J. MacKenzie  (djm at coke)
+
+	* tac.c: Print error messages before calling cleanup, not after.
+
+Tue Aug 28 18:05:24 1990  David J. MacKenzie  (djm at albert.ai.mit.edu)
+
+	* tac.c (cleanup): Return SIGTYPE, not int.
+
+Tue Aug  7 12:51:18 1990  David J. MacKenzie  (djm at apple-gunkies)
+
+	* cut.c (main, usage): Add -b and -n options for POSIX.
+	(set_fields): Don't allow SPC or TAB as number separators.
+
+	* paste.c (paste_parallel): If open of any file fails, quit
+	(for POSIX).
+
+Mon Aug  6 22:14:13 1990  David J. MacKenzie  (djm at apple-gunkies)
+
+	* pr.c: Add POSIX -F option (same as -f).
+
+	* uniq.c (check_file): Allow '-' to mean stdin or stdout.
+
+Mon Aug  6 14:43:30 1990  David J. MacKenzie  (djm at pogo.ai.mit.edu)
+
+	* head.c, tail.c: Change `chars' to `bytes' globally.
+	(main, usage): Use POSIX.2 draft 10 option syntax.
+
+Sun Aug  5 11:51:12 1990  David J. MacKenzie  (djm at pogo.ai.mit.edu)
+
+	* cat.c (main): Don't delay error messages, so they appear
+	where expected.
+	(main, simple_cat, cat): Make errors in input files nonfatal.
+
+Sat Aug  4 10:11:30 1990  David J. MacKenzie  (djm at pogo.ai.mit.edu)
+
+	* cat.c: Remove -c option added for POSIX draft 9, since POSIX
+	draft 10 removed it. 
+
+	* tac.c (tac_stdin): Use fstat instead of lseek to determine
+	whether stdin is seekable, because lseek silently fails on
+	some special files, like tty's.
+	tail.c (tail_chars, tail_lines): Use fstat instead of lseek;
+	don't turn off -f for non-regular files (assume the user knows
+	what he's doing; it might work for fifo's and sockets).
+
+	* paste.c (main): If no files given, use stdin.
+	Don't let collapse_escapes write on string constant (delim default).
+	(paste_parallel): Don't close stdin.
+
+	* cut.c (main): Use standard input for filename of "-".
+
+	* comm.c (compare_files): Allow '-' to mean stdin.
+
+Fri Aug  3 13:38:28 1990  David J. MacKenzie  (djm at pogo.ai.mit.edu)
+
+	* cut.c (enlarge_line): Take an arg giving the required amount
+	of space.  Change callers.
+	(main): Don't allow -t'<TAB>' without -f.
+	Make `delim' unsigned to fix sign extension problem in comparison.
+
+Tue Jul 17 12:36:11 EDT 1990  Jay Fenlason (hack@ai.mit.edu)
+
+	* pr.c  Deleted excess whitespace from ends of lines.
+		Modified to work with current version of getopt, which
+		returns 1 instead of 0 for non-options.
+		Reversed the meaning of the -f option, to be compatable
+		with real pr.
+
+Sun Jul  8 00:39:31 1990  David J. MacKenzie  (djm at apple-gunkies)
+
+	* cmp.c (main, usage): Rename -L option to -c and don't have
+	it imply -l. 
+	(printc): Take an arg to specify number of chars to pad to,
+	for column alignment.
+	(cmp): Respect flag_print_chars in default output format.
+	Align columns for cmp -cl.
+
+Sat Jul  7 17:23:30 1990  David J. MacKenzie  (djm at apple-gunkies)
+
+	* cmp.c: For +show-chars, have getopt return 'L' so
+	`flag_print_chars' gets set.
+
+Fri Jun 29 01:04:19 1990  David J. MacKenzie  (djm at apple-gunkies)
+
+	* tac.c (main): Initialize fastmap and translate fields of
+	regex before compiling it.
+
+Fri Jun 22 00:38:20 1990  David J. MacKenzie  (djm at albert.ai.mit.edu)
+
+	* tac.c: Change +regexp to +regex for consistency with GNU find.
+
+Wed Jun 20 01:46:09 1990  David J. MacKenzie  (djm at albert.ai.mit.edu)
+
+	* cat.c (cat): If FIONREAD is available, only use it if it is
+	supported by the filesystem that the file is on.
+
+Sun Jun  3 20:26:19 1990  David J. MacKenzie  (djm at albert.ai.mit.edu)
+
+	* cat.c (main): Add a variable to control whether the check
+	for input file == output file is made, because no values of
+	st_dev and st_ino should be assumed to be available for this
+	purpose.  Only do the check for regular files.
+
+	* tac.c: Use bcopy instead of memcpy.
+
+Thu May 31 00:55:36 1990  David J. MacKenzie  (djm at apple-gunkies)
+
+	* head.c: Use longs instead of ints for file offsets, for 16
+	bit machines.
+
+Tue May 22 00:56:51 1990  David J. MacKenzie  (djm at albert.ai.mit.edu)
+
+	* cmp.c: Change some ints to longs for 16 bit machines.
+	(bcmp_cnt): Make char-pointer counting slightly simpler.
+
+Sat May 12 01:16:42 1990  David J. MacKenzie  (djm at albert.ai.mit.edu)
+
+	* cat.c (main): Allow input file to be output file for devices
+	(ttys, etc.).  Check whether input file is output file when
+	reading standard input.  Print any error messages for standard
+	input. 
+
+	* cmp.c (bcmp_cnt): Handle int comparisons correctly on 16 bit
+	machines as well as 32 bit ones.
+	* cmp.c, tail.c: Use longs instead of ints for file offsets. 
+
+Fri May 11 02:11:03 1990  David J. MacKenzie  (djm at albert.ai.mit.edu)
+
+	* cmp.c: Fix some exit statuses for POSIX.
+
+Tue May  8 03:41:42 1990  David J. MacKenzie  (djm at abyss)
+
+	* tac.c: Use regular expressions as the record boundaries.
+	Give better error messages.
+	Reformat code and make it more readable.
+	(main): Use getopt_long to parse options.
+	(tac_stdin): Do not make a temporary file if standard input
+	is a file.
+	(tac_file): New function.
+	(tac): Take an open file desc as an arg.
+	(output): Rewrite to use its own efficient buffering.
+	(xmalloc, xrealloc, xwrite): New functions.
+
+Sun Apr  8 20:33:20 1990  David J. MacKenzie  (djm at albert.ai.mit.edu)
+
+	* head.c, tail.c: Use `error' instead of `fatal_perror' and
+	`nonfatal_perror'.  Remove some unnecessary info from messages.
+
+Wed Mar 21 09:30:18 1990  David J. MacKenzie  (djm at pogo.ai.mit.edu)
+
+	* comm.c (main): Pass the list of files to compare_files as a
+	char ** instead of a char *.
+	(compare_files): Make arg a char **.
+
+	* uniq.c: Declare some functions as void.
+	Change global vars `countmode' and `mode' from ints to enums.
+	(main): Use getopt to parse options and support POSIX options.
+	Don't use integer_arg to parse numbers, since `-#' can't be
+	parsed that way using getopt.
+	(find_field): Use isspace for finding fields boundaries.
+
+Tue Mar 20 14:28:25 1990  David J. MacKenzie  (djm at pogo.ai.mit.edu)
+
+	* comm.c (main): Call usage if given bad option or wrong
+	number of args.  Exit with 0 status normally.
+	(usage): New function.
+	Declare some other functions as void.
+
+Wed Mar 14 10:48:40 1990  David J. MacKenzie  (djm at rice-chex)
+
+	* cmp.c (main, cmp, usage): Replace -q +quick option with -L
+	+show-chars option to add ASCII representation of bytes to -l format.
+
+Tue Mar 13 00:50:14 1990  David J. MacKenzie  (djm at rice-chex)
+
+	* cmp.c (cmp): Change EOF message for POSIX compatibility.
+	For -l format, clear bits > FF.
+
+Mon Mar  5 17:21:00 1990  David J. MacKenzie  (djm at albert.ai.mit.edu)
+
+	* tail.c: Move global `errors' into main instead of having
+	nonfatal_perror set it.
+	(tail, tail_chars, tail_file, tail_lines, pipe_chars, pipe_lines):
+	Return an error status.
+	(file_lines, start_chars, start_lines): Reverse the meaning of
+	the return value.
+	(tail_lines, tail_chars): Account for that reversal.
+
+Mon Mar  5 00:34:36 1990  David J. MacKenzie  (djm at albert.ai.mit.edu)
+
+	* head.c: Move global `errors' into main and have the various
+	functions return an error status instead of setting it in
+	nonfatal_perror. 
+
+Sat Mar  3 11:27:27 1990  Torbj|rn Granlund  (tege at echnaton)
+
+	* cmp.c (cmp): Call function bcmp_cnt for flag == 0 (i.e. no
+	  options specified), to compare the two blocks and count
+	  newlines simultaneously.
+	* cmp.c New function: bcmp_cnt.
+
+	* cmp.c (main): Test if output is redirected to /dev/null, and
+	  assume `-s' if this is so.
+
+Tue Feb 20 17:09:19 1990  David J. MacKenzie  (djm at albert.ai.mit.edu)
+
+	* cat.c: Change `argbad' from a char to a short, so it will
+	work on machines with unsigned chars.
+
+Sat Feb 10 02:16:40 1990  David J. MacKenzie  (djm at albert.ai.mit.edu)
+
+	* cmp.c (cmp): Rename `r' to `first_diff', and `x' to `smaller'.
+	Remove unneccessary variable `c1'.  If -l was given, increase
+	`char_number' by the number of bytes read, after producing output,
+	rather than by the offset of the first differing bytes, before
+	producing output.
+	Replace if-else-if constructions with case statements for clarity.
+	(bcmp2): Rename `n' to `nread'.
+
+Wed Dec 20 01:32:06 1989  David J. MacKenzie  (djm at hobbes.ai.mit.edu)
+
+	* nl.c (proc_text): Use re_search instead of re_match.
+
+Tue Dec 19 01:26:34 1989  David J. MacKenzie  (djm at hobbes.ai.mit.edu)
+
+	* nl.c: Indent.  Un-nest statements.  Use GNU regexp functions
+	instead of System V ones.  Move function declarations together.
+	(quit): Remove useless function.
+	(program_name): New variable for error messages.
+	(main): Use perror in error message.
+	(xmalloc): New function to replace myalloc.
+	(myalloc): Function removed.
+	Global: use program_name and xmalloc.
+
+Sun Dec 17 00:36:36 1989  David J. MacKenzie  (djm at hobbes.ai.mit.edu)
+
+	* uniq.c: Declare some functions.
+	(main): Initialize infile and outfile.  Call usage if given
+	invalid args.  Normally exit with 0 status instead of garbage.
+	(usage): New function to print usage message and exit.
+	(check_file): Remove unused variable.
+	(readline): Compare against EOF, not < 0.
+	(xmalloc, xrealloc): Return char *, not int.
+	Ok to return 0 if 0 bytes requested.
+	(lb1, lb2): Remove unused global vars.
+	(concat): Remove unused function.
+
+Sat Dec 16 15:15:50 1989  David J. MacKenzie  (djm at hobbes.ai.mit.edu)
+
+	* comm.c: Remove unused global variables lb1, lb2.
+	(main): Remove unneeded variable.
+	(compare_files): Remove unused arg.
+	(readline): un-nest assignment.  Test against EOF instead of < 0.
+	(error): Print to stderr, not stdout.
+	(xmalloc, xrealloc): Return char * instead of int.
+	Returning 0 is ok if 0 bytes requested (ANSI C).
+
+
+Local Variables:
+mode: indented-text
+left-margin: 8
+version-control: never
+End:
