@@ -1,0 +1,84 @@
+(Message inbox:135)
+Date:    Mon, 17 Oct 88 16:53:33 PDT
+To:      mike@wheaties.ai.mit.edu
+cc:      darin%pioneer@eos.arc.nasa.gov, luzmoor@violet.berkeley.edu
+From:    James A. Woods <jaw@eos.arc.nasa.gov>
+Subject: README.cray for GNU e?grep
+
+I just sent this out to comp.unix.cray:
+
+-------------------------------------------------------------------
+From: jaw@eos.UUCP (James A. Woods)
+Newsgroups: comp.unix.cray
+Subject: GNU e?grep on Cray machines
+Message-ID: <1750@eos.UUCP>
+Date: 17 Oct 88 23:47:29 GMT
+Organization: NASA Ames Research Center, California
+Lines: 66
+
+# "What comes after silicon?  Oh, gallium arsenide, I'd guess.  And after 
+   that, there's a thing called indium phosphide."
+	-- Seymour Cray, Datamation interview, circa 1980
+
+     Now that most Cray software development is done on Crays themselves, 
+thanks to Unix, GNU e?grep should come in handy.  Of course, if you're
+scanning GENBANK for the Human Genome Project at 10 MB/second (the raw
+X/MP Unix I/O rate), you really do need the speed.
+
+     Sample, from one of the Ames Cray 2 machines:
+
+	stokes> time ./egrep astrian web2		# GNU egrep
+	alabastrian
+	Lancastrian
+	Zoroastrian
+	Zoroastrianism
+	0.5980u 0.0772s 0:01 35%
+	stokes> time /usr/bin/egrep astrian web2	# ATT egrep
+	alabastrian
+	Lancastrian
+	Zoroastrian
+	Zoroastrianism
+	7.6765u 0.1373s 0:15 49%
+
+(web2 is a 2.4 MB wordlist, standard on BSD Unix.)
+
+     To bring up GNU E?GREP, ftp Mike Haertel's version 1.1 package from
+'prep.ai.mit.edu' or 'ames.arc.nasa.gov'.  Mention -DUSG in the Makefile,
+and specify 
+
+	#define SIGN_EXTEND_CHAR(c) ((c)>(char)127?(c)-256:(c))
+
+in regex.c. [Cray characters, like MIPS chars, are unsigned, but the
+compiler won't allow ... #define SIGN_EXTEND_CHAR(c) ((signed char) (c))]
+	
+     However, at least on the Cray 2, there's a compiler bug involving the
+increment operator in complex expressions, which requires the following
+modification (also in regex.c):
+
+change
+        m->elems[m->nelem++].constraint |= s2->elems[j++].constraint;
+to
+        m->elems[m->nelem].constraint |= s2->elems[j].constraint;
+        m->nelem++;
+        j++;
+
+Thanks go to Darin Okuyama of NASA ARC for providing this workaround.
+
+-- James A. Woods (ames!jaw)
+   NASA Ames Research Center
+
+P.S.  
+Though Crays are not at their best pushing bytes, the timing difference
+is even more exaggerated with heavier regexpr processing, to wit:
+
+	time ./egrep -i 'as.*Trian' web2
+	...
+	0.7677u 0.0769s 0:01 44%
+vs.
+	time /usr/bin/egrep -i 'as.*Trian' web2
+	...
+	16.1327u 0.1379s 0:32 49%
+
+which is a mite unfair given a known System 5 egrep -i gaffe.  You get
+extra credit for vectorizing the inner loop of the Boyer/Moore/Gosper
+code, though changing all chars to ints might help also.
