@@ -23,7 +23,7 @@ syscmd(rm -f TEMPFILE)dnl
 
 divert(-1)
 
-changecom()
+changecom()
 undefine(`format')
 ifdef(`pushdef', `',
 	`errprint(`You need a newer version of M4, at least as new as
@@ -117,4 +117,4 @@ define(`confCW_FILE', `/etc/sendmail.cw')
 define(`confMIME_FORMAT_ERRORS', `True')
 
 divert(0)dnl
-VERSIONID(`@(#)cf.m4	6.15 (Berkeley) %G%')
+VERSIONID(`@(#)cf.m4	6.16 (Berkeley) %G%')
