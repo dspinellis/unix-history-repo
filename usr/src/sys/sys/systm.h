@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)systm.h	7.21 (Berkeley) %G%
+ *	@(#)systm.h	7.22 (Berkeley) %G%
  */
 
 extern const char *panicstr;	/* panic message */
@@ -69,7 +69,7 @@ void	bcopy __P((void *from, void *to, u_int len));
 void	ovbcopy __P((void *from, void *to, u_int len));
 void	bzero __P((void *buf, u_int len));
 int	bcmp __P((void *str1, void *str2, u_int len));
-size_t	strlen __P((char *string));
+size_t	strlen __P((const char *string));
 
 int	copystr __P((void *kfaddr, void *kdaddr, u_int len, u_int *done));
 int	copyinstr __P((void *udaddr, void *kaddr, u_int len, u_int *done));
