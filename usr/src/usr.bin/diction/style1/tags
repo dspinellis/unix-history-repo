@@ -1,0 +1,24 @@
+Mstyle1	style1.c	/^main(argc,argv)$/
+OUT	style1.c	/^#define OUT()	for(i=yyleng-1;i>=0; i--)putchar(my_/
+OUT1	style1.c	/^#define OUT1(nam)	printf("%c:%s\\n",nam,my_yytext)/
+OUTN	style1.c	/^#define OUTN(string)	printf("%s\\n",string)$/
+YY_FATAL_ERROR	style1.c	/^#define YY_FATAL_ERROR(msg) \\$/
+YY_INPUT	style1.c	/^#define YY_INPUT(buf,result,max_size) \\$/
+YY_PROTO	style1.c	/^#define YY_PROTO(proto) proto$/
+YY_STATE_EOF	style1.c	/^#define YY_STATE_EOF(state) (YY_END_OF_BUFFER + st/
+ahead	style1.c	/^ahead(){$/
+look	style1.c	/^look(f,n,cc)$/
+pos	style1.c	/^pos(flg){$/
+unput	style1.c	/^#define unput(c) yyunput( c, yytext )$/
+yy_create_buffer	style1.c	/^YY_BUFFER_STATE yy_create_buffer( file, size )$/
+yy_delete_buffer	style1.c	/^void yy_delete_buffer( b )$/
+yy_get_next_buffer	style1.c	/^static int yy_get_next_buffer()$/
+yy_get_previous_state	style1.c	/^static yy_state_type yy_get_previous_state()$/
+yy_init_buffer	style1.c	/^void yy_init_buffer( b, file )$/
+yy_switch_to_buffer	style1.c	/^void yy_switch_to_buffer( new_buffer )$/
+yy_try_NUL_trans	style1.c	/^static yy_state_type yy_try_NUL_trans( yy_current_/
+yyless	style1.c	/^#define yyless(n) \\$/
+yymore	style1.c	/^#define yymore() yymore_used_but_not_detected$/
+yyrestart	style1.c	/^void yyrestart( input_file )$/
+yyterminate	style1.c	/^#define yyterminate() return ( YY_NULL )$/
+yyunput	style1.c	/^static void yyunput( c, yy_bp )$/

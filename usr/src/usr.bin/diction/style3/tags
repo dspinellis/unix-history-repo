@@ -1,0 +1,35 @@
+Mpart	part.c	/^main(argc,argv)$/
+YY_FATAL_ERROR	part.c	/^#define YY_FATAL_ERROR(msg) \\$/
+YY_INPUT	part.c	/^#define YY_INPUT(buf,result,max_size) \\$/
+YY_PROTO	part.c	/^#define YY_PROTO(proto) proto$/
+YY_STATE_EOF	part.c	/^#define YY_STATE_EOF(state) (YY_END_OF_BUFFER + st/
+getnoun	pscan.c	/^getnoun(k,ce)$/
+getv	pscan.c	/^getv(si,ce)$/
+getv2	pscan.c	/^getv2(ce)$/
+isadj	pscan.c	/^#define isadj(c)	(c == ADJ || c == NOUN_ADJ || c =/
+isadv	pscan.c	/^#define isadv(c)	(c == ADV || c == ADJ_ADV)$/
+isnoun	pscan.c	/^#define isnoun(c)	(c == NOUN || c == NOUN_VERB || /
+issing	pscan.c	/^#define issing(c)	(c == UNK || c == NOUN_VERB || c/
+notnoun	pscan.c	/^#define notnoun(c)	(c != NOUN && c != UNK && c != /
+nounnom	pscan.c	/^#define nounnom(c)	(c == NOUN || c == NOM)$/
+outp	outp.c	/^outp(){$/
+scan	pscan.c	/^scan(si,ce,command)	\/*scan a phrase *\/$/
+sperc	part.c	/^sperc(a)$/
+typersent	part.c	/^typersent(a)$/
+unput	part.c	/^#define unput(c) yyunput( c, yytext )$/
+vperc	part.c	/^vperc(a)$/
+who	pscan.c	/^who(kk,ce)$/
+wperc	part.c	/^wperc(a)$/
+yy_create_buffer	part.c	/^YY_BUFFER_STATE yy_create_buffer( file, size )$/
+yy_delete_buffer	part.c	/^void yy_delete_buffer( b )$/
+yy_get_next_buffer	part.c	/^static int yy_get_next_buffer()$/
+yy_get_previous_state	part.c	/^static yy_state_type yy_get_previous_state()$/
+yy_init_buffer	part.c	/^void yy_init_buffer( b, file )$/
+yy_switch_to_buffer	part.c	/^void yy_switch_to_buffer( new_buffer )$/
+yy_try_NUL_trans	part.c	/^static yy_state_type yy_try_NUL_trans( yy_current_/
+yyless	part.c	/^#define yyless(n) \\$/
+yymore	part.c	/^#define yymore() yymore_used_but_not_detected$/
+yyrestart	part.c	/^void yyrestart( input_file )$/
+yyterminate	part.c	/^#define yyterminate() return ( YY_NULL )$/
+yyunput	part.c	/^static void yyunput( c, yy_bp )$/
+yywrap	part.c	/^yywrap(){$/
