@@ -13,7 +13,7 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)cbrt.c	1.1 (Berkeley) 5/23/85; 1.4 (ucb.elefunt) %G%";
+"@(#)cbrt.c	1.1 (Berkeley) 5/23/85; 5.1 (ucb.elefunt) %G%";
 #endif	/* not lint */
 
 /* kahan's cube root (53 bits IEEE double precision)

@@ -13,7 +13,7 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)log10.c	1.2 (Berkeley) 8/21/85; 1.5 (ucb.elefunt) %G%";
+"@(#)log10.c	1.2 (Berkeley) 8/21/85; 5.1 (ucb.elefunt) %G%";
 #endif	/* not lint */
 
 /* LOG10(X)

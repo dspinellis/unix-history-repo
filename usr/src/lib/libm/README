@@ -16,7 +16,7 @@
 *                                                                         *
 ***************************************************************************
 
-/*	@(#)README	1.6 (Berkeley) 9/12/85; 1.3 (ucb.elefunt) %G% */
+/*	@(#)README	1.6 (Berkeley) 9/12/85; 5.1 (ucb.elefunt) %G% */
 
 NB.  The machine-independent Version 7 math library found in 4.2BSD
      is now /usr/lib/libom.a.  To compile with those routines use -lom.

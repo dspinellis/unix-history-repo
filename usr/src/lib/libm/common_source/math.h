@@ -1,4 +1,4 @@
-/*	math.h	4.6	9/11/85; 1.3 (ucb.elefunt) %G% */
+/*	math.h	4.6	9/11/85; 5.1 (ucb.elefunt) %G% */
 
 extern double asinh(), acosh(), atanh();
 extern double erf(), erfc();
