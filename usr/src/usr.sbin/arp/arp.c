@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)arp.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)arp.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -34,6 +34,8 @@ static char sccsid[] = "@(#)arp.c	5.15 (Berkeley) %G%";
 
 #include <netinet/in.h>
 #include <netinet/if_ether.h>
+
+#include <arpa/inet.h>
 
 #include <netdb.h>
 #include <errno.h>
@@ -229,7 +231,6 @@ get(host)
 	struct hostent *hp;
 	struct sockaddr_inarp *sin = &sin_m;
 	u_char *ea;
-	char *inet_ntoa();
 
 	sin_m = blank_sin;
 	sin->sin_addr.s_addr = inet_addr(host);
