@@ -17,7 +17,7 @@
 #include <sendmail.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)domain.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)domain.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -161,7 +161,7 @@ getcanonname(host, hbsize)
 
 	loopcnt = 0;
 loop:
-	n = res_search(host, C_IN, T_ANY, (char *)&answer, sizeof(answer));
+	n = res_search(host, C_IN, T_CNAME, (char *)&answer, sizeof(answer));
 	if (n < 0) {
 #ifdef DEBUG
 		if (tTd(8, 1))
