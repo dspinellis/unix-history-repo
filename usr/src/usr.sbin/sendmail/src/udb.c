@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef USERDB
-static char sccsid [] = "@(#)udb.c	8.19 (Berkeley) %G% (with USERDB)";
+static char sccsid [] = "@(#)udb.c	8.20 (Berkeley) %G% (with USERDB)";
 #else
-static char sccsid [] = "@(#)udb.c	8.19 (Berkeley) %G% (without USERDB)";
+static char sccsid [] = "@(#)udb.c	8.20 (Berkeley) %G% (without USERDB)";
 #endif
 #endif
 
@@ -276,7 +276,7 @@ udbexpand(a, sendq, aliaslevel, e)
 					a->q_paddr);
 			}
 			e->e_flags |= EF_SENDRECEIPT;
-			a->q_flags |= QREPORT|QEXPLODED;
+			a->q_flags |= QDELIVERED|QEXPANDED;
 			break;
 #endif
 

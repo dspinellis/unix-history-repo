@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.126 (Berkeley) %G%
+ *	@(#)sendmail.h	8.127 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.126		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.127		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -138,15 +138,16 @@ typedef struct address ADDRESS;
 # define QNOTREMOTE	0x00000040	/* address not for remote forwarding */
 # define QSELFREF	0x00000080	/* this address references itself */
 # define QVERIFIED	0x00000100	/* verified, but not expanded */
-# define QREPORT	0x00000200	/* report this addr in return message */
 # define QBOGUSSHELL	0x00000400	/* user has no valid shell listed */
 # define QUNSAFEADDR	0x00000800	/* address aquired via unsafe path */
 # define QPINGONSUCCESS	0x00001000	/* give return on successful delivery */
 # define QPINGONFAILURE	0x00002000	/* give return on failure */
 # define QPINGONDELAY	0x00004000	/* give return on message delay */
 # define QHASNOTIFY	0x00008000	/* propogate notify parameter */
-# define QRELAYED	0x00010000	/* relayed to non-DSN aware mailer */
-# define QEXPLODED	0x00020000	/* undergone mailing list explosion */
+# define QRELAYED	0x00010000	/* DSN: relayed to non-DSN aware sys */
+# define QEXPANDED	0x00020000	/* DSN: undergone list expansion */
+# define QDELIVERED	0x00040000	/* DSN: successful final delivery */
+# define QDELAYED	0x00080000	/* DSN: message delayed */
 # define QTHISPASS	0x80000000	/* temp: address set this pass */
 
 # define NULLADDR	((ADDRESS *) NULL)

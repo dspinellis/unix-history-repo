@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.146 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.147 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -923,7 +923,7 @@ deliver(e, firstto)
 				    (e->e_receiptto != NULL ||
 				     bitset(QPINGONSUCCESS, to->q_flags)))
 				{
-					to->q_flags |= QREPORT;
+					to->q_flags |= QDELIVERED;
 					to->q_status = "2.1.5";
 					fprintf(e->e_xfp, "%s... Successfully delivered\n",
 						to->q_paddr);
@@ -1614,7 +1614,7 @@ tryhost:
 			    (e->e_receiptto != NULL ||
 			     bitset(QPINGONSUCCESS, to->q_flags)))
 			{
-				to->q_flags |= QREPORT;
+				to->q_flags |= QDELIVERED;
 				to->q_status = "2.1.5";
 				fprintf(e->e_xfp, "%s... Successfully delivered\n",
 					to->q_paddr);
@@ -2849,56 +2849,4 @@ hostsignature(m, host, e)
 	if (tTd(17, 1))
 		printf("hostsignature(%s) = %s\n", host, s->s_hostsig);
 	return s->s_hostsig;
-}
-/*
-**  SETSTATUS -- set the address status for return messages
-**
-**	Parameters:
-**		a -- the address to set.
-**		msg -- the text of the message, which must be in standard
-**			SMTP form (3 digits, a space, and a message).
-**
-**	Returns:
-**		none.
-*/
-
-setstatus(a, msg)
-	register ADDRESS *a;
-	char *msg;
-{
-	char buf[MAXLINE];
-
-	if (a->q_rstatus != NULL)
-		free(a->q_rstatus);
-	if (strlen(msg) > (SIZE_T) 4)
-	{
-		register char *p, *q;
-		int parenlev = 0;
-
-		strncpy(buf, msg, 4);
-		p = &buf[4];
-		*p++ = '(';
-		for (q = &msg[4]; *q != '\0'; q++)
-		{
-			switch (*q)
-			{
-			  case '(':
-				parenlev++;
-				break;
-
-			  case ')':
-				if (parenlev > 0)
-					parenlev--;
-				else
-					*p++ = '\\';
-				break;
-			}
-			*p++ = *q;
-		}
-		while (parenlev-- >= 0)
-			*p++ = ')';
-		*p++ = '\0';
-		msg = buf;
-	}
-	a->q_rstatus = newstr(msg);
 }

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.81 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.82 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -594,12 +594,22 @@ recipient(a, sendq, aliaslevel, e)
 			q->q_flags &= ~QTHISPASS;
 		}
 		if (nrcpts == 1)
-			only->q_flags |= QPRIMARY;
-		else if (!initialdontsend)
+		{
+			/* check to see if this actually got a new owner */
+			q = only;
+			while ((q = q->q_alias) != NULL)
+			{
+				if (q->q_owner != NULL)
+					break;
+			}
+			if (q == NULL)
+				only->q_flags |= QPRIMARY;
+		}
+		else if (!initialdontsend && nrcpts > 0)
 		{
 			/* arrange for return receipt */
 			e->e_flags |= EF_SENDRECEIPT;
-			a->q_flags |= QEXPLODED;
+			a->q_flags |= QEXPANDED;
 			if (e->e_xfp != NULL)
 				fprintf(e->e_xfp,
 					"%s... expanded to multiple addresses\n",
