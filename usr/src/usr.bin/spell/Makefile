@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.2	%G%
+#	@(#)Makefile	4.3	%G%
 
 CFLAGS= -O
 
@@ -14,7 +14,7 @@ install:	all
 	install -c spell.sh $(DESTDIR)/usr/bin/spell
 
 clean:	
-	rm -f spell spellin hlista hlistb hlist hstop spellout
+	rm -f *.o spell spellin hlista hlistb hlist hstop spellout
 
 spell: spell.o
 	cc spell.o -o spell
