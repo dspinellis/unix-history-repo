@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)wc.c	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)wc.c	4.3 (Berkeley) %G%";
 /* wc line and word count */
 
 #include <stdio.h>
@@ -25,8 +25,6 @@ char **argv;
 			wd = argv[1]+1;
 			break;
 		case 's':
-			if (argc == 2)
-				goto usage;
 			lpp = atoi(argv[1]+2);
 			if (lpp <= 0)
 				goto usage;
@@ -39,8 +37,6 @@ char **argv;
 			uucp++;
 			break;
 		case 'b':
-			if (argc == 2)
-				goto usage;
 			baud = atoi(argv[1]+2);
 			if (baud == 110)
 				cps = 10;
@@ -51,7 +47,7 @@ char **argv;
 			break;
 		default:
 		usage:
-			fprintf(stderr, "Usage: wc [-lwcpt] [-v] [-u] [-s pagesize] [-b baudrate]\n");
+			fprintf(stderr, "Usage: wc [-lwcpt] [-v] [-u] [-spagesize] [-bbaudrate]\n");
 			exit(1);
 		}
 		argc--;
