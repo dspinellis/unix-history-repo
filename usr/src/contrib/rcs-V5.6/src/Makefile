@@ -52,18 +52,19 @@ default :: all
  COMPAT2 = 0
 #COMPAT2 = 1
 
- DIFF = $(DIFFPREFIX)gdiff
+#DIFF = $(DIFFPREFIX)gdiff
 #DIFF = $(DIFFPREFIX)rdiff# short for ``RCS diff'' on some hosts
+DIFF = $(DIFFPREFIX)diff
 
- DIFFPREFIX = /usr/local/bin/# GNU diff -- must be version 1.15 or later
+#DIFFPREFIX = /usr/local/bin/# GNU diff -- must be version 1.15 or later
 #DIFFPREFIX = /bin/# traditional diff
-#DIFFPREFIX = /usr/bin/# traditional diff (alternate name)
+DIFFPREFIX = /usr/bin/# traditional diff (alternate name)
 
- DIFF_FLAGS = -an# GNU diff
-#DIFF_FLAGS = -n# traditional diff
+#DIFF_FLAGS = -an# GNU diff
+DIFF_FLAGS = -n# traditional diff
 
- DIFF_L = 1# GNU diff
-#DIFF_L = 0# traditional diff
+#DIFF_L = 1# GNU diff
+DIFF_L = 0# traditional diff
 
  DIFF_SUCCESS = 0
 #DIFF_SUCCESS = EXIT_SUCCESS
@@ -72,20 +73,24 @@ default :: all
  DIFF_TROUBLE = 2
 #DIFF_TROUBLE = (EXIT_FAILURE*2)
 
- DIFF3 = $(DIFF)3# GNU diff3
+#DIFF3 = $(DIFF)3# GNU diff3
 #DIFF3 = /usr/lib/diff3# traditional diff3
 #DIFF3 = /usr/5lib/diff3prog# other aliases for traditional diff3
 #DIFF3 = /usr/lib/diff3prog
 #DIFF3 = /usr/lib/rdiff3
+ DIFF3 = /usr/bin/diff3
 
- DIFF3_BIN = 1# GNU diff
-#DIFF3_BIN = 0# traditional diff
+#DIFF3_BIN = 1# GNU diff
+ DIFF3_BIN = 0# traditional diff
 
  ED = /bin/ed
 
- EXECUTABLE_GROUP = staff# BSD unix installation
- EXECUTABLE_PERMISSIONS = -g $(EXECUTABLE_GROUP) -m 775# BSD unix installation
- INSTALL = install -c $(EXECUTABLE_PERMISSIONS)# BSD unix installation
+#EXECUTABLE_GROUP = staff# BSD unix installation
+ EXECUTABLE_GROUP = bin# BSD unix installation
+#EXECUTABLE_PERMISSIONS = -g $(EXECUTABLE_GROUP) -m 775# BSD unix installation
+ EXECUTABLE_PERMISSIONS = -g $(EXECUTABLE_GROUP) -m 555# BSD unix installation
+#INSTALL = install -c $(EXECUTABLE_PERMISSIONS)# BSD unix installation
+ INSTALL = install -s -o bin $(EXECUTABLE_PERMISSIONS)# BSD unix installation
 #INSTALL = cp# traditional Unix installation
 
  LDFLAGS =
@@ -101,7 +106,8 @@ default :: all
 
  OTHER_OBJECT =
 
- RCSDIR = /usr/local/bin
+#RCSDIR = /usr/local/bin
+ RCSDIR = /usr/contrib/bin
 #RCSDIR = /bin
 #RCSDIR = /usr/bin
 
@@ -110,7 +116,8 @@ default :: all
 
  REMOVE = rm -f
 
- SENDMAIL = "/bin/mail"
+ SENDMAIL = "/usr/libexec/mail.local"
+#SENDMAIL = "/bin/mail"
 #SENDMAIL = "/etc/delivermail", "-w"
 #SENDMAIL = "/usr/bin/mail"
 #SENDMAIL = "/usr/lib/sendmail"
