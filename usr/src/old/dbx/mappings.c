@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)mappings.c 1.2 %G%";
+static char sccsid[] = "@(#)mappings.c 1.3 %G%";
 
 /*
  * Source-to-object and vice versa mappings.
@@ -282,4 +282,19 @@ public ordfunctab()
 public clrfunctab()
 {
     nfuncs = 0;
+}
+
+public dumpfunctab()
+{
+Symbol s;
+int i;
+
+  for(i=0;i<nfuncs;i++) { 
+	s=functab[i];
+	printf( "%s %s %s %lx \n",
+	classname(s),
+	symname(s),
+	(s->block == nil ? "noblock" : symname(s->block) ),
+	codeloc(s) );
+   }
 }
