@@ -1,4 +1,4 @@
-char version[] = "@(#)main.c	2.18	(Berkeley)	%G%";
+char version[] = "@(#)main.c	2.19	(Berkeley)	%G%";
 
 #include <stdio.h>
 #include <ctype.h>
