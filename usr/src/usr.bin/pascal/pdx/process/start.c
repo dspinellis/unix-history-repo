@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)start.c 1.2 %G%";
+static char sccsid[] = "@(#)start.c 1.3 %G%";
 
 /*
  * Begin execution.
@@ -26,9 +26,9 @@ static char sccsid[] = "@(#)start.c 1.2 %G%";
 #include "sym.h"
 #include "process.rep"
 
-#	if (isvaxpx)
-#		include "pxinfo.h"
-#	endif
+#   if (isvaxpx)
+#       include "pxinfo.h"
+#   endif
 
 LOCAL PROCESS pbuf;
 
@@ -36,53 +36,53 @@ start(argv, infile, outfile)
 char **argv;
 char *infile, *outfile;
 {
-	char *cmd;
+    char *cmd;
 
-	process = &pbuf;
-	setsigtrace();
-#	if (isvaxpx)
-		cmd = "px";
-#	else
-		cmd = argv[0];
-#	endif
-	pstart(process, cmd, argv, infile, outfile);
-	if (process->status == STOPPED) {
-#		if (isvaxpx)
-			TRAPARGS *ap, t;
+    process = &pbuf;
+    setsigtrace();
+#   if (isvaxpx)
+	cmd = "px";
+#   else
+	cmd = argv[0];
+#   endif
+    pstart(process, cmd, argv, infile, outfile);
+    if (process->status == STOPPED) {
+#       if (isvaxpx)
+	    TRAPARGS *ap, t;
 
-			pcont(process);
-			if (process->status != STOPPED) {
-				if (option('t')) {
-					quit(process->exitval);
-				} else {
-					panic("px exited with %d", process->exitval);
-				}
-			}
-			dread(&ap, process->fp + 2*sizeof(int), sizeof(ap));
-			dread(&t, ap, sizeof(TRAPARGS));
-			if (t.nargs != 5) {
-				if (option('t')) {
-					unsetsigtraces(process);
-					pcont(process);
-					quit(process->exitval);
-				} else {
-					panic("start: args out of sync");
-				}
-			}
-			DISPLAY = t.disp;
-			DP = t.dp;
-			ENDOFF = t.objstart;
-			PCADDRP = t.pcaddrp;
-			LOOPADDR = t.loopaddr;
-#		endif
-		pc = 0;
-		curfunc = program;
-		if (objsize != 0) {
-			addbp(lastaddr(), END_BP, NIL, NIL, NIL, 0);
+	    pcont(process);
+	    if (process->status != STOPPED) {
+		if (option('t')) {
+		    quit(process->exitval);
+		} else {
+		    panic("px exited with %d", process->exitval);
 		}
-	} else {
-		panic("could not start program");
+	    }
+	    dread(&ap, process->fp + 2*sizeof(int), sizeof(ap));
+	    dread(&t, ap, sizeof(TRAPARGS));
+	    if (t.nargs != 5) {
+		if (option('t')) {
+		    unsetsigtraces(process);
+		    pcont(process);
+		    quit(process->exitval);
+		} else {
+		    panic("start: args out of sync");
+		}
+	    }
+	    DISPLAY = t.disp;
+	    DP = t.dp;
+	    ENDOFF = t.objstart;
+	    PCADDRP = t.pcaddrp;
+	    LOOPADDR = t.loopaddr;
+#       endif
+	pc = 0;
+	curfunc = program;
+	if (objsize != 0) {
+	    addbp(lastaddr(), END_BP, NIL, NIL, NIL, 0);
 	}
+    } else {
+	panic("could not start program");
+    }
 }
 
 /*
@@ -96,18 +96,18 @@ char *infile, *outfile;
 
 endprogram()
 {
-	char *filename;
+    char *filename;
 
-	if (ss_variables) {
-		prvarnews();
-	}
-	printf("\nexecution completed\n");
-	curfunc = program;
-	if ((filename = srcfilename(pc)) != cursource) {
-		skimsource(filename);
-	}
-	curline = lastlinenum;
-	erecover();
+    if (ss_variables) {
+	prvarnews();
+    }
+    printf("\nexecution completed\n");
+    curfunc = program;
+    if ((filename = srcfilename(pc)) != cursource) {
+	skimsource(filename);
+    }
+    curline = lastlinenum;
+    erecover();
 }
 
 /*
@@ -116,13 +116,11 @@ endprogram()
 
 LOCAL setsigtrace()
 {
-	register int i;
-	register PROCESS *p;
+    register int i;
+    register PROCESS *p;
 
-	p = process;
-	for (i = 1; i < NSIG; i++) {
-		psigtrace(p, i, TRUE);
-	}
-	psigtrace(p, SIGHUP, FALSE);
-	psigtrace(p, SIGKILL, FALSE);
+    p = process;
+    psigtrace(p, SIGINT, TRUE);
+    psigtrace(p, SIGTRAP, TRUE);
+    psigtrace(p, SIGIOT, TRUE);
 }
