@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)socket.h	7.13 (Berkeley) %G%
+ *	@(#)socket.h	7.14 (Berkeley) %G%
  */
 
 /*
@@ -82,8 +82,9 @@ struct	linger {
 #define	AF_ROUTE	17		/* Internal Routing Protocol */
 #define	AF_LINK		18		/* Link layer interface */
 #define	pseudo_AF_XTP	19		/* eXpress Transfer Protocol (no AF) */
+#define	AF_COIP		20		/* connection-oriented IP, aka ST II */
 
-#define	AF_MAX		20
+#define	AF_MAX		21
 
 /*
  * Structure used by kernel to store most
@@ -128,6 +129,7 @@ struct sockproto {
 #define	PF_ROUTE	AF_ROUTE
 #define	PF_LINK		AF_LINK
 #define	PF_XTP		pseudo_AF_XTP	/* really just proto family, no AF */
+#define	PF_COIP		AF_COIP
 
 #define	PF_MAX		AF_MAX
 
