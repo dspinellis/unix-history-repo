@@ -27,7 +27,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)indent.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)indent.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -80,9 +80,11 @@ main(argc, argv)
     combuf = (char *) malloc(bufsize);
     labbuf = (char *) malloc(bufsize);
     codebuf = (char *) malloc(bufsize);
+    tokenbuf = (char *) malloc(bufsize);
     l_com = combuf + bufsize - 5;
     l_lab = labbuf + bufsize - 5;
     l_code = codebuf + bufsize - 5;
+    l_token = tokenbuf + bufsize - 5;
     combuf[0] = codebuf[0] = labbuf[0] = ' ';	/* set up code, label, and
 						 * comment buffers */
     combuf[1] = codebuf[1] = labbuf[1] = '\0';
@@ -90,7 +92,10 @@ main(argc, argv)
     s_lab = e_lab = labbuf + 1;
     s_code = e_code = codebuf + 1;
     s_com = e_com = combuf + 1;
+    s_token = e_token = tokenbuf + 1;
 
+    in_buffer = (char *) malloc(10);
+    in_buffer_limit = in_buffer + 8;
     buf_ptr = buf_end = in_buffer;
     line_no = 1;
     had_eof = ps.in_decl = ps.decl_on_line = break_comma = false;
@@ -500,6 +505,7 @@ check_type:
 	    break;
 
 	case rparen:		/* got a ')' or ']' */
+	    rparen_count--;
 	    if (ps.cast_mask & (1 << ps.p_l_follow) & ~ps.sizeof_mask) {
 		ps.last_u_d = true;
 		ps.cast_mask &= (1 << ps.p_l_follow) - 1;
@@ -656,7 +662,7 @@ check_type:
 				 * structure declaration */
 	    scase = false;	/* these will only need resetting in a error */
 	    squest = 0;
-	    if (ps.last_token == rparen)
+	    if (ps.last_token == rparen && rparen_count == 0)
 		ps.in_parameter_declaration = 0;
 	    ps.cast_mask = 0;
 	    ps.sizeof_mask = 0;
@@ -943,7 +949,7 @@ check_type:
 	    if (ps.p_l_follow == 0) {
 		if (ps.block_init_level <= 0)
 		    ps.block_init = 0;
-		if (break_comma && !ps.leave_comma)
+		if (break_comma && (!ps.leave_comma || compute_code_target() + (e_code - s_code) > max_col - 8))
 		    force_nl = true;
 	    }
 	    break;
@@ -960,6 +966,11 @@ check_type:
 		char        quote = 0;
 		int         com_end = 0;
 
+		while (*buf_ptr == ' ' || *buf_ptr == '\t') {
+		    buf_ptr++;
+		    if (buf_ptr >= buf_end)
+			fill_buffer();
+		}
 		while (*buf_ptr != '\n' || in_comment) {
 		    check_size(lab);
 		    *e_lab = *buf_ptr++;

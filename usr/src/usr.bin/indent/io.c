@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)io.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)io.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "indent_globs.h"
@@ -90,7 +90,19 @@ dump_line()
 	    while (e_lab > s_lab && (e_lab[-1] == ' ' || e_lab[-1] == '\t'))
 		e_lab--;
 	    cur_col = pad_output(1, compute_label_target());
-	    fprintf(output, "%.*s", e_lab - s_lab, s_lab);
+	    if (s_lab[0] == '#' && (strncmp(s_lab, "#else", 5) == 0
+				    || strncmp(s_lab, "#endif", 6) == 0)) {
+		register char *s = s_lab;
+		if (e_lab[-1] == '\n') e_lab--;
+		do putc(*s++, output);
+		while (s < e_lab && 'a' <= *s && *s<='z');
+		while ((*s == ' ' || *s == '\t') && s < e_lab)
+		    s++;
+		if (s < e_lab)
+		    fprintf(output, s[0]=='/' && s[1]=='*' ? "\t%.*s" : "\t/* %.*s */",
+			    e_lab - s, s);
+	    }
+	    else fprintf(output, "%.*s", e_lab - s_lab, s_lab);
 	    cur_col = count_spaces(cur_col, s_lab);
 	}
 	else
@@ -296,7 +308,7 @@ compute_label_target()
  * Willcox of CAC	Added check for switch back to partly full input
  * buffer from temporary buffer
  * 
- */
+ */
 int
 fill_buffer()
 {				/* this routine reads stuff from the input */
@@ -312,7 +324,16 @@ fill_buffer()
 	    return;		/* only return if there is really something in
 				 * this buffer */
     }
-    for (p = buf_ptr = in_buffer;;) {
+    for (p = in_buffer;;) {
+	if (p >= in_buffer_limit) {
+	    register size = (in_buffer_limit - in_buffer) * 2 + 10;
+	    register offset = p - in_buffer;
+	    in_buffer = (char *) realloc(in_buffer, size);
+	    if (in_buffer == 0)
+		err("input line too long");
+	    p = in_buffer + offset;
+	    in_buffer_limit = in_buffer + size - 2;
+	}
 	if ((i = getc(f)) == EOF) {
 		*p++ = ' ';
 		*p++ = '\n';
@@ -323,6 +344,7 @@ fill_buffer()
 	if (i == '\n')
 		break;
     }
+    buf_ptr = in_buffer;
     buf_end = p;
     if (p[-2] == '/' && p[-3] == '*') {
 	if (in_buffer[3] == 'I' && strncmp(in_buffer, "/**INDENT**", 11) == 0)
@@ -401,7 +423,7 @@ fill_buffer()
  * 
  * HISTORY: initial coding 	November 1976	D A Willcox of CAC
  * 
- */
+ */
 pad_output(current, target)	/* writes tabs and blanks (if necessary) to
 				 * get the current output position up to the
 				 * target column */
@@ -446,7 +468,7 @@ pad_output(current, target)	/* writes tabs and blanks (if necessary) to
  * 
  * HISTORY: initial coding 	November 1976	D A Willcox of CAC
  * 
- */
+ */
 int
 count_spaces(current, buffer)
 /*

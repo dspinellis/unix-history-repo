@@ -17,14 +17,13 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)indent_globs.h	5.7 (Berkeley) %G%
+ *	@(#)indent_globs.h	5.8 (Berkeley) %G%
  */
 
 #include <stdio.h>
 
 #define BACKSLASH '\\'
 #define bufsize 200		/* size of internal buffers */
-#define inp_bufs 600		/* size of input buffer */
 #define sc_size 5000		/* size of save_com buffer */
 #define label_offset 2		/* number of levels a label is placed to left
 				 * of code */
@@ -65,7 +64,14 @@ char       *s_com;		/* start ... */
 char       *e_com;		/* ... and end of stored comments */
 char       *l_com;		/* limit of comment buffer */
 
-char        in_buffer[inp_bufs];/* input buffer */
+#define token s_token
+char       *tokenbuf;		/* the last token scanned */
+char	   *s_token;
+char       *e_token;
+char	   *l_token;
+
+char       *in_buffer;		/* input buffer */
+char	   *in_buffer_limit;	/* the end of the input buffer */
 char       *buf_ptr;		/* ptr to next character to be taken from
 				 * in_buffer */
 char       *buf_end;		/* ptr to first after last char in in_buffer */
@@ -77,8 +83,6 @@ char       *sc_end;		/* pointer into save_com buffer */
 char       *bp_save;		/* saved value of buf_ptr when taking input
 				 * from save_com */
 char       *be_save;		/* similarly saved value of buf_end */
-
-char        token[bufsize];	/* the last token scanned */
 
 
 int         pointer_as_binop;
@@ -264,5 +268,6 @@ struct parser_state {
 }           ps;
 
 int         ifdef_level;
+int	    rparen_count;
 struct parser_state state_stack[5];
 struct parser_state match_state[5];

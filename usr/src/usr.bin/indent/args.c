@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)args.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)args.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -47,6 +47,8 @@ char       *getenv(), *index();
 #define	CLI		2	/* case label indent (float) */
 #define	STDIN		3	/* use stdin */
 #define	KEY		4	/* type (keyword) */
+
+char *option_source = "?";
 
 /*
  * N.B.: because of the way the table here is scanned, options whose names are
@@ -140,14 +142,15 @@ set_profile()
     static char prof[] = ".indent.pro";
 
     sprintf(fname, "%s/%s", getenv("HOME"), prof);
-    if ((f = fopen(fname, "r")) != NULL) {
+    if ((f = fopen(option_source = fname, "r")) != NULL) {
 	scan_profile(f);
 	(void) fclose(f);
     }
-    if ((f = fopen(prof, "r")) != NULL) {
+    if ((f = fopen(option_source = prof, "r")) != NULL) {
 	scan_profile(f);
 	(void) fclose(f);
     }
+    option_source = "Command line";
 }
 
 scan_profile(f)
@@ -211,7 +214,7 @@ set_option(arg)
     for (p = pro; p->p_name; p++)
 	if (*p->p_name == *arg && eqin(p->p_name, arg))
 	    goto found;
-    fprintf(stderr, "indent: unknown parameter \"%s\"\n", arg - 1);
+    fprintf(stderr, "indent: %s: unknown parameter \"%s\"\n", option_source, arg - 1);
     exit(1);
 found:
     switch (p->p_type) {
@@ -260,10 +263,10 @@ indent: set_option: internal error: p_special %d\n", p->p_special);
 	break;
 
     case PRO_INT:
-	if (*param_start == 0) {
+	if (!isdigit(*param_start)) {
     need_param:
-	    fprintf(stderr, "indent: ``%s'' requires a parameter\n",
-		    arg - 1);
+	    fprintf(stderr, "indent: %s: ``%s'' requires a parameter\n",
+		    option_source, arg - 1);
 	    exit(1);
 	}
 	*p->p_obj = atoi(param_start);
