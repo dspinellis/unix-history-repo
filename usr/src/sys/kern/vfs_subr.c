@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	7.81 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.82 (Berkeley) %G%
  */
 
 /*
@@ -310,8 +310,6 @@ vinvalbuf(vp, save, cred, p)
 	struct ucred *cred;
 	struct proc *p;
 {
-	USES_VOP_BWRITE;
-	USES_VOP_FSYNC;
 	register struct buf *bp;
 	struct buf *nbp, *blist;
 	int s, error;
@@ -489,7 +487,6 @@ checkalias(nvp, nvp_rdev, mp)
 	dev_t nvp_rdev;
 	struct mount *mp;
 {
-	USES_VOP_UNLOCK;
 	register struct vnode *vp;
 	struct vnode **vpp;
 
@@ -547,7 +544,6 @@ loop:
 vget(vp)
 	register struct vnode *vp;
 {
-	USES_VOP_LOCK;
 	register struct vnode *vq;
 
 	if (vp->v_flag & VXLOCK) {
@@ -591,7 +587,6 @@ void vref(vp)
 void vput(vp)
 	register struct vnode *vp;
 {
-	USES_VOP_UNLOCK;
 
 	VOP_UNLOCK(vp);
 	vrele(vp);
@@ -604,7 +599,6 @@ void vput(vp)
 void vrele(vp)
 	register struct vnode *vp;
 {
-	USES_VOP_INACTIVE;
 
 #ifdef DIAGNOSTIC
 	if (vp == NULL)
@@ -737,11 +731,10 @@ vclean(vp, flags)
 	register struct vnode *vp;
 	int flags;
 {
-	USES_VOP_LOCK;
-	USES_VOP_UNLOCK;
-	USES_VOP_CLOSE;
-	USES_VOP_INACTIVE;
-	USES_VOP_RECLAIM;
+	struct vop_inactive_args vop_inactive_a;
+	struct vop_reclaim_args vop_reclaim_a;
+	struct vop_unlock_args vop_unlock_a;
+	struct vop_close_args vop_close_a;
 	int (**origops)();
 	int active;
 
@@ -1010,7 +1003,6 @@ vprint(label, vp)
 	char *label;
 	register struct vnode *vp;
 {
-	USES_VOP_PRINT;
 	char buf[64];
 
 	if (label != NULL)
@@ -1046,7 +1038,6 @@ vprint(label, vp)
  */
 printlockedvnodes()
 {
-	USES_VOP_ISLOCKED;
 	register struct mount *mp;
 	register struct vnode *vp;
 
