@@ -1,4 +1,4 @@
-/* tcp.h 1.12 81/11/03 */
+/* tcp.h 1.13 81/11/04 */
 
 /*
  * Tcp header.  Fits over the ip header after option removed.
@@ -41,10 +41,13 @@ struct th {
  * Tcp control block.
  */
 struct tcb {
+/* first four elements of this struct must match tcphead below */
 	struct	th *t_rcv_next;		/* first el on rcv queue */
 	struct	th *t_rcv_prev;		/* last el on rcv queue */
 	struct	tcb *tcb_next;		/* next tcb */
 	struct	tcb *tcb_prev;		/* next tcb */
+/* end must match */
+	struct	th *t_template;		/* skeletal packet for transmit */
 	struct	ucb *t_ucb;		/* ucb */
 	struct	mbuf *t_rcv_unack;	/* unacked message queue */
 	short	seqcnt;
@@ -137,18 +140,19 @@ struct tcbhead {
     (((x)->tc_flags&TC_USR_ABORT) || \
       ((x)->t_ucb->uc_rbuf == NULL && (x)->t_rcv_next == (x)->t_rcv_prev))
 
+#define	ISSINCR		128		/* increment for iss each second */
+#define	TCPSIZE		20		/* size of TCP leader (bytes) */
+
 /*
  * THESE NEED TO BE JUSTIFIED!
  */
-#define	ISSINCR		128		/* increment for iss each second */
-#define	TCPROTO		6		/* TCP-4 protocol number */
-#define	TCPSIZE		20		/* size of TCP leader (bytes) */
 #define	T_2ML		10		/* 2*maximum packet lifetime */
 #define	T_PERS		5		/* persist time */
 #define	T_INIT		30		/* init too long timeout */
 #define	T_REXMT		1		/* base for retransmission time */
 #define	T_REXMTTL	30		/* retransmit too long timeout */
 #define	T_REMAX		30		/* maximum retransmission time */
+
 #define	ACTIVE		1		/* active open */
 #define	PASSIVE		0		/* passive open */
 
@@ -187,3 +191,4 @@ struct	th *tcp_template();
 #define	SEQ_LEQ(a,b)	((int)((a)-(b)) <= 0)
 #define	SEQ_GT(a,b)	((int)((a)-(b)) > 0)
 #define	SEQ_GEQ(a,b)	((int)((a)-(b)) >= 0)
+struct	th *tcp_template();

@@ -1,4 +1,4 @@
-/* uipc_mbuf.c 1.6 81/10/30 */
+/* uipc_mbuf.c 1.7 81/11/04 */
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -13,6 +13,24 @@
 #include "../inet/ip.h"
 #include "../inet/tcp.h"
 #include "../h/vm.h"
+
+m_reserve(mbufs)
+	int mbufs;
+{
+
+	if (mbstat.m_lowat + mbufs > NNETPAGES * NMBPG - 32) 
+		return (0);
+	mbstat.m_lowat += mbufs;
+	mbstat.m_hiwat = 2 * mbstat.m_lowat;
+}
+
+m_release(mbufs)
+	int mbufs;
+{
+
+	mbstat.m_lowat -= mbufs;
+	mbstat.m_hiwat = 2 * mbstat.m_lowat;
+}
 
 struct mbuf *
 m_get(canwait)
