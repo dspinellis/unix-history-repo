@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lfs.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)lfs.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -31,6 +31,38 @@ static char sccsid[] = "@(#)lfs.c	5.12 (Berkeley) %G%";
 #include "config.h"
 #include "extern.h"
 
+/*
+ * This table is indexed by the log base 2 of the block size.
+ * It returns the maximum file size allowed in a file system
+ * with the specified block size.  For block sizes smaller than
+ * 8K, the size is limited by tha maximum number of blocks that
+ * can be reached by triply indirect blocks:
+ *	NDADDR + INOPB(bsize) + INOPB(bsize)^2 + INOPB(bsize)^3
+ * For block size of 8K or larger, the file size is limited by the
+ * number of blocks that can be represented in the file system.  Since
+ * we use negative block numbers to represent indirect blocks, we can
+ * have a maximum of 2^31 blocks.
+ */
+
+u_quad_t maxtable[] = {
+	/*    1 */ -1,
+	/*    2 */ -1,
+	/*    4 */ -1,
+	/*    8 */ -1,
+	/*   16 */ -1,
+	/*   32 */ -1,
+	/*   64 */ -1,
+	/*  128 */ -1,
+	/*  256 */ -1,
+	/*  512 */ NDADDR + 128 + 128 * 128 + 128 * 128 * 128,
+	/* 1024 */ NDADDR + 256 + 256 * 256 + 256 * 256 * 256,
+	/* 2048 */ NDADDR + 512 + 512 * 512 + 512 * 512 * 512,
+	/* 4096 */ NDADDR + 1024 + 1024 * 1024 + 1024 * 1024 * 1024,
+	/* 8192 */ 2 ^ 31,
+	/* 16 K */ 2 ^ 31,
+	/* 32 K */ 2 ^ 31
+};
+
 static struct lfs lfs_default =  {
 	/* lfs_magic */		LFS_MAGIC,
 	/* lfs_version */	LFS_VERSION,
@@ -52,6 +84,7 @@ static struct lfs lfs_default =  {
 	/* lfs_lastpseg */	0,
 	/* lfs_tstamp */	0,
 	/* lfs_minfree */	MINFREE,
+	/* lfs_maxfilesize */	0,
 	/* lfs_dbpseg */	DFL_LFSSEG/DEV_BSIZE,
 	/* lfs_inopb */		DFL_LFSBLOCK/sizeof(struct dinode),
 	/* lfs_ifpb */		DFL_LFSBLOCK/sizeof(IFILE),
@@ -139,12 +172,10 @@ make_lfs(fd, lp, partp, minfree, block_size, seg_size)
 	int db_per_fb;		/* Disk blocks per file block */
 	int i, j;
 	int off;		/* Offset at which to write */
-	int sb_to_sum;		/* offset between superblock and summary */
 	int sb_interval;	/* number of segs between super blocks */
 	int seg_seek;		/* Seek offset for a segment */
 	int ssize;		/* Segment size */
 	int sum_size;		/* Size of the summary block */
-	int wbytes;		/* Number of bytes returned by write */
 
 	lfsp = &lfs_default;
 
@@ -189,6 +220,7 @@ make_lfs(fd, lp, partp, minfree, block_size, seg_size)
 	lfsp->lfs_size = partp->p_size >> lfsp->lfs_fsbtodb;
 	lfsp->lfs_dsize = lfsp->lfs_size - (LFS_LABELPAD >> lfsp->lfs_bshift);
 	lfsp->lfs_nseg = lfsp->lfs_dsize / lfsp->lfs_ssize;
+	lfsp->lfs_maxfilesize = maxtable[lfsp->lfs_bshift] << lfsp->lfs_bshift;
 
 	/* 
 	 * The number of free blocks is set from the total data size (lfs_dsize)
@@ -524,9 +556,9 @@ put(fd, off, p, len)
 	u_short	d_reclen;		/* length of this record */
 	u_short	d_namlen;		/* length of string in d_name */
 	char	d_name[MAXNAMLEN + 1];	/* name with length <= MAXNAMLEN */
+void
 lfsinit()
-{
-}
+{}
 
 static daddr_t
 make_dinode(ino, dip, nblocks, saddr, lfsp)
