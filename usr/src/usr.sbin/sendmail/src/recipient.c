@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	6.32 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	6.32.1.1 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -269,6 +269,10 @@ recipient(a, sendq, e)
 	{
 		if (sameaddr(q, a))
 		{
+			/* if this is a reinsertion, just go ahead */
+			if (bitset(QVERIFIED, q->q_flags))
+				break;
+
 			if (tTd(26, 1))
 			{
 				printf("%s in sendq: ", a->q_paddr);
@@ -287,8 +291,13 @@ recipient(a, sendq, e)
 	}
 
 	/* add address on list */
-	*pq = a;
-	a->q_next = NULL;
+	if (*pq != a)
+	{
+		*pq = a;
+		a->q_next = NULL;
+	}
+
+	a->q_flags &= ~QVERIFIED;
 
 	/*
 	**  Alias the name and handle special mailer types.
