@@ -1,4 +1,4 @@
-/*	nexus.h	4.3	81/02/26	*/
+/*	nexus.h	4.4	81/02/27	*/
 
 /*
  * Information about nexus's.
@@ -27,9 +27,9 @@ struct	nexus {
 	} nexcsr;
 	long	nex_pad[NEXSIZE / sizeof (long) - 1];
 };
-#endif
 #ifdef	KERNEL
 extern struct nexus nexus[NNEXUS];
+#endif
 #endif
 
 /*

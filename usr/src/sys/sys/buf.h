@@ -1,4 +1,4 @@
-/*	buf.h	4.9	81/02/27	*/
+/*	buf.h	4.10	81/02/27	*/
 
 /*
  * The header for buffers in the buffer pool and otherwise used
@@ -63,6 +63,7 @@ struct buf
 
 #ifdef	KERNEL
 extern	struct buf *buf;		/* the buffer pool itself */
+extern	char *buffers;
 extern	int nbuf;
 extern	struct buf *swbuf;		/* swap I/O headers */
 extern	int nswbuf;
