@@ -1,4 +1,4 @@
-/*	lpd.c	4.5	83/06/15	*/
+/*	lpd.c	4.6	83/07/06	*/
 /*
  * lpd -- line printer daemon.
  *
@@ -38,28 +38,21 @@
 
 static int	lflag;				/* log requests flag */
 static char	*logfile = DEFLOGF;
-static struct	sockaddr_in sin = { AF_INET };
 
 int	reapchild();
-char	*inet_ntoa();
+int	cleanup();
 
 main(argc, argv)
 	int argc;
 	char **argv;
 {
-	int f, options;
-	struct sockaddr_in fromaddr;
-	struct servent *sp;
+	int f, funix, finet, options, defreadfds, fromlen;
+	struct sockaddr_un sun, fromunix;
+	struct sockaddr_in sin, frominet;
+	int omask;
 
 	gethostname(host, sizeof(host));
 	name = argv[0];
-
-	sp = getservbyname("printer", "tcp");
-	if (sp == NULL) {
-		fprintf(stderr, "printer/tcp: unknown service");
-		exit(1);
-	}
-	sin.sin_port = sp->s_port;
 
 	while (--argc > 0) {
 		argv++;
@@ -76,16 +69,6 @@ main(argc, argv)
 				logfile = *++argv;
 				break;
 			}
-		else {
-			int port = atoi(argv[0]);
-			int c = argv[0][0];
-
-			if (c < '0' || c > '9' || port < 0) {
-				fprintf(stderr, "lpd: %s: bad port number\n", argv[0]);
-				exit(1);
-			}
-			sin.sin_port = htons((u_short) port);
-		}
 	}
 #ifndef DEBUG
 	/*
@@ -104,44 +87,89 @@ main(argc, argv)
 		(void) close(f);
 	}
 #endif
+#define	mask(s)	(1 << ((s) - 1))
+#define	ALLINTS	mask(SIGHUP)|mask(SIGINT)|mask(SIGQUIT)|mask(SIGTERM)
+	omask = sigblock(ALLINTS);
+	signal(SIGHUP, cleanup);
+	signal(SIGINT, cleanup);
+	signal(SIGQUIT, cleanup);
+	signal(SIGTERM, cleanup);
+	signal(SIGCHLD, reapchild);
 	(void) umask(0);
 	/*
 	 * Restart all the printers.
 	 */
 	startup();
-	f = socket(AF_INET, SOCK_STREAM, 0);
-	if (f < 0) {
-		logerror("socket");
+	funix = socket(AF_UNIX, SOCK_STREAM, 0);
+	if (funix < 0) {
+		logerr("socket");
 		exit(1);
 	}
-	if (options & SO_DEBUG)
-		if (setsockopt(f, SOL_SOCKET, SO_DEBUG, 0, 0) < 0) {
-			logerror("setsockopt (SO_DEBUG)");
-			exit(1);
-		}
-	if (bind(f, &sin, sizeof(sin), 0) < 0) {
-		logerror("bind");
+	sun.sun_family = AF_UNIX;
+	strcpy(sun.sun_path, SOCKETNAME);
+	if (bind(funix, &sun, strlen(sun.sun_path) + 2) < 0) {
+		logerr("unix domain bind");
 		exit(1);
+	}
+	sigsetmask(omask);
+	finet = socket(AF_INET, SOCK_STREAM, 0);
+	if (finet >= 0) {
+		struct servent *sp;
+
+		if (options & SO_DEBUG)
+			if (setsockopt(finet, SOL_SOCKET, SO_DEBUG, 0, 0) < 0) {
+				logerr("setsockopt (SO_DEBUG)");
+				cleanup();
+			}
+		sp = getservbyname("printer", "tcp");
+		if (sp == NULL) {
+			log("printer/tcp: unknown service");
+			cleanup();
+		}
+		sin.sin_family = AF_INET;
+		sin.sin_port = sp->s_port;
+		if (bind(finet, &sin, sizeof(sin), 0) < 0) {
+			logerr("internet domain bind");
+			cleanup();
+		}
 	}
 	/*
 	 * Main loop: listen, accept, do a request, continue.
 	 */
-	signal(SIGCHLD, reapchild);
-	listen(f, 10);
+	defreadfds = 1 << funix;
+	listen(funix, 5);
+	if (finet >= 0) {
+		defreadfds |= 1 << finet;
+		listen(finet, 5);
+	}
 	for (;;) {
-		int s, len = sizeof(fromaddr);
+		int domain, s, readfds = defreadfds;
 
-		s = accept(f, &fromaddr, &len, 0);
+		(void) select(&readfds, 0, 0, 0);
+		if (readfds & (1 << funix)) {
+			domain = AF_UNIX;
+			fromlen = sizeof(fromunix);
+			s = accept(funix, &fromunix, &fromlen);
+		} else {
+			domain = AF_INET;
+			fromlen = sizeof(frominet);
+			s = accept(finet, &frominet, &fromlen);
+		}
 		if (s < 0) {
 			if (errno == EINTR)
 				continue;
-			logerror("accept");
-			exit(1);
+			logerr("accept");
+			cleanup();
 		}
 		if (fork() == 0) {
 			signal(SIGCHLD, SIG_IGN);
-			(void) close(f);
-			doit(s, &fromaddr);
+			(void) close(funix);
+			(void) close(finet);
+			dup2(s, 1);
+			(void) close(s);
+			if (domain == AF_INET)
+				chkhost(&frominet);
+			doit();
 			exit(0);
 		}
 		(void) close(s);
@@ -155,6 +183,13 @@ reapchild()
 
 	while (wait3(&status, WNOHANG, 0) > 0)
 		;
+}
+
+static
+cleanup()
+{
+	unlink(SOCKETNAME);
+	exit(0);
 }
 
 /*
@@ -178,42 +213,22 @@ static char	*cmdnames[] = {
 };
 
 static
-doit(f, fromaddr)
-	int f;
-	struct sockaddr_in *fromaddr;
+doit()
 {
 	register char *cp;
-	register struct hostent *hp;
 	register int n;
-	char c;
 
-	dup2(f, 1);
-	(void) close(f);
-	f = 1;
-	fromaddr->sin_port = ntohs(fromaddr->sin_port);
-	if (fromaddr->sin_family != AF_INET || fromaddr->sin_port >= IPPORT_RESERVED)
-		fatal("Malformed from address");
-	hp = gethostbyaddr(&fromaddr->sin_addr, sizeof(struct in_addr),
-		fromaddr->sin_family);
-	if (hp == 0)
-		fatal("Host name for your address (%s) unknown",
-			inet_ntoa(fromaddr->sin_addr));
-	strcpy(fromb, hp->h_name);
-	from = fromb;
-	if (chkhost())
-		fatal("Your host does not have line printer access");
 	for (;;) {
 		cp = cbuf;
 		do {
-			if ((n = read(f, &c, 1)) != 1) {
+			if (cp >= &cbuf[sizeof(cbuf) - 1])
+				fatal("Command line too long");
+			if ((n = read(1, cp, 1)) != 1) {
 				if (n < 0)
 					fatal("Lost connection");
 				return;
 			}
-			if (cp >= &cbuf[sizeof(cbuf)])
-				fatal("Command line too long");
-			*cp++ = c;
-		} while (c != '\n');
+		} while (*cp++ != '\n');
 		*--cp = '\0';
 		cp = cbuf;
 		if (lflag && *cp >= '\1' && *cp <= '\5') {
@@ -286,7 +301,6 @@ doit(f, fromaddr)
 			break;
 		}
 		fatal("Illegal service request");
-		exit(1);
 	}
 }
 
@@ -314,7 +328,7 @@ startup()
 			}
 		if ((pid = fork()) < 0) {
 			log("startup: cannot fork");
-			exit(1);
+			cleanup();
 		}
 		if (!pid) {
 			endprent();
@@ -327,14 +341,27 @@ startup()
  * Check to see if the from host has access to the line printer.
  */
 static
-chkhost()
+chkhost(f)
+	struct sockaddr_in *f;
 {
+	register struct hostent *hp;
 	register FILE *hostf;
 	register char *cp;
 	char ahost[50];
+	extern char *inet_ntoa();
 
+	f->sin_port = ntohs(f->sin_port);
+	if (f->sin_family != AF_INET || f->sin_port >= IPPORT_RESERVED)
+		fatal("Malformed from address");
+	hp = gethostbyaddr(&f->sin_addr, sizeof(struct in_addr), f->sin_family);
+	if (hp == 0)
+		fatal("Host name for your address (%s) unknown",
+			inet_ntoa(f->sin_addr));
+
+	strcpy(fromb, hp->h_name);
+	from = fromb;
 	if (!strcmp(from, host))
-		return(0);
+		return;
 
 	hostf = fopen("/etc/hosts.equiv", "r");
 	while (fgets(ahost, sizeof(ahost), hostf)) {
@@ -343,11 +370,10 @@ chkhost()
 		cp = index(ahost, ' ');
 		if (!strcmp(from, ahost) && cp == NULL) {
 			(void) fclose(hostf);
-			return(0);
+			return;
 		}
 	}
-	(void) fclose(hostf);
-	return(-1);
+	fatal("Your host does not have line printer access");
 }
 
 /*VARARGS1*/
@@ -367,7 +393,7 @@ log(msg, a1, a2, a3)
 }
 
 static
-logerror(msg)
+logerr(msg)
 	char *msg;
 {
 	register int err = errno;
