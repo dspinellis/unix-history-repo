@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cp.c	5.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)cp.c	5.29 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -321,12 +321,14 @@ copy(type, ftsp)
 				copy_special(curr->fts_statp, !dne);
 				return;
 			}
+			copy_file(curr, dne);
 			break;
 		case S_IFIFO:
 			if (rflag) {
 				copy_fifo(curr->fts_statp, !dne);
 				return;
 			}
+			copy_file(curr, dne);
 			break;
 		default:
 			copy_file(curr, dne);
