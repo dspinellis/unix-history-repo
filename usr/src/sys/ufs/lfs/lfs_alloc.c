@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-static char vers[] = "@(#)lfs_alloc.c 1.17 %G%";
+static char vers[] = "@(#)lfs_alloc.c 1.18 %G%";
 
 /*	alloc.c	4.8	81/03/08	*/
 
@@ -55,7 +55,7 @@ alloc(dev, ip, bpref, size)
 	int cg;
 	
 	fs = getfs(dev);
-	if ((unsigned)size > fs->fs_bsize || size % fs->fs_fsize != 0)
+	if ((unsigned)size > fs->fs_bsize || fragoff(fs, size) != 0)
 		panic("alloc: bad size");
 	if (size == fs->fs_bsize && fs->fs_cstotal.cs_nbfree == 0)
 		goto nospace;
@@ -103,8 +103,8 @@ realloccg(dev, bprev, bpref, osize, nsize)
 	int cg;
 	
 	fs = getfs(dev);
-	if ((unsigned)osize > fs->fs_bsize || osize % fs->fs_fsize != 0 ||
-	    (unsigned)nsize > fs->fs_bsize || nsize % fs->fs_fsize != 0)
+	if ((unsigned)osize > fs->fs_bsize || fragoff(fs, osize) != 0 ||
+	    (unsigned)nsize > fs->fs_bsize || fragoff(fs, nsize) != 0)
 		panic("realloccg: bad size");
 	if (u.u_uid != 0 &&
 	    fs->fs_cstotal.cs_nbfree * fs->fs_frag + fs->fs_cstotal.cs_nffree <
@@ -117,8 +117,10 @@ realloccg(dev, bprev, bpref, osize, nsize)
 	bno = fragextend(dev, fs, cg, (long)bprev, osize, nsize);
 	if (bno != 0) {
 		bp = bread(dev, fsbtodb(fs, bno), osize);
-		if (bp->b_flags & B_ERROR)
-			return (0);
+		if (bp->b_flags & B_ERROR) {
+			brelse(bp);
+			return 0;
+		}
 		bp->b_bcount = nsize;
 		blkclr(bp->b_un.b_addr + osize, nsize - osize);
 		return (bp);
@@ -131,8 +133,10 @@ realloccg(dev, bprev, bpref, osize, nsize)
 		 * make a new copy
 		 */
 		obp = bread(dev, fsbtodb(fs, bprev), osize);
-		if (obp->b_flags & B_ERROR)
-			return (0);
+		if (obp->b_flags & B_ERROR) {
+			brelse(obp);
+			return 0;
+		}
 		bp = getblk(dev, fsbtodb(fs, bno), nsize);
 		cp = bp->b_un.b_addr;
 		bp->b_un.b_addr = obp->b_un.b_addr;
@@ -332,18 +336,20 @@ fragextend(dev, fs, cg, bprev, osize, nsize)
 	int frags, bbase;
 	int i;
 
-	frags = nsize / fs->fs_fsize;
-	bbase = bprev % fs->fs_frag;
+	frags = numfrags(fs, nsize);
+	bbase = fragoff(fs, bprev);
 	if (bbase > (bprev + frags - 1) % fs->fs_frag) {
 		/* cannot extend across a block boundry */
 		return (0);
 	}
 	bp = bread(dev, fsbtodb(fs, cgtod(fs, cg)), fs->fs_bsize);
-	if (bp->b_flags & B_ERROR)
-		return (0);
+	if (bp->b_flags & B_ERROR) {
+		brelse(bp);
+		return 0;
+	}
 	cgp = bp->b_un.b_cg;
 	bno = dtogd(fs, bprev);
-	for (i = osize / fs->fs_fsize; i < frags; i++)
+	for (i = numfrags(fs, osize); i < frags; i++)
 		if (isclr(cgp->cg_free, bno + i)) {
 			brelse(bp);
 			return (0);
@@ -357,10 +363,10 @@ fragextend(dev, fs, cg, bprev, osize, nsize)
 	for (i = frags; i < fs->fs_frag - bbase; i++)
 		if (isclr(cgp->cg_free, bno + i))
 			break;
-	cgp->cg_frsum[i - osize / fs->fs_fsize]--;
+	cgp->cg_frsum[i - numfrags(fs, osize)]--;
 	if (i != frags)
 		cgp->cg_frsum[i - frags]++;
-	for (i = osize / fs->fs_fsize; i < frags; i++) {
+	for (i = numfrags(fs, osize); i < frags; i++) {
 		clrbit(cgp->cg_free, bno + i);
 		cgp->cg_cs.cs_nffree--;
 		fs->fs_cstotal.cs_nffree--;
@@ -394,8 +400,10 @@ alloccg(dev, fs, cg, bpref, size)
 	if (fs->fs_cs(fs, cg).cs_nbfree == 0 && size == fs->fs_bsize)
 		return (0);
 	bp = bread(dev, fsbtodb(fs, cgtod(fs, cg)), fs->fs_bsize);
-	if (bp->b_flags & B_ERROR)
-		return (0);
+	if (bp->b_flags & B_ERROR) {
+		brelse(bp);
+		return 0;
+	}
 	cgp = bp->b_un.b_cg;
 	if (size == fs->fs_bsize) {
 		bno = alloccgblk(fs, cgp, bpref);
@@ -407,7 +415,7 @@ alloccg(dev, fs, cg, bpref, size)
 	 * allocsiz is the size which will be allocated, hacking
 	 * it down to a smaller size if necessary
 	 */
-	frags = size / fs->fs_fsize;
+	frags = numfrags(fs, size);
 	for (allocsiz = frags; allocsiz < fs->fs_frag; allocsiz++)
 		if (cgp->cg_frsum[allocsiz] != 0)
 			break;
@@ -590,8 +598,10 @@ ialloccg(dev, fs, cg, ipref, mode)
 	if (fs->fs_cs(fs, cg).cs_nifree == 0)
 		return (0);
 	bp = bread(dev, fsbtodb(fs, cgtod(fs, cg)), fs->fs_bsize);
-	if (bp->b_flags & B_ERROR)
-		return (0);
+	if (bp->b_flags & B_ERROR) {
+		brelse(bp);
+		return 0;
+	}
 	cgp = bp->b_un.b_cg;
 	if (ipref) {
 		ipref %= fs->fs_ipg;
@@ -644,14 +654,16 @@ fre(dev, bno, size)
 	register int i;
 
 	fs = getfs(dev);
-	if ((unsigned)size > fs->fs_bsize || size % fs->fs_fsize != 0)
+	if ((unsigned)size > fs->fs_bsize || fragoff(fs, size) != 0)
 		panic("free: bad size");
 	cg = dtog(fs, bno);
 	if (badblock(fs, bno))
 		return;
 	bp = bread(dev, fsbtodb(fs, cgtod(fs, cg)), fs->fs_bsize);
-	if (bp->b_flags & B_ERROR)
+	if (bp->b_flags & B_ERROR) {
+		brelse(bp);
 		return;
+	}
 	cgp = bp->b_un.b_cg;
 	bno = dtogd(fs, bno);
 	if (size == fs->fs_bsize) {
@@ -675,7 +687,7 @@ fre(dev, bno, size)
 		/*
 		 * deallocate the fragment
 		 */
-		frags = size / fs->fs_fsize;
+		frags = numfrags(fs, size);
 		for (i = 0; i < frags; i++) {
 			if (isset(cgp->cg_free, bno + i))
 				panic("free: freeing free frag");
@@ -729,8 +741,10 @@ ifree(dev, ino, mode)
 		panic("ifree: range");
 	cg = itog(fs, ino);
 	bp = bread(dev, fsbtodb(fs, cgtod(fs, cg)), fs->fs_bsize);
-	if (bp->b_flags & B_ERROR)
+	if (bp->b_flags & B_ERROR) {
+		brelse(bp);
 		return;
+	}
 	cgp = bp->b_un.b_cg;
 	ino %= fs->fs_ipg;
 	if (isclr(cgp->cg_iused, ino))
