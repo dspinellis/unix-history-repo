@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwupdate.c	3.6 83/08/17";
+static	char *sccsid = "@(#)wwupdate.c	3.7 83/08/19";
 #endif
 
 #include "ww.h"
@@ -19,7 +19,6 @@ wwupdate()
 	union ww_char lastc;
 
 	wwnupdate++;
-	(*tt.tt_setinsert)(0);
 	for (i = 0, touched = wwtouched; i < wwnrow; i++, touched++) {
 		if (!*touched)
 			continue;
