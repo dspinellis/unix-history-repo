@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_timer.c	7.13 (Berkeley) %G%
+ *	@(#)tp_timer.c	7.14 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -172,7 +172,6 @@ tp_slowtimo()
 	for (rp = tp_ref + tp_refinfo.tpr_maxopen; rp > tp_ref; rp--) {
 		if ((tpcb = rp->tpr_pcb) == 0 || tpcb->tp_refstate < REF_OPEN) 
 			continue;
-		t = TM_NTIMERS;
 		/* check the timers */
 		for (t = 0; t < TM_NTIMERS; t++) {
 			cp = tpcb->tp_timer + t;
@@ -180,7 +179,8 @@ tp_slowtimo()
 				*cp = 0;
 				E.ev_number = t;
 				IFDEBUG(D_TIMER)
-					printf("C expired! type 0x%x\n", t);
+					printf("tp_slowtimo: pcb 0x%x t %d\n",
+							tpcb, t);
 				ENDDEBUG
 				IncStat(ts_Cexpired);
 				tp_driver(tpcb, &E);
