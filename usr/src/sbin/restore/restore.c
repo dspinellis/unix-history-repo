@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)restore.c	3.1	(Berkeley)	83/02/18";
+static char sccsid[] = "@(#)restore.c	3.2	(Berkeley)	83/02/27";
 #endif
 
 #include "restore.h"
@@ -62,6 +62,11 @@ addfile(name, ino, type)
 		return;
 	}
 	if (mflag) {
+		if (ino == ROOTINO)
+			return;
+		ep = lookupino(ino);
+		if (ep != NIL)
+			type |= LINK;
 		ep = addentry(name, ino, type);
 	} else {
 		(void) sprintf(buf, "./%u", ino);
@@ -432,8 +437,10 @@ createfiles()
 	long curvol;
 
 	vprintf(stdout, "Extract requested files\n");
+	curfile.action = SKIP;
+	getvol((long)0);
 	first = lowerbnd(ROOTINO);
-	last = upperbnd(maxino);
+	last = upperbnd(maxino - 1);
 	for (;;) {
 		first = lowerbnd(first);
 		last = upperbnd(last);
@@ -491,6 +498,7 @@ createlinks()
 			} else {
 				linkit(name, myname(np), HARDLINK);
 			}
+			np->e_flags &= ~NEW;
 		}
 	}
 }

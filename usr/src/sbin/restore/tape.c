@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	3.2	(Berkeley)	83/02/26";
+static char sccsid[] = "@(#)tape.c	3.3	(Berkeley)	83/02/27";
 #endif
 
 #include "restore.h"
@@ -376,21 +376,17 @@ loop:
 			(*f2)(clearedbuf, size > TP_BSIZE ?
 				(long) TP_BSIZE : size);
 		}
-		if ((size -= TP_BSIZE) <= 0) {
-			gethead(&spcl);
-			goto out;
-		}
+		if ((size -= TP_BSIZE) <= 0)
+			break;
 	}
-	if (gethead(&spcl) == FAIL || checktype(&spcl, TS_ADDR) == FAIL) {
+	if (gethead(&spcl) == GOOD && size > 0) {
+		if (checktype(&spcl, TS_ADDR) == GOOD)
+			goto loop;
 		fprintf(stderr, "Missing address (header) block for %s\n",
 			curfile.name);
-		goto out;
 	}
-	goto loop;
-out:
-	if (curblk > 0) {
+	if (curblk > 0)
 		(*f1)(buf, (curblk * TP_BSIZE) + size);
-	}
 	findinode(&spcl, 1);
 	gettingfile = 0;
 }
