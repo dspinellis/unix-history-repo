@@ -37,27 +37,28 @@
 #define WhereAttrByte(p)	(IsStartField(p)? p: FieldDec(p))
 #define	WhereHighByte(p)	ScreenDec(FieldInc(p))
 #define WhereLowByte(p)		ScreenInc(WhereAttrByte(p))
-#define FieldAttributes(x)	(IsStartField(x)? Host[x].data : \
-				    Host[WhereAttrByte(x)].data)
-#define FieldAttributesPointer(p)	(IsStartFieldPointer(p)? (p)->data : \
-				    Host[WhereAttrByte((p)-&Host[0])].data)
-#define TurnOffMdt(x)	(Host[WhereAttrByte(x)].data &= ~ATTR_MDT)
-#define TurnOnMdt(x)	(Host[WhereAttrByte(x)].data |= ATTR_MDT)
-#define HasMdt(x)	(Host[x].data&ATTR_MDT)	/* modified tag */
+#define FieldAttributes(x)	(IsStartField(x)? GetHost(x) : \
+				    GetHost(WhereAttrByte(x)))
+#define FieldAttributesPointer(p)	(IsStartFieldPointer(p)? \
+				    GetHostPointer(p): \
+				    GetHost(WhereAttrByte((p)-&Host[0])))
+#define TurnOffMdt(x)	ModifyHost(WhereAttrByte(x), &= ~ATTR_MDT)
+#define TurnOnMdt(x)	ModifyHost(WhereAttrByte(x), |= ATTR_MDT)
+#define HasMdt(x)	(GetHost(x)&ATTR_MDT)	/* modified tag */
 
 	/*
 	 * Is the screen formatted?  Some algorithms change depending
 	 * on whether there are any attribute bytes lying around.
 	 */
 #define	FormattedScreen() \
-	    ((WhereAttrByte(0) != 0) || ((Host[0].data&ATTR_MASK) == ATTR_MASK))
+	    ((WhereAttrByte(0) != 0) || ((GetHost(0)&ATTR_MASK) == ATTR_MASK))
 
 					    /* field starts here */
-#define IsStartField(x)	((Host[x].data&ATTR_MASK) == ATTR_MASK)
-#define IsStartFieldPointer(p)	(((p)->data&ATTR_MASK) == ATTR_MASK)
+#define IsStartField(x)	((GetHost(x)&ATTR_MASK) == ATTR_MASK)
+#define IsStartFieldPointer(p)	((GetHostPointer(p)&ATTR_MASK) == ATTR_MASK)
 
-#define NewField(p,a)	(Host[p].data = (a)|ATTR_MASK)
-#define DeleteField(p)	(Host[p].data = 0)
+#define NewField(p,a)	SetHost(p, (a)|ATTR_MASK)
+#define DeleteField(p)	SetHost(p, 0)
 #define	DeleteAllFields()
 
 /* The following are independent of the implementation of fields */
@@ -80,9 +81,7 @@
 #define MAX(x,y)	((x)<(y)? (y):(x))
 #define MIN(x,y)	((x)<(y)? x:(y))
 
-typedef struct {
-	unsigned char	data;	/* data at this position */
-} ScreenImage;
+typedef unsigned char ScreenImage;
 
 extern int
 	FieldFind();
@@ -90,5 +89,12 @@ extern int
 extern char
 	CIABuffer[];
 
-#define GetHost(i)	Host[i].data
-#define SetHost(p,c)	(Host[p].data = c)
+#define	GetGeneric(i,h)		(h)[i]
+#define	GetGenericPointer(p)	(*(p))
+#define	SetGeneric(i,c,h)	((h)[i] = (c))
+#define	ModifyGeneric(i,what,h)	{(h)[i] what;}
+
+#define GetHost(i)		GetGeneric(i,Host)
+#define GetHostPointer(p)	GetGenericPointer(p)
+#define	SetHost(i,c)		SetGeneric(i,c,Host)
+#define	ModifyHost(i,what)	ModifyGeneric(i,what,Host)
