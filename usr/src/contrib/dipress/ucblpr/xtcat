@@ -1,0 +1,5 @@
+#!/bin/csh -f
+cat > /tmp/xd$$
+echo "Transmitting to Print Server" > /usr/spool/dpd/status
+(/usr/new/xnsprint -n "$4@$6" -b Interpress -r /tmp/xd$$) >& /usr/spool/dpd/q
+(echo -n "$4@$6" "" ; date ) >> /usr/adm/xacct
