@@ -2,9 +2,10 @@
 
 SUBDIR=	XNSrouted ac accton arp chown chroot config cron dbsym dev_mkdb \
 	diskpart edquota fdformat flcopy ftinfo gettable htable inetd iostat \
-	kgmon kvm_mkdb lpr lptcontrol mrouted mtree named portmap pppstats \
-	pwd_mkdb quotaon repquota rmt routed rwhod sa sendmail sliplogin \
-	spkrtest swapinfo syslogd timed traceroute trpt trsp vipw yp
+	kbdcontrol kgmon kvm_mkdb lpr lptcontrol mrouted mtree named portmap \
+	pppstats pwd_mkdb quotaon repquota rmt routed rwhod sa sendmail \
+	sliplogin spkrtest swapinfo syslogd timed traceroute trpt trsp \
+	vidcontrol vipw yp
 
 .if   make(clean) || make(cleandir)
 SUBDIR+=bad144
