@@ -17,7 +17,7 @@
  */
 
 #if !defined(lint) && !defined(LINT)
-static char rcsid[] = "$Header: $";
+static char rcsid[] = "$Header: /a/cvs/386BSD/src/usr.bin/crontab/crontab.c,v 1.2 1994/01/22 20:41:10 guido Exp $";
 #endif
 
 /* crontab - install and manage per-user crontab files
@@ -405,7 +405,13 @@ edit_cmd() {
 			perror("chdir(/tmp)");
 			exit(ERROR_EXIT);
 		}
-		execlp(editor, editor, Filename, NULL);
+		if (strlen(editor) + strlen(Filename) + 2 >= MAX_TEMPSTR) {
+			fprintf(stderr, "%s: editor or filename too long\n",
+				ProgramName);
+			exit(ERROR_EXIT);
+		}
+		sprintf(q, "%s %s", editor, Filename);
+		execlp(_PATH_BSHELL, _PATH_BSHELL, "-c", q, NULL);
 		perror(editor);
 		exit(ERROR_EXIT);
 		/*NOTREACHED*/

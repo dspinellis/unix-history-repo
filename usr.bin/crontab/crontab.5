@@ -15,11 +15,11 @@
 .\" * Paul Vixie          <paul@vix.com>          uunet!decwrl!vixie!paul
 .\" */
 .\"
-.\" $Header: $
+.\" $Header: /a/cvs/386BSD/src/usr.bin/crontab/crontab.5,v 1.2 1994/01/22 20:41:09 guido Exp $
 .\" 
 .\" From Id: crontab.5,v 2.4 1994/01/15 20:43:43 vixie Exp 
 .\" 
-.TH CRONTAB 5 "7 January 1994"
+.TH CRONTAB 5 "24 January 1994"
 .UC 4
 .SH NAME
 crontab \- tables for driving cron
@@ -79,6 +79,7 @@ usually doesn't read its mail.
 .PP
 The format of a cron command is very much the V7 standard, with a number of
 upward-compatible extensions.  Each line has five time and date fields,
+followed by a user name if this is the system crontab file,
 followed by a command.  Commands are executed by
 .IR cron (8)
 when the minute, hour, and month of year fields match the current time,
@@ -131,7 +132,7 @@ lists of names are not allowed.
 The ``sixth'' field (the rest of the line) specifies the command to be
 run.
 The entire command portion of the line, up to a newline or %
-character, will be executed by the user's login shell or by the shell
+character, will be executed by /bin/sh or by the shell
 specified in the SHELL variable of the cronfile.
 Percent-signs (%) in the command, unless escaped with backslash
 (\\), will be changed into newline characters, and all data
