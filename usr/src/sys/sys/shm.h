@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)shm.h	8.1 (Berkeley) %G%
+ *	@(#)shm.h	8.2 (Berkeley) %G%
  */
 
 /*

@@ -22,7 +22,7 @@
  * from: $Header: /sprite/src/kernel/vm/ds3100.md/vmPmaxAsm.s,
  *	v 1.1 89/07/10 14:27:41 nelson Exp $ SPRITE (DECWRL)
  *
- *	@(#)locore.s	8.1 (Berkeley) %G%
+ *	@(#)locore.s	8.2 (Berkeley) %G%
  */
 
 /*
@@ -730,28 +730,27 @@ ALEAF(savectx)
 END(copykstack)
 
 /*
- * _whichqs tells which of the 32 queues _qs
- * have processes in them.  Setrq puts processes into queues, Remrq
- * removes them from queues.  The running process is on no queue,
- * other processes are on a queue related to p->p_pri, divided by 4
+ * The following primitives manipulate the run queues.  _whichqs tells which
+ * of the 32 queues _qs have processes in them.  Setrunqueue puts processes
+ * into queues, Remrq removes them from queues.  The running process is on
+ * no queue, other processes are on a queue related to p->p_pri, divided by 4
  * actually to shrink the 0-127 range of priorities into the 32 available
  * queues.
  */
-
 /*
- * setrq(p)
+ * setrunqueue(p)
  *	proc *p;
  *
  * Call should be made at splclock(), and p->p_stat should be SRUN.
  */
-NON_LEAF(setrq, STAND_FRAME_SIZE, ra)
+NON_LEAF(setrunqueue, STAND_FRAME_SIZE, ra)
 	subu	sp, sp, STAND_FRAME_SIZE
 	.mask	0x80000000, (STAND_RA_OFFSET - STAND_FRAME_SIZE)
 	lw	t0, P_RLINK(a0)		## firewall: p->p_rlink must be 0
 	sw	ra, STAND_RA_OFFSET(sp)	##
 	beq	t0, zero, 1f		##
 	lbu	t0, P_PRI(a0)		# put on queue which is p->p_pri / 4
-	PANIC("setrq")			##
+	PANIC("setrunqueue")		##
 1:
 	li	t1, 1			# compute corresponding bit
 	srl	t0, t0, 2		# compute index into 'whichqs'
@@ -770,7 +769,7 @@ NON_LEAF(setrq, STAND_FRAME_SIZE, ra)
 	sw	a0, P_RLINK(t0)		# qp->ph_rlink = p
 	j	ra
 	addu	sp, sp, STAND_FRAME_SIZE
-END(setrq)
+END(setrunqueue)
 
 /*
  * Remrq(p)

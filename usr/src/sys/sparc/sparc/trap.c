@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)trap.c	8.2 (Berkeley) %G%
+ *	@(#)trap.c	8.3 (Berkeley) %G%
  *
  * from: $Header: trap.c,v 1.34 93/05/28 04:34:50 torek Exp $
  */
@@ -146,15 +146,15 @@ userret(struct proc *p, int pc, u_quad_t oticks)
 	}
 	if (want_resched) {
 		/*
-		 * Since we are curproc, a clock interrupt could
-		 * change our priority without changing run queues
-		 * (the running process is not kept on a run queue).
-		 * If this happened after we setrq ourselves but
-		 * before we swtch()'ed, we might not be on the queue
+		 * Since we are curproc, clock will normally just change
+		 * our priority without moving us from one queue to another
+		 * (since the running process is not on a queue.)
+		 * If that happened after we put ourselves on the run queue
+		 * but before we swtch()'ed, we might not be on the queue
 		 * indicated by our priority.
 		 */
 		(void) splstatclock();
-		setrq(p);
+		setrunqueue(p);
 		p->p_stats->p_ru.ru_nivcsw++;
 		swtch();
 		(void) spl0();

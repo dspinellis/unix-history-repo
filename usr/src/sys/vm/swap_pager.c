@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: swap_pager.c 1.4 91/04/30$
  *
- *	@(#)swap_pager.c	8.1 (Berkeley) %G%
+ *	@(#)swap_pager.c	8.2 (Berkeley) %G%
  */
 
 /*
@@ -565,7 +565,7 @@ swap_pager_io(swp, m, flags)
 	splx(s);
 	bp->b_flags = B_BUSY | (flags & B_READ);
 	bp->b_proc = &proc0;	/* XXX (but without B_PHYS set this is ok) */
-	bp->b_un.b_addr = (caddr_t)kva;
+	bp->b_data = (caddr_t)kva;
 	bp->b_blkno = swb->swb_block + btodb(off);
 	VHOLD(swapdev_vp);
 	bp->b_vp = swapdev_vp;

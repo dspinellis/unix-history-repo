@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)trap.c	7.12 (Berkeley) %G%
+ *	@(#)trap.c	7.13 (Berkeley) %G%
  */
 
 #include "sys/param.h"
@@ -179,12 +179,12 @@ out:
 		 * Since we are u.u_procp, clock will normally just change
 		 * our priority without moving us from one queue to another
 		 * (since the running process is not on a queue.)
-		 * If that happened after we setrq ourselves but before we
-		 * swtch()'ed, we might not be on the queue indicated by
-		 * our priority.
+		 * If that happened after we put ourselves on the run queue
+		 * but before we swtch()'ed, we might not be on the queue
+		 * indicated by our priority.
 		 */
 		(void) splclock();
-		setrq(p);
+		setrunqueue(p);
 		u.u_ru.ru_nivcsw++;
 		swtch();
 		if (i = CURSIG(p))
@@ -298,12 +298,12 @@ done:
 		 * Since we are u.u_procp, clock will normally just change
 		 * our priority without moving us from one queue to another
 		 * (since the running process is not on a queue.)
-		 * If that happened after we setrq ourselves but before we
-		 * swtch()'ed, we might not be on the queue indicated by
-		 * our priority.
+		 * If that happened after we put ourselves on the run queue
+		 * but before we swtch()'ed, we might not be on the queue
+		 * indicated by our priority.
 		 */
 		(void) splclock();
-		setrq(p);
+		setrunqueue(p);
 		u.u_ru.ru_nivcsw++;
 		swtch();
 		if (i = CURSIG(p))
