@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_prot.c	7.7 (Berkeley) %G%
+ *	@(#)kern_prot.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -52,15 +52,15 @@ getpgrp()
 getuid()
 {
 
-	u.u_r.r_val1 = u.u_ruid;
-	u.u_r.r_val2 = u.u_uid;
+	u.u_r.r_val1 = u.u_procp->p_ruid;
+	u.u_r.r_val2 = u.u_cred->cr_uid;
 }
 
 getgid()
 {
 
-	u.u_r.r_val1 = u.u_rgid;
-	u.u_r.r_val2 = u.u_gid;
+	u.u_r.r_val1 = u.u_procp->p_rgid;
+	u.u_r.r_val2 = u.u_cred->cr_groups[0];
 }
 
 getgroups()
@@ -106,12 +106,15 @@ setsid()
 /*
  * set process group
  *
- * if target pid != caller's pid
- *	pid must be an inferior
- *	pid must be in same session
- *	pid can't have done an exec
- *	there must exist a pid with pgid in same session 
- * pid must not be session leader
+ * caller does setpgrp(pid, pgid)
+ *
+ * pid must be caller or child of caller (ESRCH)
+ * if a child
+ *	pid must be in same session (EPERM)
+ *	pid can't have done an exec (EACCES)
+ * if pgid != pid
+ * 	there must exist some pid in same session having pgid (EPERM)
+ * pid must not be session leader (EPERM)
  */
 setpgrp()
 {
@@ -163,16 +166,15 @@ setreuid()
 		int	ruid;
 		int	euid;
 	} *uap;
+	register struct proc *p = u.u_procp;
 	register int ruid, euid;
 
 	uap = (struct a *)u.u_ap;
 	ruid = uap->ruid;
 	if (ruid == -1)
-		ruid = u.u_ruid;
 		return;
 	euid = uap->euid;
 	if (euid == -1)
-		euid = u.u_uid;
 		return;
 	/*
 	 * Everything's okay, do it.
@@ -183,9 +185,9 @@ setreuid()
 		qstart(getquota((uid_t)ruid, 0, 0));
 	}
 #endif
-	u.u_procp->p_uid = euid;
-	u.u_ruid = ruid;
-	u.u_uid = euid;
+	u.u_cred->cr_uid = euid;
+	p->p_uid = euid;
+	p->p_ruid = ruid;
 }
 
 setregid()
@@ -195,22 +197,22 @@ setregid()
 		int	egid;
 	} *uap;
 	register int rgid, egid;
+	register struct proc *p = u.u_procp;
 
 	uap = (struct a *)u.u_ap;
 	rgid = uap->rgid;
 	if (rgid == -1)
-		rgid = u.u_rgid;
 		return;
 	egid = uap->egid;
 	if (egid == -1)
-		egid = u.u_gid;
 		return;
 	if (u.u_rgid != rgid) {
 		leavegroup(u.u_rgid);
 		(void) entergroup((gid_t)rgid);
 		u.u_rgid = rgid;
 	}
-	u.u_gid = egid;
+	p->p_rgid = rgid;
+	u.u_cred->cr_groups[0] = egid;
 }
 
 setgroups()
@@ -297,40 +299,36 @@ groupmember(gid)
 }
 
 /*
- * Get login name of process owner, if available
+ * Get login name, if available.
  */
-
-getlogname()
+getlogin()
 {
 	struct a {
 		char	*namebuf;
 		u_int	namelen;
 	} *uap = (struct a *)u.u_ap;
 
-	if (uap->namelen > sizeof (u.u_logname))
-		uap->namelen = sizeof (u.u_logname);
-	u.u_error = copyout((caddr_t)u.u_logname, (caddr_t)uap->namebuf,
-		uap->namelen);
+	if (uap->namelen > sizeof (u.u_procp->p_logname))
+		uap->namelen = sizeof (u.u_procp->p_logname);
+	u.u_error = copyout((caddr_t)u.u_procp->p_logname, 
+			     (caddr_t)uap->namebuf, uap->namelen);
 }
 
 /*
- * Set login name of process owner
+ * Set login name.
  */
-
-setlogname()
+setlogin()
 {
 	struct a {
 		char	*namebuf;
-		u_int	namelen;
 	} *uap = (struct a *)u.u_ap;
+	int error;
 
 	if (u.u_error = suser(u.u_cred, &u.u_acflag))
 		return;
-	if (uap->namelen > sizeof (u.u_logname) - 1)
-		u.u_error = EINVAL;
-	else {
-		u.u_logname[uap->namelen] = NULL;
-		u.u_error = copyin((caddr_t)uap->namebuf,
-			(caddr_t)u.u_logname, uap->namelen);
-	}
+	error = copyinstr((caddr_t)uap->namebuf, (caddr_t)u.u_procp->p_logname,
+	    sizeof (u.u_procp->p_logname) - 1, (int *) 0);
+	if (error == ENOENT)		/* name too long */
+		error = EINVAL;
+	u.u_error = error;
 }
