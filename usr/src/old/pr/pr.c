@@ -1,4 +1,5 @@
-static char *sccsid = "@(#)pr.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)pr.c	4.2 (Berkeley) %G%";
+
 /*
  *   print file with headings
  *  2+head+2+page[56]+5
@@ -61,46 +62,54 @@ char **argv;
 		argv++;
 		if (**argv == '-') {
 			switch (*++*argv) {
-			case 'h':
+			case 'h':		/* define page header */
 				if (argc>=2) {
 					header = *++argv;
 					argc--;
 				}
 				continue;
 
-			case 't':
+			case 't':		/* don't print page headers */
 				ntflg++;
 				continue;
 
-			case 'f':
+			case 'f':		/* use form feeds */
 				fflg++;
 				plength = 60;
 				continue;
 
-			case 'l':
+			case 'l':		/* length of page */
 				length = atoi(++*argv);
 				continue;
 
-			case 'w':
+			case 'w':		/* width of page */
 				width = atoi(++*argv);
 				continue;
 
-			case 's':
+			case 's':		/* col separator */
 				if (*++*argv)
 					tabc = **argv;
 				else
 					tabc = '\t';
 				continue;
 
-			case 'm':
+			case 'm':		/* all files at once */
 				mflg++;
 				continue;
 
 			default:
-				ncol = atoi(*argv);
+				if (numeric(*argv)) {	/* # of cols */
+					if ((ncol = atoi(*argv)) == 0) {
+						fprintf(stderr, "can't print 0 cols, using 1 instead.\n");
+						ncol = 1;
+					}
+				} else {
+					fprintf(stderr, "pr: bad key %s\n", *argv);
+					exit(1);
+				}
 				continue;
 			}
-		} else if (**argv == '+') {
+		} else if (**argv == '+') {	/* start at page ++*argv */
 			fpage = atoi(++*argv);
 		} else {
 			print(*argv, argv);
@@ -120,6 +129,18 @@ done()
 	if (tty)
 		chmod(tty, mode);
 	exit(0);
+}
+
+/* numeric -- returns 1 if str is numeric, elsewise 0 */
+numeric(str)
+	char	*str;
+{
+	for (; *str ; str++) {
+		if (*str > '9' || *str < '0') {
+			return(0);
+		}
+	}
+	return(1);
 }
 
 onintr()
@@ -142,6 +163,7 @@ fixtty()
 	chmod(tty, 0600);
 }
 
+/* print -- print file */
 print(fp, argp)
 char *fp;
 char **argp;
