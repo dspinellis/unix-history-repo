@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)server.c	4.13 (Berkeley) 84/01/03";
+static	char *sccsid = "@(#)server.c	4.14 (Berkeley) 84/01/04";
 #endif
 
 #include "defs.h"
@@ -599,7 +599,7 @@ recvf(cmd, isdir)
 		}
 		if (stat(target, &stb) == 0) {
 			if (ISDIR(stb.st_mode)) {
-				if (stb.st_mode & 0777 == mode) {
+				if ((stb.st_mode & 0777) == mode) {
 					ack();
 					return;
 				}
