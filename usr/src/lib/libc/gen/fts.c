@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fts.c	5.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)fts.c	5.29 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -250,14 +250,19 @@ fts_read(sp)
 
 	/*
 	 * Following a symlink -- SLNONE test allows application to see
-	 * SLNONE and recover.
-	 *
-	 * XXX
-	 * Have to open a file descriptor to '.' so we can get back.
+	 * SLNONE and recover.  If indirecting through a symlink, have
+	 * keep a pointer to current location.  If unable to get that
+	 * pointer, follow fails.
 	 */
 	if (instr == FTS_FOLLOW &&
 	    (p->fts_info == FTS_SL || p->fts_info == FTS_SLNONE)) {
 		p->fts_info = fts_stat(sp, p, 1);
+		if (p->fts_info == FTS_D && !ISSET(FTS_NOCHDIR))
+			if ((p->fts_symfd = open(".", O_RDONLY, 0)) < 0) {
+				p->fts_errno = errno;
+				p->fts_info = FTS_ERR;
+			} else
+				p->fts_flags |= FTS_SYMFOLLOW;
 		return (p);
 	}
 
@@ -266,6 +271,8 @@ fts_read(sp)
 		/* If skipped or crossed mount point, do post-order visit. */
 		if (instr == FTS_SKIP ||
 		    ISSET(FTS_XDEV) && p->fts_dev != sp->fts_dev) {
+			if (p->fts_flags & FTS_SYMFOLLOW)
+				(void)close(p->fts_symfd);
 			if (sp->fts_child) {
 				fts_lfree(sp->fts_child);
 				sp->fts_child = NULL;
@@ -288,18 +295,22 @@ fts_read(sp)
 		if (sp->fts_child) {
 			if (CHDIR(sp, p->fts_accpath)) {
 				p->fts_errno = errno;
+				p->fts_flags |= FTS_DONTCHDIR;
 				for (p = sp->fts_child; p; p = p->fts_link)
 					p->fts_accpath =
 					    p->fts_parent->fts_accpath;
 			}
 		} else if ((sp->fts_child = fts_build(sp, BREAD)) == NULL) {
-			if ISSET(FTS_STOP)
+			p->fts_flags |= FTS_DONTCHDIR;
+			if (ISSET(FTS_STOP))
 				return (NULL);
 			if (p->fts_level == FTS_ROOTLEVEL &&
 			    FCHDIR(sp, sp->fts_rfd)) {
+				(void)close(sp->fts_rfd);
 				SET(FTS_STOP);
 				return (NULL);
 			}
+			(void)close(sp->fts_rfd);
 			return (p);
 		}
 		p = sp->fts_child;
@@ -318,15 +329,22 @@ next:	tmp = p;
 			return (sp->fts_cur = p);
 		}
 
-		/* User may have called fts_set on the node. */
+		/*
+		 * User may have called fts_set on the node.  If skipped,
+		 * ignore.  If followed, get a file descriptor so we can
+		 * get back if necessary.
+		 */
 		if (p->fts_instr == FTS_SKIP)
 			goto next;
-		/*
-		 * XXX
-		 * This may not be able to return to the current directory.
-		 */
 		if (p->fts_instr == FTS_FOLLOW) {
 			p->fts_info = fts_stat(sp, p, 1);
+			if (p->fts_info == FTS_D && !ISSET(FTS_NOCHDIR))
+				if ((p->fts_symfd =
+				    open(".", O_RDONLY, 0)) < 0) {
+					p->fts_errno = errno;
+					p->fts_info = FTS_ERR;
+				} else
+					p->fts_flags |= FTS_SYMFOLLOW;
 			p->fts_instr = FTS_NOINSTR;
 		}
 
@@ -353,27 +371,31 @@ name:		t = sp->fts_path + NAPPEND(p->fts_parent);
 	sp->fts_path[p->fts_pathlen] = '\0';
 
 	/*
-	 * If at a root node, have to cd back to the starting point, otherwise
-	 * may not be able to access the original node on post-order.  If not
-	 * a root node, cd up to the parent directory.  Note that errors are
-	 * assumed to be caused by an inability to cd to the directory in the
-	 * first place.
+	 * Change to starting directory.  If at a root node or came through a
+	 * symlink, go back through the file descriptor.  Otherwise, just cd
+	 * up one directory.
 	 */
 	if (p->fts_level == FTS_ROOTLEVEL) {
 		if (FCHDIR(sp, sp->fts_rfd)) {
+			(void)close(sp->fts_rfd);
 			SET(FTS_STOP);
 			return (NULL);
 		}
-		p->fts_info = FTS_DP;
-	} else if (p->fts_errno)
-		p->fts_info = FTS_ERR;
-	else {
+		(void)close(sp->fts_rfd);
+	} else if (p->fts_flags & FTS_SYMFOLLOW) {
+		if (FCHDIR(sp, p->fts_symfd)) {
+			(void)close(p->fts_symfd);
+			SET(FTS_STOP);
+			return (NULL);
+		}
+		(void)close(p->fts_symfd);
+	} else if (!(p->fts_flags & FTS_DONTCHDIR)) {
 		if (CHDIR(sp, "..")) {
 			SET(FTS_STOP);
 			return (NULL);
 		}
-		p->fts_info = FTS_DP;
 	}
+	p->fts_info = p->fts_errno ? FTS_ERR : FTS_DP;
 	return (sp->fts_cur = p);
 }
 
@@ -418,9 +440,12 @@ fts_children(sp)
 	if (p->fts_info == FTS_INIT)
 		return (p->fts_link);
 
-/* XXX why FTS_DNR?? */
-	 /* If not a directory being visited in pre-order, stop here. */
-	if (p->fts_info != FTS_D && p->fts_info != FTS_DNR)
+	/*
+	 * If not a directory being visited in pre-order, stop here.  Could
+	 * allow FTS_DNR, assuming the user has fixed the problem, but the
+	 * same effect is available with FTS_AGAIN.
+	 */
+	if (p->fts_info != FTS_D /* && p->fts_info != FTS_DNR */)
 		return (NULL);
 
 	/* Free up any previous child list. */
@@ -467,7 +492,7 @@ fts_build(sp, type)
 	register struct dirent *dp;
 	register FTSENT *p, *head;
 	register int nitems;
-	FTSENT *cur;
+	FTSENT *cur, *tail;
 	DIR *dirp;
 	void *adjaddr;
 	int cderrno, descend, len, level, maxlen, nlinks, saved_errno;
@@ -493,10 +518,14 @@ fts_build(sp, type)
 	 * directory if we're cheating on stat calls, 0 if we're not doing
 	 * any stat calls at all, -1 if we're doing stats on everything.
 	 */
-	nlinks =
-	    ISSET(FTS_NOSTAT) && ISSET(FTS_PHYSICAL) ?
+	nlinks = ISSET(FTS_NOSTAT) && ISSET(FTS_PHYSICAL) ?
 	    cur->fts_nlink - (ISSET(FTS_SEEDOT) ? 0 : 2) : -1;
 
+#ifdef notdef
+	(void)printf("nlinks == %d (cur: %d)\n", nlinks, cur->fts_nlink);
+	(void)printf("NOSTAT %d PHYSICAL %d SEEDOT %d\n",
+	    ISSET(FTS_NOSTAT), ISSET(FTS_PHYSICAL), ISSET(FTS_SEEDOT));
+#endif
 	/*
 	 * If we're going to need to stat anything or we want to descend
 	 * and stay in the directory, chdir.  If this fails we keep going.
@@ -505,15 +534,17 @@ fts_build(sp, type)
 	 * chdir into the directory, it will have to return different path
 	 * names than before, i.e. "a/b" instead of "b".  Since the node
 	 * has already been visited in pre-order, have to wait until the
-	 * post-order visit to return the error.  This is all fairly nasty.
-	 * If a program needed sorted entries or stat information, they had
-	 * better be checking FTS_NS on the returned nodes.
+	 * post-order visit to return the error.  There is a special case
+	 * here, if there was nothing to stat then it's not an error to
+	 * not be able to stat.  This is all fairly nasty.  If a program
+	 * needed sorted entries or stat information, they had better be
+	 * checking FTS_NS on the returned nodes.
 	 */
 	if (nlinks || type == BREAD)
 		if (FCHDIR(sp, dirfd(dirp))) {
-			if (type == BREAD)
+			if (nlinks && type == BREAD)
 				cur->fts_errno = errno;
-			descend = nlinks = 0;
+			descend = 0;
 			cderrno = errno;
 		} else {
 			descend = 1;
@@ -543,7 +574,7 @@ fts_build(sp, type)
 
 	/* Read the directory, attaching each entry to the `link' pointer. */
 	adjaddr = NULL;
-	for (head = NULL, nitems = 0; dp = readdir(dirp);) {
+	for (head = tail = NULL, nitems = 0; dp = readdir(dirp);) {
 		if (!ISSET(FTS_SEEDOT) && ISDOT(dp->d_name))
 			continue;
 
@@ -574,7 +605,14 @@ mem1:				saved_errno = errno;
 		p->fts_parent = sp->fts_cur;
 		p->fts_level = level;
 
-		if (nlinks) {
+		if (cderrno) {
+			if (nlinks) {
+				p->fts_info = FTS_NS;
+				p->fts_errno = cderrno;
+			} else
+				p->fts_info = FTS_NSOK;
+			p->fts_accpath = cur->fts_accpath;
+		} else if (nlinks) {
 			/* Build a file name for fts_stat to stat. */
 			if (ISSET(FTS_NOCHDIR)) {
 				p->fts_accpath = p->fts_path;
@@ -585,22 +623,20 @@ mem1:				saved_errno = errno;
 			if (nlinks > 0 && (p->fts_info == FTS_D ||
 			    p->fts_info == FTS_DC || p->fts_info == FTS_DOT))
 				--nlinks;
-		} else if (cderrno) {
-			if (ISSET(FTS_NOSTAT))
-				p->fts_info = FTS_NSOK;
-		        else {
-				p->fts_info = FTS_NS;
-				p->fts_errno = cderrno;
-			}
-			p->fts_accpath = cur->fts_accpath;
 		} else {
 			p->fts_accpath =
 			    ISSET(FTS_NOCHDIR) ? p->fts_path : p->fts_name;
 			p->fts_info = FTS_NSOK;
 		}
 
-		p->fts_link = head;
-		head = p;
+		/* We walk in directory order so "ls -f" doesn't get upset. */
+		p->fts_link = NULL;
+		if (head == NULL)
+			head = tail = p;
+		else {
+			tail->fts_link = p;
+			tail = p;
+		}
 		++nitems;
 	}
 	(void)closedir(dirp);
@@ -683,8 +719,6 @@ err:		bzero(sbp, sizeof(struct stat));
 	}
 
 	if (S_ISDIR(sbp->st_mode)) {
-		if (ISDOT(p->fts_name))
-			return (FTS_DOT);
 		/*
 		 * Set the device/inode.  Used to find cycles and check for
 		 * crossing mount points.  Also remember the link count, used
@@ -695,6 +729,9 @@ err:		bzero(sbp, sizeof(struct stat));
 		dev = p->fts_dev = sbp->st_dev;
 		ino = p->fts_ino = sbp->st_ino;
 		p->fts_nlink = sbp->st_nlink;
+
+		if (ISDOT(p->fts_name))
+			return (FTS_DOT);
 
 		/*
 		 * Cycle detection is done by brute force when the directory
@@ -771,8 +808,9 @@ fts_alloc(sp, name, len)
 		p->fts_statp = (struct stat *)(p->fts_name + len + 1);
 	p->fts_namelen = len;
 	p->fts_path = sp->fts_path;
-	p->fts_instr = FTS_NOINSTR;
 	p->fts_errno = 0;
+	p->fts_flags = 0;
+	p->fts_instr = FTS_NOINSTR;
 	p->fts_number = 0;
 #ifdef NOT_NECESSARY
 	p->fts_pointer = NULL;
