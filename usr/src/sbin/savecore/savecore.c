@@ -1,8 +1,10 @@
-static	char *sccsid = "@(#)savecore.c	4.9 (Berkeley) 82/10/24";
+#ifndef lint
+static	char *sccsid = "@(#)savecore.c	4.10 (Berkeley) 83/02/21";
+#endif
+
 /*
  * savecore
  */
-
 #include <stdio.h>
 #include <nlist.h>
 #include <sys/param.h>
@@ -14,7 +16,11 @@ static	char *sccsid = "@(#)savecore.c	4.9 (Berkeley) 82/10/24";
 #define	LEEWAY	(3*DAY)
 
 #define eq(a,b) (!strcmp(a,b))
+#ifdef vax
 #define ok(number) ((number)&0x7fffffff)
+#else
+#define ok(number) (number)
+#endif
 
 #define SHUTDOWNLOG "/usr/adm/shutdownlog"
 
@@ -25,48 +31,16 @@ struct nlist nl[] = {
 	{ "_dumplo" },
 #define X_TIME		2
 	{ "_time" },
-#define X_PHYSMEM	3
-	{ "_physmem" },
+#define	X_DUMPSIZE	3
+	{ "_dumpsize" },
 #define X_VERSION	4
 	{ "_version" },
 #define X_PANICSTR	5
 	{ "_panicstr" },
-#define X_DOADUMP	6
-	{ "_doadump" },
-#define X_DOADUMP	6
-	{ "_doadump" },
-	{ 0 },
+#define	X_DUMPMAG	6
+	{ "_dumpmag" },
+	{ "" },
 };
-
-/*
- *	this magic number is found in the kernel at label "doadump"
- *
- *	It is derived as follows:
- *
- *		doadump:	nop			01
- *				nop			01
- *				bicl2 $...		ca
- *							8f
- *
- *	Thus, it is likely to be moderately stable, even across
- *	operating system releases.
- */
-#define DUMPMAG 0x8fca0101
-
-/*
- *	this magic number is found in the kernel at label "doadump"
- *
- *	It is derived as follows:
- *
- *		doadump:	nop			01
- *				nop			01
- *				bicl2 $...		ca
- *							8f
- *
- *	Thus, it is likely to be moderately stable, even across
- *	operating system releases.
- */
-#define DUMPMAG 0x8fca0101
 
 char	*system;
 char	*dirname;			/* directory to save dumps in */
@@ -75,7 +49,8 @@ char	*find_dev();
 dev_t	dumpdev;			/* dump device */
 time_t	dumptime;			/* time the dump was taken */
 int	dumplo;				/* where dump starts on dumpdev */
-int	physmem;			/* amount of memory in machine */
+int	dumpsize;			/* amount of memory dumped */
+int	dumpmag;			/* magic number in dump */
 time_t	now;				/* current date */
 char	*path();
 unsigned malloc();
@@ -113,10 +88,10 @@ dump_exists()
 	int word;
 
 	dumpfd = Open(ddname, 0);
-	Lseek(dumpfd, (off_t)(dumplo + ok(nl[X_DOADUMP].n_value)), 0);
+	Lseek(dumpfd, (off_t)(dumplo + ok(nl[X_DUMPMAG].n_value)), 0);
 	Read(dumpfd, (char *)&word, sizeof word);
 	close(dumpfd);
-	return (word == DUMPMAG);
+	return (word == dumpmag);
 }
 
 clear_dump()
@@ -125,7 +100,7 @@ clear_dump()
 	int zero = 0;
 
 	dumpfd = Open(ddname, 1);
-	Lseek(dumpfd, (off_t)(dumplo + ok(nl[X_DOADUMP].n_value)), 0);
+	Lseek(dumpfd, (off_t)(dumplo + ok(nl[X_DUMPMAG].n_value)), 0);
 	Write(dumpfd, (char *)&zero, sizeof zero);
 	close(dumpfd);
 }
@@ -151,7 +126,8 @@ find_dev(dev, type)
 			return dp;
 		}
 	}
-	fprintf(stderr, "Can't find device %d,%d\n", major(dev), minor(dev));
+	fprintf(stderr, "savecore: Can't find device %d,%d\n",
+		major(dev), minor(dev));
 	exit(1);
 	/*NOTREACHED*/
 }
@@ -164,48 +140,46 @@ read_kmem()
 
 	nlist("/vmunix", nl);
 	if (nl[X_DUMPDEV].n_value == 0) {
-		fprintf(stderr, "/vmunix: dumpdev not in namelist\n");
+		fprintf(stderr, "savecore: /vmunix: dumpdev not in namelist\n");
 		exit(1);
 	}
 	if (nl[X_DUMPLO].n_value == 0) {
-		fprintf(stderr, "/vmunix: dumplo not in namelist\n");
+		fprintf(stderr, "savecore: /vmunix: dumplo not in namelist\n");
 		exit(1);
 	}
 	if (nl[X_TIME].n_value == 0) {
-		fprintf(stderr, "/vmunix: time not in namelist\n");
+		fprintf(stderr, "savecore: /vmunix: time not in namelist\n");
 		exit(1);
 	}
-	if (nl[X_PHYSMEM].n_value == 0) {
-		fprintf(stderr, "/vmunix: physmem not in namelist\n");
+	if (nl[X_DUMPSIZE].n_value == 0) {
+		fprintf(stderr, "savecore: /vmunix: dumpsize not in namelist\n");
 		exit(1);
 	}
 	if (nl[X_VERSION].n_value == 0) {
-		fprintf(stderr, "/vmunix: version not in namelist\n");
+		fprintf(stderr, "savecore: /vmunix: version not in namelist\n");
 		exit(1);
 	}
 	if (nl[X_PANICSTR].n_value == 0) {
-		fprintf(stderr, "/vmunix: panicstr not in namelist\n");
+		fprintf(stderr, "savecore: /vmunix: panicstr not in namelist\n");
 		exit(1);
 	}
-	if (nl[X_DOADUMP].n_value == 0) {
-		fprintf(stderr, "/vmunix: doadump not in namelist\n");
-		exit(1);
-	}
-	if (nl[X_DOADUMP].n_value == 0) {
-		fprintf(stderr, "/vmunix: doadump not in namelist\n");
+	if (nl[X_DUMPMAG].n_value == 0) {
+		fprintf(stderr, "savecore: /vmunix: dumpmag not in namelist\n");
 		exit(1);
 	}
 	kmem = Open("/dev/kmem", 0);
 	Lseek(kmem, (long)nl[X_DUMPDEV].n_value, 0);
-	Read(kmem, (char *)&dumpdev, sizeof dumpdev);
+	Read(kmem, (char *)&dumpdev, sizeof (dumpdev));
 	Lseek(kmem, (long)nl[X_DUMPLO].n_value, 0);
-	Read(kmem, (char *)&dumplo, sizeof dumplo);
-	Lseek(kmem, (long)nl[X_PHYSMEM].n_value, 0);
-	Read(kmem, (char *)&physmem, sizeof physmem);
+	Read(kmem, (char *)&dumplo, sizeof (dumplo));
+	Lseek(kmem, (long)nl[X_DUMPSIZE].n_value, 0);
+	Read(kmem, (char *)&dumpsize, sizeof (dumpsize));
+	Lseek(kmem, (long)nl[X_DUMPMAG].n_value, 0);
+	Read(kmem, (char *)&dumpmag, sizeof (dumpmag));
 	dumplo *= 512L;
 	ddname = find_dev(dumpdev, S_IFBLK);
 	if ((fp = fdopen(kmem, "r")) == NULL) {
-		fprintf(stderr, "Couldn't fdopen kmem\n");
+		fprintf(stderr, "savecore: Couldn't fdopen kmem\n");
 		exit(1);
 	}
 	if (system)
@@ -227,8 +201,9 @@ check_kmem() {
 	fgets(core_vers, sizeof core_vers, fp);
 	fclose(fp);
 	if (!eq(vers, core_vers))
-		fprintf(stderr, "Warning: vmunix version mismatch:\n\t%sand\n\t%s",
-		    vers,core_vers);
+		fprintf(stderr,
+		   "savecore: Warning: vmunix version mismatch:\n\t%sand\n\t%s",
+		   vers, core_vers);
 	fp = fopen(ddname, "r");
 	fseek(fp, (off_t)(dumplo + ok(nl[X_PANICSTR].n_value)), 0);
 	fread((char *)&panicstr, sizeof panicstr, 1, fp);
@@ -252,18 +227,14 @@ get_crashtime()
 	Lseek(dumpfd, (off_t)(dumplo + ok(nl[X_TIME].n_value)), 0);
 	Read(dumpfd, (char *)&dumptime, sizeof dumptime);
 	close(dumpfd);
-	if (dumptime == 0) {
-#ifdef DEBUG
-		printf("dump time is 0\n");
-#endif
-		return 0;
-	}
+	if (dumptime == 0)
+		return (0);
 	printf("System went down at %s", ctime(&dumptime));
 	if (dumptime < now - LEEWAY || dumptime > now + LEEWAY) {
 		printf("Dump time is unreasonable\n");
-		return 0;
+		return (0);
 	}
-	return 1;
+	return (1);
 }
 
 char *
@@ -275,7 +246,7 @@ path(file)
 	(void) strcpy(cp, dirname);
 	(void) strcat(cp, "/");
 	(void) strcat(cp, file);
-	return cp;
+	return (cp);
 }
 
 check_space()
@@ -296,7 +267,8 @@ check_space()
 	close(dfd);
 	freespace = fs.fs_cstotal.cs_nbfree * fs.fs_bsize / 1024;
 	if (read_number("minfree") > freespace) {
-		fprintf(stderr, "Dump omitted, not enough space on device\n");
+		fprintf(stderr,
+		   "savecore: Dump omitted, not enough space on device\n");
 		return (0);
 	}
 	if (fs.fs_cstotal.cs_nbfree * fs.fs_frag + fs.fs_cstotal.cs_nffree <
@@ -313,13 +285,13 @@ read_number(fn)
 	register FILE *fp;
 
 	if ((fp = fopen(path(fn), "r")) == NULL)
-		return 0;
+		return (0);
 	if (fgets(lin, 80, fp) == NULL) {
 		fclose(fp);
-		return 0;
+		return (0);
 	}
 	fclose(fp);
-	return atoi(lin);
+	return (atoi(lin));
 }
 
 save_core()
@@ -340,11 +312,12 @@ save_core()
 	sprintf(cp, "vmcore.%d", bounds);
 	ofd = Create(path(cp), 0644);
 	Lseek(ifd, (off_t)dumplo, 0);
-	printf("Saving %d bytes of image in vmcore.%d\n", NBPG*physmem, bounds);
-	while(physmem > 0) {
-		n = Read(ifd, cp, (physmem > 32 ? 32 : physmem) * NBPG);
+	printf("Saving %d bytes of image in vmcore.%d\n", NBPG*dumpsize,
+		bounds);
+	while (dumpsize > 0) {
+		n = Read(ifd, cp, (dumpsize > 32 ? 32 : dumpsize) * NBPG);
 		Write(ofd, cp, n);
-		physmem -= n/NBPG;
+		dumpsize -= n/NBPG;
 	}
 	close(ifd);
 	close(ofd);
@@ -450,7 +423,3 @@ Write(fd, buf, size)
 		exit(1);
 	}
 }
-
-
-
-
