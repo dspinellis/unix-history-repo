@@ -1,4 +1,4 @@
-/*	machdep.c	4.32	81/04/17	*/
+/*	machdep.c	4.33	81/04/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -363,7 +363,7 @@ dorti()
 	sp += 4;
 	u.u_ar0[PS] = fuword((caddr_t)sp);
 	sp += 4;
-	u.u_ar0[PS] |= PSL_CURMOD|PSL_PRVMOD;
+	u.u_ar0[PS] |= PSL_USERSET;
 	u.u_ar0[PS] &= ~PSL_USERCLR;
 	u.u_ar0[SP] = (int)sp;
 }
@@ -634,7 +634,7 @@ machinecheck(cmcf)
 	case VAX_750:
 #endif
 #if defined(VAX780) || defined(VAX750)
-		printf("%s%s\n", type, mc780[type&0xf],
+		printf("%s%s\n", mc780[type&0xf],
 		    (type&0xf0) ? " abort" : " fault"); 
 		break;
 #endif
