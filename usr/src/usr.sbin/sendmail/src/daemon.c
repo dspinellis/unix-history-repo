@@ -3,7 +3,7 @@
 # include <sys/mx.h>
 
 #ifndef DAEMON
-SCCSID(@(#)daemon.c	3.47		%G%	(w/o daemon mode));
+SCCSID(@(#)daemon.c	3.48		%G%	(w/o daemon mode));
 #else
 
 #include <sys/socket.h>
@@ -11,7 +11,7 @@ SCCSID(@(#)daemon.c	3.47		%G%	(w/o daemon mode));
 #include <netdb.h>
 #include <wait.h>
 
-SCCSID(@(#)daemon.c	3.47		%G%	(with daemon mode));
+SCCSID(@(#)daemon.c	3.48		%G%	(with daemon mode));
 
 /*
 **  DAEMON.C -- routines to use when running as a daemon.
@@ -284,6 +284,56 @@ makeconnection(host, port, outfile, infile)
 	*infile = fdopen(s, "r");
 
 	return (EX_OK);
+}
+/*
+**  MYHOSTNAME -- return the name of this host.
+**
+**	Parameters:
+**		hostbuf -- a place to return the name of this host.
+**
+**	Returns:
+**		A list of aliases for this host.
+**
+**	Side Effects:
+**		none.
+*/
+
+char **
+myhostname(hostbuf)
+	char hostbuf[];
+{
+	extern struct hostent *gethostbyname();
+	struct hostent *hent;
+
+	gethostname(hostbuf, sizeof hostbuf);
+	hent = gethostbyname(hostbuf);
+	if (hent != NULL)
+		return (hent->h_aliases);
+	else
+		return (NULL);
+}
+
+# else DAEMON
+
+/*
+**  MYHOSTNAME -- stub version for case of no daemon code.
+*/
+
+char **
+myhostname(hostbuf)
+	char hostbuf[];
+{
+	register FILE *f;
+
+	hostbuf[0] = '\0';
+	f = fopen("/usr/include/whoami", "r");
+	if (f != NULL)
+	{
+		(void) fgets(hostbuf, sizeof hostbuf, f);
+		fixcrlf(hostbuf, TRUE);
+		(void) fclose(f);
+	}
+	return (NULL);
 }
 
 #endif DAEMON

@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)readcf.c	3.55		%G%);
+SCCSID(@(#)readcf.c	3.56		%G%);
 
 /*
 **  READCF -- read control file.
@@ -652,9 +652,14 @@ setoption(opt, val, safe, sticky)
 			SendMode = SM_DELIVER;
 			break;
 
+		  case SM_QUEUE:	/* queue only */
+#ifndef QUEUE
+			syserr("need QUEUE to set -odqueue");
+#endif QUEUE
+			/* fall through..... */
+
 		  case SM_DELIVER:	/* do everything */
 		  case SM_FORK:		/* fork after verification */
-		  case SM_QUEUE:	/* queue only */
 			SendMode = *val;
 			break;
 
@@ -672,9 +677,6 @@ setoption(opt, val, safe, sticky)
 		switch (*val)
 		{
 		  case EM_QUIET:	/* be silent about it */
-			(void) freopen("/dev/null", "w", stdout);
-			/* fall through... */
-
 		  case EM_MAIL:		/* mail back */
 		  case EM_BERKNET:	/* do berknet error processing */
 		  case EM_WRITE:	/* write back (or mail) */

@@ -32,7 +32,7 @@
 
 
 
-SCCSID(@(#)conf.c	3.68		%G%);
+SCCSID(@(#)conf.c	3.69		%G%);
 /*
 **  Header info table
 **	Final (null) entry contains the flags used for any other field.
@@ -439,49 +439,4 @@ holdsigs()
 
 rlsesigs()
 {
-}
-/*
-**  MYHOSTNAME -- return the name of this host.
-**
-**	Parameters:
-**		hostbuf -- a place to return the name of this host.
-**
-**	Returns:
-**		A list of aliases for this host.
-**
-**	Side Effects:
-**		none.
-*/
-
-#ifdef VMUNIX
-#include <netdb.h>
-#endif VMUNIX
-
-char **
-myhostname(hostbuf)
-	char hostbuf[];
-{
-#ifdef VMUNIX
-	extern struct hostent *gethostbyname();
-	struct hostent *hent;
-
-	gethostname(hostbuf, sizeof hostbuf);
-	hent = gethostbyname(hostbuf);
-	if (hent != NULL)
-		return (hent->h_aliases);
-	else
-		return (NULL);
-# else VMUNIX
-	register FILE *f;
-
-	hostbuf[0] = '\0';
-	f = fopen("/usr/include/whoami", "r");
-	if (f != NULL)
-	{
-		(void) fgets(hostbuf, sizeof hostbuf, f);
-		fixcrlf(hostbuf, TRUE);
-		(void) fclose(f);
-	}
-	return (NULL);
-#endif VMUNIX
 }
