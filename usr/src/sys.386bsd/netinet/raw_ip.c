@@ -31,6 +31,14 @@
  * SUCH DAMAGE.
  *
  *	@(#)raw_ip.c	7.8 (Berkeley) 7/25/90
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00020
+ * --------------------         -----   ----------------------
+ *
+ * 03 Nov 92	Julian Elischer		Fixed memory leak that caused ping
+ *					and traceroute to cause panic
  */
 
 #include "param.h"
@@ -189,10 +197,10 @@ rip_ctloutput(op, so, level, optname, m)
 }
 
 /*ARGSUSED*/
-rip_usrreq(so, req, m, nam, rights, control)
+rip_usrreq(so, req, m, nam, control)
 	register struct socket *so;
 	int req;
-	struct mbuf *m, *nam, *rights, *control;
+	struct mbuf *m, *nam, *control;
 {
 	register int error = 0;
 	register struct raw_inpcb *rp = sotorawinpcb(so);
