@@ -2,24 +2,31 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ts.4	4.1 (Berkeley) %G%
+.\"	@(#)ts.4	5.1 (Berkeley) %G%
 .\"
-.TH TS 4 5/10/81
+.TH TS 4 "27 July 1983"
 .UC 4
 .SH NAME
 ts \- TS-11 magtape interface
 .SH SYNOPSIS
-controller zs0 at uba? csr 0172520 vector tsintr
+.B "controller zs0 at uba? csr 0172520 vector tsintr"
 .br
-tape ts0 at zs0 drive 0
+.B "tape ts0 at zs0 drive 0"
 .SH DESCRIPTION
 The ts-11 combination provides a standard tape drive
 interface as described in
-.IR mt (4).
+.IR mtio (4).
 The ts-11 operates only at 1600 bpi, and only one transport
 is possible per controller.
 .SH "SEE ALSO"
-mt(1), tar(1), tp(1), ht(4), mt(4), tm(4), ut(4)
+mt(1),
+tar(1),
+tp(1),
+mtio(4),
+ht(4),
+tm(4),
+mt(4),
+ut(4)
 .SH DIAGNOSTICS
 \fBts%d: no write ring\fR.  An attempt was made to write on the tape drive
 when no write ring was present; this message is written on the terminal of
@@ -41,7 +48,4 @@ The device lives at the same address as a tm-11
 as it is very difficult to get this device to interrupt, a generic
 system assumes that a ts is present whenever no tm-11 exists but
 the csr responds and a ts-11 is configured.
-This does no harm as long as a non-existant ts-11 is not accessed.
-.PP
-The system should remember which controlling terminal has the tape drive
-open and write error messages to that terminal rather than on the console.
+This does no harm as long as a non-existent ts-11 is not accessed.
