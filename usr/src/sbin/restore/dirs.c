@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dirs.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)dirs.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "restore.h"
@@ -117,9 +117,9 @@ extractdirs(genmode)
 		ip = curfile.dip;
 		if (ip == NULL || (ip->di_mode & IFMT) != IFDIR) {
 			(void) fclose(df);
-			dirp = opendir(dirfile);
+			dirp = opendirfile(dirfile);
 			if (dirp == NULL)
-				perror("opendir");
+				perror("opendirfile");
 			if (mf != NULL)
 				(void) fclose(mf);
 			i = dirlookup(".");
@@ -160,6 +160,7 @@ treescan(pname, ino, todo)
 	register struct entry *np;
 	int namelen;
 	daddr_t bpt;
+	off_t rst_telldir();
 	char locname[MAXPATHLEN + 1];
 
 	itp = inotablookup(ino);
@@ -194,7 +195,7 @@ treescan(pname, ino, todo)
 	else
 		fprintf(stderr, "Warning: `..' missing from directory %s\n",
 			pname);
-	bpt = telldir(dirp);
+	bpt = rst_telldir(dirp);
 	/*
 	 * a zero inode signals end of directory
 	 */
@@ -209,7 +210,7 @@ treescan(pname, ino, todo)
 			rst_seekdir(dirp, bpt, itp->t_seekpt);
 		}
 		dp = rst_readdir(dirp);
-		bpt = telldir(dirp);
+		bpt = rst_telldir(dirp);
 	}
 	if (dp == NULL)
 		fprintf(stderr, "corrupted directory: %s.\n", locname);
@@ -366,7 +367,7 @@ dcvt(odp, ndp)
 
 /*
  * Seek to an entry in a directory.
- * Only values returned by ``telldir'' should be passed to rst_seekdir.
+ * Only values returned by rst_telldir should be passed to rst_seekdir.
  * This routine handles many directories in a single file.
  * It takes the base of the directory in the file, plus
  * the desired seek offset into it.
@@ -376,8 +377,9 @@ rst_seekdir(dirp, loc, base)
 	register DIR *dirp;
 	daddr_t loc, base;
 {
+	off_t rst_telldir();
 
-	if (loc == telldir(dirp))
+	if (loc == rst_telldir(dirp))
 		return;
 	loc -= base;
 	if (loc < 0)
@@ -445,6 +447,39 @@ rst_opendir(name)
 		return (dirp);
 	}
 	return (0);
+}
+
+/*
+ * Simulate finding the current offset in the directory.
+ */
+off_t
+rst_telldir(dirp)
+	DIR *dirp;
+{
+	off_t lseek();
+
+	return (lseek(dirp->dd_fd, 0L, 1) - dirp->dd_size + dirp->dd_loc);
+}
+
+/*
+ * Open a directory file.
+ */
+DIR *
+opendirfile(name)
+	char *name;
+{
+	register DIR *dirp;
+	register int fd;
+
+	if ((fd = open(name, 0)) == -1)
+		return NULL;
+	if ((dirp = (DIR *)malloc(sizeof(DIR))) == NULL) {
+		close (fd);
+		return NULL;
+	}
+	dirp->dd_fd = fd;
+	dirp->dd_loc = 0;
+	return dirp;
 }
 
 /*
