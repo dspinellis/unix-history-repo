@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tcp_output.c	7.27 (Berkeley) %G%
+ *	@(#)tcp_output.c	7.28 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -225,24 +225,28 @@ send:
 	 */
 	optlen = 0;
 	hdrlen = sizeof (struct tcpiphdr);
-	if (flags & TH_SYN && (tp->t_flags & TF_NOOPT) == 0) {
-		u_short mss;
+	if (flags & TH_SYN) {
+		tp->snd_nxt = tp->iss;
+		if ((tp->t_flags & TF_NOOPT) == 0) {
+			u_short mss;
 
- 		opt[0] = TCPOPT_MAXSEG;
- 		opt[1] = 4;
-		mss = htons((u_short) tcp_mss(tp, 0));
-		bcopy((caddr_t)&mss, (caddr_t)(opt + 2), sizeof(mss));
- 		optlen = 4;
- 
- 		if ((tp->t_flags & TF_REQ_SCALE) &&
- 		    ((flags & TH_ACK) == 0 || (tp->t_flags & TF_RCVD_SCALE))) {
- 			*((u_long *) (opt + optlen)) = htonl(
- 				TCPOPT_NOP<<24 |
- 				TCPOPT_WINDOW<<16 |
- 				TCPOLEN_WINDOW<<8 |
- 				tp->request_r_scale);
- 			optlen += 4;
- 		}
+			opt[0] = TCPOPT_MAXSEG;
+			opt[1] = 4;
+			mss = htons((u_short) tcp_mss(tp, 0));
+			bcopy((caddr_t)&mss, (caddr_t)(opt + 2), sizeof(mss));
+			optlen = 4;
+	 
+			if ((tp->t_flags & TF_REQ_SCALE) &&
+			    ((flags & TH_ACK) == 0 ||
+			    (tp->t_flags & TF_RCVD_SCALE))) {
+				*((u_long *) (opt + optlen)) = htonl(
+					TCPOPT_NOP << 24 |
+					TCPOPT_WINDOW << 16 |
+					TCPOLEN_WINDOW << 8 |
+					tp->request_r_scale);
+				optlen += 4;
+			}
+		}
  	}
  
  	/*
