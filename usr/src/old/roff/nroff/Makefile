@@ -1,5 +1,5 @@
 #
-#	@(#)Makefile	4.2 %G%
+#	@(#)Makefile	4.3 %G%
 #
 DESTDIR =
 SRCS = \
@@ -69,3 +69,5 @@ install: all
 clean:
 	rm -f *.o nroff
 	cd term; make ${MFLAGS} clean
+
+depend:

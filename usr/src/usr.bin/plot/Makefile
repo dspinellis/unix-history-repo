@@ -1,4 +1,4 @@
-#	Makefile	4.8	86/08/29
+#	Makefile	4.9	87/05/31
 #
 CFLAGS=	-O
 ALL=	tek t4013 t300 t300s t450 aedplot bgplot crtplot dumbplot gigiplot \
@@ -64,3 +64,5 @@ install: all
 
 clean:
 	rm -f *.o ${ALL} a.out core errs
+
+depend:

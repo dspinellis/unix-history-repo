@@ -1,4 +1,4 @@
-#	Makefile	4.1	83/02/10
+#	Makefile	4.2	87/05/31
 
 CFLAGS=-O
 
@@ -10,4 +10,6 @@ install: diff3
 	install -c diff3.sh $(DESTDIR)/usr/bin/diff3
 
 clean:
-	rm -f diff3.o diff3	
+	rm -f diff3.o diff3
+
+depend:

@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 #
 # make file for intermachine communications package
 #
@@ -59,6 +59,8 @@ ${OBJS}: tip.h
 
 remcap.o: remcap.c
 	${CC} -c -DBUFSIZ=1024 ${CFLAGS} remcap.c
+
+depend:
 
 # acutab is configuration dependent, and so depends on the makefile
 acutab.o: Makefile

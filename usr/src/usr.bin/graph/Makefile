@@ -1,4 +1,4 @@
-#	Makefile	4.1	83/03/30
+#	Makefile	4.2	87/05/31
 #
 CFLAGS=-O
 DESTDIR=
@@ -11,3 +11,5 @@ install: graph
 
 clean:
 	rm -f *.o graph
+
+depend:

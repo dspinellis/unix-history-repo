@@ -1,5 +1,5 @@
 #
-#	@(#)Makefile	4.2	(Berkeley)	83/02/11
+#	@(#)Makefile	4.3	(Berkeley)	87/05/31
 #
 DESTDIR=
 CFLAGS=-O -DWORD32
@@ -21,3 +21,5 @@ clean :
 srcs: $(SRCS)
 $(SRCS):
 	sccs get $@
+
+depend:

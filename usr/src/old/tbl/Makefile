@@ -1,4 +1,4 @@
-#	Makefile	4.1	83/02/12
+#	Makefile	4.2	87/05/31
 
 CFLAGS=-O
 o = t0.o t1.o t2.o t3.o t4.o t5.o t6.o t7.o t8.o t9.o\
@@ -69,3 +69,5 @@ ichk: /usr/bin/tbl
 	cmp -s junk1 out1
 comp: tbl
 	cmp -s tbl /usr/bin/tbl
+
+depend:

@@ -1,4 +1,4 @@
-#	Makefile	4.2	83/06/30
+#	Makefile	4.3	87/05/31
 #
 CFLAGS=	-O
 DESTDIR=
@@ -25,3 +25,5 @@ install: enroll xsend xget
 
 clean:
 	rm -f *.o yacc.* y.tab.c ${ALL}
+
+depend:

@@ -1,4 +1,4 @@
-#	Makefile	4.3	83/08/13
+#	Makefile	4.4	87/05/31
 #
 DESTDIR=
 CFLAGS=-O
@@ -56,3 +56,5 @@ y.tab.h: beauty.y
 lextab.o tree.o beauty.y: b.h
 
 y.tab.h:	beauty.c
+
+depend:

@@ -1,4 +1,4 @@
-#	Makefile	4.1	83/08/13
+#	Makefile	4.2	87/05/31
 #
 DESTDIR=
 CFLAGS=	-O
@@ -12,3 +12,5 @@ install:
 
 clean:
 	rm -f calendar
+
+depend:
