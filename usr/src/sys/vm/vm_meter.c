@@ -1,4 +1,4 @@
-/*	vm_meter.c	3.1	%H%	*/
+/*	vm_meter.c	3.2	%H%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -81,7 +81,7 @@ sched()
 	 * amount of free memory.
 	 */
 loop:
-	VOID spl6();
+	(void) spl6();
 	deservin = 0;
 	sleeper = 0;
 	p = 0;
@@ -126,7 +126,7 @@ loop:
 			rp->p_flag &= ~SLOAD;
 			if (rp->p_stat == SRUN)
 				remrq(rp);
-			VOID swapout(rp, rp->p_dsize, rp->p_ssize);
+			(void) swapout(rp, rp->p_dsize, rp->p_ssize);
 			goto loop;
 		}
 		continue;
@@ -140,7 +140,7 @@ loop:
 		sleep((caddr_t)&runout, PSWP);
 		goto loop;
 	}
-	VOID spl0();
+	(void) spl0();
 	/*
 	 * Decide how deserving this guy is.  If he is deserving
 	 * we will be willing to work harder to bring him in.
@@ -171,7 +171,7 @@ hardswap:
 	 * Select the nbig largest jobs, then the oldest of these
 	 * is ``most likely to get booted.''
 	 */
-	VOID spl6();
+	(void) spl6();
 	inp = p;
 	sleeper = 0;
 	if (nbig > MAXNBIG)
@@ -259,7 +259,7 @@ hardswap:
 	 * Want to swap someone in, but can't
 	 * so wait on runin.
 	 */
-	VOID spl6();
+	(void) spl6();
 	runin++;
 	sleep((caddr_t)&runin, PSWP);
 	goto loop;
