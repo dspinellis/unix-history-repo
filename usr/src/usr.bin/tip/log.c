@@ -1,7 +1,8 @@
-/*	log.c	4.3	81/11/29	*/
+/*	log.c	4.4	83/06/15	*/
 #include "tip.h"
 
 #ifdef ACULOG
+static char *sccsid = "@(#)log.c	4.4 %G%";
 static FILE *flog = NULL;
 
 /*

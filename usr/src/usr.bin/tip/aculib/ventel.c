@@ -1,4 +1,4 @@
-/*	ventel.c	1.2	82/07/29	*/
+/*	ventel.c	1.3	83/06/15	*/
 
 #if VENTEL
 /*
@@ -11,6 +11,7 @@
 #define	MAXRETRY	5
 #define	DISCONNECT	"\03"		/* ^C */
 
+static char *sccsid = "@(#)ventel.c	1.3 %G%";
 static int sigALRM();
 static int timeout = 0;
 
@@ -20,7 +21,6 @@ ven_dialer(num, acu)
 {
 	register char *cp;
 	register int connected = 0;
-	char c;
 #ifdef ACULOG
 	char line[80];
 #endif
@@ -42,7 +42,7 @@ ven_dialer(num, acu)
 	for (cp = num; *cp; cp++) {
 		sleep(1);
 		write(FD, cp, 1);
-		read(FD, &c, 1);
+		read(FD, cp, 1);
 	}
 	echo(">\r$\n");
 	if (gobble('\n'))

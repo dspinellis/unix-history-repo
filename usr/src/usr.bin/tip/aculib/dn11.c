@@ -1,4 +1,4 @@
-/*	dn11.c	4.11	81/11/29	*/
+/*	dn11.c	4.12	83/06/15	*/
 
 #if DN11
 /*
@@ -12,6 +12,7 @@ int dn_abort();
 
 int alarmtr();
 
+static char *sccsid = "@(#)dn11.c	4.12 %G%";
 static jmp_buf jmpbuf;
 static int child = -1, dn;
 

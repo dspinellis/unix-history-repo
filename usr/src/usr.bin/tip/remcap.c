@@ -1,5 +1,17 @@
-/*	remcap.c	4.6	81/11/29	*/
+/*	remcap.c	4.7	83/06/15	*/
 /* Copyright (c) 1979 Regents of the University of California */
+/*
+ *	Modified 9/27/82 - Michael Wendel
+ *			   General Instrument R&D
+ *		Looks in user Remote file first.
+ *		Looks in system Remote file for each tc= entry
+ *		that cannot be resolved in the user Remote file.
+ *		Finally looks into the system Remote file to
+ *		resolve remote name.
+ *		User remote file will supplement the system file
+ *		since all the entries in the user file occur
+ *		ahead of duplicate entries from the system file.
+ */
 #ifndef BUFSIZ
 #define	BUFSIZ	1024
 #endif
@@ -15,6 +27,7 @@
  *	Made from termcap with the following defines.
  */
 #define REMOTE		/* special for tip */
+#define SYSREMOTE	"/etc/remote"  /* system remote file */
 
 #ifdef REMOTE
 #define	tgetent		rgetent
@@ -24,7 +37,7 @@
 #define	tgetflag	rgetflag
 #define	tgetstr		rgetstr
 #undef	E_TERMCAP
-#define	E_TERMCAP	RM = "/etc/remote"
+#define	E_TERMCAP	RM = SYSREMOTE
 #define V_TERMCAP	"REMOTE"
 #define V_TERM		"HOST"
 
@@ -48,12 +61,14 @@ char	*RM;
  * doesn't, and because living w/o it is not hard.
  */
 
+static char *sccsid = "@(#)remcap.c	4.7 %G%";
 static	char *tbuf;
 static	int hopcount;	/* detect infinite loops in termcap, init 0 */
 char	*tskip();
 char	*tgetstr();
 char	*tdecode();
 char	*getenv();
+static	char	*remotefile;
 
 /*
  * Get an entry for terminal name in buffer bp,
@@ -63,7 +78,41 @@ char	*getenv();
 tgetent(bp, name)
 	char *bp, *name;
 {
-	register char *cp;
+	char lbuf[BUFSIZ];
+	int	rc1, rc2;
+	char *cp;
+	char *p;
+
+	remotefile = cp = getenv(V_TERMCAP);
+	if (cp == (char *)0 || strcmp(cp, SYSREMOTE) == 0) {
+		remotefile = cp = SYSREMOTE;
+		return(getent(bp, name, cp));
+	} else {
+		if ((rc1 = getent(bp, name, cp)) != 1)
+			*bp = '\0';
+		remotefile = cp = SYSREMOTE;
+		rc2 = getent(lbuf, name, cp);
+		if (rc1 != 1 && rc2 != 1)
+			return(rc2);
+		if (rc2 == 1) {
+			p = lbuf;
+			if (rc1 == 1)
+				while (*p++ != ':')
+					;
+			if (strlen(bp) + strlen(p) > BUFSIZ) {
+				write(2, "Remcap entry too long\n", 23);
+				return(-1);
+			}
+			strcat(bp, p);
+		}
+		tbuf = bp;
+		return(1);
+	}
+}
+
+getent(bp, name, cp)
+	char *bp, *name, *cp;
+{
 	register int c;
 	register int i = 0, cnt = 0;
 	char ibuf[BUFSIZ];
@@ -73,7 +122,6 @@ tgetent(bp, name)
 	tbuf = bp;
 	tf = 0;
 #ifndef V6
-	cp = getenv(V_TERMCAP);
 	/*
 	 * TERMCAP can have one of two things in it. It can be the
 	 * name of a file to use instead of /etc/termcap. In this
@@ -117,14 +165,14 @@ tgetent(bp, name)
 			}
 			c = ibuf[i++];
 			if (c == '\n') {
-				if (cp > bp && cp[-1] == '\\'){
+				if (cp > bp && cp[-1] == '\\') {
 					cp--;
 					continue;
 				}
 				break;
 			}
 			if (cp >= bp+BUFSIZ) {
-				write(2,"Termcap entry too long\n", 23);
+				write(2,"Remcap entry too long\n", 23);
 				break;
 			} else
 				*cp++ = c;
@@ -155,36 +203,41 @@ tnchktc()
 	char tcbuf[BUFSIZ];
 	char *holdtbuf = tbuf;
 	int l;
+	char *cp;
 
 	p = tbuf + strlen(tbuf) - 2;	/* before the last colon */
 	while (*--p != ':')
 		if (p<tbuf) {
-			write(2, "Bad termcap entry\n", 18);
+			write(2, "Bad remcap entry\n", 18);
 			return (0);
 		}
 	p++;
 	/* p now points to beginning of last field */
 	if (p[0] != 't' || p[1] != 'c')
 		return(1);
-	strcpy(tcname,p+3);
+	strcpy(tcname, p+3);
 	q = tcname;
-	while (q && *q != ':')
+	while (*q && *q != ':')
 		q++;
 	*q = 0;
 	if (++hopcount > MAXHOP) {
 		write(2, "Infinite tc= loop\n", 18);
 		return (0);
 	}
-	if (tgetent(tcbuf, tcname) != 1)
-		return(0);
-	for (q=tcbuf; *q != ':'; q++)
+	if (getent(tcbuf, tcname, remotefile) != 1) {
+		if (strcmp(remotefile, SYSREMOTE) == 0)
+			return(0);
+		else if (getent(tcbuf, tcname, SYSREMOTE) != 1)
+			return(0);
+	}
+	for (q = tcbuf; *q++ != ':'; )
 		;
 	l = p - holdtbuf + strlen(q);
 	if (l > BUFSIZ) {
-		write(2, "Termcap entry too long\n", 23);
-		q[BUFSIZ - (p-tbuf)] = 0;
+		write(2, "Remcap entry too long\n", 23);
+		q[BUFSIZ - (p-holdtbuf)] = 0;
 	}
-	strcpy(p, q+1);
+	strcpy(p, q);
 	tbuf = holdtbuf;
 	return(1);
 }

@@ -1,20 +1,21 @@
-/*	cmdtab.c	4.4	81/11/29	*/
+/*	cmdtab.c	4.5	83/06/15	*/
 #include "tip.h"
 
-extern int shell(), getfl(), sendfile(), chdirectory(),
+extern int shell(), lcmd(), getfl(), sendfile(), chdirectory(),
 	finish(), help(), pipefile(), consh(), variable(),
 	cu_take(), cu_put(), dollar(), genbrk(), suspend();
 
 esctable_t etable[] =
 {
-	{ '!',	NORM,	"shell",			 shell },
+	{ '%',	NORM,	"shell",			 shell },
+	{ '!',	NORM,	"local command",		 lcmd },
 	{ '<',	NORM,	"receive file from remote host", getfl },
 	{ '>',	NORM,	"send file to remote host",	 sendfile },
 	{ 't',	NORM,	"take file from remote UNIX",	 cu_take },
 	{ 'p',	NORM,	"put file to remote UNIX",	 cu_put },
 	{ '|',	NORM,	"pipe remote file",		 pipefile },
 #ifdef CONNECT
-	{ '%',  NORM,	"connect program to remote host",consh },
+	{ 'C',  NORM,	"connect program to remote host",consh },
 #endif
 	{ 'c',	NORM,	"change directory",		 chdirectory },
 	{ '.',	NORM,	"exit from tip",		 finish },

@@ -1,11 +1,11 @@
-/*	uucplock.c	4.4	82/07/29	*/
+/*	uucplock.c	4.5	83/06/15	*/
 /*
  * defs that come from uucp.h
  */
 #define NAMESIZE 15
 #define FAIL -1
 #define SAME 0
-#define SLCKTIME 5400	/* system/device timeout (LCK.. files) in seconds */
+#define SLCKTIME 28800	/* system/device timeout (LCK.. files) in seconds (8 hours) */
 #define ASSERT(e, f, v) if (!(e)) {\
 	fprintf(stderr, "AERROR - (%s) ", "e");\
 	fprintf(stderr, f, v);\
@@ -25,6 +25,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdio.h>
+
+static char *sccsid = "@(#)uucplock.c	4.5 %G%";
 
 /*******
  *	ulockf(file, atime)
@@ -49,7 +51,7 @@ ulockf(file, atime)
 	time_t ptime;
 	int ret;
 	static int pid = -1;
-	static char tempfile[30];
+	static char tempfile[NAMESIZE];
 
 	if (pid < 0) {
 		pid = getpid();

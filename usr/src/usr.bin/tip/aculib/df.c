@@ -1,4 +1,4 @@
-/*	df.c	4.5	81/11/29	*/
+/*	df.c	4.6	83/06/15	*/
 /*
  * Dial the DF02-AC or DF03-AC
  */
@@ -7,6 +7,7 @@
 #include "tip.h"
 #include <setjmp.h>
 
+static char *sccsid = "@(#)df.c	4.6 %G%";
 static jmp_buf	Sjbuf;
 static timeout();
 
