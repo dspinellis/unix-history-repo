@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)acu.c	4.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)acu.c	4.12 (Berkeley) %G%";
 #endif
 
 #include "tip.h"
@@ -126,7 +126,7 @@ disconnect(reason)
 {
 	if (!conflag)
 		return;
-	if (reason != NOSTR) {
+	if (reason == NOSTR) {
 		logent(value(HOST), "", acu->acu_name, "call terminated");
 		if (boolean(value(VERBOSE)))
 			printf("\r\ndisconnecting...");
