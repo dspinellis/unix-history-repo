@@ -1,4 +1,4 @@
-/*	if_de.c	6.3	84/03/20	*/
+/*	if_de.c	6.4	84/03/27	*/
 #include "de.h"
 #if NDE > 0
 
@@ -44,7 +44,7 @@
 #define	NRCV	4	/* number of receive buffers (must be > 1) */
 #define	NTOT	(NXMT + NRCV)
 
-int	dedebug = 0;
+int	dedebug = 1;
 
 int	deprobe(), deattach(), deintr();
 struct	uba_device *deinfo[NDE];
@@ -198,11 +198,10 @@ deattach(ui)
 		    ds->ds_pcbb.pcbb2&0xff, (ds->ds_pcbb.pcbb2>>8)&0xff,
 		    ds->ds_pcbb.pcbb4&0xff, (ds->ds_pcbb.pcbb4>>8)&0xff,
 		    ds->ds_pcbb.pcbb6&0xff, (ds->ds_pcbb.pcbb6>>8)&0xff);
-	bcopy((caddr_t)&ds->ds_pcbb.pcbb2, (caddr_t)ds->ds_addr,
+	bcopy((caddr_t)&ds->ds_pcbb.pcbb2, (caddr_t)&ds->ds_addr,
 	    sizeof (ds->ds_addr));
 	sin = (struct sockaddr_in *)&ifp->if_addr;
 	sin->sin_family = AF_INET;
-	sin->sin_addr = arpmyaddr((struct arpcom *)0);
 	ifp->if_init = deinit;
 	ifp->if_output = deoutput;
 	ifp->if_ioctl = deioctl;
@@ -345,7 +344,6 @@ deinit(unit)
 	splx(s);
 justarp:
 	if_rtinit(&ds->ds_if, RTF_UP);
-	arpattach(&ds->ds_ac);
 	arpwhohas(&ds->ds_ac, &sin->sin_addr);
 }
 
@@ -611,7 +609,7 @@ deoutput(ifp, m0, dst)
 	struct sockaddr *dst;
 {
 	int type, s, error;
-	u_char edst[6];
+	struct ether_addr edst;
 	struct in_addr idst;
 	register struct de_softc *ds = &de_softc[ifp->if_unit];
 	register struct mbuf *m = m0;
@@ -623,7 +621,7 @@ deoutput(ifp, m0, dst)
 #ifdef INET
 	case AF_INET:
 		idst = ((struct sockaddr_in *)dst)->sin_addr;
-		if (!arpresolve(&ds->ds_ac, m, &idst, edst))
+		if (!arpresolve(&ds->ds_ac, m, &idst, &edst))
 			return (0);	/* if not yet resolved */
 		off = ntohs((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
 		/* need per host negotiation */
@@ -644,7 +642,7 @@ deoutput(ifp, m0, dst)
 
 	case AF_UNSPEC:
 		eh = (struct ether_header *)dst->sa_data;
-		bcopy((caddr_t)eh->ether_dhost, (caddr_t)edst, sizeof (edst));
+		edst = eh->ether_dhost;
 		type = eh->ether_type;
 		goto gottype;
 
@@ -688,7 +686,7 @@ gottype:
 	}
 	eh = mtod(m, struct ether_header *);
 	eh->ether_type = htons((u_short)type);
-	bcopy((caddr_t)edst, (caddr_t)eh->ether_dhost, sizeof (edst));
+	eh->ether_dhost = edst;
 	/* DEUNA fills in source address */
 
 	/*
