@@ -1,4 +1,4 @@
-/*	tcp_output.c	6.5	84/10/19	*/
+/*	tcp_output.c	6.6	84/11/01	*/
 
 #include "param.h"
 #include "systm.h"
@@ -59,7 +59,11 @@ again:
 		return (0);	/* ??? */	/* past FIN */
 	if (len > tp->t_maxseg) {
 		len = tp->t_maxseg;
-		sendalot = 1;
+		/*
+		 * Don't send more than one segment if retransmitting.
+		 */
+		if (SEQ_GT(tp->snd_nxt, tp->snd_max))
+			sendalot = 1;
 	}
 
 	flags = tcp_outflags[tp->t_state];
@@ -71,14 +75,15 @@ again:
 		goto send;
 
 	/*
-	 * Sender silly window avoidance.  If can send all data,
-	 * a maximum segment, at least 1/4 of window do it,
+	 * Sender silly window avoidance.  If connection is idle
+	 * and can send all data, a maximum segment,
+	 * at least a maximum default-size segment do it,
 	 * or are forced, do it; otherwise don't bother.
 	 */
 	if (len) {
-		if (len == tp->t_maxseg || off+len >= so->so_snd.sb_cc)
+		if (len == tp->t_maxseg || len >= so->so_snd.sb_cc) /* off = 0*/
 			goto send;
-		if (len * 4 >= tp->snd_wnd)		/* a lot */
+		if (len >= TCP_MSS)	/* a lot */
 			goto send;
 		if (tp->t_force)
 			goto send;
