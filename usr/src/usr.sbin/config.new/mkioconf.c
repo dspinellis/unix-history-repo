@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mkioconf.c	5.1 (Berkeley) %G%
+ *	@(#)mkioconf.c	5.2 (Berkeley) %G%
  *
  * from: $Header: mkioconf.c,v 1.2 92/12/08 19:34:31 torek Exp $
  */
@@ -298,7 +298,7 @@ emitpseudo(fp)
 		return (1);
 	for (i = allpseudo; i != NULL; i = i->i_next) {
 		d = i->i_base;
-		if (fprintf(fp, "\t{ %sattach, %d }\n",
+		if (fprintf(fp, "\t{ %sattach, %d },\n",
 		    d->d_name, d->d_umax) < 0)
 			return (1);
 	}
