@@ -7,20 +7,15 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stdio.h	5.8 (Berkeley) %G%
+ *	@(#)stdio.h	5.9 (Berkeley) %G%
  */
 
 #ifndef	_STDIO_H_
 #define	_STDIO_H_
 
-/*
- * NB: to fit things in six character monocase externals, the stdio
- * code uses the prefix `__s' for stdio objects, typically followed
- * by a three-character attempt at a mnemonic.
- */
+#include <sys/cdefs.h>
 
 #include <machine/types.h>
-
 #ifdef	_SIZE_T_
 typedef	_SIZE_T_	size_t;
 #undef	_SIZE_T_
@@ -33,6 +28,12 @@ typedef	_SIZE_T_	size_t;
 typedef long fpos_t;		/* Must match off_t <sys/types.h> */
 
 #define	_FSTDIO			/* Define for new stdio with functions. */
+
+/*
+ * NB: to fit things in six character monocase externals, the stdio
+ * code uses the prefix `__s' for stdio objects, typically followed
+ * by a three-character attempt at a mnemonic.
+ */
 
 /* stdio buffers */
 struct __sbuf {
@@ -75,17 +76,10 @@ typedef	struct __sFILE {
 
 	/* operations */
 	void	*_cookie;	/* cookie passed to io functions */
-#if __STDC__ || c_plusplus
-	int	(*_read)(void *_cookie, char *_buf, int _n);
-	int	(*_write)(void *_cookie, const char *_buf, int _n);
-	fpos_t	(*_seek)(void *_cookie, fpos_t _offset, int _whence);
-	int	(*_close)(void *_cookie);
-#else
-	int	(*_read)();
-	int	(*_write)();
-	fpos_t	(*_seek)();
-	int	(*_close)();
-#endif
+	int	(*_close) __P((void *_cookie));
+	int	(*_read)  __P((void *_cookie, char *_buf, int _n));
+	fpos_t	(*_seek)  __P((void *_cookie, fpos_t _offset, int _whence));
+	int	(*_write) __P((void *_cookie, const char *_buf, int _n));
 
 	/* separate buffer for long sequences of ungetc() */
 	struct	__sbuf _ub;	/* ungetc buffer */
@@ -170,91 +164,49 @@ extern FILE __sF[];
 /*
  * Functions defined in ANSI C standard.
  */
-#if __STDC__ || c_plusplus
-int	remove(const char *);
-int	rename(const char *_old, const char *_new);
-FILE	*tmpfile(void);
-char	*tmpnam(char *);
-int	fclose(FILE *);
-int	fflush(FILE *);
-FILE	*fopen(const char *_name, const char *_type);
-FILE	*freopen(const char *_name, const char *_type, FILE *_stream);
-void	setbuf(FILE *, char *);
-int	setvbuf(FILE *, char *, int, size_t);
-int	fprintf(FILE *, const char *, ...);
-int	fscanf(FILE *, const char *, ...);
-int	printf(const char *, ...);
-int	scanf(const char *, ...);
-int	sprintf(char *, const char *, ...);
-int	sscanf(char *, const char *, ...);
-int	vfprintf(FILE *, const char *, _VA_LIST_);
-int	vprintf(const char *, _VA_LIST_);
-int	vsprintf(char *, const char *, _VA_LIST_);
-int	fgetc(FILE *);
-char	*fgets(char *, size_t, FILE *);
-int	fputc(int, FILE *);
-int	fputs(const char *, FILE *);
-int	getc(FILE *);
-int	getchar(void);
-char	*gets(char *);
-int	putc(int, FILE *);
-int	putchar(int);
-int	puts(const char *);
-int	ungetc(int, FILE *);
-int	fread(void *, size_t _size, size_t _n, FILE *);
-int	fwrite(const void *, size_t _size, size_t _n, FILE *);
-int	fgetpos(FILE *, fpos_t *);
-int	fseek(FILE *, long, int);
-int	fsetpos(FILE *, const fpos_t *);
-long	ftell(const FILE *);
-void	rewind(FILE *);
-void	clearerr(FILE *);
-int	feof(FILE *);
-int	ferror(FILE *);
-void	perror(const char *);
-#else
-int	remove();
-int	rename();
-FILE	*tmpfile();
-char	*tmpnam();
-int	fclose();
-int	fflush();
-FILE	*fopen();
-FILE	*freopen();
-void	setbuf();
-int	setvbuf();
-int	fprintf();
-int	fscanf();
-int	printf();
-int	scanf();
-int	sprintf();
-int	sscanf();
-int	vfprintf();
-int	vprintf();
-int	vsprintf();
-int	fgetc();
-char	*fgets();
-int	fputc();
-int	fputs();
-int	getc();
-int	getchar();
-char	*gets();
-int	putc();
-int	putchar();
-int	puts();
-int	ungetc();
-int	fread();
-int	fwrite();
-int	fgetpos();
-int	fseek();
-int	fsetpos();
-long	ftell();
-void	rewind();
-void	clearerr();
-int	feof();
-int	ferror();
-void	perror();
-#endif
+__BEGIN_DECLS
+void	 clearerr __P((FILE *));
+int	 fclose __P((FILE *));
+int	 feof __P((FILE *));
+int	 ferror __P((FILE *));
+int	 fflush __P((FILE *));
+int	 fgetc __P((FILE *));
+int	 fgetpos __P((FILE *, fpos_t *));
+char	*fgets __P((char *, size_t, FILE *));
+FILE	*fopen __P((const char *_name, const char *_type));
+int	 fprintf __P((FILE *, const char *, ...));
+int	 fputc __P((int, FILE *));
+int	 fputs __P((const char *, FILE *));
+int	 fread __P((void *, size_t _size, size_t _n, FILE *));
+FILE	*freopen __P((const char *_name, const char *_type, FILE *_stream));
+int	 fscanf __P((FILE *, const char *, ...));
+int	 fseek __P((FILE *, long, int));
+int	 fsetpos __P((FILE *, const fpos_t *));
+long	 ftell __P((const FILE *));
+int	 fwrite __P((const void *, size_t _size, size_t _n, FILE *));
+int	 getc __P((FILE *));
+int	 getchar __P((void));
+char	*gets __P((char *));
+void	 perror __P((const char *));
+int	 printf __P((const char *, ...));
+int	 putc __P((int, FILE *));
+int	 putchar __P((int));
+int	 puts __P((const char *));
+int	 remove __P((const char *));
+int	 rename  __P((const char *_old, const char *_new));
+void	 rewind __P((FILE *));
+int	 scanf __P((const char *, ...));
+void	 setbuf __P((FILE *, char *));
+int	 setvbuf __P((FILE *, char *, int, size_t));
+int	 sprintf __P((char *, const char *, ...));
+int	 sscanf __P((char *, const char *, ...));
+FILE	*tmpfile __P((void));
+char	*tmpnam __P((char *));
+int	 ungetc __P((int, FILE *));
+int	 vfprintf __P((FILE *, const char *, _VA_LIST_));
+int	 vprintf __P((const char *, _VA_LIST_));
+int	 vsprintf __P((char *, const char *, _VA_LIST_));
+__END_DECLS
 
 /*
  * Functions defined in POSIX 1003.1.
@@ -263,73 +215,46 @@ void	perror();
 #define	L_cuserid	9	/* size for cuserid(); UT_NAMESIZE + 1 */
 #define	L_ctermid	1024	/* size for ctermid(); PATH_MAX */
 
-#if __STDC__ || c_plusplus
-FILE	*fdopen(int, const char *);
-int	fileno(FILE *);
-#else
-FILE	*fdopen();
-int	fileno();
-#endif
-#endif
+__BEGIN_DECLS
+FILE	*fdopen __P((int, const char *));
+int	 fileno __P((FILE *));
+__END_DECLS
 
 /*
  * Routines that are purely local.
  */
-#if __STDC__ || c_plusplus
-char	*fgetline(FILE *, size_t *);
-int	fpurge(FILE *);
-int	getw(FILE *);
-int	pclose(FILE *);
-FILE	*popen(const char *_name, const char *_type);
-int	putw(int, FILE *);
-void	setbuffer(FILE *, char *, int);
-int	setlinebuf(FILE *);
-int	snprintf(char *, size_t, const char *, ...);
-int	vsnprintf(char *, size_t, const char *, _VA_LIST_);
-#else
-char	*fgetline();
-int	fpurge();
-int	getw();
-int	pclose();
-FILE	*popen();
-int	putw();
-void	setbuffer();
-int	setlinebuf();
-int	snprintf();
-int	vsnprintf();
-#endif
-#endif /* _ANSI_SOURCE */
+__BEGIN_DECLS
+char	*fgetline __P((FILE *, size_t *));
+int	 fpurge __P((FILE *));
+int	 getw __P((FILE *));
+int	 pclose __P((FILE *));
+FILE	*popen __P((const char *_name, const char *_type));
+int	 putw __P((int, FILE *));
+void	 setbuffer __P((FILE *, char *, int));
+int	 setlinebuf __P((FILE *));
+int	 snprintf __P((char *, size_t, const char *, ...));
+int	 vsnprintf __P((char *, size_t, const char *, _VA_LIST_));
+__END_DECLS
 
-#ifndef _ANSI_SOURCE
 /*
  * Stdio function-access interface.
  */
-#if __STDC__ || c_plusplus
-FILE	*funopen(const void *_cookie,
+__BEGIN_DECLS
+FILE	*funopen __P((const void *_cookie,
 		int (*readfn)(void *_cookie, char *_buf, int _n),
 		int (*writefn)(void *_cookie, const char *_buf, int _n),
 		fpos_t (*seekfn)(void *_cookie, fpos_t _off, int _whence),
-		int (*closefn)(void *_cookie));
+		int (*closefn)(void *_cookie)));
+__END_DECLS
 #define	fropen(cookie, fn) funopen(cookie, fn, 0, 0, 0)
 #define	fwopen(cookie, fn) funopen(cookie, 0, fn, 0, 0)
-#else
-FILE	*funopen();
-#define	fropen(cookie, fn) \
-	funopen(cookie, fn, (int (*)())0, (fpos_t (*)())0, (int (*)())0)
-#define	fwopen(cookie, fn) \
-	funopen(cookie, (int (*)())0, fn, (fpos_t (*)())0, (int (*)())0)
-#endif
+#endif /* !ANSI_SOURCE */
 
 /*
  * Functions internal to the implementation.
  */
-#if __STDC__ || c_plusplus
-int	__srget(FILE *);
-int	__swbuf(int, FILE *);
-#else
-int	__srget();
-int	__swbuf();
-#endif
+int	__srget __P((FILE *));
+int	__swbuf __P((int, FILE *));
 
 /*
  * The __sfoo macros are here so that we can 
