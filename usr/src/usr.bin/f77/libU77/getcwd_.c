@@ -7,6 +7,7 @@
 #include	<sys/stat.h>
 #include	<sys/dir.h>
 
+static char	slash[]	= "/";
 static char	dot[]	= ".";
 static char	dotdot[] = "..";
 static char	name[128];
@@ -22,7 +23,7 @@ getcwd()
 	char	*namep = &name[(sizeof name)-1];
 
 	*namep = '\0';
-	stat("/", &d);
+	stat(slash, &d);
 	rdev = d.st_dev;
 	rino = d.st_ino;
 	for (;;)
@@ -30,6 +31,8 @@ getcwd()
 		stat(dot, &d);
 		if (d.st_ino == rino && d.st_dev == rdev)
 		{
+			if (*namep == '\0')	/* rootdir is a special case */
+				namep = prepend(namep, slash);
 			chdir(namep);
 			return(namep);
 		}
@@ -45,6 +48,8 @@ getcwd()
 			if(d.st_ino == dd.st_ino)
 			{
 				close(fd);
+				if (*namep == '\0') /* root is a special case */
+					namep = prepend(namep, slash);
 				chdir(namep);
 				return(namep);
 			}
@@ -69,7 +74,7 @@ getcwd()
 				stat(dir.d_name, &dd);
 			} while(dd.st_ino != d.st_ino || dd.st_dev != d.st_dev);
 		close(fd);
-		namep = prepend(prepend(namep, dir.d_name), "/");
+		namep = prepend(prepend(namep, dir.d_name), slash);
 	}
 }
 
@@ -90,7 +95,7 @@ char *n;
 }
 
 /*
-char id_getcwd[] = "@(#)getcwd_.c	1.2";
+char id_getcwd[] = "@(#)getcwd_.c	1.3";
  * Get pathname of current working directory.
  *
  * calling sequence:
