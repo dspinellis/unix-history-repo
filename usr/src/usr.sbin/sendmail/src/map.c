@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	6.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	6.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -504,6 +504,9 @@ db_map_lookup(map, name, av, statp)
 	int *statp;
 {
 	DBT key, val;
+	register DB *db = (DB *) map->map_db2;
+	int st;
+	int saveerrno;
 	char keybuf[MAXNAME + 1];
 
 	if (tTd(27, 20))
@@ -518,8 +521,21 @@ db_map_lookup(map, name, av, statp)
 		makelower(keybuf);
 	if (bitset(MF_INCLNULL, map->map_mflags))
 		key.size++;
-	if (((DB *) map->map_db2)->get((DB *) map->map_db2, &key, &val, 0) != 0)
+#ifndef OLD_NEWDB
+	(void) lockfile(db->fd(db), map->map_file, LOCK_SH);
+#endif
+	st = db->get(db, &key, &val, 0);
+	saveerrno = errno;
+#ifndef OLD_NEWDB
+	(void) lockfile(db->fd(db), map->map_file, LOCK_UN);
+#endif
+	if (st != 0)
+	{
+		errno = saveerrno;
+		if (st < 0)
+			syserr("db_map_lookup: get (%s)", name);
 		return NULL;
+	}
 	if (bitset(MF_MATCHONLY, map->map_mflags))
 		av = NULL;
 	return map_rewrite(map, val.data, val.size, av);
