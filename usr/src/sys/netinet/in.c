@@ -1,4 +1,4 @@
-/*	in.c	6.1	83/07/29	*/
+/*	in.c	6.2	84/04/12	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -38,9 +38,9 @@ if_makeaddr(net, host)
 {
 	u_long addr;
 
-	if (net < 128)
+	if (net < IN_CLASSA_MAX)
 		addr = (net << IN_CLASSA_NSHIFT) | host;
-	else if (net < 65536)
+	else if (net < IN_CLASSB_MAX)
 		addr = (net << IN_CLASSB_NSHIFT) | host;
 	else
 		addr = (net << IN_CLASSC_NSHIFT) | host;
@@ -55,13 +55,23 @@ in_netof(in)
 	struct in_addr in;
 {
 	register u_long i = ntohl(in.s_addr);
+	register net;
 
-	if (IN_CLASSA(i))
-		return (((i)&IN_CLASSA_NET) >> IN_CLASSA_NSHIFT);
-	else if (IN_CLASSB(i))
-		return (((i)&IN_CLASSB_NET) >> IN_CLASSB_NSHIFT);
-	else
+	if (IN_CLASSA(i)) {
+		net = ((i)&IN_CLASSA_NET) >> IN_CLASSA_NSHIFT;
+		if (in_localnet(net) && IN_SUBNETA(i))
+			return (((i)&IN_CLASSA_SUBNET) >> IN_CLASSA_SUBNSHIFT);
+		else
+			return (net);
+	} else if (IN_CLASSB(i)) {
+		net = ((i)&IN_CLASSB_NET) >> IN_CLASSB_NSHIFT;
+		if (in_localnet(net) && IN_SUBNETB(i))
+			return (((i)&IN_CLASSB_SUBNET) >> IN_CLASSB_SUBNSHIFT);
+		else
+			return (net);
+	} else {
 		return (((i)&IN_CLASSC_NET) >> IN_CLASSC_NSHIFT);
+	}
 }
 
 /*
@@ -72,12 +82,43 @@ in_lnaof(in)
 {
 	register u_long i = ntohl(in.s_addr);
 
-	if (IN_CLASSA(i))
-		return ((i)&IN_CLASSA_HOST);
-	else if (IN_CLASSB(i))
-		return ((i)&IN_CLASSB_HOST);
-	else
+	if (IN_CLASSA(i)) {
+		if (IN_SUBNETA(i) &&
+		    in_localnet(((i)&IN_CLASSA_NET) >> IN_CLASSA_NSHIFT))
+			return ((i)&IN_CLASSA_SUBHOST);
+		else
+			return ((i)&IN_CLASSA_HOST);
+	} else if (IN_CLASSB(i)) {
+		if (IN_SUBNETB(i) &&
+		    in_localnet(((i)&IN_CLASSB_NET) >> IN_CLASSB_NSHIFT) )
+			return ((i)&IN_CLASSB_SUBHOST);
+		else
+			return ((i)&IN_CLASSB_HOST);
+	} else {
 		return ((i)&IN_CLASSC_HOST);
+	}
+}
+
+/*
+ * Return true if the network is a ``local'' net
+ * (one for which we can interpret the host part).
+ */
+in_localnet(net)
+	register int net;
+{
+	register struct ifnet *ifp;
+
+	for (ifp = ifnet; ifp; ifp = ifp->if_next) {
+		if (ifp->if_addr.sa_family != AF_INET)
+			continue;
+		if (ifp->if_flags & IFF_LOCAL) {
+			if (ifp->if_net == net)
+				return (1);
+			if ((ifp->if_net >> SUBNETSHIFT) == net)
+				return (1);
+		}
+	}
+	return (0);
 }
 
 /*

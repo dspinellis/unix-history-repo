@@ -1,4 +1,4 @@
-/*	in.h	6.1	83/07/29	*/
+/*	in.h	6.2	84/04/12	*/
 
 /*
  * Constants and structures defined by the internet system,
@@ -95,11 +95,13 @@ struct in_addr {
 #define	IN_CLASSA_NET		0xff000000
 #define	IN_CLASSA_NSHIFT	24
 #define	IN_CLASSA_HOST		0x00ffffff
+#define	IN_CLASSA_MAX		128
 
 #define	IN_CLASSB(i)		((((long)(i))&0xc0000000)==0x80000000)
 #define	IN_CLASSB_NET		0xffff0000
 #define	IN_CLASSB_NSHIFT	16
 #define	IN_CLASSB_HOST		0x0000ffff
+#define	IN_CLASSB_MAX		65536
 
 #define	IN_CLASSC(i)		((((long)(i))&0xc0000000)==0xc0000000)
 #define	IN_CLASSC_NET		0xffffff00
@@ -107,6 +109,29 @@ struct in_addr {
 #define	IN_CLASSC_HOST		0x000000ff
 
 #define	INADDR_ANY	0x00000000
+
+/*
+ * Macros for subnetworks.  A subnet is distinguished by
+ * 	(1) the network number is a `local' network number, and
+ *	(2) the most significant bit of the host part is set.
+ * Such addresses include one additional byte in the network number,
+ * and use one less byte in the host part (i.e., a subnet of a Class A
+ * network uses the rules for Class B net/host number extraction,
+ * a Class B subnet is dealt with as if it were a Class C net).
+ * Subnets of Class C nets are not supported.
+ */
+#define	SUBNETSHIFT		8  /* used to get main net number from subnet */
+
+#define	IN_SUBNETA(i)		((((long)(i))&0x80800000)==0x00800000)
+#define	IN_CLASSA_SUBNET	0xffff0000
+#define	IN_CLASSA_SUBNSHIFT	(IN_CLASSA_NSHIFT - SUBNETSHIFT)
+#define	IN_CLASSA_SUBHOST	0x0000ffff
+
+#define	IN_SUBNETB(i)		((((long)(i))&0xc0008000)==0x80008000)
+#define	IN_CLASSB_SUBNET	0xffffff00
+#define	IN_CLASSB_SUBNSHIFT	(IN_CLASSB_NSHIFT - SUBNETSHIFT)
+#define	IN_CLASSA_SUBHOST	0x0000ffff
+#define	IN_CLASSB_SUBHOST	0x000000ff
 
 /*
  * Socket address, internet style.
