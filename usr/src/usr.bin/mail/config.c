@@ -1,6 +1,6 @@
 #
 
-static	char	*SccsID[] = "@(#)config.c	1.3 %G%";
+static	char	*SccsID[] = "@(#)config.c	1.4 %G%";
 
 /*
  * This file contains definitions of network data used by Mail
@@ -43,6 +43,7 @@ struct netmach netmach[] = {
 	"image",	'm',		SN,
 	"esvax",	'o',		SN,
 	"sesm",		'o',		SN,
+	"ucbcad",	'p',		SN|BN,
 	"q",		'q',		SN,
 	"kim",		'n',		SN,
 	"research",	'R',		BN,
