@@ -3,7 +3,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mbuf.h	7.15 (Berkeley) %G%
+ *	@(#)mbuf.h	7.16 (Berkeley) %G%
  */
 
 #ifndef M_WAITOK
@@ -34,7 +34,7 @@
 #define mtod(m,t)	((t)((m)->m_data))
 #define	dtom(x)		((struct mbuf *)((int)(x) & ~(MSIZE-1)))
 #define	mtocl(x)	(((u_int)(x) - (u_int)mbutl) >> MCLSHIFT)
-#define	cltom(x)	((caddr_t)((u_int)mbutl + ((u_int)(x) >> MCLSHIFT)))
+#define	cltom(x)	((caddr_t)((u_int)mbutl + ((u_int)(x) << MCLSHIFT)))
 
 /* header at beginning of each mbuf: */
 struct m_hdr {
