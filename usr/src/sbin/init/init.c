@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)init.c	6.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)init.c	6.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -508,6 +508,24 @@ single_user()
 		 */
 		setctty(_PATH_CONSOLE);
 
+#ifdef DEBUGSHELL
+		{
+			char altshell[128], *cp = altshell;
+			int num;
+
+#define	SHREQUEST \
+	"Enter pathname of shell or RETURN for sh: "
+			(void)write(STDERR_FILENO,
+			    SHREQUEST, sizeof(SHREQUEST) - 1);
+			while ((num = read(STDIN_FILENO, cp, 1)) != -1 &&
+			    num != 0 && *cp != '\n' && cp < &altshell[127])
+					cp++;
+			*cp = '\0';
+			if (altshell[0] != '\0')
+				shell = altshell;
+		}
+#endif /* DEBUGSHELL */
+
 #ifdef SECURE
 		/*
 		 * Check the root password.
@@ -527,7 +545,7 @@ single_user()
 					break;
 			}
 		}
-#if 0
+#ifdef notdef
 		/*
 		 * Make the single-user shell be root's standard shell?
 		 */
