@@ -1,4 +1,4 @@
-/*	vfs_syscalls.c	6.7	84/06/27	*/
+/*	vfs_syscalls.c	6.8	84/06/30	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -942,13 +942,9 @@ rename()
 	 * Insure directory entry still exists and
 	 * has not changed since the start of all
 	 * this.  If either has occured, forget about
-	 * about deleting the original entry and just
-	 * adjust the link count in the inode.
+	 * about deleting the original entry.
 	 */
-	if (dp == NULL || u.u_dent.d_ino != ip->i_number) {
-		ip->i_nlink--;
-		ip->i_flag |= ICHG;
-	} else {
+	if (dp != NULL && u.u_dent.d_ino == ip->i_number) {
 		/*
 		 * If source is a directory, must adjust
 		 * link count of parent directory also.
