@@ -1,5 +1,5 @@
 #ifndef lint
-static char version[] = "@(#)dir.c	3.8 (Berkeley) %G%";
+static char version[] = "@(#)dir.c	3.9 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -291,15 +291,14 @@ linkup(orphan, pdir)
 		} else {
 			pwarn("NO lost+found DIRECTORY");
 			if (preen || reply("CREATE")) {
-				idesc.id_func = mkentry;
-				idesc.id_parent = allocdir(ROOTINO, 0);
-				if (idesc.id_parent != 0) {
-					if (makeentry(dp, &idesc) != 0) {
-						lfdir = idesc.id_parent;
+				lfdir = allocdir(ROOTINO, 0);
+				if (lfdir != 0) {
+					if (makeentry(ROOTINO, lfdir, lfname) != 0) {
 						if (preen)
 							printf(" (CREATED)\n");
 					} else {
-						freedir(idesc.id_parent, ROOTINO);
+						freedir(lfdir, ROOTINO);
+						lfdir = 0;
 						if (preen)
 							printf("\n");
 					}
@@ -350,14 +349,8 @@ linkup(orphan, pdir)
 	len = strlen(lfname);
 	bcopy(lfname, pathp, len + 1);
 	pathp += len;
-	idesc.id_type = DATA;
-	idesc.id_func = mkentry;
-	idesc.id_number = lfdir;
-	idesc.id_parent = orphan;	/* this is the inode to enter */
-	idesc.id_fix = DONTKNOW;
-	idesc.id_name = tempname;
-	len = lftempname(idesc.id_name, orphan);
-	if (makeentry(dp, &idesc) == 0) {
+	len = lftempname(tempname, orphan);
+	if (makeentry(lfdir, orphan, tempname) == 0) {
 		pfatal("SORRY. NO SPACE IN lost+found DIRECTORY");
 		printf("\n\n");
 		return (0);
@@ -390,16 +383,28 @@ linkup(orphan, pdir)
 /*
  * make an entry in a directory
  */
-makeentry(dp, idesc)
-	DINODE *dp;
-	struct inodesc *idesc;
+makeentry(parent, ino, name)
+	ino_t parent, ino;
+	char *name;
 {
+	DINODE *dp;
+	struct inodesc idesc;
 	
-	if ((ckinode(dp, idesc) & ALTERED) != 0)
+	if (parent < ROOTINO || parent >= imax || ino < ROOTINO || ino >= imax)
+		return (0);
+	bzero(&idesc, sizeof(struct inodesc));
+	idesc.id_type = DATA;
+	idesc.id_func = mkentry;
+	idesc.id_number = parent;
+	idesc.id_parent = ino;	/* this is the inode to enter */
+	idesc.id_fix = DONTKNOW;
+	idesc.id_name = name;
+	dp = ginode(parent);
+	if ((ckinode(dp, &idesc) & ALTERED) != 0)
 		return (1);
 	if (expanddir(dp) == 0)
 		return (0);
-	return (ckinode(dp, idesc) & ALTERED);
+	return (ckinode(dp, &idesc) & ALTERED);
 }
 
 /*
