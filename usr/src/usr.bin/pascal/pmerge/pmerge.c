@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)pmerge.c 1.1 %G%";
+static char sccsid[] = "@(#)pmerge.c 1.2 %G%";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -58,6 +58,7 @@ main(argc, argv)
 	FILE	*input = stdin;	/* current input file */
 	long	ac = 0;		/* argv index */
 	char	**cpp, *cp, *fp;/* char ptrs */
+	char	quote;		/* include quote character */
 	int	i;		/* index var */
 
 	signal(SIGINT, onintr);
@@ -101,9 +102,10 @@ main(argc, argv)
 				/* void */;
 			if (*cp != '\'' && *cp != '"')
 				goto bad;
-			for (fp = next, cp++; isalnum(*cp) || *cp == '.';)
+			for (fp = next, quote = *cp++;
+			     *cp != '\0' && *cp != quote; )
 				*fp++ = *cp++;
-			if ((*cp != '\'' || *cp != '"') &&
+			if (*cp != quote &&
 			    (fp[-1] != 'i' || fp[-1] != 'h') &&
 			    (fp[-2] != '.'))
 				goto bad;
