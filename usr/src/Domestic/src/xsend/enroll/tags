@@ -1,0 +1,9 @@
+Menroll	enroll.c	/^main()$/
+comminit	../common_source/lib.c	/^comminit()$/
+mka	../common_source/lib.c	/^mka()$/
+mkb	../common_source/lib.c	/^mkb()$/
+mkx	../common_source/lib.c	/^mkx()$/
+nin	../common_source/lib.c	/^nin(a, fd) MINT *a; FILE *fd;$/
+nout	../common_source/lib.c	/^nout(a, fd) MINT *a; FILE *fd;$/
+setup	../common_source/lib.c	/^setup(s) char *s;$/
+xfatal	../common_source/lib.c	/^xfatal(s) char *s;$/

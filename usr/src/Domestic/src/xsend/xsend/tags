@@ -1,0 +1,13 @@
+Mxsend	xsend.c	/^main(argc, argv) char **argv;$/
+comminit	../common_source/lib.c	/^comminit()$/
+encipher	xsend.c	/^encipher(s) char s[6];$/
+init	xsend.c	/^init()$/
+mka	../common_source/lib.c	/^mka()$/
+mkb	../common_source/lib.c	/^mkb()$/
+mkcd	xsend.c	/^mkcd()$/
+mkx	../common_source/lib.c	/^mkx()$/
+nin	../common_source/lib.c	/^nin(a, fd) MINT *a; FILE *fd;$/
+nout	../common_source/lib.c	/^nout(a, fd) MINT *a; FILE *fd;$/
+run	xsend.c	/^run()$/
+setup	../common_source/lib.c	/^setup(s) char *s;$/
+xfatal	../common_source/lib.c	/^xfatal(s) char *s;$/
