@@ -2,7 +2,7 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)asparse.c 4.19 %G%";
+static char sccsid[] = "@(#)asparse.c 4.20 %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -535,6 +535,7 @@ restlab:
 		stpt->s_value = locxp->e_xvalue;
 		stpt->s_index = dotp - usedot;
 		if (exprisname){
+			stpt->s_type = locxp->e_xtype;
 			switch(stpt->s_ptype){
 				case N_GSYM:
 				case N_FNAME:
