@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)operator.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)operator.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -39,7 +39,7 @@ yanknode(planp)
  * yankexpr --
  *	Removes one expression from the plan.  This is used mainly by
  *	paren_squish.  In comments below, an expression is either a
- *	simple node or a T_EXPR node containing a list of simple nodes.
+ *	simple node or a N_EXPR node containing a list of simple nodes.
  */
 PLAN *
 yankexpr(planp)    
@@ -61,22 +61,22 @@ yankexpr(planp)
 	 * just return it and unwind our recursion; all other nodes are
 	 * complete expressions, so just return them.
 	 */
-	if (node->type == T_OPENPAREN)
+	if (node->type == N_OPENPAREN)
 		for (tail = subplan = NULL;;) {
 			if ((next = yankexpr(planp)) == NULL)
 				bad_arg("(", "missing closing ')'");
 			/*
 			 * If we find a closing ')' we store the collected
 			 * subplan in our '(' node and convert the node to
-			 * a T_EXPR.  The ')' we found is ignored.  Otherwise,
+			 * a N_EXPR.  The ')' we found is ignored.  Otherwise,
 			 * we just continue to add whatever we get to our
 			 * subplan.
 			 */
-			if (next->type == T_CLOSEPAREN) {
+			if (next->type == N_CLOSEPAREN) {
 				if (subplan == NULL)
 					bad_arg("()", "empty inner expression");
 				node->p_data[0] = subplan;
-				node->type = T_EXPR;
+				node->type = N_EXPR;
 				node->eval = f_expr;
 				break;
 			} else {
@@ -115,7 +115,7 @@ paren_squish(plan)
 		 * if we find an unclaimed ')' it means there is a missing
 		 * '(' someplace.
 		 */
-		if (expr->type == T_CLOSEPAREN)
+		if (expr->type == N_CLOSEPAREN)
 			bad_arg(")", "no beginning '('");
 
 		/* add the expression to our result plan */
@@ -139,7 +139,7 @@ not_squish(plan)
 	PLAN *plan;		/* plan to process */
 {
 	register PLAN *next;	/* next node being processed */
-	register PLAN *node;	/* temporary node used in T_NOT processing */
+	register PLAN *node;	/* temporary node used in N_NOT processing */
 	register PLAN *tail;	/* pointer to tail of result plan */
 	PLAN *result;		/* pointer to head of result plan */
     
@@ -150,7 +150,7 @@ not_squish(plan)
 		 * if we encounter a ( expression ) then look for nots in
 		 * the expr subplan.
 		 */
-		if (next->type == T_EXPR)
+		if (next->type == N_EXPR)
 			next->p_data[0] = not_squish(next->p_data[0]);
 
 		/*
@@ -158,17 +158,17 @@ not_squish(plan)
 		 * it in the not's subplan.  As an optimization we compress
 		 * several not's to zero or one not.
 		 */
-		if (next->type == T_NOT) {
+		if (next->type == N_NOT) {
 			int notlevel = 1;
 
 			node = yanknode(&plan);
-			while (node->type == T_NOT) {
+			while (node->type == N_NOT) {
 				++notlevel;
 				node = yanknode(&plan);
 			}
 			if (node == NULL)
 				bad_arg("!", "no following expression");
-			if (node->type == T_OR)
+			if (node->type == N_OR)
 				bad_arg("!", "nothing between ! and -o");
 			if (notlevel % 2 != 1)
 				next = node;
@@ -207,11 +207,11 @@ or_squish(plan)
 		 * if we encounter a ( expression ) then look for or's in
 		 * the expr subplan.
 		 */
-		if (next->type == T_EXPR)
+		if (next->type == N_EXPR)
 			next->p_data[0] = or_squish(next->p_data[0]);
 
 		/* if we encounter a not then look for not's in the subplan */
-		if (next->type == T_NOT)
+		if (next->type == N_NOT)
 			next->p_data[0] = or_squish(next->p_data[0]);
 
 		/*
@@ -219,7 +219,7 @@ or_squish(plan)
 		 * or's first subplan and then recursively collect the
 		 * remaining stuff into the second subplan and return the or.
 		 */
-		if (next->type == T_OR) {
+		if (next->type == N_OR) {
 			if (result == NULL)
 				bad_arg("-o", "no expression before -o");
 			next->p_data[0] = result;

@@ -7,15 +7,24 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)find.h	5.6 (Berkeley) %G%
+ *	@(#)find.h	5.7 (Berkeley) %G%
  */
+
+/* node type */
+enum ntype {
+	N_AND = 1, 				/* must start > 0 */
+	N_ATIME, N_CLOSEPAREN, N_CTIME, N_DEPTH, N_EXEC, N_EXPR, N_FOLLOW,
+	N_FSTYPE, N_GROUP, N_INUM, N_LINKS, N_LS, N_MTIME, N_NAME, N_NEWER,
+	N_NOGROUP, N_NOT, N_NOUSER, N_OK, N_OPENPAREN, N_OR, N_PERM, N_PRINT,
+	N_PRUNE, N_SIZE, N_TYPE, N_USER, N_XDEV,
+};
 
 /* node definition */
 typedef struct _plandata {
 	struct _plandata *next;			/* next node */
 	int (*eval)();				/* node evaluation function */
 	int flags;				/* private flags */
-	int type;				/* plan node type */
+	enum ntype type;			/* plan node type */
 	union {
 		gid_t _g_data;			/* gid */
 		ino_t _i_data;			/* inode */
@@ -47,37 +56,6 @@ typedef struct _plandata {
 #define	e_orig	p_un.ex._e_orig
 #define	e_len	p_un.ex._e_len
 } PLAN;
-
-/* node types */
-#define	T_AND		1		/* must start at >0 */
-#define	T_ATIME		2
-#define	T_CLOSEPAREN	3
-#define	T_CTIME		4
-#define	T_DEPTH		5
-#define	T_EXEC		6
-#define	T_EXPR		7
-#define	T_FOLLOW	8
-#define	T_FSTYPE	9
-#define	T_GROUP		10
-#define	T_INUM		11
-#define	T_LINKS		12
-#define	T_LS		13
-#define	T_MTIME		14
-#define	T_NAME		15
-#define	T_NEWER		16
-#define	T_NOGROUP	17
-#define	T_NOT		18
-#define	T_NOUSER	19
-#define	T_OK    	20
-#define	T_OPENPAREN	21
-#define	T_OR		22
-#define	T_PERM		23
-#define	T_PRINT		24
-#define	T_PRUNE		25
-#define	T_SIZE		26
-#define	T_TYPE		27
-#define	T_USER		28
-#define	T_XDEV		29
 
 #define	error(name, number) \
 	(void)fprintf(stderr, "find: %s: %s\n", name, strerror(number));
