@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	5.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	5.27 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -46,6 +46,7 @@ int termwidth = 80;		/* default terminal width */
 
 /* flags */
 int f_accesstime;		/* use time of last access */
+int f_column;			/* columnated format */
 int f_group;			/* show group ownership of a file */
 int f_ignorelink;		/* indirect through symbolic link operands */
 int f_inode;			/* print inode */
@@ -71,14 +72,11 @@ main(argc, argv)
 	struct winsize win;
 	int ch;
 	char *p, *getenv();
-	int namecmp(), revnamecmp(), acccmp(), revacccmp();
-	int modcmp(), revmodcmp(), statcmp(), revstatcmp();
-	int printcol(), printlong(), printscol();
+	int acccmp(), bcopy(), modcmp(), namecmp(), prcopy(), printcol();
+	int printlong(), printscol(), revacccmp(), revmodcmp(), revnamecmp();
+	int revstatcmp(), statcmp();
 
-	/*
-	 * terminal defaults to -C -q
-	 * non-terminal defaults to -1
-	 */
+	/* terminal defaults to -Cq, non-terminal defaults to -1 */
 	if (isatty(1)) {
 		f_nonprint = 1;
 		if (ioctl(1, TIOCGWINSZ, &win) == -1 || !win.ws_col) {
@@ -87,6 +85,7 @@ main(argc, argv)
 		}
 		else
 			termwidth = win.ws_col;
+		f_column = 1;
 	} else
 		f_singlecol = 1;
 
@@ -102,14 +101,15 @@ main(argc, argv)
 		 */
 		case '1':
 			f_singlecol = 1;
-			f_longform = 0;
+			f_column = f_longform = 0;
 			break;
 		case 'C':
+			f_column = 1;
 			f_longform = f_singlecol = 0;
 			break;
 		case 'l':
 			f_longform = 1;
-			f_singlecol = 0;
+			f_column = f_singlecol = 0;
 			break;
 		/* -c and -u override each other */
 		case 'c':
@@ -209,28 +209,44 @@ main(argc, argv)
 		printfcn = printscol;
 	else if (f_longform)
 		printfcn = printlong;
-	else
+	else {
+		/*
+		 * set f_column, in case f_longform selected, then turned
+		 * off by f_special.
+		 */
+		f_column = 1;
 		printfcn = printcol;
+	}
 
-	if (argc)
+	if (f_specialdir) {
+		if (!argc) {
+			(void)fprintf(stderr, "ls: -f requires operands.\n");
+			exit(1);
+		}
+		for (; *argv; ++argv)
+			dodir(*argv);
+	} else if (argc)
 		doargs(argc, argv);
 	else
-		dodot();
+		dodir(".");
 	exit(0);
 }
 
-dodot()
+dodir(name)
+	char *name;
 {
 	LS local, *stats;
 	int num;
 	char *names;
 
-	if (lstat(local.name = ".", &local.lstat)) {
+	if (lstat(local.name = name, &local.lstat)) {
 		(void)fprintf(stderr, "ls: .: %s\n", strerror(errno));
-		exit(1);
+		return;
 	}
 	if (num = tabdir(&local, &stats, &names))
 		displaydir(stats, num);
+	(void)free((char *)stats);
+	(void)free((char *)names);
 }
 
 static char path[MAXPATHLEN + 1];
@@ -241,12 +257,12 @@ doargs(argc, argv)
 	char **argv;
 {
 	register LS *dstatp, *rstatp;
+	register int cnt, dircnt, maxlen, regcnt;
 	LS *dstats, *rstats;
-	register int cnt, dircnt, regcnt;
 	struct stat sb;
-	LS *stats;
-	int num, (*statfcn)(), stat(), lstat();
-	char *names, top[MAXPATHLEN + 1];
+	int (*statfcn)(), stat(), lstat();
+	char top[MAXPATHLEN + 1];
+	u_long blocks;
 
 	/*
 	 * walk through the operands, building separate arrays of LS
@@ -256,13 +272,13 @@ doargs(argc, argv)
 	statfcn = f_ignorelink ? stat : lstat;
 	for (dircnt = regcnt = 0; *argv; ++argv) {
 		if (statfcn(*argv, &sb)) {
-			(void)fprintf(stderr, "ls: %s: %s\n",
-			    *argv, strerror(errno));
+			(void)fprintf(stderr, "ls: %s: %s\n", *argv,
+			    strerror(errno));
 			if (errno == ENOENT)
 				continue;
 			exit(1);
 		}
-		if (!f_specialdir && !f_listdir && S_ISDIR(sb.st_mode)) {
+		if (S_ISDIR(sb.st_mode) && !f_listdir) {
 			if (!dstats)
 				dstatp = dstats = (LS *)emalloc((u_int)argc *
 				    (sizeof(LS)));
@@ -272,31 +288,38 @@ doargs(argc, argv)
 			++dircnt;
 		}
 		else {
-			if (!rstats)
+			if (!rstats) {
 				rstatp = rstats = (LS *)emalloc((u_int)argc *
 				    (sizeof(LS)));
+				blocks = 0;
+				maxlen = -1;
+			}
 			rstatp->name = *argv;
 			rstatp->lstat = sb;
+
+			/* save name length for -C format */
+			rstatp->len = strlen(*argv);
+
+			if (f_nonprint)
+				prcopy(*argv, *argv, rstatp->len);
+
+			/* calculate number of blocks if -l/-s formats */
+			if (f_longform || f_size)
+				blocks += sb.st_blocks;
+
+			/* save max length if -C format */
+			if (f_column && maxlen < rstatp->len)
+				maxlen = rstatp->len;
+
 			++rstatp;
 			++regcnt;
 		}
 	}
 	/* display regular files */
 	if (regcnt) {
-		/*
-		 * for -f flag -- switch above treats all -f operands as
-		 * regular files; this code uses tabdir() to read
-		 * them as directories.
-		 */
-		if (f_specialdir) {
-			for (cnt = regcnt; cnt--;) {
-				if (num = tabdir(rstats++, &stats, &names))
-					displaydir(stats, num);
-				(void)free((char *)stats);
-				(void)free((char *)names);
-			}
-		} else
-			displaydir(rstats, regcnt);
+		rstats[0].lstat.st_btotal = blocks;
+		rstats[0].lstat.st_maxlen = maxlen;
+		displaydir(rstats, regcnt);
 	}
 	/* display directories */
 	if (dircnt) {
@@ -443,7 +466,6 @@ tabdir(lp, s_stats, s_names)
 		}
 		stats[cnt].name = names;
 
-		/* strip out unprintables */
 		if (f_nonprint)
 			prcopy(dp->d_name, names, (int)dp->d_namlen);
 		else
@@ -459,11 +481,13 @@ tabdir(lp, s_stats, s_names)
 
 		/* save name length for -C format */
 		stats[cnt].len = dp->d_namlen;
-		/* calculate number of blocks if -l format */
+
+		/* calculate number of blocks if -l/-s formats */
 		if (f_longform || f_size)
 			blocks += stats[cnt].lstat.st_blocks;
+
 		/* save max length if -C format */
-		if (!f_longform && !f_singlecol && maxlen < (int)dp->d_namlen)
+		if (f_column && maxlen < (int)dp->d_namlen)
 			maxlen = dp->d_namlen;
 		++cnt;
 	}
