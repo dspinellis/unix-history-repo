@@ -1,4 +1,4 @@
-.\"	@(#)du.1	6.1 (Berkeley) %G%
+.\"	@(#)du.1	6.2 (Berkeley) %G%
 .\"
 .TH DU 1 ""
 .AT 3
@@ -7,9 +7,7 @@ du \- summarize disk usage
 .SH SYNOPSIS
 .B du
 [
-.B \-s
-] [
-.B \-a
+.B \-asx
 ] [ name ... ]
 .SH DESCRIPTION
 .I Du
@@ -19,30 +17,26 @@ directory or file
 .IR name .
 If
 .I name
-is missing,
-`\fB.\fR'
-is used.
+is missing, the current directory is used.
 .PP
-The argument
-.B \-s
-causes only the grand total to
-be given.
-The argument
+The
 .B \-a
-causes an entry to be generated
-for each file.
+option causes an entry to be generated for each file.
+The
+.B \-s
+option causes only the grand total to be given.
 Absence of either causes an entry to be generated for
 each directory only.
 .PP
-A file which has two links to it is only counted once.
+The
+.B \-x
+option keeps
+.I du
+from crossing any mount points.
+.PP
+A file which has multiple links to it is only counted
+(and displayed) once per
+.I du
+execution.
 .SH "SEE ALSO"
 df(1), quot(8)
-.SH BUGS
-Non-directories
-given as arguments (not under
-.B \-a
-option) are not listed.
-.br
-If there are too many distinct linked files,
-.I du
-counts the excess files multiply.
