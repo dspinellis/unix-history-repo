@@ -25,7 +25,9 @@
 .Op Fl o Ar options
 .Ar special node
 .Nm umount
-.Op Fl af
+.Fl a
+.Op Fl f
+.Op Fl h Ar host
 .Op Fl t Ar ufs | lfs | external_type
 .Nm umount
 .Op Fl f
@@ -87,13 +89,13 @@ The following options apply to any file system that is being mounted:
 .Bl -tag -width indent
 .It noexec
 Do not allow execution of any binaries on the mounted file system.
-This options is useful for a server that has file systems containing
+This option is useful for a server that has file systems containing
 binaries for architectures other than its own.
 .It nosuid
 Do not allow set-user-identifier or set-group-identifier bits to take effect.
 .It nodev
 Do not interpret character or block special devices on the file system.
-This options is useful for a server that has file systems containing
+This option is useful for a server that has file systems containing
 special devices for architectures other than its own.
 .It synchronous
 All
@@ -208,16 +210,23 @@ Options for the
 .Nm umount
 command:
 .Bl -tag -width indent
+.It Fl a
+All of the file systems described in
+.Xr fstab 5
+are unmounted.
 .It Fl f
 The file system is forcibly unmounted.
 Active special devices continue to work,
 but all other files return errors if further accesses are attempted.
 The root file system cannot be forcibly unmounted.
-.It Fl a
-All of the file systems described in
-.Xr fstab 5
-are unmounted.
-.It Fl t
+.It Fl h Ar host
+Only filesystems mounted from the specified host will be
+unmounted.  This option is implies the
+.Fl a
+option and, unless otherwise specified with the
+.Fl t
+option, will only unmount NFS filesystems.
+.It Fl t Ar "ufs \\*(Ba lfs \\*(Ba external type"
 Is used to indicate the actions should only be taken on
 filesystems of the specified type.
 More than one type may be specified in a comma separated list.
