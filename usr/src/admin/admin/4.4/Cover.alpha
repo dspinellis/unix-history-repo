@@ -1,4 +1,4 @@
-.\"	@(#)Cover.alpha	1.6 (Berkeley) %G%
+.\"	@(#)Cover.alpha	1.7 (Berkeley) %G%
 .\" use -ms
 .\"
 .so HEADERS
@@ -57,7 +57,7 @@ source licenses with USL/AT&T.
 The 4.4BSD-Encumbered distribution is a complete distribution in the style of
 4.3BSD and contains the complete source for the Berkeley Distribution.
 .PP
-The 4.4BSD-Lite distribution will be a subset of 4.4BSD-Encumbered that
+The 4.4BSD-Lite distribution will be a distribution that
 is copyrighted by the University of California
 and others, but may be freely redistributed.
 It will be available to anyone and requires no previous license, either from
@@ -67,17 +67,15 @@ Networking Releases.
 The 4.4BSD-Lite distribution will contain only a few additional programs
 and no additional kernel files from the Second Networking
 release done in June 1991.
-However, like 4.4BSD-Encumbered,
+However,
 it will contain support for additional architectures
 and will have many bug fixes and performance enhancements.
 The distribution will include both software developed at Berkeley
 and also much of software contributed by authors outside Berkeley.
 .PP
 Only the 4.4BSD-Encumbered distribution is available at this time.
-The 4.4BSD-Lite distribution is under administrative and technical
-review to ensure that it does not contain any proprietary code.
-When this review is completed, we will send out a mailing to notify
-you of its availability.
+The 4.4BSD-Lite distribution is not available at this time;
+we will send out a mailing to notify you when it is available.
 .\" .PP
 .\" Because the 4.4BSD-Lite distribution is a partial-source
 .\" distribution, it is not possible to compile or run it
@@ -105,8 +103,9 @@ or one 8mm Exabyte cassette only.
 The 4.4BSD-Encumbered distribution contains complete source
 as well as binaries for
 the HP9000/300 series of workstations.
-The 4.4BSD-Lite distribution will contain only the subset of the
-4.4BSD-Encumbered sources that are freely redistributable.
+The 4.4BSD-Lite distribution will contain only freely redistributable sources.
+As the sources do not comprise a complete system,
+no binaries will be included.
 .PP
 The architectures that are supported include:
 .IP \(bu
@@ -189,7 +188,7 @@ a directory services implementation (X.500), and miscellaneous other utilities.
 .PP
 A new virtual filesystem interface has been added to the
 kernel to support multiple filesystems.
-Although generally similar to Sun's vnode interface,
+In comparison with other interfaces,
 the Berkeley interface has been structured for more efficient support
 of filesystems that maintain state (such as the local filesystem).
 The interface has been extended with support for stackable
@@ -245,19 +244,20 @@ There are several new tools and utilities included in this release.
 A new version of make allows much-simplified makefiles for the system software
 and allows compilation for multiple architectures from the same source tree
 (which may be mounted read-only).
-Notable additions to the libraries include functions to traverse a UNIX
-file hierarchy, database interfaces to btree and hashing functions,
+Notable additions to the libraries include functions to traverse a
+filesystem hierarchy, database interfaces to btree and hashing functions,
 a new, fast implementation of stdio and a radix sort function.
 The additions to the utility suite include greatly enhanced versions of
 programs that display system status information, implementations of
-various tools traditionally found in System V releases and many others.
+various traditional tools described in the IEEE Std1003.2 standard,
+and many others.
 .PP
 We have been tracking the IEEE Std1003.2 shell and utility work
 and have included prototypes of many of the proposed utilities.
-Because most of the traditional utilities have been replaced to eliminate
-code proprietary to USL/AT&T, you should realize that the utility software
-may not be as stable, reliable or well documented as in traditional Berkeley
-releases.
+Because most of the traditional utilities have been replaced
+with implementations conformant to the POSIX standards,
+you should realize that the utility software may not be as stable,
+reliable or well documented as in traditional Berkeley releases.
 In particular, almost the entire manual suite has been rewritten to
 be freely redistributable and, in many instances,
 it does not correctly reflect the current state of the software.
@@ -367,8 +367,8 @@ The fee is $2000.00 for 4.4BSD-Encumbered.
 .PP
 Because we are a research and development organization
 and not a commercial organization,
-we make our research results available for a license fee.
-We distribute only the whole system `As Is'
+we make our research results available for a small license fee.
+We distribute only the whole system ``As Is''
 and cannot send individual pieces of the system.
 We are required by the University of California to have
 a formal license arrangement with each
