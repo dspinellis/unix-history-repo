@@ -1,10 +1,10 @@
 /*-
- * Copyright (c) 1985 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1985, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)uust.h	4.2 (Berkeley) %G%
+ *	@(#)uust.h	8.1 (Berkeley) %G%
  */
 
 #define	US_RRS(a,b)	 
