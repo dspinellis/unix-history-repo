@@ -1,0 +1,161 @@
+%    Copyright (C) 1989, 1990, 1991 Aladdin Enterprises.  All rights reserved.
+%    Distributed by Free Software Foundation, Inc.
+%
+% This file is part of Ghostscript.
+%
+% Ghostscript is distributed in the hope that it will be useful, but
+% WITHOUT ANY WARRANTY.  No author or distributor accepts responsibility
+% to anyone for the consequences of using it or for whether it serves any
+% particular purpose or works at all, unless he says so in writing.  Refer
+% to the Ghostscript General Public License for full details.
+%
+% Everyone is granted permission to copy, modify and redistribute
+% Ghostscript, but only under the conditions described in the Ghostscript
+% General Public License.  A copy of this license is supposed to have been
+% given to you along with Ghostscript so you can know your rights and
+% responsibilities.  It should be in a file named COPYING.  Among other
+% things, the copyright notice and this notice must be preserved on all
+% copies.
+
+% This file provides a dummy 'statusdict' and 'serverdict',
+% and a few of the other LaserWriter operators, for the benefit of
+% PostScript programs that think they are running on a LaserWriter.
+
+systemdict begin
+
+% Define various paper formats.  These are mostly dummies for now.
+% Only letter, note, and legal are defined in the Adobe manual.
+
+ /letter {statusdict begin 0 setpagetype end} def
+ /note {statusdict begin 1 setpagetype end} def
+
+ /11x17 {} def		% 11x17 portrait
+ /a3 {} def
+ /a4 {} def
+ /a5 {} def
+ /a6 {} def
+ /b4 {} def
+ /flsa {} def
+ /flse {} def
+ /halfletter {} def
+ /ledger {} def		% 11x17 landscape
+ /legal {} def
+
+ /statusdict 80 dict def
+ /serverdict 4 dict def
+
+end
+
+statusdict begin
+
+%%%%%% The following items were suggested by a user as useful.
+
+% Permanent definitions
+
+/ramsize         4194304 def
+/hardwareiomode        0 def
+	/sethardwareiomode     {pop} def
+/softwareiomode        0 def
+	/setsoftwareiomode     {pop} def
+/dosysstart        false def
+	/setdosysstart         {pop} def
+/allowjobreset      true def
+	/setallowjobreset      {pop} def
+/defaultpaperfamily    0 def
+	/setdefaultpaperfamily {pop} def
+/defaultpapertray      0 def
+	/setdefaultpapertray   {pop} def
+/defaulttrayswitch false def
+	/setdefaulttrayswitch  {pop} def
+
+% Tray and format selection
+
+ /11x17tray {} def
+ /a3tray {} def
+ /a4tray {} def
+ /a5tray {} def
+ /a6tray {} def
+ /b4tray {} def
+ /flsatray {} def
+ /flsetray {} def
+ /halflettertray {} def
+ /legaltray {} def
+ /lettertray {} def
+
+% Per-job parameters
+
+/paperfamily 0 def	% 0 is US, 1 is European
+/papertray 1 def
+	/setpapertray {statusdict exch /papertray exch put} def 
+/trayswitch false def	% paperout feeds from another tray
+/papersize {/letter true} def	% <name of paper size>, <short-edge-first-p>
+/appletalktype (LaserWriter) def
+
+%%%%%% The following items are defined in the PostScript Language
+%%%%%% Reference Manual, First Edition.
+
+ /checkpassword {statusdict begin .password eq end} def
+ /defaulttimeouts {statusdict begin .timeouts aload pop end} def
+%/dostartpage
+ /eescratch {pop 0} def
+ /idlefonts {statusdict begin mark .idlefonts aload pop end} def
+ /jobname () def
+%/jobtimeout
+ /manualfeed false def
+ /manualfeedtimeout 60 def
+ /margins {statusdict begin .topmargin .leftmargin end} def
+ /pagecount {4711} def
+ /pagestackorder {false} def
+%/pagetype
+ /prefeed false def
+ /printererror {pop pop} def
+ /printername {statusdict begin .printername exch copy end} def
+ /product (Ghostscript) def
+ /revision revision def		% revision is defined in systemdict
+ /sccbatch {pop 9600 0} def
+ /sccinteractive {pop 9600 0} def
+ /setdefaulttimeouts {statusdict begin .timeouts astore pop end} def
+ /setdostartpage {statusdict exch /dostartpage exch put} def
+ /seteescratch {pop pop} def
+ /setidlefonts {] statusdict exch /.idlefonts exch put} def
+ /setjobtimeout {statusdict exch /jobtimeout exch put} def
+ /setmargins
+  {statusdict begin /.leftmargin exch def /.topmargin exch def end} def
+ /setpagetype {statusdict exch /pagetype exch put} def
+ /setpassword
+  {exch checkpassword
+    {statusdict exch /.password exch put true}
+    {pop false}
+   ifelse} def
+ /setprintername
+  {dup length string copy statusdict exch /printername exch put} def
+ /setsccbatch {pop pop pop} def
+ /setsccinteractive {pop pop pop} def
+ /waittimeout 300 def
+
+/.password 0 def
+/.timeouts [0 60 30] def
+true setdostartpage
+mark setidlefonts
+0 setjobtimeout
+0 0 setmargins
+0 setpagetype
+product setprintername
+
+end	% statusdict
+
+% The following contents of serverdict are a complete guess,
+% based on some observed LaserWriter boilerplate.
+
+serverdict begin
+
+ /execjob { } def
+% The Red Book implies that something like the following is
+% an appropriate definition of exitserver.
+ /exitserver { clear stop } def
+% However, this interacts badly with Ghostscript's present error handler,
+% so we override it with the following less appropriate definition.
+ /exitserver { clear cleardictstack } def
+ /setrealdevice { } def
+
+end	% serverdict
