@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs.h	5.5 (Berkeley) %G%
+ *	@(#)lfs.h	5.6 (Berkeley) %G%
  */
 
 typedef struct buf	BUF;
@@ -40,20 +40,20 @@ struct finfo {
 /* In-memory description of a segment about to be written */
 typedef struct segment SEGMENT;
 struct segment {
-	SEGMENT	*nextp;			/* Links segments together */
-	BUF	**bpp;			/* Pointer to buffer array */
-	BUF	**cbpp;			/* Pointer to next available bp */
-	BUF	*ibp;			/* Buffer pointer to inode page */
-	BUF	*sbp;			/* Segment summary buffer pointer */
-	void	*segsum;		/* Segment Summary info */
-	u_long	sum_bytes_left;		/* Bytes left in summary */
-	u_long	seg_bytes_left;		/* Bytes left in segment */
-	daddr_t	saddr;			/* Current disk address */
-	daddr_t	sum_addr;		/* Address of current summary */
-	u_long	ninodes;		/* Number of inodes in this segment */
-	u_long	sum_num;		/* Number of current summary block */
-	u_long	seg_number;		/* Number of this segment */
-	FINFO	*fip;			/* Current fileinfo pointer */
+	SEGMENT	*nextp;			/* links segments together */
+	BUF	**bpp;			/* pointer to buffer array */
+	BUF	**cbpp;			/* pointer to next available bp */
+	BUF	*ibp;			/* buffer pointer to inode page */
+	BUF	*sbp;			/* segment summary buffer pointer */
+	void	*segsum;		/* segment Summary info */
+	u_long	sum_bytes_left;		/* bytes left in summary */
+	u_long	seg_bytes_left;		/* bytes left in segment */
+	daddr_t	saddr;			/* current disk address */
+	daddr_t	sum_addr;		/* address of current summary */
+	u_long	ninodes;		/* number of inodes in this segment */
+	u_long	sum_num;		/* number of current summary block */
+	u_long	seg_number;		/* number of this segment */
+	FINFO	*fip;			/* current fileinfo pointer */
 };
 
 /* On-disk and in-memory super block. */
@@ -77,8 +77,8 @@ struct lfs {
 	u_long	lfs_nfiles;		/* number of allocated inodes */
 	daddr_t	lfs_idaddr;		/* inode file disk address */
 	ino_t	lfs_ifile;		/* inode file inode number */
-	daddr_t	lfs_lastseg;		/* last segment written */
-	daddr_t	lfs_nextseg;		/* next segment to write */
+	daddr_t	lfs_lastseg;		/* address of last segment written */
+	daddr_t	lfs_nextseg;		/* address of next segment to write */
 	u_long	lfs_tstamp;		/* time stamp */
 
 /* These are configuration parameters. */
@@ -110,7 +110,7 @@ struct lfs {
 	VNODE	*lfs_ivnode;		/* vnode for the ifile */
 	SEGUSE	*lfs_segtab;		/* in-memory segment usage table */
 	SEGMENT	*lfs_seglist;		/* list of segments being written */
-	u_long	lfs_iocount;		/* Number of ios pending */
+	u_long	lfs_iocount;		/* number of ios pending */
 	u_char	lfs_fmod;		/* super block modified flag */
 	u_char	lfs_clean;		/* file system is clean flag */
 	u_char	lfs_ronly;		/* mounted read-only flag */
@@ -131,9 +131,9 @@ struct lfs {
 #define	LOSTFOUNDINO	((ino_t)3)
 
 /* Fixed inode numbers. */
-#define	LFS_UNUSED_INUM	0		/* Out of band inode number. */
-#define	LFS_IFILE_INUM	1		/* Inode number of the ifile. */
-					/* First free inode number. */
+#define	LFS_UNUSED_INUM	0		/* out of band inode number */
+#define	LFS_IFILE_INUM	1		/* inode number of the ifile */
+					/* first free inode number */
 #define	LFS_FIRST_INUM	(LOSTFOUNDINO + 1)
 
 /*
@@ -173,7 +173,7 @@ struct ifile {
 
 /*
  * All summary blocks are the same size, so we can always read a summary
- * block easily from a segment
+ * block easily from a segment.
  */
 #define	LFS_SUMMARY_SIZE	512
 
