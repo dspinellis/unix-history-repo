@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)pccons.c	5.11 (Berkeley) 5/21/91
- *	$Id$
+ *	$Id: pccons.c,v 1.6 1993/10/16 12:50:22 rgrimes Exp $
  */
 
 /*
@@ -103,9 +103,6 @@ struct	isa_driver pcdriver = {
 	pcprobe, pcattach, "pc",
 };
 
-/* block cursor so wfj does not go blind on laptop hunting for
-	the verdamnt cursor -wfj */
-#define	FAT_CURSOR
 
 #define	COL		80
 #define	ROW		25
@@ -595,7 +592,7 @@ cursor(int a)
 	outb(addr_6845+1, 0);
 	outb(addr_6845, 11);
 	outb(addr_6845+1, 18);
-#endif	FAT_CURSOR
+#endif	/* FAT_CURSOR */
 	if (a == 0)
 		timeout(cursor, 0, hz/10);
 #ifdef XSERVER						/* 15 Aug 92*/
