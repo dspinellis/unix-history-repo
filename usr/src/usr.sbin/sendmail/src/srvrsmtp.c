@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	6.46 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.47 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	6.46 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.47 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -815,7 +815,7 @@ runinchild(label, e)
 	}
 
 	/* open alias database */
-	initaliases(AliasFile, FALSE, e);
+	initaliases(FALSE, e);
 
 	return (0);
 }

@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	6.60 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	6.61 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -710,7 +710,7 @@ main(argc, argv, envp)
 
 	  case MD_INITALIAS:
 		/* initialize alias database */
-		initaliases(AliasFile, TRUE, CurEnv);
+		initaliases(TRUE, CurEnv);
 		exit(EX_OK);
 
 	  case MD_DAEMON:
@@ -719,7 +719,7 @@ main(argc, argv, envp)
 
 	  default:
 		/* open the alias database */
-		initaliases(AliasFile, FALSE, CurEnv);
+		initaliases(FALSE, CurEnv);
 		break;
 	}
 
