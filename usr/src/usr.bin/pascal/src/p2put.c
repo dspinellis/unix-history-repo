@@ -1,9 +1,14 @@
-/* Copyright (c) 1979 Regents of the University of California */
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
 
 #ifndef lint
-static	char sccsid[] = "@(#)p2put.c 2.2 %G%";
-#endif
-
+char copyright[] =
+"@(#) Copyright (c) 1980 Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif not lint
     /*
      *	functions to help pi put out
      *	polish postfix binary portable c compiler intermediate code
