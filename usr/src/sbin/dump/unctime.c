@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)unctime.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)unctime.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -47,7 +47,7 @@ unctime(str)
 
 	if (strlen(str) != 25)
 		str[25] = 0;
-	strcpy(dbuf, str);
+	(void) strcpy(dbuf, str);
 	dbuf[E_MONTH+3] = 0;
 	if ((then.tm_mon = lookup(&dbuf[E_MONTH])) < 0)
 		return (-1);
