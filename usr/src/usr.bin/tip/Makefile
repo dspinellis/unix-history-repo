@@ -1,4 +1,4 @@
-#	Makefile	4.4	82/01/06
+#	Makefile	4.5	82/07/29
 #
 # makefile for intermachine communications package
 #
@@ -25,17 +25,19 @@
 #				writes on local side
 #	BUFSIZ			buffer sizing from stdio, must be fed
 #				explicitly to remcap.c if not 1024
+#	VMUNIX			allow VMUNIX tty stuff and job control
 
-ADM=/usr/adm
-BIN=/usr/bin
+ADM=${DESTDIR}/usr/adm
+BIN=${DESTDIR}/usr/bin
 OWNER=uucp
-CFLAGS=-O -DVMUNIX -DDEFBR=300 -DDEFFS=BUFSIZ -DDF02 -DDF03 -DACULOG
-LDFLAGS=-z
+CFLAGS=-O -DDEFBR=300 -DDEFFS=BUFSIZ -DVENTEL -DACULOG
+LDFLAGS=
 OBJECTS=acu.o acutab.o biz22.o biz31.o cmds.o cmdtab.o cu.o df.o dn11.o hunt.o \
 	lock.o log.o remote.o tip.o tipout.o value.o vars.o ventel.o
 SOURCES=acu.c acutab.c biz22.c biz31.c cmds.c cmdtab.c cu.c df.c dn11.c hunt.c \
 	lock.c log.c remcap.c remote.c tip.c tipout.c uucplock.c value.c  \
 	vars.c ventel.c
+MANS=tip.1 remote.5 phones.5
 CXREF=/usr/ucb/ctags -xw
 DIST=./dist
 
@@ -50,13 +52,13 @@ install: all
 	cp tip ${BIN}/tip
 	chown ${OWNER} ${BIN}/tip
 	chmod 4711 ${BIN}/tip
-	cp aculog /etc/aculog
-	chown ${OWNER} /etc/aculog
-	chmod 4711 /etc/aculog
+#	cp aculog /etc/aculog
+#	chown ${OWNER} /etc/aculog
+#	chmod 4711 /etc/aculog
 #	cp /dev/null ${ADM}/aculog
-	chown ${OWNER} ${ADM}/aculog
-	chmod 600 ${ADM}/aculog
-	@echo "create /etc/remote and /etc/phones"
+#	chown ${OWNER} ${ADM}/aculog
+#	chmod 600 ${ADM}/aculog
+#	@echo "create /etc/remote and /etc/phones"
 
 aculog:	aculog.c
 	${CC} -o aculog ${LDFLAGS} aculog.c
@@ -85,6 +87,8 @@ lint:
 distribution:
 	-if test ! -d ${DIST} ; then mkdir ${DIST} ; else rm -f ${DIST}/* ; fi
 	cp ${SOURCES} tip.h makefile README TODO ${DIST}
-	cp remote-file phones-file tip.1 ${DIST}
-	cd ${DIST}; tar cf dist.tar README TODO tip.h ${SOURCES} makefile \
-		remote-file phones-file tip.1
+	cp remote-file phones-file ${MANS} ${DIST}
+
+tape:
+	cd ${DIST}; tar c README TODO tip.h ${SOURCES} makefile \
+		remote-file phones-file ${MANS}
