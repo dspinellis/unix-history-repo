@@ -1,4 +1,4 @@
-.\"	@(#)4.4A.dist.cover	5.1 (Berkeley) %G%
+.\"	@(#)4.4A.dist.cover	5.2 (Berkeley) %G%
 .\" usage: soelim 4.4A.dist.cover | dtbl -Plz | psroff -ms -Plz
 .\"
 .so HEADERS
@@ -51,7 +51,21 @@ tar  xpf  /dev/\fItapename\fP
 or, for the 9-track distribution format, with a command such as:
 .sp .5
 .ti 1i
-dd  if=/dev/\fItapename\fP  bs=10240  |  uncompress  |  tar  xf  -
+dd  if=/dev/\fItapename\fP  bs=\fIbsize\fP  |  uncompress  |  tar  xf  -
+.sp .5
+.br
+where \fIbsize\fP is the blocksize as follows:
+.sp .5
+.TS
+center allbox;
+c c c c.
+	file 1	file2	file3
+Domestic 9-track	1024	20480	20480
+Domestic 8mm	1024	10240	10240
+Foreign 9-track	10240	10240	10240
+Foreign 8mm	10240	10240	10240
+.TE
+.bp
 .sp .5
 .PP
 If you have questions, you can call us at 510-642-4948, or, preferably,
