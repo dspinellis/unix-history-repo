@@ -194,15 +194,16 @@ getbroadcastnets(addrs, sock, buf)
 			sin = (struct sockaddr_in *)&ifr->ifr_addr;
 #ifdef SIOCGIFBRDADDR   /* 4.3BSD */
 			if (ioctl(sock, SIOCGIFBRDADDR, (char *)&ifreq) < 0) {
-				addrs[i++] = inet_makeaddr(inet_netof
-			    (sin->sin_addr.s_addr), INADDR_ANY);
+				addrs[i++] =
+				    inet_makeaddr(inet_netof(sin->sin_addr),
+				    INADDR_ANY);
 			} else {
 				addrs[i++] = ((struct sockaddr_in*)
 				  &ifreq.ifr_addr)->sin_addr;
 			}
 #else /* 4.2 BSD */
-			addrs[i++] = inet_makeaddr(inet_netof
-			  (sin->sin_addr.s_addr), INADDR_ANY);
+			addrs[i++] = inet_makeaddr(inet_netof(sin->sin_addr),
+			    INADDR_ANY);
 #endif
 		}
 	}

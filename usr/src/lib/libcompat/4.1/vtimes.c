@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vtimes.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)vtimes.c	5.3 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <sys/time.h>
@@ -32,6 +32,7 @@ vtimes(par, chi)
 	register struct vtimes *par, *chi;
 {
 	struct rusage ru;
+	static int getvtimes();
 
 	if (par) {
 		if (getrusage(RUSAGE_SELF, &ru) < 0)
@@ -51,6 +52,7 @@ getvtimes(aru, avt)
 	register struct rusage *aru;
 	register struct vtimes *avt;
 {
+	static int scale60();
 
 	avt->vm_utime = scale60(&aru->ru_utime);
 	avt->vm_stime = scale60(&aru->ru_stime);
@@ -68,6 +70,5 @@ static
 scale60(tvp)
 	register struct timeval *tvp;
 {
-
 	return (tvp->tv_sec * 60 + tvp->tv_usec / 16667);
 }

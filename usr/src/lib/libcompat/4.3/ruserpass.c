@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ruserpass.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)ruserpass.c	5.8 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -14,15 +14,21 @@ static char sccsid[] = "@(#)ruserpass.c	5.7 (Berkeley) %G%";
 #include <errno.h>
 #include <utmp.h>
 #include <ctype.h>
+#include <string.h>
+#include <unistd.h>
+#include <stdlib.h>
 #include <stdio.h>
 
-char	*renvlook(), *malloc(), *index(), *getenv(), *getpass(), *getlogin();
+static void blkencrypt(), enblkclr(), enblknot(), nbssetkey(), rnetrc();
+static int token();
+static char *renvlook();
 struct	utmp *getutmp();
 static	FILE *cfile;
 
 ruserpass(host, aname, apass)
 	char *host, **aname, **apass;
 {
+	static void renv();
 
 	renv(host, aname, apass);
 	if (*aname == 0 || *apass == 0)
@@ -47,7 +53,7 @@ ruserpass(host, aname, apass)
 	}
 }
 
-static
+static void
 renv(host, aname, apass)
 	char *host, **aname, **apass;
 {
@@ -75,8 +81,7 @@ renv(host, aname, apass)
 	mkpwclear(cp, host[0], *apass);
 }
 
-static
-char *
+static char *
 renvlook(host)
 	char *host;
 {
@@ -129,7 +134,7 @@ static struct toktab {
 	0,		0
 };
 
-static
+static void
 rnetrc(host, aname, apass)
 	char *host, **aname, **apass;
 {
@@ -324,7 +329,7 @@ char *crp, *key; {
 	return(deblkclr(blk));
 }
 
-static
+static void
 enblkclr(blk,str)		/* ignores top bit of chars in string str */
 char *blk,*str; {
 	register int i,j;
@@ -355,7 +360,7 @@ char *blk; {
 	return(iobuf);
 	}
 
-static
+static void
 enblknot(blk,crp)
 char *blk;
 char *crp; {
@@ -488,7 +493,7 @@ static	char	KS[16][48];
  * Set up the key schedule from the key.
  */
 
-static
+static void
 nbssetkey(key)
 char *key;
 {
@@ -613,7 +618,7 @@ static	char	preS[48];
  * The payoff: encrypt a block.
  */
 
-static
+static void
 blkencrypt(block, edflag)
 char *block;
 {

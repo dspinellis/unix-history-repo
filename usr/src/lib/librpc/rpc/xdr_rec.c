@@ -56,6 +56,10 @@ static char sccsid[] = "@(#)xdr_rec.c 1.21 87/08/11 Copyr 1984 Sun Micro";
 extern long	lseek();
 
 static u_int	fix_buf_size();
+static bool_t	flush_out();
+static bool_t	get_input_bytes();
+static bool_t	set_input_fragment();
+static bool_t	skip_input_bytes();
 
 static bool_t	xdrrec_getlong();
 static bool_t	xdrrec_putlong();
