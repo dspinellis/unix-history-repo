@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)arp.c	1.1 (Berkeley) %G%";
+static	char *sccsid = "@(#)arp.c	1.2 (Berkeley) %G%";
 #endif
 
 /*
@@ -90,7 +90,7 @@ set(argc, argv)
 	struct arpreq ar;
 	struct hostent *hp;
 	struct sockaddr_in *sin;
-	struct ether_addr *ea;
+	u_char *ea;
 	int s;
 	char *host = argv[0], *eaddr = argv[1];
 
@@ -105,7 +105,7 @@ set(argc, argv)
 	ar.arp_pa.sa_family = AF_INET;
 	sin = (struct sockaddr_in *)&ar.arp_pa;
 	sin->sin_addr = *(struct in_addr *)hp->h_addr;
-	ea = (struct ether_addr *)ar.arp_ha.sa_data;
+	ea = (u_char *)ar.arp_ha.sa_data;
 	if (ether_aton(eaddr, ea))
 		return;
 	ar.arp_flags = ATF_PERM;
@@ -139,7 +139,7 @@ get(host)
 	struct arpreq ar;
 	struct hostent *hp;
 	struct sockaddr_in *sin;
-	struct ether_addr *ea;
+	u_char *ea;
 	int s;
 
 	hp = gethostbyname(host);
@@ -165,7 +165,7 @@ get(host)
 		exit(1);
 	}
 	close(s);
-	ea = (struct ether_addr *)ar.arp_ha.sa_data;
+	ea = (u_char *)ar.arp_ha.sa_data;
 	printf("%s (%s) at ", host, inet_ntoa(sin->sin_addr));
 	if (ar.arp_flags & ATF_COM)
 		ether_print(ea);
@@ -271,7 +271,7 @@ dump(kernel, mem)
 			host = "?";
 		printf("%s (%s) at ", host, inet_ntoa(at->at_iaddr));
 		if (at->at_flags & ATF_COM)
-			ether_print(&at->at_enaddr);
+			ether_print(at->at_enaddr);
 		else
 			printf("(incomplete)");
 		if (!(at->at_flags & ATF_PERM)) printf(" temporary");
@@ -280,17 +280,15 @@ dump(kernel, mem)
 	}
 }
 
-ether_print(ea)
-	struct ether_addr *ea;
+ether_print(cp)
+	u_char *cp;
 {
-	u_char *cp = &ea->ether_addr_octet[0];
-
 	printf("%x:%x:%x:%x:%x:%x", cp[0], cp[1], cp[2], cp[3], cp[4], cp[5]);
 }
 
 ether_aton(a, n)
 	char *a;
-	struct ether_addr *n;
+	u_char *n;
 {
 	int i, o[6];
 
@@ -301,7 +299,7 @@ ether_aton(a, n)
 		return (1);
 	}
 	for (i=0; i<6; i++)
-		n->ether_addr_octet[i] = o[i];
+		n[i] = o[i];
 	return (0);
 }
 
