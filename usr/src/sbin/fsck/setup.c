@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)setup.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)setup.c	5.18 (Berkeley) %G%";
 #endif not lint
 
 #define DKTYPENAMES
@@ -141,10 +141,15 @@ setup(dev)
 			dirty(&asblk);
 		}
 	}
-	if (sblock.fs_postblformat == FS_42POSTBLFMT) {
-		pwarn("OLD FILE SYSTEM FORMAT\n");
-		if (!preen && reply("CONVERT TO NEW FILE SYSTEM FORMAT") == 1) {
-			cvtflag++;
+	if (cvtflag) {
+		if (sblock.fs_postblformat == FS_42POSTBLFMT) {
+			/*
+			 * Requested to convert from old format to new format
+			 */
+			if (preen)
+				pwarn("CONVERTING TO NEW FILE SYSTEM FORMAT\n");
+			else if (!reply("CONVERT TO NEW FILE SYSTEM FORMAT"))
+				return(0);
 			sblock.fs_postblformat = FS_DYNAMICPOSTBLFMT;
 			sblock.fs_nrpos = 8;
 			sblock.fs_postbloff =
@@ -169,20 +174,27 @@ setup(dev)
 #			endif /* LITTLE_ENDIAN */
 			sbdirty();
 			dirty(&asblk);
+		} else if (sblock.fs_postblformat == FS_DYNAMICPOSTBLFMT) {
+			/*
+			 * Requested to convert from new format to old format
+			 */
+			if (sblock.fs_nrpos != 8 || sblock.fs_ipg > 2048 ||
+			    sblock.fs_cpg > 32 || sblock.fs_cpc > 16) {
+				printf(
+				"PARAMETERS OF CURRENT FILE SYSTEM DO NOT\n\t");
+				errexit(
+				"ALLOW CONVERSION TO OLD FILE SYSTEM FORMAT\n");
+			}
+			if (preen)
+				pwarn("CONVERTING TO OLD FILE SYSTEM FORMAT\n");
+			else if (!reply("CONVERT TO OLD FILE SYSTEM FORMAT"))
+				return(0);
+			sblock.fs_postblformat = FS_42POSTBLFMT;
+			sbdirty();
+			dirty(&asblk);
+		} else {
+			errexit("UNKNOWN FILE SYSTEM FORMAT\n");
 		}
-	} else if (cvtflag) {
-		/*
-		 * Requested to convert from new format to old format
-		 */
-		if (sblock.fs_nrpos != 8 || sblock.fs_ipg > 2048 ||
-		    sblock.fs_cpg > 32) {
-			printf("PARAMETERS OF CURRENT FILE SYSTEM DO NOT\n\t");
-			errexit("ALLOW CONVERSION TO OLD FILE SYSTEM FORMAT\n");
-		}
-		pwarn("CONVERTING TO OLD FILE SYSTEM FORMAT\n");
-		sblock.fs_postblformat = FS_42POSTBLFMT;
-		sbdirty();
-		dirty(&asblk);
 	}
 	if (asblk.b_dirty) {
 		bcopy((char *)&sblock, (char *)&altsblock, sblock.fs_sbsize);
