@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *      @(#)conf.c	7.14 (Berkeley) %G%
+ *      @(#)conf.c	7.15 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -41,8 +41,15 @@ int	ttselect	__P((dev_t, int, struct proc *));
 	dev_decl(n,open); dev_decl(n,close); dev_decl(n,strategy); \
 	dev_decl(n,ioctl); dev_decl(n,dump); dev_decl(n,size)
 
+/* disk without close routine */
 #define	bdev_disk_init(c,n) { \
 	dev_init(c,n,open), (dev_type_close((*))) nullop, \
+	dev_init(c,n,strategy), dev_init(c,n,ioctl), \
+	dev_init(c,n,dump), dev_size_init(c,n), 0 }
+
+/* disk with close routine */
+#define	bdev_ldisk_init(c,n) { \
+	dev_init(c,n,open), dev_init(c,n,close), \
 	dev_init(c,n,strategy), dev_init(c,n,ioctl), \
 	dev_init(c,n,dump), dev_size_init(c,n), 0 }
 
@@ -77,9 +84,9 @@ struct bdevsw	bdevsw[] =
 {
 	bdev_tape_init(NCT,ct),	/* 0: cs80 cartridge tape */
 	bdev_notdef(),		/* 1 */
-	bdev_disk_init(NRD,rd),	/* 2: hpib disk */
+	bdev_ldisk_init(NRD,rd),/* 2: hpib disk */
 	bdev_swap_init(),	/* 3: swap pseudo-device */
-	bdev_disk_init(NSD,sd),	/* 4: scsi disk */
+	bdev_ldisk_init(NSD,sd),/* 4: scsi disk */
 	bdev_disk_init(NCD,cd),	/* 5: concatenated disk driver */
 	bdev_disk_init(NVN,vn),	/* 6: vnode disk driver (swap to files) */
 	bdev_tape_init(NST,st),	/* 7: exabyte tape */
@@ -106,6 +113,13 @@ int	nblkdev = sizeof (bdevsw) / sizeof (bdevsw[0]);
 /* open, read, write, ioctl, strategy */
 #define	cdev_disk_init(c,n) { \
 	dev_init(c,n,open), (dev_type_close((*))) nullop, dev_init(c,n,read), \
+	dev_init(c,n,write), dev_init(c,n,ioctl), (dev_type_stop((*))) enodev, \
+	(dev_type_reset((*))) nullop, 0, seltrue, (dev_type_map((*))) enodev, \
+	dev_init(c,n,strategy) }
+
+/* open, close, read, write, ioctl, strategy */
+#define	cdev_ldisk_init(c,n) { \
+	dev_init(c,n,open), dev_init(c,n,close), dev_init(c,n,read), \
 	dev_init(c,n,write), dev_init(c,n,ioctl), (dev_type_stop((*))) enodev, \
 	(dev_type_reset((*))) nullop, 0, seltrue, (dev_type_map((*))) enodev, \
 	dev_init(c,n,strategy) }
@@ -271,8 +285,8 @@ struct cdevsw	cdevsw[] =
 	cdev_ptc_init(NPTY,ptc),	/* 5: pseudo-tty master */
 	cdev_log_init(1,log),		/* 6: /dev/klog */
 	cdev_tape_init(NCT,ct),		/* 7: cs80 cartridge tape */
-	cdev_disk_init(NSD,sd),		/* 8: scsi disk */
-	cdev_disk_init(NRD,rd),		/* 9: hpib disk */
+	cdev_ldisk_init(NSD,sd),	/* 8: scsi disk */
+	cdev_ldisk_init(NRD,rd),	/* 9: hpib disk */
 	cdev_grf_init(NGRF,grf),	/* 10: frame buffer */
 	cdev_ppi_init(NPPI,ppi),	/* 11: printer/plotter interface */
 	cdev_tty_init(NDCA,dca),	/* 12: built-in single-port serial */
