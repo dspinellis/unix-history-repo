@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkpasswd.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkpasswd.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -191,6 +191,7 @@ scanpw()
 {
 	register char *cp;
 	long atol(), ftell();
+	char *bp;
 	char *fgets(), *strsep(), *index();
 
 	for (;;) {
@@ -205,25 +206,26 @@ scanpw()
 				;
 			continue;
 		}
-		_pw_passwd.pw_name = strsep(line, ":\n");
-		_pw_passwd.pw_passwd = strsep((char *)NULL, ":\n");
+		bp = line;
+		_pw_passwd.pw_name = strsep(&bp, ":\n");
+		_pw_passwd.pw_passwd = strsep(&bp, ":\n");
 		offset += _pw_passwd.pw_passwd - line;
-		if (!(cp = strsep((char *)NULL, ":\n")))
+		if (!(cp = strsep(&bp, ":\n")))
 			continue;
 		_pw_passwd.pw_uid = atoi(cp);
-		if (!(cp = strsep((char *)NULL, ":\n")))
+		if (!(cp = strsep(&bp, ":\n")))
 			continue;
 		_pw_passwd.pw_gid = atoi(cp);
-		_pw_passwd.pw_class = strsep((char *)NULL, ":\n");
-		if (!(cp = strsep((char *)NULL, ":\n")))
+		_pw_passwd.pw_class = strsep(&bp, ":\n");
+		if (!(cp = strsep(&bp, ":\n")))
 			continue;
 		_pw_passwd.pw_change = atol(cp);
-		if (!(cp = strsep((char *)NULL, ":\n")))
+		if (!(cp = strsep(&bp, ":\n")))
 			continue;
 		_pw_passwd.pw_expire = atol(cp);
-		_pw_passwd.pw_gecos = strsep((char *)NULL, ":\n");
-		_pw_passwd.pw_dir = strsep((char *)NULL, ":\n");
-		_pw_passwd.pw_shell = strsep((char *)NULL, ":\n");
+		_pw_passwd.pw_gecos = strsep(&bp, ":\n");
+		_pw_passwd.pw_dir = strsep(&bp, ":\n");
+		_pw_passwd.pw_shell = strsep(&bp, ":\n");
 		return(1);
 	}
 	/* NOTREACHED */
