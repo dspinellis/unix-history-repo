@@ -1,3 +1,5 @@
+actors|soldiers:company
+angels:host
 ants:colony|hill
 apes:shrewdness
 asses:pace|bunch
@@ -5,8 +7,10 @@ badgers:cete
 bass:shoal
 bears:sloth
 bees:swarm
+bees|locusts:swarm
 birds:dissimulation
 brats:passel
+buffaloes:herd
 candidates:slate
 caterpillars:army
 cats:clowder
@@ -21,14 +25,17 @@ earthquakes:swarm
 eggs:clutch
 elephants:herd
 elk:gang
+engineers:corps
 ferrets:business
 finches:charm
 firemen:brigade
 fish:school
 foxes:skulk
+gangsters:mob
 geese in flight:skein
 geese on water:gaggle
 goats:trip
+grapes|banannas:bunch
 hawks:cast
 hens:brood
 herons:siege
@@ -53,19 +60,25 @@ mules:barren|baren
 nightingales:watch
 operating companies:at&t|bell system
 owls:parliament
+oxen:drove
+partridges:covey
 partridges|grouse:covey
 peacocks:ostentation
+people:crowd
 pheasants:bouquet
 plovers:congregation
 ponies:string
+porpoises:shoal
 prisoners:gang
 pups:litter
 quail|maidens:bevy
 rabbits:nest
 ravens:unkindness
 rhinoceroses:crash
+robbers:band
 roebucks:bevy
 rooks:building
+rubbish:heap
 seals:pod
 sheep:flock
 ships:fleet
@@ -81,8 +94,12 @@ toads:knot
 turkeys:rafter
 turtledoves:pitying
 whales:gam|pod
+whales|fish:school
 witches:coven
+wolves:pack
 wolves:route
 woodcocks:fall
 woodpeckers:descent
+worshippers:congregation
+{H|h}uns:horde
 {wild }swine:sounder
