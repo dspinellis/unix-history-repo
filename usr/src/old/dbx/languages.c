@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)languages.c 1.2 %G%";
+static char sccsid[] = "@(#)languages.c 1.3 %G%";
 
 /*
  * Language management.
@@ -16,7 +16,7 @@ static char sccsid[] = "@(#)languages.c 1.2 %G%";
 typedef struct Language *Language;
 
 typedef enum {
-    L_PRINTDECL, L_PRINTVAL, L_TYPEMATCH
+    L_PRINTDECL, L_PRINTVAL, L_TYPEMATCH, L_BUILDAREF, L_EVALAREF
 } LanguageOp;
 
 typedef LanguageOperation();
@@ -41,6 +41,7 @@ private Language head;
 public language_init()
 {
     c_init();
+    fortran_init();
     pascal_init();
     asm_init();
 }
@@ -88,7 +89,7 @@ LanguageOp op;
 LanguageOperation *operation;
 {
     checkref(lang);
-    assert(ord(op) <= ord(L_TYPEMATCH));
+    assert(ord(op) <= ord(L_EVALAREF));
     lang->op[ord(op)] = operation;
 }
 
