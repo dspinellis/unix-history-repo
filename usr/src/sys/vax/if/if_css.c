@@ -1,4 +1,4 @@
-/*      if_css.c     6.1     83/07/29     */
+/*      if_css.c     6.2     84/08/29     */
 
 #include "css.h"
 
@@ -28,21 +28,21 @@
  */
 #include "../machine/pte.h"
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/mbuf.h"
-#include "../h/buf.h"
-#include "../h/protosw.h"
-#include "../h/socket.h"
-#include "../h/vmmac.h"
+#include "param.h"
+#include "systm.h"
+#include "mbuf.h"
+#include "buf.h"
+#include "protosw.h"
+#include "socket.h"
+#include "vmmac.h"
 
 #include "../net/if.h"
 #include "../netimp/if_imp.h"
 
 #include "../vax/cpu.h"
 #include "../vax/mtpr.h"
-#include "../vaxif/if_cssreg.h"
-#include "../vaxif/if_uba.h"
+#include "if_cssreg.h"
+#include "if_uba.h"
 #include "../vaxuba/ubareg.h"
 #include "../vaxuba/ubavar.h"
 
