@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_ex.c	6.4 (Berkeley) %G%
+ *	@(#)if_ex.c	6.5 (Berkeley) %G%
  */
 
 
@@ -45,6 +45,11 @@
 
 #ifdef PUP
 #include "../netpup/pup.h"
+#endif
+
+#ifdef NS
+#include "../netns/ns.h"
+#include "../netns/ns_if.h"
 #endif
 
 #include "../vax/cpu.h"
@@ -607,6 +612,13 @@ exrecv(unit, bp)
 		arpinput(&xs->xs_ac, m);
 		return;
 #endif
+#ifdef NS
+	case ETHERTYPE_NS:
+		schednetisr(NETISR_NS);
+		inq = &nsintrq;
+		break;
+
+#endif
 	default:
 		m_freem(m);
 		return;
@@ -680,6 +692,14 @@ exoutput(ifp, m0, dst)
 			goto gottrailertype;
 		}
 		type = ETHERTYPE_IP;
+		off = 0;
+		goto gottype;
+#endif
+#ifdef NS
+	case AF_NS:
+		type = ETHERTYPE_NS;
+ 		bcopy((caddr_t)&(((struct sockaddr_ns *)dst)->sns_addr.x_host),
+		(caddr_t)edst, sizeof (edst));
 		off = 0;
 		goto gottype;
 #endif
@@ -814,11 +834,20 @@ exioctl(ifp, cmd, data)
                 exinit(ifp->if_unit);
 
                 switch (ifa->ifa_addr.sa_family) {
+#ifdef INET
 		case AF_INET:
 			((struct arpcom *)ifp)->ac_ipaddr =
 				IA_SIN(ifa)->sin_addr;
 			arpwhohas((struct arpcom *)ifp, &IA_SIN(ifa)->sin_addr);
 			break;
+#endif
+#ifdef NS
+		case AF_NS:
+			IA_SNS(ifa)->sns_addr.x_host =
+				* (union ns_host *) 
+				     (ex_softc[ifp->if_unit].xs_addr);
+			break;
+#endif
 		}
 		break;
 
