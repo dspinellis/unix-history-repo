@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rz.c	7.6 (Berkeley) %G%
+ *	@(#)rz.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -34,8 +34,8 @@
 
 #include <ufs/ffs/fs.h>
 
-#include <mips/dev/device.h>
-#include <mips/dev/scsi.h>
+#include <pmax/dev/device.h>
+#include <pmax/dev/scsi.h>
 
 extern int splbio();
 extern void splx();

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)asc.c	7.5 (Berkeley) %G%
+ *	@(#)asc.c	7.6 (Berkeley) %G%
  */
 
 /* 
@@ -101,9 +101,9 @@
 #include <sys/conf.h>
 #include <sys/errno.h>
 
-#include <mips/dev/device.h>
-#include <mips/dev/scsi.h>
-#include <mips/dev/ascreg.h>
+#include <pmax/dev/device.h>
+#include <pmax/dev/scsi.h>
+#include <pmax/dev/ascreg.h>
 
 #define ASC_OFFSET_53C94	0x0		/* from module base */
 #define ASC_OFFSET_DMAR		0x40000		/* DMA Address Register */

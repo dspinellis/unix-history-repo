@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tz.c	7.6 (Berkeley) %G%
+ *	@(#)tz.c	7.7 (Berkeley) %G%
  *
  * from: $Header: /sprite/src/kernel/dev/RCS/devSCSITape.c,
  *	v 8.14 89/07/31 17:26:13 mendel Exp $ SPRITE (Berkeley)
@@ -29,8 +29,8 @@
 #include <sys/syslog.h>
 #include <sys/tprintf.h>
 
-#include <mips/dev/device.h>
-#include <mips/dev/scsi.h>
+#include <pmax/dev/device.h>
+#include <pmax/dev/scsi.h>
 
 int	tzprobe();
 void	tzstart(), tzdone();
