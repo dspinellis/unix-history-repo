@@ -9,11 +9,17 @@
 	.globl _/**/name; .align 2; _/**/name: .word regs; callf $4,mcount
 #define	ASENTRY(name, regs) \
 	.globl name; .align 2; name: .word regs; callf $4,mcount
+#define	XENTRY(name, regs) \
+	.globl _/**/name; .globl X/**/name; .align 2; \
+	_/**/name: X/**/name: .word regs; callf $4,mcount
 #else
 #define	ENTRY(name, regs) \
 	.globl _/**/name; .align 2; _/**/name: .word regs
 #define	ASENTRY(name, regs) \
 	.globl name; .align 2; name: .word regs
+#define	XENTRY(name, regs) \
+	.globl _/**/name; .globl X/**/name; .align 2; \
+	_/**/name: X/**/name: .word regs;
 #endif
 #define R0	0x0001
 #define R1	0x0002
