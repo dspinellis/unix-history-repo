@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-/*	ex_tune.h	7.5	83/07/02	*/
+/*	ex_tune.h	7.6	84/04/10	*/
 /*
  * Definitions of editor parameters and limits
  */
@@ -55,7 +55,7 @@
 #endif
 #define	RHSSIZE		256		/* Size of rhs of substitute */
 #define	NBRA		9		/* Number of re \( \) pairs */
-#define	TAGSIZE		32		/* Tag length */
+#define	TAGSIZE		128		/* Tag length */
 #define	ONMSZ		64		/* Option name size */
 #define	GBSIZE		256		/* Buffer size */
 #define	UXBSIZE		128		/* Unix command buffer size */

@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_vmain.c	7.3	%G%";
+static char *sccsid = "@(#)ex_vmain.c	7.4	%G%";
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -1122,7 +1122,11 @@ grabtag()
 			if (dp < &lasttag[sizeof lasttag - 2])
 				*dp++ = *cp;
 			cp++;
-		} while (isalpha(*cp) || isdigit(*cp) || *cp == '_');
+		} while (isalpha(*cp) || isdigit(*cp) || *cp == '_'
+#ifdef LISPCODE
+			|| (value(LISP) && *cp == '-')
+#endif LISPCODE
+			);
 		*dp++ = 0;
 	}
 }
