@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)slave.c	2.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)slave.c	2.15 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -14,7 +14,7 @@ static char sccsid[] = "@(#)slave.c	2.14 (Berkeley) %G%";
 
 extern jmp_buf jmpenv;
 
-extern short sequence;
+extern u_short sequence;
 
 slave()
 {
@@ -26,7 +26,7 @@ slave()
 	struct tsp *msg, to, *readmsg();
 	struct sockaddr_in saveaddr, msaveaddr;
 	struct timeval wait;
-	struct timeval time, mytime, otime;
+	struct timeval time, otime;
 	struct tsp *answer, *acksend();
 	int timeout();
 	char *date();
