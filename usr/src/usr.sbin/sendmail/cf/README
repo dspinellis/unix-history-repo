@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	6.26 (Berkeley) %G%
+		@(#)README	6.27 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -303,6 +303,10 @@ uucpdomain	Similar feature for UUCP hosts.  The default map definition
 			hash /etc/uudomain.db -o
 		At the moment there is no automagic tool to build this
 		database.
+always_add_domain
+		Include the local host domain even on locally delivered
+		mail.  Normally it is not added unless it is already
+		present.
 
 Other FEATUREs should be defined, but I was trying to keep these
 config files fairly lean and mean.
