@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)pc.c 3.11 %G%";
+static	char sccsid[] = "@(#)pc.c 3.12 %G%";
 #include <stdio.h>
 #include <signal.h>
 #include <wait.h>
@@ -120,18 +120,33 @@ main(argc, argv)
 
 			case '0':
 				pc0 = "/usr/src/cmd/pc0/a.out";
+				if (argp[3] != '\0') {
+					pc0 = &argp[3];
+				}
 				continue;
 			case '1':
 				pc1 = "/usr/src/cmd/pcc/pc1";
+				if (argp[3] != '\0') {
+					pc1 = &argp[3];
+				}
 				continue;
 			case '2':
 				pc2 = "/usr/src/cmd/pascal/pc2";
+				if (argp[3] != '\0') {
+					pc2 = &argp[3];
+				}
 				continue;
 			case '3':
 				pc3 = "/usr/src/cmd/pascal/pc3";
+				if (argp[3] != '\0') {
+					pc3 = &argp[3];
+				}
 				continue;
 			case 'l':
 				lpc = "/usr/src/lib/libpc/libpc";
+				if (argp[3] != '\0') {
+					lpc = &argp[3];
+				}
 				continue;
 			}
 			continue;
