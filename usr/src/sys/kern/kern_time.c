@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_time.c	6.7 (Berkeley) %G%
+ *	@(#)kern_time.c	6.8 (Berkeley) %G%
  */
 
 #include "../machine/reg.h"
@@ -32,9 +32,8 @@ gettimeofday()
 		struct	timezone *tzp;
 	} *uap = (struct a *)u.u_ap;
 	struct timeval atv;
-	int s;
 
-	s = spl7(); atv = time; splx(s);
+	microtime(&atv);
 	u.u_error = copyout((caddr_t)&atv, (caddr_t)uap->tp, sizeof (atv));
 	if (u.u_error)
 		return;
@@ -75,7 +74,7 @@ setthetime(tv)
 		return;
 /* WHAT DO WE DO ABOUT PENDING REAL-TIME TIMEOUTS??? */
 	boottime.tv_sec += tv->tv_sec - time.tv_sec;
-	s = spl7(); time = *tv; splx(s);
+	s = splhigh(); time = *tv; splx(s);
 	resettodr();
 }
 
@@ -144,7 +143,7 @@ getitimer()
 		u.u_error = EINVAL;
 		return;
 	}
-	s = spl7();
+	s = splclock();
 	if (uap->which == ITIMER_REAL) {
 		/*
 		 * Convert from absoulte to relative time in .it_value
@@ -194,7 +193,7 @@ setitimer()
 		u.u_error = EINVAL;
 		return;
 	}
-	s = spl7();
+	s = splclock();
 	if (uap->which == ITIMER_REAL) {
 		untimeout(realitexpire, (caddr_t)p);
 		if (timerisset(&aitv.it_value)) {
@@ -226,7 +225,7 @@ realitexpire(p)
 		return;
 	}
 	for (;;) {
-		s = spl7();
+		s = splclock();
 		timevaladd(&p->p_realtimer.it_value,
 		    &p->p_realtimer.it_interval);
 		if (timercmp(&p->p_realtimer.it_value, &time, >)) {
