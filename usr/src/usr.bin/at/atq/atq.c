@@ -1,20 +1,20 @@
 #ifndef lint
-static char sccsid[] = "@(#)atq.c       4.1 (Berkeley) 5/25/84";
-#endif
+static char sccsid[] = "@(#)atq.c	1.2	(Berkeley)	%G%";
+#endif not lint
 
 /*
  *
- *      Synopsis:  atq [ -c ] [ -n ] [ name ... ]
+ *	Synopsis:  atq [ -c ] [ -n ] [ name ... ]
  *
  *
- *      Print the queue of files waiting to be executed. These files 
- *      were created by using the "at" command and are located in the 
- *      directory "/usr/spool/at".
+ *	Print the queue of files waiting to be executed. These files 
+ *	were created by using the "at" command and are located in the 
+ *	directory "/usr/spool/at".
  *
  *
- *      Author: Steve Wall
- *              Computer Systems Research Group
- *              University of California @ Berkeley
+ *	Author: Steve Wall
+ *		Computer Systems Research Group
+ *		University of California @ Berkeley
  *
  */
 
@@ -27,23 +27,23 @@ static char sccsid[] = "@(#)atq.c       4.1 (Berkeley) 5/25/84";
 # include <pwd.h>
 # include <ctype.h>
  
-# define ATDIR          "/usr/spool/at"                 /* spooling area */
-# define LASTFILE       "/usr/spool/at/lasttimedone"    /* update time record 
-                                                           file */
+# define ATDIR		"/usr/spool/at"			/* spooling area */
+# define LASTFILE	"/usr/spool/at/lasttimedone"	/* update time record 
+							   file */
 
 /*
  * Months of the year
  */
 static char *mthnames[12] = {
-        "Jan","Feb","Mar","Apr","May","Jun","Jul",
-        "Aug","Sep","Oct","Nov","Dec",
+	"Jan","Feb","Mar","Apr","May","Jun","Jul",
+	"Aug","Sep","Oct","Nov","Dec",
 };
 
 
-int numentries;                         /* number of entries in spooling area */
-int namewanted = 0;                     /* only print jobs belonging to a 
-                                           certain person */
-struct direct **queue;                  /* the queue itself */
+int numentries;				/* number of entries in spooling area */
+int namewanted = 0;			/* only print jobs belonging to a 
+					   certain person */
+struct direct **queue;			/* the queue itself */
 
 
 main(argc,argv)
@@ -51,95 +51,95 @@ int argc;
 char **argv;
 {
 
-        int cflag = 0;                  /* print in order of creation time */
-        int nflag = 0;                  /* just print the number of jobs in 
-                                           queue */
-        int usage();                    /* print usage info and exit */
-        int creation();                 /* sort jobs by date of creation */
-        int alphasort();                /* sort jobs by date of execution */
-        int filewanted();               /* should a file be included in queue?*/
-        int printqueue();               /* print the queue */
-        int countfiles();               /* count the number of files in queue
-                                           for a given person */
-        char **namelist;                /* array of specific name(s) requested*/
+	int cflag = 0;			/* print in order of creation time */
+	int nflag = 0;			/* just print the number of jobs in 
+					   queue */
+	int usage();			/* print usage info and exit */
+	int creation();			/* sort jobs by date of creation */
+	int alphasort();		/* sort jobs by date of execution */
+	int filewanted();		/* should a file be included in queue?*/
+	int printqueue();		/* print the queue */
+	int countfiles();		/* count the number of files in queue
+					   for a given person */
+	char **namelist;		/* array of specific name(s) requested*/
 
 
-        --argc, ++argv;
+	--argc, ++argv;
 
-        /*
-         * Interpret command line flags if they exist.
-         */
-        while (argc > 0 && **argv == '-') {
-                (*argv)++;
-                while (**argv) switch (*(*argv)++) {
+	/*
+	 * Interpret command line flags if they exist.
+	 */
+	while (argc > 0 && **argv == '-') {
+		(*argv)++;
+		while (**argv) switch (*(*argv)++) {
 
-                        case 'c' :      cflag++; 
-                                        break;
+			case 'c' :	cflag++; 
+					break;
 
-                        case 'n' :      nflag++; 
-                                        break;
+			case 'n' :	nflag++; 
+					break;
 
-                        default  :      usage();
+			default	 :	usage();
 
-                }
-                --argc, ++argv;
-        }
+		}
+		--argc, ++argv;
+	}
 
-        /*
-         * If a certain name (or names) is requested, set a pointer to the
-         * beginning of the list.
-         */
-        if (**argv) {
-                ++namewanted;
-                namelist = argv;
-        }
+	/*
+	 * If a certain name (or names) is requested, set a pointer to the
+	 * beginning of the list.
+	 */
+	if (**argv) {
+		++namewanted;
+		namelist = argv;
+	}
 
-        /*
-         * Move to the spooling area and scan the directory, placing the
-         * files in the queue structure. The queue comes back sorted by
-         * execution time or creation time.
-         */
-        if (chdir(ATDIR) == -1) {
-                perror(ATDIR);
-                exit(1);
-        }
-        if ((numentries = scandir(".",&queue,filewanted, (cflag) ? creation : 
-                                alphasort)) < 0) {
-                perror(ATDIR);
-                exit(1);
-        }
+	/*
+	 * Move to the spooling area and scan the directory, placing the
+	 * files in the queue structure. The queue comes back sorted by
+	 * execution time or creation time.
+	 */
+	if (chdir(ATDIR) == -1) {
+		perror(ATDIR);
+		exit(1);
+	}
+	if ((numentries = scandir(".",&queue,filewanted, (cflag) ? creation : 
+				alphasort)) < 0) {
+		perror(ATDIR);
+		exit(1);
+	}
 
-        /*
-         * Either print a message stating:
-         *
-         *      1) that the spooling area is empty.
-         *      2) the number of jobs in the spooling area.
-         *      3) the number of jobs in the spooling area belonging to 
-         *         a certain person.
-         *      4) that the person requested doesn't have any files in the
-         *         spooling area.
-         *
-         * or send the queue off to "printqueue" for printing.
-         *
-         * This whole process might seem a bit elaborate, but it's worthwhile
-         * to print some informative messages for the user.
-         *
-         */
-        if ((numentries == 0) && (!nflag)) {
-                printf("no files in queue.\n");
-                exit(0);
-        }
-        if (nflag) {
-                printf("%d\n",(namewanted) ? countfiles(namelist) : numentries);
-                exit(0);
-        }
-        if ((namewanted) && (countfiles(namelist) == 0)) {
-                printf("no files for %s.\n", (argc == 1) ?
-                                        *argv : "specified users");
-                exit(0);
-        }
-        printqueue(namelist);
-        exit(0);
+	/*
+	 * Either print a message stating:
+	 *
+	 *	1) that the spooling area is empty.
+	 *	2) the number of jobs in the spooling area.
+	 *	3) the number of jobs in the spooling area belonging to 
+	 *	   a certain person.
+	 *	4) that the person requested doesn't have any files in the
+	 *	   spooling area.
+	 *
+	 * or send the queue off to "printqueue" for printing.
+	 *
+	 * This whole process might seem a bit elaborate, but it's worthwhile
+	 * to print some informative messages for the user.
+	 *
+	 */
+	if ((numentries == 0) && (!nflag)) {
+		printf("no files in queue.\n");
+		exit(0);
+	}
+	if (nflag) {
+		printf("%d\n",(namewanted) ? countfiles(namelist) : numentries);
+		exit(0);
+	}
+	if ((namewanted) && (countfiles(namelist) == 0)) {
+		printf("no files for %s.\n", (argc == 1) ?
+					*argv : "specified users");
+		exit(0);
+	}
+	printqueue(namelist);
+	exit(0);
 }
 
 /*
@@ -148,37 +148,37 @@ char **argv;
 countfiles(namelist)
 char **namelist;
 {
-        int i;                                  /* for loop index */
-        int entryfound;                         /* found file owned by user(s)*/
-        int numfiles = 0;                       /* number of files owned by a
-                                                   certain person(s) */
-        char **ptr;                             /* scratch pointer */
-        struct stat stbuf;                      /* buffer for file stats */
-        
+	int i;					/* for loop index */
+	int entryfound;				/* found file owned by user(s)*/
+	int numfiles = 0;			/* number of files owned by a
+						   certain person(s) */
+	char **ptr;				/* scratch pointer */
+	struct stat stbuf;			/* buffer for file stats */
+	
 
 
-        /*
-         * For each file in the queue, see if the user(s) own the file. We
-         * have to use "entryfound" (rather than simply incrementing "numfiles")
-         * so that if a person's name appears twice on the command line we 
-         * don't double the number of files owned by him/her.
-         */
-        for (i = 0; i < numentries ; i++) {
-                if ((stat(queue[i]->d_name, &stbuf)) < 0) {
-                        continue;
-                }
-                ptr = namelist;
-                entryfound = 0;
+	/*
+	 * For each file in the queue, see if the user(s) own the file. We
+	 * have to use "entryfound" (rather than simply incrementing "numfiles")
+	 * so that if a person's name appears twice on the command line we 
+	 * don't double the number of files owned by him/her.
+	 */
+	for (i = 0; i < numentries ; i++) {
+		if ((stat(queue[i]->d_name, &stbuf)) < 0) {
+			continue;
+		}
+		ptr = namelist;
+		entryfound = 0;
 
-                while (*ptr) {
-                        if (getid(*ptr) == stbuf.st_uid)
-                                ++entryfound;
-                        ++ptr;
-                }
-                if (entryfound)
-                        ++numfiles;
-        }
-        return(numfiles);
+		while (*ptr) {
+			if (getid(*ptr) == stbuf.st_uid)
+				++entryfound;
+			++ptr;
+		}
+		if (entryfound)
+			++numfiles;
+	}
+	return(numfiles);
 }
 
 /*
@@ -188,61 +188,61 @@ char **namelist;
 printqueue(namelist)
 char **namelist;
 {
-        int i;                                  /* for loop index */
-        int rank = 1;                           /* rank of a job */
-        int entryfound;                         /* found file owned by user(s)*/
-        int printrank();                        /* print the rank of a job */
-        int plastrun();                         /* print the last time the 
-                                                   spooling area was updated */
-        int getid();                            /* get uid of a person */
-        char **ptr;                             /* scratch pointer */
-        char *getname();                        /* get the login name of a 
-                                                   person using their uid */
-        struct stat stbuf;                      /* buffer for file stats */
+	int i;					/* for loop index */
+	int rank = 1;				/* rank of a job */
+	int entryfound;				/* found file owned by user(s)*/
+	int printrank();			/* print the rank of a job */
+	int plastrun();				/* print the last time the 
+						   spooling area was updated */
+	int getid();				/* get uid of a person */
+	char **ptr;				/* scratch pointer */
+	char *getname();			/* get the login name of a 
+						   person using their uid */
+	struct stat stbuf;			/* buffer for file stats */
 
 
-        /*
-         * Print the time the spooling area was last modified and the header
-         * for the queue.
-         */
-        plastrun();
-        printf(" Rank     Execution Date     Owner     Job #   Job Name\n");
+	/*
+	 * Print the time the spooling area was last modified and the header
+	 * for the queue.
+	 */
+	plastrun();
+	printf(" Rank	  Execution Date     Owner     Job #   Job Name\n");
 
-        /*
-         * Print the queue. If a certain name(s) was requested, print only jobs
-         * belonging to that person(s), otherwise print the entire queue.
-         * Once again, we have to use "entryfound" (rather than simply 
-         * comparing each command line argument) so that if a person's name 
-         * appears twice we don't print each file owned by him/her twice.
-         *
-         *
-         * "printrank", "printdate", and "printjobname" all take existing 
-         * data and display it in a friendly manner.
-         *
-         */
-        for (i = 0; i < numentries; i++) {
-                if ((stat(queue[i]->d_name, &stbuf)) < 0) {
-                        continue;
-                }
-                if (namewanted) {
-                        ptr = namelist;
-                        entryfound = 0;
+	/*
+	 * Print the queue. If a certain name(s) was requested, print only jobs
+	 * belonging to that person(s), otherwise print the entire queue.
+	 * Once again, we have to use "entryfound" (rather than simply 
+	 * comparing each command line argument) so that if a person's name 
+	 * appears twice we don't print each file owned by him/her twice.
+	 *
+	 *
+	 * "printrank", "printdate", and "printjobname" all take existing 
+	 * data and display it in a friendly manner.
+	 *
+	 */
+	for (i = 0; i < numentries; i++) {
+		if ((stat(queue[i]->d_name, &stbuf)) < 0) {
+			continue;
+		}
+		if (namewanted) {
+			ptr = namelist;
+			entryfound = 0;
 
-                        while (*ptr) {
-                                if (getid(*ptr) == stbuf.st_uid)
-                                        ++entryfound;
-                                ++ptr;
-                        }
-                        if (!entryfound)
-                                continue;
-                }
-                printrank(rank++);
-                printdate(queue[i]->d_name);
-                printf("%-10.9s",getname(stbuf.st_uid));
-                printf("%5d",stbuf.st_ino);
-                printjobname(queue[i]->d_name);
-        }
-        ++ptr;
+			while (*ptr) {
+				if (getid(*ptr) == stbuf.st_uid)
+					++entryfound;
+				++ptr;
+			}
+			if (!entryfound)
+				continue;
+		}
+		printrank(rank++);
+		printdate(queue[i]->d_name);
+		printf("%-10.9s",getname(stbuf.st_uid));
+		printf("%5d",stbuf.st_ino);
+		printjobname(queue[i]->d_name);
+	}
+	++ptr;
 }
 
 /*
@@ -252,16 +252,16 @@ char *
 getname(uid)
 int uid;
 {
-        struct passwd *pwdinfo;                 /* password info structure */
-        
+	struct passwd *pwdinfo;			/* password info structure */
+	
 
-        if ((pwdinfo = getpwuid(uid)) == 0) {
-                perror(uid);
-                exit(1);
-        }
-        return(pwdinfo->pw_name);
+	if ((pwdinfo = getpwuid(uid)) == 0) {
+		perror(uid);
+		exit(1);
+	}
+	return(pwdinfo->pw_name);
 }
-        
+	
 /*
  * Get the uid of a person using his/her login name. Return -1 if no
  * such account name exists.
@@ -270,13 +270,13 @@ getid(name)
 char *name;
 {
 
-        struct passwd *pwdinfo;                 /* password info structure */
+	struct passwd *pwdinfo;			/* password info structure */
 
 
-        if ((pwdinfo = getpwnam(name)) == 0)
-                return(-1);
+	if ((pwdinfo = getpwnam(name)) == 0)
+		return(-1);
 
-        return(pwdinfo->pw_uid);
+	return(pwdinfo->pw_uid);
 }
 
 /*
@@ -284,38 +284,38 @@ char *name;
  */
 plastrun()
 {
-        struct timeval now;                     /* time it is right now */
-        struct timezone zone;                   /* NOT USED */
-        struct tm *loc;                         /* detail of time it is right */
-        u_long lasttime;                        /* last update time in seconds
-                                                   since 1/1/70 */
-        FILE *last;                             /* file where last update hour
-                                                   is stored */
+	struct timeval now;			/* time it is right now */
+	struct timezone zone;			/* NOT USED */
+	struct tm *loc;				/* detail of time it is right */
+	u_long lasttime;			/* last update time in seconds
+						   since 1/1/70 */
+	FILE *last;				/* file where last update hour
+						   is stored */
 
 
-        /*
-         * Open the file where the last update time is stored, and grab the
-         * last update hour. The update time is measured in seconds since
-         * 1/1/70.
-         */
-        if ((last = fopen(LASTFILE,"r")) == NULL) {
-                perror(LASTFILE);
-                exit(1);
-        }
-        fscanf(last,"%d",(u_long) &lasttime);
-        fclose(last);
+	/*
+	 * Open the file where the last update time is stored, and grab the
+	 * last update hour. The update time is measured in seconds since
+	 * 1/1/70.
+	 */
+	if ((last = fopen(LASTFILE,"r")) == NULL) {
+		perror(LASTFILE);
+		exit(1);
+	}
+	fscanf(last,"%d",(u_long) &lasttime);
+	fclose(last);
 
-        /*
-         * Get a broken down representation of the last update time.
-         */
-        loc = localtime(&lasttime);
+	/*
+	 * Get a broken down representation of the last update time.
+	 */
+	loc = localtime(&lasttime);
 
-        /*
-         * Print the time that the spooling area was last updated.
-         */
-        printf("\n LAST EXECUTION TIME: %s ",mthnames[loc->tm_mon]);
-        printf("%d, 19%d ",loc->tm_mday,loc->tm_year);
-        printf("at %d:%02d\n\n",loc->tm_hour,loc->tm_min);
+	/*
+	 * Print the time that the spooling area was last updated.
+	 */
+	printf("\n LAST EXECUTION TIME: %s ",mthnames[loc->tm_mon]);
+	printf("%d, 19%d ",loc->tm_mday,loc->tm_year);
+	printf("at %d:%02d\n\n",loc->tm_hour,loc->tm_min);
 }
 
 /*
@@ -324,14 +324,14 @@ plastrun()
 static 
 printrank(n)
 {
-        static char *r[] = {
-                "th", "st", "nd", "rd", "th", "th", "th", "th", "th", "th"
-        };
+	static char *r[] = {
+		"th", "st", "nd", "rd", "th", "th", "th", "th", "th", "th"
+	};
 
-        if ((n/10) == 1)
-                 printf("%3d%-5s", n,"th");
-        else
-                 printf("%3d%-5s", n, r[n%10]);
+	if ((n/10) == 1)
+		 printf("%3d%-5s", n,"th");
+	else
+		 printf("%3d%-5s", n, r[n%10]);
 }
 
 /*
@@ -341,34 +341,34 @@ printrank(n)
 printdate(filename)
 char *filename;
 {
-        int yday  =  0;                         /* day of year file will be 
-                                                   executed */
-        int min   =  0;                         /* min. file will be executed */
-        int hour  =  0;                         /* hour file will be executed */
-        int day   =  0;                         /* day file will be executed */
-        int month =  0;                         /* month file will be executed*/
-        int year  =  0;                         /* year file will be executed */
-        int get_mth_day();                      /* convert a day of year to a
-                                                   month and day of month */
-        char date[18];                          /* reformatted execution date */
+	int yday  =  0;				/* day of year file will be 
+						   executed */
+	int min	  =  0;				/* min. file will be executed */
+	int hour  =  0;				/* hour file will be executed */
+	int day	  =  0;				/* day file will be executed */
+	int month =  0;				/* month file will be executed*/
+	int year  =  0;				/* year file will be executed */
+	int get_mth_day();			/* convert a day of year to a
+						   month and day of month */
+	char date[18];				/* reformatted execution date */
 
-        /*
-         * Pick off the necessary info from the file name and convert the day
-         * of year to a month and day of month.
-         */
-        sscanf(filename,"%2d.%3d.%2d%2d",&year,&yday,&hour,&min);
-        get_mth_day(year,yday,&month,&day);
+	/*
+	 * Pick off the necessary info from the file name and convert the day
+	 * of year to a month and day of month.
+	 */
+	sscanf(filename,"%2d.%3d.%2d%2d",&year,&yday,&hour,&min);
+	get_mth_day(year,yday,&month,&day);
 
-        /*
-         * Format the execution date of a job.
-         */
-        sprintf(date,"%3s %2d, 19%2d %02d:%02d",mthnames[month],
-                                                    day, year,hour,min);
+	/*
+	 * Format the execution date of a job.
+	 */
+	sprintf(date,"%3s %2d, 19%2d %02d:%02d",mthnames[month],
+						    day, year,hour,min);
 
-        /*
-         * Print the date the job will be executed.
-         */
-        printf("%-21.18s",date);
+	/*
+	 * Print the date the job will be executed.
+	 */
+	printf("%-21.18s",date);
 }
 
 /*
@@ -379,36 +379,36 @@ int year, dayofyear, *month, *day;
 
 {
 
-        int i = 1;                              /* for loop index */
-        int leap;                               /* are we dealing with a leap
-                                                   year? */
-                                                /* Table of the number of days 
-                                                   in each month of the year.
+	int i = 1;				/* for loop index */
+	int leap;				/* are we dealing with a leap
+						   year? */
+						/* Table of the number of days 
+						   in each month of the year.
 
-                                                     dofy_tab[1] -- regular year
-                                                     dofy_tab[2] -- leap year 
-                                                                              */
+						     dofy_tab[1] -- regular year
+						     dofy_tab[2] -- leap year 
+									      */
 
-        static int dofy_tab[2][13] = {
-                { 0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31},
-                { 0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31},
-        };
+	static int dofy_tab[2][13] = {
+		{ 0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31},
+		{ 0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31},
+	};
 
-        /*
-         * Are we dealing with a leap year?
-         */
-        leap = ((year%4 == 0 && year%100 != 0) || year%100 == 0);
+	/*
+	 * Are we dealing with a leap year?
+	 */
+	leap = ((year%4 == 0 && year%100 != 0) || year%100 == 0);
 
-        /*
-         * Calculate the month of the year and day of the month.
-         */
-        while (dayofyear >= dofy_tab[leap][i]) {
-                dayofyear -= dofy_tab[leap][i++];
-                ++(*month);
-        }
-        *day = (dayofyear + 1);
+	/*
+	 * Calculate the month of the year and day of the month.
+	 */
+	while (dayofyear >= dofy_tab[leap][i]) {
+		dayofyear -= dofy_tab[leap][i++];
+		++(*month);
+	}
+	*day = (dayofyear + 1);
 }
-        
+	
 /*
  * Print a job name. If the old "at" has been used to create the spoolfile,
  * the three line header that the new version of "at" puts in the spoolfile.
@@ -417,38 +417,38 @@ int year, dayofyear, *month, *day;
 printjobname(file)
 char *file;
 {
-        char *ch;                               /* char ptr */
-        char jobname[80];                       /* the job name */
-        FILE *filename;                         /* job file in spooling area */
+	char *ch;				/* char ptr */
+	char jobname[80];			/* the job name */
+	FILE *filename;				/* job file in spooling area */
 
-        /*
-         * Open the job file and grab the first line.
-         */
-        printf("   ");
+	/*
+	 * Open the job file and grab the first line.
+	 */
+	printf("   ");
 
-        if ((filename = fopen(file,"r")) == NULL) {
-                printf("%.27s\n", "???");
-                fclose(filename);
-                return;
-        }
-        if (fscanf(filename,"# jobname: %s",jobname) != 1) {
-                printf("%.27s\n", "???");
-                fclose(filename);
-                return;
-        }
-        fclose(filename);
+	if ((filename = fopen(file,"r")) == NULL) {
+		printf("%.27s\n", "???");
+		fclose(filename);
+		return;
+	}
+	if (fscanf(filename,"# jobname: %s",jobname) != 1) {
+		printf("%.27s\n", "???");
+		fclose(filename);
+		return;
+	}
+	fclose(filename);
 
-        /*
-         * Put a pointer at the begining of the line and remove the basename
-         * from the job file.
-         */
-        ch = jobname;
-        if ((ch = (char *)rindex(jobname,'/')) != 0)
-                ++ch;
-        else 
-                ch = jobname;
+	/*
+	 * Put a pointer at the begining of the line and remove the basename
+	 * from the job file.
+	 */
+	ch = jobname;
+	if ((ch = (char *)rindex(jobname,'/')) != 0)
+		++ch;
+	else 
+		ch = jobname;
 
-        printf("%.27s\n",ch);
+	printf("%.27s\n",ch);
 }
 
 /*
@@ -460,13 +460,13 @@ char *file;
 filewanted(direntry)
 struct direct *direntry;
 {
-        int numdot = 0;
-        char *filename;
+	int numdot = 0;
+	char *filename;
 
-        filename = direntry->d_name;
-        while (*filename)
-                numdot += (*(filename++) == '.');
-        return(numdot == 3);
+	filename = direntry->d_name;
+	while (*filename)
+		numdot += (*(filename++) == '.');
+	return(numdot == 3);
 }
 
 /*
@@ -475,22 +475,22 @@ struct direct *direntry;
 creation(d1, d2)
 struct direct **d1, **d2;
 {
-        struct stat stbuf1, stbuf2;
+	struct stat stbuf1, stbuf2;
 
-        if (stat((*d1)->d_name,&stbuf1) < 0)
-                return(1);
+	if (stat((*d1)->d_name,&stbuf1) < 0)
+		return(1);
 
-        if (stat((*d2)->d_name,&stbuf2) < 0)
-                return(1);
+	if (stat((*d2)->d_name,&stbuf2) < 0)
+		return(1);
 
-        return(stbuf1.st_ctime < stbuf2.st_ctime);
+	return(stbuf1.st_ctime < stbuf2.st_ctime);
 }
-        
+	
 /*
  * Print usage info and exit.
  */
 usage() 
 {
-        fprintf(stderr,"usage:  atq [-c] [-n] [name ...]\n");
-        exit(1);
+	fprintf(stderr,"usage:	atq [-c] [-n] [name ...]\n");
+	exit(1);
 }
