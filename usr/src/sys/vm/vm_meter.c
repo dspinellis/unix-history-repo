@@ -1,4 +1,4 @@
-/*	vm_meter.c	3.4	%G%	*/
+/*	vm_meter.c	3.5	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -190,7 +190,7 @@ hardswap:
 		if (rp->p_textp && rp->p_textp->x_flag&XLOCK)
 			continue;
 		if (rp->p_slptime > maxslp &&
-		    (rp->p_stat==SSLEEP&&rp->p_pri>=PZERO||rp->p_stat==SSTOP)) {
+		    (rp->p_stat==SSLEEP&&rp->p_pri>PZERO||rp->p_stat==SSTOP)) {
 			if (sleeper < rp->p_slptime) {
 				p = rp;
 				sleeper = rp->p_slptime;
@@ -375,12 +375,12 @@ next:
 
 			case SSLEEP:
 			case SSTOP:
-				if (p->p_pri < PZERO)
+				if (p->p_pri <= PZERO)
 					nrun++;
 				if (p->p_flag & SPAGE)
 					total.t_pw++;
 				else if (p->p_flag & SLOAD) {
-					if (p->p_pri < PZERO)
+					if (p->p_pri <= PZERO)
 						total.t_dw++;
 					else if (p->p_slptime < maxslp)
 						total.t_sl++;
