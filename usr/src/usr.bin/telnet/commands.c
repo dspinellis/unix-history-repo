@@ -16,10 +16,13 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)commands.c	1.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)commands.c	1.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
+#if	defined(unix)
+#include <sys/file.h>
+#endif	/* defined(unix) */
 #include <sys/socket.h>
 #include <netinet/in.h>
 
@@ -70,7 +73,7 @@ char	*h_errlist[] = {
 };
 int	h_nerr = { sizeof(h_errlist)/sizeof(h_errlist[0]) };
 
-extern int	h_errno;
+int h_errno;		/* In some version of SunOS this is necessary */
 
 /*
  * herror --
@@ -84,6 +87,10 @@ herror(s)
 	}
 	if ((h_errno < 0) || (h_errno >= h_nerr)) {
 		fprintf(stderr, "Unknown error\n");
+	} else if (h_errno == 0) {
+#if	defined(sun)
+		fprintf(stderr, "Host unknown\n");
+#endif	/* defined(sun) */
 	} else {
 		fprintf(stderr, "%s\n", h_errlist[h_errno]);
 	}
@@ -914,6 +921,97 @@ quit()
 	return 1;			/* just to keep lint happy */
 }
 
+#if	defined(unix)
+/*
+ * Some information about our file descriptors.
+ */
+
+char *
+decodeflags(mask)
+int mask;
+{
+    static char buffer[100];
+#define do(m,s) \
+	if (mask&(m)) { \
+	    strcat(buffer, (s)); \
+	}
+
+    buffer[0] = 0;			/* Terminate it */
+
+#ifdef FREAD
+    do(FREAD, " FREAD");
+#endif
+#ifdef FWRITE
+    do(FWRITE, " FWRITE");
+#endif
+#ifdef F_DUPFP
+    do(F_DUPFD, " F_DUPFD");
+#endif
+#ifdef FNDELAY
+    do(FNDELAY, " FNDELAY");
+#endif
+#ifdef FAPPEND
+    do(FAPPEND, " FAPPEND");
+#endif
+#ifdef FMARK
+    do(FMARK, " FMARK");
+#endif
+#ifdef FDEFER
+    do(FDEFER, " FDEFER");
+#endif
+#ifdef FASYNC
+    do(FASYNC, " FASYNC");
+#endif
+#ifdef FSHLOCK
+    do(FSHLOCK, " FSHLOCK");
+#endif
+#ifdef FEXLOCK
+    do(FEXLOCK, " FEXLOCK");
+#endif
+#ifdef FCREAT
+    do(FCREAT, " FCREAT");
+#endif
+#ifdef FTRUNC
+    do(FTRUNC, " FTRUNC");
+#endif
+#ifdef FEXCL
+    do(FEXCL, " FEXCL");
+#endif
+
+    return buffer;
+}
+#undef do
+
+static void
+filestuff(fd)
+int fd;
+{
+    int res;
+
+    setconnmode();
+    res = fcntl(fd, F_GETOWN, 0);
+    setcommandmode();
+
+    if (res == -1) {
+	perror("fcntl");
+	return;
+    }
+    printf("\tOwner is %d.\n", res);
+
+    setconnmode();
+    res = fcntl(fd, F_GETFL, 0);
+    setcommandmode();
+
+    if (res == -1) {
+	perror("fcntl");
+	return;
+    }
+    printf("\tFlags are 0x%x: %s\n", res, decodeflags(res));
+}
+
+
+#endif	/* defined(unix) */
+
 /*
  * Print status about the connection.
  */
@@ -946,6 +1044,16 @@ char	*argv[];
     if ((argc >= 2) && !strcmp(argv[1], "everything")) {
 	printf("SIGIO received %d time%s.\n",
 				sigiocount, (sigiocount == 1)? "":"s");
+	if (In3270) {
+	    printf("Process ID %d, process group %d.\n",
+					    getpid(), getpgrp(getpid()));
+	    printf("Terminal input:\n");
+	    filestuff(tin);
+	    printf("Terminal output:\n");
+	    filestuff(tout);
+	    printf("Network socket:\n");
+	    filestuff(net);
+	}
     }
     if (In3270 && transcom) {
        printf("Transparent mode command is '%s'.\n", transcom);
