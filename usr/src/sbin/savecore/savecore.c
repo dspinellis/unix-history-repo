@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)savecore.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)savecore.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -134,7 +134,7 @@ dump_exists()
 	Read(dumpfd, (char *)&word, sizeof word);
 	close(dumpfd);
 	if (Verbose && (word != dumpmag)) {
-		printf("dumplo = %d (%d bytes)\n", dumplo/512, dumplo);
+		printf("dumplo = %d (%d bytes)\n", dumplo/DEV_BSIZE, dumplo);
 		printf("magic number mismatch: %x != %x\n", word, dumpmag);
 	}
 	return (word == dumpmag);
@@ -249,7 +249,7 @@ read_kmem()
 	Read(kmem, (char *)&dumplo, sizeof (dumplo));
 	Lseek(kmem, (long)current_nl[X_DUMPMAG].n_value, 0);
 	Read(kmem, (char *)&dumpmag, sizeof (dumpmag));
-	dumplo *= 512L;
+	dumplo *= DEV_BSIZE;
 	ddname = find_dev(dumpdev, S_IFBLK);
 	if ((fp = fdopen(kmem, "r")) == NULL) {
 		fprintf(stderr, "savecore: Couldn't fdopen kmem\n");
@@ -393,6 +393,10 @@ save_core()
 		bounds);
 	while (dumpsize > 0) {
 		n = Read(ifd, cp, (dumpsize > 32 ? 32 : dumpsize) * NBPG);
+		if (n == 0) {
+			printf("WARNING: core may be incomplete\n");
+			break;
+		}
 		Write(ofd, cp, n);
 		dumpsize -= n/NBPG;
 	}
