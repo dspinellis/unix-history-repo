@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)termcap.src	5.82 (Berkeley) %G%
+#	@(#)termcap.src	5.83 (Berkeley) %G%
 #
 #	Termcap source file
 #	John Kunze, Berkeley
@@ -2177,6 +2177,18 @@ hd|9837|hp9837|98720|hp98720|98721|hp98721|HP 9000/300 workstations:\
 	:kr=\EC:ku=\EA:ke=\E&s0A:ks=\E&s1A:\
 	:cv=\E&a%dY:sf=\n:st=\E1:\
 	:ko=ce,cd,al,im,dl,dc:kN=\EU:kP=\EV
+# Developed 07SEP90 by Charles A. Finnell of MITRE   <finnell@mitre.org>
+hx|98550|hp98550|98550a|hp98550a|HP 9000 Series 300 color console:\
+	:ae=^O:al=\EL:am:as=^N:bl=^G:bs:bt=\Ei:cd=\EJ:ce=\EK:ch=\E&a%dC:\
+	:cl=\EH\EJ:cm=\E&a%dy%dC:co#128:cr=\r:ct=\E3:cv=\E&a%dY:da:db:dc=\EP:\
+	:dl=\EM:do=\n:ei=\ER:if=/usr/share/tabset/9837:im=\EQ:k1=\Ep:k2=\Eq:\
+	:k3=\Er:k4=\Es:k5=\Et:k6=\Eu:k7=\Ev:k8=\Ew:kA=\EL:kC=\EJ:kD=\EP:\
+	:kE=\EK:kF=\ES:kH=\EF:kI=\EQ:kL=\EM:kM=\ER:kN=\EU:kP=\EV:kR=\ET:\
+	:kS=\EJ:kT=\E1:ka=\E3:kb=\b:kd=\EB:ke=\E&s0A:kh=\Eh:kl=\ED:kn#12:\
+	:ko=al,cd,ce,ct,dc,dl,do,ei,im,nd,st,up:kr=\EC:ks=\E&s1A:kt=\E2:\
+	:ku=\EA:le=\b:li#49:lm#0:mb=\E&dA:md=\E&dJ:me=\E&d@:mh=\E&dH:mi:\
+	:mk=\E&ds:mr=\E&dJ:nd=\EC:pt:se=\E&d@:sf=\n:so=\E&dJ:st=\E1:ta=\t:\
+	:ue=\E&d@:up=\EA:us=\E&dD:ve=\E*dQ:vi=\E*dR:xs:
 # From: vic@fine.Princeton.EDU (Victor Duchovni)
 hy|hp700-wy|HP700/41 emulating wyse30:\
 	:al=0.7*\EE:am:bl=^G:bs:bt=\EI:bw:cd=\EY:ce=10\ET:cl=^Z:cm=\E=%+ %+ :\
