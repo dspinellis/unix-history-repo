@@ -37,11 +37,18 @@ shell_continue()
 	handle_api(&spinted.regs, &spinted.sregs);
 	spint_continue(&spinted);
     } else {
+	char inputbuffer[100];
+
 	if (spinted.rc != 0) {
 	    fprintf(stderr, "Process generated a return code of 0x%x.\n",
 								spinted.rc);
 	}
+	printf("[Hit return to continue]");
+	fflush(stdout);
+	(void) gets(inputbuffer);
 	shell_active = 0;
+	setconnmode();
+	ConnectScreen();
     }
     return shell_active;
 }
