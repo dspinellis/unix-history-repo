@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.28 (Berkeley) %G%
+#	@(#)Makefile	5.29 (Berkeley) %G%
 #
 # C Shell with process control; VM/UNIX VAX Makefile
 # Bill Joy UC Berkeley; Jim Kulp IIASA, Austria
@@ -7,7 +7,6 @@
 
 PROG=	csh
 DFLAGS=-DBUILTIN -DFILEC -DNLS -DSHORT_STRINGS
-STRIP=
 #CFLAGS+=-g
 #CFLAGS+=-Wall
 CFLAGS+=-I${.CURDIR} -I. ${DFLAGS}
