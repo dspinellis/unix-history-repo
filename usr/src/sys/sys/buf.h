@@ -1,4 +1,4 @@
-/*	buf.h	4.3	%G%	*/
+/*	buf.h	4.4	%G%	*/
 
 /*
  * Each buffer in the pool is usually doubly linked into 2 lists:
@@ -50,7 +50,6 @@ struct buf
 extern	struct buf buf[];		/* The buffer pool itself */
 extern	struct buf swbuf[];		/* swap I/O headers */
 extern	struct buf bfreelist[BQUEUES];	/* heads of available lists */
-extern	struct buf bfreelist;		/* head of available list */
 extern	struct buf bswlist;		/* head of free swap header list */
 extern	struct buf *bclnlist;		/* head of cleaned page list */
 
