@@ -42,8 +42,8 @@ Constp cp;
   register int k;
   register int lenb;
 
-  bits = cp->const.ccp;
-  lenb = cp->vleng->constblock.const.ci;
+  bits = cp->constant.ccp;
+  lenb = cp->vleng->constblock.constant.ci;
 
   p = (char *) ckalloc(len);
 
@@ -101,8 +101,8 @@ Constp cp;
   register int k;
   register int lenb;
 
-  bytes = cp->const.ccp;
-  lenb = cp->vleng->constblock.const.ci;
+  bytes = cp->constant.ccp;
+  lenb = cp->vleng->constblock.constant.ci;
 
   p = (char *) ckalloc(len);
 
@@ -148,7 +148,7 @@ Constp cp;
     case TYBITSTR:
       shortp = (short *) grabbits(2, cp);
       p = (expptr) mkconst(TYSHORT);
-      p->constblock.const.ci = *shortp;
+      p->constblock.constant.ci = *shortp;
       free((char *) shortp);
       break;
 
@@ -157,11 +157,11 @@ Constp cp;
       break;
 
     case TYLONG:
-      value = cp->const.ci;
+      value = cp->constant.ci;
       if (value >= MINWORD && value <= MAXWORD)
 	{
 	  p = (expptr) mkconst(TYSHORT);
-	  p->constblock.const.ci = value;
+	  p->constblock.constant.ci = value;
 	}
       else
 	{
@@ -180,7 +180,7 @@ Constp cp;
     case TYDCOMPLEX:
       minp = (double *) dminword;
       maxp = (double *) dmaxword;
-      rp = (long *) &(cp->const.cd[0]);
+      rp = (long *) &(cp->constant.cd[0]);
       x.q.word1 = rp[0];
       x.q.word2 = rp[1];
       if (x.f.sign == 1 && x.f.exp == 0)
@@ -195,7 +195,7 @@ Constp cp;
       else if (x.d >= *minp && x.d <= *maxp)
 	{
 	  p = (expptr) mkconst(TYSHORT);
-	  p->constblock.const.ci = x.d;
+	  p->constblock.constant.ci = x.d;
 	}
       else
 	{
@@ -227,7 +227,7 @@ Constp cp;
     case TYHOLLERITH:
       shortp = (short *) grabbytes(2, cp);
       p = (expptr) mkconst(TYSHORT);
-      p->constblock.const.ci = *shortp;
+      p->constblock.constant.ci = *shortp;
       free((char *) shortp);
       break;
 
@@ -262,13 +262,13 @@ Constp cp;
     case TYBITSTR:
       longp = (ftnint *) grabbits(4, cp);
       p = (expptr) mkconst(TYLONG);
-      p->constblock.const.ci = *longp;
+      p->constblock.constant.ci = *longp;
       free((char *) longp);
       break;
 
     case TYSHORT:
       p = (expptr) mkconst(TYLONG);
-      p->constblock.const.ci = cp->const.ci;
+      p->constblock.constant.ci = cp->constant.ci;
       break;
 
     case TYLONG:
@@ -281,7 +281,7 @@ Constp cp;
     case TYDCOMPLEX:
       minp = (double *) dminint;
       maxp = (double *) dmaxint;
-      rp = (long *) &(cp->const.cd[0]);
+      rp = (long *) &(cp->constant.cd[0]);
       x.q.word1 = rp[0];
       x.q.word2 = rp[1];
       if (x.f.sign == 1 && x.f.exp == 0)
@@ -296,7 +296,7 @@ Constp cp;
       else if (x.d >= *minp && x.d <= *maxp)
 	{
 	  p = (expptr) mkconst(TYLONG);
-	  p->constblock.const.ci = x.d;
+	  p->constblock.constant.ci = x.d;
 	}
       else
 	{
@@ -328,7 +328,7 @@ Constp cp;
     case TYHOLLERITH:
       longp = (ftnint *) grabbytes(4, cp);
       p = (expptr) mkconst(TYLONG);
-      p->constblock.const.ci = *longp;
+      p->constblock.constant.ci = *longp;
       free((char *) longp);
       break;
 
@@ -363,7 +363,7 @@ Constp cp;
     case TYBITSTR:
       longp = (long *) grabbits(4, cp);
       p = (expptr) mkconst(TYREAL);
-      rp = (long *) &(p->constblock.const.cd[0]);
+      rp = (long *) &(p->constblock.constant.cd[0]);
       rp[0] = *longp;
       free((char *) longp);
       break;
@@ -371,7 +371,7 @@ Constp cp;
     case TYSHORT:
     case TYLONG:
       p = (expptr) mkconst(TYREAL);
-      p->constblock.const.cd[0] = cp->const.ci;
+      p->constblock.constant.cd[0] = cp->constant.ci;
       break;
 
     case TYREAL:
@@ -380,20 +380,20 @@ Constp cp;
     case TYDCOMPLEX:
       minp = (double *) dminreal;
       maxp = (double *) dmaxreal;
-      rp = (long *) &(cp->const.cd[0]);
+      rp = (long *) &(cp->constant.cd[0]);
       x.q.word1 = rp[0];
       x.q.word2 = rp[1];
       if (x.f.sign == 1 && x.f.exp == 0)
 	{
 	  p = (expptr) mkconst(TYREAL);
-	  rp = (long *) &(p->constblock.const.cd[0]);
+	  rp = (long *) &(p->constblock.constant.cd[0]);
 	  rp[0] = x.q.word1;
 	}
       else if (x.d >= *minp && x.d <= *maxp)
 	{
 	  p = (expptr) mkconst(TYREAL);
 	  y = x.d;
-	  p->constblock.const.cd[0] = y;
+	  p->constblock.constant.cd[0] = y;
 	}
       else
 	{
@@ -425,7 +425,7 @@ Constp cp;
     case TYHOLLERITH:
       longp = (long *) grabbytes(4, cp);
       p = (expptr) mkconst(TYREAL);
-      rp = (long *) &(p->constblock.const.cd[0]);
+      rp = (long *) &(p->constblock.constant.cd[0]);
       rp[0] = *longp;
       free((char *) longp);
       break;
@@ -458,7 +458,7 @@ Constp cp;
     case TYBITSTR:
       longp = (long *) grabbits(8, cp);
       p = (expptr) mkconst(TYDREAL);
-      rp = (long *) &(p->constblock.const.cd[0]);
+      rp = (long *) &(p->constblock.constant.cd[0]);
       rp[0] = longp[0];
       rp[1] = longp[1];
       free((char *) longp);
@@ -467,7 +467,7 @@ Constp cp;
     case TYSHORT:
     case TYLONG:
       p = (expptr) mkconst(TYDREAL);
-      p->constblock.const.cd[0] = cp->const.ci;
+      p->constblock.constant.cd[0] = cp->constant.ci;
       break;
 
     case TYREAL:
@@ -475,8 +475,8 @@ Constp cp;
     case TYCOMPLEX:
     case TYDCOMPLEX:
       p = (expptr) mkconst(TYDREAL);
-      longp = (long *) &(cp->const.cd[0]);
-      rp = (long *) &(p->constblock.const.cd[0]);
+      longp = (long *) &(cp->constant.cd[0]);
+      rp = (long *) &(p->constblock.constant.cd[0]);
       rp[0] = longp[0];
       rp[1] = longp[1];
       break;
@@ -500,7 +500,7 @@ Constp cp;
     case TYHOLLERITH:
       longp = (long *) grabbytes(8, cp);
       p = (expptr) mkconst(TYDREAL);
-      rp = (long *) &(p->constblock.const.cd[0]);
+      rp = (long *) &(p->constblock.constant.cd[0]);
       rp[0] = longp[0];
       rp[1] = longp[1];
       free((char *) longp);
@@ -538,7 +538,7 @@ Constp cp;
     case TYBITSTR:
       longp = (long *) grabbits(8, cp);
       p = (expptr) mkconst(TYCOMPLEX);
-      rp = (long *) &(p->constblock.const.cd[0]);
+      rp = (long *) &(p->constblock.constant.cd[0]);
       rp[0] = longp[0];
       rp[2] = longp[1];
       free((char *) longp);
@@ -547,7 +547,7 @@ Constp cp;
     case TYSHORT:
     case TYLONG:
       p = (expptr) mkconst(TYCOMPLEX);
-      p->constblock.const.cd[0] = cp->const.ci;
+      p->constblock.constant.cd[0] = cp->constant.ci;
       break;
 
     case TYREAL:
@@ -557,7 +557,7 @@ Constp cp;
       overflow = 0;
       minp = (double *) dminreal;
       maxp = (double *) dmaxreal;
-      rp = (long *) &(cp->const.cd[0]);
+      rp = (long *) &(cp->constant.cd[0]);
       re.q.word1 = rp[0];
       re.q.word2 = rp[1];
       im.q.word1 = rp[2];
@@ -591,7 +591,7 @@ Constp cp;
 	      x = im.d;
 	      im.d = x;
 	    }
-	  rp = (long *) &(p->constblock.const.cd[0]);
+	  rp = (long *) &(p->constblock.constant.cd[0]);
 	  rp[0] = re.q.word1;
 	  rp[1] = re.q.word2;
 	  rp[2] = im.q.word1;
@@ -617,7 +617,7 @@ Constp cp;
     case TYHOLLERITH:
       longp = (long *) grabbytes(8, cp);
       p = (expptr) mkconst(TYCOMPLEX);
-      rp = (long *) &(p->constblock.const.cd[0]);
+      rp = (long *) &(p->constblock.constant.cd[0]);
       rp[0] = longp[0];
       rp[2] = longp[1];
       free((char *) longp);
@@ -649,7 +649,7 @@ Constp cp;
     case TYBITSTR:
       longp = (long *) grabbits(16, cp);
       p = (expptr) mkconst(TYDCOMPLEX);
-      rp = (long *) &(p->constblock.const.cd[0]);
+      rp = (long *) &(p->constblock.constant.cd[0]);
       rp[0] = longp[0];
       rp[1] = longp[1];
       rp[2] = longp[2];
@@ -660,7 +660,7 @@ Constp cp;
     case TYSHORT:
     case TYLONG:
       p = (expptr) mkconst(TYDCOMPLEX);
-      p->constblock.const.cd[0] = cp->const.ci;
+      p->constblock.constant.cd[0] = cp->constant.ci;
       break;
 
     case TYREAL:
@@ -668,8 +668,8 @@ Constp cp;
     case TYCOMPLEX:
     case TYDCOMPLEX:
       p = (expptr) mkconst(TYDCOMPLEX);
-      longp = (long *) &(cp->const.cd[0]);
-      rp = (long *) &(p->constblock.const.cd[0]);
+      longp = (long *) &(cp->constant.cd[0]);
+      rp = (long *) &(p->constblock.constant.cd[0]);
       rp[0] = longp[0];
       rp[1] = longp[1];
       rp[2] = longp[2];
@@ -695,7 +695,7 @@ Constp cp;
     case TYHOLLERITH:
       longp = (long *) grabbytes(16, cp);
       p = (expptr) mkconst(TYDCOMPLEX);
-      rp = (long *) &(p->constblock.const.cd[0]);
+      rp = (long *) &(p->constblock.constant.cd[0]);
       rp[0] = longp[0];
       rp[1] = longp[1];
       rp[2] = longp[2];
@@ -734,13 +734,13 @@ Constp cp;
       if (tylogical == TYSHORT)
 	{
 	  shortp = (short *) grabbits(size, cp);
-	  p->constblock.const.ci = (int) *shortp;
+	  p->constblock.constant.ci = (int) *shortp;
 	  free((char *) shortp);
 	}
       else
 	{
 	  longp = (long *) grabbits(size, cp);
-	  p->constblock.const.ci = *longp;
+	  p->constblock.constant.ci = *longp;
 	  free((char *) longp);
 	}
       break;
@@ -776,13 +776,13 @@ Constp cp;
       if (tylogical == TYSHORT)
 	{
 	  shortp = (short *) grabbytes(size, cp);
-	  p->constblock.const.ci = (int) *shortp;
+	  p->constblock.constant.ci = (int) *shortp;
 	  free((char *) shortp);
 	}
       else
 	{
 	  longp = (long *) grabbytes(4, cp);
-	  p->constblock.const.ci = *longp;
+	  p->constblock.constant.ci = *longp;
 	  free((char *) longp);
 	}
       break;
@@ -857,45 +857,45 @@ Constp cp;
 
 
 expptr
-convconst(type, len, const)
+convconst(type, len, constant)
 int type;
 int len;
-Constp const;
+Constp constant;
 {
   register expptr p;
 
   switch (type)
     {
     case TYSHORT:
-      p = cshort(const);
+      p = cshort(constant);
       break;
 
     case TYLONG:
-      p = clong(const);
+      p = clong(constant);
       break;
 
     case TYREAL:
-      p = creal(const);
+      p = creal(constant);
       break;
 
     case TYDREAL:
-      p = cdreal(const);
+      p = cdreal(constant);
       break;
 
     case TYCOMPLEX:
-      p = ccomplex(const);
+      p = ccomplex(constant);
       break;
 
     case TYDCOMPLEX:
-      p = cdcomplex(const);
+      p = cdcomplex(constant);
       break;
 
     case TYLOGICAL:
-      p = clogical(const);
+      p = clogical(constant);
       break;
 
     case TYCHAR:
-      p = cchar(len, const);
+      p = cchar(len, constant);
       break;
 
     case TYERROR:

@@ -359,7 +359,7 @@ struct Constblock
 	field vclass;
 	field vstg;
 	expptr vleng;
-	union Constant const;
+	union Constant constant;
 	};
 
 

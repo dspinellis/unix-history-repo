@@ -746,7 +746,7 @@ LOCAL expptr buffpower( p )
 		fatal( "buffpower: bad non-integer exponent" );
 
 	base = expand(p->exprblock.leftp);
-	exp = p->exprblock.rightp->constblock.const.ci;
+	exp = p->exprblock.rightp->constblock.constant.ci;
 	if ( exp < 2 )
 		fatal( "buffpower: bad exponent less than 2" );
 
