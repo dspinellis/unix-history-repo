@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_glue.c	7.12 (Berkeley) %G%
+ *	@(#)vm_glue.c	7.13 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -258,14 +258,12 @@ sched()
 
 loop:
 #ifdef DEBUG
-	if (!enableswap) {
-		pp = NULL;
-		goto noswap;
-	}
+	while (!enableswap)
+		sleep((caddr_t)&proc0, PVM);
 #endif
 	pp = NULL;
 	ppri = INT_MIN;
-	for (p = allproc; p != NULL; p = p->p_nxt)
+	for (p = allproc; p != NULL; p = p->p_nxt) {
 		if (p->p_stat == SRUN && (p->p_flag & SLOAD) == 0) {
 			pri = p->p_time + p->p_slptime - p->p_nice * 8;
 			if (pri > ppri) {
@@ -273,10 +271,10 @@ loop:
 				ppri = pri;
 			}
 		}
+	}
 #ifdef DEBUG
 	if (swapdebug & SDB_FOLLOW)
 		printf("sched: running, procp %x pri %d\n", pp, ppri);
-noswap:
 #endif
 	/*
 	 * Nothing to do, back to sleep
@@ -512,18 +510,25 @@ thread_wakeup(event)
 
 int indent = 0;
 
+#include <machine/stdarg.h>		/* see subr_prf.c */
+
 /*ARGSUSED2*/
-iprintf(a, b, c, d, e, f, g, h)
-	char *a;
+#if __STDC__
+iprintf(const char *fmt, ...)
+#else
+iprintf(fmt /* , va_alist */)
+	char *fmt;
+	/* va_dcl */
+#endif
 {
 	register int i;
+	va_list ap;
 
-	i = indent;
-	while (i >= 8) {
+	for (i = indent; i >= 8; i -= 8)
 		printf("\t");
-		i -= 8;
-	}
-	for (; i > 0; --i)
+	while (--i >= 0)
 		printf(" ");
-	printf(a, b, c, d, e, f, g, h);
+	va_start(ap, fmt);
+	printf("%r", fmt, ap);
+	va_end(ap);
 }
