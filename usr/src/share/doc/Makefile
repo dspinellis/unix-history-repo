@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.1.1.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 
 #Missing: index iso papers ps2 ucs
 SUBDIR=	ps1 smm usd
