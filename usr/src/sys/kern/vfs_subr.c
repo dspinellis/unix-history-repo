@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	7.86 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.87 (Berkeley) %G%
  */
 
 /*
@@ -34,6 +34,12 @@ int	vttoif_tab[9] = {
 	0, S_IFREG, S_IFDIR, S_IFBLK, S_IFCHR, S_IFLNK,
 	S_IFSOCK, S_IFIFO, S_IFMT,
 };
+
+/*
+ * Insq/Remq for the vnode usage lists.
+ */
+#define	bufinsvn(bp, dp)	list_enter_head(dp, bp, struct buf *, b_vnbufs)
+#define	bufremvn(bp)		list_remove(bp, struct buf *, b_vnbufs)
 
 /*
  * Remove a mount point from the list of mounted filesystems.
@@ -317,21 +323,22 @@ vinvalbuf(vp, flags, cred, p)
 	if (flags & V_SAVE) {
 		if (error = VOP_FSYNC(vp, cred, MNT_WAIT, p))
 			return (error);
-		if (vp->v_dirtyblkhd != NULL)
+		if (vp->v_dirtyblkhd.le_next != NULL)
 			panic("vinvalbuf: dirty bufs");
 	}
 	for (;;) {
-		if ((blist = vp->v_cleanblkhd) && flags & V_SAVEMETA)
+		if ((blist = vp->v_cleanblkhd.le_next) && flags & V_SAVEMETA)
 			while (blist && blist->b_lblkno < 0)
-				blist = blist->b_blockf;
-		if (!blist && (blist = vp->v_dirtyblkhd) && flags & V_SAVEMETA)
+				blist = blist->b_vnbufs.qe_next;
+		if (!blist && (blist = vp->v_dirtyblkhd.le_next) && 
+		    (flags & V_SAVEMETA))
 			while (blist && blist->b_lblkno < 0)
-				blist = blist->b_blockf;
+				blist = blist->b_vnbufs.qe_next;
 		if (!blist)
 			break;
 
 		for (bp = blist; bp; bp = nbp) {
-			nbp = bp->b_blockf;
+			nbp = bp->b_vnbufs.qe_next;
 			if (flags & V_SAVEMETA && bp->b_lblkno < 0)
 				continue;
 			s = splbio();
@@ -348,7 +355,8 @@ vinvalbuf(vp, flags, cred, p)
 			brelse(bp);
 		}
 	}
-	if (!(flags & V_SAVEMETA) && (vp->v_dirtyblkhd || vp->v_cleanblkhd))
+	if (!(flags & V_SAVEMETA) &&
+	    (vp->v_dirtyblkhd.le_next || vp->v_cleanblkhd.le_next))
 		panic("vinvalbuf: flush failed");
 	return (0);
 }
@@ -361,7 +369,6 @@ bgetvp(vp, bp)
 	register struct buf *bp;
 {
 	register struct vnode *vq;
-	register struct buf *bq;
 
 	if (bp->b_vp)
 		panic("bgetvp: not free");
@@ -374,11 +381,7 @@ bgetvp(vp, bp)
 	/*
 	 * Insert onto list for new vnode.
 	 */
-	if (bq = vp->v_cleanblkhd)
-		bq->b_blockb = &bp->b_blockf;
-	bp->b_blockf = bq;
-	bp->b_blockb = &vp->v_cleanblkhd;
-	vp->v_cleanblkhd = bp;
+	bufinsvn(bp, &vp->v_cleanblkhd);
 }
 
 /*
@@ -387,7 +390,6 @@ bgetvp(vp, bp)
 brelvp(bp)
 	register struct buf *bp;
 {
-	struct buf *bq;
 	struct vnode *vp;
 
 	if (bp->b_vp == (struct vnode *) 0)
@@ -395,13 +397,8 @@ brelvp(bp)
 	/*
 	 * Delete from old vnode list, if on one.
 	 */
-	if (bp->b_blockb) {
-		if (bq = bp->b_blockf)
-			bq->b_blockb = bp->b_blockb;
-		*bp->b_blockb = bq;
-		bp->b_blockf = NULL;
-		bp->b_blockb = NULL;
-	}
+	if (bp->b_vnbufs.qe_next != NOLIST)
+		bufremvn(bp);
 	vp = bp->b_vp;
 	bp->b_vp = (struct vnode *) 0;
 	HOLDRELE(vp);
@@ -416,7 +413,7 @@ reassignbuf(bp, newvp)
 	register struct buf *bp;
 	register struct vnode *newvp;
 {
-	register struct buf *bq, **listheadp;
+	register struct list_entry *listheadp;
 
 	if (newvp == NULL) {
 		printf("reassignbuf: NULL");
@@ -425,11 +422,8 @@ reassignbuf(bp, newvp)
 	/*
 	 * Delete from old vnode list, if on one.
 	 */
-	if (bp->b_blockb) {
-		if (bq = bp->b_blockf)
-			bq->b_blockb = bp->b_blockb;
-		*bp->b_blockb = bq;
-	}
+	if (bp->b_vnbufs.qe_next != NOLIST)
+		bufremvn(bp);
 	/*
 	 * If dirty, put on list of dirty buffers;
 	 * otherwise insert onto list of clean buffers.
@@ -438,11 +432,7 @@ reassignbuf(bp, newvp)
 		listheadp = &newvp->v_dirtyblkhd;
 	else
 		listheadp = &newvp->v_cleanblkhd;
-	if (bq = *listheadp)
-		bq->b_blockb = &bp->b_blockf;
-	bp->b_blockf = bq;
-	bp->b_blockb = listheadp;
-	*listheadp = bp;
+	bufinsvn(bp, listheadp);
 }
 
 /*
