@@ -4,7 +4,7 @@
  */
 
 /*
- * Sccs Id = "@(#)glob.h	2.4 %G%";
+ * Sccs Id = "@(#)glob.h	2.5 %G%";
  */
 
 int	msgCount;			/* Count of messages read in */
@@ -33,6 +33,7 @@ char	*editfile;			/* Name of file being edited */
 char	*sflag;				/* Subject given from non tty */
 int	outtty;				/* True if standard output a tty */
 int	intty;				/* True if standard input a tty */
+int	baud;				/* Output baud rate */
 char	mbox[PATHSIZE];			/* Name of mailbox file */
 char	*mailname;			/* Name of system mailbox */
 char	mailspace[PATHSIZE];		/* Space norm alloc'd for name */
