@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_srvcache.c	7.19 (Berkeley) %G%
+ *	@(#)nfs_srvcache.c	7.20 (Berkeley) %G%
  */
 
 /*
@@ -326,5 +326,7 @@ nfsrv_cleancache()
 		free(rp, M_NFSD);
 	}
 	bzero((char *)rheadhtbl, (rheadhash + 1) * sizeof(void *));
+	nfsrvlruhead = NULL;
+	nfsrvlrutail = &nfsrvlruhead;
 	numnfsrvcache = 0;
 }
