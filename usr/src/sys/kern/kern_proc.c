@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.53	82/12/17	*/
+/*	kern_proc.c	4.54	82/12/21	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -319,7 +319,7 @@ badarg:
 			if (nc % (CLSIZE*NBPG) == 0) {
 				if (bp)
 					brelse(bp);
-				bp = bread(argdev, bno + nc / NBPG,
+				bp = bread(argdev, bno + ctod(nc / NBPG),
 				    CLSIZE*NBPG);
 				bp->b_flags |= B_AGE;		/* throw away */
 				bp->b_flags &= ~B_DELWRI;	/* cancel io */
