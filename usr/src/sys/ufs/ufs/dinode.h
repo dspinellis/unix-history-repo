@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dinode.h	6.9 (Berkeley) %G%
+ *	@(#)dinode.h	6.10 (Berkeley) %G%
  */
 
 /*
@@ -28,6 +28,7 @@ struct inode {
 	long	i_id;		/* unique identifier */
 	struct	fs *i_fs;	/* file sys associated with this inode */
 	struct	dquot *i_dquot;	/* quota structure controlling this file */
+	struct	text *i_text;	/* text entry, if any (should be region) */
 	union {
 		daddr_t	if_lastr;	/* last read (read-ahead) */
 		struct	socket *is_socket;
