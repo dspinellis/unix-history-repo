@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_sysctl.c	7.7 (Berkeley) %G%
+ *	@(#)kern_sysctl.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -29,7 +29,7 @@
 
 
 #define snderr(e) { error = (e); goto release;}
-extern int kinfo_doproc(), kinfo_rtable();
+extern int kinfo_doproc(), kinfo_rtable(), kinfo_vnode();
 struct kinfo_lock kinfo_lock;
 
 getkerninfo()
@@ -58,6 +58,10 @@ getkerninfo()
 		server = kinfo_rtable;
 		break;
 
+	case KINFO_VNODE:
+		server = kinfo_vnode;
+		break;
+
 	default:
 		error = EINVAL;
 		goto done;
@@ -81,10 +85,12 @@ getkerninfo()
 	 */
 	if (bufsize > ((int)ptob(freemem) - (20 * 1024))) 	/* XXX */
 		snderr(ENOMEM);
-	vslock(uap->where, bufsize);
+	if (server != kinfo_vnode)	/* XXX */
+		vslock(uap->where, bufsize);
 	locked = bufsize;
 	error = (*server)(uap->op, uap->where, &bufsize, uap->arg, &needed);
-	vsunlock(uap->where, locked, B_WRITE);
+	if (server != kinfo_vnode)	/* XXX */
+		vsunlock(uap->where, locked, B_WRITE);
 	if (error == 0)
 		error = copyout((caddr_t)&bufsize,
 				(caddr_t)uap->size, sizeof (bufsize));
