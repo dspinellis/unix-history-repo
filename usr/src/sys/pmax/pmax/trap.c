@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: trap.c 1.32 91/04/06$
  *
- *	@(#)trap.c	7.12 (Berkeley) %G%
+ *	@(#)trap.c	7.13 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -347,9 +347,10 @@ trap(statusReg, causeReg, vadr, pc, args)
 				map, va, ftype, rv, vadr, pc,
 				!USERMODE(statusReg) ? ((int *)&args)[19] :
 					p->p_md.md_regs[RA]); /* XXX */
-			printf("\tpid %d %s PC %x RA %x\n", p->p_pid,
+			printf("\tpid %d %s PC %x RA %x SP %x\n", p->p_pid,
 				p->p_comm, p->p_md.md_regs[PC],
-				p->p_md.md_regs[RA]); /* XXX */
+				p->p_md.md_regs[RA],
+				p->p_md.md_regs[SP]); /* XXX */
 			trapDump("vm_fault");
 		}
 		/*
@@ -1586,3 +1587,189 @@ cpu_singlestep(p)
 		p->p_md.md_ss_instr, locr0[PC]); /* XXX */
 	return (0);
 }
+
+#ifdef DEBUG
+kdbpeek(addr)
+{
+	if (addr & 3) {
+		printf("kdbpeek: unaligned address %x\n", addr);
+		return (-1);
+	}
+	return (*(int *)addr);
+}
+
+#define MIPS_JR_RA	0x03e00008	/* instruction code for jr ra */
+
+/*
+ * Print a stack backtrace.
+ */
+void
+stacktrace()
+{
+	unsigned pc, sp, fp, ra, va, subr;
+	int a0, a1, a2, a3;
+	unsigned instr, mask;
+	InstFmt i;
+	int more, stksize;
+	int regs[8];
+	extern setsoftclock();
+	extern char start[], edata[];
+
+	cpu_getregs(regs);
+
+	/* get initial values from the exception frame */
+	sp = regs[0];
+	pc = regs[2];
+	ra = 0;
+	a0 = regs[3];
+	a1 = regs[4];
+	a2 = regs[5];
+	a3 = regs[6];
+	fp = regs[7];
+
+loop:
+	/* check for current PC in the kernel interrupt handler code */
+	if (pc >= (unsigned)MachKernIntr && pc < (unsigned)MachUserIntr) {
+		/* NOTE: the offsets depend on the code in locore.s */
+		printf("interrupt\n");
+		a0 = kdbpeek(sp + 36);
+		a1 = kdbpeek(sp + 40);
+		a2 = kdbpeek(sp + 44);
+		a3 = kdbpeek(sp + 48);
+		pc = kdbpeek(sp + 20);
+		ra = kdbpeek(sp + 92);
+		sp = kdbpeek(sp + 100);
+		fp = kdbpeek(sp + 104);
+	}
+
+	/* check for current PC in the exception handler code */
+	if (pc >= 0x80000000 && pc < (unsigned)setsoftclock) {
+		ra = 0;
+		subr = 0;
+		goto done;
+	}
+
+	/* check for bad PC */
+	if (pc & 3 || pc < 0x80000000 || pc >= (unsigned)edata) {
+		printf("PC 0x%x: not in kernel\n", pc);
+		ra = 0;
+		subr = 0;
+		goto done;
+	}
+
+	/*
+	 * Find the beginning of the current subroutine by scanning backwards
+	 * from the current PC for the end of the previous subroutine.
+	 */
+	va = pc - sizeof(int);
+	while ((instr = kdbpeek(va)) != MIPS_JR_RA)
+		va -= sizeof(int);
+	va += 2 * sizeof(int);	/* skip back over branch & delay slot */
+	/* skip over nulls which might separate .o files */
+	while ((instr = kdbpeek(va)) == 0)
+		va += sizeof(int);
+	subr = va;
+
+	/* scan forwards to find stack size and any saved registers */
+	stksize = 0;
+	more = 3;
+	mask = 0;
+	for (; more; va += sizeof(int), more = (more == 3) ? 3 : more - 1) {
+		/* stop if hit our current position */
+		if (va >= pc)
+			break;
+		instr = kdbpeek(va);
+		i.word = instr;
+		switch (i.JType.op) {
+		case OP_SPECIAL:
+			switch (i.RType.func) {
+			case OP_JR:
+			case OP_JALR:
+				more = 2; /* stop after next instruction */
+				break;
+
+			case OP_SYSCALL:
+			case OP_BREAK:
+				more = 1; /* stop now */
+			};
+			break;
+
+		case OP_BCOND:
+		case OP_J:
+		case OP_JAL:
+		case OP_BEQ:
+		case OP_BNE:
+		case OP_BLEZ:
+		case OP_BGTZ:
+			more = 2; /* stop after next instruction */
+			break;
+
+		case OP_COP0:
+		case OP_COP1:
+		case OP_COP2:
+		case OP_COP3:
+			switch (i.RType.rs) {
+			case OP_BCx:
+			case OP_BCy:
+				more = 2; /* stop after next instruction */
+			};
+			break;
+
+		case OP_SW:
+			/* look for saved registers on the stack */
+			if (i.IType.rs != 29)
+				break;
+			/* only restore the first one */
+			if (mask & (1 << i.IType.rt))
+				break;
+			mask |= 1 << i.IType.rt;
+			switch (i.IType.rt) {
+			case 4: /* a0 */
+				a0 = kdbpeek(sp + (short)i.IType.imm);
+				break;
+
+			case 5: /* a1 */
+				a1 = kdbpeek(sp + (short)i.IType.imm);
+				break;
+
+			case 6: /* a2 */
+				a2 = kdbpeek(sp + (short)i.IType.imm);
+				break;
+
+			case 7: /* a3 */
+				a3 = kdbpeek(sp + (short)i.IType.imm);
+				break;
+
+			case 30: /* fp */
+				fp = kdbpeek(sp + (short)i.IType.imm);
+				break;
+
+			case 31: /* ra */
+				ra = kdbpeek(sp + (short)i.IType.imm);
+			}
+			break;
+
+		case OP_ADDI:
+		case OP_ADDIU:
+			/* look for stack pointer adjustment */
+			if (i.IType.rs != 29 || i.IType.rt != 29)
+				break;
+			stksize = (short)i.IType.imm;
+		}
+	}
+
+done:
+	printf("%x+%x (%x,%x,%x,%x) ra %x sz %d\n",
+		subr, pc - subr, a0, a1, a2, a3, ra, stksize);
+
+	if (ra) {
+		if (pc == ra && stksize == 0)
+			printf("stacktrace: loop!\n");
+		else {
+			pc = ra;
+			sp -= stksize;
+			goto loop;
+		}
+	}
+}
+#endif /* DEBUG */
