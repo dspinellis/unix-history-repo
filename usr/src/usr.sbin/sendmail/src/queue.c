@@ -10,13 +10,12 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.6 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.7 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.6 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.7 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
-# include <signal.h>
 # include <errno.h>
 # include <pwd.h>
 # include <dirent.h>
@@ -415,7 +414,7 @@ runqueue(forkflag)
 #ifndef SIGCHLD
 			(void) waitfor(pid);
 #else /* SIGCHLD */
-			(void) signal(SIGCHLD, reapchild);
+			(void) setsignal(SIGCHLD, reapchild);
 #endif /* SIGCHLD */
 			if (QueueIntvl != 0)
 				(void) setevent(QueueIntvl, runqueue, TRUE);
@@ -426,7 +425,7 @@ runqueue(forkflag)
 		if (fork() != 0)
 			exit(EX_OK);
 #else /* SIGCHLD */
-		(void) signal(SIGCHLD, SIG_DFL);
+		(void) setsignal(SIGCHLD, SIG_DFL);
 #endif /* SIGCHLD */
 	}
 

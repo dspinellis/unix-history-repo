@@ -7,11 +7,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
-#include <signal.h>
 #include <netdb.h>
 #include <errno.h>
 #ifdef NAMED_BIND
@@ -1077,7 +1076,7 @@ tryhost:
 			(void) fflush(e->e_xfp);		/* for debugging */
 		(void) fflush(stdout);
 # ifdef SIGCHLD
-		(void) signal(SIGCHLD, SIG_DFL);
+		(void) setsignal(SIGCHLD, SIG_DFL);
 # endif /* SIGCHLD */
 		DOFORK(FORK);
 		/* pid is set by DOFORK */
@@ -1109,9 +1108,9 @@ tryhost:
 
 			/* child -- set up input & exec mailer */
 			/* make diagnostic output be standard output */
-			(void) signal(SIGINT, SIG_IGN);
-			(void) signal(SIGHUP, SIG_IGN);
-			(void) signal(SIGTERM, SIG_DFL);
+			(void) setsignal(SIGINT, SIG_IGN);
+			(void) setsignal(SIGHUP, SIG_IGN);
+			(void) setsignal(SIGTERM, SIG_DFL);
 
 			/* close any other cached connections */
 			mci_flush(FALSE, mci);
@@ -1892,9 +1891,9 @@ mailfile(filename, ctladdr, e)
 		/* child -- actually write to file */
 		struct stat stb;
 
-		(void) signal(SIGINT, SIG_DFL);
-		(void) signal(SIGHUP, SIG_DFL);
-		(void) signal(SIGTERM, SIG_DFL);
+		(void) setsignal(SIGINT, SIG_DFL);
+		(void) setsignal(SIGHUP, SIG_DFL);
+		(void) setsignal(SIGTERM, SIG_DFL);
 		(void) umask(OldUmask);
 
 		if (stat(filename, &stb) < 0)

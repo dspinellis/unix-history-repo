@@ -7,11 +7,10 @@
  */
 
 # include "sendmail.h"
-# include <signal.h>
 # include <pwd.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)alias.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)alias.c	8.6 (Berkeley) %G%";
 #endif /* not lint */
 
 
@@ -388,7 +387,7 @@ rebuildaliases(map, automatic)
 		return;
 	}
 
-	oldsigint = signal(SIGINT, SIG_IGN);
+	oldsigint = setsignal(SIGINT, SIG_IGN);
 
 	if (map->map_class->map_open(map, O_RDWR))
 	{
@@ -413,7 +412,7 @@ rebuildaliases(map, automatic)
 		map->map_class->map_close(map);
 
 	/* restore the old signal */
-	(void) signal(SIGINT, oldsigint);
+	(void) setsignal(SIGINT, oldsigint);
 }
 /*
 **  READALIASES -- read and process the alias file.

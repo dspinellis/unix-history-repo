@@ -13,13 +13,12 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
 
 #include "sendmail.h"
-#include <signal.h>
 #include <sgtty.h>
 #ifdef NAMED_BIND
 #include <arpa/nameser.h>
@@ -301,12 +300,12 @@ main(argc, argv, envp)
 		LastArgv = argv[argc - 1] + strlen(argv[argc - 1]);
 # endif /* SETPROCTITLE */
 
-	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
-		(void) signal(SIGINT, intsig);
-	if (signal(SIGHUP, SIG_IGN) != SIG_IGN)
-		(void) signal(SIGHUP, intsig);
-	(void) signal(SIGTERM, intsig);
-	(void) signal(SIGPIPE, SIG_IGN);
+	if (setsignal(SIGINT, SIG_IGN) != SIG_IGN)
+		(void) setsignal(SIGINT, intsig);
+	if (setsignal(SIGHUP, SIG_IGN) != SIG_IGN)
+		(void) setsignal(SIGHUP, intsig);
+	(void) setsignal(SIGTERM, intsig);
+	(void) setsignal(SIGPIPE, SIG_IGN);
 	OldUmask = umask(022);
 	OpMode = MD_DELIVER;
 	FullName = getenv("NAME");
@@ -1392,9 +1391,9 @@ disconnect(droplev, e)
 	}
 
 	/* be sure we don't get nasty signals */
-	(void) signal(SIGHUP, SIG_IGN);
-	(void) signal(SIGINT, SIG_IGN);
-	(void) signal(SIGQUIT, SIG_IGN);
+	(void) setsignal(SIGHUP, SIG_IGN);
+	(void) setsignal(SIGINT, SIG_IGN);
+	(void) setsignal(SIGQUIT, SIG_IGN);
 
 	/* we can't communicate with our caller, so.... */
 	HoldErrs = TRUE;
