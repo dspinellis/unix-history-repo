@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 # The following modules do not build/install:
 # 10.named, 13.amd
