@@ -1,4 +1,4 @@
-/*	pass2.h	4.2	86/10/15	*/
+/*	pass2.h	4.2	86/10/29	*/
 
 #ifndef _PASS2_
 #define	_PASS2_
@@ -113,6 +113,7 @@
 /* also defined in onepass.h */
 #define NOPREF		020000	/* no preference for register assignment */
 #endif
+#define	NEVEN		0100000	/* even register required */
 
 /* register allocation */
 extern	int rstatus[];		/* register status info */
