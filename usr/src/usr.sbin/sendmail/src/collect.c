@@ -3,7 +3,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)collect.c	3.7	%G%";
+static char	SccsId[] = "@(#)collect.c	3.8	%G%";
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -41,9 +41,7 @@ static char	SccsId[] = "@(#)collect.c	3.7	%G%";
 **		temp buffer can be deallocated.
 */
 
-char	*MsgId;			/* message-id, determined or created */
 long	MsgSize;		/* size of message in bytes */
-char	*Date;			/* UNIX-style origination date */
 
 char *
 maketemp(from)
@@ -54,18 +52,14 @@ maketemp(from)
 	register char *p;
 	char c;
 	extern int errno;
-	register HDR *h;
-	HDR **hp;
 	extern bool isheader();
 	extern char *newstr();
 	extern char *xalloc();
-	char *fname;
-	char *fvalue;
 	extern char *index(), *rindex();
 	char *xfrom;
 	extern char *hvalue();
-	struct hdrinfo *hi;
 	extern char *strcpy(), *strcat(), *mktemp();
+	HDR *h;
 	extern char *index();
 
 	/*
@@ -120,59 +114,8 @@ maketemp(from)
 		**  Snarf header away.
 		*/
 
-		/* strip off trailing newline */
-		p = rindex(buf, '\n');
-		if (p != NULL)
-			*p = '\0';
-
-		/* find canonical name */
-		fname = buf;
-		p = index(buf, ':');
-		fvalue = &p[1];
-		while (isspace(*--p))
-			continue;
-		*++p = '\0';
-		makelower(fname);
-
-		/* strip field value on front */
-		if (*fvalue == ' ')
-			fvalue++;
-
-		/* search header list for this header */
-		for (hp = &Header, h = Header; h != NULL; hp = &h->h_link, h = h->h_link)
-		{
-			if (strcmp(fname, h->h_field) == 0 && bitset(H_DEFAULT, h->h_flags))
-				break;
-		}
-
-		/* see if it is a known type */
-		for (hi = HdrInfo; hi->hi_field != NULL; hi++)
-		{
-			if (strcmp(hi->hi_field, fname) == 0)
-				break;
-		}
-
-		/* if this means "end of header" quit now */
-		if (bitset(H_EOH, hi->hi_flags))
+		if (bitset(H_EOH, chompheader(buf, 0)))
 			break;
-
-		/* create/fill in a new node */
-		if (h == NULL)
-		{
-			/* create a new node */
-			*hp = h = (HDR *) xalloc(sizeof *h);
-			h->h_field = newstr(fname);
-			h->h_value = NULL;
-			h->h_link = NULL;
-			h->h_flags = hi->hi_flags;
-		}
-		if (h->h_value != NULL)
-			free(h->h_value);
-		h->h_value = newstr(fvalue);
-
-		/* save the location of this field */
-		if (hi->hi_pptr != NULL)
-			*hi->hi_pptr = h->h_value;
 	}
 
 # ifdef DEBUG
@@ -219,9 +162,7 @@ maketemp(from)
 
 	/*
 	**  Find out some information from the headers.
-	**	Examples are who is the from person & the date.  Some
-	**	fields, e.g., Message-Id, may have been handled by
-	**	the hi_pptr mechanism.
+	**	Examples are who is the from person & the date.
 	*/
 
 	/* from person */
@@ -230,16 +171,13 @@ maketemp(from)
 		xfrom = hvalue("from");
 
 	/* date message originated */
-	/* we don't seem to have a good way to do canonical conversion ....
 	p = hvalue("date");
 	if (p != NULL)
-		Date = newstr(arpatounix(p));
-	.... so we will ignore the problem for the time being */
-	if (Date == NULL)
 	{
-		extern char *ctime();
-
-		Date = newstr(ctime(&CurTime));
+		define('a', p);
+		/* we don't have a good way to do canonical conversion ....
+		define('d', newstr(arpatounix(p)));
+		.... so we will ignore the problem for the time being */
 	}
 
 	if (freopen(InFileName, "r", stdin) == NULL)
@@ -270,7 +208,7 @@ maketemp(from)
 **
 **	Side Effects:
 **		extracts what information it can from the header,
-**		such as the Date.
+**		such as the date.
 */
 
 char	*MonthList[] =
@@ -309,14 +247,20 @@ eatfrom(fm)
 
 	if (*p != NULL)
 	{
+		char *q;
+
 		/* we have found a date */
-		Date = xalloc(25);
-		strncpy(Date, p, 25);
-		Date[24] = '\0';
+		q = xalloc(25);
+		strncpy(q, p, 25);
+		q[24] = '\0';
+		define('d', q);
 	}
 }
 /*
 **  HVALUE -- return value of a header.
+**
+**	Only "real" fields (i.e., ones that have not been supplied
+**	as a default) are used.
 **
 **	Parameters:
 **		field -- the field name.
@@ -337,43 +281,13 @@ hvalue(field)
 
 	for (h = Header; h != NULL; h = h->h_link)
 	{
-		if (strcmp(h->h_field, field) == 0)
+		if (!bitset(H_DEFAULT, h->h_flags) && strcmp(h->h_field, field) == 0)
 		{
 			h->h_flags |= H_USED;
 			return (h->h_value);
 		}
 	}
 	return (NULL);
-}
-/*
-**  MAKEMSGID -- Compute a message id for this process.
-**
-**	This routine creates a message id for a message if
-**	it did not have one already.  If the MESSAGEID compile
-**	flag is set, the messageid will be added to any message
-**	that does not already have one.  Currently it is more
-**	of an artifact, but I suggest that if you are hacking,
-**	you leave it in -- I may want to use it someday if
-**	duplicate messages turn out to be a problem.
-**
-**	Parameters:
-**		none.
-**
-**	Returns:
-**		a message id.
-**
-**	Side Effects:
-**		none.
-*/
-
-char *
-makemsgid()
-{
-	static char buf[50];
-	extern char *expand();
-
-	expand("<$m>", buf, &buf[sizeof buf - 1]);
-	return (buf);
 }
 /*
 **  ISHEADER -- predicate telling if argument is a header.
@@ -400,6 +314,94 @@ isheader(s)
 	while (isspace(*s))
 		s++;
 	return (*s == ':');
+}
+/*
+**  CHOMPHEADER -- process and save a header line.
+**
+**	Called by collect and by readcf to deal with header lines.
+**
+**	Parameters:
+**		line -- header as a text line.
+**		stat -- bits to set in the h_flags field.
+**
+**	Returns:
+**		flags for this header.
+**
+**	Side Effects:
+**		The header is saved on the header list.
+*/
+
+chompheader(line, stat)
+	char *line;
+	int stat;
+{
+	register char *p;
+	extern int errno;
+	register HDR *h;
+	HDR **hp;
+	extern bool isheader();
+	extern char *newstr();
+	extern char *xalloc();
+	char *fname;
+	char *fvalue;
+	extern char *index(), *rindex();
+	struct hdrinfo *hi;
+	extern char *strcpy(), *strcat(), *mktemp();
+
+	/* strip off trailing newline */
+	p = rindex(line, '\n');
+	if (p != NULL)
+		*p = '\0';
+
+	/* find canonical name */
+	fname = line;
+	p = index(line, ':');
+	fvalue = &p[1];
+	while (isspace(*--p))
+		continue;
+	*++p = '\0';
+	makelower(fname);
+
+	/* strip field value on front */
+	if (*fvalue == ' ')
+		fvalue++;
+
+	/* search header list for this header */
+	for (hp = &Header, h = Header; h != NULL; hp = &h->h_link, h = h->h_link)
+	{
+		if (strcmp(fname, h->h_field) == 0 && bitset(H_DEFAULT, h->h_flags))
+			break;
+	}
+
+	/* see if it is a known type */
+	for (hi = HdrInfo; hi->hi_field != NULL; hi++)
+	{
+		if (strcmp(hi->hi_field, fname) == 0)
+			break;
+	}
+
+	/* if this means "end of header" quit now */
+	if (bitset(H_EOH, hi->hi_flags))
+		return (hi->hi_flags);
+
+	/* create/fill in a new node */
+	if (h == NULL)
+	{
+		/* create a new node */
+		*hp = h = (HDR *) xalloc(sizeof *h);
+		h->h_field = newstr(fname);
+		h->h_value = NULL;
+		h->h_link = NULL;
+		h->h_flags = hi->hi_flags | stat;
+		h->h_mflags = hi->hi_mflags;
+	}
+	else
+		h->h_flags &= ~H_DEFAULT;
+	if (h->h_value != NULL)
+		free(h->h_value);
+	h->h_value = newstr(fvalue);
+
+	return (h->h_flags);
 }
 /*
 **  SAVEDATE -- find and save date field from a "From" line

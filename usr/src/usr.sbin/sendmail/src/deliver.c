@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.8	%G%";
+static char SccsId[] = "@(#)deliver.c	3.9	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a particular address.
@@ -506,7 +506,6 @@ putmessage(fp, m)
 	HDR *h;
 	register char *p;
 	extern char *arpadate();
-	extern char *hvalue();
 	bool anyheader = FALSE;
 	extern char *expand();
 	extern char *capitalize();
@@ -516,55 +515,20 @@ putmessage(fp, m)
 	if (!bitset(M_NHDR, m->m_flags))
 		fprintf(fp, "%s\n", FromLine);
 
-	/* clear all "used" bits */
-	for (h = Header; h != NULL; h = h->h_link)
-		h->h_flags &= ~H_USED;
-
-	/* output date if needed by mailer */
-	p = hvalue("date");
-	if (bitset(M_NEEDDATE, m->m_flags) && p == NULL)
-		p = arpadate(Date);
-	if (p != NULL)
-	{
-		fprintf(fp, "Date: %s\n", p);
-		anyheader = TRUE;
-	}
-
-	/* output from line if needed by mailer */
-	p = hvalue("from");
-	if (bitset(M_NEEDFROM, m->m_flags) && p == NULL)
-	{
-		extern char *FullName;
-
-		expand("$g", buf, &buf[sizeof buf - 1]);
-		if (FullName != NULL)
-			fprintf(fp, "From: %s <%s>\n", FullName, buf);
-		else
-			fprintf(fp, "From: %s\n", buf);
-		anyheader = TRUE;
-	}
-	else if (p != NULL)
-	{
-		fprintf(fp, "From: %s\n", p);
-		anyheader = TRUE;
-	}
-
-	/* output message-id field if needed */
-	p = hvalue("message-id");
-	if (bitset(M_MSGID, m->m_flags) && p == NULL)
-		p = MsgId;
-	if (p != NULL)
-	{
-		fprintf(fp, "Message-Id: %s\n", p);
-		anyheader = TRUE;
-	}
-
-	/* output any other header lines */
+	/* output all header lines */
 	for (h = Header; h != NULL; h = h->h_link)
 	{
-		if (bitset(H_USED, h->h_flags))
+		if (bitset(H_CHECK, h->h_flags) && bitset(H_DEFAULT, h->h_flags) &&
+		    !bitset(h->h_mflags, m->m_flags))
 			continue;
-		fprintf(fp, "%s: %s\n", capitalize(h->h_field), h->h_value);
+		if (bitset(H_DEFAULT, h->h_flags))
+		{
+			expand(h->h_value, buf, &buf[sizeof buf]);
+			p = buf;
+		}
+		else
+			p = h->h_value;
+		fprintf(fp, "%s: %s\n", capitalize(h->h_field), p);
 		h->h_flags |= H_USED;
 		anyheader = TRUE;
 	}

@@ -1,7 +1,7 @@
 /*
 **  SENDMAIL.H -- Global definitions for sendmail.
 **
-**	@(#)sendmail.h	3.10	%G%
+**	@(#)sendmail.h	3.11	%G%
 */
 
 
@@ -112,6 +112,7 @@ struct header
 	char		*h_value;	/* the value of that field */
 	struct header	*h_link;	/* the next header */
 	short		h_flags;	/* status bits, see below */
+	short		h_mflags;	/* m_flags bits needed */
 };
 
 typedef struct header	HDR;
@@ -128,7 +129,7 @@ struct hdrinfo
 {
 	char	*hi_field;	/* the name of the field */
 	short	hi_flags;	/* status bits, see below */
-	char	**hi_pptr;	/* &ptr to point to this value */
+	short	hi_mflags;	/* m_flags needed for this field */
 };
 
 extern struct hdrinfo	HdrInfo[];
@@ -138,6 +139,7 @@ extern struct hdrinfo	HdrInfo[];
 # define H_DELETE	00002	/* don't send this field */
 # define H_DEFAULT	00004	/* if another value is found, drop this */
 # define H_USED		00010	/* indicates that this has been output */
+# define H_CHECK	00020	/* check h_mflags against m_flags */
 
 
 /*
@@ -176,15 +178,12 @@ extern bool	WriteBack;	/* write back response on error */
 extern bool	NoAlias;	/* if set, don't do any aliasing */
 extern bool	ForceMail;	/* if set, mail even if already got a copy */
 extern bool	MeToo;		/* send to the sender also */
-extern bool	UseMsgId;	/* put msg-id's in all msgs [conf.c] */
 extern bool	IgnrDot;	/* don't let dot end messages */
 extern bool	SaveFrom;	/* save leading "From" lines */
 extern int	Errors;		/* set if errors */
 extern int	ExitStat;	/* exit status code */
 extern char	InFileName[];	/* input file name */
 extern char	Transcript[];	/* the transcript file name */
-extern char	*MsgId;		/* the message id for this message */
-extern char	*Date;		/* origination date (UNIX format) */
 extern ADDRESS	From;		/* the person it is from */
 extern char	*To;		/* the target person */
 extern int	HopCount;	/* hop count */

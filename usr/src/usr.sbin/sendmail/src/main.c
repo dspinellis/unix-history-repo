@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.7	%G%";
+static char	SccsId[] = "@(#)main.c	3.8	%G%";
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -121,7 +121,6 @@ char	InFileName[] = "/tmp/mailtXXXXXX";
 char	Transcript[] = "/tmp/mailxXXXXXX";
 ADDRESS	From;		/* the from person */
 char	*To;		/* the target person */
-char	*FullName;	/* full name of sender */
 int	HopCount;	/* hop count */
 int	ExitStat;	/* the exit status byte */
 HDR	*Header;	/* header list */
@@ -154,7 +153,6 @@ main(argc, argv)
 	extern char *newstr();
 	extern char *index();
 	extern char *strcpy(), *strcat();
-	extern char *makemsgid();
 	char *cfname;
 	register int i;
 	char pbuf[10];			/* holds pid */
@@ -185,7 +183,7 @@ main(argc, argv)
 # endif
 	errno = 0;
 	from = NULL;
-	cfname = "sendmail.cf";
+	cfname = "/usr/lib/sendmail.cf";
 
 	/*
 	** Crack argv.
@@ -263,7 +261,7 @@ main(argc, argv)
 # ifdef DEBUG
 		  case 'd':	/* debug */
 			Debug++;
-			printf("%s\n", Version);
+			printf("Version %s\n", Version);
 			break;
 
 		  case 'D':	/* redefine internal macro */
@@ -313,16 +311,25 @@ main(argc, argv)
 	**	getting sent, rather than when it is first composed.
 	*/
 
+	/* process id */
 	sprintf(pbuf, "%d", getpid());
 	define('p', pbuf);
+
+	/* hop count */
 	sprintf(cbuf, "%d", HopCount);
 	define('c', cbuf);
+
+	/* time as integer, unix time, arpa time */
 	time(&CurTime);
 	sprintf(tbuf, "%ld", &CurTime);
 	define('t', tbuf);
 	strcpy(dbuf, ctime(&CurTime));
 	*index(dbuf, '\n') = '\0';
 	define('d', dbuf);
+	define('a', arpadate(dbuf));
+
+	/* version */
+	define('v', Version);
 
 	readcf(cfname);
 
@@ -418,7 +425,7 @@ main(argc, argv)
 			}
 			*nb = '\0';
 			if (nbuf[0] != '\0')
-				FullName = newstr(nbuf);
+				define('x', newstr(nbuf));
 		}
 	}
 # ifdef DEBUG
