@@ -1,0 +1,19 @@
+# List of binary operators used by test
+#
+# Copyright 1989 by Kenneth Almquist.  All rights reserved.
+# This file is part of ash, which is distributed under the terms specified
+# by the Ash General Public License.  See the file named LICENSE.
+
+OR1	 -o	1
+OR2	 |	1
+AND1	 -a	2
+AND2	 &	2
+STREQ	 =	4    OP_STRING
+STRNE	 !=	4    OP_STRING
+EQ	 -eq	4    OP_INT
+NE	 -ne	4    OP_INT
+GT	 -gt	4    OP_INT
+LT	 -lt	4    OP_INT
+LE	 -le	4    OP_INT
+GE	 -ge	4    OP_INT
+
