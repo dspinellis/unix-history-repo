@@ -1,0 +1,885 @@
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)rm1	6.2 (Berkeley) %G%
+.\"
+.EQ
+delim $$
+.EN
+.NH 1
+Introduction
+.PP
+Computers have become important
+in the document preparation process, with programs
+to check for spelling errors and to format documents.
+As the amount of text stored on line increases, it becomes
+feasible and attractive to study writing
+style and to attempt to help the writer in producing readable
+documents.
+The system of writing tools described here is a first step toward such help.
+The system includes programs and a data base to
+analyze writing style at the word and sentence level.
+We use the term ``style'' in this paper to describe the
+results of a writer's particular choices among individual words and
+sentence forms.
+Although many judgements of style are subjective,
+particularly those of word choice,
+there are some objective measures that experts
+agree lead to good style.
+Three programs have been written to measure some of
+the objectively definable characteristics of writing style
+and to identify some commonly misused or unnecessary phrases.
+Although a document that conforms to the stylistic rules
+is not guaranteed to be coherent and readable, one that
+violates all of the rules is likely to be
+difficult or tedious to read.
+The program STYLE calculates readability, sentence length variability,
+sentence type, word usage and sentence openers at a rate of about 400 words per second
+on a PDP11/70 running the
+.UX
+Operating System.
+It assumes that the sentences are well-formed, i. e. that
+each sentence has a verb and that the subject and verb agree in number.
+DICTION identifies phrases that are either bad usage or unnecessarily wordy.
+EXPLAIN acts as a thesaurus for the phrases found by DICTION.
+Sections 2, 3, and 4 describe the programs; Section 5 gives the results
+on a cross-section of technical documents; Section 6 discusses
+accuracy and problems; Section 7 gives implementation details.
+.NH 1
+STYLE
+.PP
+The program STYLE reads a document and prints a summary of
+readability indices, sentence length and type, word usage,
+and sentence openers.
+It may also be used to locate all sentences in a document
+longer than a given length, of readability index higher than a given
+number, those containing a passive verb, or those beginning with an expletive.
+STYLE
+is based on the system for finding English word classes or parts of speech, PARTS [1].
+PARTS is a set of programs that uses a small dictionary (about 350 words)
+and suffix rules to partially assign word classes to
+English text.
+It then uses experimentally derived rules of word order to assign
+word classes to all words in the text with an accuracy of about 95%.
+Because PARTS uses only a small dictionary and general rules, it works
+on text about any subject, from physics to psychology.
+Style measures have been built into the output phase
+of the programs that make up PARTS.
+Some of the measures are simple counters of the word classes
+found by PARTS; many are more complicated.
+For example, the verb count is the total number of verb phrases.
+This includes phrases like:
+.DS
+has been going
+was only going
+to go
+.DE
+each of which each counts as one verb.
+Figure 1 shows the output of STYLE run on a paper by Kernighan and Mashey
+about the
+.UX
+programming environment [2].
+.KF
+.sp 2
+.TS
+box;
+l1l.
+programming environment
+readability grades:
+	(Kincaid) 12.3  (auto) 12.8  (Coleman-Liau) 11.8  (Flesch) 13.5 (46.3)
+sentence info:
+	no. sent 335 no. wds 7419
+	av sent leng 22.1 av word leng 4.91
+	no. questions 0 no. imperatives 0
+	no. nonfunc wds 4362  58.8%   av leng 6.38
+	short sent (<17) 35% (118) long sent (>32)  16% (55)
+	longest sent 82 wds at sent 174; shortest sent 1 wds at sent 117
+sentence types:
+	simple  34% (114) complex  32% (108)
+	compound  12% (41) compound-complex  21% (72)
+word usage:
+	verb types as % of total verbs
+	tobe  45% (373) aux  16% (133) inf  14% (114)
+	passives as % of non-inf verbs  20% (144)
+	types as % of total
+	prep 10.8% (804) conj 3.5% (262) adv 4.8% (354)
+	noun 26.7% (1983) adj 18.7% (1388) pron 5.3% (393)
+	nominalizations   2 % (155)
+sentence beginnings:
+	subject opener: noun (63) pron (43) pos (0) adj (58) art (62) tot  67%
+	prep  12% (39) adv   9% (31) 
+	verb   0% (1)  sub_conj   6% (20) conj   1% (5)
+	expletives   4% (13)
+.TE
+.sp
+.ce
+Figure 1
+.sp
+.KE
+As the example shows, STYLE output is in five parts.
+After a brief discussion of sentences, we will describe the parts in order.
+.NH 2
+What is a sentence?
+.PP
+Readers of documents have little
+trouble deciding where the sentences end.
+People don't even have to stop and think about uses of the
+character ``.'' in constructions like
+1.25, A. J. Jones, Ph.D., i. e., or etc. .
+When a computer reads a document,
+finding the end of sentences is not as easy.
+First we must throw away the printer's marks and formatting
+commands that litter the text in computer form.
+Then STYLE
+defines a sentence
+as a string of words ending in one of:
+.DS
+ . ! ? /.
+.DE
+The end marker ``/.'' may be used to indicate an imperative sentence.
+Imperative sentences that are not so marked are not identified as imperative.
+STYLE properly handles numbers with embedded decimal points and commas,
+strings of letters and numbers with embedded decimal points used for
+naming computer file names, and
+the common
+abbreviations listed in Appendix 1.
+Numbers that end sentences, like the preceding sentence, cause
+a sentence break if the next word begins with a capital letter.
+Initials only cause a sentence break if the next word begins with
+a capital and is found in the dictionary of function words used by PARTS.
+So the string
+.DS
+J. D. JONES
+.DE
+does not cause a break, but the string
+.DS
+ ... system H.  The ...
+.DE
+does.
+With these rules most sentences are broken at the proper place,
+although occasionally
+either two sentences are called one or a fragment is called
+a sentence.
+More on this later.
+.NH 2
+Readability Grades
+.PP
+The first section of STYLE output consists of four readability indices.
+As Klare points out in [3] readability indices may be used to
+estimate the reading skills needed by the reader to understand a document.
+The readability indices reported by STYLE are based on
+measures of sentence and word lengths.
+Although the indices
+may not measure whether the document is coherent
+and well organized,
+experience has shown that high indices seem to be indicators of stylistic
+difficulty.
+Documents with short sentences and short words have low scores;
+those with long sentences and many polysyllabic words have high scores.
+The 4 formulae reported are Kincaid Formula [4], Automated Readability Index [5],
+Coleman-Liau Formula [6]
+and a normalized version of Flesch Reading Ease Score [7].
+The formulae differ because they  were experimentally derived using different texts
+and subject groups.
+We will discuss each of the formulae briefly; for a more
+detailed discussion the reader should see [3].
+.PP
+The Kincaid Formula, given by:
+.EQ
+Reading_Grade = 11.8 * syl_per_wd + .39 * wds_per_sent - 15.59
+.EN
+.br
+was based on Navy training manuals that ranged in difficulty
+from 5.5 to 16.3 in reading grade level.
+The score reported by this formula tends to be in the mid-range of the
+4 scores.
+Because it is based on adult training manuals rather than
+school book text, this formula is probably the best
+one to apply to technical documents.
+.PP
+The Automated Readability Index (ARI), based on text from
+grades 0 to 7, was derived to be easy to automate.
+The formula is:
+.EQ
+Reading_Grade = 4.71 * let_per_wd + .5 * wds_per_sent - 21.43
+.EN
+.br
+ARI tends to produce scores that are higher than Kincaid and
+Coleman-Liau but are usually slightly lower than Flesch.
+.PP
+The Coleman-Liau Formula, based on text ranging in
+difficulty from .4 to 16.3, is:
+.EQ
+Reading_Grade = 5.89 * let_per_wd - .3 * sent_per_100_wds - 15.8
+.EN
+.br
+Of the four formulae this one usually gives the lowest
+grade when applied to technical documents.
+.PP
+The last formula, the Flesch Reading Ease Score, is based
+on grade school text covering grades 3 to 12.
+The formula, given by:
+.EQ
+Reading_Score = 206.835 - 84.6 * syl_per_wd - 1.015 * wds_per_sent
+.EN
+.br
+is usually reported in the range 0 (very difficult) to 100 (very easy).
+The score reported by STYLE is scaled to be comparable to
+the other formulas,
+except that the maximum grade level reported is set to 17.
+The Flesch score is usually the highest of the 4 scores
+on technical documents.
+.PP
+Coke [8] found that the Kincaid Formula is probably the best predictor for
+technical documents;
+both ARI and Flesch tend to overestimate
+the difficulty; Coleman-Liau tend to underestimate.
+On text in the range of grades 7 to 9
+the four formulas tend to be about the same.
+On easy text the Coleman-Liau formula is probably
+preferred since it is reasonably accurate at the lower
+grades and it is safer to present text that is a little too
+easy than a little too hard.
+.PP
+If a document has particularly difficult technical content, especially if
+it includes a lot of mathematics,
+it is probably best to make the text very easy to read, i.e. a lower
+readability index by shortening the sentences and words.
+This will allow the reader to concentrate on the technical
+content and not the long sentences.
+The user should remember that these indices are estimators;
+they should not be taken as absolute numbers.
+STYLE called with ``\-r number'' will print all sentences with
+an Automated Readability Index equal to or greater than ``number''.
+.NH 2
+Sentence length and structure
+.PP
+The next two sections of STYLE output deal with sentence length and structure.
+Almost all books on writing style or effective writing emphasize
+the importance of variety in sentence length and structure for good writing.
+Ewing's first rule in discussing style in the book
+.I
+Writing for Results
+.R
+[9] is:
+.DS
+``Vary the sentence structure and length of your sentences.''
+.DE
+Leggett, Mead and Charvat break this rule into 3 in
+.I
+Prentice-Hall Handbook for Writers
+.R
+[10] as follows:
+.DS
+``34a. Avoid the overuse of short simple sentences.''
+``34b. Avoid the overuse of long compound sentences.''
+``34c. Use various sentence structures to avoid monotony and increase effectiveness.''
+.DE
+Although experts agree that these rules are important, not all writers
+follow them.
+Sample technical documents have been found with almost no
+sentence length or type variability.
+One document had 90% of its sentences about the same
+length as the average;
+another was made up almost entirely of simple sentences (80%).
+.PP
+The output sections labeled ``sentence info'' and ``sentence types'' give
+both length and structure measures.
+STYLE reports on the number and average length of both
+sentences and words,
+and number of questions and imperative sentences (those ending in ``/.'').
+The measures of non-function words are an attempt to look at the content
+words in the document.
+In English
+non-function words are nouns, adjectives, adverbs, and non-auxiliary verbs;
+function words are prepositions, conjunctions, articles, and auxiliary
+verbs.
+Since most function words are short, they tend to lower the average
+word length.
+The average length of non-function words may be a more useful measure for comparing
+word choice of different writers than the total average word length.
+The percentages of short and long sentences measure sentence
+length variability.
+Short sentences are those at least 5 words less than the
+average; long sentences are those at least 10 words longer than the average.
+Last in the sentence information section is the
+length and location of the longest and shortest sentences.
+If the flag ``\-l number'' is used, STYLE will print all sentences
+longer than ``number''.
+.PP
+Because of the difficulties in dealing with the many uses of commas and conjunctions
+in English, sentence type definitions
+vary slightly from those of standard textbooks, but still measure
+the same constructional activity.
+.IP 1.
+A simple sentence has one verb and no dependent clause.
+.IP 2.
+A complex sentence has one independent
+clause and one dependent clause, each with one verb.
+Complex sentences are found by identifying sentences that contain either
+a subordinate conjunction or a clause beginning with words like ``that''
+or ``who''.
+The preceding sentence has such a clause.
+.IP 3.
+A compound sentence has more than one verb and no dependent
+clause.
+Sentences joined by ``;'' are also counted as compound.
+.IP 4.
+A compound-complex sentence has either several dependent clauses
+or one dependent clause and a compound verb in either
+the dependent or independent clause.
+.PP
+Even using these broader definitions, simple
+sentences dominate many of the technical documents that
+have been tested,
+but the example in Figure 1 shows variety in both sentence structure and
+sentence length.
+.NH 2
+Word Usage
+.PP
+The word usage measures are an attempt to identify
+some other constructional features of writing style.
+There are many different ways in English to
+say the same thing.
+The constructions differ from one another
+in the form of the words used.
+The following sentences all convey approximately the
+same meaning but differ in word usage:
+.DS
+The cxio program is used to perform all communication between the systems.
+The cxio program performs all communications between the systems.
+The cxio program is used to communicate between the systems.
+The cxio program communicates between the systems.
+All communication between the systems is performed by the cxio program.
+.DE
+The  distribution of the parts of speech and verb constructions
+helps identify overuse of particular constructions.
+Although the measures used by STYLE are crude, they do point out
+problem areas.
+For each category, STYLE reports a percentage and a raw count.
+In addition to looking at the percentage, the user
+may find it useful to compare the raw count with the number of sentences.
+If, for example, the number of infinitives is almost equal to the number
+of sentences, then many of the sentences in the document are constructed
+like the first and third in the preceding example.
+The user may want to transform some of these sentences into another form.
+Some of the implications of the word usage measures are discussed below.
+.IP "\fIVerbs\fR "
+are measured in several different ways to
+try to determine what types of verb constructions are
+most frequent in the document.
+Technical writing tends to contain many
+passive verb constructions and other usage of the verb ``to be''.
+The category of verbs labeled ``tobe'' measures both passives and sentences of
+the form:
+.DS
+.I
+subject tobe predicate
+.R
+.DE
+In counting verbs, whole verb phrases are counted as one verb.
+Verb phrases containing auxiliary verbs are counted in the category
+``aux''.
+The verb phrases counted here are those whose tense is not
+simple present or simple past.
+It might eventually be useful to do more detailed measures
+of verb tense or mood.
+Infinitives are listed as ``inf''.
+The percentages reported for these three categories are based on
+the total number of verb phrases found.
+These categories are not mutually exclusive;
+they cannot be added, since, for example,
+``to be going'' counts as both ``tobe'' and ``inf''.
+Use of these three types of verb constructions varies significantly among authors.
+.sp 2
+STYLE reports passive verbs as a percentage of the finite verbs in the
+document.
+Most style books warn against the overuse of passive verbs.
+Coleman [11] has shown that sentences with
+active verbs are easier to learn than those
+with passive verbs.
+Although the inverted object-subject order of the passive
+voice seems to emphasize the object, Coleman's experiments
+showed that there is little difference in retention
+by word position. He also showed that the direct object of an active verb
+is retained better than the subject of a passive verb.
+These experiments support the advice of the style books suggesting
+that writers should try to use active verbs wherever possible.
+The flag ``\-p'' causes STYLE to print all sentences containing passive verbs.
+.PP
+.IP "\fIPronouns\fR "
+add cohesiveness and connectivity to a document
+by providing back-reference.
+They are often a short-hand notation for something
+previously mentioned, and therefore connect the sentence containing the pronoun with the
+word to which the pronoun refers.
+Although there are other mechanisms for such connections, documents
+with no pronouns tend to be wordy and to have little connectivity.
+.IP "\fIAdverbs\fR "
+can provide transition between sentences and order
+in time and space.
+In performing these functions, adverbs, like pronouns, provide
+connectivity and cohesiveness.
+.IP "\fIConjunctions\fR "
+provide parallelism in a document by connecting two or more
+equal units.
+These units may be whole sentences, verb phrases, nouns, adjectives, or
+prepositional phrases.
+The compound and compound-complex sentences reported under
+sentence type are parallel structures.
+Other uses of parallel structures are indicated by the degree that the
+number of conjunctions reported under word usage exceeds the
+compound sentence measures.
+.IP "\fINouns and Adjectives.\fR "
+A ratio of nouns to adjectives near unity may indicate the over-use of modifiers.
+Some technical writers qualify every noun with one or more
+adjectives.
+Qualifiers in phrases like ``simple linear single-link network model''
+often lend more obscurity than precision to a text.
+.IP "\fINominalizations\fR "
+are verbs that are changed to nouns by adding one of the suffixes
+``ment'', ``ance'', ``ence'', or ``ion''.
+Examples are accomplishment, admittance, adherence, and abbreviation.
+When a writer transforms a nominalized sentence to a non-nominalized
+sentence, she/he increases the effectiveness of the sentence in
+several ways.
+The noun becomes an active verb and frequently one complicated clause
+becomes two shorter clauses.
+For example,
+.DS
+Their inclusion of this provision is admission of the importance of the system.
+When they included this provision, they admitted the importance of the system.
+.DE
+Coleman found that the transformed sentences were easier to
+learn, even when the transformation produced sentences that were
+slightly longer, provided the transformation broke one clause into two.
+Writers who find their document contains many
+nominalizations may want to transform some of the sentences 
+to use active verbs.
+.NH 2
+Sentence openers
+.PP
+Another agreed upon principle of style is variety in sentence openers.
+Because STYLE determines the type of sentence opener by
+looking at the part of speech of the first word in the sentence,
+the sentences counted under the heading ``subject opener'' may not
+all really begin with the subject.
+However, a large percentage of sentences in this category
+still indicates lack of variety in sentence openers.
+Other sentence opener measures help the user determine
+if there are transitions between sentences and where
+the subordination occurs.
+Adverbs and conjunctions at the beginning of sentences are mechanisms for
+transition between sentences.
+A pronoun at the beginning shows a link to something previously mentioned
+and indicates connectivity.
+.PP
+The location of subordination can be determined by comparing
+the number of sentences that begin with a subordinator with
+the number of sentences with complex clauses.
+If few sentences start with subordinate conjunctions then
+the subordination is embedded or at the end of the complex sentences.
+For variety the writer may want to transform some sentences
+to have leading subordination.
+.PP
+The last category of openers, expletives, is commonly
+overworked in technical writing.
+Expletives are the words ``it'' and ``there'', usually with the verb ``to be'',
+in constructions where the subject follows the verb.
+For example,
+.DS
+There are three streets used by the traffic.
+There are too many users on this system.
+.DE
+This construction tends to emphasize the object rather than the
+subject of the sentence.
+The flag ``\-e'' will cause STYLE to print all
+sentences that begin with an expletive.
+.NH 1
+DICTION
+.PP
+The program DICTION prints all sentences in a document containing
+phrases that are either frequently misused or indicate wordiness.
+The program, an extension of Aho's FGREP [12] string
+matching program,
+takes as input a file of phrases or patterns to be matched and a file
+of text to be searched.
+A data base of about 450 phrases has been compiled as a default
+pattern file for DICTION.
+Before attempting to locate phrases, the program maps
+upper case letters to lower case and substitutes blanks for
+punctuation.
+Sentence boundaries were deemed less critical in DICTION than
+in STYLE, so abbreviations and other uses of the character
+``.'' are not treated specially.
+DICTION brackets all pattern matches in a sentence with the characters
+``['' ``]'' .
+Although many of the phrases in the default data base are correct
+in some contexts, in others they indicate wordiness.
+Some examples of the phrases and suggested alternatives are:
+.DS
+.TS
+cc
+ll.
+Phrase	Alternative
+a large number of	many
+arrive at a decision	decide
+collect together	collect
+for this reason	so
+pertaining to	about
+through the use of	by or with
+utilize	use
+with the exception of	except
+.TE
+.DE
+Appendix 2 contains a complete list of the default file.
+Some of the entries are short forms of problem phrases.
+For example, the phrase ``the fact'' is found in all of the following
+and is sufficient to point out the wordiness to the user:
+.DS
+.TS
+cc
+ll.
+Phrase	Alternative
+accounted for by the fact that	caused by
+an example of this is the fact that	thus
+based on the fact that	because
+despite the fact that	although
+due to the fact that	because
+in light of the fact that	because
+in view of the fact that	since
+notwithstanding the fact that	although
+.TE
+.DE
+Entries in Appendix 2 preceded by ``~'' are not matched.
+See Section 7 for details on the use of ``~''.
+.PP
+The user may supply her/his own pattern file with the flag ``\-f patfile''.
+In this case the default file will be loaded first, followed by the user file.
+This mechanism allows users to suppress
+patterns contained in the default file or to include their own pet peeves that are not in the default file.
+The flag ``\-n'' will exclude the default file altogether.
+In constructing a pattern file, blanks should be used before and after each
+phrase to avoid matching substrings in words.
+For example, to find all occurrences of the word ``the'', the pattern
+`` the '' should be used.
+The blanks cause only the word ``the'' to be matched and not the
+string ``the'' in words like there, other, and therefore.
+One side effect of surrounding the words with blanks is that
+when two phrases occur without intervening words, only the
+first will be matched.
+.NH 1
+EXPLAIN
+.PP
+The last program, EXPLAIN, is an interactive thesaurus for
+phrases found by DICTION.
+The user types one of the phrases bracketed by DICTION
+and EXPLAIN responds with suggested substitutions for the phrase
+that will improve the diction of the document.
+.KF
+.DS C
+Table 1
+Text Statistics on 20 Technical Documents
+.TS
+cccccc
+llnnnn.
+	variable	minimum	maximum	mean	standard deviation
+_
+Readability	Kincaid	9.5	16.9	13.3	2.2
+	automated	9.0	17.4	13.3	2.5
+	Cole-Liau	10.0	16.0	12.7	1.8
+	Flesch	8.9	17.0	14.4	2.2
+_
+sentence info.	av sent length	15.5	30.3	21.6	4.0
+	av word length	4.61	5.63	5.08	.29
+	av nonfunction length	5.72	7.30	6.52	.45
+	short sent	23%	46%	33%	5.9
+	long sent	7%	20%	14%	2.9
+_
+sentence types	simple	31%	71%	49%	11.4
+	complex	19%	50%	33%	8.3
+	compound	2%	14%	7%	3.3
+	compound-complex	2%	19%	10%	4.8
+_
+verb types	tobe	26%	64%	44.7%	10.3
+	auxiliary	10%	40%	21%	8.7
+	infinitives	8%	24%	15.1%	4.8
+	passives	12%	50%	29%	9.3
+_
+word usage	prepositions	10.1%	15.0%	12.3%	1.6
+	conjunction	1.8%	4.8%	3.4%	.9
+	adverbs	1.2%	5.0%	3.4%	1.0
+	nouns	23.6%	31.6%	27.8%	1.7
+	adjectives	15.4%	27.1%	21.1%	3.4
+	pronouns	1.2%	8.4%	2.5%	1.1
+	nominalizations	2%	5%	3.3%	.8
+_
+sentence openers	prepositions	6%	19%	12%	3.4
+	adverbs	0%	20%	9%	4.6
+	subject	56%	85%	70%	8.0
+	verbs	0%	4%	1%	1.0
+	subordinating conj	1%	12%	5%	2.7
+	conjunctions	0%	4%	0%	1.5
+	expletives	0%	6%	2%	1.7
+.TE
+.DE
+.KE
+.NH 1
+Results
+.NH 2
+STYLE
+.PP
+To get baseline statistics and check the program's accuracy,
+we ran STYLE on 20 technical documents.
+There were a total of 3287 sentences in the sample.
+The shortest document was 67 sentences long; the longest 339 sentences.
+The documents covered a wide range of subject matter, including
+theoretical computing, physics, psychology, engineering, and
+affirmative action.
+Table 1 gives the range, median, and standard deviation of the various style measures.
+As you will note most of the measurements have a fairly wide range of values
+across the sample documents.
+.PP
+As a comparison, Table 2 gives the median results
+for two different technical authors, a sample of instructional material, and a sample of the
+Federalist Papers.
+The two authors show similar styles, although author 2
+uses somewhat shorter sentences and longer words than author 1.
+Author 1 uses all types of sentences, while author 2 prefers
+simple and complex sentences, using few compound or compound-complex sentences.
+The other major difference in the styles of these authors is the location
+of subordination.
+Author 1 seems to prefer embedded or trailing subordination, while
+author 2 begins many sentences with the subordinate clause.
+The documents tested for both authors 1 and 2 were technical documents,
+written for a technical audience.
+The instructional documents, which are written for craftspeople,
+vary surprisingly little from the two technical samples.
+The sentences and words are a little longer,
+and they contain many passive and auxiliary verbs, few adverbs, and almost
+no pronouns.
+The instructional documents contain many imperative sentences, so there are
+many sentence with verb openers.
+The sample of Federalist Papers contrasts with the other
+samples in almost every way.
+.KF
+.DS C
+Table 2
+Text Statistics on Single Authors
+.TS
+cccccc
+llnnnn.
+	variable	author 1	author 2	inst.	FED
+_
+readability	Kincaid	11.0	10.3	10.8	16.3
+	automated	11.0	10.3	11.9	17.8
+	Coleman-Liau	9.3	10.1	10.2	12.3
+	Flesch	10.3	10.7	10.1	15.0
+_
+sentence info	av sent length	22.64	19.61	22.78	31.85
+	av word length	4.47	4.66	4.65	4.95
+	av nonfunction length	5.64	5.92	6.04	6.87
+	short sent	35%	43%	35%	40%
+	long sent	18%	15%	16%	21%
+_
+sentence types	simple	36%	43%	40%	31%
+	complex	34%	41%	37%	34%
+	compound	13%	7%	4%	10%
+	compound-complex	16%	8%	14%	25%
+_
+verb type	tobe	42%	43%	45%	37%
+	auxiliary	17%	19%	32%	32%
+	infinitives	17%	15%	12%	21%
+	passives	20%	19%	36%	20%
+_
+word usage	prepositions	10.0%	10.8%	12.3%	15.9%
+	conjunctions	3.2%	2.4%	3.9%	3.4%
+	adverbs	5.05%	4.6%	3.5%	3.7%
+	nouns	27.7%	26.5%	29.1%	24.9%
+	adjectives	17.0%	19.0%	15.4%	12.4%
+	pronouns	5.3%	4.3%	2.1%	6.5%
+	nominalizations	1%	2%	2%	3%
+_
+sentence openers	prepositions	11%	14%	6%	5%
+	adverbs	9%	9%	6%	4%
+	subject	65%	59%	54%	66%
+	verb	3%	2%	14%	2%
+	subordinating conj	8%	14%	11%	3%
+	conjunction	1%	0%	0%	3%
+	expletives	3%	3%	0%	3%
+.TE
+.DE
+.KE
+.NH 2
+DICTION
+.PP
+In the few weeks that DICTION has been available
+to users
+about 35,000 sentences have been run with about
+5,000 string matches.
+The authors using the program seem to make
+the suggested changes about 50-75% of the time.
+To date, almost 200 of the 450 strings in the default
+file have been matched.
+Although most of these phrases are valid and correct
+in some contexts, the 50-75% change rate seems to
+show that the phrases are used much more often than
+concise diction warrants.
+.NH 1
+Accuracy
+.NH 2
+Sentence Identification
+.PP
+The correctness of the STYLE output on the 20 document sample was checked
+in detail.
+STYLE misidentified
+129 sentence fragments as sentences
+and incorrectly joined two or more sentences 75 times
+in the 3287 sentence sample.
+The problems were usually because of nonstandard formatting
+commands, unknown abbreviations, or lists of non-sentences.
+An impossibly long sentence found as the longest sentence in
+the document usually is the result of a long list
+of non-sentences.
+.NH 2
+Sentence Types
+.PP
+Style correctly identified sentence type on 86.5% of
+the sentences in the sample.
+The type distribution of the sentences was
+52.5% simple, 29.9% complex, 8.5% compound and
+9% compound-complex.
+The program reported 49.5% simple, 31.9% complex,
+8% compound and 10.4% compound-complex.
+Looking at the errors on the individual
+documents, the number of simple sentences was
+under-reported by about 4% and the complex and compound-complex
+were over-reported by 3% and 2%, respectively.
+The following matrix shows the programs output
+vs. the actual sentence type.
+.DS C
+.TS
+csssss
+cccccc
+clnnnn.
+Program Results
+		simple	complex	compound	comp-complex
+Actual	simple	1566	132	49	17
+Sentence	complex	47	892	6	65
+Type	compound	40	6	207	23
+	comp-complex	0	52	5	249
+.TE
+.DE
+.PP
+The system's inability to find imperative sentences seems to
+have little effect on most of the style statistics.
+A document with half of its sentences imperative was run, with and
+without the imperative end marker.
+The results were identical except for the expected errors of not finding
+verbs as sentence openers, not counting the imperative sentences,
+and a slight difference (1%) in the number of nouns
+and adjectives reported.
+.NH 2
+Word Usage
+.PP
+The accuracy of identifying word types reflects
+that of PARTS, which is about 95% correct.
+The largest source of confusion is between nouns and
+adjectives.
+The verb counts were checked on about 20 sentences from each
+document and found to be about 98% correct.
+.NH 1
+Technical Details
+.NH 2
+Finding Sentences
+.PP
+The formatting commands embedded in the text increase the difficulty
+of finding sentences.
+Not all text in a document is in sentence form; there are headings,
+tables, equations and lists, for example.
+Headings like ``Finding Sentences'' above should be discarded, not
+attached to the next sentence.
+However, since many of the documents are formatted to be phototypeset,
+and contain font changes, which usually operate on the
+most important words in the document,
+discarding all formatting commands is not correct.
+To improve the programs' ability to find sentence boundaries, the deformatting program, DEROFF [13],
+has been given some knowledge of the formatting packages used on the
+.UX
+operating system.
+DEROFF will now do the following:
+.IP 1.
+Suppress all formatting macros that
+are used for titles, headings, author's name, etc.
+.IP 2.
+Suppress the arguments to the macros for titles, headings, author's name, etc.
+.IP 3.
+Suppress displays, tables, footnotes and text that is centered or in no-fill mode.
+.IP 4.
+Substitute a place holder for equations and check
+for hidden end markers.
+The place holder is necessary because many typists and authors use
+the equation setter to change fonts on important words.
+For this reason, header files containing the definition of
+the EQN delimiters must also be included as input to STYLE.
+End markers are often hidden when an equation ends a sentence
+and the period is typed
+inside the EQN delimiters.
+.IP 5.
+Add a "." after lists.
+If the flag \-ml is also used, all lists are suppressed.
+This is a separate flag because of the variety of ways the
+list macros are used.
+Often, lists are sentences that should be included in the analysis.
+The user must determine how lists are used in the document to be analyzed.
+.PP
+Both STYLE and DICTION call DEROFF before they look at the text.
+The user should supply the \-ml flag if the document contains
+many lists of non-sentences that should be skipped.
+.NH 2
+Details of DICTION
+.PP
+The program DICTION is based on the string matching program FGREP.
+FGREP takes as input a file of patterns to be matched and a file
+to be searched and outputs each line that contains
+any of the patterns
+with no indication of which pattern was matched.
+The following changes have been added to FGREP:
+.IP 1.
+The basic unit that DICTION operates on is a sentence rather than a line.
+Each sentence that contains one of the patterns is output.
+.IP 2.
+Upper case letters are mapped to lower case.
+.IP 3.
+Punctuation is replaced by blanks.
+.IP 4
+All pattern matches in the sentence are found and surrounded with
+``['' ``]'' .
+.IP 5.
+A method for suppressing a string match has been added.
+Any pattern that begins with ``~'' will not be matched.
+Because the matching algorithm finds the longest
+substring, the suppression of a match allows words in some
+correct contexts not to be matched while allowing
+the word in another context to be found.
+For example, the word ``which'' is often incorrectly used
+instead of ``that'' in restrictive clauses.
+However, ``which'' is usually correct when preceded by a preposition
+or ``,''.
+The default pattern file suppresses the match
+of the common prepositions or a double
+blank followed by ``which'' and therefore matches only
+the suspect uses.
+The double blank accounts for the replaced comma.
+.NH
+Conclusions
+.PP
+A system of writing tools that measure some of the
+objective characteristics of writing style has been developed.
+The tools are sufficiently general that they may be applied to
+documents on any subject with equal accuracy.
+Although the measurements are only of the surface
+structure of the text, they do point out problem areas.
+In addition to helping writers produce better documents,
+these programs may be useful for studying
+the writing process and finding other formulae for measuring
+readability.

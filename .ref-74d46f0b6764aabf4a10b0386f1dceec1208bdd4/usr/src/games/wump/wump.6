@@ -1,0 +1,84 @@
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Dave Taylor, of Intuitive Systems.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)wump.6	6.3 (Berkeley) %G%
+.\"
+.TH WUMP 6 ""
+.UC 7
+.SH NAME
+wump \- hunt the wumpus in an underground cave
+.SH SYNOPSIS
+.ft B
+wump [-h] [-a arrows] [-b bats] [-p pits] [-r rooms] [-t tunnels]
+.ft R
+.SH DESCRIPTION
+The game
+.I wump 
+is based on a fantasy game first presented in the pages of
+.I "People's Computer Company"
+in 1973.
+In Hunt the Wumpus you are placed in a cave built of many different rooms,
+all interconnected by tunnels.
+Your quest is to find and shoot the evil Wumpus that resides elsewhere in
+the cave without running into any pits or using up your limited supply of
+arrows.
+.PP
+The options are as follows:
+.TP
+.I -a
+Specifies the number of magic arrows the adventurer gets.
+The default is five.
+.TP
+.I -b
+Specifies the number of rooms in the cave which contain bats.
+The default is three.
+.TP
+.I -h
+Play the hard version -- more pits, more bats, and a generally more
+dangerous cave.
+.TP
+.I -n
+Specifies the number of rooms in the cave which contain bottomless pits.
+The default is three.
+.TP
+.I -r
+Specifies the number of rooms in the cave.
+The default cave size is twenty-five rooms.
+.TP
+.I -t
+Specifies the number of tunnels connecting each room in the cave to
+another room.
+Beware, too many tunnels in a small cave can easily cause it to collapse!
+The default cave room has three tunnels to other rooms.
+.PP
+While wandering through the cave you'll notice that, while there are tunnels
+everywhere, there are some mysterious quirks to the cave topology, including
+some tunnels that go from one room to another, but not necessarily back!
+Also, most pesky of all are the rooms that are home to large numbers of bats,
+which, upon being disturbed, will en masse grab you and move you to another
+portion of the cave (including those housing bottomless pits, sure
+death for unwary explorers).
+.PP
+Fortunately, you're not going into the cave without any weapons or tools,
+and in fact your biggest aids are your senses; you can often smell the
+rather odiferous Wumpus up to
+.I two
+rooms away, and you can always feel the drafts created by the occasional
+bottomless pit and hear the rustle of the bats in caves they might be
+sleeping within.
+.PP
+To kill the wumpus, you'll need to shoot it with one of your magic arrows.
+Fortunately, you don't have to be in the same room as the creature, and can
+instead shoot the arrow from as far as three or four rooms away!
+.PP
+When you shoot an arrow, you do so by typing in a list of rooms that you'd
+like it to travel to.
+If at any point in its travels it cannot find a tunnel to the room you
+specify from the room it's in, it will instead randomly fly down one of the
+tunnels, possibly, if you're real unlucky, even flying back into the room
+you're in and hitting you!

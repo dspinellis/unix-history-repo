@@ -1,0 +1,95 @@
+.TH STAT 2 
+.SH NAME
+stat, fstat \- get file status
+.SH SYNOPSIS
+.B #include <sys/types.h>
+.br
+.B #include <sys/stat.h>
+.PP
+.B stat(name, buf)
+.br
+.B char *name;
+.br
+.B struct stat *buf;
+.PP
+.B fstat(fildes, buf)
+.br
+.B struct stat *buf;
+.SH DESCRIPTION
+.I Stat
+obtains detailed information about a named file.
+.I Fstat
+obtains the same information about an open file
+known by the file descriptor from a successful
+.I open, creat, dup
+or
+.IR pipe (2)
+call.
+.PP
+.I Name
+points to a null-terminated string naming
+a file;
+.I buf
+is the address of a buffer
+into which information is placed concerning the file.
+It is unnecessary to have any
+permissions at all with respect to the file, but all directories
+leading to the file must be searchable.
+The layout of the structure pointed to by buf
+as defined in
+.I <stat.h>
+is given below.
+.I St_mode 
+is encoded according to the `#define' statements.
+.PP
+.nf
+.so /usr/include/sys/stat.h
+.fi
+.PP
+The mode bits 0000070 and 0000007 encode group and
+others permissions (see
+.IR chmod (2)).
+The defined types,
+.I 
+ino_t, off_t, time_t,
+name various width integer values;
+.I dev_t
+encodes
+major and minor device numbers;
+their exact definitions are in
+the include file <sys/types.h>
+(see
+.IR types (5).
+.PP
+When
+.I fildes
+is associated with a pipe,
+.I fstat
+reports an ordinary file with an i-node number,
+restricted permissions,
+and a not necessarily meaningful length.
+.PP
+.I st_atime
+is the file was last read.
+For reasons of efficiency, it is not set when a directory
+is searched, although this would be more logical.
+.I st_mtime
+is the time the file was last written or created.
+It is not set by changes of owner, group, link count, or mode.
+.I st_ctime
+is set both both by writing and changing the i-node.
+.SH "SEE ALSO"
+ls(1), filsys(5)
+.SH DIAGNOSTICS
+Zero is returned if a status is available;
+\-1 if the file cannot be found.
+.SH ASSEMBLER
+(stat = 18.)
+.br
+.B sys stat; name; buf
+.PP
+(fstat = 28.)
+.br
+(file descriptor in r0)
+.br
+.B sys fstat; buf

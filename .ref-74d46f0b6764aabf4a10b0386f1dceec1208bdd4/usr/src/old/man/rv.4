@@ -1,0 +1,78 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)rv.4	4.1 (Berkeley) %G%
+.\"
+.TH RV 4 
+.UC 4
+.SH NAME
+rv \- Racal/Vadic ACU interface
+.SH DESCRIPTION
+The racal/vadic ACU interface is provided by the files
+.I /dev/cua[01]
+which is a multiplexed file, and by the daemon
+.I dnd
+which monitors the file, simulating a standard DN dialer.
+To place an outgoing call one forks a sub-process
+trying to open
+.I /dev/cul?
+and then opens the corresponding file
+.I /dev/cua?
+file and writes a number on it.
+The daemon translates the call to proper format for the
+Racal/Vadic interface, and monitors the progress of the call
+recording accounting information for later use.
+.PP
+The codes for the phone numbers are the same as in the DN interface:
+.TP
+0-9
+dial 0-9
+.br
+.ns
+.TP
+.B :
+dial *
+.br
+.ns
+.TP
+.B ;
+dial #
+.br
+.ns
+.TP
+\-
+delay for second dial tone
+.br
+.ns
+.TP
+<
+end-of-number
+.PP
+The entire telephone number must be
+presented in a single
+.I write
+system call.
+.PP
+It is require that an end-of-number
+code be given.
+.DT
+.SH FILES
+/dev/cua0	virtual dialer for 300 baud dialout
+.br
+/dev/cua1	virtual dialer for 1200 baud dialout
+.br
+/dev/cul0	the terminal which is connected to the 300 baud dialout
+.br
+/dev/cul1	the terminal which is connected to the 1200 baud dialout
+.br
+/usr/adm/dnacct	Accounting records for sucessfully completed calls.
+.SH "SEE ALSO"
+cu(1), uucp(1)
+.SH BUGS
+Locking problems.
+.PP
+The multiplexor seems to have rare-case bugs which occasinally crash
+the system taking trap type 9's, usually in the
+.I sdata
+system routine.

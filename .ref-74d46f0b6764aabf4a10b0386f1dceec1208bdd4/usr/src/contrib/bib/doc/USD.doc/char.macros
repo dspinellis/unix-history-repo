@@ -1,0 +1,58 @@
+.. when editing files
+.. BEST TO DO :set noai
+.. so tabs don't get inserted where undesired
+..
+..  CHARACTER DEFINITIONS
+.\"	fine tunning of ACCENTS enough for catalan, french and spanish
+.ds 'a \v'-0.035m'\h'\w'a'u*3/10'\z\(aa\h'-\w'a'u*3/10'\v'0.035m'a
+.ds 'e \v'-0.035m'\h'\w'e'u*3/10'\z\(aa\h'-\w'e'u*3/10'\v'0.035m'e
+.\" 	defined as a macro, but used as an string.
+.\"	assumes fixed position of fonts (1=R,2=I,3=B,4=BI)
+.de 'i
+\c
+.ie '\\n(.f'1' \k:\v'-0.035m'\h'-\w'\(id'u*2/10'\z\(aa\h'|\\n:u'\v'0.035m'\(id\c
+.el .ie '\\n(.f'2' \k:\v'-0.035m'\h'-\w'i'u*2/10'\z\(aa\h'|\\n:'\v'0.035m'i\c
+.el .ie '\\n(.f'3' \k:\v'-0.035m'\h'-\w'\(id'u*2/10'\z\(aa\h'|\\n:'\v'0.035m'\(id\c
+.el .ie '\\n(.f'9' \k:\v'-0.035m'\h'-\w'i'u*2/10'\z\(aa\h'|\\n:'\v'0.035m'i\c
+.el i\c
+..
+.ds 'o \v'-0.035m'\h'\w'o'u*3/10'\z\(aa\h'-\w'o'u*3/10'\v'0.035m'o
+.ds 'u \v'-0.035m'\h'\w'u'u*3/10'\z\(aa\h'-\w'u'u*3/10'\v'0.035m'u
+.ds `a \v'-0.035m'\h'\w'a'u*3/10'\z\(ga\h'-\w'a'u*3/10'\v'0.035m'a
+.ds `e \v'-0.035m'\h'\w'e'u*3/10'\z\(ga\h'-\w'e'u*3/10'\v'0.035m'e
+.ds `o \v'-0.035m'\h'\w'o'u*3/10'\z\(ga\h'-\w'o'u*3/10'\v'0.035m'o
+.ds ^a \v'0m'\z^\v'-0m'a
+.ds ^e \v'0m'\z^\v'-0m'e
+.ds ^o \v'0m'\z^\v'-0m'o
+.ds /o \v'0m'\z/\v'-0m'o
+.\"	DIERESI
+.ds :U \v'0m'\z\(..\v'0m'\s-2U\s+2
+.ds :A \v'0m'\z\(..\v'0m'\s-2A\s+2
+.ds :O \v'0m'\z\(..\v'0m'\s-2O\s+2
+.ds :u \v'0m'\z\(..\v'0m'u
+.ds :a \v'0m'\z\(..\v'0m'a
+.ds :o \v'0m'\z\(..\v'0m'o
+.\"	defined as macro, but used as string
+.de :i
+\c
+.    ie '\\n(.f'1' \k:\v'0m'\h'-\w'\(id'u*5/10'\z\(..\h'|\\n:u'\v'0m'\(id\c
+.el .ie '\\n(.f'2' \k:\v'0m'\h'-\w'i'u*5/10'\z\(..\h'|\\n:u'\v'0m'i\c
+.el .ie '\\n(.f'3' \k:\v'0m'\h'-\w'\(id'u*5/10'\z\(..\h'|\\n:u'\v'0m'\(id\c
+.el .ie '\\n(.f'9' \k:\v'0m'\h'-\w'\(id'u*5/10'\z\(..\h'|\\n:u'\v'0m'i\c
+.el i\c
+..
+. \" E#E
+.ds ~n \v'-0.1m'\s-2\h'\w'~'u*1/10'\z~\s+2\v'0.1m'n
+.\"	defined as macro, but used as string
+.de ~n
+\c
+.ie '\\n(.f'1' \k:\v'-0.1m'\s-2\h'\w'~'u*1/10'\z~\s+2\v'0.1m'\h'|\\n:u'n\c
+.el .ie '\\n(.f'2' \k:\v'-0.1m'\s-2\h'\w'~'u*2/10'\z~\s+2\v'0.1m'\h'|\\n:u'n\c
+.el .ie '\\n(.f'3' \k:\v'-0.1m'\s-2\h'\w'~'u*1/10'\z~\s+2\v'0.1m'\h'|\\n:u'n\c
+.el .ie '\\n(.f'9' \k:\v'-0.1m'\s-2\h'\w'~'u*1/10'\z~\s+2\v'0.1m'\h'|\\n:u'n\c
+.el n\c
+..
+. \" cedilla
+.ds ,c \v'0m'\h'-\w'\(ce'u*3/10'\z\(ce\h'\w'\(ce'u*3/10'\v'0m'c
+. \" l.l double l
+.ds .l l\v'-0.15m'\h'-\w'l'u*5/10'.\h'-\w'l'u*5/10'\v'0.15m'l

@@ -1,0 +1,1483 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)mdoc.samples.7	5.3 (Berkeley) %G%
+.\"
+.\"	This sampler invokes every macro in the package several
+.\" 	times and is garanteed to give a worst case performance
+.\"	for an already slow package.
+.Dd 
+.Os BSD 4.4
+.Dt MDOC.SAMPLES 7
+.Sh NAME
+.Nm mdoc.sample
+.Nd detailed samples utilizing
+the
+.Nm -mdoc
+macro package
+.Sh SYNOPSIS
+.Nm man mdoc.sample
+.Sh DESCRIPTION
+A fairly complete sampler of how the
+.Nm \-mdoc
+macro package is used.
+.Sh TROFF IDIOSYNCRASIES
+Although this is a content based formatting package, and
+theoretically one should not have to learn
+.Xr troff 1
+to use it, there are a few
+limitations which are unavoidable and best gotten out
+of the way. And, too, be forewarned, this package is slow.
+Its purpose is to allow translation of man pages from
+.Xr troff 1
+to
+.Xr TeX Coming\ Soon
+and vice versa.
+.Ss Macro Usage
+As in
+.Xr troff 1 ,
+a macro (request) is called by placing a
+.Li \&\.
+(dot character)
+at the beginning of
+a line followed by the two character name for the macro.
+Arguments may follow the request separated by spaces.
+It is the dot character at the beginning of the line which causes
+.Xr troff 1
+to interpret the next two characters as a request.
+To place a
+.Li \&\.
+(dot character)
+at the beginning of a line in some context other than
+a macro request, precede the
+.Li \&\.
+(dot) with a
+.Li \e&.
+In this macro package, some macros may be given the
+name of another macro as an argument. In this case
+the argument, although the name of a macro,
+is not preceded by a
+.Li \&\.
+(dot),
+and will be executed
+with the remaining arguments.
+It is in this manner that some requests are nested, such
+as the
+.Li \&.Op
+request may
+.Em call
+the flag request
+.Li \&.Fl .
+.Dp Op Fl ls
+is produced by
+.Li \&.Op Fl ls
+.Dp
+The only requests which check to see if the first argument
+is executable are:
+.Ds I
+.Cw \&.Cx\ Complex\ Expressions
+.Cl \&.Cl\ Column Line Entry	\&.Dp Display Examples (tagged paragraph)
+.Cl \&.Cx\ Complex\ Expressions	\&.Op\ Option Request
+.Cl \&.Dl\ Display (one) Line	\&.Sq Single Quotes
+.Cl \&.Dq\ Double Quotes	\&.Tp Tagged Paragraphs
+.Cw
+.De
+.Pp
+The eligible first arguments are:
+.Ds I
+.Cw \&.Cx\ Complex\ Expressions
+.Cl \&.Ad Addresses	\&.Fn Functions
+.Cl \&.Ar Arguments	\&.Ic Interactive Commands
+.Cl \&.Cl Column Entries	\&.Li Literals
+.Cl \&.Cm Command Modifiers	\&.Nm Names, subjects
+.Cl \&.Cw Column Widths	\&.Op Options
+.Cl \&.Cx Complex Expressions	\&.Pa Pathnames
+.Cl \&.Em Emphasis	\&.Sy Symbolic
+.Cl \&.Er Errno's	\&.Tp Tagged Paragraphs
+.Cl \&.Ev Environment	\&.Va Variables
+.Cl \&.Fl Flags	\&.Xr Cross References
+.Cw
+.De
+.Pp
+Requests which cannot be called, or call any other macro:
+.Ds I
+.Cw \&.Cx\ Complex\ Expressions
+.Cl \&.Di Display Indent	\&.Dw Display Tag Width
+.Cl \&.De Display End	\&.Pp Paragraph Start
+.Cl \&.Df Display Filled	\&.Tw Tagged Paragraph Tag Width
+.Cl \&.Df Display unfilled
+.Cw
+.De
+.Pp
+The macro
+.Li .Op
+is unusual that it can call more than one request on the same
+line.
+.Ss Passing Space Characters in an Argument
+To pass an argument
+to a macro request which contains spaces, the space must be preceded
+by a
+.Li \e
+to escape special interpretation:
+.Dw int\ *fetch()
+.Dp Fn int\ *fetch
+is created by
+.Li \&.Fn int\e *fetch
+.Dp
+For critical spaces at the end of a line, as might be needed
+with the request
+.Li \&.Cx ,
+following the space with
+.Li \e&
+is a good guarantee the space will not be stripped (e.g.
+.Li \e \e&) .
+A blank space at the end of a line is otherwise an open invitation
+to party for
+.Xr troff 1 .
+.Ss Escaping Special Characters
+Special characters
+like the newline character
+.Li \en ,
+are handled by replacing the
+.Li \e
+with
+.Li \ee
+(e.g.
+.Li \een )
+to preserve
+the backslash.
+.Sh HEADER REQUESTS
+Three header macros designate the document title or manual page title,
+the operating system,
+and the date of authorship (if not derived from
+.Xr sccs 1
+or
+.Xr rcs 1 ) .
+These macros are one called once at the very beginning of the document
+and are used to construct the headers and footers only.
+.Tp Li \&.Dt DOCUMENT_TITLE section# [volume]
+The document title is the
+subject of the man page and must be in CAPITALS due to troff
+limitations.
+The section number may be 1,...,8,
+and if it is specified,
+the volume title may be omitted.
+A volume title may be arbitrary or one of the following:
+.\" .Cl
+.\" USD	UNIX User's Supplementary Documents
+.\" .Cl
+.\" PS1	UNIX Programmers's Supplementary Documents
+.Cw SMM
+.Cl AMD	UNIX Ancestral Manual Documents
+.Cl SMM	UNIX System Manager's Manual
+.Cl URM	UNIX Reference Manual
+.Cl PRM	UNIX Programmers's Manual
+.Cw
+.\" .Cl
+.\" MMI	UNIX Manual Master Index
+.\" .Cl
+.\" CON	UNIX Contributed Software Manual
+.\" .Cl
+.\" LOC	UNIX Local Manual
+.Tp Li \&.Os operating_system release#
+The name of the operating system
+should be the common acronym, e.g. BSD
+or ATT.  The release should be the standard release
+nomenclature for the system specified, e.g. 4.3, 4.3+tahoe, V.3,
+V.4. Unrecognized arguments are displayed as given in the page footer.
+For instance, for the footer on this page, the 4.4 Berkeley Distribution
+was produced by:
+.Pp
+.Dl Li \&.Os BSD 4.4
+.Tp Li \&.Dd month day, year
+The date should be written formally:
+.Pp
+.Dl January 25, 1989
+.\"  is not a standard SCCS id-key. ??
+.Tp
+.Sh TEXT MACROS
+The following macro requests have similar
+syntax; the exceptions being the behaviour of the
+request if called without an argument, and the
+behaviour of the requests
+.Li \&.Fn ,
+.Li \&.Pa ,
+and
+.Li \&.Xr ,
+which expect a specific format.
+The other requests can handle up to 9 arguments
+and will format punctuation properly as
+long as the punctuation is placed in the last
+arguments.  Punctuation placed in the middle
+of a string of text arguments will result
+in a out of place space character.
+.Pp
+Any argument which may be tested for punctuation
+and contains a member of the mathematical, logical or
+quotation
+set
+{+,\-,/,*,%,<,>,<=,>=,=,==,&,`,',"}
+should have
+the character escaped.
+.Pp
+.Ss Address Request
+The address request constructs and address
+of the form addr1[,addr2[,addr3]].
+.Pp
+.Dl \&.Ad Usage: .Ad address ... \*(Pu
+.Dw \&.Ad\ f1\ ,\ f2\ ,\ f3\ :
+.Dp Li \&.Ad addr1
+.Ad addr1
+.Dp Li \&.Ad addr1\ .
+.Ad addr1 .
+.Dp Li \&.Ad addr1\ , file2
+.Ad addr1 , file2
+.Dp Li \&.Ad f1\ , f2\ , f3\ :
+.Ad f1 , f2 , f3 :
+.Dp Li \&.Ad addr\ )\ )\ ,
+.Ad addr ) ) ,
+.Dp
+It is an error to call
+.Li \&.Ad
+without arguments.
+The request may be called by
+.Li \&.Cl ,
+.Li \&.Cx ,
+.Li \&.Dl ,
+.Li \&.Dp ,
+.Li \&.Op
+or
+.Li \&.Tp .
+.Ss Argument Request
+The
+.Li \&.Ar
+argument request may be used whenever
+a command line argument is referenced.
+.Pp
+.Dl Usage: .Ar argument ... \*(Pu
+.Dw Tx
+.Dp Li \&.Ar
+.Ar
+.Dp Li \&.Ar file1
+.Ar file1
+.Dp Li \&.Ar file1\ .
+.Ar file1 .
+.Dp Li \&.Ar file1 file2
+.Ar file1 file2
+.Dp Li \&.Ar f1 f2 f3\ :
+.Ar f1 f2 f3 :
+.Dp Li \&.Ar file\ )\ )\ ,
+.Ar file ) ) ,
+.Dp
+.Pp
+If
+.Li \&.Ar
+is called with no arguments
+.Ar
+is assumed. The
+.Li \&.Ar
+request cannot call other macros, but may
+be called by
+.Li \&.Cl ,
+.Li \&.Cx ,
+.Li \&.Dl ,
+.Li \&.Dp ,
+.Li \&.Op
+or
+.Li \&.Tp .
+See the
+.Li \&.Op
+request for an example of using
+.Li \&.Ar
+in combination with the
+.Li \&.Fl
+request.
+.Ss Double Quote Request
+The
+.Li \&.Dq
+double quote request may be used to surround
+a string with double quotes. Punctuation is
+placed after the edn quote.  To place punctuation
+in inside the quotes it must be escaped with
+.Li \&\e& .
+.Pp
+.Dl Usage: .Dq string ... \*(Pu
+.Dw \&.Dq\ fools\ and\ follies
+.Dp Li \&.Dq
+.Dq
+.Dp Li \&.Dq string
+.Dq string
+.Dp Li \&.Dq string\ .
+.Dq string .
+.Dp Li \&.Dq fools and follies
+.Dq fools and follies
+.Dp Li \&.Dq Ar pattern\ )\ )\ ,
+.Dq Ar pattern ) ) ,
+.Dp
+.Pp
+If
+.Li \&.Dq
+is called with no arguments
+.Dq
+is assumed. The
+.Li \&.Dq
+request may call or be called by
+.Li \&.Cl ,
+.Li \&.Cx ,
+.Li \&.Dl ,
+.Li \&.Dp ,
+.Li \&.Op
+.Li \&.Sq ,
+or
+.Li \&.Tp .
+.Pp
+The
+.Li \&.Sq
+provides single quotes
+in the same manner as
+.Li \&.Dq .
+Neither request can nest with in itself, but
+.Li \&.Dq
+and
+.Li \&.Sq
+can be nested with in each other.
+.Ss Emphasis Request
+A portion of text may be stressed or emphasized with the .Em
+request.  The font used is commonly italic.
+.Pp
+.Dl Usage: .Em argument ... \*(Pu
+.Dw \&.Em\ vide\ infra\ )\ )\ ,
+.Dp Li \&.Em does not
+.Em does not
+.Dp Li \&.Em exceed 1024\ .
+.Em exceed 1024 .
+.Dp Li \&.Em vide infra\ )\ )\ ,
+.Em vide infra ) ) ,
+.Dp
+.Pp
+It is an error to call
+.Li \&.Em
+without arguments.
+The request cannot call other macros, but
+may be invoked by
+.Li \&.Cl ,
+.Li \&.Cx ,
+.Li \&.Dl ,
+.Li \&.Dp ,
+.Li \&.Op
+or
+.Li \&.Tp .
+.Ss Errno's (Section's two and three only)
+The
+.Li \&.Er
+errno request specifies the error return value
+for section two and three library routines. The second example
+below shows
+.Li \&.Er
+used with the
+.Li \&.Op
+request, as it would be used in the error
+section of a section two manual page.
+.Pp
+.Dl Usage: .Er ERRNOTYPE ... \*(Pu
+.Dw Tx
+.Dp Li \&.Er ENOENT
+.Er ENOENT
+.Dp Li \&.Op \&Er ENOTDIR
+.Op Er ENOTDIR
+.Dp
+.Pp
+It is an error to call
+.Li \&.Er
+without arguments.
+The request cannot call other macros, but
+may be invoked by
+.Li \&.Cl ,
+.Li \&.Cx ,
+.Li \&.Dl ,
+.Li \&.Dp ,
+.Li \&.Op
+or
+.Li \&.Tp .
+.Ss Environment Variables
+The
+.Li \&.Ev
+request specifies a environment variable.
+.Pp
+.Dl Usage: .Ev argument ... \*(Pu
+.Dw \&.Ev\ PRINTER\ )\ )\ ,
+.Dp Li \&.Ev DISPLAY
+.Ev  DISPLAY
+.Dp Li \&.Ev PATH\ .
+.Ev PATH .
+.Dp Li \&.Ev PRINTER\ )\ )\ ,
+.Ev PRINTER ) ) ,
+.Dp
+.Pp
+It is an error to call
+.Li \&.Ev
+without arguments.
+The request cannot call other macros, but
+may be invoked by
+.Li \&.Cl ,
+.Li \&.Cx ,
+.Li \&.Dl ,
+.Li \&.Dp ,
+.Li \&.Op
+or
+.Li \&.Tp .
+.Ss Flags
+The
+.Li \&.Fl
+request handles command line flags. It prepends
+a dash,
+.Li \- ,
+to the flag. For interactive command flags, which
+are not prepended with a dash, the
+.Li \&.Cm
+request is identical, but with out the dash.
+The
+.Li \&.Cm
+stands for command modifier.
+.Pp
+.Dl Usage: .Fl argument ... \*(Pu
+.Dw Tx
+.Dp Li \&.Fl
+.Fl
+.Dp Li \&.Fl cfv
+.Fl cfv
+.Dp Li \&.Fl cfv\ .
+.Fl cfv .
+.Dp Li \&.Fl s v t
+.Fl s v t
+.Dp Li \&.Fl -\ ,
+.Fl - ,
+.Dp Li \&.Fl xyz\ )\ ,
+.Fl xyz ) ,
+.Dp
+.Pp
+The
+.Li \&.Fl
+request without any arguments results
+in a dash sign representing stdin/stdout.
+Note that giving
+.Li \&.Fl
+a single dash, will result in two dashes.
+The request cannot call other macros, but
+may be invoked by
+.Li \&.Cl ,
+.Li \&.Cx ,
+.Li \&.Dl ,
+.Li \&.Dp ,
+.Li \&.Op
+or
+.Li \&.Tp .
+.Pp
+.Ss Functions (library routines)
+The .Fn request is modeled on ANSI C conventions. It
+may fail on old style parameter lists.
+.Pp
+Usage: .Fn [type\e\ ] function [[type\e\ ] params ... \*(Pu
+.Dw \&.Fn\ void\e\ push\ int\e\ p\ int\e\ *ptr,
+.Di L
+.Dp Li \&.Fn getchar
+.Fn getchar
+.Dp Li \&.Fn strlen\ )\ ,
+.Fn strlen ) ,
+.Dp Li \&.Fn strcpy char\e\ *dst char\e\ *src
+.Fn strcpy char\ *dst char\ *src
+.Dp Li \&.Fn int\e\ align int\e\ word
+.Fn int\ align int\ word
+.Dp Li \&.Fn void\e\ push int\e\ p int\e\ *ptr\ ,
+.Fn void\ push int\ p int\ *ptr ,
+.Dp
+.Pp
+It is an error to call
+.Li \&.Fn
+without any arguments.
+At the moment,
+.Li \&.Fn
+does not check its word boundaries
+against troff line lengths.  It may split across a
+line ungracefully. This will be fixed in the near future.
+In the examples above, arguments with more than one word
+escape the blank spaces with a
+.Li \e .
+The
+.Li \&.Fn
+request cannot execute any macro
+names given as the first argument.
+It may be called by the
+.Li \&.Cl ,
+.Li \&.Cx ,
+.Li \&.Dl ,
+.Li \&.Dp ,
+.Li \&.Op
+or
+.Li \&.Tp .
+.Ss Literals
+The
+.Li \&.Li
+literal request may be used for special characters,
+variable constants, anything which should be displayed as it
+would be typed.
+.Pp
+.Dl Usage: .Li argument ... \*(Pu
+.Dw Tx
+.Dp Li \&.Li \een
+.Li \en
+.Dp Li \&.Li M1 M2 M3\ ;
+.Li M1 M2 M3 ;
+.Dp Li \&.Li cntrl-D\ )\ ,
+.Li cntrl-D ) ,
+.Dp Li \&.Li 1024\ ...
+.Li 1024 ...
+.Dp
+.Pp
+It is an error to call
+.Li \&.Li
+without arguments.
+The request cannot call other macros, but
+may be invoked by
+.Li \&.Cl ,
+.Li \&.Cx ,
+.Li \&.Dl ,
+.Li \&.Dp ,
+.Li \&.Op
+or
+.Li \&.Tp .
+.Ss Name Request
+The
+.Li \&.Nm
+request is used for the document title or subject name.
+It has the peculiarity of remembering  the first
+argument it was called with, which should
+always be the subject name of the page.  When called without
+arguments,
+.Li \&.Nm
+regurgitates this initial name for the sole purpose
+of making less work for the author.
+Beyond the NAME section of the man page, a section two
+or three document function name is addressed with the
+.Li \&Fn
+request, while
+.Li \&.Nm
+can continue to be used for any other sections.
+For interactive commands, such as the
+.Li while
+command keyword in
+.Xr csh 1 ,
+the
+.Li \&.Ic
+request should be used.
+While the
+.Li \&.Ic
+is nearly identical
+to
+.Li \&.Nm ,
+it can not recall the first argument it was invoked with.
+.Pp
+.Dl Usage: .Nm argument ... \*(Pu
+.Dw Tx
+.Dp Li \&.Nm mdoc.sample
+.Nm  mdoc.sample
+.Dp Li \&.Nm \-mdoc
+.Nm \-mdoc .
+.Dp Li \&.Nm foo\ )\ )\ ,
+.Nm foo ) ) ,
+.Dp Li \&.Nm
+.Nm
+.Dp
+.Pp
+The
+.Li \&.Nm
+request cannot call other macros, but
+may be called by
+.Li \&.Cl ,
+.Li \&.Cx ,
+.Li \&.Dl ,
+.Li \&.Dp ,
+.Li \&.Op
+or
+.Li \&.Tp .
+.Ss Pathnames
+The
+.Li \&.Pa
+request formats path or file names.  It has two
+different behaviours. In any section of the man page
+.Em except
+the section FILES, it
+expects at most one path or file name, and any amount
+of punctuation. In the section FILES,
+it is often desirable to have a column of pathnames
+and a column of pathname descriptions.
+.Pp
+.Dl Usage: .Pa pathname \*(Pu
+.Dw \&.Pa\ /tmp/fooXXXXX\ )\ .
+.Dp Li \&.Pa /usr/share
+.Pa /usr/share
+.Dp Li \&.Pa /tmp/fooXXXXX\ )\ .
+.Pa /tmp/fooXXXXX ) .
+.Dp
+.Pp
+From within section FILES, use the
+.Li \&.Dw
+and
+.Li \&.Dp
+requests to format the pathnames
+and their descriptions.
+.Li \&.Pa
+request cannot call other macros, but
+may be called by
+.Li \&.Cl ,
+.Li \&.Cx ,
+.Li \&.Dl ,
+.Li \&.Dp ,
+.Li \&.Op
+or
+.Li \&.Tp .
+.Ss Single Quotes
+See the request
+.Li \&.Dq
+above.  The single quoting request
+.Li \&.Sq
+works in the same manner as
+.Li \&.Dq.
+.Ss Symbolic
+The symbolic request is really a boldface request.
+The need for this macro has not been established,
+it is included 'just in case'.
+.Pp
+.Dl Usage: .Sy symbol ... \*(Pu
+.Dw \&.Sy\ something\ bold
+.Dp Li \&.Sy something bold
+.Sy something bold
+.Dp
+.Pp
+The
+.Li \&.Sy
+request cannot call other macros, but can be called
+by
+.Li \&.Cl ,
+.Li \&.Cx ,
+.Li \&.Dl ,
+.Li \&.Dp ,
+.Li \&.Op
+or
+.Li \&.Tp .
+.Ss Variables
+Generic variable reference:
+.Pp
+.Dl Usage: .Va variable ... \*(Pu
+.Dw \&.Va\ char\ s\ ]\ )\ )\ ,
+.Dp Li \&.Va count
+.Va count
+.Dp Li \&.Va settimer ,
+.Va settimer ,
+.Dp Li \&.Va int\ *prt\ )\ :
+.Va int\ *prt ) :
+.Dp Li \&.Va char\ s\ ]\ )\ )\ ,
+.Va char\ s ] ) ) ,
+.Dp
+.Pp
+.Ss Cross References
+The
+.Li \&.Xr
+request expects the first argument to be
+a manual page name, and the second argument, if it exists,
+to be either a section page number or punctuation.  Any
+remaining arguments are assumed to be punctuation.
+.Pp
+.Dl Usage: .Xr manpage [1,...,8] \*(Pu
+.Dw Tx
+.Dp Li \&.Xr mdoc
+.Xr mdoc
+.Dp Li \&.Xr mdoc\ ,
+.Xr mdoc ,
+.Dp Li \&.Xr mdoc 7
+.Xr mdoc 7
+.Dp Li \&.Xr mdoc 7\ )\ )\ ,
+.Xr mdoc 7 ) ) ,
+.Dp
+.Pp
+The
+.Li \&.Xr
+request cannot call other macros, but may be called
+by
+.Li \&.Cl ,
+.Li \&.Cx ,
+.Li \&.Dl ,
+.Li \&.Dp ,
+.Li \&.Op
+or
+.Li \&.Tp .
+It is an error to call
+.Li \&.Xr
+without
+any arguments.
+.Pp
+.\" ---
+.Sh PAGE LAYOUT MACROS
+.Ss Section Headers
+Several
+.Li \&.Sh
+section header requests are required in every
+man page. The
+.Li \&.Sh
+request can take up to nine arguments.
+.Tp \&.Sh NAME
+The
+.Li \&.Sh NAME
+request is mandatory. If not specified,
+the headers, footers and page layout defaults
+will not be set and things will be rather unpleasant.
+The NAME section consists of at least three items.
+The first is the
+.Li \&.Nm
+name request naming the subject of the man page.
+The second is the Name Description request,
+.Li \&.Nd ,
+which separates the subject
+name from the third item, which is the description. The
+description should be the most terse and lucid possible,
+as the space available is small.
+.Tp \&.Sh SYNOPSIS
+The SYNOPSIS section describes the typical usage of the
+subject of a man page. The  requests required
+are either
+.Li \&.Nm
+or
+.Li \&.Fn .
+The function name
+request
+.Li \&.Fn
+is required
+for manual page sections 2 and 3, the command and general
+name request
+.Li \&.Nm
+is required for the remaining sections 1, 4, 5, 6, 7, 8.
+Several other requests may be necessary to produce
+the synopsis line as shown below:
+.Pp
+.Nm cat
+.Op Fl benstuv
+.Op Fl
+.Ar
+.Pp
+The following requests were used:
+.Pp
+.Dl \&.Nm cat
+.Dl \&.Op Fl benstuv
+.Dl \&.Op Fl
+.Dl \&.Ar
+.Pp
+Note, the
+.Li \&.Op
+request has accepted as its first
+argument the name of another macro
+.Em \&Fl .
+Upon discovering the first argument is callable,
+.Li \&.Op
+calls it with the remaining arguments
+and returns the formatted text in option brackets.
+.Tp \&.Sh DESCRIPTION
+In most cases the first text in the DESCRIPTION section
+is a brief paragraph on the command, function or file,
+followed by a lexical list of options and respective
+explanations. To create such a list, the
+.Li \&.Tp
+request is used in conjunction with text macros, such
+as the
+.Li \&.Fl
+macro (see
+the EXAMPLES section below).
+.Tp
+.Pp
+Other user specified
+.Li \&.Sh
+sections may be added,
+for instance, in this manual page
+.Pp
+.Dl Li \&.Sh PAGE LAYOUT MACROS
+.Pp
+was used for this section.
+.Pp
+The following
+.Li \&.Sh
+section headers are part of the
+preferred manual page layout and must be used appropriately
+to maintain consistency. They are listed in the order
+in which they would be used.
+.Tp \&.Sh ENVIRONMENT
+The ENVIRONMENT section should reveal any related
+environment
+variables and clues to their behaviour and/or usage.
+.Tp \&.Sh EXAMPLES
+There are several ways to create examples. See
+the EXAMPLES section below
+for details.
+.Tp \&.Sh FILES
+Files which are used or created by the man page subject
+should be listed via the
+.Li \&.Pa
+request in the FILES section.
+.Tp \&.Sh SEE ALSO
+References to other material on the man page topic and
+cross references to other relevant man pages should
+be placed in the SEE ALSO section.  Cross references
+are specified using the
+.Li \&.Xr
+request.  At this time
+.Xr refer 1
+style references are not accommodated.
+.Tp \&.Sh STANDARDS
+If the command, library function or file adheres to a
+specific implementation such as POSIX 1003.1 or
+ANSI C X3.159-1989 this should be noted here.  If the
+command does not adhere to any standard, its history
+should be noted in the HISTORY section.
+.Tp \&.Sh HISTORY
+Any command which does not adhere to any specific standards
+should be outlined historically in this section.
+.Tp \&.Sh AUTHORS
+Credits, if need be, should be placed here.
+.Tp \&.Sh DIAGNOSTICS
+Diagnostics from a command should be placed in this section.
+.Tp \&.Sh ERRORS
+Specific error handling, especially from library functions
+(man page sections 2 and 3) should go here.  The
+.Li \&.Er
+request is used to specify an errno.
+.Tp \&.Sh BUGS
+Blatant problems with the topic go here...
+.Tp
+.Pp
+.Ss Paragraphs and Line Spacing.
+.Tp \&.Pp
+The \&.Pp paragraph command may
+be used to specify a line space where necessary.
+The request is not necessary after a
+.Li \&.Sh
+or
+.Li \&.Ss
+request or before
+a
+.Li \&.Tp
+or
+.Li \&.Dp
+request.
+.Tp
+.Ss Complex Expressions
+A complex expression is one combined of many
+different elements of text. It is usually only necessary
+in particularly nasty man pages, such as
+.Xr adb 1
+or
+.Xr ex 1 ,
+where combinations of commands, addresses and symbols
+may be needed.
+When pieces of text are processed,
+.Xr troff 1
+assumes
+that a space character will be desired after each word
+making it difficult to combine expressions where
+different requests are used.
+.Li \&.Cx
+merely glues text together without spaces.  Where
+a space is required, it must be specified.
+A few examples:
+.Pp
+This first example shows how to construct a simple
+expression with no spacing in between:
+.Pp
+.Ds I
+.Cw (ax+bx+c) \ is\ produced\ by\ \&
+.\".Cw (ax+bx+c) \&.Va_by_) \&_and_\& \&[?/]m_b1_e1_f1[?/]\&
+.Cl Cx \t\t
+.Li \&.Cx\ (
+.Cx
+.Cl Cx \t\t
+.Li \&.Va ax
+.Cx
+.Cl Cx \t\t
+.Li \&.Sy \+
+.Cx
+.Cl Cx \&(\&
+.Va ax
+.Cx +
+.Va by
+.Cx +
+.Va c )
+.Cx \t
+.Em is produced by
+.Cx \t
+.Li \&.Va by
+.Cx
+.Cl Cx \t\t
+.Li \&.Sy \+
+.Cx
+.Cl Cx \t\t
+.Li \&.Va c )
+.Cx
+.Cl Cx \t\t
+.Li \&.Cx
+.Cx
+.Cw
+.De
+.Pp
+This example shows the same equation in a different format. The spaces
+around the
+.Li \&+
+signs were forced with
+.Li \e :
+.Pp
+.Ds I
+.Cw (ax\ +\ bx\ +\ c) \ is\ produced\ by\ \&
+.\".Cw (ax+bx+c) \&.Va_by_) \&_and_\& \&[?/]m_b1_e1_f1[?/]\&
+.Cl Cx \t\t
+.Li \&.Cx\ (
+.Cx
+.Cl Cx \t\t
+.Li \&.Va a
+.Cx
+.Cl Cx \t\t
+.Li \&.Sy x
+.Cx
+.Cl Cx \t\t
+.Li \&.Cx \e\ +\e\ \e&
+.Cx
+.Cl Cx \&(\&
+.Va a
+.Sy x
+.Cx \ +\ \&
+.Va b
+.Sy y
+.Cx \ +\ \&
+.Va c )
+.Cx \t
+.Em is produced by
+.Cl Cx \t\t
+.Li \&.Va b
+.Cx
+.Cl Cx \t\t
+.Li \&.Sy y
+.Cx
+.Cl Cx \t\t
+.Li \&.Cx \e\ +\e\ \e&
+.Cx
+.Cl Cx \t\t
+.Li \&.Va c )
+.Cx
+.Cl Cx \t\t
+.Li \&.Cx
+.Cx
+.Cw
+.De
+.Pp
+The incantation below was
+lifted from the
+.Xr adb 1
+manual page:
+.Pp
+.Ds I
+.Cw \&[?/]m_b1_e1_f1[?/]\& is\ produced\ by
+.Cl Cx \t\t
+.Li \&.Cx Op Sy ?/
+.Cx
+.Cl Cx \t\t
+.Li \&.Nm m
+.Cx
+.Cl Cx Op Sy ?/
+.Nm m
+.Ad \ b1 e1 f1
+.Op Sy ?/
+.Cx \t
+.Em is produced by
+.Cx \t
+.Li \&.Ar \e\ b1 e1 f1
+.Cx
+.Cl Cx \t\t
+.Li \&.Op Sy ?/
+.Cx
+.Cl Cx \t\t
+.Li \&.Cx
+.Cx
+.Cw
+.De
+.Pp
+.Ss Examples and Displays
+There are three types of displays, an indented one line display
+.Li \&.Dl ,
+a non\-filled block display
+.Li Ds
+and a filled block display.
+.Pp
+.Tw \&.Dl
+.Tp Li \&.Dl
+Display one line of indented text.
+The
+.Li \&.Dl
+example request has been used throughout this
+file.  It's
+basic use is to indent (display) one line of text for quick
+one line examples. Its default font is set to
+constant width, however,
+.Li \&.Dl
+checks the first argument to see if it is callable. It cannot process
+more than nine arguments.
+.Pp
+.Ds I
+.Li \&.Dl % ls -ldg /usr/local/bin
+.Pp
+produces:
+.Dl % ls -ldg /usr/local/bin
+.Pp
+.Li \&.Dl Fl ldghfstru
+.Pp
+produces:
+.Dl  Fl ldghfstru
+.De
+.Pp
+Calling either the request
+.Li \&.Tp
+or
+.Li \&.Dp
+from
+.Li \&.Dl
+is redundant and may cause unpredictable errors.
+.Tp Li \&.Ds
+Display a block of text as typed,
+right margin edges are left ragged.
+Nesting
+.Li \&.Ds
+requests seems to work,
+so they can be used outside and within
+tagged paragraphs. Each
+.Li \&.Ds
+request must be ended with a
+.Li \&De
+request.
+.Li \&.Ds
+takes can be manipulated to indent
+with the
+.Li \&L , \&C , \&R ,
+and
+.Li \&I
+flags.
+.Dw 4n
+.Dp Li L
+Align block on the current left margin,
+this is the default mode of
+.Li \&.Ds
+if called without arguments.
+.Dp Li C
+Supposedly center the block. At this time
+unfortunately, the block merely gets
+left aligned about an imaginary center margin.
+This will be fixed some time inthe near future.
+.Dp Li I
+Indent from left margin default amount (usually
+about a three quarters of an inch or eight
+constant width characters).
+.Dp Li R
+This left aligns the block about two inches from
+the right side of the page. It too, alas, needs
+work.
+.Dp
+.Tp Li \&.De
+Ends a
+.Li \&.Ds
+request.
+.Tp Li \&.Df
+Display a filled (formatted) block.  Identical to
+.Li \&.Ds ,
+except the block of text is formatted (the edges are
+not left ragged).  Takes the same modifers as
+.Li Ds .
+.Tp
+.Ss Tagged paragraphs and Columns
+The commands
+.Li \&.Tp
+and
+.Li \&.Dp
+create tagged paragraph
+lists.
+Like the
+.Li \&.Cx
+request,
+both require a begin and end.  When
+.Li \&.Tp
+or
+.Li \&.Dp
+are called with arguments, they collect and
+create the tag portion from
+the arguments.
+Anything after the tag is placed in
+the paragraph portion.
+The
+.Li \&.Dp
+macro is essentially the same as
+the \&.Tp
+macro, but with a few added features.
+These are discussed following the
+.Li \&.Tp
+example.
+.Li \&.Tp
+and
+.Li \&.Dp
+can call several macros,
+these are:
+.Pp
+.Dl \&.Ad, \&.Ar, \&.Cm, \&.Em, \&.Er, \&.Ev, \&.Fl, \&.Fn, \&.Ic,
+.Dl \&.Li, \&.Nm, \&.Sy, \&.Va and \&.Xr.
+.Pp
+The
+.Li \&.Tp
+request can be nested, and values for determining
+the width of each tag are based on which macro
+.Li \&.Tp
+is calling, if it is calling one, or by specifying
+a width with the
+.Li \&.Tw
+request.
+The default width for an unknown tag type is set to just
+about one and three quarter inches, or 20 characters in a
+constant width font.
+If the default width is unsatisfactory,
+.Li \&.Tw
+can be used as follows:
+.Dp Li \&.Tw Fl
+sets the width to the default flag width
+.Li \&.Fl ,
+which is
+set to ten constant width characters or about five sixth of
+an inch.
+.Dp Li \&.Tw 24n
+sets the width to 24 constant width characters or about two
+inches.  The
+.Li n
+is absolutely necessary for the scaling to work correctly.
+.Dp Li \&.Tw ENAMETOOLONG
+sets the width to the constant width length of the
+string given.
+.Dp Li \&.Tw  int\e\ mkfifo
+again, the width is set to the constant width of the string
+given, and the space is protected with a preceding
+.Li \e .
+.Dp
+.Pp
+A nesting
+.Li \&.Tp
+Example:
+.Pp
+.Tp Nm Name1
+This is the first call to
+.Li \&.Tp
+with
+.Li \&.Nm .
+.Tp Nm Name2
+Another call with
+.Li \&.Nm .
+.Tp Va Variable1
+An example of the
+.Li \&.Va
+request with
+.Li \&.Tp .
+Since the first argument was callable
+and different from the last one, the
+tag was indented.
+.Tp Va Variable2
+Another
+.Li \&.Va
+example.
+.Tp Fl Flag1
+A third nest (indent) using the
+.Li \&.Fl
+request.
+.Tp Fl Flag2
+Again the
+.Li \&.Fl
+.Tp
+.Pp
+A
+.Li \&.Tp
+with no arguments stops the current nest
+and exdents back to the previous level.
+.Tp Va Variable3
+Another call with the
+.Li \&.Va
+request.
+.Tp
+.Pp
+Again a
+.Li \&.Tp
+without arguments exdents.  This will put
+us back at the first level.
+.Tp Nm Name3
+Another
+.Li \&.Nm
+request. This request is followed
+by the last call to
+.Li \&.Tp
+without arguments.
+.Tp
+.Pp
+The above was created from:
+.Pp
+.Ds I
+\&.Tp Nm Name1
+This is the first call to
+\&.Li \&.Tp
+with
+\&.Li \&.Nm .
+\&.Tp Nm Name2
+Another call with
+\&.Li \&.Nm .
+\&.Tp Va Variable1
+An example of the
+\&.Li \&.Va
+request with
+\&.Li \&.Tp .
+Since the first argument was callable and different from
+the last one, the tag was indented.
+\&.Tp Va Variable2
+Another
+\&.Li \&.Va
+example.
+\&.Tp Fl Flag1
+A third nest (indent) using the
+\&.Li \&.Fl
+request.
+\&.Tp Fl Flag2
+Again the
+\&.Li \&.Fl
+\&.Tp
+A
+\&.Li \&.Tp
+with no arguments stops the current nest
+and exdents back to the previous level.
+\&.Tp Va Variable3
+Another call with the
+\&.Li \&.Va
+request.
+\&.Tp
+Again a
+\&.Li \&.Tp
+without argments exdents.
+This will put us back at the first level.
+\&.Tp Nm Name3
+Another
+\&.Li \&.Nm
+request. This request is followed by the last call to
+\&.Li \&.Tp
+without arguments.
+\&.Tp
+.De
+.Pp
+An example of
+.Li \&.Dp:
+.Pp
+.Dw PAGEIN\ 10
+.Dp SL 10
+sleep time of the process (seconds blocked)
+.Dp PAGEIN 10
+number of disk i/o's resulting from references by the process
+to pages not loaded in core.
+.Dp UID 10
+numerical user-id of process owner
+.Dp PPID 10
+numerical id of parent of process
+process priority (non-positive when in non-interruptible wait)
+.Dp
+.Pp
+The raw text:
+.Pp
+.Ds I
+.Li \&.Dw PAGEIN\ 10
+.Li \&.Dp SL 10
+sleep time of the process (seconds blocked)
+.Li \&.Dp PAGEIN 10
+number of disk i/o's resulting from references by the process
+to pages not loaded in core.
+.Li \&.Dp UID 10
+numerical user-id of process owner
+.Li \&.Dp PPID 10
+numerical id of parent of process
+process priority (non-positive when in non-interruptible wait)
+.Li \&.Dp
+.De
+.Pp
+The default behaviour of
+.Li \&.Dp
+is to indent a small amount from the current margin before
+processing the tag.  This margin can be changed with the
+request
+.Li \&.Di
+which takes as its first argument either a numerical
+argument (e.g. a scaled number like 24n) or a letter
+.Li \&L
+or
+.Li \&I .
+The
+.Li \&L
+forces a left margin, which is useful if something doesn't
+quite fit (as in the example for the
+.Li \&.Fn
+macro in the TEXT MACRO section above).
+The
+.Li \&I
+is the default, but may be used for a return to the default
+if necessary.  Like all the tagged widths, the indents
+are pushed on a stack, and when that stack (or level)
+is expired, the previous values are used (this happens
+whenever a
+.Li \&.Dp
+or
+.Li \&.Tp
+is called without arguments).
+In this example,
+.Li \&.Dw
+has been used to set the width of the tag.
+It is identical to the request
+.Li \&.Tw
+discussed above.
+.Ss Columns
+The column request is made up of a width request,
+.Li \&.Cw ,
+and a column line request,
+.Li \&.Cl .
+From one to four simple columns can be created
+and all but the last column, are simple
+single entry style columns.
+The last (rightmost) column can overflow into
+a indented paragraph.
+.Pp
+The
+.Li \&.Cw
+request takes at most three arguments
+as width indicators.  The number of columns is
+always one more than given to
+.Li \&.Cw .
+the
+.Li \&.Cl
+request should have its arguments
+on the next line and the columns should be
+separated by a tab character.
+.Pp
+An example of two columns:
+.Cw Macros
+.Cl Macros	Description
+.Cl \&.Tp	List Request
+.Cl \&.Nm	Name Request
+.Cw
+.Pp
+The requests used to format the
+columns above (the jagged edges are from tabs which can
+also be represented by
+.Li \et ) :
+.Pp
+.Dl \&.Cw Macros
+.Dl \&.Cl Macros	Description
+.Dl \&.Cl \e&.Tp	 List Request
+.Dl \&.Cl \e&.Nm	 Name Request
+.Dl \&.Cw
+.Pp
+There some problems with columns at the moment, while they
+work well in nested lists, they are otherwise difficult
+to offset via example.
+.Ss Options
+The
+.Li \&.Op
+request ain't quite working perfectly.
+The (eventual) goal of
+.Li \&.Op
+is to place brackets around the given arguments, and place any
+punctuation outside the brackets.  In the case of
+.Li \&.Cx,
+trailing punctuation on the same request line as the
+.Li \&.Op
+should be placed outside the brackets.
+The multiple macro calls are one of the reasons this request is so moody.
+Is is the only macro which attempts to call other macros on the
+request line. Its not doing too badly, just not perfect:
+.Dw \&.Op\ Fl\ c\ Ar\ objfil\ Op\ Ar\ corfil\ ,
+.Dp Li \&.Op
+.Op
+.Dp Li \&.Op Fl k
+.Op Fl k
+.Dp Li \&.Op Fl k\ )\ .
+.Op Fl k ) .
+.Dp Li \&.Op Fl k Ar kookfile
+.Op Fl k Ar kookfile
+.Dp Li \&.Op Fl k Ar kookfile\ ,
+.Op Fl k Ar kookfile ,
+.Dp Li \&.Op Ar objfil Op Ar corfil
+.Op Ar objfil Op Ar corfil
+.Dp Li \&.Op Fl c Ar objfil Op Ar corfil\ ,
+.Op Fl c Ar objfil Op Ar corfil ,
+.Dp Li \&.Op word1 word2
+.Op word1 word2
+.Dp
+.Pp
+The punctuation on the second to last example is
+improperly placed and should be fixed some day.
+.Sh FILES
+.\" .Pa /usr/share/tmac/tmac.doc.style site specific layout
+.Dw /usr/share/man0/template.doc
+.Di L
+.Dp Pa /usr/share/tmac/tmac.doc
+manual macro package
+.Dp Pa /usr/share/man0/template.doc
+template for writing a man page
+.Dp
+.Sh HISTORY
+4.4 BSD
+.Sh SEE ALSO
+.Xr mdoc.samples 7 ,
+.Xr man 1 ,
+.Xr troff 1
+.Sh BUGS
+.Pp
+Punctuation may be broken on
+.Li \&.Op
+again.
+.Pp
+Undesirable hyphenation on the dash of a flag
+argument is not yet resolved, and causes
+occasional mishaps in the DESCRIPTION section.
+.Pp
+Predefined strings are not declared in documentation.
+.Pp
+Section 3f has not been added to the header routines.
+.Pp
+.Li \&.Nm
+font should be changed in NAME section.
+.Pp
+.Li \&.Fn
+needs to have a check to prevent splitting up
+if the line length is too short. Right now it
+separates the last parenthesis, and sometimes
+looks ridiculous if a line is in fill mode.
+.Pp
+The method used to prevent header and footer page
+breaks (other than the initial header and footer) when using
+nroff seems to be putting out a partially filled line
+at the bottom of the page leaving an unsightly blank space.
+.Pp
+The tagged paragraph, display and column requests to not do any keeps
+and certainly should be able to.
+.Pp
+Occasionally there maybe a problem with mathematical
+or logical interpretation of characters from the
+set
+{+,\-,/,*,%,<,>,<=,>=,=,==,&}
+found as the second
+character in an argument string which may be checked for punctuation.
+This is a relatively rare occurrence, as a lot of checking is
+done to prevent it,
+but if it should happen
+escape the characters
+with
+.Li \e& .

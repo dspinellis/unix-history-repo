@@ -1,0 +1,659 @@
+.\"	ideal.1	(CWI)	1.2	85/03/03
+.EQ
+.nr 99 \n(.s
+.nr 98 \n(.f
+.ps 10
+.ft 2
+.ps \n(99
+.ft \n(98
+.EN
+.TH IDEAL 1 
+.SH NAME
+ideal \- troff preprocessor for drawing pictures
+.SH SYNOPSIS
+.B ideal
+[
+.BI \-p
+[
+.BI \-v
+]
+[
+.BI \-4
+]
+[
+.BI \-n
+]
+[ files ]
+.SH DESCRIPTION
+.I Ideal
+is yet another
+.IR troff (1)
+preprocessor for drawing figures on a typesetter.
+A line beginning `.IS' marks the start of an
+.I ideal
+program.
+An
+.I ideal
+program ends with `.IE' or `.IF';
+`.IE' leaves you below the bottom of the picture,
+while `.IF' (flyback)
+leaves you at the same place you were when you said `.IS'.
+.PP
+When invoked
+with the
+.I \-p
+option,
+.I ideal
+produces 
+.IR plot (1)
+instructions.
+The erases come at every `.IS', and they come fast and
+furious, so you might prefer using the
+.I \-4
+option, which produces instructions for a Tektronix
+4014, and waits at each `.IE' for an input character
+before erasing and starting the next picture.
+The
+.I \-n
+option produces raw
+.IR ideal
+output, which passes unharmed through
+.IR nroff (1).
+The
+.I \-v
+option produces
+.IR ditroff (1)
+input meant for the Versatec V-80, of course ditroff should know about
+the Versatec by using the flag -Tver.
+.PP
+The building block for
+.I ideal
+programs is a ``box'';
+boxes look like C functions,
+in that they are named, and delimited by braces.
+They may include the following kinds of statements,
+each terminated by a semicolon:
+.TP
+.I var
+declares one or more complex variables local to the box.
+Variable names are made up of letters and digits, and
+start with a letter; do not use any of the following
+keywords as variable names:
+at,
+bdlist,
+boundary,
+box,
+conn,
+construct,
+draw,
+exterior,
+interior,
+left,
+opaque,
+put,
+right,
+spline,
+text,
+to,
+using,
+var
+.TP
+.I equation
+declares relative positions of significant points of the box
+.TP
+.I conn
+asks for a straight-line path through named points
+.TP
+.I pen
+asks for a box to be replicated along a line between two points
+.TP
+.I left
+left-justifies text with respect to a point
+.TP
+.I text
+centers text with respect to a point
+.TP
+.I right
+right-justifies text with respect to a point
+.TP
+.I spline
+draws a spline guided by the named points
+.TP
+.I put
+asks for an instance of a box to be drawn
+.TP
+.I opaque
+asks for a box to erase lines already in the picture that
+are covered by its bounding polygon
+.TP
+.I boundary
+specifies the bounding polygon for an opaque box
+.TP
+.I construct
+builds a partial picture on a separate ``sheet of paper''
+.TP
+.I draw
+adds the contents of the named constructed box to the current picture
+.PP
+.I Ideal
+expects all components of a picture to be specified as boxes;
+instructions to draw the entire picture should comprise a box called ``main.''
+Boxes are remembered across .IS-.IE boundaries;
+if you won't need a box again, you can reclaim the
+space it requires by including the command
+`...forget boxname' on a line between any .IS-.IE
+pair after the last use of boxname.
+Box
+.I main
+is an exception to this rule:
+it is always forgotten when the .IE is processed.
+.PP
+During its first pass,
+.I ideal
+solves all the equations to determine the locations of all points
+it needs to know.
+These equations must be linear equations in complex variables,
+although they may include non-linear operators:
+.I ideal
+plugs in for as many variables, and does as much function evaluation,
+as it can before solving the linear equation.
+It waits until it has absolutely no hope of reducing an equation
+to a linear equation before complaining.
+.I Ideal
+knows about the following functions:
+.TP
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.ps 10
+.ft 2
+.ds 12 "\(*a
+.ds 13 "\f1[\fP
+.as 12 "\*(13
+.ds 13 "z
+.as 12 "\*(13
+.ds 13 "\f1,\fP
+.as 12 "\|\*(13
+.ds 13 "w
+.as 12 "\*(13
+.ds 13 "\f1]\fP
+.as 12 "\|\*(13
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.ps 10
+.ft 2
+.ds 12 "\ 
+.ds 13 "\(==
+.as 12 "\*(13
+.ds 13 "z
+.as 12 "\*(13
+.ds 13 "\(pl
+.as 12 "\|\*(13
+.ds 13 "\(*a
+.as 12 "\*(13
+.ds 13 "\f1(\fP
+.as 12 "\*(13
+.ds 13 "w
+.as 12 "\*(13
+.ds 13 "\(mi
+.as 12 "\|\*(13
+.ds 13 "z
+.as 12 "\*(13
+.ds 13 "\f1)\fP
+.as 12 "\|\*(13
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ", 
+.ps 10
+.ft 2
+.ds 12 "\(*a
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " of the way from 
+.ps 10
+.ft 2
+.ds 12 "z
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " to 
+.ps 10
+.ft 2
+.ds 12 "w
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+.TP
+.I re (z)
+real part of complex number
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.ps 10
+.ft 2
+.ds 12 "z
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+.TP
+.I im (z)
+imaginary part of complex number
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.ps 10
+.ft 2
+.ds 12 "z
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+.TP
+.I conj (z)
+complex conjugate of complex number
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.ps 10
+.ft 2
+.ds 12 "z
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+.TP
+.I abs (z)
+absolute value (modulus) of complex number
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.ps 10
+.ft 2
+.ds 12 "z
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+.TP
+.I cis (x)
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "a unit vector in the direction of the real part of its argument 
+.ps 10
+.ft 2
+.ds 12 "x
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ",
+.ps \n(99
+.ft \n(98
+\*(11
+which is an angle in degrees
+(radians if the line `...radians' appeared more
+recently in the file than the line
+`...degrees')
+.TP
+.I E (x)
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.ps 10
+.ft 2
+.ds 12 "\(==
+.ds 13 "cis
+.as 12 "\*(13
+.ds 13 "\f1(\fP
+.as 12 "\|\*(13
+.ds 13 "\f13\fP\f16\fP\f10\fP
+.as 12 "\*(13
+.ds 13 "x
+.as 12 "\*(13
+.ds 13 "\f1)\fP
+.as 12 "\|\*(13
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "if 
+.ps 10
+.ft 2
+.ds 12 "x
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " is measured in degrees
+.ps \n(99
+.ft \n(98
+\*(11
+.TP
+.I int (x)
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "integer part of the real part of its argument 
+.ps 10
+.ft 2
+.ds 12 "x
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+.TP
+.I angle (z)
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "arctangent of 
+.ps 10
+.ft 2
+.ds 12 "im
+.ds 13 "\f1(\fP
+.as 12 "\|\*(13
+.ds 13 "z
+.as 12 "\*(13
+.ds 13 "\f1)\fP
+.as 12 "\|\*(13
+.ds 13 "\(sl
+.as 12 "\*(13
+.ds 13 "re
+.as 12 "\*(13
+.ds 13 "\f1(\fP
+.as 12 "\|\*(13
+.ds 13 "z
+.as 12 "\*(13
+.ds 13 "\f1)\fP
+.as 12 "\|\*(13
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+.PP
+During the second pass,
+.I ideal
+draws the picture.
+.PP
+To draw a circle,
+include the line `...libfile circle' between the .IS and .IE lines,
+and
+.I put
+the box named
+.I circle,
+giving enough information that
+the circle can be determined;
+for instance, give the center and the radius,
+or give three points through which the circle passes,
+or give the center and a point on the circle.
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "The circle has center 
+.ps 10
+.ft 2
+.ds 12 "center
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ", radius 
+.ps 10
+.ft 2
+.ds 12 "radius
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ", and passes
+.ps \n(99
+.ft \n(98
+\*(11
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "through 
+.ps 10
+.ft 2
+.ds 12 "z\|\f11\fP
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ", 
+.ps 10
+.ft 2
+.ds 12 "z\|\f12\fP
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ", and 
+.ps 10
+.ft 2
+.ds 12 "z\|\f13\fP
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ".
+.ps \n(99
+.ft \n(98
+\*(11
+.PP
+To draw an arc,
+include the line `...libfile arc'  between the .IS and .IE lines,
+and
+.I put
+the box named
+.I arc,
+again giving enough information to determine the arc;
+for instance, give the center, radius, and starting and ending angles,
+or give three points on the arc--where to start, where to end, and somewhere
+in between.
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "The arc has center 
+.ps 10
+.ft 2
+.ds 12 "center
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ", radius 
+.ps 10
+.ft 2
+.ds 12 "radius
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ",
+.ps \n(99
+.ft \n(98
+\*(11
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "starts at point 
+.ps 10
+.ft 2
+.ds 12 "start
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " at angle 
+.ps 10
+.ft 2
+.ds 12 "startang
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ",
+.ps \n(99
+.ft \n(98
+\*(11
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "passes through point 
+.ps 10
+.ft 2
+.ds 12 "midway
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " at angle 
+.ps 10
+.ft 2
+.ds 12 "midang
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ",
+.ps \n(99
+.ft \n(98
+\*(11
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "and ends at point 
+.ps 10
+.ft 2
+.ds 12 "end
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " at angle 
+.ps 10
+.ft 2
+.ds 12 "endang
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ".
+.ps \n(99
+.ft \n(98
+\*(11
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "If no 
+.ps 10
+.ft 2
+.ds 12 "midway
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " is specified, the arc is drawn counterclockwise
+.ps \n(99
+.ft \n(98
+\*(11
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "from 
+.ps 10
+.ft 2
+.ds 12 "start
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " to 
+.ps 10
+.ft 2
+.ds 12 "end
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ".
+.ps \n(99
+.ft \n(98
+\*(11
+.PP
+The picture will be scaled to a default width of four inches
+and centered in a column of six inches.
+The default width can be changed by a `...width' command,
+which includes a number in inches.
+The default column width can be changed by a `...colwid' command.
+To defeat
+\f2ideal\fP's
+notion of the size of the picture, you can include lines of
+the form `...minx', `...miny', `...maxx', or `...maxy';
+these give the various coordinates of the bounding box of the
+picture in the coordinate system used by the picture.
+.PP
+.I Ideal
+supports both C-style comments (between /* and */ brackets, and they nest),
+and shell-style comments (between # and newline).
+.SH "SEE ALSO"
+C. J. Van Wyk,
+.I "IDEAL User's Manual",
+C. J. Van Wyk.
+.SH BUGS
+.I Ideal
+is relatively unforgiving about syntax errors.
+Bounding box computation is naive for arcs and text strings.

@@ -1,0 +1,92 @@
+.\" Copyright (c) 1988 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)getenv.3	6.9 (Berkeley) %G%
+.\"
+.TH GETENV 3 ""
+.AT 3
+.SH NAME
+getenv, putenv, setenv, unsetenv \- manipulate environmental variables
+.SH SYNOPSIS
+.nf
+.ft B
+#include <stdlib.h>
+
+char *
+getenv(const char *name);
+
+setenv(const char *name, const char *value, int overwrite);
+
+putenv(const char *string);
+
+void
+unsetenv(const char *name);
+.ft R
+.fi
+.SH DESCRIPTION
+.I Getenv
+searches the environment list (see
+.IR environ (7))
+for a string of the form \fIname\fP\fB=\fP\fIvalue\fP and returns
+a pointer to the string
+.I value
+if such a string is present, and a NULL pointer if it is not.
+.PP
+.I Setenv
+searches the environment list as
+.I getenv
+does; if the string
+.I name
+is not found, a string of the form \fIname\fP\fB=\fP\fIvalue\fP is
+added to the environment.
+If it is found, and
+.I overwrite
+is non-zero, its value is changed to
+.IR value .
+.I Setenv
+returns 0 on success and -1 on failure, setting the external variable
+.IR errno .
+.PP
+.I Putenv
+takes an argument of the form ``\fIname\fR=\fIvalue\fR'' and is the
+equivalent of:
+.sp
+.RS
+setenv(name, value, 1);
+.RE
+.PP
+.I Unsetenv
+removes all occurrences of the string
+.I name
+from the environment.
+There is no library provision for completely removing the current
+environment.
+It is suggested that the following code be used to do so.
+.sp
+.RS
+.nf
+static char	*envinit[1];
+extern char	**environ;
+environ = envinit;
+.fi
+.RE
+.PP
+All of these routines permit, but do not require, a trailing equals
+(``='') sign on
+.I name
+or a leading equals sign on
+.IR value .
+.SH ERRORS
+.TP
+[ENOMEM]
+.I Setenv
+or
+.I putenv
+failed because they were unable to allocate memory for the environment.
+.SH SEE ALSO
+csh(1), sh(1), execve(2), environ(7)
+.SH STANDARDS
+.B Getenv
+conforms to ANSI X3.159-1989 (``ANSI C'').

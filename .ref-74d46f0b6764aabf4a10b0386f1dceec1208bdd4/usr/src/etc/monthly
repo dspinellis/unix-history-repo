@@ -1,0 +1,23 @@
+#!/bin/sh -
+#
+#	@(#)monthly	5.3 (Berkeley) %G%
+#
+
+host=`hostname -s`
+echo "Subject: $host monthly run output"
+
+# echo ""
+# echo "Doing login accounting:"
+# ac -p | sort -nr +1
+
+echo ""
+echo "Rotating wtmp files:"
+cd /var/log
+if [ -f wtmp.5 ]; then mv -f wtmp.5 wtmp.6; fi
+if [ -f wtmp.4 ]; then mv -f wtmp.4 wtmp.5; fi
+if [ -f wtmp.3 ]; then mv -f wtmp.3 wtmp.4; fi
+if [ -f wtmp.2 ]; then mv -f wtmp.2 wtmp.3; fi
+if [ -f wtmp.1 ]; then mv -f wtmp.1 wtmp.2; fi
+if [ -f wtmp.0 ]; then mv -f wtmp.0 wtmp.1; fi
+mv -f wtmp   wtmp.0
+cp /dev/null wtmp

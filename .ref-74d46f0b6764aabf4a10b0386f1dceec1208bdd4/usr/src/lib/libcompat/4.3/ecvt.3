@@ -1,0 +1,62 @@
+.\"	@(#)ecvt.3	6.3 (Berkeley) %G%
+.\"
+.TH ECVT 3  ""
+.AT 3
+.SH NAME
+ecvt, fcvt, gcvt \- output conversion
+.SH SYNOPSIS
+.nf
+.B char *ecvt(value, ndigit, decpt, sign)
+.B double value;
+.B int ndigit, *decpt, *sign;
+.PP
+.B char *fcvt(value, ndigit, decpt, sign)
+.B double value;
+.B int ndigit, *decpt, *sign;
+.PP
+.B char *gcvt(value, ndigit, buf)
+.B double value;
+.B char *buf;
+.fi
+.SH DESCRIPTION
+.ft B
+These interfaces are obsoleted by printf(3).
+.br
+They are available from the compatibility library, libcompat.
+.ft R
+.PP
+.I Ecvt
+converts the 
+.I value
+to a null-terminated string of
+.I ndigit
+ASCII digits and returns a pointer thereto.
+The position of the decimal point relative to the
+beginning of the string is stored indirectly through
+.IR decpt ""
+(negative means to the left of the returned digits).
+If the sign of the result is negative, the word pointed to by
+.IR sign ""
+is non-zero, otherwise it is zero.  The low-order digit is rounded.
+.PP
+.IR Fcvt " is identical to " "ecvt\fR, except that the correct digit"
+has been rounded for Fortran F-format output of the number
+of digits specified by
+.IR \(*_ndigits .
+.PP
+.I Gcvt
+converts the
+.I value
+to a null-terminated ASCII string in
+.I buf
+and returns a pointer to 
+.I buf.
+It attempts to produce
+.I ndigit
+significant digits in Fortran F format if possible, otherwise E format,
+ready for printing.  Trailing zeros may be suppressed.
+.SH "SEE ALSO"
+printf(3)
+.SH BUGS
+The return values point to static data
+whose content is overwritten by each call.

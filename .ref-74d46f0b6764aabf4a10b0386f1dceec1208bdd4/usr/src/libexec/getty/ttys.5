@@ -1,0 +1,93 @@
+.\" Copyright (c) 1985 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)ttys.5	6.7 (Berkeley) %G%
+.\"
+.TH TTYS 5  ""
+.AT 3
+.SH NAME
+ttys \- terminal initialization data
+.SH DESCRIPTION
+The
+.I ttys
+file contains information that is used by various routines to initialize
+and control the use of terminal special files.
+This information is read with the
+.IR getttyent (3)
+library routines.
+There is one line in the 
+.I ttys
+file per special file.
+Fields are separated by tabs and/or spaces.
+Fields comprised of more than one word should be enclosed in double
+quotes (``"'').
+Blank lines and comments may appear anywhere in the file; comments
+are delimited by hash marks (``#'') and new lines.
+Any unspecified fields will default to null.
+.PP
+The first field is the terminal's entry in the device directory, ``/dev''.
+.PP
+The second field of the file is the command to execute for the line,
+typically
+.IR getty (8),
+which performs such tasks as baud-rate recognition, reading the login name,
+and calling
+.IR login (1).
+It can be, however, any desired command, for example
+the start up for a window system terminal emulator or some other
+daemon process, and can contain multiple words if quoted.
+.PP
+The third field is the type of terminal usually connected to that
+tty line, normally the one found in the
+.IR termcap (5)
+data base file.
+The environmental variable ``TERM'' is initialized with the value by
+either
+.IR getty (8)
+or
+.IR login (1).
+.PP
+The remaining fields set flags in the
+.I ty_status
+entry (see
+.IR getttyent (3))
+or specify a window system process that
+.IR init (8)
+will maintain for the terminal line.
+.PP
+As flag values, the strings ``on'' and ``off'' specify that
+.I init
+should (should not) execute the command given in the second field,
+while ``secure'' (if ``on'' is also specified) allows users with a
+uid of 0 to login on
+this line.
+These flag fields should not be quoted.
+.PP
+The string ``window='' may be followed by a quoted command
+string which
+.I init
+will execute
+.B before
+starting the command specified by the second field.
+.SH EXAMPLES
+.nf
+# root login on console at 1200 baud
+console	"/usr/libexec/getty std.1200"	vt100	on secure
+# dialup at 1200 baud, no root logins
+ttyd0	"/usr/libexec/getty d1200"	dialup	on	# 555-1234
+# Mike's terminal: hp2621
+ttyh0	"/usr/libexec/getty std.9600"	hp2621-nl	on	# 457 Evans
+# John's terminal: vt100
+ttyh1	"/usr/libexec/getty std.9600"	vt100	on		# 459 Evans
+# terminal emulate/window system
+ttyv0	"/usr/new/xterm -L :0"		vs100	on window="/usr/new/Xvs100 0"
+# Network pseudo ttys -- don't enable getty
+ttyp0	none	network
+ttyp1	none	network	off
+.fi
+.SH FILES
+/etc/ttys
+.SH "SEE ALSO"
+login(1), getttyent(3), ttyslot(3), gettytab(5), termcap(5), getty(8), init(8)

@@ -1,0 +1,114 @@
+#!/bin/sh -
+#
+# Copyright (c) 1990 The Regents of the University of California.
+# All rights reserved.
+#
+# %sccs.include.redist.sh%
+#
+#	@(#)get	1.7 (Berkeley) %G%
+#
+
+# Shell script to build a mini-root file system in preparation for building
+# a distribution tape.  The file system created here is image copied onto
+# tape, then image copied onto disk as the "first" step in a cold boot of
+# 4.3BSD systems.
+#
+DISTROOT=/nbsd
+#
+if [ `pwd` = '/' ]
+then
+	echo You just '(almost)' destroyed the root
+	exit
+fi
+
+# copy in kernel
+cp $DISTROOT/sys/GENERIC.alltahoe/vmunix .
+
+# create necessary directories
+DIRLIST="bin dev etc a tmp stand sbin"
+rm -rf $DIRLIST
+mkdir $DIRLIST
+
+ETC="disktab"
+for i in $ETC; do
+	cp $DISTROOT/etc/$i etc/$i
+done
+
+SBIN="disklabel fsck ifconfig init mknod mount newfs restore \
+	rrestore umount"
+for i in $SBIN; do
+	cp $DISTROOT/sbin/$i sbin/$i
+done
+
+BIN="[ cat cp dd echo ed expr ls mkdir mv rcp rm sh stty sync"
+UBIN="awk make mt"
+for i in $BIN; do
+	cp $DISTROOT/bin/$i bin/$i
+done
+for i in $UBIN; do
+	cp $DISTROOT/usr/bin/$i bin/$i
+done
+ln bin/stty bin/STTY
+
+STAND="copy vdformat"
+for i in $STAND; do
+	cp $DISTROOT/stand/$i stand/$i
+done
+
+DOT=".profile boot fppoc fppwcs poc poc1 poc2 wcs"
+#DOT=".profile boot"
+for i in $DOT; do
+	cp $DISTROOT/$i $i
+done
+
+# initialize /dev
+cp $DISTROOT/dev/MAKEDEV dev/MAKEDEV
+chmod +x dev/MAKEDEV
+cp /dev/null dev/MAKEDEV.local
+(cd dev; ./MAKEDEV std hd0; ./MAKEDEV cy0; mv rmt12 cy0; rm *mt*)
+
+# initialize /etc/passwd
+cat >etc/passwd <<EOF
+root::0:10::/:/bin/sh
+EOF
+
+# initialize /etc/group
+cat >etc/group <<EOF
+wheel:*:0:
+staff:*:10:
+EOF
+
+# initialize /etc/fstab
+cat >etc/fstab <<EOF
+/dev/xfd0a:/a:xx:1:1
+/dev/hd0a:/a:xx:1:1
+EOF
+
+# create xtr script
+cat >xtr <<'EOF'
+#!/bin/sh -e
+: ${disk?'Usage: disk=xx0 tape=yy xtr'}
+: ${tape?'Usage: disk=xx0 tape=yy xtr'}
+echo 'Build root file system'
+newfs ${disk}a
+sync
+echo 'Check the file system'
+fsck /dev/r${disk}a
+mount /dev/${disk}a /a
+cd /a
+echo 'Rewind tape'
+mt -f /dev/${tape}0 rew
+echo 'Restore the dump image of the root'
+restore rsf 3 /dev/${tape}0
+cd /
+sync
+umount /a
+sync
+fsck /dev/r${disk}a
+echo 'Root filesystem extracted'
+EOF
+
+# make xtr script executable
+chmod +x xtr
+
+sync

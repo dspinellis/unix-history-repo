@@ -1,0 +1,146 @@
+.\" Copyright (c) 1988 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)getopt.3	6.15 (Berkeley) %G%
+.\"
+.TH GETOPT 3 ""
+.UC 6
+.SH NAME
+getopt \- get option letter from argv
+.SH SYNOPSIS
+.ft B
+.nf
+int getopt(argc, argv, optstring)
+int argc;
+char **argv;
+char *optstring;
+.sp
+extern char *optarg;
+extern int optind;
+extern int opterr;
+.ft
+.SH DESCRIPTION
+.I Getopt
+returns the next option letter in
+.I argv
+that matches a letter in
+.IR optstring .
+.I Optstring
+is a string of recognized option letters; if a letter is followed by a
+colon, the option is expected to have an argument that may or may not
+be separated from it by white space.
+.PP
+On return from
+.IR getopt ,
+optarg is set to point to the start of any option argument.
+.I Optind
+contains the
+.I argv
+index of the next argument to be processed.
+.PP
+.I Opterr
+and
+.I optind
+are both initialized to 1.
+In order to use
+.I getopt
+to evaluate multiple sets of arguments, or to evaluate a single set of
+arguments multiple times,
+.I optind
+must be initialized to the number of argv entries to be skipped in each
+evaluation.
+.PP
+When all options have been processed (i.e., up to the first non-option
+argument),
+.I getopt
+returns EOF.
+The special option ``\-\-'' may be used to delimit the end of the options;
+EOF will be returned, and the ``\-\-'' will be skipped.
+.SH DIAGNOSTICS
+.I Getopt
+prints an error message on
+.I stderr
+and returns a question mark (``?'') when it encounters an option
+letter not included in
+.IR optstring ,
+or it encounters an option that requires an argument which is not
+supplied.
+Setting
+.I opterr
+to a zero will disable these error messages.
+.SH EXAMPLE
+.nf
+.in +5
+extern char *optarg;
+extern int optind;
+int bflag, ch, fd;
+
+bflag = 0;
+while ((ch = getopt(argc, argv, "bf:")) != EOF)
+	switch(ch) {
+	case 'b':
+		bflag = 1;
+		break;
+	case 'f':
+		if ((fd = open(optarg, O_RDONLY, 0)) < 0) {
+			(void)fprintf(stderr,
+			    "myname: unable to read file %s.\en", optarg);
+			exit(1);
+		}
+		break;
+	case '?':
+	default:
+		usage();
+	}
+argc -= optind;
+argv += optind;
+.fi
+.SH BUGS
+Option arguments are allowed to begin with ``\-''; this is reasonable but
+reduces the amount of error checking possible.
+.PP
+A single dash (``-'') may be specified as an character in
+.IR optstring ,
+however it should
+.B never
+have an argument associated with it.
+This allows
+.I getopt
+to be used with programs that expect ``-'' as an option flag.
+This practice is wrong, and should not be used in any current development.
+It is provided for backward compatibility
+.BR only .
+By default, a single dash causes
+.I getopt
+to return EOF.
+This is, we believe, compatible with System V.
+.PP
+It is also possible to handle digits as option letters.
+This allows
+.I getopt
+to be used with programs that expect a number (``-3'') as an option.
+This practice is wrong, and should not be used in any current development.
+It is provided for backward compatibility
+.BR only .
+The following code fragment works fairly well.
+.sp
+.nf
+.in +5
+int length;
+char *p;
+
+while ((c = getopt(argc, argv, "0123456789")) != EOF)
+	switch (c) {
+	case '0': case '1': case '2': case '3': case '4':
+	case '5': case '6': case '7': case '8': case '9':
+		p = argv[optind - 1];
+		if (p[0] == '-' && p[1] == ch && !p[2])
+			length = atoi(++p);
+		else
+			length = atoi(argv[optind] + 1);
+		break;
+	}
+}
+.fi

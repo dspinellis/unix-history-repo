@@ -1,0 +1,413 @@
+.\" Copyright (c) 1986 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)jove.3	6.2 (Berkeley) %G%
+.\"
+.NH 1
+Directory Handling
+.XS \n(PN
+\*(SN Directory Handling
+.XE
+.LP
+To save having to use absolute pathnames when you want to edit a nearby file
+\s-2JOVE\s0 allows you to move around the
+.UX
+filesystem just as the c-shell does.
+These commands are:
+.IP "cd dir" 15n
+Change to the specified directory.
+.IP "pushd [dir]"
+Like \fIcd\fP, but save the old directory on the directory stack.
+With no directory argument, simply exchange the top two directories
+on the stack and \fIcd\fP to the new top.
+.IP "popd"
+Take the current directory off the stack and \fIcd\fP to the directory now
+at the top.
+.IP "dirs"
+Display the contents of the directory stack.
+.LP
+The names and behavior of these commands were chosen to mimic those in the c-shell.
+.NH 1
+Editing C Programs
+.XS \n(PN
+\*(SN Editing C Programs
+.XE
+.LP
+This section details the support provided by \s-2JOVE\s0
+for working on C programs.
+.NH 2
+Indentation Commands
+.XS \n(PN 5n
+\*(SN Indentation Commands
+.XE
+.LP
+To save having to lay out C programs "by hand", \s-2JOVE\s0
+has an idea of the correct indentation of a line,
+based on the surrounding context.
+When you are in C Mode, \s-2JOVE\s0 treats tabs specially \(em
+typing a tab at the beginning of a new line means "indent to
+the right place".
+Closing braces are also handled specially, and are indented
+to match the corresponding open brace.
+.NH 2
+Parenthesis and Brace Matching
+.XS \n(PN 5n
+\*(SN Parenthesis and Brace Matching
+.XE
+.LP
+To check that parentheses and braces match the way you think they do,
+turn on \fIShow Match\fP mode (ESC X show-match-mode).  Then, whenever
+you type a close brace or parenthesis, the cursor moves momentarily to
+the matching opener, if it's currently visible.  If it's not visible,
+\s-2JOVE\s0 displays the line containing the matching opener on the message
+line.
+.NH 2
+C Tags
+.XS \n(PN 5n
+\*(SN C Tags
+.XE
+.LP
+Often when you are editing a C program,
+especially someone else's code,
+you see a function call and wonder what that function does.
+You then search for the function within the current file and if you're
+lucky find
+the definition, finally returning to the original spot when you are done.
+However, if are unlucky, the function turns out to be external
+(defined in another file) and
+you have to suspend the edit,
+\fIgrep\fP for the function name in every .c that might contain it,
+and finally visit the appropriate file.
+.LP
+To avoid this diversion or the need to remember which
+function is defined in which file,
+Berkeley 
+.UX
+has a program called \fIctags(1)\fP, which
+takes a set of source files and looks for function
+definitions, producing a file called \fItags\fP as its output.
+.LP
+\s-2JOVE\s0 has a command called C-X T (\fIfind-tag\fP)
+that prompts you for the name of a function (a \fItag\fP), looks up
+the tag reference in the previously constructed tags file, 
+then visits the file containing that tag in a new buffer,
+with point positioned at the definition of the function.
+There is another version of this command, namely \fIfind-tag-at-point\fP,
+that uses the identifier at 
+.I point.
+.LP
+So, when you've added new functions to a module, or moved some old
+ones around, run the \fIctags\fP program to regenerate the \fItags\fP file.
+\s-2JOVE\s0 looks in the file specified in the \fItag-file\fP variable.  The
+default is "./tags", that is, the tag file in the current directory.  If you
+wish to use an alternate tag file, you use C-U\ C-X\ T, and \s-2JOVE\s0 will
+prompt for a file name.  If you find yourself specifying the same file again
+and again, you can set \fItag-file\fP to that file, and run
+\fIfind-tag\fP with no numeric argument.
+.LP
+To begin an editing session looking for a particular tag, use
+the \fI\-t tag\fP command line option to \s-2JOVE\s0.
+For example, say you wanted to look at the file containing the tag
+\fISkipChar\fP, you would invoke \s-2JOVE\s0 as:
+.DS I
+.I
+% jove \-t SkipChar
+.R
+.DE
+.NH 2
+Compiling Your Program
+.XS \n(PN 5n
+\*(SN Compiling Your Program
+.XE
+.LP
+You've typed in a program or altered an existing one and now you
+want to run it through the compiler to check for errors.
+To save having to suspend the edit,
+run the compiler,
+scribble down error messages, and then resume the edit,
+\s-2JOVE\s0 allows you to compile your code while in the editor.
+This is done with the C-X C-E (\fIcompile-it\fP) command.
+If you run \fIcompile-it\fP with no argument
+it runs the
+.UX
+\fImake\fP
+program into a buffer;
+If you need a special command or want to pass arguments to \fImake\fP,
+run \fIcompile-it\fP with any argument (C-U is good enough) and you
+will be prompted for the command to execute.
+.LP
+If any error messages are produced, they are treated specially by \s-2JOVE\s0.
+That treatment is the subject of the next section.
+.NH 2
+Error Message Parsing and Spelling Checking
+.XS \n(PN
+\*(SN Error Message Parsing
+\*(SN Spelling Checking
+.XE
+.LP
+\s-2JOVE\s0 knows how to interpret the error messages from many
+.UX
+commands;
+In particular,
+the messages from \fIcc\fP,
+\fIgrep\fP and \fIlint\fP can be understood.
+After running the \fIcompile-it\fP command,
+the \fIparse-errors\fP command is automatically executed,
+and any errors found are displayed in a new buffer.
+The files whose names are found in parsing the error messages are each
+brought into \s-2JOVE\s0 buffers and the point is positioned at the first error
+in the first file.
+The commands \fIcurrent-error\fP, C-X C-N (\fInext-error\fP), and
+C-X C-P (\fIprevious-error\fP)
+can be used to traverse the list of errors.
+.LP
+If you already have a file called
+\fIerrs\fP containing, say, c compiler messages then you can get \s-2JOVE\s0 to interpret the messages by
+invoking it as:
+.DS I
+.I
+% jove \-p errs
+.R
+.DE
+.LP
+\s-2JOVE\s0 has a special mechanism for checking the the spelling of a document;
+It runs the
+.UX
+spell program into a buffer.
+You then delete from this buffer all those words that are not spelling
+errors and then \s-2JOVE\s0 runs the \fIparse-spelling-errors\fP command to
+yield a list of errors just as in the last section.
+.NH 1
+Simple Customization
+.XS \n(PN
+\*(SN Simple Customization
+.XE
+.LP
+.NH 2
+Major Modes
+.XS \n(PN 5n
+\*(SN Major Modes
+.XE
+.LP
+To help with editing particular types of file, say a paper or a C program,
+\s-2JOVE\s0 has several \fImajor modes\fP.
+These are as follows:
+.NH 3
+Text mode
+.XS \n(PN 10n
+\*(SN Text mode
+.XE
+.LP
+This is the default major mode.  Nothing special is done.
+.NH 3
+C mode
+.XS \n(PN 10n
+\*(SN C mode
+.XE
+.LP
+This mode affects the behavior of the tab and parentheses characters.
+Instead of just inserting the tab, \s-2JOVE\s0 determines
+where the text "ought" to line up for the C language and tabs to that position
+instead.  The same thing happens with the close brace and close parenthesis;
+they are tabbed to the "right" place and then inserted.
+Using the \fIauto-execute-command\fP command, you can make \s-2JOVE\s0 enter
+\fIC Mode\fP whenever you edit a file whose name ends in \fI.c\fP.
+.NH 3
+Lisp mode
+.XS \n(PN 10n
+\*(SN Lisp mode
+.XE
+.LP
+This mode is analogous to \fIC Mode\fP,
+but performs the indentation needed to lay out Lisp programs properly.
+Note also the \fIgrind-s-expr\fP command that prettyprints an
+\fIs-expression\fP and the \fIkill-mode-expression\fP command.
+.NH 2
+Minor Modes
+.XS \n(PN 5n
+\*(SN Minor Modes
+.XE
+.LP
+In addition to the major modes,
+\s-2JOVE\s0 has a set of minor modes.
+These are as follows:
+.NH 3
+Auto Indent
+.XS \n(PN 10n
+\*(SN Auto Indent
+.XE
+.LP
+In this mode,
+\s-2JOVE\s0 indents each line the same way as that above it.  That is,
+the Return key in this mode acts as the Linefeed key ordinarily does.
+.NH 3
+Show Match
+.XS \n(PN 10n
+\*(SN Show Match
+.XE
+.LP
+Move the cursor momentarily to the matching opening parenthesis when a closing
+parenthesis is typed.
+.NH 3
+Auto Fill
+.XS \n(PN 10n
+\*(SN Auto Fill
+.XE
+.LP
+In \fIAuto Fill\fP mode,
+a newline is automatically inserted when the line length
+exceeds the right margin.
+This way,
+you can type a whole paper without having to use the Return key.
+.NH 3
+Over Write
+.XS \n(PN 10n
+\*(SN Over Write
+.XE
+.LP
+In this mode,
+any text typed in will replace the previous contents.
+(The default is for new text to be inserted and "push" the old along.)
+This is useful for editing an already-formatted diagram in which you
+want to change some things without moving other things around on the
+screen.
+.NH 3
+Word Abbrev
+.XS \n(PN 10n
+\*(SN Word Abbrev
+.XE
+.LP
+In this mode, every word you type is compared to a list of word
+abbreviations; whenever you type an abbreviation, it is replaced
+by the text that it abbreviates.
+This can save typing if a particular word or phrase must be entered
+many times.
+The abbreviations and their expansions are held in a file that looks like:
+.DS I
+abbrev:phrase
+.DE
+This file can be set up in your \fI~/.\|joverc\fP with the \fIread-word-abbrev-file\fP command.
+Then, whenever you are editing a buffer in \fIWord Abbrev\fP mode,
+\s-2JOVE\s0 checks for the abbreviations you've given.
+See also the commands
+\fIread-word-abbrev-file\fP,
+\fIwrite-word-abbrev-file\fP,
+\fIedit-word-abbrevs\fP,
+\fIdefine-global-word-abbrev\fP,
+\fIdefine-mode-word-abbrev\fP,
+and \fIbind-macro-to-word-abbrev\fP,
+and the variable \fIauto-case-abbrev\fP.
+.NH 2
+Variables
+.XS \n(PN 5n
+\*(SN Variables
+.XE
+.LP
+\s-2JOVE\s0 can be tailored to suit your needs by changing the
+values of variables.
+A \s-2JOVE\s0 variable can be given a value with the \fIset\fP command,
+and its value displayed with the \fIprint\fP command.
+.LP
+The variables \s-2JOVE\s0 understands are listed along with the commands
+in the alphabetical list at the end of this document.
+.NH 2
+Key Re-binding
+.XS \n(PN 5n
+\*(SN Key Re-binding
+.XE
+.LP
+Many of the commands built into \s-2JOVE\s0 are not bound to
+specific keys.
+The command handler in
+\s-2JOVE\s0 is used to invoke these commands and is activated
+by the \fIexecute-extended-command\fP command (ESC X).
+When the name of a command typed in is unambiguous,
+that command will be executed.
+Since it is very slow to have
+to type in the name of each command every time it is needed,
+\s-2JOVE\s0 makes it possible to \fIbind\fP commands to keys.
+When a command is
+\fIbound\fP to a key any future hits on that key will invoke that command.
+All the printing characters are initially bound to the
+command \fIself-insert\fP.
+Thus, typing any printing character causes it to be inserted into the text.
+Any of the existing commands can be bound to any key.
+(A \fIkey\fP may actually be a \fIcontrol character\fP
+or an \fIescape sequence\fP as explained previously under
+\fICommand Input Conventions\fP).
+.LP
+Since there are more commands than there are keys,
+two keys are treated as \fIprefix\fP commands.
+When a key bound to one of the prefix commands is typed,
+the next character
+typed is interpreted on the basis that it was preceded by one of the
+prefix keys.
+Initially ^X and ESC are the prefix keys and
+many of the built in commands are initially bound to these "two stroke" keys.
+(For historical reasons, the Escape key is often referred to as "Meta").
+.NH 2
+Keyboard Macros
+.XS \n(PN 5n
+\*(SN Keyboard Macros
+.XE
+.LP
+Although \s-2JOVE\s0 has many powerful commands,
+you often find that you have a task that no individual command can do.
+\s-2JOVE\s0 allows you to define your own commands from sequences
+of existing ones "by example";
+Such a sequence is termed a \fImacro\fP.
+The procedure is as follows:
+First you type the \fIstart-remembering\fP command,
+usually bound to C-X (.
+Next you "perform" the commands which as they are being executed are
+also 
+remembered, which will constitute the body of the macro.
+Then you give the \fIstop-remembering\fP command, usually bound to
+C-X ).
+You now have a \fIkeyboard macro\fP.
+To run this command sequence again,
+use the command \fIexecute-keyboard-macro\fP, usually bound to
+C-X E.
+You may find this bothersome to type and re-type,
+so there is a way to bind the macro to a key.
+First,
+you must give the keyboard macro a name using the
+\fIname-keyboard-macro\fP command.
+Then the binding is made with the \fIbind-macro-to-key\fP command.
+We're still not finished because all this hard work will be lost
+if you leave \s-2JOVE\s0.
+What you do is to save your macros into a file
+with the \fIwrite-macros-to-file\fP command.
+There is a corresponding \fIread-macros-from-file\fP command to retrieve
+your macros in the next editing session.
+.NH 2
+Initialization Files
+.XS \n(PN 5n
+\*(SN Initialization Files
+.XE
+.LP
+Users will likely want to modify the default key bindings to their liking.
+Since it would be quite annoying to have to set up the bindings
+each time \s-2JOVE\s0 is started up,
+\s-2JOVE\s0 has the ability to read in a "startup" file.
+Whenever \s-2JOVE\s0 is started,
+it reads commands from the file \fI.\|joverc\fP in the user's home directory.
+These commands are read as
+if they were typed to the command handler (ESC X) during an edit.
+There can be only one command per line in the startup file.
+If there is a file \fI/usr/lib/jove/joverc\fP,
+then this file will be read before the user's
+.I .\|joverc
+file.
+This can be used to set up a system-wide default startup mode for
+\s-2JOVE\s0
+that is tailored to the needs of that system.
+.LP
+The \fIsource\fP command can be used to read commands from a specified file
+at any time during an editing session,
+even from inside the \fI.\|joverc\fP file.
+This means that a macro can be used to change the key bindings,
+e.g., to enter a mode,
+by reading from a specified file which contains all the necessary bindings.

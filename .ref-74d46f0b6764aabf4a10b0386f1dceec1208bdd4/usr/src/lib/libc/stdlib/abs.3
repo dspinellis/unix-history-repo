@@ -1,0 +1,31 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)abs.3	6.2 (Berkeley) %G%
+.\"
+.TH ABS 3 ""
+.UC 7
+.SH NAME
+abs \- return the absolute value of an integer
+.SH SYNOPSIS
+.nf
+.ft B
+#include <stdlib.h>
+
+int
+abs(int j);
+.ft R
+.fi
+.SH DESCRIPTION
+.B Abs
+returns the absolute value of the integer
+.IR n .
+.SH SEE ALSO
+floor(3), labs(3)
+.SH STANDARDS
+.B Abs
+conforms to ANSI X3.159-1989 (``ANSI C'').
+.SH BUGS
+The absolute value of the most negative integer remains negative.

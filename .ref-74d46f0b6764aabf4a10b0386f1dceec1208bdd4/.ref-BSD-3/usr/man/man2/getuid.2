@@ -1,0 +1,40 @@
+.TH GETUID 2 
+.SH NAME
+getuid, getgid, geteuid, getegid \- get user and group identity
+.SH SYNOPSIS
+.B getuid( )
+.PP
+.B geteuid( )
+.PP
+.B getgid( )
+.PP
+.B getegid( )
+.SH DESCRIPTION
+.I Getuid
+returns the real user ID of the current process,
+.I geteuid
+the effective user ID.
+The real user ID identifies the person who is logged in,
+in contradistinction to the effective user ID, which
+determines his access permission at the moment.
+It is thus useful to programs which operate using
+the `set user ID' mode, to find out who invoked them.
+.PP
+.I Getgid
+returns the real group ID,
+.I getegid
+the effective group ID.
+.SH "SEE ALSO"
+setuid(2)
+.SH "ASSEMBLER (PDP-11)"
+(getuid = 24.)
+.br
+.B sys getuid
+.br
+(real user ID in r0, effective user ID in r1)
+.PP
+(getgid = 47.)
+.br
+.B sys getgid
+.br
+(real group ID in r0, effective group ID in r1)

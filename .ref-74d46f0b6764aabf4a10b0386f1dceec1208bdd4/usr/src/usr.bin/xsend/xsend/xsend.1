@@ -1,0 +1,46 @@
+.\"	@(#)xsend.1	6.2 (Berkeley) %G%
+.\"
+.TH XSEND 1 ""
+.AT 3
+.SH NAME
+xsend, xget, enroll \- secret mail
+.SH SYNOPSIS
+.B xsend
+person
+.br
+.B xget
+.br
+.B enroll
+.SH DESCRIPTION
+These commands implement a secure communication
+channel;
+it is like
+.IR mail (1),
+but no one can read the messages except the intended recipient.
+The method embodies a public-key cryptosystem using knapsacks.
+.PP
+To receive messages, use
+.IR enroll ;
+it asks you for a password that you must subsequently quote
+in order to receive secret mail.
+.PP
+To receive secret mail,
+use
+.IR xget .
+It asks for your password, then gives you the messages.
+.PP
+To send secret mail, use
+.IR xsend
+in the same manner as the ordinary mail command.
+(However, it will accept only one target).
+A message announcing the receipt of secret mail is also sent
+by ordinary mail.
+.SH FILES
+/usr/spool/secretmail/*.key: keys
+.br
+/usr/spool/secretmail/*.[0-9]: messages
+.SH SEE ALSO
+mail (1)
+.SH BUGS
+It should be integrated with ordinary mail.
+The announcement of secret mail makes traffic analysis possible.

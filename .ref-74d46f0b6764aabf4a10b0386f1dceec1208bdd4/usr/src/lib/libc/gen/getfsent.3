@@ -1,0 +1,94 @@
+.\" Copyright (c) 1983 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)getfsent.3	6.8 (Berkeley) %G%
+.\"
+.TH GETFSENT 3  ""
+.UC 4
+.SH NAME
+getfsent, getfsspec, getfsfile, setfsent, endfsent \- get file system descriptor file entry
+.SH SYNOPSIS
+.nf
+.B #include <fstab.h>
+.PP
+.B struct fstab *getfsent()
+.PP
+.B struct fstab *getfsspec(spec)
+.B char *spec;
+.PP
+.B struct fstab *getfsfile(file)
+.B char *file;
+.PP
+.B int setfsent()
+.PP
+.B void endfsent()
+.fi
+.SH DESCRIPTION
+.IR Getfsent ,
+.IR getfsspec ,
+and
+.I getfsfile
+each return a pointer to an object with the following structure
+containing the broken-out fields of a line in the file system
+description file,
+.IR < fstab.h >.
+.RS
+.PP
+.nf
+.ta \w'#define 'u +\w'char\ \ 'u +\w'*fs_vfstype;\ \ 'u
+struct fstab {
+	char	*fs_spec;	/* block special device name */
+	char	*fs_file;	/* file system path prefix */
+	char	*fs_vfstype;	/* type of file system */
+	char	*fs_mntops;	/* comma separated mount options */
+	char	*fs_type;	/* rw, ro, sw, or xx */
+	int	fs_freq;	/* dump frequency, in days */
+	int	fs_passno;	/* pass number on parallel dump */
+};
+.ft R
+.ad
+.fi
+.RE
+.PP
+The fields have meanings described in
+.IR fstab (5).
+.PP
+.I Setfsent
+opens the file (closing any previously opened file) or rewinds it
+if it is already open.
+.PP
+.I Endfsent
+closes the file.
+.PP
+.I Getfsspec
+and
+.I getfsfile
+search the entire file (opening it if necessary) for a matching special
+file name or file system file name.
+.PP
+For programs wishing to read the entire database,
+.I getfsent
+reads the next entry (opening the file if necessary).
+.PP
+All entries in the file with a type field equivalent to
+.I FSTAB_XX
+are ignored.
+.SH FILES
+/etc/fstab
+.SH "SEE ALSO"
+fstab(5)
+.SH DIAGNOSTICS
+.IR Getfsent ,
+.IR getfsspec ,
+and
+.I getfsfile
+return a null pointer (0) on EOF or error.
+.I Setfsent
+returns 0 on failure, 1 on success.
+.I Endfsent
+returns nothing.
+.SH BUGS
+All information is contained in a static area so it must be copied if it is
+to be saved.

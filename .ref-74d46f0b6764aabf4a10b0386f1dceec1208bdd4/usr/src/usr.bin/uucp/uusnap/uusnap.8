@@ -1,0 +1,54 @@
+.\" Copyright (c) 1983, 1991 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)uusnap.8	6.4 (Berkeley) %G%
+.\"
+.Dd 
+.Dt UUSNAP 8
+.Os BSD 4.2
+.Sh NAME
+.Nm uusnap
+.Nd show snapshot of the
+.Tn UUCP
+system
+.Sh SYNOPSIS
+.Nm uusnap
+.Sh DESCRIPTION
+.Nm Uusnap
+displays in tabular format a synopsis of the current
+.Tn UUCP
+situation.  The format of each line is as follows:
+.Bd -literal -offset indent -compact
+
+site   N Cmds   N Data   N Xqts   Message
+
+.Ed
+Where "site" is the name of the site with work, "N" is a count of
+each of the three possible types of work (command, data, or remote execute),
+and "Message" is the current status message for that
+site as found in the
+.Tn STST
+file.
+.Pp
+Included in "Message" may be the time left before
+.Tn UUCP
+can re-try the
+call, and the count of the number of times that
+.Tn UUCP
+has tried
+(unsuccessfully) to reach the site.
+.Sh SEE ALSO
+.Xr uucp 1 ,
+.Xr uux 1 ,
+.Xr uuq 1 ,
+.Xr uucico 8
+.Rs
+.%T "UUCP Implementation Guide"
+.Re
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 4.2 .

@@ -1,0 +1,34 @@
+#print
+The "cat" command prints the contents of one or more files.
+In fact, it is named "cat" as an abbreviation
+for "concatenate".  To print the files named "dog"
+and "mouse" in succession, you could type either
+  cat dog
+  cat mouse
+or just
+  cat dog mouse
+If you print them with one command,
+the contents are printed in sequence with nothing
+between them.
+
+How many lines are there in all the files
+whose names begin with "b"?  Find out, then type
+"answer N" where N is the total number of lines.
+#create ben
+the file ben has
+a total of three
+short lines.
+#create bernie
+this file has
+two lines.
+#create bruce
+only one line here.
+#copyin
+#user
+#uncopyin
+#match 6
+#log
+#next
+4.1a  10
+4.2a    5
+4.3a    2

@@ -1,0 +1,29 @@
+.TH IUL 1 2/24/79
+.UC
+.SH NAME
+iul \- indicate underlining
+.SH SYNOPSIS
+.B iul
+[
+file ...
+]
+.SH DESCRIPTION
+This filter
+breaks underlining onto separate lines as dashing with `\-'.
+It is useful when you want to look at the underlining which is present
+in an
+.I nroff
+output stream on a soft-copy terminal.
+A typical usage of
+.I iul
+would be
+.DT
+.PP
+	nroff \-ms pcxin1.n | iul
+.SH SEE\ ALSO
+colcrt(1), ul(1)
+.SH AUTHOR
+William Joy
+.SH BUGS
+Should be made part of
+.IR ul (1);

@@ -1,0 +1,45 @@
+.\" Copyright (c) 1979 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)fig1.1.n	5.2 (Berkeley) %G%
+.\"
+.KF
+.TS
+center;
+c l
+l l
+_ l
+| l |
+| cw(18) | aw(28)
+| _ | l
+| c | a.
+Base of stack frame
+
+
+
+Block mark	Positive offsets
+.sp
+	\(<- Display entry points here
+.sp
+Local
+variables
+.sp
+_	Negative offsets
+Temporary
+expression
+space
+.sp
+.T&
+| _ | l
+c l.
+
+.sp
+Top of stack frame
+.TE
+.sp
+.ce
+Figure 1.1 \- Structure of stack frame
+.sp
+.KE

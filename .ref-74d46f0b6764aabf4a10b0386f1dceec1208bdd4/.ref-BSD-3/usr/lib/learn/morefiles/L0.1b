@@ -1,0 +1,35 @@
+#print
+The first line, that says "total N", is a measure of how much
+file space is being used by the files in this directory.
+The part of the listing that says something like
+"-rw-rw-r--" gives the read and write
+permissions for the file -- in effect,
+who can do what to it.
+The second field is the number of "links" to the file.
+We won't worry about these two right now.
+
+The name in the third field is the owner of the file.
+The fourth field is the size of the file in characters,
+which is often interesting.  The rest of the listing
+is the date and time the file was last changed, and
+its name.
+
+What is the smallest file in this directory?
+(Don't use the previous list - I've changed things.)
+Type "answer name", where "name" is the name of the
+smallest file.
+#create kseq
+stuff
+#create jseq
+morestf
+#create X1
+morestuf
+#create X2
+moremore
+#copyin
+#user
+#uncopyin
+#match .copy
+#log
+#next
+0.1c 10

@@ -1,0 +1,163 @@
+.\" Copyright (c) 1988 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)Cover.infopacket	5.2 (Berkeley) %G%
+.\"
+.so ../admin.4.3/HEADERS
+.NH
+.LP
+.rs
+.sp .75i
+.tl '''Jan 1, 1989'
+.LP
+Dear Colleague:
+.PP
+
+We are happy to send you information about our first release of the
+BSD networking software.
+This software is copyright Berkeley, and may be freely redistributed.
+It is available to anyone and requires no previous license, either from
+AT&T or The Regents of the University of California.
+.PP
+This packet is designed to serve two purposes.
+The first purpose is to acquaint you with the details of our distribution
+so you can decide whether or not you would like to receive it.
+The second purpose is to tell you how to obtain our distribution.
+.SH
+What is the networking software?
+.PP
+The distribution consists of one 1600 bpi magnetic tape, containing
+source code and manual pages for most of the networking software
+found in the standard 4BSD distribution.
+Included are the standard user level applications, kernel support
+and some C library support.
+An attachment to this letter lists most of the files that will be
+part of this distribution.
+.SH
+What support is available for this software?
+.PP
+It should be noted that this software has only been tested for compilation
+and operation on the 4.3BSD-tahoe Berkeley distributions.
+Only very limited support will be provided by our group. In particular,
+we cannot provide assistance with installation of this software on
+other systems.
+We are, however, interested in any fixes that you find it necessary to
+apply.
+.SH
+How to obtain this software
+.PP
+Before the distribution can be sent, we require:
+.IP \(bu
+Execution of the attached Berkeley License Agreement.
+.IP \(bu
+A check from a U.S. bank for $400.00 US, payable to
+``The Regents of the University of California.''
+If you must issue a Purchase Order, please issue one that is blank-backed.
+If this is not possible, insert and initial in the body of the Purchase
+Order the following clause: ``The terms and conditions of this Purchase
+Order are not accepted by The Regents of the University of California.
+The Berkeley License Agreement governs.''
+Because we are a research and development organization and not a commercial
+organization, this fee covers only our distribution costs.
+.IP \(bu
+The attached Site Information Form  and Checklist for Hardware/Software completely filled out and dated.
+Your copy of the signed Berkeley License Agreement will be sent to the
+person listed as the administrative contact.
+The distribution itself will be sent to the technical contact.
+The site information is kept confidential and is for our use in identifying
+sites with specific configurations.
+Please note that we cannot ship to post office boxes; therefore, please
+have the technical contact's address supplied without use of a post office
+box.
+.bp
+.PP
+All the above material must be sent to:
+.DS
+Pauline Schwartz, Distribution Coordinator
+Computer Systems Research Group
+Computer Science Division, EECS
+University of California
+Berkeley, California 94720
+.DE
+Once these three items have been received and are in proper order, the
+distribution will be sent to the technical address indicated on the
+Site Information Form.
+We cannot provide delivery dates.
+Once the material is assembled and packaged, the distribution is shipped
+by commercial carrier.
+Order of shipment will be based on time of arrival of the properly
+completed paperwork.
+Because of the differential in costs of shipping outside the United States,
+we ask that organizations beyond the North American continent pay
+the collect shipping charges.
+.PP
+The most expedient way to insure that your full distribution is sent as
+quickly as possible is to include, in a single package, two copies of the
+completed and properly signed Berkeley License Agreement (\fBwithout
+modification\fR), the check properly made out to ``The Regents of the
+University of California,'' and a completely filled out Site Information
+Form and Checklist for Hardware/Software, and to send this single package to 
+the address noted above.
+.PP
+Please note that if you modify the Berkeley License Agreement, you may
+experience a delay of three months or more before receiving an acceptance
+or denial of the changes.  We reserve the right to cancel your application
+if we have not received the requested paperwork within 60 days from the date
+of our request. 
+.SH
+Special Cases
+.PP
+\fBUniversity of California Sites\fR.
+If you are a part of the University of California,
+\fByou must send 
+the following items to the Computer Systems Research Group:\fR
+1) a letter signed by the Director or Head of Department requesting
+this distribution and stating that you have read and understood the Berkeley
+License Agreement and that your organization will abide by it, 2)
+an IOC for $400.00, and 3) a Site Information Form and Checklist for
+Hardware/Software.
+.PP
+\fBDARPA Sites\fR.
+The research on which the Berkeley Software Distributions are based is
+sponsored by DARPA (Defense Advanced Research Projects Agency).  Provision
+has been made for prepayment of distribution costs for a few designated
+DARPA sites.  In place of the check for $400.00, you should include a
+letter from your Program Manager stating that you are designated as such
+a site.  However, you \fBmust\fR comply with all other requirements in
+applying for the distribution.
+.SH
+A Special Note 
+.PP
+The procedures and rules set out in this document are University constraints
+which must be followed in order for the distribution of software to be
+possible.
+The Computer Systems Research Group has no control over these constraints
+and must reject your application if material submitted is not in order.
+.SH
+If You Have Read Everything and Still Need Help
+.PP
+If you have questions about the licensing process after reading this letter,
+you may call Pauline Schwartz at 415-642-7780, write to her, or contact her
+via electronic mail at bsd-dist@ucbvax.berkeley.edu. or uunet!ucbvax!bsd-dist.
+She will not be able to answer technical questions.
+.sp 2
+.ti +2.5i
+Sincerely yours,
+.sp 3
+.ti +2.5i
+Professor Domenico Ferrari 
+.br
+.ti +2.5i
+Computer Systems Research Group

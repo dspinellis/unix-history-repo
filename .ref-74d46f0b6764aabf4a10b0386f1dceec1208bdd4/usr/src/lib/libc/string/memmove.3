@@ -1,0 +1,40 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)memmove.3	5.2 (Berkeley) %G%
+.\"
+.TH MEMMOVE 3 ""
+.UC 7
+.SH NAME
+memmove \- copy byte string
+.SH SYNOPSIS
+.nf
+.ft B
+#include <string.h>
+
+void *
+memmove(void *dst, const void *src, size_t len);
+.ft R
+.fi
+.SH DESCRIPTION
+.B Memmove
+copies
+.I len
+bytes from string
+.I src
+to string
+.I dst
+and returns the original value of
+.IR dst .
+The two strings may overlap;
+the copy is always done in a non-destructive manner.
+.SH SEE ALSO
+bcopy(3), memccpy(3), memcpy(3), strcpy(3)
+.SH STANDARDS
+.IR Memmove
+conforms to ANSI X3.159-1989 (``ANSI C'').

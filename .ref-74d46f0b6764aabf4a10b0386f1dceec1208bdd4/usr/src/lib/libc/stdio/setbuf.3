@@ -1,0 +1,129 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)setbuf.3	6.7 (Berkeley) %G%
+.\"
+.TH SETBUF 3
+.UC 4
+.SH NAME
+setbuf, setbuffer, setlinebuf, setvbuf \- assign buffering to a stream
+.SH SYNOPSIS
+.nf
+.ft B
+#include <stdio.h>
+
+int
+setbuf(FILE *stream, char *buf);
+
+int
+setbuffer(FILE *stream, char *buf, size_t size);
+
+int
+setlinebuf(FILE *stream);
+
+int
+setvbuf(FILE *stream, char *buf, int mode, size_t size);
+.ft R
+.fi
+.SH DESCRIPTION
+The three types of buffering available are unbuffered, block buffered,
+and line buffered.
+When an output stream is unbuffered, information appears on the
+destination file or terminal as soon as written;
+when it is block buffered many characters are saved up and written as a block;
+when it is line buffered characters are saved up until a newline is
+output or input is read from any stream attached to a terminal device
+(typically stdin).
+.I Fflush
+(see 
+.IR fclose (3))
+may be used to force the block out early.
+Normally all files are block buffered.
+A buffer is obtained from
+.IR malloc (3)
+upon the first read or write operation on the file.
+If a stream refers to a terminal
+(as
+.B stdout
+normally does) it is line buffered.
+The standard stream
+.B stderr
+is always unbuffered.
+.PP
+.I Setvbuf
+may be used at any time on any open stream
+to change its buffer.
+The
+.I mode
+parameter must be one of the following three macros:
+.RS
+.TP 8
+.B _IONBF
+unbuffered
+.br
+.ns
+.TP 8
+.B _IOLBF
+line buffered
+.br
+.ns
+.TP 8
+.B _IOFBF
+fully buffered
+.RE
+.LP
+Except for unbuffered files, the 
+.I buf
+argument should point to a buffer at least
+.I size
+bytes long;
+this buffer will be used instead of the current buffer.
+If
+.I buf
+is NULL,
+only the mode is affected;
+a new buffer will be allocated on the next read or write operation.
+.I Setvbuf
+may be used at any time,
+but can only change the mode of a stream
+when it is not ``active'':
+that is, before any I/O,
+or immediately after a call to
+.IR fflush .
+.PP
+The other three calls are, in effect, simply aliases
+for calls to
+.IR setvbuf .
+.I Setbuf
+is exactly equivalent to the call
+.sp
+.ti +0.5i
+setvbuf(stream, buf, buf ? _IOFBF : _IONBF, BUFSIZ);
+.sp
+.I Setbuffer
+is the same, except that the size of the buffer is up to the caller,
+rather than being determined by the manifest constant
+.SM
+.BR BUFSIZ .
+.I Setlinebuf
+is exactly equivalent to the call
+.sp
+.ti +0.5i
+setvbuf(stream, (char *)NULL, _IOLBF, 0);
+.SH "SEE ALSO"
+fopen(3), fclose(3), fread(3), malloc(3), puts(3), printf(3)
+.SH STANDARDS
+.I Setbuf  
+and
+.I setvbuf
+conform to ANSI X3.159-1989 (``ANSI C'').
+.SH BUGS
+The
+.I setbuffer
+and
+.I setlinebuf
+functions are not portable to versions of BSD UNIX before 4.2BSD.
+On 4.2BSD and 4.3BSD systems,
+.I setbuf
+always uses a suboptimal buffer size and should be avoided.

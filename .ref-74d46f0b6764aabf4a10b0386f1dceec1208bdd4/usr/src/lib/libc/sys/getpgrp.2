@@ -1,0 +1,51 @@
+.\" Copyright (c) 1983, 1991 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)getpgrp.2	6.4 (Berkeley) %G%
+.\"
+.Dd 
+.Dt GETPGRP 2
+.Os BSD 4.2
+.Sh NAME
+.Nm getpgrp
+.Nd get process group
+.Sh SYNOPSIS
+.Ft pid_t
+.Fn getpgrp "int pid"
+.Sh DESCRIPTION
+The process group of the specified process is returned by
+.Fn getpgrp .
+If
+.Fa pid
+is zero, the call applies to the current process.
+.Pp
+Process groups are used for distribution of signals, and
+by terminals to arbitrate requests for their input: processes
+that have the same process group as the terminal are foreground
+and may read, while others will block with a signal if they attempt
+to read.
+.Pp
+This call is thus used by programs such as
+.Xr csh 1
+to create
+process groups
+in implementing job control.
+The
+.Dv TIOCGPGRP
+and
+.Dv TIOCSPGRP
+calls
+described in
+.Xr termios 4
+are used to get/set the process group of the control terminal.
+.Sh SEE ALSO
+.Xr setpgrp 2 ,
+.Xr getuid 2 ,
+.Xr termios 4
+.Sh HISTORY
+The
+.Nm
+function call appeared in
+.Bx 4.0 .

@@ -1,0 +1,381 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)pstat.8	6.6 (Berkeley) %G%
+.\"
+.TH PSTAT 8 ""
+.UC 4
+.SH NAME
+pstat \- print system facts
+.SH SYNOPSIS
+.B pstat
+.B \-aixptufT
+[
+.B suboptions
+] [
+.B system
+] [
+.B corefile
+]
+.SH DESCRIPTION
+.I Pstat
+interprets the contents of certain system tables.
+If
+.I corefile
+is given, the tables are sought there, otherwise
+in
+.I /dev/kmem.
+The required namelist is taken from
+.I /vmunix
+unless 
+.I system
+is specified.
+Options are
+.TP \w'WCHAN\ 'u
+.B \-a
+Under
+.BR \-p ,
+describe all process slots rather than just active ones.
+.TP
+.B \-i
+Print the inode table with the these headings:
+.IP LOC
+The core location of this table entry.
+.PD 0
+.IP FLAGS
+Miscellaneous state variables encoded thus:
+.RS
+.IP L
+locked
+.IP U
+update time
+.RI ( fs (5))
+must be corrected
+.IP A
+access time must be corrected
+.IP W
+wanted by another process (L flag is on)
+.IP C
+changed time must be corrected
+.IP S
+shared lock applied
+.IP E
+exclusive lock applied
+.IP Z
+someone waiting for a lock
+.IP M
+contains modifications
+.IP R
+has a rename in progress
+.RE
+.IP CNT
+Number of open file table entries for this inode.
+.IP DEV
+Major and minor device number of file system in which
+this inode resides.
+.IP RDC
+Reference count of shared locks on the inode.
+.IP WRC
+Reference count of exclusive locks on the inode (this may
+be > 1 if, for example, a file descriptor is inherited across a fork).
+.IP INO
+I-number within the device.
+.IP MODE
+Mode bits, see
+.IR chmod (2).
+.IP NLK
+Number of links to this inode.
+.IP UID
+User ID of owner.
+.IP SIZ/DEV
+Number of bytes in an ordinary file, or
+major and minor device of special file.
+.PD
+.TP
+.B \-x
+Print the text table with these headings:
+.IP LOC
+The core location of this table entry.
+.PD 0
+.IP FLAGS
+Miscellaneous state variables encoded thus:
+.RS
+.IP T
+.IR ptrace (2)
+in effect
+.IP W
+text not yet written on swap device
+.IP L
+loading in progress
+.IP K
+locked
+.IP w
+wanted (L flag is on)
+.IP P
+resulted from demand-page-from-vnode exec format (see
+.IR execve (2))
+.RE
+.PD
+.IP DADDR
+Disk address in swap, measured in multiples of 512 bytes.
+.IP CADDR
+Head of a linked list of loaded processes using this text segment.
+.IP RSS
+Size of resident text, measured in multiples of 512 bytes.
+.IP SIZE
+Size of text segment, measured in multiples of 512 bytes.
+.IP VPTR
+Core location of corresponding vnode.
+.IP CNT
+Number of processes using this text segment.
+.IP CCNT
+Number of processes in core using this text segment.
+.IP FORW
+Forward link in free list.
+.IP BACK
+Backward link in free list.
+.PD
+.TP
+.B \-p
+Print process table for active processes with these headings:
+.IP LOC
+The core location of this table entry.
+.PD 0
+.IP S
+Run state encoded thus:
+.RS
+.IP 0
+no process
+.IP 1
+waiting for some event
+.IP 3
+runnable
+.IP 4
+being created
+.IP 5
+being terminated
+.IP 6
+stopped (by signal or  under trace)
+.RE
+.IP F
+Miscellaneous state variables, or'ed together (hexadecimal):
+.RS
+.IP 0001 9n
+loaded
+.IP 0002
+the scheduler process
+.IP 0004
+locked for swap out
+.IP 0008
+swapped out
+.IP 0010
+traced
+.IP 0020
+used in tracing
+.	\".IP 000040
+.	\"locked in by
+.	\".IR lock (2).
+.IP 0080
+in page-wait
+.IP 0100
+prevented from swapping during
+.IR fork (2)
+.IP 0200
+will restore old mask after taking signal
+.IP 0400
+exiting
+.IP 0800
+doing physical I/O (bio.c)
+.IP 1000
+process resulted from a
+.IR vfork (2)
+which is not yet complete
+.IP 2000
+another flag for
+.IR vfork (2)
+.IP 4000
+process has no virtual memory, as it is a parent in the context of
+.IR vfork (2)
+.IP 8000
+process is demand paging data pages from its text vnode.
+.IP 10000
+process using sequential VM patterns
+.IP 20000
+process using random VM patterns
+.IP 100000
+using old 4.1-compatible signal semantics
+.IP 200000
+process needs profiling tick
+.IP 400000
+process is scanning descriptors during select
+.IP 1000000
+process page tables have changed
+.RE
+.IP POIP
+number of pages currently being pushed out from this process.
+.IP PRI
+Scheduling priority, see
+.IR setpriority (2).
+.IP SIG
+Signals received (signals 1-32 coded in bits 0-31),
+.IP UID
+Real user ID.
+.IP SLP
+Amount of time process has been blocked.
+.IP TIM
+Time resident in seconds; times over 127 coded as 127.
+.IP CPU
+Weighted integral of CPU time, for scheduler.
+.IP NI
+Nice level,
+see
+.IR setpriority (2).
+.IP PID
+The process ID number.
+.IP PPID
+The process ID of parent process.
+.IP ADDR
+If in core, the page frame number of the first page of the `u-area' of
+the process.
+If swapped out, the position in the swap area
+measured in multiples of 512 bytes.
+.IP RSS
+Resident set size \- the number of physical page frames allocated
+to this process.
+.IP SRSS
+RSS at last swap (0 if never swapped).
+.IP SIZE
+Virtual size of process image (data+stack) in multiples of 512 bytes.
+.IP WCHAN
+Wait channel number of a waiting process.
+.IP LINK
+Link pointer in list of runnable processes.
+.IP TEXTP
+If text is pure, pointer to location of text table entry.
+.PD
+.TP
+.B \-t
+Print table for terminals
+with these headings:
+.IP RAW
+Number of characters in raw input queue.
+.PD 0
+.IP CAN
+Number of characters in canonicalized input queue.
+.IP OUT
+Number of characters in putput queue.
+.IP MODE
+See
+.IR tty (4).
+.IP ADDR
+Physical device address.
+.IP DEL
+Number of delimiters (newlines) in canonicalized input queue.
+.IP COL
+Calculated column position of terminal.
+.IP STATE
+Miscellaneous state variables encoded thus:
+.RS
+.IP T
+delay timeout in progress
+.IP W
+waiting for open to complete
+.IP O
+open
+.IP F
+outq has been flushed during DMA
+.IP C
+carrier is on
+.IP B
+busy doing output
+.IP A
+process is awaiting output
+.IP X
+open for exclusive use
+.IP S
+output stopped
+.IP H
+hangup on close
+.RE
+.IP PGRP
+Process group for which this is controlling terminal.
+.IP DISC
+Line discipline; blank is old tty OTTYDISC or ``new tty'' for NTTYDISC
+or ``net'' for NETLDISC (see
+.IR bk (4)).
+.PD
+.TP
+.B \-u
+print information about a user process;
+the next argument is its address as given
+by
+.IR ps (1).
+The process must be in main memory, or the file used can
+be a core image and the address 0.
+Only the fields located in the first page cluster can be located
+succesfully if the process is in main memory.
+.TP
+.B \-f
+Print the open file table with these headings:
+.IP LOC
+The core location of this table entry.
+.IP TYPE
+The type of object the file table entry points to.
+.PD 0
+.IP FLG
+Miscellaneous state variables encoded thus:
+.RS
+.IP R
+open for reading
+.IP W
+open for writing
+.IP A
+open for appending
+.IP S
+shared lock present
+.IP X
+exclusive lock present
+.IP I
+signal pgrp when data ready
+.RE
+.IP CNT
+Number of processes that know this open file.
+.IP MSG
+Number of messages outstanding for this file.
+.IP DATA
+The location of the vnode table entry or socket structure for this file.
+.IP OFFSET
+The file offset (see
+.IR lseek (2)).
+.PD
+.PP
+.B \-s
+print information about swap space usage: the number of (1k byte) pages used
+and free is given as well as the number of used pages which belong
+to text images.
+.PP
+.B \-T
+prints the number of used and free slots in the several system tables
+and is useful for checking to see how full system tables have become if the
+system is under heavy load.
+.SH FILES
+.ta \w'/dev/kmem  'u
+/vmunix	namelist
+.br
+/dev/kmem	default source of tables
+.SH SEE ALSO
+iostat(1),
+ps(1),
+systat(1),
+vmstat(1),
+stat(2),
+fs(5),
+.br
+K. Thompson,
+.I UNIX Implementation
+.SH BUGS
+It would be very useful if the system recorded \*(lqmaximum occupancy\*(rq
+on the tables reported by
+.B \-T;
+even more useful if these tables were dynamically allocated.

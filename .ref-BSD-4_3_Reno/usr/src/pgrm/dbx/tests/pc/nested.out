@@ -1,0 +1,17 @@
+reading symbolic information ...
+p.i p.nestedp.i nested.i
+p.j p.nestedp.j
+[1] stop at 18
+[1] stopped in nestedp at line 18
+   18   	j := i;
+p.k
+6 4 3 3 4 
+stopped in nestedp at line 19
+   19       end;
+stopped in p at line 24
+   24       i := j;
+3 6 3 
+
+execution completed
+6 
+

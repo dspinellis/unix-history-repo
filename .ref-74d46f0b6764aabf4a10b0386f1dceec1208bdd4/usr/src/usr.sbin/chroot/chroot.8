@@ -1,0 +1,54 @@
+.\" Copyright (c) 1988, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)chroot.8	5.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt CHROOT 8
+.Os BSD 4.3
+.Sh NAME
+.Nm chroot
+.Nd change root directory
+.Sh SYNOPSIS
+.Nm chroot
+.Ar newroot
+.Op Ar command
+.Sh DESCRIPTION
+The
+.Nm chroot
+command changes its root directory to the supplied directory
+.Ar newroot
+and exec's
+.Ar command ,
+if supplied, or an interactive copy of your shell.
+.Pp
+Note,
+.Ar command
+or the shell are run as your real-user-id.
+.Sh ENVIRONMENT
+The following environment variable is referenced by
+.Nm chroot :
+.Bl -tag -width SHELL
+.It Ev SHELL
+If set,
+the string specified by
+.Ev SHELL
+is interpreted as the name of
+the shell to exec.
+If the variable
+.Ev SHELL
+is not set,
+.Pa /bin/sh
+is used.
+.El
+.Sh SEE ALSO
+.Xr chdir 2 ,
+.Xr chroot 2 ,
+.Xr environ 7
+.Sh HISTORY
+The
+.Nm
+command
+.Ud

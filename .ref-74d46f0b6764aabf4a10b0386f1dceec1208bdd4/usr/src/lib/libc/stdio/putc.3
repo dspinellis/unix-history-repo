@@ -1,0 +1,83 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)putc.3	6.4 (Berkeley) %G%
+.\"
+.TH PUTC 3 ""
+.UC 7
+.SH NAME
+fputc, putc, putchar, putw \- put a character or word to a stream
+.SH SYNOPSIS
+.nf
+.ft B
+#include <stdio.h>
+
+int
+fputc(int c, FILE *stream);
+
+int
+putc(int c, FILE *stream);
+
+int
+putchar(int c);
+
+int
+putw(int w, FILE *stream);
+.ft R
+.fi
+.SH DESCRIPTION
+.I Fputc
+writes the character
+.I c
+(converted to an ``unsigned char'')
+to the specified output
+.IR stream .
+.PP
+.I Putc
+acts essentially identically to
+.IR fputc ,
+but is a macro that expands in-line.
+.PP
+.I Putchar
+is identical to
+.I putc
+with an output stream of
+.BR stdout .
+.PP
+.I Putw
+writes the specified
+.B int
+to the named output
+.IR stream .
+.SH "RETURN VALUE"
+These functions return the integer constant
+.SM
+.B EOF
+upon write error,
+or if an attempt is made to write a read-only stream.
+.I Putw
+returns 0 on success;
+the other functions return the character printed.
+.SH "SEE ALSO"
+ferror(3), fopen(3), getc(3), stdio(3)
+.SH BUGS
+The size and byte order of an
+.B int
+varies from one machine to another, and
+.I putw
+is not recommended for portable applications.
+.PP
+Because it is implemented as a macro,
+.I putc
+treats a
+.I stream
+argument with side effects incorrectly.
+In particular, ``putc(c, *f++);'' may not work sensibly
+(although ``putc(*cp++, f);''
+.I does
+work correctly).

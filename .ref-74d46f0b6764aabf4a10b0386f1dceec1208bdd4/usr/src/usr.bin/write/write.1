@@ -1,0 +1,83 @@
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Jef Poskanzer and Craig Leres of the Lawrence Berkeley Laboratory.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)write.1	6.3 (Berkeley) %G%
+.\"
+.TH WRITE 1 ""
+.UC 4
+.SH NAME
+write - send a message to another user
+.SH SYNOPSIS
+.B write user
+[
+.B ttyname
+]
+.ft R
+.SH DESCRIPTION
+.I Write
+allows you to communicate with other users, by copying lines from
+your terminal to theirs.
+.PP
+When you run the
+.I write
+command, the user you are writing to gets a message of the form:
+.sp
+.nf
+.ti +5
+Message from yourname@yourhost on yourtty at hh:mm ...
+.fi
+.sp
+Any further lines you enter will be copied to the specified user's
+terminal.
+If the other user wants to reply, they must run
+.I write
+as well.
+.PP
+When you are done, type an end-of-file or interrupt character.
+The other user will see the message ``EOF'' indicating that the
+conversation is over.
+.PP
+You can prevent people (other than the super-user) from writing to you
+with the
+.IR mesg (1)
+command.
+Some commands, for example
+.I nroff
+and
+.IR pr ,
+disallow writing automatically, so that your output isn't overwritten.
+.PP
+If the user you want to write to is logged in on more than one terminal,
+you can specify which terminal to write to by specifying the terminal
+name as the second operand to the
+.I write
+command.
+Alternatively, you can let
+.I write
+select one of the terminals \- it will pick the one with the shortest
+idle time.
+This is so that if the user is logged in at work and also dialed up from
+home, the message will go to the right place.
+.PP
+The traditional protocol for writing to someone is that the string ``-o'',
+either at the end of a line or on a line by itself, means that it's the
+other person's turn to talk.
+The string ``o-o'' means that the person believes the conversation to be
+over.
+.SH "SEE ALSO"
+mesg(1), talk(1), who(1)

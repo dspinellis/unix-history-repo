@@ -1,0 +1,61 @@
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)e0	6.2 (Berkeley) %G%
+.\"
+.EH 'USD:26-%''A System for Typesetting Mathematics'
+.OH 'A System for Typesetting Mathematics''USD:26-%'
+.nr PS 9
+.nr VS 11
+....ND "Revised  April, 1977"
+.EQ
+delim $$
+gsize 9
+.EN
+....TR 17
+.TL
+A System for Typesetting Mathematics
+.AU
+Brian W. Kernighan and Lorinda L. Cherry
+.AI
+.MH
+.AB
+.PP
+This paper describes the design and implementation
+of a system for typesetting mathematics.
+The language has been designed to be easy to learn
+and to use
+by people
+(for example, secretaries and mathematical typists)
+who know neither mathematics nor typesetting.
+Experience indicates that the language can
+be learned in an hour or so,
+for it has few rules and fewer exceptions.
+For typical expressions,
+the size and font changes, positioning, line drawing,
+and the like necessary to print according to mathematical conventions
+are all done automatically.
+For example,
+the input
+.sp 4p
+.ce
+sum from i=0 to infinity x sub i = pi over 2
+.sp 4p
+produces
+.EQ
+sum from i=0 to infinity x sub i = pi over 2
+.EN
+.PP
+The syntax of the language is specified by a small
+context-free grammar;
+a compiler-compiler is used to make a compiler
+that translates this language into typesetting commands.
+Output may be produced on either a phototypesetter
+or on a terminal with forward and reverse half-line motions.
+The system interfaces directly with text formatting programs,
+so mixtures of text and mathematics may be handled simply.
+.LP
+.LP
+.PP
+This paper is a revision of a paper originally published in
+CACM, March, 1975.
+.AE

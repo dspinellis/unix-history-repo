@@ -1,0 +1,72 @@
+.\" Copyright (c) 1983, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)implog.8	6.7 (Berkeley) %G%
+.\"
+.Dd 
+.Dt IMPLOG 8
+.Os BSD 4.2
+.Sh NAME
+.Nm implog
+.Nd
+.Tn IMP
+log interpreter
+.Sh SYNOPSIS
+.Nm implog
+.Op Fl DFLcfr
+.Op Fl h Ar host#
+.Op Fl i Ar imp#
+.Op Fl l Ar link
+.Op Fl t Ar message-type
+.Sh DESCRIPTION
+.Nm Implog
+is program which interprets the message log produced by
+.Xr implogd 8 .
+.Pp
+If no arguments are specified, 
+.Nm implog
+interprets and prints every message present in the message file.
+Options may be specified to force printing only a subset of the logged
+messages.
+.Bl -tag -width Ds
+.It Fl D
+Do not show data messages. 
+.It Fl F
+Follow the logging process in action.
+This flag causes
+.Nm implog
+to check for, and display, new logged messages every 5 seconds.
+.It Fl L
+Show only those messages received on the link number of the
+IP protocol.
+.It Fl c
+In addition to printing any data messages logged, show the
+contents of the data in hexadecimal bytes.
+.It Fl f
+Follow the logging process in action as with
+.Fl F ,
+but print the current contents of the log file first.
+.It Fl h
+Show only those messages received from the specified host.
+(Usually specified in conjunction with an imp.)
+.It Fl i
+Show only those messages received from the specified imp.
+.It Fl l
+Show only those messages received on the specified ``link''.
+.It Fl r
+Print the raw imp leader, showing all fields,
+in addition to the formatted interpretation according to type.
+.It Fl t
+Show only those messages received of the specified message type.
+.Sh SEE ALSO
+.Xr imp 4 ,
+.Xr implogd 8
+.Sh BUGS
+Cannot specify multiple hosts, imps, etc.
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 4.2 .

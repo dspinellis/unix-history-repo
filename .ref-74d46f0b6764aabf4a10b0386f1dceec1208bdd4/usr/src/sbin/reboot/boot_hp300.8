@@ -1,0 +1,162 @@
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the Systems Programming Group of the University of Utah Computer
+.\"
+.\" Science Department.
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)boot_hp300.8	5.2 (Berkeley) %G%
+.\"
+.Dd 
+.Dt REBOOT 8
+.Os BSD 4.4
+.Sh NAME
+.Nm reboot
+.Nd
+.Tn UNIX
+bootstrapping procedures
+.Sh SYNOPSIS
+.Nm reboot
+.Op Fl d
+.Op Fl n
+.Op Fl q
+.Op Fl s
+.Sh DESCRIPTION
+.Tn UNIX
+is started by placing it at the beginning of physical memory
+and transferring to the entry point.
+Since the system is not reenterable,
+it is necessary to read it in from disk or tape
+each time it is to be bootstrapped.
+.Pp
+.Sy Rebooting a running system .
+When a
+.Tn UNIX
+is running and a reboot is desired,
+.Xr shutdown 8
+is normally used.
+If there are no users then
+.Nm reboot
+can be used.
+Reboot causes the disks to be synced and allows the system
+to perform other shutdown activities such as resynchronizing
+hardware time-of-day clocks.
+A multi-user reboot (as described below) is then initiated.
+This causes a system to be
+booted and an automatic disk check to be performed.  If all this succeeds
+without incident, the system is then brought up for many users.
+.Pp
+Options to reboot are:
+.Bl -tag -width Ds
+.\" .It Fl d
+.\" option forces a memory dump to the swap area (see
+.\" .Xr crash 8 )
+.\" before rebooting.
+.\" This can be used if the system is in a funny state that you would
+.\" like to ``snapshot'' and analyze later.
+.It Fl n
+option avoids the sync.  It can be used if a disk or the processor
+is on fire. 
+.It Fl q
+reboots quickly and ungracefully, without shutting down running
+processes first.
+.\" .It Fl s
+.\" option reboots to single user mode.
+.El
+.Pp
+.Nm Reboot
+normally logs the reboot using
+.Xr syslog 8
+and places a shutdown record in the login accounting file (see
+.Xr utmp 5 .
+These actions are inhibited if the
+.Fl n
+or
+.Fl q
+options are present.
+.Pp
+.Sy Power fail and crash recovery.
+Normally, the system will reboot itself at power-up or after crashes.
+An automatic consistency check of the file systems will be performed,
+and unless this fails, the system will resume multi-user operations.
+.Pp
+.Sy Cold starts.
+On an HP300, the boot procedure uses the boot rom to load a boot program
+from an
+.Tn LIF
+format directory at the beginning of an attached disk.
+The
+.Pa /usr/mdec
+directory contains a disk boot program
+.Pa bootrd
+which should be placed in a new pack automatically by
+.Xr newfs 8
+when the ``a'' partition file system on the pack is created.
+.Pp
+This
+.Em boot
+program
+finds the corresponding file on the given device 
+.Pf ( Ar vmunix
+by default),
+loads that file into memory,
+and starts the program at the entry address specified in the program header.
+.Pp
+The boot program can be interrupted by typing `^C' (ctrl-C).
+This will force the boot program to interactively prompt for a system to boot.
+If not interrupted, it will boot from the device from which the boot
+program itself was loaded.
+.Pp
+The file specifications used for an interactive boot are of the form:
+.Pp
+.Dl device(unit,minor)
+.Pp
+where
+.Ar device
+is the type of the device to be searched,
+.Ar unit
+is 8 * the hpib number plus the unit number of the disk or tape,
+and
+.Ar minor
+is the disk partition or tape file number.
+Normal line editing characters can be used when typing the file specification.
+Currently, ``rd'' is the only valid
+.Ar device
+specifier.
+.Pp
+For example,
+to boot from the `a' file system of unit 0 on HP-IB 2,
+type
+.Ql rd(16,0)vmunix
+to the boot prompt.
+For tapes, the minor device number gives a file offset.
+.Pp
+In an emergency, the bootstrap methods described in the paper
+.%T Installing 4.3bsd on the HP300
+can be used to boot from a distribution tape.
+.Sh FILES
+.Bl -tag -width /usr/mdec/installboot -compact
+.It Pa /vmunix
+system code
+.It Pa /usr/mdec/bootrd
+.Tn LIF
+format boot block
+.It Pa /usr/mdec/installboot
+program to install boot blocks
+.El
+.Sh SEE ALSO
+.Xr crash 8m ,
+.Xr fsck 8 ,
+.Xr halt 8 ,
+.Xr init 8 ,
+.Xr newfs 8 ,
+.Xr rc 8 ,
+.Xr shutdown 8 ,
+.Xr syslogd 8
+.Sh HISTORY
+The
+.Nm
+command
+.At

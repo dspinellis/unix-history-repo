@@ -1,0 +1,66 @@
+#once #create message
+.ND
+.tr %$
+.EQ
+delim $$
+.EN
+.LP
+The next step is to learn about "diacriticals", which
+is a big word for funny marks on symbols, like
+a bar over something ($x bar$), or a tilde or hat on
+something ($x tilde ,~a hat$), or perhaps a dot 
+or dotdot ($T dot ,~U dotdot$), or even an
+underlining like $abc under$.
+
+These are all easy.  Each funny character
+has a name, and all you have to do is put the name
+after the thing you want the character on.
+Thus
+  x hat makes $x hat$
+  y bar makes $y bar$
+  T dot makes $T dot$
+  x tilde makes $x tilde$ (notice that we spell tilde)
+  u dotdot makes $u dotdot$ (looks ugly on a terminal)
+.br
+and
+  i under makes $i under$.
+
+Except for "bar" and "under", these are almost always
+attached to just a single letter.
+If you want to put a bar over something longer, like
+${2 pi +1} bar$, simply enclose the thing in braces:
+
+  {2 pi +1} bar
+
+Modify "Example" to produce output that looks like this,
+then type "ready".
+.pl 1
+#once #create Ref
+.EQ
+delim $$
+.EN
+.LP
+Let $x bar$, $y bar$, and $z bar$ be the components of $pi bar$.
+Let ${alpha +1} bar$ be the mean value of $alpha hat$.
+.pl 1
+#once #create Example
+.EQ
+delim $$
+.EN
+.LP
+Let x bar, y bar, and z bar be the components of pi bar.
+Let alpha +1 bar be the mean value of alpha hat.
+.pl 1
+#
+#once neqn Ref | nroff >X1 &
+#once neqn message Ref | nroff -T$term %s/tinyms -
+#user
+neqn Example | nroff >X2
+#cmp X1 X2
+#fail
+Don't forget to set delimiters at the beginning,
+and get the spaces right around the dollar signs.
+#log
+#next
+9.1b 10
+9.2a 5

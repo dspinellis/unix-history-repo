@@ -1,0 +1,33 @@
+#print
+Just before the last line of file 'airlines'
+in this directory insert the line
+
+twa
+
+and then rewrite the file with w, q, and
+type "ready".
+#create Ref
+american
+braniff
+continental
+delta
+eastern
+national
+pan am
+twa
+united
+#create airlines
+american
+braniff
+continental
+delta
+eastern
+national
+pan am
+united
+#user
+#cmp airlines Ref
+#log
+#next
+19.1a 10
+19.2a 5

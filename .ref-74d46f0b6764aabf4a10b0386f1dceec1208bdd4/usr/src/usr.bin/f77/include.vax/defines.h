@@ -1,0 +1,282 @@
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)defines.h	5.4 (Berkeley) %G%
+ */
+
+/*
+ * defines.h
+ *
+ * Global definitions for the first pass of the f77 compiler, Unix 4.3 BSD.
+ *
+ * University of Utah CS Dept modification history:
+ *
+ * $Log:	defines.h,v $
+ * Revision 5.2  85/08/10  05:11:20  donn
+ * Added comment header; added Jerry Berkman's changes to delete INTRCNST
+ * and to ifdef 66 code.
+ * 
+ */
+
+#define INTERDATA 2
+#define GCOS 3
+#define PDP11 4
+#define IBM 5
+#define CMACH 6
+#define VAX 7
+
+#define DMR 2
+#define PCC 3
+
+#ifndef FAMILY
+FAMILY NOT DEFINED !!!
+Family = FAMILY
+#endif
+
+#ifndef HERE
+HERE NOT DEFINED !!!!
+Here = HERE
+#endif
+
+#define M(x) (1<<x)
+#define ALLOC(x)	(struct x *) ckalloc(sizeof(struct x))
+#define ALLOCN(n,x)	(struct x *) ckalloc(n*sizeof(struct x))
+#define ALLEXPR		(expptr) ckalloc( sizeof(union Expression) )
+typedef int *ptr;
+typedef char *charptr;
+typedef FILE *FILEP;
+typedef short flag;
+typedef char field;	/* actually need only 4 bits */
+typedef long int ftnint;
+#define LOCAL static
+
+#define NO 0
+#define YES 1
+
+#define CNULL (char *) 0
+#define PNULL (ptr) 0
+#define CHNULL (chainp) 0
+#define ENULL (expptr) 0
+
+
+
+/* block tag values */
+
+#define TNAME 1
+#define TCONST 2
+#define TEXPR 3
+#define TADDR 4
+#define TTEMP 5
+#define TPRIM 6
+#define TLIST 7
+#define TIMPLDO 8
+#define TERROR 9
+
+
+/* parser states */
+
+#define OUTSIDE 0
+#define INSIDE 1
+#define INDCL 2
+#define INDATA 3
+#define INEXEC 4
+
+/* procedure classes */
+
+#define PROCMAIN 1
+#define PROCBLOCK 2
+#define PROCSUBR 3
+#define PROCFUNCT 4
+
+
+/* storage classes -- vstg values */
+
+#define STGUNKNOWN 0
+#define STGARG 1
+#define STGAUTO 2
+#define STGBSS 3
+#define STGINIT 4
+#define STGCONST 5
+#define STGEXT 6
+#define STGINTR 7
+#define STGSTFUNCT 8
+#define STGCOMMON 9
+#define STGEQUIV 10
+#define STGREG 11
+#define STGLENG 12
+#define STGNULL 13
+#define STGPREG 14
+
+/* name classes -- vclass values */
+
+#define CLUNKNOWN 0
+#define CLPARAM 1
+#define CLVAR 2
+#define CLENTRY 3
+#define CLMAIN 4
+#define CLBLOCK 5
+#define CLPROC 6
+#define CLNAMELIST 7
+
+
+/* vprocclass values */
+
+#define PUNKNOWN 0
+#define PEXTERNAL 1
+#define PINTRINSIC 2
+#define PSTFUNCT 3
+#define PTHISPROC 4
+
+/* control stack codes */
+
+#define CTLDO 1
+#define CTLIF 2
+#define CTLELSE 3
+
+
+/* operators -- see also arrays 'ops' and 'ops2' in put.c */
+
+#define OPPLUS 1
+#define OPMINUS 2
+#define OPSTAR 3
+#define OPSLASH 4
+#define OPPOWER 5
+#define OPNEG 6
+#define OPOR 7
+#define OPAND 8
+#define OPEQV 9
+#define OPNEQV 10
+#define OPNOT 11
+#define OPCONCAT 12
+#define OPLT 13
+#define OPEQ 14
+#define OPGT 15
+#define OPLE 16
+#define OPNE 17
+#define OPGE 18
+#define OPCALL 19
+#define OPCCALL 20
+#define OPASSIGN 21
+#define OPPLUSEQ 22
+#define OPSTAREQ 23
+#define OPCONV 24
+#define OPLSHIFT 25
+#define OPMOD 26
+#define OPCOMMA 27
+#define OPQUEST 28
+#define OPCOLON 29
+#define OPABS 30
+#define OPMIN 31
+#define OPMAX 32
+#define OPADDR 33
+#define OPINDIRECT 34
+#define OPBITOR 35
+#define OPBITAND 36
+#define OPBITXOR 37
+#define OPBITNOT 38
+#define OPRSHIFT 39
+#define OPPAREN 40
+#define	OPUNARYPLUS 41
+
+
+/* label type codes */
+
+#define LABUNKNOWN 0
+#define LABEXEC 1
+#define LABFORMAT 2
+#define LABOTHER 3
+
+
+/* INTRINSIC function codes*/
+
+#define INTREND 0
+#define INTRCONV 1
+#define INTRMIN 2
+#define INTRMAX 3
+#define INTRGEN 4
+#define INTRSPEC 5
+#define INTRBOOL 6
+
+
+/* I/O statement codes */
+
+#define IOSTDIN ICON(5)
+#define IOSTDOUT ICON(6)
+#define IOSTDERR ICON(0)
+
+#define IOSBAD (-1)
+#define IOSPOSITIONAL 0
+#define IOSUNIT 1
+#define IOSFMT 2
+
+#define IOINQUIRE 1
+#define IOOPEN 2
+#define IOCLOSE 3
+#define IOREWIND 4
+#define IOBACKSPACE 5
+#define IOENDFILE 6
+#define IOREAD 7
+#define IOWRITE 8
+
+
+/* type masks */
+
+#define MSKLOGICAL	M(TYLOGICAL)
+#define MSKADDR	M(TYADDR)
+#define MSKCHAR	M(TYCHAR)
+#define MSKINT	M(TYSHORT)|M(TYLONG)
+#define MSKREAL	M(TYREAL)|M(TYDREAL)
+#define MSKCOMPLEX	M(TYCOMPLEX)|M(TYDCOMPLEX)
+#define MSKSTATIC (M(STGINIT)|M(STGBSS)|M(STGCOMMON)|M(STGEQUIV)|M(STGCONST))
+
+/* miscellaneous macros */
+
+#define ONEOF(x,y) (M(x) & (y))
+#define ISCOMPLEX(z) ONEOF(z, MSKCOMPLEX)
+#define ISREAL(z) ONEOF(z, MSKREAL)
+#define ISNUMERIC(z) ONEOF(z, MSKINT|MSKREAL|MSKCOMPLEX)
+#define ISICON(z) (z->tag==TCONST && ISINT(z->constblock.vtype))
+#define ISCHAR(z) (z->headblock.vtype==TYCHAR)
+#define ISINT(z)   ONEOF(z, MSKINT)
+#define ISCONST(z) (z->tag==TCONST)
+#define ISERROR(z) (z->tag==TERROR)
+#define ISPLUSOP(z) (z->tag==TEXPR && z->exprblock.opcode==OPPLUS)
+#define ISSTAROP(z) (z->tag==TEXPR && z->exprblock.opcode==OPSTAR)
+#define ISONE(z) (ISICON(z) && z->constblock.constant.ci==1)
+#define INT(z) ONEOF(z, MSKINT|MSKCHAR)
+#define ICON(z) mkintcon( (ftnint)(z) )
+
+#ifdef ONLY66
+#define NO66(s)	if(no66flag) err66(s)
+#define NOEXT(s)	if(noextflag) errext(s)
+#else
+#define NO66(s)
+#define NOEXT(s)
+#endif
+
+/* round a up to a multiple of b */
+#define roundup(a,b)    ( b * ( (a+b-1)/b) )
+
+
+/* optimization buffer slot types */
+
+#define SKNULL		0
+#define SKIFN		1
+#define SKGOTO		2
+#define SKLABEL		3
+#define SKEQ		4
+#define SKCALL		5
+#define SKCMGOTO	6
+#define SKSTOP		7
+#define SKDOHEAD	8
+#define SKENDDO		9
+#define SKARIF		10
+#define SKRETURN	11
+#define SKASGOTO	12
+#define SKPAUSE		13
+#define SKASSIGN	14
+#define SKIOIFN		15
+#define SKFRTEMP	16

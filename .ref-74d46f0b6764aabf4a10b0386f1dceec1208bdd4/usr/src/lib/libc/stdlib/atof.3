@@ -1,0 +1,53 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)atof.3	6.2 (Berkeley) %G%
+.\"
+.TH ATOF 3 ""
+.UC 7
+.SH NAME
+atof \- convert ASCII string to double
+.SH SYNOPSIS
+.nf
+.ft B
+#include <stdlib.h>
+
+double
+atof(const char *nptr);
+.ft R
+.fi
+.SH DESCRIPTION
+The
+.I atof
+function converts the initial portion of the string pointed to by
+.I nptr
+to
+.I double
+representation.
+.PP
+It is equivalent to:
+.sp
+.RS
+strtod(nptr, (char **)NULL);
+.RE
+.SH SEE ALSO
+atoi(3), atol(3), strtod(3), strtol(3), strtoul(3)
+.SH STANDARDS
+.B Atof
+conforms to ANSI X3.159-1989 (``ANSI C'').
+.SH BUGS
+This manual page represents intent instead of actual practice.
+While it is intended that
+.I atof
+be implemented using
+.IR strtod (3),
+this has not yet happened.
+In the current system,
+.I atof
+translates a string in the following form to a double:
+an optional string of spaces, followed by an optional sign (``+'' or ``-''),
+followed by a string of digits which may contain a decimal point (``.''),
+followed by an optional exponent flag (``E'' or ``e''), followed by an
+optionally signed integer.

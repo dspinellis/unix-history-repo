@@ -1,0 +1,23 @@
+#print
+How many lines are there in file "henry"?
+When you find out, leave the editor, and
+then type "answer N" where N is the number
+of lines in file "henry".
+#create henry
+Murray Hill
+Holmdel
+Whippany
+Madison
+Piscataway
+Chester
+Warren
+#copyin
+#pipe
+#user
+#unpipe
+#uncopyin
+#match 7
+#log
+#next
+14.1a  10
+14.2a 5

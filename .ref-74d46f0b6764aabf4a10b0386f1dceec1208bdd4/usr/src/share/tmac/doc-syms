@@ -1,0 +1,90 @@
+.\" Copyright (c) 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)doc-syms	5.3 (Berkeley) %G%
+.\"
+.\"     %beginstrip%
+.\" NS Ux macro - UNIX
+.de Ux
+.if \\n(aC==0 \{\
+.       ie \\n(.$==0 \&\fRU\s-2NIX\fP\s0
+.       el .aV \\$1 \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
+.\}
+.\" .   as b1 \\*(S\\n(aP
+.if \\n(aC>\\n(aP \{\
+.       as b1 \fRU\s-2NIX\s0
+.       nr aP+1
+.       nr cF \\n(.f
+.       nr cZ \\n(.s
+.       nR
+.\}
+..
+.\" NS Bx macro -BSD UNIX (fix smaller nroff version)
+.de Bx
+.if \\n(aC==0 \{\
+.       ie \\n(.$==0 \&\fRBSD U\s-2NIX\fP\s0
+.       el .aV \\$1 \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
+.\}
+.if \\n(aC>\\n(aP \{\
+.       nr aP+1
+.	ie \\n(C\\n(aP==2 \{\
+.		as b1 \fR\\*(A\\n(aP\s-2BSD\s0
+.		ie \\n(aC>\\n(aP \{\
+.			nr jj \\n(aP+1
+.			ie \\n(C\\n(jj==2 \{\
+.				if "\\*(A\\n(jj"Reno" \{\
+.					nr aP+1
+.					as b1 \&\-\\*(A\\n(jj
+.				\}
+.				if "\\*(A\\n(jj"reno" \{\
+.					nr aP+1
+.					as b1 \&\-Reno
+.				\}
+.				if "\\*(A\\n(jj"Tahoe" \{\
+.					nr aP+1
+.					as b1 \&\-\\*(A\\n(jj
+.				\}
+.				if "\\*(A\\n(jj"tahoe" \{\
+.					nr aP+1
+.					as b1 \&\-Tahoe
+.				\}
+.				ie \\n(aC>\\n(aP \{\
+.					nr aP+1
+.					nr cF \\n(.f
+.					nr cZ \\n(.s
+.					nR
+.				\}
+.				el .aZ
+.			\}
+.			el \{\
+.				nr aP+1
+.				nr cF \\n(.f
+.				nr cZ \\n(.s
+.				nR
+.			\}
+.			rr jj
+.		\}
+.		el .aZ
+.	\}
+.	el \{\
+.	       as b1 \fR\s-2BSD\s0 U\s-2NIX\s0
+.	       nr cF \\n(.f
+.	       nr cZ \\n(.s
+.	       nR
+.	\}
+.\}
+..
+.\" Ns Ud macro - prints "is currently under development." (HISTORY section)
+.de Ud
+\&is currently under development.
+..
+.\" Ns At macro - prints "is currently in alpha test." (HISTORY section)
+.de At
+\&is currently in alpha test.
+..
+.\" Ns Bt macro - prints "is currently in beta test." (HISTORY section)
+.de Bt
+\&is currently in beta test.
+..

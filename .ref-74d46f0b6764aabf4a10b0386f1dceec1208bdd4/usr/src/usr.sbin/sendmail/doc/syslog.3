@@ -1,0 +1,73 @@
+.TH SYSLOG 3
+.\"	@(#)syslog.3	4.1		%G%
+.SH NAME
+syslog, openlog, closelog -- control system log
+.SH SYNOPSIS
+# include <syslog.h>
+.PP
+openlog(ident, logstat)
+.br
+char *ident;
+.PP
+syslog(priority, message, parameters ... )
+.br
+char *message;
+.PP
+closelog()
+.SH DESCRIPTION
+.I Syslog
+arranges to
+write the
+.I message
+onto the
+system log maintained by
+.IR syslog (8).
+The message is tagged with
+.I priority.
+The message looks like a
+.I printf(3)
+string except that
+.B %m
+is replaced by the current error message
+(collected from
+.I errno\c
+).
+A trailing newline is added if needed.
+This message will be read by
+.I syslog(8)
+and output to the system console or files as appropriate.
+.PP
+If special processing is needed,
+.I openlog
+can be called to initialize the log file.
+Parameters are
+.I ident
+which is prepended to every message,
+and
+.I logstat
+which is
+a bit field indicating special status;
+current values are:
+.IP LOG_PID \w'LOG_PID'u+3
+log the process id with each message:
+useful for identifying instantiations of daemons.
+.LP
+.I Openlog
+returns zero on success.
+If it cannot open the file
+.I /dev/log,
+it writes on
+.I /dev/console
+instead and returns -1.
+.PP
+.I Closelog
+can be used to close the log file.
+.SH EXAMPLES
+.nf
+syslog(LOG_SALERT, "who: internal error 23");
+
+openlog("serverftp", LOG_PID);
+syslog(LOG_INFO, "Connection from host %d", CallingHost);
+.fi
+.SH SEE\ ALSO
+syslog(8)

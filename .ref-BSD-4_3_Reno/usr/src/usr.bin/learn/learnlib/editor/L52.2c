@@ -1,0 +1,56 @@
+#print
+In this directory is a file "memo".  Between the line
+containing "I." and the line containing "II."
+change all multiple blanks to one blank.
+Then rewrite the file and type "ready".
+#create Ref
+.TL
+The  Time  Has  Come
+.AU
+Joe Idiot
+.AI
+Bell  Labs
+Murray  Hill, NJ 07974
+.SH
+I. Introduction
+.PP
+This document describes the problems of
+designing complex systems without adequately
+trained manpower. The solution adopted was
+to trick 90% of the staff into thinking they
+were working on the system when in fact they were not.
+This let the remaining 1:0% of the staff actually get
+the thing built.
+.SH
+II. Details
+.PP
+The project   began on   June 1, 1974.   It was completed
+on Sept. 1, 1975   and has worked successfully   since then.
+#create memo
+.TL
+The  Time  Has  Come
+.AU
+Joe Idiot
+.AI
+Bell  Labs
+Murray  Hill, NJ 07974
+.SH
+I. Introduction
+.PP
+This document describes the problems  of
+designing  complex systems  without  adequately
+trained manpower.  The solution adopted   was
+to  trick  90% of the staff  into  thinking  they
+were working on the system when in fact they were not.
+This  let  the   remaining  1:0% of the staff actually   get
+the thing built.
+.SH
+II. Details
+.PP
+The project   began on   June 1, 1974.   It was completed
+on Sept. 1, 1975   and has worked successfully   since then.
+#user
+#cmp memo Ref
+#log
+#next
+53.1a 10

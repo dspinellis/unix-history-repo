@@ -1,0 +1,72 @@
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Guido van Rossum.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)fnmatch.3	5.2 (Berkeley) %G%
+.\"
+.TH FNMATCH 3 ""
+.UC 7
+.SH NAME
+fnmatch \- match filename or pathname
+.SH SYNOPSIS
+.nf
+#include <unistd.h>
+
+int fnmatch(const char *pattern, const char *string, int flags);
+.fi
+.SH DESCRIPTION
+.I Fnmatch
+matches patterns according to the rules used by the shell.
+It checks the string specified by the
+.I string
+argument to see if it matches the pattern specified by the
+.I pattern
+argument.
+.PP
+The
+.I flags
+argument modifies the interpretation of
+.I pattern
+and
+.I string.
+The value of
+.I flags
+is the bitwise inclusive OR of any of the following
+constants, which are defined in the include file
+.IR unistd.h .
+.TP
+FNM_PATHNAME
+Slash characters in
+.I string
+must be explicitly matched by slashes in
+.IR pattern .
+If this flag is not set, then slashes are treated as regular characters.
+.TP
+FNM_QUOTE
+Every occurrence of a backslash (``\e'') followed by a character in
+.I pattern
+is replaced by that character.
+This is done to negate any special meaning for the character.
+.SH RETURNS
+If
+.I string
+matches the pattern specified by
+.IR pattern ,
+then
+.I fnmatch
+returns zero.
+Otherwise,
+.I fnmatch
+returns nonzero.
+.SH SEE ALSO
+sh(1), glob(3), wordexp(3), regexp(3)
+.SH BUGS
+Quotes and slashes in range patterns are not handled correctly.
+.PP
+The pattern ``*'' matches the empty string, even if
+.I FNM_PATHNAME
+is specified.

@@ -1,0 +1,44 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)dbconv.1	5.1 (Berkeley) %G%
+.\"
+.TH DBCONV 1 ""
+.UC 7
+.SH NAME
+dbconv \- convert dbm style databases to db style databases
+.SH SYNOPSIS
+.nf
+.ft B
+dbconv from to
+.ft R
+.fi
+.SH DESCRIPTION
+.I Dbconv
+converts old style
+.IR dbm (3)
+(or
+.IR ndbm (3))
+databases to 
+.IR db (3)
+style databases.
+.I From
+is the name of the
+.I dbm
+database (the database files are expected to be
+.IR from .dir
+and
+.IR from .pag).
+The new database will be written out to the file
+.IR to .
+.PP
+Dbconv prints out the number of records that were transferred, as well
+as any duplicates that were dropped.
+.PP
+.I Dbconv
+exits 0 on success, and 1 if any records were duplicates or an error
+occurred.
+.SH SEE ALSO
+db(3), ndbm(3)

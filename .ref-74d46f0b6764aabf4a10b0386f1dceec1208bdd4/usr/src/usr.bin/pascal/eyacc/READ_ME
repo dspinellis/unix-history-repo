@@ -1,0 +1,33 @@
+/*-
+ * Copyright (c) 1980 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)READ_ME	5.2 (Berkeley) %G%
+ */
+
+August 28, 1977
+
+This directory contains source for a version of yacc needed by the Pascal
+parser.  The differences between this yacc and a stadard version 6 yacc
+are indicated in a comment in y1.c.
+
+Note that the standard yacc parser will not work on the tables produced
+by "eyacc" and also that these changes are really useful only with
+a fairly large set of error recovery routines which are part of both
+"pi" and "pxp".  The routines are language independent, but the method
+will only work on languages which have some redundancy in them... it is
+probably ill suited for C, but would work fine in ALGOL-60, ALGOL-W,
+EUCLID, LIS, SP/K, PL/1, ALPHARD, CLU, ...
+
+Sun Apr  8 21:43:08 PST 1979
+
+A paper describing the method used by eyacc will appear in August in the
+SIGPLAN Boulder conference.
+
+Mon May 5, 1980
+
+The eyacc in this directory has been modified to work for
+version 7.  This involved syntax fixes and changing the I/O calls
+to standard version 7 calls.

@@ -1,0 +1,108 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)timed.8	6.5 (Berkeley) %G%
+.\"
+.TH TIMED 8 ""
+.UC 6
+.ad
+.SH NAME
+timed \- time server daemon
+.SH SYNOPSIS
+.B timed
+[ -t ] [ -M ] [ -n network ] [ -i network ]
+.SH DESCRIPTION
+.I Timed
+is the time server daemon and is normally invoked
+at boot time from the
+.IR rc (8)
+file.  
+It synchronizes the host's time with the time of other
+machines in a local area network running 
+.IR timed (8).
+These time servers will slow down the clocks of some machines
+and speed up the clocks of others to bring them to the average network time.
+The average network time is computed from measurements of clock differences
+using the ICMP timestamp request message.
+.PP
+The service provided by \fItimed\fP is based  on a master-slave
+scheme.
+When
+.IR timed (8)
+is started on a machine, it asks the master for the network time
+and sets the host's clock to that time.
+After that, it accepts synchronization messages periodically sent by
+the master and calls 
+.IR adjtime (2)
+to perform the needed corrections on the host's clock.
+.PP
+It also communicates with
+.IR date (1)
+in order to set the date globally,
+and with 
+.IR timedc (8),
+a timed control program.
+If the machine running the master crashes, then the slaves will elect
+a new master from among slaves running with the 
+.B \-M
+flag.
+A
+.IR timed
+running without the
+.B \-M
+flag will remain a slave.
+The 
+.B \-t 
+flag enables \fItimed\fP to trace the messages it receives in the
+file /var/log/timed.log.
+Tracing can be turned on or off by the program
+.IR timedc (8).
+.I Timed
+normally checks for a master time server on each network to which
+it is connected, except as modified by the options described below.
+It will request synchronization service from the first master server
+located.
+If permitted by the
+.B \-M
+flag, it will provide synchronization service on any attached networks
+on which no current master server was detected.
+Such a server propagates the time computed by the top-level master.
+The 
+.B \-n 
+flag, followed by the name of a network which the host is connected to
+(see
+.IR networks (5)),
+overrides the default choice of the
+network addresses made by the program.
+Each time the
+.B \-n
+flag appears, that network name is added to a list of valid networks.
+All other networks are ignored.
+The 
+.B \-i 
+flag, followed by the name of a network to which the host is connected
+(see
+.IR networks (5)),
+overrides the default choice of the network addresses made by the program.
+Each time the
+.B \-i
+flag appears, that network name is added to a list of networks to ignore.
+All other networks are used by the time daemon.
+The
+.B \-n
+and 
+.B \-i
+flags are meaningless if used together.
+.SH FILES
+.nf
+.ta \w'/var/log/timed.masterlog     'u
+/var/log/timed.log		tracing file for timed
+/var/log/timed.masterlog	log file for master timed 
+.fi
+.SH "SEE ALSO"
+date(1), adjtime(2), gettimeofday(2), icmp(4), timedc(8),
+.br
+\fITSP: The Time Synchronization Protocol for UNIX 4.3BSD\fP, 
+R. Gusella and S. Zatti

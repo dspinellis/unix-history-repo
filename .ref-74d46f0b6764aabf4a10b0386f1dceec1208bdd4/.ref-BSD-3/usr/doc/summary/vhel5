@@ -1,0 +1,24 @@
+.NH
+Graphics
+.LP
+The programs in this section are predominantly intended for use
+with Tektronix 4014 storage scopes.
+.sh GRAPH
+Prepares a graph of a set of input numbers.
+.op
+Input scaled to fit standard plotting area.
+.op
+Abscissae may be supplied automatically.
+.op
+Graph may be labeled.
+.op
+Control over grid style, line style, graph orientation, etc.
+.sh SPLINE
+Provides a smooth curve through a set of points
+intended for GRAPH.
+.sh PLOT
+A set of filters for printing graphs produced by GRAPH
+and other programs
+on various terminals.
+Filters provided for
+4014, DASI terminals, Versatec printer/plotter.

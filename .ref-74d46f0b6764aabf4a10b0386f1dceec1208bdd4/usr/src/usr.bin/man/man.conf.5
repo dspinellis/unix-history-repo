@@ -1,0 +1,111 @@
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)man.conf.5	5.6 (Berkeley) %G%
+.\"
+.TH MAN.CONF 5 ""
+.SH NAME
+man.conf \- man command's configuration file
+.SH DESCRIPTION
+.IR Man (1),
+.IR apropos (1),
+and
+.IR whatis (1)
+search for manual pages or their database files as specified by the
+.I man.conf
+file.
+Manual pages are expected to be preformatted (see
+.IR nroff (1))
+and named with a trailing ``.0''.
+.PP
+The
+.I man.conf
+file contains two types of lines.
+.PP
+The first type of line is a ``section'' line, which contains a
+section name followed by a directory path.
+Lines in this format specify that manual pages for the section
+may be found in the directory.
+.PP
+Directories named with a trailing slash character (``/'') are expected
+to contain subdirectories (see the keyword ``_subdir'' below) instead
+of manual pages.
+These subdirectories are searched instead of the directory.
+.PP
+All directories (either explicitly specified or named with a trailing
+slash) may contain subdirectories.
+.IR Man (1)
+automatically searches any subdirectory with the same name as the
+current machine type before the directory is searched.
+No specification of these subdirectories is necessary in the
+.I man.conf
+file.
+.PP
+Section names are unrestricted except for the reserved words specified
+below; in general, however, it is best to avoid anything beginning with
+an underscore (``_'') in order to avoid future incompatibilities.
+.PP
+The section named ``_default'' is the list of directories to be
+searched if no section is specified.
+.PP
+The second type of line is preceded with a ``keyword''.
+The possible keywords and their meanings are as follows:
+.sp
+.TP
+_subdir
+The list (in search order) of subdirectories which will be searched in
+any directory named with a trailing slash (``/'') character.  This
+list is also used when a path is specified by the MANPATH environment 
+variable or the -M option.
+.
+.TP
+_version
+The version of the configuration file.
+.TP
+_whatdb
+The full pathname (not just a directory path) for a database to be used
+by the
+.IR apropos (1)
+and
+.IR whatis (1)
+commands.
+.PP
+Multiple specifications for all types of lines (except for ``_version'')
+are cumulative and the entries are used in the order listed in the file;
+multiple entries may be listed per line, as well.
+.PP
+Empty lines or lines whose first non-whitespace character is a hash
+mark (``#'') are ignored.
+.SH EXAMPLES
+Given the following
+.I man.conf file:
+.sp
+.nf
+.RS
+_version		BSD.1
+_subdir		cat1 cat2 cat3
+_default		/usr/share/man/
+sect3		/usr/share/man/cat3
+.fi
+.RE
+.sp
+The default
+.IR mktemp (3)
+manual page should be stored in ``/usr/share/man/cat3/mktemp.0''.
+Any VAX architecture specific version of it should be stored in
+``cat3/vax/mktemp.0''.
+.PP
+The command ``man mktemp'' would search the subdirectories ``cat1''
+``cat2'', and ``cat3'', in ``/usr/share/man'', in that order, for
+``mktemp.0''.
+If a subdirectory with the same name as the current machine type
+existed in any of them, it would be searched as well.
+.PP
+The command ``man sect3 mktemp'' would only search ``/usr/share/man/cat3''
+and any possible per machine subdirectory.
+.SH FILES
+/etc/man.conf	standard manual directory search path
+.SH "SEE ALSO"
+apropos(1), machine(1), man(1), whatis(1), whereis(1)

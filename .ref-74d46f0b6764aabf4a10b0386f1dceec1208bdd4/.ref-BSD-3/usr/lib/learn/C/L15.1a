@@ -1,0 +1,33 @@
+#print
+Write a program that reads in lines one at a time,
+and prints them out if their length (including
+the newline) is odd.
+You can use the function getline if you like; the object
+file is in getline.o.
+Compile and run it, then type "ready".
+#once #create Ref1
+this line contains an odd number of letters
+this line, however, contains an even number of letters
+#once #create Ref2
+this line contains an odd number of letters
+#once cp %s/getline.o .
+#user
+a.out <Ref1 >x1
+#cmp x1 Ref2
+#succeed
+It's certainly easiest with getline:
+
+ #include <stdio.h>
+
+main()
+{
+	char line[500];
+	int n;
+
+	while ((n = getline(line, 500)) > 0)
+		if (n % 2 == 1)
+			printf("%s", line);
+}
+#log
+#next
+15.1b 10

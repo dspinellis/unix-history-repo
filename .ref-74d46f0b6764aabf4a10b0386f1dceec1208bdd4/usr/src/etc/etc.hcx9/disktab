@@ -1,0 +1,111 @@
+#
+#	@(#)disktab	5.2 (Berkeley) %G%
+#
+# Disk geometry and partition layout tables. 
+# Key:
+#	dt	controller type
+#	ty	type of disk (fixed, removeable, simulated)
+#	d[0-4]	drive-type-dependent parameters
+#	ns	#sectors/track
+#	nt	#tracks/cylinder
+#	nc	#cylinders/disk
+#	sc	#sectors/cylinder, nc*nt default
+#	su	#sectors/unit, sc*nc default
+#	se	sector size, DEV_BSIZE default
+#	rm	rpm, 3600 default
+#	sf	supports bad144-style bad sector forwarding
+#	sk	sector skew per track, default 0
+#	cs	sector skew per cylinder, default 0
+#	hs	headswitch time, default 0
+#	ts	one-cylinder seek time, default 0
+#	il	sector interleave (n:1), 1 default
+#	bs	boot block size, default BBSIZE
+#	sb	superblock size, default SBSIZE
+#	o[a-h]	partition offsets in sectors
+#	p[a-h]	partition sizes in sectors
+#	b[a-h]	partition block sizes in bytes
+#	f[a-h]	partition fragment sizes in bytes
+#	t[a-h]	partition types (filesystem, swap, etc)
+#
+# All partition sizes contain space for bad sector tables unless
+# the device drivers fail to support this.
+#
+# disks on VDDC
+#
+
+fuj|Fujitsu|Fujitsu 337 Mb 20mhz:\
+ 	:ty=winchester:ns#66:nt#10:nc#816:rm#3600:se#512:\
+	:dt=SMD:\
+ 	:pa#38940:oa#0:ba#8192:fa#1024:\
+ 	:pb#47520:ob#38940:bb#4096:fb#1024:\
+ 	:pc#452100:oc#86460:bc#8192:fc#1024:
+
+#
+# Below this line from Harris -- incomplete re: 4.3BSD-tahoe
+#
+
+xsd|Xsd|515 Mb FSD:\
+ 	:ty=winchester:ns#24:nt#24:nc#711:rm#3600:\
+ 	:pa#30528:ba#8192:fa#1024:\
+ 	:pb#30528:\
+ 	:pc#345600:bc#8192:fc#1024:\
+ 	:pd#3456:bd#8192:fd#1024:\
+ 	:pe#406656:be#8192:fe#1024:\
+ 	:pf#410112:bf#8192:ff#1024:\
+	:pg#173376:bg#8192:fg#1024:\
+	:ph#172224:bh#8192:fh#1024:
+
+# fuj|Fujitsu|Fujitsu 360 Mb 20mhz:\
+#  	:ty=winchester:ns#32:nt#10:nc#823:rm#3600:\
+#  	:pa#19200:ba#8192:fa#1024:\
+#  	:pb#24000:\
+#  	:pc#218560:bc#8192:fc#1024:\
+#  	:pd#1920:bd#8192:fd#1024:\
+#  	:pe#261760:be#8192:fe#1024:\
+#  	:pf#263680:bf#8192:ff#1024:\
+# 	:pg#109120:bg#8192:fg#1024:\
+# 	:ph#109440:bh#8192:fh#1024:
+
+egl|Eagle|Fujitsu474 Mb EAGLE:\
+ 	:ty=winchester:ns#22:nt#20:nc#842:rm#3600:\
+ 	:pa#26400:ba#8192:fa#1024:\
+ 	:pb#33000:\
+ 	:pc#308880:bc#8192:fc#1024:\
+ 	:pd#2640:bd#8192:fd#1024:\
+ 	:pe#368280:be#8192:fe#1024:\
+ 	:pf#370920:bf#8192:ff#1024:\
+ 	:pg#155320:bg#8192:fg#1024:\
+ 	:ph#153560:bh#8192:fh#1024:
+
+xfd|Xfd|XFD|340 Mb FSD:\
+	:ty=winchester:ns#16:nt#24:nc#711:rm#3600:\
+	:pa#20352:ba#8192:fa#1024:\
+	:pb#20352:\
+	:pc#230400:bc#8192:fc#1024:\
+	:pd#2304:bd#8192:fd#1024:\
+	:pe#271104:be#8192:fe#1024:\
+	:pf#273408:bf#8192:ff#1024:\
+	:pg#115200:bg#8192:fg#1024:\
+	:ph#115200:bh#8192:fh#1024:
+
+smd|Smd|SMD|300 Mb SMD:\
+	:ty=removable:ns#16:nt#19:nc#823:rm#3600:\
+	:pa#20064:ba#8192:fa#1024:\
+	:pb#13680:\
+	:pc#214928:bc#8192:fc#1024:\
+	:pd#1824:bd#8192:fd#1024:\
+	:pe#248672:be#8192:fe#1024:\
+	:pf#250496:bf#8192:ff#1024:\
+	:pg#107312:bg#8192:fg#1024:\
+	:ph#107616:bh#8192:fh#1024:
+
+fsd|Fsd|FSD|160 Mb FSD:\
+	:ty=winchester:ns#16:nt#10:nc#823:\
+	:pa#9600:ba#8192:fa#1024:\
+	:pb#12000:\
+	:pc#109280:bc#8192:fc#1024:\
+	:pd#960:bd#8192:fd#1024:\
+	:pe#130880:be#8192:fe#1024:\
+	:pf#131840:bf#8192:ff#1024:\
+	:pg#54720:bg#8192:fg#1024:\
+	:ph#54560:bh#8192:fh#1024:

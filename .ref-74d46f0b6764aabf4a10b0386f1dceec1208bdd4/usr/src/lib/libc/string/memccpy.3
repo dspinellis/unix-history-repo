@@ -1,0 +1,40 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)memccpy.3	5.2 (Berkeley) %G%
+.\"
+.TH MEMCCPY 3 ""
+.UC 7
+.SH NAME
+memccpy
+.SH SYNOPSIS
+.nf
+.ft B
+#include <string.h>
+
+void *
+memccpy(void *dst, const void *src, int c, size_t len);
+.ft R
+.fi
+.SH DESCRIPTION
+.I Memccpy
+copies bytes from string
+.I src
+to string
+.I dst.
+If the character
+.I c
+(as converted to an unsigned char) occurs in the string
+.IR src ,
+the copy stops and a pointer to the byte after the copy of
+.I c
+in the string
+.I dst
+is returned.
+Otherwise,
+.I len
+bytes are copied, and a NULL pointer is returned.
+.SH SEE ALSO
+bcopy(3), memcpy(3), memmove(3), strcpy(3)

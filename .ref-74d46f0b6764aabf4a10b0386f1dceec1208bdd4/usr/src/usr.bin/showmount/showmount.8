@@ -1,0 +1,63 @@
+.\" Copyright (c) 1989, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Rick Macklem at The University of Guelph.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)showmount.8	6.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt SHOWMOUNT 8
+.Os BSD 4
+.Sh NAME
+.Nm showmount
+.Nd show remote nfs mounts on host
+.Sh SYNOPSIS
+.Nm showmount
+.Op Fl ade
+.Op Ar host
+.Sh DESCRIPTION
+.Nm Showmount
+shows status information about the
+.Tn NFS
+server on
+.Ar host .
+By default it prints the names of all hosts that have
+.Tn NFS
+file systems mounted
+on the host. See
+.%T "NFS: Network File System Protocol Specification" ,
+RFC 1094,
+Appendix A ,
+for a detailed desciption of the protocol.
+.Bl -tag -width Ds
+.It Fl a
+List all mount points in the form:
+.Bd -ragged -offset indent -compact
+.Ar host : Ns Ar dirpath
+.Ed
+.It Fl d
+List directory paths of mount points instead of hosts
+.It Fl e
+Show the
+.Ar host Ns 's
+exports list
+.El
+.Sh SEE ALSO
+.Xr mount 1 ,
+.Xr mountd 8
+.Sh BUGS
+The mount daemon running on the server only has an idea of the actual mounts,
+since the
+.Tn NFS
+server is stateless.
+.Nm Showmount
+will only display the information
+as accurately as the mount daemon reports it.
+.Sh HISTORY
+The
+.Nm
+command
+.Ud

@@ -1,0 +1,143 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)sigset.3	4.1 (Berkeley) %G%
+.\"
+.TH SIGSET 3
+.UC 4
+.SH NAME
+sigset, signal, sighold, sigignore, sigrelse, sigpause \- manage signals
+.SH SYNOPSIS
+.nf
+.B #include <signal.h>
+.B void action();
+.B int sig;
+.PP
+.B sigset(sig, action)
+.B signal(sig, action)
+.PP
+.B sighold(sig)
+.B sigignore(sig)
+.B sigrelse(sig)
+.PP
+.B sigpause(sig)
+.PP
+.fi
+.B cc ... \-ljobs
+.nf
+.SH DESCRIPTION
+This is a package of signal management functions to manage the signals
+as described in
+.IR sigsys (2).
+These functions are available only in this version of UNIX, and should
+not be used when the mechanisms of
+.IR signal (2)
+would suffice, as they would then impair portability.
+These functions are contained in the \fIjobs\fR library, obtained by
+specifying the loader option \fB\-ljobs\fR.
+.PP
+.I Sigset
+is used to provide a default signal handler for signal
+.I sig.
+This function is remembered across subsequent calls to the other
+functions, and need not be specified again.
+After
+.I sigset
+instances of
+.I sig
+will cause an interrupt to be taken at
+.I func,
+with the signal then held so that recursive trapping due to
+the signal will not occur.  During normal return from
+.I func,
+the routines arrange for the signal action to be restored so that
+subsequent signals will also trap to
+.I func.
+If a non-local exit is to be taken, then
+.I sigrelse
+must be called to un-hold the signal action, restoring the
+original catch.
+.I Func
+may also be specified as
+SIG_DFL, SIG_IGN or SIG_HOLD, as described in
+.IR sigsys (2).
+The value specified on the previous call to
+.I sigset
+is returned; if
+.I sigset
+has never been called, then the default action inherited from the
+system is returned.
+.PP
+.I Signal
+is like
+.I sigset,
+but the signal will not be held when the action routine is called;
+rather it will have reverted to SIG_DFL.
+This is generally unsafe, but is included for backwards compatibility
+to the old signal mechanism.
+It should not be used.
+.PP
+.I Sighold
+and
+.I sigrelse
+may be used to block off
+.I sig
+in a piece of code where it cannot be tolerated.
+After
+.I sigrelse
+the catch initially set with
+.I sigset
+will be restored.
+.PP
+.I Sigignore
+can be used to temporarily set the action for
+.I sig
+to ignore the signal.  If the signal had been held before
+the call to
+.I sigignore,
+any pending instance of the signal will be discarded.
+.PP
+.I Sigpause
+may be used by a routine which wishes to check for some condition
+produced at interrupt level by the
+.I sig
+signal, and then to pause waiting for the condition to arise with
+the catch of the signal enabled.
+In correct usage it must be preceded by an instance of
+.I sighold
+to block the signal.
+.I Sigpause
+is like
+.I pause
+in that it will return after
+.I any
+signal is processed.
+The usual thing to do then is to reenable the hold with
+.I sighold,
+check the condition
+again, and
+.I sigpause
+again if the condition has not arisen.
+.SH "SEE ALSO"
+sigsys(2), signal(2), jobs(3), tty(4)
+.SH BUGS
+.I Sighold
+and
+.I sigrelse
+do not nest; the first
+.I sigrelse
+restores the default catch.
+.PP
+These functions store information in data space.  You thus
+.B must
+call
+.IR sigsys (2)
+rather than any of
+.I sigset
+or
+.I signal
+after a
+.IR vfork (2)
+in the child which is to then
+.IR exec (2).

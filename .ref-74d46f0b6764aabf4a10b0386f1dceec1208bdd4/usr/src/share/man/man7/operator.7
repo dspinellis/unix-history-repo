@@ -1,0 +1,42 @@
+.\" Copyright (c) 1989, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)operator.7	5.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt OPERATOR 7
+.Os BSD 4.4
+.Sh NAME
+.Nm operator
+.Nd C operator precedence and order of evaluation
+.Sh DESCRIPTION
+.Ds I
+.Cw xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+.Cl Operator	Associativity
+.Cl --------	-------------
+.Cl \&() [] -> .	left to right
+.Cl \&! ~ ++ -- - (type) * & sizeof	right to left
+.Cl \&* / %	left to right
+.Cl \&+ -	left to right
+.Cl \&<< >>	left to right
+.Cl \&< <= > >=	left to right
+.Cl \&== !=	left to right
+.Cl \&&	left to right
+.Cl \&^	left to right
+.Cl \&|	left to right
+.Cl \&&&	left to right
+.Cl \&||	left to right
+.Cl \&?:	right to left
+.Cl \&= += -= etc.	right to left
+.Cl \&,	left to right
+.Cw
+.De
+.Sh FILES
+.Dw /usr/share/misc/operator
+.Di L
+.Dp Pa /usr/share/misc/operator
+.Dp
+.Sh HISTORY
+4.4 BSD.

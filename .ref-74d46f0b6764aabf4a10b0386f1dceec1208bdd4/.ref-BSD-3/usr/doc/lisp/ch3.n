@@ -1,0 +1,283 @@
+.Lc Arithmetic\ Functions 3
+.\".ch 3
+.sh 2 "" \n(ch 1
+This chapter describes 
+.Fr "'s"
+functions for doing arithmetic.
+Often the same function is know by many names, such as
+.i add
+which is also
+.i plus ,
+.i sum ,
+and \(pl.
+This is due to our desire to be compatible with other Lisps.
+The 
+.Fr
+user is advised to avoid using functions with names
+such as \(pl and \(** unless
+their arguments are fixnums.
+In the future, the 
+.Fr
+compiler may be able to take advantage of the fact that their
+arguments are fixnums.
+.sp 1v
+.Lf abs 'n_arg
+.Re
+the absolute value of n_arg.
+.Lf absval "'n_arg"
+.Eq
+abs.
+.Lf add "['n_arg1 ...]"
+.Re
+the sum of the arguments. If no arguments are given, 0 is returned.
+.No
+if the size of the partial sum exceeds the limit of a fixnum, the
+partial sum will be converted to a bignum.
+If any of the arguments are flonums, the partial sum will be 
+converted to a flonum when that argument is processed and the 
+result will thus be a flonum.
+Currently, if in the process of doing the 
+addition a bignum must be converted into
+a flonum an error message will result.
+.Lf add1 'n-arg
+.Re
+n_arg plus 1.
+.bp
+.Lf acos "'fx_arg"
+.Re
+the arc cosine of fx_arg in the range 0 to \(*pi.
+.Lf asin "'fx_arg"
+.Re
+the arc sine of fx_arg in the range \(mi\(*p/2 to \(*p/2.
+.Lf atan "'fx_arg1 'fx_arg2"
+.Re
+the arc tangent of fx_arg1/fx_arg2 in the range -\(*p to \(*p.
+.Lf boole "'x_key 'x_v1 'x_v2 ..."
+.Re
+the result of the bitwise boolean operation as described in the following
+table.
+.No
+If there are more than 3 arguments, then evaluation proceeds left to
+right with each partial result becoming the new value of x_v1.
+That is, 
+.br
+\ \ \ \ \ (boole\ 'key\ 'v1\ 'v2\ 'v3)\ \(==\ (boole\ 'key\ (boole\ 'key\ 'v1\ 'v2)\ 'v3).
+.br
+In the following table, \(** represents bitwise and, \(pl represents
+bitwise or, \o'\(ci\(pl' represents bitwise xor and \(no represents
+bitwise negation and is the highest precedence operator.
+.TS
+center box ;
+c s s s s s s s s
+c c c c c c c c c.
+(boole 'key 'x 'y)
+
+=
+key	0	1	2	3	4	5	6	7
+result	0	x \(** y	\(no x \(** y	y	x \(** \(no y	x	x \o'\(ci\(pl' y	x \(pl y
+
+_
+
+key	8	9	10	11	12	13	14	15
+result	\(no (x \(pl y)	\(no(x \o'\(ci\(pl' y)	\(no x	\(no x \(pl y	\(no y	x \(pl \(no y	\(no x \(pl \(no y	-1
+.TE
+.Lf cos "'fx_angle"
+.Re
+the cosine of fx_angle (which is assumed to be in radians).
+.Lf diff "['n_arg1 ... ]"
+.Re
+the result of subtracting from n_arg1 all subsequent arguments. 
+If no arguments are given, 0 is returned.
+.No
+See the description of add for details on data type conversions and
+restrictions.
+.Lf difference "['n_arg1 ...]"
+.Eq
+diff.
+.Lf Divide "'i_dividend 'i_divisor"
+.Re
+a list whose car is the quotient and whose cadr is the remainder of the
+division of i_divident by i_divisor.
+.No
+this is restricted to integer division.
+.Lf Emuldiv "'x_fact1 'x_fact2 'x_addn 'x_divisor"
+.Re
+a list of the quotient and remainder of this operation: 
+((x_fact1\ *\ x_fact2)\ +\ (sign\ extended)\ x_addn)\ /\ x_divisor.
+.No
+this is useful for creating a bignum arithmetic package in Lisp.
+.\".pg
+.Lf eq "'g_arg1 'g_arg2"
+.Re
+t if g_arg1 and g_arg2 are the exact same lisp object (i.e. they are
+stored in the same place in memory).
+.No
+This is a very restricted type of equality. 
+In general numbers are not
+.i eq
+to numbers with the same value, although usually small fixnums with the
+same value are
+.i eq .
+.Lf equal "'g_arg1 'g_arg2"
+.Re t iff g_arg1 and g_arg2 are the same type and their components are
+equal.
+.No
+in the case of numbers, they will be equal if their values are numerically
+equal.  If g_arg1 and g_arg2 are both lists then 
+.i equal
+is called recursively on their car's and cdr's.
+Two atoms are
+.i equal
+iff they are the same atom (i.e. they are
+.i eq .)
+This is almost equivalent to saying that two atoms are 
+.i equal 
+if their print names
+are the same.
+.Lf exp "'fx_arg"
+.Re
+.i e
+raised to the fx_arg power.
+.Lf expt "'n_base 'n_power"
+.Re
+n_base raised to the i_power power.
+.No
+if either of the arguments are flonums, the calculation will be done using
+.i log
+and 
+.i exp .
+.Lf fact "'x_arg"
+.Re
+x_arg factorial.
+.Lf fix "'n_arg"
+.Re
+a fixnum as close as we can get to n_arg.
+.No
+fix will round down.
+Currently, if n_arg is a flonum larger 
+than the size of a fixnum, this will fail.
+.Lf fixp "'g_arg"
+.Re
+t iff g_arg is a fixnum or bignum.
+.Lf floatp "'g_arg"
+.Re
+t iff g_arg is a flonum.
+.\".pg
+.Lf greaterp "['n_arg1 ...]"
+.Re
+t iff the arguments are in a strictly decreasing order.
+.No
+the function difference is used to compare adjacent values. 
+If any of the arguments are non numbers, the error message will come 
+from the difference function.
+.Lf lessp "['n_arg1 ...]"
+.Re
+t iff the arguments are in a strictly increasing order.
+.No
+the function difference is used to compare adjacent values. 
+If any of the arguments are non numbers, the error message will come 
+from the difference function.
+.Lf log "'fx_arg"
+.Re
+the natural logarithm of fx_arg.
+.Lf max "'n_arg1 ... "
+.Re
+the maximum value in the list of arguments.
+.Lf min "'n_arg1 ... "
+.Re
+the minimum value in the list of arguments.
+.Lf minus "'n_arg"
+.Re
+zero minus n_arg.
+.Lf minusp "'g_arg"
+.Re
+t iff g_arg is a negative number.
+.Lf mod "'i_dividend 'i_divisor"
+.Re
+the remainder when i_dividend is divided by i_divisor.
+.Lf numberp "'g_arg"
+.Re
+t iff g_arg is a number (fixnum, flonum or bignum).
+.Lf numbp "'g_arg"
+.Eq
+numberp.
+.\".pg
+.Lf onep "'g_arg"
+.Re
+t iff g_arg is a number equal to 1.
+.Lf plusp "'n_arg"
+.Re
+t iff n_arg is greater than zero.
+.Lf product "['n_arg1 ... ]"
+.Re
+the product of all of its arguments.
+It returns 1 if there are no arguments.
+.No
+See the description of the function add for details and restrictions to the
+automatic data type coersion.
+.Lf quotient "['n_arg1 ...]"
+.Re
+the result of dividing the first argument by succeeding ones.
+.No
+If there are no arguments, 1 is returned.
+See the description of the function add for details and restrictions
+of data type coersion..
+A divide by zero will cause a floating exception interrupt -- see the section
+on Interupts.
+.Lf remainder "'i_dividend 'i_divisor"
+.Eq
+mod.
+.Lf sin "'fx_angle"
+.Re
+the sine of fx_angle (which is assumed to be in radians).
+.Lf sqrt "'fx_arg"
+.Re
+the square root of fx_arg.
+.Lf sub1 "'n_arg"
+.Re
+n_arg minus 1.
+.Lf sum "['n_arg1 ...]"
+.Eq
+add and plus.
+.Lf times "['n_arg1 ... ]"
+.Eq
+product.
+.Lf zerop "'g_arg"
+.Re
+t iff g_arg is a number equal to 0.
+.in 0
+.nr si 0	\" kill section indent so what follows will look nice
+.sh 2
+These functions are restricted to fixnum arguments in Maclisp.
+One should avoid using them unless their arguments are known
+to be fixnums since 
+.Fr
+may adopt this convention in the future.
+.\".pg
+.Lf 1+ "'n_arg"
+.Eq
+add1.
+.Lf 1\(mi "'n_arg"
+.Eq
+sub1.
+.Lf \(pl "'n_arg"
+.Eq
+add.
+.Lf \(** "'n_arg"
+.Eq
+times. 
+.Lf \(mi "'n_arg"
+.Eq
+difference.
+.Lf  / "'n_arg1 'n_arg2"
+.Eq
+quotient
+.Lf < "'n_arg1 'n_arg2"
+.Eq
+lessp.
+.Lf \(eq "'g_arg1 'g_arg2"
+.Eq
+equal.
+.Lf > "'n_arg1 'n_arg2"
+.Eq
+greaterp.

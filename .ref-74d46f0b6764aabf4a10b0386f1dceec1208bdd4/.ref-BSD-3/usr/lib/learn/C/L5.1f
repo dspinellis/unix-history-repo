@@ -1,0 +1,17 @@
+#print
+(Section 1.5)
+Write a program to replace each tab by the
+three-character sequence >, backspace, -,
+which prints as ->.  The program should also replace
+each backspace by the analogous sequence <-.
+Compile it, test it, then type ready.
+#once #create Ref
+This contain s a back space and a	tab.
+#once #create Ref1
+This contain <-s a back <-space and a>-tab.
+#user
+a.out <Ref >test
+#cmp test Ref1
+#log
+#next
+5.1g 10

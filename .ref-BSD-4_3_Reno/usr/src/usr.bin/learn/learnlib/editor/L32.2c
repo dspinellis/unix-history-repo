@@ -1,0 +1,14 @@
+#print
+What will the word "floating" become after
+the command
+  s/a./or/
+is executed?  Type "answer WORD" where WORD is the
+new version.
+#copyin
+#user
+#uncopyin
+#match flooring
+#log
+#next
+32.2d 5
+32.1b 10

@@ -1,0 +1,210 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)ms.7	6.2 (Berkeley) 5/2/88
+.\"
+.TH MS 7 "May 2, 1988"
+.UC 4
+.ds ]W UCB Computer Center
+.SH NAME
+ms \- text formatting macros
+.SH SYNOPSIS
+\fBnroff  \-ms\fP  [ options ]  file  ...
+.br
+\fBtroff  \-ms\fP  [ options ]  file  ...
+.SH DESCRIPTION
+This package of \fInroff\fP\| and \fItroff\fP\|
+macro definitions provides a formatting facility
+for various styles of articles, theses, and books.
+When producing 2-column output on a terminal or lineprinter,
+or when reverse line motions are needed,
+filter the output through \fIcol\fP\|(1).
+All external \-ms macros are defined below.
+Many \fInroff\fP\| and \fItroff\fP\| requests
+are unsafe in conjunction with this package.
+However, the first four requests below
+may be used with impunity after initialization,
+and the last two may be used even before initialization:
+.sp .2
+.ta 5n 12n
+.nf
+	.bp	begin new page
+	.br	break output line
+	.sp n	insert n spacing lines
+	.ce n	center next n lines
+	.ls n	line spacing: n=1 single, n=2 double space
+	.na	no alignment of right margin
+.fi
+.sp .2
+Font and point size changes with \ef and \es are also allowed;
+for example, ``\efIword\efR'' will italicize \fIword.\fP
+Output of the \fItbl, eqn,\fP and \fIrefer\fP\|(1) preprocessors
+for equations, tables, and references is acceptable as input.
+.SH FILES
+/usr/share/tmac/tmac.x
+.br
+/usr/share/ms/x.???
+.SH "SEE ALSO"
+eqn(1), refer(1), tbl(1), troff(1)
+.SH REQUESTS
+.if n .in 0
+.ds x \fIx\fP\|
+.ds y \fIy\fP\|
+.ds z \fI y\fP
+.ds Y \fIx y\fP
+.tr _.
+.ta \w'MacroNam'u +\w'InitialVal'u +\w'Break? 'u
+.sp .3
+.nf
+Macro	Initial	Break?	\0 Explanation
+Name	Value	Reset?
+.sp .3
+_AB \*x	\-	y	begin abstract; if \*x=no don't label abstract
+_AE	\-	y	end abstract
+_AI	\-	y	author's institution
+_AM	\-	n	better accent mark definitions
+_AU	\-	y	author's name
+_B \*x	\-	n	embolden \*x; if no \*x, switch to boldface
+_B1	\-	y	begin text to be enclosed in a box
+_B2	\-	y	end boxed text and print it
+_BT	date	n	bottom title, printed at foot of page
+_BX \*x	\-	n	print word \*x in a box
+_CM	if t	n	cut mark between pages
+_CT	\-	y,y	chapter title: page number moved to CF (TM only)
+_DA \*x	if n	n	force date \*x at bottom of page; today if no \*x
+_DE	\-	y	end display (unfilled text) of any kind
+_DS \*Y	I	y	begin display with keep; \*x=I,L,C,B; \*y=indent 
+_ID\*z	8n,.5i	y	indented display with no keep; \*y=indent
+_LD	\-	y	left display with no keep
+_CD	\-	y	centered display with no keep
+_BD	\-	y	block display; center entire block
+_EF \*x	\-	n	even page footer \*x (3 part as for .tl)
+_EH \*x	\-	n	even page header \*x (3 part as for .tl)
+_EN	\-	y	end displayed equation produced by \fIeqn\fP
+_EQ \*Y	\-	y	break out equation; \*x=L,I,C; \*y=equation number
+_FE	\-	n	end footnote to be placed at bottom of page
+_FP	\-	n	numbered footnote paragraph; may be redefined
+_FS \*x	\-	n	start footnote; \*x is optional footnote label
+_HD	undef	n	optional page header below header margin
+_I \*x	\-	n	italicize \*x; if no \*x, switch to italics
+_IP \*Y	\-	y,y	indented paragraph, with hanging tag \*x; \*y=indent
+_IX \*Y	\-	y	index words \*x \*y and so on (up to 5 levels)
+_KE	\-	n	end keep of any kind
+_KF	\-	n	begin floating keep; text fills remainder of page
+_KS	\-	y	begin keep; unit kept together on a single page
+_LG	\-	n	larger; increase point size by 2
+_LP	\-	y,y	left (block) paragraph.
+_MC \*x	\-	y,y	multiple columns; \*x=column width
+_ND \*x	if t	n	no date in page footer; \*x is date on cover
+_NH \*Y	\-	y,y	numbered header; \*x=level, \*x=0 resets, \*x=S sets to \*y
+_NL	10p	n	set point size back to normal
+_OF \*x	\-	n	odd page footer \*x (3 part as for .tl)
+_OH \*x	\-	n	odd page header \*x (3 part as for .tl)
+_P1	if TM	n	print header on 1st page
+_PP	\-	y,y	paragraph with first line indented
+_PT	- % -	n	page title, printed at head of page
+_PX \*x	\-	y	print index (table of contents); \*x=no suppresses title
+_QP	\-	y,y	quote paragraph (indented and shorter)
+_R	on	n	return to Roman font
+_RE	5n	y,y	retreat: end level of relative indentation
+_RP \*x	\-	n	released paper format; \*x=no stops title on 1st page
+_RS	5n	y,y	right shift: start level of relative indentation
+_SH	\-	y,y	section header, in boldface
+_SM	\-	n	smaller; decrease point size by 2
+_TA	8n,5n	n	set tabs to 8n 16n ... (nroff) 5n 10n ... (troff)
+_TC \*x	\-	y	print table of contents at end; \*x=no suppresses title
+_TE	\-	y	end of table processed by \fItbl\fP
+_TH	\-	y	end multi-page header of table
+_TL	\-	y	title in boldface and two points larger
+_TM	off	n	UC Berkeley thesis mode
+_TS \*x	\-	y,y	begin table; if \*x=H table has multi-page header
+_UL \*x	\-	n	underline \*x, even in \fItroff\fP
+_UX \*x	\-	n	UNIX; trademark message first time; \*x appended
+_XA \*Y	\-	y	another index entry; \*x=page or no for none; \*y=indent
+_XE	\-	y	end index entry (or series of .IX entries)
+_XP	\-	y,y	paragraph with first line exdented, others indented
+_XS \*Y	\-	y	begin index entry; \*x=page or no for none; \*y=indent
+_1C	on	y,y	one column format, on a new page
+_2C	\-	y,y	begin two column format
+_]-	\-	n	beginning of \fIrefer\fP\| reference
+_[0	\-	n	end of unclassifiable type of reference
+_[N	\-	n	N= 1:journal-article, 2:book, 3:book-article, 4:report
+.fi
+.if t .bp
+.DT
+.SH REGISTERS
+Formatting distances can be controlled in \-ms
+by means of built-in number registers.
+For example, this sets the line length to 6.5 inches:
+.sp .3
+	.nr  LL  6.5i
+.sp .3
+Here is a table of number registers and their default values:
+.sp .3
+.nf
+.ta .5i +\w'Name\0'u +\w'paragraph distance 'u +\w'Takes Effect 'u
+	Name	Register Controls	Takes Effect	Default
+.sp .3
+	PS	point size      	paragraph	10
+	VS	vertical spacing	paragraph	12
+	LL	line length     	paragraph	6i
+	LT	title length    	next page	same as LL
+	FL	footnote length 	next .FS	5.5i
+	PD	paragraph distance	paragraph	1v (if n), .3v (if t)
+	DD	display distance	displays	1v (if n), .5v (if t)
+	PI	paragraph indent	paragraph	5n
+	QI	quote indent    	next .QP	5n
+	FI	footnote indent 	next .FS	2n
+	PO	page offset     	next page	0 (if n), \(ap1i (if t)
+	HM	header margin   	next page	1i
+	FM	footer margin   	next page	1i
+	FF	footnote format 	next .FS	0 (1, 2, 3 available)
+.fi
+.sp .3
+When resetting these values,
+make sure to specify the appropriate units.
+Setting the line length to 7, for example,
+will result in output with one character per line.
+Setting FF to 1 suppresses footnote superscripting;
+setting it to 2 also suppresses indentation of the first line;
+and setting it to 3 produces an .IP-like footnote paragraph.
+.PP
+Here is a list of string registers available in \-ms;
+they may be used anywhere in the text:
+.sp .3
+.nf
+.ta .5i 1.1i
+	Name	String's Function
+.sp .3
+	\e*Q	quote (" in \fInroff,\fP\| `` in \fItroff\fP )
+	\e*U 	unquote (" in \fInroff,\fP\| '' in \fItroff\fP )
+	\e*\-	dash (-- in \fInroff,\fP \(em in \fItroff\fP )
+	\e*(MO	month (month of the year)
+	\e*(DY	day (current date)
+	\e**	automatically numbered footnote
+	\e*[	opening footnote string delimiter
+	\e*]	closing footnote string delimiter
+	\e*([.	opening reference tag delimiter
+	\e*(.]	closing reference tag delimiter
+	\e*\'	acute accent (before letter)
+	\e*\`	grave accent (before letter)
+	\e*\d^	\ucircumflex (before letter)
+	\e*,	cedilla (before letter)
+	\e*:	umlaut (before letter)
+	\e*\d~	\utilde (before letter)
+.fi
+.sp .3
+The opening and closing delimiters for footnote numbers
+and reference tags may be changed by resetting the appropriate string.
+Both opening delimiters change to italics and superscript in \fItroff\fP,
+reverting to the previous font and the baseline at the closing delimiter.
+In \fInroff\fP, square brackets are used as delimiters, with footnote
+numbers in italics.
+.PP
+When using the extended accent mark definitions available with .AM,
+these strings should come after, rather than before,
+the letter to be accented.
+.SH BUGS
+Floating keeps and regular keeps are diverted to the same space,
+so they cannot be mixed together with predictable results.

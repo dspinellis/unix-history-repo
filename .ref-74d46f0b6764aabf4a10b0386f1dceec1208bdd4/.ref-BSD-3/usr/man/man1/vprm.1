@@ -1,0 +1,23 @@
+.TH VPRM 1 2/24/79
+.UC
+.SH NAME
+vprm \- remove a file from the Versatec queue
+.SH SYNOPSIS
+.B vprm
+[
+id ...
+] [
+filename ...
+] [
+owner ...
+]
+.SH DESCRIPTION
+.I Vprm
+removes an entry from the Versatec queue.
+The id, filename or owner should be that reported by
+.I vpq.
+All apropriate files will be removed.
+The id of each file removed from the queue will be printed.
+.SH "SEE ALSO"
+vpr(1), vpq(1)
+.SH BUGS

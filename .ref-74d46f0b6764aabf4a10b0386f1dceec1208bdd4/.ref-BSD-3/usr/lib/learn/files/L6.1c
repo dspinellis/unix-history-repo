@@ -1,0 +1,13 @@
+#print
+There is one file in this directory whose name begins
+with "g".  Rename it so the "g" at the beginning
+of the name is replaced by "h".
+Then type ready.
+#create g23
+g23, of course
+#user
+test -r h23 && test ! -r g23
+#log
+#next
+6.1d 0
+6.1e 5

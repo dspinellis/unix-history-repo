@@ -1,0 +1,50 @@
+.\" Copyright (c) 1980, 1991 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)dmesg.8	6.4 (Berkeley) %G%
+.\"
+.Dd 
+.Dt DMESG 8
+.Os BSD 4
+.Sh NAME
+.Nm dmesg
+.Nd "collect system diagnostic messages to form error log"
+.Sh SYNOPSIS
+.Nm dmesg
+.Op Fl 
+.Sh DESCRIPTION
+.Sy N.B.:
+.Nm Dmesg
+is obsoleted by
+.Xr syslogd 8
+for maintenance of the system error log.
+.Pp
+.Nm Dmesg
+looks in a system buffer for recently printed diagnostic messages
+and prints them on the standard output.
+The messages are those printed or logged
+by the system when errors occur.
+.Pp
+Available option:
+.Bl -tag -width Ds
+.It Fl
+.Nm Dmesg
+computes (incrementally) the new messages since the last time it
+was run and places these on the standard output.
+.El
+.Sh FILES
+.Bl -tag -width /var/log/msgbuf -compact
+.It Pa /var/log/msgbuf
+scratch file for memory of
+.Ql Fl
+option
+.El
+.Sh SEE ALSO
+.Xr syslogd 8
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 4.0 .

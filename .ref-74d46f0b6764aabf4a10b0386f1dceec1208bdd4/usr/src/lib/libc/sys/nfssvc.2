@@ -1,0 +1,53 @@
+.\" Copyright (c) 1989, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)nfssvc.2	6.5 (Berkeley) %G%
+.\"
+.Dd 
+.Dt NFSSVC 2
+.Os BSD 4.4
+.Sh NAME
+.Nm nfssvc
+.Nd create a remote NFS server
+.Sh SYNOPSIS
+.Fd #include <unistd.h>
+.Ft int
+.Fn nfssvc "int sock"
+.Sh DESCRIPTION
+.Bf -symbolic
+The calling sequence of this function is expected to change
+.Ef
+.Fn Nfssvc
+starts an
+.Tn NFS
+daemon listening on socket
+.Fa sock .
+The socket must be in the
+.Dv AF_INET
+family.
+.Sh RETURN VALUES
+Normally
+.Nm nfssvc
+does not return unless the server
+is terminated by a signal at which time a value of 0 is returned.
+Otherwise, -1 is returned and the global variable
+.Va errno
+is set to indicate the error.
+.Sh ERRORS
+.Fn Nfssvc
+fails if:
+.Bl -tag -width [EPERM]
+.It Bq Er EBADF
+.Fa Fd
+is not a valid open file descriptor.
+.It Bq Er EPERM
+The caller is not the super-user.
+.El
+.Sh SEE ALSO
+.Xr nfsd 8
+.Sh HISTORY
+The
+.Nm
+function call is currently under development.
