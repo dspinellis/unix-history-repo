@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1986 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1986, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Computer Consoles Inc.
@@ -9,7 +9,7 @@
  */
 
 #if defined(SYSLIBC_SCCS) && !defined(lint)
-	.asciz "@(#)cmpd.s	1.4 (Berkeley) %G%"
+	.asciz "@(#)cmpd.s	8.1 (Berkeley) %G%"
 #endif /* SYSLIBC_SCCS and not lint */
 
 #include "DEFS.h"
