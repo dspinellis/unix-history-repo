@@ -6,19 +6,21 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)subr.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)subr.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
  * Melbourne getty.
  */
 #define USE_OLD_TTY
+#include <stdlib.h>
 #include <sgtty.h>
 #include <string.h>
 #include <unistd.h>
 
 #include "gettytab.h"
 #include "extern.h"
+#include "pathnames.h"
 
 extern	struct sgttyb tmode;
 extern	struct tchars tc;
@@ -28,23 +30,24 @@ extern	struct ltchars ltc;
  * Get a table entry.
  */
 void
-gettable(name, buf, area)
-	char *name, *buf, *area;
+gettable(name, buf)
+	char *name, *buf;
 {
 	register struct gettystrs *sp;
 	register struct gettynums *np;
 	register struct gettyflags *fp;
-	register n;
+	long n;
+	char *dba[2];
+	dba[0] = _PATH_GETTYTAB;
+	dba[1] = 0;
 
-	hopcount = 0;		/* new lookup, start fresh */
-	if (getent(buf, name) != 1)
+	if (cgetent(&buf, dba, name) != 0)
 		return;
 
-	for (sp = gettystrs; sp->field; sp++)
-		sp->value = getstr(sp->field, &area);
+	for (sp = gettystrs; sp->field; sp++) 
+		cgetstr(buf, sp->field, &sp->value);
 	for (np = gettynums; np->field; np++) {
-		n = getnum(np->field);
-		if (n == -1)
+		if (cgetnum(buf, np->field, &n) == -1)
 			np->set = 0;
 		else {
 			np->set = 1;
@@ -52,14 +55,25 @@ gettable(name, buf, area)
 		}
 	}
 	for (fp = gettyflags; fp->field; fp++) {
-		n = getflag(fp->field);
-		if (n == -1)
+		if (cgetcap(buf, fp->field, ':') == NULL)
 			fp->set = 0;
 		else {
 			fp->set = 1;
-			fp->value = n ^ fp->invrt;
+			fp->value = 1 ^ fp->invrt;
 		}
 	}
+#define DEBUG
+#ifdef DEBUG
+	printf("name=\"%s\", buf=\"%s\"\n", name, buf);
+	for (sp = gettystrs; sp->field; sp++)
+		printf("cgetstr: %s=%s\n", sp->field, sp->value);
+	for (np = gettynums; np->field; np++)
+		printf("cgetnum: %s=%d\n", np->field, np->value);
+	for (fp = gettyflags; fp->field; fp++)
+		printf("cgetflags: %s='%c' set='%c'\n", fp->field, 
+		       fp->value + '0', fp->set + '0');
+	exit(1);
+#endif /* DEBUG */
 }
 
 void
