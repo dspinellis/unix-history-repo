@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.62	83/05/18	*/
+/*	kern_proc.c	4.63	83/05/21	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -99,7 +99,7 @@ execve()
 	char *sharg;
 	struct inode *ip;
 	swblk_t bno;
-	char cfname[MAXNAMLEN + 1];
+	char cfname[MAXCOMLEN + 1];
 	char cfarg[SHSIZE];
 	int resid;
 
@@ -205,8 +205,11 @@ execve()
 				sharg = cfarg;
 			}
 		}
+		if (u.u_dent.d_namlen > MAXCOMLEN)
+			u.u_dent.d_namlen = MAXCOMLEN;
 		bcopy((caddr_t)u.u_dent.d_name, (caddr_t)cfname,
 		    (unsigned)(u.u_dent.d_namlen + 1));
+		cfname[MAXCOMLEN] = 0;
 		indir = 1;
 		iput(ip);
 		ip = namei(schar, LOOKUP, 1);
@@ -797,32 +800,17 @@ fork()
 fork1(isvfork)
 {
 	register struct proc *p1, *p2;
-#ifndef	QUOTA
 	register a;
 
 	a = 0;
-#else
-	if (u.u_quota != NOQUOT && u.u_quota->q_plim &&
-	    u.u_quota->q_cnt >= u.u_quota->q_plim) {
-		u.u_error = EPROCLIM;
-		return;
-	}
-#endif
 	p2 = NULL;
 	for (p1 = proc; p1 < procNPROC; p1++) {
-#ifdef QUOTA
-		if (p1->p_stat == NULL) {
-			p2 = p1;
-			break;
-		}
-#else
 		if (p1->p_stat==NULL && p2==NULL)
 			p2 = p1;
 		else {
 			if (p1->p_uid==u.u_uid && p1->p_stat!=NULL)
 				a++;
 		}
-#endif
 	}
 	/*
 	 * Disallow if
@@ -832,11 +820,7 @@ fork1(isvfork)
 	 */
 	if (p2==NULL)
 		tablefull("proc");
-#ifdef QUOTA
-	if (p2==NULL || (u.u_uid!=0 && p2==procNPROC-1)) {
-#else
 	if (p2==NULL || (u.u_uid!=0 && (p2==procNPROC-1 || a>MAXUPRC))) {
-#endif
 		u.u_error = EAGAIN;
 		if (!isvfork) {
 			(void) vsexpand(0, &u.u_cdmap, 1);
@@ -850,9 +834,6 @@ fork1(isvfork)
 		u.u_r.r_val2 = 1;  /* child */
 		u.u_start = time.tv_sec;
 		u.u_acflag = AFORK;
-#ifdef QUOTA
-		u.u_qflags &= ~QUF_LOGIN;
-#endif
 		return;
 	}
 	u.u_r.r_val1 = p2->p_pid;
@@ -960,7 +941,8 @@ retry:
 	 */
 	rip = u.u_procp;
 #ifdef QUOTA
-	(rpp->p_quota = rip->p_quota)->q_cnt++;
+	rpp->p_quota = rip->p_quota;
+	rpp->p_quota->q_cnt++;
 #endif
 	rpp->p_stat = SIDL;
 	timerclear(&rpp->p_realtimer.it_value);
