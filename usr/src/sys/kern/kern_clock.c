@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_clock.c	7.19 (Berkeley) %G%
+ *	@(#)kern_clock.c	7.20 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -32,8 +32,8 @@ int	adjtimedelta;
  * independently of each other. The main clock, running at hz
  * times per second, is used to do scheduling and timeout calculations.
  * The second timer does resource utilization estimation statistically
- * based on the state of the machine phz times a second. Both functions
- * can be performed by a single clock (ie hz == phz), however the 
+ * based on the state of the machine stathz times a second. Both functions
+ * can be performed by a single clock (ie hz == stathz), however the 
  * statistics will be much more prone to errors. Ideally a machine
  * would have separate clocks measuring time spent in user state, system
  * state, interrupt state, and idle state. These clocks would allow a non-
@@ -60,7 +60,7 @@ int	adjtimedelta;
 }
 
 int	ticks;
-int	phz;
+int	stathz;
 int	profhz;
 struct	timeval time;
 struct	timeval mono_time;
@@ -179,7 +179,7 @@ hardclock(frame)
 	 * If the alternate clock has not made itself known then
 	 * we must gather the statistics.
 	 */
-	if (phz == 0)
+	if (stathz == 0)
 		gatherstats(&frame);
 
 	/*
@@ -444,7 +444,7 @@ kinfo_clockrate(op, where, acopysize, arg, aneeded)
 	 * Copyout clockinfo structure.
 	 */
 	clockinfo.hz = hz;
-	clockinfo.phz = phz;
+	clockinfo.stathz = stathz;
 	clockinfo.tick = tick;
 	clockinfo.profhz = profhz;
 	if (error = copyout((caddr_t)&clockinfo, where, sizeof(clockinfo)))
