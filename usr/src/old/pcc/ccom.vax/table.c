@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)table.c	1.25 (Berkeley) %G%";
+static char *sccsid ="@(#)table.c	1.26 (Berkeley) %G%";
 #endif lint
 
 # include "pass2.h"
@@ -76,6 +76,17 @@ SCONV,	INTAREG|FORCC,
 		NAREG|NASL,	RESC1|RESCC,
 		"	ZA\n",
 
+SCONV,	FORARG,
+	SAREG|AWD,	TWORD,
+	SANY,	TWORD,
+		0,	RNULL,
+		"	pushl	AL\n",
+
+SCONV,	FORARG,
+	SAREG|AWD,	TANY,
+	SANY,	TANY,
+		0,	RNULL,
+		"	ZV\n",
 
 INIT,	FOREFF,
 	SCON,	TANY,
@@ -500,27 +511,9 @@ OPLTYPE,	FORARG,
 
 OPLTYPE,	FORARG,
 	SANY,	TANY,
-	SANY,	TCHAR|TSHORT,
-		0,	RNULL,
-		"	cvtZRl	AR,-(sp)\n",
-
-OPLTYPE,	FORARG,
 	SANY,	TANY,
-	SANY,	TUCHAR|TUSHORT,
 		0,	RNULL,
-		"	movzZRl	AR,-(sp)\n",
-
-OPLTYPE,	FORARG,
-	SANY,	TANY,
-	SANY,	TDOUBLE,
-		0,	RNULL,
-		"	movd	AR,-(sp)\n",
-
-OPLTYPE,	FORARG,
-	SANY,	TANY,
-	SANY,	TFLOAT,
-		0,	RNULL,
-		"	cvtfd	AR,-(sp)\n",
+		"	ZV\n",
 
 #if defined(FORT) || defined(SPRECC)
 UNARY MINUS,	INTAREG|FORCC,
