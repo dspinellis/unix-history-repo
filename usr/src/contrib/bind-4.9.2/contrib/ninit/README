@@ -1,0 +1,89 @@
+		     NINIT -- NAMED INIT PROGRAM
+			     May 13, 1991
+
+WHAT NINIT DOES
+===============
+
+ninit starts named in nofork mode and waits for it to exit.  When it
+exits, ninit restarts a new named.  In addition, every 5 minutes,
+ninit wakes up and sends a SIGIOT to named.  This causes named to dump
+statistical information to /usr/tmp/named.stats.  Every 60 seconds,
+ninit tries to do a name resolution using the local named.  If it
+fails to get an answer back in some short amount of time, it kills the
+existing named and starts a new one.
+
+We are running this on the MIT nameservers and our mailhub.  We find
+that ninit is extremely useful in catching named's that die mysteriously,
+or which get hung for some unknown reason.  It's especially useful on our
+mailhub, since our mail queue will explode if we lose name resolution
+even for a short time.  
+
+MODIFICATIONS TO NAMED
+======================
+
+In order to use ninit, you will need to modify your named so that it
+understands the -n flag, which tells it not to fork upon startup.  The
+patch to do that can be found in ns_main.c.patch.  
+
+If you don't have source code to your named, you can also solve the
+problem by adding the #define FORKING_NAMED.  This solves the problem
+by starting the named with the -d option, which tells named not to
+fork, but which also tells it to start a debugging log in
+/usr/tmp/named.run.  As soon as the the named is finished
+initializing, ninit will send a SIGUSR1 signal to tell it to turn off
+debugging.  (It can't send the signal before that because the signal
+handlers aren't established before that point.)  The down side of this
+is that named will be writing debugging information while it is
+initializing itself.  
+
+I would suggest modifying named if you have the source.  If you don't
+FORKING_NAMED will work --- it's an ugly solution, though.
+
+HOW TO INSTALL NINIT
+====================
+
+1)  Edit ninit.c and check the configuration options near the
+beginning of the file.  You will almost certainly need to change
+TEST_HOST.  You may or may not need to change the configuration
+variables.
+
+2) Compile ninit and place the executable in /etc.
+
+3) Pick a port for the "nstats" service and install it in /etc/services.
+Modify the named_stats script to use the port number you've picked as the 
+$default_nstats_port.
+
+5) Add the following line /etc/inetd.conf
+
+nstats stream tcp nowait unswitched daemon /bin/cat   cat /usr/tmp/named.stats
+
+6) Modify /etc/rc so that it starts /etc/ninit instead of /etc/named
+upon reboot.
+
+7) As root, run /etc/ninit.  It will kill off the existing named and
+run a new named under its control.
+
+If you like, you may wish to edit /etc/syslog.conf to direct the ninit
+logging information to a logfile, or to some centeral logging host, or
+wherever you choose.
+
+You will also need to modify named_stats so that it checks whatever
+hosts you desire.
+
+BUGS
+====
+
+	None known.  (Yet!)
+
+	If you find any problems, please let me know:
+
+		Theodore Ts'o
+		tytso@mit.edu.
+
+I hope you find ninit useful!
+
+Theodore Ts'o
+May 13, 1991.
+
+
+	
