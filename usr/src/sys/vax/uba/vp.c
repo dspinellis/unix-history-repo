@@ -1,4 +1,4 @@
-/*	vp.c	6.1	83/07/29	*/
+/*	vp.c	6.2	83/09/20	*/
 
 #include "vp.h"
 #if NVP > 0
@@ -83,13 +83,11 @@ vpprobe(reg)
 	vpaddr->prbcr = 1;
 	DELAY(10000);
 	vpaddr->prcsr = 0;
-#if ERNIE || CAD 
-	/* UNTIL REWIRED, GET INTERRUPT AT 200 BUT WANT 174 */
+	/* GET INTERRUPT AT 200 BUT WANT 174 IF HAVE TWO VECTORS */
 	if (cvec == 0200) {
 		printf("vp reset vec from 200 to 174\n");
 		cvec = 0174;
 	}
-#endif
 	return (sizeof (struct vpdevice));
 }
 
