@@ -11,7 +11,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tar.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)tar.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -65,6 +65,7 @@ struct	linkbuf *ihead;
 struct	stat stbuf;
 
 int	rflag;
+int	sflag;
 int	xflag;
 int	vflag;
 int	tflag;
@@ -166,6 +167,10 @@ char	*argv[];
 
 		case 'r':
 			rflag++;
+			break;
+
+		case 's':
+			sflag++;
 			break;
 
 		case 'v':
@@ -423,6 +428,14 @@ top:
 		if (iflag)
 			goto top;
 		done(2);
+	}
+	/* strip off leading "/" if present */
+	if (sflag && dblock.dbuf.name[0] == '/') {
+		register char *cp1, *cp2;
+		for (cp1 = cp2 = dblock.dbuf.name; *cp2 && *cp2 == '/'; ++cp2);
+		if (!*cp2)
+			goto top;
+		while (*cp1++ = *cp2++);
 	}
 	if (tfile != NULL)
 		fprintf(tfile, "%s %s\n", dblock.dbuf.name, dblock.dbuf.mtime);
