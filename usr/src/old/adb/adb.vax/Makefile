@@ -1,5 +1,5 @@
 #
-#	Makefile	4.4	86/06/07
+#	Makefile	4.5	87/05/10
 #
 DESTDIR= 
 DFLAGS = -DADB
@@ -12,7 +12,7 @@ OFILES= access.o command.o expr.o format.o input.o main.o message.o \
 #
 #	path to the directory containing as
 #
-AS =	../as
+AS =	../../as/as.vax
 
 adb:	${OFILES}
 	${CC} -o adb ${OFILES}
