@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)lpd.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)lpd.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -232,8 +232,8 @@ int	requ[MAXREQUESTS];	/* job number of spool entries */
 int	requests;		/* # of spool requests */
 char	*person;		/* name of person doing lprm */
 
-char	fromb[32];	/* buffer for client's machine name */
-char	cbuf[BUFSIZ];	/* command line buffer */
+char	fromb[MAXHOSTNAMELEN];	/* buffer for client's machine name */
+char	cbuf[BUFSIZ];		/* command line buffer */
 char	*cmdnames[] = {
 	"null",
 	"printjob",
@@ -389,41 +389,29 @@ chkhost(f)
 	register struct hostent *hp;
 	register FILE *hostf;
 	register char *cp, *sp;
-	char ahost[50];
 	int first = 1;
 	extern char *inet_ntoa();
-	int baselen = -1;
 
 	f->sin_port = ntohs(f->sin_port);
 	if (f->sin_family != AF_INET || f->sin_port >= IPPORT_RESERVED)
 		fatal("Malformed from address");
+
+	/* Need real hostname for temporary filenames */
 	hp = gethostbyaddr((char *)&f->sin_addr,
 	    sizeof(struct in_addr), f->sin_family);
-	if (hp == 0)
+	if (hp == NULL)
 		fatal("Host name for your address (%s) unknown",
 			inet_ntoa(f->sin_addr));
 
-	strcpy(fromb, hp->h_name);
+	(void) strncpy(fromb, hp->h_name, sizeof(fromb));
+	from[sizeof(fromb) - 1] = '\0';
 	from = fromb;
-	if (!strcmp(from, host))
-		return;
 
-	sp = fromb;
-	cp = ahost;
-	while (*sp) {
-		if (*sp == '.') {
-			if (baselen == -1)
-				baselen = sp - fromb;
-			*cp++ = *sp++;
-		} else {
-			*cp++ = isupper(*sp) ? tolower(*sp++) : *sp++;
-		}
-	}
-	*cp = '\0';
 	hostf = fopen(_PATH_HOSTSEQUIV, "r");
 again:
 	if (hostf) {
-		if (!_validuser(hostf, ahost, DUMMY, DUMMY, baselen)) {
+		if (__ivaliduser(hostf, f->sin_addr.s_addr,
+		    DUMMY, DUMMY) == 0) {
 			(void) fclose(hostf);
 			return;
 		}
@@ -435,4 +423,5 @@ again:
 		goto again;
 	}
 	fatal("Your host does not have line printer access");
+	/*NOTREACHED*/
 }
