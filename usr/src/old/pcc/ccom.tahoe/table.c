@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)table.c	1.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)table.c	1.20 (Berkeley) %G%";
 #endif
 
 # include "pass2.h"
@@ -171,22 +171,35 @@ OPLOG,	FORCC,
 		0,	RESCC,
 		"	cmpl	AL,AR\nZP",
 
-/* tahoe won't handle uns char/short equality/inequality with mem and const */
-EQ,	FORCC,
-	AWD,		TUCHAR|TUSHORT,
-	SCON,	TANY,
-		NAREG,	RESCC,
-		"	movzZLl	AL,A1\n	cmpZL	A1,AR\nZP",
+/* more grot: constants in unsigned char/short comparisons sign-extend */
+/* optim2() ensures that SCCON/SSCON iff high bit is not set */
+OPLOG,	FORCC,
+	SAREG|AWD,	TUCHAR,
+	SCCON,	TANY,
+		0,	RESCC,
+		"	cmpZL	AL,AR\nZP",
 
-NE,	FORCC,
-	AWD,		TUCHAR|TUSHORT,
+OPLOG,	FORCC,
+	AWD,		TUCHAR,
 	SCON,	TANY,
 		NAREG,	RESCC,
-		"	movzZLl	AL,A1\n	cmpZL	A1,AR\nZP",
+		"	movzZLl	AL,A1\n	cmpl	A1,AR\nZP",
+
+OPLOG,	FORCC,
+	SAREG|AWD,	TUSHORT,
+	SSCON,	TANY,
+		0,	RESCC,
+		"	cmpZL	AL,AR\nZP",
+
+OPLOG,	FORCC,
+	AWD,		TUSHORT,
+	SCON,	TANY,
+		NAREG,	RESCC,
+		"	movzZLl	AL,A1\n	cmpl	A1,AR\nZP",
 
 /* optim2() handles degenerate comparisons with constants */
 OPLOG,	FORCC,
-	SAREG|AWD,	TCHAR|TUCHAR|TSHORT|TUSHORT,
+	SAREG|AWD,	TCHAR|TSHORT,
 	SCON,	TANY,
 		0,	RESCC,
 		"	cmpZL	AL,AR\nZP",
