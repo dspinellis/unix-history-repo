@@ -1,4 +1,4 @@
-/*	tcp_subr.c	4.24	82/04/24	*/
+/*	tcp_subr.c	4.25	82/04/25	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -13,6 +13,7 @@
 #include "../net/if.h"
 #include "../net/ip.h"
 #include "../net/ip_var.h"
+#include "../net/ip_icmp.h"
 #include "../net/tcp.h"
 #include "../net/tcp_fsm.h"
 #include "../net/tcp_seq.h"
@@ -237,5 +238,28 @@ tcp_ctlinput(cmd, arg)
 	int cmd;
 	caddr_t arg;
 {
+	struct in_addr *sin;
+	extern u_char inetctlerrmap[];
 COUNT(TCP_CTLINPUT);
+
+	if (cmd < 0 || cmd > PRC_NCMDS)
+		return;
+	switch (cmd) {
+
+	case PRC_ROUTEDEAD:
+		break;
+
+	case PRC_QUENCH:
+		break;
+
+	/* these are handled by ip */
+	case PRC_IFDOWN:
+	case PRC_HOSTDEAD:
+	case PRC_HOSTUNREACH:
+		break;
+
+	default:
+		sin = &((struct icmp *)arg)->icmp_ip.ip_dst;
+		in_pcbnotify(&tcb, sin, inetctlerrmap[cmd], tcp_abort);
+	}
 }
