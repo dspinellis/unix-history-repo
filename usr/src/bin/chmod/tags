@@ -1,0 +1,3 @@
+Mchmod	chmod.c	/^main(argc, argv)$/
+error	chmod.c	/^error(name)$/
+usage	chmod.c	/^usage()$/
