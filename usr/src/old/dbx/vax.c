@@ -4,7 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
-static char sccsid[] = "@(#)vax.c 5.4 %G%";
+static char sccsid[] = "@(#)vax.c 5.5 %G%";
 /*
  * Target machine dependent stuff.
  */
