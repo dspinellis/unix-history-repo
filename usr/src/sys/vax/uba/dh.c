@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dh.c	6.12 (Berkeley) %G%
+ *	@(#)dh.c	6.13 (Berkeley) %G%
  */
 
 #include "dh.h"
@@ -194,11 +194,10 @@ dhopen(dev, flag)
 	 * block uba resets which can clear the state.
 	 */
 	s = spl5();
-	if (dh_ubinfo[ui->ui_ubanum] == 0) {
-		/* 512+ is a kludge to try to get around a hardware problem */
+	if (cbase[ui->ui_ubanum] == 0) {
 		dh_ubinfo[ui->ui_ubanum] =
 		    uballoc(ui->ui_ubanum, (caddr_t)cfree,
-			512+nclist*sizeof(struct cblock), 0);
+			nclist*sizeof(struct cblock), 0);
 		cbase[ui->ui_ubanum] = dh_ubinfo[ui->ui_ubanum]&0x3ffff;
 	}
 	if (timerstarted == 0) {
@@ -590,17 +589,17 @@ dhreset(uban)
 	register struct uba_device *ui;
 	int i;
 
-	if (dh_ubinfo[uban] == 0)
-		return;
-	dh_ubinfo[uban] = uballoc(uban, (caddr_t)cfree,
-	    512+nclist*sizeof (struct cblock), 0);
-	cbase[uban] = dh_ubinfo[uban]&0x3ffff;
 	dh = 0;
 	for (dh = 0; dh < NDH; dh++) {
 		ui = dhinfo[dh];
 		if (ui == 0 || ui->ui_alive == 0 || ui->ui_ubanum != uban)
 			continue;
 		printf(" dh%d", dh);
+		if (cbase[uban] == 0) {
+			dh_ubinfo[uban] = uballoc(uban, (caddr_t)cfree,
+			    nclist*sizeof (struct cblock), 0);
+			cbase[uban] = dh_ubinfo[uban]&0x3ffff;
+		}
 		((struct dhdevice *)ui->ui_addr)->un.dhcsr |= DH_IE;
 		((struct dhdevice *)ui->ui_addr)->dhsilo = 0;
 		unit = dh * 16;

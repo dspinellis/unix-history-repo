@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dhu.c	4.5 (Berkeley) %G%
+ *	@(#)dhu.c	4.6 (Berkeley) %G%
  */
 
 /*
@@ -108,7 +108,7 @@ int	dhustart(), ttrstrt();
  * into an i/o space address for the DMA routine.
  */
 int	dhu_ubinfo[NUBA];	/* info about allocated unibus map */
-static int cbase[NUBA];		/* base address in unibus map */
+int	cbase[NUBA];		/* base address in unibus map */
 #define UBACVT(x, uban) 	(cbase[uban] + ((x)-(char *)cfree))
 
 /*
@@ -194,7 +194,7 @@ dhuopen(dev, flag)
 	 * block uba resets which can clear the state.
 	 */
 	s = spl5();
-	if (dhu_ubinfo[ui->ui_ubanum] == 0) {
+	if (cbase[ui->ui_ubanum] == 0) {
 		dhu_ubinfo[ui->ui_ubanum] =
 		    uballoc(ui->ui_ubanum, (caddr_t)cfree,
 			nclist*sizeof(struct cblock), 0);
@@ -712,16 +712,16 @@ dhureset(uban)
 	int i;
 	register int s;
 
-	if (dhu_ubinfo[uban] == 0)
-		return;
-	dhu_ubinfo[uban] = uballoc(uban, (caddr_t)cfree,
-				    nclist*sizeof (struct cblock), 0);
-	cbase[uban] = dhu_ubinfo[uban]&0x3ffff;
 	for (dhu = 0; dhu < NDHU; dhu++) {
 		ui = dhuinfo[dhu];
 		if (ui == 0 || ui->ui_alive == 0 || ui->ui_ubanum != uban)
 			continue;
 		printf(" dhu%d", dhu);
+		if (cbase[uban] == 0) {
+			dhu_ubinfo[uban] = uballoc(uban, (caddr_t)cfree,
+					    nclist*sizeof (struct cblock), 0);
+			cbase[uban] = dhu_ubinfo[uban]&0x3ffff;
+		}
 		addr = (struct dhudevice *)ui->ui_addr;
 		addr->dhucsr = DHU_SELECT(0) | DHU_IE;
 		addr->dhutimo = DHU_DEF_TIMO;
