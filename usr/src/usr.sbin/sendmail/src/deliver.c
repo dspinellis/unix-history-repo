@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	4.8		%G%);
+SCCSID(@(#)deliver.c	4.9		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -823,7 +823,10 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 		printf("Cannot exec '%s' errno=%d\n", m->m_mailer, errno);
 		(void) fflush(stdout);
 #endif FIOCLEX
-		_exit(EX_UNAVAILABLE);
+		if (m == LocalMailer)
+			_exit(EX_TEMPFAIL);
+		else
+			_exit(EX_UNAVAILABLE);
 	}
 
 	/*

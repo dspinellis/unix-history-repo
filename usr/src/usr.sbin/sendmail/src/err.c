@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)err.c	4.3		%G%);
+SCCSID(@(#)err.c	4.4		%G%);
 
 /*
 **  SYSERR -- Print error message.
@@ -31,22 +31,23 @@ char	MsgBuf[BUFSIZ*2];	/* text of most recent message */
 syserr(fmt, a, b, c, d, e)
 	char *fmt;
 {
+	register char *p;
+	int olderrno = errno;
 	extern char Arpa_PSyserr[];
 	extern char Arpa_TSyserr[];
-	register char *p;
 
 	/* format and output the error message */
-	if (errno == 0)
+	if (olderrno == 0)
 		p = Arpa_PSyserr;
 	else
 		p = Arpa_TSyserr;
-	fmtmsg(MsgBuf, (char *) NULL, p, fmt, a, b, c, d, e);
+	fmtmsg(MsgBuf, (char *) NULL, p, olderrno, fmt, a, b, c, d, e);
 	puterrmsg(MsgBuf);
 
 	/* determine exit status if not already set */
 	if (ExitStat == EX_OK)
 	{
-		if (errno == 0)
+		if (olderrno == 0)
 			ExitStat = EX_SOFTWARE;
 		else
 			ExitStat = EX_OSERR;
@@ -84,11 +85,12 @@ usrerr(fmt, a, b, c, d, e)
 {
 	extern char SuprErrs;
 	extern char Arpa_Usrerr[];
+	extern int errno;
 
 	if (SuprErrs)
 		return;
 
-	fmtmsg(MsgBuf, CurEnv->e_to, Arpa_Usrerr, fmt, a, b, c, d, e);
+	fmtmsg(MsgBuf, CurEnv->e_to, Arpa_Usrerr, errno, fmt, a, b, c, d, e);
 	puterrmsg(MsgBuf);
 
 	if (QuickAbort)
@@ -116,7 +118,7 @@ message(num, msg, a, b, c, d, e)
 	register char *msg;
 {
 	errno = 0;
-	fmtmsg(MsgBuf, CurEnv->e_to, num, msg, a, b, c, d, e);
+	fmtmsg(MsgBuf, CurEnv->e_to, num, 0, msg, a, b, c, d, e);
 	putmsg(MsgBuf, FALSE);
 }
 /*
@@ -143,7 +145,7 @@ nmessage(num, msg, a, b, c, d, e)
 	register char *msg;
 {
 	errno = 0;
-	fmtmsg(MsgBuf, (char *) NULL, num, msg, a, b, c, d, e);
+	fmtmsg(MsgBuf, (char *) NULL, num, 0, msg, a, b, c, d, e);
 	putmsg(MsgBuf, FALSE);
 }
 /*
@@ -213,6 +215,7 @@ puterrmsg(msg)
 **		eb -- error buffer to get result.
 **		to -- the recipient tag for this message.
 **		num -- arpanet error number.
+**		en -- the error number to display.
 **		fmt -- format of string.
 **		a, b, c, d, e -- arguments.
 **
@@ -223,12 +226,13 @@ puterrmsg(msg)
 **		none.
 */
 
-/*VARARGS4*/
+/*VARARGS5*/
 static
-fmtmsg(eb, to, num, fmt, a, b, c, d, e)
+fmtmsg(eb, to, num, eno, fmt, a, b, c, d, e)
 	register char *eb;
 	char *to;
 	char *num;
+	int en;
 	char *fmt;
 {
 	char del;
