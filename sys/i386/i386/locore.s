@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)locore.s	7.3 (Berkeley) 5/13/91
- *	$Id: locore.s,v 1.18 1994/06/07 23:53:22 phk Exp $
+ *	$Id: locore.s,v 1.19 1994/06/14 17:31:52 davidg Exp $
  */
 
 /*
@@ -172,8 +172,7 @@ NON_GPROF_ENTRY(btext)
 #endif
 
 	/* don't trust what the BIOS gives for eflags */
-	movl	$PSL_MBO,%eax
-	pushl	%eax
+	pushl	$PSL_MBO
 	popfl
 
 	/* Find out our CPU type. */
