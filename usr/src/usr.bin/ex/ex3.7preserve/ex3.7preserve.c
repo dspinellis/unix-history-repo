@@ -1,380 +1,297 @@
-/*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
  */
 
 #ifndef lint
-char *copyright =
-"@(#) Copyright (c) 1980 Regents of the University of California.\n\
+char copyright[] =
+"@(#) Copyright (c) 1991 The Regents of the University of California.\n\
  All rights reserved.\n";
-#endif not lint
+#endif /* not lint */
 
 #ifndef lint
-static char *sccsid = "@(#)ex3.7preserve.c	7.17 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)ex3.7preserve.c	7.18 (Berkeley) %G%";
+#endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
-#include <sys/dir.h>
+#include <dirent.h>
+#include <fcntl.h>
+#include <time.h>
 #include <pwd.h>
+#include <errno.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <stdlib.h>
+#include <string.h>
 #include "pathnames.h"
-
-#ifdef VMUNIX
-#define	HBLKS	2
-#else
-#define HBLKS	1
-#endif
-
-char xstr[1];			/* make loader happy */
 
 /*
  * Expreserve - preserve a file in _PATH_PRESERVE.
  * Bill Joy UCB November 13, 1977
  *
  * This routine is very naive - it doesn't remove anything from
- * _PATH_PRESERVE... this may mean that we leave
- * stuff there... the danger in doing anything with _PATH_PRESERVE
- * is that the clock may be screwed up and we may get confused.
+ * _PATH_PRESERVE... this may mean that we leave stuff there...
+ * the danger in doing anything with _PATH_PRESERVE is that the
+ * clock may be screwed up and we may get confused.
  *
- * We are called in two ways - first from the editor with no argumentss
- * and the standard input open on the temp file. Second with an argument
- * to preserve the entire contents of /tmp (root only).
+ * We are called in two ways - first from the editor with no arguments
+ * and the standard input open on the temp file.  Second with an
+ * argument to preserve the entire contents of _PATH_VARTMP (root only).
  *
  * BUG: should do something about preserving Rx... (register contents)
  *      temporaries.
  */
 
-#ifndef VMUNIX
-#define	LBLKS	125
-#else
+#ifdef VMUNIX
+#define	HBLKS	2
 #define	LBLKS	900
+#else
+#define HBLKS	1
+#define	LBLKS	125
 #endif
 #define	FNSIZE	128
 
 struct 	header {
 	time_t	Time;			/* Time temp file last updated */
 	int	Uid;			/* This users identity */
-#ifndef VMUNIX
-	short	Flines;			/* Number of lines in file */
-#else
+#ifdef VMUNIX
 	int	Flines;
+#else
+	short	Flines;			/* Number of lines in file */
 #endif
 	char	Savedfile[FNSIZE];	/* The current file name */
 	short	Blocks[LBLKS];		/* Blocks where line pointers stashed */
 } H;
 
-#ifdef	lint
-#define	ignore(a)	Ignore(a)
-#define	ignorl(a)	Ignorl(a)
-#else
-#define	ignore(a)	a
-#define	ignorl(a)	a
-#endif
-
-off_t	lseek();
-FILE	*popen();
-
-#define eq(a, b) strcmp(a, b) == 0
-
-main(argc)
+main(argc, argv)
 	int argc;
+	char **argv;
 {
+	extern int optind;
 	register DIR *tf;
-	struct direct *dirent;
+	struct dirent *dirent;
 	struct stat stbuf;
-	int err = 0;
+	int aflag, ch, err;
 	char path[MAXPATHLEN];
 
-	if (chdir(_PATH_PRESERVE) < 0) {
-		perror(_PATH_PRESERVE);
-		exit(1);
-	}
+	aflag = 0;
+	while ((ch = getopt(argc, argv, "a")) != EOF)
+		switch(ch) {
+		case 'a':
+			aflag = 1;
+			break;
+		case '?':
+		default:
+			usage();
+		}
+	argc -= optind;
+	argv += optind;
+
+	if (chdir(_PATH_PRESERVE) < 0)
+		error(_PATH_PRESERVE);
 
 	/*
 	 * If only one argument, then preserve the standard input.
 	 */
-	if (argc == 1) {
-		if (copyout((char *) 0))
-			exit(1);
-		exit(0);
-	}
+	if (!aflag)
+		exit(copyout(NULL) ? 1 : 0);
 
 	/*
 	 * If not super user, then can only preserve standard input.
 	 */
 	if (getuid()) {
-		fprintf(stderr, "NOT super user\n");
-		exit(1);
+		errno = EPERM;
+		error(NULL);
 	}
 
 	/*
 	 * ... else preserve all the stuff in /var/tmp, removing
 	 * it as we go.
 	 */
+	if (!(tf = opendir(_PATH_VARTMP)))
+		error(_PATH_VARTMP);
 
-	tf = opendir(_PATH_VARTMP);
-	if (tf == NULL) {
-		perror(_PATH_VARTMP);
-		exit(1);
-	}
+	err = 0;
 	while ((dirent = readdir(tf)) != NULL) {
 		/* Ex temporaries must begin with Ex. */
 		if (dirent->d_name[0] != 'E' || dirent->d_name[1] != 'x')
 			continue;
-		sprintf(path, "%s/%s", _PATH_VARTMP, dirent->d_name);
-		if (stat(path, &stbuf))
-			continue;
-		if ((stbuf.st_mode & S_IFMT) != S_IFREG)
+		(void)sprintf(path, "%s/%s", _PATH_VARTMP, dirent->d_name);
+		if (stat(path, &stbuf) || !S_ISREG(stbuf.st_mode))
 			continue;
 		/*
 		 * Save the bastard.
 		 */
 		err |= copyout(path);
 	}
-	closedir(tf);
+	(void)closedir(tf);
 	exit(err);
 }
 
-char	pattern[] = "Exaa`XXXXX";
-
-/*
- * Copy file name into pattern[].
- * If name is (char *) 0, then do the standard input.
- * We make some checks on the input to make sure it is
- * really an editor temporary, generate a name for the
- * file (this is the slowest thing since we must stat
- * to find a unique name), and finally copy the file.
- */
 copyout(name)
 	char *name;
 {
-	int i;
-	static int reenter;
-	char buf[BUFSIZ];
+	struct stat sb;
+	register int ifd, ofd, nr, nw, off, rval;
+	char buf[8*1024], fname[20];
 
-	/*
-	 * The first time we put in the digits of our
-	 * process number at the end of the pattern.
-	 */
-	if (reenter == 0) {
-		mkdigits(pattern);
-		reenter++;
+	/* Open any given file name. */
+	if (name) {
+		if ((ifd = open(name, O_RDWR)) < 0)
+			return(1);
+		(void)fstat(ifd, &sb);
+		if (!sb.st_size) {
+			(void)unlink(name);
+			return(0);
+		}
+	} else {
+		ifd = STDIN_FILENO;
+		/* vi hands us an fd, it's not necessarily at the beginning. */
+		(void)lseek(ifd, 0l, SEEK_SET);
 	}
 
-	/*
-	 * If a file name was given, make it the standard
-	 * input if possible.
-	 */
-	if (name != 0) {
-		ignore(close(0));
-		/*
-		 * Need read/write access for arcane reasons
-		 * (see below).
-		 */
-		if (open(name, 2) < 0)
-			return (1);
-	}
-
-	/*
-	 * Get the header block.
-	 */
-	ignorl(lseek(0, 0l, 0));
-	if (read(0, (char *) &H, sizeof H) != sizeof H) {
-format:
-		if (name == 0)
-			fprintf(stderr, "Buffer format error\t");
-		return (1);
-	}
+	if (read(ifd, &H, sizeof(H)) != sizeof(H))
+		goto format;
 
 	/*
 	 * Consistency checks so we don't copy out garbage.
 	 */
 	if (H.Flines < 0) {
-#ifdef DEBUG
-		fprintf(stderr, "Negative number of lines\n");
-#endif
+		(void)fprintf(stderr,
+		    "ex3.7preserve: negative number of lines\n");
 		goto format;
 	}
+
 	if (H.Blocks[0] != HBLKS || H.Blocks[1] != HBLKS+1) {
-#ifdef DEBUG
-		fprintf(stderr, "Blocks %d %d\n", H.Blocks[0], H.Blocks[1]);
-#endif
-		goto format;
-	}
-	if (name == 0 && H.Uid != getuid()) {
-#ifdef DEBUG
-		fprintf(stderr, "Wrong user-id\n");
-#endif
-		goto format;
-	}
-	if (lseek(0, 0l, 0)) {
-#ifdef DEBUG
-		fprintf(stderr, "Negative number of lines\n");
-#endif
+		(void)fprintf(stderr,
+		    "ex3.7preserve: blocks %d %d\n", H.Blocks[0], H.Blocks[1]);
 		goto format;
 	}
 
-	/*
-	 * If no name was assigned to the file, then give it the name
-	 * LOST, by putting this in the header.
-	 */
-	if (H.Savedfile[0] == 0) {
-		strcpy(H.Savedfile, "LOST");
-		ignore(write(0, (char *) &H, sizeof H));
-		H.Savedfile[0] = 0;
-		lseek(0, 0l, 0);
+	if (!name && H.Uid != getuid()) {
+		(void)fprintf(stderr, "ex3.7preserve: wrong user-id\n");
+		goto format;
 	}
 
-	/*
-	 * File is good.  Get a name and create a file for the copy.
-	 */
-	mknext(pattern);
-	ignore(close(1));
-	if (creat(pattern, 0600) < 0) {
-		if (name == 0)
-			perror(pattern);
+	if (lseek(ifd, 0l, SEEK_SET)) {
+		(void)fprintf(stderr,
+		    "ex3.7preserve: negative number of lines\n");
+format:		(void)fprintf(stderr, "ex3.7preserve: %s\n", strerror(EFTYPE));
 		return (1);
 	}
 
 	/*
-	 * Make the target be owned by the owner of the file.
+	 * If no name was assigned to the file, then give it the name
+	 * LOST, by putting this in the header.  This involves overwriting
+	 * the "input" file.
 	 */
-	ignore(chown(pattern, H.Uid, 0));
-
-	/*
-	 * Copy the file.
-	 */
-	for (;;) {
-		i = read(0, buf, BUFSIZ);
-		if (i < 0) {
-			if (name)
-				perror("Buffer read error");
-			ignore(unlink(pattern));
-			return (1);
-		}
-		if (i == 0) {
-			if (name)
-				ignore(unlink(name));
-			notify(H.Uid, H.Savedfile, (int) name, H.Time);
-			return (0);
-		}
-		if (write(1, buf, i) != i) {
-			if (name == 0)
-				perror(pattern);
-			unlink(pattern);
-			return (1);
-		}
+	if (H.Savedfile[0] == 0) {
+		(void)strcpy(H.Savedfile, "LOST");
+		(void)write(ifd, &H, sizeof(H));
+		H.Savedfile[0] = 0;
+		(void)lseek(ifd, 0l, SEEK_SET);
 	}
+
+	/* File is good.  Get a name and create a file for the copy. */
+	(void)strcpy(fname, "ExXXXXXX");
+	if ((ofd = mkstemp(fname)) == -1)
+		return(1);
+
+	/* Copy the file. */
+	rval = 0;
+	while ((nr = read(ifd, buf, sizeof(buf))) > 0)
+		for (off = 0; off < nr; nr -= nw, off += nw)
+			if ((nw = write(ofd, buf + off, nr)) < 0) {
+				(void)fprintf(stderr,
+				    "ex3.7preserve: tmp file: %s\n",
+				    strerror(errno));
+				rval = 1;
+				break;
+			}
+	if (nr < 0) {
+		(void)fprintf(stderr, "ex3.7preserve: %s: %s\n",
+		    name ? name : "stdin", strerror(errno));
+		rval = 1;
+	}
+	    
+	if (rval)
+		(void)unlink(fname);
+	else {
+		(void)fchown(ofd, H.Uid, 0);
+		notify(H.Uid, H.Savedfile, (int)name, H.Time);
+		if (name)
+			(void)unlink(name);
+	}
+	(void)close(ifd);
+	(void)close(ofd);
+	return(rval);
 }
 
-/*
- * Blast the last 5 characters of cp to be the process number.
- */
-mkdigits(cp)
-	char *cp;
-{
-	register int i, j;
-
-	for (i = getpid(), j = 5, cp += strlen(cp); j > 0; i /= 10, j--)
-		*--cp = i % 10 | '0';
-}
-
-/*
- * Make the name in cp be unique by clobbering up to
- * three alphabetic characters into a sequence of the form 'aab', 'aac', etc.
- * Mktemp gets weird names too quickly to be useful here.
- */
-mknext(cp)
-	char *cp;
-{
-	char *dcp;
-	struct stat stb;
-
-	dcp = cp + strlen(cp) - 1;
-	while (isdigit(*dcp))
-		dcp--;
-whoops:
-	if (dcp[0] == 'z') {
-		dcp[0] = 'a';
-		if (dcp[-1] == 'z') {
-			dcp[-1] = 'a';
-			if (dcp[-2] == 'z')
-				fprintf(stderr, "Can't find a name\t");
-			dcp[-2]++;
-		} else
-			dcp[-1]++;
-	} else
-		dcp[0]++;
-	if (stat(cp, &stb) == 0)
-		goto whoops;
-}
-
-/*
- * Notify user uid that his file fname has been saved.
- */
+/* Notify user uid that his file fname has been saved. */
 notify(uid, fname, flag, time)
 	int uid;
 	char *fname;
 	time_t	time;
 {
-	struct passwd *pp = getpwuid(uid);
+	struct passwd *pp;
 	register FILE *mf;
-	char	cmd[BUFSIZ];
-	char	hostname[128];
-	char	croak[128];
-	char	*timestamp, *ctime();
+	static int reenter;
+	static char hostname[MAXHOSTNAMELEN], *timestamp;
+	char cmd[MAXPATHLEN + 50], croak[50];
 
+	pp = getpwuid(uid);
 	if (pp == NULL)
 		return;
-	gethostname(hostname, sizeof(hostname));
-	timestamp = ctime(&time);
-	timestamp[16] = 0;	/* blast from seconds on */
-	sprintf(cmd, "%s %s", _PATH_BINMAIL, pp->pw_name);
-	setuid(getuid());
+
+	if (!reenter) {
+		reenter = 1;
+		(void)gethostname(hostname, sizeof(hostname));
+		timestamp = ctime(&time);
+		timestamp[16] = 0;	/* blast from seconds on */
+	}
+
+	(void)snprintf(cmd, sizeof(cmd), 
+	    "%s -i -t -F \"The Editor\" -f root", _PATH_SENDMAIL);
 	mf = popen(cmd, "w");
 	if (mf == NULL)
 		return;
-	setbuf(mf, cmd);
+	(void)fprintf(mf,
+	    "Reply-To: root@%s\nFrom: root@%s (The Editor)\nTo: %s\n",
+	    hostname, hostname, pp->pw_name);
+
 	/*
-	 *	flag says how the editor croaked:
-	 * "the editor was killed" is perhaps still not an ideal
-	 * error message.  Usually, either it was forcably terminated
-	 * or the phone was hung up, but we don't know which.
+	 * flag says how the editor croaked: "the editor was killed" is
+	 * perhaps still not an ideal error message.  Usually, either it
+	 * was forcably terminated or the phone was hung up, but we don't
+	 * know which.
 	 */
-	sprintf(croak, flag
-		? "the system went down"
-		: "the editor was killed");
-	if (fname[0] == 0) {
+	(void)snprintf(croak, sizeof(croak), 
+	    flag ? "the system went down"
+		 : "the editor was killed");
+	if (!fname  || !fname[0]) {
 		fname = "LOST";
+		fprintf(mf, "Subject: editor saved \"LOST\"\n\n");
+		fprintf(mf, "You were editing a file without a name\n");
+		fprintf(mf, "at %s on the machine %s when %s.\n",
+		    timestamp, hostname, croak);
 		fprintf(mf,
-"Subject: editor saved ``LOST''\n");
-		fprintf(mf,
-"You were editing a file without a name\n");
-		fprintf(mf,
-"at <%s> on the machine ``%s'' when %s.\n", timestamp, hostname, croak);
-		fprintf(mf,
-"Since the file had no name, it has been named \"LOST\".\n");
+		   "Since the file had no name, it has been named \"LOST\".\n");
 	} else {
-		fprintf(mf,
-"Subject: editor saved ``%s''\n", fname);
-		fprintf(mf,
-"You were editing the file \"%s\"\n", fname);
-		fprintf(mf,
-"at <%s> on the machine ``%s''\n", timestamp, hostname);
-		fprintf(mf,
-"when %s.\n", croak);
+		fprintf(mf, "Subject: editor saved \"%s\"\n\n", fname);
+		fprintf(mf, "You were editing the file %s\n", fname);
+		fprintf(mf, "at %s on the machine %s\n", timestamp, hostname);
+		fprintf(mf, "when %s.\n", croak);
 	}
+	fprintf(mf, "\nYou can retrieve most of your changes to this file\n");
+	fprintf(mf, "using the \"recover\" command of the editor.\n");
 	fprintf(mf,
-"\nYou can retrieve most of your changes to this file\n");
-	fprintf(mf,
-"using the \"recover\" command of the editor.\n");
-	fprintf(mf,
-"An easy way to do this is to give the command \"vi -r %s\".\n", fname);
-	fprintf(mf,
-"This method also works using \"ex\" and \"edit\".\n");
+	    "An easy way to do this is to give the command \"vi -r %s\".\n",
+	    fname);
+	fprintf(mf, "This method also works using \"ex\" and \"edit\".\n\n");
 	pclose(mf);
 }
 
@@ -383,19 +300,18 @@ notify(uid, fname, flag, time)
  *	never exactly the same
  *	just like a snowflake 
  */
-
-#ifdef lint
-Ignore(a)
-	int a;
+error(msg)
+	char *msg;
 {
-
-	a = a;
+	(void)fprintf(stderr, "ex3.7preserve: ");
+	if (msg)
+		(void)fprintf(stderr, "%s: ", msg);
+	(void)fprintf(stderr, "%s\n", strerror(errno));
+	exit(1);
 }
 
-Ignorl(a)
-	long a;
+usage()
 {
-
-	a = a;
+	(void)fprintf(stderr, "usage: ex3.7preserve [-a]\n");
+	exit(1);
 }
-#endif
