@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)mkfs.c	1.4 (Berkeley) %G%";
+static	char *sccsid = "@(#)mkfs.c	1.5 (Berkeley) %G%";
 
 /*
  * make file system for cylinder-group style file systems
@@ -456,7 +456,7 @@ struct inode *par;
 		}
 		while((i=read(f, db, BSIZE)) > 0) {
 			in.i_size += i;
-			newblk(&dbc, db, &ibc, ib, i);
+			newblk(&dbc, db, &ibc, ib, BSIZE);
 		}
 		close(f);
 		break;
@@ -502,7 +502,7 @@ struct inode *par;
 		break;
 	}
 	if(dbc != 0)
-		newblk(&dbc, db, &ibc, ib, roundup(dbc,FSIZE));
+		newblk(&dbc, db, &ibc, ib, roundup(dbc,BSIZE));
 	iput(&in, &ibc, ib);
 }
 
