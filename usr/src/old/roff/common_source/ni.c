@@ -1,8 +1,9 @@
 #ifndef lint
-static char sccsid[] = "@(#)ni.c	4.2 %G%";
+static char sccsid[] = "@(#)ni.c	4.3 %G%";
 #endif lint
 
 #include "tdef.h"
+#include "pathnames.h"
 char obuf[OBUFSZ];
 char *obufp = obuf;
 int r[NN] = {
@@ -23,10 +24,10 @@ int r[NN] = {
 int pto = 10000;
 int pfrom = 1;
 int print = 1;
-char nextf[NS] = "/usr/lib/tmac/tmac.xxxxx";
+char nextf[NS] = _PATH_TMAC;
 int nfi = 19;
 #ifdef NROFF
-char termtab[NS] = "/usr/lib/term/tablpr";
+char termtab[NS] = _PATH_TABLPR;
 int tti = 17;
 #endif
 #ifndef NROFF
