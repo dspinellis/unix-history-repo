@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)join.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)join.c	4.2 (Berkeley) %G%";
 /*	join F1 F2 on stuff */
 
 #include	<stdio.h>
@@ -86,7 +86,7 @@ char *argv[];
 	for (i = 0; i < no; i++)
 		olist[i]--;	/* 0 origin */
 	if (argc != 3)
-		error("usage: join [-j1 x -j2 y] [-o list] file1 file2");
+error("usage: join [-an] [-estring] [-j1 x -j2 y] [-o list] [-tc] file1 file2");
 	j1--;
 	j2--;	/* everyone else believes in 0 origin */
 	s1 = ppi[F1][j1];
