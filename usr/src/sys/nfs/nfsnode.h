@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfsnode.h	7.5 (Berkeley) %G%
+ *	@(#)nfsnode.h	7.6 (Berkeley) %G%
  */
 
 /*
@@ -36,7 +36,6 @@ struct nfsnode {
 	long	n_attrstamp;	/* Time stamp (sec) for attributes */
 	struct	vattr n_vattr;	/* Vnode attribute cache */
 	struct	sillyrename *n_sillyrename;	/* Ptr to silly rename struct */
-	daddr_t	n_lastr;	/* Last block read for read ahead */
 	u_long	n_size;		/* Current size of file */
 	time_t	n_mtime;	/* Prev modify time to maintain data cache consistency*/
 	int	n_error;	/* Save write error value */
