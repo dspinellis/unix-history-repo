@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)format.c	4.4 %G%";
+static	char sccsid[] = "@(#)format.c	4.5 %G%";
 #endif
 /*
  *
@@ -97,7 +97,7 @@ STRING		ifp;
 	STRING		fp;
 	CHAR		c, modifier, longpr;
 	L_REAL		fw;
-	struct{
+	struct bad_programming {
 		L_INT	sa;
 		INT	sb,sc;
 	};
@@ -114,8 +114,15 @@ STRING		ifp;
 		     FI
 		FI
 		IF c=='F'
-		THEN fw.sb=get(inkdot(4),itype);
-		     fw.sc=get(inkdot(6),itype);
+		/*
+		 * This used to be the following, but real C compilers won't
+		 * let you use a double as a struct!
+		 *
+		 *	THEN fw.sb=get(inkdot(4),itype);
+		 *	fw.sc=get(inkdot(6),itype);
+		 */
+		THEN (*(struct bad_programming *)&fw).sb=get(inkdot(4),itype);
+		     (*(struct bad_programming *)&fw).sc=get(inkdot(6),itype);
 		FI
 		IF errflg THEN return(fp); FI
 		IF mkfault THEN error(0); FI
@@ -213,7 +220,13 @@ STRING		ifp;
 
 		    case 'f':
 			fw = 0;
-			fw.sa = wx;
+			/*
+			 * This used to be the following, but real compilers
+			 * won't let you use a double as a struct!
+			 *
+			 *	fw.sa = wx;
+			 */
+			(*(struct bad_programming *)&fw).sa = wx;
 			IF (wx & ~0xFFFF00FF) == 0x8000
 			THEN printf("(reserved oprnd)");
 			ELSE printf("%-16.9f", fw);
@@ -221,7 +234,7 @@ STRING		ifp;
 			dotinc=4; break;
 
 		    case 'F':
-			fw.sa = wx;
+			(*(struct bad_programming *)&fw).sa = wx;
 			IF (wx & ~0xFFFF00FF) == 0x8000
 			THEN printf("%-32s", "(reserved oprnd)");
 			ELSE printf("%-32.18F", fw);
