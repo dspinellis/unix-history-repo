@@ -1,4 +1,4 @@
-/*		lpf.c	4.6	83/03/01
+/*		lpf.c	4.7	83/03/07
  * 	filter which reads the output of nroff and converts lines
  *	with ^H's to overwritten lines.  Thus this works like 'ul'
  *	but is much better: it can handle more than 2 overwrites
@@ -14,14 +14,54 @@
 
 char	buf[MAXREP][MAXWIDTH];
 int	maxcol[MAXREP] = {-1};
+int	lineno;
+int	width = 132;	/* default line length */
+int	length = 66;	/* page length */
+int	npages = 1;
+int	literal;	/* print control characters */
+char	*name;		/* user's login name */
+char	*host;		/* user's machine name */
+char	*acctfile;	/* accounting information file */
 
-main()
+main(argc, argv)
+int argc;
+char *argv[];
 {
 	register FILE *p = stdin, *o = stdout;
 	register int i, col;
 	register char *cp;
 	int done, linedone, maxrep;
 	char ch, *limit;
+
+	while (--argc) {
+		if (*(cp = *++argv) == '-') {
+			switch (cp[1]) {
+			case 'n':
+				argc--;
+				name = *++argv;
+				break;
+
+			case 'h':
+				argc--;
+				host = *++argv;
+				break;
+
+			case 'w':
+				if ((i = atoi(&cp[2])) > 0 && i <= MAXWIDTH)
+					width = i;
+				break;
+
+			case 'l':
+				length = atoi(&cp[2]);
+				break;
+
+			case 'c':	/* Print control chars */
+				literal++;
+				break;
+			}
+		} else
+			acctfile = cp;
+	}
 
 	for (cp = buf[0], limit = buf[MAXREP]; cp < limit; *cp++ = ' ');
 	done = 0;
@@ -38,7 +78,12 @@ main()
 				break;
 
 			case '\f':
+				lineno = length;
 			case '\n':
+				if (++lineno >= length) {
+					npages++;
+					lineno = 0;
+				}
 				linedone = 1;
 				break;
 
@@ -55,7 +100,6 @@ main()
 				col = (col | 07) + 1;
 				break;
 
-#ifdef WAITCHAR
 			case '\031':
 				/*
 				 * lpd needs to use a different filter to
@@ -70,10 +114,9 @@ main()
 					ungetc(ch, stdin);
 					ch = '\031';
 				}
-#endif
 
 			default:
-				if (col >= MAXWIDTH)
+				if (col >= width || !literal && ch < ' ')
 					break;
 				cp = &buf[0][col];
 				for (i = 0; i < MAXREP; i++) {
@@ -105,4 +148,13 @@ main()
 			maxcol[i] = -1;
 		}
 	}
+	if (lineno) {		/* be sure to end on a page boundary */
+		putchar('\f');
+		npages++;
+	}
+	if (name && acctfile && access(acctfile, 02) >= 0 &&
+	    freopen(acctfile, "a", stdout) != NULL) {
+		printf("%7.2f\t%s:%s\n", (float)npages, host, name);
+	}
+	exit(0);
 }
