@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_apx.c	7.9 (Berkeley) %G%
+ *	@(#)if_apx.c	7.10 (Berkeley) %G%
  */
 
 /*
@@ -113,11 +113,22 @@ struct	isa_driver apxdriver = {
 apxprobe(id)
 	register struct	isa_device *id;
 {
-	int	moffset = 0, subunit, unit = id->id_unit << 1;
+	int	moffset = 0, nchips = 2, unit = id->id_unit << 1, subunit;
 	struct	apc_reg *reg = (struct apc_reg *)id->id_iobase;
 	register struct	apx_softc *apx = apx_softc + unit;
 
-	for (subunit = 0; subunit < 2; subunit++) {
+	/*
+	 * Probing for the second MK5025 on all ISA/EISA adax boards
+	 * manufactured prior to July 1992 (and some time following)
+	 * will hang the bus and the system.  Thus, it is essential
+	 * not to probe for the second mk5025 if it is known not to be there.
+	 * As the current config scheme for 386BSD does not have a flags
+	 * field, we adopt the convention of using the low order bit of
+	 * the memsize to warn us that we have a single chip board.
+	 */
+	if (id->id_msize & 1)
+		nchips = 1;
+	for (subunit = 0; subunit < nchips; subunit++) {
 		apx->apx_msize	= id->id_msize >> 1;
 		apx->apx_hmem	= (struct apc_mem *) (id->id_maddr + moffset);
 		apx->apx_dmem	= (struct apc_mem *) moffset;
@@ -324,6 +335,7 @@ apxstart(ifp)
 			return (0);
 		len = min(m->m_pkthdr.len, SGMTU);
 		m_copydata(m, 0, len, apc->apc_tbuf[apx->apx_txnum]);
+		m_freem(m);
 		dx->sgdx_mcnt = -len;
 		dx->sgdx_flags = (SG_OWN|SG_TUI|SG_SLF|SG_ELF) |
 			(0xff & dx->sgdx_flags);
