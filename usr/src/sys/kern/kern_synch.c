@@ -1,4 +1,4 @@
-/*	kern_synch.c	4.5	%G%	*/
+/*	kern_synch.c	4.6	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -55,10 +55,6 @@ caddr_t chan;
 			goto out;
 		rp->p_stat = SSLEEP;
 		(void) spl0();
-		if(runin != 0) {
-			runin = 0;
-			wakeup((caddr_t)&runin);
-		}
 		swtch();
 		if(ISSIG(rp))
 			goto psig;
@@ -266,8 +262,10 @@ register struct proc *pp;
 	p += PUSER + 2*(pp->p_nice - NZERO);
 	if(p > 127)
 		p = 127;
-	if(p < curpri)
+	if(p < curpri) {
 		runrun++;
+		aston();
+	}
 	pp->p_usrpri = p;
 	return(p);
 }
