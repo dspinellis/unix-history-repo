@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)kdump.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)kdump.c	1.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -35,10 +35,10 @@ static char sccsid[] = "@(#)kdump.c	1.1 (Berkeley) %G%";
 
 #define FLG_TIME	0x1
 #define FLG_PERSIST	0x2
+#define FLG_SHODATA	0x4
 int flags;
 
-#define DEF_TRACEFILE	"trace.out"
-char *tracefile;
+char *tracefile = "trace.out";
 
 struct ktr_header ktr_header;
 int size = 1024;
@@ -53,13 +53,20 @@ main(argc, argv)
 	int ch, ktrlen;
 	register char *m;
 
-	while ((ch = getopt(argc,argv,"tf")) != EOF)
+	while ((ch = getopt(argc,argv,"tlf:d")) != EOF)
 		switch((char)ch) {
 			case 't':
 				flags |= FLG_TIME;
 				break;
-			case 'f':
+			case 'l':
 				flags |= FLG_PERSIST;
+				break;
+			case 'f':
+				tracefile = optarg;
+				break;
+			case 'd':
+				flags |= FLG_SHODATA;
+				break;
 			default:
 				fprintf(stderr,"usage: \n",*argv);
 				exit(1);
@@ -70,7 +77,6 @@ main(argc, argv)
 		fprintf(stderr, "kdump: usage\n");
 		exit(1);
 	}
-	tracefile = argc ? argv[0] : DEF_TRACEFILE;
 	if (!eqs(tracefile, "-")) {
 		if (freopen(tracefile, "r", stdin) == NULL) {
 			fprintf(stderr, "kdump: %s:", tracefile);
@@ -80,25 +86,25 @@ main(argc, argv)
 	}
 	m = (char *)malloc(size);
 	if (m == NULL) {
-		fprintf(stderr, "out of money\n");
+		fprintf(stderr, "kdump: out of money\n");
 		exit(1);
 	}
-	while (fread(&ktr_header, sizeof(struct ktr_header), 1, stdin)) {
+	while (myfread(&ktr_header, sizeof(struct ktr_header), 1, stdin)) {
 		dumpheader(&ktr_header);
-		if ((ktrlen = ktr_header.ktr_len) > 30000) {	/* XXX */
-			fprintf(stderr, "bogus length %d\n", 
+		if ((ktrlen = ktr_header.ktr_len) > 80000) {	/* XXX */
+			fprintf(stderr, "kdump: bogus length %d\n", 
 				ktrlen);
 			exit(1);
 		}
 		if (ktrlen > size) {
 			m = (char *)realloc(m, ktrlen);
 			if (m == NULL) {
-				fprintf(stderr, "out of money\n");
+				fprintf(stderr, "kdump: out of money\n");
 				exit(1);
 			}
 			size = ktrlen;
 		}
-		if (fread(m, ktrlen, 1, stdin) == 0) {
+		if (myfread(m, ktrlen, 1, stdin) == 0) {
 			fprintf(stderr, "kdump: out of data\n");
 			exit(1);
 		}
@@ -112,7 +118,28 @@ main(argc, argv)
 		case KTR_NAMEI:
 			ktrnamei(m, ktrlen);
 			break;
+		case KTR_GENIO:
+			ktrgenio((struct ktr_genio *)m, ktrlen);
+			break;
 		}
+	}
+}
+
+myfread(buf, size, num, stream)
+	char *buf;
+	FILE *stream;
+{
+	int i;
+again:
+	if (i = fread(buf, size, num, stream))
+		return (i);
+	else {
+		if (flags&FLG_PERSIST) {
+			sleep(1);
+			clearerr(stream);
+			goto again;
+		} else
+			return 0;
 	}
 }
 
@@ -132,15 +159,20 @@ dumpheader(kth)
 	case KTR_NAMEI:
 		type = "N";
 		break;
+	case KTR_GENIO:
+		type = "D";
+		break;
 	default:
-		sprintf(unknown, "UNKNOWN %d", kth->ktr_type);
+		sprintf(unknown, "UNKNOWN(%d)", kth->ktr_type);
 		type = unknown;
 	}
 
-	printf("%s %d (%s) ",
+	printf("%s %6d %-8s ",
 		type, kth->ktr_pid, kth->ktr_comm);
 	if (flags&FLG_TIME)
 		printf("%d.%d ", kth->ktr_time.tv_sec, kth->ktr_time.tv_usec);
+	if (flags&FLG_PERSIST)
+		fflush(stdout);
 }
 
 #include "/sys/sys/syscalls.c"
@@ -165,6 +197,8 @@ ktrsyscall(ktr, len)
 	if (ktr->ktr_narg)
 		putchar(')');
 	putchar('\n');
+	if (flags&FLG_PERSIST)
+		fflush(stdout);
 }
 
 ktrsysret(ktr, len)
@@ -182,8 +216,57 @@ ktrsysret(ktr, len)
 	else
 		printf("%d (0x%x)", ktr->ktr_retval, ktr->ktr_retval);
 	putchar('\n');
+	if (flags&FLG_PERSIST)
+		fflush(stdout);
 }
 
 ktrnamei(cp, len) {
-	printf("%.*s\n", len, cp);
+	printf("\"%.*s\"\n", len, cp);
+	if (flags&FLG_PERSIST)
+		fflush(stdout);
 }
+
+ktrgenio(ktr, len)
+	struct ktr_genio *ktr;
+{
+	int datalen = len - sizeof (struct ktr_genio);
+	char *cp = (char *)ktr + sizeof (struct ktr_genio);
+
+	printf("FD %d %s %d bytes\n", ktr->ktr_fd,
+		ktr->ktr_rw == UIO_READ ? "READ" : "WRITE", datalen);
+	if (flags&FLG_SHODATA) {
+		int col = 0;
+
+		while (datalen > 0) {
+			if (col == 0) {
+				putchar('\t');
+				col = 1;
+			}
+			if (*cp < 040 || *cp > 0177) {
+				switch (*cp) {
+				case '\n':
+					putchar(*cp);
+					col = 0;
+					break;
+				case '\t':
+					putchar(*cp);
+					break;
+				default:
+					if (*cp & 0200) {
+						putchar('M');
+						putchar('-');
+						*cp &= 0177;
+					}
+					putchar('^');
+					putchar(*cp+'@');
+				}
+			} else
+				putchar(*cp);
+			datalen--;
+			cp++;
+		}
+		if (col != 0)
+			putchar('\n');
+	}
+}
+
