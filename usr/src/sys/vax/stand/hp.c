@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hp.c	7.3 (Berkeley) %G%
+ *	@(#)hp.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -79,6 +79,7 @@ hpopen(io)
 	struct hpdevice *hpaddr = (struct hpdevice *)mbadrv(unit);
 	register struct hp_softc *sc = &hp_softc[unit];
 	register struct disklabel *lp = &hplabel[unit];
+	struct disklabel *dlp;
 
 	if (mbainit(UNITTOMBA(unit)) == 0) {
 		printf("nonexistent mba");
@@ -118,17 +119,18 @@ hpopen(io)
 			printf("can't read disk label");
 			return (EIO);
 		}
-		*lp = *(struct disklabel *)(lbuf + LABELOFFSET);
-#ifndef SMALL
-		if (lp->d_magic != DISKMAGIC || lp->d_magic2 != DISKMAGIC) {
+		dlp = (struct disklabel *)(lbuf + LABELOFFSET);
+		if (dlp->d_magic != DISKMAGIC || dlp->d_magic2 != DISKMAGIC) {
 			printf("hp%d: unlabeled\n", unit);
-#ifdef COMPAT_42
+#if defined(COMPAT_42) && !defined(SMALL)
 			hpmaptype(hpaddr, hpaddr->hpdt & MBDT_TYPE,
 			    UNITTODRIVE(unit), lp);
 #else
 			return (ENXIO);
 #endif
-		}
+		} else
+			*lp = *dlp;
+#ifndef SMALL
 		/*
 		 * Read in the bad sector table.
 		 */
@@ -147,8 +149,8 @@ hpopen(io)
 				hpbad[unit].bt_bad[i].bt_trksec = -1;
 			}
 		}
-		sc->gottype = 1;
 #endif
+		sc->gottype = 1;
 	}
 	if (io->i_boff < 0 || io->i_boff >= lp->d_npartitions ||
 	    lp->d_partitions[io->i_boff].p_size == 0) {
