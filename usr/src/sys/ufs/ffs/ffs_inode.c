@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ffs_inode.c	7.7 (Berkeley) %G%
+ *	@(#)ffs_inode.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -262,6 +262,17 @@ again:
 	if (ip->i_mode != 0)
 		ip->i_dquot = inoquota(ip);
 #endif
+	/*
+	 * Set up a generation number for this inode if it does not
+	 * already have one. This should only happen on old filesystems.
+	 */
+	if (ip->i_gen == 0) {
+		if (++nextgennumber < (u_long)time.tv_sec)
+			nextgennumber = time.tv_sec;
+		ip->i_gen = nextgennumber;
+		if ((vp->v_mount->m_flag & M_RDONLY) == 0)
+			ip->i_flag |= IMOD;
+	}
 	*ipp = ip;
 	return (0);
 }
