@@ -1,4 +1,4 @@
-#	@(#)bsd.own.mk	0.1 (RGrimes) 4/4/93
+#	$Id$
 
 BINGRP?=	bin
 BINOWN?=	bin

@@ -1,4 +1,5 @@
-#	@(#)sys.mk	5.11 (Berkeley) 3/13/91
+#	from: @(#)sys.mk	5.11 (Berkeley) 3/13/91
+#	$Id$
 
 unix=		We run UNIX.
 

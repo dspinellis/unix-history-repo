@@ -1,4 +1,5 @@
-#	@(#)bsd.prog.mk	5.26 (Berkeley) 6/25/91
+#	from: @(#)bsd.prog.mk	5.26 (Berkeley) 6/25/91
+#	$Id$
 
 .if exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
@@ -170,7 +171,7 @@ obj: _PROGSUBDIR
 .else
 obj: _PROGSUBDIR
 	@cd ${.CURDIR}; rm -rf obj; \
-	here=`pwd`; dest=/usr/obj/`echo $$here | sed 's,/usr/src/,,'`; \
+	here=`pwd`; dest=/usr/obj`echo $$here | sed 's,^/usr/src,,'`; \
 	echo "$$here -> $$dest"; ln -s $$dest obj; \
 	if test -d /usr/obj -a ! -d $$dest; then \
 		mkdir -p $$dest; \
