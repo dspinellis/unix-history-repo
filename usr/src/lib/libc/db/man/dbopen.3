@@ -3,12 +3,12 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)dbopen.3	5.1 (Berkeley) %G%
+.\"	@(#)dbopen.3	5.3 (Berkeley) %G%
 .\"
 .TH DB 3  ""
 .UC 7
 .SH NAME
-btree_open, flat_open, hash_open \- database manipulation routines
+btree_open, hash_open, recno_open \- database manipulation routines
 .SH SYNOPSIS
 .nf
 .ft B
@@ -18,21 +18,20 @@ DB *
 btree_open(const char *file, int flags, int mode, const BTREEINFO * private);
 
 DB *
-flat_open(const char *file, int flags, int mode, const FLATINFO * private);
+hash_open(const char *file, int flags, int mode, const HASHINFO * private);
 
 DB *
-hash_open(const char *file, int flags, int mode, const HASHINFO * private);
+recno_open(const char *file, int flags, int mode, const RECNOINFO * private);
 .ft R
 .fi
 .SH DESCRIPTION
 .IR Btree_open ,
-.IR flat_open ,
+.IR hash_open ,
 and
-.I hash_open
-are interfaces, respectively, to database files in btree, flat,
-and hashed record formats.
-Access to all file types is based on key/data pairs, where both keys
-and data are of essentially unlimited size.
+.I recno_open
+are interfaces, respectively, to database files in btree, hashed, and
+flat-file record formats.
+Access to all file types is based on key/data pairs.
 .PP
 Each routine opens
 .I file
@@ -52,32 +51,32 @@ The argument
 is a pointer to a private, access-method specific structure described
 below.
 .PP
-The open routines return a pointer to a structure representing the
-database on success and NULL on error.
-This structure is as follows:
+The open routines return a pointer to a structure on success and NULL
+on error.
+This structure contains at least the following fields:
 .sp
 typedef struct {
 .RS
-void *internal;
+void *private;
 .br
 int (*close)(), (*delete)(), (*get)(), (*put)(), (*seq)(), (*sync)();
 .RE
 } DB;
 .sp
 .PP
-This structure is as follows:
+The elements of this structure are defined as follows:
 .TP
-internal
+private
 A pointer to an internal structure private to the access method.
 .TP
 close
 A pointer to a routine to flush any cached information to disk, free any
-allocated resources, and close the database file, whose function prototype
-is:
+allocated resources, and close the database file.
+Its function prototype is:
 .sp
-.in +5
+.RS
 close(const DB *db);
-.in -5
+.RE
 .sp
 Since key/data pairs may be cached in memory, failing to close the
 file with the
@@ -88,12 +87,12 @@ The
 routine returns 0 on error and 1 on success.
 .TP
 delete
-A pointer to a routine to remove key/data pairs from the database,
-whose function prototype is:
+A pointer to a routine to remove key/data pairs from the database.
+Its function prototype is:
 .sp
-.in +5
+.RS
 delete(const DB *db, const VALUE *key);
-.in -5
+.RE
 .sp
 The
 .I delete
@@ -103,11 +102,12 @@ was not in the file.
 .TP
 get
 A pointer to a routine which is the interface for keyed retrieval from
-the database, whose function prototype is:
+the database.
+Its function prototype is:
 .sp
-.in +5
+.RS
 get(const DB *db, const VALUE *key, VALUE *data);
-.in -5
+.RE
 .sp
 The address and length of the data associated with the specified
 .I key
@@ -120,18 +120,14 @@ routine returns 0 on error, 1 on success, and -1 if the
 was not in the file.
 .TP
 put
-A pointer to a routine to store key/data pairs in the database,
-whose function prototype is:
+A pointer to a routine to store key/data pairs in the database.
+Its function prototype is:
 .sp
-.in +5
-put(const DB *db, const VALUE *key, const VALUE *data, u_long flag);
-.in -5
-.sp
-The parameter flag, if set, should be either R_APPEND or R_INSERT,
-optionally
-.IR or 'ed
-with R_NOOVERWRITE.
 .RS
+.RS
+put(const DB *db, const VALUE *key, const VALUE *data, u_long flag);
+.RE
+.sp
 .TP
 R_APPEND
 Append the data immediately after the data referenced by
@@ -139,7 +135,7 @@ Append the data immediately after the data referenced by
 creating a new record.
 (This implies that the access method is able to create new keys itself,
 i.e. the keys are ordered and independent, for example, record numbers.
-Currently applicable only to the flat file access method.)
+Currently applicable only to the RECNO access method.)
 .TP
 R_INSERT
 Insert the data immediately before the data referenced by
@@ -147,7 +143,7 @@ Insert the data immediately before the data referenced by
 creating a new record.
 (This implies that the access method is able to create new keys itself,
 i.e. the keys are ordered and independent, for example, record numbers.
-Currently applicable only to the flat file access method.)
+Currently applicable only to the RECNO access method.)
 .TP
 R_NOOVERWRITE
 Enter the new key/data pair only if the key does not previously exist.
@@ -162,11 +158,12 @@ is set and the key already exists in the file.
 .TP
 seq
 A pointer to a routine which is the interface for sequential
-retrieval from the database, whose function prototype is:
+retrieval from the database.
+Its function prototype is:
 .sp
-.in +5
+.RS
 seq(const DB *db, VALUE *key, VALUE *data, int flag);
-.in -5
+.RE
 .sp
 The address and length of the key are returned in the structure
 referenced by
@@ -208,12 +205,12 @@ and -2 if the input is a character device and no complete records are
 available.
 .TP
 sync
-A pointer to a routine to flush any cached information to disk,
-whose function prototype is:
+A pointer to a routine to flush any cached information to disk.
+Its function prototype is:
 .sp
-.in +5
+.RS
 sync(const DB *db);
-.in -5
+.RE
 .sp
 If the database is in memory only, the
 .I sync
@@ -234,9 +231,9 @@ u_char *data;
 .br
 size_t size;
 .RE
-} ENTRY;
+} DBT;
 .PP
-The elements of this structure are as follows:
+The elements of this structure are defined as follows:
 .TP
 data
 A pointer to a byte string.
@@ -247,38 +244,23 @@ The length of the byte string.
 One of the access methods is a btree: a sorted, balanced
 tree structure with associated key and data pairs.
 .PP
-<Mike fill this in?>
-.PP
 The private data structure provided to
 .I btree_open
 is as follows:
 .sp
 typedef struct {
 .RS
-u_long flags;
-.br
 int cachesize;
-.br
-int pagesize;
 .RE
 } BTREEINFO;
 .PP
-The elements of this structure are as follows:
-.TP
-flags
-The flag value is specified by
-.IR or 'ing
-the following values:
-.RS
-.TP
-R_SMALLCACHE
-A flag informing the routines that they are not expected to be
-the primary data cache, and to minimize any caching they do.
+The elements of this structure are defined as follows:
 .RE
 .TP
 cachesize
-.TP
-pagesize
+A suggested maximum size, in bytes, of the memory cache.
+Setting this value to zero specifies that an appropriate amount of memory
+should be used.
 .SH HASH
 One of the access methods is hashed access and storage.
 The private data structure provided to
@@ -287,9 +269,9 @@ is as follows:
 .sp
 typedef struct {
 .RS
-u_long flags;
-.br
 int bsize;
+.br
+int cachesize;
 .br
 int ffactor;
 .br
@@ -299,18 +281,7 @@ u_long (*hash)(const void *, const size_t);
 .RE
 } HASHINFO;
 .PP
-The elements of this structure are as follows:
-.TP
-flags
-The flag value is specified by
-.IR or 'ing
-the following values:
-.RS
-.TP
-R_SMALLCACHE
-A flag informing the routines that they are not expected to be
-the primary cache, and to minimize any caching they do.
-.RE
+The elements of this structure are defined as follows:
 .TP
 bsize
 .I Bsize
@@ -319,6 +290,11 @@ For tables with large data items, it may be preferable to increase the
 page size, and, conversely, applications doing exclusively in-memory hashing
 may want to use a very small bucket size, for example, 256, to minimize
 hash chain collisions.
+.TP
+cachesize
+A suggested maximum size, in bytes, of the memory cache.
+Setting this value to zero specifies that an appropriate amount of memory
+should be used.
 .TP
 ffactor
 .I Ffactor
@@ -344,6 +320,9 @@ If not set, the default value is 1.
 If not set or set too low, hash tables will expand gracefully as keys
 are entered, although a slight performance degradation may be noticed.
 .PP
+If the pointer to the private data structure is NULL, the open routine
+will use appropriate values.
+.PP
 If the hash table already exists, and the O_TRUNC flag is not
 specified to 
 .IR hash_open ,
@@ -359,17 +338,20 @@ If a hash function is specified,
 will attempt to determine if the hash function specified is the same as
 the one with which the database was created, and will fail if it is not.
 .PP
+Both key and data structures may reference byte strings of essentially
+unlimited length.
+.PP
 Backward compatible interfaces to the routines described in
 .IR dbm (3),
 .IR hsearch (3),
 and
 .IR ndbm (3)
 are provided as part of the compatibility library, ``libcompat.a''.
-.SH "FLAT FILES"
+.SH RECNO
 One of the access methods is either variable or fixed-length records,
 the former delimited by a specific byte value.
 The private data structure provided to
-.I flat_open
+.I recno_open
 is as follows:
 .sp
 typedef struct {
@@ -382,9 +364,9 @@ size_t reclen;
 .br
 u_char bval;
 .RE
-} VLENINFO;
+} RECNOINFO;
 .PP
-The elements of this structure are as follows:
+The elements of this structure are defined as follows:
 .TP
 flags
 The flag value is specified by
@@ -399,14 +381,12 @@ The structure element
 specifies the length of the record, and the structure element
 .I bval
 is used as the pad character.
-.TP
-R_SMALLCACHE
-A flag informing the routines that they are not expected to be
-the primary cache, and to minimize any caching they do.
 .RE
 .TP
 cachesize
-The amount of memory to be used as a data cache.
+A suggested maximum size, in bytes, of the memory cache.
+Setting this value to zero specifies that an appropriate amount of memory
+should be used.
 .TP
 reclen
 The length of a fixed-length record.
@@ -441,6 +421,8 @@ The byte offset is valid.
 .TP
 R_RECNO
 The record number is valid.
+.PP
+Data structures may reference byte strings of essentially unlimited length.
 .SH ERRORS
 The
 .I open
@@ -455,6 +437,10 @@ or the following:
 A parameter has been specified (hash function, pad byte etc.) that is
 incompatible with the current file specification or there is a mismatch
 between the version number of file and the software.
+.TP
+[EOPNOTSUPP]
+A file used by an open routine is incorrectly formatted, corrupted,
+or otherwise unusable.
 .PP
 The
 .I get
@@ -476,3 +462,6 @@ The
 routines may fail and set errno for any of the errors specified for the
 library routine
 .IR fsync (2).
+.SH BUGS
+The typedef DBT is a mnemonic for ``data base thang'', and was used
+because all of the reasonable names were taken.
