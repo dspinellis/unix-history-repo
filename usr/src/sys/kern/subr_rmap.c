@@ -1,4 +1,4 @@
-/*	subr_rmap.c	4.7	82/10/21	*/
+/*	subr_rmap.c	4.8	82/10/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -43,7 +43,7 @@
  */
 rminit(mp, size, addr, name, mapsize)
 	register struct map *mp;
-	int size, addr;
+	long size, addr;
 	char *name;
 	int mapsize;
 {
