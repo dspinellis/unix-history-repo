@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)select.2	6.1 (Berkeley) %G%
+.\"	@(#)select.2	6.2 (Berkeley) %G%
 .\"
 .TH SELECT 2 ""
 .UC 5
@@ -37,7 +37,7 @@ i.e. the bits from 0 through
 .IR nfds -1
 in the masks are examined.
 .I Select
-returns, in place, a mask of those descriptors which are ready.
+returns, in place, a mask of those descriptors that are ready.
 The total number of bits set in all the masks is returned in
 .IR nfound .
 .PP
@@ -58,7 +58,7 @@ and
 may be given as 0 if no descriptors are of interest.
 .SH "RETURN VALUE
 .I Select
-returns the number of 'one' bits which are contained in
+returns the number of 'one' bits that are contained in
 the bit masks,
 or \-1 if an error occurred.
 If the time limit expires then
@@ -71,8 +71,12 @@ An error return from \fIselect\fP indicates:
 One of the bit masks specified an invalid descriptor.
 .TP 15
 [EINTR]
-An signal was delivered before any of the selected for
-events occurred or the time limit expired.
+A signal was delivered before the time limit expired and
+before any of the selected events occurred.
+.TP 15
+[EINVAL]
+The specified time limit is unacceptable.  One of its components is
+negative or too large.
 .SH SEE ALSO
 accept(2), connect(2), read(2), write(2), recv(2), send(2), getdtablesize(2)
 .SH BUGS
