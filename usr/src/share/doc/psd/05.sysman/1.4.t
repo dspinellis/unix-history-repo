@@ -2,9 +2,8 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)1.4.t	5.1 (Berkeley) %G%
+.\"	@(#)1.4.t	6.1 (Berkeley) %G%
 .\"
-.\" 1.4.t 5.1 86/05/08
 .sh "Timers
 .NH 3
 Real time

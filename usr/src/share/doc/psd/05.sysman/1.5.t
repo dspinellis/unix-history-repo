@@ -2,9 +2,8 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)1.5.t	5.1 (Berkeley) %G%
+.\"	@(#)1.5.t	6.1 (Berkeley) %G%
 .\"
-.\" 1.5.t 5.1 86/05/08
 .sh Descriptors
 .PP
 .NH 3
@@ -153,7 +152,7 @@ Descriptor wrapping.\(dg
 .PP
 .FS
 \(dg The facilities described in this section are not included
-in 4.2BSD.
+in 4.3BSD.
 .FE
 A user process may build descriptors of a specified type by
 \fIwrapping\fP a communications channel with a system supplied protocol

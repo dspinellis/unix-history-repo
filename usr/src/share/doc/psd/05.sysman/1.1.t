@@ -2,9 +2,8 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)1.1.t	5.1 (Berkeley) %G%
+.\"	@(#)1.1.t	6.1 (Berkeley) %G%
 .\"
-.\" 1.1.t 5.1 86/05/08
 .sh "Processes and protection
 .NH 3
 Host and process identifiers
