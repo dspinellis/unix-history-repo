@@ -1,6 +1,11 @@
 #ifndef lint
-static char sccsid[] = "@(#)res_debug.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_debug.c	4.4 (Berkeley) %G%";
 #endif
+
+/*
+ * Copyright (c) 1985 Regents of the University of California
+ *	All Rights Reserved
+ */
 
 #include <sys/types.h>
 #include <netinet/in.h>

@@ -1,4 +1,9 @@
-/*	res_mkquery.c	4.4	85/03/28	*/
+/*	res_mkquery.c	4.5	85/04/01	*/
+
+/*
+ * Copyright (c) 1985 Regents of the University of California
+ *	All Rights Reserved
+ */
 
 #include <stdio.h>
 #include <sys/types.h>
