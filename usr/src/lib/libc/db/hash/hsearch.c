@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hsearch.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)hsearch.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -31,7 +31,7 @@ unsigned	nel;
     info.nelem = nel;
     info.bsize = 256;
     info.ffactor = 8;
-    info.ncached = NULL;
+    info.cachesize = NULL;
     info.hash = NULL;
     info.lorder = 0;
     dbp = hash_open ( NULL, O_CREAT|O_RDWR, 0600, &info );
