@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty.c	7.21 (Berkeley) %G%
+ *	@(#)tty.c	7.22 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -1743,6 +1743,7 @@ ttspeedtab(speed, table)
 	return(-1);
 }
 
+int ttyhostname = 0;
 /*
  * (^T)
  * Report on state of foreground process group.
@@ -1750,30 +1751,156 @@ ttspeedtab(speed, table)
 ttyinfo(tp)
 	struct tty *tp;
 {
-	register struct proc *p;
+	register struct proc *p, *pick = NULL;
+	register char *cp = hostname;
+	int x, s;
+	struct timeval utime, stime;
+#define	pgtok(a)	((a)/(1024/NBPG))
 
 	if (ttycheckoutq(tp,0) == 0) 
 		return;
-	if (tp->t_session == NULL)
-		ttyprintf(tp, "kernel: not a controlling terminal\n");
-	else if (tp->t_pgrp == NULL || 
-		(p = tp->t_pgrp->pg_mem) == NULL)
-		ttyprintf(tp, "kernel: no foreground process group\n");
-	else {
-		int i = 0;
-
-		for (; p != NULL; p = p->p_pgrpnxt) {
-			ttyprintf(tp, 
-			 "kernel: pid: %d state: %x wchan: %x ticks: %d\n",
-				p->p_pid, p->p_stat, p->p_wchan, p->p_cpticks);
-			if (++i > 6) {
-				ttyprintf(tp, "kernel: more...\n");
-				break;
-			}
-		}
+	/* 
+	 * hostname 
+	 */
+	if (ttyhostname) {
+		if (*cp == '\0')
+			ttyprintf(tp, "amnesia");
+		else
+			while (*cp && *cp != '.')
+				tputchar(*cp++, tp);
+		tputchar(' ');
 	}
+	/* 
+	 * load average 
+	 */
+	x = (averunnable[0] * 100 + FSCALE/2) >> FSHIFT;
+	ttyprintf(tp, "load: %d.", x/100);
+	ttyoutint(x%100, 10, 2, tp);
+	if (tp->t_session == NULL)
+		ttyprintf(tp, " not a controlling terminal\n");
+	else if (tp->t_pgrp == NULL)
+		ttyprintf(tp, " no foreground process group\n");
+	else if ((p = tp->t_pgrp->pg_mem) == NULL)
+		ttyprintf(tp, " empty foreground process group\n");
+	else {
+		/* pick interesting process */
+		for (; p != NULL; p = p->p_pgrpnxt) {
+			if (proc_compare(pick, p))
+				pick = p;
+		}
+		ttyprintf(tp, "  cmd: %s %d [%s] ",
+			pick->p_comm, pick->p_pid,
+			pick->p_wmesg ? pick->p_wmesg : "running");
+		/* 
+		 * cpu time 
+		 */
+		if (u.u_procp == pick)
+			s = splclock();
+		utime = pick->p_utime;
+		stime = pick->p_stime;
+		if (u.u_procp == pick)
+			splx(s);
+		/* user time */
+		x = (utime.tv_usec + 5000) / 10000; /* scale to 100's */
+		ttyoutint(utime.tv_sec, 10, 1, tp);
+		tputchar('.', tp);
+		ttyoutint(x, 10, 2, tp);
+		tputchar('u', tp);
+		tputchar(' ', tp);
+		/* system time */
+		x = (stime.tv_usec + 5000) / 10000; /* scale to 100's */
+		ttyoutint(stime.tv_sec, 10, 1, tp);
+		tputchar('.', tp);
+		ttyoutint(x, 10, 2, tp);
+		tputchar('s', tp);
+		tputchar(' ', tp);
+		/* 
+		 * pctcpu 
+		 */
+		x = pick->p_pctcpu * 10000 + FSCALE/2 >> FSHIFT;
+		ttyoutint(x/100, 10, 1, tp);
+#ifdef notdef	/* do we really want this ??? */
+		tputchar('.', tp);
+		ttyoutint(x%100, 10, 2, tp);
+#endif
+		ttyprintf(tp, "%% %dk\n", pgtok(pick->p_ssize + pick->p_dsize));
+	}
+	tp->t_rocount = 0;	/* so pending input will be retyped if BS */
 }
 
+ttyoutint(n, base, min, tp)
+	register int n, base, min;
+	register struct tty *tp;
+{
+	char info[16];
+	register char *p = info;
+
+	while (--min >= 0 || n) {
+		*p++ = "0123456789abcdef"[n%base];
+		n /= base;
+	}
+	while (p > info)
+		ttyoutput(*--p, tp);
+}
+
+/*
+ * Returns 1 if p2 is "better" than p1
+ *
+ * The algorithm for picking the "interesting" process is thus:
+ *
+ *	1) (Only foreground processes are eligable - implied)
+ *	2) Runnable processes are favored over anything
+ *	   else.  The runner with the highest cpu
+ *	   utilization is picked (p_cpu).  Ties are
+ *	   broken by picking the highest pid.
+ *	3  Next, the sleeper with the shortest sleep
+ *	   time is favored.  With ties, we pick out
+ *	   just "short-term" sleepers (SSINTR == 0).
+ *	   Further ties are broken by picking the highest
+ *	   pid.
+ *
+ */
+#define isrun(p)	(((p)->p_stat == SRUN) || ((p)->p_stat == SIDL))
+proc_compare(p1, p2)
+	register struct proc *p1, *p2;
+{
+
+	if (p1 == NULL)
+		return (1);
+	/*
+	 * see if at least one of them is runnable
+	 */
+	switch (isrun(p1)<<1 | isrun(p2)) {
+	case 0x01:
+		return (1);
+	case 0x10:
+		return (0);
+	case 0x11:
+		/*
+		 * tie - favor one with highest recent cpu utilization
+		 */
+		if (p2->p_cpu > p1->p_cpu)
+			return (1);
+		if (p1->p_cpu > p2->p_cpu)
+			return (0);
+		return (p2->p_pid > p1->p_pid);	/* tie - return highest pid */
+	}
+	/* 
+	 * pick the one with the smallest sleep time
+	 */
+	if (p2->p_slptime > p1->p_slptime)
+		return (0);
+	if (p1->p_slptime > p2->p_slptime)
+		return (1);
+	/*
+	 * favor one sleeping in a non-interruptible sleep
+	 */
+	if (p1->p_flag&SSINTR && (p2->p_flag&SSINTR) == 0)
+		return (1);
+	if (p2->p_flag&SSINTR && (p1->p_flag&SSINTR) == 0)
+		return (0);
+	return(p2->p_pid > p1->p_pid);		/* tie - return highest pid */
+}
 #define TOTTY	0x2	/* XXX should be in header */
 /*VARARGS2*/
 ttyprintf(tp, fmt, x1)
