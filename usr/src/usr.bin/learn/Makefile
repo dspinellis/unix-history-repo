@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.4	(Berkeley)	86/05/15
+#	@(#)Makefile	4.5	(Berkeley)	87/05/31
 #
 DESTDIR=
 
@@ -54,3 +54,5 @@ check:
 	-@test -r $(LLIB)/lrntee || echo 'lrntee not present; make lrntee'
 	-@test -r $(LLIB)/lcount || echo 'lcount not present; make lcount'
 	-@test -r $(LLIB)/../log || echo 'log directory not present; make log if you want logging'
+
+depend:

@@ -1,5 +1,5 @@
 #
-#	@(#)Makefile	4.5	(Berkeley)	83/06/30
+#	@(#)Makefile	4.6	(Berkeley)	87/05/31
 #
 #	make file for STYLE and DICTION
 #
@@ -40,6 +40,8 @@ install: style diction style.sh diction.sh explain.sh dict.d explain.d
 clean:
 	rm -f prtlex.c wdslex.c endlex.c
 	rm -f *.o style1 style2 style3 dprog
+
+depend:
 
 style3: prtlex.o pscan.o outp.o
 	cc prtlex.o pscan.o outp.o -ll  -o style3

@@ -1,5 +1,5 @@
 #
-#	@(#)Makefile	1.4	(Berkeley)	83/06/30
+#	@(#)Makefile	5.1	(Berkeley)	87/05/31
 #
 DESTDIR=
 SRCS=	dc.c dc.h
@@ -15,3 +15,5 @@ install: dc
 
 clean:
 	rm -f *.o dc a.out errs core
+
+depend:

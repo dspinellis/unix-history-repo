@@ -1,4 +1,4 @@
-#	Makefile	4.1	83/08/11
+#	Makefile	4.2	87/05/31
 #
 CFLAGS = -O
 
@@ -28,3 +28,5 @@ install: all
 
 clean:
 	rm -f *.o lex y.tab.c
+
+depend:
