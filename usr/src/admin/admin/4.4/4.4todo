@@ -1,4 +1,4 @@
-#	@(#)4.4todo	5.8 (Berkeley) %G%
+#	@(#)4.4todo	5.9 (Berkeley) %G%
 
 Target for alpha tape release: May 31.
 Target architectures: 386/486, HP300, Sparc, DECstation 3100/5000.
@@ -19,8 +19,9 @@ Getloadinfo			Kirk/TK
 Getsysinfo/uname		Kirk/TK
 Pathconf			Kirk
 
-Block size in environment	TK		1	1 day
+Block size in environment	TK		1	1 day	done
 Generate man page info/printout	TK		2	1 day
+Symlinks			TK		2.1	2 day
 Vi				TK		3	1 mo
 LFS				TK		4	1 mo
 Mpool(3) interface		TK		5	2 wk
