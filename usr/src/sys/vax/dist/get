@@ -1,5 +1,5 @@
 #! /bin/sh -x
-#	@(#)get	4.2	%G%
+#	@(#)get	4.3	%G%
 # Shell script to build a mini-root file system
 # in preparation for building a distribution tape.
 # The file system created here is image copied onto
@@ -36,10 +36,20 @@ cp /bin/cat bin; strip bin/cat
 cp /bin/mkdir bin; strip bin/mkdir
 cp /bin/stty bin; strip bin/stty; ln bin/stty bin/STTY
 cp /bin/echo bin; strip bin/echo
+cp /bin/rm bin; strip bin/rm
+cp /bin/cp bin; strip bin/cp
+cp /bin/expr bin; strip bin/expr
+cp /bin/awk bin; strip bin/awk
 cp /usr/mdec/* usr/mdec
 cp /sys/floppy/*boo* floppy
 cp /boot boot
 cp /.profile .profile
+cat >etc/passwd <<EOF
+root::0:10::/:/bin/sh
+EOF
+cat >etc/group <<EOF
+staff:*:10:
+EOF
 cat >etc/fstab <<EOF
 /dev/hp0a:/a:xx:1:1
 /dev/up0a:/a:xx:1:1
@@ -70,6 +80,7 @@ EOF
 chmod +x xtr
 rm -rf dev; mkdir dev
 cp /sys/dist/MAKEDEV dev
+cp /dev/null dev/MAKEDEV.local
 cd dev
 ./MAKEDEV std hp0 hk0 up0 ra0 rb0
 ./MAKEDEV ts0; mv rmt12 ts0; rm *mt*;
