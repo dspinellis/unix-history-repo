@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	8.78 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.79 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	8.78 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.79 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -124,9 +124,17 @@ smtp(e)
 		CurSmtpClient = CurHostName;
 
 	setproctitle("server %s startup", CurSmtpClient);
-	expand("\201e", inp, sizeof inp, e);
+#ifdef LOG
+	if (LogLevel > 11)
+	{
+		/* log connection information */
+		syslog(LOG_INFO, "SMTP connect from %s (%s)",
+			CurSmtpClient, anynet_ntoa(&RealHostAddr));
+	}
+#endif
 
 	/* output the first line, inserting "ESMTP" as second word */
+	expand("\201e", inp, sizeof inp, e);
 	p = strchr(inp, '\n');
 	if (p != NULL)
 		*p++ = '\0';
