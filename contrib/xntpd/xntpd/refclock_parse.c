@@ -1,8 +1,8 @@
 #if defined(REFCLOCK) && (defined(PARSE) || defined(PARSEPPS))
 /*
- * /src/NTP/REPOSITORY/v3/xntpd/refclock_parse.c,v 3.51 1994/03/03 09:49:54 kardel Exp
+ * /src/NTP/REPOSITORY/v3/xntpd/refclock_parse.c,v 3.53 1994/03/25 13:07:39 kardel Exp
  *
- * refclock_parse.c,v 3.51 1994/03/03 09:49:54 kardel Exp
+ * refclock_parse.c,v 3.53 1994/03/25 13:07:39 kardel Exp
  *
  * generic reference clock driver for receivers
  *
@@ -134,7 +134,7 @@ CURRENTLY NO BSD TTY SUPPORT
 #include "parse.h"
 
 #if !defined(NO_SCCSID) && !defined(lint) && !defined(__GNUC__)
-static char rcsid[]="refclock_parse.c,v 3.51 1994/03/03 09:49:54 kardel Exp";
+static char rcsid[]="refclock_parse.c,v 3.53 1994/03/25 13:07:39 kardel Exp";
 #endif
 
 /**===========================================================================
@@ -2863,7 +2863,7 @@ parse_control(unit, in, out)
       sprintf(tt, "refclock_iomode=\"%s\"", parse->binding->bd_description);
 
       tt = add_var(&out->kv_list, 128, RO);
-      sprintf(tt, "refclock_driver_version=\"refclock_parse.c,v 3.51 1994/03/03 09:49:54 kardel Exp\"");
+      sprintf(tt, "refclock_driver_version=\"refclock_parse.c,v 3.53 1994/03/25 13:07:39 kardel Exp\"");
 
       out->lencode       = strlen(outstatus);
       out->lastcode      = outstatus;
@@ -3142,7 +3142,11 @@ parse_process(parse, parsetime)
       L_ADD(&off, &offset);
       rectime = off;		/* this makes org time and xmt time somewhat artificial */
     
-      if (parse->flags & PARSE_STAT_FILTER)
+      L_SUB(&off, &parsetime->parse_stime.fp);
+
+      if ((parse->flags & PARSE_STAT_FILTER) &&
+	  (off.l_i > -60) &&
+	  (off.l_i <  60))				/* take usec error only if within +- 60 secs */
 	{
 	  struct timeval usecerror;
 	  /*
@@ -3153,10 +3157,6 @@ parse_process(parse, parsetime)
 
 	  sTVTOTS(&usecerror, &off);
 	  L_ADD(&off, &offset);
-	}
-      else
-	{
-	  L_SUB(&off, &parsetime->parse_stime.fp);
 	}
     }
 
@@ -3448,6 +3448,12 @@ trimble_init(parse)
  * History:
  *
  * refclock_parse.c,v
+ * Revision 3.53  1994/03/25  13:07:39  kardel
+ * fixed offset calculation for large (>4 Min) offsets
+ *
+ * Revision 3.52  1994/03/03  09:58:00  kardel
+ * stick -kv in cvs is no fun
+ *
  * Revision 3.49  1994/02/20  13:26:00  kardel
  * rcs id cleanup
  *
