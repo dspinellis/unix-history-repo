@@ -16,7 +16,7 @@ options	ISO			ISO networking (TP4?)
 options	ISOFS			ISO 9660 File System
 options	KTRACE			Kernel tracing
 options	MATH_EMULATE		Support for x87 emulation
-options	MFS			Memroy File System
+options	MFS			Memory File System
 options	"NCONS=8"		Number of syscons virtual consoles
 options	NFS			Network File System
 options	NS			Xerox NS communications protocols
@@ -31,4 +31,4 @@ options	"TCP_COMPAT_42"		Tcp/Ip compatible with 4.2
 options	UCONSOLE		Xconsole support
 options	XSERVER			Xserver support
 
-$Id$
+$Id: config_options.doc,v 1.2 1993/10/16 19:21:57 rgrimes Exp $
