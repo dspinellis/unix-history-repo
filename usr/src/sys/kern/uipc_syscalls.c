@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uipc_syscalls.c	6.10 (Berkeley) %G%
+ *	@(#)uipc_syscalls.c	6.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -209,6 +209,7 @@ connect()
 		sleep((caddr_t)&so->so_timeo, PZERO+1);
 	u.u_error = so->so_error;
 	so->so_error = 0;
+	so->so_state &= ~SS_ISCONNECTING;
 bad2:
 	splx(s);
 bad:
