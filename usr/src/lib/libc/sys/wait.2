@@ -1,8 +1,8 @@
-.\" Copyright (c) 1980 Regents of the University of California.
+.\" Copyright (c) 1980, 1991 Regents of the University of California.
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)wait.2	6.3 (Berkeley) %G%
+.\"	@(#)wait.2	6.4 (Berkeley) %G%
 .\"
 .TH WAIT 2 ""
 .UC 4
@@ -15,14 +15,14 @@ wait, waitpid, wait4, wait3 \- wait for process to terminate
 #include <sys/wait.h>
 .PP
 .ft B
-pid = wait(status)
+pid = wait(statp)
 pid_t pid;
-int *status;
+int *statp;
 .PP
 .ft B
-pid = waitpid(wpid, status, options)
+pid = waitpid(wpid, statp, options)
 pid_t pid, wpid;
-int *status;
+int *statp;
 int options;
 .PP
 .ft B
@@ -30,16 +30,16 @@ int options;
 #include <sys/resource.h>
 .PP
 .ft B
-pid = wait4(wpid, status, options, rusage)
+pid = wait4(wpid, statp, options, rusage)
 pid_t pid, wpid;
-int *status;
+int *statp;
 int options;
 struct rusage *rusage;
 .PP
 .ft B
-pid = wait3(status, options, rusage)
+pid = wait3(statp, options, rusage)
 pid_t pid;
-int *status;
+int *statp;
 int options;
 struct rusage *rusage;
 .fi
@@ -58,10 +58,12 @@ the value \-1 returned.
 .PP
 On return from a successful 
 .I wait
-call, 
-the
-.I status
-area contains termination information about the process that exited
+call with a non-null
+.I statp
+pointer, 
+the location to which
+.I statp
+points contains termination information about the process that exited
 as defined below.
 .PP
 The
@@ -94,7 +96,7 @@ equals the absolute value of
 .IR wpid .
 .PP
 The
-.I status
+.I statp
 parameter is defined below.  The
 .I options
 parameter contains the bitwise OR of any of the following options.
@@ -135,7 +137,14 @@ with a
 .I wpid
 value of \-1.
 .PP
-The following macros may be used to test the manner of exit of the process.
+If the
+.I statp
+parameter is not null,
+the status of the process is placed in the location to which
+.I statp
+points.
+The following macros may be used with that status information
+to test the state and/or manner of exit of the process.
 One of the first three macros will evaluate to a non-zero (true) value:
 .IP WIFEXITED(status)
 True if the process terminated normally by a call to
@@ -226,7 +235,7 @@ The calling process has no existing unwaited-for
 child processes.
 .TP 15
 [EFAULT]
-The \fIstatus\fP or \fIrusage\fP arguments point to an illegal address.
+The \fIstatp\fP or \fIrusage\fP arguments point to an illegal address.
 (May not be detected before exit of a child process.)
 .TP 15
 [EINTR]
