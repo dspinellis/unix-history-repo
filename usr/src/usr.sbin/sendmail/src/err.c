@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)err.c	6.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)err.c	6.22 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -255,13 +255,15 @@ putmsg(msg, holdmsg)
 			(void) fflush(OutChannel);
 		if (ferror(OutChannel))
 		{
-			int saveerrno = errno;
-
-			(void) freopen("/dev/null", "w", OutChannel);
+			/* can't call syserr, 'cause we are using MsgBuf */
 			HoldErrs = TRUE;
-			errno = saveerrno;
-			syserr("putmsg: error on output channel sending \"%s\"",
-				msg);
+#ifdef LOG
+			if (LogLevel > 0)
+				syslog(LOG_CRIT,
+					"%s: SYSERR: putmsg (%s): error on output channel sending \"%s\"",
+					CurEnv->e_id == NULL ? "NOQUEUE" : CurEnv->e_id,
+					CurHostName, msg);
+#endif
 		}
 	}
 }
