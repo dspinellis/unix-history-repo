@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)dosys.c	4.6 (Berkeley) 83/05/22";
+static	char *sccsid = "@(#)dosys.c	4.7 (Berkeley) 83/06/22";
 #include "defs"
 #include <signal.h>
 
@@ -36,7 +36,7 @@ char *getenv(), *rindex();
 char *shellcom = getenv("SHELL");
 char *shellstr;
 #endif
-if((waitpid = fork()) == 0)
+if((waitpid = vfork()) == 0)
 	{
 	enbint(SIG_DFL);
 	doclose();
@@ -135,7 +135,6 @@ return( await() );
 #include <errno.h>
 
 #include <sys/stat.h>
-
 
 
 
