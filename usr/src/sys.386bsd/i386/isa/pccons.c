@@ -37,12 +37,13 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         3       00055
+ * CURRENT PATCH LEVEL:         4       00078
  * --------------------         -----   ----------------------
  *
  * 15 Aug 92	Pace Willisson		Patches for X server
  * 21 Aug 92    Frank Maclachlan        Fixed back-scroll system crash
  * 28 Nov 1992	Terry Lee		Fixed LED's in X mode
+ * 09 Feb 1993	Rich Murphey		Added 'BELL' mode in X
  */
 static char rcsid[] = "$Header: /usr/bill/working/sys/i386/isa/RCS/pccons.c,v 1.2 92/01/21 14:35:28 william Exp $";
 
@@ -306,6 +307,7 @@ pcrint(dev, irq, cpl)
 #ifdef XSERVER						/* 15 Aug 92*/
 #define CONSOLE_X_MODE_ON _IO('t',121)
 #define CONSOLE_X_MODE_OFF _IO('t',122)
+#define CONSOLE_X_BELL _IOW('t',123,int[2])
 #endif /* XSERVER */
 
 pcioctl(dev, cmd, data, flag)
@@ -321,6 +323,17 @@ pcioctl(dev, cmd, data, flag)
 		return (0);
 	} else if (cmd == CONSOLE_X_MODE_OFF) {
 		pc_xmode_off ();
+		return (0);
+	} else if (cmd == CONSOLE_X_BELL) {
+		/* if set, data is a pointer to a length 2 array of
+		   integers. data[0] is the pitch in Hz and data[1]
+		   is the duration in msec.  */
+		if (data) {
+			sysbeep(1187500/ ((int*)data)[0],
+				((int*)data)[1] * hz/ 3000);
+		} else {
+			sysbeep(0x31b, hz/4);
+		}
 		return (0);
 	}
 #endif /* XSERVER */
