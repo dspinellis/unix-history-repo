@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)file.c	4.9 (Berkeley) %G%";
+static	char sccsid[] = "@(#)file.c	4.10 (Berkeley) %G%";
 #endif
 /*
  * file - determine type of file
@@ -27,6 +27,12 @@ char *c[] = {
 	"int","char","float","double","struct","extern",0};
 char *as[] = {
 	"globl","byte","align","text","data","comm",0};
+char *sh[] = {
+	"fi", "elif", "esac", "done", "export",
+	"readonly", "trap", "PATH", "HOME", 0 };
+char *csh[] = {
+	"alias", "breaksw", "endsw", "foreach", "limit",  "onintr",
+	"repeat", "setenv", "source", "path", "home", 0 };
 int	ifile;
 
 main(argc, argv)
@@ -153,35 +159,36 @@ exec:
 				printf(" (old format symbol table)");
 		}
 		printf("\n");
-		goto out;
+		return;
 
 	case 0177555:
 		printf("very old archive\n");
-		goto out;
+		return;
 
 	case 0177545:
 		printf("old archive\n");
-		goto out;
+		return;
 
 	case 070707:
 		printf("cpio data\n");
-		goto out;
+		return;
 	}
 
+	if (buf[0] == '#' && buf[1] == '!' && shellscript(buf+2, &mbuf))
+		return;
 	if(strncmp(buf, "!<arch>\n__.SYMDEF", 17) == 0 ) {
 		printf("archive random library\n");
-		goto out;
+		return;
 	}
 	if (strncmp(buf, "!<arch>\n", 8)==0) {
 		printf("archive\n");
-		goto out;
+		return;
 	}
 	if (mbuf.st_size % 512 == 0) {	/* it may be a PRESS file */
 		lseek(ifile, -512L, 2);	/* last block */
-		if (read(ifile, buf, BUFSIZ) > 0
-		 && *(short int *)buf == 12138) {
+		if (read(ifile, buf, BUFSIZ) > 0 && *(short *)buf == 12138) {
 			printf("PRESS file\n");
-			goto out;
+			return;
 		}
 	}
 	i = 0;
@@ -191,7 +198,7 @@ exec:
 		while(buf[i++] != '\n'){
 			if(i - j > 255){
 				printf("data\n"); 
-				goto out;
+				return;
 			}
 			if(i >= in)goto notc;
 		}
@@ -273,12 +280,11 @@ notfort:
 	goto outa;
 notas:
 	for(i=0; i < in; i++)if(buf[i]&0200){
-		if (buf[0]=='\100' && buf[1]=='\357') {
+		if (buf[0]=='\100' && buf[1]=='\357')
 			printf("troff (CAT) output\n");
-			goto out;
-		}
-		printf("data\n"); 
-		goto out; 
+		else
+			printf("data\n"); 
+		return;
 	}
 	if (mbuf.st_mode&((S_IEXEC)|(S_IEXEC>>3)|(S_IEXEC>>6))) {
 		if (mbuf.st_mode & S_ISUID)
@@ -287,9 +293,18 @@ notas:
 			printf("set-gid ");
 		if (mbuf.st_mode & S_ISVTX)
 			printf("sticky ");
-		printf("commands text");
+		if (shell(buf, in, sh))
+			printf("shell script");
+		else if (shell(buf, in, csh))
+			printf("c-shell script");
+		else
+			printf("commands text");
 	} else if (troffint(buf, in))
 		printf("troff intermediate output text");
+	else if (shell(buf, in, sh))
+		printf("shell commands");
+	else if (shell(buf, in, csh))
+		printf("c-shell commands");
 	else if (english(buf, in))
 		printf("English text");
 	else
@@ -298,18 +313,17 @@ outa:
 	while(i < in)
 		if((buf[i++]&0377) > 127){
 			printf(" with garbage\n");
-			goto out;
+			return;
 		}
 	/* if next few lines in then read whole file looking for nulls ...
 		while((in = read(ifile,buf,BUFSIZ)) > 0)
 			for(i = 0; i < in; i++)
 				if((buf[i]&0377) > 127){
 					printf(" with garbage\n");
-					goto out;
+					return;
 				}
 		/*.... */
 	printf("\n");
-out:;
 }
 
 oldo(cp)
@@ -426,4 +440,55 @@ char *bp;
 	if (2*ct[';'] > ct['e']) return(0);
 	if ( (ct['>']+ct['<']+ct['/'])>ct['e']) return(0); /* shell file test */
 	return (vow*5 >= n-ct[' '] && freq >= 10*rare);
+}
+
+shellscript(buf, sb)
+	char buf[];
+	struct stat *sb;
+{
+	register char *tp;
+	char *cp, *xp, *index();
+
+	cp = index(buf, '\n');
+	if (cp == 0 || cp - buf > in)
+		return (0);
+	for (tp = buf; tp != cp && isspace(*tp); tp++)
+		if (!isascii(*tp))
+			return (0);
+	for (xp = tp; tp != cp && !isspace(*tp); tp++)
+		if (!isascii(*tp))
+			return (0);
+	if (tp == xp)
+		return (0);
+	if (sb->st_mode & S_ISUID)
+		printf("set-uid ");
+	if (sb->st_mode & S_ISGID)
+		printf("set-gid ");
+	if (strncmp(xp, "/bin/sh", tp-xp) == 0)
+		xp = "shell";
+	else if (strncmp(xp, "/bin/csh", tp-xp) == 0)
+		xp = "c-shell";
+	else
+		*tp = '\0';
+	printf("executable %s script\n", xp);
+	return (1);
+}
+
+shell(bp, n, tab)
+	char *bp;
+	int n;
+	char *tab[];
+{
+
+	i = 0;
+	do {
+		if (buf[i] == '#' || buf[i] == ':')
+			while (i < n && buf[i] != '\n')
+				i++;
+		if (++i >= n)
+			break;
+		if (lookup(tab) == 1)
+			return (1);
+	} while (i < n);
+	return (0);
 }
