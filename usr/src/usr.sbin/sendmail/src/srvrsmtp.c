@@ -1,10 +1,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)srvrsmtp.c	3.22		%G%	(no SMTP));
+SCCSID(@(#)srvrsmtp.c	3.23		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)srvrsmtp.c	3.22		%G%);
+SCCSID(@(#)srvrsmtp.c	3.23		%G%);
 
 /*
 **  SMTP -- run the SMTP protocol.
@@ -122,7 +122,7 @@ smtp()
 		fixcrlf(inp, TRUE);
 
 		/* echo command to transcript */
-		fprintf(Xscript, "*** %s\n", inp);
+		fprintf(Xscript, "<<< %s\n", inp);
 
 		/* break off command */
 		for (p = inp; isspace(*p); p++)
