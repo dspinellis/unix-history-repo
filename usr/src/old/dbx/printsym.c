@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)printsym.c 1.11 %G%";
+static char sccsid[] = "@(#)printsym.c 1.12 %G%";
 
 /*
  * Printing of symbolic information.
@@ -374,7 +374,7 @@ Symbol s;
 	case FUNC:
 	    printf("address\t0x%x\n", s->symvalue.funcv.beginaddr);
 	    if (isinline(s)) {
-		printf("inline procedure");
+		printf("inline procedure\n");
 	    }
 	    if (nosource(s)) {
 		printf("does not have source information\n");
