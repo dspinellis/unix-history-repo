@@ -1,6 +1,6 @@
 /*
  * code to manage AT bus
- * @(#)isa.c	1.2 (Berkeley) %G%
+ * @(#)isa.c	1.3 (Berkeley) %G%
  */
 
 #include "param.h"
