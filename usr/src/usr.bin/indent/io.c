@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)io.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)io.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "indent_globs.h"
@@ -36,7 +36,6 @@ dump_line()
 				 * code section with the appropriate nesting
 				 * level, followed by any comments */
     register int cur_col,
-                temp_col,
                 target_col;
     static      not_first_line;
 
@@ -301,7 +300,6 @@ compute_label_target()
 int
 fill_buffer()
 {				/* this routine reads stuff from the input */
-    int         count;
     register char *p;
     register int i;
     register FILE *f = input;
@@ -314,13 +312,16 @@ fill_buffer()
 	    return;		/* only return if there is really something in
 				 * this buffer */
     }
-    p = in_buffer;
-    buf_ptr = p;
-    while ((*p++ = i = getc(f)) != EOF && i != '\n');
-    if (i == EOF) {
-	p[-1] = ' ';
-	*p++ = '\n';
-	had_eof = true;
+    for (p = buf_ptr = in_buffer;;) {
+	if ((i = getc(f)) == EOF) {
+		*p++ = ' ';
+		*p++ = '\n';
+		had_eof = true;
+		break;
+	}
+	*p++ = i;
+	if (i == '\n')
+		break;
     }
     buf_end = p;
     if (p[-2] == '/' && p[-3] == '*') {
@@ -541,17 +542,6 @@ chfont(of, nf, s)
     return s;
 }
 
-
-setfont(f)
-    register struct fstate *f;
-{
-    if (f->font[0] != ps.cfont.font[0]
-	    || f->font[1] != ps.cfont.font[1])
-	fprintf(output, f->font[1] ? "\\f(%s" : "\\f%s", f->font);
-    if (f->size != ps.cfont.size)
-	fprintf(output, "\\s%d", f->size);
-    ps.cfont = *f;
-}
 
 parsefont(f, s0)
     register struct fstate *f;
