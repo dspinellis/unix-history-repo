@@ -1,0 +1,48 @@
+GOMOKU(6)                    BSD Reference Manual                    GOMOKU(6)
+
+NNAAMMEE
+     ggoommookkuu - game of 5 in a row
+
+SSYYNNOOPPSSIISS
+     ggoommookkuu [--bbccdduu] [--DD _d_e_b_u_g_f_i_l_e] [_i_n_p_u_t_f_i_l_e]
+
+DDEESSCCRRIIPPTTIIOONN
+     GGoommookkuu is a two player game were the object is to get 5 in a row horizon-
+     tally, vertically or diagonally on a 19 by 19 grid. By convention, black
+     always moves first.  With no arguments, ggoommookkuu will display a playing
+     board and prompt for moves from the user.  Valid moves are a letter for
+     the column and a number for the row of an empty board location. Entering
+     ``quit" or ``resign" will end the game.  You can save the current state
+     of the game by entering ``save" and supplying a file name when prompted.
+     The optional file _i_n_p_u_t_f_i_l_e can be used to restore a saved game.
+
+     The options are:
+
+     --bb      This option sets background mode. Input moves are read from stan-
+             dard input, the computer picks a move, and prints it to standard
+             output. The first input line should be either ``black" or
+             ``white" to specify whether ggoommookkuu has the first move or not re-
+             spectively. This option was intended for game tournaments where a
+             referee program handles the board display and pits one program
+             against another.
+
+     --cc      Computer verses computer.  GGoommookkuu will play a game against it-
+             self. This is mostly used for testing.
+
+     --dd      Print debugging information. Repeating this option more than once
+             yields more detailed information.
+
+     --DD _d_e_b_u_g_f_i_l_e
+             Print the debug information to _d_e_b_u_g_f_i_l_e instead of to the stan-
+             dard output.
+
+     --uu      User verses user. This is mostly used for testing.
+
+AAUUTTHHOORR
+     Ralph Campbell
+
+AACCKKNNOOWWLLEEDDGGEEMMEENNTTSS
+     The board display routines were based on the ggoorreeff program written by Pe-
+     ter Langston.
+
+4.4BSD                          August 4, 1994                               1
