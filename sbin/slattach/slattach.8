@@ -31,7 +31,7 @@
 .\"
 .\"     @(#)slattach.8	6.4 (Berkeley) 3/16/91
 .\"
-.\"	$Header: /a/cvs/386BSD/src/sbin/slattach/slattach.8,v 1.2 1993/07/06 16:46:01 jkh Exp $
+.\"	$Header: /a/cvs/386BSD/src/sbin/slattach/slattach.8,v 1.3 1993/08/30 09:51:00 rgrimes Exp $
 .\"
 .Dd April 4, 1993
 .Dt SLATTACH 8
@@ -45,6 +45,7 @@
 .Op \-c
 .Op \-e exit-command
 .Op \-h
+.Op \-l
 .Op \-n
 .Op \-r redial-command
 .Op \-s baudrate
@@ -71,6 +72,10 @@ before slattach exits.
 .It Ar \-h
 Turn on cts/rts style flow control on the slip port, by default no flow
 control is done.
+.It Ar \-l
+disable modem control (CLOCAL) and ignore carrier detect on the slip
+port.  By default the redial-command is invoked upon carrier drop and
+slattach aborts if no redial-command is specified.
 .It Ar \-n
 Throw away ICMP packets.  The slip interface will ignore ICMP packets
 to prevent slow lines being saturated by ICMP responses.
@@ -133,6 +138,11 @@ To force a redial, use
 (SIGHUP) which causes slattach to think carrier was lost and thus invoke 
 .Ql sh -c redial-command
 to reconnect to the server.
+.Pp
+If you use a hard-wired connection rather than a modem, invoke
+slattach with the
+.Ql \-l
+option in order to ignore carrier on the slip line.
 .Sh EXAMPLES
 .Bd -literal -offset indent -compact
 slattach ttyh8
@@ -141,14 +151,14 @@ slattach \-c \-s 38400 /dev/sio01
 slattach \-r 'kermit -y dial.script >kermit.log 2>&1'
 .Ed
 .Sh DIAGNOSTICS
+Look for error messages in /var/log/messages (slattach is a daemon).
 Messages indicating the specified interface does not exit, the
-requested address is unknown, the user is not privileged and
-tried to alter an interface's configuration.
+requested address is unknown, the user is not privileged and tried to
+alter an interface's configuration are logged there.  Slattach also
+logs failure to set the controlling terminal or failure to install
+signal handlers.  Upon connection and redial the ttyname and baud rate
+are logged and on shutdown the ttyname is logged.
 .Pp
-All error messages indicating failure to set the controlling terminal
-or failure to install signal handlers are sent to the syslog.  Upon
-connection and redial the ttyname and baud rate are logged and on
-shutdown the ttyname is logged.
 .Sh SEE ALSO
 .Xr netstat 1 ,
 .Xr netintro 4 ,

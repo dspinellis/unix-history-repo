@@ -79,7 +79,7 @@ char copyright[] =
 
 #ifndef lint
 static char sccsid[] = "@(#)slattach.c	4.6 (Berkeley) 6/1/90";
-static char rcsid[] = "$Header: /etc/home/slattach2/RCS/slattach.c,v 1.4 1993/08/27 22:10:25 root Exp root $";
+static char rcsid[] = "$Header: /a/cvs/386BSD/src/sbin/slattach/slattach.c,v 1.4 1993/08/30 09:51:01 rgrimes Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -116,6 +116,7 @@ char	*dev = (char *)0;
 int	slipdisc = SLIPDISC;
 int	ttydisc = TTYDISC;
 int	flow_control = 0;	/* non-zero to enable hardware flow control. */
+int	modem_control = 0;	/* non-zero iff we watch carrier. */
 int	redial_on_startup = 0;	/* iff non-zero execute redial_cmd on startup */
 int	speed = DEFAULT_BAUD;
 int	slflags = 0;		/* compression flags */
@@ -135,6 +136,7 @@ usage: %s [-a ][-c ][-d ][-e <command> ][-n ][-s <speed> ]<device>\n\
 	-c	-- enable VJ compression\n\
 	-e ECMD	-- execute ECMD before exiting\n\
 	-h	-- turn on cts/rts style flow control\n\
+	-l	-- disable modem control (CLOCAL) and ignore carrier detect\n\
 	-n	-- throw out ICMP packets\n\
 	-r RCMD	-- execute RCMD upon loss of carrier\n\
 	-s #	-- set baud rate (default 9600)\n\
@@ -164,6 +166,9 @@ int main(int argc, char **argv)
 			break;
 		case 'h':
 			flow_control |= CRTSCTS;
+			break;
+		case 'l':
+			modem_control |= CLOCAL;
 			break;
 		case 'n':
 			slflags |= SC_NOICMP;
@@ -236,10 +241,12 @@ int main(int argc, char **argv)
 		sighup_handler();
 	else
 		attach_line();
-
+	if (modem_control) {
 	ioctl(fd, TIOCMGET, &comstate);
 	if (!(comstate & MSR_DCD)) { /* check for carrier */
-		kill (getpid(), SIGHUP); /* force a redial if no carrier */
+			/* force a redial if no carrier */
+			kill (getpid(), SIGHUP);
+		}
 	}
 	for (;;)
 		sigsuspend(0L);
@@ -250,7 +257,7 @@ void setup_line()
 	struct termios tty;
 
 	tty.c_lflag = tty.c_iflag = tty.c_oflag = 0;
-	tty.c_cflag = CREAD | CS8 | flow_control;
+	tty.c_cflag = CREAD | CS8 | flow_control | modem_control;
 	tty.c_ispeed = tty.c_ospeed = speed;
 	/* set the line speed and flow control */
 	if (tcsetattr(fd, TCSAFLUSH, &tty) < 0) {
