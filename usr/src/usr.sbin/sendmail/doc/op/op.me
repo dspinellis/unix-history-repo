@@ -1751,6 +1751,9 @@ if you have a mailer that takes a long time to deliver a message.
 If you run in mode
 .q q
 (queue only)
+or
+.q b
+(deliver in background)
 .i sendmail
 will not expand aliases and follow .forward files
 upon initial receipt of the mail.
@@ -6243,7 +6246,7 @@ VRFY doesn't expand aliases or follow .forward files.
 EXPN still does.
 .pp
 As an optimization, if you run with your default delivery mode being
-queue-only,
+queue-only or deliver-in-background,
 the RCPT command will also not chase aliases and .forward files.
 It will chase them when it processes the queue.
 .sh 2 "[IPC] Mailers Allow Multiple Hosts"
