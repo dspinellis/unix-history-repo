@@ -1,4 +1,4 @@
-/*	if_imp.h	4.5	82/03/16	*/
+/*	if_imp.h	4.6	82/03/19	*/
 
 /*
  * Structure of IMP 1822 long leader.
@@ -30,8 +30,8 @@ struct imp_leader {
 };
 
 #define	IMP_DROPCNT	2	/* # of noops from imp to ignore */
-/* don't use 1019 here, 'cuz odd numbers and word counts are confusing */
-#define	IMP_MTU		(sizeof (struct imp_leader) + 1018) 
+/* insure things are even... */
+#define	IMPMTU		((8159 / NBBY) & ~01)
 
 /*
  * IMP-host flags

@@ -1,4 +1,4 @@
-/*	if_imp.c	4.18	82/03/19	*/
+/*	if_imp.c	4.19	82/03/19	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -84,7 +84,7 @@ COUNT(IMPATTACH);
 	/* UNIT COULD BE AMBIGUOUS */
 	ifp->if_unit = ui->ui_unit;
 	ifp->if_name = "imp";
-	ifp->if_mtu = IMP_MTU - sizeof (struct imp_leader);
+	ifp->if_mtu = IMPMTU - sizeof(struct imp_leader);
 	ifp->if_net = ui->ui_flags;
 	/* the host and imp fields will be filled in by the imp */
 	ifp->if_addr = if_makeaddr(ifp->if_net, 0);
@@ -254,7 +254,7 @@ COUNT(IMPINPUT);
 			sc->imp_dropcnt = IMP_DROPCNT;
 		}
 		if (sc->imp_state != IMPS_INIT || --sc->imp_dropcnt > 0)
-			goto rawlinkin;
+			goto drop;
 		sc->imp_state = IMPS_UP;
 		sin = &sc->imp_if.if_addr;
 		sc->imp_if.if_host[0] = sin->s_host = ip->il_host;
@@ -263,7 +263,7 @@ COUNT(IMPINPUT);
 			ntohs(ip->il_imp));
 		/* restart output in case something was q'd */
 		(*sc->imp_cb.ic_start)(sc->imp_if.if_unit);
-		goto rawlinkin;
+		goto drop;
 	}
 
 	/*
@@ -277,7 +277,7 @@ COUNT(IMPINPUT);
 		if (hp && hp->h_rfnm)
 			if (next = hostdeque(hp))
 				(void) impsnd(&sc->imp_if, next);
-		goto rawlinkin;
+		goto drop;
 
 	/*
 	 * Host or IMP can't be reached.  Flush any packets
