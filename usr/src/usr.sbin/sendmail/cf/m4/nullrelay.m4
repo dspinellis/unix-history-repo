@@ -1,6 +1,6 @@
 divert(-1)
 #
-# Copyright (c) 1983 Eric P. Allman
+# Copyright (c) 1983, 1995 Eric P. Allman
 # Copyright (c) 1988, 1993
 #	The Regents of the University of California.  All rights reserved.
 #
@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)nullrelay.m4	8.7 (Berkeley) %G%')
+VERSIONID(`@(#)nullrelay.m4	8.8 (Berkeley) %G%')
 
 #
 #  This configuration applies only to relay-only hosts.  They send
