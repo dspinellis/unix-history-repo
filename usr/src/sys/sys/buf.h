@@ -1,6 +1,4 @@
-/*	buf.h	4.14	82/04/19	*/
-
-/*	buf.h	2.1	3/25/82	*/
+/*	buf.h	4.15	82/05/31	*/
 
 /*
  * The header for buffers in the buffer pool and otherwise used
@@ -66,6 +64,11 @@ struct buf
 #define	BQ_AGE		2		/* rubbish */
 
 #ifdef	KERNEL
+#define	BUFHSZ	63
+#define RND	(MAXBSIZE/DEV_BSIZE)
+#define	BUFHASH(dev, dblkno)	\
+	((struct buf *)&bufhash[((int)(dev)+(((int)(dblkno))/RND)) % BUFHSZ])
+
 struct	buf *buf;		/* the buffer pool itself */
 char	*buffers;
 int	nbuf;
@@ -73,6 +76,7 @@ struct	buf *swbuf;		/* swap I/O headers */
 int	nswbuf;
 short	*swsize;
 int	*swpf;
+struct	bufhd bufhash[BUFHSZ];	/* heads of hash lists */
 struct	buf bfreelist[BQUEUES];	/* heads of available lists */
 struct	buf bswlist;		/* head of free swap header list */
 struct	buf *bclnlist;		/* head of cleaned page list */
@@ -112,3 +116,15 @@ unsigned minphys();
 #define	B_LOCKED	0x020000	/* locked in core (not reusable) */
 #define	B_HEAD		0x040000	/* a buffer header, not a buffer */
 #define	B_BAD		0x100000	/* bad block revectoring in progress */
+
+/*
+ * Take a buffer off the free list it's on and
+ * mark it as being use (B_BUSY) by a device.
+ */
+#define	notavail(bp) { \
+	int x = spl6(); \
+	(bp)->av_back->av_forw = (bp)->av_forw; \
+	(bp)->av_forw->av_back = (bp)->av_back; \
+	(bp)->b_flags |= B_BUSY; \
+	splx(x); \
+}
