@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_glue.c	7.24 (Berkeley) %G%
+ *	@(#)vm_glue.c	7.25 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -396,7 +396,7 @@ swapout_threads()
 			
 		case SSLEEP:
 		case SSTOP:
-			if (p->p_slptime > maxslp) {
+			if (p->p_slptime >= maxslp) {
 				swapout(p);
 				didswap++;
 			} else if (p->p_slptime > outpri) {
