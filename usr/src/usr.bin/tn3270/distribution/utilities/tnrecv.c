@@ -12,8 +12,8 @@
 #include "../ctlr/oia.h"
 #include "../ctlr/screen.h"
 
-#include "../ascii/disp_asc.h"
-#include "../ascii/astosc.h"
+#include "../apilib/disp_asc.h"
+#include "../apilib/astosc.h"
 
 #include "../general/general.h"
 
@@ -389,7 +389,7 @@ static int
 find_input_area(from)
 int	from;
 {
-#define	FieldDec()	(0)		/* We don't really use this */
+#define	FieldDec(p)	(0)		/* We don't really use this */
     register int i, attr;
 
     for (i = from; i < MAXSCREENSIZE; ) {
