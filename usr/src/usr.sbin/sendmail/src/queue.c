@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	5.40 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	5.41 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	5.40 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	5.41 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -74,8 +74,10 @@ queueup(e, queueall, announce)
 	bool newid;
 	register char *p;
 	MAILER nullmailer;
+	ADDRESS *lastctladdr;
 	char buf[MAXLINE], tf[MAXLINE];
 	extern char *macvalue();
+	extern ADDRESS *getctladdr();
 
 	/*
 	**  Create control file.
@@ -182,15 +184,19 @@ queueup(e, queueall, announce)
 	fprintf(tfp, "S%s\n", e->e_from.q_paddr);
 
 	/* output list of recipient addresses */
+	lastctladdr = NULL;
 	for (q = e->e_sendqueue; q != NULL; q = q->q_next)
 	{
 		if (queueall ? !bitset(QDONTSEND|QSENT, q->q_flags) :
 			       bitset(QQUEUEUP, q->q_flags))
 		{
-			char *ctluser, *getctluser();
+			ADDRESS *ctladdr;
 
-			if ((ctluser = getctluser(q)) != NULL)
-				fprintf(tfp, "C%s\n", ctluser);
+			if ((ctladdr = getctladdr(q)) != lastctladdr)
+			{
+				printctladdr(ctladdr, tfp);
+				lastctladdr = ctladdr;
+			}
 			fprintf(tfp, "R%s\n", q->q_paddr);
 			if (announce)
 			{
@@ -213,10 +219,13 @@ queueup(e, queueall, announce)
 	{
 		if (!bitset(QDONTSEND, q->q_flags))
 		{
-			char *ctluser, *getctluser();
+			ADDRESS *ctladdr;
 
-			if ((ctluser = getctluser(q)) != NULL)
-				fprintf(tfp, "C%s\n", ctluser);
+			if ((ctladdr = getctladdr(q)) != lastctladdr)
+			{
+				printctladdr(ctladdr, tfp);
+				lastctladdr = ctladdr;
+			}
 			fprintf(tfp, "E%s\n", q->q_paddr);
 		}
 	}
@@ -303,6 +312,27 @@ queueup(e, queueall, announce)
 	fflush(tfp);
 	return;
 }
+
+printctladdr(a, tfp)
+	ADDRESS *a;
+	FILE *tfp;
+{
+	char *u;
+	struct passwd *pw;
+	extern struct passwd *getpwuid();
+
+	if (a == NULL)
+	{
+		fprintf(tfp, "C\n");
+		return;
+	}
+	if (a->q_uid == 0 || (pw = getpwuid(a->q_uid)) == NULL)
+		u = DefUser;
+	else
+		u = pw->pw_name;
+	fprintf(tfp, "C%s\n", u);
+}
+
 /*
 **  RUNQUEUE -- run the jobs in the queue.
 **
@@ -739,11 +769,12 @@ readqf(e)
 {
 	char *qf;
 	register FILE *qfp;
+	int fd;
+	ADDRESS *ctladdr;
 	char buf[MAXFIELD];
 	extern char *fgetfolded();
 	extern long atol();
-	int gotctluser = 0;
-	int fd;
+	extern ADDRESS *setctluser();
 # ifdef LOCKF
 	struct flock lfd;
 # endif
@@ -791,6 +822,7 @@ readqf(e)
 	LineNumber = 0;
 	if (Verbose)
 		printf("\nRunning %s\n", e->e_id);
+	ctladdr = NULL;
 	while (fgetfolded(buf, sizeof buf, qfp) != NULL)
 	{
 		if (tTd(40, 4))
@@ -798,8 +830,7 @@ readqf(e)
 		switch (buf[0])
 		{
 		  case 'C':		/* specify controlling user */
-			setctluser(&buf[1]);
-			gotctluser = 1;
+			ctladdr = setctluser(&buf[1]);
 			break;
 
 		  case 'R':		/* specify recipient */
@@ -807,7 +838,7 @@ readqf(e)
 			break;
 
 		  case 'E':		/* specify error recipient */
-			sendtolist(&buf[1], (ADDRESS *) NULL, &e->e_errorqueue);
+			sendtolist(&buf[1], ctladdr, &e->e_errorqueue);
 			break;
 
 		  case 'H':		/* header */
@@ -849,24 +880,7 @@ readqf(e)
 				LineNumber, buf);
 			break;
 		}
-		/*
-		**  The `C' queue file command operates on the next line,
-		**  so we use "gotctluser" to maintain state as follows:
-		**      0 - no controlling user,
-		**      1 - controlling user has been set but not used,
-		**      2 - controlling user must be used on next iteration.
-		*/
-		if (gotctluser == 1)
-			gotctluser++;
-		else if (gotctluser == 2)
-		{
-			clrctluser();
-			gotctluser = 0;
-		}
 	}
-
-	/* clear controlling user in case we break out prematurely */
-	clrctluser();
 
 	FileName = NULL;
 
@@ -901,7 +915,6 @@ printqueue()
 	FILE *f;
 	int nrequests;
 	char buf[MAXLINE];
-	char cbuf[MAXLINE];
 
 	/*
 	**  Read and order the queue.
@@ -962,7 +975,6 @@ printqueue()
 		errno = 0;
 
 		message[0] = '\0';
-		cbuf[0] = '\0';
 		while (fgets(buf, sizeof buf, f) != NULL)
 		{
 			register int i;
@@ -990,22 +1002,11 @@ printqueue()
 				break;
 
 			  case 'C':	/* controlling user */
-				if (strlen(buf) < MAXLINE-3)	/* sanity */
-					(void) strcat(buf, ") ");
-				cbuf[0] = cbuf[1] = '(';
-				(void) strncpy(&cbuf[2], &buf[1], MAXLINE-1);
-				cbuf[MAXLINE-1] = '\0';
+				if (Verbose)
+					printf("\n\t\t\t\t\t (---%.30s---)", &buf[1]);
 				break;
 
 			  case 'R':	/* recipient name */
-				if (cbuf[0] != '\0') {
-					/* prepend controlling user to `buf' */
-					(void) strncat(cbuf, &buf[1],
-					              MAXLINE-strlen(cbuf));
-					cbuf[MAXLINE-1] = '\0';
-					(void) strcpy(buf, cbuf);
-					cbuf[0] = '\0';
-				}
 				if (Verbose)
 					printf("\n\t\t\t\t\t %.38s", &buf[1]);
 				else
@@ -1170,134 +1171,47 @@ unlockqueue(e)
 
 }
 /*
-**  GETCTLUSER -- return controlling user if mailing to prog or file
+**  SETCTLUSER -- create a controlling address
 **
-**	Check for a "|" or "/" at the beginning of the address.  If
-**	found, return a controlling username.
+**	Create a fake "address" given only a local login name; this is
+**	used as a "controlling user" for future recipient addresses.
 **
 **	Parameters:
-**		a - the address to check out
+**		user -- the user name of the controlling user.
 **
 **	Returns:
-**		Either NULL, if we werent mailing to a program or file,
-**		or a controlling user name (possibly in getpwuid's
-**		static buffer).
+**		An address descriptor for the controlling user.
 **
 **	Side Effects:
 **		none.
 */
 
-char *
-getctluser(a)
-	ADDRESS *a;
+ADDRESS *
+setctluser(user)
+	char *user;
 {
-	extern ADDRESS *getctladdr();
-	struct passwd *pw;
-	char *retstr;
-
-	/*
-	**  Get unquoted user for file, program or user.name check.
-	**  N.B. remove this code block to always emit controlling
-	**  addresses (at the expense of backward compatibility).
-	*/
-
-	{
-		char buf[MAXNAME];
-		(void) strncpy(buf, a->q_paddr, MAXNAME);
-		buf[MAXNAME-1] = '\0';
-		stripquotes(buf, TRUE);
-
-		if (buf[0] != '|' && buf[0] != '/')
-			return((char *)NULL);
-	}
-
-	a = getctladdr(a);		/* find controlling address */
-
-	if (a != NULL && a->q_uid != 0 && (pw = getpwuid(a->q_uid)) != NULL)
-		retstr = pw->pw_name;
-	else				/* use default user */
-		retstr = DefUser;
-
-	if (tTd(40, 5))
-		printf("Set controlling user for `%s' to `%s'\n",
-		       (a == NULL)? "<null>": a->q_paddr, retstr);
-
-	return(retstr);
-}
-/*
-**  SETCTLUSER - sets `CtlUser' to controlling user
-**  CLRCTLUSER - clears controlling user (no params, nothing returned)
-**
-**	These routines manipulate `CtlUser'.
-**
-**	Parameters:
-**		str  - controlling user as passed to setctluser()
-**
-**	Returns:
-**		None.
-**
-**	Side Effects:
-**		`CtlUser' is changed.
-*/
-
-static char CtlUser[MAXNAME];
-
-setctluser(str)
-register char *str;
-{
-	(void) strncpy(CtlUser, str, MAXNAME);
-	CtlUser[MAXNAME-1] = '\0';
-}
-
-clrctluser()
-{
-	CtlUser[0] = '\0';
-}
-
-/*
-**  SETCTLADDR -- create a controlling address
-**
-**	If global variable `CtlUser' is set and we are given a valid
-**	address, make that address a controlling address; change the
-**	`q_uid', `q_gid', and `q_ruser' fields and set QGOODUID.
-**
-**	Parameters:
-**		a - address for which control uid/gid info may apply
-**
-**	Returns:
-**		None.	
-**
-**	Side Effects:
-**		Fills in uid/gid fields in address and sets QGOODUID
-**		flag if appropriate.
-*/
-
-setctladdr(a)
-	ADDRESS *a;
-{
+	register ADDRESS *a;
 	struct passwd *pw;
 
 	/*
-	**  If there is no current controlling user, or we were passed a
-	**  NULL addr ptr or we already have a controlling user, return.
+	**  See if this clears our concept of controlling user.
 	*/
 
-	if (CtlUser[0] == '\0' || a == NULL || a->q_ruser)
-		return;
+	if (user == NULL || *user == '\0')
+		return NULL;
 
 	/*
-	**  Set up addr fields for controlling user.  If `CtlUser' is no
-	**  longer valid, use the default user/group.
+	**  Set up addr fields for controlling user.
 	*/
 
-	if ((pw = getpwnam(CtlUser)) != NULL)
+	a = (ADDRESS *) xalloc(sizeof *a);
+	bzero((char *) a, sizeof *a);
+	if ((pw = getpwnam(user)) != NULL)
 	{
-		if (a->q_home)
-			free(a->q_home);
 		a->q_home = newstr(pw->pw_dir);
 		a->q_uid = pw->pw_uid;
 		a->q_gid = pw->pw_gid;
-		a->q_ruser = newstr(CtlUser);
+		a->q_ruser = newstr(user);
 	}
 	else
 	{
@@ -1307,8 +1221,5 @@ setctladdr(a)
 	}
 
 	a->q_flags |= QGOODUID;		/* flag as a "ctladdr"  */
-
-	if (tTd(40, 5))
-		printf("Restored controlling user for `%s' to `%s'\n",
-		       a->q_paddr, a->q_ruser);
+	return a;
 }
