@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)proc_cmd.c	1.2 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)proc_cmd.c	1.3 (Berkeley/CCI) %G%";
 #endif
 
 #include	"vdfmt.h"
@@ -255,7 +255,7 @@ int	ctlr, *d_list, op_mask;
 	int		table[MAXDRIVE+10];
 	int		i;
 
-	max_drive = (c_info[ctlr].type == SMDCTLR) ? 4 : 16;
+	max_drive = (c_info[ctlr].type == VDTYPE_VDDC) ? 4 : 16;
 	for(i=0; i<max_drive; i++)
 		table[i] = i;
 	table[i] = -1;
@@ -291,7 +291,7 @@ int	ctlr, drive;
 		print("Drive type for controller %d, drive %d? ", ctlr, drive);
 		if(d_info[ctlr][drive].info != 0)
 			printf("(%s) ", d_info[ctlr][drive].info->vc_name);
-		if(c_info[ctlr].type == SMDCTLR)
+		if(c_info[ctlr].type == VDTYPE_VDDC)
 			count = get_text_cmd(drive_types+smddrives, tokens);
 		else
 			count = get_text_cmd(drive_types, tokens);
