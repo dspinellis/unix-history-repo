@@ -1,0 +1,477 @@
+/* Makefile for GNU Emacs.
+   Copyright (C) 1985, 1987, 1988, 1990 Free Software Foundation, Inc.
+
+This file is part of GNU Emacs.
+
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
+
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+
+
+dot = .
+/* on Xenix, replace double-dot below with $(dot)$(dot) */
+lispdir = $(dot)$(dot)/lisp/
+etcdir = $(dot)$(dot)/etc/
+shortnamesdir = $(dot)$(dot)/shortnames/
+cppdir = $(dot)$(dot)/cpp/
+oldXMenudir = $(dot)$(dot)/oldXMenu/
+
+#define NO_SHORTNAMES
+#include "config.h"
+
+/* Use HAVE_X11 as an alias for X11 in this file
+   to avoid problems with X11 as a subdirectory name
+   in -I and other such options which pass through this file. */
+
+#ifdef X11
+#define HAVE_X11
+#undef X11
+#endif
+
+/* On some machines #define register is done in config;
+   don't let it interfere with this file.  */
+#undef register
+
+/* Some machines don't find the standard C libraries in the usual place.  */
+#ifndef LIB_STANDARD
+#define LIB_STANDARD -lc
+#endif
+
+/* Unless inhibited or changed, use -lg to link for debugging.  */
+#ifndef LIBS_DEBUG
+#define LIBS_DEBUG -lg
+#endif
+
+/* Some s- files define this to request special libraries.  */
+#ifndef LIBS_SYSTEM
+#define LIBS_SYSTEM
+#endif
+
+/* Some m- files define this to request special libraries.  */
+#ifndef LIBS_MACHINE
+#define LIBS_MACHINE
+#endif
+
+/* Some s- files define this to request special switches in ld.  */
+#ifndef LD_SWITCH_SYSTEM
+#if defined (BSD) && !defined (COFF)
+#define LD_SWITCH_SYSTEM -X
+#else
+#define LD_SWITCH_SYSTEM
+#endif /* COFF, or not BSD */
+#endif
+
+/* Some m- files define this to request special switches in ld.  */
+#ifndef LD_SWITCH_MACHINE
+#define LD_SWITCH_MACHINE
+#endif
+
+/* Some m- files define this to request special switches in cc.  */
+#ifndef C_SWITCH_MACHINE
+#define C_SWITCH_MACHINE
+#endif
+
+#ifndef C_SWITCH_SYSTEM
+#define C_SWITCH_SYSTEM
+#endif
+
+#ifndef START_FILES
+#ifdef NO_REMAP
+#define START_FILES pre-crt0.o /lib/crt0.o
+#else
+#define START_FILES crt0.o
+#endif
+#endif /* have START_FILES */
+STARTFILES = START_FILES
+
+/* Unless inhibited or changed, use -g to compile for debugging.  */
+#ifndef C_DEBUG_SWITCH
+#define C_DEBUG_SWITCH -g
+#endif
+
+/* If user wants to optimize, this is how.  */
+#ifndef C_OPTIMIZE_SWITCH
+#define C_OPTIMIZE_SWITCH -O
+#endif
+
+/* cc switches needed to make `asm' keyword work.
+   Nothing special needed on most machines.  */
+#ifndef C_SWITCH_ASM
+#define C_SWITCH_ASM
+#endif
+
+/* Specify address for ld to start loading at,
+   if requested by configuration.  */
+
+#ifdef LD_TEXT_START_ADDR
+STARTFLAGS = -T LD_TEXT_START_ADDR -e __start
+#endif
+
+#ifndef LINKER
+#define LINKER ld
+#endif
+LD=LINKER
+LDFLAGS = LD_SWITCH_SYSTEM LD_SWITCH_MACHINE
+
+/* Figure out whether the system cpp can handle long names.
+   Do it by testing it right now.
+   If it loses, arrange to use the GNU cpp.  */
+
+#define LONGNAMEBBBFOOX
+#ifdef LONGNAMEBBBARFOOX
+/* Installed cpp fails to distinguish those names!  */
+/* Arrange to compile the GNU cpp later on */
+#define NEED_CPP
+/* Cause cc to invoke the cpp that comes with Emacs,
+   which will be in a file named localcpp.  */
+MYCPPFLAG= -Blocal
+/* LOCALCPP is the local one or nothing.
+   CPP is the local one or the standardone.  */
+LOCALCPP= localcpp
+#endif /* NEED_CPP */
+
+#ifdef SHORTNAMES
+SHORT= shortnames
+#endif /* SHORTNAMES */
+
+CFLAGS= C_DEBUG_SWITCH -Demacs $(MYCPPFLAG) C_SWITCH_MACHINE C_SWITCH_SYSTEM
+/* DO NOT use -R.  There is a special hack described in lastfile.c
+   which is used instead.  Some initialized data areas are modified
+   at initial startup, then labeled as part of the text area when
+   Emacs is dumped for the first time, and never changed again. */
+
+/* You may replace C_DEBUG_SWITCH with C_OPTIMIZE_SWITCH
+   if you don't believe in debugging. */
+
+/* -Demacs is needed to make some files produce the
+   correct version for use in Emacs.  */
+
+#ifndef LIBX10_MACHINE
+#define LIBX10_MACHINE
+#endif
+
+#ifndef LIBX11_MACHINE
+#define LIBX11_MACHINE
+#endif
+
+#ifndef LIBX10_SYSTEM
+#define LIBX10_SYSTEM
+#endif
+
+#ifndef LIBX11_SYSTEM
+#define LIBX11_SYSTEM
+#endif
+
+#ifndef LIB_X11_LIB
+#define LIB_X11_LIB -lX11
+#endif
+
+#ifdef HAVE_X_WINDOWS
+#ifdef HAVE_X11
+#ifdef HAVE_X_MENU
+OLDXMENU = libXMenu11.a
+XOBJ = x11term.o x11fns.o xmenu.o
+LIBX = $(OLDXMENU) -loldX LIB_X11_LIB LIBX11_MACHINE LIBX11_SYSTEM
+#else
+XOBJ = x11term.o x11fns.o
+LIBX = LIB_X11_LIB LIBX11_MACHINE LIBX11_SYSTEM
+#endif
+#else /* not HAVE_X11 */
+#ifdef HAVE_X_MENU
+XOBJ= xterm.o xfns.o xmenu.o
+LIBX= -lXMenu -lX LIBX10_MACHINE LIBX10_SYSTEM
+#else
+XOBJ= xterm.o xfns.o
+LIBX= -lX LIBX10_MACHINE LIBX10_SYSTEM
+#endif /* not HAVE_X_MENU */
+#endif /* not HAVE_X11 */
+#endif /* HAVE_X_WINDOWS */
+
+/* Fix linking if compiled with GCC.  */
+#ifdef __GNUC__
+#ifndef LIB_GCC
+#define LIB_GCC /usr/local/lib/gcc-gnulib
+#endif
+GNULIB_VAR = `if [ -f LIB_GCC ] ; then echo LIB_GCC; else echo; fi`
+#else
+GNULIB_VAR = 
+#endif
+
+#ifdef MAINTAIN_ENVIRONMENT
+environobj = environ.o
+#endif MAINTAIN_ENVIRONMENT
+
+/* Allow config.h to specify a replacement file for unexec.c.  */
+#ifndef UNEXEC
+#define UNEXEC unexec.o
+#endif
+
+/* lastfile must follow all files
+   whose initialized data areas should be dumped as pure by dump-emacs. */
+obj=    dispnew.o scroll.o xdisp.o window.o \
+	term.o cm.o $(XOBJ) \
+	emacs.o keyboard.o macros.o keymap.o sysdep.o \
+	buffer.o filelock.o insdel.o marker.o \
+	minibuf.o fileio.o dired.o filemode.o \
+	cmds.o casefiddle.o indent.o search.o regex.o undo.o \
+	alloc.o data.o doc.o editfns.o callint.o \
+	eval.o fns.o print.o lread.o \
+	abbrev.o syntax.o UNEXEC mocklisp.o bytecode.o \
+	process.o callproc.o $(environobj) \
+	doprnt.o
+
+#ifdef TERMINFO
+/* Used to be -ltermcap here.  If your machine needs that,
+   define LIBS_TERMCAP in the m- file.  */
+#ifndef LIBS_TERMCAP
+#define LIBS_TERMCAP -lcurses
+#endif
+termcapobj = terminfo.o
+#else
+#ifndef LIBS_TERMCAP
+#define LIBS_TERMCAP
+termcapobj = termcap.o tparam.o
+#else
+termcapobj = tparam.o
+#endif
+#endif
+
+#ifndef SYSTEM_MALLOC
+#ifdef HAVE_ALLOCA
+mallocobj = malloc.o
+#else
+mallocobj = alloca.o malloc.o
+#endif
+#else /* SYSTEM_MALLOC */
+#ifndef HAVE_ALLOCA
+mallocobj = alloca.o
+#endif
+#endif
+
+/* define otherobj as list of object files that make-docfile
+   should not be told about.  */
+otherobj= $(termcapobj) lastfile.o $(mallocobj)
+
+/* List of Lisp files loaded into the dumped Emacs. */
+lisp=	${lispdir}simple.elc ${lispdir}help.elc \
+	${lispdir}files.elc ${lispdir}window.elc \
+	${lispdir}indent.elc ${lispdir}loaddefs.el ${lispdir}paths.el \
+	${lispdir}startup.elc ${lispdir}lisp.elc \
+	${lispdir}page.elc ${lispdir}register.elc \
+	${lispdir}paragraphs.elc ${lispdir}lisp-mode.elc \
+	${lispdir}text-mode.elc ${lispdir}fill.elc \
+	${lispdir}c-mode.elc ${lispdir}isearch.elc \
+	${lispdir}replace.elc ${lispdir}abbrev.elc \
+	${lispdir}buff-menu.elc ${lispdir}subr.elc
+
+/* just to be sure the sh is used */
+SHELL=/bin/sh
+
+/* Construct full set of libraries to be linked.  */
+LIBES = LIBS_TERMCAP $(LIBX) LIBS_SYSTEM LIBS_MACHINE LIBS_DEBUG LIB_STANDARD $(GNULIB_VAR)
+
+/* Enable recompilation of certain other files depending on system type.  */
+
+#ifndef OTHER_FILES
+#define OTHER_FILES
+#endif
+
+/* Enable inclusion of object files in temacs depending on system type.  */
+#ifndef OBJECTS_SYSTEM
+#define OBJECTS_SYSTEM
+#endif
+
+#ifndef OBJECTS_MACHINE
+#define OBJECTS_MACHINE
+#endif
+
+all: xemacs OTHER_FILES
+
+xemacs: temacs ${etcdir}DOC ${lisp}
+#ifdef HAVE_SHM
+	./temacs -nl -batch -l inc-vers
+	./temacs -nl -batch -l loadup dump
+	ln temacs xemacs
+#else
+#ifdef CANNOT_DUMP
+	mv temacs xemacs
+#else
+	./temacs -batch -l inc-vers
+	./temacs -batch -l loadup.el dump
+#endif /* not CANNOT_DUMP */
+#endif /* not HAVE_SHM */
+
+${etcdir}DOC: ${etcdir}make-docfile ${obj} ${lisp}
+	rm -f ${etcdir}DOC
+	${etcdir}make-docfile ${obj} ${lisp} ${lispdir}version.el > ${etcdir}DOC
+
+${etcdir}make-docfile:
+	cd ${etcdir}; make ${MFLAGS} make-docfile
+
+/* Some systems define this to cause parallel Make-ing.  */
+#ifndef MAKE_PARALLEL
+#define MAKE_PARALLEL
+#endif
+
+temacs: MAKE_PARALLEL $(LOCALCPP) $(SHORT) $(STARTFILES) $(OLDXMENU) ${obj} ${otherobj} OBJECTS_SYSTEM OBJECTS_MACHINE
+	$(LD) ${STARTFLAGS} ${LDFLAGS} -o temacs ${STARTFILES} ${obj} ${otherobj} OBJECTS_SYSTEM OBJECTS_MACHINE ${LIBES}
+
+/* These are needed for C compilation, on the systems that need them */
+#ifdef NEED_CPP
+CPP = ./localcpp
+localcpp:
+	cd ${cppdir}; make ${MFLAGS} EMACS=-DEMACS
+	ln ${cppdir}cpp localcpp  /* Name where CFLAGS will refer to it */
+/* cc appears to be cretinous and require all of these to exist
+   if -B is specified -- we can't use one local pass and let the
+   others be the standard ones.  What a loser.
+   We can't even use ln, since they are probably
+   on different disks.  */
+	cp /lib/ccom localccom
+	-cp /lib/optim localoptim
+	-cp /lib/c2 localc2
+	cp /bin/as localas
+#else /* not NEED_CPP */
+CPP = $(CC) -E
+#endif /* need NEED_CPP */
+
+#ifdef SHORTNAMES
+shortnames:
+	cd ${shortnamesdir}; make ${MFLAGS}
+#endif /* SHORTNAMES */
+
+#ifdef HAVE_X_WINDOWS
+#ifdef HAVE_X_MENU
+#ifdef HAVE_X11
+$(OLDXMENU):
+	cd ${oldXMenudir}; make ${MFLAGS}
+	ln ${oldXMenudir}libXMenu11.a $(OLDXMENU)
+#endif /* HAVE_X11 */
+#endif /* HAVE_X_MENU */
+#endif /* HAVE_X_WINDOWS */
+
+paths.h: paths.h-dist
+	@sh -c "if test -r $@; then echo $? is newer than $@; exit 1;\
+	  else exit 0; fi"
+	cp $? $@
+
+config.h: config.h-dist
+	@sh -c "if test -r $@; then echo $? is newer than $@; exit 1;\
+	  else exit 0; fi"
+	cp $? $@
+
+/* Some machines have alloca built-in.
+   They should define HAVE_ALLOCA, or may just let alloca.s
+   be used but generate no code.
+   Some have it written in assembler in alloca.s.
+   Some use the C version in alloca.c (these define C_ALLOCA in config.h).
+   */
+
+#ifdef C_ALLOCA
+alloca.o : alloca.c
+#else
+#ifndef HAVE_ALLOCA
+alloca.o : alloca.s config.h
+/* $(CPP) is cc -E, which may get confused by filenames
+   that do not end in .c.  So copy file to a safe name.  */
+	cp alloca.s allocatem.c
+/* remove any ^L, blank lines, and preprocessor comments,
+   since some assemblers barf on them */
+	$(CPP) allocatem.c | \
+	sed -e 's///' -e 's/^#.*//' | \
+	sed -n -e '/^..*$$/p' > allocatem.s
+	-rm -f alloca.o
+/* Xenix, in particular, needs to run assembler via cc.  */
+	cc -c allocatem.s
+	mv allocatem.o alloca.o
+	rm allocatem.s allocatem.c
+#endif /* HAVE_ALLOCA */
+#endif /* not C_ALLOCA */
+
+/* Nearly all the following files depend on lisp.h,
+   but it is not included as a dependency because
+   it is so often changed in ways that do not require any recompilation
+   and so rarely changed in ways that do require any.  */
+
+abbrev.o : abbrev.c buffer.h commands.h config.h 
+buffer.o : buffer.c syntax.h buffer.h commands.h window.h config.h 
+callint.o : callint.c window.h commands.h buffer.h config.h 
+callproc.o : callproc.c paths.h buffer.h commands.h config.h 
+casefiddle.o : casefiddle.c syntax.h commands.h buffer.h config.h 
+cm.o : cm.c cm.h termhooks.h config.h
+cmds.o : cmds.c syntax.h buffer.h commands.h config.h 
+crt0.o : crt0.c config.h
+	$(CC) -c $(CFLAGS) C_SWITCH_ASM crt0.c
+dired.o : dired.c commands.h buffer.h config.h 
+dispnew.o : dispnew.c commands.h window.h buffer.h dispextern.h termchar.h termopts.h cm.h config.h
+doc.o : doc.c buffer.h config.h paths.h
+doprnt.o : doprnt.c
+editfns.o : editfns.c window.h buffer.h config.h 
+emacs.o : emacs.c commands.h config.h 
+#ifdef MAINTAIN_ENVIRONMENT
+environ.o : environ.c buffer.h commands.h config.h
+#endif MAINTAIN_ENVIRONMENT
+fileio.o : fileio.c window.h buffer.h config.h 
+filelock.o : filelock.c buffer.h paths.h config.h
+filemode.o : filemode.c 
+indent.o : indent.c window.h indent.h buffer.h config.h termchar.h termopts.h
+insdel.o : insdel.c window.h buffer.h config.h 
+keyboard.o : keyboard.c termchar.h termhooks.h termopts.h buffer.h commands.h window.h macros.h config.h 
+keymap.o : keymap.c buffer.h commands.h config.h 
+lastfile.o : lastfile.c 
+macros.o : macros.c window.h buffer.h commands.h macros.h config.h
+malloc.o : malloc.c config.h
+marker.o : marker.c buffer.h config.h 
+minibuf.o : minibuf.c syntax.h window.h buffer.h commands.h config.h 
+mocklisp.o : mocklisp.c buffer.h config.h
+process.o : process.c process.h buffer.h window.h termhooks.h termopts.h commands.h config.h 
+regex.o : regex.c syntax.h buffer.h config.h regex.h 
+scroll.o : scroll.c termchar.h config.h dispextern.h termhooks.h
+search.o : search.c regex.h commands.h buffer.h syntax.h config.h 
+syntax.o : syntax.c syntax.h buffer.h commands.h config.h 
+sysdep.o : sysdep.c config.h dispextern.h termhooks.h termchar.h termopts.h window.h
+term.o : term.c termchar.h termhooks.h termopts.h config.h cm.h
+termcap.o : termcap.c config.h
+terminfo.o : terminfo.c config.h
+tparam.o : tparam.c config.h
+undo.o : undo.c buffer.h commands.h config.h 
+UNEXEC : config.h
+window.o : window.c indent.h commands.h window.h buffer.h config.h termchar.h
+xdisp.o : xdisp.c macros.h commands.h indent.h buffer.h dispextern.h termchar.h window.h config.h 
+xfns.o : xfns.c xterm.h window.h config.h
+xmenu.o : xmenu.c xterm.h window.h config.h
+xterm.o : xterm.c xterm.h termhooks.h termopts.h termchar.h \
+ dispextern.h config.h sink.h sinkmask.h
+
+x11fns.o : x11fns.c window.h x11term.h dispextern.h termchar.h config.h
+x11term.o : x11term.c x11term.h termhooks.h termopts.h termchar.h \
+ dispextern.h config.h sink.h sinkmask.h
+
+/* The files of Lisp proper */
+
+alloc.o : alloc.c window.h buffer.h config.h 
+bytecode.o : bytecode.c buffer.h config.h 
+data.o : data.c buffer.h config.h 
+eval.o : eval.c commands.h config.h
+fns.o : fns.c buffer.h commands.h config.h
+print.o : print.c process.h window.h buffer.h dispextern.h termchar.h config.h 
+lread.o : lread.c buffer.h paths.h config.h 
+
+/* System-specific programs to be made.
+   OTHER_FILES, OBJECTS_SYSTEM and OBJECTS_MACHINE
+   select which of these should be compiled.  */
+
+sunfns.o  : sunfns.c buffer.h config.h
+
+${etcdir}emacstool: ${etcdir}emacstool.c
+	cd ${etcdir}; make ${MFLAGS} emacstool
