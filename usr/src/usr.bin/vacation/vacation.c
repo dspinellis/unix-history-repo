@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)vacation.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)vacation.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -66,7 +66,7 @@ static DBM *db;
 
 extern int errno;
 
-#define	VIT	"__VACATION__INTERVAL__TIMER__"
+static char *VIT = "__VACATION__INTERVAL__TIMER__";
 static char from[MAXLINE];
 
 main(argc, argv)
