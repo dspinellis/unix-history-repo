@@ -31,6 +31,14 @@
  * SUCH DAMAGE.
  *
  *	@(#)ufs_alloc.c	7.26 (Berkeley) 5/2/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00106
+ * --------------------         -----   ----------------------
+ *
+ * 28 Mar 93    Chris Torek     Fix contiguous block allocation.
+ *
  */
 
 #include "param.h"
@@ -437,9 +445,8 @@ blkpref(ip, lbn, indx, bap)
 	 * requested rotationally delayed by fs_rotdelay milliseconds.
 	 */
 	nextblk = bap[indx - 1] + fs->fs_frag;
-	if (indx > fs->fs_maxcontig &&
-	    bap[indx - fs->fs_maxcontig] + blkstofrags(fs, fs->fs_maxcontig)
-	    != nextblk)
+	if (indx < fs->fs_maxcontig || bap[indx - fs->fs_maxcontig] +
+	    blkstofrags(fs, fs->fs_maxcontig) != nextblk)
 		return (nextblk);
 	if (fs->fs_rotdelay != 0)
 		/*
