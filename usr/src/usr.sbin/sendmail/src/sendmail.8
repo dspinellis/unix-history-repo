@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)sendmail.8	8.5 (Berkeley) %G%
+.\"     @(#)sendmail.8	8.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt SENDMAIL 8
@@ -183,6 +183,18 @@ is specified,
 will run in background.
 This option can be used safely with
 .Fl bd .
+.It Fl qI Ns Ar substr
+Limit processed jobs to those containing
+.Ar substr
+as a substring of the queue id.
+.It Fl qR Ns Ar substr
+Limit processed jobs to those containing
+.Ar substr
+as a substring of one of the recipients.
+.It Fl qS Ns Ar substr
+Limit processed jobs to those containing
+.Ar substr
+as a substring of the sender.
 .It Fl r Ns Ar name
 An alternate and obsolete form of the
 .Fl f
