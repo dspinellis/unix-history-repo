@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)collect.c	3.56		%G%);
+SCCSID(@(#)collect.c	3.57		%G%);
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -183,6 +183,10 @@ maketemp(from)
 		}
 	}
 	(void) fclose(tf);
+
+	/* An EOF when running SMTP is an error */
+	if (feof(InChannel) && OpMode == MD_SMTP)
+		syserr("collect: unexpected close");
 
 	/*
 	**  Find out some information from the headers.
