@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)strings.c	5.2 (Berkeley) %G%";
+static char *sccsid = "@(#)strings.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -35,8 +35,8 @@ salloc(size)
 	int index;
 
 	s = size;
-	s++;
-	s &= ~01;
+	s += 3;
+	s &= ~03;
 	index = 0;
 	for (sp = &stringdope[0]; sp < &stringdope[NSPACE]; sp++) {
 		if (sp->s_topFree == NOSTR && (STRINGSIZE << index) >= s)
