@@ -18,7 +18,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)option.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)option.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -47,6 +47,12 @@ option(argc, argv)
 	static int sc_window_set = 0;
 	int ch;
 	char *p;
+
+	/* backward compatible processing for "+/search" */
+	char **a;
+	for (a = argv; *a; ++a)
+		if ((*a)[0] == '+' && (*a)[1] == '/')
+			(*a)[0] = '-';
 
 	optind = 1;		/* called twice, re-init getopt. */
 	while ((ch = getopt(argc, argv, "0123456789/:ceinpst:ux:")) != EOF)
