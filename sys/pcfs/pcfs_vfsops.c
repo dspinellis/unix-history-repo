@@ -15,7 +15,7 @@
  *
  *  October 1992
  *
- *	$Header: /usr/src/CVS/sys/pcfs/pcfs_vfsops.c,v 1.1.2.1 1993/02/07 21:57:25 friedl Exp $
+ *	$Header: /a/cvs/386BSD/src/sys.386bsd/pcfs/pcfs_vfsops.c,v 1.1.1.1 1993/06/12 14:57:13 rgrimes Exp $
  *
  *  April 6, 1992
  *
@@ -196,7 +196,7 @@ mountpcfs(devvp, mp, p)
 	int ronly = (mp->mnt_flag & MNT_RDONLY) != 0;
 	dev_t dev = devvp->v_rdev;
 	union bootsector *bsp;
-	struct pcfsmount *pmp;
+	struct pcfsmount *pmp = NULL;
 	struct buf *bp0 = NULL;
 	struct byte_bpb33 *b33;
 	struct byte_bpb50 *b50;
