@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)mount.8	6.5 (Berkeley) %G%
+.\"	@(#)mount.8	6.6 (Berkeley) %G%
 .\"
 .TH MOUNT 8 ""
 .UC 4
@@ -25,7 +25,7 @@ special | node
 .B \-frw
 ] [
 .B \-t
-.B nfs | ufs
+nfs | ufs
 ] [
 .B \-o
 options
@@ -60,26 +60,25 @@ The \fI-o\fP argument followed by \fIoptions\fP, which is a comma
 separated string of any of the following list,
 can be used to override the defaults for an nfs mount.
 .PP
-.nf
 .IP "hard" 12
-- I/O system calls will retry until the server responds (default)
+I/O system calls will retry until the server responds (default)
 .IP "soft" 12
-- I/O system calls will fail and return errno after \fIretrans\fP request
+I/O system calls will fail and return errno after \fIretrans\fP request
 retransmissions
 .IP "bg" 12
-- If the first mount request times out, do retries in background
+If the first mount request times out, do retries in background
 .IP "intr" 12
-- I/O system calls can be interrupted.
+I/O system calls can be interrupted.
 .IP "rsize=#" 12
-- Set read size to \fI#\fP bytes.
+Set read size to \fI#\fP bytes.
 .IP "wsize=#" 12
-- Set write size to \fI#\fP bytes.
+Set write size to \fI#\fP bytes.
 .IP "retry=#" 12
-- Set mount retry count to \fI#\fP.
+Set mount retry count to \fI#\fP.
 .IP "retrans=#" 12
-- Set retransmission count for nfs rpc's to \fI#\fP.
+Set retransmission count for nfs rpc's to \fI#\fP.
 .IP "timeo=#" 12
-- Set initial nfs timeout to \fI#\fP in 0.1 sec intervals.
+Set initial nfs timeout to \fI#\fP in 0.1 sec intervals.
 .fi
 .PP
 .I Umount
