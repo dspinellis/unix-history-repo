@@ -1,4 +1,4 @@
-/*	tty.c	4.7	81/07/05	*/
+/*	tty.c	4.8	81/07/05	*/
 
 /*
  * TTY subroutines common to more than one line discipline
@@ -370,8 +370,15 @@ caddr_t addr;
 		tp->t_state |= HUPCLS;
 		break;
 
-	case TIOCFLUSH:
-		flushtty(tp, FREAD|FWRITE);
+	case TIOCFLUSH: {
+		int flags;
+		if (addr == 0)
+			flags = FREAD|FWRITE;
+		else if (copyin(addr, (caddr_t)&flags, sizeof (flags))) {
+			u.u_error = EFAULT;
+			return;
+		}
+		flushtty(tp, flags);
 		break;
 
 	/*
