@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	4.3 (Berkeley) 82/10/10";
+static	char *sccsid = "@(#)main.c	4.4 (Berkeley) 82/10/11";
 # include "defs"
 /*
 command make to update programs.
@@ -153,6 +153,8 @@ for (i=1; i<argc; ++i)
 	}
 
 *op++ = '\0';
+if (strcmp(options, "-") == 0)
+	*options = '\0';
 setvar("MFLAGS", options);		/* MFLAGS=options to make */
 
 if( !descset )
