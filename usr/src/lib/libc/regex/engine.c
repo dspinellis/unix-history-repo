@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)engine.c	8.1 (Berkeley) %G%
+ *	@(#)engine.c	8.2 (Berkeley) %G%
  */
 
 /*
@@ -514,8 +514,8 @@ sopno lev;			/* PLUS nesting level */
 					(sp < m->endp && *(sp-1) == '\n' &&
 						(m->g->cflags&REG_NEWLINE)) ||
 					(sp > m->beginp &&
-							!isalnum(*(sp-1))) ) &&
-					(sp < m->endp && isalnum(*sp)) )
+							!ISWORD(*(sp-1))) ) &&
+					(sp < m->endp && ISWORD(*sp)) )
 				{ /* yes */ }
 			else
 				return(NULL);
@@ -524,8 +524,8 @@ sopno lev;			/* PLUS nesting level */
 			if (( (sp == m->endp && !(m->eflags&REG_NOTEOL)) ||
 					(sp < m->endp && *sp == '\n' &&
 						(m->g->cflags&REG_NEWLINE)) ||
-					(sp < m->endp && !isalnum(*sp)) ) &&
-					(sp > m->beginp && isalnum(*(sp-1))) )
+					(sp < m->endp && !ISWORD(*sp)) ) &&
+					(sp > m->beginp && ISWORD(*(sp-1))) )
 				{ /* yes */ }
 			else
 				return(NULL);
@@ -702,12 +702,12 @@ sopno stopst;
 		}
 
 		/* how about a word boundary? */
-		if ( (flagch == BOL || (lastc != OUT && !isalnum(lastc))) &&
-					(c != OUT && isalnum(c)) ) {
+		if ( (flagch == BOL || (lastc != OUT && !ISWORD(lastc))) &&
+					(c != OUT && ISWORD(c)) ) {
 			flagch = BOW;
 		}
-		if ( (lastc != OUT && isalnum(lastc)) &&
-				(flagch == EOL || (c != OUT && !isalnum(c))) ) {
+		if ( (lastc != OUT && ISWORD(lastc)) &&
+				(flagch == EOL || (c != OUT && !ISWORD(c))) ) {
 			flagch = EOW;
 		}
 		if (flagch == BOW || flagch == EOW) {
@@ -791,12 +791,12 @@ sopno stopst;
 		}
 
 		/* how about a word boundary? */
-		if ( (flagch == BOL || (lastc != OUT && !isalnum(lastc))) &&
-					(c != OUT && isalnum(c)) ) {
+		if ( (flagch == BOL || (lastc != OUT && !ISWORD(lastc))) &&
+					(c != OUT && ISWORD(c)) ) {
 			flagch = BOW;
 		}
-		if ( (lastc != OUT && isalnum(lastc)) &&
-				(flagch == EOL || (c != OUT && !isalnum(c))) ) {
+		if ( (lastc != OUT && ISWORD(lastc)) &&
+				(flagch == EOL || (c != OUT && !ISWORD(c))) ) {
 			flagch = EOW;
 		}
 		if (flagch == BOW || flagch == EOW) {
