@@ -1,4 +1,4 @@
-/*	tcp_usrreq.c	1.76	83/05/12	*/
+/*	tcp_usrreq.c	1.77	83/05/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -354,6 +354,7 @@ tcp_usrclosed(tp)
 
 	switch (tp->t_state) {
 
+	case TCPS_CLOSED:
 	case TCPS_LISTEN:
 	case TCPS_SYN_SENT:
 		tp->t_state = TCPS_CLOSED;
