@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vnops.c	7.70 (Berkeley) %G%
+ *	@(#)ffs_vnops.c	7.71 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -178,10 +178,12 @@ ffs_read(vp, uio, ioflag, cred)
 	register struct fs *fs;
 	struct buf *bp;
 	daddr_t lbn, bn, rablock;
-	int size, rasize, diff, error = 0;
-	long n, on, type;
+	off_t diff;
+	int error = 0;
+	long size, rasize, n, on;
 
 #ifdef DIAGNOSTIC
+	int type;
 	if (uio->uio_rw != UIO_READ)
 		panic("ffs_read mode");
 	type = ip->i_mode & IFMT;
