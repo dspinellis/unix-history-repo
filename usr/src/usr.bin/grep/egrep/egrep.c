@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)egrep.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)egrep.c	5.11 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -140,6 +140,7 @@ char *
 strchr(), *strrchr(), *strcpy(), *strncpy(), *strpbrk(), *malloc();
 char *
 grepxlat(), *fold(), *pfile(), *alternate(), *isolate();
+char *gotamatch(), *kanji(), *linesave(), *submatch();
 char **args;
 
 main(argc, argv)
@@ -364,7 +365,6 @@ chimaera(file, pat)		/* "reach out and boyer-moore search someone" */
 	register int *deltazero = delta0;
 	int patlen = altmin;
 	char *t;
-	char *gotamatch(), *kanji(), *linesave(), *submatch();
 
 	nleftover = boyfound = flushflag = 0;
 	nline = 1L;
