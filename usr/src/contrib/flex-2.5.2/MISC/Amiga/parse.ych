@@ -1,0 +1,8 @@
+Changes for PARSE.Y 2.4.7 by Andreas Scherer, January 20, 1995.
+Modified for PARSE.Y 2.5.1, April 3, 1995.
+
+@x l.60
+char *alloca ();
+@y
+char *alloca(unsigned int);
+@z
