@@ -74,6 +74,7 @@ setinput(source)
 	extern int errno;
 #ifdef RRESTORE
 	char *host, *tape;
+	char *ruser;
 #endif RRESTORE
 	char *strerror();
 
@@ -86,6 +87,16 @@ setinput(source)
 #ifdef RRESTORE
 	host = source;
 	tape = index(host, ':');
+	if((host = index(source, '@')))
+	  {
+	   *host++ = '\0';
+	   ruser = source;
+	  }
+	else
+	  {
+	   host = source;
+	   ruser = NULL;
+	  }
 	if (tape == 0) {
 nohost:
 		msg("need keyletter ``f'' and device ``host:tape''\n");
@@ -93,7 +104,7 @@ nohost:
 	}
 	*tape++ = '\0';
 	(void) strcpy(magtape, tape);
-	if (rmthost(host) == 0)
+	if (rmthost(host, ruser) == 0)
 		done(1);
 	setuid(getuid());	/* no longer need or want root privileges */
 #else
