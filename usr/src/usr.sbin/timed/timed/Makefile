@@ -3,13 +3,13 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	2.2	(Berkeley)	%G%
+#	@(#)Makefile	2.3	(Berkeley)	%G%
 #
 # optional flags are: MEASURE TESTING DEBUG
 
 CFLAGS= -O
 DESTDIR=
-MACHINE= `machine`
+MACHINE=unknown
 LIBS=
 PROGRS=	timed timedc
 
