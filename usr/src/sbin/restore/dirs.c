@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dirs.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)dirs.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -55,9 +55,10 @@ static struct inotab *inotab[HASHSIZE];
 struct modeinfo {
 	ino_t ino;
 	struct timeval timep[2];
-	short mode;
-	short uid;
-	short gid;
+	mode_t mode;
+	uid_t uid;
+	gid_t gid;
+	int flags;
 };
 
 /*
@@ -591,6 +592,7 @@ setdirmodes(flags)
 			cp = myname(ep);
 			(void) chown(cp, node.uid, node.gid);
 			(void) chmod(cp, node.mode);
+			(void) chflags(cp, node.flags);
 			utimes(cp, node.timep);
 			ep->e_flags &= ~NEW;
 		}
@@ -688,6 +690,7 @@ allocinotab(ino, dip, seekpt)
 	node.timep[1].tv_sec = dip->di_mtime.ts_sec;
 	node.timep[1].tv_usec = dip->di_mtime.ts_nsec / 1000;
 	node.mode = dip->di_mode;
+	node.flags = dip->di_flags;
 	node.uid = dip->di_uid;
 	node.gid = dip->di_gid;
 	(void) fwrite((char *)&node, 1, sizeof(struct modeinfo), mf);
