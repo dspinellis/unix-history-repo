@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)kern_exec.c	7.72 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.73 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -33,7 +33,6 @@
 #include <vm/vm_pager.h>
 
 #include <sys/signalvar.h>
-#include <sys/kinfo_proc.h>
 
 #ifdef HPUXCOMPAT
 #include <sys/user.h>			/* for pcb */
