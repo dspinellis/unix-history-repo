@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ping.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)ping.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -106,9 +106,9 @@ int interval = 1;		/* interval between packets */
 
 /* timing */
 int timing;			/* flag to do timing */
-long tmin = LONG_MAX;		/* minimum round trip time */
-long tmax;			/* maximum round trip time */
-u_long tsum;			/* sum of all times, for doing average */
+double tmin = 999999999.0;	/* minimum round trip time */
+double tmax = 0.0;		/* maximum round trip time */
+double tsum = 0.0;		/* sum of all times, for doing average */
 
 char *pr_addr();
 void catcher(), finish();
@@ -346,7 +346,7 @@ main(argc, argv)
  * catcher --
  *	This routine causes another PING to be transmitted, and then
  * schedules another SIGALRM for 1 second from now.
- * 
+ *
  * bug --
  *	Our sense of time will slowly skew (i.e., packets will not be
  * launched exactly at 1-second intervals).  This does not affect the
@@ -375,7 +375,7 @@ catcher()
 
 /*
  * pinger --
- * 	Compose and transmit an ICMP ECHO REQUEST packet.  The IP packet
+ *	Compose and transmit an ICMP ECHO REQUEST packet.  The IP packet
  * will be added on by the kernel.  The ID field is our UNIX process ID,
  * and the sequence number is an ascending integer.  The first 8 bytes
  * of the data portion are used to hold a UNIX "timeval" struct in VAX
@@ -438,7 +438,7 @@ pr_pack(buf, cc, from)
 	static char old_rr[MAX_IPOPTLEN];
 	struct ip *ip;
 	struct timeval tv, *tp;
-	long triptime;
+	double triptime;
 	int hlen, dupflag;
 
 	(void)gettimeofday(&tv, (struct timezone *)NULL);
@@ -468,7 +468,8 @@ pr_pack(buf, cc, from)
 			tp = (struct timeval *)icp->icmp_data;
 #endif
 			tvsub(&tv, tp);
-			triptime = tv.tv_sec * 1000 + (tv.tv_usec / 1000);
+			triptime = ((double)tv.tv_sec) * 1000.0 +
+			    ((double)tv.tv_usec) / 1000.0;
 			tsum += triptime;
 			if (triptime < tmin)
 				tmin = triptime;
@@ -496,7 +497,7 @@ pr_pack(buf, cc, from)
 			   icp->icmp_seq);
 			(void)printf(" ttl=%d", ip->ip_ttl);
 			if (timing)
-				(void)printf(" time=%ld ms", triptime);
+				(void)printf(" time=%g ms", triptime);
 			if (dupflag)
 				(void)printf(" (DUP!)");
 			/* check the data */
@@ -664,6 +665,8 @@ tvsub(out, in)
 void
 finish()
 {
+	register int i;
+
 	(void)signal(SIGINT, SIG_IGN);
 	(void)putchar('\n');
 	(void)fflush(stdout);
@@ -680,9 +683,12 @@ finish()
 			    (int) (((ntransmitted - nreceived) * 100) /
 			    ntransmitted));
 	(void)putchar('\n');
-	if (nreceived && timing)
-		(void)printf("round-trip min/avg/max = %ld/%lu/%ld ms\n",
-		    tmin, tsum / (nreceived + nrepeats), tmax);
+	if (nreceived && timing) {
+		/* Only display average to microseconds */
+		i = 1000.0 * tsum / (nreceived + nrepeats);
+		(void)printf("round-trip min/avg/max = %g/%g/%g ms\n",
+		    tmin, ((double)i) / 1000.0, tmax);
+	}
 	exit(0);
 }
 
