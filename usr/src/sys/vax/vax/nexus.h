@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)nexus.h	6.6 (Berkeley) %G%
+ *	@(#)nexus.h	6.7 (Berkeley) %G%
  */
 
 /*
@@ -32,6 +32,10 @@
 #if VAX730
 #define	NNEX730	NNEXSBI
 #define	NEX730	((struct nexus *)0xf20000)
+#endif
+#if VAX630
+#define	NNEX630	1
+#define	NEX630	((struct nexus *)0x20088000)
 #endif
 #define	NEXSIZE	0x2000
 

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)Locore.c	6.8 (Berkeley) %G%
+ *	@(#)Locore.c	6.9 (Berkeley) %G%
  */
 
 #include "dz.h"
@@ -29,6 +29,7 @@
 
 #include "nexus.h"
 #include "ioa.h"
+#include "ka630.h"
 #include "../vaxuba/ubavar.h"
 #include "../vaxuba/ubareg.h"
 
@@ -212,6 +213,12 @@ struct	mbuf mbutl[NMBCLUSTERS*CLBYTES/sizeof (struct mbuf)];
 struct	pte msgbufmap[CLSIZE];
 struct	msgbuf msgbuf;
 struct	pte camap[32];
+#ifdef VAX630
+struct	pte Clockmap[1];
+struct	cldevice cldevice;
+struct	pte Ka630map[1];
+struct	ka630cpu ka630cpu;
+#endif
 int	cabase, calimit;
 #ifdef unneeded
 char	caspace[32*NBPG];
@@ -346,7 +353,7 @@ imax(a, b) int a, b; { return (a > b ? a : b); }
 unsigned min(a, b) u_int a, b; { return (a < b ? a : b); }
 unsigned max(a, b) u_int a, b; { return (a > b ? a : b); }
 #endif
-ntohs(s) u_short s; { return ((int)s); }
-htons(s) u_short s; { return ((int)s); }
-ntohl(l) u_long l; { return ((int)l); }
-htonl(l) u_long l; { return ((int)l); }
+u_short ntohs(s) u_short s; { return ((u_short)s); }
+u_short htons(s) u_short s; { return ((u_short)s); }
+u_long ntohl(l) u_long l; { return ((u_long)l); }
+u_long htonl(l) u_long l; { return ((u_long)l); }
