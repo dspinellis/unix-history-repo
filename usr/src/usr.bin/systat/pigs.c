@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pigs.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)pigs.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -18,7 +18,7 @@ static char sccsid[] = "@(#)pigs.c	5.13 (Berkeley) %G%";
 #include <sys/dir.h>
 #include <sys/time.h>
 #include <sys/proc.h>
-#include <sys/kinfo.h>
+#include <sys/sysctl.h>
 #include <sys/kinfo_proc.h>
 
 #include <pwd.h>
@@ -156,7 +156,7 @@ fetchpigs()
 
 	if (namelist[X_FIRST].n_type == 0)
 		return;
-	if ((kpp = kvm_getprocs(kd, KINFO_PROC_ALL, 0, &nproc)) == NULL) {
+	if ((kpp = kvm_getprocs(kd, KERN_PROC_ALL, 0, &nproc)) == NULL) {
 		error("%s", kvm_geterr(kd));
 		if (pt)
 			free(pt);
