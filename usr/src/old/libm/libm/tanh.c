@@ -12,7 +12,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tanh.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)tanh.c	4.3 (Berkeley) %G%";
 #endif not lint
 
 /* TANH(X)
@@ -26,23 +26,24 @@ static char sccsid[] = "@(#)tanh.c	4.2 (Berkeley) %G%";
  *	finite(x)
  *
  * Required kernel function:
- *	E(x)	...exp(x)-1
+ *	expm1(x)	...exp(x)-1
  *
  * Method :
  *	1. reduce x to non-negative by tanh(-x) = - tanh(x).
- *	2. For appropriate values of small, 
- *					          -E(-2x)
- *	    0     <  x <=     1   :  tanh(x) := ------------
- *					         E(-2x) + 2
- *							 2
- *	    1     <= x <= 22.0    :  tanh(x) := 1 -  ------------
- *						      E(2x) + 2
- *	    22.0  <  x <= INF     :  tanh(x) := 1.
+ *	2.
+ *	    0      <  x <=  1.e-10 :  tanh(x) := x
+ *					          -expm1(-2x)
+ *	    1.e-10 <  x <=  1      :  tanh(x) := --------------
+ *					         expm1(-2x) + 2
+ *							  2
+ *	    1      <= x <=  22.0   :  tanh(x) := 1 -  ---------------
+ *						      expm1(2x) + 2
+ *	    22.0   <  x <= INF     :  tanh(x) := 1.
  *
- *	Note: 22 are chosen so that fl(1.0+2/(E(2*22)+2)) == 1.
+ *	Note: 22 was chosen so that fl(1.0+2/(expm1(2*22)+2)) == 1.
  *
  * Special cases:
- *	tanh(NAN) is NAN;
+ *	tanh(NaN) is NaN;
  *	only tanh(0)=0 is exact for finite argument.
  *
  * Accuracy:
@@ -54,24 +55,25 @@ static char sccsid[] = "@(#)tanh.c	4.2 (Berkeley) %G%";
 double tanh(x)
 double x;
 {
-	static double one=1.0, two=2.0;
-	double E(), t,  copysign(), sign;
+	static double one=1.0, two=2.0, small = 1.0e-10, big = 1.0e10;
+	double expm1(), t, copysign(), sign;
 	int finite();
 
-	if(x!=x) return(x);
+#ifndef VAX
+	if(x!=x) return(x);	/* x is NaN */
+#endif
 
 	sign=copysign(one,x);
 	x=copysign(x,one);
 	if(x < 22.0) 
 	    if( x > one )
-		return(copysign(one-two/(E(x+x)+two),sign));
-	    else
-		{t= -E(-(x+x)); return(copysign(t/(two-t),sign));}
-
+		return(copysign(one-two/(expm1(x+x)+two),sign));
+	    else if ( x > small )
+		{t= -expm1(-(x+x)); return(copysign(t/(two-t),sign));}
+	    else		/* raise the INEXACT flag for non-zero x */
+		{big+x; return(copysign(x,sign));}
 	else if(finite(x))
-	    return (sign+1.0E-37); /* raise the inexact flag */
-
+	    return (sign+1.0E-37); /* raise the INEXACT flag */
 	else
 	    return(sign);	/* x is +- INF */
 }
-
