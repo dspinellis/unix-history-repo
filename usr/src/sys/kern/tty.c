@@ -1,4 +1,4 @@
-/*	tty.c	4.35	82/12/07	*/
+/*	tty.c	4.36	82/12/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -241,6 +241,9 @@ ttioctl(tp, com, data, flag)
 	case TIOCLBIS:
 	case TIOCLBIC:
 	case TIOCLSET:
+	case TIOCBIS:
+	case TIOCBIC:
+	case TIOCSET:
 	case TIOCSTI:
 		while (tp->t_line == NTTYDISC &&
 		   u.u_procp->p_pgrp != tp->t_pgrp && tp == u.u_ttyp &&
@@ -293,17 +296,17 @@ ttioctl(tp, com, data, flag)
 		tp->t_state &= ~TS_XCLUDE;
 		break;
 
-	/* set new parameters */
-	case TIOCSETP:
-	case TIOCSETN: {
-		register struct sgttyb *sg = (struct sgttyb *)data;
-		struct clist tq;
+	case TIOCSET:
+	case TIOCBIS: {
+		u_long newflags = *(u_long *)data;
 
-		(void) spl5();
-		if (tp->t_flags&RAW || sg->sg_flags&RAW || com == TIOCSETP)
+		s = spl5();
+		if (tp->t_flags&RAW || newflags&RAW)
 			wflushtty(tp);
-		else if ((tp->t_flags&CBREAK) != (sg->sg_flags&CBREAK)) {
-			if (sg->sg_flags&CBREAK) {
+		else if ((tp->t_flags&CBREAK) != (newflags&CBREAK))
+			if (newflags&CBREAK) {
+				struct clist tq;
+
 				catq(&tp->t_rawq, &tp->t_canq);
 				tq = tp->t_rawq;
 				tp->t_rawq = tp->t_canq;
@@ -312,32 +315,54 @@ ttioctl(tp, com, data, flag)
 				tp->t_flags |= PENDIN;
 				ttwakeup(tp);
 			}
-		}
-		tp->t_ispeed = sg->sg_ispeed;
-		tp->t_ospeed = sg->sg_ospeed;
-		tp->t_erase = sg->sg_erase;
-		tp->t_kill = sg->sg_kill;
-		tp->t_flags &= ~0xffff;
-		tp->t_flags |= sg->sg_flags;
+		if (com == TIOCSET)
+			tp->t_flags = newflags;
+		else
+			tp->t_flags |= newflags;
 		if (tp->t_flags&RAW) {
 			tp->t_state &= ~TS_TTSTOP;
 			ttstart(tp);
 		}
-		(void) spl0();
+		splx(s);
 		break;
 	}
 
-	/* send current parameters to user */
-	case TIOCGETP: {
-		register struct sgttyb *sg = (struct sgttyb *)data;
+	case TIOCBIC: {
+		u_long newflags = *(long *)data;
 
-		sg->sg_ispeed = tp->t_ispeed;
-		sg->sg_ospeed = tp->t_ospeed;
-		sg->sg_erase = tp->t_erase;
-		sg->sg_kill = tp->t_kill;
-		sg->sg_flags = tp->t_flags;
+		if (tp->t_flags&RAW)
+			wflushtty(tp);
+		else if ((tp->t_flags&CBREAK) != (CBREAK&~newflags))
+			if (newflags&CBREAK) {
+				tp->t_flags |= PENDIN;
+				ttwakeup(tp);
+			} else {
+				struct clist tq;
+
+				catq(&tp->t_rawq, &tp->t_canq);
+				tq = tp->t_rawq;
+				tp->t_rawq = tp->t_canq;
+				tp->t_canq = tq;
+			}
+		if (tp->t_flags&RAW) {
+			tp->t_state &= ~TS_TTSTOP;
+			ttstart(tp);
+		}
+		splx(s);
 		break;
 	}
+
+	case TIOCGET:
+		*(long *)data = tp->t_flags;
+		break;
+
+	case TIOCCGET:
+		bcopy((caddr_t)&tp->t_chars, data, sizeof (struct ttychars));
+		break;
+
+	case TIOCCSET:
+		bcopy(data, (caddr_t)&tp->t_chars, sizeof (struct ttychars));
+		break;
 
 	/* hang up line on last close */
 	case TIOCHPCL:
@@ -355,66 +380,9 @@ ttioctl(tp, com, data, flag)
 		break;
 	}
 
-	/* set and fetch special characters */
-	/* THIS SHOULD USE struct ttychars */
-	case TIOCSETC:
-		bcopy(data, (caddr_t)&tp->t_intrc, sizeof (struct tchars));
-		break;
-
-	case TIOCGETC:
-		bcopy((caddr_t)&tp->t_intrc, data, sizeof (struct tchars));
-		break;
-
-/* BEGIN DEFUNCT */
-	case FIONBIO:
-		if (*(int *)data)
-			tp->t_state |= TS_NBIO;
-		else
-			tp->t_state &= ~TS_NBIO;
-		break;
-
-	/* set/get local special characters */
-	case TIOCSLTC:
-		bcopy(data, (caddr_t)&tp->t_suspc, sizeof (struct ltchars));
-		break;
-
-	case TIOCGLTC:
-		bcopy((caddr_t)&tp->t_suspc, data, sizeof (struct ltchars));
-		break;
-
-	/*
-	 * Modify local mode word.
-	 */
-	case TIOCLBIS:
-		tp->t_flags |= *(int *)data << 16;
-		break;
-
-	case TIOCLBIC:
-		tp->t_flags &= ~(*(int *)data << 16);
-		break;
-
-	case TIOCLSET:
-		tp->t_flags &= 0xffff;
-		tp->t_flags |= *(int *)data << 16;
-		break;
-
-	case TIOCLGET:
-		*(int *)data = tp->t_flags >> 16;
-		break;
-/* END DEFUNCT */
-
 	/* return number of characters immediately available */
 	case FIONREAD:
 		*(off_t *)data = ttnread(tp);
-		break;
-
-	/* should allow SPGRP and GPGRP only if tty open for reading */
-	case TIOCSPGRP:
-		tp->t_pgrp = *(int *)data;
-		break;
-
-	case TIOCGPGRP:
-		*(int *)data = tp->t_pgrp;
 		break;
 
 	case TIOCSTOP:
@@ -446,7 +414,11 @@ ttioctl(tp, com, data, flag)
 		break;
 
 	default:
+#ifndef NOCOMPAT
+		return (ottioctl(tp, com, data, flag));
+#else
 		return (-1);
+#endif
 	}
 	return (0);
 }
