@@ -917,40 +917,87 @@ tty_iscrnl()
 }
 
 /*
+ * Try to guess whether speeds are "encoded" (4.2BSD) or just numeric (4.4BSD).
+ */
+#if B4800 != 4800
+#define	DECODE_BAUD
+#endif
+
+#ifdef	DECODE_BAUD
+
+/*
  * A table of available terminal speeds
  */
 struct termspeeds {
 	int	speed;
 	int	value;
 } termspeeds[] = {
-	{ 0,     B0 },    { 50,    B50 },   { 75,    B75 },
-	{ 110,   B110 },  { 134,   B134 },  { 150,   B150 },
-	{ 200,   B200 },  { 300,   B300 },  { 600,   B600 },
-	{ 1200,  B1200 }, { 1800,  B1800 }, { 2400,  B2400 },
-	{ 4800,  B4800 }, { 9600,  B9600 }, { 19200, B9600 },
-	{ 38400, B9600 }, { -1,    B9600 }
+	{ 0,      B0 },      { 50,    B50 },    { 75,     B75 },
+	{ 110,    B110 },    { 134,   B134 },   { 150,    B150 },
+	{ 200,    B200 },    { 300,   B300 },   { 600,    B600 },
+	{ 1200,   B1200 },   { 1800,  B1800 },  { 2400,   B2400 },
+	{ 4800,   B4800 },  
+#ifdef	B7200
+	{ 7200,  B7200 }, 
+#endif
+	{ 9600,   B9600 },
+#ifdef	B14400
+	{ 14400,  B14400 },
+#endif
+#ifdef	B19200
+	{ 19200,  B19200 },
+#endif
+#ifdef	B28800
+	{ 28800,  B28800 },
+#endif
+#ifdef	B38400
+	{ 38400,  B38400 },
+#endif
+#ifdef	B57600
+	{ 57600,  B57600 },
+#endif
+#ifdef	B115200
+	{ 115200, B115200 },
+#endif
+#ifdef	B230400
+	{ 230400, B230400 },
+#endif
+	{ -1,     0 }
 };
+#endif	/* DECODE_BUAD */
 
 	void
 tty_tspeed(val)
 	int val;
 {
+#ifdef	DECODE_BAUD
 	register struct termspeeds *tp;
 
 	for (tp = termspeeds; (tp->speed != -1) && (val > tp->speed); tp++)
 		;
+	if (tp->speed == -1)	/* back up to last valid value */
+		--tp;
 	cfsetospeed(&termbuf, tp->value);
+#else	/* DECODE_BUAD */
+	cfsetospeed(&termbuf, val);
+#endif	/* DECODE_BUAD */
 }
 
 	void
 tty_rspeed(val)
 	int val;
 {
+#ifdef	DECODE_BAUD
 	register struct termspeeds *tp;
 
 	for (tp = termspeeds; (tp->speed != -1) && (val > tp->speed); tp++)
 		;
+	if (tp->speed == -1)	/* back up to last valid value */
+		--tp;
 	cfsetispeed(&termbuf, tp->value);
+#else	/* DECODE_BAUD */
+	cfsetispeed(&termbuf, val);
+#endif	/* DECODE_BAUD */
 }
 
 #if	defined(CRAY2) && defined(UNICOS5)
@@ -1497,8 +1544,8 @@ start_login(host, autologin, name)
 	utmpx.ut_id[3] = SC_WILDC;
 	utmpx.ut_type = LOGIN_PROCESS;
 	(void) time(&utmpx.ut_tv.tv_sec);
-	if (makeutx(&utmpx) == NULL)
-		fatal(net, "makeutx failed");
+	if (pututxline(&utmpx) == NULL)
+		fatal(net, "pututxline failed");
 #endif
 
 	/*
@@ -1662,11 +1709,27 @@ start_login(host, autologin, name)
 		 */
 		unsetenv("USER");
 	}
+#ifdef	SOLARIS
+	else {
+		char **p;
+ 
+		argv = addarg(argv, "");	/* no login name */
+		for (p = environ; *p; p++) {
+			argv = addarg(argv, *p);
+		}
+	}
+#endif	/* SOLARIS */
 #if	defined(AUTHENTICATION) && defined(NO_LOGIN_F) && defined(LOGIN_R)
 	if (pty > 2)
 		close(pty);
 #endif
 	closelog();
+	/*
+	 * This sleep(1) is in here so that telnetd can
+	 * finish up with the tty.  There's a race condition
+	 * the login banner message gets lost...
+	 */
+	sleep(1);
 	execv(_PATH_LOGIN, argv);
 
 	syslog(LOG_ERR, "%s: %m\n", _PATH_LOGIN);
@@ -1696,7 +1759,7 @@ addarg(argv, val)
 	if (cpp == &argv[(int)argv[-1]]) {
 		--argv;
 		*argv = (char *)((int)(*argv) + 10);
-		argv = (char **)realloc(argv, (int)(*argv) + 2);
+		argv = (char **)realloc(argv, sizeof(*argv)*((int)(*argv) + 2));
 		if (argv == NULL)
 			return(NULL);
 		argv++;
