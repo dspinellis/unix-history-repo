@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)mail0.nr	6.2 (Berkeley) %G%
+.\"	@(#)mail0.nr	6.3 (Berkeley) %G%
 .\"
 .eh 'USD:7-%''Mail Reference Manual'
 .oh 'Mail Reference Manual''USD:7-%'
@@ -26,16 +26,12 @@ Kurt Shoens
 .(l C
 Revised by
 .)l
-.i
 .(l C
-Craig Leres
-.)l
+.i
+Craig Leres\ \c
 .r
-.(l C
-and
-.)l
+and\ \c
 .i
-.(l C
 Mark Andrews
 .)l
 .r
