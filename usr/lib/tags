@@ -1,0 +1,471 @@
+ACTFILE	/usr/src/usr.lib/libpc/ACTFILE.c	/^ACTFILE(curfile)$/
+ADDT	/usr/src/usr.lib/libpc/ADDT.c	/^ADDT(result0, left, right, siz)$/
+APPEND	/usr/src/usr.lib/libpc/APPEND.c	/^APPEND(filep)$/
+ARGV	/usr/src/usr.lib/libpc/ARGV.c	/^ARGV(subscript, var, siz)$/
+ASRT	/usr/src/usr.lib/libpc/ASRT.c	/^ASRT(cond)$/
+ASRTS	/usr/src/usr.lib/libpc/,ASRTS.c	/^ASRTS(cond, stmt)$/
+ASSERT	/usr/src/lib/libc/gen/malloc.c	/^#define ASSERT(p) if(!(p))botch("p");else$/
+ATAN	/usr/src/usr.lib/libpc/ATAN.c	/^ATAN(value)$/
+BUFF	/usr/src/usr.lib/libpc/BUFF.c	/^BUFF(amount)$/
+CARD	/usr/src/usr.lib/libpc/CARD.c	/^CARD(setptr, siz)$/
+CASERNG	/usr/src/usr.lib/libpc/CASERNG.c	/^CASERNG(val)$/
+CHR	/usr/src/usr.lib/libpc/CHR.c	/^CHR(value)$/
+CLCK	/usr/src/usr.lib/libpc/CLCK.c	/^CLCK()$/
+COS	/usr/src/usr.lib/libpc/COS.c	/^COS(value)$/
+CTRL	/usr/src/usr.lib/libtermlib/tgoto.c	/^#define	CTRL(c)	('c' & 037)$/
+CTTOT	/usr/src/usr.lib/libpc/CTTOT.c	/^CTTOT(result0, lwrbnd, uprbnd, paircnt, singcnt, d/
+DATE	/usr/src/usr.lib/libpc/DATE.c	/^DATE(alfap)$/
+DEFNAME	/usr/src/usr.lib/libpc/DEFNAME.c	/^DEFNAME(filep, name, maxnamlen, datasize)$/
+DFDISPOSE	/usr/src/usr.lib/libpc/DFDISPOSE.c	/^DFDISPOSE(var, size)$/
+DISPOSE	/usr/src/usr.lib/libpc/DISPOSE.c	/^DISPOSE(var, siz)$/
+ENTRY	/usr/src/lib/libc/sys/Obrk.c	/^ENTRY(sbrk)$/
+ERROR	/usr/src/usr.lib/libpc/ERROR.c	/^ERROR(msg, d1, d2)$/
+EXCEPT	/usr/src/usr.lib/libpc/EXCEPT.c	/^EXCEPT(signum, type)$/
+EXP	/usr/src/usr.lib/libpc/EXP.c	/^EXP(value)$/
+EXPO	/usr/src/usr.lib/libpc/EXPO.c	/^EXPO(value)$/
+FCALL	/usr/src/usr.lib/libpc/FCALL.c	/^FCALL(save, frtn)$/
+FLUSH	/usr/src/usr.lib/libpc/FLUSH.c	/^FLUSH(curfile)$/
+FNIL	/usr/src/usr.lib/libpc/FNIL.c	/^FNIL(curfile)$/
+FRTN	/usr/src/usr.lib/libpc/FRTN.c	/^FRTN(frtn, save)$/
+FSAV	/usr/src/usr.lib/libpc/FSAV.c	/^FSAV(entryaddr, cbn, frtn) $/
+GET	/usr/src/usr.lib/libpc/GET.c	/^GET(curfile)$/
+GETNAME	/usr/src/usr.lib/libpc/GETNAME.c	/^GETNAME(filep, name, namlim, datasize)$/
+HALT	/usr/src/usr.lib/libpc/HALT.c	/^HALT()$/
+IN	/usr/src/usr.lib/libpc/IN.c	/^IN(element, lower, upper, setptr)$/
+INCT	/usr/src/usr.lib/libpc/INCT.c	/^INCT(element, paircnt, singcnt, data)$/
+IOSYNC	/usr/src/usr.lib/libpc/IOSYNC.c	/^IOSYNC(curfile)$/
+LINO	/usr/src/usr.lib/libpc/LINO.c	/^LINO()$/
+LLIMIT	/usr/src/usr.lib/libpc/LLIMIT.c	/^LLIMIT(curfile, limit)$/
+LN	/usr/src/usr.lib/libpc/LN.c	/^LN(value)$/
+MAX	/usr/src/usr.lib/libpc/MAX.c	/^MAX(width, reduce, min)$/
+MULT	/usr/src/usr.lib/libpc/MULT.c	/^MULT(result0, left, right, siz)$/
+Mmain	/usr/src/usr.lib/libln/main.c	/^main(){$/
+Mtc1	/usr/src/usr.lib/libtermlib/tc1.c	/^main(argc, argv) char **argv; {$/
+Mtc2	/usr/src/usr.lib/libtermlib/tc2.c	/^main(argc, argv) char **argv; {$/
+Mtc3	/usr/src/usr.lib/libtermlib/tc3.c	/^main(argc, argv) char **argv; {$/
+NAM	/usr/src/usr.lib/libpc/NAM.c	/^NAM(val, name)$/
+NEW	/usr/src/usr.lib/libpc/NEW.c	/^NEW(var, size)$/
+NIL	/usr/src/usr.lib/libpc/NIL.c	/^NIL(ptr)$/
+PACK	/usr/src/usr.lib/libpc/PACK.c	/^PACK(i, a, z, size_a, lb_a, ub_a, size_z)$/
+PAGE	/usr/src/usr.lib/libpc/PAGE.c	/^PAGE(curfile)$/
+PCEXIT	/usr/src/usr.lib/libpc/PCEXIT.c	/^PCEXIT(code)$/
+PCLOSE	/usr/src/usr.lib/libpc/PCLOSE.c	/^PCLOSE(level)$/
+PCSTART	/usr/src/usr.lib/libpc/PCSTART.c	/^PCSTART(mode)$/
+PERROR	/usr/src/usr.lib/libpc/PERROR.c	/^PERROR(msg, fname)$/
+PFCLOSE	/usr/src/usr.lib/libpc/PFCLOSE.c	/^PFCLOSE(filep)$/
+PFLUSH	/usr/src/usr.lib/libpc/PFLUSH.c	/^PFLUSH()$/
+PMFLUSH	/usr/src/usr.lib/libpc/PMFLUSH.c	/^PMFLUSH(cntrs, rtns, bufaddr)$/
+PRED	/usr/src/usr.lib/libpc/PRED.c	/^PRED(value, lower, upper)$/
+PSEUDO	/usr/src/lib/libc/sys/_exit.c	/^PSEUDO(_exit,exit)$/
+PUT	/usr/src/usr.lib/libpc/PUT.c	/^PUT(curfile)$/
+RANDOM	/usr/src/usr.lib/libpc/RANDOM.c	/^RANDOM()$/
+RANG4	/usr/src/usr.lib/libpc/RANG4.c	/^RANG4(value, lower, upper)$/
+READ4	/usr/src/usr.lib/libpc/READ4.c	/^READ4(curfile)$/
+READ8	/usr/src/usr.lib/libpc/READ8.c	/^READ8(curfile)$/
+READC	/usr/src/usr.lib/libpc/READC.c	/^READC(curfile)$/
+READE	/usr/src/usr.lib/libpc/READE.c	/^READE(curfile, name)$/
+READLN	/usr/src/usr.lib/libpc/READLN.c	/^READLN(curfile)$/
+RELEQ	/usr/src/usr.lib/libpc/RELEQ.c	/^RELEQ(siz, str1, str2)$/
+RELNE	/usr/src/usr.lib/libpc/RELNE.c	/^RELNE(siz, str1, str2)$/
+RELSGE	/usr/src/usr.lib/libpc/RELSGE.c	/^RELSGE(siz, str1, str2)$/
+RELSGT	/usr/src/usr.lib/libpc/RELSGT.c	/^RELSGT(siz, str1, str2)$/
+RELSLE	/usr/src/usr.lib/libpc/RELSLE.c	/^RELSLE(siz, str1, str2)$/
+RELSLT	/usr/src/usr.lib/libpc/RELSLT.c	/^RELSLT(siz, str1, str2)$/
+RELTGE	/usr/src/usr.lib/libpc/RELTGE.c	/^RELTGE(bytecnt, left, right)$/
+RELTGT	/usr/src/usr.lib/libpc/RELTGT.c	/^RELTGT(bytecnt, left, right)$/
+RELTLE	/usr/src/usr.lib/libpc/RELTLE.c	/^RELTLE(bytecnt, left, right)$/
+RELTLT	/usr/src/usr.lib/libpc/RELTLT.c	/^RELTLT(bytecnt, left, right)$/
+REMOVE	/usr/src/usr.lib/libpc/REMOVE.c	/^REMOVE(name, namlim)$/
+RESET	/usr/src/usr.lib/libpc/RESET.c	/^RESET(filep, name, maxnamlen, datasize)$/
+REWRITE	/usr/src/usr.lib/libpc/REWRITE.c	/^REWRITE(filep, name, maxnamlen, datasize)$/
+ROUND	/usr/src/usr.lib/libpc/ROUND.c	/^ROUND(value)$/
+RSNG4	/usr/src/usr.lib/libpc/RSNG4.c	/^RSNG4(value, upper)$/
+SCLCK	/usr/src/usr.lib/libpc/SCLCK.c	/^SCLCK()$/
+SEED	/usr/src/usr.lib/libpc/SEED.c	/^SEED(value)$/
+SEEK	/usr/src/usr.lib/libpc/SEEK.c	/^SEEK(curfile, loc)$/
+SIN	/usr/src/usr.lib/libpc/SIN.c	/^SIN(value)$/
+SQRT	/usr/src/usr.lib/libpc/SQRT.c	/^SQRT(value)$/
+STLIM	/usr/src/usr.lib/libpc/STLIM.c	/^STLIM(limit)$/
+SUBSC	/usr/src/usr.lib/libpc/SUBSC.c	/^SUBSC(i, lower, upper)$/
+SUBSCZ	/usr/src/usr.lib/libpc/SUBSCZ.c	/^SUBSCZ(value, upper)$/
+SUBT	/usr/src/usr.lib/libpc/SUBT.c	/^SUBT(result0, left, right, siz)$/
+SUCC	/usr/src/usr.lib/libpc/SUCC.c	/^SUCC(value, lower, upper)$/
+SYSCALL	/usr/src/lib/libc/sys/Oalarm.c	/^SYSCALL(alarm)$/
+TELL	/usr/src/usr.lib/libpc/TELL.c	/^TELL(curfile)$/
+TEOF	/usr/src/usr.lib/libpc/TEOF.c	/^TEOF(filep)$/
+TEOLN	/usr/src/usr.lib/libpc/TEOLN.c	/^TEOLN(filep)$/
+TIME	/usr/src/usr.lib/libpc/TIME.c	/^TIME(alfap)$/
+TRUNC	/usr/src/usr.lib/libpc/TRUNC.c	/^TRUNC(value)$/
+UNIT	/usr/src/usr.lib/libpc/UNIT.c	/^UNIT(curfile)$/
+UNPACK	/usr/src/usr.lib/libpc/UNPACK.c	/^UNPACK(i, a, z, size_a, lb_a, ub_a, size_z)$/
+UNSYNC	/usr/src/usr.lib/libpc/UNSYNC.c	/^UNSYNC(curfile)$/
+WRITEC	/usr/src/usr.lib/libpc/WRITEC.c	/^WRITEC(curfile, d1, d2)$/
+WRITEF	/usr/src/usr.lib/libpc/WRITEF.c	/^WRITEF(curfile, d1, d2, d3, d4, d5, d6, d7, d8)$/
+WRITES	/usr/src/usr.lib/libpc/WRITES.c	/^WRITES(curfile, d1, d2, d3, d4)$/
+WRITLN	/usr/src/usr.lib/libpc/WRITLN.c	/^WRITLN(curfile)$/
+_cleanup	/usr/src/lib/libc/stdio/flsbuf.c	/^_cleanup()$/
+_doscan	/usr/src/lib/libc/stdio/doscan.c	/^_doscan(iop, fmt, argp)$/
+_error	/usr/src/lib/libc/stdio/error.c	/^_error(s)$/
+_filbuf	/usr/src/lib/libc/stdio/filbuf.c	/^_filbuf(iop)$/
+_flsbuf	/usr/src/lib/libc/stdio/flsbuf.c	/^_flsbuf(c, iop)$/
+_getccl	/usr/src/lib/libc/stdio/doscan.c	/^_getccl(s)$/
+_innum	/usr/src/lib/libc/stdio/doscan.c	/^_innum(ptr, type, len, size, iop, eofptr)$/
+_instr	/usr/src/lib/libc/stdio/doscan.c	/^_instr(ptr, type, len, iop, eofptr)$/
+_mcleanup	/usr/src/lib/libc/csu/cmgt.crt0.c	/^_mcleanup()$/
+_mstartup	/usr/src/lib/libc/csu/cmgt.crt0.c	/^_mstartup(lowpc, highpc)$/
+_putchar	/usr/src/usr.lib/libcurses/cr_put.c	/^_putchar(c)$/
+_sigcatch	/usr/src/usr.lib/libjobs/sigset.c	/^_sigcatch(signum))()$/
+_sprintw	/usr/src/usr.lib/libcurses/printw.c	/^_sprintw(win, fmt, args)$/
+_sscans	/usr/src/usr.lib/libcurses/scanw.c	/^_sscans(win, fmt, args)$/
+_strout	/usr/src/lib/libc/stdio/strout.c	/^_strout(count, string, adjust, file, fillch)$/
+_t_handler	/usr/src/lib/libc/csu/cmgt.crt0.c	/^_t_handler(a, b, c, stackpc, psw)$/
+_t_setup	/usr/src/lib/libc/csu/cmgt.crt0.c	/^_t_setup(argc, argv)$/
+acos	/usr/src/usr.lib/libm/asin.c	/^acos(arg) double arg; {$/
+acos	/usr/src/usr.lib/libnm/acos.c	/^acos(arg) double arg; {$/
+additem	/usr/src/usr.lib/libdbm/dbm.c	/^additem(buf, item)$/
+advance	/usr/src/lib/libc/gen/regex.c	/^advance(lp, ep)$/
+allock	/usr/src/lib/libc/gen/malloc.c	/^allock()$/
+allprint	/usr/src/usr.lib/libln/allprint.c	/^allprint(c)$/
+any	/usr/src/lib/libc/gen/raddr.c	/^any(cp, match)$/
+asctime	/usr/src/lib/libc/gen/ctime.c	/^asctime(t)$/
+asin	/usr/src/usr.lib/libm/asin.c	/^asin(arg) double arg; {$/
+asym	/usr/src/usr.lib/libm/gamma.c	/^asym(arg)$/
+asympt	/usr/src/usr.lib/libm/j0.c	/^asympt(arg) double arg;{$/
+atan	/usr/src/usr.lib/libm/atan.c	/^atan(arg)$/
+atan2	/usr/src/usr.lib/libm/atan.c	/^atan2(arg1,arg2)$/
+atoi	/usr/src/lib/libc/gen/atoi.c	/^atoi(p)$/
+atol	/usr/src/lib/libc/gen/atol.c	/^atol(p)$/
+backref	/usr/src/lib/libc/gen/regex.c	/^backref(i, lp)$/
+blkclr	/usr/src/usr.lib/libpc/blkclr.c	/^blkclr(at, siz)$/
+blkcpy	/usr/src/usr.lib/libpc/blkcpy.c	/^blkcpy(from, to, siz)$/
+blkencrypt	/usr/src/lib/libc/gen/ruserpass.c	/^blkencrypt(block, edflag)$/
+botch	/usr/src/lib/libc/gen/malloc.c	/^botch(s)$/
+box	/usr/src/usr.lib/libcurses/box.c	/^box(win, vert, hor)$/
+brk	/usr/src/lib/libc/csu/cmgt.crt0.c	/^brk(addr)$/
+cabs	/usr/src/usr.lib/libm/hypot.c	/^cabs(arg)$/
+calchash	/usr/src/usr.lib/libdbm/dbm.c	/^calchash(item)$/
+calloc	/usr/src/lib/libc/gen/calloc.c	/^calloc(num, size)$/
+cat	/usr/src/usr.lib/libjobs/getwd.c	/^cat()$/
+cclass	/usr/src/lib/libc/gen/regex.c	/^cclass(set, c, af)$/
+ceil	/usr/src/usr.lib/libm/floor.c	/^ceil(d)$/
+cfree	/usr/src/lib/libc/gen/calloc.c	/^cfree(p, num, size)$/
+chkblk	/usr/src/usr.lib/libdbm/dbm.c	/^chkblk(buf)$/
+clearbusy	/usr/src/lib/libc/gen/malloc.c	/^#define clearbusy(p) (union store *)((INT)(p)&~BUS/
+clearerr	/usr/src/lib/libc/stdio/clrerr.c	/^clearerr(iop)$/
+closedir	/usr/src/lib/libc/gen/closedir.c	/^closedir(dirp)$/
+clrbuf	/usr/src/usr.lib/libdbm/dbm.c	/^clrbuf(cp, n)$/
+cmpdatum	/usr/src/usr.lib/libdbm/dbm.c	/^cmpdatum(d1, d2)$/
+cos	/usr/src/usr.lib/libm/sin.c	/^cos(arg)$/
+cosh	/usr/src/usr.lib/libm/sinh.c	/^cosh(arg)$/
+crypt	/usr/src/lib/libc/gen/crypt.c	/^crypt(pw,salt)$/
+ct_numb	/usr/src/lib/libc/gen/ctime.c	/^ct_numb(cp, n)$/
+ctime	/usr/src/lib/libc/gen/ctime.c	/^ctime(t)$/
+cvt	/usr/src/lib/libc/gen/ecvt.c	/^cvt(arg, ndigits, decpt, sign, eflag)$/
+dbm_access	/usr/src/usr.lib/libdbm/dbm.c	/^dbm_access(hash)$/
+dbminit	/usr/src/usr.lib/libdbm/dbm.c	/^dbminit(file)$/
+deblkclr	/usr/src/lib/libc/gen/ruserpass.c	/^char *deblkclr(blk)$/
+deblknot	/usr/src/lib/libc/gen/ruserpass.c	/^char *deblknot(blk)$/
+delete	/usr/src/usr.lib/libdbm/dbm.c	/^delete(key)$/
+delitem	/usr/src/usr.lib/libdbm/dbm.c	/^delitem(buf, n)$/
+delwin	/usr/src/usr.lib/libcurses/delwin.c	/^delwin(win)$/
+dummy	/usr/src/lib/libmp/util.c	/^dummy(){}$/
+dysize	/usr/src/lib/libc/gen/ctime.c	/^dysize(y)$/
+ecvt	/usr/src/lib/libc/gen/ecvt.c	/^ecvt(arg, ndigits, decpt, sign)$/
+enblkclr	/usr/src/lib/libc/gen/ruserpass.c	/^enblkclr(blk,str)		\/* ignores top bit of chars in /
+enblknot	/usr/src/lib/libc/gen/ruserpass.c	/^enblknot(blk,crp)$/
+encrypt	/usr/src/lib/libc/gen/crypt.c	/^encrypt(block, edflag)$/
+endfsent	/usr/src/lib/libc/stdio/fstab.c	/^int endfsent()$/
+endgrent	/usr/src/lib/libc/stdio/getgrent.c	/^endgrent()$/
+endpwent	/usr/src/lib/libc/stdio/getpwent.c	/^endpwent()$/
+endwin	/usr/src/usr.lib/libcurses/endwin.c	/^endwin()$/
+erf	/usr/src/usr.lib/libm/erf.c	/^erf(arg) double arg;{$/
+erfc	/usr/src/usr.lib/libm/erf.c	/^erfc(arg) double arg;{$/
+execat	/usr/src/lib/libc/gen/execvp.c	/^execat(s1, s2, si)$/
+execlp	/usr/src/lib/libc/gen/execvp.c	/^execlp(name, argv)$/
+execvp	/usr/src/lib/libc/gen/execvp.c	/^execvp(name, argv)$/
+exit	/usr/src/lib/libc/csu/cmgt.crt0.c	/^exit(code)$/
+exp	/usr/src/usr.lib/libm/exp.c	/^exp(arg)$/
+fatal	/usr/src/lib/libmp/util.c	/^fatal(s) char *s;$/
+fclose	/usr/src/lib/libc/stdio/flsbuf.c	/^fclose(iop)$/
+fcvt	/usr/src/lib/libc/gen/ecvt.c	/^fcvt(arg, ndigits, decpt, sign)$/
+fdopen	/usr/src/lib/libc/stdio/fdopen.c	/^fdopen(fd, mode)$/
+fetch	/usr/src/usr.lib/libdbm/dbm.c	/^fetch(key)$/
+fflush	/usr/src/lib/libc/stdio/flsbuf.c	/^fflush(iop)$/
+fgetc	/usr/src/lib/libc/stdio/fgetc.c	/^fgetc(fp)$/
+fgets	/usr/src/lib/libc/stdio/fgets.c	/^fgets(s, n, iop)$/
+fgoto	/usr/src/usr.lib/libcurses/cr_put.c	/^fgoto() {$/
+firsthash	/usr/src/usr.lib/libdbm/dbm.c	/^firsthash(hash)$/
+firstkey	/usr/src/usr.lib/libdbm/dbm.c	/^firstkey()$/
+floor	/usr/src/usr.lib/libm/floor.c	/^floor(d)$/
+fmin	/usr/src/lib/libmp/mout.c	/^fmin(a,f) MINT *a; FILE *f;$/
+fmout	/usr/src/lib/libmp/mout.c	/^fmout(a,f) MINT *a; FILE *f;$/
+fopen	/usr/src/lib/libc/stdio/fopen.c	/^fopen(file, mode)$/
+forder	/usr/src/usr.lib/libdbm/dbm.c	/^forder(key)$/
+fprintf	/usr/src/lib/libc/stdio/fprintf.c	/^fprintf(iop, fmt, args)$/
+fputc	/usr/src/lib/libc/stdio/fputc.c	/^fputc(c, fp)$/
+fputs	/usr/src/lib/libc/stdio/fputs.c	/^fputs(s, iop)$/
+fread	/usr/src/lib/libc/stdio/rdwr.c	/^fread(ptr, size, count, iop)$/
+free	/usr/src/lib/libc/gen/malloc.c	/^free(ap)$/
+freopen	/usr/src/lib/libc/stdio/freopen.c	/^freopen(file, mode, iop)$/
+frexp	/usr/src/lib/libc/gen/frexp.c	/^frexp(x,i)$/
+fs_digit	/usr/src/lib/libc/stdio/fstab.c	/^static char *fs_digit(backp, string, end)$/
+fs_string	/usr/src/lib/libc/stdio/fstab.c	/^static	char	*fs_string(back, string, lg, end)$/
+fscanf	/usr/src/lib/libc/stdio/scanf.c	/^fscanf(iop, fmt, args)$/
+fseek	/usr/src/lib/libc/stdio/fseek.c	/^fseek(iop, offset, ptrname)$/
+fstabscan	/usr/src/lib/libc/stdio/fstab.c	/^static	int	fstabscan(fsp)$/
+ftell	/usr/src/lib/libc/stdio/ftell.c	/^long ftell(iop)$/
+fwrite	/usr/src/lib/libc/stdio/rdwr.c	/^fwrite(ptr, size, count, iop)$/
+gamma	/usr/src/usr.lib/libm/gamma.c	/^gamma(arg)$/
+gcd	/usr/src/lib/libmp/gcd.c	/^gcd(a,b,c) MINT *a,*b,*c;$/
+gcvt	/usr/src/lib/libc/stdio/gcvt.c	/^gcvt(number, ndigit, buf)$/
+getbit	/usr/src/usr.lib/libdbm/dbm.c	/^getbit()$/
+getcap	/usr/src/usr.lib/libcurses/cr_tty.c	/^getcap(name)$/
+getchar	/usr/src/lib/libc/stdio/getchar.c	/^getchar()$/
+getenv	/usr/src/lib/libc/gen/getenv.c	/^getenv(name)$/
+getfsent	/usr/src/lib/libc/stdio/fstab.c	/^struct fstab *getfsent()$/
+getfsfile	/usr/src/lib/libc/stdio/fstab.c	/^struct fstab *getfsfile(name)$/
+getfsspec	/usr/src/lib/libc/stdio/fstab.c	/^struct fstab *getfsspec(name)$/
+getgrent	/usr/src/lib/libc/stdio/getgrent.c	/^getgrent()$/
+getgrgid	/usr/src/lib/libc/stdio/getgrgid.c	/^getgrgid(gid)$/
+getgrnam	/usr/src/lib/libc/stdio/getgrnam.c	/^getgrnam(name)$/
+getlogin	/usr/src/lib/libc/gen/getlogin.c	/^getlogin()$/
+getpass	/usr/src/lib/libc/stdio/getpass.c	/^getpass(prompt)$/
+getpw	/usr/src/lib/libc/stdio/getpw.c	/^getpw(uid, buf)$/
+getpwent	/usr/src/lib/libc/stdio/getpwent.c	/^getpwent()$/
+getpwnam	/usr/src/lib/libc/stdio/getpwnam.c	/^getpwnam(name)$/
+getpwuid	/usr/src/lib/libc/stdio/getpwuid.c	/^getpwuid(uid)$/
+gets	/usr/src/lib/libc/stdio/gets.c	/^gets(s)$/
+gettmode	/usr/src/usr.lib/libcurses/cr_tty.c	/^gettmode() {$/
+getttys	/usr/src/lib/libc/gen/ttyslot.c	/^getttys(f)$/
+getutmp	/usr/src/lib/libc/gen/ruserpass.c	/^struct utmp *getutmp(sttyname)$/
+getw	/usr/src/lib/libc/stdio/getw.c	/^getw(iop)$/
+getwd	/usr/src/usr.lib/libjobs/getwd.c	/^getwd(np)$/
+gmtime	/usr/src/lib/libc/gen/ctime.c	/^gmtime(tim)$/
+grskip	/usr/src/lib/libc/stdio/getgrent.c	/^grskip(p,c)$/
+gtty	/usr/src/lib/libc/gen/stty.c	/^gtty(fd, ap)$/
+hashinc	/usr/src/usr.lib/libdbm/dbm.c	/^hashinc(hash)$/
+hypot	/usr/src/usr.lib/libm/hypot.c	/^hypot(a,b)$/
+index	/usr/src/lib/libc/gen/index.c	/^index(sp, c)$/
+initgroups	/usr/src/lib/libc/gen/initgroups.c	/^initgroups(uname, agroup)$/
+initscr	/usr/src/usr.lib/libcurses/initscr.c	/^initscr() {$/
+initstate	/usr/src/lib/libc/gen/random.c	/^initstate( seed, arg_state, n )$/
+intss	/usr/src/lib/libc/stdio/intss.c	/^intss()$/
+invert	/usr/src/lib/libmp/gcd.c	/^invert(a, b, c) MINT *a, *b, *c;$/
+isatty	/usr/src/lib/libc/gen/isatty.c	/^isatty(f)$/
+itom	/usr/src/lib/libmp/util.c	/^MINT *itom(n)$/
+j0	/usr/src/usr.lib/libm/j0.c	/^j0(arg) double arg;{$/
+j1	/usr/src/usr.lib/libm/j1.c	/^j1(arg) double arg;{$/
+jmp	/usr/src/lib/libc/sys/Ovfork.c	/^jmp	(r2)$/
+jn	/usr/src/usr.lib/libm/jn.c	/^jn(n,x) int n; double x;{$/
+localtime	/usr/src/lib/libc/gen/ctime.c	/^localtime(tim)$/
+log	/usr/src/usr.lib/libm/log.c	/^log(arg)$/
+log10	/usr/src/usr.lib/libm/log.c	/^log10(arg)$/
+longname	/usr/src/usr.lib/libcurses/longname.c	/^longname(bp, def)$/
+m_add	/usr/src/lib/libmp/madd.c	/^m_add(a,b,c) struct mint *a,*b,*c;$/
+m_div	/usr/src/lib/libmp/mdiv.c	/^m_div(a,b,q,r) MINT *a,*b,*q,*r;$/
+m_dsb	/usr/src/lib/libmp/mdiv.c	/^m_dsb(q,n,a,b) short *a,*b;$/
+m_in	/usr/src/lib/libmp/mout.c	/^m_in(a,b,f) MINT *a; FILE *f;$/
+m_mult	/usr/src/lib/libmp/mult.c	/^m_mult(a,b,c) struct mint *a,*b,*c;$/
+m_out	/usr/src/lib/libmp/mout.c	/^m_out(a,b,f) MINT *a; FILE *f;$/
+m_sub	/usr/src/lib/libmp/madd.c	/^m_sub(a,b,c) struct mint *a,*b,*c;$/
+m_trq	/usr/src/lib/libmp/mdiv.c	/^m_trq(v1,v2,u1,u2,u3)$/
+madd	/usr/src/lib/libmp/madd.c	/^madd(a,b,c) struct mint *a,*b,*c;$/
+makdatum	/usr/src/usr.lib/libdbm/dbm.c	/^makdatum(buf, n)$/
+makech	/usr/src/usr.lib/libcurses/refresh.c	/^makech(win, wy)$/
+makenew	/usr/src/usr.lib/libcurses/newwin.c	/^makenew(num_lines, num_cols, begy, begx)$/
+malloc	/usr/src/lib/libc/gen/malloc.c	/^malloc(nbytes)$/
+max	/usr/src/usr.lib/libcurses/overlay.c	/^# define	max(a,b)	(a < b ? a : b)$/
+mcan	/usr/src/lib/libmp/util.c	/^mcan(a) MINT *a;$/
+mcmp	/usr/src/lib/libmp/util.c	/^mcmp(a,b) MINT *a,*b;$/
+mcount	/usr/src/lib/libc/csu/cmgt.crt0.c	/^mcount()$/
+mdiv	/usr/src/lib/libmp/mdiv.c	/^mdiv(a,b,q,r) MINT *a,*b,*q,*r;$/
+min	/usr/src/lib/libmp/mout.c	/^min(a) MINT *a;$/
+min	/usr/src/usr.lib/libcurses/overlay.c	/^# define	min(a,b)	(a < b ? a : b)$/
+mkenvkey	/usr/src/lib/libc/gen/ruserpass.c	/^char *mkenvkey(mch)$/
+mkpwclear	/usr/src/lib/libc/gen/ruserpass.c	/^mkpwclear(sencpasswd,mch,spasswd)$/
+mkpwunclear	/usr/src/lib/libc/gen/ruserpass.c	/^mkpwunclear(spasswd,mch,sencpasswd)$/
+mktemp	/usr/src/lib/libc/gen/mktemp.c	/^mktemp(as)$/
+monitor	/usr/src/lib/libc/csu/cmgt.crt0.c	/^monitor(lowpc, highpc, buf, bufsiz, cntsiz)$/
+mout	/usr/src/lib/libmp/mout.c	/^mout(a) MINT *a;$/
+move	/usr/src/lib/libmp/util.c	/^move(a,b) MINT *a,*b;$/
+msqrt	/usr/src/lib/libmp/msqrt.c	/^msqrt(a,b,r) MINT *a,*b,*r;$/
+msub	/usr/src/lib/libmp/madd.c	/^msub(a,b,c) struct mint *a,*b,*c;$/
+mult	/usr/src/lib/libmp/mult.c	/^mult(a,b,c) struct mint *a,*b,*c;$/
+mvcur	/usr/src/usr.lib/libcurses/cr_put.c	/^mvcur(ly, lx, y, x)$/
+mvprintw	/usr/src/usr.lib/libcurses/mvprintw.c	/^mvprintw(y, x, fmt, args)$/
+mvscanw	/usr/src/usr.lib/libcurses/mvscanw.c	/^mvscanw(y, x, fmt, args)$/
+mvwin	/usr/src/usr.lib/libcurses/mvwin.c	/^mvwin(win, by, bx)$/
+mvwprintw	/usr/src/usr.lib/libcurses/mvprintw.c	/^mvwprintw(win, y, x, fmt, args)$/
+mvwscanw	/usr/src/usr.lib/libcurses/mvscanw.c	/^mvwscanw(win, y, x, fmt, args)$/
+nbs8decrypt	/usr/src/lib/libc/gen/ruserpass.c	/^char *nbs8decrypt(crp,key)$/
+nbs8encrypt	/usr/src/lib/libc/gen/ruserpass.c	/^char *nbs8encrypt(str,key)$/
+nbsdecrypt	/usr/src/lib/libc/gen/ruserpass.c	/^char *nbsdecrypt(cpt,key,result)$/
+nbsencrypt	/usr/src/lib/libc/gen/ruserpass.c	/^char *nbsencrypt(str,key,result)$/
+nbssetkey	/usr/src/lib/libc/gen/ruserpass.c	/^nbssetkey(key)$/
+neg	/usr/src/usr.lib/libm/gamma.c	/^neg(arg)$/
+newwin	/usr/src/usr.lib/libcurses/newwin.c	/^newwin(num_lines, num_cols, begy, begx)$/
+nextkey	/usr/src/usr.lib/libdbm/dbm.c	/^nextkey(key)$/
+nlist	/usr/src/lib/libc/gen/nlist.c	/^nlist(name, list)$/
+nvmatch	/usr/src/lib/libc/gen/getenv.c	/^nvmatch(s1, s2)$/
+omin	/usr/src/lib/libmp/mout.c	/^omin(a) MINT *a;$/
+omout	/usr/src/lib/libmp/mout.c	/^omout(a) MINT *a;$/
+opendir	/usr/src/lib/libc/gen/opendir.c	/^opendir(name)$/
+overlay	/usr/src/usr.lib/libcurses/overlay.c	/^overlay(win1, win2)$/
+overwrite	/usr/src/usr.lib/libcurses/overwrite.c	/^overwrite(win1, win2)$/
+pclose	/usr/src/lib/libc/stdio/popen.c	/^pclose(ptr)$/
+perror	/usr/src/lib/libc/gen/perror.c	/^perror(s)$/
+plod	/usr/src/usr.lib/libcurses/cr_put.c	/^plod(cnt)$/
+plodput	/usr/src/usr.lib/libcurses/cr_put.c	/^plodput(c)$/
+popen	/usr/src/lib/libc/stdio/popen.c	/^popen(cmd,mode)$/
+pos	/usr/src/usr.lib/libm/gamma.c	/^pos(arg)$/
+pow	/usr/src/lib/libmp/pow.c	/^pow(a,b,c,d) MINT *a,*b,*c,*d;$/
+pow	/usr/src/usr.lib/libm/pow.c	/^pow(arg1,arg2)$/
+pow	/usr/src/usr.lib/libnm/pow.c	/^pow(arg1,arg2)$/
+pr	/usr/src/usr.lib/libtermlib/tc3.c	/^pr(p)$/
+prexit	/usr/src/usr.lib/libjobs/getwd.c	/^prexit(cp)$/
+printable	/usr/src/usr.lib/libln/allprint.c	/^printable(c)$/
+printf	/usr/src/lib/libc/stdio/printf.c	/^printf(fmt, args)$/
+printw	/usr/src/usr.lib/libcurses/printw.c	/^printw(fmt, args)$/
+pushl	/usr/src/lib/libc/sys/execle.c	/^	pushl	(ap)[r0]$/
+putchar	/usr/src/lib/libc/stdio/putchar.c	/^putchar(c)$/
+putpad	/usr/src/usr.lib/libcurses/cr_put.c	/^putpad(cp)$/
+puts	/usr/src/lib/libc/stdio/puts.c	/^puts(s)$/
+putw	/usr/src/lib/libc/stdio/putw.c	/^putw(w, iop)$/
+pwskip	/usr/src/lib/libc/stdio/getpwent.c	/^pwskip(p)$/
+qs1	/usr/src/lib/libc/gen/qsort.c	/^static qs1(a, l)$/
+qsexc	/usr/src/lib/libc/gen/qsort.c	/^static qsexc(i, j)$/
+qsort	/usr/src/lib/libc/gen/qsort.c	/^qsort(a, n, es, fc)$/
+qstexc	/usr/src/lib/libc/gen/qsort.c	/^static qstexc(i, j, k)$/
+raddr	/usr/src/lib/libc/gen/raddr.c	/^raddr(desaddr)$/
+rand	/usr/src/lib/libc/gen/rand.c	/^rand()$/
+random	/usr/src/lib/libc/gen/random.c	/^random()$/
+rany	/usr/src/lib/libc/gen/raddr.c	/^rany(cp, match)$/
+rdchar	/usr/src/usr.lib/libtermlib/tc3.c	/^char *rdchar(c)$/
+re_comp	/usr/src/lib/libc/gen/regex.c	/^re_comp(sp)$/
+re_exec	/usr/src/lib/libc/gen/regex.c	/^re_exec(p1)$/
+readdir	/usr/src/lib/libc/gen/readdir.c	/^readdir(dirp)$/
+realloc	/usr/src/lib/libc/gen/malloc.c	/^realloc(p, nbytes)$/
+renv	/usr/src/lib/libc/gen/ruserpass.c	/^renv(host, aname, apass)$/
+renvlook	/usr/src/lib/libc/gen/ruserpass.c	/^renvlook(host)$/
+rewind	/usr/src/lib/libc/stdio/rew.c	/^rewind(iop)$/
+rin	/usr/src/lib/libc/gen/rin.c	/^rin()$/
+rindex	/usr/src/lib/libc/gen/rindex.c	/^rindex(sp, c)$/
+rnetrc	/usr/src/lib/libc/gen/ruserpass.c	/^rnetrc(host, aname, apass)$/
+rpow	/usr/src/lib/libmp/pow.c	/^rpow(a,n,b) MINT *a,*b;$/
+ruserpass	/usr/src/lib/libc/gen/ruserpass.c	/^ruserpass(host, aname, apass)$/
+s_div	/usr/src/lib/libmp/mout.c	/^s_div(a,n,q,r) MINT *a,*q; short *r;$/
+satan	/usr/src/usr.lib/libm/atan.c	/^satan(arg)$/
+scanf	/usr/src/lib/libc/stdio/scanf.c	/^scanf(fmt, args)$/
+scanw	/usr/src/usr.lib/libcurses/scanw.c	/^scanw(fmt, args)$/
+scroll	/usr/src/usr.lib/libcurses/scroll.c	/^scroll(win)$/
+sdiv	/usr/src/lib/libmp/mout.c	/^sdiv(a,n,q,r) MINT *a,*q; short *r;$/
+seekdir	/usr/src/lib/libc/gen/seekdir.c	/^seekdir(dirp, loc)$/
+setbit	/usr/src/usr.lib/libdbm/dbm.c	/^setbit()$/
+setbuf	/usr/src/lib/libc/stdio/setbuf.c	/^setbuf(iop, buf)$/
+setbuffer	/usr/src/lib/libc/stdio/setbuffer.c	/^setbuffer(iop, buf, size)$/
+setbusy	/usr/src/lib/libc/gen/malloc.c	/^#define setbusy(p) (union store *)((INT)(p)|BUSY)$/
+setegid	/usr/src/lib/libc/osys/setegid.c	/^setegid(egid)$/
+seteuid	/usr/src/lib/libc/osys/seteuid.c	/^seteuid(euid)$/
+setfsent	/usr/src/lib/libc/stdio/fstab.c	/^int	setfsent()$/
+setgid	/usr/src/lib/libc/osys/osetgid.c	/^setgid(gid)$/
+setgrent	/usr/src/lib/libc/stdio/getgrent.c	/^setgrent()$/
+setkey	/usr/src/lib/libc/gen/crypt.c	/^setkey(key)$/
+setpwent	/usr/src/lib/libc/stdio/getpwent.c	/^setpwent()$/
+setrgid	/usr/src/lib/libc/osys/setrgid.c	/^setrgid(rgid)$/
+setruid	/usr/src/lib/libc/osys/setruid.c	/^setruid(ruid)$/
+setstate	/usr/src/lib/libc/gen/random.c	/^setstate( arg_state )$/
+setterm	/usr/src/usr.lib/libcurses/cr_tty.c	/^setterm(type)$/
+setuid	/usr/src/lib/libc/osys/osetuid.c	/^setuid(uid)$/
+sighold	/usr/src/usr.lib/libjobs/sigset.c	/^sighold(signum)$/
+sigignore	/usr/src/usr.lib/libjobs/sigset.c	/^sigignore(signum)$/
+signal	/usr/src/usr.lib/libjobs/sigset.c	/^signal(signum, action))()$/
+sigpause	/usr/src/usr.lib/libjobs/sigset.c	/^sigpause(signum)$/
+sigrelse	/usr/src/usr.lib/libjobs/sigset.c	/^sigrelse(signum)$/
+sigset	/usr/src/usr.lib/libjobs/sigset.c	/^sigset(signum, action))()$/
+sigsys	/usr/src/usr.lib/libjobs/sigset.c	/^int	(*sigsys())();$/
+sin	/usr/src/usr.lib/libm/sin.c	/^sin(arg)$/
+sinh	/usr/src/usr.lib/libm/sinh.c	/^sinh(arg)$/
+sinus	/usr/src/usr.lib/libm/sin.c	/^sinus(arg, quad)$/
+sleep	/usr/src/lib/libc/gen/sleep.c	/^sleep(n)$/
+sleepx	/usr/src/lib/libc/gen/sleep.c	/^sleepx()$/
+sprint	/usr/src/usr.lib/libln/allprint.c	/^sprint(s)$/
+sprintf	/usr/src/lib/libc/stdio/sprintf.c	/^char *sprintf(str, fmt, args)$/
+sqrt	/usr/src/usr.lib/libm/sqrt.c	/^sqrt(arg)$/
+srand	/usr/src/lib/libc/gen/rand.c	/^srand(x)$/
+srandom	/usr/src/lib/libc/gen/random.c	/^srandom( x )$/
+sreverse	/usr/src/lib/libc/gen/ruserpass.c	/^sreverse(sto, sfrom)$/
+sscanf	/usr/src/lib/libc/stdio/scanf.c	/^sscanf(str, fmt, args)$/
+start	/usr/src/lib/libc/csu/cmgt.crt0.c	/^start()$/
+store	/usr/src/usr.lib/libdbm/dbm.c	/^store(key, dat)$/
+strcat	/usr/src/lib/libc/gen/strcat.c	/^strcat(s1, s2)$/
+strcatn	/usr/src/lib/libc/gen/strcatn.c	/^strcatn(s1, s2, n)$/
+strcmp	/usr/src/lib/libc/gen/strcmp.c	/^strcmp(s1, s2)$/
+strcmpn	/usr/src/lib/libc/gen/strcmpn.c	/^strcmpn(s1, s2, n)$/
+strcpy	/usr/src/lib/libc/gen/strcpy.c	/^strcpy(s1, s2)$/
+strcpyn	/usr/src/lib/libc/gen/strcpyn.c	/^strcpyn(s1, s2, n)$/
+strlen	/usr/src/lib/libc/gen/strlen.c	/^strlen(s)$/
+strncat	/usr/src/lib/libc/gen/strncat.c	/^strncat(s1, s2, n)$/
+strncmp	/usr/src/lib/libc/gen/strncmp.c	/^strncmp(s1, s2, n)$/
+strncpy	/usr/src/lib/libc/gen/strncpy.c	/^strncpy(s1, s2, n)$/
+stty	/usr/src/lib/libc/gen/stty.c	/^stty(fd, ap)$/
+subwin	/usr/src/usr.lib/libcurses/newwin.c	/^subwin(orig, num_lines, num_cols, begy, begx)$/
+sunday	/usr/src/lib/libc/gen/ctime.c	/^sunday(t, d)$/
+swab	/usr/src/lib/libc/gen/swab.c	/^swab(pf, pt, n)$/
+system	/usr/src/lib/libc/stdio/system.c	/^system(s)$/
+tan	/usr/src/usr.lib/libm/tan.c	/^tan(arg)$/
+tanh	/usr/src/usr.lib/libm/tanh.c	/^tanh(arg)$/
+tdecode	/usr/src/usr.lib/libtermlib/termcap.c	/^tdecode(str, area)$/
+tell	/usr/src/lib/libc/gen/tell.c	/^long tell(f)$/
+telldir	/usr/src/lib/libc/gen/telldir.c	/^telldir(dirp)$/
+testbusy	/usr/src/lib/libc/gen/malloc.c	/^#define testbusy(p) ((INT)(p)&BUSY)$/
+tgetent	/usr/src/usr.lib/libtermlib/termcap.c	/^tgetent(bp, name)$/
+tgetflag	/usr/src/usr.lib/libtermlib/termcap.c	/^tgetflag(id)$/
+tgetnum	/usr/src/usr.lib/libtermlib/termcap.c	/^tgetnum(id)$/
+tgetstr	/usr/src/usr.lib/libtermlib/termcap.c	/^tgetstr(id, area)$/
+tgoto	/usr/src/usr.lib/libtermlib/tgoto.c	/^tgoto(CM, destcol, destline)$/
+timezone	/usr/src/lib/libc/gen/timezone.c	/^char *timezone(zone, dst)$/
+tmpnam	/usr/src/lib/libc/stdio/tmpnam.c	/^char *tmpnam(s)$/
+tnamatch	/usr/src/usr.lib/libtermlib/termcap.c	/^tnamatch(np)$/
+tnchktc	/usr/src/usr.lib/libtermlib/termcap.c	/^tnchktc()$/
+token	/usr/src/lib/libc/gen/ruserpass.c	/^token()$/
+touchwin	/usr/src/usr.lib/libcurses/touchwin.c	/^touchwin(win)$/
+tputs	/usr/src/usr.lib/libtermlib/tputs.c	/^tputs(cp, affcnt, outc)$/
+tradd	/usr/src/lib/libmp/mult.c	/^tradd(a,b,c) long c; int *a; union g {long xx; str/
+tskip	/usr/src/usr.lib/libtermlib/termcap.c	/^tskip(bp)$/
+tst	/usr/src/lib/libc/stdio/popen.c	/^#define	tst(a,b)	(*mode == 'r'? (b) : (a))$/
+tstp	/usr/src/usr.lib/libcurses/tstp.c	/^tstp() {$/
+ttyname	/usr/src/lib/libc/gen/nttyname.c	/^ttyname(f)$/
+ttyslot	/usr/src/lib/libc/gen/ttyslot.c	/^ttyslot()$/
+ungetc	/usr/src/lib/libc/stdio/ungetc.c	/^ungetc(c, iop)$/
+valloc	/usr/src/lib/libc/gen/valloc.c	/^valloc(i)$/
+value	/usr/src/lib/libc/gen/raddr.c	/^value(cp)$/
+waddch	/usr/src/usr.lib/libcurses/addch.c	/^waddch(win, c)$/
+waddstr	/usr/src/usr.lib/libcurses/addstr.c	/^waddstr(win,str)$/
+wclear	/usr/src/usr.lib/libcurses/clear.c	/^wclear(win)$/
+wclrtobot	/usr/src/usr.lib/libcurses/clrtobot.c	/^wclrtobot(win)$/
+wclrtoeol	/usr/src/usr.lib/libcurses/clrtoeol.c	/^wclrtoeol(win)$/
+wdelch	/usr/src/usr.lib/libcurses/delch.c	/^wdelch(win)$/
+wdeleteln	/usr/src/usr.lib/libcurses/deleteln.c	/^wdeleteln(win)$/
+wdleng	/usr/src/lib/libc/stdio/stuff.c	/^wdleng()$/
+werase	/usr/src/usr.lib/libcurses/erase.c	/^werase(win)$/
+wgetch	/usr/src/usr.lib/libcurses/getch.c	/^wgetch(win)$/
+wgetstr	/usr/src/usr.lib/libcurses/getstr.c	/^wgetstr(win,str)$/
+winsch	/usr/src/usr.lib/libcurses/insch.c	/^winsch(win, c)$/
+winsertln	/usr/src/usr.lib/libcurses/insertln.c	/^winsertln(win)$/
+wmove	/usr/src/usr.lib/libcurses/move.c	/^wmove(win, y, x)$/
+wprintw	/usr/src/usr.lib/libcurses/printw.c	/^wprintw(win, fmt, args)$/
+wrefresh	/usr/src/usr.lib/libcurses/refresh.c	/^wrefresh(win)$/
+wscanw	/usr/src/usr.lib/libcurses/scanw.c	/^wscanw(win, fmt, args)$/
+wstandend	/usr/src/usr.lib/libcurses/standout.c	/^wstandend(win)$/
+wstandout	/usr/src/usr.lib/libcurses/standout.c	/^wstandout(win)$/
+xalloc	/usr/src/lib/libmp/util.c	/^short *xalloc(nint,s) char *s;$/
+xatan	/usr/src/usr.lib/libm/atan.c	/^xatan(arg)$/
+xfree	/usr/src/lib/libmp/util.c	/^xfree(c) MINT *c;$/
+y0	/usr/src/usr.lib/libm/j0.c	/^y0(arg) double arg;{$/
+y1	/usr/src/usr.lib/libm/j1.c	/^y1(arg) double arg;{$/
+yn	/usr/src/usr.lib/libm/jn.c	/^yn(n,x) int n; double x;{$/
+yyless	/usr/src/usr.lib/libln/yyless.c	/^}$/
+yyracc	/usr/src/usr.lib/libln/reject.c	/^yyracc(m)$/
+yyreject	/usr/src/usr.lib/libln/reject.c	/^yyreject ()$/
+yywrap	/usr/src/usr.lib/libln/yywrap.c	/^}$/
+zap	/usr/src/usr.lib/libcurses/cr_tty.c	/^zap() {$/
