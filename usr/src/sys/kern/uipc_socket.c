@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_socket.c	7.30 (Berkeley) %G%
+ *	@(#)uipc_socket.c	7.31 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -256,6 +256,7 @@ bad:
 	return (error);
 }
 
+#define	SBLOCKWAIT(f)	(((f) & MSG_DONTWAIT) ? M_NOWAIT : M_WAITOK)
 /*
  * Send on a socket.
  * If send must go all at once and message is larger than
@@ -301,7 +302,7 @@ sosend(so, addr, uio, top, control, flags)
 #define	snderr(errno)	{ error = errno; splx(s); goto release; }
 
 restart:
-	if (error = sblock(&so->so_snd))
+	if (error = sblock(&so->so_snd, SBLOCKWAIT(flags)))
 		goto out;
 	do {
 		s = splnet();
@@ -320,11 +321,11 @@ restart:
 		space = sbspace(&so->so_snd);
 		if (flags & MSG_OOB)
 			space += 1024;
-		if (space < resid + clen &&
+		if (atomic && resid > so->so_snd.sb_hiwat ||
+		    clen > so->so_snd.sb_hiwat)
+			snderr(EMSGSIZE);
+		if (space < resid + clen && uio &&
 		    (atomic || space < so->so_snd.sb_lowat || space < clen)) {
-			if (atomic && resid > so->so_snd.sb_hiwat ||
-			    clen > so->so_snd.sb_hiwat)
-				snderr(EMSGSIZE);
 			if (so->so_state & SS_NBIO)
 				snderr(EWOULDBLOCK);
 			sbunlock(&so->so_snd);
@@ -486,7 +487,7 @@ bad:
 		    (struct mbuf *)0, (struct mbuf *)0);
 
 restart:
-	if (error = sblock(&so->so_rcv))
+	if (error = sblock(&so->so_rcv, SBLOCKWAIT(flags)))
 		return (error);
 	s = splnet();
 
@@ -497,11 +498,13 @@ restart:
 	 *   1. the current count is less than the low water mark, or
 	 *   2. MSG_WAITALL is set, and it is possible to do the entire
 	 *	receive operation at once if we block (resid <= hiwat).
+	 *   3. MSG_DONTWAIT is not set
 	 * If MSG_WAITALL is set but resid is larger than the receive buffer,
 	 * we have to do the receive in sections, and thus risk returning
 	 * a short count if a timeout or signal occurs after we start.
 	 */
-	if (m == 0 || so->so_rcv.sb_cc < uio->uio_resid &&
+	if (m == 0 || ((flags & MSG_DONTWAIT) == 0 &&
+	    so->so_rcv.sb_cc < uio->uio_resid) &&
 	    (so->so_rcv.sb_cc < so->so_rcv.sb_lowat ||
 	    ((flags & MSG_WAITALL) && uio->uio_resid <= so->so_rcv.sb_hiwat)))
 		if (m && (m->m_nextpkt || (m->m_flags & M_EOR) ||
@@ -532,7 +535,7 @@ restart:
 		}
 		if (uio->uio_resid == 0)
 			goto release;
-		if (so->so_state & SS_NBIO) {
+		if ((so->so_state & SS_NBIO) || (flags & MSG_DONTWAIT)) {
 			error = EWOULDBLOCK;
 			goto release;
 		}
@@ -742,7 +745,7 @@ sorflush(so)
 	struct sockbuf asb;
 
 	sb->sb_flags |= SB_NOINTR;
-	(void) sblock(sb);
+	(void) sblock(sb, M_WAITOK);
 	s = splimp();
 	socantrcvmore(so);
 	sbunlock(sb);
