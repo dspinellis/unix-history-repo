@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	5.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	5.26 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -107,7 +107,6 @@ struct _disk {
 } cur, last;
 
 struct vmmeter sum;
-double etime, stat1();
 char *vmunix = _PATH_UNIX;
 char **dr_name;
 int *dr_select, dk_ndrive, ndrives;
@@ -120,12 +119,10 @@ int *dr_select, dk_ndrive, ndrives;
 #define	VMSTAT		0x20
 #define	ZEROOUT		0x40
 
-void kread();
-
 #include "names.c"			/* disk names -- machine dependent */
 
-void doforkst(), dointr(), domem(), dosum(), dotimes(), dovmstat();
-void stats(), usage(), zero();
+void cpustats(), dkstats(), doforkst(), dointr(), domem(), dosum();
+void dotimes(), dovmstat(), kread(), usage(), zero();
 
 main(argc, argv)
 	register int argc;
@@ -217,6 +214,13 @@ main(argc, argv)
 			reps = atoi(*argv);
 	}
 #endif
+
+	if (interval) {
+		if (!reps)
+			reps = -1;
+	} else
+		if (reps)
+			interval = 1;
 
 	if (todo & FORKSTAT)
 		doforkst();
@@ -316,6 +320,8 @@ getuptime()
 	return(uptime);
 }
 
+int hz;
+
 void
 dovmstat(interval, reps)
 	u_int interval;
@@ -323,19 +329,17 @@ dovmstat(interval, reps)
 {
 	struct vmmeter rate;
 	struct vmtotal total;
-	register int i;
 	time_t uptime;
-	long tmp;
-	int deficit, hdrcnt, HZ, hz, phz;
+	int deficit, hdrcnt;
 	void printhdr();
 
 	uptime = getuptime();
 	(void)signal(SIGCONT, printhdr);
 
-	kread(X_HZ, &hz, sizeof(hz));
 	if (nl[X_PHZ].n_type != 0 && nl[X_PHZ].n_value != 0)
-		kread(X_PHZ, &phz, sizeof(phz));
-	HZ = phz ? phz : hz;
+		kread(X_PHZ, &hz, sizeof(hz));
+	if (!hz)
+		kread(X_HZ, &hz, sizeof(hz));
 
 	for (hdrcnt = 1;;) {
 		if (!--hdrcnt) {
@@ -351,20 +355,6 @@ dovmstat(interval, reps)
 		kread(X_TOTAL, &total, sizeof(total));
 		kread(X_SUM, &sum, sizeof(sum));
 		kread(X_DEFICIT, &deficit, sizeof(deficit));
-		etime = 0;
-		for (i = 0; i < dk_ndrive; i++) {
-			tmp = cur.xfer[i];
-			cur.xfer[i] -= last.xfer[i];
-			last.xfer[i] = tmp;
-		}
-		for (i = 0; i < CPUSTATES; i++) {
-			tmp = cur.time[i];
-			cur.time[i] -= last.time[i];
-			last.time[i] = tmp;
-			etime += cur.time[i];
-		}
-		if (etime == 0.)
-			etime = 1.;
 		(void)printf("%2d%2d%2d",
 		    total.t_rq, total.t_dw + total.t_pw, total.t_sw);
 #define pgtok(a) ((a)*NBPG >> 10)
@@ -377,30 +367,16 @@ dovmstat(interval, reps)
 		(void)printf("%4lu%4lu%4d%4lu", pgtok(rate.v_pgpgout) / uptime,
 		    pgtok(rate.v_dfree) / uptime,
 		    pgtok(deficit), rate.v_scan / uptime);
-		etime /= (float)HZ;
-		for (i = 0; i < dk_ndrive; i++)
-			if (dr_select[i])
-				stats(i);
-#define	INTS(x)	((x) - (hz + phz))
-		(void)printf("%4lu%4lu%4lu", INTS(rate.v_intr / uptime),
+		dkstats();
+		(void)printf("%4lu%4lu%4lu", rate.v_intr / uptime,
 		    rate.v_syscall / uptime, rate.v_swtch / uptime);
-		for (i = 0; i < CPUSTATES; i++) {
-			double f;
-
-			f = stat1(i);
-			if (i == 0) {		/* US+NI */
-				i++;
-				f += stat1(i);
-			}
-			(void)printf("%3.0f", f);
-		}
+		cpustats();
 		(void)printf("\n");
 		(void)fflush(stdout);
 		uptime = 1;
-		if (--reps <= 0)
+		if (reps >= 0 && --reps <= 0)
 			break;
-		if (interval)
-			sleep(interval);
+		(void)sleep(interval);
 	}
 }
 
@@ -557,28 +533,51 @@ doforkst()
 }
 
 void
-stats(dn)
-	int dn;
+dkstats()
 {
-	if (dn >= dk_ndrive)
-		(void)printf("  0");
-	else
+	register int dn, state;
+	double etime;
+	long tmp;
+
+	for (dn = 0; dn < dk_ndrive; ++dn) {
+		tmp = cur.xfer[dn];
+		cur.xfer[dn] -= last.xfer[dn];
+		last.xfer[dn] = tmp;
+	}
+	etime = 0;
+	for (state = 0; state < CPUSTATES; ++state) {
+		tmp = cur.time[state];
+		cur.time[state] -= last.time[state];
+		last.time[state] = tmp;
+		etime += cur.time[state];
+	}
+	if (etime == 0)
+		etime = 1;
+	etime /= hz;
+	for (dn = 0; dn < dk_ndrive; ++dn) {
+		if (!dr_select[dn])
+			continue;
 		(void)printf("%3.0f", cur.xfer[dn] / etime);
+	}
 }
 
-double
-stat1(row)
-	int row;
+void
+cpustats()
 {
-	register int i;
-	double t;
+	register int state;
+	double pct, total;
 
-	t = 0;
-	for (i = 0; i < CPUSTATES; i++)
-		t += cur.time[i];
-	if (t == 0.)
-		t = 1.;
-	return(cur.time[row]*100./t);
+	total = 0;
+	for (state = 0; state < CPUSTATES; ++state)
+		total += cur.time[state];
+	if (total)
+		pct = 100 / total;
+	else
+		pct = 0;
+	(void)printf("%3.0f",				/* user + nice */
+	    (cur.time[0] + cur.time[1]) * pct);
+	(void)printf("%3.0f", cur.time[2] * pct);	/* system */
+	(void)printf("%3.0f", cur.time[3] * pct);	/* idle */
 }
 
 void
