@@ -2,7 +2,7 @@
 #	Makefile,v 1.4 1993/07/30 11:11:03 mycroft Exp
 
 NOPROG=
-MAN8=	yp.0
+MAN8=	yp.8
 
 CFLAGS+=-DYP
 SUBDIR=	ypbind ypwhich ypcat ypmatch ypset yppoll # yppasswd
