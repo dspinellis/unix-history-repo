@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)security	5.24 (Berkeley) %G%
+#	@(#)security	5.25 (Berkeley) %G%
 #
 
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
@@ -26,7 +26,7 @@ awk -F: '{
 	if (NF != 10)
 		printf("Line %d has the wrong number of fields.\n", NR);
 	if ($1 !~ /^[A-Za-z0-9]*$/)
-		printf("Login %s has non-numeric characters.\n", $1);
+		printf("Login %s has non-alphanumeric characters.\n", $1);
 	if (length($1) > 8)
 		printf("Login %s has more than 8 characters.\n", $1);
 	if ($2 == "")
@@ -88,7 +88,7 @@ awk -F: '{
 	if (NF != 4)
 		printf("Line %d has the wrong number of fields.\n", NR);
 	if ($1 !~ /^[A-za-z0-9]*$/)
-		printf("Group %s has non-numeric characters.\n", $1);
+		printf("Group %s has non-alphanumeric characters.\n", $1);
 	if (length($1) > 8)
 		printf("Group %s has more than 8 characters.\n", $1);
 	if ($3 !~ /[0-9]*/)
