@@ -1,6 +1,13 @@
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
+ */
+
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ecvt.c	5.2 (Berkeley) %G%";
-#endif LIBC_SCCS and not lint
+static char sccsid[] = "@(#)ecvt.c	5.3 (Berkeley) %G%";
+#endif /* LIBC_SCCS and not lint */
 
 #if defined(hp300) && !defined(IEEE)
 #define	IEEE	1
