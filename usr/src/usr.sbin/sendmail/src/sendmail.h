@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.43.1.3 (Berkeley) %G%
+ *	@(#)sendmail.h	8.92 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.43.1.3		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.92		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
