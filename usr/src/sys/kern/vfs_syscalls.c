@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_syscalls.c	7.36 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.37 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -122,13 +122,6 @@ mount(scp)
 		vput(vp);
 		RETURN (EBUSY);
 	}
-	/*
-	 * Put the new filesystem on the mount list after root.
-	 */
-	mp->m_next = rootfs->m_next;
-	mp->m_prev = rootfs;
-	rootfs->m_next = mp;
-	mp->m_next->m_prev = mp;
 	vp->v_mountedhere = mp;
 	mp->m_vnodecovered = vp;
 update:
@@ -164,6 +157,13 @@ update:
 		vrele(vp);
 		RETURN (error);
 	}
+	/*
+	 * Put the new filesystem on the mount list after root.
+	 */
+	mp->m_next = rootfs->m_next;
+	mp->m_prev = rootfs;
+	rootfs->m_next = mp;
+	mp->m_next->m_prev = mp;
 	cache_purge(vp);
 	if (!error) {
 		VOP_UNLOCK(vp);
@@ -257,12 +257,14 @@ sync(scp)
 	struct syscontext *scp;
 {
 	register struct mount *mp;
+	struct mount *nmp;
 
 	mp = rootfs;
 	do {
-		if ((mp->m_flag & M_RDONLY) == 0)
+		nmp = mp->m_next;
+		if ((mp->m_flag & (M_MLOCK|M_RDONLY)) == 0)
 			VFS_SYNC(mp, MNT_NOWAIT);
-		mp = mp->m_next;
+		mp = nmp;
 	} while (mp != rootfs);
 }
 
