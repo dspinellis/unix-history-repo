@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -14,12 +14,11 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ip_icmp.c	7.10 (Berkeley) %G%
+ *	@(#)ip_icmp.c	7.8.1.1 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
-#include "malloc.h"
 #include "mbuf.h"
 #include "protosw.h"
 #include "socket.h"
@@ -49,16 +48,17 @@ int	icmpprintfs = 0;
  * Generate an error packet of type error
  * in response to bad packet ip.
  */
-/*VARARGS3*/
-icmp_error(n, type, code, dest)
-	struct mbuf *n;
+/*VARARGS4*/
+icmp_error(oip, type, code, ifp, dest)
+	struct ip *oip;
 	int type, code;
+	struct ifnet *ifp;
 	struct in_addr dest;
 {
-	register struct ip *oip = mtod(n, struct ip *), *nip;
 	register unsigned oiplen = oip->ip_hl << 2;
 	register struct icmp *icp;
 	register struct mbuf *m;
+	struct ip *nip;
 	unsigned icmplen;
 
 #ifdef ICMPPRINTFS
@@ -75,7 +75,7 @@ icmp_error(n, type, code, dest)
 	if (oip->ip_off &~ (IP_MF|IP_DF))
 		goto free;
 	if (oip->ip_p == IPPROTO_ICMP && type != ICMP_REDIRECT &&
-	  n->m_len >= oiplen + ICMP_MINLEN &&
+	  dtom(oip)->m_len >= oiplen + ICMP_MINLEN &&
 	  !ICMP_INFOTYPE(((struct icmp *)((caddr_t)oip + oiplen))->icmp_type)) {
 		icmpstat.icps_oldicmp++;
 		goto free;
@@ -84,12 +84,12 @@ icmp_error(n, type, code, dest)
 	/*
 	 * First, formulate icmp message
 	 */
-	m = m_gethdr(M_DONTWAIT, MT_HEADER);
+	m = m_get(M_DONTWAIT, MT_HEADER);
 	if (m == NULL)
 		goto free;
 	icmplen = oiplen + min(8, oip->ip_len);
 	m->m_len = icmplen + ICMP_MINLEN;
-	MH_ALIGN(m, m->m_len);
+	m->m_off = MMAXOFF - m->m_len;
 	icp = mtod(m, struct icmp *);
 	if ((u_int)type > ICMP_MAXTYPE)
 		panic("icmp_error");
@@ -112,40 +112,39 @@ icmp_error(n, type, code, dest)
 	 * Now, copy old ip header (without options)
 	 * in front of icmp message.
 	 */
-	if (m->m_data - sizeof(struct ip) < m->m_pktdat)
+	if (m->m_len + oiplen > MLEN)
+		oiplen = sizeof(struct ip);
+	if (m->m_len + oiplen > MLEN)
 		panic("icmp len");
-	m->m_data -= sizeof(struct ip);
+	m->m_off -= sizeof(struct ip);
 	m->m_len += sizeof(struct ip);
-	m->m_pkthdr.len = m->m_len;
-	m->m_pkthdr.rcvif = n->m_pkthdr.rcvif;
 	nip = mtod(m, struct ip *);
 	bcopy((caddr_t)oip, (caddr_t)nip, oiplen);
 	nip->ip_len = m->m_len;
 	nip->ip_hl = sizeof(struct ip) >> 2;
 	nip->ip_p = IPPROTO_ICMP;
-	icmp_reflect(m);
+	icmp_reflect(nip, ifp);
 
 free:
-	m_freem(n);
+	m_freem(dtom(oip));
 }
 
 static struct sockproto icmproto = { AF_INET, IPPROTO_ICMP };
-static struct sockaddr_in icmpsrc = { sizeof (struct sockaddr_in), AF_INET };
-static struct sockaddr_in icmpdst = { sizeof (struct sockaddr_in), AF_INET };
-static struct sockaddr_in icmpgw = { sizeof (struct sockaddr_in), AF_INET };
-struct sockaddr_in icmpmask = { 8, 0 };
+static struct sockaddr_in icmpsrc = { AF_INET };
+static struct sockaddr_in icmpdst = { AF_INET };
+static struct sockaddr_in icmpgw = { AF_INET };
 struct in_ifaddr *ifptoia();
 
 /*
  * Process a received ICMP message.
  */
-icmp_input(m, hlen)
+icmp_input(m, ifp)
 	register struct mbuf *m;
-	int hlen;
+	struct ifnet *ifp;
 {
 	register struct icmp *icp;
 	register struct ip *ip = mtod(m, struct ip *);
-	int icmplen = ip->ip_len;
+	int icmplen = ip->ip_len, hlen = ip->ip_hl << 2;
 	register int i;
 	struct in_ifaddr *ia;
 	int (*ctlfunc)(), code;
@@ -165,20 +164,21 @@ icmp_input(m, hlen)
 		goto free;
 	}
 	i = hlen + MIN(icmplen, ICMP_ADVLENMIN);
- 	if (m->m_len < i && (m = m_pullup(m, i)) == 0)  {
+ 	if ((m->m_off > MMAXOFF || m->m_len < i) &&
+ 		(m = m_pullup(m, i)) == 0)  {
 		icmpstat.icps_tooshort++;
 		return;
 	}
  	ip = mtod(m, struct ip *);
 	m->m_len -= hlen;
-	m->m_data += hlen;
+	m->m_off += hlen;
 	icp = mtod(m, struct icmp *);
 	if (in_cksum(m, icmplen)) {
 		icmpstat.icps_checksum++;
 		goto free;
 	}
 	m->m_len += hlen;
-	m->m_data -= hlen;
+	m->m_off -= hlen;
 
 #ifdef ICMPPRINTFS
 	/*
@@ -254,19 +254,17 @@ icmp_input(m, hlen)
 		
 	case ICMP_IREQ:
 #define	satosin(sa)	((struct sockaddr_in *)(sa))
-		if (in_netof(ip->ip_src) == 0 &&
-		    (ia = ifptoia(m->m_pkthdr.rcvif)))
+		if (in_netof(ip->ip_src) == 0 && (ia = ifptoia(ifp)))
 			ip->ip_src = in_makeaddr(in_netof(IA_SIN(ia)->sin_addr),
 			    in_lnaof(ip->ip_src));
 		icp->icmp_type = ICMP_IREQREPLY;
 		goto reflect;
 
 	case ICMP_MASKREQ:
-		if (icmplen < ICMP_MASKLEN ||
-		    (ia = ifptoia(m->m_pkthdr.rcvif)) == 0)
+		if (icmplen < ICMP_MASKLEN || (ia = ifptoia(ifp)) == 0)
 			break;
 		icp->icmp_type = ICMP_MASKREPLY;
-		icp->icmp_mask = ia->ia_sockmask.sin_addr.s_addr;
+		icp->icmp_mask = htonl(ia->ia_subnetmask);
 		if (ip->ip_src.s_addr == 0) {
 			if (ia->ia_ifp->if_flags & IFF_BROADCAST)
 			    ip->ip_src = satosin(&ia->ia_broadaddr)->sin_addr;
@@ -277,7 +275,7 @@ reflect:
 		ip->ip_len += hlen;	/* since ip_input deducts this */
 		icmpstat.icps_reflect++;
 		icmpstat.icps_outhist[icp->icmp_type]++;
-		icmp_reflect(m);
+		icmp_reflect(ip, ifp);
 		return;
 
 	case ICMP_REDIRECT:
@@ -300,14 +298,10 @@ reflect:
 				icp->icmp_gwaddr);
 #endif
 		if (code == ICMP_REDIRECT_NET || code == ICMP_REDIRECT_TOSNET) {
-			u_long in_netof();
 			icmpsrc.sin_addr =
 			 in_makeaddr(in_netof(icp->icmp_ip.ip_dst), INADDR_ANY);
-			icmpmask.sin_addr.s_addr =
-					in_maskof(icp->icmp_ip.ip_dst);
 			rtredirect((struct sockaddr *)&icmpsrc,
-			  (struct sockaddr *)&icmpdst,
-			  (struct sockaddr *)&icmpmask, RTF_GATEWAY,
+			  (struct sockaddr *)&icmpdst, RTF_GATEWAY,
 			  (struct sockaddr *)&icmpgw);
 			icmpsrc.sin_addr = icp->icmp_ip.ip_dst;
 			pfctlinput(PRC_REDIRECT_NET,
@@ -315,8 +309,7 @@ reflect:
 		} else {
 			icmpsrc.sin_addr = icp->icmp_ip.ip_dst;
 			rtredirect((struct sockaddr *)&icmpsrc,
-			  (struct sockaddr *)&icmpdst,
-			  (struct sockaddr *)0, RTF_GATEWAY | RTF_HOST,
+			  (struct sockaddr *)&icmpdst, RTF_GATEWAY | RTF_HOST,
 			  (struct sockaddr *)&icmpgw);
 			pfctlinput(PRC_REDIRECT_HOST,
 			  (struct sockaddr *)&icmpsrc);
@@ -349,10 +342,10 @@ free:
 /*
  * Reflect the ip packet back to the source
  */
-icmp_reflect(m)
-	struct mbuf *m;
+icmp_reflect(ip, ifp)
+	register struct ip *ip;
+	struct ifnet *ifp;
 {
-	register struct ip *ip = mtod(m, struct ip *);
 	register struct in_ifaddr *ia;
 	struct in_addr t;
 	struct mbuf *opts = 0, *ip_srcroute();
@@ -374,7 +367,7 @@ icmp_reflect(m)
 			break;
 	}
 	if (ia == (struct in_ifaddr *)0)
-		ia = ifptoia(m->m_pkthdr.rcvif);
+		ia = ifptoia(ifp);
 	if (ia == (struct in_ifaddr *)0)
 		ia = in_ifaddr;
 	t = IA_SIN(ia)->sin_addr;
@@ -412,15 +405,13 @@ icmp_reflect(m)
 			}
 		}
 		ovbcopy((caddr_t)ip, (caddr_t)ip + optlen, sizeof(struct ip));
-		m->m_data += optlen;
+		m->m_off += optlen;
 		m->m_len -= optlen;
 		ip = mtod(m, struct ip *);
 		ip->ip_len -= optlen;
 		ip->ip_hl = sizeof(struct ip) >> 2;
-		if (m->m_flags & M_PKTHDR)
-			m->m_pkthdr.len -= optlen;
 	}
-	icmp_send(m, opts);
+	icmp_send(ip, opts);
 	if (opts)
 		(void)m_free(opts);
 }
@@ -441,21 +432,22 @@ ifptoia(ifp)
  * Send an icmp packet back to the ip level,
  * after supplying a checksum.
  */
-icmp_send(m, opts)
-	register struct mbuf *m;
+icmp_send(ip, opts)
+	register struct ip *ip;
 	struct mbuf *opts;
 {
-	register struct ip *ip = mtod(m, struct ip *);
 	register int hlen;
 	register struct icmp *icp;
+	register struct mbuf *m;
 
+	m = dtom(ip);
 	hlen = ip->ip_hl << 2;
-	m->m_data += hlen;
+	m->m_off += hlen;
 	m->m_len -= hlen;
 	icp = mtod(m, struct icmp *);
 	icp->icmp_cksum = 0;
 	icp->icmp_cksum = in_cksum(m, ip->ip_len - hlen);
-	m->m_data -= hlen;
+	m->m_off -= hlen;
 	m->m_len += hlen;
 #ifdef ICMPPRINTFS
 	if (icmpprintfs)
