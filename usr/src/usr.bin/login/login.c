@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.78 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.79 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -420,9 +420,10 @@ main(argc, argv)
 #endif
 
 	if (!quietlog) {
-		(void)printf(
-"Copyright (c) 1980,1983,1986,1988,1990,1991 The Regents of the University\n%s",
-"of California.  All rights reserved.\n\n");
+		(void)printf("%s\n\t%s  %s\n\n",
+		    "Copyright (c) 1980, 1983, 1986, 1988, 1990, 1991, 1993",
+		    "The Regents of the University of California. ",
+		    "All rights reserved.");
 		motd();
 		(void)snprintf(tbuf,
 		    sizeof(tbuf), "%s/%s", _PATH_MAILDIR, pwd->pw_name);
