@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.32 (Berkeley) %G%
+		@(#)README	8.33 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -1008,6 +1008,7 @@ confSMTP_LOGIN_MSG	$j Sendmail $v/$Z ready at $b
 					De	The initial (spontaneous)
 						SMTP greeting message.
 confSEVEN_BIT_INPUT	False		O7	Force input to seven bits?
+confEIGHT_BIT_HANDLING	pass8		O8	8-bit data handling
 confALIAS_WAIT		10		Oa	Wait (in minutes) for alias
 						file rebuild.
 confMIN_FREE_BLOCKS	4		Ob	Minimum number of free blocks
