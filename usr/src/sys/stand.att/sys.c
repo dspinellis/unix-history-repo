@@ -1,4 +1,4 @@
-/*	sys.c	4.8	82/12/30	*/
+/*	sys.c	4.9	83/01/16	*/
 
 #include "../h/param.h"
 #include "../h/inode.h"
@@ -507,6 +507,7 @@ ioctl(fdesc, cmd, arg)
 	register struct iob *file;
 	int error = 0;
 
+	fdesc -= 3;
 	if (fdesc < 0 || fdesc >= NFILES ||
 	    ((file = &iob[fdesc])->i_flgs&F_ALLOC) == 0) {
 		errno = EBADF;
@@ -524,6 +525,22 @@ ioctl(fdesc, cmd, arg)
 
 	case SAIOHCHECK:
 		file->i_flgs |= F_HCHECK;
+		break;
+
+	case SAIONOBAD:
+		file->i_flgs |= F_NBSF;
+		break;
+
+	case SAIODOBAD:
+		file->i_flgs &= ~F_NBSF;
+		break;
+
+	case SAIOECCLIM:
+		file->i_flgs |= F_ECCLM;
+		break;
+
+	case SAIOECCUNL:
+		file->i_flgs &= ~F_ECCLM;
 		break;
 
 	default:
