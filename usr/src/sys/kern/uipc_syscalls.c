@@ -1,4 +1,4 @@
-/*	uipc_syscalls.c	4.23	82/08/14	*/
+/*	uipc_syscalls.c	4.24	82/08/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -18,66 +18,79 @@
 #include "../h/uio.h"
 
 ssocreate()
+/*###21 [lint] ssocreate defined( sys_socket.c(21) ), but never used%%%*/
 {
 
 }
 
 ssobind()
+/*###26 [lint] ssobind defined( sys_socket.c(26) ), but never used%%%*/
 {
 
 }
 
 ssolisten()
+/*###31 [lint] ssolisten defined( sys_socket.c(31) ), but never used%%%*/
 {
 
 }
 
 ssoaccept()
+/*###36 [lint] ssoaccept defined( sys_socket.c(36) ), but never used%%%*/
 {
 
 }
 
 ssoconnect()
+/*###41 [lint] ssoconnect defined( sys_socket.c(41) ), but never used%%%*/
 {
 
 }
 
 ssocreatepair()
+/*###46 [lint] ssocreatepair defined( sys_socket.c(46) ), but never used%%%*/
 {
 
 }
 
 ssosendto()
+/*###51 [lint] ssosendto defined( sys_socket.c(51) ), but never used%%%*/
 {
 
 }
 
 ssosend()
+/*###56 [lint] ssosend defined( sys_socket.c(56) ), but never used%%%*/
 {
 
 }
 
 ssorecvfrom()
+/*###61 [lint] ssorecvfrom defined( sys_socket.c(61) ), but never used%%%*/
 {
 
 }
 
 ssorecv()
+/*###66 [lint] ssorecv defined( sys_socket.c(66) ), but never used%%%*/
 {
 
 }
 
 ssosendm()
+/*###71 [lint] ssosendm defined( sys_socket.c(71) ), but never used%%%*/
 {
 
 }
 
 ssorecvm()
+/*###76 [lint] ssorecvm defined( sys_socket.c(76) ), but never used%%%*/
 {
 
 }
 
 ssoshutdown()
+/*###81 [lint] ssoshutdown defined( sys_socket.c(81) ), but never used%%%*/
 {
 
 }
@@ -317,6 +330,8 @@ ssend()
 	} *uap = (struct a *)u.u_ap;
 	register struct file *fp;
 	struct sockaddr sa;
+	struct uio auio;
+	struct iovec aiov;
 
 	fp = getf(uap->fdes);
 	if (fp == 0)
@@ -325,16 +340,20 @@ ssend()
 		u.u_error = ENOTSOCK;
 		return;
 	}
-	u.u_base = uap->cbuf;
-	u.u_count = uap->count;
-	u.u_segflg = 0;
+	auio.uio_iov = &aiov;
+	auio.uio_iovcnt = 1;
+	aiov.iov_base = uap->cbuf;
+	aiov.iov_len = uap->count;
+	auio.uio_resid = uap->count;
+	auio.uio_segflg = 0;
+	auio.uio_offset = 0;	/* XXX */
 	if (useracc(uap->cbuf, uap->count, B_READ) == 0 ||
 	    uap->asa && copyin((caddr_t)uap->asa, (caddr_t)&sa, sizeof (sa))) {
 		u.u_error = EFAULT;
 		return;
 	}
-	u.u_error = sosend(fp->f_socket, uap->asa ? &sa : 0);
-	u.u_r.r_val1 = uap->count - u.u_count;
+	u.u_error = sosend(fp->f_socket, uap->asa ? &sa : 0, &auio);
+	u.u_r.r_val1 = uap->count - auio.uio_resid;
 }
 
 /*
@@ -377,7 +396,7 @@ sreceive()
 		return;
 	if (uap->asa)
 		(void) copyout((caddr_t)&sa, (caddr_t)uap->asa, sizeof (sa));
-	u.u_r.r_val1 = uap->count - u.u_count;
+	u.u_r.r_val1 = uap->count - auio.uio_resid;
 }
 
 /*
