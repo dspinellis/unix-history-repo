@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_time.c	6.9 (Berkeley) %G%
+ *	@(#)kern_time.c	6.10 (Berkeley) %G%
  */
 
 #include "../machine/reg.h"
@@ -78,8 +78,10 @@ setthetime(tv)
 	resettodr();
 }
 
-int adjtimedelta;
-extern int tickadj;
+extern	int tickadj;			/* "standard" clock skew, us./tick */
+int	tickdelta;			/* current clock skew, us. per tick */
+long	timedelta;			/* unapplied time correction, us. */
+long	bigadj = 1000000;		/* use 10x skew above bigadj us. */
 
 adjtime()
 {
@@ -88,6 +90,7 @@ adjtime()
 		struct timeval *olddelta;
 	} *uap = (struct a *)u.u_ap;
 	struct timeval atv, oatv;
+	register long ndelta;
 	int s;
 
 	if (!suser()) 
@@ -96,17 +99,26 @@ adjtime()
 		sizeof (struct timeval));
 	if (u.u_error)
 		return;
+	ndelta = atv.tv_sec * 1000000 + atv.tv_usec;
+	if (timedelta == 0)
+		if (ndelta > bigadj)
+			tickdelta = 10 * tickadj;
+		else
+			tickdelta = tickadj;
+	if (ndelta % tickdelta)
+		ndelta = ndelta / tickadj * tickadj;
+
 	s = splclock();
 	if (uap->olddelta) {
-		oatv.tv_sec = adjtimedelta / 1000000;
-		oatv.tv_usec = adjtimedelta % 1000000;
+		oatv.tv_sec = timedelta / 1000000;
+		oatv.tv_usec = timedelta % 1000000;
+	}
+	timedelta = ndelta;
+	splx(s);
+
+	if (uap->olddelta)
 		(void) copyout((caddr_t)&oatv, (caddr_t)uap->olddelta,
 			sizeof (struct timeval));
-	}
-	adjtimedelta = atv.tv_sec * 1000000 + atv.tv_usec;
-	if (adjtimedelta % tickadj)
-		adjtimedelta = adjtimedelta / tickadj * tickadj;
-	splx(s);
 }
 
 /*

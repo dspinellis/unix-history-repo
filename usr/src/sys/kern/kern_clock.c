@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_clock.c	6.15 (Berkeley) %G%
+ *	@(#)kern_clock.c	6.16 (Berkeley) %G%
  */
 
 #include "../machine/reg.h"
@@ -211,17 +211,17 @@ hardclock(pc, ps)
 		}
 	}
 #else
-	if (adjtimedelta == 0)
+	if (timedelta == 0)
 		BUMPTIME(&time, tick)
 	else {
 		register delta;
 
-		if (adjtimedelta < 0) {
-			delta = tick - tickadj;
-			adjtimedelta += tickadj;
+		if (timedelta < 0) {
+			delta = tick - tickdelta;
+			timedelta += tickdelta;
 		} else {
-			delta = tick + tickadj;
-			adjtimedelta -= tickadj;
+			delta = tick + tickdelta;
+			timedelta -= tickdelta;
 		}
 		BUMPTIME(&time, delta);
 	}
