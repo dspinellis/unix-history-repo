@@ -5,7 +5,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)run.test	5.8 (Berkeley) %G%
+#	@(#)run.test	5.9 (Berkeley) %G%
 #
 
 # db regression tests
@@ -267,6 +267,26 @@ test7()
 		exit;
 	}' > $TMP1
 	rm -f TMP2 $TMP3
+
+	# Test that R_CURSOR doesn't succeed before cursor initialized
+	for type in btree recno; do
+		cat $TMP1 |
+		awk '{
+			if (i == 10)
+				exit;
+			printf("p\nk%d\nd%s\n", ++i, $0);
+		}
+		END {
+			printf("fR_CURSOR\nr\nk1\n");
+			printf("etest7 R_CURSOR SHOULD HAVE FAILED\n");
+		}' > $TMP2
+		$PROG -o $TMP3 $type $TMP2 > /dev/null 2>&1
+		if [ -s $TMP3 ] ; then
+			printf "test7: R_CURSOR SHOULD HAVE FAILED\n"
+			exit 1
+		fi
+	done
+			
 	for type in btree recno; do
 		cat $TMP1 |
 		awk '{
@@ -306,9 +326,9 @@ test8()
 			if (i % 8 == 0) {
 				printf("c\nkkey2\nD/bin/csh\n");
 				printf("c\nkkey1\nD/bin/sh\n");
-				printf("e\t%d of 75 (comparison)\r\n", i);
+				printf("e\t%d of 10 (comparison)\r\n", i);
 			} else
-				printf("e\t%d of 75             \r\n", i);
+				printf("e\t%d of 10             \r\n", i);
 			printf("r\nkkey1\nr\nkkey2\n");
 		}
 		printf("e\n");
