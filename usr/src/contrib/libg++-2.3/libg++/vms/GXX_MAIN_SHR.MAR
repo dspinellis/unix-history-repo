@@ -1,0 +1,16 @@
+.title	gxx_main_shr
+	;
+	;	Force these psects to be loaded
+	;
+	.psect	__gxx_init_0_shr,ovr,noexe,pic,rel,gbl,shr
+	.long	0
+
+	.psect	__gxx_init_2_shr,ovr,noexe,pic,rel,gbl,shr
+	.long	0
+
+	.psect	__gxx_clean_0_shr,ovr,noexe,pic,rel,gbl,shr
+	.long	0
+
+	.psect	__gxx_clean_2_shr,ovr,noexe,pic,rel,gbl,shr
+	.long	0
+.end
