@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1980, 1987 Regents of the University of California.
+ * Copyright (c) 1980, 1987, 1992 Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
@@ -7,62 +7,145 @@
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1980, 1987 Regents of the University of California.\n\
+"@(#) Copyright (c) 1980, 1987, 1992 Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)head.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)head.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <sys/types.h>
+#include <errno.h>
+#include <stdlib.h>
+#include <string.h>
 #include <stdio.h>
 #include <ctype.h>
+
 /*
  * head - give the first few lines of a stream or of each of a set of files
  *
  * Bill Joy UCB August 24, 1977
  */
 
-main(argc, argv)
-	int	argc;
-	char	**argv;
-{
-	register int	ch, cnt;
-	int	firsttime, linecnt = 10;
+void err __P((int, const char *, ...));
+void head __P((int));
+void obsolete __P((char *[]));
+void usage __P((void));
 
-	if (argc > 1 && argv[1][0] == '-') {
-		if (!isdigit(argv[1][1])) {
-			fprintf(stderr, "head: illegal option -- %c\n", argv[1][1]);
-			goto usage;
+int eval;
+
+int
+main(argc, argv)
+	int argc;
+	char *argv[];
+{
+	register int ch;
+	int first, linecnt;
+	char *ep;
+
+	obsolete(argv);
+	linecnt = 10;
+	while ((ch = getopt(argc, argv, "n:")) != EOF)
+		switch(ch) {
+		case 'n':
+			linecnt = strtol(optarg, &ep, 10);
+			if (*ep || linecnt <= 0)
+				err(1, "illegal line count -- %s", optarg);
+			break;
+		case '?':
+		default:
+			usage();
 		}
-		if ((linecnt = atoi(argv[1] + 1)) < 0) {
-usage:			fputs("usage: head [-line_count] [file ...]\n", stderr);
-			exit(1);
-		}
-		--argc; ++argv;
-	}
-	/* setlinebuf(stdout); */
-	for (firsttime = 1, --argc, ++argv;; firsttime = 0) {
-		if (!*argv) {
-			if (!firsttime)
-				exit(0);
-		}
-		else {
+	argc -= optind;
+	argv += optind;
+
+	if (*argv)
+		for (first = 1; *argv; ++argv) {
 			if (!freopen(*argv, "r", stdin)) {
-				fprintf(stderr, "head: can't read %s.\n", *argv);
-				exit(1);
+				err(0, "%s: %s", *argv, strerror(errno));
+				continue;
 			}
 			if (argc > 1) {
-				if (!firsttime)
-					putchar('\n');
-				printf("==> %s <==\n", *argv);
+				(void)printf("%s==> %s <==\n",
+				    first ? "" : "\n", *argv);
+				first = 0;
 			}
-			++argv;
+			head(linecnt);
 		}
-		for (cnt = linecnt; cnt; --cnt)
-			while ((ch = getchar()) != EOF)
-				if (putchar(ch) == '\n')
-					break;
+	else
+		head(linecnt);
+	exit(eval);
+}
+
+void
+head(cnt)
+	register int cnt;
+{
+	register int ch;
+
+	while (cnt--)
+		while ((ch = getchar()) != EOF) {
+			if (putchar(ch) == EOF)
+				err(1, "stdout: %s", strerror(errno));
+			if (ch == '\n')
+				break;
+		}
+}
+
+void
+obsolete(argv)
+	char *argv[];
+{
+	char *ap;
+
+	while (ap = *++argv) {
+		/* Return if "--" or not "-[0-9]*". */
+		if (ap[0] != '-' || ap[1] == '-' || !isdigit(ap[1]))
+			return;
+		if ((ap = malloc(strlen(*argv) + 2)) == NULL)
+			err(1, "%s", strerror(errno));
+		ap[0] = '-';
+		ap[1] = 'n';
+		(void)strcpy(ap + 2, *argv + 1);
+		*argv = ap;
 	}
-	/*NOTREACHED*/
+}
+
+void
+usage()
+{
+	(void)fprintf(stderr, "usage: head [-n lines] [file ...]\n");
+	exit(1);
+}
+
+#if __STDC__
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
+
+void
+#if __STDC__
+err(int fatal, const char *fmt, ...)
+#else
+err(fatal, fmt, va_alist)
+	int fatal;
+	char *fmt;
+        va_dcl
+#endif
+{
+	va_list ap;
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
+	(void)fprintf(stderr, "head: ");
+	(void)vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	(void)fprintf(stderr, "\n");
+	if (fatal)
+		exit(1);
+	eval = 1;
 }
