@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sysctl.c	7.31 (Berkeley) %G%
+ *	@(#)kern_sysctl.c	7.32 (Berkeley) %G%
  */
 
 /*
@@ -589,7 +589,7 @@ struct getkerninfo_args {
 	int	arg;
 };
 
-getkerninfo(p, uap, retval)
+ogetkerninfo(p, uap, retval)
 	struct proc *p;
 	register struct getkerninfo_args *uap;
 	int *retval;
