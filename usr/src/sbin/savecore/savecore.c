@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)savecore.c	5.37 (Berkeley) %G%";
+static char sccsid[] = "@(#)savecore.c	5.38 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -477,10 +477,18 @@ int
 check_space()
 {
 	register FILE *fp;
+	char *tvmunix;
+	off_t minfree, spacefree, vmunixsize, needed;
+	struct stat st;
 	struct statfs fsbuf;
-	off_t minfree, spacefree;
 	char buf[100], path[MAXPATHLEN];
 
+	tvmunix = vmunix ? vmunix : _PATH_UNIX;
+	if (stat(tvmunix, &st) < 0) {
+		syslog(LOG_ERR, "%s: %m", tvmunix);
+		exit(1);
+	}
+	vmunixsize = st.st_blocks * S_BLKSIZE;
 	if (statfs(dirname, &fsbuf) < 0) {
 		syslog(LOG_ERR, "%s: %m", dirname);
 		exit(1);
@@ -498,12 +506,13 @@ check_space()
 		(void)fclose(fp);
 	}
 
- 	if (minfree > 0 && spacefree - dumpsize < minfree) {
+	needed = dumpsize + vmunixsize;
+ 	if (minfree > 0 && spacefree - needed < minfree) {
 		syslog(LOG_WARNING,
 		    "no dump, not enough free space on device");
 		return (0);
 	}
-	if (spacefree - dumpsize < minfree)
+	if (spacefree - needed < minfree)
 		syslog(LOG_WARNING,
 		    "dump performed, but free space threshold crossed");
 	return (1);
