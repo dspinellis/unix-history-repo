@@ -1,0 +1,119 @@
+exec:	  iffable
+	| SDO end_spec label dospec
+		{
+		if($3->labdefined)
+			execerr("no backward DO loops");
+		$3->blklevel = blklevel+1;
+		exdo($3->labelno, $4);
+		}
+	| logif iffable
+		{ exendif();  thiswasbranch = NO; }
+	| logif STHEN
+	| SELSEIF end_spec SLPAR expr SRPAR STHEN
+		{ exelif($4); }
+	| SELSE end_spec
+		{ exelse(); }
+	| SENDIF end_spec
+		{ exendif(); }
+	;
+
+logif:	  SLOGIF end_spec SLPAR expr SRPAR
+		{ exif($4); }
+	;
+
+dospec:	  name SEQUALS exprlist
+		{ $$ = mkchain($1, $3); }
+	;
+
+iffable:  let lhs SEQUALS expr
+		{ exequals($2, $4); }
+	| SASSIGN end_spec labelval STO name
+		{ exassign($5, $3); }
+	| SCONTINUE end_spec
+	| goto
+	| io
+		{ inioctl = NO; }
+	| SARITHIF end_spec SLPAR expr SRPAR label SCOMMA label SCOMMA label
+		{ exarif($4, $6, $8, $10);  thiswasbranch = YES; }
+	| call
+		{ excall($1, 0, 0, labarray); }
+	| call SLPAR SRPAR
+		{ excall($1, 0, 0, labarray); }
+	| call SLPAR callarglist SRPAR
+		{ if(nstars < MAXLABLIST)
+			excall($1, mklist($3), nstars, labarray);
+		  else
+			err("too many alternate returns");
+		}
+	| SRETURN end_spec opt_expr
+		{ exreturn($3);  thiswasbranch = YES; }
+	| stop end_spec opt_expr
+		{ exstop($1, $3);  thiswasbranch = $1; }
+	;
+
+let:	  SLET
+		{ if(parstate == OUTSIDE)
+			{
+			newproc();
+			startproc(0, CLMAIN);
+			}
+		}
+	;
+
+goto:	  SGOTO end_spec label
+		{ exgoto($3);  thiswasbranch = YES; }
+	| SASGOTO end_spec name
+		{ exasgoto($3);  thiswasbranch = YES; }
+	| SASGOTO end_spec name opt_comma SLPAR labellist SRPAR
+		{ exasgoto($3);  thiswasbranch = YES; }
+	| SCOMPGOTO end_spec SLPAR labellist SRPAR opt_comma expr
+		{ if(nstars < MAXLABLIST)
+			putcmgo(fixtype($7), nstars, labarray);
+		  else
+			err("computed GOTO list too long");
+		}
+	;
+
+opt_comma:
+	| SCOMMA
+	;
+
+call:	  SCALL end_spec name
+		{ nstars = 0; $$ = $3; }
+	;
+
+callarglist:  callarg
+		{ $$ = ($1 ? mkchain($1,0) : 0); }
+	| callarglist SCOMMA callarg
+		{ if($3)
+			if($1) $$ = hookup($1, mkchain($3,0));
+			else $$ = mkchain($3,0);
+		}
+	;
+
+callarg:  expr
+	| SSTAR label
+		{ if(nstars<MAXLABLIST) labarray[nstars++] = $2; $$ = 0; }
+	;
+
+stop:	  SPAUSE
+		{ $$ = 0; }
+	| SSTOP
+		{ $$ = 1; }
+	;
+
+exprlist:  expr
+		{ $$ = mkchain($1, 0); }
+	| exprlist SCOMMA expr
+		{ $$ = hookup($1, mkchain($3,0) ); }
+	;
+
+end_spec:
+		{ if(parstate == OUTSIDE)
+			{
+			newproc();
+			startproc(0, CLMAIN);
+			}
+		  if(parstate < INDATA) enddcl();
+		}
+	;
