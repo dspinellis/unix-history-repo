@@ -6,7 +6,7 @@
 Please mail all suggestions and additions to <FreeBSD-FAQ@freefall.cdrom.com>
 
 
-Revision: $Id: FreeBSD.FAQ,v 1.28 1994/05/27 11:13:39 jkh Exp $
+Revision: $Id: FreeBSD.FAQ,v 1.29 1994/05/30 23:36:15 gclarkii Exp $
 
 All entries marked <CURRENT> are for FreeBSD-current.  All other entries
 are for both version 1.1 and current.
@@ -829,6 +829,8 @@ and follow the instructions.
 Yes.  See the man pages for slattach(8) and/or pppd(8) if you're using
 FreeBSD to connect to another site.  If you're using FreeBSD as a
 server for other machines, look at the man page for sliplogin(8).
+You may also want to take a look at the slip FAQ in:
+             FAQ/OTHER-FAQS/FreeBSD.slip.dialup.faq
 
 8.4:  How do I set up NTP?
 
