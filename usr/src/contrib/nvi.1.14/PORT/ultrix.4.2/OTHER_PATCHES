@@ -1,0 +1,20 @@
+*** PORT/db/include/db.h.orig	Sat Oct 30 14:08:54 1993
+--- PORT/db/include/db.h	Sat Oct 30 14:09:13 1993
+***************
+*** 86,100 ****
+   * is so that the access methods can skip copying the key/data pair when
+   * the DB_LOCK flag isn't set.
+   */
+- #if UINT_MAX > 65535
+  #define	DB_LOCK		0x20000000	/* Do locking. */
+  #define	DB_SHMEM	0x40000000	/* Use shared memory. */
+  #define	DB_TXN		0x80000000	/* Do transactions. */
+- #else
+- #define	DB_LOCK		0x00002000	/* Do locking. */
+- #define	DB_SHMEM	0x00004000	/* Use shared memory. */
+- #define	DB_TXN		0x00008000	/* Do transactions. */
+- #endif
+  
+  /* Access method description structure. */
+  typedef struct __db {
+--- 86,94 ----
