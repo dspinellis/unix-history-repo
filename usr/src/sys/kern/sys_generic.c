@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sys_generic.c	7.28 (Berkeley) %G%
+ *	@(#)sys_generic.c	7.29 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -447,7 +447,7 @@ ioctl(p, uap, retval)
 	return (error);
 }
 
-int	nselcoll;
+int	selwait, nselcoll;
 
 /*
  * Select system call.
