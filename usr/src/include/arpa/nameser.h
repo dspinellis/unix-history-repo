@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)nameser.h	5.15 (Berkeley) %G%
+ *	@(#)nameser.h	5.16 (Berkeley) %G%
  */
 
 /*
@@ -28,8 +28,8 @@
  */
 #define QUERY		0x0		/* standard query */
 #define IQUERY		0x1		/* inverse query */
-#define CQUERYM		0x2		/* completion query (multiple) */
-#define CQUERYU		0x3		/* completion query (unique) */
+#define STATUS		0x2		/* nameserver status query */
+/*#define xxx		0x3		/* 0x3 reserved */
 	/* non standard */
 #define UPDATEA		0x9		/* add resource record */
 #define UPDATED		0xa		/* delete a specific resource record */
