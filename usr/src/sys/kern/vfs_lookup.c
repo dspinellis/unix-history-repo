@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_lookup.c	7.30 (Berkeley) %G%
+ *	@(#)vfs_lookup.c	7.31 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -60,11 +60,8 @@ namei(ndp, p)
 	 * Get a buffer for the name to be translated, and copy the
 	 * name into the buffer.
 	 */
-#ifdef DIAGNOSTIC
-	if (ndp->ni_nameiop & HASBUF)
-		panic("namei: reentered");
-#endif
-	MALLOC(ndp->ni_pnbuf, caddr_t, MAXPATHLEN, M_NAMEI, M_WAITOK);
+	if ((ndp->ni_nameiop & HASBUF) == 0)
+		MALLOC(ndp->ni_pnbuf, caddr_t, MAXPATHLEN, M_NAMEI, M_WAITOK);
 	if (ndp->ni_segflg == UIO_SYSSPACE)
 		error = copystr(ndp->ni_dirp, ndp->ni_pnbuf,
 			    MAXPATHLEN, &ndp->ni_pathlen);
