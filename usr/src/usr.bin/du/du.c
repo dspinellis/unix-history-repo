@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)du.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)du.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -46,10 +46,17 @@ main(argc, argv)
 	ftsoptions = FTS_PHYSICAL;
 	save = argv;
 	aflag = sflag = 0;
-	while ((ch = getopt(argc, argv, "asx")) != EOF)
+	while ((ch = getopt(argc, argv, "Hahsx")) != EOF)
 		switch(ch) {
+		case 'H':
+			ftsoptions |= FTS_COMFOLLOW;
+			break;
 		case 'a':
 			aflag = 1;
+			break;
+		case 'h':
+			ftsoptions &= ~FTS_PHYSICAL;
+			ftsoptions |= FTS_LOGICAL;
 			break;
 		case 's':
 			sflag = 1;
@@ -109,12 +116,6 @@ main(argc, argv)
 			(void)fprintf(stderr,
 			    "du: %s: %s\n", p->fts_path, strerror(errno));
 			break;
-		case FTS_SL:
-			if (p->fts_level == FTS_ROOTLEVEL) {
-				(void)fts_set(fts, p, FTS_FOLLOW);
-				break;
-			}
-			/* FALLTHROUGH */
 		default:
 			if (p->fts_statp->st_nlink > 1 && linkchk(p))
 				break;
@@ -167,7 +168,7 @@ linkchk(p)
 void
 usage()
 {
-	(void)fprintf(stderr, "usage: du [-a | -s] [-x] [file ...]\n");
+	(void)fprintf(stderr, "usage: du [-a | -s] [-Hhx] [file ...]\n");
 	exit(1);
 }
 
