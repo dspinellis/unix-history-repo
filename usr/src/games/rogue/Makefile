@@ -1,7 +1,7 @@
-#	@(#)Makefile	5.8 (Berkeley) %G%
+#	@(#)Makefile	5.9 (Berkeley) %G%
 
 PROG=	rogue
-CFLAGS+=-DUNIX -DUNIX_BSD4_2 -fwritable-strings
+CFLAGS+=-DUNIX -fwritable-strings
 SRCS=	curses.c hit.c init.c inventory.c level.c machdep.c main.c \
 	message.c monster.c move.c object.c pack.c play.c random.c ring.c \
 	room.c save.c score.c spec_hit.c throw.c trap.c use.c zap.c
