@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	6.29 (Berkeley) %G%
+.\"	@(#)op.me	6.30 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,9 +40,9 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 6.29
+Version 6.30
 .sp
-For Sendmail Version 6.44
+For Sendmail Version 6.45
 .)l
 .sp 2
 .pp
@@ -2070,8 +2070,8 @@ The metasymbols are:
 \fB$*\fP	Match zero or more tokens
 \fB$+\fP	Match one or more tokens
 \fB$\-\fP	Match exactly one token
-\fB$=\fP\fIx\fP	Match any token in class \fIx\fP
-\fB$~\fP\fIx\fP	Match any token not in class \fIx\fP
+\fB$=\fP\fIx\fP	Match any phrase in class \fIx\fP
+\fB$~\fP\fIx\fP	Match any phrase not in class \fIx\fP
 .)b
 If any of these match,
 they are assigned to the symbol
@@ -2702,12 +2702,11 @@ fields are set to the protocol used to communicate with sendmail
 and the sending hostname.
 .sh 3 "C and F \*- define classes"
 .pp
-Classes of words may be defined
+Classes of phrases may be defined
 to match on the left hand side of rewriting rules,
 where a
-.q word
-is a sequence of characters that do not contain characters
-in the $o macro.
+.q phrase
+is a sequence of characters that do not contain space characters.
 For example
 a class of all local names for this site
 might be created
@@ -2723,8 +2722,8 @@ are reserved for system use.
 The syntax is:
 .(b F
 .b C \c
-.i c\|word1
-.i word2...
+.i c\|phrase1
+.i phrase2...
 .br
 .b F \c
 .i c\|file
@@ -5874,7 +5873,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 6.29
+.\"Version 6.30
 .\".ce 0
 .pn 2
 .bp
