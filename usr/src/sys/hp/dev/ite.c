@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: ite.c 1.1 90/07/09$
  *
- *	@(#)ite.c	7.4 (Berkeley) %G%
+ *	@(#)ite.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -27,21 +27,19 @@
 #undef NITE
 #define NITE	NGRF
 
-#include "sys/param.h"
-#include "sys/conf.h"
-#include "sys/user.h"
-#include "sys/proc.h"
-#include "sys/ioctl.h"
-#include "sys/tty.h"
-#include "sys/systm.h"
-#include "sys/uio.h"
-#include "sys/malloc.h"
+#include "param.h"
+#include "conf.h"
+#include "proc.h"
+#include "ioctl.h"
+#include "tty.h"
+#include "systm.h"
+#include "malloc.h"
 
 #include "itevar.h"
 #include "iteioctl.h"
 #include "kbdmap.h"
 
-#include "../include/cpu.h"
+#include "machine/cpu.h"
 
 #define set_attr(ip, attr)	((ip)->attribute |= (attr))
 #define clr_attr(ip, attr)	((ip)->attribute &= ~(attr))
@@ -179,9 +177,15 @@ iteoff(dev, flag)
 		ip->flags &= ~ITE_ACTIVE;
 }
 
-/*ARGSUSED*/
-iteopen(dev, flag)
+/* ARGSUSED */
+#ifdef __STDC__
+iteopen(dev_t dev, int mode, int devtype, struct proc *p)
+#else
+iteopen(dev, mode, devtype, p)
 	dev_t dev;
+	int mode, devtype;
+	struct proc *p;
+#endif
 {
 	int unit = UNIT(dev);
 	register struct tty *tp = &ite_tty[unit];
@@ -190,7 +194,7 @@ iteopen(dev, flag)
 	int first = 0;
 
 	if ((tp->t_state&(TS_ISOPEN|TS_XCLUDE)) == (TS_ISOPEN|TS_XCLUDE)
-	    && u.u_uid != 0)
+	    && p->p_ucred->cr_uid != 0)
 		return (EBUSY);
 	if ((ip->flags & ITE_ACTIVE) == 0) {
 		error = iteon(dev, 0);
@@ -757,7 +761,6 @@ itecnprobe(cp)
 {
 	register struct ite_softc *ip;
 	int i, maj, unit, pri;
-	extern int iteopen();
 
 	/* locate the major number */
 	for (maj = 0; maj < nchrdev; maj++)

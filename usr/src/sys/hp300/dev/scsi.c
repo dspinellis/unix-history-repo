@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)scsi.c	7.4 (Berkeley) %G%
+ *	@(#)scsi.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -41,10 +41,8 @@ static char rcsid[] = "$Header: scsi.c,v 1.4 91/01/17 12:50:18 mike Exp $";
 #define	SCSI_INIT_WAIT	50000	/* wait per step (both) during init */
 
 extern void isrlink();
-extern void printf();
 extern void _insque();
 extern void _remque();
-extern void bzero();
 
 int	scsiinit(), scsigo(), scsiintr(), scsixfer();
 void	scsistart(), scsidone(), scsifree(), scsireset();

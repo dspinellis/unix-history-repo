@@ -11,13 +11,13 @@
  *
  * from: Utah $Hdr: hil.c 1.33 89/12/22$
  *
- *	@(#)hil.c	7.6 (Berkeley) %G%
+ *	@(#)hil.c	7.7 (Berkeley) %G%
  */
 
 #include "sys/param.h"
 #include "sys/conf.h"
-#include "sys/user.h"
 #include "sys/proc.h"
+#include "sys/user.h"
 #include "sys/ioctl.h"
 #include "sys/file.h"
 #include "sys/tty.h"
@@ -30,7 +30,7 @@
 #include "hilvar.h"
 #include "kbdmap.h"
 
-#include "../include/cpu.h"
+#include "machine/cpu.h"
 
 #include "vm/vm_param.h"
 #include "vm/vm_map.h"
@@ -91,10 +91,12 @@ hilinit()
 	kbdenable();
 }
 
-hilopen(dev, flags)
+/* ARGSUSED */
+hilopen(dev, flags, mode, p)
 	dev_t dev;
+	int flags, mode;
+	struct proc *p;
 {
-	struct proc *p = u.u_procp;		/* XXX */
   	register struct hilloop *hilp = &hil0;	/* XXX */
 	register struct hilloopdev *dptr;
 	u_char device = HILUNIT(dev);
@@ -164,7 +166,7 @@ hilopen(dev, flags)
 hilclose(dev, flags)
 	dev_t dev;
 {
-	struct proc *p = u.u_procp;		/* XXX */
+	struct proc *p = curproc;		/* XXX */
   	register struct hilloop *hilp = &hil0;	/* XXX */
 	register struct hilloopdev *dptr;
 	register int i;
@@ -292,11 +294,11 @@ hilread(dev, uio)
 	return(error);
 }
 
-hilioctl(dev, cmd, data, flag)
+hilioctl(dev, cmd, data, flag, p)
 	dev_t dev;
 	caddr_t data;
+	struct proc *p;
 {
-	struct proc *p = u.u_procp;		/* XXX */
 	register struct hilloop *hilp = &hil0;	/* XXX */
 	char device = HILUNIT(dev);
 	struct hilloopdev *dptr;
@@ -583,7 +585,7 @@ hpuxhilioctl(dev, cmd, data, flag)
 #endif
 
 /*
- * XXX: the mmap inteface for HIL devices should be rethought.
+ * XXX: the mmap interface for HIL devices should be rethought.
  * We used it only briefly in conjuntion with shared queues
  * (instead of HILIOCMAPQ ioctl).  Perhaps mmap()ing a device
  * should give a single queue per process.
@@ -594,7 +596,7 @@ hilmap(dev, off, prot)
 	register int off;
 {
 #ifdef MMAP
-	struct proc *p = u.u_procp;		/* XXX */
+	struct proc *p = curproc;		/* XXX */
 	register struct hilloop *hilp = &hil0;	/* XXX */
 	register struct hiliqueue *qp;
 	register int qnum;
@@ -618,10 +620,10 @@ hilmap(dev, off, prot)
 }
 
 /*ARGSUSED*/
-hilselect(dev, rw)
+hilselect(dev, rw, p)
 	dev_t dev;
+	struct proc *p;
 {
-	struct proc *p = u.u_procp;		/* XXX */
 	register struct hilloop *hilp = &hil0;	/* XXX */
 	register struct hilloopdev *dptr;
 	register struct hiliqueue *qp;
@@ -953,7 +955,7 @@ hpuxhilevent(hilp, dptr)
 hilqalloc(qip)
 	struct hilqinfo *qip;
 {
-	struct proc *p = u.u_procp;		/* XXX */
+	struct proc *p = curproc;		/* XXX */
 
 #ifdef DEBUG
 	if (hildebug & HDB_FOLLOW)
@@ -965,7 +967,7 @@ hilqalloc(qip)
 hilqfree(qnum)
 	register int qnum;
 {
-	struct proc *p = u.u_procp;		/* XXX */
+	struct proc *p = curproc;		/* XXX */
 
 #ifdef DEBUG
 	if (hildebug & HDB_FOLLOW)
@@ -977,7 +979,7 @@ hilqfree(qnum)
 hilqmap(qnum, device)
 	register int qnum, device;
 {
-	struct proc *p = u.u_procp;		/* XXX */
+	struct proc *p = curproc;		/* XXX */
 	register struct hilloop *hilp = &hil0;	/* XXX */
 	register struct hilloopdev *dptr = &hilp->hl_device[device];
 	int s;
@@ -991,12 +993,13 @@ hilqmap(qnum, device)
 		return(EINVAL);
 	if ((dptr->hd_flags & HIL_QUEUEIN) == 0)
 		return(EINVAL);
-	if (dptr->hd_qmask && u.u_uid && u.u_uid != dptr->hd_uid)
+	if (dptr->hd_qmask && p->p_ucred->cr_uid &&
+	    p->p_ucred->cr_uid != dptr->hd_uid)
 		return(EPERM);
 
 	hilp->hl_queue[qnum].hq_devmask |= hildevmask(device);
 	if (dptr->hd_qmask == 0)
-		dptr->hd_uid = u.u_uid;
+		dptr->hd_uid = p->p_ucred->cr_uid;
 	s = splhil();
 	dptr->hd_qmask |= hilqmask(qnum);
 	splx(s);
@@ -1012,7 +1015,7 @@ hilqmap(qnum, device)
 hilqunmap(qnum, device)
 	register int qnum, device;
 {
-	struct proc *p = u.u_procp;		/* XXX */
+	struct proc *p = curproc;		/* XXX */
 	register struct hilloop *hilp = &hil0;	/* XXX */
 	int s;
 
