@@ -5,7 +5,7 @@
    Please mail all suggestions and additions to FreeBSD-FAQ@freefall.cdrom.com
 
 
-Revision: $Id: FreeBSD.FAQ,v 1.10 1994/04/19 22:06:06 wollman Exp $
+Revision: $Id: FreeBSD.FAQ,v 1.11 1994/04/20 11:45:30 jkh Exp $
 
 
 Table of Contents
@@ -110,8 +110,8 @@ These two commands are just shell functions defined in /.profile.  To
 get these back, or boot FreeBSD with a `-s' at the boot prompt.
 
 
-1.2:  I want to install FreeBSD unto a SCSI disk that has more than
-        1024 cylinders.  How do I do it?
+1.2:  I want to install FreeBSD onto a SCSI disk that has more than
+      1024 cylinders.  How do I do it?
 
 This depends.  If you don't have DOS (or another operating system) on the
 system, you can just keep the drive in native mode and simply make sure that
@@ -197,6 +197,7 @@ written in Australia by David Burren.  This code is now available on
 some non-US FreeBSD mirror sites.  Sources for the unencumbered 
 librypt, and binaries of the programs which use it, can be obtained
 from the following ftp sites:
+
 	South Africa:	braae.ru.ac.za:/pub/FreeBSD/securedist/
 			owl.und.ac.za (currently uncertain)
 	Iceland:	ftp.veda.is:/pub/crypt/FreeBSD/
@@ -215,7 +216,7 @@ A non-US distribution of Kerberos is also being developed, and current
 versions can generally be obtained by anonymous ftp from braae.ru.ac.za.
 
 There is also a mailing list for the discussion of non-US encryption
-software.  For maore information, send an email message with a single
+software.  For more information, send an email message with a single
 line saying "help" in the body of your message to majordomo@braae.ru.ac.za.
 
 
@@ -448,6 +449,7 @@ file in the packages directory provides more details on the care
 and feeding of the package software, so no explicit details will
 be given here.
 
+
 5 Misc Questions
 ----------------
 
@@ -519,7 +521,7 @@ You may also want to look at the multi-port serial FAQ in
 
 
 6.2:  FreeBSD is supposed to come with support for QIC-40/80 drives but
-        when I look, I can't find it.
+      when I look, I can't find it.
 
 You need to uncomment the following line in the generic config file (or add
 it to your config file) and recompile.
@@ -588,7 +590,7 @@ and may be replaced with a more complex but capable solution later.
 
 
 7.2: I'm trying to use my printer and keep running into problems.  I tried
-        looking at /etc/printcap, but it's close to useless.  Any ideas?
+     looking at /etc/printcap, but it's close to useless.  Any ideas?
 
 Yes, you can pick up Andreas Klemm's apsfilter package from:
 
@@ -637,7 +639,7 @@ usage.
 There is a standard `router floppy' that you can boot on a FreeBSD
 machine to configure it as a network router.  Please look in:
 
-	freefall.cdrom.com:~ftp/pub/incoming/freertr
+	freefall.cdrom.com:~ftp/pub/incoming/freertr/
 
 and follow the instructions.
 
