@@ -27,7 +27,7 @@ SOFTWARE.
 /*
  * $Header: iso.c,v 4.11 88/09/19 14:58:35 root Exp $ 
  * $Source: /usr/argo/sys/netiso/RCS/iso.c,v $ 
- *	@(#)iso.c	7.7 (Berkeley) %G%
+ *	@(#)iso.c	7.8 (Berkeley) %G%
  *
  * iso.c: miscellaneous routines to support the iso address family
  */
@@ -616,16 +616,18 @@ iso_ifinit(ifp, ia, siso, scrub)
 	 */
 	if (ifp->if_flags & IFF_LOOPBACK) {
 		ia->ia_ifa.ifa_dstaddr = ia->ia_ifa.ifa_addr;
-		rtinit(&(ia->ia_ifa), (int)RTM_ADD, RTF_HOST|RTF_UP);
+		error = rtinit(&(ia->ia_ifa), (int)RTM_ADD, RTF_HOST|RTF_UP);
 	} else if (ifp->if_flags & IFF_POINTOPOINT &&
 		 ia->ia_dstaddr.siso_family == AF_ISO)
-		rtinit(&(ia->ia_ifa), (int)RTM_ADD, RTF_HOST|RTF_UP);
+		error = rtinit(&(ia->ia_ifa), (int)RTM_ADD, RTF_HOST|RTF_UP);
 	else {
-		rtinit(&(ia->ia_ifa), (int)RTM_ADD, RTF_UP);
+		rt_maskedcopy(ia->ia_ifa.ifa_addr, ia->ia_ifa.ifa_dstaddr,
+			ia->ia_ifa.ifa_netmask);
+		error = rtinit(&(ia->ia_ifa), (int)RTM_ADD, RTF_UP);
 	}
 	ia->ia_flags |= IFA_ROUTE;
 	splx(s);
-	return (0);
+	return (error);
 }
 #ifdef notdef
 
