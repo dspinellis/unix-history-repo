@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rm.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)rm.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -20,18 +20,20 @@ static char sccsid[] = "@(#)rm.c	8.4 (Berkeley) %G%";
 
 #include <err.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <fts.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
-int dflag, fflag, iflag, eval, stdin_ok;
+int dflag, eval, fflag, iflag, Pflag, stdin_ok;
 
 int	check __P((char *, char *, struct stat *));
 void	checkdot __P((char **));
-void	rmfile __P((char **));
-void	rmtree __P((char **));
+void	rm_file __P((char **));
+void	rm_overwrite __P((char *, struct stat *));
+void	rm_tree __P((char **));
 void	usage __P((void));
 
 /*
@@ -48,8 +50,8 @@ main(argc, argv)
 {
 	int ch, rflag;
 
-	rflag = 0;
-	while ((ch = getopt(argc, argv, "dfiRr")) != EOF)
+	Pflag = rflag = 0;
+	while ((ch = getopt(argc, argv, "dfiPRr")) != EOF)
 		switch(ch) {
 		case 'd':
 			dflag = 1;
@@ -62,8 +64,11 @@ main(argc, argv)
 			fflag = 0;
 			iflag = 1;
 			break;
+		case 'P':
+			Pflag = 1;
+			break;
 		case 'R':
-		case 'r':			/* compatibility */
+		case 'r':			/* Compatibility. */
 			rflag = 1;
 			break;
 		case '?':
@@ -83,14 +88,14 @@ main(argc, argv)
 	stdin_ok = isatty(STDIN_FILENO);
 
 	if (rflag)
-		rmtree(argv);
+		rm_tree(argv);
 	else
-		rmfile(argv);
+		rm_file(argv);
 	exit (eval);
 }
 
 void
-rmtree(argv)
+rm_tree(argv)
 	char **argv;
 {
 	FTS *fts;
@@ -168,8 +173,12 @@ rmtree(argv)
 					continue;
 			} else if (p->fts_info != FTS_DP)
 				warnx("%s: unable to read", p->fts_path);
-		} else if (!unlink(p->fts_accpath) || fflag && errno == ENOENT)
-			continue;
+		} else {
+			if (Pflag)
+				rm_overwrite(p->fts_accpath, NULL);
+			if (!unlink(p->fts_accpath) || fflag && errno == ENOENT)
+				continue;
+		}
 		warn("%s", p->fts_path);
 		eval = 1;
 	}
@@ -178,12 +187,12 @@ rmtree(argv)
 }
 
 void
-rmfile(argv)
+rm_file(argv)
 	char **argv;
 {
-	int df;
-	char *f;
 	struct stat sb;
+	int df, rval;
+	char *f;
 
 	df = dflag;
 	/*
@@ -206,13 +215,74 @@ rmfile(argv)
 		}
 		if (!fflag && !check(f, f, &sb))
 			continue;
-		if ((S_ISDIR(sb.st_mode) ? rmdir(f) : unlink(f)) &&
-		    (!fflag || errno != ENOENT)) {
+		if (S_ISDIR(sb.st_mode))
+			rval = rmdir(f);
+		else {
+			if (Pflag)
+				rm_overwrite(f, &sb);
+			rval = unlink(f);
+		}
+		if (rval && (!fflag || errno != ENOENT)) {
 			warn("%s", f);
 			eval = 1;
 		}
 	}
 }
+
+/*
+ * rm_overwrite --
+ *	Overwrite the file 3 times with varying bit patterns.
+ *
+ * XXX
+ * This is a cheap way to *really* delete files.  Note that only regular
+ * files are deleted, directories (and therefore names) will remain.
+ * Also, this assumes a fixed-block file system (like FFS, or a V7 or a
+ * System V file system).  In a logging file system, you'll have to have
+ * kernel support.
+ */
+void
+rm_overwrite(file, sbp)
+	char *file;
+	struct stat *sbp;
+{
+	struct stat sb;
+	off_t len;
+	int fd, wlen;
+	char buf[8 * 1024];
+
+	fd = -1;
+	if (sbp == NULL) {
+		if (lstat(file, &sb))
+			goto err;
+		sbp = &sb;
+	}
+	if (!S_ISREG(sbp->st_mode))
+		return;
+	if ((fd = open(file, O_WRONLY, 0)) == -1)
+		goto err;
+
+#define	PASS(byte) {							\
+	memset(buf, byte, sizeof(buf));					\
+	for (len = sbp->st_size; len > 0; len -= wlen) {		\
+		wlen = len < sizeof(buf) ? len : sizeof(buf);		\
+		if (write(fd, buf, wlen) != wlen)			\
+			goto err;					\
+	}								\
+}
+	PASS(0xff);
+	if (fsync(fd) || lseek(fd, (off_t)0, SEEK_SET))
+		goto err;
+	PASS(0x00);
+	if (fsync(fd) || lseek(fd, (off_t)0, SEEK_SET))
+		goto err;
+	PASS(0xff);
+	if (!fsync(fd) && !close(fd))
+		return;
+
+err:	eval = 1;
+	warn("%s", file);
+}
+
 
 int
 check(path, name, sp)
