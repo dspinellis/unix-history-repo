@@ -1,9 +1,10 @@
 .nr _0 \n(c.
-.\"	@(#)tbl.me	2.1	%G%
+.\"	@(#)tbl.me	2.2	%G%
 .\"	%beginstrip%
 .de TS			\" *** table start
 .sp \\n(bsu
 .@C 1
+.fi				\" drop into fill mode for text boxes
 .if "\\$1"H" \
 \{\
 .	di |h			\" save header part
