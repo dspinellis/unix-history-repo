@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -40,7 +40,7 @@ static char sccsid[] = "@(#)main.c	5.10 (Berkeley) %G%";
 int	ispipe;
 int	new_file;
 int	is_tty;
-char	*current_file, *previous_file, *current_name;
+char	*current_file, *previous_file, *current_name, *next_name;
 off_t	prev_pos;
 int	any_display;
 int	scroll;
@@ -142,6 +142,10 @@ edit(filename)
 		current_name = "stdin";
 	} else
 		current_name = (p = rindex(filename, '/')) ? p + 1 : filename;
+	if (curr_ac >= ac)
+		next_name = NULL;
+	else
+		next_name = av[curr_ac + 1];
 	file = f;
 	ch_init(cbufs, 0);
 	init_mark();

@@ -18,7 +18,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)command.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)command.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -173,7 +173,7 @@ cmd_exec()
 prompt()
 {
 	extern int terseprompt, linenums;
-	extern char *current_name, *firstsearch;
+	extern char *current_name, *firstsearch, *next_name;
 	off_t len, pos, ch_length(), position(), forw_line();
 	char pbuf[40];
 
@@ -227,7 +227,12 @@ prompt()
 		so_enter();
 		putstr(current_name);
 		if (hit_eof)
-			putstr(": END");
+			if (next_name) {
+				(void)sprintf(pbuf, ": END (%s)", next_name);
+				putstr(pbuf);
+			}
+			else
+				putstr(": END");
 		else if (linenums) {
 			(void)sprintf(pbuf, ": %d", currline(TOP));
 			putstr(pbuf);
