@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)vdfmt.c	1.2 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)vdfmt.c	1.3 (Berkeley/CCI) %G%";
 #endif
 
 /*
@@ -73,7 +73,7 @@ determine_controller_types()
 	/* Identify which controllers are present and what type they are. */
 	num_controllers = 0;
 	for(ctlr = 0; ctlr < MAXCTLR; ctlr++) {
-		c_info[ctlr].addr = (cdr *)(vddcaddr[ctlr]+VBIOBASE);
+		c_info[ctlr].addr = (cdr *)(vddcaddr[ctlr]);
 		if(!badaddr(c_info[ctlr].addr, 2)) {
 			printf("controller %d: ", ctlr);
 			num_controllers++;
