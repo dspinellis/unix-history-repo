@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass1.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass1.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -95,7 +95,8 @@ checkinode(inumber, idesc)
 	}
 	lastino = inumber;
 	if (/* dp->di_size < 0 || */
-	    dp->di_size + sblock.fs_bsize - 1 < dp->di_size) {
+	    dp->di_size + sblock.fs_bsize - 1 < dp->di_size ||
+	    (mode == IFDIR && dp->di_size > MAXDIRSIZE)) {
 		if (debug)
 			printf("bad size %qu:", dp->di_size);
 		goto unknown;
