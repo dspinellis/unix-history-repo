@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)uusnap.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)uusnap.c	5.7 (Berkeley) %G%";
 #endif
 
 /*
@@ -209,7 +209,7 @@ char *sdir;
 		exit(1);
 	}
 	while ((dentp = readdir(dirp)) != NULL) {
-		if (strcmp(dentp->d_name, X_LOCK) == SAME) {
+		if (strcmp(&dentp->d_name[5], X_LOCK) == SAME) {
 			xqtisrunning++;
 			continue;
 		}
