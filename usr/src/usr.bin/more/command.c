@@ -18,7 +18,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)command.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)command.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -243,6 +243,15 @@ prompt()
 static
 getcc()
 {
+	extern int cmdstack;
+	int ch;
+
+	/* left over from error() routine. */
+	if (cmdstack) {
+		ch = cmdstack;
+		cmdstack = NULL;
+		return(ch);
+	}
 	if (cp > cmdbuf && position(TOP) == NULL_POSITION) {
 		/*
 		 * Command is incomplete, so try to complete it.
