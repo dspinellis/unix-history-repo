@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ar.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)ar.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #ifndef lint
@@ -59,7 +59,7 @@ char	**namv;
 int	namc;
 char	*arnam;
 char	*ponam;
-char	*tmpnam = _PATH_TMP1;
+char	*tmp0nam = _PATH_TMP1;
 char	*tmp1nam = _PATH_TMP2;
 char	*tmp2nam = _PATH_TMP3;
 char	*tfnam;
@@ -139,7 +139,7 @@ char *argv[];
 		done(1);
 	}
 	if(flg['l'-'a']) {
-		tmpnam = "vXXXXX";
+		tmp0nam = "vXXXXX";
 		tmp1nam = "v1XXXXX";
 		tmp2nam = "v2XXXXX";
 	}
@@ -352,7 +352,7 @@ qcmd()
 init()
 {
 
-	tfnam = mktemp(tmpnam);
+	tfnam = mktemp(tmp0nam);
 	close(creat(tfnam, 0600));
 	tf = open(tfnam, 2);
 	if(tf < 0) {
