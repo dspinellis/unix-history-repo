@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)lfs_vnops.c	6.22 (Berkeley) %G%
+ *	@(#)lfs_vnops.c	6.23 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -601,7 +601,7 @@ chown()
 		int	gid;
 	} *uap = (struct a *)u.u_ap;
 
-	if (!suser() || (ip = owner(uap->fname, NOFOLLOW)) == NULL)
+	if ((ip = owner(uap->fname, NOFOLLOW)) == NULL)
 		return;
 	u.u_error = chown1(ip, uap->uid, uap->gid);
 	iput(ip);
@@ -624,8 +624,6 @@ fchown()
 	if (fp == NULL)
 		return;
 	ip = (struct inode *)fp->f_data;
-	if (!suser())
-		return;
 	ILOCK(ip);
 	u.u_error = chown1(ip, uap->uid, uap->gid);
 	IUNLOCK(ip);
@@ -649,6 +647,10 @@ chown1(ip, uid, gid)
 		uid = ip->i_uid;
 	if (gid == -1)
 		gid = ip->i_gid;
+	if (uid != ip->i_uid && !suser())
+		return (u.u_error);
+	if (gid != ip->i_gid && !groupmember((gid_t)gid) && !suser())
+		return (u.u_error);
 #ifdef QUOTA
 	if (ip->i_uid == uid)		/* this just speeds things a little */
 		change = 0;
@@ -713,7 +715,7 @@ truncate()
 {
 	struct a {
 		char	*fname;
-		u_long	length;
+		off_t	length;
 	} *uap = (struct a *)u.u_ap;
 	struct inode *ip;
 	register struct nameidata *ndp = &u.u_nd;
@@ -730,7 +732,7 @@ truncate()
 		u.u_error = EISDIR;
 		goto bad;
 	}
-	itrunc(ip, uap->length);
+	itrunc(ip, (u_long)uap->length);
 bad:
 	iput(ip);
 }
@@ -742,7 +744,7 @@ ftruncate()
 {
 	struct a {
 		int	fd;
-		u_long	length;
+		off_t	length;
 	} *uap = (struct a *)u.u_ap;
 	struct inode *ip;
 	struct file *fp;
@@ -756,7 +758,7 @@ ftruncate()
 	}
 	ip = (struct inode *)fp->f_data;
 	ILOCK(ip);
-	itrunc(ip, uap->length);
+	itrunc(ip, (u_long)uap->length);
 	IUNLOCK(ip);
 }
 
