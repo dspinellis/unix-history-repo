@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)abs.ms	5.1 (Berkeley) %G%
+.\"	@(#)abs.ms	6.1 (Berkeley) %G%
 .\"
 .if n .ND
 .TL
@@ -14,7 +14,8 @@ Revised July 27, 1983
 Bob Kridle
 .AI
 mt Xinu
-2405 Fourth Street
+2560 9th Street
+Suite #312
 Berkeley, California  94710
 .AU
 Marshall Kirk McKusick\(dd
@@ -83,9 +84,9 @@ arbitration scheme to produce another increase in throughput.
 .ds LH Performance
 .ds RH Contents
 .bp 1
-.if t .ds CF July 27, 1983
-.if t .ds LF CSRG TR/8
-.if t .ds RF Kridle, et. al.
+.\".if t .ds CF July 27, 1983
+.\".if t .ds LF CSRG TR/8
+.\".if t .ds RF Kridle, et. al.
 .ce
 .B "TABLE OF CONTENTS"
 .LP

@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)appendix.ms	5.1 (Berkeley) %G%
+.\"	@(#)appendix.ms	6.1 (Berkeley) %G%
 .\"
 .nr H2 1
 .ds RH Appendix A
