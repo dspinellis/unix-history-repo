@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.88 (Berkeley) %G%
+#	@(#)READ_ME	8.89 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -427,7 +427,11 @@ IP_SRCROUTE	Define this to 1 to get IP source routing information
 		most systems, but some (e.g., Ultrix) apparently have a
 		broken version of getsockopt that doesn't properly
 		support the IP_OPTIONS call.  You probably want this if
-		your OS can cope with it.
+		your OS can cope with it.  Symptoms of failure will be that
+		it won't compile properly (that is, no support for fetching
+		IP_OPTIONs), or it compiles but source-routed TCP connections
+		either refuse to open or open and hang for no apparent reason.
+		Ultrix and AIX are known to fail this way.
 LOG		Set this to get syslog(3) support.  Defined by default
 		in conf.h.  You want this if at all possible.
 NETINET		Set this to get TCP/IP support.  Defined by default
@@ -1020,4 +1024,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.88, last update %G% 16:44:26)
+(Version 8.89, last update %G% 07:55:40)
