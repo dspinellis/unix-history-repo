@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)proc.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)proc.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -15,8 +15,11 @@ static char sccsid[] = "@(#)proc.c	5.3 (Berkeley) %G%";
  *
  * University of Utah CS Dept modification history:
  *
- * $Header: proc.c,v 5.2 85/08/10 05:03:34 donn Exp $
+ * $Header: proc.c,v 5.3 85/09/30 23:21:07 donn Exp $
  * $Log:	proc.c,v $
+ * Revision 5.3  85/09/30  23:21:07  donn
+ * Print space with prspace() in outlocvars() so that alignment is preserved.
+ * 
  * Revision 5.2  85/08/10  05:03:34  donn
  * Support for NAMELIST i/o from Jerry Berkman.
  * 
@@ -1727,8 +1730,8 @@ outlocvars()
 	  else
 	    {
 	      pralign(typealign[np->vtype]);
-	      fprintf(initfile, "%s:\n\t.space\t%d\n", sname,
-		      np->varsize);
+	      fprintf(initfile, "%s:\n", sname);
+	      prspace(np->varsize);
 	    }
 	  np->inlcomm = NO;
 	}
@@ -1751,7 +1754,8 @@ outlocvars()
 	  else
 	    {
 	      pralign(typealign[type]);
-	      fprintf(initfile, "%s:\n\t.space\t%d\n", sname, ep->eqvleng);
+	      fprintf(initfile, "%s:\n", sname);
+	      prspace(ep->eqvleng);
 	    }
 	  ep->inlcomm = NO;
 	}
