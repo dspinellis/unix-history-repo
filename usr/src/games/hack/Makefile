@@ -97,7 +97,7 @@ install:
 	rm -f ${DESTDIR}/usr/games/lib/hackdir/bones*
 
 clean:
-	rm -f *.o
+	rm -f *.o hack makedefs
 
 depend:
 	mkdep ${CFLAGS} ${CSOURCES}
