@@ -1,13 +1,13 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)start.c 1.1 %G%";
+static char sccsid[] = "@(#)start.c 1.2 %G%";
 
 /*
  * Begin execution.
  *
  * For px, pstart does a traced exec to read in px and then stop.  But we
  * want control after px has read in the obj file and before it starts
- * executing.  The "-d" option to px tells it to give us control
+ * executing.  The zeroth argument to px tells it to give us control
  * by sending itself a signal just prior to interpreting.
  *
  * We set a "END_BP" breakpoint at the end of the code so that the
@@ -18,6 +18,7 @@ static char sccsid[] = "@(#)start.c 1.1 %G%";
 #include <signal.h>
 #include "process.h"
 #include "machine.h"
+#include "main.h"
 #include "breakpoint.h"
 #include "source.h"
 #include "object.h"
@@ -35,36 +36,38 @@ start(argv, infile, outfile)
 char **argv;
 char *infile, *outfile;
 {
-	char *pargv[4];
-#	if (isvaxpx)
-		TRAPARGS *ap, t;
-#	endif
+	char *cmd;
 
 	process = &pbuf;
 	setsigtrace();
-	if (argv == NIL) {
-		argv = pargv;
-#		if (isvaxpx)
-			pargv[0] = "px";
-			pargv[1] = "-d";
-			pargv[2] = objname;
-			pargv[3] = NIL;
-#		else
-			pargv[0] = objname;
-			pargv[1] = NIL;
-#		endif
-	}
-	pstart(process, argv, infile, outfile);
+#	if (isvaxpx)
+		cmd = "px";
+#	else
+		cmd = argv[0];
+#	endif
+	pstart(process, cmd, argv, infile, outfile);
 	if (process->status == STOPPED) {
 #		if (isvaxpx)
+			TRAPARGS *ap, t;
+
 			pcont(process);
 			if (process->status != STOPPED) {
-				panic("px exited with %d", process->exitval);
+				if (option('t')) {
+					quit(process->exitval);
+				} else {
+					panic("px exited with %d", process->exitval);
+				}
 			}
 			dread(&ap, process->fp + 2*sizeof(int), sizeof(ap));
 			dread(&t, ap, sizeof(TRAPARGS));
 			if (t.nargs != 5) {
-				panic("start: args out of sync");
+				if (option('t')) {
+					unsetsigtraces(process);
+					pcont(process);
+					quit(process->exitval);
+				} else {
+					panic("start: args out of sync");
+				}
 			}
 			DISPLAY = t.disp;
 			DP = t.dp;
@@ -77,6 +80,8 @@ char *infile, *outfile;
 		if (objsize != 0) {
 			addbp(lastaddr(), END_BP, NIL, NIL, NIL, 0);
 		}
+	} else {
+		panic("could not start program");
 	}
 }
 
