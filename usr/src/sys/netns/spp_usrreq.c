@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *      @(#)spp_usrreq.c	7.4 (Berkeley) %G%
+ *      @(#)spp_usrreq.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -234,7 +234,7 @@ spp_input(m, nsp, ifp)
 	m->m_off += sizeof (struct idp);
 
 	if (spp_reass(cb, si)) {
-		m_freem(m);
+		(void) m_freem(m);
 	}
 	if (cb->s_force || (cb->s_flags & (SF_ACKNOW|SF_WIN|SF_RXT)))
 		(void) spp_output(cb, (struct mbuf *)0);
@@ -288,7 +288,7 @@ register struct spidp *si;
 	if (SSEQ_GT(si->si_alo, cb->s_ralo))
 		cb->s_flags |= SF_WIN;
 	if (SSEQ_LEQ(si->si_ack, cb->s_rack)) {
-		if ((si->si_cc & SP_SP) && cb->s_rack != cb->s_smax) {
+		if ((si->si_cc & SP_SP) && cb->s_rack != (cb->s_smax + 1)) {
 			sppstat.spps_rcvdupack++;
 			/*
 			 * If this is a completely duplicate ack
@@ -306,7 +306,7 @@ register struct spidp *si;
 				cb->s_snxt = si->si_ack;
 				cb->s_cwnd = CUNIT;
 				cb->s_force = 1 + TCPT_REXMT;
-				(void) spp_output(cb, 0);
+				(void) spp_output(cb, (struct mbuf *)0);
 				cb->s_timer[TCPT_REXMT] = cb->s_rxtcur;
 				cb->s_rtt = 0;
 				if (cwnd >= 4 * CUNIT)
@@ -384,7 +384,7 @@ register struct spidp *si;
 	/*
 	 * Trim Acked data from output queue.
 	 */
-	for (m = so->so_snd.sb_mb; m; m = m->m_act) {
+	while ((m = so->so_snd.sb_mb) != NULL) {
 		if (SSEQ_LT((mtod(m, struct spidp *))->si_seq, si->si_ack))
 			sbdroprecord(&so->so_snd);
 		else
@@ -649,9 +649,8 @@ spp_output(cb, m0)
 	register struct sockbuf *sb = &so->so_snd;
 	int len = 0, win, rcv_win;
 	short span, off;
-	u_short alo, oalo;
+	u_short alo;
 	int error = 0, idle, sendalot;
-	u_short lookfor = 0;
 	struct mbuf *mprev;
 	extern int idpcksum;
 
@@ -672,12 +671,11 @@ spp_output(cb, m0)
 				m_freem(m0);
 				return (EMSGSIZE);
 			} else {
-				int off = 0;
 				int oldEM = cb->s_cc & SP_EM;
 
 				cb->s_cc &= ~SP_EM;
 				while (len > mtu) {
-					m = m_copy(m0, off, mtu);
+					m = m_copy(m0, 0, mtu);
 					if (m == NULL) {
 						error = ENOBUFS;
 						goto bad_copy;
@@ -896,7 +894,7 @@ send:
 	 */
 	if (rcv_win < 0)
 		rcv_win = 0;
-	oalo = alo = cb->s_ack - 1 + (rcv_win / ((short)cb->s_mtu));
+	alo = cb->s_ack - 1 + (rcv_win / ((short)cb->s_mtu));
 	if (SSEQ_LT(alo, cb->s_alo)) 
 		alo = cb->s_alo;
 
@@ -1539,7 +1537,7 @@ spp_abort(nsp)
 	(void) spp_close((struct sppcb *)nsp->nsp_pcb);
 }
 
-long	spp_backoff[TCP_MAXRXTSHIFT+1] =
+int	spp_backoff[TCP_MAXRXTSHIFT+1] =
     { 1, 2, 4, 8, 16, 32, 64, 64, 64, 64, 64, 64, 64 };
 /*
  * Fast timeout routine for processing delayed acks
@@ -1670,7 +1668,7 @@ spp_timers(cb, timer)
 		if (win < 2)
 			win = 2;
 		cb->s_cwnd = CUNIT;
-		cb->s_ssthresh = win;
+		cb->s_ssthresh = win * CUNIT;
 		(void) spp_output(cb, (struct mbuf *) 0);
 		break;
 
@@ -1708,5 +1706,7 @@ spp_timers(cb, timer)
 	}
 	return (cb);
 }
+#ifndef lint
 int SppcbSize = sizeof (struct sppcb);
 int NspcbSize = sizeof (struct nspcb);
+#endif lint
