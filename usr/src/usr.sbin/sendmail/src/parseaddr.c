@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)parseaddr.c	4.5		%G%);
+SCCSID(@(#)parseaddr.c	4.6		%G%);
 
 /*
 **  PARSEADDR -- Parse an address
@@ -124,6 +124,14 @@ parseaddr(addr, a, copyf, delim)
 	}
 
 	/*
+	**  Convert host name to lower case if requested.
+	**	User name will be done later.
+	*/
+
+	if (!bitnset(M_HST_UPPER, m->m_flags))
+		makelower(a->q_host);
+
+	/*
 	**  Compute return value.
 	*/
 
@@ -155,8 +163,6 @@ loweraddr(a)
 {
 	register MAILER *m = a->q_mailer;
 
-	if (!bitnset(M_HST_UPPER, m->m_flags))
-		makelower(a->q_host);
 	if (!bitnset(M_USR_UPPER, m->m_flags))
 		makelower(a->q_user);
 }
