@@ -1,4 +1,4 @@
-/*	ufs_lookup.c	3.3	%G%	*/
+/*	ufs_lookup.c	3.4	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -114,7 +114,7 @@ eloop:
 	if(u.u_offset >= dp->i_size) {
 		if(bp != NULL)
 			brelse(bp);
-		if(flag==1 && c=='\0') {
+		if(flag==1 && c=='\0' && dp->i_nlink) {
 			if(access(dp, IWRITE))
 				goto out;
 			u.u_pdir = dp;
