@@ -1,4 +1,4 @@
-/*	autoconf.c	6.5	84/02/03	*/
+/*	autoconf.c	6.6	84/02/15	*/
 
 /*
  * Setup the system to run on the current machine.

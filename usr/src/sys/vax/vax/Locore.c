@@ -1,4 +1,4 @@
-/*	Locore.c	6.1	83/08/11	*/
+/*	Locore.c	6.2	84/02/15	*/
 
 #include "dz.h"
 #include "mba.h"
@@ -141,8 +141,8 @@ char	Sysbase[6*NPTEPG*NBPG];
 int	umbabeg;
 struct	pte Nexmap[16][16];
 struct	nexus nexus[MAXNNEXUS];
-struct	pte UMEMmap[MAXNUBA][512];
-char	umem[MAXNUBA][512*NBPG];
+struct	pte UMEMmap[NUBA][512];
+char	umem[NUBA][512*NBPG];
 int	umbaend;
 struct	pte Usrptmap[USRPTSIZE];
 struct	pte usrpt[USRPTSIZE*NPTEPG];
