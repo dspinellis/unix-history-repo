@@ -1,4 +1,4 @@
-SCCSID = "@(#)Makefile 1.13 %G%"
+SCCSID = "@(#)Makefile 1.14 %G%"
 WHOAMI = pc
 INSTALLNAME = $(DESTDIR)/usr/lib/pc0
 VERSION = 2.0
@@ -57,7 +57,7 @@ a.out: ${OBJS} version
 sources: whoami.h ${SRCS} ${HDRS} ${OTHERS}
 	
 ${SRCS} ${HDRS} ${OTHERS}:
-	${GET} ${REL} $@
+	${GET} $@
 
 .c.o:
 	${RM} ${TMPDIR}/$*.c
@@ -91,7 +91,7 @@ clean:
 	${RM} ${ERRORSTRINGS}
 	${RM} version Version.c
 	${RM} a.out core *.list *.bak
-	${RM} opc.c opc pic tags
+	${RM} opc pic tags
 
 print:	sources
 	@pr makefile READ_ME
