@@ -43,8 +43,6 @@ static char sccsid[] = "@(#)telnet.c	3.1  10/29/86";
  *
  *	TN3270		- 	This is to be linked with tn3270.
  *
- *	DEBUG		-	Allow for some extra debugging operations.
- *
  *	NOT43		-	Allows the program to compile and run on
  *				a 4.2BSD system.
  *
@@ -214,6 +212,7 @@ static int
 	debug = 0,
 	crmod,
 	netdata,
+	noasynch = 0,	/* User specified "-noasynch" on command line */
 	askedSGA = 0,	/* We have talked about suppress go ahead */
 	telnetport = 1;
 
@@ -552,9 +551,11 @@ register int f;
     ioctl(tin, FIONBIO, (char *)&onoff);
     ioctl(tout, FIONBIO, (char *)&onoff);
 #endif	/* (!defined(TN3270)) || ((!defined(NOT43)) || defined(PUTCHAR)) */
-#if	defined(TN3270) && !defined(DEBUG)
-    ioctl(tin, FIOASYNC, (char *)&onoff);
-#endif	/* defined(TN3270) && !defined(DEBUG) */
+#if	defined(TN3270)
+    if (noasynch == 0) {
+	ioctl(tin, FIOASYNC, (char *)&onoff);
+    }
+#endif	/* defined(TN3270) */
 
     if (MODE_LINE(f)) {
 	void doescape();
@@ -2725,10 +2726,9 @@ telnet()
     NetNonblockingIO(net, 1);
 
 #if	defined(TN3270)
-#if	!defined(DEBUG)		/* DBX can't handle! */
-    NetSigIO(net, 1);
-#endif	/* !defined(DEBUG) */
-
+    if (noasynch == 0) {			/* DBX can't handle! */
+	NetSigIO(net, 1);
+    }
     NetSetPgrp(net);
 #endif	/* defined(TN3270) */
 
@@ -2787,10 +2787,14 @@ telnet()
 		    StopScreen(1);
 		    haventstopped = 0;
 		}
+#endif	/* defined(MSDOS) */
 		if (shell_continue() == 0) {
 		    ConnectScreen();
+#if	defined(MSDOS)
 		    haventstopped = 1;
+#endif	/* defined(MSDOS) */
 		}
+#if	defined(MSDOS)
 		setconnmode();
 #endif	/* defined(MSDOS) */
 	    } else {
@@ -3679,9 +3683,9 @@ static char
 #if	defined(unix)
 	zhelp[] =	"suspend telnet",
 #endif	/* defined(unix */
-#if	defined(MSDOS)
+#if	defined(TN3270)
 	shellhelp[] =	"invoke a subshell",
-#endif	/* defined(MSDOS) */
+#endif	/* defined(TN3270) */
 	modehelp[] = "try to enter line-by-line or character-at-a-time mode";
 
 extern int	help(), shell();
@@ -3702,9 +3706,9 @@ static struct cmd cmdtab[] = {
 #if	defined(unix)
 	{ "z",		zhelp,		suspend,	1, 0 },
 #endif	/* defined(unix) */
-#if	defined(MSDOS)
-	{ "!",		shellhelp,	shell,		1, 0 },
-#endif	/* defined(MSDOS) */
+#if	defined(TN3270)
+	{ "!",		shellhelp,	shell,		1, 1 },
+#endif	/* defined(TN3270) */
 	{ "?",		helphelp,	help,		1, 0 },
 	0
 };
@@ -3762,51 +3766,53 @@ void
 command(top)
 	int top;
 {
-	register struct cmd *c;
+    register struct cmd *c;
 
-	setcommandmode();
-	if (!top) {
-		putchar('\n');
-	} else {
+    setcommandmode();
+    if (!top) {
+	putchar('\n');
+    } else {
 #if	defined(unix)
-		signal(SIGINT, SIG_DFL);
-		signal(SIGQUIT, SIG_DFL);
+	signal(SIGINT, SIG_DFL);
+	signal(SIGQUIT, SIG_DFL);
 #endif	/* defined(unix) */
+    }
+    for (;;) {
+	printf("%s> ", prompt);
+	if (gets(line) == NULL) {
+	    if (feof(stdin) || ferror(stdin))
+		quit();
+	    break;
 	}
-	for (;;) {
-		printf("%s> ", prompt);
-		if (gets(line) == NULL) {
-			if (feof(stdin) || ferror(stdin))
-				quit();
-			break;
-		}
-		if (line[0] == 0)
-			break;
-		makeargv();
-		c = getcmd(margv[0]);
-		if (c == Ambiguous(struct cmd *)) {
-			printf("?Ambiguous command\n");
-			continue;
-		}
-		if (c == 0) {
-			printf("?Invalid command\n");
-			continue;
-		}
-		if (c->needconnect && !connected) {
-			printf("?Need to be connected first.\n");
-			continue;
-		}
-		if ((*c->handler)(margc, margv)) {
-			break;
-		}
+	if (line[0] == 0)
+	    break;
+	makeargv();
+	c = getcmd(margv[0]);
+	if (c == Ambiguous(struct cmd *)) {
+	    printf("?Ambiguous command\n");
+	    continue;
 	}
-	if (!top) {
-		if (!connected) {
-			longjmp(toplevel, 1);
-			/*NOTREACHED*/
-		}
-		setconnmode();
+	if (c == 0) {
+	    printf("?Invalid command\n");
+	    continue;
 	}
+	if (c->needconnect && !connected) {
+	    printf("?Need to be connected first.\n");
+	    continue;
+	}
+	if ((*c->handler)(margc, margv)) {
+	    break;
+	}
+    }
+    if (!top) {
+	if (!connected) {
+	    longjmp(toplevel, 1);
+	    /*NOTREACHED*/
+	}
+	if (shell_active == 0) {
+	    setconnmode();
+	}
+    }
 }
 
 /*
@@ -3859,35 +3865,38 @@ main(argc, argv)
     autoflush = TerminalAutoFlush();
 
     prompt = argv[0];
-    if (argc > 1 && !strcmp(argv[1], "-d")) {
-	debug = 1;
-	argv++;
-	argc--;
-    }
-    if (argc > 1 && !strcmp(argv[1], "-n")) {
-	argv++;
-	argc--;
-	if (argc > 1) {		/* get file name */
-	    NetTrace = fopen(argv[1], "w");
-	    argv++;
-	    argc--;
-	    if (NetTrace == NULL) {
-		NetTrace = stdout;
+    while ((argc > 1) && (argv[1][0] == '-')) {
+	if (!strcmp(argv[1], "-d")) {
+	    debug = 1;
+	} else if (!strcmp(argv[1], "-n")) {
+	    if ((argc > 1) && (argv[1][0] != '-')) {	/* get file name */
+		NetTrace = fopen(argv[1], "w");
+		argv++;
+		argc--;
+		if (NetTrace == NULL) {
+		    NetTrace = stdout;
+		}
+	    }
+	} else {
+#if	defined(TN3270) && defined(unix)
+	    if (!strcmp(argv[1], "-t")) {
+		if ((argc > 1) && (argv[1][0] != '-')) { /* get file name */
+		    transcom = tline;
+		    (void) strcpy(transcom, argv[1]);
+		    argv++;
+		    argc--;
+		}
+	    } else if (!strcmp(argv[1], "-noasynch")) {
+		noasynch = 1;
+	    } else
+#endif	/* defined(TN3270) && defined(unix) */
+	    if (argv[1][1] != '\0') {
+		fprintf(stderr, "Unknown option *%s*.\n", argv[1]);
 	    }
 	}
-    }
-#if	defined(TN3270) && defined(unix)
-    if (argc > 1 && !strcmp(argv[1], "-t")) {
-	argv++;
 	argc--;
-	if (argc > 1) {		/* get command name */
-	    transcom = tline;
-	    (void) strcpy(transcom, argv[1]);
-	    argv++;
-	    argc--;
-	}
+	argv++;
     }
-#endif	/* defined(TN3270) && defined(unix) */
     if (argc != 1) {
 	if (setjmp(toplevel) != 0)
 	    Exit(0);
@@ -3901,9 +3910,9 @@ main(argc, argv)
 	if (!shell_active) {
 	    command(1);
 	} else {
-#if	defined(MSDOS)
+#if	defined(TN3270)
 	    shell_continue();
-#endif	/* defined(MSDOS) */
+#endif	/* defined(TN3270) */
 	}
 #endif	/* !defined(TN3270) */
     }
