@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pix.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)pix.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -26,7 +26,8 @@ static char sccsid[] = "@(#)pix.c	8.1 (Berkeley) %G%";
 #include "config.h"
 #define	ERRS	1
 
-char	*name;
+char	argname[] = "-o/tmp/pixaXXXXX";
+char	*name = &argname[2];
 
 int	onintr();
 
@@ -53,7 +54,6 @@ main(argc, argv)
 			ac++;
 			break;
 		}
-	name = "-o/tmp/pixaXXXXX" + 2;
 	mktemp(name);
 	for (;;) {
 		io = creat(name, 0400);
