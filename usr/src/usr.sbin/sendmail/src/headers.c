@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	8.36 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	8.37 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -566,8 +566,8 @@ logsender(e, msgid)
 #  if (SYSLOG_BUFSIZE) >= 256
 	sbp = sbuf;
 	sprintf(sbp, "from=%.200s, size=%ld, class=%d, pri=%ld, nrcpts=%d",
-	    e->e_from.q_paddr, e->e_msgsize, e->e_class,
-	    e->e_msgpriority, e->e_nrcpts);
+	    e->e_from.q_paddr == NULL ? "<NONE>" : e->e_from.q_paddr,
+	    e->e_msgsize, e->e_class, e->e_msgpriority, e->e_nrcpts);
 	sbp += strlen(sbp);
 	if (msgid != NULL)
 	{
@@ -588,7 +588,8 @@ logsender(e, msgid)
 #  else			/* short syslog buffer */
 
 	syslog(LOG_INFO, "%s: from=%s",
-		e->e_id, shortenstring(e->e_from.q_paddr, 83));
+		e->e_id, e->e_from.q_paddr == NULL ? "<NONE>" :
+				shortenstring(e->e_from.q_paddr, 83));
 	syslog(LOG_INFO, "%s: size=%ld, class=%ld, pri=%ld, nrcpts=%d",
 		e->e_id, e->e_msgsize, e->e_class,
 		e->e_msgpriority, e->e_nrcpts);
