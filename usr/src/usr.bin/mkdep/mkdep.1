@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)mkdep.1	5.6 (Berkeley) %G%
+.\"	@(#)mkdep.1	5.7 (Berkeley) %G%
 .\"
 .TH MKDEP 1 ""
 .UC 5
@@ -22,19 +22,19 @@ mkdep \- construct Makefile dependency list
 .SH SYNOPSIS
 .B mkdep
 [
-.B \-f makefile
+.B \-f depend_file
 ] [
 .B \-p
 ] [ flags ] file ...
 .SH DESCRIPTION
-\fIMkdep\fP takes a set of flags for the C compiler and a list of C
-source files as arguments and constructs a set of include file dependencies.
-It attaches this dependency list to the end of the file ``Makefile''.
-An example of its use in a makefile might be:
+\fIMkdep\fP takes a set of flags for the C compiler and a list
+of C source files as arguments and constructs a set of include
+file dependencies which are written into the file \fI.depend\fP.
+An example of its use in a Makefile might be:
 .nf
 .RS
 
-CFLAGS= -O -I../include -I.
+CFLAGS= -O -DDEBUG -I../include -I.
 SRCS= file1.c file2.c
 
 depend:
@@ -51,4 +51,4 @@ intermediate \fI.o\fP module.  This is useful in directories that
 contain many programs, each of whose source is contained in a single
 C module.
 .SH "SEE ALSO"
-cc(1), make(1)
+cc(1), cpp(1), make(1)
