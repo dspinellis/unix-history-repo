@@ -1,11 +1,19 @@
-/*	signalsim.c	4.1	83/06/04	*/
+/*	signalsim.c	4.2	83/06/10	*/
 
 /*
  * Backwards compatible signal.
  */
+#include <signal.h>
 
-signal(s, a)
+int (*
+signal(s, a))()
+	int s, (*a)();
 {
+	struct sigvec osv, sv;
 
-	return (sigvec(s, a, 0));
+	sv.sv_handler = a;
+	sv.sv_mask = sv.sv_onstack = 0;
+	if (sigvec(s, &sv, &osv) < 0)
+		return (BADSIG);
+	return (osv.sv_handler);
 }
