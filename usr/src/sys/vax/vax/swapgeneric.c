@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)swapgeneric.c	7.3 (Berkeley) %G%
+ *	@(#)swapgeneric.c	7.4 (Berkeley) %G%
  */
 
 #include "mba.h"
@@ -44,6 +44,7 @@ extern	struct uba_driver hkdriver;
 extern	struct uba_driver idcdriver;
 extern	struct uba_driver hldriver;
 extern	struct uba_driver udadriver;
+extern	struct uba_driver kdbdriver;
 
 struct	genericconf {
 	caddr_t	gc_driver;
@@ -57,15 +58,18 @@ struct	genericconf {
 	{ (caddr_t)&hldriver,	"rl",	makedev(14, 0),	},
 	{ (caddr_t)&hkdriver,	"hk",	makedev(3, 0),	},
 	{ (caddr_t)&hkdriver,	"rk",	makedev(3, 0),	},
+	{ (caddr_t)&kdbdriver,	"kra",	makedev(16, 0), },
 	{ 0 },
 };
 
 setconf()
 {
+#if NMBA > 0
 	register struct mba_device *mi;
+#endif
 	register struct uba_device *ui;
 	register struct genericconf *gc;
-	register char *cp;
+	register char *cp, *gp;
 	int unit, swaponroot = 0;
 
 	if (rootdev != NODEV)
@@ -76,13 +80,13 @@ retry:
 		printf("root device? ");
 		gets(name);
 		for (gc = genericconf; gc->gc_driver; gc++)
-			if (gc->gc_name[0] == name[0] &&
-			    gc->gc_name[1] == name[1])
+		    for (cp = name, gp = gc->gc_name; *cp == *gp; cp++, gp++)
+			if (*gp == 0)
 				goto gotit;
-		printf("use hp%%d, up%%d, ra%%d, rb%%d, rl%%d or hk%%d\n");
+		printf(
+		  "use hp%%d, up%%d, ra%%d, rb%%d, rl%%d, hk%%d or kra%%d\n");
 		goto retry;
 gotit:
-		cp = name + 2;
 		if (*cp < '0' || *cp > '9') {
 			printf("bad/missing unit number\n");
 			goto retry;
@@ -95,6 +99,7 @@ gotit:
 	}
 	unit = 0;
 	for (gc = genericconf; gc->gc_driver; gc++) {
+#if NMBA > 0
 		for (mi = mbdinit; mi->mi_driver; mi++) {
 			if (mi->mi_alive == 0)
 				continue;
@@ -105,6 +110,7 @@ gotit:
 				goto found;
 			}
 		}
+#endif
 		for (ui = ubdinit; ui->ui_driver; ui++) {
 			if (ui->ui_alive == 0)
 				continue;

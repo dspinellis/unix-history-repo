@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mscp.c	1.1 (Berkeley) %G%
+ *	@(#)mscp.c	1.2 (Berkeley) %G%
  */
 
 /*
@@ -88,30 +88,6 @@ again:
 /*???*/	mp->mscp_sccc.sccc_copyspd = 0;
 	return (mp);
 #undef	mri
-}
-
-/*
- * Decode and print an MSCP media ID.  It is made up of five 5-bit
- * `characters' and 7 bits of numeric information.  BITS(i)
- * selects character i's bits; CHAR returns the corresponding
- * character.
- */
-mscp_printmedia(id)
-	register u_long id;
-{
-	int c4, c3, c2, c1, c0;
-#define	BITS(i)	((id >> ((i) * 5 + 7)) & 0x1f)
-#define	CHAR(c)	((c) ? (c) + '@' : ' ')
-
-	c4 = BITS(4);
-	c3 = BITS(3);
-	c2 = BITS(2);
-	c1 = BITS(1);
-	c0 = BITS(0);
-	printf("%c%c %c%c%c%d", CHAR(c4), CHAR(c3), CHAR(c2),
-		CHAR(c1), CHAR(c0), id & 0x7f);
-#undef	BITS
-#undef	CHAR
 }
 
 #ifdef AVOID_EMULEX_BUG

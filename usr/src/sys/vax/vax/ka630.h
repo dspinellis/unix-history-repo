@@ -1,5 +1,5 @@
 /*
- *	@(#)ka630.h	7.1 (Berkeley) %G%
+ *	@(#)ka630.h	7.2 (Berkeley) %G%
  *
  * Definitions specific to the ka630 uvax2 cpu card. Includes the tod
  * clock chip and the cpu registers.
@@ -49,7 +49,7 @@
 #define	KA630CLK_LANG	0360
 
 #ifndef LOCORE
-struct cldevice {
+struct ka630clock {
 	u_short	sec;
 	u_short	secalrm;
 	u_short	min;

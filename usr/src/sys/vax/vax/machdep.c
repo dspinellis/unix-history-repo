@@ -1,20 +1,17 @@
 /*
- * Copyright (c) 1982 Regents of the University of California.
+ * Copyright (c) 1982,1986,1988 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)machdep.c	7.11 (Berkeley) %G%
+ *	@(#)machdep.c	7.12 (Berkeley) %G%
  */
-
-#include "reg.h"
-#include "pte.h"
-#include "psl.h"
 
 #include "param.h"
 #include "systm.h"
 #include "dir.h"
 #include "user.h"
 #include "kernel.h"
+#include "malloc.h"
 #include "map.h"
 #include "vm.h"
 #include "proc.h"
@@ -30,8 +27,10 @@
 #include "mbuf.h"
 #include "msgbuf.h"
 #include "quota.h"
-#include "malloc.h"
 
+#include "reg.h"
+#include "pte.h"
+#include "psl.h"
 #include "frame.h"
 #include "clock.h"
 #include "cons.h"
@@ -40,6 +39,7 @@
 #include "mtpr.h"
 #include "rpb.h"
 #include "ka630.h"
+
 #include "../vaxuba/ubavar.h"
 #include "../vaxuba/ubareg.h"
 
@@ -68,7 +68,7 @@ startup(firstaddr)
 	register int unixsize;
 	register unsigned i;
 	register struct pte *pte;
-	int mapaddr, j;
+	int mapaddr, j, n;
 	register caddr_t v;
 	int maxbufs, base, residual;
 
@@ -127,7 +127,7 @@ startup(firstaddr)
 	 * An index into the kernel page table corresponding to the
 	 * virtual memory address maintained in "v" is kept in "mapaddr".
 	 */
-	v = (caddr_t)(0x80000000 | (firstaddr * NBPG));
+	v = (caddr_t)(KERNBASE | (firstaddr * NBPG));
 #define	valloc(name, type, num) \
 	    (name) = (type *)v; v = (caddr_t)((name)+(num))
 #define	valloclim(name, type, num, lim) \
@@ -177,10 +177,10 @@ startup(firstaddr)
 	 * Now the amount of virtual memory remaining for buffers
 	 * can be calculated, estimating needs for the cmap.
 	 */
-	ncmap = (maxmem*NBPG - ((int)v &~ 0x80000000)) /
+	ncmap = (maxmem*NBPG - ((int)v &~ KERNBASE)) /
 		(CLBYTES + sizeof(struct cmap)) + 2;
 	maxbufs = ((SYSPTSIZE * NBPG) -
-	    ((int)(v + ncmap * sizeof(struct cmap)) - 0x80000000)) /
+	    ((int)(v + ncmap * sizeof(struct cmap)) - KERNBASE)) /
 		(MAXBSIZE + sizeof(struct buf));
 	if (maxbufs < 16)
 		panic("sys pt too small");
@@ -201,7 +201,7 @@ startup(firstaddr)
 	 * and buffer headers not yet allocated.
 	 * Add 2: 1 because the 0th entry is unused, 1 for rounding.
 	 */
-	ncmap = (maxmem*NBPG - ((int)(v + bufpages*CLBYTES) &~ 0x80000000)) /
+	ncmap = (maxmem*NBPG - ((int)(v + bufpages*CLBYTES) &~ KERNBASE)) /
 		(CLBYTES + sizeof(struct cmap)) + 2;
 	valloclim(cmap, struct cmap, ncmap, ecmap);
 
@@ -209,7 +209,7 @@ startup(firstaddr)
 	 * Clear space allocated thus far, and make r/w entries
 	 * for the space in the kernel map.
 	 */
-	unixsize = btoc((int)v &~ 0x80000000);
+	unixsize = btoc((int)v &~ KERNBASE);
 	while (firstaddr < unixsize) {
 		*(int *)(&Sysmap[firstaddr]) = PG_V | PG_KW | firstaddr;
 		clearseg((unsigned)firstaddr);
@@ -225,16 +225,9 @@ startup(firstaddr)
 	base = bufpages / nbuf;
 	residual = bufpages % nbuf;
 	mapaddr = firstaddr;
-	for (i = 0; i < residual; i++) {
-		for (j = 0; j < (base + 1) * CLSIZE; j++) {
-			*(int *)(&Sysmap[mapaddr+j]) = PG_V | PG_KW | firstaddr;
-			clearseg((unsigned)firstaddr);
-			firstaddr++;
-		}
-		mapaddr += MAXBSIZE / NBPG;
-	}
-	for (i = residual; i < nbuf; i++) {
-		for (j = 0; j < base * CLSIZE; j++) {
+	for (i = 0; i < nbuf; i++) {
+		n = (i < residual ? base + 1 : base) * CLSIZE;
+		for (j = 0; j < n; j++) {
 			*(int *)(&Sysmap[mapaddr+j]) = PG_V | PG_KW | firstaddr;
 			clearseg((unsigned)firstaddr);
 			firstaddr++;
@@ -242,7 +235,7 @@ startup(firstaddr)
 		mapaddr += MAXBSIZE / NBPG;
 	}
 
-	unixsize = btoc((int)v &~ 0x80000000);
+	unixsize = btoc((int)v &~ KERNBASE);
 	if (firstaddr >= physmem - 8*UPAGES)
 		panic("no memory");
 	mtpr(TBIA, 0);			/* After we just cleared it all! */
@@ -519,7 +512,7 @@ dorti()
 #endif
 
 /*
- * Memenable enables the memory controlle corrected data reporting.
+ * Memenable enables memory controller corrected data reporting.
  * This runs at regular intervals, turning on the interrupt.
  * The interrupt is turned off, per memory controller, when error
  * reporting occurs.  Thus we report at most once per memintvl.
@@ -528,44 +521,8 @@ int	memintvl = MEMINTVL;
 
 memenable()
 {
-	register struct mcr *mcr;
-	register int m;
 
-#if VAX630
-	if (cpu == VAX_630)
-		return;
-#endif
-#ifdef	VAX8600
-	if (cpu == VAX_8600) {
-		M8600_ENA;
-	} else
-#endif
-	for (m = 0; m < nmcr; m++) {
-		mcr = mcraddr[m];
-		switch (mcrtype[m]) {
-#if VAX780
-		case M780C:
-			M780C_ENA(mcr);
-			break;
-		case M780EL:
-			M780EL_ENA(mcr);
-			break;
-		case M780EU:
-			M780EU_ENA(mcr);
-			break;
-#endif
-#if VAX750
-		case M750:
-			M750_ENA(mcr);
-			break;
-#endif
-#if VAX730
-		case M730:
-			M730_ENA(mcr);
-			break;
-#endif
-		}
-	}
+	(*cpuops->cpu_memenable)();
 	if (memintvl > 0)
 		timeout(memenable, (caddr_t)0, memintvl*hz);
 }
@@ -578,179 +535,9 @@ memenable()
  */
 memerr()
 {
-#ifdef VAX8600
-	register int reg11;	/* known to be r11 below */
-#endif
-	register struct mcr *mcr;
-	register int m;
 
-#if VAX630
-	if (cpu == VAX_630)
-		return;
-#endif
-#ifdef VAX8600
-	if (cpu == VAX_8600) {
-		int mdecc, mear, mstat1, mstat2, array;
-
-		/*
-		 * Scratchpad registers in the Ebox must be read by
-		 * storing their ID number in ESPA and then immediately
-		 * reading ESPD's contents with no other intervening
-		 * machine instructions!
-		 *
-		 * The asm's below have a number of constants which
-		 * are defined correctly in mem.h and mtpr.h.
-		 */
-#ifdef lint
-		reg11 = 0;
-#else
-		asm("mtpr $0x27,$0x4e; mfpr $0x4f,r11");
-#endif
-		mdecc = reg11;	/* must acknowledge interrupt? */
-		if (M8600_MEMERR(mdecc)) {
-			asm("mtpr $0x2a,$0x4e; mfpr $0x4f,r11");
-			mear = reg11;
-			asm("mtpr $0x25,$0x4e; mfpr $0x4f,r11");
-			mstat1 = reg11;
-			asm("mtpr $0x26,$0x4e; mfpr $0x4f,r11");
-			mstat2 = reg11;
-			array = M8600_ARRAY(mear);
-
-			printf("mcr0: ecc error, addr %x (array %d) syn %x\n",
-				M8600_ADDR(mear), array, M8600_SYN(mdecc));
-			printf("\tMSTAT1 = %b\n\tMSTAT2 = %b\n",
-				    mstat1, M8600_MSTAT1_BITS,
-				    mstat2, M8600_MSTAT2_BITS);
-			M8600_INH;
-		}
-	} else
-#endif
-	for (m = 0; m < nmcr; m++) {
-		mcr = mcraddr[m];
-		switch (mcrtype[m]) {
-#if VAX780
-		case M780C:
-			if (M780C_ERR(mcr)) {
-				printf("mcr%d: soft ecc addr %x syn %x\n",
-				    m, M780C_ADDR(mcr), M780C_SYN(mcr));
-#ifdef TRENDATA
-				memlog(m, mcr);
-#endif
-				M780C_INH(mcr);
-			}
-			break;
-
-		case M780EL:
-			if (M780EL_ERR(mcr)) {
-				printf("mcr%d: soft ecc addr %x syn %x\n",
-				    m, M780EL_ADDR(mcr), M780EL_SYN(mcr));
-				M780EL_INH(mcr);
-			}
-			break;
-
-		case M780EU:
-			if (M780EU_ERR(mcr)) {
-				printf("mcr%d: soft ecc addr %x syn %x\n",
-				    m, M780EU_ADDR(mcr), M780EU_SYN(mcr));
-				M780EU_INH(mcr);
-			}
-			break;
-#endif
-#if VAX750
-		case M750:
-			if (M750_ERR(mcr)) {
-				struct mcr amcr;
-				amcr.mc_reg[0] = mcr->mc_reg[0];
-				printf("mcr%d: %s",
-				    m, (amcr.mc_reg[0] & M750_UNCORR) ?
-				    "hard error" : "soft ecc");
-				printf(" addr %x syn %x\n",
-				    M750_ADDR(&amcr), M750_SYN(&amcr));
-				M750_INH(mcr);
-			}
-			break;
-#endif
-#if VAX730
-		case M730: {
-			struct mcr amcr;
-
-			/*
-			 * Must be careful on the 730 not to use invalid
-			 * instructions in I/O space, so make a copy;
-			 */
-			amcr.mc_reg[0] = mcr->mc_reg[0];
-			amcr.mc_reg[1] = mcr->mc_reg[1];
-			if (M730_ERR(&amcr)) {
-				printf("mcr%d: %s",
-				    m, (amcr.mc_reg[1] & M730_UNCORR) ?
-				    "hard error" : "soft ecc");
-				printf(" addr %x syn %x\n",
-				    M730_ADDR(&amcr), M730_SYN(&amcr));
-				M730_INH(mcr);
-			}
-			break;
-		}
-#endif
-		}
-	}
+	(*cpuops->cpu_memerr)();
 }
-
-#ifdef TRENDATA
-/*
- * Figure out what chip to replace on Trendata boards.
- * Assumes all your memory is Trendata or the non-Trendata
- * memory never fails..
- */
-struct {
-	u_char	m_syndrome;
-	char	m_chip[4];
-} memlogtab[] = {
-	0x01,	"C00",	0x02,	"C01",	0x04,	"C02",	0x08,	"C03",
-	0x10,	"C04",	0x19,	"L01",	0x1A,	"L02",	0x1C,	"L04",
-	0x1F,	"L07",	0x20,	"C05",	0x38,	"L00",	0x3B,	"L03",
-	0x3D,	"L05",	0x3E,	"L06",	0x40,	"C06",	0x49,	"L09",
-	0x4A,	"L10",	0x4c,	"L12",	0x4F,	"L15",	0x51,	"L17",
-	0x52,	"L18",	0x54,	"L20",	0x57,	"L23",	0x58,	"L24",
-	0x5B,	"L27",	0x5D,	"L29",	0x5E,	"L30",	0x68,	"L08",
-	0x6B,	"L11",	0x6D,	"L13",	0x6E,	"L14",	0x70,	"L16",
-	0x73,	"L19",	0x75,	"L21",	0x76,	"L22",	0x79,	"L25",
-	0x7A,	"L26",	0x7C,	"L28",	0x7F,	"L31",	0x80,	"C07",
-	0x89,	"U01",	0x8A,	"U02",	0x8C,	"U04",	0x8F,	"U07",
-	0x91,	"U09",	0x92,	"U10",	0x94,	"U12",	0x97, 	"U15",
-	0x98,	"U16",	0x9B,	"U19",	0x9D,	"U21",	0x9E, 	"U22",
-	0xA8,	"U00",	0xAB,	"U03",	0xAD,	"U05",	0xAE,	"U06",
-	0xB0,	"U08",	0xB3,	"U11",	0xB5,	"U13",	0xB6,	"U14",
-	0xB9,	"U17",	0xBA,	"U18",	0xBC,	"U20",	0xBF,	"U23",
-	0xC1,	"U25",	0xC2,	"U26",	0xC4,	"U28",	0xC7,	"U31",
-	0xE0,	"U24",	0xE3,	"U27",	0xE5,	"U29",	0xE6,	"U30"
-};
-
-memlog (m, mcr)
-	int m;
-	struct mcr *mcr;
-{
-	register i;
-
-	switch (mcrtype[m]) {
-
-#if VAX780
-	case M780C:
-	for (i = 0; i < (sizeof (memlogtab) / sizeof (memlogtab[0])); i++)
-		if ((u_char)(M780C_SYN(mcr)) == memlogtab[i].m_syndrome) {
-			printf (
-	"mcr%d: replace %s chip in %s bank of memory board %d (0-15)\n",
-				m,
-				memlogtab[i].m_chip,
-				(M780C_ADDR(mcr) & 0x8000) ? "upper" : "lower",
-				(M780C_ADDR(mcr) >> 16));
-			return;
-		}
-	printf ("mcr%d: multiple errors, not traceable\n", m);
-	break;
-#endif
-	}
-}
-#endif
 
 /*
  * Invalidate single all pte's in a cluster
@@ -775,14 +562,12 @@ tbiscl(v)
   
 int	waittime = -1;
 
-boot(arghowto)
-	int arghowto;
-{
+boot(howto)
 	register int howto;		/* r11 == how to boot */
+{
 	register int devtype;		/* r10 == major of root dev */
 	extern char *panicstr;
 
-	howto = arghowto;
 	if ((howto&RB_NOSYNC)==0 && waittime < 0 && bfreelist[0].b_forw) {
 		register struct buf *bp;
 		int iter, nbusy;
@@ -820,39 +605,68 @@ boot(arghowto)
 	splx(0x1f);			/* extreme priority */
 	devtype = major(rootdev);
 	if (howto&RB_HALT) {
+		/* 630 can be told to halt, but how? */
 		printf("halting (in tight loop); hit\n\t^P\n\tHALT\n\n");
-		mtpr(IPL, 0x1f);
 		for (;;)
 			;
 	} else {
-		if (howto & RB_DUMP) {
-			doadump();		/* TXDB_BOOT's itself */
-			/*NOTREACHED*/
-		}
-		tocons(TXDB_BOOT);
+		if (howto & RB_DUMP)
+			doadump();
+		vaxboot();
 	}
-#if defined(VAX750) || defined(VAX730) || defined(VAX630)
-	if (cpu == VAX_750 || cpu == VAX_730 || cpu == VAX_630)
-		{ asm("movl r11,r5"); }		/* boot flags go in r5 */
-#endif
-	for (;;)
-		asm("halt");
 #ifdef lint
-	printf("howto %d, devtype %d\n", arghowto, devtype);
+	devtype = devtype;
 #endif
 	/*NOTREACHED*/
 }
 
+/*
+ * Reboot after panic or via reboot system call.  Note that r11
+ * and r10 must already have the proper boot values (`call by voodoo').
+ */
+vaxboot()
+{
+
+	switch (cpu) {
+
+#ifdef VAX8200
+	case VAX_8200:
+		/*
+		 * TXDB_BOOT erases memory!  Instead we set the `did
+		 * a dump' flag in the rpb.
+		 */
+		*(int *)&Sysmap[0] &= ~PG_PROT;
+		*(int *)&Sysmap[0] |= PG_KW;
+		mtpr(TBIS, &rpb);
+		rpb.rp_flag = 1;
+		break;
+#endif
+
+	default:
+		tocons(TXDB_BOOT);
+	}
+
+	/*
+	 * Except on 780s and 8600s, boot flags go in r5.  SBI
+	 * VAXen do not care, so copy boot flags to r5 always.
+	 */
+	asm("movl r11,r5");
+	for (;;) {
+		asm("halt");
+	}
+}
+
 tocons(c)
 {
-	register oldmask;
+	register int oldmask;
 
 	while (((oldmask = mfpr(TXCS)) & TXCS_RDY) == 0)
 		continue;
 
 	switch (cpu) {
 
-#if VAX780 || VAX750 || VAX730 || VAX630
+#if VAX8200 || VAX780 || VAX750 || VAX730 || VAX630
+	case VAX_8200:
 	case VAX_780:
 	case VAX_750:
 	case VAX_730:
@@ -881,6 +695,9 @@ tocons(c)
 		mtpr(TXCS, oldmask | TXCS_WMASK);
 		break;
 	}
+#endif
+#ifdef lint
+	oldmask = oldmask;
 #endif
 }
 
@@ -935,263 +752,29 @@ dumpsys()
 
 /*
  * Machine check error recovery code.
- * Print out the machine check frame and then give up.
  */
-#if VAX8600
-#define NMC8600	7
-char *mc8600[] = {
-	"unkn type",	"fbox error",	"ebox error",	"ibox error",
-	"mbox error",	"tbuf error",	"mbox 1D error"
-};
-/* codes for above */
-#define	MC_FBOX		1
-#define	MC_EBOX		2
-#define	MC_IBOX		3
-#define	MC_MBOX		4
-#define	MC_TBUF		5
-#define	MC_MBOX1D	6
+machinecheck(cmcf)
+	caddr_t cmcf;
+{
 
-/* error bits */
-#define	MBOX_FE		0x8000		/* Mbox fatal error */
-#define	FBOX_SERV	0x10000000	/* Fbox service error */
-#define	IBOX_ERR	0x2000		/* Ibox error */
-#define	EBOX_ERR	0x1e00		/* Ebox error */
-#define	MBOX_1D		0x81d0000	/* Mbox 1D error */
-#define EDP_PE		0x200
-#endif
+	if ((*cpuops->cpu_mchk)(cmcf) == MCHK_RECOVERED)
+		return;
+	(*cpuops->cpu_memerr)();
+	panic("mchk");
+}
 
 #if defined(VAX780) || defined(VAX750)
-char *mc780[] = {
+/*
+ * These strings are shared between the 780 and 750 machine check code
+ * in ka780.c and ka730.c.
+ */
+char *mc780750[16] = {
 	"cp read",	"ctrl str par",	"cp tbuf par",	"cp cache par",
 	"cp rdtimo", 	"cp rds",	"ucode lost",	0,
 	0,		0,		"ib tbuf par",	0,
 	"ib rds",	"ib rd timo",	0,		"ib cache par"
 };
-#define MC750_TBERR	2		/* type code of cp tbuf par */
-#define	MC750_TBPAR	4		/* tbuf par bit in mcesr */
 #endif
-
-#if VAX730
-#define	NMC730	12
-char *mc730[] = {
-	"tb par",	"bad retry",	"bad intr id",	"cant write ptem",
-	"unkn mcr err",	"iib rd err",	"nxm ref",	"cp rds",
-	"unalgn ioref",	"nonlw ioref",	"bad ioaddr",	"unalgn ubaddr",
-};
-#endif
-#if VAX630
-#define NMC630	10
-extern struct ka630cpu ka630cpu;
-char *mc630[] = {
-	0,		"immcr (fsd)",	"immcr (ssd)",	"fpu err 0",
-	"fpu err 7",	"mmu st(tb)",	"mmu st(m=0)",	"pte in p0",
-	"pte in p1",	"un intr id",
-};
-#endif
-
-/*
- * Frame for each cpu
- */
-struct mc780frame {
-	int	mc8_bcnt;		/* byte count == 0x28 */
-	int	mc8_summary;		/* summary parameter (as above) */
-	int	mc8_cpues;		/* cpu error status */
-	int	mc8_upc;		/* micro pc */
-	int	mc8_vaviba;		/* va/viba register */
-	int	mc8_dreg;		/* d register */
-	int	mc8_tber0;		/* tbuf error reg 0 */
-	int	mc8_tber1;		/* tbuf error reg 1 */
-	int	mc8_timo;		/* timeout address divided by 4 */
-	int	mc8_parity;		/* parity */
-	int	mc8_sbier;		/* sbi error register */
-	int	mc8_pc;			/* trapped pc */
-	int	mc8_psl;		/* trapped psl */
-};
-struct mc750frame {
-	int	mc5_bcnt;		/* byte count == 0x28 */
-	int	mc5_summary;		/* summary parameter (as above) */
-	int	mc5_va;			/* virtual address register */
-	int	mc5_errpc;		/* error pc */
-	int	mc5_mdr;
-	int	mc5_svmode;		/* saved mode register */
-	int	mc5_rdtimo;		/* read lock timeout */
-	int	mc5_tbgpar;		/* tb group parity error register */
-	int	mc5_cacherr;		/* cache error register */
-	int	mc5_buserr;		/* bus error register */
-	int	mc5_mcesr;		/* machine check status register */
-	int	mc5_pc;			/* trapped pc */
-	int	mc5_psl;		/* trapped psl */
-};
-struct mc730frame {
-	int	mc3_bcnt;		/* byte count == 0xc */
-	int	mc3_summary;		/* summary parameter */
-	int	mc3_parm[2];		/* parameter 1 and 2 */
-	int	mc3_pc;			/* trapped pc */
-	int	mc3_psl;		/* trapped psl */
-};
-struct mc630frame {
-	int	mc63_bcnt;		/* byte count == 0xc */
-	int	mc63_summary;		/* summary parameter */
-	int	mc63_mrvaddr;		/* most recent vad */
-	int	mc63_istate;		/* internal state */
-	int	mc63_pc;			/* trapped pc */
-	int	mc63_psl;		/* trapped psl */
-};
-struct mc8600frame {
-	int	mc6_bcnt;		/* byte count == 0x58 */
-	int	mc6_ehmsts;
-	int	mc6_evmqsav;
-	int	mc6_ebcs;
-	int	mc6_edpsr;
-	int	mc6_cslint;
-	int	mc6_ibesr;
-	int	mc6_ebxwd1;
-	int	mc6_ebxwd2;
-	int	mc6_ivasav;
-	int	mc6_vibasav;
-	int	mc6_esasav;
-	int	mc6_isasav;
-	int	mc6_cpc;
-	int	mc6_mstat1;
-	int	mc6_mstat2;
-	int	mc6_mdecc;
-	int	mc6_merg;
-	int	mc6_cshctl;
-	int	mc6_mear;
-	int	mc6_medr;
-	int	mc6_accs;
-	int	mc6_cses;
-	int	mc6_pc;			/* trapped pc */
-	int	mc6_psl;		/* trapped psl */
-};
-
-machinecheck(cmcf)
-	caddr_t cmcf;
-{
-	register u_int type = ((struct mc780frame *)cmcf)->mc8_summary;
-
-	printf("machine check %x: ", type);
-	switch (cpu) {
-#if VAX8600
-	case VAX_8600: {
-		register struct mc8600frame *mcf = (struct mc8600frame *)cmcf;
-
-		if (mcf->mc6_ebcs & MBOX_FE)
-			mcf->mc6_ehmsts |= MC_MBOX;
-		else if (mcf->mc6_ehmsts & FBOX_SERV)
-			mcf->mc6_ehmsts |= MC_FBOX;
-		else if (mcf->mc6_ebcs & EBOX_ERR) {
-			if (mcf->mc6_ebcs & EDP_PE)
-				mcf->mc6_ehmsts |= MC_MBOX;
-			else
-				mcf->mc6_ehmsts |= MC_EBOX;
-		} else if (mcf->mc6_ehmsts & IBOX_ERR)
-			mcf->mc6_ehmsts |= MC_IBOX;
-		else if (mcf->mc6_mstat1 & M8600_TB_ERR)
-			mcf->mc6_ehmsts |= MC_TBUF;
-		else if ((mcf->mc6_cslint & MBOX_1D) == MBOX_1D)
-			mcf->mc6_ehmsts |= MC_MBOX1D;
-
-		type = mcf->mc6_ehmsts & 0x7;
-		if (type < NMC8600)
-			printf("machine check %x: %s", type, mc8600[type]);
-		printf("\n");
-		printf("\tehm.sts %x evmqsav %x ebcs %x edpsr %x cslint %x\n",
-		    mcf->mc6_ehmsts, mcf->mc6_evmqsav, mcf->mc6_ebcs,
-		    mcf->mc6_edpsr, mcf->mc6_cslint);
-		printf("\tibesr %x ebxwd %x %x ivasav %x vibasav %x\n",
-		    mcf->mc6_ibesr, mcf->mc6_ebxwd1, mcf->mc6_ebxwd2,
-		    mcf->mc6_ivasav, mcf->mc6_vibasav);
-		printf("\tesasav %x isasav %x cpc %x mstat %x %x mdecc %x\n",
-		    mcf->mc6_esasav, mcf->mc6_isasav, mcf->mc6_cpc,
-		    mcf->mc6_mstat1, mcf->mc6_mstat2, mcf->mc6_mdecc);
-		printf("\tmerg %x cshctl %x mear %x medr %x accs %x cses %x\n",
-		    mcf->mc6_merg, mcf->mc6_cshctl, mcf->mc6_mear,
-		    mcf->mc6_medr, mcf->mc6_accs, mcf->mc6_cses);
-		printf("\tpc %x psl %x\n", mcf->mc6_pc, mcf->mc6_psl);
-		mtpr(EHSR, 0);
-		break;
-	};
-#endif
-#if VAX780
-	case VAX_780: {
-		register struct mc780frame *mcf = (struct mc780frame *)cmcf;
-
-		register int sbifs;
-		printf("%s%s\n", mc780[type&0xf],
-		    (type&0xf0) ? " abort" : " fault"); 
-		printf("\tcpues %x upc %x va/viba %x dreg %x tber %x %x\n",
-		   mcf->mc8_cpues, mcf->mc8_upc, mcf->mc8_vaviba,
-		   mcf->mc8_dreg, mcf->mc8_tber0, mcf->mc8_tber1);
-		sbifs = mfpr(SBIFS);
-		printf("\ttimo %x parity %x sbier %x pc %x psl %x sbifs %x\n",
-		   mcf->mc8_timo*4, mcf->mc8_parity, mcf->mc8_sbier,
-		   mcf->mc8_pc, mcf->mc8_psl, sbifs);
-		/* THE FUNNY BITS IN THE FOLLOWING ARE FROM THE ``BLACK */
-		/* BOOK'' AND SHOULD BE PUT IN AN ``sbi.h'' */
-		mtpr(SBIFS, sbifs &~ 0x2000000);
-		mtpr(SBIER, mfpr(SBIER) | 0x70c0);
-		break;
-	}
-#endif
-#if VAX750
-	case VAX_750: {
-		register struct mc750frame *mcf = (struct mc750frame *)cmcf;
-
-		int mcsr = mfpr(MCSR);
-		printf("%s%s\n", mc780[type&0xf],
-		    (type&0xf0) ? " abort" : " fault"); 
-		mtpr(TBIA, 0);
-		mtpr(MCESR, 0xf);
-		printf("\tva %x errpc %x mdr %x smr %x rdtimo %x tbgpar %x cacherr %x\n",
-		    mcf->mc5_va, mcf->mc5_errpc, mcf->mc5_mdr, mcf->mc5_svmode,
-		    mcf->mc5_rdtimo, mcf->mc5_tbgpar, mcf->mc5_cacherr);
-		printf("\tbuserr %x mcesr %x pc %x psl %x mcsr %x\n",
-		    mcf->mc5_buserr, mcf->mc5_mcesr, mcf->mc5_pc, mcf->mc5_psl,
-		    mcsr);
-		if (type == MC750_TBERR && (mcf->mc5_mcesr&0xe) == MC750_TBPAR){
-			printf("tbuf par: flushing and returning\n");
-			return;
-		}
-		break;
-		}
-#endif
-#if VAX730
-	case VAX_730: {
-		register struct mc730frame *mcf = (struct mc730frame *)cmcf;
-
-		if (type < NMC730)
-			printf("%s", mc730[type]);
-		printf("\n");
-		printf("params %x,%x pc %x psl %x mcesr %x\n",
-		    mcf->mc3_parm[0], mcf->mc3_parm[1],
-		    mcf->mc3_pc, mcf->mc3_psl, mfpr(MCESR));
-		mtpr(MCESR, 0xf);
-		break;
-		}
-#endif
-#if VAX630
-	case VAX_630: {
-		register struct ka630cpu *ka630addr = &ka630cpu;
-		register struct mc630frame *mcf = (struct mc630frame *)cmcf;
-		printf("vap %x istate %x pc %x psl %x\n",
-		    mcf->mc63_mrvaddr, mcf->mc63_istate,
-		    mcf->mc63_pc, mcf->mc63_psl);
-		if (ka630addr->ka630_mser & KA630MSER_MERR) {
-			printf("mser=0x%x ",ka630addr->ka630_mser);
-			if (ka630addr->ka630_mser & KA630MSER_CPUER)
-				printf("page=%d",ka630addr->ka630_cear);
-			if (ka630addr->ka630_mser & KA630MSER_DQPE)
-				printf("page=%d",ka630addr->ka630_dear);
-			printf("\n");
-		}
-		break;
-		}
-#endif
-	}
-	memerr();
-	panic("mchk");
-}
 
 /*
  * Return the best possible estimate of the time in the timeval
@@ -1230,22 +813,6 @@ microtime(tvp)
 	splx(s);
 }
 
-physstrat(bp, strat, prio)
-	struct buf *bp;
-	int (*strat)(), prio;
-{
-	int s;
-
-	(*strat)(bp);
-	/* pageout daemon doesn't wait for pushed pages */
-	if (bp->b_flags & B_DIRTY)
-		return;
-	s = splbio();
-	while ((bp->b_flags & B_DONE) == 0)
-		sleep((caddr_t)bp, prio);
-	splx(s);
-}
-
 initcpu()
 {
 	/*
@@ -1253,6 +820,16 @@ initcpu()
 	 */
 	switch (cpu) {
 
+#if VAX8600
+	case VAX_8600:
+		mtpr(CSWP, 3);
+		break;
+#endif
+#if VAX8200
+	case VAX_8200:
+		mtpr(CADR, 0);
+		break;
+#endif
 #if VAX780
 	case VAX_780:
 		mtpr(SBIMT, 0x200000);
@@ -1261,11 +838,6 @@ initcpu()
 #if VAX750
 	case VAX_750:
 		mtpr(CADR, 0);
-		break;
-#endif
-#if VAX8600
-	case VAX_8600:
-		mtpr(CSWP, 3);
 		break;
 #endif
 	default:
@@ -1279,8 +851,8 @@ initcpu()
 	switch(cpu) {
 
 #if VAX8600 || VAX780
-	case VAX_780:
 	case VAX_8600:
+	case VAX_780:
 		if ((mfpr(ACCS) & 0xff) != 0) {
 			printf("Enabling FPA\n");
 			mtpr(ACCS, 0x8000);
@@ -1292,17 +864,18 @@ initcpu()
 }
 
 /*
- * Return a reasonable approximation to a time-of-day register.
+ * Return a reasonable approximation of the time of day register.
  * More precisely, return a number that increases by one about
  * once every ten milliseconds.
  */
 todr()
 {
+
 	switch (cpu) {
 
 #if VAX8600 || VAX8200 || VAX780 || VAX750 || VAX730
 	case VAX_8600:
-	/* case VAX_8200: */
+	case VAX_8200:
 	case VAX_780:
 	case VAX_750:
 	case VAX_730:

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)Locore.c	7.2 (Berkeley) %G%
+ *	@(#)Locore.c	7.3 (Berkeley) %G%
  */
 
 #include "dz.h"
@@ -26,10 +26,11 @@
 #include "protosw.h"
 #include "domain.h"
 #include "map.h"
+#include "dkbad.h"
 
+#include "scb.h"
 #include "nexus.h"
 #include "ioa.h"
-#include "ka630.h"
 #include "../vaxuba/ubavar.h"
 #include "../vaxuba/ubareg.h"
 
@@ -37,7 +38,7 @@
  * Pseudo file for lint to show what is used/defined in locore.s.
  */
 
-struct	scb scb;
+struct	scb scb[1];
 int	(*UNIvec[128])();
 #if NUBA > 1
 int	(*UNI1vec[128])();
@@ -53,15 +54,17 @@ int	szicode = sizeof (icode);
  * Variables declared for savecore, or
  * implicitly, such as by config or the loader.
  */
-char	version[] = "4.2 BSD UNIX ....";
+char	version[] = "4.3 BSD UNIX ....";
 int	etext;
 
 doadump() { dumpsys(); }
 
+#if NMBA > 0
 Xmba3int() { }
 Xmba2int() { }
 Xmba1int() { }
 Xmba0int() { }
+#endif
 
 lowinit()
 {
@@ -73,9 +76,6 @@ lowinit()
 	extern int arptab_size;
 	extern int dk_ndrive;
 	extern struct domain unixdomain;
-#ifdef PUP
-	extern struct domain pupdomain;
-#endif
 #ifdef INET
 	extern struct domain inetdomain;
 #endif
@@ -90,10 +90,6 @@ lowinit()
 	/* cpp messes these up for lint so put them here */
 	unixdomain.dom_next = domains;
 	domains = &unixdomain;
-#ifdef PUP
-	pupdomain.dom_next = domains;
-	domains = &pupdomain;
-#endif
 #ifdef INET
 	inetdomain.dom_next = domains;
 	domains = &inetdomain;
@@ -117,7 +113,7 @@ lowinit()
 	lowinit();
 	intstack[0] = intstack[1];
 	rpb = rpb;
-	scb = scb;
+	scb[0] = scb[0];
 	maxmem = physmem = freemem = 0;
 	u = u;
 	fixctlrmask();
@@ -144,6 +140,13 @@ lowinit()
 #if NMBA > 0
 	mbintr(0);
 #endif
+#if VAX8200			/* XXX wrong conditional */
+	bi_buserr(0);
+#endif
+#if VAX8200
+	rxcdintr();
+	rx50intr();
+#endif
 	hardclock((caddr_t)0, 0);
 	softclock((caddr_t)0, 0);
 	trap(0, 0, (unsigned)0, 0, 0);
@@ -155,13 +158,25 @@ lowinit()
 #ifdef NS
 	nsintr();
 #endif
-
-	if (vmemall((struct pte *)0, 0, (struct proc *)0, 0))
-		return;		/* use value */
 	machinecheck((caddr_t)0);
 	memerr();
+
+	/*
+	 * Miscellaneous routines called from configurable
+	 * drivers.
+	 */
+	ubapurge((struct uba_ctlr *)0);
+	ubattydma(0);
+	(void) ubamem(0, 0, 16, 1);
+	(void) isbad((struct dkbad *)0, 0, 0, 0);
+	disksort((struct buf *)0, (struct buf *)0);
+	(void) uwritec((struct uio *)0);
+	(void) todr();
+	if (vmemall((struct pte *)0, 0, (struct proc *)0, 0))
+		return;		/* use value */
 	boothowto = 0;
 	dumpflag = 0; dumpflag = dumpflag;
+	bootesym = 0; bootesym = bootesym;
 #if !defined(GPROF)
 	cp = (caddr_t)&etext;
 	cp = cp;
@@ -174,7 +189,7 @@ consdout() { }
 dzdma() { dzxint((struct tty *)0); }
 #endif
 
-int	catcher[256];
+quad	catcher[128];
 int	cold = 1;
 
 Xustray() { }
@@ -184,7 +199,9 @@ char	Sysbase[6*NPTEPG*NBPG];
 int	umbabeg;
 struct	pte Nexmap[16][16];
 struct	nexus nexus[MAXNNEXUS];
+#if VAX8600
 struct	pte Ioamap[MAXNIOA][IOAMAPSIZ/NBPG];
+#endif
 struct	pte UMEMmap[NUBA][512];
 char	umem[NUBA][512*NBPG];
 int	umbaend;
@@ -212,16 +229,17 @@ struct	pte Mbmap[NMBCLUSTERS/CLSIZE];
 struct	mbuf mbutl[NMBCLUSTERS*CLBYTES/sizeof (struct mbuf)];
 struct	pte msgbufmap[CLSIZE];
 struct	msgbuf msgbuf;
-struct	pte kmempt[100];
-#ifdef VAX630
-struct	pte Clockmap[1];
-struct	cldevice cldevice;
+struct	pte kmempt[200];
+#if VAX8200
+struct	pte RX50map[1];
+struct	pte Ka820map[1];
+#endif
+#if VAX630
 struct	pte Ka630map[1];
-struct	ka630cpu ka630cpu;
 #endif
 int	kmembase, kmemlimit;
-#ifdef unneeded
-char	caspace[32*NBPG];
+#if VAX8200 || VAX630
+struct	pte Clockmap[1];
 #endif
 
 /*ARGSUSED*/
@@ -333,10 +351,12 @@ mfpr(reg) int reg; { return (0); }
 /*ARGSUSED*/
 setjmp(lp) label_t *lp; { return (0); }
 
+#ifndef VAX630
 /*ARGSUSED*/
 scanc(size, cp, table, mask)
     unsigned size; char *cp, table[]; int mask;
 { return (0); }
+#endif
 
 /*ARGSUSED*/
 skpc(mask, size, cp) int mask; int size; char *cp; { return (0); }

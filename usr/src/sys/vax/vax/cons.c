@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)cons.c	7.4 (Berkeley) %G%
+ *	@(#)cons.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -129,7 +129,7 @@ cnrint(dev)
 		return;
 	}
 	tp = &cons;
-#ifdef KDB
+#ifdef KADB
 	if (!kdbrintr(c, tp))
 #endif
 	(*linesw[tp->t_line].l_rint)(c, tp);
@@ -248,7 +248,7 @@ cnputc(c)
 	mtpr(TXCS, s);
 }
 
-#if defined(KDB) || defined(GENERIC)
+#if (defined(KADB) || defined(GENERIC)) && !defined(lint)
 /*
  * Get character from console.
  */
@@ -266,7 +266,7 @@ cngetc()
 }
 #endif
 
-#ifdef KDB
+#ifdef KADB
 cnpoll(onoff)
 	int onoff;
 {
