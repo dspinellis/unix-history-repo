@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	6.44 (Berkeley) %G%
+.\"	@(#)op.me	6.45 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,7 +40,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 6.44
+Version 6.45
 .sp
 For Sendmail Version 6.57
 .)l
@@ -3553,6 +3553,7 @@ Known keys are:
 Port	Name/number of listening port (defaults to "smtp")
 Addr	Address mask (defaults INADDR_ANY)
 Family	Address family (defaults to INET)
+Listen	Size of listen queue (defaults to 10)
 .)b
 The
 .i Addr ess
@@ -6219,7 +6220,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 6.44
+.\"Version 6.45
 .\".ce 0
 .pn 2
 .bp
