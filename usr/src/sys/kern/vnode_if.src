@@ -4,11 +4,11 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)vnode_if.src	7.3 (Berkeley) %G%
+#	@(#)vnode_if.src	7.4 (Berkeley) %G%
 #
 vop_lookup {
 	IN struct vnode *dvp;
-	OUT struct vnode **vpp;
+	INOUT struct vnode **vpp;
 	IN struct componentname *cnp;
 };
 
