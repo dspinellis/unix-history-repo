@@ -13,9 +13,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	6.46 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.47 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	6.46 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.47 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -729,6 +729,9 @@ maphostname(map, hbuf, hbsize, avp, statp)
 	s = stab(hbuf, ST_NAMECANON, ST_ENTER);
 	if (bitset(NCF_VALID, s->s_namecanon.nc_flags))
 	{
+		if (tTd(9, 1))
+			printf("maphostname(%s, %d) => CACHE %s\n",
+				hbuf, hbsize, s->s_namecanon.nc_cname);
 		errno = s->s_namecanon.nc_errno;
 		h_errno = s->s_namecanon.nc_herrno;
 		*statp = s->s_namecanon.nc_stat;
