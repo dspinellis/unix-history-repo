@@ -15,7 +15,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	5.72 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	5.73 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -92,7 +92,7 @@ main(argc, argv)
 		f_listdot = 1;
 
 	fts_options = FTS_PHYSICAL;
-	while ((ch = getopt(argc, argv, "1ACFLRTacdfgikloqrstu")) != EOF) {
+	while ((ch = getopt(argc, argv, "1ACFLRTacdfgiloqrstu")) != EOF) {
 		switch (ch) {
 		/*
 		 * The -1, -C and -l options all override each other so shell
@@ -149,9 +149,6 @@ main(argc, argv)
 			break;
 		case 'i':
 			f_inode = 1;
-			break;
-		case 'k':		/* Delete before 4.4BSD. */
-			(void)fprintf(stderr, "ls: -k no longer supported\n");
 			break;
 		case 'o':
 			f_flags = 1;
