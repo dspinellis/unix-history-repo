@@ -1,4 +1,4 @@
-#	@(#)changelist	5.1 (Berkeley) %G%
+#	@(#)changelist	8.1 (Berkeley) %G%
 #
 # List of files which the security script backs up and checks
 # for modifications.
