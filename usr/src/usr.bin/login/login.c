@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.48 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.49 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -471,8 +471,8 @@ main(argc, argv)
 	strcpy(tbuf + 1, (p = rindex(pwd->pw_shell, '/')) ?
 	    p + 1 : pwd->pw_shell);
 
-	if (setlogname(pwd->pw_name, strlen(pwd->pw_name)) < 0)
-		syslog(LOG_ERR, "setlogname() failure: %m");
+	if (setlogin(pwd->pw_name) < 0)
+		syslog(LOG_ERR, "setlogin() failure: %m");
 
 	/* discard permissions last so can't get killed and drop core */
 	(void)setuid(pwd->pw_uid);
