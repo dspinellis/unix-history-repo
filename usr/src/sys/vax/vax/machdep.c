@@ -1,4 +1,4 @@
-/*	machdep.c	4.11	%G%	*/
+/*	machdep.c	4.12	81/02/15	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -12,17 +12,19 @@
 #include "../h/vm.h"
 #include "../h/proc.h"
 #include "../h/psl.h"
+#include "../h/buf.h"
 #include "../h/uba.h"
 #include "../h/cons.h"
 #include "../h/reboot.h"
 #include "../h/conf.h"
-#include "../h/buf.h"
+#include "../h/mem.h"
+#include "../h/cpu.h"
 #include <frame.h>
 
 int	coresw = 0;
 int	printsw = 0;
 
-char	version[] = "VM/UNIX (Berkeley Version 4.11) 81/02/08 18:34:34 \n";
+char	version[] = "VM/UNIX (Berkeley Version 4.12) 81/02/15 12:18:16 \n";
 int	icode[] =
 {
 	0x9f19af9f,	/* pushab [&"init",0]; pushab */
@@ -95,7 +97,6 @@ startup(firstaddr)
 	tocons(TXDB_CWSI);
 	tocons(TXDB_CCSI);
 
-	ubainit();		/* GROT */
 	timeout(memchk, (caddr_t)0, 60);	/* it will pick its own intvl */
 }
 
@@ -276,7 +277,6 @@ sendsig(p, n)
 asm("bad:");
 #endif
 bad:
-	printf("%d: cant send signal\n", u.u_procp->p_pid);
 	psignal(u.u_procp, SIGKILL);
 }
 
@@ -317,36 +317,47 @@ dorti()
 /*
  * Check memory controller for memory parity errors
  */
-#define	MEMINTVL	(60*60*10)		/* 10 minutes */
 int	memintvl = MEMINTVL;
-
-#define	M780_HIERR	0x20000000
-#define	M780_ERLOG	0x10000000
-#define	M750_UNCORR	0xc0000000
-#define	M750_CORERR	0x40000000
-#define	M750_ERLOG	(M750_UNCORR|M750_CORERR)
 
 memchk()
 {
-	register int c;
+	register struct mcr *mcr;
+	register int m;
 	int error;
 
-#if VAX==780
-	error = mcr[2] & M780_ERLOG;
-#else
-	error = mcr[0] & M750_ERLOG;
+	for (m = 0; m < nmcr; m++) {
+		mcr = mcraddr[m];
+		switch (cpu) {
+#if VAX780
+		case VAX_780:
+			error = mcr->mc_reg[2] & M780_ERLOG;
+			break;
 #endif
-	if (error) {
-		printf("MEMERR: %x %x %x\n", mcr[0], mcr[1], mcr[2]);
-#if VAX==780
-		mcr[2] = M780_ERLOG|M780_HIERR;
-#else
-		mcr[0] = MERLOG;
+#if VAX750
+		case VAX_750:
+			error = mcr->mc_reg[0] & M750_ERLOG;
+			break;
 #endif
+		default:
+			error = 0;
+		}
+		if (error)
+			printf("MEMERR %d: %x %x %x\n", m,
+			    mcr->mc_reg[0], mcr->mc_reg[1], mcr->mc_reg[2]);
+		switch (cpu) {
+#if VAX780
+		case VAX_780:
+			mcr->mc_reg[2] = M780_ERLOG|M780_HIERR;
+			break;
+#endif
+#if VAX750
+		case VAX_750:
+			mcr->mc_reg[0] = M750_ERLOG;
+			mcr->mc_reg[1] = 0;
+			break;
+#endif
+		}
 	}
-#if VAX==750
-	mcr[1] = 0;		/* report errors */
-#endif
 	if (memintvl > 0)
 		timeout(memchk, (caddr_t)0, memintvl);
 }
@@ -372,24 +383,6 @@ tbiscl(v)
 	}
 }
   
-#if VAX==780
-int	hangcnt;
-
-unhang()
-{
-	register struct uba_regs *up = (struct uba_regs *)UBA0;
-
-	if (up->uba_sr == 0)
-		return;
-	hangcnt++;
-	if (hangcnt > 5*HZ) {
-		hangcnt = 0;
-		printf("HANG ");
-		ubareset();
-	}
-}
-#endif
-
 int	waittime = -1;
 
 boot(panic, arghowto)
@@ -449,5 +442,7 @@ dumpsys()
 	if ((minor(dumpdev)&07) != 1)
 		return;
 	printf("\ndumping to dev %x, offset %d\n", dumpdev, dumplo);
-	printf("dump %s\n", (*bdevsw[major(dumpdev)].d_dump)(dumpdev) ? "failed" : "succeeded");
+	printf("dump %s\n",
+	    (*bdevsw[major(dumpdev)].d_dump)(dumpdev) ?
+		"failed" : "succeeded");
 }
