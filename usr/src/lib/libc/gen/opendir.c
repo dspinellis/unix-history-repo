@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)opendir.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)opendir.c	5.13 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -29,7 +29,7 @@ opendir(name)
 
 	if ((fd = open(name, 0)) == -1)
 		return NULL;
-	if (fcntl(fd, F_SETFD, 1) == -1 ||
+	if (fcntl(fd, F_SETFD, FD_CLOEXEC) == -1 ||
 	    (dirp = (DIR *)malloc(sizeof(DIR))) == NULL) {
 		close (fd);
 		return NULL;
