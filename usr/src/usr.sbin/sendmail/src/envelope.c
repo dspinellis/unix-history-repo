@@ -3,7 +3,7 @@
 #include "sendmail.h"
 #include <sys/stat.h>
 
-SCCSID(@(#)envelope.c	3.8		%G%);
+SCCSID(@(#)envelope.c	3.9		%G%);
 
 /*
 **  NEWENVELOPE -- allocate a new envelope
@@ -118,7 +118,7 @@ dropenvelope(e)
 	**  Arrange to send error messages if there are fatal errors.
 	*/
 
-	if (bitset(EF_FATALERRS|EF_TIMEOUT, e->e_flags))
+	if (bitset(EF_FATALERRS|EF_TIMEOUT, e->e_flags) && ErrorMode != EM_QUIET)
 		savemail(e);
 
 	/*
@@ -135,7 +135,13 @@ dropenvelope(e)
 		xunlink(queuename(e, 'q'));
 	}
 	else if (queueit || !bitset(EF_INQUEUE, e->e_flags))
+	{
+#ifdef QUEUE
 		queueup(e, FALSE, FALSE);
+#else QUEUE
+		syserr("dropenvelope: queueup");
+#endif QUEUE
+	}
 
 	/* now unlock the job */
 	closexscript(e);
@@ -204,8 +210,10 @@ unlockqueue(e)
 #endif DEBUG
 		xunlink(queuename(e, 'x'));
 
+# ifdef QUEUE
 	/* last but not least, remove the lock */
 	xunlink(queuename(e, 'l'));
+# endif QUEUE
 }
 /*
 **  INITSYS -- initialize instantiation of system
@@ -367,6 +375,7 @@ queuename(e, type)
 			if (tTd(7, 20))
 				printf("queuename: trying \"%s\"\n", nf);
 # endif DEBUG
+# ifdef QUEUE
 			if (access(lf, 0) >= 0 || access(qf, 0) >= 0)
 				continue;
 			errno = 0;
@@ -384,6 +393,10 @@ queuename(e, type)
 			if (link(lf, qf) >= 0)
 				break;
 			(void) unlink(lf);
+# else QUEUE
+			if (close(creat(qf, FileMode)) < 0)
+				continue;
+# endif QUEUE
 		}
 		if (c1 >= '~' && c2 >= 'Z')
 		{
