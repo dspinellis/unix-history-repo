@@ -1,4 +1,7 @@
-.\"	@(#)NASA.proposal	1.5	91/08/28
+.\"	@(#)NASA.proposal	1.7	91/09/17
+.\"
+.\" use the me macro package
+.\"
 .fo +CSRG NASA proposal++%
 .nr si 3n
 .nr PS 11
@@ -60,7 +63,7 @@ Moffett Field, CA 94035
 .sh 2 Funding
 .pp
 The funding requested is $100,000.
-The project will start September 1, 1991, and will last for one year.
+The project will start November 1, 1991, and will last for one year.
 .bp
 .sh 1 Abstract
 .pp
@@ -91,12 +94,13 @@ During the funding period, CSRG anticipates that it will complete
 its next major release, 4.4BSD.
 As soon as this release is complete, CSRG will begin work on a
 follow-on release, tentatively named 4.5BSD.
+The 4.5BSD release is expected to include full multiprocessor support.
 The requested funding will support the development of software for
 both releases.
 .sp 2
 .sh 1 "Project Description"
 .pp
-The project will include the following specific goals:
+The project will help fund the following specific goals:
 .ip \(bu
 Integrate a new virtual memory subsystem into the kernel which
 includes multiprocessor support.
@@ -107,6 +111,9 @@ includes multiprocessor support.
 Implement a prototype of the POSIX 1003.4a threads model with support
 for multiple threads of execution through the use of primitives providing
 thread synchronization, scheduling and mutual exclusion.
+.ip \(bu
+Design and implement the machine dependent code to support a multiprocessor
+version of at least one architecture.
 .ip \(bu
 Replace the remaining proprietary source code in the machine independent
 portions of the kernel.
