@@ -21,6 +21,9 @@ VERSION=3.7
 #
 # If your system expands tabs to 4 spaces you should -DTABS=4 below
 #
+# If your system has no floating point unit, you should use FP= -f
+# and change the the appropriate invocation of ${LD}.
+#
 BINDIR=	/usr/ucb/bin
 NBINDIR=/usr/new/bin
 LIBDIR=	/usr/ucb/lib
@@ -34,6 +37,7 @@ DEBUGFLAGS=	-DTRACE
 NONDEBUGFLAGS=	-O
 DEB=	${NONDEBUGFLAGS}	# or ${DEBUGFLAGS} to to debug
 CFLAGS=	-DTABS=8 -DLISPCODE -DCHDIR -DUCVISUAL ${DEB}
+FP=
 TERMLIB=	-lovtermlib
 MKSTR=	${BINDIR}/mkstr
 CXREF=	${BINDIR}/cxref
@@ -67,22 +71,28 @@ SRCS=	ex.h ex_argv.h ex_re.h ex_temp.h ex_tty.h ex_tune.h ex_vars.h ex_vis.h\
 	mv x.o $*.o
 
 # 11/23, 34, 40 and other non split I/D machines
-# each of the 5 overlays must stay less than 16K.
+# each of the 6 overlays must stay less than 16K.
 # a.out: ${OBJS}
-# 	${LD} -X /lib/crt0.o ${FMT}\
-# 	    -Z ex_cmds.o ex_cmds2.o ex_cmdsub.o ex_re.o \
-# 	    -Z ex_vadj.o ex_vmain.o ex_voper.o ex_vwind.o ex_vops3.o\
-# 	    -Z ex_v.o ex_vget.o ex_vops.o ex_vops2.o ex_vput.o\
-# 	    -Z ex_get.o ex_io.o ex_temp.o ex_tty.o ex_unix.o ex_addr.o ex.o ex_set.o \
-# 	    -L ex_put.o ex_subr.o ${PRINTF} strings.o \
-# 	       ex_data.o ex_extern.o ${TERMLIB} -lovc 
+# if no floating point unit
+#	${LD} -X /lib/fcrt0.o ${FMT} \
+# end no floating point unit
+	${LD} -X /lib/crt0.o ${FMT} \
+	    -Z ex_cmds.o ex_cmds2.o ex_cmdsub.o ex_re.o \
+	    -Z ex_vadj.o ex_vmain.o ex_voper.o ex_vwind.o ex_vops3.o\
+	    -Z ex_v.o ex_vget.o ex_vops.o ex_vops2.o ex_vput.o\
+	    -Z ex_get.o ex_io.o ex_temp.o ex_tty.o ex_unix.o ex_addr.o ex.o ex_set.o \
+	    -Z ex_put.o ex_subr.o ${TERMLIB} \
+	    -L ex_data.o ex_extern.o ${PRINTF} strings.o -lovc
 
 a.out: ${OBJS}
+# if no floating point unit
+#	${LD} -X /lib/fcrt0.o -i \
+# end no floating point unit
 	${LD} -X /lib/crt0.o ${FMT}\
 	    -Z ex_voper.o ex_vget.o ex_vops.o ex_vops2.o ex_vops3.o \
-	    -Z ex_set.o ex_re.o ex_io.o ex_tty.o ex_unix.o ex.o\
+	    -Z ex_set.o ex_re.o ex_io.o ex_tty.o ex_unix.o ex.o ex_v.o \
 	    -L ex_addr.o ex_cmds.o ex_cmds2.o ex_cmdsub.o ex_get.o ex_temp.o\
-	       ex_v.o ex_vadj.o ex_vmain.o ex_vwind.o\
+	       ex_vadj.o ex_vmain.o ex_vwind.o\
 	       ex_vput.o ex_put.o ex_subr.o ${PRINTF} strings.o \
 	       ex_data.o ex_extern.o ${TERMLIB} -lovc 
 
@@ -102,13 +112,13 @@ strings.o: strings
 	rm xs.s
 	
 exrecover: exrecover.o
-	${CC} ${CFLAGS} exrecover.o ex_extern.o -o exrecover
+	${CC} ${FP} ${CFLAGS} exrecover.o ex_extern.o -o exrecover
 
 exrecover.o: exrecover.c
 	${CC} ${CFLAGS} -c -O exrecover.c
 
 expreserve: expreserve.o
-	${CC} expreserve.o ex_extern.o -o expreserve
+	${CC} ${FP} expreserve.o ex_extern.o -o expreserve
 
 expreserve.o:
 	${CC} ${CFLAGS} -c -O expreserve.c
