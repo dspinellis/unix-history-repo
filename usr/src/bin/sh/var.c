@@ -9,13 +9,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)var.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)var.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
  * Shell variables.
  */
-
 
 #include "shell.h"
 #include "output.h"
@@ -66,7 +65,6 @@ const struct varinit varinit[] = {
 	{&vpath,	VSTRFIXED|VTEXTFIXED,		"PATH=:/bin:/usr/bin"},
 	{&vps1,	VSTRFIXED|VTEXTFIXED,		"PS1=$ "},
 	{&vps2,	VSTRFIXED|VTEXTFIXED,		"PS2=> "},
-	{&vvers,	VSTRFIXED|VTEXTFIXED,		"SHELLVERS=ash 0.2"},
 #if ATTY
 	{&vterm,	VSTRFIXED|VTEXTFIXED|VUNSET,	"TERM="},
 #endif
@@ -120,6 +118,9 @@ initvar() {
 
 	for (ip = varinit ; (vp = ip->var) != NULL ; ip++) {
 		if ((vp->flags & VEXPORT) == 0) {
+			if ((strncmp(ip->text, "PS1=", 4) == 0) &&
+			    getuid() == 0)
+				ip->text = "PS1=# ";
 			vpp = hashvar(ip->text);
 			vp->next = *vpp;
 			*vpp = vp;
@@ -127,9 +128,8 @@ initvar() {
 			vp->flags = ip->flags;
 		}
 	}
+
 }
-
-
 
 /*
  * Set the value of a variable.  The flags argument is ored with the

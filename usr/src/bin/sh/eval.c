@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)eval.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)eval.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -102,54 +102,35 @@ SHELLPROC {
 
 
 /*
- * The eval builtin.  Do you want clean, straight-forward semantics for
- * your eval command?  If so, read on....
+ * The eval commmand.
  */
 
-#ifdef ELIGANT
-evalcmd(argc, argv)  char **argv; {
-	char **ap;
+evalcmd(argc, argv)  
+	char **argv; 
+{
+        char *p;
+        char *concat;
+        char **ap;
 
-	for (ap = argv + 1 ; *ap ; ap++) {
-		evalstring(*ap);
-	}
-	return exitstatus;
+        if (argc > 1) {
+                p = argv[1];
+                if (argc > 2) {
+                        STARTSTACKSTR(concat);
+                        ap = argv + 2;
+                        for (;;) {
+                                while (*p)
+                                        STPUTC(*p++, concat);
+                                if ((p = *ap++) == NULL)
+                                        break;
+                                STPUTC(' ', concat);
+                        }
+                        STPUTC('\0', concat);
+                        p = grabstackstr(concat);
+                }
+                evalstring(p);
+        }
+        return exitstatus;
 }
-#else
-
-/*
- * If, on the other hand, you prefer downright bogus semantics in the
- * name of compatibility, here it is...
- */
-
-evalcmd(argc, argv)  char **argv; {
-	char **ap;
-	char *p, *q;
-
-	if (argc <= 1) {
-		p = nullstr;
-	} else if (argc == 2) {
-		p = argv[1];
-	} else {
-		STARTSTACKSTR(p);
-		ap = argv + 1;
-		for (;;) {
-			q = *ap++;
-			while (*q) {
-				STPUTC(*q++, p);
-			}
-			if (*ap == NULL)
-				break;
-			STPUTC(' ', p);
-		}
-		STPUTC('\0', p);
-		p = grabstackstr(p);
-	}
-	evalstring(p);
-	return exitstatus;
-}
-#endif
-
 
 
 /*

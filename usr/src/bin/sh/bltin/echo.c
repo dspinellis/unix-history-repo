@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)echo.c	5.1 (Berkeley) %G%
+ *	@(#)echo.c	5.2 (Berkeley) %G%
  */
 
 /*
@@ -18,83 +18,61 @@
 
 #include "bltin.h"
 
-#define EOF (-1)
+/* #define eflag 1 */
 
-main(argc, argv)  
-	char **argv; 
-{
+main(argc, argv)  char **argv; {
+	register char **ap;
 	register char *p;
 	register char c;
 	int count;
 	int nflag = 0;
+#ifndef eflag
 	int eflag = 0;
-	extern char *optarg;
-	extern int optind, opterr;
-	int ch;
+#endif
 
-	opterr = 0;
-	while ((ch = getopt(argc, argv, "ne")) != EOF)
-		switch((char)ch) {
-		case 'n':
+	ap = argv;
+	if (argc)
+		ap++;
+	if ((p = *ap) != NULL) {
+		if (equal(p, "-n")) {
 			nflag++;
-			break;
-		case 'e':
+			ap++;
+		} else if (equal(p, "-e")) {
+#ifndef eflag
 			eflag++;
-			break;
-		case '?':
-		default:
-			error("usage: %s [-ne] [arg]...", *argv);
-			return 0;
-		}
-	argc -= optind;
-	argv += optind;
-
-	if (!eflag) {
-		while (p = *argv++) {
-			while (*p) {
-				putchar(*p);
-				p++;
-			}
-			if (*argv) putchar(' ');
-		}
-	} else {
-		while (p = *argv++) {
-			while (c = *p++) {
-				if (c == '\\') {
-					switch (*p++) {
-					case 'b':  c = '\b';  break;
-					case 'c':  return 0;	/* exit */
-					case 'f':  c = '\f';  break;
-					case 'n':  c = '\n';  break;
-					case 'r':  c = '\r';  break;
-					case 't':  c = '\t';  break;
-					case 'v':  c = '\v';  break;
-					case '\\':  break;	/* c = '\\' */
-					case '0':	/* should be [0-7] */
-					      c = 0;
-					      count = 3;
-					      while (--count >= 0 && (unsigned)(*p - '0') < 8)
-						    c = (c << 3) + (*p++ - '0');
-					      break;
-					default:
-						p--;
-					      break;
-					}
-				}
-				putchar(c);
-			}
-			if (*argv) putchar(' ');
+#endif
+			ap++;
 		}
 	}
-	if (!nflag)
+	while ((p = *ap++) != NULL) {
+		while ((c = *p++) != '\0') {
+			if (c == '\\' && eflag) {
+				switch (*p++) {
+				case 'b':  c = '\b';  break;
+				case 'c':  return 0;		/* exit */
+				case 'f':  c = '\f';  break;
+				case 'n':  c = '\n';  break;
+				case 'r':  c = '\r';  break;
+				case 't':  c = '\t';  break;
+				case 'v':  c = '\v';  break;
+				case '\\':  break;		/* c = '\\' */
+				case '0':
+					c = 0;
+					count = 3;
+					while (--count >= 0 && (unsigned)(*p - '0') < 8)
+						c = (c << 3) + (*p++ - '0');
+					break;
+				default:
+					p--;
+					break;
+				}
+			}
+			putchar(c);
+		}
+		if (*ap)
+			putchar(' ');
+	}
+	if (! nflag)
 		putchar('\n');
 	return 0;
 }
-
-#ifndef SHELL
-void
-error(f, a)
-{
-	_doprnt(f, &a, stderr);
-}
-#endif

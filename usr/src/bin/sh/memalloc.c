@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)memalloc.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)memalloc.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "shell.h"
@@ -179,7 +179,7 @@ growstackblock() {
 	int oldlen = stacknleft;
 	struct stack_block *sp;
 
-	if (stacknxt == stackp->space) {
+	if (stacknxt == stackp->space && stackp != &stackbase) {
 		INTOFF;
 		sp = stackp;
 		stackp = sp->prev;
@@ -230,7 +230,7 @@ grabstackblock(len) {
 char *
 growstackstr() {
 	int len = stackblocksize();
-	if (herefd && len >= 1024) {
+	if (herefd >= 0 && len >= 1024) {
 		xwrite(herefd, stackblock(), len);
 		sstrnleft = len - 1;
 		return stackblock();
