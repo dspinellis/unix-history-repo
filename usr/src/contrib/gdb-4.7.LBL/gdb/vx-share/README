@@ -1,0 +1,7 @@
+The files in this directory are shared with Wind River Systems' VxWorks
+debug stub.  This stub runs in the realtime system, as a process, and
+waits for net connections from GDB's and DBX's and such.
+
+Do not change these files without coordinating with Wind River Systems
+in Alameda, California.  Talk to postmaster@wrs.com to find out who 
+currently maintains GDB for them.
