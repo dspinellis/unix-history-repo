@@ -6,7 +6,7 @@
 # include <log.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	1.7	%G%";
+static char	SccsId[] = "@(#)main.c	1.8	%G%";
 
 /*
 **  DELIVERMAIL -- Deliver mail to a set of destinations
@@ -173,8 +173,6 @@ main(argc, argv)
 		Debug++;
 	}
 # endif DEBUGFILE
-	if (Debug)
-		printf("%s\n", Version);
 # endif
 	errno = 0;
 	from = NULL;
@@ -255,6 +253,7 @@ main(argc, argv)
 # ifdef DEBUG
 		  case 'd':	/* debug */
 			Debug++;
+			printf("%s\n", Version);
 			break;
 # endif DEBUG
 		
