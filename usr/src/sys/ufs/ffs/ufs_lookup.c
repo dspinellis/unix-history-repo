@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_lookup.c	7.29 (Berkeley) %G%
+ *	@(#)ufs_lookup.c	7.30 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -506,7 +506,8 @@ dirbad(ip, offset, how)
 
 	printf("%s: bad dir ino %d at offset %d: %s\n",
 	    ip->i_fs->fs_fsmnt, ip->i_number, offset, how);
-	panic("bad dir");
+	if (ip->i_fs->fs_ronly == 0)
+		panic("bad dir");
 }
 
 /*
