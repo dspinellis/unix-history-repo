@@ -1,4 +1,4 @@
-/* tcp_usrreq.c 1.49 82/01/18 */
+/* tcp_usrreq.c 1.50 82/02/19 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -322,6 +322,7 @@ tcp_disconnect(tp)
  * state.  In all other cases, have already sent FIN to peer (e.g.
  * after PRU_SHUTDOWN), and just have to play tedious game waiting
  * for peer to send FIN or not respond to keep-alives, etc.
+ * We can let the user exit from the close as soon as the FIN is acked.
  */
 tcp_usrclosed(tp)
 	struct tcpcb *tp;
@@ -344,4 +345,6 @@ tcp_usrclosed(tp)
 		tp->t_state = TCPS_LAST_ACK;
 		break;
 	}
+	if (tp->t_state >= TCPS_FIN_WAIT_2)
+		soisdisconnected(tp->t_inpcb->inp_socket);
 }
