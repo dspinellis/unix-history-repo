@@ -15,7 +15,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)get	1.5 (Berkeley) %G%
+#	@(#)get	1.6 (Berkeley) %G%
 #
 # Shell script to build a mini-root file system in preparation for building
 # a distribution tape.  The file system created here is image copied onto
@@ -61,7 +61,7 @@ done
 
 # copy in files from /
 #DOTFILE=".profile boot fppoc fppwcs poc poc1 poc2 wcs"
-DOTFILE=".profile boot wcs"
+DOTFILE=".profile boot"
 for i in $DOTFILE; do
 	cp $DISTROOT/$i $i
 done
@@ -70,7 +70,7 @@ done
 cp $DISTROOT/dev/MAKEDEV dev/MAKEDEV
 chmod +x dev/MAKEDEV
 cp /dev/null dev/MAKEDEV.local
-(cd dev; ./MAKEDEV std dk0; ./MAKEDEV cy0; mv rmt12 cy0; rm *mt*)
+(cd dev; ./MAKEDEV std hd0; ./MAKEDEV cy0; mv rmt12 cy0; rm *mt*)
 
 # initialize /etc/passwd
 cat >etc/passwd <<EOF
@@ -86,7 +86,7 @@ EOF
 # initialize /etc/fstab
 cat >etc/fstab <<EOF
 /dev/xfd0a:/a:xx:1:1
-/dev/dk0a:/a:xx:1:1
+/dev/hd0a:/a:xx:1:1
 EOF
 
 # create xtr script

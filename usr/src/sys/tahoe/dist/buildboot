@@ -15,7 +15,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)buildboot	1.4 (Berkeley) %G%
+#	@(#)buildboot	1.5 (Berkeley) %G%
 #
 boot=dk2b
 boottype=xfd
@@ -24,14 +24,14 @@ DISTROOT=/nbsd
 
 date
 umount /dev/${boot}
-newfs -s 1200 ${boot} ${boottype}
+newfs -s 1500 ${boot} ${boottype}
 fsck /dev/r${boot}
 mount /dev/${boot} ${bootmnt}
 cp $DISTROOT/stand/copy ${bootmnt}
-#cp $DISTROOT/stand/vdformat ${bootmnt}
+cp $DISTROOT/stand/vdformat ${bootmnt}
 cp $DISTROOT/boot ${bootmnt}
-cp $DISTROOT/wcs ${bootmnt}
-cp $DISTROOT/fppwcs ${bootmnt}
+#cp $DISTROOT/wcs ${bootmnt}
+#cp $DISTROOT/fppwcs ${bootmnt}
 #cp $DISTROOT/poc ${bootmnt}
 #cp $DISTROOT/poc1 ${bootmnt}
 #cp $DISTROOT/poc2 ${bootmnt}
