@@ -1,4 +1,4 @@
-/* vsort.c	1.6	83/10/22
+/* vsort.c	1.7	83/11/30
  *
  *	Sorts and shuffles ditroff output for versatec wide printer.  It
  *	puts pages side-by-side on the output, and fits as many as it can
@@ -26,7 +26,7 @@
 #define WIDTH	7040	/* number of pixels across the page */
 #define HALF	(INCH/2)
 #ifndef DEBUGABLE
-#define BAND	2	/* or defined below.... */
+#define BAND	1	/* length of each band (or defined below) */
 #endif
 #define NLINES	(int)(BAND * INCH)	/* number of pixels in each band */
 
@@ -389,7 +389,7 @@ setlimit()
 arcbounds(h, v, h1, v1)
 int h, v, h1, v1;
 {
-	register int rad = ((int) (sqrt ((double) (h*h + v*v)) + 0.5)) >> 1;
+	register unsigned rad = (int)(sqrt((double)(h*h + v*v)) + 0.5);
 	register int i = ((h >= 0) << 2) | ((h1 < 0) << 1) | ((v + v1) < 0);
 
 			/* i is a set of flags for the points being on the */
@@ -400,7 +400,7 @@ int h, v, h1, v1;
 
 				/* test relative positions for maximums */
 	vlp->u = (((i&3)==1) ? v1 : (((i&5)==4) ? vpos : vpos+v-rad)) - thick/2;
-	vlp->d = (((i&3)==2) ? v1 : (((i&5)==1) ? vpos : vpos+v-rad)) - thick/2;
+	vlp->d = (((i&3)==2) ? v1 : (((i&5)==1) ? vpos : vpos+v+rad)) + thick/2;
 }
 
 
