@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mkproto.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkproto.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -50,6 +50,7 @@ main(argc, argv)
 	char *argv[];
 {
 	int i;
+	char *calloc();
 
 	if (argc != 3) {
 		fprintf(stderr, "usage: mkproto filsys proto\n");
@@ -64,7 +65,7 @@ main(argc, argv)
 	fs = &sblock;
 	rdfs(SBOFF, SBSIZE, (char *)fs);
 	dev_bsize = fs->fs_fsize / fsbtodb(fs, 1);
-	fscs = (struct csum *)calloc(1, fs->fs_cssize);
+	fscs = (struct csum *)calloc(1, (u_int)fs->fs_cssize);
 	for (i = 0; i < fs->fs_cssize; i += fs->fs_bsize)
 		rdfs(fsbtodb(fs, fs->fs_csaddr + numfrags(fs, i)),
 			(int)(fs->fs_cssize - i < fs->fs_bsize ?
@@ -299,7 +300,7 @@ newblk(buf, aibc, ib, size)
 	int size;
 {
 	int i;
-	daddr_t bno;
+	daddr_t bno, alloc();
 
 	bno = alloc(size);
 	wtfs(fsbtodb(fs, bno), (int)fs->fs_bsize, buf);
@@ -318,11 +319,12 @@ iput(ip, aibc, ib)
 	int *aibc;
 	daddr_t *ib;
 {
-	daddr_t d;
+	daddr_t d, alloc();
 	int i;
 	struct dinode buf[MAXBSIZE / sizeof (struct dinode)];
+	time_t time();
 
-	ip->i_atime = ip->i_mtime = ip->i_ctime = time((long *)0);
+	ip->i_atime = ip->i_mtime = ip->i_ctime = time((time_t *)NULL);
 	switch (ip->i_mode&IFMT) {
 
 	case IFDIR:
@@ -412,8 +414,6 @@ goth:
 ialloc(ip)
 	register struct inode *ip;
 {
-	struct dinode buf[MAXBSIZE / sizeof (struct dinode)];
-	daddr_t d;
 	int c;
 
 	ip->i_number = ++ino;
@@ -436,11 +436,11 @@ ialloc(ip)
 	sblock.fs_cstotal.cs_nifree--;
 	fscs[c].cs_nifree--;
 	if(ip->i_number >= sblock.fs_ipg * sblock.fs_ncg) {
-		printf("fsinit: inode value out of range (%d).\n",
+		printf("fsinit: inode value out of range (%lu).\n",
 		    ip->i_number);
 		exit(1);
 	}
-	return (ip->i_number);
+	/* return (ip->i_number); */
 }
 
 /*
@@ -451,15 +451,16 @@ rdfs(bno, size, bf)
 	char *bf;
 {
 	int n;
+	off_t lseek();
 
 	if (lseek(fsi, bno * dev_bsize, 0) < 0) {
-		printf("seek error: %ld\n", bno);
+		printf("seek error: %d\n", bno);
 		perror("rdfs");
 		exit(1);
 	}
 	n = read(fsi, bf, size);
 	if(n != size) {
-		printf("read error: %ld\n", bno);
+		printf("read error: %d\n", bno);
 		perror("rdfs");
 		exit(1);
 	}
@@ -473,15 +474,16 @@ wtfs(bno, size, bf)
 	char *bf;
 {
 	int n;
+	off_t lseek();
 
 	if (lseek(fso, bno * dev_bsize, 0) < 0) {
-		printf("seek error: %ld\n", bno);
+		printf("seek error: %d\n", bno);
 		perror("wtfs");
 		exit(1);
 	}
 	n = write(fso, bf, size);
 	if(n != size) {
-		printf("write error: %D\n", bno);
+		printf("write error: %d\n", bno);
 		perror("wtfs");
 		exit(1);
 	}
@@ -509,7 +511,7 @@ isblock(fs, cp, h)
 		mask = 0x01 << (h & 0x7);
 		return ((cp[h >> 3] & mask) == mask);
 	default:
-		fprintf(stderr, "isblock bad fs_frag %d\n", fs->fs_frag);
+		fprintf(stderr, "isblock bad fs_frag %ld\n", fs->fs_frag);
 		return (0);
 	}
 	/*NOTREACHED*/
@@ -537,7 +539,7 @@ clrblock(fs, cp, h)
 		cp[h >> 3] &= ~(0x01 << (h & 0x7));
 		return;
 	default:
-		fprintf(stderr, "clrblock bad fs_frag %d\n", fs->fs_frag);
+		fprintf(stderr, "clrblock bad fs_frag %ld\n", fs->fs_frag);
 		return;
 	}
 }
