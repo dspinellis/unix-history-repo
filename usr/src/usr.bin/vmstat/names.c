@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)names.c	5.2 (Berkeley) %G%
+ *	@(#)names.c	5.3 (Berkeley) %G%
  */
 
 #if !defined(hp300) && !defined(tahoe) && !defined(vax)
@@ -12,7 +12,7 @@ char *defdrives[] = { 0 };
 #endif
 
 #ifdef hp300
-#include <hp300/dev/device.h>
+#include <hp/dev/device.h>
 
 char *defdrives[] = { "sd0", "sd1", "sd2", "rd0", "rd1", "rd2", 0 };
 
