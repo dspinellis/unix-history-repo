@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	6.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	6.25 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -239,10 +239,6 @@ recipient(a, sendq, e)
 
 	/* set the queue timeout */
 	a->q_timeout = TimeOut;
-
-	/* map user & host to lower case if requested on non-aliases */
-	if (a->q_alias == NULL)
-		loweraddr(a);
 
 	/* get unquoted user for file, program or user.name check */
 	(void) strcpy(buf, a->q_user);

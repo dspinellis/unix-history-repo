@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	6.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	6.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -488,7 +488,6 @@ setsender(from, e, delimptr)
 		printf("setsender: QDONTSEND ");
 		printaddr(&e->e_from, FALSE);
 	}
-	loweraddr(&e->e_from);
 	SuprErrs = FALSE;
 
 	pvp = NULL;
