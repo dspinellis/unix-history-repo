@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getcwd.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)getcwd.c	5.11 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -58,7 +58,7 @@ getcwd(pt, size)
 		ept = pt + ptsize;
 	}
 	bpt = ept - 1;
-	*ept = '\0';
+	*bpt = '\0';
 
 	/*
 	 * Allocate bytes (1024 - malloc space) for the string of "../"'s.
