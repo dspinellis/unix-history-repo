@@ -6,7 +6,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)main.c	3.129		%G%);
+SCCSID(@(#)main.c	3.130		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -128,15 +128,19 @@ main(argc, argv)
 	char **argv;
 {
 	register char *p;
+	int ac;
+	char **av;
 	extern int finis();
 	extern char Version[];
 	char *from;
 	typedef int (*fnptr)();
 	STAB *st;
 	register int i;
+	int pass = 0;
 	bool safecf = TRUE;		/* this conf file is sys default */
 	bool queuemode = FALSE;		/* process queue requests */
 	bool aliasinit = FALSE;
+	bool dofreeze = FALSE;		/* freeze the .cf file after read */
 	static bool reenter = FALSE;
 	char jbuf[30];			/* holds HostName */
 	extern bool safefile();
@@ -163,7 +167,7 @@ main(argc, argv)
 # ifdef LOG
 	openlog("sendmail", 0);
 # endif LOG
-	openxscrpt();
+	Xscript = stderr;
 	errno = 0;
 	from = NULL;
 	initmacros();
@@ -172,7 +176,11 @@ main(argc, argv)
 	** Crack argv.
 	*/
 
-	while (--argc > 0 && (p = *++argv)[0] == '-')
+  crackargs:
+	ac = argc;
+	av = argv;
+	pass++;
+	while (--ac > 0 && (p = *++av)[0] == '-')
 	{
 		switch (p[1])
 		{
@@ -193,6 +201,7 @@ main(argc, argv)
 			ConfFile = &p[2];
 			if (ConfFile[0] == '\0')
 				ConfFile = "sendmail.cf";
+			safecf = FALSE;
 			break;
 
 # ifdef DEBUG
@@ -209,16 +218,16 @@ main(argc, argv)
 			p += 2;
 			if (*p == '\0')
 			{
-				p = *++argv;
-				if (--argc <= 0 || *p == '-')
+				p = *++av;
+				if (--ac <= 0 || *p == '-')
 				{
 					syserr("No \"from\" person");
-					argc++;
-					argv--;
+					ac++;
+					av--;
 					break;
 				}
 			}
-			if (from != NULL)
+			if (from != NULL && pass <= 1)
 			{
 				syserr("More than one \"from\" person");
 				break;
@@ -230,12 +239,12 @@ main(argc, argv)
 			p += 2;
 			if (*p == '\0')
 			{
-				p = *++argv;
-				if (--argc <= 0 || *p == '-')
+				p = *++av;
+				if (--ac <= 0 || *p == '-')
 				{
 					syserr("Bad -F flag");
-					argc++;
-					argv--;
+					ac++;
+					av--;
 					break;
 				}
 			}
@@ -246,12 +255,12 @@ main(argc, argv)
 			p += 2;
 			if (*p == '\0')
 			{
-				p = *++argv;
-				if (--argc <= 0 || *p < '0' || *p > '9')
+				p = *++av;
+				if (--ac <= 0 || *p < '0' || *p > '9')
 				{
 					syserr("Bad hop count (%s)", p);
-					argc++;
-					argv--;
+					ac++;
+					av--;
 					break;
 				}
 			}
@@ -286,6 +295,10 @@ main(argc, argv)
 			GrabTo = TRUE;
 			break;
 
+		  case 'Z':	/* freeze the configuration file */
+			dofreeze = TRUE;
+			break;
+
 			/* compatibility flags */
 		  case 'b':	/* operations mode */
 		  case 'c':	/* connect to non-local mailers */
@@ -309,11 +322,18 @@ main(argc, argv)
 	**	Extract special fields for local use.
 	*/
 
-# ifdef LOG
-	if (LogLevel > 10)
-		syslog(LOG_DEBUG, "entered, uid=%d, pid=%d", getuid(), getpid());
-# endif LOG
-	readcf(ConfFile, safecf);
+	if (pass <= 1)
+	{
+		if (!safecf || dofreeze || !thaw())
+			readcf(ConfFile, safecf);
+		else
+			goto crackargs;
+	}
+	if (dofreeze)
+	{
+		freeze();
+		exit(EX_OK);
+	}
 
 	/* do heuristic mode adjustment */
 	if (Verbose)
@@ -511,7 +531,7 @@ main(argc, argv)
 
 	setsender(from);
 
-	if (Mode != MD_DAEMON && argc <= 0 && !GrabTo)
+	if (Mode != MD_DAEMON && ac <= 0 && !GrabTo)
 	{
 		usrerr("Usage: /etc/sendmail [flags] addr...");
 		finis();
@@ -526,7 +546,7 @@ main(argc, argv)
 	*/
 
 	if (++HopCount > MAXHOP)
-		syserr("Infinite forwarding loop (%s->%s)", CurEnv->e_from.q_paddr, *argv);
+		syserr("Infinite forwarding loop (%s->%s)", CurEnv->e_from.q_paddr, *av);
 
 	/*
 	**  Scan argv and deliver the message to everyone.
@@ -536,7 +556,7 @@ main(argc, argv)
 
 	if (GrabTo)
 		DontSend = TRUE;
-	sendtoargv(argv);
+	sendtoargv(av);
 
 	/* if we have had errors sofar, arrange a meaningful exit stat */
 	if (Errors > 0 && ExitStat == EX_OK)
@@ -871,25 +891,22 @@ intsig()
 **		none
 **
 **	Side Effects:
-**		Turns the standard output into a special file
-**			somewhere.
+**		Open the transcript file.
 */
 
 openxscrpt()
 {
-	extern char *mktemp();
 	register char *p;
 
-	p = newstr(XcriptFile);
-	(void) mktemp(p);
+	p = queuename(CurEnv, 'x');
 	Xscript = fopen(p, "w");
 	if (Xscript == NULL)
 	{
 		Xscript = stdout;
 		syserr("Can't create %s", p);
 	}
-	Transcript = p;
 	(void) chmod(p, 0644);
+	Transcript = newstr(p);
 }
 /*
 **  SETSENDER -- set sendmail's idea of the sender.
@@ -1025,10 +1042,10 @@ initsys()
 
 	/*
 	**  Give this envelope a reality.
-	**	I.e., an id and a creation time.
+	**	I.e., an id, a transcript, and a creation time.
 	*/
 
-	(void) queuename(CurEnv, '\0');
+	openxscrpt();
 	CurEnv->e_ctime = curtime();
 
 	/*
