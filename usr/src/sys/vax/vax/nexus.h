@@ -33,10 +33,6 @@
 #define	NNEX730	NNEXSBI
 #define	NEX730	((struct nexus *)0xf20000)
 #endif
-#if VAX630
-#define	NNEX630	1
-#define	NEX630	((struct nexus *)0x20088000)
-#endif
 #define	NEXSIZE	0x2000
 
 #if VAX8600
