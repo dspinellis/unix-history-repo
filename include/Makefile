@@ -70,7 +70,7 @@ copies:
 	@echo copies: ${LDIRS}
 	@-for i in ${LDIRS}; do \
 		rm -rf ${DESTDIR}/usr/include/$$i; \
-		cd /sys; \
+		cd ../sys; \
 		tar cf - $$i/*.h | (cd ${DESTDIR}/usr/include; tar xpfB -); \
 		chown -R ${BINOWN}.${BINGRP} ${DESTDIR}/usr/include/$$i; \
 		chmod -R 444 ${DESTDIR}/usr/include/$$i; \
@@ -78,7 +78,7 @@ copies:
 	done
 	rm -rf ${DESTDIR}/usr/include/machine
 	mkdir ${DESTDIR}/usr/include/machine
-	cd /sys/${MACHINE}/include; \
+	cd ../sys/${MACHINE}/include; \
 	tar cf - *.h | (cd ${DESTDIR}/usr/include/machine; tar xpfB -);
 	chown -R ${BINOWN}.${BINGRP} ${DESTDIR}/usr/include/machine;
 	chmod -R 444 ${DESTDIR}/usr/include/machine;
