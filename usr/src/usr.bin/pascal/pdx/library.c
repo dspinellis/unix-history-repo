@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)library.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)library.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -14,60 +14,23 @@ static char sccsid[] = "@(#)library.c	5.1 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <errno.h>
+#include "defs.h"
 
 #define public
 #define private static
 #define and &&
-#define or ||
-#define not !
-#define ord(enumcon)	((int) enumcon)
 #define nil(type)	((type) 0)
 
-typedef enum { FALSE, TRUE } Boolean;
 typedef char *String;
 typedef FILE *File;
 typedef String Filename;
+typedef char Boolean;
 
 #undef FILE
-
-/*
- * Definitions of standard C library routines that aren't in the
- * standard I/O library, but which are generally useful.
- */
-
-extern long atol();		/* ascii to long */
-extern double atof();		/* ascii to floating point */
-extern char *mktemp();		/* make a temporary file name */
 
 String cmdname;			/* name of command for error messages */
 Filename errfilename;		/* current file associated with error */
 short errlineno;		/* line number associated with error */
-
-/*
- * Definitions for doing memory allocation.
- */
-
-extern char *malloc();
-
-#define alloc(n, type)	((type *) malloc((unsigned) (n) * sizeof(type)))
-#define dispose(p)	{ free((char *) p); p = 0; }
-
-/*
- * Macros for doing freads + fwrites.
- */
-
-#define get(fp, var)	fread((char *) &(var), sizeof(var), 1, fp)
-#define put(fp, var)	fwrite((char *) &(var), sizeof(var), 1, fp)
-
-/*
- * String definitions.
- */
-
-extern String strcpy(), index(), rindex();
-extern int strlen();
-
-#define strdup(s)		strcpy(malloc((unsigned) strlen(s) + 1), s)
-#define streq(s1, s2)	(strcmp(s1, s2) == 0)
 
 typedef int INTFUNC();
 
@@ -78,13 +41,15 @@ typedef struct {
 #define ERR_IGNORE ((INTFUNC *) 0)
 #define ERR_CATCH  ((INTFUNC *) 1)
 
+public INTFUNC *onsyserr();
+
 /*
  * Call a program.
  *
- * Four entries:
+ * Three entries:
  *
  *	call, callv - call a program and wait for it, returning status
- *	back, backv - call a program and don't wait, returning process id
+ *	backv - call a program and don't wait, returning process id
  *
  * The command's standard input and output are passed as FILE's.
  */
@@ -115,26 +80,6 @@ String args;
     return callv(name, in, out, argv);
 }
 
-/* VARARGS3 */
-public int back(name, in, out, args)
-String name;
-File in;
-File out;
-String args;
-{
-    String *ap, *argp;
-    String argv[MAXNARGS];
-
-    argp = &argv[0];
-    *argp++ = name;
-    ap = &args;
-    while (*ap != nil(String)) {
-	*argp++ = *ap++;
-    }
-    *argp = nil(String);
-    return backv(name, in, out, argv);
-}
-
 public int callv(name, in, out, argv)
 String name;
 File in;
@@ -160,7 +105,7 @@ String *argv;
     if (ischild(pid = fork())) {
 	fswap(0, fileno(in));
 	fswap(1, fileno(out));
-	onsyserr(EACCES, ERR_IGNORE);
+	(void) onsyserr(EACCES, ERR_IGNORE);
 	execvp(name, argv);
 	_exit(BADEXEC);
     }
@@ -244,8 +189,11 @@ int pid, *statusp;
 	    *statusp = p->status;
 	    dispose(p);
 	} else {
-		*statusp = status;
+	    *statusp = status;
 	}
+#ifdef tahoe
+	chkret(p, status);
+#endif
 }
 
 /*
@@ -268,9 +216,9 @@ int pid;
     }
     if (p != nil(Pidlist *)) {
 	if (prev == nil(Pidlist *)) {
-		pidlist = p->next;
+	    pidlist = p->next;
 	} else {
-		prev->next = p->next;
+	    prev->next = p->next;
 	}
     }
     return p;
@@ -289,13 +237,10 @@ extern char *sys_errlist[];
  
 /*
  * Before calling syserr, the integer errno is set to contain the
- * number of the error.  The routine "_mycerror" is a dummy which
- * is used to force the loader to get my version of cerror rather
- * than the usual one.
+ * number of the error.
  */
 
 extern int errno;
-extern _mycerror();
 
 /*
  * default error handling
@@ -357,32 +302,18 @@ public syserr()
 }
 
 /*
- * Catcherrs only purpose is to get this module loaded and make
- * sure my cerror is loaded (only applicable when this is in a library).
- */
-
-public catcherrs()
-{
-    _mycerror();
-}
-
-/*
  * Change the action on receipt of an error.
  */
 
-public onsyserr(n, f)
+public INTFUNC *onsyserr(n, f)
 int n;
 INTFUNC *f;
 {
+    INTFUNC *g = errinfo[n].func;
+
     errinfo[n].func = f;
+    return(g);
 }
-
-/*
- * Standard error handling routines.
- */
-
-private short nerrs;
-private short nwarnings;
 
 /*
  * Main driver of error message reporting.
@@ -415,20 +346,6 @@ String s;
 }
 
 /*
- * The messages are listed in increasing order of seriousness.
- *
- * First are warnings.
- */
-
-/* VARARGS1 */
-public warning(s, a, b, c, d, e, f, g, h, i, j, k, l, m)
-String s;
-{
-    nwarnings++;
-    errmsg("warning", FALSE, s, a, b, c, d, e, f, g, h, i, j, k, l, m);
-}
-
-/*
  * Errors are a little worse, they mean something is wrong,
  * but not so bad that processing can't continue.
  *
@@ -442,7 +359,6 @@ String s;
 {
     extern erecover();
 
-    nerrs++;
     errmsg(nil(String), FALSE, s, a, b, c, d, e, f, g, h, i, j, k, l, m);
     erecover();
 }
@@ -468,46 +384,6 @@ String s;
 {
     errmsg("panic", TRUE, s, a, b, c, d, e, f, g, h, i, j, k, l, m);
 }
-
-short numerrors()
-{
-    short r;
-
-    r = nerrs;
-    nerrs = 0;
-    return r;
-}
-
-short numwarnings()
-{
-    short r;
-
-    r = nwarnings;
-    nwarnings = 0;
-    return r;
-}
-
-/*
- * Recover from an error.
- *
- * This is the default routine which we aren't using since we have our own.
- *
-public erecover()
-{
-}
- *
- */
-
-/*
- * Default way to quit from a program is just to exit.
- *
-public quit(r)
-int r;
-{
-    exit(r);
-}
- *
- */
 
 /*
  * Compare n-byte areas pointed to by s1 and s2
@@ -545,12 +421,14 @@ register unsigned int n;
 
 public mov(src, dest, n)
 register char *src, *dest;
-register unsigned int n;
+register int n;
 {
-    if (src == nil(char *))
+    if (src == nil(char *)) {
 	panic("mov: nil source");
-    if (dest == nil(char *))
+    }
+    if (dest == nil(char *)) {
 	panic("mov: nil destination");
+    }
     if (n > 0) {
 	for (; n != 0; n--) {
 	    *dest++ = *src++;

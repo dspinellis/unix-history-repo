@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)machine.h	5.1 (Berkeley) %G%
+ *	@(#)machine.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -17,7 +17,6 @@
 ADDRESS pc;			/* current program counter */
 LINENO curline;			/* line number associated with pc */
 SYM *curfunc;			/* pointer to active function symbol */
-short errnum;			/* current error number */
 
 setbp();			/* set a breakpoint */
 unsetbp();			/* unset a breakpoint */

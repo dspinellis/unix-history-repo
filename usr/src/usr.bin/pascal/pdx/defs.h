@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)defs.h	5.1 (Berkeley) %G%
+ *	@(#)defs.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -69,11 +69,10 @@ extern char *malloc();
 #define dispose(p)	{ free((char *) p); p = NIL; }
 
 /*
- * macros for doing freads + fwrites
+ * macro for doing freads
  */
 
 #define get(fp, var)	fread((char *) &(var), sizeof(var), 1, fp)
-#define put(fp, var)	fwrite((char *) &(var), sizeof(var), 1, fp)
 
 /*
  * string definitions

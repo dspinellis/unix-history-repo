@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sym.h	5.1 (Berkeley) %G%
+ *	@(#)sym.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -47,7 +47,7 @@ SYM *findclass();		/* find symbol with given class */
 NODE *dot();			/* construct a tree for the dot operator */
 NODE *subscript();		/* construct a tree for subscripting */
 SYM *treetype();		/* return the type of a tree, checking also */
-evalindex();			/* evaluate a subscript index */
+long evalindex();		/* evaluate a subscript index */
 unmkstring();			/* free a constant string type */
 chkboolean();			/* check if a tree is boolean-valued */
 printdecl();			/* print out a symbol's declaration */
