@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_meter.c	7.19 (Berkeley) %G%
+ *	@(#)vm_meter.c	7.20 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -79,9 +79,9 @@ vm_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 	int *name;
 	u_int namelen;
 	void *oldp;
-	u_int *oldlenp;
+	size_t *oldlenp;
 	void *newp;
-	u_int newlen;
+	size_t newlen;
 	struct proc *p;
 {
 	struct vmtotal vmtotals;
