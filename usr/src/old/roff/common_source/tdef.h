@@ -1,6 +1,8 @@
-/*	tdef.h	4.6	85/05/05	*/
+/*	tdef.h	4.7	86/10/19	*/
 
-#define MAXPTR 0x7fffffff	/* max value of any pointer variable */
+#include <machine/machparam.h>
+#include <machine/vmparam.h>
+#define MAXPTR (USRSTACK-1)	/* max value of any pointer variable */
 #ifdef NROFF	/*NROFF*/
 #define EM t.Em
 #define HOR t.Hor
