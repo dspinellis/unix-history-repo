@@ -1,0 +1,55 @@
+M4 Macros
+
+EXTERNAL_VERSION	``#'	`%W%' (Berkeley) `%G%''
+
+     The SCCS id of the "outside" file.
+
+INTERNET_ALIASES	`Cwcad ucbcad'
+
+     If defined, the line which lists the w class.  If not defined,
+defaults to `Cwmonet ucbmonet' with a warning to replace this line
+with your hostname.
+
+UUCP_NAME		`DUucbcad'
+
+     If defined, includes UUCP code.  Used to define your official
+UUCP hostname.
+
+UUCP_ALIASES		`CUucbcad'
+
+     Included only if UUCP_NAME is defined, lists aliases for UUCP.
+
+UUCP_HOSTS_FILE		`../machdep/uucp.cad.m4'
+
+     Included only if UUCP_NAME is defined.  Defines class V of
+local UUCP hosts by including the appropriate m4 file.
+
+SMTPUUCP		`../machdep/smtpuucp.cad.m4'
+
+     If defined, use SMTP to resolve local UUCP connections (while
+keepign bangist format).  Should be defined to be the file that
+contains thef ruleset 0 additions.
+
+INTERNET_RELAY		`DAcad.Berkeley.EDU'
+
+     If defined, this will be the machine behind which non-NIC registered
+hosts are hidden, resuling in addresses of the form
+
+	user%host@INTERNET_RELAY
+
+If not defined, defaults to ucbvax.Berkeley.EDU.
+
+UUCP_RELAY		`DRcad'
+
+     If defined, this will be the machine to which non-local UUCP traffic
+is forwarded.  If not defined, defaults to ucbvax.
+
+BITNET_RELAY		`DBjade.Berkeley.EDU'
+
+     If defined, this will be the machien to which BITNET traffic
+is forwarded.  If not defined, it defaults to jade.Berkeley.EDU.
+
+CSNET_RELAY		`DCrelay.cs.net'
+
+     If defined, this will be the machine to which CSNET traffic is
+forwarded.  If not defined, it defaults to relay.cs.net.
