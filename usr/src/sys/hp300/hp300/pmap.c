@@ -9,7 +9,7 @@
  * The CMU software License Agreement specifies the terms and conditions
  * for use and redistribution.
  *
- *	@(#)pmap.c	7.2 (Berkeley) %G%
+ *	@(#)pmap.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -304,6 +304,7 @@ pmap_init(phys_start, phys_end)
 	vm_size_t	npg, s;
 	int		rv;
 	extern vm_offset_t	DIObase;
+	extern char kstack[];
 
 #ifdef DEBUG
 	if (pmapdebug & PDB_FOLLOW)
@@ -330,11 +331,11 @@ pmap_init(phys_start, phys_end)
 	if (addr != (vm_offset_t)Sysmap)
 		goto bogons;
 
-	addr = (vm_offset_t) &u;
+	addr = (vm_offset_t) kstack;
 	vm_object_reference(kernel_object);
 	(void) vm_map_find(kernel_map, kernel_object, addr,
 			   &addr, hp300_ptob(UPAGES), FALSE);
-	if (addr != (vm_offset_t)&u)
+	if (addr != (vm_offset_t)kstack)
 bogons:
 		panic("pmap_init: bogons in the VM system!\n");
 
