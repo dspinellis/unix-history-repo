@@ -5,8 +5,8 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)set.c	5.3 (Berkeley) %G%";
-#endif
+static char sccsid[] = "@(#)set.c	5.4 (Berkeley) %G%";
+#endif /* not lint */
 
 #include "sh.h"
 
@@ -171,12 +171,12 @@ dolet(v)
 			p = xset(p, &v);
 		} else {
 			c = *p++;
-			if (any(c, "+-")) {
+			if (index("+-", c)) {
 				if (c != op || *p)
 					goto letsyn;
 				p = plusplus;
 			} else {
-				if (any(op, "<>")) {
+				if (index("<>", op)) {
 					if (c != op)
 						goto letsyn;
 					c = *p++;
@@ -387,7 +387,7 @@ set1(var, vec, head)
 
 	gflag = 0; tglob(oldv);
 	if (gflag) {
-		vec = glob(oldv);
+		vec = globall(oldv);
 		if (vec == 0) {
 			bferr("No match");
 			blkfree(oldv);
