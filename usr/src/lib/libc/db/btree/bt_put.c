@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_put.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_put.c	5.10 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -55,6 +55,9 @@ __bt_put(dbp, key, data, flags)
 	char *dest, db[NOVFLSIZE], kb[NOVFLSIZE];
 
 	t = dbp->internal;
+
+	/* Clear any stack. */
+	BT_CLR(t);
 
 	switch (flags) {
 	case R_CURSOR:
@@ -151,14 +154,12 @@ storekey:		if (__ovfl_put(t, key, &pg) == RET_ERROR)
 			CLR(t, BTF_DELCRSR);
 			goto delete;
 		}
-		BT_CLR(t);
 		mpool_put(t->bt_mp, h, 0);
 		return (RET_SPECIAL);
 	default:
 		if (!exact || !ISSET(t, BTF_NODUPS))
 			break;
 delete:		if (__bt_dleaf(t, h, index) == RET_ERROR) {
-			BT_CLR(t);
 			mpool_put(t->bt_mp, h, 0);
 			return (RET_ERROR);
 		}
@@ -204,7 +205,6 @@ delete:		if (__bt_dleaf(t, h, index) == RET_ERROR) {
 		}
 
 	mpool_put(t->bt_mp, h, MPOOL_DIRTY);
-	BT_CLR(t);
 
 success:
 	if (flags == R_SETCURSOR) {
