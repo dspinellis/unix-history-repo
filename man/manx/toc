@@ -1,0 +1,257 @@
+.bp
+.tr |
+.bl 1
+.nf
+.ta 30
+.tc .
+.ce
+TABLE OF CONTENTS
+
+I.  COMMANDS
+
+.xx
+: 	 place label
+ar 	 archive (combine) files
+as 	 assembler
+bas 	 BASIC dialect
+cat 	 concatenate (or print) files
+cc 	 compile C program
+cdb 	 C debugger
+chdir 	 change working directory
+chmod 	 change access mode of files
+chown 	 change owner of files
+cmp 	 compare file contents
+cp 	 copy file
+cref 	 cross reference table
+crypt 	 encrypt, decrypt a file
+date 	 get date and time of day
+db 	 symbolic debugger
+dc 	 desk calculator
+df 	 find free disk space
+dsw 	 delete files interactively
+du 	 find disk usage
+echo 	 print command arguments
+ed 	 text editor
+exit 	 end command sequence
+factor 	 factor a number
+fc 	 compile Fortran program
+fed 	 form letter editor
+form 	 generate form letter
+forml 	 generate form letters
+goto 	 command transfer
+hyphen 	 find hyphenated words
+if 	 conditional command
+ld 	 link editor (loader)
+ln 	 link to file
+login 	 log on to system
+ls 	 list contents of directory
+m6 	 macroprocessor
+mail 	 send mail to another user
+man 	 run off manual section
+mesg 	 permit or deny messages
+mkdir 	 create directory
+mt 	 save, restore files on magtape
+mv 	 move or rename file
+nm 	 print namelist
+nroff 	 format text for printing
+od 	 octal dump of file
+opr 	 print file off-line
+ov 	 page overlay file print
+passwd 	 set login password
+pr 	 print file with headings
+proof 	 compare text files
+reloc 	 relocate object files
+rew 	 rewind DECtape
+rm 	 remove (delete) file
+rmdir 	 remove (delete) directory
+roff 	 format text for printing
+sh 	 command interpreter
+size 	 get executable program size
+sno 	 compile Snobol program
+sort 	 sort ASCII file
+speak 	 send words to voice synthesizer
+split 	 break a file into pieces
+stat 	 get file status
+strip 	 remove symbols, relocation bits
+stty 	 set typewriter modes
+sum 	 sum file
+tap 	 save, restore files on DECtape
+time 	 get time information
+tmg 	 compile tmgl program
+tss 	 communicate with MH-TSS (GCOS)
+tty 	 find name of terminal
+type 	 print file page-by-page
+typo 	 find typographic errors
+un 	 find undefined symbols
+uniq 	 find duplicate lines in a file
+vs 	 generate voice synthesizer phonemes
+wc 	 get (English) word count
+who 	 who is on the system
+write 	 write to another user
+
+
+II.  SYSTEM CALLS
+
+.xx
+boot 	 reboot the system
+break 	 set program break
+cemt 	 catch EMT traps
+chdir 	 change working directory
+chmod 	 change mode of file
+chown 	 change owner of file
+close 	 close open file
+creat 	 create file
+csw 	 read the console switches
+dup 	 duplicate an open file
+exec 	 execute program file
+exit 	 terminate execution
+fork 	 create new process
+fpe 	 catch floating exception errors
+fstat 	 status of open file
+getuid 	 get user ID
+gtty 	 get typewriter mode
+ilgins 	 catch illegal instruction trap
+intr 	 catch or inhibit interrupts
+kill 	 destroy process
+link 	 link to file
+makdir 	 create directory
+mdate 	 set date modified of file
+mount 	 mount file system
+nice 	 set low-priority status
+open 	 open file
+pipe 	 open inter process channel
+quit 	 inhibit quits
+read 	 read file
+rele 	 release processor
+seek 	 move read or write pointer
+setuid 	 set user ID
+sleep 	 delay execution
+stat 	 get file status
+stime 	 set system time
+stty 	 set mode of typewriter
+sync 	 assure synchronization
+time 	 get time of year
+times 	 get execution times
+umount 	 dismount file system
+unlink 	 remove (delete) file
+wait 	 wait for process
+write 	 write file
+
+
+III.  SUBROUTINES
+
+.xx
+atan 	 arctangent
+atof 	 convert ASCII to floating
+atoi 	 convert ASCII to integer
+compar 	 string compare for sort
+crypt 	 encrypt according to a keyword
+ctime 	 convert time to ASCII
+ddsput 	 display character on Picturephone
+ecvt 	 edited output conversion
+exp 	 exponential function
+ftoa 	 convert floating to ASCII
+ftoo 	 convert floating to octal
+gerts 	 communicate with GCOS
+getc 	 get character
+hypot 	 compute hypotenuse
+itoa 	 convert integer to ASCII
+log 	 logarithm base e
+mesg 	 print string on typewriter
+nlist 	 read name list
+pow 	 take powers of numbers
+ptime 	 print time
+putc 	 write character or word
+qsort 	 quicker sort
+rand 	 pseudo random number generator
+salloc 	 storage allocator
+sin 	 sine, cosine
+sqrt 	 square root
+switch 	 transfer depending on value
+ttyn 	 find teletype name
+
+
+IV.  SPECIAL FILES
+
+.xx
+dc 	 remote typewriter
+dn 	 801 ACU
+dp 	 201 Dataphone
+kl 	 console typewriter
+mem 	 core memory
+pc 	 punched paper tape
+rf 	 RF disk
+rk 	 RK disk
+tc 	 DECtape
+tm 	 9-track magtape
+vt 	 storage-tube display
+
+
+V.  FILE FORMATS
+
+.xx
+a.out 	 assembler and loader output
+archive 	 archive file
+core 	 core image file
+directory 	 directory format
+file system 	 file system format
+passwd 	 password file
+tap 	 DECtape and magtape format
+utmp 	 logged-in user information
+wtmp 	 accounting files
+
+
+VI.  USER MAINTAINED PROGRAMS
+
+.xx
+bc 	 compile B program
+bj 	 blackjack
+ptx 	 permuted index
+yacc 	 yet another compiler-compiler
+
+
+VII.  MISCELLANEOUS
+
+.xx
+ascii 	 map of ASCII
+dpd 	 spawn dataphone daemon
+getty 	 adapt to typewriter
+glob 	 argument expander
+greek 	 extended TTY 37 typebox map
+init 	 initializer process
+msh 	 mini Shell
+tabs 	 set tab stops on typewriter
+vsp 	 voice synthesizer phonemes
+
+
+VIII. SYSTEM MAINTAINANCE
+
+.xx
+20boot 	 reboot 11/20 system
+acct 	 get connect-time accounting
+bproc 	 boot procedure
+check 	 check consistency of file system
+chk 	 check all file systems
+clri 	 clear file's i-node
+dcheck 	 verify directory hierarchy
+dli 	 load DEC binary paper tapes
+istat 	 file status by i-number
+kill 	 terminate a process
+mount 	 mount removable file system
+ps 	 get process status
+salv 	 repair damaged file system
+su 	 become super-user
+swtmp 	 truncate accounting files
+tm 	 get system time information
+umount 	 dismount removable file system
+.xx
+.bp
+.bl 1
+.ce
+INDEX
+
+
+.nf
+.tc
+.ta 9 17 25 33 41 49 57
+.nx index
