@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_syscalls.c	7.46 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.47 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -240,9 +240,8 @@ dounmount(mp, flags)
 
 	xumount(mp);		/* remove unused sticky files from text table */
 	cache_purgevfs(mp);	/* remove cache entries for this file sys */
-	VFS_SYNC(mp, MNT_WAIT);
-
-	error = VFS_UNMOUNT(mp, flags);
+	if ((error = VFS_SYNC(mp, MNT_WAIT)) == 0 || (flags & MNT_FORCE))
+		error = VFS_UNMOUNT(mp, flags);
 	mp->mnt_flag &= ~MNT_UNMOUNT;
 	vfs_unbusy(mp);
 	if (error) {
@@ -1515,6 +1514,7 @@ revoke(scp)
 {
 	struct a {
 		char	*fname;
+		int	flags;
 	} *uap = (struct a *)scp->sc_ap;
 	register struct nameidata *ndp = &scp->sc_nd;
 	register struct vnode *vp;
