@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)pccons.c	5.11 (Berkeley) 5/21/91
- *	$Id: pccons.c,v 1.9 1993/11/25 01:31:46 wollman Exp $
+ *	$Id: pccons.c,v 1.10 1993/12/19 00:50:44 wollman Exp $
  */
 
 /*
@@ -707,7 +707,7 @@ sput(c,  ka)
 		}
 		vs.kern_bg_at = BG_BLACK;
 
-		fillw(((vs.bg_at|vs.fg_at)<<8)|' ', (caddr_t)crtat,
+		fillw(((vs.bg_at|vs.fg_at)<<8)|' ', crtat,
 		      COL*ROW-cursorat);
 	}
 
@@ -806,17 +806,17 @@ sput(c,  ka)
 					if (vs.cx == 0)
 						/* ... to end of display */
 						fillw((at << 8) + ' ',
-							(caddr_t)crtat,
+							crtat,
 							Crtat + vs.ncol * vs.nrow - crtat);
 					else if (vs.cx == 1)
 						/* ... to next location */
 						fillw((at << 8) + ' ',
-							(caddr_t)Crtat,
+							Crtat,
 							crtat - Crtat + 1);
 					else if (vs.cx == 2)
 						/* ... whole display */
 						fillw((at << 8) + ' ',
-						      (caddr_t)Crtat,
+							Crtat,
 							vs.ncol * vs.nrow);
 						
 					vs.esc = 0; vs.ebrac = 0; vs.eparm = 0;
@@ -825,17 +825,17 @@ sput(c,  ka)
 					if (vs.cx == 0)
 						/* ... current to EOL */
 						fillw((at << 8) + ' ',
-							(caddr_t)crtat,
+							crtat,
 							vs.ncol - (crtat - Crtat) % vs.ncol);
 					else if (vs.cx == 1)
 						/* ... beginning to next */
 						fillw((at << 8) + ' ',
-							(caddr_t)crtat - (crtat - Crtat) % vs.ncol,
+							crtat - (crtat - Crtat) % vs.ncol,
 							((crtat - Crtat) % vs.ncol) + 1);
 					else if (vs.cx == 2)
 						/* ... entire line */
 						fillw((at << 8) + ' ',
-						      (caddr_t)crtat - (crtat - Crtat) % vs.ncol,
+							crtat - (crtat - Crtat) % vs.ncol,
 							vs.ncol);
 					vs.esc = 0; vs.ebrac = 0; vs.eparm = 0;
 					break;
@@ -854,16 +854,15 @@ sput(c,  ka)
 					if (vs.cx <= 0) vs.cx = 1;
 					bcopy(Crtat+vs.ncol*vs.cx, Crtat, vs.ncol*(vs.nrow-vs.cx)*CHR);
 					fillw((at <<8)+' ',
-					      ((caddr_t) Crtat
-					       + vs.ncol * (vs.nrow - vs.cx)),
-					      vs.ncol * vs.cx);
+						(Crtat + vs.ncol * (vs.nrow - vs.cx)),
+						vs.ncol * vs.cx);
 					/* crtat -= vs.ncol*vs.cx;*/ /* XXX */
 					vs.esc = 0; vs.ebrac = 0; vs.eparm = 0;
 					break;
 				case 'T':  /* scroll down cx lines */
 					if (vs.cx <= 0) vs.cx = 1;
 					bcopy(Crtat, Crtat+vs.ncol*vs.cx, vs.ncol*(vs.nrow-vs.cx)*CHR);
-					fillw((at <<8)+' ', (caddr_t)Crtat, vs.ncol*vs.cx);
+					fillw((at <<8)+' ', Crtat, vs.ncol*vs.cx);
 					/* crtat += vs.ncol*vs.cx;*/ /* XXX */
 					vs.esc = 0; vs.ebrac = 0; vs.eparm = 0;
 					break;
@@ -928,7 +927,7 @@ sput(c,  ka)
 				}
 				break;
 			} else if (c == 'c') { /* Clear screen & home */
-				fillw((at << 8) + ' ', (caddr_t)Crtat, vs.ncol*vs.nrow);
+				fillw((at << 8) + ' ', Crtat, vs.ncol*vs.nrow);
 				crtat = Crtat; vs.col = 0;
 				vs.esc = 0; vs.ebrac = 0; vs.eparm = 0;
 			} else if (c == '[') { /* Start ESC [ sequence */
@@ -953,7 +952,7 @@ sput(c,  ka)
 	if (sc && crtat >= Crtat+vs.ncol*vs.nrow) { /* scroll check */
 		if (openf) do (void)sgetc(1); while (scroll);
 		bcopy(Crtat+vs.ncol, Crtat, vs.ncol*(vs.nrow-1)*CHR);
-		fillw ((at << 8) + ' ', (caddr_t)Crtat + vs.ncol*(vs.nrow-1),
+		fillw ((at << 8) + ' ', Crtat + vs.ncol*(vs.nrow-1),
 			vs.ncol);
 		crtat -= vs.ncol;
 	}
