@@ -1,4 +1,4 @@
-/*	main.c	4.4	82/11/15	*/
+/*	main.c	4.5	82/12/25	*/
 
 /*
  * TFTP User Program -- Command Interface.
@@ -138,8 +138,8 @@ setpeer(argc, argv)
 			connected = 0;
 			return;
 		}
+		sin.sin_port = htons((u_short)sin.sin_port);
 	}
-	sin.sin_port = htons((u_short)sin.sin_port);
 	connected = 1;
 }
 
