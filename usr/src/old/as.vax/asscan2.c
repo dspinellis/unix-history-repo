@@ -2,7 +2,7 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)asscan2.c 4.11 %G%";
+static char sccsid[] = "@(#)asscan2.c 4.12 %G%";
 #endif not lint
 
 #include "asscanl.h"
@@ -47,12 +47,6 @@ fillinbuffer()
 	Ginbufptr = inbuffer + 1;
 }
 
-#if NCPName < NCPString
-char	strtext[NCPString + 1];
-#else
-#	define	strtext yytext
-#endif
-
 scan_dot_s(bufferbox)
 	struct tokbufdesc *bufferbox;
 {
@@ -69,11 +63,10 @@ scan_dot_s(bufferbox)
 		ptrall	lgbackpatch;	/* where to stuff a string length */
 	reg	ptrall	bufptr;		/* where to stuff tokens */
 		ptrall	bufub;		/* where not to stuff tokens */
-	reg	int	strlg;		/* the length of a string */
 		long	intval;		/* value of int */
 		int	linescrossed;	/* when doing strings and comments */
 		struct	Opcode		opstruct;
-		struct	strdesc	strd;	/* for building DQ strings */
+	reg	int	strlg;		/* the length of a string */
 
 	(bytetoktype *)bufptr = (bytetoktype *) & (bufferbox->toks[0]);	
 	(bytetoktype *)bufub = &(bufferbox->toks[AVAILTOKS]);
@@ -81,13 +74,7 @@ scan_dot_s(bufferbox)
 	MEMTOREGBUF;
 	if (newfflag){
 		newfflag = 0;
-		strd.sd_stroff = strfilepos;
-		strd.sd_place = STR_BOTH;
-		strd.sd_strlen = strlen(newfname) + 1;
-		fputs(newfname, strfile);
-		putc(0, strfile);
-		strfilepos += strd.sd_strlen;
-		ryylval = (int)savestr(newfname, &strd);
+		ryylval = (int)savestr(newfname, strlen(newfname)+1, STR_BOTH);
 
 		ptoken(bufptr, IFILE);
 		ptoken(bufptr, STRING);
@@ -319,9 +306,7 @@ scan_dot_s(bufferbox)
 	case DQ:
 	   eatstr:
 		linescrossed = 0;
-		strd.sd_stroff = strfilepos;
-		strd.sd_place = STR_FILE;
-		for (strd.sd_strlen = 0; /*VOID*/; strd.sd_strlen++){
+		for (strlg = 0; /*VOID*/; strlg++){
 		    switch(ch = getchar()){
 		    case '"':
 			goto tailDQ;
@@ -381,18 +366,14 @@ scan_dot_s(bufferbox)
 			pint(bufptr, linescrossed);
 		}
 		/*
-		 *	put the string in strtext into the string pool
-		 *
 		 *	Cheat: append a trailing null to the string
 		 *	and then adjust the string length to ignore
 		 *	the trailing null.  If any STRING client requires
 		 *	the trailing null, the client can just change STRLEN
 		 */
-		val = STRING;
 		putc(0, strfile);
-		strd.sd_strlen += 1;
-		strfilepos += strd.sd_strlen;
-		ryylval = (int)savestr(strtext, &strd);
+		ryylval = (int)savestr((char *)0, strlg + 1, STR_FILE);
+		val = STRING;
 		((struct strdesc *)ryylval)->sd_strlen -= 1;
 		goto ret;
 
