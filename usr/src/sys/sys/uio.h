@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uio.h	7.6 (Berkeley) %G%
+ *	@(#)uio.h	7.7 (Berkeley) %G%
  */
 
 #ifndef _UIO_H_
