@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sysctl.h	7.16 (Berkeley) %G%
+ *	@(#)sysctl.h	7.17 (Berkeley) %G%
  */
 
 /*
@@ -20,6 +20,23 @@
  */
 
 #define CTL_MAXNAME	12	/* largest number of components supported */
+
+/*
+ * Each subsystem defined by sysctl defines a list of variables
+ * for that subsystem. Each name is either a node with further 
+ * levels defined below it, or it is a leaf of some particular
+ * type given below. Each sysctl level defines a set of name/type
+ * pairs to be used by sysctl(1) in manipulating the subsystem.
+ */
+struct ctlname {
+	char	*ctl_name;	/* subsystem name */
+	int	ctl_type;	/* type of name */
+};
+#define	CTLTYPE_NODE	1	/* name is a node */
+#define	CTLTYPE_INT	2	/* name describes an integer */
+#define	CTLTYPE_STRING	3	/* name describes a string */
+#define	CTLTYPE_QUAD	4	/* name describes a 64-bit number */
+#define	CTLTYPE_STRUCT	5	/* name describes a structure */
 
 /*
  * Top-level identifiers
@@ -35,14 +52,14 @@
 #define	CTL_MAXID	8		/* number of valid top-level ids */
 
 #define CTL_NAMES { \
-	"unspec", \
-	"kern", \
-	"vm", \
-	"fs", \
-	"net", \
-	"debug", \
-	"hw", \
-	"machdep", \
+	{ 0, 0 }, \
+	{ "kern", CTLTYPE_NODE }, \
+	{ "vm", CTLTYPE_NODE }, \
+	{ "fs", CTLTYPE_NODE }, \
+	{ "net", CTLTYPE_NODE }, \
+	{ "debug", CTLTYPE_NODE }, \
+	{ "hw", CTLTYPE_NODE }, \
+	{ "machdep", CTLTYPE_NODE }, \
 }
 
 /*
@@ -66,22 +83,22 @@
 #define	KERN_MAXID	16		/* number of valid kern ids */
 
 #define CTL_KERN_NAMES { \
-	"unspec", \
-	"ostype", \
-	"osrelease", \
-	"osrevision", \
-	"version", \
-	"posix1version", \
-	"maxproc", \
-	"maxfiles", \
-	"argmax", \
-	"securelevel", \
-	"hostname", \
-	"hostid", \
-	"clockrate", \
-	"vnode", \
-	"proc", \
-	"file", \
+	{ 0, 0 }, \
+	{ "ostype", CTLTYPE_STRING }, \
+	{ "osrelease", CTLTYPE_STRING }, \
+	{ "osrevision", CTLTYPE_INT }, \
+	{ "version", CTLTYPE_STRING }, \
+	{ "posix1version", CTLTYPE_INT }, \
+	{ "maxproc", CTLTYPE_INT }, \
+	{ "maxfiles", CTLTYPE_INT }, \
+	{ "argmax", CTLTYPE_INT }, \
+	{ "securelevel", CTLTYPE_INT }, \
+	{ "hostname", CTLTYPE_STRING }, \
+	{ "hostid", CTLTYPE_INT }, \
+	{ "clockrate", CTLTYPE_STRUCT }, \
+	{ "vnode", CTLTYPE_STRUCT }, \
+	{ "proc", CTLTYPE_STRUCT }, \
+	{ "file", CTLTYPE_STRUCT }, \
 }
 
 /* 
@@ -110,16 +127,16 @@
 #define	HW_MAXID	10		/* number of valid hw ids */
 
 #define CTL_HW_NAMES { \
-	"unspec", \
-	"machine", \
-	"model", \
-	"ncpu", \
-	"cpuspeed", \
-	"physmem", \
-	"usermem", \
-	"pagesize", \
-	"disknames", \
-	"diskstats", \
+	{ 0, 0 }, \
+	{ "machine", CTLTYPE_STRING }, \
+	{ "model", CTLTYPE_STRING }, \
+	{ "ncpu", CTLTYPE_INT }, \
+	{ "cpuspeed", CTLTYPE_INT }, \
+	{ "physmem", CTLTYPE_INT }, \
+	{ "usermem", CTLTYPE_INT }, \
+	{ "pagesize", CTLTYPE_INT }, \
+	{ "disknames", CTLTYPE_STRUCT }, \
+	{ "diskstats", CTLTYPE_STRUCT }, \
 }
 
 #ifdef KERNEL
