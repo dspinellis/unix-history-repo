@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)vipw.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)vipw.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -60,7 +60,7 @@ main()
 	(void)umask(0);
 
 	temp = _PATH_PTMP;
-	if ((fd = open(temp, O_WRONLY|O_CREAT|O_EXCL, 0600)) < 0) {
+	if ((fd = open(temp, O_RDWR|O_CREAT|O_EXCL, 0600)) < 0) {
 		if (errno == EEXIST)
 			(void)fprintf(stderr, "vipw: password file busy.\n");
 		else
@@ -83,7 +83,7 @@ syserr:		(void)fprintf(stderr, "vipw: %s: %s; ",
 		    passwd, strerror(errno));
 		stop(1);
 	}
-	if (fsync(fd) || !(tfp = fdopen(fd, "r"))) {
+	if (!(tfp = fdopen(fd, "r"))) {
 		(void)fprintf(stderr, "vipw: %s: %s; ",
 		    temp, strerror(errno));
 		stop(1);
