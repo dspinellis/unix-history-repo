@@ -12,23 +12,26 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mail.local.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)mail.local.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
+
 #include <netinet/in.h>
-#include <syslog.h>
+
+#include <errno.h>
 #include <fcntl.h>
 #include <netdb.h>
 #include <pwd.h>
-#include <time.h>
-#include <unistd.h>
-#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <syslog.h>
+#include <time.h>
+#include <unistd.h>
+
 #include "pathnames.h"
 
 #define	FATAL		1
@@ -40,6 +43,7 @@ void	notifybiff __P((char *));
 int	store __P((char *));
 void	usage __P((void));
 
+int
 main(argc, argv)
 	int argc;
 	char **argv;
@@ -88,6 +92,7 @@ main(argc, argv)
 	exit(eval);
 }
 
+int
 store(from)
 	char *from;
 {
@@ -97,7 +102,7 @@ store(from)
 	char *tn, line[2048];
 
 	tn = strdup(_PATH_LOCTMP);
-	if ((fd = mkstemp(tn)) == -1 || !(fp = fdopen(fd, "w+")))
+	if ((fd = mkstemp(tn)) == -1 || (fp = fdopen(fd, "w+")) == NULL)
 		err(FATAL, "unable to open temporary file");
 	(void)unlink(tn);
 	free(tn);
@@ -131,6 +136,7 @@ store(from)
 	return(fd);
 }
 
+int
 deliver(fd, name)
 	int fd;
 	char *name;
@@ -150,7 +156,7 @@ deliver(fd, name)
 		return(1);
 	}
 
-	(void)sprintf(path, "%s/%s", _PATH_MAILDIR, name);
+	(void)snprintf(path, sizeof(path), "%s/%s", _PATH_MAILDIR, name);
 
 	if (!(created = lstat(path, &sb)) &&
 	    (sb.st_nlink != 1 || S_ISLNK(sb.st_mode))) {
@@ -177,7 +183,7 @@ deliver(fd, name)
 	}
 
 	curoff = lseek(mbfd, (off_t)0, SEEK_END);
-	(void)sprintf(biffmsg, "%s@%qd\n", name, curoff);
+	(void)snprintf(biffmsg, sizeof(biffmsg), "%s@%qd\n", name, curoff);
 	if (lseek(fd, (off_t)0, SEEK_SET) == (off_t)-1) {
 		err(FATAL, "temporary file: %s", strerror(errno));
 		rval = 1;
