@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)lpd.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)lpd.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -44,14 +44,35 @@ static char sccsid[] = "@(#)lpd.c	5.14 (Berkeley) %G%";
  *	   w/o help of lpq and lprm programs.
  */
 
+#include <sys/param.h>
+#include <sys/wait.h>
+
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <netinet/in.h>
+#include <netdb.h>
+
+#include <syslog.h>
+#include <signal.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <dirent.h>
+#include <stdio.h>
 #include "lp.h"
+#include "lp.local.h"
 #include "pathnames.h"
+#include "extern.h"
 
 int	lflag;				/* log requests flag */
 int	from_remote;			/* from remote socket */
 
-void mcleanup(), reapchild();
+static void       reapchild __P((int));
+static void       mcleanup __P((int));
+static void       doit __P((void));
+static void       startup __P((void));
+static void       chkhost __P((struct sockaddr_in *));
 
+int
 main(argc, argv)
 	int argc;
 	char **argv;
@@ -141,18 +162,18 @@ main(argc, argv)
 		if (options & SO_DEBUG)
 			if (setsockopt(finet, SOL_SOCKET, SO_DEBUG, 0, 0) < 0) {
 				syslog(LOG_ERR, "setsockopt (SO_DEBUG): %m");
-				mcleanup();
+				mcleanup(0);
 			}
 		sp = getservbyname("printer", "tcp");
 		if (sp == NULL) {
 			syslog(LOG_ERR, "printer/tcp: unknown service");
-			mcleanup();
+			mcleanup(0);
 		}
 		sin.sin_family = AF_INET;
 		sin.sin_port = sp->s_port;
 		if (bind(finet, (struct sockaddr *)&sin, sizeof(sin)) < 0) {
 			syslog(LOG_ERR, "bind: %m");
-			mcleanup();
+			mcleanup(0);
 		}
 		defreadfds |= 1 << finet;
 		listen(finet, 5);
@@ -205,8 +226,9 @@ main(argc, argv)
 	}
 }
 
-void
-reapchild()
+static void
+reapchild(signo)
+	int signo;
 {
 	union wait status;
 
@@ -214,8 +236,9 @@ reapchild()
 		;
 }
 
-void
-mcleanup()
+static void
+mcleanup(signo)
+	int signo;
 {
 	if (lflag)
 		syslog(LOG_INFO, "exiting");
@@ -243,6 +266,7 @@ char	*cmdnames[] = {
 	"rmjob"
 };
 
+static void
 doit()
 {
 	register char *cp;
@@ -350,6 +374,7 @@ doit()
  * Make a pass through the printcap database and start printing any
  * files left from the last time the machine went down.
  */
+static void
 startup()
 {
 	char buf[BUFSIZ];
@@ -369,7 +394,7 @@ startup()
 			}
 		if ((pid = fork()) < 0) {
 			syslog(LOG_WARNING, "startup: cannot fork");
-			mcleanup();
+			mcleanup(0);
 		}
 		if (!pid) {
 			endprent();
@@ -383,6 +408,7 @@ startup()
 /*
  * Check to see if the from host has access to the line printer.
  */
+static void
 chkhost(f)
 	struct sockaddr_in *f;
 {
@@ -425,3 +451,15 @@ again:
 	fatal("Your host does not have line printer access");
 	/*NOTREACHED*/
 }
+
+
+
+
+
+
+
+
+
+
+
+
