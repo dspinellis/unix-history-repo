@@ -1,6 +1,6 @@
 Hello, Emacs, this is an -*- Indented-Text -*- file!
 
-$Id: Changes,v 1.2 1994/04/02 22:15:18 wollman Exp $
+$Id: Changes,v 1.3 1994/04/05 18:52:11 wollman Exp $
 
 This file is intended to keep track of important kernel and user
 changes in FreeBSD between releases.  Entries are in reverse
@@ -8,6 +8,19 @@ chronological order; userids can be decoded with the chart at the end
 of this file.
 
 Since 1.1 BETA:
+- Allow mbufs to point to other ``external'' objects than just
+  clusters, and add in performance enhancements for NFS from Yuval
+  Yarom.  (davidg)
+
+- Yet more VM system improvements.  (dyson/davidg)
+  o General cleanup and some portability fixes.
+  o A new system process is now responsible for keeping page
+    statistics, rather than making the pagedaemon do it, which was
+    getting impractical.  Performance is improved on small-memory
+    machines.
+  o Process resource usage counters are now properly updated for
+    faults and swaps.
+
 - Fixed bugs in truncating mapped files.  (dyson/davidg)
 
 - A new version of the interrupt-handler glue code has been added, which
