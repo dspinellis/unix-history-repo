@@ -1,0 +1,11 @@
+Atari ST under TOS with gcc compiler
+BLKSIZE_MISSING	1	/* Not really - but it may work better that way */
+STRCASE_MISSING	1 
+STDC_HEADERS	1 
+SYSTEM_MISSING   1 
+SRANDOM_PROTO	1
+ALLOCA_PROTO	1
+DEFPATH	".,c:\\\\lib\\\\awk,c:\\\\gnu\\\\lib\\\\awk"
+ENVSEP	','
+SZTC (size_t)
+INTC (int)
