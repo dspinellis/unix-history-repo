@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)rmt.8	6.2 (Berkeley) %G%
+.\"	@(#)rmt.8	6.3 (Berkeley) %G%
 .\"
 .TH RMT 8 ""
 .UC 5
@@ -40,17 +40,16 @@ magnetic tapes, performs the commands, then responds with
 a status indication.  All responses are in ASCII and in
 one of two forms. 
 Successful commands have responses of
-.PP
-.ti +0.5i
-\fBA\fInumber\fR\en
+.IP
+.BI A number \en
 .PP
 where 
 .I number
 is an ASCII representation of a decimal number.
 Unsuccessful commands are responded to with
 .PP
-.ti +0.5i
-\fBE\fIerror-number\fR\en\fIerror-message\fR\en,
+.IP
+.BI E error-number \en error-message \en
 .PP
 where
 .I error-number
@@ -63,9 +62,12 @@ is the corresponding error string as printed
 from a call to
 .IR perror (3).
 The protocol is comprised of the
-following commands (a space is present between each token).
+following commands, which are sent as indicated - no spaces are supplied
+between the command and its arguments, or between its arguments, and
+.B \en
+indicates that a newline should be supplied:
 .TP 15
-.B O device mode
+.BI O device \en mode \en
 Open the specified 
 .I device
 using the indicated
@@ -79,12 +81,12 @@ number suitable for passing to
 If a device had already been opened, it is
 closed before a new open is performed.
 .TP 15
-.B C device
+.BI C device \en
 Close the currently open device.  The
 .I device
 specified is ignored.
 .TP 15
-.B L whence offset
+.BI L whence \en offset \en
 Perform an
 .IR lseek (2)
 operation using the specified parameters.
@@ -92,7 +94,7 @@ The response value is that returned from the
 .I lseek
 call.
 .TP 15
-.B W count
+.BI W count \en
 Write data onto the open device.
 .I Rmt
 reads
@@ -104,7 +106,7 @@ the
 .IR write (2)
 call.
 .TP 15
-.B R count
+.BI R count \en
 Read
 .I count
 bytes of data from the open device.
@@ -116,12 +118,13 @@ truncated to the data buffer size.
 then performs the requested 
 .IR read (2)
 and responds with 
-\fBA\fIcount-read\fR\en if the read was
+.BI A count-read \en
+if the read was
 successful; otherwise an error in the
 standard format is returned.  If the read
 was successful, the data read is then sent.
 .TP 15
-.B I operation count 
+.BI I operation \en count \en
 Perform a MTIOCOP 
 .IR ioctl (2)
 command using the specified parameters.
