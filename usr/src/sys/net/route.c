@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)route.c	7.28 (Berkeley) %G%
+ *	@(#)route.c	7.29 (Berkeley) %G%
  */
 #include "param.h"
 #include "systm.h"
@@ -32,7 +32,6 @@
 
 int	rttrash;		/* routes not in table but not freed */
 struct	sockaddr wildcard;	/* zero valued cookie for wildcard searches */
-int	rthashsize = RTHASHSIZ;	/* for netstat, etc. */
 
 static int rtinits_done = 0;
 struct radix_node *rn_match(), *rn_delete(), *rn_addroute();
@@ -69,6 +68,7 @@ rtalloc1(dst, report)
 	register struct rtentry *rt;
 	register struct radix_node *rn;
 	struct rtentry *newrt = 0;
+	struct rt_addrinfo info;
 	int  s = splnet(), err = 0, msgtype = RTM_MISS;
 
 	if (rnh && rnh->rnh_treetop &&
@@ -85,8 +85,11 @@ rtalloc1(dst, report)
 			rt->rt_refcnt++;
 	} else {
 		rtstat.rts_unreach++;
-	miss:	if (report)
-			rt_missmsg(msgtype, dst, SA(0), SA(0), SA(0), 0, err);
+	miss:	if (report) {
+			bzero((caddr_t)&info, sizeof(info));
+			info.rti_info[RTAX_DST] = dst;
+			rt_missmsg(msgtype, &info, 0, err);
+		}
 	}
 	splx(s);
 	return (newrt);
@@ -110,6 +113,7 @@ rtfree(rt)
 	}
 }
 int ifafree_verbose;
+struct ifaddr *ifafree_usedlist;
 void
 ifafree(ifa)
 	register struct ifaddr *ifa;
@@ -119,9 +123,12 @@ ifafree(ifa)
 	/* for now . . . . */
 	if (ifafree_verbose) {
 	    if (ifa->ifa_refcnt < 0)
-		    printf("ifafree: would panic\n");
-	    if (ifa->ifa_refcnt == 0)
+		    printf("ifafree(%x): would panic\n", ifa);
+	    if (ifa->ifa_refcnt == 0) {
 		    printf("ifafree((caddr_t)ifa, M_IFADDR)\n");
+		    ifa->ifa_next = ifafree_usedlist;
+		    ifafree_usedlist = ifa;
+	    }
 	    if (ifa->ifa_flags & IFA_ROUTE)
 		    printf("ifafree: has route \n");
 	}
@@ -145,6 +152,7 @@ rtredirect(dst, gateway, netmask, flags, src, rtp)
 	register struct rtentry *rt;
 	int error = 0;
 	short *stat = 0;
+	struct rt_addrinfo info;
 
 	/* verify the gateway is directly reachable */
 	if (ifa_ifwithnet(gateway) == 0) {
@@ -213,7 +221,12 @@ out:
 		rtstat.rts_badredirect++;
 	else if (stat != NULL)
 		(*stat)++;
-	rt_missmsg(RTM_REDIRECT, dst, gateway, netmask, src, flags, error);
+	bzero((caddr_t)&info, sizeof(info));
+	info.rti_info[RTAX_DST] = dst;
+	info.rti_info[RTAX_GATEWAY] = gateway;
+	info.rti_info[RTAX_NETMASK] = netmask;
+	info.rti_info[RTAX_AUTHOR] = src;
+	rt_missmsg(RTM_REDIRECT, &info, flags, error);
 }
 
 /*
@@ -279,9 +292,9 @@ rtioctl(req, data, p)
 		}
 	error =  rtrequest(req, &(entry->rt_dst), &(entry->rt_gateway), netmask,
 				entry->rt_flags, (struct rtentry **)0);
-	rt_missmsg((req == RTM_ADD ? RTM_OLDADD : RTM_OLDDEL),
+	/* rt_missmsg((req == RTM_ADD ? RTM_OLDADD : RTM_OLDDEL),
 		   &(entry->rt_dst), &(entry->rt_gateway),
-		   netmask, SA(0), entry->rt_flags, error);
+		   netmask, SA(0), entry->rt_flags, error); */
 	return (error);
 #endif
 }
@@ -369,7 +382,9 @@ rtrequest(req, dst, gateway, netmask, flags, ret_nrt)
 		if ((ifa = rt->rt_ifa) && ifa->ifa_rtrequest)
 			ifa->ifa_rtrequest(RTM_DELETE, rt, SA(0));
 		rttrash++;
-		if (rt->rt_refcnt <= 0)
+		if (ret_nrt)
+			*ret_nrt = rt;
+		else if (rt->rt_refcnt <= 0)
 			rtfree(rt);
 		break;
 
@@ -491,13 +506,10 @@ rtinit(ifa, cmd, flags)
 	register struct sockaddr *dst;
 	register struct sockaddr *deldst;
 	struct mbuf *m = 0;
+	struct rtentry *nrt = 0;
 	int error;
 
 	dst = flags & RTF_HOST ? ifa->ifa_dstaddr : ifa->ifa_addr;
-	if (rt = ifa->ifa_rt) {
-		rtfree(rt);
-		ifa->ifa_rt = 0;
-	}
 	if (cmd == RTM_DELETE) {
 		if ((flags & RTF_HOST) == 0 && ifa->ifa_netmask) {
 			m = m_get(M_WAIT, MT_SONAME);
@@ -516,13 +528,18 @@ rtinit(ifa, cmd, flags)
 		}
 	}
 	error = rtrequest(cmd, dst, ifa->ifa_addr, ifa->ifa_netmask,
-			flags | ifa->ifa_flags, &ifa->ifa_rt);
+			flags | ifa->ifa_flags, &nrt);
+	rt_newaddrmsg(cmd, ifa, error, nrt);
 	if (m)
 		(void) m_free(m);
-	if (cmd == RTM_ADD && error == 0 && (rt = ifa->ifa_rt)
-						&& rt->rt_ifa != ifa) {
+	if (cmd == RTM_DELETE && error == 0 && (rt = nrt)) {
+		if (rt->rt_refcnt <= 0)
+			rtfree(rt);
+	}
+	if (cmd == RTM_ADD && error == 0 && (rt = nrt)) {
 		rt->rt_ifa = ifa;
 		rt->rt_ifp = ifa->ifa_ifp;
+		rt->rt_refcnt--;
 	}
 	return (error);
 }
