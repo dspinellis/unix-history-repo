@@ -298,6 +298,7 @@ off_t	offset = sizeof (off_t);
 
 int	ofilfnd;		/* -o given; otherwise move l.out to a.out */
 char	*ofilename = "l.out";
+int	ofilemode;		/* respect umask even for unsucessful ld's */
 int	infil;			/* current input file descriptor */
 char	*filname;		/* and its name */
 
@@ -492,7 +493,7 @@ delexit()
 	bflush();
 	unlink("l.out");
 	if (delarg==0 && Aflag==0)
-		chmod(ofilename, 0777 &~ umask(0));
+		chmod(ofilename, ofilemode);
 	exit (delarg);
 }
 
@@ -971,11 +972,19 @@ setupout()
 	extern char *sys_errlist[];
 	extern int errno;
 
-	biofd = creat(ofilename, 0666);
+	ofilemode = 0777 & ~umask(0);
+	biofd = creat(ofilename, 0666 & ofilemode);
 	if (biofd < 0) {
 		filname = ofilename;		/* kludge */
 		archdr.ar_name[0] = 0;		/* kludge */
 		error(1, sys_errlist[errno]);	/* kludge */
+	} else {
+		struct stat mybuf;		/* kls kludge */
+		fstat(biofd, &mybuf);		/* suppose file exists, wrong*/
+		if(mybuf.st_mode & 0111) {	/* mode, ld fails? */
+			chmod(ofilename, mybuf.st_mode & 0666);
+			ofilemode = mybuf.st_mode;
+		}
 	}
 	tout = &toutb;
 	bopen(tout, 0);
