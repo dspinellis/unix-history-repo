@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)docmd.c	4.7 (Berkeley) 83/10/27";
+static	char *sccsid = "@(#)docmd.c	4.8 (Berkeley) 83/11/01";
 #endif
 
 #include "defs.h"
@@ -14,8 +14,6 @@ dohcmds(files, hosts, cmds)
 {
 	register struct block *h, *f, *c;
 	register char **cpp;
-	static struct block excpt = { EXCEPT };
-	char *cp;
 	int n, ddir;
 
 	if (debug)
@@ -31,28 +29,10 @@ dohcmds(files, hosts, cmds)
 		error("empty list of hosts to be updated\n");
 		return;
 	}
+	if (!mkexceptlist(cmds))
+		return;
+
 	ddir = files->b_next != NULL;
-	f = NULL;
-	except = NULL;
-	for (c = cmds; c != NULL; c = c->b_next) {
-		if (c->b_type != EXCEPT)
-			continue;
-		if (except == NULL)
-			except = &excpt;
-		for (h = c->b_args; h != NULL; h = h->b_next) {
-			cp = h->b_name;
-			if (*cp == '~') {
-				(void) exptilde(buf, cp);
-				cp = buf;
-			}
-			if (f == NULL)
-				except->b_args = f = expand(makeblock(NAME, cp), 0);
-			else
-				f->b_next = expand(makeblock(NAME, cp), 0);
-			while (f->b_next != NULL)
-				f = f->b_next;
-		}
-	}
 
 	for (h = hosts; h != NULL; h = h->b_next) {
 		if (!qflag)
@@ -80,13 +60,12 @@ dohcmds(files, hosts, cmds)
 				if (c->b_type != INSTALL)
 					continue;
 				n++;
-				if (c->b_name == NULL)
-					install(f->b_name, f->b_name, 0, c->b_options);
-				else
-					install(f->b_name, c->b_name, ddir, c->b_options);
+				install(f->b_name, c->b_name,
+					c->b_name == NULL ? 0 : ddir,
+					c->b_options);
 			}
 			if (n == 0)
-				install(f->b_name, f->b_name, 0, options);
+				install(f->b_name, NULL, 0, options);
 		}
 		if (!nflag) {
 			/* signal end of connection */
@@ -112,8 +91,7 @@ makeconn(rhost)
 	register char *ruser;
 	extern char user[];
 
-	(void) sprintf(buf, "/usr/local/rdist -Server%s%s",
-		nflag ? " -n" : "", qflag ? " -q" : "");
+	(void) sprintf(buf, "/usr/local/rdist -Server%s", qflag ? " -q" : "");
 
 	ruser = rindex(rhost, '.');
 	if (ruser != NULL) {
@@ -138,44 +116,24 @@ makeconn(rhost)
 	return(1);
 }
 
-/*
- * Update the file(s) if they are different.
- * destdir = 1 if destination should be a directory
- * (i.e., more than one source is being copied to the same destination).
- */
-install(src, dest, destdir, opts)
-	char *src, *dest;
-	int destdir, opts;
+okname(name)
+	register char *name;
 {
-	register char *cp;
+	register char *cp = name;
+	register int c;
 
-	if (exclude(src))
-		return;
-
-	if (nflag || debug) {
-		printf("%s%s%s%s%s %s %s\n", opts & VERIFY ? "verify":"install",
-			opts & WHOLE ? " -w" : "",
-			opts & YOUNGER ? " -y" : "",
-			opts & COMPARE ? " -b" : "",
-			opts & REMOVE ? " -r" : "", src, dest);
-		if (nflag)
-			return;
-	}
-	/*
-	 * Pass the destination file/directory name to remote.
-	 */
-	(void) sprintf(buf, "%c%s\n", destdir ? 'T' : 't', dest);
-	if (debug)
-		printf("buf = %s", buf);
-	(void) write(rem, buf, strlen(buf));
-
-	if (!destdir && (opts & WHOLE))
-		opts |= STRIP;
-	if (opts & REMOVE) {
-		opts &= ~REMOVE;
-		rmchk(src, NULL, opts);
-	}
-	sendf(src, NULL, opts);
+	do {
+		c = *cp;
+		if (c & 0200)
+			goto bad;
+		if (!isalpha(c) && !isdigit(c) && c != '_' && c != '-')
+			goto bad;
+		cp++;
+	} while (*cp);
+	return(1);
+bad:
+	error("invalid user name %s\n", name);
+	return(0);
 }
 
 struct tstamp {
@@ -214,7 +172,8 @@ dofcmds(files, stamps, cmds)
 		error("empty time stamp file list\n");
 		return;
 	}
-	except = cmds;
+	if (!mkexceptlist(cmds))
+		return;
 
 	t = ts;
 	nstamps = 0;
@@ -284,7 +243,8 @@ cmptime(name)
 	 * first time cmptime() is called?
 	 */
 	if (tp == NULL) {
-		exptilde(target, name);
+		if (exptilde(target, name) == NULL)
+			return;
 		tp = name = target;
 		while (*tp)
 			tp++;
@@ -437,36 +397,48 @@ struct	block *except;		/* list of files to exclude */
 exclude(file)
 	char *file;
 {
-	register struct block *b, *c;
+	register struct block *c;
 
-	for (c = except; c != NULL; c = c->b_next) {
-		if (c->b_type != EXCEPT)
-			continue;
-		for (b = c->b_args; b != NULL; b = b->b_next)
-			if (!strcmp(file, b->b_name))
-				return(1);
-	}
+	for (c = except; c != NULL; c = c->b_next)
+		if (!strcmp(file, c->b_name))
+			return(1);
 	return(0);
 }
 
-okname(name)
-	register char *name;
+/*
+ * Build the exception list from an unexpanded list of commands.
+ */
+mkexceptlist(cmds)
+	struct block *cmds;
 {
-	register char *cp = name;
-	register int c;
+	register struct block *f, *a, *c;
+	register char *cp;
 
-	do {
-		c = *cp;
-		if (c & 0200)
-			goto bad;
-		if (!isalpha(c) && !isdigit(c) && c != '_' && c != '-')
-			goto bad;
-		cp++;
-	} while (*cp);
+	if (debug)
+		printf("mkexceptlist()\n");
+
+	except = f = NULL;
+	for (c = cmds; c != NULL; c = c->b_next) {
+		if (c->b_type != EXCEPT)
+			continue;
+		for (a = c->b_args; a != NULL; a = a->b_next) {
+			cp = a->b_name;
+			if (*cp == '~') {
+				if (exptilde(buf, cp) == NULL)
+					return(0);
+				cp = buf;
+			}
+			if (f == NULL)
+				except = f = expand(makeblock(NAME, cp), 0);
+			else
+				f->b_next = expand(makeblock(NAME, cp), 0);
+			while (f->b_next != NULL)
+				f = f->b_next;
+		}
+	}
+	if (debug)
+		prnames(except);
 	return(1);
-bad:
-	error("invalid user name %s\n", name);
-	return(0);
 }
 
 char *

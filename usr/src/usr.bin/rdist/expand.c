@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)expand.c	4.4 (Berkeley) 83/10/20";
+static	char *sccsid = "@(#)expand.c	4.5 (Berkeley) 83/11/01";
 #endif
 
 #include "defs.h"
@@ -550,30 +550,32 @@ exptilde(buf, file)
 	register char *file;
 {
 	register char *s1, *s2, *s3;
-	register struct passwd *pw;
-	extern char *homedir;
+	extern char homedir[];
 
 	if (*file != '~') {
 		strcpy(buf, file);
 		return(buf);
 	}
-	file++;
-	if (*file == '\0' || *file == '/') {
+	if (*++file == '\0') {
+		s2 = homedir;
+		s3 = NULL;
+	} else if (*file == '/') {
 		s2 = homedir;
 		s3 = file;
 	} else {
-		for (s3 = file; *s3 && *s3 != '/'; s3++)
-			;
+		while (*s3 && *s3 != '/')
+			s3++;
 		if (*s3 == '/')
 			*s3 = '\0';
 		else
 			s3 = NULL;
-		pw = getpwnam(file);
-		if (pw == NULL) {
-			error("unknown user %s\n", file);
-			if (s3 != NULL)
-				*s3 = '/';
-			return(NULL);
+		if (pw == NULL || strcmp(pw->pw_name, file) != 0) {
+			if ((pw = getpwnam(file)) == NULL) {
+				error("unknown user %s\n", file);
+				if (s3 != NULL)
+					*s3 = '/';
+				return(NULL);
+			}
 		}
 		if (s3 != NULL)
 			*s3 = '/';
@@ -582,8 +584,10 @@ exptilde(buf, file)
 	for (s1 = buf; *s1++ = *s2++; )
 		;
 	s2 = --s1;
-	if (s3 != NULL)
+	if (s3 != NULL) {
+		s2++;
 		while (*s1++ = *s3++)
 			;
+	}
 	return(s2);
 }
