@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)telnet.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	5.11 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -55,15 +55,23 @@ typedef long	fd_set;
 
 #endif
 
-#define	strip(x)	((x)&0x3f)
+#define	strip(x)	((x)&0x7f)
 
-char	ttyobuf[BUFSIZ], *tfrontp = ttyobuf, *tbackp = ttyobuf;
-#define	TTYADD(c)	{ if (!SYNCHing) { *tfrontp++ = c; } }
+char	ttyobuf[2*BUFSIZ], *tfrontp = ttyobuf, *tbackp = ttyobuf;
+#define	TTYADD(c)	{ if (!(SYNCHing||flushout)) { *tfrontp++ = c; } }
+#define	TTYLOC()	(tfrontp)
+#define	TTYMAX()	(ttyobuf+sizeof ttyobuf-1)
+#define	TTYMIN()	(netobuf)
+#define	TTYBYTES()	(tfrontp-tbackp)
+#define	TTYROOM()	(TTYMAX()-TTYLOC()+1)
 
-char	netobuf[BUFSIZ], *nfrontp = netobuf, *nbackp = netobuf;
+char	netobuf[2*BUFSIZ], *nfrontp = netobuf, *nbackp = netobuf;
 #define	NETADD(c)	{ *nfrontp++ = c; }
 #define	NET2ADD(c1,c2)	{ NETADD(c1); NETADD(c2); }
 #define NETLOC()	(nfrontp)
+#define	NETMAX()	(netobuf+sizeof netobuf-1)
+#define	NETBYTES()	(nfrontp-nbackp)
+#define	NETROOM()	(NETMAX()-NETLOC()+1)
 char	*neturg = 0;		/* one past last byte of urgent data */
 
 char	hisopts[256];
@@ -99,6 +107,7 @@ char	echoc = CTRL(E);
 
 int	SYNCHing = 0;		/* we are in TELNET SYNCH mode */
 int	flushout = 0;		/* flush output */
+int	autoflush = 0;		/* flush output when interrupting? */
 int	autosynch = 0;		/* send interrupt characters with SYNCH? */
 int	localsigs = 0;		/* we recognize interrupt/quit */
 int	donelclsigs = 0;	/* the user has set "localsigs" */
@@ -121,7 +130,7 @@ struct	cmd *getcmd();
 struct	servent *sp;
 
 struct	tchars otc, ntc;
-struct	ltchars oltc;
+struct	ltchars oltc, nltc;
 struct	sgttyb ottyb, nttyb;
 int	globalmode = 0;
 int	flushline = 1;
@@ -200,7 +209,7 @@ register char *s;
 	case '^':
 		b = *++s;
 		if (b == '?') {
-		    c = b | 0x80;		/* DEL */
+		    c = b | 0x40;		/* DEL */
 		} else {
 		    c = b & 0x1f;
 		}
@@ -222,7 +231,7 @@ control(c)
 {
 	static char buf[3];
 
-	if (c == 0x3f)
+	if (c == 0x7f)
 		return ("^?");
 	if (c == '\377') {
 		return "off";
@@ -333,10 +342,11 @@ ttyflush()
     int n;
 
     if ((n = tfrontp - tbackp) > 0) {
-	if (!SYNCHing) {
+	if (!(SYNCHing||flushout)) {
 	    n = write(tout, tbackp, n);
 	} else {
 	    ioctl(fileno(stdout), TIOCFLUSH, (char *) 0);
+	    /* we leave 'n' alone! */
 	}
     }
     if (n < 0) {
@@ -362,9 +372,6 @@ intr()
 {
     if (localsigs) {
 	intp();
-	if (autosynch) {
-	    dosynch();
-	}
 	return;
     }
     setcommandmode();
@@ -375,9 +382,6 @@ intr2()
 {
     if (localsigs) {
 	sendbrk();
-	if (autosynch) {
-	    dosynch();
-	}
 	return;
     }
 }
@@ -458,10 +462,6 @@ printoption(direction, fmt, option, what)
  * Mode - set up terminal to a specific mode.
  */
 
-struct	tchars notc =	{ -1, -1, -1, -1, -1, -1 };
-struct	tchars notc2;
-struct	ltchars noltc =	{ -1, -1, -1, -1, -1, -1 };
-struct	ltchars noltc2;
 
 mode(f)
 	register int f;
@@ -471,6 +471,10 @@ mode(f)
 	struct ltchars *ltc;
 	struct sgttyb sb;
 	int onoff, old;
+	struct	tchars notc2;
+	struct	ltchars noltc2;
+	static struct	tchars notc =	{ -1, -1, -1, -1, -1, -1 };
+	static struct	ltchars noltc =	{ -1, -1, -1, -1, -1, -1 };
 
 	globalmode = f;
 	if (prevmode == f)
@@ -499,13 +503,13 @@ mode(f)
 		 * If user hasn't specified one way or the other,
 		 * then default to not trapping signals.
 		 */
-		if (!donelclsigs)
+		if (!donelclsigs) {
 			localsigs = 0;
+		}
 		if (localsigs) {
 			notc2 = notc;
 			notc2.t_intrc = ntc.t_intrc;
 			notc2.t_quitc = ntc.t_quitc;
-			notc2.t_eofc = ntc.t_eofc;
 			tc = &notc2;
 		} else
 			tc = &notc;
@@ -521,23 +525,25 @@ mode(f)
 			sb.sg_flags |= ECHO;
 		else
 			sb.sg_flags &= ~ECHO;
+		notc2 = ntc;
+		tc = &notc2;
+		noltc2 = oltc;
+		ltc = &noltc2;
 		/*
 		 * If user hasn't specified one way or the other,
 		 * then default to trapping signals.
 		 */
-		if (!donelclsigs)
+		if (!donelclsigs) {
 			localsigs = 1;
-		if (localsigs)
-			tc = &ntc;
-		else {
-			notc2 = ntc;
-			notc2.t_intrc = notc2.t_quitc = -1;
-			tc = &notc2;
 		}
-		noltc2 = oltc;
+		if (localsigs) {
+			notc2.t_brkc = nltc.t_flushc;
+			noltc2.t_flushc = -1;
+		} else {
+			notc2.t_intrc = notc2.t_quitc = -1;
+		}
 		noltc2.t_suspc = escape;
 		noltc2.t_dsuspc = -1;
-		ltc = &noltc2;
 		onoff = 1;
 		break;
 
@@ -603,6 +609,7 @@ char	sibuf[BUFSIZ], *sbp;
 char	tibuf[BUFSIZ], *tbp;
 int	scc, tcc;
 
+
 /*
  * Select from tty and network...
  */
@@ -614,10 +621,12 @@ telnet()
 
 	tout = fileno(stdout);
 	setconnmode();
+	scc = 0;
+	tcc = 0;
 	ioctl(net, FIONBIO, (char *)&on);
-#if	defined(IOCTL_TO_DO_UNIX_OOB_IN_TCP_WAY)
-	ioctl(net, asdf, asdf);		/* handle urgent data in band */
-#endif	/* defined(IOCTL_TO_DO_UNIX_OOB_IN_TCP_WAY) */
+#if	defined(xxxSO_OOBINLINE)
+	setsockopt(net, SOL_SOCKET, SO_OOBINLINE, on, sizeof on);
+#endif	/* defined(xxxSO_OOBINLINE) */
 	if (telnetport && !hisopts[TELOPT_SGA]) {
 		willoption(TELOPT_SGA);
 	}
@@ -632,12 +641,12 @@ telnet()
 		FD_ZERO(&obits);
 		FD_ZERO(&xbits);
 
-		if (((globalmode < 4) || flushline) && (nfrontp - nbackp)) {
+		if (((globalmode < 4) || flushline) && NETBYTES()) {
 			FD_SET(net, &obits);
 		} else {
 			FD_SET(tin, &ibits);
 		}
-		if (tfrontp - tbackp) {
+		if (TTYBYTES()) {
 			FD_SET(tout, &obits);
 		} else {
 			FD_SET(net, &ibits);
@@ -673,7 +682,13 @@ telnet()
 		 * Something to read from the network...
 		 */
 		if (FD_ISSET(net, &ibits)) {
-#if	!defined(IOCTL_TO_DO_UNIX_OOB_IN_TCP_WAY)
+			int canread;
+
+			if (scc == 0) {
+			    sbp = sibuf;
+			}
+			canread = sibuf + sizeof sibuf - sbp;
+#if	!defined(xxxSO_OOBINLINE)
 			/*
 			 * In 4.2 (and some early 4.3) systems, the
 			 * OOB indication and data handling in the kernel
@@ -713,54 +728,55 @@ telnet()
 
 			ioctl(net, SIOCATMARK, (char *)&atmark);
 			if (atmark) {
-			    scc = recv(net, sibuf, sizeof (sibuf), MSG_OOB);
-			    if ((scc == -1) && (errno == EINVAL)) {
-				scc = read(net, sibuf, sizeof (sibuf));
+			    c = recv(net, sibuf, canread, MSG_OOB);
+			    if ((c == -1) && (errno == EINVAL)) {
+				c = read(net, sibuf, canread);
 				if (clocks.didnetreceive < clocks.gotDM) {
 				    SYNCHing = stilloob(net);
 				}
 			    }
 			} else {
-			    scc = read(net, sibuf, sizeof (sibuf));
+			    c = read(net, sibuf, canread);
 			}
 		    } else {
-			scc = read(net, sibuf, sizeof (sibuf));
+			c = read(net, sibuf, canread);
 		    }
 		    settimer(didnetreceive);
-#else	/* !defined(IOCTL_TO_DO_UNIX_OOB_IN_TCP_WAY) */
-		    scc = read(net, sibuf, sizeof (sibuf));
-#endif	/* !defined(IOCTL_TO_DO_UNIX_OOB_IN_TCP_WAY) */
-		    if (scc < 0 && errno == EWOULDBLOCK)
-			scc = 0;
-		    else {
-			if (scc <= 0) {
-			    break;
-			}
-			sbp = sibuf;
-			if (netdata) {
-			    Dump('<', sbp, scc);
-			}
+#else	/* !defined(xxxSO_OOBINLINE) */
+		    c = read(net, sbp, canread);
+#endif	/* !defined(xxxSO_OOBINLINE) */
+		    if (c < 0 && errno == EWOULDBLOCK) {
+			c = 0;
+		    } else if (c <= 0) {
+			break;
 		    }
+		    if (netdata) {
+			Dump('<', sbp, c);
+		    }
+		    scc += c;
 		}
 
 		/*
 		 * Something to read from the tty...
 		 */
 		if (FD_ISSET(tin, &ibits)) {
-			tcc = read(tin, tibuf, sizeof (tibuf));
-			if (tcc < 0 && errno == EWOULDBLOCK)
-				tcc = 0;
-			else {
-				if (tcc <= 0)
-					break;
-				tbp = tibuf;
+			if (tcc == 0) {
+			    tbp = tibuf;	/* nothing left, reset */
 			}
+			c = read(tin, tbp, tibuf+sizeof tibuf - tbp);
+			if (c < 0 && errno == EWOULDBLOCK) {
+				c = 0;
+			} else if (c <= 0) {
+				tcc = c;
+				break;
+			}
+			tcc += c;
 		}
 
 		while (tcc > 0) {
 			register int sc;
 
-			if ((&netobuf[BUFSIZ] - nfrontp) < 2) {
+			if (NETROOM() < 2) {
 				flushline = 1;
 				break;
 			}
@@ -790,6 +806,12 @@ telnet()
 					break;
 				} else if (sc == ntc.t_quitc) {
 					sendbrk();
+					break;
+				} else if (sc == nltc.t_flushc) {
+					NET2ADD(IAC, AO);
+					if (autoflush) {
+					    doflush();
+					}
 					break;
 				} else if (globalmode > 2) {
 					;
@@ -826,12 +848,12 @@ telnet()
 			}
 		}
 		if (((globalmode < 4) || flushline) &&
-		    (FD_ISSET(net, &obits) && (nfrontp - nbackp) > 0)) {
+		    FD_ISSET(net, &obits) && (NETBYTES() > 0)) {
 			netflush(net);
 		}
 		if (scc > 0)
 			telrcv();
-		if (FD_ISSET(tout, &obits) && (tfrontp - tbackp) > 0)
+		if (FD_ISSET(tout, &obits) && (TTYBYTES() > 0))
 			ttyflush();
 	}
 	setcommandmode();
@@ -853,47 +875,57 @@ telrcv()
 	register int c;
 	static int state = TS_DATA;
 
-	while (scc > 0) {
+	while ((scc > 0) && (TTYROOM() > 2)) {
 		c = *sbp++ & 0xff, scc--;
 		switch (state) {
 
 		case TS_CR:
 			state = TS_DATA;
-			if ((c == '\0') || (c == '\n')) {
-			    break;	/* by now, we ignore \n */
+			if (c == '\0') {
+			    break;	/* Ignore \0 after CR */
+			} else if (c == '\n') {
+			    if (hisopts[TELOPT_ECHO] && !crmod) {
+				TTYADD(c);
+			    }
+			    break;
 			}
+			/* Else, fall through */
 
 		case TS_DATA:
 			if (c == IAC) {
 				state = TS_IAC;
 				continue;
 			}
+			    /*
+			     * The 'crmod' hack (see following) is needed
+			     * since we can't * set CRMOD on output only.
+			     * Machines like MULTICS like to send \r without
+			     * \n; since we must turn off CRMOD to get proper
+			     * input, the mapping is done here (sigh).
+			     */
 			if (c == '\r') {
 				if (scc > 0) {
 					c = *sbp&0xff;
 					if (c == 0) {
 						sbp++, scc--;
+						/* a "true" CR */
 						TTYADD('\r');
-				/*
-				 * The following hack is needed since we can't
-				 * set CRMOD on output only.  Machines like
-				 * MULTICS like to send \r without \n; since
-				 * we must turn off CRMOD to get proper input,
-				 * the mapping is done here (sigh).
-				 */
-						if (crmod) {
-							TTYADD('\n');
-						}
 					} else if (!hisopts[TELOPT_ECHO] &&
 								(c == '\n')) {
 						sbp++, scc--;
 						TTYADD('\n');
 					} else {
 						TTYADD('\r');
+						if (crmod) {
+							TTYADD('\n');
+						}
 					}
 				} else {
 					state = TS_CR;
 					TTYADD('\r');
+					if (crmod) {
+						TTYADD('\n');
+					}
 				}
 			} else {
 				TTYADD(c);
@@ -1089,26 +1121,37 @@ struct sendlist *s;
     neturg = NETLOC()-1;	/* Some systems are off by one XXX */
 }
 
+doflush()
+{
+    /* This shouldn't really be here... */
+    NET2ADD(IAC, DO);
+    NETADD(TELOPT_TM);
+    printoption("SENT", doopt, TELOPT_TM);
+    flushline = 1;
+    flushout = 1;
+    ttyflush();
+}
+
 intp()
 {
     NET2ADD(IAC, IP);
+    if (autoflush) {
+	doflush();
+    }
+    if (autosynch) {
+	dosynch();
+    }
 }
 
 sendbrk()
 {
-#if	0
-    /*
-     * There is a question here.  Should we send a TM to flush the stream?
-     * Should we also send a TELNET SYNCH also?
-     */
-    *nfrontp++ = IAC;
-    *nfrontp++ = DO;
-    *nfrontp++ = TELOPT_TM;
-    flushout = 1;
-    printoption("SENT", doopt, TELOPT_TM);
-#endif	/* 0 */
     NET2ADD(IAC, BREAK);
-    flushline = 1;
+    if (autoflush) {
+	doflush();
+    }
+    if (autosynch) {
+	dosynch();
+    }
 }
 
 
@@ -1208,7 +1251,7 @@ char	**argv;
 	}
     }
     /* Now, do we have enough room? */
-    if (netobuf+sizeof netobuf-nfrontp-1 < count) {
+    if (NETROOM() < count) {
 	printf("There is not enough room in the buffer TO the network\n");
 	printf("to process your request.  Nothing will be done.\n");
 	printf("('send synch' will throw away most data in the network\n");
@@ -1311,6 +1354,12 @@ struct togglelist Togglelist[] = {
 		1,
 		    &autosynch,
 			"send interrupt characters in urgent mode" },
+    { "autoflush",
+	"toggle automatic flushing of output when sending interrupt characters",
+	    0,
+		1,
+		    &autoflush,
+			"flush output when sending interrupt characters" },
     { "crmod",
 	crmodhelp,
 	    0,
@@ -1424,8 +1473,11 @@ struct setlist {
 struct setlist Setlist[] = {
     { "echo", 	"character to toggle local echoing on/off", &echoc },
     { "escape",	"character to escape back to telnet command mode", &escape },
+    { "\200", "" },
+    { "\200", "The following need 'localsigs' to be toggled true", 0 },
     { "interrupt", "character to cause an Interrupt Process", &ntc.t_intrc },
     { "quit",	"character to cause a Break", &ntc.t_quitc },
+    { "flush output", "character to cause an Abort Oubput", &nltc.t_flushc },
     { "erase",	"character to cause an Erase Character", &nttyb.sg_erase },
     { "kill",	"character to cause an Erase Line", &nttyb.sg_kill },
     { 0 }
@@ -1683,7 +1735,7 @@ char	*argv[];
 	printf("Connected to %s.\n", hostname);
 	if (argc < 2) {
 	    printf("Operating in %s.\n", modedescriptions[getconnmode()]);
-	    if (localsigs || ((!donelclsigs) && (getconnmode() >= 3))) {
+	    if (localsigs) {
 		printf("Catching signals locally.\n");
 	    }
 	}
@@ -1985,8 +2037,13 @@ main(argc, argv)
 	ioctl(0, TIOCGETP, (char *)&ottyb);
 	ioctl(0, TIOCGETC, (char *)&otc);
 	ioctl(0, TIOCGLTC, (char *)&oltc);
+#if	defined(LNOFLSH)
+	ioctl(0, TIOCLGET, (char *)&autoflush);
+	autoflush &= LNOFLSH;
+#endif	/* LNOFLSH */
 	ntc = otc;
 	ntc.t_eofc = -1;		/* we don't want to use EOF */
+	nltc = oltc;
 	nttyb = ottyb;
 	setbuf(stdin, (char *)0);
 	setbuf(stdout, (char *)0);
