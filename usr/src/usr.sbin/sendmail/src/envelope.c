@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	8.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	8.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -612,7 +612,7 @@ setsender(from, e, delimptr, internal)
 			char nbuf[100];
 
 			SuprErrs = TRUE;
-			expand("\201n", buf, &buf[sizeof buf], e);
+			expand("\201n", nbuf, &nbuf[sizeof nbuf], e);
 			if (parseaddr(from = newstr(nbuf), &e->e_from,
 				      RF_COPYALL, ' ', NULL, e) == NULL &&
 			    parseaddr(from = "postmaster", &e->e_from,
