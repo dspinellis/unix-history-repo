@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-SCCSID(@(#)savemail.c	3.24		%G%);
+SCCSID(@(#)savemail.c	3.25		%G%);
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -36,6 +36,7 @@ savemail()
 
 	if (exclusive++)
 		return;
+	ForceMail = TRUE;
 
 	/*
 	**  In the unhappy event we don't know who to return the mail
@@ -145,13 +146,16 @@ savemail()
 	}
 	if (p != NULL && TempFile != NULL)
 	{
+		auto ADDRESS *q;
+
 		/* we have a home directory; open dead.letter */
 		message(Arpa_Info, "Saving message in dead.letter");
 		define('z', p);
 		(void) expand("$z/dead.letter", buf, &buf[sizeof buf - 1]);
 		To = buf;
-		i = mailfile(buf, &From);
-		giveresponse(i, TRUE, LocalMailer);
+		q = NULL;
+		sendto(buf, -1, NULL, &q);
+		(void) deliver(q, NULL);
 	}
 
 	/* add terminator to writeback message */
@@ -185,7 +189,6 @@ returntosender(msg)
 
 	(void) freopen("/dev/null", "w", stdout);
 	NoAlias++;
-	ForceMail++;
 	ErrorMessage = msg;
 
 	/* fake up an address header for the from person */

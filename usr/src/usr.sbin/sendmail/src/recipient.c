@@ -2,7 +2,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)recipient.c	3.31		%G%);
+SCCSID(@(#)recipient.c	3.32		%G%);
 
 /*
 **  SENDTO -- Designate a send list.
@@ -169,7 +169,7 @@ recipient(a, sendq)
 		{
 			a->q_mailer = m = ProgMailer;
 			a->q_user++;
-			if (a->q_alias == NULL && Debug == 0 && !QueueRun)
+			if (a->q_alias == NULL && Debug == 0 && !QueueRun && !ForceMail)
 			{
 				usrerr("Cannot mail directly to programs");
 				a->q_flags |= QDONTSEND;
@@ -220,7 +220,7 @@ recipient(a, sendq)
 		if (strncmp(a->q_user, ":include:", 9) == 0)
 		{
 			a->q_flags |= QDONTSEND;
-			if (a->q_alias == NULL && Debug == 0 && !QueueRun)
+			if (a->q_alias == NULL && Debug == 0 && !QueueRun && !ForceMail)
 				usrerr("Cannot mail directly to :include:s");
 			else
 			{
@@ -261,7 +261,7 @@ recipient(a, sendq)
 		if ((p = rindex(buf, '/')) != NULL)
 		{
 			/* check if writable or creatable */
-			if (a->q_alias == NULL && Debug == 0 && !QueueRun)
+			if (a->q_alias == NULL && Debug == 0 && !QueueRun && !ForceMail)
 			{
 				usrerr("Cannot mail directly to files");
 				a->q_flags |= QDONTSEND;
