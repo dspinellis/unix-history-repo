@@ -1,4 +1,4 @@
-/*	tipout.c	4.5	81/12/16	*/
+/*	tipout.c	4.6	82/01/06	*/
 #include "tip.h"
 /*
  * tip
@@ -99,7 +99,7 @@ tipout()
 		write(1, buf, cnt);
 		if (boolean(value(SCRIPT)) && fscript != NULL) {
 			if (!boolean(value(BEAUTIFY))) {
-				fputs(buf, fscript);
+				fwrite(buf, 1, cnt, fscript);
 				continue;
 			}
 			for (cp = buf; cp < buf + cnt; cp++) {
