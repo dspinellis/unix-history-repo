@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)inode.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)inode.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -27,17 +27,6 @@ static char sccsid[] = "@(#)inode.c	5.12 (Berkeley) %G%";
 #include "fsck.h"
 
 struct bufarea *pbp = 0;
-/*
- * Inode cache data structures.
- */
-struct inoinfo {
-	struct	inoinfo *i_next;	/* next entry in hash chain */
-	ino_t	i_number;		/* inode number of this entry */
-	size_t	i_size;			/* size of inode */
-	u_int	i_numblks;		/* size of block array */
-	daddr_t	i_blks[1];		/* actually longer */
-} **inphead;
-long hashsize;
 
 ckinode(dp, idesc)
 	struct dinode *dp;
@@ -179,6 +168,9 @@ chkrange(blk, cnt)
 	return (0);
 }
 
+/*
+ * General purpose interface for reading inodes.
+ */
 struct dinode *
 ginode(inumber)
 	ino_t inumber;
@@ -199,6 +191,79 @@ ginode(inumber)
 	return (&pbp->b_un.b_dinode[inumber % INOPB(&sblock)]);
 }
 
+/*
+ * Special purpose version of ginode used to optimize first pass
+ * over all the inodes in numerical order.
+ */
+ino_t nextino, lastinum;
+long readcnt, readpercg, fullcnt, inobufsize, partialcnt, partialsize;
+struct dinode *inodebuf;
+
+struct dinode *
+getnextinode(inumber)
+	ino_t inumber;
+{
+	long size;
+	daddr_t dblk;
+	static struct dinode *dp;
+
+	if (inumber != nextino++ || inumber > maxino)
+		errexit("bad inode number %d to nextinode\n", inumber);
+	if (inumber >= lastinum) {
+		readcnt++;
+		dblk = fsbtodb(&sblock, itod(&sblock, lastinum));
+		if (readcnt % readpercg == 0) {
+			size = partialsize;
+			lastinum += partialcnt;
+		} else {
+			size = inobufsize;
+			lastinum += fullcnt;
+		}
+		bread(fsreadfd, (char *)inodebuf, dblk, size);
+		dp = inodebuf;
+	}
+	return (dp++);
+}
+
+resetinodebuf()
+{
+
+	nextino = 0;
+	lastinum = 0;
+	readcnt = 0;
+	inobufsize = blkroundup(&sblock, INOBUFSIZE);
+	fullcnt = inobufsize / sizeof(struct dinode);
+	readpercg = sblock.fs_ipg / fullcnt;
+	partialcnt = sblock.fs_ipg % fullcnt;
+	partialsize = partialcnt * sizeof(struct dinode);
+	if (partialcnt != 0) {
+		readpercg++;
+	} else {
+		partialcnt = fullcnt;
+		partialsize = inobufsize;
+	}
+	if (inodebuf == NULL &&
+	    (inodebuf = (struct dinode *)malloc((unsigned)inobufsize)) == NULL)
+		errexit("Cannot allocate space for inode buffer\n");
+	while (nextino < ROOTINO)
+		getnextinode(nextino);
+}
+
+freeinodebuf()
+{
+
+	if (inodebuf != NULL)
+		free((char *)inodebuf);
+	inodebuf = NULL;
+}
+
+/*
+ * Routines to maintain information about directory inodes.
+ * This is built during the first pass and used during the
+ * second and third passes.
+ *
+ * Enter inodes into the cache.
+ */
 cacheino(dp, inumber)
 	register struct dinode *dp;
 	ino_t inumber;
@@ -207,13 +272,6 @@ cacheino(dp, inumber)
 	struct inoinfo **inpp;
 	unsigned int blks;
 
-	if (inphead == NULL) {
-		hashsize = sblock.fs_cstotal.cs_ndir;
-		inphead = (struct inoinfo **)malloc(hashsize * sizeof(daddr_t));
-		if (inphead == NULL)
-			return;
-		bzero((char *)inphead, hashsize * sizeof(daddr_t));
-	}
 	blks = howmany(dp->di_size, sblock.fs_bsize);
 	if (blks > NDADDR)
 		blks = NDADDR + NIADDR;
@@ -221,49 +279,58 @@ cacheino(dp, inumber)
 		malloc(sizeof(*inp) + (blks - 1) * sizeof(daddr_t));
 	if (inp == NULL)
 		return;
-	inpp = &inphead[inumber % hashsize];
-	inp->i_next = *inpp;
+	inpp = &inphead[inumber % numdirs];
+	inp->i_nexthash = *inpp;
 	*inpp = inp;
+	inp->i_parent = (ino_t)0;
+	inp->i_dotdot = (ino_t)0;
 	inp->i_number = inumber;
-	inp->i_size = dp->di_size;
+	inp->i_isize = dp->di_size;
 	inp->i_numblks = blks * sizeof(daddr_t);
-	bcopy((char *)&dp->di_db[0], (char *)&inp->i_blks[0], inp->i_numblks);
+	bcopy((char *)&dp->di_db[0], (char *)&inp->i_blks[0],
+	    (int)inp->i_numblks);
+	if (inplast == listmax) {
+		listmax += 100;
+		inpsort = (struct inoinfo **)realloc((char *)inpsort,
+		    (unsigned)listmax * sizeof(struct inoinfo *));
+		if (inpsort == NULL)
+			errexit("cannot increase directory list");
+	}
+	inpsort[inplast++] = inp;
 }
 
-struct dinode *
-getcacheino(inumber)
+/*
+ * Look up an inode cache structure.
+ */
+struct inoinfo *
+getinoinfo(inumber)
 	ino_t inumber;
 {
 	register struct inoinfo *inp;
-	static struct dinode dino;
-	register struct dinode *dp = &dino;
 
-	for (inp = inphead[inumber % hashsize]; inp; inp = inp->i_next) {
+	for (inp = inphead[inumber % numdirs]; inp; inp = inp->i_nexthash) {
 		if (inp->i_number != inumber)
 			continue;
-		dp->di_size = inp->i_size;
-		bcopy((char *)&inp->i_blks[0], (char *)&dp->di_db[0],
-			inp->i_numblks);
-		return (dp);
+		return (inp);
 	}
-	return (ginode(inumber));
+	errexit("cannot find inode %d\n", inumber);
+	return ((struct inoinfo *)0);
 }
 
+/*
+ * Clean up all the inode cache structure.
+ */
 inocleanup()
 {
-	register struct inoinfo *inp, **inpp;
-	struct inoinfo *inpnext;
+	register struct inoinfo **inpp;
 
 	if (inphead == NULL)
 		return;
-	for (inpp = &inphead[hashsize - 1]; inpp >= inphead; inpp--) {
-		for (inp = *inpp; inp; inp = inpnext) {
-			inpnext = inp->i_next;
-			free(inp);
-		}
-	}
-	free(inphead);
-	inphead = NULL;
+	for (inpp = &inpsort[inplast - 1]; inpp >= inpsort; inpp--)
+		free((char *)(*inpp));
+	free((char *)inphead);
+	free((char *)inpsort);
+	inphead = inpsort = NULL;
 }
 	
 inodirty()
