@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_malloc.c	7.4 (Berkeley) %G%
+ *	@(#)kern_malloc.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -20,6 +20,7 @@
 struct kmembuckets bucket[MINBUCKET + 16];
 struct kmemstats kmemstats[M_LAST];
 struct kmemusage *kmemusage;
+long wantkmemmap;
 
 /*
  * Allocate a block of memory
@@ -33,15 +34,24 @@ qaddr_t malloc(size, type, flags)
 	long indx, npg, alloc, allocsize, s;
 	caddr_t va, cp;
 #ifdef KMEMSTATS
-	register struct kmemstats *ksp;
-
-	ksp = &kmemstats[type];
-	if (ksp->ks_inuse >= ksp->ks_limit)
-		return (0);
+	register struct kmemstats *ksp = &kmemstats[type];
 #endif
+
 	indx = BUCKETINDX(size);
 	kbp = &bucket[indx];
 	s = splimp();
+again:
+#ifdef KMEMSTATS
+	while (ksp->ks_inuse >= ksp->ks_limit) {
+		if (flags & M_NOWAIT) {
+			splx(s);
+			return (0);
+		}
+		if (ksp->ks_limblocks < 65535)
+			ksp->ks_limblocks++;
+		sleep((caddr_t)ksp, PSWP+2);
+	}
+#endif
 	if (kbp->kb_next == NULL) {
 		if (size > MAXALLOCSAVE)
 			allocsize = roundup(size, CLBYTES);
@@ -54,15 +64,20 @@ qaddr_t malloc(size, type, flags)
 		}
 		alloc = rmalloc(kmemmap, npg);
 		if (alloc == 0) {
-			splx(s);
-			return (0);
+			if (flags & M_NOWAIT) {
+				splx(s);
+				return (0);
+			}
+#ifdef KMEMSTATS
+			if (ksp->ks_mapblocks < 65535)
+				ksp->ks_mapblocks++;
+#endif
+			wantkmemmap++;
+			sleep((caddr_t)&wantkmemmap, PSWP+2);
+			goto again;
 		}
 		alloc -= CLSIZE;		/* convert to base 0 */
-		if (vmemall(&kmempt[alloc], npg, &proc[0], CSYS) == 0) {
-			rmfree(kmemmap, npg, alloc+CLSIZE);
-			splx(s);
-			return (0);
-		}
+		(void) vmemall(&kmempt[alloc], npg, &proc[0], CSYS);
 		va = (caddr_t) kmemxtob(alloc);
 		vmaccess(&kmempt[alloc], va, npg);
 #ifdef KMEMSTATS
@@ -74,6 +89,9 @@ qaddr_t malloc(size, type, flags)
 			if (npg > 65535)
 				panic("malloc: allocation too large");
 			kup->ku_pagecnt = npg;
+#ifdef KMEMSTATS
+			ksp->ks_memuse += allocsize;
+#endif
 			goto out;
 		}
 #ifdef KMEMSTATS
@@ -81,7 +99,7 @@ qaddr_t malloc(size, type, flags)
 		kbp->kb_totalfree += kbp->kb_elmpercl;
 #endif
 		kbp->kb_next = va + (npg * NBPG) - allocsize;
-		for(cp = kbp->kb_next; cp > va; cp -= allocsize)
+		for (cp = kbp->kb_next; cp > va; cp -= allocsize)
 			*(caddr_t *)cp = cp - allocsize;
 		*(caddr_t *)cp = NULL;
 	}
@@ -95,6 +113,7 @@ qaddr_t malloc(size, type, flags)
 		panic("malloc: lost data");
 	kup->ku_freecnt--;
 	kbp->kb_totalfree--;
+	ksp->ks_memuse += 1 << indx;
 out:
 	kbp->kb_calls++;
 	ksp->ks_inuse++;
@@ -118,17 +137,27 @@ void free(addr, type)
 	register struct kmembuckets *kbp;
 	register struct kmemusage *kup;
 	long alloc, s;
+#ifdef KMEMSTATS
+	register struct kmemstats *ksp = &kmemstats[type];
+#endif
 
 	kup = btokup(addr);
 	s = splimp();
 	if (1 << kup->ku_indx > MAXALLOCSAVE) {
 		alloc = btokmemx(addr);
 		(void) memfree(&kmempt[alloc], kup->ku_pagecnt, 0);
-		rmfree(kmemmap, (long)kup->ku_pagecnt, alloc+CLSIZE);
+		rmfree(kmemmap, (long)kup->ku_pagecnt, alloc + CLSIZE);
+		if (wantkmemmap) {
+			wakeup((caddr_t)&wantkmemmap);
+			wantkmemmap = 0;
+		}
 #ifdef KMEMSTATS
+		ksp->ks_memuse -= kup->ku_pagecnt << PGSHIFT;
 		kup->ku_indx = 0;
 		kup->ku_pagecnt = 0;
-		kmemstats[type].ks_inuse--;
+		if (ksp->ks_inuse == ksp->ks_limit)
+			wakeup((caddr_t)ksp);
+		ksp->ks_inuse--;
 #endif
 		splx(s);
 		return;
@@ -142,7 +171,10 @@ void free(addr, type)
 		else if (kbp->kb_totalfree > kbp->kb_highwat)
 			kbp->kb_couldfree++;
 	kbp->kb_totalfree++;
-	kmemstats[type].ks_inuse--;
+	if (ksp->ks_inuse == ksp->ks_limit)
+		wakeup((caddr_t)ksp);
+	ksp->ks_inuse--;
+	ksp->ks_memuse -= 1 << kup->ku_indx;
 #endif
 	*(caddr_t *)addr = kbp->kb_next;
 	kbp->kb_next = addr;
@@ -173,6 +205,7 @@ kmeminit()
 		bucket[indx].kb_highwat = 5 * bucket[indx].kb_elmpercl;
 	}
 	for (indx = 0; indx < M_LAST; indx++)
-		kmemstats[indx].ks_limit = 0x7fffffff;
+		kmemstats[indx].ks_limit =
+			(ekmempt - kmempt) * CLBYTES * 9 / 10;
 #endif
 }
