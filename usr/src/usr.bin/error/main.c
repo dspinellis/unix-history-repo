@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	1.4 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	1.5 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include <signal.h>
@@ -14,7 +14,7 @@ int	language = INCC;
 
 char	*currentfilename = "????";
 char	*processname;
-char	*im_on;			/* my tty name */
+char	im_on[] = "/dev/tty";	/* my tty name */
 
 boolean	query = FALSE;		/* query the operator if touch files */
 boolean	notouch = FALSE;	/* don't touch ANY files */
@@ -124,11 +124,13 @@ main(argc, argv)
 			exit(4);
 		}
 	}
-	im_on = "/dev/tty";
 	if ( (queryfile = fopen(im_on, "r")) == NULL){
-		fprintf(stderr,"%s: Can't open \"%s\" to query the user.\n",
-			processname, im_on);
-		exit(9);
+		if (query){
+			fprintf(stderr,
+				"%s: Can't open \"%s\" to query the user.\n",
+				processname, im_on);
+			exit(9);
+		}
 	}
 	if (signal(SIGINT, onintr) == SIG_IGN)
 		signal(SIGINT, SIG_IGN);
