@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex.c	6.3 %G%";
+static char *sccsid = "@(#)ex.c	6.4 %G%";
 #include "ex.h"
 #include "ex_argv.h"
 #include "ex_temp.h"
@@ -81,7 +81,7 @@ main(ac, av)
 	bool ivis;
 	bool itag = 0;
 	bool fast = 0;
-	int onemt();
+	extern int onemt();
 #ifdef TRACE
 	register char *tracef;
 #endif
@@ -393,122 +393,6 @@ init()
 }
 
 /*
- * When a hangup occurs our actions are similar to a preserve
- * command.  If the buffer has not been [Modified], then we do
- * nothing but remove the temporary files and exit.
- * Otherwise, we sync the temp file and then attempt a preserve.
- * If the preserve succeeds, we unlink our temp files.
- * If the preserve fails, we leave the temp files as they are
- * as they are a backup even without preservation if they
- * are not removed.
- */
-onhup()
-{
-
-	/*
-	 * USG tty driver can send multiple HUP's!!
-	 */
-	signal(SIGINT, SIG_IGN);
-	signal(SIGHUP, SIG_IGN);
-	if (chng == 0) {
-		cleanup(1);
-		exit(0);
-	}
-	if (setexit() == 0) {
-		if (preserve()) {
-			cleanup(1);
-			exit(0);
-		}
-	}
-	exit(1);
-}
-
-/*
- * An interrupt occurred.  Drain any output which
- * is still in the output buffering pipeline.
- * Catch interrupts again.  Unless we are in visual
- * reset the output state (out of -nl mode, e.g).
- * Then like a normal error (with the \n before Interrupt
- * suppressed in visual mode).
- */
-onintr()
-{
-
-#ifndef CBREAK
-	signal(SIGINT, onintr);
-#else
-	signal(SIGINT, inopen ? vintr : onintr);
-#endif
-	draino();
-	if (!inopen) {
-		pstop();
-		setlastchar('\n');
-#ifdef CBREAK
-	}
-#else
-	} else
-		vraw();
-#endif
-	error("\nInterrupt" + inopen);
-}
-
-/*
- * If we are interruptible, enable interrupts again.
- * In some critical sections we turn interrupts off,
- * but not very often.
- */
-setrupt()
-{
-
-	if (ruptible) {
-#ifndef CBREAK
-		signal(SIGINT, onintr);
-#else
-		signal(SIGINT, inopen ? vintr : onintr);
-#endif
-#ifdef SIGTSTP
-		if (dosusp)
-			signal(SIGTSTP, onsusp);
-#endif
-	}
-}
-
-preserve()
-{
-
-#ifdef VMUNIX
-	tflush();
-#endif
-	synctmp();
-	pid = fork();
-	if (pid < 0)
-		return (0);
-	if (pid == 0) {
-		close(0);
-		dup(tfile);
-		execl(EXPRESERVE, "expreserve", (char *) 0);
-		exit(1);
-	}
-	waitfor();
-	if (rpid == pid && status == 0)
-		return (1);
-	return (0);
-}
-
-#ifndef V6
-exit(i)
-	int i;
-{
-
-# ifdef TRACE
-	if (trace)
-		fclose(trace);
-# endif
-	_exit(i);
-}
-#endif
-
-/*
  * Return last component of unix path name p.
  */
 char *
@@ -521,17 +405,4 @@ register char *p;
 		if (*p == '/')
 			r = p+1;
 	return(r);
-}
-
-/*
- * The following code is defensive programming against a bug in the
- * pdp-11 overlay implementation.  Sometimes it goes nuts and asks
- * for an overlay with some garbage number, which generates an emt
- * trap.  This is a less than elegant solution, but it is somewhat
- * better than core dumping and losing your work, leaving your tty
- * in a weird state, etc.
- */
-onemt()
-{
-	error("emt trap@ - try again");
 }
