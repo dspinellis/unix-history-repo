@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)icheck.c	1.13 (Berkeley) %G%";
+static	char *sccsid = "@(#)icheck.c	1.14 (Berkeley) %G%";
 
 /*
  * icheck
@@ -465,9 +465,11 @@ makecg()
 				setbit(cgrp.cg_iused, i);
 				cgrp.cg_cs.cs_nifree--;
 			}
-		for (s = 0; s < MAXCPG; s++)
+		for (s = 0; s < MAXCPG; s++) {
+			cgrp.cg_btot[s] = 0;
 			for (i = 0; i < NRPOS; i++)
 				cgrp.cg_b[s][i] = 0;
+		}
 		if (c == 0) {
 			dmin += howmany(sblock.fs_cssize, sblock.fs_bsize) *
 			    sblock.fs_frag;
@@ -485,6 +487,7 @@ makecg()
 			}
 			if (j == sblock.fs_frag) {
 				cgrp.cg_cs.cs_nbfree++;
+				cgrp.cg_btot[cbtocylno(&sblock, d)]++;
 				cgrp.cg_b[cbtocylno(&sblock, d)]
 				    [cbtorpos(&sblock, d)]++;
 			} else if (j > 0) {

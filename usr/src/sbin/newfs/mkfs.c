@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)mkfs.c	1.13 (Berkeley) %G%";
+static	char *sccsid = "@(#)mkfs.c	1.14 (Berkeley) %G%";
 
 /*
  * make file system for cylinder-group style file systems
@@ -410,9 +410,11 @@ initcg(cylno)
 	if (write(fso, (char *)zino, sblock.fs_ipg * sizeof (struct dinode)) !=
 	    sblock.fs_ipg * sizeof (struct dinode))
 		printf("write error %D\n", tell(fso) / sblock.fs_bsize);
-	for (i = 0; i < MAXCPG; i++)
+	for (i = 0; i < MAXCPG; i++) {
+		acg.cg_btot[i] = 0;
 		for (j = 0; j < NRPOS; j++)
 			acg.cg_b[i][j] = 0;
+	}
 	if (cylno == 0) {
 		dmin += howmany(sblock.fs_cssize, sblock.fs_bsize) *
 			sblock.fs_frag;
@@ -422,6 +424,7 @@ initcg(cylno)
 	while ((d+sblock.fs_frag) <= dmax - cbase) {
 		setblock(&sblock, acg.cg_free, d/sblock.fs_frag);
 		acg.cg_cs.cs_nbfree++;
+		acg.cg_btot[cbtocylno(&sblock, d)]++;
 		acg.cg_b[cbtocylno(&sblock, d)][cbtorpos(&sblock, d)]++;
 		d += sblock.fs_frag;
 	}
@@ -520,6 +523,7 @@ goth:
 		sblock.fs_cstotal.cs_ndir++;
 		fscs[0].cs_ndir++;
 	}
+	acg.cg_btot[cbtocylno(&sblock, d)]--;
 	acg.cg_b[cbtocylno(&sblock, d)][cbtorpos(&sblock, d)]--;
 	if (size != sblock.fs_bsize) {
 		frag = howmany(size, sblock.fs_fsize);
