@@ -1,4 +1,4 @@
-/*	hunt.c	4.2	81/06/16	*/
+/*	hunt.c	4.3	81/10/02	*/
 #include "tip.h"
 
 #define RD	04
@@ -40,17 +40,16 @@ char *name;
 		alarm(10);
 		if((FD = open(cp, 2)) >= 0){
 			alarm(0);
-			if(deadfl)
-				continue;
-			ioctl(FD, TIOCEXCL, 0);
-			break;
+			if(!deadfl) {
+				ioctl(FD, TIOCEXCL, 0);
+				signal(SIGALRM, SIG_DFL);
+				return((int)cp);
+			}
 		}
 		alarm(0);
 		signal(SIGALRM, dead);
+		delock(uucplock);
 	}
-	alarm(0);
 	signal(SIGALRM, SIG_DFL);
-	if(deadfl)
-		return(-1);
-	return((int)cp);
+	return(deadfl ? -1 : (int)cp);
 }
