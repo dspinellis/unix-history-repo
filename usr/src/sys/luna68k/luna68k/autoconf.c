@@ -12,7 +12,7 @@
  *
  * from:hp300/hp300/autoconf.c	7.9 (Berkeley) 12/27/92
  *
- *	@(#)autoconf.c	7.6 (Berkeley) %G%
+ *	@(#)autoconf.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -480,7 +480,7 @@ swapconf()
 	register struct swdevt *swp;
 	register int nblks;
 
-	for (swp = swdevt; swp->sw_dev; swp++)
+	for (swp = swdevt; swp->sw_dev != NODEV; swp++)
 		if (bdevsw[major(swp->sw_dev)].d_psize) {
 			nblks =
 			  (*bdevsw[major(swp->sw_dev)].d_psize)(swp->sw_dev);
@@ -590,7 +590,7 @@ setroot()
 
 #ifdef DOSWAP
 	mindev &= ~PARTITIONMASK;
-	for (swp = swdevt; swp->sw_dev; swp++) {
+	for (swp = swdevt; swp->sw_dev != NODEV; swp++) {
 		if (majdev == major(swp->sw_dev) &&
 		    mindev == (minor(swp->sw_dev) & ~PARTITIONMASK)) {
 			temp = swdevt[0].sw_dev;
@@ -599,7 +599,7 @@ setroot()
 			break;
 		}
 	}
-	if (swp->sw_dev == 0)
+	if (swp->sw_dev == NODEV)
 		return;
 
 	/*
@@ -630,7 +630,7 @@ showroot()
 		mindev >> PARTITIONSHIFT, (mindev & PARTITIONMASK) + 'a');
 
 	swp++;
-	for (; swp->sw_dev; swp++) {
+	for (; swp->sw_dev != NODEV; swp++) {
 		majdev = major(swp->sw_dev);
 		mindev = minor(swp->sw_dev);
 		printf("and %c%c%d%c ",
