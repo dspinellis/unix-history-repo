@@ -367,19 +367,74 @@ bread(bno, buf, cnt)
 	}
 }
 
-daddr_t
-bmap(i)
-	int i;
-{
-	daddr_t ibuf[MAXNINDIR];
+/*
+ * Swiped from standalone sys.c.
+ */
+#define	NBUFS	4
+char	b[NBUFS][MAXBSIZE];
+daddr_t	blknos[NBUFS];
 
-	if(i < NDADDR)
-		return(gip->di_db[i]);
-	i -= NDADDR;
-	if(i > NINDIR(&sblock)) {
-		fprintf(stderr, "ncheck: %u - huge directory\n", ino);
-		return((daddr_t)0);
+daddr_t
+bmap(bn)
+	register daddr_t bn;
+{
+	register int j;
+	int i, sh;
+	daddr_t nb, *bap;
+
+	if (bn < 0) {
+		fprintf(stderr, "ncheck: bn %d negative\n", bn);
+		return ((daddr_t)0);
 	}
-	bread(fsbtodb(&sblock, gip->di_ib[i]), (char *)ibuf, sizeof(ibuf));
-	return(ibuf[i]);
+
+	/*
+	 * blocks 0..NDADDR are direct blocks
+	 */
+	if(bn < NDADDR)
+		return(gip->di_db[bn]);
+
+	/*
+	 * addresses NIADDR have single and double indirect blocks.
+	 * the first step is to determine how many levels of indirection.
+	 */
+	sh = 1;
+	bn -= NDADDR;
+	for (j = NIADDR; j > 0; j--) {
+		sh *= NINDIR(&sblock);
+		if (bn < sh)
+			break;
+		bn -= sh;
+	}
+	if (j == 0) {
+		printf("ncheck: bn %ld ovf, ino %u\n", bn, ino);
+		return ((daddr_t)0);
+	}
+
+	/*
+	 * fetch the first indirect block address from the inode
+	 */
+	nb = gip->di_ib[NIADDR - j];
+	if (nb == 0) {
+		printf("ncheck: bn %ld void1, ino %u\n", bn, ino);
+		return ((daddr_t)0);
+	}
+
+	/*
+	 * fetch through the indirect blocks
+	 */
+	for (; j <= NIADDR; j++) {
+		if (blknos[j] != nb) {
+			bread(fsbtodb(&sblock, nb), b[j], sblock.fs_bsize);
+			blknos[j] = nb;
+		}
+		bap = (daddr_t *)b[j];
+		sh /= NINDIR(&sblock);
+		i = (bn / sh) % NINDIR(&sblock);
+		nb = bap[i];
+		if(nb == 0) {
+			printf("ncheck: bn %ld void2, ino %u\n", bn, ino);
+			return ((daddr_t)0);
+		}
+	}
+	return (nb);
 }
