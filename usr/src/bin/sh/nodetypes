@@ -7,7 +7,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)nodetypes	8.1 (Berkeley) %G%
+#	@(#)nodetypes	8.2 (Berkeley) %G%
 
 # This file describes the nodes used in parse trees.  Unindented lines
 # contain a node type followed by a structure tag.  Subsequent indented
@@ -104,6 +104,8 @@ NFROMFD ndup			# fd>&dupfd
 	next	  nodeptr		# next redirection in list
 	fd	  int			# file descriptor being redirected
 	dupfd	  int			# file descriptor to duplicate
+	vname	  nodeptr		# file name if fd>&$var
+
 
 NHERE nhere			# fd<<\!
 NXHERE nhere			# fd<<!
