@@ -7,7 +7,7 @@
  * ~ escapes.
  */
 
-static char *SccsId = "@(#)collect.c	2.1 %G%";
+static char *SccsId = "@(#)collect.c	2.2 %G%";
 
 #include "rcv.h"
 #include <sys/stat.h>
@@ -40,14 +40,13 @@ collect(hp)
 	struct header *hp;
 {
 	FILE *ibuf, *fbuf, *obuf;
-	int lc, cc, escape, collrub(), intack(), stopdot, collhup, collcont();
+	int lc, cc, escape, collrub(), intack(), collhup, collcont(), eof;
 	register int c, t;
 	char linebuf[LINESIZE], *cp;
 	extern char tempMail[];
 	int notify();
 
 	noreset++;
-	stopdot = (value("dot") != NOSTR) && intty;
 	ibuf = obuf = NULL;
 	if (value("ignore") != NOSTR)
 		hf = 1;
@@ -94,15 +93,25 @@ collect(hp)
 	escape = ESCAPE;
 	if ((cp = value("escape")) != NOSTR)
 		escape = *cp;
+	eof = 0;
 	for (;;) {
 		setjmp(coljmp);
 		sigrelse(SIGINT);
 		sigrelse(SIGHUP);
 		flush();
-		if (readline(stdin, linebuf) <= 0)
+		if (readline(stdin, linebuf) <= 0) {
+			if (intty && value("ignoreeof") != NOSTR) {
+				if (++eof > 35)
+					break;
+				printf("Use \"%cq\" to terminate letter\n",
+				    escape);
+				continue;
+			}
 			break;
+		}
+		eof = 0;
 		hadintr = 0;
-		if (stopdot && equal(".", linebuf))
+		if (intty && equal(".", linebuf) && value("dot") != NOSTR)
 			break;
 		if (linebuf[0] != escape || rflag != NOSTR) {
 			if ((t = putline(obuf, linebuf)) < 0)
