@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lfs.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)lfs.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -88,15 +88,15 @@ static struct lfs lfs_default =  {
 
 
 struct direct lfs_root_dir[] = {
-	{ ROOTINO, sizeof(struct direct), 1, "."},
-	{ ROOTINO, sizeof(struct direct), 2, ".."},
-	{ LFS_IFILE_INUM, sizeof(struct direct), 5, "ifile"},
-	{ LOSTFOUNDINO, sizeof(struct direct), 10, "lost+found"},
+	{ ROOTINO, sizeof(struct direct), DT_DIR, 1, "."},
+	{ ROOTINO, sizeof(struct direct), DT_DIR, 2, ".."},
+	{ LFS_IFILE_INUM, sizeof(struct direct), DT_REG, 5, "ifile"},
+	{ LOSTFOUNDINO, sizeof(struct direct), DT_DIR, 10, "lost+found"},
 };
 
 struct direct lfs_lf_dir[] = {
-        { LOSTFOUNDINO, sizeof(struct direct), 1, "." },
-        { ROOTINO, sizeof(struct direct), 2, ".." },
+        { LOSTFOUNDINO, sizeof(struct direct), DT_DIR, 1, "." },
+        { ROOTINO, sizeof(struct direct), DT_DIR, 2, ".." },
 };
 
 static daddr_t make_dinode 
@@ -543,7 +543,10 @@ make_dinode(ino, dip, nblocks, saddr, lfsp)
 
 	/* If we ever need something longer than 32 bits, this changes */
 	dip->di_size = (dip->di_blocks << lfsp->lfs_bshift);
-	dip->di_atime = dip->di_mtime = dip->di_ctime = lfsp->lfs_tstamp;
+	dip->di_atime.ts_sec = dip->di_mtime.ts_sec =
+	    dip->di_ctime.ts_sec = lfsp->lfs_tstamp;
+	dip->di_atime.ts_nsec = dip->di_mtime.ts_nsec =
+	    dip->di_ctime.ts_nsec = 0;
 	dip->di_inum = ino;
 
 #define	SEGERR \
@@ -575,12 +578,12 @@ make_dir(bufp, protodir, entries)
 
 	spcleft = DIRBLKSIZ;
 	for (cp = bufp, i = 0; i < entries - 1; i++) {
-		protodir[i].d_reclen = DIRSIZ(0, &protodir[i]);
+		protodir[i].d_reclen = DIRSIZ(NEWDIRFMT, &protodir[i]);
 		bcopy(&protodir[i], cp, protodir[i].d_reclen);
 		cp += protodir[i].d_reclen;
 		if ((spcleft -= protodir[i].d_reclen) < 0)
 			fatal("%s: %s", special, "directory too big");
 	}
 	protodir[i].d_reclen = spcleft;
-	bcopy(&protodir[i], cp, DIRSIZ(0, &protodir[i]));
+	bcopy(&protodir[i], cp, DIRSIZ(NEWDIRFMT, &protodir[i]));
 }
