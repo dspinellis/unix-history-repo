@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1985, 1988, 1990, 1992, 1993
+ * Copyright (c) 1985, 1988, 1990, 1992, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
@@ -7,12 +7,12 @@
 
 #ifndef lint
 static char copyright[] =
-"@(#) Copyright (c) 1985, 1988, 1990, 1992, 1993\n\
+"@(#) Copyright (c) 1985, 1988, 1990, 1992, 1993, 1994\n\
 	The Regents of the University of California.  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -33,20 +33,24 @@ static char sccsid[] = "@(#)ftpd.c	8.1 (Berkeley) %G%";
 #include <arpa/inet.h>
 #include <arpa/telnet.h>
 
-#include <signal.h>
+#include <ctype.h>
 #include <dirent.h>
+#include <err.h>
+#include <errno.h>
 #include <fcntl.h>
-#include <time.h>
+#include <glob.h>
+#include <limits.h>
+#include <netdb.h>
 #include <pwd.h>
 #include <setjmp.h>
-#include <netdb.h>
-#include <errno.h>
-#include <syslog.h>
-#include <unistd.h>
+#include <signal.h>
 #include <stdio.h>
-#include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
+#include <syslog.h>
+#include <time.h>
+#include <unistd.h>
+
 #include "pathnames.h"
 #include "extern.h"
 
@@ -56,8 +60,9 @@ static char sccsid[] = "@(#)ftpd.c	8.1 (Berkeley) %G%";
 #include <varargs.h>
 #endif
 
+static char version[] = "Version 6.00";
+
 extern	off_t restart_point;
-extern	char *home;		/* pointer to home directory for glob */
 extern	char cbuf[];
 
 struct	sockaddr_in ctrl_addr;
@@ -81,7 +86,7 @@ int	stru;			/* avoid C keyword */
 int	mode;
 int	usedefault = 1;		/* for data transfers */
 int	pdata = -1;		/* for passive mode */
-int	transflag;
+sig_atomic_t transflag;
 off_t	file_size;
 off_t	byte_count;
 #if !defined(CMASK) || CMASK == 0
@@ -107,10 +112,8 @@ int	swaitint = SWAITINT;
 #ifdef SETPROCTITLE
 char	**Argv = NULL;		/* pointer to argument vector */
 char	*LastArgv = NULL;	/* end of argv */
-char	proctitle[BUFSIZ];	/* initial part of title */
+char	proctitle[LINE_MAX];	/* initial part of title */
 #endif /* SETPROCTITLE */
-
-#define MAXLINE         256
 
 #define LOGCMD(cmd, file) \
 	if (logging > 1) \
@@ -166,8 +169,8 @@ main(argc, argv, envp)
 	char *argv[];
 	char **envp;
 {
-	int addrlen, on = 1, tos;
-	char *cp, line[MAXLINE];
+	int addrlen, ch, on = 1, tos;
+	char *cp, line[LINE_MAX];
 	FILE *fd;
 
 	/*
@@ -175,12 +178,12 @@ main(argc, argv, envp)
 	 * necessary for anonymous ftp's that chroot and can't do it later.
 	 */
 	openlog("ftpd", LOG_PID | LOG_NDELAY, LOG_FTP);
-	addrlen = sizeof (his_addr);
+	addrlen = sizeof(his_addr);
 	if (getpeername(0, (struct sockaddr *)&his_addr, &addrlen) < 0) {
 		syslog(LOG_ERR, "getpeername (%s): %m",argv[0]);
 		exit(1);
 	}
-	addrlen = sizeof (ctrl_addr);
+	addrlen = sizeof(ctrl_addr);
 	if (getsockname(0, (struct sockaddr *)&ctrl_addr, &addrlen) < 0) {
 		syslog(LOG_ERR, "getsockname (%s): %m",argv[0]);
 		exit(1);
@@ -202,14 +205,8 @@ main(argc, argv, envp)
 	LastArgv = envp[-1] + strlen(envp[-1]);
 #endif /* SETPROCTITLE */
 
-	argc--, argv++;
-	while (argc > 0 && *argv[0] == '-') {
-		for (cp = &argv[0][1]; *cp; cp++) switch (*cp) {
-
-		case 'v':
-			debug = 1;
-			break;
-
+	while ((ch = getopt(argc, argv, "dlt:T:u:v")) != EOF) {
+		switch (ch) {
 		case 'd':
 			debug = 1;
 			break;
@@ -219,37 +216,37 @@ main(argc, argv, envp)
 			break;
 
 		case 't':
-			timeout = atoi(++cp);
+			timeout = atoi(optarg);
 			if (maxtimeout < timeout)
 				maxtimeout = timeout;
-			goto nextopt;
+			break;
 
 		case 'T':
-			maxtimeout = atoi(++cp);
+			maxtimeout = atoi(optarg);
 			if (timeout > maxtimeout)
 				timeout = maxtimeout;
-			goto nextopt;
+			break;
 
 		case 'u':
 		    {
-			int val = 0;
+			long val = 0;
 
-			while (*++cp && *cp >= '0' && *cp <= '9')
-				val = val*8 + *cp - '0';
-			if (*cp)
-				fprintf(stderr, "ftpd: Bad value for -u\n");
+			val = strtol(optarg, &optarg, 8);
+			if (*optarg != '\0' || val < 0)
+				warnx("bad value for -u");
 			else
 				defumask = val;
-			goto nextopt;
+			break;
 		    }
 
+		case 'v':
+			debug = 1;
+			break;
+
 		default:
-			fprintf(stderr, "ftpd: Unknown flag -%c ignored.\n",
-			     *cp);
+			warnx("unknown flag -%c ignored", optopt);
 			break;
 		}
-nextopt:
-		argc--, argv++;
 	}
 	(void) freopen(_PATH_DEVNULL, "w", stderr);
 	(void) signal(SIGPIPE, lostconn);
@@ -280,7 +277,7 @@ nextopt:
 
 	/* If logins are disabled, print out the message. */
 	if ((fd = fopen(_PATH_NOLOGIN,"r")) != NULL) {
-		while (fgets(line, sizeof (line), fd) != NULL) {
+		while (fgets(line, sizeof(line), fd) != NULL) {
 			if ((cp = strchr(line, '\n')) != NULL)
 				*cp = '\0';
 			lreply(530, "%s", line);
@@ -291,7 +288,7 @@ nextopt:
 		exit(0);
 	}
 	if ((fd = fopen(_PATH_FTPWELCOME, "r")) != NULL) {
-		while (fgets(line, sizeof (line), fd) != NULL) {
+		while (fgets(line, sizeof(line), fd) != NULL) {
 			if ((cp = strchr(line, '\n')) != NULL)
 				*cp = '\0';
 			lreply(220, "%s", line);
@@ -300,7 +297,7 @@ nextopt:
 		(void) fclose(fd);
 		/* reply(220,) must follow */
 	}
-	(void) gethostname(hostname, sizeof (hostname));
+	(void) gethostname(hostname, sizeof(hostname));
 	reply(220, "%s FTP server (%s) ready.", hostname, version);
 	(void) setjmp(errcatch);
 	for (;;)
@@ -312,6 +309,7 @@ static void
 lostconn(signo)
 	int signo;
 {
+
 	if (debug)
 		syslog(LOG_DEBUG, "lost connection");
 	dologout(-1);
@@ -347,8 +345,7 @@ sgetpwnam(name)
 	char *name;
 {
 	static struct passwd save;
-	register struct passwd *p;
-	char *sgetsave();
+	struct passwd *p;
 
 	if ((p = getpwnam(name)) == NULL)
 		return (p);
@@ -387,8 +384,7 @@ void
 user(name)
 	char *name;
 {
-	register char *cp;
-	char *shell;
+	char *cp, *shell;
 
 	if (logged_in) {
 		if (guest) {
@@ -451,10 +447,9 @@ static int
 checkuser(name)
 	char *name;
 {
-	register FILE *fd;
-	register char *p;
-	char line[BUFSIZ];
+	FILE *fd;
 	int found = 0;
+	char *p, line[BUFSIZ];
 
 	if ((fd = fopen(_PATH_FTPUSERS, "r")) != NULL) {
 		while (fgets(line, sizeof(line), fd) != NULL)
@@ -492,7 +487,7 @@ void
 pass(passwd)
 	char *passwd;
 {
-	char *xpasswd, *salt;
+	char *salt, *xpasswd;
 	FILE *fd;
 
 	if (logged_in || askpasswd == 0) {
@@ -563,9 +558,9 @@ pass(passwd)
 	 * N.B. reply(230,) must follow the message.
 	 */
 	if ((fd = fopen(_PATH_FTPLOGINMESG, "r")) != NULL) {
-		char *cp, line[MAXLINE];
+		char *cp, line[LINE_MAX];
 
-		while (fgets(line, sizeof (line), fd) != NULL) {
+		while (fgets(line, sizeof(line), fd) != NULL) {
 			if ((cp = strchr(line, '\n')) != NULL)
 				*cp = '\0';
 			lreply(230, "%s", line);
@@ -576,7 +571,8 @@ pass(passwd)
 	if (guest) {
 		reply(230, "Guest login ok, access restrictions apply.");
 #ifdef SETPROCTITLE
-		sprintf(proctitle, "%s: anonymous/%.*s", remotehost,
+		snprintf(proctitle, sizeof(proctitle),
+		    "%s: anonymous/%.*s", remotehost,
 		    sizeof(proctitle) - sizeof(remotehost) -
 		    sizeof(": anonymous/"), passwd);
 		setproctitle(proctitle);
@@ -584,17 +580,16 @@ pass(passwd)
 		if (logging)
 			syslog(LOG_INFO, "ANONYMOUS FTP LOGIN FROM %s, %s",
 			    remotehost, passwd);
-		home = "/";		/* guest home dir for globbing */
 	} else {
 		reply(230, "User %s logged in.", pw->pw_name);
 #ifdef SETPROCTITLE
-		sprintf(proctitle, "%s: %s", remotehost, pw->pw_name);
+		snprintf(proctitle, sizeof(proctitle),
+		    "%s: %s", remotehost, pw->pw_name);
 		setproctitle(proctitle);
 #endif /* SETPROCTITLE */
 		if (logging)
 			syslog(LOG_INFO, "FTP LOGIN FROM %s as %s",
 			    remotehost, pw->pw_name);
-		home = pw->pw_dir;	/* home dir for globbing */
 	}
 	(void) umask(defumask);
 	return;
@@ -609,7 +604,7 @@ retrieve(cmd, name)
 {
 	FILE *fin, *dout;
 	struct stat st;
-	int (*closefunc)();
+	int (*closefunc) __P((FILE *));
 
 	if (cmd == 0) {
 		fin = fopen(name, "r"), closefunc = fclose;
@@ -632,8 +627,7 @@ retrieve(cmd, name)
 		return;
 	}
 	byte_count = -1;
-	if (cmd == 0 &&
-	    (fstat(fileno(fin), &st) < 0 || (st.st_mode&S_IFMT) != S_IFREG)) {
+	if (cmd == 0 && (fstat(fileno(fin), &st) < 0 || !S_ISREG(st.st_mode))) {
 		reply(550, "%s: not a plain file.", name);
 		goto done;
 	}
@@ -657,7 +651,7 @@ store(name, mode, unique)
 {
 	FILE *fout, *din;
 	struct stat st;
-	int (*closefunc)();
+	int (*closefunc) __P((FILE *));
 
 	if (unique && stat(name, &st) == 0 &&
 	    (name = gunique(name)) == NULL) {
@@ -694,8 +688,7 @@ static FILE *
 getdatasock(mode)
 	char *mode;
 {
-	int s, on = 1, tries;
-	int t;
+	int on = 1, s, t, tries;
 
 	if (data >= 0)
 		return (fdopen(data, mode));
@@ -704,14 +697,14 @@ getdatasock(mode)
 	if (s < 0)
 		goto bad;
 	if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR,
-	    (char *) &on, sizeof (on)) < 0)
+	    (char *) &on, sizeof(on)) < 0)
 		goto bad;
 	/* anchor socket to avoid multi-homing problems */
 	data_source.sin_family = AF_INET;
 	data_source.sin_addr = ctrl_addr.sin_addr;
 	for (tries = 1; ; tries++) {
 		if (bind(s, (struct sockaddr *)&data_source,
-		    sizeof (data_source)) >= 0)
+		    sizeof(data_source)) >= 0)
 			break;
 		if (errno != EADDRINUSE || tries > 10)
 			goto bad;
@@ -746,7 +739,7 @@ dataconn(name, size, mode)
 	file_size = size;
 	byte_count = 0;
 	if (size != (off_t) -1)
-		(void) sprintf (sizebuf, " (%qd bytes)", size);
+		(void) sprintf(sizebuf, " (%qd bytes)", size);
 	else
 		(void) strcpy(sizebuf, "");
 	if (pdata >= 0) {
@@ -758,7 +751,7 @@ dataconn(name, size, mode)
 			reply(425, "Can't open data connection.");
 			(void) close(pdata);
 			pdata = -1;
-			return(NULL);
+			return (NULL);
 		}
 		(void) close(pdata);
 		pdata = s;
@@ -769,7 +762,7 @@ dataconn(name, size, mode)
 #endif
 		reply(150, "Opening %s mode data connection for '%s'%s.",
 		     type == TYPE_A ? "ASCII" : "BINARY", name, sizebuf);
-		return(fdopen(pdata, mode));
+		return (fdopen(pdata, mode));
 	}
 	if (data >= 0) {
 		reply(125, "Using existing data connection for '%s'%s.",
@@ -789,7 +782,7 @@ dataconn(name, size, mode)
 	}
 	data = fileno(file);
 	while (connect(data, (struct sockaddr *)&data_dest,
-	    sizeof (data_dest)) < 0) {
+	    sizeof(data_dest)) < 0) {
 		if (errno == EADDRINUSE && retry < swaitmax) {
 			sleep((unsigned) swaitint);
 			retry += swaitint;
@@ -816,9 +809,8 @@ send_data(instr, outstr, blksize)
 	FILE *instr, *outstr;
 	off_t blksize;
 {
-	register int c, cnt;
-	register char *buf;
-	int netfd, filefd;
+	int c, cnt, filefd, netfd;
+	char *buf;
 
 	transflag++;
 	if (setjmp(urgcatch)) {
@@ -893,7 +885,7 @@ static int
 receive_data(instr, outstr)
 	FILE *instr, *outstr;
 {
-	register int c;
+	int c;
 	int cnt, bare_lfs = 0;
 	char buf[BUFSIZ];
 
@@ -906,7 +898,7 @@ receive_data(instr, outstr)
 
 	case TYPE_I:
 	case TYPE_L:
-		while ((cnt = read(fileno(instr), buf, sizeof buf)) > 0) {
+		while ((cnt = read(fileno(instr), buf, sizeof(buf))) > 0) {
 			if (write(fileno(outstr), buf, cnt) != cnt)
 				goto file_err;
 			byte_count += cnt;
@@ -970,9 +962,9 @@ void
 statfilecmd(filename)
 	char *filename;
 {
-	char line[BUFSIZ];
 	FILE *fin;
 	int c;
+	char line[LINE_MAX];
 
 	(void)snprintf(line, sizeof(line), "/bin/ls -lgA %s", filename);
 	fin = ftpd_popen(line, "r");
@@ -1055,6 +1047,7 @@ void
 fatal(s)
 	char *s;
 {
+
 	reply(451, "Error in server: %s\n", s);
 	reply(221, "Closing connection due to server error.");
 	dologout(0);
@@ -1117,6 +1110,7 @@ static void
 ack(s)
 	char *s;
 {
+
 	reply(250, "%s command successful.", s);
 }
 
@@ -1124,11 +1118,12 @@ void
 nack(s)
 	char *s;
 {
+
 	reply(502, "%s command not implemented.", s);
 }
 
 /* ARGSUSED */
-char *
+void
 yyerror(s)
 	char *s;
 {
@@ -1169,6 +1164,7 @@ void
 cwd(path)
 	char *path;
 {
+
 	if (chdir(path) < 0)
 		perror_reply(550, path);
 	else
@@ -1179,6 +1175,7 @@ void
 makedir(name)
 	char *name;
 {
+
 	LOGCMD("mkdir", name);
 	if (mkdir(name, 0777) < 0)
 		perror_reply(550, name);
@@ -1190,6 +1187,7 @@ void
 removedir(name)
 	char *name;
 {
+
 	LOGCMD("rmdir", name);
 	if (rmdir(name) < 0)
 		perror_reply(550, name);
@@ -1226,6 +1224,7 @@ void
 renamecmd(from, to)
 	char *from, *to;
 {
+
 	LOGCMD2("rename", from, to);
 	if (rename(from, to) < 0)
 		perror_reply(550, "rename");
@@ -1238,15 +1237,15 @@ dolog(sin)
 	struct sockaddr_in *sin;
 {
 	struct hostent *hp = gethostbyaddr((char *)&sin->sin_addr,
-		sizeof (struct in_addr), AF_INET);
+		sizeof(struct in_addr), AF_INET);
 
 	if (hp)
-		(void) strncpy(remotehost, hp->h_name, sizeof (remotehost));
+		(void) strncpy(remotehost, hp->h_name, sizeof(remotehost));
 	else
 		(void) strncpy(remotehost, inet_ntoa(sin->sin_addr),
-		    sizeof (remotehost));
+		    sizeof(remotehost));
 #ifdef SETPROCTITLE
-	sprintf(proctitle, "%s: connected", remotehost);
+	snprintf(proctitle, sizeof(proctitle), "%s: connected", remotehost);
 	setproctitle(proctitle);
 #endif /* SETPROCTITLE */
 
@@ -1262,6 +1261,7 @@ void
 dologout(status)
 	int status;
 {
+
 	if (logged_in) {
 		(void) seteuid((uid_t)0);
 		logwtmp(ttyline, "", "");
@@ -1310,7 +1310,7 @@ void
 passive()
 {
 	int len;
-	register char *p, *a;
+	char *p, *a;
 
 	pdata = socket(AF_INET, SOCK_STREAM, 0);
 	if (pdata < 0) {
@@ -1365,7 +1365,7 @@ gunique(local)
 		*cp = '\0';
 	if (stat(cp ? local : ".", &st) < 0) {
 		perror_reply(553, cp ? local : ".");
-		return((char *) 0);
+		return ((char *) 0);
 	}
 	if (cp)
 		*cp = '/';
@@ -1375,10 +1375,10 @@ gunique(local)
 	for (count = 1; count < 100; count++) {
 		(void)sprintf(cp, "%d", count);
 		if (stat(new, &st) < 0)
-			return(new);
+			return (new);
 	}
 	reply(452, "Unique file name cannot be created.");
-	return(NULL);
+	return (NULL);
 }
 
 /*
@@ -1389,6 +1389,7 @@ perror_reply(code, string)
 	int code;
 	char *string;
 {
+
 	reply(code, "%s: %s.", string, strerror(errno));
 }
 
@@ -1398,38 +1399,40 @@ static char *onefile[] = {
 };
 
 void
-send_file_list(whichfiles)
-	char *whichfiles;
+send_file_list(whichf)
+	char *whichf;
 {
 	struct stat st;
 	DIR *dirp = NULL;
 	struct dirent *dir;
 	FILE *dout = NULL;
-	register char **dirlist, *dirname;
+	char **dirlist, *dirname;
 	int simple = 0;
+	int freeglob = 0;
+	glob_t gl;
 
-	if (strpbrk(whichfiles, "~{[*?") != NULL) {
-		extern char *globerr;
+	if (strpbrk(whichf, "~{[*?") != NULL) {
 
-		globerr = NULL;
-		dirlist = ftpglob(whichfiles);
-		if (globerr != NULL) {
-			reply(550, globerr);
-			return;
-		} else if (dirlist == NULL) {
+		memset(&gl, 0, sizeof(gl));
+		freeglob = 1;
+		if (glob(whichf, GLOB_BRACE|GLOB_QUOTE|GLOB_TILDE, 0, &gl)) {
+			reply(550, "not found");
+			goto out;
+		} else if (gl.gl_pathc == 0) {
 			errno = ENOENT;
-			perror_reply(550, whichfiles);
-			return;
+			perror_reply(550, whichf);
+			goto out;
 		}
+		dirlist = gl.gl_pathv;
 	} else {
-		onefile[0] = whichfiles;
+		onefile[0] = whichf;
 		dirlist = onefile;
 		simple = 1;
 	}
 
 	if (setjmp(urgcatch)) {
 		transflag = 0;
-		return;
+		goto out;
 	}
 	while (dirname = *dirlist++) {
 		if (stat(dirname, &st) < 0) {
@@ -1440,30 +1443,30 @@ send_file_list(whichfiles)
 			if (dirname[0] == '-' && *dirlist == NULL &&
 			    transflag == 0) {
 				retrieve("/bin/ls %s", dirname);
-				return;
+				goto out;
 			}
-			perror_reply(550, whichfiles);
+			perror_reply(550, whichf);
 			if (dout != NULL) {
 				(void) fclose(dout);
 				transflag = 0;
 				data = -1;
 				pdata = -1;
 			}
-			return;
+			goto out;
 		}
 
-		if ((st.st_mode&S_IFMT) == S_IFREG) {
+		if (S_ISREG(st.st_mode)) {
 			if (dout == NULL) {
 				dout = dataconn("file list", (off_t)-1, "w");
 				if (dout == NULL)
-					return;
+					goto out;
 				transflag++;
 			}
 			fprintf(dout, "%s%s\n", dirname,
 				type == TYPE_A ? "\r" : "");
 			byte_count += strlen(dirname) + 1;
 			continue;
-		} else if ((st.st_mode&S_IFMT) != S_IFDIR)
+		} else if (!S_ISDIR(st.st_mode))
 			continue;
 
 		if ((dirp = opendir(dirname)) == NULL)
@@ -1485,12 +1488,12 @@ send_file_list(whichfiles)
 			 * not a directory or special file.
 			 */
 			if (simple || (stat(nbuf, &st) == 0 &&
-			    (st.st_mode&S_IFMT) == S_IFREG)) {
+			    S_ISREG(st.st_mode))) {
 				if (dout == NULL) {
 					dout = dataconn("file list", (off_t)-1,
 						"w");
 					if (dout == NULL)
-						return;
+						goto out;
 					transflag++;
 				}
 				if (nbuf[0] == '.' && nbuf[1] == '/')
@@ -1517,6 +1520,11 @@ send_file_list(whichfiles)
 		(void) fclose(dout);
 	data = -1;
 	pdata = -1;
+out:
+	if (freeglob) {
+		freeglob = 0;
+		globfree(&gl);
+	}
 }
 
 #ifdef SETPROCTITLE
@@ -1534,10 +1542,11 @@ setproctitle(fmt, va_alist)
         va_dcl
 #endif
 {
-	register char *p, *bp, ch;
-	register int i;
+	int i;
 	va_list ap;
-	char buf[BUFSIZ];
+	char *p, *bp, ch;
+	char buf[LINE_MAX];
+
 #if __STDC__
 	va_start(ap, fmt);
 #else
