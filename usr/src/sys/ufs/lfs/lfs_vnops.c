@@ -1,6 +1,4 @@
-/*	lfs_vnops.c	4.23	82/04/19	*/
-
-/* merged into kernel:	@(#)sys3.c 2.2 4/8/82 */
+/*	lfs_vnops.c	4.24	82/06/04	*/
 
 #ifdef SIMFS
 #include "../h/sysrenam.h"
@@ -480,7 +478,7 @@ stat1(ip, ub)
 
 	IUPDAT(ip, &time, &time, 0);
 	/*
-	 * First copy from inode table
+	 * Copy from inode table
 	 */
 	ds.st_dev = ip->i_dev;
 	ds.st_ino = ip->i_number;
@@ -493,6 +491,7 @@ stat1(ip, ub)
 	ds.st_atime = ip->i_atime;
 	ds.st_mtime = ip->i_mtime;
 	ds.st_ctime = ip->i_ctime;
+	ds.st_blksize = ip->i_fs->fs_bsize;
 	if (copyout((caddr_t)&ds, (caddr_t)ub, sizeof(ds)) < 0)
 		u.u_error = EFAULT;
 }
