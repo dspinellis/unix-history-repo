@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	3.1 (Berkeley) %G%
+#	@(#)Makefile	3.2 (Berkeley) %G%
 #
 #
 # Window makefile, update with mkmf (or "make depend")
@@ -22,9 +22,12 @@ EXTHDRS	      = /usr/include/fcntl.h \
 		/usr/include/sys/socket.h \
 		/usr/include/sys/time.h \
 		/usr/include/sys/ttychars.h \
+		/usr/include/sys/ttychars.h \
+		/usr/include/sys/ttydev.h \
 		/usr/include/sys/ttydev.h \
 		/usr/include/sys/types.h \
-		/usr/include/sys/wait.h
+		/usr/include/sys/wait.h \
+		/usr/include/time.h
 
 HDRS	      = alias.h \
 		char.h \
@@ -80,6 +83,7 @@ OBJS	      = char.o \
 		ttoutput.o \
 		tttermcap.o \
 		tttvi925.o \
+		ttzentec.o \
 		var.o \
 		win.o \
 		wwadd.o \
@@ -161,6 +165,7 @@ SRCS	      = char.c \
 		ttoutput.c \
 		tttermcap.c \
 		tttvi925.c \
+		ttzentec.c \
 		var.c \
 		win.c \
 		wwadd.c \
@@ -233,52 +238,57 @@ wc:;		@wc $(SRCS) $(HDRS)
 char.o: char.h
 cmd.o: defs.h ww.h /usr/include/sgtty.h /usr/include/sys/ioctl.h \
 	/usr/include/sys/ttychars.h /usr/include/sys/ttydev.h \
-	/usr/include/setjmp.h /usr/include/sys/time.h char.h
+	/usr/include/setjmp.h /usr/include/sys/time.h /usr/include/time.h \
+	char.h
 cmd1.o: defs.h ww.h /usr/include/sgtty.h /usr/include/sys/ioctl.h \
 	/usr/include/sys/ttychars.h /usr/include/sys/ttydev.h \
-	/usr/include/setjmp.h /usr/include/sys/time.h char.h
+	/usr/include/setjmp.h /usr/include/sys/time.h /usr/include/time.h \
+	char.h
 cmd2.o: defs.h ww.h /usr/include/sgtty.h /usr/include/sys/ioctl.h \
 	/usr/include/sys/ttychars.h /usr/include/sys/ttydev.h \
-	/usr/include/setjmp.h /usr/include/sys/time.h
+	/usr/include/setjmp.h /usr/include/sys/time.h /usr/include/time.h
 cmd3.o: defs.h ww.h /usr/include/sgtty.h /usr/include/sys/ioctl.h \
 	/usr/include/sys/ttychars.h /usr/include/sys/ttydev.h \
-	/usr/include/setjmp.h /usr/include/sys/time.h string.h
+	/usr/include/setjmp.h /usr/include/sys/time.h /usr/include/time.h \
+	string.h
 cmd4.o: defs.h ww.h /usr/include/sgtty.h /usr/include/sys/ioctl.h \
 	/usr/include/sys/ttychars.h /usr/include/sys/ttydev.h \
-	/usr/include/setjmp.h /usr/include/sys/time.h
+	/usr/include/setjmp.h /usr/include/sys/time.h /usr/include/time.h
 cmd5.o: defs.h ww.h /usr/include/sgtty.h /usr/include/sys/ioctl.h \
 	/usr/include/sys/ttychars.h /usr/include/sys/ttydev.h \
-	/usr/include/setjmp.h /usr/include/sys/time.h
+	/usr/include/setjmp.h /usr/include/sys/time.h /usr/include/time.h
 cmd6.o: defs.h ww.h /usr/include/sgtty.h /usr/include/sys/ioctl.h \
 	/usr/include/sys/ttychars.h /usr/include/sys/ttydev.h \
-	/usr/include/setjmp.h /usr/include/sys/time.h string.h char.h
+	/usr/include/setjmp.h /usr/include/sys/time.h /usr/include/time.h \
+	string.h char.h
 cmd7.o: defs.h ww.h /usr/include/sgtty.h /usr/include/sys/ioctl.h \
 	/usr/include/sys/ttychars.h /usr/include/sys/ttydev.h \
-	/usr/include/setjmp.h /usr/include/sys/time.h
+	/usr/include/setjmp.h /usr/include/sys/time.h /usr/include/time.h
 context.o: /usr/include/stdio.h value.h string.h context.h
 error.o: defs.h ww.h /usr/include/sgtty.h /usr/include/sys/ioctl.h \
 	/usr/include/sys/ttychars.h /usr/include/sys/ttydev.h \
-	/usr/include/setjmp.h /usr/include/sys/time.h value.h context.h \
-	/usr/include/stdio.h char.h
+	/usr/include/setjmp.h /usr/include/sys/time.h /usr/include/time.h \
+	value.h context.h /usr/include/stdio.h char.h
 lcmd.o: defs.h ww.h /usr/include/sgtty.h /usr/include/sys/ioctl.h \
 	/usr/include/sys/ttychars.h /usr/include/sys/ttydev.h \
-	/usr/include/setjmp.h /usr/include/sys/time.h value.h lcmd.h
+	/usr/include/setjmp.h /usr/include/sys/time.h /usr/include/time.h \
+	value.h lcmd.h
 lcmd1.o: defs.h ww.h /usr/include/sgtty.h /usr/include/sys/ioctl.h \
 	/usr/include/sys/ttychars.h /usr/include/sys/ttydev.h \
-	/usr/include/setjmp.h /usr/include/sys/time.h string.h value.h lcmd.h \
-	var.h
+	/usr/include/setjmp.h /usr/include/sys/time.h /usr/include/time.h \
+	string.h value.h lcmd.h var.h
 lcmd2.o: defs.h ww.h /usr/include/sgtty.h /usr/include/sys/ioctl.h \
 	/usr/include/sys/ttychars.h /usr/include/sys/ttydev.h \
-	/usr/include/setjmp.h /usr/include/sys/time.h string.h value.h var.h \
-	lcmd.h /usr/include/sys/resource.h alias.h
+	/usr/include/setjmp.h /usr/include/sys/time.h /usr/include/time.h \
+	string.h value.h var.h lcmd.h /usr/include/sys/resource.h alias.h
 main.o: defs.h ww.h /usr/include/sgtty.h /usr/include/sys/ioctl.h \
 	/usr/include/sys/ttychars.h /usr/include/sys/ttydev.h \
-	/usr/include/setjmp.h /usr/include/sys/time.h \
+	/usr/include/setjmp.h /usr/include/sys/time.h /usr/include/time.h \
 	/usr/include/sys/signal.h /usr/include/stdio.h string.h char.h \
 	local.h
 mloop.o: defs.h ww.h /usr/include/sgtty.h /usr/include/sys/ioctl.h \
 	/usr/include/sys/ttychars.h /usr/include/sys/ttydev.h \
-	/usr/include/setjmp.h /usr/include/sys/time.h
+	/usr/include/setjmp.h /usr/include/sys/time.h /usr/include/time.h
 parser1.o: parser.h /usr/include/stdio.h value.h context.h token.h string.h
 parser2.o: parser.h /usr/include/stdio.h value.h context.h token.h string.h \
 	var.h lcmd.h alias.h
@@ -289,8 +299,8 @@ parser5.o: parser.h /usr/include/stdio.h value.h context.h token.h string.h \
 scanner.o: /usr/include/stdio.h value.h token.h context.h string.h
 startup.o: defs.h ww.h /usr/include/sgtty.h /usr/include/sys/ioctl.h \
 	/usr/include/sys/ttychars.h /usr/include/sys/ttydev.h \
-	/usr/include/setjmp.h /usr/include/sys/time.h value.h var.h char.h \
-	local.h
+	/usr/include/setjmp.h /usr/include/sys/time.h /usr/include/time.h \
+	value.h var.h char.h local.h
 string.o: string.h
 ttf100.o: ww.h /usr/include/sgtty.h /usr/include/sys/ioctl.h \
 	/usr/include/sys/ttychars.h /usr/include/sys/ttydev.h \
@@ -314,10 +324,14 @@ tttermcap.o: tt.h
 tttvi925.o: ww.h /usr/include/sgtty.h /usr/include/sys/ioctl.h \
 	/usr/include/sys/ttychars.h /usr/include/sys/ttydev.h \
 	/usr/include/setjmp.h tt.h
+ttzentec.o: ww.h /usr/include/sgtty.h /usr/include/sys/ioctl.h \
+	/usr/include/sys/ttychars.h /usr/include/sys/ttydev.h \
+	/usr/include/setjmp.h tt.h
 var.o: value.h var.h string.h
 win.o: defs.h ww.h /usr/include/sgtty.h /usr/include/sys/ioctl.h \
 	/usr/include/sys/ttychars.h /usr/include/sys/ttydev.h \
-	/usr/include/setjmp.h /usr/include/sys/time.h char.h
+	/usr/include/setjmp.h /usr/include/sys/time.h /usr/include/time.h \
+	char.h
 wwadd.o: ww.h /usr/include/sgtty.h /usr/include/sys/ioctl.h \
 	/usr/include/sys/ttychars.h /usr/include/sys/ttydev.h \
 	/usr/include/setjmp.h
@@ -387,7 +401,8 @@ wwinsline.o: ww.h /usr/include/sgtty.h /usr/include/sys/ioctl.h \
 	/usr/include/setjmp.h
 wwiomux.o: ww.h /usr/include/sgtty.h /usr/include/sys/ioctl.h \
 	/usr/include/sys/ttychars.h /usr/include/sys/ttydev.h \
-	/usr/include/setjmp.h /usr/include/sys/time.h
+	/usr/include/setjmp.h /usr/include/sys/time.h /usr/include/time.h \
+	/usr/include/sys/types.h
 wwlabel.o: ww.h /usr/include/sgtty.h /usr/include/sys/ioctl.h \
 	/usr/include/sys/ttychars.h /usr/include/sys/ttydev.h \
 	/usr/include/setjmp.h char.h
