@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_lock.c	8.4 (Berkeley) %G%
+ *	@(#)kern_lock.c	8.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -74,7 +74,8 @@ int lock_wait_time = 100;
 /*
  * Initialize a lock; required before use.
  */
-void lock_init(lkp, prio, wmesg, timo, flags)
+void
+lock_init(lkp, prio, wmesg, timo, flags)
 	struct lock *lkp;
 	int prio;
 	char *wmesg;
@@ -115,6 +116,7 @@ lockstatus(lkp)
  * LK_WANT_EXCL flag (preventing further shared locks), and wait for already
  * accepted shared locks and shared-to-exclusive upgrades to go away.
  */
+int
 lockmgr(lkp, p, flags)
 	volatile struct lock *lkp;
 	struct proc *p;
