@@ -15,13 +15,12 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)arp.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)arp.c	5.11.1.1 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
  * arp - display, set, and delete arp table entries
  */
-
 
 #include <sys/param.h>
 #include <sys/file.h>
@@ -39,12 +38,12 @@ static char sccsid[] = "@(#)arp.c	5.12 (Berkeley) %G%";
 #include <netdb.h>
 #include <errno.h>
 #include <nlist.h>
+#include <kvm.h>
 #include <stdio.h>
 #include <paths.h>
 
 extern int errno;
 static int pid;
-static int kflag;
 static int nflag;
 static int s = -1;
 
@@ -323,22 +322,6 @@ u_long addr;
 	extern int h_errno;
 	struct hostent *hp;
 
-	if ((needed = getkerninfo(op, 0, 0, RTF_LLINFO)) < 0)
-		quit("route-getkerninfo-estimate");
-	if ((buf = malloc(needed)) == NULL)
-		quit("malloc");
-	if ((rlen = getkerninfo(op, buf, &needed, RTF_LLINFO)) < 0)
-		quit("actual retrieval of routing table");
-	lim = buf + rlen;
-	for (next = buf; next < lim; next += rtm->rtm_msglen) {
-		rtm = (struct rt_msghdr *)next;
-		sin = (struct sockaddr_inarp *)(rtm + 1);
-		sdl = (struct sockaddr_dl *)(sin + 1);
-		if (addr) {
-			if (addr != sin->sin_addr.s_addr)
-				continue;
-			found_entry = 1;
-		}
 		if (nflag == 0)
 			hp = gethostbyaddr((caddr_t)&(sin->sin_addr),
 			    sizeof sin->sin_addr, AF_INET);
@@ -372,8 +355,6 @@ u_long addr;
 		}
 		printf("\n");
 	}
-}
-
 ether_print(cp)
 	u_char *cp;
 {
