@@ -10,22 +10,23 @@
 
 #ifndef lint
 #if NAMED_BIND
-static char sccsid[] = "@(#)domain.c	8.32 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	8.19.1.1 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	8.32 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	8.19.1.1 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
 #if NAMED_BIND
 
 #include <errno.h>
+#include <arpa/nameser.h>
 #include <resolv.h>
 #include <netdb.h>
 
 typedef union
 {
 	HEADER	qb1;
-	u_char	qb2[PACKETSZ];
+	char	qb2[PACKETSZ];
 } querybuf;
 
 static char	MXHostBuf[MAXMXHOSTS*PACKETSZ];
@@ -42,17 +43,15 @@ static char	MXHostBuf[MAXMXHOSTS*PACKETSZ];
 # define NO_DATA	NO_ADDRESS
 #endif
 
-#ifndef HFIXEDSZ
-# define HFIXEDSZ	12	/* sizeof(HEADER) */
+#ifndef HEADERSZ
+# define HEADERSZ	sizeof(HEADER)
 #endif
+
+/* don't use sizeof because sizeof(long) is different on 64-bit machines */
+#define SHORTSIZE	2	/* size of a short (really, must be 2) */
+#define LONGSIZE	4	/* size of a long (really, must be 4) */
 
 #define MAXCNAMEDEPTH	10	/* maximum depth of CNAME recursion */
-
-#if defined(__RES) && (__RES >= 19940415)
-# define RES_UNC_T	char *
-#else
-# define RES_UNC_T	u_char *
-#endif
 /*
 **  GETMXRR -- get MX resource records for a domain
 **
@@ -86,10 +85,10 @@ getmxrr(host, mxhosts, droplocalhost, rcode)
 	querybuf answer;
 	int ancount, qdcount, buflen;
 	bool seenlocal = FALSE;
-	u_short pref, type;
-	u_short localpref = 256;
+	u_short pref, localpref, type;
 	char *fallbackMX = FallBackMX;
 	static bool firsttime = TRUE;
+	STAB *st;
 	bool trycanon = FALSE;
 	u_short prefer[MAXMXHOSTS];
 	int weight[MAXMXHOSTS];
@@ -100,14 +99,15 @@ getmxrr(host, mxhosts, droplocalhost, rcode)
 
 	if (fallbackMX != NULL)
 	{
-		if (firsttime &&
-		    res_query(FallBackMX, C_IN, T_A,
-			      (u_char *) &answer, sizeof answer) < 0)
+		if (firsttime && res_query(FallBackMX, C_IN, T_A,
+					   (char *) &answer, sizeof answer) < 0)
 		{
 			/* this entry is bogus */
 			fallbackMX = FallBackMX = NULL;
 		}
-		else if (droplocalhost && wordinclass(fallbackMX, 'w'))
+		else if (droplocalhost &&
+			 (st = stab(fallbackMX, ST_CLASS, ST_FIND)) != NULL &&
+			 bitnset('w', st->s_class))
 		{
 			/* don't use fallback for this pass */
 			fallbackMX = NULL;
@@ -119,19 +119,8 @@ getmxrr(host, mxhosts, droplocalhost, rcode)
 	if (host[0] == '[')
 		goto punt;
 
-	/*
-	**  If we don't have MX records in our host switch, don't
-	**  try for MX records.  Note that this really isn't "right",
-	**  since we might be set up to try NIS first and then DNS;
-	**  if the host is found in NIS we really shouldn't be doing
-	**  MX lookups.  However, that should be a degenerate case.
-	*/
-
-	if (!UseNameServer)
-		goto punt;
-
 	errno = 0;
-	n = res_search(host, C_IN, T_MX, (u_char *) &answer, sizeof(answer));
+	n = res_search(host, C_IN, T_MX, (char *)&answer, sizeof(answer));
 	if (n < 0)
 	{
 		if (tTd(8, 1))
@@ -149,14 +138,24 @@ getmxrr(host, mxhosts, droplocalhost, rcode)
 
 		  case HOST_NOT_FOUND:
 #ifdef BROKEN_RES_SEARCH
-		  case 0:	/* Ultrix resolver retns failure w/ h_errno=0 */
+			/* Ultrix resolver returns failure w/ h_errno=0 */
+		  case 0:
 #endif
-			/* host doesn't exist in DNS; might be in /etc/hosts */
+			/* the host just doesn't exist */
 			*rcode = EX_NOHOST;
-			goto punt;
+
+			if (!UseNameServer)
+			{
+				/* might exist in /etc/hosts */
+				goto punt;
+			}
+			break;
 
 		  case TRY_AGAIN:
 			/* couldn't connect to the name server */
+			if (!UseNameServer && errno == ECONNREFUSED)
+				goto punt;
+
 			/* it might come up later; better queue it up */
 			*rcode = EX_TEMPFAIL;
 			break;
@@ -174,7 +173,7 @@ getmxrr(host, mxhosts, droplocalhost, rcode)
 
 	/* find first satisfactory answer */
 	hp = (HEADER *)&answer;
-	cp = (u_char *)&answer + HFIXEDSZ;
+	cp = (u_char *)&answer + HEADERSZ;
 	eom = (u_char *)&answer + n;
 	for (qdcount = ntohs(hp->qdcount); qdcount--; cp += n + QFIXEDSZ)
 		if ((n = dn_skipname(cp, eom)) < 0)
@@ -185,11 +184,11 @@ getmxrr(host, mxhosts, droplocalhost, rcode)
 	while (--ancount >= 0 && cp < eom && nmx < MAXMXHOSTS - 1)
 	{
 		if ((n = dn_expand((u_char *)&answer,
-		    eom, cp, (RES_UNC_T) bp, buflen)) < 0)
+		    eom, cp, (u_char *)bp, buflen)) < 0)
 			break;
 		cp += n;
 		GETSHORT(type, cp);
- 		cp += INT16SZ + INT32SZ;
+ 		cp += SHORTSIZE + LONGSIZE;
 		GETSHORT(n, cp);
 		if (type != T_MX)
 		{
@@ -201,10 +200,12 @@ getmxrr(host, mxhosts, droplocalhost, rcode)
 		}
 		GETSHORT(pref, cp);
 		if ((n = dn_expand((u_char *)&answer, eom, cp,
-				   (RES_UNC_T) bp, buflen)) < 0)
+				   (u_char *)bp, buflen)) < 0)
 			break;
 		cp += n;
-		if (droplocalhost && wordinclass(bp, 'w'))
+		if (droplocalhost &&
+		    (st = stab(bp, ST_CLASS, ST_FIND)) != NULL &&
+		    bitnset('w', st->s_class))
 		{
 			if (tTd(8, 3))
 				printf("found localhost (%s) in MX list, pref=%d\n",
@@ -417,7 +418,7 @@ getcanonname(host, hbsize, trymx)
 	char **dp;
 	char *mxmatch;
 	bool amatch;
-	bool gotmx = FALSE;
+	bool gotmx;
 	int qtype;
 	int loopcnt;
 	char *xp;
@@ -495,7 +496,7 @@ cnameloop:
 				qtype == T_ANY ? "ANY" : qtype == T_A ? "A" :
 				qtype == T_MX ? "MX" : "???");
 		ret = res_querydomain(host, *dp, C_IN, qtype,
-				      answer.qb2, sizeof(answer.qb2));
+				      &answer, sizeof(answer));
 		if (ret <= 0)
 		{
 			if (tTd(8, 7))
@@ -545,7 +546,7 @@ cnameloop:
 		*/
 
 		hp = (HEADER *) &answer;
-		ap = (u_char *) &answer + HFIXEDSZ;
+		ap = (u_char *) &answer + HEADERSZ;
 		eom = (u_char *) &answer + ret;
 
 		/* skip question part of response -- we know what we asked */
@@ -564,12 +565,12 @@ cnameloop:
 		for (ancount = ntohs(hp->ancount); --ancount >= 0 && ap < eom; ap += n)
 		{
 			n = dn_expand((u_char *) &answer, eom, ap,
-				      (RES_UNC_T) nbuf, sizeof nbuf);
+				      (u_char *) nbuf, sizeof nbuf);
 			if (n < 0)
 				break;
 			ap += n;
 			GETSHORT(type, ap);
-			ap += INT16SZ + INT32SZ;
+			ap += SHORTSIZE + LONGSIZE;
 			GETSHORT(n, ap);
 			switch (type)
 			{
@@ -613,7 +614,7 @@ cnameloop:
 
 				/* value points at name */
 				if ((ret = dn_expand((u_char *)&answer,
-				    eom, ap, (RES_UNC_T) nbuf, sizeof(nbuf))) < 0)
+				    eom, ap, (u_char *)nbuf, sizeof(nbuf))) < 0)
 					break;
 				(void)strncpy(host, nbuf, hbsize); /* XXX */
 				host[hbsize - 1] = '\0';
@@ -675,14 +676,14 @@ gethostalias(host)
 {
 	char *fname;
 	FILE *fp;
-	register char *p = NULL;
+	register char *p;
 	char buf[MAXLINE];
 	static char hbuf[MAXDNAME];
 
 	fname = getenv("HOSTALIASES");
-	if (fname == NULL ||
-	    (fp = safefopen(fname, O_RDONLY, 0, SFF_ANYFILE)) == NULL)
+	if (fname == NULL || (fp = fopen(fname, "r")) == NULL)
 		return NULL;
+	setbuf(fp, NULL);
 	while (fgets(buf, sizeof buf, fp) != NULL)
 	{
 		for (p = buf; p != '\0' && !(isascii(*p) && isspace(*p)); p++)
@@ -728,28 +729,15 @@ getcanonname(host, hbsize, trymx)
 	bool trymx;
 {
 	struct hostent *hp;
-	char *p;
 
 	hp = gethostbyname(host);
 	if (hp == NULL)
 		return (FALSE);
-	p = hp->h_name;
-	if (strchr(p, '.') == NULL)
-	{
-		/* first word is a short name -- try to find a long one */
-		char **ap;
 
-		for (ap = hp->h_aliases; *ap != NULL; ap++)
-			if (strchr(*ap, '.') != NULL)
-				break;
-		if (*ap != NULL)
-			p = *ap;
-	}
-
-	if (strlen(p) >= hbsize)
+	if (strlen(hp->h_name) >= hbsize)
 		return (FALSE);
 
-	(void) strcpy(host, p);
+	(void) strcpy(host, hp->h_name);
 	return (TRUE);
 }
 
