@@ -11,7 +11,7 @@
  */
 
 #ifdef notdef
-static char sccsid[] = "@(#)cmd3.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmd3.c	5.7 (Berkeley) %G%";
 #endif /* notdef */
 
 #include "rcv.h"
@@ -244,7 +244,6 @@ _respond(msgvec)
 			strcpy(buf, cp);
 	}
 	np = elide(extract(buf, GTO));
-	mapf(np, rcv);
 	/*
 	 * Delete my name from the reply list,
 	 * and with it, all my alternate names.
@@ -278,7 +277,6 @@ _respond(msgvec)
 		cp = skin(hfield("cc", mp));
 		if (cp != NOSTR) {
 			np = elide(extract(cp, GCC));
-			mapf(np, rcv);
 			np = delname(np, myname, icequal);
 			if (altnames != 0)
 				for (ap = altnames; *ap; ap++)

@@ -11,7 +11,7 @@
  */
 
 #ifdef notdef
-static char sccsid[] = "@(#)names.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)names.c	5.7 (Berkeley) %G%";
 #endif /* notdef */
 
 /*
@@ -22,6 +22,11 @@ static char sccsid[] = "@(#)names.c	5.6 (Berkeley) %G%";
 
 #include "rcv.h"
 #include <sys/wait.h>
+
+/*
+ * Set of network separator characters.
+ */
+char	*metanet = "!%@";
 
 /*
  * Allocate a single element of a name list,
@@ -193,64 +198,6 @@ yankword(ap, wbuf)
 }
 
 /*
- * Verify that all the users in the list of names are
- * legitimate.  Bitch about and delink those who aren't.
- */
-
-struct name *
-verify(names)
-	struct name *names;
-{
-#ifdef SENDMAIL
-
-	return(names);
-#else
-	register struct name *np, *top, *t, *x;
-	register char *cp;
-
-	top = names;
-	np = names;
-	while (np != NIL) {
-		if (np->n_type & GDEL) {
-			np = np->n_flink;
-			continue;
-		}
-		for (cp = "!:@^"; *cp; cp++)
-			if (any(*cp, np->n_name))
-				break;
-		if (*cp != 0) {
-			np = np->n_flink;
-			continue;
-		}
-		cp = np->n_name;
-		while (*cp == '\\')
-			cp++;
-		if (equal(cp, "msgs") ||
-		    getuserid(cp) != -1) {
-			np = np->n_flink;
-			continue;
-		}
-		fprintf(stderr, "Can't send to %s\n", np->n_name);
-		senderr++;
-		if (np == top) {
-			top = np->n_flink;
-			if (top != NIL)
-				top->n_blink = NIL;
-			np = top;
-			continue;
-		}
-		x = np->n_blink;
-		t = np->n_flink;
-		x->n_flink = t;
-		if (t != NIL)
-			t->n_blink = x;
-		np = t;
-	}
-	return(top);
-#endif
-}
-
-/*
  * For each recipient in the passed name list with a /
  * in the name, append the message to the end of the named file
  * and remove him from the recipient list.
@@ -419,7 +366,6 @@ isfileaddr(name)
 	char *name;
 {
 	register char *cp;
-	extern char *metanet;
 
 	if (any('@', name))
 		return(0);
@@ -588,7 +534,6 @@ unpack(np)
 	extra = 2;
 	if (rflag != NOSTR)
 		extra += 2;
-#ifdef SENDMAIL
 	extra++;
 	metoo = value("metoo") != NOSTR;
 	if (metoo)
@@ -596,7 +541,6 @@ unpack(np)
 	verbose = value("verbose") != NOSTR;
 	if (verbose)
 		extra++;
-#endif SENDMAIL
 	if (hflag)
 		extra += 2;
 	top = (char **) salloc((t + extra) * sizeof *top);
@@ -606,13 +550,11 @@ unpack(np)
 		*ap++ = "-r";
 		*ap++ = rflag;
 	}
-#ifdef SENDMAIL
 	*ap++ = "-i";
 	if (metoo)
 		*ap++ = "-m";
 	if (verbose)
 		*ap++ = "-v";
-#endif SENDMAIL
 	if (hflag) {
 		*ap++ = "-h";
 		*ap++ = savestr(sprintf(hbuf, "%d", hflag));
@@ -826,21 +768,6 @@ delname(np, name, cmpfun)
 			p->n_flink->n_blink = p->n_blink;
 		}
 	return(np);
-}
-
-/*
- * Call the given routine on each element of the name
- * list, replacing said value if need be.
- */
-
-mapf(np, from)
-	register struct name *np;
-	char *from;
-{
-	register struct name *p;
-
-	for (p = np; p != NIL; p = p->n_flink)
-		p->n_name = netmap(p->n_name, from);
 }
 
 /*

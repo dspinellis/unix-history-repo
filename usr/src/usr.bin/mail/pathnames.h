@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)pathnames.h	5.4 (Berkeley) %G%
+ *	@(#)pathnames.h	5.5 (Berkeley) %G%
  */
 
 /*
@@ -18,14 +18,6 @@
  * Vax/Unix version 7.
  */
 
-#define	GETHOST				/* System has gethostname syscall */
-#ifdef	GETHOST
-#define	LOCAL		EMPTYID		/* Dynamically determined local host */
-#else
-#define	LOCAL		'j'		/* Local host id */
-#endif	GETHOST
-
-#define	MAIL		"/bin/mail"	/* Name of mail sender */
 #define SENDMAIL	"/usr/lib/sendmail"
 					/* Name of classy mail deliverer */
 #define	EDITOR		"/usr/ucb/ex"	/* Name of text editor */
@@ -35,10 +27,8 @@
 #define	HELPFILE	"/usr/lib/Mail.help"
 					/* Name of casual help file */
 #define	THELPFILE	"/usr/lib/Mail.tildehelp"
+					/* Name of casual tilde help */
 #define	POSTAGE		"/usr/adm/maillog"
 					/* Where to audit mail sending */
-					/* Name of casual tilde help */
 #define	MASTER		"/usr/lib/Mail.rc"
 #define	APPEND				/* New mail goes to end of mailbox */
-#define CANLOCK				/* Locking protocol actually works */
-#define	UTIME				/* System implements utime(2) */

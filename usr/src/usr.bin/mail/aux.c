@@ -11,7 +11,7 @@
  */
 
 #ifdef notdef
-static char sccsid[] = "@(#)aux.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)aux.c	5.9 (Berkeley) %G%";
 #endif /* notdef */
 
 #include "rcv.h"
@@ -328,36 +328,20 @@ unstack()
 /*
  * Touch the indicated file.
  * This is nifty for the shell.
- * If we have the utime() system call, this is better served
- * by using that, since it will work for empty files.
- * On non-utime systems, we must sleep a second, then read.
  */
 
 alter(name)
 	char name[];
 {
-#ifdef UTIME
 	struct stat statb;
 	long time();
 	time_t time_p[2];
-#else
-	register int pid, f;
-	char w;
-#endif UTIME
 
-#ifdef UTIME
 	if (stat(name, &statb) < 0)
 		return;
 	time_p[0] = time((long *) 0) + 1;
 	time_p[1] = statb.st_mtime;
 	utime(name, time_p);
-#else
-	sleep(1);
-	if ((f = open(name, 0)) < 0)
-		return;
-	read(f, &w, 1);
-	exit(0);
-#endif
 }
 
 /*

@@ -11,7 +11,7 @@
  */
 
 #ifdef notdef
-static char sccsid[] = "@(#)quit.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)quit.c	5.6 (Berkeley) %G%";
 #endif /* notdef */
 
 #include "rcv.h"
@@ -55,22 +55,12 @@ quit()
 	 * Delete all untouched messages to keep them out of mbox.
 	 * If all the messages are to be preserved, just exit with
 	 * a message.
-	 *
-	 * If the luser has sent mail to himself, refuse to do
-	 * anything with the mailbox, unless mail locking works.
 	 */
 
 	fbuf = fopen(mailname, "r");
 	if (fbuf == NULL)
 		goto newmail;
 	flock(fileno(fbuf), LOCK_EX);
-#ifndef CANLOCK
-	if (selfsent) {
-		printf("You have new mail.\n");
-		fclose(fbuf);
-		return;
-	}
-#endif
 	rbuf = NULL;
 	if (fstat(fileno(fbuf), &minfo) >= 0 && minfo.st_size > mailsize) {
 		printf("New mail has arrived.\n");

@@ -11,7 +11,7 @@
  */
 
 #ifdef notdef
-static char sccsid[] = "@(#)send.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)send.c	5.8 (Berkeley) %G%";
 #endif /* notdef */
 
 #include "rcv.h"
@@ -279,7 +279,6 @@ mail1(hp)
 
 	to = outof(to, mtf, hp);
 	rewind(mtf);
-	to = verify(to);
 	if (senderr && !remote) {
 topdog:
 
@@ -363,13 +362,10 @@ topdog:
 		(void) dup(fileno(mtf));
 		for (i = getdtablesize(); --i > 2;)
 			(void) close(i);
-#ifdef SENDMAIL
 		if ((deliver = value("sendmail")) == NOSTR)
 			deliver = SENDMAIL;
 		execv(deliver, namelist);
-#endif SENDMAIL
-		execv(MAIL, namelist);
-		perror(MAIL);
+		perror(deliver);
 		exit(1);
 	}
 
