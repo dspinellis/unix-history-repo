@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)atrun.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)atrun.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -259,11 +259,11 @@ char *spoolfile;
 		}
 		exitstatus = ((errbuf.st_size == 0) ? NORMAL : ABNORMAL);
 
-		/* If errors occured, then we send mail to the owner
+		/* If errors occurred, then we send mail to the owner
 		 * telling him/her that we ran into trouble.  
 		 *
 		 * (NOTE: this could easily be modified so that if any 
-		 * errors occured while running a job, mail is sent regard-
+		 * errors occurred while running a job, mail is sent regard-
 		 * less of whether the -m flag was set or not.
 		 *
 		 * i.e. rather than:
@@ -390,7 +390,7 @@ int exitstatus;
 	/*
 	 * If the job exited abnormally, send a letter notifying the user
 	 * that the job didn't run proberly. Also, send a copy of the errors 
-	 * that occured to the user.
+	 * that occurred to the user.
 	 */
 	else {
 		if (exitstatus == ABNORMAL) {
@@ -401,11 +401,11 @@ int exitstatus;
 			fprintf(mailptr,"\n\nThe job you submitted to at, ");
 			fprintf(mailptr,"\"%s\", ",jobname);
 			fprintf(mailptr,"exited abnormally.\nA list of the ");
-			fprintf(mailptr," errors that occured follows:\n\n\n");
+			fprintf(mailptr," errors that occurred follows:\n\n\n");
 
 			/*
 			 * Open the file containing a log of the errors that
-			 * occured.
+			 * occurred.
 			 */
 			if ((errptr = fopen(errfile,"r")) == NULL) {
 				perror(errfile);
