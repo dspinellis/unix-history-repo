@@ -1,6 +1,6 @@
 #	@(#)Makefile	5.1.1.2 (Berkeley) 5/9/91
 #
-#	$Id: Makefile,v 1.51 1994/05/25 18:28:01 phk Exp $
+#	$Id: Makefile,v 1.52 1994/06/02 06:50:20 jkh Exp $
 #
 
 SUBDIR=
@@ -138,6 +138,7 @@ includes:
 	cd ${.CURDIR}/include;			make clean all install
 	cd ${CCDIR}/libobjc;			make beforeinstall
 	cd ${.CURDIR}/gnu/lib/libg++;		make beforeinstall
+	cd ${.CURDIR}/gnu/lib/libreadline;	make beforeinstall
 	cd ${.CURDIR}/lib/libcurses;		make beforeinstall
 	cd ${.CURDIR}/lib/libc;			make beforeinstall
 .if !defined(NOCRYPT) && exists(${.CURDIR}/kerberosIV)
