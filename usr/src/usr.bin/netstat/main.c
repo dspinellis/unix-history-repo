@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	4.6 83/03/11";
+static char sccsid[] = "@(#)main.c	4.7 83/03/23";
 #endif
 
 #include <sys/param.h>
@@ -233,7 +233,8 @@ klseek(fd, base, off)
 #ifdef vax
 		base &= 0x7fffffff;
 #endif
-		base = ctob(Sysmap[btoc(base)].pg_pfnum) + (base & (NBPG-1));
+		base = ctob(Sysmap[base >> PGSHIFT].pg_pfnum) +
+			(base & PGOFSET);
 	}
 	lseek(fd, base, off);
 }
