@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ansi.h	8.1 (Berkeley) %G%
+ *	@(#)ansi.h	8.2 (Berkeley) %G%
  */
 
 #ifndef	_ANSI_H_
@@ -18,8 +18,6 @@
  *	typedef	_BSD_SIZE_T_ size_t;
  *	#undef	_BSD_SIZE_T_
  *	#endif
- *
- * Thanks, ANSI!
  */
 #define	_BSD_CLOCK_T_	unsigned long		/* clock() */
 #define	_BSD_PTRDIFF_T_	int			/* ptr1 - ptr2 */
