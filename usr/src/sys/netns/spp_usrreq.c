@@ -41,11 +41,13 @@ spp_init()
 struct spidp spp_savesi;
 int traceallspps = 0;
 extern int sppconsdebug;
-
 int spp_hardnosed;
-spp_input(m, nsp)
+
+/*ARGSUSED*/
+spp_input(m, nsp, ifp)
 	register struct mbuf *m;
 	register struct nspcb *nsp;
+	struct ifnet *ifp;
 {
 	register struct sppcb *cb;
 	register struct spidp *si = mtod(m, struct spidp *);
@@ -361,6 +363,7 @@ spp_ctlinput(cmd, arg)
 	extern struct nspcb *idp_drop();
 	struct ns_errp *errp;
 	struct nspcb *nsp;
+	struct sockaddr_ns *sns;
 	int type;
 
 	if (cmd < 0 || cmd > PRC_NCMDS)
@@ -374,12 +377,12 @@ spp_ctlinput(cmd, arg)
 		break;
 
 	case PRC_IFDOWN:
-		na = &((struct sockaddr_ns *)arg)->sns_addr;
-		break;
-
 	case PRC_HOSTDEAD:
 	case PRC_HOSTUNREACH:
-		na = (struct ns_addr *)arg;
+		sns = (struct sockaddr_ns *)arg;
+		if (sns->sns_family != AF_NS)
+			return;
+		na = &sns->sns_addr;
 		break;
 
 	default:
@@ -468,37 +471,49 @@ spp_output(cb, m0)
 	register struct spidp *si = (struct spidp *) 0;
 	register struct sockbuf *sb = &(so->so_snd);
 	register int len = 0;
-	int mtu = cb->s_mtu;
 	int error = 0;
 	u_short lookfor = 0;
 	struct mbuf *mprev;
 	extern int idpcksum;
 
 	if (m0) {
+		int mtu = cb->s_mtu;
+		int datalen;
+		/*
+		 * Make sure that packet isn't too big.
+		 */
 		for (m = m0; m ; m = m->m_next) {
 			mprev = m;
 			len += m->m_len;
 		}
-		if (len > mtu) {
+		datalen = (cb->s_flags & SF_HO) ?
+				len - sizeof (struct sphdr) : len;
+		if (datalen > mtu) {
 			if (cb->s_flags & SF_PI) {
 				m_freem(m0);
 				return (EMSGSIZE);
 			} else {
 				int off = 0;
+				int oldEM = cb->s_cc & SP_EM;
+
+				cb->s_cc &= ~SP_EM;
 				while (len > mtu) {
 					m = m_copy(m0, off, mtu);
 					if (m == NULL) {
-						m_freem(m0);
-						return (ENOBUFS);
+						error = ENOBUFS;
+						goto bad_copy;
 					}
 					error = spp_output(cb, m);
 					if (error) {
+					bad_copy:
+						cb->s_cc |= oldEM;
 						m_freem(m0);
-						return (error);
+						return(error);
 					}
 					m_adj(m0, mtu);
 					len -= mtu;
 				}
+				cb->s_cc |= oldEM;
 			}
 		}
 		/*
@@ -526,7 +541,6 @@ spp_output(cb, m0)
 			m_freem(m0);
 			return (ENOBUFS);
 		}
-
 		/*
 		 * Fill in mbuf with extended SP header
 		 * and addresses and length put into network format.
@@ -779,6 +793,12 @@ spp_ctloutput(req, so, level, name, value)
 			*mtod(m, short *) = cb->s_flags & mask;
 			break;
 
+		case SO_MTU:
+			m->m_len = sizeof(u_short);
+			m->m_off = MMAXOFF - sizeof(short);
+			*mtod(m, short *) = cb->s_mtu;
+			break;
+
 		case SO_LAST_HEADER:
 			m->m_len = sizeof(struct sphdr);
 			m->m_off = MMAXOFF - sizeof(struct sphdr);
@@ -794,6 +814,10 @@ spp_ctloutput(req, so, level, name, value)
 		break;
 
 	case PRCO_SETOPT:
+		if (value == 0 || *value == 0) {
+			error = EINVAL;
+			break;
+		}
 		switch (name) {
 			int *ok;
 
@@ -804,13 +828,17 @@ spp_ctloutput(req, so, level, name, value)
 		case SO_HEADERS_ON_OUTPUT:
 			mask = SF_HO;
 		set_head:
-			if (value && *value) {
+			if (cb->s_flags & SF_PI) {
 				ok = mtod(*value, int *);
 				if (*ok)
 					cb->s_flags |= mask;
 				else
 					cb->s_flags &= ~mask;
 			} else error = EINVAL;
+			break;
+
+		case SO_MTU:
+			cb->s_mtu = *(mtod(*value, u_short *));
 			break;
 
 		case SO_DEFAULT_HEADERS:
@@ -821,8 +849,7 @@ spp_ctloutput(req, so, level, name, value)
 				cb->s_cc = sp->sp_cc & SP_EM;
 			}
 		}
-		if (value && *value)
-			m_freem(*value);
+		m_freem(*value);
 		break;
 	}
 	release:
@@ -1078,7 +1105,7 @@ spp_template(cb)
 	register struct nspcb *nsp = cb->s_nspcb;
 	register struct spidp *n = &(cb->s_shdr);
 
-	cb->s_mtu = 1024;
+	cb->s_mtu = 576 - sizeof (struct spidp);
 	n->si_pt = NSPROTO_SPP;
 	n->si_sna = nsp->nsp_laddr;
 	n->si_dna = nsp->nsp_faddr;
@@ -1250,7 +1277,7 @@ float	spp_backoff[TCP_MAXRXTSHIFT] =
     { 1.0, 1.2, 1.4, 1.7, 2.0, 3.0, 5.0, 8.0, 16.0, 32.0 };
 int sppexprexmtbackoff = 0;
 /*
- * TCP timer processing.
+ * SPP timer processing.
  */
 struct sppcb *
 spp_timers(cb, timer)
