@@ -1,5 +1,5 @@
 #ifndef lint
-static char version[] = "@(#)inode.c	3.3 (Berkeley) %G%";
+static char version[] = "@(#)inode.c	3.4 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -133,11 +133,8 @@ ginode(inumber)
 	static ino_t startinum = 0;	/* blk num of first in raw area */
 
 
-	if (inumber < ROOTINO || inumber > imax) {
-		if (debug && inumber > imax)
-			printf("inumber out of range (%d)\n", inumber);
-		return (NULL);
-	}
+	if (inumber < ROOTINO || inumber > imax)
+		errexit("bad inode number %d to ginode\n", inumber);
 	if (startinum == 0 ||
 	    inumber < startinum || inumber >= startinum + INOPB(&sblock)) {
 		iblk = itod(&sblock, inumber);
@@ -156,8 +153,7 @@ clri(idesc, s, flg)
 {
 	register DINODE *dp;
 
-	if ((dp = ginode(idesc->id_number)) == NULL)
-		return;
+	dp = ginode(idesc->id_number);
 	if (flg == 1) {
 		pwarn("%s %s", s, DIRCT(dp) ? "DIR" : "FILE");
 		pinode(idesc->id_number);
@@ -197,8 +193,9 @@ pinode(ino)
 	char *ctime();
 
 	printf(" I=%u ", ino);
-	if ((dp = ginode(ino)) == NULL)
+	if (ino < ROOTINO || ino > imax)
 		return;
+	dp = ginode(ino);
 	printf(" OWNER=");
 	if (getpw((int)dp->di_uid, uidbuf) == 0) {
 		for (p = uidbuf; *p != ':'; p++);

@@ -1,5 +1,5 @@
 #ifndef lint
-static char version[] = "@(#)pass2.c	3.3 (Berkeley) %G%";
+static char version[] = "@(#)pass2.c	3.4 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -29,8 +29,9 @@ pass2()
 	case FSTATE:
 	case FCLEAR:
 		pfatal("ROOT INODE NOT DIRECTORY");
-		if (reply("FIX") == 0 || (dp = ginode(ROOTINO)) == NULL)
+		if (reply("FIX") == 0)
 			errexit("");
+		dp = ginode(ROOTINO);
 		dp->di_mode &= ~IFMT;
 		dp->di_mode |= IFDIR;
 		inodirty();
@@ -191,8 +192,7 @@ again:
 			direrr(dirp->d_ino, "DUP/BAD");
 			if ((n = reply("REMOVE")) == 1)
 				break;
-			if ((dp = ginode(dirp->d_ino)) == NULL)
-				break;
+			dp = ginode(dirp->d_ino);
 			statemap[dirp->d_ino] = DIRCT(dp) ? DSTATE : FSTATE;
 			goto again;
 
