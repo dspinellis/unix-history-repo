@@ -1,18 +1,31 @@
 /* Copyright (c) 1985 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)interactive.c	3.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)interactive.c	3.2	(Berkeley)	%G%";
 #endif not lint
 
 #include "restore.h"
 #include <dumprestor.h>
 #include <setjmp.h>
 
+#define round(a, b) (((a) + (b) - 1) / (b) * (b))
+
 /*
  * Things to handle interruptions.
  */
 static jmp_buf reset;
 static char *nextarg = NULL;
+
+/*
+ * Structure associated with file name globbing.
+ */
+struct argnod {
+	struct argnod *argnxt;
+	char argval[1];
+}; 
+static struct argnod *gchain, *stakbot, *staktop;
+static char *brkend, *nullstr = "";
+struct argnod *locstak(), *endstak();
 
 /*
  * Structure and routines associated with listing directories.
@@ -41,6 +54,7 @@ runcmdshell()
 	canon("/", curdir);
 loop:
 	if (setjmp(reset) != 0) {
+		gchain = 0;
 		nextarg = NULL;
 		volno = 0;
 	}
@@ -200,6 +214,8 @@ getcmd(curdir, cmd, name)
 	/*
 	 * Check to see if still processing arguments.
 	 */
+	if (gchain != 0)
+		goto getnextexp;
 	if (nextarg != NULL)
 		goto getnext;
 	/*
@@ -253,6 +269,10 @@ getnext:
 		(void) strcat(output, rawname);
 		canon(output, name);
 	}
+	expandarg(name);
+getnextexp:
+	strcpy(name, gchain->argval);
+	gchain = gchain->argnxt;
 #	undef rawname
 }
 
@@ -341,6 +361,261 @@ canon(rawname, canonname)
 			np = cp;
 		}
 	}
+}
+
+/*
+ * globals (file name generation)
+ *
+ * "*" in params matches r.e ".*"
+ * "?" in params matches r.e. "."
+ * "[...]" in params matches character class
+ * "[...a-z...]" in params matches a through z.
+ */
+expandarg(arg)
+	char *arg;
+{
+	static char *expbuf = NULL;
+	static unsigned expsize = BUFSIZ;
+	int size;
+	char argbuf[BUFSIZ];
+
+	do {
+		if (expbuf != NULL)
+			free(expbuf);
+		expbuf = malloc(expsize);
+		brkend = expbuf + expsize;
+		expsize <<= 1;
+		stakbot = (struct argnod *)expbuf;
+		gchain = 0;
+		(void)strcpy(argbuf, arg);
+		size = expand(argbuf, 0);
+	} while (size < 0);
+	if (size == 0) {
+		gchain = (struct argnod *)expbuf;
+		gchain->argnxt = 0;
+		(void)strcpy(gchain->argval, arg);
+	}
+}
+
+/*
+ * Expand a file name
+ */
+expand(as, rflg)
+	char *as;
+	int rflg;
+{
+	int		count, size;
+	char		dir = 0;
+	char		*rescan = 0;
+	DIR		*dirp;
+	register char	*s, *cs;
+	struct argnod	*schain = gchain;
+	struct direct	*dp;
+	register char	slash; 
+	register char	*rs; 
+	struct argnod	*rchain;
+	register char	c;
+
+	/*
+	 * check for meta chars
+	 */
+	s = cs = as;
+	slash = 0;
+	while (*cs != '*' && *cs != '?' && *cs != '[') {	
+		if (*cs++==0) {	
+			if (rflg && slash)
+				break; 
+			else
+				return (0) ;
+		} else if (*cs=='/') {	
+			slash++;
+		}
+	}
+	for (;;) {	
+		if (cs == s) {	
+			s = nullstr;
+			break;
+		} else if (*--cs == '/') {	
+			*cs = 0;
+			if (s == cs)
+				s = "/";
+			break;
+		}
+	}
+	if ((dirp = rst_opendir(s)) != NULL)
+		dir++;
+	count = 0;
+	if (*cs == 0)
+		*cs++=0200 ;
+	if (dir) {
+		/*
+		 * check for rescan
+		 */
+		rs = cs;
+		do {	
+			if (*rs == '/') { 
+				rescan = rs; 
+				*rs = 0; 
+				gchain = 0 ;
+			}
+		} while (*rs++);
+		while ((dp = rst_readdir(dirp)) != NULL && dp->d_ino != 0) {
+			if (!dflag && BIT(dp->d_ino, dumpmap) == 0)
+				continue;
+			if ((*dp->d_name == '.' && *cs != '.'))
+				continue;
+			if (gmatch(dp->d_name, cs)) {	
+				if (addg(s, dp->d_name, rescan) < 0)
+					return (-1);
+				count++;
+			}
+		}
+		if (rescan) {	
+			rchain = gchain; 
+			gchain = schain;
+			if (count) {	
+				count = 0;
+				while (rchain) {	
+					size = expand(rchain->argval, 1);
+					if (size < 0)
+						return (size);
+					count += size;
+					rchain = rchain->argnxt;
+				}
+			}
+			*rescan = '/';
+		}
+	}
+	s = as;
+	while (c = *s)
+		*s++ = (c&0177 ? c : '/');
+	return (count);
+}
+
+/*
+ * Check for a name match
+ */
+gmatch(s, p)
+	register char	*s, *p;
+{
+	register int	scc;
+	char		c;
+	char		ok; 
+	int		lc;
+
+	if (scc = *s++)
+		if ((scc &= 0177) == 0)
+			scc = 0200;
+	switch (c = *p++) {
+
+	case '[':
+		ok = 0; 
+		lc = 077777;
+		while (c = *p++) {	
+			if (c==']') {
+				return (ok ? gmatch(s, p) : 0);
+			} else if (c == '-') {	
+				if (lc <= scc && scc <= (*p++))
+					ok++ ;
+			} else {	
+				if (scc == (lc = (c&0177)))
+					ok++ ;
+			}
+		}
+		return (0);
+
+	default:
+		if ((c&0177) != scc)
+			return (0) ;
+		/* falls through */
+
+	case '?':
+		return (scc ? gmatch(s, p) : 0);
+
+	case '*':
+		if (*p == 0)
+			return (1) ;
+		s--;
+		while (*s) {  
+			if (gmatch(s++, p))
+				return (1);
+		}
+		return (0);
+
+	case 0:
+		return (scc == 0);
+	}
+}
+
+/*
+ * Construct a matched name.
+ */
+addg(as1, as2, as3)
+	char		*as1, *as2, *as3;
+{
+	register char	*s1, *s2;
+	register int	c;
+
+	if ((s2 = (char *)locstak()) == 0)
+		return (-1);
+	s2 += sizeof(char *);
+	s1 = as1;
+	while (c = *s1++) {	
+		if ((c &= 0177) == 0) {	
+			*s2++='/';
+			break;
+		}
+		*s2++ = c;
+	}
+	s1 = as2;
+	while (*s2 = *s1++)
+		s2++;
+	if (s1 = as3) {	
+		*s2++ = '/';
+		while (*s2++ = *++s1)
+			/* void */;
+	}
+	makearg(endstak(s2));
+	return (0);
+}
+
+/*
+ * Add a matched name to the list.
+ */
+makearg(args)
+	register struct argnod *args;
+{
+	args->argnxt = gchain;
+	gchain = args;
+}
+
+/*
+ * set up stack for local use
+ * should be followed by `endstak'
+ */
+struct argnod *
+locstak()
+{
+	if (brkend - (char *)stakbot < 100) {	
+		fprintf(stderr, "ran out of arg space\n");
+		return (0);
+	}
+	return (stakbot);
+}
+
+/*
+ * tidy up after `locstak'
+ */
+struct argnod *
+endstak(argp)
+	register char *argp;
+{
+	register struct argnod *oldstak;
+
+	*argp++ = 0;
+	oldstak = stakbot;
+	stakbot = staktop = (struct argnod *)round((int)argp, sizeof(char *));
+	return (oldstak);
 }
 
 /*
