@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ht.c	7.11 (Berkeley) %G%
+ *	@(#)ht.c	7.12 (Berkeley) %G%
  */
 
 #include "tu.h"
@@ -30,6 +30,7 @@
 #include "cmap.h"
 #include "tty.h"
 #include "syslog.h"
+#include "tprintf.h"
 
 #include "machine/pte.h"
 #include "../vax/cpu.h"
@@ -68,7 +69,7 @@ struct	tu_softc {
 	u_short	sc_dsreg;
 	short	sc_resid;
 	short	sc_dens;
-	caddr_t	sc_ctty;		/* record user's tty for errors */
+	caddr_t	sc_tpr;		/* tprintf handle for errors to user */
 	int	sc_blks;	/* number of I/O operations since open */
 	int	sc_softerrs;	/* number of soft I/O errors since open */
 } tu_softc[NTU];
@@ -149,8 +150,7 @@ htopen(dev, flag)
 	sc->sc_dens = dens;
 	sc->sc_blks = 0;
 	sc->sc_softerrs = 0;
-	sc->sc_ctty = (caddr_t)(u.u_procp->p_flag&SCTTY ? 
-			u.u_procp->p_session->s_ttyp : 0);
+	sc->sc_tpr = tprintf_open();
 	return (0);
 }
 
@@ -170,6 +170,7 @@ htclose(dev, flag)
 	if (sc->sc_blks > 100 && sc->sc_softerrs > sc->sc_blks / 100)
 		log(LOG_INFO, "tu%d: %d soft errors in %d blocks\n",
 		    TUUNIT(dev), sc->sc_softerrs, sc->sc_blks);
+	tprintf_close(sc->sc_tpr);
 	sc->sc_openf = 0;
 	return (0);
 }
@@ -348,7 +349,8 @@ htdtint(mi, mbsr)
 			    (mbs&MBSR_EBITS) == (MBSR_DTABT|MBSR_MBEXC) &&
 			    (ds&HTDS_MOL))
 				goto noprint;
-			tprintf(sc->sc_ctty, "tu%d: hard error bn%d mbsr=%b er=%b ds=%b\n",
+			tprintf(sc->sc_tpr,
+			    "tu%d: hard error bn%d mbsr=%b er=%b ds=%b\n",
 			    TUUNIT(bp->b_dev), bp->b_blkno,
 			    mbsr, mbsr_bits,
 			    sc->sc_erreg, hter_bits,
@@ -414,7 +416,7 @@ htndtint(mi)
 	if ((ds & (HTDS_ERR|HTDS_MOL)) != HTDS_MOL) {
 		if ((ds & HTDS_MOL) == 0 && sc->sc_openf > 0)
 			sc->sc_openf = -1;
-		tprintf(sc->sc_ctty, "tu%d: hard error bn%d er=%b ds=%b\n",
+		tprintf(sc->sc_tpr, "tu%d: hard error bn%d er=%b ds=%b\n",
 		    TUUNIT(bp->b_dev), bp->b_blkno,
 		    sc->sc_erreg, hter_bits, sc->sc_dsreg, htds_bits);
 		bp->b_flags |= B_ERROR;
@@ -449,7 +451,7 @@ htioctl(dev, cmd, data, flag)
 	register struct tu_softc *sc = &tu_softc[TUUNIT(dev)];
 	register struct buf *bp = &chtbuf[HTUNIT(dev)];
 	register callcount;
-	int fcount, error = 0;
+	int fcount;
 	struct mtop *mtop;
 	struct mtget *mtget;
 	/* we depend of the values and order of the MT codes here */
@@ -496,9 +498,8 @@ htioctl(dev, cmd, data, flag)
 				break;
 		}
 		if (bp->b_flags&B_ERROR)
-			if ((error = bp->b_error)==0)
-				return (EIO);
-		return (error);
+			return (bp->b_error ? bp->b_error : EIO);
+		return (0);
 
 	case MTIOCGET:
 		mtget = (struct mtget *)data;
