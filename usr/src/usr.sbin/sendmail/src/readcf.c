@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)readcf.c	4.10		%G%);
+SCCSID(@(#)readcf.c	4.11		%G%);
 
 /*
 **  READCF -- read control file.
@@ -639,19 +639,25 @@ setoption(opt, val, safe, sticky)
 # endif DEBUG
 		return;
 	}
-#ifdef DEBUG
-	else if (tTd(37, 1))
-		printf("\n");
-#endif DEBUG
 
 	/*
 	**  Check to see if this option can be specified by this user.
 	*/
 
-	if (!safe && (getruid() == 0 || trusteduser(username())))
+	if (!safe && (getruid() == 0 || OpMode == MD_TEST))
 		safe = TRUE;
 	if (!safe && index("deiLmorsv", opt) == NULL)
+	{
+# ifdef DEBUG
+		if (tTd(37, 1))
+			printf(" (unsafe)\n");
+# endif DEBUG
 		return;
+	}
+#ifdef DEBUG
+	else if (tTd(37, 1))
+		printf("\n");
+#endif DEBUG
 
 	switch (opt)
 	{

@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	4.4		%G%	(no queueing));
+SCCSID(@(#)queue.c	4.5		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	4.4		%G%);
+SCCSID(@(#)queue.c	4.5		%G%);
 
 /*
 **  Work queue.
@@ -838,8 +838,8 @@ queuename(e, type)
 				break;
 			(void) unlink(lf);
 # else QUEUE
-			if (close(creat(qf, FileMode)) < 0)
-				continue;
+			if (close(creat(qf, FileMode)) >= 0)
+				break;
 # endif QUEUE
 		}
 		if (c1 >= '~' && c2 >= 'Z')
