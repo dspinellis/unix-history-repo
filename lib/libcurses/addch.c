@@ -45,7 +45,7 @@ static char sccsid[] = "@(#)addch.c	8.1 (Berkeley) 6/4/93";
 int
 waddch(win, ch)
 	WINDOW *win;
-	int ch;
+	char ch;
 {
 	__LDATA buf;
 

@@ -100,6 +100,10 @@
 /* WINDOW structure members name compatibility */
 #define _curx   curx
 #define _cury   cury
+#define _begx   begx
+#define _begy   begy
+#define _maxx   maxx
+#define _maxy   maxy
 
 #endif /* _CURSES_PRIVATE */
 
@@ -267,7 +271,7 @@ extern char	*ttytype;		/* Full name of current terminal. */
 	((w)->lines[(w)->cury]->line[(w)->curx].ch & 0xff)
 
 /* Public function prototypes. */
-int	 box __P((WINDOW *, int, int));
+int      box __P((WINDOW *, char, char));
 int	 cbreak __P((void));
 int	 delwin __P((WINDOW *));
 int	 echo __P((void));
@@ -307,7 +311,7 @@ int	 touchoverlap __P((WINDOW *, WINDOW *));
 int	 touchwin __P((WINDOW *));
 int 	 vwprintw __P((WINDOW *, const char *, _BSD_VA_LIST_));
 int      vwscanw __P((WINDOW *, const char *, _BSD_VA_LIST_));
-int	 waddch __P((WINDOW *, int));
+int      waddch __P((WINDOW *, char));
 int	 waddnstr __P((WINDOW *, const char *, int));
 int	 wclear __P((WINDOW *));
 int	 wclrtobot __P((WINDOW *));
@@ -317,14 +321,14 @@ int	 wdeleteln __P((WINDOW *));
 int	 werase __P((WINDOW *));
 int	 wgetch __P((WINDOW *));
 int	 wgetstr __P((WINDOW *, char *));
-int	 winsch __P((WINDOW *, int));
+int      winsch __P((WINDOW *, char));
 int	 winsertln __P((WINDOW *));
 int	 wmove __P((WINDOW *, int, int));
 int	 wprintw __P((WINDOW *, const char *, ...));
 int	 wrefresh __P((WINDOW *));
 int	 wscanw __P((WINDOW *, const char *, ...));
-char	*wstandend __P((WINDOW *));
-char	*wstandout __P((WINDOW *));
+int      wstandend __P((WINDOW *));
+int      wstandout __P((WINDOW *));
 int	 vwprintw __P((WINDOW *, const char *, _BSD_VA_LIST_));
 
 /* Private functions that are needed for user programs prototypes. */

@@ -45,7 +45,7 @@ static char sccsid[] = "@(#)insch.c	8.1 (Berkeley) 6/4/93";
 int
 winsch(win, ch)
 	register WINDOW *win;
-	int ch;
+	char ch;
 {
 
 	register __LDATA *end, *temp1, *temp2;
@@ -67,6 +67,7 @@ winsch(win, ch)
 			wrefresh(win);
 			scroll(win);
 			win->cury--;
+
 		} else
 			return (ERR);
 	return (OK);

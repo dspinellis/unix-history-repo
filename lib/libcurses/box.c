@@ -45,7 +45,7 @@ static char sccsid[] = "@(#)box.c	8.1 (Berkeley) 6/4/93";
 int
 box(win, vert, hor)
 	register WINDOW *win;
-	int vert, hor;
+	char vert, hor;
 {
 	register int endy, endx, i;
 	register __LDATA *fp, *lp;
