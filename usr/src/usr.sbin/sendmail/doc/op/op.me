@@ -1,6 +1,6 @@
 .ls 2
 .he 'Sendmail Installation and Operation Guide''%'
-.fo 'Version 3.5'DRAFT'Last Mod %G%'
+.fo 'Version 3.6'DRAFT'Last Mod %G%'
 .nr si 3n
 .de $0
 .(x
@@ -26,7 +26,7 @@ INSTALLATION AND OPERATION GUIDE
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 3.5
+Version 3.6
 .)l
 .sp 3
 .pp
@@ -290,7 +290,7 @@ These should be mode 666 if you are running a reasonably relaxed system:
 cp /dev/null /usr/lib/aliases.dir
 cp /dev/null /usr/lib/aliases.pag
 chmod 666 /usr/lib/aliases.*
-/usr/lib/sendmail -bi
+/usr/lib/sendmail \-bi
 .)b
 .sh 3 "/usr/lib/sendmail.fc"
 .pp
@@ -301,7 +301,7 @@ and initialize it.
 This step may be safely skipped.
 .(b
 cp /dev/null /usr/lib/sendmail.fc
-/usr/lib/sendmail -bz
+/usr/lib/sendmail \-bz
 .)b
 .sh 3 "/etc/rc"
 .pp
@@ -395,6 +395,32 @@ see the manual page for
 (located in
 .i sendmail/doc
 on the distribution).
+.sh 3 "/usr/ucb/newaliases"
+.pp
+If
+.i sendmail
+is invoked as
+.q newaliases,
+it will simulate the
+.b \-bi
+flag
+(i.e., will rebuild the alias database;
+see below).
+This should be a link to /usr/lib/sendmail.
+.sh 3 "/usr/ucb/mailq"
+.pp
+If
+.i sendmail
+is invoked as
+.q mailq,
+it will simulate the
+.b \-bp
+flag
+(i.e.,
+.i sendmail
+will print the contents of the mail queue;
+see below).
+This should be a link to /usr/lib/sendmail.
 .sh 1 "NORMAL OPERATIONS"
 .sh 2 "Quick Configuration Startup"
 .pp
@@ -473,6 +499,19 @@ if a major host is down for a period of time
 the queue may become clogged.
 Although sendmail ought to recover gracefully when the host comes up,
 you may find performance unacceptably bad in the meantime.
+.sh 3 "Printing the queue"
+.pp
+The contents of the queue can be printed
+using the
+.b \-bp
+flag:
+.(b
+/usr/lib/sendmail -bp
+.)b
+This will produce a listing of the queue id's,
+the size of the message,
+the date the message entered the queue,
+and the sender and recipients.
 .sh 3 "Format of queue files"
 .pp
 All queue files have the form
@@ -3453,7 +3492,7 @@ INSTALLATION AND OPERATION GUIDE
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 3.5
+Version 3.6
 .ce 0
 .bp 1
 .ce
