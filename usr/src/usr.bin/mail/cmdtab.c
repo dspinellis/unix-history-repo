@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmdtab.c	5.1 (Berkeley) %G%";
+static char *sccsid = "@(#)cmdtab.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include "def.h"
