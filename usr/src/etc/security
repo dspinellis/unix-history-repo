@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)security	5.13 (Berkeley) %G%
+#	@(#)security	5.14 (Berkeley) %G%
 #
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
 
@@ -11,17 +11,159 @@ TMP1=/tmp/_secure2.$$
 TMP2=/tmp/_secure3.$$
 LIST=/tmp/_secure4.$$
 
-trap 'rm -f $ERR $LIST $TMP1 $TMP2' 0
+trap 'rm -f $ERR $TMP1 $TMP2 $LIST' 0
 
-# Display uids of 0.
+# Check uids.
 echo ""
 echo "Checking for uids of 0:"
-awk -F: "\$3==\"0\" {print \"user: \" \$1 \", uid: \" \$3 }" /etc/master.passwd
+awk -F: "\$3 == 0 \
+	{ print \"user \" \$1 \" has a uid of \" \$3 }" /etc/master.passwd
 
-# Display uids without passwords.
+# Check passwords.
 echo ""
 echo "Checking for uids without passwords:"
-awk -F: "\$2==\"\" {print \"user: \" \$1 \", uid: \" \$3 }" /etc/master.passwd
+awk -F: "\$2 == \"\" \
+	{ print \"user \" \$1 \" has no password\" }" /etc/master.passwd
+
+echo ""
+echo "Checking for turned-off accounts with valid shells:"
+awk -F: "length(\$2) != 13 && \$10 ~ /.*sh$/ \
+	{ print \"user \" \$1 \" account turned off with valid shell.\" }" \
+	/etc/master.passwd
+
+# Check special users with .rhosts files.
+echo ""
+echo "Checking for special users with .rhosts files."
+awk -F: "\$3 < 100 || \$1 == \"ftp\" || \$1 == \"uucp\" \
+	{ print \$1 \" \" \$6 }" /etc/passwd | \
+	while read uid homedir; do
+		if [ -f ${homedir}/.rhosts ] ; then
+			rhost=`ls -lT ${homedir}/.rhosts`
+			echo "$uid: $rhost"
+		fi
+	done
+
+# Check home directories.
+echo ""
+echo "Checking user's home directories."
+echo "Checking .netrc, .rhosts."
+# Files that should not be owned by someone else or readable.
+awk -F: "{ print \$1 \" \" \$6 }" /etc/passwd | \
+while read uid homedir; do
+	if [ -f ${homedir}/.netrc ] ; then
+		file=`ls -lT ${homedir}/.netrc`
+		echo "$uid .netrc $file"
+	fi
+	if [ -f ${homedir}/.rhosts ] ; then
+		file=`ls -lT ${homedir}/.rhosts`
+		echo "$uid .rhosts $file"
+	fi
+done | awk \
+	    "\$1 != \$5 && \$5 != \"root\" \
+	{ print \"user \" \$1 \"'s \" \$2 \" file is owned by \" \$5 } \
+	     \$3 ~ /^-...r/ \
+	{ print \"user \" \$1 \"'s \" \$2 \" file is group readable\" } \
+	     \$3 ~ /^-......r/ \
+	{ print \"user \" \$1 \"'s \" \$2 \" file is other readable\" } \
+	     \$3 ~ /^-....w/ \
+	{ print \"user \" \$1 \"'s \" \$2 \" file is group writeable\" } \
+	     \$3 ~ /^-.......w/ \
+	{ print \"user \" \$1 \"'s \" \$2 \" file is other writeable\" }"
+
+# Files that should not be owned by someone else or writeable.
+echo ""
+echo "Checking .cshrc, .klogin, .login, .profile."
+awk -F: "{ print \$1 \" \" \$6 }" /etc/passwd | \
+while read uid homedir; do
+	if [ -f ${homedir}/.cshrc ] ; then
+		file=`ls -lT ${homedir}/.cshrc`
+		echo "$uid .cshrc $file"
+	fi
+	if [ -f ${homedir}/.klogin ] ; then
+		file=`ls -lT ${homedir}/.klogin`
+		echo "$uid .klogin $file"
+	fi
+	if [ -f ${homedir}/.login ] ; then
+		file=`ls -lT ${homedir}/.login`
+		echo "$uid .login $file"
+	fi
+	if [ -f ${homedir}/.profile ] ; then
+		file=`ls -lT ${homedir}/.profile`
+		echo "$uid .profile $file"
+	fi
+done | awk \
+	    "\$1 != \$5 && \$5 != \"root\" \
+	{ print \"user \" \$1 \"'s \" \$2 \" file is owned by \" \$5 } \
+	     \$3 ~ /^-....w/ \
+	{ print \"user \" \$1 \"'s \" \$2 \" file is group writeable\" } \
+	     \$3 ~ /^-.......w/ \
+	{ print \"user \" \$1 \"'s \" \$2 \" file is other writeable\" }"
+
+# Check mailbox ownership and permissions.
+echo ""
+echo "Checking mailbox ownership."
+ls -l /var/mail | \
+awk "\$3 != \$9 \
+	{ print \"user \" \$9 \"'s mailbox is owned by \" \$3 } \
+     \$2 ~ /^-...r/ \
+	{ print \"user \" \$1 \"'s mailbox is group readable\" } \
+     \$2 ~ /^-......r/ \
+	{ print \"user \" \$1 \"'s mailbox is other readable\" } \
+     \$2 ~ /^-....w/ \
+	{ print \"user \" \$1 \"'s mailbox is group writeable\" } \
+     \$2 ~ /^-.......w/ \
+	{ print \"user \" \$1 \"'s mailbox is other writeable\" }"
+
+# Check for special files.
+echo ""
+echo "Checking dangerous files and directories."
+mtree -e -p / -f /etc/mtree/flist.secure
+
+# Check for bad paths in root startup files.
+echo ""
+echo "Checking root paths (csh startup files)."
+rhome=/root
+for i in /etc/csh.cshrc /etc/csh.login ${rhome}/.cshrc ${rhome}/.login ; do
+	echo "$i:"
+	if [ -f $i ] ; then
+		if egrep -h -i 'path.*[^a-z]\.[^a-z]' $i > /dev/null ; then
+			echo "Root's path appears to include ."
+		fi
+		egrep -h -i path $i | \
+		awk "{ for (i = 1; i <= NF; ++i) print \$i }" | \
+		while read dir; do
+			if [ -d $dir ] ; then
+				echo `ls -ldgT $dir`
+			fi
+		done | \
+		awk "\$1 ~ /^d....w/ \
+	{ print \"Root path directory \" \$10 \" is group writeable.\" } \
+		     \$1 ~ /^d.......w/ \
+	{ print \"Root path directory \" \$10 \" is other writeable.\" }"
+	fi
+done
+
+echo ""
+echo "Checking root paths (sh startup files)."
+for i in ${rhome}/.profile ${rhome}/.klogin ; do
+	echo "$i:"
+	if [ -f $i ] ; then
+		if egrep -h -i 'path.*:\.:' $i > /dev/null ; then
+			echo "Root's path appears to include ."
+		fi
+		egrep -h -i 'path.*:' $i | \
+		awk -F: "{ for (i = 1; i <= NF; ++i) print \$i }" | \
+		while read dir; do
+			if [ -d $dir ] ; then
+				echo `ls -ldgT $dir`
+			fi
+		done | \
+		awk "\$1 ~ /^d....w/ \
+	{ print \"Root path directory \" \$10 \" is group writeable.\" } \
+		     \$1 ~ /^d.......w/ \
+	{ print \"Root path directory \" \$10 \" is other writeable.\" }"
+	fi
+done
 
 # Display setuid and device changes.
 echo ""
@@ -124,12 +266,12 @@ if [ -s $LIST ] ; then
 		mv $LIST $CUR
 	fi
 fi
-exit
 
 # Check the system binaries.
 # Create the mtree tree specifications using:
 #
-#	mtree -cx -pDIR -kcksum,gid,mode,nlink,size,link,time,uid > DIR.secure
+#	mtree -cx -pDIR -kcksum,gid,mode,nlink,size,link,time,uid
+#	    DIR.secure
 #	chown bin.bin DIR.SECURE
 #	chmod 444 DIR.SECURE
 #
@@ -137,7 +279,6 @@ exit
 # the hacker can modify the tree specification to match the replaced binary.
 # For details on really protecting yourself against modified binaries, see
 # the mtree(8) manual page.
-
 if cd /etc/mtree; then
 	echo ""
 	echo "Checking system binaries:"
