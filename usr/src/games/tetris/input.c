@@ -2,9 +2,12 @@
  * Copyright (c) 1992 The Regents of the University of California.
  * All rights reserved.
  *
+ * This code is derived from software contributed to Berkeley by
+ * Chris Torek and Darren F. Provine.
+ *
  * %sccs.include.redist.c%
  *
- *	@(#)input.c	5.1 (Berkeley) %G%
+ *	@(#)input.c	5.2 (Berkeley) %G%
  */
 
 /*
@@ -13,6 +16,7 @@
 
 #include <sys/types.h>
 #include <sys/time.h>
+
 #include <errno.h>
 #include <unistd.h>
 
