@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getusershell.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)getusershell.c	5.3 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <sys/param.h>
@@ -96,6 +96,8 @@ initshells()
 	sp = shells;
 	cp = strings;
 	while (fgets(cp, MAXPATHLEN + 1, fp) != NULL) {
+		if (*cp == '#')
+			continue;
 		while (*cp != '/' && *cp != '\0')
 			cp++;
 		if (*cp == '\0')
