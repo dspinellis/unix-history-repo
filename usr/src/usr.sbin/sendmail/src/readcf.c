@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.75 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.76 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -676,9 +676,10 @@ fileclass(class, filename, fmt, safe, optional)
 	if (safe)
 		sff |= SFF_OPENASROOT;
 	f = safefopen(filename, O_RDONLY, 0, sff);
-	if (f == NULL && !optional)
+	if (f == NULL)
 	{
-		syserr("fileclass: cannot open %s", filename);
+		if (!optional)
+			syserr("fileclass: cannot open %s", filename);
 		return;
 	}
 
