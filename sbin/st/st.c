@@ -70,9 +70,7 @@ struct commands {
 	{ "rewoffl",	MTOFFL,	1 },
 	{ "status",	MTNOP,	1 },
 	{ "blocksize",	MTSETBSIZ,	0 },
-	{ "high_dnsty",	MTSETHDNSTY,	0 },
-	{ "medium_dnsty",	MTSETMDNSTY,	0 },
-	{ "low_dnsty",	MTSETLDNSTY,	0 },
+	{ "density",	MTSETDNSTY,	0 },
 	{ 0 }
 };
 
@@ -105,15 +103,7 @@ main(argc, argv)
 		usage();
 		exit(1);
 	}
-	if ((strncmp(cp, "high_dnsty", strlen(cp)) == 0) && argc < 3 ) {
-		usage();
-		exit(1);
-	}
-	if ((strncmp(cp, "medium_dnsty", strlen(cp)) == 0) && argc < 3 ) {
-		usage();
-		exit(1);
-	}
-	if ((strncmp(cp, "low_dnsty", strlen(cp)) == 0) && argc < 3 ) {
+	if ((strncmp(cp, "density", strlen(cp)) == 0) && argc < 3 ) {
 		usage();
 		exit(1);
 	}
@@ -213,9 +203,11 @@ status(bp)
 	}
 	printf("%s tape drive, residual=%d, blocksize=%d\n", 
 		mt->t_name, bp->mt_resid, bp->mt_bsiz);
-	printf("Density: high = %d (0x%x), medium = %d (0x%x), low = %d (0x%x)\n", 
-		bp->mt_dns_high, bp->mt_dns_high, bp->mt_dns_medium,
-		bp->mt_dns_medium, bp->mt_dns_low, bp->mt_dns_low);
+	printf("Density: dflt(0) = %d(0x%x) 1 = %d(0x%x), 2 = %d(0x%x), 3 = %d(0x%x)\n", 
+		bp->mt_dns_dflt, bp->mt_dns_dflt,
+		bp->mt_dns_dsty1, bp->mt_dns_dsty1,
+		bp->mt_dns_dsty2, bp->mt_dns_dsty2,
+		bp->mt_dns_dsty3, bp->mt_dns_dsty3);
 	printreg("ds", bp->mt_dsreg, mt->t_dsbits);
 	printreg("\ner", bp->mt_erreg, mt->t_erbits);
 	putchar('\n');

@@ -84,7 +84,7 @@ records.
 Rewind the tape
 (Count is ignored).
 .It Cm offline , rewoffl
-Rewind the tape and place the tape unit off-line
+Rewind the tape and place the tape unit off-line (possibly eject)
 (Count is ignored).
 .It Cm blocksize
 Sets the block size characteristics of the device to value specified in
@@ -92,18 +92,8 @@ Sets the block size characteristics of the device to value specified in
 A 0 means variable sized blocks, and anything else means fixed block, 
 with blocksize as that of
 .Ar count.
-.It Cm high_dnsty
-Set the default high density minor device 
-.Ar count
-density code as specified by the SCSI II specification. Valid values
-are from 0  to 0x17.
-.It Cm medium_dnsty
-Set the default medium density minor device 
-.Ar count
-density code as specified by the SCSI II specification. Valid values
-are from 0  to 0x17.
-.It Cm low_dnsty
-Set the default low density minor device 
+.It Cm density
+Set the density for the openned device  (bits 2,3 of minor number)
 .Ar count
 density code as specified by the SCSI II specification. Valid values
 are from 0  to 0x17.
@@ -206,7 +196,7 @@ If a tape name is not specified, and the environment variable
 does not exist;
 .Nm st
 uses the device
-.Pa /dev/rmt12 .
+.Pa /dev/rst0 .
 .Pp
 .Nm St
 returns a 0 exit status when the operation(s) were successful,
@@ -225,11 +215,12 @@ argument
 is not given.
 .Sh FILES
 .Bl -tag -width /dev/rmt* -compact
-.It Pa /dev/rmt*
+.It Pa /dev/rst*
 Raw magnetic tape interface
 .El
 .Sh SEE ALSO
 .\".Xr mtio 4 ,
+.Xr st 4 ,
 .Xr dd 1 ,
 .Xr ioctl 2 ,
 .Xr environ 7
