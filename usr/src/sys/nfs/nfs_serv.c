@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_serv.c	7.45 (Berkeley) %G%
+ *	@(#)nfs_serv.c	7.46 (Berkeley) %G%
  */
 
 /*
@@ -35,10 +35,10 @@
 #include "vnode.h"
 #include "mount.h"
 #include "mbuf.h"
+#include "dirent.h"
 
-#include "ufs/ufs/quota.h"
-#include "ufs/ufs/inode.h"
-#include "ufs/ufs/dir.h"
+#include "ufs/ufs/quota.h"	/* XXX - for ufid */
+#include "ufs/ufs/inode.h"	/* XXX - for ufid */
 
 #include "nfsv2.h"
 #include "rpcv2.h"
@@ -1194,7 +1194,7 @@ out:
  *	reads nothing
  * - as such one readdir rpc will return eof false although you are there
  *	and then the next will return eof
- * - it trims out records with d_ino == 0
+ * - it trims out records with d_fileno == 0
  *	this doesn't matter for Unix clients, but they might confuse clients
  *	for other os'.
  * NB: It is tempting to set eof to true if the VOP_READDIR() reads less
@@ -1227,7 +1227,7 @@ nfsrv_readdir(nfsd, mrep, md, dpos, cred, nam, mrq)
 {
 	register char *bp, *be;
 	register struct mbuf *mp;
-	register struct direct *dp;
+	register struct dirent *dp;
 	register caddr_t cp;
 	register u_long *tl;
 	register long t1;
@@ -1307,10 +1307,10 @@ again:
 	 */
 	cpos = rbuf + on;
 	cend = rbuf + siz;
-	dp = (struct direct *)cpos;
-	while (cpos < cend && dp->d_ino == 0) {
+	dp = (struct dirent *)cpos;
+	while (cpos < cend && dp->d_fileno == 0) {
 		cpos += dp->d_reclen;
-		dp = (struct direct *)cpos;
+		dp = (struct dirent *)cpos;
 	}
 	if (cpos >= cend) {
 		toff = off;
@@ -1321,7 +1321,7 @@ again:
 
 	cpos = rbuf + on;
 	cend = rbuf + siz;
-	dp = (struct direct *)cpos;
+	dp = (struct dirent *)cpos;
 	len = 3*NFSX_UNSIGNED;	/* paranoia, probably can be 0 */
 	nfsm_reply(siz);
 	mp = mp2 = mb;
@@ -1330,7 +1330,7 @@ again:
 
 	/* Loop through the records and build reply */
 	while (cpos < cend) {
-		if (dp->d_ino != 0) {
+		if (dp->d_fileno != 0) {
 			nlen = dp->d_namlen;
 			rem = nfsm_rndup(nlen)-nlen;
 			len += (4*NFSX_UNSIGNED + nlen + rem);
@@ -1338,13 +1338,15 @@ again:
 				eofflag = 0;
 				break;
 			}
-	
-			/* Build the directory record xdr from the direct entry */
+			/*
+			 * Build the directory record xdr from
+			 * the dirent entry.
+			 */
 			nfsm_clget;
 			*tl = nfs_true;
 			bp += NFSX_UNSIGNED;
 			nfsm_clget;
-			*tl = txdr_unsigned(dp->d_ino);
+			*tl = txdr_unsigned(dp->d_fileno);
 			bp += NFSX_UNSIGNED;
 			nfsm_clget;
 			*tl = txdr_unsigned(nlen);
@@ -1377,7 +1379,7 @@ again:
 		} else
 			toff += dp->d_reclen;
 		cpos += dp->d_reclen;
-		dp = (struct direct *)cpos;
+		dp = (struct dirent *)cpos;
 	}
 	vrele(vp);
 	nfsm_clget;
@@ -1407,7 +1409,7 @@ nqnfsrv_readdirlook(nfsd, mrep, md, dpos, cred, nam, mrq)
 {
 	register char *bp, *be;
 	register struct mbuf *mp;
-	register struct direct *dp;
+	register struct dirent *dp;
 	register caddr_t cp;
 	register u_long *tl;
 	register long t1;
@@ -1492,10 +1494,10 @@ again:
 	 */
 	cpos = rbuf + on;
 	cend = rbuf + siz;
-	dp = (struct direct *)cpos;
-	while (cpos < cend && dp->d_ino == 0) {
+	dp = (struct dirent *)cpos;
+	while (cpos < cend && dp->d_fileno == 0) {
 		cpos += dp->d_reclen;
-		dp = (struct direct *)cpos;
+		dp = (struct dirent *)cpos;
 	}
 	if (cpos >= cend) {
 		toff = off;
@@ -1506,7 +1508,7 @@ again:
 
 	cpos = rbuf + on;
 	cend = rbuf + siz;
-	dp = (struct direct *)cpos;
+	dp = (struct dirent *)cpos;
 	len = 3*NFSX_UNSIGNED;	/* paranoia, probably can be 0 */
 	nfsm_reply(siz);
 	mp = mp2 = mb;
@@ -1516,7 +1518,7 @@ again:
 
 	/* Loop through the records and build reply */
 	while (cpos < cend) {
-		if (dp->d_ino != 0) {
+		if (dp->d_fileno != 0) {
 			nlen = dp->d_namlen;
 			rem = nfsm_rndup(nlen)-nlen;
 	
@@ -1526,7 +1528,7 @@ again:
 			 */
 			bzero((caddr_t)&fl.fl_nfh, sizeof (nfsv2fh_t));
 			ufp->ufid_len = sizeof (struct ufid);
-			ufp->ufid_ino = dp->d_ino;
+			ufp->ufid_ino = dp->d_fileno;
 			fl.fl_nfh.fh_generic.fh_fsid = mntp->mnt_stat.f_fsid;
 			if (VFS_FHTOVP(mntp, (struct fid *)ufp, 1, &nvp))
 				goto invalid;
@@ -1548,8 +1550,10 @@ again:
 				eofflag = 0;
 				break;
 			}
-	
-			/* Build the directory record xdr from the direct entry */
+			/*
+			 * Build the directory record xdr from
+			 * the dirent entry.
+			 */
 			nfsm_clget;
 			*tl = nfs_true;
 			bp += NFSX_UNSIGNED;
@@ -1572,7 +1576,7 @@ again:
 					cp += tsiz;
 			}
 			nfsm_clget;
-			*tl = txdr_unsigned(dp->d_ino);
+			*tl = txdr_unsigned(dp->d_fileno);
 			bp += NFSX_UNSIGNED;
 			nfsm_clget;
 			*tl = txdr_unsigned(nlen);
@@ -1606,7 +1610,7 @@ again:
 invalid:
 			toff += dp->d_reclen;
 		cpos += dp->d_reclen;
-		dp = (struct direct *)cpos;
+		dp = (struct dirent *)cpos;
 	}
 	vrele(vp);
 	nfsm_clget;
