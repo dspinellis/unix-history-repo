@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -84,6 +84,10 @@ struct nlist nl[] = {
 #ifdef tahoe
 #define	X_VBDINIT	(X_XSTATS+1)
 	{ "_vbdinit" },
+#define	X_CKEYSTATS	(X_XSTATS+2)
+	{ "_ckeystats" },
+#define	X_DKEYSTATS	(X_XSTATS+3)
+	{ "_dkeystats" },
 #endif
 	{ "" },
 };
@@ -374,8 +378,11 @@ dotimes()
 dosum()
 {
 	struct nchstats nchstats;
-	struct xstats  xstats;
+	struct xstats xstats;
 	long nchtotal;
+#if defined(tahoe)
+	struct keystats keystats;
+#endif
 
 	lseek(mf, (long)nl[X_SUM].n_value, L_SET);
 	read(mf, &sum, sizeof sum);
@@ -432,6 +439,24 @@ dosum()
 	printf("%9d total calls to xfree", xstats.free);
 	printf(" (sticky %d cached %d swapped %d)\n",
 	    xstats.free_inuse, xstats.free_cache, xstats.free_cacheswap);
+#if defined(tahoe)
+	lseek(mf, (long)nl[X_CKEYSTATS].n_value, 0);
+	read(mf, &keystats, sizeof keystats);
+	printf("%9d %s (free %d%% norefs %d%% taken %d%% shared %d%%)\n",
+	    keystats.ks_allocs, "code cache keys allocated",
+	    keystats.ks_free * 100 / nz(keystats.ks_allocs),
+	    keystats.ks_norefs * 100 / nz(keystats.ks_allocs),
+	    keystats.ks_taken * 100 / nz(keystats.ks_allocs),
+	    keystats.ks_shared * 100 / nz(keystats.ks_allocs));
+	lseek(mf, (long)nl[X_DKEYSTATS].n_value, 0);
+	read(mf, &keystats, sizeof keystats);
+	printf("%9d %s (free %d%% norefs %d%% taken %d%% shared %d%%)\n",
+	    keystats.ks_allocs, "data cache keys allocated",
+	    keystats.ks_free * 100 / nz(keystats.ks_allocs),
+	    keystats.ks_norefs * 100 / nz(keystats.ks_allocs),
+	    keystats.ks_taken * 100 / nz(keystats.ks_allocs),
+	    keystats.ks_shared * 100 / nz(keystats.ks_allocs));
+#endif
 }
 
 doforkst()
