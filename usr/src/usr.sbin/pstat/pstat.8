@@ -2,28 +2,35 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)pstat.8	4.1 (Berkeley) %G%
+.\"	@(#)pstat.8	5.1 (Berkeley) %G%
 .\"
-.TH PSTAT 8 4/1/81
+.TH PSTAT 8 4/1/83
 .UC 4
 .SH NAME
 pstat \- print system facts
 .SH SYNOPSIS
 .B /etc/pstat
-[
 .B \-aixptufT
-] [ suboptions ]
-[ file ]
+[
+.B suboptions
+] [
+.B system
+] [
+.B corefile
+]
 .SH DESCRIPTION
 .I Pstat
 interprets the contents of certain system tables.
 If
-.I file
+.I corefile
 is given, the tables are sought there, otherwise
 in
 .I /dev/kmem.
 The required namelist is taken from
-.I /vmunix.
+.I /vmunix
+unless 
+.I system
+is specified.
 Options are
 .TP \w'WCHAN\ 'u
 .B \-a
@@ -43,7 +50,7 @@ Miscellaneous state variables encoded thus:
 locked
 .IP U
 update time
-.IR (filsys (5))
+.RI ( fs (5))
 must be corrected
 .IP A
 access time must be corrected
@@ -55,12 +62,23 @@ wanted by another process (L flag is on)
 contains a text file
 .IP C
 changed time must be corrected
+.IP S
+shared lock applied
+.IP E
+exclusive lock applied
+.IP Z
+someone waiting for an exclusive lock
 .RE
 .IP CNT
 Number of open file table entries for this inode.
 .IP DEV
 Major and minor device number of file system in which
 this inode resides.
+.IP RDC
+Reference count of shared locks on the inode.
+.IP WRC
+Reference count of exclusive locks on the inode (this may
+be > 1 if, for example, a file descriptor is inherited across a fork).
 .IP INO
 I-number within the device.
 .IP MODE
@@ -96,7 +114,7 @@ locked
 wanted (L flag is on)
 .IP P
 resulted from demand-page-from-inode exec format (see
-.IR exec (2))
+.IR execve (2))
 .RE
 .PD
 .IP DADDR
@@ -149,9 +167,9 @@ swapped out
 traced
 .IP 000020
 used in tracing
-.IP 000040
-locked in by
-.IR lock (2).
+.	\".IP 000040
+.	\"locked in by
+.	\".IR lock (2).
 .IP 000080
 in page-wait
 .IP 000100
@@ -185,9 +203,8 @@ process is in a sleep which will timeout.
 a parent of this process has exited and this process
 is now considered detached.
 .IP 100000
-process used some new signal primitives, i.e.
-.IR sigset (3);
-more system calls will restart.
+process used 4.1BSD compatibility mode signal primitives,
+no system calls will restart.
 .IP 200000
 process is owed a profiling tick.
 .RE
@@ -195,7 +212,7 @@ process is owed a profiling tick.
 number of pages currently being pushed out from this process.
 .IP PRI
 Scheduling priority, see
-.IR nice (2).
+.IR setpriority (2).
 .IP SIGNAL
 Signals received (signals 1-32 coded in bits 0-31),
 .IP UID
@@ -209,7 +226,7 @@ Weighted integral of CPU time, for scheduler.
 .IP NI
 Nice level,
 see
-.IR nice (2).
+.IR setpriority (2).
 .IP PGRP
 Process number of root of process group
 (the opener of the controlling terminal).
@@ -236,9 +253,9 @@ Link pointer in list of runnable processes.
 .IP TEXTP
 If text is pure, pointer to location of text table entry.
 .IP CLKT
-Countdown for
-.IR alarm (2)
-measured in seconds.
+Countdown for real interval timer,
+.IR setitimer (2)
+measured in clock ticks (10 milliseconds).
 .PD
 .TP
 .B \-t
@@ -300,6 +317,8 @@ be a core image and the address 0.
 Print the open file table with these headings:
 .IP LOC
 The core location of this table entry.
+.IP TYPE
+The type of object the file table entry points to.
 .PD 0
 .IP FLG
 Miscellaneous state variables encoded thus:
@@ -308,16 +327,17 @@ Miscellaneous state variables encoded thus:
 open for reading
 .IP W
 open for writing
-.IP P
-pipe
+.IP A
+open for appending
 .RE
 .IP CNT
 Number of processes that know this open file.
 .IP INO
 The location of the inode table entry for this file.
-.IP OFFS
-The file offset, see
-.IR lseek (2).
+.IP OFFS/SOCK
+The file offset (see
+.IR lseek (2)),
+or the core address of the associated socket structure.
 .PD
 .PP
 .B \-s
@@ -329,19 +349,15 @@ to text images.
 prints the number of used and free slots in the several system tables
 and is useful for checking to see how full system tables have become if the
 system is under heavy load.
-.B \-m
-and
-.B \-g
-flags print the multiplexor tables.  These tables are rather difficult to
-explain.  The potential explorer should examine the multiplexor code in
-the system.
 .SH FILES
 .ta \w'/dev/kmem  'u
 /vmunix	namelist
 .br
 /dev/kmem	default source of tables
 .SH SEE ALSO
-ps(1), stat(2), filsys(5)
+ps(1),
+stat(2),
+fs(5)
 .br
 K. Thompson,
 .I UNIX Implementation
