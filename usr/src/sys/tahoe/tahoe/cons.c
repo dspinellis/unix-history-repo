@@ -1,13 +1,12 @@
-/*	cons.c	1.3	86/11/03	*/
-/*	Minor device 0 is the CP itself.
-/*	  No real read/writes can be done to him.
-/*	Minor 1 is the console terminal.
-/*	Minor 2 is the remote line trminal.
-/**/
+/*	cons.c	1.4	86/11/25	*/
 
 /*
  * Tahoe console processor driver
  *
+ * Minor device 0 is the CP itself.
+ *	  No real read/writes can be done to him.
+ * Minor 1 is the console terminal.
+ * Minor 2 is the remote line trminal.
  */
 #include "param.h"
 #include "conf.h"
@@ -36,6 +35,7 @@ struct	consoftc {
 	int	cs_flags;
 #define	CSF_ACTIVE	0x1	/* timeout active */
 #define	CSF_RETRY	0x2	/* try again at a later time */
+#define	CSF_POLLING	0x4	/* polling for input */
 } consoftc[3];
 struct	cpdcb_o consout[3] = { 
 	/* 	unit,		cmd,count, buf */
@@ -59,7 +59,6 @@ char	partab[];
 cnopen(dev, flag)
 	dev_t dev;
 {
-	register struct cpdcb_i *cin;
 	register struct tty *tp;
 	int unit = minor(dev);
 
@@ -68,6 +67,22 @@ cnopen(dev, flag)
 	tp = constty[unit];
 	if (tp->t_state&TS_XCLUDE && u.u_uid != 0)
 		return (EBUSY);
+	cnpostread(unit);		/* post request for input */
+	tp->t_oproc = cnstart;
+	tp->t_dev = dev;
+	if ((tp->t_state&TS_ISOPEN) == 0) {
+		ttychars(tp);
+		tp->t_state = TS_ISOPEN|TS_CARR_ON;
+		tp->t_flags = EVENP|ECHO|XTABS|CRMOD;
+	}
+	return ((*linesw[tp->t_line].l_open)(dev, tp));
+}
+
+cnpostread(unit)
+	int unit;
+{
+	register struct cpdcb_i *cin;
+
 	if (lasthdr != (struct cphdr *)0) {
 		register int timo;
 
@@ -82,14 +97,6 @@ cnopen(dev, flag)
 	cin->cp_hdr.cp_count = 1;	/* Get ready for input */
 	mtpr(CPMDCB, cin);
 	lasthdr = (struct cphdr *)cin;
-	tp->t_oproc = cnstart;
-	tp->t_dev = dev;
-	if ((tp->t_state&TS_ISOPEN) == 0) {
-		ttychars(tp);
-		tp->t_state = TS_ISOPEN|TS_CARR_ON;
-		tp->t_flags = EVENP|ECHO|XTABS|CRMOD;
-	}
-	return ((*linesw[tp->t_line].l_open)(dev, tp));
 }
 
 cnclose(dev)
@@ -133,16 +140,16 @@ cnrint(dev)
 	register struct tty *tp;
 	int unit;
 
-	if (intenable == 0)
-		return;
 	unit = minor(dev);
+	if (!intenable || consoftc[unit].cs_flags&CSF_POLLING)
+		return;
 	/* make sure we dont take it from cache */
 	uncache(&consin[unit].cpi_buf[0]);
 	c = consin[unit].cpi_buf[0];
-/*
-/* Wait about 5 milli for last CPMDCB to be read by CP,
-/* otherwise give up
-/**/
+	/*
+	 * Wait about 5 milli for last CPMDCB to be read by CP,
+	 * otherwise give up
+	 */
 	timo = 10000;
 	uncache(&lasthdr->cp_unit);
 	while ((lasthdr->cp_unit&CPTAKE) == 0  && --timo)
@@ -154,6 +161,10 @@ cnrint(dev)
 		mtpr(CPMDCB, &consin[unit]); /* Ready for new character */
 		lasthdr = (struct cphdr *)&consin[unit];
 		tp = constty[unit];
+#ifdef KDB
+		if (unit == CPCONS && kdbrintr(c, tp))
+			return;
+#endif
 		(*linesw[tp->t_line].l_rint)(c, tp);
 	}
 }
@@ -186,7 +197,7 @@ cnxint(dev)
 	register struct tty *tp;
 	register int unit;
 
-	if (intenable == 0 || consintr == 0)
+	if (!intenable || !consintr)
 		return;
 	unit = minor(dev);
 #ifdef CPPERF
@@ -252,7 +263,7 @@ cnputc(c)
 /*
  * Print a character on console.
  */
-cnputchar(c,tp)
+cnputchar(c, tp)
 	register char c;
 	register struct tty *tp;
 {
@@ -305,6 +316,53 @@ cnputchar(c,tp)
 	consoftc[unit].cs_flags |= CSF_RETRY;	/* wait some more */
 	mtpr(CPMDCB, current);
 }
+
+#if defined(KDB) || defined(GENERIC)
+cngetc()
+{
+	register int c, s;
+
+	s = spl8();		/* block cnrint while we poll */
+	c = cngetchar((struct tty *)0);
+	if (c == '\r')
+		c = '\n';
+	splx(s);
+	return (c);
+}
+
+cngetchar(tp)
+	register struct tty *tp;
+{
+	register timo, unit;
+	register struct cpdcb_i *current;
+	char c;
+
+	/* tp == 0 only in system error messages */
+	if (tp == 0) {
+		current = &consin[CPCONS];
+		unit = CPCONS;
+		if (lasthdr == 0)	/* not done anything yet */
+			lasthdr = (struct cphdr *)current;
+	} else {
+		current = &consin[minor(tp->t_dev)];
+		unit = minor(tp->t_dev);
+	}
+	timo = 10000;
+	uncache((char *)&lasthdr->cp_unit);
+	while ((lasthdr->cp_unit&CPTAKE) == 0 && --timo)
+		uncache(&lasthdr->cp_unit);
+	current->cp_hdr.cp_unit = unit;		/* Resets done bit */
+	current->cp_hdr.cp_comm = CPREAD;
+	current->cp_hdr.cp_count = 1;
+	mtpr(CPMDCB, current);
+	while ((current->cp_hdr.cp_unit & CPDONE) == 0) 
+		uncache(&current->cp_hdr.cp_unit);
+	uncache(&current->cpi_buf[0]);
+	c = current->cpi_buf[0] & 0x7f;
+	lasthdr = (struct cphdr *)current;
+	return (c);
+}
+#endif
 
 /*
  * Restart (if necessary) transfer to CP line.
@@ -377,3 +435,19 @@ cnparams(tp)
 	mtpr(CPMDCB, cin);
 	lasthdr = (struct cphdr *)cin;
 }
+
+#ifdef KDB
+/*
+ * Turn input polling on/off (used by debugger).
+ */
+cnpoll(onoff)
+	int onoff;
+{
+
+	if (!onoff) {
+		consoftc[CPCONS].cs_flags &= ~CSF_POLLING;
+		cnpostread(CPCONS);		/* restart input */
+	} else
+		consoftc[CPCONS].cs_flags |= CSF_POLLING;
+}
+#endif
