@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)cron.c	4.5 (Berkeley) %G%";
+static char *sccsid = "@(#)cron.c	4.6 (Berkeley) %G%";
 #include <sys/types.h>
 #include <stdio.h>
 #include <ctype.h>
@@ -6,7 +6,8 @@ static char *sccsid = "@(#)cron.c	4.5 (Berkeley) %G%";
 #include <time.h>
 #include <sys/stat.h>
 
-#define	LISTS	BUFSIZ
+#define	LISTS	(2*BUFSIZ)
+#define	MAXLIN	BUFSIZ
 
 #define	EXACT	100
 #define	ANY	101
@@ -157,7 +158,7 @@ init()
 	cp = list;
 
 loop:
-	if(cp > list+listsize-BUFSIZ) {
+	if(cp > list+listsize-MAXLIN) {
 		char *olist;
 		listsize += LISTS;
 		olist = list;
