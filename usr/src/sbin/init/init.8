@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)init.8	8.4 (Berkeley) %G%
+.\"     @(#)init.8	8.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt INIT 8
@@ -143,7 +143,7 @@ file without a reboot by sending the signal
 to
 .Nm init
 with the command
-.Dq Li "kill -HUP 1" .
+.Dq Li "kill \-s HUP 1" .
 On receipt of this signal,
 .Nm init
 re-reads the
@@ -183,7 +183,7 @@ will terminate multi-user operations and resume single-user mode
 if sent a terminate
 .Pq Dv TERM
 signal, for example,
-.Dq Li "kill \-TERM 1" .
+.Dq Li "kill \-s TERM 1" .
 If there are processes outstanding that are deadlocked (because of
 hardware or software failure),
 .Xr init
@@ -196,7 +196,7 @@ will cease creating new
 and allow the system to slowly die away, if it is sent a terminal stop
 .Pq Dv TSTP
 signal, i.e.
-.Dq Li "kill \-TSTP 1" .
+.Dq Li "kill \-s TSTP 1" .
 A later hangup will resume full
 multi-user operations, or a terminate will start a single user shell.
 This hook is used by
