@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)stty.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)stty.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -244,8 +244,8 @@ char	**iargv;
 		}
 		if (eq("dec")){
 			mode.sg_erase = 0177;
-			mode.sg_kill = CTRL(u);
-			tc.t_intrc = CTRL(c);
+			mode.sg_kill = CKILL;
+			tc.t_intrc = CINTR;
 			ldisc = NTTYDISC;
 			lmode &= ~LPRTERA;
 			lmode |= LCRTBS|LCTLECH|LDECCTQ;
