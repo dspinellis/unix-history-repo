@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)ld.c 3.1 %G%";
+static	char sccsid[] = "@(#)ld.c 3.2 %G%";
 /*
  * VAX VM/UNIX ld - string table version
  */
@@ -7,8 +7,8 @@ static	char sccsid[] = "@(#)ld.c 3.1 %G%";
 #include <signal.h>
 #include <stdio.h>
 #include <ctype.h>
-#include <newar.h>
-#include <newa.out.h>
+#include <ar.h>
+#include <a.out.h>
 #include <ranlib.h>
 #include <stat.h>
 #include <pagsiz.h>
@@ -107,7 +107,7 @@ int	nsym;			/* pass2: number of local symbols in a.out */
 /* nsym + symx(nextsym) is the symbol table size during pass2 */
 
 struct	nlist **lookup(), **slookup();
-struct	nlist *p_data, *p_etext, *p_edata, *p_end, *entrypt;
+struct	nlist *p_etext, *p_edata, *p_end, *entrypt;
 
 /*
  * Definitions of segmentation for library member table.
@@ -134,8 +134,6 @@ struct	libseg {
  * which maps these internal numbers to symbol table entries.
  * A hash table is constructed, based on the local symbol table indices,
  * for quick lookup of these symbols.
- *
- * COULD JUST KEEP WHOLE SYMBOL TABLE AROUND.
  */
 #define	LHSIZ	31
 struct	local {
@@ -171,7 +169,7 @@ char	*tabstr;	/* string table for table of contents */
  * We open each input file or library only once, but in pass2 we
  * (historically) read from such a file at 2 different places at the
  * same time.  These structures are remnants from those days,
- * and now serve only to catch ``Premature EOF''... soon to be gone...
+ * and now serve only to catch ``Premature EOF''.
  */
 typedef struct {
 	short	*fakeptr;
@@ -221,9 +219,10 @@ int	arflag;		/* original copy of rflag */
 int	sflag;		/* discard all symbols */
 int	nflag;		/* pure procedure */
 int	dflag;		/* define common even with rflag */
-int	zflag = 1;	/* demand paged  */
+int	zflag;		/* demand paged  */
 long	hsize;		/* size of hole at beginning of data to be squashed */
 int	Aflag;		/* doing incremental load */
+int	Nflag;		/* want impure a.out */
 int	funding;	/* reading fundamental file for incremental load */
 
 /*
@@ -236,16 +235,22 @@ off_t	tsize, dsize, bsize, trsize, drsize, ssize;
  * Symbol relocation: c?rel is a scale factor which is
  * added to an old relocation to convert it to new units;
  * i.e. it is the difference between segment origins.
+ * (Thus if we are loading from a data segment which began at location
+ * 4 in a .o file into an a.out where it will be loaded starting at
+ * 1024, cdrel will be 1020.)
  */
 long	ctrel, cdrel, cbrel;
 
 /*
- * Textbase is the starting text address, 0 unless given by -H.
+ * Textbase is the start address of all text, 0 unless given by -T.
  * Database is the base of all data, computed before and used during pass2.
+ */
+long	textbase, database;
+
+/*
  * The base addresses for the loaded text, data and bss from the
  * current module during pass2 are given by torigin, dorigin and borigin.
  */
-long	textbase, database;
 long	torigin, dorigin, borigin;
 
 /*
@@ -310,13 +315,17 @@ char **argv;
 	register char *ap, **p;
 	char save;
 
-	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
+	if (signal(SIGINT, SIG_IGN) != SIG_IGN) {
 		signal(SIGINT, delexit);
+		signal(SIGTERM, delexit);
+	}
 	if (argc == 1)
 		exit(4);
 	p = argv+1;
 
-	/* scan files once to find symdefs */
+	/*
+	 * Scan files once to find where symbols are defined.
+	 */
 	for (c=1; c<argc; c++) {
 		if (trace)
 			printf("%s:\n", *p);
@@ -396,8 +405,6 @@ char **argv;
 		case 'r':
 			rflag++;
 			arflag++;
-			zflag = 0;
-			nflag = 1;
 			continue;
 		case 's':
 			sflag++;
@@ -405,11 +412,11 @@ char **argv;
 			continue;
 		case 'n':
 			nflag++;
-			zflag = 0;
+			Nflag = zflag = 0;
 			continue;
 		case 'N':
-			nflag = 0;
-			zflag = 0;
+			Nflag++;
+			nflag = zflag = 0;
 			continue;
 		case 'd':
 			dflag++;
@@ -422,7 +429,7 @@ char **argv;
 			continue;
 		case 'z':
 			zflag++;
-			nflag = 0;
+			Nflag = nflag = 0;
 			continue;
 		default:
 			filname = savestr("-x");	/* kludge */
@@ -433,6 +440,8 @@ char **argv;
 next:
 		;
 	}
+	if (rflag == 0 && Nflag == 0 && nflag == 0)
+		zflag++;
 	endload(argc, argv);
 	exit(0);
 }
@@ -792,7 +801,6 @@ middle()
 	dorigin = 0; 
 	borigin = 0;
 
-	p_data = *slookup("_data");
 	p_etext = *slookup("_etext");
 	p_edata = *slookup("_edata");
 	p_end = *slookup("_end");
@@ -804,8 +812,7 @@ middle()
 		for (i = 0; i < nsymt; i++) {
 			sp = xsym(i);
 			if (sp->n_type==N_EXT+N_UNDF && sp->n_value==0 &&
-			    sp!=p_end && sp!=p_edata &&
-			    sp!=p_etext && sp!=p_data) {
+			    sp!=p_end && sp!=p_edata && sp!=p_etext) {
 				rflag++;
 				dflag = 0;
 				break;
@@ -824,7 +831,6 @@ middle()
 	    (nflag||zflag? PAGSIZ : sizeof (long)));
 	database += hsize;
 	if (dflag || rflag==0) {
-		ldrsym(p_data, (long)0 , N_EXT+N_DATA);
 		ldrsym(p_etext, tsize, N_EXT+N_TEXT);
 		ldrsym(p_edata, dsize, N_EXT+N_DATA);
 		ldrsym(p_end, bsize, N_EXT+N_BSS);
@@ -867,6 +873,8 @@ middle()
 		case N_EXT+N_UNDF:
 			errlev |= 01;
 			if ((arflag==0 || dflag) && sp->n_value==0) {
+				if (sp==p_end || sp==p_etext || sp==p_edata)
+					continue;
 				if (nund==0)
 					printf("Undefined:\n");
 				nund++;
@@ -896,7 +904,6 @@ middle()
 	bsize += csize;
 	nsym = ssize / (sizeof cursym);
 	if (Aflag) {
-		fixspec(p_data,dorigin);
 		fixspec(p_etext,torigin);
 		fixspec(p_edata,dorigin);
 		fixspec(p_end,borigin);
@@ -1032,7 +1039,7 @@ long loc;
 	int type;
 
 	readhdr(loc);
-	if(!funding) {
+	if (!funding) {
 		ctrel = torigin;
 		cdrel += dorigin;
 		cbrel += borigin;
@@ -1131,11 +1138,11 @@ long loc;
 		return;
 	dseek(&text, loc, filhdr.a_text);
 	dseek(&reloc, loc+filhdr.a_text+filhdr.a_data, filhdr.a_trsize);
-	load2td(ctrel, tout, trout);
+	load2td(ctrel, torigin - textbase, tout, trout);
 	dseek(&text, loc+filhdr.a_text, filhdr.a_data);
 	dseek(&reloc, loc+filhdr.a_text+filhdr.a_data+filhdr.a_trsize,
 	    filhdr.a_drsize);
-	load2td(cdrel, dout, drout);
+	load2td(cdrel, dorigin - database, dout, drout);
 	while (filhdr.a_data & (sizeof(long)-1)) {
 		bputc(0, dout);
 		filhdr.a_data++;
@@ -1146,15 +1153,27 @@ long loc;
 	free(curstr);
 }
 
-load2td(creloc, b1, b2)
-	long creloc;
+/*
+ * This routine relocates the single text or data segment argument.
+ * Offsets from external symbols are resolved by adding the value
+ * of the external symbols.  Non-external reference are updated to account
+ * for the relative motion of the segments (ctrel, cdrel, ...).  If
+ * a relocation was pc-relative, then we update it to reflect the
+ * change in the positioning of the segments by adding the displacement
+ * of the referenced segment and subtracting the displacement of the
+ * current segment (creloc).
+ *
+ * If we are saving the relocation information, then we increase
+ * each relocation datum address by our base position in the new segment.
+ */
+load2td(creloc, position, b1, b2)
+	long creloc, offset;
 	struct biobuf *b1, *b2;
 {
 	register struct nlist *sp;
 	register struct local *lp;
 	long tw;
 	register struct relocation_info *rp, *rpend;
-	long address;
 	struct relocation_info *relp;
 	char *codep;
 	register char *cp;
@@ -1170,9 +1189,10 @@ load2td(creloc, b1, b2)
 	rpend = &relp[relsz / sizeof (struct relocation_info)];
 	mget(codep, codesz, &text);
 	for (rp = relp; rp < rpend; rp++) {
-		if (rflag)
-			address = rp->r_address + creloc;
 		cp = codep + rp->r_address;
+		/*
+		 * Pick up previous value at location to be relocated.
+		 */
 		switch (rp->r_length) {
 
 		case 0:		/* byte */
@@ -1190,7 +1210,19 @@ load2td(creloc, b1, b2)
 		default:
 			error(1, "load2td botch: bad length");
 		}
+		/*
+		 * If relative to an external which is defined,
+		 * resolve to a simpler kind of reference in the
+		 * result file.  If the external is undefined, just
+		 * convert the symbol number to the number of the
+		 * symbol in the result file and leave it undefined.
+		 */
 		if (rp->r_extern) {
+			/*
+			 * Search the hash table which maps local
+			 * symbol numbers to symbol tables entries
+			 * in the new a.out file.
+			 */
 			lp = lochash[rp->r_symbolnum % LHSIZ];
 			while (lp->l_index != rp->r_symbolnum) {
 				lp = lp->l_link;
@@ -1206,7 +1238,11 @@ load2td(creloc, b1, b2)
 				rp->r_extern = 0;
 			}
 		} else switch (rp->r_symbolnum & N_TYPE) {
-
+		/*
+		 * Relocation is relative to the loaded position
+		 * of another segment.  Update by the change in position
+		 * of that segment.
+		 */
 		case N_TEXT:
 			tw += ctrel;
 			break;
@@ -1221,9 +1257,21 @@ load2td(creloc, b1, b2)
 		default:
 			error(1, "relocation format botch (symbol type))");
 		}
+		/*
+		 * Relocation is pc relative, so decrease the relocation
+		 * by the amount the current segment is displaced.
+		 * (E.g if we are a relative reference to a text location
+		 * from data space, we added the increase in the text address
+		 * above, and subtract the increase in our (data) address
+		 * here, leaving the net change the relative change in the
+		 * positioning of our text and data segments.)
+		 */
 		if (rp->r_pcrel)
-			/* assembler already subtracted text.pos */
 			tw -= creloc;
+		/*
+		 * Put the value back in the segment,
+		 * while checking for overflow.
+		 */
 		switch (rp->r_length) {
 
 		case 0:		/* byte */
@@ -1240,8 +1288,15 @@ load2td(creloc, b1, b2)
 			*(long *)cp = tw;
 			break;
 		}
+		/*
+		 * If we are saving relocation information,
+		 * we must convert the address in the segment from
+		 * the old .o file into an address in the segment in
+		 * the new a.out, by adding the position of our
+		 * segment in the new larger segment.
+		 */
 		if (rflag)
-			rp->r_address = address;
+			rp->r_address += position;
 	}
 	bwrite(codep, codesz, b1);
 	if (rflag)
