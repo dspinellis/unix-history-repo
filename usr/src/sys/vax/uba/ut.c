@@ -1,6 +1,6 @@
-/*	ut.c	4.6	81/11/11	*/
+/*	ut.c	4.7	81/11/11	*/
 
-#include "ut.h"
+#include "tj.h"
 #if NUT > 0
 /*
  * System Industries Model 9700 Tape Drive
