@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	6.15 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	6.16 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -23,7 +23,7 @@ V4')
 Cwlocalhost
 ifdef(`USE_CW_FILE',
 `# file containing names of hosts for which we receive email
-Fw/etc/sendmail.cw', `dnl')
+CONCAT(`Fw', confCW_FILE)', `dnl')
 
 ifdef(`UUCP_RELAY',
 `# UUCP relay host

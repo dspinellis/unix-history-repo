@@ -96,6 +96,7 @@ define(`confDEF_USER_ID', `1')
 define(`confQUEUE_LA', `8')
 define(`confREFUSE_LA', `12')
 define(`confSEPARATE_PROC', `False')
+define(`confCW_FILE', `/etc/sendmail.cw')
 
 divert(0)dnl
-VERSIONID(`@(#)cf.m4	6.7 (Berkeley) %G%')
+VERSIONID(`@(#)cf.m4	6.8 (Berkeley) %G%')
