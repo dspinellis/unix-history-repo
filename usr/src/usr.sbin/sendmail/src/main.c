@@ -6,7 +6,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)main.c	3.116		%G%);
+SCCSID(@(#)main.c	3.117		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -618,6 +618,10 @@ main(argc, argv)
 	**		slower than it must be.
 	*/
 
+	if (Mode == MD_QUEUE || Mode == MD_FORK ||
+	    (Mode != MD_VERIFY && SuperSafe))
+		queueup(CurEnv, TRUE);
+
 	if (Mode == MD_FORK)
 	{
 		if (fork() > 0)
@@ -632,7 +636,8 @@ main(argc, argv)
 	}
 	else if (Mode == MD_QUEUE)
 	{
-		queueup(CurEnv, TRUE);
+		CurEnv->e_df = CurEnv->e_qf = NULL;
+		CurEnv->e_dontqueue = TRUE;
 		finis();
 	}
 

@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)readcf.c	3.33		%G%);
+SCCSID(@(#)readcf.c	3.34		%G%);
 
 /*
 **  READCF -- read control file.
@@ -526,7 +526,9 @@ setoption(opt, val)
 {
 	time_t tval;
 	int ival;
+	bool bval;
 	extern char *HelpFile;			/* defined in conf.c */
+	extern bool atobool();
 
 # ifdef DEBUG
 	if (tTd(37, 1))
@@ -541,6 +543,8 @@ setoption(opt, val)
 		tval = convtime(val);
 	else if (index("gLu", opt) != NULL)
 		ival = atoi(val);
+	else if (index("s", opt) != NULL)
+		bval = atobool(val);
 	else if (val[0] == '\0')
 		val = "";
 	else
@@ -555,12 +559,6 @@ setoption(opt, val)
 	  case 'A':		/* set default alias file */
 		AliasFile = val;
 		break;
-
-# ifdef V6
-	  case 'd':		/* dst timezone name */
-		DstTimeZone = val;
-		break;
-# endif V6
 
 	  case 'g':		/* default gid */
 		DefGid = ival;
@@ -586,14 +584,22 @@ setoption(opt, val)
 		StatFile = val;
 		break;
 
-# ifdef V6
-	  case 's':		/* standard time time zone */
-		StdTimeZone = val;
+	  case 's':		/* be super safe, even if expensive */
+		SuperSafe = bval;
 		break;
-# endif V6
 
 	  case 'T':		/* queue timeout */
 		TimeOut = tval;
+		break;
+
+	  case 't':		/* time zone name */
+# ifdef V6
+		StdTimezone = val;
+		DstTimezone = index(val, ',');
+		if (DstTimezone == NULL)
+			goto syntax;
+		*DstTimezone++ = '\0';
+# endif V6
 		break;
 
 	  case 'u':		/* set default uid */
@@ -605,7 +611,9 @@ setoption(opt, val)
 		break;
 
 	  default:
-		syserr("setoption: line %d: illegal option %c", LineNumber, opt);
+	  syntax:
+		syserr("setoption: line %d: syntax error on \"%c%s\"",
+		       LineNumber, opt, val);
 		break;
 	}
 }
