@@ -91,7 +91,7 @@ char copyright[] =
 
 #ifndef lint
 static char sccsid[] = "@(#)slattach.c	4.6 (Berkeley) 6/1/90";
-static char rcsid[] = "$Header: /a/cvs/386BSD/src/sbin/slattach/slattach.c,v 1.10 1993/09/15 02:39:40 smace Exp $";
+static char rcsid[] = "$Header: /a/cvs/386BSD/src/sbin/slattach/slattach.c,v 1.11 1993/09/16 06:33:44 rich Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -417,6 +417,12 @@ void sigterm_handler()
 /* Run config_cmd if specified before exiting. */
 void exit_handler(int ret)
 {
+	/*
+	 * First close the slip line in case exit_cmd wants it (like to hang
+	 * up a modem or something).
+	 */
+	if (fd != -1)
+		close(fd);
 	/* invoke a shell for exit_cmd. */
 	if (exit_cmd) {
 		syslog(LOG_NOTICE,"exiting after running %s", exit_cmd);
