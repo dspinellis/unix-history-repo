@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	5.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	5.34 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -81,7 +81,7 @@ printlong(dp)
 			(void)printf("%3d, %3d ",
 			    major(sp->st_rdev), minor(sp->st_rdev));
 		else
-			(void)printf("%*ld ", dp->s_size, sp->st_size);
+			(void)printf("%*qd ", dp->s_size, sp->st_size);
 		if (f_accesstime)
 			printtime(sp->st_atime);
 		else if (f_statustime)
