@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)recipient.c	5.6 (Berkeley) %G%";
+static char	SccsId[] = "@(#)recipient.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 # include <pwd.h>
@@ -426,31 +426,29 @@ finduser(name)
 	extern struct passwd *getpwent();
 	extern struct passwd *getpwnam();
 
-	/*
-	**  Make name canonical.
-	*/
-
+	/* map upper => lower case */
 	for (p = name; *p != '\0'; p++)
 	{
-		if (*p == (SpaceSub & 0177) || *p == '_')
-			*p = ' ';
-		else if (isascii(*p) && isupper(*p))
+		if (isascii(*p) && isupper(*p))
 			*p = tolower(*p);
 	}
 
-	/* look up this login name */
+	/* look up this login name using fast path */
 	if ((pw = getpwnam(name)) != NULL)
 		return (pw);
 
 	/* search for a matching full name instead */
+	for (p = name; *p != '\0'; p++)
+	{
+		if (*p == (SpaceSub & 0177) || *p == '_')
+			*p = ' ';
+	}
 	(void) setpwent();
 	while ((pw = getpwent()) != NULL)
 	{
 		extern bool sameword();
 		char buf[MAXNAME];
 
-		if (strcmp(pw->pw_name, name) == 0)
-			return (pw);
 		fullname(pw, buf);
 		if (index(buf, ' ') != NULL && sameword(buf, name))
 		{
