@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)rsnmle.c	1.1	%G%
+ *	@(#)rsnmle.c	5.1	%G%
  */
 
 /*
