@@ -2,9 +2,8 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)puman1.n	5.1 (Berkeley) %G%
+.\"	@(#)puman1.n	6.1 (Berkeley) %G%
 .\"
-.if \n(xx .bp
 .if !\n(xx \{\
 .so tmac.p \}
 .if n 'ND
@@ -187,7 +186,7 @@ and
 in a concise form.  If you have used a line oriented editor before
 this summary alone may be enough to get you started.
 .SH
-Ex Reference Manual \- Version 3.5
+Ex Reference Manual \- Version 3.7
 .PP
 A complete reference on the features of
 .I ex
@@ -335,96 +334,83 @@ Computer Center
 University of California, Berkeley
 January, 1978.
 .re
-.I "Edit: a tutorial"
 Ricki Blau and James Joyce
-Computing Services Division, Computing Affairs
-University of California, Berkeley
-January, 1978.
+.I "Edit: a tutorial"
+UNIX User's Supplementary Documents (USD), 14
+University of California, Berkeley, CA. 94720
+April, 1986.
 .re
 .I "Ex/edit Command Summary"
 Computer Center
 University of California, Berkeley
 August, 1978.
 .re
-.I "Ex Reference Manual \- Version 3.5"
-.I "An Introduction to Display Editing with Vi"
-.I "Vi Quick Reference"
 William Joy
-Computer Science Division
-Department of Electrical Engineering and Computer Science
-University of California, Berkeley
-October, 1980.
+.I "Ex Reference Manual \- Version 3.7"
+UNIX User's Supplementary Documents (USD), 16
+University of California, Berkeley, CA. 94720
+April, 1986.
 .re
-.I "An Introduction to the C shell (Revised)"
 William Joy
-Computer Science Division
-Department of Electrical Engineering and Computer Science
-University of California, Berkeley
-October, 1980.
+.I "An Introduction to Display Editing with Vi"
+UNIX User's Supplementary Documents (USD), 15
+University of California, Berkeley, CA. 94720
+April, 1986.
+.re
+William Joy
+.I "An Introduction to the C shell (Revised)"
+UNIX User's Supplementary Documents (USD), 4
+University of California, Berkeley, CA. 94720
+April, 1986.
 .re
 Brian W. Kernighan
 .I "UNIX for Beginners \- Second Edition"
-Bell Laboratories
-Murray Hill, New Jersey.
+UNIX User's Supplementary Documents (USD), 1
+University of California, Berkeley, CA. 94720
+April, 1986.
 .re
 Brian W. Kernighan
 .I "A Tutorial Introduction to the UNIX Text Editor"
-Bell Laboratories
-Murray Hill, New Jersey.
+UNIX User's Supplementary Documents (USD), 12
+University of California, Berkeley, CA. 94720
+April, 1986.
 .re
 Dennis M. Ritchie and Ken Thompson
 .I "The UNIX Time Sharing System"
-Communications of the ACM
-July 1974
-365-378.
-.re
-B. W. Kernighan and M. D. McIlroy
-.I "UNIX Programmer's Manual \- Seventh Edition"
-Bell Laboratories
-Murray Hill, New Jersey
-December, 1978.
-(Virtual VAX/11 Version,
- U. C. Berkeley
- Berkeley, Ca.
- November, 1980.)
-.ne 12
+Reprinted from Communications of the ACM July 1974 in
+UNIX Programmer's Supplementary Documents, Volume 2 (PS2), 1
+University of California, Berkeley, CA. 94720
+April, 1986.
 .SH
 Pascal Language Documents
 .re
-Conway, Gries and Zimmerman
-.I "A Primer on PASCAL"
-Winthrop, Cambridge Mass.
-1976, 433 pp.
+Cooper and Clancy
+.I "Oh! Pascal!, 2nd Edition"
+W. W. Norton & Company, Inc.
+500 Fifth Ave., NY, NY. 10110
+1985, 475 pp.
+.re
+Cooper
+.I "Standard Pascal User Reference Manual"
+W. W. Norton & Company, Inc.
+500 Fifth Ave., NY, NY. 10110
+1983, 176 pp.
 .re
 Kathleen Jensen and Niklaus Wirth
 .I "Pascal \- User Manual and Report"
 Springer-Verlag, New York.
 1975, 167 pp.
 .re
-C. A. G. Webster
-.I "Introduction to Pascal"
-Heyden and Son, New York
-1976, 129pp.
-.re
 Niklaus Wirth
 .I "Algorithms + Data structures = Programs"
 Prentice-Hall, New York.
 1976, 366 pp.
-.re
-Niklaus Wirth
-.I "Systematic Programming"
-Prentice-Hall, New York.
-1973, 169 pp.
 .SH
 Berkeley Pascal documents
 .PP
 The following documents are available from the Computer Center Library
 at the University of California, Berkeley.
 .nf
-.re
-William N. Joy, Susan L. Graham, and Charles B. Haley
-.I "Berkeley Pascal User's Manual \- Version 2.0"
-October 1980.
 .re
 William N. Joy
 .I "Berkeley Pascal PX Implementation Notes"
