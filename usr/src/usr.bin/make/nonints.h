@@ -8,6 +8,8 @@
  * Adam de Boor.
  *
  * %sccs.include.redist.c%
+ *
+ *	@(#)nonints.h	5.6 (Berkeley) %G%
  */
 
 char **brk_string(), *emalloc(), *str_concat();
