@@ -15,8 +15,8 @@ MDIR=	/usr/man/cat8
 SRCS=	XNSrouted.8 \
 	ac.8 adduser.8 arp.8 badsect.8 bugfiler.8 chown.8 \
 	clri.8 comsat.8 config.8 cron.8 dcheck.8 disklabel.8 diskpart.8 \
-	dm.8 dmesg.8 dump.8 dumpfs.8 edquota.8 \
-	fastboot.8 fingerd.8 fsck.8 fstat.8 ftpd.8 gettable.8 getty.8 halt.8 \
+	dm.8 dmesg.8 dump.8 dumpfs.8 edquota.8 fastboot.8 fingerd.8 \
+	fsck.8 fsdb.8 fstat.8 ftpd.8 gettable.8 getty.8 halt.8 \
 	htable.8 icheck.8 ifconfig.8 implog.8 implogd.8 inetd.8 init.8 \
 	intro.8 kgmon.8 lpc.8 lpd.8 makedev.8 makekey.8 mkhosts.8 \
 	mklost+found.8 mknod.8 mkpasswd.8 mkproto.8 mount.8 named.8 \
@@ -30,8 +30,8 @@ SRCS=	XNSrouted.8 \
 OBJS=	XNSrouted.0 \
 	ac.0 adduser.0 arp.0 badsect.0 bugfiler.0 chown.0 \
 	clri.0 comsat.0 config.0 cron.0 dcheck.0 disklabel.0 diskpart.0 \
-	dm.0 dmesg.0 dump.0 dumpfs.0 edquota.0 \
-	fastboot.0 fingerd.0 fsck.0 fstat.0 ftpd.0 gettable.0 getty.0 halt.0 \
+	dm.0 dmesg.0 dump.0 dumpfs.0 edquota.0 fastboot.0 fingerd.0 \
+	fsck.0 fsdb.0 fstat.0 ftpd.0 gettable.0 getty.0 halt.0 \
 	htable.0 icheck.0 ifconfig.0 implog.0 implogd.0 inetd.0 init.0 \
 	intro.0 kgmon.0 lpc.0 lpd.0 makedev.0 makekey.0 mkhosts.0 \
 	mklost+found.0 mknod.0 mkpasswd.0 mkproto.0 mount.0 named.0 \
