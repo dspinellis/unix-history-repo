@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)display.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)display.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -185,6 +185,8 @@ bpad(pr)
 	while (*p2++ = *p1++);
 }
 
+static char **_argv;
+
 u_char *
 get()
 {
@@ -226,6 +228,9 @@ get()
 		n = fread((char *)curp + nread, sizeof(u_char),
 		    length == -1 ? need : MIN(length, need), stdin);
 		if (!n) {
+			if (ferror(stdin))
+				(void)fprintf(stderr, "hexdump: %s: %s\n",
+				    _argv[-1], strerror(errno));
 			ateof = 1;
 			continue;
 		}
@@ -258,7 +263,6 @@ next(argv)
 {
 	extern int errno, exitval;
 	static int done;
-	static char **_argv;
 	int statok;
 
 	if (argv) {
