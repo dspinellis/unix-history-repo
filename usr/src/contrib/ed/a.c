@@ -9,12 +9,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)a.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)a.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 
+#ifdef DBI
 #include <db.h>
+#endif
 #include <regex.h>
 #include <setjmp.h>
 #include <stdio.h>
@@ -36,8 +38,6 @@ a(inputt, errnum)
 
 	if (g_flag == 0)
 		u_clr_stk();
-	if (sigint_flag)
-		SIGINT_ACTION;
 	add_flag = 1;
 	input_lines(inputt, errnum);
 	add_flag = 0;
