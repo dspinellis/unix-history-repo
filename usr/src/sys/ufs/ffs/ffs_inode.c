@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_inode.c	7.41 (Berkeley) %G%
+ *	@(#)ffs_inode.c	7.42 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -42,34 +42,30 @@ ffs_init()
  * return the inode locked. Detection and handling of mount
  * points must be done by the calling routine.
  */
-ffs_iget(pip, ino, ipp)
-	struct inode *pip;
+ffs_vget(mntp, ino, vpp)
+	struct mount *mntp;
 	ino_t ino;
-	struct inode **ipp;
+	struct vnode **vpp;
 {
-	extern struct vnodeops ffs_vnodeops;
+	extern struct vnodeops ffs_vnodeops, ffs_specops, ffs_fifoops;
 	register struct fs *fs;
 	register struct inode *ip;
+	struct ufsmount *ump;
 	struct buf *bp;
 	struct dinode *dp;
-	struct mount *mntp;
 	struct vnode *vp;
 	union ihead *ih;
 	dev_t dev;
 	int i, error;
 
-	mntp = ITOV(pip)->v_mount;
-	fs = VFSTOUFS(mntp)->um_fs;
-	if (ino < ROOTINO || ino >= fs->fs_ncg * fs->fs_ipg)
-		return (EINVAL);
-
-	dev = pip->i_dev;
-	if ((*ipp = ufs_ihashget(dev, ino)) != NULL)
+	ump = VFSTOUFS(mntp);
+	dev = ump->um_dev;
+	if ((*vpp = ufs_ihashget(dev, ino)) != NULL)
 		return (0);
 
 	/* Allocate a new vnode/inode. */
 	if (error = getnewvnode(VT_UFS, mntp, &ffs_vnodeops, &vp)) {
-		*ipp = NULL;
+		*vpp = NULL;
 		return (error);
 	}
 	ip = VTOI(vp);
@@ -79,6 +75,8 @@ ffs_iget(pip, ino, ipp)
 	ip->i_mode = 0;
 	ip->i_diroff = 0;
 	ip->i_lockf = 0;
+	ip->i_dev = dev;
+	ip->i_number = ino;
 #ifdef QUOTA
 	for (i = 0; i < MAXQUOTAS; i++)
 		ip->i_dquot[i] = NODQUOT;
@@ -89,14 +87,11 @@ ffs_iget(pip, ino, ipp)
 	 * for old data structures to be purged or for the contents of the
 	 * disk portion of this inode to be read.
 	 */
-	ip->i_dev = dev;
-	ip->i_number = ino;
-	ip->i_fs = fs;					/* XXX KIRK?? */
-	ip->i_devvp = VFSTOUFS(mntp)->um_devvp;
 	ufs_ihashins(ip);
 
 	/* Read in the disk contents for the inode, copy into the inode. */
-	if (error = bread(VFSTOUFS(mntp)->um_devvp, fsbtodb(fs, itod(fs, ino)),
+	fs = ump->um_fs;
+	if (error = bread(ump->um_devvp, fsbtodb(fs, itod(fs, ino)),
 	    (int)fs->fs_bsize, NOCRED, &bp)) {
 		/*
 		 * The inode does not contain anything useful, so it would
@@ -110,7 +105,7 @@ ffs_iget(pip, ino, ipp)
 		/* Unlock and discard unneeded inode. */
 		ufs_iput(ip);
 		brelse(bp);
-		*ipp = NULL;
+		*vpp = NULL;
 		return (error);
 	}
 	dp = bp->b_un.b_dino;
@@ -122,12 +117,18 @@ ffs_iget(pip, ino, ipp)
 	 * Initialize the vnode from the inode, check for aliases.  In all
 	 * cases re-init ip, the underlying vnode/inode may have changed.
 	 */
-	if (error = ufs_vinit(mntp, &vp)) {
+	if (error = ufs_vinit(mntp, &ffs_specops, &ffs_fifoops, &vp)) {
 		ufs_iput(ip);
-		*ipp = NULL;
+		*vpp = NULL;
 		return (error);
 	}
+	/*
+	 * Finish inode initialization now that aliasing has been resolved.
+	 */
 	ip = VTOI(vp);
+	ip->i_fs = fs;
+	ip->i_devvp = ump->um_devvp;
+	VREF(ip->i_devvp);
 
 	/*
 	 * Set up a generation number for this inode if it does not
@@ -140,13 +141,13 @@ ffs_iget(pip, ino, ipp)
 		if ((vp->v_mount->mnt_flag & MNT_RDONLY) == 0)
 			ip->i_flag |= IMOD;
 	}
-	*ipp = ip;
+	*vpp = vp;
 	return (0);
 }
 
 /*
  * Update the access, modified, and inode change times as specified
- * by the IACC, IMOD, and ICHG flags respectively. The IUPD flag
+ * by the IACC, IUPD, and ICHG flags respectively. The IMOD flag
  * is used to specify that the inode needs to be updated but that
  * the times have already been set. The access and modified times
  * are taken from the second and third parameters; the inode change
@@ -154,27 +155,21 @@ ffs_iget(pip, ino, ipp)
  * then wait for the disk write of the inode to complete.
  */
 int
-ffs_iupdat(ip, ta, tm, waitfor)
-	register struct inode *ip;
+ffs_update(vp, ta, tm, waitfor)
+	register struct vnode *vp;
 	struct timeval *ta, *tm;
 	int waitfor;
 {
 	struct buf *bp;
-	struct vnode *vp = ITOV(ip);
+	struct inode *ip;
 	struct dinode *dp;
 	register struct fs *fs;
 
-	fs = ip->i_fs;
-	if ((ip->i_flag & (IUPD|IACC|ICHG|IMOD)) == 0)
-		return (0);
 	if (vp->v_mount->mnt_flag & MNT_RDONLY)
 		return (0);
-	error = bread(ip->i_devvp, fsbtodb(fs, itod(fs, ip->i_number)),
-		(int)fs->fs_bsize, NOCRED, &bp);
-	if (error) {
-		brelse(bp);
-		return (error);
-	}
+	ip = VTOI(vp);
+	if ((ip->i_flag & (IUPD|IACC|ICHG|IMOD)) == 0)
+		return (0);
 	if (ip->i_flag&IACC)
 		ip->i_atime = ta->tv_sec;
 	if (ip->i_flag&IUPD)
@@ -182,11 +177,18 @@ ffs_iupdat(ip, ta, tm, waitfor)
 	if (ip->i_flag&ICHG)
 		ip->i_ctime = time.tv_sec;
 	ip->i_flag &= ~(IUPD|IACC|ICHG|IMOD);
+
+	fs = ip->i_fs;
+	if (error = bread(ip->i_devvp, fsbtodb(fs, itod(fs, ip->i_number)),
+		(int)fs->fs_bsize, NOCRED, &bp)) {
+		brelse(bp);
+		return (error);
+	}
 	dp = bp->b_un.b_dino + itoo(fs, ip->i_number);
 	*dp = ip->i_din;
-	if (waitfor) {
+	if (waitfor)
 		return (bwrite(bp));
-	} else {
+	else {
 		bdwrite(bp);
 		return (0);
 	}
@@ -201,12 +203,13 @@ ffs_iupdat(ip, ta, tm, waitfor)
  *
  * NB: triple indirect blocks are untested.
  */
-ffs_itrunc(oip, length, flags)
-	register struct inode *oip;
+ffs_truncate(ovp, length, flags)
+	register struct vnode *ovp;
 	u_long length;
 	int flags;
 {
 	register daddr_t lastblock;
+	register struct inode *oip;
 	daddr_t bn, lbn, lastiblock[NIADDR];
 	register struct fs *fs;
 	register struct inode *ip;
@@ -217,10 +220,11 @@ ffs_itrunc(oip, length, flags)
 	int aflags, error, allerror;
 	struct inode tip;
 
-	vnode_pager_setsize(ITOV(oip), length);
+	vnode_pager_setsize(ovp, length);
+	oip = VTOI(ovp);
 	if (oip->i_size <= length) {
 		oip->i_flag |= ICHG|IUPD;
-		error = ffs_iupdat(oip, &time, &time, 1);
+		error = ffs_update(ovp, &time, &time, 1);
 		return (error);
 	}
 	/*
@@ -284,7 +288,7 @@ ffs_itrunc(oip, length, flags)
 		oip->i_db[i] = 0;
 	oip->i_flag |= ICHG|IUPD;
 	vinvalbuf(ITOV(oip), (length > 0));
-	allerror = ffs_iupdat(oip, &time, &time, MNT_WAIT);
+	allerror = ffs_update(ovp, &time, &time, MNT_WAIT);
 
 	/*
 	 * Indirect blocks first.

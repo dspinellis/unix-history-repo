@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_balloc.c	7.14 (Berkeley) %G%
+ *	@(#)ffs_balloc.c	7.15 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -26,11 +26,14 @@
  * is done by using the logical block number to index into
  * the array of block pointers described by the dinode.
  */
-ffs_bmap(ip, bn, bnp)
-	register struct inode *ip;
+int
+ffs_bmap(vp, bn, vpp, bnp)
+	struct vnode *vp;
 	register daddr_t bn;
-	daddr_t	*bnp;
+	struct vnode **vpp;
+	daddr_t *bnp;
 {
+	register struct inode *ip;
 	register struct fs *fs;
 	register daddr_t nb;
 	struct buf *bp;
@@ -38,6 +41,15 @@ ffs_bmap(ip, bn, bnp)
 	int i, j, sh;
 	int error;
 
+	/*
+	 * Check for underlying vnode requests and ensure that logical
+	 * to physical mapping is requested.
+	 */
+	ip = VTOI(vp);
+	if (vpp != NULL)
+		*vpp = ip->i_devvp;
+	if (bnp == NULL)
+		return (0);
 	if (bn < 0)
 		return (EFBIG);
 	fs = ip->i_fs;

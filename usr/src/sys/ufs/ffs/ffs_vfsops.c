@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	7.57 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	7.58 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -39,12 +39,12 @@ struct vfsops ufs_vfsops = {
 	ffs_mount,
 	ufs_start,
 	ffs_unmount,
-	ufs_root,
+	ffs_root,
 	ufs_quotactl,
 	ffs_statfs,
 	ffs_sync,
-	ufs_fhtovp,
-	ufs_vptofh,
+	ffs_fhtovp,
+	ffs_vptofh,
 	ffs_init,
 };
 
@@ -304,18 +304,6 @@ ffs_mountfs(devvp, mp, p)
 	ump->um_devvp = devvp;
 	for (i = 0; i < MAXQUOTAS; i++)
 		ump->um_quotas[i] = NULLVP;
-
-	/* Initialize UFS glue. */
-	ump->um_blkatoff = ffs_blkatoff;
-	ump->um_write = ffs_write;
-	ump->um_iget = ffs_iget;
-	ump->um_ialloc = ffs_ialloc;
-	ump->um_ifree = ffs_ifree;
-	ump->um_itrunc = ffs_itrunc;
-	ump->um_iupdat = ffs_iupdat;
-	ump->um_bwrite = bwrite;
-	ump->um_bmap = ffs_bmap;
-
 	devvp->v_specflags |= SI_MOUNTEDON;
 
 	/* Sanity checks for old file systems.			   XXX */
@@ -473,7 +461,7 @@ loop:
 		if (vp->v_dirtyblkhd)
 			vflushbuf(vp, 0);
 		if ((ip->i_flag & (IMOD|IACC|IUPD|ICHG)) &&
-		    (error = ffs_iupdat(ip, &time, &time, 0)))
+		    (error = ffs_update(vp, &time, &time, 0)))
 			allerror = error;
 		vput(vp);
 	}
@@ -485,6 +473,70 @@ loop:
 	qsync(mp);
 #endif
 	return (allerror);
+}
+
+/*
+ * File handle to vnode
+ *
+ * Have to be really careful about stale file handles:
+ * - check that the inode number is valid
+ * - call ffs_vget() to get the locked inode
+ * - check for an unallocated inode (i_mode == 0)
+ * - check that the generation number matches
+ */
+int
+ffs_fhtovp(mp, fhp, vpp)
+	register struct mount *mp;
+	struct fid *fhp;
+	struct vnode **vpp;
+{
+	register struct inode *ip;
+	register struct ufid *ufhp;
+	struct fs *fs;
+	struct vnode *nvp;
+	int error;
+
+	ufhp = (struct ufid *)fhp;
+	fs = VFSTOUFS(mp)->um_fs;
+	if (ufhp->ufid_ino < ROOTINO ||
+	    ufhp->ufid_ino >= fs->fs_ncg * fs->fs_ipg)
+		return (EINVAL);
+	if (error = ffs_vget(mp, ufhp->ufid_ino, &nvp)) {
+		*vpp = NULLVP;
+		return (error);
+	}
+	ip = VTOI(nvp);
+	if (ip->i_mode == 0) {
+		ufs_iput(ip);
+		*vpp = NULLVP;
+		return (EINVAL);
+	}
+	if (ip->i_gen != ufhp->ufid_gen) {
+		ufs_iput(ip);
+		*vpp = NULLVP;
+		return (EINVAL);
+	}
+	*vpp = nvp;
+	return (0);
+}
+
+/*
+ * Vnode pointer to File handle
+ */
+/* ARGSUSED */
+ffs_vptofh(vp, fhp)
+	struct vnode *vp;
+	struct fid *fhp;
+{
+	register struct inode *ip;
+	register struct ufid *ufhp;
+
+	ip = VTOI(vp);
+	ufhp = (struct ufid *)fhp;
+	ufhp->ufid_len = sizeof(struct ufid);
+	ufhp->ufid_ino = ip->i_number;
+	ufhp->ufid_gen = ip->i_gen;
+	return (0);
 }
 
 /*

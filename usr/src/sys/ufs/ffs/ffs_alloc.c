@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_alloc.c	7.28 (Berkeley) %G%
+ *	@(#)ffs_alloc.c	7.29 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -275,24 +275,26 @@ nospace:
  *   2) quadradically rehash into other cylinder groups, until an
  *      available inode is located.
  */
-ffs_ialloc(pip, mode, cred, ipp)
-	register struct inode *pip;
+ffs_valloc(pvp, mode, cred, vpp)
+	register struct vnode *pvp;
 	int mode;
 	struct ucred *cred;
-	struct inode **ipp;
+	struct vnode **vpp;
 {
+	register struct inode *pip;
 	register struct fs *fs;
 	register struct inode *ip;
 	ino_t ino, ipref;
 	int cg, error;
 	
-	*ipp = NULL;
+	*vpp = NULL;
+	pip = VTOI(pvp);
 	fs = pip->i_fs;
 	if (fs->fs_cstotal.cs_nifree == 0)
 		goto noinodes;
 
 	if ((mode & IFMT) == IFDIR)
-		ipref = ffs_dirpref(pip->i_fs);
+		ipref = ffs_dirpref(fs);
 	else
 		ipref = pip->i_number;
 	if (ipref >= fs->fs_ncg * fs->fs_ipg)
@@ -301,16 +303,16 @@ ffs_ialloc(pip, mode, cred, ipp)
 	ino = (ino_t)ffs_hashalloc(pip, cg, (long)ipref, mode, ffs_ialloccg);
 	if (ino == 0)
 		goto noinodes;
-	error = ffs_iget(pip, ino, ipp);
+	error = ffs_vget(pvp->v_mount, ino, vpp);
 	if (error) {
-		ffs_ifree(pip, ino, mode);	/* XXX already freed? */
+		ffs_vfree(pvp, ino, mode);
 		return (error);
 	}
-	ip = *ipp;
+	ip = VTOI(*vpp);
 	if (ip->i_mode) {
 		printf("mode = 0%o, inum = %d, fs = %s\n",
 		    ip->i_mode, ip->i_number, fs->fs_fsmnt);
-		panic("ffs_ialloc: dup alloc");
+		panic("ffs_valloc: dup alloc");
 	}
 	if (ip->i_blocks) {				/* XXX */
 		printf("free inode %s/%d had %d blocks\n",
@@ -982,16 +984,18 @@ ffs_blkfree(ip, bno, size)
  * The specified inode is placed back in the free map.
  */
 void
-ffs_ifree(pip, ino, mode)
-	struct inode *pip;
+ffs_vfree(pvp, ino, mode)
+	struct vnode *pvp;
 	ino_t ino;
 	int mode;
 {
 	register struct fs *fs;
 	register struct cg *cgp;
+	register struct inode *pip;
 	struct buf *bp;
 	int error, cg;
 
+	pip = VTOI(pvp);
 	fs = pip->i_fs;
 	if ((u_int)ino >= fs->fs_ipg * fs->fs_ncg)
 		panic("ifree: range: dev = 0x%x, ino = %d, fs = %s\n",
