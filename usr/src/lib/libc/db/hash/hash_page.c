@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash_page.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash_page.c	5.11 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /******************************************************************************
@@ -204,7 +204,7 @@ int nbucket;
 		    return(retval);
 		    
 		}
-		key.data = op + ino[n]; 
+		key.data = (u_char *)op + ino[n]; 
 		key.size = off - ino[n];
 
 		if ( __call_hash ( key.data, key.size ) == obucket ) {
@@ -219,7 +219,7 @@ int nbucket;
 		    ndx += 2;
 		} else {
 		    /* Switch page */
-		    val.data = op + ino[n+1];
+		    val.data = (u_char *)op + ino[n+1];
 		    val.size = ino[n] - ino[n+1];
 		    putpair( np, &key, &val);
 		    moved +=2;
@@ -330,9 +330,9 @@ int	moved;		/* number of pairs moved to new page */
 	off = hashp->BSIZE;
 	for ( n = 1; (n < ino[0]) && (ino[n+1] >= REAL_KEY); n += 2 ) {
 	    cino = (char *)ino;
-	    key.data = cino + ino[n]; 
+	    key.data = (u_char *)cino + ino[n]; 
 	    key.size = off - ino[n];
-	    val.data = cino + ino[n+1];
+	    val.data = (u_char *)cino + ino[n+1];
 	    val.size = ino[n] - ino[n+1];
 	    off = ino[n+1];
 

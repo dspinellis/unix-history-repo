@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash.c	5.12 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -616,7 +616,7 @@ DBT *key, *val;
 #endif
 
 	size = key->size;
-	kp = key->data;
+	kp = (char *)key->data;
 	rbufp = __get_buf ( __call_hash(kp, size), NULL, 0 );
 	if ( !rbufp ) return(ERROR);
 	save_bufp = rbufp;
@@ -701,7 +701,7 @@ found:
 		bp = (u_short *)rbufp->page;
 		if (bp[ndx+1] < REAL_KEY) __big_return(rbufp, ndx, val, 0);
 		else {
-		    val->data = rbufp->page + (int) bp[ndx + 1];
+		    val->data = (u_char *)rbufp->page + (int) bp[ndx + 1];
 		    val->size = bp[ndx] - bp[ndx + 1];
 		}
 		break;
@@ -788,9 +788,9 @@ u_long	flag;
 		return(ERROR);
 	    }
 	} else {
-	    key->data = hashp->cpage->page + bp[ndx];
+	    key->data = (u_char *)hashp->cpage->page + bp[ndx];
 	    key->size = (ndx > 1 ? bp[ndx-1] : hashp->BSIZE) - bp[ndx];
-	    data->data = hashp->cpage->page + bp[ndx + 1];
+	    data->data = (u_char *)hashp->cpage->page + bp[ndx + 1];
 	    data->size = bp[ndx] - bp[ndx + 1];
 	    ndx += 2;
 	    if ( ndx > bp[0] ) {

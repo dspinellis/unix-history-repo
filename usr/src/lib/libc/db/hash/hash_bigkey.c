@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash_bigkey.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash_bigkey.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /******************************************************************************
@@ -84,9 +84,9 @@ DBT	*key, *val;
     int		n;
     u_short	space, move_bytes, off;
 
-    key_data = key->data;
+    key_data = (char *)key->data;
     key_size = key->size;
-    val_data = val->data;
+    val_data = (char *)val->data;
     val_size = val->size;
 
     /* First move the Key */
@@ -386,7 +386,7 @@ int	set_current;
 	/* The data is all on one page */
 	tp = (char *)bp;
 	off = bp[bp[0]];
-	val->data = tp + off;
+	val->data = (u_char *)tp + off;
 	val->size = bp[1] - off;
 	if ( set_current ) {
 	    if ( bp[0] == 2 ) {		/* No more buckets in chain */
@@ -416,7 +416,7 @@ int	set_current;
 	return(-1);
     }
     bcopy ( (save_p->page)+off, hashp->tmp_buf, len );
-    val->data = hashp->tmp_buf;
+    val->data = (u_char *)hashp->tmp_buf;
     return(0);
 }
 
@@ -491,7 +491,7 @@ int	set;
     if ( key->size == -1 ) {
 	return (-1);
     }
-    key->data = hashp->tmp_key;
+    key->data = (u_char *)hashp->tmp_key;
     return(0);
 }
 
