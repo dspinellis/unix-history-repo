@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 
 OBJS=	getline.o getnum.o
 
@@ -17,4 +17,4 @@ install:
 	install -o ${BINOWN} -g ${BINGRP} -m 444 ${OBJS} \
 	    ${DESTDIR}${LLIB}/learn/C
 
-.include <bsd.own.mk>
+.include <bsd.prog.mk>
