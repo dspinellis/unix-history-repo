@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sysctl.c	7.27 (Berkeley) %G%
+ *	@(#)kern_sysctl.c	7.28 (Berkeley) %G%
  */
 
 /*
@@ -303,9 +303,10 @@ sysctl_string(oldp, oldlenp, newp, newlen, str, maxlen)
 		return (ENOMEM);
 	if (newp && newlen >= maxlen)
 		return (EINVAL);
-	*oldlenp = len;
-	if (oldp)
+	if (oldp) {
+		*oldlenp = len;
 		error = copyout(str, oldp, len);
+	}
 	if (error == 0 && newp) {
 		error = copyin(newp, str, newlen);
 		str[newlen] = 0;
