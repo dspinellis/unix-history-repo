@@ -1,5 +1,8 @@
 #ifndef lint
+/*
 static char sccsid[] = "@(#)t10.c	2.4 (CWI) 89/08/14";
+*/
+static char sccsid[] = "@(#)t10.c	2.5 (Berkeley) %G%";
 #endif lint
 #include "tdef.h"
 #include <sgtty.h>
@@ -28,10 +31,8 @@ int	Unitwidth;
 int	nfonts;
 int	nsizes;
 int	nchtab;
-#ifndef 0
 int	nstips;
 tchar	*stiplab;
-#endif
 
 /* these characters are used as various signals or values
 /* in miscellaneous places.
@@ -63,7 +64,7 @@ struct Font *fontbase[NFONT+1];
 ptinit()
 {
 	int	i, fin, nw;
-	char	*setbrk(), *filebase, *p;
+	char	*filebase, *p;
 
 	/* open table for device,
 	/* read in resolution, size info, font info, etc.
@@ -84,12 +85,9 @@ ptinit()
 	nfonts = dev.nfonts;
 	nsizes = dev.nsizes;
 	nchtab = dev.nchtab;
-#ifndef 0
 	nstips = dev.spare1;
-			/* "unsigned" so very large files will work properly */
-	stiplab = (tchar *) setbrk((nstips + 1) * sizeof(tchar));
-#endif
-	filebase = setbrk(dev.filesize + 2 * EXTRAFONT);	/* enough room for whole file */
+	stiplab = (tchar *) malloc((nstips + 1) * sizeof(tchar));
+	filebase = malloc(dev.filesize + 2 * EXTRAFONT);
 	read(fin, filebase, dev.filesize);	/* all at once */
 	pstab = (short *) filebase;
 	chtab = pstab + nsizes + 1;
@@ -108,23 +106,11 @@ ptinit()
 		codetab[i] = p + 2 * nw;
 		fitab[i] = p + 3 * nw;	/* skip width, kern, code */
 		p += 3 * nw + dev.nchtab + 128 - 32;
-		/*
-		 * jaap
-		 *
-		 * skip also fcode, if there
-		 * See remarks in dev.h and makedev.c
-		 */
-#ifdef 0
-		if(fontbase[i]->fonttab == 1)
-			p += nw * sizeof(short);
-#endif
 	}
-#ifndef 0
 	for (i = 1; i <= nstips; i++) {		/* make stipple names tchars */
 		stiplab[i] = PAIR(*p, *(p+1));
 		while (*(p++));
 	}
-#endif
 	fontbase[0] = (struct Font *) p;	/* the last shall be first */
 	fontbase[0]->nwfont = MAXCHARS;
 	fontab[0] = p + sizeof (struct Font);
@@ -147,7 +133,7 @@ ptinit()
 	fdprintf(ptid, "x T %s\n", devname);
 	fdprintf(ptid, "x res %d %d %d\n", Inch, Hor, Vert);
 	fdprintf(ptid, "x init\n");	/* do initialization for particular device */
-  /*
+#ifdef notdef
 	for (i = 1; i <= nfonts; i++)
 		fdprintf(ptid, "x font %d %s\n", i, fontbase[i]->namefont);
 	fdprintf(ptid, "x xxx fonts=%d sizes=%d unit=%d\n", nfonts, nsizes, Unitwidth);
@@ -160,7 +146,7 @@ ptinit()
 	for (i = 0; i < dev.nchtab; i++)
 		fdprintf(ptid, " %s", &chname[chtab[i]]);
 	fdprintf(ptid, "\nx xxx\n");
-  */
+#endif
 }
 
 specnames()

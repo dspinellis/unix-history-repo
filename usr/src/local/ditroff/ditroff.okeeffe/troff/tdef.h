@@ -1,3 +1,6 @@
+/*
+ * @(#)tdef.h	2.3 (Berkeley) %G%
+ */
 
 /* starting values for typesetting parameters: */
 
@@ -19,7 +22,6 @@
 #	define	TRAILER	0
 #	define	PO	0 /* page offset */
 #	define	ASCII	1
-#	define	PTID	1
 #	define	LG	0
 #	define	DTAB	0	/* set at 8 Ems at init time */
 #	define	ICS	2*SPS
@@ -39,7 +41,6 @@
 #define	EM	(((long) INCH * pts + 36) / 72)	/* don't lose significance */
 #define	EMPTS(pts)	(((long) INCH * (pts) + 36) / 72)
 #	define	ASCII	0
-#	define	PTID	1
 #	define	LG	1
 #	define	DTAB	(INCH/2)
 #	define	ICS	3*SPS
@@ -108,7 +109,7 @@
 
 /* array sizes, and similar limits: */
 
-#define	NFONT	10	/* maximum number of fonts (including specials) */
+#define	NFONT	128	/* maximum number of fonts (including specials) */
 #define	NN	400	/* number registers */
 #define	NNAMES	15	 /* predefined reg names */
 #define	NIF	15	/* if-else nesting */
@@ -116,10 +117,10 @@
 #define	NTM	256	/* tm buffer */
 #define	NEV	3	/* environments */
 #define	EVLSZ	10	/* size of ev stack */
-#define	DSIZE	512	/* disk sector size in chars */
+#define	DSIZE	2048	/* disk sector size in chars */
 
 #define	NM	500	/* requests + macros */
-#define	DELTA	1024	/* delta core bytes */
+#define	DELTA	8192	/* delta core bytes */
 #define	NHYP	10	/* max hyphens per word */
 #define	NHEX	128	/* byte size of exception word list */
 #define	NTAB	40	/* tab stops */
@@ -132,8 +133,7 @@
 #define	NTRAP	20	/* number of traps */
 #define	NPN	20	/* numbers in "-o" */
 #define	FBUFSZ	256	/* field buf size words */
-#define	OBUFSZ	4096	/* bytes */
-#define	IBUFSZ	4096	/* bytes */
+#define	IBUFSZ	8192	/* bytes */
 #define	NC	1024	/* cbuf size words */
 #define	NOV	10	/* number of overstrike chars */
 #define	NPP	10	/* pads per field */
@@ -199,7 +199,7 @@
 
 #define	PAIR(A,B)	(A|(B<<BYTE))
 
-#define	oput(c)	if ((*obufp++ = (c)), obufp >= &obuf[OBUFSZ]) flusho(); else
+#define	oput(c)	putc(c, ptid)
 
 /*
  * "temp file" parameters.  macros and strings
@@ -278,9 +278,7 @@ extern int	c_boxrule;
 extern int	c_lefthand;
 extern int	c_dagger;
 
-extern int	stderr;	/* this is NOT the stdio value! */
-
-extern	struct	d {	/* diversion */
+struct	d {	/* diversion */
 	filep	op;
 	int	dnl;
 	int	dimac;
@@ -295,7 +293,7 @@ extern	struct	d {	/* diversion */
 	int	curd;
 };
 
-extern	struct	s {	/* stack frame */
+struct	s {	/* stack frame */
 	int	nargs;
 	struct s *pframe;
 	filep	pip;
@@ -340,87 +338,87 @@ extern struct numtab {
 
 /* the infamous environment block */
 
-#define	ics	env._ics
-#define	sps	env._sps
-#define	spacesz	env._spacesz
-#define	lss	env._lss
-#define	lss1	env._lss1
-#define	ll	env._ll
-#define	ll1	env._ll1
-#define	lt	env._lt
-#define	lt1	env._lt1
-#define	ic	env._ic
-#define	icf	env._icf
-#define	chbits	env._chbits
-#define	spbits	env._spbits
-#define	nmbits	env._nmbits
-#define	apts	env._apts
-#define	apts1	env._apts1
-#define	pts	env._pts
-#define	pts1	env._pts1
-#define	font	env._font
-#define	font1	env._font1
-#define	ls	env._ls
-#define	ls1	env._ls1
-#define	ad	env._ad
-#define	nms	env._nms
-#define	ndf	env._ndf
-#define	fi	env._fi
-#define	cc	env._cc
-#define	c2	env._c2
-#define	ohc	env._ohc
-#define	tdelim	env._tdelim
-#define	hyf	env._hyf
-#define	hyoff	env._hyoff
-#define hyalg	env._hyalg
-#define hyalg1	env._hyalg1
-#define	thresh	env._thresh
-#define	un1	env._un1
-#define	tabc	env._tabc
-#define	dotc	env._dotc
-#define	adsp	env._adsp
-#define	adrem	env._adrem
-#define	lastl	env._lastl
-#define	nel	env._nel
-#define	admod	env._admod
-#define	wordp	env._wordp
-#define	spflg	env._spflg
-#define	linep	env._linep
-#define	wdend	env._wdend
-#define	wdstart	env._wdstart
-#define	wne	env._wne
-#define	ne	env._ne
-#define	nc	env._nc
-#define	nb	env._nb
-#define	lnmod	env._lnmod
-#define	nwd	env._nwd
-#define	nn	env._nn
-#define	ni	env._ni
-#define	ul	env._ul
-#define	cu	env._cu
-#define	ce	env._ce
-#define	in	env._in
-#define	in1	env._in1
-#define	un	env._un
-#define	wch	env._wch
-#define	pendt	env._pendt
-#define	pendw	env._pendw
-#define	pendnf	env._pendnf
-#define	spread	env._spread
-#define	it	env._it
-#define	itmac	env._itmac
-#define	lnsize	env._lnsize
-#define	hyptr	env._hyptr
-#define	tabtab	env._tabtab
-#define	line	env._line
-#define	word	env._word
+#define	ics	(env->_ics)
+#define	sps	(env->_sps)
+#define	spacesz	(env->_spacesz)
+#define	lss	(env->_lss)
+#define	lss1	(env->_lss1)
+#define	ll	(env->_ll)
+#define	ll1	(env->_ll1)
+#define	lt	(env->_lt)
+#define	lt1	(env->_lt1)
+#define	ic	(env->_ic)
+#define	icf	(env->_icf)
+#define	chbits	(env->_chbits)
+#define	spbits	(env->_spbits)
+#define	nmbits	(env->_nmbits)
+#define	apts	(env->_apts)
+#define	apts1	(env->_apts1)
+#define	pts	(env->_pts)
+#define	pts1	(env->_pts1)
+#define	font	(env->_font)
+#define	font1	(env->_font1)
+#define	ls	(env->_ls)
+#define	ls1	(env->_ls1)
+#define	ad	(env->_ad)
+#define	nms	(env->_nms)
+#define	ndf	(env->_ndf)
+#define	fi	(env->_fi)
+#define	cc	(env->_cc)
+#define	c2	(env->_c2)
+#define	ohc	(env->_ohc)
+#define	tdelim	(env->_tdelim)
+#define	hyf	(env->_hyf)
+#define	hyoff	(env->_hyoff)
+#define hyalg	(env->_hyalg)
+#define hyalg1	(env->_hyalg1)
+#define	thresh	(env->_thresh)
+#define	un1	(env->_un1)
+#define	tabc	(env->_tabc)
+#define	dotc	(env->_dotc)
+#define	adsp	(env->_adsp)
+#define	adrem	(env->_adrem)
+#define	lastl	(env->_lastl)
+#define	nel	(env->_nel)
+#define	admod	(env->_admod)
+#define	wordp	(env->_wordp)
+#define	spflg	(env->_spflg)
+#define	linep	(env->_linep)
+#define	wdend	(env->_wdend)
+#define	wdstart	(env->_wdstart)
+#define	wne	(env->_wne)
+#define	ne	(env->_ne)
+#define	nc	(env->_nc)
+#define	nb	(env->_nb)
+#define	lnmod	(env->_lnmod)
+#define	nwd	(env->_nwd)
+#define	nn	(env->_nn)
+#define	ni	(env->_ni)
+#define	ul	(env->_ul)
+#define	cu	(env->_cu)
+#define	ce	(env->_ce)
+#define	in	(env->_in)
+#define	in1	(env->_in1)
+#define	un	(env->_un)
+#define	wch	(env->_wch)
+#define	pendt	(env->_pendt)
+#define	pendw	(env->_pendw)
+#define	pendnf	(env->_pendnf)
+#define	spread	(env->_spread)
+#define	it	(env->_it)
+#define	itmac	(env->_itmac)
+#define	lnsize	(env->_lnsize)
+#define	hyptr	(env->_hyptr)
+#define	tabtab	(env->_tabtab)
+#define	line	(env->_line)
+#define	word	(env->_word)
 
 /*
  * Note (jaap)
  * If this structure changes in ni.c, you should change
  * this as well
  */
-extern struct env {
+struct env {
 	int	_ics;
 	int	_sps;
 	int	_spacesz;
@@ -495,7 +493,10 @@ extern struct env {
 	int	_tabtab[NTAB];
 	tchar	_line[LNSIZE];
 	tchar	_word[WDSIZE];
-} env;
+};
+
+extern struct env *env;
+extern struct env env_array[];
 
 /*
  * All changes will come after this comment (jaap)
@@ -520,3 +521,7 @@ extern struct env {
 
 #define EXTRAFONT (3*MAXCHARS * sizeof(char) + dev.nchtab + (128-32) \
 	* sizeof(char) + sizeof(struct Font) + 255 * sizeof(short))
+
+#include <stdio.h>
+#define fdprintf fprintf
+#define flusho()

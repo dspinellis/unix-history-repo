@@ -1,26 +1,28 @@
 #ifndef lint
+/*
 static char sccsid[] = "@(#)ni.c	2.3 (CWI) 89/08/14";
+*/
+static char sccsid[] = "@(#)ni.c	2.4 (Berkeley) %G%";
 #endif lint
 #include "tdef.h"
+#include "pathnames.h"
 
 /* You may want to change these names */
 
 #ifdef NROFF
 
-char	termtab[NS] = "/usr/local/lib/ditroff/term/tab.";
+char	termtab[NS] = _PATH_TERMTAB;
 					/* term type added in ptinit() */
 char	fontfile[NS] = "";	/* not used */
 char	devname[20] = "37";
 
 #else
 
-char	termtab[NS] = "/usr/local/lib/font";	/* rest added in ptinit() */
-char	fontfile[NS] = "/usr/local/lib/font";	/* rest added in casefp() */
+char	termtab[NS] = _PATH_FONTS;	/* rest added in ptinit() */
+char	fontfile[NS] = _PATH_FONTS;	/* rest added in casefp() */
 char	devname[20]	 = "psc";	/* default typesetter */
 
 #endif
-char	obuf[OBUFSZ];	/* characters collected here for typesetter output */
-char	*obufp = obuf;
 struct numtab numtab[NN] = {
 	{ PAIR('%', 0) },
 	{ PAIR('n', 'l') },
@@ -43,7 +45,7 @@ struct numtab numtab[NN] = {
 int	pto = 10000;
 int	pfrom = 1;
 int	print = 1;
-char	nextf[NS] = "/usr/lib/tmac/tmac.";
+char	nextf[NS] = _PATH_TMAC;
 #ifndef NROFF
 int	oldbits = -1;
 #endif
@@ -62,7 +64,7 @@ int	dfactd = 1;
 int	res = 1;
 int	smnt = 0;	/* beginning of special fonts */
 int	ascii = ASCII;
-int	ptid = PTID;
+FILE	*ptid = stdout;
 int	lg = LG;
 int	pnlist[NPN] = { -1 };
 
@@ -191,7 +193,8 @@ tchar oline[LNSIZE+1];
  * If you change this, don't forget to update tdef.h (jaap)
  */
 
-struct	env env = {
+struct	env env_array[NEV] = {
+{
 /* int	ics	 */	0,
 /* int	sps	 */	0,
 /* int	spacesz	 */	0,
@@ -266,4 +269,7 @@ struct	env env = {
 /* int	it	 */	0,
 /* int	itmac	 */	0,
 /* int	lnsize	 */	LNSIZE,
+},
 };
+
+struct env *env = &env_array[0];
