@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 1989 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ *	@(#)pathnames.h	5.1 (Berkeley) %G%
+ */
+
+#define	_PATH_ENEMY	"/usr/games/lib/phantasia/enemy"
+#define	_PATH_GAMEPROG	"/usr/games/phantasia/phantasia"
+#define	_PATH_GOLD	"/usr/games/lib/phantasia/gold"
+#define	_PATH_HELP	"/usr/games/lib/phantasia/phant.help"
+#define	_PATH_LASTDEAD	"/usr/games/lib/phantasia/lastdead"
+#define	_PATH_MESS	"/usr/games/lib/phantasia/mess"
+#define	_PATH_MONST	"/usr/games/lib/phantasia/monsters"
+#define	_PATH_MOTD	"/usr/games/lib/phantasia/motd"
+#define	_PATH_PEOPLE	"/usr/games/lib/phantasia/characs"
+#define	_PATH_PHANTDIR	"/usr/games/lib/phantasia"
+#define	_PATH_SCORE	"/usr/games/lib/phantasia/scoreboard"
+#define	_PATH_VOID	"/usr/games/lib/phantasia/void"
