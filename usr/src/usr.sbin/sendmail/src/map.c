@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.30 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1083,6 +1083,48 @@ nis_map_lookup(map, name, av, statp)
 		return map_rewrite(map, name, strlen(name), NULL);
 	else
 		return map_rewrite(map, vp, vsize, av);
+}
+
+#endif
+/*
+**  HESIOD Modules
+**
+**	Only works for aliases (for now).
+*/
+
+#ifdef HESIOD
+
+char *
+hes_map_lookup(map, name, av, statp)
+        MAP *map;
+        char *name;
+        char **av;
+        int *statp;
+{
+	struct hes_postoffice *pobox;
+	char keybuf[MAXNAME + 1];
+
+	if (tTd(38, 20))
+		printf("hes_map_lookup(%s)\n", name);
+
+	pobox = hes_getmailhost(name);
+	if (pobox == NULL)
+		return NULL;
+
+	/* We only know how to deal with the SMTP types right now */
+	if (strcmp(pobox->po_type, "SMTP") != 0 &&
+	    strcmp(pobox->po_type, "ESMTP") != 0)
+		return NULL;
+
+	/* if just checking for a match, we are done */
+	if (bitset(MF_MATCHONLY, map->map_mflags))
+		return map_rewrite(map, name, strlen(name), NULL);
+
+	/* Do the rewriting with new values */
+	if (strlen(pobox->po_name) + strlen(pobox->po_host) + 1 > sizeof keybuf)
+		return NULL;
+	(void) sprintf(keybuf, "%s@%s", pobox->po_name, pobox->po_host);
+	return map_rewrite(map, keybuf, strlen(keybuf), av);
 }
 
 #endif
