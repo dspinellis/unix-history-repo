@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.5	{Berkeley}	83/06/27
+#	Makefile	4.6	83/07/02
 #
 # The system has two monitoring schemes, utilizing either ``prof''
 # or ``gprof''. DFLMON determines the default profiler; mon.o
@@ -8,7 +8,8 @@
 # Machine dependent routines are located in a subtree which parallels
 # the top directories.  This subtree is identified by the machine name.
 #
-# Compatibility routines are kept in directories with a trailing ``compat''
+# Compatibility routines are kept in directories with a prefixing
+# ``compat'' (so they all sort together).
 # 
 # The C run-time startup code is always machine dependent and expected
 # to be located in ${MACHINE}/csu
@@ -17,7 +18,7 @@ DESTDIR=
 INSTALL=install -m 644
 DFLMON=	mon.o
 MACHINE=vax
-COPMAT=	4.1compat
+COMPAT=	compat-4.1 compat-sys5
 ALL=	gen inet net stdio ${MACHINE} ${COMPAT}
 
 libc.a libc_p.a: ${MACHINE}/csu ${ALL}
