@@ -1,4 +1,4 @@
-/*	init_main.c	4.2	%G%	*/
+/*	init_main.c	4.3	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -150,14 +150,13 @@ iinit()
 
 	(*bdevsw[major(rootdev)].d_open)(rootdev, 1);
 	bp = bread(rootdev, SUPERB);
-	cp = geteblk();
 	if(u.u_error)
 		panic("iinit");
-	bcopy(bp->b_un.b_addr, cp->b_un.b_addr, sizeof(struct filsys));
+	bp->b_flags |= B_LOCKED;		/* block can never be re-used */
 	brelse(bp);
-	mount[0].m_bufp = cp;
 	mount[0].m_dev = rootdev;
-	fp = cp->b_un.b_filsys;
+	mount[0].m_bufp = bp;
+	fp = bp->b_un.b_filsys;
 	fp->s_flock = 0;
 	fp->s_ilock = 0;
 	fp->s_ronly = 0;
@@ -192,17 +191,20 @@ binit()
 	struct bdevsw *bdp;
 	struct swdevt *swp;
 
-	bfreelist.b_forw = bfreelist.b_back =
-	    bfreelist.av_forw = bfreelist.av_back = &bfreelist;
+	for (dp = bfreelist; dp < &bfreelist[BQUEUES]; dp++) {
+		dp->b_forw = dp->b_back = dp->av_forw = dp->av_back = dp;
+		dp->b_flags = B_HEAD;
+	}
+	dp--;				/* dp = &bfreelist[BQUEUES-1]; */
 	for (i=0; i<NBUF; i++) {
 		bp = &buf[i];
 		bp->b_dev = NODEV;
 		bp->b_un.b_addr = buffers[i];
-		bp->b_back = &bfreelist;
-		bp->b_forw = bfreelist.b_forw;
-		bfreelist.b_forw->b_back = bp;
-		bfreelist.b_forw = bp;
-		bp->b_flags = B_BUSY;
+		bp->b_back = dp;
+		bp->b_forw = dp->b_forw;
+		dp->b_forw->b_back = bp;
+		dp->b_forw = bp;
+		bp->b_flags = B_BUSY|B_INVAL;
 		brelse(bp);
 	}
 	for (bdp = bdevsw; bdp->d_open; bdp++) {
