@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1989, 1993
+ * Copyright (c) 1989, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -9,19 +9,21 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)setmode.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)setmode.c	8.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <signal.h>
+
+#include <ctype.h>
 #include <errno.h>
+#include <signal.h>
 #include <stddef.h>
+#include <stdlib.h>
+
 #ifdef SETMODE_DEBUG
 #include <stdio.h>
 #endif
-#include <stdlib.h>
-#include <ctype.h>
 
 #define	SET_LEN	6		/* initial # of bitcmd struct to malloc */
 #define	SET_LEN_INCR 4		/* # of bitcmd structs to add as needed */
@@ -56,7 +58,7 @@ getmode(bbox, omode)
 	mode_t omode;
 {
 	register BITCMD *set;
-	register mode_t newmode, value;
+	register mode_t clrval, newmode, value;
 
 	set = (BITCMD *)bbox;
 	newmode = omode;
@@ -79,12 +81,14 @@ getmode(bbox, omode)
 		case 'o':
 			value = newmode & S_IRWXO;
 common:			if (set->cmd2 & CMD2_CLR) {
+				clrval =
+				    (set->cmd2 & CMD2_SET) ?  S_IRWXO : value;
 				if (set->cmd2 & CMD2_UBITS)
-					newmode &= ~(S_IRWXU & set->bits);
+					newmode &= ~((clrval<<6) & set->bits);
 				if (set->cmd2 & CMD2_GBITS)
-					newmode &= ~(S_IRWXG & set->bits);
+					newmode &= ~((clrval<<3) & set->bits);
 				if (set->cmd2 & CMD2_OBITS)
-					newmode &= ~(S_IRWXO & set->bits);
+					newmode &= ~(clrval & set->bits);
 			}
 			if (set->cmd2 & CMD2_SET) {
 				if (set->cmd2 & CMD2_UBITS)
@@ -118,17 +122,17 @@ common:			if (set->cmd2 & CMD2_CLR) {
 		}
 }
 
-#define	ADDCMD(a, b, c, d) \
-	if (set >= endset) { \
-		register BITCMD *newset; \
-		setlen += SET_LEN_INCR; \
-		newset = realloc(saveset, sizeof(BITCMD) * setlen); \
-		if (!saveset) \
-			return (NULL); \
-		set = newset + (set - saveset); \
-		saveset = newset; \
-		endset = newset + (setlen - 2); \
-	} \
+#define	ADDCMD(a, b, c, d)						\
+	if (set >= endset) {						\
+		register BITCMD *newset;				\
+		setlen += SET_LEN_INCR;					\
+		newset = realloc(saveset, sizeof(BITCMD) * setlen);	\
+		if (!saveset)						\
+			return (NULL);					\
+		set = newset + (set - saveset);				\
+		saveset = newset;					\
+		endset = newset + (setlen - 2);				\
+	}								\
 	set = addcmd(set, (a), (b), (c), (d))
 
 #define	STANDARD_BITS	(S_ISUID|S_ISGID|S_IRWXU|S_IRWXG|S_IRWXO)
@@ -142,7 +146,7 @@ setmode(p)
 	BITCMD *set, *saveset, *endset;
 	sigset_t sigset, sigoset;
 	mode_t mask;
-	int permXbits, setlen;
+	int equalopdone, permXbits, setlen;
 
 	if (!*p)
 		return (NULL);
@@ -171,7 +175,7 @@ setmode(p)
 	 * or illegal bits.
 	 */
 	if (isdigit(*p)) {
-		perm = (mode_t)strtol(p, (char **)0, 8);
+		perm = (mode_t)strtol(p, NULL, 8);
 		if (perm & ~(STANDARD_BITS|S_ISTXT)) {
 			free(saveset);
 			return (NULL);
@@ -214,6 +218,8 @@ getop:		if ((op = *p++) != '+' && op != '-' && op != '=') {
 			free(saveset);
 			return (NULL);
 		}
+		if (op == '=')
+			equalopdone = 0;
 
 		who &= ~S_ISTXT;
 		for (perm = 0, permXbits = 0;; ++p) {
@@ -250,10 +256,12 @@ getop:		if ((op = *p++) != '+' && op != '-' && op != '=') {
 				 * to flush out any partial mode that we have,
 				 * and then do the copying of the mode bits.
 				 */
-				if (perm || op == '=') {
+				if (perm) {
 					ADDCMD(op, who, perm, mask);
 					perm = 0;
 				}
+				if (op == '=')
+					equalopdone = 1;
 				if (op == '+' && permXbits) {
 					ADDCMD('X', who, permXbits, mask);
 					permXbits = 0;
@@ -266,7 +274,9 @@ getop:		if ((op = *p++) != '+' && op != '-' && op != '=') {
 				 * Add any permissions that we haven't already
 				 * done.
 				 */
-				if (perm || op == '=') {
+				if (perm || (op == '=' && !equalopdone)) {
+					if (op == '=')
+						equalopdone = 1;
 					ADDCMD(op, who, perm, mask);
 					perm = 0;
 				}
@@ -305,29 +315,20 @@ addcmd(set, op, who, oparg, mask)
 	u_int mask;
 {
 	switch (op) {
+	case '=':
+		set->cmd = '-';
+		set->bits = who ? who : STANDARD_BITS;
+		set++;
+
+		op = '+';
+		/* FALLTHROUGH */
 	case '+':
+	case '-':
 	case 'X':
 		set->cmd = op;
 		set->bits = (who ? who : mask) & oparg;
 		break;
 
-	case '-':
-		set->cmd = '-';
-		set->bits = (who ? who : (S_IRWXU|S_IRWXG|S_IRWXO)) & oparg;
-		break;
-
-	case '=':
-		set->cmd = '-';
-		if (!who) {
-			set->bits = STANDARD_BITS;
-			who = mask;
-		} else
-			set->bits = who;
-		set++;
-
-		set->cmd = '+';
-		set->bits = who & oparg;
-		break;
 	case 'u':
 	case 'g':
 	case 'o':
