@@ -2,7 +2,7 @@
 # Makefile for mrouted, a multicast router, and its auxiliary programs,
 # map-mbone and mrinfo.
 #
-# $Id: Makefile,v 1.1.1.1 1994/05/17 20:59:34 jkh Exp $
+# $Id: Makefile,v 1.2 1994/05/26 17:48:51 ats Exp $
 #
 # Modified by: Jim Lowe for FreeBSD 5/17/94
 #
@@ -37,8 +37,8 @@ mrinfo: ${IGMP_OBJS} ${MRINFO_OBJS}
 	${CC} ${LDFLAGS} -o $@ ${CFLAGS} ${IGMP_OBJS} ${MRINFO_OBJS}
 
 install: mrouted mrinfo map-mbone
-	install -c mrouted ${BINDIR}
-	install -c -o root -m 500 mrinfo ${BINDIR}
-	install -c -o root -m 500 map-mbone ${BINDIR}
+	install -c mrouted ${DESTDIR}${BINDIR}
+	install -c -o root -m 500 mrinfo ${DESTDIR}${BINDIR}
+	install -c -o root -m 500 map-mbone ${DESTDIR}${BINDIR}
 
 .include <bsd.prog.mk>
