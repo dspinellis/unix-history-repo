@@ -960,8 +960,7 @@ nfs_removeit(sp, procp)
  * nfs file rename call
  */
 int
-nfs_rename(fdvp, fvp, fcnp,
-	   tdvp, tvp, tcnp)
+nfs_rename(fdvp, fvp, fcnp, tdvp, tvp, tcnp)
 	struct vnode *fdvp, *fvp;
 	struct componentname *fcnp;
 	struct vnode *tdvp, *tvp;
