@@ -1,4 +1,4 @@
-/*	uipc_syscalls.c	4.6	81/11/20	*/
+/*	uipc_syscalls.c	4.7	81/11/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -372,4 +372,9 @@ COUNT(SSOCKETADDR);
 		u.u_error = ENOTSOCK;
 		return;
 	}
-	copyout(fp->f_socket->f_
+	if (copyout((caddr_t)&fp->f_socket->so_addr, (caddr_t)uap->asa, 
+	    sizeof (struct sockaddr))) {
+		u.u_error = EFAULT;
+		return;
+	}
+}

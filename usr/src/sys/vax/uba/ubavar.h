@@ -1,4 +1,4 @@
-/*	ubavar.h	4.21	81/11/07	*/
+/*	ubavar.h	4.22	81/11/20	*/
 
 /*
  * This file contains definitions related to the kernel structures
@@ -148,7 +148,7 @@ struct uba_driver {
  * UBA related kernel variables
  */
 int	numuba;					/* number of uba's */
-extern	struct	uba_hd uba_hd[];
+struct	uba_hd uba_hd[];
 
 /*
  * Ubminit and ubdinit initialize the mass storage controller and

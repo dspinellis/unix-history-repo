@@ -1,4 +1,4 @@
-/*	tty_subr.c	4.12	81/10/11	*/
+/*	tty_subr.c	4.13	81/11/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -54,6 +54,7 @@ register struct clist *p;
 	return(c);
 }
 
+#if 0
 /*
  * copy clist to buffer.
  * return number of bytes moved.
@@ -109,6 +110,7 @@ register char *cp;
 	splx(s);
 	return(cp-acp);
 }
+#endif
 
 /*
  * Return count of contiguous characters
@@ -397,6 +399,7 @@ register struct clist *p;
 }
 #endif
 
+#if 0
 putw(c, p)
 register struct clist *p;
 {
@@ -412,3 +415,4 @@ register struct clist *p;
 	splx(s);
 	return(0);
 }
+#endif

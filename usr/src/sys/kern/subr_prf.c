@@ -1,4 +1,4 @@
-/*	subr_prf.c	4.19	81/08/31	*/
+/*	subr_prf.c	4.19	81/11/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -217,8 +217,8 @@ putchar(c, touser)
 		if (tp && (tp->t_state&CARR_ON)) {
 			register s = spl6();
 			if (c == '\n')
-				ttyoutput('\r', tp);
-			ttyoutput(c, tp);
+				(void) ttyoutput('\r', tp);
+			(void) ttyoutput(c, tp);
 			ttstart(tp);
 			splx(s);
 		}

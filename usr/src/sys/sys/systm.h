@@ -1,4 +1,4 @@
-/*	systm.h	4.20	81/11/18	*/
+/*	systm.h	4.21	81/11/20	*/
 
 /*
  * Random set of variables
@@ -64,7 +64,9 @@ unsigned min();
 int	memall();
 int	uchar(), schar();
 int	vmemall();
+#if 0
 char	*wmemall();
+#endif
 swblk_t	vtod();
 
 /*

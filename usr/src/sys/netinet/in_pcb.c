@@ -1,4 +1,4 @@
-/* in_pcb.c 4.5 81/11/20 */
+/* in_pcb.c 4.6 81/11/20 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -78,7 +78,7 @@ gotport:
 bad2:
 	sbrelease(&so->so_snd);
 bad:
-	m_free(m);
+	(void) m_free(m);
 	return (ENOBUFS);
 }
 

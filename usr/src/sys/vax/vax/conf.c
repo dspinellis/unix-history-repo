@@ -1,4 +1,4 @@
-/*	conf.c	4.43	81/11/18	*/
+/*	conf.c	4.44	81/11/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -284,7 +284,7 @@ int	dnopen(), dnclose(), dnwrite(), dnselect();
 #define	dnselect	selecttrue
 #endif
 
-int	ttselect(), seltrue(), selectfalse();
+int	ttselect(), seltrue();
 
 struct cdevsw	cdevsw[] =
 {

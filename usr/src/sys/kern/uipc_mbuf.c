@@ -1,4 +1,4 @@
-/*	uipc_mbuf.c	1.12	81/11/20	*/
+/*	uipc_mbuf.c	1.13	81/11/20	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -173,7 +173,7 @@ COUNT(MBUFINIT);
 	vmaccess(&Mbmap[0], (caddr_t)m, 2);
 	for (i=0; i < NMBPG; i++) {
 		m->m_off = 0;
-		m_free(m);
+		(void) m_free(m);
 		m++;
 	}
 	(void) pg_alloc(3);
@@ -225,7 +225,7 @@ COUNT(PG_ALLOC);
 	s = splimp();
 	for (j=0; j < bufs; j++) {
 		m->m_off = 0;
-		m_free(m);
+		(void) m_free(m);
 		m++;
 	}
 	splx(s);

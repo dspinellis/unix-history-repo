@@ -1,4 +1,4 @@
-/* tcp_usrreq.c 1.31 81/11/20 */
+/* tcp_usrreq.c 1.32 81/11/20 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -150,7 +150,7 @@ COUNT(TCP_USRREQ);
 		}
 		error = in_pcballoc(so, &tcb, 2048, 2048, (struct sockaddr_in *)addr);
 		if (error) {
-			m_free(dtom(tp));
+			(void) m_free(dtom(tp));
 			break;
 		}
 		inp = (struct inpcb *)so->so_pcb;

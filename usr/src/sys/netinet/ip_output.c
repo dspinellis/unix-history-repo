@@ -1,4 +1,4 @@
-/*	ip_output.c	1.15	81/11/20	*/
+/*	ip_output.c	1.16	81/11/20	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -75,7 +75,7 @@ COUNT(IP_OUTPUT);
 		}
 		mh->m_next = m_copy(m, off, len);
 		if (mh->m_next == 0) {
-			m_free(mh);
+			(void) m_free(mh);
 			goto bad;
 		}
 		ip_send(mhip);
