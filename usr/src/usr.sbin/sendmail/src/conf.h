@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	6.7 (Berkeley) %G%
+ *	@(#)conf.h	6.8 (Berkeley) %G%
  */
 
 /*
@@ -32,6 +32,7 @@
 # define MAXKEY		128		/* maximum size of a database key */
 # define MEMCHUNKSIZE	1024		/* chunk size for memory allocation */
 # define MAXUSERENVIRON	100		/* max envariables saved */
+# define MAXIPADDR	16		/* max # of IP addrs for this host */
 # define PSBUFSIZE	(MAXNAME * 4)	/* size of prescan buffer */
 
 # ifndef QUEUESIZE
