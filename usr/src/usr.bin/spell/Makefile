@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	4.8	(Berkeley)	%G%
+#	@(#)Makefile	4.9	(Berkeley)	%G%
 #
 # The word lists may be extended by adding special words.
 # The set of files containing words to be added are defined
@@ -50,7 +50,7 @@ depend: FRC
 	mkdep -p ${CFLAGS} ${SRCS}
 
 install: FRC
-	-mkdir ${DESTDIR}/usr/dict/special > /dev/null 2>&1
+	-[ -d ${DESTDIR}/usr/dict/special ] || mkdir ${DESTDIR}/usr/dict/special
 	install -s -o bin -g bin -m 755 spell ${DESTDIR}/usr/lib/spell
 	install -s -o bin -g bin -m 755 spellin ${DESTDIR}/usr/bin/spellin
 	install -s -o bin -g bin -m 755 spellout ${DESTDIR}/usr/bin/spellout

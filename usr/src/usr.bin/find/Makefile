@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	4.4	(Berkeley)	%G%
+#	@(#)Makefile	4.5	(Berkeley)	%G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -29,7 +29,7 @@ depend: FRC
 
 install: FRC
 	install -s -o bin -g bin -m 755 find ${DESTDIR}/usr/bin/find
-	-mkdir ${DESTDIR}/usr/lib/find > /dev/null 2>&1
+	-[ -d ${DESTDIR}/usr/lib/find ] || mkdir ${DESTDIR}/usr/lib/find
 	install -s -o bin -g bin -m 755 bigram ${DESTDIR}/usr/lib/find/bigram
 	install -s -o bin -g bin -m 755 code ${DESTDIR}/usr/lib/find/code
 	install -c -o bin -g bin -m 755 updatedb.csh ${DESTDIR}/usr/lib/find/updatedb

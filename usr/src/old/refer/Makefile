@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	4.8	(Berkeley)	%G%
+#	@(#)Makefile	4.9	(Berkeley)	%G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -76,7 +76,7 @@ depend: FRC
 	mkdep ${CFLAGS} ${SRCS}
 
 install: FRC
-	-mkdir /usr/lib/refer > /dev/null 2>&1
+	-[ -d ${DESTDIR}/usr/lib/refer ] || mkdir ${DESTDIR}/usr/lib/refer
 	install -s -o bin -g bin -m 755 mkey ${DESTDIR}/usr/lib/refer/mkey
 	install -s -o bin -g bin -m 755 inv ${DESTDIR}/usr/lib/refer/inv
 	install -s -o bin -g bin -m 755 hunt ${DESTDIR}/usr/lib/refer/hunt
