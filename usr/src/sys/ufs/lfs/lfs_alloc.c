@@ -1,6 +1,6 @@
 /*	alloc.c	4.1	82/03/25	*/
 
-/* merged into kernel:	@(#)lfs_alloc.c 2.2 %G% */
+/* merged into kernel:	@(#)lfs_alloc.c 2.3 %G% */
 
 /* last monet version:	alloc.c	4.8	81/03/08	*/
 
@@ -333,6 +333,8 @@ fragextend(ip, cg, bprev, osize, nsize)
 	int i;
 
 	fs = ip->i_fs;
+	if (fs->fs_cs(fs, cg).cs_nffree < nsize - osize)
+		return (NULL);
 	frags = numfrags(fs, nsize);
 	bbase = fragoff(fs, bprev);
 	if (bbase > (bprev + frags - 1) % fs->fs_frag) {
@@ -340,11 +342,11 @@ fragextend(ip, cg, bprev, osize, nsize)
 		return (NULL);
 	}
 	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), fs->fs_bsize);
-	if (bp->b_flags & B_ERROR) {
+	cgp = bp->b_un.b_cg;
+	if (bp->b_flags & B_ERROR || cgp->cg_magic != CG_MAGIC) {
 		brelse(bp);
 		return (NULL);
 	}
-	cgp = bp->b_un.b_cg;
 	bno = dtogd(fs, bprev);
 	for (i = numfrags(fs, osize); i < frags; i++)
 		if (isclr(cgp->cg_free, bno + i)) {
@@ -398,11 +400,11 @@ alloccg(ip, cg, bpref, size)
 	if (fs->fs_cs(fs, cg).cs_nbfree == 0 && size == fs->fs_bsize)
 		return (NULL);
 	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), fs->fs_bsize);
-	if (bp->b_flags & B_ERROR) {
+	cgp = bp->b_un.b_cg;
+	if (bp->b_flags & B_ERROR || cgp->cg_magic != CG_MAGIC) {
 		brelse(bp);
 		return (NULL);
 	}
-	cgp = bp->b_un.b_cg;
 	if (size == fs->fs_bsize) {
 		bno = alloccgblk(fs, cgp, bpref);
 		bdwrite(bp);
@@ -439,7 +441,7 @@ alloccg(ip, cg, bpref, size)
 		return (bno);
 	}
 	bno = mapsearch(fs, cgp, bpref, allocsiz);
-	if (bno == 0)
+	if (bno == -1)
 		return (NULL);
 	for (i = 0; i < frags; i++)
 		clrbit(cgp->cg_free, bno + i);
@@ -559,7 +561,7 @@ norot:
 	 * available one in this cylinder group.
 	 */
 	bno = mapsearch(fs, cgp, bpref, fs->fs_frag);
-	if (bno == 0)
+	if (bno == -1)
 		return (NULL);
 	cgp->cg_rotor = bno;
 gotit:
@@ -599,11 +601,11 @@ ialloccg(ip, cg, ipref, mode)
 	if (fs->fs_cs(fs, cg).cs_nifree == 0)
 		return (NULL);
 	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), fs->fs_bsize);
-	if (bp->b_flags & B_ERROR) {
+	cgp = bp->b_un.b_cg;
+	if (bp->b_flags & B_ERROR || cgp->cg_magic != CG_MAGIC) {
 		brelse(bp);
 		return (NULL);
 	}
-	cgp = bp->b_un.b_cg;
 	if (ipref) {
 		ipref %= fs->fs_ipg;
 		if (isclr(cgp->cg_iused, ipref))
@@ -661,11 +663,11 @@ fre(ip, bno, size)
 	if (badblock(fs, bno))
 		return;
 	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), fs->fs_bsize);
-	if (bp->b_flags & B_ERROR) {
+	cgp = bp->b_un.b_cg;
+	if (bp->b_flags & B_ERROR || cgp->cg_magic != CG_MAGIC) {
 		brelse(bp);
 		return;
 	}
-	cgp = bp->b_un.b_cg;
 	bno = dtogd(fs, bno);
 	if (size == fs->fs_bsize) {
 		if (isblock(fs, cgp->cg_free, bno/fs->fs_frag))
@@ -740,11 +742,11 @@ ifree(ip, ino, mode)
 		panic("ifree: range");
 	cg = itog(fs, ino);
 	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), fs->fs_bsize);
-	if (bp->b_flags & B_ERROR) {
+	cgp = bp->b_un.b_cg;
+	if (bp->b_flags & B_ERROR || cgp->cg_magic != CG_MAGIC) {
 		brelse(bp);
 		return;
 	}
-	cgp = bp->b_un.b_cg;
 	ino %= fs->fs_ipg;
 	if (isclr(cgp->cg_iused, ino))
 		panic("ifree: freeing free inode");
@@ -790,14 +792,13 @@ mapsearch(fs, cgp, bpref, allocsiz)
 	loc = scanc(len, &cgp->cg_free[start], fragtbl[fs->fs_frag],
 		1 << (allocsiz - 1 + (fs->fs_frag % NBBY)));
 	if (loc == 0) {
-		loc = fs->fs_dblkno / NBBY;
-		len = start - loc + 1;
-		start = loc;
+		len = start + 1;
+		start = 0;
 		loc = scanc(len, &cgp->cg_free[start], fragtbl[fs->fs_frag],
 			1 << (allocsiz - 1 + (fs->fs_frag % NBBY)));
 		if (loc == 0) {
 			panic("alloccg: map corrupted");
-			return (NULL);
+			return (-1);
 		}
 	}
 	bno = (start + len - loc) * NBBY;
@@ -819,7 +820,7 @@ mapsearch(fs, cgp, bpref, allocsiz)
 		}
 	}
 	panic("alloccg: block not in map");
-	return (NULL);
+	return (-1);
 }
 
 /*
@@ -864,7 +865,7 @@ badblock(fs, bn)
 	daddr_t bn;
 {
 
-	if ((unsigned)bn >= fs->fs_size || bn < cgdmin(fs, dtog(fs, bn))) {
+	if ((unsigned)bn >= fs->fs_size) {
 		fserr(fs, "bad block");
 		return (1);
 	}
@@ -970,16 +971,18 @@ update(flag)
 		if (fs->fs_ronly != 0)
 			panic("update: rofs mod");
 		bp = getblk(mp->m_dev, SBLOCK, SBSIZE);
+		if (bp->b_un.b_fs != fs || fs->fs_magic != FS_MAGIC)
+			panic("update: bad b_fs");
 		fs->fs_fmod = 0;
 		fs->fs_time = time;
-		if (bp->b_un.b_fs != fs)
-			panic("update: bad b_fs");
 		bwrite(bp);
-		blks = howmany(fs->fs_cssize, fs->fs_bsize);
-		for (i = 0; i < blks; i++) {
+		blks = howmany(fs->fs_cssize, fs->fs_fsize);
+		for (i = 0; i < blks; i += fs->fs_frag) {
 			bp = getblk(mp->m_dev,
-			    fsbtodb(fs, fs->fs_csaddr + (i * fs->fs_frag)),
-			    fs->fs_bsize);
+			    fsbtodb(fs, fs->fs_csaddr + i),
+			    blks - i < fs->fs_frag ? 
+				(blks - i) * fs->fs_fsize :
+				fs->fs_bsize);
 			bwrite(bp);
 		}
 	}
