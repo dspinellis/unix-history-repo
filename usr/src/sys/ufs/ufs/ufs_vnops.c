@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	7.85 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.86 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -23,6 +23,8 @@
 #include <sys/fifo.h>
 #include <sys/malloc.h>
 
+#include <vm/vm.h>
+
 #include <ufs/ufs/lockf.h>
 #include <ufs/ufs/quota.h>
 #include <ufs/ufs/inode.h>
@@ -32,7 +34,7 @@
 
 int ufs_chmod __P((struct vnode *, int, struct ucred *, struct proc *));
 int ufs_chown
-	__P((struct vnode *, u_int, u_int, struct ucred *, struct proc *));
+	__P((struct vnode *, uid_t, gid_t, struct ucred *, struct proc *));
 
 #ifdef _NOQUAD
 #define	SETHIGH(q, h)	(q).val[_QUAD_HIGHWORD] = (h)
@@ -234,12 +236,9 @@ ufs_getattr(vp, vap, cred, p)
 #else
 	vap->va_qsize = ip->i_din.di_qsize;
 #endif
-	vap->va_atime.tv_sec = ip->i_atime;
-	vap->va_atime.tv_usec = 0;
-	vap->va_mtime.tv_sec = ip->i_mtime;
-	vap->va_mtime.tv_usec = 0;
-	vap->va_ctime.tv_sec = ip->i_ctime;
-	vap->va_ctime.tv_usec = 0;
+	vap->va_atime = ip->i_atime;
+	vap->va_mtime = ip->i_mtime;
+	vap->va_ctime = ip->i_ctime;
 	vap->va_flags = ip->i_flags;
 	vap->va_gen = ip->i_gen;
 	/* this doesn't belong here */
@@ -283,7 +282,7 @@ ufs_setattr(vp, vap, cred, p)
 	/*
 	 * Go through the fields and update iff not VNOVAL.
 	 */
-	if (vap->va_uid != (u_short)VNOVAL || vap->va_gid != (u_short)VNOVAL)
+	if (vap->va_uid != (uid_t)VNOVAL || vap->va_gid != (gid_t)VNOVAL)
 		if (error = ufs_chown(vp, vap->va_uid, vap->va_gid, cred, p))
 			return (error);
 	if (vap->va_size != VNOVAL) {
@@ -306,7 +305,7 @@ ufs_setattr(vp, vap, cred, p)
 			return (error);
 	}
 	error = 0;
-	if (vap->va_mode != (u_short)VNOVAL)
+	if (vap->va_mode != (mode_t)VNOVAL)
 		error = ufs_chmod(vp, (int)vap->va_mode, cred, p);
 	if (vap->va_flags != VNOVAL) {
 		if (cred->cr_uid != ip->i_uid &&
@@ -361,8 +360,8 @@ ufs_chmod(vp, mode, cred, p)
 static int
 ufs_chown(vp, uid, gid, cred, p)
 	register struct vnode *vp;
-	u_int uid;
-	u_int gid;
+	uid_t uid;
+	gid_t gid;
 	struct ucred *cred;
 	struct proc *p;
 {
@@ -375,9 +374,9 @@ ufs_chown(vp, uid, gid, cred, p)
 	long change;
 #endif
 
-	if (uid == (u_short)VNOVAL)
+	if (uid == (uid_t)VNOVAL)
 		uid = ip->i_uid;
-	if (gid == (u_short)VNOVAL)
+	if (gid == (gid_t)VNOVAL)
 		gid = ip->i_gid;
 	/*
 	 * If we don't own the file, are trying to change the owner
@@ -563,12 +562,12 @@ ufs_link(tdvp, vp, cnp)
 	register struct inode *ip;
 	int error;
 
-#ifdef DIANOSTIC
+#ifdef DIAGNOSTIC
 	if ((cnp->cn_flags & HASBUF) == 0)
 		panic("ufs_link: no name");
 #endif
 	ip = VTOI(vp);
-	if ((unsigned short)ip->i_nlink >= LINK_MAX) {
+	if ((nlink_t)ip->i_nlink >= LINK_MAX) {
 		free(cnp->cn_pnbuf, M_NAMEI);
 		return (EMLINK);
 	}
@@ -784,7 +783,7 @@ ufs_rename(fdvp, fvp, fcnp,
 	int error = 0;
 	int fdvpneedsrele = 1, tdvpneedsrele = 1;
 
-#ifdef DIANOSTIC
+#ifdef DIAGNOSTIC
 	if ((tcnp->cn_flags & HASBUF) == 0 ||
 	    (fcnp->cn_flags & HASBUF) == 0)
 		panic("ufs_rename: no name");
@@ -896,7 +895,7 @@ ufs_rename(fdvp, fvp, fcnp,
 		 * parent we don't fool with the link count.
 		 */
 		if (doingdirectory && newparent) {
-			if ((unsigned short)dp->i_nlink >= LINK_MAX) {
+			if ((nlink_t)dp->i_nlink >= LINK_MAX) {
 				error = EMLINK;
 				goto bad;
 			}
@@ -1106,12 +1105,12 @@ ufs_mkdir(dvp, vpp, cnp, vap)
 	int error;
 	int dmode;
 
-#ifdef DIANOSTIC
+#ifdef DIAGNOSTIC
 	if ((cnp->cn_flags & HASBUF) == 0)
 		panic("ufs_mkdir: no name");
 #endif
 	dp = VTOI(dvp);
-	if ((unsigned short)dp->i_nlink >= LINK_MAX) {
+	if ((nlink_t)dp->i_nlink >= LINK_MAX) {
 		free(cnp->cn_pnbuf, M_NAMEI);
 		ufs_iput(dp);
 		return (EMLINK);
@@ -1724,7 +1723,7 @@ ufs_makeinode(mode, dvp, vpp, cnp)
 	int error;
 
 	pdir = VTOI(dvp);
-#ifdef DIANOSTIC
+#ifdef DIAGNOSTIC
 	if ((cnp->cn_flags & HASBUF) == 0)
 		panic("ufs_makeinode: no name");
 #endif
