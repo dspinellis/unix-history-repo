@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_conv.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_conv.c	5.10 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -19,7 +19,6 @@ static char sccsid[] = "@(#)bt_conv.c	5.9 (Berkeley) %G%";
 #include <db.h>
 #include "btree.h"
 
-static void kdswap __P((PAGE *));
 static void mswap __P((PAGE *));
 
 /*
@@ -43,7 +42,7 @@ __bt_pgin(t, pg, pp)
 	u_char flags;
 	char *p;
 
-	if (!ISSET(((BTREE *)t), BTF_NEEDSWAP))
+	if (!ISSET(((BTREE *)t), B_NEEDSWAP))
 		return;
 	if (pg == P_META) {
 		mswap(pp);
@@ -111,7 +110,7 @@ __bt_pgout(t, pg, pp)
 	u_char flags;
 	char *p;
 
-	if (!ISSET(((BTREE *)t), BTF_NEEDSWAP))
+	if (!ISSET(((BTREE *)t), B_NEEDSWAP))
 		return;
 	if (pg == P_META) {
 		mswap(pp);
