@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vm_mmap.c 1.6 91/10/21$
  *
- *	@(#)vm_mmap.c	8.7 (Berkeley) %G%
+ *	@(#)vm_mmap.c	8.8 (Berkeley) %G%
  */
 
 /*
@@ -315,7 +315,7 @@ msync(p, uap, retval)
 		vm_map_lock_read(map);
 		rv = vm_map_lookup_entry(map, addr, &entry);
 		vm_map_unlock_read(map);
-		if (rv)
+		if (!rv)
 			return (EINVAL);
 		addr = entry->start;
 		size = entry->end - entry->start;
