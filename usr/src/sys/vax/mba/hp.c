@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hp.c	7.17 (Berkeley) %G%
+ *	@(#)hp.c	7.18 (Berkeley) %G%
  */
 
 #ifdef HPDEBUG
@@ -26,7 +26,6 @@ int	hpbdebug;
 #include "dkstat.h"
 #include "buf.h"
 #include "conf.h"
-#include "dir.h"
 #include "file.h"
 #include "user.h"
 #include "map.h"
@@ -36,7 +35,6 @@ int	hpbdebug;
 #include "dkbad.h"
 #include "disklabel.h"
 #include "ioctl.h"
-#include "uio.h"
 #include "syslog.h"
 #include "stat.h"
 
