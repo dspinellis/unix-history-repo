@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty.c	6.21 (Berkeley) %G%
+ *	@(#)tty.c	6.22 (Berkeley) %G%
  */
 
 #include "../machine/reg.h"
@@ -132,7 +132,7 @@ ttywait(tp)
 	register int s = spltty();
 
 	while ((tp->t_outq.c_cc || tp->t_state&TS_BUSY) &&
-	    tp->t_state&TS_CARR_ON && tp->t_oproc) {	/* kludge for pty */
+	    tp->t_state&TS_CARR_ON) {
 		(*tp->t_oproc)(tp);
 		tp->t_state |= TS_ASLEEP;
 		sleep((caddr_t)&tp->t_outq, TTOPRI);
@@ -291,13 +291,10 @@ ttioctl(tp, com, data, flag)
 		if ((unsigned) t >= nldisp)
 			return (ENXIO);
 		s = spltty();
-		if (tp->t_line)
-			(*linesw[tp->t_line].l_close)(tp);
-		if (t)
-			error = (*linesw[t].l_open)(dev, tp);
+		(*linesw[tp->t_line].l_close)(tp);
+		error = (*linesw[t].l_open)(dev, tp);
 		if (error) {
-			if (tp->t_line)
-				(void) (*linesw[tp->t_line].l_open)(dev, tp);
+			(void) (*linesw[tp->t_line].l_open)(dev, tp);
 			splx(s);
 			return (error);
 		}
@@ -561,6 +558,7 @@ win:
 }
 
 /*
+ * Initial open of tty, or (re)entry to line discipline.
  * Establish a process group for distribution of
  * quits and interrupts from the tty.
  */
@@ -590,20 +588,69 @@ ttyopen(dev, tp)
 }
 
 /*
+ * "close" a line discipline
+ */
+ttylclose(tp)
+	register struct tty *tp;
+{
+
+	ttywflush(tp);
+	tp->t_line = 0;
+}
+
+/*
  * clean tp on last close
  */
 ttyclose(tp)
 	register struct tty *tp;
 {
 
-	if (tp->t_line) {
-		ttywflush(tp);
-		tp->t_line = 0;
-		return;
-	}
+	ttyflush(tp, FREAD|FWRITE);
 	tp->t_pgrp = 0;
-	ttywflush(tp);
 	tp->t_state = 0;
+}
+
+/*
+ * Handle modem control transition on a tty.
+ * Flag indicates new state of carrier.
+ * Returns 0 if the line should be turned off, otherwise 1.
+ */
+ttymodem(tp, flag)
+	register struct tty *tp;
+{
+
+	if ((tp->t_state&TS_WOPEN) == 0 && (tp->t_flags & MDMBUF)) {
+		/*
+		 * MDMBUF: do flow control according to carrier flag
+		 */
+		if (flag) {
+			tp->t_state &= ~TS_TTSTOP;
+			ttstart(tp);
+		} else if ((tp->t_state&TS_TTSTOP) == 0) {
+			tp->t_state |= TS_TTSTOP;
+			(*cdevsw[major(tp->t_dev)].d_stop)(tp, 0);
+		}
+	} else if (flag == 0) {
+		/*
+		 * Lost carrier.
+		 */
+		tp->t_state &= ~TS_CARR_ON;
+		if (tp->t_state & TS_ISOPEN) {
+			if ((tp->t_flags & NOHANG) == 0) {
+				gsignal(tp->t_pgrp, SIGHUP);
+				gsignal(tp->t_pgrp, SIGCONT);
+				ttyflush(tp, FREAD|FWRITE);
+				return (0);
+			}
+		}
+	} else {
+		/*
+		 * Carrier now on.
+		 */
+		tp->t_state |= TS_CARR_ON;
+		wakeup((caddr_t)&tp->t_rawq);
+	}
+	return (1);
 }
 
 /*
@@ -1182,6 +1229,34 @@ checktandem:
 			ttstart(tp);
 		}
 	return (error);
+}
+
+/*
+ * Check the output queue on tp for space for a kernel message
+ * (from uprintf/tprintf).  Allow some space over the normal
+ * hiwater mark so we don't lose messages due to normal flow
+ * control, but don't let the tty run amok.
+ */
+ttycheckoutq(tp, wait)
+	register struct tty *tp;
+	int wait;
+{
+	int hiwat, s;
+
+	hiwat = TTHIWAT(tp);
+	s = spltty();
+	if (tp->t_outq.c_cc > hiwat + 200)
+	    while (tp->t_outq.c_cc > hiwat) {
+		ttstart(tp);
+		if (wait == 0) {
+			splx(s);
+			return (0);
+		}
+		tp->t_state |= TS_ASLEEP;
+		sleep((caddr_t)&tp->t_outq, TTOPRI);
+	}
+	splx(s);
+	return (1);
 }
 
 /*
