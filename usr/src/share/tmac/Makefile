@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	6.1 (Berkeley) %G%
+#	@(#)Makefile	6.2 (Berkeley) %G%
 #
 #
 #  Makefile for -man macros
@@ -14,6 +14,6 @@ SRCS=	tmac.an tmac.an.new tmac.an6n tmac.an6t
 all:	${SRCS}
 
 install:${SRCS}
-	for i in ${SRCS} do (install -c $$i ${DESTDIR}/usr/lib/tmac/$$i); done
+	for i in ${SRCS}; do (install -c $$i ${DESTDIR}/usr/lib/tmac/$$i); done
 
 clean:
