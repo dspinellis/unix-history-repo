@@ -27,6 +27,7 @@
 #
 C2=	/lib/c2
 LD=	/bin/ld
+INLINE=	../vax/inline/inline
 TOUCH=	touch -f -c
 
 INCLUDES= -I. -I../h
@@ -60,10 +61,10 @@ lint: /tmp
 ../vax/inline/inline: ../vax/inline/machpats.c ../vax/inline/main.c
 	cd ../vax/inline; make
 
-locore.o: assym.s ${AHEADS} ../vax/rpb.s ../vax/scb.s ../vax/locore.s \
-    ubglue.s ../vax/mtpr.h ../vax/trap.h ../machine/psl.h \
+locore.o: assym.s ${AHEADS} ../vax/rpb.s ../vax/scb.s ubvec.s \
+    ../vax/locore.s ubglue.s ../vax/mtpr.h ../vax/trap.h ../machine/psl.h \
     ../machine/pte.h ../vax/cpu.h mba.h
-	cat assym.s ../vax/rpb.s ../vax/scb.s ../vax/locore.s \
+	cat assym.s ../vax/rpb.s ../vax/scb.s ubvec.s ../vax/locore.s \
 	    ubglue.s > locore.c
 	cc -E -DLOCORE -I../vax ${COPTS} locore.c > locore.i
 	@echo 'as -o locore.o $${AHEADS} locore.i'
