@@ -11,4 +11,3 @@ install:
 
 .include <bsd.lib.mk>
 .include "../Makefile.cfg"
-.include "Makefile.dep"

@@ -9,4 +9,3 @@ DPADD+=		$(LIBGROFF)
 .include <bsd.prog.mk>
 .include "../../../usr.bin/Makefile.inc"
 .include "../Makefile.cfg"
-.include "Makefile.dep"

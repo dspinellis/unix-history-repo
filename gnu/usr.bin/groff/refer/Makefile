@@ -12,4 +12,3 @@ CLEANFILES+=	label.cc label.tab.h
 .include <bsd.prog.mk>
 .include "../../../usr.bin/Makefile.inc"
 .include "../Makefile.cfg"
-.include "Makefile.dep"
