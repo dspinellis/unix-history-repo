@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)server.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)server.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -1191,7 +1191,7 @@ clean(cp)
 			(void) sprintf(cp, "need to remove: %s\n", target);
 			(void) write(rem, buf, strlen(cp) + 1);
 		} else
-			remove(&stb);
+			removeit(&stb);
 	}
 	closedir(d);
 	(void) write(rem, "E\n", 2);
@@ -1204,7 +1204,7 @@ clean(cp)
  * Remove a file or directory (recursively) and send back an acknowledge
  * or an error message.
  */
-remove(stp)
+removeit(stp)
 	struct stat *stp;
 {
 	DIR *d;
@@ -1252,7 +1252,7 @@ remove(stp)
 			error("%s:%s: %s\n", host, target, strerror(errno));
 			continue;
 		}
-		remove(&stb);
+		removeit(&stb);
 	}
 	closedir(d);
 	tp = otp;
@@ -1468,6 +1468,8 @@ cleanup()
 }
 
 note(fmt, a1, a2, a3)
+	char *fmt;
+	int a1, a2, a3;
 {
 	static char buf[BUFSIZ];
 	sprintf(buf, fmt, a1, a2, a3);
