@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)pftn.c	1.9 (Berkeley) %G%";
+static char *sccsid ="@(#)pftn.c	1.10 (Berkeley) %G%";
 #endif lint
 
 # include "pass1.h"
@@ -767,7 +767,10 @@ tsize( ty, d, s )  TWORD ty; {
 		}
 
 	if( dimtab[s]==0 ) {
-		uerror( "unknown size");
+		if( ty == STRTY )
+			uerror( "undefined structure" );
+		else
+			uerror( "unknown size");
 		return( SZINT );
 		}
 	return( (unsigned int) dimtab[ s ] * mult );
@@ -914,6 +917,11 @@ instk( id, t, d, s, off ) OFFSZ off; TWORD t; {
 			continue;
 			}
 		else if( t == STRTY ){
+			if( dimtab[pstk->in_s] == 0 ){
+				uerror( "can't initialize undefined structure" );
+				iclass = -1;
+				return;
+				}
 			id = dimtab[pstk->in_x];
 			p = &stab[id];
 			if( p->sclass != MOS && !(p->sclass&FIELD) ) cerror( "insane structure member list" );
@@ -982,6 +990,7 @@ endinit(){
 	case EXTERN:
 	case AUTO:
 	case REGISTER:
+	case -1:
 		return;
 		}
 
