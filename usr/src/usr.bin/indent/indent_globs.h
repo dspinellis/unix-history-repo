@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)indent_globs.h	5.8 (Berkeley) %G%
+ *	@(#)indent_globs.h	5.9 (Berkeley) %G%
  */
 
 #include <stdio.h>
@@ -40,13 +40,37 @@
 FILE       *input;		/* the fid for the input file */
 FILE       *output;		/* the output file */
 
-#define check_size(name) \
-	if (e_/**/name >= l_/**/name) { \
-	    register nsize = l_/**/name-s_/**/name+400; \
-	    name/**/buf = (char *) realloc(name/**/buf, nsize); \
-	    e_/**/name = name/**/buf + (e_/**/name-s_/**/name) + 1; \
-	    l_/**/name = name/**/buf + nsize - 5; \
-	    s_/**/name = name/**/buf + 1; \
+#define CHECK_SIZE_CODE \
+	if (e_code >= l_code) { \
+	    register nsize = l_code-s_code+400; \
+	    codebuf = (char *) realloc(codebuf, nsize); \
+	    e_code = codebuf + (e_code-s_code) + 1; \
+	    l_code = codebuf + nsize - 5; \
+	    s_code = codebuf + 1; \
+	}
+#define CHECK_SIZE_COM \
+	if (e_com >= l_com) { \
+	    register nsize = l_com-s_com+400; \
+	    combuf = (char *) realloc(combuf, nsize); \
+	    e_com = combuf + (e_com-s_com) + 1; \
+	    l_com = combuf + nsize - 5; \
+	    s_com = combuf + 1; \
+	}
+#define CHECK_SIZE_LAB \
+	if (e_lab >= l_lab) { \
+	    register nsize = l_lab-s_lab+400; \
+	    labbuf = (char *) realloc(labbuf, nsize); \
+	    e_lab = labbuf + (e_lab-s_lab) + 1; \
+	    l_lab = labbuf + nsize - 5; \
+	    s_lab = labbuf + 1; \
+	}
+#define CHECK_SIZE_TOKEN \
+	if (e_token >= l_token) { \
+	    register nsize = l_token-s_token+400; \
+	    tokenbuf = (char *) realloc(tokenbuf, nsize); \
+	    e_token = tokenbuf + (e_token-s_token) + 1; \
+	    l_token = tokenbuf + nsize - 5; \
+	    s_token = tokenbuf + 1; \
 	}
 
 char       *labbuf;		/* buffer for label */

@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pr_comment.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)pr_comment.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -162,7 +162,7 @@ pr_comment()
 				 * copied */
 	if (*buf_ptr > 040 && *buf_ptr != '*')
 	    ps.last_nl = 0;
-	check_size(com);
+	CHECK_SIZE_COM;
 	switch (*buf_ptr) {	/* this checks for various spcl cases */
 	case 014:		/* check for a form feed */
 	    if (!ps.box_com) {	/* in a text comment, break the line here */
@@ -211,7 +211,7 @@ pr_comment()
 			s_com[0] = s_com[1] = s_com[2] = ' ';
 		    }
 		    dump_line();
-		    check_size(com);
+		    CHECK_SIZE_COM;
 		    *e_com++ = ' ';
 		    *e_com++ = ' ';
 		}
@@ -256,7 +256,7 @@ pr_comment()
 		 */
 		else {		/* otherwise, insert one */
 		    last_bl = e_com;
-		    check_size(com);
+		    CHECK_SIZE_COM;
 		    *e_com++ = ' ';
 		    ++now_col;
 		}
@@ -317,7 +317,7 @@ pr_comment()
 		    dump_line();
 		    now_col = ps.com_col;
 		}
-		check_size(com);
+		CHECK_SIZE_COM;
 		*e_com++ = '*';
 		*e_com++ = '/';
 		*e_com = '\0';

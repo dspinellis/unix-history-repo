@@ -27,7 +27,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)indent.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)indent.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -428,7 +428,7 @@ check_type:
 					 * in a line. fix it */
 		*e_code++ = ' ';
 		for (t_ptr = s_com; *t_ptr; ++t_ptr) {
-		    check_size(code);
+		    CHECK_SIZE_CODE;
 		    *e_code++ = *t_ptr;
 		}
 		*e_code++ = ' ';
@@ -446,7 +446,7 @@ check_type:
 	/*-----------------------------------------------------*\
 	|	   do switch on type of token scanned		|
 	\*-----------------------------------------------------*/
-	check_size(code);
+	CHECK_SIZE_CODE;
 	switch (type_code) {	/* now, decide what to do with the token */
 
 	case form_feed:	/* found a form feed in line */
@@ -478,7 +478,7 @@ check_type:
 		}
 		else {
 		    while ((e_code - s_code) < dec_ind) {
-			check_size(code);
+			CHECK_SIZE_CODE;
 			*e_code++ = ' ';
 		    }
 		    *e_code++ = token[0];
@@ -556,14 +556,14 @@ check_type:
 							 * token */
 		    for (i = 0; token[i]; ++i);	/* find length of token */
 		    while ((e_code - s_code) < (dec_ind - i)) {
-			check_size(code);
+			CHECK_SIZE_CODE;
 			*e_code++ = ' ';	/* pad it */
 		    }
 		}
 		if (troff && token[0] == '-' && token[1] == '>')
 		    res = "\\(->";
 		for (t_ptr = res; *t_ptr; ++t_ptr) {
-		    check_size(code);
+		    CHECK_SIZE_CODE;
 		    *e_code++ = *t_ptr;
 		}
 	    }
@@ -598,7 +598,7 @@ check_type:
 			break;
 		    }
 		for (t_ptr = res; *t_ptr; ++t_ptr) {
-		    check_size(code);
+		    CHECK_SIZE_CODE;
 		    *e_code++ = *t_ptr;	/* move the operator */
 		}
 	    }
@@ -672,7 +672,7 @@ check_type:
 
 	    if (ps.in_decl && s_code == e_code && !ps.block_init)
 		while ((e_code - s_code) < (dec_ind - 1)) {
-		    check_size(code);
+		    CHECK_SIZE_CODE;
 		    *e_code++ = ' ';
 		}
 
@@ -891,7 +891,7 @@ check_type:
 			}
 			else
 			    while ((e_code - s_code) < dec_ind) {
-				check_size(code);
+				CHECK_SIZE_CODE;
 				*e_code++ = ' ';
 			    }
 		}
@@ -915,7 +915,7 @@ check_type:
 	    if (troff && ps.its_a_keyword) {
 		e_code = chfont(&bodyf, &keywordf, e_code);
 		for (t_ptr = token; *t_ptr; ++t_ptr) {
-		    check_size(code);
+		    CHECK_SIZE_CODE;
 		    *e_code++ = keywordf.allcaps && islower(*t_ptr)
 			? toupper(*t_ptr) : *t_ptr;
 		}
@@ -923,7 +923,7 @@ check_type:
 	    }
 	    else
 		for (t_ptr = token; *t_ptr; ++t_ptr) {
-		    check_size(code);
+		    CHECK_SIZE_CODE;
 		    *e_code++ = *t_ptr;
 		}
 	    ps.want_blank = true;
@@ -941,7 +941,7 @@ check_type:
 						 * line */
 	    if (ps.in_decl && is_procname == 0 && !ps.block_init)
 		while ((e_code - s_code) < (dec_ind - 1)) {
-		    check_size(code);
+		    CHECK_SIZE_CODE;
 		    *e_code++ = ' ';
 		}
 
@@ -972,7 +972,7 @@ check_type:
 			fill_buffer();
 		}
 		while (*buf_ptr != '\n' || in_comment) {
-		    check_size(lab);
+		    CHECK_SIZE_LAB;
 		    *e_lab = *buf_ptr++;
 		    if (buf_ptr >= buf_end)
 			fill_buffer();
