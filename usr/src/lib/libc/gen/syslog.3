@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)syslog.3	6.7 (Berkeley) %G%
+.\"	@(#)syslog.3	6.8 (Berkeley) %G%
 .\"
 .TH SYSLOG 3 ""
 .UC 5
@@ -28,7 +28,19 @@ syslog, openlog, closelog, setlogmask \- control system log
 .PP
 .B "syslog(priority, message, parameters ... )
 .br
+.B "int priority;
+.br
 .B "char *message;
+.PP
+.B "#include <varargs.h>
+.br
+.B "vsyslog(priority, message, args)
+.br
+.B "int priority;
+.br
+.B "char *message;
+.br
+.B "va_list args;
 .PP
 .B "closelog()
 .PP
@@ -47,7 +59,13 @@ string except that
 .B %m
 is replaced by the current error message (collected from
 .IR errno ).
-A trailing newline is added if needed.
+A trailing newline is added if needed.  An alternate form,
+in which the arguments have already been captured using the
+variable-length argument facilities of
+.IR varargs (3),
+is available under the name
+.IR vsyslog .
+.PP
 This message will be read by
 .IR syslogd (8)
 and written to the system console, log files, or forwarded to
