@@ -1,4 +1,4 @@
-.\"	@(#)tapeinfo	1.2 (Berkeley) %G%
+.\"	@(#)tapeinfo	1.3 (Berkeley) %G%
 .\"
 .\" psroff -ms
 .\"
@@ -21,7 +21,7 @@ The distribution includes both software developed at Berkeley
 and much software contributed by authors outside Berkeley.
 The code in this distribution may be redistributed and used
 in released products without fee, if the due credit,
-copyright notice, and other requirements
+copyright notice, sublicensing, and other requirements
 described in the license and the source files are met.
 .PP
 .B "This distribution is a source distribution only,"
@@ -32,9 +32,11 @@ The Exabyte tape contains a single \fBtar\fP(1) image of
 the distribution with a ``20b'' blocking factor.
 The 9-track distribution contains a single \fBtar\fP(1)
 archive on each tape, each with a ``20b'' blocking factor.
-The first tape contains everything on the distribution
+The first tape of this 9-track distribution
+contains everything on the distribution
 except \fI4.4BSD-Lite/usr/src/contrib\fP;
-the second tape contains \fI4.4BSD-Lite/usr/src/contrib\fP.
+the second tape of this 9-track distribution
+contains \fI4.4BSD-Lite/usr/src/contrib\fP.
 Both tapes contain paths starting from 4.4BSD-Lite,
 and may be extracted in any order.
 .PP
