@@ -1,5 +1,5 @@
 #
-#	Makefile	1.7	87/12/10
+#	Makefile	1.8	87/12/10
 #
 # Makefile for tahoe pcc
 #
@@ -123,15 +123,15 @@ install:
 	install -s -o bin -g bin -m 755 ${TESTDIR}/ccom ${DESTDIR}/lib/ccom
 	install -s -o bin -g bin -m 755 ${TESTDIR}/f1 ${DESTDIR}/lib/f1
 
-./pcclocal.h: localdefs.h /usr/include/pcc.h
+./pcclocal.h: ../localdefs.h /usr/include/pcc.h
 	${RM} pcclocal.h
-	cat /usr/include/pcc.h localdefs.h | \
+	cat /usr/include/pcc.h ../localdefs.h | \
 	    ${GREP} '^#[ 	]*(define[ 	][ 	]*PCC(F|T|TM|OM)?_|ifdef|ifndef|endif)' | \
 	    sed -e 's/PCC[A-Z]*_//' > pcclocal.h 
 
-./pcctokens: localdefs.h /usr/include/pcc.h
+./pcctokens: ../localdefs.h /usr/include/pcc.h
 	${RM} pcctokens
-	cat /usr/include/pcc.h localdefs.h | \
+	cat /usr/include/pcc.h ../localdefs.h | \
 	    ${GREP} '^#[ 	]*define[ 	][ 	]*PCC_' | sed -e 's/^#[ 	]*define[ 	][ 	]*PCC_/%term	/' > pcctokens
 
 clean:
