@@ -9,7 +9,7 @@
  * More user commands.
  */
 
-static char *SccsId = "@(#)cmd2.c	2.7 %G%";
+static char *SccsId = "@(#)cmd2.c	2.8 %G%";
 
 /*
  * If any arguments were given, go to the next applicable argument
@@ -458,6 +458,8 @@ igfield(list)
 	if (argcount(list) == 0)
 		return(igshow());
 	for (ap = list; *ap != 0; ap++) {
+		if (isign(*ap))
+			continue;
 		istrcpy(field, *ap);
 		h = hash(field);
 		igp = (struct ignore *) calloc(1, sizeof (struct ignore));
@@ -474,16 +476,37 @@ igfield(list)
  */
 igshow()
 {
-	register int h, did;
+	register int h, count;
 	struct ignore *igp;
+	char **ap, **ring;
+	int igcomp();
 
-	did = 0;
+	count = 0;
 	for (h = 0; h < HSHSIZE; h++)
-		for (igp = ignore[h]; igp != 0; igp = igp->i_link) {
-			printf("%s\n", igp->i_field);
-			did++;
-		}
-	if (!did)
+		for (igp = ignore[h]; igp != 0; igp = igp->i_link)
+			count++;
+	if (count == 0) {
 		printf("No fields currently being ignored.\n");
+		return(0);
+	}
+	ring = (char **) alloca((count + 1) * sizeof (char *));
+	ap = ring;
+	for (h = 0; h < HSHSIZE; h++)
+		for (igp = ignore[h]; igp != 0; igp = igp->i_link)
+			*ap++ = igp->i_field;
+	*ap = 0;
+	qsort(ring, count, sizeof (char *), igcomp);
+	for (ap = ring; *ap != 0; ap++)
+		printf("%s\n", *ap);
 	return(0);
+}
+
+/*
+ * Compare two names for sorting ignored field list.
+ */
+igcomp(l, r)
+	char **l, **r;
+{
+
+	return(strcmp(*l, *r));
 }
