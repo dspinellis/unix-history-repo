@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: uipc_shm.c 1.9 89/08/14$
  *
- *	@(#)sysv_shm.c	7.4 (Berkeley) %G%
+ *	@(#)sysv_shm.c	7.5 (Berkeley) %G%
  */
 
 /*
