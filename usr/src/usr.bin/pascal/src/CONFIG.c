@@ -1,12 +1,18 @@
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)CONFIG.c	5.1 (Berkeley) %G%";
+#endif not lint
+
     /*
      *	make sure you are editing
      *		CONFIG.c
      *	editing config.c won't work
      */
-
-#ifndef lint
-static	char *sccsid = "@(#)CONFIG.c	2.7 (Berkeley) 84/02/08";
-#endif
 
     /*
      *	the version of translator
