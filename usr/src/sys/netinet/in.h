@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)in.h	7.4 (Berkeley) %G%
+ *	@(#)in.h	7.5 (Berkeley) %G%
  */
 
 /*
@@ -22,7 +22,7 @@
  */
 #define	IPPROTO_IP		0		/* dummy for IP */
 #define	IPPROTO_ICMP		1		/* control message protocol */
-#define	IPPROTO_GGP		2		/* gateway^2 (deprecated) */
+#define	IPPROTO_GGP		3		/* gateway^2 (deprecated) */
 #define	IPPROTO_TCP		6		/* tcp */
 #define	IPPROTO_EGP		8		/* exterior gateway protocol */
 #define	IPPROTO_PUP		12		/* pup */
