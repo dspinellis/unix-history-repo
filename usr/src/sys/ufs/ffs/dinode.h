@@ -1,25 +1,21 @@
-/*	dinode.h	4.7	81/10/17	*/
+/*	dinode.h	4.8	81/11/08	*/
 
 /*
- * The I node is the focus of all
- * file activity in unix. There is a unique
- * inode allocated for each active file,
- * each current directory, each mounted-on
- * file, text file, and the root. An inode is 'named'
- * by its dev/inumber pair. (iget/iget.c)
- * Data, from mode on, is read in
- * from permanent inode on volume.
+ * The I node is the focus of all file activity in UNIX.
+ * There is a unique inode allocated for each active file,
+ * each current directory, each mounted-on file, text file, and the root.
+ * An inode is 'named' by its dev/inumber pair. (iget/iget.c)
+ * Data, from mode on, is read in from permanent inode on volume.
  */
-
 #define	NADDR	13
 
-struct	inode
-{
+struct inode {
 	char	i_flag;
 	char	i_count;	/* reference count */
 	dev_t	i_dev;		/* device where inode resides */
 	ino_t	i_number;	/* i number, 1-to-1 with device address */
-	unsigned short i_mode;
+/* begin read from disk */
+	u_short	i_mode;
 	short	i_nlink;	/* directory entries */
 	short	i_uid;		/* owner */
 	short	i_gid;		/* group of owner */
@@ -27,7 +23,7 @@ struct	inode
 	union {
 		struct {
 			daddr_t	I_addr[NADDR];	/* if normal file/directory */
-			daddr_t	I_lastr;	/* last read (for read-ahead) */
+			daddr_t	I_lastr;	/* last read (read-ahead) */
 		} i_f;
 #define	i_addr	i_f.I_addr
 #define	i_lastr	i_f.I_lastr
@@ -35,14 +31,10 @@ struct	inode
 			daddr_t	I_rdev;		/* i_addr[0] */
 		} i_d;
 #define	i_rdev	i_d.I_rdev
-		struct {
-			daddr_t	I_port0;	/* low 16 bits of portid */
-			daddr_t	I_port1;	/* high 16 bits of portid */
-		} i_p;
-#define	i_port0	i_p.I_port0
-#define	i_port1	i_p.I_port1
 	} i_un;
-	short	i_vfdcnt;	/* number of fd's vreading this inode */
+/* end read from disk */
+	short	i_XXXXXX;	/* ### */
+/* SHOULD USE POINTERS, NOT INDICES, FOR HAS CHAIN */
 	short	i_hlink;	/* link in hash chain (iget/iput/ifind) */
 };
 
@@ -51,7 +43,6 @@ struct	inode *inode, *inodeNINODE;
 int	ninode;
 
 struct	inode *rootdir;		/* pointer to inode of root directory */
-struct	inode *mpxip;		/* mpx virtual inode */
 
 struct	inode *ialloc();
 struct	inode *ifind();
@@ -69,7 +60,6 @@ struct	inode *namei();
 #define	IWANT	020		/* some process waiting on lock */
 #define	ITEXT	040		/* inode is pure text prototype */
 #define	ICHG	0100		/* inode has been changed */
-#define	IPIPE	0200		/* inode is a pipe */
 
 /* modes */
 #define	IFMT	0170000		/* type of file */
@@ -77,7 +67,6 @@ struct	inode *namei();
 #define		IFCHR	0020000	/* character special */
 #define		IFBLK	0060000	/* block special */
 #define		IFREG	0100000	/* regular */
-#define		IFPORT	0010000	/* named port */
 #define	ISUID	04000		/* set user id on execution */
 #define	ISGID	02000		/* set group id on execution */
 #define	ISVTX	01000		/* save swapped text even after use */
