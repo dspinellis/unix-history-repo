@@ -1,4 +1,4 @@
-/*	ut.c	4.3	81/11/07	*/
+/*	ut.c	4.4	81/11/08	*/
 
 #include "ut.h"
 #if NUT > 0
@@ -34,7 +34,7 @@ struct	buf	tjutab[NTJ];	/* bufs for slave queue headers */
 
 struct uba_ctlr *utminfo[NUT];
 struct uba_device *tjdinfo[NTJ];
-int utprobe(), utslave(), utattach(), utdgo();
+int utprobe(), utslave(), utattach(), utdgo(), utintr(), uttimer();
 u_short utstd[] = { 0772440, 0 };
 struct uba_driver utdriver =
   { utprobe, utslave, utattach, utdgo, utstd, "tj", tjdinfo, "ut", utminfo, 0 };
@@ -61,6 +61,8 @@ struct	tj_softc {
 	u_short	sc_dsreg;	/* image of utds */
 	u_short	sc_resid;	/* residual from transfer */
 	u_short	sc_dens;	/* sticky selected density */
+	daddr_t	sc_timo;	/* time until timeout expires */
+	short	sc_tact;	/* timeout is active flag */
 } tj_softc[NTJ];
 
 /*
@@ -73,10 +75,6 @@ struct	tj_softc {
 #define	SERASE		5	/* erase inter-record gap */
 #define	SERASED		6	/* erased inter-record gap */
 
-/*
- * A NOP should get an interrupt back, if the
- *  device is there.
- */
 utprobe(reg)
 	caddr_t reg;
 {
@@ -170,6 +168,13 @@ get:
 	 * For 6250 bpi take exclusive use of the UNIBUS.
 	 */
 	ui->ui_driver->ud_xclu = (dens&(T_1600BPI|T_6250BPI)) == T_6250BPI;
+	(void) spl6();
+	if (sc->sc_tact == 0) {
+		sc->sc_timo = INF;
+		sc->sc_tact = 1;
+		timeout(uttimer, (caddr_t)dev, 5*hz);
+	}
+	(void) spl0();
 }
 
 utclose(dev, flag)
@@ -313,10 +318,13 @@ loop:
 		/*
 		 * Set next state; handle timeouts
 		 */
-		if (bp->b_command == UT_REW)
+		if (bp->b_command == UT_REW) {
 			um->um_tab.b_state = SREW;
-		else
+			sc->sc_timo = 5*60;
+		} else {
 			um->um_tab.b_state = SCOM;
+			sc->sc_timo = imin(imax(10*(int)-bp->b_repcnt,60),5*60);
+		}
 		/* NOTE: this depends on the ut command values */
 		if (bp->b_command >= UT_SFORW && bp->b_command <= UT_SREVF)
 			addr->utfc = -bp->b_repcnt;
@@ -359,6 +367,7 @@ loop:
 			if (um->um_tab.b_errcnt) {
 				if (um->um_tab.b_state != SERASED) {
 					um->um_tab.b_state = SERASE;
+					sc->sc_timo = 60;
 					addr->utcs1 = UT_ERASE|UT_IE|UT_GO;
 					return;
 				}
@@ -366,6 +375,7 @@ loop:
 			um->um_cmd = UT_WCOM;
 		} else
 			um->um_cmd = UT_RCOM;
+		sc->sc_timo = 60;
 		um->um_tab.b_state = SIO;
 		(void) ubago(ui);
 		return;
@@ -383,6 +393,7 @@ loop:
 		addr->utfc = dbtofsb(bp->b_blkno) - blkno;
 		bp->b_command = UT_SREV;
 	}
+	sc->sc_timo = imin(imax(10 * -addr->utfc, 60), 5*60);
 
 dobpcmd:
 	/*
@@ -612,6 +623,24 @@ opdone:
 		return;
 opcont:
 	utstart(um);
+}
+
+/*
+ * Watchdog timer routine.
+ */
+uttimer(dev)
+	int dev;
+{
+	register struct tj_softc *sc = &tj_softc[TJUNIT(dev)];
+
+	if (sc->sc_timo != INF && (sc->sc_timo -= 5) < 0) {
+		printf("te%d: lost interrupt\n", TJUNIT(dev));
+		sc->sc_timo = INF;
+		(void) spl5();
+		utintr(UTUNIT(dev));
+		(void) spl0();
+	}
+	timeout(uttimer, (caddr_t)dev, 5*hz);
 }
 
 /*
