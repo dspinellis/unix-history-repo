@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "restore.h"
@@ -284,11 +284,22 @@ again:
 	}
 	closemt();
 	fprintf(stderr, "Mount tape volume %d\n", newvol);
-	fprintf(stderr, "then enter tape name (default: %s) ", magtape);
+	fprintf(stderr, "Enter ``none'' if there are no more tapes\n");
+	fprintf(stderr, "otherwise enter tape name (default: %s) ", magtape);
 	(void) fflush(stderr);
 	(void) fgets(tbf, BUFSIZ, terminal);
 	if (feof(terminal))
 		done(1);
+	if (!strcmp(tbf, "none\n")) {
+		curfile.name = "<name unknown>";
+		curfile.action = UNKNOWN;
+		curfile.dip = (struct dinode *)NIL;
+		curfile.ino = maxino;
+		if (gettingfile) {
+			gettingfile = 0;
+			longjmp(restart, 1);
+		}
+	}
 	if (tbf[0] != '\n') {
 		(void) strcpy(magtape, tbf);
 		magtape[strlen(magtape) - 1] = '\0';
@@ -803,7 +814,8 @@ readhdr(b)
 gethead(buf)
 	struct s_spcl *buf;
 {
-	long i, *j;
+	long i;
+	u_long *j;
 	union u_ospcl {
 		char dummy[TP_BSIZE];
 		struct	s_ospcl {
