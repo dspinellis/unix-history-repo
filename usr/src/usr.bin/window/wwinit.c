@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwinit.c	1.2 83/07/17";
+static	char *sccsid = "@(#)wwinit.c	1.3 83/07/18";
 #endif
 
 #include "ww.h"
@@ -28,12 +28,12 @@ wwinit()
 	wwnewtty.ww_pgrp = wwoldtty.ww_pgrp;
 	wwnewtty.ww_ldisc = wwoldtty.ww_ldisc;
 	wwnewtty.ww_sgttyb.sg_flags |= CBREAK;
-	wwnewtty.ww_sgttyb.sg_flags &= ~ECHO;
+	wwnewtty.ww_sgttyb.sg_flags &= ~(ECHO|CRMOD);
 	wwnewtty.ww_lmode |= LLITOUT;
 	wwnewtty.ww_tchars.t_quitc = wwoldtty.ww_tchars.t_quitc;
 	if (wwsettty(0, &wwnewtty) < 0)
 		return -1;
-	if (Winit(&wwnewtty.ww_sgttyb, 1) != 0)
+	if (Winit(2, 1) != 0)
 		return -1;
 	WSetRealCursor = 1;
 	return 0;

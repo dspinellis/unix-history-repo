@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwopen.c	1.2 83/07/17";
+static	char *sccsid = "@(#)wwopen.c	1.3 83/07/18";
 #endif
 
 #include "ww.h"
@@ -7,24 +7,36 @@ static	char *sccsid = "@(#)wwopen.c	1.2 83/07/17";
 #include <sys/stat.h>
 
 struct ww *
-wwopen(id, nrow, ncol, row, col)
+wwopen(flag, id, nrow, ncol, row, col)
 {
 	register struct ww *w = 0;
 
 	w = (struct ww *)calloc(sizeof (struct ww), 1);
 	if (w == 0)
 		goto bad;
-	if (wwgetpty(w) < 0)
+	w->ww_pty = w->ww_tty = -1;
+	switch (flag) {
+	case WW_PTY:
+		if (wwgetpty(w) < 0)
+			goto bad;
+		if (wwsettty(w->ww_pty, &wwoldtty) < 0)
+			goto bad;
+		break;
+	case WW_SOCKET:
+		break;
+	case WW_NONE:
+		break;
+	default:
 		goto bad;
-	if (wwsettty(w->ww_pty, &wwoldtty) < 0)
-		goto bad;
+	}
 	if ((w->ww_win = Wopen(id, col, row, ncol, nrow, ncol, nrow)) == 0)
 		goto bad;
 	Woncursor(w->ww_win, 0);		/* don't show cursor */
-	w->ww_col = col;
-	w->ww_row = row;
-	w->ww_ncol = ncol;
-	w->ww_nrow = nrow;
+	w->ww_ident = id;
+	w->ww_icol = w->ww_col = col;
+	w->ww_irow = w->ww_row = row;
+	w->ww_incol = w->ww_ncol = ncol;
+	w->ww_inrow = w->ww_nrow = nrow;
 	w->ww_next = wwhead;
 	w->ww_state = WW_INITIAL;
 	wwhead = w;

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwiomux.c	1.2 83/07/17";
+static	char *sccsid = "@(#)wwiomux.c	1.3 83/07/18";
 #endif
 
 #include "ww.h"
@@ -12,7 +12,8 @@ register int *imask;
 	register int n;
 
 	for (w = wwhead; w; w = w->ww_next)
-		*imask |= 1 << w->ww_pty;
+		if (w->ww_pty >= 0)
+			*imask |= 1 << w->ww_pty;
 	n = select(getdtablesize(), imask,
 		(int *)0, (int *)0, (struct timeval *)0);
 	if (n <= 0)
