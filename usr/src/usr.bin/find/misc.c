@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)misc.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)misc.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -88,10 +88,10 @@ queryuser(argv)
  *	print out a bad argument message.
  */
 void
-bad_arg(option, error)
-	char *option, *error;
+bad_arg(option, err)
+	char *option, *err;
 {
-	(void)fprintf(stderr, "find: %s: %s.\n", option, error);
+	(void)fprintf(stderr, "find: %s: %s.\n", option, err);
 	exit(1);
 }
  
