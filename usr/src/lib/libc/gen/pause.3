@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)pause.3	4.1 (Berkeley) %G%
+.\"	@(#)pause.3	5.1 (Berkeley) %G%
 .\"
-.TH PAUSE 2 
+.TH PAUSE 3C "18 July 1983"
 .UC 4
 .SH NAME
 pause \- stop until signal
@@ -16,16 +16,20 @@ never returns normally.
 It is used to give up control while waiting for
 a signal from
 .IR kill (2)
-or
-.IR alarm (2).
+or an interval timer, see
+.IR setitimer (2).
 Upon termination of a signal handler started during a
 .I pause,
 the
 .I pause
 call will return.
-.SH SEE ALSO
-kill(1), kill(2), alarm(2), sigsys(2), signal(2), sigset(3), setjmp(3)
-.SH "ASSEMBLER (PDP-11)"
-(pause = 29.)
-.br
-.B sys pause
+.SH "RETURN VALUE
+Always returns \-1.
+.SH ERRORS
+.I Pause
+always returns:
+.TP 15
+[EINTR]
+The call was interrupted.
+.SH "SEE ALSO
+kill(2), select(2), sigpause(2)
