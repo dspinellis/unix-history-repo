@@ -1,6 +1,6 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
-static	char sccsid[] = "@(#)sconv.c 1.1 %G%";
+static	char sccsid[] = "@(#)sconv.c 1.2 %G%";
 
     /*
      *	functions to help pi put out
@@ -12,7 +12,6 @@ static	char sccsid[] = "@(#)sconv.c 1.1 %G%";
 #ifdef PC
 #include	"0.h"
 #include	"pcops.h"
-#include	"pc.h"
 
     /*
      *	this routine enforces ``the usual arithmetic conversions''
@@ -38,7 +37,7 @@ tuac(thistype, thattype, resulttypep, resultp2typep)
     if (isnta(thistype,"sbcid") || isnta(thattype,"sbcid")) {
 	return;
     }
-    if (thistype == P2CHAR || thistype == P2SHORT) {
+    if (thisp2type == P2CHAR || thisp2type == P2SHORT) {
 	*resultp2typep = P2INT;
 	*resulttypep = nl + T4INT;
     }
