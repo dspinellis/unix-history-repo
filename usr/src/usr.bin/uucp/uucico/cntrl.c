@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cntrl.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)cntrl.c	5.6 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -9,6 +9,7 @@ static char sccsid[] = "@(#)cntrl.c	5.5 (Berkeley) %G%";
 extern int errno;
 extern int turntime;
 int willturn;
+int HaveSentHup = 0;
 
 struct Proto {
 	char P_id;
@@ -23,12 +24,11 @@ struct Proto {
 extern int gturnon(), gturnoff();
 extern int grdmsg(), grddata();
 extern int gwrmsg(), gwrdata();
-extern int imsg(), omsg();
-#ifdef BSDTCP
-extern int tnullf();
+extern int imsg(), omsg(), nullf();
+#ifdef TCPIP
 extern int twrmsg(), trdmsg();
 extern int twrdata(), trddata();
-#endif BSDTCP
+#endif TCPIP
 #ifdef PAD
 extern int fturnon(), fturnoff();
 extern int frdmsg(), frddata();
@@ -36,9 +36,9 @@ extern int fwrmsg(), fwrdata();
 #endif PAD
 
 struct Proto Ptbl[]={
-#ifdef BSDTCP
-	't', tnullf, trdmsg, twrmsg, trddata, twrdata, tnullf,
-#endif BSDTCP
+#ifdef TCPIP
+	't', nullf, trdmsg, twrmsg, trddata, twrdata, nullf,
+#endif TCPIP
 #ifdef PAD
 	'f', fturnon, frdmsg, fwrmsg, frddata, fwrdata, fturnoff,
 #endif PAD
@@ -50,7 +50,7 @@ int (*Imsg)() = imsg, (*Omsg)() = omsg;
 
 int (*Rdmsg)()=imsg, (*Rddata)();
 int (*Wrmsg)()=omsg, (*Wrdata)();
-int (*Turnon)(), (*Turnoff)();
+int (*Turnon)()=nullf, (*Turnoff)() = nullf;
 
 struct timeb Now, LastTurned;
 
@@ -109,7 +109,6 @@ char Dfile[MAXFULLNAME];
  * To avoid a huge backlog of X. files, start uuxqt every so often.
  */
 static int nXfiles = 0;	/* number of X files since last uuxqt start */
-static int nXQTs = 0;	/* number of uuxqts started */
 static char send_or_receive;
 struct stat stbuf;
 
@@ -151,14 +150,15 @@ remaster:
 	ftime(&LastTurned);
 #endif !USG
 	send_or_receive = RESET;
+	HaveSentHup = 0;
 top:
 	for (i = 0; i < sizeof wrkvec / sizeof wrkvec[0]; i++)
 		wrkvec[i] = 0;
 	DEBUG(4, "*** TOP ***  -  role=%s\n", role ? "MASTER" : "SLAVE");
-	setline(RESET);
+	setupline(RESET);
 	if (nologinflag) {
 		logent(NOLOGIN, "UUCICO SHUTDOWN");
-		if (Debug)
+		if (Debug > 4)
 			logent("DEBUGGING", "continuing anyway");
 		else {
 			WMESG(HUP, YES);
@@ -220,6 +220,7 @@ top:
 			   (fp = fopen(subfile(filename), "r")) == NULL) {
 				/*  can not read data file  */
 				logent("CAN'T READ DATA", _FAILED);
+				TransferSucceeded = 1; /* else will keep sending */
 				USRF(USR_LOCACC);
 				unlinkdf(Dfile);
 				lnotify(User, filename, "can't access");
@@ -232,6 +233,7 @@ top:
 				/*  access denied  */
 				fclose(fp);
 				fp = NULL;
+				TransferSucceeded = 1; /* else will keep sending */
 				logent("DENIED", "ACCESS");
 				USRF(USR_LOCACC);
 				unlinkdf(W_DFILE);
@@ -239,7 +241,7 @@ top:
 				goto top;
 			}
 
-			setline(SNDFILE);
+			setupline(SNDFILE);
 		}
 
 		if (wrktype == RCVFILE) {
@@ -249,6 +251,7 @@ top:
 			 || chkperm(filename, index(W_OPTNS, 'd'))) {
 				/*  access denied  */
 				logent("DENIED", "ACCESS");
+				TransferSucceeded = 1; /* else will keep trying */
 				USRF(USR_LOCACC);
 				lnotify(User, filename, "access denied");
 				goto top;
@@ -261,7 +264,7 @@ top:
 				unlinkdf(Dfile);
 				goto top;
 			}
-			setline(RCVFILE);
+			setupline(RCVFILE);
 		}
 sendmsg:
 		DEBUG(4, "wrktype - %c\n", wrktype);
@@ -281,10 +284,10 @@ process:
 
 	case RQSTCMPT:
 		DEBUG(4, "RQSTCMPT:\n", CNULL);
-		TransferSucceeded = msg[1] == 'Y';
 		if (msg[1] == 'N') {
 			i = atoi(&msg[2]);
-			if (i<0 || i>EM_MAX) i=0;
+			if (i<0 || i>EM_MAX)
+				i = 0;
 			USRF( 1 << i );
 				i = 0;
 			logent(Em_msg[i], "REQUEST FAILED");
@@ -293,10 +296,13 @@ process:
 				WMESG(HUP, "");
 				RMESG(HUP, msg, 1);
 				goto process;
-			}
+			} else
+				TransferSucceeded = 1; /* He had his chance */
 		}
-		if (msg[1] == 'Y')
+		if (msg[1] == 'Y') {
 			USRF(USR_COK);
+			TransferSucceeded = 1;
+		}
 		if (role == MASTER) {
 			notify(mailopt, W_USER, W_FILE1, Rmtname, &msg[1]);
 		}
@@ -318,6 +324,7 @@ process:
 
 	case HUP:
 		DEBUG(4, "HUP:\n", CNULL);
+		HaveSentHup = 1;
 		if (msg[1] == 'Y') {
 			if (role == MASTER)
 				WMESG(HUP, YES);
@@ -493,7 +500,7 @@ process:
 		fflush(fp);
 		if (ferror(fp) || fclose(fp))
 			ret = FAIL;
-
+		
 		if (ret != SUCCESS) {
 			(void) unlinkdf(Dfile);
 			(*Turnoff)();
@@ -640,7 +647,7 @@ process:
 		ret = fstat(fileno(fp), &stbuf);
 		ASSERT(ret != -1, "STAT FAILED", filename, 0);
 		i = 1 + (int)(stbuf.st_size / XFRRATE);
-		sprintf(msg, "%s %o", YES, stbuf.st_mode & 0777);
+		sprintf(msg, "%s %o", YES, (int)stbuf.st_mode & 0777);
 		WMESG(RCVFILE, msg);
 		if (send_or_receive != SNDFILE) {
 			send_or_receive = SNDFILE;
@@ -833,13 +840,16 @@ register char *str;
 	extern char *Flds[];
 
 	for (p = Ptbl; p->P_id != '\0'; p++) {
-#ifdef BSDTCP
-		if (!IsTcpIp && p->P_id == 't')	/* Only use 't' on TCP/IP */
+#ifdef TCPIP
+		/* Only use 't' on TCP/IP */
+		if (p->P_id == 't' && strcmp("TCP", Flds[F_LINE]))
 			continue;
-#endif BSDTCP
+#endif TCPIP
+#ifdef PAD
 		/* only use 'f' protocol on PAD */
-		if (strcmp("PAD", Flds[F_LINE]) && p->P_id == 'f')
+		if (p->P_id == 'f' && strcmp("PAD", Flds[F_LINE]))
 			continue;
+#endif PAD
 		if (index(str, p->P_id) != NULL) {
 			return p->P_id;
 		}
@@ -971,4 +981,9 @@ char *file, *nuser, *rmtsys, *rmtuser;
 	sprintf(mbuf, "%s from %s!%s arrived\n", file, rmtsys, rmtuser);
 	mailst(nuser, mbuf, CNULL);
 	return;
+}
+
+nullf()
+{
+	return SUCCESS;
 }
