@@ -1,19 +1,26 @@
 #
-#	@(#)ttys	8.1 (Berkeley) %G%
+#	@(#)ttys	5.2 (Berkeley) %G%
 #
 # name	getty				type	status		comments
 #
+# If the console is marked insecure, single-user requires
+# the root password.
 console	"/usr/libexec/getty std.9600"	unknown	on secure
+
 #tahoe's only
 #remote	"/usr/libexec/getty std.1200"	pt	on		# diagnostics
-tty00	"/usr/libexec/getty std.9600"	unknown	on secure
-tty01	"/usr/libexec/getty std.9600"	unknown	on secure
-tty02	"/usr/libexec/getty std.9600"	unknown	on secure
-tty03	"/usr/libexec/getty std.9600"	unknown	on secure
-tty04	"/usr/libexec/getty std.9600"	unknown	on secure
-tty05	"/usr/libexec/getty std.9600"	unknown	on secure
-tty06	"/usr/libexec/getty std.9600"	unknown	on secure
-tty07	"/usr/libexec/getty std.9600"	unknown	on secure
+
+# Hardwired lines are marked off, by default, so getty(8)
+# is quiet when they don't exist.
+tty00	"/usr/libexec/getty std.9600"	unknown	off secure
+tty01	"/usr/libexec/getty std.9600"	unknown	off secure
+tty02	"/usr/libexec/getty std.9600"	unknown	off secure
+tty03	"/usr/libexec/getty std.9600"	unknown	off secure
+tty04	"/usr/libexec/getty std.9600"	unknown	off secure
+tty05	"/usr/libexec/getty std.9600"	unknown	off secure
+tty06	"/usr/libexec/getty std.9600"	unknown	off secure
+tty07	"/usr/libexec/getty std.9600"	unknown	off secure
+
 ttyp0	none			network
 ttyp1	none			network
 ttyp2	none			network
