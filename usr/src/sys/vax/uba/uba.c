@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uba.c	6.6 (Berkeley) %G%
+ *	@(#)uba.c	6.7 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -392,15 +392,15 @@ ubainit(uba)
 	}
 }
 
-#ifdef VAX780
+#if defined(VAX780) || defined(VAX8600)
 int	ubawedgecnt = 10;
 int	ubacrazy = 500;
 int	zvcnt_max = 5000;	/* in 8 sec */
 int	zvcnt_total;
 long	zvcnt_time;
 /*
- * This routine is called by the locore code to
- * process a UBA error on an 11/780.  The arguments are passed
+ * This routine is called by the locore code to process a UBA
+ * error on an 11/780 or 8600.  The arguments are passed
  * on the stack, and value-result (through some trickery).
  * In particular, the uvec argument is used for further
  * uba processing so the result aspect of it is very important.
