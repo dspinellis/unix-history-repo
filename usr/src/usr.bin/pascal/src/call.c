@@ -1,7 +1,7 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
 #ifndef lint
-static	char sccsid[] = "@(#)call.c 2.2 %G%";
+static	char sccsid[] = "@(#)call.c 2.3 %G%";
 #endif
 
 #include "whoami.h"
@@ -223,7 +223,7 @@ call(p, argv_node, porf, psbn)
 				break;
 			}
 			p2 = p1->type;
-			if (p2->chain->class != CRANGE) {
+			if (p2 == NLNIL || p2->chain->class != CRANGE) {
 			    if (q != p2) {
 				error("Parameter type not identical to type of var parameter %s of %s", p1->symbol, p->symbol);
 				chk = FALSE;
