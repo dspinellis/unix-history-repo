@@ -9,10 +9,11 @@
  */
 
 #include <sys/syscall.h>
+#include <machine/reg.h>
 #include "DEFS.h"
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	ASMSTR("@(#)setjmp.s	5.2 (Berkeley) %G%")
+	ASMSTR("@(#)setjmp.s	5.3 (Berkeley) %G%")
 #endif /* LIBC_SCCS and not lint */
 
 /*
