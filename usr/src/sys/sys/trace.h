@@ -1,9 +1,10 @@
-/*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1982, 1986 The Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)trace.h	7.5 (Berkeley) %G%
+ * %sccs.include.redist.c%
+ *
+ *	@(#)trace.h	7.6 (Berkeley) %G%
  */
 
 /*
@@ -71,6 +72,7 @@
 #define	VTR_UALARM	3		/* set alarm to go off (sig 16) */
 					/* in specified number of hz */
 #define	VTR_STAMP	4		/* user specified stamp */
+
 #ifdef KERNEL
 #ifdef TRACE
 char	traceflags[TR_NFLAGS];
