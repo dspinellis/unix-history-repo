@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	6.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	6.23 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -981,7 +981,7 @@ impl_map_open(map, mode)
 	if (hash_map_open(map, mode))
 	{
 #if defined(NDBM) && defined(YPCOMPAT)
-		if (mode == O_RDONLY || access("/var/yp/Makefile", R_OK) == 0)
+		if (mode == O_RDONLY || access("/var/yp/Makefile", R_OK) != 0)
 #endif
 			return TRUE;
 	}
