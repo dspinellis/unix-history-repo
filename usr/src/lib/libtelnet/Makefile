@@ -4,13 +4,16 @@
 #
 # %sccs.include.redist.sh
 #
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
 
 LIB=	telnet
-SRCS=	pow.c gcd.c msqrt.c mdiv.c mout.c mult.c madd.c util.c
-SRCS=	auth.c encrypt.c genget.c getent.c kerberos.c \
-	kerberos5.c krb_des.c misc.c simple_auth.c
+SRCS=	auth.c encrypt.c genget.c getent.c gettytab.c misc.c
+SRCS+=	kerberos.c krb_des.c
+#SRCS+=	kerberos5.c simple_auth.c
 CFLAGS+= -DENCRYPT -DAUTHENTICATE
+CFLAGS+= -DKRB4 -DKRBDES_ENCRYPT -I/usr/include/kerberosIV
 
+.PATH:  ${.CURDIR}/../../libexec/getty
 .include <bsd.lib.mk>
+
