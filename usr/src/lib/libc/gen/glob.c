@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)glob.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)glob.c	5.17 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -27,6 +27,8 @@ static char sccsid[] = "@(#)glob.c	5.16 (Berkeley) %G%";
  * GLOB_NOMAGIC:
  *	Same as GLOB_NOCHECK, but it will only append pattern if it did
  *	not contain any magic characters.  [Used in csh style globbing]
+ * GLOB_ALTDIRFUNC:
+ *	Use alternately specified directory access functions.
  * gl_matchc:
  *	Number of matches in the current invocation of glob.
  */
@@ -74,10 +76,10 @@ typedef u_short Char;
 
 static int	 compare __P((const void *, const void *));
 static void	 g_Ctoc __P((Char *, char *));
-static int	 g_lstat __P((Char *, struct stat *));
-static DIR	*g_opendir __P((Char *));
+static int	 g_lstat __P((Char *, struct stat *, glob_t *));
+static DIR	*g_opendir __P((Char *, glob_t *));
 static Char	*g_strchr __P((Char *, int));
-static int	 g_stat __P((Char *, struct stat *));
+static int	 g_stat __P((Char *, struct stat *, glob_t *));
 static int	 glob1 __P((Char *, glob_t *));
 static int	 glob2 __P((Char *, Char *, Char *, glob_t *));
 static int	 glob3 __P((Char *, Char *, Char *, Char *, glob_t *));
@@ -271,13 +273,13 @@ glob2(pathbuf, pathend, pattern, pglob)
 	for (anymeta = 0;;) {
 		if (*pattern == EOS) {		/* End of pattern? */
 			*pathend = EOS;
-			if (g_lstat(pathbuf, &sb))
+			if (g_lstat(pathbuf, &sb, pglob))
 				return(0);
 		
 			if (((pglob->gl_flags & GLOB_MARK) &&
 			    pathend[-1] != SEP) && (S_ISDIR(sb.st_mode)
 			    || (S_ISLNK(sb.st_mode) &&
-			    (g_stat(pathbuf, &sb) == 0) &&
+			    (g_stat(pathbuf, &sb, pglob) == 0) &&
 			    S_ISDIR(sb.st_mode)))) {
 				*pathend++ = SEP;
 				*pathend = EOS;
@@ -312,13 +314,14 @@ glob3(pathbuf, pathend, pattern, restpattern, pglob)
 	glob_t *pglob;
 {
 	register struct dirent *dp;
+	struct dirent *(*readdirfunc)();
 	DIR *dirp;
 	int len, err;
 
 	*pathend = EOS;
 	errno = 0;
 	    
-	if (!(dirp = g_opendir(pathbuf)))
+	if (!(dirp = g_opendir(pathbuf, pglob)))
 		/* TODO: don't call for ENOENT or ENOTDIR? */
 		if (pglob->gl_errfunc &&
 		    (*pglob->gl_errfunc)(pathbuf, errno) ||
@@ -330,7 +333,11 @@ glob3(pathbuf, pathend, pattern, restpattern, pglob)
 	err = 0;
 
 	/* Search directory for matching names. */
-	while ((dp = readdir(dirp))) {
+	if (pglob->gl_flags & GLOB_ALTDIRFUNC)
+		readdirfunc = pglob->gl_readdir;
+	else
+		readdirfunc = readdir;
+	while ((dp = (*readdirfunc)(dirp))) {
 		register u_char *sc;
 		register Char *dc;
 
@@ -348,8 +355,10 @@ glob3(pathbuf, pathend, pattern, restpattern, pglob)
 			break;
 	}
 
-	/* TODO: check error from readdir? */
-	(void)closedir(dirp);
+	if (pglob->gl_flags & GLOB_ALTDIRFUNC)
+		(*pglob->gl_closedir)(dirp);
+	else
+		closedir(dirp);
 	return(err);
 }
 
@@ -471,36 +480,47 @@ globfree(pglob)
 }
 
 static DIR *
-g_opendir(str)
+g_opendir(str, pglob)
 	register Char *str;
+	glob_t *pglob;
 {
 	char buf[MAXPATHLEN];
+	char *dirname;
 
 	if (!*str)
-		return(opendir("."));
-	g_Ctoc(str, buf);
+		strcpy(buf, ".");
+	else
+		g_Ctoc(str, buf);
+	if (pglob->gl_flags & GLOB_ALTDIRFUNC)
+		return((*pglob->gl_opendir)(buf));
 	return(opendir(buf));
 }
 
 static int
-g_lstat(fn, sb)
+g_lstat(fn, sb, pglob)
 	register Char *fn;
 	struct stat *sb;
+	glob_t *pglob;
 {
 	char buf[MAXPATHLEN];
 
 	g_Ctoc(fn, buf);
+	if (pglob->gl_flags & GLOB_ALTDIRFUNC)
+		return((*pglob->gl_lstat)(buf, sb));
 	return(lstat(buf, sb));
 }
 
 static int
-g_stat(fn, sb)
+g_stat(fn, sb, pglob)
 	register Char *fn;
 	struct stat *sb;
+	glob_t *pglob;
 {
 	char buf[MAXPATHLEN];
 
 	g_Ctoc(fn, buf);
+	if (pglob->gl_flags & GLOB_ALTDIRFUNC)
+		return((*pglob->gl_stat)(buf, sb));
 	return(stat(buf, sb));
 }
 

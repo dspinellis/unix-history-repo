@@ -5,7 +5,7 @@
 .\" Guido van Rossum.
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)glob.3	5.6 (Berkeley) %G%
+.\"     @(#)glob.3	5.7 (Berkeley) %G%
 .\"
 .Dd 
 .Dt GLOB 3
@@ -183,6 +183,21 @@ Use the backslash
 character for quoting: every occurrence of
 a backslash followed by a character in the pattern is replaced by that
 character, avoiding any special interpretation of the character.
+.It Dv GLOB_ALTDIRFUNC
+The following additional fields in the pglob structure have been
+initialized with alternate functions for glob to use to open, read,
+and close directories and to get stat information on names found
+in those directories.
+.Bd -literal
+	void *(*gl_opendir)();
+	struct dirent *(*gl_readdir)();
+	void (*gl_closedir)();
+	int (*gl_lstat)();
+	int (*gl_stat)();
+.Ed
+.Pp
+This non-standard extension is provided to allow programs such
+as restore to provide globbing from directories stored on tape.
 .El
 .Pp
 If, during the search, a directory is encountered that cannot be opened
@@ -317,7 +332,9 @@ The
 function is expected to be
 .St -p1003.2
 compatible with the exception
-that the flag 
+that the flags
+.Dv GLOB_ALTDIRFUNC
+and
 .Dv GLOB_QUOTE
 and the fields 
 .Fa gl_matchc
