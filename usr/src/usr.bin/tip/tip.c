@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tip.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)tip.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -43,9 +43,9 @@ int bauds[] = {
 };
 
 int	disc = OTTYDISC;		/* tip normally runs this way */
-int	intprompt();
-int	timeout();
-int	cleanup();
+void	intprompt();
+void	timeout();
+void	cleanup();
 char	*sname();
 char	PNbuf[256];			/* This limits the size of a number */
 
@@ -210,6 +210,7 @@ cucommon:
 	/*NOTREACHED*/
 }
 
+void
 cleanup()
 {
 
@@ -293,7 +294,7 @@ prompt(s, p)
 	register char *p;
 {
 	register char *b = p;
-	int (*oint)(), (*oquit)();
+	sig_t oint, oquit;
 
 	stoprompt = 0;
 	oint = signal(SIGINT, intprompt);
@@ -314,6 +315,7 @@ prompt(s, p)
 /*
  * Interrupt service routine during prompting
  */
+void
 intprompt()
 {
 

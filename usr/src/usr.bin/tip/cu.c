@@ -16,13 +16,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cu.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)cu.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "tip.h"
 
-int	cleanup();
-int	timeout();
+void	cleanup();
 
 /*
  * Botch the interface to look like cu's

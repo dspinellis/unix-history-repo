@@ -25,7 +25,7 @@ static char sccsid[] = "@(#)wwsuspend.c	3.11 (Berkeley) %G%";
 
 wwsuspend()
 {
-	int (*oldsig)();
+	sig_t oldsig;
 
 	oldsig = signal(SIGTSTP, SIG_IGN);
 	wwend();

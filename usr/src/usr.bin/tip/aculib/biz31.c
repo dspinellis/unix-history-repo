@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)biz31.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)biz31.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "tip.h"
@@ -24,7 +24,7 @@ static char sccsid[] = "@(#)biz31.c	5.2 (Berkeley) %G%";
 #define MAXRETRY	3		/* sync up retry count */
 #define DISCONNECT_CMD	"\21\25\11\24"	/* disconnection string */
 
-static	int sigALRM();
+static	void sigALRM();
 static	int timeout = 0;
 static	jmp_buf timeoutbuf;
 
@@ -135,7 +135,7 @@ echo(s)
 	}
 }
 
-static int
+static void
 sigALRM()
 {
 
@@ -147,8 +147,8 @@ static int
 detect(s)
 	register char *s;
 {
+	sig_t f;
 	char c;
-	int (*f)();
 
 	f = signal(SIGALRM, sigALRM);
 	timeout = 0;
@@ -172,8 +172,8 @@ static int
 flush(s)
 	register char *s;
 {
+	sig_t f;
 	char c;
-	int (*f)();
 
 	f = signal(SIGALRM, sigALRM);
 	while (*s++) {

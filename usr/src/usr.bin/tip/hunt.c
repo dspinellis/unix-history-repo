@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)hunt.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)hunt.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "tip.h"
@@ -27,9 +27,9 @@ extern char *rindex();
 static	jmp_buf deadline;
 static	int deadfl;
 
+void
 dead()
 {
-
 	deadfl = 1;
 	longjmp(deadline, 1);
 }
@@ -38,7 +38,7 @@ hunt(name)
 	char *name;
 {
 	register char *cp;
-	int (*f)();
+	sig_t f;
 
 	f = signal(SIGALRM, dead);
 	while (cp = getremote(name)) {
