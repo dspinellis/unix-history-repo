@@ -15,19 +15,20 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/ioctl.h>
 
+#include <limits.h>
 #include <regex.h>
 #include <setjmp.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <limits.h>
+#include <unistd.h>
 
 #ifdef DBI
 #include <db.h>
