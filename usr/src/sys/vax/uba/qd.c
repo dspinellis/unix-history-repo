@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- * 	@(#)qd.c	1.4  Berkeley  %G%
+ * 	@(#)qd.c	1.5  Berkeley  %G%
  *
  * derived from: "@(#)qd.c	1.40	ULTRIX	10/2/86";
  */
@@ -67,7 +67,7 @@ struct qdflags {
     u_int inuse;	    /* which minor dev's are in use now */
     u_int config;	    /* I/O page register content */
     u_int mapped;	    /* user mapping status word */
-    u_int kernel_loop;	    /* if kernel console is redirected */
+    u_int kernel_loop;	    /* if kernel console is redirected (DEFUNCT) */
     u_int user_dma;	    /* DMA from user space in progress */
     u_short pntr_id;	    /* type code of pointing device */
     u_short duart_imask;    /* shadowing for duart intrpt mask reg */
@@ -1097,33 +1097,26 @@ int flags;
 	register int mapix;		/* QVmap[] page table index */
 	register struct _vs_event *event;
 	register struct tty *tp;
-
 	struct qdmap *qd;		/* pointer to device map struct */
 	struct dga *dga;		/* Gate Array reg structure pntr */
 	struct duart *duart;		/* DUART reg structure pointer */
 	struct adder *adder;		/* ADDER reg structure pointer */
-
 	struct prgkbd *cmdbuf;
 	struct prg_cursor *curs;
 	struct _vs_cursor *pos;
-
 	u_int unit = minor(dev) >> 2;	/* number of caller's QDSS */
 	u_int minor_dev = minor(dev);
 	struct uba_device *ui = qdinfo[unit];
 	struct qd_softc *sc = &qd_softc[ui->ui_unit];
 	/* struct devget *devget; */
-
 	int error;
 	int s;
-
 	int i;				/* SIGNED index */
 	int sbr;			/* SBR variable (you silly boy) */
 	u_int ix;
-
 	short status;
 	short *shortp;			/* generic pointer to a short */
 	char *chrp;			/* generic character pointer */
-
 	short *temp;			/* a pointer to template RAM */
 
 	/* service graphic device ioctl commands */
@@ -1554,6 +1547,17 @@ int flags;
 	    case QD_PRGTABRES:
 
 		qdflags[unit].tab_res = *(short *)datap;
+		break;
+
+	    /*
+	     * ultrix has a bizarre scheme for routing console output
+	     * to an alternate window (xcons).  these ioctls are
+	     * left in as no-ops so the X11R2 qdss server code doesn't
+	     * have to be modified. console redirection is accomplished
+	     * by a more sensible method using TIOCCONS in 4.3.tahoe BSD.
+	     */
+	    case QD_KERN_LOOP:
+	    case QD_KERN_UNLOOP:
 		break;
 
 	    default:
