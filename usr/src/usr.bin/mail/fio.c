@@ -10,7 +10,7 @@
  * File I/O.
  */
 
-static char *SccsId = "@(#)fio.c	2.9 %G%";
+static char *SccsId = "@(#)fio.c	2.10 %G%";
 
 /*
  * Set up the input pointers while copying the mail file into
@@ -361,7 +361,7 @@ edstop()
 		if ((mp->m_flag & MDELETED) != 0)
 			continue;
 		c++;
-		if (send(mp, obuf) < 0) {
+		if (send(mp, obuf, 0) < 0) {
 			perror(editfile);
 			relsesigs();
 			reset(0);
