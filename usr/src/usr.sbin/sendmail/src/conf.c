@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.154 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.155 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1205,6 +1205,8 @@ getla()
 #else
 # ifdef __hpux
 
+struct pst_dynamic;
+
 #  include <sys/param.h>
 #  include <sys/pstat.h>
 
@@ -1214,7 +1216,7 @@ getla()
 	struct pst_dynamic pstd;
 
 	if (pstat_getdynamic(&pstd, sizeof(struct pst_dynamic),
-			     (size_t) 1 ,0) == -1)
+			     (size_t) 1, 0) == -1)
 		return 0;
 
         if (tTd(3, 1))
