@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex3.7preserve.c	7.2	%G%";
+static char *sccsid = "@(#)ex3.7preserve.c	7.3	%G%";
 #include <stdio.h>
 #include <ctype.h>
 #include <sys/types.h>
@@ -12,6 +12,8 @@ static char *sccsid = "@(#)ex3.7preserve.c	7.2	%G%";
 
 #ifdef VMUNIX
 #define	HBLKS	2
+#else
+#define HBLKS	1
 #endif
 
 char xstr[1];			/* make loader happy */
