@@ -1,0 +1,174 @@
+.NH
+Installation Steps
+.PP
+This chapter explains in greater detail the steps covered in the overview.
+It presumes the source hierarchy has been loaded in some convenient location,
+and that the \fI/usr/new\fP directory
+and \fI/usr/new/lib\fP directory already exist.
+As distributed, the X makefile only creates \fIXvs100\fP.  If you
+have source or object for other display types in their device dependent
+directories, you should edit the X/X/Makefile to build them.
+.NH 2
+Prelude
+.PP
+NOTE:
+As X is a network transparent window system, client programs use
+network facilities to communicate with the window system.
+Make sure your network code works properly BEFORE attempting to use X.
+For example, \fItalk(1)\fP should be working properly between normal terminals,
+or you should be able to \fIrlogin\fP to either the local or to
+another machine if you have a network.
+.PP
+Also make sure you have made as many pseudo-teletypes as possible
+(cd /dev; MAKEDEV pty0; MAKEDEV pty1).
+These are used for terminal emulator windows, and it is possible you
+may use quite a few of them.
+.PP
+If you have other machines in your network that run a 4.2BSD derived
+system, you can also move the C language source code and recompile it
+on those machines.
+The C applications should be able to communicate with the X server on
+your display.
+This has only currently be tested for Sun and IBM RT/PC's, but in
+principle, you should be able to interoperate properly with your Vax,
+Sun, or other displays.
+.NH 2
+Font and Firmware Files
+.PP
+For each device type supported by X, fonts may differ.
+There may also be local installation restrictions which may
+prohibit you from using the default location of \fI/usr/new/lib/X\fP
+for the fonts or other files needed by X (for example, Vs100 firmware).
+In each device dependent X library should be a file \fIvssite.h\fP
+which can be tailored to find the fonts and firmware in a different location.
+Another reason why you may want to change the font and firmware directory
+locations would be to allow use of the display while not having all of
+your file systems mounted.
+Tailor this file to your taste, and modify the master make file to move
+the fonts and firmware to your location.
+.PP
+The binaries are normally installed into \fI/usr/new\fP.
+If you want to change this, edit the master Makefile and change
+CONFDIR to the directory you choose.
+The entry ``make reconfig'' can be used to automatically edit the Makefiles
+in the directories from \fI/usr/new\fP to your new configuration.
+.NH 2
+Building Software
+.PP
+To build executable versions of all X programs,
+execute the command ``make all'' in the main directory.
+.PP
+Compiling all software takes quite a while. 
+Building the X library takes the longest, as there are more than one
+hundred fifty modules.
+This should complete without error.
+.NH 2
+Installing the X Executables
+.PP
+As super user,
+execute the command ``make install''.
+This should complete without error.
+.PP
+This  also copies all necessary files for users to program
+using X into \fI/usr/include/X\fP.
+.NH 2
+Building a Kernel With the Device Driver
+.PP
+You must add a line to your configuration file for each display you have.
+Make sure the CSR address matches between your configuration file and your
+hardware.
+Configure, make, and install the kernel containing the display driver.
+When you reboot the machine, make sure that your display auto configures
+during boot.
+.PP
+You should also make a device entry for each display.
+For a Vs100, change directory to \fI/dev\fP,
+and perform a ``MAKEDEV vs?'', where `?' is the number of the Vs100 as root.
+For a QVSS on a MicroVAX,
+the command would be ``/etc/mknod /dev/mouse c 35 2''.
+Normally, the protection on the device would be only user read/write,
+but for debugging purposes you may want to temporarily change it.
+.NH 2
+Renaming Pseudo Teletypes
+.PP
+To avoid a possible race condition, and to allow consistent Unix program
+behavior, we dedicate a pseudo teletype for each display's login window.
+All other pty's are allocated dynamically when used.
+Pseudo TTY's come in pairs, the master and the slave.
+We rename them to be ``ttyv?'' where `?' is the number of the display.
+.PP
+So for example,
+we might execute the commands:
+``mv ttyqf ttyv0; mv ptyqf ptyv0'', and similarly for any other displays.
+When logged in, you would appear to be logged in on ``ttyv0'' in this case.
+We use the last pseudo teletypes since all other utilities start searching
+from lower to higher, and we'd just as soon have them find a pty as soon
+as they can.
+.NH 2
+Testing and Trouble Shooting
+.PP
+We highly recommend testing before attempting to enable
+login on the display.
+Error messages will go to your terminal, rather than being logged in a file.
+You can use \fIxinit(1)\fP to aid you in testing, but
+it is most easily performed from another terminal or from across the network.
+.PP
+To test a Vs100 on line 0, for example,
+you would change directory to /usr/new (or wherever you decided to put the
+executable programs), and would type ``Xvs100 0 0 &''.
+(For a MicroVAX, the command would be ``Xqvss 0 0 &'').
+The first argument is which device to use (in this case \fI/dev/vs0\fP
+will be used).
+There can only be one display on a MicroVAX.
+The second argument is ignored.
+See the \fIX(8c)\fP manual page for other options.
+.PP
+If everything succeeds, you should get a grey background and a large
+X cursor on the screen.
+For reasons we have never understood, it may take three tries to get a
+VS100 display to respond.
+If not, the most common mistake is the fonts or firmware to be in the
+wrong location or a directory or file to not be readable.
+.PP
+You should now be able to run any of the X programs.
+A common beginning mistake would be to forget to set the "DISPLAY"
+environment variable.
+Most programs also take arguments to specify the host and display number.
+So, for convenience while testing, you might execute the
+command ``setenv DISPLAY \fIyourhost\fP:0'' where \fIyourhost\fP is the name of your
+machine when using the C-shell.
+This variable will be set for you automatically
+when you log in in the future.
+.PP
+A common problem that might prevent the \fIxterm(1)\fP
+program from working is it
+not being set user ID and owned by root.
+The installation makefiles should be installing \fIxterm(1)\fP this way.
+.PP
+If everything is working, you should be ready to enable the line for login.
+.NH 2
+Configuring Lines in /etc/ttys
+.PP
+If you started X in the previous step, you will want to abort it now.
+For each display you have on a machine, you
+must have a line in \fI/etc/ttys\fP to drive the terminal emulator used for
+login and the window system server.
+NOTE:
+The format of the \fI/etc/ttys\fP file has changed radically between 4.2 and
+4.3.
+You cannot set up a display for login on a 4.2BSD system without installing
+new versions of \fI/etc/init\fP,
+\fI/etc/getty\fP, and \fI/bin/login\fP from 4.3.
+.PP
+An example line in \fI/etc/ttys\fP is given in the \fIX(8c)\fP manual page
+(though you will have to customize the line for the location and names of
+the executable programs).
+An example for a Vs100 installed without any reconfiguration on 4.3BSD
+might be:
+.sp
+	ttyv0 "/usr/new/xterm -L =-1+1 :0" xterms on window="/usr/new/Xvs100 0"
+.sp
+You can customize these commands to taste.
+.PP
+You can tell \fIinit(8)\fP to re-read the \fI/etc/ttys\fP file by the command
+``kill -1 1'' as super user.
