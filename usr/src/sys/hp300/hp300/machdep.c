@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: machdep.c 1.63 91/04/24$
  *
- *	@(#)machdep.c	7.13 (Berkeley) %G%
+ *	@(#)machdep.c	7.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -121,13 +121,13 @@ consinit()
 }
 
 /*
- * Machine-dependent startup code
+ * cpu_startup: allocate memory for variable-sized tables,
+ * initialize cpu, and do autoconfiguration.
  */
-startup(firstaddr)
-	int firstaddr;
+cpu_startup()
 {
 	register unsigned i;
-	register caddr_t v;
+	register caddr_t v, firstaddr;
 	int base, residual;
 	extern long Usrptsize;
 	extern struct map *useriomap;
@@ -305,7 +305,9 @@ again:
 }
 
 /*
- * Clear registers on exec
+ * Set registers on exec.
+ * XXX Should clear registers except sp, pc,
+ * but would break init; should be fixed soon.
  */
 setregs(p, entry, retval)
 	register struct proc *p;
