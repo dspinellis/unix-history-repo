@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)gmon.c	1.1 (Berkeley) %G%";
+static	char *sccsid = "@(#)gmon.c	1.2 (Berkeley) %G%";
 
 #include <stdio.h>
 
@@ -81,7 +81,7 @@ _mcleanup()
     monitor((int (*)())0);
     fd = fopen( "dmon.out" , "w" );
     if ( fd == NULL ) {
-	perror( "mcount: mon.out2" );
+	perror( "mcount: dmon.out" );
 	return;
     }
     fwrite( sbuf , ssiz , 1 , fd );
@@ -113,7 +113,7 @@ mcount()
     register char		*selfpc;	/* r11 */
     register unsigned short	*frompcindex;	/* r10 */
     register struct tostruct	*top;		/* r9 */
-    /* !!! if you add anything, you have to fix the pushr and popr !!! */
+    static int			profiling = 0;
 
     asm( "	forgot to run ex script on monitor.s" );
     asm( "#define r11 r5" );
@@ -124,18 +124,26 @@ mcount()
     frompcindex = 0;
 #else not lint
 	/*
-	 *	we've pushed the old r11, r10, and r9,
-	 *	so the return address for a plain old jsb
-	 *	which should be at 0(sp) is now at 12(sp)
+	 *	find the return address for mcount,
+	 *	and the return address for mcount's caller.
 	 */
     asm("	movl (sp), r11");	/* selfpc = ... (jsb frame) */
     asm("	movl 16(fp), r10");	/* frompcindex =     (calls frame) */
 #endif not lint
-    /*
-     *	check that we are profiling
-     */
-    if ( tos == 0 ) {
+	/*
+	 *	check that we are profiling
+	 */
+    if ( profiling || tos == 0 ) {
 	goto out;
+    }
+    profiling = 1;
+	/*
+	 *	check that frompcindex is a reasonable pc value.
+	 *	for example:	signal catchers get called from the stack,
+	 *			not from text space.  too bad.
+	 */
+    if ( (char *) frompcindex < s_lowpc || (char *) frompcindex > s_highpc ) {
+	goto done;
     }
     frompcindex = &froms[ ( (long) frompcindex - (long) s_lowpc ) >> 1 ];
     if ( *frompcindex == 0 ) {
@@ -150,10 +158,10 @@ mcount()
     } else {
 	top = &tos[ *frompcindex ];
     }
-    for ( ; /*break*/ ; top = &tos[ top -> link ] ) {
+    for ( ; /* goto done */ ; top = &tos[ top -> link ] ) {
 	if ( top -> selfpc == selfpc ) {
 	    top -> count++;
-	    break;
+	    goto done;
 	}
 	if ( top -> link == 0 ) {
 	    top -> link = ++tos[0].link;
@@ -163,9 +171,12 @@ mcount()
 	    top -> selfpc = selfpc;
 	    top -> count = 1;
 	    top -> link = 0;
-	    break;
+	    goto done;
 	}
     }
+done:
+    profiling = 0;
+    /* and fall through */
 out:
     asm( "	rsb" );
     asm( "#undef r11" );
