@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)tput.1	6.2 (Berkeley) %G%
+.\"	@(#)tput.1	6.3 (Berkeley) %G%
 .\"
 .TH TPUT 1 ""
 .UC 7
@@ -37,6 +37,15 @@ If not specified,
 .I tput
 retrieves the ``TERM'' variable from the environment.
 .PP
+.I Tput
+outputs a string if the
+.I attribute
+is of type string; a number if it is of type integer.
+Otherwise,
+.I tput
+exits 0 if the terminal has the capability and 1 if it does not,
+without further action.
+.PP
 The following special attributes are available:
 .TP
 clear
@@ -51,17 +60,32 @@ Initialize the terminal (the
 .I termcap
 ``is'' sequence).
 .TP
+longname
+Print the descriptive name of the user's terminal type.
+.TP
 reset
 .br
 Reset the terminal (the
 .I termcap
 ``rs'' sequence).
+.SH DIAGNOSTICS
+The exit value of
+.I tput
+is based on the last attribute specified.
+If the attribute is of type string or of type integer,
+.I tput
+exits 0 if the attribute is defined for this terminal type and 1
+if it is not.
+If the attribute is of type boolean,
+.I tput
+exits 0 if the terminal has this attribute, and 1 if it does not.
+.I Tput
+exits 2 if any error occurred.
 .SH "SEE ALSO"
 termcap(3), termcap(5)
 .SH BUGS
 .I Tput
-doesn't have the power available in the System V version of the
-program.
+can't really distinguish between different types of attributes.
 This is due to the limited interface in the current version of
-.IR termcap (3).
-This will be fixed in the near future.
+.IR termcap (3),
+and will be fixed in the near future.

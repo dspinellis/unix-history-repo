@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tput.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)tput.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/termios.h>
@@ -35,8 +35,8 @@ main(argc, argv)
 {
 	extern char *optarg;
 	extern int optind;
-	int ch, exitval, myputchar();
-	char *ap, *p, *term, buf[1024], tbuf[1024];
+	int ch, exitval, n, outc();
+	char *cptr, *p, *term, buf[1024], tbuf[1024];
 	char *getenv(), *tgetstr(), *realname();
 
 	term = NULL;
@@ -54,46 +54,55 @@ main(argc, argv)
 
 	if (!term && !(term = getenv("TERM"))) {
 		(void)fprintf(stderr, "tput: no terminal type specified.\n");
-		exit(3);
+		exit(2);
 	}
 	if (tgetent(tbuf, term) != 1) {
 		(void)fprintf(stderr, "tput: tgetent failure.\n");
-		exit(3);
+		exit(2);
 	}
 	setospeed();
-	for (p = buf, exitval = 0; *argv; ++argv)
-		if (ap = tgetstr(realname(*argv), &p))
-			tputs(ap, 1, myputchar);
+	for (cptr = buf; p = *argv; ++argv) {
+		exitval = 0;
+		switch(*p) {
+		case 'c':
+			if (!strcmp(p, "clear"))
+				p = "cl";
+			break;
+		case 'i':
+			if (!strcmp(p, "init"))
+				p = "is";
+			break;
+		case 'l':
+			if (!strcmp(p, "longname"))
+				prlongname(tbuf);
+			continue;
+		case 'r':
+			if (!strcmp(p, "reset"))
+				p = "rs";
+			break;
+		}
+		if (tgetstr(p, &cptr))
+			(void)tputs(buf, 1, outc);
+		else if ((n = tgetnum(p)) != -1)
+			(void)printf("%d\n", n);
 		else
-			exitval = 2;
+			exitval = !tgetflag(p);
+	}
 	exit(exitval);
 }
 
-char *
-realname(s)
-	char *s;
+prlongname(buf)
+	char *buf;
 {
-	switch(*s) {
-	case 'c':
-		if (!strcmp(s, "clear"))
-			return("cl");
-		break;
-	case 'i':
-		if (!strcmp(s, "init"))
-			return("is");
-		break;
-	case 'r':
-		if (!strcmp(s, "reset"))
-			return("rs");
-		break;
-	}
-	return(s);
-}
+	register char *p;
+	int savech;
+	char *savep;
 
-myputchar(c)
-	int c;
-{
-	putchar(c);
+	for (p = buf; *p && *p != ':'; ++p);
+	savech = *(savep = p);
+	for (*p = '\0'; p >= buf && *p != '|'; --p);
+	(void)printf("%s\n", p + 1);
+	*savep = savech;
 }
 
 setospeed()
@@ -107,6 +116,12 @@ setospeed()
 		exit(1);
 	}
 	ospeed = cfgetospeed(&t);
+}
+
+outc(c)
+	int c;
+{
+	putchar(c);
 }
 
 usage()
