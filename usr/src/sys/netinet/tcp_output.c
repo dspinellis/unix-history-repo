@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_output.c	7.6 (Berkeley) %G%
+ *	@(#)tcp_output.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -353,15 +353,16 @@ send:
 		/*
 		 * Set retransmit timer if not currently set,
 		 * and not doing an ack or a keep-alive probe.
-		 * Initial value for retransmit timer is tcp_beta*tp->t_srtt.
+		 * Initial value for retransmit timer is smoothed
+		 * round-trip time + 2 * round-trip time variance.
 		 * Initialize shift counter which is used for backoff
 		 * of retransmit time.
 		 */
 		if (tp->t_timer[TCPT_REXMT] == 0 &&
 		    tp->snd_nxt != tp->snd_una) {
 			TCPT_RANGESET(tp->t_timer[TCPT_REXMT],
-			  tcp_beta * (tp->t_srtt ? tp->t_srtt : TCPTV_SRTTDFLT),
-			  TCPTV_MIN, TCPTV_MAX);
+			  ((tp->t_srtt >> 2) + tp->t_rttvar) >> 1,
+			  TCPTV_MIN, TCPTV_REXMTMAX);
 			tp->t_rxtshift = 0;
 			tp->t_timer[TCPT_PERSIST] = 0;
 		}
@@ -404,6 +405,7 @@ send:
 tcp_setpersist(tp)
 	register struct tcpcb *tp;
 {
+	register t = ((tp->t_srtt >> 2) + tp->t_rttvar) >> 1;
 
 	if (tp->t_timer[TCPT_REXMT])
 		panic("tcp_output REXMT");
@@ -411,7 +413,7 @@ tcp_setpersist(tp)
 	 * Start/restart persistance timer.
 	 */
 	TCPT_RANGESET(tp->t_timer[TCPT_PERSIST],
-	    ((int)(tcp_beta * tp->t_srtt)) << tp->t_rxtshift,
+	    t * tcp_backoff[tp->t_rxtshift],
 	    TCPTV_PERSMIN, TCPTV_PERSMAX);
 	if (tp->t_rxtshift < TCP_MAXRXTSHIFT)
 		tp->t_rxtshift++;
