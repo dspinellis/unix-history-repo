@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash.c	5.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash.c	5.35 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -35,13 +35,14 @@ static int   flush_meta __P((HTAB *));
 static int   hash_access __P((HTAB *, ACTION, DBT *, DBT *));
 static int   hash_close __P((DB *));
 static int   hash_delete __P((const DB *, const DBT *, u_int));
+static int   hash_fd __P((const DB *));
 static int   hash_get __P((const DB *, const DBT *, DBT *, u_int));
 static int   hash_put __P((const DB *, DBT *, const DBT *, u_int));
 static void *hash_realloc __P((SEGMENT **, int, int));
 static int   hash_seq __P((const DB *, DBT *, DBT *, u_int));
 static int   hash_sync __P((const DB *, u_int));
 static int   hdestroy __P((HTAB *));
-static HTAB *init_hash __P((HTAB *, HASHINFO *));
+static HTAB *init_hash __P((HTAB *, const char *, HASHINFO *));
 static int   init_htab __P((HTAB *, int));
 #if BYTE_ORDER == LITTLE_ENDIAN
 static void  swap_header __P((HTAB *));
@@ -105,7 +106,7 @@ __hash_open(file, flags, mode, info)
 		(void)fcntl(hashp->fp, F_SETFD, 1);
 	}
 	if (new_table) {
-		if (!(hashp = init_hash(hashp, (HASHINFO *)info)))
+		if (!(hashp = init_hash(hashp, file, (HASHINFO *)info)))
 			RETURN_ERROR(errno, error1);
 	} else {
 		/* Table already exists */
@@ -170,6 +171,7 @@ __hash_open(file, flags, mode, info)
 	dbp->internal = hashp;
 	dbp->close = hash_close;
 	dbp->del = hash_delete;
+	dbp->fd = hash_fd;
 	dbp->get = hash_get;
 	dbp->put = hash_put;
 	dbp->seq = hash_seq;
@@ -226,12 +228,31 @@ hash_close(dbp)
 	return (retval);
 }
 
+static int
+hash_fd(dbp)
+	const DB *dbp;
+{
+	HTAB *hashp;
+
+	if (!dbp)
+		return (ERROR);
+
+	hashp = (HTAB *)dbp->internal;
+	if (hashp->fp == -1) {
+		errno = ENOENT;
+		return (-1);
+	}
+	return (hashp->fp);
+}
+
 /************************** LOCAL CREATION ROUTINES **********************/
 static HTAB *
-init_hash(hashp, info)
+init_hash(hashp, file, info)
 	HTAB *hashp;
+	const char *file;
 	HASHINFO *info;
 {
+	struct stat statbuf;
 	int nelem;
 
 	nelem = 1;
@@ -246,6 +267,14 @@ init_hash(hashp, info)
 	hashp->hash = __default_hash;
 	memset(hashp->SPARES, 0, sizeof(hashp->SPARES));
 	memset(hashp->BITMAPS, 0, sizeof (hashp->BITMAPS));
+
+	/* Fix bucket size to be optimal for file system */
+	if (file != NULL) {
+		if (stat(file, &statbuf))
+			return (NULL);
+		hashp->BSIZE = statbuf.st_blksize;
+		hashp->BSHIFT = __log2(hashp->BSIZE);
+	}
 
 	if (info) {
 		if (info->bsize) {
