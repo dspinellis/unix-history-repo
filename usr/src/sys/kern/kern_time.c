@@ -1,4 +1,4 @@
-/*	kern_time.c	6.3	84/08/29	*/
+/*	kern_time.c	6.4	84/11/14	*/
 
 #include "../machine/reg.h"
 
@@ -71,6 +71,32 @@ setthetime(tv)
 	boottime.tv_sec += tv->tv_sec - time.tv_sec;
 	s = spl7(); time = *tv; splx(s);
 	resettodr();
+}
+
+int adjtimedelta;
+
+adjtime()
+{
+	register struct a {
+		struct timeval *delta;
+		struct timeval *olddelta;
+	} *uap = (struct a *)u.u_ap;
+
+	struct timeval atv, oatv;
+
+	if (!suser()) 
+		return;
+	u.u_error = copyin((caddr_t)uap->delta, (caddr_t)&atv,
+		sizeof (struct timeval));
+	if (u.u_error)
+		return;
+	if (uap->olddelta) {
+		oatv.tv_sec = adjtimedelta / 1000000;
+		oatv.tv_usec = adjtimedelta % 1000000;
+		(void) copyout((caddr_t)&oatv, (caddr_t)uap->olddelta,
+			sizeof (struct timeval));
+	}
+	adjtimedelta = atv.tv_sec * 1000000 + atv.tv_usec;
 }
 
 /*
