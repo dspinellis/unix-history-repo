@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sii.c	7.1 (Berkeley) %G%
+ *	@(#)sii.c	7.2 (Berkeley) %G%
  *
  * from: $Header: /sprite/src/kernel/dev/ds3100.md/RCS/devSII.c,
  *	v 9.2 89/09/14 13:37:41 jhh Exp $ SPRITE (DECWRL)"; */
@@ -200,26 +200,18 @@ siistart(scsicmd)
  * and process as appropriate.
  */
 void
-siiintr()
+siiintr(unit)
+	int unit;
 {
-	register struct siisoftc *sc;
+	register struct siisoftc *sc = &sii_softc[unit];
 	unsigned dstat;
-	int seenany;
 
 	/*
 	 * Find which controller caused the interrupt.
 	 */
-	for (sc = sii_softc; sc < &sii_softc[NSII]; sc++) {
-		dstat = sc->sc_regs->dstat;
-		if (dstat & (SII_CI | SII_DI)) {
-			sii_DoIntr(sc, dstat);
-			seenany++;
-		}
-	}
-#ifdef DEBUG
-	if (!seenany && sii_debug > 4)
-		printf("sii?: spurious interrupt\n");
-#endif
+	dstat = sc->sc_regs->dstat;
+	if (dstat & (SII_CI | SII_DI))
+		sii_DoIntr(sc, dstat);
 }
 
 /*
@@ -543,8 +535,11 @@ again:
 		if (cstat & SII_RST) {
 			printf("sii%d: SCSI bus reset!!\n", sc - sii_softc);
 			/* need to flush disconnected commands */
-			for (i = 0; i < SII_NCMD; i++)
+			for (i = 0; i < SII_NCMD; i++) {
+				if (!sc->sc_cmd[i])
+					continue;
 				sii_CmdDone(sc, i, EIO);
+			}
 			/* rearbitrate synchronous offset */
 			for (i = 0; i < SII_NCMD; i++)
 				sc->sc_st[i].dmaReqAck = 0;
