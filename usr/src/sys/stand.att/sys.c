@@ -3,14 +3,14 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sys.c	7.2 (Berkeley) %G%
+ *	@(#)sys.c	7.3 (Berkeley) %G%
  */
 
-#include "../h/param.h"
-#include "../h/inode.h"
-#include "../h/fs.h"
-#include "../h/dir.h"
-#include "../h/reboot.h"
+#include "param.h"
+#include "inode.h"
+#include "fs.h"
+#include "dir.h"
+#include "reboot.h"
 #include "saio.h"
 
 ino_t	dlook();
@@ -43,6 +43,7 @@ find(path, file)
 	struct iob *file;
 {
 	register char *q;
+	char *dir;
 	char c;
 	int n;
 
@@ -55,6 +56,7 @@ find(path, file)
 		printf("can't read root inode\n");
 		return (0);
 	}
+	dir = path;
 	while (*path) {
 		while (*path == '/')
 			path++;
@@ -65,7 +67,7 @@ find(path, file)
 		*q = '\0';
 		if (q == path) path = "." ;	/* "/" means "/." */
 
-		if ((n = dlook(path, file)) != 0) {
+		if ((n = dlook(path, file, dir)) != 0) {
 			if (c == '\0')
 				break;
 			if (openi(n, file) < 0)
@@ -159,9 +161,10 @@ sbmap(io, bn)
 }
 
 static ino_t
-dlook(s, io)
+dlook(s, io, dir)
 	char *s;
 	register struct iob *io;
+	char *dir;
 {
 	register struct direct *dp;
 	register struct inode *ip;
@@ -173,11 +176,11 @@ dlook(s, io)
 	ip = &io->i_ino;
 	if ((ip->i_mode&IFMT) != IFDIR) {
 		printf("not a directory\n");
-		printf("%s: not a directory\n", s);
+		printf("%s: not a directory\n", dir);
 		return (0);
 	}
 	if (ip->i_size == 0) {
-		printf("%s: zero length directory\n", s);
+		printf("%s: zero length directory\n", dir);
 		return (0);
 	}
 	len = strlen(s);
@@ -467,7 +470,7 @@ gotfile:
 				errno = EOFFSET;
 				goto badspec;
 			}
-		file->i_boff = atol(cp);
+		file->i_boff = atol(++cp);
 		for (;;) {
 			if (*cp == ')')
 				break;
@@ -475,6 +478,7 @@ gotfile:
 				continue;
 			goto badspec;
 		}
+		cp++;
 	} else if (*cp != ':') {
 		/* default bootstrap unit and device */
 		file->i_ino.i_dev = (bootdev >> B_TYPESHIFT) & B_TYPEMASK;
@@ -510,6 +514,7 @@ gotfile:
 	opendev |= ((file->i_unit % 8) << B_UNITSHIFT);
 	opendev |= ((file->i_unit / 8) << B_ADAPTORSHIFT);
 	opendev |= file->i_boff << B_PARTITIONSHIFT;
+	opendev |= B_DEVMAGIC;
 	if (errno = devopen(file))
 		goto bad;
 	if (cp != str && *cp == '\0') {
@@ -520,7 +525,7 @@ gotfile:
 	}
 	file->i_ma = (char *)(&file->i_fs);
 	file->i_cc = SBSIZE;
-	file->i_bn = SBLOCK + file->i_boff;
+	file->i_bn = SBOFF / DEV_BSIZE + file->i_boff;
 	file->i_offset = 0;
 	if (devread(file) < 0) {
 		errno = file->i_error;
