@@ -6,7 +6,7 @@
  * Use and redistribution is subject to the Berkeley Software License
  * Agreement and your Software Agreement with AT&T (Western Electric).
  *
- *	@(#)vfs_bio.c	7.44 (Berkeley) %G%
+ *	@(#)vfs_bio.c	7.45 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -46,6 +46,8 @@ bufinit()
 		bp->b_wcred = NOCRED;
 		bp->b_dirtyoff = 0;
 		bp->b_dirtyend = 0;
+		bp->b_validoff = 0;
+		bp->b_validend = 0;
 		bp->b_un.b_addr = buffers + i * MAXBSIZE;
 		if (i < residual)
 			bp->b_bufsize = (base + 1) * CLBYTES;
@@ -93,18 +95,20 @@ bread(vp, blkno, size, cred, bpp)
 }
 
 /*
- * Operates like bread, but also starts I/O on the specified
- * read-ahead block.
+ * Operates like bread, but also starts I/O on the N specified
+ * read-ahead blocks.
  */
-breada(vp, blkno, size, rablkno, rabsize, cred, bpp)
+breadn(vp, blkno, size, rablkno, rabsize, num, cred, bpp)
 	struct vnode *vp;
 	daddr_t blkno; int size;
-	daddr_t rablkno; int rabsize;
+	daddr_t rablkno[]; int rabsize[];
+	int num;
 	struct ucred *cred;
 	struct buf **bpp;
 {
 	struct proc *p = curproc;		/* XXX */
 	register struct buf *bp, *rabp;
+	register int i;
 
 	bp = NULL;
 	/*
@@ -116,7 +120,7 @@ breada(vp, blkno, size, rablkno, rabsize, cred, bpp)
 		if ((bp->b_flags & (B_DONE | B_DELWRI)) == 0) {
 			bp->b_flags |= B_READ;
 			if (bp->b_bcount > bp->b_bufsize)
-				panic("breada");
+				panic("breadn");
 			if (bp->b_rcred == NOCRED && cred != NOCRED) {
 				crhold(cred);
 				bp->b_rcred = cred;
@@ -129,13 +133,16 @@ breada(vp, blkno, size, rablkno, rabsize, cred, bpp)
 	}
 
 	/*
-	 * If there is a read-ahead block, start I/O on it too.
+	 * If there's read-ahead block(s), start I/O
+	 * on them also (as above).
 	 */
-	if (!incore(vp, rablkno)) {
-		rabp = getblk(vp, rablkno, rabsize);
+	for (i = 0; i < num; i++) {
+		if (incore(vp, rablkno[i]))
+			continue;
+		rabp = getblk(vp, rablkno[i], rabsize[i]);
 		if (rabp->b_flags & (B_DONE | B_DELWRI)) {
 			brelse(rabp);
-			trace(TR_BREADHITRA, pack(vp, rabsize), rablkno);
+			trace(TR_BREADHITRA, pack(vp, rabsize[i]), rablkno[i]);
 		} else {
 			rabp->b_flags |= B_ASYNC | B_READ;
 			if (rabp->b_bcount > rabp->b_bufsize)
@@ -145,7 +152,7 @@ breada(vp, blkno, size, rablkno, rabsize, cred, bpp)
 				rabp->b_rcred = cred;
 			}
 			VOP_STRATEGY(rabp);
-			trace(TR_BREADMISSRA, pack(vp, rabsize), rablkno);
+			trace(TR_BREADMISSRA, pack(vp, rabsize[i]), rablkno[i]);
 			p->p_stats->p_ru.ru_inblock++;	/* pay in advance */
 		}
 	}
@@ -537,6 +544,7 @@ loop:
 	}
 	bp->b_flags = B_BUSY;
 	bp->b_dirtyoff = bp->b_dirtyend = 0;
+	bp->b_validoff = bp->b_validend = 0;
 	return (bp);
 }
 
