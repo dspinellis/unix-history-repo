@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rmail.c	4.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)rmail.c	4.11 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -167,7 +167,12 @@ main(argc, argv)
 		args[i++] = junk2;
 	}
 	for (; *++argv != NULL; i++) {
-		args[i] = *argv;
+		/*
+		 * don't copy arguments beginning with - as they will
+		 * be passed to sendmail and could be interpreted as flags
+		 */
+		if (**argv != '-')
+			args[i] = *argv;
 	}
 	args[i] = NULL;
 #ifdef DEBUG
