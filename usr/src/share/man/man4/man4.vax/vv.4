@@ -2,38 +2,30 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)vv.4	5.1 (Berkeley) %G%
+.\"	@(#)vv.4	6.1 (Berkeley) %G%
 .\"
-.TH VV 4 "27 July 1983"
+.TH VV 4 ""
 .UC 5
 .SH NAME
 vv \- Proteon proNET 10 Megabit ring
 .SH SYNOPSIS
-.B "device vv0 at uba0 csr 161000 vector vvrint vvxint"
+.B "device vv0 at uba0 csr 0161000 vector vvrint vvxint"
 .SH DESCRIPTION
 The
 .I vv
 interface provides access to a 10 Mb/s Proteon proNET ring network.
 .PP
-The network number to which the interface is attached must
-be specified with an SIOCSIFADDR ioctl before data can be
-transmitted or received.
-The host's address is discovered by putting the interface in
-digital loopback mode (not joining the ring)
-and sending a broadcast packet from which the source
-address is extracted.
-the Internet address of the interface would be 128.3.0.24.
+The network address of the interface must be specified with an
+an SIOCSIFADDR ioctl before data can be transmitted or received.
+It is only permissible to change the network address while the
+interface is marked "down".
 .PP
-The interface software implements error-rate limiting on
-the input side.
-This provides a defense against situations where other hosts
-or interface hardware failures cause a machine to be
-inundated with garbage packets.
-The scheme involves an exponential backoff where the input
-side of the interface is disabled for longer and longer periods.
-In the limiting case,
-the interface is turned on every two minutes or so to see
-if operation can resume.
+The host's hardware address is discovered by putting the interface in
+digital loopback mode (not joining the ring) and sending a broadcast
+packet from which the hardware address is extracted.
+.PP
+Transmit timeouts are detected through use of a watchdog routine.
+Lost input interrupts are checked for when packets are sent out.
 .PP
 If the installation is running CTL boards which use the old broadcast
 address of 0 instead of the new address of 0xff, the define OLD_BROADCAST
@@ -44,10 +36,10 @@ be specified in the driver.
 .BR N.B. :
 Incorrect definition of WIRECENTER can cause hardware damage.
 .PP
-The interface normally tries to use a ``trailer'' encapsulation
-to minimize copying data on input and output.  This may be
-disabled, on a per-interface basis, by setting the IFF_NOTRAILERS
-flag with an SIOCSIFFLAGS ioctl.
+The driver can use ``trailer'' encapsulation to minimize copying
+data on input and output.
+This may be disabled, on a per-interface basis,
+by setting the IFF_NOTRAILERS flag with an SIOCSIFFLAGS ioctl.
 .SH DIAGNOSTICS
 .PP
 \fBvv%d: host %d\fP.  The software announces the host
