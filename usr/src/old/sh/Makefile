@@ -1,6 +1,6 @@
-#	Makefile	4.3	82/10/23
+#	Makefile	4.4	83/02/09
 #
-CFLAGS = -O
+CFLAGS = -O -w
 
 all:	sh
 
@@ -24,12 +24,10 @@ fault.o:	brkincr.h
 main.o:		brkincr.h
 stak.o:		brkincr.h
 
-sh:;		cc -o sh -n *.o
+sh:
+	cc -o sh -n *.o
 
-newsys:;	:newsys file=msg; make sh
-install:;	install -s sh $(DESTDIR)/bin
-clean:; rm -f sh *.o
-diff:;		:diff
-list:;		list Makefile *.h *.s *.c
-
-.c.o:;	cc -O  -c $<
+install:
+	install -s sh $(DESTDIR)/bin
+clean:
+	rm -f sh *.o
