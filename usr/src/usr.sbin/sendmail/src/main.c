@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.96 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.97 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -199,9 +199,33 @@ main(argc, argv, envp)
 				ConfFile = "sendmail.cf";
 			tTflag(&p[2]);
 			setbuf(stdout, (char *) NULL);
-			printf("Version %s\n", Version);
 		}
 	}
+	}
+
+	if (tTd(0, 1))
+	{
+		int ll;
+		extern char *CompileOptions[];
+
+		printf("Version %s", Version);
+		av = CompileOptions;
+		ll = 100;
+		while (*av != NULL)
+		{
+			if (ll + strlen(*av) > 63)
+			{
+				putchar('\n');
+				ll = 0;
+			}
+			if (ll == 0)
+				putchar('\t');
+			else
+				putchar(' ');
+			printf("%s", *av);
+			ll += strlen(*av++) + 1;
+		}
+		putchar('\n');
 	}
 
 	InChannel = stdin;
@@ -620,6 +644,7 @@ main(argc, argv, envp)
 		else
 			*evp++ = newstr(tzbuf);
 	}
+	tzset();
 
 	if (ConfigLevel > MAXCONFIGLEVEL)
 	{
