@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)main.c 1.2 %G%";
+static char sccsid[] = "@(#)main.c 1.3 %G%";
 
 /*
  * Debugger main routine.
@@ -15,8 +15,8 @@ static char sccsid[] = "@(#)main.c 1.2 %G%";
 #include "object.h"
 
 #define FIRST_TIME 0		/* initial value setjmp returns */
-#define isinteractive()		(isatty(fileno(stdin)))
 
+LOCAL int firstarg;
 LOCAL jmp_buf env;
 LOCAL catchintr();
 
@@ -25,10 +25,12 @@ int argc;
 char **argv;
 {
 	FILE *fp;
+	int i;
 
-	cmdname = argv[0];
 	catcherrs();
+	catchsigs();
 	scanargs(argc, argv);
+	cmdname = argv[0];
 	if ((fp = fopen(objname, "r")) == NIL) {
 		panic("can't read %s", objname);
 	} else {
@@ -37,20 +39,24 @@ char **argv;
 	if (option('r')) {
 		if (setjmp(env) == FIRST_TIME) {
 			arginit();
+			for (i = firstarg; i < argc; i++) {
+				newarg(argv[i]);
+			}
 			run();
 			/* NOTREACHED */
 		} else {
 			option('r') = FALSE;
 		}
 	} else {
-		start(NIL, NIL, NIL);
+		initstart();
 		prompt();
 		init();
 	}
 	setjmp(env);
-	signal(SIGINT, &catchintr);
+	signal(SIGINT, catchintr);
 	yyparse();
 	putchar('\n');
+	quit(0);
 }
 
 /*
@@ -96,37 +102,65 @@ int argc;
 char **argv;
 {
 	register int i, j;
-	BOOLEAN foundfile;
+	BOOLEAN done;
 
-	foundfile = FALSE;
-	for (i = 1; i < argc; i++) {
-		if (argv[i][0] == '-') {
-			for (j = 1; argv[i][j] != '\0'; j++) {
-				setoption(argv[i][j]);
-			}
-		} else if (!foundfile) {
-			objname = argv[i];
+	if (streq(argv[0], "pxhdr") || streq(argv[0], "pix")) {
+		objname = argv[1];
+		option('r') = TRUE;
+		option('t') = TRUE;
+		if (streq(argv[0], "pxhdr")) {
+			setargs("pdx", argv[2]);
+			firstarg = 3;
 		} else {
-			panic("extraneous argument %s", argv[i]);
+			setargs("pix", NIL);
+			firstarg = 2;
 		}
+		argv[0] = "pdx";
+	} else {
+		done = FALSE;
+		i = 1;
+		while (i < argc && !done) {
+			if (argv[i][0] == '-') {
+				for (j = 1; argv[i][j] != '\0'; j++) {
+					switch (argv[i][j]) {
+						case 'r':	/* run program before accepting commands */
+						case 'b':	/* (internal) trace breakpoints */
+						case 'e':	/* (internal) trace execution */
+						case 'h':	/* (internal) display header information */
+							option(argv[i][j]) = TRUE;
+							break;
+
+					default:
+						panic("bad option \"%c\"", argv[i]);
+					}
+				}
+			} else {
+				objname = argv[i];
+				done = TRUE;
+			}
+			i++;
+		}
+		firstarg = i;
+		setargs("pdx", objname);
 	}
 }
 
 /*
- * take appropriate action for recognized command argument
+ * Terminate program.  In the case of the -t option, we must remove
+ * the object file because it's a tmp file.
  */
 
-LOCAL setoption(c)
-register char c;
+quit(r)
+int r;
 {
-	switch(c) {
-		case 'r':	/* run program before accepting commands */
-		case 'b':	/* trace internal breakpoints (for debugging) */
-		case 'e':	/* trace execution (for debugging) */
-			option(c) = TRUE;
-			break;
-
-		default:
-			panic("unknown option '%c'", c);
+	if (option('t')) {
+		unlink(objname);
 	}
+	exit(r);
+}
+
+LOCAL catchsigs()
+{
+	signal(SIGHUP, quit);
+	signal(SIGQUIT, quit);
 }
