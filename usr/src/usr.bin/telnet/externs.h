@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)externs.h	1.15 (Berkeley) %G%
+ *	@(#)externs.h	1.16 (Berkeley) %G%
  */
 
 #include <stdio.h>
@@ -49,6 +49,12 @@ extern int
     dontlecho,		/* do we suppress local echoing right now? */
     crmod,
     netdata,		/* Print out network data flow */
+#if	defined(unix)
+#if	defined(TN3270)
+    cursesdata,		/* Print out curses data flow */
+#endif	/* defined(TN3270) */
+    termdata,		/* Print out terminal data flow */
+#endif	/* defined(unix) */
     debug;			/* Debug level */
 
 extern char
