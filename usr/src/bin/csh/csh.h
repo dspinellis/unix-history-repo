@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)csh.h	5.20 (Berkeley) %G%
+ *	@(#)csh.h	5.21 (Berkeley) %G%
  */
 
 /*
@@ -53,17 +53,10 @@ typedef void *ptr_t;
 #include "char.h"
 #include "err.h"
 
-#ifdef SYSMALLOC
 #define xmalloc(i)	Malloc(i)
 #define xrealloc(p, i)	Realloc(p, i)
 #define xcalloc(n, s)	Calloc(n, s)
 #define xfree(p)	Free(p)
-#else
-#define xmalloc(i)	malloc(i)
-#define xrealloc(p, i)	realloc(p, i)
-#define xcalloc(n, s)	calloc(n, s)
-#define xfree(p)	free(p)
-#endif				/* SYSMALLOC */
 
 #include <stdio.h>
 FILE *cshin, *cshout, *csherr;

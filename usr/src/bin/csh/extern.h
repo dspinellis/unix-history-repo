@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)extern.h	5.13 (Berkeley) %G%
+ *	@(#)extern.h	5.14 (Berkeley) %G%
  */
 
 #include <sys/cdefs.h>
@@ -278,17 +278,10 @@ void	psecs __P((long));
 /*
  * alloc.c
  */
-#ifndef SYSMALLOC
-void	free __P((ptr_t));
-ptr_t	malloc __P((size_t));
-ptr_t	realloc __P((ptr_t, size_t));
-ptr_t	calloc __P((size_t, size_t));
-#else
 void	Free __P((ptr_t));
 ptr_t	Malloc __P((size_t));
 ptr_t	Realloc __P((ptr_t, size_t));
 ptr_t	Calloc __P((size_t, size_t));
-#endif				/* SYSMALLOC */
 void	showall __P((Char **, struct command *));
 
 /*
