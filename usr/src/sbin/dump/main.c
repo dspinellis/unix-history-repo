@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	1.16 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	1.17 (Berkeley) %G%";
 #include "dump.h"
 
 int	notify = 0;	/* notify operator flag */
@@ -265,7 +265,7 @@ main(argc, argv)
 	bitmap(clrmap, TS_CLRI);
 
 	msg("dumping (Pass III) [directories]\n");
-	pass(dump, dirmap);
+ 	pass(dirdump, dirmap);
 
 	msg("dumping (Pass IV) [regular files]\n");
 	pass(dump, nodmap);

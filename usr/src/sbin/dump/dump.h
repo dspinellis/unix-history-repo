@@ -1,4 +1,4 @@
-/*	dump.h	1.12	83/07/01	*/
+/*	dump.h	1.13	84/10/05	*/
 
 #define	NI		16
 #define MAXINOPB	(MAXBSIZE / sizeof(struct dinode))
@@ -66,6 +66,7 @@ char	*prdate();
 long	atol();
 int	mark();
 int	add();
+int	dirdump();
 int	dump();
 int	tapsrec();
 int	dmpspc();
