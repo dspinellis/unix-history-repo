@@ -9,7 +9,7 @@
  *
  * %sccs.include.386.c%
  *
- *	@(#)pccons.c	5.2 (Berkeley) %G%
+ *	@(#)pccons.c	5.3 (Berkeley) %G%
  */
 
 /*
@@ -23,7 +23,7 @@
 #include "proc.h"
 #include "tty.h"
 #include "uio.h"
-#include "machine/device.h"
+#include "machine/isa/device.h"
 #include "callout.h"
 #include "systm.h"
 #include "kernel.h"
@@ -43,9 +43,22 @@ struct	consoftc {
 
 int cnprobe(), cnattach();
 
-struct	driver cndriver = {
+struct	isa_driver cndriver = {
 	cnprobe, cnattach, "cn",
 };
+
+#define	COL		80
+#define	ROW		25
+#define	CHR		2
+#define MONO_BASE	0x3B4
+#define MONO_BUF	0xB0000
+#define CGA_BASE	0x3D4
+#define CGA_BUF		0xB8000
+#define IOPHYSMEM	0xA0000
+
+u_char	color = 0xe ;
+static unsigned int addr_6845 = MONO_BASE;
+u_short *Crtat = (u_short *)MONO_BUF;
 
 /*
  * We check the console periodically to make sure
@@ -76,7 +89,7 @@ char	partab[];
 u_char inb();
 
 cnprobe(dev)
-struct device *dev;
+struct isa_device *dev;
 {
 	u_char c;
 	int again = 0;
@@ -96,16 +109,28 @@ struct device *dev;
 			again = 1;
 		}
 	}
-	if (again) printf("KEYBOARD Reconnected\n");
 	/* pick up keyboard reset return code */
-	sgetc(1);
+	while((c=inb(0x60))!=0xAA)nulldev();
 	return 1;
 }
 
 cnattach(dev)
-struct device *dev;
+struct isa_device *dev;
 {
-	INTREN(IRQ1);
+	u_short *cp = Crtat + (CGA_BUF-MONO_BUF)/CHR;
+	u_short was;
+
+	/* Crtat initialized to point to MONO buffer   */
+	/* if not present change to CGA_BUF offset     */
+	/* ONLY ADD the difference since locore.s adds */
+	/* in the remapped offset at the right time    */
+
+	was = *Crtat;
+	*Crtat = (u_short) 0xA55A;
+	if (*Crtat != 0xA55A)
+		printf("<mono>");
+	else	printf("<color>");
+	*Crtat = was;
 }
 
 /*ARGSUSED*/
@@ -134,7 +159,6 @@ cnclose(dev)
 {
 	(*linesw[cons.t_line].l_close)(&cons);
 	ttyclose(&cons);
-	INTRDIS(IRQ1);
 }
 
 /*ARGSUSED*/
@@ -158,13 +182,13 @@ cnwrite(dev, uio)
  * the console processor wants to give us a character.
  * Catch the character, and see who it goes to.
  */
-cnrint(dev)
+cnrint(dev, irq, cpl)
 	dev_t dev;
 {
 	int c;
 
 	c = sgetc(1);
-	if (c&0x100)return;
+	if (c&0x100) return;
 	if (consoftc.cs_flags&CSF_POLLING)
 		return;
 #ifdef KDB
@@ -328,28 +352,15 @@ sysbeep()
 	timeout(sysbeepstop,0,hz/4);
 }
 
-#define	COL		80
-#define	ROW		25
-#define	CHR		2
-#define MONO_BASE	0x3B4
-#define MONO_BUF	0xB0000
-#define CGA_BASE	0x3D4
-#define CGA_BUF		0xB8000
-#define IOPHYSMEM	0xA0000
-
-u_char	color = 0xe ;
-static unsigned int addr_6845;
-u_short *Crtat = (u_short *)MONO_BUF;
-
 /* cursor() sets an offset (0-1999) into the 80x25 text area    */
-/* Theoretically there should be a slight delay between outb's  */
-/* and if your display has cursor problems that may be it.      */
-/* This may have to be left as is since it is done after every  */
-/* char and can seriously affect performance .                  */
 
-cursor(pos)
-int pos;
-{
+static u_short *crtat = 0;
+char bg_at = 0x0f;
+char so_at = 0x70;
+
+cursor()
+{ 	int pos = crtat - Crtat;
+
 	outb(addr_6845,14);
 	outb(addr_6845+1,pos >> 8);
 	outb(addr_6845,15);
@@ -359,34 +370,39 @@ int pos;
 /* sput has support for emulation of the 'ibmpc' termcap entry. */
 /* This is a bare-bones implementation of a bare-bones entry    */
 /* One modification: Change li#24 to li#25 to reflect 25 lines  */
-/* sput tries to do 16-bit writes.  This may not work on all.   */
 
 sput(c, ca)
 u_char c, ca;
 {
 
 	static int esc,ebrac,eparm,cx,cy,row,so;
-	static u_short *crtat = 0;
-	int s;
 
-	s = splnone();
-
-/*
-	if(inb(0x64)&1)sgetc(1);
-*/
 	if (crtat == 0) {
+		u_short *cp = Crtat + (CGA_BUF-MONO_BUF)/CHR, was;
+		unsigned cursorat;
 
 		/* Crtat initialized to point to MONO buffer   */
 		/* if not present change to CGA_BUF offset     */
 		/* ONLY ADD the difference since locore.s adds */
 		/* in the remapped offset at the right time    */
 
-		*Crtat = (u_short) 0xA55A;
-		if (*Crtat != 0xA55A) {
-			Crtat = Crtat + (CGA_BUF-MONO_BUF)/CHR;
+		was = *cp;
+		*cp = (u_short) 0xA55A;
+		if (*cp != 0xA55A) {
+			addr_6845 = MONO_BASE;
+		} else {
+			*cp = was;
 			addr_6845 = CGA_BASE;
-		} else addr_6845 = MONO_BASE;
-		crtat = Crtat; bzero (crtat,COL*ROW*CHR);
+			Crtat = Crtat + (CGA_BUF-MONO_BUF)/CHR;
+		}
+		/* Extract cursor location */
+		outb(addr_6845,14);
+		cursorat = inb(addr_6845+1)<<8 ;
+		outb(addr_6845,15);
+		cursorat |= inb(addr_6845+1);
+
+		crtat = Crtat + cursorat;
+		fillw((bg_at<<8)|' ', crtat, COL*ROW-cursorat);
 	}
 	switch(c) {
 	case 0x1B:
@@ -434,11 +450,12 @@ u_char c, ca;
 					esc = 0; ebrac = 0; eparm = 0;
 					break;
 				case 'J': /* Clear to end of display */
-					bzero(crtat,(Crtat+COL*ROW-crtat)*CHR);
+					fillw((bg_at<<8)+' ', crtat,
+						Crtat+COL*ROW-crtat);
 					esc = 0; ebrac = 0; eparm = 0;
 					break;
 				case 'K': /* Clear to EOL */
-					bzero(crtat,(COL-row)*CHR);
+					fillw((bg_at<<8)+' ', crtat, COL-row);
 					esc = 0; ebrac = 0; eparm = 0;
 					break;
 				case 'H': /* Cursor move */
@@ -453,7 +470,6 @@ u_char c, ca;
 					break;
 				case ';': /* Switch params in cursor def */
 					eparm = 1;
-					splx(s);
 					return;
 				default: /* Only numbers valid here */
 					if ((c >= '0')&&(c <= '9')) {
@@ -467,17 +483,16 @@ u_char c, ca;
 					} else {
 						esc = 0; ebrac = 0; eparm = 0;
 					}
-					splx(s);
 					return;
 				}
 				break;
 			} else if (c == 'c') { /* Clear screen & home */
-				bzero(Crtat,COL*ROW*CHR);
+				fillw((bg_at<<8)+' ', Crtat,COL*ROW);
 				crtat = Crtat; row = 0;
 				esc = 0; ebrac = 0; eparm = 0;
-			}else if (c == '[') { /* Start ESC [ sequence */
+			} else if (c == '[') { /* Start ESC [ sequence */
 				ebrac = 1; cx = 0; cy = 0; eparm = 0;
-			}else{ /* Invalid, clear state */
+			} else { /* Invalid, clear state */
 				 esc = 0; ebrac = 0; eparm = 0;
 			}
 		} else {
@@ -485,9 +500,10 @@ u_char c, ca;
 				sysbeep();
 			}
 			/* Print only printables */
-			else if (c >= ' ') {
+			else /*if (c >= ' ') */ {
+				while(inb(0x3da)&1)nulldev();
 				if (so) {
-					*crtat++ = 0x7000| c; row++ ;
+					*crtat++ = (so_at<<8)| c; row++ ;
 				} else {
 					*crtat++ = (ca<<8)| c; row++ ;
 				}
@@ -498,13 +514,10 @@ u_char c, ca;
 	}
 	if (crtat >= Crtat+COL*(ROW)) { /* scroll check */
 		bcopy(Crtat+COL,Crtat,COL*(ROW-1)*CHR);
-		bzero (Crtat+COL*(ROW-1),COL*CHR) ;
+		fillw ((bg_at<<8)+' ', Crtat+COL*(ROW-1),COL) ;
 		crtat -= COL ;
 	}
-	cursor(crtat-Crtat);
-	splx(s);
 }
-
 
 
 #define	L		0x0001	/* locking function */
@@ -518,7 +531,7 @@ u_char c, ca;
 #define	FUNC		0x0100	/* function key */
 #define	SCROLL		0x0200	/* scroll lock key */
 
-unsigned	__debug = 0 ;
+unsigned	__debug = 0;
 u_short action[] = {
 0,     ASCII, ASCII, ASCII, ASCII, ASCII, ASCII, ASCII,		/* scan  0- 7 */
 ASCII, ASCII, ASCII, ASCII, ASCII, ASCII, ASCII, ASCII,		/* scan  8-15 */
@@ -611,6 +624,17 @@ update_led()
 	outb(0x60,scroll | 2*num | 4*caps);
 }
 
+reset_cpu() {
+	while(1) {
+		while (inb(0x64)&2);	/* wait input ready */
+		outb(0x64,0xFE);	/* Reset Command */
+		DELAY(4000000);
+		while (inb(0x64)&2);	/* wait input ready */
+		outb(0x64,0xFF);	/* Keyboard Reset Command */
+	}
+	/* NOTREACHED */
+}
+
 /*
 sgetc(noblock) : get a character from the keyboard. If noblock = 0 wait until
 a key is gotten.  Otherwise return a 0x100 (256).
@@ -689,7 +713,7 @@ getchar()
 	consoftc.cs_flags |= CSF_POLLING;
 	x=splhigh();
 	sput('>',0x6);
-	while (1) {
+	/*while (1) {*/
 		thechar = (char) sgetc(0);
 		consoftc.cs_flags &= ~CSF_POLLING;
 		splx(x);
@@ -714,5 +738,5 @@ getchar()
 			     sput('^',0x6) ; sput('D',0x6) ; sput('\r',0x6) ; sput('\n',0x6) ;
 			     return(0);
 		}
-	}
+	/*}*/
 }
