@@ -1,0 +1,102 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)printcap.5	5.1 (Berkeley) %G%
+.\"
+.TH PRINTCAP 5 "18 July 1983"
+.UC 5
+.ad
+.SH NAME
+printcap \- printer capability data base
+.SH SYNOPSIS
+/etc/printcap
+.SH DESCRIPTION
+.I Printcap
+is a simplified version of the
+.IR termcap (5)
+data base
+used to describe line printers.  The spooling system accesses the
+.I printcap
+file every time it is used, allowing dynamic
+addition and deletion of printers.  Each entry in the data base
+is used to describe one printer.  This data base may not be
+substituted for, as is possible for 
+.IR termcap ,
+because it may allow accounting to be bypassed.
+.PP
+The default printer is normally 
+.IR lp ,
+though the environment variable PRINTER
+may be used to override this.  Each spooling utility supports an option,
+.BI \-P printer,
+to allow explicit naming of a destination printer.
+.PP
+Refer to the
+.ul
+4.2BSD Line Printer Spooler Manual
+for a complete discussion on how setup the database for a given printer.
+.SH CAPABILITIES
+Refer to
+.I termcap
+for a description of the file layout.
+.nf
+
+.ta \w'k0-k9  'u +\w'Type  'u +\w'``/usr/spool/lpd\'\'  'u
+\fBName	Type	Default	Description\fR
+af	str	NULL	name of accounting file
+br	num	none	if lp is a tty, set the baud rate (ioctl call)
+cf	str	NULL	cifplot data filter
+df	str	NULL	tex data filter (DVI format)
+fc	num	0	if lp is a tty, clear flag bits (sgtty.h)
+ff	str	``\ef''	string to send for a form feed
+fo	bool	false	print a form feed when device is opened
+fs	num	0	like `fc' but set bits
+gf	str	NULL	graph data filter (plot (3X) format)
+ic	bool	false	driver supports (non standard) ioctl to indent printout
+if	str	NULL	name of text filter which does accounting
+lf	str	``/dev/console''	error logging file name
+lo	str	``lock''	name of lock file
+lp	str	``/dev/lp''	device name to open for output
+mx	num	1000	maximum file size (in BUFSIZ blocks), zero = unlimited
+nd	str	NULL	next directory for list of queues (unimplemented)
+nf	str	NULL	ditroff data filter (device independent troff)
+of	str	NULL	name of output filtering program
+pl	num	66	page length (in lines)
+pw	num	132	page width (in characters)
+px	num	0	page width in pixels (horizontal)
+py	num	0	page length in pixels (vertical)
+rf	str	NULL	filter for printing FORTRAN style text files
+rm	str	NULL	machine name for remote printer
+rp	str	``lp''	remote printer name argument
+rs	bool	false	restrict remote users to those with local accounts
+rw	bool	false	open the printer device for reading and writing
+sb	bool	false	short banner (one line only)
+sc	bool	false	suppress multiple copies
+sd	str	``/usr/spool/lpd''	spool directory
+sf	bool	false	suppress form feeds
+sh	bool	false	suppress printing of burst page header
+st	str	``status''	status file name
+tf	str	NULL	troff data filter (cat phototypesetter)
+tr	str	NULL	trailer string to print when queue empties
+vf	str	NULL	raster image filter
+xc	num	0	if lp is a tty, clear local mode bits (tty (4))
+xs	num	0	like `xc' but set bits
+.fi
+.PP
+Error messages sent to the console have a carriage return and a line
+feed appended to them, rather than just a line feed.
+.PP
+If the local line printer driver supports indentation, the daemon
+must understand how to invoke it.
+.SH "SEE ALSO"
+termcap(5),
+lpc(8),
+lpd(8),
+pac(8),
+lpr(1),
+lpq(1),
+lprm(1)
+.br
+.ul
+4.2BSD Line Printer Spooler Manual
