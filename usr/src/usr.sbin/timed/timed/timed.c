@@ -1,17 +1,17 @@
 /*
- * Copyright (c) 1983 Regents of the University of California.
+ * Copyright (c) 1985 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1983 Regents of the University of California.\n\
+"@(#) Copyright (c) 1985 Regents of the University of California.\n\
  All rights reserved.\n";
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)timed.c	2.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)timed.c	2.7 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -149,23 +149,6 @@ char **argv;
 			}
 		} while (*++(*argv));
 	}
-
-#ifndef DEBUG
-	if (fork())
-		exit(0);
-	{ int s;
-	  for (s = getdtablesize(); s >= 0; --s)
-		(void) close(s);
-	  (void) open("/dev/null", 0);
-	  (void) dup2(0, 1);
-	  (void) dup2(0, 2);
-	  s = open("/dev/tty", 2);
-	  if (s >= 0) {
-		(void) ioctl(s, (int)TIOCNOTTY, (char *)0);
-		(void) close(s);
-	  }
-	}
-#endif
 
 	if (trace == ON) {
 		fd = fopen(tracefile, "w");
@@ -331,6 +314,23 @@ char **argv;
 
 	/* election timer delay in secs. */
 	delay2 = casual((long)MINTOUT, (long)MAXTOUT);
+#ifndef DEBUG
+	if (fork())
+		exit(0);
+	{ int s;
+	  for (s = getdtablesize(); s >= 0; --s)
+		(void) close(s);
+	  (void) open("/dev/null", 0);
+	  (void) dup2(0, 1);
+	  (void) dup2(0, 2);
+	  s = open("/dev/tty", 2);
+	  if (s >= 0) {
+		(void) ioctl(s, (int)TIOCNOTTY, (char *)0);
+		(void) close(s);
+	  }
+	}
+#endif
+
 
 	if (Mflag) {
 		/* open raw socket used to measure time differences */
@@ -394,12 +394,11 @@ char **argv;
 	} else {
 		/* if Mflag is not set timedaemon is forced to act as a slave */
 		status = SLAVE;
-		makeslave(firstslavenet());
 		if (setjmp(jmpenv)) {
 			setstatus();
 			checkignorednets();
-			makeslave(firstslavenet());
 		}
+		makeslave(firstslavenet());
 		for (ntp = nettab; ntp != NULL; ntp = ntp->next)
 			if (ntp->status == MASTER)
 				ntp->status = IGNORE;
@@ -569,7 +568,7 @@ firstslavenet()
 	return ((struct netinfo *)0);
 }
 
-/* 
+/*
  * `casual' returns a random number in the range [inf, sup]
  */
 
