@@ -1,4 +1,4 @@
-/*	getlogin.c	4.2	82/11/14	*/
+/*	getlogin.c	4.3	84/04/27	*/
 
 #include <utmp.h>
 
