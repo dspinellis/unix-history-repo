@@ -3,13 +3,13 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)getvfsbyname.3	8.2 (Berkeley) %G%
+.\"     @(#)getvfsbyname.3	8.3 (Berkeley) %G%
 .\"
 .Dd 
-.Dt KVM_GETVFSBYNAME 3
+.Dt GETVFSBYNAME 3
 .Os
 .Sh NAME
-.Nm kvm_getvfsbyname
+.Nm getvfsbyname
 .Nd get information about a filesystem
 .Sh SYNOPSIS
 .Fd #include <sys/types.h>
@@ -17,10 +17,10 @@
 .Fd #include <kvm.h>
 .br
 .Ft int
-.Fn kvm_getvfsbyname "const char *name" "struct vfsconf *vfc"
+.Fn getvfsbyname "const char *name" "struct vfsconf *vfc"
 .Sh DESCRIPTION
 The
-.Fn kvm_getvfsbyname
+.Fn getvfsbyname
 function provides access to information about a
 filesystem module that is configured in the kernel.
 If successful,
