@@ -294,6 +294,13 @@ dosetrlimit(p, which, limp)
 		if (limp->rlim_max > maxfiles)
 			limp->rlim_max = maxfiles;
 		break;
+
+	case RLIMIT_NPROC:
+		if (limp->rlim_cur > maxproc)
+			limp->rlim_cur = maxproc;
+		if (limp->rlim_max > maxproc)
+			limp->rlim_max = maxproc;
+		break;
 	}
 	*alimp = *limp;
 	return (0);
