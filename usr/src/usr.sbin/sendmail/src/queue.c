@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.49 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.50 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.49 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.50 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -229,7 +229,11 @@ queueup(e, queueall, announce)
 		fprintf(tfp, "$_%s\n", p);
 
 	/* output name of sender */
-	fprintf(tfp, "S%s\n", e->e_from.q_paddr);
+	if (bitnset(M_UDBENVELOPE, e->e_from.q_mailer->m_flags))
+		p = e->e_sender;
+	else
+		p = e->e_from.q_paddr;
+	fprintf(tfp, "S%s\n", p);
 
 	/* output list of error recipients */
 	printctladdr(NULL, NULL);

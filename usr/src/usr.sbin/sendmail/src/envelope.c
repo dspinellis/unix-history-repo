@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	8.40 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	8.41 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -635,34 +635,27 @@ setsender(from, e, delimptr, internal)
 	}
 	SuprErrs = FALSE;
 
-	pvp = NULL;
+# ifdef USERDB
 	if (bitnset(M_CHECKUDB, e->e_from.q_mailer->m_flags))
 	{
-# ifdef USERDB
 		register char *p;
 		extern char *udbsender();
-# endif
 
+		p = udbsender(e->e_from.q_user);
+		if (p != NULL)
+			from = p;
+	}
+# endif /* USERDB */
+
+	if (bitnset(M_HASPWENT, e->e_from.q_mailer->m_flags))
+	{
 		if (!internal)
 		{
-			/* if the user has given fullname already, don't redefine */
+			/* if the user already given fullname don't redefine */
 			if (FullName == NULL)
 				FullName = macvalue('x', e);
 			if (FullName != NULL && FullName[0] == '\0')
 				FullName = NULL;
-
-# ifdef USERDB
-			p = udbsender(e->e_from.q_user);
-
-			if (p != NULL)
-			{
-				/*
-				**  We have an alternate address for the sender
-				*/
-
-				pvp = prescan(p, '\0', pvpbuf, sizeof pvpbuf, NULL);
-			}
-# endif /* USERDB */
 		}
 
 		if ((pw = getpwnam(e->e_from.q_user)) != NULL)
@@ -717,8 +710,7 @@ setsender(from, e, delimptr, internal)
 	**	links in the net.
 	*/
 
-	if (pvp == NULL)
-		pvp = prescan(from, delimchar, pvpbuf, sizeof pvpbuf, NULL);
+	pvp = prescan(from, delimchar, pvpbuf, sizeof pvpbuf, NULL);
 	if (pvp == NULL)
 	{
 		/* don't need to give error -- prescan did that already */
@@ -728,9 +720,11 @@ setsender(from, e, delimptr, internal)
 # endif
 		finis();
 	}
+/*
 	(void) rewrite(pvp, 3, 0, e);
 	(void) rewrite(pvp, 1, 0, e);
 	(void) rewrite(pvp, 4, 0, e);
+*/
 	bp = buf + 1;
 	cataddr(pvp, NULL, bp, sizeof buf - 2, '\0');
 	if (*bp == '@' && !bitnset(M_NOBRACKET, e->e_from.q_mailer->m_flags))
