@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)signal.h	8.1 (Berkeley) %G%
+ *	@(#)signal.h	8.2 (Berkeley) %G%
  *
  * from: $Header: signal.h,v 1.5 92/11/26 02:04:46 torek Exp $
  */
@@ -21,6 +21,7 @@
 #ifndef LOCORE
 typedef int sig_atomic_t;
 
+#if !defined(_POSIX_SOURCE) && !defined(_ANSI_SOURCE)
 /*
  * Information pushed on stack when a signal is delivered.
  * This is used by the kernel to restore state following
@@ -41,6 +42,7 @@ struct sigcontext {
 	int	sc_g1;			/* %g1 to restore */
 	int	sc_o0;			/* %o0 to restore */
 };
+#endif
 #else /* LOCORE */
 #define	SC_SP_OFFSET	8
 #define	SC_PC_OFFSET	12
@@ -50,6 +52,7 @@ struct sigcontext {
 #define	SC_O0_OFFSET	28
 #endif /* LOCORE */
 
+#if !defined(_POSIX_SOURCE) && !defined(_ANSI_SOURCE)
 /*
  * `Code' arguments to signal handlers.  The names, and the funny numbering.
  * are defined so as to match up with what SunOS uses; I have no idea why
@@ -62,3 +65,4 @@ struct sigcontext {
 #define	FPE_FLTUND_TRAP		0xcc	/* underflow */
 #define	FPE_FLTOPERR_TRAP	0xd0	/* operand error */
 #define	FPE_FLTOVF_TRAP		0xd4	/* overflow */
+#endif

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)signal.h	8.1 (Berkeley) %G%
+ *	@(#)signal.h	8.2 (Berkeley) %G%
  */
 
 /*
@@ -13,9 +13,8 @@
 
 typedef int sig_atomic_t;
 
-#ifndef _POSIX_SOURCE
+#if !defined(_POSIX_SOURCE) && !defined(_ANSI_SOURCE)
 #include <machine/trap.h>	/* codes for SIGILL, SIGFPE */
-#endif
 
 /*
  * Information pushed on stack when a signal is delivered.
@@ -33,3 +32,4 @@ struct	sigcontext {
 	int	sc_pc;		/* pc to restore */
 	int	sc_ps;		/* psl to restore */
 };
+#endif
