@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dirs.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)dirs.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "restore.h"
@@ -53,7 +53,7 @@ struct dirdesc {
 	char	dd_buf[DIRBLKSIZ];
 };
 extern DIR *opendirfile();
-extern long rst_telldir();
+extern off_t rst_telldir();
 extern void rst_seekdir();
 
 /*
@@ -167,7 +167,6 @@ treescan(pname, ino, todo)
 	register struct entry *np;
 	int namelen;
 	daddr_t bpt;
-	off_t rst_telldir();
 	char locname[MAXPATHLEN + 1];
 
 	itp = inotablookup(ino);
@@ -388,7 +387,6 @@ rst_seekdir(dirp, loc, base)
 	register DIR *dirp;
 	daddr_t loc, base;
 {
-	off_t rst_telldir();
 
 	if (loc == rst_telldir(dirp))
 		return;
