@@ -18,7 +18,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)logwtmp.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)logwtmp.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -29,16 +29,17 @@ static char sccsid[] = "@(#)logwtmp.c	5.1 (Berkeley) %G%";
 
 #define	WTMPFILE	"/usr/adm/wtmp"
 
+static int fd;
+
 logwtmp(line, name, host)
 	char *line, *name, *host;
 {
 	struct utmp ut;
 	struct stat buf;
-	int fd;
 	time_t time();
 	char *strncpy();
 
-	if ((fd = open(WTMPFILE, O_WRONLY|O_APPEND, 0)) < 0)
+	if (!fd && (fd = open(WTMPFILE, O_WRONLY|O_APPEND, 0)) < 0)
 		return;
 	if (!fstat(fd, &buf)) {
 		(void)strncpy(ut.ut_line, line, sizeof(ut.ut_line));
@@ -49,5 +50,4 @@ logwtmp(line, name, host)
 		    sizeof(struct utmp))
 			(void)ftruncate(fd, buf.st_size);
 	}
-	(void)close(fd);
 }
