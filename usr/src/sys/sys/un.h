@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)un.h	7.4 (Berkeley) %G%
+ *	@(#)un.h	7.5 (Berkeley) %G%
  */
 
 /*
@@ -23,7 +23,7 @@
 struct	sockaddr_un {
 	u_char	sun_len;		/* sockaddr len including null */
 	u_char	sun_family;		/* AF_UNIX */
-	char	sun_path[108];		/* path name (gag) */
+	char	sun_path[104];		/* path name (gag) */
 };
 
 #ifdef KERNEL
