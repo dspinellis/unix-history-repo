@@ -1,4 +1,4 @@
-SCCSID = "@(#)Makefile 1.8 %G%"
+SCCSID = "@(#)Makefile 1.9 %G%"
 CFLAGS = -O
 LIB = ${DESTDIR}/usr/lib
 SRCDIR = ${DESTDIR}/usr/ucb
@@ -46,21 +46,33 @@ sources: ${CMDS} ${SYS} ${EXTN} ${HDRS}
 
 .s.o:
 	${AS} -o tmp $*.s
+	-${LD} -x -r -o normal/$@ tmp
+	sed -f mcount.sed $*.s | ${AS} -o tmp
 	-${LD} -x -r -o $@ tmp
 
 .c.o:
 	${CC} ${CFLAGS} -c $*.c
 	mv $@ tmp
+	-${LD} -x -r -o normal/$@ tmp
+	${CC} -p ${CFLAGS} -c $*.c
+	mv $@ tmp
 	-${LD} -x -r -o $@ tmp
 
-install: libpc
+libpc libpc_p: normal ${OBJS} ${SYOBJ} ${EXOBJ}
+	${AR} cru libpc_p ${OBJS} ${SYOBJ} ${EXOBJ}
+	${RANLIB} libpc_p
+	mv normal/* .
+	${AR} cru libpc ${OBJS} ${SYOBJ} ${EXOBJ}
+	${RANLIB} libpc
+
+install: libpc libpc_p
+	cp libpc_p ${LIB}/libpc_p.a
+	${RANLIB} ${LIB}/libpc_p.a
 	cp libpc ${LIB}/libpc.a
 	${RANLIB} ${LIB}/libpc.a
 
-libpc: ${OBJS} ${SYOBJ} ${EXOBJ}
-	${RM} libpc
-	${AR} cr libpc ${OBJS} ${SYOBJ} ${EXOBJ}
-	${RANLIB} libpc
+normal:
+	mkdir normal
 
 whoami.h:
 	cp ${PASDIR}/whoami.h whoami.h
@@ -103,7 +115,6 @@ ACTFILE.o: h00vars.h
 APPEND.o: h00vars.h
 ARGV.o: h00vars.h
 BUFF.o: h00vars.h
-CATCHERR.o: h00vars.h
 CTTOT.o: whoami.h
 CTTOT.o: h00vars.h
 DEFNAME.o: h00vars.h
@@ -116,6 +127,7 @@ FRTN.o: h00vars.h
 FSAV.o: h00vars.h
 GET.o: h00vars.h
 GETNAME.o: h00vars.h
+HALT.o: h00vars.h
 IN.o: h00vars.h
 INCT.o: h00vars.h
 IOSYNC.o: h00vars.h
@@ -145,6 +157,7 @@ RELNE.o: h00vars.h
 RELSGE.o: h00vars.h
 RELSGT.o: h00vars.h
 RELSLE.o: h00vars.h
+RELSLT.o: h00vars.h
 RELTGE.o: h00vars.h
 RELTGT.o: h00vars.h
 RELTLE.o: h00vars.h
