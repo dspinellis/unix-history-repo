@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: rd.c 1.30 89/09/17$
  *
- *	@(#)rd.c	7.2 (Berkeley) %G%
+ *	@(#)rd.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -38,19 +38,20 @@ struct	driver rddriver = {
 
 struct	rd_softc {
 	struct	hp_device *sc_hd;
+	int	sc_flags;
+	short	sc_type;
+	short	sc_punit;
+	char	*sc_addr;
+	int	sc_resid;
+	u_int	sc_wpms;
+	struct	rdinfo *sc_info;
+	struct	devqueue sc_dq;
 	struct	rd_iocmd sc_ioc;
 	struct	rd_rscmd sc_rsc;
 	struct	rd_stat sc_stat;
 	struct	rd_ssmcmd sc_ssmc;
 	struct	rd_srcmd sc_src;
 	struct	rd_clearcmd sc_clear;
-	int	sc_resid;
-	char	*sc_addr;
-	struct	rdinfo *sc_info;
-	int	sc_flags;
-	short	sc_type;
-	short	sc_punit;
-	struct	devqueue sc_dq;
 } rd_softc[NRD];
 
 /* sc_flags values */
@@ -373,6 +374,8 @@ struct	buf rdbuf[NRD];
 #define	RDRETRY		5
 #define RDWAITC		1	/* min time for timeout in seconds */
 
+int rderrthresh = RDRETRY-1;	/* when to start reporting errors */
+
 rdinit(hd)
 	register struct hp_device *hd;
 {
@@ -389,6 +392,11 @@ rdinit(hd)
 	rs->sc_dq.dq_driver = &rddriver;
 	rs->sc_info = &rdinfo[rs->sc_type];
 	rs->sc_flags = RDF_ALIVE;
+#ifdef DEBUG
+	/* always report errors */
+	if (rddebug & RDB_ERROR)
+		rderrthresh = 0;
+#endif
 	return(1);
 }
 
@@ -442,6 +450,8 @@ rdident(rs, hd)
 			name[i] = (n & 0xf) + '0';
 			n >>= 4;
 		}
+		/* use drive characteristics to calculate xfer rate */
+		rs->sc_wpms = 1000000 * (desc.d_sectsize/2) / desc.d_blocktime;
 	}
 #ifdef DEBUG
 	if (rddebug & RDB_IDENT) {
@@ -536,8 +546,12 @@ rdopen(dev, flags)
 
 	if (unit >= NRD || (rs->sc_flags & RDF_ALIVE) == 0)
 		return(ENXIO);
-	if (rs->sc_hd->hp_dk >= 0)
-	dk_wpms[rs->sc_hd->hp_dk] = 60 * rs->sc_info->nbpt * DEV_BSIZE / 2;
+	if (rs->sc_hd->hp_dk >= 0) {
+		/* guess at xfer rate based on 3600 rpm (60 rps) */
+		if (rs->sc_wpms == 0)
+			rs->sc_wpms = 60 * rs->sc_info->nbpt * DEV_BSIZE / 2;
+		dk_wpms[rs->sc_hd->hp_dk] = rs->sc_wpms;
+	}
 	return(0);
 }
 
@@ -830,7 +844,7 @@ rderror(unit)
 	struct rd_softc *rs = &rd_softc[unit];
 	register struct rd_stat *sp;
 	struct buf *bp;
-	daddr_t bn, pbn;
+	daddr_t hwbn, pbn;
 
 	if (rdstatus(rs)) {
 #ifdef DEBUG
@@ -865,21 +879,29 @@ rderror(unit)
 		timeout(rdrestart, unit, rdtimo*hz);
 		return(0);
 	}
-	bp = rdtab[unit].b_actf;
+	/*
+	 * Only report error if we have reached the error reporting
+	 * threshhold.  By default, this will only report after the
+	 * retry limit has been exceeded.
+	 */
+	if (rdtab[unit].b_errcnt < rderrthresh)
+		return(1);
+
 	/*
 	 * First conjure up the block number at which the error occured.
 	 * Note that not all errors report a block number, in that case
 	 * we just use b_blkno.
  	 */
-	pbn = RDSTOB(rs->sc_info->nbpc *
-		     rs->sc_info->sizes[rdpart(bp->b_dev)].cyloff);
+	bp = rdtab[unit].b_actf;
+	pbn = rs->sc_info->nbpc *
+		rs->sc_info->sizes[rdpart(bp->b_dev)].cyloff;
 	if ((sp->c_fef & FEF_CU) || (sp->c_fef & FEF_DR) ||
 	    (sp->c_ief & IEF_RRMASK)) {
-		bn = pbn + bp->b_blkno;
+		hwbn = RDBTOS(pbn + bp->b_blkno);
 		pbn = bp->b_blkno;
 	} else {
-		bn = RDSTOB(sp->c_blk);
-		pbn = bn - pbn;
+		hwbn = sp->c_blk;
+		pbn = RDSTOB(hwbn) - pbn;
 	}
 	/*
 	 * Now output a generic message suitable for badsect.
@@ -904,7 +926,7 @@ rderror(unit)
 		rdprinterr("fault", sp->c_fef, err_fault);
 		rdprinterr("access", sp->c_aef, err_access);
 		rdprinterr("info", sp->c_ief, err_info);
-		printf("    block: %d, P1-P10: ", bn);
+		printf("    block: %d, P1-P10: ", hwbn);
 		printf("%s", hexstr(*(u_int *)&sp->c_raw[0], 8));
 		printf("%s", hexstr(*(u_int *)&sp->c_raw[4], 8));
 		printf("%s\n", hexstr(*(u_short *)&sp->c_raw[8], 4));

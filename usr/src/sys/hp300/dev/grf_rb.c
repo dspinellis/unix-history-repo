@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: grf_rb.c 1.10 89/04/11$
  *
- *	@(#)grf_rb.c	7.1 (Berkeley) %G%
+ *	@(#)grf_rb.c	7.2 (Berkeley) %G%
  */
 
 #include "grf.h"
@@ -28,19 +28,6 @@
 #include "grf_rbreg.h"
 
 #include "machine/cpu.h"
-
-#ifdef notyet
-static short rb_microcode[] = {
-	0x5efe, 0x8a38, 0x0000, 0x0000, 0x0f00, 0, 0, 0,
-	0x3efe, 0x8a38, 0x0000, 0x7003, 0xf706, 0, 0, 0,
-	0x1efe, 0x8a38, 0x0000, 0x0000, 0x0000, 0, 0, 0,
-	0x3efe, 0x8a38, 0x0000, 0x7003, 0xfc06, 0, 0, 0,
-	0x1efe, 0x8a38, 0x0000, 0x0000, 0x0000, 0, 0, 0,
-	0x3efe, 0x8a38, 0x0004, 0x40f7, 0xa006, 0, 0, 0,
-	0x9efe, 0x8a38, 0x0000, 0x0000, 0x0000, 0, 0, 0,
-	0x1efe, 0x8a38, 0x0000, 0x0000, 0x0000
-};
-#endif
 
 /*
  * Initialize hardware.
@@ -69,51 +56,6 @@ rb_init(gp, addr)
 	gi->gd_colors = 256;
 	return(1);
 }
-
-#ifdef notyet
-/*
- * Download the microcode to the rbox.
- */
-rb_download_microcode(regbase)
-     caddr_t regbase;
-{
-	register short *rb_microcode_ptr = rb_microcode;
-	register short *rb_cntlstore_ptr = (short *)((char *)regbase + 0xC000);
-	register int i;
-
-	/*
-	 * Reset and halt transform engine
-	 */
-	*((char *)regbase + 0x8002) = 0x00a0;
-	*((char *)regbase + 0x8002) = 0x0020;
-	*((char *)regbase + 0x8002) = 0x0080;
-
-	/*
-	 * Select the first bank of control store.
-	 */
-	*((char *)regbase + 0x8007) = 0x0;
-
-	/*
-	 * Write the microcode into the control store address space.
-	 */
-	for (i = 0; i < sizeof(rb_microcode) / sizeof(rb_microcode[0]); i++)
-		*rb_cntlstore_ptr++ = *rb_microcode_ptr++;
-
-	/*
-	 * Start microcode execution.
-	 */
-	*(short *)((char *)regbase + 0x8002) = 0x2000;
-	*(short *)((char *)regbase + 0x8002) = 0x0;
-	
-	/*
-	 * wait for renaissance to finish up.
-	 */
-	for (i = 0; i < 1000; i++) {
-		if (*((char *)regbase + 0x8012) < 0)
-			continue;
-	}
-}
-#endif
 
 /*
  * Change the mode of the display.

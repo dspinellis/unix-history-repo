@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: grf.c 1.28 89/08/14$
  *
- *	@(#)grf.c	7.1 (Berkeley) %G%
+ *	@(#)grf.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -295,6 +295,9 @@ grflock(gp, block)
 	register struct grf_softc *gp;
 	int block;
 {
+	int error;
+	extern char devioc[];
+
 #ifdef DEBUG
 	if (grfdebug & GDB_LOCK)
 		printf("grflock(%d): dev %x flags %x lockpid %x\n",
@@ -324,6 +327,11 @@ grflock(gp, block)
 		do {
 			gp->g_flags |= GF_WANTED;
 			sleep((caddr_t)&gp->g_flags, PZERO+1);
+
+			if (error = tsleep((caddr_t)&gp->g_flags,
+					   (PZERO+1) | PCATCH, devioc, 0))
+				return (error);
+
 		} while (gp->g_lockp);
 	}
 	gp->g_lockp = u.u_procp;

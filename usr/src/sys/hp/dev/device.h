@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)device.h	7.1 (Berkeley) %G%
+ *	@(#)device.h	7.2 (Berkeley) %G%
  */
 
 struct driver {
@@ -74,12 +74,15 @@ struct hp_hw {
 #define	CT		0x2c
 
 /* These are not controllers, but may have their own HPIB address */
-#define	BITMAP		0x01
-#define	NET		0x02
-#define	COMM		0x03
-#define	FPA		0x04
-#define	MISC		0x05
-#define KEYBOARD	0x06
+#define	BITMAP		1
+#define	NET		2
+#define	FPA		4
+#define	MISC		5
+#define	KEYBOARD	6
+#define	COMMDCA		7
+#define	COMMDCM		8
+#define	COMMDCL		9
+#define	PPORT		10
 
 #ifdef KERNEL
 extern struct hp_ctlr	hp_cinit[];
