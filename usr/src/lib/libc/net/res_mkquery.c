@@ -3,15 +3,20 @@
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
- * provided that this notice is preserved and that due credit is given
- * to the University of California at Berkeley. The name of the University
- * may not be used to endorse or promote products derived from this
- * software without specific prior written permission. This software
- * is provided ``as is'' without express or implied warranty.
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_mkquery.c	6.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_mkquery.c	6.8 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
@@ -65,20 +70,6 @@ res_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 	*dpp++ = buf;
 	*dpp++ = NULL;
 	lastdnptr = dnptrs + sizeof(dnptrs)/sizeof(dnptrs[0]);
-	/*
-	 * If the domain name contains no dots (single label), then
-	 * append the default domain name to the one given.
-	 */
-	if ((_res.options & RES_DEFNAMES) && dname != 0 && dname[0] != '\0' &&
-	    index(dname, '.') == NULL) {
-		if (!(_res.options & RES_INIT))
-			if (res_init() == -1)
-				return(-1);
-		if (_res.defdname[0] != '\0') {
-			(void)sprintf(dnbuf, "%s.%s", dname, _res.defdname);
-			dname = dnbuf;
-		}
-	}
 	/*
 	 * perform opcode specific processing
 	 */
