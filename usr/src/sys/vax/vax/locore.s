@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	7.14 (Berkeley) %G%
+ *	@(#)locore.s	7.15 (Berkeley) %G%
  */
 
 #include "psl.h"
@@ -115,7 +115,7 @@ SCBVEC(machcheck):
 	.word	1f-0b		# 7 is 610  (unsupported)
 	.word	1f-0b		# 8 is 630
 	.word	1f-0b		# 9 is ???
-	.word	1f-0b		# 10 is 650
+	.word	9f-0b		# 10 is 650
 5:
 #if defined(VAX8200) || defined(VAX750) || defined(VAX730)
 	mtpr	$0xf,$MCESR
@@ -130,10 +130,18 @@ SCBVEC(machcheck):
 #if VAX780
 	mtpr	$0,$SBIFS
 #endif
+	brb	1f
+9:
+#if VAX650
+	bitl	$PG_V,_KA650MERRmap
+	beql	1f	# don't bother clearing err reg if not mapped in
+	movl	$DSER_CLEAR,_ka650merr+4
+#endif
 1:
 	addl2	(sp)+,sp		# discard mchchk trash
 	movl	nofault,(sp)
 	rei
+
 SCBVEC(kspnotval):
 	PANIC("KSP not valid");
 SCBVEC(powfail):
@@ -952,13 +960,15 @@ start:
 	acbl	$MAXMEM*1024-1,$64*1024,r7,1b
 9:
 #if  VAX630 || VAX650
-/* leave an area for uVAX console scratch pad at the top */
+/* reserved area at top of memory for processor specific use */
 	cmpb	_cpu,$VAX_630
 	beql	1f
 	cmpb	_cpu,$VAX_650
 	bneq	2f
+	subl2	$32768,r7	# space for Qbus map registers
+	brb	2f
 1:
-	subl2   $4096,r7
+	subl2   $4096,r7	# space for console scratchpad
 2:
 #endif
 /* clear memory from kernel bss and pages for proc 0 u. and page table */
