@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)shell.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)shell.c	4.2	(Berkeley)	%G%";
 #endif not lint
 
 /*
@@ -16,8 +16,8 @@ shell()
 	{
 		setuid(getuid());
 		nice(0);
-		execl("/bin/sh", "-", 0);
-		syserr("cannot execute /bin/sh");
+		execl("/bin/csh", "-", 0);
+		syserr("cannot execute /bin/csh");
 	}
 	sav2 = signal(2, 1);
 	sav3 = signal(3, 1);
