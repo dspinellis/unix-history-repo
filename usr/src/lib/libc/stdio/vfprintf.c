@@ -11,7 +11,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vfprintf.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)vfprintf.c	5.13 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -117,6 +117,7 @@ flags:		switch (*++fmt) {
 			/*FALLTHROUGH*/
 		case '1': case '2': case '3': case '4':
 		case '5': case '6': case '7': case '8': case '9':
+			width = 0;
 			do {
 				width = 10 * width + *fmt - '0';
 			} while isdigit(*++fmt);
