@@ -29,7 +29,7 @@
 # See below for how to change them for certain systems.
 
 # Selection of languages to be made.
-LANGUAGES = c c++ objective-c proto
+LANGUAGES = c c++
 
 ALLOCA =
 ALLOCA_FLAGS =
@@ -123,9 +123,21 @@ SYSTEM_HEADER_DIR = /usr/include
 PREMADE_ATTRTAB_MD = Makefile  # Guaranteed not to cmp equal to md.
 PREMADE_ATTRTAB = 
 
-target=m68k-hp-bsd
-xmake_file=../Makefile.in
-tmake_file=../Makefile.in
+
+.if ${MACHINE} == "hp300"
+target = m68k-hp-bsd
+.elif ${MACHINE} == "luna68k"
+target =  m68k-omron-bsd
+.elif ${MACHINE} == "mips"
+target = mips-dec-bsd
+.elif ${MACHINE} == "sparc"
+target = sparc
+.endif
+
+
+#xmake_file=../Makefile.in
+#tmake_file=../Makefile.in
+
 version=`sed -e 's/.*\"\([^ \"]*\)[ \"].*/\1/' < $(srcdir)/version.c`
 
 # Directory where sources are, from where we are.
@@ -167,7 +179,8 @@ OBSTACK= obstack.o
 # Specify the rule for actually making libgcc1.a.
 # The value may be empty; that means to do absolutely nothing
 # with or for libgcc1.a.
-LIBGCC1 = libgcc1.a
+#LIBGCC1 = libgcc1.a
+LIBGCC1 =
 
 # Specify the rule for actually making libgcc2.a.
 LIBGCC2 = libgcc2.a
@@ -269,7 +282,11 @@ INSTALL_TARGET=install-native
 # do not specify the default target.
 # The real definition is under `all.internal' (for native compilers)
 # or `all.cross' (for cross compilers).
-all: all.indirect
+all: banner all.indirect
+
+banner:
+	@echo Creating gcc for target = $(target)...
+	
 
 # This tells GNU Make version 3 not to put all variables in the environment.
 .NOEXPORT:
@@ -426,10 +443,6 @@ CPLUS_TREE_H = $(TREE_H) cp-tree.h cp-tree.def
 
 # Avoid a lot of time thinking about remaking Makefile.in and *.def.
 .SUFFIXES: .in .def
-
-Makefile: $(srcdir)/Makefile.in $(srcdir)/configure $(srcdir)/version.c \
-   $(srcdir)/config/$(xmake_file) $(srcdir)/config/$(tmake_file)
-	sh config.status
 
 all.internal: start.encap rest.encap
 # This is what to compile if making a cross-compiler.
@@ -1442,26 +1455,6 @@ install-float-h-cross:
 # Create the installation directory.
 install-dir:
 	-if [ -d $(libdir) ] ; then true ; else mkdir $(libdir) ; fi
-	-if [ -d $(libdir)/gcc-lib ] ; then true ; else mkdir $(libdir)/gcc-lib ; fi
-	-if [ -d $(libdir)/gcc-lib/include ] ; then true ; else mkdir $(libdir)/gcc-lib/include ; fi
-	-if [ -d $(libdir)/gcc-lib/$(target) ] ; then true ; else mkdir $(libdir)/gcc-lib/$(target) ; fi
-	-if [ -d $(libdir)/gcc-lib/$(target)/$(version) ] ; then true ; else mkdir $(libdir)/gcc-lib/$(target)/$(version) ; fi
-	-if [ -d $(libdir)/gcc-lib/$(target)/$(version)/include ] ; then true ; else mkdir $(libdir)/gcc-lib/$(target)/$(version)/include ; fi
-	-if [ -d $(bindir) ] ; then true ; else mkdir $(bindir) ; fi
-	-if [ -d $(includedir) ] ; then true ; else mkdir $(includedir) ; fi
-	-if [ -d $(includedir) ] ; then true ; else mkdir $(includedir) ; fi
-	-if [ -f gcc-cross ] ; \
-	then \
-	  if [ -d $(tooldir) ] ; then true ; else mkdir $(tooldir) ; fi ; \
-	  if [ -d $(assertdir) ] ; then true ; else mkdir $(assertdir) ; fi ; \
-	else true; \
-	fi
-# We don't use mkdir -p to create the parents of mandir,
-# because some systems don't support it.
-# Instead, we use this technique to create the immediate parent of mandir.
-	-parent=`echo $(mandir)|sed -e 's@/[^/]*$$@@'`; \
-	if [ -d $$parent ] ; then true ; else mkdir $$parent ; fi
-	-if [ -d $(mandir) ] ; then true ; else mkdir $(mandir) ; fi
 
 # Install the compiler executables built during cross compilation.
 # Deps on  $(srcdir)/g++ $(srcdir)/c++  would be natural here,
