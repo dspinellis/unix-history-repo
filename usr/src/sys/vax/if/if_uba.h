@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_uba.h	6.2 (Berkeley) %G%
+ *	@(#)if_uba.h	6.3 (Berkeley) %G%
  */
 
 /*
@@ -13,8 +13,9 @@
 
 #define	IF_MAXNUBAMR	10
 /*
- * Each interface has one of these structures giving information
- * about UNIBUS resources held by the interface.
+ * Each interface has structures giving information
+ * about UNIBUS resources held by the interface
+ * for each send and receive buffer.
  *
  * We hold IF_NUBAMR map registers for datagram data, starting
  * at ifr_mr.  Map register ifr_mr[-1] maps the local network header
@@ -33,23 +34,68 @@
  * with the pages already containing the data, mapping the allocated
  * pages to replace the input pages for the next UNIBUS data input.
  */
-struct	ifuba {
-	short	ifu_uban;			/* uba number */
-	short	ifu_hlen;			/* local net header length */
-	struct	uba_regs *ifu_uba;		/* uba regs, in vm */
-	struct ifrw {
-		caddr_t	ifrw_addr;		/* virt addr of header */
-		int	ifrw_bdp;		/* unibus bdp */
-		int	ifrw_info;		/* value from ubaalloc */
-		int	ifrw_proto;		/* map register prototype */
-		struct	pte *ifrw_mr;		/* base of map registers */
-	} ifu_r, ifu_w;
-	struct	pte ifu_wmap[IF_MAXNUBAMR];	/* base pages for output */
-	short	ifu_xswapd;			/* mask of clusters swapped */
-	short	ifu_flags;			/* used during uballoc's */
-	struct	mbuf *ifu_xtofree;		/* pages being dma'd out */
+
+/*
+ * Information per interface.
+ */
+struct	ifubinfo {
+	short	iff_uban;			/* uba number */
+	short	iff_hlen;			/* local net header length */
+	struct	uba_regs *iff_uba;		/* uba regs, in vm */
+	short	iff_flags;			/* used during uballoc's */
 };
 
+/*
+ * Information per buffer.
+ */
+struct ifrw {
+	caddr_t	ifrw_addr;			/* virt addr of header */
+	int	ifrw_bdp;			/* unibus bdp */
+	int	ifrw_info;			/* value from ubaalloc */
+	int	ifrw_proto;			/* map register prototype */
+	struct	pte *ifrw_mr;			/* base of map registers */
+};
+
+/*
+ * Information per transmit buffer, including the above.
+ */
+struct ifxmt {
+	struct	ifrw ifrw;
+	caddr_t	ifw_base;			/* virt addr of buffer */
+	struct	pte ifw_wmap[IF_MAXNUBAMR];	/* base pages for output */
+	struct	mbuf *ifw_xtofree;		/* pages being dma'd out */
+	short	ifw_xswapd;			/* mask of clusters swapped */
+};
+#define	ifw_addr	ifrw.ifrw_addr
+#define	ifw_bdp		ifrw.ifrw_bdp
+#define	ifw_info	ifrw.ifrw_info
+#define	ifw_proto	ifrw.ifrw_proto
+#define	ifw_mr		ifrw.ifrw_mr
+
+/*
+ * Most interfaces have a single receive and a single transmit buffer,
+ * and use struct ifuba to store all of the unibus information.
+ */
+struct ifuba {
+	struct	ifubinfo ifu_info;
+	struct	ifrw ifu_r;
+	struct	ifxmt ifu_xmt;
+};
+
+#define	ifu_uban	ifu_info.iff_uban
+#define	ifu_hlen	ifu_info.iff_hlen
+#define	ifu_uba		ifu_info.iff_uba
+#define	ifu_flags	ifu_info.iff_flags
+#define	ifu_w		ifu_xmt.ifrw
+#define	ifu_xtofree	ifu_xmt.ifw_xtofree
+
 #ifdef 	KERNEL
-struct	mbuf *if_rubaget();
+#define	if_ubainit(ifuba, uban, hlen, nmr) \
+		if_ubaminit(&(ifuba)->ifu_info, uban, hlen, nmr, \
+			&(ifuba)->ifu_r, 1, &(ifuba)->ifu_w, 1)
+#define	if_rubaget(ifu, totlen, off0, ifp) \
+		if_ubaget(&(ifu)->ifu_info, &(ifu)->ifu_r, totlen, off0, ifp)
+#define	if_wubaput(ifu, m) \
+		if_ubaput(&(ifu)->ifu_info, &(ifu)->ifu_w, m)
+struct	mbuf *if_ubaget();
 #endif
