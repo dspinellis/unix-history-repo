@@ -1,3 +1,9 @@
+
+/*
+ *	$Source: /mit/kerberos/ucb/mit/rlogind/RCS/rlogind.c,v $
+ *	$Header: rlogind.c,v 5.0 89/06/26 18:31:01 kfall Locked $
+ */
+
 /*
  * Copyright (c) 1983, 1988 The Regents of the University of California.
  * All rights reserved.
@@ -22,7 +28,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	5.35 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogind.c	5.35 (Berkeley) 4/2/89";
 #endif /* not lint */
 
 /*
@@ -58,7 +64,7 @@ static char sccsid[] = "@(#)rlogind.c	5.35 (Berkeley) %G%";
 #endif
 
 #ifdef	KERBEROS
-#include <kerberos/krb.h>
+#include <krb.h>
 #define	SECURE_MESSAGE "This rlogin session is using DES encryption for all transmissions.\r\n"
 
 AUTH_DAT	*kdata;
@@ -69,9 +75,17 @@ Key_schedule	schedule;
 int		encrypt = 0, retval, use_kerberos = 0, vacuous = 0;
 int		do_krb_login();
 
+#if	BSD > 43
 #define		ARGSTR			"lnkvx"
 #else
+#define		ARGSTR			"nkvx"
+#endif
+#else
+#if	BSD > 43
 #define		ARGSTR			"ln"
+#else
+#define		ARGSTR			"n"
+#endif
 #endif	/* KERBEROS */
 
 char	*env[2];
@@ -92,7 +106,10 @@ main(argc, argv)
 	int argc;
 	char **argv;
 {
-	extern int opterr, optind, _check_rhosts_file;
+	extern int opterr, optind;
+#if	BSD > 43
+	extern int _check_rhosts_file;
+#endif
 	int ch;
 	int on = 1, fromlen;
 	struct sockaddr_in from;
@@ -102,9 +119,11 @@ main(argc, argv)
 	opterr = 0;
 	while ((ch = getopt(argc, argv, ARGSTR)) != EOF)
 		switch (ch) {
+#if	BSD > 43
 		case 'l':
 			_check_rhosts_file = 0;
 			break;
+#endif
 		case 'n':
 			keepalive = 0;
 			break;
@@ -313,6 +332,7 @@ gotpty:
 		close(f), close(p);
 		dup2(t, 0), dup2(t, 1), dup2(t, 2);
 		close(t);
+
 		if (authenticated)
 			execl(_PATH_LOGIN, "login", "-p",
 			    "-h", hp->h_name, "-f", lusername, 0);
@@ -579,10 +599,10 @@ extern	char **environ;
 setup_term(fd)
 	int fd;
 {
-	struct termios tt;
 	register char *cp = index(term+ENVSIZE, '/');
 	char *speed;
 
+	struct termios tt;
 	tcgetattr(fd, &tt);
 	if (cp) {
 		*cp++ = '\0';
@@ -592,10 +612,21 @@ setup_term(fd)
 			*cp++ = '\0';
 		cfsetspeed(&tt, atoi(speed));
 	}
+
+
 	tt.c_iflag = BRKINT|ICRNL|IXON|ISTRIP|IEXTEN|IMAXBEL;
 	tt.c_oflag = OPOST|ONLCR|OXTABS;
 	tt.c_lflag = ISIG|ICANON|ECHO;
 	tcsetattr(fd, TCSADFLUSH, &tt);
+#ifdef	notdef
+	{
+		struct	sgttyb	b;
+		(void) ioctl(fd, TIOCGETP, &b);
+		b.sg_flags = ECHO|CRMOD|ANYP;
+		b.sg_ispeed = b.sg_ospeed = atoi(speed);
+		(void) ioctl(fd, TIOCSETP, &b);
+	}
+#endif
 
 	env[0] = term;
 	env[1] = 0;
