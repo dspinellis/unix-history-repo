@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)ranlib.c 4.8 %G%";
+static	char sccsid[] = "@(#)ranlib.c 4.9 %G%";
 #endif
 /*
  * ranlib - create table of contents for archive; string table version
@@ -47,11 +47,6 @@ char **argv;
 
 	--argc;
 	while(argc--) {
-		if (just_touch) {
-			fixdate(*++argv);
-			continue;
-		}
-
 		fi = fopen(*++argv,"r");
 		if (fi == NULL) {
 			fprintf(stderr, "ranlib: cannot open %s\n", *argv);
@@ -65,6 +60,25 @@ char **argv;
 			else
 				fprintf(stderr, "not an ");
 			fprintf(stderr, "archive: %s\n", *argv);
+			continue;
+		}
+		if (just_touch) {
+			register int	len;
+
+			fseek(fi, (long) SARMAG, 0);
+			if (fread(cmdbuf, sizeof archdr.ar_name, 1, fi) != 1) {
+				fprintf(stderr, "malformed archive: %s\n",
+					*argv);
+				continue;
+			}
+			len = strlen(tempnm);
+			if (bcmp(cmdbuf, tempnm, len) != 0 ||
+			    cmdbuf[len] != ' ') {
+				fprintf(stderr, "no symbol table: %s\n", *argv);
+				continue;
+			}
+			fclose(fi);
+			fixdate(*++argv);
 			continue;
 		}
 		fseek(fi, 0L, 0);
