@@ -6,12 +6,13 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parse.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)parse.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/file.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
 #include "hexdump.h"
@@ -45,18 +46,14 @@ addfile(name)
 	(void)fclose(fp);
 }
 
-add(xfmt)
-	char *xfmt;
+add(fmt)
+	char *fmt;
 {
 	register char *p;
 	static FS **nextfs;
 	FS *tfs;
 	FU *tfu, **nextfu;
-	char savech, *savep, *emalloc(), *strdup();
-	char *fmt;
-
-	if ((fmt = strdup(xfmt)) == NULL)
-		nomem();
+	char *savep, *emalloc();
 
 	/* start new linked list of format units */
 	/* NOSTRICT */
@@ -88,11 +85,8 @@ add(xfmt)
 			if (!isspace(*p) && *p != '/')
 				badfmt(fmt);
 			/* may overwrite either white space or slash */
-			savech = *p;
-			*p = '\0';
 			tfu->reps = atoi(savep);
 			tfu->flags = F_SETREP;
-			*p = savech;
 			/* skip trailing white space */
 			for (++p; isspace(*p); ++p);
 		}
@@ -106,10 +100,7 @@ add(xfmt)
 			for (savep = p; isdigit(*p); ++p);
 			if (!isspace(*p))
 				badfmt(fmt);
-			savech = *p;
-			*p = '\0';
 			tfu->bcnt = atoi(savep);
-			*p = savech;
 			/* skip trailing white space */
 			for (++p; isspace(*p); ++p);
 		}
@@ -117,15 +108,15 @@ add(xfmt)
 		/* format */
 		if (*p != '"')
 			badfmt(fmt);
-		for (savep = ++p; *p != '"'; ++p);
-		if (*p != '"')
-			badfmt(fmt);
-		savech = *p;
-		*p = '\0';
-		if (!(tfu->fmt = strdup(savep)))
+		for (savep = ++p; *p != '"';)
+			if (*p++ == 0)
+				badfmt(fmt);
+		if (!(tfu->fmt = malloc(p - savep + 1)))
 			nomem();
+		(void) strncpy(tfu->fmt, savep, p - savep);
+		tfu->fmt[p - savep] = '\0';
 		escape(tfu->fmt);
-		*p++ = savech;
+		p++;
 	}
 }
 
