@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_resource.c	7.13 (Berkeley) %G%
+ *	@(#)kern_resource.c	7.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -180,6 +180,7 @@ setrlimit(p, uap, retval)
 	    (p->p_limit->p_lflags & PL_SHAREMOD) == 0) {
 		p->p_limit->p_refcnt--;
 		p->p_limit = limcopy(p->p_limit);
+		alimp = &p->p_rlimit[uap->which];
 	}
 
 	switch (uap->which) {
@@ -222,7 +223,7 @@ setrlimit(p, uap, retval)
 		}
 		break;
 	}
-	p->p_rlimit[uap->which] = alim;
+	*alimp = alim;
 	return (0);
 }
 
