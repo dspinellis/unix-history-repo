@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.6 (Berkeley) %G%
+#	@(#)Makefile	5.7 (Berkeley) %G%
 
 MSSRCS=	acc.ms cov.ms eqn.ms ref.ms tbl.ms ths.ms toc.ms
 TMSRCS=	tmac.s tmac.os tmac.scover tmac.sU
@@ -14,5 +14,7 @@ install:
 	    ${DESTDIR}${BINDIR}/ms
 	install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${TMSRCS} \
 	    ${DESTDIR}${BINDIR}/tmac
+
+BINDIR?=        /usr/old/lib
 
 .include <bsd.prog.mk>
