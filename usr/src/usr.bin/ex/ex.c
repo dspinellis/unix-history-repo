@@ -442,6 +442,10 @@ exit(i)
 	int i;
 {
 
+# ifdef TRACE
+	if (trace)
+		fclose(trace);
+# endif
 	_exit(i);
 }
 #endif

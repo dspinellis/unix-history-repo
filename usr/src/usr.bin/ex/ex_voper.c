@@ -27,6 +27,7 @@ operate(c, cnt)
 	bool subop = 0;
 	char *oglobp, *ocurs;
 	register line *addr;
+	line *odot;
 	static char lastFKND, lastFCHR;
 	char d;
 
@@ -259,7 +260,7 @@ ein:
 	case ',':
 		forbid (lastFKND == 0);
 		c = isupper(lastFKND) ? tolower(lastFKND) : toupper(lastFKND);
-		ungetkey(lastFCHR);
+		i = lastFCHR;
 		if (vglobp == 0)
 			vglobp = "";
 		subop++;
@@ -279,7 +280,7 @@ ein:
 	case ';':
 		forbid (lastFKND == 0);
 		c = lastFKND;
-		ungetkey(lastFCHR);
+		i = lastFCHR;
 		subop++;
 		goto nocount;
 
@@ -298,11 +299,12 @@ ein:
 	 */
 	case 'f':	/* find */
 	case 't':
-		i = getesc();
-		if (i == 0)
-			return;
-		if (!subop)
+		if (!subop) {
+			i = getesc();
+			if (i == 0)
+				return;
 			*lastcp++ = i;
+		}
 		if (vglobp == 0)
 			lastFKND = c, lastFCHR = i;
 		for (; cnt > 0; cnt--)
@@ -597,13 +599,17 @@ errlab:
 			vsetsiz(Xcnt);
 		vsave();
 		ocurs = cursor;
+		odot = dot;
 		wcursor = 0;
 		if (readecho(c))
 			return;
 		if (!vglobp)
 			vscandir[0] = genbuf[0];
 		oglobp = globp; CP(vutmp, genbuf); globp = vutmp;
-		d = peekc; ungetchar(0); fixech();
+		d = peekc;
+fromsemi:
+		ungetchar(0);
+		fixech();
 		CATCH
 #ifndef CBREAK
 			/*
@@ -619,7 +625,10 @@ errlab:
 #ifndef CBREAK
 			vraw();
 #endif
+slerr:
 			globp = oglobp;
+			dot = odot;
+			cursor = ocurs;
 			ungetchar(d);
 			splitw = 0;
 			vclean();
@@ -630,6 +639,14 @@ errlab:
 			globp = "";
 		else if (peekc)
 			--globp;
+		if (*globp == ';') {
+			/* /foo/;/bar/ */
+			globp++;
+			dot = addr;
+			cursor = loc1;
+			goto fromsemi;
+		}
+		dot = odot;
 		ungetchar(d);
 		c = 0;
 		if (*globp == 'z')
@@ -639,8 +656,13 @@ errlab:
 		i = 0;
 		while (isdigit(*globp))
 			i = i * 10 + *globp++ - '0';
-		if (*globp)
+		if (any(*globp, "^+-."))
 			c = *globp++;
+		if (*globp) {
+			/* random junk after the pattern */
+			beep();
+			goto slerr;
+		}
 		globp = oglobp;
 		splitw = 0;
 		vmoving = 0;

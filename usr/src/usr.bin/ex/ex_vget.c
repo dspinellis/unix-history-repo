@@ -85,10 +85,6 @@ getATTN:
 			vundkind = VMANY;
 		inopen = 1;	/* restore old setting now that macro done */
 	}
-#ifdef TRACE
-	if (trace)
-		fflush(trace);
-#endif
 	flusho();
 again:
 	if (read(0, &ch, 1) != 1) {
@@ -166,6 +162,11 @@ getesc()
 
 	c = getkey();
 	switch (c) {
+
+	case CTRL(v):
+	case CTRL(q):
+		c = getkey();
+		return (c);
 
 	case ATTN:
 	case QUIT:
@@ -408,10 +409,16 @@ map(c,maps)
 					 */
 					if ((c=='#' ? peekkey() : fastpeekkey()) == 0) {
 #ifdef MDEBUG
-					if (trace)
-						fprintf(trace,"fpk=0: return %c",c);
+						if (trace)
+							fprintf(trace,"fpk=0: return %c",c);
 #endif
-						macpush(&b[1],1);
+						/*
+						 * We want to be able to undo
+						 * commands, but it's nonsense
+						 * to undo part of an insertion
+						 * so if in input mode don't.
+						 */
+						macpush(&b[1],maps == arrows);
 						return(c);
 					}
 					*q = getkey();
@@ -455,15 +462,18 @@ int canundo;
 
 	if (st==0 || *st==0)
 		return;
+	if (!value(UNDOMACRO))
+		canundo = 0;
 #ifdef TRACE
 	if (trace)
-		fprintf(trace, "macpush(%s)",st);
+		fprintf(trace, "macpush(%s), canundo=%d",st,canundo);
 #endif
-	if (strlen(vmacp) + strlen(st) > BUFSIZ)
+	if ((vmacp ? strlen(vmacp) : 0) + strlen(st) > BUFSIZ)
 		error("Macro too long@ - maybe recursive?");
 	if (vmacp) {
 		strcpy(tmpbuf, vmacp);
-		canundo = 0;	/* can't undo inside a macro anyway */
+		if (!FIXUNDO)
+			canundo = 0;	/* can't undo inside a macro anyway */
 	}
 	strcpy(vmacbuf, st);
 	if (vmacp)
@@ -471,17 +481,22 @@ int canundo;
 	vmacp = vmacbuf;
 	/* arrange to be able to undo the whole macro */
 	if (canundo) {
-		inopen = -1;	/* no need to save since it had to be 1 or -1 before */
 		otchng = tchng;
 		vsave();
 		saveall();
+		inopen = -1;	/* no need to save since it had to be 1 or -1 before */
 		vundkind = VMANY;
 	}
-#ifdef TRACE
-	if (trace)
-		fprintf(trace, "saveall for macro: undkind=%d, unddel=%d, undap1=%d, undap2=%d, dol=%d, unddol=%d, truedol=%d\n", undkind, lineno(unddel), lineno(undap1), lineno(undap2), lineno(dol), lineno(unddol), lineno(truedol));
-#endif
 }
+
+#ifdef TRACE
+vudump(s)
+char *s;
+{
+	if (trace)
+		fprintf(trace, "%s: undkind=%d, vundkind=%d, unddel=%d, undap1=%d, undap2=%d, dot=%d, dol=%d, unddol=%d, truedol=%d\n", s, undkind, vundkind, lineno(unddel), lineno(undap1), lineno(undap2), lineno(dot), lineno(dol), lineno(unddol), lineno(truedol));
+}
+#endif
 
 /*
  * Get a count from the keyed input stream.
@@ -515,10 +530,21 @@ fastpeekkey()
 	int trapalarm();
 	register int c;
 
-	if (inopen == -1)	/* don't work inside macros! */
-		return (0);
-	signal(SIGALRM, trapalarm);
-	alarm(1);
+	/*
+	 * If the user has set notimeout, we wait forever for a key.
+	 * If we are in a macro we do too, but since it's already
+	 * buffered internally it will return immediately.
+	 * In other cases we force this to die in 1 second.
+	 * This is pretty reliable (VMUNIX rounds it to .5 - 1.5 secs,
+	 * but UNIX truncates it to 0 - 1 secs) but due to system delays
+	 * there are times when arrow keys or very fast typing get counted
+	 * as separate.  notimeout is provided for people who dislike such
+	 * nondeterminism.
+	 */
+	if (value(TIMEOUT) && inopen >= 0) {
+		signal(SIGALRM, trapalarm);
+		alarm(1);
+	}
 	CATCH
 		c = peekkey();
 #ifdef MDEBUG

@@ -158,11 +158,13 @@ error1(str)
 		io = -1;
 	}
 	die = (getpid() != ppid);	/* Only children die */
+	inglobal = 0;
+	globp = vglobp = vmacp = 0;
 	if (vcatch && !die) {
-		inglobal = 0;
-		vglobp = vmacp = 0;
 		inopen = 1;
 		vcatch = 0;
+		if (str)
+			noonl();
 		fixol();
 		longjmp(vreslab,1);
 	}
@@ -173,8 +175,6 @@ error1(str)
 	lseek(0, 0L, 2);
 	if (inglobal)
 		setlastchar('\n');
-	inglobal = 0;
-	globp = 0;
 	while (lastchar() != '\n' && lastchar() != EOF)
 		ignchar();
 	ungetchar(0);
@@ -449,7 +449,7 @@ ret:
 }
 
 /*
- * Continue after a shell escape from open/visual.
+ * Continue after a : command from open/visual.
  */
 vcontin(ask)
 	bool ask;
@@ -459,10 +459,24 @@ vcontin(ask)
 		vcnt = -vcnt;
 	if (inopen) {
 		if (state != VISUAL) {
-/*
-			vtube[WECHO][0] = '*';
-			vnfl();
-*/
+			/*
+			 * We don't know what a shell command may have left on
+			 * the screen, so we move the cursor to the right place
+			 * and then put out a newline.  But this makes an extra
+			 * blank line most of the time so we only do it for :sh
+			 * since the prompt gets left on the screen.
+			 *
+			 * BUG: :!echo longer than current line \\c
+			 * will screw it up, but be reasonable!
+			 */
+			if (state == CRTOPEN) {
+				termreset();
+				vgoto(WECHO, 0);
+			}
+			if (!ask) {
+				putch('\r');
+				putch('\n');
+			}
 			return;
 		}
 		if (ask) {
@@ -473,17 +487,27 @@ vcontin(ask)
 		vraw();
 #endif
 		if (ask) {
+#ifdef EATQS
 			/*
 			 * Gobble ^Q/^S since the tty driver should be eating
 			 * them (as far as the user can see)
 			 */
 			while (peekkey() == CTRL(Q) || peekkey() == CTRL(S))
 				ignore(getkey());
-			if(getkey() == ':')
+#endif
+			if(getkey() == ':') {
+				/* Ugh. Extra newlines, but no other way */
+				putch('\n');
+				outline = WECHO;
 				ungetkey(':');
+			}
 		}
-		putpad(VS);
-		putpad(KS);
+		vclrech(1);
+		if (ask && Peekkey != ':') {
+			putpad(TI);
+			putpad(VS);
+			putpad(KS);
+		}
 	}
 }
 

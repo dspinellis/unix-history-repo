@@ -6,21 +6,28 @@
  * Initialization of option values.
  * The option #defines in ex_vars.h are made
  * from this file by the script makeoptions.
+ *
+ * These initializations are done char by char instead of as strings
+ * to confuse xstr so it will leave them alone.
  */
-char	direct[32] =
+char	direct[ONMSZ] =
 	{ '/', 't', 'm', 'p' };
-char	sections[32] = {
-	'N', 'H', 'S', 'H',				/* -ms macros */
-	'H', ' ', 'H', 'U'				/* -mm macros */
-};
-char	paragraphs[32] = {
+char	paragraphs[ONMSZ] = {
 	'I', 'P', 'L', 'P', 'P', 'P', 'Q', 'P',		/* -ms macros */
 	'P', ' ', 'L', 'I',				/* -mm macros */
 	'b', 'p'					/* bare nroff */
 };
-char	shell[32] =
+char	sections[ONMSZ] = {
+	'N', 'H', 'S', 'H',				/* -ms macros */
+	'H', ' ', 'H', 'U'				/* -mm macros */
+};
+char	shell[ONMSZ] =
 	{ '/', 'b', 'i', 'n', '/', 's', 'h' };
-char	ttytype[16] =
+char	tags[ONMSZ] = {
+	't', 'a', 'g', 's', ' ',
+	'/', 'u', 's', 'r', '/', 'l', 'i', 'b', '/', 't', 'a', 'g', 's'
+};
+char	ttytype[ONMSZ] =
 	{ 'd', 'u', 'm', 'b' };
 
 short	COLUMNS = 80;
@@ -39,13 +46,13 @@ struct	option options[NOPTS + 1] = {
 	"lisp",		0,	ONOFF,		0,	0,	0,
 	"list",		0,	ONOFF,		0,	0,	0,
 	"magic",	0,	ONOFF,		1,	1,	0,
-	"mapinput",	"mi",	ONOFF,		0,	0,	0,
 	"number",	"nu",	ONOFF,		0,	0,	0,
 	"open",		0,	ONOFF,		1,	1,	0,
 	"optimize",	"opt",	ONOFF,		0,	0,	0,
 	"paragraphs",	"para",	STRING,		0,	0,	paragraphs,
 	"prompt",	0,	ONOFF,		1,	1,	0,
 	"redraw",	0,	ONOFF,		0,	0,	0,
+	"remap",	0,	ONOFF,		1,	1,	0,
 	"report",	0,	NUMERIC,	5,	5,	0,
 	"scroll",	"scr",	NUMERIC,	12,	12,	0,
 	"sections",	"sect",	STRING,		0,	0,	sections,
@@ -53,10 +60,13 @@ struct	option options[NOPTS + 1] = {
 	"shiftwidth",	"sw",	NUMERIC,	TABS,	TABS,	0,
 	"showmatch",	"sm",	ONOFF,		0,	0,	0,
 	"slowopen",	"slow",	ONOFF,		0,	0,	0,
+	"tags",		"tag",	STRING,		0,	0,	tags,
 	"tabstop",	"ts",	NUMERIC,	TABS,	TABS,	0,
-	"ttytype",	"tty",	OTERM,		0,	0,	ttytype,
 	"term",		0,	OTERM,		0,	0,	ttytype,
 	"terse",	0,	ONOFF,		0,	0,	0,
+	"timeout",	"to",	ONOFF,		1,	1,	0,
+	"ttytype",	"tty",	OTERM,		0,	0,	ttytype,
+	"undomacro",	"um",	ONOFF,		1,	1,	0,
 	"warn",		0,	ONOFF,		1,	1,	0,
 	"window",	"wi",	NUMERIC,	23,	23,	0,
 	"wrapscan",	"ws",	ONOFF,		1,	1,	0,

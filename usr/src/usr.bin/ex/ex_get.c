@@ -12,11 +12,7 @@ short	lastc = '\n';
 
 ignchar()
 {
-	register int c;
-
-	do
-		c = getcd();
-	while (c == CTRL(d));
+	ignore(getchar());
 }
 
 getchar()
@@ -25,7 +21,7 @@ getchar()
 
 	do
 		c = getcd();
-	while (c == CTRL(d));
+	while (!globp && c == CTRL(d));
 	return (c);
 }
 
@@ -39,7 +35,7 @@ again:
 		return (c);
 	c &= TRIM;
 	if (!inopen)
-		if (c == CTRL(d))
+		if (!globp && c == CTRL(d))
 			setlastchar('\n');
 		else if (junk(c)) {
 			checkjunk(c);

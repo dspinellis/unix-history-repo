@@ -37,7 +37,8 @@ vdcMID()
 
 	squish();
 	setLAST();
-	vundkind = VCHNG, CP(vutmp, linebuf);
+	if (FIXUNDO)
+		vundkind = VCHNG, CP(vutmp, linebuf);
 	if (wcursor < cursor)
 		cp = wcursor, wcursor = cursor, cursor = cp;
 	vUD1 = vUA1 = vUA2 = cursor; vUD2 = wcursor;
@@ -326,7 +327,7 @@ vappend(ch, cnt, indent)
 		 * out dot before it changes so that undo will work
 		 * correctly later.
 		 */
-		if (vundkind == VCHNG) {
+		if (FIXUNDO && vundkind == VCHNG) {
 			vremote(1, yank, 0);
 			undap1--;
 		}
@@ -442,9 +443,12 @@ vgetline(cnt, gcursor, aescaped)
 				goto vadone;
 		}
 		ch = c = getkey() & (QUOTE|TRIM);
-		if (value(MAPINPUT))
-			while ((ch = map(c, arrows)) != c)
+		if (vglobp == 0 && Peekkey == 0)
+			while ((ch = map(c, immacs)) != c) {
 				c = ch;
+				if (!value(REMAP))
+					break;
+			}
 		if (!iglobp) {
 
 			/*
@@ -679,7 +683,7 @@ vbackup:
 					CDCNT = 1;
 					endim();
 					back1();
-					vputc(' ');
+					vputchar(' ');
 					goto vbackup;
 				}
 			if (vglobp && vglobp - iglobp >= 2 &&

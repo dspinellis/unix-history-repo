@@ -554,10 +554,25 @@ dontcr:
 		}
 	}
 	while (outcol < destcol) {
-		if (inopen && ND)
+		/*
+		 * move one char to the right.  We don't use ND space
+		 * because it's better to just print the char we are
+		 * moving over.  There are various exceptions, however.
+		 * If !inopen, vtube contains garbage.  If the char is
+		 * a null or a tab we want to print a space.  Other random
+		 * chars we use space for instead, too.
+		 */
+#ifdef TRACE
+		if (trace)
+			fprintf(trace, "ND: inopen=%d, i=%d, outline=%d, outcol=%d\n", inopen, i, outline, outcol);
+#endif
+		if (!inopen || vtube[outline]==NULL ||
+			(i=vtube[outline][outcol]) < ' ')
+			i = ' ';
+		if (insmode && ND)
 			tputs(ND, 0, plodput);
 		else
-			plodput(' ');
+			plodput(i);
 		outcol++;
 		if (plodcnt < 0)
 			goto out;
@@ -768,7 +783,7 @@ ostart()
 #else
 	tty.sg_flags = (normf &~ (ECHO|XTABS|CRMOD)) | RAW;
 #endif
-#ifdef TIOCGETC
+#ifdef EATQS
 	nttyc.t_quitc = nttyc.t_startc = nttyc.t_stopc = '\377';
 #endif
 	sTTY(1);
@@ -835,7 +850,7 @@ setty(f)
 {
 	register int ot = tty.sg_flags;
 
-#ifdef TIOCGETC
+#ifdef EATQS
 	if (f == normf)
 		nttyc = ottyc;
 	else
@@ -851,7 +866,7 @@ gTTY(i)
 {
 
 	ignore(gtty(i, &tty));
-#ifdef TIOCGETC
+#ifdef EATQS
 	ioctl(i, TIOCGETC, &ottyc);
 	nttyc = ottyc;
 #endif
@@ -873,7 +888,7 @@ sTTY(i)
 #else
 	stty(i, &tty);
 #endif
-#ifdef TIOCSETC
+#ifdef EATQS
 	ioctl(i, TIOCSETC, &nttyc);
 #endif
 }

@@ -81,7 +81,7 @@ vundo()
 		notecnt = 1;
 		if (undkind == UNDPUT && undap1 == undap2) {
 			beep();
-			return;
+			break;
 		}
 		/*
 		 * Undo() call below basically replaces undap1 to undap2-1
@@ -98,14 +98,14 @@ vundo()
 		cnt = dot - addr;
 		if (cnt < 0 || cnt > vcnt || state != VISUAL) {
 			vjumpto(dot, NOSTR, '.');
-			return;
+			break;
 		}
 		if (!savenote)
 			notecnt = 0;
 		vcline = cnt;
 		vrepaint(vmcurs);
 		vmcurs = 0;
-		return;
+		break;
 
 	case VCHNG:
 	case VCAPU:
@@ -122,7 +122,7 @@ vundo()
 			vsave();
 			vopen(dot, WBOT);
 			vnline(cursor);
-			return;
+			break;
 		}
 		/*
 		 * Pseudo insert command.
@@ -142,11 +142,11 @@ vundo()
 		if (cursor > linebuf && cursor >= strend(linebuf))
 			cursor--;
 		vfixcurs();
-		return;
+		break;
 
 	case VNONE:
 		beep();
-		return;
+		break;
 	}
 }
 
@@ -544,7 +544,8 @@ voOpen(c, cnt)
 	}
 	killU();
 	prepapp();
-	vundkind = VMANY;
+	if (FIXUNDO)
+		vundkind = VMANY;
 	if (state != VISUAL)
 		c = WBOT + 1;
 	else {
@@ -641,6 +642,13 @@ vfilter()
 		dot = one;
 	splitw = 0;
 	notenam = "";
+	/*
+	 * BUG: we shouldn't be depending on what undap2 and undap1 are,
+	 * since we may be inside a macro.  What's really wanted is the
+	 * number of lines we read from the filter.  However, the mistake
+	 * will be an overestimate so it only results in extra work,
+	 * it shouldn't cause any real screwups.
+	 */
 	vreplace(vcline, cnt, undap2 - undap1);
 	dot = addr;
 	if (dot > dol) {
@@ -757,7 +765,8 @@ vrep(cnt)
 		ungetkey(c);
 	}
 	CP(vutmp, linebuf);
-	vundkind = VCHNG;
+	if (FIXUNDO)
+		vundkind = VCHNG;
 	wcursor = cursor + cnt;
 	vUD1 = cursor; vUD2 = wcursor;
 	CP(cursor, wcursor);
@@ -783,7 +792,8 @@ vyankit()
 		vremote(cnt, yank, 0);
 		setpk();
 		notenam = "yank";
-		vundkind = VNONE;
+		if (FIXUNDO)
+			vundkind = VNONE;
 		DEL[0] = 0;
 		wdot = NOLINE;
 		if (notecnt <= vcnt - vcline && notecnt < value(REPORT))

@@ -27,21 +27,14 @@ append(f, a)
 
 	nline = 0;
 	dot = a;
-	/*
-	 * This is probably a bug, since it's different than the other tests
-	 * in appendnone, delete, and deletenone. It is known to fail for
-	 * the command :g/foo/r xxx (where there is one foo and the file
-	 * xxx exists) and you try to undo it. I'm leaving it in for now
-	 * because I'm afraid if I change it I'll break something.
-	 */
-	if (!inglobal && !inopen && f != getsub) {
+	if(FIXUNDO && !inopen && f!=getsub) {
 		undap1 = undap2 = dot + 1;
 		undkind = UNDCHANGE;
 	}
 	while ((*f)() == 0) {
 		if (truedol >= endcore) {
 			if (morelines() < 0) {
-				if (!inglobal && f == getsub) {
+				if (FIXUNDO && f == getsub) {
 					undap1 = addr1;
 					undap2 = addr2 + 1;
 				}
@@ -71,7 +64,7 @@ append(f, a)
 appendnone()
 {
 
-	if (inopen >= 0 && (inopen || !inglobal)) {
+	if(FIXUNDO) {
 		undkind = UNDCHANGE;
 		undap1 = undap2 = addr1;
 	}
@@ -108,7 +101,7 @@ delete(hush)
 	register line *a1, *a2;
 
 	nonzero();
-	if (inopen >= 0 && (inopen || !inglobal)) {
+	if(FIXUNDO) {
 		register int (*dsavint)();
 
 		change();
@@ -157,7 +150,7 @@ delete(hush)
 deletenone()
 {
 
-	if (inopen >= 0 && (inopen || !inglobal)) {
+	if(FIXUNDO) {
 		undkind = UNDCHANGE;
 		squish();
 		unddel = addr1;
@@ -172,14 +165,16 @@ squish()
 {
 	register line *a1 = dol + 1, *a2 = unddol + 1, *a3 = truedol + 1;
 
-	if (inopen == -1)
-		return;
-	if (a1 < a2 && a2 < a3)
-		do
-			*a1++ = *a2++;
-		while (a2 < a3);
-	truedol -= unddol - dol;
-	unddol = dol;
+	if(FIXUNDO) {
+		if (inopen == -1)
+			return;
+		if (a1 < a2 && a2 < a3)
+			do
+				*a1++ = *a2++;
+			while (a2 < a3);
+		truedol -= unddol - dol;
+		unddol = dol;
+	}
 }
 
 /*
@@ -294,16 +289,18 @@ move1(cflag, addrt)
 		error("Move to a moved line");
 	change();
 	if (!inglobal)
-		if (cflag) {
-			undap1 = addrt + 1;
-			undap2 = undap1 + lines;
-			deletenone();
-		} else {
-			undkind = UNDMOVE;
-			undap1 = addr1;
-			undap2 = addr2;
-			unddel = addrt;
-			squish();
+		if(FIXUNDO) {
+			if (cflag) {
+				undap1 = addrt + 1;
+				undap2 = undap1 + lines;
+				deletenone();
+			} else {
+				undkind = UNDMOVE;
+				undap1 = addr1;
+				undap2 = addr2;
+				unddel = addrt;
+				squish();
+			}
 		}
 }
 
@@ -333,6 +330,8 @@ put()
 {
 	register int cnt;
 
+	if (!FIXUNDO)
+		error("Cannot put inside global/macro");
 	cnt = unddol - dol;
 	if (cnt && inopen && pkill[0] && pkill[1]) {
 		pragged(1);
@@ -397,7 +396,7 @@ shift(c, cnt)
 	char *dp;
 	register int i;
 
-	if (!inglobal)
+	if(FIXUNDO)
 		save12(), undkind = UNDCHANGE;
 	cnt *= value(SHIFTWIDTH);
 	for (addr = addr1; addr <= addr2; addr++) {
@@ -449,11 +448,27 @@ tagfind(quick)
 {
 	char cmdbuf[BUFSIZ];
 	char filebuf[FNSIZE];
+	char tagfbuf[128];
 	register int c, d;
 	bool samef = 1;
-	bool notagsfile = 0;
-	short master = -1;
-	short omagic;
+	int tfcount = 0;
+	int omagic;
+	char *fn, *fne;
+#ifdef VMUNIX
+	/*
+	 * We have lots of room so we bring in stdio and do
+	 * a binary search on the tags file.
+	 */
+# undef EOF
+# include <stdio.h>
+# undef getchar
+# undef putchar
+	FILE *iof;
+	char iofbuf[BUFSIZ];
+	long mid;	/* assumed byte offset */
+	long top, bot;	/* length of tag file */
+	struct stat sbuf;
+#endif
 
 	omagic = value(MAGIC);
 	if (!skipend()) {
@@ -476,20 +491,76 @@ badtag:
 	if (c == EOF)
 		ungetchar(c);
 	clrstats();
-	do {
-		io = open(master ? "tags" : MASTERTAGS, 0);
-		if (master && io < 0)
-			notagsfile = 1;
+
+	/*
+	 * Loop once for each file in tags "path".
+	 */
+	CP(tagfbuf, svalue(TAGS));
+	fne = tagfbuf - 1;
+	while (fne) {
+		fn = ++fne;
+		while (*fne && *fne != ' ')
+			fne++;
+		if (*fne == 0)
+			fne = 0;	/* done, quit after this time */
+		else
+			*fne = 0;	/* null terminate filename */
+#ifdef VMUNIX
+		iof = fopen(fn, "r");
+		if (iof == NULL)
+			continue;
+		tfcount++;
+		setbuf(iof, iofbuf);
+		fstat(fileno(iof), &sbuf);
+		top = sbuf.st_size;
+		if (top == 0L || iof == NULL)
+			top = -1L;
+		bot = 0L;
+		while (top >= bot) {
+#else
+		/*
+		 * Avoid stdio and scan tag file linearly.
+		 */
+		io = open(fn, 0);
+		if (io<0)
+			continue;
 		while (getfile() == 0) {
+#endif
+			/* loop for each tags file entry */
 			register char *cp = linebuf;
 			register char *lp = lasttag;
 			char *oglobp;
 
+#ifdef VMUNIX
+			mid = (top + bot) / 2;
+			fseek(iof, mid, 0);
+			if (mid > 0)	/* to get first tag in file to work */
+				fgets(linebuf, sizeof linebuf, iof);	/* scan to next \n */
+			fgets(linebuf, sizeof linebuf, iof);	/* get a line */
+			linebuf[strlen(linebuf)-1] = 0;	/* was '\n' */
+#endif
 			while (*cp && *lp == *cp)
 				cp++, lp++;
-			if (*lp || !iswhite(*cp))
+			if (*lp || !iswhite(*cp)) {
+#ifdef VMUNIX
+				if (*lp > *cp)
+					bot = mid + 1;
+				else
+					top = mid - 1;
+#endif
+				/* Not this tag.  Try the next */
 				continue;
+			}
+
+			/*
+			 * We found the tag.  Decode the line in the file.
+			 */
+#ifdef VMUNIX
+			fclose(iof);
+#else
 			close(io);
+#endif
+			/* name of file */
 			while (*cp && iswhite(*cp))
 				cp++;
 			if (!*cp)
@@ -502,6 +573,7 @@ badtags:
 				cp++;
 			}
 			*lp++ = 0;
+
 			if (*cp == 0)
 				goto badtags;
 			if (dol != zero) {
@@ -520,6 +592,7 @@ badtags:
 			if (strcmp(filebuf, savedfile) || !edited) {
 				char cmdbuf2[sizeof filebuf + 10];
 
+				/* Different file.  Do autowrite & get it. */
 				if (!quick) {
 					ckaw();
 					if (chng && dol > zero)
@@ -530,33 +603,46 @@ badtags:
 				strcat(cmdbuf2, filebuf);
 				globp = cmdbuf2;
 				d = peekc; ungetchar(0);
-				/*
-				 * BUG: if it isn't found (user edited header
-				 * line) we get left in nomagic mode.
-				 */
-				value(MAGIC) = 0;
 				commands(1, 1);
 				peekc = d;
 				globp = oglobp;
 				value(MAGIC) = omagic;
 				samef = 0;
 			}
+
+			/*
+			 * Look for pattern in the current file.
+			 */
 			oglobp = globp;
 			globp = cmdbuf;
 			d = peekc; ungetchar(0);
 			if (samef)
 				markpr(dot);
+			/*
+			 * BUG: if it isn't found (user edited header
+			 * line) we get left in nomagic mode.
+			 */
 			value(MAGIC) = 0;
 			commands(1, 1);
 			peekc = d;
 			globp = oglobp;
 			value(MAGIC) = omagic;
 			return;
-		}
-	} while (++master == 0);
-	if (notagsfile)
+		}	/* end of "for each tag in file" */
+
+		/*
+		 * No such tag in this file.  Close it and try the next.
+		 */
+#ifdef VMUNIX
+		fclose(iof);
+#else
+		close(io);
+#endif
+	}	/* end of "for each file in path" */
+	if (tfcount <= 0)
 		error("No tags file");
-	serror("%s: No such tag@in tags file", lasttag);
+	else
+		serror("%s: No such tag@in tags file", lasttag);
 }
 
 /*
@@ -566,6 +652,8 @@ badtags:
 yank()
 {
 
+	if (!FIXUNDO)
+		error("Can't yank inside global/macro");
 	save12();
 	undkind = UNDNONE;
 	killcnt(addr2 - addr1 + 1);
@@ -787,6 +875,10 @@ undo(c)
 	register line *jp, *kp;
 	line *dolp1, *newdol, *newadot;
 
+#ifdef TRACE
+	if (trace)
+		vudump("before undo");
+#endif
 	if (inglobal && inopen <= 0)
 		error("Can't undo in global@commands");
 	if (!c)
@@ -890,11 +982,15 @@ undo(c)
 		if (undkind == UNDALL) {
 			dot = undadot;
 			undadot = newadot;
-		}
-		undkind = UNDCHANGE;
+		} else
+			undkind = UNDCHANGE;
 	}
 	if (dot == zero && dot != dol)
 		dot = one;
+#ifdef TRACE
+	if (trace)
+		vudump("after undo");
+#endif
 }
 
 /*
@@ -945,7 +1041,9 @@ mapcmd(un)
 	register char *p;
 	register char c;
 	char *dname;
+	struct maps *mp;	/* the map structure we are working on */
 
+	mp = exclam() ? immacs : arrows;
 	if (skipend()) {
 		int i;
 
@@ -954,13 +1052,13 @@ mapcmd(un)
 			ignchar();
 		if (inopen)
 			pofix();
-		for (i=0; arrows[i].mapto; i++)
-			if (arrows[i].cap) {
-				lprintf("%s", arrows[i].descr);
+		for (i=0; mp[i].mapto; i++)
+			if (mp[i].cap) {
+				lprintf("%s", mp[i].descr);
 				putchar('\t');
-				lprintf("%s", arrows[i].cap);
+				lprintf("%s", mp[i].cap);
 				putchar('\t');
-				lprintf("%s", arrows[i].mapto);
+				lprintf("%s", mp[i].mapto);
 				putNFL();
 			}
 		return;
@@ -980,7 +1078,7 @@ mapcmd(un)
 			ungetchar(c);
 			if (un) {
 				newline();
-				addmac(lhs, NOSTR, NOSTR);
+				addmac(lhs, NOSTR, NOSTR, mp);
 				return;
 			} else
 				error("Missing rhs");
@@ -1020,27 +1118,29 @@ mapcmd(un)
 	} else {
 		dname = lhs;
 	}
-	addmac(lhs,rhs,dname);
+	addmac(lhs,rhs,dname,mp);
 }
 
 /*
  * Add a macro definition to those that already exist. The sequence of
  * chars "src" is mapped into "dest". If src is already mapped into something
  * this overrides the mapping. There is no recursion. Unmap is done by
- * using NOSTR for dest.
+ * using NOSTR for dest.  Dname is what to show in listings.  mp is
+ * the structure to affect (arrows, etc).
  */
-addmac(src,dest,dname)
+addmac(src,dest,dname,mp)
 	register char *src, *dest, *dname;
+	register struct maps *mp;
 {
 	register int slot, zer;
 
-	if (dest) {
+	if (dest && mp==arrows) {
 		/* Make sure user doesn't screw himself */
 		/*
 		 * Prevent tail recursion. We really should be
 		 * checking to see if src is a suffix of dest
-		 * but we are too lazy here, so we don't bother unless
-		 * src is only 1 char long.
+		 * but this makes mapping involving escapes that
+		 * is reasonable mess up.
 		 */
 		if (src[1] == 0 && src[0] == dest[strlen(dest)-1])
 			error("No tail recursion");
@@ -1053,19 +1153,24 @@ addmac(src,dest,dname)
 		 */
 		if (isalpha(src[0]) && src[1] || any(src[0],":"))
 			error("Too dangerous to map that");
-		/*
-		 * If the src were null it would cause the dest to
-		 * be mapped always forever. This is not good.
-		 */
-		if (src[0] == 0)
-			error("Null lhs");
 	}
+	else if (dest) {
+		/* check for tail recursion in input mode: fussier */
+		if (eq(src, dest+strlen(dest)-strlen(src)))
+			error("No tail recursion");
+	}
+	/*
+	 * If the src were null it would cause the dest to
+	 * be mapped always forever. This is not good.
+	 */
+	if (src == NOSTR || src[0] == 0)
+		error("Missing lhs");
 
 	/* see if we already have a def for src */
 	zer = -1;
-	for (slot=0; arrows[slot].mapto; slot++) {
-		if (arrows[slot].cap) {
-			if (eq(src, arrows[slot].cap))
+	for (slot=0; mp[slot].mapto; slot++) {
+		if (mp[slot].cap) {
+			if (eq(src, mp[slot].cap))
 				break;	/* if so, reuse slot */
 		} else {
 			zer = slot;	/* remember an empty slot */
@@ -1074,9 +1179,9 @@ addmac(src,dest,dname)
 
 	if (dest == NOSTR) {
 		/* unmap */
-		if (arrows[slot].cap) {
-			arrows[slot].cap = NOSTR;
-			arrows[slot].descr = NOSTR;
+		if (mp[slot].cap) {
+			mp[slot].cap = NOSTR;
+			mp[slot].descr = NOSTR;
 		} else {
 			error("Not mapped|That macro wasn't mapped");
 		}
@@ -1084,7 +1189,7 @@ addmac(src,dest,dname)
 	}
 
 	/* reuse empty slot, if we found one and src isn't already defined */
-	if (zer >= 0 && arrows[slot].mapto == 0)
+	if (zer >= 0 && mp[slot].mapto == 0)
 		slot = zer;
 
 	/* if not, append to end */
@@ -1096,18 +1201,18 @@ addmac(src,dest,dname)
 	if (msnext - mapspace + strlen(dest) + strlen(src) + strlen(dname) + 3 > MAXCHARMACS)
 		error("Too much macro text");
 	CP(msnext, src);
-	arrows[slot].cap = msnext;
+	mp[slot].cap = msnext;
 	msnext += strlen(src) + 1;	/* plus 1 for null on the end */
 	CP(msnext, dest);
-	arrows[slot].mapto = msnext;
+	mp[slot].mapto = msnext;
 	msnext += strlen(dest) + 1;
 	if (dname) {
 		CP(msnext, dname);
-		arrows[slot].descr = msnext;
+		mp[slot].descr = msnext;
 		msnext += strlen(dname) + 1;
 	} else {
 		/* default descr to string user enters */
-		arrows[slot].descr = src;
+		mp[slot].descr = src;
 	}
 }
 

@@ -114,13 +114,19 @@ short	WECHO;
 
 short	costCM;
 
-#define MAXNOMACS	32	/* max number of macros */
-#define MAXCHARMACS	512	/* max # of chars total in macros */
+#ifdef VMUNIX
+# define MAXNOMACS	128	/* max number of macros of each kind */
+# define MAXCHARMACS	2048	/* max # of chars total in macros */
+#else
+# define MAXNOMACS	32	/* max number of macros of each kind */
+# define MAXCHARMACS	512	/* max # of chars total in macros */
+#endif
 struct maps {
 	char *cap;	/* pressing button that sends this.. */
 	char *mapto;	/* .. maps to this string */
 	char *descr;	/* legible description of key */
 };
 struct maps arrows[MAXNOMACS];	/* macro defs - 1st 5 built in */
+struct maps immacs[MAXNOMACS];	/* for while in insert mode */
 char	mapspace[MAXCHARMACS];
 char	*msnext;	/* next free location in mapspace */

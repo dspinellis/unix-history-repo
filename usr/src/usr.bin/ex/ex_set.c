@@ -13,6 +13,7 @@ set()
 	register struct option *op;
 	register int c;
 	bool no;
+	extern short ospeed;
 
 	setnoaddr();
 	if (skipend()) {
@@ -26,7 +27,7 @@ set()
 		do {
 			if (cp < &optname[ONMSZ - 2])
 				*cp++ = getchar();
-		} while (isalpha(peekchar()));
+		} while (isalnum(peekchar()));
 		*cp = 0;
 		cp = optname;
 		if (eq("all", cp)) {
@@ -39,6 +40,24 @@ set()
 		if (cp[0] == 'n' && cp[1] == 'o') {
 			cp += 2;
 			no++;
+		}
+		/* Implement w300, w1200, and w9600 specially */
+		if (eq(cp, "w300")) {
+			if (ospeed >= B1200) {
+dontset:
+				ignore(getchar());	/* = */
+				ignore(getnum());	/* value */
+				continue;
+			}
+			cp = "window";
+		} else if (eq(cp, "w1200")) {
+			if (ospeed < B1200 || ospeed >= B2400)
+				goto dontset;
+			cp = "window";
+		} else if (eq(cp, "w9600")) {
+			if (ospeed < B2400)
+				goto dontset;
+			cp = "window";
 		}
 		for (op = options; op < &options[NOPTS]; op++)
 			if (eq(op->oname, cp) || op->oabbrev && eq(op->oabbrev, cp))
@@ -67,10 +86,12 @@ printone:
 
 		case NUMERIC:
 			if (!isdigit(peekchar()))
-error("Digits required@after = when assigning numeric option");
+				error("Digits required@after =");
 			op->ovalue = getnum();
 			if (value(TABSTOP) <= 0)
 				value(TABSTOP) = TABS;
+			if (op == &options[WINDOW])
+				vsetsiz(value(WINDOW));
 			break;
 
 		case STRING:

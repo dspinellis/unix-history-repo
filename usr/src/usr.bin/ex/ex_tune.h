@@ -10,12 +10,11 @@
  * "/usr/lib/..." here, "/lib" will be tried only for strings.
  */
 #include "local/uparm.h"
-#define	EXRECOVER	libpath(ex3.2recover)
-#define	EXPRESERVE	libpath(ex3.2preserve)
+#define	EXRECOVER	libpath(ex3.3recover)
+#define	EXPRESERVE	libpath(ex3.3preserve)
 #ifndef VMUNIX
-#define	EXSTRINGS	libpath(ex3.2strings)
+#define	EXSTRINGS	libpath(ex3.3strings)
 #endif
-#define	MASTERTAGS	libpath(tags)
 
 /*
  * If your system believes that tabs expand to a width other than
@@ -43,7 +42,7 @@
 #define	RHSSIZE		256		/* Size of rhs of substitute */
 #define	NBRA		9		/* Number of re \( \) pairs */
 #define	TAGSIZE		32		/* Tag length */
-#define	ONMSZ		32		/* Option name size */
+#define	ONMSZ		64		/* Option name size */
 #define	GBSIZE		256		/* Buffer size */
 #define	UXBSIZE		128		/* Unix command buffer size */
 #define	VBSIZE		128		/* Partial line max size in visual */
