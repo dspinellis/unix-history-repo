@@ -27,6 +27,9 @@ main(argc, argv)
 	char *argv[];
 {
 	register struct cmd *c;
+	extern char *name;
+
+	name = argv[0];
 
 	if (--argc > 0) {
 		c = getcmd(*++argv);
