@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)mille.6	4.1 (Berkeley) %G%
+.\"	@(#)mille.6	5.1 (Berkeley) %G%
 .\"
-.TH MILLE 6
+.TH MILLE 6 "1 February 1983"
 .UC 4
 .SH NAME
 mille \- play Mille Bournes
@@ -13,10 +13,8 @@ mille \- play Mille Bournes
 [ file ]
 .SH DESCRIPTION
 .I Mille
-plays a two-handed game
-reminiscent of
-the Parker Brother's game of Mille Bournes
-with you.
+plays a two-handed game reminiscent of
+the Parker Brother's game of Mille Bournes with you.
 The rules are described below.
 If a file name is given on the command line,
 the game saved in that file is started.
@@ -29,28 +27,21 @@ Pick a card from the deck.
 This card is placed in the `P' slot in your hand.
 .IP D
 Discard a card from your hand.
-To indicate which card,
-type the number of the card in the hand
-(or \*(lqP\*(rq for the just-picked card)
-followed by a <RETURN> or <SPACE>.
+To indicate which card, type the number of the card in the hand
+(or \*(lqP\*(rq for the just-picked card) followed by a <RETURN> or <SPACE>.
 The <RETURN or <SPACE> is required to allow recovery from typos
-which can be very expensive,
-like discarding safeties.
+which can be very expensive, like discarding safeties.
 .IP U
 Use a card.
-The card is again indicated by its number,
-followed by a <RETURN> or <SPACE>.
+The card is again indicated by its number, followed by a <RETURN> or <SPACE>.
 .IP O
 Toggle ordering the hand.
-By default off,
-if turned on it will sort the cards in your hand appropriately.
+By default off, if turned on it will sort the cards in your hand appropriately.
 This is not recommended for the impatient on slow terminals.
 .IP Q
 Quit the game.
 This will ask for confirmation, just to be sure.
-Hitting <DELETE>
-(or <RUBOUT>) 
-is equivalent.
+Hitting <DELETE> (or <RUBOUT>) is equivalent.
 .IP S
 Save the game in a file.
 If the game was started from a file,
@@ -61,22 +52,18 @@ If you type a <RETURN> without a name,
 the save will be terminated and the game resumed.
 .IP R
 Redraw the screen from scratch.
-The command ^L
-(control `L')
-will also work.
+The command ^L (control `L') will also work.
 .IP W
 Toggle window type.
 This switches the score window between the startup window
-(with all the command names)
-and the end-of-game window.
+(with all the command names) and the end-of-game window.
 Using the end-of-game window
 saves time by eliminating the switch at the end of the game
 to show the final score.
 Recommended for hackers and other miscreants.
 .PP
 If you make a mistake, an error message will be printed
-on the last line of the score window,
-and a bell will beep.
+on the last line of the score window, and a bell will beep.
 .PP
 At the end of each hand or game,
 you will be asked if you wish to play another.
@@ -91,7 +78,7 @@ Ken Arnold
 .br
 (The game itself is a product of Parker Brothers, Inc.)
 .SH "SEE ALSO"
-curses(3),
+curses(3X),
 .I "Screen Updating and Cursor Movement Optimization:"
 .IR "A Library Package" ,
 Ken Arnold
@@ -120,10 +107,8 @@ Speed Limit (3)	End of Limit (6)
 .SH RULES
 .PP
 .BR Object :
-The point of game is to get a total of 5000 points
-in several hands.
-Each hand is a race to put down exactly 700 miles
-before your opponent does.
+The point of game is to get a total of 5000 points in several hands.
+Each hand is a race to put down exactly 700 miles before your opponent does.
 Beyond the points gained by putting down milestones,
 there are several other ways of making points.
 .PP
@@ -147,8 +132,7 @@ The cards are
 and
 .IR "Stop" .
 .I Remedy
-cards fix problems caused by Hazard cards played on you by
-your opponent.
+cards fix problems caused by Hazard cards played on you by your opponent.
 The cards are
 .IR "Gasoline" ,
 .IR "Repairs" ,
@@ -171,23 +155,18 @@ and there are only one of each in the deck.
 The board is split into several areas.
 From top to bottom, they are:
 .B "SAFETY AREA"
-(unlabeled):
-This is where the safeties will be placed as they are played.
+(unlabeled): This is where the safeties will be placed as they are played.
 .BR HAND :
 These are the cards in your hand.
 .BR BATTLE :
 This is the Battle pile.
-All the Hazard and Remedy Cards are played here,
-except the
+All the Hazard and Remedy Cards are played here, except the
 .I "Speed Limit"
 and
 .I "End of Limit"
-cards.
-Only the top card is displayed,
-as it is the only effective one.
+cards.  Only the top card is displayed, as it is the only effective one.
 .BR SPEED :
-The Speed pile.
-The
+The Speed pile.  The
 .I "Speed Limit"
 and
 .I "End of Limit"
@@ -200,19 +179,13 @@ The total of the numbers shown here is the distance traveled so far.
 .BR Play :
 The first pick alternates between the two players.
 Each turn usually starts with a pick from the deck.
-The player then plays a card,
-or if this is not possible or desirable,
-discards one.
-Normally, a play or discard of a single card
-constitutes a turn.
-If the card played is a safety,
-however,
+The player then plays a card, or if this is not possible or desirable,
+discards one.  Normally, a play or discard of a single card
+constitutes a turn.  If the card played is a safety, however,
 the same player takes another turn immediately.
 .PP
-This repeats until one of the players reaches 700 points
-or the deck runs out.
-If someone reaces 700,
-they have the option of going for an
+This repeats until one of the players reaches 700 points or the deck runs out.
+If someone reaces 700, they have the option of going for an
 .IR Extension ,
 which means that the play continues until someone reaches 1000 miles.
 .PP
@@ -222,8 +195,7 @@ Remedy Cards are used for undoing the effects of your opponent's nastyness.
 .PP
 .RB "\ \ \ \ " Go
 (Green Light)
-must be the top card on your Battle pile
-for you to play any mileage,
+must be the top card on your Battle pile for you to play any mileage,
 unless you have played the
 .I "Right of Way"
 card (see below).
@@ -231,8 +203,7 @@ card (see below).
 .RB "\ \ \ \ " Stop
 is played on your opponent's
 .I Go
-card
-to prevent them from playing mileage until they play a
+card to prevent them from playing mileage until they play a
 .I Go
 card.
 .br
@@ -240,60 +211,47 @@ card.
 is played on your opponent's Speed pile.
 Until they play an
 .I "End of Limit"
-they can only play 25 or 50 mile cards,
-presuming their
+they can only play 25 or 50 mile cards, presuming their
 .I Go
 card allows them to do even that.
 .br
 .RB "\ \ \ \ " "End of Limit"
-is played on your Speed pile
-to nullify a
+is played on your Speed pile to nullify a
 .I "Speed Limit"
 played by your opponent.
 .br
 .RB "\ \ \ \ " "Out of Gas"
 is played on your opponent's
 .I Go
-card.
-They must then play a
+card.  They must then play a
 .I Gasoline
-card,
-and then a
+card, and then a
 .I Go
-card
-before they can play any more mileage.
+card before they can play any more mileage.
 .br
 .RB "\ \ \ \ " "Flat Tire"
 is played on your opponent's
 .I Go
-card.
-They must then play a
+card.  They must then play a
 .I "Spare Tire"
-card,
-and then a
+card, and then a
 .I Go
-card
-before they can play any more mileage.
+card before they can play any more mileage.
 .br
 .RB "\ \ \ \ " "Accident"
 is played on your opponent's
 .I Go
-card.
-They must then play a
+card.  They must then play a
 .I Repairs
-card,
-and then a
+card, and then a
 .I Go
-card
-before they can play any more mileage.
+card before they can play any more mileage.
 .br
 .PP
 .BR "Safety Cards" :
 Safety cards prevent your opponent
-from playing the corresponding Hazard cards on you
-for the rest of the hand.
-It cancels an attack in progress,
-and
+from playing the corresponding Hazard cards on you for the rest of the hand.
+It cancels an attack in progress, and
 .IR "always entitles the player to an extra turn" .
 .br
 .RB "\ \ \ \ "  "Right of Way"
@@ -301,32 +259,25 @@ prevents your opponent from playing both
 .I Stop
 and
 .I "Speed Limit"
-cards on you.
-It also acts as a permanent
+cards on you.  It also acts as a permanent
 .I Go
-card for the rest of the hand,
-so you can play mileage
-as long as there is not a Hazard card
-on top of your Battle pile.
-In this case only,
-your opponent can play Hazard cards directly on a Remedy card
+card for the rest of the hand, so you can play mileage
+as long as there is not a Hazard card on top of your Battle pile.
+In this case only, your opponent can play Hazard cards directly on a Remedy card
 besides a Go card.
 .br
 .RB "\ \ \ \ " "Extra Tank"
-When played,
-your opponent cannot play an
+When played, your opponent cannot play an
 .I "Out of Gas"
 on your Battle Pile.
 .br
 .RB "\ \ \ \ " "Puncture Proof"
-When played,
-your opponent cannot play a
+When played, your opponent cannot play a
 .I "Flat Tire"
 on your Battle Pile.
 .br
 .RB "\ \ \ \ " "Driving Ace"
-When played,
-your opponent cannot play an
+When played, your opponent cannot play an
 .I Accident
 on your Battle Pile.
 .PP
@@ -341,22 +292,18 @@ except that
 A hand ends whenever one player gets exactly 700 miles or the deck runs out.
 In that case, play continues until neither someone reaches 700,
 or neither player can use any cards in their hand.
-If the trip is completed after the deck runs out,
-this is called
+If the trip is completed after the deck runs out, this is called
 .IR "Delayed Action" .
 .PP
 .BR "Coup Fourr\o'\(aae'" :
 This is a French fencing term for a counter-thrust move as part of a parry
 to an opponents attack.
-In Mille Bournes,
-it is used as follows:
+In Mille Bournes, it is used as follows:
 If an opponent plays a Hazard card,
 and you have the corresponding Safety in your hand,
-you play it immediately,
-even
+you play it immediately, even
 .I before
-you draw.
-This immediately removes the Hazard card from your Battle pile,
+you draw.  This immediately removes the Hazard card from your Battle pile,
 and protects you from that card for the rest of the game.  This
 gives you more points (see \*(lqScoring\*(rq below).
 .PP
