@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_comp.c	6.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_comp.c	6.11 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <sys/types.h>
@@ -196,7 +196,10 @@ dn_skipname(comp_dn, eom)
 /*
  * Search for expanded name from a list of previously compressed names.
  * Return the offset from msg if found or -1.
+ * dnptrs is the pointer to the first name on the list,
+ * not the pointer to the start of the message.
  */
+static
 dn_find(exp_dn, msg, dnptrs, lastdnptr)
 	u_char *exp_dn, *msg;
 	u_char **dnptrs, **lastdnptr;
@@ -205,7 +208,7 @@ dn_find(exp_dn, msg, dnptrs, lastdnptr)
 	register int n;
 	u_char *sp;
 
-	for (cpp = dnptrs + 1; cpp < lastdnptr; cpp++) {
+	for (cpp = dnptrs; cpp < lastdnptr; cpp++) {
 		dn = exp_dn;
 		sp = cp = *cpp;
 		while (n = *cp++) {
