@@ -1,4 +1,4 @@
-/*	tu.c	4.13	83/02/10	*/
+/*	tu.c	4.14	83/05/05	*/
 
 #if defined(VAX750) || defined(VAX730)
 /*
@@ -457,6 +457,7 @@ bad:
 			tu.tu_state = TUS_INIT1;
 		} else {
 			printf("tu receive state error, state=");
+			printstate(tu.tu_state);
 			printf(", byte=%x\n", c);
 #ifdef notdef
 			tu.tu_state = TUS_INIT1; */
