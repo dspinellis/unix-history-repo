@@ -1,4 +1,4 @@
-/*	tty.h	4.9	82/01/30	*/
+/*	tty.h	4.10	82/02/08	*/
 
 #ifdef KERNEL
 #include "../h/ioctl.h"
@@ -134,3 +134,4 @@ short	tthiwat[NSPEEDS], ttlowat[NSPEEDS];
 #define	DMSET		0
 #define	DMBIS		1
 #define	DMBIC		2
+#define	DMGET		3
