@@ -1,0 +1,46 @@
+#
+# ETHERNET COMET
+#
+machine		vax
+cpu		"VAX780"
+cpu		"VAX750"
+cpu		"VAX730"
+ident		MONET
+timezone	8 dst
+maxusers	16
+options		INET, PUP
+# tu58 MRSP prom present
+options		MRSP
+
+config	hphphp	vmunix
+config	hphp	hpvmunix
+
+controller	uba0	at nexus ?
+controller	mba0	at nexus ?
+disk		hp0	at mba0 drive 0
+# this is in case we have to move the RM03
+disk		hp3	at mba0 drive 1
+controller	mba1	at nexus ?
+disk		hp1	at mba1 drive 0
+disk		hp2	at mba1 drive 1
+controller	hk0	at uba? csr 0177440 		vector rkintr
+disk		rk0	at hk0 drive 0
+disk		rk1	at hk0 drive 1
+controller	sc0	at uba? csr 0176700		vector upintr
+disk		up0	at sc0 drive 0
+disk		up1	at sc0 drive 1
+device		dz0	at uba? csr 0160120 flags 0xff	vector dzrint dzxint
+device		dz1	at uba? csr 0160140 flags 0x0	vector dzrint dzxint
+controller	zs0	at uba? csr 0172520		vector tsintr
+device		ts0	at zs0 drive 0
+pseudo-device	pty
+pseudo-device	inet
+#pseudo-device	imp
+pseudo-device	pup
+pseudo-device	loop
+device		en0	at uba0 csr 0161000 flags 46
+				vector enxint enrint encollide
+#device		en1	at uba0 csr 0162000 flags 0xc02e00
+#				vector enxint enrint encollide
+device		il0	at uba? csr 0164000 flags 97
+				vector ilrint ilcint
