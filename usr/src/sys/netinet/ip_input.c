@@ -1,4 +1,4 @@
-/*	ip_input.c	1.37	82/03/30	*/
+/*	ip_input.c	1.38	82/03/31	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -45,7 +45,8 @@ COUNT(IP_INIT);
 
 u_char	ipcksum = 1;
 struct	ip *ip_reass();
-int	ipforwarding = 0;
+int	ipforwarding = 1;
+int	ipprintfs = 0;
 struct	sockaddr_in ipaddr = { AF_INET };
 
 /*
@@ -142,7 +143,9 @@ next:
 	}
 	ipaddr.sin_addr = ip->ip_dst;
 	if (if_ifwithaddr((struct sockaddr *)&ipaddr) == 0) {
-printf("forward: src %x dst %x ttl %x\n", ip->ip_src, ip->ip_dst, ip->ip_ttl);
+		if (ipprintfs)
+			printf("forward: src %x dst %x ttl %x\n", ip->ip_src,
+				ip->ip_dst, ip->ip_ttl);
 		if (ipforwarding == 0)
 			goto bad;
 		if (ip->ip_ttl < IPTTLDEC) {

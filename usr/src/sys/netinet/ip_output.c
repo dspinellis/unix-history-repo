@@ -1,4 +1,4 @@
-/*	ip_output.c	1.30	82/03/30	*/
+/*	ip_output.c	1.31	82/03/31	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -49,15 +49,16 @@ COUNT(IP_OUTPUT);
 		ro->ro_dst.sa_family = AF_INET;
 		((struct sockaddr_in *)&ro->ro_dst)->sin_addr = ip->ip_dst;
 		rtalloc(ro);
-		if (ro != &iproute)
-			ro->ro_rt->rt_refcnt++;
 	}
 	if (ro->ro_rt == 0 || (ifp = ro->ro_rt->rt_ifp) == 0) {
-printf("no route to %x\n", ip->ip_dst.s_addr);
+		printf("no route to %x (from %x, len %d)\n",
+		    ip->ip_dst.s_addr, ip->ip_src.s_addr, ip->ip_len);
 		goto bad;
-}
+	}
 	dst = ro->ro_rt->rt_flags&RTF_DIRECT ?
 	    (struct sockaddr *)&ro->ro_dst : &ro->ro_rt->rt_gateway;
+	if (ro == &iproute)
+		RTFREE(ro->ro_rt);
 	if (!allowbroadcast && (ifp->if_flags & IFF_BROADCAST)) {
 		struct sockaddr_in *sin;
 
