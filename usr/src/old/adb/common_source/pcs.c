@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)pcs.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)pcs.c	5.3 (Berkeley) %G%";
 #endif
 
 /*
@@ -34,7 +34,6 @@ char	*malloc();
 /* run modes */
 #define	CONTINUOUS	0
 #define	SINGLESTEP	1
-#define	NEW		2	/* starting new process, no pc to set */
 
 /* sub process control */
 
@@ -42,8 +41,8 @@ subpcs(modif)
 	int modif;
 {
 	register int check;
-	int execsig = 0, runmode;
 	register struct bkpt *bp;
+	int execsig, runmode;
 	char *comptr;
 
 	switch (modif) {
@@ -109,7 +108,7 @@ subpcs(modif)
 		endpcs();
 		setup();
 		runcount = ecount;
-		runmode = CONTINUOUS | NEW;
+		runmode = CONTINUOUS;
 		execsig = 0;
 		if (gavedot) {
 			if (scanbkpt(dot) == NULL)
@@ -129,8 +128,9 @@ subpcs(modif)
 			execsig = oexpr() ? expv : signo;
 		} else {
 			setup();
-			runmode = SINGLESTEP | NEW;
+			runmode = SINGLESTEP;
 			execsig = 0;
+			runcount--;
 		}
 		break;
 
@@ -147,9 +147,10 @@ subpcs(modif)
 
 	default:
 		error(BADMOD);
+		/* NOTREACHED */
 	}
 
-	if (runcount > 0 && runpcs(runmode & ~NEW, execsig, runmode & NEW))
+	if (runcount > 0 && runpcs(runmode, execsig))
 		adbprintf("breakpoint%16t");
 	else
 		adbprintf("stopped at%16t");
@@ -218,33 +219,28 @@ bperr(b, how)
  * ... return true iff stopped due to breakpoint
  */
 int
-runpcs(runmode, execsig, newproc)
-	int runmode, execsig, newproc;
+runpcs(runmode, execsig)
+	int runmode, execsig;
 {
 	register struct bkpt *bkpt;
 	int rc;
 
 	/* always set pc, so that expr>pc works too */
-	setpc(gavedot ? dot : newproc ? entrypc() : getpc());
+	setpc(gavedot ? dot : getpc());
 	adbprintf("%s: running\n", symfile.name);
 	while (--runcount >= 0) {
-#ifdef DEBUG
-		adbprintf("\n%s @ %X sig %D\n",
-			newproc ? "start" : "continue",
-			getpc(), execsig);		/* XXX */
-#endif
 		/* BEGIN XXX (machine dependent?, delete ptrace, etc) */
 		if (runmode == SINGLESTEP)
 			delbp();	/* hardware handles single-stepping */
 		else {	/* continuing from a breakpoint is hard */
-			if (!newproc && (bkpt = scanbkpt(getpc())) != NULL) {
+			if ((bkpt = scanbkpt(getpc())) != NULL) {
 				execbkpt(bkpt, execsig);
 				execsig = 0;
 			}
 			setbp();
 		}
 		(void) ptrace(runmode == CONTINUOUS ? PT_CONTINUE : PT_STEP,
-			pid, (int *)(newproc ? 1 : getpc()), execsig);
+			pid, (int *)getpc(), execsig);
 		/* END XXX */
 		bpwait();
 		checkerr();
@@ -404,7 +400,7 @@ doexec()
 	} while (c != '\n');
 	unreadc();
 	*ap++ = 0;
-	exect(symfile.name, argl, environ);
+	execve(symfile.name, argl, environ);
 	perror(symfile.name);
 }
 
