@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)rk.c	6.5 (Berkeley) %G%
+ *	@(#)rk.c	6.6 (Berkeley) %G%
  */
 
 #include "rk.h"
@@ -749,8 +749,10 @@ rkdump(dev)
 	}
 	st = &rkst[ui->ui_type];
 	sizes = phys(struct size *, st->sizes);
-	if (dumplo < 0 || dumplo + num >= sizes[minor(dev)&07].nblocks)
+	if (dumplo < 0)
 		return (EINVAL);
+	if (dumplo + num >= sizes[minor(dev)&07].nblocks)
+		num = sizes[minor(dev)&07].nblocks - dumplo;
 	while (num > 0) {
 		register struct pte *io;
 		register int i;
