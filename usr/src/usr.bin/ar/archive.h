@@ -5,7 +5,7 @@
  * This code is derived from software contributed to Berkeley by
  * Hugh Smith at The University of Guelph.
  *
- *	@(#)archive.h	5.3 (Berkeley) %G%
+ *	@(#)archive.h	5.4 (Berkeley) %G%
  */
 
 /* Ar(1) options. */
@@ -68,12 +68,12 @@ typedef struct {
 	} \
 }
 
-/* Old archive format name limit. */
-#define	ARNAMEMAX	16
-
 /* Header format strings. */
 #define	HDR1	"%s%-13d%-12ld%-6u%-6u%-8o%-10ld%2s"
 #define	HDR2	"%-16.16s%-12ld%-6u%-6u%-8o%-10ld%2s"
+
+#define	OLDARMAXNAME	15
+#define	HDR3	"%-16.15s%-12ld%-6u%-6u%-8o%-10ld%2s"
 
 #include <stdlib.h>
 #include <string.h>

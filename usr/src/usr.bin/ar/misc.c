@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)misc.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)misc.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -89,7 +89,7 @@ compare(dest)
 	char *rname();
 
 	if (options & AR_S)
-		return(!strncmp(chdr.name, rname(dest), ARNAMEMAX));
+		return(!strncmp(chdr.name, rname(dest), OLDARMAXNAME));
 	return(!strcmp(chdr.name, rname(dest)));
 }
 

@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)archive.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)archive.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -187,19 +187,21 @@ put_object(cfp, sb)
 		 * a space, use extended format 1.
 		 */
 		lname = strlen(name);
-		if (!(options & AR_S) && (lname > sizeof(hdr->ar_name) ||
-		    index(name, ' '))) {
+		if (options & AR_S) {
+			if (lname > OLDARMAXNAME) {
+				(void)fflush(stdout); (void)fprintf(stderr,
+				    "ar: warning: %s truncated to %.*s\n",
+				    name, OLDARMAXNAME, name);
+				(void)fflush(stderr);
+			}
+			(void)sprintf(hb, HDR3, name, sb->st_mtime, sb->st_uid,
+			    sb->st_gid, sb->st_mode, sb->st_size, ARFMAG);
+			lname = 0;
+		} else if (lname > sizeof(hdr->ar_name) || index(name, ' '))
 			(void)sprintf(hb, HDR1, AR_EFMT1, lname, sb->st_mtime,
 			    sb->st_uid, sb->st_gid, sb->st_mode,
 			    sb->st_size + lname, ARFMAG);
-		} else {
-			if (lname > sizeof(hdr->ar_name)) {
-				(void)fflush(stdout);
-				(void)fprintf(stderr,
-				    "ar: warning: %s truncated to %.*s\n",
-				    name, sizeof(hdr->ar_name), name);
-				(void)fflush(stderr);
-			}
+		else {
 			lname = 0;
 			(void)sprintf(hb, HDR2, name, sb->st_mtime, sb->st_uid,
 			    sb->st_gid, sb->st_mode, sb->st_size, ARFMAG);
