@@ -7,7 +7,7 @@ BINDIR = /usr/local
 DESTDIR =
 # LIBDIR is the place where we expect the the things we need and is
 # is therefore hardwired in. Since it is all local, we use BINDIR as well
-LIBDIR = ${BINDIR}/lib/ideal/lib
+LIBDIR = ${BINDIR}/lib/ideal/lib/
 CFLAGS = -O -DLIBDIR=\"${LIBDIR}\"
 
 SOURCES = ideal.h ideal.c util.c memut.c bldds.c simul.c exprn.c\
