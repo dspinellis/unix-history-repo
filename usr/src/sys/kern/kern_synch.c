@@ -1,4 +1,4 @@
-/*	kern_synch.c	6.4	84/08/29	*/
+/*	kern_synch.c	6.5	84/12/20	*/
 
 #include "../machine/pte.h"
 
@@ -27,10 +27,9 @@ roundrobin()
 	timeout(roundrobin, (caddr_t)0, hz / 10);
 }
 
-/* constants to digital decay and forget 90% of usage in 5*loadav time */
-#undef ave
-#define	ave(a,b) ((int)(((int)(a*b))/(b+1)))
-int	nrscale = 2;
+/* fraction for digital decay to forget 90% of usage in 5*loadav sec */
+#define	filter(loadav) ((2 * (loadav)) / (2 * (loadav) + 1))
+
 double	ccpu = 0.95122942450071400909;		/* exp(-1/20) */
 
 /*
@@ -41,6 +40,7 @@ schedcpu()
 	register double ccpu1 = (1.0 - ccpu) / (double)hz;
 	register struct proc *p;
 	register int s, a;
+	float scale = filter(avenrun[0]);
 
 	wakeup((caddr_t)&lbolt);
 	for (p = allproc; p != NULL; p = p->p_nxt) {
@@ -49,18 +49,27 @@ schedcpu()
 		if (p->p_stat==SSLEEP || p->p_stat==SSTOP)
 			if (p->p_slptime != 127)
 				p->p_slptime++;
-		if (p->p_flag&SLOAD)
-			p->p_pctcpu = ccpu * p->p_pctcpu + ccpu1 * p->p_cpticks;
+		/*
+		 * If the process has slept the entire second,
+		 * stop recalculating its priority until it wakes up.
+		 */
+		if (p->p_slptime > 1) {
+			p->p_pctcpu *= ccpu;
+			continue;
+		}
+		/*
+		 * p_pctcpu is only for ps.
+		 */
+		p->p_pctcpu = ccpu * p->p_pctcpu + ccpu1 * p->p_cpticks;
 		p->p_cpticks = 0;
-		a = ave((p->p_cpu & 0377), avenrun[0]*nrscale) +
-		     p->p_nice - NZERO;
+		a = (int) (scale * (p->p_cpu & 0377)) + p->p_nice;
 		if (a < 0)
 			a = 0;
 		if (a > 255)
 			a = 255;
 		p->p_cpu = a;
 		(void) setpri(p);
-		s = spl6();	/* prevent state changes */
+		s = splhigh();	/* prevent state changes */
 		if (p->p_pri >= PUSER) {
 #define	PPQ	(128 / NQS)
 			if ((p != u.u_procp || noproc) &&
@@ -83,6 +92,26 @@ schedcpu()
 	if (bclnlist != NULL)
 		wakeup((caddr_t)&proc[2]);
 	timeout(schedcpu, (caddr_t)0, hz);
+}
+
+/*
+ * Recalculate the priority of a process after it has slept for a while.
+ */
+updatepri(p)
+	register struct proc *p;
+{
+	register int a = p->p_cpu & 0377;
+	float scale = filter(avenrun[0]);
+
+	p->p_slptime--;		/* the first time was done in schedcpu */
+	while (a && --p->p_slptime)
+		a = (int) (scale * a) /* + p->p_nice */;
+	if (a < 0)
+		a = 0;
+	if (a > 255)
+		a = 255;
+	p->p_cpu = a;
+	(void) setpri(p);
 }
 
 #define SQSIZE 0100	/* Must be power of 2 */
@@ -108,8 +137,9 @@ sleep(chan, pri)
 	register s;
 
 	rp = u.u_procp;
-	s = spl6();
-	if (chan==0 || rp->p_stat != SRUN || rp->p_rlink)
+	s = splhigh();
+	if ((chan==0 || rp->p_stat != SRUN || rp->p_rlink) &&
+	    panicstr == (char *) NULL)
 		panic("sleep");
 	rp->p_wchan = chan;
 	rp->p_slptime = 0;
@@ -148,7 +178,6 @@ out:
 	 * If priority was low (>PZERO) and
 	 * there has been a signal, execute non-local goto through
 	 * u.u_qsave, aborting the system call in progress (see trap.c)
-	 * (or finishing a tsleep, see below)
 	 */
 psig:
 	longjmp(&u.u_qsave);
@@ -164,7 +193,7 @@ unsleep(p)
 	register struct proc **hp;
 	register s;
 
-	s = spl6();
+	s = splhigh();
 	if (p->p_wchan) {
 		hp = &slpque[HASH(p->p_wchan)];
 		while (*hp != p)
@@ -184,7 +213,7 @@ wakeup(chan)
 	register struct proc *p, **q, **h;
 	int s;
 
-	s = spl6();
+	s = splhigh();
 	h = &slpque[HASH(chan)];
 restart:
 	for (q = h; p = *q; ) {
@@ -193,6 +222,8 @@ restart:
 		if (p->p_wchan==chan) {
 			p->p_wchan = 0;
 			*q = p->p_link;
+			if (p->p_slptime > 1)
+				updatepri(p);
 			p->p_slptime = 0;
 			if (p->p_stat == SSLEEP) {
 				/* OPTIMIZED INLINE EXPANSION OF setrun(p) */
@@ -242,7 +273,7 @@ setrun(p)
 {
 	register int s;
 
-	s = spl6();
+	s = splhigh();
 	switch (p->p_stat) {
 
 	case 0:
@@ -260,6 +291,8 @@ setrun(p)
 	case SIDL:
 		break;
 	}
+	if (p->p_slptime > 1)
+		updatepri(p);
 	p->p_stat = SRUN;
 	if (p->p_flag & SLOAD)
 		setrq(p);
@@ -289,7 +322,7 @@ setpri(pp)
 	register int p;
 
 	p = (pp->p_cpu & 0377)/4;
-	p += PUSER + 2*(pp->p_nice - NZERO);
+	p += PUSER + 2 * pp->p_nice;
 	if (pp->p_rssize > pp->p_maxrss && freemem < desfree)
 		p += 2*4;	/* effectively, nice(4) */
 	if (p > 127)
