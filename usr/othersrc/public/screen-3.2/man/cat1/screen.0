@@ -1,0 +1,1914 @@
+
+
+
+SCREEN(1)                      1992                     SCREEN(1)
+
+
+NNAAMMEE
+       screen - screen manager with VT100/ANSI terminal emulation
+
+SSYYNNOOPPSSIISS
+       ssccrreeeenn [ --_o_p_t_i_o_n_s ] [ _c_m_d [ _a_r_g_s ] ]
+       ssccrreeeenn --rr [ [[_p_i_d.]]_t_t_y[[._h_o_s_t]] ]
+
+DDEESSCCRRIIPPTTIIOONN
+       _S_c_r_e_e_n is a full-screen window manager that multiplexes  a
+       physical  terminal  between  several  processes (typically
+       interactive shells).  Each virtual terminal  provides  the
+       functions of the DEC VT100 terminal and, in addition, sev-
+       eral control functions from the ANSI X3.64 (ISO 6429)  and
+       ISO  2022  standards  (e.g. insert/delete line and support
+       for multiple character sets).  There is a scrollback  his-
+       tory buffer for each virtual terminal and a copy-and-paste
+       mechanism that allows moving text regions between windows.
+
+       The name of this program was changed to _i_S_c_r_e_e_n to be able
+       to distinguish it from Oliver  Laumann's  original  _s_c_r_e_e_n
+       program.  Despite  that fact, this manual will continue to
+       use the name _s_c_r_e_e_n.  This is, because often the binary is
+       installed as 'screen'.
+
+       When  _s_c_r_e_e_n  is called, it creates a single window with a
+       shell in it (or the specified command) and then  gets  out
+       of  your  way  so that you can use the program as you nor-
+       mally would.  Then, at any time, you can create new (full-
+       screen)  windows  with  other  programs in them (including
+       more shells), kill existing windows, view a  list  of  the
+       current windows, turn output logging on and off, copy-and-
+       paste text between windows, view the  scrollback  history,
+       switch  between  windows in whatever manner you wish, etc.
+       When a program terminates, _s_c_r_e_e_n kills  the  window  that
+       contained  it.   If this window was in the foreground, the
+       display switches to the previous window; if none are left,
+       _s_c_r_e_e_n exits.
+
+       Everything  you type is sent to the program running in the
+       current window.  The only exception to  this  is  the  one
+       keystroke that is used to initiate a command to the window
+       manager.  By default, each command begins with a control-a
+       (abbreviated  C-a  from  now  on),  and is followed by one
+       other keystroke.  The command character and  all  the  key
+       bindings  can be fully customized to be anything you like,
+       though they are always two characters in length.
+
+       The standard way to create a new window is  to  type  "C-a
+       c".   This  creates  a  new  window  running  a  shell and
+       switches to that window  immediately,  regardless  of  the
+       state of the process running in the current window.  Simi-
+       larly, you can create a new window with a  custom  command
+       in it by first binding the command to a keystroke (in your
+       .screenrc file) and then using it just like  the  "C-a  c"
+
+
+
+January                         31                              1
+
+
+
+
+
+SCREEN(1)                      1992                     SCREEN(1)
+
+
+       command.   In addition, new windows can be created by run-
+       ning a command like:
+
+              screen emacs prog.c
+
+       from a shell prompt within a  previously  created  window.
+       This will not run another copy of _s_c_r_e_e_n, but will instead
+       supply the command name and its arguments  to  the  window
+       manager  who  will  use  it to create the new window.  The
+       above  example  would  start  the  emacs  editor  (editing
+       prog.c) and switch to its window.
+
+       If  "/etc/utmp"  is  writable  by  _s_c_r_e_e_n,  an appropriate
+       record will be written to this file for each  window,  and
+       removed when the window is terminated.  This is useful for
+       working with "talk", "script", "shutdown", "rsend", "sccs"
+       and  other  similar  programs  that  use  the utmp file to
+       determine who you are. As long as _s_c_r_e_e_n is active on your
+       terminal,  the  terminals  own  record is removed from the
+       utmp file. See also "C-a L".
+
+GGEETTTTIINNGG SSTTAARRTTEEDD
+       Before you begin to use _s_c_r_e_e_n you'll need  to  make  sure
+       you  have  correctly  selected your terminal type, just as
+       you would for any other  termcap/terminfo  program.   (You
+       can do this by using _t_s_e_t or _s_t_t_y, for example.)
+
+       If  you're impatient and want to get started without doing
+       a lot more reading, you should remember this one  command:
+       "C-a  ?".  Typing these two characters will display a list
+       of the available _s_c_r_e_e_n commands and their bindings.  Each
+       keystroke  is discussed in the section "COMMAND KEYS". The
+       manual section "CUSTOMIZATION" deals with the contents  of
+       your .screenrc.
+
+       If  possible,  choose a version of your terminal's termcap
+       that has automatic margins turned _o_f_f.  This  will  ensure
+       an  accurate  and optimal update of the screen in all cir-
+       cumstances.  The next best thing is an auto-margin  termi-
+       nal  that  allows  the  last  position on the screen to be
+       updated without scrolling the screen (such  as  a  vt100).
+       This also allows the entire screen to be updated.  Lastly,
+       if all you've got is a "true" auto-margin terminal  _s_c_r_e_e_n
+       will  be  content  to use it, but updating a character put
+       into the last position on the screen may not  be  possible
+       until  the screen scrolls or the character is moved into a
+       safe position in some other way.  This delay can be short-
+       ened by using a terminal with insert-character capability.
+
+       If your terminal is  of  the  second  type  (firm-margined
+       `am'),  you will want to let _s_c_r_e_e_n know about this, since
+       a normal termcap doesn't distinguish this  type  of  auto-
+       matic margins from a "true" `am' terminal.  You do this by
+       specifying the `LP' capability in your  termcap  (see  the
+
+
+
+January                         31                              2
+
+
+
+
+
+SCREEN(1)                      1992                     SCREEN(1)
+
+
+       "termcap"  .screenrc command), or by using the --LL command-
+       line option.  _S_c_r_e_e_n needs this information  to  correctly
+       update the screen.
+
+       If  you  are using a "true" auto-margin terminal (no `LP')
+       at low baud rates, you may want to turn on a more  optimal
+       output  mode  by  including  the flag `OP' in your termcap
+       entry, or by specifying the --OO command-line  option.   The
+       trade-off is that _s_c_r_e_e_n will no-longer accurately emulate
+       the vt100's line-end quirks (e.g. the screen  will  scroll
+       after  putting _o_n_e character in the last screen position).
+
+CCOOMMMMAANNDD KKEEYYSS
+       As mentioned, each _s_c_r_e_e_n command consists of a "C-a" fol-
+       lowed  by  one other character.  For your convenience, all
+       commands that are bound to  lower-case  letters  are  also
+       bound  to  their  control character counterparts (with the
+       exception of "C-a a"; see below), thus, "C-a c" as well as
+       "C-a C-c" can be used to create a window.
+
+       The following keystroke commands are available:
+
+       CC--aa 00  -  CC--aa 99   (select0 - select9)
+              Switch  to  the window with the number 0 through 9.
+              When a new window is established, the first  avail-
+              able number from the range 0..9 is assigned to this
+              window.  Thus, the first window can be activated by
+              "C-a  0" (there can be no more than 10 windows pre-
+              sent at any one time).
+
+       CC--aa CC--aa   (other)
+              Switch to the window  displayed  previously.   Note
+              that  this function defaults to the command charac-
+              ter typed twice, unless overridden;  for  instance,
+              if you use the option "--ee]]xx", this function becomes
+              "]]", not "]C-a".
+
+       CC--aa aa
+              Send the command character (C-a) to  the  processes
+              in the current window.
+
+       CC--aa AA   (aka)
+              Allow  the  user to enter an a.k.a (also-known-as).
+              for the current window.
+
+       CC--aa cc  or  CC--aa CC--cc   (shell)
+              Create a new window with a shell and switch to that
+              window.
+
+       CC--aa CC   (clear)
+              Clear the screen.
+
+       CC--aa dd  or  CC--aa CC--dd   (detach)
+              Detach  _s_c_r_e_e_n (disconnect it from the terminal and
+
+
+
+January                         31                              3
+
+
+
+
+
+SCREEN(1)                      1992                     SCREEN(1)
+
+
+              put it into the background).  A detached _s_c_r_e_e_n can
+              be  resumed  by invoking _s_c_r_e_e_n with the --rr option.
+              (See also section "COMMAND-LINE OPTIONS".)
+
+       CC--aa DD DD   (pow_detach)
+              Power detach. Mainly the same as  above,  but  also
+              sends  a  HANGUP  signal  to  the parent process of
+              _s_c_r_e_e_n.  CAUTION: This will  result  in  a  logout,
+              when _s_c_r_e_e_n was started from your login shell.
+
+       CC--aa ff  or  CC--aa CC--ff   (flow)
+              Cycles  the  current  window's flow-control setting
+              from "automatic" to "on" to "off", see the  section
+              titled FLOW-CONTROL for details.
+
+       CC--aa CC--gg   (vbell)
+              Toggles _s_c_r_e_e_n'_s visual bell mode. If your terminal
+              does not support a visual bell,  a  `vbell-message'
+              is displayed in the status line.
+
+       CC--aa hh  or  CC--aa CC--hh   (hardcopy)
+              Write  a hardcopy of the current window to the file
+              "hardcopy._n" in  the  window's  default  directory,
+              where _n is the number of the current window.
+
+       CC--aa HH   (log)
+              Begins/ends  logging  of  the current window to the
+              file "screenlog._n" in the window's  default  direc-
+              tory,  where _n is the number of the current window.
+              The session log is appended to  the  previous  con-
+              tents  of  the file if it already exists.  The cur-
+              rent contents and the contents  of  the  scrollback
+              history are not included in the session log.
+
+       CC--aa ii  or  CC--aa CC--ii   (info)
+              Uses  the  message line to display some information
+              about the current window: the  cursor  position  in
+              the  form "(column,row)" starting with "(1,1)", the
+              terminal width and height  plus  the  size  of  the
+              scrollback  buffer  in lines, like in "(80,24)+50",
+              various flag settings (flow-control,  insert  mode,
+              origin  mode,  wrap  mode, application-keypad mode,
+              output logging, and activity monitoring (`+'  indi-
+              cates  enabled,  `-'  not)),  the  currently active
+              character set (_G_0, _G_1, _G_2, or _G_3),  and  in  square
+              brackets  the terminal character sets that are cur-
+              rently designated as _G_0  through  _G_3.   For  system
+              information use "C-a t".
+
+       CC--aa kk  or  CC--aa CC--kk   (kill)
+              Kill  the  current  window and switch to the previ-
+              ously displayed window.  Note: _E_m_a_c_s  users  should
+              keep this command in mind, when killing a line.  It
+              is recommended not  to  use  "C-a"  as  the  _s_c_r_e_e_n
+
+
+
+January                         31                              4
+
+
+
+
+
+SCREEN(1)                      1992                     SCREEN(1)
+
+
+              escape key or that kill is rebound to "C-a K".
+
+       CC--aa ll  or  CC--aa CC--ll   (redisplay)
+              Redisplay the current window.
+
+       CC--aa LL   (login)
+              Adds or removes the entry in /etc/utmp file for the
+              current window.  This controls  if  the  window  is
+              `logged  in'. See also above.  Additionally to that
+              toggle, it is convenient having a `log  in'  and  a
+              `log out' key. E.g. `bind I set login on' and `bind
+              O set login off' will map these keys to  be  C-a  I
+              and C-a O.
+
+       CC--aa mm  or  CC--aa CC--mm   (lastmsg)
+              Repeat  the  last  message displayed in the message
+              line.  Useful  if  you're  typing  when  a  message
+              appears, because (unless your terminal has a status
+              line) the message goes away when you press a key.
+
+       CC--aa MM   (monitor)
+              Toggles monitoring of  the  current  window.   When
+              monitoring  is turned on and the affected window is
+              switched into the background, you will receive  the
+              activity notification message in the status line at
+              the first sign of output and the window  will  also
+              be marked with an `@' in the window-status display.
+              Monitoring is initially off for all windows.
+
+       CC--aa ssppaaccee  or  CC--aa nn  or  CC--aa CC--nn   (next)
+              Switch to the next window.  This  function  can  be
+              used  repeatedly  to cycle through the list of win-
+              dows.  (Some terminals require you to  release  the
+              control key before pressing space.)
+
+       CC--aa pp  or  CC--aa CC--pp   (prev)
+              Switch  to the previous window (the opposite of CC--aa
+              nn).
+
+       CC--aa qq  or  CC--aa CC--qq   (xon)
+              Send a control-q to the program in the current win-
+              dow.
+
+       CC--aa rr  or  CC--aa CC--rr   (wrap)
+              Toggle the current window's line-wrap setting (turn
+              the current window's automatic margins on and off).
+
+       CC--aa ss  or  CC--aa CC--ss   (xoff)
+              Send a control-s to the program in the current win-
+              dow.
+
+       CC--aa tt  or  CC--aa CC--tt   (time)
+              Uses the message line to display the time  of  day,
+              the host name, and the load averages over 1, 5, and
+
+
+
+January                         31                              5
+
+
+
+
+
+SCREEN(1)                      1992                     SCREEN(1)
+
+
+              15 minutes (if this is available on  your  system).
+              For window specific information use "C-a i".
+
+       CC--aa vv  or  CC--aa CC--vv   (version)
+              Display the version and compilation date.
+
+       CC--aa ww  or  CC--aa CC--ww   (windows)
+              Uses  the message line to display a list of all the
+              windows.  Each window is listed by number with  the
+              name of process that has been started in the window
+              (or its a.k.a.); the current window is marked  with
+              a  `*';  the  previous window is marked with a `-';
+              all the windows that are  "logged  in"  are  marked
+              with a `$'; a background window that has received a
+              bell is marked with a `!'; a background window that
+              is  being  monitored  and has had activity occur is
+              marked with an `@'; a window which has output  log-
+              ging turned on is marked with `(L)'.
+
+       CC--aa WW   (width)
+              Toggle the window width between 80 and 132 columns.
+              As this command became a  toggle,  "C-a  N"  is  no
+              longer supported.  This requires a capable terminal
+              and the termcap entries "Z0"  and  "Z1".   See  the
+              "termcap"  command  in  section "CUSTOMIZATION" for
+              more information.
+
+       CC--aa xx  or  CC--aa CC--xx   (lock)
+              Call  a  screenlock  program   (/local/bin/lck   or
+              /usr/bin/lock  or  a builtin, if no other is avail-
+              able). Screen does  not  accept  any  command  keys
+              until  this program terminates. Meanwhile processes
+              in the windows may continue, as the windows are  in
+              the `detached' state. The screenlock program may be
+              changed through the environment  variable  $LOCKPRG
+              (which  must  be set in the shell from which _s_c_r_e_e_n
+              is started) and is executed with the user's uid and
+              gid.
+
+       CC--aa zz  or  CC--aa CC--zz   (suspend)
+              Suspend  _s_c_r_e_e_n.  The windows are in the `detached'
+              state, while _s_c_r_e_e_n is suspended.
+
+       CC--aa ZZ   (reset)
+              Reset the virtual terminal to its  "power-on"  val-
+              ues.
+
+       CC--aa ..   (termcap)
+              Write the termcap entry for the virtual terminal of
+              the currently active window to the file  ".termcap"
+              in  the  user's "$HOME/.screen" directory (or wher-
+              ever _s_c_r_e_e_n stores its  sockets.  See  the  "FILES"
+              section below).  This termcap entry is identical to
+              the value of the environment variable $TERMCAP that
+
+
+
+January                         31                              6
+
+
+
+
+
+SCREEN(1)                      1992                     SCREEN(1)
+
+
+              is  set  up by _s_c_r_e_e_n for each window. For terminfo
+              based systems you will need to run a converter like
+              _c_a_p_t_o_i_n_f_o and then compile the entry with _t_i_c.
+
+       CC--aa ??   (help)
+              Displays  a  help  screen  showing  you all the key
+              bindings.  The first pages list  all  the  internal
+              commands  followed  by  their bindings.  Subsequent
+              pages will display the custom commands, one command
+              per key.  Press space when you're done reading each
+              page, or return to exit early.  All  other  charac-
+              ters are ignored, except for the command character,
+              which will exit the help display and begin  a  com-
+              mand.
+
+       CC--aa CC--\\   (quit)
+              Kill  all  windows and terminate _s_c_r_e_e_n.  Note that
+              on vt100-style terminals the keys C-4 and  C-\  are
+              identical.  So be careful not to write C-a C-4 when
+              selecting window no. 4.  Use the empty bind command
+              (as in "bind '^'") to remove a key binding.
+
+       CC--aa ::   (colon)
+              Allows  you  to  enter ".screenrc" command lines as
+              well as names of  key-bound-functions.  Useful  for
+              on-the-fly  modification  of key bindings, specific
+              window creation and changing settings. Settings  of
+              the current window can be changed by prepending the
+              command (if appropriate) with  the  keyword  "set".
+              If  you  consider  this as the `Ex command mode' of
+              _s_c_r_e_e_n, you may regard "C-a esc" as its `Vi command
+              mode'.
+
+       CC--aa [[  or  CC--aa CC--[[  or  CC--aa eesscc   (copy)
+              Enter copy/scrollback mode. This allows you to copy
+              text from the current window and its  history  into
+              the  paste  buffer.  In  this  mode a vi-like `full
+              screen editor' is active:
+              _M_o_v_e_m_e_n_t _k_e_y_s:
+              hh, jj, kk, ll move the cursor line by line  or  column
+              by column.
+              00,  ^^  and  $$  move  to the leftmost column, to the
+              first or last non-whitespace character on the line.
+              HH,  MM  and LL move the cursor to the leftmost column
+              of the top, center or bottom line of the window.
+              ++ and -- positions one line up and down.
+              GG moves to the specified  absolute  line  (default:
+              end of buffer).
+              || moves to the specified absolute column.
+              ww, bb, ee move the cursor word by word.
+              CC--uu and CC--dd scroll the display up/down by the spec-
+              ified amount of lines while preserving  the  cursor
+              position. (Default: half screenfull).
+              CC--bb  and  CC--ff  scroll  the  display  up/down a full
+
+
+
+January                         31                              7
+
+
+
+
+
+SCREEN(1)                      1992                     SCREEN(1)
+
+
+              screen.
+              gg moves to the beginning of the buffer, whereas
+              %% jumps to the specified percentage.
+              _N_o_t_e: Emacs style movement keys can  be  customized
+              by    a    .screenrc   command.   (E.g.    markkeys
+              "h=^B:l=^F:$=^E") There is no simple method  for  a
+              full  emacs-style  keymap,  as this involves multi-
+              character codes.
+              _M_a_r_k_i_n_g:
+              The copy range is specified by setting  two  marks.
+              The  text  between these marks will be highlighted.
+              Press ssppaaccee to set the first or second mark respec-
+              tively.
+              YY  and  yy  can be used to mark one whole line or to
+              mark from start of line.
+              WW marks exactly one word.
+              _R_e_p_e_a_t _c_o_u_n_t:
+              Any of these commands can be prefixed with a number
+              (by  pressing  digits  00..99)  which  is  taken as a
+              repeat count. Example: "C-a C-[ H 10 j  5  Y"  will
+              copy lines 11 to 15 into the pastebuffer.
+              _S_p_e_c_i_a_l_s:
+              There  are  however  some keys that act differently
+              here and in _v_i.  _V_i does not allow to yank  rectan-
+              gular blocks of text, but _s_c_r_e_e_n does. Press
+              cc  or  CC  to  set  the left or right margin respec-
+              tively. If no repeat count is given,  both  default
+              to  the  current  cursor  position.  Try  this on a
+              rather full text screen as an example: "C-A  [  S-M
+              20 l SPACE c 10 l 5 j S-C SPACE".
+              JJ  joins  lines.  It toggles between 3 modes: lines
+              separated by a newline character (012), lines glued
+              seamless,  lines  separated by a single whitespace.
+              Note that you can  prepend  the  newline  character
+              with a carriage return character, by issuing a "set
+              crlf on".
+              vv is for all the _v_i users with ":set numbers" -  it
+              toggles the left margin between column 9 and 1.
+              Press  aa  before  the  final space key to toggle in
+              append mode. Thus the contents of  the  pastebuffer
+              will not be overwritten, but appended to.
+              AA  toggles in append mode and sets a (second) mark.
+              >> sets the (second) mark and writes the contents of
+              the   copybuffer   to   the   screen-exchange  file
+              (/tmp/screen-exchange per default)  once  copy-mode
+              is  finished. This example demonstrates how to dump
+              the whole scrollback buffer to that file: "C-A [  g
+              SPACE G $ >".
+              ?? gives information about the current line and col-
+              umn.
+
+       CC--aa ]]  or  CC--aa CC--]]   (paste)
+              Paste. Write the contents of the  paste  buffer  to
+              the stdin queue of the current window.
+
+
+
+January                         31                              8
+
+
+
+
+
+SCREEN(1)                      1992                     SCREEN(1)
+
+
+       CC--aa {{   (history)
+              Usually  users  work  with a shell that allows easy
+              access to previous commands.  E.g. csh has the com-
+              mand  "!!"  to  repeat  the  last command executed.
+              _S_c_r_e_e_n allows you to have a primitive  way  of  re-
+              calling  "the  command  that started ...": You just
+              type the first letter of that command, then hit `C-
+              a  {' and _s_c_r_e_e_n tries to find a previous line that
+              matches with the `prompt character' to the left  of
+              the  cursor. This line is pasted into this window's
+              input queue.  Thus you have a crude command history
+              (made  up  by the visible window and its scrollback
+              buffer).
+
+       CC--aa >>   (write_buffer)
+              Writes the contents of the paste buffer to a public
+              accessible screen-exchange file. This is thought of
+              as  a  primitive  means  of  communication  between
+              _s_c_r_e_e_n  users on the same host. See also "C-a esc".
+
+       CC--aa <<   (read_buffer)
+              Reads the  screen-exchange  file  into  the  paste-
+              buffer. See also "C-a ]".
+
+       CC--aa ==   (kill_buffer)
+              Removes  the exchange file used by "C-a <" and "C-a
+              >".
+
+CCOOMMMMAANNDD--LLIINNEE OOPPTTIIOONNSS
+       Screen has the following command-line options:
+
+       --aa   include _a_l_l capabilities (with some minor exceptions)
+            in  each window's termcap, even if _s_c_r_e_e_n must redraw
+            parts of the display in order to  implement  a  func-
+            tion.
+
+       --cc _f_i_l_e
+            override   the   default   configuration   file  from
+            "$HOME/.screenrc" to _f_i_l_e.
+
+       --dd|--DD [_p_i_d._t_t_y._h_o_s_t]
+            does not start _s_c_r_e_e_n, but detach the elsewhere  run-
+            ning _s_c_r_e_e_n session. It has the same effect as typing
+            "C-a d" from _s_c_r_e_e_n'_s controlling terminal. --DD is the
+            equivalent  to  the  power detach key.  If no session
+            can be detached, this option is ignored.  The  combi-
+            nation  "screen -D -r" can be used to `transport' the
+            elsewhere running session to this terminal and logout
+            there.  Note: It is a good idea to have the status of
+            your sessions checked by means of "screen -list".
+
+       --ee _x_y
+            specifies the command character to be _x and the char-
+            acter  generating  a  literal  command character to _y
+
+
+
+January                         31                              9
+
+
+
+
+
+SCREEN(1)                      1992                     SCREEN(1)
+
+
+            (when  typed  after  the  command  character).    The
+            default  is  "C-a" and `a', which can be specified as
+            "-e^Aa".  See the "escape" .screenrc command for more
+            details.
+
+       --ff, --ffnn, and --ffaa
+            turns  flow-control  on, off, or "automatic switching
+            mode".  This can also be defined through  the  "flow"
+            .screenrc command.
+
+       --hh _n_u_m
+            Specifies  the  history  scrollback  buffer to be _n_u_m
+            lines high.
+
+       --ii   will cause the interrupt key (usually C-c) to  inter-
+            rupt the display immediately when flow-control is on.
+            See the "flow" .screenrc command for details.
+
+       --ll and --llnn
+            turns login mode on or off (for /etc/utmp  updating).
+            This   can   also  be  defined  through  the  "login"
+            .screenrc command.
+
+       --llss and --lliisstt
+            does  not  start  _s_c_r_e_e_n,  but  prints  a   list   of
+            _p_i_d._t_t_y._h_o_s_t  strings  identifying  your  _s_c_r_e_e_n ses-
+            sions.  Sessions marked  `detached'  can  be  resumed
+            with "screen -r". Those marked `attached' are running
+            and have a controlling terminal. Sessions  marked  as
+            `dead'  should be thoroughly checked and removed. Ask
+            your system administrator if you are not sure. Remove
+            sessions with the --wwiippee option.
+
+       --tt _n_a_m_e
+            sets  the  title  (a.k.a.)  for  the default shell or
+            specified program.  See also the "shellaka" .screenrc
+            command.
+
+       --wwiippee
+            does  the same as "screen -ls", but removes destroyed
+            sessions instead of marking them as `dead'.
+
+       --LL   tells _s_c_r_e_e_n your auto-margin terminal has a writable
+            last-position on the screen.  This can also be set in
+            your .screenrc by specifying `LP' in a "termcap" com-
+            mand.
+
+       --OO   selects  a more optimal output mode for your terminal
+            rather than true vt100 emulation (only affects  auto-
+            margin terminals without `LP').  This can also be set
+            in your .screenrc by specifying `OP' in  a  "termcap"
+            command.
+
+
+
+
+
+January                         31                             10
+
+
+
+
+
+SCREEN(1)                      1992                     SCREEN(1)
+
+
+       --rr [_p_i_d._t_t_y._h_o_s_t]
+            resumes  a detached _s_c_r_e_e_n session.  No other options
+            (except "-d -r" or "-D -r") may be specified,  though
+            an optional prefix of [_p_i_d.]_t_t_y._h_o_s_t may be needed to
+            distinguish between  multiple  detached  _s_c_r_e_e_n  ses-
+            sions.
+
+       --RR   attempts  to resume the first detached _s_c_r_e_e_n session
+            it finds.   If  successful,  all  other  command-line
+            options  are ignored.  If no detached session exists,
+            starts a new session  using  the  specified  options,
+            just as if --RR were not specified.
+
+       --ss   sets  the  default  shell  to  the program specified,
+            instead of the  value  in  the  environment  variable
+            $SHELL  (or "/bin/sh" if not defined).  This can also
+            be defined through the "shell" .screenrc command.
+
+CCUUSSTTOOMMIIZZAATTIIOONN
+       The "socket directory" defaults either to $HOME/.screen or
+       preferably  to  /local/screens.  If  _s_c_r_e_e_n  is  installed
+       setuid-root, then the administrator should compile  screen
+       with  an  adequate (not NFS mounted) SOCKDIR. If _s_c_r_e_e_n is
+       not running setuid-root, the user can specify any mode 777
+       directory in the environment variable $SCREENDIR.
+
+       When  _s_c_r_e_e_n  is  invoked, it executes initialization com-
+       mands from the files "/local/etc/screenrc" and ".screenrc"
+       in  the user's home directory. These are the "programmer's
+       defaults" that can be overridden in  the  following  ways:
+       For the global screenrc file _s_c_r_e_e_n searches for the envi-
+       ronment variable $SYSSCREENRC. The user specific  screenrc
+       file  is  searchend  in  $ISCREENRC,  then $SCREENRC, then
+       $HOME/.iscreenrc and finally defaults to  $HOME/.screenrc.
+       The  command line option --cc takes precedence over the user
+       specific screenrc file.  Commands in these files are  used
+       to  set  options, bind functions to keys, and to automati-
+       cally establish one or more extra windows at the beginning
+       of your _s_c_r_e_e_n session.  Commands are listed one per line,
+       with empty lines being ignored.  A command's arguments are
+       separated by tabs or spaces, and may be surrounded by sin-
+       gle or double quotes.  A `#' turns the rest  of  the  line
+       into  a  comment,  except in quotes.  Unintelligible lines
+       are warned about and ignored.  Commands may contain refer-
+       ences  to  environment variables. The syntax is the shell-
+       like "$VAR " or "${VAR}". Note that this causes incompati-
+       bilities   with  previous  _s_c_r_e_e_n  versions,  as  now  the
+       '$'-sign has to be protected with '' if no  variable  sub-
+       stitution shall be performed.
+
+       Customization  can  also  be  done 'on-line'. To enter the
+       command mode type `C-a :'. Setting flags (like scrollback,
+       login,  etc.)  on-line may not have the desired effect, as
+       e.g. the command "C-a : login on"  will  affect  only  the
+
+
+
+January                         31                             11
+
+
+
+
+
+SCREEN(1)                      1992                     SCREEN(1)
+
+
+       settings for the creation of new windows (just like within
+       .screenrc).  If you intend to change flags of the  current
+       window,  then  prepend the command with the keyword "set".
+       E.g.  "C-a : set login on" will log this window in.
+
+       The following initialization commands are available:
+
+       aaccttiivviittyy _m_e_s_s_a_g_e
+
+       When any activity occurs in a background  window  that  is
+       being  monitored,  _s_c_r_e_e_n  displays  a notification in the
+       message line.  The notification message can be  re-defined
+       by  means  of  the "activity" command.  Each occurrence of
+       `%' in _m_e_s_s_a_g_e is replaced by the number of the window  in
+       which activity has occurred, and each occurrence of `~' is
+       replaced by the definition for bell in your termcap  (usu-
+       ally an audible bell).  The default message is
+
+            'Activity in window %'
+
+       Note  that  monitoring  is off for all windows by default,
+       but can be altered by use of the  "monitor"  command  (C-a
+       M).
+
+       aauuttooddeettaacchh oonn|ooffff
+
+       Sets whether _s_c_r_e_e_n will automatically detach upon hangup,
+       which saves all  your  running  programs  until  they  are
+       resumed  with  a  ssccrreeeenn  --rr  command.  When turned off, a
+       hangup signal will terminate _s_c_r_e_e_n and all the  processes
+       it contains. Autodetach is on by default.
+
+       bbeellll _m_e_s_s_a_g_e
+
+       When  a  bell  character  is  sent to a background window,
+       _s_c_r_e_e_n displays a notification in the message  line.   The
+       notification  message  can  be  re-defined by means of the
+       "bell" command.  Each occurrence  of  `%'  in  _m_e_s_s_a_g_e  is
+       replaced  by  the number of the window to which a bell has
+       been sent, and each occurrence of `~' is replaced  by  the
+       definition  for  bell  in your termcap (usually an audible
+       bell).  The default message is
+
+            'Bell in window %'
+
+       An empty message can be supplied to the "bell" command  to
+       suppress output of a message line (bell "").
+
+       bbiinndd _k_e_y [_f_u_n_c_t_i_o_n [_a_r_g_s]]
+
+       Bind  a function to a key.  By default, each function pro-
+       vided by _s_c_r_e_e_n is bound to one or more keys as  indicated
+       by the above table, e.g. the function to create a new win-
+       dow is bound to "C-c" and "c".  The "bind" command can  be
+
+
+
+January                         31                             12
+
+
+
+
+
+SCREEN(1)                      1992                     SCREEN(1)
+
+
+       used  to redefine the key bindings and to define new bind-
+       ings.  The _k_e_y argument is either a  single  character,  a
+       two-character sequence of the form "^x" (meaning "C-x"), a
+       backslash followed by  an  octal  number  (specifying  the
+       ASCII code of the character), or a backslash followed by a
+       second character, such as "\^" or "\\".  The argument  can
+       also  be  quoted,  if you like.  If no further argument is
+       given, any previously established binding for this key  is
+       removed.   The _f_u_n_c_t_i_o_n argument can be one of the follow-
+       ing keywords:
+
+            select0      Switch to window #0
+              ...
+            select9      Switch to window #9
+            aka          Change the current window's a.k.a.
+            clear        Clear the screen
+            colon        Enter one ".screenrc" command on-the-fly.
+            copy         Select a piece of text.
+            detach       Detach _s_c_r_e_e_n
+            flow         Toggle the current window's flow-control setting
+            hardcopy     Make hardcopy of current window
+            history      Use cut&paste to fetch a recently displayed line.
+            help         Display a list of the key bindings in effect
+            info         Display the current window's status information
+            kill         Kill the current window
+            lastmsg      Redisplay the last message line
+            lock         Run a screenlock program.
+            log          Begin/end logging of the current window's output
+            login        Toggle the window's "login" setting (/etc/utmp entry)
+            monitor      Toggle activity monitoring of the current window
+            next         Switch to the next window
+            other        Switch to the window displayed previously
+            paste        Paste in a selected piece of text.
+            pow_detach   Detach _s_c_r_e_e_n and logout.
+            prev         Switch to the previous window
+            quit         Kill all windows and terminate
+            readbuffer   Take text from the exchange file.
+            redisplay    Redisplay current window
+            reset        Reset the window to its "power-on" settings
+            screen       Create a new window with the specified command
+            shell        Create a new window with a shell
+            suspend      Suspend _s_c_r_e_e_n
+            termcap      Write screen's termcap entry to $HOME/.screencap
+            vbell        Toggle the window's "vbell" setting.
+            version      Display the version numbers and date last modified
+            width        Toggle the terminal width between 80 and 132 columns
+            windows      Display a list of all windows
+            wrap         Toggle the current window's line-wrap setting
+            writebuffer  Store the selected text in the exchange file.
+            xoff         Send a control-s to the current program
+            xon          Send a control-q to the current program
+
+       Some examples:
+
+
+
+
+January                         31                             13
+
+
+
+
+
+SCREEN(1)                      1992                     SCREEN(1)
+
+
+            bind ' ' windows
+            bind ^f screen telnet foobar
+            bind \033 screen -ln -t root -h 1000 9 su
+
+       would bind the space key to the function that  displays  a
+       list  of  windows (so that the function usually invoked by
+       "C-a C-w" would also be available as  "C-a  space"),  bind
+       "C-f"  to the function "create a window with a TELNET con-
+       nection to foobar", and bind "escape" to the function that
+       creates an non-login window with a.k.a. "root" in slot #9,
+       with a super-user shell and  a  scrollbackbuffer  of  1000
+       lines.
+
+       bbuuffffeerrffiillee _e_x_c_h_a_n_g_e-_f_i_l_e
+
+       Change  the filename used for reading and writing with the
+       copybuffer.  The default  is  "/tmp/screen-exchange".  The
+       following  example  will  paste the system's password file
+       into the screen window:
+
+            C-a : bufferfile /etc/passwd
+            C-a < C-a ]
+
+       cchhddiirr [_d_i_r_e_c_t_o_r_y]
+
+       Change the _c_u_r_r_e_n_t _d_i_r_e_c_t_o_r_y of _s_c_r_e_e_n  to  the  specified
+       directory  or, if called without an argument, to your home
+       directory (the value of the environment  variable  $HOME).
+       All windows that are created by means of the "screen" com-
+       mand from within ".screenrc" or by means of "C-a :  screen
+       ..."  or  "C-a  c"  use  this  as their default directory.
+       Without a chdir command, this would be the directory  from
+       which  _s_c_r_e_e_n  was  invoked.   Hardcopy  and log files are
+       always written to the _w_i_n_d_o_w'_s default directory, _n_o_t  the
+       current  directory  of  the process running in the window.
+       You can use this command multiple times in your  .screenrc
+       to start various windows in different default directories,
+       but the last chdir value will affect all the  windows  you
+       create interactively.
+
+       ccrrllff oonn|ooffff
+
+       This  affects the copying of text regions with the `C-a ['
+       command. If it is set to `on', lines will be separated  by
+       the  two  character  sequence `CR' - `LF'.  Otherwise only
+       `LF' is used.
+
+       eecchhoo [--nn] _m_e_s_s_a_g_e
+
+       The echo command may be used to annoy _s_c_r_e_e_n users with  a
+       'message  of  the  day'.  Typically  installed in a global
+       /usr/local/etc/screenrc. See also "sleep".  Echo  is  also
+       useful for online checking of environment variables.
+
+
+
+
+January                         31                             14
+
+
+
+
+
+SCREEN(1)                      1992                     SCREEN(1)
+
+
+       eessccaappee _x_y
+
+       Set  the command character to _x and the character generat-
+       ing a literal command character to _y (just like in the  -e
+       option).   Each  argument  is either a single character, a
+       two-character sequence of the form "^x" (meaning "C-x"), a
+       backslash  followed  by  an  octal  number (specifying the
+       ASCII code of the character), or a backslash followed by a
+       second  character,  such  as "\^" or "\\".  The default is
+       "^Aa", but "``" is recommended by one of the authors.
+
+       ffllooww oonn|ooffff|aauuttoo [iinntteerrrruupptt]
+
+       Sets the default flow-control mode for new windows.  Spec-
+       ifying  "flow  auto interrupt" is the same as the command-
+       line options --ffaa and --ii.   See  the  discussion  on  FLOW-
+       CONTROL  later  on  in  this document for full details and
+       note, that this is subject to change in future releases.
+
+       hhaarrddccooppyy__aappppeenndd oonn|ooffff
+
+       If set to "on", _s_c_r_e_e_n will  append  to  the  "hardcopy.n"
+       files  created  by  the  command  "C-a h", otherwise these
+       files are overwritten each time.
+
+       hhaarrddssttaattuuss oonn|ooffff
+
+       Toggles the use of the terminals hardware status line.  If
+       "on",  _s_c_r_e_e_n  will  use this facility to display one line
+       messages.  Otherwise  these  messages  are  overlayed   in
+       reverse  video  mode  at  the  display line. Note that the
+       hardstatus feature should  only  be  used,  if  the  term-
+       cap/terminfo  capabilities  "hs",  "ts", "fs" and "ds" are
+       set properly.
+
+       llooggiinn oonn|ooffff
+
+       Sets the login flag which determines if new windows should
+       have /etc/utmp entries added for them.  The login state is
+       also changeable on-the-fly by using the  bindable  version
+       of  the  "login" command (C-a L) of by means of "C-a : set
+       login on|off".  The default should be "on"  for  a  _s_c_r_e_e_n
+       that runs under suid-root.
+
+       mmaarrkkkkeeyyss _s_t_r_i_n_g
+
+       This   is  a  method  of  changing  the  keymap  used  for
+       copy/history  mode.   The  string  is  made  up  of   _o_l_d-
+       _c_h_a_r=_n_e_w_c_h_a_r  pairs  which  are separated by `:'. Example:
+       The string "B=^B:F=^F" will change the keys `C-b' and  `C-
+       f'  from  their  (original emacs-style bindings) to the vi
+       style binding (scroll up/down full  page),  which  is  the
+       default meaning of `B' and `F'.
+
+
+
+
+January                         31                             15
+
+
+
+
+
+SCREEN(1)                      1992                     SCREEN(1)
+
+
+       mmooddee _m_o_d_e
+
+       The  mode  of  each  newly  allocated pseudo-tty is set to
+       _m_o_d_e.  _M_o_d_e is an octal number.  When no "mode" command is
+       given, mode 0622 is used.
+
+       nneetthhaacckk oonn|ooffff
+
+       Changes  the  kind of error messages used by _s_c_r_e_e_n.  When
+       you are familiar with the game "nethack",  you  may  enjoy
+       the nethack-style messages which will often blur the facts
+       a little, but are much funnier to read.  Anyway,  standard
+       messages often tend to be unclear as well.
+       This option is only available, if screen was compiled with
+       the NETHACK flag defined.  The  default  setting  is  then
+       determined  by  the  presence  of the environment variable
+       $NETHACKOPTIONS.
+
+       mmssggmmiinnwwaaiitt _s_e_c
+
+       Defines the time _s_c_r_e_e_n delays all activity after  a  mes-
+       sage was dispayled. The default is 1 second.
+
+       mmssggwwaaiitt _s_e_c
+
+       Defines  the time a message is displayed, if _s_c_r_e_e_n is not
+       disturbed by other activity. The default is 5 seconds.
+
+       ppaasssswwoorrdd [_c_r_y_p_t_e_d__p_w]
+
+       Present a crypted password in your  ".screenrc"  file  and
+       screen  will  ask  for  it, whenever a detached session is
+       tried to be resumed. This is useful, if  you  have  privi-
+       leged  programs  running under _s_c_r_e_e_n and you want to pro-
+       tect your session from reattach  attempts  by  users  that
+       managed to have your uid. (I.e. any superuser.)
+
+       ppooww__ddeettaacchh__mmssgg _m_e_s_s_a_g_e
+
+       The  _m_e_s_s_a_g_e  specified  here  is output whenever a `Power
+       detach' was performed. It may be used as a replacement for
+       a logout message or to reset baud rate, etc.
+
+       ssccrreeeenn [-_o_p_t_s] [_n] [_c_m_d [_a_r_g_s]]
+
+       Establish a new window.  The flow-control options (--ff, --ffnn
+       and --ffaa), title (a.k.a.) option (--tt),  login  options  (--ll
+       and --llnn) , terminal type option (--TT <<tteerrmm>>) and scrollback
+       option (--hh <num>) may be specified for each  command.   If
+       an  optional number _n in the range 0..9 is given, the win-
+       dow number _n is assigned to the newly created window  (or,
+       if  this number is already in-use, the next available num-
+       ber).  If a command is specified after "screen", this com-
+       mand  (with the given arguments) is started in the window;
+
+
+
+January                         31                             16
+
+
+
+
+
+SCREEN(1)                      1992                     SCREEN(1)
+
+
+       otherwise, a shell is created.  Thus, if your  ".screenrc"
+       contains the lines
+
+            # example for .screenrc:
+            screen 1
+            screen -fn -t foobar 2 telnet foobar
+
+       _s_c_r_e_e_n  creates  a  shell  window (in window #1), a window
+       with a TELNET connection to the machine  foobar  (with  no
+       flow-control  using the a.k.a. "foobar" in window #2), and
+       finally, a second shell window (the default window)  which
+       gets  a window number of zero.  When the initialization is
+       completed, _s_c_r_e_e_n switches to the last window specified in
+       your .screenrc file or, if none, it opens a default window
+       #0 that would be displayed in this case.
+
+       ssccrroollllbbaacckk _n_u_m
+
+       Set the size of the scrollback buffer for new  windows  to
+       _n_u_m  lines.  The default scrollback is 50 lines.  Use "C-a
+       : set scrollback _n_u_m" to change the scrollback size of the
+       current  window  and  use "C-a i" to view the current set-
+       ting.
+
+       rreeddrraaww oonn|ooffff
+
+       Define whether the display should be  refreshed  (as  done
+       with  "C-a  l")  after switching to the current window. As
+       usual when the "set" keyword is given, this  command  only
+       affects  the  current  window.  But unlike other commands,
+       "redraw off" (without "set") affects all windows, the win-
+       dow  specific settings come into effect again when "redraw
+       on" (without "set") is entered.
+
+       sshheellll _c_o_m_m_a_n_d
+
+       Set the command to be used to create a  new  shell.   This
+       overrides the value of the environment variable $SHELL, or
+       "/bin/sh" if undefined.  This is useful if you'd  like  to
+       run  a tty-enhancer which is expecting to execute the pro-
+       gram specified in $SHELL.
+
+       sshheellllaakkaa _a._k._a.
+
+       Set the a.k.a. for all shells created during startup or by
+       the C-A C-c command.  For details about what a.k.a.'s are,
+       see the discussion entitled ALSO KNOWN AS.
+
+       sslleeeepp _n_u_m This command  will  pause  the  execution  of  a
+       .screenrc  file  for  _n_u_m seconds.  It may be used to give
+       users a chance to read the messages output by "echo".
+
+
+
+
+
+
+January                         31                             17
+
+
+
+
+
+SCREEN(1)                      1992                     SCREEN(1)
+
+
+       sslloowwppaassttee _u_s_e_c
+
+       Define the speed text is inserted by the paste  ("C-a  ]")
+       command.  For  each  80  characters (IOSIZE) pasted _s_c_r_e_e_n
+       will make a pause of _u_s_e_c milliseconds to allow the appli-
+       cation  the  processing of input. Use that, if you have to
+       fear that your underlying system chokes on large pastes.
+
+       tteerrmm _t_e_r_m
+
+       In each window's environment _s_c_r_e_e_n  opens,  it  sets  the
+       $TERM  variable  to  "screen"  by  default.   But  when no
+       description for "screen" is installed in the local termcap
+       or  terminfo  data base, you can pretend that the terminal
+       emulator is - say - "vt100". This won't do much  harm,  as
+       _s_c_r_e_e_n  is  VT100/ANSI  compatible.  The use of the "term"
+       command is discouraged for non-default purpose.  That  is,
+       one  may  want  to  specify  special  $TERM settings (e.g.
+       vt100) for the next "screen rlogin othermachine"  command.
+       Use  the  command  "screen  -T  vt100 rlogin othermachine"
+       rather than setting ("term vt100")  and  resetting  ("term
+       screen")  the  default  before and after the "screen" com-
+       mand.
+
+       tteerrmmccaapp _t_e_r_m _t_e_r_m_i_n_a_l-_t_w_e_a_k_s [_w_i_n_d_o_w-_t_w_e_a_k_s]
+       tteerrmmiinnffoo _t_e_r_m _t_e_r_m_i_n_a_l-_t_w_e_a_k_s [_w_i_n_d_o_w-_t_w_e_a_k_s]
+
+       Use this command to modify your terminal's  termcap  entry
+       without going through all the hassles involved in creating
+       a custom termcap entry.  Plus,  you  can  optionally  cus-
+       tomize  the  termcap  generated  for the windows.  If your
+       system works with terminfo-database rather than with term-
+       cap  _s_c_r_e_e_n  will  understand the `terminfo' command which
+       has the same effects as the `termcap' command. Thus  users
+       can  write  one  .screenrc  file  that handles both cases,
+       although terminfo syntax is slightly different from  term-
+       cap syntax.
+
+       The  first  argument specifies which terminal(s) should be
+       affected by this definition.   You  can  specify  multiple
+       terminal  names  by separating them with `|'s.  Use `*' to
+       match all terminals and `vt*' to match all terminals  that
+       begin with "vt".
+
+       Each  _t_w_e_a_k  argument contains one or more termcap defines
+       (separated by `:'s) to be inserted at  the  start  of  the
+       appropriate  termcap  entry,  enhancing  it  or overriding
+       existing values.  The first tweak modifies your terminal's
+       termcap,  and contains definitions that your terminal uses
+       to perform certain functions.  Specify a  null  string  to
+       leave  this  unchanged  (e.g.  '').  The second (optional)
+       tweak modifies all the window termcaps, and should contain
+       definitions that screen understands (see the "VIRTUAL TER-
+       MINAL" section).
+
+
+
+January                         31                             18
+
+
+
+
+
+SCREEN(1)                      1992                     SCREEN(1)
+
+
+       Some examples:
+
+              termcap xterm*  LP:hs@
+
+       Informs _s_c_r_e_e_n that all terminals that begin with  `xterm'
+       have firm auto-margins that allow the last position on the
+       screen to be updated (LP), but they don't  really  have  a
+       status  line  (no 'hs' -- append `@' to turn entries off).
+       Note that we assume `LP' for all terminal names that start
+       with "vt", but only if you don't specify a termcap command
+       for that terminal.
+
+            termcap vt*  LP
+            termcap vt102|vt220  Z0=\E[?3h:Z1=\E[?3l
+
+       Specifies the firm-margined `LP' capability for all termi-
+       nals  that  begin with `vt', and the second line will also
+       add the escape-sequences to switch into (Z0) and back  out
+       of  (Z1) 132-character-per-line mode if this is a vt102 or
+       vt220.  (You must specify Z0 and Z1 in your termcap to use
+       the width-changing commands.)
+
+              termcap vt100  ""  l0=PF1:l1=PF2:l2=PF3:l3=PF4
+
+       This leaves your vt100 termcap alone and adds the function
+       key labels to each window's termcap entry.
+
+              termcap h19|z19  am@:im=\E@:ei=\EO  dc=\E[P
+
+       Takes a h19 or z19  termcap  and  turns  off  auto-margins
+       (am@) and enables the insert mode (im) and end-insert (ei)
+       capabilities (the `@' in the `im' string is after the `=',
+       so  it  is  part of the string).  Having the `im' and `ei'
+       definitions put into your terminal's  termcap  will  cause
+       screen  to  automatically  advertise  the character-insert
+       capability in each window's  termcap.   Each  window  will
+       also get the delete-character capability (dc) added to its
+       termcap, which screen will translate  into  a  line-update
+       for  the  terminal  (we're  pretending  it doesn't support
+       character deletion).
+
+       If you would like to fully specify each  window's  termcap
+       entry,  you  should  instead  set  the $SCREENCAP variable
+       prior to running _s_c_r_e_e_n.  See the discussion on the  "VIR-
+       TUAL TERMINAL" in this manual, and the termcap(5) man page
+       for more information on termcap definitions.
+
+       vvbbeellll oonn|ooffff
+
+       Sets the visual bell setting for new windows. If your ter-
+       minal  does not support a visual bell a message is printed
+       to the status line. The default message is "Wuff, Wuff!!".
+
+
+
+
+
+January                         31                             19
+
+
+
+
+
+SCREEN(1)                      1992                     SCREEN(1)
+
+
+       vvbbeellll__mmssgg _m_e_s_s_a_g_e
+
+       Sets  the  visual  bell message. _m_e_s_s_a_g_e is printed to the
+       status line if the window receives a bell  character  (^G)
+       and vbell is set to "on".
+
+       vvbbeellllwwaaiitt _s_e_c
+
+       Define  a delay in seconds after each display of _s_c_r_e_e_n '_s
+       visual bell message. The default is 0 seconds.
+
+       wwrraapp oonn|ooffff
+
+       Sets the line-wrap setting for new  windows.   When  line-
+       wrap  is  on,  the  second consecutive printable character
+       output at the last column of a line will wrap to the start
+       of  the  following  line.   As an added feature, backspace
+       (^H) will also wrap through the left margin to the  previ-
+       ous  line.   Line-wrap is on by default and can be toggled
+       with the "wrap" command ("C-a r") or by means  of  "C-a  :
+       set wrap on|off".
+
+TTHHEE MMEESSSSAAGGEE LLIINNEE
+       _S_c_r_e_e_n  displays informational messages and other diagnos-
+       tics in a _m_e_s_s_a_g_e _l_i_n_e at the bottom of  the  screen.   If
+       your  terminal  has  a status line defined in its termcap,
+       screen will use this for displaying its  messages,  other-
+       wise the last line of the screen will be temporarily over-
+       written and output will be momentarily  interrupted.   The
+       message  line is automatically removed after a few seconds
+       delay, but it can also  be  removed  early  (on  terminals
+       without a status line) by beginning to type.
+
+       The  message  line  facility can be used by an application
+       running in the current window by means of the ANSI _P_r_i_v_a_c_y
+       _m_e_s_s_a_g_e  control  sequence.  For instance, from within the
+       shell, try something like:
+
+              echo '<esc>^Hello world<esc>\\'
+
+       where '<esc>' is an _e_s_c_a_p_e, '^' is a literal up-arrow, and
+       '\\' turns into a single backslash.
+
+FFLLOOWW--CCOONNTTRROOLL
+       Each window has a flow-control setting that determines how
+       screen deals with the XON and XOFF characters (and perhaps
+       the  interrupt  character).   When  flow-control is turned
+       off, screen ignores the XON  and  XOFF  characters,  which
+       allows  the  user  to  send them to the current program by
+       simply typing them  (useful  for  the  _e_m_a_c_s  editor,  for
+       instance).   The trade-off is that it will take longer for
+       output from a "normal" program to pause in response to  an
+       XOFF.   With  flow-control turned on, XON and XOFF charac-
+       ters are used to  immediately  pause  the  output  of  the
+
+
+
+January                         31                             20
+
+
+
+
+
+SCREEN(1)                      1992                     SCREEN(1)
+
+
+       current  window.   You  can still send these characters to
+       the current program, but you must use the appropriate two-
+       character screen commands (typically "C-a q" (xon) and "C-
+       a s" (xoff)).  The xon/xoff commands are also  useful  for
+       typing  C-s  and C-q past a terminal that intercepts these
+       characters.
+
+       Each window has an initial  flow-control  value  set  with
+       either  the --ff option or the "flow" .screenrc command. Per
+       default the windows are set to  automatic  flow-switching.
+       It  can  then  be  toggled between the three states 'fixed
+       on', 'fixed off' and
+
+       The automatic flow-switching mode deals with flow  control
+       using  the  TIOCPKT  mode (like "rlogin" does). If the tty
+       driver does not support TIOCPKT, screen tries to find  out
+       the  right mode based on the current setting of the appli-
+       cation keypad --  when  it  is  enabled,  flow-control  is
+       turned  off  and  visa  versa.   Of  course, you can still
+       manipulate flow-control manually when needed.
+
+       If you're running with flow-control enabled and find  that
+       pressing  the  interrupt key (usually C-c) does not inter-
+       rupt the display until another 6-8 lines have scrolled by,
+       try  running  screen  with the "interrupt" option (add the
+       "interrupt" flag to the "flow" command in your  .screenrc,
+       or  use the --ii command-line option).  This causes the out-
+       put that _s_c_r_e_e_n has accumulated from the interrupted  pro-
+       gram  to be flushed.  One disadvantage is that the virtual
+       terminal's memory contains the non-flushed version of  the
+       output,  which  in rare cases can cause minor inaccuracies
+       in the output.  For example, if  you  switch  screens  and
+       return,  or  update  the screen with "C-a l" you would see
+       the version of the output you would  have  gotten  without
+       "interrupt"  being  on.   Also, you might need to turn off
+       flow-control (or use auto-flow mode to turn it  off  auto-
+       matically) when running a program that expects you to type
+       the interrupt character as input, as  it  is  possible  to
+       interrupt the output of the virtual terminal to your phys-
+       ical terminal when flow-control is enabled.  If this  hap-
+       pens,  a  simple  refresh  of the screen with "C-a l" will
+       restore it.  Give each mode a try, and use whichever  mode
+       you find more comfortable.
+
+AALLSSOO KKNNOOWWNN AASS ((AA..KK..AA..ss))
+       You can customize each window's name in the window display
+       (viewed with the "windows" command (C-a w)) by setting  it
+       with  one  of the a.k.a. commands.  Normally the name dis-
+       played is the actual command name of the  program  created
+       in the window.  However, it is sometimes useful to distin-
+       guish various programs of the same name or to  change  the
+       name  on-the-fly  to reflect the current state of the win-
+       dow.
+
+
+
+
+January                         31                             21
+
+
+
+
+
+SCREEN(1)                      1992                     SCREEN(1)
+
+
+       The default name for all shell windows can be set with the
+       "shellaka"  command in the .screenrc file, while all other
+       windows are created with a "screen" command and  thus  can
+       have  their  name  set with the --tt option.  Interactively,
+       there is the AKA-string escape-sequence (<esc>k_n_a_m_e<esc>\)
+       and  the  "aka" command (C-a A).  The former can be output
+       from an application to control  the  window's  name  under
+       software  control,  and  the latter will prompt for a name
+       when typed.  You can also bind pre-defined names  to  keys
+       with  the  "aka"  command  to  set  things quickly without
+       prompting.
+
+       Finally, _s_c_r_e_e_n has a  shell-specific  heuristic  that  is
+       enabled  by setting the window's name to "_s_e_a_r_c_h|_n_a_m_e" and
+       arranging to have a null aka escape-sequence output  as  a
+       part of your prompt.  The _s_e_a_r_c_h portion specifies an end-
+       of-prompt search string, while the _n_a_m_e portion  specifies
+       the  default  shell name for the window.  If the _n_a_m_e ends
+       in a `:' _s_c_r_e_e_n will add what it believes to be  the  cur-
+       rent  command running in the window to the end of the win-
+       dow's shell name (e.g. "_n_a_m_e:_c_m_d").  Otherwise the current
+       command  name  supersedes  the shell name while it is run-
+       ning.
+
+       Here's how it works:  you must modify your shell prompt to
+       output a null aka escape-sequence (<esc>k<esc>\) as a part
+       of your prompt.  The last part of your prompt must be  the
+       same as the string you specified for the _s_e_a_r_c_h portion of
+       the a.k.a.  Once this is set up, _s_c_r_e_e_n will use  the  aka
+       escape-sequence to clear the previous command name and get
+       ready for the next  command.   Then,  when  a  newline  is
+       received  from  the shell, a search is made for the end of
+       the prompt.  If found, it will grab the first  word  after
+       the matched string and use it as the command name.  If the
+       command name begins with either '!', '%',  or  '^'  _s_c_r_e_e_n
+       will  use  the first word on the following line (if found)
+       in preference to the  just-found  name.   This  helps  csh
+       users  get  better command names when using job control or
+       history recall commands.
+
+       Here's some .screenrc examples:
+
+              screen -t top 2 nice top
+
+       Adding this line to your .screenrc  would  start  a  niced
+       version of the "top" command in window 2 name "top" rather
+       than "nice".
+
+            shellaka '> |csh'
+            screen 1
+
+       This file would  start  two  shells  (one  specified,  one
+       default)  using  the given shellaka.  The a.k.a. specified
+       is an auto-aka that would expect the prompt and the  typed
+
+
+
+January                         31                             22
+
+
+
+
+
+SCREEN(1)                      1992                     SCREEN(1)
+
+
+       command to look something like the following:
+
+              /usr/joe/src/dir> trn
+
+       (it  looks after the '> ' for the command name).  The win-
+       dow status would show the name "trn" while the command was
+       running, and revert to "csh" upon completion.
+
+              bind R screen -t '% |root:' su
+
+       Having  this  command in your .screenrc would bind the key
+       sequence "C-a R" to the "su" command and give it an  auto-
+       aka  name  of  "root:".   For  this  auto-aka to work, the
+       screen could look something like this:
+
+            % !em
+            emacs file.c
+
+       Here the user typed the csh history  command  "!em"  which
+       ran  the  previously  entered "emacs" command.  The window
+       status would show "root:emacs" during the execution of the
+       command, and revert to simply "root:" at its completion.
+
+            bind o aka
+            bind E aka ""
+            bind u aka (unknown)
+
+       The  first binding doesn't have any arguments, so it would
+       prompt you for an a.k.a. when you type "C-a o".  The  sec-
+       ond binding would clear an auto-aka's current setting (C-a
+       E).  The third binding  would  set  the  current  window's
+       a.k.a. to "(unknown)" (C-a u).
+
+       One  thing  to keep in mind when adding a null aka escape-
+       sequence to your prompt is that some shells (like the csh)
+       count  all  the  non-control  characters  as  part  of the
+       prompt's length.  If these invisible characters  aren't  a
+       multiple  of  8 then backspacing over a tab will result in
+       an incorrect display.  One way to get around  this  is  to
+       use a prompt like this:
+
+              set prompt='^[[0000m^[k^[\% '
+
+       The  escape-sequence "<esc>[0000m" not only normalizes the
+       character attributes, but all the zeros round  the  length
+       of  the  invisible  characters  up  to 8.  Bash users will
+       probably  want  to  echo  the  escape  sequence   in   the
+       PROMPT_COMMAND:
+
+              PROMPT_COMMAND='echo -n -e "\033k\033\134"'
+
+       (I  used "134" to output a `\' because of a bug in v1.04).
+
+
+
+
+
+January                         31                             23
+
+
+
+
+
+SCREEN(1)                      1992                     SCREEN(1)
+
+
+TTHHEE VVIIRRTTUUAALL TTEERRMMIINNAALL
+       Usually _s_c_r_e_e_n tries to emulate as much of the  VT100/ANSI
+       standard  as  possible. But if your terminal lacks certain
+       capabilities the emulation may not be complete.  In  these
+       cases _s_c_r_e_e_n has to tell the applications that some of the
+       features are missing. This is no problem on machines using
+       termcap,  because  _s_c_r_e_e_n can use the $TERMCAP variable to
+       customize the standard screen termcap.
+       But if you do a rlogin on another machine or your  machine
+       supports  only terminfo this method fails. Because of this
+       _s_c_r_e_e_n offers a way to deal with these cases. Here is  how
+       it works:
+       When  _s_c_r_e_e_n  tries  to  figure  out  a  terminal name for
+       itself, it first looks for an entry named "screen.<term>",
+       where  <term>  is the contents of your $TERM variable.  If
+       no such entry exists, _s_c_r_e_e_n tries "screen"  (or  "screen-
+       w",  if the terminal is wide (132 cols or more)).  If even
+       this entry cannot be found, "vt100" is used as  a  substi-
+       tute.
+       The idea is that if you have a terminal which doesn't sup-
+       port an important feature (e.g. delete char  or  clear  to
+       EOS) you can build a new termcap/terminfo entry for _s_c_r_e_e_n
+       (named "screen.<dumbterm>") in which this  capability  has
+       been  disabled.   If  this  entry  is  installed  on  your
+       machines you are able to do a rlogin and  still  keep  the
+       correct  termcap/terminfo entry.  The terminal name is put
+       in the $TERM variable of all  new  windows.   _S_c_r_e_e_n  also
+       sets  the $TERMCAP variable reflecting the capabilities of
+       the virtual terminal emulated. Notice  that,  however,  on
+       machines  using the terminfo database this variable has no
+       effect.  Furthermore, the variable $WINDOW is set  to  the
+       window number of each window.
+       The  actual  set  of capabilities supported by the virtual
+       terminal depends on  the  capabilities  supported  by  the
+       physical  terminal.  If, for instance, the physical termi-
+       nal does not support underscore mode, _s_c_r_e_e_n does not  put
+       the  `us' and `ue' capabilities into the window's $TERMCAP
+       variable, accordingly.  However, a minimum number of capa-
+       bilities  must  be supported by a terminal in order to run
+       _s_c_r_e_e_n; namely scrolling, clear screen, and direct  cursor
+       addressing  (in  addition, _s_c_r_e_e_n does not run on hardcopy
+       terminals or on terminals that over-strike).
+
+       Also, you can customize the $TERMCAP value used by  _s_c_r_e_e_n
+       by  using  the "termcap" .screenrc command, or by defining
+       the variable $SCREENCAP prior to startup.  When the latter
+       defined,  its value will be copied verbatim into each win-
+       dow's $TERMCAP variable.  This can either be the full ter-
+       minal   definition,  or  a  filename  where  the  terminal
+       "screen" (and/or "screen-w") is defined.
+
+       Note that _s_c_r_e_e_n honors the "terminfo"  .screenrc  command
+       if the system uses the terminfo database rather than term-
+       cap.
+
+
+
+January                         31                             24
+
+
+
+
+
+SCREEN(1)                      1992                     SCREEN(1)
+
+
+       When the boolean `G0' capability is present in the termcap
+       entry  for  the  terminal on which _s_c_r_e_e_n has been called,
+       the terminal emulation of _s_c_r_e_e_n supports multiple charac-
+       ter  sets.  This allows an application to make use of, for
+       instance, the VT100 graphics  character  set  or  national
+       character  sets.  The following control functions from ISO
+       2022 are supported: _l_o_c_k _s_h_i_f_t  _G_0  (_S_I),  _l_o_c_k  _s_h_i_f_t  _G_1
+       (_S_O),  _l_o_c_k  _s_h_i_f_t _G_2, _l_o_c_k _s_h_i_f_t _G_3, _s_i_n_g_l_e _s_h_i_f_t _G_2, and
+       _s_i_n_g_l_e _s_h_i_f_t _G_3.  When a virtual terminal  is  created  or
+       reset, the ASCII character set is designated as _G_0 through
+       _G_3.  When the `G0' capability is present, screen evaluates
+       the  capabilities `S0', `E0', and `C0' if present. `S0' is
+       the sequence the terminal uses to  enable  and  start  the
+       graphics character set rather than _S_I.  `E0' is the corre-
+       sponding replacement for _S_O. `C0'  gives  a  character  by
+       character  translation  string  that  is used during semi-
+       graphics mode. This string is built like the  `acsc'  ter-
+       minfo capability.
+
+       When  the  `po'  and  `pf' capabilities are present in the
+       terminal's termcap entry, applications running in a _s_c_r_e_e_n
+       window  can  send output to the printer port of the termi-
+       nal.  This allows a user to have  an  application  in  one
+       window sending output to a printer connected to the termi-
+       nal, while all other windows are still active (the printer
+       port  is enabled and disabled again for each chunk of out-
+       put).  As a side-effect,  programs  running  in  different
+       windows  can  send  output  to the printer simultaneously.
+       Data sent to the printer is not displayed in the window.
+
+       Some capabilities are only put into the $TERMCAP  variable
+       of  the virtual terminal if they can be efficiently imple-
+       mented by  the  physical  terminal.   For  instance,  `dl'
+       (delete  line)  is  only put into the $TERMCAP variable if
+       the  terminal  supports  either  delete  line  itself   or
+       scrolling  regions.  Note that this may provoke confusion,
+       when the session is reattached on a different terminal, as
+       the  value  of  $TERMCAP cannot be modified by parent pro-
+       cesses.
+
+       The following is a list of control sequences recognized by
+       _s_c_r_e_e_n.  "(V)" and "(A)" indicate VT100-specific and ANSI-
+       or ISO-specific functions, respectively.
+
+
+       EESSCC EE                    Next Line
+
+       EESSCC DD                    Index
+
+       EESSCC MM                    Reverse Index
+
+       EESSCC HH                    Horizontal Tab Set
+
+       EESSCC 77               (V)  Save Cursor and Attributes
+
+
+
+January                         31                             25
+
+
+
+
+
+SCREEN(1)                      1992                     SCREEN(1)
+
+
+       EESSCC 88               (V)  Restore Cursor and Attributes
+
+       EESSCC [[ss              (A)  Save Cursor and Attributes
+
+       EESSCC [[uu              (A)  Restore Cursor and Attributes
+
+       EESSCC cc                    Reset to Initial State
+
+       EESSCC ==               (V)  Application Keypad Mode
+
+       EESSCC >>               (V)  Numeric Keypad Mode
+
+       EESSCC ## 88             (V)  Fill Screen with E's
+
+       EESSCC \\               (A)  String Terminator
+
+       EESSCC ^^               (A)  Privacy Message String (Message Line)
+
+       EESSCC kk                    A.k.a. Definition String
+
+       EESSCC PP               (A)  Device Control String
+                                Outputs a string directly to the host
+                                terminal without interpretation.
+
+       EESSCC __               (A)  Application Program Command (not used)
+
+       EESSCC ]]               (A)  Operating System Command (not used)
+
+       CCoonnttrrooll--NN           (A)  Lock Shift G1 (SO)
+
+       CCoonnttrrooll--OO           (A)  Lock Shift G0 (SI)
+
+       EESSCC nn               (A)  Lock Shift G2
+
+       EESSCC oo               (A)  Lock Shift G3
+
+       EESSCC NN               (A)  Single Shift G2
+
+       EESSCC OO               (A)  Single Shift G3
+
+       EESSCC (( Pcs           (A)  Designate character set as G0
+
+       EESSCC )) Pcs           (A)  Designate character set as G1
+
+       EESSCC ** Pcs           (A)  Designate character set as G2
+
+       EESSCC ++ Pcs           (A)  Designate character set as G3
+
+       EESSCC [[ Pn ;; Pn HH          Direct Cursor Addressing
+
+       EESSCC [[ Pn ;; Pn ff          Direct Cursor Addressing
+
+       EESSCC [[ Pn JJ               Erase in Display
+
+
+
+
+January                         31                             26
+
+
+
+
+
+SCREEN(1)                      1992                     SCREEN(1)
+
+
+           Pn = None or 00       From Cursor to End of Screen
+
+                11               From Beginning of Screen to Cursor
+
+                22               Entire Screen
+
+       EESSCC [[ Pn KK               Erase in Line
+
+           Pn = None or 00       From Cursor to End of Line
+
+                11               From Beginning of Line to Cursor
+
+                22               Entire Line
+
+       EESSCC [[ Pn AA               Cursor Up
+
+       EESSCC [[ Pn BB               Cursor Down
+
+       EESSCC [[ Pn CC               Cursor Right
+
+       EESSCC [[ Pn DD               Cursor Left
+
+       EESSCC [[ Ps ;;...;; Ps mm      Select Graphic Rendition
+
+           Ps = None or 00       Default Rendition
+
+                11               Bold
+
+                22          (A)  Faint
+
+                33          (A)  _S_t_a_n_d_o_u_t Mode (ANSI: Italicized)
+
+                44               Underlined
+
+                55               Blinking
+
+                77               Negative Image
+
+                2222         (A)  Normal Intensity
+
+                2233         (A)  _S_t_a_n_d_o_u_t Mode off (ANSI: Italicized off)
+
+                2244         (A)  Not Underlined
+
+                2255         (A)  Not Blinking
+
+                2277         (A)  Positive Image
+
+       EESSCC [[ Pn gg               Tab Clear
+
+           Pn = None or 00       Clear Tab at Current Position
+
+                33               Clear All Tabs
+
+
+
+
+January                         31                             27
+
+
+
+
+
+SCREEN(1)                      1992                     SCREEN(1)
+
+
+       EESSCC [[ Pn ;; Pn rr     (V)  Set Scrolling Region
+
+       EESSCC [[ Pn II          (A)  Horizontal Tab
+
+       EESSCC [[ Pn ZZ          (A)  Backward Tab
+
+       EESSCC [[ Pn LL          (A)  Insert Line
+
+       EESSCC [[ Pn MM          (A)  Delete Line
+
+       EESSCC [[ Pn @@          (A)  Insert Character
+
+       EESSCC [[ Pn PP          (A)  Delete Character
+
+       EESSCC [[ Ps ;;...;; Ps hh      Set Mode
+
+       EESSCC [[ Ps ;;...;; Ps ll      Reset Mode
+
+           Ps = 44          (A)  Insert Mode
+
+                ??33         (V)  Change Terminal Width
+
+                ??55         (V)  Visible Bell (_O_n followed by _O_f_f)
+
+                ??66         (V)  _O_r_i_g_i_n Mode
+
+                ??77         (V)  _W_r_a_p Mode
+
+       EESSCC [[ 55 ii           (A)  Start relay to printer (ANSI Media Copy)
+
+       EESSCC [[ 44 ii           (A)  Stop relay to printer (ANSI Media Copy)
+
+FFIILLEESS
+       $SYSSCREENRC
+       /local/etc/screenrc   _s_c_r_e_e_n initialization commands
+       $ISCREENRC
+       $SCREENRC
+       $HOME/.iscreenrc
+       $HOME/.screenrc       Read in after /usr/local/etc/screenrc
+       $ISCREENDIR/S-<login>
+       $SCREENDIR/S-<login>
+       /local/screens/S-<login>  Socket directories (default)
+       /usr/tmp/screens/S-<login>  Alternate socket directories.
+       <socket directory>/.termcap  Written by the "termcap" output function
+       /usr/tmp/screens/screen-exchange  or
+       /tmp/screen-exchange  _s_c_r_e_e_n `interprocess communication buffer'
+       hardcopy.[0-9]        Screen images created by the hardcopy function
+       screenlog.[0-9]       Output log files created by the log function
+       /usr/lib/terminfo/?/*   or
+       /etc/termcap          Terminal capability databases
+       /etc/utmp             Login records
+       $LOCKPRG              Program that locks a terminal.
+
+
+
+
+
+January                         31                             28
+
+
+
+
+
+SCREEN(1)                      1992                     SCREEN(1)
+
+
+SSEEEE AALLSSOO
+       termcap(5), utmp(5), vi(1), captoinfo(1), tic(1)
+
+AAUUTTHHOORRSS
+       Originally created by Oliver Laumann, this latest  version
+       was produced by Wayne Davison, Juergen Weigert and Michael
+       Schroeder.
+
+CCOONNTTRRIIBBUUTTOORRSS
+       Allan Ball, Bart Schaefer, Doug Siebert, Howard  Chu,  Jay
+       Vassos-Libove,  John  Kraft,  Larry  Virden, Marc Boucher,
+       Nathan Glasser, Patrick Wolfe,  Rudolf  Koenig.   Toerless
+       Eckert,
+
+VVEERRSSIIOONN
+       This  is  version  3.2. It's roots are a merge of a custom
+       version 2.3PR7 by Wayne Davison and  several  enhancements
+       to  Oliver  Laumann's  version 2.0. Note that all versions
+       numbered 2.x are copyright by Oliver Laumann.
+
+
+BBUUGGSS
+       `dm' (delete mode), `xn', and `xs' are  not  handled  cor-
+       rectly (they are ignored).
+
+       The _G_R set of ISO 2022 is not supported.
+
+       There is no keyboard input translation to VT100 sequences.
+
+       It is not possible  to  change  the  environment  variable
+       $TERMCAP when reattaching under a different terminal type.
+
+       The support of terminfo based  systems  is  very  limited.
+       Adding  extra  capabilities  to  $TERMCAP may not have any
+       effects.
+
+       _S_c_r_e_e_n does not make use of hardware tabs.
+
+       _S_c_r_e_e_n must be installed as set-uid  with  owner  root  in
+       order  to be able to correctly change the owner of the tty
+       device file for each window.  Special permission may  also
+       be required to write the file "/etc/utmp".
+
+       Entries  in  "/etc/utmp"  are  not  removed when _s_c_r_e_e_n is
+       killed with SIGKILL.  This will cause some programs  (like
+       "w"  or  "rwho") to advertise that a user is logged on who
+       really isn't.
+
+
+
+
+
+
+
+
+
+
+January                         31                             29
+
+
