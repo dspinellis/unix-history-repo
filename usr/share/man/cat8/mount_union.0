@@ -1,0 +1,98 @@
+MOUNT_UNION(8)            BSD System Manager's Manual           MOUNT_UNION(8)
+
+NNAAMMEE
+     mmoouunntt__uunniioonn - mount union filesystems
+
+SSYYNNOOPPSSIISS
+     mmoouunntt__uunniioonn [--bbrr] [--oo _o_p_t_i_o_n_s] _d_i_r_e_c_t_o_r_y _u_n_i_o_n_d_i_r
+
+DDEESSCCRRIIPPTTIIOONN
+     The mmoouunntt__uunniioonn command attaches _d_i_r_e_c_t_o_r_y above _u_n_i_o_n_d_i_r in such a way
+     that the contents of both directory trees remain visible.  By default,
+     _d_i_r_e_c_t_o_r_y becomes the _u_p_p_e_r layer and _u_n_i_o_n_d_i_r becomes the _l_o_w_e_r layer.
+
+     The options are as follows:
+
+     --bb      Invert the default position, so that _d_i_r_e_c_t_o_r_y becomes the lower
+             layer and _u_n_i_o_n_d_i_r becomes the upper layer.  However, _u_n_i_o_n_d_i_r
+             remains the mount point.
+
+     --oo      Options are specified with a --oo flag followed by a comma separat-
+             ed string of options.  See the mount(8) man page for possible op-
+             tions and their meanings.
+
+     --rr      Hide the lower layer completely in the same way as mounting with
+             mount_null(8).
+
+     To enforce filesystem security, the user mounting the filesystem must be
+     superuser or else have write permission on the mounted-on directory.
+
+     Filenames are looked up in the upper layer and then in the lower layer.
+     If a directory is found in the lower layer, and there is no entry in the
+     upper layer, then a _s_h_a_d_o_w directory will be created in the upper layer.
+     It will be owned by the user who originally did the union mount, with
+     mode ``rwxrwxrwx'' (0777) modified by the umask in effect at that time.
+
+     If a file exists in the upper layer then there is no way to access a file
+     with the same name in the lower layer.  If necessary, a combination of
+     loopback and union mounts can be made which will still allow the lower
+     files to be accessed by a different pathname.
+
+     Except in the case of a directory, access to an object is granted via the
+     normal filesystem access checks.  For directories, the current user must
+     have access to both the upper and lower directories (should they both ex-
+     ist).
+
+     Requests to create or modify objects in _u_n_i_o_n_d_i_r are passed to the upper
+     layer with the exception of a few special cases.  An attempt to open for
+     writing a file which exists in the lower layer causes a copy of the
+     _e_n_t_i_r_e file to be made to the upper layer, and then for the upper layer
+     copy to be opened.  Similarly, an attempt to truncate a lower layer file
+     to zero length causes an empty file to be created in the upper layer.
+     Any other operation which would ultimately require modification to the
+     lower layer fails with EROFS.
+
+     The union filesystem manipulates the namespace, rather than individual
+     filesystems.  The union operation applies recursively down the directory
+     tree now rooted at _u_n_i_o_n_d_i_r. Thus any filesystems which are mounted under
+     _u_n_i_o_n_d_i_r will take part in the union operation.  This differs from the
+     _u_n_i_o_n option to mount(8) which only applies the union operation to the
+     mount point itself, and then only for lookups.
+
+EEXXAAMMPPLLEESS
+     The commands
+
+           mount -t cd9660 -o ro /dev/cd0a /usr/src
+           mount -t union -o /var/obj /usr/src
+
+     mount the CD-ROM drive _/_d_e_v_/_c_d_0_a on _/_u_s_r_/_s_r_c and then attaches _/_v_a_r_/_o_b_j
+     on top.  For most purposes the effect of this is to make the source tree
+     appear writable even though it is stored on a CD-ROM.
+
+     The command
+
+           mount -t union -o -b /sys $HOME/sys
+
+     attaches the system source tree below the _s_y_s directory in the user's
+     home directory.  This allows individual users to make private changes to
+     the source, and build new kernels, without those changes becoming visible
+     to other users.  Note that the files in the lower layer remain accessible
+     via _/_s_y_s.
+
+SSEEEE AALLSSOO
+     intro(2),  mount(2),  unmount(2),  fstab(5),  mount(8),  mount_null(8)
+
+BBUUGGSS
+     Without whiteout support from the filesystem backing the upper layer,
+     there is no way that delete and rename operations on lower layer objects
+     can be done.  EROFS is returned for this kind of operations along with
+     any others which would make modifications to the lower layer, such as
+     chmod(1).
+
+     Running find(1) over a union tree has the side-effect of creating a tree
+     of shadow directories in the upper layer.
+
+HHIISSTTOORRYY
+     The mmoouunntt__uunniioonn command first appeared in 4.4BSD.
+
+4.4BSD                            May 1, 1995                                2

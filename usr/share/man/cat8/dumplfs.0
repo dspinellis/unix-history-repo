@@ -1,0 +1,21 @@
+DUMPLFS(8)                BSD System Manager's Manual               DUMPLFS(8)
+
+NNAAMMEE
+     dduummppllffss - dump file system information
+
+SSYYNNOOPPSSIISS
+     dduummppllffss [_f_i_l_e_s_y_s | _d_e_v_i_c_e]
+
+DDEESSCCRRIIPPTTIIOONN
+     DDuummppllffss prints out the file system layout information for the LFS file
+     system or special device specified.  The listing is very long and de-
+     tailed.  This command is useful mostly for finding out certain file sys-
+     tem information such as the file system block size.
+
+SSEEEE AALLSSOO
+     fs(5),  disktab(5),  disklabel(8),  newlfs(8),
+
+HHIISSTTOORRYY
+     The dduummppllffss command appeared in 4.4BSD.
+
+4.4BSD                           June 18, 1993                               1

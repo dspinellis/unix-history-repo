@@ -1,0 +1,61 @@
+SAVECORE(8)               BSD System Manager's Manual              SAVECORE(8)
+
+NNAAMMEE
+     ssaavveeccoorree - save a core dump of the operating system
+
+SSYYNNOOPPSSIISS
+     ssaavveeccoorree --cc
+     ssaavveeccoorree [--ffvvzz] [--NN _s_y_s_t_e_m] _d_i_r_e_c_t_o_r_y
+
+DDEESSCCRRIIPPTTIIOONN
+     SSaavveeccoorree copies the currently running kernel and its associated core dump
+     into _d_i_r_e_c_t_o_r_y, and enters a reboot message and information about the
+     core dump into the system log.
+
+     The options are as follows:
+
+     --cc         Clears the dump, so that future invocations of ssaavveeccoorree will
+                ignore it.
+
+     --ff         Forces a dump to be taken even if the dump doesn't appear cor-
+                rect or there is insufficient disk space.
+
+     --NN         Use _s_y_s_t_e_m as the kernel instead of the default ``/vmunix''.
+
+     --vv         Prints out some additional debugging information.
+
+     --zz         Compresses the core dump and kernel (see compress(1)).
+
+     SSaavveeccoorree checks the core dump in various ways to make sure that it is
+     current and that it corresponds to the currently running system.  If it
+     passes these checks, it saves the core image in _d_i_r_e_c_t_o_r_y_/_v_m_c_o_r_e_._# and
+     the system in _d_i_r_e_c_t_o_r_y_/_v_m_u_n_i_x_._# The ``#'' is the number from the first
+     line of the file _d_i_r_e_c_t_o_r_y_/_b_o_u_n_d_s, and it is incremented and stored back
+     into the file each time ssaavveeccoorree successfully runs.
+
+     SSaavveeccoorree also checks the available disk space before attempting to make
+     the copies.  If there is insufficient disk space in the filesystem con-
+     taining _d_i_r_e_c_t_o_r_y, or if the file _d_i_r_e_c_t_o_r_y_/_m_i_n_f_r_e_e exists and the number
+     of free kilobytes (for non-superusers) in the filesystem after the copies
+     were made would be less than the number in the first line of this file,
+     the copies are not attempted.
+
+     If ssaavveeccoorree successfully copies the kernel and the core dump, the core
+     dump is cleared so that future invocations of ssaavveeccoorree will ignore it.
+
+     SSaavveeccoorree is meant to be called near the end of the initialization file
+     _/_e_t_c_/_r_c (see rc(8)).
+
+FFIILLEESS
+     /vmunix    current UNIX
+
+BBUUGGSS
+     The minfree code does not consider the effect of compression.
+
+SSEEEE AALLSSOO
+     compress(1),  syslogd(8)
+
+HHIISSTTOORRYY
+     The ssaavveeccoorree command appeared in 4.1BSD.
+
+4th Berkeley Distribution        June 5, 1993                                1

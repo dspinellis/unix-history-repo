@@ -1,0 +1,52 @@
+MOUNT_LFS(8)              BSD System Manager's Manual             MOUNT_LFS(8)
+
+NNAAMMEE
+     mmoouunntt__llffss - mount a log-structured file system
+
+SSYYNNOOPPSSIISS
+     mmoouunntt__llffss [--ddnnss] [--oo _o_p_t_i_o_n_s] _s_p_e_c_i_a_l _n_o_d_e
+
+DDEESSCCRRIIPPTTIIOONN
+     The mmoouunntt__llffss command attaches a log-structured file system _s_p_e_c_i_a_l de-
+     vice on to the file system tree at the point _n_o_d_e. In addition, the
+     lfs_cleanerd(8) utility is invoked to clean the file system periodically.
+
+     This command is normally executed by mount(8) at boot time.
+
+     The options are as follows:
+
+     --dd      Run lfs_cleanerd(8) in debug mode.
+
+     --oo      Options are specified with a --oo flag followed by a comma separat-
+             ed string of options.  See the mount(8) man page for possible op-
+             tions and their meanings.
+
+     --nn      Don't start lfs_cleanerd(8) on the file system.
+
+     --ss      Cause lfs_cleanerd(8) to read data in small chunks when cleaning
+             the file system.
+
+SSEEEE AALLSSOO
+     mount(2),  unmount(2),  fstab(5),  lfs_cleanerd(8),  mount(8)
+
+
+     Ousterhout and Douglis, "Beating the I/O Bottleneck: A Case for Log-
+     structured File Systems", _O_p_e_r_a_t_i_n_g _S_y_s_t_e_m_s _R_e_v_i_e_w, No. 1, Vol. 23, pp.
+     11-27, 1989, also available as Technical Report UCB/CSD 88/467.
+
+     Rosenblum and Ousterhout, "The Design and Implementation of a Log-
+     Structured File System", _A_C_M _S_I_G_O_P_S _O_p_e_r_a_t_i_n_g _S_y_s_t_e_m_s _R_e_v_i_e_w, No. 5, Vol.
+     25, 1991.
+
+     Seltzer, "File System Performance and Transaction Support", _P_h_D _T_h_e_s_i_s_,
+     _U_n_i_v_e_r_s_i_t_y _o_f _C_a_l_i_f_o_r_n_i_a_, _B_e_r_k_e_l_e_y, 1992, also available as Technical
+     Report UCB/ERL M92.
+
+     Seltzer, Bostic, McKusick and Staelin, "An Implementation of a Log-
+     Structured File System for UNIX", _P_r_o_c_. _o_f _t_h_e _W_i_n_t_e_r _1_9_9_3 _U_S_E_N_I_X _C_o_n_f_.,
+     pp. 315-331, 1993.
+
+HHIISSTTOORRYY
+     The mmoouunntt__llffss function first appeared in 4.4BSD.
+
+4.4BSD                          March 30, 1994                               1

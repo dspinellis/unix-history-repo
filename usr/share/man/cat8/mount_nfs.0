@@ -1,0 +1,157 @@
+MOUNT_NFS(8)              BSD System Manager's Manual             MOUNT_NFS(8)
+
+NNAAMMEE
+     mmoouunntt__nnffss - mount nfs file systems
+
+SSYYNNOOPPSSIISS
+     mmoouunntt__nnffss [--33KKPPTTUUbbccddiillqqss] [--DD _d_e_a_d_t_h_r_e_s_h] [--II _r_e_a_d_d_i_r_s_i_z_e] [--LL _l_e_a_s_e_t_e_r_m]
+               [--RR _r_e_t_r_y_c_n_t] [--aa _m_a_x_r_e_a_d_a_h_e_a_d] [--gg _m_a_x_g_r_o_u_p_s] [--mm _r_e_a_l_m] [--oo
+               _o_p_t_i_o_n_s] [--rr _r_e_a_d_s_i_z_e] [--tt _t_i_m_e_o_u_t] [--ww _w_r_i_t_e_s_i_z_e] [--xx _r_e_t_r_a_n_s]
+               _r_h_o_s_t_:_p_a_t_h _n_o_d_e
+
+DDEESSCCRRIIPPTTIIOONN
+     The mmoouunntt__nnffss command calls the mount(2) system call to prepare and graft
+     a remote nfs file system (rhost:path) on to the file system tree at the
+     point _n_o_d_e_. This command is normally executed by mount(8).  It implements
+     the mount protocol as described in RFC 1094, Appendix A and _N_F_S_: _N_e_t_w_o_r_k
+     _F_i_l_e _S_y_s_t_e_m _V_e_r_s_i_o_n _3 _P_r_o_t_o_c_o_l _S_p_e_c_i_f_i_c_a_t_i_o_n, Appendix I.
+
+     The options are:
+
+     --33      Use the NFS Version 3 protocol (Version 2 is the default).
+
+     --DD      Used with NQNFS to set the ``dead server threshold'' to the spec-
+             ified number of round trip timeout intervals.  After a ``dead
+             server threshold'' of retransmit timeouts, cached data for the
+             unresponsive server is assumed to still be valid.  Values may be
+             set in the range of 1 - 9, with 9 referring to an ``infinite dead
+             threshold'' (i.e. never assume cached data still valid).  This
+             option is not generally recommended and is really an experimental
+             feature.
+
+     --II      Set the readdir read size to the specified value. The value
+             should normally be a multiple of DIRBLKSIZ that is <= the read
+             size for the mount.
+
+     --KK      Pass Kerberos authenticators to the server for client-to-server
+             user-credential mapping.  This requires that the kernel be built
+             with the NFSKERB option.  (Refer to the INTERNET-DRAFT titled
+             _A_u_t_h_e_n_t_i_c_a_t_i_o_n _M_e_c_h_a_n_i_s_m_s _f_o_r _O_N_C _R_P_C, for more information.)
+
+     --LL      Used with NQNFS to set the lease term to the specified number of
+             seconds.  Only use this argument for mounts with a large round
+             trip delay.  Values are normally in the 10-30 second range.
+
+     --PP      Use a reserved socket port number.  This is useful for mounting
+             servers that require clients to use a reserved port number on the
+             mistaken belief that this makes NFS more secure. (For the rare
+             case where the client has a trusted root account but untrusworthy
+             users and the network cables are in secure areas this does help,
+             but for normal desktop clients this does not apply.)
+
+     --RR      Set the retry count for doing the mount to the specified value.
+
+     --TT      Use TCP transport instead of UDP.  This is recommended for
+             servers that are not on the same LAN cable as the client.  (NB:
+             This is NOT supported by most non-BSD servers.)
+
+     --UU      Force the mount protocol to use UDP transport, even for TCP NFS
+             mounts.  (Necessary for some old BSD servers.)
+
+     --aa      Set the read-ahead count to the specified value.  This may be in
+             the range of 0 - 4, and determines how many blocks will be read
+             ahead when a large file is being read sequentially.  Trying a
+             value greater than 1 for this is suggested for mounts with a
+
+             large bandwidth * delay product.
+
+     --bb      If an initial attempt to contact the server fails, fork off a
+             child to keep trying the mount in the background.  Useful for
+             fstab(5),  where the filesystem mount is not critical to multius-
+             er operation.
+
+     --cc      For UDP mount points, do not do a connect(2).  This must be used
+             for servers that do not reply to requests from the standard NFS
+             port number 2049.
+
+     --dd      Turn off the dynamic retransmit timeout estimator.  This may be
+             useful for UDP mounts that exhibit high retry rates, since it is
+             possible that the dynamically estimated timeout interval is too
+             short.
+
+     --gg      Set the maximum size of the group list for the credentials to the
+             specified value.  This should be used for mounts on old servers
+             that cannot handle a group list size of 16, as specified in RFC
+             1057.  Try 8, if users in a lot of groups cannot get response
+             from the mount point.
+
+     --ii      Make the mount interruptible, which implies that file system
+             calls that are delayed due to an unresponsive server will fail
+             with EINTR when a termination signal is posted for the process.
+
+     --ll      Used with NQNFS and NFSV3 to specify that the RReeaaddddiirrPPlluuss RPC
+             should be used.  This option reduces RPC traffic for cases such
+             as ``ls -l'', but tends to flood the attribute and name caches
+             with prefetched entries.  Try this option and see whether perfor-
+             mance improves or degrades. Probably most useful for client to
+             server network interconnects with a large bandwidth times delay
+             product.
+
+     --mm      Set the Kerberos realm to the string argument.  Used with the --KK
+             option for mounts to other realms.
+
+     --oo      Options are specified with a --oo flag followed by a comma separat-
+             ed string of options.  See the mount(8) man page for possible op-
+             tions and their meanings.
+
+     --qq      Use the leasing extensions to the NFS Version 3 protocol to main-
+             tain cache consistency.  This protocol version 2 revision to Not
+             Quite Nfs (NQNFS) is only supported by this updated release of
+             NFS code.  It is not backwards compatible with the version 1 NQN-
+             FS protocol that was part of the first release of 4.4BSD-Lite.
+             To interoperate with a first release 4.4BSD-Lite NFS system you
+             will have to avoid this option until you have had an oppurtunity
+             to upgrade the NFS code to release 2 of 4.4BSD-Lite on all your
+             systems.
+
+     --rr      Set the read data size to the specified value.  It should normal-
+             ly be a power of 2 greater than or equal to 1024.  This should be
+             used for UDP mounts when the ``fragments dropped due to timeout''
+             value is getting large while actively using a mount point.  (Use
+             netstat(1) with the --ss option to see what the ``fragments dropped
+             due to timeout'' value is.)  See the --ww option as well.
+
+     --ss      A soft mount, which implies that file system calls will fail af-
+             ter RReettrryy round trip timeout intervals.
+
+     --tt      Set the initial retransmit timeout to the specified value.  May
+             be useful for fine tuning UDP mounts over internetworks with high
+             packet loss rates or an overloaded server.  Try increasing the
+             interval if nfsstat(1) shows high retransmit rates while the file
+             system is active or reducing the value if there is a low retrans-
+             mit rate but long response delay observed.  (Normally, the -d op-
+             tion should be specified when using this option to manually tune
+             the timeout interval.)
+
+     --ww      Set the write data size to the specified value.  Ditto the com-
+             ments w.r.t. the --rr option, but using the ``fragments dropped due
+             to timeout'' value on the server instead of the client.  Note
+             that both the --rr and --ww options should only be used as a last
+             ditch effort at improving performance when mounting servers that
+             do not support TCP mounts.
+
+     --xx      Set the retransmit timeout count for soft mounts to the specified
+             value.
+
+SSEEEE AALLSSOO
+     mount(2),  unmount(2),  fstab(5),  mount(8)
+
+BBUUGGSS
+     Due to the way that Sun RPC is implemented on top of UDP (unreliable
+     datagram) transport, tuning such mounts is really a black art that can
+     only be expected to have limited success.  For clients mounting servers
+     that are not on the same LAN cable or that tend to be overloaded, TCP
+     transport is strongly recommended, but unfortunately this is restricted
+     to mostly 4.4BSD servers.
+
+4.4BSD                          March 29, 1995                               3
