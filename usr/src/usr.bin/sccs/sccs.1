@@ -78,6 +78,18 @@ as described above,
 and all the flags listed for ``get''
 above except \-e and \-k
 are passed to ``edit''.
+.IP create
+Creates an
+.SM SCCS
+file,
+taking the initial contents from the file of the same name.
+Any flags to ``admin'' are accepted.
+If the creation is successful,
+the files are renamed with a comma on the front.
+These should be removed when you are convinced that
+the
+.SM SCCS
+files have been created successfully.
 .IP fix
 Must be followed by a
 .B \-r
