@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	1.10 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	1.11 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -371,8 +371,7 @@ check(dev)
 	}
 	pfunc = pass1;
 	inum = 0;
-	n_blks += roundup(sblock.fs_ncg * sizeof (struct csum), BSIZE)
-		/ BSIZE * FRAG;
+	n_blks += howmany(sblock.fs_cssize, BSIZE) * FRAG;
 	for (c = 0; c < sblock.fs_ncg; c++) {
 		if (getblk(&cgblk, cgtod(c, &sblock), sblock.fs_cgsize) == 0)
 			continue;
@@ -437,9 +436,9 @@ check(dev)
 				}
 			}
 		}
-		if (n != cgrp.cg_nifree) {
-			printf("cg[%d].cg_nifree is %d not %d\n",
-			    c, cgrp.cg_nifree, n);
+		if (n != cgrp.cg_cs.cs_nifree) {
+			printf("cg[%d].cg_cs.cs_nifree is %d not %d\n",
+			    c, cgrp.cg_cs.cs_nifree, n);
 			inosumbad++;
 		}
 	}
@@ -553,12 +552,12 @@ out1b:
 			break;
 		}
 	}
-	if (imax - n_files != sblock.fs_nifree) {
+	if (imax - n_files != sblock.fs_cstotal.cs_nifree) {
 		pwarn("FREE INODE COUNT WRONG IN SUPERBLK");
 		if (preen)
 			printf(" (FIXED)\n");
 		if (preen || reply("FIX") == 1) {
-			sblock.fs_nifree = imax - n_files;
+			sblock.fs_cstotal.cs_nifree = imax - n_files;
 			sbdirty();
 		}
 	}
@@ -573,7 +572,7 @@ out1b:
 	for (c = 0; c < sblock.fs_ncg; c++) {
 		daddr_t cbase = cgbase(c,&sblock);
 		short bo[MAXCPG][NRPOS];
-		short frsum[FRAG];
+		long frsum[FRAG];
 		int blk;
 
 		for (n = 0; n < sblock.fs_cpg; n++)
@@ -638,14 +637,14 @@ out5:
 			    offsumbad ? "(BLOCK OFFSETS) " : "",
 			    frsumbad ? "(FRAG SUMMARIES) " : "");
 			fixcg = 1;
-		} else if (n_ffree != sblock.fs_nffree ||
-		    n_bfree != sblock.fs_nbfree) {
+		} else if (n_ffree != sblock.fs_cstotal.cs_nffree ||
+		    n_bfree != sblock.fs_cstotal.cs_nbfree) {
 			pwarn("FREE BLK COUNT(S) WRONG IN SUPERBLK");
 			if (preen)
 				printf(" (FIXED)\n");
 			if (preen || reply("FIX") == 1) {
-				sblock.fs_nffree = n_ffree;
-				sblock.fs_nbfree = n_bfree;
+				sblock.fs_cstotal.cs_nffree = n_ffree;
+				sblock.fs_cstotal.cs_nbfree = n_bfree;
 				sbdirty();
 			}
 		}
@@ -671,12 +670,13 @@ out5:
 			bwrite(&dfile, (char *)sblock.fs_csp[i],
 			       csaddr(&sblock) + (i * FRAG), BSIZE);
 		}
-		n_ffree = sblock.fs_nffree;
-		n_bfree = sblock.fs_nbfree;
+		n_ffree = sblock.fs_cstotal.cs_nffree;
+		n_bfree = sblock.fs_cstotal.cs_nbfree;
 	}
 
 	pwarn("%d files, %d used, %d free (%d frags, %d blocks)\n",
-	    n_files, n_blks, n_ffree + FRAG * n_bfree, n_ffree, n_bfree);
+	    n_files, n_blks - howmany(sblock.fs_cssize, BSIZE) * FRAG,
+	    n_ffree + FRAG * n_bfree, n_ffree, n_bfree);
 	if (dfile.mod) {
 		time(&sblock.fs_time);
 		sbdirty();
@@ -1451,8 +1451,10 @@ makecg()
 	register struct csum *cs;
 	register DINODE *dp;
 
-	sblock.fs_nbfree = 0;
-	sblock.fs_nffree = 0;
+	sblock.fs_cstotal.cs_nbfree = 0;
+	sblock.fs_cstotal.cs_nffree = 0;
+	sblock.fs_cstotal.cs_nifree = 0;
+	sblock.fs_cstotal.cs_ndir = 0;
 	for (c = 0; c < sblock.fs_ncg; c++) {
 		dbase = cgbase(c, &sblock);
 		dmax = dbase + sblock.fs_fpg;
@@ -1466,10 +1468,10 @@ makecg()
 		cgrp.cg_ncyl = sblock.fs_cpg;
 		cgrp.cg_niblk = sblock.fs_ipg;
 		cgrp.cg_ndblk = dmax - dbase;
-		cgrp.cg_ndir = 0;
-		cgrp.cg_nffree = 0;
-		cgrp.cg_nbfree = 0;
-		cgrp.cg_nifree = 0;
+		cgrp.cg_cs.cs_ndir = 0;
+		cgrp.cg_cs.cs_nffree = 0;
+		cgrp.cg_cs.cs_nbfree = 0;
+		cgrp.cg_cs.cs_nifree = 0;
 		cgrp.cg_rotor = dmin;
 		cgrp.cg_frotor = dmin;
 		cgrp.cg_irotor = 0;
@@ -1482,11 +1484,11 @@ makecg()
 				continue;
 			if (ALLOC) {
 				if (DIR)
-					cgrp.cg_ndir++;
+					cgrp.cg_cs.cs_ndir++;
 				setbit(cgrp.cg_iused, i);
 				continue;
 			}
-			cgrp.cg_nifree++;
+			cgrp.cg_cs.cs_nifree++;
 			clrbit(cgrp.cg_iused, i);
 		}
 		while (i < MAXIPG) {
@@ -1511,12 +1513,12 @@ makecg()
 					clrbit(cgrp.cg_free, d+i);
 			}
 			if (j == FRAG) {
-				cgrp.cg_nbfree++;
+				cgrp.cg_cs.cs_nbfree++;
 				s = d * NSPF;
 				cgrp.cg_b[s/sblock.fs_spc]
 				  [s%sblock.fs_nsect*NRPOS/sblock.fs_nsect]++;
 			} else if (j > 0) {
-				cgrp.cg_nffree += j;
+				cgrp.cg_cs.cs_nffree += j;
 				blk = ((cgrp.cg_free[d / NBBY] >> (d % NBBY)) &
 				       (0xff >> (NBBY - FRAG)));
 				fragacct(blk, cgrp.cg_frsum, 1);
@@ -1525,7 +1527,7 @@ makecg()
 		for (j = d; d < dmax - dbase; d++) {
 			if (!getbmap(dbase+d)) {
 				setbit(cgrp.cg_free, d);
-				cgrp.cg_nffree++;
+				cgrp.cg_cs.cs_nffree++;
 			} else
 				clrbit(cgrp.cg_free, d);
 		}
@@ -1536,11 +1538,11 @@ makecg()
 		}
 		for (; d < MAXBPG; d++)
 			clrbit(cgrp.cg_free, d);
-		sblock.fs_nffree += cgrp.cg_nffree;
-		sblock.fs_nbfree += cgrp.cg_nbfree;
-		cs->cs_ndir = cgrp.cg_ndir;
-		cs->cs_nifree = cgrp.cg_nifree;
-		cs->cs_nbfree = cgrp.cg_nbfree;
+		sblock.fs_cstotal.cs_nffree += cgrp.cg_cs.cs_nffree;
+		sblock.fs_cstotal.cs_nbfree += cgrp.cg_cs.cs_nbfree;
+		sblock.fs_cstotal.cs_nifree += cgrp.cg_cs.cs_nifree;
+		sblock.fs_cstotal.cs_ndir += cgrp.cg_cs.cs_ndir;
+		*cs = cgrp.cg_cs;
 		bwrite(&dfile, &cgrp, cgtod(c, &sblock), sblock.fs_cgsize);
 	}
 	sblock.fs_ronly = 0;
@@ -1554,7 +1556,7 @@ makecg()
  */
 fragacct(fragmap, fraglist, cnt)
 	int fragmap;
-	short fraglist[];
+	long fraglist[];
 	int cnt;
 {
 	int inblk;

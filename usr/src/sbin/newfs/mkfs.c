@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)mkfs.c	1.8 (Berkeley) %G%";
+static	char *sccsid = "@(#)mkfs.c	1.9 (Berkeley) %G%";
 
 /*
  * make file system for cylinder-group style file systems
@@ -240,7 +240,7 @@ noinit:
 	if (cgdmin(0,&sblock) >= sblock.fs_fpg)
 		printf("inode blocks/cyl group (%d) >= data blocks (%d)\n",
 		    cgdmin(0,&sblock)/FRAG, sblock.fs_fpg/FRAG), exit(1);
-	sblock.fs_nifree = sblock.fs_ipg * sblock.fs_ncg;
+	sblock.fs_cstotal.cs_nifree = sblock.fs_ipg * sblock.fs_ncg;
 	sblock.fs_cgsize = cgsize(&sblock);
 	sblock.fs_cssize = cssize(&sblock);
 	sblock.fs_sblkno = SBLOCK;
@@ -278,8 +278,10 @@ noinit:
 	 * then print out indices of cylinder groups forwarded
 	 * past bad blocks or other obstructions.
 	 */
-	sblock.fs_nffree = 0;
-	sblock.fs_nbfree = 0;
+	sblock.fs_cstotal.cs_ndir = 0;
+	sblock.fs_cstotal.cs_nbfree = 0;
+	sblock.fs_cstotal.cs_nifree = 0;
+	sblock.fs_cstotal.cs_nffree = 0;
 	sblock.fs_cgrotor = 0;
 	for (i = 0; i < NRPOS; i++)
 		sblock.fs_postbl[i] = -1;
@@ -333,17 +335,16 @@ initcg(c)
 	dmin = cgdmin(c,&sblock) - cbase;
 	d = cbase;
 	cs = fscs+c;
-	cs->cs_ndir = 0;
 	acg.cg_time = utime;
 	acg.cg_magic = CG_MAGIC;
 	acg.cg_cgx = c;
 	acg.cg_ncyl = sblock.fs_cpg;
 	acg.cg_niblk = sblock.fs_ipg;
 	acg.cg_ndblk = dmax - cbase;
-	acg.cg_ndir = 0;
-	acg.cg_nffree = 0;
-	acg.cg_nbfree = 0;
-	acg.cg_nifree = 0;
+	acg.cg_cs.cs_ndir = 0;
+	acg.cg_cs.cs_nffree = 0;
+	acg.cg_cs.cs_nbfree = 0;
+	acg.cg_cs.cs_nifree = 0;
 	acg.cg_rotor = dmin;
 	acg.cg_frotor = dmin;
 	acg.cg_irotor = 0;
@@ -355,7 +356,7 @@ initcg(c)
 			clrbit(acg.cg_iused, i);
 			i++;
 		}
-		acg.cg_nifree += INOPB;
+		acg.cg_cs.cs_nifree += INOPB;
 	}
 	while (i < MAXIPG) {
 		clrbit(acg.cg_iused, i);
@@ -375,7 +376,7 @@ initcg(c)
 		clrblock(acg.cg_free, d/FRAG);
 	while ((d+FRAG) <= dmax - cbase) {
 		setblock(acg.cg_free, d/FRAG);
-		acg.cg_nbfree++;
+		acg.cg_cs.cs_nbfree++;
 		s = d * NSPF;
 		acg.cg_b[s/sblock.fs_spc]
 		    [s%sblock.fs_nsect*NRPOS/sblock.fs_nsect]++;
@@ -384,14 +385,16 @@ initcg(c)
 	if (d < dmax - cbase)
 		for (; d < dmax - cbase; d++) {
 			setbit(acg.cg_free, d);
-			acg.cg_nffree++;
+			acg.cg_cs.cs_nffree++;
 		}
 	for (; d < MAXBPG; d++)
 		clrbit(acg.cg_free, d);
-	sblock.fs_nffree += acg.cg_nffree;
-	sblock.fs_nbfree += acg.cg_nbfree;
-	cs->cs_nifree = acg.cg_nifree;
-	cs->cs_nbfree = acg.cg_nbfree;
+	sblock.fs_dsize += acg.cg_ndblk - dmin;
+	sblock.fs_cstotal.cs_ndir += acg.cg_cs.cs_ndir;
+	sblock.fs_cstotal.cs_nffree += acg.cg_cs.cs_nffree;
+	sblock.fs_cstotal.cs_nbfree += acg.cg_cs.cs_nbfree;
+	sblock.fs_cstotal.cs_nifree += acg.cg_cs.cs_nifree;
+	*cs = acg.cg_cs;
 	wtfs(cgtod(c, &sblock), BSIZE, (char *)&acg);
 }
 
@@ -619,7 +622,7 @@ alloc(size, mode)
 
 	c = 0;
 	rdfs(cgtod(0,&sblock), sblock.fs_cgsize, (char *)&acg);
-	if (acg.cg_nbfree == 0) {
+	if (acg.cg_cs.cs_nbfree == 0) {
 		printf("first cylinder group ran out of space\n");
 		return (0);
 	}
@@ -630,20 +633,22 @@ alloc(size, mode)
 	return (0);
 goth:
 	clrblock(acg.cg_free, d/FRAG);
-	acg.cg_nbfree--;
-	sblock.fs_nbfree--;
+	acg.cg_cs.cs_nbfree--;
+	sblock.fs_cstotal.cs_nbfree--;
 	fscs[0].cs_nbfree--;
 	if (mode & IFDIR) {
-		acg.cg_ndir++;
+		acg.cg_cs.cs_ndir++;
+		sblock.fs_cstotal.cs_ndir++;
 		fscs[0].cs_ndir++;
 	}
 	s = d * NSPF;
 	acg.cg_b[s/sblock.fs_spc][s%sblock.fs_nsect*NRPOS/sblock.fs_nsect]--;
 	if (size != BSIZE) {
 		frag = howmany(size, FSIZE);
-		acg.cg_nffree += FRAG - frag;
+		fscs[0].cs_nffree += FRAG - frag;
+		sblock.fs_cstotal.cs_nffree += FRAG - frag;
+		acg.cg_cs.cs_nffree += FRAG - frag;
 		acg.cg_frsum[FRAG - frag]++;
-		sblock.fs_nffree += FRAG - frag;
 		for (i = frag; i < FRAG; i++)
 			setbit(acg.cg_free, d+i);
 	}
@@ -720,10 +725,10 @@ daddr_t *ib;
 	int i, c = ip->i_number / sblock.fs_ipg;
 
 	rdfs(cgtod(c,&sblock), sblock.fs_cgsize, (char *)&acg);
-	acg.cg_nifree--;
+	acg.cg_cs.cs_nifree--;
 	setbit(acg.cg_iused, ip->i_number);
 	wtfs(cgtod(c,&sblock), sblock.fs_cgsize, (char *)&acg);
-	sblock.fs_nifree--;
+	sblock.fs_cstotal.cs_nifree--;
 	fscs[0].cs_nifree--;
 	if(ip->i_number >= sblock.fs_ipg) {
 		printf("mkfs: cant handle more than one cg of inodes (yet)\n");
