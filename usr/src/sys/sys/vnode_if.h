@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode_if.h	7.1 (Berkeley) %G%
+ *	@(#)vnode_if.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -13,9 +13,9 @@
 
 struct vop_lookup_args {
 	struct vnodeop_desc *a_desc;
-	struct vnode * a_dvp;
-	struct vnode ** a_vpp;
-	struct componentname * a_cnp;
+	struct vnode *a_dvp;
+	struct vnode **a_vpp;
+	struct componentname *a_cnp;
 };
 extern struct vnodeop_desc vop_lookup_desc;
 #define USES_VOP_LOOKUP struct vop_lookup_args vop_lookup_a
@@ -30,10 +30,10 @@ extern struct vnodeop_desc vop_lookup_desc;
 
 struct vop_create_args {
 	struct vnodeop_desc *a_desc;
-	struct vnode * a_dvp;
-	struct vnode ** a_vpp;
-	struct componentname * a_cnp;
-	struct vattr * a_vap;
+	struct vnode *a_dvp;
+	struct vnode **a_vpp;
+	struct componentname *a_cnp;
+	struct vattr *a_vap;
 };
 extern struct vnodeop_desc vop_create_desc;
 #define USES_VOP_CREATE struct vop_create_args vop_create_a
@@ -49,10 +49,10 @@ extern struct vnodeop_desc vop_create_desc;
 
 struct vop_mknod_args {
 	struct vnodeop_desc *a_desc;
-	struct vnode * a_dvp;
-	struct vnode ** a_vpp;
-	struct componentname * a_cnp;
-	struct vattr * a_vap;
+	struct vnode *a_dvp;
+	struct vnode **a_vpp;
+	struct componentname *a_cnp;
+	struct vattr *a_vap;
 };
 extern struct vnodeop_desc vop_mknod_desc;
 #define USES_VOP_MKNOD struct vop_mknod_args vop_mknod_a
@@ -68,10 +68,10 @@ extern struct vnodeop_desc vop_mknod_desc;
 
 struct vop_open_args {
 	struct vnodeop_desc *a_desc;
-	struct vnode * a_vp;
+	struct vnode *a_vp;
 	int  a_mode;
-	struct ucred * a_cred;
-	struct proc * a_p;
+	struct ucred *a_cred;
+	struct proc *a_p;
 };
 extern struct vnodeop_desc vop_open_desc;
 #define USES_VOP_OPEN struct vop_open_args vop_open_a
@@ -87,10 +87,10 @@ extern struct vnodeop_desc vop_open_desc;
 
 struct vop_close_args {
 	struct vnodeop_desc *a_desc;
-	struct vnode * a_vp;
+	struct vnode *a_vp;
 	int  a_fflag;
-	struct ucred * a_cred;
-	struct proc * a_p;
+	struct ucred *a_cred;
+	struct proc *a_p;
 };
 extern struct vnodeop_desc vop_close_desc;
 #define USES_VOP_CLOSE struct vop_close_args vop_close_a
@@ -106,10 +106,10 @@ extern struct vnodeop_desc vop_close_desc;
 
 struct vop_access_args {
 	struct vnodeop_desc *a_desc;
-	struct vnode * a_vp;
+	struct vnode *a_vp;
 	int  a_mode;
-	struct ucred * a_cred;
-	struct proc * a_p;
+	struct ucred *a_cred;
+	struct proc *a_p;
 };
 extern struct vnodeop_desc vop_access_desc;
 #define USES_VOP_ACCESS struct vop_access_args vop_access_a
@@ -125,10 +125,10 @@ extern struct vnodeop_desc vop_access_desc;
 
 struct vop_getattr_args {
 	struct vnodeop_desc *a_desc;
-	struct vnode * a_vp;
-	struct vattr * a_vap;
-	struct ucred * a_cred;
-	struct proc * a_p;
+	struct vnode *a_vp;
+	struct vattr *a_vap;
+	struct ucred *a_cred;
+	struct proc *a_p;
 };
 extern struct vnodeop_desc vop_getattr_desc;
 #define USES_VOP_GETATTR struct vop_getattr_args vop_getattr_a
@@ -144,10 +144,10 @@ extern struct vnodeop_desc vop_getattr_desc;
 
 struct vop_setattr_args {
 	struct vnodeop_desc *a_desc;
-	struct vnode * a_vp;
-	struct vattr * a_vap;
-	struct ucred * a_cred;
-	struct proc * a_p;
+	struct vnode *a_vp;
+	struct vattr *a_vap;
+	struct ucred *a_cred;
+	struct proc *a_p;
 };
 extern struct vnodeop_desc vop_setattr_desc;
 #define USES_VOP_SETATTR struct vop_setattr_args vop_setattr_a
@@ -163,10 +163,10 @@ extern struct vnodeop_desc vop_setattr_desc;
 
 struct vop_read_args {
 	struct vnodeop_desc *a_desc;
-	struct vnode * a_vp;
-	struct uio * a_uio;
+	struct vnode *a_vp;
+	struct uio *a_uio;
 	int  a_ioflag;
-	struct ucred * a_cred;
+	struct ucred *a_cred;
 };
 extern struct vnodeop_desc vop_read_desc;
 #define USES_VOP_READ struct vop_read_args vop_read_a
@@ -182,10 +182,10 @@ extern struct vnodeop_desc vop_read_desc;
 
 struct vop_write_args {
 	struct vnodeop_desc *a_desc;
-	struct vnode * a_vp;
-	struct uio * a_uio;
+	struct vnode *a_vp;
+	struct uio *a_uio;
 	int  a_ioflag;
-	struct ucred * a_cred;
+	struct ucred *a_cred;
 };
 extern struct vnodeop_desc vop_write_desc;
 #define USES_VOP_WRITE struct vop_write_args vop_write_a
@@ -201,12 +201,12 @@ extern struct vnodeop_desc vop_write_desc;
 
 struct vop_ioctl_args {
 	struct vnodeop_desc *a_desc;
-	struct vnode * a_vp;
+	struct vnode *a_vp;
 	int  a_command;
 	caddr_t  a_data;
 	int  a_fflag;
-	struct ucred * a_cred;
-	struct proc * a_p;
+	struct ucred *a_cred;
+	struct proc *a_p;
 };
 extern struct vnodeop_desc vop_ioctl_desc;
 #define USES_VOP_IOCTL struct vop_ioctl_args vop_ioctl_a
@@ -224,11 +224,11 @@ extern struct vnodeop_desc vop_ioctl_desc;
 
 struct vop_select_args {
 	struct vnodeop_desc *a_desc;
-	struct vnode * a_vp;
+	struct vnode *a_vp;
 	int  a_which;
 	int  a_fflags;
-	struct ucred * a_cred;
-	struct proc * a_p;
+	struct ucred *a_cred;
+	struct proc *a_p;
 };
 extern struct vnodeop_desc vop_select_desc;
 #define USES_VOP_SELECT struct vop_select_args vop_select_a
@@ -245,10 +245,10 @@ extern struct vnodeop_desc vop_select_desc;
 
 struct vop_mmap_args {
 	struct vnodeop_desc *a_desc;
-	struct vnode * a_vp;
+	struct vnode *a_vp;
 	int  a_fflags;
-	struct ucred * a_cred;
-	struct proc * a_p;
+	struct ucred *a_cred;
+	struct proc *a_p;
 };
 extern struct vnodeop_desc vop_mmap_desc;
 #define USES_VOP_MMAP struct vop_mmap_args vop_mmap_a
@@ -264,11 +264,11 @@ extern struct vnodeop_desc vop_mmap_desc;
 
 struct vop_fsync_args {
 	struct vnodeop_desc *a_desc;
-	struct vnode * a_vp;
+	struct vnode *a_vp;
 	int  a_fflags;
-	struct ucred * a_cred;
+	struct ucred *a_cred;
 	int  a_waitfor;
-	struct proc * a_p;
+	struct proc *a_p;
 };
 extern struct vnodeop_desc vop_fsync_desc;
 #define USES_VOP_FSYNC struct vop_fsync_args vop_fsync_a
@@ -285,10 +285,10 @@ extern struct vnodeop_desc vop_fsync_desc;
 
 struct vop_seek_args {
 	struct vnodeop_desc *a_desc;
-	struct vnode * a_vp;
+	struct vnode *a_vp;
 	off_t  a_oldoff;
 	off_t  a_newoff;
-	struct ucred * a_cred;
+	struct ucred *a_cred;
 };
 extern struct vnodeop_desc vop_seek_desc;
 #define USES_VOP_SEEK struct vop_seek_args vop_seek_a
@@ -304,9 +304,9 @@ extern struct vnodeop_desc vop_seek_desc;
 
 struct vop_remove_args {
 	struct vnodeop_desc *a_desc;
-	struct vnode * a_dvp;
-	struct vnode * a_vp;
-	struct componentname * a_cnp;
+	struct vnode *a_dvp;
+	struct vnode *a_vp;
+	struct componentname *a_cnp;
 };
 extern struct vnodeop_desc vop_remove_desc;
 #define USES_VOP_REMOVE struct vop_remove_args vop_remove_a
@@ -321,9 +321,9 @@ extern struct vnodeop_desc vop_remove_desc;
 
 struct vop_link_args {
 	struct vnodeop_desc *a_desc;
-	struct vnode * a_vp;
-	struct vnode * a_tdvp;
-	struct componentname * a_cnp;
+	struct vnode *a_vp;
+	struct vnode *a_tdvp;
+	struct componentname *a_cnp;
 };
 extern struct vnodeop_desc vop_link_desc;
 #define USES_VOP_LINK struct vop_link_args vop_link_a
@@ -338,12 +338,12 @@ extern struct vnodeop_desc vop_link_desc;
 
 struct vop_rename_args {
 	struct vnodeop_desc *a_desc;
-	struct vnode * a_fdvp;
-	struct vnode * a_fvp;
-	struct componentname * a_fcnp;
-	struct vnode * a_tdvp;
-	struct vnode * a_tvp;
-	struct componentname * a_tcnp;
+	struct vnode *a_fdvp;
+	struct vnode *a_fvp;
+	struct componentname *a_fcnp;
+	struct vnode *a_tdvp;
+	struct vnode *a_tvp;
+	struct componentname *a_tcnp;
 };
 extern struct vnodeop_desc vop_rename_desc;
 #define USES_VOP_RENAME struct vop_rename_args vop_rename_a
@@ -361,10 +361,10 @@ extern struct vnodeop_desc vop_rename_desc;
 
 struct vop_mkdir_args {
 	struct vnodeop_desc *a_desc;
-	struct vnode * a_dvp;
-	struct vnode ** a_vpp;
-	struct componentname * a_cnp;
-	struct vattr * a_vap;
+	struct vnode *a_dvp;
+	struct vnode **a_vpp;
+	struct componentname *a_cnp;
+	struct vattr *a_vap;
 };
 extern struct vnodeop_desc vop_mkdir_desc;
 #define USES_VOP_MKDIR struct vop_mkdir_args vop_mkdir_a
@@ -380,9 +380,9 @@ extern struct vnodeop_desc vop_mkdir_desc;
 
 struct vop_rmdir_args {
 	struct vnodeop_desc *a_desc;
-	struct vnode * a_dvp;
-	struct vnode * a_vp;
-	struct componentname * a_cnp;
+	struct vnode *a_dvp;
+	struct vnode *a_vp;
+	struct componentname *a_cnp;
 };
 extern struct vnodeop_desc vop_rmdir_desc;
 #define USES_VOP_RMDIR struct vop_rmdir_args vop_rmdir_a
@@ -397,11 +397,11 @@ extern struct vnodeop_desc vop_rmdir_desc;
 
 struct vop_symlink_args {
 	struct vnodeop_desc *a_desc;
-	struct vnode * a_dvp;
-	struct vnode ** a_vpp;
-	struct componentname * a_cnp;
-	struct vattr * a_vap;
-	char * a_target;
+	struct vnode *a_dvp;
+	struct vnode **a_vpp;
+	struct componentname *a_cnp;
+	struct vattr *a_vap;
+	char *a_target;
 };
 extern struct vnodeop_desc vop_symlink_desc;
 #define USES_VOP_SYMLINK struct vop_symlink_args vop_symlink_a
@@ -418,10 +418,10 @@ extern struct vnodeop_desc vop_symlink_desc;
 
 struct vop_readdir_args {
 	struct vnodeop_desc *a_desc;
-	struct vnode * a_vp;
-	struct uio * a_uio;
-	struct ucred * a_cred;
-	int * a_eofflagp;
+	struct vnode *a_vp;
+	struct uio *a_uio;
+	struct ucred *a_cred;
+	int *a_eofflagp;
 };
 extern struct vnodeop_desc vop_readdir_desc;
 #define USES_VOP_READDIR struct vop_readdir_args vop_readdir_a
@@ -437,9 +437,9 @@ extern struct vnodeop_desc vop_readdir_desc;
 
 struct vop_readlink_args {
 	struct vnodeop_desc *a_desc;
-	struct vnode * a_vp;
-	struct uio * a_uio;
-	struct ucred * a_cred;
+	struct vnode *a_vp;
+	struct uio *a_uio;
+	struct ucred *a_cred;
 };
 extern struct vnodeop_desc vop_readlink_desc;
 #define USES_VOP_READLINK struct vop_readlink_args vop_readlink_a
@@ -454,8 +454,8 @@ extern struct vnodeop_desc vop_readlink_desc;
 
 struct vop_abortop_args {
 	struct vnodeop_desc *a_desc;
-	struct vnode * a_dvp;
-	struct componentname * a_cnp;
+	struct vnode *a_dvp;
+	struct componentname *a_cnp;
 };
 extern struct vnodeop_desc vop_abortop_desc;
 #define USES_VOP_ABORTOP struct vop_abortop_args vop_abortop_a
@@ -469,8 +469,8 @@ extern struct vnodeop_desc vop_abortop_desc;
 
 struct vop_inactive_args {
 	struct vnodeop_desc *a_desc;
-	struct vnode * a_vp;
-	struct proc * a_p;
+	struct vnode *a_vp;
+	struct proc *a_p;
 };
 extern struct vnodeop_desc vop_inactive_desc;
 #define USES_VOP_INACTIVE struct vop_inactive_args vop_inactive_a
@@ -484,7 +484,7 @@ extern struct vnodeop_desc vop_inactive_desc;
 
 struct vop_reclaim_args {
 	struct vnodeop_desc *a_desc;
-	struct vnode * a_vp;
+	struct vnode *a_vp;
 };
 extern struct vnodeop_desc vop_reclaim_desc;
 #define USES_VOP_RECLAIM struct vop_reclaim_args vop_reclaim_a
@@ -497,7 +497,7 @@ extern struct vnodeop_desc vop_reclaim_desc;
 
 struct vop_lock_args {
 	struct vnodeop_desc *a_desc;
-	struct vnode * a_vp;
+	struct vnode *a_vp;
 };
 extern struct vnodeop_desc vop_lock_desc;
 #define USES_VOP_LOCK struct vop_lock_args vop_lock_a
@@ -510,7 +510,7 @@ extern struct vnodeop_desc vop_lock_desc;
 
 struct vop_unlock_args {
 	struct vnodeop_desc *a_desc;
-	struct vnode * a_vp;
+	struct vnode *a_vp;
 };
 extern struct vnodeop_desc vop_unlock_desc;
 #define USES_VOP_UNLOCK struct vop_unlock_args vop_unlock_a
@@ -523,10 +523,10 @@ extern struct vnodeop_desc vop_unlock_desc;
 
 struct vop_bmap_args {
 	struct vnodeop_desc *a_desc;
-	struct vnode * a_vp;
-	daddr_t  a_bn;
-	struct vnode ** a_vpp;
-	daddr_t * a_bnp;
+	struct vnode *a_vp;
+	daddr_t a_bn;
+	struct vnode **a_vpp;
+	daddr_t *a_bnp;
 };
 extern struct vnodeop_desc vop_bmap_desc;
 #define USES_VOP_BMAP struct vop_bmap_args vop_bmap_a
@@ -542,7 +542,7 @@ extern struct vnodeop_desc vop_bmap_desc;
 
 struct vop_strategy_args {
 	struct vnodeop_desc *a_desc;
-	struct buf * a_bp;
+	struct buf *a_bp;
 };
 extern struct vnodeop_desc vop_strategy_desc;
 #define USES_VOP_STRATEGY struct vop_strategy_args vop_strategy_a
@@ -555,7 +555,7 @@ extern struct vnodeop_desc vop_strategy_desc;
 
 struct vop_print_args {
 	struct vnodeop_desc *a_desc;
-	struct vnode * a_vp;
+	struct vnode *a_vp;
 };
 extern struct vnodeop_desc vop_print_desc;
 #define USES_VOP_PRINT struct vop_print_args vop_print_a
@@ -568,7 +568,7 @@ extern struct vnodeop_desc vop_print_desc;
 
 struct vop_islocked_args {
 	struct vnodeop_desc *a_desc;
-	struct vnode * a_vp;
+	struct vnode *a_vp;
 };
 extern struct vnodeop_desc vop_islocked_desc;
 #define USES_VOP_ISLOCKED struct vop_islocked_args vop_islocked_a
@@ -581,10 +581,10 @@ extern struct vnodeop_desc vop_islocked_desc;
 
 struct vop_advlock_args {
 	struct vnodeop_desc *a_desc;
-	struct vnode * a_vp;
+	struct vnode *a_vp;
 	caddr_t  a_id;
 	int  a_op;
-	struct flock * a_fl;
+	struct flock *a_fl;
 	int  a_flags;
 };
 extern struct vnodeop_desc vop_advlock_desc;
@@ -602,10 +602,10 @@ extern struct vnodeop_desc vop_advlock_desc;
 
 struct vop_blkatoff_args {
 	struct vnodeop_desc *a_desc;
-	struct vnode * a_vp;
+	struct vnode *a_vp;
 	off_t  a_offset;
-	char ** a_res;
-	struct buf ** a_bpp;
+	char **a_res;
+	struct buf **a_bpp;
 };
 extern struct vnodeop_desc vop_blkatoff_desc;
 #define USES_VOP_BLKATOFF struct vop_blkatoff_args vop_blkatoff_a
@@ -621,9 +621,9 @@ extern struct vnodeop_desc vop_blkatoff_desc;
 
 struct vop_vget_args {
 	struct vnodeop_desc *a_desc;
-	struct mount * a_mp;
+	struct mount *a_mp;
 	ino_t  a_ino;
-	struct vnode ** a_vpp;
+	struct vnode **a_vpp;
 };
 extern struct vnodeop_desc vop_vget_desc;
 #define USES_VOP_VGET struct vop_vget_args vop_vget_a
@@ -638,10 +638,10 @@ extern struct vnodeop_desc vop_vget_desc;
 
 struct vop_valloc_args {
 	struct vnodeop_desc *a_desc;
-	struct vnode * a_pvp;
+	struct vnode *a_pvp;
 	int  a_mode;
-	struct ucred * a_cred;
-	struct vnode ** a_vpp;
+	struct ucred *a_cred;
+	struct vnode **a_vpp;
 };
 extern struct vnodeop_desc vop_valloc_desc;
 #define USES_VOP_VALLOC struct vop_valloc_args vop_valloc_a
@@ -657,7 +657,7 @@ extern struct vnodeop_desc vop_valloc_desc;
 
 struct vop_vfree_args {
 	struct vnodeop_desc *a_desc;
-	struct vnode * a_pvp;
+	struct vnode *a_pvp;
 	ino_t  a_ino;
 	int  a_mode;
 };
@@ -674,10 +674,10 @@ extern struct vnodeop_desc vop_vfree_desc;
 
 struct vop_truncate_args {
 	struct vnodeop_desc *a_desc;
-	struct vnode * a_vp;
+	struct vnode *a_vp;
 	u_long  a_length;
 	int  a_flags;
-	struct ucred * a_cred;
+	struct ucred *a_cred;
 };
 extern struct vnodeop_desc vop_truncate_desc;
 #define USES_VOP_TRUNCATE struct vop_truncate_args vop_truncate_a
@@ -693,9 +693,9 @@ extern struct vnodeop_desc vop_truncate_desc;
 
 struct vop_update_args {
 	struct vnodeop_desc *a_desc;
-	struct vnode * a_vp;
-	struct timeval * a_ta;
-	struct timeval * a_tm;
+	struct vnode *a_vp;
+	struct timeval *a_ta;
+	struct timeval *a_tm;
 	int  a_waitfor;
 };
 extern struct vnodeop_desc vop_update_desc;
@@ -712,7 +712,7 @@ extern struct vnodeop_desc vop_update_desc;
 
 struct vop_bwrite_args {
 	struct vnodeop_desc *a_desc;
-	struct buf * a_bp;
+	struct buf *a_bp;
 };
 extern struct vnodeop_desc vop_bwrite_desc;
 #define USES_VOP_BWRITE struct vop_bwrite_args vop_bwrite_a
