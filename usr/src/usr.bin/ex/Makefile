@@ -3,16 +3,16 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	7.32.1.1 (Berkeley) %G%
+#	@(#)Makefile	7.33 (Berkeley) %G%
 #
 #
 # Copyright (c) 1980 Regents of the University of California.
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	7.32.1.1 (Berkeley) %G%
+#	@(#)Makefile	7.33 (Berkeley) %G%
 #
-#	@(#)Makefile	7.32.1.1 (Berkeley) %G%
+#	@(#)Makefile	7.33 (Berkeley) %G%
 
 # Things that can be turned off to save space:
 #	LISPCODE (-l flag, showmatch and lisp options)
@@ -33,8 +33,8 @@ SRCS=	ex.c ex_addr.c ex_cmds.c ex_cmds2.c ex_cmdsub.c ex_data.c ex_extern.c \
 	ex_voper.c ex_vops.c ex_vops2.c ex_vops3.c ex_vput.c ex_vwind.c \
 	printf.c
 BINMODE=1755
-DPADD=	strings.o ${LIBTERMCAP}
-LDADD=	strings.o -z -ltermcap
+DPADD=	${LIBTERMCAP}
+LDADD=	-z -ltermcap
 MAN1=	ex.0 vi.0
 LINKS=	${BINDIR}/ex ${BINDIR}/vi ${BINDIR}/ex ${BINDIR}/view \
 	${BINDIR}/ex ${BINDIR}/edit
@@ -42,24 +42,11 @@ LINKS=	${BINDIR}/ex ${BINDIR}/vi ${BINDIR}/ex ${BINDIR}/view \
 # There's a boostrap problem here -- ex is necessary to build ex_vars.h.
 # The file ex_vars.h.init can be used to build a version of ex to start
 # with.
-CLEANFILES+=ex_vars.h strings xs.c xs.s x.c strings.o
-
-SHAREDSTRINGS=	sharedstrings
+CLEANFILES+=ex_vars.h
 
 ex_vars.h: ex_data.c
 	csh -f ${.CURDIR}/makeoptions ${.CURDIR}/ex_data.c ${CFLAGS:M-[ID]*}
 
-# xstr: hands off!
-strings.o: strings
-	xstr
-	${CC} -c -S xs.c
-	ed - < ${.CURDIR}/rofix xs.s
-	${AS} -o strings.o xs.s
-	rm xs.s
-
 .include <bsd.prog.mk>
 
 ${OBJS} ${SUBDIR} .depend: ex_vars.h
-${OBJS}: strings
-strings:
-	touch strings
