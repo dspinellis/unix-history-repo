@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.6.1.1 (Berkeley) %G%
+#	@(#)Makefile	5.7 (Berkeley) %G%
 
 PROG=	rshd
 SRCS=	rshd.c
