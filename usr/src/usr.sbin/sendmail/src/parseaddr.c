@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	6.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	6.34 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -637,7 +637,7 @@ rewrite(pvp, ruleset)
 				goto backup;
 			}
 			if (ap == NULL && (*rp & 0377) != MATCHZANY &&
-			    (*rp & 0377) != CANONHOST)
+			    (*rp & 0377) != MATCHZERO)
 			{
 				/* end-of-input with patterns left */
 				goto backup;
@@ -701,7 +701,7 @@ rewrite(pvp, ruleset)
 				mlp++;
 				break;
 
-			  case CANONHOST:
+			  case MATCHZERO:
 				/* match zero tokens */
 				break;
 
@@ -768,7 +768,7 @@ rewrite(pvp, ruleset)
 		**  See if we successfully matched
 		*/
 
-		if (rvp < rwr->r_lhs || *rvp != NULL)
+		if (mlp < mlist || *rvp != NULL)
 		{
 			if (tTd(21, 10))
 				printf("----- rule fails\n");
