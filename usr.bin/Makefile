@@ -16,7 +16,7 @@ SUBDIR=	ar awk biff basename cal calendar \
 	cpio crontab ctags cut diff diff3 dirname du egrep elvis elvisrecover \
 	env error expand false fgrep file find finger fmt fold fpr from fsplit \
 	fstat ftp \
-	g++ gas gcc2 gdb grep gprof groff groups head hexdump id indent join \
+	g++ gas gcc2 gdb grep gprof groff groups gzip head hexdump id indent join \
 	ktrace last lastcomm ld leave lex locate lock logger \
 	login logname look lorder m4 machine mail make man mesg mkdep mkfifo \
 	mkstr more msgs mt netstat nfsstat nice nm nohup pagesize \
@@ -44,6 +44,9 @@ gcc2::
 groff::
 	@rm -f groff
 	ln -s ../gnu/groff .
+gzip::
+	@rm -f gzip
+	ln -s ../gnu/gzip .
 tar::
 	@rm -f tar
 	ln -s ../gnu/tar . 
