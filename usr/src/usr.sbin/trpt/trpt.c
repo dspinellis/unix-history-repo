@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)trpt.c	4.6 %G%";
+static char sccsid[] = "@(#)trpt.c	4.7 %G%";
 #endif
 
 #include <sys/param.h>
@@ -35,6 +35,7 @@ n_time	ntime;
 int	sflag;
 int	tflag;
 int	jflag;
+int	aflag;
 int	numeric();
 struct	nlist nl[] = {
 	{ "_tcp_debug" },
@@ -44,6 +45,7 @@ struct	nlist nl[] = {
 struct	tcp_debug tcp_debug[TCP_NDEBUG];
 caddr_t	tcp_pcbs[TCP_NDEBUG];
 int	tcp_debx;
+char	*ntoa();
 
 main(argc, argv)
 	int argc;
@@ -54,6 +56,10 @@ main(argc, argv)
 
 	argc--, argv++;
 again:
+	if (argc > 0 && !strcmp(*argv, "-a")) {
+		aflag++, argc--, argv++;
+		goto again;
+	}
 	if (argc > 0 && !strcmp(*argv, "-s")) {
 		sflag++, argc--, argv++;
 		goto again;
@@ -197,6 +203,12 @@ tcp_trace(act, ostate, atp, tp, ti, req)
 
 	case TA_INPUT:
 	case TA_OUTPUT:
+		if (aflag) {
+			printf("(src=%s,%d, ", ntoa(ti->ti_src),
+				ntohs(ti->ti_sport));
+			printf("dst=%s,%d)", ntoa(ti->ti_dst),
+				ntohs(ti->ti_dport));
+		}
 		seq = ti->ti_seq;
 		ack = ti->ti_ack;
 		len = ti->ti_len;
@@ -273,4 +285,22 @@ numeric(c1, c2)
 {
 	
 	return (*c1 - *c2);
+}
+
+/*
+ * Convert network-format internet address
+ * to base 256 d.d.d.d representation.
+ */
+char *
+ntoa(in)
+	struct in_addr in;
+{
+	static char b[18];
+	register char *p;
+
+	in.s_addr = ntohl(in.s_addr);
+	p = (char *)&in;
+#define	UC(b)	(((int)b)&0xff)
+	sprintf(b, "%d.%d.%d.%d", UC(p[0]), UC(p[1]), UC(p[2]), UC(p[3]));
+	return (b);
 }
