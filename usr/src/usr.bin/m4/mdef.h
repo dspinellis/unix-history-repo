@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mdef.h	5.3 (Berkeley) %G%
+ *	@(#)mdef.h	5.4 (Berkeley) %G%
  */
 
 /*
@@ -26,9 +26,10 @@
  * by: oz
  */
 
+#include <sys/signal.h>
 #include <stdio.h>
 #include <ctype.h>
-#include <signal.h>
+#include "pathnames.h"
 
 /*
  *
@@ -84,15 +85,6 @@
 #define COMMA           ','
 #define SCOMMT          '#'
 #define ECOMMT          '\n'
-
-/*
- * definitions of diversion files. If the name of
- * the file is changed, adjust UNIQUE to point to the
- * wildcard (*) character in the filename.
- */
-
-#define DIVNAM  "/tmp/m4*XXXXXX"        /* unix diversion files    */
-#define UNIQUE          7               /* unique char location    */
 
 /*
  * other important constants
