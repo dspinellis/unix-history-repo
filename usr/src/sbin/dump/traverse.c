@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)traverse.c	1.10 (Berkeley) %G%";
+static	char *sccsid = "@(#)traverse.c	1.11 (Berkeley) %G%";
 
 #include "dump.h"
 
@@ -170,8 +170,8 @@ blksout(blkp, frags)
 {
 	int i, j, count, blks, tbperdb;
 
-	blks = frags * BLKING(sblock);
-	tbperdb = BLKING(sblock) * sblock->fs_frag;
+	blks = frags * sblock->fs_fsize / TP_BSIZE;
+	tbperdb = sblock->fs_bsize / TP_BSIZE;
 	for (i = 0; i < blks; i += TP_NINDIR) {
 		if (i + TP_NINDIR > blks)
 			count = blks;
