@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)route.c	4.9 84/10/31";
+static char sccsid[] = "@(#)route.c	4.10 85/06/03";
 #endif
 
 #include <sys/types.h>
@@ -14,7 +14,7 @@ static char sccsid[] = "@(#)route.c	4.9 84/10/31";
 
 extern	int kmem;
 extern	int nflag;
-extern	char *routename();
+extern	char *routename(), *netname();
 
 /*
  * Definitions for showing gateway flags.
@@ -79,8 +79,9 @@ again:
 			rt = mtod(&mb, struct rtentry *);
 			sin = (struct sockaddr_in *)&rt->rt_dst;
 			printf("%-15.15s ",
-			    sin->sin_addr.s_addr ?
-				routename(sin->sin_addr) : "default");
+			    (sin->sin_addr.s_addr == 0) ? "default" :
+			    (rt->rt_flags & RTF_HOST) ?
+			    routename(sin->sin_addr) : netname(sin->sin_addr, 0));
 			sin = (struct sockaddr_in *)&rt->rt_gateway;
 			printf("%-15.15s ", routename(sin->sin_addr));
 			for (flags = name, p = bits; p->b_mask; p++)
@@ -118,43 +119,73 @@ routename(in)
 	char *cp = 0;
 	static char line[50];
 	struct hostent *hp;
-	struct netent *np;
-	int lna, net, subnet;
 
-	net = inet_netof(in);
-	subnet = inet_subnetof(in);
-	lna = inet_lnaof(in);
 	if (!nflag) {
-		if (lna == INADDR_ANY) {
-			np = getnetbyaddr(net, AF_INET);
-			if (np)
-				cp = np->n_name;
-		} else if ((subnet != net) && ((lna & 0xff) == 0) &&
-		    (np = getnetbyaddr(subnet, AF_INET))) {
-			struct in_addr subnaddr, inet_makeaddr();
-			subnaddr = inet_makeaddr(subnet, INADDR_ANY);
-			if (bcmp(&in, &subnaddr, sizeof(in)) == 0)
-				cp = np->n_name;
-			else
-				goto host;
-		} else {
-host:
-			hp = gethostbyaddr(&in, sizeof (struct in_addr),
-				AF_INET);
-			if (hp)
-				cp = hp->h_name;
-		}
+		hp = gethostbyaddr(&in, sizeof (struct in_addr),
+			AF_INET);
+		if (hp)
+			cp = hp->h_name;
 	}
 	if (cp)
 		strcpy(line, cp);
 	else {
-		u_char *ucp = (u_char *)&in;
-		if (lna == INADDR_ANY)
-			sprintf(line, "%u.%u.%u", ucp[0], ucp[1], ucp[2]);
-		else
-			sprintf(line, "%u.%u.%u.%u", ucp[0], ucp[1],
-				ucp[2], ucp[3]);
+#define C(x)	((x) & 0xff)
+		in.s_addr = ntohl(in.s_addr);
+		sprintf(line, "%u.%u.%u.%u", C(in.s_addr >> 24),
+			C(in.s_addr >> 16), C(in.s_addr >> 8), C(in.s_addr));
 	}
+	return (line);
+}
+
+/*
+ * Return the name of the network whose address is given.
+ * The address is assumed to be that of a net or subnet, not a host.
+ */
+char *
+netname(in, mask)
+	struct in_addr in;
+	u_long mask;
+{
+	char *cp = 0;
+	static char line[50];
+	struct netent *np = 0;
+	u_long net;
+	register i;
+
+	in.s_addr = ntohl(in.s_addr);
+	if (!nflag && in.s_addr) {
+		if (mask) {
+			net = in.s_addr & mask;
+			while ((mask & 1) == 0)
+				mask >>= 1, net >>= 1;
+			np = getnetbyaddr(net, AF_INET);
+		}
+		if (np == 0) {
+			/*
+			 * Try for subnet addresses.
+			 */
+			for (i = 0; ((0xf<<i) & in.s_addr) == 0; i += 4)
+				;
+			for ( ; i; i -= 4)
+			    if (np = getnetbyaddr((unsigned)in.s_addr >> i,
+				    AF_INET))
+					break;
+		}
+		if (np)
+			cp = np->n_name;
+	}
+	if (cp)
+		strcpy(line, cp);
+	else if ((in.s_addr & 0xffffff) == 0)
+		sprintf(line, "%u", C(in.s_addr >> 24));
+	else if ((in.s_addr & 0xffff) == 0)
+		sprintf(line, "%u.%u", C(in.s_addr >> 24) , C(in.s_addr >> 16));
+	else if ((in.s_addr & 0xff) == 0)
+		sprintf(line, "%u.%u.%u", C(in.s_addr >> 24),
+			C(in.s_addr >> 16), C(in.s_addr >> 8));
+	else
+		sprintf(line, "%u.%u.%u.%u", C(in.s_addr >> 24),
+			C(in.s_addr >> 16), C(in.s_addr >> 8), C(in.s_addr));
 	return (line);
 }
 /*
@@ -182,32 +213,4 @@ rt_stats(off)
 		rtstat.rts_unreach, plural(rtstat.rts_unreach));
 	printf("\t%d use%s of a wildcard route\n",
 		rtstat.rts_wildcard, plural(rtstat.rts_wildcard));
-}
-
-/*
- * Return the possible subnetwork number from an internet address.
- * If the address is of the form of a subnet address (most significant
- * bit of the host part is set), believe the subnet exists.
- * Otherwise, return the network number.
- * SHOULD FIND OUT WHETHER THIS IS A LOCAL NETWORK BEFORE LOOKING
- * INSIDE OF THE HOST PART.  We can only believe this if we have other
- * information (e.g., we can find a name for this number).
- */
-inet_subnetof(in)
-	struct in_addr in;
-{
-	register u_long i = ntohl(in.s_addr);
-
-	if (IN_CLASSA(i)) {
-		if (IN_SUBNETA(i))
-			return ((i & IN_CLASSA_SUBNET) >> IN_CLASSA_SUBNSHIFT);
-		else
-			return ((i & IN_CLASSA_NET) >> IN_CLASSA_NSHIFT);
-	} else if (IN_CLASSB(i)) {
-		if (IN_SUBNETB(i))
-			return ((i & IN_CLASSB_SUBNET) >> IN_CLASSB_SUBNSHIFT);
-		else
-			return ((i & IN_CLASSB_NET) >> IN_CLASSB_NSHIFT);
-	} else
-		return ((i & IN_CLASSC_NET) >> IN_CLASSC_NSHIFT);
 }

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)inet.c	4.18 (Berkeley) 84/10/31";
+static char sccsid[] = "@(#)inet.c	4.19 (Berkeley) 85/06/03";
 #endif
 
 #include <sys/types.h>
@@ -31,7 +31,7 @@ static char sccsid[] = "@(#)inet.c	4.18 (Berkeley) 84/10/31";
 
 struct	inpcb inpcb;
 struct	tcpcb tcpcb;
-struct	socket socket;
+struct	socket sockb;
 struct	protosw proto;
 extern	int kmem;
 extern	int Aflag;
@@ -93,15 +93,15 @@ protopr(off, name)
 			continue;
 		}
 		klseek(kmem, (off_t)inpcb.inp_socket, 0);
-		read(kmem, &socket, sizeof (socket));
+		read(kmem, &sockb, sizeof (sockb));
 		if (istcp) {
 			klseek(kmem, (off_t)inpcb.inp_ppcb, 0);
 			read(kmem, &tcpcb, sizeof (tcpcb));
 		}
 		if (Aflag)
 			printf("%8x ", inpcb.inp_ppcb);
-		printf("%-5.5s %6d %6d ", name, socket.so_rcv.sb_cc,
-			socket.so_snd.sb_cc);
+		printf("%-5.5s %6d %6d ", name, sockb.so_rcv.sb_cc,
+			sockb.so_snd.sb_cc);
 		inetprint(&inpcb.inp_laddr, inpcb.inp_lport, name);
 		inetprint(&inpcb.inp_faddr, inpcb.inp_fport, name);
 		if (istcp) {
@@ -302,24 +302,15 @@ inetname(in)
 	struct netent *np;
 
 	if (!nflag && in.s_addr != INADDR_ANY) {
-		int net = inet_netof(in), subnet = inet_subnetof(in);
+		int net = inet_netof(in);
 		int lna = inet_lnaof(in);
 
 		if (lna == INADDR_ANY) {
 			np = getnetbyaddr(net, AF_INET);
 			if (np)
 				cp = np->n_name;
-		} else if (subnet != net && (lna & 0xff) == 0 &&
-		    (np = getnetbyaddr(subnet, AF_INET))) {
-			struct in_addr subnaddr, inet_makeaddr();
-
-			subnaddr = inet_makeaddr(subnet, INADDR_ANY);
-			if (bcmp(&in, &subnaddr, sizeof (in)) == 0)
-				cp = np->n_name;
-			else
-				goto host;
-		} else {
-host:
+		}
+		if (cp == 0) {
 			hp = gethostbyaddr(&in, sizeof (in), AF_INET);
 			if (hp)
 				cp = hp->h_name;
@@ -330,9 +321,10 @@ host:
 	else if (cp)
 		strcpy(line, cp);
 	else {
-		u_char *ucp = (u_char *)&in;
-
-		sprintf(line, "%u.%u.%u.%u", ucp[0], ucp[1], ucp[2], ucp[3]);
+		in.s_addr = ntohl(in.s_addr);
+#define C(x)	((x) & 0xff)
+		sprintf(line, "%u.%u.%u.%u", C(in.s_addr >> 24),
+			C(in.s_addr >> 16), C(in.s_addr >> 8), C(in.s_addr));
 	}
 	return (line);
 }
