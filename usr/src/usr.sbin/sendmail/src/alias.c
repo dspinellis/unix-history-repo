@@ -10,7 +10,7 @@
 # include <pwd.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)alias.c	8.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)alias.c	8.25 (Berkeley) %G%";
 #endif /* not lint */
 
 
@@ -119,11 +119,20 @@ alias(a, sendq, e)
 	if (!bitnset(M_USR_UPPER, a->q_mailer->m_flags))
 		makelower(obuf);
 	owner = aliaslookup(obuf, e);
-	if (owner != NULL)
+	if (owner == NULL)
+		return;
+
+	/* reflect owner into envelope sender */
+	if (strpbrk(owner, ",:/|\"") != NULL)
+		owner = obuf;
+	a->q_owner = newstr(owner);
+
+	/* announce delivery to this alias; NORECEIPT bit set later */
+	if (e->e_xfp != NULL)
 	{
-		if (strpbrk(owner, ",:/|\"") != NULL)
-			owner = obuf;
-		a->q_owner = newstr(owner);
+		fprintf(e->e_xfp, "Message delivered to mailing list %s\n",
+			a->q_paddr);
+		e->e_flags |= EF_SENDRECEIPT;
 	}
 }
 /*

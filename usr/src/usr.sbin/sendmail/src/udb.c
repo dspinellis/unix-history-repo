@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef USERDB
-static char sccsid [] = "@(#)udb.c	8.7 (Berkeley) %G% (with USERDB)";
+static char sccsid [] = "@(#)udb.c	8.8 (Berkeley) %G% (with USERDB)";
 #else
-static char sccsid [] = "@(#)udb.c	8.7 (Berkeley) %G% (without USERDB)";
+static char sccsid [] = "@(#)udb.c	8.8 (Berkeley) %G% (without USERDB)";
 #endif
 #endif
 
@@ -266,6 +266,15 @@ udbexpand(a, sendq, e)
 			a->q_owner = xalloc(info.size + 1);
 			bcopy(info.data, a->q_owner, info.size);
 			a->q_owner[info.size] = '\0';
+
+			/* announce delivery; NORECEIPT bit set later */
+			if (e->e_xfp != NULL)
+			{
+				fprintf(e->e_xfp,
+					"Message delivered to mailing list %s\n",
+					a->q_paddr);
+				e->e_flags |= EF_SENDRECEIPT;
+			}
 			break;
 
 #ifdef HESIOD
