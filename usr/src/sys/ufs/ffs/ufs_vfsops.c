@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_vfsops.c	7.36 (Berkeley) %G%
+ *	@(#)ufs_vfsops.c	7.37 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -188,11 +188,10 @@ ufs_mount(mp, path, data, ndp)
  * Common code for mount and mountroot
  */
 mountfs(devvp, mp)
-	struct vnode *devvp;
+	register struct vnode *devvp;
 	struct mount *mp;
 {
 	register struct ufsmount *ump;
-	struct ufsmount *fmp = NULL;
 	struct buf *bp = NULL;
 	register struct fs *fs;
 	dev_t dev = devvp->v_rdev;
@@ -203,15 +202,20 @@ mountfs(devvp, mp)
 	int needclose = 0;
 	int ronly = (mp->m_flag & M_RDONLY) != 0;
 
-	for (ump = &mounttab[0]; ump < &mounttab[NMOUNT]; ump++) {
-		if (ump->um_fs == NULL) {
-			if (fmp == NULL)
-				fmp = ump;
-		} else if (dev == ump->um_dev) {
-			return (EBUSY);		/* needs translation */
-		}
-	}
-	if ((ump = fmp) == NULL)
+	/*
+	 * Disallow multiple mounts of the same device.
+	 * Disallow mounting of a device that is currently in use.
+	 * Flush out any old buffers remaining from a previous use.
+	 */
+	if (error = mountedon(devvp))
+		return (error);
+	if (vcount(devvp) > 1)
+		return (EBUSY);
+	vinvalbuf(devvp, 1);
+	for (ump = &mounttab[0]; ump < &mounttab[NMOUNT]; ump++)
+		if (ump->um_fs == NULL)
+			break;
+	if (ump >= &mounttab[NMOUNT])
 		return (EMFILE);		/* needs translation */
 	ump->um_fs = (struct fs *)1;		/* just to reserve this slot */
 	error = VOP_OPEN(devvp, ronly ? FREAD : FREAD|FWRITE, NOCRED);
@@ -281,6 +285,7 @@ mountfs(devvp, mp)
 	ump->um_dev = dev;
 	ump->um_devvp = devvp;
 	ump->um_qinod = NULL;
+	devvp->v_specinfo->si_flags |= SI_MOUNTEDON;
 
 	/* Sanity checks for old file systems.			   XXX */
 	fs->fs_npsect = MAX(fs->fs_npsect, fs->fs_nsect);	/* XXX */
@@ -352,10 +357,34 @@ ufs_unmount(mp, flags)
 	free((caddr_t)fs, M_SUPERBLK);
 	ump->um_fs = NULL;
 	ump->um_dev = NODEV;
+	ump->um_devvp->v_specinfo->si_flags &= ~SI_MOUNTEDON;
 	error = VOP_CLOSE(ump->um_devvp, ronly ? FREAD : FREAD|FWRITE, NOCRED);
 	vrele(ump->um_devvp);
 	ump->um_devvp = (struct vnode *)0;
 	return (error);
+}
+
+/*
+ * Check to see if a filesystem is mounted on a block device.
+ */
+mountedon(vp)
+	register struct vnode *vp;
+{
+	register struct vnode *vq;
+
+	if (vp->v_specinfo->si_flags & SI_MOUNTEDON)
+		return (EBUSY);
+	if (vp->v_flag & VALIASED) {
+		for (vq = *vp->v_specinfo->si_hashchain; vq;
+		     vq = vq->v_specinfo->si_specnext) {
+			if (vq->v_rdev != vp->v_rdev ||
+			    vq->v_type != vp->v_type)
+				continue;
+			if (vq->v_specinfo->si_flags & SI_MOUNTEDON)
+				return (EBUSY);
+		}
+	}
+	return (0);
 }
 
 /*
