@@ -3,14 +3,15 @@ cpyr	Copyright (c) 1983  Eric P. Allman
 cpyr	Copyright (c) 1988 The Regents of the University of California.
 cpyr	All rights reserved.
 cpyr	
-cpyr	@(#)sendmail.hf	4.6 (Berkeley) %G%
+cpyr	@(#)sendmail.hf	4.7 (Berkeley) %G%
 cpyr
 smtp	Commands:
 smtp		HELO	MAIL	RCPT	DATA	RSET
 smtp		NOOP	QUIT	HELP	VRFY	EXPN
+smtp		VERB
 smtp	For more info use "HELP <topic>".
 smtp	To report bugs in the implementation send email to
-smtp	sendmail@okeeffe.CS.Berkeley.EDU.
+smtp		sendmail@CS.Berkeley.EDU.
 smtp	For local information send email to Postmaster at your site.
 help	HELP [ <topic> ]
 help		The HELP command gives help info.
@@ -28,6 +29,10 @@ rset	RSET
 rset		Resets the system.
 quit	QUIT
 quit		Exit sendmail (SMTP).
+verb	VERB
+verb		Go into verbose mode.  This sends 0xy responses that are
+verb		are not RFC821 standard (but should be)  They are recognized
+verb		by humans and other sendmail implementations.
 vrfy	VRFY <recipient>
 vrfy		Not implemented to protocol.  Gives some sexy
 vrfy		information.
