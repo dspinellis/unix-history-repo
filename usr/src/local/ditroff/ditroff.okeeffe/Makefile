@@ -1,10 +1,10 @@
 #
-#	@(#)Makefile	1.3	(CWI)	85/10/02
+#	@(#)Makefile	1.4	(CWI)	85/10/25
 #
 CFLAGS= -DINCORE -g
 DESTDIR=
 BINDIR=/usr/local
-SUBDIR= utilities devhar eqn pic ideal tbl
+SUBDIR= utilities devhar eqn pic ideal grap tbl
 TFILES=n1.o n2.o n3.o n4.o n5.o t6.o n7.o n8.o n9.o t10.o ni.o nii.o hytab.o suftab.o
 
 all:	ditroff ${SUBDIR}
