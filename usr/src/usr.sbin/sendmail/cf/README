@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.22 (Berkeley) %G%
+		@(#)README	8.23 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -13,7 +13,7 @@ there is an ``OLDSENDMAIL'' mode, they haven't really been tested on
 old versions of sendmail and cannot be expected to work well.
 
 These configuration files are probably not as general as previous
-versions, and don't handle as many of the wierd cases automagically.
+versions, and don't handle as many of the weird cases automagically.
 I was able to simplify by them for two reasons.  First, the network
 has become more consistent -- for example, at this point, everyone
 on the internet is supposed to be running a name server, so hacks to
@@ -23,8 +23,8 @@ a long-haul protocol.  I realize that this is not universal, but it
 does describe the vast majority of sites with which I am familiar,
 including those outside the US.
 
-Of course, the downside of this is that if you do live in a wierd
-world, things are going to get wierder for you.  I'm sorry about that,
+Of course, the downside of this is that if you do live in a weird
+world, things are going to get weirder for you.  I'm sorry about that,
 but at the time we at Berkeley had a problem, and it seemed like the
 right thing to do.
 
@@ -180,11 +180,6 @@ FAX_MAILER_PATH		[/usr/local/lib/fax/mailfax] The program used to
 			submit FAX messages.
 FAX_MAILER_MAX		[100000] The maximum size message accepted for
 			transmission by FAX.
-HOSTMAP_SPEC		[dbm -o /etc/hostmap] The value for the builtin
-			hostmap key definition.  You can redefine this
-			to change the class, flags, and filename of
-			the hostmap.  The default flag (-o) makes this
-			map optional.
 
 +---------+
 | DOMAINS |
@@ -555,7 +550,7 @@ will cause addresses of the form "decvax!user" and "research!user"
 to be converted to "user@decvax.dec.com" and "user@research.att.com"
 respectively.
 
-This could also be used to look hosts in a database map:
+This could also be used to look up hosts in a database map:
 
 	LOCAL_RULE_3
 	R$* < @ $+ > $*		$: $1 < @ $(hostmap $2 $) > $3
@@ -593,9 +588,9 @@ You can have your host masquerade as another using
 
 	MASQUERADE_AS(host.domain)
 
-This causes outgoing SMTP mail to be labelled as coming from the
+This causes outgoing SMTP mail to be labeled as coming from the
 indicated domain, rather than $j.  One normally masquerades as one
-of your own subdomains (for example, it's unlikely that I would
+of one's own subdomains (for example, it's unlikely that I would
 choose to masquerade as an MIT site).
 
 The masquerade name is not normally canonified, so it is important
@@ -1089,7 +1084,7 @@ feature		These hold special orthogonal features that you might
 hack		Local hacks.  These can be referenced using the HACK
 		macro.  They shouldn't be of more than voyeuristic
 		interest outside the .Berkeley.EDU domain, but who knows?
-		We've all got our own peccadilloes.
+		We've all got our own peccadillos.
 
 siteconfig	Site configuration -- e.g., tables of locally connected
 		UUCP sites.
