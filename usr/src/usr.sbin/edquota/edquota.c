@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)edquota.c	4.2 (Berkeley, from Melbourne) %G%";
+static char sccsid[] = "@(#)edquota.c	4.3 (Berkeley, from Melbourne) %G%";
 #endif
 
 /*
@@ -316,11 +316,11 @@ getdiscq(uid, dq, dqf)
 		if (stat(qfilename, &statb) < 0 || statb.st_dev != fsdev)
 			continue;
 		if (quota(Q_GETDLIM, uid, fsdev, &dqblk) != 0) {
-			register fd = open(qfilename, FRDONLY);
+			register fd = open(qfilename, O_RDONLY);
 
 			if (fd < 0)
 				continue;
-			lseek(fd, (long)(uid * sizeof dqblk), FSEEK_ABSOLUTE);
+			lseek(fd, (long)(uid * sizeof dqblk), L_SET);
 			if (read(fd, &dqblk, sizeof dqblk) != sizeof (dqblk)) {
 				close(fd);
 				continue;
