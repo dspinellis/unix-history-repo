@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.2 (Berkeley) %G%
+#	@(#)Makefile.inc	5.3 (Berkeley) %G%
 
 # sys sources
 .PATH: ${.CURDIR}/${MACHINE}/sys ${.CURDIR}/sys
@@ -31,7 +31,7 @@ OBJS+=	${BLDASM}
 POBJS+=	${BLDASM:.o=.po}
 CLEANFILES+=${BLDASM} ${BLDASM:.o=.po}
 
-${BLDASM}: /usr/include/sys/syscall.h
+${BLDASM}: ${.CURDIR}/${MACHINE}/SYS.h /usr/include/sys/syscall.h
 	@echo creating ${.PREFIX}.o
 	@printf '#include "SYS.h"\nSYSCALL(${.PREFIX})\nret\n' | \
 	    ${CPP} ${CFLAGS:M-[ID]*} ${AINC} | ${AS} -o ${.PREFIX}.o
