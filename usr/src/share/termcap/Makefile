@@ -1,4 +1,4 @@
-# @(#)Makefile	1.2	%G%
+# @(#)Makefile	1.3	%G%
 #
 # reorder gives an editor command for most common terminals
 # (in reverse order from n'th to 1'st most commonly used)
@@ -6,7 +6,7 @@
 #
 DESTDIR = /etc
 termcap.obj: reorder termcap.src
-	ed - termcap.src < reorder
+	ex - termcap.src < reorder
 
 install: termcap.obj
 	cp termcap.obj ${DESTDIR}/termcap
