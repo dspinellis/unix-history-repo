@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)man.conf.5	5.2 (Berkeley) %G%
+.\"	@(#)man.conf.5	5.3 (Berkeley) %G%
 .\"
 .TH MAN.CONF 5 ""
 .SH NAME
@@ -38,8 +38,6 @@ The first type of line is a ``section'' line, which contains a
 section name followed by a directory path.
 Lines in this format specify that manual pages for the section
 may be found in the directory.
-Multiple specifications for a section are cumulative and the
-directories are searched in the order listed in the file.
 .PP
 Directories named with a trailing slash character (``/'') are expected
 to contain subdirectories (see the keyword ``_subdir'' below) instead
@@ -80,6 +78,10 @@ by the
 and
 .IR whatis (1)
 commands.
+.PP
+Multiple specifications for all types of lines (except for ``_version'')
+are cumulative and the entries are used in the order listed in the file;
+multiple entries may be listed per line, as well.
 .PP
 Empty lines or lines whose first non-whitespace character is a hash
 mark (``#'') are ignored.
