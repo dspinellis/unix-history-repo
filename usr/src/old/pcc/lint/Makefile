@@ -1,5 +1,5 @@
 #
-#	@(#)Makefile	1.18	(Berkeley)	%G%
+#	@(#)Makefile	1.19	(Berkeley)	%G%
 #
 M=/usr/src/lib/mip
 P=/usr/src/lib/pcc/pcc.${MACHINE}
@@ -104,13 +104,13 @@ lintall:
 		$M/pftn.c $M/trees.c $M/optim.c lint.c
 
 install: all SHELL
-	install -s -o bin -g src -m 755 lpass1 ${DESTDIR}/usr/lib/lint/lint1
-	install -s -o bin -g src -m 755 lpass2 ${DESTDIR}/usr/lib/lint/lint2
-	for i in llib-*; do install -c -o bin -g src -m 644 $$i ${DESTDIR}/usr/lib/lint; done
+	install -s -o bin -g bin -m 755 lpass1 ${DESTDIR}/usr/lib/lint/lint1
+	install -s -o bin -g bin -m 755 lpass2 ${DESTDIR}/usr/lib/lint/lint2
+	for i in llib-*; do install -c -o bin -g bin -m 644 $$i ${DESTDIR}/usr/lib/lint; done
 	-rm -f ${DESTDIR}/usr/lib/lint/llib-ltermlib*
 	ln -s llib-ltermcap ${DESTDIR}/usr/lib/lint/llib-ltermlib
 	ln -s llib-ltermcap.ln ${DESTDIR}/usr/lib/lint/llib-ltermlib.ln
-	install -c -o bin -g src -m 755 SHELL ${DESTDIR}/usr/bin/lint
+	install -c -o bin -g bin -m 755 SHELL ${DESTDIR}/usr/bin/lint
 
 shrink:
 	rm -f *.o errs rodata.c pcctokens pcclocal.h
