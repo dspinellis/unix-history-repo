@@ -1,4 +1,4 @@
-/*	draw.c	1.9	84/11/27
+/*	draw.c	1.10	85/12/16
  *
  *	This file contains the functions for producing the graphics
  *   images in the canon/imagen driver for ditroff.
@@ -99,47 +99,47 @@ register int d;
  *----------------------------------------------------------------------------*/
 
 drawellip(hd, vd)
-int hd;
-int vd;
+register int hd;
+register int vd;
 {
     double xs, ys, xepsilon, yepsilon;	/* ellipse-calculation vairables */
     register int basex;			/* center of the ellipse */
     register int basey;
-    register int mask;			/* used to skip points on the ellipse */
     register int extent;		/* number of points to produce */
 
 
-    basex = hpos + (hd >> 1);	/* set the center of the ellipse */
+    basex = hpos;		/* set the center of the ellipse */
     basey = vpos;
     hmot (hd);			/* troff motion done here, once. */
+    if (!output) return;
     if ((hd = hd >> 1) < 1) hd = 1;	/* hd and vd are like radii */
+    basex += ++hd;
     if ((vd = vd >> 1) < 1) vd = 1;
-    ys = (double) vd;		/* initial distances from center to perimeter */
+    ys = (double) ++vd;		/* initial distances from center to perimeter */
     xs = 0.0;
 				/* calculate drawing parameters */
     if (vd > hd) {
-	xepsilon = (double) hd / (double) (vd * vd);
-	yepsilon = 1.0 / (double) hd;
-	extent = 6 * vd + (vd >> 1);
-	mask = (1 << (int) log10(5.0 / xepsilon + 1.0)) - 1;
+	xepsilon = 4.0 * (double) hd / (double) (vd * vd);
+	yepsilon = 4.0 / (double) hd;
+	extent = (int) (1.575 * (double) vd);
     } else {
-	xepsilon = 1.0 / (double) vd;
-	yepsilon = (double) vd / (double) (hd * hd);
-	extent = 6 * hd + (hd >> 1);
-	mask = (1 << (int) log10(5.0 / yepsilon + 1.0)) - 1;
+	xepsilon = 4.0 / (double) vd;
+	yepsilon = 4.0 * (double) vd / (double) (hd * hd);
+	extent = (int) (1.575 * (double) hd);
     }
 
     byte(ASPATH);			/* start path definition */
-    word(2 + (extent-1) / (mask+1));	/* number of points */
+    word(1 + extent);			/* number of points */
     word(xbound(basex));
-    word(ybound(basey + vd));
-    while (--extent >= 0) {
+    vd += basey;
+    word(ybound(vd));
+    while (extent--) {
 	xs += xepsilon * ys;
 	ys -= yepsilon * xs;
-	if (!(extent&mask)) {		/* put out a point on ellipse */
-	    word(xbound(basex + (int)(0.5 + xs)));
-	    word(ybound(basey + (int)(0.5 + ys)));
-	}
+	hd = basex + (int) xs;
+	vd = basey + (int) ys;
+	word(xbound(hd));	/* put out a point on ellipse */
+	word(ybound(hd));
     }
     byte(ADRAW);		/* now draw the arc */
     byte(15);
@@ -233,11 +233,11 @@ int pic;
 				/* now, actually DO the curve */
     if (output) {
 	if (pic > 0)
-	    picurve(x, y, npts);
+	    picurve(&x[0], &y[0], npts);
 	else if (pic < 0)
-	    polygon(x, y, npts);
+	    polygon(&x[0], &y[0], npts);
 	else
-	    HGCurve(x, y, npts);
+	    HGCurve(&x[0], &y[0], npts);
     }
 }
 
@@ -295,9 +295,9 @@ extern int laststipmem;		/* this is set, before this routine, to the */
 				/* stipple member number to be printed.  If */
 				/* it's zero, the path should not be filled */
 polygon(x, y, npts)
-int x[MAXPOINTS];
-int y[MAXPOINTS];
-int npts;
+register int *x;
+register int *y;
+register int npts;
 {
 	register int i;
 
@@ -307,9 +307,11 @@ int npts;
 	}
 	byte(ASPATH);		/* set up to send the path */
 	word(npts);
-	for (i = 1; i <= npts; i++) {	/* send the path */
-		word(xbound(x[i]));
-		word(ybound(y[i]));
+	while (npts--) {	/* send the path */
+		x++;
+		y++;
+		word(xbound(*x));
+		word(ybound(*y));
 	}
 	if (polyborder && linmod == SOLID) {
 		byte(ADRAW);	/* draw the border, if requested */
@@ -331,18 +333,17 @@ int npts;
  *----------------------------------------------------------------------------*/
 
 picurve (x, y, npts)
-int x[MAXPOINTS];
-int y[MAXPOINTS];
+register int *x;
+register int *y;
 int npts;
 {
-    register int i;		/* line segment traverser */
-    register float w;		/* position factor */
-    register int xp;		/* current point (and intermediary) */
-    register int yp;
-    register int j;		/* inner curve segment traverser */
     register int nseg;		/* effective resolution for each curve */
-    register int pxp, pyp;	/* "previous" line segments' end */
-    float t1, t2, t3;		/* calculation temps */
+    register int xp;		/* current point (and temporary) */
+    register int yp;
+    int pxp, pyp;		/* previous point (to make lines from) */
+    int i;			/* inner curve segment traverser */
+    double w;			/* position factor */
+    double t1, t2, t3;		/* calculation temps */
 
 
     if (x[1] == x[npts] && y[1] == y[npts]) {
@@ -357,29 +358,29 @@ int npts;
 	y[npts + 1] = y[npts];
     }
 
-    for (i = 0; i < npts; i++) {	/* traverse the line segments */
-	xp = x[i] - x[i+1];
-	yp = y[i] - y[i+1];
-	nseg = (int) sqrt((double)(xp * xp + yp * yp));
-	xp = x[i+1] - x[i+2];
-	yp = y[i+1] - y[i+2];		/* "nseg" is the number of line */
-					/* segments that will be drawn for */
-					/* each curve segment.  ">> 3" is */
-					/* dropping the resolution ( == / 8) */
-	nseg = (nseg + (int) sqrt((double)(xp * xp + yp * yp))) >> 3;
+    pxp = (x[0] + x[1]) / 2;		/* make the last point pointers */
+    pyp = (y[0] + y[1]) / 2;		/* point to the start of the 1st line */
 
-	pxp = (x[i]+x[i+1]+1) >> 1;	/* the start of the first line seg */
-	pyp = (y[i]+y[i+1]+1) >> 1;
-	for (j = 1; j <= nseg; j++) {
-	    w = (float) j / (float) nseg;
-	    t1 = 0.5 * w * w;
-	    w -= 0.5;
-	    t2 = 0.75 - w * w ;
-	    w -= 0.5;
-	    t3 = 0.5 * w * w;
-	    xp = t1 * x[i+2] + t2 * x[i+1] + t3 * x[i] + 0.5;
-	    yp = t1 * y[i+2] + t2 * y[i+1] + t3 * y[i] + 0.5;
-	    HGtline (pxp, pyp, xp, yp);
+    for (; npts--; x++, y++) {		/* traverse the line segments */
+	xp = x[0] - x[1];
+	yp = y[0] - y[1];
+	nseg = (int) sqrt((double)(xp * xp + yp * yp));
+	xp = x[1] - x[2];
+	yp = y[1] - y[2];		/* "nseg" is the number of line */
+					/* segments that will be drawn for */
+					/* each curve segment.  ">> 4" is */
+					/* dropping the resolution ( == / 16) */
+	nseg = (nseg + (int) sqrt((double)(xp * xp + yp * yp))) >> 4;
+
+	for (i = 1; i < nseg; i++) {
+	    w = (double) i / (double) nseg;
+	    t1 = w * w;
+	    t3 = t1 + 1.0 - (w + w);
+	    t2 = 2.0 - (t3 + t1);
+	    xp = (((int) (t1 * x[2] + t2 * x[1] + t3 * x[0])) + 1) / 2;
+	    yp = (((int) (t1 * y[2] + t2 * y[1] + t3 * y[0])) + 1) / 2;
+
+	    HGtline(pxp, pyp, xp, yp);
 	    pxp = xp;
 	    pyp = yp;
 	}
@@ -626,8 +627,8 @@ int npoints;				/* number of valid points */
 #define PointsPerInterval 32
 
 HGCurve(x, y, numpoints)
-int x[MAXPOINTS];
-int y[MAXPOINTS];
+int *x;
+int *y;
 int numpoints;
 {
 	float h[MAXPOINTS], dx[MAXPOINTS], dy[MAXPOINTS];
