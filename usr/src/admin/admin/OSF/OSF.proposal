@@ -1,4 +1,4 @@
-.\"	@(#)OSF.proposal	1.1	89/09/06
+.\"	@(#)OSF.proposal	1.2	89/10/27
 .if n \{\
 .ND
 .rm CH
@@ -18,7 +18,8 @@
 
 .LP
 .nf
-Ira Goldstein
+Dr. Ira Goldstein
+Open Software Foundation
 11 Cambridge Center
 Cambridge, MA 02142
 .sp 1
@@ -36,7 +37,7 @@ Berkeley, CA 94720
 email: mckusick@Berkeley.EDU
 .sp 2
 .LP
-Dear Mr. Goldstein,
+Dear Dr. Goldstein,
 .PP
 I am writing to you in my role as the head of operating
 system and networking research for the \s-1UNIX\s0 project in the Computer
@@ -53,7 +54,7 @@ can continue our work at the university.
 .PP
 Our strategy is to get three sources of funding,
 each of which would provide approximately one third of our annual budget.
-Annual grants on the order of $400,000 would provide roughly
+Annual gifts on the order of $250,000 would provide roughly
 a third of the budget needed by \s-1CSRG\s0
 for salaries and benefits, maintenance and network access fees,
 travel and other expenses.
