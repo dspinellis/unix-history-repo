@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ftp.c	4.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftp.c	4.5 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -172,8 +172,10 @@ getreply(expecteof)
 			if (n == 0)
 				n = c;
 		}
-		if (verbose || n == '5')
+		if (verbose || n == '5') {
 			putchar(c);
+			(void) fflush (stdout);
+		}
 		if (continuation && code != originalcode) {
 			if (originalcode == 0)
 				originalcode = code;
@@ -212,10 +214,10 @@ sendrequest(cmd, local, remote)
 	FILE *fin, *dout, *popen();
 	int (*closefunc)(), pclose(), fclose(), (*oldintr)();
 	char buf[BUFSIZ];
-	register int bytes = 0, c;
+	register int bytes = 0;
+	register int c, d;
 	struct stat st;
 	struct timeval start, stop;
-	extern int errno;
 
 	closefunc = NULL;
 	if (setjmp(sendabort))
@@ -259,15 +261,15 @@ sendrequest(cmd, local, remote)
 
 	case TYPE_I:
 	case TYPE_L:
-		errno = 0;
+		errno = d = 0;
 		while ((c = read(fileno (fin), buf, sizeof (buf))) > 0) {
-			if (write(fileno (dout), buf, c) < 0)
+			if ((d = write(fileno (dout), buf, c)) < 0)
 				break;
 			bytes += c;
 		}
 		if (c < 0)
 			perror(local);
-		else if (errno)
+		if (d < 0)
 			perror("netout");
 		break;
 
@@ -288,7 +290,7 @@ sendrequest(cmd, local, remote)
 		}
 		if (ferror(fin))
 			perror(local);
-		else if (ferror(dout))
+		if (ferror(dout))
 			perror("netout");
 		break;
 	}
@@ -323,10 +325,10 @@ recvrequest(cmd, local, remote)
 {
 	FILE *fout, *din, *popen();
 	char buf[BUFSIZ];
-	int (*closefunc)(), pclose(), fclose(), (*oldintr)(), c;
+	int (*closefunc)(), pclose(), fclose(), (*oldintr)();
 	register int bytes = 0;
+	register int c, d;
 	struct timeval start, stop;
-	extern int errno;
 
 	closefunc = NULL;
 	if (setjmp(recvabort))
@@ -374,15 +376,15 @@ recvrequest(cmd, local, remote)
 
 	case TYPE_I:
 	case TYPE_L:
-		errno = 0;
+		errno = d = 0;
 		while ((c = read(fileno(din), buf, sizeof (buf))) > 0) {
-			if (write(fileno(fout), buf, c) < 0)
+			if ((d = write(fileno(fout), buf, c)) < 0)
 				break;
 			bytes += c;
 		}
 		if (c < 0)
 			perror("netin");
-		if (errno)
+		if (d < 0)
 			perror(local);
 		break;
 
