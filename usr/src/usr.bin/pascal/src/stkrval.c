@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)stkrval.c 1.6 %G%";
+static char sccsid[] = "@(#)stkrval.c 1.7 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -151,20 +151,20 @@ cstrng:
 				cp1 = cp;
 				for (c = 0; *cp++; c++)
 					continue;
-				w = 0;
+				w = c;
 				if (contype != NIL && !opt('s')) {
 					if (width(contype) < c && classify(contype) == TSTR) {
 						error("Constant string too long");
 						return (NIL);
 					}
-					w = width(contype) - c;
+					w = width(contype);
 				}
 #				ifdef OBJ
-				    put(2, O_LVCON, lenstr(cp1, w));
-				    putstr(cp1, w);
+				    put(2, O_LVCON, lenstr(cp1, w - c));
+				    putstr(cp1, w - c);
 #				endif OBJ
 #				ifdef PC
-				    putCONG( cp1 , c + w , LREQ );
+				    putCONG( cp1 , w , LREQ );
 #				endif PC
 				/*
 				 * Define the string temporarily
@@ -172,7 +172,7 @@ cstrng:
 				 * width.
 				 * cleaned out by stat.
 				 */
-				q = defnl(0, STR, 0, c);
+				q = defnl(0, STR, 0, w);
 				q->type = q;
 				return (q);
 			}
