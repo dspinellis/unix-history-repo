@@ -1,4 +1,10 @@
-.\"	@(#)Cover.infopacket	1.2	%G%
+.\"	@(#)Cover.infopacket	1.3	%G%
+.nr PS 11
+.ps 11
+.nr VS 13
+.vs 11p
+.nr LL 6.5i
+.ll 6.5i
 .so HEADERS
 .HE
 .LP
@@ -38,12 +44,12 @@ to work unchanged on 4.4BSD.
 Unlike past test releases, 4.3BSD-Reno is being made generally available
 to 4.3BSD licensees,
 and 4.3BSD-Reno may be redistributed and used in released products
-(within the usual licensinge constraints).
+(within the usual licensing constraints).
 However, you will have to upgrade any code that you use from
 4.3BSD-Reno to the 4.4BSD code within one year of the release of 4.4BSD.
 We appreciate your help in this debugging effort and look
 forward to hearing from you.
-Please send your comments to reno43_bugs@okeeffe.Berkeley.EDU.
+Please send your comments to reno43-bugs@okeeffe.Berkeley.EDU.
 We regret that changes documents are not available;
 the next section outlines the major changes available in 4.3BSD-Reno.
 .PP
