@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -64,7 +64,7 @@ main(argc, argv)
 	register c;
 
 	if (argv[0][0] == 'a')
-		howfile =+ 9;
+		howfile += 9;
 	argc--, argv++;
 	if (argc == 0) {
 		execl("/bin/cat", "cat", howfile, 0);
@@ -194,8 +194,8 @@ usage:
 
 		cp = (stdoutn = "/tmp/pxp00000") + 13;
 		signal(2, onintr);
-		for (c = getpid(); c; c =/ 10)
-			*--cp =| (c % 10);
+		for (c = getpid(); c; c /= 10)
+			*--cp |= (c % 10);
 		if (freopen(stdoutn, "w", stdout) == NULL)
 bad:
 			perror(stdoutn), exit(1);

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)yycomm.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)yycomm.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -286,7 +286,7 @@ putcm()
 	cp = cp->cmnext;
 	while (cp->cmseqid < Seqid || cp->cmseqid == Seqid && cp->cml->cmcol < Col) {
 		putone(cp);
-		i =| 1 << cp->cmjust;
+		i |= 1 << cp->cmjust;
 		if (cp->cmnext == cp) {
 			cmhp = NIL;
 			break;
@@ -397,8 +397,8 @@ oneline(margin, cml)
 				i++;
 				continue;
 			case '\t':
-				i =+ 8;
-				i =& ~7;
+				i += 8;
+				i &= ~7;
 				if (i < margin)
 					continue;
 				ppop("\t");
