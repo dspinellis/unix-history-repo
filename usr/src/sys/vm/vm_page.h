@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_page.h	7.4 (Berkeley) %G%
+ *	@(#)vm_page.h	7.5 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -173,23 +173,24 @@ simple_lock_data_t	vm_page_queue_lock;	/* lock on active and inactive
 extern
 simple_lock_data_t	vm_page_queue_free_lock;
 						/* lock on free page queue */
-vm_offset_t	vm_page_startup();
-vm_page_t	vm_page_lookup();
-vm_page_t	vm_page_alloc();
-void		vm_page_init();
-void		vm_page_free();
-void		vm_page_activate();
-void		vm_page_deactivate();
-void		vm_page_rename();
-void		vm_page_replace();
+void		vm_page_startup __P((vm_offset_t *start, vm_offset_t *end));
+vm_page_t	vm_page_lookup __P((vm_object_t object, vm_offset_t offset));
+vm_page_t	vm_page_alloc __P((vm_object_t object, vm_offset_t offset));
+void		vm_page_init __P((vm_page_t mem, vm_object_t object,
+			vm_offset_t offset));
+void		vm_page_free __P((vm_page_t mem));
+void		vm_page_activate __P((vm_page_t mem));
+void		vm_page_deactivate __P((vm_page_t mem));
+void		vm_page_rename __P((vm_page_t mem, vm_object_t new_object,
+			vm_offset_t new_offset));
 
-boolean_t	vm_page_zero_fill();
-void		vm_page_copy();
+boolean_t	vm_page_zero_fill __P((vm_page_t mem));
+void		vm_page_copy __P((vm_page_t src_mem, vm_page_t dst_mem));
 
-void		vm_page_wire();
-void		vm_page_unwire();
+void		vm_page_wire __P((vm_page_t mem));
+void		vm_page_unwire __P((vm_page_t mem));
 
-void		vm_set_page_size();
+void		vm_set_page_size __P((void));
 
 /*
  *	Functions implemented as macros
