@@ -156,8 +156,10 @@ main(argc, argv)
 	signal(SIGTERM, mcleanup);
 	un.sun_family = AF_UNIX;
 	strcpy(un.sun_path, _PATH_SOCKETNAME);
-	if (bind(funix,
-	     (struct sockaddr *)&un, strlen(un.sun_path) + 2) < 0) {
+#ifndef SUN_LEN
+#define SUN_LEN(unp) (strlen((unp)->sun_path) + 2)
+#endif
+	if (bind(funix, (struct sockaddr *)&un, SUN_LEN(&un)) < 0) {
 		syslog(LOG_ERR, "ubind: %m");
 		exit(1);
 	}

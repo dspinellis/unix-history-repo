@@ -43,7 +43,10 @@ startdaemon(printer)
 	}
 	un.sun_family = AF_UNIX;
 	strcpy(un.sun_path, _PATH_SOCKETNAME);
-	if (connect(s, (struct sockaddr *)&un, strlen(un.sun_path) + 2) < 0) {
+#ifndef SUN_LEN
+#define SUN_LEN(unp) (strlen((unp)->sun_path) + 2)
+#endif
+	if (connect(s, (struct sockaddr *)&un, SUN_LEN(&un)) < 0) {
 		perr("connect");
 		(void) close(s);
 		return(0);
