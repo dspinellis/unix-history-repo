@@ -1,4 +1,4 @@
-/*	kern_exec.c	4.2	83/06/02	*/
+/*	kern_exec.c	4.3	83/06/12	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -400,24 +400,26 @@ bad:
  */
 setregs()
 {
-	register int (**rp)();
-	register int i, sigmask;
+	register int i;
 	register struct proc *p = u.u_procp;
 
-	rp = &u.u_signal[1];
-	for (sigmask = 1; rp < &u.u_signal[NSIG]; sigmask <<= 1, rp++)
-		/* disallow masked signals to carry over? */
-		if (p->p_sigcatch & sigmask && (p->p_sigmask & sigmask) == 0) {
-			(void) spl6();
-			p->p_sigcatch &= ~sigmask;
-			*rp = SIG_DFL;
-			(void) spl0();
-		}
+	/*
+	 * Reset caught signals.  Held signals
+	 * remain held through p_sigmask.
+	 */
+	while (p->p_sigcatch) {
+		(void) spl6();
+		i = ffs(p->p_sigcatch);
+		p->p_sigcatch &= ~(1 << (i - 1));
+		u.u_signal[i] = SIG_DFL;
+		(void) spl0();
+	}
 #ifdef vax
-/*
+#ifdef notdef
+	/* should pass args to init on the stack */
 	for (rp = &u.u_ar0[0]; rp < &u.u_ar0[16];)
 		*rp++ = 0;
-*/
+#endif
 	u.u_ar0[PC] = u.u_exdata.ux_entloc+2;
 #endif
 #ifdef sun
