@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	8.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	8.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -102,6 +102,14 @@ parseaddr(addr, a, flags, delim, delimptr, e)
 
 	if (delimptr == NULL)
 		delimptr = &delimptrbuf;
+
+	if (strlen(addr) >= MAXNAME)
+	{
+		usrerr("Name too long, %d characters max", MAXNAME - 1);
+		if (tTd(20, 1))
+			printf("parseaddr-->NULL\n");
+		return NULL;
+	}
 
 	pvp = prescan(addr, delim, pvpbuf, delimptr);
 	if (pvp == NULL)
@@ -598,7 +606,11 @@ prescan(addr, delim, pvpbuf, delimptr)
 	}
 	CurEnv->e_to = saveto;
 	if (av[0] == NULL)
+	{
+		if (tTd(22, 1))
+			printf("prescan: null leading token\n");
 		return (NULL);
+	}
 	return (av);
 }
 /*
