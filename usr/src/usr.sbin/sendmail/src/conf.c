@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.115 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.116 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -347,7 +347,7 @@ setupmaps()
 		impl_map_lookup, impl_map_store);
 
 	/* access to system passwd file */
-	MAPDEF("user", NULL, 0,
+	MAPDEF("user", NULL, MCF_OPTFILE,
 		map_parseargs, user_map_open, null_map_close,
 		user_map_lookup, null_map_store);
 
