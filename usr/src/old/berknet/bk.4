@@ -2,14 +2,14 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)bk.4	4.1 (Berkeley) %G%
+.\"	@(#)bk.4	5.1 (Berkeley) %G%
 .\"
-.TH BK 4 5/11/81
+.TH BK 4 "1 September 1981"
 .UC 4
 .SH NAME
-bk \- line discipline for machine-machine communication
+bk \- line discipline for machine-machine communication (obsolete)
 .SH SYNOPSIS
-pseudo-device bk
+.B pseudo-device bk
 .SH DESCRIPTION
 This line discipline provides a replacement for the old and new
 tty drivers described in
@@ -17,8 +17,7 @@ tty drivers described in
 when high speed output to
 and especially input from another machine is to be transmitted
 over a asynchronous communications line.  The discipline
-was designed for use by the Berkeley network
-.IR net (1).
+was designed for use by the Berkeley network.
 It may be suitable for uploading of data from microprocessors into
 the system.  If you are going to send data over asynchronous
 communications lines at high speed into the system, you must
@@ -82,10 +81,3 @@ None.
 The Purdue uploading line discipline, which provides 8 bits and uses
 timeout's to terminate uploading should be incorporated into the standard
 system, as it is much more suitable for microprocessor connections.
-.PP
-Inclusion of this line discipline causes the system to use the input
-silos on dz's and dh's.  This causes problems with some terminals, which
-require ^S/^Q handshaking to operate but have inadequate buffering to
-tolerate even a small number of characters transmitted after they send
-a ^S.  In particular this problem existed on early VT100's
-(where, however, an ECO exists to fix this problem.)
