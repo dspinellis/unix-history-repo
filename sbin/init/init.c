@@ -211,6 +211,7 @@ top:
 			/* if we are about to be rebooted, then wait for it */
 			if (WIFSIGNALED(status) && WTERMSIG(status) == SIGKILL)
 				pause();
+			logwtmp("~", "reboot", "");
 		} else	{ status = 1;  sflag = 1; goto top; }
 	}
 	signal(SIGTERM, sterm);
