@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mci.c	6.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)mci.c	6.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -76,7 +76,7 @@ mci_cache(mci)
 
 	/* otherwise we may have to clear the slot */
 	if (*mcislot != NULL)
-		mci_uncache(mcislot);
+		mci_uncache(mcislot, TRUE);
 
 	*mcislot = mci;
 	mci->mci_flags |= MCIF_CACHED;
@@ -122,7 +122,7 @@ mci_scan(savemci)
 		{
 			/* connection idle too long -- close it */
 			bestmci = &MciCache[i];
-			mci_uncache(bestmci);
+			mci_uncache(bestmci, TRUE);
 			continue;
 		}
 		if (*bestmci == NULL)
@@ -139,13 +139,17 @@ mci_scan(savemci)
 **
 **	Parameters:
 **		mcislot -- the slot to empty.
+**		doquit -- if TRUE, send QUIT protocol on this connection.
+**			  if FALSE, we are assumed to be in a forked child;
+**				all we want to do is close the file(s).
 **
 **	Returns:
 **		none.
 */
 
-mci_uncache(mcislot)
+mci_uncache(mcislot, doquit)
 	register MCI **mcislot;
+	bool doquit;
 {
 	register MCI *mci;
 	extern ENVELOPE BlankEnvelope;
@@ -154,19 +158,45 @@ mci_uncache(mcislot)
 	if (mci == NULL)
 		return;
 	*mcislot = NULL;
-	mci->mci_flags &= ~MCIF_CACHED;
 
-	message(Arpa_Info, "Closing connection to %s", mci->mci_host);
+	if (doquit)
+	{
+		message(Arpa_Info, "Closing connection to %s", mci->mci_host);
 
-	/* only uses the envelope to flush the transcript file */
-	if (mci->mci_state != MCIS_CLOSED)
-		smtpquit(mci->mci_mailer, mci, &BlankEnvelope);
+		mci->mci_flags &= ~MCIF_CACHED;
+
+		/* only uses the envelope to flush the transcript file */
+		if (mci->mci_state != MCIS_CLOSED)
+			smtpquit(mci->mci_mailer, mci, &BlankEnvelope);
+	}
+	else
+	{
+		if (mci->mci_in != NULL)
+			fclose(mci->mci_in);
+		if (mci->mci_out != NULL)
+			fclose(mci->mci_out);
+		mci->mci_in = mci->mci_out = NULL;
+		mci->mci_state = MCIS_CLOSED;
+		mci->mci_exitstat = EX_OK;
+		mci->mci_errno = 0;
+		mci->mci_flags = 0;
+	}
 }
 /*
 **  MCI_FLUSH -- flush the entire cache
+**
+**	Parameters:
+**		doquit -- if TRUE, send QUIT protocol.
+**			  if FALSE, just close the connection.
+**		allbut -- but leave this one open.
+**
+**	Returns:
+**		none.
 */
 
-mci_flush()
+mci_flush(doquit, allbut)
+	bool doquit;
+	MCI *allbut;
 {
 	register int i;
 
@@ -174,7 +204,8 @@ mci_flush()
 		return;
 
 	for (i = 0; i < MaxMciCache; i++)
-		mci_uncache(&MciCache[i]);
+		if (allbut != MciCache[i])
+			mci_uncache(&MciCache[i], doquit);
 }
 /*
 **  MCI_GET -- get information about a particular host

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	6.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	6.13 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/types.h>
@@ -32,7 +32,7 @@ static char sccsid[] = "@(#)recipient.c	6.12 (Berkeley) %G%";
 **			these people into.
 **
 **	Returns:
-**		none
+**		The number of addresses actually on the list.
 **
 **	Side Effects:
 **		none.
@@ -50,6 +50,7 @@ sendtolist(list, ctladdr, sendq, e)
 	register ADDRESS *al;	/* list of addresses to send to */
 	bool firstone;		/* set on first address sent */
 	char delimiter;		/* the address delimiter */
+	int naddrs;
 
 	if (tTd(25, 1))
 	{
@@ -68,6 +69,7 @@ sendtolist(list, ctladdr, sendq, e)
 
 	firstone = TRUE;
 	al = NULL;
+	naddrs = 0;
 
 	for (p = list; *p != '\0'; )
 	{
@@ -107,9 +109,11 @@ sendtolist(list, ctladdr, sendq, e)
 		/* arrange to inherit full name */
 		if (a->q_fullname == NULL && ctladdr != NULL)
 			a->q_fullname = ctladdr->q_fullname;
+		naddrs++;
 	}
 
 	e->e_to = NULL;
+	return (naddrs);
 }
 /*
 **  RECIPIENT -- Designate a message recipient
@@ -586,6 +590,7 @@ include(fname, forwarding, ctladdr, sendq, e)
 	char *oldfilename = FileName;
 	int oldlinenumber = LineNumber;
 	register EVENT *ev = NULL;
+	int nincludes;
 	char buf[MAXLINE];
 	static int includetimeout();
 
@@ -648,6 +653,8 @@ include(fname, forwarding, ctladdr, sendq, e)
 	/* read the file -- each line is a comma-separated list. */
 	FileName = fname;
 	LineNumber = 0;
+	ctladdr->q_flags &= ~QSELFREF;
+	nincludes = 0;
 	while (fgets(buf, sizeof buf, fp) != NULL)
 	{
 		register char *p = strchr(buf, '\n');
@@ -667,10 +674,10 @@ include(fname, forwarding, ctladdr, sendq, e)
 #endif
 
 		AliasLevel++;
-		sendtolist(buf, ctladdr, sendq, e);
+		nincludes += sendtolist(buf, ctladdr, sendq, e);
 		AliasLevel--;
 	}
-	if (!bitset(QSELFREF, ctladdr->q_flags))
+	if (nincludes > 0 && !bitset(QSELFREF, ctladdr->q_flags))
 	{
 		if (tTd(27, 5))
 		{
@@ -728,7 +735,7 @@ sendtoargv(argv, e)
 				argv += 2;
 			}
 		}
-		sendtolist(p, (ADDRESS *) NULL, &e->e_sendqueue, e);
+		(void) sendtolist(p, (ADDRESS *) NULL, &e->e_sendqueue, e);
 	}
 }
 /*

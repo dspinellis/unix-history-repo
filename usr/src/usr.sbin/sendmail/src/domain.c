@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef NAMED_BIND
-static char sccsid[] = "@(#)domain.c	6.5 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	6.6 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	6.5 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	6.6 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -331,9 +331,10 @@ getcanonname(host, hbsize)
 		if (ret <= 0)
 		{
 			if (tTd(8, 8))
-				printf("\tNO: h_errno=%d\n", h_errno);
+				printf("\tNO: errno=%d, h_errno=%d\n",
+					errno, h_errno);
 
-			if (errno == ECONNREFUSED)
+			if (errno == ECONNREFUSED || h_errno == TRY_AGAIN)
 			{
 				/* the name server seems to be down */
 				h_errno = TRY_AGAIN;

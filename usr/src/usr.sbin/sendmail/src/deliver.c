@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -827,6 +827,9 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 			(void) signal(SIGHUP, SIG_IGN);
 			(void) signal(SIGTERM, SIG_DFL);
 
+			/* close any other cached connections */
+			mci_flush(FALSE, mci);
+
 			/* arrange to filter std & diag output of command */
 			if (clever)
 			{
@@ -1498,6 +1501,18 @@ sendall(e, mode)
 			exit(EX_OK);
 		}
 # endif /* LOCKF */
+
+		/*
+		**  Close any cached connections.
+		**
+		**	We don't send the QUIT protocol because the parent
+		**	still knows about the connection.
+		**
+		**	This should only happen when delivering an error
+		**	message.
+		*/
+
+		mci_flush(FALSE, NULL);
 
 		break;
 	}
