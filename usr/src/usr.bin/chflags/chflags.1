@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)chflags.1	5.1 (Berkeley) %G%
+.\"	@(#)chflags.1	5.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CHFLAGS 1
@@ -16,7 +16,7 @@
 .Nd change file flags
 .Sh SYNOPSIS
 .Nm chflags
-.Op Fl R
+.Op Fl HRh
 .Ar flags
 .Ar file ...
 .Sh DESCRIPTION
@@ -29,15 +29,26 @@ operand.
 .Pp
 The options are as follows:
 .Bl -tag -width Ds
+.It Fl H
+When encountering a symbolic link on the command line, follow it.  All other
+symbolic links encountered in the traversal are not followed.
 .It Fl R
 Traverse a file hierarchy.
 For each file that is of type directory,
 .Nm chflags
 changes the flags of all files in the file hierarchy below it followed
 by the flags of the directory itself.
+.It Fl h
+When encountering a symbolic link anywhere in the traversal, follow it.
 .El
 .Pp
-Symbolic links are not indirected through, nor are their flags altered.
+The flags of a symbolic link are immutable, so that unless the
+.Fl h
+or
+.Fl H
+flags are set,
+.Nm chflags
+on a symbolic link is a no-op.
 .Pp
 Only the owner of a file or the super-user is permitted to change
 the low 16-bits in the flags of a file.
