@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_extern.h	7.8 (Berkeley) %G%
+ *	@(#)ufs_extern.h	7.9 (Berkeley) %G%
  */
 
 struct buf;
@@ -30,15 +30,15 @@ char	*readdisklabel __P((dev_t, int (*)(), struct disklabel *));
 int	 setdisklabel __P((struct disklabel *, struct disklabel *, u_long));
 int	 writedisklabel __P((dev_t, int (*)(), struct disklabel *));
 
-int	 ufs_abortop __P((struct vop_abortop_args *)); /* XXX */
-int	 ufs_access __P((struct vop_access_args *)); /* XXX */
-int	 ufs_advlock __P((struct vop_advlock_args *)); /* XXX */
+int	 ufs_abortop __P((struct vop_abortop_args *));
+int	 ufs_access __P((struct vop_access_args *));
+int	 ufs_advlock __P((struct vop_advlock_args *));
 void	 ufs_bufstats __P((void));
 int	 ufs_checkpath __P((struct inode *, struct inode *, struct ucred *));
 int	 ufs_chmod __P((struct vnode *, int, struct ucred *, struct proc *));
 int	 ufs_chown
 	    __P((struct vnode *, uid_t, gid_t, struct ucred *, struct proc *));
-int	 ufs_close __P((struct vop_close_args *)); /* XXX */
+int	 ufs_close __P((struct vop_close_args *));
 int	 ufs_create __P((struct vop_create_args *));
 void	 ufs_dirbad __P((struct inode *, doff_t, char *));
 int	 ufs_dirbadentry __P((struct direct *, int));
@@ -56,40 +56,40 @@ void	 ufs_ilock __P((struct inode *));
 int	 ufs_init __P((void));
 int	 ufs_ioctl __P((struct vop_ioctl_args *));
 void	 ufs_iput __P((struct inode *));
-int	 ufs_islocked __P((struct vop_islocked_args *)); /* XXX */
+int	 ufs_islocked __P((struct vop_islocked_args *));
 void	 ufs_iunlock __P((struct inode *));
-int	 ufs_link __P((struct vop_link_args *)); /* XXX */
-int	 ufs_lock __P((struct vop_lock_args *)); /* XXX */
-int	 ufs_lookup __P((struct vop_lookup_args *)); /* XXX */
+int	 ufs_link __P((struct vop_link_args *));
+int	 ufs_lock __P((struct vop_lock_args *));
+int	 ufs_lookup __P((struct vop_lookup_args *));
 int	 ufs_makeinode __P((int mode, struct vnode *, struct vnode **, struct componentname *));
 int	 ufs_mkdir __P((struct vop_mkdir_args *));
 int	 ufs_mknod __P((struct vop_mknod_args *));
-int	 ufs_mmap __P((struct vop_mmap_args *)); /* XXX */
+int	 ufs_mmap __P((struct vop_mmap_args *));
 int	 ufs_mountedon __P((struct vnode *));
-int	 ufs_open __P((struct vop_open_args *)); /* XXX */
-int	 ufs_print __P((struct vop_print_args *)); /* XXX */
-int	 ufs_readdir __P((struct vop_readdir_args *)); /* XXX */
-int	 ufs_readlink __P((struct vop_readlink_args *)); /* XXX */
-int	 ufs_reclaim __P((struct vop_reclaim_args *)); /* XXX */
-int	 ufs_remove __P((struct vop_remove_args *)); /* XXX */
+int	 ufs_open __P((struct vop_open_args *));
+int	 ufs_print __P((struct vop_print_args *));
+int	 ufs_readdir __P((struct vop_readdir_args *));
+int	 ufs_readlink __P((struct vop_readlink_args *));
+int	 ufs_reclaim __P((struct vop_reclaim_args *));
+int	 ufs_remove __P((struct vop_remove_args *));
 int	 ufs_rename __P((struct vop_rename_args *));
-int	 ufs_rmdir __P((struct vop_rmdir_args *)); /* XXX */
-int	 ufs_seek __P((struct vop_seek_args *)); /* XXX */
+int	 ufs_rmdir __P((struct vop_rmdir_args *));
+int	 ufs_seek __P((struct vop_seek_args *));
 int	 ufs_select __P((struct vop_select_args *));
 int	 ufs_setattr __P((struct vop_setattr_args *));
 int	 ufs_start __P((struct mount *, int, struct proc *));
-int	 ufs_strategy __P((struct vop_strategy_args *)); /* XXX */
+int	 ufs_strategy __P((struct vop_strategy_args *));
 int	 ufs_symlink __P((struct vop_symlink_args *));
-int	 ufs_unlock __P((struct vop_unlock_args *)); /* XXX */
+int	 ufs_unlock __P((struct vop_unlock_args *));
 int	 ufs_vinit __P((struct mount *,
 	    int (**)(), int (**)(), struct vnode **));
 int	 ufsspec_close __P((struct vop_close_args *));
-int	 ufsspec_read __P((struct vop_read_args *)); /* XXX */
-int	 ufsspec_write __P((struct vop_write_args *)); /* XXX */
+int	 ufsspec_read __P((struct vop_read_args *));
+int	 ufsspec_write __P((struct vop_write_args *));
 
 #ifdef FIFO
-int	ufsfifo_read __P((struct vop_read_args *)); /* XXX */
-int	ufsfifo_write __P((struct vop_write_args *)); /* XXX */
-int	ufsfifo_close __P((struct vop_close_args *)); /* XXX */
+int	ufsfifo_read __P((struct vop_read_args *));
+int	ufsfifo_write __P((struct vop_write_args *));
+int	ufsfifo_close __P((struct vop_close_args *));
 #endif
 __END_DECLS
