@@ -8,7 +8,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)mount_portal.8	8.1 (Berkeley) %G%
+.\"	@(#)mount_portal.8	8.2 (Berkeley) %G%
 .\"
 .\"
 .Dd 
@@ -35,7 +35,7 @@ This command is normally executed by
 at boot time.
 .Pp
 The portal daemon provides an
-.I open
+.Em open
 service.
 Objects opened under the portal mount point are
 dynamically created by the portal daemon according
@@ -52,7 +52,7 @@ to the calling process as the result of the open system call.
 By convention, the portal daemon divides the namespace into sub-namespaces,
 each of which handles objects of a particular type.
 .Pp
-Current, two sub-namespaces are implemented:
+Currently, two sub-namespaces are implemented:
 .Pa tcp
 and
 .Pa fs .
