@@ -1,39 +1,57 @@
-static char *sccsid = "@(#)flcopy.c	4.1 (Berkeley) %G%";
+static char *sccsid ="@(#)flcopy.c	4.2 (Berkeley) %G%";
 int floppydes;
 char *flopname = "/dev/floppy";
+long dsize = 77 * 26 * 128;
+int hflag;
+int rflag;
 
 main(argc,argv)
-char *argv[];
+register char **argv;
 {
 	static char buff[512];
-	register count = 77 * 26 * 128, startad = -26 * 128;
-	register int n, file;
+	register long count;
+	register startad = -26 * 128;
+	register int n, file; register char *cp;
 
-	if(argc==2) {
+	for(cp = *++argv; --argc > 0; cp ++) {
+	    if(*cp++!='-') continue;
+	    while(*cp) switch(*cp++) {
+	    case 'h':
+		hflag++;
 		printf("Halftime!\n");
-		if(strcmp(argv[1],"-h")!=0)
-			printf("Bad halftime option.\n"),
-			exit(1);
 		if((file = open("floppy",0))<0)
-			printf("failed to open floppy image"),
-			exit(1);
-		goto halftime;
+		    printf("failed to open floppy image, for reading\n"),
+		    exit(1);
+		continue;
+	    case 't':
+		dsize = atoi(*++argv) * 26 * 128;
+		argc--;
+		if (dsize <= 0)
+		    printf("Bad number of tracks\n"), exit(2);
+		continue;
+	    case 'r':
+		rflag++;
+	    }
 	}
-	file = creat("floppy",0666);
-	close(file);
-	file = open("floppy",2);
-	if(file < 0) exit(1);
-	for( ; count > 0 ; count -= 512) {
+	if(!hflag) {
+	    file = creat("floppy",0666);
+	    close(file);
+	    file = open("floppy",2);
+	    if(file < 0)
+		printf("failed to open floppy image"),
+		exit(1);
+	    for(count = dsize; count > 0 ; count -= 512) {
 		n = count > 512 ? 512 : count ;
 		lread(startad,n,buff);
 		write(file,buff,n);
 		startad += 512;
+	    }
 	}
-halftime:
+	if(rflag) exit(0);
 	printf("Change Floppy, Hit return when done.\n");
 	gets(buff);
 	lseek(file,0,0);
-	count = 77 * 26 * 128; startad = -26 * 128;
+	count = dsize; startad = -26 * 128;
 	for( ; count > 0 ; count -= 512) {
 		n = count > 512 ? 512 : count ;
 		read(file,buff,n);
@@ -47,6 +65,7 @@ rt_init()
 	int mode = 2;
 
 	if(initized) return;
+	if(rflag) mode = 0;
 	initized = 1;
 	if((floppydes = open(flopname,mode)) < 0) {
 		printf("Floppy open failed\n");
