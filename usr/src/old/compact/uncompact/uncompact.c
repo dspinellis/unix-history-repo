@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)uncompact.c	4.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)uncompact.c	4.5 (Berkeley) %G%";
 #endif
 
 /*
@@ -149,6 +149,7 @@ char *argv [ ];
 				     goto closeboth;
 		}
 
+		fflush (uncfp);
 		if (ferror (uncfp) || ferror (cfp))
 			if (i < argc) {
 				if (ferror (uncfp))
@@ -170,4 +171,5 @@ char *argv [ ];
 		fail 	  : fprintf (stderr, "Unsuccessful uncompact of standard input to standard output.\n");
 		            break;
 	}
+	return (0);
 }

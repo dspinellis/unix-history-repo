@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)compact.c	4.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)compact.c	4.5 (Berkeley) %G%";
 #endif
 
 /*
@@ -180,30 +180,26 @@ char *argv [ ];
 			else oc = ic;
 		}
 
+		fflush (cfp);
 		if (ferror (uncfp) || ferror (cfp))
 			if (i < argc) {
 				if (ferror (cfp))
 					perror (fname);
 				else
 					perror (argv [i]);
-				if (oc > 1) {
-					unlink (fname);
-					goto closeboth;
-				}
-				goto closein;
+				unlink (fname);
+				goto closeboth;
 			}
 			else goto fail;
 		else {
 			if (oc >= ic) {
-				if (i < argc) fprintf (stderr, "%s: ", argv [i]);
-				if (i < argc) fprintf (stderr, "Not compacted.  ");
+				if (i < argc)
+					fprintf (stderr, "%s: Not compacted.  ",
+						argv [i]);
 				fprintf (stderr, "Does not save bytes.\n");
 				if (i < argc) {
-					if (oc > 1) {
-						unlink (fname);
-						goto closeboth;
-					}
-					goto closein;
+					unlink (fname);
+					goto closeboth;
 				}
 				else break;
 			}
@@ -219,16 +215,20 @@ char *argv [ ];
 			fprintf (stderr, "Compression : %4ld.%c%c%%\n", n / 1000, c . chars . lob, bits);
 		}
 
-			    if (i >= argc) break;
-			    unlink (argv [i]);
-		closeboth : fclose (cfp);
-		closein   : fclose (uncfp);
-			    if (i == argc - 1) break;
-			    for (j = 256; j--; ) in [j] . flags = 0;
-			    continue;
-		fail 	  : fprintf (stderr, "Unsuccessful compact of standard input to standard output.\n");
-		            break;
+		if (i >= argc) break;
+		unlink (argv [i]);
+	closeboth:
+		fclose (cfp);
+	closein:
+		fclose (uncfp);
+		if (i == argc - 1) break;
+		for (j = 256; j--; )
+			in [j] . flags = 0;
 	}
+	exit (0);
+fail:
+	fprintf (stderr, "Unsuccessful compact of standard input to standard output.\n");
+	exit (1);
 }
 
 encode (ch)
