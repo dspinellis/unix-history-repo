@@ -1,4 +1,4 @@
-/*	mac2defs.h	1.2	86/02/04	*/
+/*	mac2defs.h	1.3	86/07/27	*/
 
 /*
  * Tahoe Registers
@@ -60,11 +60,7 @@ extern	int maxargs;
 /*
  * Some short routines that get called an awful lot are actually macros.
  */
-#if defined(FORT) || defined(SPRECC)
 #define	szty(t)	((t) == DOUBLE ? 2 : 1)
-#else
-#define	szty(t)	(((t) == DOUBLE || (t) == FLOAT) ? 2 : 1)
-#endif
 #define	shltype(o, p) \
 	((o) == REG || (o) == NAME || (o) == ICON || \
 	 (o) == OREG || ((o) == UNARY MUL && shumul((p)->in.left)))
