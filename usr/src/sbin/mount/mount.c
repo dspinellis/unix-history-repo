@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)mount.c	4.5 (Berkeley) %G%";
+static char *sccsid = "@(#)mount.c	4.6 (Berkeley) %G%";
 #include <stdio.h>
 #include <fstab.h>
 
@@ -18,8 +18,10 @@ int	all;
 int	ro;
 int	fake;
 int	verbose;
+
 main(argc, argv)
-char **argv;
+	int argc;
+	char **argv;
 {
 	register struct mtab *mp;
 	register char *np;
@@ -35,8 +37,13 @@ char **argv;
 	}
 top:
 	if (argc > 1) {
-		if (strcmp(argv[1], "-a") == 0) {
+		if (!strcmp(argv[1], "-a")) {
 			all++;
+			argc--, argv++;
+			goto top;
+		}
+		if (!strcmp(argv[1], "-r")) {
+			ro++;
 			argc--, argv++;
 			goto top;
 		}
@@ -52,7 +59,8 @@ top:
 		}
 	}
 	if (all) {
-		struct	fstab	*fsp;
+		struct fstab *fsp;
+
 		if (argc > 1)
 			goto argcnt;
 		close(2); dup(1);
