@@ -1,56 +1,108 @@
 /*
- * Copyright (c) 1983 Regents of the University of California.
+ * Copyright (c) 1983,1987 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)disklabel.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)disklabel.c	5.5 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
-#include <disktab.h>
+#include <sys/param.h>
+#include <sys/fs.h>
+#include <sys/file.h>
+#define DKTYPENAMES
+#include <sys/disklabel.h>
 #include <stdio.h>
 
 static	char *dgetstr();
 
-struct disktab *
+struct disklabel *
 getdiskbyname(name)
 	char *name;
 {
-	static struct disktab disk;
-	static char localbuf[100], *cp = localbuf;
-	register struct	disktab *dp = &disk;
+	static struct disklabel disk;
+	static char localbuf[100];
+	char *cp, *cq;
+	register struct	disklabel *dp = &disk;
 	register struct partition *pp;
-	char p, psize[3], pbsize[3], pfsize[3];
+	char p, max, psize[3], pbsize[3], pfsize[3], poffset[3], ptype[3];
 	char buf[BUFSIZ];
+	int i;
+	u_long *dx;
 
 	if (dgetent(buf, name) <= 0)
-		return ((struct disktab *)0);
-	dp->d_name = cp;
-	strcpy(cp, name);
-	cp += strlen(name) + 1;
-	dp->d_type = dgetstr("ty", &cp);
-	dp->d_secsize = dgetnum("se");
-	if (dp->d_secsize <= 0)
-		dp->d_secsize = 512;
+		return ((struct disklabel *)0);
+	bzero((char *)&disk, sizeof(disk));
+	cq = dp->d_typename;
+	cp = buf;
+	while (cq < dp->d_typename + sizeof(dp->d_typename) - 1 &&
+	    (*cq = *cp) && *cq != '|' && *cq != ':')
+		cq++, cp++;
+	*cq = '\0';
+	cp = localbuf;
+	cq = dgetstr("ty", &cp);
+	if (cq && strcmp(cq, "removable") == 0)
+		dp->d_flags |= D_REMOVABLE;
+	else  if (cq && strcmp(cq, "simulated") == 0)
+		dp->d_flags |= D_RAMDISK;
+	if (dgetflag("sf"))
+		dp->d_flags |= D_BADSECT;
+#define getnumdflt(field, dname, dflt) \
+	{ int f = dgetnum(dname); \
+	(field) = f == -1 ? (dflt) : f; }
+
+	getnumdflt(dp->d_secsize, "se", DEV_BSIZE);
 	dp->d_ntracks = dgetnum("nt");
 	dp->d_nsectors = dgetnum("ns");
 	dp->d_ncylinders = dgetnum("nc");
-	dp->d_rpm = dgetnum("rm");
-	if (dp->d_rpm <= 0)
-		dp->d_rpm = 3600;
-	dp->d_badsectforw = dgetflag("sf");
-	dp->d_sectoffset = dgetflag("so");
+	cq = dgetstr("dt", &cp);
+	if (cq)
+		dp->d_type = gettype(cq, dktypenames);
+	else
+		getnumdflt(dp->d_type, "dt", 0);
+	getnumdflt(dp->d_secpercyl, "sc", dp->d_nsectors * dp->d_ntracks);
+	getnumdflt(dp->d_secperunit, "su", dp->d_secpercyl * dp->d_ncylinders);
+	getnumdflt(dp->d_rpm, "rm", 3600);
+	getnumdflt(dp->d_interleave, "il", 1);
+	getnumdflt(dp->d_trackskew, "sk", 0);
+	getnumdflt(dp->d_cylskew, "cs", 0);
+	getnumdflt(dp->d_headswitch, "hs", 0);
+	getnumdflt(dp->d_trkseek, "ts", 0);
+	getnumdflt(dp->d_bbsize, "bs", BBSIZE);
+	getnumdflt(dp->d_sbsize, "sb", SBSIZE);
 	strcpy(psize, "px");
 	strcpy(pbsize, "bx");
 	strcpy(pfsize, "fx");
-	for (p = 'a'; p < 'i'; p++) {
-		psize[1] = pbsize[1] = pfsize[1] = p;
-		pp = &dp->d_partitions[p - 'a'];
+	strcpy(poffset, "ox");
+	strcpy(ptype, "tx");
+	max = 'a' - 1;
+	pp = &dp->d_partitions[0];
+	for (p = 'a'; p < 'a' + MAXPARTITIONS; p++, pp++) {
+		psize[1] = pbsize[1] = pfsize[1] = poffset[1] = ptype[1] = p;
 		pp->p_size = dgetnum(psize);
-		pp->p_bsize = dgetnum(pbsize);
-		pp->p_fsize = dgetnum(pfsize);
+		if (pp->p_size == -1)
+			pp->p_size = 0;
+		else {
+			pp->p_offset = dgetnum(poffset);
+			getnumdflt(pp->p_fsize, pfsize, 0);
+			if (pp->p_fsize)
+				pp->p_frag = dgetnum(pbsize) / pp->p_fsize;
+			getnumdflt(pp->p_fstype, ptype, 0);
+			if (pp->p_fstype == 0 && (cq = dgetstr(ptype, &cp)))
+				pp->p_fstype = gettype(cq, fstypenames);
+			max = p;
+		}
 	}
+	dp->d_npartitions = max + 1 - 'a';
+	strcpy(psize, "dx");
+	dx = dp->d_drivedata;
+	for (p = '0'; p < '0' + NDDATA; p++, dx++) {
+		psize[1] = p;
+		getnumdflt(*dx, psize, 0);
+	}
+	dp->d_magic = DISKMAGIC;
+	dp->d_magic2 = DISKMAGIC;
 	return (dp);
 }
 
@@ -298,4 +350,78 @@ nextc:
 	str = *area;
 	*area = cp;
 	return (str);
+}
+
+static
+gettype(t, names)
+	char *t;
+	char **names;
+{
+	register char **nm;
+
+	for (nm = names; *nm; nm++)
+		if (ustrcmp(t, *nm) == 0)
+			return (nm - names);
+	if (isdigit(*t))
+		return (atoi(t));
+	return (0);
+}
+
+static
+ustrcmp(s1, s2)
+	register char *s1, *s2;
+{
+#define	lower(c)	(islower(c) ? (c) : tolower(c))
+
+	for (; *s1; s1++, s2++) {
+		if (*s1 == *s2)
+			continue;
+		if (isalpha(*s1) && isalpha(*s2) &&
+		    lower(*s1) == lower(*s2))
+			continue;
+		return (*s2 - *s1);
+	}
+	return (0);
+}
+
+/*
+ * Swab disk label if needed.
+ */
+#if ENDIAN != BIG
+/* ARGSUSED */
+#endif
+swablabel(lp)
+	register struct disklabel *lp;
+{
+#if ENDIAN != BIG
+	register u_long *p;
+	register struct partition *pp;
+	int npart;
+
+	lp->d_magic = ntohl(lp->d_magic);
+	lp->d_type = ntohs(lp->d_type);
+	lp->d_subtype = ntohs(lp->d_subtype);
+	for (p = &lp->d_swabfirst; p <= &lp->d_swablast; p++)
+		*p = ntohl(*p);
+	npart = lp->d_npartitions;
+	for (pp = lp->d_partitions; pp < &lp->d_partitions[npart]; pp++) {
+		pp->p_size = ntohl(pp->p_size);
+		pp->p_offset = ntohl(pp->p_offset);
+		pp->p_fsize = ntohl(pp->p_fsize);
+		pp->p_cpg = ntohs(pp->p_cpg);
+	}
+#endif
+}
+
+dkcksum(lp)
+	register struct disklabel *lp;
+{
+	register u_short *start, *end;
+	register u_short sum = 0;
+
+	start = (u_short *)lp;
+	end = (u_short *)&lp->d_partitions[lp->d_npartitions];
+	while (start < end)
+		sum ^= *start++;
+	return (sum);
 }
