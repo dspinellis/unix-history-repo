@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)scandir.3	6.6 (Berkeley) %G%
+.\"	@(#)scandir.3	6.7 (Berkeley) %G%
 .\"
 .TH SCANDIR 3  ""
 .UC 5
@@ -17,7 +17,7 @@ scandir, alphasort \- scan a directory
 
 scandir(dirname, namelist, select, compar)
 char *dirname;
-struct direct ***namelist;
+struct dirent ***namelist;
 int (*select)();
 int (*compar)();
 
