@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_alloc.c	7.24 (Berkeley) %G%
+ *	@(#)ffs_alloc.c	7.25 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -1007,7 +1007,8 @@ ifree(ip, ino, mode)
 	if (isclr(cg_inosused(cgp), ino)) {
 		printf("dev = 0x%x, ino = %d, fs = %s\n",
 		    ip->i_dev, ino, fs->fs_fsmnt);
-		panic("ifree: freeing free inode");
+		if (fs->fs_ronly == 0)
+			panic("ifree: freeing free inode");
 	}
 	clrbit(cg_inosused(cgp), ino);
 	if (ino < cgp->cg_irotor)
