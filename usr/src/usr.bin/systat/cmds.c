@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -21,7 +21,6 @@ command(cmd)
         register char *cp;
         register struct cmdtab *p;
 	int interval, omask;
-	extern (*sigtstpdfl)();
 
 	omask = sigblock(sigmask(SIGALRM));
         for (cp = cmd; *cp && !isspace(*cp); cp++)
@@ -152,6 +151,7 @@ status()
 suspend()
 {
         int oldmask;
+	extern (*sigtstpdfl)();
 
 	alarm(0);
         move(CMDLINE, 0);
