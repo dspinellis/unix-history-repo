@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ufs_vfsops.c	7.3 (Berkeley) %G%
+ *	@(#)ufs_vfsops.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -222,7 +222,7 @@ found:
 out:
 	if (error == 0)
 		error = EIO;
-	if (needclose)
+	if (needclose && ip)
 		(void) closei((dev_t)ip->i_rdev, IFBLK,
 		    ronly? FREAD : FREAD|FWRITE);
 	if (needclose)
