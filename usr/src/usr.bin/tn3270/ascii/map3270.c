@@ -105,8 +105,12 @@ static FILE *ourFile= 0;
 static char *environPointer = 0;	/* if non-zero, point to input
 					 * string in core.
 					 */
-static char keys3a[] =
+static char **whichkey = 0;
+static char *keysgeneric[] = {
 #include "default.map"		/* Define the default default */
+
+	0,			/* Terminate list of entries */
+};
 			;
 
 static	int	Empty = 1,		/* is the unget lifo empty? */
@@ -121,20 +125,27 @@ GetC()
     int character;
 
     if (usePointer) {
-	if (*environPointer) {
-	    character = 0xff&*environPointer++;
-	} else {
-	    static char suffix = 'A';
-	    char envname[9];
-	    extern char *getenv();
+	if ((*environPointer) == 0) {
+	    /*
+	     * If we have reached the end of this string, go on to
+	     * the next (if there is a next).
+	     */
+	    if (whichkey == 0) {
+		static char suffix = 'A';	/* From environment */
+		char envname[9];
+		extern char *getenv();
 
-	    (void) sprintf(envname, "MAP3270%c", suffix++);
-	    environPointer = getenv(envname);
-	    if (*environPointer) {
-	       character = 0xff&*environPointer++;
+		(void) sprintf(envname, "MAP3270%c", suffix++);
+		environPointer = getenv(envname);
 	    } else {
-	       character = EOF;
+		whichkey++;			/* default map */
+		environPointer = *whichkey;
 	    }
+	}
+	if (*environPointer) {
+	   character = 0xff&*environPointer++;
+	} else {
+	   character = EOF;
 	}
     } else {
 	character = getc(ourFile);
@@ -920,8 +931,9 @@ int	pickyarg;		/* Should we be picky? */
 #if !defined(MSDOS)
 	    fprintf(stderr, "Using default key mappings.\n");
 #endif	/* !defined(MSDOS) */
-	    environPointer = keys3a;	/* use incore table */
 	    usePointer = 1;		/* flag use of non-file */
+	    whichkey = keysgeneric;
+	    environPointer = *whichkey;	/* use default table */
 	}
     } else {
 	usePointer = 1;
