@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)disklabel.h	7.16 (Berkeley) %G%
+ *	@(#)disklabel.h	7.17 (Berkeley) %G%
  */
 
 /*
@@ -161,7 +161,7 @@ static char *dktypenames[] = {
 	"old DEC",
 	"SCSI",
 	"ESDI",
-	"type 6",
+	"ST506",
 	"type 7",
 	"type 8",
 	"type 9",
@@ -184,6 +184,7 @@ static char *dktypenames[] = {
 #define	FS_V71K		5		/* V7 with 1K blocks (4.1, 2.9) */
 #define	FS_V8		6		/* Eighth Edition, 4K blocks */
 #define	FS_BSDFFS	7		/* 4.2BSD fast file system */
+#define	FS_MSDOS	8		/* MSDOS file system */
 
 #ifdef	DKTYPENAMES
 static char *fstypenames[] = {
@@ -195,6 +196,7 @@ static char *fstypenames[] = {
 	"4.1BSD",
 	"Eighth Edition",
 	"4.2BSD",
+	"MSDOS",
 	0
 };
 #define FSMAXTYPES	(sizeof(fstypenames) / sizeof(fstypenames[0]) - 1)
