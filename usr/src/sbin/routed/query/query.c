@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)query.c	4.3 %G%";
+static char sccsid[] = "@(#)query.c	4.4 %G%";
 #endif
 
 #include <sys/param.h>
@@ -99,7 +99,7 @@ rip_input(from, size)
 
 	if (msg->rip_cmd != RIPCMD_RESPONSE)
 		return;
-	hp = gethostbyaddr(&from->sin_addr, sizeof (struct in_addr));
+	hp = gethostbyaddr(&from->sin_addr, sizeof (struct in_addr), AF_INET);
 	name = hp == 0 ? "???" : hp->h_name;
 	printf("from %s(%x):\n", name, from->sin_addr);
 	size -= sizeof (int);
@@ -111,11 +111,11 @@ rip_input(from, size)
 			break;
 		sin = (struct sockaddr_in *)&n->rip_dst;
 		if (in_lnaof(sin->sin_addr) == INADDR_ANY) {
-			np = getnetbyaddr(in_netof(sin->sin_addr));
+			np = getnetbyaddr(in_netof(sin->sin_addr), AF_INET);
 			name = np ? np->n_name : "???";
 		} else {
 			hp = gethostbyaddr(&sin->sin_addr,
-				sizeof (struct in_addr));
+				sizeof (struct in_addr), AF_INET);
 			name = hp ? hp->h_name : "???";
 		}
 		printf("\t%s(%x), metric %d\n", name,
