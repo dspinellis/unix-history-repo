@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_malloc.c	7.19 (Berkeley) %G%
+ *	@(#)kern_malloc.c	7.20 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -21,6 +21,7 @@
 struct kmembuckets bucket[MINBUCKET + 16];
 struct kmemstats kmemstats[M_LAST];
 struct kmemusage *kmemusage;
+char *memname[] = INITKMEMNAMES;
 long wantkmemmap;
 
 /*
@@ -55,7 +56,7 @@ again:
 		}
 		if (ksp->ks_limblocks < 65535)
 			ksp->ks_limblocks++;
-		sleep((caddr_t)ksp, PSWP+2);
+		tsleep((caddr_t)ksp, PSWP+2, memname[type], 0);
 	}
 #endif
 	if (kbp->kb_next == NULL) {
@@ -79,7 +80,7 @@ again:
 				ksp->ks_mapblocks++;
 #endif
 			wantkmemmap++;
-			sleep((caddr_t)&wantkmemmap, PSWP+2);
+			tsleep((caddr_t)&wantkmemmap, PSWP+2, memname[type], 0);
 			goto again;
 		}
 		alloc -= CLSIZE;		/* convert to base 0 */
