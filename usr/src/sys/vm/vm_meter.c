@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)vm_meter.c	6.7 (Berkeley) %G%
+ *	@(#)vm_meter.c	6.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -16,6 +16,8 @@
 #include "vm.h"
 #include "cmap.h"
 #include "kernel.h"
+
+
 
 int	maxslp = MAXSLP;
 int	saferss = SAFERSS;
@@ -145,7 +147,6 @@ loop:
 			 */
 			rp->p_flag &= ~SLOAD;
 			(void) swapout(rp, rp->p_dsize, rp->p_ssize);
-			goto loop;
 		}
 		continue;
 	}
@@ -278,7 +279,8 @@ hardswap:
 			gives = 0;	/* someone else taketh away */
 		if (swapout(p, p->p_dsize, p->p_ssize) == 0)
 			deficit -= imin(gives, deficit);
-		goto loop;
+		else
+			goto loop;
 	}
 	/*
 	 * Want to swap someone in, but can't
