@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef NAMED_BIND
-static char sccsid[] = "@(#)domain.c	8.12 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	8.13 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	8.12 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	8.13 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -470,6 +470,10 @@ cnameloop:
 	else if (n == 0 && bitset(RES_DEFNAMES, _res.options))
 	{
 		*dp++ = _res.defdname;
+	}
+	else if (*cp == '.')
+	{
+		*cp = '\0';
 	}
 	*dp = NULL;
 
