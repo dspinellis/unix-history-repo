@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.180 (Berkeley) %G%
+ *	@(#)conf.h	8.181 (Berkeley) %G%
  */
 
 /*
@@ -176,6 +176,7 @@ extern void	hard_syslog(int, char *, ...);
 */
 
 #ifdef _AIX3
+# include <paths.h>
 # define HASINITGROUPS	1	/* has initgroups(3) call */
 # define HASUNAME	1	/* use System V uname(2) system call */
 # define HASGETUSERSHELL 0	/* does not have getusershell(3) call */
@@ -185,6 +186,7 @@ extern void	hard_syslog(int, char *, ...);
 # define SFS_TYPE	SFS_STATFS	/* use <sys/statfs.h> statfs() impl */
 # define SPT_PADCHAR	'\0'	/* pad process title with nulls */
 # define LA_TYPE	LA_INT
+# define LA_AVENRUN	"avenrun"
 #endif
 
 
