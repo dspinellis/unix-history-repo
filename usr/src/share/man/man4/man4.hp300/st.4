@@ -7,7 +7,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)st.4	8.1 (Berkeley) %G%
+.\"     @(#)st.4	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt ST 4 hp300
@@ -162,10 +162,9 @@ will not work
 .Pf ( Dq Li tar c
 is ok).  One can only start writing at  1) beginning of tape, 2) on the
 end of what was last written, 3) "front" side of a regular (long) filemark.
-Say you have a tape with 3 tar files on it, want to save the first
-file, and want to begin writing over the 2nd file.
-.Pp
-On a normal 1/4" or 1/2" drive you would do:
+For example, you have a tape with 3 tar files. If you want to save the first 
+file, but overwrite the second two files with new data, on a normal
+1/4" or 1/2" drive you would do:
 .Pp
 .Li "mt fsf 1; tar cf /dev/nrst0 ..."
 .Pp

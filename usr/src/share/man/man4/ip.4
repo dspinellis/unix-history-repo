@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)ip.4	8.1 (Berkeley) %G%
+.\"     @(#)ip.4	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt IP 4
@@ -36,7 +36,7 @@ when developing new protocols, or
 special-purpose applications.
 .Pp
 There are several
-.Tn IP -level
+.Tn IP-level
 .Xr setsockopt 2 / Ns
 .Xr getsockopt 2
 options.
@@ -212,7 +212,7 @@ or the
 address of a particular multicast-capable interface if
 the host is multihomed.
 Membership is associated with a single interface; 
-programs running on multihomed hosts may need to to 
+programs running on multihomed hosts may need to 
 join the same group on more than one interface.  
 Up to 
 .Dv IP_MAX_MEMBERSHIPS 

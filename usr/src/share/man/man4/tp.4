@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)tp.4	8.1 (Berkeley) %G%
+.\"     @(#)tp.4	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt TP 4
@@ -113,7 +113,7 @@ domain.
 .Pp
 Two system calls were modified from the previous
 release of the Berkeley Software Distribution
-to permit the support the end-of-transport-service-data-unit
+to permit the support of the end-of-transport-service-data-unit
 .Pq Dv EOTSDU
 indication, and for the receipt and transmission of user
 connect, confirm, and disconnect data.
@@ -220,7 +220,7 @@ the connection.
 (char *) [none]
 .br
 Data to send when confirming a connection.
-This may aslo be sent by a 
+This may also be sent by a 
 .Xr setsockopt
 system call, or by issuing a
 .Xr sendmsg
@@ -394,7 +394,7 @@ with an AK TPDU.
 .Pp
 .Dv TPACK_WINDOW
 means that upon receipt of the packet that represents
-the high edge of the last window advertised, and AK TPDU is generated.
+the high edge of the last window advertised, an AK TPDU is generated.
 .It Ar p_rx_strat
 4 bit mask
 .Bq Dv TPRX_USE_CW No \&|\  Dv TPRX_FASTSTART
@@ -423,7 +423,7 @@ Begin sending the maximum amount of data permitted
 by the peer (subject to availability).
 The alternative is to start sending slowly by 
 pretending the peer's window is smaller than it is, and letting
-it slowly grow up to the real peer's window size.
+it slowly grow up to the peer window's real size.
 This is to smooth the effect of new connections on a congested network
 by preventing a transport connection from suddenly 
 overloading the network with a burst of packets.
@@ -443,7 +443,7 @@ during connection establishment.
 Boolean.
 [false]
 .br
-Boolean indicating that extended format shall be negotiated.
+Boolean indicating that extended format is negotiated.
 This parameter applies only to class 4.
 .It Ar p_xpd_service
 Boolean.
@@ -470,7 +470,7 @@ Boolean.
 .Pp
 Boolean indicating that the local
 .Tn TP
-entity shall not issue
+entity will not issue
 indications (signals) when a
 .Tn TP
 connection is disconnected.
@@ -601,7 +601,7 @@ value upon return from the system call is
 If the signal
 .Dv SIGURG
 is being handled by reading
-from the socket, and it was a
+from the socket, and it was an
 .Xr accept 2
 that
 timed out, the read may result in
@@ -692,5 +692,5 @@ The
 .Tn ARGO
 implementation acknowledges XPD TPDUs
 immediately,
-in the hope that most users will not use expedited data requently
+in the hope that most users will not use expedited data frequently
 enough for this to be a problem.
