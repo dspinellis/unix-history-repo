@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)init.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)init.c	5.17 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -58,24 +58,23 @@ void	idle(), merge(), reset();
 
 struct	sigvec rvec = { reset, sigmask(SIGHUP), 0 };
 
-#if defined(vax) || defined(tahoe) || defined(hp300)
-main()
+main(argc, argv)
+	char **argv;
 {
 #if defined(tahoe)
 	register int r12;		/* make sure r11 gets bootflags */
 #endif
+#if defined(vax) || defined(tahoe) || defined(hp300)
 	register int r11;		/* passed thru from boot */
-#else
-main(argc, argv)
-	char **argv;
-{
 #endif
 #ifdef __GNUC__
 	/* insure proper semantics for setjmp/longjmp */
 	static
 #endif
-	int howto, oldhowto, started;
+	int howto, oldhowto, started = 0;
 
+#if defined(vax) || defined(tahoe) || defined(hp300)
+	/* howto passed in high-order register XXX */
 #ifdef __GNUC__
 #ifdef hp300
 	asm("movl d7,%0" : "=rm" (howto));
@@ -83,10 +82,10 @@ main(argc, argv)
 	asm("movl r11,%0" : "=rm" (howto));
 #endif
 #else
-#if defined(vax) || defined(tahoe) || defined(hp300)
 	howto = r11;
-#else
-	howto = 0;
+#endif /* __GNUC__ */
+#else  /* defined(vax) || defined(tahoe) || defined(hp300) */
+	/* howto passed as argument */
 	if (argc > 1 && argv[1][0] == '-') {
 		char *cp;
 
@@ -100,11 +99,9 @@ main(argc, argv)
 			howto |= RB_SINGLE;
 			break;
 		}
-	} else {
+	} else
 		howto = RB_SINGLE;
-	}
 #endif
-#endif /* !__GNUC__ */
 	if (getuid() != 0)
 		exit(1);
 	openlog("init", LOG_CONS|LOG_ODELAY, LOG_AUTH);
@@ -116,7 +113,7 @@ main(argc, argv)
 	signal(SIGTTIN, SIG_IGN);
 	signal(SIGTTOU, SIG_IGN);
 	(void) setjmp(sjbuf);
-	for (started = 0; ; ) {
+	for (; ; ) {
 		oldhowto = howto;
 		howto = RB_SINGLE;
 		if (started && setjmp(shutpass) == 0)
@@ -191,6 +188,7 @@ single()
 {
 	register pid;
 	register xpid;
+	int fd;
 	extern int errno;
 
 	do {
@@ -202,11 +200,18 @@ single()
 			signal(SIGTSTP, SIG_IGN);
 			if (setsid() < 0)
 				syslog(LOG_ERR, "setsid failed (single): %m");
-			(void) open(ctty, O_RDWR);
-			if (ioctl(0, TIOCSCTTY, 0) < 0)
+			(void) revoke(ctty);
+			if ((fd = open(ctty, O_RDWR)) < 0) {
+				syslog(LOG_ERR, "open %s: %m", ctty);
+				exit(1);
+			}
+			if (ioctl(fd, TIOCSCTTY, 0) < 0)
 				syslog(LOG_ERR, "TIOCSCTTY failed: %m");
-			dup2(0, 1);
-			dup2(0, 2);
+			dup2(fd, 0);
+			dup2(fd, 1);
+			dup2(fd, 2);
+			if (fd > 2)
+				close(fd);
 			execl(shell, minus, (char *)0);
 			perror(shell);
 			exit(0);
