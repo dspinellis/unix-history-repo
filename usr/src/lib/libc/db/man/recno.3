@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)recno.3	5.2 (Berkeley) %G%
+.\"	@(#)recno.3	5.3 (Berkeley) %G%
 .\"
 .TH RECNO 3 ""
 .UC 7
@@ -123,7 +123,7 @@ In the interface specified by
 .IR dbopen ,
 using the
 .I put
-interface to create a new record may cause the creation of multiple,
+interface to create a new record will cause the creation of multiple,
 empty records if the record number is more than one greater than the
 largest record currently in the database.
 .SH "SEE ALSO"
