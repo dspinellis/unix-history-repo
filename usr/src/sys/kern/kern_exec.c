@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)kern_exec.c	7.70 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.71 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -524,7 +524,11 @@ getxfile(p, vp, ep, paged, ssize, uid, gid)
 	else
 #endif
 	if (paged)
+#ifdef mips
+		toff = 0;
+#else
 		toff = CLBYTES;
+#endif
 	else
 		toff = sizeof (struct exec);
 #endif
