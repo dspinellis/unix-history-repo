@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef NAMED_BIND
-static char sccsid[] = "@(#)domain.c	6.17 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	6.18 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	6.17 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	6.18 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -191,46 +191,46 @@ punt:
 			*bp = '\0';
 		}
 		nmx = 1;
-		prefer[0] = 0;
-		weight[0] = 0;
 	}
-
-	/* sort the records */
-	for (i = 0; i < nmx; i++)
+	else
 	{
-		for (j = i + 1; j < nmx; j++)
+		/* sort the records */
+		for (i = 0; i < nmx; i++)
 		{
-			if (prefer[i] > prefer[j] ||
-			    (prefer[i] == prefer[j] && weight[i] > weight[j]))
+			for (j = i + 1; j < nmx; j++)
 			{
-				register int temp;
-				register char *temp1;
+				if (prefer[i] > prefer[j] ||
+				    (prefer[i] == prefer[j] && weight[i] > weight[j]))
+				{
+					register int temp;
+					register char *temp1;
 
-				temp = prefer[i];
-				prefer[i] = prefer[j];
-				prefer[j] = temp;
-				temp1 = mxhosts[i];
-				mxhosts[i] = mxhosts[j];
-				mxhosts[j] = temp1;
-				temp = weight[i];
-				weight[i] = weight[j];
-				weight[j] = temp;
+					temp = prefer[i];
+					prefer[i] = prefer[j];
+					prefer[j] = temp;
+					temp1 = mxhosts[i];
+					mxhosts[i] = mxhosts[j];
+					mxhosts[j] = temp1;
+					temp = weight[i];
+					weight[i] = weight[j];
+					weight[j] = temp;
+				}
 			}
-		}
-		if (seenlocal && prefer[i] >= localpref)
-		{
-			/*
-			 * truncate higher pref part of list; if we're
-			 * the best choice left, we should have realized
-			 * awhile ago that this was a local delivery.
-			 */
-			if (i == 0)
+			if (seenlocal && prefer[i] >= localpref)
 			{
-				*rcode = EX_CONFIG;
-				return (-1);
+				/*
+				 * truncate higher pref part of list; if we're
+				 * the best choice left, we should have realized
+				 * awhile ago that this was a local delivery.
+				 */
+				if (i == 0)
+				{
+					*rcode = EX_CONFIG;
+					return (-1);
+				}
+				nmx = i;
+				break;
 			}
-			nmx = i;
-			break;
 		}
 	}
 

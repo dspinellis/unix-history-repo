@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.58 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.59 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -47,6 +47,7 @@ sendall(e, mode)
 	int otherowners;
 	register ENVELOPE *ee;
 	ENVELOPE *splitenv = NULL;
+	bool announcequeueup;
 
 	/* determine actual delivery mode */
 	if (mode == SM_DEFAULT)
@@ -57,7 +58,10 @@ sendall(e, mode)
 		if (mode != SM_VERIFY &&
 		    shouldqueue(e->e_msgpriority, e->e_ctime))
 			mode = SM_QUEUE;
+		announcequeueup = mode == SM_QUEUE;
 	}
+	else
+		announcequeueup = FALSE;
 
 	if (tTd(13, 1))
 	{
@@ -238,9 +242,9 @@ sendall(e, mode)
 	    !bitset(EF_INQUEUE, e->e_flags))
 	{
 		/* be sure everything is instantiated in the queue */
-		queueup(e, TRUE, mode == SM_QUEUE);
+		queueup(e, TRUE, announcequeueup);
 		for (ee = splitenv; ee != NULL; ee = ee->e_sibling)
-			queueup(ee, TRUE, mode == SM_QUEUE);
+			queueup(ee, TRUE, announcequeueup);
 	}
 #endif /* QUEUE */
 

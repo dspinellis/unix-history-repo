@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	6.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	6.13 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -25,6 +25,9 @@ static char sccsid[] = "@(#)collect.c	6.12 (Berkeley) %G%";
 **			style message to say we are ready to collect
 **			input, and never ignore a single dot to mean
 **			end of message.
+**		requeueflag -- this message will be requeued later, so
+**			don't do final processing on it.
+**		e -- the current envelope.
 **
 **	Returns:
 **		none.
@@ -34,8 +37,9 @@ static char sccsid[] = "@(#)collect.c	6.12 (Berkeley) %G%";
 **		The from person may be set.
 */
 
-collect(smtpmode, e)
+collect(smtpmode, requeueflag, e)
 	bool smtpmode;
+	bool requeueflag;
 	register ENVELOPE *e;
 {
 	register FILE *tf;
@@ -251,7 +255,7 @@ readerr:
 	**	Examples are who is the from person & the date.
 	*/
 
-	eatheader(e);
+	eatheader(e, !requeueflag);
 
 	/*
 	**  Add an Apparently-To: line if we have no recipient lines.

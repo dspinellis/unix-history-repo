@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	6.37 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.38 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	6.37 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.38 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -408,8 +408,15 @@ smtp(e)
 				break;
 			}
 
+			/* check to see if we need to re-expand aliases */
+			for (a = e->e_sendqueue; a != NULL; a = a->q_next)
+			{
+				if (bitset(QVERIFIED, a->q_flags))
+					break;
+			}
+
 			/* collect the text of the message */
-			collect(TRUE, e);
+			collect(TRUE, a != NULL, e);
 			if (Errors != 0)
 				break;
 
@@ -439,13 +446,6 @@ smtp(e)
 			e->e_flags &= ~EF_FATALERRS;
 			e->e_xfp = freopen(queuename(e, 'x'), "w", e->e_xfp);
 			id = e->e_id;
-
-			/* check to see if we need to re-expand aliases */
-			for (a = e->e_sendqueue; a != NULL; a = a->q_next)
-			{
-				if (bitset(QVERIFIED, a->q_flags))
-					break;
-			}
 
 			/* send to all recipients */
 			sendall(e, a == NULL ? SM_DEFAULT : SM_QUEUE);
