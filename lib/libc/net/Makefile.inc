@@ -7,7 +7,7 @@ SRCS+=	gethostnamadr.c getnetbyaddr.c getnetbyname.c getnetent.c \
 	getproto.c getprotoent.c getprotoname.c getservbyname.c \
 	getservbyport.c getservent.c herror.c inet_addr.c inet_lnaof.c \
 	inet_makeaddr.c inet_netof.c inet_network.c inet_ntoa.c \
-	linkaddr.c rcmd.c recv.c res_comp.c \
+	iso_addr.c linkaddr.c ns_addr.c ns_ntoa.c rcmd.c recv.c res_comp.c \
 	res_debug.c res_init.c res_mkquery.c res_query.c res_send.c \
 	send.c sethostent.c
 
@@ -37,7 +37,8 @@ MLINKS+=getservent.3 endservent.3 getservent.3 getservbyname.3 \
 	getservent.3 getservbyport.3 getservent.3 setservent.3
 MLINKS+=inet.3 addr.3 inet.3 inet_addr.3 inet.3 inet_lnaof.3 \
 	inet.3 inet_makeaddr.3 inet.3 inet_netof.3 inet.3 inet_network.3 \
-	inet.3 inet_ntoa.3 inet.3 network.3 inet.3 ntoa.3
+	inet.3 inet_ntoa.3 inet.3 network.3 inet.3 ntoa.3 \
+	inet.3 inet_aton.3
 MLINKS+=ns.3 ns_addr.3 ns.3 ns_ntoa.3
 MLINKS+=rcmd.3 rresvport.3 rcmd.3 ruserok.3
 MLINKS+=resolver.3 dn_comp.3 resolver.3 dn_expand.3 resolver.3 res_init.3 \
