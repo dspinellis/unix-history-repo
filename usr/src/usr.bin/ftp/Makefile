@@ -14,91 +14,34 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.6 (Berkeley) %G%
+#	@(#)Makefile	5.7 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
 SRCS=	cmds.c cmdtab.c ftp.c getpass.c glob.c main.c pclose.c ruserpass.c              domacro.c
 OBJS=	cmds.o cmdtab.o ftp.o getpass.o glob.o main.o pclose.o ruserpass.o              domacro.o
+MAN=	ftp.0
 
 all: ftp
 
-ftp:	${OBJS} ${LIBC}
+ftp: ${OBJS} ${LIBC}
 	${CC} -o $@ ${CFLAGS} ${OBJS}
 
-clean: FRC
+clean:
 	rm -f ${OBJS} core ftp
 
-depend: FRC
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
+depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
-install: FRC
+install: ${MAN}
 	install -s -o bin -g bin -m 755 ftp ${DESTDIR}/usr/ucb/ftp
+	install -c -o bin -g bin -m 444 ftp.0 ${DESTDIR}/usr/man/cat1
 
-lint: FRC
+lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
 
-tags: FRC
+tags: ${SRCS}
 	ctags ${SRCS}
-
-FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-cmds.o: cmds.c
-cmds.o:ftp_var.h
-cmds.o: /usr/include/sys/param.h /usr/include/sys/types.h /usr/include/signal.h
-cmds.o: /usr/include/machine/machparam.h /usr/include/setjmp.h
-cmds.o: /usr/include/sys/socket.h /usr/include/arpa/ftp.h /usr/include/signal.h
-cmds.o: /usr/include/stdio.h /usr/include/errno.h /usr/include/netdb.h
-cmds.o: /usr/include/ctype.h /usr/include/sys/wait.h
-cmdtab.o: cmdtab.c
-cmdtab.o:ftp_var.h
-cmdtab.o: /usr/include/sys/param.h /usr/include/sys/types.h
-cmdtab.o: /usr/include/signal.h /usr/include/machine/machparam.h
-cmdtab.o: /usr/include/setjmp.h
-ftp.o: ftp.c
-ftp.o:ftp_var.h
-ftp.o: /usr/include/sys/param.h /usr/include/sys/types.h /usr/include/signal.h
-ftp.o: /usr/include/machine/machparam.h /usr/include/setjmp.h
-ftp.o: /usr/include/sys/stat.h /usr/include/sys/ioctl.h
-ftp.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-ftp.o: /usr/include/sys/socket.h /usr/include/sys/time.h /usr/include/time.h
-ftp.o: /usr/include/sys/param.h /usr/include/sys/types.h /usr/include/signal.h
-ftp.o: /usr/include/machine/machparam.h /usr/include/netinet/in.h
-ftp.o: /usr/include/arpa/ftp.h /usr/include/arpa/telnet.h /usr/include/stdio.h
-ftp.o: /usr/include/signal.h /usr/include/errno.h /usr/include/netdb.h
-ftp.o: /usr/include/fcntl.h /usr/include/pwd.h /usr/include/ctype.h
-getpass.o: getpass.c /usr/include/stdio.h /usr/include/signal.h
-getpass.o: /usr/include/sgtty.h /usr/include/sys/ioctl.h
-getpass.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-glob.o: glob.c /usr/include/sys/param.h /usr/include/sys/types.h
-glob.o: /usr/include/signal.h /usr/include/machine/machparam.h
-glob.o: /usr/include/sys/stat.h /usr/include/sys/dir.h /usr/include/stdio.h
-glob.o: /usr/include/errno.h /usr/include/pwd.h
-main.o: main.c
-main.o:ftp_var.h
-main.o: /usr/include/sys/param.h /usr/include/sys/types.h /usr/include/signal.h
-main.o: /usr/include/machine/machparam.h /usr/include/setjmp.h
-main.o: /usr/include/sys/socket.h /usr/include/sys/ioctl.h
-main.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-main.o: /usr/include/sys/types.h /usr/include/arpa/ftp.h /usr/include/signal.h
-main.o: /usr/include/stdio.h /usr/include/errno.h /usr/include/ctype.h
-main.o: /usr/include/netdb.h /usr/include/pwd.h
-pclose.o: pclose.c /usr/include/stdio.h /usr/include/signal.h
-pclose.o: /usr/include/sys/param.h /usr/include/sys/types.h
-pclose.o: /usr/include/signal.h /usr/include/machine/machparam.h
-pclose.o: /usr/include/sys/wait.h
-ruserpass.o: ruserpass.c /usr/include/stdio.h /usr/include/utmp.h
-ruserpass.o: /usr/include/ctype.h /usr/include/sys/types.h
-ruserpass.o: /usr/include/sys/stat.h /usr/include/errno.h
-domacro.o: domacro.c
-domacro.o:ftp_var.h
-domacro.o: /usr/include/sys/param.h /usr/include/sys/types.h
-domacro.o: /usr/include/signal.h /usr/include/machine/machparam.h
-domacro.o: /usr/include/setjmp.h /usr/include/signal.h /usr/include/stdio.h
-domacro.o: /usr/include/errno.h /usr/include/ctype.h
-domacro.o: /usr/include/sys/ttychars.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
