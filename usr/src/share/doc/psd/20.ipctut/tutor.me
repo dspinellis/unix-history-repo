@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)tutor.me	6.3 (Berkeley) %G%
+.\"	@(#)tutor.me	6.4 (Berkeley) %G%
 .\"
 .oh 'Introductory 4.3BSD IPC''PS1:7-%'
 .eh 'PS1:7-%''Introductory 4.3BSD IPC'
@@ -31,13 +31,14 @@ University of California, Berkeley
 .(c
 .pp
 Berkeley UNIX\(dg 4.3BSD offers several choices for interprocess communication.
-To aid the programmer in  developing programs comprising cooperating
+To aid the programmer in  developing programs which are comprised of
+cooperating
 processes, the different choices are discussed and a series of example 
 programs are presented.  These programs
-demonstrate in a simple way the use of pipes, socketpairs, and sockets
+demonstrate in a simple way the use of pipes, socketpairs, sockets
 and the use of datagram and stream communication.  The intent of this
 document is to present a few simple example programs, not to describe the
-networking system in full generality.
+networking system in full.
 .)c
 .sp 2
 .(f
@@ -70,17 +71,17 @@ and to which one writes.
 The use of a descriptor has three phases: its creation,
 its use for reading and writing, and its destruction.  By using descriptors
 to write files, rather than simply naming the target file in the write
-call, one gains a surprising amount of flexibility.  Often the program that
+call, one gains a surprising amount of flexibility.  Often, the program that
 creates a descriptor will be different from the program that uses the
 descriptor.  For example the shell can create a descriptor for the output 
 of the `ls'
 command that will cause the listing to appear in a file rather than
 on a terminal.  The use of descriptors is not the only communication mechanism
 provided by UNIX.
-There is another mechanism to flash a tiny amount of information from one 
+There is another mechanism which flashes a tiny amount of information from one 
 process to another, telling it, for example, that someone wants it to stop.  
 This is called sending a signal.  To signal
-another process one states explicitly the identity of the recipient.
+another process, one states explicitly the identity of the recipient.
 This requirement limits the flexibility of the signaling mechanism
 as a means of interprocess communication.
 .pp
@@ -92,7 +93,8 @@ has necessitated some change in the way that descriptors are created.
 Additionally, new possibilities for the meaning of read and write have
 been admitted.  Originally the meanings, or semantics, of these terms
 were fairly simple.  When you wrote something it was delivered.  When
-you read, you blocked until the data arrived.  Other possibilities exist,
+you read something, you were blocked until the data arrived.
+Other possibilities exist,
 however.  One can write without full assurance of delivery if one can
 check later to catch occasional failures.  Messages can be kept as
 discrete units or merged into a stream. 
@@ -117,7 +119,7 @@ To clearly present how communication can take place,
 the example programs have been cleared of anything that
 might be construed as useful work.
 They can, therefore, serve as models
-for the programmer trying to construct programs comprising
+for the programmer trying to construct programs which are comprised of 
 cooperating processes.
 .b
 .sh 1 "Processes"
@@ -126,11 +128,11 @@ A \fIprogram\fP is both a sequence of statements and a rough way of referring
 to the computation that occurs when the compiled statements are run.
 A \fIprocess\fP can be thought of as a single line of control in a program.
 Most programs execute some statements, go through a few loops, branch in
-various directions and then end.  They are single process programs.
+various directions and then end.  These are single process programs.
 Programs can also have a point where control splits into two independent lines,
 an action called \fIforking.\fP
 In UNIX these lines can never join again.  A call to the system routine 
-\fIfork()\fP causes a process to split in this way.
+\fIfork()\fP, causes a process to split in this way.
 The result of this call is that two independent processes will be
 running, executing exactly the same code.
 Memory values will be the same for all values set before the fork, but,
@@ -167,15 +169,15 @@ This is called ``piping'' the output of one program
 to another because the mechanism used to transfer the output is called a
 pipe.
 When the user types a command, the command is read by the shell, which
-decides how to execute it.  If the command is simple, for example
+decides how to execute it.  If the command is simple, for example,
 .i "``prog1,''"
-the shell forks a process, which executes the program prog1 and then dies.
+the shell forks a process, which executes the program, prog1, and then dies.
 The shell waits for this termination and then prompts for the next
 command.
 If the command is a compound command,
 .i "``prog1 | prog2,''"
 the shell creates two processes connected by a pipe. One process
-runs the program prog1, the other runs prog2.  The pipe is an I/O
+runs the program, prog1, the other runs prog2.  The pipe is an I/O
 mechanism with two ends, or sockets.  Data that is written into one socket
 can be read from the other.  
 .(z
@@ -215,11 +217,11 @@ returned in the low word of the array is opened for reading only,
 while the socket in the high end is opened only for writing.
 This corresponds to the fact that the standard input is the first
 descriptor of a process's descriptor table and the standard output
-the second.  After creating the pipe, the parent creates the child 
+is the second.  After creating the pipe, the parent creates the child 
 with which it will share the pipe by calling \fIfork().\fP
 Figure 2 illustrates the effect of a fork.
 The parent process's descriptor table points to both ends of the pipe.
-After the fork, both parent's and child's descriptor table point to
+After the fork, both parent's and child's descriptor tables point to
 the pipe.
 The child can then use the pipe to send a message to the parent.
 .(z
@@ -242,16 +244,17 @@ from child to parent would be possible (since both processes have
 references to both ends), but very complicated.
 If the parent and child are to have a two-way conversation,
 the parent creates two pipes, one for use in each direction.
-(In accordance with their plans both parent and child in the example above
+(In accordance with their plans, both parent and child in the example above
 close the socket that they will not use.  It is not required that unused
 descriptors be closed, but it is good practice.)
-A pipe is also a \fIstream\fP communication mechanism, that
-is all messages sent through the pipe are placed in order
-and reliably delivered.  When the reader asks for some number of bytes of this
+A pipe is also a \fIstream\fP communication mechanism; that
+is, all messages sent through the pipe are placed in order
+and reliably delivered.  When the reader asks for a certain
+number of bytes from this
 stream, he is given as many bytes as are available, up
-to the amount of the request.  Note that this pays no attention
-to whether those bytes all came from the same call to \fIwrite()\fP
-or came from several calls to \fIwrite()\fP but were concatenated.
+to the amount of the request. Note that these bytes may have come from 
+the same call to \fIwrite()\fR or from several calls to \fIwrite()\fR
+which were concatenated.
 .b
 .sh 1 "Socketpairs"
 .r
@@ -281,8 +284,6 @@ domain, called the UNIX domain.
 The UNIX domain uses UNIX path names for naming sockets.  
 It only allows communication
 between sockets on the same machine.
-A style of communication is a statement about the semantics that
-are desired.
 .pp
 Note that the header files 
 .i "<sys/socket.h>"
@@ -317,7 +318,8 @@ Figure 4\ \ Sharing a socketpair between parent and child
 Pipes and socketpairs are a simple solution for communicating between
 a parent and child or between child processes.
 What if we wanted to have processes that have no common ancestor
-to communicate?  Neither standard UNIX pipes nor socketpairs are
+with whom to set up communication?
+Neither standard UNIX pipes nor socketpairs are
 the answer here, since both mechanisms require a common ancestor to
 set up the communication.
 We would like to have two processes separately create sockets
@@ -375,7 +377,7 @@ generally less important than the difference in semantics.  The
 performance gain that one might find in using datagrams must be weighed
 against the increased complexity of the program, which must now concern
 itself with lost or out of order messages.  If lost messages may simply be 
-ignored, the quantity of traffic may be a consideration; the expense
+ignored, the quantity of traffic may be a consideration. The expense
 of setting up a connection is best justified by frequent use of the connection.
 Since the performance of a protocol changes as it is tuned for different
 situations, it is best to seek the most up-to-date information when
@@ -394,7 +396,7 @@ It is possible for several protocols, differing only in low level
 details, to implement the same style of communication within
 a particular domain.  Although it is possible to select
 which protocol should be used, for nearly all uses it is sufficient to
-request the default protocol.  This has been done in all the example
+request the default protocol.  This has been done in all of the example
 programs.
 .pp
 One specifies the domain, style and protocol of a socket when
@@ -409,7 +411,7 @@ in the UNIX domain.
 .so udgramread.c
 .ft
 .ce 1
-Figure 5a\ \ Reading using UNIX domain datagrams
+Figure 5a\ \ Reading UNIX domain datagrams
 .)z
 .pp
 Let us now look at two programs that create sockets separately.
@@ -426,7 +428,7 @@ system call \fIbind().\fP
 The program in Figure 5a uses the name ``socket'',
 which it binds to its socket.
 This name will appear in the working directory of the program.
-The routines in Figure 5b uses its
+The routines in Figure 5b use its
 socket only for sending messages.  It does not create a name for
 the socket because no other process has to refer to it.  
 .(z
@@ -445,7 +447,8 @@ When a name is bound into the name space, a file (inode) is allocated in the
 file system.  If
 the inode is not deallocated, the name will continue to exist even after
 the bound socket is closed.  This can cause subsequent runs of a program
-to find that a name is unavailable, and directories to fill up with these
+to find that a name is unavailable, and can cause 
+directories to fill up with these
 objects.  The names are removed by calling \fIunlink()\fP or using
 the \fIrm\fP\|(1) command.
 Names in the UNIX domain are only used for rendezvous.  They are not used
@@ -456,7 +459,7 @@ not) automatically given addresses when they are connected.
 There is no established means of communicating names to interested
 parties.  In the example, the program in Figure 5b gets the
 name of the socket to which it will send its message through its
-command line arguments.  Once a line of communication has been created
+command line arguments.  Once a line of communication has been created,
 one can send the names of additional, perhaps new, sockets over the link.
 Facilities will have to be built that will make the distribution of
 names less of a problem than it now is.
@@ -468,7 +471,7 @@ names less of a problem than it now is.
 .so dgramread.c
 .ft
 .ce 1
-Figure 6a\ \ Reading using Internet domain datagrams
+Figure 6a\ \ Reading Internet domain datagrams
 .)z
 .pp
 The examples in Figure 6a and 6b are very close to the previous example
@@ -495,7 +498,7 @@ of a pair of communicating sockets.
 An association is thus identified by the tuple
 <\fIprotocol, local machine address, local port,
 remote machine address, remote port\fP>.
-An association may transient when using datagram sockets;
+An association may be transient when using datagram sockets;
 the association actually exists during a \fIsend\fP operation.
 .(z
 .ft CW
@@ -519,7 +522,8 @@ to receive from ``anywhere,'' but one cannot send a message ``anywhere.''
 The program in Figure 6b is given the destination host name as a command
 line argument.
 To determine a network address to which it can send the message, it looks
-the host address up by the call to \fIgethostbyname()\fP.
+up
+the host address by the call to \fIgethostbyname()\fP.
 The returned structure includes the host's network address,
 which is copied into the structure specifying the
 destination of the message.
@@ -569,7 +573,7 @@ To initiate a connection, this program simply creates
 a stream socket, then calls \fIconnect()\fP,
 specifying the address of the socket to which
 it wishes its socket connected.  Provided that the target socket exists and
-is prepared to handle a connection, connection will complete,
+is prepared to handle a connection, connection will be complete,
 and the program can begin to send
 messages.  Messages will be delivered in order without message
 boundaries, as with pipes.  The connection is destroyed when either
@@ -642,7 +646,7 @@ Once the listen call has been completed, the program enters
 an infinite loop.  On each pass through the loop, a new connection is
 accepted and removed from the queue, and, hence, a new socket for the 
 connection is created.  The bottom half of Figure 8 shows the result of
-Process 1 connecting with the named socket of Process 2 and Process 2
+Process 1 connecting with the named socket of Process 2, and Process 2
 accepting the connection.  After the connection is created, the
 service, in this case printing out the messages, is performed and the
 connection socket closed.  The \fIaccept()\fP
@@ -839,7 +843,7 @@ as there are usually only 64 entries available in the open descriptor
 table.  This can cause problems if a single server must talk with a large
 number of clients. 
 Another is that for delivering a short message the stream setup and 
-teardown time can be unnecessarily large.  Weighed against this are
+teardown time can be unnecessarily long.  Weighed against this are
 the reliability built into the streams.  This will often be the
 deciding factor in favor of streams.
 .b
