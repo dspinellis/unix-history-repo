@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.10	(Berkeley)	%G%
+#	Makefile	4.11	83/07/02
 #
 # makefile for line printer spooling system
 #
@@ -7,7 +7,6 @@
 # DAEMON	someone special
 # SPGRP		the group id of the spooling programs
 #
-
 CFLAGS=-O
 LIBDIR=/usr/lib
 BINDIR=/usr/ucb
@@ -17,21 +16,20 @@ ROOT=root
 DAEMON=daemon
 SPGRP=daemon
 DESTDIR=
-
 SRCS=	lpd.c lpr.c lpq.c lprm.c pac.c lpd.c cmds.c cmdtab.c \
 	printjob.c recvjob.c displayq.c rmjob.c \
 	startdaemon.c common.c printcap.c lpdchar.c
-OBJS=	lpd lpr lpq lprm pac lpc
+ALL=	lpd lpr lpq lprm pac lpc
 
-all:	${OBJS}
+all:	${ALL} FILTERS
 
-lpd:	lpd.o printjob.o recvjob.o displayq.o rmjob.o \
-	startdaemon.o lpdchar.o common.o printcap.o
+lpd:	lpd.o printjob.o recvjob.o displayq.o rmjob.o
+lpd:	startdaemon.o lpdchar.o common.o printcap.o
 	${CC} -o lpd lpd.o printjob.o recvjob.o displayq.o rmjob.o \
 		startdaemon.o lpdchar.o common.o printcap.o
 
-lpr:	lpr.o startdaemon.o common.o printcap.o
-	${CC} -o lpr lpr.o startdaemon.o common.o printcap.o
+lpr:	lpr.o startdaemon.o printcap.o
+	${CC} -o lpr lpr.o startdaemon.o printcap.o
 
 lpq:	lpq.o displayq.o common.o printcap.o
 	${CC} -o lpq lpq.o displayq.o common.o printcap.o -ltermcap
@@ -47,22 +45,28 @@ pac:	pac.o printcap.o
 
 lpd.o lpr.o lpq.o lprm.o pac.o: lp.h lp.local.h
 recvjob.o printjob.o displayq.o rmjob.o common.o: lp.h lp.local.h
+startdaemon.o: lp.local.h
 lpc.o cmdtab.o: lpc.h
 cmds.o: lp.h lp.local.h
 
+FILTERS:
+	cd filters; make ${MFLAGS}
+
 install: all
-	install -s -g ${SPGRP} -m 6711 lpd ${DESTDIR}${LIBDIR}/lpd
-	install -s -g ${SPGRP} -m 6711 lpr ${DESTDIR}${BINDIR}/lpr
-	install -s -g ${SPGRP} -m 6711 lpq ${DESTDIR}${BINDIR}/lpq
-	install -s -g ${SPGRP} -m 6711 lprm ${DESTDIR}${BINDIR}/lprm
+	install -s -g ${SPGRP} -m 6711 lpd ${DESTDIR}/${LIBDIR}/lpd
+	install -s -g ${SPGRP} -m 6711 lpr ${DESTDIR}/${BINDIR}/lpr
+	install -s -g ${SPGRP} -m 6711 lpq ${DESTDIR}/${BINDIR}/lpq
+	install -s -g ${SPGRP} -m 6711 lprm ${DESTDIR}/${BINDIR}/lprm
 	install -s -g ${SPGRP} -m 6711 lpc ${DESTDIR}/etc/lpc
 	install -s pac ${DESTDIR}/etc/pac
-	chown ${DAEMON} ${DESTDIR}${SPOOLDIR}
-	chgrp ${SPGRP} ${DESTDIR}${SPOOLDIR}
-	chmod 775 ${DESTDIR}${SPOOLDIR}
+	chown ${DAEMON} ${DESTDIR}/${SPOOLDIR}
+	chgrp ${SPGRP} ${DESTDIR}/${SPOOLDIR}
+	chmod 775 ${DESTDIR}/${SPOOLDIR}
+	cd filters; make ${MFLAGS} install
 
 clean:
-	rm -f ${OBJS} *.o
+	rm -f ${ALL} *.o
+	cd filters; make ${MFLAGS} clean
 
 print:
 	@pr makefile
