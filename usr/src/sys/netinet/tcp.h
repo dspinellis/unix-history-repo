@@ -1,4 +1,4 @@
-/* tcp.h 1.6 81/10/28 */
+/* tcp.h 1.7 81/10/28 */
 
 /*
  * Tcp header (fits over ip header).
@@ -153,3 +153,8 @@ struct	tcp_debug tcp_debug[TDBSIZE];
 int	tdbx;			/* rotating index into tcp_debug */
 #endif
 #endif
+
+#define	SEQ_LT(a,b)	((int)((a)-(b)) < 0)
+#define	SEQ_LEQ(a,b)	((int)((a)-(b)) <= 0)
+#define	SEQ_GT(a,b)	((int)((a)-(b)) > 0)
+#define	SEQ_GEQ(a,b)	((int)((a)-(b)) >= 0)
