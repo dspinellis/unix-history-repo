@@ -1,24 +1,68 @@
 			  FreeBSD 1.0
 		        Contributor List
 
-		        Rodney W. Grimes
 
 
-Derived Software Contributors
+Derived Software Contributors:
 
-This software was derived from William F. Jolitz's 386BSD release 0.1, please
-see the file CONTRIB.386BSD for a list of contributors to that release.
+This software was derived from William F. Jolitz's 386BSD release 0.1. 
+Please see the file CONTRIB.386BSD for the list of contributors from 
+386BSD.
 
-Also included in this release is all the patches from patch kit 0.2.4 the
-names of contributors from the patch kit is listed below in a seperate
-section.
+Also included in this release are the patches from the patch kit version
+0.2.4.  The names of contributors from the patch kit are listed below.
 
-Hardware Contributors
+Hardware Contributors:
 
-A special thanks to Robert Bruce and Jack Velte of Walnut Creek CDROM for
-providing a 486/DX2-66 EISA/VL system that was T-1 internet connected
-for the developement work.  It would have been imposible for us to get
-this release done with out them.
+A special thanks to Robert Bruce and Jack Velte of Walnut Creek CDROM
+for providing a 486/DX2-66 EISA/VL system that is being used for the
+development work.  It would have been impossible to do this release
+with out there support.
+
+FreeBSD core:
+Andrew Moore <alm@netcom.com>
+J.T. Conklin <conklin@talisman.kaleida.com>
+David Greenman <davidg@implode.rain.com>
+Jordan K. Hubbard <jkh@whisker.lotus.ie>
+Nate Williams <nate@bsd.coe.montana.edu>
+Paul Richards <paul@isl.cf.ac.uk>
+Rich Murphey <rich@lamprey.utmb.edu>
+Rodney W. Grimes <rgrimes@cdrom.com>
+
+Additional FreeBSD Contributors:
+Adam Glass <glass@postgres.berkeley.edu>
+Andrew A. Chernov <ache@astral.msk.su>
+Andrew Herbert <andrew@werple.apana.org.au>
+Bob Wilcox <bob@obiwan.uucp>
+Bruce Evans <bde@runx.oz.au>
+Charles Hannum
+Chris G. Demetriou <cdg@sun-lamp.cs.berkeley.edu>
+Chris Torek
+Christoph Robitschko <chmr@edvz.tu-graz.ac.at> <chmr@fstgds01.tu-graz.ac.at>
+Dave Burgess <burgess@hrd769.brooks.af.mil>
+Dave Rivers <rivers@ponds.uucp>
+David Dawes <dawes@physics.su.OZ.AU>
+Frank Maclachlan <fpm@crash.cts.com>
+Gary A. Browning <gab10@griffcd.amdahl.com>
+Guido van Rooij <guido@gvr.win.tue.nl>
+Havard Eidnes <Havard.Eidnes@runit.sintef.no>
+Ishii Masahiro, R. Kym Horsell
+James Clark <jjc@jclark.com>
+James da Silva <jds@cs.umd.edu> et al
+Jim Wilson <wilson@moria.cygnus.com>
+John Dyson - <formerly dyson@ref.tfs.com>
+Julian Elischer <formerly julian@ref.tfs.com>
+Julian Stacey <stacey@guug.de> <fallback: <julian@meepmeep.pcs.com>>
+Keith Bostic
+Mark Tinguely <tinguely@plains.nodak.edu> <tinguely@hookie.cs.ndsu.NoDak.edu>
+Paul Kranenburg <pk@cs.few.eur.nl>
+Paul Mackerras <paulus@cs.anu.edu.au>
+Poul-Henning Kamp <phk@data.fls.dk>
+Sascha Wildner <swildner@channelz.GUN.de>
+Scotty ?
+Sean Eric Fagan <sef@moria.cygnus.com>
+Terry Lee <terry@uivlsi.csl.uiuc.edu> <terry@uivlsisd.csl.uiuc.edu>
+Yoval Yarom <???>
 
 PATCH KIT PATCH CONTRIBUTORS:
 Adam Glass <glass@postgres.berkeley.edu>
@@ -38,7 +82,6 @@ Charles Hannum
 Chris G. Demetriou <cdg@sun-lamp.cs.berkeley.edu>
 Chris Torek
 Christoph Robitschko <chmr@edvz.tu-graz.ac.at> <chmr@fstgds01.tu-graz.ac.at>
-Christoph Robitschko <chmr@fstgs01.tu-graz.ac.at>
 Daniel Poirot <poirot@aio.jsc.nasa.gov>
 Dave Burgess <burgess@hrd769.brooks.af.mil>
 Dave Rivers <rivers@ponds.uucp>
@@ -81,7 +124,7 @@ Mark Tinguely <tinguely@plains.nodak.edu> <tinguely@hookie.cs.ndsu.NoDak.edu>
 Martin Renters <martin@innovus.com>
 Michael Galassi <nerd@percival.rain.com>
 Mike Durkin <mdurkin@tsoft.sf-bay.org>
-Nate Williams <osynw@terra.oscs.montana.edu>
+Nate Williams <nate@bsd.coe.montana.edu>
 Nick Handel <nhandel@NeoSoft.com> <nick@madhouse.neosoft.com>
 Pace Willisson <pace@blitz.com>
 Paul Kranenburg <pk@cs.few.eur.nl>
@@ -94,7 +137,7 @@ Ralf Friedl <friedl@informatik.uni-kl.de>
 Rich Murphey <rich@lamprey.utmb.edu>
 Rick "gopher I" <root@snowhite.cis.uoguelph.ca>
 Robert D. Thrush <rd@phoenix.aii.com>
-Rodney W. Grimes <rgrimes@agora.rain.com>
+Rodney W. Grimes <rgrimes@cdrom.com>
 Rog Egge
 Sascha Wildner <swildner@channelz.GUN.de>
 Scott Burris <scott@pita.cns.ucla.edu>
