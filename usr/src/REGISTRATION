@@ -1,0 +1,522 @@
+
+
+
+
+
+
+
+		     386BSD RELEASE 0.1
+	     OFFICIAL USER GROUP REGISTRATION
+
+
+_3_8_6_B_S_D _U_s_e_r _G_r_o_u_p _R_e_g_i_s_t_r_a_t_i_o_n
+
+     Attached is the 386BSD user group registration form and
+survey.	Please  fill	it  out completely and return it via
+email, regular mail, or fax. We will put you on the Official
+386BSD	User  Group mailing list for information and updates
+on 386BSD.
+
+     A userdirectory file is installed at official distribu-
+tion  sites  to	allow	386BSD	users  to contact and become
+acquainted with other 386BSD users.  If you wish your  name,
+company	or  university,  and  email address to be placed in
+this public directory, please check the box on the registra-
+tion  form.  (NOTE: You do not have to select this option in
+order to participate in the 386BSD SIG and  regular  mailing
+lists	and   other  activities.  This	directory  has	been
+installed only as a courtesy to the 386BSD  user  community.
+Participation is not mandatory.)
+
+_3_8_6_B_S_D _U_s_e_r _A_c_t_i_v_i_t_i_e_s _a_n_d _M_a_i_l_i_n_g _L_i_s_t_s
+
+     There are a number of 386BSD  special  interest  groups
+forming, focussing on topics of interest to the research and
+development community.	Among these areas of interest are:
+
+*    Shared Libraries
+
+*    Filesystems
+
+*    Symmetric Multiprocessing
+
+*    Windowing Systems
+
+*    Virtual Memory System
+
+*    Gigabit Networking
+
+In addition, a	number	of  smaller  projects  focussing  on
+improvements  in the kernel and utilities are getting under-
+way.
+
+     If you are interested in learning about  any  of  these
+groups,	or you would like to form your own SIG, please fill
+out and send in this REGISTRATION form and we will  put	you
+on the SIG mailing list (along with the general 386BSD mail-
+ing list) and  help  you  form	contacts  with	other  users
+interested in discussing these topics.
+
+
+
+386BSD REGFORM		1			July 1992
+
+
+
+
+
+
+
+
+
+
+     For  information  and  questions  on  386BSD  seminars,
+tutorials, and materials, contact:
+
+    Jim Joyce
+    The Gawain Group
+    139 Noe Street
+    San Francisco, California 94114 USA
+    1-415-626-7581
+
+
+_M_o_n_e_t_a_r_y _C_o_n_t_r_i_b_u_t_i_o_n_s _f_o_r _3_8_6_B_S_D _R_e_l_e_a_s_e_s
+
+     386BSD is intended by the developer to be used for edu-
+cational  and  research	purposes. As such, the developer of
+this release is making	it  available  to  the	user  at  no
+charge,	in  order  to	encourage  and facilitate its use in
+research and education.	However, 386BSD has been  a  costly
+product	to  develop and maintain, and each release consumes
+enormous resources.
+
+     Release  0.0,  the	first	complete  freely   available
+release of BSD for the 386/486 PC, was completed entirely as
+a personal project.  386BSD Release 0.1, the second  release
+of  a complete 386BSD system, was motivated primarily due to
+the enthusiasm and contributions of  the  Release  0.0	user
+base.
+
+     In sum, 386BSD has taken over four	years	of  personal
+financing on the part of the developers to get it out to the
+user.  Unfortunately, we are  not  funded  by  any  granting
+agency, university, corporation, or non-profit company.
+
+     If you like 386BSD, you may elect to make	a  contribu-
+tion  to  defray  the cost of development and to demonstrate
+support of this project.  If just 10% of the number of	peo-
+ple using 386BSD out there right now sent in $100 each, this
+project would be adequately funded for the next two years!
+
+     Should you with to make  a	contribution,	return	this
+form with your check or money order (suggested contribution:
+$50.00US binary and $100.00US source) made out to:
+
+    Lynne Greer Jolitz
+    386BSD Registration
+    447 61ST Street
+    Oakland, CA. 94609	USA
+
+    +1-510-420-0174 FAX
+    ljolitz@cardio.ucsf.edu
+    CIS 76703,4266
+    BIX wjolitz
+
+If you are  located  in	Europe	and  you  wish	to  make  a
+
+
+386BSD REGFORM		2			July 1992
+
+
+
+
+
+
+
+
+
+
+contribution,  but  you	are having difficulty with currency
+transactions, please contact for instructions:
+
+    BSD-Projekt
+    Juergen Fey
+    UNIX Magazin
+    Hans-Pinsel-Str. 2
+    8013 Haar bei Muenchen
+
+    +49-89-46-13-356 FAX
+    jf@unixmag.mut.de
+
+They will collect  monetary  contributions  for	386BSD	and
+transfer  the  funds  for you.	However, please specify that
+this is a "386BSD contribution to defray development  costs"
+to  avoid  confusion  with  other items which are offered by
+UNIX Magazin.
+
+     There is no mandatory payment required by the developer
+for  use  of 386BSD Release 0.1.  However, your contribution
+would be greatly appreciated.
+
+_O_t_h_e_r _C_o_n_t_r_i_b_u_t_i_o_n_s _t_o _3_8_6_B_S_D
+
+     Software contributions, bug fixes, software  ports	and
+other  items  are welcome for submission. For novel software
+contributions (such as major modules) and  ports  of  public
+domain	or  otherwise  unencumbered software, please use the
+software.form. For bugs and their  appropriate	fix,  please
+use the bugnfix.form.
+
+     Please contact  us	directly  for	equipment  or  other
+items.
+
+_S_e_r_v_i_c_e_s _a_n_d _S_u_p_p_o_r_t _F_i_l_e
+
+     A service.support file is available at official distri-
+bution	sites.	This  file  contains  a unverified and dis-
+claimed list of people, groups,	and/or	companies  offering
+support	for  386BSD.	We  require  that  anyone wishing to
+appear on this list send mail properly requesting  inclusion
+or exclusion, to avoid any potential problems.	Requests for
+inclusion should state the following: name, firm  (if  any),
+contact	address and country, contact phone/fax/telex/email,
+areas of specialty, rates, and experience.  This information
+is  only for the purposes of aiding users, and is definitely
+not intended as *advertising*.
+
+Thank you for your support.
+
+Lynne Greer Jolitz
+TeleMuse
+
+
+386BSD REGFORM		3			July 1992
+
+
+
+
+
+
+
+
+
+
+____________________________________________________________
+
+
+		    386BSD RELEASE 0.1
+			USER GROUP
+		     REGISTRATION FORM
+			 AND SURVEY
+
+
+     Please complete this registration form and	survey	and
+return it to:
+
+    Lynne Greer Jolitz
+    386BSD User Registration
+    447 61ST Street
+    Oakland, CA. 94609	USA
+
+    +1-510-420-0174 FAX
+    ljolitz@cardio.ucsf.edu
+    CIS 76703,4266
+
+Should you wish to  make  a  monetary  contribution,  please
+attach check or money order (made out to "Lynne Greer Jolitz
+- 386BSD Contribution") and return  with  this	registration
+form.
+
+_R_e_g_i_s_t_r_a_t_i_o_n _I_n_f_o_r_m_a_t_i_o_n:
+
+NAME:
+TITLE:
+FIRM:
+ADDRESS:
+COUNTRY:
+PHONE:
+FAX:
+EMAIL:
+
+
+1.   A userdirectory file is installed at official distribu-
+     tion  sites to allow 386BSD users to contact and become
+     acquainted with other 386BSD  users.   Would  you	like
+     your  name, company or university, and email address to
+     be placed in this public directory? (y/n).
+
+     NOTE: You do not have to select this option in order to
+     participate in the 386BSD SIG and regular mailing lists
+     and other activities. This directory has been installed
+     only as a courtesy to the 386BSD user community. Parti-
+     cipation is not mandatory.
+
+2.   What type of site are you working at?
+
+	 college/university
+
+
+386BSD REGFORM		4			July 1992
+
+
+
+
+
+
+
+
+
+
+	 research lab
+	 commercial
+	 individual/consultant
+	 other:
+
+
+3.   Do you have Internet access?
+
+4.   Do you work on (commercial/government/university/other)
+     projects?
+
+
+
+
+_3_8_6_B_S_D _I_n_t_e_r_e_s_t
+
+1.   Where  did	you	first	find   out   about   386BSD?
+     (email/magazine/other)
+
+
+
+
+2.   What aspect of 386BSD most interests you?
+
+	 source availability
+	 binary availability
+	 advanced operating system
+	 advanced networking
+	 other:
+
+
+3.   Why do you think 386BSD is interesting ?
+
+
+
+
+3.   We write regularly in Dr. Dobbs Journal and UNIX  Maga-
+     zin  about	386BSD	and  other  topics.  What aspect of
+     386BSD would you like to read more about? What  techni-
+     cal  areas should we cover in more depth? (You can also
+     contact the editors of DDJ at CIS 76703,50 and the edi-
+     tors  of UNIX Magazin at jf@unixmag.mut.de for comments
+     regarding articles).
+
+
+
+
+5.   Is a 386BSD forum a good idea?
+
+
+
+
+
+
+386BSD REGFORM		5			July 1992
+
+
+
+
+
+
+
+
+
+
+6.   Would you be interested in attending a seminar  on	the
+     installation and maintenance of 386BSD ? Is this a good
+     idea ?
+
+
+
+
+7.   Would you be interested in attending a seminar  on	the
+     kernel internals of 386BSD ?  Is this a good idea ?
+
+
+
+
+8.   Would you like to hear more about	any  of	the  386BSD
+     SIGs  forming  right  now?	(Please  select a topic of
+     interest, or add one of your own. I will try to  match-
+     make  you	to  others  interested	in  the same area of
+     study).
+
+
+
+
+_3_8_6_B_S_D _R_e_l_e_a_s_e _0._0
+
+386BSD	Release	0.0  (March  1992)  was  the  first  fully-
+operational and freely available version of 386BSD.
+
+1.   Did you obtain 386BSD Release 0.0 ?
+
+
+
+
+2.   If yes, were you able to get 386BSD Release 0.0  opera-
+     tional?
+
+
+
+
+3.   If yes, what did you like about 0.0 ? What was unsatis-
+     factory ?
+
+
+
+
+4.   If no, why not?
+
+
+
+
+_3_8_6_B_S_D _R_e_l_e_a_s_e _0._1 _U_s_a_g_e
+
+1.   What do you intend to use 336BSD Release 0.1 for?
+
+
+386BSD REGFORM		6			July 1992
+
+
+
+
+
+
+
+
+
+
+	 development system
+	 networking/gateway
+	 individual research
+	 personal work
+	 replacement for MS-DOS
+	 replacement for other UNIX
+	 other:
+
+
+2.   Would students be using this system? (yes/no)  If	yes,
+     would 386BSD be integrated into a course or lab study?
+
+
+
+
+3.   What aspects of 386BSD Release 0.1 do you most like?
+
+
+
+
+4.   What aspects of 386BSD Release 0.1 would  you  like  to
+     see improved?
+
+
+
+
+5.   Where do you think 386BSD	should	head,  in  terms  of
+     development goals?
+
+
+
+
+6.   Would you like to help contribute	to  this  effort  to
+     facilitate	further releases of 386BSD? (Check all that
+     apply)
+
+	 yes - monetary contribution to 386BSD effort (see instructions)
+	 yes - software enhancements to 386BSD (see bugnfix.form and software.form)
+	 yes - hardware loans for new software testing (see instructions)
+	 yes - other items:
+	 no
+
+
+7    Do you see the need for a	centrally-supported  version
+     of	386BSD	?   How  would this best be done ? (This is
+     intentionally an open-ended question.  We would like to
+     hear your opinion).
+
+
+
+
+
+
+
+386BSD REGFORM		7			July 1992
+
+
+
+
+
+
+
+
+
+
+_O_t_h_e_r _C_o_m_m_e_n_t_s
+
+1.   If you  have  any	suggestions  or	comments  regarding
+     386BSD  Release  0.0  or  our writings on this subject,
+     please take a moment and attach them.
+
+
+
+
+
+
+
+Thank you for completing this survey. Your input  will	help
+us in making 386BSD Release 0.1 more accessible and targeted
+to your needs.
+____________________________________________________________
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+386BSD REGFORM		8			July 1992
+
+
+
