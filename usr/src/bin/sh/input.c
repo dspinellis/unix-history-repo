@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)input.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)input.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -28,7 +28,7 @@ static char sccsid[] = "@(#)input.c	5.5 (Berkeley) %G%";
 #include "error.h"
 #include "alias.h"
 #include "parser.h"
-#include "histedit.h"
+#include "myhistedit.h"
 
 #define EOF_NLEFT -99		/* value of parsenleft when EOF pushed back */
 
