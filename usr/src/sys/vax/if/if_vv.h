@@ -1,4 +1,4 @@
-/*	if_vv.h	4.5	83/07/29	*/
+/*	if_vv.h	4.6	84/01/03	*/
 /*
  * Local network header for V2LNI Ring
  * This is arbitrated by "V2LNI-PEOPLE@MIT-MC"
@@ -82,4 +82,6 @@ struct vvreg {
 	u_short	vvoea;		/* output addr hi */
 };
 
-#define	VVRETRY	7
+#define	VVRETRY	7		/* output retry limit */
+#define VVIDENTRETRY 10		/* identify loop retry limit */
+#define VVTIMEOUT 60		/* seconds before a transmit timeout */
