@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_syscalls.c	7.21 (Berkeley) %G%
+ *	@(#)lfs_syscalls.c	7.22 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -97,11 +97,16 @@ lfs_markv(p, uap, retval)
 				lfs_updatemeta(sp);
 				lfs_writeinode(fs, sp, ip);
 				vput(vp);
+				sp->vp = NULL;
 			}
 			lastino = blkp->bi_inode;
-			LFS_IENTRY(ifp, fs, blkp->bi_inode, bp);
-			v_daddr = ifp->if_daddr;
-			brelse(bp);
+			if (blkp->bi_inode == LFS_IFILE_INUM)
+				v_daddr = fs->lfs_idaddr;
+			else {
+				LFS_IENTRY(ifp, fs, blkp->bi_inode, bp);
+				v_daddr = ifp->if_daddr;
+				brelse(bp);
+			}
 			if (v_daddr == LFS_UNUSED_DADDR)
 				continue;
 			/* Get the vnode/inode. */
@@ -124,13 +129,8 @@ lfs_markv(p, uap, retval)
 		/* If this BLOCK_INFO didn't contain a block, keep going. */
 		if (blkp->bi_lbn == LFS_UNUSED_LBN)
 			continue;
-		/*
-		 * If change time later than segment create time, see if the
-		 * block has been replaced.
-		 */
-		if (ip->i_ctime.ts_sec > blkp->bi_segcreate &&
-		    (VOP_BMAP(vp, blkp->bi_lbn, NULL, &b_daddr) ||
-		    b_daddr != blkp->bi_daddr))
+		if (VOP_BMAP(vp, blkp->bi_lbn, NULL, &b_daddr) ||
+		    b_daddr != blkp->bi_daddr)
 			continue;
 		/*
 		 * If we got to here, then we are keeping the block.  If it
@@ -224,6 +224,8 @@ lfs_bmapv(p, uap, retval)
 	}
 
 	for (step = cnt; step--; ++blkp) {
+		if (blkp->bi_lbn == LFS_UNUSED_LBN)
+			continue;
 		if (VFS_VGET(mntp, blkp->bi_inode, &vp))
 			daddr = LFS_UNUSED_DADDR;
 		else {
@@ -274,8 +276,6 @@ lfs_segclean(p, uap, retval)
 	fs->lfs_bfree += (sup->su_nsums * LFS_SUMMARY_SIZE / DEV_BSIZE) +
 	    sup->su_ninos * btodb(fs->lfs_bsize);
 	sup->su_flags &= ~SEGUSE_DIRTY;
-printf ("segclean: segment %d has %d bytes %d sums %d ninos\n",
-uap->segment, sup->su_nbytes, sup->su_nsums, sup->su_ninos);
 	(void) VOP_BWRITE(bp);
 
 	LFS_CLEANERINFO(cip, fs, bp);
