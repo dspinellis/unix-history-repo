@@ -1,6 +1,4 @@
-static char *sccsid = "@(#)find.c	4.8 (Berkeley) %G%";
-
-/*	find	COMPILE:	cc -o find -s -O -i find.c -lS	*/
+static char *sccsid = "@(#)find.c	4.9 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <sys/param.h>
@@ -45,7 +43,7 @@ char *rindex();
 char *sbrk();
 
 /*
- * SEE ALSO:	find.squeeze, find.bigram.c, find.code.c
+ * SEE ALSO:	updatedb, bigram.c, code.c
  *		Usenix ;login:, February/March, 1983, p. 8.
  *
  * REVISIONS: 	James A. Woods, Informatics General Corporation,
@@ -53,7 +51,7 @@ char *sbrk();
  *
  *		The second form searches a pre-computed filelist
  *		(constructed nightly by /usr/lib/crontab) which is
- *		compressed by find.squeeze (v.i.z.)  The effect of
+ *		compressed by updatedb (v.i.z.)  The effect of
  *			find <name>
  *		is similar to
  *			find / +0 -name "*<name>*" -print
@@ -721,7 +719,7 @@ again:
  *
  *	0-28	likeliest differential counts + offset to make nonnegative 
  *	30	escape code for out-of-range count to follow in next word
- *	128-255 bigram codes, (128 most common, as determined by 'find.squeeze')
+ *	128-255 bigram codes, (128 most common, as determined by 'updatedb')
  *	32-127  single character (printable) ascii residue
  *
  * A novel two-tiered string search technique is employed: 
@@ -736,7 +734,7 @@ again:
  * provided in the standard 'find'.
  */
 
-#define	FCODES 	"/etc/find.codes"
+#define	FCODES 	"/usr/lib/find/find.codes"
 #define	YES	1
 #define	NO	0
 #define	OFFSET	14

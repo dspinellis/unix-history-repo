@@ -1,10 +1,11 @@
 #!/bin/csh -f
 #
-#	@(#)updatedb.csh	4.2	(Berkeley)	83/07/21
+#	@(#)updatedb.csh	4.3	(Berkeley)	83/07/21
 #
-set LIBDIR = /usr/lib/find	# for subprograms
-set FINDHONCHO = root		# for error messages
-set FCODES = /etc/find.codes	# the database 
+set SRCHPATHS = "/usr /bin /etc /lib"	# directories to be put in the database
+set LIBDIR = /usr/lib/find		# for subprograms
+set FINDHONCHO = root			# for error messages
+set FCODES = /usr/lib/find/find.codes	# the database 
 
 set path = ( $LIBDIR /usr/ucb /bin /usr/bin )
 set bigrams = /tmp/f.bigrams$$
@@ -19,7 +20,7 @@ set errs = /tmp/f.errs$$
 # lines, but is too slow, and runs out of string space on small machines).
 
 nice +10
-find / -print | tr '/' '\001' | \
+find ${SRCHPATHS} -print | tr '/' '\001' | \
    (sort -f; echo $status > $errs) | \
    tr '\001' '/' | tee $filelist | $LIBDIR/bigram | \
    (sort; echo $status >> $errs) | uniq -c | sort -nr | \
