@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_input.c	7.6 (Berkeley) %G%
+ *	@(#)pk_input.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -140,7 +140,7 @@ struct x25config *xcp;
 
 	xp = mtod (m, struct x25_packet *);
 	ptype = pk_decode (xp);
-	lcn = xp -> logical_channel_number;
+	lcn = LCN(xp);
 	lcp = pkp -> pk_chan[lcn];
 
 	/* 
@@ -197,7 +197,7 @@ struct x25config *xcp;
 	 *  the DCE will ignore it anyway. 
 	 */
 	case CALL + SENT_CALL: 
-		pk_message ((int)xp -> logical_channel_number, pkp -> pk_xcp, 
+		pk_message ((int)lcn, pkp -> pk_xcp, 
 			"incoming call collision");
 		break;
 
@@ -290,16 +290,13 @@ struct x25config *xcp;
 		m -> m_data += PKHEADERLN;
 		m -> m_len -= PKHEADERLN;
 		if (lcp -> lcd_flags & X25_MQBIT) {
-			octet *t;
+			octet t = (xp -> q_bit) ? t = 0x80 : 0;
 
+			if (MBIT(xp))
+				t |= 0x40;
 			m -> m_data -= 1;
 			m -> m_len += 1;
-			t = mtod (m, octet *);
-			*t = 0x00;
-			if (xp -> q_bit)
-				*t |= 0x80;
-			if (MBIT(xp))
-				*t |= 0x40;
+			*mtod(m, octet *) = t;
 		}
 
 		/*
@@ -318,11 +315,7 @@ struct x25config *xcp;
 			lcp -> lcd_template = pk_template (lcp -> lcd_lcn, X25_RR);
 			pk_output (lcp);
 		} else {
-#ifdef BSD4_3
 			sbappendrecord (&so -> so_rcv, m);
-#else
-			sbappend (&so -> so_rcv, m);
-#endif
 			sorwakeup (so);
 		}
 		break;
@@ -491,7 +484,7 @@ struct x25config *xcp;
 		}
 		else	/* Packets arrived on an unassigned channel. 
 			*/
-			pk_message ((int)xp->logical_channel_number, pkp -> pk_xcp,
+			pk_message (lcn, pkp -> pk_xcp,
 				"packet arrived on unassigned lcn");
 		break;
 	}
@@ -521,7 +514,7 @@ struct x25_packet *xp;
 	register int l1, l2;
 	char *e, *errstr = "server unavailable";
 	octet *u;
-	int lcn = xp -> logical_channel_number;
+	int lcn = LCN(xp);
 
 	/* First, copy the data from the incoming call packet to a X25_socket
 	   descriptor. */
@@ -573,6 +566,14 @@ struct x25_packet *xp;
 			errstr = "incoming collect call refused";
 			break;
 		}
+		/*
+		 * don't accept incoming calls with the D-Bit on
+		 * unless the server agrees
+		 */
+		if (xp -> d_bit && !(sxp -> x25_opts.op_flags & X25_DBIT)) {
+			errstr = "incoming D-Bit mismatch";
+			break;
+		}
 		if (l -> lcd_so) {
 			if (so = sonewconn (l -> lcd_so, SS_ISCONNECTED))
 				    lcp = (struct pklcd *) so -> so_pcb;
@@ -595,6 +596,12 @@ struct x25_packet *xp;
 			~X25_REVERSE_CHARGE;
 		pk_assoc (pkp, lcp, sa);
 		lcp -> lcd_template = pk_template (lcp -> lcd_lcn, X25_CALL_ACCEPTED);
+		if (lcp -> lcd_flags & X25_DBIT) {
+			if (xp -> d_bit)
+				lcp -> lcd_template -> d_bit = 1;
+			else
+				lcp -> lcd_flags &= ~X25_DBIT;
+		}
 		if (so) {
 			pk_output (lcp);
 			soisconnected (so);
@@ -643,6 +650,8 @@ struct x25_packet *xp;
 	lcp -> lcd_state = DATA_TRANSFER;
 	if (lcp -> lcd_so)
 		soisconnected (lcp -> lcd_so);
+	if ((lcp -> lcd_flags & X25_DBIT) && (xp -> d_bit == 0))
+		lcp -> lcd_flags &= ~X25_DBIT;
 	if (len > 3) {
 		ap = (struct x25_calladdr *) &xp -> packet_data;
 		fcp = (octet *) ap -> address_field + (ap -> calling_addrlen +
