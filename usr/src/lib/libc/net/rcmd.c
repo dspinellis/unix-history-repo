@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rcmd.c	4.5 %G%";
+static char sccsid[] = "@(#)rcmd.c	4.6 %G%";
 #endif
 
 #include <stdio.h>
@@ -68,7 +68,11 @@ retry:
 		}
 		listen(s2, 1);
 		(void) sprintf(num, "%d", lport);
-		(void) write(s, num, strlen(num)+1);
+		if (write(s, num, strlen(num)+1) != strlen(num)+1) {
+			perror("write: setting up stderr");
+			(void) close(s2);
+			goto bad;
+		}
 		{ int len = sizeof (from);
 		  s3 = accept(s2, &from, &len, 0);
 		  close(s2);
