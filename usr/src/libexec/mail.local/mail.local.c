@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mail.local.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)mail.local.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -278,6 +278,9 @@ err(isfatal, fmt, va_alist)
 	va_start(ap, fmt);
 #else
 	va_start(ap);
+#endif
+#ifndef LOG_PERROR
+	(void)vfprintf(stderr, fmt, ap);
 #endif
 	vsyslog(LOG_ERR, fmt, ap);
 	va_end(ap);
