@@ -1,4 +1,4 @@
-#	@(#)Makefile	8.3 (Berkeley) %G%
+#	@(#)Makefile	8.4 (Berkeley) %G%
 
 NOOBJ=	oobj
 
@@ -6,15 +6,14 @@ NOOBJ=	oobj
 # -rw-r--r--
 BIN1=	aliases amd-home amd-n changelist csh.cshrc csh.login csh.logout \
 	crontab crontab.local daily dm.conf exports ftpusers ftpwelcome \
-	gettytab group hosts hosts.equiv hosts.lpd inetd.conf man.conf \
-	monthly motd netgroup netstart phones printcap protocols rc \
+	gettytab group hosts hosts.lpd inetd.conf man.conf \
+	monthly motd netgroup phones printcap protocols rc \
 	rc.local remote security services shells syslog.conf ttys weekly \
 	etc.${MACHINE}/disktab
 
 # -rw-rw-rw-
 BIN2=	motd
 
-MTREE=	4.4BSD.dist special
 KRB=	README krb.conf krb.realms
 NAMEDB=	localhost.rev named.boot root.cache
 PCS=	pcs750.bin
@@ -43,6 +42,8 @@ distribution:
 	(cd /dev && ./MAKEDEV std)
 	install -c -o root -g wheel -m 444 COPYRIGHT ${DESTDIR}/
 	install -c -o root -g wheel -m 600 master.passwd ${DESTDIR}/etc
+	install -c -o root -g wheel -m 600 hosts.equiv ${DESTDIR}/etc
+	install -c -o root -g wheel -m 744 netstart ${DESTDIR}/etc
 	install -c -o root -g wheel -m 644 ${BIN1} ${DESTDIR}/etc
 	install -c -o root -g wheel -m 666 ${BIN2} ${DESTDIR}/etc
 	(cd root; \
@@ -59,8 +60,11 @@ distribution:
 		rm -f ${DESTDIR}/.cshrc ${DESTDIR}/.profile; \
 		ln ${DESTDIR}/root/.cshrc ${DESTDIR}/.cshrc; \
 		ln ${DESTDIR}/root/.profile ${DESTDIR}/.profile)
-	(cd mtree; install -c -o root -g wheel -m 444 ${MTREE} \
-	    ${DESTDIR}/etc/mtree)
+	(cd mtree; \
+		install -c -o root -g wheel -m 600 special \
+		    ${DESTDIR}/etc/mtree; \
+		install -c -o root -g wheel -m 444 4.4BSD.dist \
+		    ${DESTDIR}/etc/mtree)
 	(cd namedb; install -c -o root -g wheel -m 644 ${NAMEDB} \
 	    ${DESTDIR}/etc/namedb)
 	(cd kerberosIV; install -c -o root -g wheel -m 444 ${KRB} \
