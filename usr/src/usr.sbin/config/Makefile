@@ -3,13 +3,13 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 #
 #
 CFILES=	y.tab.c main.c lex.yy.c mkioconf.c mkmakefile.c \
-	mkubglue.c mkheaders.c mkswapconf.c
+	mkglue.c mkheaders.c mkswapconf.c
 OBJS=	y.tab.o main.o lex.yy.o mkioconf.o mkmakefile.o \
-	mkubglue.o mkheaders.o mkswapconf.o
+	mkglue.o mkheaders.o mkswapconf.o
 
 CFLAGS=-O
 LDFLAGS=-ll
@@ -51,11 +51,9 @@ depend:
 
 # DO NOT DELETE THIS LINE -- make depend uses it
 
-y.tab.o: config.h
 main.o: y.tab.h config.h
-lex.yy.o: y.tab.h config.h
 mkioconf.o: y.tab.h config.h
 mkmakefile.o: y.tab.h config.h
-mkubglue.o: config.h y.tab.h
+mkglue.o: config.h y.tab.h
 mkheaders.o: config.h y.tab.h
 mkswapconf.o: config.h
