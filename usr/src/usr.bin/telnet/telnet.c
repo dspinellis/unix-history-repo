@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)telnet.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	5.16 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -964,10 +964,11 @@ telnet()
 			switch (c) {
 			case '\n':
 				/*
-				 * If echoing is happening locally,
-				 * then a newline (unix) is CRLF (TELNET).
+				 * If we are in CRMOD mode (\r ==> \n)
+				 * on our local machine, then probably
+				 * a newline (unix) is CRLF (TELNET).
 				 */
-				if (!hisopts[TELOPT_ECHO]) {
+				if (globalmode >= 3) {
 					NETADD('\r');
 				}
 				NETADD('\n');
