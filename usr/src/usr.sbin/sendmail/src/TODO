@@ -1,4 +1,4 @@
-(Version 8.3 of %G%)
+(Version 8.4 of %G%)
 
 *****	Database (keyed lookup) locking and rebuild.
 
@@ -56,3 +56,13 @@
 	HELO command.
 
 ***	Add ability to disable Return-Receipt-To: on a privacy flag.
+
+**	LOCAL_RULE_5 (Spencer Sun, spencer@phoenix.Princeton.EDU)
+
+******	init_md() hook in main to conf.c.
+
+*****	init_md hook for setcompat(COMPAT_BSDPROT | getcompat()); on A/UX.
+
+****	Merge Sun changes.
+
+***	Merge Encore changes.
