@@ -62,6 +62,12 @@ The above three items WILL be in the next version, which should come
 along "any day now" (say 6 months) (but, they WON'T be in the production
 release of this version).
 
+4.2 NOTE:
+
+If you run 4.2 on a vax, you may get error messages involving assignments
+to variables which are pointers to void returning functions.  These
+errors can be corrected by using makefile_4.2 as your makefile.
+
 MS-DOS NOTES:
 
 This version can be built on an MS-DOS system.

@@ -122,7 +122,7 @@ ALLO	= telnet$O mset$O
 
 ALLPRINT =	${ALLH} ${ALLC}
 
-ALLSOURCE =	${ALLPRINT} makefile makefile.mak README
+ALLSOURCE =	${ALLPRINT} makefile makefile.mak makefile_4.2 README
 
 SYS	= sys_curses
 #PC_SYS	= sys_dos
