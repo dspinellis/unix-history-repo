@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	4.10 82/11/14";
+static char sccsid[] = "@(#)telnetd.c	4.11 82/11/15";
 #endif
 
 /*
@@ -97,9 +97,9 @@ again:
 	for (;;) {
 		int s2;
 
-		s2 = accept(s, (caddr_t)0, 0);
+		s2 = accept(s, (caddr_t)0, 0, 0);
 		if (s2 < 0) {
-			perror("accept");
+			perror("telnetd: accept");
 			sleep(1);
 			continue;
 		}
@@ -131,9 +131,8 @@ doit(f)
 		if (p > 0)
 			goto gotpty;
 	}
-	dup2(f, 1);
-	printf("All network ports in use.\n");
-	exit(1);
+	fatal(f, "All network ports in use");
+	/*NOTREACHED*/
 gotpty:
 	dup2(f, 0);
 	cp[strlen("/dev/")] = 't';
@@ -143,22 +142,16 @@ gotpty:
 		close(t);
 	}
 	t = open(cp, 2);
-	if (t < 0) {
-		dup2(f, 2);
-		perror(cp);
-		exit(1);
-	}
+	if (t < 0)
+		fatalperror(f, cp, errno);
 	ioctl(t, TIOCGETP, &b);
 	b.sg_flags = CRMOD|XTABS|ANYP;
 	ioctl(t, TIOCSETP, &b);
 	ioctl(p, TIOCGETP, &b);
 	b.sg_flags &= ~ECHO;
 	ioctl(p, TIOCSETP, &b);
-	if ((i = fork()) < 0) {
-		dup2(f, 2);
-		perror("fork");
-		exit(1);
-	}
+	if ((i = fork()) < 0)
+		fatalperror(f, "fork", errno);
 	if (i)
 		telnet(f, p);
 	close(f);
@@ -168,8 +161,31 @@ gotpty:
 	dup2(t, 2);
 	close(t);
 	execl("/bin/login", "telnet-login", 0);
-	perror("/bin/login");
+	fatalperror(f, "/bin/login", errno);
+	/*NOTREACHED*/
+}
+
+fatal(f, msg)
+	int f;
+	char *msg;
+{
+	char buf[BUFSIZ];
+
+	(void) sprintf(buf, "telnetd: %s.\n", msg);
+	(void) write(f, buf, strlen(buf));
 	exit(1);
+}
+
+fatalperror(f, msg, errno)
+	int f;
+	char *msg;
+	int errno;
+{
+	char buf[BUFSIZ];
+	extern char *sys_errlist[];
+
+	(void) sprintf(buf, "%s: %s", msg, sys_errlist[errno]);
+	fatal(f, buf);
 }
 
 /*
@@ -566,10 +582,10 @@ cleanup()
 	int how = 2;
 
 	rmut();
+#ifdef notdef
 	vhangup();
-#ifndef notdef
-	ioctl(net, SIOCDONE, &how);
 #endif
+	ioctl(net, SIOCDONE, &how);
 	kill(0, SIGKILL);
 	exit(1);
 }
