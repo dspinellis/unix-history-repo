@@ -1,14 +1,15 @@
 C
 C ioinit - initialize the I/O system
-C		@(#)ioinit.f	1.2
+C		@(#)ioinit.f	1.3
 C synopsis:
-C	logical function ioinit (io66, ioapnd, prefix, vrbose)
-C	logical io66, ioapnd
+C	logical function ioinit (cctl, bzro, apnd, prefix, vrbose)
+C	logical cctl, bzro, apnd, vrbose
 C	character*(*) prefix
 C
 C where:
-C	io66	is .true. to turn on fortran-66 carriage control
-C	ioapnd	is .true. to open files at their end
+C	cctl	is .true. to turn on fortran-66 carriage control
+C	bzro	is .true. to cause blank space to be zero on input
+C	apnd	is .true. to open files at their end
 C	prefix	is a string defining environment variables to
 C		be used to initialize logical units.
 C	vrbose	is .true. if the caller wants output showing the lu association
@@ -19,30 +20,43 @@ C
 C David L. Wasley
 C U.C.Bekeley
 C
-	logical function ioinit (io66, ioapnd, prefix, vrbose)
-	logical		io66, ioapnd, vrbose
+	logical function ioinit (cctl, bzro, apnd, prefix, vrbose)
+	logical		cctl, bzro, apnd, vrbose
 	character*(*)	prefix
 
-	automatic	iok, fenv, ienv, ename, fname
+	automatic	iok, fenv, ienv, ename, fname, form, blank
 	logical		iok, fenv, ienv
-	integer*2	ibof, i66
+	integer*2	ibof, ictl, izro
+	character	form, blank
 	character*32	ename
 	character*256	fname
-	common /opnbof/ ibof
-	common /init66/ i66
+	common /opnbof/	ibof
+	common /ccntrl/	ictl
+	common /blzero/	izro
 
-	if (io66) then
-		i66 = 1
-		open (unit=6, form='p', blank='z')
+	if (cctl) then
+	    ictl = 1
+	    form = 'p'
 	else
-		i66 = 0
-		open (unit=6, form='f', blank='n')
+	    ictl = 0
+	    form = 'f'
 	endif
 
-	if (ioapnd) then
-		ibof = 0
+	if (bzro) then
+	    izro = 1
+	    blank = 'z'
 	else
-		ibof = 1
+	    izro = 0
+	    blank = 'n'
+	endif
+
+	open (unit=5, form=form, blank=blank)
+	open (unit=6, form=form, blank=blank)
+
+	if (apnd) then
+	    ibof = 0
+	else
+	    ibof = 1
 	endif
 
 	iok = .true.
@@ -75,7 +89,7 @@ C
 
 	if (vrbose) then
 	    if (ienv .and. (.not. fenv)) write (0, 2001) ename(:nb-1)
-	    write (0, 2004) io66, ioapnd
+	    write (0, 2004) cctl, bzro, apnd
 	    call flush (0)
 	endif
 
@@ -86,5 +100,5 @@ C
  2001	format ('ioinit: no initialization found for ', a)
  2002	format ('ioinit: initializing from ', a, 'nn')
  2003	format ('ioinit: ', a, ' ', $)
- 2004	format ('ioinit: io66=', l, ', ioapnd=', l)
+ 2004	format ('ioinit: cctl=', l, ', bzro=', l, ', apnd=', l)
 	end
