@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_cmds.c	5.1 %G%";
+static char *sccsid = "@(#)ex_cmds.c	5.2 %G%";
 #include "ex.h"
 #include "ex_argv.h"
 #include "ex_temp.h"
@@ -474,9 +474,12 @@ quit:
 				case 'w':
 					tail2of("rewind");
 					setnoaddr();
+					if (!exclam()) {
+						ckaw();
+						if (chng && dol > zero)
+							error("No write@since last chage (:rewind! overrides)");
+					}
 					eol();
-					ckaw();
-					ignore(quickly());
 					erewind();
 					next();
 					c = 'e';
@@ -650,7 +653,7 @@ quit:
 /* version */
 				tail("version");
 				setNAEOL();
-				printf("@(#) Version 3.5, %G%"+5);
+				printf("@(#) Version 3.5, %G%."+5);
 				noonl();
 				continue;
 
