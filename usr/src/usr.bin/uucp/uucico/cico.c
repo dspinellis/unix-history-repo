@@ -1,9 +1,9 @@
 #ifndef lint
-static char sccsid[] = "@(#)cico.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)cico.c	5.7 (Berkeley) %G%";
 #endif
 
-#include "uucp.h"
 #include <signal.h>
+#include "uucp.h"
 #include <setjmp.h>
 #ifdef	USG
 #include <termio.h>
@@ -19,6 +19,14 @@ static char sccsid[] = "@(#)cico.c	5.6 (Berkeley) %G%";
 #include <sys/stat.h>
 #include "uust.h"
 #include "uusub.h"
+
+#if defined(VMS) && defined(BSDTCP)
+#define NOGETPEER
+#endif
+
+#ifdef BSD2_9
+#define NOGETPEER
+#endif
 
 jmp_buf Sjbuf;
 jmp_buf Pipebuf;
@@ -48,7 +56,6 @@ int Stattype[] = {
 };
 
 
-int Errorrate = 0;
 int ReverseRole = 0;
 int StdErrIsTty = 0;
 int Role = SLAVE;
@@ -82,12 +89,11 @@ register char *argv[];
 	extern char *pskip();
 	char rflags[30];
 	char *ttyn;
-#if defined(VMS) && defined(BSDTCP)
+#ifdef NOGETPEER
 	u_long Hostnumber = 0;
-#endif VMS && BSDTCP
+#endif NOGETPEER
 
 	strcpy(Progname, "uucico");
-	uucpname(Myname);
 
 	signal(SIGINT, onintr);
 	signal(SIGHUP, onintr);
@@ -97,6 +103,7 @@ register char *argv[];
 	signal(SIGFPE, setdebug);
 	ret = guinfo(getuid(), User, msg);
 	strcpy(Loginuser, User);
+	uucpname(Myname);
 	ASSERT(ret == 0, "BAD UID", CNULL, ret);
 
 #ifdef BSD4_2
@@ -123,7 +130,8 @@ register char *argv[];
 			Role = MASTER;
 			break;
 		case 's':
-			sprintf(Rmtname, "%.7s", &argv[1][2]);
+			strncpy(Rmtname, &argv[1][2], MAXBASENAME);
+			Rmtname[MAXBASENAME] = '\0';
 			if (Rmtname[0] != '\0')
 				onesys = 1;
 			break;
@@ -141,11 +149,11 @@ register char *argv[];
 		case 'L':	/* local calls only */
 			LocalOnly++;
 			break;
-#if defined(VMS) && defined(BSDTCP)
+#ifdef NOGETPEER
 		case 'h':
 			Hostnumber = inet_addr(&argv[1][2]);
 			break;
-#endif VMS && BSDTCP
+#endif NOGETPEER
 		default:
 			printf("unknown flag %s (ignored)\n", argv[1]);
 			break;
@@ -186,7 +194,7 @@ register char *argv[];
 		ultouch();	/* sets nologinflag as a side effect */
 		if (nologinflag) {
 			logent(NOLOGIN, "UUCICO SHUTDOWN");
-			if (Debug)
+			if (Debug > 4)
 				logent("DEBUGGING", "continuing anyway");
 			else
 				cleanup(1);
@@ -198,7 +206,8 @@ register char *argv[];
 		if (isatty(0) ==  0) {
 			IsTcpIp = 1;
 			DEBUG(4, "TCPIP connection -- ioctl-s disabled\n", CNULL);
-		}
+		} else
+			IsTcpIp = 0;
 #endif TCPIP
 		/* initial handshake */
 		onesys = 1;
@@ -221,7 +230,7 @@ register char *argv[];
 #ifdef VMS
 		/* hold the version number down */
 		unlink(file);
-#endif
+#endif VMS
 		freopen(file, "w", stderr);
 #ifdef BSD4_2
 		setlinebuf(stderr);
@@ -237,10 +246,9 @@ register char *argv[];
 			if (!IsTcpIp) {
 #ifdef	USG
 				ret = ioctl(0, TCSETA, &Savettyb);
-#endif
-#ifndef	USG
+#else	!USG
 				ret = ioctl(0, TIOCSETP, &Savettyb);
-#endif
+#endif !USG
 			}
 			cleanup(0);
 		}
@@ -251,10 +259,9 @@ register char *argv[];
 				if (!IsTcpIp) {
 #ifdef	USG
 					ret = ioctl(0, TCSETA, &Savettyb);
-#endif
-#ifndef	USG
+#else	!USG
 					ret = ioctl(0, TIOCSETP, &Savettyb);
-#endif
+#endif !USG
 				}
 				cleanup(0);
 			}
@@ -264,12 +271,21 @@ register char *argv[];
 		alarm(0);
 		q = &msg[1];
 		p = pskip(q);
-		sprintf(Rmtname, "%.7s", q);
+		strncpy(Rmtname, q, MAXBASENAME);
+		Rmtname[MAXBASENAME] = '\0';
 		sprintf(wkpre,"%s/%s", RMTDEBUG, Rmtname);
 		unlink(wkpre);
 		if (link(file, wkpre) == 0)
 			unlink(file);
 		DEBUG(4, "sys-%s\n", Rmtname);
+#ifdef	NOSTRANGERS
+		/* If we don't know them, we won't talk to them... */
+		if (versys(&Rmtname)) {
+			logent(Rmtname, "UNKNOWN HOST");
+			omsg('R', "You are unknown to me", Ofn);
+			cleanup(0);
+		}
+#endif	NOSTRANGERS
 #ifdef BSDTCP
 		/* we must make sure they are really who they say they
 		 * are. We compare the hostnumber with the number in the hosts
@@ -281,17 +297,17 @@ register char *argv[];
 			int fromlen;
 			struct sockaddr_in from;
 
-#ifndef	VMS
+#ifdef	NOGETPEER
+			from.sin_addr.s_addr = Hostnumber;
+			from.sin_family = AF_INET;
+#else	!NOGETPEER
 			fromlen = sizeof(from);
 			if (getpeername(0, &from, &fromlen) < 0) {
 				logent(Rmtname, "NOT A TCP CONNECTION");
 				omsg('R', "NOT TCP", Ofn);
 				cleanup(0);
 			}
-#else	VMS
-			from.sin_addr.s_addr = Hostnumber;
-			from.sin_family = AF_INET;
-#endif	VMS
+#endif	!NOGETPEER
 			hp = gethostbyaddr(&from.sin_addr,
 				sizeof (struct in_addr), from.sin_family);
 			if (hp == 0) {
@@ -311,35 +327,27 @@ register char *argv[];
 			 * given its network number (remote machine) in our
 			 * host table.
 			 */
-			if (strncmp(q, hp->h_name, 7) == 0) {
+			if (strncmp(q, hp->h_name, MAXBASENAME) == 0) {
 				if (Debug > 99)
 					logent(q,"Found in host Tables");
 			} else { /* Scan The host aliases */
 				for(alias=hp->h_aliases; *alias!=0 &&
-				    strncmp(q, *alias, 7) != 0; ++alias)
+				    strncmp(q, *alias, MAXBASENAME) != 0; ++alias)
 					;
-				if (strncmp(q, *alias, 7) != 0) {
+				if (strncmp(q, *alias, MAXBASENAME) != 0) {
 					logent(q, "FORGED HOSTNAME");
 					logent(inet_ntoa(from.sin_addr), "ORIGINATED AT");
-					omsg('R',"You're not who you claim to be");
+					omsg('R',"You're not who you claim to be", Ofn);
 					cleanup(0);
 				}
 #ifdef DEBUG
 				if (Debug> 99)
 					logent(q,"Found in host Tables");
-#endif
+#endif DEBUG
 			}
 		}
 #endif	BSDTCP
 
-#ifdef	NOSTRANGERS
-		/* If we don't know them, we won't talk to them... */
-		if (versys(&Rmtname)) {
-			logent(Rmtname, "UNKNOWN HOST");
-			omsg('R', "You are unknown to me", Ofn);
-			cleanup(0);
-		}
-#endif	NOSTRANGERS
 		if (mlock(Rmtname)) {
 			omsg('R', "LCK", Ofn);
 			cleanup(0);
@@ -372,6 +380,13 @@ register char *argv[];
 				MaxGrade = DefMaxGrade = *++p;
 				DEBUG(4, "MaxGrade set to %c\n", MaxGrade);
 				break;
+			case 'v':
+				if (strncmp(p, "grade", 5) == 0) {
+					p += 6;
+					MaxGrade = DefMaxGrade = *p++;
+					DEBUG(4, "MaxGrade set to %c\n", MaxGrade);
+				}
+				break;
 			default:
 				break;
 			}
@@ -393,7 +408,7 @@ register char *argv[];
 		else {
 #endif !GNXSEQ
 			systat(Rmtname, Stattype[7], Stattext[7]);
-			logent("BAD SEQ", "HANDSHAKE FAIL");
+			logent("BAD SEQ", "FAILED HANDSHAKE");
 #ifdef GNXSEQ
 			ulkseq();
 #endif GNXSEQ
@@ -432,14 +447,14 @@ loop:
 		setdebug(0);
 		if (ret == FAIL)
 			cleanup(100);
-		if (ret == 0)
+		if (ret == SUCCESS)
 			cleanup(0);
 	} else if (Role == MASTER && callok(Rmtname) != 0) {
 		logent("SYSTEM STATUS", "CAN NOT CALL");
 		cleanup(0);
 	}
 
-	sprintf(wkpre, "%c.%.7s", CMDPRE, Rmtname);
+	sprintf(wkpre, "%c.%.*s", CMDPRE, SYSNSIZE, Rmtname);
 
 	signal(SIGINT, SIG_IGN);
 	signal(SIGQUIT, SIG_IGN);
@@ -448,18 +463,13 @@ loop:
 		ultouch();	/* sets nologinflag as a side effect */
 		if (nologinflag) {
 			logent(NOLOGIN, "UUCICO SHUTDOWN");
-			if (Debug)
+			if (Debug > 4)
 				logent("DEBUGGING", "continuing anyway");
 			else
 				cleanup(1);
 		}
 		/*  master part */
 		signal(SIGHUP, SIG_IGN);
-		MaxGrade = DefMaxGrade;
-		if (!iswrk(file, "chk", Spool, wkpre) && !onesys) {
-			logent(Rmtname, "NO WORK");
-			goto next;
-		}
 		if (Ifn != -1 && Role == MASTER) {
 			write(Ofn, EOTMSG, strlen(EOTMSG));
 			clsacu();
@@ -480,7 +490,7 @@ loop:
 			if (Ofn != CF_TIME)
 				logent(msg, _FAILED);
 			/* avoid excessive 'wrong time' info */
-			if (Stattype[-Ofn] != SS_WRONGTIME || argv[0][0] != 'U'){
+			if (Stattype[-Ofn] != SS_WRONGTIME){
 				systat(Rmtname, Stattype[-Ofn], Stattext[-Ofn]);
 				US_SST(-Ofn);
 				UB_SST(-Ofn);
@@ -498,7 +508,8 @@ loop:
 		if (isatty(Ifn) ==  0) {
 			IsTcpIp = 1;
 			DEBUG(4, "TCPIP connection -- ioctl-s disabled\n", CNULL);
-		}
+		} else
+			IsTcpIp = 0;
 #endif
 
 		if (setjmp(Sjbuf))
@@ -523,11 +534,13 @@ loop:
 #endif !GNXSEQ
 		if (MaxGrade != '\177') {
 			char buf[10];
-			sprintf(buf, " -p%c", MaxGrade);
+			sprintf(buf, " -p%c -vgrade=%c", MaxGrade, MaxGrade);
 			strcat(rflags, buf);
 		}
 
-		sprintf(msg, "%.7s -Q%d %s", Myname, seq, rflags);
+		sprintf(msg, "%s -Q%d %s", Myname, seq, rflags);
+		if (MaxGrade != '\177')
+			DEBUG(2, "Max Grade this transfer is %c\n", MaxGrade);
 		omsg('S', msg, Ofn);
 		for (;;) {
 			ret = imsg(msg, Ifn);
@@ -546,7 +559,7 @@ loop:
 		alarm(0);
 		if (msg[1] == 'B') {
 			/* bad sequence */
-			logent("BAD SEQ", "HANDSHAKE FAIL");
+			logent("BAD SEQ", "FAILED HANDSHAKE");
 			US_SST(us_s_hand);
 			systat(Rmtname, SS_BADSEQ, Stattext[SS_BADSEQ]);
 #ifdef GNXSEQ
@@ -555,14 +568,14 @@ loop:
 			goto next;
 		}
 		if (strcmp(&msg[1], "OK") != SAME)  {
-			logent(&msg[1], "HANDSHAKE FAIL");
+			logent(&msg[1], "FAILED HANDSHAKE");
 			US_SST(us_s_hand);
 #ifdef GNXSEQ
 			ulkseq();
 #endif GNXSEQ
 			systat(Rmtname, SS_INPROGRESS,
 				strcmp(&msg[1], "CB") == SAME?
-				"AWAITING CALLBACK": "HANDSHAKE FAIL");
+				"AWAITING CALLBACK": "FAILED HANDSHAKE");
 			goto next;
 		}
 #ifdef GNXSEQ
@@ -640,7 +653,6 @@ struct sgttyb Hupvec;
 cleanup(code)
 register int code;
 {
-	register int ret;
 	register char *ttyn;
 	char bfr[BUFSIZ];
 	struct stat sbuf;
@@ -654,25 +666,24 @@ register int code;
 		if (!IsTcpIp) {
 #ifdef USG
 			Savettyb.c_cflag |= HUPCL;
-			ret = ioctl(0, TCSETA, &Savettyb);
+			(void) ioctl(0, TCSETA, &Savettyb);
 #else !USG
-			ret = ioctl(0, TIOCHPCL, STBNULL);
+			(void) ioctl(0, TIOCHPCL, STBNULL);
 #ifdef TIOCSDTR
-			ret = ioctl(0, TIOCCDTR, STBNULL);
+			(void) ioctl(0, TIOCCDTR, STBNULL);
 			sleep(2);
-			ret = ioctl(0, TIOCSDTR, STBNULL);
+			(void) ioctl(0, TIOCSDTR, STBNULL);
 #else !TIOCSDTR
-			ret = ioctl(0, TIOCGETP, &Hupvec);
+			(void) ioctl(0, TIOCGETP, &Hupvec);
 #endif !TIOCSDTR
 			Hupvec.sg_ispeed = B0;
 			Hupvec.sg_ospeed = B0;
-			ret = ioctl(0, TIOCSETP, &Hupvec);
+			(void) ioctl(0, TIOCSETP, &Hupvec);
 			sleep(2);
-			ret = ioctl(0, TIOCSETP, &Savettyb);
+			(void) ioctl(0, TIOCSETP, &Savettyb);
 			/* make *sure* exclusive access is off */
-			ret = ioctl(0, TIOCNXCL, STBNULL);
+			(void) ioctl(0, TIOCNXCL, STBNULL);
 #endif !USG
-			DEBUG(4, "ret ioctl - %d\n", ret);
 		}
 		ttyn = ttyname(Ifn);
 		if (ttyn != NULL)
@@ -712,7 +723,7 @@ register int inter;
 	sprintf(str, "SIGNAL %d", inter);
 	logent(str, "CAUGHT");
 	US_SST(us_s_intr);
-	if (*Rmtname && strncmp(Rmtname, Myname, 7))
+	if (*Rmtname && strncmp(Rmtname, Myname, MAXBASENAME))
 		systat(Rmtname, SS_FAIL, str);
 	if (inter == SIGPIPE && !onesys)
 		longjmp(Pipebuf, 1);
@@ -729,7 +740,13 @@ int code;
 {
 	char buf[BUFSIZ];
 
-	if (!StdErrIsTty) {
+	if (code) {
+		if (Debug == 0)
+			Debug = 30;
+		else
+			Debug = 0;
+	}
+	if (Debug && !StdErrIsTty) {
 		sprintf(buf,"%s/%s", RMTDEBUG, Rmtname);
 		unlink(buf);
 		freopen(buf, "w", stderr);
@@ -738,12 +755,6 @@ int code;
 #else  !BSD4_2
 		setbuf(stderr, NULL);
 #endif !BSD4_2
-	}
-	if (code) {
-		if (Debug == 0)
-			Debug = 30;
-		else
-			Debug = 0;
 	}
 }
 
@@ -763,41 +774,42 @@ register int tty;
 #ifndef	USG
 	struct sgttyb ttbuf;
 #endif
-	register int ret;
 
 	if (IsTcpIp)
 		return;
 #ifdef	USG
-	ret = ioctl(tty, TCGETA, &ttbuf);
+	ioctl(tty, TCGETA, &ttbuf);
 	ttbuf.c_iflag = ttbuf.c_oflag = ttbuf.c_lflag = (ushort)0;
 	ttbuf.c_cflag &= (CBAUD);
 	ttbuf.c_cflag |= (CS8|CREAD);
 	ttbuf.c_cc[VMIN] = 6;
 	ttbuf.c_cc[VTIME] = 1;
-	ret = ioctl(tty, TCSETA, &ttbuf);
+	ioctl(tty, TCSETA, &ttbuf);
 #endif
 #ifndef	USG
 	ioctl(tty, TIOCGETP, &ttbuf);
 	ttbuf.sg_flags = (ANYP | RAW);
-	ret = ioctl(tty, TIOCSETP, &ttbuf);
+	ioctl(tty, TIOCSETP, &ttbuf);
 #endif
-/*	ASSERT(ret >= 0, "STTY FAILED", CNULL, ret); */
 #ifndef	USG
-	ret = ioctl(tty, TIOCEXCL, STBNULL);
+	ioctl(tty, TIOCEXCL, STBNULL);
 #endif
 }
 
 
-/***
+/*
  *	timeout()	catch SIGALRM routine
  */
 
 timeout()
 {
-	logent(Rmtname, "TIMEOUT");
-	if (*Rmtname && strncmp(Rmtname, Myname, 7)) {
-		US_SST(us_s_tmot);
-		systat(Rmtname, SS_FAIL, "TIMEOUT");
+	extern int HaveSentHup;
+	if (!HaveSentHup) {
+		logent(Rmtname, "TIMEOUT");
+		if (*Rmtname && strncmp(Rmtname, Myname, MAXBASENAME)) {
+			US_SST(us_s_tmot);
+			systat(Rmtname, SS_FAIL, "TIMEOUT");
+		}
 	}
 	longjmp(Sjbuf, 1);
 }
@@ -808,7 +820,7 @@ register char *p;
 {
 	while(*p && *p != ' ')
 		++p;
-	if(*p)
+	while(*p && *p == ' ')
 		*p++ = 0;
 	return p;
 }
