@@ -1,0 +1,69 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the Systems Programming Group of the University of Utah Computer
+.\" Science Department.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)ct.4	5.1 (Berkeley) %G%
+.\"
+.TH CT 4 ""
+.UC 7
+.SH NAME
+ct \- CS/80 cartridge tape interface
+.SH SYNOPSIS
+.B "tape ct0 at hpib? slave ?"
+.SH DESCRIPTION
+The cartridge tape interface as found in the 7946 and 9144 products
+provides a standard tape drive interface as described in
+.IR mtio (4)
+with the following exceptions:
+.TP 3
+1.
+There is only one density.
+.TP 3
+2.
+Only the ``raw'' interface is supported.
+.TP 3
+3.
+The MTIOCTOP
+.I ioctl
+is limited.
+In particular, the command, MTFSR is not supported.
+.TP 3
+4.
+The MTIOCGET
+.I ioctl
+is not supported.
+.TP 3
+5.
+The record size for read and write operations must be between
+1K and 64K inclusive.
+.PP
+Special files
+.I rct0
+through
+.I rct3
+refer to rewind on close interfaces to drives 0 to 3.
+.I Rct4
+through
+.I rct7
+refer to no-rewind interfaces.
+.I Rct8
+through
+.I rct11
+refer to streaming rewind on close interfaces. (Only 9144 type devices
+can stream.)
+.I Rct12
+through
+.I rct15
+refer to streaming no-rewind interfaces.
+.SH BUGS
+Read and writes of less than 1024 bytes will not behave as expected.
+.SH "SEE ALSO"
+mt(1),
+tar(1),
+tp(1),
+mtio(4).
