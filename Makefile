@@ -1,6 +1,6 @@
 #	@(#)Makefile	5.1.1.2 (Berkeley) 5/9/91
 #
-#	$Id: Makefile,v 1.9 1993/09/06 00:04:23 nate Exp $
+#	$Id: Makefile,v 1.10 1993/09/06 12:00:32 rgrimes Exp $
 #
 
 SUBDIR=	bin contrib games gnu include lib libexec sbin share usr.bin usr.sbin
@@ -17,13 +17,16 @@ CLEANDIR=
 CLEANDIR=	cleandir
 .endif
 
-world:	cleandist mk includes libraries tools mdec
+world:	directories cleandist mk includes libraries tools mdec
 	@echo "--------------------------------------------------------------"
 	@echo " Rebuilding ${DESTDIR} The whole thing"
 	@echo "--------------------------------------------------------------"
 	@echo
 	make depend all install
 	cd ${.CURDIR}/usr.sbin/sendmail/src;	make install
+
+directories:
+	cd ${.CURDIR}/etc;			make distrib-dirs
 
 cleandist:
 .if !defined(NOCLEANDIR)
