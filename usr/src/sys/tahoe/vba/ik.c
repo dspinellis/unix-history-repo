@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ik.c	7.2 (Berkeley) %G%
+ *	@(#)ik.c	7.3 (Berkeley) %G%
  */
 
 #include "ik.h"
@@ -26,14 +26,12 @@
 #include "buf.h"
 #include "cmap.h"
 #include "conf.h"
-#include "dir.h"
 #include "dkstat.h"
 #include "map.h"
 #include "systm.h"
 #include "user.h"
 #include "vmmac.h"
 #include "proc.h"
-#include "uio.h"
 #include "kernel.h"
 #include "syslog.h"
 

@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vba.c	7.3 (Berkeley) %G%
+ *	@(#)vba.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -25,7 +25,6 @@
 #include "buf.h"
 #include "cmap.h"
 #include "conf.h"
-#include "dir.h"
 #include "dk.h"
 #include "map.h"
 #include "systm.h"

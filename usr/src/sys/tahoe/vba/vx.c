@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vx.c	7.3 (Berkeley) %G%
+ *	@(#)vx.c	7.4 (Berkeley) %G%
  */
 
 #include "vx.h"
@@ -32,13 +32,11 @@
 #include "param.h"
 #include "ioctl.h"
 #include "tty.h"
-#include "dir.h"
 #include "user.h"
 #include "map.h"
 #include "buf.h"
 #include "conf.h"
 #include "file.h"
-#include "uio.h"
 #include "proc.h"
 #include "vm.h"
 #include "kernel.h"
