@@ -9,13 +9,13 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: hpux_compat.c 1.42 92/01/20$
+ * from: Utah $Hdr: hpux_compat.c 1.43 92/04/23$
  *
- *	@(#)hpux_compat.c	7.24 (Berkeley) %G%
+ *	@(#)hpux_compat.c	7.25 (Berkeley) %G%
  */
 
 /*
- * Various HPUX compatibility routines
+ * Various HP-UX compatibility routines
  */
 
 #ifdef HPUXCOMPAT
@@ -98,7 +98,7 @@ notimp(p, uap, retval, code, nargs)
 	register int *argp = uap;
 	extern char *hpuxsyscallnames[];
 
-	printf("HPUX %s(", hpuxsyscallnames[code]);
+	printf("HP-UX %s(", hpuxsyscallnames[code]);
 	if (nargs)
 		while (nargs--)
 			printf("%x%c", *argp++, nargs? ',' : ')');
@@ -136,10 +136,10 @@ hpuxexecv(p, uap, retval)
 }
 
 /*
- * HPUX versions of wait and wait3 actually pass the parameters
+ * HP-UX versions of wait and wait3 actually pass the parameters
  * (status pointer, options, rusage) into the kernel rather than
  * handling it in the C library stub.  We also need to map any
- * termination signal from BSD to HPUX.
+ * termination signal from BSD to HP-UX.
  */
 hpuxwait3(p, uap, retval)
 	struct proc *p;
@@ -404,7 +404,7 @@ hpuxwritev(p, uap, retval)
 
 /*
  * 4.3bsd dup allows dup2 to come in on the same syscall entry
- * and hence allows two arguments.  HPUX dup has only one arg.
+ * and hence allows two arguments.  HP-UX dup has only one arg.
  */
 hpuxdup(p, uap, retval)
 	struct proc *p;
@@ -472,6 +472,10 @@ hpuxutssys(p, uap, retval)
 			protoutsname.machine[6] = '7';
 			protoutsname.machine[7] = '5';
 			break;
+		/* includes 425 */
+		case HP_380:
+			protoutsname.machine[6] = '8';
+			break;
 		}
 		/* copy hostname (sans domain) to nodename */
 		for (i = 0; i < 8 && hostname[i] != '.'; i++)
@@ -535,7 +539,7 @@ hpuxsysconf(p, uap, retval)
 		}
 		break;
 	default:
-		uprintf("HPUX sysconf(%d) not implemented\n", uap->name);
+		uprintf("HP-UX sysconf(%d) not implemented\n", uap->name);
 		return (EINVAL);
 	}
 	return (0);
@@ -768,18 +772,13 @@ hpuxsetdomainname(p, uap, retval)
 }
 
 #ifdef SYSVSHM
+#include "shm.h"
+
 hpuxshmat(p, uap, retval)
 	struct proc *p;
 	int *uap, *retval;
 {
 	return (shmat(p, uap, retval));
-}
-
-hpuxshmctl(p, uap, retval)
-	struct proc *p;
-	int *uap, *retval;
-{
-	return (shmctl(p, uap, retval));
 }
 
 hpuxshmdt(p, uap, retval)
@@ -794,6 +793,35 @@ hpuxshmget(p, uap, retval)
 	int *uap, *retval;
 {
 	return (shmget(p, uap, retval));
+}
+
+/*
+ * Handle HP-UX specific commands.
+ */
+hpuxshmctl(p, uap, retval)
+	struct proc *p;
+	struct args {
+		int shmid;
+		int cmd;
+		caddr_t buf;
+	} *uap;
+	int *retval;
+{
+	register struct shmid_ds *shp;
+	register struct ucred *cred = p->p_ucred;
+	int error;
+
+	if (error = shmvalid(uap->shmid))
+		return (error);
+	shp = &shmsegs[uap->shmid % SHMMMNI];
+	if (uap->cmd == SHM_LOCK || uap->cmd == SHM_UNLOCK) {
+		/* don't really do anything, but make them think we did */
+		if (cred->cr_uid && cred->cr_uid != shp->shm_perm.uid &&
+		    cred->cr_uid != shp->shm_perm.cuid)
+			return (EPERM);
+		return (0);
+	}
+	return (shmctl(p, uap, retval));
 }
 #endif
 
@@ -841,7 +869,7 @@ hpuxsemop(p, uap, retval)
 	return (0);
 }
 
-/* convert from BSD to HPUX errno */
+/* convert from BSD to HP-UX errno */
 bsdtohpuxerrno(err)
 	int err;
 {
@@ -952,7 +980,7 @@ hpuxtobsdioctl(com)
 }
 
 /*
- * HPUX ioctl system call.  The differences here are:
+ * HP-UX ioctl system call.  The differences here are:
  *	IOC_IN also means IOC_VOID if the size portion is zero.
  *	no FIOCLEX/FIONCLEX/FIOASYNC/FIOGETOWN/FIOSETOWN
  *	the sgttyb struct is 2 bytes longer
@@ -1317,7 +1345,7 @@ hpuxgetaccess(p, uap, retval)
 }
 
 /*
- * Brutal hack!  Map HPUX u-area offsets into BSD u offsets.
+ * Brutal hack!  Map HP-UX u-area offsets into BSD u offsets.
  * No apologies offered, if you don't like it, rewrite it!
  */
 
@@ -1364,7 +1392,7 @@ hpuxtobsduoff(off)
 
 	/*
 	 * 68020 registers.
-	 * We know that the HPUX registers are in the same order as ours.
+	 * We know that the HP-UX registers are in the same order as ours.
 	 * The only difference is that their PS is 2 bytes instead of a
 	 * padded 4 like ours throwing the alignment off.
 	 */
@@ -1393,7 +1421,7 @@ hpuxtobsduoff(off)
 }
 
 /*
- * Kludge up a uarea dump so that HPUX debuggers can find out
+ * Kludge up a uarea dump so that HP-UX debuggers can find out
  * what they need.  IMPORTANT NOTE: we do not EVEN attempt to
  * convert the entire user struct.
  */
@@ -1429,7 +1457,7 @@ hpuxdumpu(vp, cred)
 	      (caddr_t)&faku->hpuxu_exdata, sizeof (struct hpux_exec));
 	/*
 	 * Adjust user's saved registers (on kernel stack) to reflect
-	 * HPUX order.  Note that HPUX saves the SR as 2 bytes not 4
+	 * HP-UX order.  Note that HP-UX saves the SR as 2 bytes not 4
 	 * so we have to move it up.
 	 */
 	faku->hpuxu_ar0 = p->p_md.md_regs;
@@ -1439,7 +1467,7 @@ hpuxdumpu(vp, cred)
 	foop[34] = foop[35];
 #ifdef FPCOPROC
 	/*
-	 * Copy 68881 registers from our PCB format to HPUX format
+	 * Copy 68881 registers from our PCB format to HP-UX format
 	 */
 	bp = (struct bsdfp *) &p->p_addr->u_pcb.pcb_fpregs;
 	bcopy((caddr_t)bp->save, (caddr_t)faku->hpuxu_fp.hpfp_save,
