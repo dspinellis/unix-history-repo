@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)nice.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)nice.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -38,15 +38,16 @@ main(argc, argv)
 {
 	int niceness = DEFNICE;
 
+	if (argv[1] == NULL)
+		usage();
 	if (argv[1][0] == '-')
 		if (argv[1][1] == '-' || isdigit(argv[1][1])) {
 			niceness = atoi(argv[1] + 1);
 			++argv;
+			if (argv[1] == NULL)
+				usage();
 		} else
 			errx(1, "illegal option -- %s", argv[1]);
-
-	if (argv[1] == NULL)
-		usage();
 
 	errno = 0;
 	niceness += getpriority(PRIO_PROCESS, 0);
