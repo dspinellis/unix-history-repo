@@ -1,0 +1,38 @@
+Xditview.paned.allowResize:		true
+Xditview.paned.viewport.allowVert:	true
+Xditview.paned.viewport.allowHoriz:	true
+Xditview.paned.viewport.skipAdjust:	false
+Xditview.paned.viewport.width:		600
+Xditview.paned.viewport.height:		800
+Xditview.paned.viewport.showGrip:	false
+Xditview.paned.label.skipAdjust:	true
+
+Xditview.paned.viewport.dvi.translations: #augment \
+	<Btn1Down>:	XawPositionSimpleMenu(menu) MenuPopup(menu)\n\
+	<Key>Next:	NextPage()\n\
+	<Key>Prior:	PreviousPage()\n\
+	<Key>Select:	SelectPage()\n\
+	<Key>Find:	OpenFile()
+Xditview.paned.label.translations: #augment \
+	<Btn1Down>:	XawPositionSimpleMenu(menu) MenuPopup(menu)\n\
+	<Key>Next:	NextPage()\n\
+	<Key>Prior:	PreviousPage()\n\
+	<Key>Select:	SelectPage()\n\
+	<Key>Find:	OpenFile()
+Xditview.menu.nextPage.label:		Next Page
+Xditview.menu.previousPage.label:	Previous Page
+Xditview.menu.selectPage.label:		Select Page
+Xditview.menu.openFile.label:		Open
+Xditview.menu.quit.label:		Quit
+
+Xditview.promptShell.allowShellResize:	true
+Xditview.promptShell.promptDialog.value.translations: #override \
+	<Key>Return:	Accept()
+
+Xditview.promptShell.promptDialog.accept.label: Accept
+Xditview.promptShell.promptDialog.accept.translations: #override \
+	<BtnUp>:	Accept() unset()
+
+Xditview.promptShell.promptDialog.cancel.label: Cancel
+Xditview.promptShell.promptDialog.cancel.translations: #override \
+	<BtnUp>:	Cancel() unset()
