@@ -1,4 +1,4 @@
-/*	cons.c	7.5	90/01/17	*/
+/*	cons.c	7.6	90/11/01	*/
 
 /*
  * Tahoe console processor driver
@@ -10,6 +10,7 @@
  */
 #include "param.h"
 #include "conf.h"
+#include "file.h"
 #include "ioctl.h"
 #include "user.h"
 #include "proc.h"
@@ -432,8 +433,11 @@ cnreset(tp)
 	if (current->cp_hdr.cp_unit & CPTAKE) {
 		cnparams(tp, &tp->t_termios);
 		failed = 0;
-	} else if (failed++ == 0)
-		log(LOG_ERR, "Console wedged, reset failed.\n");
+	} else {
+		if (failed++ == 0)
+			log(LOG_ERR, "Console wedged, reset failed.\n");
+		ttyflush(tp, FWRITE);
+	}
 }
 
 /*
