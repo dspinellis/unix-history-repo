@@ -1,0 +1,142 @@
+// This may look like C code, but it is really -*- C++ -*-
+/* 
+Copyright (C) 1988 Free Software Foundation
+    written by Doug Lea (dl@rocky.oswego.edu)
+    based on code by Marc Shapiro (shapiro@sor.inria.fr)
+
+This file is part of GNU CC.
+
+GNU CC is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY.  No author or distributor
+accepts responsibility to anyone for the consequences of using it
+or for whether it serves any particular purpose or works at all,
+unless he says so in writing.  Refer to the GNU CC General Public
+License for full details.
+
+Everyone is granted permission to copy, modify and redistribute
+GNU CC, but only under the conditions described in the
+GNU CC General Public License.   A copy of this license is
+supposed to have been given to you along with GNU CC so you
+can know your rights and responsibilities.  It should be in a
+file named COPYING.  Among other things, the copyright notice
+and this notice must be preserved on all copies.  
+*/
+
+
+#ifndef _<T>XPDeque_h
+#ifdef __GNUG__
+#pragma once
+#pragma interface
+#endif
+#define _<T>XPDeque_h
+
+#include "<T>.XPlex.h"
+#include "<T>.Deque.h"
+
+class <T>XPDeque : public <T>Deque
+{
+  <T>XPlex     p;
+
+public:
+               <T>XPDeque(int chunksize = DEFAULT_INITIAL_CAPACITY);
+               <T>XPDeque(const <T>XPDeque& d);
+               ~<T>XPDeque();
+
+  void          operator = (const <T>XPDeque&);
+
+  void          push(<T&> item); // insert at front
+  void          enq(<T&> item);  // insert at rear
+
+  <T>&          front();
+  <T>&          rear();
+
+  <T>           deq();
+  void          del_front();
+  void          del_rear();               
+
+  void          clear();
+  int           empty();
+  int           full();
+  int           length();
+               
+  int           OK();
+};
+
+#if defined(__OPTIMIZE__) || defined(USE_LIBGXX_INLINES)
+
+inline <T>XPDeque::<T>XPDeque(int chunksize) 
+     : p(chunksize) {}
+inline <T>XPDeque::<T>XPDeque(const <T>XPDeque& d) : p(d.p) {}
+
+inline <T>XPDeque::~<T>XPDeque() {}
+
+inline void <T>XPDeque::push(<T&>item)
+{
+  p.add_low(item);
+}
+
+inline void <T>XPDeque::enq(<T&>item)
+{
+  p.add_high(item);
+}
+
+inline <T> <T>XPDeque::deq()
+{
+  <T> res = p.low_element();
+  p.del_low();
+  return res;
+}
+
+inline <T>& <T>XPDeque::front()
+{
+  return p.low_element();
+}
+
+inline <T>& <T>XPDeque::rear()
+{
+  return p.high_element();
+}
+
+inline void <T>XPDeque::del_front()
+{
+  p.del_low();
+}
+
+inline void <T>XPDeque::del_rear()
+{
+  p.del_high();
+}
+
+inline void <T>XPDeque::operator =(const <T>XPDeque& s)
+{
+  p.operator = (s.p);
+}
+
+
+inline int <T>XPDeque::empty()
+{
+  return p.empty();
+}
+
+inline int <T>XPDeque::full()
+{
+  return p.full();
+}
+
+inline int <T>XPDeque::length()
+{
+  return p.length();
+}
+
+inline int <T>XPDeque::OK()
+{
+  return p.OK();
+}
+
+inline void <T>XPDeque::clear()
+{
+  p.clear();
+}
+
+#endif
+#endif

@@ -1,0 +1,157 @@
+// This may look like C code, but it is really -*- C++ -*-
+/* 
+Copyright (C) 1988 Free Software Foundation
+    written by Doug Lea (dl@rocky.oswego.edu)
+
+This file is part of GNU CC.
+
+GNU CC is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY.  No author or distributor
+accepts responsibility to anyone for the consequences of using it
+or for whether it serves any particular purpose or works at all,
+unless he says so in writing.  Refer to the GNU CC General Public
+License for full details.
+
+Everyone is granted permission to copy, modify and redistribute
+GNU CC, but only under the conditions described in the
+GNU CC General Public License.   A copy of this license is
+supposed to have been given to you along with GNU CC so you
+can know your rights and responsibilities.  It should be in a
+file named COPYING.  Among other things, the copyright notice
+and this notice must be preserved on all copies.  
+*/
+
+
+#ifndef _<T>SplayPQ_h
+#ifdef __GNUG__
+#pragma once
+#pragma interface
+#endif
+#define _<T>SplayPQ_h 1
+
+#include "<T>.PQ.h"
+
+#ifndef _<T>SplayNode
+#define _<T>SplayNode 1
+
+struct <T>SplayNode
+{
+  <T>SplayNode*   lt;
+  <T>SplayNode*   rt;
+  <T>SplayNode*   par;
+  <T>             item;
+                  <T>SplayNode(<T&> h, <T>SplayNode* l=0, <T>SplayNode* r=0);
+                  ~<T>SplayNode();
+};
+
+#if defined(__OPTIMIZE__) || defined(USE_LIBGXX_INLINES)
+
+inline <T>SplayNode::<T>SplayNode(<T&> h, <T>SplayNode* l, <T>SplayNode* r)
+:item(h), lt(l), rt(r), par(0) {}
+
+inline <T>SplayNode::~<T>SplayNode() {}
+
+#endif
+
+typedef <T>SplayNode* <T>SplayNodePtr;
+
+#endif
+
+class <T>SplayPQ : public <T>PQ
+{
+protected:
+  <T>SplayNode*   root;
+
+  <T>SplayNode*   leftmost();
+  <T>SplayNode*   rightmost();
+  <T>SplayNode*   pred(<T>SplayNode* t);
+  <T>SplayNode*   succ(<T>SplayNode* t);
+  void            _kill(<T>SplayNode* t);
+  <T>SplayNode*   _copy(<T>SplayNode* t);
+
+public:
+                  <T>SplayPQ();
+                  <T>SplayPQ(<T>SplayPQ& a);
+                  ~<T>SplayPQ();
+
+  Pix           enq(<T&> item);
+  <T>           deq(); 
+
+  <T>&          front();
+  void          del_front();
+
+  int           contains(<T&> item);
+
+  void          clear(); 
+
+  Pix           first(); 
+  Pix           last(); 
+  void          next(Pix& i);
+  void          prev(Pix& i);
+  <T>&          operator () (Pix i);
+  void          del(Pix i);
+  Pix           seek(<T&> item);
+
+  int           OK();                    // rep invariant
+};
+
+#if defined(__OPTIMIZE__) || defined(USE_LIBGXX_INLINES)
+
+inline <T>SplayPQ::~<T>SplayPQ()
+{
+  _kill(root);
+}
+
+inline <T>SplayPQ::<T>SplayPQ()
+{
+  root = 0;
+  count = 0;
+}
+
+inline <T>SplayPQ::<T>SplayPQ(<T>SplayPQ& b)
+{
+  count = b.count;
+  root = _copy(b.root);
+}
+
+inline Pix <T>SplayPQ::first()
+{
+  return Pix(leftmost());
+}
+
+inline Pix <T>SplayPQ::last()
+{
+  return Pix(rightmost());
+}
+
+inline void <T>SplayPQ::next(Pix& i)
+{
+  if (i != 0) i = Pix(succ((<T>SplayNode*)i));
+}
+
+inline void <T>SplayPQ::prev(Pix& i)
+{
+  if (i != 0) i = Pix(pred((<T>SplayNode*)i));
+}
+
+inline <T>& <T>SplayPQ::operator () (Pix i)
+{
+  if (i == 0) error("null Pix");
+  return ((<T>SplayNode*)i)->item;
+}
+
+inline void <T>SplayPQ::clear()
+{
+  _kill(root);
+  count = 0;
+  root = 0;
+}
+
+inline int <T>SplayPQ::contains(<T&> key)
+{
+  return seek(key) != 0;
+}
+
+
+#endif
+#endif
