@@ -1,0 +1,8 @@
+#!/bin/sh
+#
+# This shell script does nothing since Bash doesn't require
+# configuration to be forced on it; it auto-configures.  You can
+# change the location of the source directory with +srcdir.
+#
+echo "Bash is configured to auto configure."
+exit 0
