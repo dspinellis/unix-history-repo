@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kernfs_vnops.c	8.1 (Berkeley) %G%
+ *	@(#)kernfs_vnops.c	8.2 (Berkeley) %G%
  */
 
 /*
@@ -248,7 +248,7 @@ kernfs_lookup(ap)
 #ifdef KERNFS_DIAGNOSTIC
 	printf("kernfs_lookup: allocate new vnode\n");
 #endif
-	error = getnewvnode(VT_UFS, dvp->v_mount, kernfs_vnodeop_p, &fvp);
+	error = getnewvnode(VT_KERNFS, dvp->v_mount, kernfs_vnodeop_p, &fvp);
 	if (error)
 		goto bad;
 	MALLOC(fvp->v_data, void *, sizeof(struct kernfs_node), M_TEMP, M_WAITOK);
@@ -577,7 +577,7 @@ kernfs_print(ap)
 	} */ *ap;
 {
 
-	printf("tag VT_NON, kernfs vnode\n");
+	printf("tag VT_KERNFS, kernfs vnode\n");
 	return (0);
 }
 

@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fdesc_vnops.c	8.4 (Berkeley) %G%
+ *	@(#)fdesc_vnops.c	8.5 (Berkeley) %G%
  *
  * $Id: fdesc_vnops.c,v 1.12 1993/04/06 16:17:17 jsp Exp $
  */
@@ -79,7 +79,7 @@ loop:
 	}
 	fdescvplock |= FDL_LOCKED;
 
-	error = getnewvnode(VT_UFS, mp, fdesc_vnodeop_p, vpp);
+	error = getnewvnode(VT_FDESC, mp, fdesc_vnodeop_p, vpp);
 	if (error)
 		goto out;
 	MALLOC((*vpp)->v_data, void *, sizeof(struct fdescnode), M_TEMP, M_WAITOK);
