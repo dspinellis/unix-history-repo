@@ -1,114 +1,128 @@
 #
-# Copyright (c) 1983 Regents of the University of California.
+# Copyright (c) 1987 Regents of the University of California.
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5	(Berkeley)	%G%
 #
-DESTDIR=
-OBJS=	talk.o get_names.o display.o io.o ctl.o init_disp.o \
-	msgs.o get_addrs.o ctl_transact.o invite.o look_up.o
+CFLAGS=	-O
+LIBC=	/lib/libc.a
 SRCS=	talk.c get_names.c display.c io.c ctl.c init_disp.c \
 	msgs.c get_addrs.c ctl_transact.c invite.c look_up.c
-INCLUDE=talk.h talk_ctl.h
-CFLAGS= -O
+OBJS=	talk.o get_names.o display.o io.o ctl.o init_disp.o \
+	msgs.o get_addrs.o ctl_transact.o invite.o look_up.o
 
-all:	talk
+all: talk
 
-talk:	${OBJS}
-	cc -o talk ${OBJS} -lcurses -ltermlib
+talk:	${OBJS} ${LIBC}
+	${CC} -o $@ ${CFLAGS} ${OBJS} -lcurses -ltermlib
 
-${OBJS}: talk.h talk_ctl.h
+clean: FRC
+	rm -f ${OBJS} core talk
 
-install: talk
-	install -g tty -m 2755 -s talk ${DESTDIR}/usr/ucb/talk
+depend: FRC
+	mkdep ${CFLAGS} ${SRCS}
 
-clean:
-	rm -f ${OBJS} a.out errs core talk
+install: FRC
+	install -s -o bin -g tty -m 2755 talk ${DESTDIR}/usr/ucb/talk
 
-tags:	${SRCS} ${INCLUDE}
-	ctags ${SRCS} ${INCLUDE}
+lint: FRC
+	lint ${CFLAGS} ${SRCS}
 
-depend: ${SRCS}
-	for i in ${SRCS}; do \
-	    cc -M $$i | sed 's/\.o//' | \
-	    awk ' { if ($$1 != prev) \
-		{ if (rec != "") print rec; rec = $$0; prev = $$1; } \
-		else { if (length(rec $$2) > 78) { print rec; rec = $$0; } \
-		else rec = rec " " $$2 } } \
-		END { print rec } ' >> makedep; done
-	echo '/^# DO NOT DELETE THIS LINE/+2,$$d' >eddep
-	echo '$$r makedep' >>eddep
-	echo 'w' >>eddep
-	cp Makefile Makefile.bak
-	ed - Makefile < eddep
-	rm eddep makedep
-	echo '# DEPENDENCIES MUST END AT END OF FILE' >> Makefile
-	echo '# IF YOU PUT STUFF HERE IT WILL GO AWAY' >> Makefile
-	echo '# see make depend above' >> Makefile
+tags: FRC
+	ctags ${SRCS}
 
-# DO NOT DELETE THIS LINE -- make depend uses it
+FRC:
 
-talk: talk.c ./talk.h /usr/include/curses.h /usr/include/stdio.h
-talk: /usr/include/sgtty.h /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
-talk: /usr/include/sys/ttydev.h /usr/include/utmp.h
-get_names: get_names.c ./talk.h /usr/include/curses.h /usr/include/stdio.h
-get_names: /usr/include/sgtty.h /usr/include/sys/ioctl.h
-get_names: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-get_names: /usr/include/utmp.h /usr/include/sys/param.h
-get_names: /usr/include/machine/machparam.h /usr/include/signal.h
-get_names: /usr/include/sys/types.h /usr/include/protocols/talkd.h
-get_names: /usr/include/sys/types.h /usr/include/sys/socket.h
-display: display.c ./talk.h /usr/include/curses.h /usr/include/stdio.h
-display: /usr/include/sgtty.h /usr/include/sys/ioctl.h
-display: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-display: /usr/include/utmp.h
-io: io.c ./talk.h /usr/include/curses.h /usr/include/stdio.h
-io: /usr/include/sgtty.h /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
-io: /usr/include/sys/ttydev.h /usr/include/utmp.h /usr/include/stdio.h
-io: /usr/include/errno.h /usr/include/sys/time.h /usr/include/time.h
-ctl: ctl.c ./talk_ctl.h /usr/include/sys/types.h /usr/include/protocols/talkd.h
-ctl: /usr/include/sys/types.h /usr/include/sys/socket.h
-ctl: /usr/include/netinet/in.h ./talk.h /usr/include/curses.h
-ctl: /usr/include/stdio.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
-ctl: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h /usr/include/utmp.h
-ctl: /usr/include/errno.h
-init_disp: init_disp.c ./talk.h /usr/include/curses.h /usr/include/stdio.h
-init_disp: /usr/include/sgtty.h /usr/include/sys/ioctl.h
-init_disp: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-init_disp: /usr/include/utmp.h /usr/include/signal.h
-msgs: msgs.c /usr/include/signal.h /usr/include/stdio.h /usr/include/sys/time.h
-msgs: /usr/include/time.h ./talk.h /usr/include/curses.h /usr/include/stdio.h
-msgs: /usr/include/sgtty.h /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
-msgs: /usr/include/sys/ttydev.h /usr/include/utmp.h
-get_addrs: get_addrs.c ./talk_ctl.h /usr/include/sys/types.h
-get_addrs: /usr/include/protocols/talkd.h /usr/include/sys/types.h
-get_addrs: /usr/include/sys/socket.h /usr/include/netinet/in.h ./talk.h
-get_addrs: /usr/include/curses.h /usr/include/stdio.h /usr/include/sgtty.h
-get_addrs: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
-get_addrs: /usr/include/sys/ttydev.h /usr/include/utmp.h /usr/include/errno.h
-get_addrs: /usr/include/netdb.h
-ctl_transact: ctl_transact.c ./talk_ctl.h /usr/include/sys/types.h
-ctl_transact: /usr/include/protocols/talkd.h /usr/include/sys/types.h
-ctl_transact: /usr/include/sys/socket.h /usr/include/netinet/in.h ./talk.h
-ctl_transact: /usr/include/curses.h /usr/include/stdio.h /usr/include/sgtty.h
-ctl_transact: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
-ctl_transact: /usr/include/sys/ttydev.h /usr/include/utmp.h
-ctl_transact: /usr/include/errno.h /usr/include/sys/time.h /usr/include/time.h
-invite: invite.c ./talk_ctl.h /usr/include/sys/types.h
-invite: /usr/include/protocols/talkd.h /usr/include/sys/types.h
-invite: /usr/include/sys/socket.h /usr/include/netinet/in.h ./talk.h
-invite: /usr/include/curses.h /usr/include/stdio.h /usr/include/sgtty.h
-invite: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
-invite: /usr/include/sys/ttydev.h /usr/include/utmp.h /usr/include/errno.h
-invite: /usr/include/sys/time.h /usr/include/time.h /usr/include/signal.h
-invite: /usr/include/setjmp.h
-look_up: look_up.c ./talk_ctl.h /usr/include/sys/types.h
-look_up: /usr/include/protocols/talkd.h /usr/include/sys/types.h
-look_up: /usr/include/sys/socket.h /usr/include/netinet/in.h ./talk.h
-look_up: /usr/include/curses.h /usr/include/stdio.h /usr/include/sgtty.h
-look_up: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
-look_up: /usr/include/sys/ttydev.h /usr/include/utmp.h /usr/include/errno.h
-# DEPENDENCIES MUST END AT END OF FILE
-# IF YOU PUT STUFF HERE IT WILL GO AWAY
-# see make depend above
+# DO NOT DELETE THIS LINE -- mkdep uses it.
+# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
+
+talk.o: talk.c
+talk.o:talk.h
+talk.o: /usr/include/curses.h /usr/include/stdio.h /usr/include/sgtty.h
+talk.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
+talk.o: /usr/include/sys/ttydev.h /usr/include/utmp.h
+get_names.o: get_names.c
+get_names.o:talk.h
+get_names.o: /usr/include/curses.h /usr/include/stdio.h /usr/include/sgtty.h
+get_names.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
+get_names.o: /usr/include/sys/ttydev.h /usr/include/utmp.h
+get_names.o: /usr/include/sys/param.h /usr/include/sys/types.h
+get_names.o: /usr/include/signal.h /usr/include/machine/machparam.h
+get_names.o: /usr/include/protocols/talkd.h /usr/include/sys/types.h
+get_names.o: /usr/include/sys/socket.h
+display.o: display.c
+display.o:talk.h
+display.o: /usr/include/curses.h /usr/include/stdio.h /usr/include/sgtty.h
+display.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
+display.o: /usr/include/sys/ttydev.h /usr/include/utmp.h
+io.o: io.c
+io.o:talk.h
+io.o: /usr/include/curses.h /usr/include/stdio.h /usr/include/sgtty.h
+io.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
+io.o: /usr/include/sys/ttydev.h /usr/include/utmp.h /usr/include/stdio.h
+io.o: /usr/include/errno.h /usr/include/sys/time.h /usr/include/time.h
+ctl.o: ctl.c
+ctl.o:talk_ctl.h
+ctl.o: /usr/include/sys/types.h /usr/include/protocols/talkd.h
+ctl.o: /usr/include/sys/types.h /usr/include/sys/socket.h
+ctl.o: /usr/include/netinet/in.h
+ctl.o:talk.h
+ctl.o: /usr/include/curses.h /usr/include/stdio.h /usr/include/sgtty.h
+ctl.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
+ctl.o: /usr/include/sys/ttydev.h /usr/include/utmp.h /usr/include/errno.h
+init_disp.o: init_disp.c
+init_disp.o:talk.h
+init_disp.o: /usr/include/curses.h /usr/include/stdio.h /usr/include/sgtty.h
+init_disp.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
+init_disp.o: /usr/include/sys/ttydev.h /usr/include/utmp.h
+init_disp.o: /usr/include/signal.h
+msgs.o: msgs.c /usr/include/signal.h /usr/include/stdio.h
+msgs.o: /usr/include/sys/time.h /usr/include/time.h
+msgs.o:talk.h
+msgs.o: /usr/include/curses.h /usr/include/stdio.h /usr/include/sgtty.h
+msgs.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
+msgs.o: /usr/include/sys/ttydev.h /usr/include/utmp.h
+get_addrs.o: get_addrs.c
+get_addrs.o:talk_ctl.h
+get_addrs.o: /usr/include/sys/types.h /usr/include/protocols/talkd.h
+get_addrs.o: /usr/include/sys/types.h /usr/include/sys/socket.h
+get_addrs.o: /usr/include/netinet/in.h
+get_addrs.o:talk.h
+get_addrs.o: /usr/include/curses.h /usr/include/stdio.h /usr/include/sgtty.h
+get_addrs.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
+get_addrs.o: /usr/include/sys/ttydev.h /usr/include/utmp.h /usr/include/errno.h
+get_addrs.o: /usr/include/netdb.h
+ctl_transact.o: ctl_transact.c
+ctl_transact.o:talk_ctl.h
+ctl_transact.o: /usr/include/sys/types.h /usr/include/protocols/talkd.h
+ctl_transact.o: /usr/include/sys/types.h /usr/include/sys/socket.h
+ctl_transact.o: /usr/include/netinet/in.h
+ctl_transact.o:talk.h
+ctl_transact.o: /usr/include/curses.h /usr/include/stdio.h /usr/include/sgtty.h
+ctl_transact.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
+ctl_transact.o: /usr/include/sys/ttydev.h /usr/include/utmp.h
+ctl_transact.o: /usr/include/errno.h /usr/include/sys/time.h
+ctl_transact.o: /usr/include/time.h
+invite.o: invite.c
+invite.o:talk_ctl.h
+invite.o: /usr/include/sys/types.h /usr/include/protocols/talkd.h
+invite.o: /usr/include/sys/types.h /usr/include/sys/socket.h
+invite.o: /usr/include/netinet/in.h
+invite.o:talk.h
+invite.o: /usr/include/curses.h /usr/include/stdio.h /usr/include/sgtty.h
+invite.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
+invite.o: /usr/include/sys/ttydev.h /usr/include/utmp.h /usr/include/errno.h
+invite.o: /usr/include/sys/time.h /usr/include/time.h /usr/include/signal.h
+invite.o: /usr/include/setjmp.h
+look_up.o: look_up.c
+look_up.o:talk_ctl.h
+look_up.o: /usr/include/sys/types.h /usr/include/protocols/talkd.h
+look_up.o: /usr/include/sys/types.h /usr/include/sys/socket.h
+look_up.o: /usr/include/netinet/in.h
+look_up.o:talk.h
+look_up.o: /usr/include/curses.h /usr/include/stdio.h /usr/include/sgtty.h
+look_up.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
+look_up.o: /usr/include/sys/ttydev.h /usr/include/utmp.h /usr/include/errno.h
+
+# IF YOU PUT ANYTHING HERE IT WILL GO AWAY

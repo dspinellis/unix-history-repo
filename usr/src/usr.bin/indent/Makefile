@@ -1,57 +1,61 @@
 #
-# Copyright (c) 1980 Regents of the University of California.
+# Copyright (c) 1987 Regents of the University of California.
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6	(Berkeley)	%G%
 #
-DESTDIR=
 CFLAGS=	-O
+LIBC=	/lib/libc.a
 SRCS=	indent.c io.c lexi.c parse.c pr_comment.c args.c
 OBJS=	indent.o io.o lexi.o parse.o pr_comment.o args.o
 
-indent: ${OBJS}
-	cc ${CFLAGS} -o indent ${OBJS}
+all: indent
 
-clean:
-	rm -f ${OBJS} indent core
+indent:	${OBJS} ${LIBC}
+	${CC} -o $@ ${CFLAGS} ${OBJS}
 
-tags:
+clean: FRC
+	rm -f ${OBJS} core indent
+
+depend: FRC
+	mkdep ${CFLAGS} ${SRCS}
+
+install: FRC
+	install -s -o bin -g bin -m 755 indent ${DESTDIR}/usr/ucb/indent
+
+lint: FRC
+	lint ${CFLAGS} ${SRCS}
+
+tags: FRC
 	ctags ${SRCS}
 
-.DEFAULT:
-	sccs get $<
+FRC:
 
-install: indent
-	install -s indent ${DESTDIR}/usr/ucb/indent
+# DO NOT DELETE THIS LINE -- mkdep uses it.
+# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
 
-depend:
-	cc -M ${SRCS} | \
-	    awk '{ if ($$1 != prev) { if (rec != "") print rec; \
-		rec = $$0; prev = $$1; } \
-		else { if (length(rec $$2) > 78) { print rec; rec = $$0; } \
-		else rec = rec " " $$2 } } \
-		END { print rec }' >makedep
-	echo '/^# DO NOT DELETE THIS LINE/+2,$$d' >eddep
-	echo '$$r makedep' >> eddep
-	echo 'w' >>eddep
-	cp Makefile Makefile.bak
-	ed - Makefile < eddep
-	rm eddep makedep
-	echo '# DEPENDENCIES MUST END AT END OF FILE' >> Makefile
-	echo '# IF YOU PUT STUFF HERE IT WILL GO AWAY' >> Makefile
-	echo '# see make depend above' >> Makefile
-
-# DO NOT DELETE THIS LINE -- make depend uses it
-
-indent.o: indent.c ./indent_globs.h /usr/include/stdio.h ./indent_codes.h
-io.o: io.c ./indent_globs.h /usr/include/stdio.h
-lexi.o: lexi.c ./indent_globs.h /usr/include/stdio.h ./indent_codes.h
+indent.o: indent.c
+indent.o:indent_globs.h
+indent.o: /usr/include/stdio.h
+indent.o:indent_codes.h
+io.o: io.c
+io.o:indent_globs.h
+io.o: /usr/include/stdio.h
+lexi.o: lexi.c
+lexi.o:indent_globs.h
+lexi.o: /usr/include/stdio.h
+lexi.o:indent_codes.h
 lexi.o: /usr/include/ctype.h
-parse.o: parse.c ././indent_globs.h /usr/include/stdio.h ././indent_codes.h
-pr_comment.o: pr_comment.c ./indent_globs.h /usr/include/stdio.h
-args.o: args.c ./indent_globs.h /usr/include/stdio.h /usr/include/sys/types.h
-args.o: /usr/include/ctype.h
-# DEPENDENCIES MUST END AT END OF FILE
-# IF YOU PUT STUFF HERE IT WILL GO AWAY
-# see make depend above
+parse.o: parse.c
+parse.o:./indent_globs.h
+parse.o: /usr/include/stdio.h
+parse.o:./indent_codes.h
+pr_comment.o: pr_comment.c
+pr_comment.o:indent_globs.h
+pr_comment.o: /usr/include/stdio.h
+args.o: args.c
+args.o:indent_globs.h
+args.o: /usr/include/stdio.h /usr/include/sys/types.h /usr/include/ctype.h
+
+# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
