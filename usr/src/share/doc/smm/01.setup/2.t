@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.t	6.17 (Berkeley) %G%
+.\"	@(#)2.t	6.18 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -33,7 +33,7 @@ Sony News MIPS-based workstations
 .IP \(bu
 Omron Luna 68000-based workstations
 .LP
-If you wish to run one of these other architectures,
+If you wish to run one of these architectures,
 you will have to build a cross compilation environment.
 Note that the distribution does
 .B not
@@ -186,13 +186,13 @@ where
 \fIu\fP the unit, and
 \fIp\fP a partition.
 The \fIdevice type\fP differentiates the various disks and tapes and is one of:
-``rd'' (HP-IB CS80 disks),
-``ct'' (HP-IB CS80 cartridge tape),
-``sd'' (SCSI-I disks) or
-``st'' (SCSI-I tapes).
+``rd'' for HP-IB CS80 disks,
+``ct'' for HP-IB CS80 cartridge tapes, or
+``sd'' for SCSI-I disks
+(SCSI-I tapes are not supported at this time).
 The \fIadaptor\fP field is a logical HP-IB or SCSI bus adaptor card number.
 This will typically be
-0 for SCSI disks and tapes,
+0 for SCSI disks,
 0 for devices on the ``slow'' HP-IB interface (usually tapes) and
 1 for devices on the ``fast'' HP-IB interface (usually disks).
 To get a complete mapping of physical (select-code) to logical card numbers
@@ -236,7 +236,7 @@ of a type given in the ``supported hardware'' list above.
 If you want to load an entire binary system
 (i.e., everything except /usr/src),
 on the single disk you will need a minimum of 290MB,
-ruling out anything smaller than a 7959B disk.
+ruling out anything smaller than a 7959B/S disk.
 The disklabel included in the bootstrap root image is layed out
 to accomodate this scenerio.
 Note that an HP SCSI magneto-optical disk will work fine for this case.
@@ -271,7 +271,7 @@ It includes a disklabel and bootblock along with the root filesystem.
 An example command to copy the image from tape to the beginning of a disk is:
 .DS
 .ft CW
-dd if=/dev/rmt/0m of=/dev/rdsk/1s0 bs=20b
+dd if=/dev/rmt/0m of=/dev/rdsk/1s0 bs=40b
 .DE
 The actual special file syntax may vary depending on unit numbers and
 the version of HP-UX that is running.
@@ -298,10 +298,10 @@ and then copy the image onto tape.
 For example:
 .DS
 .ft CW
-dd if=/dev/rst0 of=bootimage bs=20b
+dd if=/dev/rst0 of=bootimage bs=40b
 rcp bootimage foo:/tmp/bootimage
 <login to foo>
-dd if=/tmp/bootimage of=/dev/rct/0m bs=20b
+dd if=/tmp/bootimage of=/dev/rct/0m bs=40b
 .DE
 Once this tape is created you can boot and run the standalone tape
 copy program from it.
@@ -318,15 +318,13 @@ lw(2i) l.
 \fBFrom:\fP \fI^C\fP	(control-C to see logical adaptor assignments)
 \fBhpib0 at sc7\fP
 \fBscsi0 at sc14\fP
-\fBFrom:\fP \fIct(0,7,0,0)\fP	(HP-IB tape target 7, first tape file)
-\fBTo:\fP \fIsd(0,0,0,2)\fP	(SCSI disk target 0, third disk partition)
-\fBCopy completed: 2048 records copied\fP
+\fBFrom:\fP \fIct(0,7,0,0)\fP	(HP-IB tape, target 7, first tape file)
+\fBTo:\fP \fIsd(0,0,0,2)\fP	(SCSI disk, target 0, third partition)
+\fBCopy completed: 1728 records copied\fP
 .TE
 .DE
 .LP
 This copy will likely take 30 minutes or more.
-Unfortunately, this won't work for a SCSI DAT tape since \*(4B includes
-no standalone driver for SCSI tapes.
 .NH 4
 Step 3: booting the root filesystem
 .PP
@@ -336,6 +334,8 @@ it would be best if you shut down the machine and turn off power on
 the HP-UX drive.
 It will be less confusing and it will eliminate any chance of accidentally
 destroying the HP-UX disk.
+If you used a cartridge tape for booting you should also unload the tape
+at this point.
 Whether you booted from tape or copied from disk you should now reboot
 the machine and perform another assisted boot, this time with SYS_TBOOT.
 Once loaded and running the boot program will display the CPU type and
@@ -429,7 +429,7 @@ You will later build a system tailored to your configuration
 that will not prompt you for a root device when it is bootstrapped.
 .DS
 \fBroot device?\fP \fI\*(Dk0\fP
-WARNING: preposterous time in filesystem \-\- CHECK AND RESET THE DATE!
+\fBWARNING: preposterous time in filesystem \-\- CHECK AND RESET THE DATE!\fP
 \fBerase ^?, kill ^U, intr ^C\fP
 \fB#\fP
 .DE
@@ -453,14 +453,16 @@ This is done as follows:
 .DS
 .TS
 lw(2i) l.
-\fB#\fP \fImount_mfs -s 1000 -T type /dev/null /tmp	(create a writable filesystem)
+\fB#\fP \fImount_mfs -s 1000 -T type /dev/null /tmp\fP	(create a writable filesystem)
 (\fItype\fP is the disk type as determined from /etc/disktab)
-\fB#\fP \fIcd /tmp\fP	(go to that filesystem)
+\fB#\fP \fIcd /tmp\fP	(connect to that directory)
 \fB#\fP \fI../dev/MAKEDEV \*(Dk#\fP	(create special files for root disk)
 (\fI\*(Dk\fP is the disk type, \fI#\fP is the unit number)
+(ignore warning from ``sh'')
 \fB#\fP \fImount -u /tmp/\*(Dk#a /\fP	(read-write mount root filesystem)
 \fB#\fP \fIcd /dev\fP	(go to device directory)
 \fB#\fP \fI./MAKEDEV \*(Dk#\fP	(create permanent special files for root disk)
+(again, ignore warning from ``sh'')
 .TE
 .DE
 .NH 4
@@ -479,8 +481,8 @@ proceed directly to step 5.
 .PP
 Connect a second disk to your machine.
 If you bootstrapped using the two disk method, you can
-overwrite your initial bootstrapping disk, as it will no longer
-be needed.
+overwrite your initial HP-UX disk, as it will no longer
+be needed (assuming you have no plans to run HP-UX again).
 .PP
 To actually create the root filesystem on drive 1
 you should first label the disk as described in step 5 below.
@@ -512,40 +514,42 @@ easy installation of / and /usr and may not be suitable for the actual
 disk on which it was installed.
 In particular,
 it may make your disk appear larger or smaller than it actually is.
-In the latter case, some of the partitions may include non-existent
-space leading to errors if those partitions are used.
+In the former case, you lose some capacity.
+In the latter, some of the partitions may map non-existent sectors
+leading to errors if those partitions are used.
 It is also possible that the defined geometry will interact poorly with
 the filesystem code resulting in reduced performance.
+However, as long as you are willing to give up a little space,
+not use certain partitions or suffer minor performance degredation,
+you might want to avoid this step;
+especially if you do not know how to use
+.Xr ed (1).
 .PP
-At this time you can edit this label and fill in correct geometry
-information from
-.Pn /etc/disklabel .
+If you choose to edit this label,
+you can fill in correct geometry information from
+.Pn /etc/disktab .
 You may also want to rework the ``e'' and ``f'' partitions used for
 loading /usr and /var.
 You should not attempt to, and
 .Xr disklabel
 will not let you, modify the ``a'', ``b'' and ``d'' partitions.
-Since you must use
-.Xr ed (1)
-for this step, consider carefully whether you really want to do this.
 To edit a label:
 .DS
 \fB#\fP \fIEDITOR=ed\fP
-\fB#\fP \fexport EDITOR\fP
-\fB#\fP \fIdisklabel -r -e /dev/r\fBXX#\fPd
+\fB#\fP \fIexport EDITOR\fP
+\fB#\fP \fIdisklabel  -r  -e  /dev/r\fBXX#\fPd
 .DE
-where \fBXX#\fP is the type and \fB#\fP is the logical drive number; e.g.
+where \fBXX\fP is the type and \fB#\fP is the logical drive number; e.g.
 .Pn /dev/rsd0d
 or
 .Pn /dev/rrd0d .
-Note the use of the ``d'' partition.
-This allows you to change the size of the ``c'' partition
-(the partition normally used by
-.Xr disklabel ).
+Note the explicit use of the ``d'' partition.
+This partition includes the bootblock as does ``c''
+and using it allows you to change the size of ``c''.
 .PP
 If you wish to label any addtional disks, run the following command for each:
 .DS
-\fB#\|\fP\fIdisklabel -rw \fBXX# type\fP \fI"optional_pack_name"\fP
+\fB#\|\fP\fIdisklabel  -rw  \fBXX#  type\fP  \fI"optional_pack_name"\fP
 .DE
 where \fBXX#\fP is the same as in the previous command
 and \fBtype\fP is the HP300 disk device name as listed in
@@ -561,7 +565,7 @@ you may wish to add entries for the modified configuration in
 before labeling the affected disks.
 .PP
 You have now completed the HP300 specific part of the installation.
-You should now proceed to the generic part of the installation
+Now proceed to the generic part of the installation
 described starting in section 2.5 below.
 Note that where the disk name ``sd'' is used throughout section 2.5,
 you should substitute the name ``rd'' if you are running on an HP-IB disk.
@@ -665,9 +669,12 @@ Note that the root filesystem currently requires at least 10 MB; 16 MB
 or more is recommended.  The b partition will be used for swap;
 this should be at least 32 MB.
 .IP 3)
-Use the SunOS ``newfs'' to build the root filesystem.  You may also
+Use the SunOS
+.Xr newfs
+to build the root filesystem.  You may also
 want to build other filesystems at the same time.  (By default, the
-\*(4B newfs builds a filesystem that SunOS will not handle; if you
+\*(4B
+.Xr newfs builds a filesystem that SunOS will not handle; if you
 plan to switch OSes back and forth you may want to sacrifice the
 performance gain from the new filesystem format for compatibility.)
 You can build an old-format filesystem on \*(4B by giving the \-O
@@ -680,7 +687,10 @@ so you may want to initially build old format filesystems so that they
 can be mounted under SunOS,
 and then later convert them to new format filesystems when you are
 satisfied that \*(4B is running properly.
-In any case, YOU MUST BUILD AN OLD-STYLE ROOT FILE SYSTEM
+In any case,
+.B
+you must build an old-style root filesystem
+.R
 so that the SunOS boot program will work.
 .IP 4)
 Mount the new root, then copy the SunOS
@@ -712,25 +722,22 @@ If you have chosen to use the SunOS newfs to build
 .Pn /usr ,
 you may mount and restore it now and skip the next step.
 .IP 6)
-Boot the supplied kernel.  Configure the network, build
-.Pn /usr ,
-mount it, and restore it:
+Boot the supplied kernel:
 .DS
 .ft CW
 # halt
 ok boot sd(0,3)vmunix -s		[for old proms] OR
 ok boot disk3 -s			[for new proms]
 \&... [\*(4B boot messages]
-# ifconfig le0 [your address, subnet, etc, as needed]
-# newfs /dev/rsd0g
-\&... [newfs output, including a warning about being unable to
-     update the label \(em ignore this]
-# mount /dev/sd0g /usr
-# cd /usr
-# rrestore xf tapehost:/dev/nrst0
 .DE
-.IP 7)
-At this point you may wish to set up \*(4B to reboot automatically:
+.LP
+To install the remaining filesystems, use the procedure described
+starting in section 2.5.
+In these instructions, /usr should be loaded into the ``e'' parition
+and /var in the ``f'' partition.
+.LP
+After completing the filesystem installation you may want
+to set up \*(4B to reboot automatically:
 .DS
 .ft CW
 # halt
@@ -823,7 +830,7 @@ will extract the following four files:
 A) root.image: \fIdd\fP image of the root filesystem
 B) vmunix.tape: \fIdd\fP image for creating boot tapes
 C) vmunix.net: file for booting over the network
-D) root.dump: dump image of the root filesystem
+D) root.dump: \fIdump\fP image of the root filesystem
 .DE
 There are three basic ways a system can be bootstrapped corresponding to the
 first three files.
@@ -842,7 +849,7 @@ root filesystem.
 An example command to copy the image to the beginning of a disk is:
 .DS
 .ft CW
-dd if=root.image of=/dev/rz1c bs=20b
+dd if=root.image of=/dev/rz1c bs=40b
 .DE
 The actual special file syntax will vary depending on unit numbers and
 the version of ULTRIX that is running.
@@ -876,7 +883,7 @@ The actual special file syntax for the tape drive will vary depending on
 unit numbers, tape device and the version of ULTRIX that is running.
 .PP
 The first file on the boot tape contains a boot header, kernel, and
-mini-root file system that the PROM can copy into memory.
+mini-root filesystem that the PROM can copy into memory.
 Installing from tape has only been tested
 on a 3100 and a 5000/200 using a TK50 tape drive. Here are two example
 PROM commands to boot from tape.
@@ -1006,7 +1013,7 @@ or a small filesystem like,
 .Pn /tmp ;
 the second partition, \*(Dk0b,
 is used for paging and swapping; and
-the third partition, \*(Dk0\*(Pa,
+a third partition, typically \*(Dk0g,
 holds a user filesystem.
 .PP
 The space available on a disk varies per device.
@@ -1180,7 +1187,7 @@ internal system buffer cache.   The system
 currently provides space in the inode for
 12 direct block pointers, 1 single indirect block
 pointer, 1 double indirect block pointer,
-and 1 double indirect block pointer.
+and 1 triple indirect block pointer.
 If a file uses only direct blocks, access time to
 it will be optimized by maximizing the block size.
 If a file spills over into an indirect block,
@@ -1233,7 +1240,17 @@ a parameter to
 or by updating the super block of an existing filesystem using
 .Xr tunefs (8).
 .PP
-In general, unless a filesystem is to be used
+Finally, a third, less common consideration is the attributes of
+the disk itself.  The fragment size should not be smaller than the
+physical sector size of the disk.  As an example, the HP magneto-optical
+disks have 1024 byte physical sectors.  Using a 512 byte fragment size
+on such disks will work but is extremely inefficient.
+.PP
+Note that the above discussion considers block sizes of up to only 8k.
+As of the 4.4 release, the maximum block size has been increased to 64k.
+This allows an entirely new set of block/fragment combinations for which
+there is little experience to date.
+In general though, unless a filesystem is to be used
 for a special purpose application (for example, storing
 image processing data), we recommend using the
 values supplied above.
@@ -1360,7 +1377,18 @@ is:
 .DE
 Obviously, the target machine must be connected to the local network
 for this to work.
-See section 5 if you need hints on how to do this.
+To do this:
+.DS
+\fB#\fP \fIecho  127.0.0.1  localhost >> /etc/hosts\fP
+\fB#\fP \fIecho  \fPyour.host.inet.number  myname.my.domain  myname\fI >> /etc/hosts\fP
+\fB#\fP \fIecho  \fPfriend.host.inet.number  myfriend.my.domain  myfriend\fI >> /etc/hosts\fP
+\fB#\fP \fIifconfig  le0  inet  \fPmyname
+.DE
+where the ``host.inet.number'' fields are the IP addresses for your host and
+the host with the tape drive
+and the ``my.domain'' fields are the names of your machine and the tape-hosting
+machine.
+See sections 4.4 and 5 for more information on setting up the network.
 .PP
 Assuming a directly connected tape drive, here is how to extract and
 install /var and /usr:
@@ -1370,23 +1398,24 @@ install /var and /usr:
 .TS
 lw(2i) l.
 \fB#\fP \fImount -u /dev/\*(Dk#a /\fP	(read-write mount root filesystem)
+(this step may fail if it was done earlier)
 \fB#\fP \fIdate yymmddhhmm\fP	(set date, see \fIdate\fP\|(1))
 \&....
 \fB#\fP \fIpasswd root\fP	(set password for super-user)
 \fBNew password:\fP	(password will not echo)
 \fBRetype new password:\fP
 \fB#\fP \fIhostname mysitename\fP	(set your hostname)
-\fB#\fP \fInewfs r\*(Dk#c\fP	(create empty user filesystem)
-(\fI\*(Dk\fP is the disk type, \fI#\fP is the unit number, \fIc\fP
-is the partition; this takes a few minutes)
-\fB#\fP \fImount /dev/\*(Dk#c /var\fP	(mount the var filesystem)
+\fB#\fP \fInewfs r\*(Dk#p\fP	(create empty user filesystem)
+(\fI\*(Dk\fP is the disk type, \fI#\fP is the unit number,
+\fIp\fP is the partition; this takes a few minutes)
+\fB#\fP \fImount /dev/\*(Dk#p /var\fP	(mount the var filesystem)
 \fB#\fP \fIcd /var\fP	(make /var the current directory)
 \fB#\fP \fImt -f /dev/nr\*(Mt0 fsf\fP	(space to end of previous tape file)
 \fB#\fP \fItar xbpf 40 /dev/nr\*(Mt0\fP	(extract all of var)
-\fB#\fP \fInewfs r\*(Dk#c\fP	(create empty user filesystem)
-(as before \fI\*(Dk\fP is the disk type, \fI#\fP is the unit number, \fIc\fP
-is the partition)
-\fB#\fP \fImount /dev/\*(Dk#c /usr\fP	(mount the usr filesystem)
+\fB#\fP \fInewfs r\*(Dk#p\fP	(create empty user filesystem)
+(as before \fI\*(Dk\fP is the disk type, \fI#\fP is the unit number,
+\fIp\fP is the partition)
+\fB#\fP \fImount /dev/\*(Dk#p /usr\fP	(mount the usr filesystem)
 \fB#\fP \fIcd /usr\fP	(make /usr the current directory)
 \fB#\fP \fImt -f /dev/nr\*(Mt0 fsf\fP	(space to end of previous tape file)
 \fB#\fP \fItar xbpf 40 /dev/nr\*(Mt0\fP	(extract all of usr except usr/src)
@@ -1422,7 +1451,7 @@ lw(2i) l.
 (this takes about 5-10 minutes)
 \fB#\fP \fIcd /\fP	(change directory, back to the root)
 \fB#\fP \fIchmod 755  /usr/src\fP
-\fB#\fP \fIumount /dev/\*(Dk#c\fP	(unmount /usr)
+\fB#\fP \fIumount /dev/\*(Dk#p\fP	(unmount /usr)
 .TE
 .DE
 .PP
@@ -1430,14 +1459,14 @@ You can check the consistency of the
 .Pn /usr
 filesystem by doing
 .DS
-\fB#\fP \fIfsck /dev/r\*(Dk#c\fP
+\fB#\fP \fIfsck /dev/r\*(Dk#p\fP
 .DE
 The output from
 .Xr fsck
 should look something like:
 .DS
 .B
-** /dev/r\*(Dk#c
+** /dev/r\*(Dk#p
 ** Last Mounted on /usr
 ** Phase 1 - Check Blocks and Sizes
 ** Phase 2 - Check Pathnames
@@ -1457,7 +1486,7 @@ To use the
 .Pn /usr
 filesystem, you should now remount it with:
 .DS
-\fB#\fP \fI/sbin/mount /dev/\*(Dk#c /usr\fP
+\fB#\fP \fImount /dev/\*(Dk#p /usr\fP
 .DE
 .PP
 If you are using 6250bpi tapes, the second reel of the
@@ -1502,8 +1531,8 @@ To restore a dump tape for, say, the
 filesystem something like the following would be used:
 .DS
 \fB#\fP \fImkdir /a\fP
-\fB#\fP \fInewfs \*(Dk#c\fI
-\fB#\fP \fImount /dev/\*(Dk#c /a\fP
+\fB#\fP \fInewfs \*(Dk#p\fI
+\fB#\fP \fImount /dev/\*(Dk#p /a\fP
 \fB#\fP \fIcd /a\fP
 \fB#\fP \fIrestore x\fP
 .DE
