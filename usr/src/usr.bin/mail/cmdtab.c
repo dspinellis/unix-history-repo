@@ -11,7 +11,7 @@
  */
 
 #ifdef notdef
-static char sccsid[] = "@(#)cmdtab.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmdtab.c	5.6 (Berkeley) %G%";
 #endif /* notdef */
 
 #include "def.h"
@@ -30,6 +30,7 @@ extern int pversion(), group(), top(), core(), null(), stouch(), visual();
 extern int swrite(), dosh(), file(), echo(), Respond(), scroll(), ifcmd();
 extern int elsecmd(), endifcmd(), mboxit(), clobber(), alternates();
 extern int local(), folders(), igfield(), Type(), retfield(), more(), More();
+extern int saveigfield(), saveretfield();
 extern int unread();	/* , Header(); */
 
 struct cmd cmdtab[] = {
@@ -98,6 +99,9 @@ struct cmd cmdtab[] = {
 	"ignore",	igfield,	M|RAWLIST,	0,	1000,
 	"discard",	igfield,	M|RAWLIST,	0,	1000,
 	"retain",	retfield,	M|RAWLIST,	0,	1000,
+	"saveignore",	saveigfield,	M|RAWLIST,	0,	1000,
+	"savediscard",	saveigfield,	M|RAWLIST,	0,	1000,
+	"saveretain",	saveretfield,	M|RAWLIST,	0,	1000,
 /*	"Header",	Header,		STRLIST,	0,	1000,	*/
 	"core",		core,		M|NOLIST,	0,	0,
 	"#",		null,		M|NOLIST,	0,	0,

@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)def.h	5.5 (Berkeley) %G%
+ *	@(#)def.h	5.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>		/* includes <sys/types.h> */
@@ -196,9 +196,12 @@ struct grouphead {
 /*
  * Structure of the hash table of ignored header fields
  */
-struct ignore {
-	struct ignore	*i_link;	/* Next ignored field in bucket */
-	char		*i_field;	/* This ignored field */
+struct ignoretab {
+	int i_count;			/* Number of entries */
+	struct ignore {
+		struct ignore *i_link;	/* Next ignored field in bucket */
+		char *i_field;		/* This ignored field */
+	} *i_head[HSHSIZE];
 };
 
 /*

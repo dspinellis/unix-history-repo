@@ -11,7 +11,7 @@
  */
 
 #ifdef notdef
-static char sccsid[] = "@(#)cmd2.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmd2.c	5.6 (Berkeley) %G%";
 #endif /* notdef */
 
 #include "rcv.h"
@@ -172,7 +172,7 @@ save1(str, mark)
 		mesg = *ip;
 		touch(mesg);
 		mp = &message[mesg-1];
-		if ((t = send(mp, obuf, 0)) < 0) {
+		if ((t = send(mp, obuf, saveignore)) < 0) {
 			perror(file);
 			fclose(obuf);
 			return(1);
@@ -469,59 +469,8 @@ clob1(n)
 retfield(list)
 	char *list[];
 {
-	char field[BUFSIZ];
-	register int h;
-	register struct ignore *igp;
-	char **ap;
 
-	if (argcount(list) == 0)
-		return(retshow());
-	for (ap = list; *ap != 0; ap++) {
-		istrcpy(field, *ap);
-
-		if (member(field, retain))
-			continue;
-
-		h = hash(field);
-		igp = (struct ignore *) calloc(1, sizeof (struct ignore));
-		igp->i_field = calloc((unsigned) strlen(field) + 1,
-			sizeof (char));
-		strcpy(igp->i_field, field);
-		igp->i_link = retain[h];
-		retain[h] = igp;
-		nretained++;
-	}
-	return(0);
-}
-
-/*
- * Print out all currently retained fields.
- */
-retshow()
-{
-	register int h, count;
-	struct ignore *igp;
-	char **ap, **ring;
-	int igcomp();
-
-	count = 0;
-	for (h = 0; h < HSHSIZE; h++)
-		for (igp = retain[h]; igp != 0; igp = igp->i_link)
-			count++;
-	if (count == 0) {
-		printf("No fields currently being retained.\n");
-		return(0);
-	}
-	ring = (char **) salloc((count + 1) * sizeof (char *));
-	ap = ring;
-	for (h = 0; h < HSHSIZE; h++)
-		for (igp = retain[h]; igp != 0; igp = igp->i_link)
-			*ap++ = igp->i_field;
-	*ap = 0;
-	qsort((char *) ring, count, sizeof (char *), igcomp);
-	for (ap = ring; *ap != 0; ap++)
-		printf("%s\n", *ap);
-	return(0);
+	return ignore1(list, ignore + 1, "retained");
 }
 
 /*
@@ -531,56 +480,78 @@ retshow()
 igfield(list)
 	char *list[];
 {
+
+	return ignore1(list, ignore, "ignored");
+}
+
+saveretfield(list)
+	char *list[];
+{
+
+	return ignore1(list, saveignore + 1, "retained");
+}
+
+saveigfield(list)
+	char *list[];
+{
+
+	return ignore1(list, saveignore, "ignored");
+}
+
+ignore1(list, tab, which)
+	char *list[];
+	struct ignoretab *tab;
+	char *which;
+{
 	char field[BUFSIZ];
 	register int h;
 	register struct ignore *igp;
 	char **ap;
 
 	if (argcount(list) == 0)
-		return(igshow());
+		return igshow(tab, which);
 	for (ap = list; *ap != 0; ap++) {
-		if (isign(*ap))
-			continue;
 		istrcpy(field, *ap);
+		if (member(field, tab))
+			continue;
 		h = hash(field);
 		igp = (struct ignore *) calloc(1, sizeof (struct ignore));
 		igp->i_field = calloc((unsigned) strlen(field) + 1,
 			sizeof (char));
 		strcpy(igp->i_field, field);
-		igp->i_link = ignore[h];
-		ignore[h] = igp;
+		igp->i_link = tab->i_head[h];
+		tab->i_head[h] = igp;
+		tab->i_count++;
 	}
-	return(0);
+	return 0;
 }
 
 /*
- * Print out all currently ignored fields.
+ * Print out all currently retained fields.
  */
-igshow()
+igshow(tab, which)
+	struct ignoretab *tab;
+	char *which;
 {
-	register int h, count;
+	register int h;
 	struct ignore *igp;
 	char **ap, **ring;
 	int igcomp();
 
-	count = 0;
-	for (h = 0; h < HSHSIZE; h++)
-		for (igp = ignore[h]; igp != 0; igp = igp->i_link)
-			count++;
-	if (count == 0) {
-		printf("No fields currently being ignored.\n");
-		return(0);
+	if (tab->i_count == 0) {
+		printf("No fields currently being %s.\n", which);
+		return 0;
 	}
-	ring = (char **) salloc((count + 1) * sizeof (char *));
+	ring = (char **) salloc((tab->i_count + 1) * sizeof (char *));
 	ap = ring;
 	for (h = 0; h < HSHSIZE; h++)
-		for (igp = ignore[h]; igp != 0; igp = igp->i_link)
+		for (igp = tab->i_head[h]; igp != 0; igp = igp->i_link)
 			*ap++ = igp->i_field;
 	*ap = 0;
-	qsort((char *) ring, count, sizeof (char *), igcomp);
+	qsort((char *) ring, tab->i_count, sizeof (char *), igcomp);
 	for (ap = ring; *ap != 0; ap++)
 		printf("%s\n", *ap);
-	return(0);
+	return 0;
 }
 
 /*
@@ -590,5 +561,5 @@ igcomp(l, r)
 	char **l, **r;
 {
 
-	return(strcmp(*l, *r));
+	return strcmp(*l, *r);
 }

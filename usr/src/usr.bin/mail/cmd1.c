@@ -11,7 +11,7 @@
  */
 
 #ifdef notdef
-static char sccsid[] = "@(#)cmd1.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmd1.c	5.6 (Berkeley) %G%";
 #endif /* notdef */
 
 #include "rcv.h"
@@ -340,7 +340,7 @@ type1(msgvec, doign, page)
 		dot = mp;
 		if (value("quiet") == NOSTR)
 			fprintf(obuf, "Message %d:\n", mesg);
-		send(mp, obuf, doign);
+		send(mp, obuf, doign ? ignore : 0);
 	}
 	if (obuf != stdout) {
 		pipef = NULL;
