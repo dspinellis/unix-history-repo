@@ -1,4 +1,4 @@
-/*	tty.c	3.1	%H%	*/
+/*	tty.c	3.2	%H%	*/
 
 /*
  * general TTY subroutines
@@ -127,6 +127,18 @@ gtty()
 }
 
 /*
+ * Do nothing specific version of line
+ * discipline specific ioctl command.
+ */
+nullioctl(tp, cmd, addr)
+register struct tty *tp;
+caddr_t addr;
+{
+
+	return (cmd);
+}
+
+/*
  * ioctl system call
  * Check legality, execute common code, and switch out to individual
  * device routine.
@@ -175,6 +187,7 @@ caddr_t addr;
 	unsigned t;
 	struct ttiocb iocb;
 	extern int nldisp;
+	register s;
 
 	switch(com) {
 
@@ -199,12 +212,14 @@ caddr_t addr;
 			u.u_error = ENXIO;
 			break;
 		}
+		s = spl5();
 		if (tp->t_line)
 			(*linesw[tp->t_line].l_close)(tp);
 		if (t)
 			(*linesw[t].l_open)(dev, tp, addr);
 		if (u.u_error==0)
 			tp->t_line = t;
+		splx(s);
 		break;
 
 	/*
@@ -228,7 +243,7 @@ caddr_t addr;
 			u.u_error = EFAULT;
 			return(1);
 		}
-		VOID spl5();
+		(void) spl5();
 		while (canon(tp)>=0) 
 			;
 		if ((tp->t_state&SPEEDS)==0) {
@@ -238,7 +253,7 @@ caddr_t addr;
 		tp->t_erase = iocb.ioc_erase;
 		tp->t_kill = iocb.ioc_kill;
 		tp->t_flags = iocb.ioc_flags;
-		VOID spl0();
+		(void) spl0();
 		break;
 
 	/*
@@ -271,7 +286,8 @@ caddr_t addr;
 	 */
 	case DIOCSETP:
 	case DIOCGETP:
-		(*linesw[tp->t_line].l_ioctl)(com, tp, addr);
+		if ((*linesw[tp->t_line].l_ioctl)(com, tp, addr))
+			u.u_error = ENOTTY;
 		break;
 
 	/*
@@ -300,14 +316,14 @@ wflushtty(tp)
 register struct tty *tp;
 {
 
-	VOID spl5();
+	(void) spl5();
 	while (tp->t_outq.c_cc && tp->t_state&CARR_ON) {
 		(*tp->t_oproc)(tp);
 		tp->t_state |= ASLEEP;
 		sleep((caddr_t)&tp->t_outq, TTOPRI);
 	}
 	flushtty(tp);
-	VOID spl0();
+	(void) spl0();
 }
 
 /*
@@ -318,11 +334,11 @@ register struct tty *tp;
 {
 	register s;
 
+	s = spl6();
 	while (getc(&tp->t_canq) >= 0)
 		;
 	wakeup((caddr_t)&tp->t_rawq);
 	wakeup((caddr_t)&tp->t_outq);
-	s = spl6();
 	tp->t_state &= ~TTSTOP;
 	(*cdevsw[major(tp->t_dev)].d_stop)(tp);
 	while (getc(&tp->t_outq) >= 0)
@@ -389,7 +405,7 @@ loop:
 			break;
 	}
 	bp1 = &canonb[2];
-	VOID b_to_q(bp1, bp-bp1, &tp->t_canq);
+	(void) b_to_q(bp1, bp-bp1, &tp->t_canq);
 
 	if (tp->t_state&TBLOCK && tp->t_rawq.c_cc < TTYHOG/5) {
 		if (putc(tun.t_startc, &tp->t_outq)==0) {
@@ -415,9 +431,9 @@ register char *pb, *pe;
 
 	tandem = tp->t_flags&TANDEM;
 	if (tp->t_flags&RAW) {
-		VOID b_to_q(pb, pe-pb, &tp->t_rawq);
+		(void) b_to_q(pb, pe-pb, &tp->t_rawq);
 		if (tp->t_chan)
-			VOID sdata(tp->t_chan); else
+			(void) sdata(tp->t_chan); else
 			wakeup((caddr_t)&tp->t_rawq);
 	} else {
 		tp->t_flags &= ~TANDEM;
@@ -487,12 +503,12 @@ register struct tty *tp;
 	}
 	if (t_flags&LCASE && c>='A' && c<='Z')
 		c += 'a'-'A';
-	VOID putc(c, &tp->t_rawq);
+	(void) putc(c, &tp->t_rawq);
 	if (t_flags&(RAW|CBREAK)||(c=='\n'||c==tun.t_eofc||c==tun.t_brkc)) {
 		if ((t_flags&(RAW|CBREAK))==0 && putc(0377, &tp->t_rawq)==0)
 			tp->t_delct++;
 		if ((cp=tp->t_chan)!=NULL)
-			VOID sdata(cp); else
+			(void) sdata(cp); else
 			wakeup((caddr_t)&tp->t_rawq);
 	}
 	if (t_flags&ECHO) {
@@ -539,19 +555,18 @@ register struct tty *tp;
 	register char *colp;
 	register ctype;
 
-	tk_nout++;
 	/*
 	 * Ignore EOT in normal mode to avoid hanging up
 	 * certain terminals.
 	 * In raw mode dump the char unchanged.
 	 */
-
 	if ((tp->t_flags&RAW)==0) {
 		c &= 0177;
 		if ((tp->t_flags&CBREAK)==0 && c==CEOT)
 			return;
 	} else {
-		VOID putc(c, &tp->t_outq);
+		tk_nout++;
+		(void) putc(c, &tp->t_outq);
 		return;
 	}
 
@@ -559,12 +574,13 @@ register struct tty *tp;
 	 * Turn tabs to spaces as required
 	 */
 	if (c=='\t' && (tp->t_flags&TBDELAY)==XTABS) {
-		c = 8;
-		do
-			ttyoutput(' ', tp);
-		while (--c >= 0 && tp->t_col&07);
+		c = 8 - (tp->t_col & 7);
+		(void) b_to_q("        ", c, &tp->t_outq);
+		tp->t_col += c;
+		tk_nout += c;
 		return;
 	}
+	tk_nout++;
 	/*
 	 * for upper-case-only terminals,
 	 * generate escapes.
@@ -585,7 +601,7 @@ register struct tty *tp;
 	 */
 	if (c=='\n' && tp->t_flags&CRMOD)
 		ttyoutput('\r', tp);
-	VOID putc(c, &tp->t_outq);
+	(void) putc(c, &tp->t_outq);
 	/*
 	 * Calculate delays.
 	 * The numbers here represent clock ticks
@@ -654,12 +670,12 @@ register struct tty *tp;
 		} else if(ctype == 3) { /* concept 100 */
 			int i;
 			for (i= *colp; i<9; i++)
-				VOID putc(0177, &tp->t_outq);
+				(void) putc(0177, &tp->t_outq);
 		}
 		*colp = 0;
 	}
 	if(c)
-		VOID putc(c|0200, &tp->t_outq);
+		(void) putc(c|0200, &tp->t_outq);
 }
 
 /*
@@ -745,7 +761,7 @@ register struct tty *tp;
 		iomove(cp, (unsigned)cc, B_WRITE);
 		if (u.u_error)
 			break;
-		VOID spl5();
+		(void) spl5();
 		while (tp->t_outq.c_cc > TTHIWAT) {
 			ttstart(tp);
 			tp->t_state |= ASLEEP;
@@ -753,12 +769,12 @@ register struct tty *tp;
 				u.u_base -= cc;
 				u.u_offset -= cc;
 				u.u_count += cc;
-				VOID spl0();
+				(void) spl0();
 				return((caddr_t)&tp->t_outq);
 			}
 			sleep((caddr_t)&tp->t_outq, TTOPRI);
 		}
-		VOID spl0();
+		(void) spl0();
 		if (tp->t_flags&LCASE) {
 			while (cc--)
 				ttyoutput(*cp++,tp);
@@ -779,7 +795,7 @@ register struct tty *tp;
 				if (ce==0) {
 					ttyoutput(*cp++,tp);
 					cc--;
-					continue;
+					goto check;
 				}
 			}
 			i=b_to_q(cp,ce,&tp->t_outq);
@@ -788,14 +804,17 @@ register struct tty *tp;
 			tp->t_col+=ce;
 			cp+=ce;
 			cc-=ce;
-			if (i) {
-				VOID spl5();
+			if (i == 0)
+				continue;
+check:
+			if (tp->t_outq.c_cc > TTHIWAT) {
+				(void) spl5();
 				while (tp->t_outq.c_cc > TTHIWAT) {
 					ttstart(tp);
 					tp->t_state |= ASLEEP;
 					sleep((caddr_t)&tp->t_outq, TTOPRI);
 				}
-				VOID spl0();
+				(void) spl0();
 			}
 		}
 	}
