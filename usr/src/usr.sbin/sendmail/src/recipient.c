@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.60 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.61 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1079,7 +1079,8 @@ sendtoargv(argv, e)
 
 	while ((p = *argv++) != NULL)
 	{
-		(void) sendtolist(p, NULLADDR, &e->e_sendqueue, 0, e);
+		(void) sendtolist(denlstring(p), NULLADDR,
+				  &e->e_sendqueue, 0, e);
 	}
 }
 /*
