@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -663,7 +663,7 @@ dinfo(dn, c)
 
 	c = DISKCOL + c * 5;
 	atime = s.dk_time[dn];
-	atime /= 60.0;
+	atime /= hertz;
 	words = s.dk_wds[dn]*32.0;	/* number of words transferred */
 	xtime = dk_mspw[dn]*words;	/* transfer time */
 	itime = atime - xtime;		/* time not transferring */
