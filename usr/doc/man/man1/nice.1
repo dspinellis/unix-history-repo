@@ -1,0 +1,25 @@
+.th NICE I 2/8/75
+.sh NAME
+nice \*- run a command at low priority
+.sh SYNOPSIS
+.bd nice
+[
+\fB\-\fInumber\fR
+]
+command [ arguments ]
+.sh DESCRIPTION
+.it Nice
+executes
+.it command
+with low scheduling priority.
+If a numerical argument is given, that priority
+(in the range 1-20) is used;
+if not, priority 4 is used.
+.s3
+The super-user may run commands with
+priority higher than normal
+by using a negative priority,
+e.g. `\-\-10'.
+.sh "SEE ALSO"
+nohup (I), nice (II)
+.sh BUGS
