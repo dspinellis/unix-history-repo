@@ -561,7 +561,7 @@ extern char	*mktemp proto((char *));
  * the name prevent any macro expansion.
  */
 
-extern int	UNMACRO(vfork) proto((void));
+extern pid_t	UNMACRO(vfork) proto((void));
 
 #ifdef	BSD_SIGS
 #ifndef BSD386
