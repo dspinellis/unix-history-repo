@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ffs_vnops.c	7.12 (Berkeley) %G%
+ *	@(#)ffs_vnops.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -272,8 +272,6 @@ ufs_setattr(vp, vap, cred)
 	if (vap->va_size != VNOVAL) {
 		if (vp->v_type == VDIR)
 			return (EISDIR);
-		if (error = iaccess(ip, IWRITE, cred))
-			return (error);
 		if (error = itrunc(ip, vap->va_size))
 			return (error);
 	}
@@ -705,7 +703,7 @@ ufs_rename(fndp, tndp)
 			error = itrunc(xp, (u_long)0);
 		}
 		xp->i_flag |= ICHG;
-		vput(ITOV(xp));
+		iput(xp);
 		xp = NULL;
 	}
 
