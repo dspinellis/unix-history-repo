@@ -1,4 +1,4 @@
-/*	autoconf.c	4.43	82/10/23	*/
+/*	autoconf.c	4.44	82/10/31	*/
 
 /*
  * Setup the system to run on the current machine.
@@ -366,6 +366,7 @@ unifind(vubp, pubp, vumem, pumem, memmap)
 	struct uba_driver *udp;
 	int i, (**ivec)(), haveubasr;
 	caddr_t ualloc, zmemall();
+	extern int catcher[256];
 
 	/*
 	 * Initialize the UNIBUS, by freeing the map
