@@ -3,13 +3,11 @@
  * All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
- * William Jolitz.
- *
- * Added support for ibmpc term type and improved keyboard support. -Don Ahn
+ * William Jolitz and Don Ahn.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pccons.c	5.10 (Berkeley) %G%
+ *	@(#)pccons.c	5.11 (Berkeley) %G%
  */
 
 /*
