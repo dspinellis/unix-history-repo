@@ -1,11 +1,17 @@
 /*
- * Copyright (c) 1980 Regents of the University of California.
+ * Copyright (c) 1983 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)query.c	5.1 (Berkeley) 6/7/85";
+char copyright[] =
+"@(#) Copyright (c) 1983 Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif not lint
+
+#ifndef lint
+static char sccsid[] = "@(#)query.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -49,11 +55,7 @@ char *argv[];
 	}
 
 	argv++, argc--;
-	count = argc;
-	while (argc > 0) {
-		query(*argv);
-		argv++, argc--;
-	}
+	query(argv,argc);
 
 	/*
 	 * Listen for returning packets;
@@ -63,7 +65,7 @@ char *argv[];
 	bzero(&notime, sizeof(notime));
 	signal(SIGALRM, timeout);
 	alarm(WTIME);
-	while ((count > 0 && !timedout) ||
+	while (!timedout || 
 	    select(20, &bits, 0, 0, &notime) > 0) {
 		struct nspacket {
 			struct idp hdr;
@@ -86,14 +88,16 @@ char *argv[];
 	}
 }
 
-query(host)
-	char *host;
+query(argv,argc)
+char **argv;
 {
 	struct sockaddr_ns router;
 	register struct rip *msg = (struct rip *)packet;
 	long mynet;
 	short work[3];
+	char *host = *argv;
 
+	argv++; argc--;
 	bzero((char *)&router, sizeof (router));
 	router.sns_family = AF_NS;
 	router.sns_addr.x_port = htons(IDPPORT_RIF);
@@ -104,6 +108,10 @@ query(host)
 	msg->rip_cmd = htons(RIPCMD_REQUEST);
 	xnnet(msg->rip_nets[0]) = -1;
 	msg->rip_nets[0].rip_metric = htons(HOPCNT_INFINITY);
+	if (argc > 0) {
+		u_long wanted = xnnet(msg->rip_nets[0]) = htonl(atoi(*argv));
+		printf("Net asked for was %d\n", ntohl(wanted));
+	}
 	if (sendto(s, packet, sizeof (struct rip), 0,
 	  &router, sizeof(router)) < 0)
 		perror(host);
