@@ -1,0 +1,31 @@
+.TH ZNEW 1
+.SH NAME
+znew \-   recompress .Z files to .z files
+.SH SYNOPSIS
+.B znew
+[ -tv9PK] [ name.Z ...  ]
+.SH DESCRIPTION
+.I  Znew
+recompresses files from .Z (compress) format to .z (gzip) format.
+.SH OPTIONS
+.TP
+.B \-t
+Tests the new files before deleting originals.
+.TP
+.B \-v
+Verbose. Display the name and percentage reduction for each file compressed.
+.TP
+.B \-9
+Use the slowest compression method (optimal compression).
+.TP
+.B \-P
+Use pipes for the conversion to reduce disk space usage.
+.TP
+.B \-K
+Keep a .Z file when it is smaller than the .z file
+.SH "SEE ALSO"
+gzip(1), zmore(1), zcmp(1), zforce(1), gzexe(1), compress(1)
+.SH BUGS
+.I Znew
+does not maintain the time stamp with the -P option if 'touch' does
+not support the -r option.
