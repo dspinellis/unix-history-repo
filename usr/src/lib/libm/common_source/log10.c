@@ -13,7 +13,7 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)log10.c	1.2 (Berkeley) 8/21/85; 1.3 (ucb.elefunt) %G%";
+"@(#)log10.c	1.2 (Berkeley) 8/21/85; 1.4 (ucb.elefunt) %G%";
 #endif not lint
 
 /* LOG10(X)
@@ -55,9 +55,14 @@ static char sccsid[] =
  */
 
 #if (defined(VAX)||defined(TAHOE))	/* VAX D format (56 bits) */
+#ifdef VAX
+#define _0x(A,B)	0x/**/A/**/B
+#else	/* VAX */
+#define _0x(A,B)	0x/**/B/**/A
+#endif	/* VAX */
 /* static double */
 /* ln10hi =  2.3025850929940456790E0     ; Hex   2^  2   *  .935D8DDDAAA8AC */
-static long    ln10hix[] = { 0x5d8d4113, 0xa8acddaa};
+static long    ln10hix[] = { _0x(5d8d,4113), _0x(a8ac,ddaa)};
 #define   ln10hi    (*(double*)ln10hix)
 #else	/* IEEE double */
 static double

@@ -13,7 +13,7 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)exp__E.c	1.2 (Berkeley) 8/21/85; 1.4 (ucb.elefunt) %G%";
+"@(#)exp__E.c	1.2 (Berkeley) 8/21/85; 1.5 (ucb.elefunt) %G%";
 #endif not lint
 
 /* exp__E(x,c)
@@ -68,17 +68,22 @@ static char sccsid[] =
  */
 
 #if (defined(VAX)||defined(TAHOE))	/* VAX D format */
+#ifdef VAX
+#define _0x(A,B)	0x/**/A/**/B
+#else	/* VAX */
+#define _0x(A,B)	0x/**/B/**/A
+#endif	/* VAX */
 /* static double */
 /* p1     =  1.5150724356786683059E-2    , Hex  2^ -6   *  .F83ABE67E1066A */
 /* p2     =  6.3112487873718332688E-5    , Hex  2^-13   *  .845B4248CD0173 */
 /* q1     =  1.1363478204690669916E-1    , Hex  2^ -3   *  .E8B95A44A2EC45 */
 /* q2     =  1.2624568129896839182E-3    , Hex  2^ -9   *  .A5790572E4F5E7 */
 /* q3     =  1.5021856115869022674E-6    ; Hex  2^-19   *  .C99EB4604AC395 */
-static long        p1x[] = { 0x3abe3d78, 0x066a67e1};
-static long        p2x[] = { 0x5b423984, 0x017348cd};
-static long        q1x[] = { 0xb95a3ee8, 0xec4544a2};
-static long        q2x[] = { 0x79053ba5, 0xf5e772e4};
-static long        q3x[] = { 0x9eb436c9, 0xc395604a};
+static long        p1x[] = { _0x(3abe,3d78), _0x(066a,67e1)};
+static long        p2x[] = { _0x(5b42,3984), _0x(0173,48cd)};
+static long        q1x[] = { _0x(b95a,3ee8), _0x(ec45,44a2)};
+static long        q2x[] = { _0x(7905,3ba5), _0x(f5e7,72e4)};
+static long        q3x[] = { _0x(9eb4,36c9), _0x(c395,604a)};
 #define       p1    (*(double*)p1x)
 #define       p2    (*(double*)p2x)
 #define       q1    (*(double*)q1x)

@@ -1,4 +1,4 @@
-/*	@(#)floor.c	4.2	9/11/85; 1.3 (ucb.elefunt) %G% */
+/*	@(#)floor.c	4.2	9/11/85; 1.4 (ucb.elefunt) %G% */
 
 /*
  * floor and ceil-- greatest integer <= arg
@@ -53,7 +53,12 @@ double d;
  *	customary for IEEE 754.  No other signal can be emitted.
  */
 #if (defined(VAX)||defined(TAHOE))
-static long Lx[] = {0x5c00,0x0};		/* 2**55 */
+#ifdef VAX
+#define _0x(A,B)	0x/**/A/**/B
+#else	/* VAX */
+#define _0x(A,B)	0x/**/B/**/A
+#endif	/* VAX */
+static long Lx[] = {_0x(0000,5c00),_0x(0000,0000)};	/* 2**55 */
 #define L *(double *) Lx
 #else	/* IEEE double */
 static double L = 4503599627370496.0E0;		/* 2**52 */

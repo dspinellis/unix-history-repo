@@ -13,7 +13,7 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)exp.c	4.3 (Berkeley) 8/21/85; 1.6 (ucb.elefunt) %G%";
+"@(#)exp.c	4.3 (Berkeley) 8/21/85; 1.7 (ucb.elefunt) %G%";
 #endif not lint
 
 /* EXP(X)
@@ -59,6 +59,11 @@ static char sccsid[] =
  */
 
 #if (defined(VAX)||defined(TAHOE))	/* VAX D format */
+#ifdef VAX
+#define _0x(A,B)	0x/**/A/**/B
+#else	/* VAX */
+#define _0x(A,B)	0x/**/B/**/A
+#endif	/* VAX */
 /* static double */
 /* ln2hi  =  6.9314718055829871446E-1    , Hex  2^  0   *  .B17217F7D00000 */
 /* ln2lo  =  1.6465949582897081279E-12   , Hex  2^-39   *  .E7BCD5E4F1D9CC */
@@ -70,16 +75,16 @@ static char sccsid[] =
 /* p3     =  6.6137563214379341918E-5    , Hex  2^-13   *  .8AB355792EF15F */
 /* p4     = -1.6533902205465250480E-6    , Hex  2^-19   * -.DDEA0E2E935F84 */
 /* p5     =  4.1381367970572387085E-8    , Hex  2^-24   *  .B1BB4B95F52683 */
-static long     ln2hix[] = { 0x72174031, 0x0000f7d0};
-static long     ln2lox[] = { 0xbcd52ce7, 0xd9cce4f1};
-static long    lnhugex[] = { 0xec1d43bd, 0x9010a73e};
-static long    lntinyx[] = { 0x4f01c3bf, 0x33afd72e};
-static long    invln2x[] = { 0xaa3b40b8, 0x17f1295c};
-static long        p1x[] = { 0xaaaa3f2a, 0xa9f1aaaa};
-static long        p2x[] = { 0x0b60bc36, 0xec94b5f5};
-static long        p3x[] = { 0xb355398a, 0xf15f792e};
-static long        p4x[] = { 0xea0eb6dd, 0x5f842e93};
-static long        p5x[] = { 0xbb4b3431, 0x268395f5};
+static long     ln2hix[] = { _0x(7217,4031), _0x(0000,f7d0)};
+static long     ln2lox[] = { _0x(bcd5,2ce7), _0x(d9cc,e4f1)};
+static long    lnhugex[] = { _0x(ec1d,43bd), _0x(9010,a73e)};
+static long    lntinyx[] = { _0x(4f01,c3bf), _0x(33af,d72e)};
+static long    invln2x[] = { _0x(aa3b,40b8), _0x(17f1,295c)};
+static long        p1x[] = { _0x(aaaa,3f2a), _0x(a9f1,aaaa)};
+static long        p2x[] = { _0x(0b60,bc36), _0x(ec94,b5f5)};
+static long        p3x[] = { _0x(b355,398a), _0x(f15f,792e)};
+static long        p4x[] = { _0x(ea0e,b6dd), _0x(5f84,2e93)};
+static long        p5x[] = { _0x(bb4b,3431), _0x(2683,95f5)};
 #define    ln2hi    (*(double*)ln2hix)
 #define    ln2lo    (*(double*)ln2lox)
 #define   lnhuge    (*(double*)lnhugex)

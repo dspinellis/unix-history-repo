@@ -13,7 +13,7 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)expm1.c	1.2 (Berkeley) 8/21/85; 1.4 (ucb.elefunt) %G%";
+"@(#)expm1.c	1.2 (Berkeley) 8/21/85; 1.5 (ucb.elefunt) %G%";
 #endif not lint
 
 /* EXPM1(X)
@@ -68,15 +68,20 @@ static char sccsid[] =
  */
 
 #if (defined(VAX)||defined(TAHOE))	/* VAX D format */
+#ifdef VAX
+#define _0x(A,B)	0x/**/A/**/B
+#else	/* VAX */
+#define _0x(A,B)	0x/**/B/**/A
+#endif	/* VAX */
 /* static double */
 /* ln2hi  =  6.9314718055829871446E-1    , Hex  2^  0   *  .B17217F7D00000 */
 /* ln2lo  =  1.6465949582897081279E-12   , Hex  2^-39   *  .E7BCD5E4F1D9CC */
 /* lnhuge =  9.4961163736712506989E1     , Hex  2^  7   *  .BDEC1DA73E9010 */
 /* invln2 =  1.4426950408889634148E0     ; Hex  2^  1   *  .B8AA3B295C17F1 */
-static long     ln2hix[] = { 0x72174031, 0x0000f7d0};
-static long     ln2lox[] = { 0xbcd52ce7, 0xd9cce4f1};
-static long    lnhugex[] = { 0xec1d43bd, 0x9010a73e};
-static long    invln2x[] = { 0xaa3b40b8, 0x17f1295c};
+static long     ln2hix[] = { _0x(7217,4031), _0x(0000,f7d0)};
+static long     ln2lox[] = { _0x(bcd5,2ce7), _0x(d9cc,e4f1)};
+static long    lnhugex[] = { _0x(ec1d,43bd), _0x(9010,a73e)};
+static long    invln2x[] = { _0x(aa3b,40b8), _0x(17f1,295c)};
 #define    ln2hi    (*(double*)ln2hix)
 #define    ln2lo    (*(double*)ln2lox)
 #define   lnhuge    (*(double*)lnhugex)
