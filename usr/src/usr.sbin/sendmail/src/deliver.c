@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.104 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.105 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -2149,13 +2149,8 @@ putbody(mci, e, separator)
 
 		if (hvalue("Content-Type", e->e_header) == NULL)
 		{
-			char *charset = DefaultCharSet;
-
-			/* as recommended by RFC 1428 section 3... */
-			if (charset == NULL)
-				charset = "unknown-8bit";
 			sprintf(buf, "Content-Type: text/plain; charset=%s",
-				charset);
+				defcharset(e));
 			putline(buf, mci);
 		}
 
