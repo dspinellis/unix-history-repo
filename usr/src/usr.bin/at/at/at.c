@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)at.c	4.9	(Berkeley)	%G%";
+static char sccsid[] = "@(#)at.c	4.10	(Berkeley)	%G%";
 #endif not lint
 
 /*
@@ -693,6 +693,7 @@ char *date;
 isprefix(prefix, fullname)
 char *prefix, *fullname;
 {
+	char ch;
 	char *ptr;
 	char *ptr1;
 
@@ -700,11 +701,14 @@ char *prefix, *fullname;
 	ptr1 = fullname;
 
 	while (*ptr) {
-		if (isupper(*ptr))
-			*ptr = tolower(*ptr);
+		ch = *ptr;
+		if (isupper(ch))
+			ch = tolower(ch);
 
-		if (*ptr++ != *ptr1++)
+		if (ch != *ptr1++)
 			return(0);
+
+		++ptr;
 	}
 	return(1);
 }
