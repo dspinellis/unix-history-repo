@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)spline.c	4.3 (Berkeley) %G%";
+static char *sccsid = "@(#)spline.c	4.4 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -50,7 +50,7 @@ where
 
 	di = ai - hi2/di-1	1<i<_n
 
-	ri = bi - hiri-1/di-1i	1<_i<_n
+	ri = bi - hiri-1/di-1i	1<_i<_n
 
 the back solution is
 	y"n = rn/dn
@@ -335,4 +335,3 @@ numb(np,argcp,argvp)
 	(*argcp)--;
 	(*argvp)++; 
 	return(1); }
-
