@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)input.c	4.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)input.c	4.10 (Berkeley) %G%";
 #endif
 
 /*
@@ -94,9 +94,15 @@ rip_input(from, size)
 				rt->rt_timer = 0;
 			return;
 		}
-		/* update timer for interface on which the packet arrived */
+		/*
+		 * Update timer for interface on which the packet arrived.
+		 * If from other end of a point-to-point link that isn't
+		 * in the routing tables, (re-)add the route.
+		 */
 		if ((rt = rtfind(from)) && (rt->rt_state & RTS_INTERFACE))
 			rt->rt_timer = 0;
+		else if (ifp = if_ifwithdstaddr(from))
+			addrouteforif(ifp);
 		size -= 4 * sizeof (char);
 		n = msg->rip_nets;
 		for (; size > 0; size -= sizeof (struct netinfo), n++) {
