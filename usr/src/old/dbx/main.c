@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 static char rcsid[] = "$Header: main.c,v 1.5 84/12/26 10:40:16 linton Exp $";
@@ -103,6 +103,7 @@ String argv[];
     language_init();
     symbols_init();
     process_init();
+    optab_init();
     if (runfirst) {
 	if (setjmp(env) == FIRST_TIME) {
 	    arginit();
