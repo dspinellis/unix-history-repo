@@ -1,4 +1,4 @@
-/*	pass2.h	4.3	87/12/10	*/
+/*	pass2.h	4.4	87/12/10	*/
 
 #ifndef _PASS2_
 #define	_PASS2_
@@ -129,6 +129,8 @@ extern	struct respref {
 #define istnode(p)	(p->in.op==REG && istreg(p->tn.rval))
 
 #define TBUSY		01000	/* register temporarily busy (during alloc) */
+#define PBUSY		02000	/* this reg and next one are used as a pair */
+#define ISBUSY(r)	(((busy[r])&(PBUSY-1)) > 1)
 #define REGLOOP(i)	for (i = 0; i < REGSZ; ++i)
 
 extern	NODE *deltrees[DELAYS];	/* trees held for delayed evaluation */
