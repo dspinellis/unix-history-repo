@@ -1,0 +1,272 @@
+Changes between 2.3 (full) release of 26May90 and 2.2 (alpha) release:
+
+    User-visible:
+
+	- A lone <<EOF>> rule (that is, one which is not qualified with
+	  a list of start conditions) now specifies the EOF action for
+	  *all* start conditions which haven't already had <<EOF>> actions
+	  given.  To specify an end-of-file action for just the initial
+	  state, use <INITIAL><<EOF>>.
+
+	- -d debug output is now contigent on the global yy_flex_debug
+	  being set to a non-zero value, which it is by default.
+
+	- A new macro, YY_USER_INIT, is provided for the user to specify
+	  initialization action to be taken on the first call to the
+	  scanner.  This action is done before the scanner does its
+	  own initialization.
+
+	- yy_new_buffer() has been added as an alias for yy_create_buffer()
+
+	- Comments beginning with '#' and extending to the end of the line
+	  now work, but have been deprecated (in anticipation of making
+	  flex recognize #line directives).
+
+	- It is now documented that flex interprets "^foo|bar" differently
+	  from lex.  flex interprets it as "match either a 'foo' or a 'bar',
+	  providing it comes at the beginning of a line", whereas lex
+	  interprets it as "match either a 'foo' at the beginning of a line,
+	  or a 'bar' anywhere".
+
+	- It is now documented that flex initializes the global "yyin" on
+	  the first call to the scanner, while lex initializes it at
+	  compile-time.
+
+	- It is now documented that yy_switch_to_buffer() can be used
+	  in the yywrap() macro/routine.
+
+	- The funky restrictions on when semi-colons could follow the
+	  YY_NEW_FILE and yyless macros have been removed.  They now
+	  behave identically to functions.
+
+
+    Other changes:
+
+	- Prototypes and proper declarations of void routines have
+	  been added to the flex source code, courtesy of Kevin B. Kenny.
+
+	- Routines dealing with memory allocation now use void* pointers
+	  instead of char* - see Makefile for porting implications.
+
+	- Error-checking is now done when flex closes a file.
+
+	- Various lint tweaks were added to reduce the number of gripes.
+
+	- Makefile has been further parameterized to aid in porting.
+
+	- Support for SCO Unix added.
+
+	- A note has been added to flexdoc.1 mentioning work in progress
+	  on modifying flex to generate straight C code rather than a
+	  table-driven automaton, with an email address of whom to contact
+	  if you are working along similar lines.
+
+
+Changes between 2.2 Patch #3 (30Mar90) and 2.2 Patch #2:
+
+	- fixed bug which caused -I scanners to bomb
+
+
+Changes between 2.2 Patch #2 (27Mar90) and 2.2 Patch #1:
+
+	- fixed bug writing past end of input buffer in yyunput()
+	- fixed bug detecting NUL's at the end of a buffer
+
+
+Changes between 2.2 Patch #1 (23Mar90) and 2.2 (alpha) release:
+
+	- Makefile fixes: definition of MAKE variable for systems
+	  which don't have it; installation of flexdoc.1 along with
+	  flex.1; fixed two bugs which could cause "bigtest" to fail.
+
+	- flex.skel fix for compiling with g++.
+
+	- README and flexdoc.1 no longer list an out-of-date BITNET address
+	  for contacting me.
+
+	- minor typos and formatting changes to flex.1 and flexdoc.1.
+
+
+Changes between 2.2 (alpha) release of March '90 and previous release:
+
+    User-visible:
+
+	- Full user documentation now available.
+
+	- Support for 8-bit scanners.
+
+	- Scanners now accept NUL's.
+
+	- A facility has been added for dealing with multiple
+	  input buffers.
+
+	- Two manual entries now.  One which fully describes flex
+	  (rather than just its differences from lex), and the
+	  other for quick(er) reference.
+
+	- A number of changes to bring flex closer into compliance
+	  with the latest POSIX lex draft:
+
+		%t support
+		flex now accepts multiple input files and concatenates
+		    them together to form its input
+		previous -c (compress) flag renamed -C
+		do-nothing -c and -n flags added
+		Any indented code or code within %{}'s in section 2 is
+		    now copied to the output
+
+	- yyleng is now a bona fide global integer.
+
+	- -d debug information now gives the line number of the
+	  matched rule instead of which number rule it was from
+	  the beginning of the file.
+
+	- -v output now includes a summary of the flags used to generate
+	  the scanner.
+
+	- unput() and yyrestart() are now globally callable.
+
+	- yyrestart() no longer closes the previous value of yyin.
+
+	- C++ support; generated scanners can be compiled with C++ compiler.
+
+	- Primitive -lfl library added, containing default main()
+	  which calls yylex().  A number of routines currently living
+	  in the scanner skeleton will probably migrate to here
+	  in the future (in particular, yywrap() will probably cease
+	  to be a macro and instead be a function in the -lfl library).
+
+	- Hexadecimal (\x) escape sequences added.
+
+	- Support for MS-DOS, VMS, and Turbo-C integrated.
+
+	- The %used/%unused operators have been deprecated.  They
+	  may go away soon.
+
+
+    Other changes:
+
+	- Makefile enhanced for easier testing and installation.
+	- The parser has been tweaked to detect some erroneous
+	  constructions which previously were missed.
+	- Scanner input buffer overflow is now detected.
+	- Bugs with missing "const" declarations fixed.
+	- Out-of-date Minix/Atari patches provided.
+	- Scanners no longer require printf() unless FLEX_DEBUG is being used.
+	- A subtle input() bug has been fixed.
+	- Line numbers for "continued action" rules (those following
+	  the special '|' action) are now correct.
+	- unput() bug fixed; had been causing problems porting flex to VMS.
+	- yymore() handling rewritten to fix bug with interaction
+	  between yymore() and trailing context.
+	- EOF in actions now generates an error message.
+	- Bug involving -CFe and generating equivalence classes fixed.
+	- Bug which made -CF be treated as -Cf fixed.
+	- Support for SysV tmpnam() added.
+	- Unused #define's for scanner no longer generated.
+	- Error messages which are associated with a particular input
+	  line are now all identified with their input line in standard
+	  format.
+	- % directives which are valid to lex but not to flex are
+	  now ignored instead of generating warnings.
+	- -DSYS_V flag can now also be specified -DUSG for System V
+	  compilation.
+
+
+Changes between 2.1 beta-test release of June '89 and previous release:
+
+    User-visible:
+
+	- -p flag generates a performance report to stderr.  The report
+	  consists of comments regarding features of the scanner rules
+	  which result in slower scanners.
+
+	- -b flag generates backtracking information to lex.backtrack.
+	  This is a list of scanner states which require backtracking
+	  and the characters on which they do so.  By adding rules
+	  one can remove backtracking states.  If all backtracking states
+	  are eliminated, the generated scanner will run faster.
+	  Backtracking is not yet documented in the manual entry.
+
+	- Variable trailing context now works, i.e., one can have
+	  rules like "(foo)*/[ \t]*bletch".  Some trailing context
+	  patterns still cannot be properly matched and generate
+	  error messages.  These are patterns where the ending of the
+	  first part of the rule matches the beginning of the second
+	  part, such as "zx*/xy*", where the 'x*' matches the 'x' at
+	  the beginning of the trailing context.  Lex won't get these
+	  patterns right either.
+
+	- Faster scanners.
+
+	- End-of-file rules.  The special rule "<<EOF>>" indicates
+	  actions which are to be taken when an end-of-file is
+	  encountered and yywrap() returns non-zero (i.e., indicates
+	  no further files to process).  See manual entry for example.
+
+	- The -r (reject used) flag is gone.  flex now scans the input
+	  for occurrences of the string "REJECT" to determine if the
+	  action is needed.  It tries to be intelligent about this but
+	  can be fooled.  One can force the presence or absence of
+	  REJECT by adding a line in the first section of the form
+	  "%used REJECT" or "%unused REJECT".
+
+	- yymore() has been implemented.  Similarly to REJECT, flex
+	  detects the use of yymore(), which can be overridden using
+	  "%used" or "%unused".
+
+	- Patterns like "x{0,3}" now work (i.e., with lower-limit == 0).
+
+	- Removed '\^x' for ctrl-x misfeature.
+
+	- Added '\a' and '\v' escape sequences.
+
+	- \<digits> now works for octal escape sequences; previously
+	  \0<digits> was required.
+
+	- Better error reporting; line numbers are associated with rules.
+
+	- yyleng is a macro; it cannot be accessed outside of the
+	  scanner source file.
+
+	- yytext and yyleng should not be modified within a flex action.
+
+	- Generated scanners #define the name FLEX_SCANNER.
+
+	- Rules are internally separated by YY_BREAK in lex.yy.c rather
+	  than break, to allow redefinition.
+
+	- The macro YY_USER_ACTION can be redefined to provide an action
+	  which is always executed prior to the matched rule's action.
+	
+	- yyrestart() is a new action which can be used to restart
+	  the scanner after it has seen an end-of-file (a "real" one,
+	  that is, one for which yywrap() returned non-zero).  It takes
+	  a FILE* argument indicating a new file to scan and sets
+	  things up so that a subsequent call to yylex() will start
+	  scanning that file.
+
+	- Internal scanner names all preceded by "yy_"
+
+	- lex.yy.c is deleted if errors are encountered during processing.
+
+	- Comments may be put in the first section of the input by preceding
+	  them with '#'.
+
+
+
+    Other changes:
+
+	- Some portability-related bugs fixed, in particular for machines
+	  with unsigned characters or sizeof( int* ) != sizeof( int ).
+	  Also, tweaks for VMS and Microsoft C (MS-DOS), and identifiers all
+	  trimmed to be 31 or fewer characters.  Shortened file names
+	  for dinosaur OS's.  Checks for allocating > 64K memory
+	  on 16 bit'ers.  Amiga tweaks.  Compiles using gcc on a Sun-3.
+	- Compressed and fast scanner skeletons merged.
+	- Skeleton header files done away with.
+	- Generated scanner uses prototypes and "const" for __STDC__.
+	- -DSV flag is now -DSYS_V for System V compilation.
+	- Removed all references to FTL language.
+	- Software now covered by BSD Copyright.
+	- flex will replace lex in subsequent BSD releases.
