@@ -22,9 +22,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	5.34 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	5.35 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	5.34 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	5.35 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -420,7 +420,7 @@ maphostname(hbuf, hbsize)
 {
 	register struct hostent *hp;
 	u_long in_addr;
-	char ptr[256];
+	char ptr[256], *cp;
 	struct hostent *gethostbyaddr();
 
 	/*
@@ -433,7 +433,9 @@ maphostname(hbuf, hbsize)
 		getcanonname(hbuf, hbsize);
 		return;
 	}
-	*index(strcpy(ptr, hbuf), ']') = '\0';
+	if ((cp = index(strcpy(ptr, hbuf), ']')) == NULL)
+		return;
+	*cp = '\0';
 	in_addr = inet_addr(&ptr[1]);
 	hp = gethostbyaddr((char *)&in_addr, sizeof(struct in_addr), AF_INET);
 	if (hp == NULL)
