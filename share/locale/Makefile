@@ -1,5 +1,5 @@
 #	From: @(#)Makefile	8.1 (Berkeley) 6/7/93
-#	$Id: Makefile,v 1.2 1994/04/03 00:28:10 wollman Exp $
+#	$Id: Makefile,v 1.3 1994/04/05 07:14:46 ache Exp $
 
 PROG=	mklocale
 SRCS=	yacc.c lex.c
@@ -15,7 +15,7 @@ afterinstall:
 	-if [ -d ${LOCALEDIR} ]; then true; else mkdir -p ${LOCALEDIR}; fi
 	for locale in ${LOCALES}; do \
 		mkdir -p ${LOCALEDIR}/$$locale || true; \
-		mklocale -o ${LOCALEDIR}/$$locale/LC_CTYPE ${.SRCDIR}/$$locale; \
+		mklocale -o ${LOCALEDIR}/$$locale/LC_CTYPE ${.CURDIR}/$$locale; \
 		chmod ${BINMODE} ${LOCALEDIR}/$$locale; \
 	done
 	chown -R ${BINOWN}.${BINGRP} ${LOCALEDIR}
