@@ -1,0 +1,130 @@
+Thu Jun 15 12:53:43 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* movemail.c [USG]: Define F_OK, etc., if not in header.
+
+Fri May 12 22:08:09 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* etags.c (readline): Split call to xrealloc for 3b1 cc bug.
+
+Tue Apr 18 21:31:25 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* loadst.c: on bsd4.3, use gettimeofday instead of CPUSTATES.
+
+Thu Mar 16 13:43:07 1989  Randall Smith  (randy at sugar-bombs.ai.mit.edu)
+
+	* MACHINES: m-sequent.h works for symmetry also.
+
+Mon Mar 13 17:03:06 1989  Randall Smith  (randy at sugar-bombs.ai.mit.edu)
+
+	* MACHINES: Added note mentioning m-news3.0.h.
+
+Tue Feb 21 12:58:55 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* movemail.c: On sysv, include unistd.h.
+
+Tue Jan  3 13:29:46 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* movemail.c: Check access before doing real work.
+	Check that outfile is in a writable directory.
+	On fatal error, delete the lock file.
+
+Fri Dec 30 16:37:27 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* movemail.c: Use `access' to check input and output files.
+
+Wed Dec 28 23:16:28 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* emacsclient.c [USG]: Don't append cwd if abs pathname is spec'd.
+
+Wed Nov 30 15:21:13 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* movemail.c: Do fsync before closing output.
+
+Tue Nov 29 09:59:54 1988  Richard Mlynarik  (mly at pickled-brain.ai.mit.edu)
+
+        * movemail.c:  Better error message when can't create tempname.
+        This file needs a great deal of extra error-checking and lucid reporting...
+
+Tue Nov 15 10:00:21 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* movemail.c: Close output and check errors before deleting input.
+
+Thu Aug  4 19:42:45 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* emacsclient.c: Args like +DIGITS are passed through unchanged.
+
+Tue Jul 12 22:08:00 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* server.c: If both BSD and HAVE_SYSVIPC, use the latter.
+	* emacsclient.c: Likewise.
+	In the HAVE_SYSVIPC alternative, if BSD, use getwd instead of getcwd.
+
+Thu Jun 23 08:40:53 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* etags.c: Handle `typedef struct foo {' (price@mcc.com).
+	(istoken) New string-comparison macro.
+	(consider_token): New arg `level'.  New state `tag_ok' in `tydef'.
+
+Tue Jun 14 04:25:58 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* etags.c: Changes for VMS.
+	Always define ETAGS on VMS.
+	Define macros GOOD and BAD for success and failure exit codes.
+	(begtk, intk): Allow `$' in identifiers
+	(main): Don't support -B, -F or -u on VMS.
+	Alternate loop for scanning filename arguments.
+	(system): Delete definition of this function.
+
+	* etags-vmslib.c (system): Undefine this; VMS now provides it.
+
+Wed Jun  8 08:18:21 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* loadst.c: Prevent multiple-def errors on BSD and BSD4_3
+	around include of param.h.  (Like fns.c.)
+
+Mon May 16 01:06:26 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* loadst.c (load_average): Move load-average code to this new fn.
+	Add conditionals to compute load ave on UMAX.
+
+Sat May 14 01:24:53 1988  Richard Stallman  (rms at lucky-charms.ai.mit.edu)
+
+	* loadst.c: Change DK_HEADER_FILE to DKSTAT_HEADER_FILE
+	with opposite sense.
+
+Fri May 13 18:09:39 1988  Chris Hanson  (cph at kleph)
+
+	* emacsclient.c: Delete references to unused variable `out'.  This
+	caused a bus error when used under hp-ux.
+
+Fri May  6 10:42:31 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* loadst.c: Control dk.h conditional with DK_HEADER_FILE.
+
+Wed May  4 16:08:43 1988  Richard Stallman  (rms at rice-krispies.ai.mit.edu)
+
+	* etags.c (find_entries): `.t' or `.sch' means scheme code.
+
+Fri Apr 29 00:22:26 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* loadst.c: Add BSD4_3 conditional for file dk.h instead of dkstat.h.
+
+Thu Apr 28 08:55:46 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* movemail.c: #undef close, since config can #define it on V.3.
+	* emacsclient.c, fakemail.c, loadst.c, server.c: likewise.
+
+Tue Apr 26 07:33:01 1988  Richard Stallman  (rms at lucky-charms.ai.mit.edu)
+
+	* etags.c (TEX_mode, etc.): Remove superfluous backslashes from
+	invalid escape sequences such as `\{'.
+
+	* loadst.c: Add `sequent' conditional for file dk.h.
+
+Sun Mar 20 13:17:13 1988  Richard M. Stallman  (rms at wilson)
+
+	* server.c [not BSD and not HAVE_SYSVIPC]: fix error message.
+
+	* loadst.c (main) [XENIX]: use /usr/spool/mail, not /usr/mail.
+
+
