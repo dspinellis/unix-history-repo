@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	8.55 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.56 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	8.55 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.56 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -326,6 +326,7 @@ smtpmailfrom(m, mci, e)
 		if (bodytype == NULL &&
 		    bitset(MM_MIME8BIT, MimeMode) &&
 		    bitset(EF_HAS8BIT, e->e_flags) &&
+		    !bitset(EF_DONT_MIME, e->e_flags) &&
 		    !bitnset(M_8BITS, m->m_flags))
 			bodytype = "8BITMIME";
 		if (bodytype != NULL)
@@ -341,6 +342,7 @@ smtpmailfrom(m, mci, e)
 	}
 #if MIME8TO7
 	else if (bitset(MM_CVTMIME, MimeMode) &&
+		 !bitset(EF_DONT_MIME, e->e_flags) &&
 		 (!bitset(MM_PASS8BIT, MimeMode) ||
 		  bitset(EF_IS_MIME, e->e_flags)))
 	{

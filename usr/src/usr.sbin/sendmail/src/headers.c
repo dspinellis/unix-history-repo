@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	8.68 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	8.69 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -531,13 +531,23 @@ eatheader(e, full)
 		define('a', p, e);
 
 	/* check to see if this is a MIME message */
-	if ((e->e_bodytype != NULL &&
-	     strcasecmp(e->e_bodytype, "8BITMIME") == 0) ||
-	    hvalue("MIME-Version", e->e_header) != NULL)
+	else if ((e->e_bodytype != NULL &&
+		  strcasecmp(e->e_bodytype, "8BITMIME") == 0) ||
+		 hvalue("MIME-Version", e->e_header) != NULL)
 	{
 		e->e_flags |= EF_IS_MIME;
 		if (HasEightBits)
 			e->e_bodytype = "8BITMIME";
+	}
+	else if ((p = hvalue("Content-Type", e->e_header)) != NULL)
+	{
+		/* this may be an RFC 1049 message */
+		p = strtok(p, ";/");
+		if (p == NULL || *p == ';')
+		{
+			/* yep, it is */
+			e->e_flags |= EF_DONT_MIME;
+		}
 	}
 
 	/*
@@ -1194,6 +1204,7 @@ vanilla:
 #if MIME8TO7
 	if (bitset(MM_MIME8BIT, MimeMode) &&
 	    bitset(EF_HAS8BIT, e->e_flags) &&
+	    !bitset(EF_DONT_MIME, e->e_flags) &&
 	    !bitnset(M_8BITS, mci->mci_mailer->m_flags) &&
 	    !bitset(MCIF_CVT8TO7, mci->mci_flags))
 	{
