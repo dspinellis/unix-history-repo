@@ -3,7 +3,7 @@
 #include "sendmail.h"
 #include <sys/stat.h>
 
-SCCSID(@(#)envelope.c	3.14		%G%);
+SCCSID(@(#)envelope.c	3.15		%G%);
 
 /*
 **  NEWENVELOPE -- allocate a new envelope
@@ -234,17 +234,11 @@ unlockqueue(e)
 
 initsys()
 {
-	auto time_t now;
 	static char cbuf[5];			/* holds hop count */
-	static char dbuf[30];			/* holds ctime(tbuf) */
 	static char pbuf[10];			/* holds pid */
-	static char tbuf[20];			/* holds "current" time */
 	static char ybuf[10];			/* holds tty id */
 	register char *p;
-	register struct tm *tm;
 	extern char *ttyname();
-	extern char *arpadate();
-	extern struct tm *gmtime();
 	extern char *macvalue();
 	extern char Version[];
 
@@ -279,19 +273,7 @@ initsys()
 	define('c', cbuf, CurEnv);
 
 	/* time as integer, unix time, arpa time */
-	now = curtime();
-	tm = gmtime(&now);
-	(void) sprintf(tbuf, "%02d%02d%02d%02d%02d", tm->tm_year, tm->tm_mon+1,
-			tm->tm_mday, tm->tm_hour, tm->tm_min);
-	define('t', tbuf, CurEnv);
-	(void) strcpy(dbuf, ctime(&now));
-	*index(dbuf, '\n') = '\0';
-	if (macvalue('d', CurEnv) == NULL)
-		define('d', dbuf, CurEnv);
-	p = newstr(arpadate(dbuf));
-	if (macvalue('a', CurEnv) == NULL)
-		define('a', p, CurEnv);
-	define('b', p, CurEnv);
+	settime();
 
 	/* tty name */
 	if (macvalue('y', CurEnv) == NULL)
@@ -305,6 +287,44 @@ initsys()
 			define('y', ybuf, CurEnv);
 		}
 	}
+}
+/*
+**  SETTIME -- set the current time.
+**
+**	Parameters:
+**		none.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		Sets the various time macros -- $a, $b, $d, $t.
+*/
+
+settime()
+{
+	register char *p;
+	auto time_t now;
+	static char tbuf[20];			/* holds "current" time */
+	static char dbuf[30];			/* holds ctime(tbuf) */
+	register struct tm *tm;
+	extern char *arpadate();
+	extern struct tm *gmtime();
+	extern char *macvalue();
+
+	now = curtime();
+	tm = gmtime(&now);
+	(void) sprintf(tbuf, "%02d%02d%02d%02d%02d", tm->tm_year, tm->tm_mon+1,
+			tm->tm_mday, tm->tm_hour, tm->tm_min);
+	define('t', tbuf, CurEnv);
+	(void) strcpy(dbuf, ctime(&now));
+	*index(dbuf, '\n') = '\0';
+	if (macvalue('d', CurEnv) == NULL)
+		define('d', dbuf, CurEnv);
+	p = newstr(arpadate(dbuf));
+	if (macvalue('a', CurEnv) == NULL)
+		define('a', p, CurEnv);
+	define('b', p, CurEnv);
 }
 /*
 **  QUEUENAME -- build a file name in the queue directory for this envelope.
@@ -619,7 +639,7 @@ setsender(from)
 		/* if the user has given fullname already, don't redefine */
 		if (FullName == NULL)
 			FullName = macvalue('x', CurEnv);
-		if (FullName[0] == '\0')
+		if (FullName != NULL && FullName[0] == '\0')
 			FullName = NULL;
 
 		/* extract full name from passwd file */
