@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)route.c	6.12 (Berkeley) %G%
+ *	@(#)route.c	6.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -319,19 +319,12 @@ bad:
  * Set up a routing table entry, normally
  * for an interface.
  */
-rtinit(dst, gateway, flags)
+rtinit(dst, gateway, cmd, flags)
 	struct sockaddr *dst, *gateway;
-	int flags;
+	int cmd, flags;
 {
 	struct rtentry route;
-	int cmd;
 
-	if (flags == -1) {
-		cmd = (int)SIOCDELRT;
-		flags = 0;
-	} else {
-		cmd = (int)SIOCADDRT;
-	}
 	bzero((caddr_t)&route, sizeof (route));
 	route.rt_dst = *dst;
 	route.rt_gateway = *gateway;
