@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sys_generic.c	8.1 (Berkeley) %G%
+ *	@(#)sys_generic.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -26,9 +26,9 @@
  * Read system call.
  */
 struct read_args {
-	int	fdes;
-	char	*cbuf;
-	unsigned count;
+	int	fd;
+	char	*buf;
+	u_int	nbyte;
 };
 /* ARGSUSED */
 read(p, uap, retval)
@@ -45,15 +45,15 @@ read(p, uap, retval)
 	struct iovec ktriov;
 #endif
 
-	if (((unsigned)uap->fdes) >= fdp->fd_nfiles ||
-	    (fp = fdp->fd_ofiles[uap->fdes]) == NULL ||
+	if (((u_int)uap->fd) >= fdp->fd_nfiles ||
+	    (fp = fdp->fd_ofiles[uap->fd]) == NULL ||
 	    (fp->f_flag & FREAD) == 0)
 		return (EBADF);
-	aiov.iov_base = (caddr_t)uap->cbuf;
-	aiov.iov_len = uap->count;
+	aiov.iov_base = (caddr_t)uap->buf;
+	aiov.iov_len = uap->nbyte;
 	auio.uio_iov = &aiov;
 	auio.uio_iovcnt = 1;
-	auio.uio_resid = uap->count;
+	auio.uio_resid = uap->nbyte;
 	auio.uio_rw = UIO_READ;
 	auio.uio_segflg = UIO_USERSPACE;
 	auio.uio_procp = p;
@@ -64,7 +64,7 @@ read(p, uap, retval)
 	if (KTRPOINT(p, KTR_GENIO))
 		ktriov = aiov;
 #endif
-	cnt = uap->count;
+	cnt = uap->nbyte;
 	if (error = (*fp->f_ops->fo_read)(fp, &auio, fp->f_cred))
 		if (auio.uio_resid != cnt && (error == ERESTART ||
 		    error == EINTR || error == EWOULDBLOCK))
@@ -72,7 +72,7 @@ read(p, uap, retval)
 	cnt -= auio.uio_resid;
 #ifdef KTRACE
 	if (KTRPOINT(p, KTR_GENIO) && error == 0)
-		ktrgenio(p->p_tracep, uap->fdes, UIO_READ, &ktriov, cnt, error);
+		ktrgenio(p->p_tracep, uap->fd, UIO_READ, &ktriov, cnt, error);
 #endif
 	*retval = cnt;
 	return (error);
@@ -84,7 +84,7 @@ read(p, uap, retval)
 struct readv_args {
 	int	fdes;
 	struct	iovec *iovp;
-	unsigned iovcnt;
+	u_int	iovcnt;
 };
 readv(p, uap, retval)
 	struct proc *p;
@@ -98,12 +98,12 @@ readv(p, uap, retval)
 	struct iovec *needfree;
 	struct iovec aiov[UIO_SMALLIOV];
 	long i, cnt, error = 0;
-	unsigned iovlen;
+	u_int iovlen;
 #ifdef KTRACE
 	struct iovec *ktriov = NULL;
 #endif
 
-	if (((unsigned)uap->fdes) >= fdp->fd_nfiles ||
+	if (((u_int)uap->fdes) >= fdp->fd_nfiles ||
 	    (fp = fdp->fd_ofiles[uap->fdes]) == NULL ||
 	    (fp->f_flag & FREAD) == 0)
 		return (EBADF);
@@ -172,9 +172,9 @@ done:
  * Write system call
  */
 struct write_args {
-	int	fdes;
-	char	*cbuf;
-	unsigned count;
+	int	fd;
+	char	*buf;
+	u_int	nbyte;
 };
 write(p, uap, retval)
 	struct proc *p;
@@ -190,15 +190,15 @@ write(p, uap, retval)
 	struct iovec ktriov;
 #endif
 
-	if (((unsigned)uap->fdes) >= fdp->fd_nfiles ||
-	    (fp = fdp->fd_ofiles[uap->fdes]) == NULL ||
+	if (((u_int)uap->fd) >= fdp->fd_nfiles ||
+	    (fp = fdp->fd_ofiles[uap->fd]) == NULL ||
 	    (fp->f_flag & FWRITE) == 0)
 		return (EBADF);
-	aiov.iov_base = (caddr_t)uap->cbuf;
-	aiov.iov_len = uap->count;
+	aiov.iov_base = (caddr_t)uap->buf;
+	aiov.iov_len = uap->nbyte;
 	auio.uio_iov = &aiov;
 	auio.uio_iovcnt = 1;
-	auio.uio_resid = uap->count;
+	auio.uio_resid = uap->nbyte;
 	auio.uio_rw = UIO_WRITE;
 	auio.uio_segflg = UIO_USERSPACE;
 	auio.uio_procp = p;
@@ -209,7 +209,7 @@ write(p, uap, retval)
 	if (KTRPOINT(p, KTR_GENIO))
 		ktriov = aiov;
 #endif
-	cnt = uap->count;
+	cnt = uap->nbyte;
 	if (error = (*fp->f_ops->fo_write)(fp, &auio, fp->f_cred)) {
 		if (auio.uio_resid != cnt && (error == ERESTART ||
 		    error == EINTR || error == EWOULDBLOCK))
@@ -220,7 +220,7 @@ write(p, uap, retval)
 	cnt -= auio.uio_resid;
 #ifdef KTRACE
 	if (KTRPOINT(p, KTR_GENIO) && error == 0)
-		ktrgenio(p->p_tracep, uap->fdes, UIO_WRITE,
+		ktrgenio(p->p_tracep, uap->fd, UIO_WRITE,
 		    &ktriov, cnt, error);
 #endif
 	*retval = cnt;
@@ -231,9 +231,9 @@ write(p, uap, retval)
  * Gather write system call
  */
 struct writev_args {
-	int	fdes;
+	int	fd;
 	struct	iovec *iovp;
-	unsigned iovcnt;
+	u_int	iovcnt;
 };
 writev(p, uap, retval)
 	struct proc *p;
@@ -247,13 +247,13 @@ writev(p, uap, retval)
 	struct iovec *needfree;
 	struct iovec aiov[UIO_SMALLIOV];
 	long i, cnt, error = 0;
-	unsigned iovlen;
+	u_int iovlen;
 #ifdef KTRACE
 	struct iovec *ktriov = NULL;
 #endif
 
-	if (((unsigned)uap->fdes) >= fdp->fd_nfiles ||
-	    (fp = fdp->fd_ofiles[uap->fdes]) == NULL ||
+	if (((u_int)uap->fd) >= fdp->fd_nfiles ||
+	    (fp = fdp->fd_ofiles[uap->fd]) == NULL ||
 	    (fp->f_flag & FWRITE) == 0)
 		return (EBADF);
 	/* note: can't use iovlen until iovcnt is validated */
@@ -308,7 +308,7 @@ writev(p, uap, retval)
 #ifdef KTRACE
 	if (ktriov != NULL) {
 		if (error == 0)
-			ktrgenio(p->p_tracep, uap->fdes, UIO_WRITE,
+			ktrgenio(p->p_tracep, uap->fd, UIO_WRITE,
 				ktriov, cnt, error);
 		FREE(ktriov, M_TEMP);
 	}
@@ -324,9 +324,9 @@ done:
  * Ioctl system call
  */
 struct ioctl_args {
-	int	fdes;
-	int	cmd;
-	caddr_t	cmarg;
+	int	fd;
+	int	com;
+	caddr_t	data;
 };
 /* ARGSUSED */
 ioctl(p, uap, retval)
@@ -344,19 +344,19 @@ ioctl(p, uap, retval)
 	caddr_t data = stkbuf;
 	int tmp;
 
-	if ((unsigned)uap->fdes >= fdp->fd_nfiles ||
-	    (fp = fdp->fd_ofiles[uap->fdes]) == NULL)
+	if ((u_int)uap->fd >= fdp->fd_nfiles ||
+	    (fp = fdp->fd_ofiles[uap->fd]) == NULL)
 		return (EBADF);
 	if ((fp->f_flag & (FREAD|FWRITE)) == 0)
 		return (EBADF);
-	com = uap->cmd;
+	com = uap->com;
 
 	if (com == FIOCLEX) {
-		fdp->fd_ofileflags[uap->fdes] |= UF_EXCLOSE;
+		fdp->fd_ofileflags[uap->fd] |= UF_EXCLOSE;
 		return (0);
 	}
 	if (com == FIONCLEX) {
-		fdp->fd_ofileflags[uap->fdes] &= ~UF_EXCLOSE;
+		fdp->fd_ofileflags[uap->fd] &= ~UF_EXCLOSE;
 		return (0);
 	}
 
@@ -374,14 +374,14 @@ ioctl(p, uap, retval)
 	}
 	if (com&IOC_IN) {
 		if (size) {
-			error = copyin(uap->cmarg, data, (u_int)size);
+			error = copyin(uap->data, data, (u_int)size);
 			if (error) {
 				if (memp)
 					free(memp, M_IOCTLOPS);
 				return (error);
 			}
 		} else
-			*(caddr_t *)data = uap->cmarg;
+			*(caddr_t *)data = uap->data;
 	} else if ((com&IOC_OUT) && size)
 		/*
 		 * Zero the buffer so the user always
@@ -389,7 +389,7 @@ ioctl(p, uap, retval)
 		 */
 		bzero(data, size);
 	else if (com&IOC_VOID)
-		*(caddr_t *)data = uap->cmarg;
+		*(caddr_t *)data = uap->data;
 
 	switch (com) {
 
@@ -447,7 +447,7 @@ ioctl(p, uap, retval)
 		 * already set and checked above.
 		 */
 		if (error == 0 && (com&IOC_OUT) && size)
-			error = copyout(data, uap->cmarg, (u_int)size);
+			error = copyout(data, uap->data, (u_int)size);
 		break;
 	}
 	if (memp)

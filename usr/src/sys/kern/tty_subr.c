@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)tty_subr.c	8.1 (Berkeley) %G%
+ *	@(#)tty_subr.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -30,7 +30,8 @@ int	cfreecount, nclist;
 /*
  * Initialize clist by freeing all character blocks.
  */
-cinit()
+void
+clist_init()
 {
 	register int ccp;
 	register struct cblock *cp;
@@ -198,6 +199,7 @@ out:
 /*
  * Flush cc bytes from q.
  */
+void
 ndflush(q, cc)
 	register struct clist *q;
 	register int cc;
@@ -420,6 +422,7 @@ unputc(p)
  * Put the chars in the from que
  * on the end of the to que.
  */
+void
 catq(from, to)
 	struct clist *from, *to;
 {
