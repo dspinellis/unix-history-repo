@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)errfunction	5.1 (Berkeley) %G%
+ *	@(#)errfunction	8.1 (Berkeley) %G%
  */
 
 err(s, syserr)
