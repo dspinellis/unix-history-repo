@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)tail.c	4.3 (Berkeley) %G%";
+static char *sccsid = "@(#)tail.c	4.4 (Berkeley) %G%";
 /* tail command 
  *
  *	tail where [file]
@@ -44,9 +44,12 @@ char **argv;
 	}
 	fromend = *arg=='-';
 	arg++;
-	n = 0;
-	while(isdigit(*arg))
-		n = n*10 + *arg++ - '0';
+	if (isdigit(*arg)) {
+		n = 0;
+		while(isdigit(*arg))
+			n = n*10 + *arg++ - '0';
+	} else
+		n = -1;
 	if(!fromend&&n>0)
 		n--;
 	if(argc>2) {
@@ -75,7 +78,7 @@ char **argv;
 		follow = 1;
 		break;
 	case 'r':
-		if(n==0) n = LBIN;
+		if(n==-1) n = LBIN;
 		bkwds = 1; fromend = 1; bylines = 1;
 		break;
 	case 'l':
@@ -85,7 +88,7 @@ char **argv;
 	default:
 		goto errcom;
 	}
-	if (n==0) n = 10;
+	if (n==-1) n = 10;
 	if(bylines==-1) bylines = 1;
 	if(bkwds) follow=0;
 	if(fromend)
