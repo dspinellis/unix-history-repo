@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_exit.c	7.41 (Berkeley) %G%
+ *	@(#)kern_exit.c	7.42 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -61,6 +61,7 @@ exit(p, rv)
 {
 	register struct proc *q, *nq;
 	register struct proc **pp;
+	register struct vmspace *vm;
 	int s;
 
 #ifdef PGINPROF
@@ -85,8 +86,9 @@ exit(p, rv)
 	fdfree(p);
 
 	/* The next two chunks should probably be moved to vmspace_exit. */
+	vm = p->p_vmspace;
 #ifdef SYSVSHM
-	if (p->p_vmspace->vm_shm)
+	if (vm->vm_shm)
 		shmexit(p);
 #endif
 	/*
@@ -97,8 +99,8 @@ exit(p, rv)
 	 * Can't free the entire vmspace as the kernel stack
 	 * may be mapped within that space also.
 	 */
-	if (p->p_vmspace->vm_refcnt == 1)
-		(void) vm_map_remove(&p->p_vmspace->vm_map, VM_MIN_ADDRESS,
+	if (vm->vm_refcnt == 1)
+		(void) vm_map_remove(&vm->vm_map, VM_MIN_ADDRESS,
 		    VM_MAXUSER_ADDRESS);
 
 	if (p->p_pid == 1)
