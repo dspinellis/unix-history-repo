@@ -1,0 +1,6 @@
+enter repeat count
+main:        10        20        30        40
+lvl1:       110       120       130       140
+lvl2:       210       220       230       240
+
+48 statements executed in 0.03 seconds cpu time.

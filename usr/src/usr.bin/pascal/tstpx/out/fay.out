@@ -1,0 +1,14 @@
+stacking          1
+Doing successors of          1
+stacking          2
+Doing successors of          2
+Now checking if          2 is an SCC root
+Now checking if          1 is an SCC root
+         1 is an SCC root; SP=         2 T=         1
+Yield SCC should pass          1 out to TakeUSCC
+YieldUSCC passes         1 to TakeUSCC
+TakeUSCC receives V=         1 from YieldUSCC
+The SCC's constituents are:
+         2         1
+
+79 statements executed in 0.08 seconds cpu time.
