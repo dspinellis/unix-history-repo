@@ -1,4 +1,4 @@
-\"	@(#)postp.me	1.1 %G%
+\"	@(#)postp.me	1.2 %G%
 .sh 1 "Post Processing"
 .pp
 Having gathered the arcs of the call graph and timing information
@@ -8,10 +8,22 @@ routines that call it.
 We construct a dynamic call graph with arcs from caller to callee,
 and propagate time from descendants to ancestors
 by topologically sorting the call graph.
+.(q
+<<< we need a picture here.>>>
+.br
+<<< and maybe enough equations to show the recurrence equation. >>>
+.)q
+Time propagation is performed from the leaves of the
+call graph toward the roots, according to the order
+assigned by a topological numbering algorithm.
+Each parent receives some fraction of a child's time.
+Thus time is charged to the
+caller in addition to being charged to the callee.
+.pp
 However, if the execution contains recursive calls,
 the call graph has cycles that
 cannot be topologically sorted.
-The solution we chose is to discover strongly-connected
+In these cases, we discover strongly-connected
 components in the call graph,
 treat each such component as a single node,
 and then sort the resulting graph.
@@ -19,12 +31,12 @@ We use a variation of Tarjan's strongly-connected
 components algorithm
 that discovers strongly-connected components as it is assigning
 topological order numbers [Tarjan72].
-The topological numbering insures that
+The topological numbering ensures that
 all edges in the graph go from higher numbered nodes to lower
 numbered nodes.
 If we propagate time from nodes in the
 reverse order assigned by the algorithm,
-time is properly propagated from descendants to ancestors
+execution time can be propagated from descendants to ancestors
 after a single traversal of each arc in the call graph.
 .pp
 Time propagation within strongly connected
@@ -53,17 +65,9 @@ propagate time into the cycle as a whole.
 Calls among the members of the cycle 
 do not propagate any time,
 though they are listed in the call graph profile.
-.pp
-Time propagation is performed from the leaves of the
-call graph toward the roots, according to the order
-assigned by the topological numbering algorithm described above.
-Each parent receives some fraction of a child's time.
-The time propagated to a parent is calculated according to the 
-recurrence equation given in the previous section.
-Notice that time propagation duplicates costs in the
-process of distributing them.
-Thus time is charged to the
-caller in addition to being charged to the callee.
+.(q
+<<<we need a picture here.>>>
+.)q
 .pp
 Since the technique described above only collects the
 dynamic call graph,
