@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tu.c	7.3 (Berkeley) %G%
+ *	@(#)tu.c	7.4 (Berkeley) %G%
  */
 
 #if defined(VAX750) || defined(VAX730)
@@ -34,7 +34,6 @@
 #include "cpu.h"
 #include "mtpr.h"
 #include "rsp.h"
-#include "tsleep.h"
 
 #define	printd	if(tudebug) printf
 #ifdef	printd
@@ -102,6 +101,7 @@ tuopen(dev, flag)
 {
 	extern int tuwatch();
 	register s;
+	int error;
 
 #ifdef lint
 	turintr(); tuwintr();
@@ -129,7 +129,11 @@ tuopen(dev, flag)
 	 * and wait for things to settle down.
 	 */
 	tureset();
-	tsleep((caddr_t)&tu, PZERO+1, SLP_TU_OPN, 0);
+	if (error = tsleep((caddr_t)&tu, (PZERO + 1) | PCATCH,
+	    devopn, 0)) {
+		splx(s);
+		return (error);
+	}
 	tutab.b_active = NULL;
 	if (tu.tu_state != TUS_IDLE) {
 		tu.tu_state = TUS_INIT1;
