@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)alias.h	1.2 (Berkeley) %G%
+ *	@(#)alias.h	8.1 (Berkeley) %G%
  */
 
 #define ALIASINUSE	1
