@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)slave.c	2.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)slave.c	2.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "globals.h"
@@ -36,8 +36,7 @@ slave()
 	char candidate[MAXHOSTNAMELEN];
 	struct tsp *msg, to, *readmsg();
 	struct sockaddr_in saveaddr, msaveaddr;
-	struct timeval wait;
-	struct timeval time, otime;
+	struct timeval time, wait;
 	struct tsp *answer, *acksend();
 	int timeout();
 	char *date();
@@ -213,12 +212,12 @@ loop:
 			seq = msg->tsp_seq;
 
 			(void)strcpy(olddate, date());
-			(void)gettimeofday(&otime, (struct timezone *)0);
+			logwtmp("|", "date", "");
 			(void)settimeofday(&msg->tsp_time,
 				(struct timezone *)0);
+			logwtmp("{", "date", "");
 			syslog(LOG_NOTICE, "date changed by %s from: %s",
 				msg->tsp_name, olddate);
-			logwtmp(otime, msg->tsp_time);
 			if ((status & SUBMASTER) == SUBMASTER)
 				spreadtime();
 			(void)gettimeofday(&time, (struct timezone *)0);
