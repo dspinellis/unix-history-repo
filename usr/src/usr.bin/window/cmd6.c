@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd6.c	3.5 84/01/12";
+static	char *sccsid = "@(#)cmd6.c	3.6 84/01/13";
 #endif
 
 #include "defs.h"
@@ -57,10 +57,12 @@ debug_str()
 		return;
 	}
 	for (s = str_head.s_forw; s != &str_head; s = s->s_forw) {
-		more(w);
+		if (more(w, 0) == 2)
+			goto out;
 		(void) wwprintf(w, "(0x%x)\t\"%s\"\n", s->s_data, s->s_data);
 	}
 	waitnl(w);
+out:
 	closeiwin(w);
 }
 #else

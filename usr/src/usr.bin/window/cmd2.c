@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd2.c	3.19 84/01/12";
+static	char *sccsid = "@(#)cmd2.c	3.20 84/01/13";
 #endif
 
 #include "defs.h"
@@ -77,30 +77,30 @@ dohelp()
 	wwprintf(w, "^L      Redraw screen.\r\n");
 	wwprintf(w, "^Z      Suspend.\r\n");
 	wwprintf(w, ".       Quit.\r\n");
-	help_print(w, "Short commands", help_shortcmd);
-	help_print(w, "Long commands", help_longcmd);
+	if (help_print(w, "Short commands", help_shortcmd) >= 0)
+		(void) help_print(w, "Long commands", help_longcmd);
 	closewin(w);
 }
 
 help_print(w, name, list)
 register struct ww *w;
 char *name;
-char **list;
+register char **list;
 {
-	register char **p;
-	char firsttime = 1;
-
-	for (p = list; *p;) {
-		(void) wwprintf(w, "%s:%s\n\n",
-			name, firsttime ? "" : " (continued)");
-		firsttime = 0;
-		while (*p && w->ww_cur.r < w->ww_w.b - 2) {
-			(void) wwputs(*p++, w);
+	(void) wwprintf(w, "%s:\n\n", name);
+	while (*list)
+		switch (more(w, 0)) {
+		case 0:
+			(void) wwputs(*list++, w);
 			(void) wwputc('\n', w);
+			break;
+		case 1:
+			(void) wwprintf(w, "%s: (continue)\n\n", name);
+			break;
+		case 2:
+			return -1;
 		}
-		waitnl(w);
-		(void) wwputs("\033E", w);	/* clear and home cursor */
-	}
+	return more(w, 1) == 2 ? -1 : 0;
 }
 
 #ifndef O_4_1A
@@ -257,23 +257,35 @@ char *label;
 }
 
 waitnl(w)
+struct ww *w;
+{
+	(void) waitnl1(w, "[Type any key to continue]");
+}
+
+waitnl1(w, prompt)
 register struct ww *w;
+char *prompt;
 {
 	wwsetcurwin(w);
 	wwprintf(w, "\r\nType return to continue: ");
 	wwsetcursor(WCurRow(w->ww_win), WCurCol(w->ww_win));
-	while (bgetc() < 0)
+	while (bpeekc() < 0)
 		bread();
+	return bgetc();
 	wwputs("\033E", w);			/* clear and home cursor */
 }
 
-more(w)
+more(w, flag)
 register struct ww *w;
+char flag;
 {
-	if (w->ww_cur.r > w->ww_w.b - 3) {
-		waitnl(w);
-		(void) wwputs("\033E", w);
-	}
+	int c;
+
+	if (!flag && w->ww_cur.r < w->ww_w.b - 2)
+		return 0;
+	c = waitnl1(w, "[Type escape to abort, any other key to continue]");
+	(void) wwputs("\033E", w);
+	return c == CTRL([) ? 2 : 1;
 }
 
 closewin(w)
