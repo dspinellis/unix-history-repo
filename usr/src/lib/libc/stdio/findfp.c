@@ -1,92 +1,79 @@
-/* @(#)findfp.c	1.2 (Berkeley) %G% */
+/* @(#)findfp.c	1.3 (Berkeley) %G% */
 #include <stdio.h>
 
-#define NSTATIC	10	/* stdin, stdout, stderr, plus slack */
+#define active(iop)	((iop)->_flag & (_IOREAD|_IOWRT|_IORW))
 
-extern char *calloc();
-
-static FILE *dummy[NSTATIC];
-static FILE **iov = NULL;
-static FILE **iovend;
+#define NSTATIC	3	/* stdin + stdout + stderr */
 
 FILE _iob[NSTATIC] = {
-	{ 0, NULL, NULL, NULL, _IOREAD,		0 },	/* stdin  */
-	{ 0, NULL, NULL, NULL, _IOWRT,		1 },	/* stdout */
-	{ 0, NULL, NULL, NULL, _IOWRT|_IONBF,	2 },	/* stderr */
+	{ 0, NULL, NULL, 0, _IOREAD,		0 },	/* stdin  */
+	{ 0, NULL, NULL, 0, _IOWRT,		1 },	/* stdout */
+	{ 0, NULL, NULL, 0, _IOWRT|_IONBF,	2 },	/* stderr */
 };
 
-static char smallbuf[NSTATIC];
-static char *unbufp = NULL;
+static	FILE	*_lastbuf = _iob + NSTATIC;
+
+extern	char	*calloc();
+
+static	FILE	**iobglue;
+static	FILE	**endglue;
+static	int	nfiles;
 
 FILE *
 _findiop()
 {
-	register FILE **iovp;
+	register FILE **iov;
 	register FILE *fp;
-	register int nfiles;
 
-	if (iov == NULL) {
-		unbufp	= NULL;
-		iov	= NULL;
-		fp	= NULL;
-
+	if (nfiles <= 0)
 		nfiles = getdtablesize();
-		if (nfiles > NSTATIC) {
-			fp = (FILE *)calloc(nfiles - NSTATIC, sizeof *fp);
-			if (fp != NULL) {
-				iov = (FILE **)calloc(nfiles, sizeof *iov);
-				if (iov != NULL)
-					unbufp = calloc(nfiles, sizeof *unbufp);
-			}
-		}
 
-		if (unbufp != NULL) {
-			iovend = iov + nfiles;
-			for (iovp = iov + NSTATIC; iovp < iovend; /* void */)
-				*iovp++ = fp++;
-		} else {
-			if (fp != NULL) {
-				free((char *)fp);
-				if (iov != NULL)
-					free((char *)iov);
-			}
-
-			iovend	= dummy + NSTATIC;
-			iov	= dummy;
-		}
-
-		iovp = iov;
-		for (fp = _iob; fp < _iob + NSTATIC; /* void */)
-			*iovp++ = fp++;
-	}
-
-	for (iovp = iov; (*iovp)->_flag & (_IOREAD|_IOWRT|_IORW); /* void */)
-		if (++iovp >= iovend)
+	if (iobglue == NULL) {
+		iobglue = (FILE **)calloc(nfiles, sizeof *iobglue);
+		if (iobglue == NULL)
 			return (NULL);
 
-	return (*iovp);
+		endglue = iobglue + nfiles;
+
+		iov = iobglue;
+		for (fp = _iob; fp < _lastbuf; /* void */)
+			*iov++ = fp++;
+	}
+
+	iov = iobglue;
+	while (*iov != NULL && active(*iov))
+		if (++iov >= endglue)
+			return (NULL);
+
+	if (*iov == NULL)
+		*iov = (FILE *)calloc(1, sizeof **iov);
+
+	return (*iov);
+}
+
+_fwalk(function)
+	register int (*function)();
+{
+	register FILE **iov;
+	register FILE *fp;
+
+	if (function == NULL)
+		return;
+
+	if (iobglue == NULL) {
+		for (fp = _iob; fp < _lastbuf; fp++)
+			if (active(fp))
+				(*function)(fp);
+	} else {
+		for (iov = iobglue; iov < endglue; iov++)
+			if (*iov != NULL && active(*iov))
+				(*function)(*iov);
+	}
 }
 
 _cleanup()
 {
-	register FILE *_lastbuf = _iob + NSTATIC;
-	register FILE **iovp;
-	register FILE *iop;
+	extern int fclose();
 
-	if (iov == NULL)
-		for (iop = _iob; iop < _lastbuf; iop++)
-			fclose(iop);
-	else
-		for (iovp = iov; iovp < iovend; iovp++)
-			fclose(*iovp);
-}
-
-char *
-_smallbuf(iop)
-	register FILE *iop;
-{
-	if (unbufp == NULL)
-		return (&smallbuf[iop - _iob]);
-	else
-		return (&unbufp[fileno(iop)]);
+	_fwalk(fclose);
 }
