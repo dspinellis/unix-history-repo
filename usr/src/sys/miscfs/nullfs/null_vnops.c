@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)null_vnops.c	8.3 (Berkeley) %G%
+ *	@(#)null_vnops.c	8.4 (Berkeley) %G%
  *
  * Ancestors:
  *	@(#)lofs_vnops.c	1.2 (Berkeley) 6/18/92
@@ -286,7 +286,6 @@ null_bypass(ap)
 	return (error);
 }
 
-
 /*
  *  We handle getattr only to change the fsid.
  */
@@ -307,6 +306,32 @@ null_getattr(ap)
 	return (0);
 }
 
+/*
+ * We need to verify that we are not being vgoned and then clear
+ * the interlock flag as it applies only to our vnode, not the
+ * vnodes below us on the stack.
+ */
+int
+null_lock(ap)
+	struct vop_lock_args *ap;
+{
+	struct vnode *vp = ap->a_vp;
+	int error;
+
+	if ((ap->a_flags & LK_INTERLOCK) == 0)
+		simple_lock(&vp->v_interlock);
+	if (vp->v_flag & VXLOCK) {
+		vp->v_flag |= VXWANT;
+		simple_unlock(&vp->v_interlock);
+		tsleep((caddr_t)vp, PINOD, "unionlk1", 0);
+		return (ENOENT);
+	}
+	simple_unlock(&vp->v_interlock);
+	ap->a_flags &= ~LK_INTERLOCK;
+	if (error = null_bypass(ap))
+		return (error);
+	return (0);
+}
 
 int
 null_inactive(ap)
@@ -333,6 +358,7 @@ int
 null_reclaim(ap)
 	struct vop_reclaim_args /* {
 		struct vnode *a_vp;
+		struct proc *a_p;
 	} */ *ap;
 {
 	struct vnode *vp = ap->a_vp;
@@ -352,7 +378,6 @@ null_reclaim(ap)
 	return (0);
 }
 
-
 int
 null_print(ap)
 	struct vop_print_args /* {
@@ -363,7 +388,6 @@ null_print(ap)
 	printf ("\ttag VT_NULLFS, vp=%x, lowervp=%x\n", vp, NULLVPTOLOWERVP(vp));
 	return (0);
 }
-
 
 /*
  * XXX - vop_strategy must be hand coded because it has no
@@ -389,7 +413,6 @@ null_strategy(ap)
 
 	return (error);
 }
-
 
 /*
  * XXX - like vop_strategy, vop_bwrite must be hand coded because it has no
@@ -424,6 +447,7 @@ struct vnodeopv_entry_desc null_vnodeop_entries[] = {
 	{ &vop_default_desc, null_bypass },
 
 	{ &vop_getattr_desc, null_getattr },
+	{ &vop_lock_desc, null_lock },
 	{ &vop_inactive_desc, null_inactive },
 	{ &vop_reclaim_desc, null_reclaim },
 	{ &vop_print_desc, null_print },
