@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	4.8 %G%";
+static char sccsid[] = "@(#)newfs.c	4.9 %G%";
 #endif
 
 /*
@@ -246,12 +246,13 @@ again:
 		exit(status);
 	if (*cp == 'a' && !noboot) {
 		char type[3];
+		struct stat sb;
 
 		cp = rindex(special, '/');
 		if (cp == NULL)
 			fatal("%s: can't figure out disk type from name",
 				special);
-		if (cp[1] == 'r')
+		if (stat(special, &sb) >= 0 && (sb.st_mode & S_IFMT) == S_IFCHR)
 			cp++;
 		type[0] = *++cp;
 		type[1] = *++cp;
