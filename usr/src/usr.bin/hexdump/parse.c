@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parse.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)parse.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -264,6 +264,22 @@ rewrite(fs)
 			case 'd': case 'i':
 				pr->flags = F_INT;
 				goto sw1;
+			case 'l':
+				++p2;
+				switch(p1[1]) {
+				case 'd': case 'i':
+					++p1;
+					pr->flags = F_INT;
+					goto sw1;
+				case 'o': case 'u': case 'x': case 'X':
+					++p1;
+					pr->flags = F_UINT;
+					goto sw1;
+				default:
+					p1[2] = '\0';
+					badconv(p1);
+				}
+				/* NOTREACHED */
 			case 'o': case 'u': case 'x': case 'X':
 				pr->flags = F_UINT;
 sw1:				switch(fu->bcnt) {
@@ -479,6 +495,6 @@ badfmt(fmt)
 badconv(ch)
 	char *ch;
 {
-	(void)fprintf(stderr, "hexdump: bad conversion character %s.\n", ch);
+	(void)fprintf(stderr, "hexdump: bad conversion character %%%s.\n", ch);
 	exit(1);
 }
