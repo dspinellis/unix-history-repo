@@ -66,7 +66,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)expr.y	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)expr.y	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -145,8 +145,18 @@ char *arith(op, r1, r2) char *r1, *r2; {
 	case ADD: i1 = i1 + i2; break;
 	case SUBT: i1 = i1 - i2; break;
 	case MULT: i1 = i1 * i2; break;
-	case DIV: i1 = i1 / i2; break;
-	case REM: i1 = i1 % i2; break;
+	case DIV:
+		if (i2 != 0)
+			i1 = i1 / i2;
+		else
+			yyerror("Divide by zero");
+		break;
+	case REM:
+		if (i2 != 0)
+			i1 = i1 % i2;
+		else
+			yyerror("Remainder by zero");
+		break;
 	}
 	rv = malloc(16);
 	(void)sprintf(rv, "%ld", i1);
