@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)bdes.1	5.2 (Berkeley) %G%
+.\"	@(#)bdes.1	5.3 (Berkeley) %G%
 .\"
 .TH BDES 1 ""
 .SH NAME
@@ -51,7 +51,7 @@ the key and initialization vector.
 Use electronic code book mode.
 .TP
 \-d
-Invert (decrypt) the input.
+Decrypt the input.
 .TP
 \-F
 Use
@@ -74,7 +74,7 @@ to the standard CFB mode specification).
 \-k
 Use
 .I key
-as the encryption key.
+as the cryptographic key.
 .TP
 \-m
 Compute a message authentication code (MAC) of
@@ -111,7 +111,7 @@ Set the initialization vector to
 the vector is interpreted in the same way as the key.
 The vector is ignored in electronic codebook mode.
 .PP
-The key and initialization vector are taken as sequences of \*(As
+The key and initialization vector are taken as sequences of ASCII
 characters which are then mapped into their bit representations.
 If either begins with ``0X'' or ``0x'',
 that one is taken as a sequence of hexadecimal digits indicating the
@@ -174,7 +174,7 @@ Unlike Sun's implementation, unused bytes of that last block are not filled
 with random data, but instead contain what was in those byte positions in
 the preceding block.
 This is quicker and more portable, and does not weaken the encryption
-significantly (and even then, only in a few cases).
+significantly.
 .PP
 If the key is entered in ASCII, the parity bits of the key characters are set
 so that each key character is of odd parity.
@@ -218,7 +218,7 @@ Technical Report PCS-TR-91-158,
 Department of Mathematics and Computer Science,
 Dartmouth College,
 Hanover, NH  03755
-(Feb. 1991).
+(Apr. 1991).
 .SH BUGS
 There is a controversy raging over whether the DES will still be secure
 in a few years.
@@ -228,10 +228,36 @@ infeasible.
 .PP
 As the key or key schedule is stored in memory, the encryption can be
 compromised if memory is readable.
-.SH BUGS
-Programs which display programs' arguments may compromise the key and
-initialization vector, if they are specified on the command line.
+Additionally, programs which display programs' arguments may compromise the
+key and initialization vector, if they are specified on the command line.
 To avoid this
 .I bdes
 overwrites its arguments, however, the obvious race cannot currently be
 avoided.
+.PP
+Certain specific keys should be avoided because they introduce potential
+weaknesses; these keys, called the
+.I weak
+and
+.I semiweak
+keys, are (in hex notation, where p is either 0 or 1, and P is either
+e or f):
+.sp
+.nf
+.in +10n
+.ta \w'0x0p0p0p0p0p0p0p0p\0\0\0'u+5n
+0x0p0p0p0p0p0p0p0p	0x0p1P0p1P0p0P0p0P
+0x0pep0pep0pfp0pfp	0x0pfP0pfP0pfP0pfP
+0x1P0p1P0p0P0p0P0p	0x1P1P1P1P0P0P0P0P
+0x1Pep1Pep0Pfp0Pfp	0x1PfP1PfP0PfP0PfP
+0xep0pep0pfp0pfp0p	0xep1Pep1pfp0Pfp0P
+0xepepepepepepepep	0xepfPepfPfpfPfpfP
+0xfP0pfP0pfP0pfP0p	0xfP1PfP1PfP0PfP0P
+0xfPepfPepfPepfPep	0xfPfPfPfPfPfPfPfP
+.fi
+.in -10n
+.sp
+This is inherent in the DES algorithm (see Moore and Simmons,
+\*(LqCycle structure of the DES with weak and semi-weak keys,\*(Rq
+.I "Advances in Cryptology \- Crypto '86 Proceedings" ,
+Springer-Verlag New York, \(co1987, pp. 9-32.)

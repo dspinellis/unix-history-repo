@@ -19,17 +19,18 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)bdes.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)bdes.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
  * BDES -- DES encryption package for Berkeley Software Distribution 4.4
  * options:
  *	-a	key is in ASCII
- *	-e	use ECB (electronic code book) mode
+ *	-b	use ECB (electronic code book) mode
+ *	-d	invert (decrypt) input
  *	-f b	use b-bit CFB (cipher feedback) mode
  *	-F b	use b-bit CFB (cipher feedback) alternative mode
- *	-i	invert (decrypt) input
+ *	-k key	use key as the cryptographic key
  *	-m b	generate a MAC of length b
  *	-o b	use b-bit OFB (output feedback) mode
  *	-p	don't reset the parity bit
@@ -102,33 +103,41 @@ typedef char Desbuf[8];
  */
 #define KEY_DEFAULT		0	/* interpret radix of key from key */
 #define KEY_ASCII		1	/* key is in ASCII characters */
-int keybase = KEY_DEFAULT;	/* how to interpret the key */
+int keybase = KEY_DEFAULT;		/* how to interpret the key */
 
-enum { MODE_ENCRYPT, MODE_DECRYPT, MODE_AUTHENTICATE } mode = MODE_ENCRYPT;
-enum { ALG_ECB, ALG_CBC, ALG_CFB, ALG_OFB, ALG_CFBA } alg = ALG_CBC;
+enum { 					/* encrypt, decrypt, authenticate */
+	MODE_ENCRYPT, MODE_DECRYPT, MODE_AUTHENTICATE
+} mode = MODE_ENCRYPT;
+enum {					/* ecb, cbc, cfb, cfba, ofb? */
+	ALG_ECB, ALG_CBC, ALG_CFB, ALG_OFB, ALG_CFBA
+} alg = ALG_CBC;
 
-Desbuf ivec;			/* initialization vector */
-char bits[] = {			/* used to extract bits from a char */
+Desbuf ivec;				/* initialization vector */
+char bits[] = {				/* used to extract bits from a char */
 	'\200', '\100', '\040', '\020', '\010', '\004', '\002', '\001'
 };
-int inverse;			/* 0 to encrypt, 1 to decrypt */
-int macbits = -1;		/* number of bits in authentication */
-int fbbits = -1;		/* number of feedback bits */
-int pflag;			/* 1 to preserve parity bits */
+int inverse;				/* 0 to encrypt, 1 to decrypt */
+int macbits = -1;			/* number of bits in authentication */
+int fbbits = -1;			/* number of feedback bits */
+int pflag;				/* 1 to preserve parity bits */
 
 main(ac, av)
-	int ac;
-	char **av;
+	int ac;				/* arg count */
+	char **av;			/* arg vector */
 {
-	extern int optind;	/* option (argument) number */
-	extern char *optarg;	/* argument to option if any */
-	register int i;		/* counter in a for loop */
-	register char *p;	/* used to obtain the key */
-	Desbuf msgbuf;		/* I/O buffer */
-	int argc, kflag;
-	char **argv;
+	extern int optind;		/* option (argument) number */
+	extern char *optarg;		/* argument to option if any */
+	register int i;			/* counter in a for loop */
+	register char *p;		/* used to obtain the key */
+	Desbuf msgbuf;			/* I/O buffer */
+	int kflag;			/* command-line encryptiooon key */
+	int argc;			/* the real arg count */
+	char **argv;			/* the real argument vector */
 
-	/* hide the arguments from ps(1) */
+	/*
+	 * Hide the arguments from ps(1) by making private copies of them
+	 * and clobbering the global (visible to ps(1)) ones.
+	 */
 	argc = ac;
 	ac = 1;
 	argv = malloc((argc + 1) * sizeof(char *));
@@ -206,7 +215,7 @@ main(ac, av)
 		/*
 		 * copy it, nul-padded, into the key area
 		 */
-		strncpy(BUFFER(msgbuf), p, 8);
+		cvtkey(BUFFER(msgbuf), p);
 	}
 
 	makekey(msgbuf);
@@ -301,8 +310,8 @@ err(n, s)
  * map a hex character to an integer
  */
 tobinhex(c, radix)
-	char c;
-	int radix;
+	char c;			/* char to be converted */
+	int radix;		/* base (2 to 16) */
 {
 	switch(c) {
 	case '0':		return(0x0);
@@ -332,7 +341,8 @@ tobinhex(c, radix)
  * convert the key to a bit pattern
  */
 cvtkey(obuf, ibuf)
-	char *obuf, *ibuf;
+	char *obuf;			/* bit pattern */
+	char *ibuf;			/* the key itself */
 {
 	register int i, j;		/* counter in a for loop */
 	int nbuf[64];			/* used for hex/key translation */
@@ -399,11 +409,11 @@ cvtkey(obuf, ibuf)
  * 3. must be a multiple of mult
  */
 setbits(s, mult)
-	char *s;
-	int mult;
+	char *s;			/* the ASCII string */
+	int mult;			/* what it must be a multiple of */
 {
-	register char *p;
-	register int n = 0;
+	register char *p;		/* pointer in a for loop */
+	register int n = 0;		/* the integer collected */
 
 	/*
 	 * skip white space
@@ -963,35 +973,38 @@ cfbauth()
  * change from 8 bits/Uchar to 1 bit/Uchar
  */
 expand(from, to)
-Desbuf from;			/* 8bit/unsigned char string */
-char to[64];			/* 1bit/char string */
+	Desbuf from;			/* 8bit/unsigned char string */
+	char *to;			/* 1bit/char string */
 {
 	register int i, j;		/* counters in for loop */
 
 	for (i = 0; i < 8; i++)
 		for (j = 0; j < 8; j++)
-			to[i*8+j] = (CHAR(from, i)>>(7-j))&01;
+			*to++ = (CHAR(from, i)>>(7-j))&01;
 }
 
 /*
  * change from 1 bit/char to 8 bits/Uchar
  */
 compress(from, to)
-char from[64];			/* 1bit/char string */
-Desbuf to;			/* 8bit/unsigned char string */
+	char *from;			/* 1bit/char string */
+	Desbuf to;			/* 8bit/unsigned char string */
 {
 	register int i, j;		/* counters in for loop */
 
 	for (i = 0; i < 8; i++) {
 	 	CHAR(to, i) = 0;
 		for (j = 0; j < 8; j++)
-			CHAR(to, i) = (from[i*8+j]<<(7-j))|CHAR(to, i);
+			CHAR(to, i) = ((*from++)<<(7-j))|CHAR(to, i);
 	}
 }
 
+/*
+ * message about usage
+ */
 usage()
 {
-	(void)fprintf(stderr,
-"usage: bdes [-aceip] [-F bit] [-f bit] [-m bit] [-o bit] [-v vector] [key]\n");
+	(void)fprintf(stderr, "%s\n", 
+"usage: bdes [-abdp] [-F bit] [-f bit] [-k key] [-m bit] [-o bit] [-v vector]");
 	exit(1);
 }
