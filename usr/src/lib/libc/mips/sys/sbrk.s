@@ -11,28 +11,28 @@
 #include "SYS.h"
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	ASMSTR("@(#)sbrk.s	5.2 (Berkeley) %G%")
+	ASMSTR("@(#)sbrk.s	5.3 (Berkeley) %G%")
 #endif /* LIBC_SCCS and not lint */
 
 #define	SYS_brk		17
 
 	.data
-	.globl	_minbrk
-_minbrk:
+	.globl	minbrk
+minbrk:
 	.word	end
-	.globl	_curbrk
-_curbrk:
+	.globl	curbrk
+curbrk:
 	.word	end
 	.text
 
 LEAF(sbrk)
-	lw	v1, _curbrk
+	lw	v1, curbrk
 	li	v0, SYS_brk
 	addu	a0, a0, v1	# compute current break
 	syscall
 	bne	a3, zero, 1f
 	move	v0, v1		# return old val of _curbrk from above
-	sw	a0, _curbrk	# save current val of _curbrk from above
+	sw	a0, curbrk	# save current val of _curbrk from above
 	j	ra
 1:
 	j	_cerror
