@@ -14,18 +14,18 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 #
-CFLAGS=	-O
+CFLAGS=	-I. -O
 LIBC=	/lib/libc.a
 SRCS=	passwd.c
-OBJS=
+OBJS=	passwd.o
 MAN=	passwd.0
 
 all: passwd
 
-passwd: ${LIBC}
-	${CC} ${CFLAGS} -o $@ $@.c
+passwd: ${LIBC} ${OBJS}
+	${CC} ${CFLAGS} -o $@ ${OBJS}
 
 clean:
 	rm -f ${OBJS} core passwd
@@ -38,13 +38,7 @@ depend: ${SRCS}
 
 install: ${MAN}
 	install -s -o root -g bin -m 4755 passwd ${DESTDIR}/bin/passwd
-	rm -f ${DESTDIR}/bin/chfn; ln ${DESTDIR}/bin/passwd ${DESTDIR}/bin/chfn
-	rm -f ${DESTDIR}/bin/chsh; ln ${DESTDIR}/bin/passwd ${DESTDIR}/bin/chsh
 	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
-	rm -f ${DESTDIR}/usr/man/cat1/chfn.0
-	rm -f ${DESTDIR}/usr/man/cat1/chsh.0
-	ln ${DESTDIR}/usr/man/cat1/passwd.0 ${DESTDIR}/usr/man/cat1/chfn.0
-	ln ${DESTDIR}/usr/man/cat1/passwd.0 ${DESTDIR}/usr/man/cat1/chsh.0
 
 lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}

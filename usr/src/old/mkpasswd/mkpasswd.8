@@ -13,43 +13,47 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)mkpasswd.8	6.4 (Berkeley) %G%
+.\"	@(#)mkpasswd.8	6.5 (Berkeley) %G%
 .\"
 .TH MKPASSWD 8 ""
 .UC 6
 .SH NAME
 mkpasswd \- generate hashed password table
 .SH SYNOPSIS
-.B /etc/mkpasswd
+.B mkpasswd
 [
-.B \-v
-]
-passwdfile
+.B \-p
+] passwdfile
 .SH DESCRIPTION
 .I Mkpasswd
 is used to generated the hashed password database used by the
-library routines
-.B getpwnam()
-and
-.BR getpwuid() .
-If the
-.B \-v
-option is supplied, each entry will be listed as it is added.
+password library routines (see
+.IR getpwent (3)).
+.PP
 The file
 .I passwdfile
-is usually /etc/ptmp (invoked by vipw(8)), and in any case
-must be in the format of /etc/passwd (see passwd(5)).
+must be in password file format (see
+.IR passwd (5)).
 .I Mkpasswd
-will generate database files named
-.I passwdfile.pag
-and
-.I passwdfile.dir.
+generates database files named ``passwdfile.pag'' and
+``passwdfile.dir'' (see
+.IR ndbm (3)).
+Data subsequently taken from the database files differ from
+.I passwdfile
+in one respect.
+Rather than storing the encrypted password in the database,
+.I mkpasswd
+stores the offset of the encrypted password in
+.IR passwdfile .
+.PP
 .I Mkpasswd
-will exit with a non-zero exit code if any errors are detected.
-.SH FILES
-.ta \w'passwdfile.dir    'u
-\fIpasswdfile\fR.pag	- database filenames
-.br
-\fIpasswdfile\fR.dir
+exits zero on success, non-zero on failure.
+.PP
+The
+.I \-p
+option causes
+.I mkpasswd
+to create ``passwdfile.orig'', a password file in the
+standard Version 7 format.
 .SH SEE ALSO
-getpwent(3), vipw(8), passwd(5)
+chpass(1), passwd(1), getpwent(3), ndbm(3), passwd(5), vipw(8)
