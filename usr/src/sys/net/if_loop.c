@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_loop.c	7.6 (Berkeley) %G%
+ *	@(#)if_loop.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -33,7 +33,7 @@
 #include "../net/netisr.h"
 #include "../net/route.h"
 
-#include "../machine/mtpr.h"
+#include "machine/mtpr.h"
 
 #ifdef	INET
 #include "../netinet/in.h"

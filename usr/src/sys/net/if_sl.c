@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_sl.c	7.11 (Berkeley) %G%
+ *	@(#)if_sl.c	7.12 (Berkeley) %G%
  */
 
 /*
@@ -63,7 +63,7 @@
 #include "../netinet/ip.h"
 #endif
 
-#include "../machine/mtpr.h"
+#include "machine/mtpr.h"
 
 /*
  * N.B.: SLMTU is now a hard limit on input packet size.

@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_imp.c	7.10 (Berkeley) %G%
+ *	@(#)if_imp.c	7.11 (Berkeley) %G%
  */
 
 #include "imp.h"
@@ -37,7 +37,7 @@
 #include "ioctl.h"
 #include "syslog.h"
 
-#include "../machine/mtpr.h"
+#include "machine/mtpr.h"
 
 #include "../net/if.h"
 #include "../net/netisr.h"
