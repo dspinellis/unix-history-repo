@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_apx.c	7.5 (Berkeley) %G%
+ *	@(#)if_apx.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -53,13 +53,22 @@ struct apx_softc {
 	int	apx_rxnum;		/* Last receiver dx we looked at */
 	int	apx_txnum;		/* Last tranmistter dx we stomped on */
 	int	apx_txcnt;		/* Number of packets queued for tx*/
+	struct	sgae apx_csr23;		/* 24 bit init addr, as seen by chip */
 	u_short	apx_csr4;		/* byte gender, set in mach dep code */
 	struct	apc_modes apx_modes;	/* Parameters, as amended by ioctls */
 } apx_softc[2 * NAPX];
 
 struct apxstat {
-	int	nulltx;
-	int	pint;
+	int	rxnull;			/* no rx bufs ready this interrupt */
+	int	rxnrdy;			/* expected rx buf not ready */
+	int	rx2big;			/* expected rx buf not ready */
+	int	txnull;
+	int	pint;			/* new primitive available interrupt */
+	int	rint;			/* receive interrupts */
+	int	tint;			/* transmit interrupts */
+	int	anyint;			/* note all interrupts */
+	int	queued;			/* got through apxinput */
+	int	nxpctd;			/* received while if was down */
 } apxstat;
 
 /* default operating paramters for devices */
@@ -73,8 +82,8 @@ struct	apc_modes apx_default_modes = {
    -80,		/* apm_sgob.tp; */
  },
  2,		/* apm_txwin; */
- 5,		/* apm_apxmode; */
- 0,		/* apm_apxaltmode; */
+ 1,		/* apm_apxmode: RS_232 connector and modem clock; */
+ 0,		/* apm_apxaltmode: enable dtr, disable X.21 connector; */
  IFT_X25,	/* apm_iftype; */
 };
 
@@ -177,7 +186,6 @@ apxinit(unit)
 apxctr(apx)
 	register struct apx_softc *apx;
 {
-	int i;
 	APX_WCSR(apx, axr_ccr, 0xB0); /* select ctr 2, write lsb+msb, mode 0 */
 	APX_WCSR(apx, axr_cnt2, 0x1);
 	APX_WCSR(apx, axr_cnt2, 0x0);
@@ -206,6 +214,7 @@ apxtest(apx)
 		apxerror(apx, "no mk5025, csr5 high bits are", i);
 	else
 		apx->apx_flags |= APXF_CHIPHERE;
+	(void) apx_uprim(apx, SG_STOP, "stop after probing");
 }
 
 apxreset(unit)
@@ -222,22 +231,23 @@ apxreset(unit)
 	MODE(apm_apxaltmode);
 	APX_WCSR(apx, axr_mode, apm_apxmode);
 	APX_WCSR(apx, axr_altmode, apm_apxaltmode);
-	apx->apx_txnum = apx->apx_rxnum = apx->apx_txcnt = 0;
-
-	if (apx_uprim(apx, SG_STOP, "stop") ||
-	    !(apx->apx_if.if_flags & IFF_UP))
+	(void) apxctr(apx);
+	(void) apx_uprim(apx, SG_STOP, "stop to reset");
+	if ((apx->apx_if.if_flags & IFF_UP) == 0)
 		return 0;
-	apx_meminit(apx->apx_hmem, apx); /* also sets CSR2 */
-	SG_WCSR(apx, 3, (int)apx->apx_dmem);
+	apx_meminit(apx->apx_hmem, apx);
 	SG_WCSR(apx, 4, apx->apx_csr4);
+	SG_WCSR(apx, 2, apx->apx_csr23.f_hi);
+	SG_WCSR(apx, 3, apx->apx_csr23.lo);
 	if (apx_uprim(apx, SG_INIT, "init request") ||
 	    apx_uprim(apx, SG_STAT, "status request") ||
 	    apx_uprim(apx, SG_TRANS, "transparent mode"))
 		return 0;
-	(void) apxctr(apx);
 	SG_WCSR(apx, 0, SG_INEA);
 	return 1;
 }
+int apx_doinit = 1, apx_dostat = 1;
+int apx_didinit = 0, apx_didstat = 0;
 
 apx_uprim(apx, request, ident)
 	register struct apx_softc *apx;
@@ -248,14 +258,20 @@ apx_uprim(apx, request, ident)
 
 	if ((apx->apx_flags & APXF_CHIPHERE) == 0)
 		return 1;	/* maybe even should panic . . . */
+
+if (request == SG_STAT) { if (apx_dostat) apx_didstat = 1; else return 0;}
+if (request == SG_INIT) { if (apx_doinit) apx_didinit = 1; else return 0;}
+
 	if ((reply = SG_RCSR(apx, 1)) & 0x8040)
 		SG_WCSR(apx, 1, 0x8040); /* Magic! */
 	SG_WCSR(apx, 1, request | SG_UAV);
 	do {
 		reply = SG_RCSR(apx, 1);
-		if (timo++ >= TIMO | reply & 0x8000) {
-			apxerror(apx, ident, reply);
-			return 1;
+		if (timo++ >= TIMO || (reply & 0x8000)) {
+			if (request != SG_STOP || apxdebug)
+				apxerror(apx, ident, reply);
+			if (request != SG_STOP)
+				return 1;
 		}
 	} while (reply & SG_UAV);
 	return 0;
@@ -269,26 +285,24 @@ apx_meminit(apc, apx)
 	register int i;
 #define LOWADDR(e) (((u_long)&(apcbase->e)) & 0xffff)
 #define HIADDR(e) ((((u_long)&(apcbase->e)) >> 16) & 0xff)
-#define SET_SGDX(dx, f, a, b, m) \
-	{ (dx).sgdx_addr = LOWADDR(a); (dx).sgdx_bcnt = (b);\
-	  (dx).sgdx_mcnt = (m); (dx).sgdx_flags = (f) | HIADDR(a); }
+#define SET_SGAE(d, f, a) {(d).lo = LOWADDR(a); (d).f_hi = (f) | HIADDR(a);}
+#define SET_SGDX(d, f, a, b) \
+	{SET_SGAE((d).sgdx_ae, f, a); (d).sgdx_mcnt = (d).sgdx_bcnt = (b);}
 
-	bzero((caddr_t)apc, LOWADDR(apc_rxmd[0]));
-	apc->apc_mode = 0x8040;	/* 2 flag spacing, trans mode, 16bit FCS */
+	apx->apx_txnum = apx->apx_rxnum = apx->apx_txcnt = 0;
+	bzero((caddr_t)apc, ((caddr_t)(&apc->apc_rxmd[0])) - (caddr_t)apc);
+	apc->apc_mode = 0x0008;	/* 2 flag spacing, trans mode, 16bit FCS */
 	apc->apc_sgop = apx->apx_modes.apm_sgop;
-	apc->apc_rlen = SG_RLEN | HIADDR(apc_rxmd[0]);
-	apc->apc_rdra = LOWADDR(apc_rxmd[0]);
-	apc->apc_rlen = SG_TLEN | apx->apx_modes.apm_txwin |HIADDR(apc_txmd[0]);
-	apc->apc_tdra = LOWADDR(apc_txmd[0]);
-	SET_SGDX(apc->apc_rxtid, SG_OWN, apc_rxidbuf, -SGMTU, 0);
-	SET_SGDX(apc->apc_txtid, 0, apc_txidbuf, -SGMTU, 0);
-	apc->apc_stathi = HIADDR(apc_sgsb);
-	apc->apc_statlo = LOWADDR(apc_sgsb);
+	SET_SGAE(apx->apx_csr23, SG_UIE | SG_PROM, apc_mode);
+	SET_SGAE(apc->apc_rxdd, SG_RLEN, apc_rxmd[0]);
+	SET_SGAE(apc->apc_txdd, SG_TLEN|apx->apx_modes.apm_txwin, apc_txmd[0]);
+	SET_SGAE(apc->apc_stdd, 0, apc_sgsb);
+	SET_SGDX(apc->apc_rxtid, SG_OWN, apc_rxidbuf[0], -SGMTU);
+	SET_SGDX(apc->apc_txtid, 0, apc_txidbuf[0], 0);
 	for (i = 0; i < SGRBUF; i++)
-		 SET_SGDX(apc->apc_rxmd[i], SG_OWN, apc_rbuf[i][0], -SGMTU, 0)
+		 SET_SGDX(apc->apc_rxmd[i], SG_OWN, apc_rbuf[i][0], -SGMTU)
 	for (i = 0; i < SGTBUF; i++)
-		 SET_SGDX(apc->apc_txmd[i], SG_TUI, apc_tbuf[i][0], 0, 0)
-	SG_WCSR(apx, 2, SG_UIE | SG_PROM | HIADDR(apc_mode));
+		 SET_SGDX(apc->apc_txmd[i], SG_TUI, apc_tbuf[i][0], 0)
 }
 
 /*
@@ -317,7 +331,8 @@ apxstart(ifp)
 		len = min(m->m_pkthdr.len, SGMTU);
 		m_copydata(m, 0, len, apc->apc_tbuf[apx->apx_txnum]);
 		dx->sgdx_mcnt = -len;
-		dx->sgdx_flags = SG_OWN | SG_TUI | (0xff & dx->sgdx_flags);
+		dx->sgdx_flags = (SG_OWN|SG_TUI|SG_SLF|SG_ELF) |
+			(0xff & dx->sgdx_flags);
 		SG_WCSR(apx, 0, SG_INEA | SG_TDMD);
 		if (++apx->apx_txnum >= SGTBUF)
 			apx->apx_txnum = 0;
@@ -333,6 +348,7 @@ apxintr()
 	register struct apx_softc *apx;
 	int reply;
 
+	apxstat.anyint++;
 	for (apx = apx_softc + NAPX + NAPX; --apx >= apx_softc;) {
 		if (apx->apx_flags & APXF_CHIPHERE)
 		    /* Try to turn off interrupt cause */
@@ -360,13 +376,14 @@ apxtint(apx)
 	register struct apc_mem *apc = apx->apx_hmem;
 	int i, loopcount = 0;
 
+	apxstat.tint++;
 	do {
 		if ((i = apx->apx_txnum - apx->apx_txcnt) < 0)
 			i += SGTBUF;
 		if (apc->apc_txmd[i].sgdx_flags & SG_OWN) {
 			if (loopcount)
 				break;
-			apxstat.nulltx++;
+			apxstat.txnull++;
 			return;
 		}
 		loopcount++;
@@ -381,15 +398,21 @@ apxrint(apx)
 {
 	register struct apc_mem *apc = apx->apx_hmem;
 	register struct sgdx *dx = apc->apc_rxmd + apx->apx_rxnum;
+	int i = 0;
 #define SGNEXTRXMD \
 dx = ++apx->apx_rxnum == SGRBUF ? &apc->apc_rxmd[apx->apx_rxnum = 0] : dx + 1;
 
+	apxstat.rint++;
 	/*
 	 * Out of sync with hardware, should never happen?
 	 */
-	if (dx->sgdx_flags & SG_OWN) {
-		apxerror(apx, "out of sync", apx->apx_rxnum);
-		return;
+	while (dx->sgdx_flags & SG_OWN) {
+		apxstat.rxnrdy++;
+		if (++i == SGRBUF) {
+			apxstat.rxnull++;
+			return;
+		}
+		SGNEXTRXMD;
 	}
 	/*
 	 * Process all buffers with valid data
@@ -397,11 +420,12 @@ dx = ++apx->apx_rxnum == SGRBUF ? &apc->apc_rxmd[apx->apx_rxnum = 0] : dx + 1;
 	while ((dx->sgdx_flags & SG_OWN) == 0) {
 		if ((dx->sgdx_flags & (SG_SLF|SG_ELF)) != (SG_SLF|SG_ELF)) {
 			/*
-			 * Find the end of the packet so we can see how long
-			 * it was.  We still throw it away.
+			 * Find the end of the packet so we synch up.
+			 * We throw the data away.
 			 */
 			apxerror(apx, "chained buffer", dx->sgdx_flags);
 			do {
+				apxstat.rx2big++;
 				dx->sgdx_bcnt = 0;
 				dx->sgdx_flags = SG_OWN | (0xff&dx->sgdx_flags);
 				SGNEXTRXMD;
@@ -417,7 +441,7 @@ dx = ++apx->apx_rxnum == SGRBUF ? &apc->apc_rxmd[apx->apx_rxnum = 0] : dx + 1;
 			}
 		} else
 			apxinput(&apx->apx_if, apc->apc_rbuf[apx->apx_rxnum],
-					-dx->sgdx_bcnt);
+					-dx->sgdx_mcnt);
 		dx->sgdx_bcnt = 0;
 		dx->sgdx_flags = SG_OWN | (0xff & dx->sgdx_flags);
 		SGNEXTRXMD;
@@ -436,6 +460,10 @@ apxinput(ifp, buffer, len)
 	int isr;
 
 	ifp->if_ipackets++;
+	if ((ifp->if_flags & IFF_UP) == 0) {
+		apxstat.nxpctd++;
+		return;
+	}
 	if (cp[0] == 0xff && cp[1] == 0x3) {
 		/* This is a UI HDLC Packet, so we'll assume PPP
 		   protocol.  for now, IP only. */
@@ -459,6 +487,7 @@ apxinput(ifp, buffer, len)
 		IF_DROP(inq);
 		m_freem(m);
 	} else {
+		apxstat.queued++;
 		IF_ENQUEUE(inq, m);
 		schednetisr(isr);
 	}
