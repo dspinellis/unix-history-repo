@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftp.c	5.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftp.c	5.30 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -36,6 +36,7 @@ static char sccsid[] = "@(#)ftp.c	5.29 (Berkeley) %G%";
 #include <netdb.h>
 #include <fcntl.h>
 #include <pwd.h>
+#include <varargs.h>
 
 #include "ftp_var.h"
 
@@ -47,6 +48,7 @@ int	ptflag = 0;
 int	connected;
 struct	sockaddr_in myctladdr;
 uid_t	getuid();
+sig_t	lostpeer();
 
 FILE	*cin, *cout;
 FILE	*dataconn();
@@ -86,9 +88,10 @@ hookup(host, port)
 		return (0);
 	}
 	hisctladdr.sin_port = port;
-	while (connect(s, &hisctladdr, sizeof (hisctladdr)) < 0) {
+	while (connect(s, (struct sockaddr *)&hisctladdr, sizeof (hisctladdr)) < 0) {
 		if (hp && hp->h_addr_list[1]) {
 			int oerrno = errno;
+			extern char *inet_ntoa();
 
 			fprintf(stderr, "ftp: connect to address %s: ",
 				inet_ntoa(hisctladdr.sin_addr));
@@ -113,7 +116,7 @@ hookup(host, port)
 		goto bad;
 	}
 	len = sizeof (myctladdr);
-	if (getsockname(s, (char *)&myctladdr, &len) < 0) {
+	if (getsockname(s, (struct sockaddr *)&myctladdr, &len) < 0) {
 		perror("ftp: getsockname");
 		code = -1;
 		goto bad;
@@ -148,7 +151,7 @@ hookup(host, port)
 			perror("ftp: setsockopt");
 		}
 	}
-#endif SO_OOBINLINE
+#endif /* SO_OOBINLINE */
 
 	return (hostname);
 bad:
@@ -218,6 +221,7 @@ login(host)
 	return (1);
 }
 
+sig_t
 cmdabort()
 {
 	extern jmp_buf ptabort;
@@ -229,20 +233,25 @@ cmdabort()
 		longjmp(ptabort,1);
 }
 
-/*VARARGS1*/
-command(fmt, args)
-	char *fmt;
+/*VARARGS*/
+command(va_alist)
+va_dcl
 {
-	int r, (*oldintr)(), cmdabort();
-	char *xxx = "XXX";
+	va_list ap;
+	char *fmt;
+	int r;
+	sig_t (*oldintr)(), cmdabort();
 
 	abrtflag = 0;
 	if (debug) {
 		printf("---> ");
-		if (strncmp(fmt, "PASS", 4) == 0)
-			_doprnt(fmt, (int *)&xxx, stdout);
-		else
-			_doprnt(fmt, &args, stdout);
+		va_start(ap);
+		fmt = va_arg(ap, char *);
+		if (strncmp("PASS ", fmt, 5) == 0)
+			printf("PASS XXXX");
+		else 
+			vfprintf(stdout, fmt, ap);
+		va_end(ap);
 		printf("\n");
 		(void) fflush(stdout);
 	}
@@ -251,8 +260,11 @@ command(fmt, args)
 		code = -1;
 		return (0);
 	}
-	oldintr = signal(SIGINT,cmdabort);
-	_doprnt(fmt, &args, cout);
+	oldintr = signal(SIGINT, cmdabort);
+	va_start(ap);
+	fmt = va_arg(ap, char *);
+	vfprintf(cout, fmt, ap);
+	va_end(ap);
 	fprintf(cout, "\r\n");
 	(void) fflush(cout);
 	cpend = 1;
@@ -273,11 +285,12 @@ getreply(expecteof)
 	register int c, n;
 	register int dig;
 	register char *cp;
-	int originalcode = 0, continuation = 0, (*oldintr)(), cmdabort();
+	int originalcode = 0, continuation = 0;
+	sig_t (*oldintr)(), cmdabort();
 	int pflag = 0;
 	char *pt = pasv;
 
-	oldintr = signal(SIGINT,cmdabort);
+	oldintr = signal(SIGINT, cmdabort);
 	for (;;) {
 		dig = n = code = 0;
 		cp = reply_string;
@@ -287,13 +300,13 @@ getreply(expecteof)
 				case WILL:
 				case WONT:
 					c = getc(cin);
-					fprintf(cout, "%c%c%c",IAC,DONT,c);
+					fprintf(cout, "%c%c%c", IAC, DONT, c);
 					(void) fflush(cout);
 					break;
 				case DO:
 				case DONT:
 					c = getc(cin);
-					fprintf(cout, "%c%c%c",IAC,WONT,c);
+					fprintf(cout, "%c%c%c", IAC, WONT, c);
 					(void) fflush(cout);
 					break;
 				default:
@@ -386,7 +399,7 @@ abortsend()
 
 	mflag = 0;
 	abrtflag = 0;
-	printf("\nsend aborted\n");
+	printf("\nsend aborted\nwaiting for remote to finish abort\n");
 	(void) fflush(stdout);
 	longjmp(sendabort, 1);
 }
@@ -398,7 +411,8 @@ sendrequest(cmd, local, remote, printnames)
 	int printnames;
 {
 	FILE *fin, *dout = 0, *popen();
-	int (*closefunc)(), pclose(), fclose(), (*oldintr)(), (*oldintp)();
+	int (*closefunc)(), pclose(), fclose();
+	sig_t (*oldintr)(), (*oldintp)();
 	int abortsend();
 	char buf[BUFSIZ], *bufp;
 	long bytes = 0, hashbytes = HASHBYTES;
@@ -614,12 +628,13 @@ abort:
 
 jmp_buf	recvabort;
 
+sig_t
 abortrecv()
 {
 
 	mflag = 0;
 	abrtflag = 0;
-	printf("\n");
+	printf("\nreceive aborted\nwaiting for remote to finish abort\n");
 	(void) fflush(stdout);
 	longjmp(recvabort, 1);
 }
@@ -628,13 +643,11 @@ recvrequest(cmd, local, remote, mode, printnames)
 	char *cmd, *local, *remote, *mode;
 {
 	FILE *fout, *din = 0, *popen();
-	int (*closefunc)(), pclose(), fclose(), (*oldintr)(), (*oldintp)(); 
-	int abortrecv(), is_retr, tcrflag, nfnd;
 	char *bufp, *gunique(), msg;
 	static char *buf;
 	static int bufsize;
+	static char *buf;
 	long bytes = 0, hashbytes = HASHBYTES;
-	struct fd_set mask;
 	register int c, d;
 	struct timeval start, stop;
 	struct stat st;
@@ -762,7 +775,7 @@ recvrequest(cmd, local, remote, mode, printnames)
 	if (st.st_blksize > bufsize) {
 		if (buf)
 			(void) free(buf);
-		buf = malloc(st.st_blksize);
+		buf = malloc((unsigned)st.st_blksize);
 		if (buf == NULL) {
 			perror("malloc");
 			bufsize = 0;
@@ -810,6 +823,8 @@ recvrequest(cmd, local, remote, mode, printnames)
 
 	case TYPE_A:
 		while ((c = getc(din)) != EOF) {
+			if (c == '\n')
+				bare_lfs++;
 			while (c == '\r') {
 				while (hash && (bytes >= hashbytes)) {
 					(void) putchar('#');
@@ -837,6 +852,10 @@ recvrequest(cmd, local, remote, mode, printnames)
 	contin2:	;
 		}
 break2:
+		if (bare_lfs) {
+			printf("WARNING! %d bare linefeeds received in ASCII mode\n", bare_lfs);
+			printf("File may not have transferred correctly.\n");
+		}
 		if (hash) {
 			if (bytes < hashbytes)
 				(void) putchar('#');
@@ -870,47 +889,14 @@ abort:
 	(void) gettimeofday(&stop, (struct timezone *)0);
 	if (oldintp)
 		(void) signal(SIGPIPE, oldintr);
-	(void) signal(SIGINT,SIG_IGN);
+	(void) signal(SIGINT, SIG_IGN);
 	if (!cpend) {
 		code = -1;
-		(void) signal(SIGINT,oldintr);
+		(void) signal(SIGINT, oldintr);
 		return;
 	}
 
-	fprintf(cout,"%c%c",IAC,IP);
-	(void) fflush(cout); 
-	msg = IAC;
-/* send IAC in urgent mode instead of DM because UNIX places oob mark */
-/* after urgent byte rather than before as now is protocol            */
-	if (send(fileno(cout),&msg,1,MSG_OOB) != 1) {
-		perror("abort");
-	}
-	fprintf(cout,"%cABOR\r\n",DM);
-	(void) fflush(cout);
-	FD_ZERO(&mask);
-	FD_SET(fileno(cin), &mask);
-	if (din) { 
-		FD_SET(fileno(din), &mask);
-	}
-	if ((nfnd = empty(&mask,10)) <= 0) {
-		if (nfnd < 0) {
-			perror("abort");
-		}
-		code = -1;
-		lostpeer();
-	}
-	if (din && FD_ISSET(fileno(din), &mask)) {
-		while ((c = read(fileno(din), buf, bufsize)) > 0)
-			;
-	}
-	if ((c = getreply(0)) == ERROR && code == 552) { /* needed for nic style abort */
-		if (data >= 0) {
-			(void) close(data);
-			data = -1;
-		}
-		(void) getreply(0);
-	}
-	(void) getreply(0);
+	abort_remote(din);
 	code = -1;
 	if (data >= 0) {
 		(void) close(data);
@@ -922,7 +908,7 @@ abort:
 		(void) fclose(din);
 	if (bytes > 0)
 		ptransfer("received", bytes, &start, &stop);
-	(void) signal(SIGINT,oldintr);
+	(void) signal(SIGINT, oldintr);
 }
 
 /*
@@ -930,7 +916,7 @@ abort:
  * before we send the command, otherwise the
  * server's connect may fail.
  */
-int sendport = -1;
+int sendport;
 
 initconn()
 {
@@ -943,7 +929,7 @@ noport:
 	if (sendport)
 		data_addr.sin_port = 0;	/* let system pick one */ 
 	if (data != -1)
-		(void) close (data);
+		(void) close(data);
 	data = socket(AF_INET, SOCK_STREAM, 0);
 	if (data < 0) {
 		perror("ftp: socket");
@@ -964,7 +950,7 @@ noport:
 	    setsockopt(data, SOL_SOCKET, SO_DEBUG, (char *)&on, sizeof (on)) < 0)
 		perror("ftp: setsockopt (ignored)");
 	len = sizeof (data_addr);
-	if (getsockname(data, (char *)&data_addr, &len) < 0) {
+	if (getsockname(data, (struct sockaddr *)&data_addr, &len) < 0) {
 		perror("ftp: getsockname");
 		goto bad;
 	}
@@ -1051,6 +1037,7 @@ tvsub(tdiff, t1, t0)
 		tdiff->tv_sec--, tdiff->tv_usec += 1000000;
 }
 
+sig_t
 psabort()
 {
 	extern int abrtflag;
@@ -1062,7 +1049,7 @@ pswitch(flag)
 	int flag;
 {
 	extern int proxy, abrtflag;
-	int (*oldintr)();
+	sig_t (*oldintr)();
 	static struct comvars {
 		int connect;
 		char name[MAXHOSTNAMELEN];
@@ -1154,6 +1141,7 @@ pswitch(flag)
 jmp_buf ptabort;
 int ptabflg;
 
+sig_t
 abortpt()
 {
 	printf("\n");
@@ -1167,7 +1155,8 @@ abortpt()
 proxtrans(cmd, local, remote)
 	char *cmd, *local, *remote;
 {
-	int (*oldintr)(), abortpt(), prox_type, secndflag = 0, nfnd;
+	sig_t (*oldintr)(), abortpt();
+	int secndflag = 0, prox_type, nfnd;
 	extern jmp_buf ptabort;
 	char *cmd2;
 	struct fd_set mask;
@@ -1233,30 +1222,8 @@ abort:
 	if (!cpend && !secndflag) {  /* only here if cmd = "STOR" (proxy=1) */
 		if (command("%s %s", cmd2, local) != PRELIM) {
 			pswitch(0);
-			if (cpend) {
-				char msg[2];
-
-				fprintf(cout,"%c%c",IAC,IP);
-				(void) fflush(cout); 
-				*msg = IAC;
-				*(msg+1) = DM;
-				if (send(fileno(cout),msg,2,MSG_OOB) != 2)
-					perror("abort");
-				fprintf(cout,"ABOR\r\n");
-				(void) fflush(cout);
-				FD_ZERO(&mask);
-				FD_SET(fileno(cin), &mask);
-				if ((nfnd = empty(&mask,10)) <= 0) {
-					if (nfnd < 0) {
-						perror("abort");
-					}
-					if (ptabflg)
-						code = -1;
-					lostpeer();
-				}
-				(void) getreply(0);
-				(void) getreply(0);
-			}
+			if (cpend)
+				abort_remote((FILE *) NULL);
 		}
 		pswitch(1);
 		if (ptabflg)
@@ -1264,58 +1231,14 @@ abort:
 		(void) signal(SIGINT, oldintr);
 		return;
 	}
-	if (cpend) {
-		char msg[2];
-
-		fprintf(cout,"%c%c",IAC,IP);
-		(void) fflush(cout); 
-		*msg = IAC;
-		*(msg+1) = DM;
-		if (send(fileno(cout),msg,2,MSG_OOB) != 2)
-			perror("abort");
-		fprintf(cout,"ABOR\r\n");
-		(void) fflush(cout);
-		FD_ZERO(&mask);
-		FD_SET(fileno(cin), &mask);
-		if ((nfnd = empty(&mask,10)) <= 0) {
-			if (nfnd < 0) {
-				perror("abort");
-			}
-			if (ptabflg)
-				code = -1;
-			lostpeer();
-		}
-		(void) getreply(0);
-		(void) getreply(0);
-	}
+	if (cpend)
+		abort_remote((FILE *) NULL);
 	pswitch(!proxy);
 	if (!cpend && !secndflag) {  /* only if cmd = "RETR" (proxy=1) */
 		if (command("%s %s", cmd2, local) != PRELIM) {
 			pswitch(0);
-			if (cpend) {
-				char msg[2];
-
-				fprintf(cout,"%c%c",IAC,IP);
-				(void) fflush(cout); 
-				*msg = IAC;
-				*(msg+1) = DM;
-				if (send(fileno(cout),msg,2,MSG_OOB) != 2)
-					perror("abort");
-				fprintf(cout,"ABOR\r\n");
-				(void) fflush(cout);
-				FD_ZERO(&mask);
-				FD_SET(fileno(cin), &mask);
-				if ((nfnd = empty(&mask,10)) <= 0) {
-					if (nfnd < 0) {
-						perror("abort");
-					}
-					if (ptabflg)
-						code = -1;
-					lostpeer();
-				}
-				(void) getreply(0);
-				(void) getreply(0);
-			}
+			if (cpend)
+				abort_remote((FILE *) NULL);
 			pswitch(1);
 			if (ptabflg)
 				code = -1;
@@ -1323,35 +1246,13 @@ abort:
 			return;
 		}
 	}
-	if (cpend) {
-		char msg[2];
-
-		fprintf(cout,"%c%c",IAC,IP);
-		(void) fflush(cout); 
-		*msg = IAC;
-		*(msg+1) = DM;
-		if (send(fileno(cout),msg,2,MSG_OOB) != 2)
-			perror("abort");
-		fprintf(cout,"ABOR\r\n");
-		(void) fflush(cout);
-		FD_ZERO(&mask);
-		FD_SET(fileno(cin), &mask);
-		if ((nfnd = empty(&mask,10)) <= 0) {
-			if (nfnd < 0) {
-				perror("abort");
-			}
-			if (ptabflg)
-				code = -1;
-			lostpeer();
-		}
-		(void) getreply(0);
-		(void) getreply(0);
-	}
+	if (cpend)
+		abort_remote((FILE *) NULL);
 	pswitch(!proxy);
 	if (cpend) {
 		FD_ZERO(&mask);
 		FD_SET(fileno(cin), &mask);
-		if ((nfnd = empty(&mask,10)) <= 0) {
+		if ((nfnd = empty(&mask, 10)) <= 0) {
 			if (nfnd < 0) {
 				perror("abort");
 			}
@@ -1433,4 +1334,44 @@ gunique(local)
 		}
 	}
 	return(new);
+}
+
+abort_remote(din)
+FILE *din;
+{
+	char buf[BUFSIZ];
+	int nfnd;
+	struct fd_set mask;
+
+	/*
+	 * send IAC in urgent mode instead of DM because 4.3BSD places oob mark
+	 * after urgent byte rather than before as is protocol now
+	 */
+	sprintf(buf, "%c%c%c", IAC, IP, IAC);
+	if (send(fileno(cout), buf, 3, MSG_OOB) != 3)
+		perror("abort");
+	fprintf(cout,"%cABOR\r\n", DM);
+	(void) fflush(cout);
+	FD_ZERO(&mask);
+	FD_SET(fileno(cin), &mask);
+	if (din) { 
+		FD_SET(fileno(din), &mask);
+	}
+	if ((nfnd = empty(&mask, 10)) <= 0) {
+		if (nfnd < 0) {
+			perror("abort");
+		}
+		if (ptabflg)
+			code = -1;
+		lostpeer();
+	}
+	if (din && FD_ISSET(fileno(din), &mask)) {
+		while (read(fileno(din), buf, BUFSIZ) > 0)
+			/* LOOP */;
+	}
+	if (getreply(0) == ERROR && code == 552) {
+		/* 552 needed for nic style abort */
+		(void) getreply(0);
+	}
+	(void) getreply(0);
 }
