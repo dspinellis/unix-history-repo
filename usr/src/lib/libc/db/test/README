@@ -1,4 +1,4 @@
-#	@(#)README	5.7 (Berkeley) %G%
+#	@(#)README	8.1 (Berkeley) %G%
 
 The script file consists of lines with a initial character which is
 the "command" for that line.  Legal characters are as follows:
