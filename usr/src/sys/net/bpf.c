@@ -1,22 +1,55 @@
 /*-
- * Copyright (c) 1991 The Regents of the University of California.
+ * Copyright (c) 1990-1991 The Regents of the University of California.
  * All rights reserved.
  *
  * This code is derived from the Stanford/CMU enet packet filter,
  * (net/enet.c) distributed as part of 4.3BSD, and code contributed
- * to Berkeley by Steven McCanne of Lawrence Berkeley Laboratory.
+ * to Berkeley by Steven McCanne and Van Jacobson both of Lawrence 
+ * Berkeley Laboratory.
  *
- * %sccs.include.redist.c%
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Berkeley and its contributors.
+ * 4. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
  *
- *	@(#)bpf.c	7.5 (Berkeley) %G%
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ *
+ *	@(#)bpf.c	7.5 (Berkeley) 7/15/91
  *
  * static char rcsid[] =
- * "$Header: bpf.c,v 1.23 91/01/30 18:22:13 mccanne Exp $";
+ * "$Header: bpf.c,v 1.33 91/10/27 21:21:58 mccanne Exp $";
  */
 
 #include "bpfilter.h"
 
-#if (NBPFILTER > 0)
+#if NBPFILTER > 0
+
+#ifndef __GNUC__
+#define inline
+#else
+#define inline __inline__
+#endif
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -29,7 +62,7 @@
 #include <sys/map.h>
 
 #include <sys/file.h>
-#ifdef sparc
+#if defined(sparc) && BSD < 199103
 #include <sys/stream.h>
 #endif
 #include <sys/tty.h>
@@ -48,12 +81,27 @@
 #include <netinet/if_ether.h>
 #include <sys/kernel.h>
 
+/*
+ * Older BSDs don't have kernel malloc.
+ */
+#if BSD < 199103
+extern bcopy();
+static caddr_t bpf_alloc();
+#define malloc(size, type, canwait) bpf_alloc(size, canwait)
+#define free(cp, type) m_free(*(struct mbuf **)(cp - 8))
+#define M_WAITOK M_WAIT
+#define BPF_BUFSIZE (MCLBYTES-8)
+#define ERESTART EINTR
+#else
+#define BPF_BUFSIZE 4096
+#endif
+
 #define PRINET  26			/* interruptible */
 
 /*
  * The default read buffer size is patchable.
  */
-int bpf_bufsize = MCLBYTES;
+int bpf_bufsize = BPF_BUFSIZE;
 
 /*
  *  bpf_iflist is the list of interfaces; each corresponds to an ifnet
@@ -122,9 +170,14 @@ bpf_movein(uio, linktype, mp, sockp)
 	if (m == 0)
 		return (ENOBUFS);
 	if (len > MLEN) {
+#if BSD >= 199103
 		MCLGET(m, M_WAIT);
 		if ((m->m_flags & M_EXT) == 0) {
-			error = ENOBUFS;
+#else
+		MCLGET(m);
+		if (m->m_len == MCLBYTES) {
+#endif
+			error = ENOBUFS;		
 			goto bad;
 		}
 	}
@@ -135,8 +188,11 @@ bpf_movein(uio, linktype, mp, sockp)
 	 */
 	if (hlen) {
 		m->m_len -= hlen;
+#if BSD >= 199103
 		m->m_data += hlen; /* XXX */
-
+#else
+		m->m_off += hlen;
+#endif
 		error = uiomove((caddr_t)sockp->sa_data, hlen, uio);
 		if (error)
 			goto bad;
@@ -150,7 +206,7 @@ bpf_movein(uio, linktype, mp, sockp)
 }
 
 /*
- * Attach 'd' to the bpf interface 'bp', i.e. make 'd' listen on 'bp'.
+ * Attach file to the bpf interface, i.e. make d listen on bp.
  * Must be called at splimp.
  */
 static void
@@ -158,19 +214,21 @@ bpf_attachd(d, bp)
 	struct bpf_d *d;
 	struct bpf_if *bp;
 {
-	/* Point d at bp. */
+	/*
+	 * Point d at bp, and add d to the interface's list of listeners.
+	 * Finally, point the driver's bpf cookie at the interface so
+	 * it will divert packets to bpf.
+	 */
 	d->bd_bif = bp;
-
-	/* Add d to bp's list of listeners. */
 	d->bd_next = bp->bif_dlist;
 	bp->bif_dlist = d;
 
-	/*
-	 * Let the driver know we're here (if it doesn't already).
-	 */
 	*bp->bif_driverp = bp;
 }
 
+/*
+ * Detach a file from its interface.
+ */
 static void
 bpf_detachd(d)
 	struct bpf_d *d;
@@ -191,9 +249,9 @@ bpf_detachd(d)
 			 * the driver into promiscuous mode, but can't
 			 * take it out.
 			 */
-			panic("bpf_detachd: ifpromisc failed");
+			panic("bpf: ifpromisc failed");
 	}
-	/* Remove 'd' from the interface's descriptor list. */
+	/* Remove d from the interface's descriptor list. */
 	p = &bp->bif_dlist;
 	while (*p != d) {
 		p = &(*p)->bd_next;
@@ -276,17 +334,42 @@ bpfclose(dev, flag)
 		bpf_detachd(d);
 	splx(s);
 
-	/* Free the buffer space. */
-	if (d->bd_hbuf)
-		free(d->bd_hbuf, M_DEVBUF);
-	if (d->bd_fbuf)
-		free(d->bd_fbuf, M_DEVBUF);
-	free(d->bd_sbuf, M_DEVBUF);
-	if (d->bd_filter)
-		free((caddr_t)d->bd_filter, M_DEVBUF);
-	
-	D_MARKFREE(d);
+	bpf_freed(d);
 }
+
+#if BSD < 199103
+static
+bpf_timeout(arg)
+	caddr_t arg;
+{
+	struct bpf_d *d = (struct bpf_d *)arg;
+	d->bd_timedout = 1;
+	wakeup(arg);
+}
+
+static int
+tsleep(cp, pri, s, t)
+	register caddr_t cp;
+	register int pri;
+	char *s;
+	register int t;
+{
+	register struct bpf_d *d = (struct bpf_d *)cp;
+	register int error;
+
+	if (t != 0) {
+		d->bd_timedout = 0;
+		timeout(bpf_timeout, cp);
+	}
+	error = sleep(cp, pri);
+	if (t != 0) {
+		if (d->bd_timedout != 0)
+			return EWOULDBLOCK;
+		untimeout(bpf_timeout, cp);
+	}
+	return error;
+}
+#endif
 
 /*
  * Rotate the packet buffers in descriptor d.  Move the store buffer
@@ -371,8 +454,11 @@ bpfread(dev, uio)
 	 * We know the entire buffer is transferred since
 	 * we checked above that the read buffer is bpf_bufsize bytes.
 	 */
+#if BSD >= 199103
 	error = uiomove(d->bd_hbuf, d->bd_hlen, uio);
-
+#else
+	error = uiomove(d->bd_hbuf, d->bd_hlen, UIO_READ, uio);
+#endif
 	s = splimp();
 	d->bd_fbuf = d->bd_hbuf;
 	d->bd_hbuf = 0;
@@ -423,7 +509,11 @@ bpfwrite(dev, uio)
 		return (error);
 
 	s = splnet();
+#if BSD >= 199103
+	error = (*ifp->if_output)(ifp, m, &dst, (struct rtenty *)0);
+#else
 	error = (*ifp->if_output)(ifp, m, &dst);
+#endif
 	splx(s);
 	/*
 	 * The driver frees the mbuf. 
@@ -452,7 +542,6 @@ reset_d(d)
 /*
  *  FIONREAD		Check for read packet available.
  *  SIOCGIFADDR		Get interface address - convenient hook to driver.
- *  BIOCGFLEN		Get max filter len.
  *  BIOCGBLEN		Get buffer len [for read()].
  *  BIOCSETF		Set ethernet read filter.
  *  BIOCFLUSH		Flush read packet buffer.
@@ -513,12 +602,6 @@ bpfioctl(dev, cmd, addr, flag)
 		}
 
 	/*
-	 * Get max filter len.
-	 */
-	case BIOCGFLEN:
-		*(u_int *)addr = BPF_MAXINSNS;
-		break;
-	/*
 	 * Get buffer len [for read()].
 	 */
 	case BIOCGBLEN:
@@ -526,7 +609,7 @@ bpfioctl(dev, cmd, addr, flag)
 		break;
 
 	/*
-	 * Set ethernet read filter.
+	 * Set link layer read filter.
 	 */
         case BIOCSETF:
 		error = bpf_setf(d, (struct bpf_program *)addr);
@@ -554,8 +637,9 @@ bpfioctl(dev, cmd, addr, flag)
 		}
 		s = splimp();
 		if (d->bd_promisc == 0) {
-			d->bd_promisc = 1;
 			error = ifpromisc(d->bd_bif->bif_ifp, 1);
+			if (error == 0)
+				d->bd_promisc = 1;
 		}
 		splx(s);
 		break;
@@ -642,7 +726,7 @@ bpfioctl(dev, cmd, addr, flag)
 }
 
 /* 
- * Set d's packet filter program to 'fp'.  If 'd' already has a filter,
+ * Set d's packet filter program to fp.  If this file already has a filter,
  * free it and replace it.  Returns EINVAL for bogus requests.
  */
 int
@@ -688,8 +772,9 @@ bpf_setf(d, fp)
 }
 
 /*
- * Detach 'd' from its current interface (if attached at all) and attach to 
- * the interface named 'name'.  Return ioctl error code or 0.
+ * Detach a file from its current interface (if attached at all) and attach 
+ * to the interface indicated by the name stored in ifr.  
+ * Return an errno or 0.
  */
 static int
 bpf_setif(d, ifr)
@@ -753,8 +838,8 @@ bpf_setif(d, ifr)
 }
 
 /*
- * Lookup the name of the 'ifp' interface and return it in 'ifr->ifr_name'.
- * We augment the ifp's base name with its unit number.
+ * Convert an interface name plus unit number of an ifp to a single
+ * name which is returned in the ifr.
  */
 static void
 bpf_ifname(ifp, ifr)
@@ -772,6 +857,22 @@ bpf_ifname(ifp, ifr)
 }
 
 /*
+ * The new select interface passes down the proc pointer; the old select
+ * stubs had to grab it out of the user struct.  This glue allows either case.
+ */
+#if BSD >= 199103
+#define bpf_select bpfselect
+#else
+int
+bpfselect(dev, rw)
+	register dev_t dev;
+	int rw;
+{
+	bpf_select(dev, rw, u.u_procp);
+}
+#endif
+
+/*
  * Support for select() system call
  * Inspired by the code in tty.c for the same purpose.
  *
@@ -780,7 +881,7 @@ bpf_ifname(ifp, ifr)
  *	false but make a note that a selwakeup() must be done.
  */
 int
-bpfselect(dev, rw, p)
+bpf_select(dev, rw, p)
 	register dev_t dev;
 	int rw;
 	struct proc *p;
@@ -870,8 +971,8 @@ bpf_mcopy(src, dst, len)
 }
 
 /*
- * bpf_mtap - incoming linkage from device drivers, when packet
- *   is in an mbuf chain
+ * bpf_mtap -	incoming linkage from device drivers, when packet
+ *		is in an mbuf chain
  */
 void
 bpf_mtap(arg, m)
@@ -884,7 +985,7 @@ bpf_mtap(arg, m)
 	struct mbuf *m0;
 
 	pktlen = 0;
-	for (m0 = m; m0 != m; m0 = m0->m_next)
+	for (m0 = m; m0 != 0; m0 = m0->m_next)
 		pktlen += m0->m_len;
 
 	for (d = bp->bif_dlist; d != 0; d = d->bd_next) {
@@ -898,10 +999,10 @@ bpf_mtap(arg, m)
 /*
  * Move the packet data from interface memory (pkt) into the
  * store buffer.  Return 1 if it's time to wakeup a listener (buffer full),
- * otherwise 0.  'copy' is the routine called to do the actual data 
- * transfer.  'bcopy' is passed in to copy contiguous chunks, while
- * 'bpf_mcopy' is passed in to copy mbuf chains.  In the latter
- * case, 'pkt' is really an mbuf.
+ * otherwise 0.  "copy" is the routine called to do the actual data 
+ * transfer.  bcopy is passed in to copy contiguous chunks, while
+ * bpf_mcopy is passed in to copy mbuf chains.  In the latter case,
+ * pkt is really an mbuf.
  */
 static void
 catchpacket(d, pkt, pktlen, snaplen, cpfn)
@@ -959,7 +1060,7 @@ catchpacket(d, pkt, pktlen, snaplen, cpfn)
 #ifdef sun
 	uniqtime(&hp->bh_tstamp);
 #else
-#ifdef hp300
+#if BSD >= 199103
 	microtime(&hp->bh_tstamp);
 #else
 	hp->bh_tstamp = time;
@@ -997,8 +1098,32 @@ bpf_initd(d)
 }
 
 /*
- * Register 'ifp' with bpf.  XXX
- * and 'driverp' is a pointer to the 'struct bpf_if *' in the driver's softc.
+ * Free buffers currently in use by a descriptor.
+ * Called on close.
+ */
+bpf_freed(d)
+	register struct bpf_d *d;
+{
+	/*
+	 * We don't need to lock out interrupts since this descriptor has
+	 * been detached from its interface and it yet hasn't been marked 
+	 * free.
+	 */
+	if (d->bd_hbuf)
+		free(d->bd_hbuf, M_DEVBUF);
+	if (d->bd_fbuf)
+		free(d->bd_fbuf, M_DEVBUF);
+	free(d->bd_sbuf, M_DEVBUF);
+	if (d->bd_filter)
+		free((caddr_t)d->bd_filter, M_DEVBUF);
+	
+	D_MARKFREE(d);
+}
+
+/*
+ * Attach an interface to bpf.  driverp is a pointer to a (struct bpf_if *)
+ * in the driver's softc; dlt is the link layer type; hdrlen is the fixed
+ * size of the link header (variable length headers not yet supported).
  */
 void
 bpfattach(driverp, ifp, dlt, hdrlen)
@@ -1008,8 +1133,14 @@ bpfattach(driverp, ifp, dlt, hdrlen)
 {
 	struct bpf_if *bp;
 	int i;
+#if BSD < 199103
+	static struct bpf_if bpf_ifs[NBPFILTER];
+	static int bpfifno;
 
+	bp = (bpfifno < NBPFILTER) ? &bpf_ifs[bpfifno++] : 0;
+#else
 	bp = (struct bpf_if *)malloc(sizeof(*bp), M_DEVBUF, M_DONTWAIT);
+#endif
 	if (bp == 0)
 		panic("bpfattach");
 
@@ -1041,6 +1172,7 @@ bpfattach(driverp, ifp, dlt, hdrlen)
 	printf("bpf: %s%d attached\n", ifp->if_name, ifp->if_unit);
 }
 
+#if BSD >= 199103
 /* XXX This routine belongs in net/if.c. */
 /*
  * Set/clear promiscuous mode on interface ifp based on the truth value`
@@ -1073,5 +1205,36 @@ ifpromisc(ifp, pswitch)
 	ifr.ifr_flags = ifp->if_flags;
 	return ((*ifp->if_ioctl)(ifp, SIOCSIFFLAGS, (caddr_t)&ifr));
 }
+#endif
 
-#endif (NBPFILTER > 0)
+#if BSD < 199103
+/*
+ * Allocate some memory for bpf.  This is temporary SunOS support, and
+ * is admittedly a gross hack.
+ * If resources unavaiable, return 0.
+ */
+static caddr_t
+bpf_alloc(size, canwait)
+	register int size;
+	register int canwait;
+{
+	register struct mbuf *m;
+
+	if ((unsigned)size > (MCLBYTES-8))
+		return 0;
+
+	MGET(m, canwait, MT_DATA);
+	if (m == 0)
+		return 0;
+	if ((unsigned)size > (MLEN-8)) {
+		MCLGET(m);
+		if (m->m_len != MCLBYTES) {
+			m_freem(m);
+			return 0;
+		}
+	}
+	*mtod(m, struct mbuf **) = m;
+	return mtod(m, caddr_t) + 8;
+}
+#endif
+#endif
