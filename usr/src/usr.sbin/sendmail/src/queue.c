@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.57 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.58 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.57 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.58 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -214,6 +214,8 @@ queueup(df)
 		    (queueall && !bitset(QDONTSEND|QBADADDR|QSENT, q->q_flags)))
 		{
 			printctladdr(q, tfp);
+			if (q->q_orcpt != NULL)
+				fprintf(tfp, "Q%s\n", q->q_orcpt);
 			fprintf(f, "R%s\n", q->q_paddr);
 	}
 
@@ -1012,6 +1014,7 @@ readqf(e)
 	char *bp;
 	int qfver = 0;
 	register char *p;
+	char *orcpt = NULL;
 	char qf[20];
 	char buf[MAXLINE];
 	extern long atol();
@@ -1131,6 +1134,10 @@ readqf(e)
 			ctladdr = setctluser(&bp[1]);
 			break;
 
+		  case 'Q':		/* original recipient */
+			orcpt = newstr(&bp[1]);
+			break;
+
 		  case 'R':		/* specify recipient */
 			p = bp;
 			qflags = 0;
@@ -1170,11 +1177,14 @@ readqf(e)
 			else
 				qflags |= QPRIMARY;
 			q = parseaddr(++p, NULLADDR, RF_COPYALL, '\0', NULL, e);
-			if (q == NULL)
-				break;
-			q->q_alias = ctladdr;
-			q->q_flags |= qflags;
-			(void) recipient(q, &e->e_sendqueue, 0, e);
+			if (q != NULL)
+			{
+				q->q_alias = ctladdr;
+				q->q_flags |= qflags;
+				q->q_orcpt = orcpt;
+				(void) recipient(q, &e->e_sendqueue, 0, e);
+			}
+			orcpt = NULL;
 			break;
 
 		  case 'E':		/* specify error recipient */

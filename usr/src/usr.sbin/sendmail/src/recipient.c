@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.56 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.57 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -134,6 +134,9 @@ sendtolist(list, ctladdr, sendq, aliaslevel, e)
 			/* various flag bits */
 			a->q_flags &= ~QINHERITEDBITS;
 			a->q_flags |= ctladdr->q_flags & QINHERITEDBITS;
+
+			/* original recipient information */
+			a->q_orcpt = ctladdr->q_orcpt;
 		}
 
 		al = a;
