@@ -2,40 +2,36 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)last.1	6.2 (Berkeley) %G%
+.\"	@(#)last.1	6.3 (Berkeley) %G%
 .\"
 .TH LAST 1 ""
 .UC 4
 .SH NAME
 last \- indicate last logins of users and ttys
 .SH SYNOPSIS
-\fBlast\fP [-f file] [-#] [users ...] [ttys ...] [hosts ...]
+\fBlast\fP [-#] [-f file] [-h host] [-t tty] [user ...]
 .SH DESCRIPTION
 \fILast\fP will list the sessions of specified \fIusers,\fP \fIttys,\fP
 and \fIhosts,\fP in reverse time order.  Each line of output contains
 the user name, the tty from which the session was conducted, any
 hostname, the start and stop times for the session, and the duration
 of the session.  If the session is still continuing or was cut short by
-a reboot, \fIlast\fP will so indicate.
+a crash or shutdown, \fIlast\fP will so indicate.
 .PP
-\fILast\fP reads the file \fIfile\fP, or by default, /usr/adm/wtmp.
-The \fI-#\fP option limits the report to \fI#\fP lines.
+\fILast\fP reads the file \fIfile\fP, or by default, \fI/usr/adm/wtmp\fP.
+The \fB-#\fP option limits the report to \fB#\fP lines.
 .PP
 Other arguments specify \fIusers,\fP \fIttys\fP or \fIhosts\fP of interest.
-Tty names may be given fully or abbreviated, e.g., "last 03" is equivalent
-to "last tty03".  Host names should not include domain information, and
-may be internet numbers.  If multiple arguments are given, the information
-which applies to any of the arguments is printed, e.g., "last root console"
-would list all of "root's" sessions as well as all sessions on the console
-terminal. If no users or terminals are specified, \fIlast\fP prints a record
-of all logins and logouts.
+Tty names may be given fully or abbreviated, e.g., ``last -t 03'' is
+equivalent to ``last -t tty03''.  Host names may be internet numbers.  If
+multiple arguments are given, the information which applies to any of the
+arguments is printed, e.g., ``last root -t console'' would list all of
+``root's'' sessions as well as all sessions on the console terminal. If no
+users, hostnames or terminals are specified, \fIlast\fP prints a record of
+all logins and logouts.
 .PP
 The pseudo-user \fBreboot\fP logs in at reboots of the system, thus
-.DT
-.PP
-	last reboot
-.PP
-will give an indication of mean time between reboot.
+``last reboot'' will give an indication of mean time between reboot.
 .PP
 If \fIlast\fP is interrupted, it indicates to what date the search has
 progressed.  If interrupted with a quit signal \fIlast\fP indicates how
@@ -45,9 +41,3 @@ far the search has progressed and then continues.
 .br
 .SH "SEE ALSO"
 lastcomm(1), utmp(5), ac(8)
-.SH BUGS
-\fILast\fP does not distinguish between different types of information.  The
-command "last ucbvax" will report all sessions of the user "ucbvax" as well
-as all logins from the host "ucbvax.berkeley.edu".
-.SH AUTHOR
-Howard Katseff
