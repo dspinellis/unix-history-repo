@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ps.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)ps.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -449,11 +449,11 @@ writepsdb(unixname)
 	} else
 		fchmod(fileno(fp), 0644);
 
-	fwrite(thisversion, sizeof (thisversion), 1, fp);
+	fwrite(thisversion, sizeof thisversion, 1, fp);
 	fwrite(unixname, strlen(unixname) + 1, 1, fp);
 	if (stat(unixname, &stb) < 0)
 		stb.st_mtime = 0;
-	fwrite((char *) &stb.st_mtime, sizeof (stb.st_mtime), 1, fp);
+	fwrite((char *) &stb.st_mtime, sizeof stb.st_mtime, 1, fp);
 
 	fwrite((char *) &nllen, sizeof nllen, 1, fp);
 	fwrite((char *) nl, sizeof (struct nlist), nllen, fp);
@@ -1257,7 +1257,7 @@ upr(sp)
 }
 
 char *vhdr =
-" SIZE  PID TT STAT  TIME SL RE PAGEIN SIZE  RSS  LIM TSIZ TRS %CPU %MEM"+5;
+" SIZE  PID TT STAT  TIME SL RE PAGEIN SIZE  RSS   LIM TSIZ TRS %CPU %MEM"+5;
 vpr(sp)
 	struct savcom *sp;
 {
@@ -1273,9 +1273,9 @@ vpr(sp)
 	   ap->a_time > 99 ? 99 : ap->a_time, vp->v_majflt,
 	   pgtok(ap->a_size), pgtok(ap->a_rss));
 	if (ap->a_maxrss == (RLIM_INFINITY/NBPG))
-		printf("   xx");
+		printf("    xx");
 	else
-		printf("%5d", pgtok(ap->a_maxrss));
+		printf("%6d", pgtok(ap->a_maxrss));
 	printf("%5d%4d%5.1f%5.1f",
 	   pgtok(ap->a_tsiz), pgtok(ap->a_txtrss), vp->v_pctcpu, pmem(ap));
 }
