@@ -1,0 +1,48 @@
+.\" Copyright (c) 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)tcgetpgrp.3	1.1 (Berkeley) %G%
+.\"
+.LP
+.B "Get Foreground Process Group ID"
+.LP
+.B "Function:  tcgetpgrp()"
+.LP
+.B "Synopsis"
+.LP
+.nf
+#include <sys/types.h>
+
+pid_t tcgetpgrp(int fildes);
+.fi
+.LP
+.B "Description"
+.LP
+The tcgetpgrp() function shall return the value of the process
+group ID of the foreground process group associated with the
+terminal.
+.LP
+.B "Returns"
+.LP
+Upon successful completion, tcgetpgrp() returns the process group ID of
+the foreground process group associated with the terminal.  If there is
+no foreground process group, tcgetpgrp() shall return a value greater
+than 1 that does not match the process group ID of any existing process
+group.  Otherwise, a value of -1 is returned and errno is set to indicate
+the error.
+.LP
+.B "Errors"
+.LP
+If any of the following conditions occur, the tcgetpgrp() function shall
+return -1 and set errno to the corresponding value:
+.nf
+   [EBADF]       The fildes argument is not a valid file descriptor.
+
+   [ENOSYS]      The tcgetpgrp() function is not supported in this
+                 implementation.
+
+   [ENOTTY]      The calling process does not have a controlling terminal
+                 or the file is not the controlling terminal.
+.fi
