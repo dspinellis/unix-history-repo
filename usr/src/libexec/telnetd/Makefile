@@ -2,9 +2,9 @@
 # Copyright (c) 1990 The Regents of the University of California.
 # All rights reserved.
 #
-# %sccs.include.redist.sh
+# %sccs.include.redist.sh%
 #
-#	@(#)Makefile	5.13 (Berkeley) %G%
+#	@(#)Makefile	5.14 (Berkeley) %G%
 #
 
 PROG=	telnetd
