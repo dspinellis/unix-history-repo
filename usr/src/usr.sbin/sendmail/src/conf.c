@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.87 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.88 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -646,14 +646,14 @@ struct	nlist Nl[] =
 # if defined(__alpha) || defined(IRIX)
 #  define FSHIFT	10
 # endif
-
-# if (LA_TYPE == LA_INT) || (LA_TYPE == LA_SHORT)
-#  define FSHIFT	8
-# endif
 #endif
 
-#if ((LA_TYPE == LA_INT) || (LA_TYPE == LA_SHORT)) && !defined(FSCALE)
-#  define FSCALE	(1 << FSHIFT)
+#ifndef FSHIFT
+# define FSHIFT		8
+#endif
+
+#ifndef FSCALE
+# define FSCALE		(1 << FSHIFT)
 #endif
 
 getla()
