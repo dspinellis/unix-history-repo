@@ -1,4 +1,4 @@
-/*	ioctl.h	4.33	83/06/12	*/
+/*	ioctl.h	4.34	83/06/13	*/
 /*
  * Ioctl definitions
  */
@@ -12,7 +12,6 @@
 #include <sys/ttydev.h>
 #endif
 
-#ifndef NOCOMPAT
 #include <sgtty.h>
 struct tchars {
 	char	t_intrc;	/* interrupt */
@@ -30,7 +29,6 @@ struct ltchars {
 	char	t_werasc;	/* word erase */
 	char	t_lnextc;	/* literal next character */
 };
-#endif
 
 #ifndef _IO
 /*
@@ -80,10 +78,6 @@ struct ltchars {
 #define	TIOCFLUSH	_IOW(t, 16, int)	/* flush buffers */
 #define	TIOCSETC	_IOW(t,17,struct tchars)/* set special characters */
 #define	TIOCGETC	_IOR(t,18,struct tchars)/* get special characters */
-#define	TIOCSET		_IOW(t, 19, long)	/* set tty flags */
-#define	TIOCBIS		_IOW(t, 20, long)	/* bis tty flags */
-#define	TIOCBIC		_IOW(t, 21, long)	/* bic tty flags */
-#define	TIOCGET		_IOR(t, 22, long)	/* get all tty flags */
 #define		TANDEM		0x00000001	/* send stopc on out q full */
 #define		CBREAK		0x00000002	/* half-cooked mode */
 #define		LCASE		0x00000004	/* simulate lower case */
@@ -131,10 +125,7 @@ struct ltchars {
 #define		PENDIN		0x20000000	/* tp->t_rawq needs reread */
 #define		DECCTQ		0x40000000	/* only ^Q starts after ^S */
 #define		NOFLSH		0x80000000	/* no output flush on signal */
-#define	TIOCCSET	_IOW(t,23,struct ttychars)/* set special characters */
-#define	TIOCCGET	_IOR(t,24,struct ttychars)/* get special characters */
 /* locals, from 127 down */
-#ifndef NOCOMPAT
 #define	TIOCLBIS	_IOW(t, 127, int)	/* bis local mode bits */
 #define	TIOCLBIC	_IOW(t, 126, int)	/* bic local mode bits */
 #define	TIOCLSET	_IOW(t, 125, int)	/* set entire local mode word */
@@ -153,7 +144,6 @@ struct ltchars {
 #define		LPENDIN		(PENDIN>>16)
 #define		LDECCTQ		(DECCTQ>>16)
 #define		LNOFLSH		(NOFLSH>>16)
-#endif
 #define	TIOCSBRK	_IO(t, 123)		/* set break bit */
 #define	TIOCCBRK	_IO(t, 122)		/* clear break bit */
 #define	TIOCSDTR	_IO(t, 121)		/* set data terminal ready */
@@ -162,6 +152,7 @@ struct ltchars {
 #define	TIOCSPGRP	_IOW(t, 118, int)	/* set pgrp of tty */
 #define	TIOCSLTC	_IOW(t,117,struct ltchars)/* set local special chars */
 #define	TIOCGLTC	_IOR(t,116,struct ltchars)/* get local special chars */
+#define	TIOCOUTQ	_IOR(t, 115, int)	/* output queue size */
 #define	TIOCSTI		_IOW(t, 114, char)	/* simulate terminal input */
 #define	TIOCNOTTY	_IO(t, 113)		/* void tty association */
 #define	TIOCPKT		_IOW(t, 112, int)	/* pty: set/clear packet mode */
