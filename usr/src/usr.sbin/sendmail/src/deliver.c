@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.25 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1419,7 +1419,9 @@ tryhost:
 		char wbuf[MAXLINE];
 
 		/* make absolutely certain 0, 1, and 2 are in use */
-		sprintf(wbuf, "%s... end of deliver(%s)", e->e_to, m->m_name);
+		sprintf(wbuf, "%s... end of deliver(%s)",
+			e->e_to == NULL ? "NO-TO-LIST" : e->e_to,
+			m->m_name);
 		checkfd012(wbuf);
 	}
 #endif
