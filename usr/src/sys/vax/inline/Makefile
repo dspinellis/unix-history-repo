@@ -1,4 +1,4 @@
-#	@(#)Makefile	1.2	(Berkeley)	84/08/18
+#	@(#)Makefile	1.3	(Berkeley)	84/08/20
 #
 DESTDIR=
 CFLAGS=	-O
@@ -32,6 +32,9 @@ install: ${PROG}
 
 clean:
 	rm -f a.out core ${OBJS} ${PROG}
+
+print:
+	@pr ${HDRS} ${SRCS}
 
 lint:
 	lint ${SRCS}
