@@ -12,7 +12,7 @@
  *
  * from: Utah $Hdr: clock.c 1.18 91/01/21$
  *
- *	@(#)clock.c	7.3 (Berkeley) %G%
+ *	@(#)clock.c	7.4 (Berkeley) %G%
  */
 
 #include "../include/fix_machine_type.h"
@@ -35,18 +35,6 @@
  *
  * Resettodr restores the time of day hardware after a time change.
  */
-
-/*
- * Set up the real-time and statistics clocks.  Leave stathz 0 only if
- * no alternative timer is available.
- *
- */
-cpu_initclocks()
-{
-
-	startrtclock();
-	enablertclock();
-}
 
 /*
  * We assume newhz is either stathz or profhz, and that neither will
@@ -79,6 +67,18 @@ enablertclock()
 {
 
 	*(char *)INTEN0 |= (char)INTEN0_TIMINT;
+}
+
+/*
+ * Set up the real-time and statistics clocks.  Leave stathz 0 only if
+ * no alternative timer is available.
+ *
+ */
+cpu_initclocks()
+{
+
+	startrtclock();
+	enablertclock();
 }
 
 /*
