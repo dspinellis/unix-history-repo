@@ -12,7 +12,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pathnames.h	5.2 (Berkeley) %G%
+ *	@(#)pathnames.h	8.1 (Berkeley) %G%
  *
  * Utah $Hdr: pathnames.h 3.1 92/07/06$
  * Author: Jeff Forys, University of Utah CSS
