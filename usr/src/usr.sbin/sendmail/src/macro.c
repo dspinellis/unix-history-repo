@@ -7,10 +7,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)macro.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)macro.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
+
+char	*MacroName[256];	/* macro id to name table */
+int	NextMacroId = 0240;	/* codes for long named macros */
+
 
 char	*Macro[128];
 
@@ -199,7 +203,7 @@ define(n, v, e)
 {
 	if (tTd(35, 9))
 	{
-		printf("define(%c as ", n);
+		printf("define(%s as ", macname(n));
 		xputs(v);
 		printf(")\n");
 	}

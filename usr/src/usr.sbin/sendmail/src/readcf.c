@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.37 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.38 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -79,6 +79,7 @@ readcf(cfname)
 	int nfuzzy;
 	char *file;
 	bool optional;
+	int mid;
 	char buf[MAXLINE];
 	register char *p;
 	extern char **copyplist();
@@ -135,7 +136,7 @@ readcf(cfname)
 			continue;
 		}
 
-		/* map $ into \201 for macro expansion */
+		/* do macro expansion mappings */
 		for (p = bp; *p != '\0'; p++)
 		{
 			if (*p == '#' && p > bp && ConfigLevel >= 3)
@@ -168,7 +169,7 @@ readcf(cfname)
 				continue;
 			}
 
-			if (*p != '$')
+			if (*p != '$' || p[1] == '\0')
 				continue;
 
 			if (p[1] == '$')
@@ -179,7 +180,12 @@ readcf(cfname)
 			}
 
 			/* convert to macro expansion character */
-			*p = MACROEXPAND;
+			*p++ = MACROEXPAND;
+
+			/* convert macro name to code */
+			*p = macid(p, &ep);
+			if (ep != p)
+				strcpy(p + 1, ep);
 		}
 
 		/* interpret this line */
@@ -370,8 +376,9 @@ readcf(cfname)
 			break;
 
 		  case 'D':		/* macro definition */
-			p = munchstring(&bp[2], NULL);
-			define(bp[1], newstr(p), e);
+			mid = macid(&bp[1], &ep);
+			p = munchstring(ep, NULL);
+			define(mid, newstr(p), e);
 			break;
 
 		  case 'H':		/* required header line */
@@ -380,7 +387,8 @@ readcf(cfname)
 
 		  case 'C':		/* word class */
 			/* scan the list of words and set class for all */
-			expand(&bp[2], exbuf, &exbuf[sizeof exbuf], e);
+			mid = macid(&bp[1], &ep);
+			expand(ep, exbuf, &exbuf[sizeof exbuf], e);
 			for (p = exbuf; *p != '\0'; )
 			{
 				register char *wd;
@@ -394,13 +402,14 @@ readcf(cfname)
 				delim = *p;
 				*p = '\0';
 				if (wd[0] != '\0')
-					setclass(bp[1], wd);
+					setclass(mid, wd);
 				*p = delim;
 			}
 			break;
 
 		  case 'F':		/* word class from file */
-			for (p = &bp[2]; isascii(*p) && isspace(*p); )
+			mid = macid(&bp[1], &ep);
+			for (p = ep; isascii(*p) && isspace(*p); )
 				p++;
 			if (p[0] == '-' && p[1] == 'o')
 			{
