@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)kdump.c	1.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)kdump.c	1.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ktrace.h"
@@ -47,7 +47,7 @@ main(argc, argv)
 	register char *m;
 	int facs = DEF_FACS;
 
-	while ((ch = getopt(argc,argv,"t:f:dnlTm")) != EOF)
+	while ((ch = getopt(argc,argv,"t:f:dnlTm:")) != EOF)
 		switch((char)ch) {
 			case 't':
 				facs = getfacs(optarg);
