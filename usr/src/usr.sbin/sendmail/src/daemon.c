@@ -3,17 +3,37 @@
 # include <sys/mx.h>
 
 #ifndef DAEMON
-SCCSID(@(#)daemon.c	3.19		%G%	(w/o daemon mode));
+SCCSID(@(#)daemon.c	3.20		%G%	(w/o daemon mode));
 #else
 
 # include <sys/socket.h>
 # include <net/in.h>
 # include <wait.h>
 
-SCCSID(@(#)daemon.c	3.19		%G%	(with daemon mode));
+SCCSID(@(#)daemon.c	3.20		%G%	(with daemon mode));
 
 /*
 **  DAEMON.C -- routines to use when running as a daemon.
+**
+**	This entire file is highly dependent on the 4.2 BSD
+**	interprocess communication primitives.  No attempt has
+**	been made to make this file portable to Version 7,
+**	Version 6, MPX files, etc.  If you should try such a
+**	thing yourself, I recommend chucking the entire file
+**	and starting from scratch.  Basic semantics are:
+**
+**	getrequests()
+**		Opens a port and initiates a connection.
+**		Returns in a child.  Must set InChannel and
+**		OutChannel appropriately.
+**	makeconnection(host, port, outfile, infile)
+**		Make a connection to the named host on the given
+**		port.  Set *outfile and *infile to the files
+**		appropriate for communication.  Returns zero on
+**		success, else an exit status describing the
+**		error.
+**
+**	The semantics of both of these should be clean.
 */
 
 static FILE	*MailPort;	/* port that mail comes in on */
@@ -91,22 +111,30 @@ getconnection()
 		printf("getconnection\n");
 # endif DEBUG
 
-	s = socket(SOCK_STREAM, 0, &SendmailAddress, SO_ACCEPTCONN);
-	if (s < 0)
+	for (;;)
 	{
-		sleep(10);
-		return (s);
-	}
+		/* get a socket for the SMTP connection */
+		s = socket(SOCK_STREAM, 0, &SendmailAddress, SO_ACCEPTCONN);
+		if (s < 0)
+		{
+			/* probably another daemon already */
+			syserr("getconnection: can't create socket");
+			break;
+		}
 
 # ifdef DEBUG
-	if (Debug)
-		printf("getconnection: %d\n", s);
+		if (Debug)
+			printf("getconnection: %d\n", s);
 # endif DEBUG
-	if (accept(s, &otherend) < 0)
-	{
-		syserr("accept");
+
+		/* wait for a connection */
+		if (accept(s, &otherend) >= 0)
+			break;
+
+		/* probably innocuous -- retry */
+		syserr("getconnection: accept");
 		(void) close(s);
-		return (-1);
+		sleep(20);
 	}
 
 	return (s);
