@@ -1,32 +1,32 @@
-.\"	@(#)basename.1	6.1 (Berkeley) %G%
+.\"	@(#)basename.1	6.2 (Berkeley) %G%
 .\"
 .TH BASENAME 1 ""
 .AT 3
 .SH NAME
-basename \- strip filename affixes
+basename, dirname \- strip filename affixes
 .SH SYNOPSIS
-.B basename
-string [ suffix ]
+\fBbasename\fP \fBstring\fP [ \fBsuffix\fP ]
+.br
+\fBdirname\fP \fBstring\fP
 .SH DESCRIPTION
-.I Basename
-deletes any prefix ending in `/' and the
-.I suffix,
-if present in
-.I string,
-from
-.I string,
-and prints the result on the standard output.
-It is normally used inside substitution marks \`\ \`
-in shell procedures.
+\fIBasename\fP deletes any prefix ending in `/' and the \fIsuffix\fP,
+if present in \fIstring\fP, from \fIstring\fP, and prints the result
+to the standard output.  It is normally used inside substitution marks
+(\`\`) in shell procedures.
 .PP
-This shell procedure invoked with the argument
-.I /usr/src/bin/cat.c
-compiles the named file and moves the output to
-.I cat
-in the current directory:
+\fIDirname\fP deletes from the last slash (``/'') to the end of
+\fIstring\fP, and prints to result to the standard output.
+.SH EXAMPLES
+This shell procedure invoked with the argument \fI/usr/src/bin/cat.c\fP
+compiles the named file and moves the output to \fIcat\fP in the current
+directory:
 .IP "" 15n
 cc $1
 .br
 mv a.out \`basename $1 .c\`
+.PP
+The following line sets the shell variable \fIFOO\fP to \fI/usr/bin\fP.
+.IP "" 15n
+FOO=`dirname /usr/bin/trail`
 .SH "SEE ALSO"
 sh(1)
