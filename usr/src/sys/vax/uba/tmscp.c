@@ -1,4 +1,4 @@
-/*	@(#)tmscp.c	7.9 (Berkeley) %G% */
+/*	@(#)tmscp.c	7.10 (Berkeley) %G% */
 
 #ifndef lint
 static	char	*sccsid = "@(#)tmscp.c	1.24	(ULTRIX)	1/21/86";
@@ -135,7 +135,6 @@ static	char	*sccsid = "@(#)tmscp.c	1.24	(ULTRIX)	1/21/86";
 #include "mtio.h"
 #include "cmap.h"
 #include "uio.h"
-#include "tty.h"
 
 #include "../vax/pte.h"
 #include "../vax/cpu.h"
@@ -191,7 +190,7 @@ struct tms_info {
 	short		tms_fmtmenu;	/* the unit's format (density) menu */
 	short		tms_unitflgs;	/* unit flag parameters */
 	short		tms_format;	/* the unit's current format (density) */
-	struct tty	*tms_ttyp;	/* record user's tty for errors */
+	caddr_t 	*tms_ctty;	/* user's controlling tty (vnode) */
 } tms_info[NTMS];
 struct uba_ctlr *tmscpminfo[NTMSCP];
 struct uba_device *tmsdinfo[NTMS];
@@ -704,7 +703,8 @@ tmscpopen(dev, flag)
 		return (EBUSY);
 	sc = &tmscp_softc[ui->ui_ctlr];
 	tms->tms_openf = 1;
-	tms->tms_ttyp = u.u_ttyp;
+	tms->tms_ctty = (caddr_t)(u.u_procp->p_flag&SCTTY ?
+			u.u_procp->p_session->s_ttyvp : 0);
 	s = spl5();
 	if (sc->sc_state != S_RUN)
 		{
@@ -836,6 +836,7 @@ tmscpclose(dev, flag)
 			tmscpcommand(dev, TMS_CSE, 1);
 			}
 	tms->tms_openf = 0;
+	return (0);
 }
 
 
@@ -1041,7 +1042,7 @@ tmscpstart(um)
 	tms = &tms_info[ui->ui_unit];
 	if ((tmscpaddr->tmscpsa&TMSCP_ERR) || sc->sc_state != S_RUN)
 		{
-		tprintf(tms->tms_ttyp,
+		tprintf(tms->tms_ctty,
 		    "tms%d: hard error bn%d\n",
 		    minor(bp->b_dev)&03, bp->b_blkno);
 		log(TMS_PRI, "tmscp%d: sa 0%o, state %d\n",um->um_ctlr,
@@ -1412,11 +1413,11 @@ tmscprsp(um, tm, sc, i)
 		else 
 			{
 			if (bp = dp->b_actf)
-				tprintf(tms->tms_ttyp,
+				tprintf(tms->tms_ctty,
 				    "tms%d: hard error bn%d: OFFLINE\n",
 				    minor(bp->b_dev)&03, bp->b_blkno);
 			else
-				tprintf(tms->tms_ttyp,
+				tprintf(tms->tms_ctty,
 				    "tms%d: hard error: OFFLINE\n",
 				    ui->ui_unit);
 			while (bp = dp->b_actf)
@@ -1548,7 +1549,7 @@ tmscprsp(um, tm, sc, i)
 				tms->tms_serex = 1;
 			if (st != M_ST_TAPEM)
 				{
-				tprintf(tms->tms_ttyp,
+				tprintf(tms->tms_ctty,
 				    "tms%d: hard error bn%d\n",
 				    minor(bp->b_dev)&03, bp->b_blkno);
 				errinfo(st);		/* produces more info */
