@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)file.c 3.2 %G%";
+static	char sccsid[] = "@(#)file.c 3.3 %G%";
 /*
  * file - determine type of file
  */
@@ -8,7 +8,7 @@ static	char sccsid[] = "@(#)file.c 3.2 %G%";
 #include <stat.h>
 #include <stdio.h>
 #include <ctype.h>
-#include <newa.out.h>
+#include <a.out.h>
 int in;
 int i  = 0;
 char buf[BUFSIZ];
