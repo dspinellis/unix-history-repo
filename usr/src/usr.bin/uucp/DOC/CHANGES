@@ -1,5 +1,5 @@
 List of Changes to UUCP
-CHANGES	5.2	85/04/10
+CHANGES	5.3	85/06/19
 
 Added support for Eunice.
 
@@ -9,9 +9,11 @@ Added new dialers:
 	Racal Vadic 820 dialer with 831 adaptor
 	Racal Vadic MACS, 811 dialer with 831 adaptor
 	Racal Vadic MACS, 820 dialer with 831 adaptor
+	Dec DF112
 	4.2BSD style networking on top of tcp/ip ('t' protocol)
 	X.25/PAD support ('f' protocol)
 	Novation
+	Penril
 
 Running uucico with debugging on requires read access to L.sys.
 
@@ -26,7 +28,7 @@ CORRUPT subdirectory contains corrupted C. and X. files that could
 not be processed. (Instead of just exiting)
 
 You can specify a maximum grade to send either on the command line (-gX)
-or in the L.sys file (Any@C|Evening will only send class C [usually
+or in the L.sys file (Any/C|Evening will only send class C [usually
 mail] or higher during the day and will send everything in the evening)
 See UUAIDS/L.sys for examples.
 
@@ -131,3 +133,17 @@ uucico will not try and resend files it has already sent (when the
 files are specified in one C. file)
 
 Incorporated Bill Sebok's code to dial in and out on the same modem.
+
+For compatibility with Honey DanBer, in the Date fields of L.sys,
+	| was changed to , (| is supported, but not encouraged)
+	, was changed to ; (to allow , to be the date seperator)
+
+For Honey DanBer compatibility, the Grade flag is now passed as
+	-vgrade=X instead of the old -pX
+
+Don't truncate site names to 7 characters (truncate to 14 if
+anyone gets that absurd) for HDB compatibility.  L.aliases may
+be used to map host with longer names in L.sys to 7 character
+names that some hosts send.  Entries should be 
+
+	fullname 7-char-name
