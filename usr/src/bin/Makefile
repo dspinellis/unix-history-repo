@@ -1,12 +1,12 @@
-#	@(#)Makefile	5.32 (Berkeley) %G%
+#	@(#)Makefile	5.33 (Berkeley) %G%
 
-SUBDIR=	cat chmod cp csh date dd df echo ed expr hostname kill ls mkdir \
-	mv ps pwd rcp rm rmail rmdir sh sleep stty sync tar test
+SUBDIR=	cat chmod cp csh date dd df echo ed expr hostname kill ln ls \
+	mkdir mv pwd rcp rm rmail rmdir sh sleep stty sync tar test
 
 .if   ${MACHINE} == "tahoe"
-SUBDIR+=adb
+SUBDIR+=adb ps
 .elif ${MACHINE} == "vax"
-SUBDIR+=adb
+SUBDIR+=adb ps
 .endif
 
 .include <bsd.subdir.mk>
