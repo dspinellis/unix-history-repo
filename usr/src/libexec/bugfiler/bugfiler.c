@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)bugfiler.c	5.10 (Berkeley) 87/07/20";
+static char sccsid[] = "@(#)bugfiler.c	5.11 (Berkeley) 87/07/21";
 #endif not lint
 
 /*
@@ -110,7 +110,7 @@ make_copy()
 		(void)close(tfd);
 		return;
 	}
-	error("can't make copy using %s.\n", tmpname);
+	error("can't make copy using %s.", tmpname);
 }
 
 /*
@@ -121,9 +121,12 @@ static
 logit()
 {
 	struct timeval	tp;
-	char	*ctime();
+	char	*C1, *C2,
+		*ctime();
 
 	if (gettimeofday(&tp, (struct timezone *)NULL))
 		error("can't get time of day.", CHN);
-	fprintf(stderr, "\n>>> BUGFILER <<<\n\t%s", ctime(&tp.tv_sec));
+	for (C1 = C2 = ctime(&tp.tv_sec); *C1 && *C1 != '\n'; ++C1);
+	*C1 = EOS;
+	fputs(C2, stderr);
 }
