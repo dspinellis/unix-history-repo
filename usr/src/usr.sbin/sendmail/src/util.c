@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.61 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.62 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1476,13 +1476,14 @@ dumpfd(fd, printclosed, logit)
 	bool printclosed;
 	bool logit;
 {
-	register struct hostent *hp;
 	register char *p;
+	char *hp;
 	char *fmtstr;
-	struct sockaddr_in sin;
+	SOCKADDR sa;
 	auto int slen;
 	struct stat st;
 	char buf[200];
+	extern char *hostnamebyanyaddr();
 
 	p = buf;
 	sprintf(p, "%3d: ", fd);
@@ -1513,28 +1514,30 @@ dumpfd(fd, printclosed, logit)
 	  case S_IFSOCK:
 		sprintf(p, "SOCK ");
 		p += strlen(p);
-		slen = sizeof sin;
-		if (getsockname(fd, (struct sockaddr *) &sin, &slen) < 0)
+		slen = sizeof sa;
+		if (getsockname(fd, &sa.sa, &slen) < 0)
 			sprintf(p, "(badsock)");
 		else
 		{
-			hp = sm_gethostbyaddr((char *) &sin.sin_addr,
-					   INADDRSZ, AF_INET);
-			sprintf(p, "%s/%d", hp == NULL ? inet_ntoa(sin.sin_addr)
-						   : hp->h_name, ntohs(sin.sin_port));
+			hp = hostnamebyanyaddr(&sa);
+			if (sa.sa.sa_family == AF_INET)
+				sprintf(p, "%s/%d", hp, ntohs(sa.sin.sin_port));
+			else
+				sprintf(p, "%s", hp);
 		}
 		p += strlen(p);
 		sprintf(p, "->");
 		p += strlen(p);
-		slen = sizeof sin;
-		if (getpeername(fd, (struct sockaddr *) &sin, &slen) < 0)
+		slen = sizeof sa;
+		if (getpeername(fd, &sa.sa, &slen) < 0)
 			sprintf(p, "(badsock)");
 		else
 		{
-			hp = sm_gethostbyaddr((char *) &sin.sin_addr,
-					   INADDRSZ, AF_INET);
-			sprintf(p, "%s/%d", hp == NULL ? inet_ntoa(sin.sin_addr)
-						   : hp->h_name, ntohs(sin.sin_port));
+			hp = hostnamebyanyaddr(&sa);
+			if (sa.sa.sa_family == AF_INET)
+				sprintf(p, "%s/%d", hp, ntohs(sa.sin.sin_port));
+			else
+				sprintf(p, "%s", hp);
 		}
 		break;
 #endif
