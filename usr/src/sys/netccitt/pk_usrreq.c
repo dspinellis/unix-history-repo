@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_usrreq.c	7.14 (Berkeley) %G%
+ *	@(#)pk_usrreq.c	7.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -412,7 +412,7 @@ int cmd, level, optname;
 		(void) m_freem (*mp);
 		*mp = 0;
 	}
-	return (EOPNOTSUPP);
+	return (error);
 
 }
 
