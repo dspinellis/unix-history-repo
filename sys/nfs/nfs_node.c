@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	From:	@(#)nfs_node.c	7.34 (Berkeley) 5/15/91
- *	$Id: nfs_node.c,v 1.2 1993/09/09 22:06:02 rgrimes Exp $
+ *	$Id: nfs_node.c,v 1.3 1993/11/25 01:36:48 wollman Exp $
  */
 
 #include "param.h"
@@ -162,6 +162,7 @@ loop:
 	np->n_sillyrename = (struct sillyrename *)0;
 	np->n_size = 0;
 	np->n_mtime = 0;
+	np->n_lockf = 0;
 	*npp = np;
 	return (0);
 }
