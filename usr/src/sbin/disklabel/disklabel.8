@@ -3,7 +3,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)disklabel.8	6.1 (Berkeley) %G%
+.\"	@(#)disklabel.8	6.2 (Berkeley) %G%
 .\"
 .TH DISKLABEL 8 ""
 .UC 5
@@ -49,9 +49,19 @@ When writing the label, it can be used
 to change the drive identification,
 the disk partitions on the drive,
 or to replace a damaged label or bootstrap.
-The disk label and bootstrap are located on block 0 of each disk.
+The disk label is located on one of the first sectors
+of each disk (usually block 0).
+On machines that require a block-0 bootstrap (VAX 11/750),
+the label is inserted into the bootstrap program.
 This information is used by the system disk driver and by the bootstrap
 program to determine how to program the drive.
+There are several forms of the command that display, install or modify
+the label on a disk.
+Each form has an additional option,
+.BR \-r ,
+which causes the label to be read from or written to the disk directly,
+rather than going through the system's in-core copy of the label.
+When writing, the in-core copy is also updated if possible.
 .PP
 The first form of the command is used to examine the label on the named
 disk drive (e.g. hp0 or /dev/rhp0c).
@@ -86,11 +96,11 @@ flag is given, the disk sectors containing the label and bootstrap
 will be written directly,
 otherwise only the label will be modified.
 In either case, the kernel's in-core label is replaced.
-On machines that require a block-0 bootstrap (VAX 11/750),
+On machines that require a block-0 bootstrap,
 the
 .B \-r
-flag \fImust\fP be used when installing a label on a disk for the first time
-to install the version of the bootstrap that understands disk labels.
+flag is assumed with
+.BR \-w .
 An alternate version of the bootstrap may be specified
 after the pack identifier.
 If an alternate bootstrap is not specified, the standard bootstrap will be used.
@@ -116,9 +126,6 @@ If no editor is specified in an EDITOR environment variable,
 is used.
 When the editor terminates, the formatted label is reread
 and used to rewrite the disk label.
-A bootstrap is also installed if using the
-.B \-r
-option.
 .PP
 Finally,
 .I disklabel
@@ -129,6 +136,7 @@ of the
 flag.
 The prototype file used to create the label is exactly that
 produced when reading or editing a label.
+A block-0 bootstrap is also installed on machines that use one.
 .SH FILES
 /etc/disktab
 .br
