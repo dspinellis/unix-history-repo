@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)restore.h	5.1 (Berkeley) %G%
+ *	@(#)restore.h	5.2 (Berkeley) %G%
  */
 
 #include <stdio.h>
@@ -20,6 +20,7 @@ extern int	bflag;		/* set input block size */
 extern int	dflag;		/* print out debugging info */
 extern int	hflag;		/* restore heirarchies */
 extern int	mflag;		/* restore by name instead of inode number */
+extern int	Nflag;		/* do not write the disk */
 extern int	vflag;		/* print out actions taken */
 extern int	yflag;		/* always try to recover from tape errors */
 /*

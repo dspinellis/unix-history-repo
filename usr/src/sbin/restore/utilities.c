@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include "restore.h"
@@ -80,7 +80,7 @@ gentempname(ep)
 renameit(from, to)
 	char *from, *to;
 {
-	if (rename(from, to) < 0) {
+	if (!Nflag && rename(from, to) < 0) {
 		fprintf(stderr, "Warning: cannot rename %s to %s", from, to);
 		(void) fflush(stderr);
 		perror("");
@@ -100,7 +100,7 @@ newnode(np)
 	if (np->e_type != NODE)
 		badentry(np, "newnode: not a node");
 	cp = myname(np);
-	if (mkdir(cp, 0777) < 0) {
+	if (!Nflag && mkdir(cp, 0777) < 0) {
 		np->e_flags |= EXISTED;
 		fprintf(stderr, "Warning: ");
 		(void) fflush(stderr);
@@ -125,7 +125,7 @@ removenode(ep)
 	ep->e_flags |= REMOVED;
 	ep->e_flags &= ~TMPNAME;
 	cp = myname(ep);
-	if (rmdir(cp) < 0) {
+	if (!Nflag && rmdir(cp) < 0) {
 		fprintf(stderr, "Warning: ");
 		(void) fflush(stderr);
 		perror(cp);
@@ -147,7 +147,7 @@ removeleaf(ep)
 	ep->e_flags |= REMOVED;
 	ep->e_flags &= ~TMPNAME;
 	cp = myname(ep);
-	if (unlink(cp) < 0) {
+	if (!Nflag && unlink(cp) < 0) {
 		fprintf(stderr, "Warning: ");
 		(void) fflush(stderr);
 		perror(cp);
@@ -165,7 +165,7 @@ linkit(existing, new, type)
 {
 
 	if (type == SYMLINK) {
-		if (symlink(existing, new) < 0) {
+		if (!Nflag && symlink(existing, new) < 0) {
 			fprintf(stderr,
 				"Warning: cannot create symbolic link %s->%s: ",
 				new, existing);
@@ -174,7 +174,7 @@ linkit(existing, new, type)
 			return (FAIL);
 		}
 	} else if (type == HARDLINK) {
-		if (link(existing, new) < 0) {
+		if (!Nflag && link(existing, new) < 0) {
 			fprintf(stderr,
 				"Warning: cannot create hard link %s->%s: ",
 				new, existing);

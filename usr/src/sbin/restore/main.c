@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -37,7 +37,7 @@ static char sccsid[] = "@(#)main.c	5.3 (Berkeley) %G%";
 #include <signal.h>
 
 int	bflag = 0, cvtflag = 0, dflag = 0, vflag = 0, yflag = 0;
-int	hflag = 1, mflag = 1;
+int	hflag = 1, mflag = 1, Nflag = 0;
 char	command = '\0';
 long	dumpnum = 1;
 long	volno = 0;
@@ -94,6 +94,9 @@ usage:
 			break;
 		case 'm':
 			mflag = 0;
+			break;
+		case 'N':
+			Nflag++;
 			break;
 		case 'v':
 			vflag++;

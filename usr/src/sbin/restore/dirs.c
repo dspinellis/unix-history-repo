@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dirs.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)dirs.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include "restore.h"
@@ -515,7 +515,7 @@ genliteraldir(name, ino)
 			perror("read");
 			done(1);
 		}
-		if (write(ofile, buf, (int) size) == -1) {
+		if (!Nflag && write(ofile, buf, (int) size) == -1) {
 			fprintf(stderr,
 				"write error extracting inode %d, name %s\n",
 				curfile.ino, curfile.name);
