@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)title.urm	8.6 (Berkeley) %G%
+.\"	@(#)title.urm	8.7 (Berkeley) %G%
 .\"
 .af % i
 .EH ''''
@@ -34,7 +34,7 @@ institutions with an interest in UNIX and UNIX-like systems,
 and, by extension, C++, X windows, and other programming tools.
 It is dedicated to:
 .IP \(bu
-fostering innovation and communicating research and technological devlopments,
+fostering innovation and communicating research and technological developments,
 .IP \(bu
 sharing ideas and experience relevant to UNIX,
 UNIX-related, and advanced computing systems, and
@@ -701,6 +701,17 @@ The Kerberos (version 4) authentication software has been
 integrated into much of the system (including NFS) to provide
 the first real network authentication on BSD.
 .PP
+A new implementation of the \fIex/vi\fP text editors is available
+in this release.
+It is intended as a bug-for-bug compatible version of the editors.
+It also has a few new features: 8-bit clean data, lines and files
+limited only by memory and disk space, split screens, tags stacks
+and left-right scrolling among them.
+\fINex/nvi\fP
+is not yet production quality; future versions of this software may
+be retrieved by anonymous ftp from ftp.cs.berkeley.edu, in the
+directory ucb/4bsd.
+.PP
 The \fIfind\fP
 utility has two new options that are important to be aware of if you
 intend to use NFS.
@@ -741,6 +752,8 @@ an extensible, dynamic hashing scheme,
 referenced by logical record number.
 Each of the access methods stores associated key/data pairs and
 uses the same record oriented interface for access.
+Future versions of this software may be retrieved by anonymous ftp
+from ftp.cs.berkeley.edu, in the directory ucb/4bsd.
 .IP \(bu
 The \fIqsort\fP
 function has been rewritten for additional performance.
@@ -782,22 +795,20 @@ function support.
 .NH 1
 Acknowledgements
 .PP
-We were greatly assisted by the recent employees of the
-Computer Systems Research Group: Mike Karels, Marc Tietelbaum,
-and Keith Sklower.
-Our distribution coordinator, Pauline Schwartz,
-has reliably managed the finances
-and the mechanics of gettings distributions shipped for
+We were greatly assisted by the past employees of the Computer Systems
+Research Group: Mike Karels, Keith Sklower, and Marc Tietelbaum.
+Our distribution coordinator, Pauline Schwartz, has reliably managed
+the finances and the mechanics of shipping distributions for
 nearly the entire fourteen years of the group's existence.
-Without the help of the lawyers Mary MacDonald, Joel Linzner,
-and Carla Shapiro, the 4.4BSD-Lite distribution might never
+Without the help of lawyers Mary MacDonald, Joel Linzner,
+and Carla Shapiro, the 4.4BSD-Lite distribution would never
 have seen the light of day.
 Much help was provided by Chris Demetriou in getting bug fixes
 from NetBSD integrated back into the 4.4BSD-Lite distribution.
-The vast majority of the 4.4BSD distribution comes from the
-numerous people in the UNIX community
-that provided their time and energy in creating
-the software contributed to this release.
+.PP
+The vast majority of the 4.4BSD distribution comes from the numerous
+people in the UNIX community that provided their time and energy in
+creating the software contained in this release.
 We dedicate this distribution to them.
 .sp 1
 .in 4i
@@ -836,7 +847,7 @@ to do the Xerox Network Systems implementation.
 Robert Elz at the University of Melbourne contributed greatly
 to the performance work in the kernel.
 Donn Seeley and Jay Lepreau at the University of Utah
-relentlessly dealt with a miriad of details;
+relentlessly dealt with a myriad of details;
 Donn completed the unfinished performance work on Fortran 77
 and fixed numerous C compiler bugs.
 Ralph Campbell handled innumerable questions and problem reports
