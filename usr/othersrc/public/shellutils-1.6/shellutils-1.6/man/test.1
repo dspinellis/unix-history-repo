@@ -1,0 +1,149 @@
+.TH TEST 1L \" -*- nroff -*-
+.SH NAME
+test \- check file types and compare values
+.SH SYNOPSIS
+.B test
+[expr]
+.SH DESCRIPTION
+This manual page
+documents the GNU version of
+.BR test .
+.PP
+.B test
+returns a status of 0 (true) or 1 (false) depending on
+the evaluation of
+the conditional expression
+.IR expr .
+Expressions may be unary or binary.  Unary
+expressions are often used to examine the status of a file.  There
+are string operators
+and numeric comparison operators as well.
+
+.PD 0
+.TP
+.B \-b \fIfile\fP
+True if \fIfile\fP exists and is block special.
+.TP
+.B \-c \fIfile\fP
+True if \fIfile\fP exists and is character special.
+.TP
+.B \-d \fIfile\fP
+True if \fIfile\fP exists and is a directory.
+.TP
+.B \-e \fIfile\fP
+True if \fIfile\fP exists
+.TP
+.B \-f \fIfile\fP
+True if \fIfile\fP exists and is a regular file.
+.TP
+.B \-g \fIfile\fP
+True if \fIfile\fP exists and is set-group-id.
+.TP
+.B \-k \fIfile\fP
+True if \fIfile\fP has its ``sticky'' bit set.
+.TP
+.B \-L \fIfile\fP
+True if \fIfile\fP exists and is a symbolic link.
+.TP
+.B \-p \fIfile\fP
+True if \fIfile\fP exists and is a named pipe.
+.TP
+.B \-r \fIfile\fP
+True if \fIfile\fP exists and is readable.
+.TP
+.B \-s \fIfile\fP
+True if \fIfile\fP exists and has a size greater than zero.
+.TP
+.B \-S \fIfile\fP
+True if \fIfile\fP exists and is a socket.
+.TP
+.B \-t [\fIfd\fP]
+True if
+.I fd
+is opened on a terminal.  If
+.I fd
+is omitted, it defaults to 1 (standard output).
+.TP
+.B \-u \fIfile\fP
+True if \fIfile\fP exists and its set-user-id bit is set.
+.TP
+.B \-w \fIfile\fP
+True if \fIfile\fP exists and is writable.
+.TP
+.B \-x \fIfile\fP
+True if \fIfile\fP exists and is executable.
+.TP
+.B \-O \fIfile\fP
+True if \fIfile\fP exists and is owned by the effective user id.
+.TP
+.B \-G \fIfile\fP
+True if \fIfile\fP exists and is owned by the effective group id.
+.TP
+\fIfile1\fP \-\fBnt\fP \fIfile2\fP
+True if \fIfile1\fP is newer (according to
+modification date) than \fIfile2\fP.
+.TP
+\fIfile1\fP \-\fBot\fP \fIfile2\fP
+True if \fIfile1\fP is older than file2.
+.TP
+\fIfile1\fP \fB\-ef\fP \fIfile\fP
+True if \fIfile1\fP and \fIfile2\fP have the same device and
+inode numbers.
+.TP
+.B \-z \fIstring\fP
+True if the length of \fIstring\fP is zero.
+.TP
+.B \-n \fIstring\fP
+.TP
+\fIstring\fP
+True if the length of
+.I string
+is non-zero.
+.TP
+\fIstring1\fP \fB=\fP \fIstring2\fP
+True if the strings are equal.
+.TP
+\fIstring1\fP \fB!=\fP \fIstring2\fP
+True if the strings are not equal.
+.TP
+.B ! \fIexpr\fP
+True if
+.I expr
+is false.
+.TP
+\fIexpr1\fP \-\fBa\fP \fIexpr2\fP
+True if both
+.I expr1
+and
+.I expr2
+are true.
+.TP
+\fIexpr1\fP \-\fBo\fP \fIexpr2\fP
+True if either
+.I expr1
+or
+.I expr2
+is true.
+.TP
+.I arg1 \fBOP\fP arg2
+.SM
+.B OP
+is one of
+.BR \-eq ,
+.BR \-ne ,
+.BR \-lt ,
+.BR \-le ,
+.BR \-gt ,
+or
+.BR \-ge .
+These arithmetic binary operators return true if \fIarg1\fP
+is equal, not-equal, less-than, less-than-or-equal,
+greater-than, or greater-than-or-equal than \fIarg2\fP,
+respectively.
+.I arg1
+and
+.I arg2
+may be positive integers, negative integers, or the special
+expression \fB\-l\fP \fIstring\fP, which evaluates to the
+length of 
+.IR string .

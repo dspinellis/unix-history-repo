@@ -1,0 +1,18 @@
+.TH GROUPS 1L \" -*- nroff -*-
+.SH NAME
+groups \- print the groups a user is in
+.SH SYNOPSIS
+.B groups
+[username...]
+.SH DESCRIPTION
+This manual page
+documents the GNU version of
+.BR groups .
+.B groups
+prints the names of the supplementary groups that each given
+.IR username ,
+or the current process if none are given, is in.
+If user names are given, the name of each user is printed before the
+list of that user's groups.
+.PP
+The group lists are equivalent to the output of the command `id \-Gn'.
