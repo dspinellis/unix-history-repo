@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)fs.h	7.2.1.1 (Berkeley) %G%
+ *	@(#)fs.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -29,9 +29,12 @@
  *
  * The first boot and super blocks are given in absolute disk addresses.
  * The byte-offset forms are preferred, as they don't imply a sector size.
+ * The byte-offset forms are preferred, as they don't imply a sector size.
  */
 #define BBSIZE		8192
 #define SBSIZE		8192
+#define	BBOFF		((off_t)(0))
+#define	SBOFF		((off_t)(BBOFF + BBSIZE))
 #define	BBOFF		((off_t)(0))
 #define	SBOFF		((off_t)(BBOFF + BBSIZE))
 #ifndef SECSIZE

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)conf.h	7.1.1.1 (Berkeley) %G%
+ *	@(#)conf.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -20,6 +20,7 @@ struct bdevsw
 	int	(*d_open)();
 	int	(*d_close)();
 	int	(*d_strategy)();
+	int	(*d_ioctl)();
 	int	(*d_ioctl)();
 	int	(*d_dump)();
 	int	(*d_psize)();
