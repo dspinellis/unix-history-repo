@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)jot.c	4.2	(Berkeley)	%G%";
+static char sccsid[] = "@(#)jot.c	4.3	(Berkeley)	%G%";
 #endif not lint
 
 /*
@@ -72,6 +72,7 @@ char	**argv;
 			putdata(*x, reps - *i);
 	if (!nofinalnl)
 		putchar('\n');
+	exit(0);
 }
 
 getargs(ac, av)
@@ -253,8 +254,6 @@ double	x;
 long	notlast;
 {
 	long		d = x;
-	register char	*r;
-	register char	*e;
 	register long	*dp = &d;
 
 	if (boring)				/* repeated word */

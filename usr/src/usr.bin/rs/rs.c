@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)rs.c	4.2	(Berkeley)	%G%";
+static char sccsid[] = "@(#)rs.c	4.3	(Berkeley)	%G%";
 #endif not lint
 
 /*
@@ -67,6 +67,7 @@ char	**argv;
 	prepfile();
 	/*fprintf(stderr, "#irows %d icols %d orows %d ocols %d\n",irows,icols,orows,ocols);*/
 	putfile();
+	exit(0);
 }
 
 getfile()
