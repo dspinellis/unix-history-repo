@@ -1,4 +1,4 @@
-/*	main.c	1.20	(Berkeley)	84/12/29
+/*	main.c	1.21	(Berkeley)	85/06/24
  *
  *	This file contains the main and file system dependent routines
  * for processing gremlin files into troff input.  The program watches
@@ -187,20 +187,27 @@ main(argc, argv)
 int argc;
 char **argv;
 {
-	register FILE *fp = stdin;
+	register FILE *fp;
 	register int k;
 	register char c;
 	register gfil = 0;
 	char *file[50];
 
 	char *operand();
+	char *getenv();
 
 
+	if (fp = (FILE *) getenv("PRINTER")) printer = (char *) fp;
+	if (fp = (FILE *) getenv("TYPESETTER")) printer = (char *) fp;
 	while (--argc) {
 	    if (**++argv != '-')
 		file[gfil++] = *argv;
 	    else
 	      switch (c = (*argv)[1]) {
+
+		case 0:
+			file[gfil++] = NULL;
+			break;
 
 		case 'P':
 		case 'T':	/* final output typesetter name */
