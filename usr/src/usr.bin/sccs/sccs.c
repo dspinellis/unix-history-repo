@@ -93,7 +93,7 @@
 **		Copyright 1980 Regents of the University of California
 */
 
-static char SccsId[] = "@(#)sccs.c	1.67 %G%";
+static char SccsId[] = "@(#)sccs.c	1.68 %G%";
 
 /*******************  Configuration Information  ********************/
 
@@ -232,6 +232,12 @@ bool	Debug;			/* turn on tracing */
 # ifndef V6
 extern char	*getenv();
 # endif V6
+
+char *gstrcat(), *strcat();
+char *gstrncat(), *strncat();
+char *gstrcpy(), *strcpy();
+#define	FBUFSIZ	BUFSIZ
+#define	PFILELG	120
 
 main(argc, argv)
 	int argc;
@@ -244,7 +250,7 @@ main(argc, argv)
 # ifndef SCCSDIR
 	register struct passwd *pw;
 	extern struct passwd *getpwnam();
-	char buf[100];
+	char buf[FBUFSIZ];
 
 	/* pull "SccsDir" out of the environment (possibly) */
 	p = getenv("PROJECT");
@@ -260,12 +266,12 @@ main(argc, argv)
 				usrerr("user %s does not exist", p);
 				exit(EX_USAGE);
 			}
-			strcpy(buf, pw->pw_dir);
-			strcat(buf, "/src");
+			gstrcpy(buf, pw->pw_dir, sizeof(buf));
+			gstrcat(buf, "/src", sizeof(buf));
 			if (access(buf, 0) < 0)
 			{
-				strcpy(buf, pw->pw_dir);
-				strcat(buf, "/source");
+				gstrcpy(buf, pw->pw_dir, sizeof(buf));
+				gstrcat(buf, "/source", sizeof(buf));
 				if (access(buf, 0) < 0)
 				{
 					usrerr("project %s has no source!", p);
@@ -365,7 +371,7 @@ command(argv, forkflag, arg0)
 {
 	register struct sccsprog *cmd;
 	register char *p;
-	char buf[100];
+	char buf[FBUFSIZ];
 	extern struct sccsprog *lookup();
 	char *nav[1000];
 	char **np;
@@ -568,7 +574,8 @@ command(argv, forkflag, arg0)
 		while (*np != NULL)
 		{
 			printf("\n%s:\n", *np);
-			sprintf(buf, "-i%s", *np);
+			strcpy(buf, "-i");
+			gstrcat(buf, *np, sizeof(buf));
 			ap[0] = buf;
 			argv[0] = tail(*np);
 			argv[1] = NULL;
@@ -576,7 +583,8 @@ command(argv, forkflag, arg0)
 			argv[1] = p;
 			if (rval == 0)
 			{
-				sprintf(buf, ",%s", tail(*np));
+				strcpy(buf, ",");
+				gstrcat(buf, tail(*np), sizeof(buf));
 				if (link(*np, buf) >= 0)
 					unlink(*np);
 			}
@@ -749,7 +757,7 @@ makefile(name)
 	char *name;
 {
 	register char *p;
-	char buf[512];
+	char buf[3*FBUFSIZ];
 	extern char *malloc();
 	extern char *rindex();
 	extern bool safepath();
@@ -779,28 +787,28 @@ makefile(name)
 	/* first the directory part */
 	if (SccsDir[0] != '\0' && name[0] != '/' && strncmp(name, "./", 2) != 0)
 	{
-		strcpy(buf, SccsDir);
-		strcat(buf, "/");
+		gstrcpy(buf, SccsDir, sizeof(buf));
+		gstrcat(buf, "/", sizeof(buf));
 	}
 	else
-		strcpy(buf, "");
+		gstrcpy(buf, "", sizeof(buf));
 	
 	/* then the head of the pathname */
-	strncat(buf, name, p - name);
+	gstrncat(buf, name, p - name, sizeof(buf));
 	q = &buf[strlen(buf)];
 
 	/* now copy the final part of the name, in case useful */
-	strcpy(q, p);
+	gstrcpy(q, p, sizeof(buf));
 
 	/* so is it useful? */
 	if (strncmp(p, "s.", 2) != 0 && !isdir(buf))
 	{
 		/* sorry, no; copy the SCCS pathname & the "s." */
-		strcpy(q, SccsPath);
-		strcat(buf, "/s.");
+		gstrcpy(q, SccsPath, sizeof(buf));
+		gstrcat(buf, "/s.", sizeof(buf));
 
 		/* and now the end of the name */
-		strcat(buf, p);
+		gstrcat(buf, p, sizeof(buf));
 	}
 
 	/* if i haven't changed it, why did I do all this? */
@@ -907,7 +915,7 @@ clean(mode, argv)
 	char **argv;
 {
 	struct direct dir;
-	char buf[100];
+	char buf[FBUFSIZ];
 	char *bufend;
 	register FILE *dirfd;
 	register char *basefile;
@@ -962,15 +970,15 @@ clean(mode, argv)
 	**  Find and open the SCCS directory.
 	*/
 
-	strcpy(buf, SccsDir);
+	gstrcpy(buf, SccsDir, sizeof(buf));
 	if (buf[0] != '\0')
-		strcat(buf, "/");
+		gstrcat(buf, "/", sizeof(buf));
 	if (subdir != NULL)
 	{
-		strcat(buf, subdir);
-		strcat(buf, "/");
+		gstrcat(buf, subdir, sizeof(buf));
+		gstrcat(buf, "/", sizeof(buf));
 	}
-	strcat(buf, SccsPath);
+	gstrcat(buf, SccsPath, sizeof(buf));
 	bufend = &buf[strlen(buf)];
 
 	dirfd = fopen(buf, "r");
@@ -993,7 +1001,7 @@ clean(mode, argv)
 			continue;
 		
 		/* got an s. file -- see if the p. file exists */
-		strcpy(bufend, "/p.");
+		gstrcpy(bufend, "/p.", sizeof(buf));
 		basefile = bufend + 3;
 		strncpy(basefile, &dir.d_name[2], sizeof dir.d_name - 2);
 		basefile[sizeof dir.d_name - 2] = '\0';
@@ -1033,8 +1041,8 @@ clean(mode, argv)
 		{
 			strncpy(buf, &dir.d_name[2], sizeof dir.d_name - 2);
 			buf[sizeof dir.d_name - 2] = '\0';
-			char	unlinkbuf[100];
-			strcpy(unlinkbuf, &dir->d_name[2]);
+			char	unlinkbuf[FBUFSIZ];
+			gstrcpy(unlinkbuf, &dir->d_name[2], sizeof(unlinkbuf));
 			unlink(unlinkbuf);
 		}
 	}
@@ -1121,7 +1129,7 @@ unedit(fn)
 	extern char *username();
 	struct pfile *pent;
 	extern struct pfile *getpfent();
-	char buf[120];
+	char buf[PFILELG];
 	extern char *makefile();
 
 	/* make "s." filename & find the trailing component */
@@ -1329,7 +1337,7 @@ getpfent(pfp)
 	FILE *pfp;
 {
 	static struct pfile ent;
-	static char buf[120];
+	static char buf[PFILELG];
 	register char *p;
 	extern char *nextfield();
 
@@ -1482,4 +1490,45 @@ username()
 		p = getlogin();
 	return (p);
 # endif UIDUSER
+}
+
+/*
+**	Guarded string manipulation routines; the last argument
+**	is the length of the buffer into which the strcpy or strcat
+**	is to be done.
+*/
+char *gstrcat(to, from, length)
+	char	*to, *from;
+	int	length;
+{
+	if (strlen(from) + strlen(to) >= length) {
+		gstrbotch(to, from);
+	}
+	return(strcat(to, from));
+}
+
+char *gstrncat(to, from, n, length)
+	char	*to, *from;
+	int	n;
+	int	length;
+{
+	if (n + strlen(to) >= length) {
+		gstrbotch(to, from);
+	}
+	return(strncat(to, from, n));
+}
+
+char *gstrcpy(to, from, length)
+	char	*to, *from;
+	int	length;
+{
+	if (strlen(from) >= length) {
+		gstrbotch(from, (char *)0);
+	}
+	return(strcpy(to, from));
+}
+gstrbotch(str1, str2)
+	char	*str1, *str2;
+{
+	usrerr("Filename(s) too long: %s %s", str1, str2);
 }
