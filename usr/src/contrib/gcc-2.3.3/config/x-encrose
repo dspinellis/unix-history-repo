@@ -1,0 +1,32 @@
+# Define CC and OLDCC as the same, so that the tests:
+#	if [ x"$(OLDCC)" = x"$(CC)" ] ...
+#
+# will succeed (if OLDCC != CC, it is assumed that GCC is
+# being used in secondary stage builds).
+
+BUILD		=
+CC		= $(OLDCC)
+CLIB		= -lld
+X_CFLAGS	= $(DEB_OPT) $(MSTATS) $(SHLIB) $(X_DEFINES)
+X_CFLAGS_NODEBUG = $(NO_DEBUG) $(MSTATS) $(OPT) $(PROFILE) $(SHLIB) $(X_DEFINES) $(XCFLAGS)
+CPP_ABORT	= # -Dabort=fancy_abort
+CPPFLAGS	= $(CPP_ABORT) $(SYSTEM_INCLUDES)
+DEB_OPT		= $(OPT) $(DEBUG) $(PROFILE)
+DEBUG		=
+DEBUG_COLLECT	= # -DDEBUG
+GCC_CFLAGS	= $(INTERNAL_CFLAGS) $(X_CFLAGS) $(T_CFLAGS) $(CFLAGS) -B./ -DPOSIX
+INSTALL		= installbsd -c
+LDFLAGS		=
+MSTATS		= # -mstats
+GNU_ROSE_BIN	= /usr/ccs/gcc
+OLDCC		= $(GNU_ROSE_BIN)/gcc
+OPT		= -O
+PROFILE		=
+SHLIB		= -L${BUILD}/usr/ccs/lib	# no shared libraries
+SYSTEM_INCLUDES	= # -I${BUILD}/usr/include
+X_DEFINES	= -Dvfork=fork
+
+libdir		= /usr/ccs
+mandir		= /usr/ccs/gcc/$(target)/$(version)
+bindir		= /usr/ccs/gcc/$(target)/$(version)
+
