@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)iostat.c	1.4 (Lucasfilm) %G%";
+static char sccsid[] = "@(#)iostat.c	1.5 (Lucasfilm) %G%";
 #endif
 
 /*
@@ -74,7 +74,7 @@ static struct {
 static  int linesperregion;
 static  double etime;
 static  int numbers = 0;                /* default display bar graphs */
-static  int msps = 1;                   /* default ms/seek shown */
+static  int msps = 0;                   /* default ms/seek shown */
 static  int dk_select[DK_NDRIVE];
 
 initiostat()
