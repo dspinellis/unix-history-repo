@@ -1,0 +1,38 @@
+###############################################################################
+#
+# isobjects - ISODE Objects Database
+#
+#	Mappings between object descriptors and object identifiers
+#
+#
+# $Header: /f/osi/config/RCS/objects.local,v 7.1 91/02/22 09:16:42 mrose Interim $
+#
+#
+# $Log:	objects.local,v $
+# Revision 7.1  91/02/22  09:16:42  mrose
+# Interim 6.8
+# 
+# Revision 7.0  89/11/23  21:26:10  mrose
+# Release 6.0
+# 
+###############################################################################
+
+
+###############################################################################
+#
+# Syntax:
+#
+#	<object descriptor> <object id>
+#
+#	Each token is separated by LWSP, though double-quotes may be
+#	used to prevent separation
+#
+###############################################################################
+
+
+###############################################################################
+# locally defined objects
+#	(this section is usually empty...)
+###############################################################################
+
+

@@ -1,0 +1,108 @@
+
+
+NOTES FOR NEARLY-POSIX-COMPATIBLE C LIBRARY DIRECTORY-ACCESS ROUTINES
+
+
+Older UNIX C libraries lacked support for reading directories, so historically
+programs had knowledge of UNIX directory structure hard-coded into them.  When
+Berkeley changed the format of directories for 4.2BSD, it became necessary to
+change programs to work with the new structure.  Fortunately, Berkeley designed
+a small set of directory access routines to encapsulate knowledge of the new
+directory format so that user programs could deal with directory entries as an
+abstract data type.  (Unfortunately, they didn't get it quite right.)  The
+interface to these routines was nearly independent of the particular
+implementation of directories on any given UNIX system; this has become a
+particularly important requirement with the advent of heterogeneous network
+filesystems such as NFS.
+
+It has consequently become possible to write portable applications that search
+directories by restricting all directory access to use these new interface
+routines.  The sources supplied here are a total rewrite of Berkeley's code,
+incorporating ideas from a variety of sources and conforming as closely to
+published standards as possible, and are in the PUBLIC DOMAIN to encourage
+their widespread adoption.  They support four methods of access to system
+directories: the original UNIX filesystem via read(), the 4.2BSD filesystem via
+read(), NFS and native filesystems via getdirentries(), and SVR3 getdents().
+The other three types are accomplished by appropriate emulation of the SVR3
+getdents() system call, which attains portability at the cost of slightly more
+data movement than absolutely necessary for some systems.  These routines
+should be added to the standard C library on all UNIX systems, and all existing
+and future applications should be changed to use this interface.  Once this is
+done, there should be no portability problems due to differences in underlying
+directory structures among UNIX systems.  (When porting your applications to
+other UNIX systems, you can always carry this package around with you.)
+
+An additional benefit of these routines is that they buffer directory input,
+which provides improved access speed over raw read()s of one entry at a time.
+
+One annoying compatibility problem has arisen along the way, namely that the
+original Berkeley interface used the same name, struct direct, for the new data
+structure as had been used for the original UNIX filesystem directory record
+structure.  This name was changed by the IEEE 1003.1 (POSIX) Working Group to
+"struct dirent" and was picked up for SVR3 under the new name; it is also the
+name used in this portable package.  I believe it is necessary to bite the
+bullet and adopt the new non-conflicting name.  Code using a 4.2BSD-compatible
+package needs to be slightly revised to work with this new package, as follows:
+	Change
+		#include <ndir.h>	/* Ninth Edition UNIX */
+	or
+		#include <sys/dir.h>	/* 4.2BSD */
+	or
+		#include <dir.h>	/* BRL System V emulation */
+	to
+		#include <sys/types.h>	/* if not already #included */
+		#include <dirent.h>
+
+	Change
+		struct direct
+	to
+		struct dirent
+
+	Change
+		(anything)->d_namlen
+	to
+		strlen( (anything)->d_name )
+
+There is a minor compatibility problem in that the closedir() function was
+originally defined to have type void, but IEEE 1003.1 changed this to type int,
+which is what this implementation supports (even though I disagree with the
+change).  However, the difference does not affect most applications.
+
+Another minor problem is that IEEE 1003.1 defined the d_name member of a struct
+dirent to be an array of maximum length; this does not permit use of compact
+variable-length entries directly from a directory block buffer.  This part of
+the specification is incompatible with efficient use of the getdents() system
+call, and I have therefore chosen to follow the SVID specification instead of
+IEEE 1003.1 (which I hope is changed for the final-use standard).  This
+deviation should have little or no impact on sensibly-coded applications, since
+the relevant d_name length is that given by strlen(), not the declared array
+size.
+
+Error handling is not completely satisfactory, due to the variety of possible
+failure modes in a general setting.  For example, the rewinddir() function
+might fail, but there is no good way to indicate this.  I have tried to
+follow the specifications in IEEE 1003.1 and the SVID as closely as possible,
+but there are minor deviations in this regard.  Applications should not rely
+too heavily on exact failure mode semantics.
+
+Please do not change the new standard interface in any way, as that would
+defeat the major purpose of this package!  (It's okay to alter the internal
+implementation if you really have to, although I tried to make this unnecessary
+for the vast majority of UNIX variants.)
+
+Installation instructions can be found in the file named INSTALL.
+
+This implementation is provided by:
+
+	Douglas A. Gwyn
+	U.S. Army Ballistic Research Laboratory
+	SLCBR-VL-V
+	Aberdeen Proving Ground, MD 21005-5066
+
+	(301)278-6647
+
+	Gwyn@BRL.MIL or seismo!brl!gwyn
+
+This is UNSUPPORTED, use-at-your-own-risk, free software in the public domain.
+However, I would appreciate hearing of any actual bugs you find in this
+implementation and/or any improvements you come up with.

@@ -1,0 +1,343 @@
+/* llib-lacsap - lint library for -lacsap */
+
+/* 
+ * $Header: /f/osi/acsap/RCS/llib-lacsap,v 7.4 91/02/22 09:14:45 mrose Interim $
+ *
+ *
+ * $Log:	llib-lacsap,v $
+ * Revision 7.4  91/02/22  09:14:45  mrose
+ * Interim 6.8
+ * 
+ * Revision 7.3  90/12/23  18:39:16  mrose
+ * update
+ * 
+ * Revision 7.2  90/12/11  10:52:12  mrose
+ * lock-and-load
+ * 
+ * Revision 7.1  90/07/09  14:31:18  mrose
+ * sync
+ * 
+ * Revision 7.0  89/11/23  21:22:15  mrose
+ * Release 6.0
+ * 
+ */
+
+/*
+ *				  NOTICE
+ *
+ *    Acquisition, use, and distribution of this module and related
+ *    materials are subject to the restrictions of a license agreement.
+ *    Consult the Preface in the User's Manual for the full terms of
+ *    this agreement.
+ *
+ */
+
+
+/* LINTLIBRARY */
+
+#include "acsap.h"
+#include "tsap.h"
+#include "isoservent.h"
+
+/*  */
+
+/* A-ASSOCIATE.INDICATION */
+
+int	AcInit (vecp, vec, acs, aci)
+int	vecp;
+char  **vec;
+struct AcSAPstart *acs;
+struct AcSAPindication *aci;
+{
+    return AcInit (vecp, vec, acs, aci);
+}
+
+
+/* A-ASSOCIATE.RESPONSE */
+
+int	AcAssocResponse (sd, status, reason, context, respondtitle,
+	respondaddr, ctxlist, defctxresult, prequirements, srequirements, isn,
+	settings, ref, data, ndata, aci)
+int	sd;
+int	status,
+	reason;
+OID	context;
+AEI	respondtitle;
+struct PSAPaddr *respondaddr;
+int	prequirements,
+	srequirements,
+	settings,
+	ndata;
+long	isn;
+struct PSAPctxlist *ctxlist;
+int	defctxresult;
+struct SSAPref *ref;
+PE     *data;
+struct AcSAPindication *aci;
+{
+    return AcAssocResponse (sd, status, reason, context, respondtitle,
+	    respondaddr, ctxlist, defctxresult, prequirements, srequirements,
+	    isn, settings, ref, data, ndata, aci);
+}
+
+
+/* A-(ASYN-)ASSOCIATE.REQUEST */
+
+int	AcAsynAssocRequest (context, callingtitle, calledtitle, callingaddr,
+	calledaddr, ctxlist, defctxname, prequirements, srequirements, isn,
+	settings, ref, data, ndata, qos, acc, aci, async)
+OID	context;
+AEI	callingtitle,
+	calledtitle;
+struct PSAPaddr *callingaddr,
+		*calledaddr;
+int	prequirements,
+	srequirements,
+	settings,
+	ndata,
+	async;
+long	isn;
+struct PSAPctxlist *ctxlist;
+OID	defctxname;
+struct SSAPref *ref;
+PE    *data;
+struct QOStype *qos;
+struct AcSAPconnect *acc;
+struct AcSAPindication *aci;
+{
+    return AcAsynAssocRequest (context, callingtitle, calledtitle, callingaddr,
+	    calledaddr, ctxlist, defctxname, prequirements, srequirements, isn,
+	    settings, ref, data, ndata, qos, acc, aci, async);
+}
+
+
+/* A-ASYN-RETRY.REQUEST (pseudo) */
+
+int	AcAsynRetryRequest (sd, acc, aci)
+int	sd;
+struct AcSAPconnect *acc;
+struct AcSAPindication *aci;
+{
+    return AcAsynRetryRequest (sd, acc, aci);
+}
+
+
+/* A-ASYN-NEXT.REQUEST (pseudo) */
+
+int	AcAsynNextRequest (sd, acc, aci)
+int	sd;
+struct AcSAPconnect *acc;
+struct AcSAPindication *aci;
+{
+    return AcAsynNextRequest (sd, acc, aci);
+}
+
+
+/* A-RELEASE.REQUEST */
+
+int	AcRelRequest (sd, reason, data, ndata, secs, acr, aci)
+int	sd;
+int	reason;
+PE     *data;
+int	ndata;
+int	secs;
+struct AcSAPrelease *acr;
+struct AcSAPindication *aci;
+{
+    return AcRelRequest (sd, reason, data, ndata, secs, acr, aci);
+}
+
+
+/* A-RELEASE-RETRY.REQUEST (pseudo) */
+
+int	AcRelRetryRequest (sd, secs, acr, aci)
+int	sd;
+int	secs;
+struct AcSAPrelease *acr;
+struct AcSAPindication *aci;
+{
+    return AcRelRetryRequest (sd, secs, acr, aci);
+}
+
+
+/* A-RELEASE.RESPONSE */
+
+int	AcRelResponse (sd, status, reason, data, ndata, aci)
+int	sd;
+int	status,
+	reason;
+PE     *data;
+int	ndata;
+struct AcSAPindication *aci;
+{
+    return AcRelResponse (sd, status, reason, data, ndata, aci);
+}
+
+
+/* A-ABORT.REQUEST */
+
+int	AcUAbortRequest (sd, data, ndata, aci)
+int	sd;
+PE     *data;
+int	ndata;
+struct AcSAPindication *aci;
+{
+    return AcUAbortRequest (sd, data, ndata, aci);
+}
+
+
+/* handle P-RELEASE.INDICATION */
+
+int	AcFINISHser (sd, pf, aci)
+int	sd;
+struct PSAPfinish *pf;
+struct AcSAPindication *aci;
+{
+    return AcFINISHser (sd, pf, aci);
+}
+
+
+/* handle P-{U,P}-ABORT.INDICATION */
+
+int	AcABORTser (sd, pa, aci)
+int	sd;
+struct PSAPabort *pa;
+struct AcSAPindication *aci;
+{
+    return AcABORTser (sd, pa, aci);
+}
+
+
+/* return PCI used by ACSE */
+
+int	AcFindPCI (sd, pci, aci)
+int	sd;
+int    *pci;
+struct AcSAPindication *aci;
+{
+    return AcFindPCI (sd, pci, aci);
+}
+
+
+/* return AcSAP error code in string form */
+
+char   *AcErrString (code)
+int	code;
+{
+    return AcErrString (code);
+}
+
+
+/* string to application entity info */
+
+AEI	_str2aei (designator, qualifier, context, interactive, userdn,
+		  password)
+char   *designator,
+       *qualifier,
+       *context,
+       *userdn,
+       *password;
+int     interactive;
+{
+    return _str2aei (designator, qualifier, context, interactive, userdn,
+		     password);
+}
+
+
+char   *sprintaei (aei)
+AEI	aei;
+{
+    return sprintaei (aei);
+}
+
+
+/* application entity info to PSAPaddr */
+
+struct PSAPaddr *aei2addr (aei)
+AEI	aei;
+{
+    return aei2addr (aei);
+}
+
+
+int	setisoentity (f)
+int	f;
+{
+    return setisoentity (f);
+}
+
+
+int	endisoentity ()
+{
+    return endisoentity ();
+}
+
+struct isoentity *getisoentity ()
+{
+    return getisoentity ();
+}
+
+
+AEI	oid2aei (oid)
+OID	oid;
+{
+    return oid2aei (oid);
+}
+
+
+/* old-style */
+
+struct PSAPaddr *is2paddr (host, service, is)
+char   *host,
+       *service;
+struct isoservent *is;
+{
+    return is2paddr (host, service, is);
+}
+
+
+/* old-style */
+
+struct SSAPaddr *is2saddr (host, service, is)
+char   *host,
+       *service;
+struct isoservent *is;
+{
+    return is2saddr (host, service, is);
+}
+
+
+/* old-style */
+
+struct TSAPaddr *is2taddr (host, service, is)
+char   *host,
+       *service;
+struct isoservent *is;
+{
+    return is2taddr (host, service, is);
+}
+
+
+/* "user-friendly" name service */
+
+set_lookup_dase (flag)
+char	flag;
+{
+	set_lookup_dase (flag);
+}
+
+
+
+/* generic server dispatch */
+
+int	isodeserver (argc, argv, aei, initfnx, workfnx, losefnx, td)
+int	argc;
+char  **argv;
+AEI	aei;
+IFP	initfnx,
+	workfnx,
+	losefnx;
+struct TSAPdisconnect *td;
+{
+    return isodeserver (argc, argv, aei, initfnx, workfnx, losefnx, td);
+}

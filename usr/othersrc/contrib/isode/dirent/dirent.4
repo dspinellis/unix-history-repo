@@ -1,0 +1,72 @@
+.TH DIRENT 4 "Standard Extension"
+.SH NAME
+dirent \- file system independent directory entry
+.SH SYNOPSIS
+.B "#include <sys/types.h>"
+.br
+.B "#include <isode/sys.dirent.h>"
+.SH DESCRIPTION
+Different file system types
+may have different directory entries.
+The
+.I dirent
+structure defines a
+file system independent directory entry,
+which contains information common to
+directory entries in different file system types.
+A set of these structures is returned by the
+.IR getdents (2)
+system call.
+.P
+The
+.I dirent
+structure is defined below.
+.sp
+struct	dirent	{
+.br
+			long			d_ino;
+.br
+			off_t			d_off;
+.br
+			unsigned short		d_reclen;
+.br
+			char			d_name[1];
+.br
+		};
+.P
+.sp
+The field
+.I d_ino
+is a number which is unique
+for each file in the file system.
+The field
+.I d_off\^
+represents an offset of that directory entry
+in the actual file system directory.
+The field
+.I d_name
+is the beginning of the character array
+giving the name of the directory entry.
+This name is null terminated
+and may have at most
+.SM NAME_MAX
+characters in addition to the null terminator.
+This results in file system independent directory entries
+being variable-length entities.
+The value of
+.I d_reclen
+is the record length of this entry.
+This length is defined to be the number of bytes
+between the beginning of the current entry and the next one,
+adjusted so that the next entry
+will start on a long boundary.
+.SH FILES
+\*(IDsys.dirent.h
+.SH "SEE ALSO"
+getdents(2).
+.SH WARNING
+The field
+.I d_off\^
+does not have a simple interpretation
+for some file system types
+and should not be used directly by applications.

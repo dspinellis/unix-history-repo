@@ -1,0 +1,8 @@
+.\" isoman.rf - include file for ISODE manual entries
+.\" Sat Nov  4 23:15:36 1989  Marshall T. Rose <mrose@cheetah.ca.psi.com>
+
+.ds BD @(BINDIR)
+.ds ED @(ETCDIR)
+.ds ID @(INCDIR)
+.ds LD @(LOGDIR)
+.ds SD @(SBINDIR)
