@@ -1,4 +1,4 @@
-/*	condevs.h	4.4	86/01/24	*/
+/*	condevs.h	4.5	86/02/12	*/
 
 #include "uucp.h"
 #include <errno.h>
@@ -106,4 +106,9 @@ int micopn(), miccls();
 
 #ifdef SYTEK
 int sykopn(), sykcls();
-#endif
+#endif SYTEK
+
+#ifdef ATT2224
+int attopn(), attcls();
+#endif	ATT2224
+
