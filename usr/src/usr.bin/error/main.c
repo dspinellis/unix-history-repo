@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	1.1 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	1.2 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include <signal.h>
@@ -142,7 +142,7 @@ main(argc, argv)
 			exit(4);
 		}
 	}
-	im_on = (char *)ttyname(2);
+	im_on = "/dev/tty";
 	if ( (queryfile = fopen(im_on, "r")) == NULL){
 		fprintf(stderr,"%s: Can't open \"%s\" to query the user.\n",
 			processname, im_on);
