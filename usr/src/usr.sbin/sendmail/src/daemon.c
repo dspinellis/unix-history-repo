@@ -3,14 +3,14 @@
 # include <sys/mx.h>
 
 #ifndef DAEMON
-SCCSID(@(#)daemon.c	3.8		%G%	(w/o daemon mode));
+SCCSID(@(#)daemon.c	3.9		%G%	(w/o daemon mode));
 #else
 
 # include <sys/socket.h>
 # include <wellknown.h>
 # include <net/in.h>
 
-SCCSID(@(#)daemon.c	3.8		%G%	(with daemon mode));
+SCCSID(@(#)daemon.c	3.9		%G%	(with daemon mode));
 
 /*
 **  DAEMON.C -- routines to use when running as a daemon.
@@ -61,14 +61,13 @@ struct sockaddr_in SendmailAddress = { AF_INET, IPPORT_SMTP };
 getconnection()
 {
 	register int s;
-	char *host = "localhost";
 	struct sockaddr otherend;
 
 	/*
 	**  Set up the address for the mailer.
 	*/
 
-	SendmailAddress.sin_addr.s_addr = rhost(&host);
+	SendmailAddress.sin_addr.s_addr = 0;
 
 	/*
 	**  Try to actually open the connection.
@@ -76,7 +75,7 @@ getconnection()
 
 # ifdef DEBUG
 	if (Debug)
-		printf("getconnection (%s)\n", host);
+		printf("getconnection\n");
 # endif DEBUG
 
 	s = socket(SOCK_STREAM, 0, &SendmailAddress, SO_ACCEPTCONN);
