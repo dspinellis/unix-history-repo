@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)getpgrp.2	6.1 (Berkeley) %G%
+.\"	@(#)getpgrp.2	6.2 (Berkeley) %G%
 .\"
 .TH GETPGRP 2 ""
 .UC 5
@@ -25,7 +25,7 @@ is zero, then the call applies to the current process.
 .PP
 Process groups are used for distribution of signals, and
 by terminals to arbitrate requests for their input: processes
-which have the same process group as the terminal are foreground
+that have the same process group as the terminal are foreground
 and may read, while others will block with a signal if they attempt
 to read.
 .PP

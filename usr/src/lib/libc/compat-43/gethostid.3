@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)gethostid.3	6.1 (Berkeley) %G%
+.\"	@(#)gethostid.3	6.2 (Berkeley) %G%
 .\"
 .TH GETHOSTID 2 ""
 .UC 5
@@ -21,7 +21,7 @@ int hostid;
 .SH DESCRIPTION
 .I Sethostid
 establishes a 32-bit identifier for the
-current processor which is intended to be unique among all
+current processor that is intended to be unique among all
 UNIX systems in existence.  This is normally a DARPA Internet
 address for the local machine.  This call is allowed only to the
 super-user and is normally performed at boot time.
