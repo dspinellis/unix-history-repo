@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)kern_exec.c	7.68 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.69 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -182,13 +182,6 @@ execve(p, uap, retval)
 		bcopy((caddr_t)&exdata.ex_hexec,
 		      (caddr_t)&hhead, sizeof hhead);
 		/*
-		 * If version number is 0x2bad this is a native BSD
-		 * binary created via the HPUX SGS.  Should not be
-		 * treated as an HPUX binary.
-		 */
-		if (exdata.ex_hexec.ha_version != BSDVNUM)
-			paged |= SHPUX;				/* XXX */
-		/*
 		 * Shuffle important fields to their BSD locations.
 		 * Note that the order in which this is done is important.
 		 */
@@ -233,11 +226,7 @@ execve(p, uap, retval)
 		break;
 
 	case ZMAGIC:
-#ifdef HPUXCOMPAT
-		paged |= 1;	/* XXX fix me */
-#else
 		paged = 1;
-#endif
 		/* FALLTHROUGH */
 
 	case NMAGIC:
@@ -419,9 +408,9 @@ execve(p, uap, retval)
 	 * We are now committed to the exec so we can save the exec
 	 * header in the pcb where we can dump it if necessary in core()
 	 */
-	if (p->p_addr->u_pcb.pcb_flags & PCB_HPUXBIN)
+	if (p->p_md.md_flags & MDP_HPUX)
 		bcopy((caddr_t)&hhead,
-		      (caddr_t)p->p_addr->u_pcb.pcb_exec, sizeof hhead);
+		      (caddr_t)p->p_addr->u_md.md_exec, sizeof hhead);
 #endif
 
 	/*
@@ -522,8 +511,6 @@ getxfile(p, vp, ep, paged, ssize, uid, gid)
 	int error = 0;
 
 #ifdef HPUXCOMPAT
-	int hpux = (paged & SHPUX);
-	paged &= ~SHPUX;
 	if (ep->a_mid == MID_HPUX)
 		toff = paged ? CLBYTES : sizeof(struct hpux_exec);
 	else
@@ -583,15 +570,23 @@ getxfile(p, vp, ep, paged, ssize, uid, gid)
 		p->p_flag &= ~SPPWAIT;
 		wakeup((caddr_t) p->p_pptr);
 	}
+#if defined(HP380)
+	/* default to copyback caching on 68040 */
+	if (mmutype == MMU_68040)
+		p->p_md.md_flags |= (MDP_CCBDATA|MDP_CCBSTACK);
+#endif
 #ifdef HPUXCOMPAT
-	p->p_addr->u_pcb.pcb_flags &= ~(PCB_HPUXMMAP|PCB_HPUXBIN);
-	/* remember that we were loaded from an HPUX format file */
+	p->p_md.md_flags &= ~(MDP_HPUX|MDP_HPUXMMAP);
+	/* note that we are an HP-UX binary */
 	if (ep->a_mid == MID_HPUX)
-		p->p_addr->u_pcb.pcb_flags |= PCB_HPUXBIN;
-	if (hpux)
-		p->p_flag |= SHPUX;
-	else
-		p->p_flag &= ~SHPUX;
+		p->p_md.md_flags |= MDP_HPUX;
+	/* deal with miscellaneous attributes */
+	if (ep->a_trsize & HPUXM_VALID) {
+		if (ep->a_trsize & HPUXM_DATAWT)
+			p->p_md.md_flags &= ~MDP_CCBDATA;
+		if (ep->a_trsize & HPUXM_STKWT)
+			p->p_md.md_flags &= ~MDP_CCBSTACK;
+	}
 #endif
 #ifdef ULTRIXCOMPAT
 	/*
