@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.102 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.103 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -851,6 +851,7 @@ deliver(firstto, editfcn)
 			giveresponse(rcode, m, NULL, ctladdr, e);
 			if (rcode == EX_OK)
 				to->q_flags |= QSENT;
+			to->q_statdate = curtime();
 			continue;
 		}
 
@@ -1371,6 +1372,8 @@ markfailure(e, q, rcode)
 		q->q_flags |= QBADADDR;
 		break;
 	}
+	q->q_statdate = curtime();
+	q->q_statmta = newstr(CurHostName);
 }
 /*
 **  ENDMAILER -- Wait for mailer to terminate.

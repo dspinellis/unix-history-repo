@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	8.44 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.45 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	8.44 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.45 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -259,13 +259,12 @@ smtp(e)
 				MyHostName, CurSmtpClient);
 			if (!bitset(PRIV_NOEXPN, PrivacyFlags))
 				message("250-EXPN");
-#ifdef ADVERTISE_MIME
 			message("250-8BITMIME");
-#endif
 			if (MaxMessageSize > 0)
 				message("250-SIZE %ld", MaxMessageSize);
 			else
 				message("250-SIZE");
+			message("250-DSN");
 			message("250 HELP");
 			break;
 
@@ -431,6 +430,15 @@ smtp(e)
 						/* NOTREACHED */
 					}
 				}
+				else if (strcasecmp(kp, "envid") == 0)
+				{
+					if (vp == NULL)
+					{
+						usrerr("501 ENVID requires a value");
+						/* NOTREACHED */
+					}
+					e->e_envid = newstr(vp);
+				}
 				else
 				{
 					usrerr("501 %s parameter unrecognized", kp);
@@ -476,11 +484,102 @@ smtp(e)
 			p = skipword(p, "to");
 			if (p == NULL)
 				break;
-			a = parseaddr(p, NULLADDR, RF_COPYALL, ' ', NULL, e);
+			a = parseaddr(p, NULLADDR, RF_COPYALL, ' ', &delimptr, e);
 			if (a == NULL)
 				break;
+			p = delimptr;
 			a->q_flags |= QPRIMARY;
 			a = recipient(a, &e->e_sendqueue, e);
+
+			/* now parse ESMTP arguments */
+			while (p != NULL && *p != '\0')
+			{
+				char *kp;
+				char *vp = NULL;
+
+				/* locate the beginning of the keyword */
+				while (isascii(*p) && isspace(*p))
+					p++;
+				if (*p == '\0')
+					break;
+				kp = p;
+
+				/* skip to the value portion */
+				while (isascii(*p) && isalnum(*p) || *p == '-')
+					p++;
+				if (*p == '=')
+				{
+					*p++ = '\0';
+					vp = p;
+
+					/* skip to the end of the value */
+					while (*p != '\0' && *p != ' ' &&
+					       !(isascii(*p) && iscntrl(*p)) &&
+					       *p != '=')
+						p++;
+				}
+
+				if (*p != '\0')
+					*p++ = '\0';
+
+				if (tTd(19, 1))
+					printf("RCPT: got arg %s=\"%s\"\n", kp,
+						vp == NULL ? "<null>" : vp);
+
+				if (strcasecmp(kp, "notify") == 0)
+				{
+					if (vp == NULL)
+					{
+						usrerr("501 NOTIFY requires a value");
+						/* NOTREACHED */
+					}
+					a->q_flags &= ~(QPINGONSUCCESS|QPINGONFAILURE);
+					if (strcasecmp(vp, "success") == 0)
+						a->q_flags |= QPINGONSUCCESS;
+					else if (strcasecmp(vp, "failure") == 0)
+						a->q_flags |= QPINGONFAILURE;
+					else if (strcasecmp(vp, "always") == 0)
+						a->q_flags |= QPINGONSUCCESS |
+							      QPINGONFAILURE;
+					else if (strcasecmp(vp, "never") != 0)
+					{
+						usrerr("501 Bad argument \"%s\"  to NOTIFY",
+							vp);
+						/* NOTREACHED */
+					}
+				}
+				else if (strcasecmp(kp, "ret") == 0)
+				{
+					if (vp == NULL)
+					{
+						usrerr("501 RET requires a value");
+						/* NOTREACHED */
+					}
+					a->q_flags |= QHASRETPARAM;
+					if (strcasecmp(vp, "no") == 0)
+						a->q_flags |= QNOBODYRETURN;
+					else if (strcasecmp(vp, "yes") != 0)
+					{
+						usrerr("501 Bad argument \"%s\" to RET",
+							vp);
+						/* NOTREACHED */
+					}
+				}
+				else if (strcasecmp(kp, "orcpt") == 0)
+				{
+					if (vp == NULL)
+					{
+						usrerr("501 ORCPT requires a value");
+						/* NOTREACHED */
+					}
+					a->q_orcpt = newstr(vp);
+				}
+				else
+				{
+					usrerr("501 %s parameter unrecognized", kp);
+					/* NOTREACHED */
+				}
+			}
 			if (Errors != 0)
 				break;
 

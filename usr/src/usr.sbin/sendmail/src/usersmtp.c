@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	8.22 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.23 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	8.22 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.23 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -272,6 +272,8 @@ helo_options(line, m, mci, e)
 	}
 	else if (strcasecmp(line, "expn") == 0)
 		mci->mci_flags |= MCIF_EXPN;
+	else if (strcasecmp(line, "dsn") == 0)
+		mci->mci_flags |= MCIF_DSN;
 }
 /*
 **  SMTPMAILFROM -- send MAIL command
@@ -315,6 +317,12 @@ smtpmailfrom(m, mci, e)
 			usrerr("%s does not support 8BITMIME", mci->mci_host);
 			return EX_DATAERR;
 		}
+	}
+
+	if (e->e_envid != NULL && bitset(MCIF_DSN, mci->mci_flags))
+	{
+		strcat(optbuf, " ENVID=");
+		strcat(optbuf, e->e_envid);
 	}
 
 	/*
@@ -405,8 +413,43 @@ smtprcpt(to, m)
 	register MAILER *m;
 {
 	register int r;
+	char optbuf[MAXLINE];
 
-	smtpmessage("RCPT To:<%s>", m, mci, to->q_user);
+	strcpy(optbuf, "");
+	if (bitset(MCIF_DSN, mci->mci_flags))
+	{
+		strcat(optbuf, " NOTIFY=");
+		if (bitset(QPINGONFAILURE, to->q_flags))
+		{
+			if (bitset(QPINGONSUCCESS, to->q_flags))
+				strcat(optbuf, "ALWAYS");
+			else
+				strcat(optbuf, "FAILURE");
+		}
+		else
+		{
+			if (bitset(QPINGONSUCCESS, to->q_flags))
+				strcat(optbuf, "SUCCESS");
+			else
+				strcat(optbuf, "NEVER");
+		}
+		if (bitset(QHASRETPARAM, to->q_flags))
+		{
+			strcat(optbuf, " RET=");
+			if (bitset(QNOBODYRETURN, to->q_flags))
+				strcat(optbuf, "NO");
+			else
+				strcat(optbuf, "YES");
+		}
+	}
+	else if (bitset(QPINGONSUCCESS, to->q_flags))
+	{
+		to->q_flags |= QRELAYED;
+		fprintf(e->e_xfp, "%s... relayed; expect no further notifications\n",
+			to->q_paddr);
+	}
+
+	smtpmessage("RCPT To:<%s>%s", m, mci, to->q_user, optbuf);
 
 	if (r < 0 || REPLYTYPE(r) == 4)
 		return (EX_TEMPFAIL);

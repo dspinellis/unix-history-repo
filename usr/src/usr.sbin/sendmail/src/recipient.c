@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.50 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.51 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -36,7 +36,10 @@ static char sccsid[] = "@(#)recipient.c	8.50 (Berkeley) %G%";
 **		none.
 */
 
-# define MAXRCRSN	10
+#define MAXRCRSN	10	/* maximum levels of alias recursion */
+
+/* q_flags bits inherited from ctladdr */
+#define QINHERITEDBITS	(QPINGONSUCCESS|QPINGONFAILURE|QPINGONDELAY|QHASRETPARAM|QNOBODYRETURN)
 
 sendtolist(list, ctladdr, sendq, e)
 	char *list;
@@ -110,9 +113,17 @@ sendtolist(list, ctladdr, sendq, e)
 		al = a->q_next;
 		a = recipient(a, sendq, e);
 
-		/* arrange to inherit full name */
-		if (a->q_fullname == NULL && ctladdr != NULL)
-			a->q_fullname = ctladdr->q_fullname;
+		/* arrange to inherit attributes from parent */
+		if (ctladdr != NULL)
+		{
+			/* full name */
+			if (a->q_fullname == NULL)
+				a->q_fullname = ctladdr->q_fullname;
+
+			/* various flag bits */
+			a->q_flags &= ~QINHERITEDBITS;
+			a->q_flags |= ctladdr->q_flags & QINHERITEDBITS;
+		}
 		naddrs++;
 	}
 
