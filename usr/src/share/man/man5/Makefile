@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.7.1.1 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 MAN5=	a.out.0 acct.0 core.0 dir.0 disktab.0 fs.0 fstab.0 \
 	group.0 hosts.0 networks.0 passwd.0 phones.0 printcap.0 \

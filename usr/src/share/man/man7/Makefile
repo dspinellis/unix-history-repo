@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.8 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 MAN7=	ascii.0 environ.0 hier.0 hostname.0 intro.0 mailaddr.0 \
 	mdoc.samples.0 operator.0 term.0
