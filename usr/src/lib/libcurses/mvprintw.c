@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mvprintw.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)mvprintw.c	5.12 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -35,8 +35,8 @@ mvprintw(y, x, fmt, va_alist)
 	va_list ap;
 	int ret;
 
-	if (move(y, x) != CURSES_OK)
-		return (CURSES_ERR);
+	if (move(y, x) != OK)
+		return (ERR);
 #if __STDC__
 	va_start(ap, fmt);
 #else
@@ -61,8 +61,8 @@ mvwprintw(win, y, x, fmt, va_alist)
 	va_list ap;
 	int ret;
 
-	if (wmove(win, y, x) != CURSES_OK)
-		return (CURSES_ERR);
+	if (wmove(win, y, x) != OK)
+		return (ERR);
 #if __STDC__
 	va_start(ap, fmt);
 #else

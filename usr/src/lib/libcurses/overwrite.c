@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)overwrite.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)overwrite.c	5.12 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <ctype.h>
@@ -31,7 +31,7 @@ overwrite(win1, win2)
 	endy = min(win1->maxy + win1->begy, win2->maxy + win2->begx);
 	endx = min(win1->maxx + win1->begx, win2->maxx + win2->begx);
 	if (starty >= endy || startx >= endx)
-		return (CURSES_OK);
+		return (OK);
 #ifdef DEBUG
 	__TRACE("overwrite: from (%d, %d) to (%d, %d)\n",
 	    starty, startx, endy, endx);
@@ -44,5 +44,5 @@ overwrite(win1, win2)
 		__touchline(win2, y, startx - win2->begx, endx - win2->begx,
 		    0);
 	}
-	return (CURSES_OK);
+	return (OK);
 }

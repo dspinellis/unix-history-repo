@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deleteln.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)deleteln.c	5.15 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -50,5 +50,5 @@ wdeleteln(win)
 	__touchline(win, y, 0, win->maxx - 1, 0);
 	if (win->orig == NULL)
 		__id_subwins(win);
-	return (CURSES_OK);
+	return (OK);
 }

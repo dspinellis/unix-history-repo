@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)delwin.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)delwin.c	5.10 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -50,5 +50,5 @@ delwin(win)
 		wp->nextp = win->nextp;
 	}
 	free(win);
-	return (CURSES_OK);
+	return (OK);
 }

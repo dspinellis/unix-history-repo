@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)touchwin.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)touchwin.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <curses.h>
@@ -41,7 +41,7 @@ touchwin(win)
 	maxy = win->maxy;
 	for (y = 0; y < maxy; y++)
 		__touchline(win, y, 0, win->maxx - 1, 1);
-	return (CURSES_OK);
+	return (OK);
 }
 
 
@@ -57,7 +57,7 @@ __touchwin(win)
 	maxy = win->maxy;
 	for (y = 0; y < maxy; y++)
 		__touchline(win, y, 0, win->maxx - 1, 0);
-	return (CURSES_OK);
+	return (OK);
 }
 
 int
@@ -89,5 +89,5 @@ __touchline(win, y, sx, ex, force)
 	__TRACE("touchline: first = %d, last = %d\n",
 	    *win->lines[y]->firstchp, *win->lines[y]->lastchp);
 #endif
-	return (CURSES_OK);
+	return (OK);
 }
