@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)input.c	4.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)input.c	4.9 (Berkeley) %G%";
 #endif
 
 /*
@@ -109,6 +109,9 @@ rip_input(from, size)
 			}
 			if ((unsigned) n->rip_metric >= HOPCNT_INFINITY)
 				continue;
+			if (n->rip_dst.sa_family >= AF_MAX)
+				continue;
+			afp = &afswitch[n->rip_dst.sa_family];
 			if (((*afp->af_checkhost)(&n->rip_dst)) == 0)
 				continue;
 			rt = rtlookup(&n->rip_dst);
