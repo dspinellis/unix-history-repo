@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fsck.h	8.3 (Berkeley) %G%
+ *	@(#)fsck.h	8.4 (Berkeley) %G%
  */
 
 #include <unistd.h>
@@ -55,7 +55,6 @@ struct bufarea sblk;		/* file system superblock */
 struct bufarea cgblk;		/* cylinder group blocks */
 struct bufarea *pdirbp;		/* current directory contents */
 struct bufarea *pbp;		/* current inode block */
-struct bufarea *getdatablk();
 
 #define	dirty(bp)	(bp)->b_dirty = 1
 #define	initbarea(bp) \
@@ -206,7 +205,7 @@ int		checkfstab __P((int preen, int maxrun,
 			int (*docheck)(struct fstab *),
 			int (*chkit)(char *, char *, long, int)));
 int		chkrange __P((ufs_daddr_t blk, int cnt));
-void		ckfini __P((void));
+void		ckfini __P((int markclean));
 int		ckinode __P((struct dinode *dp, struct inodesc *));
 void		clri __P((struct inodesc *, char *type, int flag));
 void		direrror __P((ino_t ino, char *errmesg));

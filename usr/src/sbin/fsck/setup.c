@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)setup.c	8.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)setup.c	8.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #define DKTYPENAMES
@@ -36,12 +36,17 @@ static int calcsb __P((char *dev, int devfd, struct fs *fs));
 static struct disklabel *getdisklabel __P((char *s, int fd));
 static int readsb __P((int listerr));
 
+/*
+ * Read in a superblock finding an alternate if necessary.
+ * Return 1 if successful, 0 if unsuccessful, -1 if filesystem
+ * is already clean (preen mode only).
+ */
 int
 setup(dev)
 	char *dev;
 {
 	long cg, size, asked, i, j;
-	long bmapsize;
+	long skipclean, bmapsize;
 	struct disklabel *lp;
 	off_t sizepb;
 	struct stat statb;
@@ -49,6 +54,7 @@ setup(dev)
 
 	havesb = 0;
 	fswritefd = -1;
+	skipclean = preen;
 	if (stat(dev, &statb) < 0) {
 		printf("Can't stat %s: %s\n", dev, strerror(errno));
 		return (0);
@@ -88,6 +94,7 @@ setup(dev)
 	 * Read in the superblock, looking for alternates if necessary
 	 */
 	if (readsb(1) == 0) {
+		skipclean = 0;
 		if (bflag || preen || calcsb(dev, fsreadfd, &proto) == 0)
 			return(0);
 		if (reply("LOOK FOR ALTERNATE SUPERBLOCKS") == 0)
@@ -108,6 +115,10 @@ setup(dev)
 			return(0);
 		}
 		pwarn("USING ALTERNATE SUPERBLOCK AT %d\n", bflag);
+	}
+	if (skipclean && sblock.fs_clean) {
+		pwarn("FILESYSTEM CLEAN; SKIPPING CHECKS\n");
+		return (-1);
 	}
 	maxfsblock = sblock.fs_size;
 	maxino = sblock.fs_ncg * sblock.fs_ipg;
@@ -260,7 +271,7 @@ setup(dev)
 	return (1);
 
 badsb:
-	ckfini();
+	ckfini(0);
 	return (0);
 }
 

@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -163,9 +163,12 @@ checkfilesys(filesys, mntpt, auxdata, child)
 	cdevname = filesys;
 	if (debug && preen)
 		pwarn("starting\n");
-	if (setup(filesys) == 0) {
+	switch (setup(filesys)) {
+	case 0:
 		if (preen)
 			pfatal("CAN'T CHECK FILE SYSTEM.");
+		/* fall through */
+	case -1:
 		return (0);
 	}
 	/*
@@ -266,7 +269,7 @@ checkfilesys(filesys, mntpt, auxdata, child)
 			bwrite(fswritefd, (char *)&sblock,
 			    fsbtodb(&sblock, cgsblock(&sblock, cylno)), SBSIZE);
 	}
-	ckfini();
+	ckfini(1);
 	free(blockmap);
 	free(statemap);
 	free((char *)lncntp);
