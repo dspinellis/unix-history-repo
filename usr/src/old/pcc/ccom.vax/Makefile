@@ -1,3 +1,5 @@
+#	Makefile	1.6	85/01/17
+#
 TESTDIR = .
 FRC =
 O = -O
@@ -60,8 +62,8 @@ shrink:
 clean:
 	rm -f *.o comp fort cgram.c rodata.c
 lintall:
-	lint -hpv -I. -I$M  $M/cgram.c $M/xdefs.c $M/scan.c $M/pftn.c \
-		$M/trees.c $M/optim.c code.c local.c $M/reader \
+	lint -hv -I. -I$M  cgram.c $M/xdefs.c $M/scan.c $M/pftn.c \
+		$M/trees.c $M/optim.c code.c local.c $M/reader.c \
 		local2.c order.c $M/match.c $M/allo.c $M/comm1.c table.c
 fort: comp fort.o freader.o fallo.o fmatch.o ftable.o forder.o flocal2.o \
 	fcomm2.o
