@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)local2.c	1.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)local2.c	1.13 (Berkeley) %G%";
 #endif
 
 # include "pass2.h"
@@ -580,8 +580,25 @@ upput(p, size)
 }
 
 /*
+ * Prlen() is a cheap prtype()...
+ */
+static char convtab[SZINT/SZCHAR + 1] = {
+	'?', 'b', 'w', '?', 'l'
+};
+#define	prlen(len)	putchar(convtab[len])
+
+
+/*
  * Generate code for integral scalar conversions.
- * Many work-arounds for brain-damaged Tahoe register behavior.
+ * Some of this code is designed to work around a tahoe misfeature
+ *	that causes sign- and zero- extension to be defeated in
+ *	certain circumstances.
+ * Basically if the source operand of a CVT or MOVZ instruction is
+ *	shorter than the destination, and the source is a register
+ *	or an immediate constant, sign- and zero- extension are
+ *	ignored and the high bits of the source are copied.  (Note
+ *	that zero-extension is not a problem for immediate
+ *	constants.)
  */
 sconv(p, forcc)
 	NODE *p;
@@ -605,10 +622,45 @@ sconv(p, forcc)
 		dsttype = p->in.type;
 	}
 
-	srclen = tlen(src);
-	srctype = src->in.op == REG ?
-		ISUNSIGNED(src->in.type) ? UNSIGNED : INT :
-		src->in.type;
+	if (src->in.op == REG) {
+		srclen = SZINT/SZCHAR;
+		srctype = ISUNSIGNED(src->in.type) ? UNSIGNED : INT;
+	} else {
+		srclen = tlen(src);
+		srctype = src->in.type;
+	}
+
+	if (src->in.op == ICON) {
+		if (src->tn.lval == 0) {
+			putstr("clr");
+			prtype(dst);
+			putchar('\t');
+			adrput(dst);
+			return;
+		}
+		if (dstlen < srclen) {
+			switch (dsttype) {
+			case CHAR:
+				src->tn.lval = (char) src->tn.lval;
+				break;
+			case UCHAR:
+				src->tn.lval = (unsigned char) src->tn.lval;
+				break;
+			case SHORT:
+				src->tn.lval = (short) src->tn.lval;
+				break;
+			case USHORT:
+				src->tn.lval = (unsigned short) src->tn.lval;
+				break;
+			}
+		}
+		if (dst->in.op == REG) {
+			dsttype = INT;
+			dstlen = SZINT/SZCHAR;
+		}
+		srctype = dsttype;
+		srclen = dstlen;
+	}
 
 	if (srclen < dstlen) {
 		if (srctype == CHAR && dsttype == USHORT && dst->in.op == REG) {
@@ -632,6 +684,7 @@ sconv(p, forcc)
 	}
 
 	if (srclen > dstlen && dst->in.op == REG) {
+		/* if dst is a register, the result must look like an int */
 		if (src->in.op == REG) {
 			if (ISUNSIGNED(dsttype)) {
 				val = (1 << dstlen * SZCHAR) - 1;
@@ -646,15 +699,24 @@ sconv(p, forcc)
 				adrput(dst);
 				return;
 			}
-			val = SZINT - srclen * SZCHAR;
-			printf("shll\t$%d,", val);
+			/*
+			 * Sign extension in register can also be
+			 * accomplished by shifts, but unfortunately
+			 * shifts are extremely slow, due to the lack
+			 * of a barrel shifter.
+			 */
+			putstr("pushl\t");
 			adrput(src);
-			putchar(',');
+			putstr("\n\tcvt");
+			prlen(dstlen);
+			printf("l\t%d(sp),", SZINT/SZCHAR - dstlen);
 			adrput(dst);
-			printf("\n\tshar\t$%d,", val);
-			adrput(dst);
-			putchar(',');
-			adrput(dst);
+			putstr("\n\tmovab\t4(sp),sp");
+			if (forcc) {
+				/* inverted test */
+				putstr("\n\tcmpl\t$0,");
+				adrput(dst);
+			}
 			return;
 		}
 		tmp = talloc();
@@ -668,7 +730,9 @@ sconv(p, forcc)
 		} else {
 			/* we must store src's address */
 			*tmp = *dst;
-			putstr("movab\t");
+			putstr("mova");
+			prlen(srclen);
+			putchar('\t');
 			adrput(src);
 			putchar(',');
 			adrput(tmp);
@@ -687,22 +751,19 @@ sconv(p, forcc)
 }
 
 genconv(usrc, srclen, dstlen, src, dst)
-	int usrc, srclen, dstlen;
+	int usrc;
+	register int srclen, dstlen;
 	NODE *src, *dst;
 {
-	static char convtab[SZINT/SZCHAR + 1] = {
-		'?', 'b', 'w', '?', 'l'
-	};
-
 	if (srclen != dstlen) {
 		if (usrc && srclen < dstlen)
 			putstr("movz");
 		else
 			putstr("cvt");
-		putchar(convtab[srclen]);
+		prlen(srclen);
 	} else
 		putstr("mov");
-	putchar(convtab[dstlen]);
+	prlen(dstlen);
 	putchar('\t');
 	adrput(src);
 	putchar(',');
