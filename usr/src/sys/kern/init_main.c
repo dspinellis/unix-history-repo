@@ -89,9 +89,11 @@ main(firstaddr)
 		u.u_rlimit[i].rlim_cur = u.u_rlimit[i].rlim_max = 
 		    RLIM_INFINITY;
 	/*
-	 * Virtual memory limits get set in vminit().
+	 * configure virtual memory system,
+	 * set vm rlimits
 	 */
 	vminit();
+
 #if defined(QUOTA)
 	qtinit();
 	p->p_quota = u.u_quota = getquota(0, 0, Q_NDQ);
@@ -250,7 +252,12 @@ binit()
 	if (nswdev > 1)
 		nswap = ((nswap + dmmax - 1) / dmmax) * dmmax;
 	nswap *= nswdev;
-	maxpgio *= nswdev;
+	/*
+	 * If there are multiple swap areas,
+	 * allow more paging operations per second.
+	 */
+	if (nswdev > 1)
+		maxpgio = (maxpgio * (2 * nswdev - 1)) / 2;
 	swfree(0);
 }
 
