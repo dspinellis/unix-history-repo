@@ -44,6 +44,7 @@ short	debug;
 char	*tracefn;		/* trace file name */
 char	*server;
 short	send_banner;
+struct	termios pt, old_pt;
 struct	sockaddr_x25 sock;
 
 int	reapchild();
@@ -195,7 +196,7 @@ register char **argv;
 	if (debug == 0)
 		daemon(0, 0);
 
-	while((s = socket(AF_CCITT, SOCK_STREAM, 0)) < 0)
+	while ((s = socket(AF_CCITT, SOCK_STREAM, 0)) < 0)
 		sleep(60);
 	while (bind(s, (caddr_t)&sock, sizeof (sock)) < 0)
 		sleep(60);
@@ -203,7 +204,7 @@ register char **argv;
 	listen(s, 5);
 
 	for (;;) {
-		struct sockaddr_x25 from;
+		s truct sockaddr_x25 from;
 		int fromlen = sizeof (from);
 
 		if ((net = accept(s, (caddr_t)&from, &fromlen)) < 0) {
@@ -364,9 +365,13 @@ x29d()
 
 	ioctl(net, FIONBIO, (char *)&on);
 	ioctl(pty, FIONBIO, (char *)&on);
+	/*ioctl(pty, TIOCREMECHO, (char *)&on);	/* enable special pty mode */
+	/* new equivalent is no processing in pty, no echo, but let
+	   user set modes and have either remote end do line mode processing
+	   or do it in daemon */
+	ioctl(pty, TIOCEXT, (char *)&on);
 	ioctl(pty, TIOCPKT, (char *)&on);
-#define TIOCREMECHO 5 /*  to make compile */
-	ioctl(pty, TIOCREMECHO, (char *)&on);	/* enable special pty mode */
+	ioctl(pty, TIOCGETA, (char *)&pt);
 	signal(SIGPIPE, SIG_IGN);	/* why not cleanup?  --kwl */
 	signal(SIGTSTP, SIG_IGN);
 	signal(SIGCHLD, cleanup);
@@ -415,7 +420,7 @@ x29d()
 			else
 				if (fcc >= 0)	/* net still alive? */
 					ibits |= (1 << pty);
-		if(ibits == 0 && obits == 0)
+		if (ibits == 0 && obits == 0)
 			break;
 		(void) select(16, &ibits, &obits, (int *)0, 0);
 		if (ibits == 0 && obits == 0) {
@@ -426,17 +431,17 @@ x29d()
 		/*
 		 * Something to read from the network...
 		 */
-		if (ibits & (1 << net)) {
+		if (fcc == 0 && (ibits & (1 << net))) {
 			fcc = read(net, fibuf, BUFSIZ);
 			fbp = fibuf+1;
 			if (fcc < 0 && errno == EWOULDBLOCK)
 				fcc = 0;
-			else if(fcc <= 0)
+			else if (fcc <= 0)
 				fcc = -1;
 			else {
 				if (tracefn)
 					x29d_trace("netread", fibuf, fcc);
-				if(fibuf[0] & Q_BIT) {
+				if (fibuf[0] & Q_BIT) {
 					x29_qbit(fcc);
 					fcc = 0;
 				} else
@@ -453,24 +458,28 @@ x29d()
 				pcc = 0;
 			else if (pcc <= 0)
 				pcc = -1;
-			else if(pibuf[0] != 0) {	/* non-data packet */
-				if (pibuf[0] & TIOCPKT_IOCTL)
+			else if (pibuf[0] != 0) {	/* non-data packet */
+				if (pibuf[0] & TIOCPKT_IOCTL) {
+					if (--pcc > sizeof(pt))
+						pcc = sizeof(pt);
+					old_pt = pt;
+					bcopy(pibuf + 1, (char *)&pt, pcc);
 					pcc = set_x29_parameters();
-				else
+				} else
 					pcc = 0;
 			} else				/* data packet */
 				pibuf[0] = 0;
 		}
 
 		if ((obits & (1<<net)) && pcc > 0)
-			if((cc = write(net, pibuf, pcc)) == pcc) {
-				if(tracefn)
+			if ((cc = write(net, pibuf, pcc)) == pcc) {
+				if (tracefn)
 					x29d_trace("netwrite", pibuf, pcc);
 				pcc = 0;
 			} else {
 				extern char *sys_errlist[];
 
-				if(tracefn)
+				if (tracefn)
 					x29d_trace("netwrite",
 						sys_errlist[errno],
 						strlen(sys_errlist[errno]));
@@ -478,7 +487,7 @@ x29d()
 			}
 
 		if ((obits & (1 << pty)) && fcc > 0) {
-			cc = write(pty, fbp, fcc);
+			cc = ptywrite(fbp, fcc);
 			if (cc > 0) {
 				fcc -= cc;
 				fbp += cc;
@@ -533,21 +542,33 @@ cleanup()
 set_x29_parameters()
 {
 	register char *p;
-	register int f;
-	struct termios b;
+	int f;
+	char *lim = p + sizeof (pt);
 
 	if (netp->n_type == X25NET)
 		return (0);
-	tcgetattr(pty, &b);
+	if ((old_pt.c_lflag & ICANON) != (pt.c_lflag & ICANON)) {
+		f = pt.c_lflag & ICANON;
+		ioctl(pty, TIOCEXT, &f);
+		/* this precipitates more junk of the same
+		 * sort that caused our call here, but we can't
+		 * turn it off since something may be going on in our progeny.
+		 *
+		 * Instead, we'll check the next time around to see if nothing
+		 * has changed, and skip informing the network.
+		 */
+	}
+	if (bcmp((char *)&pt, (char *)&old_pt, sizeof (pt)) == 0)
+		return;
 	p = pibuf;
 	*p++ = Q_BIT;
 	*p++ = X29_SET_PARMS;
 	/* *p++ = X29_ESCAPE_TO_CMD_CODE; *p++ = (f & (RAW|CBREAK)) == 0;*/
-	*p++ = X29_ESCAPE_TO_CMD_CODE; *p++ = (b.c_lflag & ICANON) != 0;
+	*p++ = X29_ESCAPE_TO_CMD_CODE; *p++ = (pt.c_lflag & ICANON) != 0;
 
-	*p++ = X29_ECHO_CODE; *p++ = (b.c_lflag & ECHO) != 0;
+	*p++ = X29_ECHO_CODE; *p++ = (pt.c_lflag & ECHO) != 0;
 	*p++ = X29_FORWARDING_SIGNAL_CODE;
-			*p++ = (b.c_lflag & ISIG) ? 0 : 126;
+			*p++ = (pt.c_lflag & ISIG) ? 0 : 126;
 
 	/*
 	 * The value of 10 (0.5 seconds) for the idle timer when
@@ -559,25 +580,70 @@ set_x29_parameters()
 	 */
 
 	/**p++ = X29_IDLE_TIMER_CODE;	*p++ = (f & (RAW|CBREAK)) ? 10 : 0;*/
-	*p++ = X29_IDLE_TIMER_CODE; *p++ = (b.c_lflag & ICANON)  ? 0 : 10;
+	*p++ = X29_IDLE_TIMER_CODE; *p++ = (pt.c_lflag & ICANON)  ? 0 : 10;
 
 	/**p++ = X29_AUX_DEV_CONTROL_CODE;*p++ = (f & TANDEM) != 0;*/
-	*p++ = X29_AUX_DEV_CONTROL_CODE;*p++ = (b.c_iflag & IXOFF) != 0;
-	*p++ = X29_XON_XOFF_CODE;	*p++ = (b.c_iflag & IXON) != 0;
-	if(netp->n_type == CCITT1980) {
+	*p++ = X29_AUX_DEV_CONTROL_CODE;*p++ = (pt.c_iflag & IXOFF) != 0;
+	*p++ = X29_XON_XOFF_CODE;	*p++ = (pt.c_iflag & IXON) != 0;
+	if (netp->n_type == CCITT1980) {
 		*p++ = X29_LF_AFTER_CR;
 		/* *p++ = (f & (RAW|CBREAK) || (f & ECHO) == 0) ? 0 : 4; */
-		*p++ = (0 == (b.c_lflag & ICANON) || 0 == (b.c_lflag & ECHO)) ?
+		*p++ = ((pt.c_lflag & (ICANON | ECHO)) != (ICANON | ECHO)) ?
 			0 : 4;
 
-		*p++ = X29_EDITING; *p++ = (b.c_lflag & ICANON) != 0;
+		*p++ = X29_EDITING; *p++ = (pt.c_lflag & ICANON) != 0;
 #define ctlchar(x) \
-  (0 == (b.c_lflag & ICANON) || b.c_cc[x] == _POSIX_VDISABLE) ? 0 : b.c_cc[x]
+  (0 == (pt.c_lflag & ICANON) || pt.c_cc[x] == _POSIX_VDISABLE) ? 0 : pt.c_cc[x]
 		*p++ = X29_CHARACTER_DELETE; *p++ = ctlchar(VERASE);
 		*p++ = X29_LINE_DELETE; *p++ = ctlchar(VKILL);
 		*p++ = X29_LINE_DISPLAY; *p++ = ctlchar(VREPRINT);
 	}
+#undef ctlchar
 	return (p - pibuf);
+}
+
+/* Have to be careful writing to pty.  The pad will forward control
+ * characters without necessarily sending an interrupt so if ISIG and
+ * ICANNON are set, must inspect line for quit or interrupt or suspend.
+ */
+ptywrite(buf, n)
+char *buf;
+int n;
+{
+	register char *cp, *lim;
+	char *last;
+#define is_ctl(x) (pt.c_cc[x] == *(cc_t *)cp)
+
+	if ((pt.c_lflag & EXTPROC) && (pt.c_lflag & ISIG)) {
+		for (cp = buf, lim = buf + n; cp < lim; cp ++) {
+			if (is_ctl(VLNEXT))
+				{ cp++; continue; }
+			if (is_ctl(VSUSP) || is_ctl(VDSUSP) || 
+			    is_ctl(VINTR) || is_ctl(VQUIT))  {
+				int onoff = 0;
+				tcflag_t old_echo = pt.c_lflag & ECHO;
+
+				ioctl(pty, TIOCPKT, (char *)&onoff);
+				ioctl(pty, FIONBIO, (char *)&onoff);
+				ioctl(pty, TIOCEXT, (char *)&onoff);
+				if (old_echo) {
+					pt.c_lflag &= ~ECHO;
+					ioctl(pty, TIOCSETA, (char *)&pt);
+				}
+				n = write(pty, buf, n);
+				onoff = 1;
+				if (old_echo) {
+					pt.c_lflag |= ECHO;
+					ioctl(pty, TIOCSETA, (char *)&pt);
+				}
+				ioctl(pty, TIOCEXT, (char *)&onoff);
+				ioctl(pty, FIONBIO, (char *)&onoff);
+				ioctl(pty, TIOCPKT, (char *)&onoff);
+				return (n);
+			}
+		}
+	}
+	return write(pty, buf, n);
 }
 
 /*
@@ -595,20 +661,18 @@ x29_qbit(n)
 	case X29_SET_AND_READ_PARMS:
 	case X29_PARAMETER_INDICATION:
 	case X29_INDICATION_OF_BREAK:
-		for(p = &fibuf[2]; p < fibuf+n; p++) {
-			if(*p == X29_TRANSMISSION_SPEED_CODE) {
+		for (p = &fibuf[2]; p < fibuf+n; p++) {
+			if (*p == X29_TRANSMISSION_SPEED_CODE) {
 				static char speeds[] = {
 					B110, B0, B300, B1200, B600,
 					B0, B0, B0, B0, B0, B0, B0,
 					B2400, B4800, B9600, EXTA };
-				struct termios b;
 
-				if(*++p >= 0 && *p < sizeof(speeds)) {
-					tcgetattr(pty, &b);
-					cfsetspeed(&b, speeds[*p]);
-					tcsetattr(pty, TCSANOW, &b);
+				if (*++p >= 0 && *p < sizeof(speeds)) {
+					cfsetspeed(&pt, speeds[*p]);
+					tcsetattr(pty, TCSANOW, &pt);
 				}
-			} else if(*p == X29_DISCARD_OUTPUT_CODE && *++p != 0) {
+			} else if (*p == X29_DISCARD_OUTPUT_CODE && *++p != 0) {
 				char message[4];
 
 				/*
@@ -619,7 +683,7 @@ x29_qbit(n)
 				message[2] = X29_DISCARD_OUTPUT_CODE;
 				message[3] = 0;
 				(void) write(net, message, sizeof(message));
-				if(tracefn)
+				if (tracefn)
 					x29d_trace("netwrite", message, 4);
 			}
 		}
@@ -636,9 +700,9 @@ x29_qbit(n)
 			 * of the packet on the console.
 			 */
 			p = buf;
-			for(p2 = "x29d: unknown q-bit packet: "; *p++ = *p2++; );
-			for(p2 = fibuf+1; p2 < fibuf+n; p2++)
-				if(*p2 >= ' ' && *p2 < 0177)
+			for (p2 = "x29d: unknown q-bit packet: "; *p++ = *p2++; );
+			for (p2 = fibuf+1; p2 < fibuf+n; p2++)
+				if (*p2 >= ' ' && *p2 < 0177)
 					*p++ = *p2;
 				else {
 					*p++ = '\\';
@@ -647,7 +711,7 @@ x29_qbit(n)
 					*p++ = (*p2 & 07) + '0';
 				}
 			*p++ = '\n';
-			if(fd <= 0)
+			if (fd <= 0)
 				fd = open(console, 1);
 			(void) write(fd, buf, p-buf);
 		}
@@ -661,11 +725,11 @@ char *s, *bp;
 	char buf[BUFSIZ*4];
 	register char *p1, *p2;
 
-	for(p1 = buf; *s; *p1++ = *s++);
+	for (p1 = buf; *s; *p1++ = *s++);
 	*p1++ = ':';
 	*p1++ = ' ';
-	for(p2=bp; p2 < bp+n; p2++)
-		if(*p2 >= ' ' && *p2 < 0177)
+	for (p2=bp; p2 < bp+n; p2++)
+		if (*p2 >= ' ' && *p2 < 0177)
 			*p1++ = *p2;
 		else {
 			*p1++ = '\\';
@@ -674,7 +738,7 @@ char *s, *bp;
 			*p1++ = (*p2 & 07) + '0';
 		}
 	*p1++ = '\n';
-	if(fd <= 0)
+	if (fd <= 0)
 		fd = creat(tracefn, 0666);
 	(void) write(fd, buf, p1-buf);
 }
