@@ -2,14 +2,13 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ustreamread.c	6.1 (Berkeley) %G%
+.\"	@(#)ustreamread.c	6.2 (Berkeley) %G%
 .\"
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <stdio.h>
 
-#define TRUE 1
 #define NAME "socket"
 
 /*
@@ -19,15 +18,13 @@
  * connection breaks, or a termination message comes through, the program
  * accepts a new connection. 
  */
-
 main()
 {
 	int             sock;
 	struct sockaddr_un server;
 	int             msgsock;
 	char            buf[1024];
-	int             rval;
-	int             i;
+	int             rval, i;
 
 	/* Create socket */
 	sock = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -42,10 +39,9 @@ main()
 		perror("binding stream socket");
 	}
 	printf("Socket has name %s\en", server.sun_path);
-
 	/* Start accepting connections */
 	listen(sock, 5);
-	do {
+	for (;;) {
 		msgsock = accept(sock, 0, 0);
 		do {
 			for (i = 0; i < 1024; i++)
@@ -59,7 +55,7 @@ main()
 			};
 		} while (rval != 0);
 		close(msgsock);
-	} while (TRUE);
+	}
 	/*
 	 * The following statements are not executed, because they follow an
 	 * infinite loop.  However, most ordinary programs will not run

@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ustreamwrite.c	6.1 (Berkeley) %G%
+.\"	@(#)ustreamwrite.c	6.2 (Berkeley) %G%
 .\"
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -16,7 +16,6 @@
  * one line message to that socket. The form of the command line is
  * ustreamwrite pathname 
  */
-
 main(argc, argv)
 	int             argc;
 	char           *argv[];
