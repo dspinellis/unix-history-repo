@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kbd.c	8.1 (Berkeley) %G%
+ *	@(#)kbd.c	8.2 (Berkeley) %G%
  */
 
 /*
@@ -300,39 +300,4 @@ kbdintr(unit)
 	if (rr & RR_TXRDY) {
 		sio->sio_cmd = WR0_RSTPEND;
 	}
-}
-
-kbdselect(dev, rw, p)
-	dev_t dev;
-	int rw;
-	struct proc *p;
-{
-	register int unit = kbdunit(dev);
-	register struct tty *tp;
-	int nread;
-	int s = spltty();
-
-	tp = &kbd_tty[unit];
-
-	switch (rw) {
-
-	case FREAD:
-		nread = ttnread(tp);
-		if (nread > 0 || ((tp->t_cflag&CLOCAL) == 0 && (tp->t_state&TS_CARR_ON) == 0))
-			goto win;
-
-		selrecord(p, &tp->t_rsel);
-		break;
-
-	case FWRITE:
-		if (tp->t_outq.c_cc <= tp->t_lowat)
-			goto win;
-		selrecord(p, &tp->t_wsel);
-		break;
-	}
-	splx(s);
-	return (0);
-win:
-	splx(s);
-	return (1);
 }
