@@ -19,6 +19,7 @@ struct timeval;
 struct ucred;
 struct uio;
 struct vnode;
+struct mbuf;
 
 __BEGIN_DECLS
 int	ffs_alloc __P((struct inode *,
@@ -30,7 +31,8 @@ int	ffs_blkfree __P((struct inode *, daddr_t, long));
 daddr_t	ffs_blkpref __P((struct inode *, daddr_t, int, daddr_t *));
 int	ffs_bmap __P((struct vop_bmap_args *));
 void	ffs_clrblock __P((struct fs *, u_char *, daddr_t));
-int	ffs_fhtovp __P((struct mount *, struct fid *, struct vnode **));
+int	ffs_fhtovp __P((struct mount *, struct fid *, struct mbuf *,
+	    struct vnode **, int *, struct ucred **));
 void	ffs_fragacct __P((struct fs *, int, long [], int));
 int	ffs_fsync __P((struct vop_fsync_args *));
 int	ffs_inactive __P((struct vop_inactive_args *));
