@@ -1,6 +1,6 @@
-.\"	@(#)exp.3	5.1 (Berkeley) %G%
+.\"	@(#)exp.3	6.1 (Berkeley) %G%
 .\"
-.TH EXP 3M  "18 July 1983"
+.TH EXP 3M  ""
 .AT 3
 .SH NAME
 exp, log, log10, pow, sqrt \- exponential, logarithm, power, square root
@@ -55,8 +55,8 @@ is set to ERANGE.
 .I Pow
 returns 0 and sets
 .I errno
-to EDOM when the second argument is negative and non-integral and
-when both arguments are 0.
+to EDOM when the first argument is negative and the second is non-integral or
+when first argument is 0 and the second is less than or equal to 0.
 .PP
 .I Log
 returns 0 when
