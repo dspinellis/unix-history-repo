@@ -1,4 +1,4 @@
-/*	locore.s	6.21	84/10/26	*/
+/*	locore.s	6.22	84/12/20	*/
 
 #include "psl.h"
 #include "pte.h"
@@ -50,6 +50,7 @@ _doadump:
 #define	_rpbmap	_Sysmap				# rpb, scb, UNI*vec, istack*4
 	bicl2	$PG_PROT,_rpbmap
 	bisl2	$PG_KW,_rpbmap
+	mtpr	$_rpb,$TBIS
 	tstl	_rpb+RP_FLAG			# dump only once!
 	bneq	1f
 	incl	_rpb+RP_FLAG
@@ -1156,7 +1157,6 @@ sw2:	beql	sw3
 sw3:
 	clrl	_noproc
 	clrl	_runrun
-	mtpr	$ASTLVL_NONE,$ASTLVL	# cancel scheduling ast's
 	tstl	P_WCHAN(r2)		## firewalls
 	bneq	badsw			##
 	cmpb	P_STAT(r2),$SRUN	##
@@ -1175,7 +1175,7 @@ sw3:
  * Resume(pf)
  */
 JSBENTRY(Resume, R0)
-	mtpr	$0x18,$IPL			# no interrupts, please
+	mtpr	$0x1f,$IPL			# no interrupts, please
 	movl	_CMAP2,_u+PCB_CMAP2	# yech
 	svpctx
 	mtpr	r0,$PCBB
