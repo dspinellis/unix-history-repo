@@ -1,4 +1,4 @@
-/*	machdep.c	4.82	83/06/19	*/
+/*	machdep.c	4.83	83/06/19	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -438,10 +438,8 @@ memerr()
 #if VAX750
 		case VAX_750:
 			if (M750_ERR(mcr)) {
-#ifdef notdef
 				printf("mcr%d: soft ecc addr %x syn %x\n",
 				    m, M750_ADDR(mcr), M750_SYN(mcr));
-#endif
 				M750_INH(mcr);
 			}
 			break;
