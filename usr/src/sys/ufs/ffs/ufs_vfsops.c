@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_vfsops.c	7.37 (Berkeley) %G%
+ *	@(#)ufs_vfsops.c	7.38 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -23,6 +23,7 @@
 #include "kernel.h"
 #include "namei.h"
 #include "vnode.h"
+#include "specdev.h"
 #include "mount.h"
 #include "buf.h"
 #include "ucred.h"
@@ -285,7 +286,7 @@ mountfs(devvp, mp)
 	ump->um_dev = dev;
 	ump->um_devvp = devvp;
 	ump->um_qinod = NULL;
-	devvp->v_specinfo->si_flags |= SI_MOUNTEDON;
+	devvp->v_specflags |= SI_MOUNTEDON;
 
 	/* Sanity checks for old file systems.			   XXX */
 	fs->fs_npsect = MAX(fs->fs_npsect, fs->fs_nsect);	/* XXX */
@@ -357,7 +358,7 @@ ufs_unmount(mp, flags)
 	free((caddr_t)fs, M_SUPERBLK);
 	ump->um_fs = NULL;
 	ump->um_dev = NODEV;
-	ump->um_devvp->v_specinfo->si_flags &= ~SI_MOUNTEDON;
+	ump->um_devvp->v_specflags &= ~SI_MOUNTEDON;
 	error = VOP_CLOSE(ump->um_devvp, ronly ? FREAD : FREAD|FWRITE, NOCRED);
 	vrele(ump->um_devvp);
 	ump->um_devvp = (struct vnode *)0;
@@ -372,15 +373,14 @@ mountedon(vp)
 {
 	register struct vnode *vq;
 
-	if (vp->v_specinfo->si_flags & SI_MOUNTEDON)
+	if (vp->v_specflags & SI_MOUNTEDON)
 		return (EBUSY);
 	if (vp->v_flag & VALIASED) {
-		for (vq = *vp->v_specinfo->si_hashchain; vq;
-		     vq = vq->v_specinfo->si_specnext) {
+		for (vq = *vp->v_hashchain; vq; vq = vq->v_specnext) {
 			if (vq->v_rdev != vp->v_rdev ||
 			    vq->v_type != vp->v_type)
 				continue;
-			if (vq->v_specinfo->si_flags & SI_MOUNTEDON)
+			if (vq->v_specflags & SI_MOUNTEDON)
 				return (EBUSY);
 		}
 	}

@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_vnops.c	7.34 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.35 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -25,12 +25,12 @@
 #include "stat.h"
 #include "buf.h"
 #include "proc.h"
-#include "uio.h"
 #include "socket.h"
 #include "socketvar.h"
 #include "conf.h"
 #include "mount.h"
 #include "vnode.h"
+#include "specdev.h"
 #include "../ufs/inode.h"
 #include "../ufs/fs.h"
 #include "../ufs/quota.h"
