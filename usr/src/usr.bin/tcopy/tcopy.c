@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tcopy.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)tcopy.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -137,7 +137,7 @@ main(argc, argv)
 		}
 r1:		guesslen = 0;
 		if (nread > 0) {
-			if (op >= COPY) {
+			if (op == COPY || op == COPYVERIFY) {
 				if (needeof) {
 					writeop(outp, MTWEOF);
 					needeof = 0;
@@ -176,7 +176,7 @@ r1:		guesslen = 0;
 	}
 	printf("total length: %ld bytes\n", tsize);
 	(void)signal(SIGINT, oldsig);
-	if (op >= COPY) {
+	if (op == COPY || op == COPYVERIFY) {
 		writeop(outp, MTWEOF);
 		writeop(outp, MTWEOF);
 		if (op == COPYVERIFY) {
