@@ -1,0 +1,5 @@
+Thu Feb  6 22:19:01 1992  Michael Tiemann  (tiemann at cygnus.com)
+
+	* {dir,fcntl,file,mman,param,resource,signal,socket}.h: Make
+	these files work correctly with #include_next.
+	{stat,time,times,types,wait}.h: Ditto.
