@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwscroll.c	3.7 83/08/24";
+static	char *sccsid = "@(#)wwscroll.c	3.8 83/08/24";
 #endif
 
 #include "ww.h"
@@ -80,10 +80,14 @@ int leaveit;
 		register union ww_char *tmp;
 		register union ww_char **cpp, **cqq;
 
+		/*
+		 * Don't worry about retain when scrolling down.
+		 * But do worry when scrolling up.  For hp2621.
+		 */
 		if (dir > 0) {
 			(*tt.tt_move)(srow1 + w->ww_w.t, 0);
 			(*tt.tt_delline)();
-			if (tt.tt_retain || erow1 + w->ww_w.t != wwnrow - 1) {
+			if (erow1 + w->ww_w.t != wwnrow - 1) {
 				(*tt.tt_move)(erow1 + w->ww_w.t, 0);
 				(*tt.tt_insline)();
 			}
@@ -99,7 +103,7 @@ int leaveit;
 			for (i = wwncol; --i >= 0;)
 				tmp++->c_w = ' ';
 		} else {
-			if (erow1 + w->ww_w.t != wwnrow - 1) {
+			if (tt.tt_retain || erow1 + w->ww_w.t != wwnrow - 1) {
 				(*tt.tt_move)(erow1 + w->ww_w.t, 0);
 				(*tt.tt_delline)();
 			}
