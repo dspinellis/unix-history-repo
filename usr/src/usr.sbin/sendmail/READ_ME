@@ -1,5 +1,5 @@
 /*-
- *	@(#)READ_ME	8.10 (Berkeley) %G%
+ *	@(#)READ_ME	8.11 (Berkeley) %G%
  */
 
 			SENDMAIL RELEASE 8
@@ -234,6 +234,9 @@ praliases	A program to print the DBM version of the aliases file.
 rmail		Source for rmail(8).  This is used as a delivery
 		agent for for UUCP, and could presumably be used by
 		other non-socket oriented mailers.  Older versions of
-		rmail are probably deficient.
+		rmail are probably deficient.  RMAIL IS NOT PART OF
+		SENDMAIL!!!  The 4.4BSD source is included for you to
+		look at or try to port to your system.  I know it doesn't
+		compile on {SunOS, HP-UX, OSF/1, other} (pick one).
 src		Source for the sendmail program itself.
 test		Some test scripts (currently only for compilation aids).
