@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file	@(#)termcap.src	5.47 (Berkeley) %G%
+#	Termcap source file	@(#)termcap.src	5.48 (Berkeley) %G%
 #	John Kunze, Berkeley
 #	Craig Leres, Berkeley
 #
@@ -723,6 +723,8 @@ M5|sun-1|Sun 1-line window for sysline:\
 	:li#1:co#80:es:hs:ts=\r:fs=\E[K:ds=^L:tc=sun:
 M6|sun-e|sun-nic|sune|Sun Microsystems Workstation without insert character:\
 	:ic@:im@:ei@:tc=sun:
+M7|sun-c|sun-cmd|Sun Microsystems Workstation console with scrollable history:\
+	:te=\E[>4h:ti=\E[>4l:tc=sun:
 LS|apollo:\
 	:al=\EI:am:bs:cd=\EJ:ce=\EK:ch=\EN%d:cl=^L:cm=\EM%+ %d):\
 	:cv=\EO+ :dc=\EP:dl=\EL:do=\EB:ei=\ER:im=\EQ:mi:nd=\EC:se=\ET:sf=\EE:\
