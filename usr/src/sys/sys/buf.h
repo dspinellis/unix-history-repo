@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)buf.h	7.13 (Berkeley) %G%
+ *	@(#)buf.h	7.14 (Berkeley) %G%
  */
 
 /*
@@ -123,7 +123,7 @@ void	biodone __P((struct buf *));
 int	biowait __P((struct buf *));
 int	bread __P((struct vnode *, daddr_t, int,
 	    struct ucred *, struct buf **));
-int	breada __P((struct vnode *, daddr_t, int, daddr_t, int,
+int	breadn __P((struct vnode *, daddr_t, int, daddr_t *, int *, int,
 	    struct ucred *, struct buf **));
 int	brelse __P((struct buf *));
 void	bufinit __P((void));
