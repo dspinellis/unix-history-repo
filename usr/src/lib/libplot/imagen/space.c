@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)space.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)space.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 extern float botx;
@@ -14,14 +14,17 @@ extern float obotx;
 extern float oboty;
 extern float scalex;
 extern float scaley;
+
+int PlotRes = DEFRES;
+
 int scaleflag;
 space(x0,y0,x1,y1){
-	botx = 0.;
-	boty = 0.;
+	botx = 2.;
+	boty = 2.;
 	obotx = x0;
 	oboty = y0;
 	if(scaleflag)
 		return;
-	scalex = 2040./(x1-x0);
-	scaley = 2040./(y1-y0);
+	scalex = (8.0 * PlotRes)/(x1-x0);
+	scaley = (8.0 * PlotRes)/(y1-y0);
 }
