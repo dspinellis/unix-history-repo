@@ -1,4 +1,4 @@
-/* ip.h 1.10 82/03/30 */
+/* ip.h 1.11 82/12/28 */
 
 /*
  * Definitions for internet protocol version 4.
@@ -14,8 +14,14 @@
  * against negative integers quite easily, and fail in subtle ways.
  */
 struct ip {
+#ifdef vax
 	u_char	ip_hl:4,		/* header length */
 		ip_v:4;			/* version */
+#endif
+#ifdef sun
+	u_char	ip_v:4,			/* version */
+		ip_hl:4;		/* header length */
+#endif
 	u_char	ip_tos;			/* type of service */
 	short	ip_len;			/* total length */
 	u_short	ip_id;			/* identification */
