@@ -1,7 +1,8 @@
-/*	tm.c	4.16	%G%	*/
+/*	tm.c	4.17	%G%	*/
 
 #include "tm.h"
 #if NTM > 0
+int	tmgapsdcnt;		/* DEBUG */
 /*
  * TM11/TE10 tape driver
  *
@@ -57,6 +58,7 @@ struct	tm_softc {
 	u_short	sc_erreg;	/* copy of last erreg */
 	u_short	sc_dsreg;	/* copy of last dsreg */
 	short	sc_resid;	/* copy of last bc */
+	short	sc_lastcmd;	/* last command to handle direction changes */
 } tm_softc[NTM];
 
 /*
@@ -345,13 +347,11 @@ loop:
 	if (bp == &ctmbuf[unit]) {
 		if (bp->b_command == TM_SENSE)
 			goto next;
-		cmd |= bp->b_command;
 		um->um_tab.b_active =
 		    bp->b_command == TM_REW ? SREW : SCOM;
 		if (bp->b_command == TM_SFORW || bp->b_command == TM_SREV)
 			addr->tmbc = bp->b_repcnt;
-		addr->tmcs = cmd;
-		return;
+		goto dobpcmd;
 	}
 	/*
 	 * If the data transfer command is in the correct place,
@@ -370,6 +370,12 @@ loop:
 			cmd |= TM_RCOM;
 		um->um_tab.b_active = SIO;
 		um->um_cmd = cmd;
+/*
+		if (tmreverseop(sc->sc_lastcmd))
+			while (addr->tmer & TM_SDWN)
+				tmgapsdcnt++;
+*/
+		sc->sc_lastcmd = TM_RCOM;		/* will serve */
 		ubago(ui);
 		return;
 	}
@@ -379,13 +385,20 @@ loop:
 	 */
 	um->um_tab.b_active = SSEEK;
 	if (blkno < dbtofsb(bp->b_blkno)) {
-		cmd |= TM_SFORW;
+		bp->b_command = TM_SFORW;
 		addr->tmbc = blkno - dbtofsb(bp->b_blkno);
 	} else {
-		cmd |= TM_SREV;
+		bp->b_command = TM_SREV;
 		addr->tmbc = dbtofsb(bp->b_blkno) - blkno;
 	}
-	addr->tmcs = cmd;
+dobpcmd:
+/*
+	if (tmreverseop(sc->sc_lastcmd) != tmreverseop(bp->b_command))
+		while (addr->tmer & TM_SDWN)
+			tmgapsdcnt++;
+*/
+	sc->sc_lastcmd = bp->b_command;
+	addr->tmcs = (cmd | bp->b_command);
 	return;
 
 next:
