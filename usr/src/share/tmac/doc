@@ -3,10 +3,14 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)doc	5.4 (Berkeley) %G%
+.\"     @(#)doc	5.5 (Berkeley) %G%
 .\"
 .\" .mdoc-parse - attempt to parse troff request arguments
 .\"     %beginstrip%
+.if \n(.g \{\
+.cp 0
+.ftr C CR
+.\}
 .if t \{\
 .	so /usr/share/tmac/tmac.doc-ditroff
 .\}
@@ -15,6 +19,14 @@
 .\}
 .so /usr/share/tmac/tmac.doc-common
 .so /usr/share/tmac/tmac.doc-syms
+.\" .if t \{\
+.\" .	so /usr/u0/cael/man/tmac.mdoc-ditroff
+.\" .\}
+.\" .if n \{\
+.\" .	so /usr/u0/cael/man/tmac.mdoc-nroff
+.\" .\}
+.\" .so /usr/u0/cael/man/tmac.mdoc-common
+.\" .so /usr/u0/cael/man/tmac.mdoc-syms
 .\"
 .\" NS Db macro - start/stop DEBUG MODE
 .\" NS Db register DEBUG MODE
@@ -738,8 +750,6 @@
 .					el \{\
 .						if \\n(iS==0 \{\
 .							sw \\$1
-.\" .							nr nW \w' '
-.\" .					nr iS (\\n(sWu+1*\\n(fW)u+\\n(nWu
 .					nr iS ((\\n(sWu+1)*\\n(fW)u
 .						\}
 .					\}
@@ -808,7 +818,7 @@
 .	\}
 .\}
 .if \\n(aC>\\n(aP \{\
-.	as b1 \\*(tN
+.	as b1 \\*(tN\\*(tF
 .	nr aP \\n(aP+1
 .       nr cF \\n(.f
 .	nr cZ \\n(.s
@@ -862,6 +872,7 @@
 .\}
 .if \\n(aC>\\n(aP \{\
 .	nr aP \\n(aP+1
+.\" .tm in No: b1==\\*(b1
 .       ie \\n(C\\n(aP==1 \{\
 .		\\*(A\\n(aP
 .       \}
@@ -1086,7 +1097,7 @@
 .de eO
 .as b1 \\*(qL
 .nr oM \\n(oM+1
-.\" .tm eO last arg==A[\\n(aC]==\\*(A\\n(aC; aP==\\n(aP; oM==\\n(oM; dZ==\\n(dZ;
+.\" tm eO last arg==A[\\n(aC]==\\*(A\\n(aC; aP==\\n(aP; oM==\\n(oM; dZ==\\n(dZ;
 .if \\n(aC==0 \{\
 .       ie \\n(.$>0 \{\
 .               aV \\$1 \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
@@ -1104,7 +1115,7 @@
 .	\}
 .\}
 .ie \\n(aC>0 \{\
-.	if \\n(aC>\\n(aP \{\
+.	ie \\n(aC>\\n(aP \{\
 .		nr aP \\n(aP+1
 .		ie \\n(C\\n(aP==1 .\\*(A\\n(aP
 .		el  \{\
@@ -1112,8 +1123,9 @@
 .			No
 .		\}
 .	\}
-.	if \\n(aC==\\n(aP \{\
+.	el \\n(aC==\\n(aP \{\
 .		if \\n(tP==1 \{\
+.\" tm SETTING Xt!!!
 .			nr Xt 1
 .		\}
 .		aY
@@ -1128,7 +1140,7 @@
 .\" NS aa local register
 .de eC
 .nr oM \\n(oM-1
-.\" .tm eC last arg==A[\\n(aC]==\\*(A\\n(aC; aP==\\n(aP; oM==\\n(oM; dZ==\\n(dZ;
+.\" tm eC last arg==A[\\n(aC]==\\*(A\\n(aC; aP==\\n(aP; oM==\\n(oM; dZ==\\n(dZ;
 .as b1 \\*(qR
 .if \\n(aC==0 \{\
 .       ie \\n(.$>0 \{\
@@ -1146,6 +1158,7 @@
 .		\}
 .	\}
 .\}
+.\" tm here is b1==\\*(b1
 .if \\n(aC>0 \{\
 .	ie \\n(aC==\\n(aP \{\
 .		ie \\n(oM==0 \{\
@@ -1156,7 +1169,13 @@
 .	el \{\
 .		nr aa \\n(aP+1
 .		if \\n(C\\n(aa==2 .as b1 \\*(S\\n(aC
+.\" tm CURRENT arg (aP==\\*(A\\n(aP and ap+1==\\*(A\\n(aa) tP==\\n(tP Xt==\\n(Xt
 .		rr aa
+.		if \\n(tP>0 \{\
+.\" tm UNSETTING Xt==\\n(Xt!!!!
+.			if \\n(Xt>0 .nr Xt \\n(Xt-1
+.\" tm NOW Xt==\\n(Xt!!!!
+.		\}
 .		No
 .	\}
 .\}
@@ -1260,7 +1279,7 @@
 .\" NS aT register argument type
 .de aT
 .nr aT 0
-.ie \\n(sW>2 \{\
+.ie \\n(sW>2:(\A'\\$1'==0) \{\
 .	nr aT 2
 .\}
 .el \{\
@@ -1281,7 +1300,7 @@
 .de aU
 .nr aT 0
 .aW \\$1
-.ie \\n(sW>2 .nr aT 2
+.ie \\n(sW>2:(\A'\\*(A\\$1'==0) .nr aT 2
 .el \{\
 .	if \\n(sW==1 \{\
 .		ie \\n(z\\*(A\\$1>2 \{\
@@ -1591,7 +1610,7 @@
 .	if "\\$1"-enum" \{\
 .		nr aP \\n(aP+1
 .		ds L\\n(lC nU
-.		nr w\\n(lC 2n
+.		nr w\\n(lC 3n
 .		nr tC  1
 .	\}
 .	if "\\$1"-bullet" \{\
@@ -1661,6 +1680,13 @@
 .\" .tm Here is L[\\n(lC]==\\*(L\\n(lC
 .\}
 ..
+.if \n(.g \{\
+.	nr i 10
+.	while \ni<100 \{\
+.	     nr num!\nin 1
+.	     nr i +1
+.	\}
+.\}
 .\" NS lV macro - resolve remaining .Bl arguments
 .de lV
 .nr aP \\n(aP+1
@@ -1678,13 +1704,19 @@
 .		ds tS \\*(A\\n(aP
 .		aW \\n(aP
 .		ie \\n(sW>2 \{\
-.			ie \\n(sW==3 \{\
-.				ie (\\*(tS>9n)&(\\*(tS<99n) \{\
-.					nr w\\n(lC \\*(tSu
+.			nr w\\n(lC (\\n(sW)*\\n(fWu
+.			if \\n(sW==3 \{\
+.				ie \\n(.g \{\
+.					if \A'\\*(tS' .if r num!\\*(tS \{\
+.						nr w\\n(lC \\*(tS
+.					\}
 .				\}
-.				el .nr w\\n(lC (\\n(sW)*\\n(fWu
+.				el \{\
+.					if (\\*(tS>9n)&(\\*(tS<99n) \{\
+.						nr w\\n(lC \\*(tSu
+.					\}
+.				\}
 .			\}
-.			el .nr w\\n(lC (\\n(sW)*\\n(fWu
 .		\}
 .		el \{\
 .			aT \\*(tS
@@ -1706,10 +1738,17 @@
 .			ds tS \\*(A\\n(aP
 .			aW \\n(aP
 .			ie \\n(sW>2 \{\
-.				ie (\\*(tS>9n)&(\\*(tS<100n) \{\
-.					nr o\\n(lC \\*(tS
+.				nr o\\n(lC (\\n(sW)*\\n(fWu
+.				ie \\n(.g \{\
+.					if \A'\\*(tS' .if r num!\\*(tS \{\
+.						nr o\\n(lC \\*(tS
+.					\}
 .				\}
-.				el .nr o\\n(lC (\\n(sW)*\\n(fWu
+.				el \{\
+.					if (\\*(tS>9n)&(\\*(tS<100n) \{\
+.						nr o\\n(lC \\*(tS
+.					\}
+.				\}
 .			\}
 .			el \{\
 .				ie \\n(C\\n(aP==1 .nr o\\n(lC \\n(\\*(tS
@@ -1820,8 +1859,9 @@
 .	\}
 .	if \\n(iD==0 \{\
 .		fV
-.\" .tm It list-type==\\*(L\\n(lC, aP==\\n(aP
-.\" .tm It beg arg(A[1])==\\*(A1; oM==\\n(oM; dZ==\\n(dZ; Xt==\\n(Xt; aC==\\n(aC
+.\" tm ------------------------------------------------------------------------
+.\" tm It list-type==\\*(L\\n(lC, aP==\\n(aP
+.\" tm It beg arg(A[1])==\\*(A1; oM==\\n(oM; dZ==\\n(dZ; Xt==\\n(Xt; aC==\\n(aC
 .		nr oM \\n(oM+1
 .		nr tP 1
 .		nr aP \\n(aP+1
@@ -1838,6 +1878,8 @@
 .			nr aP \\n(aP-1
 .			No
 .		\}
+.\" tm in It here is b1==\\*(b1
+.\" tm It mid arg(A[1])==\\*(A1; oM==\\n(oM; dZ==\\n(dZ; Xt==\\n(Xt; aC==\\n(aC
 .		ie \\n(Xt==1 .ds xB \&\\*(L\\n(lC
 .		el .\\*(L\\n(lC
 .	\}
@@ -1852,7 +1894,6 @@
 \&\\*(b1
 .nr oM \\n(oM-1
 .nr tP 0
-.\" .nr dZ \\n(dZ+1
 .ds b1
 .aY
 'fi
@@ -1862,11 +1903,9 @@
 .lX
 .nr bb \\n(w\\n(lCu+\\n(lSu
 .ti -\\n(bbu
-.\" .ie \w'\\*(b1'u>=(\\n(w\\n(lCu) \&\\*(b1\\*(lS
 .ie \w\\*(b1u>=(\\n(w\\n(lCu) \&\\*(b1
 .el \&\\*(b1\h'|\\n(bbu'\c
 .nr oM \\n(oM-1
-.\" .nr dZ \\n(dZ+1
 .ds b1
 .nr tP 0
 .aY
@@ -1878,7 +1917,6 @@
 \&\\*(b1
 .br
 .nr oM \\n(oM-1
-.\" .nr dZ \\n(dZ+1
 .ds b1
 .nr tP 0
 .aY
@@ -1899,7 +1937,7 @@
 .de nU
 .nr oM \\n(oM+1
 .nr nU \\n(nU+1
-.ds b1 \&\\n(nU
+.ds b1 \&\\n(nU.
 .uL
 ..
 .de bU
@@ -1920,7 +1958,6 @@
 .nr bb \\n(w\\n(lCu+\\n(lSu
 .ti -\\n(bbu
 .ie \w\\*(b1u>=(\\n(w\\n(lCu) \&\\*(b1
-.\" .ie \w'\\*(b1'u>=(\\n(w\\n(lCu) \&\\*(b1\0
 .el \&\\*(b1\h'|\\n(bbu'\c
 .nr oM \\n(oM-1
 .\" .nr dZ \\n(dZ+1
@@ -1951,6 +1988,7 @@
 ..
 .\" NS tL macro - .It item of list-type "tag"
 .de tL
+.\" tm in tL here is b1==\\*(b1
 .if \\n(tW==0 .lW
 .lX
 .nr bb \\n(w\\n(lCu+\\n(lSu
@@ -2150,7 +2188,6 @@
 'in \\n(.iu+\\n(eWu+\\n(o\\n(lCu
 ..
 .de W2
-.\" ARGS2 Here is offset == \\n(o\\n(lCu
 .ta \w\\*(A1    u +\w\\*(A2    u
 .nr eW \w\\*(A1    u+\w\\*(A2    u
 'in \\n(.iu+\\n(eWu+\\n(o\\n(lCu
@@ -2161,11 +2198,6 @@
 'in \\n(.iu+\\n(eWu+\\n(o\\n(lCu
 ..
 .de W4
-.\" ARGS4Here is o[\\n(lC] == \\n(o\\n(lCu,
-.\" A1==\\*(A1
-.\" A2==\\*(A2
-.\" A3==\\*(A3
-.\" A4==\\*(A4
 .ta \w\\*(A1    u +\w\\*(A2    u +\w\\*(A3    u +\w\\*(A4    u
 .nr eW \w\\*(A1    u+\w\\*(A2    u +\w\\*(A3    u +\w\\*(A4    u
 'in \\n(.iu+\\n(eWu+\\n(o\\n(lCu
@@ -2553,7 +2585,7 @@
 .de Rs
 .nr rS 1
 .rC
-.if \\n(nA==1 .br
+.if \\n(nA==1 .Pp
 .nr Kl 0
 ..
 .\" NS Re macro - Reference End
@@ -2688,9 +2720,11 @@
 .       ie \\n(.$==0 .tm Usage: .%B Book Name (#\\n(.c)
 .       el \{\
 .		ds mN %B
-.		nr bK \\n(bK+1
-.		nr Kl \\n(Kl+1
-.		ds rS bK
+.		if \\n(rS>0 \{\
+.			nr bK \\n(bK+1
+.			nr Kl \\n(Kl+1
+.			ds rS bK
+.		\}
 .               ds A1 \\$1
 .               ds A2 \\$2
 .               ds A3 \\$3
@@ -2708,7 +2742,11 @@
 .	nr aP \\n(aP+1
 .       nr cF \\n(.f
 .	nr cZ \\n(.s
-.       rR
+.	ie \\n(rS==0 \{\
+.		as b1 \&\\*(eM
+.		nR
+.	\}
+.	el .rR
 .\}
 ..
 .\" NS %D macro - [reference] Date

@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)doc-common	5.4 (Berkeley) %G%
+.\"     @(#)doc-common	5.5 (Berkeley) %G%
 .\"
 .\"     %beginstrip%
 .nr %A 1
@@ -242,7 +242,7 @@
 .	\}
 .	ev
 .\}
-.\" .tm IN 444 fM .k == \\n(.k and nl == \\n(nl
+.\" .tm BOTTOM OF FM 444 .k == \\n(.k and nl == \\n(nl
 ..
 .de lM
 .fl

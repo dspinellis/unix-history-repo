@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)doc-ditroff	5.5 (Berkeley) %G%
+.\"     @(#)doc-ditroff	5.6 (Berkeley) %G%
 .\"
 .\" tmac.mdoc-ditroff
 .\"     %beginstrip%
@@ -11,6 +11,7 @@
 .ds aD \fI\s10
 .ds aR \f(CO\s10
 .ds cM \f(CB\s10
+.ds dF \fR\s10
 .ds eM \fI\s10
 .ds eR \fC\s10
 .ds eV \fC\s10
@@ -18,6 +19,8 @@
 .ds fD \f(CB\s10
 .ds fL \f(CB\s10
 .ds fN \f(CB\s10
+.ds fP \fP\s0
+.ds fS \s0
 .ds fT \f(CO\s10
 .ds Hs \fR\s10
 .ds iC \f(CB\s10
@@ -38,7 +41,8 @@
 .ds sH \fB\s10
 .ds sY \fB\s10
 .ds sX \fR\s10
-.ds tN \fR\s10
+.ds tF \fR
+.ds tN \s10
 .ds vA \fI\s10
 .ds Vs \fR\s10
 .ds vT \f(CB\s10
@@ -51,8 +55,6 @@
 .nr lS \w'\0'u
 .nr dI 6n
 .de pL
-.\" .nr Hm .2i is for xproof
-.\" .nr Hm .5i is for troff
 .nr Hm .5i
 .nr Fm .5i
 .nr ll 6.5i
@@ -70,8 +72,8 @@
 .ds ua \(ua
 .ds aa \(aa
 .ds ga \(ga
-.ds sR \(aa
-.ds sL \(ga
+.ds sR \&'
+.ds sL \&`
 .ds q \&"
 .\" Math stuff
 .ds Pi \(*p
@@ -100,9 +102,13 @@
 .\" .tm Here is gX == \\n(gX
 .ie \\n(gX==1 \{\
 .	rm n1
-.	bp
+.	if \\n(.g .br
+.	if !\\n(.g .bp
 .\}
-.el 'bp
+.el \{\
+.	if \\n(.g .br
+.	if !\\n(.g 'bp
+.\}
 .nr % 1
 .nr gX 0
 .em lM
