@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwiomux.c	3.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwiomux.c	3.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -29,9 +29,9 @@ extern int _wwdtablesize;
 /*
  * Multiple window output handler.
  * The idea is to copy window outputs to the terminal, via the
- * display package.  We try to give the top most window highest
- * priority.  The only return condition is when there is keyboard
- * input or when a child process dies which are serviced by signal
+ * display package.  We try to give wwcurwin highest priority.
+ * The only return conditions are when there is keyboard input
+ * and when a child process dies, which are serviced by signal
  * catchers (wwrint() and wwchild()).
  * When there's nothing to do, we sleep in a select().
  * This can be done better with interrupt driven io.  But that's
