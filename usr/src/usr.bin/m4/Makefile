@@ -1,5 +1,5 @@
 Virgin BTL M4 as sent out in 4.1
-#	@(#)Makefile	5.7 (Berkeley) %G%
+#	@(#)Makefile	5.7.1.1 (Berkeley) %G%
 #
 #	-DEXTENDED 
 #		if you want the paste & spaste macros.
@@ -7,5 +7,6 @@ Virgin BTL M4 as sent out in 4.1
 PROG=	m4
 CFLAGS+=-DEXTENDED
 SRCS =  main.c eval.c serv.c look.c misc.c expr.c
+NOMAN=	noman
 
 .include <bsd.prog.mk>

@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.8 (Berkeley) %G%
+#	@(#)Makefile	5.8.1.1 (Berkeley) %G%
 
 # need conversion:	tn3270
 # remove lisp
@@ -10,9 +10,9 @@ SUBDIR+=gas gcc
 .elif	${MACHINE} == "i386"
 SUBDIR+=gas gcc
 .elif	${MACHINE} == "tahoe"
-SUBDIR+=f77 pascal systat
+SUBDIR+=pascal
 .elif	${MACHINE} == "vax"
-SUBDIR+=f77 gas pascal systat
+SUBDIR+=gas pascal
 .endif
 
 .include <bsd.subdir.mk>
