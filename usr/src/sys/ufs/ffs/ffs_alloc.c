@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1989 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -14,21 +14,21 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ffs_alloc.c	7.8 (Berkeley) %G%
+ *	@(#)ffs_alloc.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
 #include "mount.h"
-#include "fs.h"
 #include "buf.h"
-#include "inode.h"
-#include "dir.h"
 #include "user.h"
-#include "quota.h"
+#include "vnode.h"
 #include "kernel.h"
 #include "syslog.h"
 #include "cmap.h"
+#include "../ufs/quota.h"
+#include "../ufs/inode.h"
+#include "../ufs/fs.h"
 
 extern u_long		hashalloc();
 extern ino_t		ialloccg();
@@ -59,17 +59,19 @@ extern unsigned char	*fragtbl[];
  *   2) quadradically rehash into other cylinder groups, until an
  *      available block is located.
  */
-struct buf *
-alloc(ip, bpref, size)
+alloc(ip, bpref, size, bpp, flags)
 	register struct inode *ip;
 	daddr_t bpref;
 	int size;
+	struct buf **bpp;
+	int flags;
 {
 	daddr_t bno;
 	register struct fs *fs;
 	register struct buf *bp;
-	int cg;
+	int cg, error;
 	
+	*bpp = 0;
 	fs = ip->i_fs;
 	if ((unsigned)size > fs->fs_bsize || fragoff(fs, size) != 0) {
 		printf("dev = 0x%x, bsize = %d, size = %d, fs = %s\n",
@@ -81,9 +83,8 @@ alloc(ip, bpref, size)
 	if (u.u_uid != 0 && freespace(fs, fs->fs_minfree) <= 0)
 		goto nospace;
 #ifdef QUOTA
-	u.u_error = chkdq(ip, (long)btodb(size), 0);
-	if (u.u_error)
-		return (NULL);
+	if (error = chkdq(ip, (long)btodb(size), 0))
+		return (error);
 #endif
 	if (bpref >= fs->fs_size)
 		bpref = 0;
@@ -97,14 +98,15 @@ alloc(ip, bpref, size)
 		goto nospace;
 	ip->i_blocks += btodb(size);
 	ip->i_flag |= IUPD|ICHG;
-	bp = getblk(ip->i_dev, fsbtodb(fs, bno), size);
-	clrbuf(bp);
-	return (bp);
+	bp = getblk(ip->i_devvp, fsbtodb(fs, bno), size);
+	if (flags & B_CLRBUF)
+		clrbuf(bp);
+	*bpp = bp;
+	return (0);
 nospace:
 	fserr(fs, "file system full");
 	uprintf("\n%s: write failed, file system is full\n", fs->fs_fsmnt);
-	u.u_error = ENOSPC;
-	return (NULL);
+	return (ENOSPC);
 }
 
 /*
@@ -115,18 +117,19 @@ nospace:
  * the original block. Failing that, the regular block allocator is
  * invoked to get an appropriate block.
  */
-struct buf *
-realloccg(ip, bprev, bpref, osize, nsize)
+realloccg(ip, bprev, bpref, osize, nsize, bpp)
 	register struct inode *ip;
 	daddr_t bprev, bpref;
 	int osize, nsize;
+	struct buf **bpp;
 {
 	register struct fs *fs;
-	register struct buf *bp, *obp;
+	struct buf *bp, *obp;
 	int cg, request;
 	daddr_t bno, bn;
-	int i, count;
+	int i, error, count;
 	
+	*bpp = 0;
 	fs = ip->i_fs;
 	if ((unsigned)osize > fs->fs_bsize || fragoff(fs, osize) != 0 ||
 	    (unsigned)nsize > fs->fs_bsize || fragoff(fs, nsize) != 0) {
@@ -142,25 +145,26 @@ realloccg(ip, bprev, bpref, osize, nsize)
 		panic("realloccg: bad bprev");
 	}
 #ifdef QUOTA
-	u.u_error = chkdq(ip, (long)btodb(nsize - osize), 0);
-	if (u.u_error)
-		return (NULL);
+	if (error = chkdq(ip, (long)btodb(nsize - osize), 0))
+		return (error);
 #endif
 	cg = dtog(fs, bprev);
 	bno = fragextend(ip, cg, (long)bprev, osize, nsize);
 	if (bno != 0) {
 		do {
-			bp = bread(ip->i_dev, fsbtodb(fs, bno), osize);
-			if (bp->b_flags & B_ERROR) {
+			error = bread(ip->i_devvp, fsbtodb(fs, bno),
+				osize, &bp);
+			if (error) {
 				brelse(bp);
-				return (NULL);
+				return (error);
 			}
 		} while (brealloc(bp, nsize) == 0);
 		bp->b_flags |= B_DONE;
 		bzero(bp->b_un.b_addr + osize, (unsigned)nsize - osize);
 		ip->i_blocks += btodb(nsize - osize);
 		ip->i_flag |= IUPD|ICHG;
-		return (bp);
+		*bpp = bp;
+		return (0);
 	}
 	if (bpref >= fs->fs_size)
 		bpref = 0;
@@ -210,17 +214,17 @@ realloccg(ip, bprev, bpref, osize, nsize)
 	bno = (daddr_t)hashalloc(ip, cg, (long)bpref, request,
 		(u_long (*)())alloccg);
 	if (bno > 0) {
-		obp = bread(ip->i_dev, fsbtodb(fs, bprev), osize);
-		if (obp->b_flags & B_ERROR) {
+		error = bread(ip->i_devvp, fsbtodb(fs, bprev), osize, &obp);
+		if (error) {
 			brelse(obp);
-			return (NULL);
+			return (error);
 		}
 		bn = fsbtodb(fs, bno);
-		bp = getblk(ip->i_dev, bn, nsize);
+		bp = getblk(ip->i_devvp, bn, nsize);
 		bcopy(obp->b_un.b_addr, bp->b_un.b_addr, (u_int)osize);
 		count = howmany(osize, CLBYTES);
 		for (i = 0; i < count; i++)
-			munhash(ip->i_dev, bn + i * CLBYTES / DEV_BSIZE);
+			munhash(ip->i_devvp, bn + i * CLBYTES / DEV_BSIZE);
 		bzero(bp->b_un.b_addr + osize, (unsigned)nsize - osize);
 		if (obp->b_flags & B_DELWRI) {
 			obp->b_flags &= ~B_DELWRI;
@@ -233,7 +237,8 @@ realloccg(ip, bprev, bpref, osize, nsize)
 				(off_t)(request - nsize));
 		ip->i_blocks += btodb(nsize - osize);
 		ip->i_flag |= IUPD|ICHG;
-		return (bp);
+		*bpp = bp;
+		return (0);
 	}
 nospace:
 	/*
@@ -241,8 +246,7 @@ nospace:
 	 */
 	fserr(fs, "file system full");
 	uprintf("\n%s: write failed, file system is full\n", fs->fs_fsmnt);
-	u.u_error = ENOSPC;
-	return (NULL);
+	return (ENOSPC);
 }
 
 /*
@@ -260,24 +264,24 @@ nospace:
  *   2) quadradically rehash into other cylinder groups, until an
  *      available inode is located.
  */
-struct inode *
-ialloc(pip, ipref, mode)
+ialloc(pip, ipref, mode, ipp)
 	register struct inode *pip;
 	ino_t ipref;
 	int mode;
+	struct inode **ipp;
 {
 	ino_t ino;
 	register struct fs *fs;
 	register struct inode *ip;
-	int cg;
+	int cg, error;
 	
+	*ipp = 0;
 	fs = pip->i_fs;
 	if (fs->fs_cstotal.cs_nifree == 0)
 		goto noinodes;
 #ifdef QUOTA
-	u.u_error = chkiq(pip->i_dev, (struct inode *)NULL, u.u_uid, 0);
-	if (u.u_error)
-		return (NULL);
+	if (error = chkiq(pip->i_dev, (struct inode *)NULL, u.u_uid, 0))
+		return (error);
 #endif
 	if (ipref >= fs->fs_ncg * fs->fs_ipg)
 		ipref = 0;
@@ -285,10 +289,11 @@ ialloc(pip, ipref, mode)
 	ino = (ino_t)hashalloc(pip, cg, (long)ipref, mode, ialloccg);
 	if (ino == 0)
 		goto noinodes;
-	ip = iget(pip->i_dev, pip->i_fs, ino);
-	if (ip == NULL) {
+	error = iget(pip, ino, ipp);
+	ip = *ipp;
+	if (error) {
 		ifree(pip, ino, 0);
-		return (NULL);
+		return (error);
 	}
 	if (ip->i_mode) {
 		printf("mode = 0%o, inum = %d, fs = %s\n",
@@ -300,12 +305,11 @@ ialloc(pip, ipref, mode)
 		    fs->fs_fsmnt, ino, ip->i_blocks);
 		ip->i_blocks = 0;
 	}
-	return (ip);
+	return (0);
 noinodes:
 	fserr(fs, "out of inodes");
 	uprintf("\n%s: create/symlink failed, no inodes free\n", fs->fs_fsmnt);
-	u.u_error = ENOSPC;
-	return (NULL);
+	return (ENOSPC);
 }
 
 /*
@@ -492,11 +496,11 @@ fragextend(ip, cg, bprev, osize, nsize)
 	int osize, nsize;
 {
 	register struct fs *fs;
-	register struct buf *bp;
 	register struct cg *cgp;
+	struct buf *bp;
 	long bno;
 	int frags, bbase;
-	int i;
+	int i, error;
 
 	fs = ip->i_fs;
 	if (fs->fs_cs(fs, cg).cs_nffree < numfrags(fs, nsize - osize))
@@ -507,9 +511,14 @@ fragextend(ip, cg, bprev, osize, nsize)
 		/* cannot extend across a block boundary */
 		return (NULL);
 	}
-	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), (int)fs->fs_cgsize);
+	error = bread(ip->i_devvp, fsbtodb(fs, cgtod(fs, cg)),
+		(int)fs->fs_cgsize, &bp);
+	if (error) {
+		brelse(bp);
+		return (NULL);
+	}
 	cgp = bp->b_un.b_cg;
-	if (bp->b_flags & B_ERROR || !cg_chkmagic(cgp)) {
+	if (!cg_chkmagic(cgp)) {
 		brelse(bp);
 		return (NULL);
 	}
@@ -557,18 +566,22 @@ alloccg(ip, cg, bpref, size)
 	int size;
 {
 	register struct fs *fs;
-	register struct buf *bp;
 	register struct cg *cgp;
-	int bno, frags;
-	int allocsiz;
+	struct buf *bp;
 	register int i;
+	int error, bno, frags, allocsiz;
 
 	fs = ip->i_fs;
 	if (fs->fs_cs(fs, cg).cs_nbfree == 0 && size == fs->fs_bsize)
 		return (NULL);
-	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), (int)fs->fs_cgsize);
+	error = bread(ip->i_devvp, fsbtodb(fs, cgtod(fs, cg)),
+		(int)fs->fs_cgsize, &bp);
+	if (error) {
+		brelse(bp);
+		return (NULL);
+	}
 	cgp = bp->b_un.b_cg;
-	if (bp->b_flags & B_ERROR || !cg_chkmagic(cgp) ||
+	if (!cg_chkmagic(cgp) ||
 	    (cgp->cg_cs.cs_nbfree == 0 && size == fs->fs_bsize)) {
 		brelse(bp);
 		return (NULL);
@@ -757,15 +770,19 @@ ialloccg(ip, cg, ipref, mode)
 	register struct fs *fs;
 	register struct cg *cgp;
 	struct buf *bp;
-	int start, len, loc, map, i;
+	int error, start, len, loc, map, i;
 
 	fs = ip->i_fs;
 	if (fs->fs_cs(fs, cg).cs_nifree == 0)
 		return (NULL);
-	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), (int)fs->fs_cgsize);
+	error = bread(ip->i_devvp, fsbtodb(fs, cgtod(fs, cg)),
+		(int)fs->fs_cgsize, &bp);
+	if (error) {
+		brelse(bp);
+		return (NULL);
+	}
 	cgp = bp->b_un.b_cg;
-	if (bp->b_flags & B_ERROR || !cg_chkmagic(cgp) ||
-	    cgp->cg_cs.cs_nifree == 0) {
+	if (!cg_chkmagic(cgp) || cgp->cg_cs.cs_nifree == 0) {
 		brelse(bp);
 		return (NULL);
 	}
@@ -830,8 +847,8 @@ blkfree(ip, bno, size)
 {
 	register struct fs *fs;
 	register struct cg *cgp;
-	register struct buf *bp;
-	int cg, blk, frags, bbase;
+	struct buf *bp;
+	int error, cg, blk, frags, bbase;
 	register int i;
 
 	fs = ip->i_fs;
@@ -845,9 +862,14 @@ blkfree(ip, bno, size)
 		printf("bad block %d, ino %d\n", bno, ip->i_number);
 		return;
 	}
-	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), (int)fs->fs_cgsize);
+	error = bread(ip->i_devvp, fsbtodb(fs, cgtod(fs, cg)),
+		(int)fs->fs_cgsize, &bp);
+	if (error) {
+		brelse(bp);
+		return;
+	}
 	cgp = bp->b_un.b_cg;
-	if (bp->b_flags & B_ERROR || !cg_chkmagic(cgp)) {
+	if (!cg_chkmagic(cgp)) {
 		brelse(bp);
 		return;
 	}
@@ -925,8 +947,8 @@ ifree(ip, ino, mode)
 {
 	register struct fs *fs;
 	register struct cg *cgp;
-	register struct buf *bp;
-	int cg;
+	struct buf *bp;
+	int error, cg;
 
 	fs = ip->i_fs;
 	if ((unsigned)ino >= fs->fs_ipg*fs->fs_ncg) {
@@ -935,9 +957,14 @@ ifree(ip, ino, mode)
 		panic("ifree: range");
 	}
 	cg = itog(fs, ino);
-	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), (int)fs->fs_cgsize);
+	error = bread(ip->i_devvp, fsbtodb(fs, cgtod(fs, cg)),
+		(int)fs->fs_cgsize, &bp);
+	if (error) {
+		brelse(bp);
+		return;
+	}
 	cgp = bp->b_un.b_cg;
-	if (bp->b_flags & B_ERROR || !cg_chkmagic(cgp)) {
+	if (!cg_chkmagic(cgp)) {
 		brelse(bp);
 		return;
 	}
