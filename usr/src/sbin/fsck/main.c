@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	1.22 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	1.23 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -1064,7 +1064,6 @@ dirscan(blk, nf)
 	dirp.blkno = blk;
 	dirp.blksiz = blksiz;
 	for (dp = readdir(&dirp); dp != NULL; dp = readdir(&dirp)) {
-		printf("got %s ino %d\n", dp->d_name, dp->d_ino);
 		copy(dp, &direntry, DIRSIZ(dp));
 		if ((n = (*pfunc)(&direntry)) & ALTERD) {
 			if (getblk(&fileblk, blk, blksiz) != NULL) {
@@ -1081,25 +1080,13 @@ dirscan(blk, nf)
 }
 
 /*
- * read an old stlye directory entry and present it as a new one
- */
-#define	ODIRSIZ	14
-
-struct	olddirect {
-	ino_t	d_ino;
-	char	d_name[ODIRSIZ];
-	char	d_spare[14];
-};
-
-/*
  * get next entry in a directory.
  */
 DIRECT *
 readdir(dirp)
 	register struct dirstuff *dirp;
 {
-	register struct olddirect *dp;
-	static DIRECT dir;
+	register DIRECT *dp;
 
 	if (getblk(&fileblk, dirp->blkno, dirp->blksiz) == NULL) {
 		filsize -= dirp->blksiz - dirp->loc;
@@ -1108,15 +1095,12 @@ readdir(dirp)
 	for (;;) {
 		if (filsize <= 0 || dirp->loc >= dirp->blksiz)
 			return NULL;
-		dp = (struct olddirect *)(dirblk.b_buf + dirp->loc);
-		dirp->loc += sizeof(struct olddirect);
-		filsize -= sizeof(struct olddirect);
+		dp = (DIRECT *)(dirblk.b_buf + dirp->loc);
+		dirp->loc += dp->d_reclen;
+		filsize -= dp->d_reclen;
 		if (dp->d_ino == 0)
 			continue;
-		dir.d_ino = dp->d_ino;
-		strncpy(dir.d_name, dp->d_name, ODIRSIZ);
-		dir.d_namlen = strlen(dir.d_name);
-		return (&dir);
+		return (dp);
 	}
 }
 
