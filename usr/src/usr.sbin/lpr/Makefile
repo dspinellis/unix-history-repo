@@ -29,8 +29,8 @@ lpr:	lpr.o printcap.o
 sq:	sq.o printcap.o getqueue.o
 	${CC} -o sq ${LDFLAGS} sq.o -ltermcap printcap.o getqueue.o
 
-dq:	dq.o printcap.o scandir.o
-	${CC} -o dq ${LDFLAGS} dq.o printcap.o scandir.o
+dq:	dq.o printcap.o
+	${CC} -o dq ${LDFLAGS} dq.o printcap.o
 
 lpdrestart: lpdrestart.o
 	${CC} -o lpdrestart ${LDFLAGS} lpdrestart.o
