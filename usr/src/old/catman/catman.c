@@ -1,37 +1,36 @@
-static char *sccsid = "@(#)catman.c	4.2 (Berkeley) %G%";
-# include	<stdio.h>
-# include	<sys/param.h>
-# include	<stat.h>
-# include	<dir.h>
-# include	<ctype.h>
+#ifndef lint
+static char *sccsid = "@(#)catman.c	4.3 (Berkeley) %G%";
+#endif
 
-# define	reg	register
-# define	bool	char
+/*
+ * catman: update cat'able versions of manual pages
+ *  (whatis database also)
+ */
+#include <stdio.h>
+#include <sys/types.h>
+#include <stat.h>
+#include <time.h>
+#include <dir.h>
+#include <ctype.h>
 
-# define	SYSTEM(str)	(pflag ? printf("%s\n", str) : system(str))
+#define	SYSTEM(str)	(pflag ? printf("%s\n", str) : system(str))
 
-char		buf[BUFSIZ],
-		pflag = 0,
-		nflag = 0,
-		wflag = 0;
-
-char		*rindex();
+char	buf[BUFSIZ];
+char	pflag;
+char	nflag;
+char	wflag;
+char	man[MAXNAMLEN+6] = "manx/";
+char	cat[MAXNAMLEN+6] = "catx/";
+char	*rindex();
 
 main(ac, av)
-int	ac;
-char	*av[]; {
-
-	reg char	*tsp, *msp, *csp, *sp;
-	reg FILE	*inf;
-	reg DIR		*mdir;
-	reg long	time;
-	reg char	*sections;
-	reg int		exstat = 0;
-	reg bool	changed = 0;
-	static char	man[MAXNAMLEN+6] = "manx/";
-	static char	cat[MAXNAMLEN+6] = "catx/";
-	reg struct direct *dir;
-	struct stat	sbuf;
+	int ac;
+	char *av[];
+{
+	register char *msp, *csp, *sp;
+	register char *sections;
+	register int exstat = 0;
+	register char changed = 0;
 
 	while (ac > 1) {
 		av++;
@@ -63,6 +62,10 @@ usage:
 	csp = &cat[5];
 	umask(0);
 	for (sp = sections; *sp; sp++) {
+		register DIR *mdir;
+		register struct direct *dir;
+		struct stat sbuf;
+
 		man[3] = cat[3] = *sp;
 		*msp = *csp = '\0';
 		if ((mdir = opendir(man)) == NULL) {
@@ -79,18 +82,25 @@ usage:
 		if ((sbuf.st_mode & 0777) != 0777)
 			chmod(cat, 0777);
 		while ((dir = readdir(mdir)) != NULL) {
+			time_t time;
+			char *tsp;
+			FILE *inf;
+
 			if (dir->d_ino == 0 || dir->d_name[0] == '.')
 				continue;
 			/*
-			 * make sure this is a man file, i.e., that it
+			 * Make sure this is a man file, i.e., that it
 			 * ends in .[0-9] or .[0-9][a-z]
 			 */
 			tsp = rindex(dir->d_name, '.');
 			if (tsp == NULL)
 				continue;
-			if (!isdigit(*++tsp) || ((*++tsp && !isalpha(*tsp)) || *++tsp))
+			if (!isdigit(*++tsp))
 				continue;
-
+			if (*++tsp && !isalpha(*tsp))
+				continue;
+			if (*tsp && *++tsp)
+				continue;
 			strcpy(msp, dir->d_name);
 			if ((inf = fopen(man, "r")) == NULL) {
 				perror(man);
