@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.67.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.68 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -47,6 +47,8 @@ sendall(e, mode)
 	register ADDRESS *q;
 	char *owner;
 	int otherowners;
+	register ENVELOPE *ee;
+	ENVELOPE *splitenv = NULL;
 	bool announcequeueup;
 
 	/*
@@ -184,7 +186,6 @@ sendall(e, mode)
 
 		if (owner != NULL && otherowners > 0)
 		{
-			register ENVELOPE *ee;
 			extern HDR *copyheader();
 			extern ADDRESS *copyqueue();
 
@@ -216,6 +217,8 @@ sendall(e, mode)
 			ee->e_xfp = NULL;
 			ee->e_df = NULL;
 			ee->e_errormode = EM_MAIL;
+			ee->e_sibling = splitenv;
+			splitenv = ee;
 			
 			for (q = e->e_sendqueue; q != NULL; q = q->q_next)
 				if (q->q_owner == owner)
@@ -243,15 +246,8 @@ sendall(e, mode)
 				syslog(LOG_INFO, "%s: clone %s",
 					ee->e_id, e->e_id);
 #endif
-			CurEnv = ee;
-			sendenvelope(ee, mode, announcequeueup);
-			dropenvelope(ee);
 		}
 	}
-
-	/*
-	**  Split off envelopes have been sent -- now send original
-	*/
 
 	if (owner != NULL)
 	{
@@ -265,27 +261,6 @@ sendall(e, mode)
 		e->e_errormode = EM_MAIL;
 	}
 
-	if (otherowners > 0 && tTd(13, 1))
-	{
-		printf("\nsendall: Split queue; remaining queue:\n");
-		printaddr(e->e_sendqueue, TRUE);
-	}
-
-	CurEnv = e;
-	sendenvelope(e, mode, announcequeueup);
-}
-
-sendenvelope(e, mode, announcequeueup)
-	register ENVELOPE *e;
-	char mode;
-	bool announcequeueup;
-{
-	bool oldverbose;
-	int pid;
-	register ADDRESS *q;
-	char *qf;
-	char *id;
-
 # ifdef QUEUE
 	if ((mode == SM_QUEUE || mode == SM_FORK ||
 	     (mode != SM_VERIFY && SuperSafe)) &&
@@ -293,8 +268,42 @@ sendenvelope(e, mode, announcequeueup)
 	{
 		/* be sure everything is instantiated in the queue */
 		queueup(e, TRUE, announcequeueup);
+		for (ee = splitenv; ee != NULL; ee = ee->e_sibling)
+			queueup(ee, TRUE, announcequeueup);
 	}
 #endif /* QUEUE */
+
+	if (splitenv != NULL)
+	{
+		if (tTd(13, 1))
+		{
+			printf("\nsendall: Split queue; remaining queue:\n");
+			printaddr(e->e_sendqueue, TRUE);
+		}
+
+		for (ee = splitenv; ee != NULL; ee = ee->e_sibling)
+		{
+			CurEnv = ee;
+			sendenvelope(ee, mode);
+		}
+
+		CurEnv = e;
+	}
+	sendenvelope(e, mode);
+
+	for (; splitenv != NULL; splitenv = splitenv->e_sibling)
+		dropenvelope(splitenv);
+}
+
+sendenvelope(e, mode)
+	register ENVELOPE *e;
+	char mode;
+{
+	bool oldverbose;
+	int pid;
+	register ADDRESS *q;
+	char *qf;
+	char *id;
 
 	/*
 	**  If we have had global, fatal errors, don't bother sending
@@ -1666,19 +1675,21 @@ logdelivery(m, mci, stat, ctladdr, e)
 		sprintf(bp, ", mailer=%s", m->m_name);
 		bp += strlen(bp);
 	}
+	syslog(LOG_INFO, "%s: %s", e->e_id, buf);
 
+	buf[0] = '\0';
 	if (mci != NULL && mci->mci_host != NULL)
 	{
 # ifdef DAEMON
 		extern SOCKADDR CurHostAddr;
 # endif
 
-		sprintf(bp, ", relay=%s", mci->mci_host);
+		sprintf(buf, ", relay=%s", mci->mci_host);
 
 # ifdef DAEMON
-		(void) strcat(bp, " [");
-		(void) strcat(bp, anynet_ntoa(&CurHostAddr));
-		(void) strcat(bp, "]");
+		(void) strcat(buf, " [");
+		(void) strcat(buf, anynet_ntoa(&CurHostAddr));
+		(void) strcat(buf, "]");
 # endif
 	}
 	else
@@ -1686,9 +1697,10 @@ logdelivery(m, mci, stat, ctladdr, e)
 		char *p = macvalue('h', e);
 
 		if (p != NULL && p[0] != '\0')
-			sprintf(bp, ", relay=%s", p);
+			sprintf(buf, ", relay=%s", p);
 	}
-	syslog(LOG_INFO, "%s: %s", e->e_id, buf);
+	if (buf[0] != '\0')
+		syslog(LOG_INFO, "%s: %s", e->e_id, buf);
 
 	syslog(LOG_INFO, "%s: stat=%s", e->e_id, shortenstring(stat, 63));
 #  endif /* short log buffer */
