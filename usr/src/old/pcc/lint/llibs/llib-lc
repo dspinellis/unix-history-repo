@@ -1,4 +1,4 @@
-/*	llib-lc	1.18	85/04/16	*/
+/*	llib-lc	1.19	85/05/15	*/
 /* LINTLIBRARY */
 #include <sys/types.h>
 #include <fstab.h>
@@ -260,13 +260,13 @@ char *	fgets( s, l, f ) char *s; FILE *f; { return(s); }
 int	_filbuf( f ) FILE *f; { return 0; }
 int	_flsbuf( c, f ) unsigned char c; FILE *f; { return 0; }
 FILE *	fopen(s,m) char *s, *m; { return(stdin); }
-	/* VARARGS */
+	/* VARARGS2 */
 	fprintf( f, s ) FILE *f; char *s; {;}
 int	fputc(c, f) char c; FILE *f; {return 0; }
 	fputs(s,f) char *s; FILE *f; {;}
 int	fread( p, s, n, f ) char *p; FILE *f; {return(1);}
 FILE *	freopen(s, m, f) char *s, *m; FILE *f; { return(stdin); }
-	/* VARARGS */
+	/* VARARGS2 */
 	fscanf( f, s ) FILE *f; char *s; {return(1);}
 	fseek(f, o, p) FILE *f; long o; { return(0); }
 long	ftell(f) FILE *f; { return(0L); }
@@ -276,17 +276,17 @@ char *	gets( s ) char *s; { return(s); }
 struct _iobuf _iob[];
 int	pclose( f ) FILE *f; { return 0; }
 FILE *	popen( c, t ) char *c, *t; { return(stdin); }
-	/* VARARGS */
+	/* VARARGS1 */
 	printf( s ) char *s; {;}
 	puts(s) char *s;{;}
 int	putw(w, f) FILE *f; { return 0;}
 	rewind(f) FILE *f; {;}
-	/* VARARGS */
+	/* VARARGS1 */
 	scanf( f ) char *f; {return(1); }
 	setbuf( f, b ) FILE *f; char *b; {;}
 	setbuffer( f, b, s ) FILE *f; char *b; {;}
-	/* VARARGS */
+	/* VARARGS2 */
 char *	sprintf( s, f ) char *s, *f; { return(s);}
-	/* VARARGS */
+	/* VARARGS2 */
 	sscanf( s, f ) char *s, *f; { return(1); }
 	ungetc( c, f ) FILE *f; {  return(c); }
