@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode.h	7.54 (Berkeley) %G%
+ *	@(#)vnode.h	7.55 (Berkeley) %G%
  */
 
 #ifndef KERNEL
@@ -78,6 +78,7 @@ struct vnode {
 #define	VXWANT		0x0200	/* process is waiting for vnode */
 #define	VBWAIT		0x0400	/* waiting for output to complete */
 #define	VALIASED	0x0800	/* vnode has an alias */
+#define	VDIROP		0x1000	/* LFS: vnode is involved in a directory op */
 
 /*
  * Vnode attributes.  A field value of VNOVAL represents a field whose value
