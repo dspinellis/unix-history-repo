@@ -9,25 +9,47 @@
  * All advertising materials mentioning features or use of this software
  * must display the following acknowledgement:
  *	This product includes software developed by the University of
- *	California, Lawrence Berkeley Laboratories.
+ *	California, Lawrence Berkeley Laboratory.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)zsvar.h	7.2 (Berkeley) %G%
+ *	@(#)zsvar.h	7.3 (Berkeley) %G%
  *
- * from: $Header: zsvar.h,v 1.4 92/06/17 05:35:54 torek Exp $ (LBL)
+ * from: $Header: zsvar.h,v 1.7 92/11/26 01:28:04 torek Exp $ (LBL)
  */
 
 /*
  * Software state, per zs channel.
  *
- * The receive ring size and type are carefully chosen to make the
- * zs hardware interrupt handler go fast.  We need 8 bits for the
- * received character and 8 bits for the corresponding RR1 status.
- * The character is known to be in the upper byte of the pair.
+ * The zs chip has insufficient buffering, so we provide a software
+ * buffer using a two-level interrupt scheme.  The hardware (high priority)
+ * interrupt simply grabs the `cause' of the interrupt and stuffs it into
+ * a ring buffer.  It then schedules a software interrupt; the latter
+ * empties the ring as fast as it can, hoping to avoid overflow.
+ *
+ * Interrupts can happen because of:
+ *	- received data;
+ *	- transmit pseudo-DMA done; and
+ *	- status change.
+ * These are all stored together in the (single) ring.  The size of the
+ * ring is a power of two, to make % operations fast.  Since we need two
+ * bits to distinguish the interrupt type, and up to 16 for the received
+ * data plus RR1 status, we use 32 bits per ring entry.
+ *
+ * When the value is a character + RR1 status, the character is in the
+ * upper 8 bits of the RR1 status.
  */
-#define ZLRB_RING_SIZE 256
-#define	ZLRB_RING_MASK 255
+#define ZLRB_RING_SIZE 256		/* ZS line ring buffer size */
+#define	ZLRB_RING_MASK 255		/* mask for same */
+
+/* 0 is reserved (means "no interrupt") */
+#define	ZRING_RINT	1		/* receive data interrupt */
+#define	ZRING_XINT	2		/* transmit done interrupt */
+#define	ZRING_SINT	3		/* status change interrupt */
+
+#define	ZRING_TYPE(x)	((x) & 3)
+#define	ZRING_VALUE(x)	((x) >> 8)
+#define	ZRING_MAKE(t, v)	((t) | (v) << 8)
 
 struct zs_chanstate {
 	struct	zs_chanstate *cs_next;	/* linked list for zshard() */
@@ -42,7 +64,7 @@ struct zs_chanstate {
 	 * needed but 16 bytes is cheap and this makes the addressing
 	 * simpler.  Unfortunately, we can only write to some registers
 	 * when the chip is not actually transmitting, so whenever
-	 * we are expecting a `transmit done' interrupt the wreg array
+	 * we are expecting a `transmit done' interrupt the preg array
 	 * is allowed to `get ahead' of the current values.  In a
 	 * few places we must change the current value of a register,
 	 * rather than (or in addition to) the pending value; for these
@@ -51,6 +73,16 @@ struct zs_chanstate {
 	u_char	cs_creg[16];		/* current values */
 	u_char	cs_preg[16];		/* pending values */
 	u_char	cs_heldchange;		/* change pending (creg != preg) */
+	u_char	cs_rr0;			/* last rr0 processed */
+
+	/* pure software data, per channel */
+	char	cs_softcar;		/* software carrier */
+	char	cs_conk;		/* is console keyboard, decode L1-A */
+	char	cs_brkabort;		/* abort (as if via L1-A) on BREAK */
+	char	cs_kgdb;		/* enter debugger on frame char */
+	char	cs_consio;		/* port does /dev/console I/O */
+	char	cs_xxx;			/* (spare) */
+	int	cs_speed;		/* default baud rate (from ROM) */
 
 	/*
 	 * The transmit byte count and address are used for pseudo-DMA
@@ -69,27 +101,12 @@ struct zs_chanstate {
 	long	cs_rotime;		/* time of last ring overrun */
 	long	cs_fotime;		/* time of last fifo overrun */
 
-	/* pure software data, per channel */
-	int	cs_speed;		/* default baud rate (from ROM) */
-	char	cs_softcar;		/* software carrier */
-	char	cs_conk;		/* is console keyboard, decode L1-A */
-	char	cs_brkabort;		/* abort (as if via L1-A) on BREAK */
-	char	cs_kgdb;		/* enter debugger on frame char */
-	char	cs_consio;		/* port does /dev/console I/O */
-
 	/*
-	 * Status change interrupts merely copy the new status and
-	 * schedule a software interrupt to deal with it.  To make
-	 * checking easier, cs_rr0 is guaranteed nonzero on status
-	 * changes.  cs_txint indicates a software transmit interrupt
-	 * (a txint where cs_tbc was 0).  A software receive interrupt
-	 * is implicit in cs_rbget != cs_rbput.
+	 * The ring buffer.
 	 */
-	u_char	cs_txint;		/* software tx interrupt */
-	u_short	cs_rr0;			/* rr0 | 0x100, after change */
-	u_int	cs_rbget;		/* receive ring buffer `get' index */
-	volatile u_int cs_rbput;	/* receive ring buffer `put' index */
-	u_short	cs_rbuf[ZLRB_RING_SIZE];/* packed data: (char << 8) + rr1 */
+	u_int	cs_rbget;		/* ring buffer `get' index */
+	volatile u_int cs_rbput;	/* ring buffer `put' index */
+	int	cs_rbuf[ZLRB_RING_SIZE];/* type, value pairs */
 };
 
 /*
