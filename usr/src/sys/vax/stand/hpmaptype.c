@@ -1,4 +1,4 @@
-/*	hpmaptype.c	4.7	83/03/03	*/
+/*	hpmaptype.c	4.8	83/06/17	*/
 
 /*
  * RP??/RM?? drive type mapping routine.
@@ -117,6 +117,10 @@ hpmaptype(hpaddr, type, unit)
 		ntracks = MASKREG(hpaddr->hphr) + 1;
 		if (ntracks == 16) {
 			newtype = HPDT_CAP;	/* AMPEX capricorn */
+			goto done;
+		}
+		if (ntracks == 19) {
+			newtype = HPDT_9300;	/* AMPEX 9300 */
 			goto done;
 		}
 		hpaddr->hpcs1 = HP_NOP;
