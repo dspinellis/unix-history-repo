@@ -1,5 +1,5 @@
 Virgin BTL M4 as sent out in 4.1
-#	@(#)Makefile	5.9 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 # -DEXTENDED 
 # 	if you want the paste & spaste macros.
