@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogin.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogin.c	5.12 (Berkeley) 9/19/88";
 #endif /* not lint */
 
 /*
@@ -45,6 +45,14 @@ static char sccsid[] = "@(#)rlogin.c	5.12 (Berkeley) %G%";
 #include <signal.h>
 #include <setjmp.h>
 #include <netdb.h>
+
+#ifdef	KERBEROS
+#include <kerberos/krb.h>
+int		encrypt = 0;
+char		krb_realm[REALM_SZ];
+CREDENTIALS	cred;
+Key_schedule	schedule;
+#endif	/* KERBEROS */
 
 # ifndef TIOCPKT_WINDOW
 # define TIOCPKT_WINDOW 0x80
@@ -154,6 +162,16 @@ another:
 		argv++, argc--;
 		goto another;
 	}
+
+#ifdef	KERBEROS
+	if (argc > 0 && !strcmp(*argv, "-x")) {
+		encrypt = 1;
+		des_set_key(cred.session, schedule);
+		argv++, argc--;
+		goto another;
+	}
+#endif	/* KERBEROS */
+
 	if (host == 0)
 		goto usage;
 	if (argc > 0)
@@ -179,10 +197,46 @@ another:
 	(void) signal(SIGPIPE, lostpeer);
 	/* will use SIGUSR1 for window size hack, so hold it off */
 	oldmask = sigblock(sigmask(SIGURG) | sigmask(SIGUSR1));
+
+#ifdef	KERBEROS
+	rem = KSUCCESS;
+	if(krb_realm[0] == '\0') {
+		rem = get_krbrlm(krb_realm, 1);
+	}
+	if(rem == KSUCCESS) {
+		if(encrypt) {
+			rem = krcmd_mutual(
+				&host, sp->s_port,
+				name ? name : pwd->pw_name, term,
+				0, krb_realm,
+				&cred, schedule
+			);
+		} else {
+			rem = krcmd(
+			    	&host, sp->s_port,
+			    	name ? name : pwd->pw_name, term,
+			    	0, krb_realm
+			);
+		}
+	} else {
+		fprintf(
+			stderr,
+			"rlogin: Kerberos error getting local realm %s\n",
+			krb_err_txt[rem]
+		);
+		exit(1);
+	}
+
+#else	/* !KERBEROS */
+
         rem = rcmd(&host, sp->s_port, pwd->pw_name,
 	    name ? name : pwd->pw_name, term, 0);
-        if (rem < 0)
-                exit(1);
+
+#endif	/* KERBEROS */
+
+	if(rem < 0) 
+		exit(1);
+
 	if (options & SO_DEBUG &&
 	    setsockopt(rem, SOL_SOCKET, SO_DEBUG, &on, sizeof (on)) < 0)
 		perror("rlogin: setsockopt (SO_DEBUG)");
@@ -195,7 +249,11 @@ another:
 	/*NOTREACHED*/
 usage:
 	fprintf(stderr,
+#ifdef	KERBEROS
+	    "usage: rlogin host [ -ex ] [ -l username ] [ -8 ] [ -L ] [ -x ]\n");
+#else
 	    "usage: rlogin host [ -ex ] [ -l username ] [ -8 ] [ -L ]\n");
+#endif
 	exit(1);
 }
 
@@ -379,13 +437,36 @@ writer()
 				stop(c);
 				continue;
 			}
-			if (c != cmdchar)
-				(void) write(rem, &cmdchar, 1);
+			if (c != cmdchar) {
+#ifdef	KERBEROS
+				if(encrypt) {
+					(void) des_write(
+						rem,
+						&cmdchar,
+						1
+					);
+				} else
+#endif
+					(void) write(
+						rem,
+						&cmdchar,
+						1
+					);
+			}
 		}
-		if (write(rem, &c, 1) == 0) {
-			prf("line gone");
-			break;
-		}
+
+#ifdef	KERBEROS
+		if(encrypt) {
+			if (des_write(rem, &c, 1) == 0) {
+				prf("line gone");
+				break;
+			}
+		} else
+#endif
+			if (write(rem, &c, 1) == 0) {
+				prf("line gone");
+				break;
+			}
 		bol = c == defkill || c == deftc.t_eofc ||
 		    c == deftc.t_intrc || c == defltc.t_suspc ||
 		    c == '\r' || c == '\n';
@@ -451,7 +532,13 @@ sendwindow()
 	wp->ws_col = htons(winsize.ws_col);
 	wp->ws_xpixel = htons(winsize.ws_xpixel);
 	wp->ws_ypixel = htons(winsize.ws_ypixel);
-	(void) write(rem, obuf, sizeof(obuf));
+
+#ifdef	KERBEROS
+	if(encrypt)
+		(void) des_write(rem, obuf, sizeof(obuf));
+	else
+#endif
+		(void) write(rem, obuf, sizeof(obuf));
 }
 
 /*
@@ -594,7 +681,13 @@ reader(oldmask)
 		bufp = rcvbuf;
 		rcvcnt = 0;
 		rcvstate = READING;
-		rcvcnt = read(rem, rcvbuf, sizeof (rcvbuf));
+
+#ifdef	KERBEROS
+		if(encrypt)
+			rcvcnt = des_read(rem, rcvbuf, sizeof(rcvbuf));
+		else
+#endif
+			rcvcnt = read(rem, rcvbuf, sizeof (rcvbuf));
 		if (rcvcnt == 0)
 			return (0);
 		if (rcvcnt < 0) {
