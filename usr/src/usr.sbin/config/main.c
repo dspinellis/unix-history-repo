@@ -1,4 +1,4 @@
-/*	main.c	1.8	82/12/09	*/
+/*	main.c	1.9	83/05/18	*/
 
 #include <stdio.h>
 #include <ctype.h>
@@ -28,6 +28,7 @@ main(argc, argv)
 		exit(2);
 	}
 	dtab = NULL;
+	confp = &conf_list;
 	if (yyparse())
 		exit(3);
 	switch (machine) {
@@ -47,6 +48,7 @@ main(argc, argv)
 	}
 	makefile();			/* build Makefile */
 	headers();			/* make a lot of .h files */
+	swapconf();			/* swap config files */
 	printf("Don't forget to run \"make depend\"\n");
 }
 
