@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tsreg.h	7.1 (Berkeley) %G%
+ *	@(#)tsreg.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -161,6 +161,9 @@ struct ts_char {
 
 /* characteristics */
 #define	TS_ESS	0200		/* enable skip tape marks stop */
-#define	TS_ENB	0100		/* ??? */
+#define	TS_ENB	0100		/* enable skip stop BOT */
 #define	TS_EAI	0040		/* enable attention interrupts */
 #define	TS_ERI	0020		/* enable message buffer release interrupts */
+
+/* Emulex TC13 only */
+#define	TS_NRZI	0001		/* select NRZI (800bpi) rather than PE */
