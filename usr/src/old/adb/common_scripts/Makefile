@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 #
 LIST=	buf callout callout.next clist clist.nxt dino dir dir.nxt \
 	dmap file filsys findinode findinode.nxt findproc host.nxt hosts \
@@ -23,7 +23,7 @@ LIST=	buf callout callout.next clist clist.nxt dino dir dir.nxt \
 	mbufchain mbufs mbufs.nxt mount nameidata nspcb nsrtentry packetchain \
 	protosw quota rawcb route rtentry rusage setproc setproc.done socket \
 	spp sppcb stat tcpcb tcpip tcpreass tcpreass.nxt text traceall \
-	traceall.nxt u u.all ubadev uio un unpcb urppcb vtimes
+	traceall.nxt u u.all ubadev uio un unpcb urppcb vtimes why
 
 all:
 
