@@ -1,11 +1,11 @@
-#	@(#)Makefile	8.1 (Berkeley) %G%
+#	@(#)Makefile	8.2 (Berkeley) %G%
 
 PROG=	pi
 SRCDIR=	${.CURDIR}/../src
 CFLAGS=	-I. -I${.CURDIR} -I${SRCDIR}
 .PATH:	${SRCDIR}
 
-EYACC=	/usr/libexec/pascal/eyacc
+EYACC=	${.CURDIR}/../eyacc/obj/eyacc
 
 SRCS=	ato.c call.c case.c clas.c const.c conv.c cset.c error.c fdec.c \
 	fend.c fhdr.c flvalue.c forop.c func.c gen.c hash.c lab.c lookup.c \
@@ -39,9 +39,14 @@ y.tab.o: y.tab.c y.tab.h
 y.tab.c: y.tab.h
 
 y.tab.h: ${SRCDIR}/pas.y ${SRCDIR}/gram
-	@echo make y.tab.h and y.tab.c
-	rm -f y.tab.h y.tab.c
-	${EYACC} ${SRCDIR}/pas.y > /dev/null
+	if [ -f ${EYACC} ]; then \
+		echo make y.tab.h and y.tab.c; \
+		rm -f y.tab.h y.tab.c; \
+		${EYACC} ${SRCDIR}/pas.y > /dev/null; \
+	else \
+		echo copy y.tab.h and y.tab.c; \
+		cp ${SRCDIR}/y.tab.c ${SRCDIR}/y.tab.h .; \
+	fi
 	ex - y.tab.c < ${SRCDIR}/gram
 
 picture: pic ${SRCDIR}/OPnames.h
