@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.45	81/12/23	*/
+/*	tcp_input.c	1.46	82/01/07	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -206,6 +206,8 @@ COUNT(TCP_INPUT);
 		if ((tiflags & TH_SYN) == 0)
 			goto drop;
 		tp->snd_una = ti->ti_ack;
+		if (SEQ_LT(tp->snd_nxt, tp->snd_una))
+			tp->snd_nxt = tp->snd_una;
 		tp->t_timer[TCPT_REXMT] = 0;
 		tp->irs = ti->ti_seq;
 		tcp_rcvseqinit(tp);
@@ -368,6 +370,8 @@ trimthenstep6:
 		    SEQ_GT(ti->ti_ack, tp->snd_max))
 			goto dropwithreset;
 		tp->snd_una++;			/* SYN acked */
+		if (SEQ_LT(tp->snd_nxt, tp->snd_una))
+			tp->snd_nxt = tp->snd_una;
 		tp->t_timer[TCPT_REXMT] = 0;
 		so->so_state |= SS_CONNAWAITING;
 		soisconnected(so);
@@ -417,6 +421,8 @@ trimthenstep6:
 		if (so->so_snd.sb_flags & SB_WAIT)
 			sowwakeup(so);
 		tp->snd_una = ti->ti_ack;
+		if (SEQ_LT(tp->snd_nxt, tp->snd_una))
+			tp->snd_nxt = tp->snd_una;
 
 		/*
 		 * If transmit timer is running and timed sequence
