@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_compat.c 1.64 93/08/05$
  *
- *	@(#)hpux_compat.c	8.3 (Berkeley) %G%
+ *	@(#)hpux_compat.c	8.4 (Berkeley) %G%
  */
 
 /*
@@ -363,27 +363,31 @@ hpuxfcntl(p, uap, retval)
 	register struct hpuxfcntl_args *uap;
 	int *retval;
 {
-	int mode, error;
-	char *fp;
+	int mode, error, flg = F_POSIX;
+	struct file *fp;
+	char *pop;
+	struct hpuxflock hfl;
+	struct flock fl;
+	struct vnode *vp;
 
-	if (uap->cmd == F_GETFL || uap->cmd == F_SETFL) {
-		if ((unsigned)uap->fdes >= p->p_fd->fd_nfiles ||
-		    p->p_fd->fd_ofiles[uap->fdes] == NULL)
-			return (EBADF);
-		fp = &p->p_fd->fd_ofileflags[uap->fdes];
-	}
+	if ((unsigned)uap->fdes >= p->p_fd->fd_nfiles ||
+	    (fp = p->p_fd->fd_ofiles[uap->fdes]) == NULL)
+		return (EBADF);
+	pop = &p->p_fd->fd_ofileflags[uap->fdes];
 	switch (uap->cmd) {
 	case F_SETFL:
 		if (uap->arg & HPUXNONBLOCK)
-			*fp |= UF_NONBLOCK_ON;
+			*pop |= UF_NONBLOCK_ON;
 		else
-			*fp &= ~UF_NONBLOCK_ON;
+			*pop &= ~UF_NONBLOCK_ON;
 		if (uap->arg & HPUXNDELAY)
-			*fp |= UF_FNDELAY_ON;
+			*pop |= UF_FNDELAY_ON;
 		else
-			*fp &= ~UF_FNDELAY_ON;
-		if (*fp & (UF_NONBLOCK_ON|UF_FNDELAY_ON|UF_FIONBIO_ON))
+			*pop &= ~UF_FNDELAY_ON;
+		if (*pop & (UF_NONBLOCK_ON|UF_FNDELAY_ON|UF_FIONBIO_ON))
 			uap->arg |= FNONBLOCK;
+		else
+			uap->arg &= ~FNONBLOCK;
 		uap->arg &= ~(HPUXNONBLOCK|HPUXFSYNCIO|HPUXFREMOTE);
 		break;
 	case F_GETFL:
@@ -391,6 +395,72 @@ hpuxfcntl(p, uap, retval)
 	case F_GETFD:
 	case F_SETFD:
 		break;
+
+	case HPUXF_SETLKW:
+		flg |= F_WAIT;
+		/* Fall into F_SETLK */
+
+	case HPUXF_SETLK:
+		if (fp->f_type != DTYPE_VNODE)
+			return (EBADF);
+		vp = (struct vnode *)fp->f_data;
+		/* Copy in the lock structure */
+		error = copyin((caddr_t)uap->arg, (caddr_t)&hfl, sizeof (hfl));
+		if (error)
+			return (error);
+		fl.l_start = hfl.hl_start;
+		fl.l_len = hfl.hl_len;
+		fl.l_pid = hfl.hl_pid;
+		fl.l_type = hfl.hl_type;
+		fl.l_whence = hfl.hl_whence;
+		if (fl.l_whence == SEEK_CUR)
+			fl.l_start += fp->f_offset;
+		switch (fl.l_type) {
+
+		case F_RDLCK:
+			if ((fp->f_flag & FREAD) == 0)
+				return (EBADF);
+			p->p_flag |= P_ADVLOCK;
+			return (VOP_ADVLOCK(vp, (caddr_t)p, F_SETLK, &fl, flg));
+
+		case F_WRLCK:
+			if ((fp->f_flag & FWRITE) == 0)
+				return (EBADF);
+			p->p_flag |= P_ADVLOCK;
+			return (VOP_ADVLOCK(vp, (caddr_t)p, F_SETLK, &fl, flg));
+
+		case F_UNLCK:
+			return (VOP_ADVLOCK(vp, (caddr_t)p, F_UNLCK, &fl,
+				F_POSIX));
+
+		default:
+			return (EINVAL);
+		}
+
+	case F_GETLK:
+		if (fp->f_type != DTYPE_VNODE)
+			return (EBADF);
+		vp = (struct vnode *)fp->f_data;
+		/* Copy in the lock structure */
+		error = copyin((caddr_t)uap->arg, (caddr_t)&hfl, sizeof (hfl));
+		if (error)
+			return (error);
+		fl.l_start = hfl.hl_start;
+		fl.l_len = hfl.hl_len;
+		fl.l_pid = hfl.hl_pid;
+		fl.l_type = hfl.hl_type;
+		fl.l_whence = hfl.hl_whence;
+		if (fl.l_whence == SEEK_CUR)
+			fl.l_start += fp->f_offset;
+		if (error = VOP_ADVLOCK(vp, (caddr_t)p, F_GETLK, &fl, F_POSIX))
+			return (error);
+		hfl.hl_start = fl.l_start;
+		hfl.hl_len = fl.l_len;
+		hfl.hl_pid = fl.l_pid;
+		hfl.hl_type = fl.l_type;
+		hfl.hl_whence = fl.l_whence;
+		return (copyout((caddr_t)&hfl, (caddr_t)uap->arg, sizeof (hfl)));
+
 	default:
 		return (EINVAL);
 	}
@@ -399,9 +469,9 @@ hpuxfcntl(p, uap, retval)
 		mode = *retval;
 		*retval &= ~(O_CREAT|O_TRUNC|O_EXCL);
 		if (mode & FNONBLOCK) {
-			if (*fp & UF_NONBLOCK_ON)
+			if (*pop & UF_NONBLOCK_ON)
 				*retval |= HPUXNONBLOCK;
-			if ((*fp & UF_FNDELAY_ON) == 0)
+			if ((*pop & UF_FNDELAY_ON) == 0)
 				*retval &= ~HPUXNDELAY;
 		}
 		if (mode & O_CREAT)
