@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)atq.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)atq.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -331,7 +331,7 @@ plastrun()
 		perror(LASTFILE);
 		exit(1);
 	}
-	fscanf(last,"%d",(u_long) &lasttime);
+	fscanf(last,"%lu",&lasttime);
 	fclose(last);
 
 	/*
