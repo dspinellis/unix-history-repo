@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)getopt.3	6.3 (Berkeley) %G%
+.\"	@(#)getopt.3	6.4 (Berkeley) %G%
 .\"
 .TH GETOPT 3 ""
 .UC 6
@@ -94,25 +94,25 @@ char **argv;
 	\&.
 	while ((c = getopt(argc, argv, "abf:o:")) != EOF)
 		switch (c) {
-		case 'a':
+		case `a':
 			if (bflg)
 				errflg++;
 			else
 				aflg++;
 			break;
-		case 'b':
+		case `b':
 			if (aflg)
 				errflg++;
 			else
 				bproc();
 			break;
-		case 'f':
+		case `f':
 			ifile = optarg;
 			break;
-		case 'o':
+		case `o':
 			ofile = optarg;
 			break;
-		case '?':
+		case `?':
 		default:
 			errflg++;
 			break;
