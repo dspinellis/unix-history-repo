@@ -1,5 +1,5 @@
-static char Sccsid[] "@(#)bal	2.1";
-#
+static char Sccsid[] = "@(#)bal.c	1.2	%G%";
+
 /*
 	Function to find the position, in str, of the first of the char-
 	acters in end occurring outside a balanced string.  A balanced string
@@ -25,7 +25,7 @@ char *str,*open,*clos,*end;
 		ifany(clos) return error;
 		ifany(open) {
 			opp[0] = matching_clos;
-			s =+ balbrk(s,open,clos,opp);
+			s += balbrk(s,open,clos,opp);
 			if (*s++ != matching_clos) return error;
 			break;
 		}

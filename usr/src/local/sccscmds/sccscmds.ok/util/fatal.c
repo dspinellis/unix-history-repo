@@ -1,6 +1,7 @@
+static char Sccsid[] = "@(#)fatal.c	1.2	%G%";
+
 # include	"../hdr/macros.h"
 # include	"../hdr/fatal.h"
-SCCSID(@(#)fatal	2.2);
 
 /*
 	General purpose error handler.
@@ -54,7 +55,7 @@ SCCSID(@(#)fatal	2.2);
 int	Fcnt;
 int	Fflags;
 char	*Ffile;
-int	Fvalue	-1;
+int	Fvalue = -1;
 int	(*Ffunc)();
 int	Fjmp[10];
 
