@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)archive.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)archive.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -182,12 +182,24 @@ put_object(cfp, sb)
 		name = rname(cfp->rname);
 		(void)fstat(cfp->rfd, sb);
 
-		if ((lname = strlen(name)) > sizeof(hdr->ar_name) ||
-		    index(name, ' ')) {
+		/*
+		 * If not truncating names and the name is too long or contains
+		 * a space, use extended format 1.
+		 */
+		lname = strlen(name);
+		if (!(options & AR_S) && (lname > sizeof(hdr->ar_name) ||
+		    index(name, ' '))) {
 			(void)sprintf(hb, HDR1, AR_EFMT1, lname, sb->st_mtime,
 			    sb->st_uid, sb->st_gid, sb->st_mode,
 			    sb->st_size + lname, ARFMAG);
 		} else {
+			if (lname > sizeof(hdr->ar_name)) {
+				(void)fflush(stdout);
+				(void)fprintf(stderr,
+				    "ar: warning: %s truncated to %.*s\n",
+				    name, sizeof(hdr->ar_name), name);
+				(void)fflush(stderr);
+			}
 			lname = 0;
 			(void)sprintf(hb, HDR2, name, sb->st_mtime, sb->st_uid,
 			    sb->st_gid, sb->st_mode, sb->st_size, ARFMAG);

@@ -5,7 +5,7 @@
  * This code is derived from software contributed to Berkeley by
  * Hugh Smith at The University of Guelph.
  *
- *	@(#)archive.h	5.2 (Berkeley) %G%
+ *	@(#)archive.h	5.3 (Berkeley) %G%
  */
 
 /* Ar(1) options. */
@@ -18,10 +18,11 @@
 #define	AR_P	0x0040
 #define	AR_Q	0x0080
 #define	AR_R	0x0100
-#define	AR_T	0x0200
-#define	AR_U	0x0400
-#define	AR_V	0x0800
-#define	AR_X	0x1000
+#define	AR_S	0x0200
+#define	AR_T	0x0400
+#define	AR_U	0x0800
+#define	AR_V	0x1000
+#define	AR_X	0x2000
 extern u_int options;
 
 /* Set up file copy. */
@@ -67,9 +68,12 @@ typedef struct {
 	} \
 }
 
+/* Old archive format name limit. */
+#define	ARNAMEMAX	16
+
 /* Header format strings. */
 #define	HDR1	"%s%-13d%-12ld%-6u%-6u%-8o%-10ld%2s"
-#define	HDR2	"%-16s%-12ld%-6u%-6u%-8o%-10ld%2s"
+#define	HDR2	"%-16.16s%-12ld%-6u%-6u%-8o%-10ld%2s"
 
 #include <stdlib.h>
 #include <string.h>
