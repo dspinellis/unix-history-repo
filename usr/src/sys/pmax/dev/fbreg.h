@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fbreg.h	7.2 (Berkeley) %G%
+ *	@(#)fbreg.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -27,6 +27,7 @@ struct pmax_fb {
 	int	row, col;		/* Screen pos for glass tty */
 	struct	fbuaccess *fbu;		/* X event stuff */
 	char	*fr_addr;		/* Frame buffer address */
+	size_t	fr_size;		/* Frame buffer size */
 	char	*fr_chipaddr;		/* Base address for chips */
 	void	(*posCursor)();		/* Position cursor func */
 	void	(*KBDPutc)();		/* Send char to keyboard func */
@@ -125,3 +126,17 @@ typedef struct {
  * Macro to translate from a time struct to milliseconds.
  */
 #define TO_MS(tv) ((tv.tv_sec * 1000) + (tv.tv_usec / 1000))
+
+extern void fbKbdEvent __P((int, struct pmax_fb *));
+extern void fbMouseEvent __P((MouseReport *, struct pmax_fb *));
+extern void fbMouseButtons __P((MouseReport *, struct pmax_fb *));
+extern void fbScroll __P((struct pmax_fb *));
+extern void fbPutc __P((dev_t, int));
+extern void fbBlitc __P((int, struct pmax_fb *));
+extern void fbBlitc __P((int, struct pmax_fb *));
+extern int kbdMapChar __P((int));
+extern void KBDReset __P((dev_t, void (*)(dev_t, int)));
+extern void MouseInit __P((dev_t, void (*)(dev_t, int), int (*)(dev_t)));
+extern int KBDGetc __P((void));
+extern int tb_kbdmouseconfig __P((struct pmax_fb *));
+extern int fbmmap __P((struct pmax_fb *, dev_t, caddr_t, struct proc *));

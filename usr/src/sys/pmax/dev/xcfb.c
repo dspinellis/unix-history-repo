@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)xcfb.c	7.2 (Berkeley) %G%
+ *	@(#)xcfb.c	7.3 (Berkeley) %G%
  */
 
 /* 
@@ -91,8 +91,6 @@ struct pmax_fb xcfbfb;
 /*
  * Forward references.
  */
-extern void fbScroll();
-
 static void xcfbScreenInit();
 static void xcfbLoadCursor();
 static void xcfbRestoreCursorColor();
@@ -106,8 +104,8 @@ static void ims332_load_colormap_entry();
 static void ims332_video_off();
 static void ims332_video_on();
 
-extern void dtopKBDPutc(), fbKbdEvent(), fbMouseEvent(), fbMouseButtons();
 void xcfbKbdEvent(), xcfbMouseEvent(), xcfbMouseButtons();
+extern void dtopKBDPutc();
 extern void (*dtopDivertXInput)();
 extern void (*dtopMouseEvent)();
 extern void (*dtopMouseButtons)();
@@ -188,51 +186,23 @@ xcfbclose(dev, flag)
 	dtopMouseButtons = (void (*)())0;
 	splx(s);
 	xcfbScreenInit();
-	vmUserUnmap();
 	bzero((caddr_t)fp->fr_addr, 1024 * 768);
 	xcfbPosCursor(fp->col * 8, fp->row * 15);
 	return (0);
 }
 
 /*ARGSUSED*/
-xcfbioctl(dev, cmd, data, flag)
+xcfbioctl(dev, cmd, data, flag, p)
 	dev_t dev;
 	caddr_t data;
+	struct proc *p;
 {
 	register struct pmax_fb *fp = &xcfbfb;
 	int s;
 
 	switch (cmd) {
 	case QIOCGINFO:
-	    {
-		caddr_t addr;
-		extern caddr_t vmUserMap();
-
-		/*
-		 * Map the all the data the user needs access to into
-		 * user space.
-		 */
-		addr = vmUserMap(sizeof(struct fbuaccess), (unsigned)fp->fbu);
-		if (addr == (caddr_t)0)
-			goto mapError;
-		*(PM_Info **)data = &((struct fbuaccess *)addr)->scrInfo;
-		fp->fbu->scrInfo.qe.events = ((struct fbuaccess *)addr)->events;
-		fp->fbu->scrInfo.qe.tcs = ((struct fbuaccess *)addr)->tcs;
-		fp->fbu->scrInfo.planemask = (char *)0;
-		/*
-		 * Map the frame buffer into the user's address space.
-		 */
-		addr = vmUserMap(1024 * 1024, (unsigned)fp->fr_addr);
-		if (addr == (caddr_t)0)
-			goto mapError;
-		fp->fbu->scrInfo.bitmap = (char *)addr;
-		break;
-
-	mapError:
-		vmUserUnmap();
-		printf("Cannot map shared data structures\n");
-		return (EIO);
-	    }
+		return (fbmmap(fp, dev, data, p));
 
 	case QIOCPMSTATE:
 		/*
@@ -266,8 +236,8 @@ xcfbioctl(dev, cmd, data, flag)
 				*cp |= 0x80;
 			(*fp->KBDPutc)(fp->kbddev, (int)*cp);
 		}
+		break;
 	    }
-	    break;
 
 	case QIOCADDR:
 		*(PM_Info **)data = &fp->fbu->scrInfo;
@@ -315,6 +285,24 @@ xcfbioctl(dev, cmd, data, flag)
 		return (EINVAL);
 	}
 	return (0);
+}
+
+/*
+ * Return the physical page number that corresponds to byte offset 'off'.
+ */
+/*ARGSUSED*/
+xcfbmap(dev, off, prot)
+	dev_t dev;
+{
+	int len;
+
+	len = pmax_round_page(((vm_offset_t)&xcfbu & PGOFSET) + sizeof(xcfbu));
+	if (off < len)
+		return pmax_btop(MACH_CACHED_TO_PHYS(&xcfbu) + off);
+	off -= len;
+	if (off >= xcfbfb.fr_size)
+		return (-1);
+	return pmax_btop(MACH_UNCACHED_TO_PHYS(xcfbfb.fr_addr) + off);
 }
 
 xcfbselect(dev, flag, p)
@@ -599,11 +587,10 @@ xcfbinit()
 	 */
 	fp->fr_addr = (char *)
 		MACH_PHYS_TO_UNCACHED(XINE_PHYS_CFB_START + VRAM_OFFSET);
-
+	fp->fr_size = 0x100000;
 	/*
-	 * Must be in Uncached space or the Xserver sees a stale version of
-	 * the event queue and acts totally wacko. I don't understand this,
-	 * since the R3000 uses a physical address cache?
+	 * Must be in Uncached space since the fbuaccess structure is
+	 * mapped into the user's address space uncached.
 	 */
 	fp->fbu = (struct fbuaccess *)
 		MACH_PHYS_TO_UNCACHED(MACH_CACHED_TO_PHYS(&xcfbu));
