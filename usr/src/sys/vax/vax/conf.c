@@ -1,4 +1,4 @@
-/*	conf.c	4.68	83/05/14	*/
+/*	conf.c	4.69	83/05/18	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -11,7 +11,7 @@ int	nodev();
 
 #include "hp.h"
 #if NHP > 0
-int	hpopen(),hpstrategy(),hpread(),hpwrite(),hpdump(),hpioctl();
+int	hpopen(),hpstrategy(),hpread(),hpwrite(),hpdump(),hpioctl(),hpsize();
 #else
 #define	hpopen		nodev
 #define	hpstrategy	nodev
@@ -19,6 +19,7 @@ int	hpopen(),hpstrategy(),hpread(),hpwrite(),hpdump(),hpioctl();
 #define	hpwrite		nodev
 #define	hpdump		nodev
 #define	hpioctl		nodev
+#define	hpsize		0
 #endif
  
 #include "tu.h"
@@ -36,7 +37,8 @@ int	htopen(),htclose(),htstrategy(),htread(),htwrite(),htdump(),htioctl();
 
 #include "rk.h"
 #if NHK > 0
-int	rkopen(),rkstrategy(),rkread(),rkwrite(),rkintr(),rkdump(),rkreset();
+int	rkopen(),rkstrategy(),rkread(),rkwrite(),rkintr();
+int	rkdump(),rkreset(),rksize();
 #else
 #define	rkopen		nodev
 #define	rkstrategy	nodev
@@ -45,6 +47,7 @@ int	rkopen(),rkstrategy(),rkread(),rkwrite(),rkintr(),rkdump(),rkreset();
 #define	rkintr		nodev
 #define	rkdump		nodev
 #define	rkreset		nodev
+#define	rksize		0
 #endif
 
 #include "te.h"
@@ -93,7 +96,7 @@ int	mtioctl(),mtdump();
 
 #include "ra.h"
 #if NUDA > 0
-int	udopen(),udstrategy(),udread(),udwrite(),udreset(),uddump();
+int	udopen(),udstrategy(),udread(),udwrite(),udreset(),uddump(),udsize();
 #else
 #define	udopen		nodev
 #define	udstrategy	nodev
@@ -101,11 +104,12 @@ int	udopen(),udstrategy(),udread(),udwrite(),udreset(),uddump();
 #define	udwrite		nodev
 #define	udreset		nulldev
 #define	uddump		nodev
+#define	udsize		0
 #endif
 
 #include "up.h"
 #if NSC > 0
-int	upopen(),upstrategy(),upread(),upwrite(),upreset(),updump();
+int	upopen(),upstrategy(),upread(),upwrite(),upreset(),updump(),upsize();
 #else
 #define	upopen		nodev
 #define	upstrategy	nodev
@@ -113,6 +117,7 @@ int	upopen(),upstrategy(),upread(),upwrite(),upreset(),updump();
 #define	upwrite		nodev
 #define	upreset		nulldev
 #define	updump		nodev
+#define	upsize		0
 #endif
 
 #include "tj.h"
@@ -132,7 +137,8 @@ int	utreset(),utdump();
 
 #include "rb.h"
 #if NIDC > 0
-int	idcopen(),idcstrategy(),idcread(),idcwrite(),idcreset(),idcdump();
+int	idcopen(),idcstrategy(),idcread(),idcwrite();
+int	idcreset(),idcdump(),idcsize();;
 #else
 #define	idcopen		nodev
 #define	idcstrategy	nodev
@@ -140,6 +146,7 @@ int	idcopen(),idcstrategy(),idcread(),idcwrite(),idcreset(),idcdump();
 #define	idcwrite	nodev
 #define	idcreset	nulldev
 #define	idcdump		nodev
+#define	idcsize		0
 #endif
 
 #if defined(VAX750) || defined(VAX730)
@@ -177,7 +184,7 @@ int	uuopen(),uustrategy(),uuclose(),uureset(),uuioctl();
 #include "rl.h"
 #if NRL > 0
 int	rlopen(),rlstrategy(),rlclose(),rlread(),rlwrite();
-int	rlreset(),rlioctl(),rldump();
+int	rlreset(),rlioctl(),rldump(),rlsize();
 #else
 #define	rlopen		nodev
 #define	rlstrategy	nodev
@@ -187,27 +194,43 @@ int	rlreset(),rlioctl(),rldump();
 #define	rlreset		nulldev
 #define	rlioctl		nodev
 #define	rldump		nodev
+#define	rlsize		0
 #endif
 
 int	swstrategy(),swread(),swwrite();
 
 struct bdevsw	bdevsw[] =
 {
-	hpopen,		nulldev,	hpstrategy,	hpdump,	0,	/*0*/
-	htopen,		htclose,	htstrategy,	htdump,	B_TAPE,	/*1*/
-	upopen,		nulldev,	upstrategy,	updump,	0,	/*2*/
-	rkopen,		nulldev,	rkstrategy,	rkdump,	0,	/*3*/
-	nodev,		nodev,		swstrategy,	nodev,	0,	/*4*/
-	tmopen,		tmclose,	tmstrategy,	tmdump,	B_TAPE,	/*5*/
-	tsopen,		tsclose,	tsstrategy,	tsdump,	B_TAPE,	/*6*/
-	mtopen,		mtclose,	mtstrategy,	mtdump,	B_TAPE,	/*7*/
-	tuopen,		tuclose,	tustrategy,	nodev,	B_TAPE,	/*8*/
-	udopen,		nulldev,	udstrategy,	uddump,	0,	/*9*/
-	utopen,		utclose,	utstrategy,	utdump,	B_TAPE,	/*10*/
-	idcopen,	nodev,		idcstrategy,	idcdump,0,	/*11*/
-	rxopen,		rxclose,	rxstrategy,	nodev,	0,	/*12*/
-	uuopen,		uuclose,	uustrategy,	nodev,	0,	/*13*/
-	rlopen,		rlclose,	rlstrategy,	rldump,	0,	/*14*/
+	{ hpopen,	nulldev,	hpstrategy,	hpdump,		/*0*/
+	  hpsize,	0 },
+	{ htopen,	htclose,	htstrategy,	htdump,		/*1*/
+	  0,		B_TAPE },
+	{ upopen,	nulldev,	upstrategy,	updump,		/*2*/
+	  upsize,	0 },
+	{ rkopen,	nulldev,	rkstrategy,	rkdump,		/*3*/
+	  rksize,	0 },
+	{ nodev,	nodev,		swstrategy,	nodev,		/*4*/
+	  0,		0 },
+	{ tmopen,	tmclose,	tmstrategy,	tmdump,		/*5*/
+	  0,		B_TAPE },
+	{ tsopen,	tsclose,	tsstrategy,	tsdump,		/*6*/
+	  0,		B_TAPE },
+	{ mtopen,	mtclose,	mtstrategy,	mtdump,		/*7*/
+	  0,		B_TAPE },
+	{ tuopen,	tuclose,	tustrategy,	nodev,		/*8*/
+	  0,		B_TAPE },
+	{ udopen,	nulldev,	udstrategy,	uddump,		/*9*/
+	  udsize,	0 },
+	{ utopen,	utclose,	utstrategy,	utdump,		/*10*/
+	  0,		B_TAPE },
+	{ idcopen,	nodev,		idcstrategy,	idcdump,	/*11*/
+	  idcsize,	0 },
+	{ rxopen,	rxclose,	rxstrategy,	nodev,		/*12*/
+	  0,		0 },
+	{ uuopen,	uuclose,	uustrategy,	nodev,		/*13*/
+	  0,		0 },
+	{ rlopen,	rlclose,	rlstrategy,	rldump,		/*14*/
+	  rlsize,	0 },
 };
 int	nblkdev = sizeof (bdevsw) / sizeof (bdevsw[0]);
 

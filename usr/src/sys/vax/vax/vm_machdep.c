@@ -1,4 +1,4 @@
-/*	vm_machdep.c	5.4	83/05/10	*/
+/*	vm_machdep.c	5.5	83/05/18	*/
 
 #include "../machine/pte.h"
 
@@ -10,6 +10,7 @@
 #include "../h/cmap.h"
 #include "../h/mount.h"
 #include "../h/vm.h"
+#include "../h/text.h"
 
 #include "../vax/mtpr.h"
 
@@ -58,15 +59,42 @@ mapout(pte, size)
 #endif
 
 /*
- * Check that a process will not be too large.
+ * Check for valid program size
  */
 chksize(ts, ds, ss)
-	size_t ts, ds, ss;
+	unsigned ts, ds, ss;
 {
+	static int maxdmap = 0;
 
-	if (ts>MAXTSIZ || ds>MAXDSIZ || ss>MAXSSIZ) {
+	if (ts > MAXTSIZ || ds > MAXDSIZ || ss > MAXSSIZ) {
 		u.u_error = ENOMEM;
-		return(1);
+		return (1);
+	}
+	/* check for swap map overflow */
+	if (maxdmap == 0) {
+		int i, blk;
+
+		blk = dmmin;
+		for (i = 0; i < NDMAP; i++) {
+			maxdmap += blk;
+			if (blk < dmmax)
+				blk *= 2;
+		}
+	}
+	if (ctod(ts) > NXDAD * dmtext ||
+	    ctod(ds) > maxdmap || ctod(ss) > maxdmap) {
+		u.u_error = ENOMEM;
+		return (1);
+	}
+	/*
+	 * Make sure the process isn't bigger than our
+	 * virtual memory limit.
+	 *
+	 * THERE SHOULD BE A CONSTANT FOR THIS.
+	 */
+	if (ts + ds + ss + LOWPAGES + HIGHPAGES > btoc(USRSTACK)) {
+		u.u_error = ENOMEM;
+		return (1);
 	}
 	return (0);
 }

@@ -1,4 +1,4 @@
-/*	machdep.c	4.76	83/02/21	*/
+/*	machdep.c	4.77	83/05/18	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -160,8 +160,6 @@ startup(firstaddr)
 	}
 	valloc(buf, struct buf, nbuf);
 	valloc(swbuf, struct buf, nswbuf);
-	valloc(swsize, short, nswbuf);	/* note: nswbuf is even */
-	valloc(swpf, int, nswbuf);
 	valloclim(inode, struct inode, ninode, inodeNINODE);
 	valloclim(file, struct file, nfile, fileNFILE);
 	valloclim(proc, struct proc, nproc, procNPROC);
@@ -411,8 +409,10 @@ memerr()
 #if VAX750
 		case VAX_750:
 			if (M750_ERR(mcr)) {
+#ifdef notdef
 				printf("mcr%d: soft ecc addr %x syn %x\n",
 				    m, M750_ADDR(mcr), M750_SYN(mcr));
+#endif
 				M750_INH(mcr);
 			}
 			break;

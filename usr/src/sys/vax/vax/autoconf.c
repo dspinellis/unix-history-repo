@@ -1,4 +1,4 @@
-/*	autoconf.c	4.46	83/01/01	*/
+/*	autoconf.c	4.47	83/05/18	*/
 
 /*
  * Setup the system to run on the current machine.
@@ -29,6 +29,8 @@
 #include "../h/buf.h"
 #include "../h/dk.h"
 #include "../h/vm.h"
+#include "../h/conf.h"
+#include "../h/dmap.h"
 
 #include "../vax/cpu.h"
 #include "../vax/mem.h"
@@ -95,6 +97,11 @@ configure()
 #if GENERIC
 			setconf();
 #endif
+			/*
+			 * Configure swap area and related system
+			 * parameter based on device(s) used.
+			 */
+			swapconf();
 			cold = 0;
 			memenable();
 			return;
@@ -654,4 +661,40 @@ ubaaccess(pumem, pte)
 		*(int *)pte++ = PG_V|PG_KW|v++;
 	while (--i > 0);
 	mtpr(TBIA, 0);
+}
+
+#define	DMMIN	32
+#define	DMMAX	1024
+#define	DMTEXT	1024
+#define	MAXDUMP	(10*2048)
+/*
+ * Configure swap space and related parameters.
+ */
+swapconf()
+{
+	register struct swdevt *swp;
+
+	for (swp = swdevt; swp->sw_dev; swp++) {
+		if (swp->sw_nblks != 0)
+			continue;
+		if (bdevsw[major(swp->sw_dev)].d_psize)
+			swp->sw_nblks =
+			  (*bdevsw[major(swp->sw_dev)].d_psize)(swp->sw_dev);
+		if (swp->sw_nblks < 0)
+			swp->sw_nblks = 0;
+	}
+	if (!cold)			/* in case called for mba device */
+		return;
+	if (dumplo == 0)
+		dumplo = swdevt[0].sw_nblks - MAXDUMP;
+	if (dumplo < 0)
+		dumplo = 0;
+	if (dmmin == 0)
+		dmmin = DMMIN;
+	if (dmmax == 0)
+		dmmax = DMMAX;
+	if (dmtext == 0)
+		dmtext = DMTEXT;
+	if (dmtext > dmmax)
+		dmtext = dmmax;
 }

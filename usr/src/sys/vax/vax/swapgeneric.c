@@ -1,4 +1,4 @@
-/*	swapgeneric.c	4.5	82/12/17	*/
+/*	swapgeneric.c	4.6	83/05/18	*/
 
 #include "mba.h"
 
@@ -23,12 +23,15 @@
  */
 dev_t	rootdev, argdev, dumpdev;
 int	nswap;
-struct	swdevt swdevt[] =
-{
-	-1,	1,
-	0,	0,
+struct	swdevt swdevt[] = {
+	{ -1,	1,	0 },
+	{ 0,	0,	0 },
 };
 long	dumplo;
+
+int	dmmin = 32;
+int	dmmax;
+int	dmtext;
 
 extern	struct mba_driver hpdriver;
 extern	struct uba_driver scdriver;
@@ -41,15 +44,15 @@ struct	genericconf {
 	char	*gc_name;
 	dev_t	gc_root;
 	long	gc_nswap;
-	long	gc_dumplo;
+	long	gc_dumpsize;
 } genericconf[] = {
-   (caddr_t)&hpdriver,	"hp", makedev(0, 0), 33440, 33440 - 10*2048,
-   (caddr_t)&scdriver,	"up", makedev(2, 0), 33440, 33440 - 10*2048,
-   (caddr_t)&udadriver,	"ra", makedev(9, 0), 33440, 33440 - 10*2048,
-   (caddr_t)&idcdriver, "rb", makedev(11, 0),33440, 33440 - 10*2048,
-   (caddr_t)&idcdriver, "rl", makedev(11, 0), 4480, 0,
-   (caddr_t)&hkdriver,	"hk", makedev(3, 0), 10032, 10032 - 2*(2048+1024),
-   0,
+	{ (caddr_t)&hpdriver,	"hp",	makedev(0, 0),	33440,	10*2048 },
+	{ (caddr_t)&scdriver,	"up",	makedev(2, 0),	33440,	10*2048 },
+	{ (caddr_t)&udadriver,	"ra",	makedev(9, 0),	33440,	10*2048 },
+	{ (caddr_t)&idcdriver,	"rb",	makedev(11, 0),	33440,	10*2048 },
+	{ (caddr_t)&idcdriver,	"rl",	makedev(11, 0),	4480,	0 },
+	{ (caddr_t)&hkdriver,	"hk",	makedev(3, 0),	10032,	2*(2048+1024) },
+	{ 0 },
 };
 
 setconf()
@@ -90,7 +93,8 @@ bad:
 				continue;
 			if (mi->mi_unit == 0 && mi->mi_driver ==
 			    (struct mba_driver *)gc->gc_driver) {
-				printf("root on %s0\n", mi->mi_driver->md_dname);
+				printf("root on %s0\n",
+				    mi->mi_driver->md_dname);
 				goto found;
 			}
 		}
@@ -112,8 +116,10 @@ found:
 	rootdev = gc->gc_root;
 	swdevt[0].sw_dev = argdev = dumpdev =
 	    makedev(major(rootdev), minor(rootdev)+1);
-	nswap = gc->gc_nswap;
-	dumplo = gc->gc_dumplo;
+	swdevt[0].sw_nblks = gc->gc_nswap;
+	dumplo = gc->gc_nswap - gc->gc_dumpsize;
+	if (dumplo < 0)
+		dumplo = 0;
 	if (swaponroot)
 		rootdev = dumpdev;
 }
@@ -122,13 +128,13 @@ getchar()
 {
 	register c;
 
-	while((mfpr(RXCS)&RXCS_DONE) == 0)
+	while ((mfpr(RXCS)&RXCS_DONE) == 0)
 		;
 	c = mfpr(RXDB)&0177;
-	if (c=='\r')
+	if (c == '\r')
 		c = '\n';
 	cnputc(c);
-	return(c);
+	return (c);
 }
 
 gets(cp)
@@ -140,7 +146,7 @@ gets(cp)
 	lp = cp;
 	for (;;) {
 		c = getchar() & 0177;
-		switch(c) {
+		switch (c) {
 		case '\n':
 		case '\r':
 			*lp++ = '\0';
