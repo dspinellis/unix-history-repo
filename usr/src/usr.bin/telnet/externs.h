@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)externs.h	1.17 (Berkeley) %G%
+ *	@(#)externs.h	1.18 (Berkeley) %G%
  */
 
 #ifdef	CRAY
@@ -158,6 +158,7 @@ extern void
 #if	!defined(NOT43)
     dosynch(),
 #endif	/* !defined(NOT43) */
+    get_status(),
     Dump(),
     init_3270(),
     printoption(),

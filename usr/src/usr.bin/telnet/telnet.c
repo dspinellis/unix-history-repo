@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)telnet.c	5.42 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	5.43 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -37,6 +37,8 @@ static char sccsid[] = "@(#)telnet.c	5.42 (Berkeley) %G%";
 #else	/* defined(unix) */
 #include <string.h>
 #endif	/* defined(unix) */
+
+#include <ctype.h>
 
 #include "ring.h"
 
@@ -323,10 +325,12 @@ willoption(option)
 		}
 		    /* Fall through */
 	    case TELOPT_EOR:
-	    case TELOPT_BINARY:
 #endif	    /* defined(TN3270) */
+	    case TELOPT_BINARY:
 	    case TELOPT_SGA:
 		settimer(modenegotiated);
+		/* FALL THROUGH */
+	    case TELOPT_STATUS:
 		new_state_ok = 1;
 		break;
 
@@ -438,8 +442,8 @@ dooption(option)
 
 #	if defined(TN3270)
 	    case TELOPT_EOR:		/* end of record */
-	    case TELOPT_BINARY:		/* binary mode */
 #	endif	/* defined(TN3270) */
+	    case TELOPT_BINARY:		/* binary mode */
 	    case TELOPT_NAWS:		/* window size */
 	    case TELOPT_TSPEED:		/* terminal speed */
 	    case TELOPT_LFLOW:		/* local flow control */
@@ -514,6 +518,181 @@ dontoption(option)
 }
 
 /*
+ * Given a buffer returned by tgetent(), this routine will turn
+ * the pipe seperated list of names in the buffer into an array
+ * of pointers to null terminated names.  We toss out any bad,
+ * duplicate, or verbose names (names with spaces).
+ */
+
+static char *unknown[] = { "UNKNOWN", 0 };
+
+char **
+mklist(buf, name)
+char *buf, *name;
+{
+	register int n;
+	register char c, *cp, **argvp, *cp2, **argv;
+	char *malloc();
+
+	if (name) {
+		if (strlen(name) > 40)
+			name = 0;
+		else {
+			unknown[0] = name;
+			upcase(name);
+		}
+	}
+	/*
+	 * Count up the number of names.
+	 */
+	for (n = 1, cp = buf; *cp && *cp != ':'; cp++) {
+		if (*cp == '|')
+			n++;
+	}
+	/*
+	 * Allocate an array to put the name pointers into
+	 */
+	argv = (char **)malloc((n+3)*sizeof(char *));
+	if (argv == 0)
+		return(unknown);
+
+	/*
+	 * Fill up the array of pointers to names.
+	 */
+	*argv = 0;
+	argvp = argv+1;
+	n = 0;
+	for (cp = cp2 = buf; (c = *cp);  cp++) {
+		if (c == '|' || c == ':') {
+			*cp++ = '\0';
+			/*
+			 * Skip entries that have spaces or are over 40
+			 * characters long.  If this is our environment
+			 * name, then put it up front.  Otherwise, as
+			 * long as this is not a duplicate name (case
+			 * insensitive) add it to the list.
+			 */
+			if (n || (cp - cp2 > 41))
+				;
+			else if (name && (strncasecmp(name, cp2, cp-cp2) == 0))
+				*argv = cp2;
+			else if (is_unique(cp2, argv+1, argvp))
+				*argvp++ = cp2;
+			if (c == ':')
+				break;
+			/*
+			 * Skip multiple delimiters. Reset cp2 to
+			 * the beginning of the next name. Reset n,
+			 * the flag for names with spaces.
+			 */
+			while ((c = *cp) == '|')
+				cp++;
+			cp2 = cp;
+			n = 0;
+		}
+		/*
+		 * Skip entries with spaces or non-ascii values.
+		 * Convert lower case letters to upper case.
+		 */
+		if ((c == ' ') || !isascii(c))
+			n = 1;
+		else if (islower(c))
+			*cp = toupper(c);
+	}
+	
+	/*
+	 * Check for an old V6 2 character name.  If the second
+	 * name points to the beginning of the buffer, and is
+	 * only 2 characters long, move it to the end of the array.
+	 */
+	if ((argv[1] == buf) && (strlen(argv[1]) == 2)) {
+		*argvp++ = buf;
+		cp = *argv++;
+		*argv = cp;
+	}
+
+	/*
+	 * Duplicate last name, for TTYPE option, and null
+	 * terminate the array.  If we didn't find a match on
+	 * our terminal name, put that name at the beginning.
+	 */
+	cp = *(argvp-1);
+	*argvp++ = cp;
+	*argvp = 0;
+
+	if (*argv == 0) {
+		if (name)
+			*argv = name;
+		else
+			argv++;
+	}
+	if (*argv)
+		return(argv);
+	else
+		return(unknown);
+}
+
+is_unique(name, as, ae)
+register char *name, **as, **ae;
+{
+	register char **ap;
+	register int n;
+
+	n = strlen(name) + 1;
+	for (ap = as; ap < ae; ap++)
+		if (strncasecmp(*ap, name, n) == 0)
+			return(0);
+	return (1);
+}
+
+#ifdef	TERMCAP
+char ttytype[1024];
+setupterm(tname, fd, errp)
+char *tname;
+int fd, *errp;
+{
+	if (tgetent(ttytype, tname) == 1) {
+		ttytype[1023] = '\0';
+		if (errp)
+			*errp = 1;
+		return(0);
+	}
+	if (errp)
+		*errp = 0;
+	return(-1);
+}
+#endif
+
+char *
+gettermname()
+{
+	char *tname;
+	static int first = 1;
+	extern char ttytype[];
+	static char **tnamep;
+	static char **next;
+	char *getenv();
+	int err;
+
+	if (first) {
+		first = 0;
+		if ((tname = getenv("TERM")) &&
+				(setupterm(tname, 1, &err) == 0)) {
+			tnamep = mklist(ttytype, tname);
+		} else {
+			if (tname && (strlen(tname) <= 40)) {
+				unknown[0] = tname;
+				upcase(tname);
+			}
+			tnamep = unknown;
+		}
+		next = tnamep;
+	}
+	if (*next == 0)
+		next = tnamep;
+	return(*next++);
+}
+/*
  * suboption()
  *
  *	Look at the sub-option buffer, and try to be helpful to the other
@@ -526,9 +705,6 @@ dontoption(option)
  *		Local flow control (is request).
  *		Linemode
  */
-
-static char tty1[] = { IAC, SB, TELOPT_TTYPE, TELQUAL_IS, 0 };
-static char tty2[] = { IAC, SE, 0 };
 
 static void
 suboption()
@@ -543,6 +719,7 @@ suboption()
 	} else {
 	    char *name;
 	    extern char *getenv();
+	    char temp[50];
 	    int len;
 
 #if	defined(TN3270)
@@ -550,21 +727,13 @@ suboption()
 		return;
 	    }
 #endif	/* defined(TN3270) */
-	    name = getenv("TERM");
-	    if ((name == 0) || ((len = strlen(name)) > 40)) {
-		name = "UNKNOWN";
-		len = strlen(name);
-	    }
-	    if ((len + 4+2) < NETROOM()) {
-		char temp[50];
-
-		strcpy(temp, tty1);
-		strcpy(&temp[4], name);
-		upcase(&temp[4]);
-		strcpy(&temp[4+len], tty2);
-		len += 6;
+	    name = gettermname();
+	    len = strlen(name) + 4 + 2;
+	    if (len < NETROOM()) {
+		sprintf(temp, "%c%c%c%c%s%c%c", IAC, SB, TELOPT_TTYPE,
+				TELQUAL_IS, name, IAC, SE);
 		ring_supply_data(&netoring, temp, len);
-		printsub('>', temp+2, len-2);
+		printsub('>', &temp[2], len-2);
 	    } else {
 		ExitString("No room in buffer for terminal type.\n", 1);
 		/*NOTREACHED*/
@@ -1465,6 +1634,7 @@ telnet()
 	send_will(TELOPT_TSPEED, 1);
 	send_will(TELOPT_LFLOW, 1);
 	send_will(TELOPT_LINEMODE, 1);
+	send_do(TELOPT_STATUS, 1);
     }
 #   endif /* !defined(TN3270) */
 
@@ -1644,6 +1814,7 @@ void
 xmitAO()
 {
     NET2ADD(IAC, AO);
+    printoption("SENT", "IAC", AO);
     if (autoflush) {
 	doflush();
     }
@@ -1654,12 +1825,14 @@ void
 xmitEL()
 {
     NET2ADD(IAC, EL);
+    printoption("SENT", "IAC", EL);
 }
 
 void
 xmitEC()
 {
     NET2ADD(IAC, EC);
+    printoption("SENT", "IAC", EC);
 }
 
 
@@ -1674,6 +1847,7 @@ dosynch()
     NETADD(IAC);
     setneturg();
     NETADD(DM);
+    printoption("SENT", "IAC", DM);
 
 #if	defined(NOT43)
     return 0;
@@ -1681,9 +1855,37 @@ dosynch()
 }
 
 void
+get_status()
+{
+    char tmp[16];
+    register char *cp;
+
+    if (my_want_state_is_dont(TELOPT_STATUS)) {
+	printf("Remote side does not support STATUS option\n");
+	return;
+    }
+    if (!showoptions)
+	printf("You will not see the response unless you set \"options\"\n");
+
+    cp = tmp;
+
+    *cp++ = IAC;
+    *cp++ = SB;
+    *cp++ = TELOPT_STATUS;
+    *cp++ = TELQUAL_SEND;
+    *cp++ = IAC;
+    *cp++ = SE;
+    if (NETROOM() >= cp - tmp) {
+	ring_supply_data(&netoring, tmp, cp-tmp);
+	printsub('>', tmp+2, cp - tmp - 2);
+    }
+}
+
+void
 intp()
 {
     NET2ADD(IAC, IP);
+    printoption("SENT", "IAC", IP);
     flushline = 1;
     if (autoflush) {
 	doflush();
@@ -1697,6 +1899,7 @@ void
 sendbrk()
 {
     NET2ADD(IAC, BREAK);
+    printoption("SENT", "IAC", BREAK);
     flushline = 1;
     if (autoflush) {
 	doflush();
@@ -1710,6 +1913,7 @@ void
 sendabort()
 {
     NET2ADD(IAC, ABORT);
+    printoption("SENT", "IAC", ABORT);
     flushline = 1;
     if (autoflush) {
 	doflush();
@@ -1723,6 +1927,7 @@ void
 sendsusp()
 {
     NET2ADD(IAC, SUSP);
+    printoption("SENT", "IAC", SUSP);
     flushline = 1;
     if (autoflush) {
 	doflush();
@@ -1735,7 +1940,8 @@ sendsusp()
 void
 sendeof()
 {
-   NET2ADD(IAC, xEOF);
+    NET2ADD(IAC, xEOF);
+    printoption("SENT", "IAC", xEOF);
 }
 
 /*
@@ -1774,14 +1980,20 @@ sendnaws()
     }
 }
 
-tel_enter_binary()
+tel_enter_binary(rw)
+int rw;
 {
-    send_do(TELOPT_BINARY, 1);
-    send_will(TELOPT_BINARY, 1);
+    if (rw&1)
+	send_do(TELOPT_BINARY, 1);
+    if (rw&2)
+	send_will(TELOPT_BINARY, 1);
 }
 
-tel_leave_binary()
+tel_leave_binary(rw)
+int rw;
 {
-    send_dont(TELOPT_BINARY, 1);
-    send_wont(TELOPT_BINARY, 1);
+    if (rw&1)
+	send_dont(TELOPT_BINARY, 1);
+    if (rw&2)
+	send_wont(TELOPT_BINARY, 1);
 }

@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sys_bsd.c	1.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)sys_bsd.c	1.21 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -51,6 +51,7 @@ int
 struct	tchars otc = { 0 }, ntc = { 0 };
 struct	ltchars oltc = { 0 }, nltc = { 0 };
 struct	sgttyb ottyb = { 0 }, nttyb = { 0 };
+int	olmode = 0;
 
 #define	ISPEED	ottyb.sg_ispeed
 #define	OSPEED	ottyb.sg_ospeed
@@ -186,6 +187,7 @@ TerminalSaveState()
     ioctl(0, TIOCGETP, (char *)&ottyb);
     ioctl(0, TIOCGETC, (char *)&otc);
     ioctl(0, TIOCGLTC, (char *)&oltc);
+    ioctl(0, TIOCLGET, (char *)&olmode);
 
     ntc = otc;
     nltc = oltc;
@@ -292,6 +294,7 @@ register int f;
     struct tchars tc;
     struct ltchars ltc;
     struct sgttyb sb;
+    int lmode;
 #else	/* USE_TERMIO */
     struct termio tmp_tc;
 #endif	/* USE_TERMIO */
@@ -335,6 +338,7 @@ register int f;
     sb = nttyb;
     tc = ntc;
     ltc = nltc;
+    lmode = olmode;
 #else
     tmp_tc = new_tc;
 #endif
@@ -411,6 +415,21 @@ register int f;
     if (f == -1) {
 	onoff = 0;
     } else {
+#ifndef	USE_TERMIO
+	if (his_want_state_is_will(TELOPT_BINARY))
+		lmode |= LLITOUT;
+	else
+		lmode &= ~LLITOUT;
+	if (my_want_state_is_will(TELOPT_BINARY))
+		lmode |= LPASS8;
+	else
+		lmode &= ~LPASS8;
+#else
+	if (my_want_state_is_will(TELOPT_BINARY))
+		tmp.tc.c_lflag &= ~ISTRIP;
+	else
+		tmp.tc.c_lflag |= ISTRIP;
+#endif
 	onoff = 1;
     }
 
@@ -425,12 +444,14 @@ register int f;
 	    (void) signal(SIGTSTP, SIG_DFL);
 	    sigsetmask(sigblock(0) & ~(1<<(SIGTSTP-1)));
 	}
+	ioctl(tin, TIOCLSET, (char *)&lmode);
 	ioctl(tin, TIOCSLTC, (char *)&ltc);
 	ioctl(tin, TIOCSETC, (char *)&tc);
 	ioctl(tin, TIOCSETP, (char *)&sb);
     } else {
 	(void) signal(SIGTSTP, SIG_DFL);
 	sigsetmask(sigblock(0) & ~(1<<(SIGTSTP-1)));
+	ioctl(tin, TIOCLSET, (char *)&lmode);
 	ioctl(tin, TIOCSLTC, (char *)&oltc);
 	ioctl(tin, TIOCSETC, (char *)&otc);
 	ioctl(tin, TIOCSETP, (char *)&ottyb);

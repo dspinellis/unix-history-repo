@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	1.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	1.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	TELOPTS
@@ -129,27 +129,29 @@ int	length;
 	fprintf(NetTrace, "%c 0x%x\t", direction, offset);
 	pThis = buffer;
 	if (prettydump) {
-	    buffer = buffer + min(length, BYTES_PER_LINE);
+	    buffer = buffer + min(length, BYTES_PER_LINE/2);
 	    while (pThis < buffer) {
 		fprintf(NetTrace, "%c%.2x",
 		    (((*pThis)&0xff) == 0xff) ? '*' : ' ',
 		    (*pThis)&0xff);
 		pThis++;
 	    }
+	    length -= BYTES_PER_LINE/2;
+	    offset += BYTES_PER_LINE/2;
 	} else {
-	    buffer = buffer + min(length, BYTES_PER_LINE/2);
+	    buffer = buffer + min(length, BYTES_PER_LINE);
 	    while (pThis < buffer) {
 		fprintf(NetTrace, "%.2x", (*pThis)&0xff);
 		pThis++;
 	    }
+	    length -= BYTES_PER_LINE;
+	    offset += BYTES_PER_LINE;
 	}
 	if (NetTrace == stdout) {
 	    fprintf(NetTrace, "\r\n");
 	} else {
 	    fprintf(NetTrace, "\n");
 	}
-	length -= BYTES_PER_LINE;
-	offset += BYTES_PER_LINE;
 	if (length < 0) {
 	    fflush(NetTrace);
 	    return;
@@ -268,32 +270,34 @@ int	length;			/* length of suboption data */
     register int i;
 
     if (showoptions) {
-	fprintf(NetTrace, "%s suboption ",
+	if (direction) {
+	    fprintf(NetTrace, "%s suboption ",
 				(direction == '<')? "Received":"Sent");
-	if (length >= 3) {
-	    register int j;
+	    if (length >= 3) {
+		register int j;
 
-	    i = pointer[length-2];
-	    j = pointer[length-1];
+		i = pointer[length-2];
+		j = pointer[length-1];
 
-	    if (i != IAC || j != SE) {
-		fprintf(NetTrace, "(terminated by ");
-		if (TELOPT_OK(i))
-		    fprintf(NetTrace, "%s ", TELOPT(i));
-		else if (TELCMD_OK(i))
-		    fprintf(NetTrace, "%s ", TELCMD(i));
-		else
-		    fprintf(NetTrace, "%d ", i);
-		if (TELOPT_OK(j))
-		    fprintf(NetTrace, "%s", TELOPT(j));
-		else if (TELCMD_OK(j))
-		    fprintf(NetTrace, "%s", TELCMD(j));
-		else
-		    fprintf(NetTrace, "%d", j);
-		fprintf(NetTrace, ", not IAC SE!) ");
+		if (i != IAC || j != SE) {
+		    fprintf(NetTrace, "(terminated by ");
+		    if (TELOPT_OK(i))
+			fprintf(NetTrace, "%s ", TELOPT(i));
+		    else if (TELCMD_OK(i))
+			fprintf(NetTrace, "%s ", TELCMD(i));
+		    else
+			fprintf(NetTrace, "%d ", i);
+		    if (TELOPT_OK(j))
+			fprintf(NetTrace, "%s", TELOPT(j));
+		    else if (TELCMD_OK(j))
+			fprintf(NetTrace, "%s", TELCMD(j));
+		    else
+			fprintf(NetTrace, "%d", j);
+		    fprintf(NetTrace, ", not IAC SE!) ");
+		}
 	    }
+	    length -= 2;
 	}
-	length -= 2;
 	if (length < 1) {
 	    fprintf(NetTrace, "(Empty suboption???)");
 	    return;
@@ -321,7 +325,7 @@ int	length;			/* length of suboption data */
 		break;
 	    }
 	    switch (pointer[1]) {
-	    case 0:
+	    case TELQUAL_IS:
 		fprintf(NetTrace, " IS ");
 		fprintf(NetTrace, "%.*s", length-2, pointer+2);
 		break;
@@ -471,16 +475,97 @@ int	length;			/* length of suboption data */
 	    }
 	    break;
 
+	case TELOPT_STATUS: {
+	    register char *cp;
+	    register int j, k;
+
+	    fprintf(NetTrace, "STATUS");
+
+	    switch (pointer[1]) {
+	    default:
+		if (pointer[1] == TELQUAL_SEND)
+		    fprintf(NetTrace, " SEND");
+		else
+		    fprintf(NetTrace, " %d (unknown)");
+		for (i = 2; i < length; i++)
+		    fprintf(NetTrace, " ?%d?", pointer[i]);
+		break;
+	    case TELQUAL_IS:
+		if (NetTrace == stdout)
+		    fprintf(NetTrace, " IS\r\n");
+		else
+		    fprintf(NetTrace, " IS\n");
+
+		for (i = 2; i < length; i++) {
+		    switch(pointer[i]) {
+		    case DO:	cp = "DO"; goto common2;
+		    case DONT:	cp = "DONT"; goto common2;
+		    case WILL:	cp = "WILL"; goto common2;
+		    case WONT:	cp = "WONT"; goto common2;
+		    common2:
+			i++;
+			if (TELOPT_OK(pointer[i]))
+			    fprintf(NetTrace, " %s %s", cp, TELOPT(pointer[i]));
+			else
+			    fprintf(NetTrace, " %s %d", cp, pointer[i]);
+
+			if (NetTrace == stdout)
+			    fprintf(NetTrace, "\r\n");
+			else
+			    fprintf(NetTrace, "\n");
+			break;
+
+		    case SB:
+			fprintf(NetTrace, " SB ");
+			i++;
+			j = k = i;
+			while (j < length) {
+			    if (pointer[j] == SE) {
+				if (j+1 == length)
+				    break;
+				if (pointer[j+1] == SE)
+				    j++;
+				else
+				    break;
+			    }
+			    pointer[k++] = pointer[j++];
+			}
+			printsub(0, &pointer[i], k - i);
+			if (i < length) {
+			    fprintf(NetTrace, " SE");
+			    i = j;
+			} else
+			    i = j - 1;
+
+			if (NetTrace == stdout)
+			    fprintf(NetTrace, "\r\n");
+			else
+			    fprintf(NetTrace, "\n");
+
+			break;
+				
+		    default:
+			fprintf(NetTrace, " %d", pointer[i]);
+			break;
+		    }
+		}
+		break;
+	    }
+	    break;
+	  }
+
 	default:
 	    fprintf(NetTrace, "Unknown option ");
 	    for (i = 0; i < length; i++)
 		fprintf(NetTrace, " %d", pointer[i]);
 	    break;
 	}
-	if (NetTrace == stdout)
-	    fprintf(NetTrace, "\r\n");
-	else
-	    fprintf(NetTrace, "\n");
+	if (direction) {
+	    if (NetTrace == stdout)
+		fprintf(NetTrace, "\r\n");
+	    else
+		fprintf(NetTrace, "\n");
+	}
     }
 }
 
