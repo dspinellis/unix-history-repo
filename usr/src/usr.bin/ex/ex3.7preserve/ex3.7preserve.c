@@ -1,8 +1,8 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex3.7preserve.c	7.5	%G%";
+static char *sccsid = "@(#)ex3.7preserve.c	7.6	%G%";
 #include <stdio.h>
 #include <ctype.h>
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/dir.h>
 #include <pwd.h>
@@ -70,8 +70,8 @@ FILE	*popen();
 main(argc)
 	int argc;
 {
-	register FILE *tf;
-	struct direct dirent;
+	register DIR *tf;
+	struct direct *dirent;
 	struct stat stbuf;
 
 	/*
@@ -100,31 +100,30 @@ main(argc)
 		exit(1);
 	}
 
-	tf = fopen(".", "r");
+	tf = opendir(".");
 	if (tf == NULL) {
 		perror(TMP);
 		exit(1);
 	}
-	while (fread((char *) &dirent, sizeof dirent, 1, tf) == 1) {
-		if (dirent.d_ino == 0)
-			continue;
+	while ((dirent = readdir(tf)) != NULL) {
 		/*
 		 * Ex temporaries must begin with Ex;
 		 * we check that the 10th character of the name is null
 		 * so we won't have to worry about non-null terminated names
 		 * later on.
 		 */
-		if (dirent.d_name[0] != 'E' || dirent.d_name[1] != 'x' || dirent.d_name[10])
+		if (dirent->d_name[0] != 'E' || dirent->d_name[1] != 'x' || dirent->d_name[10])
 			continue;
-		if (stat(dirent.d_name, &stbuf))
+		if (stat(dirent->d_name, &stbuf))
 			continue;
 		if ((stbuf.st_mode & S_IFMT) != S_IFREG)
 			continue;
 		/*
 		 * Save the bastard.
 		 */
-		ignore(copyout(dirent.d_name));
+		ignore(copyout(dirent->d_name));
 	}
+	closedir(tf);
 	exit(0);
 }
 
