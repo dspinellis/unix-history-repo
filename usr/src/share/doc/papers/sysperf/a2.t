@@ -1,9 +1,9 @@
 .\" Copyright (c) 1985 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.roff%
+.\" %sccs.include.redist.man%
 .\"
-.\"	@(#)a2.t	1.2 (Berkeley) %G%
+.\"	@(#)a2.t	5.1 (Berkeley) %G%
 .\"
 .SH
 run (shell script)

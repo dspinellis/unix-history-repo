@@ -1,4 +1,6 @@
-.\"	@(#)m4.ms	6.1 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)m4.ms	6.2 (Berkeley) %G%
 .\"
 .EH 'PS1:17-%''The M4 Macro Processor'
 .OH 'The M4 Macro Processor''PS1:17-%'

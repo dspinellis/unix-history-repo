@@ -1,8 +1,9 @@
-.\" Copyright (c) 1983 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1983 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)1.0.t	6.2 (Berkeley) %G%
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)1.0.t	6.3 (Berkeley) %G%
 .\"
 .ds ss 1
 .sh "Kernel primitives

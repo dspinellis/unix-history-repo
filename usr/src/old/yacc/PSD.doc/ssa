@@ -1,4 +1,6 @@
-.\"	@(#)ssa	6.1 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)ssa	6.2 (Berkeley) %G%
 .\"
 .SH
 Appendix A:  A Simple Example

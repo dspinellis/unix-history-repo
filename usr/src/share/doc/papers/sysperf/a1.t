@@ -1,9 +1,9 @@
 .\" Copyright (c) 1985 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.roff%
+.\" %sccs.include.redist.man%
 .\"
-.\"	@(#)a1.t	1.2 (Berkeley) %G%
+.\"	@(#)a1.t	5.1 (Berkeley) %G%
 .\"
 .ds RH Appendix A \- Benchmark sources
 .nr H2 1

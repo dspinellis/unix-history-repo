@@ -1,4 +1,6 @@
-.\"	@(#)ctrademarks	6.1 (Berkeley) %G%
+.\" %sccs.include.proprietary.man%
+.\"
+.\"	@(#)ctrademarks	6.2 (Berkeley) %G%
 .\"
 .so /k3/unx/MACROS/cmac1.1
 .VM 20 20

@@ -1,3 +1,10 @@
+.\" Copyright (c) 1979 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)table2.3.n	5.2 (Berkeley) %G%
+.\"
 .TS H
 box center;
 c s s

@@ -1,8 +1,9 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1980 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)chb.n	6.1 (Berkeley) %G%
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)chb.n	6.2 (Berkeley) %G%
 .\"
 ." $Header: /na/franz/doc/RCS/chb.n,v 1.1 83/01/31 07:11:40 jkf Exp $
 .Ap 2 Special\ Symbols

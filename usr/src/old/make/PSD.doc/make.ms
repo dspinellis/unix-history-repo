@@ -1,4 +1,6 @@
-.\"	@(#)make.ms	6.1 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)make.ms	6.2 (Berkeley) %G%
 .\"
 .EH 'PS1:12-%''Make \(em A Program for Maintaining Computer Programs'
 .OH 'Make \(em A Program for Maintaining Computer Programs''PS1:12-%'

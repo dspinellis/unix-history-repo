@@ -1,4 +1,6 @@
-.\"	@(#)p1	6.2 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)p1	6.3 (Berkeley) %G%
 .\"
 .OH 'The UNIX Time-Sharing System''PS2:1-%'
 .EH 'PS2:1-%''The UNIX Time-Sharing System'

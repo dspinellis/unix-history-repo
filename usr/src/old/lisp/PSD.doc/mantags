@@ -1,9 +1,10 @@
+# Copyright (c) 1980 The Regents of the University of California.
+# All rights reserved.
 #
-# Copyright (c) 1986 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# %sccs.include.redist.sh%
 #
-#	@(#)mantags	6.1 (Berkeley) %G%
+#	@(#)mantags	6.2 (Berkeley) %G%
 #
+
 /^\.Lf/	{ print $2, FILENAME, "?^\.Lf " $2 "?" }
 /^\.Lx/	{ print $2, FILENAME, "?^\.Lx " $2 "?" }

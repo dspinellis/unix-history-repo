@@ -1,4 +1,6 @@
-.\"	@(#)p6	6.2 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)p6	6.3 (Berkeley) %G%
 .\"
 .NH
 SIGNALS \(em INTERRUPTS AND ALL THAT
