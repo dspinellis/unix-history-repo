@@ -1,4 +1,4 @@
-/*	if_ace.c	1.7	86/01/24	*/
+/*	if_ace.c	1.8	86/01/26	*/
 
 /*
  * ACC VERSAbus Ethernet controller
@@ -52,7 +52,7 @@ short random_mask_tbl[16] = {
 
 int	aceprobe(), aceattach(), acerint(), acecint();
 struct	vba_device *aceinfo[NACE];
-long	acestd[] = { 0x0ff0000, 0xff0100, 0 };
+long	acestd[] = { 0 };
 struct	vba_driver acedriver =
     { aceprobe, 0, aceattach, 0, acestd, "ace", aceinfo, "v/eiu", 0 };
 
