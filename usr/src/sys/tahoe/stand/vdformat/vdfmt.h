@@ -1,4 +1,4 @@
-/*	vdfmt.h	1.2	86/11/04	*/
+/*	vdfmt.h	1.3	86/12/19	*/
 
 /*
  * VERSAbus disk controller (vd) disk formatter.
@@ -230,6 +230,7 @@ bs_map	*bad_map;
 
 boolean	kill_processes;
 int	num_controllers;
+extern	int vdtimeout;
 
 /*
  * Pattern buffers and the sort
