@@ -1,4 +1,4 @@
-/*	ts.c	4.3	%G%	*/
+/*	ts.c	4.4	%G%	*/
 
 #include "ts.h"
 #if NTS > 0
@@ -16,6 +16,7 @@
 #include "../h/pte.h"
 #include "../h/map.h"
 #include "../h/uba.h"
+#include "../h/vm.h"
 
 struct	device {
 	u_short	tsdb;
@@ -38,6 +39,8 @@ daddr_t	ts_nxrec;
 /* status message */
 struct	sts {
 	u_short	s_sts;
+	u_short	len;
+	u_short rbpcr;
 	u_short	xs0;
 	u_short	xs1;
 	u_short	xs2;
@@ -394,6 +397,7 @@ tsphys(dev)
 #define	UBMAP	(int *)0xf30800
 
 int dtsinfo;
+struct tsmesg dts;
 
 twall(start, num)
 {
@@ -437,10 +441,10 @@ tsinit()
 	*(ubap+2) = i;
 	*(ubap+3) = i+1;
 	dts.ts_cmd.c_cmd = ACK + 04;
-	dts.ts_cmd.c_loba = &tsm->ts_char;
+	dts.ts_cmd.c_loba = (int)&tsm->ts_char;
 	dts.ts_cmd.c_hiba = 0;
 	dts.ts_cmd.c_size = sizeof(dts.ts_char);
-	dts.ts_char.char_loba = &tsm->ts_sts;
+	dts.ts_char.char_loba = (int)&tsm->ts_sts;
 	dts.ts_char.char_hiba = 0;
 	dts.ts_char.char_size = sizeof(dts.ts_sts);
 	dts.ts_char.char_mode = 0400;
