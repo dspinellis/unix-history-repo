@@ -1,6 +1,6 @@
 .if n .ls 2
 .he 'Sendmail Installation and Operation Guide''%'
-.fo 'Version 4.2''Last Mod %G%'
+.fo 'Version 4.3''Last Mod %G%'
 .nr si 3n
 .de $0
 .(x
@@ -28,7 +28,7 @@
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 4.2
+Version 4.3
 .)l
 .sp 2
 .pp
@@ -2922,6 +2922,21 @@ This is intended only for use from the command line.
 .ip m
 Send to me too,
 even if I am in an alias expansion.
+.ip N\fInetname\fP
+The name of the home network;
+.q ARPA
+by default.
+The the argument of an SMTP
+.q HELO
+command is checked against
+.q hostname.netname
+where
+.i hostname
+is requested from the kernel for the current connection.
+If they do not match,
+.q Received:
+lines are augmented by the name that is determined in this manner
+so that messages can be traced accurately.
 .ip o
 Assume that the headers may be in old format,
 i.e.,
@@ -3642,7 +3657,7 @@ INSTALLATION AND OPERATION GUIDE
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 4.2
+Version 4.3
 .ce 0
 .bp 1
 .ce
