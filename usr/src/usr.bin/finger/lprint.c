@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lprint.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)lprint.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -53,7 +53,7 @@ lflag_print()
 			err(1, "db seq");
 		if (r == 1)
 			break;
-		memcpy(&tmp, data.data, sizeof tmp);
+		memmove(&tmp, data.data, sizeof tmp);
 		pn = tmp;
 		if (sflag != R_FIRST)
 			putchar('\n');
