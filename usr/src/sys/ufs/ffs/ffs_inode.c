@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ffs_inode.c	7.12 (Berkeley) %G%
+ *	@(#)ffs_inode.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -827,6 +827,8 @@ indirtrunc(ip, bn, lastbn, level, countp)
  * There should not be any active ones, return error if any are found
  * (nb: this is a user error, not a system err).
  */
+int busyprt = 0;	/* patch to print out busy inodes */
+
 #ifdef QUOTA
 iflush(dev, iq)
 	dev_t dev;
@@ -837,38 +839,46 @@ iflush(dev)
 #endif
 {
 	register struct inode *ip;
+	int busy = 0;
 
 	for (ip = inode; ip < inodeNINODE; ip++) {
 #ifdef QUOTA
-		if (ip != iq && ip->i_dev == dev)
+		if (ip == iq || ip->i_dev != dev)
+			continue;
 #else
-		if (ip->i_dev == dev)
+		if (ip->i_dev != dev)
+			continue;
 #endif
-			if (ITOV(ip)->v_count)
-				return (EBUSY);
-			else {
-				remque(ip);
-				ip->i_forw = ip;
-				ip->i_back = ip;
-				/*
-				 * as v_count == 0, the inode was on the free
-				 * list already, just leave it there, it will
-				 * fall off the bottom eventually. We could
-				 * perhaps move it to the head of the free
-				 * list, but as umounts are done so
-				 * infrequently, we would gain very little,
-				 * while making the code bigger.
-				 */
+		if (ITOV(ip)->v_count) {
+			busy++;
+			if (!busyprt)
+				continue;
+			printf("%s %d on dev 0x%x count %d type %d\n",
+			    "iflush: busy inode ", ip->i_number, ip->i_dev,
+			    ITOV(ip)->v_count, ITOV(ip)->v_type);
+			continue;
+		}
+		remque(ip);
+		ip->i_forw = ip;
+		ip->i_back = ip;
+		/*
+		 * As v_count == 0, the inode was on the free list already,
+		 * just leave it there, it will fall off the bottom eventually.
+		 * We could perhaps move it to the head of the free list,
+		 * but as umounts are done so infrequently, we would gain
+		 * very little, while making the code bigger.
+		 */
 #ifdef QUOTA
-				dqrele(ip->i_dquot);
-				ip->i_dquot = NODQUOT;
+		dqrele(ip->i_dquot);
+		ip->i_dquot = NODQUOT;
 #endif
-				if (ip->i_devvp) {
-					vrele(ip->i_devvp);
-					ip->i_devvp = 0;
-				}
-			}
+		if (ip->i_devvp) {
+			vrele(ip->i_devvp);
+			ip->i_devvp = 0;
+		}
 	}
+	if (busy)
+		return (EBUSY);
 	return (0);
 }
 
