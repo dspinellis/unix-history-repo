@@ -16,15 +16,16 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)join.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)join.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
-#include <errno.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+
 #include <ctype.h>
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 /*
  * There's a structure per input file which encapsulates the state of the
@@ -285,13 +286,19 @@ slurp(F)
 		}
 		if ((bp = fgetline(F->fp, &len)) == NULL)
 			return;
-		if (lp->linealloc <= len) {
+		if (lp->linealloc <= len + 1) {
 			lp->linealloc += MAX(100, len + 1);
 			if ((lp->line =
 			    realloc(lp->line, lp->linealloc)) == NULL)
 				enomem();
 		}
-		bcopy(bp, lp->line, len + 1);
+		bcopy(bp, lp->line, len);
+
+		/* Replace trailing newline, if it exists. */
+		if (bp[len - 1] == '\n')
+			lp->line[len - 1] = '\0';
+		else
+			lp->line[len] = '\0';
 		bp = lp->line;
 
 		/* Split the line into fields, allocate space as necessary. */
