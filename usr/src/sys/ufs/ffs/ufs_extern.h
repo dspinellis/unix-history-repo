@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_extern.h	8.1 (Berkeley) %G%
+ *	@(#)ufs_extern.h	8.2 (Berkeley) %G%
  */
 
 struct buf;
@@ -48,10 +48,8 @@ int	 ufs_direnter __P((struct inode *, struct vnode *,struct componentname *));
 int	 ufs_dirremove __P((struct vnode *, struct componentname*));
 int	 ufs_dirrewrite
 	    __P((struct inode *, struct inode *, struct componentname *));
-void	 ufs_free_addrlist __P((struct ufsmount *));
 int	 ufs_getattr __P((struct vop_getattr_args *));
 int	 ufs_getlbns __P((struct vnode *, daddr_t, struct indir *, int *));
-int	 ufs_hang_addrlist __P((struct mount *, struct ufs_args *));
 struct vnode *
 	 ufs_ihashget __P((dev_t, ino_t));
 void	 ufs_ihashinit __P((void));
@@ -70,7 +68,6 @@ int	 ufs_makeinode __P((int mode, struct vnode *, struct vnode **, struct compon
 int	 ufs_mkdir __P((struct vop_mkdir_args *));
 int	 ufs_mknod __P((struct vop_mknod_args *));
 int	 ufs_mmap __P((struct vop_mmap_args *));
-int	 ufs_mountedon __P((struct vnode *));
 int	 ufs_open __P((struct vop_open_args *));
 int	 ufs_pathconf __P((struct vop_pathconf_args *));
 int	 ufs_print __P((struct vop_print_args *));
