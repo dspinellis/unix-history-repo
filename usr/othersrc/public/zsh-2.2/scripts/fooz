@@ -1,0 +1,78 @@
+alias -- 0='vi'
+alias -- a='alias'
+alias -- a.out='./a.out'
+alias -- c='cp'
+alias -- gnu='telnet gnu.ai.mit.edu'
+alias -- grep='egrep'
+alias -- gz='gdb zsh'
+alias -- j='jobs -l'
+alias -- k='kill'
+alias -- l='ls -AF'
+alias -- lock='lock -p -600'
+alias -- lsd='ls -d */'
+alias -- m='make'
+alias -- main='./main'
+alias -- man='woman'
+alias -- mm='less'
+alias -- more='less'
+alias -- nw='l -ltr | tail'
+alias -- pd='pushd'
+alias -- pop='popd'
+alias -- ps='sps'
+alias -- pwrite='talk'
+alias -- rn='h /usr/princeton/bin/rn.4.1'
+alias -- rtfm='man'
+alias -- strings='strings -'
+alias -- t='cat'
+alias -- talk='h talk'
+alias -- v='mv'
+alias -- where='hostname; echo >/dev/null'
+alias -- whm='who | mm'
+alias -- wm='w | mm'
+320 () { $* | fgrep -f /u/pfalstad/src/cs320/cs320list }
+acx () { chmod 755 $* }
+cx () { chmod +x $* }
+f () { $* | fgrep -f /u/pfalstad/.friends }
+k9 () { kill -9 $* }
+mere () { nroff <$1 -man -Tman | less -s }
+nrable () { ls -AFltr $* | grep -v r..r..  }
+rable () { ls -AFltr $* | grep r..r..  }
+export ATTRIBUTION='%f wrote:'
+export CAD_HOME='/u/cad/magic'
+export COSMOS='/u/cad/cosmos'
+export HOME='/u/pfalstad'
+export LESS='-ainx3'
+export LM_LICENSE_FILE='/u/cs475/Mentor/etc/license_file'
+export LOGNAME='pfalstad'
+export MAIL='/usr/spool/mail/pfalstad'
+export MAILCALL='NEW MAIL! '
+export MANPATH='/usr/man:/usr/princeton/man:/u/cad/man'
+export NAME='Paul Falstad'
+export OCTTOOLS='/u/cad/octtools'
+export ORGANIZATION='The E. Henry Thripshaw Fan Club'
+export PATH='/u/pfalstad/scr:/u/pfalstad/bin/sun4:/usr/princeton/bin:/usr/ucb:/usr/bin:/bin:/u/maruchck/scr:/u/cs320/bin:/u/subbarao/bin:/u/maruchck/bin:/usr/hosts:/usr/princeton/bin/X11:/usr/etc:/etc'
+export PRINTER='dod'
+export PWD='/n/homeserver/c/pfalstad/zsh2.1/scripts'
+export RNINIT='/u/pfalstad/.rninit'
+export SCS='/u/cs475/Mentor'
+export SCS_LICENSE_CLASS='2'
+export SHELL='/u/pfalstad/bin/sun4/zsh'
+export TERM='vt100'
+export TERMCAP='d0|vt100|vt100-am|vt100am|dec-vt100:do=^J:co#80:li#24:cl=50\E[;H\E[2J:sf=5\ED:le=^H:bs:am:cm=5\E[%i%d;%dH:nd=2\E[C:up=2\E[A:ce=3\E[K:cd=50\E[J:so=2\E[7m:se=2\E[m:us=2\E[4m:ue=2\E[m:md=2\E[1m:mr=2\E[7m:mb=2\E[5m:me=2\E[m:is=\E>\E[?1l\E[?3l\E[?4l\E[?5l\E[?7h\E[?8h:rf=/usr/share/lib/tabset/vt100:rs=\E>\E[?3l\E[?4l\E[?5l\E[?7h\E[?8h:ks=\E[?1h\E=:ke=\E[?1l\E>:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:kb=^H:ho=\E[H:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:pt:sr=5\EM:vt#3:xn:sc=\E7:rc=\E8:cs=\E[%i%d;%dr:'
+export USER='pfalstad'
+export YOUSAID='In %C you wrote:'
+export _='/u/pfalstad/zsh2.1/scripts/c2z'
+DISPLAY='phoenix:0.0'
+HOSTTYPE='sun4'
+cdpath=(/u/pfalstad /u/pfalstad/src/cs320 /u/pfalstad/src)
+edit=
+HISTSIZE='200'
+HOME='/u/pfalstad'
+mail=(30 /usr/spool/mail/pfalstad)
+path=(/u/pfalstad/scr /u/pfalstad/bin/sun4 /usr/princeton/bin /usr/ucb /usr/bin /bin /u/maruchck/scr /u/cs320/bin /u/subbarao/bin /u/maruchck/bin /usr/hosts /usr/princeton/bin/X11 /usr/etc /etc)
+prompt='c phoenix% '
+shell='/bin/csh'
+setopt globdots
+term='vt100'
+user='pfalstad'
+vi=

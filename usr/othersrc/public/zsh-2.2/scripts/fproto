@@ -1,0 +1,4 @@
+#! /bin/sh
+# prototype generator
+sed -n '/\/\*\*\/$/{N;s/^\([^(]*\).*\/\*\*\/.\(.*\)/\1 DCLPROTO((\2))/p;}' $1 | sed -e 's/;/,/g' -e 's/,))$/));/' -e 's/(({))$/((void));/'
+

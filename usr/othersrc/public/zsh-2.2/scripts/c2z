@@ -1,0 +1,120 @@
+#! /bin/sh
+#
+# c2z - environment conversion tool
+# Contributed by Bart Schaefer
+# (Tweaked a bit by Paul Falstad)
+#
+# This is a quick script to convert csh aliases to zsh aliases/functions.
+# It also converts the csh environment and local variables to zsh.  c2z
+# uses the csh to parse its own dot-files, then processes csh output to
+# convert the csh settings to zsh.
+#
+# When run as a zsh fuction, c2z runs csh as if it were an interactive
+# shell whenever the parent zsh is interactive.  When run as a shell
+# script, the -i switch can be used to force this behavior.
+#
+# The -l (login) switch causes csh to run as if it were a login shell.
+# This is done "properly" if c2z is used as a zsh function, otherwise
+# it's faked by explicitly sourcing .login.  Use with caution if your
+# .login initializes an X server or does other one-time-only startup
+# procedures.
+#
+# usage:
+#	c2z [-i] [-l]
+#
+# You can use this script in your .zshrc or .zlogin files to load your
+# regular csh environment into zsh; for example, in .zlogin:
+#
+#	. =(c2z -l)
+#
+# This is not perfect, but it gets most common aliases and variables.
+# It's also rather time-consuming to do this every time you log in.
+# However, if you're moving from csh to zsh for the first time, this
+# can get you started with a familiar environment right away.
+#
+# In case your mailer eats tabs, $T is set to expand to a tab.
+#
+T="`echo x | tr x '\011'`"
+
+# If we're zsh, we can run "- csh" to get the complete environment.
+#
+MINUS=""
+LOGIN=""
+INTERACT=""
+case "$VERSION" in
+zsh*)
+    case $1 in
+    -l*) MINUS="-" ;;
+    -i*) INTERACT="-i" ;;
+    esac
+    if [[ -o INTERACTIVE ]]; then INTERACT="-i"; fi
+    setopt nobanghist
+    ;;
+*)
+    case $1 in
+    -l*) LOGIN="source ~/.login" ;;
+    -i*) INTERACT="-i" ;;
+    esac
+    ;;
+esac
+
+( eval $MINUS csh $INTERACT ) <<EOF 2>&1 >/dev/null
+$LOGIN
+alias >! /tmp/cz$$.a
+setenv >! /tmp/cz$$.e
+set >! /tmp/cz$$.v
+EOF
+
+# save stdin
+exec 9<&0
+
+# First convert aliases
+exec < /tmp/cz$$.a
+
+# Taken straight from ctoz except for $T and "alias --"
+sed -e 's/'"$T"'(\(.*\))/'"$T"'\1/' >/tmp/cz$$.1
+grep ! /tmp/cz$$.1 >/tmp/cz$$.2
+grep -v ! /tmp/cz$$.1 >/tmp/cz$$.3
+sed -e "s/'/'"\\\\"''"/g \
+    -e 's/^\([^'"$T"']*\)'"$T"'\(.*\)$/alias -- \1='"'\2'/" \
+    /tmp/cz$$.3
+sed -e 's/![:#]*/$/g' \
+    -e 's/^\([^'"$T"']*\)'"$T"'\(.*\)$/\1 () { \2 }/' \
+    /tmp/cz$$.2
+
+# Next, convert environment variables
+exec < /tmp/cz$$.e
+
+# Would be nice to deal with embedded newlines, e.g. in TERMCAP, but ...
+sed -e '/^SHLVL/d' \
+    -e "s/'/'"\\\\"''"/g \
+    -e "s/^\([A-Za-z0-9_]*=\)/export \1'/" \
+    -e "s/$/'/"
+
+# Finally, convert local variables
+exec < /tmp/cz$$.v
+
+sed -e 's/'"$T"'/=/' \
+    -e "s/'/'"\\\\"''"/g \
+    -e '/^[A-Za-z0-9_]*=[^(]/{
+	s/=/='"'/"'
+	s/$/'"'/"'
+	}' |
+sed -e '/^argv=/d' -e '/^cwd=/d' -e '/^filec=/d' -e '/^status=/d' \
+	 -e '/^histchars=/s//HISTCHARS=/' \
+	 -e '/^history=/s//HISTSIZE=/' \
+	 -e '/^home=/s//HOME=/' \
+	 -e '/^ignoreeof=/s/.*/setopt ignoreeof/' \
+	 -e '/^noclobber=/s/.*/setopt noclobber/' \
+	 -e '/^notify=/d' \
+	 -e '/^showdots=/s/.*/setopt globdots/' \
+    -e '/^savehist=/s//HISTFILE=\~\/.zhistory SAVEHIST=/' \
+	 -e '/^autolist=/s/.*/setopt autolist/' \
+	 -e '/^correct=[cmd]*/s//setopt autocorrect/' \
+	 -e '/^who=/s//WATCHFMT=/'
+
+
+exec 0<&9
+
+rm /tmp/cz$$.?
+exit

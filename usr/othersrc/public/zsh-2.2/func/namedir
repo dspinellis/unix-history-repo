@@ -1,0 +1,15 @@
+# give a name to a directory
+
+$1=~+
+: ~$1
+
+# for example, if we say: namedir foo
+# where the current directory is /usr/princeton/common/src/news/nntp/inews
+# this will do:
+#
+# foo=/usr/princeton/common/src/news/nntp/inews
+# : ~foo
+#
+# The : ~foo just evaluates ~foo, which declares foo as a named directory.
+# The first time a parameter is used with tilde expansion, it is declared
+# as the name of a named dir.

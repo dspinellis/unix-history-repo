@@ -1,0 +1,13 @@
+void prefork DCLPROTO((Lklist list));
+void postfork DCLPROTO((Lklist list,int doglob));
+void singsub DCLPROTO((char **s));
+vptr nstrdup DCLPROTO((vptr s));
+char *dynread DCLPROTO((int stop));
+int filesub DCLPROTO((char **namptr));
+char *gethome DCLPROTO((char *user,int len));
+void commsubst DCLPROTO((Lklist l,Lknode n,char *str3,char *str,int qt));
+void paramsubst DCLPROTO((Lklist l,Lknode n,char *aptr,char *bptr,int qt));
+void arithsubst DCLPROTO((vptr *aptr,char **bptr));
+void modify DCLPROTO((char **str,char **ptr));
+char *dstackent DCLPROTO((int val));
+struct alias *mkanode DCLPROTO((char *txt,int cmflag));
