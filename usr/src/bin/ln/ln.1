@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)ln.1	6.8 (Berkeley) %G%
+.\"	@(#)ln.1	6.9 (Berkeley) %G%
 .\"
 .Dd 
 .Dt LN 1
@@ -16,29 +16,33 @@
 .Nd make links
 .Sh SYNOPSIS
 .Nm ln
-.Op Fl s
+.Op Fl fs
 .Ar source_file
 .Op target_file
 .Nm ln
-.Op Fl s
+.Op Fl fs
 .Ar source_file ...
 .Op target_dir
 .Sh DESCRIPTION
 The
 .Nm ln
-utility creates a new
-directory entry (linked file)
-which inherits the same modes as the orginal
-file.
-It is useful for maintaining multiple copies of a file in
-many places at once - without the `copies'; instead,
-a link `points' to the original copy.
+utility creates a new directory entry (linked file) which has the
+same modes as the orginal file.
+It is useful for maintaining multiple copies of a file in many places
+at once without using up storage for the
+.Dq copies ;
+instead, a link
+.Dq points
+to the original copy.
 There are two types of links; hard links and symbolic links.
-How a link `points' to a file is one of the differences
-between a hard or symbolic link.
+How a link
+.Dq points
+to a file is one of the differences between a hard or symbolic link.
 .Pp
-Option available:
+The options are as follows:
 .Bl -tag -width flag
+.It Fl f
+Unlink any already existing file, permitting the link to occur.
 .It Fl s
 Create a symbolic link.
 .El
@@ -48,12 +52,10 @@ By default
 makes
 .Em hard
 links.
-A hard link to a file is indistinguishable from the
-original directory entry; any changes to a
-file are effective independent of the name used
-to reference the file.  Hard links may not refer to directories
-(unless the proper incantations are supplied) and may not span
-file systems.
+A hard link to a file is indistinguishable from the original directory entry;
+any changes to a file are effective independent of the name used to reference
+the file.
+Hard links may not normally refer to directories and may not span file systems.
 .Pp
 A symbolic link contains the name of the file to
 which it is linked.  The referenced file is used when an
@@ -89,10 +91,90 @@ makes links in
 .Ar target_dir
 to all the named source files.
 The links made will have the same name as the files being linked to.
+.Sh SYMBOLIC LINK FOLLOWING
+Many file system traversal utilities and system calls
+have the option of traversing the file system in a physical traversal, i.e., 
+treating a symbolic link as a link rather than its target, or in a logical
+traversal, i.e., following the symbolic link whenever one is encountered.
+The following rules summarize the conventions of symbolic link following in 
+utilities and system calls.
+.Pp
+The only system calls that operate on symbolic links are 
+.Xr unlink 2 ,
+.Xr rename 2 ,
+.Xr lstat 2 ,
+and
+.Xr readlink 2 .
+All other system calls follow the symbolic link and operate on the object to
+which the link points to.
+.Pp
+Utilities that do not recurse over trees always
+follow symbolic links on the command line.  The rest of the utilities
+.Xr (chown 1 ,
+.Xr chmod 1 ,
+.Xr chgrp 1 ,
+.Xr chflags 1 ,
+.Xr cp 1 ,
+.Xr du 1 ,
+.Xr find 1 ,
+and
+.Xr tar 1 )
+treat symbolic links in three distinct ways.  The first option, the default,
+is to never follow any symbolic link.  The second, specified by the
+.Fl H 
+flag, causes the utility to follow symbolic links only on the command line
+but not in the tree of traversal (if recursive).  The third option, specified
+by the 
+.Fl h
+flag, causes the utility to follow any symbolic link encountered on the command
+line and in the tree of traversal (if recursive).
+.Pp
+The purpose of the 
+.Fl H
+flag is to make the command line name space look like the logical name space,
+i.e., make all names on the command line appear as hard links, whereas the
+purpose of the
+.Fl h
+flag is to make the entire hierarchy look like the logical name space. i.e., 
+make all names in the hierarchy appear as hard links.
+.Pp
+Exceptions to these rules are the behaviors of 
+.Xr rm  1 ,
+.Xr mv 1 ,
+and
+.Xr ls  1 .
+.Pp
+.Xr Rm 1 
+and
+.Xr mv 1
+operate on the name, not the object it points to, and therefore always operate
+on the symbolic link itself and do not follow it.
+.Pp
+For historical reasons,
+.Xr ls 1
+follows symbolic links in the entire hierarchy (including command line)
+only when the 
+.Fl L 
+option is specified, and follows only on the command line only 
+when neither of the 
+.Fl F, d, 
+or 
+.Fl l
+options are specified. In all other cases, 
+.Xr ls 1 
+does not follow symbolic links.
 .Sh SEE ALSO
 .Xr rm 1 ,
 .Xr cp 1 ,
 .Xr mv 1 ,
+.Xr ls 1 ,
+.Xr tar 1 ,
+.Xr chown 1 ,
+.Xr chmod 1 ,
+.Xr chgrp 1 ,
+.Xr chflags 1 ,
+.Xr du 1 ,
+.Xr find 1 ,
 .Xr link 2 ,
 .Xr readlink 2 ,
 .Xr stat 2 ,
