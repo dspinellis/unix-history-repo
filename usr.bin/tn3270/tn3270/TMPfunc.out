@@ -1,0 +1,216 @@
+# 1 "./../ctlr/function.c"
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static char sccsid[] = "@(#)function.c	4.2 (Berkeley) 4/26/91";
+
+
+ 
+
+
+
+
+
+
+
+
+# 1 "./../ctlr/function.h" 1
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+enum ctlrfcn {
+
+	undefined = 0,			 
+
+	FCN_NULL,	  		 
+
+	FCN_RESET,			 
+	FCN_MAKE_SHIFT_LOCK,
+	FCN_BREAK_SHIFT_LOCK,
+
+	FCN_MAKE_SHIFT,			 
+	FCN_BREAK_SHIFT,		 
+
+	FCN_MAKE_ALT,			 
+	FCN_BREAK_ALT,			 
+
+	FCN_MAKE_CTRL,
+
+	FCN_CAPS_LOCK,
+
+	FCN_MONOCASE,			 
+	FCN_DVCNL,
+
+	FCN_CHARACTER,			 
+	FCN_VERTICAL_BAR,		 
+	FCN_CENTSIGN,			 
+	FCN_SPACE,			 
+	FCN_DP,				 
+	FCN_FM,				 
+
+	FCN_AID,			 
+	FCN_ATTN,
+	FCN_CURSEL,			 
+	FCN_TEST,			 
+
+	FCN_EINP,			 
+	FCN_EEOF,
+	FCN_DELETE,
+	FCN_INSRT,
+	FCN_TAB,
+	FCN_BTAB,
+	FCN_NL,
+	FCN_HOME,
+	FCN_UP,
+	FCN_DOWN,
+	FCN_RIGHT,
+	FCN_LEFT,
+	FCN_LEFT2,
+	FCN_RIGHT2,
+
+
+	 
+
+
+	FCN_SETTAB,			 
+	FCN_DELTAB,
+	FCN_COLTAB,
+	FCN_COLBAK,
+	FCN_INDENT,			 
+	FCN_UNDENT,
+	FCN_SETMRG,
+	FCN_SETHOM,
+	FCN_CLRTAB,
+	FCN_ERASE,			 
+	FCN_WERASE,
+	FCN_FERASE,
+	FCN_WORDTAB,			 
+	FCN_WORDBACKTAB,
+	FCN_WORDEND,			 
+	FCN_FIELDEND,			 
+
+	 
+
+
+	FCN_APLON,			 
+	FCN_APLOFF,
+	FCN_APLEND,
+
+	FCN_PCON,
+	FCN_PCOFF,
+	FCN_INIT,			 
+	FCN_SYNCH,			 
+	FCN_FLINP,			 
+	FCN_RESHOW,			 
+	FCN_MASTER_RESET,		 
+
+	FCN_DISC,			 
+	FCN_ESCAPE,			 
+
+	FCN_ALTK,			 
+
+	FCN_XOFF,			 
+	FCN_XON,			 
+
+	FCN_LPRT			 
+
+};
+ 
+
+
+
+
+struct hits {
+    unsigned char keynumber;
+    struct hit {
+	enum ctlrfcn ctlrfcn;
+	unsigned char code;	 
+    } hit[4];	 
+};
+
+extern struct hits hits[];
+
+ 
+
+
+
+
+
+
+
+
+
+# 47 "./../ctlr/function.c" 2
+
