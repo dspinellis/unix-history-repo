@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)lprm.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)lprm.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -26,7 +26,18 @@ static char sccsid[] = "@(#)lprm.c	5.6 (Berkeley) %G%";
  * entries, otherwise one can only remove their own.
  */
 
+#include <sys/param.h>
+
+#include <syslog.h>
+#include <dirent.h>
+#include <pwd.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
 #include "lp.h"
+#include "lp.local.h"
 
 /*
  * Stuff for handling job specifications
@@ -39,14 +50,15 @@ char	*person;		/* name of person doing lprm */
 
 static char	luser[16];	/* buffer for person */
 
+void usage __P((void));
+
+int
 main(argc, argv)
 	int argc;
 	char *argv[];
 {
 	register char *arg;
 	struct passwd *p;
-	struct direct **files;
-	int nitems, assasinated = 0;
 
 	name = argv[0];
 	gethostname(host, sizeof(host));
@@ -94,8 +106,10 @@ main(argc, argv)
 		printer = DEFLP;
 
 	rmjob();
+	exit(0);
 }
 
+void
 usage()
 {
 	fprintf(stderr, "usage: lprm [-] [-Pprinter] [[job #] [user] ...]\n");

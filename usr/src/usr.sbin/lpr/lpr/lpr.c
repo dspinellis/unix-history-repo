@@ -69,8 +69,9 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)lpr.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)lpr.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
+
 /*
  *      lpr -- off line print
  *
@@ -78,15 +79,22 @@ static char sccsid[] = "@(#)lpr.c	5.10 (Berkeley) %G%";
  * using information from a printer data base.
  */
 
-#include <stdio.h>
-#include <sys/types.h>
-#include <sys/file.h>
+#include <sys/param.h>
 #include <sys/stat.h>
+
+#include <dirent.h>
+#include <fcntl.h>
+#include <a.out.h>
+#include <signal.h>
+#include <syslog.h>
 #include <pwd.h>
 #include <grp.h>
-#include <signal.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <ctype.h>
-#include <syslog.h>
+#include <string.h>
+#include "lp.h"
 #include "lp.local.h"
 #include "pathnames.h"
 
@@ -111,7 +119,7 @@ char	*person;		/* user name */
 char	*title;			/* pr'ing title */
 char	*fonts[4];		/* troff font names */
 char	*width;			/* width for versatec printing */
-char	host[32];		/* host name */
+char	host[MAXHOSTNAMELEN];	/* host name */
 char	*class = host;		/* class title on header page */
 char    *jobname;		/* job name on header page */
 char	*name;			/* program name */
@@ -126,12 +134,19 @@ char	*LO;			/* lock file name */
 char	*RG;			/* restrict group */
 short	SC;			/* suppress multiple copies */
 
-char	*getenv();
-char	*rindex();
-char	*linked();
-void	cleanup();
+void	 card __P((int, char *));
+void	 chkprinter __P((char *));
+void	 cleanup __P((int));
+void	 copy __P((int, char []));
+void	 fatal __P((const char *, ...));
+char	*itoa __P((int));
+char	*linked __P((char *));
+char	*lmktemp __P((char *, int, int));
+void	 mktemps __P((void));
+int	 nfile __P((char *));
+int	 test __P((char *));
 
-/*ARGSUSED*/
+int
 main(argc, argv)
 	int argc;
 	char *argv[];
@@ -386,18 +401,19 @@ main(argc, argv)
 		if ((tfd = open(tfname, O_RDWR)) >= 0) {
 			char c;
 
-			if (read(tfd, &c, 1) == 1 && lseek(tfd, 0L, 0) == 0 &&
+			if (read(tfd, &c, 1) == 1 &&
+			    lseek(tfd, (off_t)0, 0) == 0 &&
 			    write(tfd, &c, 1) != 1) {
 				printf("%s: cannot touch %s\n", name, tfname);
 				tfname[inchar]++;
-				cleanup();
+				cleanup(0);
 			}
 			(void) close(tfd);
 		}
 		if (link(tfname, cfname) < 0) {
 			printf("%s: cannot rename %s\n", name, cfname);
 			tfname[inchar]++;
-			cleanup();
+			cleanup(0);
 		}
 		unlink(tfname);
 		if (qflag)		/* just q things up */
@@ -406,13 +422,14 @@ main(argc, argv)
 			printf("jobs queued, but cannot start daemon.\n");
 		exit(0);
 	}
-	cleanup();
+	cleanup(0);
 	/* NOTREACHED */
 }
 
 /*
  * Create the file n and copy from file descriptor f.
  */
+void
 copy(f, n)
 	int f;
 	char n[];
@@ -489,8 +506,10 @@ linked(file)
 /*
  * Put a line into the control file.
  */
+void
 card(c, p2)
-	register char c, *p2;
+	register int c;
+	register char *p2;
 {
 	char buf[BUFSIZ];
 	register char *p1 = buf;
@@ -508,26 +527,27 @@ card(c, p2)
 /*
  * Create a new file in the spool directory.
  */
+int
 nfile(n)
 	char *n;
 {
-	register f;
+	register int f;
 	int oldumask = umask(0);		/* should block signals */
 
 	f = creat(n, FILMOD);
 	(void) umask(oldumask);
 	if (f < 0) {
 		printf("%s: cannot create %s\n", name, n);
-		cleanup();
+		cleanup(0);
 	}
 	if (fchown(f, userid, -1) < 0) {
 		printf("%s: cannot chown %s\n", name, n);
-		cleanup();
+		cleanup(0);
 	}
 	if (++n[inchar] > 'z') {
 		if (++n[inchar-2] == 't') {
 			printf("too many files - break up the job\n");
-			cleanup();
+			cleanup(0);
 		}
 		n[inchar] = 'A';
 	} else if (n[inchar] == '[')
@@ -539,7 +559,8 @@ nfile(n)
  * Cleanup after interrupts and errors.
  */
 void
-cleanup()
+cleanup(signo)
+	int signo;
 {
 	register i;
 
@@ -571,6 +592,7 @@ cleanup()
  * Return -1 if it is not, 0 if its printable, and 1 if
  * we should remove it after printing.
  */
+int
 test(file)
 	char *file;
 {
@@ -598,19 +620,9 @@ test(file)
 		printf("%s: cannot open %s\n", name, file);
 		return(-1);
 	}
-	if (read(fd, &execb, sizeof(execb)) == sizeof(execb))
-		switch(execb.a_magic) {
-		case A_MAGIC1:
-		case A_MAGIC2:
-		case A_MAGIC3:
-#ifdef A_MAGIC4
-		case A_MAGIC4:
-#endif
+	if (read(fd, &execb, sizeof(execb)) == sizeof(execb) &&
+	    !N_BADMAG(execb)) {
 			printf("%s: %s is an executable program", name, file);
-			goto error1;
-
-		case ARMAG:
-			printf("%s: %s is an archive file", name, file);
 			goto error1;
 		}
 	(void) close(fd);
@@ -659,6 +671,7 @@ itoa(i)
 /*
  * Perform lookup for printer name or abbreviation --
  */
+void
 chkprinter(s)
 	char *s;
 {
@@ -666,7 +679,6 @@ chkprinter(s)
 	char buf[BUFSIZ];
 	static char pbuf[BUFSIZ/2];
 	char *bp = pbuf;
-	extern char *pgetstr();
 
 	if ((status = pgetent(buf, s)) < 0)
 		fatal("cannot open printer description file");
@@ -689,9 +701,10 @@ chkprinter(s)
 /*
  * Make the temp files.
  */
+void
 mktemps()
 {
-	register int c, len, fd, n;
+	register int len, fd, n;
 	register char *cp;
 	char buf[BUFSIZ];
 	char *lmktemp();
@@ -719,7 +732,7 @@ mktemps()
 	dfname = lmktemp("df", n, len);
 	inchar = strlen(SD) + 3;
 	n = (n + 1) % 1000;
-	(void) lseek(fd, 0L, 0);
+	(void) lseek(fd, (off_t)0, 0);
 	sprintf(buf, "%03d\n", n);
 	(void) write(fd, buf, strlen(buf));
 	(void) close(fd);	/* unlocks as well */
@@ -734,7 +747,6 @@ lmktemp(id, num, len)
 	int	num, len;
 {
 	register char *s;
-	extern char *malloc();
 
 	if ((s = malloc(len)) == NULL)
 		fatal("out of memory");
@@ -742,12 +754,30 @@ lmktemp(id, num, len)
 	return(s);
 }
 
-/*VARARGS1*/
-fatal(msg, a1, a2, a3)
+#if __STDC__
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
+
+void
+#if __STDC__
+fatal(const char *msg, ...)
+#else
+fatal(msg, va_alist)
 	char *msg;
+        va_dcl
+#endif
 {
+	va_list ap;
+#if __STDC__
+	va_start(ap, msg);
+#else
+	va_start(ap);
+#endif
 	printf("%s: ", name);
-	printf(msg, a1, a2, a3);
+	vprintf(msg, ap);
 	putchar('\n');
+	va_end(ap);
 	exit(1);
 }
