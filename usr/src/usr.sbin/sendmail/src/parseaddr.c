@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	8.32 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	8.33 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -757,7 +757,7 @@ _rewrite(pvp, ruleset)
 	struct match *old_mlp;		/* to save our place */
 	bool extend_match;	/* extend existing match during backup */
 
-	if (OpMode == MD_TEST || tTd(21, 2))
+	if (OpMode == MD_TEST || tTd(21, 1))
 	{
 		printf("rewrite: ruleset %2d   input:", ruleset);
 		printcav(pvp);
@@ -1471,7 +1471,7 @@ backup:
 		}
 	}
 
-	if (OpMode == MD_TEST || tTd(21, 2))
+	if (OpMode == MD_TEST || tTd(21, 1))
 	{
 		printf("rewrite: ruleset %2d returns:", ruleset);
 		printcav(pvp);
