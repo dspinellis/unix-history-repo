@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)err.c	8.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)err.c	8.14 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -315,17 +315,16 @@ puterrmsg(msg)
 	putoutmsg(msg, HoldErrs);
 
 	/* signal the error */
-	if (!HoldErrs)
-	{
-		Errors++;
-		if (msgcode == '5' && bitset(EF_GLOBALERRS, CurEnv->e_flags))
-			CurEnv->e_flags |= EF_FATALERRS;
-	}
-
+	Errors++;
 	if (msgcode == '6')
 	{
 		/* notify the postmaster */
 		CurEnv->e_flags |= EF_PM_NOTIFY;
+	}
+	else if (msgcode == '5' && bitset(EF_GLOBALERRS, CurEnv->e_flags))
+	{
+		/* mark long-term fatal errors */
+		CurEnv->e_flags |= EF_FATALERRS;
 	}
 }
 /*
