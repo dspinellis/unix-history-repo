@@ -1,14 +1,16 @@
 /*
  * Main/getopt(3) fragment.
  *
- *	@(#)getopt	5.1 (Berkeley) %G%
+ *	@(#)getopt	5.2 (Berkeley) %G%
  */
 
 #include <sys/types.h>
+
 #include <stdlib.h>
 
 void usage __P((void));
 
+int
 main(argc, argv)
 	int argc;
 	char *argv[];
@@ -16,7 +18,7 @@ main(argc, argv)
 	int ch;
 
 	while ((ch = getopt(argc, argv, "")) != EOF)
-		switch(ch) {
+		switch (ch) {
 		case '':
 			break;
 		case '?':
