@@ -529,12 +529,19 @@ badlogin(name)
 {
 	if (failures == 0)
 		return;
-	if (hostname)
-		syslog(LOG_NOTICE, "%d LOGIN FAILURE%s FROM %s, %s",
+	if (hostname) {
+		syslog(LOG_NOTICE, "%d LOGIN FAILURE%s FROM %s",
+		    failures, failures > 1 ? "S" : "", hostname);
+		syslog(LOG_AUTHPRIV|LOG_NOTICE,
+		    "%d LOGIN FAILURE%s FROM %s, %s",
 		    failures, failures > 1 ? "S" : "", hostname, name);
-	else
-		syslog(LOG_NOTICE, "%d LOGIN FAILURE%s ON %s, %s",
+	} else {
+		syslog(LOG_NOTICE, "%d LOGIN FAILURE%s ON %s",
+		    failures, failures > 1 ? "S" : "", tty);
+		syslog(LOG_AUTHPRIV|LOG_NOTICE,
+		    "%d LOGIN FAILURE%s ON %s, %s",
 		    failures, failures > 1 ? "S" : "", tty, name);
+	}
 }
 
 #undef	UNKNOWN
