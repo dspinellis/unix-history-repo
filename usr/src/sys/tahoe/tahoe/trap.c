@@ -3,12 +3,11 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)trap.c	7.3 (Berkeley) %G%
+ *	@(#)trap.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
-#include "dir.h"
 #include "user.h"
 #include "proc.h"
 #include "seg.h"
@@ -266,7 +265,7 @@ syscall(sp, type, hfs, accmst, acclst, dbl, code, pc, psl)
 		if (KTRPOINT(p, KTR_SYSCALL))
 			ktrsyscall(p->p_tracep, code, callp->sy_narg);
 #endif
-		(*callp->sy_call)();
+		(*callp->sy_call)(&u);
 	}
 	if (u.u_eosys == NORMALRETURN) {
 		if (u.u_error) {
