@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.69		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.70		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.69		%G%);
+SCCSID(@(#)queue.c	3.70		%G%);
 
 /*
 **  Work queue.
@@ -105,6 +105,7 @@ queueup(df)
 
 	bzero(&nullmailer, sizeof nullmailer);
 	nullmailer.m_r_rwset = nullmailer.m_s_rwset = -1;
+	nullmailer.m_eol = "\n";
 
 	define('g', "$f", e);
 	for (h = CurEnv->e_header; h != NULL; h = h->h_link)
