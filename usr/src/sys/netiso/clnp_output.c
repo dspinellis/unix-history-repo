@@ -24,11 +24,11 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
-/* $Header: clnp_output.c,v 4.5 88/09/15 18:57:57 hagens Exp $ */
-/* $Source: /usr/argo/sys/netiso/RCS/clnp_output.c,v $ */
+/* $Header: /var/src/sys/netiso/RCS/clnp_output.c,v 5.0 89/02/08 12:00:15 hagens Exp $ */
+/* $Source: /var/src/sys/netiso/RCS/clnp_output.c,v $ */
 
 #ifndef lint
-static char *rcsid = "$Header: clnp_output.c,v 4.5 88/09/15 18:57:57 hagens Exp $";
+static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_output.c,v 5.0 89/02/08 12:00:15 hagens Exp $";
 #endif lint
 
 #ifdef ISO
@@ -114,6 +114,11 @@ static struct clnp_fixed echo_template = {
 	0				/* checksum */
 };
 
+#ifdef	DECBIT
+u_char qos_option[] = {CLNPOVAL_QOS, 1, 
+	CLNPOVAL_GLOBAL|CLNPOVAL_SEQUENCING|CLNPOVAL_LOWDELAY};
+#endif	DECBIT
+
 int				clnp_id = 0;		/* id for segmented dgrams */
 
 /*
@@ -178,6 +183,7 @@ int					flags;		/* flags */
 	struct iso_addr				*dst;		/* ptr to destination address */
 	struct clnp_cache			clc;		/* storage for cache information */
 	struct clnp_cache			*clcp = NULL;	/* ptr to clc */
+	int							hdrlen = 0;
 
 	src = &isop->isop_laddr.siso_addr;
 	dst = &isop->isop_faddr.siso_addr;
@@ -428,6 +434,22 @@ int					flags;		/* flags */
 		}
 
 		clnp->cnf_hdr_len = m->m_len = (u_char)(hoff - (caddr_t)clnp);
+		hdrlen = clnp->cnf_hdr_len;
+
+#ifdef	DECBIT
+		/*
+		 *	Add the globally unique QOS (with room for congestion experienced
+		 *	bit). I can safely assume that this option is not in the options
+		 *	mbuf below because I checked that the option was not specified
+		 *	previously
+		 */
+		if ((m->m_len + sizeof(qos_option)) < MLEN) {
+			bcopy((caddr_t)qos_option, hoff, sizeof(qos_option));
+			clnp->cnf_hdr_len += sizeof(qos_option);
+			hdrlen += sizeof(qos_option);
+			m->m_len += sizeof(qos_option);
+		}
+#endif	DECBIT
 
 		/*
 		 *	If an options mbuf is present, concatenate a copy to the hdr mbuf.
@@ -444,6 +466,12 @@ int					flags;		/* flags */
 
 			/* update size of header */
 			clnp->cnf_hdr_len += opt_copy->m_len;
+			hdrlen += opt_copy->m_len;
+		}
+
+		if (hdrlen > CLNP_HDR_MAX) {
+			error = EMSGSIZE;
+			goto bad;
 		}
 
 		/*
