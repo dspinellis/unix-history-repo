@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)display.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)display.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -131,8 +131,9 @@ display()
 			for (cnt = fu->reps; cnt; --cnt)
 			    for (pr = fu->nextpr; pr; address += pr->bcnt,
 				bp += pr->bcnt, pr = pr->nextpr) {
-				    if (eaddress && address >= eaddress)
-					    bpad(fu, pr);
+				    if (eaddress && address >= eaddress &&
+					!(pr->flags&(F_TEXT|F_BPAD)))
+					    bpad(pr);
 				    if (cnt == 1 && pr->nospace) {
 					savech = *pr->nospace;
 					*pr->nospace = '\0';
@@ -159,6 +160,23 @@ display()
 				break;
 			}
 	}
+}
+
+bpad(pr)
+	PR *pr;
+{
+	static char *spec = " -0+#";
+	register char *p1, *p2;
+
+	/*
+	 * remove all conversion flags; '-' is the only one valid
+	 * with %s, and it's not useful here.
+	 */
+	pr->flags = F_BPAD;
+	*pr->cchar = 's';
+	for (p1 = pr->fmt; *p1 != '%'; ++p1);
+	for (p2 = ++p1; *p1 && index(spec, *p1); ++p1);
+	while (*p2++ = *p1++);
 }
 
 u_char *
