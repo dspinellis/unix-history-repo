@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)getdtablesize.2	6.1 (Berkeley) %G%
+.\"	@(#)getdtablesize.2	6.2 (Berkeley) %G%
 .\"
 .TH GETDTABLESIZE 2 ""
 .UC 5
@@ -15,7 +15,7 @@ nfds = getdtablesize()
 int nfds;
 .fi
 .SH DESCRIPTION
-Each process has a fixed size descriptor table
+Each process has a fixed size descriptor table,
 which is guaranteed to have at least 20 slots.  The entries in
 the descriptor table are numbered with small integers starting at 0.
 The call
