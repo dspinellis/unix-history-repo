@@ -9,10 +9,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)param.h	8.2 (Berkeley) %G%
+ *	@(#)param.h	8.3 (Berkeley) %G%
  */
 
-#define	BSD	199306		/* System version (year & month). */
+#define	BSD	199506		/* System version (year & month). */
 #define BSD4_3	1
 #define BSD4_4	1
 
