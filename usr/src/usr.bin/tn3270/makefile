@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)makefile	4.1 (Berkeley) %G%
+#	@(#)makefile	4.2 (Berkeley) %G%
 #
 
 # Makefile for tn3270 and friends...
@@ -213,7 +213,7 @@ everywhere:	action
 		do (echo "[$$i]"; cd $$i; make ${MFLAGS} action \
 						"ACTION=${ACTION}"); done
 
-clean:
+cleandir clean:
 	for i in $(ALLO) mset tn3270 errs makefile.bak; \
 			do (${RM} $$i); done
 	for i in ${SUBDIR} ${EXTRADIR}; \
