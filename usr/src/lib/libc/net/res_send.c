@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_send.c	6.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_send.c	6.26 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -61,7 +61,7 @@ res_send(buf, buflen, answer, anslen)
 #ifdef DEBUG
 	if (_res.options & RES_DEBUG) {
 		printf("res_send()\n");
-		p_query(buf);
+		__p_query(buf);
 	}
 #endif DEBUG
 	if (!(_res.options & RES_INIT))
@@ -332,7 +332,7 @@ wait:
 #ifdef DEBUG
 				if (_res.options & RES_DEBUG) {
 					printf("old answer:\n");
-					p_query(answer);
+					__p_query(answer);
 				}
 #endif DEBUG
 				goto wait;
@@ -355,7 +355,7 @@ wait:
 #ifdef DEBUG
 		if (_res.options & RES_DEBUG) {
 			printf("got answer:\n");
-			p_query(answer);
+			__p_query(answer);
 		}
 #endif DEBUG
 		/*
