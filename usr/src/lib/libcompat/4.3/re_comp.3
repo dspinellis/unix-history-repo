@@ -3,10 +3,10 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)re_comp.3	6.4 (Berkeley) %G%
+.\"     @(#)re_comp.3	6.5 (Berkeley) %G%
 .\"
 .Dd 
-.Dt REGEX 3
+.Dt RE_COMP 3
 .Os
 .Sh NAME
 .Nm re_comp ,
@@ -18,12 +18,10 @@
 .Fn re_comp "const char *s"
 .Ft int
 .Fn re_exec "const char *s"
-.Bf -symbolic
-This interface is made obsolete by:
-.Ef
-.Xr regexp 3 .
-.Pp
 .Sh DESCRIPTION
+This interface is made obsolete by
+.Xr regex 3 .
+.Pp
 The
 .Fn re_comp
 function
@@ -89,7 +87,7 @@ unmatched \e).
 .Xr egrep 1 ,
 .Xr fgrep 1 ,
 .Xr grep 1 ,
-.Xr regexp 3
+.Xr regex 3
 .Sh HISTORY
 The
 .Fn re_comp
