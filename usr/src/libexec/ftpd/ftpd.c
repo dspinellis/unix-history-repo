@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	4.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	4.23 (Berkeley) %G%";
 #endif
 
 /*
@@ -9,6 +9,7 @@ static char sccsid[] = "@(#)ftpd.c	4.22 (Berkeley) %G%";
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
+#include <sys/file.h>
 
 #include <netinet/in.h>
 
@@ -59,7 +60,7 @@ int	stru;			/* avoid C keyword */
 int	mode;
 int	usedefault = 1;		/* for data transfers */
 char	hostname[32];
-char	*remotehost;
+char	remotehost[32];
 struct	servent *sp;
 
 /*
@@ -76,7 +77,6 @@ int	swaitint = SWAITINT;
 int	lostconn();
 int	reapchild();
 FILE	*getdatasock(), *dataconn();
-char	*ntoa();
 
 main(argc, argv)
 	int argc;
@@ -129,28 +129,26 @@ nextopt:
 	for (s = 0; s < 10; s++)
 		if (!logging || (s != 2))
 			(void) close(s);
-	(void) open("/", 0);
+	(void) open("/", O_RDONLY);
 	(void) dup2(0, 1);
 	if (!logging)
 		(void) dup2(0, 2);
-	{ int tt = open("/dev/tty", 2);
+	{ int tt = open("/dev/tty", O_RDWR);
 	  if (tt > 0) {
 		ioctl(tt, TIOCNOTTY, 0);
 		close(tt);
 	  }
 	}
 #endif
-	while ((s = socket(AF_INET, SOCK_STREAM, 0, 0)) < 0) {
+	while ((s = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
 		perror("ftpd: socket");
 		sleep(5);
 	}
 	if (options & SO_DEBUG)
 		if (setsockopt(s, SOL_SOCKET, SO_DEBUG, 0, 0) < 0)
 			perror("ftpd: setsockopt (SO_DEBUG)");
-#ifdef notdef
 	if (setsockopt(s, SOL_SOCKET, SO_KEEPALIVE, 0, 0) < 0)
 		perror("ftpd: setsockopt (SO_KEEPALIVE)");
-#endif
 	while (bind(s, &ctrl_addr, sizeof (ctrl_addr), 0) < 0) {
 		perror("ftpd: bind");
 		sleep(5);
@@ -169,8 +167,7 @@ nextopt:
 		}
 		if (fork() == 0) {
 			signal (SIGCHLD, SIG_IGN);
-			if (logging)
-				dolog(&his_addr);
+			dolog(&his_addr);
 			close(s);
 			dup2(ctrl, 0), close(ctrl), dup2(0, 1);
 			/* do telnet option negotiation here */
@@ -244,6 +241,7 @@ pass(passwd)
 	else
 		reply(230, "Guest login ok, access restrictions apply.");
 	logged_in = 1;
+	dologin(pw);
 	seteuid(pw->pw_uid);
 	/*
 	 * Save everything so globbing doesn't
@@ -361,11 +359,11 @@ FILE *
 getdatasock(mode)
 	char *mode;
 {
-	int s, linger;
+	int s;
 
 	if (data >= 0)
 		return (fdopen(data, mode));
-	s = socket(AF_INET, SOCK_STREAM, 0, 0);
+	s = socket(AF_INET, SOCK_STREAM, 0);
 	if (s < 0)
 		return (NULL);
 	seteuid(0);
@@ -376,8 +374,6 @@ getdatasock(mode)
 	data_source.sin_addr = ctrl_addr.sin_addr;
 	if (bind(s, &data_source, sizeof (data_source), 0) < 0)
 		goto bad;
-	linger = 60;			/* value ignored by system */
-	(void) setsockopt(s, SOL_SOCKET, SO_LINGER, &linger, sizeof (linger));
 	seteuid(pw->pw_uid);
 	return (fdopen(s, mode));
 bad:
@@ -412,13 +408,13 @@ dataconn(name, size, mode)
 	file = getdatasock(mode);
 	if (file == NULL) {
 		reply(425, "Can't create data socket (%s,%d): %s.",
-		    ntoa(data_source.sin_addr),
+		    inet_ntoa(data_source.sin_addr),
 		    ntohs(data_source.sin_port),
 		    sys_errlist[errno]);
 		return (NULL);
 	}
 	reply(150, "Opening data connection for %s (%s,%d)%s.",
-	    name, ntoa(data_dest.sin_addr.s_addr),
+	    name, inet_ntoa(data_dest.sin_addr.s_addr),
 	    ntohs(data_dest.sin_port), sizebuf);
 	data = fileno(file);
 	while (connect(data, &data_dest, sizeof (data_dest), 0) < 0) {
@@ -536,7 +532,7 @@ fatal(s)
 {
 	reply(451, "Error in server: %s\n", s);
 	reply(221, "Closing connection due to server error.");
-	exit(0);
+	dologout(0);
 }
 
 reply(n, s, args)
@@ -694,38 +690,74 @@ renamecmd(from, to)
 	ack("RNTO");
 }
 
-/*
- * Convert network-format internet address
- * to base 256 d.d.d.d representation.
- */
-char *
-ntoa(in)
-	struct in_addr in;
-{
-	static char b[18];
-	register char *p;
-
-	p = (char *)&in;
-#define	UC(b)	(((int)b)&0xff)
-	sprintf(b, "%d.%d.%d.%d", UC(p[0]), UC(p[1]), UC(p[2]), UC(p[3]));
-	return (b);
-}
-
 dolog(sin)
 	struct sockaddr_in *sin;
 {
 	struct hostent *hp = gethostbyaddr(&sin->sin_addr,
 		sizeof (struct in_addr), AF_INET);
-	char *remotehost;
 	time_t t;
 
-	if (hp)
-		remotehost = hp->h_name;
-	else
-		remotehost = inet_ntoa(sin->sin_addr);
+	if (hp) {
+		strncpy(remotehost, hp->h_name, sizeof (remotehost));
+		endhostent();
+	} else
+		strncpy(remotehost, inet_ntoa(sin->sin_addr),
+		    sizeof (remotehost));
+	if (!logging)
+		return;
 	t = time(0);
 	fprintf(stderr,"FTPD: connection from %s at %s", remotehost, ctime(&t));
 	fflush(stderr);
+}
+
+#include <utmp.h>
+
+#define	SCPYN(a, b)	strncpy(a, b, sizeof (a))
+struct	utmp utmp;
+
+/*
+ * Record login in wtmp file.
+ */
+dologin(pw)
+	struct passwd *pw;
+{
+	int wtmp;
+	char line[32];
+
+	wtmp = open("/usr/adm/wtmp", O_WRONLY|O_APPEND);
+	if (wtmp >= 0) {
+		/* hack, but must be unique and no tty line */
+		sprintf(line, "ftp%d", getpid());
+		SCPYN(utmp.ut_line, line);
+		SCPYN(utmp.ut_name, pw->pw_name);
+		SCPYN(utmp.ut_host, remotehost);
+		utmp.ut_time = time(0);
+		(void) write(wtmp, (char *)&utmp, sizeof (utmp));
+		(void) close(wtmp);
+	}
+}
+
+/*
+ * Record logout in wtmp file
+ * and exit with supplied status.
+ */
+dologout(status)
+	int status;
+{
+	int wtmp;
+
+	if (!logged_in)
+		return;
+	seteuid(0);
+	wtmp = open("/usr/adm/wtmp", O_WRONLY|O_APPEND);
+	if (wtmp >= 0) {
+		SCPYN(utmp.ut_name, "");
+		SCPYN(utmp.ut_host, "");
+		utmp.ut_time = time(0);
+		(void) write(wtmp, (char *)&utmp, sizeof (utmp));
+		(void) close(wtmp);
+	}
+	exit(status);
 }
 
 /*
