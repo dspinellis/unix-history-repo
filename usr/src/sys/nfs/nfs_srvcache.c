@@ -17,7 +17,13 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_srvcache.c	7.7 (Berkeley) %G%
+ *	@(#)nfs_srvcache.c	7.8 (Berkeley) %G%
+ */
+
+/*
+ * Reference: Chet Juszczak, "Improving the Performance and Correctness
+ *            of an NFS Server", in Proc. Winter 1989 USENIX Conference,
+ *            pages 53-63. San Diego, February 1989.
  */
 
 #include "param.h"
