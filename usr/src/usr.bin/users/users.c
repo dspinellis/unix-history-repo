@@ -11,69 +11,87 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)users.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)users.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
  * users
  */
-char	*malloc();
-
-#include <stdio.h>
+#include <sys/types.h>
 #include <utmp.h>
+#include <stdio.h>
 
-#define NMAX sizeof(utmp.ut_name)
-#define LMAX sizeof(utmp.ut_line)
+#define ERREXIT		1
+#define OKEXIT		0
+#define NMAX		sizeof(utmp.ut_name)
+#define MAXUSERS	200
 
-struct utmp utmp;
+static struct utmp	utmp;		/* read structure */
+static int	ncnt;			/* count of names */
+static char	*names[MAXUSERS],	/* names table */
+		**namp;			/* pointer to names table */
 
-main(argc, argv)
-char **argv;
+main(argc,argv)
+int	argc;
+char	**argv;
 {
-	register char *tp, *s;
-	register FILE *fi;
+	register FILE	*fp;		/* file pointer */
+	char	*fname;
 
-	s = "/etc/utmp";
-	if(argc == 2)
-		s = argv[1];
-	if ((fi = fopen(s, "r")) == NULL) {
-		perror(s);
-		exit(1);
+	if (argc > 2) {
+		fputs("usage: users [ utmp_file ]\n",stderr);
+		exit(ERREXIT);
 	}
-	while (fread((char *)&utmp, sizeof(utmp), 1, fi) == 1) {
-		if(utmp.ut_name[0] == '\0')
-			continue;
-		putline();
+	fname = argc == 2 ? argv[1] : "/etc/utmp";
+	if (!(fp = fopen(fname,"r"))) {
+		perror(fname);
+		exit(ERREXIT);
 	}
-	summary();
+	namp = names;
+	while (fread((char *)&utmp,sizeof(utmp),1,fp) == 1)
+		if (*utmp.ut_name) {
+			if (++ncnt > MAXUSERS) {
+				ncnt = MAXUSERS;
+				fputs("users: too many users.\n",stderr);
+				break;
+			}
+			nsave();
+		}
+	if (ncnt)
+		summary();
+	exit(OKEXIT);
 }
 
-char	*names[128];
-char	**namp = names;
-putline()
+nsave()
 {
-	char temp[NMAX+1];
-	strncpy(temp, utmp.ut_name, NMAX);
-	temp[NMAX] = 0;
-	*namp = malloc(strlen(temp) + 1);
-	strcpy(*namp++, temp);
+	char	*calloc();
+
+	if (!(*namp = calloc((u_int)(NMAX + 1),sizeof(char)))) {
+		fputs("users: malloc error.\n",stderr);
+		exit(ERREXIT);
+	}
+	bcopy(utmp.ut_name,*namp++,NMAX);
 }
 
-scmp(p, q)
-char **p, **q;
-{
-	return(strcmp(*p, *q));
-}
 summary()
 {
-	register char **p;
+	register char	**p,
+			**q;
+	int	scmp();
 
-	qsort(names, namp - names, sizeof names[0], scmp);
-	for (p=names; p < namp; p++) {
+	qsort((char *)names,ncnt,sizeof(names[0]),scmp);
+	for (p = names;p < namp;p = q) {
 		if (p != names)
 			putchar(' ');
-		fputs(*p, stdout);
+		fputs(*p,stdout);
+		for (q = p + 1;q < namp && !strcmp(*q,*p);++q);
 	}
-	if (namp != names)		/* at least one user */
-		putchar('\n');
+	putchar('\n');
+}
+
+scmp(p,q)
+char	**p,
+	**q;
+{
+	return(strcmp(*p,*q));
 }
