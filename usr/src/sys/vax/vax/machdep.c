@@ -1,4 +1,4 @@
-/*	machdep.c	4.31	81/04/13	*/
+/*	machdep.c	4.32	81/04/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -135,6 +135,13 @@ startup(firstaddr)
 		clearseg(i);
 	}
 	mtpr(TBIA, 1);
+
+	/*
+	 * Initialize callouts
+	 */
+	callfree = callout;
+	for (i = 1; i < ncallout; i++)
+		callout[i-1].c_next = &callout[i];
 
 	/*
 	 * Initialize memory allocator and swap

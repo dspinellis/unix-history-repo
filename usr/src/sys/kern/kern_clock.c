@@ -1,4 +1,4 @@
-/*	kern_clock.c	4.19	81/04/13	*/
+/*	kern_clock.c	4.20	81/04/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -62,12 +62,10 @@ hardclock(pc, ps)
 	/*
 	 * update callout times
 	 */
-	if (callout[0].c_func == NULL)
-		goto out;
-	p1 = &callout[0];
-	while (p1->c_time<=0 && p1->c_func!=NULL)
-		p1++;
-	p1->c_time--;
+	for (p1 = calltodo.c_next; p1 && p1->c_time <= 0; p1 = p1->c_next)
+		;
+	if (p1)
+		p1->c_time--;
 out:
 
 	/*
@@ -169,22 +167,24 @@ softclock(pc, ps)
 	register struct callout *p1, *p2;
 	register struct proc *pp;
 	register int a, s;
+	caddr_t arg;
+	int (*func)();
 
 	/*
 	 * Perform callouts (but not after panic's!)
 	 */
-	if (panicstr == 0 && callout[0].c_time <= 0) {
-		p1 = &callout[0];
-		while (p1->c_func != 0 && p1->c_time <= 0) {
-			(*p1->c_func)(p1->c_arg);
-			p1++;
-		}
-		p2 = &callout[0];
-		while (p2->c_func = p1->c_func) {
-			p2->c_time = p1->c_time;
-			p2->c_arg = p1->c_arg;
-			p1++;
-			p2++;
+	if (panicstr == 0) {
+		for (;;) {
+			s = spl7();
+			if ((p1 = calltodo.c_next) == 0 || p1->c_time > 0)
+				break;
+			calltodo.c_next = p1->c_next;
+			arg = p1->c_arg;
+			func = p1->c_func;
+			p1->c_next = callfree;
+			callfree = p1;
+			(void) splx(s);
+			(*func)(arg);
 		}
 	}
 
@@ -400,7 +400,7 @@ softclock(pc, ps)
 /*
  * Timeout is called to arrange that
  * fun(arg) is called in tim/hz seconds.
- * An entry is sorted into the callout
+ * An entry is linked into the callout
  * structure.  The time in each structure
  * entry is the number of hz's more
  * than the previous entry.
@@ -415,7 +415,7 @@ timeout(fun, arg, tim)
 	int (*fun)();
 	caddr_t arg;
 {
-	register struct callout *p1, *p2, *p3;
+	register struct callout *p1, *p2, *pnew;
 	register int t;
 	int s;
 
@@ -426,28 +426,19 @@ timeout(fun, arg, tim)
 		panic("timeout ttrstr arg");
 /* END DEBUGGING CODE */
 	t = tim;
-	p1 = &callout[0];
 	s = spl7();
-	while (p1->c_func != 0 && p1->c_time <= t) {
-		t -= p1->c_time;
-		p1++;
-	}
-	p1->c_time -= t;
-	p2 = p1;
-	p3 = callout+(ncallout-2);
-	while (p2->c_func != 0) {
-		if (p2 >= p3)
-			panic("timeout table overflow");
-		p2++;
-	}
-	while (p2 >= p1) {
-		(p2+1)->c_time = p2->c_time;
-		(p2+1)->c_func = p2->c_func;
-		(p2+1)->c_arg = p2->c_arg;
-		p2--;
-	}
-	p1->c_time = t;
-	p1->c_func = fun;
-	p1->c_arg = arg;
+	pnew = callfree;
+	if (pnew == NULL)
+		panic("timeout table overflow");
+	callfree = pnew->c_next;
+	pnew->c_arg = arg;
+	pnew->c_func = fun;
+	for (p1 = &calltodo; (p2 = p1->c_next) && p2->c_time < t; p1 = p2)
+		t -= p2->c_time;
+	p1->c_next = pnew;
+	pnew->c_next = p2;
+	pnew->c_time = t;
+	if (p2)
+		p2->c_time -= t;
 	splx(s);
 }
