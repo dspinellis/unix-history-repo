@@ -1,12 +1,13 @@
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 
 MAN8=	fastboot.0
+MLINKS=	fastboot.8 fasthalt.8
 
 all fastboot: ${MAN8}
 
 clean cleandir depend lint tags:
 
-install: maninstall
+beforeinstall:
 	install -c -o ${BINOWN} -g ${BINGRP} -m ${BINMODE} \
 	    ${.CURDIR}/fastboot.sh ${DESTDIR}${BINDIR}/fastboot
 	install -c -o ${BINOWN} -g ${BINGRP} -m ${BINMODE} \
