@@ -23,9 +23,7 @@ SRCS=	 	AllocRing.cc Obstack.cc builtin.cc \
 		sbufvscan.C stdiostream.C floatconv.C outfloat.C iomanip.C \
 		insque.c strerror.c
 
-CFLAGS+=	-I$(.CURDIR) -I$(.CURDIR)/../libiberty
-CXXFLAGS+=      -nostdinc++ -I$(.CURDIR) -I$(.CURDIR)/../g++-include \
-		-I$(.CURDIR)/../include -I$(.CURDIR)/../iostream
+CFLAGS+=        -I$(.CURDIR)/../libiberty
 NOMAN=		noman
 .PATH:		$(.CURDIR)/../iostream $(.CURDIR)/../libiberty
 
