@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)proc.h	7.22 (Berkeley) %G%
+ *	@(#)proc.h	7.23 (Berkeley) %G%
  */
 
 /*
@@ -67,7 +67,8 @@ struct	proc {
 	struct	vm_map *p_map;	/* VM address map */
 	caddr_t	p_shm;		/* SYS5 shared memory private data */
 	int	p_thread;	/* id for this "thread" (Mach glue) XXX */
-	int	p_pad1[2];
+	struct	filedesc *p_fd;	/* ptr to open files structure */
+	int	p_pad1;
 	segsz_t p_rssize; 	/* current resident set size in clicks */
 	segsz_t p_maxrss;	/* copy of u.u_limit[MAXRSS] */
 	segsz_t p_swrss;	/* resident set size before last swap */
