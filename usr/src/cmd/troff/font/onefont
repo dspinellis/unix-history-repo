@@ -1,0 +1,5 @@
+cc -c $1.c
+strip $1.o
+mv $1.o /usr/lib/font/$1
+chmod 755 /usr/lib/font/$1
+echo $1 done
