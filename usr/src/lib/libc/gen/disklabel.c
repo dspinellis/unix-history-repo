@@ -6,18 +6,19 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)disklabel.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)disklabel.c	5.23 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
-#include <sys/errno.h>
-#include <sys/file.h>
 #define DKTYPENAMES
 #include <sys/disklabel.h>
 #include <ufs/ffs/fs.h>
+
+#include <errno.h>
+#include <fcntl.h>
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 static int	error __P((int));

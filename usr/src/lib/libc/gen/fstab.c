@@ -6,19 +6,21 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fstab.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)fstab.c	5.16 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
-#include <sys/errno.h>
+#include <errno.h>
 #include <fstab.h>
-#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 static FILE *_fs_fp;
 static struct fstab _fs_fstab;
-static error();
+
+static error __P((int));
+static fstabscan __P((void));
 
 static
 fstabscan()
