@@ -1,4 +1,4 @@
-@(#)README	3.6 %G%
+@(#)README	3.7 %G%
 
 /*
  * Copyright (c) 1983 Regents of the University of California,
@@ -16,9 +16,21 @@ Compilation notes:
      The file local.h contains locally tunable constants.
 
      The makefile should be updated with mkmf.  The only library it needs
-is termcap (and jobs for 4.1).
+is termcap.
 
-     Window only runs on 4.2 machines.
+     Window, as is, only runs on 4.3 machines.
+
+     On 4.2 machines, at least these modifications must be done:
+
+	delete uses of window size ioctls: TIOCGWINSZ, TIOCSWINSZ,
+		struct winsize
+	add to ww.h
+		typedef int fd_set;
+		#define FD_ZERO(s) (*(s) = 0)
+		#define FD_SET(b, s) (*(s) |= 1 << (b))
+		#define FD_ISSET(b, s) (*(s) & 1 << (b))
+	add to ww.h
+		#define sigmask(s) (1 << (s) - 1)
 
 
 A few notes about the internals:
