@@ -1,4 +1,4 @@
-.\"     @(#)H.t	1.1     89/02/23
+.\"     @(#)H.t	1.2     89/02/23
 .LP
 \fB\s+4H. Technical Rationale\fP\s-4
 .PP
@@ -44,19 +44,9 @@ with such a plan.
 We can provide at least two members for a response team
 and can serve as the primary coordinators for problems involving BSD
 UNIX and networking software.
-.PP
-A group within the Internet Engineering Task Force has been drafting
-a Host Requirements standard for Internet hosts.
-We reviewed this draft recently and joined the working group.
-For the most part, the existing Berkeley TCP/IP and networking application
-software conforms with the draft.
-We will review conformance with the Host Requirements standard
-at the same time that we review the robustness of the network software.
-We expect that some additions will have to be made
-to the kernel network protocols to make them compliant.
-In particular, support for IP type-of-service options and routing needs
-to be added, and recent proposals for gateway monitoring should be implemented
-and tested.
+.sp
+.LP
+\fB\s+2H.2 User Authentication\fP\s-2
 .PP
 A major shortcoming of the present system is that authentication
 over the network is based solely on the privileged port mechanism
@@ -98,4 +88,20 @@ a equivalence be established
 between his identities in the two realms.
 Such a facility could greatly reduce the need to transmit passwords
 in the clear over wide-area networks.
+.sp
+.LP
+\fB\s+2H.3 Host Requirements\fP\s-2
+.PP
+A group within the Internet Engineering Task Force has been drafting
+a Host Requirements standard for Internet hosts.
+We reviewed this draft recently and joined the working group.
+For the most part, the existing Berkeley TCP/IP and networking application
+software conforms with the draft.
+We will review conformance with the Host Requirements standard
+at the same time that we review the robustness of the network software.
+We expect that some additions will have to be made
+to the kernel network protocols to make them compliant.
+In particular, support for IP type-of-service options and routing needs
+to be added, and recent proposals for gateway monitoring should be implemented
+and tested.
 .bp
