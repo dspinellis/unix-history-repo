@@ -1,0 +1,5 @@
+
+  When  a  current  list  exists   (i.e.  a  list  returned  by  the
+ latest call to "Search" or "Look Back" is being displayed), the user
+ can set the contents  of  the  "Search  For"  field  to  one  of the
+ displayed  objects directly by typing in that object's list number.
