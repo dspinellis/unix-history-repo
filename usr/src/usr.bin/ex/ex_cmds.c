@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_cmds.c	7.7	%G%";
+static char *sccsid = "@(#)ex_cmds.c	7.8	%G%";
 #include "ex.h"
 #include "ex_argv.h"
 #include "ex_temp.h"
@@ -516,7 +516,6 @@ quit:
 					tlaste();
 #endif
 					laste = 0;
-					sync();
 					nochng();
 					continue;
 				}
