@@ -59,7 +59,7 @@ static	char	sccsid[] = "@(#)map3270.c	3.1  10/29/86";
 
 #include "state.h"
 
-#include "../system/globals.h"
+#include "../general/globals.h"
 #include "map3270.ext"
 
 /* this is the list of types returned by the lex processor */

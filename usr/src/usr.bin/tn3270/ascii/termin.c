@@ -30,11 +30,11 @@ static	char	sccsid[] = "@(#)termin.c	3.1  10/29/86";
 #include <stdio.h>
 #include <ctype.h>
 
-#include "../general.h"
+#include "../general/general.h"
 #include "m4.out"		/* output of termcodes.m4 */
 #include "state.h"
 
-#include "../system/globals.h"
+#include "../general/globals.h"
 #include "../ctlr/function.h"
 #include "../ctlr/inbound.ext"
 #include "../ctlr/outbound.ext"
