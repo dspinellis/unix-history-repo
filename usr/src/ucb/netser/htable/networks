@@ -1,0 +1,81 @@
+#
+# Internet networks (reordered for local efficiency)
+#
+ucb-ether	46		ucb ucb-localnet
+ub-net		99		ungermann-bass-network
+3com-net	98		3com-network
+interlan-net	97		interlan-network
+cad-net		96		cad-network
+ucb-ether2	192.0.46	ucbether2 ether2
+cc-net		89		cc-network comp-center-net
+sons-net	125		three-suns-network
+loopback-net	127		software-loopback-net
+bbn-pr          1
+sf-pr-1         2
+bbn-net         3
+sat-net         4
+demo-pr-1       5
+sf-pr-2         6
+clarknet        8
+bragg-pr        9
+arpanet         10
+uclnet          11
+cyclades        12
+telenet         14
+pss             15
+datapac         16
+transpac        17
+mit             18
+tymnet          19
+dc-pr           20
+edn             21
+dialnet         22
+mitre           23
+bbn-local       24
+rsre-ppsn       25
+autodin-ii      26
+nosc-lccn       27
+wideband        28
+dcn-ucl         30
+bbn-sat-test    31
+ucl-tac-net     32
+unknown-net-33  33
+matnet          34
+null            35
+su-net          36
+decnet          37
+decnet-test     38
+srinet          39
+cislnet         40
+bbn-ln-test     41
+s1net           42
+unknown-net-43  43
+amprnet         44
+ucb             46
+sac-pr          47
+ndre-tiu        48
+rutgers         49
+ndre-ring       50
+bbn-gtb         128.1
+purdue-cs       128.10
+bbn-cronus      128.11
+uclnet-b        128.16
+cmu-net         128.2
+lbl-csam        128.3
+dcnet           128.4
+fordnet         128.5
+dfvlr           128.7
+umdnet          128.8
+isi-net         128.9
+bbn-gtc         192.0.1
+bbn-fibrenet    192.1.2
+eclnet          192.5.10
+wisc            192.5.2
+brlnet1         192.5.21
+brlnet2         192.5.22
+brlnet3         192.5.23
+brlnet4         192.5.24
+brlnet5         192.5.25
+brlnet          192.5.5
+cit-cs-net      192.5.7
+aeronet         192.5.9

@@ -1,0 +1,14 @@
+net 1 destination bbn-pr-gateway metric 1 passive
+net 3 destination bbn-pr-gateway metric 1 passive
+net 10 destination mit-gw metric 1 passive
+net 18 destination mit-gw metric 1 passive
+net 11 destination ucl-sam-gateway metric 1 passive
+net 16 destination ucl-sam-gateway metric 1 passive
+net 10 destination csnet-purdue-gw metric 1 passive
+net 14 destination csnet-purdue-gw metric 1 passive
+net 21 destination dcec-psat-ig metric 1 passive
+net 28 destination dcec-psat-ig metric 1 passive
+net 25 destination rsre-gateway metric 1 passive
+net 4 destination ntare-gateway metric 1 passive
+net 48 destination ntare-gateway metric 1 passive
+net 50 destination ntare-gateway metric 1 passive
