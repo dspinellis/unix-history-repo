@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_subr.c	8.12 (Berkeley) %G%
+ *	@(#)union_subr.c	8.13 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -541,10 +541,10 @@ union_copyfile(fvp, tvp, cred, p)
 	uio.uio_offset = 0;
 
 	VOP_UNLOCK(fvp);				/* XXX */
-	LEASE_CHECK(fvp, p, cred, LEASE_READ);
+	VOP_LEASE(fvp, p, cred, LEASE_READ);
 	VOP_LOCK(fvp);					/* XXX */
 	VOP_UNLOCK(tvp);				/* XXX */
-	LEASE_CHECK(tvp, p, cred, LEASE_WRITE);
+	VOP_LEASE(tvp, p, cred, LEASE_WRITE);
 	VOP_LOCK(tvp);					/* XXX */
 
 	buf = malloc(MAXBSIZE, M_TEMP, M_WAITOK);
@@ -655,13 +655,14 @@ union_copyup(un, docopy, cred, p)
 }
 
 static int
-union_relookup(um, dvp, vpp, cnp, cn, path)
+union_relookup(um, dvp, vpp, cnp, cn, path, pathlen)
 	struct union_mount *um;
 	struct vnode *dvp;
 	struct vnode **vpp;
 	struct componentname *cnp;
 	struct componentname *cn;
 	char *path;
+	int pathlen;
 {
 	int error;
 
@@ -676,7 +677,7 @@ union_relookup(um, dvp, vpp, cnp, cn, path)
 	 *
 	 * The pathname buffer will be FREEed by VOP_MKDIR.
 	 */
-	cn->cn_namelen = strlen(path);
+	cn->cn_namelen = pathlen;
 	cn->cn_pnbuf = malloc(cn->cn_namelen+1, M_NAMEI, M_WAITOK);
 	bcopy(path, cn->cn_pnbuf, cn->cn_namelen);
 	cn->cn_pnbuf[cn->cn_namelen] = '\0';
@@ -724,7 +725,8 @@ union_mkshadow(um, dvp, cnp, vpp)
 	struct proc *p = cnp->cn_proc;
 	struct componentname cn;
 
-	error = union_relookup(um, dvp, vpp, cnp, &cn, cnp->cn_nameptr);
+	error = union_relookup(um, dvp, vpp, cnp, &cn,
+			cnp->cn_nameptr, cnp->cn_namelen);
 	if (error)
 		return (error);
 
@@ -748,8 +750,8 @@ union_mkshadow(um, dvp, cnp, vpp)
 	va.va_type = VDIR;
 	va.va_mode = um->um_cmode;
 
-	/* LEASE_CHECK: dvp is locked */
-	LEASE_CHECK(dvp, p, cn.cn_cred, LEASE_WRITE);
+	/* VOP_LEASE: dvp is locked */
+	VOP_LEASE(dvp, p, cn.cn_cred, LEASE_WRITE);
 
 	error = VOP_MKDIR(dvp, vpp, &cn, &va);
 	return (error);
@@ -778,9 +780,11 @@ union_mkwhiteout(um, dvp, cnp, path)
 	struct componentname cn;
 
 	VOP_UNLOCK(dvp);
-	error = union_relookup(um, dvp, vpp, cnp, &cn, path);
-	if (error)
+	error = union_relookup(um, dvp, vpp, cnp, &cn, path, strlen(path));
+	if (error) {
+		VOP_LOCK(dvp);
 		return (error);
+	}
 
 	if (*vpp) {
 		VOP_ABORTOP(dvp, &cn);
@@ -790,11 +794,11 @@ union_mkwhiteout(um, dvp, cnp, path)
 		return (EEXIST);
 	}
 
-	/* LEASE_CHECK: dvp is locked */
-	LEASE_CHECK(dvp, p, p->p_ucred, LEASE_WRITE);
+	/* VOP_LEASE: dvp is locked */
+	VOP_LEASE(dvp, p, p->p_ucred, LEASE_WRITE);
 
 	error = VOP_WHITEOUT(dvp, &cn, CREATE);
-	if (error != 0)
+	if (error)
 		VOP_ABORTOP(dvp, &cn);
 
 	vrele(dvp);
@@ -876,7 +880,7 @@ union_vn_create(vpp, un, p)
 	VATTR_NULL(vap);
 	vap->va_type = VREG;
 	vap->va_mode = cmode;
-	LEASE_CHECK(un->un_dirvp, p, cred, LEASE_WRITE);
+	VOP_LEASE(un->un_dirvp, p, cred, LEASE_WRITE);
 	if (error = VOP_CREATE(un->un_dirvp, &vp, &cn, vap))
 		return (error);
 
