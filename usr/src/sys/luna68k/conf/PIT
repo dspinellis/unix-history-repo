@@ -1,45 +1,28 @@
-#	@(#)PIT	7.1 (Berkeley) %G%
+#	@(#)PIT	7.2 (Berkeley) %G%
 #
 
 machine		"luna68k"
-cpu		"luna1"
-cpu		"luna2"
+cpu		"LUNA1"
+cpu		"LUNA2"
 ident		PIT
 
-timezone	8 dst
+timezone	5
 maxusers	16
 hz		60
 
 # Standard options
 options		QUOTA
 options		INET
-options		FIFO
-options		FFS
-options		MFS
-options		NFS
-options		DIAGNOSTIC
+options		FFS,MFS,NFS,LFS,FIFO
+options		LOFS,KERNFS,FDESC,PORTAL,NULLFS,UMAPFS
 options		"COMPAT_43"
 options		"TCP_COMPAT_42"
-
-options		SWAPPAGER
-options		VNODEPAGER
-options		DEVPAGER
-
-# Options for all HP machines
-## options		SYSVSHM
-## options		HPUXCOMPAT
-
-# Options specific to this host.
-## options		DEBUG,DIAGNOSTIC
-## options		PANICBUTTON
-## options		KTRACE
-## options		"NKMEMCLUSTERS=512"
-## options		"HILVID=1"
-## options		PROFTIMER,"PRF_INTERVAL=500"
-## options		KGDB,"KGDBDEV=15*256+2","KGDBRATE=19200"
+options		SWAPPAGER,VNODEPAGER,DEVPAGER
 
 options		DEBUG
+options		DIAGNOSTIC
 options		DEBUGPRINT
+options		HPFPLIB		# floating point emulation for MC68040
 
 config		vmunix root on sd0 swap on sd0b and sd1b
 
