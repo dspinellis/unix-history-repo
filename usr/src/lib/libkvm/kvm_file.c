@@ -1,12 +1,12 @@
 /*-
- * Copyright (c) 1989, 1992 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1989, 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)kvm_file.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)kvm_file.c	8.1 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
