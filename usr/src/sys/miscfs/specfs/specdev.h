@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)specdev.h	8.2 (Berkeley) %G%
+ *	@(#)specdev.h	8.3 (Berkeley) %G%
  */
 
 /*
@@ -67,6 +67,7 @@ int	spec_close __P((struct vop_close_args *));
 #define spec_setattr ((int (*) __P((struct  vop_setattr_args *)))spec_ebadf)
 int	spec_read __P((struct vop_read_args *));
 int	spec_write __P((struct vop_write_args *));
+#define	spec_lease_check ((int (*) __P((struct  vop_lease_args *)))nullop)
 int	spec_ioctl __P((struct vop_ioctl_args *));
 int	spec_select __P((struct vop_select_args *));
 #define spec_mmap ((int (*) __P((struct  vop_mmap_args *)))spec_badop)
