@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)fs.h	7.7 (Berkeley) %G%
+ *	@(#)fs.h	7.8 (Berkeley) %G%
  */
 
 /*
@@ -372,6 +372,8 @@ struct	ocg {
 	((loc) & ~(fs)->fs_bmask)
 #define fragoff(fs, loc)	/* calculates (loc % fs->fs_fsize) */ \
 	((loc) & ~(fs)->fs_fmask)
+#define lblktosize(fs, blk)	/* calculates (blk * fs->fs_bsize) */ \
+	((blk) << (fs)->fs_bshift)
 #define lblkno(fs, loc)		/* calculates (loc / fs->fs_bsize) */ \
 	((loc) >> (fs)->fs_bshift)
 #define numfrags(fs, loc)	/* calculates (loc / fs->fs_fsize) */ \
