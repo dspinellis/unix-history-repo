@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
+ * Copyright (c) 1982, 1986 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)tcp_input.c	7.17 (Berkeley) %G%
+ *	@(#)tcp_input.c	7.15.1.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -319,7 +319,9 @@ findpcb:
 		inp = (struct inpcb *)so->so_pcb;
 		inp->inp_laddr = ti->ti_dst;
 		inp->inp_lport = ti->ti_dport;
+#if BSD>=43
 		inp->inp_options = ip_srcroute();
+#endif
 		tp = intotcpcb(inp);
 		tp->t_state = TCPS_LISTEN;
 	}
@@ -329,7 +331,7 @@ findpcb:
 	 * Reset idle time and keep-alive timer.
 	 */
 	tp->t_idle = 0;
-	tp->t_timer[TCPT_KEEP] = tcp_keepidle;
+	tp->t_timer[TCPT_KEEP] = TCPTV_KEEP;
 
 	/*
 	 * Process options if not in LISTEN state,
@@ -418,7 +420,7 @@ findpcb:
 		tcp_rcvseqinit(tp);
 		tp->t_flags |= TF_ACKNOW;
 		tp->t_state = TCPS_SYN_RECEIVED;
-		tp->t_timer[TCPT_KEEP] = TCPTV_KEEP_INIT;
+		tp->t_timer[TCPT_KEEP] = TCPTV_KEEP;
 		dropsocket = 0;		/* committed to socket */
 		tcpstat.tcps_accepts++;
 		goto trimthenstep6;
@@ -487,7 +489,17 @@ trimthenstep6:
 		ti->ti_seq++;
 		if (ti->ti_len > tp->rcv_wnd) {
 			todrop = ti->ti_len - tp->rcv_wnd;
+#if BSD>=43
 			m_adj(m, -todrop);
+#else
+			/* XXX work around 4.2 m_adj bug */
+			if (m->m_len) {
+				m_adj(m, -todrop);
+			} else {
+				/* skip tcp/ip header in first mbuf */
+				m_adj(m->m_next, -todrop);
+			}
+#endif
 			ti->ti_len = tp->rcv_wnd;
 			tiflags &= ~TH_FIN;
 			tcpstat.tcps_rcvpackafterwin++;
@@ -517,28 +529,18 @@ trimthenstep6:
 		}
 		if (todrop > ti->ti_len ||
 		    todrop == ti->ti_len && (tiflags&TH_FIN) == 0) {
+#ifdef TCP_COMPAT_42
+			/*
+			 * Don't toss RST in response to 4.2-style keepalive.
+			 */
+			if (ti->ti_seq == tp->rcv_nxt - 1 && tiflags & TH_RST)
+				goto do_rst;
+#endif
 			tcpstat.tcps_rcvduppack++;
 			tcpstat.tcps_rcvdupbyte += ti->ti_len;
-			/*
-			 * If segment is just one to the left of the window,
-			 * check two special cases:
-			 * 1. Don't toss RST in response to 4.2-style keepalive.
-			 * 2. If the only thing to drop is a FIN, we can drop
-			 *    it, but check the ACK or we will get into FIN
-			 *    wars if our FINs crossed (both CLOSING).
-			 * In either case, send ACK to resynchronize,
-			 * but keep on processing for RST or ACK.
-			 */
-			if ((tiflags & TH_FIN && todrop == ti->ti_len + 1)
-#ifdef TCP_COMPAT_42
-			  || (tiflags & TH_RST && ti->ti_seq == tp->rcv_nxt - 1)
-#endif
-			   ) {
-				todrop = ti->ti_len;
-				tiflags &= ~TH_FIN;
-				tp->t_flags |= TF_ACKNOW;
-			} else
-				goto dropafterack;
+			todrop = ti->ti_len;
+			tiflags &= ~TH_FIN;
+			tp->t_flags |= TF_ACKNOW;
 		} else {
 			tcpstat.tcps_rcvpartduppack++;
 			tcpstat.tcps_rcvpartdupbyte += todrop;
@@ -555,7 +557,7 @@ trimthenstep6:
 	}
 
 	/*
-	 * If new data are received on a connection after the
+	 * If new data is received on a connection after the
 	 * user processes are gone, then RST the other end.
 	 */
 	if ((so->so_state & SS_NOFDREF) &&
@@ -601,11 +603,24 @@ trimthenstep6:
 				goto dropafterack;
 		} else
 			tcpstat.tcps_rcvbyteafterwin += todrop;
+#if BSD>=43
 		m_adj(m, -todrop);
+#else
+		/* XXX work around m_adj bug */
+		if (m->m_len) {
+			m_adj(m, -todrop);
+		} else {
+			/* skip tcp/ip header in first mbuf */
+			m_adj(m->m_next, -todrop);
+		}
+#endif
 		ti->ti_len -= todrop;
 		tiflags &= ~(TH_PUSH|TH_FIN);
 	}
 
+#ifdef TCP_COMPAT_42
+do_rst:
+#endif
 	/*
 	 * If the RST bit is set examine the state:
 	 *    SYN_RECEIVED STATE:
@@ -619,18 +634,14 @@ trimthenstep6:
 	if (tiflags&TH_RST) switch (tp->t_state) {
 
 	case TCPS_SYN_RECEIVED:
-		so->so_error = ECONNREFUSED;
-		goto close;
+		tp = tcp_drop(tp, ECONNREFUSED);
+		goto drop;
 
 	case TCPS_ESTABLISHED:
 	case TCPS_FIN_WAIT_1:
 	case TCPS_FIN_WAIT_2:
 	case TCPS_CLOSE_WAIT:
-		so->so_error = ECONNRESET;
-	close:
-		tp->t_state = TCPS_CLOSED;
-		tcpstat.tcps_drops++;
-		tp = tcp_close(tp);
+		tp = tcp_drop(tp, ECONNRESET);
 		goto drop;
 
 	case TCPS_CLOSING:
@@ -777,7 +788,8 @@ trimthenstep6:
 				 * (srtt = rtt/8 + srtt*7/8 in fixed point).
 				 * Adjust t_rtt to origin 0.
 				 */
-				delta = tp->t_rtt - 1 - (tp->t_srtt >> 3);
+				tp->t_rtt--;
+				delta = tp->t_rtt - (tp->t_srtt >> 3);
 				if ((tp->t_srtt += delta) <= 0)
 					tp->t_srtt = 1;
 				/*
@@ -838,7 +850,7 @@ trimthenstep6:
 		if (tp->snd_cwnd > tp->snd_ssthresh)
 			incr = MAX(incr * incr / tp->snd_cwnd, 1);
 
-		tp->snd_cwnd = MIN(tp->snd_cwnd + incr, IP_MAXPACKET); /* XXX */
+		tp->snd_cwnd = MIN(tp->snd_cwnd + incr, 65535); /* XXX */
 		}
 		if (acked > so->so_snd.sb_cc) {
 			tp->snd_wnd -= so->so_snd.sb_cc;
@@ -873,7 +885,7 @@ trimthenstep6:
 				 */
 				if (so->so_state & SS_CANTRCVMORE) {
 					soisdisconnected(so);
-					tp->t_timer[TCPT_2MSL] = tcp_maxidle;
+					tp->t_timer[TCPT_2MSL] = TCPTV_MAXIDLE;
 				}
 				tp->t_state = TCPS_FIN_WAIT_2;
 			}
@@ -984,8 +996,11 @@ step6:
 		 * but if two URG's are pending at once, some out-of-band
 		 * data may creep in... ick.
 		 */
-		if (ti->ti_urp <= ti->ti_len &&
-		    (so->so_options & SO_OOBINLINE) == 0)
+		if (ti->ti_urp <= ti->ti_len
+#ifdef SO_OOBINLINE
+		     && (so->so_options & SO_OOBINLINE) == 0
+#endif
+							   )
 			tcp_pulloutofband(so, ti);
 	} else
 		/*
@@ -1263,3 +1278,34 @@ tcp_mss(tp)
 	tp->snd_cwnd = mss;
 	return (mss);
 }
+
+#if BSD<43
+/* XXX this belongs in netinet/in.c */
+in_localaddr(in)
+	struct in_addr in;
+{
+	register u_long i = ntohl(in.s_addr);
+	register struct ifnet *ifp;
+	register struct sockaddr_in *sin;
+	register u_long mask;
+
+	if (IN_CLASSA(i))
+		mask = IN_CLASSA_NET;
+	else if (IN_CLASSB(i))
+		mask = IN_CLASSB_NET;
+	else if (IN_CLASSC(i))
+		mask = IN_CLASSC_NET;
+	else
+		return (0);
+
+	i &= mask;
+	for (ifp = ifnet; ifp; ifp = ifp->if_next) {
+		if (ifp->if_addr.sa_family != AF_INET)
+			continue;
+		sin = (struct sockaddr_in *)&ifp->if_addr;
+		if ((sin->sin_addr.s_addr & mask) == i)
+			return (1);
+	}
+	return (0);
+}
+#endif
