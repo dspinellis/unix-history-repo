@@ -1,5 +1,5 @@
 # Makefile for the f77 I/O library
-#	@(#)makefile	1.5	%G%
+#	@(#)makefile	1.6	%G%
 # Originally written by P. Weinberger, Bell Labs, Murray Hill, N.J.
 # Modified by D. Wasley, Univ of California, Berkeley, Calif.
 
@@ -29,7 +29,7 @@ $(LIB):	$(OBJECTS) Version
 	@echo "" > /dev/tty
 
 install:
-#	@mv $(LIBDIR)/$(LIB) $(LIBDIR)/$(LIB).old
+	@mv $(LIBDIR)/$(LIB) $(LIBDIR)/$(LIB).old
 	cp $(LIB) $(LIBDIR)/$(LIB)
 	ranlib $(LIBDIR)/$(LIB)
 
