@@ -53,9 +53,11 @@ fi
 host=
 
 # Default prefix to /usr/local.
-prefix=/usr/local
+#prefix=/usr/local
+prefix=/usr/libexec
 # Default is to let the Makefile set exec_prefix from $(prefix)
-exec_prefix='$(prefix)'
+#exec_prefix='$(prefix)'
+exec_prefix='$(prefix)/gcc2'
 
 remove=rm
 hard_link=ln
@@ -562,6 +564,11 @@ for machine in $canon_build $canon_host $canon_target; do
 		tm_file=hp3bsd.h
 		use_collect2=yes
 		header_files=math-68881.h
+		;;
+	m68k-omron-bsd*)		# OMRON LUNA-I/LUNA-II running Berkeley Unix
+		tm_file=luna68k.h
+		use_collect2=yes
+#		header_files=math-68881.h
 		;;
 	m68k-isi-bsd*)
 		if [ x$nfp = xyes ]
