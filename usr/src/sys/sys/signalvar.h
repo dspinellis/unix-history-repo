@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)signalvar.h	8.5 (Berkeley) %G%
+ *	@(#)signalvar.h	8.6 (Berkeley) %G%
  */
 
 #ifndef	_SYS_SIGNALVAR_H_		/* tmp for user.h */
@@ -130,6 +130,8 @@ int	issignal __P((struct proc *p));
 void	pgsignal __P((struct pgrp *pgrp, int sig, int checkctty));
 void	postsig __P((int sig));
 void	psignal __P((struct proc *p, int sig));
+void	setsigvec __P((struct proc *p, int signum, struct sigaction *sa));
+void	sigexit __P((struct proc *p, int signum));
 void	siginit __P((struct proc *p));
 void	trapsignal __P((struct proc *p, int sig, u_long code));
 
