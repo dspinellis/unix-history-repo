@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	7.104 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.105 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -1442,7 +1442,7 @@ utimes(p, uap, retval)
 	register struct vnode *vp;
 	struct timeval tv[2];
 	struct vattr vattr;
-	int s, error;
+	int error;
 	struct nameidata nd;
 
 	VATTR_NULL(&vattr);
