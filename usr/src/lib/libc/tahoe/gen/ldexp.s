@@ -19,7 +19,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	.asciz "@(#)ldexp.s	1.3 (Berkeley) %G%"
+	.asciz "@(#)ldexp.s	5.1 (Berkeley) %G%"
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -38,7 +38,13 @@
  *
  * Constants
  */
-#include <errno.h>
+
+/*
+ * we can't include errno.h anymore, ANSI says that it defines errno.
+ *
+ * #include <errno.h>
+ */
+#define	ERANGE	34
 #include <tahoemath/fp.h>
 
 #include "DEFS.h"
