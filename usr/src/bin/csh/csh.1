@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)csh.1	6.5 (Berkeley) %G%
+.\"	@(#)csh.1	6.6 (Berkeley) %G%
 .\"
 .TH CSH 1 ""
 .UC 4
@@ -924,12 +924,12 @@ or
 .HP 5
 .B  alloc
 .br
-Shows the amount of dynamic core in use, broken down into used and
-free core, and address of the last location in the heap.
-With an argument shows each used and free block on the internal dynamic
-memory chain indicating its address, size, and whether it is used or free.
-This is a debugging command and may not work in production versions of the
-shell; it requires a modified version of the system memory allocator.
+Shows the amount of dynamic memory acquired, broken down into used and
+free memory.
+With an argument shows the number of free and used blocks in each size
+category.  The categories start at size 8 and double at each step.
+This command's output may vary across system types, since
+systems other than the VAX may use a different memory allocator.
 .HP 5
 .B bg
 .br
@@ -1374,15 +1374,16 @@ is set.
 .BR nice " \+number command"
 .br
 The first form sets the
-.I nice
+scheduling priority
 for this shell to 4.
 The second form sets the
-.I nice
+priority
 to the given number.
 The final two forms run command at priority 4 and
 .I number
 respectively.
-The super-user may specify negative niceness by using `nice \-number ...'.
+The greater the number, the less cpu the process will get.
+The super-user may specify negative priority by using `nice \-number ...'.
 Command is always executed in a sub-shell, and the restrictions
 placed on commands in simple
 .I if
@@ -2294,3 +2295,7 @@ to be combined with `|', and to be used with `&' and `;' metasyntax.
 It should be possible to use the `:' modifiers on the output of command
 substitutions.
 All and more than one `:' modifier should be allowed on `$' substitutions.
+.PP
+The way the
+.B filec
+facility is implemented is ugly and expensive.
