@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)glob.c	5.37 (Berkeley) %G%";
+static char sccsid[] = "@(#)glob.c	5.38 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -306,9 +306,7 @@ globexpand(v)
      * Step 2: expand braces
      */
     el = vl;
-    vl = nv;
-    expbrace(&vl, &el, size);
-
+    expbrace(&nv, &el, size);
 
     /*
      * Step 3: expand ~
