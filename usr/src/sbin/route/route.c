@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.38 (Berkeley) %G%";
+static char sccsid[] = "@(#)route.c	5.39 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -56,9 +56,6 @@ union	sockunion {
 	struct	sockaddr_dl sdl;
 	struct	sockaddr_x25 sx25;
 } so_dst, so_gate, so_mask, so_genmask, so_ifa, so_ifp;
-
-union sockunion *so_addrs[] =
-	{ &so_dst, &so_gate, &so_mask, &so_genmask, &so_ifp, &so_ifa, 0}; 
 
 typedef union sockunion *sup;
 int	pid, rtm_addrs, uid;
@@ -1040,7 +1037,7 @@ print_getmsg(rtm, msglen)
 	register char *cp;
 	register int i;
 
-	(void) printf("   route to: %s\n", routename(so_addrs[0]));
+	(void) printf("   route to: %s\n", routename(&so_dst));
 	if (rtm->rtm_version != RTM_VERSION) {
 		(void)fprintf(stderr,
 		    "routing message version %d not understood\n",
