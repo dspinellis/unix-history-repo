@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tty_pty.c	7.21 (Berkeley) 5/30/91
- *	$Id: tty_pty.c,v 1.12 1994/04/05 10:12:41 ache Exp $
+ *	$Id: tty_pty.c,v 1.13 1994/04/20 18:37:10 ache Exp $
  */
 
 /*
@@ -59,8 +59,6 @@
 #endif
 
 #define BUFSIZ 100		/* Chunk size iomoved to/from user */
-#define	PTCREAD_SLEEP_ADDR(tp)	((caddr_t)&tp->t_out + 1)
-#define	PTCWRITE_SLEEP_ADDR(tp)	((caddr_t)&tp->t_raw + 1)
 
 static void ptcwakeup(struct tty *, int);
 
@@ -96,7 +94,7 @@ ptsopen(dev, flag, devtype, p)
 	struct proc *p;
 {
 	register struct tty *tp;
-	int error = 0;
+	int error;
 
 #ifdef lint
 	npty = npty;
@@ -105,7 +103,6 @@ ptsopen(dev, flag, devtype, p)
 		return (ENXIO);
 	tp = pt_tty[minor(dev)] = ttymalloc(pt_tty[minor(dev)]);
 	if ((tp->t_state & TS_ISOPEN) == 0) {
-		tp->t_state |= TS_WOPEN;
 		ttychars(tp);		/* Set up default chars */
 		tp->t_iflag = TTYDEF_IFLAG;
 		tp->t_oflag = TTYDEF_OFLAG;
@@ -118,20 +115,17 @@ ptsopen(dev, flag, devtype, p)
 	if (tp->t_oproc)			/* Ctrlr still around. */
 		tp->t_state |= TS_CARR_ON;
 	while ((tp->t_state & TS_CARR_ON) == 0) {
-		tp->t_state |= TS_WOPEN;
 		if (flag&FNONBLOCK)
 			break;
-		if (error = ttysleep(tp, (caddr_t)tp->t_raw, TTIPRI | PCATCH,
+		if (error = ttysleep(tp, TSA_CARR_ON(tp), TTIPRI | PCATCH,
 		    "ptsopn", 0))
-			break;
+			return (error);
 	}
-	if (error == 0)
-		error = (*linesw[tp->t_line].l_open)(dev, tp, flag);
+	error = (*linesw[tp->t_line].l_open)(dev, tp, flag);
 	if (error == 0) {
 		ptcwakeup(tp, FREAD|FWRITE);
 		pt_ioctl[minor(dev)].pt_flags |= PF_SOPEN;
-	} else
-		tp->t_state &= ~TS_WOPEN;
+	}
 	return (error);
 }
 
@@ -256,7 +250,7 @@ ptcwakeup(tp, flag)
 			pti->pt_selr = 0;
 			pti->pt_flags &= ~PF_RCOLL;
 		}
-		wakeup(PTCREAD_SLEEP_ADDR(tp));
+		wakeup(TSA_PTC_READ(tp));
 	}
 	if (flag & FWRITE) {
 		if (pti->pt_selw) {
@@ -264,7 +258,7 @@ ptcwakeup(tp, flag)
 			pti->pt_selw = 0;
 			pti->pt_flags &= ~PF_WCOLL;
 		}
-		wakeup(PTCWRITE_SLEEP_ADDR(tp));
+		wakeup(TSA_PTC_WRITE(tp));
 	}
 }
 
@@ -370,7 +364,7 @@ ptcread(dev, uio, flag)
 			return (0);	/* EOF */
 		if (flag & IO_NDELAY)
 			return (EWOULDBLOCK);
-		if (error = tsleep(PTCREAD_SLEEP_ADDR(tp), TTIPRI | PCATCH,
+		if (error = tsleep(TSA_PTC_READ(tp), TTIPRI | PCATCH,
 		    "ptcin", 0))
 			return (error);
 	}
@@ -391,17 +385,8 @@ ptcread(dev, uio, flag)
 			break;
 		error = uiomove(buf, cc, uio);
 	}
-	if (RB_LEN(tp->t_out) <= tp->t_lowat) {
-		if (tp->t_state&TS_ASLEEP) {
-			tp->t_state &= ~TS_ASLEEP;
-			wakeup((caddr_t)tp->t_out);
-		}
-		if (tp->t_wsel) {
-			selwakeup(tp->t_wsel, tp->t_state & TS_WCOLL);
-			tp->t_wsel = 0;
-			tp->t_state &= ~TS_WCOLL;
-		}
-	}
+	if (tp->t_state & (TS_SO_OCOMPLETE | TS_SO_OLOWAT) || tp->t_wsel)
+		ttwwakeup(tp);
 	return (error);
 }
 
@@ -554,7 +539,7 @@ again:
 		while (cc > 0) {
 			if ((RB_LEN(tp->t_raw) + RB_LEN(tp->t_can)) >= TTYHOG - 2 &&
 			   (RB_LEN(tp->t_can) > 0 || !(tp->t_iflag&ICANON))) {
-				wakeup((caddr_t)tp->t_raw);
+				wakeup(TSA_HUP_OR_INPUT(tp));
 				goto block;
 			}
 			(*linesw[tp->t_line].l_rint)(*cp++, tp);
@@ -578,7 +563,7 @@ block:
 			return (EWOULDBLOCK);
 		return (0);
 	}
-	if (error = tsleep(PTCWRITE_SLEEP_ADDR(tp), TTOPRI | PCATCH,
+	if (error = tsleep(TSA_PTC_WRITE(tp), TTOPRI | PCATCH,
 	    "ptcout", 0)) {
 		/* adjust for data copied in but not written */
 		uio->uio_resid += cc;
