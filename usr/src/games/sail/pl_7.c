@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)pl_7.c	2.7 84/02/23";
+static	char *sccsid = "@(#)pl_7.c	2.8 84/02/23";
 #endif
 
 #include "player.h"
@@ -34,7 +34,6 @@ initscreen()
 #endif
 	noecho();
 	crmode();
-	return 0;
 }
 
 cleanupscreen()

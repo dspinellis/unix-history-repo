@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)misc.c	2.2 84/02/23";
+static	char *sccsid = "@(#)misc.c	2.3 84/02/23";
 #endif
 #include "externs.h"
 
@@ -161,7 +161,8 @@ register struct ship *s;
 	if ((fp = fopen(LOGFILE, "r+")) == NULL)
 		return;
 #ifdef LOCK_EX
-	flock(fileno(fp), LOCK_EX);
+	if (flock(fileno(fp), LOCK_EX) < 0)
+		return;
 #endif
 	net = (float)s->file->points / s->specs->pts;
 	persons = getw(fp);
@@ -191,7 +192,7 @@ register struct ship *s;
 			break;
 		}
 #ifdef LOCK_EX
-	flock(fileno(fp), LOCK_UN);
+	(void) flock(fileno(fp), LOCK_UN);
 #endif
 	(void) fclose(fp);
 }
