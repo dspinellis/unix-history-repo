@@ -1,4 +1,4 @@
-/*	mbavar.h	4.14	81/03/09	*/
+/*	mbavar.h	4.15	81/04/08	*/
 
 /*
  * This file contains definitions related to the kernel structures
@@ -125,12 +125,12 @@ struct mba_driver {
  * Kernel definitions related to mba.
  */
 #ifdef KERNEL
+int	nummba;
 #if NMBA > 0
 struct	mba_hd mba_hd[NMBA];
 extern	Xmba0int(), Xmba1int(), Xmba2int(), Xmba3int();
 
 extern	struct	mba_device mbdinit[];
 extern	struct	mba_slave mbsinit[];
-int	nummba;
 #endif
 #endif
