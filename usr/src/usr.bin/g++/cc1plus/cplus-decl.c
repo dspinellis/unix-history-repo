@@ -25,6 +25,15 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 /* ??? not all decl nodes are given the most useful possible
    line numbers.  For example, the CONST_DECLs for enum values.  */
+/*
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00056
+ * --------------------         -----   ----------------------
+ *
+ * 27 Nov 1992	James Clark		Fixed memory bug in g++
+ */
 
 #include "config.h"
 #include "tree.h"
@@ -7953,7 +7962,7 @@ finish_function (lineno, call_poplevel)
       if (TREE_GETS_DELETE (current_class_type))
 	exprstmt = build_method_call (build1 (NOP_EXPR, TYPE_POINTER_TO (current_class_type), error_mark_node),
 				      get_identifier (OPERATOR_DELETE_FORMAT),
-				      build_tree_list (NULL_TREE, integer_zero_node),
+                                    build_tree_list (NULL_TREE, current_class_decl),
 				      NULL_TREE, LOOKUP_NORMAL);
       else if (TYPE_USES_VIRTUAL_BASECLASSES (current_class_type))
 	exprstmt = build_x_delete (ptr_type_node, current_class_decl, 0);
