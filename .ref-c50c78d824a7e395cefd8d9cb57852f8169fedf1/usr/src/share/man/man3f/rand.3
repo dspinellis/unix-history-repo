@@ -1,0 +1,51 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)rand.3	6.1 (Berkeley) %G%
+.\"
+.TH RAND 3F ""
+.UC 5
+.SH NAME
+rand, drand, irand \- return random values
+.SH SYNOPSIS
+.B function irand (iflag)
+.sp 1
+.B function rand (iflag)
+.sp 1
+.B double precision function drand (iflag)
+.SH DESCRIPTION
+.ft B
+The newer random(3f) should be used in new applications;
+rand remains for compatibilty.
+.ft R
+.PP
+These functions use
+.IR rand (3C)
+to generate sequences of random numbers.
+If
+.I iflag
+is '1', the generator is restarted and the first random value is returned.
+If
+.I iflag
+is otherwise non-zero, it is used as a new seed for the random number
+generator, and the first new random value is returned.
+.PP
+.I Irand
+returns positive integers in the range 0 through 2147483647.
+.I Rand
+and
+.I drand
+return values in the range 0. through 1.0 .
+.SH FILES
+.ie \nM /usr/ucb/lib/libF77.a
+.el /usr/lib/libF77.a
+.SH "SEE ALSO"
+random(3F), rand(3C)
+.SH BUGS
+The algorithm returns a 15 bit quantity on the PDP11; a 31 bit quantity
+on the VAX.
+.I Irand
+on the PDP11 calls
+.IR rand (3C)
+twice to form a 31 bit quantity, but bit 15 will always be 0.

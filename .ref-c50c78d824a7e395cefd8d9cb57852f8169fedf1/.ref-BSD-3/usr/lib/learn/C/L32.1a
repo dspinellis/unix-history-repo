@@ -1,0 +1,46 @@
+#print
+Write a program
+   pair(a,b)
+which accepts as arguments two pointers to integers
+and swaps the integers if necessary so that the
+first argument points to the larger one; that is
+	int x,y;
+	x = 9;
+	y = 15;
+	pair( &x, &y);
+results in x being 15 and y 9.  Leave the program
+on file "pair.c"; compile, test it, and type "ready".
+#once #create tzaqc.c
+main()
+{
+int x,y;
+y=200;
+x = 0;
+pair(&y, &x);
+if (x!=0 || y !=200) return(1);
+pair(&x,&y);
+if (x!=200 || y !=0) return(1);
+x = 30;
+y = 23097;
+pair(&x,&y);
+if (x!= 23097 || y!= 30) return(1);
+return(0);
+}
+#user
+cc tzaqc.c pair.o
+a.out 
+#succeed
+pair(a, b)
+int *a, *b;
+{
+	int t;
+
+	if (*a <= *b) {
+		t = *a;
+		*a = *b;
+		*b = t;
+	}
+}
+#log
+#next
+33.1a 10

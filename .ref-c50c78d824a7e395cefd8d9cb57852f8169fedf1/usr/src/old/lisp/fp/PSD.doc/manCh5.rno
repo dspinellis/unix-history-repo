@@ -1,0 +1,434 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)manCh5.rno	6.1 (Berkeley) %G%
+.\"
+.NS 1 "Programming Examples"
+.pp
+We will start off by developing a larger FP program, \fImergeSort\fP.
+We measure \fImergeSort\fP using the trace package, and then we
+comment on the measurements.
+Following \fImergeSort\fP
+we show an actual session at the terminal.
+.NS 2 "MergeSort"
+.pp
+The source code for
+\fImergeSort\fP is:
+.(b
+.sp 4p
+.hl
+.sp 4p
+.(c
+# Use a divide and conquer strategy
+.sp 3p
+{mergeSort $^"\fB|\fP"^$ merge}
+.sp 6p
+{merge atEnd @ mergeHelp @ [[], fixLists]}
+.sp 6p
+# Must convert atomic arguments into sequences
+# Atomic arguments occur at the leaves of the execution tree
+.sp 3p
+{fixLists &(atom -> [id] ; id)}
+.sp 6p
+# Merge until one or both input lists are empty
+.sp 3p
+{mergeHelp (while \kxand @ &(not@null) @ 2
+\h'\nxu'(firstIsSmaller -> \kytakeFirst ;
+\h'\nyu'takeSecond))}
+.sp 6p
+# Find the list with the smaller first element
+.sp 3p
+{firstIsSmaller < @ [1@1@2, 1@2@2]}
+.sp 6p
+# Take the first element of the first list
+.sp 3p
+{takeFirst [apndr@[1,1@1@2], [tl@1@2, 2@2]]}
+.sp 6p
+# Take the first element of the second list
+.sp 3p
+{takeSecond [apndr@[1,1@2@2], [1@2, tl@2@2]]}
+.sp 6p
+# If one list isn't null, then append it to the
+# end of the merged list
+.sp 3p
+{atEnd (firstIsNull -> \kzconcat@[1,2@2] ;
+\h'\nzu'concat@[1,1@2])}
+.sp 6p
+{firstIsNull null@1@2}
+.)c
+.sp 4p
+.hl
+.sp 4p
+.)b
+.pp
+The merge sort algorithm uses a divide and conquer strategy;
+it splits the input in half, recursively sorts each half,
+and then merges the sorted lists.
+Of course, all these sub-sorts can execute
+in parallel, and the
+tree-insert ($"\fB|\fP" $) functional form expresses this
+concurrency.  \fIMerge\fP removes successively larger elements
+from the heads of the
+two lists (either \fItakeFirst\fP or \fItakeSecond\fP)
+and appends these elements to the end of the merged sequence.
+\fIMerge\fP terminates when
+one sequence is empty, and then
+\fIatEnd\fP appends
+any remaining non-empty sequence
+to the end of the merged one.
+.CH "Dynamic Statistics"
+.pp
+On the next page we
+give the trace of the function \fImerge\fP, which information
+we can use to determine the structure of
+\fImerge\fP's execution tree.
+Since the tree is well-balanced,
+many of the \fImerge\fP's
+could be executed in parallel.
+Using this trace we
+can also calculate
+the average length of the
+arguments passed to \fImerge\fP, or a distribution of argument lengths.
+This information is useful for
+determining communication costs.
+.(b
+.nf
+.sp 4p
+.nf
+.hl
+.sp 4p
+.(c
+	)trace on merge
+
+	mergeSort\ :\ <0\ 3\ -2\ 1\ 11\ 8\ -22\ -33>
+|\ 3\ >Enter>\ merge\ [<0\ 3>]
+|\ 3\ <EXIT<\ \ merge\ \ <0\ 3>
+|\ 3\ >Enter>\ merge\ [<-2\ 1>]
+|\ 3\ <EXIT<\ \ merge\ \ <-2\ 1>
+|2\ >Enter>\ merge\ [<<0\ 3>\ <-2\ 1>>]
+|2\ <EXIT<\ \ merge\ \ <-2\ 0\ 1\ 3>
+|\ 3\ >Enter>\ merge\ [<11\ 8>]
+|\ 3\ <EXIT<\ \ merge\ \ <8\ 11>
+|\ 3\ >Enter>\ merge\ [<-22\ -33>]
+|\ 3\ <EXIT<\ \ merge\ \ <-33\ -22>
+|2\ >Enter>\ merge\ [<<8\ 11>\ <-33\ -22>>]
+|2\ <EXIT<\ \ merge\ \ <-33\ -22\ 8\ 11>
+1\ >Enter>\ merge\ [<<-2\ 0\ 1\ 3>\ <-33\ -22\ 8\ 11>>]
+1\ <EXIT<\ \ merge\ \ <-33\ -22\ -2\ 0\ 1\ 3\ 8\ 11>
+
+<-33\ -22\ -2\ 0\ 1\ 3\ 8\ 11>
+.)c
+.sp 4p
+.hl
+.fi
+.)b
+.bp
+.NS 2 "FP Session"
+.pp
+User input is
+\fBemboldened\fP, terminal output in Roman script.
+.sp 0.5i
+.nf
+\fBfp\fP
+
+FP, v. 4.1 11/31/82
+\fB	)load ex_man\fP
+{all_le}
+{sort}
+{abs_val}
+{find}
+{ip}
+{mm}
+{eq0}
+{fact}
+{sub1}
+{alt_fnd}
+{alt_fact}
+\fB	)fns\fP
+
+.TS
+l l l l l l l.
+abs_val	all_le	alt_fact	alt_fnd	eq0	fact	find
+ip	mm	sort	sub1	\&	\&	\&
+.TE
+
+\fB	abs_val : 3\fP
+
+3
+
+\fB	abs_val : -3\fP
+
+3
+
+\fB	abs_val : 0\fP
+
+0
+
+\fB	abs_val : <-5 0 66>\fP
+
+?
+
+\fB	&abs_val : <-5 0 66>\fP
+
+<5 0 66>
+
+\fB	)pfn abs_val\fP
+
+{abs_val ((> @ [id,%0]) -> id ; (- @ [%0,id]))}
+
+\fB	[id,%0] : -3\fP
+
+<-3 0>
+
+\fB	[%0,id] : -3\fP
+
+<0 -3>
+
+\fB	- @ [%0,id] : -3\fP
+
+3
+
+\fB	all_le : <1 3 5 7>\fP
+
+T
+
+\fB	all_le : <1 0 5 7>\fP
+
+F
+
+\fB	)pfn all_le\fP
+
+{all_le ! and @ &<= @ distl @ [1,tl]}
+
+\fB	distl @ [1,tl] : <1 2 3 4>\fP
+
+<<1 2> <1 3> <1 4>>
+
+\fB	&<= @ distl @ [1,tl] : <1 2 3 4>\fP
+
+<T T T>
+
+\fB	! and : <F T T>\fP
+
+F
+
+\fB	! and : <T T T>\fP
+
+T
+
+\fB	sort : <3 1 2 4>\fP
+
+<1 2 3 4>
+
+\fB	sort : <1>\fP
+
+<1>
+
+\fB	sort : <>\fP
+
+?
+
+\fB	sort : 4\fP
+
+?
+
+\fB	)pfn sort\fP
+
+{sort (null @ tl -> [1] ; (all_le -> apndl @ [1,sort@tl]; sort@rotl))}
+
+\fB	fact : 3\fP
+
+6
+
+\fB	)pfn fact sub1 eq0\fP
+
+{fact (eq0 -> %1 ; *@[id , fact@sub1])}
+
+{sub1 -@[id,%1]}
+
+{eq0 = @ [id,%0]}
+
+\fB	&fact : <1 2 3 4 5>\fP
+
+<1 2 6 24 120>
+
+\fB	eq0 : 3\fP
+
+F
+
+\fB	eq0 : <>\fP
+
+F
+
+\fB	eq0 : 0\fP
+
+T
+
+\fB	sub1 : 3\fP
+
+2
+
+\fB	%1 : 3\fP
+
+1
+
+\fB	alt_fact : 3\fP
+
+6
+
+\fB	)pfn alt_fact\fP
+
+{alt_fact !* @ iota}
+
+\fB	iota : 3\fP
+
+<1 2 3>
+
+\fB	!* @ iota : 3\fP
+
+6
+
+\fB	!+ : <1 2 3>\fP
+
+6
+
+\fB	find : <3 <3 4 5>>\fP
+
+T
+
+\fB	find : <<> <3 4 <>>>\fP
+
+T
+
+\fB	find : <3 <4 5>>\fP
+
+F
+
+\fB	)pfn find\fP
+
+{find (null@2 -> %F ; (=@[1,1@2] -> %T ; find@[1,tl@2]))}
+
+\fB	[1,tl@2] : <3 <3 4 5>>\fP
+
+<3 <4 5>>
+
+\fB	[1,1@2] : <3 <3 4 5>>\fP
+
+<3 3>
+
+\fB	alt_fnd : <3 <3 4 5>>\fP
+
+T
+
+\fB	)pfn alt_fnd\fP
+
+{alt_fnd ! or @ &eq @ distl }
+
+\fB	distl : <3 <3 4 5>>\fP
+
+<<3 3> <3 4> <3 5>>
+
+\fB	&eq @ distl : <3 <3 4 5>>\fP
+
+<T F F>
+
+\fB	!or : <T F T>\fP
+
+T
+
+\fB	!or : <F F F>\fP
+
+F
+
+\fB	)delete alt_fnd\fP
+
+\fB	)fns\fP
+
+.TS
+l l l l l l l.
+abs_val	all_le	alt_fact	eq0	fact	find	ip
+mm	sort	sub1	\&	\&	\&	\&
+.TE
+
+\fB	alt_fnd : <3 <3 4 5>>\fP
+
+alt_fnd not defined
+
+?
+\fB	{g g}\fP
+
+{g}
+\fB	g : 3\fP
+
+non-terminating
+
+?
+
+[Return to top level]
+
+FP, v. 4.0 10/8/82
+\fB	[+,*] : <3 4>\fP
+
+<7 12>
+
+.(b
+\fB	[+,* : <3 4>\fP
+
+syntax error:
+
+[+,* \kx: <3 4>
+\h'\nxu'^
+.)b
+\fB	ip : <<3 4 5> <5 6 7>>\fP
+
+74
+
+\fB	)pfn ip\fP
+
+{ip !+ @ &* @ trans}
+
+\fB	trans : <<3 4 5> <5 6 7>>\fP
+
+<<3 5> <4 6> <5 7>>
+
+\fB	&* @ trans : <<3 4 5> <5 6 7>>\fP
+
+<15 24 35>
+
+\fB	mm : <<<1 0> <0 1>> <<3 4> <5 6>>>\fP
+
+<<3 4> <5 6>>
+
+\fB	)pfn mm\fP
+
+{mm &&ip @ &distl @ distr @[1,trans@2]}
+
+\fB	[1,trans@2] : <<<1 0> <0 1>> <<3 4> <5 6>>>\fP
+
+<<<1 0> <0 1>> <<3 4> <5 6>>>
+
+\fB	distr : <<<1 0> <0 1>> <<3 4> <5 6>>>\fP
+
+<<<1 0> <<3 4> <5 6>>> <<0 1> <<3 4> <5 6>>>>
+
+\fB	&distl : <<<1 0> <<3 4> <5 6>>> <<0 1> <<3 4> <5 6>>>>\fP
+
+<<<<1 0> <3 4>> <<1 0> <5 6>>> <<<0 1> <3 4>> <<0 1> <5 6>>>>
+
+.(b
+\fB	&ip @ &dist & distr @ [1,trans @ 2] : <<<1 0> <0 1>> <<3 4> <5 6>>>\fP
+
+syntax error:
+
+[+,* \kx: <3 4>
+\h'\nxu'^
+&ip @ &distl \kx& distr @ [1,trans @ 2] : <<<1 0> <0 1>> <<3 4> <5 6>>>
+\h'\nxu'^
+.)b
+\fB	&ip @ &distl @ distr @ [1,trans@2] : <<<1 0> <0 1>> <<3 4> <5 6>>>\fP
+
+?
+.sp 2
+.fi
+.bp

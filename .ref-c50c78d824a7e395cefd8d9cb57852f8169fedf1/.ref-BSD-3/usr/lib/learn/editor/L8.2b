@@ -1,0 +1,26 @@
+#print
+Using the same scheme, print lines 2 and 3 of this file.
+Then rewrite it and leave and type "ready".
+#create Ref
+john adams
+thomas jefferson
+91
+#create file
+george washington
+john adams
+thomas jefferson
+james madison
+james monroe
+john quincy adams
+#copyout
+#pipe
+ed file
+#user
+#unpipe
+#uncopyout
+tail -3 .ocopy >X1
+#cmp Ref X1
+#log
+#next
+8.2c 3
+8.1b 8

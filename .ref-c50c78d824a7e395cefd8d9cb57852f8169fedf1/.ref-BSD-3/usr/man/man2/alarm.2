@@ -1,0 +1,37 @@
+.TH ALARM 2 
+.SH NAME
+alarm \- schedule signal after specified time
+.SH SYNOPSIS
+.B alarm(seconds)
+.br
+.B unsigned seconds;
+.SH DESCRIPTION
+.I Alarm
+causes signal SIGALRM, see
+.IR signal (2),
+to be sent to the invoking process
+in a number of seconds given by the argument.
+Unless caught or ignored, the signal terminates the process.
+.PP
+Alarm requests are not stacked;
+successive calls reset the alarm clock.
+If the argument is 0, any alarm request is cancelled.
+Because the clock has a 1-second resolution,
+the signal may occur up to one second early;
+because of scheduling delays,
+resumption of execution of when the signal is
+caught may be delayed an arbitrary amount.
+The longest specifiable delay time is 2147483647 seconds.
+.PP
+The return value is the amount of time
+previously remaining in the alarm clock.
+.SH "SEE ALSO"
+pause(2), signal(2), sleep(3)
+.SH "ASSEMBLER (PDP-11)"
+(alarm = 27.)
+.br
+(seconds in r0)
+.br
+.B sys alarm
+.br
+(previous amount in r0)

@@ -1,0 +1,7 @@
+This directory contains software written at UCB to drive a Versatec
+36 inch Electrostatic Plotter.  Some of the software is proprietary
+and has not been included, but can be obtained from Versatec.
+
+We have the versatec running as a plotter, a printer (four pages
+across using the hardware characters), and a typesetter (also
+running four pages across).

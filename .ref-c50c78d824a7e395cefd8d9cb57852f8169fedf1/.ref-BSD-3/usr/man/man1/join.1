@@ -1,0 +1,104 @@
+.TH JOIN 1 
+.SH NAME
+join \- relational database operator
+.SH SYNOPSIS
+.B join
+[
+options
+]
+file1 file2
+.SH DESCRIPTION
+.I Join
+forms, on the standard output,
+a join
+of the two relations specified by the lines of
+.I file1
+and
+.IR file2 .
+If
+.I file1
+is `\-', the standard input is used.
+.PP
+.I File1
+and 
+.I file2
+must be sorted in increasing ASCII collating
+sequence on the fields
+on which they are to be joined,
+normally the first in each line.
+.PP
+There is one line in the output 
+for each pair of lines in 
+.I file1 
+and 
+.I file2
+that have identical join fields.
+The output line normally consists of the common field,
+then the rest of the line from 
+.IR file1 ,
+then the rest of the line from
+.IR file2 .
+.PP
+Fields are normally separated by blank, tab or newline.
+In this case, multiple separators count as one, and
+leading separators are discarded.
+.PP
+These options are recognized:
+.TP
+.BI \-a n
+In addition to the normal output,
+produce a line for each unpairable line in file
+.IR n ,
+where
+.I n
+is 1 or 2.
+.TP
+.BI \-e \ s
+Replace empty output fields by string
+.IR s .
+.TP
+.BI \-j n\ m
+Join on the
+.IR m th
+field of file
+.IR n .
+If
+.I n
+is missing, use the
+.IR m th
+field in each file.
+.TP
+.BI \-o \ list
+Each output line comprises the fields specifed in
+.IR list ,
+each element of which has the form
+.IR n . m ,
+where
+.I n
+is a file number and
+.I m
+is a field number.
+.PP
+.TP
+.BI \-t c
+Use character
+.I c
+as a separator (tab character).
+Every appearance of
+.I c
+in a line is significant.
+.SH "SEE ALSO"
+sort(1), comm(1), awk(1)
+.SH BUGS
+With default field separation,
+the collating sequence is that of
+.IR sort\ \-b ;
+with
+.BR \-t ,
+the sequence is that of a plain sort.
+.PP
+The conventions of
+.I join, sort, comm, uniq, look
+and
+.IR awk (1)
+are wildly incongruous.

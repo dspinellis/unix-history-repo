@@ -1,0 +1,154 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)read.2	6.6 (Berkeley) %G%
+.\"
+.TH READ 2 ""
+.UC 4
+.SH NAME
+read, readv \- read input
+.SH SYNOPSIS
+.nf
+.ft B
+cc = read(d, buf, nbytes)
+int cc, d;
+char *buf;
+int nbytes;
+.PP
+.ft B
+#include <sys/types.h>
+#include <sys/uio.h>
+.PP
+.ft B
+cc = readv(d, iov, iovcnt)
+int cc, d;
+struct iovec *iov;
+int iovcnt;
+.fi
+.SH DESCRIPTION
+.I Read
+attempts to read
+.I nbytes
+of data from the object referenced by the descriptor
+.I d
+into the buffer pointed to by
+.IR buf .
+.I Readv
+performs the same action, but scatters the input data
+into the 
+.I iovcnt
+buffers specified by the members of the
+.I iov
+array: iov[0], iov[1], ..., iov[iovcnt\|\-\|1].
+.PP
+For 
+.IR readv ,
+the 
+.I iovec
+structure is defined as
+.PP
+.nf
+.RS
+.DT
+struct iovec {
+	caddr_t	iov_base;
+	int	iov_len;
+};
+.RE
+.fi
+.PP
+Each 
+.I iovec
+entry specifies the base address and length of an area
+in memory where data should be placed. 
+.I Readv
+will always fill an area completely before proceeding
+to the next.
+.PP
+On objects capable of seeking, the
+.I read
+starts at a position
+given by the pointer associated with
+.IR d 
+(see
+.IR lseek (2)).
+Upon return from
+.IR read ,
+the pointer is incremented by the number of bytes actually read.
+.PP
+Objects that are not capable of seeking always read from the current
+position.  The value of the pointer associated with such an
+object is undefined.
+.PP
+Upon successful completion,
+.I read
+and
+.I readv
+return the number of bytes actually read and placed in the buffer.
+The system guarantees to read the number of bytes requested if
+the descriptor references a normal file that has that many bytes left
+before the end-of-file, but in no other case.
+.PP
+If the returned value is 0, then
+end-of-file has been reached.
+.SH "RETURN VALUE
+If successful, the
+number of bytes actually read is returned.
+Otherwise, a \-1 is returned and the global variable
+.I errno
+is set to indicate the error.
+.SH "ERRORS
+.I Read
+and
+.I readv
+will fail if one or more of the following are true:
+.TP 15
+[EBADF]
+\fID\fP is not a valid file or socket descriptor open for reading.
+.TP 15
+[EFAULT]
+\fIBuf\fP points outside the allocated address space.
+.TP 15
+[EIO]
+An I/O error occurred while reading from the file system.
+.TP 15
+[EINTR]
+A read from a slow device was interrupted before
+any data arrived by the delivery of a signal.
+.TP 15
+[EINVAL]
+The pointer associated with
+.I d
+was negative.
+.TP 15
+[EWOULDBLOCK]
+The file was marked for non-blocking I/O,
+and no data were ready to be read.
+.PP
+In addition, 
+.I readv
+may return one of the following errors:
+.TP 15
+[EINVAL]
+.I Iovcnt
+was less than or equal to 0, or greater than 16.
+.TP 15
+[EINVAL]
+One of the
+.I iov_len
+values in the
+.I iov
+array was negative.
+.TP 15
+[EINVAL]
+The sum of the
+.I iov_len
+values in the
+.I iov
+array overflowed a 32-bit integer.
+.TP 15
+[EFAULT]
+Part of the \fIiov\fP points outside the process's allocated address space.
+.SH "SEE ALSO"
+dup(2), fcntl(2), open(2), pipe(2), select(2), socket(2), socketpair(2)

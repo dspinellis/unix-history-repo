@@ -1,0 +1,72 @@
+#print
+Write in a program which reads its input and writes it
+out line numbered, with a three-digit line number (starting at one)
+followed by a single space and then by the original line.
+Note: the printf format specification %3d will print a three
+digit number.
+You might try the function fgets (part of the standard library).
+	fgets(buf, size, stdin)
+reads from the terminal ("stdin") up to size characters
+into buf.  It returns NULL on end of file.
+
+Compile and test your program; then type "ready".
+#once #create Ref
+When in the course of human events, it becomes
+necessary for one people to dissolve the political bands which have
+connected them with another, and to assume among the 
+powers of the earth the separate and equal station to which
+the laws of Nature and of Nature's God entitle them, a decent
+respect to the opinions of mankind requires that they should
+declare the causes which impel them to the separation.
+  We hold these truths to be self evident, that all men
+are created equal, that they are endowed by their creator
+with certain unalienable rights, that among these are life, liberty,
+and the pursuit of happiness.  That to secure these rights,
+governments are instituted among men, deriving their just
+powers from the consent of the governed.  That whenever
+any form of government becomes destructive of these ends,
+it is the right of the people to alter or to abolish it, and
+to institute new government, laying its foundation on such
+principles and organizing its powers in such form, as to them
+shall seem most likely to effect their safety and happiness.
+#once #create reffed
+  1 When in the course of human events, it becomes
+  2 necessary for one people to dissolve the political bands which have
+  3 connected them with another, and to assume among the 
+  4 powers of the earth the separate and equal station to which
+  5 the laws of Nature and of Nature's God entitle them, a decent
+  6 respect to the opinions of mankind requires that they should
+  7 declare the causes which impel them to the separation.
+  8   We hold these truths to be self evident, that all men
+  9 are created equal, that they are endowed by their creator
+ 10 with certain unalienable rights, that among these are life, liberty,
+ 11 and the pursuit of happiness.  That to secure these rights,
+ 12 governments are instituted among men, deriving their just
+ 13 powers from the consent of the governed.  That whenever
+ 14 any form of government becomes destructive of these ends,
+ 15 it is the right of the people to alter or to abolish it, and
+ 16 to institute new government, laying its foundation on such
+ 17 principles and organizing its powers in such form, as to them
+ 18 shall seem most likely to effect their safety and happiness.
+#user
+a.out <Ref >xxx
+#cmp xxx reffed
+#succeed
+
+FROM HERE ON, EXAMPLES HAVEN'T BEEN CLEANED AT ALL
+
+ #include <stdio.h>
+
+main()
+{
+	char s[200];
+	int k;
+
+	k = 0;
+	while (fgets(s, 200, stdin) != NULL)
+		printf("%3d %s", ++k, s);
+}
+#log
+#next
+18.1a 10
+17.1c 5

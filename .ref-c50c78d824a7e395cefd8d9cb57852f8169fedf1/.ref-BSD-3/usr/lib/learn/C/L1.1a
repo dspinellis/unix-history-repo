@@ -1,0 +1,23 @@
+#print
+(Section 1.1)
+The way you compile a C program is to say
+  cc name.c 
+where name.c is the name of the file the program
+is on.  Here is a short C program that prints
+out a line containing "hello".  Type it in and
+compile it.  Call it anything you want but
+don't rename the output.
+When done, type "ready".
+
+main()
+{
+	printf("hello\n");
+}
+#once #create Ref
+hello
+#user
+a.out >x
+#cmp x Ref
+#log
+#next
+1.1b 10

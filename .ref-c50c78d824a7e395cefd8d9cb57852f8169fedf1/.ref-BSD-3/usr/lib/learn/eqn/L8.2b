@@ -1,0 +1,17 @@
+#print
+Does the input
+   .EQ
+   e sup sqrt {pi x}
+   .EN
+produce the same output as
+   .EQ
+   e sup sqrt pi x
+   .EN
+Answer yes or no.
+#copyin
+#user
+#uncopyin
+#match no
+#log
+#next
+9.1a 10

@@ -1,0 +1,39 @@
+#print
+The current directory contains a file
+named 'hand'.  The third line is missing:
+add the line
+
+middle finger
+
+after line 2 of this file.
+Check what you're doing by printing the file
+with 
+  1,$p
+before and after the change.
+Then rewrite the file with the usual w, q,
+and then type "ready".
+#create Ref
+thumb
+index finger
+middle finger
+ring finger
+little finger
+#create hand
+thumb
+index finger
+ring finger
+little finger
+#create rhand
+thumb
+index finger
+ring finger
+little finger
+#pipe
+#user
+#unpipe
+#cmp hand Ref
+#log
+#next
+17.2a 5
+18.1a 10
+18.2a 7

@@ -1,0 +1,20 @@
+# Versatec DITroff Description file
+fonts 56 R I B S CW tr ti tb ts cr ci cb ap br bi bb bk ch cl co cy
+		dr di db gr gi gb gk gf hb hn m mn mr mi mb nr ni nb
+		oe or oi ob pb pp sc sl sg sh sr si sb tR tI tB tS
+sizes 6 7 8 9 10 11 12 14 16 18 20 22 24 28 36 0
+stipples 2 ug cf
+unitwidth 36
+# unitwidth = the pointsize of the given font widths
+res 200
+hor 1
+vert 1
+paperwidth 1600
+paperlength 2100
+charset
+!= ** *A *B *C *D *E *F *G *H *I *K *L *M *N *O *P *Q *R *S *T *U *W
+*X *Y *Z *a *b *c *d *e *f *g *h *i *k *l *m *n *o *p *q *r *s *t *u
+*w *x *y *z +- -> 12 14 34 <- <= <> == >= ?? Fi Fl O+ OX \- \^ \_ \|
+aa an ap br bs bu bv ca ci co ct cu da dd de dg di em eq es fa ff fi
+fl fm ga gr hy ib if ip is lb lc lf lh lk lt mi mo mu no or pd pl pt
+rb rc rf rg rh rk rn rt ru sb sc sl sp sq sr te ts ua ul ~=

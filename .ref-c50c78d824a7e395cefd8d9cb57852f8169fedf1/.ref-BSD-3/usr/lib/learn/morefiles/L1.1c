@@ -1,0 +1,18 @@
+#print
+In this directory is a file named for an unsuccessful king.
+Read it and do what it tells you.
+#create Elizabeth1
+1. She was not a king
+2. She was generally successful
+#create George3
+Does the file George3 contain a backspace character
+any where in it?  Figure it out with grep, then type
+"answer N", where N is the line number where you found it.
+Type "answer 0" if there is no backspace.
+#copyin
+#user
+#uncopyin
+#match 2
+#log
+#next
+1.1d 10

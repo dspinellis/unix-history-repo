@@ -1,0 +1,175 @@
+.\"	@(#)e6	6.1 (Berkeley) %G%
+.\"
+.NH
+Experience
+.PP
+There are really three aspects of interest_how
+well
+.UC EQN
+sets mathematics,
+how well it satisfies its goal
+of being ``easy to use,''
+and how easy it was to build.
+.PP
+The first question is easily addressed.
+This entire paper
+has been set by the program.
+Readers can judge for themselves
+whether it is good enough for their purposes.
+One of our users commented that although the output
+is not as good as the best hand-set material,
+it is still
+better than average,
+and much better than
+the worst.
+In any case, who cares?
+Printed books cannot compete with the birds and flowers
+of illuminated manuscripts on esthetic grounds,
+either,
+but they have some clear economic advantages.
+.PP
+Some of the deficiencies in the output could
+be cleaned up with more work on our part.
+For example, we sometimes leave too much space between
+a roman letter and an italic one.
+If we were willing to keep track of the fonts
+involved,
+we could do this better more of the time.
+.PP
+Some other weaknesses are inherent in our output device.
+It is hard, for instance, to draw a line
+of an arbitrary length without getting
+a perceptible overstrike at one end.
+.PP
+As to ease of use,
+at the time of writing,
+the system has been used by two distinct groups.
+One user population consists of mathematicians,
+chemists, physicists, and computer scientists.
+Their typical reaction has been something like:
+.IP " (1)"
+It's easy to write, although I make the following mistakes...
+.IP " (2)"
+How do I do...?
+.IP " (3)"
+It botches the following things.... Why don't you fix them?
+.IP " (4)"
+You really need the following features...
+.sp 5p
+.PP
+The learning time is short.
+A few minutes gives the general flavor,
+and typing a page or two of a paper generally
+uncovers most of the misconceptions about how it works.
+.PP
+The second user group is much larger,
+the secretaries and mathematical typists
+who were the original target of the system.
+They tend to be enthusiastic converts.
+They find the language easy to learn
+(most are largely self-taught),
+and have little trouble producing the output they want.
+They are of course less critical of the esthetics of their output
+than users trained in mathematics.
+After a transition period, most find
+using a computer more interesting than
+a regular typewriter.
+.PP
+The main difficulty that users have seems to be remembering
+that a blank is a delimiter;
+even experienced users use blanks where they shouldn't and omit them
+when they are needed.
+A common instance is typing
+.P1
+f(x sub i)
+.P2
+which produces
+.EQ
+f(x sub i)
+.EN
+instead of
+.EQ
+f(x sub i )
+.EN
+Since the 
+.UC EQN
+language knows no mathematics, it cannot deduce that the
+right parenthesis is not part of the subscript.
+.PP
+The language is somewhat prolix, but this doesn't seem
+excessive considering how much is being done,
+and it is certainly more compact than the corresponding
+.UC TROFF
+commands.
+For example, here is the source for the continued fraction
+expression in Section 1 of this paper:
+.P1
+.ne 4
+.ce 0
+     a sub 0 + b sub 1 over
+       {a sub 1 + b sub 2 over
+         {a sub 2 + b sub 3 over
+           {a sub 3 + ... }}}
+.P2
+This is the input for the large integral of Section 1;
+notice the use of definitions:
+.P1
+.ce 0
+.ne 15
+.in 1
+define emx "{e sup mx}"
+define mab "{m sqrt ab}"
+define sa "{sqrt a}"
+define sb "{sqrt b}"
+int dx over {a emx - be sup -mx} ~=~
+left { lpile {
+     1 over {2 mab} ~log~ 
+           {sa emx - sb} over {sa emx + sb}
+   above
+     1 over mab ~ tanh sup -1 ( sa over sb emx ) 
+   above
+     -1 over mab ~ coth sup -1 ( sa over sb emx )
+}
+.in 0
+.P2
+.PP
+As to ease of construction,
+we have already
+mentioned that there are really only a few person-months
+invested.
+Much of this time has gone into two things_fine-tuning
+(what is the most esthetically pleasing space to use
+between the numerator and denominator of a fraction?),
+and changing things found deficient by our users
+(shouldn't a tilde be a delimiter?).
+.PP
+The program consists of a number of small,
+essentially unconnected modules for code generation,
+a simple lexical analyzer,
+a canned parser which we did not have to write,
+and some miscellany associated with input files
+and the macro facility.
+The program is now about 1600 lines of 
+.UC C
+[6], a high-level language reminiscent of
+.UC BCPL .
+About 20 percent of these lines are ``print'' statements,
+generating the output code.
+.PP
+The semantic routines that generate the actual 
+.UC TROFF
+commands can be changed to accommodate other formatting languages
+and devices.
+For example, in less than 24 hours,
+one of us changed the entire semantic package
+to drive 
+.UC NROFF,
+a variant of
+.UC TROFF,
+for typesetting mathematics on teletypewriter devices
+capable of reverse line motions.
+Since many potential users do not have access
+to a typesetter, but still have to type mathematics,
+this provides a way to get a typed version of the final output
+which is close enough for debugging purposes,
+and sometimes even for ultimate use.

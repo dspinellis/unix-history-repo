@@ -1,0 +1,156 @@
+.TH MORE 1 11/16/79
+.UC
+.SH NAME
+more \- file perusal filter for crt viewing
+.SH SYNOPSIS
+.B more
+[
+.B \-d
+]
+[
+.B \-\fIn\fP
+]
+[
+.B +\fIlinenumber\fP | +/\fIpattern\fP
+]
+[
+name ...
+]
+.SH DESCRIPTION
+.I  More
+is a filter which allows examination of a continuous text
+one screenful at a time on a soft-copy terminal.
+It normally pauses after each screenful, printing --More--
+at the bottom of the screen.
+If the user then types a carriage return, one more line is displayed.
+If the user hits a space,
+another screenful is displayed.
+If a space is preceded by an integer, that number of lines are printed.
+If the user hits d or control-D,
+11 more lines are displayed (a `scroll').
+.I More
+looks in the file
+.I /etc/termcap
+to determine terminal characteristics,
+and to determine the default window size.
+On a terminal capable of displaying 24 lines,
+the default window size is 22 lines.
+.PP
+Other sequences which may be typed when
+.I more
+pauses, and their effects, are as follows (\fIi\fP is an optional integer
+argument, defaulting to 1) :
+.PP
+.IP \fIi\fPz
+same as typing a space except that \fIi\fP, if present, becomes the new
+window size.
+.PP
+.IP \fIi\fPs
+skip \fIi\fP lines and print a screenful of lines
+.PP
+.IP \fIi\fPf
+skip \fIi\fP screenfuls and print a screenful of lines
+.PP
+.IP \fIi\fPn
+skip to the \fIi\fP-th next file given in the command line
+(skips to last file if n doesn't make sense)
+.PP
+.IP \fIi\fPp
+skip to the \fIi\fP-th previous file given in the command line.
+If this command is given in the middle of printing out a
+file, then
+.I more
+goes back to the beginning of the file. If \fIi\fP doesn't make sense,
+.I more
+skips back to the first file.
+If
+.I more
+is not reading from a file, the bell is rung and nothing else happens.
+.PP
+.IP q or Q
+Exit from more.
+.PP
+.IP \fIi\fP/expr
+search for the \fIi\fP-th occurrence of the regular expression \fIexpr\fP.
+If there are less than \fIi\fP occurrences of \fIexpr\fP,
+and the input is a file (rather than a pipe),
+then the position in the file remains unchanged.
+Otherwise, a screenful is displayed, starting two lines before the place
+where the expression was found.
+The user's erase and kill characters may be used to edit the regular
+expression.
+Erasing back past the first column cancels the search command.
+.PP
+.IP !command
+invoke a shell with \fIcommand\fP. 
+.PP
+The commands take effect immediately, i.e., it is not necessary to
+type a carriage return.
+Up to the time when the command character itself is given,
+the user may hit his or her line kill character to cancel the numerical
+argument being formed.
+.PP
+At any time when output is being sent to the terminal, the user can
+hit the quit key (normally control\-\\).
+.I More
+will stop sending output, and will display the usual --More--
+prompt.
+The user may then enter one of the above commands in the normal manner.
+Unfortunately, some output is lost when this is done, due to the
+fact that any characters waiting in the terminal's output queue
+are flushed when the quit signal occurs.
+.PP
+The terminal is set to
+.I noecho
+mode by this program so that the output can be continuous.
+What you type will thus not show on your terminal, except for the / and !
+commands.
+.PP
+If the standard output is not a teletype, then
+.I more
+acts just like
+.I cat,
+except that a header is printed before each file (if there is
+more than one).
+.PP
+The
+.B \-n
+option is an integer which is the size (in lines) of the window which
+.I more
+will use instead of the default.
+The
+.B \-d
+option causes more to prompt the user with the message "Hit
+space to continue, Rubout to abort" at the end of each screenful.
+This is useful if
+.I more
+is being used as a filter in some setting,
+such as a class,
+where many users may be unsophisticated.
+The
+.B +\fIlinenumber\fP
+option causes more to start up at \fIlinenumber\fP, while the
+.B +/\fIpattern\fP
+option causes more to start up two lines before the line containing the
+regular expression \fIpattern\fP.
+.PP
+.DT
+A sample usage of
+.I more
+in previewing
+.I nroff
+output would be
+.PP
+	nroff \-ms +2 doc.n | more
+.SH AUTHOR
+Eric Shienbrood
+.SH FILES
+.DT
+/etc/termcap	Terminal data base
+.SH "SEE ALSO"
+script(1)
+.SH BUGS
+The function of
+.I more
+should be done optionally by the teletype driver in the system,
+akin to the ``more'' feature of the ITS systems at MIT.

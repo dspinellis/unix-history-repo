@@ -1,0 +1,91 @@
+.\" Copyright (c) 1986 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)vx.4	6.2 (Berkeley) %G%
+.\"
+.TH VX 4 ""
+.UC 7
+.SH NAME
+vx \- VIOC-X communications multiplexor
+.SH SYNOPSIS
+.B "device vx0 at vba? csr 0xfffe0000 vector vackint vcmdrsp vunsol"
+.SH DESCRIPTION
+A VIOC-X provides 16 communication lines with partial modem control,
+adequate for UNIX dialup use.
+Each line attached to the VIOC-X communications multiplexor
+behaves as described in
+.IR tty (4)
+and may be set to run at any of 16 speeds; see
+.IR tty (4)
+for the encoding.
+.SH FILES
+/dev/tty[0-9][0-9]
+.br
+/dev/ttyd[0-9a-f]		dialups
+.SH "SEE ALSO"
+tty(4)
+.SH DIAGNOSTICS
+\fBvx%d: vc proc err, ustat %x\fP.
+.PP
+\fBvx%d: vc uqual err, uqual %x\fP.
+.PP
+\fBvx%d: %d exceeds silo size\fP.
+.PP
+\fBvx%d: receiver overrun\fP.
+.PP
+\fBVIOC-BOP no. %d at %x\fP.
+The system identified a vioc supporting the bit oriented protocol.
+The number \fB%d\fP is the board number assigned by the system
+while the address \fB%x\fP is the address of the command control
+block for the vioc.
+.PP
+\fBvx%d: unknown type %x\fP.
+The system encountered a vioc of unknown type during autoconfiguration.
+.PP
+\fBvx%d: didn't respond to LIDENT\fP.
+The device did not respond to the configuration command that
+sets the interrupt vectors and port configuration.
+.PP
+\fBvx%d: %s%s, ports %d-%d\fP.
+This is informatory message printed during autoconfiguration
+indicating the type of hardware present the port configuration.
+.PP
+\fBvx%d: no buffers\fP.
+All the command buffers were in use; this indicates the device
+is constipated for some reason.
+.PP
+\fBvx%d: setq overflow\fP.
+An attempt to append a command to an existing command buffer
+failed because the buffer was full or the hardware doesn't
+support this facility.
+.PP
+\fBvx%d: cmd q overflow\fP.
+An attempt to place a new command on the command queue failed
+because it was full.  The device is either overloaded or hung
+up for some reason.  If this happens, the system tries to
+reset the device to unwedge it.
+.PP
+\fBvx%d INTR ERR type %x v_dcd %x\fP.
+An error was returned by the device in response to some command.
+The command identifier and data carrier detect mask are printed
+followed by the contents of the command buffer in error.
+.PP
+\fBvx%d: vcmdrsp interrupt\fP.
+A command response interrupt was received from a bop (bit oriented
+protocol) vioc.  This should not happen.
+.PP
+\fBvx%d: cmdresp debug\fP.
+.PP
+\fBvx%d: vunsol from BOP\fP.
+An unsolicited interrupt was received from a bop vioc.  This should
+not happen.
+.PP
+\fBvx%d: interrupt q overflow\fP.
+The queue of pending interrupts to be delivered to the vioc is
+full.  This is probably due to the vioc being wedged.  The system
+resets the vioc if this occurs.
+.PP
+\fBvx%d: reset...\fP.
+The system attempted to reset the vioc.
+.SH BUGS

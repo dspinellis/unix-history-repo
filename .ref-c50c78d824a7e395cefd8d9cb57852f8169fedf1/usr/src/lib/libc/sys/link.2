@@ -1,0 +1,111 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)link.2	6.3 (Berkeley) %G%
+.\"
+.TH LINK 2 ""
+.UC 4
+.SH NAME
+link \- make a hard link to a file
+.SH SYNOPSIS
+.nf
+.ft B
+link(name1, name2)
+char *name1, *name2;
+.fi
+.ft R
+.SH DESCRIPTION
+A hard link
+to
+.I name1
+is created;
+the link has the name
+.IR name2 .
+.I Name1
+must exist.
+.PP
+With hard links,
+both
+.I name1
+and
+.I name2
+must be in the same file system.
+Unless the caller is the super-user,
+.I name1
+must not be a directory.
+Both the old and the new
+.I link
+share equal access and rights to
+the underlying object.
+.SH "RETURN VALUE
+Upon successful completion, a value of 0 is returned.  Otherwise,
+a value of \-1 is returned and
+.I errno
+is set to indicate the error.
+.SH "ERRORS
+.I Link
+will fail and no link will be created if one or more of the following
+are true:
+.TP 15
+[ENOTDIR]
+A component of either path prefix is not a directory.
+.TP 15
+[EINVAL]
+Either pathname contains a character with the high-order bit set.
+.TP 15
+[ENAMETOOLONG]
+A component of either pathname exceeded 255 characters,
+or entire length of either path name exceeded 1023 characters.
+.TP 15
+[ENOENT]
+A component of either path prefix does not exist.
+.TP 15
+[EACCES]
+A component of either path prefix denies search permission.
+.TP 15
+[EACCES]
+The requested link requires writing in a directory with a mode
+that denies write permission.
+.TP 15
+[ELOOP]
+Too many symbolic links were encountered in translating one of the pathnames.
+.TP 15
+[ENOENT]
+The file named by \fIname1\fP does not exist.
+.TP 15
+[EEXIST]
+The link named by \fIname2\fP does exist.
+.TP 15
+[EPERM]
+The file named by \fIname1\fP is a directory and the effective
+user ID is not super-user.
+.TP 15
+[EXDEV]
+The link named by \fIname2\fP and the file named by \fIname1\fP
+are on different file systems.
+.TP 15
+[ENOSPC]
+The directory in which the entry for the new link is being placed
+cannot be extended because there is no space left on the file
+system containing the directory.
+.TP 15
+[EDQUOT]
+The directory in which the entry for the new link
+is being placed cannot be extended because the
+user's quota of disk blocks on the file system
+containing the directory has been exhausted.
+.TP 15
+[EIO]
+An I/O error occurred while reading from or writing to 
+the file system to make the directory entry.
+.TP 15
+[EROFS]
+The requested link requires writing in a directory on a read-only file
+system.
+.TP 15
+[EFAULT]
+One of the pathnames specified
+is outside the process's allocated address space.
+.SH "SEE ALSO"
+symlink(2), unlink(2)

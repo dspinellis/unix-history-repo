@@ -1,0 +1,239 @@
+
+# include "macdefs"
+# include "manifest"
+
+/*	storage classes  */
+# define SNULL 0
+# define AUTO 1
+# define EXTERN 2
+# define STATIC 3
+# define REGISTER 4
+# define EXTDEF 5
+# define LABEL 6
+# define ULABEL 7
+# define MOS 8
+# define PARAM 9
+# define STNAME 10
+# define MOU 11
+# define UNAME 12
+# define TYPEDEF 13
+# define FORTRAN 14
+# define ENAME 15
+# define MOE 16
+# define UFORTRAN 17
+# define USTATIC 18
+	/* field size is ORed in */
+# define FIELD 0100
+# define FLDSIZ 077
+extern char *scnames();
+
+/*	location counters */
+# define PROG 0
+# define DATA 1
+# define ADATA 2
+# define STRNG 3
+# define ISTRNG 4
+# define STAB 5
+
+
+/* symbol table flags */
+# define SMOS 01
+# define SHIDDEN 02
+# define SHIDES 04
+# define SSET 010
+# define SREF 020
+
+# define FIXDEF(p) outstab(p)
+# ifndef FIXDEF
+# define FIXDEF(p)
+#endif
+
+	/* alignment of initialized quantities */
+# ifndef AL_INIT
+#	define	AL_INIT ALINT
+# endif
+
+struct symtab {
+	char sname[NCHNAM];
+	TWORD stype;  /* type word */
+
+	char sclass;  /* storage class */
+	char slevel;  /* scope level */
+	char sflags;  /* flags for set, use, hidden, mos, etc. */
+	int offset;  /* offset or value */
+	short dimoff; /* offset into the dimension table */
+	short sizoff; /* offset into the size table */
+	short suse;  /* line number of last use of the variable */
+	};
+
+
+# ifdef ONEPASS
+/* NOPREF must be defined for use in first pass tree machine */
+# define NOPREF 020000  /* no preference for register assignment */
+#else
+
+union ndu {
+	struct {
+		int op;
+		TWORD type;
+		int cdim, csiz;
+		NODE *left;
+		NODE * right;
+		};
+	
+	struct {
+		/* this structure is the same as above,
+		   but is used when a value, rather than
+		   address, is kept in +left */
+		int op;
+		TWORD type;
+		int cdim, csiz;
+		CONSZ lval;
+		int rval;
+		};
+	
+	struct {
+		/* this structure is used when a floating point constant
+		   is being computed */
+		int op;
+		TWORD type;
+		int cdim, csiz;
+		double dval;
+		};
+
+	};
+# endif
+
+struct sw {
+	CONSZ sval;
+	int slab;
+	};
+
+extern struct sw swtab[];
+extern struct sw *swp;
+extern int swx;
+
+extern int ftnno;
+extern int blevel;
+extern int instruct, stwart;
+
+extern int lineno, nerrors;
+typedef union {
+	int intval;
+	NODE * nodep;
+	} YYSTYPE;
+extern YYSTYPE yylval;
+
+extern CONSZ lastcon;
+extern double dcon;
+
+extern char ftitle[];
+extern char ititle[];
+extern struct symtab stab[];
+extern int curftn;
+extern int curclass;
+extern int curdim;
+extern int dimtab[];
+extern int paramstk[];
+extern int paramno;
+extern int autooff, argoff, strucoff;
+extern int regvar;
+extern int minrvar;
+extern int brkflag;
+extern char yytext[];
+
+extern int strflg;
+
+extern OFFSZ inoff;
+
+extern int reached;
+
+/*	tunnel to buildtree for name id's */
+
+extern int idname;
+
+extern NODE node[];
+extern NODE *lastfree;
+
+extern int cflag, hflag, pflag;
+
+/* various labels */
+extern int brklab;
+extern int contlab;
+extern int flostat;
+extern int retlab;
+extern int retstat;
+extern int asavbc[], *psavbc;
+
+/*	flags used in structures/unions */
+
+# define SEENAME 01
+# define INSTRUCT 02
+# define INUNION 04
+# define FUNNYNAME 010
+
+/*	flags used in the (elementary) flow analysis ... */
+
+# define FBRK 02
+# define FCONT 04
+# define FDEF 010
+# define FLOOP 020
+
+/*	flags used for return status */
+
+# define RETVAL 1
+# define NRETVAL 2
+
+/*	used to mark a constant with no name field */
+
+# define NONAME 040000
+
+	/* mark an offset which is undefined */
+
+# define NOOFFSET (-10201)
+
+/*	declarations of various functions */
+
+extern NODE
+	*buildtree(),
+	*bdty(),
+	*mkty(),
+	*rstruct(),
+	*dclstruct(),
+	*getstr(),
+	*tymerge(),
+	*stref(),
+	*offcon(),
+	*bcon(),
+	*bpsize(),
+	*convert(),
+	*pconvert(),
+	*oconvert(),
+	*ptmatch(),
+	*tymatch(),
+	*makety(),
+	*block(),
+	*doszof(),
+	*talloc(),
+	*optim(),
+	*strargs(),
+	*clocal();
+
+OFFSZ	tsize(),
+	psize();
+
+TWORD	types();
+
+
+double atof();
+
+char *exname(), *exdcon();
+
+# define checkst(x)
+
+# ifndef CHARCAST
+/* to make character constants into character connstants */
+/* this is a macro to defend against cross-compilers, etc. */
+# define CHARCAST(x) (char)(x)
+# endif
+

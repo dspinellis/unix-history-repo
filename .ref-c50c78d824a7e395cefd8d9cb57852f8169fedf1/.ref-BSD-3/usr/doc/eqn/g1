@@ -1,0 +1,608 @@
+.if t .2C
+.SC Introduction
+.PP
+.UC EQN
+is a
+program for typesetting mathematics
+on the Graphics Systems phototypesetters on
+.UC UNIX
+and
+.UC GCOS .
+The 
+.UC EQN
+language was designed to be easy to use
+by people who know neither mathematics
+nor typesetting.
+Thus
+.UC EQN
+knows relatively little about mathematics.
+In particular, mathematical symbols like
++, \(mi, \(mu, parentheses, and so on have no special meanings.
+.UC EQN
+is quite happy to set garbage (but it will look good).
+.PP
+.UC EQN
+works as a preprocessor for the typesetter formatter,
+.UC TROFF [1],
+so the normal mode of operation is to prepare
+a document with both mathematics and ordinary text
+interspersed,
+and let
+.UC EQN
+set the mathematics while
+.UC TROFF
+does the body of the text.
+.PP
+On
+.UC UNIX ,
+.UC EQN
+will also produce mathematics on
+.UC DASI 
+and
+.UC GSI
+terminals and on
+Model 37 teletypes.
+The input is identical, but you have to use the programs
+.UC NEQN 
+and
+.UC NROFF
+instead of
+.UC EQN 
+and
+.UC TROFF .
+Of course, some things won't look as good
+because terminals 
+don't provide the variety of characters, sizes and fonts
+that a typesetter does,
+but the output is usually adequate for proofreading.
+.PP
+To use 
+.UC EQN
+on
+.UC UNIX ,
+.P1
+eqn files | troff
+.P2
+.UC GCOS
+use is discussed in section 26.
+.SC Displayed Equations
+.PP
+To tell
+.UC EQN
+where a mathematical expression begins and ends,
+we mark it with lines beginning
+.UC .EQ
+and
+.UC .EN .
+Thus
+if you type the lines
+.P1
+^EQ
+x=y+z
+^EN
+.P2
+your output will look like
+.EQ
+x=y+z
+.EN
+The
+.UC .EQ
+and
+.UC .EN
+are copied through untouched;
+they
+are not otherwise processed
+by
+.UC EQN .
+This means that you have to take care
+of things like centering, numbering, and so on
+yourself.
+The most common way is to use the
+.UC TROFF
+and
+.UC NROFF
+macro package package `\(mims'
+developed by M. E. Lesk[3],
+which allows you to center, indent, left-justify and number equations.
+.PP
+With the `\(mims' package,
+equations are centered by default.
+To left-justify an equation, use
+.UC \&.EQ\ L
+instead of
+.UC .EQ .
+To indent it, use
+.UC .EQ\ I .
+Any of these can be followed by an arbitrary `equation number'
+which will be placed at the right margin.
+For example, the input
+.P1
+^EQ I (3.1a)
+x = f(y/2) + y/2
+^EN
+.P2
+produces the output
+.EQ I (3.1a)
+x = f(y/2) + y/2
+.EN
+.PP
+There is also a shorthand notation so
+in-line expressions
+like
+$pi sub i sup 2$
+can be entered without
+.UC .EQ
+and
+.UC .EN .
+We will talk about it in section 19.
+.SC Input spaces
+.PP
+Spaces and newlines within an expression are thrown away by
+.UC EQN .
+(Normal text is left absolutely alone.)
+Thus
+between
+.UC .EQ
+and
+.UC .EN ,
+.P1
+x=y+z
+.P2
+and
+.P1
+x = y + z
+.P2
+and
+.P1
+x   =   y   
+   + z
+.P2
+and so on
+all produce the same
+output
+.EQ
+x=y+z
+.EN
+You should use spaces and newlines freely to make your input equations
+readable and easy to edit.
+In particular, very long lines are a bad idea,
+since they are often hard to fix if you make a mistake.
+.SC Output spaces
+.PP
+To force extra spaces into the 
+.ul
+output,
+use a tilde ``\|~\|''
+for each space you want:
+.P1
+x~=~y~+~z
+.P2
+gives
+.EQ
+x~=~y~+~z
+.EN
+You can also use a circumflex ``^'', 
+which gives a space half the width of a tilde.
+It is mainly useful for fine-tuning.
+Tabs may also be used to position pieces
+of an expression,
+but the tab stops must be set by 
+.UC TROFF
+commands.
+.SC "Symbols, Special Names, Greek"
+.PP
+.UC EQN
+knows some mathematical symbols,
+some mathematical names, and the Greek alphabet.
+For example,
+.P1
+x=2 pi int sin ( omega t)dt
+.P2
+produces
+.EQ
+x = 2 pi int sin ( omega t)dt
+.EN
+Here the spaces in the input are
+.B
+necessary
+.R
+to tell
+.UC EQN
+that
+.ul
+int,
+.ul
+pi,
+.ul
+sin
+and
+.ul
+omega
+are separate entities that should get special treatment.
+The
+.ul
+sin,
+digit 2, and parentheses are set in roman type instead of italic;
+.ul
+pi
+and
+.ul
+omega
+are made Greek;
+and
+.ul
+int
+becomes the integral sign.
+.PP
+When in doubt, leave spaces around separate parts of the input.
+A
+.ul
+very
+common error is to type
+.ul
+f(pi)
+without leaving spaces on both sides of the
+.ul
+pi.
+As a result,
+.UC EQN
+does not recognize
+.ul
+pi
+as a special word, and it appears as
+$f(pi)$
+instead of
+$f( pi )$.
+.PP
+A complete list of
+.UC EQN
+names appears in section 23.
+Knowledgeable users can also use
+.UC TROFF
+four-character names
+for anything 
+.UC EQN
+doesn't know about,
+like
+.ul
+\\(bs
+for the Bell System sign \(bs.
+.SC "Spaces, Again"
+.PP
+The only way
+.UC EQN
+can deduce that some sequence
+of letters might be special
+is if that sequence is separated from the letters
+on either side of it.
+This can be done by surrounding a special word by ordinary spaces
+(or tabs or newlines),
+as we did in the previous section.
+.PP
+.tr ~~
+You can also make special words stand out by surrounding them
+with tildes or circumflexes:
+.P1
+x~=~2~pi~int~sin~(~omega~t~)~dt
+.P2
+is much the same as the last example,
+except that the tildes
+not only
+separate the magic words
+like
+.ul
+sin,
+.ul
+omega,
+and so on,
+but also add extra spaces,
+one space per tilde:
+.EQ
+x~=~2~pi~int~sin~(~omega~t~)~dt
+.EN
+.PP
+Special words can also be separated by braces { }
+and double quotes "...",
+which have special meanings that we will
+see soon.
+.tr ~
+.SC "Subscripts and Superscripts"
+.PP
+Subscripts and superscripts are
+obtained with the words
+.ul
+sub
+and
+.ul
+sup.
+.P1
+x sup 2 + y sub k
+.P2
+gives
+.EQ
+x sup 2 + y sub k
+.EN
+.UC EQN
+takes care of all the size changes and vertical motions
+needed to make the output look right.
+The words
+.ul
+sub
+and
+.ul
+sup
+must be surrounded by spaces;
+.ul
+x sub2
+will give you
+$x sub2$ instead of $x sub 2$.
+Furthermore, don't forget to leave a space
+(or a tilde, etc.)
+to mark the end of a subscript or superscript.
+A common error is to say
+something like
+.P1
+y = (x sup 2)+1
+.P2
+which causes
+.EQ
+y = (x sup 2)+1
+.EN
+instead of
+the intended
+.EQ
+y = (x sup 2 )+1
+.EN
+.PP
+Subscripted subscripts and superscripted superscripts
+also work:
+.P1
+x sub i sub 1
+.P2
+is
+.EQ
+x sub i sub 1
+.EN
+A subscript and superscript on the same thing
+are printed one above the other
+if the subscript comes
+.ul
+first:
+.P1
+x sub i sup 2
+.P2
+is
+.EQ
+x sub i sup 2
+.EN
+.PP
+Other than this special case,
+.ul
+sub
+and
+.ul
+sup
+group to the right, so
+.ul
+x\ sup\ y\ sub\ z
+means
+$x sup {y sub z}$, not ${x sup y} sub z$.
+.SC "Braces for Grouping"
+.PP
+Normally, the end of a subscript or superscript is marked
+simply by a blank (or tab or tilde, etc.)
+What if the subscript or superscript is something that has to be typed
+with blanks in it?
+In that case, you can use the braces
+{ and } to mark the
+beginning and end of the subscript or superscript:
+.P1
+e sup {i omega t}
+.P2
+is
+.EQ
+e sup {i omega t}
+.EN
+.sp
+Rule:  Braces can
+.ul
+always
+be used to force 
+.UC EQN
+to treat something as a unit,
+or just to make your intent perfectly clear.
+Thus:
+.P1
+x sub {i sub 1} sup 2
+.P2
+is
+.EQ
+x sub {i sub 1} sup 2
+.EN
+with braces, but
+.P1
+x sub i sub 1 sup 2
+.P2
+is
+.EQ
+x sub i sub 1 sup 2
+.EN
+which is rather different.
+.PP
+Braces can occur within braces if necessary:
+.P1
+e sup {i pi sup {rho +1}}
+.P2
+is
+.EQ
+e sup {i pi sup {rho +1}}
+.EN
+The general rule is that anywhere you could use some single
+thing like
+.ul
+x,
+you can use an arbitrarily complicated thing if you enclose
+it in braces.
+.UC EQN
+will look after all the details of positioning it and making
+it the right size.
+.PP
+In all cases, make sure you have the
+right number of braces.
+Leaving one out or adding an extra will cause 
+.UC EQN
+to complain bitterly.
+.PP
+Occasionally you will have to
+print braces.
+To do this,
+enclose them in double quotes,
+like "{".
+Quoting is discussed in more detail in section 14.
+.SC Fractions
+.PP
+To make a fraction,
+use the word
+.ul
+over:
+.P1
+a+b over 2c =1
+.P2
+gives
+.EQ
+a+b over 2c =1
+.EN
+The line is made the right length and positioned automatically.
+Braces can be used to make clear what goes over what:
+.P1
+{alpha + beta} over {sin (x)}
+.P2
+is
+.EQ
+{alpha + beta} over {sin (x)}
+.EN
+What happens when there is both an
+.ul
+over
+and a
+.ul
+sup
+in the same expression?
+In such an apparently ambiguous case,
+.UC EQN
+does the
+.ul
+sup
+before the
+.ul
+over,
+so
+.P1
+\(mib sup 2 over pi
+.P2
+is
+$-b sup 2 over pi$
+instead of
+$-b sup {2 over pi}$
+The rules
+which decide which operation is done first in cases like this
+are summarized in section 23.
+When in doubt, however,
+.ul
+use braces
+to make clear what goes with what.
+.SC "Square Roots"
+.PP
+To draw a square root, use
+.ul
+sqrt:
+.P1 2
+sqrt a+b + 1 over sqrt {ax sup 2 +bx+c}
+.P2
+is
+.EQ
+sqrt a+b + 1 over sqrt {ax sup 2 +bx+c}
+.EN
+Warning _ square roots of tall quantities look lousy,
+because a root-sign 
+big enough to cover the quantity is
+too dark and heavy:
+.P1
+sqrt {a sup 2 over b sub 2}
+.P2
+is
+.EQ
+sqrt{a sup 2 over b sub 2}
+.EN
+Big square roots are generally better written as something
+to the power \(12:
+.EQ
+(a sup 2 /b sub 2 ) sup half
+.EN
+which is
+.P1
+(a sup 2 /b sub 2 ) sup half
+.P2
+.SC "Summation, Integral, Etc."
+.PP
+Summations, integrals, and similar constructions
+are easy:
+.P1
+sum from i=0 to {i= inf} x sup i
+.P2
+produces
+.EQ
+sum from i=0 to {i= inf} x sup i
+.EN
+Notice that we used
+braces to indicate where the upper
+part
+$i= inf$
+begins and ends.
+No braces were necessary for the lower part $i=0$,
+because it contained no blanks.
+The braces will never hurt,
+and if the 
+.ul
+from
+and
+.ul
+to
+parts contain any blanks, you must use braces around them.
+.PP
+The
+.ul
+from
+and
+.ul
+to
+parts are both optional,
+but if both are used,
+they have to occur in that order.
+.PP
+Other useful characters can replace the
+.ul
+sum
+in our example:
+.P1
+int   prod   union   inter
+.P2
+become, respectively,
+.EQ
+int ~~~~~~ prod ~~~~~~ union ~~~~~~ inter
+.EN
+Since the thing before the 
+.ul
+from
+can be anything,
+even something in braces,
+.ul
+from-to
+can often be used in unexpected ways:
+.P1
+lim from {n \(mi> inf} x sub n =0
+.P2
+is
+.EQ
+lim from {n-> inf} x sub n =0
+.EN

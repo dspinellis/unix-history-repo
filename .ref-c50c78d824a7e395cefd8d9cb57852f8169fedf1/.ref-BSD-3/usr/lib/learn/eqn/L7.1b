@@ -1,0 +1,50 @@
+#once #create message
+.ND
+.tr %$
+.EQ
+delim $$
+.EN
+.LP
+As you might expect from our previous discussions,
+any part of a
+
+  thing from thing to thing
+
+construction can be as complicated as you wish.
+The only limitation is that the individual "thing"'s
+may well need braces around them to make it
+clear to neqn which part goes with which.
+
+For example, suppose you want
+.EQ
+sum from {pi = 0} to {pi = n}
+.EN
+Then you have to ensure that the $pi =0$ and
+$pi =n$ parts are included in braces or
+they will not work right.
+
+Modify file "Example" so the output looks like
+the example above, then type "ready".
+.pl 1
+#once #create Ref
+.LP
+.EQ
+sum from {pi = 0} to {pi =n}
+.EN
+.pl 1
+#once #create Example
+.LP
+.EQ
+sum from pi = 0 to pi = n
+.EN
+.pl 1
+#
+#once neqn Ref | nroff >X1 &
+#once neqn message Ref | nroff -T$term %s/tinyms -
+#user
+neqn Example | nroff >X2
+#cmp X1 X2
+#log
+#next
+7.1c 10
+7.2b 5

@@ -1,0 +1,15 @@
+#print
+The lessons from this point on are from the old C script.
+They have not been cleaned up as much as they could, so some
+are not very illuminating, and the code they illustrate
+is not always the best. You're welcome to try them nonetheless,
+but be warned.
+If you want to proceed, type yes;
+otherwise, type bye.
+#copyin
+#user
+#uncopyin
+#match yes
+#next 
+11.1a 10
+11.2a 5

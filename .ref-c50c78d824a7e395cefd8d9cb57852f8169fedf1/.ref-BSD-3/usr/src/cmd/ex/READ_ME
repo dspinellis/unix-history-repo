@@ -1,0 +1,43 @@
+
+This is version 3.1 of the editor. It is too large to fit on a pdp-11
+unless you have overlay code. (Such code is expected to be available
+for v7 unix soon.)
+
+Version 2.9 corresponds to version 3.1 without the enhancements in 3.1.
+There is no reason to use 2.9 unless you have a pdp-11 that does not have
+overlay software, since 3.1 contains all the bug fixes and some new features.
+
+Special installation notes for this version.
+1) If on a V6 system using -lretro, be sure to remove the line in
+   /usr/include/retrofit/sgtty.h that defines CBREAK. If you have
+   added a line defining TIOCSETN or TIOCGETC these should be removed.
+2) The include file varargs.h should be installed, as the new printf needs it.
+3) The include file local/uparm.h should be installed, as ex_tune.h needs it.
+   The contents of this include file can be modified if you wish to place
+   the editor in a nonstandard location.
+4) Be sure not to use the -t1 compiler (which puts switches in I space and
+   hence makes larger I segments. This will causes the editor not to fit
+   in 64K on an 11.
+5) Use the -t0 compiler which has a large enough symbol table. (V6 only)
+6) Be sure to use the new termlib that goes with this version of the editor.
+7) Be sure to use the new termcap.
+8) Make sure the programs setenv and printenv are installed, and that setenv
+   is able to write /etc/htmp. (V6 only)
+
+Conditional compilation flags:
+	-DTRACE		for debugging (wont then fit on an 11)
+	-DV6		for version 6, using raw (v7 uses cbreak)
+	-DVFORK		for UCB Vax/Unix with the vfork system call.
+	-DCHDIR		compile in undocumented old chdir (cd) command
+	-DLISP		compile in lisp hacks
+	-DUCVISUAL	compile in code to handle \ escapes for visual on
+			upper case only terminals.  gross.
+
+Ex means to avoid stdio like the plague. If any of stdio other than the
+ctype.h functions or str* get pulled in, it is a mistake.
+
+Ex is very large, but should fit (barely) on an 11/70.  There are only
+a few bytes of room left in version 2.9 unless you take out some of
+CHDIR, LISP, or UCVISUAL. This assumes the new termlib (which knows
+about the tc= capability, 1024 byte entries, and @ cancellation of
+capabilities); and that -t1 is NOT used for compilation.

@@ -1,0 +1,85 @@
+.\"	@(#)g0	6.1 (Berkeley) %G%
+.\"
+.EH 'USD:27-%''Typesetting Mathematics _ User\'s Guide'
+.OH 'Typesetting Mathematics _ User\'s Guide''USD:27-%'
+.EQ
+delim $$
+.EN
+\".ND "June 2, 1976"
+.\".RP
+\".TM "76-1273-4 76-1271-4" 39199 39199-11
+.TL
+Typesetting Mathematics _ User's Guide
+\&\ \ \ \ \ (Second\ Edition)
+.AU 2C-518 6021
+Brian W. Kernighan and Lorinda L. Cherry
+.AI
+.MH
+.AB
+.in
+.ll
+.PP
+This is the user's guide for a system for typesetting
+mathematics,
+using
+the phototypesetters on the
+.UX
+operating system.
+.PP
+Mathematical expressions are described in a language
+designed to be easy to use
+by people who know neither mathematics nor typesetting.
+Enough of the language to set in-line expressions like
+$lim from {x-> pi /2} ( tan~x) sup{sin~2x}~=~1$
+or display equations like
+.in .5i
+.EQ I
+G(z)~mark =~ e sup { ln ~ G(z) }
+~=~ exp left ( 
+sum from k>=1 {S sub k z sup k} over k right )
+~=~  prod from k>=1 e sup {S sub k z sup k /k}
+.EN
+.EQ I
+lineup = left ( 1 + S sub 1 z + 
+{ S sub 1 sup 2 z sup 2 } over 2! + ... right )
+left ( 1+ { S sub 2 z sup 2 } over 2
++ { S sub 2 sup 2 z sup 4 } over { 2 sup 2 cdot 2! }
++ ... right ) ...
+.EN
+.EQ I
+lineup =  sum from m>=0 left (
+sum from
+pile { k sub 1 ,k sub 2 ,..., k sub m  >=0
+above
+k sub 1 +2k sub 2 + ... +mk sub m =m}
+{ S sub 1 sup {k sub 1} } over {1 sup k sub 1 k sub 1 ! } ~
+{ S sub 2 sup {k sub 2} } over {2 sup k sub 2 k sub 2 ! } ~
+...
+{ S sub m sup {k sub m} } over {m sup k sub m k sub m ! } 
+right ) z sup m
+.EN
+.in 0
+can be learned in an hour or so.
+.PP
+The language interfaces directly with
+the phototypesetting language
+.UC TROFF ,
+so mathematical expressions can be embedded in the running
+text
+of a manuscript,
+and the entire document produced in one process.
+This user's guide is an example of its output.
+.PP
+The same language
+may be used with the 
+.UC UNIX
+formatter
+.UC NROFF
+to set mathematical expressions on 
+.UC DASI
+and
+.UC GSI
+terminals
+and Model 37 teletypes.
+.AE
+.CS 11 0 11 0 0 3

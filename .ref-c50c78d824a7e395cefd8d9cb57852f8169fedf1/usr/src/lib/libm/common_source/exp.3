@@ -1,0 +1,128 @@
+.\" Copyright (c) 1985 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)exp.3	6.9 (Berkeley) %G%
+.\"
+.TH EXP 3M  ""
+.UC 4
+.ds nn \fINaN\fR
+.ds up \fIulp\fR
+.SH NAME
+exp, expm1, log, log10, log1p, pow \- exponential, logarithm, power
+.SH SYNOPSIS
+.nf
+.B #include <math.h>
+.PP
+.B double exp(x)
+.B double x;
+.PP
+.B double expm1(x)
+.B double x;
+.PP
+.B double log(x)
+.B double x;
+.PP
+.B double log10(x)
+.B double x;
+.PP
+.B double log1p(x)
+.B double x;
+.PP
+.B double pow(x,y)
+.B double x,y;
+.fi
+.SH DESCRIPTION
+.PP
+Exp returns the exponential function of x.
+.PP
+Expm1 returns exp(x)\-1 accurately even for tiny x.
+.PP
+Log returns the natural logarithm of x.
+.PP
+Log10 returns the logarithm of x to base 10.
+.PP
+Log1p returns log(1+x) accurately even for tiny x.
+.PP
+Pow(x,y) returns
+.if n \
+x**y.
+.if t \
+x\u\s8y\s10\d.
+.SH ERROR (due to Roundoff etc.)
+exp(x), log(x), expm1(x) and log1p(x) are accurate to within 
+an \*(up, and log10(x) to within about 2 \*(ups;
+an \*(up is one \fIU\fRnit in the \fIL\fRast \fIP\fRlace.
+The error in pow(x,y) is below about 2 \*(ups when its
+magnitude is moderate, but increases as pow(x,y) approaches
+the over/underflow thresholds until almost as many bits could be
+lost as are occupied by the floating\-point format's exponent
+field; that is 8 bits for VAX D and 11 bits for IEEE 754 Double.
+No such drastic loss has been exposed by testing; the worst
+errors observed have been below 20 \*(ups for VAX D,
+300 \*(ups for IEEE 754 Double.
+Moderate values of pow are accurate enough that pow(integer,integer)
+is exact until it is bigger than 2**56 on a VAX, 2**53 for IEEE 754.
+.SH DIAGNOSTICS
+Exp, expm1 and pow return the reserved operand on a VAX when the correct
+value would overflow, and they set \fIerrno\fR to ERANGE.
+Pow(x,y) returns the reserved operand on a VAX and sets \fIerrno\fR
+to EDOM when x < 0 and y is not an integer.
+.PP
+On a VAX, \fIerrno\fR is set to EDOM and the reserved operand is returned
+by log unless x > 0, by log1p unless x > \-1.
+.SH NOTES
+The functions exp(x)\-1 and log(1+x) are called expm1
+and logp1 in BASIC on the Hewlett\-Packard HP\-71B and APPLE
+Macintosh, EXP1 and LN1 in Pascal, exp1 and log1 in C
+on APPLE Macintoshes, where they have been provided to make
+sure financial calculations of ((1+x)**n\-1)/x, namely
+expm1(n\(**log1p(x))/x, will be accurate when x is tiny.
+They also provide accurate inverse hyperbolic functions.
+.PP
+Pow(x,0) returns x**0 = 1 for all x including x = 0,
+.if n \
+Infinity
+.if t \
+\(if
+(not found on a VAX), and \*(nn (the reserved
+operand on a VAX).  Previous implementations of pow may
+have defined x**0 to be undefined in some or all of these
+cases.  Here are reasons for returning x**0 = 1 always:
+.IP (1) \w'\0\0\0\0'u
+Any program that already tests whether x is zero (or
+infinite or \*(nn) before computing x**0 cannot care
+whether 0**0 = 1 or not. Any program that depends
+upon 0**0 to be invalid is dubious anyway since that
+expression's meaning and, if invalid, its consequences 
+vary from one computer system to another.
+.IP (2) \w'\0\0\0\0'u
+Some Algebra texts (e.g. Sigler's) define x**0 = 1 for 
+all x, including x = 0.
+This is compatible with the convention that accepts a[0]
+as the value of polynomial
+.ce
+p(x) = a[0]\(**x**0 + a[1]\(**x**1 + a[2]\(**x**2 +...+ a[n]\(**x**n
+.IP
+at x = 0 rather than reject a[0]\(**0**0 as invalid.
+.IP (3) \w'\0\0\0\0'u
+Analysts will accept 0**0 = 1 despite that x**y can
+approach anything or nothing as x and y approach 0
+independently.
+The reason for setting 0**0 = 1 anyway is this:
+.IP
+If x(z) and y(z) are \fIany\fR functions analytic (expandable
+in power series) in z around z = 0, and if there 
+x(0) = y(0) = 0, then x(z)**y(z) \(-> 1 as z \(-> 0.
+.IP (4) \w'\0\0\0\0'u
+If 0**0 = 1, then
+.if n \
+infinity**0 = 1/0**0 = 1 too; and
+.if t \
+\(if**0 = 1/0**0 = 1 too; and
+then \*(nn**0 = 1 too because x**0 = 1 for all finite
+and infinite x, i.e., independently of x.
+.SH SEE ALSO
+math(3M), infnan(3M)
+.SH AUTHOR
+Kwok\-Choi Ng, W. Kahan

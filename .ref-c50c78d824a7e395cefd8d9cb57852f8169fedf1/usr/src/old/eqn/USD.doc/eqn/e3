@@ -1,0 +1,134 @@
+.\"	@(#)e3	6.1 (Berkeley) %G%
+.\"
+.NH
+Language Design
+.PP
+The fundamental principle upon which we based our language design
+is that the language should be easy to use
+by people (for example, secretaries) who know neither mathematics nor typesetting.
+.PP
+This principle implies
+several things.
+First,
+``normal'' mathematical conventions about operator precedence,
+parentheses, and the like cannot be used,
+for to give special meaning to such characters means
+that the user has to understand what he or she
+is typing.
+Thus the language should not assume, for instance,
+that parentheses are always balanced,
+for they are not in
+the half-open interval $(a,b]$.
+Nor should it assume that
+that $sqrt{a+b}$ can be replaced by
+$(a+b) sup roman \(12$,
+or that $1/(1-x)$ is better written as $1 over 1-x$
+(or
+vice versa).
+.PP
+Second, there should be relatively few rules,
+keywords,
+special symbols and operators, and the like.
+This keeps the language easy to learn and remember. Furthermore, there should be few exceptions to
+the rules that do exist: 
+if something works in one situation,
+it should work everywhere.
+If a variable can have a subscript,
+then a subscript can have a subscript, and so on without limit.
+.PP
+Third, ``standard'' things should happen automatically.
+Someone who types ``x=y+z+1'' should get ``$x=y+z+1$''.
+Subscripts and superscripts should automatically
+be printed in an appropriately smaller size,
+with no special intervention.
+Fraction bars have to be made the right length and positioned at the
+right height.
+And so on.
+Indeed a mechanism for overriding default actions has to exist,
+but its application is the exception, not the rule.
+.PP
+We assume
+that the typist has a reasonable picture
+(a two-dimensional representation)
+of the desired final form, as might be handwritten
+by the author of a paper.
+We also assume that
+the input is typed on a computer terminal much like an ordinary typewriter.
+This implies an input alphabet
+of perhaps 100 characters,
+none of them special.
+.PP
+A secondary, but still important, goal in our design
+was that the system should be easy to implement,
+since neither of the authors had any desire to make
+a long-term project of it.
+Since our design was not firm,
+it was also necessary that the program be easy to change
+at any time.
+.PP
+To make the program easy to build and to change,
+and to guarantee regularity
+(``it should work everywhere''),
+the language is defined by a
+context-free grammar, described in Section 5.
+The compiler for the language was built using a compiler-compiler.
+.PP
+A priori,
+the grammar/compiler-compiler approach seemed the right thing to do.
+Our subsequent experience leads us to believe
+that any other course would have been folly.
+The original language was designed in a few days. 
+Construction of a working system
+sufficient to try significant examples
+required perhaps a person-month.
+Since then, we have spent a modest amount of additional time
+over several years
+tuning, adding facilities,
+and occasionally changing the language as users
+make criticisms and suggestions.
+.PP
+We also decided quite early that
+we would let
+.UC TROFF
+do our work for us whenever possible.
+.UC TROFF
+is quite a powerful program, with
+a macro facility, text and arithmetic variables, numerical computation and testing,
+and conditional branching.
+Thus we have been able to avoid writing
+a lot of mundane but tricky software.
+For example, we store no text strings,
+but simply pass them on to
+.UC TROFF .
+Thus we avoid having to write a storage management package.
+Furthermore, we have been able to isolate ourselves
+from most details of the particular device and character set
+currently in use.
+For example, we let
+.UC TROFF
+compute the widths of all strings of characters;
+we need know nothing about them.
+.PP
+A third design goal is special to our environment.
+Since our program is only useful for typesetting mathematics,
+it is necessary that it interface cleanly with the underlying typesetting language
+for the benefit of users
+who want to set intermingled mathematics and text
+(the usual case).
+The standard mode of operation
+is that when a document is typed,
+mathematical expressions are input as part of the text,
+but marked by user settable delimiters.
+The program reads this input and treats as comments
+those things which are not mathematics,
+simply passing them through untouched.
+At the same time it converts the mathematical input
+into the necessary
+.UC TROFF
+commands.
+The resulting ioutput is passed directly to
+.UC TROFF
+where the comments and the mathematical parts both become
+text and/or
+.UC TROFF
+commands.

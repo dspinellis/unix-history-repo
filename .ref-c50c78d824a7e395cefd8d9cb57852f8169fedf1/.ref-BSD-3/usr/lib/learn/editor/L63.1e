@@ -1,0 +1,13 @@
+#print
+Will the command
+  m-
+interchange lines "." and ".-1"?
+Answer yes or no.
+#copyin
+#user
+#uncopyin
+#match no
+You actually need "m--".
+#log
+#next
+64.1a 10

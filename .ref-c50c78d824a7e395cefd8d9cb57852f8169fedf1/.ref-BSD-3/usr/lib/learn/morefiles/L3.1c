@@ -1,0 +1,42 @@
+#print
+So far the only printing program we have seen
+is "cat", which just copies one or more files
+onto the terminal (or perhaps onto a file when used
+with ">").
+The next step up is the program "pr", which
+prints files so that each file begins on a
+new page, and the top of each page contains the date
+and time the file was changed, and a running page number.
+Use a single "pr" to print the two files in this directory
+whose names begin with "fed". 
+What page number is printed on the last page? Type "answer N"
+where N is the page number.
+#create fed1
+   After an unequivocal experience of the inefficacy of
+the subsisting federal government, you are called upon to
+deliberate on a new Constitution for the United States
+of America.  The subject speaks its own importance;
+comprehending in its consequences nothing less than the
+existence of the union, the safety and welfare of the
+parts of which it is composed, the fate of an empire in many
+respects the most interesting in the world.
+#create fed2
+It has been frequently remarked that it seems to have been
+reserved to the people of this country, by their conduct and
+example, to decide the important question, whether
+societies of men are really capable or not of establishing
+good government from reflection and choice, or whether
+they are forever destined to depend for their political
+constitutions on accident and force.  If there be any truth
+in the remark, the crisis at which we are arrived may with
+propriety be regarded as the era in which that
+decision is to be made; and a wrong election of the part
+we shall act may, in this view, deserve to be considered as
+the general misfortune of mankind.
+#copyin
+#user
+#uncopyin
+#match 1
+#log
+#next
+3.1d

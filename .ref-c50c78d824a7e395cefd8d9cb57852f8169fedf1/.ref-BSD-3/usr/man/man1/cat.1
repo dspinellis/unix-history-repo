@@ -1,0 +1,41 @@
+.TH CAT 1 
+.SH NAME
+cat \- catenate and print
+.SH SYNOPSIS
+.B cat
+[
+.B \-u
+]
+file ...
+.SH DESCRIPTION
+.I Cat
+reads each
+.I file
+in sequence
+and writes it on the standard output.
+Thus
+.PP
+.ti+15n
+cat file
+.PP
+prints the file, and
+.PP
+.ti+15n
+cat file1 file2 >file3
+.PP
+concatenates the first two files and places the result on the third.
+.PP
+If no input file is given,
+or if the argument `\-' is encountered,
+.I cat
+reads from the standard
+input file.
+Output is buffered in 1024-byte blocks unless the standard
+output is a terminal or the
+.B \-u
+option is specified.
+.SH "SEE ALSO"
+pr(1), cp(1)
+.SH BUGS
+Beware of `cat a b >a' and `cat a b >b', which destroy
+the input files before reading them.

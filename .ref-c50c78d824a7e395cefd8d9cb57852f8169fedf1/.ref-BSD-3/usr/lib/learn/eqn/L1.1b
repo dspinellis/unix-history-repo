@@ -1,0 +1,51 @@
+#print
+Most technical papers and memos consist of normal text
+interspersed with occasional (or frequent) mathematical
+expressions, such as the ones in the last lesson.
+To tell neqn that something is mathematics, not normal
+text, you must surround it by two "commands":
+
+   A line that begins with
+   .EQ
+   marks the start of an expression.
+
+   A line that begins with
+   .EN
+   marks the end of the expression.
+
+Thus, the lines
+.EQ
+x=y+1
+.EN
+represent the equation
+
+x=y+1
+
+The file "Example" in this directory has a line that contains
++ and - signs.  Make that line into an equation
+by adding .EQ and .EN before and after.
+Print "Example" with neqn and nroff (and the appropriate -Txxx),
+then type "ready".
+#once #create Ref
+This is a tiny little text
+that includes one equation
+or at least it will when you find this line:
+.ce
+.EQ
+a = b + c - d
+.EN
+and convert it into an equation.
+.pl 1
+#once #create Example
+This is a tiny little text
+that includes one equation
+or at least it will when you find this line:
+.ce
+a = b + c - d
+and convert it into an equation.
+.pl 1
+#user
+#cmp Ref Example
+#log
+#next
+1.1c 10

@@ -1,0 +1,14 @@
+#print
+Now make a file containing the line
+
+The Hon. Brendan Byrne
+
+and write it on file "gov".
+Then type "ready".
+#create Ref
+The Hon. Brendan Byrne
+#user
+#cmp gov Ref
+#log
+#next
+15.1b 10

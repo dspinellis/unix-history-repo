@@ -1,0 +1,224 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)ptrace.2	6.4 (Berkeley) %G%
+.\"
+.TH PTRACE 2 ""
+.UC 4
+.SH NAME
+ptrace \- process trace
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/signal.h>
+#include <sys/ptrace.h>
+.PP
+.ft B
+ptrace(request, pid, addr, data)
+int request, pid, *addr, data;
+.fi
+.SH DESCRIPTION
+.I Ptrace
+provides a means by which a parent process
+may control the execution of a child process,
+and examine and change its core image.
+Its primary use is for the implementation of breakpoint debugging.
+There are four arguments whose interpretation
+depends on a
+.I request
+argument.
+Generally,
+.I pid
+is the process ID of the traced process,
+which must be a child (no more distant descendant)
+of the tracing process.
+A process being traced
+behaves normally until it encounters some signal
+whether internally generated
+like \*(lqillegal instruction\*(rq or externally
+generated like \*(lqinterrupt\*(rq.
+See
+.IR sigvec (2)
+for the list.
+Then the traced process enters a stopped state
+and its parent is notified via
+.IR  wait (2).
+When the child is in the stopped state,
+its core image can be examined and modified
+using
+.IR ptrace .
+If desired, another
+.I ptrace
+request can then cause the child either to terminate
+or to continue, possibly ignoring the signal.
+.PP
+The value of the
+.I request
+argument determines the precise
+action of the call:
+.TP 4
+PT_TRACE_ME
+This request is the only one used by the child process;
+it declares that the process is to be traced by its parent.
+All the other arguments are ignored.
+Peculiar results will ensue
+if the parent does not expect to trace the child.
+.TP 4
+PT_READ_I, PT_READ_D
+The
+word in the child process's address space
+at
+.I addr
+is returned.
+If I and D space are separated (e.g. historically
+on a pdp-11), request PT_READ_I indicates I space,
+PT_READ_D D space.
+.I Addr
+must be even on some machines.
+The child must be stopped.
+The input
+.I data
+is ignored.
+.TP 4
+PT_READ_U
+The word
+of the system's per-process data area corresponding to
+.I addr
+is returned.
+.I Addr
+must be even on some machines and less than 512.
+This space contains the registers and other information about
+the process;
+its layout corresponds to the
+.I user
+structure in the system.
+.TP 4
+PT_WRITE_I, PT_WRITE_D
+The
+given
+.I data
+is written at the word in the process's address space corresponding to
+.I addr,
+which must be even on some machines.
+No useful value is returned.
+If I and D space are separated, request PT_WRITE_I indicates I space, 
+PT_WRITE_D D space.
+Attempts to write in pure procedure
+fail if another process is executing the same file.
+.TP 4
+PT_WRITE_U
+The process's system data is written,
+as it is read with request PT_READ_U.
+Only a few locations can be written in this way:
+the general registers,
+the floating point status and registers,
+and certain bits of the processor status word.
+.TP 4
+PT_CONTINUE
+The
+.I data
+argument is taken as a signal number
+and the child's execution continues
+at location
+.I addr
+as if it had incurred that signal.
+Normally the signal number will be
+either 0 to indicate that the signal that caused the stop
+should be ignored,
+or that value fetched out of the
+process's image indicating which signal caused
+the stop.
+If
+.I addr
+is (int *)1 then execution continues from where it stopped.
+.TP 4
+PT_KILL
+The traced process terminates.
+.TP 4
+PT_STEP
+Execution continues as in request PT_CONTINUE;
+however, as soon as possible after execution of at least one instruction,
+execution stops again.
+The signal number from the stop is
+SIGTRAP.
+(On the VAX-11 the T-bit is used and just one instruction
+is executed.)
+This is part of the mechanism for implementing breakpoints.
+.PP
+As indicated,
+these calls
+(except for request PT_TRACE_ME)
+can be used only when the subject process has stopped.
+The
+.I wait
+call is used to determine
+when a process stops;
+in such a case the \*(lqtermination\*(rq status
+returned by
+.I wait
+has the value 0177 to indicate stoppage rather
+than genuine termination.
+.PP
+To forestall possible fraud,
+.I ptrace
+inhibits the set-user-id and set-group-id facilities
+on subsequent
+.IR  execve (2)
+calls.
+If a traced process calls
+.IR execve ,
+it will stop before executing the first instruction of the new image
+showing signal SIGTRAP.
+.PP
+On a VAX-11, \*(lqword\*(rq also means a 32-bit integer,
+but the \*(lqeven\*(rq
+restriction does not apply.
+.SH "RETURN VALUE
+A 0 value is returned if the call succeeds.  If the call fails
+then a \-1 is returned and the global variable \fIerrno\fP is
+set to indicate the error.
+.SH "ERRORS
+.TP 15
+[EIO]
+The request code is invalid.
+.TP 15
+[ESRCH]
+The specified process does not exist.
+.TP 15
+[EIO]
+The given signal number is invalid.
+.TP 15
+[EIO]
+The specified address is out of bounds.
+.TP 15
+[EPERM]
+The specified process cannot be traced.
+.SH "SEE ALSO"
+wait(2), sigvec(2), adb(1)
+.SH BUGS
+.I Ptrace
+is unique and arcane; it should be replaced with a special file that
+can be opened and read and written.  The control functions could then
+be implemented with
+.IR ioctl (2)
+calls on this file.  This would be simpler to understand and have much
+higher performance.
+.PP
+The request PT_TRACE_ME call should be able to specify
+signals that are to be treated normally and not cause a stop.
+In this way, for example,
+programs with simulated floating point (which
+use \*(lqillegal instruction\*(rq signals at a very high rate)
+could be efficiently debugged.
+.PP
+The error indication, \-1, is a legitimate function value;
+.I errno,
+(see
+.IR intro (2)),
+can be used to disambiguate.
+.PP
+It should be possible to stop a process on occurrence of a system
+call;
+in this way a completely controlled environment could
+be provided.

@@ -1,0 +1,67 @@
+#print
+Write a subroutine myexp(x) which expects a floating
+argument x and returns the floating point value
+of e to the x.  An adequate algorithm
+for the purpose is the standard Maclaurin series
+
+   x            2       3       4
+  e  = 1 + x + x /2! + x /3! + x /4! + ...
+Name your routine myexp(), not exp().  You can test it, then,
+by comparing it with the system routine as well as by
+comparing it with tables.  Leave it on file
+myexp.c, and then type "ready".
+#once #create reldif.c
+double reldif(a,b)
+ double a,b;
+{
+double c,d;
+if (a==0. && b==0.) return(0.);
+c = a>0 ? a : -a;
+d = b>0 ? b : -b;
+c = c>d ? c : d;
+return( (a-b)/c );
+}
+#once #create tzaqc.c
+main()
+{
+double x,y, log(), myexp(), reldif();
+for(x=1.; x<5.; x=+ 0.2)
+  {
+  y = myexp(x);
+ if (reldif(x, log(y)) >1.e-5) return(1);
+  }
+return(0);
+}
+exp()
+{
+printf("Cheat! you called the system routine\n");
+return(1.2);
+}
+#user
+cc tzaqc.c myexp.o reldif.c
+a.out
+#succeed
+/* one way */
+double myexp(x)
+double x;
+{
+	double term, sum, dabs();
+	int n;
+	
+	term = sum = 1.0;
+	n = 1;
+	while (dabs(term) > dabs(sum)/1.e8) {
+		term = term * x / n++;
+		sum += term;
+	}
+	return(sum);
+}
+
+double dabs(x)
+double x;
+{
+	return(x>0 ? x : -x);
+}
+#log
+#next
+50.1a 10

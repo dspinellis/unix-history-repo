@@ -1,0 +1,18 @@
+#print
+(Section 1.1)
+The program in Ref.c has an error in it.
+Find it, fix it, and run it.
+Then type ready.
+#once #create Ref.c
+main()
+{
+	printf("hello\");
+}
+#once #create Ref
+hello
+#user
+a.out >x
+#cmp x Ref
+#log
+#next
+1.1d 10

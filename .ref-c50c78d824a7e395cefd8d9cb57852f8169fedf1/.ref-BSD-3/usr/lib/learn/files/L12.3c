@@ -1,0 +1,22 @@
+#print
+Are the files "old" and "new" in this directory the same?
+Again, if they are not, "diff" will print out the differences
+marking the lines in the first file named by "<" and the
+lines in the second file by ">".  Check the results of
+diff by printing the files.  Then type "yes" or "no".
+#create new
+This file has three
+lines of text in
+it to read.
+and this has one more.
+#create old
+This file has three
+lines of text in
+it to read.
+#copyin
+#user
+#uncopyin
+#match no
+#log
+#next
+12.2c 5

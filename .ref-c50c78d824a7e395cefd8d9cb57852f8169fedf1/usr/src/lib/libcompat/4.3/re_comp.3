@@ -1,0 +1,70 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)re_comp.3	6.2 (Berkeley) %G%
+.\"
+.TH REGEX 3 ""
+.UC
+.SH NAME
+re_comp, re_exec \- regular expression handler
+.SH SYNOPSIS
+.B char *re_comp(s)
+.br
+.B char *s;
+.PP
+.B re_exec(s)
+.br
+.B char *s;
+.SH DESCRIPTION
+.I Re_comp
+compiles a string into an internal form suitable for pattern matching. 
+.I Re_exec 
+checks the argument string against the last string passed to
+.I re_comp.
+.PP
+.I Re_comp
+returns 0 if the string
+.I s
+was compiled successfully; otherwise a string containing an
+error message is returned. If 
+.I re_comp
+is passed 0 or a null string, it returns without changing the currently
+compiled regular expression.
+.PP
+.I Re_exec
+returns 1 if the string
+.I s
+matches the last compiled regular expression, 0 if the string
+.I s
+failed to match the last compiled regular expression, and \-1 if the compiled
+regular expression was invalid (indicating an internal error).
+.PP
+The strings passed to both
+.I re_comp
+and
+.I re_exec
+may have trailing or embedded newline characters; 
+they are terminated by nulls.
+The regular expressions recognized are described in the manual entry for 
+.IR ed (1),
+given the above difference.
+.SH "SEE ALSO"
+ed(1), ex(1), egrep(1), fgrep(1), grep(1), regexp(3)
+.SH DIAGNOSTICS
+.I Re_exec
+returns \-1 for an internal error.
+.PP
+.I Re_comp
+returns one of the following strings if an error occurs:
+.PP
+.nf
+.in +0.5i
+\fINo previous regular expression,
+Regular expression too long,
+unmatched \e(,
+missing ],
+too many \e(\e) pairs,
+unmatched \e).\fP
+.in -0.5i
+.fi

@@ -1,0 +1,26 @@
+#print
+You can also use the "=" command to find out what
+the 'current' line is.  Since the current line
+is named '.', the appropriate command is
+   .=
+and so if you say
+   3p
+   .=
+the second command will print '3'.  Since you should not
+believe what I tell you without checking it, edit file
+"doubt" and type the two commands above, which first
+print line 3 (and incidentally set "." to that line) and
+then ask what number "." is.  Then type w, q, ready.
+#create doubt
+you didn't have to print this line
+you didn't have to print this line
+to err is human, to really foul things up takes a computer
+you didn't have to print this line
+you didn't have to print this line
+#copyout
+#user
+#uncopyout
+grep 3 .ocopy >dev/null
+#log
+#next
+14.2b 5

@@ -1,0 +1,74 @@
+tmp=/tmp/toc$$
+troff=vtroff
+trap "rm $tmp ; exit" 2 3 15
+if [ $# -eq 2 ]
+then
+	: create toc input file for one section only
+
+	( cd man$1 ; /usr/lib/getNAME -t *.* |
+		sed \
+			-e 's/.s-1//g' \
+			-e 's/.s0//g' \
+			-e 's/.s+1//g' \
+			-e 's/  *.-  */: /' \
+			-e 's/$/./' \
+			-e 's/.TH.*	//' \
+		> ../man0/tocx$1
+	)
+else case $1 in
+	all )
+		:   tocx files for all sections and everything else
+
+		for x in 1 2 3 4 5 6 7 8
+			do
+			$0 $x $x
+			done
+		$0 t
+		;;
+	t )
+		:   permuted index and toc files
+
+		if [ ! -f man0/tocx1 ]
+		then
+			echo "tocx? files missing; must run tocrc all first"
+			exit
+		fi
+		sed \
+			-e 's/(1c)/(1C)/' \
+			-e 's/(1m)/(1M)/' \
+			-e 's/(1g)/(1G)/' \
+			-e 's/(3c)/(3C)/' \
+			-e 's/(3m)/(3M)/' \
+			-e 's/(3s)/(3S)/' \
+			-e '/"\."/d' \
+			man0/tocx? man0/cshcmd \
+		> /tmp/cattoc
+
+		ptx -r -t -b break -f -w 108 -i ignore /tmp/cattoc man0/ptxx
+
+		for x in 1 2 3 4 5 6 7 8
+		do
+			< man0/tocx$x /usr/bin/grep '^intro' >$tmp
+				sed \
+				-e '2,${' \
+				-e '/^intro/d' \
+				-e '}' \
+				-e 's/ .*://' \
+				-e 's/.$//' \
+				-e 's/([^)]*) /" "/' \
+				-e 's/.*/.xx "&"/' \
+				-e '/""/d' \
+				$tmp man0/tocx$x \
+			>man0/toc$x
+		done
+		;;
+	tr )
+		cd man0; $troff ptx.in ; cd ..
+		cd man0 ; $troff toc.in  ; cd ..
+		;;
+	* )
+		$0 $1 $1
+		;;
+	esac
+fi
+exit

@@ -1,0 +1,112 @@
+.TH MALLOC 3 
+.SH NAME
+malloc, free, realloc, calloc \- main memory allocator
+.SH SYNOPSIS
+.B char *malloc(size)
+.br
+.B unsigned size;
+.PP
+.B free(ptr)
+.br
+.B char *ptr;
+.PP
+.B char *realloc(ptr, size)
+.br
+.B char *ptr;
+.br
+.B unsigned size;
+.PP
+.B char *calloc(nelem, elsize)
+.br
+.B unsigned nelem, elsize;
+.SH DESCRIPTION
+.I Malloc
+and
+.I free
+provide a simple general-purpose memory allocation package.
+.I Malloc
+returns a pointer to a block of at least
+.I size
+bytes beginning on a word boundary.
+.PP
+The argument to
+.I free
+is a pointer to a block previously allocated by
+.IR malloc ;
+this space is made available for further allocation,
+but its contents are left undisturbed.
+.PP
+Needless to say, grave disorder will result if the space
+assigned by
+.I malloc
+is overrun or if some random number is handed to
+.IR free .
+.PP
+.I Malloc
+allocates the first big enough contiguous reach of
+free space
+found in a circular search from the last 
+block allocated or freed,
+coalescing adjacent free blocks as it searches.
+It calls
+.I sbrk
+(see
+.IR break (2))
+to get more memory from the system when there is no
+suitable space already free.
+.PP
+.I Realloc
+changes the size of the block pointed to by
+.I ptr
+to
+.I size
+bytes and returns a pointer to the (possibly moved)
+block.
+The contents will be unchanged up to the
+lesser of the new and old sizes.
+.PP
+.I Realloc
+also works if
+.I ptr
+points to a block freed since the last call of
+.I malloc, realloc
+or
+.IR calloc ;
+thus sequences of
+.I free, malloc
+and
+.I realloc
+can exploit the search strategy of
+.I malloc
+to do storage compaction.
+.PP
+.I Calloc
+allocates space for
+an array of
+.I nelem
+elements of size
+.I elsize.
+The space is initialized to zeros.
+.PP
+Each of the allocation routines returns a pointer
+to space suitably aligned (after possible pointer coercion)
+for storage of any type of object.
+.SH DIAGNOSTICS
+.I Malloc, realloc
+and
+.I calloc
+return a null pointer (0) if there is no available memory
+or if the arena has been detectably corrupted by storing outside the bounds
+of a block.
+.I Malloc
+may be recompiled to check the arena very stringently
+on every transaction;
+see the source code.
+.SH BUGS
+When
+.I realloc
+returns 0,
+the block
+pointed to by
+.I ptr
+may be destroyed.

@@ -1,0 +1,81 @@
+.TH VMSPREP LOCAL "4/10/85 UCB Local"
+.SH NAME
+vmsprep - VMS tape preparation aid
+.SH SYNOPSIS
+.B vmsprep
+[-] [name ...]
+.SH DESCRIPTION
+.I Vmsprep
+traverses hierarchies of files and prepares them for
+transportation to VMS.
+Since ANSI stardard tapes (the VMS standard) do
+not allow hierarchy, this program provides a
+method of flattening the hierarchy onto a tape
+in such a way that it can be unpacked on VMS
+to recreate the same tree structure.
+.PP
+For reasons best not described here,
+.I vmsprep
+will attempt to exclude all RCS and SCCS archives by
+ignoring all files or directories named 'RCS' or 'SCCS', or
+files starting with 's.' or ending in ',v'.
+.PP
+The output of 
+.I vmsprep
+is a pair of files vmsprep.namelist and UNPACK.COM.
+vmsprep.namelist is a list of files to be placed on
+the tape in the format required by 
+.I ansitape.
+If the first argument is '-' instead of a file or directory name,
+vmsprep will instead send the namelist to standard output, and
+place UNPACK.COM in /tmp to avoid attempting to write in the
+current directory.
+All of the files except UNPACK.COM will
+be placed on the tape under cryptic names.
+UNPACK.COM is a VMS command script which will recreate
+all of the necessary directories and then move the
+cryptically named files to their proper place.
+.PP
+A typical sequence would be:
+.br
+.RS
+vmsprep - tree1 tree2 file | ansitape cln trees -
+.RE
+.br
+.I Then on a VMS machine
+.br
+.RS
+mount MFA0: trees
+.br
+copy MFA0:*.*.* *
+.br
+@UNPACK
+.RE
+.br
+.SH FILES
+vmsprep.namelist
+.br
+UNPACK.COM
+.br
+.SH DIAGNOSTICS
+A warning is reported if a file or directory name contains
+a character not permitted in VMS names. 
+The offending character is replaced by 'Z' and 
+.I vmsprep
+continues.
+.br
+.SH "SEE ALSO"
+ansitape(l)
+.SH BUGS
+Extra periods in file names may not be dealt with optimally.
+.br
+All files and directories to be moved must be descendants of the
+current working directory.  Absolute path names and paths containing ".."
+will produce unpredictable results.
+.br
+Since vmsprep uses find(1) internally, it does not follow symbolic links.
+.br
+The exclusion of RCS and SCCS files should be controlled by a command line flag.
+.br
+Assumes VMS v4.0 or greater for long file names.
+.br

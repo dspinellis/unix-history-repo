@@ -1,0 +1,487 @@
+.Lc Data\ Structure\ Access 2
+.\".ch 2
+.pp
+The following functions allow one to create and manipulate the various types
+of lisp data structures.
+Refer to \(sc1.3 for details of the data structures known to 
+.Fr .
+.sp 3v
+.Lf *array "'s_name 's_type 'x_dim1 ... x_dim\fIn\fP"
+.Re
+an array of type s_type with n dimensions of extents given by the 
+x_dim\fIi\fP.
+.No
+s_type may be any of the lisp data types or it may be t in which case
+it means an array of any type of lisp data.
+This is done by creating an array of value cells and doing an extra
+evaluation upon every reference to make it seem that the array
+contains heterogeneous data types.
+.Se
+If s_name is non nil, the value and function definition of s_name is
+set to the array structure returned.
+.No
+the above is true if you are using the default array package.
+Users who wish to make arrays look different will probably want to
+redefine *array.
+.Lf aexplode "'s_arg"
+.Re
+a list of single character symbols which 
+.i print 
+would use to print out
+g_arg, that is the list returned will contain quoting characters if
+.i print
+would have used them to print s_arg.
+.No
+this is restriced to symbols and is mainly for use by explode.
+.Lf aexplodec "'s_arg"
+.Re
+a list of symbols whose pnames are the characters 
+in s_arg's pname.
+.\".pg
+.Lf aexploden "'s_arg"
+.Re
+a list of fixnums which represent the characters of s_arg's
+pname.
+.Lf alphalessp "'s_arg1 's_arg2"
+.Re
+t iff the print name of s_arg1 is alphabetically less than the 
+print name of s_arg2.
+.Lf append "'l_arg1 'l_arg2"
+.Re
+a list containing the elemens of l_arg1 followed by l_arg2.
+.No
+To generate the result, the top level list cells of l_arg1 are duplicated
+and the cdr of the last list cell is set to point to l_arg2.
+Thus this is an expensive operation if l_arg1 is large.
+See the description of nconc for a cheaper way of doing the append.
+.Lf append1 "'l_arg1 'g_arg2"
+.Re
+a list like l_arg1 with g_arg2 as the last element.
+.No
+this is equivalent to (append 'l_arg1 (list 'g_arg2)).
+.Lf array "s_name s_type x_dim1 ... x_dim\fIi\fP"
+.No
+this is the same as *array except the arguments are not evaluated.
+.Lf arraycall "'s_type 'a_array 'x_ind1 ... "
+.Re
+the element selected by  the indicies from the array a_array
+of type s_type.
+.Lf arraydims "'s_name"
+.Re
+a list of the type and bounds of the array s_name.
+.Lf arrayp "'g_arg"
+.Re
+t iff g_arg is of type array.
+.Lf arrayref "'s_name 'x_ind"
+.Re
+the x_ind\fIth\fP element of the array associated with s_name.
+x_ind of zero accesses the first element.
+.\".pg
+.Lf assoc "'g_arg1 'l_arg2"
+.Re
+the first top level element of l_arg2 whose
+.i car
+is 
+.i equal
+to g_arg1.
+.No
+the test is make with the lisp function equal.
+Usually l_arg2 has an
+.i a-list
+structure and g_arg1 acts as key.
+.Lf assq "'g_arg1 'l_arg2"
+.Re
+the first top element of l_arg2 whose
+.i car
+is
+equal to g_arg1 using the
+lisp function
+.i eq.
+.No
+This is faster than assoc since eq is faster than equal but 
+lisp objects which print alike are not always 
+.i eq.
+See the description of eq for more details.
+.Lf atom "'g_arg"
+.Re
+t iff g_arg is not a list cell.
+.No
+(atom '()) returns t.
+.Lf bcdp "'g_arg"
+.Re
+t iff g_arg is a data object of type binary.
+.No
+the name of this function is a throwback to the PDP-11 Lisp system.
+.Lf bigp "'g_arg"
+.Re
+t iff g_arg is a bignum.
+.Lf c\.\.r "'l_arg"
+.Wh 
+\.\. is any positive number of \fBa\fP's and \fBd\fP's.
+.Re
+the result of accessing the list structure in the way determined by
+the function name.
+The \fBa\fP's and \fBd\fP's are read from right to left, a 
+.b d
+directing the access down the cdr part of the list cell and an
+.b a
+down the car part.
+.No
+l_arg may also be nil, and it is guaranteed that the car and cdr of nil
+is nil.
+.br
+Currently one may disect bignums with c..r as well although this is
+subject to change.
+.\".pg
+.Lf concat "['s_arg1 ... ]"
+.Re
+a symbol whose print name
+is the result of concatenating the print names 
+of the s_arg\fIi\fP.
+.No
+If no arguments are given, a symbol with a null pname is returned.
+Concat places the symbol created on the oblist, the function uconcat
+does the same thing but does not place the new symbol on the oblist.
+.Lf cons "'g_arg1 'g_arg2"
+.Re
+a new list cell whose car is g_arg1 and whose cdr is g_arg2.
+.Lf copy "'g_arg"
+.Re
+A structure 
+.i equal
+to g_arg but with new list cells.
+.Lf defprop "s_atm g_val g_ind"
+.Re
+g_val.
+.Se
+The property list of s_atm is updated by adding g_val as the value
+of indicator g_ind.
+.No
+this is similar to putprop except that the arguments to defprop
+are not evaluated.
+.Lf delete "'g_val 'l_list ['x_count]"
+.Re
+the result of splicing g_val from the top level of
+l_list no more than x_count times.
+.No
+x_count defaults to a very large number, thus if x_count is not given, all
+occurances of g_val are removed from the top level of l_list.
+g_val is compared with successive 
+.i car 's
+of l_list using the function
+.i equal .
+.Se
+l_list is modifed using rplacd, no new list cells are used.
+.Lf delq "'g_val 'l_list ['x_count]"
+.Re
+the result of splicing g_val from the top level of l_list no more than
+x_count times.
+.No
+.i delq 
+is the same as 
+.i delete 
+except that 
+.i eq
+is used for comparison instead of 
+.i equal .
+.Lf dtpr "'g_arg"
+.Re
+t iff g_arg is a list cell.
+.No
+that (dtpr '()) is nil.
+.Lf eq "'g_arg1 'g_arg2"
+.Re
+t if g_arg1 and g_arg2 are the exact same lisp object.
+.No
+.i Eq
+simply tests if g_arg1 and g_arg2 are located in the exact same
+place in memory.
+Lisp objects which print the same are not necessarily 
+.i eq .
+The only objects guaranteed to be 
+.i eq
+are interned symbols with the same print name.
+[Unless a symbol is created in a special way (such as with
+uconcat or maknam)
+it will be interned.]
+.Lf equal "'g_arg1 'g_arg2"
+.Re
+t iff g_arg1 and g_arg2 have the same structure as described below.
+.No
+g_arg and g_arg2 are 
+.i equal
+if
+.np
+they are eq.
+.np
+they are both fixnums with the same value
+.np
+they are both flonums with the same value
+.np
+they are both bignums with the same value
+.np
+they are both lists and their cars and cdrs are
+.i equal .
+.\".pg
+.Lf explode "'g_arg"
+.Re
+a list of single character symbols which 
+.i print 
+would use to print g_arg.
+.Lf explodec "'g_val"
+.Re
+the list of characters which print would use to print g_val except that
+special characters in symbols are 
+not escaped (just as if patom were used to print them).
+.Lf exploden "'g_val"
+.Re
+a list of fixnums which print would use to print g_val except that
+special characters in symbols are not escaped
+(just as if patom were used to print them).
+.Lf fillarray "'s_array 'l_itms"
+.Re
+s_array
+.Se
+the array s_array is filled with elements from l_itms.
+If there are not enough elements in l_itms to fill the entire array,
+then the last element of l_itms is used to fill the remaining parts
+of the array.
+.Lf gensym "'s_leader"
+.Re
+a new uninterned atom beginning with the first character of s_leader's
+pname, or beginning with g if s_leader is not given.
+.No
+The symbol looks like x0nnnnn where x is s_leader's first character and
+nnnnn is the number of times you have called gensym.
+.Lf get "'s_name 'g_ind"
+.Re
+the value under indicator g_ind in s_name's property list.
+.No
+If there is no indicator g_ind in s_name's property list nil is returned.
+If the first argument is not a symbol or disembodied property
+list, nil is returned (than atom but e lack of er,
+aclisp).
+.Lf get_pname "'s_arg"
+.Re
+the string which is the print name of s_arg.
+.\".pg
+.Lf getaccess  "'a_array"
+.Re
+the access function for the array a_array.
+.Rm
+.Lf getaux "'a_array"
+.Re
+the auxilliary field for the array a_array.
+.Rm
+.Lf getchar "'s_arg 'x_index"
+.Re
+the x_index'th character of the print name of s_arg or nil if x_index
+is less than 1 or greater than the length of s_arg's print name.
+.Lf getcharn "'s_arg 'x_index"
+.Re
+the fixnum representation of the x_index'th character 
+of the print name of s_arg or nil if x_index
+is less than 1 or greater than the length of s_arg's print name.
+.Lf getd "'s_arg"
+.Re
+the function definition of s_arg or nil if there is no function definition.
+.Lf getdelta "'a_array"
+.Re
+the delta field for a_array.
+.Rm
+.Lf getentry "'y_funchd"
+.Re
+the entry field of the binary y_funchd.
+.Rm
+.Lf getlength "'a_array"
+.Re
+the length field of the array a_array.
+.Rm
+.Lf implode "'l_arg"
+.Wh
+l_arg is a list of symbols and small fixnums.
+.Re
+The symbol whose print name is the result of concatentating the print names
+of the symbols in the list.
+Any fixnums are converted to the equivalent ascii character.
+.\".pg
+.Lf last "'l_arg"
+.Re
+the last list cell in the list l_arg.
+.No
+(last '(a b)) returns (b).
+.Lf length "'l_arg"
+.Re
+the number of elements in the top level of list l_arg.
+.Lf list "['g_arg1 ... ]"
+.Re
+a list whose elements are the g_arg\fIi\fP.
+.Lf maknam "'l_arg"
+.Re
+what implode would return except the resulting symbol is uninterned.
+.Lf marray  "'g_data 's_access 'g_aux 'x_length 'x_delta"
+.Re
+an array type with the fields set up from the above arguments
+in the obvious way (see \(sc 1.3.9).
+.Lf member "'g_arg1 'l_arg2"
+.Re
+that part of the l_arg2 beginning with the first occurance
+of g_arg1.
+If g_arg1 is not in the top level of l_arg2, nil is returned.
+.No
+the test for equality is made with
+.i equal .
+.Lf memq "'g_arg1 'l_arg2"
+.Re.
+that part of the l_arg2 beginning with the first occurance
+of g_arg1.
+If g_arg1 is not in the top level of l_arg2, nil is returned.
+.No
+the test for equality is made with
+.i eq .
+.Lf nconc "'l_arg1 'l_arg2"
+.Re
+A list consisting of the elements of l_arg1 followed by the elements of
+l_arg2.
+.No
+The cdr of the last list cell of l_arg1 is changed to point to l_arg2.
+.\".pg
+.Lf ncons "'g_arg"
+.Re
+a new list cell with g_arg as car and nil as cdr.
+.Lf not "'g_arg"
+.Re
+t iff g_arg is nil.
+.Lf nreverse "'l_arg"
+.Re
+the reverse of l_arg.
+.No
+The reverse is done in place, that is the list structure is modified.
+No new list cells are allocated.
+.Lf nthelem "'n_arg1 'l_arg2"
+.Re
+The n_arg1'\fIst\fP element of the list l_arg2.
+.No
+If n_arg1 is non-positive or greater than the length
+of the list, nil is returned. 
+.Lf null "'g_arg"
+.Re
+t iff g_arg is nil.
+.Eq
+not.
+.Lf plist "'s_name"
+.Re
+the property list of s_name.
+.Lf putaccess "'a_array 's_func"
+.Re
+s_func.
+.Se
+replaces the access field of a_array with s_func.
+.Rm
+.Lf putaux "'a_array 'g_aux"
+.Re
+s_aux.
+.Se
+replaces the auxillary field of a_array with g_aux.
+.Rm
+.\".pg
+.Lf putdelta "'a_array 'x_delta"
+.Re
+x_delta.
+.Se
+replaces the delta field of a_array with x_delta.
+.Rm
+.Lf putlength "'a_array 'x_length"
+.Re
+x_length
+.Se
+replaces the length field of a_array with x_length.
+.Rm
+.Lf putprop "'s_name 'g_val 'g_ind"
+.Re
+g_val.
+.Se
+Adds to the property list of s_name the value g_val under the indicator
+g_ind.
+.No
+this is similar to defprop except the arguments are evaluated to putprop.
+.Lf quote "g_arg"
+.Re
+g_arg.
+.No
+the reader allows you to abbreviate (quote foo) as 'foo.
+.Lf remprop "'s_name 'g_ind"
+.Re
+the portion of  s_name's property list beginning with the 
+property under the indicator g_ind.
+If there is no g_ind indicator in s_name's plist, nil is returned.
+.Se
+the value under indicator g_ind and g_ind itself is removed from 
+the property list of s_name.
+.Lf replace "'g_arg1 'g_arg2"
+.Wh
+g_arg1 and g_arg2 must be the same type of lispval and not symbols.
+.Re
+g_arg2.
+.Se
+the contents of lispval g_arg1 is replaced by the contents of lispval g_arg2.
+.\".pg
+.Lf reverse "'l_arg"
+.Re
+the reverse of the list l_arg.
+.No
+The reverse is performed by allocating new list cells to duplicate
+the top level of l_arg. This can be expensive if l_arg is large.
+The function nreverse will reverse the list without allocating 
+new list cells.
+.Lf rplaca "'l_arg1 'g_arg2"
+.Re
+the modified l_arg1.
+.Se
+the car of l_arg1 is set to  g_arg2.
+.Lf rplacd "'l_arg1 'g_arg2"
+.Re
+the modified l_arg1.
+.Se
+the cdr of l_arg2 is set to g_arg2
+.Lf set "'s_arg1 'g_arg2"
+.Re
+g_arg2.
+.Se
+the value of s_arg1 is set to g_arg2.
+.Lf setplist "'s_atm 'l_plist"
+.Re
+l_plist.
+.Se
+the property list of s_atm is set to l_plist.
+.Lf setq "s_atm1 'g_val1 [ s_atm2 'g_val2 ... ... ]"
+.Wh
+the arguments are pairs of atom names and expressions.
+.Re
+the last g_val\fIi\fP.
+.Se
+each s_atm\fIi\fP is set to have the value g_val\fIi\fP.
+.Lf stringp "'g_arg"
+.Re
+t iff g_arg is a string.
+.Lf symbolp "'g_arg"
+.Re
+t iff g_arg is an symbol.
+.Lf type "'g_arg"
+.Re
+an symbol whose pname describes the type of g_arg.
+.\".pg
+.Lf typep "'g_arg"
+.Eq
+type.
+.Lf uconcat "['s_arg1 ... ]"
+.Re
+a symbol whose pname is the result of concatenating the print names (pnames)
+of the s_arg\fIi\fP.
+.No
+If no arguments are given, a symbol with a null pname is returned.
+Uconcat does not place the symbol created on the oblist, the function concat
+does the same thing but does place the new symbol on the oblist.
+.Lf valuep "'g_arg"
+.Re
+t iff g_arg is a value cell

@@ -1,0 +1,113 @@
+.TH DUMP 1M 
+.SH NAME
+dump \- incremental file system dump
+.SH SYNOPSIS
+.B dump
+[ key [ argument ... ] filesystem ]
+.SH DESCRIPTION
+.I Dump
+copies to magnetic tape all files
+changed after a certain date
+in the
+.I filesystem.
+The
+.I key
+specifies the date and other options about the dump.
+.I Key
+consists of characters from
+the set
+.B 0123456789fusd.
+.TP 5
+.B  f
+Place the dump on the next 
+.I argument 
+file
+instead of the tape.
+.TP 5
+.B  u
+If the dump completes successfully,
+write the date of the beginning of the dump on
+file `/etc/ddate'.
+This file records a separate date for
+each filesystem and each dump level.
+.TP 5
+.B  0\-9
+This number is the `dump level'.
+All files modified since the last date stored
+in the file `/etc/ddate' for
+the same filesystem at lesser levels
+will be dumped.
+If no date is determined by the level,
+the beginning of time is assumed;
+thus the option
+.B 0
+causes the entire filesystem to be dumped.
+.TP 5
+.B  s
+The size of the dump tape is specified in feet.
+The number of feet is taken from the next
+.I argument.
+When the specified size is reached,
+the dump will wait for reels to be changed.
+The default size is 2300 feet.
+.TP 5
+.B d
+The density of the tape, expressed in BPI,
+is taken from the next
+.I argument.
+This is used in calculating the amount of tape
+used per write. The default is 1600.
+.PP
+.DT
+If no arguments are given,
+the
+.I key
+is assumed to be
+.B 9u
+and a default file system is dumped
+to the default tape.
+.PP
+Now a short suggestion on how
+perform dumps.
+Start with a full level 0 dump
+.PP
+	dump 0u
+.PP
+Next,
+periodic level 9 dumps should be made on an
+exponential progression of tapes.
+(Sometimes called Tower of Hanoi \- 1 2 1 3 1 2 1 4 ...
+tape 1 used every other time,
+tape 2 used every fourth,
+tape 3 used every eighth, etc.)
+.PP
+	dump 9u
+.PP
+When the level 9 incremental approaches a full
+tape (about 78000 blocks at 1600 BPI blocked 20),
+a level 1 dump should be made.
+.PP
+	dump 1u
+.PP
+After this,
+the exponential series should progress as uninterrupted.
+These level 9 dumps are based on the level 1 dump which
+is based on the level 0 full dump.
+This progression of levels of dump can be carried
+as far as desired.
+.SH FILES
+default filesystem and tape vary with installation.
+.br
+/etc/ddate	record dump dates of filesystem/level.
+.SH "SEE ALSO"
+restor(1), dump(5), dumpdir(1)
+.SH DIAGNOSTICS
+If the dump requires more than one tape,
+it will ask you to change tapes.
+Reply with a new-line when this has been done.
+.SH BUGS
+Sizes are based on 1600 BPI blocked tape.
+The raw magtape device has to be used to
+approach these densities.
+Read errors on the filesystem are ignored.
+Write errors on the magtape are usually fatal.

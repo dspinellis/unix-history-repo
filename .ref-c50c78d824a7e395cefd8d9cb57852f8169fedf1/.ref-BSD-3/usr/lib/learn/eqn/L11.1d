@@ -1,0 +1,18 @@
+#print
+One thing to keep in mind, although it generally
+isn't going to affect you, is that the quote "
+is a delimiter just like blank or tilde -
+it turns off subscripts and superscripts, and so
+on. 
+Experiment a bit, and decide if
+  e sup "{t}"
+is the same as
+  e sup "{"t"}"
+Type yes if they are the same, no if they are different.
+#copyin
+#user
+#uncopyin
+#match no
+#log
+#next
+11.1e 10

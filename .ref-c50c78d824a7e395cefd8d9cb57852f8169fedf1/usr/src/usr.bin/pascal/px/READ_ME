@@ -1,0 +1,51 @@
+Copyright (c) 1980 Regents of the University of California.
+All rights reserved.  The Berkeley software License Agreement
+specifies the terms and conditions for redistribution.
+
+sccsid = "@(#)READ_ME 5.1 %G%"
+
+   This directory contains the source code for the Version 7 VAX
+interpreter for Pascal. Following standard convensions, the makefile
+contains four commands:
+
+	px - compile px
+
+	install - compile and install px in /usr/ucb
+
+	clean - clean out directory
+
+	print - print out a listing of px
+
+
+
+Bugs and Limitations:
+
+   Runtime error messages could give far more information than they
+currently do. (eg the actual value of a subscript which is out
+of range)
+
+   It should be possible to resume execution following many of
+the runtime errors. (eg fixed overflow, interrupt, etc)
+
+
+Comparison of Pascal with C compiler
+
+In an attempt to compare compiled versus interpreted execution speeds
+the 'Tower of Hanoi' benchmark (see hanoi.p, hanoi.c) was run with 
+the following results:
+
+Data:
+	number of disks: 		   16
+	number of moves required:	65535
+
+Compiler, Flags		  Compile	Compile		 Run	 Run
+			   Time		 Factor		 Time	Factor
+Pi, full tests		 0.4u+0.4s	  1.0		42.7u	  1.0
+Pi, no tests		 0.3u+0.3s	  0.7		35.2u	  1.2
+Pc, unoptimized		 3.8u+2.4s	  7.7		 5.3u	  8.1
+Pc, optimized		 4.4u+2.3s	  8.4		 4.6u	  9.3
+C, unoptimized		 1.7u+1.8s	  4.4		 2.8u	 15.3
+C, optimized		 2.0u+2.0s	  5.0		 2.5u	 17.1
+
+Note: The times for Pc and C were obtained by running larger
+problems and scaling the run times down appropriately.
