@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: rd.c 1.44 92/12/26$
  *
- *	@(#)rd.c	8.4 (Berkeley) %G%
+ *	@(#)rd.c	8.5 (Berkeley) %G%
  */
 
 /*
@@ -36,10 +36,7 @@
 #include <hp300/hp300/led.h>
 #endif
 
-#include <vm/vm_param.h>
-#include <sys/lock.h>
-#include <vm/vm_prot.h>
-#include <vm/pmap.h>
+#include <vm/vm.h>
 
 int	rdinit(), rdstart(), rdgo(), rdintr();
 void	rdstrategy();
