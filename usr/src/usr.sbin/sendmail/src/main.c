@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -190,7 +190,7 @@ main(argc, argv, envp)
 	av = argv;
 	nothaw = FALSE;
 #if defined(__osf__) || defined(_AIX3)
-#define OPTIONS		"B:b:C:cd:e:F:f:h:Iimno:p:q:r:sTtvX:x"
+# define OPTIONS	"B:b:C:cd:e:F:f:h:Iimno:p:q:r:sTtvX:x"
 #else
 	while ((p = *++av) != NULL)
 	{
