@@ -1,0 +1,11 @@
+in main: eoln = false   eof = false   ch = a
+in main: eoln = false   eof = false   ch = b
+in main: eoln = true   eof = false   ch = c
+in eolncode: eoln = false   eof = false   ch =  
+in main: eoln = true   eof = false   ch = 	
+in eolncode: eoln = 
+#tmp.D4910: eoln is undefined when eof is true
+
+	Error in "test"+10 near line 17.
+
+20 statements executed in 0.07 seconds cpu time.
