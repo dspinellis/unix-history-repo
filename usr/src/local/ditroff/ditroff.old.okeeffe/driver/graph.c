@@ -1,4 +1,4 @@
-/* graph.c	1.11	84/03/14
+/* graph.c	1.12	84/03/27
  *
  *	This file contains the functions for producing the graphics
  *   images in the varian/versatec drivers for ditroff.
