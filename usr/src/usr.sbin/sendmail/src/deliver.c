@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)deliver.c	5.11 (Berkeley) %G%";
+static char	SccsId[] = "@(#)deliver.c	5.12 (Berkeley) %G%";
 #endif not lint
 
 # include <signal.h>
@@ -363,14 +363,14 @@ deliver(e, firstto)
 	{
 # ifdef MXDOMAIN
 		expand("\001w", buf, &buf[sizeof buf - 1], e);
-		if ((nmx = getmxrr(host, mxhosts, MAXMXHOSTS, buf)) < 0)
+		if ((Nmx = getmxrr(host, MxHosts, MAXMXHOSTS, buf)) < 0)
 		{
 			/*
 			 * Map errors into standard values
 			 */
-			if (nmx == -1)
+			if (Nmx == -1)
 				rcode = EX_TEMPFAIL;
-			else if (nmx == -3)
+			else if (Nmx == -3)
 				rcode = EX_NOHOST;
 			else
 				rcode = EX_UNAVAILABLE;
@@ -378,8 +378,8 @@ deliver(e, firstto)
 		else
 			rcode = EX_OK;
 #else MXDOMAIN
-		nmx = 1;
-		mxhosts[0] = q->q_host;
+		Nmx = 1;
+		MxHosts[0] = q->q_host;
 		rcode = EX_OK;
 #endif
 		/* send the initial SMTP protocol */
@@ -742,28 +742,28 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 			port = atoi(pvp[2]);
 		else
 			port = 0;
-		for (j = 0; j < nmx; j++)
+		for (j = 0; j < Nmx; j++)
 		{
-			CurHostName = mxhosts[j];
+			CurHostName = MxHosts[j];
 #ifdef HOSTINFO
 		/* see if we have already determined that this host is fried */
-			st = stab(mxhosts[j], ST_HOST, ST_FIND);
+			st = stab(MxHosts[j], ST_HOST, ST_FIND);
 			if (st == NULL || st->s_host.ho_exitstat == EX_OK)
-				i = makeconnection(mxhosts[j], port, pmfile, prfile);
+				i = makeconnection(MxHosts[j], port, pmfile, prfile);
 			else
 			{
 				i = st->s_host.ho_exitstat;
 				errno = st->s_host.ho_errno;
 			}
 #else HOSTINFO
-			i = makeconnection(mxhosts[j], port, pmfile, prfile);
+			i = makeconnection(MxHosts[j], port, pmfile, prfile);
 #endif HOSTINFO
 			if (i != EX_OK)
 			{
 #ifdef HOSTINFO
 				/* enter status of this host */
 				if (st == NULL)
-					st = stab(mxhosts[j], ST_HOST, ST_ENTER);
+					st = stab(MxHosts[j], ST_HOST, ST_ENTER);
 				st->s_host.ho_exitstat = i;
 				st->s_host.ho_errno = errno;
 #endif HOSTINFO
