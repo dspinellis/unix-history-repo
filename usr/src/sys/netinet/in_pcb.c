@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)in_pcb.c	7.1 (Berkeley) %G%
+ *	@(#)in_pcb.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -152,24 +152,24 @@ in_pcbconnect(inp, nam)
 		}
 		if ((inp->inp_socket->so_options & SO_DONTROUTE) == 0 && /*XXX*/
 		    (ro->ro_rt == (struct rtentry *)0 ||
-		    (ifp = ro->ro_rt->rt_ifp) == (struct ifnet *)0)) {
+		    ro->ro_rt->rt_ifp == (struct ifnet *)0)) {
 			/* No route yet, so try to acquire one */
 			ro->ro_dst.sa_family = AF_INET;
 			((struct sockaddr_in *) &ro->ro_dst)->sin_addr =
 				sin->sin_addr;
 			rtalloc(ro);
-			/*
-			 * If we found a route, use the address
-			 * corresponding to the outgoing interface
-			 * unless it is the loopback (in case a route
-			 * to our address on another net goes to loopback).
-			 */
-			if (ro->ro_rt && (ifp = ro->ro_rt->rt_ifp) &&
-			    (ifp->if_flags & IFF_LOOPBACK) == 0)
-				for (ia = in_ifaddr; ia; ia = ia->ia_next)
-					if (ia->ia_ifp == ifp)
-						break;
 		}
+		/*
+		 * If we found a route, use the address
+		 * corresponding to the outgoing interface
+		 * unless it is the loopback (in case a route
+		 * to our address on another net goes to loopback).
+		 */
+		if (ro->ro_rt && (ifp = ro->ro_rt->rt_ifp) &&
+		    (ifp->if_flags & IFF_LOOPBACK) == 0)
+			for (ia = in_ifaddr; ia; ia = ia->ia_next)
+				if (ia->ia_ifp == ifp)
+					break;
 		if (ia == 0) {
 			ia = (struct in_ifaddr *)
 			    ifa_ifwithdstaddr((struct sockaddr *)sin);
