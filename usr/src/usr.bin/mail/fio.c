@@ -10,7 +10,7 @@
  * File I/O.
  */
 
-static char *SccsId = "@(#)fio.c	1.1 %G%";
+static char *SccsId = "@(#)fio.c	1.2 %G%";
 
 /*
  * Set up the input pointers while copying the mail file into
@@ -167,6 +167,8 @@ makemessage(f)
 		printf("Insufficient memory for %d messages\n", msgCount);
 		exit(1);
 	}
+	if (message != (struct message *) 0)
+		cfree((char *) message);
 	message = (struct message *) mp;
 	dot = message;
 	lseek(f, 0L, 0);
@@ -223,6 +225,8 @@ edstop()
 	register struct message *mp;
 	FILE *obuf;
 
+	if (readonly)
+		return;
 	for (mp = &message[0], gotcha = 0; mp < &message[msgCount]; mp++)
 		if (mp->m_flag & (MODIFY|MDELETED)) {
 			gotcha++;
