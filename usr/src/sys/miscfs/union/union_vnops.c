@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vnops.c	8.16 (Berkeley) %G%
+ *	@(#)union_vnops.c	8.17 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -214,6 +214,14 @@ union_lookup(ap)
 		}
 	} else {
 		lerror = ENOENT;
+		if ((cnp->cn_flags & ISDOTDOT) && dun->un_pvp != NULLVP) {
+			lowervp = LOWERVP(dun->un_pvp);
+			if (lowervp != NULLVP) {
+				VREF(lowervp);
+				VOP_LOCK(lowervp);
+				lerror = 0;
+			}
+		}
 	}
 
 	if (!lockparent)
