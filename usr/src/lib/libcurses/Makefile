@@ -1,12 +1,14 @@
-#	@(#)Makefile	5.11 (Berkeley) %G%
+#	@(#)Makefile	5.12 (Berkeley) %G%
 
+CFLAGS+=#-g -DDEBUG -DTFILE=\"/dev/ttyp0\"
+CFLAGS+=-D_CURSES_PRIVATE -I${.CURDIR}
 LIB=	curses
 SRCS=	addbytes.c addch.c addstr.c box.c clear.c clrtobot.c clrtoeol.c \
-	cr_put.c cr_tty.c curses.c delch.c deleteln.c delwin.c endwin.c \
-	erase.c fullname.c getch.c getstr.c idlok.c id_subwins.c initscr.c \
-	insch.c insertln.c longname.c move.c mvprintw.c mvscanw.c mvwin.c \
-	newwin.c overlay.c overwrite.c printw.c putchar.c refresh.c scanw.c \
-	scroll.c toucholap.c standout.c touchwin.c tstp.c unctrl.c
+	cr_put.c curses.c delch.c deleteln.c delwin.c erase.c fullname.c \
+	getch.c getstr.c id_subwins.c idlok.c initscr.c insch.c insertln.c \
+	longname.c move.c mvwin.c newwin.c overlay.c overwrite.c printw.c \
+	putchar.c refresh.c scanw.c scroll.c setterm.c standout.c \
+	toucholap.c touchwin.c trace.c tstp.c tty.c unctrl.c
 MAN3=	curses.0
 
 beforeinstall:
