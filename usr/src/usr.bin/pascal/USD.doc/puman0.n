@@ -3,11 +3,11 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)puman0.n	6.3 (Berkeley) %G%
+.\"	@(#)puman0.n	6.4 (Berkeley) %G%
 .\"
 .so tmac.p
-.EH 'PS1:4-%''Berkeley Pascal User\'s Manual'
-.OH 'Berkeley Pascal User\'s Manual''PS1:4-%'
+.EH 'PSD:7-%''Berkeley Pascal User\'s Manual'
+.OH 'Berkeley Pascal User\'s Manual''PSD:7-%'
 .TL
 Berkeley Pascal User's Manual
 .br

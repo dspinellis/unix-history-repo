@@ -3,10 +3,10 @@
 .\"
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)implement	6.3 (Berkeley) %G%
+.\"	@(#)implement	6.4 (Berkeley) %G%
 .\"
-.EH 'PS2:4-%''UNIX Implementation'
-.OH 'UNIX Implementation''PS2:4-%'
+.EH 'PSD:1-%''UNIX Implementation'
+.OH 'UNIX Implementation''PSD:1-%'
 .de P1
 .DS
 ..
