@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)netintro.4	6.2 (Berkeley) %G%
+.\"	@(#)netintro.4	6.3 (Berkeley) %G%
 .\"
 .TH INTRO 4N ""
 .UC 5
@@ -101,7 +101,8 @@ Consult the appropriate manual pages in this section for more
 information regarding the support for each protocol family.
 .SH ADDRESSING
 Associated with each protocol family is an address
-format.  The following address formats are used by the system:
+format.  The following address formats are used by the system (and additional
+formats are defined for possible future implementation):
 .sp 1
 .nf
 ._d
@@ -109,6 +110,8 @@ format.  The following address formats are used by the system:
 #define	AF_INET	2	/* internetwork: UDP, TCP, etc. */
 #define	AF_IMPLINK	3	/* arpanet imp addresses */
 #define	AF_PUP	4	/* pup protocols: e.g. BSP */
+#define	AF_NS	6	/* Xerox NS protocols */
+#define	AF_HYLINK	15	/* NSC Hyperchannel */
 .fi
 .SH ROUTING
 The network facilities provided limited packet routing.
@@ -117,7 +120,7 @@ used in selecting the appropriate network interface when
 transmitting packets.  This table contains a single entry for
 each route to a specific network or host.  A user process,
 the routing daemon, maintains this data base with the aid
-of two socket specific 
+of two socket-specific 
 .IR ioctl (2)
 commands, SIOCADDRT and SIOCDELRT.  The commands allow
 the addition and deletion of a single routing
@@ -178,7 +181,7 @@ but the resources associated with it will not
 be reclaimed until all references to it are released. 
 The routing code returns EEXIST if
 requested to duplicate an existing entry, ESRCH if
-requested to delete a non-existant entry,
+requested to delete a non-existent entry,
 or ENOBUFS if insufficient resources were available
 to install a new route.
 User processes read the routing tables through the
