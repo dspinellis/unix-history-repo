@@ -1,4 +1,4 @@
-/* in_cksum.c 1.1 81/10/14 */
+/* in_cksum.c 1.2 81/10/16 */
 
 #include <sys/types.h>
 #include "../bbnnet/net.h"
@@ -8,21 +8,6 @@
  * Network primitives; this file varies per-cpu,
  * and the code here is for VAX only.
  */
-cksum(m, len)
-register struct mbuf *m;
-{
-	int i,j;
-	i = ncksum(m, len);
-	j = ocksum(m, len);
-	if (i != j) {
-		printf("old %x new %x \n", i, j);
-		while (m != 0) {
-			printf("m->m_off %d m->m_len %d\n", m->m_off, m->m_len);
-			m = m->m_next;
-		}
-	}
-	return (j);
-}
 
 /*
  * Checksum routine for TCP/IP headers.  This
@@ -30,14 +15,14 @@ register struct mbuf *m;
  * code and should be rewritten for each CPU
  * to be as fast as possible.
  */
-ncksum(m, len)
+cksum(m, len)
 	register struct mbuf *m;
 	register int len;
 {
 	register u_short *w;		/* known to be r9 */
 	register int sum = 0;		/* known to be r8 */
 	register int mlen = 0;
-COUNT(NCKSUM);
+COUNT(CKSUM);
 
 	for (;;) {
 		w = (u_short *)((int)m + m->m_off);
@@ -87,61 +72,3 @@ COUNT(NCKSUM);
  *	htons and ntohs		do byte reverse of a 16 bit integer
  *	htonl and ntohl		do byte reverse of a 32 bit integer
  */
-ocksum(m, len)
-register struct mbuf *m;
-register len;
-{
-	register unsigned short *w;
-	register unsigned long sum;
-	register mlen;
-COUNT(OCKSUM);
-
-	w = (unsigned short *)((int)m + m->m_off);
-	mlen = m->m_len;
-	sum = 0;
-
-	for (; len > 0; len -= 2, mlen -= 2) {
-
-try:            if (mlen > 1) {         /* can get a word */
-
-			if (len > 1) {
-				sum += *(w++);
-
-			} else            /* trailing odd byte */
-
-				sum += *((char *)w) & 0xff;
-
-		} else if (mlen > 0) {  /* last byte of mbuf */
-
-			sum += *((char *)w) & 0xff;
-
-			if (len > 1) {
-
-        			/* get next good mbuf for hi byte */
-        
-        			while ((m = m->m_next) != 0 && 
-					(mlen = m->m_len + 1) == 1);
-        			if (m != 0) {
-        				w = (unsigned short *)((int)m + m->m_off);
-        				sum += (*((char *)w) & 0xff) << 8;
-					w = (unsigned short *)((int)w + 1);
-        			} else
-        				len = 0;        /* force loop exit */
-			}
-
-		} else {                /* end of mbuf, get next and try again */
-
-			while ((m = m->m_next) != 0 && (mlen = m->m_len) == 0);
-			if (m != 0) {
-				w = (unsigned short *)((int)m + m->m_off);
-				goto try;
-			} else
-				break;
-		}
-	}
-
-	/* add in one's complement carry */
-
-	sum = (sum + (sum >> 16)) & 0xffff;
-	return(~sum & 0xffff);
-}

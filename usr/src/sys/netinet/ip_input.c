@@ -1,4 +1,4 @@
-/* ip_input.c 1.2 81/10/14 */
+/* ip_input.c 1.3 81/10/16 */
 #include "../h/param.h"
 #include "../bbnnet/net.h"
 #include "../bbnnet/tcp.h"
@@ -386,12 +386,15 @@ ip_timeo()      /* frag reass.q timeout routine */
 {
 	register struct ip *q;
 	register struct ipq *fp;
+	int s = splnet();
 
 COUNT(IP_TIMEO);
 	timeout(ip_timeo, 0, 60);       /* reschedule every second */
 
-	if (netcb.n_ip_lock)    /* reass.q must not be in use */
+	if (netcb.n_ip_lock) {    /* reass.q must not be in use */
+		splx(s);
 		return;
+	}
 
 	/* search through reass.q */
 
@@ -406,4 +409,5 @@ COUNT(IP_TIMEO);
 			}                                                      
 			ip_freef(fp);           /* free header */              
 		}
+	splx(s);
 }
