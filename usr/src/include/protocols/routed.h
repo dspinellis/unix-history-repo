@@ -1,4 +1,4 @@
-/*	routed.h	82/05/26	4.3	*/
+/*	routed.h	82/06/05	4.4	*/
 /*
  * Routing Information Protocol
  *
@@ -14,11 +14,18 @@ struct netinfo {
 struct rip {
 	u_char	rip_cmd;		/* request/response */
 	u_char	rip_res1[3];		/* pad to 32-bit boundary */
-	struct	netinfo rip_nets[1];	/* variable length... */
+	union {
+		struct	netinfo ru_nets[1];	/* variable length... */
+		char	ru_tracefile[1];	/* ditto ... */
+	} ripun;
+#define	rip_nets	ripun.ru_nets
+#define	rip_tracefile	ripun.ru_tracefile
 };
  
 #define	RIPCMD_REQUEST		0x1	/* want info */
 #define	RIPCMD_RESPONSE		0x2	/* responding to request */
+#define	RIPCMD_TRACEON		0x3	/* turn tracing on */
+#define	RIPCMD_TRACEOFF		0x4	/* turn it off */
 
 #define IPPORT_ROUTESERVER 	520	/* well-known port */
 #define	HOPCNT_INFINITY		16	/* per Xerox NS */
