@@ -537,7 +537,7 @@ register int 	count = 0;		/* count in file */
 /
 / MODULES CALLED: fread(), fopen(), printf(), fclose()
 /
-/ GLOBAL INPUTS: Scorefile[]
+/ GLOBAL INPUTS: 
 /
 / GLOBAL OUTPUTS: none
 /
@@ -551,7 +551,7 @@ scorelist()
 struct	scoreboard	sbuf;	/* for reading entries */
 register FILE	*fp;		/* to open the file */
 
-    if ((fp = fopen(Scorefile, "r")) != NULL)
+    if ((fp = fopen(_PATH_SCORE, "r")) != NULL)
 	{
 	while (fread((char *) &sbuf, SZ_SCORESTRUCT, 1, fp) == 1)
 	    printf("%-20s   (%-9s)  Level: %6.0f  Type: %s\n",
@@ -663,7 +663,7 @@ long	loc = 0L;	/* location in file */
 / MODULES CALLED: fread(), fseek(), fopen(), error(), strcmp(), fclose(), 
 /	strcpy(), fwrite(), descrtype()
 /
-/ GLOBAL INPUTS: Player, Scorefile[]
+/ GLOBAL INPUTS: Player
 /
 / GLOBAL OUTPUTS: none
 /
@@ -683,7 +683,7 @@ FILE	*fp;				/* to open scoreboard file */
 long	loc = 0L;			/* location in scoreboard file */
 bool	found = FALSE;			/* set if we found an entry for this login */
 
-    if ((fp = fopen(Scorefile, "r+")) != NULL)
+    if ((fp = fopen(_PATH_SCORE, "r+")) != NULL)
 	{
 	while (fread((char *) &sbuf, SZ_SCORESTRUCT, 1, fp) == 1)
 	    if (strcmp(Player.p_login, sbuf.sb_login) == 0)
@@ -696,7 +696,7 @@ bool	found = FALSE;			/* set if we found an entry for this login */
 	}
     else
 	{
-	error(Scorefile);
+	error(_PATH_SCORE);
 	/*NOTREACHED*/
 	}
 

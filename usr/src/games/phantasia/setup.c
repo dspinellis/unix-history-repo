@@ -21,9 +21,7 @@
 /	fgets(), floor(), srandom(), umask(), drandom(), strcpy(), getuid(), 
 /	unlink(), fwrite(), fclose(), sscanf(), printf(), strlen(), fprintf()
 /
-/ GLOBAL INPUTS: Peoplefile[], Curmonster, _iob[], Databuf[], *Monstfp, 
-/	Lastdead[], Goldfile[], Voidfile[], Motdfile[], Messfile[], Scorefile[], 
-/	Enemyfile[], Monstfile[], Enrgyvoid
+/ GLOBAL INPUTS: Curmonster, _iob[], Databuf[], *Monstfp, Enrgyvoid
 /
 / GLOBAL OUTPUTS: Curmonster, Databuf[], *Monstfp, Enrgyvoid
 /
@@ -46,16 +44,16 @@ register char	**filename;	/* for pointing to file names */
 register int	fd;		/* file descriptor */
 static char *files[] =		/* all files to create */
 	{
-	Monstfile,
-	Peoplefile,
-	Messfile,
-	Lastdead,
-	Motdfile,
-	Goldfile,
-	Voidfile,
-	Scorefile,
+	_PATH_MONST,
+	_PATH_PEOPLE,
+	_PATH_MESS,
+	_PATH_LASTDEAD,
+	_PATH_MOTD,
+	_PATH_GOLD,
+	_PATH_VOID,
+	_PATH_SCORE,
 #ifdef ENEMY
-	Enemyfile,
+	_PATH_ENEMY,
 #endif
 	(char *) NULL
 	};
@@ -68,17 +66,17 @@ static char *files[] =		/* all files to create */
 	fprintf(stderr, "Warning: UID (%d) is not equal to current uid.\n", UID);
 
     /* check Phantasia destination directory */
-    if (stat(DEST", &fbuf) < 0)
+    if (stat(_PATH_PHANTDIR, &fbuf) < 0)
 	/* not found */
 	{
-	Error("Cannot stat %s.\n", DEST");
+	Error("Cannot stat %s.\n", _PATH_PHANTDIR);
 	exit(1);
 	/*NOTREACHED*/
 	}
 
     if ((fbuf.st_mode & S_IFDIR) == 0)
 	/* not a directory */
-	Error("%s is not a directory.\n", DEST");
+	Error("%s is not a directory.\n", _PATH_PHANTDIR);
 	/*NOTREACHED*/
 
     /* try to create data files */
@@ -89,7 +87,7 @@ static char *files[] =		/* all files to create */
 	if (stat(*filename, &fbuf) == 0)
 	    /* file exists; remove it */
 	    {
-	    if (*filename == Peoplefile)
+	    if (!strcmp(*filename, _PATH_PEOPLE))
 		/* do not reset character file if it already exists */
 		{
 		++filename;
@@ -114,8 +112,8 @@ static char *files[] =		/* all files to create */
     Enrgyvoid.ev_active = TRUE;
     Enrgyvoid.ev_x = ROLL(-1.0e6, 2.0e6);
     Enrgyvoid.ev_y = ROLL(-1.0e6, 2.0e6);
-    if ((fp = fopen(Voidfile, "w")) == NULL)
-	Error("Cannot update %s.\n", Voidfile);
+    if ((fp = fopen(_PATH_VOID, "w")) == NULL)
+	Error("Cannot update %s.\n", _PATH_VOID);
     else
 	{
 	fwrite(&Enrgyvoid, SZ_VOIDSTRUCT, 1, fp);
@@ -123,8 +121,8 @@ static char *files[] =		/* all files to create */
 	}
 
     /* create binary monster data base */
-    if ((Monstfp = fopen(Monstfile, "w")) == NULL)
-	Error("Cannot update %s.\n", Monstfile);
+    if ((Monstfp = fopen(_PATH_MONST, "w")) == NULL)
+	Error("Cannot update %s.\n", _PATH_MONST);
     else
 	{
 	if ((fp = fopen("monsters.asc", "r")) == NULL)
@@ -163,8 +161,8 @@ static char *files[] =		/* all files to create */
     printf("One line 'motd' ? ");
     if (fgets(Databuf, SZ_DATABUF, stdin) == NULL)
 	Databuf[0] = '\0';
-    if ((fp = fopen(Motdfile, "w")) == NULL)
-	Error("Cannot update %s.\n", Motdfile);
+    if ((fp = fopen(_PATH_MOTD, "w")) == NULL)
+	Error("Cannot update %s.\n", _PATH_MOTD);
     else
 	{
 	fwrite(Databuf, sizeof(char), strlen(Databuf), fp);
@@ -173,7 +171,7 @@ static char *files[] =		/* all files to create */
 
     /* report compile-time options */
     printf("Compiled options:\n\n");
-    printf("Phantasia destination directory:  %s\n", DEST");
+    printf("Phantasia destination directory:  %s\n", _PATH_PHANTDIR);
     printf("Wizard:  %s   UID:  %d\n", WIZARD, UID);
 
 #ifdef ENEMY

@@ -809,8 +809,8 @@ register int	numusers = 0;	/* number of users on file */
 / MODULES CALLED: writerecord(), fread(), fseek(), fopen(), wmove(), fclose(), 
 /	fwrite(), altercoordinates(), waddstr(), fprintf()
 /
-/ GLOBAL INPUTS: *Energyvoidfp, Other, Player, *stdscr, Voidfile[], 
-/	Messfile[], Enrgyvoid, *Playersfp
+/ GLOBAL INPUTS: *Energyvoidfp, Other, Player, *stdscr,
+/	Enrgyvoid, *Playersfp
 /
 / GLOBAL OUTPUTS: Other, Player, Changed
 /
@@ -862,14 +862,14 @@ long	loc = 0L;		/* location of old king in player file */
 	mvaddstr(4, 0, "You have become king!\n");
 
 	/* let everyone else know */
-	fp = fopen(Messfile, "w");
+	fp = fopen(_PATH_MESS, "w");
 	fprintf(fp, "All hail the new king!");
 	fclose(fp);
 
 	/* clear all energy voids; retain location of holy grail */
 	fseek(Energyvoidfp, 0L, 0);
 	fread((char *) &Enrgyvoid, SZ_VOIDSTRUCT, 1, Energyvoidfp);
-	fp = fopen(Voidfile, "w");
+	fp = fopen(_PATH_VOID, "w");
 	fwrite((char *) &Enrgyvoid, SZ_VOIDSTRUCT, 1, fp);
 	fclose(fp);
 	}
@@ -895,7 +895,7 @@ long	loc = 0L;		/* location of old king in player file */
 /	allocvoid(), getanswer(), getstring(), wclrtoeol(), writevoid()
 /
 / GLOBAL INPUTS: *Energyvoidfp, Other, Illcmd[], Wizard, Player, *stdscr, 
-/	Databuf[], Goldfile[], Enrgyvoid
+/	Databuf[], Enrgyvoid
 /
 / GLOBAL OUTPUTS: Other, Player, Enrgyvoid
 /
@@ -968,7 +968,7 @@ FILE	*fp;				/* for opening gold file */
 		break;
 
 	    case '5':	/* collect accumulated taxes */
-		if ((fp = fopen(Goldfile, "r+")) != NULL)
+		if ((fp = fopen(_PATH_GOLD, "r+")) != NULL)
 		    /* collect taxes */
 		    {
 		    fread((char *) &temp1, sizeof(double), 1, fp);

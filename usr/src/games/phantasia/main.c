@@ -89,7 +89,7 @@
 /	scorelist(), titlelist()
 /
 / GLOBAL INPUTS: *Login, Throne, Wizard, Player, *stdscr, Changed, Databuf[], 
-/	Fileloc, Helpfile[], Stattable[]
+/	Fileloc, Stattable[]
 /
 / GLOBAL OUTPUTS: Wizard, Player, Changed, Fileloc, Timeout, *Statptr
 /
@@ -158,7 +158,7 @@ double	dtemp;			/* for temporary calculations */
 	    case 'h':	/* help */
 		cleanup(FALSE);
 		strcpy(Databuf, "cat ");
-		system(strcat(Databuf, Helpfile));
+		system(strcat(Databuf, _PATH_HELP));
 		exit(0);
 		/*NOTREACHED*/
 		}
@@ -340,7 +340,7 @@ double	dtemp;			/* for temporary calculations */
 / MODULES CALLED: time(), fopen(), srandom(), error(), getuid(), getlogin(), 
 /	getpwuid()
 /
-/ GLOBAL INPUTS: Peoplefile[], Voidfile[], Messfile[], Monstfile[]
+/ GLOBAL INPUTS: 
 /
 / GLOBAL OUTPUTS: *Energyvoidfp, Echo, Marsh, *Login, Users, Beyond, 
 /	Throne, Wizard, Changed, Okcount, Timeout, Windows, *Monstfp, *Messagefp, 
@@ -368,20 +368,20 @@ initialstate()
 	Login = getpwuid(getuid())->pw_name;
     
     /* open some files */
-    if ((Playersfp = fopen(Peoplefile, "r+")) == NULL)
-	error(Peoplefile);
+    if ((Playersfp = fopen(_PATH_PEOPLE, "r+")) == NULL)
+	error(_PATH_PEOPLE);
 	/*NOTREACHED*/
 
-    if ((Monstfp = fopen(Monstfile, "r+")) == NULL)
-	error(Monstfile);
+    if ((Monstfp = fopen(_PATH_MONST, "r+")) == NULL)
+	error(_PATH_MONST);
 	/*NOTREACHED*/
 
-    if ((Messagefp = fopen(Messfile, "r")) == NULL)
-	error(Messfile);
+    if ((Messagefp = fopen(_PATH_MESS, "r")) == NULL)
+	error(_PATH_MESS);
 	/*NOTREACHED*/
 
-    if ((Energyvoidfp = fopen(Voidfile, "r+")) == NULL)
-	error(Voidfile);
+    if ((Energyvoidfp = fopen(_PATH_VOID, "r+")) == NULL)
+	error(_PATH_VOID);
 	/*NOTREACHED*/
 
     srandom((unsigned) time((long *) NULL));	/* prime random numbers */
@@ -522,7 +522,7 @@ int	ch;		/* input */
 /	getstring(), wclrtobot()
 /
 / GLOBAL INPUTS: Circle, Illcmd[], Throne, Wizard, Player, *stdscr, 
-/	Databuf[], Illmove[], Messfile[]
+/	Databuf[], Illmove[]
 /
 / GLOBAL OUTPUTS: Player, Changed
 /
@@ -628,7 +628,7 @@ bool	hasmoved = FALSE;	/* set if player has moved */
 	    mvaddstr(4, 0, "Message ? ");
 	    getstring(Databuf, SZ_DATABUF);
 	    /* we open the file for writing to erase any data which is already there */
-	    fp = fopen(Messfile, "w");
+	    fp = fopen(_PATH_MESS, "w");
 	    if (Databuf[0] != '\0')
 		fprintf(fp, "%s: %s", Player.p_name, Databuf);
 	    fclose(fp);
@@ -755,7 +755,7 @@ bool	hasmoved = FALSE;	/* set if player has moved */
 /
 / MODULES CALLED: fopen(), fgets(), strcmp(), fclose(), printf(), cleanup()
 /
-/ GLOBAL INPUTS: *Login, Databuf[], Enemyfile[]
+/ GLOBAL INPUTS: *Login, Databuf[]
 /
 / GLOBAL OUTPUTS: none
 /
@@ -772,7 +772,7 @@ checkenemy()
 FILE	*fp;		/* to open enemy file */
 
     /* check hit list of restricted accounts */
-    if ((fp = fopen(Enemyfile, "r")) != NULL)
+    if ((fp = fopen(_PATH_ENEMY, "r")) != NULL)
 	{
 	while (fgets(Databuf, SZ_DATABUF, fp) != NULL)
 	    if (strcmp(Login, Databuf) == 0)
@@ -804,8 +804,7 @@ FILE	*fp;		/* to open enemy file */
 / MODULES CALLED: fread(), fseek(), fopen(), fgets(), wmove(), strcpy(), 
 /	fclose(), strlen(), waddstr(), sprintf(), wrefresh()
 /
-/ GLOBAL INPUTS: Lines, Other, *stdscr, Databuf[], Lastdead[], Motdfile[], 
-/	*Playersfp
+/ GLOBAL INPUTS: Lines, Other, *stdscr, Databuf[], *Playersfp
 /
 / GLOBAL OUTPUTS: Lines
 /
@@ -826,7 +825,7 @@ char	hiname[21], nxtname[21];/* used for finding the two highest players */
     mvaddstr(0, 14, "W e l c o m e   t o   P h a n t a s i a (vers. 3.3.2)!");
 
     /* print message of the day */
-    if ((fp = fopen(Motdfile, "r")) != NULL
+    if ((fp = fopen(_PATH_MOTD, "r")) != NULL
 	&& fgets(Databuf, SZ_DATABUF, fp) != NULL)
 	{
 	mvaddstr(2, 40 - strlen(Databuf) / 2, Databuf);
@@ -911,7 +910,7 @@ char	hiname[21], nxtname[21];/* used for finding the two highest players */
     mvaddstr(17, 40 - strlen(Databuf) / 2, Databuf);
 
     /* print last to die */
-    if ((fp = fopen(Lastdead,"r")) != NULL
+    if ((fp = fopen(_PATH_LASTDEAD,"r")) != NULL
 	&& fgets(Databuf, SZ_DATABUF, fp) != NULL)
 	{
 	mvaddstr(19, 25, "The last character to die was:");
