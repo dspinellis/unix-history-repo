@@ -9,7 +9,7 @@
  * The CMU software License Agreement specifies the terms and conditions
  * for use and redistribution.
  *
- *	@(#)pmap.c	7.3 (Berkeley) %G%
+ *	@(#)pmap.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -17,6 +17,10 @@
  *	For 68020/68030 machines with HP, 68551, or 68030 MMUs
  *		(models 320,350,318,319,330,340,360,370,345,375)
  *	Don't even pay lip service to multiprocessor support.
+ *
+ *	XXX will only work for PAGE_SIZE == NBPG (hppagesperpage == 1)
+ *	right now because of the assumed one-to-one relationship of PT
+ *	pages to STEs.
  */
 
 /*
@@ -119,6 +123,8 @@ int pmapvacflush = 0;
 #define	PVF_REMOVE	0x02
 #define	PVF_PROTECT	0x04
 #define	PVF_TOTAL	0x80
+
+extern vm_offset_t pager_sva, pager_eva;
 #endif
 
 /*
@@ -303,7 +309,6 @@ pmap_init(phys_start, phys_end)
 	vm_offset_t	addr, addr2;
 	vm_size_t	npg, s;
 	int		rv;
-	extern vm_offset_t	DIObase;
 	extern char kstack[];
 
 #ifdef DEBUG
@@ -314,10 +319,10 @@ pmap_init(phys_start, phys_end)
 	 * Now that kernel map has been allocated, we can mark as
 	 * unavailable regions which we have mapped in locore.
 	 */
-	addr = DIObase;
+	addr = (vm_offset_t) intiobase;
 	(void) vm_map_find(kernel_map, NULL, (vm_offset_t) 0,
-			   &addr, hp300_ptob(IOMAPSIZE), FALSE);
-	if (addr != DIObase)
+			   &addr, hp300_ptob(IIOMAPSIZE+EIOMAPSIZE), FALSE);
+	if (addr != (vm_offset_t)intiobase)
 		goto bogons;
 	addr = (vm_offset_t) Sysmap;
 	vm_object_reference(kernel_object);
@@ -865,60 +870,50 @@ pmap_remove(pmap, sva, eva)
 }
 
 /*
- *	Routine:	pmap_remove_all
- *	Function:
- *		Removes this physical page from
- *		all physical maps in which it resides.
- *		Reflects back modify bits to the pager.
+ *	pmap_page_protect:
+ *
+ *	Lower the permission for all mappings to a given page.
  */
 void
-pmap_remove_all(pa)
-	vm_offset_t pa;
+pmap_page_protect(pa, prot)
+	vm_offset_t	pa;
+	vm_prot_t	prot;
 {
 	register pv_entry_t pv;
 	int s;
 
 #ifdef DEBUG
-	if (pmapdebug & (PDB_FOLLOW|PDB_REMOVE|PDB_PROTECT))
-		printf("pmap_remove_all(%x)\n", pa);
+	if ((pmapdebug & (PDB_FOLLOW|PDB_PROTECT)) ||
+	    prot == VM_PROT_NONE && (pmapdebug & PDB_REMOVE))
+		printf("pmap_page_protect(%x, %x)\n", pa, prot);
 #endif
-	/*
-	 * Not one of ours
-	 */
 	if (pa < vm_first_phys || pa >= vm_last_phys)
 		return;
 
-	pv = pa_to_pvh(pa);
-	s = splimp();
-	/*
-	 * Do it the easy way for now
-	 */
-	while (pv->pv_pmap != NULL) {
+	switch (prot) {
+	case VM_PROT_ALL:
+		break;
+	/* copy_on_write */
+	case VM_PROT_READ:
+	case VM_PROT_READ|VM_PROT_EXECUTE:
+		pmap_changebit(pa, PG_RO, TRUE);
+		break;
+	/* remove_all */
+	default:
+		pv = pa_to_pvh(pa);
+		s = splimp();
+		while (pv->pv_pmap != NULL) {
 #ifdef DEBUG
-		if (!pmap_ste_v(pmap_ste(pv->pv_pmap, pv->pv_va)) ||
-		    pmap_pte_pa(pmap_pte(pv->pv_pmap, pv->pv_va)) != pa)
-			panic("pmap_remove_all: bad mapping");
+			if (!pmap_ste_v(pmap_ste(pv->pv_pmap,pv->pv_va)) ||
+			    pmap_pte_pa(pmap_pte(pv->pv_pmap,pv->pv_va)) != pa)
+				panic("pmap_page_protect: bad mapping");
 #endif
-		pmap_remove(pv->pv_pmap, pv->pv_va, pv->pv_va + PAGE_SIZE);
+			pmap_remove(pv->pv_pmap, pv->pv_va,
+				    pv->pv_va + PAGE_SIZE);
+		}
+		splx(s);
+		break;
 	}
-	splx(s);
-}
-
-/*
- *	Routine:	pmap_copy_on_write
- *	Function:
- *		Remove write privileges from all
- *		physical maps for this physical page.
- */
-void
-pmap_copy_on_write(pa)
-	vm_offset_t pa;
-{
-#ifdef DEBUG
-	if (pmapdebug & (PDB_FOLLOW|PDB_PROTECT))
-		printf("pmap_copy_on_write(%x)\n", pa);
-#endif
-	pmap_changebit(pa, PG_RO, TRUE);
 }
 
 /*
@@ -1572,17 +1567,6 @@ pmap_activate(pmap, pcbp)
 }
 
 /*
- *	Routine:	pmap_kernel
- *	Function:
- *		Returns the physical map handle for the kernel.
- */
-pmap_t
-pmap_kernel()
-{
-    	return (kernel_pmap);
-}
-
-/*
  *	pmap_zero_page zeros the specified (machine independent)
  *	page by mapping the page into virtual memory and using
  *	bzero to clear its contents, one machine dependent page
@@ -1895,6 +1879,17 @@ pmap_changebit(pa, bit, setem)
 			toflush |= (pv->pv_pmap == kernel_pmap) ? 2 : 1;
 #endif
 			va = pv->pv_va;
+
+			/*
+			 * XXX don't write protect pager mappings
+			 */
+			if (bit == PG_RO) {
+				extern vm_offset_t pager_sva, pager_eva;
+
+				if (va >= pager_sva && va < pager_eva)
+					continue;
+			}
+
 			pte = (int *) pmap_pte(pv->pv_pmap, va);
 			/*
 			 * Flush VAC to ensure we get correct state of HW bits
