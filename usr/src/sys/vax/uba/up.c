@@ -1,4 +1,4 @@
-/*	%H%	3.14	%G%	*/
+/*	%H%	3.15	%G%	*/
 
 #define	spl5	spl6		/* block clock, for delay loop's sake */
 /*
@@ -212,6 +212,8 @@ struct	buf	rupbuf;			/* Buffer for raw i/o */
 #define	MOL	010000		/* Drive is online, heads loaded, etc */
 #define	DRY	0200		/* Drive ready */
 
+/* Bits of upcs2 */
+#define	CLR	040		/* Controller clear */
 /* Bits of uper1 */
 #define	DCK	0100000		/* Ecc error occurred */
 #define	ECH	0100		/* Ecc error was unrecoverable */
@@ -243,6 +245,10 @@ int	csdel2 = 0;		/* ??? Delay in upstart ??? */
 int	nwaitcs2;		/* How many sdelay loops ? */
 int	neasycs2;		/* How many sdelay loops not needed ? */
 
+int	up_wticks;		/* Ticks waiting for interrupt */
+int	upwstart;		/* Have started guardian */
+int	upwatch();
+
 #ifdef INTRLVE
 daddr_t dkblock();
 #endif
@@ -262,6 +268,10 @@ register struct buf *bp;
 	register unit, xunit;
 	long sz, bn;
 
+	if (upwstart == 0) {
+		timeout((caddr_t)upwatch, 0, HZ);
+		upwstart++;
+	}
 	xunit = minor(bp->b_dev) & 077;
 	sz = bp->b_bcount;
 	sz = (sz+511) >> 9;		/* transfer size in 512 byte sectors */
@@ -546,6 +556,7 @@ upintr()
 	int needie = 1;
 
 	(void) spl6();
+	up_wticks = 0;
 	if (uptab.b_active) {
 		/*
 		 * The drive is transferring, thus the hardware
@@ -805,9 +816,39 @@ upreset()
 		printf("<%d>", (up_ubinfo>>28)&0xf);
 		ubafree(up_ubinfo), up_ubinfo = 0;
 	}
+	UPADDR->upcs2 = CLR;		/* clear controller */
+	DELAY(idelay);
 	for (unit = 0; unit < NUP; unit++) {
 		uputab[unit].b_active = 0;
 		(void) upustart(unit);
 	}
 	(void) upstart();
+}
+
+/*
+ * Wake up every second and if an interrupt is pending
+ * but nothing has happened increment a counter.
+ * If nothing happens for 20 seconds, reset the controller
+ * and begin anew.
+ */
+upwatch()
+{
+	int i;
+
+	timeout((caddr_t)upwatch, 0, HZ);
+	if (uptab.b_active == 0) {
+		for (i = 0; i < NUP; i++)
+			if (uputab[i].b_active)
+				goto active;
+		up_wticks = 0;		/* idling */
+		return;
+	}
+active:
+	up_wticks++;
+	if (up_wticks >= 20) {
+		up_wticks = 0;
+		printf("LOST INTERRUPT RESET");
+		upreset();
+		printf("\n");
+	}
 }
