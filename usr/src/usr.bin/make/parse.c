@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parse.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)parse.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -159,7 +159,7 @@ static struct {
 } parseKeywords[] = {
 { ".BEGIN", 	  Begin,    	0 },
 { ".DEFAULT",	  Default,  	0 },
-{ ".DONTCARE",	  Attribute,   	OP_DONTCARE },
+{ ".OPTIONAL",	  Attribute,   	OP_OPTIONAL },
 { ".END",   	  End,	    	0 },
 { ".EXEC",	  Attribute,   	OP_EXEC },
 { ".IGNORE",	  Ignore,   	OP_IGNORE },
