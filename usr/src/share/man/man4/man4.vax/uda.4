@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)uda.4	6.3 (Berkeley) %G%
+.\"	@(#)uda.4	6.4 (Berkeley) %G%
 .\"
 .TH UDA 4 ""
 .UC 4
@@ -11,7 +11,9 @@ uda \- UDA50 disk controller interface
 .SH SYNOPSIS
 .B "controller uda0 at uba0 csr 0172150 vector udaintr"
 .br
-.b "disk ra0 at uda0 drive 0"
+.B "disk ra0 at uda0 drive 0"
+.br
+.B "options MSCP_PARANOIA"
 .SH DESCRIPTION
 This is a driver for the DEC UDA50 disk controller and other
 compatible controllers.  The UDA50 communicates with the host through
@@ -39,10 +41,17 @@ In raw I/O counts should be a multiple of 512 bytes (a disk sector).
 Likewise
 .I seek
 calls should specify a multiple of 512 bytes.
+.PP
+The
+.B MSCP_PARANOIA
+option enables runtime checking on all transfer completion responses
+from the controller.  This increases disk I/O overhead and may
+be undesirable on slow machines, but is otherwise recommended.
 .SH "DISK SUPPORT"
 This driver configures the type of each drive when it is first
-encountered.  A partition table in the driver is required for each type
-of disk.  The origin and size (in sectors) of the pseudo-disks on each
+encountered.  A default partition table in the driver is used for each type
+of disk when a pack is not labelled.  The origin and size
+(in sectors) of the default pseudo-disks on each
 drive are shown below.  Not all partitions begin on cylinder
 boundaries, as on other drives, because previous drivers used one
 partition table for all drive types.  Variants of the partition tables
@@ -63,6 +72,17 @@ RA60 partitions
 	ra?f	49324	350852
 	ra?g	242606	157570
 	ra?h	49324	193282
+.PP
+RA70 partitions
+	disk	start	length
+	ra?a	0	15884
+	ra?b	15972	33440
+	ra?c	0	547041
+	ra?d	34122	15884
+	ra?e	357192	55936
+	ra?f	413457	133584
+	ra?g	341220	205821
+	ra?h	49731	29136
 .PP
 RA80 partitions
 	disk	start	length
@@ -95,6 +115,17 @@ RA81 partitions with 4.2BSD-compatible partitions
 	ra?f	412490	478582	same as 4.2BSD ra?f
 	ra?g	375564	515508
 	ra?h	83538	291346
+.PP
+RA82 partitions
+	disk	start	length
+	ra?a	0	15884
+	ra?b	16245	66880
+	ra?c	0	1135554
+	ra?d	375345	15884
+	ra?e	391590	307200
+	ra?f	669390	466164
+	ra?g	375345	760209
+	ra?h	83790	291346
 .DT
 .fi
 .PP
@@ -133,11 +164,15 @@ uda%d: cannot handle unit number %d (max is %d)
 The controller found a drive whose unit number is too large.
 Valid unit numbers are those in the range [0..7].
 .TP
-uda%d: unit %d (media ID `%s') is of unknown type %d; ignored
-The controller found a drive whose type is not known, and thus has
-no partitioning.  The drive has been ignored.  You can add the type
-to the udatypes[] table, now that you know what it is:  The media
-ID will be something like `DU RA25'.
+ra%d: don't have a partition table for %s; using (s,t,c)=(%d,%d,%d)
+The controller found a drive whose media identifier (e.g. `RA 25')
+does not have a default partition table.  A temporary partition
+table containing only an `a' partition has been created covering
+the entire disk, which has the indicated numbers of sectors per
+track (s), tracks per cylinder (t), and total cylinders (c).
+Give the pack a label with the
+.I disklabel
+utility.
 .TP
 uda%d: uballoc map failed
 Unibus resource map allocation failed during initialisation.  This
@@ -174,9 +209,14 @@ panic: udastart
 A drive was found marked for status or on-line functions while performing
 status or on-line functions.  This indicates a bug in the driver.
 .TP
-uda%d: controller error, sa=%b
-The controller reported an error.  The driver will reset it and retry
-pending I/O.
+uda%d: controller error, sa=0%o (%s)
+The controller reported an error.  The error code is printed in
+octal, along with a short description if the code is known (see the
+.IR "UDA50 Maintenance Guide" ,
+DEC part number AA-M185B-TC, pp. 18-22).
+If this occurs during normal
+operation, the driver will reset it and retry pending I/O.  If
+it occurs during configuration, the controller may be ignored.
 .TP
 uda%d: stray intr
 The controller interrupted when it should have stayed quiet.  The
@@ -219,33 +259,22 @@ uda%d: ra%d: unknown type %d
 The type index of the named drive is not known to the driver, so the
 drive will be ignored.
 .TP
-ra%d: changed types! was %s
+ra%d: changed types! was %d now %d
 A drive somehow changed from one kind to another, e.g., from an RA80
-to an RA60.  The driver believes the new type.
+to an RA60.  The numbers printed are the encoded media identifiers (see
+.RI < vax/mscp.h >
+for the encoding).
+The driver believes the new type.
 .TP
-ra%d: %s, size = %d sectors
-The named drive is of the given type, and has that many sectors of
-user-file area.  This is printed during configuration.
+ra%d: uda%d, unit %d, size = %d sectors
+The named drive is on the indicated controller as the given unit,
+and has that many sectors of user-file area.  This is printed
+during configuration.
 .TP
 .RI "uda%d: attempt to get status for ra%d failed: " detail
 A status request failed.  The
 .I detail
 message should tell why.
-.TP
-ra%d: unit %d, nspt %d, group %d, ntpc %d, rctsize %d,
-.br
-.ti -5
-nrpt %d, nrct %d
-.br
-Information about the geometry of the named drive.  This is not
-used by the driver, but can one setting up
-.I disktab
-entries, e.g.  Note that the sectors per track, group, and tracks per
-cylinder values are those after bad blocking is accounted for, and will
-differ slightly from the actual hardware setup.  This message also
-reports the MSCP unit number for the drive.  Errors tend to include
-only the MSCP unit number, rather than the drive number, since that
-is all the driver can tell at the time.
 .TP
 ra%d: bad block report: %d
 The drive has reported the given block as bad.  If there are multiple
@@ -357,7 +386,13 @@ has been clever, or your hardware has gone to Australia for vacation
 unit %d: %s %d
 Also a disk error, but an `SDI' error, whatever that is.  (I doubt
 it has anything to do with Ronald Reagan.)  This lists the block
-type (`lbn' or `rbn') and number.
+type (`lbn' or `rbn') and number.  This is followed by a second
+message indicating a microprocessor error code and a front panel
+code.  These latter codes are drive-specific, and are intended to
+be used by field service as an aid in locating failing hardware.
+The codes for RA81s can be found in the
+.IR "RA81 Maintenance Guide" ,
+DEC order number AA-M879A-TC, in appendices E and F.
 .TP
 unit %d: small disk error, cyl %d
 Yet another kind of disk error, but for small disks.  (`That's what
