@@ -44,6 +44,7 @@ struct	buf	chtbuf[NHT];
 short	httypes[] =
 	{ MBDT_TM03, MBDT_TE16, MBDT_TU45, MBDT_TU77, 0 };
 struct	mba_device *htinfo[NHT];
+struct	mba_slave *tuinfo[NTU];
 int	htattach(), htslave(), htustart(), htndtint(), htdtint();
 struct	mba_driver htdriver =
     { htattach, htslave, htustart, 0, htdtint, htndtint,
@@ -106,6 +107,7 @@ htslave(mi, ms, sn)
 	if (htaddr->htdt & HTDT_SPR) {
 		sc->sc_mi = mi;
 		sc->sc_slave = sn;
+		tuinfo[ms->ms_unit] = ms;
 		tutoht[ms->ms_unit] = mi->mi_unit;
 		return (1);
 	} else
@@ -124,8 +126,8 @@ htopen(dev, flag)
 	int olddens, dens;
 
 	tuunit = TUUNIT(dev);
-	if (tuunit >= NTU || (mi = htinfo[HTUNIT(dev)]) == 0 ||
-	    mi->mi_alive == 0)
+	if (tuunit >= NTU || tuinfo[tuunit]->ms_alive == 0 || 
+	    (mi = htinfo[HTUNIT(dev)]) == 0 || mi->mi_alive == 0)
 		return (ENXIO);
 	if ((sc = &tu_softc[tuunit])->sc_openf)
 		return (EBUSY);
