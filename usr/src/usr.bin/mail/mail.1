@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)mail.1	5.1 (Berkeley) %G%
+.\"	@(#)mail.1	6.1 (Berkeley) %G%
 .\"
-.TH MAIL 1 "1 April 1983"
+.TH MAIL 1 ""
 .UC 4
 .SH NAME
 mail \- send and receive mail
@@ -264,8 +264,10 @@ Like
 .B print
 but also prints out ignored header fields. See also
 .B print
+,
+.B ignore
 and
-.B ignore.
+.B retain.
 .TP
 .B Reply
 (\fRR\fR)
@@ -381,6 +383,11 @@ Does not override the
 command.
 .TP
 .B ignore
+.B N.B.:
+.I Ignore
+has been superseded by
+.I retain.
+.br
 Add the list of header fields named to the
 .IR "ignored list" .
 Header fields in the ignore list are not printed
@@ -453,6 +460,22 @@ The default message must not be deleted.
 A synonym for
 .BR reply .
 .TP
+.B retain
+Add the list of header fields named to the
+.IR "retained list" .
+Only the header fields in the retain list
+are shown on your terminal when you print a message.
+All other header fields are suppressed.
+The
+.B Type
+and
+.B Print
+commands can be used to print a message in its entirety.
+If
+.B retain
+is executed with no arguments, it lists the current set of
+retained fields.
+.TP
 .B save
 (\fBs\fR) Takes a message list and a filename and appends each message in
 turn to the end of the file.  The filename in quotes, followed by the line
@@ -462,7 +485,7 @@ count and character count is echoed on the user's terminal.
 (\fBse\fR) With no arguments, prints all variable values.  Otherwise, sets
 option.  Arguments are of the form
 ``option=value''
-or
+(no space before or after =) or
 ``option.''
 .TP
 .B shell
