@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)strfile.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)strfile.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	<sys/param.h>
@@ -139,12 +139,12 @@ char	**av;
 	dc = Delimch;
 	if ((inf = fopen(Infile, "r")) == NULL) {
 		perror(Infile);
-		exit(-1);
+		exit(1);
 	}
 
 	if ((outf = fopen(Outfile, "w")) == NULL) {
 		perror(Outfile);
-		exit(-1);
+		exit(1);
 	}
 	if (!STORING_PTRS)
 		(void) fseek(outf, sizeof Tbl, 0);
