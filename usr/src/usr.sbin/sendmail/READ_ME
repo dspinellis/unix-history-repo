@@ -1,5 +1,5 @@
 
-		        SENDMAIL DISTRIBUTION
+			S E N D M A I L
 
 Presumably by the time you get to this READ_ME file, you will have
 already read the tape in, or will have received this distribution as
@@ -35,6 +35,18 @@ A brief tour:
 	test	  Some files used for testing -- mostly these are
 		  shell files intended as the targets for aliasing.
 
+The following are the known major problems and their Problem Report
+number:
+
+012, 043	Names of files and programs cannot have upper case letters
+		in them -- these get mapped to lower case due to the
+		case mapping feature.
+178		Because of the different syntaxes used in envelopes versus
+		headers, we will occasionally allow syntactically incorrect
+		headers go out.
+226		Quote interpretation may be incorrect -- this is not well
+		defined in the protocols.
+
 Due to my present circumstances, I am unable to provide a formal
 level of support for this system.  However, I will make whatever
 attempt I can to answer a reasonable number of questions.  Since
@@ -49,4 +61,4 @@ that I am unable to accept phone calls.  I can be contacted as:
 Eric Allman
 Britton-Lee, Inc.
 
-@(#)READ_ME	3.1		%G%
+@(#)READ_ME	3.2		%G%
