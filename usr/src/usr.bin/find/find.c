@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)find.c	4.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)find.c	4.26 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -30,6 +30,7 @@ FTS *tree;			/* pointer to top of FTS hierarchy */
 time_t now;			/* time find was run */
 dev_t curdev = (dev_t)-1;	/* device number of current tree */
 int ftsoptions;			/* options passed to ftsopen() */
+int deprecated;			/* old or new syntax */
 int depth;			/* set by -depth option */
 int output_specified;		/* one of -print, -ok or -exec was specified */
 int xdev;			/* set by -xdev option */
@@ -39,18 +40,32 @@ main(argc, argv)
 	char **argv;
 {
 	PLAN *plan;
-	char **paths, **find_getpaths();
+	char **p, **paths;
 	PLAN *find_formplan();
 	time_t time();
     
-	(void)time(&now);	/* initialize the time-of-day */
+	(void)time(&now);			/* initialize the time-of-day */
 
 	if (argc < 2)
 		usage();
-    
+
+	paths = argv;
 	ftsoptions = FTS_MULTIPLE|FTS_NOSTAT|FTS_PHYSICAL;
 
-	paths = find_getpaths(&argv);		/* places to start search */
+	/*
+	 * if arguments start with an option, it's new syntax; otherwise,
+	 * if has a "-option" anywhere it must be old syntax.
+	 */
+	if (argv[1][0] != '-')
+		for (p = argv + 1; *p; ++p)
+			if (**p == '-') {
+				deprecated = 1;
+				oldsyntax(&argv);
+				break;
+			}
+	if (!deprecated)
+		newsyntax(argc, &argv);
+    
 	plan = find_formplan(argv);		/* execution plan */
 	find_execute(plan, paths);
 }
@@ -65,7 +80,6 @@ find_formplan(argv)
 	char **argv;
 {
 	PLAN *plan, *tail, *new;
-	int i;
 	PLAN *c_print(), *find_create(), *find_squish_not(), *find_squish_or();
 	PLAN *find_squish_paren();
 
@@ -192,7 +206,7 @@ find_execute(plan, paths)
 
 		/* always keep curdev up to date, -fstype uses it. */
 		if (xdev && curdev != entry->statb.st_dev &&
-		    ftsset(tree, entry, FTS_SKIP)) {
+		    curdev != -1 && ftsset(tree, entry, FTS_SKIP)) {
 			(void)fprintf(stderr, "find: %s: %s.\n",
 			    entry->path, strerror(errno));
 			exit(1);

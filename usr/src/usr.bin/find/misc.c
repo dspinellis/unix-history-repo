@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)misc.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)misc.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -18,44 +18,8 @@ static char sccsid[] = "@(#)misc.c	5.1 (Berkeley) %G%";
 #include "find.h"
  
 /*
- * find_getpaths --
- *	remove the path strings from the command line and returns them in
- *	another array.  The find syntax assumes all command arguments up
- *	to the first one beginning with a '-', '(' or '!' are pathnames.
- */
-char **
-find_getpaths(argvp)
-	char ***argvp;
-{
-	register char **argv;
-	char **start;
-
-	/*
-	 * find first '-', '(' or '!' to delimit paths; if no paths, it's
-	 * an error.  Shift the array back one at the same time, creating
-	 * a separate array of pathnames.
-	 */
-	for (argv = *argvp + 1;; ++argv) {
-		argv[-1] = argv[0];
-		if (!*argv || **argv == '-' || **argv == '!' || **argv == '(')
-			break;
-	}
-
-	if (argv == *argvp + 1)
-		usage();
-
-	argv[-1] = NULL;
-
-	start = *argvp;			/* save beginning of path array */
-	*argvp = argv;			/* move argv value */
-	return(start);			/* return path array */
-}
-    
-/*
  * find_subst --
  *	Replace occurrences of {} in s1 with s2 and return the result string.
- *	Find_subst always returns a newly allocated string which should be
- *	freed by the caller.
  */
 find_subst(orig, store, path, len)
 	char *orig, **store, *path;
@@ -63,7 +27,7 @@ find_subst(orig, store, path, len)
 {
 	register int plen;
 	register char ch, *p;
-	char *realloc();
+	char *realloc(), *strerror();
 
 	plen = strlen(path);
 	for (p = *store; ch = *orig; ++orig)
@@ -120,7 +84,7 @@ char *
 emalloc(len)
 	u_int len;
 {
-	char *p, *malloc();
+	char *p, *malloc(), *strerror();
 
 	if (!(p = malloc(len))) {
 		(void)fprintf(stderr, "find: %s.\n", strerror(errno));
@@ -131,6 +95,12 @@ emalloc(len)
 
 usage()
 {
-	(void)fprintf(stderr, "usage: find path-list expression\n");
+	extern int deprecated;
+
+	if (deprecated)
+		(void)fprintf(stderr, "usage: find path-list expression\n");
+	else
+		(void)fprintf(stderr,
+		    "usage: find [-dsx] -f path ... expression\n");
 	exit(1);
 }

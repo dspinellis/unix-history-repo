@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)option.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)option.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -26,13 +26,16 @@ typedef struct _option {
 #define	O_ZERO		0x02	/* pass: nothing */
 #define	O_ARGV		0x04	/* pass: argv, increment argv */
 #define	O_ARGVP		0x08	/* pass: *argv, T_OK || T_EXEC */
+#define	O_MASK		0x0f	/* mask of op bits */
+#define	O_OLD		0x10	/* deprecated syntax */
+#define	O_NEW		0x20	/* new syntax */
 	int flags;
 } OPTION;
 
 PLAN	*c_atime(), *c_ctime(), *c_depth(), *c_exec(), *c_follow(),
 	*c_fstype(), *c_group(), *c_inum(), *c_links(), *c_ls(),
 	*c_mtime(), *c_name(), *c_newer(), *c_nogroup(), *c_nouser(),
-	*c_ok(), *c_perm(), *c_print(), *c_prune(), *c_size(), *c_type(),
+	*c_perm(), *c_print(), *c_prune(), *c_size(), *c_type(),
 	*c_user(), *c_xdev(), *c_openparen(), *c_closeparen(), *c_not(),
 	*c_or();
 
@@ -40,31 +43,33 @@ OPTION options[] = {
 	"!",		T_NOT,		c_not,		O_ZERO,
 	"(",		T_OPENPAREN,	c_openparen,	O_ZERO,
 	")",		T_CLOSEPAREN,	c_closeparen,	O_ZERO,
-	"-a",		T_AND,		(PLAN *(*)())-1,O_NONE,
-	"-atime",	T_ATIME,	c_atime,	O_ARGV,
-	"-ctime",	T_CTIME,	c_ctime,	O_ARGV,
-	"-depth",	T_DEPTH,	c_depth,	O_ZERO,
-	"-exec",	T_EXEC,		c_exec,		O_ARGVP,
-	"-follow",	T_FOLLOW,	c_follow,	O_ZERO,
-	"-fstype",	T_FSTYPE,	c_fstype,	O_ARGV,
-	"-group",	T_GROUP,	c_group,	O_ARGV,
-	"-inum",	T_INUM,		c_inum,		O_ARGV,
-	"-links",	T_LINKS,	c_links,	O_ARGV,
-	"-ls",		T_LS,		c_ls,		O_ZERO,
-	"-mtime",	T_MTIME,	c_mtime,	O_ARGV,
-	"-name",	T_NAME,		c_name,		O_ARGV,
-	"-newer",	T_NEWER,	c_newer,	O_ARGV,
-	"-nogroup",	T_NOGROUP,	c_nogroup,	O_ZERO,
-	"-nouser",	T_NOUSER,	c_nouser,	O_ZERO,
-	"-o",		T_OR,		c_or,		O_ZERO,
-	"-ok",		T_OK,		c_exec,		O_ARGVP,
-	"-perm",	T_PERM,		c_perm,		O_ARGV,
-	"-print",	T_PRINT,	c_print,	O_ZERO,
-	"-prune",	T_PRUNE,	c_prune,	O_ZERO,
-	"-size",	T_SIZE,		c_size,		O_ARGV,
-	"-type",	T_TYPE,		c_type,		O_ARGV,
-	"-user",	T_USER,		c_user,		O_ARGV,
-	"-xdev",	T_XDEV,		c_xdev,		O_ZERO,
+	"a",		T_AND,		(PLAN *(*)())-1,O_NONE|O_OLD,
+	"and",		T_AND,		(PLAN *(*)())-1,O_NONE|O_NEW,
+	"atime",	T_ATIME,	c_atime,	O_ARGV,
+	"ctime",	T_CTIME,	c_ctime,	O_ARGV,
+	"depth",	T_DEPTH,	c_depth,	O_ZERO|O_OLD,
+	"exec",		T_EXEC,		c_exec,		O_ARGVP,
+	"follow",	T_FOLLOW,	c_follow,	O_ZERO|O_OLD,
+	"fstype",	T_FSTYPE,	c_fstype,	O_ARGV,
+	"group",	T_GROUP,	c_group,	O_ARGV,
+	"inum",		T_INUM,		c_inum,		O_ARGV,
+	"links",	T_LINKS,	c_links,	O_ARGV,
+	"ls",		T_LS,		c_ls,		O_ZERO,
+	"mtime",	T_MTIME,	c_mtime,	O_ARGV,
+	"name",		T_NAME,		c_name,		O_ARGV,
+	"newer",	T_NEWER,	c_newer,	O_ARGV,
+	"nogroup",	T_NOGROUP,	c_nogroup,	O_ZERO,
+	"nouser",	T_NOUSER,	c_nouser,	O_ZERO,
+	"o",		T_OR,		c_or,		O_ZERO|O_OLD,
+	"ok",		T_OK,		c_exec,		O_ARGVP,
+	"or",		T_OR,		c_or,		O_ZERO|O_NEW,
+	"perm",		T_PERM,		c_perm,		O_ARGV,
+	"print",	T_PRINT,	c_print,	O_ZERO,
+	"prune",	T_PRUNE,	c_prune,	O_ZERO,
+	"size",		T_SIZE,		c_size,		O_ARGV,
+	"type",		T_TYPE,		c_type,		O_ARGV,
+	"user",		T_USER,		c_user,		O_ARGV,
+	"xdev",		T_XDEV,		c_xdev,		O_ZERO|O_OLD,
 	{ NULL },
 };
 
@@ -80,19 +85,24 @@ PLAN *
 find_create(argvp)
 	char ***argvp;
 {
+	extern int deprecated;
 	register OPTION *p;
 	OPTION tmp;
 	PLAN *new;
 	char **argv;
-	OPTION *find_typelookup();
 	int typecompare();
 
 	argv = *argvp;
 	tmp.name = *argv++;
 
+	/* strip off any leading dash */
+	if (*tmp.name == '-')
+		++tmp.name;
+
 	p = (OPTION *)bsearch(&tmp, options, sizeof(options)/sizeof(OPTION),
 	    sizeof(OPTION), typecompare);
-	if (!p) {
+	if (!p || deprecated && p->flags&O_NEW ||
+	    !deprecated && p->flags&O_OLD) {
 		(void)fprintf(stderr, "find: unknown option %s.\n", *--argv);
 		exit(1);
 	}
@@ -102,7 +112,7 @@ find_create(argvp)
 		exit(1);
 	}
 
-	switch(p->flags) {
+	switch(p->flags&O_MASK) {
 	case O_ZERO:
 		new = (p->create)();
 		break;
