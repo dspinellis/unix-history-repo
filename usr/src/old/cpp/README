@@ -1,6 +1,12 @@
 #
-# @(#)README 1.1 %G%
+# @(#)README 1.2 %G%
 #
+August 30, 1982
+Fixed by Kurt Shoens, UCB
+If the "#line n name" occurs, then all future references
+to the current file are generated in terms of "name", instead
+of the name of file given to cpp in its command argument
+
 August 25, 1978
 
 Files in this directory form the C preprocessor, which handles '#include'
