@@ -1,4 +1,4 @@
-#       @(#)Makefile	6.9 (Berkeley) %G%
+#       @(#)Makefile	8.1 (Berkeley) %G%
 
 SUBDIR= mailstats makemap praliases
 VER=	XX
