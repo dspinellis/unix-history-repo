@@ -1,4 +1,4 @@
-/*	kdb_print.c	7.2	86/11/20	*/
+/*	kdb_print.c	7.3	86/11/20	*/
 
 #include "../kdb/defs.h"
 
@@ -45,6 +45,8 @@ printtrace(modif)
 	register ADDR argp, frame;
 	register struct nlist *sp;
 	int stack, ntramp;
+	register struct  proc *p;
+	extern struct proc *allproc;
 
 	if (cntflg==0)
 		cntval = -1;
@@ -77,6 +79,12 @@ printtrace(modif)
 		break;
 
 	case 0: case '?':
+		if (p = (struct proc *)var[varchk('p')])
+			printf("pid = %d\n", p->p_pid);
+		else
+			printf("in idle loop\n");
+		printtrap(var[varchk('t')], var[varchk('c')]);
+		/* fall thru... */
 	case 'r': case 'R':
 		printregs(modif);
 		return;
@@ -167,10 +175,7 @@ printtrace(modif)
 			}
 		break;
 
-	case 'l': {
-		register struct  proc *p;
-		extern struct proc *allproc;
-
+	case 'l':
 		for (p = allproc; p; p = p->p_nxt) {
 			printf("%X pid %5d %c", p, p->p_pid,
 				p->p_stat == SSLEEP ? 'S' :
@@ -184,7 +189,6 @@ printtrace(modif)
 			printc(EOR);
 		}
 		break;
-	}
 
 	default:
 		error(BADMOD);

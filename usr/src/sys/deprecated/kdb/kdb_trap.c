@@ -1,4 +1,4 @@
-/*	kdb_trap.c	7.2	86/11/20	*/
+/*	kdb_trap.c	7.3	86/11/20	*/
 
 /*
  * Trap handler - command loop entry point.
@@ -18,13 +18,20 @@ int	lastcom;
 ADDR	maxoff = MAXOFF;
 long	maxpos = MAXPOS;
 
-kdb(type, sp, curproc)
-	int type, *sp;
+/*
+ * Kdb trap handler; entered on all fatal
+ * and/or debugger related traps or faults.
+ */
+kdb(type, code, curproc)
+	int type, code;
 	struct proc *curproc;
 {
 
+	var[varchk('t')] = type;
+	var[varchk('c')] = code;
+	var[varchk('p')] = (int)curproc;
+	printtrap(type, code);
 	userpc = dot = pcb.pcb_pc;
-	var[varchk('t')] = (int)sp;
 	switch (setexit()) {
 
 	case SINGLE:
