@@ -14,19 +14,20 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-# @(#)Makefile	5.1 (Berkeley) %G%
+# @(#)Makefile	5.1 (Berkeley) 9/20/88
 #
 
-CFLAGS=	-O
+CFLAGS=	-O -DKERBEROS
 LIBC=	/lib/libc.a
-SRCS=	rcp.c
-OBJS=
+SRCS=	rcp.c krcmd.c kcmd.c
+OBJS=	rcp.o krcmd.o kcmd.o
 MAN=	rcp.0
+VPATH=	/usr/src/usr.bin/rlogin/kcmd:
 
 all: rcp
 
-rcp: ${LIBC}
-	${CC} -o $@ ${CFLAGS} $@.c
+rcp: ${LIBC} ${OBJS}
+	${CC} -o $@ ${CFLAGS} ${OBJS} -lkrb -ldes
 
 clean:
 	rm -f ${OBJS} core rcp
