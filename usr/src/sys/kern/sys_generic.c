@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sys_generic.c	7.31 (Berkeley) %G%
+ *	@(#)sys_generic.c	7.32 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -12,8 +12,8 @@
 #include "filedesc.h"
 #include "ioctl.h"
 #include "file.h"
-#include "socketvar.h"
 #include "proc.h"
+#include "socketvar.h"
 #include "uio.h"
 #include "kernel.h"
 #include "stat.h"
@@ -590,17 +590,48 @@ seltrue(dev, flag, p)
 	return (1);
 }
 
-selwakeup(p, coll)
-	register struct proc *p;
-	int coll;
+/*
+ * Record a select request.
+ */
+void
+selrecord(selector, sip)
+	struct proc *selector;
+	struct selinfo *sip;
 {
+	struct proc *p;
+	pid_t mypid;
 
-	if (coll) {
+	mypid = selector->p_pid;
+	if (sip->si_pid == mypid)
+		return;
+	if (sip->si_pid && (p = pfind(sip->si_pid)) &&
+	    p->p_wchan == (caddr_t)&selwait)
+		sip->si_flags |= SI_COLL;
+	else
+		sip->si_pid = mypid;
+}
+
+/*
+ * Do a wakeup when a selectable event occurs.
+ */
+void
+selwakeup(sip)
+	register struct selinfo *sip;
+{
+	register struct proc *p;
+	int s;
+
+	if (sip->si_pid == 0)
+		return;
+	if (sip->si_flags & SI_COLL) {
 		nselcoll++;
+		sip->si_flags &= ~SI_COLL;
 		wakeup((caddr_t)&selwait);
 	}
-	if (p) {
-		int s = splhigh();
+	if ((p = pfind(sip->si_pid)) == 0) {
+		sip->si_pid = 0;
+	} else {
+		s = splhigh();
 		if (p->p_wchan == (caddr_t)&selwait) {
 			if (p->p_stat == SSLEEP)
 				setrun(p);
