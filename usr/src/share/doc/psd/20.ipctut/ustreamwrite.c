@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ustreamwrite.c	6.2 (Berkeley) %G%
+.\"	@(#)ustreamwrite.c	6.3 (Berkeley) %G%
 .\"
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -17,18 +17,18 @@
  * ustreamwrite pathname 
  */
 main(argc, argv)
-	int             argc;
-	char           *argv[];
+	int argc;
+	char *argv[];
 {
-	int             sock;
+	int sock;
 	struct sockaddr_un server;
-	char            buf[1024];
+	char buf[1024];
 
 	/* Create socket */
 	sock = socket(AF_UNIX, SOCK_STREAM, 0);
 	if (sock < 0) {
 		perror("opening stream socket");
-		exit(0);
+		exit(1);
 	}
 	/* Connect socket using name specified by command line. */
 	server.sun_family = AF_UNIX;
@@ -37,7 +37,7 @@ main(argc, argv)
 	if (connect(sock, &server, sizeof(struct sockaddr_un)) < 0) {
 		close(sock);
 		perror("connecting stream socket");
-		exit(0);
+		exit(1);
 	}
 	if (write(sock, DATA, sizeof(DATA)) < 0)
 		perror("writing on stream socket");
