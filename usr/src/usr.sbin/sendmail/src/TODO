@@ -11,6 +11,9 @@
 -- mailq; split it out, by default, just # of messages, also add sort
 	by machine?
 
+-- flag so that if it has to forward mail it returns a note giving the
+	relay address?
+
  ******	Finish properly implementing SMTP:
 	- check correct name in HELO exchange (?)
 
