@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_x25subr.c	7.20 (Berkeley) %G%
+ *	@(#)if_x25subr.c	7.21 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -621,7 +621,7 @@ register struct x25_ifaddr *ia;
 		 * This uses the X25 routing table to do inverse
 		 * lookup of x25 address to sockaddr.
 		 */
-		if (rt = rtalloc1(dst, 0)) {
+		if (rt = rtalloc1(SA(dst), 0)) {
 			sa = rt->rt_gateway;
 			rt->rt_refcnt--;
 		}

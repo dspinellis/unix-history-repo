@@ -10,7 +10,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_llcsubr.c	7.2 (Berkeley) %G%
+ *	@(#)pk_llcsubr.c	7.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -94,6 +94,7 @@
 			       (caddr_t)(a2), \
 			       (a1)->sa_len) == 0)
 #define XIFA(rt) ((struct x25_ifaddr *)((rt)->rt_ifa))
+#define SA(s) ((struct sockaddr *)s)
 
 int
 cons_rtrequest(int cmd, struct rtentry *rt, struct sockaddr *dst)
@@ -251,7 +252,7 @@ npaidb_enter(struct sockaddr_dl *key, struct sockaddr *value,
 
 	USES_AF_LINK_RTS;
 
-	if ((nprt = rtalloc1(key, 0)) == 0) {
+	if ((nprt = rtalloc1(SA(key), 0)) == 0) {
 		register u_int size = sizeof(struct npaidbentry);
 		register u_char saploc = LLSAPLOC(key, rt->rt_ifp);
 
@@ -270,7 +271,8 @@ npaidb_enter(struct sockaddr_dl *key, struct sockaddr *value,
 			value = &npdl_dummy;
 
 		/* now enter it */
-		rtrequest(RTM_ADD, key, value, &npdl_netmask, 0, &nprt);
+		rtrequest(RTM_ADD, SA(key), SA(value),
+			SA(&npdl_netmask), 0, &nprt);
 
 		/* and reset npdl_netmask */
 		for (i = saploc; i < npdl_datasize; i++)
@@ -292,7 +294,7 @@ npaidb_enrich(short type, caddr_t info, struct sockaddr_dl *sdl)
 
 	USES_AF_LINK_RTS;
 
-	if (rt = rtalloc1(sdl, 0)) {
+	if (rt = rtalloc1((struct sockaddr *)sdl, 0)) {
 		rt->rt_refcnt--;
 		switch (type) {
 		case NPAIDB_LINK:

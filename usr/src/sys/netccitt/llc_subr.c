@@ -10,7 +10,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)llc_subr.c	7.2 (Berkeley) %G%
+ *	@(#)llc_subr.c	7.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -206,7 +206,8 @@ llc_setsapinfo(struct ifnet *ifp, u_char af, u_char sap, struct dllconfig *llcon
 	sap_saddr.sdl_alen++;
 
 	/* now enter it */ 
-	rtrequest(RTM_ADD, &sap_saddr, &sap_sgate, 0, 0, &sirt); 
+	rtrequest(RTM_ADD, (struct sockaddr *)&sap_saddr,
+			(struct sockaddr *)&sap_sgate, 0, 0, &sirt); 
 	if (sirt == 0) 	
 		return 0;
 
@@ -254,7 +255,7 @@ llc_getsapinfo(u_char sap, struct ifnet *ifp)
 	si_addr.sdl_data[saploc] = sap;
 	si_addr.sdl_alen++;
 
-	if ((sirt = rtalloc1(&si_addr, 0))) 	
+	if ((sirt = rtalloc1((struct sockaddr *)&si_addr, 0))) 	
 		sirt->rt_refcnt--; 
 	else return(0);
 
