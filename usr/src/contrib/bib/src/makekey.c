@@ -1,6 +1,7 @@
 #ifndef lint
 static char sccsid[] = "@(#)makekey.c	2.2	%G%";
 #endif not lint
+#
 
 # include "stdio.h"
 # include "ctype.h"

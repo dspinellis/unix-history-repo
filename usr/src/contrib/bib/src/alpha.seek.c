@@ -1,6 +1,7 @@
 #ifndef lint
 static char sccsid[] = "@(#)alpha.seek.c	2.2	%G%";
 #endif not lint
+#
 
 # include "stdio.h"
 # include "ctype.h"
@@ -59,7 +60,7 @@ int  fold;
         }
 
     pos(low);
-    if (low=high)   return(0);
+    if (low==high)  return(0);
     else            return(ans==0);
 }
 

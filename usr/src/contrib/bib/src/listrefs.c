@@ -1,117 +1,115 @@
 #ifndef lint
 static char sccsid[] = "@(#)listrefs.c	2.2	%G%";
 #endif not lint
-
 /*
-        list all documents in ref index file
+        Listrefs - list references for bib system
+
+        Authored by: Tim Budd, University of Arizona, 1983.
+                lookup routines written by gary levin 2/82
+
+                version 7/4/83
+
+        Various modifications suggested by:
+                David Cherveny - Duke University Medical Center
+                Phil Garrison - UC Berkeley
+                M. J. Hawley - Yale University
+
+
+
+
                                                         */
 # include <stdio.h>
 # include <ctype.h>
 # include "bib.h"
 # include "streams.h"
-# define MAXLINE 250
+# define MAXLIST 2000  /* maximum number of references that can be listed */
+# define getch(c,fd) (c = getc(fd))
 
 FILE *tfd;
-int  count = 1;
-char refs[REFSIZE], *rp;
+
+FILE *rfd;                      /* reference file position */
+char reffile[] = TMPREFFILE;    /* temporary file (see bib.h) */
+long int refspos[MAXLIST];      /* references temporary file, seek positions */
+long int rend = 1;              /* last used position in reference file */
+int numrefs = -1;               /* number of references */
+char *citestr[MAXLIST];         /* citation strings */
+extern int sort;                /* see if things are to be sorted */
+extern char bibfname[];
+extern int biblineno;
 
 main(argc, argv)
    int argc;
    char **argv;
-{
+{  char defult[120];
+   int  i, rcomp();
+
    tfd = stdout;
-   doargs(argc, argv, "/usr/lib/bmac/bib.list");
+   strcpy(defult, BMACLIB);
+   strcat(defult,"/bib.list");
+   mktemp(reffile);
+   rfd = fopen(reffile,"w+");
+   if (rfd == NULL)
+      error("can't open temporary reference file");
+   putc('x', rfd);      /* put garbage in first position */
+
+   doargs(argc, argv, defult);
+
+   if (sort)
+      qsort(refspos, numrefs+1, sizeof(long), rcomp);
+   makecites(citestr);
+   disambiguate();
+
+   for (i = 0; i <= numrefs; i++)
+      dumpref(i, stdout);
+
    exit(0);
 }
 
 /* rdtext - process a file */
    rdtext(ifile)
    FILE *ifile;
-{
-   long int start, length;
-   int  i, numauths, numeds;
-   char *p, c;
+{  char c, *p, rec[REFSIZE];
+   int i;
 
-   start = length = 0L;
-
+   biblineno = 1;
    for (;;) {
-      start = nextrecord(ifile, start + length);
-      if (start == EOF) break;
-      length = recsize(ifile, start);
+      while (getch(c, ifile) == '\n')
+         biblineno++;   /* skip leading newlines */
+      if (c == EOF)
+         return;
 
-      /* count number of authors */
-      numauths = numeds = 0;
-      p = refs;
-      for (i = length; i > 0; i--)
-         if ((*p++ = getc(ifile)) == '%') {
-            i--;
-            c = *p++ = getc(ifile);
-            if (c == 'A')
-               numauths++;
-            else if (c == 'E')
-               numeds++;
+      p = rec;          /* read a reference */
+      for (;;) {
+         for (*p++ = c; getch(c, ifile) != '\n'; )
+            if (c == EOF)
+               error("ill formed reference file");
+            else
+               *p++ = c;
+         if (getch(c, ifile) == '\n' || c == EOF) {
+            biblineno++;
+            *p++ = '\n';
+            break;
             }
+         if (c == '.' || c == '%')
+            *p++ = '\n';
+         else
+            *p++ = ' ';
+         }
 
       *p = 0;
-      expand(refs);
-      rp = refs;
-      dumpref(stdout, numauths, numeds);
+      expand(rec);
 
-     }
-}
-
-/* get a line from reference file */
-   char refgets(line)
-   char line[];
-{
-   char c, *p;
-
-   if (*rp == 0)
-      return(0);
-   for (p = line;;) {
-      while ((c = *rp++) != '\n')
-         if (c == 0)
-            return(0);
-         else
-            *p++ = c;
-      c = *rp;
-      if (c == 0)
-         break;
-      if (c == '.' || c == '%' || c == '\n')
-         break;
-      *p++ = ' ';
+      if (numrefs++ > MAXLIST)
+         error("too many references");
+      refspos[numrefs] = rend;
+#ifdef READWRITE
+      fixrfd( WRITE );          /* fix access mode of rfd, if nec. */
+#else
+      fseek(rfd, rend, 0);
+#endif
+      i = strlen(rec) + 1;
+      fwrite(rec, 1, i, rfd);
+      rend = rend + i;
       }
-   *p++ = '\n';
-   *p = 0;
-   return(' ');
 }
 
-/* dump reference */
-   dumpref(ofile, maxauths, maxeds)
-   FILE *ofile;
-   int maxauths, maxeds;
-{
-   char line[250], *p;
-   int  numauths, numeds;
-
-   fprintf(tfd, ".[-\n");
-   fprintf(tfd, ".ds [F %d\n", count++);
-   numauths = numeds = 0;
-   while (refgets(line) != 0) {
-      if (line[0] == '\n')
-         break;
-      else if (line[0] == '.')
-         fprintf(ofile, "%s\n", line);
-      else {
-         if (line[0] == '%') {
-            for (p = &line[2]; isspace(*p); p++);
-            if (line[1] == 'A')
-               numauths++;
-            else if (line[1] == 'E')
-               numeds++;
-            doline(line[1], p, numauths, maxauths, numeds, maxeds, ofile);
-            }
-         }
-      }
-   fprintf(tfd, ".][\n");
-}
