@@ -10,7 +10,7 @@
  * File I/O.
  */
 
-static char *SccsId = "@(#)fio.c	1.11 %G%";
+static char *SccsId = "@(#)fio.c	1.12 %G%";
 
 /*
  * Set up the input pointers while copying the mail file into
@@ -328,6 +328,7 @@ edstop()
 			relsesigs();
 			reset(0);
 		}
+		fseek(ibuf, mailsize, 0);
 		while ((c = getc(ibuf)) != EOF)
 			putc(c, obuf);
 		fclose(ibuf);
