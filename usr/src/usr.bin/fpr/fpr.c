@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fpr.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)fpr.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -330,7 +330,7 @@ flush()
       i = length;
       while (i > 0 && text[i-1] == BLANK)
 	i--;
-      length == i;
+      length = i;
       for (i = 0; i < length; i++)
 	putchar(text[i]);
       putchar(EOL);
