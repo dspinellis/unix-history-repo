@@ -1,0 +1,73 @@
+head     1.2;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.2
+date     83.02.10.13.26.04;  author jkf;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     83.02.10.13.08.16;  author jkf;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@copy files
+@
+text
+@#$Header$
+#
+#			-[Thu Feb 10 13:15:17 1983 by jkf]-
+
+# Makefile for VLP
+
+# files required:
+#	vlp.l	- lisp program to read source and add troff control
+#		characters.
+#	vlpmacs - troff macros used by vlp.
+#
+# vlp and vlpmacs are put in DESTDIR
+# If DESTDIR is changed, then the source (vlp.l) must be modified since
+# it explicitly points to vlpmacs.
+
+DESTDIR =
+.DEFAULT:vlp
+
+vlp:	vlp.l
+	/usr/ucb/liszt -qar -o vlp vlp.l
+
+install: vlp vlpmacs
+	install vlp ${DESTDIR}/usr/ucb
+	install -c -m 664 vlpmacs ${DESTDIR}/usr/lib
+	install -c -m 775 ilprint.sh ${DESTDIR}/usr/ucb/ilprint
+	install -c -m 775 vlprint.sh ${DESTDIR}/usr/ucb/vlprint
+
+clean:
+	rm -f vlp
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d3 1
+a3 1
+#			-[Thu Feb 10 13:08:10 1983 by jkf]-
+d24 3
+a26 3
+	install -m 664 vlpmacs ${DESTDIR}/usr/lib
+	install -m 775 ilprint.sh ${DESTDIR}/usr/ucb/ilprint
+	install -m 775 vlprint.sh ${DESTDIR}/usr/ucb/vlprint
+@
