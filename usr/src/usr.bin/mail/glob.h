@@ -1,4 +1,4 @@
-/*	glob.h	2.10	83/08/11	*/
+/*	glob.h	2.11	85/04/18	*/
 
 /*
  * A bunch of global variable declarations lie herein.
@@ -52,6 +52,8 @@ struct	message	*message;		/* The actual message structure */
 struct	var	*variables[HSHSIZE];	/* Pointer to active var list */
 struct	grouphead	*groups[HSHSIZE];/* Pointer to active groups */
 struct	ignore		*ignore[HSHSIZE];/* Pointer to ignored fields */
+struct	ignore		*retain[HSHSIZE];/* Pointer to retained fields */
+int	nretained;			/* Number of retained fields */
 char	**altnames;			/* List of alternate names for user */
 char	**localnames;			/* List of aliases for our local host */
 int	debug;				/* Debug flag set */

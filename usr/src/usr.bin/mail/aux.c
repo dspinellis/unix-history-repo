@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)aux.c	2.11 (Berkeley) %G%";
+static char *sccsid = "@(#)aux.c	2.12 (Berkeley) %G%";
 #endif
 
 #include "rcv.h"
@@ -384,7 +384,7 @@ struct sstack {
 	FILE	*s_file;		/* File we were in. */
 	int	s_cond;			/* Saved state of conditionals */
 	int	s_loading;		/* Loading .mailrc, etc. */
-} sstack[_NFILE];
+} sstack[NOFILE];
 
 /*
  * Pushdown current input file and switch to a new one.
@@ -404,7 +404,7 @@ source(name)
 		perror(cp);
 		return(1);
 	}
-	if (ssp >= _NFILE-2) {
+	if (ssp >= NOFILE - 2) {
 		printf("Too much \"sourcing\" going on.\n");
 		fclose(fi);
 		return(1);
@@ -503,7 +503,7 @@ blankline(linebuf)
 	register char *cp;
 
 	for (cp = linebuf; *cp; cp++)
-		if (!any(*cp, " \t"))
+		if (*cp != ' ' && *cp != '\t')
 			return(0);
 	return(1);
 }
@@ -543,6 +543,7 @@ skin(name)
 	register char *cp, *cp2;
 	int gotlt, lastsp;
 	char nbuf[BUFSIZ];
+	int nesting;
 
 	if (name == NOSTR)
 		return(NOSTR);
@@ -554,10 +555,21 @@ skin(name)
 	for (cp = name, cp2 = nbuf; c = *cp++; ) {
 		switch (c) {
 		case '(':
-			while (*cp != ')' && *cp != 0)
-				cp++;
-			if (*cp)
-				cp++;
+			nesting = 1;
+			while (*cp != '\0') {
+				switch (*cp++) {
+				case '(':
+					nesting++;
+					break;
+
+				case ')':
+					--nesting;
+					break;
+				}
+
+				if (nesting <= 0)
+					break;
+			}
 			lastsp = 0;
 			break;
 
@@ -767,13 +779,28 @@ isign(field)
 	char *field;
 {
 	char realfld[BUFSIZ];
-	register int h;
+
+	/*
+	 * Lower-case the string, so that "Status" and "status"
+	 * will hash to the same place.
+	 */
+	istrcpy(realfld, field);
+
+	if (nretained > 0)
+		return (!member(realfld, retain));
+	else
+		return (member(realfld, ignore));
+}
+
+member(realfield, table)
+	register char *realfield;
+	register struct ignore **table;
+{
 	register struct ignore *igp;
 
-	istrcpy(realfld, field);
-	h = hash(realfld);
-	for (igp = ignore[h]; igp != 0; igp = igp->i_link)
-		if (strcmp(igp->i_field, realfld) == 0)
-			return(1);
-	return(0);
+	for (igp = table[hash(realfield)]; igp != 0; igp = igp->i_link)
+		if (equal(igp->i_field, realfield))
+			return (1);
+
+	return (0);
 }
