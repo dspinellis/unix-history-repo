@@ -13,31 +13,49 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)strings.1	6.5 (Berkeley) %G%
+.\"	@(#)strings.1	6.6 (Berkeley) %G%
 .\"
 .TH STRINGS 1 ""
 .UC
 .SH NAME
 strings \- find the printable strings in a file
 .SH SYNOPSIS
-.B strings
-[
-.B \-ao
-] [
-\fB\-\fInumber\fR
-] [ file ... ]
+.ft B
+strings [ \-ao ] [ \-n number ] [ file ... ]
+.ft R
 .SH DESCRIPTION
-\fIStrings\fP looks for ascii strings in each of the specified files,
-or from the standard input.  A string is any sequence of 4 or more printing
-characters.  Unless the \fB-a\fP flag is given, \fIstrings\fP only looks
-in the initialized data space of object files.  If the \fB-o\fP flag is
-given, then each string is preceded by its decimal offset in the file.
-If the \fB-\fInumber\fR flag is given, then \fInumber\fP is used as the
-minimum string length rather than 4.
+.I String
+displays the sequences of printable characters in each of the specified
+files, or in the standard input, by default.
+By default, a sequence must be at least four characters in length
+before being displayed.
 .PP
-\fIStrings\fP is useful for identifying random object files and
-many other things.
+The options are as follows:
+.TP
+\-a
+By default,
+.I strings
+only searches the initialized data space of object files.
+The
+.I \-a
+option causes
+.I strings
+to search the entire object file.
+.TP
+\-n
+Specifies the minimum number of characters in a sequence to be
+.IR number ,
+instead of four.
+.TP
+\-o
+The
+.I \-o
+option causes each string to be preceded by its decimal offset in the
+file.
+.PP
+.I Strings
+is useful for identifying random binaries, among other things.
 .SH "SEE ALSO"
-od(1)
+hexdump(1)
 .SH BUGS
 The algorithm for identifying strings is extremely primitive.
