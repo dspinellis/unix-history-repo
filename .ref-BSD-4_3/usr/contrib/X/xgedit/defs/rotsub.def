@@ -1,6 +1,0 @@
-d main
-m 0 0 c tl B
-m 0 0 c cr A
-m 0 32 l 8 24
-m 0 32 l 0 0
-e

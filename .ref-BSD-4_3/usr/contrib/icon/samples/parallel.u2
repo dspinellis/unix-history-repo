@@ -1,7 +1,0 @@
-impl	local
-global	5
-	0,000005,main,0
-	1,000005,star,1
-	2,000005,octal,0
-	3,000005,Parallel,1
-	4,000005,Call,1

@@ -1,4 +1,0 @@
-cc -s -i -O -o xed xed.c reset.s
-cc -s -n -o aplcvt aplcvt.c;: do NOT use the optimizer
-cc -s -O -o cata cata.c
-make rebuild -f makefile.pdp

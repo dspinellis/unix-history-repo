@@ -1,8 +1,0 @@
-whatis p.a
-stop at 10
-run
-print arrays.a
-step
-print a[3], a[4], a[5]
-step
-print arrays.a

@@ -1,5 +1,0 @@
-# List of acceptable shells for chsh/passwd -s
-# Ftpd will not allow users to connect who do not have one of these shells
-#
-/bin/sh
-/bin/csh

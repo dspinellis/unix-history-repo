@@ -1,6 +1,0 @@
-procedure pause(i)
-   local j
-   j := &time
-   while (&time - j) < i
-   return
-end

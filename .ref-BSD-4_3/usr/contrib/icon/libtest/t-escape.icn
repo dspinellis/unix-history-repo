@@ -1,5 +1,0 @@
-link "../ilib/escape"
-
-procedure main()
-   while write(escape(read()))
-end

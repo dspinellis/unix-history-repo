@@ -1,4 +1,0 @@
-../ibin/delam 10+5:1-10:1-10:80 - f1 f2 f3 f4 <t-delam.dat
-ls -s f[0-9]
-cat f[0-9]
-rm -f f[0-9]

@@ -1,15 +1,0 @@
-0 3 * * * cp /etc/passwd /usr/adm/account.backup
-30 4 * * * /etc/sa -s > /dev/null
-0 4 * * * calendar -
-30 4 * * * /usr/lib/uucp/cleanlog
-15 4 * * * find /usr/preserve -mtime +7 -a -exec rm -f {} \;
-20 4 * * * find /usr/msgs -mtime +21 -a ! -perm 444 -a ! -name bounds -a -exec rm -f {} \;
-40 4 * * * find / -name '#*' -atime +3 -exec rm -f {} \;
-0 5 * * * su daemon < /usr/lib/uucp/poll > /dev/console 2>&1
-0 0,12,18 * * * su daemon < /usr/local/lib/uucp.6hours > /dev/console 2>&1
-0 3,9,15,21 * * * echo /usr/local/lib/uucp.2hr | su daemon > /dev/console 2>&1
-0,15,30,45 * * * * /usr/lib/atrun
-0,10,20,30,40,50 * * * * /etc/dmesg - >>/usr/adm/messages
-1,11,21,31,41,51 * * * * (echo -n '	'; date; echo ) >/dev/console
-5 4 * * * sh /usr/adm/newsyslog
-0 0 * * * /usr/local/lib/news/expire

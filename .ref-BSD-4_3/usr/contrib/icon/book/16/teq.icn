@@ -1,8 +1,0 @@
-procedure teq(a1,a2)
-   local i
-   if *a1 ~= *a2 then fail	# check sizes
-   if a1[1] ~== a2[1] then fail	# check values
-   every i := 2 to *a1 do	# check subtrees
-      if not teq(a1[i],a2[i]) then fail
-   return a2
-end

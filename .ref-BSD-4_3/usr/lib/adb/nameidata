@@ -1,4 +1,0 @@
-./"ni_dirp"16t"nameiop"8t"ni_err"8t"ni_pdir"16t"ni_bp"nXxdXX
-+/"ni_base"16t"ni_count"8t"ni_iovec"8t"ni_iovcnt"nXDXD
-+/"ni_offset"8t"ni_segflg"8t"ni_resid"nDXD
-+/"ni_dent.d_inum"8t"reclen"8t"namlen"8t"name"nDdd14C242+

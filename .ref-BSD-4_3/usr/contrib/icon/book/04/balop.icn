@@ -1,6 +1,0 @@
-procedure main()
-   while line := read() do {
-      write(line)
-      write(repl(" ",bal('+-*/',,,line) - 1),"|")
-      }
-end

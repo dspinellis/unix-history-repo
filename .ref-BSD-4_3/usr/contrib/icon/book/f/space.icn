@@ -1,6 +1,0 @@
-procedure space(s)
-   local s1
-   s1 := ""
-   s ? while s1 ||:= move(1) || " "
-   return s1
-end

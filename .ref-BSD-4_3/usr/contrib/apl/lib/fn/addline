@@ -1,5 +1,0 @@
-r { mx addline ln;t
-}(0$t { (1URmx)-R,ln)/ ok 
- mx { mx,((1YRmx),-t)R' '
- t { 0
-ok: r { mx,[I1]ln,tR' '

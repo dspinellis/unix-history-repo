@@ -1,5 +1,0 @@
-procedure main()
-   fseq := create fibseq()
-   every write(|@fseq) \ 20
-   every write(|@fseq) \ 20
-end

@@ -1,8 +1,0 @@
-procedure main()
-   s2 := &cset || "AEIOUaeiou"
-   s3 := repl(" ",*&cset) || "||||||||||"
-   while line := read() do {
-      write(line)
-      write(map(line,s2,s3))
-      }
-end

@@ -1,7 +1,0 @@
-2 === +2 ----> 2
-2.0 === +2.0 ----> 2.0
-3 === *"abc" ----> 3
-'abc' === ('abc' ++ '') ----> 'abc'
-Run-time error 102 at line 13 in std47.icn
-numeric expected
-offending value: "abc"

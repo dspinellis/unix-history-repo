@@ -1,5 +1,0 @@
-impl	local
-global	3
-	0,000005,main,0
-	1,000005,cross,2
-	2,000005,xprint,4

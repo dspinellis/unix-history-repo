@@ -1,6 +1,0 @@
-procedure Seqimage(e)
-   local s1
-   s1 := ""
-   while s1 ||:= ", " || image(@e)
-   return "{" || s1[3:0] || "}" | "{}"
-end

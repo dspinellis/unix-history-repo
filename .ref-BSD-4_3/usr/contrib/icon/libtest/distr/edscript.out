@@ -1,4 +1,0 @@
-g/\/usr\/icon/s//\/usr\/ucon/g
-g/17/s//------/g
-w
-q

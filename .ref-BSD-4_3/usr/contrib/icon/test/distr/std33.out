@@ -1,8 +1,0 @@
-x := [] ----> list(0)
-every push(x,1 to 1000) ----> none
-x ----> list(1000)
-every push(x,1 to 10000) ----> none
-x ----> list(11000)
-Run-time error 101 at line 14 in std33.icn
-integer expected
-offending value: [10000,9999,9998,...,3,2,1]

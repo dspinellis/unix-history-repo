@@ -1,7 +1,0 @@
-adiron Any ACU 1200 out0123456789- ogin-EOT-ogin uucp
-alice Never Slave 300
-anlams Any2300-2359 ACU 1200 out0987543210 ogin-EOT-ogin uucp ssword: foo
-anlams Any0000-0800 ACU 1200 out0987543210 ogin-EOT-ogin uucp ssword: foo
-c70 Never c70 1200 ttyj7
-lbl-uni Any ACU 1200 out9999999 "" \d\dc\d\ds\d\dm\d\df ogin-BREAK-ogin-BREAK-ogin-EOT-ogin uucp ssword bar
-ucbcad Any ACU 1200 ucb9999 quest:-\r\c-quest:-\r\c tek in:-\b-in:-EOT-in:-\b-in:-EOT-in:-\b-in: uucp assword: foobar

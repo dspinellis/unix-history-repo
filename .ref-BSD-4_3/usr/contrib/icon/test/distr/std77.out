@@ -1,8 +1,0 @@
-x := 1 ----> 1
-y := 2 ----> 2
-(x <- y) & &fail ----> none
-x ----> 1
-y ----> 2
-Run-time error 111 at line 14 in std77.icn
-variable expected
-offending value: 1

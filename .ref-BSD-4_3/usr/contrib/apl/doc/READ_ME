@@ -1,7 +1,0 @@
-This directory contains the nroff/troff sources for the APL manual
-and the manual pages for "apl", "xed", and "aplcvt".  The command
-file "mkman" will create a nroffed APL manual; the command file
-"mktman" will create a troffed APL manual.
-
-The APL manual itself uses the "-ms" macro set.  The manual pages
-use the "-man" macro set.

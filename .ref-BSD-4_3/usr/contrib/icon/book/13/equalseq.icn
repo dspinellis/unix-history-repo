@@ -1,7 +1,0 @@
-procedure equalseq(e1,e2)
-   local x
-   while x := @e1 do
-      (x === @e2) | fail	# fail if different
-   if @e2 then fail		# fail if longer
-   else return
-end

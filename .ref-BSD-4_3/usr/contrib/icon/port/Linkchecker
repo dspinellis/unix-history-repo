@@ -1,5 +1,0 @@
-for i in `cat set1.tlist`
-do
-   echo Checking $i
-   diff distr/$i.ux local/$i.ux
-done

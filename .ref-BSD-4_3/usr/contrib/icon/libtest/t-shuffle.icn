@@ -1,9 +1,0 @@
-link "../ilib/shuffle"
-
-procedure main()
-   write(shuffle("abcde"))
-   write(shuffle(&lcase))
-   a := shuffle([1,2,3,4,5])
-   every write(!a)
-   write(shuffle(24.58))
-end

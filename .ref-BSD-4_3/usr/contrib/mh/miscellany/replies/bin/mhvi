@@ -1,2 +1,0 @@
-#!/bin/sh
-exec /usr/ucb/vi "+/^------/+mark a|'a,\$s/^/#/|'a" $@

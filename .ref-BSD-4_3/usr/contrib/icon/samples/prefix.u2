@@ -1,8 +1,0 @@
-impl	local
-global	6
-	0,000005,main,0
-	1,000005,prefix,1
-	2,000005,strip,1
-	3,000005,lassoc,2
-	4,000005,rassoc,2
-	5,000005,form,2

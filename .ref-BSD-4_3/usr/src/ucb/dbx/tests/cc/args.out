@@ -1,9 +1,0 @@
-reading symbolic information ...
-[1] stop in main
-[1] stopped in main at 0x4e
-0000004e  brb	51
-127 
-"vm_sw.o" 
-"vm_swap.o" 
-"vm_swp.o" 
-

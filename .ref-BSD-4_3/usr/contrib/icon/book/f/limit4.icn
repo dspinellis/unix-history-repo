@@ -1,6 +1,0 @@
-procedure limit(p,i)
-   local j
-   j := &pos
-   suspend p() \ i
-   &pos := j
-end

@@ -1,4 +1,0 @@
-The C source for strlen, strcmp, strcpy, strcat, strncmp, strncpy,
-strncat, index, and rindex have been moved to /usr/src/lib/libc/gen.
-The equivalent, machine-dependent, assembly language versions found
-here replace them.

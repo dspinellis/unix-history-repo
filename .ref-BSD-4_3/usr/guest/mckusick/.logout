@@ -1,6 +1,0 @@
-clear
-killsysline
-date
-time
-hashstat
-/usr/games/fortune -a

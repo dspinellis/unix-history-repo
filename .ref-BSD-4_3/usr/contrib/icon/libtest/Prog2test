@@ -1,9 +1,0 @@
-for i in `cat prog2.tlist`
-do
-        rm -f local/$i.out
-        echo Running $i
-	sh t-$i >local/$i.out 2>&1
-        echo Checking $i
-        diff distr/$i.out local/$i.out
-	rm -f $i
-done

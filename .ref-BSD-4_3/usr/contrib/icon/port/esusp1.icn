@@ -1,5 +1,0 @@
-#  This program tests lib/esusp.s.
-
-procedure main()
-   every write( 1 | 2 | "a" | 4)
-end

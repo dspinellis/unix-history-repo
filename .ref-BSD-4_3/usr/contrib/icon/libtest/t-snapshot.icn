@@ -1,9 +1,0 @@
-link "../ilib/snapshot"
-
-procedure main()
-   "((a+b)-delta)/(c*d))" ? (tab(bal('+-/*')) & snapshot())
-   "abcdefgh" ? (tab(0) & snapshot())
-   "abc\tdef\nghi" ? (tab(upto('\n')) & snapshot())
-   every ("abcdefg" | "\g\f\000") ? while move(1) do
-      snapshot()
-end

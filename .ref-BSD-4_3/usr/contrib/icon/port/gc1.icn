@@ -1,5 +1,0 @@
-#  This program tests rt/gollect.s and rt/sweep.c
-
-procedure main()
-   every 1 to 1000 do list(1000)
-end

@@ -1,2 +1,0 @@
-#
-stty erase  kill @ start ^Q stop ^S

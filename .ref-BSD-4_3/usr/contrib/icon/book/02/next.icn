@@ -1,5 +1,0 @@
-procedure main()
-   while line := read() do
-      if match("comment",line) then next
-      else write(line)
-end

@@ -1,9 +1,0 @@
-procedure fibseq()
-   local i, j, k
-   suspend (i := 1) | (j := 1)
-   repeat {
-      suspend k := i + j
-      i := j
-      j := k
-      }
-end

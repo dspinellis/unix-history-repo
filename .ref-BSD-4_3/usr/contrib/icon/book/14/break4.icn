@@ -1,5 +1,0 @@
-procedure main()
-   local i
-   every write(i := fibseq()) do
-      if i > 5000 then break
-end

@@ -1,8 +1,0 @@
-terse yes
-# window start-row start-column number-of-rows number-of-columns buffer-lines
-#	%1
-window 1 0 5 80 48
-#	%2
-window 7 0 5 80 48
-#	%3
-window 13 0 11 80 48

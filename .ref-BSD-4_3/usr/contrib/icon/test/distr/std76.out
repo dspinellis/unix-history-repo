@@ -1,6 +1,0 @@
-1 & 2 & 3 & 4 ----> 4
-(1 & 2 & 3 & x) := 3 ----> 3
-x ----> 3
-Run-time error 111 at line 12 in std76.icn
-variable expected
-offending value: 4

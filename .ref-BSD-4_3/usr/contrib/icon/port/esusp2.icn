@@ -1,9 +1,0 @@
-#  This program tests lib/esusp.s.
-
-procedure main()
-   every write(0 | foo(1) | foo(2) | foo(5 | 6 | 7))
-end
-
-procedure foo(i)
-   if i % 2 = 1 then return i else fail
-end

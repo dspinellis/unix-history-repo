@@ -1,3 +1,0 @@
-procedure form(arg1,op,arg2)
-   return [op,fix(arg1),fix(arg2)]
-end

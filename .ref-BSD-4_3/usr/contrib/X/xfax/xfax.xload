@@ -1,6 +1,0 @@
-*
-../CLUlib/*
-~CLU/bin/mint
-#-sym
-#heap_size:128
-^xfax

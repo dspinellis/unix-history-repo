@@ -1,7 +1,0 @@
-2 ~=== +2 ----> none
-2.0 ~=== +2.0 ----> none
-3 ~=== *"abc" ----> none
-'abc' ~=== ('abc' ++ '') ----> none
-Run-time error 102 at line 13 in std80.icn
-numeric expected
-offending value: "abc"

@@ -1,6 +1,0 @@
-f := open("foo.baz","w") ----> file(foo.baz)
-write(f,"hello world") ----> "hello world"
-close(f) ----> file(foo.baz)
-system("rm -f foo.baz") ----> 0
-sh: syntax error at line 1: `(' unexpected
-system("system()") ----> 2

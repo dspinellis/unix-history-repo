@@ -1,3 +1,0 @@
-procedure main()
-  write(keyin() | "no input waiting")
-end

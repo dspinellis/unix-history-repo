@@ -1,8 +1,0 @@
-c1 := 'abcde' ----> 'abcde'
-c2 := 'aeuoi' ----> 'aeiou'
-c1 ++ c2 ----> 'abcdeiou'
-c1 -- c2 ----> 'bcd'
-c1 ** c2 ----> 'ae'
-Run-time error 104 at line 14 in std81.icn
-cset expected
-offending value: []

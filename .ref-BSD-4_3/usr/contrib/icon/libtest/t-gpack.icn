@@ -1,5 +1,0 @@
-link "../ilib/gpack"
-
-procedure main()
-   write("gpack(2) cannot be tested without a Chromatics CG 3999")
-end

@@ -1,5 +1,0 @@
-procedure allbal(c,s)
-   local i
-   every i := 1 to (*s - 1) do
-      suspend "" ~== s[i:bal(c,,,s,i)]
-end

@@ -1,5 +1,0 @@
-procedure delete(s,c)
-   while i := upto(c,s) do
-      s[i:many(c,s,i)] := ""
-   return s
-end

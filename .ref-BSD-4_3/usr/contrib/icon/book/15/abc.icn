@@ -1,9 +1,0 @@
-procedure main()
-   while writes(line := read()) do
-      if line ? (ABC("") & pos(0)) then write(" accepted")
-      else write(" rejected")
-end
-
-procedure ABC(X)
-   suspend =X | (="a" || ABC("b" || X) || ="c")
-end

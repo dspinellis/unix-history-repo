@@ -1,7 +1,0 @@
-.\" Note that tr84-11.roff must be processed by tbl(1) to
-.\" produce tr84-11b.tbl before this document is formatted.
-.\" This file is not included in the distribution because of
-.\" its large size.
-.so tmac.tr
-.so tr84-11a.roff
-.so tr84-11b.tbl

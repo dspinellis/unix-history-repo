@@ -1,4 +1,0 @@
-for i in basis arith fail pret esusp lsusp psusp suspend display gc
-do
-   Runtest $i
-done

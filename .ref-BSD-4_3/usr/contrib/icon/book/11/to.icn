@@ -1,6 +1,0 @@
-procedure To(i,j)
-   while i <= j do {
-      suspend i
-      i +:= 1
-      }
-end

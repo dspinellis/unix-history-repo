@@ -1,6 +1,0 @@
-[] ||| [] ----> list(0)
-[1,2,3] ||| [] ----> list(3)
-[] ||| [1,2,3] ----> list(3)
-Run-time error 103 at line 12 in std73.icn
-string expected
-offending value: [,,,...,,,]
