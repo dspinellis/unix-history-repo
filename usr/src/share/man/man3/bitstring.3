@@ -5,7 +5,7 @@
 .\" Paul Vixie.
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)bitstring.3	8.1 (Berkeley) %G%
+.\"     @(#)bitstring.3	5.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt BITSTRING 3
@@ -86,11 +86,11 @@ in the bit string
 The
 .Fn bit_test
 macro
-evaluates to zero if the zero-based numbered bit
+evaluates to non-zero if the zero-based numbered bit
 .Fa bit
 of bit string
 .Fa name
-is set, and non-zero otherwise.
+is set, and zero otherwise.
 .Pp
 The
 .Fn bit_ffs
