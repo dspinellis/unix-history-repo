@@ -4,11 +4,12 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)in.c	7.17 (Berkeley) %G%
+ *	@(#)in.c	7.18 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "ioctl.h"
+#include "errno.h"
 #include "mbuf.h"
 #include "socket.h"
 #include "socketvar.h"
@@ -462,6 +463,7 @@ in_ifinit(ifp, ia, sin, scrub)
 	register u_long i = ntohl(sin->sin_addr.s_addr);
 	struct sockaddr_in oldaddr;
 	int s = splimp(), error, flags = RTF_UP;
+	int ether_output(), arp_rtrequest();
 
 	oldaddr = ia->ia_addr;
 	ia->ia_addr = *sin;
@@ -474,6 +476,10 @@ in_ifinit(ifp, ia, sin, scrub)
 		splx(s);
 		ia->ia_addr = oldaddr;
 		return (error);
+	}
+	if (ifp->if_output == ether_output) { /* XXX: Another Kludge */
+		ia->ia_ifa.ifa_rtrequest = arp_rtrequest;
+		ia->ia_ifa.ifa_flags |= RTF_CLONING;
 	}
 	splx(s);
 	if (scrub) {
