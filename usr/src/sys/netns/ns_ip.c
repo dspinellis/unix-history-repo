@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns_ip.c	6.4 (Berkeley) %G%
+ *	@(#)ns_ip.c	6.5 (Berkeley) %G%
  */
 
 /*
@@ -15,6 +15,7 @@
 #include "systm.h"
 #include "mbuf.h"
 #include "socket.h"
+#include "socketvar.h"
 #include "errno.h"
 #include "ioctl.h"
 
@@ -56,7 +57,6 @@ nsipattach()
 {
 	register struct mbuf *m = m_getclr(M_DONTWAIT, MT_PCB);
 	register struct ifnet *ifp;
-	register struct sockaddr_in *sin;
 
 	if (m==0) return (0);
 	m->m_off = MMINOFF;
@@ -117,9 +117,9 @@ idpip_input(m0)
 
 	if(nsip_hold_input) {
 		if(nsip_lastin) {
-			m_free(nsip_lastin);
+			m_freem(nsip_lastin);
 		}
-		nsip_lastin = m_copy(m0, 0, M_COPYALL);
+		nsip_lastin = m_copy(m0, 0, (int)M_COPYALL);
 	}
 	/*
 	 * Get IP and IDP header together in first mbuf.
@@ -170,17 +170,15 @@ idpip_input(m0)
 		IF_DROP(ifq);
 		m_freem(m0);
 		splx(s);
-		return (ENOBUFS);
+		return;
 	}
 	IF_ENQUEUE(ifq, m0);
 	schednetisr(NETISR_NS);
 	splx(s);
-	return (0);
-bad:
-	m_freem(m);
-	return (0);
+	return;
 }
 
+/* ARGSUSED */
 nsipoutput(ifn, m0, dst)
 	struct ifnet_en *ifn;
 	struct mbuf *m0;
@@ -191,7 +189,6 @@ nsipoutput(ifn, m0, dst)
 	register struct ip *ip;
 	register struct route *ro = &(ifn->ifen_route);
 	register int len = 0;
-	struct in_addr in_src, in_dst;
 	register struct idp *idp = mtod(m0, struct idp *);
 	int error;
 
@@ -256,21 +253,16 @@ nsip_route(m)
 	register struct nsip_req *rq = mtod(m, struct nsip_req *);
 	struct sockaddr_ns *ns_dst = (struct sockaddr_ns *)&rq->rq_ns;
 	struct sockaddr_in *ip_dst = (struct sockaddr_in *)&rq->rq_ip;
-	int flags = rq->rq_flags;
-	struct ifnet *ifp;
 	struct route ro;
 	struct ifnet_en *ifn;
-	int error;
-	struct sockaddr_in *dst;
 	struct sockaddr_in *src;
 	/*
 	 * First, determine if we can get to the destination
 	 */
 	bzero((caddr_t)&ro, sizeof (ro));
 	ro.ro_dst = *(struct sockaddr *)ip_dst;
-	dst = (struct sockaddr_in *)& ro.ro_dst;
 	rtalloc(&ro);
-	if (ro.ro_rt == 0 || (ifp = ro.ro_rt->rt_ifp) == 0) {
+	if (ro.ro_rt == 0 || ro.ro_rt->rt_ifp == 0) {
 		return (ENETUNREACH);
 	}
 	/*
@@ -307,7 +299,7 @@ nsip_route(m)
 	 */
 	ifr.ifr_name[4] = '0' + nsipif.if_unit - 1;
 	ifr.ifr_dstaddr = * (struct sockaddr *) ns_dst;
-	return(ns_control((struct socket *)0, SIOCSIFADDR, (caddr_t)&ifr,
+	return(ns_control((struct socket *)0, (int)SIOCSIFADDR, (caddr_t)&ifr,
 			(struct ifnet *)ifn));
 }
 #endif

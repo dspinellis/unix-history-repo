@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)spp_debug.c	6.2 (Berkeley) %G%
+ *	@(#)spp_debug.c	6.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -101,6 +101,8 @@ spp_trace(act, ostate, sp, si, req)
 #ifndef lint
 #define pf(f) { if (flags&SP_/**/f) { printf("%s%s", cp, "f"); cp = ","; } }
 			pf(SP); pf(SA); pf(OB); pf(EM);
+#else
+			cp = cp;
 #endif
 			printf(">");
 		}
