@@ -1,5 +1,5 @@
 #ifdef LIBC_SCCS
-	.asciz	"@(#)setjmp.s	1.1 (Berkeley/CCI) %G%"
+	.asciz	"@(#)setjmp.s	1.2 (Berkeley/CCI) %G%"
 #endif LIBC_SCCS
 
 /*
@@ -11,31 +11,34 @@
  *	setjmp(a)
  * by restoring registers from the stack,
  * previous signal mask, and doing a return.
- *
- * BUG: always restores onsigstack state to 0
  */
 
 #include "DEFS.h"
 
-ENTRY(setjmp, 0)
+ENTRY(setjmp, R6)
+	movl	4(fp),r6		# construct sigcontext
+	movab	-8(sp),sp		# space for current struct sigstack
+	pushal	(sp)			# get current values
+	pushl	$0			# no new values
+	callf	$16,_sigstack		# pop args plus signal stack value
+	movl	(sp)+,(r6)		# save onsigstack status of caller
 	pushl	$0
 	callf	$8,_sigblock		# get signal mask
-	movl	r0,r1
-	movl	4(fp),r0
-	movl	(fp),(r0)		# save frame pointer of caller
-	movl	-8(fp),4(r0)		# save pc of caller
-	movl	r1,8(r0)		# save signal mask
-	clrl	12(r0)			# XXX (should be onsigstack) XXX
+	movl	r0,4(r6)		# save signal mask of caller
+	addl3	$8,fp,8(r6)		# save stack pointer of caller
+	movl	(fp),12(r6)		# save frame pointer of caller
+	movl	-8(fp),20(r6)		# save pc of caller
+	movpsl	24(r6)			# save psl of caller
 	clrl	r0
 	ret
 
 ENTRY(longjmp, 0)
 	movl	8(fp),r0		# return(v)
 	movl	4(fp),r1		# fetch buffer
-	tstl	(r1)
+	tstl	12(r1)
 	beql	botch
 loop:
-	cmpl	(r1),(fp)
+	cmpl	12(r1),(fp)
 	beql	done
 	blssu	botch
 	movl	$loop,-8(fp)
@@ -53,12 +56,9 @@ done:
 3:
 	addl2	$8,sp			# compensate for PSL-PC push
 4:
-	pushal	(sp)			# old stack pointer
-	pushl	8(r1)			# old signal mask
-	pushl	12(r1)			# old onsigstack
-	pushal	(sp)			# pointer to sigcontext
-	kcall	$139			# restore previous signal context
-	jmp	*4(r1)			# done, return....
+	pushl	r1			# pointer to sigcontext
+	callf	$4,_sigreturn		# restore previous context
+					# we should never return
 
 botch:
 	callf	$4,_longjmperror
