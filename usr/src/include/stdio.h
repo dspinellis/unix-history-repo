@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stdio.h	5.11 (Berkeley) %G%
+ *	@(#)stdio.h	5.12 (Berkeley) %G%
  */
 
 #ifndef	_STDIO_H_
@@ -142,7 +142,7 @@ extern FILE __sF[];
 
 /* System V/ANSI C; this is the wrong way to do this, do *not* use these. */
 #ifndef _ANSI_SOURCE
-#define	P_tmpdir	"/usr/tmp/"
+#define	P_tmpdir	"/var/tmp/"
 #endif
 #define	L_tmpnam	1024	/* XXX must be == PATH_MAX */
 #define	TMP_MAX		308915776
@@ -235,6 +235,7 @@ FILE	*popen __P((const char *, const char *));
 int	 putw __P((int, FILE *));
 void	 setbuffer __P((FILE *, char *, int));
 int	 setlinebuf __P((FILE *));
+char	*tempnam __P((const char *, const char *));
 int	 snprintf __P((char *, size_t, const char *, ...));
 int	 vsnprintf __P((char *, size_t, const char *, _VA_LIST_));
 __END_DECLS
