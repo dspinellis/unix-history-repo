@@ -1,4 +1,3 @@
-.include <bsd.global.mk>
 
 .if exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
@@ -6,10 +5,10 @@
 
 .MAIN: all
 
-# minor mods to prefer .s to a .c, and add .po
+# prefer .s to a .c, add .po, remove stuff not used in the BSD tree
 .SUFFIXES:
-.SUFFIXES: .out .a .ln .o .po .s .c .F .f .e .r .y .l .cl .p .h \
-                .8 .7 .6 .5 .4 .3 .2 .1 .0
+.SUFFIXES: .out .o .po .s .c .y .l
+
 .c.o:
 	${CC} ${CFLAGS} -c ${.IMPSRC} 
 	@${LD} -x -r ${.TARGET}
