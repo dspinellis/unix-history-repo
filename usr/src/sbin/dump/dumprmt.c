@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dumprmt.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)dumprmt.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -13,6 +13,7 @@ static char sccsid[] = "@(#)dumprmt.c	5.9 (Berkeley) %G%";
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <ufs/dinode.h>
+#include <signal.h>
 
 #include <netinet/in.h>
 
@@ -20,8 +21,11 @@ static char sccsid[] = "@(#)dumprmt.c	5.9 (Berkeley) %G%";
 #include <protocols/dumprestore.h>
 #include <pwd.h>
 #include <stdio.h>
+#ifdef __STDC__
+#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#endif
 #include "pathnames.h"
 
 #define	TS_CLOSED	0

@@ -5,11 +5,27 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
-#include "dump.h"
+#include <sys/param.h>
+#include <ufs/dir.h>
+#include <ufs/dinode.h>
+#include <ufs/fs.h>
+#include <protocols/dumprestore.h>
+#include <signal.h>
+#ifdef __STDC__
+#include <time.h>
+#endif
 #include <fcntl.h>
+#include <fstab.h>
+#include <stdio.h>
+#ifdef __STDC__
+#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
+#endif
+#include "dump.h"
 #include "pathnames.h"
 
 int	notify = 0;	/* notify operator flag */
@@ -27,7 +43,7 @@ int	rmthost();
 
 main(argc, argv)
 	int argc;
-	char *argv[];
+	char **argv;
 {
 	register ino_t ino;
 	register long bits; 

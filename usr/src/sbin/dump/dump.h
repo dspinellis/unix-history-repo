@@ -3,27 +3,12 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dump.h	5.10 (Berkeley) %G%
+ *	@(#)dump.h	5.11 (Berkeley) %G%
  */
 
 #define	NI		16
 #define MAXINOPB	(MAXBSIZE / sizeof(struct dinode))
 #define MAXNINDIR	(MAXBSIZE / sizeof(daddr_t))
-
-#include <sys/param.h>
-#include <sys/stat.h>
-#include <sys/time.h>
-#include <ufs/fs.h>
-#include <ufs/dinode.h>
-#include <ufs/dir.h>
-#include <protocols/dumprestore.h>
-#include <utmp.h>
-#include <signal.h>
-#include <fstab.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
 
 /*
  * Dump maps used to describe what is to be dumped.

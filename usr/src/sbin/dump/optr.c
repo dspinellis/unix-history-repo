@@ -5,14 +5,26 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)optr.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)optr.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
-#include "dump.h"
+#include <sys/param.h>
 #include <sys/wait.h>
-#include <errno.h>
+#include <ufs/dir.h>
+#include <signal.h>
+#include <time.h>
+#include <fstab.h>
 #include <grp.h>
 #include <varargs.h>
+#include <utmp.h>
+#include <errno.h>
+#include <stdio.h>
+#ifdef __STDC__
+#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
+#endif
+#include "dump.h"
 #include "pathnames.h"
 
 static void alarmcatch();
