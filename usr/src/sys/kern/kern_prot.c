@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_prot.c	7.13 (Berkeley) %G%
+ *	@(#)kern_prot.c	7.14 (Berkeley) %G%
  */
 
 /*
@@ -377,22 +377,21 @@ setgroups(p, uap, retval)
 	int *retval;
 {
 	register gid_t *gp;
+	register u_int ngrps;
 	register int *lp;
-	int error, ngrp, groups[NGROUPS];
+	int error, groups[NGROUPS];
 
 	if (error = suser(u.u_cred, &u.u_acflag))
 		return (error);
-	ngrp = uap->gidsetsize;
-	if (ngrp > NGROUPS)
+	if ((ngrps = uap->gidsetsize) > NGROUPS)
 		return (EINVAL);
-	error = copyin((caddr_t)uap->gidset, (caddr_t)groups,
-	    uap->gidsetsize * sizeof (groups[0]));
-	if (error)
+	if (error = copyin((caddr_t)uap->gidset, (caddr_t)groups,
+	    ngrps * sizeof (groups[0])))
 		return (error);
-	gp = u.u_cred->cr_groups;
-	for (lp = groups; lp < &groups[uap->gidsetsize]; )
-		*gp++ = *lp++;
-	u.u_cred->cr_ngroups = ngrp;
+	u.u_cred->cr_ngroups = ngrps;
+	/* convert from int's to gid_t's */
+	for (gp = u.u_cred->cr_groups, lp = groups; ngrps--; *gp++ = *lp++)
+		/* void */;
 	return (0);
 }
 
