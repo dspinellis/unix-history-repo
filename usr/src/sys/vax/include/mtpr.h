@@ -4,8 +4,10 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)mtpr.h	7.6 (Berkeley) %G%
+ *	@(#)mtpr.h	7.7 (Berkeley) %G%
  */
+#ifndef _MTPR_H_
+#define _MTPR_H_
 
 /*
  * VAX processor register numbers
@@ -132,3 +134,4 @@
 #define	BINID	0x5e		/* VAXBI node ID register */
 #define	BISTOP	0x5f		/* VAXBI stop register */
 #endif
+#endif /*_MTPR_H_*/
