@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_enp.c	7.5 (Berkeley) %G%
+ *	@(#)if_enp.c	7.6 (Berkeley) %G%
  */
 
 #include "enp.h"
@@ -626,6 +626,7 @@ enpr_write(dev, uio)
 	enpcopy((u_char *)iov->iov_base,
 	    (u_char *)&addr->enp_ram[uio->uio_offset], (u_int)iov->iov_len);
 	uio->uio_resid -= iov->iov_len;
+	uio->uio_offset += iov->iov_len;
 	iov->iov_len = 0;
 	return (0);
 }
