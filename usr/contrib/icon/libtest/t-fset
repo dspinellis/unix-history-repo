@@ -1,0 +1,3 @@
+../ibin/gset 't*--*.icn--*.dat'
+../ibin/gset '.*'
+../ibin/gset 'M*'

@@ -1,0 +1,5 @@
+procedure main()
+   f := open("t-seek.icn")
+   write(seek(f,10,0))
+   write(read(f))
+end

@@ -1,0 +1,7 @@
+link "../ilib/pdae"
+link "../ilib/gener"
+
+procedure main()
+   every Parallel{|write,!"abcd",1 to 10}
+   every Parallel{|write,octal(),star("abc")}
+end
