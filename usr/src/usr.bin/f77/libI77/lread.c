@@ -1,5 +1,5 @@
 /*
-char id_lread[] = "@(#)lread.c	1.9";
+char id_lread[] = "@(#)lread.c	1.10";
  *
  * list directed read
  */
@@ -112,6 +112,14 @@ l_read(number,ptr,len,type) ftnint *number,type; flex *ptr; ftnlen len;
 			ERR(l_CHAR());
 			break;
 		}
+		
+ 		/* peek at next character; it should be separator or new line */
+ 		GETC(ch); (*ungetn)(ch,cf);
+ 		if(!issep(ch) && !endlinp(ch)) {
+ 			while(GETC(ch)!= '\n' && ch != EOF);
+ 			err(errflag,F_ERLIO,lrd);
+ 		}
+ 
 		if(lquit) return(OK);
 		if(leof) err(endflag,EOF,lrd)
 		else if(external && ferror(cf)) err(errflag,errno,lrd)
