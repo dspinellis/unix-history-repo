@@ -69,3 +69,8 @@
    scheme (though HP 68k boxes have just about every caching scheme
    imaginable: internal/external, physical/virtual, writeback/writethrough)
    See, for example, Wheeler and Bershad in ASPLOS 92.
+
+----
+Mike Hibler
+University of Utah CSS group
+mike@cs.utah.edu
