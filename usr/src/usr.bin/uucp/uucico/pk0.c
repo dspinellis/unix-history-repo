@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)pk0.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)pk0.c	5.8 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -453,7 +453,6 @@ register struct pack *pk;
 		pkxstart(pk, x, seq);
 		pk->p_os[seq] = bstate;
 		pk->p_state &= ~RXMIT;
-		pk->p_nout++;
 		goto out;
 	}
 	/*
@@ -461,7 +460,6 @@ register struct pack *pk;
 	 * and transmission buffers are languishing
 	 */
 	if (pk->p_xcount) {
-		pk->p_timer = 2;
 		pk->p_state |= WAITO;
 	} else
 		pk->p_state &= ~WAITO;
@@ -489,13 +487,11 @@ register struct pack *pk;
 	 * try to flush output
 	 */
 	i = 0;
-	pk->p_timer = 2;
 	while (pk->p_xcount && pk->p_state&LIVE) {
 		if (pk->p_state&(RCLOSE+DOWN) || ++i > 2)
 			break;
 		pkoutput(pk);
 	}
-	pk->p_timer = 0;
 	pk->p_state |= DOWN;
 
 	/*
@@ -504,7 +500,6 @@ register struct pack *pk;
 	i = 0;
 	while ((pk->p_state&RCLOSE)==0 && i<2) {
 		pk->p_msg = M_CLOSE;
-		pk->p_timer = 2;
 		pkoutput(pk);
 		i++;
 	}
@@ -538,7 +533,7 @@ register struct pack *pk;
 		char buf[256];
 
 		sprintf(buf, "PK0: rc %d rw %d", rcheck, pk->p_rwindow);
-		logent(buf, "pkclose rcheck != p_rwindow");
+		assert(buf, Rmtname, 0);
 	}
 	free((char *)pk);
 }
