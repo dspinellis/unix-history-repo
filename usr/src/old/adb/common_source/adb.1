@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)adb.1	5.5 (Berkeley) %G%
+.\"	@(#)adb.1	5.6 (Berkeley) %G%
 .\"
 .TH ADB 1 ""
 .UC 4
@@ -628,12 +628,14 @@ Set breakpoint at
 .IR address .
 The breakpoint is executed
 .IR count \-1
-times before causing a stop.
+times before causing a stop,
+after which it stops unconditionally.
 Each time the breakpoint is encountered the command
 .I c
 is executed.  If this command is omitted or sets
 .I dot
-to zero then the breakpoint causes a stop.
+to zero, the breakpoint causes a stop immediately,
+regardless of any remaining count.
 .TP
 .B d
 Delete breakpoint at
