@@ -31,6 +31,13 @@
  * SUCH DAMAGE.
  *
  *	@(#)isofs_inode.c
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00151
+ * --------------------         -----   ----------------------
+ *
+ * 23 Apr 93	Jagane D Sundar		support nfs exported isofs
  */
 
 #include "param.h"
@@ -132,6 +139,9 @@ loop:
 	ip->i_flag = 0;
 	ip->i_devvp = 0;
 	ip->i_diroff = 0;
+	/* The following two are req for NFS FH. -Jagane D Sundar.- */
+	ip->iso_parent = xp->i_diroff; /* Parent directory's */
+	ip->iso_parent_ext = xp->iso_extent;
 	ip->i_lockf = 0;
 	/*
 	 * Put it onto its hash chain and lock it so that other requests for

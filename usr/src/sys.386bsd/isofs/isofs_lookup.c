@@ -34,10 +34,11 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00040
+ * CURRENT PATCH LEVEL:         2       00151
  * --------------------         -----   ----------------------
  *
  * 10 Aug 92    Scott Burris            Fixed "delete from CD-ROM" bug
+ * 23 Apr 93	Jagane D Sundar		support nfs exported isofs
  */
 
 #include "param.h"
@@ -309,8 +310,8 @@ found:
 	 * in the cache as to where the entry was found.
 	 */
 	if (*ndp->ni_next == '\0' && flag == LOOKUP)
-		dp->i_diroff = ndp->ni_ufs.ufs_offset
-			&~ (imp->logical_block_size - 1);
+		dp->i_diroff = ndp->ni_ufs.ufs_offset;
+			/* &~ (imp->logical_block_size - 1); */
 
 	/*
 	 * Step through the translation in the name.  We do not `iput' the
