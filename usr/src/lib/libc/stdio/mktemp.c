@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)mktemp.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)mktemp.c	5.8 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -26,72 +26,73 @@ static char sccsid[] = "@(#)mktemp.c	5.7 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 
-#define	YES	1
-#define	NO	0
-
-mkstemp(as)
-	char	*as;
+mkstemp(path)
+	char *path;
 {
-	int	fd;
+	int fd;
 
-	return (_gettemp(as, &fd) ? fd : -1);
+	return (_gettemp(path, &fd) ? fd : -1);
 }
 
 char *
-mktemp(as)
-	char	*as;
+mktemp(path)
+	char *path;
 {
-	return(_gettemp(as, (int *)NULL) ? as : (char *)NULL);
+	return(_gettemp(path, (int *)NULL) ? path : (char *)NULL);
 }
 
 static
-_gettemp(as, doopen)
-	char	*as;
-	register int	*doopen;
+_gettemp(path, doopen)
+	char *path;
+	register int *doopen;
 {
-	extern int	errno;
-	register char	*start, *trv;
-	struct stat	sbuf;
-	u_int	pid;
+	extern int errno;
+	register char *start, *trv;
+	struct stat sbuf;
+	u_int pid;
 
 	pid = getpid();
-
-	/* extra X's get set to 0's */
-	for (trv = as; *trv; ++trv);
+	for (trv = path; *trv; ++trv);		/* extra X's get set to 0's */
 	while (*--trv == 'X') {
 		*trv = (pid % 10) + '0';
 		pid /= 10;
 	}
 
 	/*
-	 * check for write permission on target directory; if you have
-	 * six X's and you can't write the directory, this will run for
-	 * a *very* long time.
+	 * check the target directory; if you have six X's and it
+	 * doesn't exist this runs for a *very* long time.
 	 */
-	for (start = ++trv; trv > as && *trv != '/'; --trv);
-	if (*trv == '/') {
-		*trv = '\0';
-		if (stat(as, &sbuf) || !(sbuf.st_mode & S_IFDIR))
-			return(NO);
-		*trv = '/';
+	for (start = trv + 1;; --trv) {
+		if (trv <= path)
+			break;
+		if (*trv == '/') {
+			*trv = '\0';
+			if (stat(path, &sbuf))
+				return(0);
+			if (!S_ISDIR(sbuf.st_mode)) {
+				errno = ENOTDIR;
+				return(0);
+			}
+			*trv = '/';
+			break;
+		}
 	}
-	else if (stat(".", &sbuf) == -1)
-		return(NO);
 
 	for (;;) {
 		if (doopen) {
-		    if ((*doopen = open(as, O_CREAT|O_EXCL|O_RDWR, 0600)) >= 0)
-			return(YES);
-		    if (errno != EEXIST)
-			return(NO);
+			if ((*doopen =
+			    open(path, O_CREAT|O_EXCL|O_RDWR, 0600)) >= 0)
+				return(1);
+			if (errno != EEXIST)
+				return(0);
 		}
-		else if (stat(as, &sbuf))
-			return(errno == ENOENT ? YES : NO);
+		else if (stat(path, &sbuf))
+			return(errno == ENOENT ? 1 : 0);
 
 		/* tricky little algorithm for backward compatibility */
 		for (trv = start;;) {
 			if (!*trv)
-				return(NO);
+				return(0);
 			if (*trv == 'z')
 				*trv++ = 'a';
 			else {
