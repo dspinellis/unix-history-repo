@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.43	82/07/22	*/
+/*	socket.c	4.43	82/07/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -70,6 +70,11 @@ socreate(aso, type, asp, asa, options)
 		return (ENOBUFS);
 	so = mtod(m, struct socket *);
 	so->so_options = options;
+	if (options & SO_ACCEPTCONN) {
+		so->so_q = so;
+		so->so_q0 = so;
+		so->so_qlimit = (so->so_options & SO_NEWFDONCONN) ? 5 : 1;
+	}
 	so->so_state = 0;
 	if (u.u_uid == 0)
 		so->so_state = SS_PRIV;
@@ -81,9 +86,7 @@ socreate(aso, type, asp, asa, options)
 	so->so_proto = prp;
 	error = (*prp->pr_usrreq)(so, PRU_ATTACH, 0, asa);
 	if (error) {
-		if (so->so_snd.sb_mbmax || so->so_rcv.sb_mbmax)
-			panic("socreate");
-		so->so_state |= SS_USERGONE;
+		so->so_state |= SS_NOFDREF;
 		sofree(so);
 		return (error);
 	}
@@ -95,7 +98,12 @@ sofree(so)
 	struct socket *so;
 {
 
-	if (so->so_pcb || (so->so_state & SS_USERGONE) == 0)
+	if (so->so_head) {
+		if (!soqremque(so, 0) && !soqremque(so, 1))
+			panic("sofree dq");
+		so->so_head = 0;
+	}
+	if (so->so_pcb || (so->so_state & SS_NOFDREF) == 0)
 		return;
 	sbrelease(&so->so_snd);
 	sbrelease(&so->so_rcv);
@@ -106,15 +114,20 @@ sofree(so)
  * Close a socket on last file table reference removal.
  * Initiate disconnect if connected.
  * Free socket when disconnect complete.
- *
- * THIS IS REALLY A UNIX INTERFACE ROUTINE
  */
 soclose(so, exiting)
 	register struct socket *so;
 	int exiting;
 {
 	int s = splnet();		/* conservative */
+	register struct socket *so2;
 
+	if (so->so_options & SO_ACCEPTCONN) {
+		while (so->so_q0 != so)
+			soclose(so->so_q0, 1);
+		while (so->so_q != so)
+			soclose(so->so_q, 1);
+	}
 	if (so->so_pcb == 0)
 		goto discard;
 	if (exiting)
@@ -151,7 +164,7 @@ drop:
 		}
 	}
 discard:
-	so->so_state |= SS_USERGONE;
+	so->so_state |= SS_NOFDREF;
 	sofree(so);
 	splx(s);
 }
@@ -176,17 +189,7 @@ soaccept(so, asa)
 	int s = splnet();
 	int error;
 
-	if ((so->so_options & SO_ACCEPTCONN) == 0) {
-		error = EINVAL;			/* XXX */
-		goto bad;
-	}
-	if ((so->so_state & SS_CONNAWAITING) == 0) {
-		error = ENOTCONN;
-		goto bad;
-	}
-	so->so_state &= ~SS_CONNAWAITING;
 	error = (*so->so_proto->pr_usrreq)(so, PRU_ACCEPT, 0, (caddr_t)asa);
-bad:
 	splx(s);
 	return (error);
 }
@@ -494,9 +497,9 @@ soioctl(so, cmd, cmdp)
 			return;
 		}
 		if (keep)
-			so->so_options |= SO_KEEPALIVE;
-		else
 			so->so_options &= ~SO_KEEPALIVE;
+		else
+			so->so_options |= SO_KEEPALIVE;
 		return;
 	}
 
