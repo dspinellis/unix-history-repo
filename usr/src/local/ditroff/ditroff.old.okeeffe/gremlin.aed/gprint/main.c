@@ -1,4 +1,4 @@
-/* main.c	1.5	83/05/13
+/* main.c	1.6	83/06/17
  *
  * Copyright -C- 1982 Barry S. Roitblat
  *
@@ -85,7 +85,6 @@ char *argv[];
 			file[gfil++] = arg;
 		else switch (*++arg) {
 		case 'W':	/* Print to wide (versatec) device */
-			BytPrLin = Wbytperlin;
 			DevRange = Wxlen;
 			DevRange8 = Wxlen/8;
 			BytPrLin = Wbytperlin;
@@ -93,7 +92,6 @@ char *argv[];
 			lpargs[1] = "-Pversatec";
 			break;
 		case 'V':	/* Print to narrow (varian) device */
-			BytPrLin = Vbytperlin;
 			DevRange = Vxlen;
 			DevRange8 = Vxlen/8;
 			BytPrLin = Vbytperlin;
@@ -195,20 +193,20 @@ char *argv[];
 			printf("narrow brush size? (%d): ", thick[0]);
 			gets(string);
 			if (*string != '\0') {
-				sscanf(string, "%d", &brsh);
-				thick[0] = thick[1] = thick[3] = thick[4] = brsh;
+			    sscanf(string, "%d", &brsh);
+			    thick[0] = thick[1] = thick[3] = thick[4] = brsh;
 			}
 			printf("medium brush size? (%d): ", thick[5]);
 			gets(string);
 			if (*string != '\0') {
-				sscanf(string, "%d", &brsh);
-				thick[5] = brsh;
+			    sscanf(string, "%d", &brsh);
+			    thick[5] = brsh;
 			}
 			printf("thick brush size? (%d): ", thick[2]);
 			gets(string);
 			if (*string != '\0') {
-				sscanf(string, "%d", &brsh);
-				thick[2] = brsh;
+			    sscanf(string, "%d", &brsh);
+			    thick[2] = brsh;
 			}
 			break;
 		default:
@@ -216,12 +214,19 @@ char *argv[];
 		}
 	}
 
+	if (WriteRaster) {		/* over-ride dimension settings */
+		DevRange = Vxlen;	/* if printing to file to be gdumped */
+		DevRange8 = Vxlen/8;
+		BytPrLin = Vbytperlin;
+		NumOfLin = Wylen;
+	}
+
 	signal(SIGTERM, cleanup);
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
 		signal(SIGINT, cleanup);
 	mktemp(picture);
 	if ((obuf = malloc(bufsize = NumOfLin * DevRange8)) == NULL) {
-		fprintf(stderr, "gprint: ran out of memory for output buffer\n");
+		fprintf(stderr,"gprint: ran out of memory for output buffer\n");
 		exit(1);
 	}
 	if (gfil == 0) {	/* no filename, use standard input */
@@ -231,8 +236,8 @@ char *argv[];
 	for (k=0; k<gfil; k++) {
 		if (file[k] != NULL) {
 			if ((fp = fopen(file[k], "r")) == NULL) {
-				fprintf(stderr, "gprint: can't open %s\n", file[k]);
-				continue;
+			    fprintf(stderr, "gprint: can't open %s\n", file[k]);
+			    continue;
 			}
 			if (k == 0) {
 				if ((arg = rindex(file[k], '/')) == NULL)
@@ -254,8 +259,8 @@ char *argv[];
 		if (!WriteRaster) {
 			umask(022);
 			if ((pfp = fopen(picture, "w")) == NULL) {
-				fprintf(stderr, "gprint: can't create %s\n", picture);
-				cleanup();
+			    fprintf(stderr,"gprint: can't create %s\n",picture);
+			    cleanup();
 			}
 		}
 		i = strlen(picture) + 1;
@@ -271,7 +276,7 @@ char *argv[];
 			*cp1++ = 0;
 		e = PICTURE;
 		while (!DBNullelt(e)) {
-			HGPrintElt(e);	/* traverse picture, printing elements */
+			HGPrintElt(e);	/* traverse picture;  print elements */
 			e = DBNextElt(e);
 		}
 		for (cp1 = obuf; cp1 < cp2; ) {
