@@ -1,6 +1,6 @@
 /*
  *	Copyright (c) 1982 Regents of the University of California
- *	@(#)asscanl.h 4.3 %G%
+ *	@(#)asscanl.h 4.4 %G%
  */
 /*
  *	This file contains definitions local to the files implementing
@@ -89,15 +89,6 @@ int	bufno;			/*which buffer number: 0,1 for tmp file*/
 struct 	tokbufdesc tokbuf[2];	/*our initial increment of buffers*/
 ptrall	tokptr;			/*where the current token comes from*/
 ptrall	tokub;			/*the last token in the current token buffer*/
-
-/*
- *	Variables to manage the string buffering
- *	declared in asscan.h.
- */
-int	strno;			/*the current string being filled*/
-struct	strdesc	strbuf[3];	/*the string buffers; the first for nulls*/
-struct	strdesc	*strptr;	/*current string buffer being filled*/
-	
 
 #define bstrlg(from, length) \
 	*(lgtype *)from = length; \

@@ -2,25 +2,20 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)asscan2.c 4.6 %G%";
+static char sccsid[] = "@(#)asscan2.c 4.7 %G%";
 #endif not lint
 
 #include "asscanl.h"
 static	inttoktype	oval = NL;
 
-#ifdef BUFSIZ
-#undef BUFSIZ
-#endif
-
-#define BUFSIZ 4096
-
+#define ASINBUFSIZ 4096
 #define	NINBUFFERS	2
-#define	INBUFLG		NINBUFFERS*BUFSIZ + 2
+#define	INBUFLG		NINBUFFERS*ASINBUFSIZ + 2
 	/*
-	 *	We have two input buffers; the first one is reserved
+	 *	We have NINBUFFERS input buffers; the first one is reserved
 	 *	for catching the tail of a line split across a buffer
-	 *	boundary; the other one are used for snarfing a buffer
-	 *	worth of .s source.
+	 *	boundary; the other ones are used for snarfing a buffer
+	 *	worth of assembly language source.
 	 */
 static	char	inbuffer[INBUFLG];
 static	char	*InBufPtr = 0;
@@ -46,12 +41,13 @@ static	char	*InBufPtr = 0;
  */
 
 static	char	p_swapped = '\0';			
-static	char	*p_start = &inbuffer[NINBUFFERS * BUFSIZ];
-static	char	*p_stop = &inbuffer[NINBUFFERS * BUFSIZ];
+static	char	*p_start = &inbuffer[NINBUFFERS * ASINBUFSIZ];
+static	char	*p_stop = &inbuffer[NINBUFFERS * ASINBUFSIZ];
+
+#define	MIDDLE	&inbuffer[ASINBUFSIZ]
 
 char *fillinbuffer()
 {
-	register	char	*to;
 	register	char	*from;
 			char	*inbufptr;
 	int		nread;
@@ -60,21 +56,19 @@ char *fillinbuffer()
 	int		got;
 
 	*p_start = p_swapped;
-	inbufptr = &inbuffer[1*BUFSIZ] - (p_stop - p_start);
-
-	for (to = inbufptr, from = p_start; from < p_stop;)
-		*to++ = *from++;
+	inbufptr = MIDDLE - (p_stop - p_start);
+	movestr(inbufptr, p_start, p_stop - p_start);
 	/*
-	 *	Now, go read two full buffers (hopefully)
+	 *	Now, go read up to NINBUFFERS - 1 full buffers
 	 */
 	if (hadeof){
 		hadeof = 0;
 		return (0);
 	}
-	goal = (NINBUFFERS - 1)*BUFSIZ;
+	goal = (NINBUFFERS - 1)*ASINBUFSIZ;
 	nread = 0;
 	do {
-		got = read(stdin->_file, &inbuffer[1*BUFSIZ + nread], goal);
+		got = read(stdin->_file, MIDDLE + nread, goal);
 		if (got == 0)
 			hadeof = 1;
 		if (got <= 0)
@@ -85,14 +79,14 @@ char *fillinbuffer()
 
 	if (nread == 0)
 		return(0);
-	p_stop = from = &inbuffer[1*BUFSIZ + nread];
+	from = MIDDLE + nread;
+	p_stop = from;
 	*from = '\0';
-
 	while (*--from != '\n'){
 		/*
 		 *	back over the partial line
 		 */
-		if (from == &inbuffer[1*BUFSIZ]) {
+		if (from == MIDDLE) {
 			from = p_stop;
 			*p_stop++ = '\n';
 			break;
@@ -125,7 +119,7 @@ scan_dot_s(bufferbox)
 	reg	ptrall	bufptr;		/* where to stuff tokens */
 		ptrall	lgbackpatch;	/* where to stuff a string length */
 		ptrall	bufub;		/* where not to stuff tokens */
-		int	maxstrlg;	/* how long a string can be */
+	reg	int	maxstrlg;	/* how long a string can be */
 		long	intval;		/* value of int */
 		int	linescrossed;	/* when doing strings and comments */
 		struct	Opcode		opstruct;
@@ -145,16 +139,16 @@ scan_dot_s(bufferbox)
 	}
 
 	if (newfflag){
+		newfflag = 0;
+		ryylval = (int)savestr(newfname, strlen(newfname) + 1);
+
 		ptoken(bufptr, IFILE);
 		ptoken(bufptr, STRING);
-		val = strlen(newfname) + 1;
-		movestr( (char *)&( ( (lgtype *)bufptr)[1]), newfname, val);
-		bstrlg(bufptr, val);
+		pptr(bufptr, ryylval);
 
 		ptoken(bufptr, ILINENO);
 		ptoken(bufptr, INT);
 		pint(bufptr,  1);
-		newfflag = 0;
 	}
 
 	while (bufptr < bufub){
@@ -389,59 +383,38 @@ scan_dot_s(bufferbox)
 	case DQ:
 	   eatstr:
 		linescrossed = 0;
-		maxstrlg = (char *)bufub - (char *)bufptr;
-
-		if (maxstrlg < MAXSTRLG) {
-			ungetc('"');
-			*(bytetoktype *)bufptr = VOID ;
-			bufub = bufptr;
-			goto done;
-		}
-		if (maxstrlg > MAXSTRLG)
-			maxstrlg = MAXSTRLG;
-		
-		ptoken(bufptr, STRING);
-		lgbackpatch = bufptr;	/*this is where the size goes*/
-		bufptr += sizeof(lgtype);
-		/*
-		 *	bufptr is now set to
-		 *	be stuffed with characters from
-		 *	the input
-		 */
-
-		while (   (maxstrlg > 0)
-		       && !(INCHARSET( (ch = getchar()), STRESCAPE))
-		      ){
-			stuff:
-				maxstrlg -= 1;
-				pchar(bufptr, ch);
-			}
-		if (maxstrlg <= 0){	/*enough characters to fill a string buffer*/
-			ungetc('"');		/*will read it next*/
-		}
-		else if (ch == '"')
-			/*VOID*/ ;		/*done*/
-		else if (ch == '\n'){
-			yywarning("New line embedded in a string constant.");
+		for(rcp = yytext, maxstrlg = NCPS; maxstrlg > 0; --maxstrlg){
+		    switch(ch = getchar()){
+		    case '"':
+			goto tailDQ;
+		    default:
+		    stuff:
+			pchar(rcp, ch);
+			break;
+		    case '\n':
+			yywarning("New line in a string constant");
 			scanlineno++;
 			linescrossed++;
 			ch = getchar();
-			if (ch == EOFCHAR){
-			  do_eof:
-				pchar(bufptr, '\n');
+			switch(ch){
+			case NEEDCHAR:
+				if ( (inbufptr = fillinbuffer()) != 0){
+					ch = '\n';
+					goto stuff;
+				}
+				/*FALLTHROUGH*/
+			case EOFCHAR:
+				pchar(rcp, '\n');
 				ungetc(EOFCHAR);
-			} else
-			if (ch == NEEDCHAR){
-				if ( (inbufptr = fillinbuffer()) == 0)
-					goto do_eof;
-				ch = '\n';
-				goto stuff;
-			} else {	/* simple case */
+				goto tailDQ;
+			default:
 				ungetc(ch);
 				ch = '\n';
 				goto stuff;
 			}
-		} else {
+			break;
+
+		    case '\\':
 			ch = getchar();		/*skip the '\\'*/
 			if ( INCHARSET(ch, BSESCAPE)){
 				switch (ch){
@@ -452,27 +425,45 @@ scan_dot_s(bufferbox)
 				  case 't':  ch = '\t'; goto stuff;
 				}
 			}
-			if ( !(INCHARSET(ch,OCTDIGIT)) )  goto stuff;
+			if ( !(INCHARSET(ch, OCTDIGIT)) ) 
+				goto stuff;
 			i = 0;
 			intval = 0;
 			while ( (i < 3) && (INCHARSET(ch, OCTDIGIT))){
-				i++;intval <<= 3;intval += ch - '0';
+				i++;
+				intval <<= 3;
+				intval += ch - '0';
 				ch = getchar();
 			}
 			ungetc(ch);
 			ch = (char)intval;
 			goto stuff;
+		    }
+		}
+	tailDQ: ;
+		/*
+		 *	account for any lines that were crossed
+		 */
+		if (linescrossed){
+			ptoken(bufptr, ILINESKIP);
+			pint(bufptr, linescrossed);
 		}
 		/*
-		 *	bufptr now points at the next free slot
+		 *	put the string in yytext into the string pool
+		 *
+		 *	The value in ryylval points to the string;
+		 *	the previous 2 bytes is the length of the string
+		 *
+		 *	Cheat: append a trailing null to the string
+		 *	and then adjust the string length to ignore
+		 *	the trailing null.  If any STRING client requires
+		 *	the trailing null, the client can just change STRLEN
 		 */
-		bstrfromto(lgbackpatch, bufptr);
-		if (linescrossed){
-			val = ILINESKIP;
-			ryylval = linescrossed;
-			goto ret;
-		} else
-			goto builtval;
+		val = STRING;
+		*rcp++ = 0;
+		ryylval = (int)savestr(yytext, rcp - yytext);
+		STRLEN(((char *)ryylval)) -= 1;
+		goto ret;
 
 	case BADCHAR:
 		linescrossed = lineno;
@@ -505,6 +496,8 @@ scan_dot_s(bufferbox)
 		case	INT:	plong(bufptr, ryylval);
 				break;
 		case 	BIGNUM:	pnumber(bufptr, yybignum);
+				break;
+		case	STRING:	pptr(bufptr, (int)(char *)ryylval);
 				break;
 		case	NAME:	pptr(bufptr, (int)(struct symtab *)ryylval);
 				break;

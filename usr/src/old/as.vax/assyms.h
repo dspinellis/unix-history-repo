@@ -1,6 +1,6 @@
 /*
  *	Copyright (c) 1982 Regents of the University of California
- *	@(#)assyms.h 4.3 %G%
+ *	@(#)assyms.h 4.4 %G%
  */
 /*
  *	To speed up walks through symbols defined in a particular
@@ -44,7 +44,6 @@ struct 	allocbox{
 	struct		symtab		symslots[SYMDALLOP];
 };
 
-#ifdef FLEXNAMES
 /*
  *	Names are allocated in a string pool.  String pools are linked
  *	together and are allocated dynamically by Calloc.
@@ -57,7 +56,6 @@ struct	strpool{
 };
 
 extern	struct	strpool *strplhead;
-#endif
 
 extern	struct	allocbox	*allochead;
 extern	struct	allocbox	*alloctail;
