@@ -1,0 +1,204 @@
+.\" $Revision: 1.15 $
+.TH EXPIRE 8
+.SH NAME
+expire \- Usenet article and history expiration program
+.SH SYNOPSIS
+.B expire
+[
+.BI \-d " dir"
+]
+[
+.BI \-f " file"
+]
+[
+.BI \-g " file"
+]
+[
+.BI \-h " file"
+]
+[
+.B \-i
+]
+[
+.B \-l
+]
+[
+.B \-n
+]
+[
+.B \-p
+]
+[
+.B \-q
+]
+[
+.BI \-r " reason"
+]
+[
+.B \-s
+]
+[
+.B \-t
+]
+[
+.BI \-v " level"
+]
+[
+.BI \-w " number"
+]
+[
+.B \-x
+]
+[
+.BI \-z " file"
+]
+[
+.I expire.ctl
+]
+.SH DESCRIPTION
+.I Expire
+scans the
+.IR history (5)
+text file
+.\" =()<.I @<_PATH_HISTORY>@>()=
+.I /var/spool/news/data/history
+and uses the information recorded in it to purge old news articles.
+To specify an alternate history file, use the ``\-f'' flag.
+To specify an alternate input text history file, use the ``\-h'' flag.
+.I Expire
+uses the old
+.IR dbz (3z)
+database to determine the size of the new one.
+To ignore the old database, use the ``\-i'' flag.
+.PP
+.I Expire
+normally just unlinks each file if it should be expired.
+If the ``\-l'' flag is used, then all articles after the first one are
+treated as if they could be symbolic links to the first one.
+In this case, the first article will not be removed as long as any other
+cross-posts of the article remain.
+.PP
+.I Expire
+normally sends a ``pause'' command to the local
+.IR innd (8)
+daemon when it needs exclusive access to the history file, using
+the string ``Expiring'' as the reason.
+To give a different reason, use the ``\-r'' flag.
+The process ID will be appended to the reason.
+When
+.I expire
+is finished and the new history file is ready, it sends a ``go'' command.
+If
+.I innd
+is not running, use the ``\-n'' flag and
+.I expire
+will not send the ``pause'' or ``go'' commands.
+(For more details on the commands, see
+.IR ctlinnd (8)).
+Note that
+.I expire
+only needs exclusive access for a very short time \(em long enough to see
+if any new articles arrived since it first hit the end of the file, and to
+rename the new files to the working files.
+.PP
+If the ``\-s'' flag is used, then
+.I expire
+will print a summary when it exits showing the approximate number of
+kilobytes used by all deleted articles.
+.PP
+If the ``\-t'' flag is used, then
+.I expire
+will generate a list of the files that should be removed on its
+standard output, and the new history file will be left in
+.I history.n
+and
+.I history.n.dir
+and
+.IR history.n.pag .
+This flag be useful for debugging when used with the ``\-n'' and ``\-s'' flags.
+Note that if the ``\-f'' flag is used, then the name specified with that flag
+will be used instead of
+.IR history .
+.PP
+If the ``\-x'' flag is used, then
+.I expire
+will not create any new history files.
+This is most useful when combined with the ``\-n'', ``\-s'', and ``\-t'' flags
+to see how different expiration policies would change the amount of disk space
+used.
+.PP
+If the ``\-z'' flag is used, then articles are not removed, but their
+names are written to the specified
+.IR file .
+See the description of
+.I expirerm
+in
+.IR news.daily (8).
+.PP
+.I Expire
+makes its decisions on the time the article arrived, as found in the
+.I history
+file.
+This means articles are often kept a little longer than with other
+expiration programs that base their decisions on the article's posting
+date.
+To use the article's posting date, use the ``\-p'' flag.
+Use the ``\-w'' flag to ``warp'' time so that
+.I expire
+thinks it is running at some time other then the current time.
+The value should be a signed floating point number of the number of days
+to use as the offset.
+.PP
+If the ``\-d'' flag is used, then the new history file and database is
+created in the specified directory,
+.IR dir .
+This is useful when the filesystem does not have sufficient space to
+hold both the old and new history files.
+When this flag is used,
+.I expire
+leaves the server paused and creates a zero-length file named after the
+new history file, with an extension of ``.done'' to indicate that
+it has successfully completed the expiration.
+The calling script should install the new history file and un-pause the server.
+The ``\-r'' flag should be used with this flag.
+.PP
+If a filename is specified, it is taken as the control file and parsed
+according to the rules in
+.IR expire.ctl (5).
+A single dash (``\-'') may be used to read the file from standard input.
+If no file is specified, the file
+.\" =()<.IR @<_PATH_EXPIRECTL>@>()=
+.IR /var/spool/news/data/expire.ctl
+is read.
+.PP
+.I Expire
+normally complains about articles that are posted to newsgroups not
+mentioned in the active file.
+To suppress this action, use the ``\-q'' flag.
+.PP
+The ``\-v'' flag is used to increase the verbosity of the program,
+generating messages to standard output.
+The
+.I level
+should be a number, where higher numbers result in more output.
+Level one will print totals of the various actions done (not valid if a
+new history file is not written), level two will print report on each
+individual file, while level five results in more than one line of output
+for every line processed.
+If the ``\-g'' flag is given, then a one-line summary equivalent to the
+output of ``\-v1'' and preceeded by the current time, will be appended to
+the specified
+.IR file .
+.SH HISTORY
+Written by Rich $alz <rsalz@uunet.uu.net> for InterNetNews.
+.de R$
+This is revision \\$3, dated \\$4.
+..
+.R$ $Id: expire.8,v 1.15 1993/03/18 21:03:35 rsalz Exp $
+.SH "SEE ALSO"
+ctlinnd(8),
+dbz(3z),
+expire.ctl(5),
+history(5),
+innd(8),
+inndcomm(3).

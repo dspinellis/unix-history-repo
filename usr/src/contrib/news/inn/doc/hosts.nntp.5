@@ -1,0 +1,86 @@
+.\" $Revision: 1.17 $
+.TH HOSTS.NNTP 5
+.SH NAME
+hosts.nntp, hosts.nntp.nolimit \- list of hosts that feed NNTP news
+.SH DESCRIPTION
+The file
+.\" =()<.I @<_PATH_INNDHOSTS>@>()=
+.I /var/spool/news/data/hosts.nntp
+is read by
+.IR innd (8)
+to get the list of hosts that feed the local site Usenet news
+using the NNTP protocol.
+The server reads this file at start-up or when directed to by
+.IR ctlinnd (8).
+When a hosts connects to the NNTP port of the system on which
+.I innd
+is running, the server will do a check to see if their Internet address
+is the same as one of the hosts named in this file.
+If the host is not mentioned, then
+.I innd
+will spawn an
+.IR nnrpd (8)
+to process the connection, with the accepted connection on standard input
+and standard output.
+.PP
+Comments begin with a number sign (``#'') and continue through the end of
+the line.
+Blank lines and comments also ignored.
+All other lines should consist of two or three fields separated by a colon.
+.PP
+The first field should be either an Internet address in dotted-quad
+format or an address that can be parsed by
+.IR gethostbyname (3).
+If a host's entry has multiple addresses, all of them will be added to
+the access list.
+The second field, which may be blank, is the password the foreign host is
+required to use when first connecting.
+The third field, which may be omitted, is a list of newsgroups to which
+the host may post articles.
+This list is parsed as a
+.IR newsfeeds (5)
+subscription list; groups not in the list are ignored.
+.PP
+Since
+.I innd
+is usually started at system boot time, the local nameserver may not be
+fully operational when
+.I innd
+parses this file.
+As a work-around, a
+.I ctlinnd
+``reload'' command can be performed after a delay of an hour or so.
+It is also possible to provide both a host's name and its dotted-quad
+address in the file.
+.PP
+For example:
+.RS
+.nf
+##  FOO has a password, UUNET doesn't.
+##  UUNET cannot post to local group.s
+##  These are comment lines.
+news.foo.com:magic
+uunet.uu.net::!foo.*
+.fi
+.RE
+.PP
+If the file contains passwords, it should not be world-readable.
+The file
+.\" =()<.IR @<_PATH_INNDHOSTS>@.nolimit ,>()=
+.IR /var/spool/news/data/hosts.nntp.nolimit ,
+if it exists is read whenever the ``hosts.nntp'' file is read.
+It has the same format, although only the first field is used.
+Any host mentioned in this file is not subject to the incoming connections
+limit specified by
+.IR innd 's
+\&``\-c'' flag.
+This can be used to allow local hosts or time-sensitive peers, to connect
+regardless of the local conditions.
+.SH HISTORY
+Written by Rich $alz <rsalz@uunet.uu.net> for InterNetNews.
+.de R$
+This is revision \\$3, dated \\$4.
+..
+.R$ $Id: hosts.nntp.5,v 1.17 1993/03/18 21:03:37 rsalz Exp $
+.SH "SEE ALSO"
+ctlinnd(8), innd(8), nnrpd(8).

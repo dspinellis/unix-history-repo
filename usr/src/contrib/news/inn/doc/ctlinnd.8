@@ -1,0 +1,453 @@
+.\" $Revision: 1.30 $
+.TH CTLINND 8
+.SH NAME
+ctlinnd \- control the InterNetNews daemon
+.SH SYNOPSIS
+.B ctlinnd
+[
+.B \-h
+]
+[
+.B \-s
+]
+[
+.BI \-t " timeout"
+]
+.I command
+[
+.I argument...
+]
+.SH DESCRIPTION
+.I Ctlinnd
+sends a message to the control channel of
+.IR innd (8),
+the InterNetNews server.
+.PP
+In the normal mode of behavior, the message is sent to the server, which
+then performs the requested action and sends back a reply with a text
+message and the exit code for
+.IR ctlinnd .
+If the server successfully performed the command,
+.I ctlinnd
+will exit with a status of zero and print the reply on standard output.
+If the server could not perform the command (for example, it was told to
+remove a newsgroup that does not exist), it will direct
+.I ctlinnd
+to exit with a status of one.
+The ``shutdown,'' ``xabort,'' and ``xexec'' commands do not generate a reply;
+.I ctlinnd
+will always exit silently with a status of zero.
+If the ``\-s'' flag is
+used, then no message will be printed if the command was successful.
+.PP
+The ``\-t'' flag can be used to specify how long to wait for the reply
+from the server.
+The timeout value specifies the number of seconds to wait.
+A value of zero waits forever, and a value less
+than zero indicates that no reply is needed.
+When waiting for a reply,
+.I ctlinnd
+will try every two minutes to see if the server is still running, so it
+is unlikely that ``\-t0'' will hang.
+.\" =()<The default is ``\-t@<CTLINND_TIMEOUT>@.''>()=
+The default is ``\-t0.''
+.PP
+To see a command summary, use the ``\-h'' flag.
+If a command is included when
+.I ctlinnd
+is invoked with the ``\-h'' flag, then only the usage for that command
+will be given.
+.PP
+If a large number of groups are going to be created or deleted at once,
+it may be more efficient to ``pause'' or ``throttle'' the server
+and edit the
+.I active
+file directly.
+.PP
+The complete list of commands follows.
+Note that all commands have a fixed number of arguments.
+If a parameter can be an empty string, then it is necessary to
+specify it as two adjacent quotes, like "".
+.TP
+.BI addhist " <Message-ID> arr exp post paths"
+Add an entry to the history database.
+This directs the server to create a history line for
+.IR Message-ID .
+The angle brackets are optional.
+.IR Arr ,
+.IR exp ,
+and
+.I post
+specify when the article arrived, what its expiration date is, and
+when it was posted.
+All three values are a number indicating the number of seconds since the
+epoch.
+If the article does not have an Expires header, then
+.I exp
+should be zero.
+.I Paths
+is the pathname within the news spool directory where the article is filed.
+If the article is cross-posted, then the names should be separated by
+whitespace and the
+.I paths
+argument should be inside double quotes.
+If the server is paused or throttled, this command causes it to briefly
+open the history database.
+.TP
+.BI allow " reason"
+Remote connections are allowed.
+The
+.I reason
+must be the same text given with an earlier ``reject'' command, or an
+empty string.
+.TP
+.BI begin " site"
+Begin feeding
+.IR site .
+This will cause the server to rescan the
+.IR newsfeeds (5)
+file to find the specified site and set up a newsfeed for it.
+If the site already exists, a ``drop'' is done first.
+This command is forwarded; see below.
+.TP
+.BI cancel " <Message-ID>"
+Remove the article with the specified Message-ID from the local system.
+This does
+.I not
+generate a cancel message.
+The angle brackets are optional.
+If the server is paused or throttled, this command causes it to briefly
+open the history database.
+.TP
+.BI changegroup " group rest"
+The newsgroup
+.I group
+is changed so that its fourth field in the
+.I active
+file becomes the value specified by the
+.I rest
+parameter.
+This may be used to make an existing group moderated or unmoderated,
+for example.
+.TP
+.B checkfile
+Check the syntax of the
+.I newsfeeds
+file, and display a message if any errors are found.
+The details of the errors are reported to
+.IR syslog (3).
+.TP
+.BI drop " site"
+Flush and drop
+.I site
+from the server's list of active feeds.
+This command is forwarded; see below.
+.TP
+.BI flush " site"
+Flush the buffer for the specified site.
+The actions taken depend on the type of feed the site receives; see
+.IR newsfeeds (5).
+This is useful when the site is fed by a file and batching is going to start.
+If
+.I site
+is an empty string, then all sites are flushed and the
+.I active
+file and history databases are also written out.
+This command is forwarded; see below.
+.TP
+.B flushlogs
+Close the log and error log files and rename them to have a
+.I \&.old
+extension.
+The history database and
+.I active
+file are also written out.
+.TP
+.BI go " reason"
+Re-open the history database and start accepting articles after a ``pause''
+or ``throttle'' command.
+The
+.I reason
+must either be an empty string or match the text that was given
+in the earlier ``pause'' or ``throttle'' command.
+If a ``reject'' command was done, this will also do an ``allow'' command
+if the
+.I reason
+matches the text that was given in the ``reject.''
+If a ``reserve'' command was done, this will also clear the reservation if
+the
+.I reason
+matches the text that was given in the ``reserve.''
+Note that if only the history database has changed while the server is
+paused or throttled, it is not necessary to send it a ``reload'' command
+before sending it a ``go'' command.
+If the server throttled itself because it accumulated too many I/O
+errors, this command will reset the error count.
+If the server was not started with the ``\-ny'' flag, then this command also
+does a ``readers'' command with ``yes'' as the flag and
+.I reason
+as the text.
+.TP
+.BI hangup " channel"
+Close the socket on the specified incoming channel.
+This is useful when an incoming connection appears to be hung.
+.TP
+.BI help " [command]"
+Print a command summary for all commands, or just
+.I command
+if specified.
+.TP
+.BI mode
+Print the server's operating mode as a multi-line summary of the parameters
+and operating state.
+.TP
+.BI name " nnn"
+Print the name of channel number
+.I nnn
+or of all channels if it is an empty string.
+.TP
+.BI newgroup " group rest creator"
+Create the specified newsgroup.
+The
+.I rest
+parameter should be the fourth field as described in
+.IR active (5);
+if it is not an equal sign, only the first letter is used.
+The
+.I creator
+should be the name of the person creating the group.
+If the newsgroup already exists, this is equivalent to the ``changegroup''
+command.
+This is the only command that has defaults.
+The
+.I creator
+can be omitted and will default to the empty string, and the
+.I rest
+parameter can be omitted and will default to ``y''.
+This command can be done while the server is paused or throttled; it will
+update its internal state when a ``go'' command is sent.
+This command updates the
+.I active.times
+(see
+.IR active (5))
+file.
+.TP
+.BI param " letter value"
+Change the command-line parameters of the server.
+The combination of defaults make it possible to use the text of the Control
+header directly.
+.I Letter
+is the
+.I innd
+command-line option to set, and
+.I value
+is the new value.
+For example, ``i 5'' directs the server to allow only five incoming
+connections.
+To enable or disable the action of the ``\-n'' flag, use the letter ``y''
+or ``n'', respectively, for the
+.IR value.
+.TP
+.BI pause " reason"
+Pause the server so that no incoming articles are accepted.
+No existing connections are closed, but the history database is closed.
+This command should be used for short-term locks, such as when replacing
+the history files.
+If the server was not started with the ``\-ny'' flag, then this command also
+does a ``readers'' command with ``no'' as the flag and
+.I reason
+as the text.
+.TP
+.BI readers " flag text"
+Allow or disallow newsreaders.
+If
+.I flag
+starts with the letter ``n'' then newsreading is disallowed, by
+causing the server to pass the
+.I text
+as the value of the
+.IR nnrpd (8)
+\&``\-r'' flag.
+If
+.I flag
+starts with the letter ``y'' and
+.I text
+is either an empty string, or the same string that was used when newsreading
+was disallowed, then newsreading will be allowed.
+.\".TP
+.\".BI refile " path group"
+.\"The article specified by
+.\".I path
+.\"is refiled as if it were posted to the newsgroup
+.\".IR group .
+.TP
+.BI reject " reason"
+Remote connections (those that would not be handed off to
+.IR nnrpd )
+are rejected, with
+.I reason
+given as the explanation.
+.TP
+.BI reload " what reason"
+The server updates its in-memory copies of various configuration files.
+.I What
+identifies what should be reloaded.
+If it is an empty string or the word ``all'' then everything is reloaded;
+if it is the word ``history'' then the history database is closed and opened,
+if it is the word ``hosts.nntp'' then the
+.IR hosts.nntp (5)
+file is reloaded; if it is the word ``active'' or ``newsfeeds'' then both
+the
+.I active
+and
+.I newsfeeds
+files are reloaded; if it is the word ``overview.fmt'' then the
+.IR overview.fmt (5)
+file is reloaded.
+The
+.I reason
+is reported to
+.IR syslog .
+There is no way to reload the data
+.IR inn.conf (5)
+file; the server currently only uses the ``pathhost'' parameter, so this
+restriction should not be a problem.
+.TP
+.BI renumber " group"
+Scan the spool directory for the specified newsgroup and update the
+low-water mark in the
+.I active
+file.
+If
+.I group
+is an empty string then all newsgroups are scanned.
+.TP
+.BI reserve " reason"
+The next ``pause'' or ``throttle'' command must use
+.I reason
+as its text.
+This ``reservation'' is cleared by giving an empty string for the
+.IR reason .
+This command is used by programs like
+.IR expire (8)
+that want to avoid running into other instances of each other.
+.TP
+.BI rmgroup " group"
+Remove the specified newsgroup.
+This is done by editing the
+.I active
+file.
+The spool directory is not touched, and any articles in the group will
+be expired using the default expiration parameters.
+Unlike the ``newgroup'' command, this command does not update the
+.I active.times
+file.
+.TP
+.BI send " feed text..."
+The specified
+.I text
+is sent as a control line to the exploder
+.IR feed .
+.TP
+.BI shutdown " reason"
+The server is shut down, with the specified reason recorded in the log
+and sent to all open connections.
+It is a good idea to send a ``throttle'' command first.
+.TP
+.BI signal " sig site"
+Signal
+.I sig
+is sent to the specified
+.IR site ,
+which must be a channel or exploder feed.
+.I Sig
+can be a numeric signal number or the word ``hup,'' ``int,'' or ``term'';
+case is not significant.
+.TP
+.BI throttle " reason"
+Input is throttled so that all existing connections are closed and new
+connections are rejected.
+The history database is closed.
+This should be used for long-term locks, such as when
+.I expire
+is being run.
+If the server was not started with the ``\-ny'' flag, then this command also
+does a ``readers'' command with ``no'' as the flag and
+.I reason
+as the text.
+.TP
+.BI trace " item flag"
+Tracing is turned on or off for the specified
+.IR item .
+.I Flag
+should start with the letter ``y'' or ``n'' to turn tracing on or off.
+If
+.I item
+starts is a number, then tracing is set for the specified
+.I innd
+channel, which must be for an incoming NNTP feed.
+If it starts with the letter ``i'' then general
+.I innd
+tracing is turned on or off.
+If it starts with the letter ``n'' then future
+.IR nnrpd 's
+will or will not have the ``\-t'' flag enabled, as appropriate.
+.TP
+.BI xabort " reason"
+The server logs the specified
+.I reason
+and then invokes the
+.IR abort (3)
+routine.
+.TP
+.BI xexec " path"
+The server gets ready to shut itself down, but instead of exiting it
+execs the specified
+.I path
+with all of its original arguments.
+If
+.I path
+is ``innd'' then
+.\" =()<.I @<_PATH_INND>@>()=
+.I /usr/contrib/news/innd
+is invoked; if it is ``inndstart'' then
+.\" =()<.I @<_PATH_INNDSTART>@>()=
+.I /usr/contrib/news/inndstart
+is invoked; if it is an empty string, it will invoke the appropriate program
+depending on whether or not it was started with the ``\-p'' flag;
+any other value is an error.
+.PP
+In addition to being acted upon within the server, certain commands can
+be forwarded to the appropriate child process.
+If the site receiving the command is an exploder (such as
+.IR buffchan (8))
+or it is a funnel that feeds into an exploder, then the
+command can be forwarded.
+In this case, the server will send a command line to the exploder that
+consists of the
+.I ctlinnd
+command name.
+If the site funnels into an exploder that has an asterisk (``*'') in its ``W''
+flag (see
+.IR newsfweed (5)),
+then the site name will be appended to the command; otherwise no argument
+is appended.
+.SH BUGS
+.I Ctlinnd
+uses the
+.IR inndcomm (3)
+library, and is therefore limited to server replies no larger than 4k.
+.SH HISTORY
+Written by Rich $alz <rsalz@uunet.uu.net> for InterNetNews.
+.de R$
+This is revision \\$3, dated \\$4.
+..
+.R$ $Id: ctlinnd.8,v 1.30 1993/03/18 21:03:34 rsalz Exp $
+.SH "SEE ALSO"
+active(5),
+expire(8),
+innd(8),
+inndcomm(3),
+inn.conf(5),
+newsfeeds(5),
+overview.fmt(5).

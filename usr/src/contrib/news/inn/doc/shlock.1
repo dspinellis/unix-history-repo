@@ -1,0 +1,72 @@
+.\" $Revision: 1.7 $
+.TH SHLOCK 1
+.SH NAME
+shlock \- create lock files for use in shell scripts
+.SH SYNOPSIS
+.B shlock
+.BI \-p " pid"
+.BI \-f " name"
+[
+.B \-b
+]
+[
+.B \-u
+]
+[
+.B \-c
+]
+.SH DESCRIPTION
+.I Shlock
+tries to create a lock file named
+.I name
+and write the process ID
+.I pid
+into it.
+If the file already exists,
+.I shlock
+will read the process ID from the file and test to see if the process
+is currently running.
+If the process exists, then the file will not be created.
+.PP
+.I Shlock
+exits with a zero status if it was able to create the lock file, or
+non-zero if the file refers to currently-active process.
+.PP
+Process IDs are normally read and written in ASCII.
+If the ``\-b'' flag is used, then they will be written as a binary
+.IR int .
+For compatibility with other systems, the ``\-u'' flag is accepted as
+a synonym for ``\-b'' since binary locks are used by many UUCP packages.
+.PP
+The following example shows how
+.I shlock
+would be used within a shell script:
+.RS
+.nf
+.\" =()<LOCK=@<_PATH_LOCKS>@/LOCK.send>()=
+LOCK=/var/spool/news/data/LOCK.send
+trap 'rm -f ${LOCK} ; exit 1' 1 2 3 15
+if shlock -p $$ -f ${LOCK} ; then
+    # Do appropriate work
+else
+    echo Locked by `cat ${LOCK}`
+f\&i
+.fi
+.RE
+.PP
+If the ``\-c'' flag is used, then
+.I shlock
+will not create a lock file, but will instead use the file to see if
+the lock is held be another program.
+If the lock is valid, the program will exit with a non-zero status; if
+the lock is not valid (i.e., invoking
+.I shlock
+without the flag would have succeeded), then the program will exit
+with a zero status.
+.SH HISTORY
+Written by Rich $alz <rsalz@uunet.uu.net> after a description of HDB UUCP
+locking given by Peter Honeyman.
+.de R$
+This is revision \\$3, dated \\$4.
+..
+.R$ $Id: shlock.1,v 1.7 1993/01/29 16:43:15 rsalz Exp $

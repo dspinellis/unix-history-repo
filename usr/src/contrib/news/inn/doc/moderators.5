@@ -1,0 +1,58 @@
+.\" $Revision: 1.13 $
+.TH MODERATORS 5
+.SH NAME
+moderators \- mail addresses for moderated Usenet newsgroups
+.SH DESCRIPTION
+The
+.IR GetModeratorAddress (3)
+routine reads the file
+.\" =()<.I @<_PATH_MODERATORS>@>()=
+.I /var/spool/news/data/moderators
+to determine how to reach the moderator of a newsgroup.
+This is used by
+.IR inews (1)
+when an unapproved local posting is made to a moderated newsgroup.
+.PP
+The file is read until a match is found.
+Blank lines and lines starting with a number sign (``#'') are ignored.
+All other lines should consist of two fields separated by a colon.
+.PP
+The first field is a
+.IR wildmat(3) -style
+pattern.
+If it matches the name of the newsgroup, then the second field is taken to
+be a format string for
+.IR sprintf (3).
+This string should have at most one
+.I %s
+parameter, which will be given the name of the newsgroup with periods
+transliterated to dashes.
+.PP
+Here is a sample file:
+.RS
+.nf
+foo.important:announce-request@foo.com
+foo.*:%s@mailer.foo.com
+gnu.*:%s@prep.ai.mit.edu
+*:%s@uunet.uu.net
+.fi
+.RE
+Using the above file, postings to the moderated newsgroup in the left
+column will be sent to the address shown in the right column:
+.RS
+.nf
+.ta \w'gnu.emacs.sources   'u
+foo.important	announce-request@foo.com
+foo.x.announce	foo-x-announce@mailer.foo.com
+gnu.emacs.sources	gnu-emacs-sources@prep.ai.mit.edu
+comp.sources.unix	comp-sources-unix@uunet.uu.net
+.fi
+.RE
+.SH HISTORY
+Written by Rich $alz <rsalz@uunet.uu.net> for InterNetNews.
+.de R$
+This is revision \\$3, dated \\$4.
+..
+.R$ $Id: moderators.5,v 1.13 1993/01/29 16:43:02 rsalz Exp $
+.SH "SEE ALSO"
+inews(1), inn.conf(5), libinn(3), wildmat(3).

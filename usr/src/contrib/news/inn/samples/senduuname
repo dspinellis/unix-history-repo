@@ -1,0 +1,31 @@
+#! /bin/sh
+##  $Revision: 1.4 $
+##  Senduuname control-message handler
+
+PROG=senduuname
+##  Some shells don't pass in $* unless we explicitly pass it in here.
+##  =()<. @<_PATH_PARSECTL>@ "$@">()=
+. /var/spool/news/data/parsecontrol "$@"
+
+SUBJECT="Senduuname reply from `innconfval pathhost`"
+case ${ACTION} in
+mail)
+    export FROM MAILCMD SUBJECT ARTICLE
+    (
+	echo "${FROM} posted a senduuname."
+	echo 'To reply, do the following:'
+	echo "	uuname | ${MAILCMD} -s \"${SUBJECT}\" ${FROM}"
+	echo 'The full article was:'
+	cat ${ARTICLE}
+    ) | ${MAILCMD} -s "senduuname by ${FROM}" ${NEWSMASTER}
+    ;;
+logit)
+    ${WRITELOG} ${LOGFILE} "senduuname by ${FROM}; reply skipped" <${ARTICLE}
+    ;;
+doit)
+    uuname | ${MAILCMD} -s "${SUBJECT}" ${REPLYTO}
+    ${WRITELOG} ${LOGFILE} "senduuname by ${FROM}; reply sent" <${ARTICLE}
+    ;;
+esac
+
+exit

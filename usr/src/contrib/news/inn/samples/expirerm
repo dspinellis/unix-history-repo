@@ -1,0 +1,20 @@
+#! /bin/sh
+##  Remove articles listed by expire -z.
+##  Remove all files specified in the input file.
+
+##  =()<. @<_PATH_SHELLVARS>@>()=
+. /var/spool/news/data/innshellvars
+
+MAIL="${MAILCMD} -s 'Problem removing expired files' ${NEWSMASTER}"
+
+#RMPROC="xargs rm"
+RMPROC="fastrm -e -u -s ${SPOOL}"
+
+eval "cd ${SPOOL} \
+    && ${RMPROC} <$1 \
+    && mv $1 ${MOST_LOGS}/expire.list"
+if [ -f $1 ] ; then
+    echo "Expire had problems removing articles on `hostname`" \
+	| eval ${MAIL}
+    exit 1
+fi
