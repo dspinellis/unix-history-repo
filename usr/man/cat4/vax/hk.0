@@ -1,0 +1,198 @@
+
+
+
+HK(4)		    UNIX Programmer's Manual		    HK(4)
+
+
+
+NNAAMMEE
+     hk - RK6-11/RK06 and RK07 moving head disk
+
+SSYYNNOOPPSSIISS
+     ccoonnttrroolllleerr hhkk00 aatt uubbaa?? ccssrr 00117777444400 vveeccttoorr rrkkiinnttrr
+     ddiisskk rrkk00 aatt hhkk00 ddrriivvee 00
+
+DDEESSCCRRIIPPTTIIOONN
+     Files with minor device numbers 0 through 7 refer to various
+     portions of drive 0; minor devices 8 through 15 refer to
+     drive 1, etc.  The standard device names begin with ``hk''
+     followed by the drive number and then a letter a-h for par-
+     titions 0-7 respectively.	The character ? stands here for a
+     drive number in the range 0-7.
+
+     The block files access the disk via the system's normal
+     buffering mechanism and may be read and written without
+     regard to physical disk records.  There is also a `raw'
+     interface which provides for direct transmission between the
+     disk and the user's read or write buffer.	A single read or
+     write call results in exactly one I/O operation and there-
+     fore raw I/O is considerably more efficient when many words
+     are transmitted.  The names of the raw files conventionally
+     begin with an extra `r.'
+
+     In raw I/O counts should be a multiple of 512 bytes (a disk
+     sector).  Likewise _s_e_e_k calls should specify a multiple of
+     512 bytes.
+
+DDIISSKK SSUUPPPPOORRTT
+     The origin and size (in sectors) of the pseudo-disks on each
+     drive are as follows:
+
+     RK07 partitions:
+	  disk	    start     length	cyl
+	  hk?a	    0	      15884	0-240
+	  hk?b	    15906     10032	241-392
+	  hk?c	    0	      53790	0-814
+	  hk?d	    25938     15884	393-633
+	  hk?f	    41844     11792	634-814
+	  hk?g	    25938     27786	393-813
+
+     RK06 partitions
+	  disk	    start     length	cyl
+	  hk?a	    0	      15884	0-240
+	  hk?b	    15906     11154	241-409
+	  hk?c	    0	      27126	0-410
+
+     On a dual RK-07 system partition hk?a is used for the root
+     for one drive and partition hk?g for the /usr file system.
+     If large jobs are to be run using hk?b on both drives as
+     swap area provides a 10Mbyte paging area.	Otherwise
+
+
+
+Printed 7/9/88		  June 13, 1988                         1
+
+
+
+
+
+
+HK(4)		    UNIX Programmer's Manual		    HK(4)
+
+
+
+     partition hk?c on the other drive is used as a single large
+     file system.
+
+FFIILLEESS
+     /dev/hk[0-7][a-h]	 block files
+     /dev/rhk[0-7][a-h]  raw files
+
+SSEEEE AALLSSOO
+     hp(4), uda(4), up(4), syslogd(8)
+
+DDIIAAGGNNOOSSTTIICCSS
+     hhkk%%dd%%cc:: hhaarrdd eerrrroorr %%ssiinngg ffssbbnn %%dd[[--%%dd]] ccss22==%%bb ddss==%%bb eerr==%%bb.
+     An unrecoverable error occurred during transfer of the
+     specified filesystem block number(s), which are logical
+     block numbers on the indicated partition.	The contents of
+     the cs2, ds and er registers are printed in octal and sym-
+     bolically with bits decoded.  The error was either unrecov-
+     erable, or a large number of retry attempts (including
+     offset positioning and drive recalibration) could not
+     recover the error.
+
+     rrkk%%dd:: wwrriittee lloocckkeedd.  The write protect switch was set on the
+     drive when a write was attempted.	The write operation is
+     not recoverable.
+
+     rrkk%%dd:: nnoott rreeaaddyy.  The drive was spun down or off line when
+     it was accessed.  The i/o operation is not recoverable.
+
+     rrkk%%dd:: nnoott rreeaaddyy ((ccaammee bbaacckk!!)).  The drive was not ready, but
+     after printing the message about being not ready (which
+     takes a fraction of a second) was ready.  The operation is
+     recovered if no further errors occur.
+
+     uupp%%dd%%cc:: ssoofftt eecccc rreeaaddiinngg ffssbbnn %%dd[[--%%dd]].  A recoverable ECC
+     error occurred on the specified sector(s) in the specified
+     disk partition. This happens normally a few times a week.
+     If it happens more frequently than this the sectors where
+     the errors are occurring should be checked to see if certain
+     cylinders on the pack, spots on the carriage of the drive or
+     heads are indicated.
+
+     hhkk%%dd:: lloosstt iinntteerrrruupptt.  A timer watching the controller
+     detected no interrupt for an extended period while an opera-
+     tion was outstanding.  This indicates a hardware or software
+     failure.  There is currently a hardware/software problem
+     with spinning down drives while they are being accessed
+     which causes this error to occur.	The error causes a UNIBUS
+     reset, and retry of the pending operations.  If the con-
+     troller continues to lose interrupts, this error will recur
+     a few seconds later.
+
+
+
+
+
+Printed 7/9/88		  June 13, 1988                         2
+
+
+
+
+
+
+HK(4)		    UNIX Programmer's Manual		    HK(4)
+
+
+
+BBUUGGSS
+     In raw I/O _r_e_a_d and _w_r_i_t_e(2) truncate file offsets to 512-
+     byte block boundaries, and _w_r_i_t_e scribbles on the tail of
+     incomplete blocks.  Thus, in programs that are likely to
+     access raw devices, _r_e_a_d, _w_r_i_t_e and _l_s_e_e_k(2) should always
+     deal in 512-byte multiples.
+
+     DEC-standard error logging should be supported.
+
+     A program to analyze the logged error information (even in
+     its present reduced form) is needed.
+
+     The partition tables for the file systems should be read off
+     of each pack, as they are never quite what any single
+     installation would prefer, and this would make packs more
+     portable.
+
+     The rk07 g partition size in rk.c disagrees with that in
+     /etc/disktab.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  June 13, 1988                         3
+
+
+

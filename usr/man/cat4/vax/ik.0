@@ -1,0 +1,66 @@
+
+
+
+IK(4)		    UNIX Programmer's Manual		    IK(4)
+
+
+
+NNAAMMEE
+     ik - Ikonas frame buffer, graphics device interface
+
+SSYYNNOOPPSSIISS
+     ddeevviiccee iikk00 aatt uubbaa?? ccssrr 00117722446600 vveeccttoorr iikkiinnttrr
+
+DDEESSCCRRIIPPTTIIOONN
+     _I_k provides an interface to an Ikonas frame buffer graphics
+     device.  Each minor device is a different frame buffer
+     interface board.  When the device is opened, its interface
+     registers are mapped, via virtual memory, into the user
+     processes address space.  This allows the user process very
+     high bandwidth to the frame buffer with no system call over-
+     head.
+
+     Bytes written or read from the device are DMA'ed from or to
+     the interface.  The frame buffer XY address, its addressing
+     mode, etc. must be set up by the user process before calling
+     write or read.
+
+     Other communication with the driver is via ioctls.  The
+     IK_GETADDR ioctl returns the virtual address where the user
+     process can find the interface registers.	The IK_WAITINT
+     ioctl suspends the user process until the ikonas device has
+     interrupted (for whatever reason - the user process has to
+     set the interrupt enables).
+
+FFIILLEESS
+     /dev/ik
+
+DDIIAAGGNNOOSSTTIICCSS
+     None.
+
+BBUUGGSS
+     An invalid access (e.g., longword) to a mapped interface
+     register can cause the system to crash with a machine check.
+     A user process could possibly cause infinite interrupts
+     hence bringing things to a crawl.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 15, 1985				1
+
+
+

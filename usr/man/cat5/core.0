@@ -1,0 +1,66 @@
+
+
+
+CORE(5)             UNIX Programmer's Manual		  CORE(5)
+
+
+
+NNAAMMEE
+     core - format of memory image file
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ppaarraamm..hh>>
+
+DDEESSCCRRIIPPTTIIOONN
+     The UNIX System writes out a memory image of a terminated
+     process when any of various errors occur.	See _s_i_g_v_e_c(2) for
+     the list of reasons; the most common are memory violations,
+     illegal instructions, bus errors, and user-generated quit
+     signals.  The memory image is called `core' and is written
+     in the process's working directory (provided it can be; nor-
+     mal access controls apply).
+
+     The maximum size of a _c_o_r_e file is limited by _s_e_t_r_l_i_m_i_t(2).
+     Files which would be larger than the limit are not created.
+
+     The core file consists of the _u. area, whose size (in pages)
+     is defined by the UPAGES manifest in the <_s_y_s/_p_a_r_a_m._h> file.
+     The _u. area starts with a _u_s_e_r structure as given in
+     <_s_y_s/_u_s_e_r._h>.  The remainder of the core file consists first
+     of the data pages and then the stack pages of the process
+     image.  The amount of data space image in the core file is
+     given (in pages) by the variable _u__d_s_i_z_e in the _u. area.
+     The amount of stack image in the core file is given (in
+     pages) by the variable _u__s_s_i_z_e in the _u. area.  The size of
+     a ``page'' is given by the constant NBPG (also from
+     <_s_y_s/_p_a_r_a_m._h>).
+
+     In general the debugger _a_d_b(1) is sufficient to deal with
+     core images.
+
+SSEEEE AALLSSOO
+     adb(1), dbx(1), sigvec(2), setrlimit(2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  March 9, 1986                         1
+
+
+

@@ -1,0 +1,198 @@
+
+
+
+USERFILE(5)	    UNIX Programmer's Manual	      USERFILE(5)
+
+
+
+NNAAMMEE
+     USERFILE - UUCP pathname permissions file
+
+DDEESSCCRRIIPPTTIIOONN
+     The _U_S_E_R_F_I_L_E file specifies the file system directory trees
+     that are accessible to local users and to remote systems via
+     UUCP.
+
+     Each line in _U_S_E_R_F_I_L_E is of the form:
+
+     [_l_o_g_i_n_n_a_m_e],,[_s_y_s_t_e_m] [ cc ] _p_a_t_h_n_a_m_e [_p_a_t_h_n_a_m_e] [_p_a_t_h_n_a_m_e]
+
+     The first two items are separated by a comma; any number of
+     spaces or tabs may separate the remaining items.  Lines
+     beginning with a `#' character are comments.  A trailing `\'
+     indicates that the next line is a continuation of the
+     current line.
+
+     _L_o_g_i_n_n_a_m_e is a login (from /_e_t_c/_p_a_s_s_w_d) on the local
+     machine.
+
+     _S_y_s_t_e_m is the name of a remote machine, the same name used
+     in _L._s_y_s(5).
+
+     _c denotes the optional _c_a_l_l_b_a_c_k field.  If a cc appears here,
+     a remote machine that calls in will be told that callback is
+     requested, and the conversation will be terminated.  The
+     local system will then immediately call the remote host
+     back.
+
+     _P_a_t_h_n_a_m_e is a pathname prefix that is permissible for this
+     _l_o_g_i_n and/or _s_y_s_t_e_m.
+
+     When _u_u_c_i_c_o(8C) runs in master role or _u_u_c_p(1C) or _u_u_x(1C)
+     are run by local users, the permitted pathnames are those on
+     the first line with a _l_o_g_i_n_n_a_m_e that matches the name of the
+     user who executed the command.  If no such line exists, then
+     the first line with a null (missing) _l_o_g_i_n_n_a_m_e field is
+     used.  (Beware: _u_u_c_i_c_o is often run by the superuser or the
+     UUCP administrator through _c_r_o_n(8).)
+
+     When _u_u_c_i_c_o runs in slave role, the permitted pathnames are
+     those on the first line with a _s_y_s_t_e_m field that matches the
+     hostname of the remote machine.  If no such line exists,
+     then the first line with a null (missing) _s_y_s_t_e_m field is
+     used.
+
+     _U_u_x_q_t(8) works differently; it knows neither a login name
+     nor a hostname.  It accepts the pathnames on the first line
+     that has a null _s_y_s_t_e_m field.  (This is the same line that
+     is used by _u_u_c_i_c_o when it cannot match the remote machine's
+     hostname.)
+
+
+
+Printed 7/9/88		 April 24, 1986                         1
+
+
+
+
+
+
+USERFILE(5)	    UNIX Programmer's Manual	      USERFILE(5)
+
+
+
+     A line with both _l_o_g_i_n_n_a_m_e and _s_y_s_t_e_m null, for example
+
+	  ,, //uussrr//ssppooooll//uuuuccppppuubblliicc
+
+     can be used to conveniently specify the paths for both "no
+     match" cases if lines earlier in _U_S_E_R_F_I_L_E did not define
+     them.  (This differs from older Berkeley and all USG ver-
+     sions, where each case must be individually specified.  If
+     neither case is defined earlier, a "null" line only defines
+     the "unknown login" case.)
+
+     To correctly process _l_o_g_i_n_n_a_m_e on systems that assign
+     several logins per UID, the following strategy is used to
+     determine the current _l_o_g_i_n_n_a_m_e:
+
+     1)   If the process is attached to a terminal, a login entry
+	  exists in /_e_t_c/_u_t_m_p, and the UID for the _u_t_m_p name
+	  matches the current real UID, then _l_o_g_i_n_n_a_m_e is set to
+	  the _u_t_m_p name.
+
+     2)   If the UUSSEERR environment variable is defined and the UID
+	  for this name matches the current real UID, then _l_o_g_i_n_-
+	  _n_a_m_e is set to the name in UUSSEERR.
+
+     3)   If both of the above fail, call _g_e_t_p_w_u_i_d(3) to fetch
+	  the first name in /_e_t_c/_p_a_s_s_w_d that matches the real
+	  UID.
+
+     4)   If all of the above fail, the utility aborts.
+
+FFIILLEESS
+     /usr/lib/uucp/USERFILE
+     /usr/lib/uucp/UUAIDS/USERFILE   USERFILE example
+
+SSEEEE AALLSSOO
+     uucp(1C), uux(1C), L.cmds(5), L.sys(5), uucico(8C),
+     uuxqt(8C)
+
+NNOOTTEESS
+     The UUCP utilities (_u_u_c_i_c_o, _u_u_c_p, _u_u_x, and _u_u_x_q_t) always
+     have access to the UUCP spool files in /_u_s_r/_s_p_o_o_l/_u_u_c_p,
+     regardless of pathnames in _U_S_E_R_F_I_L_E.
+
+     If uuuuccpp is listed in _L._c_m_d_s(5), then a remote system will
+     execute _u_u_c_p on the local system with the _U_S_E_R_F_I_L_E
+     privileges for its _l_o_g_i_n, not its hostname.
+
+     _U_u_c_i_c_o freely switches between master and slave roles during
+     the course of a conversation, regardless of the role it was
+     started with.  This affects how _U_S_E_R_F_I_L_E is interpreted.
+
+
+
+
+
+Printed 7/9/88		 April 24, 1986                         2
+
+
+
+
+
+
+USERFILE(5)	    UNIX Programmer's Manual	      USERFILE(5)
+
+
+
+WWAARRNNIINNGG
+     _U_S_E_R_F_I_L_E restricts access only on strings that the UUCP
+     utilities identify as being pathnames.  If the wrong holes
+     are left in other UUCP control files (notably _L._c_m_d_s), it
+     can be easy for an intruder to open files anywhere in the
+     file system.  Arguments to _u_u_c_p(1C) are safe, since it
+     assumes all of its non-option arguments are files.  _U_u_x(1C)
+     cannot make such assumptions; hence, it is more dangerous.
+
+BBUUGGSS
+     The _U_U_C_P _I_m_p_l_e_m_e_n_t_a_t_i_o_n _D_e_s_c_r_i_p_t_i_o_n explicitly states that
+     all remote login names must be listed in _U_S_E_R_F_I_L_E.  This
+     requirement is not enforced by Berkeley UUCP, although it is
+     by USG UUCP.
+
+     Early versions of 4.2BSD _u_u_x_q_t(8) erroneously check UUCP
+     spool files against the _U_S_E_R_F_I_L_E pathname permissions.
+     Hence, on these systems it is necessary to specify
+     /_u_s_r/_s_p_o_o_l/_u_u_c_p as a valid path on the _U_S_E_R_F_I_L_E line used by
+     _u_u_x_q_t.  Otherwise, all _u_u_x(1C) requests are rejected with a
+     "PERMISSION DENIED" message.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 April 24, 1986                         3
+
+
+

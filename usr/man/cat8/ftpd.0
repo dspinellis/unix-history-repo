@@ -1,0 +1,198 @@
+
+
+
+FTPD(8C)	    UNIX Programmer's Manual		 FTPD(8C)
+
+
+
+NNAAMMEE
+     ftpd - DARPA Internet File Transfer Protocol server
+
+SSYYNNOOPPSSIISS
+     //eettcc//ffttppdd [ --dd ] [ --ll ] [ --tttimeout ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _F_t_p_d is the DARPA Internet File Transfer Prototocol server
+     process.  The server uses the TCP protocol and listens at
+     the port specified in the ``ftp'' service specification; see
+     _s_e_r_v_i_c_e_s(5).
+
+     If the --dd option is specified, debugging information is
+     written to the syslog.
+
+     If the --ll option is specified, each ftp session is logged in
+     the syslog.
+
+     The ftp server will timeout an inactive session after 15
+     minutes.  If the --tt option is specified, the inactivity
+     timeout period will be set to _t_i_m_e_o_u_t.
+
+     The ftp server currently supports the following ftp
+     requests;	case is not distinguished.
+
+     RReeqquueesstt	    DDeessccrriippttiioonn
+     ABOR	    abort previous command
+     ACCT	    specify account (ignored)
+     ALLO	    allocate storage (vacuously)
+     APPE	    append to a file
+     CDUP	    change to parent of current working directory
+     CWD	    change working directory
+     DELE	    delete a file
+     HELP	    give help information
+     LIST	    give list files in a directory (``ls -lg'')
+     MKD	    make a directory
+     MODE	    specify data transfer _m_o_d_e
+     NLST	    give name list of files in directory (``ls'')
+     NOOP	    do nothing
+     PASS	    specify password
+     PASV	    prepare for server-to-server transfer
+     PORT	    specify data connection port
+     PWD	    print the current working directory
+     QUIT	    terminate session
+     RETR	    retrieve a file
+     RMD	    remove a directory
+     RNFR	    specify rename-from file name
+     RNTO	    specify rename-to file name
+     STOR	    store a file
+     STOU	    store a file with a unique name
+     STRU	    specify data transfer _s_t_r_u_c_t_u_r_e
+     TYPE	    specify data transfer _t_y_p_e
+
+
+
+Printed 7/9/88		 April 27, 1985                         1
+
+
+
+
+
+
+FTPD(8C)	    UNIX Programmer's Manual		 FTPD(8C)
+
+
+
+     USER	    specify user name
+     XCUP	    change to parent of current working directory
+     XCWD	    change working directory
+     XMKD	    make a directory
+     XPWD	    print the current working directory
+     XRMD	    remove a directory
+
+     The remaining ftp requests specified in Internet RFC 959 are
+     recognized, but not implemented.
+
+     The ftp server will abort an active file transfer only when
+     the ABOR command is preceded by a Telnet "Interrupt Process"
+     (IP) signal and a Telnet "Synch" signal in the command Tel-
+     net stream, as described in Internet RFC 959.
+
+     _F_t_p_d interprets file names according to the ``globbing''
+     conventions used by _c_s_h(1).  This allows users to utilize
+     the metacharacters ``*?[]{}~''.
+
+     _F_t_p_d authenticates users according to three rules.
+
+     1)   The user name must be in the password data base,
+	  /_e_t_c/_p_a_s_s_w_d, and not have a null password.  In this
+	  case a password must be provided by the client before
+	  any file operations may be performed.
+
+     2)   The user name must not appear in the file
+	  /_e_t_c/_f_t_p_u_s_e_r_s.
+
+     3)   The user must have a standard shell returned by
+	  _g_e_t_u_s_e_r_s_h_e_l_l(3).
+
+     4)   If the user name is ``anonymous'' or ``ftp'', an
+	  anonymous ftp account must be present in the password
+	  file (user ``ftp'').	In this case the user is allowed
+	  to log in by specifying any password (by convention
+	  this is given as the client host's name).
+
+     In the last case, _f_t_p_d takes special measures to restrict
+     the client's access privileges.  The server performs a
+     _c_h_r_o_o_t(2) command to the home directory of the ``ftp'' user.
+     In order that system security is not breached, it is recom-
+     mended that the ``ftp'' subtree be constructed with care;
+     the following rules are recommended.
+
+     ~ftp)
+	  Make the home directory owned by ``ftp'' and unwritable
+	  by anyone.
+
+     ~ftp/bin)
+	  Make this directory owned by the super-user and unwrit-
+	  able by anyone.  The program _l_s(1) must be present to
+
+
+
+Printed 7/9/88		 April 27, 1985                         2
+
+
+
+
+
+
+FTPD(8C)	    UNIX Programmer's Manual		 FTPD(8C)
+
+
+
+	  support the list commands.  This program should have
+	  mode 111.
+
+     ~ftp/etc)
+	  Make this directory owned by the super-user and unwrit-
+	  able by anyone.  The files _p_a_s_s_w_d(5) and _g_r_o_u_p(5) must
+	  be present for the _l_s command to work properly.  These
+	  files should be mode 444.
+
+     ~ftp/pub)
+	  Make this directory mode 777 and owned by ``ftp''.
+	  Users should then place files which are to be accessi-
+	  ble via the anonymous account in this directory.
+
+SSEEEE AALLSSOO
+     ftp(1C), getusershell(3), syslogd(8)
+
+BBUUGGSS
+     The anonymous account is inherently dangerous and should
+     avoided when possible.
+
+     The server must run as the super-user to create sockets with
+     privileged port numbers.  It maintains an effective user id
+     of the logged in user, reverting to the super-user only when
+     binding addresses to sockets.  The possible security holes
+     have been extensively scrutinized, but are possibly incom-
+     plete.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 April 27, 1985                         3
+
+
+

@@ -1,0 +1,66 @@
+
+
+
+DLMPCC(8)	    UNIX Programmer's Manual		DLMPCC(8)
+
+
+
+NNAAMMEE
+     dlmpcc - download MPCC
+
+SSYYNNOOPPSSIISS
+     ddllmmppcccc  [ n ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _D_l_m_p_c_c downloads CCI's Multi-Protocol Communication Con-
+     troller (MPCC).  The controller provides high-speed synchro-
+     nous communications for the POWER 5 and POWER 6 families of
+     computers.  This utility allows you to download any or all
+     of the MPCC boards.  The configuration file mmppccccttaabb deter-
+     mines the protocol attributes for each MPCC board. See
+     _m_p_c_c_t_a_b(4) for details.
+
+     If you specify the command with no argument, then _d_l_m_p_c_c
+     scans the configuration file and downloads all configured
+     boards with corresponding protocol software. The option _n
+     allows you to specify one or more MPCC boards for download-
+     ing. The valid values range from 00--1155. For example, the fol-
+     lowing command line orders _d_l_m_p_c_c to download only the pro-
+     tocol software identified with board 2:
+
+	     dlmpcc  2
+
+     The next command line orders the download of the protocols
+     identified with boards 0 and 3:
+
+	     dlmpcc  0	3
+
+     Typically, this download function is performed at boot time
+     from the /etc/rc.local file with an entry similar to:
+	     /etc/dlmpcc > /dev/console 2>&1
+
+SSEEEE AALLSSOO
+     mpcctab(4)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		   May 4, 1988				1
+
+
+

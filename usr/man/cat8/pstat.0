@@ -1,0 +1,330 @@
+
+
+
+PSTAT(8)	    UNIX Programmer's Manual		 PSTAT(8)
+
+
+
+NNAAMMEE
+     pstat - print system facts
+
+SSYYNNOOPPSSIISS
+     //eettcc//ppssttaatt --aaiixxppttuuffTT [ ssuubbooppttiioonnss ] [ ssyysstteemm ] [ ccoorreeffiillee ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _P_s_t_a_t interprets the contents of certain system tables.  If
+     _c_o_r_e_f_i_l_e is given, the tables are sought there, otherwise in
+     /_d_e_v/_k_m_e_m. The required namelist is taken from /_v_m_u_n_i_x
+     unless _s_y_s_t_e_m is specified.  Options are
+
+     --aa    Under --pp, describe all process slots rather than just
+	   active ones.
+
+     --ii    Print the inode table with the these headings:
+
+     LOC   The core location of this table entry.
+     FLAGS Miscellaneous state variables encoded thus:
+	   L	locked
+	   U	update time (_f_s(5)) must be corrected
+	   A	access time must be corrected
+	   M	file system is mounted here
+	   W	wanted by another process (L flag is on)
+	   T	contains a text file
+	   C	changed time must be corrected
+	   S	shared lock applied
+	   E	exclusive lock applied
+	   Z	someone waiting for a lock
+     CNT   Number of open file table entries for this inode.
+     DEV   Major and minor device number of file system in which
+	   this inode resides.
+     RDC   Reference count of shared locks on the inode.
+     WRC   Reference count of exclusive locks on the inode (this
+	   may be > 1 if, for example, a file descriptor is
+	   inherited across a fork).
+     INO   I-number within the device.
+     MODE  Mode bits, see _c_h_m_o_d(2).
+     NLK   Number of links to this inode.
+     UID   User ID of owner.
+     SIZ/DEV
+	   Number of bytes in an ordinary file, or major and
+	   minor device of special file.
+
+     --xx    Print the text table with these headings:
+
+     LOC   The core location of this table entry.
+     FLAGS Miscellaneous state variables encoded thus:
+	   T	_p_t_r_a_c_e(2) in effect
+	   W	text not yet written on swap device
+	   L	loading in progress
+	   K	locked
+
+
+
+Printed 7/9/88		  May 24, 1986				1
+
+
+
+
+
+
+PSTAT(8)	    UNIX Programmer's Manual		 PSTAT(8)
+
+
+
+	   w	wanted (L flag is on)
+	   P	resulted from demand-page-from-inode exec format
+		(see _e_x_e_c_v_e(2))
+
+     DADDR Disk address in swap, measured in multiples of 512
+	   bytes.
+
+     CADDR Head of a linked list of loaded processes using this
+	   text segment.
+
+     RSS   Size of resident text, measured in multiples of 512
+	   bytes.
+
+     SIZE  Size of text segment, measured in multiples of 512
+	   bytes.
+
+     IPTR  Core location of corresponding inode.
+
+     CNT   Number of processes using this text segment.
+
+     CCNT  Number of processes in core using this text segment.
+
+     FORW  Forward link in free list.
+
+     BACK  Backward link in free list.
+
+     --pp    Print process table for active processes with these
+	   headings:
+
+     LOC   The core location of this table entry.
+     S	   Run state encoded thus:
+	   0	no process
+	   1	waiting for some event
+	   3	runnable
+	   4	being created
+	   5	being terminated
+	   6	stopped (by signal or  under trace)
+     F	   Miscellaneous state variables, or'ed together (hexade-
+	   cimal):
+	   0001     loaded
+	   0002     the scheduler process
+	   0004     locked for swap out
+	   0008     swapped out
+	   0010     traced
+	   0020     used in tracing
+	   0080     in page-wait
+	   0100     prevented from swapping during _f_o_r_k(2)
+	   0200     will restore old mask after taking signal
+	   0400     exiting
+	   0800     doing physical I/O (bio.c)
+	   1000     process resulted from a _v_f_o_r_k(2) which is not
+		    yet complete
+
+
+
+Printed 7/9/88		  May 24, 1986				2
+
+
+
+
+
+
+PSTAT(8)	    UNIX Programmer's Manual		 PSTAT(8)
+
+
+
+	   2000     another flag for _v_f_o_r_k(2)
+	   4000     process has no virtual memory, as it is a
+		    parent in the context of _v_f_o_r_k(2)
+	   8000     process is demand paging data pages from its
+		    text inode.
+	   10000    process using sequential VM patterns
+	   20000    process using random VM patterns
+	   100000   using old 4.1-compatible signal semantics
+	   200000   process needs profiling tick
+	   400000   process is scanning descriptors during select
+	   1000000  process page tables have changed
+     POIP  number of pages currently being pushed out from this
+	   process.
+     PRI   Scheduling priority, see _s_e_t_p_r_i_o_r_i_t_y(2).
+     SIG   Signals received (signals 1-32 coded in bits 0-31),
+     UID   Real user ID.
+     SLP   Amount of time process has been blocked.
+     TIM   Time resident in seconds; times over 127 coded as 127.
+     CPU   Weighted integral of CPU time, for scheduler.
+     NI    Nice level, see _s_e_t_p_r_i_o_r_i_t_y(2).
+     PGRP  Process number of root of process group.
+     PID   The process ID number.
+     PPID  The process ID of parent process.
+     ADDR  If in core, the page frame number of the first page of
+	   the `u-area' of the process.  If swapped out, the
+	   position in the swap area measured in multiples of 512
+	   bytes.
+     RSS   Resident set size - the number of physical page frames
+	   allocated to this process.
+     SRSS  RSS at last swap (0 if never swapped).
+     SIZE  Virtual size of process image (data+stack) in multi-
+	   ples of 512 bytes.
+     WCHAN Wait channel number of a waiting process.
+     LINK  Link pointer in list of runnable processes.
+     TEXTP If text is pure, pointer to location of text table
+	   entry.
+
+     --tt    Print table for terminals with these headings:
+
+     RAW   Number of characters in raw input queue.
+     CAN   Number of characters in canonicalized input queue.
+     OUT   Number of characters in putput queue.
+     MODE  See _t_t_y(4).
+     ADDR  Physical device address.
+     DEL   Number of delimiters (newlines) in canonicalized input
+	   queue.
+     COL   Calculated column position of terminal.
+     STATE Miscellaneous state variables encoded thus:
+	   T	delay timeout in progress
+	   W	waiting for open to complete
+	   O	open
+	   F	outq has been flushed during DMA
+
+
+
+Printed 7/9/88		  May 24, 1986				3
+
+
+
+
+
+
+PSTAT(8)	    UNIX Programmer's Manual		 PSTAT(8)
+
+
+
+	   C	carrier is on
+	   B	busy doing output
+	   A	process is awaiting output
+	   X	open for exclusive use
+	   S	output stopped
+	   H	hangup on close
+     PGRP  Process group for which this is controlling terminal.
+     DISC  Line discipline; blank is old tty OTTYDISC or ``new
+	   tty'' for NTTYDISC or ``net'' for NETLDISC (see
+	   _b_k(4)).
+
+     --uu    print information about a user process; the next argu-
+	   ment is its address as given by _p_s(1).  The process
+	   must be in main memory, or the file used can be a core
+	   image and the address 0.  Only the fields located in
+	   the first page cluster can be located succesfully if
+	   the process is in main memory.
+
+     --ff    Print the open file table with these headings:
+
+     LOC   The core location of this table entry.
+
+     TYPE  The type of object the file table entry points to.
+     FLG   Miscellaneous state variables encoded thus:
+	   R	open for reading
+	   W	open for writing
+	   A	open for appending
+	   S	shared lock present
+	   X	exclusive lock present
+	   I	signal pgrp when data ready
+     CNT   Number of processes that know this open file.
+     MSG   Number of messages outstanding for this file.
+     DATA  The location of the inode table entry or socket struc-
+	   ture for this file.
+     OFFSET
+	   The file offset (see _l_s_e_e_k(2)).
+
+     --ss print information about swap space usage: the number of
+     (1k byte) pages used and free is given as well as the number
+     of used pages which belong to text images.
+
+     --TT prints the number of used and free slots in the several
+     system tables and is useful for checking to see how full
+     system tables have become if the system is under heavy load.
+
+FFIILLEESS
+     /vmunix	namelist
+     /dev/kmem	default source of tables
+
+SSEEEE AALLSSOO
+     iostat(1), ps(1), systat(1), vmstat(1), stat(2), fs(5),
+     K. Thompson, _U_N_I_X _I_m_p_l_e_m_e_n_t_a_t_i_o_n
+
+
+
+Printed 7/9/88		  May 24, 1986				4
+
+
+
+
+
+
+PSTAT(8)	    UNIX Programmer's Manual		 PSTAT(8)
+
+
+
+BBUUGGSS
+     It would be very useful if the system recorded "maximum
+     occupancy" on the tables reported by --TT;; even more useful if
+     these tables were dynamically allocated.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 24, 1986				5
+
+
+

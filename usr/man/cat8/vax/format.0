@@ -1,0 +1,264 @@
+
+
+
+FORMAT(8V)	    UNIX Programmer's Manual	       FORMAT(8V)
+
+
+
+NNAAMMEE
+     format - how to format disk packs
+
+DDEESSCCRRIIPPTTIIOONN
+     There are two ways to format disk packs.  The simplest is to
+     use the _f_o_r_m_a_t program.  The alternative is to use the DEC
+     standard formatting software which operates under the DEC
+     diagnostic supervisor. This manual page describes the opera-
+     tion of _f_o_r_m_a_t, then concludes with some remarks about using
+     the DEC formatter.
+
+     _F_o_r_m_a_t is a standalone program used to format and check
+     disks prior to constructing file systems.	In addition to
+     the formatting operation, _f_o_r_m_a_t records any bad sectors
+     encountered according to DEC standard 144. Formatting is
+     performed one track at a time by writing the appropriate
+     headers and a test pattern and then checking the sector by
+     reading and verifying the pattern, using the controller's
+     ECC for error detection.  A sector is marked bad if an unre-
+     coverable media error is detected, or if a correctable ECC
+     error too many bits in length is detected (such errors are
+     indicated as ``ECC'' in the summary printed upon completing
+     the format operation).  After the entire disk has been for-
+     matted and checked, the total number of errors are reported,
+     any bad sectors and skip sectors are marked, and a bad sec-
+     tor forwarding table is written to the disk in the first
+     five even numbered sectors of the last track.  It is also
+     possible to reformat sections of the disk in units of
+     tracks.  _F_o_r_m_a_t may be used on any UNIBUS or MASSBUS drive
+     supported by the _u_p and _h_p device drivers which uses 4-byte
+     headers (everything except RP's).
+
+     The test pattern used during the media check may be selected
+     from one of: 0xf00f (RH750 worst case), 0xec6d (media worst
+     case), and 0xa5a5 (alternating 1's and 0's).  Normally the
+     media worst case pattern is used.
+
+     _F_o_r_m_a_t also has an option to perform an extended "severe
+     burn-in," which makes a number of passes using different
+     patterns.	The number of passes can be selected at run time,
+     up to a maximum of 48, with provision for additional passes
+     or termination after the preselected number of passes.  This
+     test runs for many hours, depending on the disk and proces-
+     sor.
+
+     Each time _f_o_r_m_a_t is run to format an entire disk, a com-
+     pletely new bad sector table is generated based on errors
+     encountered while formatting.  The device driver, however,
+     will always attempt to read any existing bad sector table
+     when the device is first opened.  Thus, if a disk pack has
+     never previously been formatted, or has been formatted with
+     different sectoring, five error messages will be printed
+
+
+
+Printed 7/9/88		  May 22, 1986				1
+
+
+
+
+
+
+FORMAT(8V)	    UNIX Programmer's Manual	       FORMAT(8V)
+
+
+
+     when the driver attempts to read the bad sector table; these
+     diagnostics should be ignored.
+
+     Formatting a 400 megabyte disk on a MASSBUS disk controller
+     usually takes about 20 minutes.  Formatting on a UNIBUS disk
+     controller takes significantly longer.  For every hundredth
+     cylinder formatted _f_o_r_m_a_t prints a message indicating the
+     current cylinder being formatted.	(This message is just to
+     reassure people that nothing is is amiss.)
+
+     _F_o_r_m_a_t uses the standard notation of the standalone I/O
+     library in identifying a drive to be formatted.  A drive is
+     specified as _z_z(_x,_y), where _z_z refers to the controller type
+     (either _h_p or _u_p), _x is the unit number of the drive; 8
+     times the UNIBUS or MASSBUS adaptor number plus the MASSBUS
+     drive number or UNIBUS drive unit number; and _y is the file
+     system partition on drive _x (this should always be 0). For
+     example, ``hp(1,0)'' indicates that drive 1 on MASSBUS adap-
+     tor 0 should be formatted; while ``up(10,0)'' indicates that
+     UNIBUS drive 2 on UNIBUS adaptor 1 should be formatted.
+
+     Before each formatting attempt, _f_o_r_m_a_t prompts the user in
+     case debugging should be enabled in the appropriate device
+     driver.  A carriage return disables debugging information.
+
+     _F_o_r_m_a_t should be used prior to building file systems (with
+     _n_e_w_f_s(8)) to insure that all sectors with uncorrectable
+     media errors are remapped.  If a drive develops uncorrect-
+     able defects after formatting, either _b_a_d_1_4_4(8) or _b_a_d_-
+     _s_e_c_t(8) should be able to avoid the bad sectors.
+
+EEXXAAMMPPLLEE
+     A sample run of _f_o_r_m_a_t is shown below. In this example
+     (using a VAX-11/780), _f_o_r_m_a_t is loaded from the console
+     floppy; on an 11/750 _f_o_r_m_a_t will be loaded from the root
+     file system with _b_o_o_t(8) following a "B/3" command.  Bold-
+     face means user input.  As usual, ``#'' and ``@'' may be
+     used to edit input.
+
+	  >>>LL FFOORRMMAATT
+		    LOAD DONE, 00004400 BYTES LOADED
+	  >>>SS 22
+	  Disk format/check utility
+
+	  Enable debugging (0=none, 1=bse, 2=ecc, 3=bse+ecc)? 00
+	  Device to format? hhpp((88,,00))
+	  (_e_r_r_o_r _m_e_s_s_a_g_e_s _m_a_y _o_c_c_u_r _a_s _o_l_d _b_a_d _s_e_c_t_o_r _t_a_b_l_e _i_s _r_e_a_d)
+	  Formatting drive hp0 on adaptor 1: verify (yes/no)? yyeess
+	  Device data: #cylinders=842, #tracks=20, #sectors=48
+	  Starting cylinder (0):
+	  Starting track (0):
+	  Ending cylinder (841):
+
+
+
+Printed 7/9/88		  May 22, 1986				2
+
+
+
+
+
+
+FORMAT(8V)	    UNIX Programmer's Manual	       FORMAT(8V)
+
+
+
+	  Ending track (19):
+	  Available test patterns are:
+		    1 - (f00f) RH750 worst case
+		    2 - (ec6d) media worst case
+		    3 - (a5a5) alternating 1's and 0's
+		    4 - (ffff) Severe burnin (up to 48 passes)
+	  Pattern (one of the above, other to restart)? 22
+	  Maximum number of bit errors to allow for soft ECC (3):
+	  Start formatting...make sure the drive is online
+	   ...
+	  (_s_o_f_t _e_c_c'_s _a_n_d _o_t_h_e_r _e_r_r_o_r_s _a_r_e _r_e_p_o_r_t_e_d _a_s _t_h_e_y _o_c_c_u_r)
+	   ...
+	  (_i_f _4 _w_r_i_t_e _c_h_e_c_k _e_r_r_o_r_s _w_e_r_e _f_o_u_n_d, _t_h_e _p_r_o_g_r_a_m _t_e_r_m_i_n_a_t_e_s _l_i_k_e _t_h_i_s...)
+	   ...
+	  Errors:
+	  Bad sector: 0
+	  Write check: 4
+	  Hard ECC: 0
+	  Other hard: 0
+	  Marked bad: 0
+	  Skipped: 0
+	  Total of 4 hard errors revectored.
+	  Writing bad sector table at block 808272
+	  (_8_0_8_2_7_2 _i_s _t_h_e _b_l_o_c_k # _o_f _t_h_e _f_i_r_s_t _b_l_o_c_k _i_n _t_h_e _b_a_d _s_e_c_t_o_r _t_a_b_l_e)
+	  Done
+	  (..._p_r_o_g_r_a_m _r_e_s_t_a_r_t_s _t_o _a_l_l_o_w _f_o_r_m_a_t_t_i_n_g _o_t_h_e_r _d_i_s_k_s)
+	  (..._t_o _a_b_o_r_t _h_a_l_t _m_a_c_h_i_n_e _w_i_t_h ^_P)
+
+
+DDIIAAGGNNOOSSTTIICCSS
+     The diagnostics are intended to be self explanatory.
+
+UUSSIINNGG DDEECC SSOOFFTTWWAARREE TTOO FFOORRMMAATT
+     WWaarrnniinngg::  TThheessee iinnssttrruuccttiioonnss aarree ffoorr ppeeooppllee wwiitthh 1111//778800
+     CCPPUU''ss.. The steps needed for 11/750 or 11/730 cpu's are simi-
+     lar, but not covered in detail here.
+
+     The formatting procedures are different for each type of
+     disk.  Listed here are the formatting procedures for RK07's,
+     RP0X, and RM0X disks.
+
+     You should shut down UNIX and halt the machine to do any
+     disk formatting.  Make certain you put in the pack you want
+     formatted.  It is also a good idea to spin down or write
+     protect the disks you don't want to format, just in case.
+
+     FFoorrmmaattttiinngg aann RRKK0077.. Load the console floppy labeled, "RX11
+     VAX DSK LD DEV #1" in the console disk drive, and type the
+     following commands:
+	  >>>BOOT
+	  DIAGNOSTIC SUPERVISOR.  ZZ-ESSAA-X5.0-119  23-JAN-1980 12:44:40.03
+	  DS>ATTACH DW780 SBI DW0 3 5
+
+
+
+Printed 7/9/88		  May 22, 1986				3
+
+
+
+
+
+
+FORMAT(8V)	    UNIX Programmer's Manual	       FORMAT(8V)
+
+
+
+	  DS>ATTACH RK611 DMA
+	  DS>ATTACH RK07 DW0 DMA0
+	  DS>SELECT DMA0
+	  DS>LOAD EVRAC
+	  DS>START/SEC:PACKINIT
+
+     FFoorrmmaattttiinngg aann RRPP00XX.. Follow the above procedures except that
+     the ATTACH and SELECT lines should read:
+	  DS>ATTACH RH780 SBI RH0 8 5
+	  DS>ATTACH RP0X RH0 DBA0(RP0X is, e.g. RP06)
+	  DS>SELECT DBA0
+
+     This is for drive 0 on mba0; use 9 instead of 8 for mba1,
+     etc.
+
+     FFoorrmmaattttiinngg aann RRMM00XX.. Follow the above procedures except that
+     the ATTACH and SELECT lines should read:
+	  DS>ATTACH RH780 SBI RH0 8 5
+	  DS>ATTACH RM0X RH0 DRA0
+	  DS>SELECT DRA0
+
+     Don't forget to put your UNIX console floppy back in the
+     floppy disk drive.
+
+SSEEEE AALLSSOO
+     bad144(8), badsect(8), newfs(8)
+
+BBUUGGSS
+     An equivalent facility should be available which operates
+     under a running UNIX system.
+
+     It should be possible to reformat or verify part or all of a
+     disk, then update the existing bad sector table.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 22, 1986				4
+
+
+

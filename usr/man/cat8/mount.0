@@ -1,0 +1,66 @@
+
+
+
+MOUNT(8)	    UNIX Programmer's Manual		 MOUNT(8)
+
+
+
+NNAAMMEE
+     mount, umount - mount and dismount file system
+
+SSYYNNOOPPSSIISS
+     //eettcc//mmoouunntt [ special name [ --rr ] ]
+
+     //eettcc//mmoouunntt --aa
+
+     //eettcc//uummoouunntt special
+
+     //eettcc//uummoouunntt --aa
+
+DDEESSCCRRIIPPTTIIOONN
+     _M_o_u_n_t announces to the system that a removable file system
+     is present on the device _s_p_e_c_i_a_l. The file _n_a_m_e must exist
+     already; it must be a directory (unless the root of the
+     mounted file system is not a directory).  It becomes the
+     name of the newly mounted root.  The optional argument --rr
+     indicates that the file system is to be mounted read-only.
+
+     _U_m_o_u_n_t announces to the system that the removable file sys-
+     tem previously mounted on device _s_p_e_c_i_a_l is to be removed.
+
+     If the --aa option is present for either _m_o_u_n_t or _u_m_o_u_n_t, all
+     of the file systems described in /_e_t_c/_f_s_t_a_b are attempted to
+     be mounted or unmounted.  In this case, _s_p_e_c_i_a_l and _n_a_m_e are
+     taken from /_e_t_c/_f_s_t_a_b. The _s_p_e_c_i_a_l file name from /_e_t_c/_f_s_t_a_b
+     is the block special name.
+
+     These commands maintain a table of mounted devices in
+     /_e_t_c/_m_t_a_b. If invoked without an argument, _m_o_u_n_t prints the
+     table.
+
+     Physically write-protected and magnetic tape file systems
+     must be mounted read-only or errors will occur when access
+     times are updated, whether or not any explicit write is
+     attempted.
+
+FFIILLEESS
+     /etc/mtab mount table
+     /etc/fstab     file system table
+
+SSEEEE AALLSSOO
+     mount(2), mtab(5), fstab(5)
+
+BBUUGGSS
+     Mounting file systems full of garbage will crash the system.
+     Mounting a root directory on a non-directory makes some
+     apparently good pathnames invalid.
+
+
+
+
+
+
+Printed 7/9/88		 April 27, 1985                         1
+
+
+

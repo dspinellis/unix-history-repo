@@ -1,0 +1,132 @@
+
+
+
+MAN(7)		    UNIX Programmer's Manual		   MAN(7)
+
+
+
+NNAAMMEE
+     man - macros to typeset manual
+
+SSYYNNOOPPSSIISS
+     nnrrooffff  --mmaann  file ...
+
+     ttrrooffff  --mmaann  file ...
+
+DDEESSCCRRIIPPTTIIOONN
+     These macros are used to lay out pages of this manual.  A
+     skeleton page may be found in the file
+     /usr/man/man.template.
+
+     Any text argument _t may be zero to six words.  Quotes may be
+     used to include blanks in a `word'.  If _t_e_x_t is empty, spe-
+     cial treatment is applied to the next input line with text
+     to be printed.  In this way ..I may be used to italicize a
+     whole line, or ..SM may be followed by ..B to make small bold
+     letters.
+
+     A prevailing indent distance is remembered between succes-
+     sive indented paragraphs, and is reset to default value upon
+     reaching a non-indented paragraph.  Default units for
+     indents _i are ens.
+
+     Type font and size are reset to default values before each
+     paragraph, and after processing font and size setting mac-
+     ros.
+
+     These strings are predefined by --mmaann:
+
+     \*R  `(Reg)', trademark symbol in _t_r_o_f_f.
+
+     \*S  Change to default type size.
+
+FFIILLEESS
+     /usr/lib/tmac/tmac.an
+     /usr/man/man.template
+
+SSEEEE AALLSSOO
+     man(1), troff(1)
+
+BBUUGGSS
+     Relative indents don't nest.
+
+RREEQQUUEESSTTSS
+Request      Cause If no    Explanation
+	     Break Argument
+.B _t	     no    _t=n.t.l.*Text _t is bold.
+.BI _t	     no    _t=n.t.l. Join words of _t alternating bold and
+			    italic.
+.BR _t	     no    _t=n.t.l. Join words of _t alternating bold and
+
+
+
+Printed 7/9/88		 August 10, 1987			1
+
+
+
+
+
+
+MAN(7)		    UNIX Programmer's Manual		   MAN(7)
+
+
+
+			    Roman.
+.DT	     no    .5i 1i...Restore default tabs.
+.HP _i	     yes   _i=p.i.*  Set prevailing indent to _i. Begin
+			    paragraph with hanging indent.
+.I _t	     no    _t=n.t.l. Text _t is italic.
+.IB _t	     no    _t=n.t.l. Join words of _t alternating italic
+			    and bold.
+.IP _x _i      yes   _x=""     Same as .TP with tag _x.
+.IR _t	     no    _t=n.t.l. Join words of _t alternating italic
+			    and Roman.
+.LP	     yes   -	    Same as .PP.
+.PD _d	     no    _d=.4v    Interparagraph distance is _d.
+.PP	     yes   -	    Begin paragraph.  Set prevailing
+			    indent to .5i.
+.RE	     yes   -	    End of relative indent.  Set prevail-
+			    ing indent to amount of starting .RS.
+.RB _t	     no    _t=n.t.l. Join words of _t alternating Roman and
+			    bold.
+.RI _t	     no    _t=n.t.l. Join words of _t alternating Roman and
+			    italic.
+.RS _i	     yes   _i=p.i.   Start relative indent, move left mar-
+			    gin in distance _i. Set prevailing
+			    indent to .5i for nested indents.
+.SH _t	     yes   _t=n.t.l. Subhead.
+.SM _t	     no    _t=n.t.l. Text _t is small.
+.TH _n _c _x _v _m	   yes	    -Begin page named _n of chapter _c; _x
+			    is extra commentary, e.g. `local',
+			    for page foot center; _v alters page
+			    foot left, e.g. `4th Berkeley Distri-
+			    bution'; _m alters page head center,
+			    e.g. `Brand X Programmer's Manual'.
+			    Set prevailing indent and tabs to
+			    .5i.
+.TP _i	     yes   _i=p.i.   Set prevailing indent to _i. Begin
+			    indented paragraph with hanging tag
+			    given by next text line.  If tag
+			    doesn't fit, place it on separate
+			    line.
+
+* n.t.l. = next text line; p.i. = prevailing indent
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 August 10, 1987			2
+
+
+

@@ -1,0 +1,66 @@
+
+
+
+INTRO(8)	    UNIX Programmer's Manual		 INTRO(8)
+
+
+
+NNAAMMEE
+     intro - introduction to system maintenance and operation
+     commands
+
+DDEESSCCRRIIPPTTIIOONN
+     This section contains information related to system opera-
+     tion and maintenance.  It describes commands used to create
+     new file systems, _n_e_w_f_s, verify the integrity of the file
+     systems, _f_s_c_k, control disk usage, _e_d_q_u_o_t_a, maintain system
+     backups, _d_u_m_p, and recover files when disks die an untimely
+     death, _r_e_s_t_o_r_e.  The section _f_o_r_m_a_t should be consulted when
+     formatting disk packs.  Network related services are dis-
+     tinguished as 8C.	The section _c_r_a_s_h should be consulted in
+     understanding how to interpret system crash dumps.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 29, 1986				1
+
+
+

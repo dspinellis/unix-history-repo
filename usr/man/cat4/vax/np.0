@@ -1,0 +1,132 @@
+
+
+
+NP(4)		    UNIX Programmer's Manual		    NP(4)
+
+
+
+NNAAMMEE
+     np - Interlan Np100 10 Mb/s Ethernet interface
+
+SSYYNNOOPPSSIISS
+     ddeevviiccee nnpp00 aatt uubbaa00 ccssrr 116666000000 vveeccttoorr nnppiinnttrr
+
+DDEESSCCRRIIPPTTIIOONN
+     The _N_P device provides access to an Interlan Np100 Ethernet
+     interface for control functions.
+
+     This interface is unusual in that it requires loading
+     firmware into the controller before it may be used as a net-
+     work link-level interface.  This is accomplished by opening
+     a character special device, and writing data to it.  It is
+     also possible to do post-mortem debugging of firmware
+     failures by reading the local memory of the device.
+
+     A program to load the image is provided in
+     /usr/src/new/np100.  The sequence of commands would be:
+
+	  # ./npload np.image [/dev/np00]
+	  # sleep 10
+	  # ifconfig ix0 ...
+
+     Multiple control processes are allowed by opening separate
+     minor devices; secondary interfaces are specified by shift-
+     ing the interface number by 4 bits.
+
+     The device also responds to commands passed through the
+     driver by the following ioctls:
+
+     NPRESET
+	  kills off all active network processes.
+
+     NPSTART
+	  begins execution of the board at the specified address
+	  (usually 0x400).
+
+     NPNETBOOT
+	  downloads the image from a server on the network.
+	  [Contact MICOM-INTERLAN for details.]
+
+DDIIAAGGNNOOSSTTIICCSS
+     nnpp%%dd:: BBaadd MMaaiinntteennaannccee ccoommmmaanndd:: %%xx!!.  An invalid ioctl was
+     passed to the np driver.
+
+     nnpp%%dd:: PPaanniicc NNPP110000 bbaadd bbuuffffeerr cchhaaiinn.  An error occurred in an
+     read or write operation causing it to run out of buffers
+     before it finished the operation.	This indicates a kernel
+     failure rather than a device failure.
+
+
+
+
+
+Printed 7/9/88		  May 21, 1986				1
+
+
+
+
+
+
+NP(4)		    UNIX Programmer's Manual		    NP(4)
+
+
+
+     NNPP110000 uunniitt %%dd nnoott ffoouunndd!!.	A failure occurred during ini-
+     tialization, such that the unibus address expected for the
+     board was found to be bad.  Probably indicates hardware
+     problems with the board, as do the following:
+
+
+     NNPP110000 UUnniitt %%dd ttiimmeedd oouutt!!
+
+     NNPP110000 UUnniitt %%dd FFaaiilleedd ddiiaaggnnoossttiiccss!!
+     SSttaattuuss ffrroomm CCSSRR00:: %%xx..
+
+     PPaanniicc ffrroomm NNPP110000 uunniitt %%dd!!\\nnPPaanniicc MMeessssaaggee:: %%ss.  An occurrence
+     on the board was deemed serious enough to have the vax print
+     it out.
+
+     NNPP110000 uunniitt ##%%dd aavvaaiillaabbllee!!.  The board was successfully
+     loaded and started.
+
+     nnpp%%dd:: BBaadd RReeqq:: %%xx...  The board made a maintenance request to
+     the vax that it did not understand.
+
+     nnpp%%dd:: NNoo mmoorree rroooomm oonn CCoommmmaanndd QQuueeuuee!!.  The np driver allowed
+     an internal resource to be exhausted.  This should never
+     happen.
+
+     There are 110 other diagnostic messages that can be enabled
+     by setting bits in a debugging mask.  Consult the driver for
+     details.
+
+SSEEEE AALLSSOO
+     intro(4N), inet(4F), arp(4P), ix(4)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 21, 1986				2
+
+
+

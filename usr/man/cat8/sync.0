@@ -1,0 +1,66 @@
+
+
+
+SYNC(8)             UNIX Programmer's Manual		  SYNC(8)
+
+
+
+NNAAMMEE
+     sync - update the super block
+
+SSYYNNOOPPSSIISS
+     //eettcc//ssyynncc
+
+DDEESSCCRRIIPPTTIIOONN
+     _S_y_n_c executes the _s_y_n_c system primitive.  _S_y_n_c can be called
+     to insure that all disk writes have been completed before
+     the processor is halted in a way not suitably done by
+     _r_e_b_o_o_t(8) or _h_a_l_t(8).  Generally, it is preferable to use
+     _r_e_b_o_o_t or _h_a_l_t to shut down the system, as they may perform
+     additional actions such as resynchronizing the hardware
+     clock and flushing internal caches before performing a final
+     _s_y_n_c.
+
+     See _s_y_n_c(2) for details on the system primitive.
+
+SSEEEE AALLSSOO
+     sync(2), fsync(2), halt(8), reboot(8), update(8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 28, 1986				1
+
+
+

@@ -1,0 +1,132 @@
+
+
+
+TIMEDC(8)	    UNIX Programmer's Manual		TIMEDC(8)
+
+
+
+NNAAMMEE
+     timedc - timed control program
+
+SSYYNNOOPPSSIISS
+     //eettcc//ttiimmeeddcc [ command [ argument ... ] ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _T_i_m_e_d_c is used to control the operation of  the  _t_i_m_e_d  pro-
+     gram.  It may be used to:
+
+     o+	  measure the differences between machines' clocks,
+
+     o+	  find the location where the master time server is  run-
+	  ning,
+
+     o+	  enable or  disable  tracing  of  messages  received  by
+	  _t_i_m_e_d, and
+
+     o+	  perform various debugging actions.
+
+     Without any arguments, _t_i_m_e_d_c will prompt for commands  from
+     the  standard  input.   If  arguments  are  supplied, _t_i_m_e_d_c
+     interprets the first argument as a command and the remaining
+     arguments	as parameters to the command.  The standard input
+     may be redirected causing _t_i_m_e_d_c to  read	commands  from	a
+     file.  Commands may be abbreviated; recognized commands are:
+
+     ? [ command ... ]
+
+     help [ command ... ]
+	  Print a short description of each command specified  in
+	  the  argument  list,	or,  if no arguments are given, a
+	  list of the recognized commands.
+
+     clockdiff host ...
+	  Compute the differences between the clock of	the  host
+	  machine  and	the clocks of the machines given as argu-
+	  ments.
+
+     trace { on | off }
+	  Enable or disable the tracing of incoming  messages  to
+	  _t_i_m_e_d in the file /usr/adm/timed.log.
+
+     quit
+	  Exit from timedc.
+
+     Other commands may be included for use in testing and debug-
+     ging  _t_i_m_e_d;  the help command and the program source may be
+     consulted for details.
+
+FFIILLEESS
+     /usr/adm/timed.log       tracing file for timed
+
+
+
+Printed 7/9/88		  July 9, 1988				1
+
+
+
+
+
+
+TIMEDC(8)	    UNIX Programmer's Manual		TIMEDC(8)
+
+
+
+     /usr/adm/timed.masterlog log file for master timed
+
+SSEEEE AALLSSOO
+     date(1), adjtime(2), icmp(4P), timed(8),
+     _T_S_P: _T_h_e _T_i_m_e _S_y_n_c_h_r_o_n_i_z_a_t_i_o_n _P_r_o_t_o_c_o_l _f_o_r _U_N_I_X  _4._3_B_S_D,  R.
+     Gusella and S. Zatti
+
+DDIIAAGGNNOOSSTTIICCSS
+     ?Ambiguous command      abbreviation matches more than one command
+     ?Invalid command	     no match found
+     ?Privileged command     command can be executed by root only
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  July 9, 1988				2
+
+
+

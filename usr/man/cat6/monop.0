@@ -1,0 +1,198 @@
+
+
+
+MONOP(6)	    UNIX Programmer's Manual		 MONOP(6)
+
+
+
+NNAAMMEE
+     monop - Monopoly game
+
+SSYYNNOOPPSSIISS
+     //uussrr//ggaammeess//mmoonnoopp [ file ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _M_o_n_o_p is reminiscent of the Parker Brother's game Monopoly,
+     and monitors a game between 1 to 9 users.	It is assumed
+     that the rules of Monopoly are known.  The game follows the
+     standard rules, with the exception that, if a property goes
+     up for auction and there are only two solvent players, no
+     auction is held and the property remains unowned.
+
+     The game, in effect, lends the player money, so it is possi-
+     ble to buy something which you cannot afford.  However, as
+     soon as a person goes into debt, he must "fix the problem",
+     _i._e., make himself solvent, before play can continue.  If
+     this is not possible, the player's property reverts to his
+     debtee, either a player or the bank.  A player can resign at
+     any time to any person or the bank, which puts the property
+     back on the board, unowned.
+
+     Any time that the response to a question is a _s_t_r_i_n_g, e.g.,
+     a name, place or person, you can type `?' to get a list of
+     valid answers.  It is not possible to input a negative
+     number, nor is it ever necessary.
+
+     _A _S_u_m_m_a_r_y _o_f _C_o_m_m_a_n_d_s:
+     _q_u_i_t:     quit game: This allows you to quit the game.  It
+	       asks you if you're sure.
+     _p_r_i_n_t:    print board: This prints out the current board.
+	       The columns have the following meanings (column
+	       headings are the same for the wwhheerree, oowwnn hhoollddiinnggss,
+	       and hhoollddiinnggss commands):
+	       Name  The first ten characters of the name of the
+		     square
+	       Own   The _n_u_m_b_e_r of the owner of the property.
+	       Price The cost of the property (if any)
+	       Mg    This field has a `*' in it if the property
+		     is mortgaged
+	       #     If the property is a Utility or Railroad,
+		     this is the number of such owned by the
+		     owner.  If the property is land, this is the
+		     number of houses on it.
+	       Rent  Current rent on the property.  If it is not
+		     owned, there is no rent.
+     _w_h_e_r_e:    where players are: Tells you where all the players
+	       are.  A `*' indicates the current player.
+     _o_w_n _h_o_l_d_i_n_g_s:
+	       List your own holdings, _i._e., money, get-out-of-
+	       jail-free cards, and property.
+
+
+
+Printed 7/9/88		   May 6, 1986				1
+
+
+
+
+
+
+MONOP(6)	    UNIX Programmer's Manual		 MONOP(6)
+
+
+
+     _h_o_l_d_i_n_g_s: holdings list: Look at anyone's holdings.  It will
+	       ask you whose holdings you wish to look at.  When
+	       you are finished, type "done".
+     _s_h_e_l_l:    shell escape: Escape to a shell.  When the shell
+	       dies, the program continues where you left off.
+     _m_o_r_t_g_a_g_e: mortgage property: Sets up a list of mortgageable
+	       property, and asks which you wish to mortgage.
+     _u_n_m_o_r_t_g_a_g_e:
+	       unmortgage property: Unmortgage mortgaged pro-
+	       perty.
+     _b_u_y:      buy houses: Sets up a list of monopolies on which
+	       you can buy houses.  If there is more than one, it
+	       asks you which you want to buy for.  It then asks
+	       you how many for each piece of property, giving
+	       the current amount in parentheses after the pro-
+	       perty name.  If you build in an unbalanced manner
+	       (a disparity of more than one house within the
+	       same monopoly), it asks you to re-input things.
+     _s_e_l_l:     sell houses: Sets up a list of monopolies from
+	       which you can sell houses.  It operates in an
+	       analogous manner to _b_u_y.
+     _c_a_r_d:     card for jail: Use a get-out-of-jail-free card to
+	       get out of jail.  If you're not in jail, or you
+	       don't have one, it tells you so.
+     _p_a_y:      pay for jail: Pay $50 to get out of jail, from
+	       whence you are put on Just Visiting.  Difficult to
+	       do if you're not there.
+     _t_r_a_d_e:    This allows you to trade with another player.  It
+	       asks you whom you wish to trade with, and then
+	       asks you what each wishes to give up.  You can get
+	       a summary at the end, and, in all cases, it asks
+	       for confirmation of the trade before doing it.
+     _r_e_s_i_g_n:   Resign to another player or the bank.  If you
+	       resign to the bank, all property reverts to its
+	       virgin state, and get-out-of-jail free cards
+	       revert to the deck.
+     _s_a_v_e:     save game: Save the current game in a file for
+	       later play.  You can continue play after saving,
+	       either by adding the file in which you saved the
+	       game after the _m_o_n_o_p command, or by using the
+	       _r_e_s_t_o_r_e command (see below).  It will ask you
+	       which file you wish to save it in, and, if the
+	       file exists, confirm that you wish to overwrite
+	       it.
+     _r_e_s_t_o_r_e:  restore game: Read in a previously saved game from
+	       a file.	It leaves the file intact.
+     _r_o_l_l:     Roll the dice and move forward to your new loca-
+	       tion. If you simply hit the <RETURN> key instead
+	       of a command, it is the same as typing _r_o_l_l.
+
+AAUUTTHHOORR
+     Ken Arnold
+
+
+
+Printed 7/9/88		   May 6, 1986				2
+
+
+
+
+
+
+MONOP(6)	    UNIX Programmer's Manual		 MONOP(6)
+
+
+
+FFIILLEESS
+     /usr/games/lib/cards.pck Chance and Community Chest cards
+
+BBUUGGSS
+     No command can be given an argument instead of a response to
+     a query.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		   May 6, 1986				3
+
+
+

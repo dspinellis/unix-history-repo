@@ -1,0 +1,66 @@
+
+
+
+REPQUOTA(8)	    UNIX Programmer's Manual	      REPQUOTA(8)
+
+
+
+NNAAMMEE
+     repquota - summarize quotas for a file system
+
+SSYYNNOOPPSSIISS
+     rreeppqquuoottaa _f_i_l_e_s_y_s...
+
+DDEESSCCRRIIPPTTIIOONN
+     _R_e_p_q_u_o_t_a prints a summary of the disc usage and quotas for
+     the specified file systems.  For each user the current
+     number files and amount of space (in kilobytes) is printed,
+     along with any quotas created with _e_d_q_u_o_t_a(8).
+
+     Only the super-user may view quotas which are not their own.
+
+FFIILLEESS
+     _q_u_o_t_a_s    at the root of each file system with quotas
+     /etc/fstab     for file system names and locations
+
+SSEEEE AALLSSOO
+     quota(1), quota(2), quotacheck(8), quotaon(8), edquota(8)
+
+DDIIAAGGNNOOSSTTIICCSS
+     Various messages about inaccessible files; self-explanatory.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  July 9, 1988				1
+
+
+

@@ -1,0 +1,198 @@
+
+
+
+RSHD(8C)	    UNIX Programmer's Manual		 RSHD(8C)
+
+
+
+NNAAMMEE
+     rshd - remote shell server
+
+SSYYNNOOPPSSIISS
+     //eettcc//rrsshhdd
+
+DDEESSCCRRIIPPTTIIOONN
+     _R_s_h_d is the server for the _r_c_m_d(3X) routine and, conse-
+     quently, for the _r_s_h(1C) program.	The server provides
+     remote execution facilities with authentication based on
+     privileged port numbers from trusted hosts.
+
+     _R_s_h_d listens for service requests at the port indicated in
+     the ``cmd'' service specification; see _s_e_r_v_i_c_e_s(5).  When a
+     service request is received the following protocol is ini-
+     tiated:
+
+     1)   The server checks the client's source port.  If the
+	  port is not in the range 0-1023, the server aborts the
+	  connection.
+
+     2)   The server reads characters from the socket up to a
+	  null (`\0') byte.  The resultant string is interpreted
+	  as an ASCII number, base 10.
+
+     3)   If the number received in step 2 is non-zero, it is
+	  interpreted as the port number of a secondary stream to
+	  be used for the ssttddeerrrr.  A second connection is then
+	  created to the specified port on the client's machine.
+	  The source port of this second connection is also in
+	  the range 0-1023.
+
+     4)   The server checks the client's source address and
+	  requests the corresponding host name (see
+	  _g_e_t_h_o_s_t_b_y_a_d_d_r(3N), _h_o_s_t_s(5) and _n_a_m_e_d(8)).  If the
+	  hostname cannot be determined, the dot-notation
+	  representation of the host address is used.
+
+     5)   A null terminated user name of at most 16 characters is
+	  retrieved on the initial socket.  This user name is
+	  interpreted as the user identity on the cclliieenntt's
+	  machine.
+
+     6)   A null terminated user name of at most 16 characters is
+	  retrieved on the initial socket.  This user name is
+	  interpreted as a user identity to use on the sseerrvveerr's
+	  machine.
+
+     7)   A null terminated command to be passed to a shell is
+	  retrieved on the initial socket.  The length of the
+	  command is limited by the upper bound on the size of
+	  the system's argument list.
+
+
+
+Printed 7/9/88		October 25, 1987			1
+
+
+
+
+
+
+RSHD(8C)	    UNIX Programmer's Manual		 RSHD(8C)
+
+
+
+     8)   _R_s_h_d then validates the user according to the following
+	  steps.  The local (server-end) user name is looked up
+	  in the password file and a _c_h_d_i_r is performed to the
+	  user's home directory.  If either the lookup or _c_h_d_i_r
+	  fail, the connection is terminated.  If the user is not
+	  the super-user, (user id 0), the file /_e_t_c/_h_o_s_t_s._e_q_u_i_v
+	  is consulted for a list of hosts considered
+	  ``equivalent''.  If the client's host name is present
+	  in this file, the authentication is considered success-
+	  ful.	If the lookup fails, or the user is the super-
+	  user, then the file ._r_h_o_s_t_s in the home directory of
+	  the remote user is checked for the machine name and
+	  identity of the user on the client's machine.  If this
+	  lookup fails, the connection is terminated.
+
+     9)   A null byte is returned on the initial socket and the
+	  command line is passed to the normal login shell of the
+	  user.  The shell inherits the network connections esta-
+	  blished by _r_s_h_d.
+
+DDIIAAGGNNOOSSTTIICCSS
+     Except for the last one listed below, all diagnostic mes-
+     sages are returned on the initial socket, after which any
+     network connections are closed.  An error is indicated by a
+     leading byte with a value of 1 (0 is returned in step 9
+     above upon successful completion of all the steps prior to
+     the execution of the login shell).
+
+     ````llooccuusseerr ttoooo lloonngg''''
+     The name of the user on the client's machine is longer than
+     16 characters.
+
+     ````rreemmuusseerr ttoooo lloonngg''''
+     The name of the user on the remote machine is longer than 16
+     characters.
+
+     ````ccoommmmaanndd ttoooo lloonngg ''''
+     The command line passed exceeds the size of the argument
+     list (as configured into the system).
+
+     ````LLooggiinn iinnccoorrrreecctt..''''
+     No password file entry for the user name existed.
+
+     ````NNoo rreemmoottee ddiirreeccttoorryy..''''
+     The _c_h_d_i_r command to the home directory failed.
+
+     ````PPeerrmmiissssiioonn ddeenniieedd..''''
+     The authentication procedure described above failed.
+
+     ````CCaann''tt mmaakkee ppiippee..''''
+     The pipe needed for the ssttddeerrrr, wasn't created.
+
+
+
+
+Printed 7/9/88		October 25, 1987			2
+
+
+
+
+
+
+RSHD(8C)	    UNIX Programmer's Manual		 RSHD(8C)
+
+
+
+     ````TTrryy aaggaaiinn..''''
+     A _f_o_r_k by the server failed.
+
+     ````<<sshheellllnnaammee>>:: ......''''
+     The user's login shell could not be started.  This message
+     is returned on the connection associated with the ssttddeerrrr,
+     and is not preceded by a flag byte.
+
+SSEEEE AALLSSOO
+     rsh(1C), rcmd(3X)
+
+BBUUGGSS
+     The authentication procedure used here assumes the integrity
+     of each client machine and the connecting medium.	This is
+     insecure, but is useful in an ``open'' environment.
+
+     A facility to allow all data exchanges to be encrypted
+     should be present.
+
+     A more extensible protocol should be used.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		October 25, 1987			3
+
+
+

@@ -1,0 +1,66 @@
+
+
+
+BCD PPT(6)	    UNIX Programmer's Manual	       BCD PPT(6)
+
+
+
+NNAAMMEE
+     bcd - format input as punch cards
+     ppt - format input as paper tape
+
+SSYYNNOOPPSSIISS
+     bbccdd [ string ]
+     pppptt [ string ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _B_c_d and _p_p_t convert command line arguments, if provided, or
+     standard input into a form familiar to old-timers.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  July 9, 1988				1
+
+
+

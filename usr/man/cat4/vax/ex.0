@@ -1,0 +1,66 @@
+
+
+
+EX(4)		    UNIX Programmer's Manual		    EX(4)
+
+
+
+NNAAMMEE
+     ex - Excelan 10 Mb/s Ethernet interface
+
+SSYYNNOOPPSSIISS
+     ddeevviiccee eexx00 aatt uubbaa00 ccssrr 116644000000 vveeccttoorr eexxccddiinntt
+
+DDEESSCCRRIIPPTTIIOONN
+     The _e_x interface provides access to a 10 Mb/s Ethernet net-
+     work through an Excelan controller used as a link-layer
+     interface.
+
+     Each of the host's network addresses is specified at boot
+     time with an SIOCSIFADDR ioctl.  The _e_x interface employs
+     the address resolution protocol described in _a_r_p(4P) to
+     dynamically map between Internet and Ethernet addresses on
+     the local network.
+
+     The interface normally tries to use a ``trailer'' encapsula-
+     tion to minimize copying data on input and output.  The use
+     of trailers is negotiated with ARP.  This negotiation may be
+     disabled, on a per-interface basis, by setting the
+     IFF_NOTRAILERS flag with an SIOCSIFFLAGS ioctl.
+
+DDIIAAGGNNOOSSTTIICCSS
+     eexx%%dd:: HHWW %%cc..%%cc,, NNXX %%cc..%%cc,, hhaarrddwwaarree aaddddrreessss %%ss.  This pro-
+     vides firmware revisions levels, and is expected during
+     autoconfiguration.
+
+     eexx%%dd:: ccaann''tt iinniittiiaalliizzee.  There was a failure in allocating
+     unibus resources for the device.
+
+     eexx%%dd:: ccoonnffiigguurraattiioonn ffaaiilleedd;; cccc == %%xx.  The hardware indicated
+     an error when trying to initalize itself.	The error code
+     returned is described at length in the device Reference
+     Manual.
+
+     eexx%%dd:: rreecceeiivvee eerrrroorr %%bb.  The hardware indicated an error in
+     reading a packet from the cable.  Specific Error bits are
+     provided
+
+     eexx%%dd:: ttrraannssmmiitt eerrrroorr %%bb.  The hardware indicated an error in
+     transmitting a packet to the cable or an illegally sized
+     packet.  Specific Error bits are provided
+
+     eexx%%dd:: ccaann''tt hhaannddllee aaff%%dd.  The interface was handed a message
+     with addresses formatted in an unsuitable address family;
+     the packet was dropped.
+
+SSEEEE AALLSSOO
+     intro(4N), inet(4F), arp(4P)
+
+
+
+
+
+Printed 7/9/88		  May 16, 1986				1
+
+
+

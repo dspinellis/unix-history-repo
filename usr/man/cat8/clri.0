@@ -1,0 +1,66 @@
+
+
+
+CLRI(8)             UNIX Programmer's Manual		  CLRI(8)
+
+
+
+NNAAMMEE
+     clri - clear i-node
+
+SSYYNNOOPPSSIISS
+     //eettcc//ccllrrii filesystem i-number ...
+
+DDEESSCCRRIIPPTTIIOONN
+     NN..BB..:: _C_l_r_i is obsoleted for normal file system repair work
+     by _f_s_c_k(8).
+
+     _C_l_r_i writes zeros on the i-nodes with the decimal _i-_n_u_m_b_e_r_s
+     on the _f_i_l_e_s_y_s_t_e_m. After _c_l_r_i, any blocks in the affected
+     file will show up as `missing' in an _i_c_h_e_c_k(8) of the
+     _f_i_l_e_s_y_s_t_e_m.
+
+     Read and write permission is required on the specified file
+     system device.  The i-node becomes allocatable.
+
+     The primary purpose of this routine is to remove a file
+     which for some reason appears in no directory.  If it is
+     used to zap an i-node which does appear in a directory, care
+     should be taken to track down the entry and remove it.  Oth-
+     erwise, when the i-node is reallocated to some new file, the
+     old entry will still point to that file.  At that point
+     removing the old entry will destroy the new file.	The new
+     entry will again point to an unallocated i-node, so the
+     whole cycle is likely to be repeated again and again.
+
+SSEEEE AALLSSOO
+     icheck(8)
+
+BBUUGGSS
+     If the file is open, _c_l_r_i is likely to be ineffective.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 April 27, 1985                         1
+
+
+

@@ -1,0 +1,66 @@
+
+
+
+QUIZ(6)             UNIX Programmer's Manual		  QUIZ(6)
+
+
+
+NNAAMMEE
+     quiz - test your knowledge
+
+SSYYNNOOPPSSIISS
+     //uussrr//ggaammeess//qquuiizz [ --ii file ] [ --tt ] [ category1 category2 ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _Q_u_i_z gives associative knowledge tests on various subjects.
+     It asks items chosen from _c_a_t_e_g_o_r_y_1 and expects answers from
+     _c_a_t_e_g_o_r_y_2.  If no categories are specified, _q_u_i_z gives
+     instructions and lists the available categories.
+
+     _Q_u_i_z tells a correct answer whenever you type a bare new-
+     line.  At the end of input, upon interrupt, or when ques-
+     tions run out, _q_u_i_z reports a score and terminates.
+
+     The --tt flag specifies `tutorial' mode, where missed ques-
+     tions are repeated later, and material is gradually intro-
+     duced as you learn.
+
+     The --ii flag causes the named file to be substituted for the
+     default index file.  The lines of these files have the  syn-
+     tax:
+	  line	    = category newline | category `:' line
+	  category  = alternate | category `|' alternate
+	  alternate = empty | alternate primary
+	  primary   = character | `[' category `]' | option
+	  option    = `{' category `}'
+
+     The first category on each line of an index file names an
+     information file.	The remaining categories specify the
+     order and contents of the data in each line of the informa-
+     tion file.  Information files have the same syntax.
+     Backslash `\' is used as with _s_h(1) to quote syntactically
+     significant characters or to insert transparent newlines
+     into a line.  When either a question or its answer is empty,
+     _q_u_i_z will refrain from asking it.
+
+FFIILLEESS
+     /usr/games/quiz.k/*
+
+BBUUGGSS
+     The construct `a|ab' doesn't work in an information file.
+     Use `a{b}'.
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 20, 1985				1
+
+
+

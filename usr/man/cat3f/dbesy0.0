@@ -1,0 +1,66 @@
+
+
+
+BESSEL(3F)	    UNIX Programmer's Manual	       BESSEL(3F)
+
+
+
+NNAAMMEE
+     bessel functions - of two kinds for integer orders
+
+SSYYNNOOPPSSIISS
+     ffuunnccttiioonn bbeessjj00 ((xx))
+
+     ffuunnccttiioonn bbeessjj11 ((xx))
+
+     ffuunnccttiioonn bbeessjjnn ((nn,, xx))
+
+     ffuunnccttiioonn bbeessyy00 ((xx))
+
+     ffuunnccttiioonn bbeessyy11 ((xx))
+
+     ffuunnccttiioonn bbeessyynn ((nn,, xx))
+
+     ddoouubbllee pprreecciissiioonn ffuunnccttiioonn ddbbeessjj00 ((xx))
+     ddoouubbllee pprreecciissiioonn xx
+
+     ddoouubbllee pprreecciissiioonn ffuunnccttiioonn ddbbeessjj11 ((xx))
+     ddoouubbllee pprreecciissiioonn xx
+
+     ddoouubbllee pprreecciissiioonn ffuunnccttiioonn ddbbeessjjnn ((nn,, xx))
+     ddoouubbllee pprreecciissiioonn xx
+
+     ddoouubbllee pprreecciissiioonn ffuunnccttiioonn ddbbeessyy00 ((xx))
+     ddoouubbllee pprreecciissiioonn xx
+
+     ddoouubbllee pprreecciissiioonn ffuunnccttiioonn ddbbeessyy11 ((xx))
+     ddoouubbllee pprreecciissiioonn xx
+
+     ddoouubbllee pprreecciissiioonn ffuunnccttiioonn ddbbeessyynn ((nn,, xx))
+     ddoouubbllee pprreecciissiioonn xx
+
+DDEESSCCRRIIPPTTIIOONN
+     These functions calculate Bessel functions of the first and
+     second kinds for real arguments and integer orders.
+
+DDIIAAGGNNOOSSTTIICCSS
+     Negative arguments cause _b_e_s_y_0, _b_e_s_y_1, and _b_e_s_y_n to return a
+     huge negative value. The system error code will be set to
+     EDOM (33).
+
+FFIILLEESS
+     /usr/lib/libF77.a
+
+SSEEEE AALLSSOO
+     j0(3M), perror(3F)
+
+
+
+
+
+
+
+Printed 7/9/88		  May 15, 1985				1
+
+
+

@@ -1,0 +1,66 @@
+
+
+
+MEM(4)		    UNIX Programmer's Manual		   MEM(4)
+
+
+
+NNAAMMEE
+     mem, kmem - main memory
+
+DDEESSCCRRIIPPTTIIOONN
+     _M_e_m is a special file that is an image of the main memory of
+     the computer.  It may be used, for example, to examine (and
+     even to patch) the system.
+
+     Byte addresses in _m_e_m are interpreted as physical memory
+     addresses.  References to non-existent locations cause
+     errors to be returned.
+
+     The file _k_m_e_m is the same as _m_e_m except that kernel virtual
+     memory rather than physical memory is accessed.  Only kernel
+     virtual addresses that are mapped to memory are allowed.
+     The file _k_U_m_e_m also refers to kernel virtual memory, but may
+     be used to access areas mapped to UNIBUS address space and
+     other I/O areas.  It forces all accesses to use word (short
+     integer) accesses.  Examining and patching device registers
+     is likely to lead to unexpected results when read-only or
+     write-only bits are present.
+
+     On VAX 11/780 the I/O space begins at physical address
+     20000000(16); on an 11/750 I/O space addresses are of the
+     form fxxxxx(16).  On all VAX'en per-process data for the
+     current process is UPAGES long, and ends at virtual address
+     80000000(16).
+
+FFIILLEESS
+     /dev/mem
+     /dev/kmem
+     /dev/kUmem
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 16, 1986				1
+
+
+

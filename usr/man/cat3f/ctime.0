@@ -1,0 +1,66 @@
+
+
+
+TIME(3F)	    UNIX Programmer's Manual		 TIME(3F)
+
+
+
+NNAAMMEE
+     time, ctime, ltime, gmtime - return system time
+
+SSYYNNOOPPSSIISS
+     iinntteeggeerr ffuunnccttiioonn ttiimmee(())
+
+     cchhaarraacctteerr**((**)) ffuunnccttiioonn ccttiimmee ((ssttiimmee))
+     iinntteeggeerr ssttiimmee
+
+     ssuubbrroouuttiinnee llttiimmee ((ssttiimmee,, ttaarrrraayy))
+     iinntteeggeerr ssttiimmee,, ttaarrrraayy((99))
+
+     ssuubbrroouuttiinnee ggmmttiimmee ((ssttiimmee,, ttaarrrraayy))
+     iinntteeggeerr ssttiimmee,, ttaarrrraayy((99))
+
+DDEESSCCRRIIPPTTIIOONN
+     _T_i_m_e returns the time since 00:00:00 GMT, Jan. 1, 1970,
+     measured in seconds.  This is the value of the UNIX system
+     clock.
+
+     _C_t_i_m_e converts a system time to a 24 character ASCII string.
+     The format is described under _c_t_i_m_e(3).  No 'newline' or
+     NULL will be included.
+
+     _L_t_i_m_e and _g_m_t_i_m_e disect a UNIX time into month, day, etc.,
+     either for the local time zone or as GMT.	The order and
+     meaning of each element returned in _t_a_r_r_a_y is described
+     under _c_t_i_m_e(3).
+
+FFIILLEESS
+     /usr/lib/libU77.a
+
+SSEEEE AALLSSOO
+     ctime(3), itime(3F), idate(3F), fdate(3F)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 15, 1985				1
+
+
+

@@ -1,0 +1,66 @@
+
+
+
+BANNER(6)	    UNIX Programmer's Manual		BANNER(6)
+
+
+
+NNAAMMEE
+     banner - print large banner on printer
+
+SSYYNNOOPPSSIISS
+     //uussrr//ggaammeess//bbaannnneerr [ --ww_n ] message ...
+
+DDEESSCCRRIIPPTTIIOONN
+     _B_a_n_n_e_r prints a large, high quality banner on the standard
+     output.  If the message is omitted, it prompts for and reads
+     one line of its standard input.  If --ww is given, the output
+     is scrunched down from a width of 132 to _n , suitable for a
+     narrow terminal.  If _n is omitted, it defaults to 80.
+
+     The output should be printed on a hard-copy device, up to
+     132 columns wide, with no breaks between the pages. The
+     volume is great enough that you may want a printer or a fast
+     hardcopy terminal, but if you are patient, a decwriter or
+     other 300 baud terminal will do.
+
+BBUUGGSS
+     Several ASCII characters are not defined, notably <, >, [,
+     ], \, ^, _, {, }, |, and ~.  Also, the characters ", ', and
+     & are funny looking (but in a useful way.)
+
+     The --ww option is implemented by skipping some rows and
+     columns.  The smaller it gets, the grainier the output.
+     Sometimes it runs letters together.
+
+AAUUTTHHOORR
+     Mark Horton
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		   May 6, 1986				1
+
+
+

@@ -1,0 +1,66 @@
+
+
+
+TRPFPE(3F)	    UNIX Programmer's Manual	       TRPFPE(3F)
+
+
+
+NNAAMMEE
+     trpfpe, fpecnt - trap and repair floating point faults
+
+SSYYNNOOPPSSIISS
+     ssuubbrroouuttiinnee ttrrppffppee ((nnuummeessgg,, rrttnnvvaall))
+     ddoouubbllee pprreecciissiioonn rrttnnvvaall
+
+     iinntteeggeerr ffuunnccttiioonn ffppeeccnntt (())
+
+     ccoommmmoonn //ffppeefflltt// ffppeerrrr
+     llooggiiccaall ffppeerrrr
+
+DDEESSCCRRIIPPTTIIOONN
+     NNOOTTEE:: TThhiiss rroouuttiinnee aapppplliieess oonnllyy ttoo VVaaxx ccoommppuutteerrss..	It is a
+     null routine on the PDP11.
+
+     _T_r_p_f_p_e sets up a signal handler to trap arithmetic excep-
+     tions.  If the exception is due to a floating point arith-
+     metic fault, the result of the operation is replaced with
+     the _r_t_n_v_a_l specified.  _R_t_n_v_a_l must be a double precision
+     value. For example, ``0d0'' or ``dflmax()''.
+
+     The first _n_u_m_e_s_g occurrences of a floating point arithmetic
+     error will cause a message to be written to the standard
+     error file.  Any exception that can't be repaired will
+     result in the default action, typically an abort with core
+     image.
+
+     _F_p_e_c_n_t returns the number of faults since the last call to
+     _t_r_p_f_p_e.
+
+     The logical value in the common block labelled _f_p_e_f_l_t will
+     be set to ..ttrruuee.. each time a fault occurs.
+
+FFIILLEESS
+     /usr/lib/libF77.a
+
+SSEEEE AALLSSOO
+     signal(3F), range(3F)
+
+BBUUGGSS
+     This routine works only for _f_a_u_l_t_s, not _t_r_a_p_s.  This is pri-
+     marily due to the Vax architecture.
+
+     If the operation involves changing the stack pointer, it
+     can't be repaired.  This seldom should be a problem with the
+     f77 compiler, but such an operation might be produced by the
+     optimizer.
+
+     The POLY and EMOD opcodes are not dealt with.
+
+
+
+
+
+Printed 7/9/88		  May 15, 1985				1
+
+
+

@@ -1,0 +1,66 @@
+
+
+
+TFTPD(8C)	    UNIX Programmer's Manual		TFTPD(8C)
+
+
+
+NNAAMMEE
+     tftpd - DARPA Trivial File Transfer Protocol server
+
+SSYYNNOOPPSSIISS
+     //eettcc//ttffttppdd
+
+DDEESSCCRRIIPPTTIIOONN
+     _T_f_t_p_d is a server which supports the DARPA Trivial File
+     Transfer Protocol.  The TFTP server operates at the port
+     indicated in the ``tftp'' service description; see _s_e_r_-
+     _v_i_c_e_s(5).	The server is normally started by _i_n_e_t_d(8).
+
+     The use of _t_f_t_p does not require an account or password on
+     the remote system.  Due to the lack of authentication infor-
+     mation, _t_f_t_p_d will allow only publicly readable files to be
+     accessed.	Files may be written only if they already exist
+     and are publicly writable.  Note that this extends the con-
+     cept of ``public'' to include all users on all hosts that
+     can be reached through the network; this may not be
+     appropriate on all systems, and its implications should be
+     considered before enabling tftp service.  The server should
+     have the user ID with the lowest possible privilege.
+
+SSEEEE AALLSSOO
+     tftp(1C), inetd(8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 26, 1986				1
+
+
+

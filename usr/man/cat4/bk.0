@@ -1,0 +1,132 @@
+
+
+
+BK(4)		    UNIX Programmer's Manual		    BK(4)
+
+
+
+NNAAMMEE
+     bk - line discipline for machine-machine communication
+     (obsolete)
+
+SSYYNNOOPPSSIISS
+     ppsseeuuddoo--ddeevviiccee bbkk
+
+DDEESSCCRRIIPPTTIIOONN
+     This line discipline provides a replacement for the old and
+     new tty drivers described in _t_t_y(4) when high speed output
+     to and especially input from another machine is to be
+     transmitted over a asynchronous communications line.  The
+     discipline was designed for use by the Berkeley network.  It
+     may be suitable for uploading of data from microprocessors
+     into the system.  If you are going to send data over asyn-
+     chronous communications lines at high speed into the system,
+     you must use this discipline, as the system otherwise may
+     detect high input data rates on terminal lines and disables
+     the lines; in any case the processing of such data when nor-
+     mal terminal mechanisms are involved saturates the system.
+
+     The line discipline is enabled by a sequence:
+
+	  ##iinncclluuddee <<ssggttttyy..hh>>
+	  iinntt llddiisscc == NNEETTLLDDIISSCC,, ffiillddeess;; ......
+	  iiooccttll((ffiillddeess,, TTIIOOCCSSEETTDD,, &&llddiisscc));;
+
+     A typical application program then reads a sequence of lines
+     from the terminal port, checking header and sequencing
+     information on each line and acknowledging receipt of each
+     line to the sender, who then transmits another line of data.
+     Typically several hundred bytes of data and a smaller amount
+     of control information will be received on each handshake.
+
+     The old standard teletype discipline can be restored by
+     doing:
+
+	  llddiisscc == OOTTTTYYDDIISSCC;;
+	  iiooccttll((ffiillddeess,, TTIIOOCCSSEETTDD,, &&llddiisscc));;
+
+     While in networked mode, normal teletype output functions
+     take place.  Thus, if an 8 bit output data path is desired,
+     it is necessary to prepare the output line by putting it
+     into RAW mode using _i_o_c_t_l(2).  This must be done bbeeffoorree
+     changing the discipline with TIOCSETD, as most _i_o_c_t_l(2)
+     calls are disabled while in network line-discipline mode.
+
+     When in network mode, input processing is very limited to
+     reduce overhead.  Currently the input path is only 7 bits
+     wide, with newline the only recognized character, terminat-
+     ing an input record.  Each input record must be read and
+     acknowledged before the next input is read as the system
+
+
+
+Printed 7/9/88		  May 15, 1985				1
+
+
+
+
+
+
+BK(4)		    UNIX Programmer's Manual		    BK(4)
+
+
+
+     refuses to accept any new data when there is a record in the
+     buffer.  The buffer is limited in length, but the system
+     guarantees to always be willing to accept input resulting in
+     512 data characters and then the terminating newline.
+
+     User level programs should provide sequencing and checksums
+     on the information to guarantee accurate data transfer.
+
+SSEEEE AALLSSOO
+     tty(4)
+
+DDIIAAGGNNOOSSTTIICCSS
+     None.
+
+BBUUGGSS
+     The Purdue uploading line discipline, which provides 8 bits
+     and uses timeout's to terminate uploading should be incor-
+     porated into the standard system, as it is much more suit-
+     able for microprocessor connections.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 15, 1985				2
+
+
+

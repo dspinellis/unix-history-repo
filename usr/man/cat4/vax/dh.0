@@ -1,0 +1,66 @@
+
+
+
+DH(4)		    UNIX Programmer's Manual		    DH(4)
+
+
+
+NNAAMMEE
+     dh - DH-11/DM-11 communications multiplexer
+
+SSYYNNOOPPSSIISS
+     ddeevviiccee ddhh00 aatt uubbaa00 ccssrr 00116600002200 vveeccttoorr ddhhrriinntt ddhhxxiinntt
+     ddeevviiccee ddmm00 aatt uubbaa00 ccssrr 00117700550000 vveeccttoorr ddmmiinnttrr
+
+DDEESSCCRRIIPPTTIIOONN
+     A dh-11 provides 16 communication lines; dm-11's may be
+     optionally paired with dh-11's to provide modem control for
+     the lines.
+
+     Each line attached to the DH-11 communications multiplexer
+     behaves as described in _t_t_y(4).  Input and output for each
+     line may independently be set to run at any of 16 speeds;
+     see _t_t_y(4) for the encoding.
+
+     Bit _i of flags may be specified for a dh to say that a line
+     is not properly connected, and that the line should be
+     treated as hard-wired with carrier always present.  Thus
+     specifying ``flags 0x0004'' in the specification of dh0
+     would cause line ttyh2 to be treated in this way.
+
+     The _d_h driver monitors the rate of input on each board, and
+     switches between the use of character-at-a-time interrupts
+     and input silos.  While the silo is enabled during periods
+     of high-speed input, the driver polls for input 30 times per
+     second.
+
+FFIILLEESS
+     /dev/tty[h-o][0-9a-f]
+     /dev/ttyd[0-9a-f]
+
+SSEEEE AALLSSOO
+     tty(4)
+
+DDIIAAGGNNOOSSTTIICCSS
+     ddhh%%dd:: NNXXMM.  No response from UNIBUS on a dma transfer within
+     a timeout period.	This is often followed by a UNIBUS
+     adapter error.  This occurs most frequently when the UNIBUS
+     is heavily loaded and when devices which hog the bus (such
+     as rk07's) are present.  It is not serious.
+
+     ddhh%%dd:: ssiilloo oovveerrffllooww.  The character input silo overflowed
+     before it could be serviced.  This can happen if a hard
+     error occurs when the CPU is running with elevated priority,
+     as the system will then print a message on the console with
+     interrupts disabled.  It is not serious.
+
+
+
+
+
+
+
+Printed 7/9/88		  May 16, 1986				1
+
+
+

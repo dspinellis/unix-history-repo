@@ -1,0 +1,66 @@
+
+
+
+INDEX(3F)	    UNIX Programmer's Manual		INDEX(3F)
+
+
+
+NNAAMMEE
+     index, rindex, lnblnk, len - tell about character objects
+
+SSYYNNOOPPSSIISS
+     ((iinnttrriinnssiicc)) ffuunnccttiioonn iinnddeexx ((ssttrriinngg,, ssuubbssttrr))
+     cchhaarraacctteerr**((**)) ssttrriinngg,, ssuubbssttrr
+
+     iinntteeggeerr ffuunnccttiioonn rriinnddeexx ((ssttrriinngg,, ssuubbssttrr))
+     cchhaarraacctteerr**((**)) ssttrriinngg,, ssuubbssttrr
+
+     ffuunnccttiioonn llnnbbllnnkk ((ssttrriinngg))
+     cchhaarraacctteerr**((**)) ssttrriinngg
+
+     ((iinnttrriinnssiicc)) ffuunnccttiioonn lleenn ((ssttrriinngg))
+     cchhaarraacctteerr**((**)) ssttrriinngg
+
+DDEESSCCRRIIPPTTIIOONN
+     _I_n_d_e_x (_r_i_n_d_e_x) returns the index of the first (last)
+     occurrence of the substring _s_u_b_s_t_r in _s_t_r_i_n_g, or zero if it
+     does not occur.  _I_n_d_e_x is an f77 intrinsic function; _r_i_n_d_e_x
+     is a library routine.
+
+     _L_n_b_l_n_k returns the index of the last non-blank character in
+     _s_t_r_i_n_g. This is useful since all f77 character objects are
+     fixed length, blank padded.  Intrinsic function _l_e_n returns
+     the size of the character object argument.
+
+FFIILLEESS
+     /usr/lib/libF77.a
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 15, 1985				1
+
+
+

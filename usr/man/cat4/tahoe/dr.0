@@ -1,0 +1,198 @@
+
+
+
+DR(4)		    UNIX Programmer's Manual		    DR(4)
+
+
+
+NNAAMMEE
+     dr - Ikon DR-11W interface
+
+SSYYNNOOPPSSIISS
+     ddeevviiccee ddrr00 aatt vvbbaa?? ccssrr 00xxffffffff88000000 vveeccttoorr ddrriinnttrr
+
+DDEESSCCRRIIPPTTIIOONN
+     The _d_r driver provides access to an Ikon DR-11W DMA con-
+     troller.  Each minor device is a different controller.
+
+     In addition to reading and writing, the following _i_o_c_t_l
+     requests are available:
+
+     DRWAIT    Wait for an attention interrupt from the associ-
+	       ated device.
+
+     DRPIOW    Write to the programmed i/o register.
+
+     DRPACL    Write to the pulse register.
+
+     DRDACL    Set the ``ac-low'' bit in the next command sent to
+	       the DR-11W.
+
+     DRPCYL    Set the ``cycle'' bit in the next command sent to
+	       the DR-11W.
+
+     DRDFCN    Hold the function bits until the next command is
+	       issused.
+
+     DRRATN    Reset the attention flag.
+
+     DRRDMA    Reset the DMA complete flag.
+
+     DRSFCN    Set the function bits in the control status regis-
+	       ter and, as a side effect, clear the interrupt
+	       enable flag.
+
+     DRRPER    Reset the parity error flag.
+
+     DRSETRSTALL
+	       Set ``no stall'' mode for all subsequent reads.
+	       In no stall mode the driver will abort read
+	       requests that fail to complete before a user
+	       specified timeout expires.
+
+     DRSETNORSTALL
+	       Disable no stall mode for reads.
+
+     DRGETRSTALL
+	       Return true if in no stall mode for reads.
+
+     DRSETRTIMEOUT
+
+
+
+Printed 7/9/88		November 21, 1986			1
+
+
+
+
+
+
+DR(4)		    UNIX Programmer's Manual		    DR(4)
+
+
+
+	       Set the value of the timeout used in no stall mode
+	       for reads.  The time is specified in tenths of
+	       seconds.
+
+     DRGETRTIMEOUT
+	       Return the time until (in tenths of seconds)
+	       before a read is timed out when in no stall mode.
+
+     DRSETWSTALL
+	       Set ``no stall'' mode for all subsequent writes.
+	       In no stall mode the driver will abort write
+	       requests that fail to complete before a user
+	       specified timeout expires.
+
+     DRSETNOWSTALL
+	       Disable no stall mode for writes.
+
+     DRGETWSTALL
+	       Return true if in no stall mode for writes.
+
+     DRSETWTIMEOUT
+	       Set the value of the timeout used in no stall mode
+	       for writes.  The time is specified in tenths of
+	       seconds.
+
+     DRGETRTIMEOUT
+	       Return the time until (in tenths of seconds)
+	       before a write is timed out when in no stall mode.
+
+     DRWRITEREADY
+	       Return 1 if the device can accept data, 0 other-
+	       wise (this is areally the DR-11W A status bit).
+
+     DRREADREADY
+	       Return 1 if the device has data for the host to
+	       read, 0 otherwise (this is really the DR-11W B
+	       status bit).
+
+     DRBUSY    Return 1  if the device is busy, 0 otherwise.
+
+     DRRESET   Reset the DR-11W.
+
+     DR11STAT  Return the driver status and the contents of the
+	       DR-11W i/o registers.  The eight words returned
+	       are, in order, the driver status flags, the con-
+	       tents of the control status register, the contents
+	       of the status register at the time of the last
+	       interrupt from the device, the contents of the
+	       programmed i/o data register, a combination of the
+	       address modifier used by the device in performing
+	       VERSAbus transfers and the interrupt vector used
+	       by the device, the contents of the range register,
+
+
+
+Printed 7/9/88		November 21, 1986			2
+
+
+
+
+
+
+DR(4)		    UNIX Programmer's Manual		    DR(4)
+
+
+
+	       the contents of the rahi register, and the con-
+	       tents of the ralo register.
+
+     DR11LOOP  Perform loopback testing (the loopback cable must
+	       be in place for this to work).
+
+FFIILLEESS
+     /dev/dr[0-7]   standard devices
+
+DDIIAAGGNNOOSSTTIICCSS
+     Lots of them, none of them meaningful.
+
+BBUUGGSS
+     This driver needs to be rewritten.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		November 21, 1986			3
+
+
+

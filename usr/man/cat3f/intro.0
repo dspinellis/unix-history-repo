@@ -1,0 +1,198 @@
+
+
+
+INTRO(3F)	    UNIX Programmer's Manual		INTRO(3F)
+
+
+
+NNAAMMEE
+     intro - introduction to FORTRAN library functions
+
+DDEESSCCRRIIPPTTIIOONN
+     This section describes those functions that are in the For-
+     tran run time library.  The functions listed here provide an
+     interface from _f_7_7 programs to the system in the same manner
+     as the C library does for C programs.  They are automati-
+     cally loaded as needed by the Fortran compiler _f_7_7(1),
+     except for the graphics interface routines.  Those must be
+     explicitly requested, see _p_l_o_t(3f).
+
+     The math intrinsics required by the 1977 Fortran standard
+     are available, although not described here.  In addition,
+     the _a_b_s, _s_q_r_t, _e_x_p, _l_o_g, _s_i_n, and _c_o_s intrinsics have been
+     extended for double complex values.  They may be referenced
+     using the generic names listed above, or they may be refer-
+     enced using their specific names that consist of the generic
+     names preceded by either _c_d or _z.	For example, if _z_z is
+     double complex, then _s_q_r_t(_z_z), _z_s_q_r_t(_z_z), or _c_d_s_q_r_t(_z_z) com-
+     pute the square root of _z_z.  The _d_c_m_p_l_x intrinsic forms a
+     double complex value from two double precision variables or
+     expressions, and the name of the specific function for the
+     conjugate of a double complex value is _d_c_o_n_j_g.
+
+     Most of these functions are in libU77.a. Some are in
+     libF77.a or libI77.a.  A few intrinsic functions are
+     described for the sake of completeness.
+
+     For efficiency, the SCCS ID strings are not normally
+     included in the _a._o_u_t file. To include them, simply declare
+
+	  external f77lid
+
+     in any _f_7_7 module.
+
+LLIISSTT OOFF FFUUNNCCTTIIOONNSS
+     _N_a_m_e    _A_p_p_e_a_r_s _o_n _P_a_g_e	_D_e_s_c_r_i_p_t_i_o_n
+     abort     abort.3f     abnormal termination
+     access    access.3f    determine accessibility of a file
+     alarm     alarm.3f     execute a subroutine after a specified time
+     and       bit.3f	    bitwise and
+     arc       plot.3f	    f77 interface to plot(3x)
+     bessel    bessel.3f    bessel functions of two kinds for integer orders
+     box       plot.3f	    f77 interface to plot(3x)
+     chdir     chdir.3f     change default directory
+     chmod     chmod.3f     change mode of a file
+     circle    plot.3f	    f77 interface to plot(3x)
+     clospl    plot.3f	    f77 interface to plot(3x)
+     cont      plot.3f	    f77 interface to plot(3x)
+     ctime     time.3f	    return system time
+     dffrac    flmin.3f     return extreme values
+
+
+
+Printed 7/9/88		  May 27, 1986				1
+
+
+
+
+
+
+INTRO(3F)	    UNIX Programmer's Manual		INTRO(3F)
+
+
+
+     dflmax    flmin.3f     return extreme values
+     dflmin    flmin.3f     return extreme values
+     drand     rand.3f	    return random values
+     drandm    random.3f    better random number generator
+     dtime     etime.3f     return elapsed execution time
+     erase     plot.3f	    f77 interface to plot(3x)
+     etime     etime.3f     return elapsed execution time
+     exit      exit.3f	    terminate process with status
+     falloc    malloc.3f    memory allocator
+     fdate     fdate.3f     return date and time in an ASCII string
+     ffrac     flmin.3f     return extreme values
+     fgetc     getc.3f	    get a character from a logical unit
+     flmax     flmin.3f     return extreme values
+     flmin     flmin.3f     return extreme values
+     flush     flush.3f     flush output to a logical unit
+     fork      fork.3f	    create a copy of this process
+     fpecnt    trpfpe.3f    trap and repair floating point faults
+     fputc     putc.3f	    write a character to a fortran logical unit
+     free      malloc.3f    memory allocator
+     fseek     fseek.3f     reposition a file on a logical unit
+     fstat     stat.3f	    get file status
+     ftell     fseek.3f     reposition a file on a logical unit
+     gerror    perror.3f    get system error messages
+     getarg    getarg.3f    return command line arguments
+     getc      getc.3f	    get a character from a logical unit
+     getcwd    getcwd.3f    get pathname of current working directory
+     getenv    getenv.3f    get value of environment variables
+     getgid    getuid.3f    get user or group ID of the caller
+     getlog    getlog.3f    get user's login name
+     getpid    getpid.3f    get process id
+     getuid    getuid.3f    get user or group ID of the caller
+     gmtime    time.3f	    return system time
+     hostnm    hostnm.3f    get name of current host
+     iargc     getarg.3f    return command line arguments
+     idate     idate.3f     return date or time in numerical form
+     ierrno    perror.3f    get system error messages
+     index     index.3f     tell about character objects
+     inmax     flmin.3f     return extreme values
+     ioinit    ioinit.3f    change f77 I/O initialization
+     irand     rand.3f	    return random values
+     irandm    random.3f    better random number generator
+     isatty    ttynam.3f    find name of a terminal port
+     itime     idate.3f     return date or time in numerical form
+     kill      kill.3f	    send a signal to a process
+     label     plot.3f	    f77 interface to plot(3x)
+     len       index.3f     tell about character objects
+     line      plot.3f	    f77 interface to plot(3x)
+     linemd    plot.3f	    f77 interface to plot(3x)
+     link      link.3f	    make a link to an existing file
+     lnblnk    index.3f     tell about character objects
+     loc       loc.3f	    return the address of an object
+     long      long.3f	    integer object conversion
+
+
+
+Printed 7/9/88		  May 27, 1986				2
+
+
+
+
+
+
+INTRO(3F)	    UNIX Programmer's Manual		INTRO(3F)
+
+
+
+     lshift    bit.3f	    left shift
+     lstat     stat.3f	    get file status
+     ltime     time.3f	    return system time
+     malloc    malloc.3f    memory allocator
+     move      plot.3f	    f77 interface to plot(3x)
+     not       bit.3f	    bitwise complement
+     openpl    plot.3f	    f77 interface to plot(3x)
+     or        bit.3f	    bitwise or
+     perror    perror.3f    get system error messages
+     point     plot.3f	    f77 interface to plot(3x)
+     putc      putc.3f	    write a character to a fortran logical unit
+     qsort     qsort.3f     quick sort
+     rand      rand.3f	    return random values
+     random    random.3f    better random number generator
+     rename    rename.3f    rename a file
+     rindex    index.3f     tell about character objects
+     rshift    bit.3f	    right shift
+     short     long.3f	    integer object conversion
+     signal    signal.3f    change the action for a signal
+     sleep     sleep.3f     suspend execution for an interval
+     space     plot.3f	    f77 interface to plot(3x)
+     stat      stat.3f	    get file status
+     symlnk    symlnk.3f    make a symbolic link
+     system    system.3f    execute a UNIX command
+     tclose    topen.3f     f77 tape I/O
+     time      time.3f	    return system time
+     topen     topen.3f     f77 tape I/O
+     traper    traper.3f    trap arithmetic errors
+     trapov    trapov.3f    trap and repair floating point overflow
+     tread     topen.3f     f77 tape I/O
+     trewin    topen.3f     f77 tape I/O
+     trpfpe    trpfpe.3f    trap and repair floating point faults
+     tskipf    topen.3f     f77 tape I/O
+     tstate    topen.3f     f77 tape I/O
+     ttynam    ttynam.3f    find name of a terminal port
+     twrite    topen.3f     f77 tape I/O
+     unlink    unlink.3f    remove a directory entry
+     wait      wait.3f	    wait for a process to terminate
+     xor       bit.3f	    bitwise exclusive or
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 27, 1986				3
+
+
+

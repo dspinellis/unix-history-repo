@@ -1,0 +1,66 @@
+
+
+
+AARDVARK(6)	    UNIX Programmer's Manual	      AARDVARK(6)
+
+
+
+NNAAMMEE
+     aardvark - yet another exploration game
+
+SSYYNNOOPPSSIISS
+     //uussrr//ggaammeess//aaaarrddvvaarrkk
+
+DDEESSCCRRIIPPTTIIOONN
+     Aardvark is yet another computer fantasy simulation game of
+     the adventure/zork genre.	This one is written in DDL
+     (Dungeon Definition Language) and is intended primarily as
+     an example of how to write a dungeon in DDL.
+
+FFIILLEESS
+     /usr/games/lib/ddlrun  ddl interpreter
+     /usr/games/lib/aardvarkinternal form of aardvark dungeon
+
+AAUUTTHHOORR
+     Mike Urban, UCLA
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 20, 1985				1
+
+
+

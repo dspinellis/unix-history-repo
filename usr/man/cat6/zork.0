@@ -1,0 +1,66 @@
+
+
+
+ZORK(6)             UNIX Programmer's Manual		  ZORK(6)
+
+
+
+NNAAMMEE
+     zork - the game of dungeon
+
+SSYYNNOOPPSSIISS
+     //uussrr//ggaammeess//zzoorrkk
+
+DDEESSCCRRIIPPTTIIOONN
+     _D_u_n_g_e_o_n is a computer fantasy simulation based on Adventure
+     and on Dungeons & Dragons, originally written by Lebling,
+     Blank, and Anderson of MIT.  In it you explore a dungeon
+     made up of various rooms, caves, rivers, and so on.  The
+     object of the game is to collect as much treasure as possi-
+     ble and stow it safely in the trophy case (and, of course,
+     to stay alive.)
+
+     Figuring out the rules is part of the game, but if you are
+     stuck, you should start off with "open mailbox", "take
+     leaflet", and then "read leaflet".  Additional useful com-
+     mands that are not documented include:
+
+     quit (to end the game)
+
+     !cmd (the usual shell escape convention)
+
+     >	  (to save a game)
+
+     <	  (to restore a game)
+
+FFIILLEESS
+     /usr/games/lib/d*
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 20, 1985				1
+
+
+

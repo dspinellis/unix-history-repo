@@ -1,0 +1,198 @@
+
+
+
+SYSLOGD(8)	    UNIX Programmer's Manual	       SYSLOGD(8)
+
+
+
+NNAAMMEE
+     syslogd - log systems messages
+
+SSYYNNOOPPSSIISS
+     //eettcc//ssyyssllooggdd [ --ff_c_o_n_f_i_g_f_i_l_e ] [ --mm_m_a_r_k_i_n_t_e_r_v_a_l ] [ --dd ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _S_y_s_l_o_g_d reads and logs messages into a set of files
+     described by the configuration file /etc/syslog.conf.  Each
+     message is one line.  A message can contain a priority code,
+     marked by a number in angle braces at the beginning of the
+     line.  Priorities are defined in <_s_y_s/_s_y_s_l_o_g._h>.  _S_y_s_l_o_g_d
+     reads from the UNIX domain socket /_d_e_v/_l_o_g, from an Internet
+     domain socket specified in /_e_t_c/_s_e_r_v_i_c_e_s, and from the spe-
+     cial device /_d_e_v/_k_l_o_g (to read kernel messages).
+
+     _S_y_s_l_o_g_d configures when it starts up and whenever it
+     receives a hangup signal.	Lines in the configuration file
+     have a _s_e_l_e_c_t_o_r to determine the message priorities to which
+     the line applies and an _a_c_t_i_o_n.  The _a_c_t_i_o_n field are
+     separated from the selector by one or more tabs.
+
+     Selectors are semicolon separated lists of priority specif-
+     iers.  Each priority has a _f_a_c_i_l_i_t_y describing the part of
+     the system that generated the message, a dot, and a _l_e_v_e_l
+     indicating the severity of the message.  Symbolic names may
+     be used.  An asterisk selects all facilities.  All messages
+     of the specified level or higher (greater severity) are
+     selected.	More than one facility may be selected using com-
+     mas to separate them.  For example:
+
+	  *.emerg;mail,daemon.crit
+
+     Selects all facilities at the _e_m_e_r_g level and the _m_a_i_l and
+     _d_a_e_m_o_n facilities at the _c_r_i_t level.
+
+     Known facilities and levels recognized by _s_y_s_l_o_g_d are those
+     listed in _s_y_s_l_o_g(3) without the leading ``LOG_''.	The addi-
+     tional facility ``mark'' has a message at priority LOG_INFO
+     sent to it every 20 minutes (this may be changed with the --mm
+     flag).  The ``mark'' facility is not enabled by a facility
+     field containing an asterisk.  The level ``none'' may be
+     used to disable a particular facility.  For example,
+
+	  *.debug;mail.none
+
+     Sends all messages _e_x_c_e_p_t mail messages to the selected
+     file.
+
+     The second part of each line describes where the message is
+     to be logged if this line is selected.  There are four
+     forms:
+
+
+
+Printed 7/9/88		  May 26, 1986				1
+
+
+
+
+
+
+SYSLOGD(8)	    UNIX Programmer's Manual	       SYSLOGD(8)
+
+
+
+     o+	A filename (beginning with a leading slash).  The file
+	will be opened in append mode.
+
+     o+	A hostname preceeded by an at sign (``@'').  Selected
+	messages are forwarded to the _s_y_s_l_o_g_d on the named host.
+
+     o+	A comma separated list of users.  Selected messages are
+	written to those users if they are logged in.
+
+     o+	An asterisk.  Selected messages are written to all
+	logged-in users.
+
+     Blank lines and lines beginning with `#' are ignored.
+
+     For example, the configuration file:
+
+	 kern,mark.debug	/dev/console
+	 *.notice;mail.info	/usr/spool/adm/syslog
+	 *.crit                 /usr/adm/critical
+	 kern.err		@ucbarpa
+	 *.emerg		*
+	 *.alert		eric,kridle
+	 *.alert;auth.warning	ralph
+
+     logs all kernel messages and 20 minute marks onto the system
+     console, all notice (or higher) level messages and all mail
+     system messages except debug messages into the file
+     /usr/spool/adm/syslog, and all critical messages into
+     /usr/adm/critical; kernel messages of error severity or
+     higher are forwarded to ucbarpa.  All users will be informed
+     of any emergency messages, the users ``eric'' and ``kridle''
+     will be informed of any alert messages, and the user
+     ``ralph'' will be informed of any alert message, or any
+     warning message (or higher) from the authorization system.
+
+     The flags are:
+
+     --ff   Specify an alternate configuration file.
+
+     --mm   Select the number of minutes between mark messages.
+
+     --dd   Turn on debugging.
+
+     _S_y_s_l_o_g_d creates the file /etc/syslog.pid, if possible, con-
+     taining a single line with its process id.  This can be used
+     to kill or reconfigure _s_y_s_l_o_g_d.
+
+     To bring _s_y_s_l_o_g_d down, it should be sent a terminate signal
+     (e.g. kill `cat /etc/syslog.pid`).
+
+FFIILLEESS
+     /etc/syslog.conf	 the configuration file
+
+
+
+Printed 7/9/88		  May 26, 1986				2
+
+
+
+
+
+
+SYSLOGD(8)	    UNIX Programmer's Manual	       SYSLOGD(8)
+
+
+
+     /etc/syslog.pid	 the process id
+     /dev/log		 Name of the UNIX domain datagram log socket
+     /dev/klog		 The kernel log device
+
+SSEEEE AALLSSOO
+     logger(1), syslog(3)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 26, 1986				3
+
+
+

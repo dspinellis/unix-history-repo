@@ -1,0 +1,132 @@
+
+
+
+DMZ(4)		    UNIX Programmer's Manual		   DMZ(4)
+
+
+
+NNAAMMEE
+     dmz - DMZ-32 terminal multiplexor
+
+SSYYNNOOPPSSIISS
+     ddeevviiccee ddmmzz00 aatt uubbaa?? ccssrr 00116600554400
+	  vveeccttoorr ddmmzzrriinnttaa ddmmzzxxiinnttaa ddmmzzrriinnttbb ddmmzzxxiinnttbb ddmmzzrriinnttcc
+     ddmmzzxxiinnttcc
+
+DDEESSCCRRIIPPTTIIOONN
+     The _d_m_z device provides 24 lines of asynchronous serial line
+     support.  Modem control on all ports is available as an
+     option for the H3014 distribution panel.
+
+     Each line attached to a DMZ-32 serial line port behaves as
+     described in _t_t_y(4).  Input and output for each line may
+     independently be set to run at any of 16 speeds; see _t_t_y(4)
+     for the encoding.
+
+     Bit _i of flags may be specified for a _d_m_z to to say that a
+     line is not properly connected, and that the line should be
+     treated as hard-wired with carrier always present.  Thus
+     specifying ``flags 0x000004'' in the specification of _d_m_z0
+     would cause line _t_t_y_a_2 to be treated in this way.
+
+     The _d_m_z driver normally enables the input silos with a short
+     timeout (30 milliseconds); this allows multiple characters
+     to be received per interrupt during periods of high-speed
+     input.
+
+FFIILLEESS
+     /dev/tty[abcefg][0-9a-n]
+
+SSEEEE AALLSSOO
+     tty(4)
+
+DDIIAAGGNNOOSSTTIICCSS
+     ddmmzz%%dd:: NNXXMM lliinnee %%dd.  No response from the UNIBUS on a DMA
+     transfer within a timeout period.	This is often followed by
+     a UNIBUS adapter error.  This occurs most frequently when
+     the UNIBUS is heavily loaded and when devices which hog the
+     bus (such as RK07s) are present.  It is not serious.
+
+     ddmmzz%%dd:: ssiilloo oovveerrffllooww.  The character input silo overflowed
+     before it could be serviced.  This can happen if a hard
+     error occurs when the CPU is running with elevated priority,
+     as the system will then print a message on the console with
+     interrupts disabled.  It is not serious.
+
+BBUUGGSS
+     It should be possible to set the silo timeout with a confi-
+     guration file option, as the value is a trade-off between
+     efficiency and response time for flow control and character
+
+
+
+Printed 7/9/88		  April 7, 1986                         1
+
+
+
+
+
+
+DMZ(4)		    UNIX Programmer's Manual		   DMZ(4)
+
+
+
+     echo.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  April 7, 1986                         2
+
+
+

@@ -1,0 +1,198 @@
+
+
+
+PRINTCAP(5)	    UNIX Programmer's Manual	      PRINTCAP(5)
+
+
+
+NNAAMMEE
+     printcap - printer capability data base
+
+SSYYNNOOPPSSIISS
+     /etc/printcap
+
+DDEESSCCRRIIPPTTIIOONN
+     _P_r_i_n_t_c_a_p is a simplified version of the _t_e_r_m_c_a_p(5) data base
+     used   to	describe  line	printers.   The  spooling  system
+     accesses the _p_r_i_n_t_c_a_p file every time it is  used,  allowing
+     dynamic  addition	and  deletion of printers.  Each entry in
+     the data base is used to describe one  printer.   This  data
+     base may not be substituted for, as is possible for _t_e_r_m_c_a_p,
+     because it may allow accounting to be bypassed.
+
+     The default printer is normally _l_p, though  the  environment
+     variable  PRINTER may be used to override this.  Each spool-
+     ing utility supports an option, --PP_p_r_i_n_t_e_r, to allow explicit
+     naming of a destination printer.
+
+     Refer to the _4._3_B_S_D _L_i_n_e _P_r_i_n_t_e_r _S_p_o_o_l_e_r _M_a_n_u_a_l for  a  com-
+     plete  discussion	on  how  setup	the  database for a given
+     printer.
+
+CCAAPPAABBIILLIITTIIEESS
+     Refer to _t_e_r_m_c_a_p(5) for a description of the file layout.
+
+     NNaammee   TTyyppee  DDeeffaauulltt	      DDeessccrriippttiioonn
+     af     str   NULL		      name of accounting file
+     br     num   none		      if lp is a tty, set the baud rate (ioctl call)
+     cf     str   NULL		      cifplot data filter
+     df     str   NULL		      tex data filter (DVI format)
+     fc     num   0		      if lp is a tty, clear flag bits (sgtty.h)
+     ff     str   ``\f''	      string to send for a form feed
+     fo     bool  false               print a form feed when device is opened
+     fs     num   0		      like `fc' but set bits
+     gf     str   NULL		      graph data filter (plot (3X) format)
+     hl     bool  false               print the burst header page last
+     ic     bool  false               driver supports (non standard) ioctl to indent printout
+     if     str   NULL		      name of text filter which does accounting
+     lf     str   ``/dev/console''    error logging file name
+     lo     str   ``lock''	      name of lock file
+     lp     str   ``/dev/lp''	      device name to open for output
+     mx     num   1000		      maximum file size (in BUFSIZ blocks), zero = unlimited
+     nd     str   NULL		      next directory for list of queues (unimplemented)
+     nf     str   NULL		      ditroff data filter (device independent troff)
+     of     str   NULL		      name of output filtering program
+     pc     num   200		      price per foot or page in hundredths of cents
+     pl     num   66		      page length (in lines)
+     pw     num   132		      page width (in characters)
+     px     num   0		      page width in pixels (horizontal)
+     py     num   0		      page length in pixels (vertical)
+
+
+
+Printed 7/9/88		  May 14, 1986				1
+
+
+
+
+
+
+PRINTCAP(5)	    UNIX Programmer's Manual	      PRINTCAP(5)
+
+
+
+     rf     str   NULL		      filter for printing FORTRAN style text files
+     rg     str   NULL		      restricted group. Only members of group allowed access
+     rm     str   NULL		      machine name for remote printer
+     rp     str   ``lp''	      remote printer name argument
+     rs     bool  false               restrict remote users to those with local accounts
+     rw     bool  false               open the printer device for reading and writing
+     sb     bool  false               short banner (one line only)
+     sc     bool  false               suppress multiple copies
+     sd     str   ``/usr/spool/lpd''  spool directory
+     sf     bool  false               suppress form feeds
+     sh     bool  false               suppress printing of burst page header
+     st     str   ``status''	      status file name
+     tf     str   NULL		      troff data filter (cat phototypesetter)
+     tr     str   NULL		      trailer string to print when queue empties
+     vf     str   NULL		      raster image filter
+     xc     num   0		      if lp is a tty, clear local mode bits (tty (4))
+     xs     num   0		      like `xc' but set bits
+
+     If the local line printer driver supports	indentation,  the
+     daemon must understand how to invoke it.
+
+FFIILLTTEERRSS
+     The _l_p_d(8) daemon creates a pipeline of _f_i_l_t_e_r_s  to  process
+     files  for  various  printer  types.   The  filters selected
+     depend on the flags passed to _l_p_r(1).  The pipeline  set  up
+     is:
+
+	  -p   pr | if	 regular text + _p_r(1)
+	  none if	 regular text
+	  -c   cf	 cifplot
+	  -d   df	 DVI (tex)
+	  -g   gf	 _p_l_o_t(3)
+	  -n   nf	 ditroff
+	  -f   rf	 Fortran
+	  -t   tf	 troff
+	  -v   vf	 raster image
+
+     The iiff filter is invoked with arguments:
+
+	  _i_f [ --cc ] --wwwidth --lllength --iiindent --nn  login  --hh  host
+     acct-file
+
+     The --cc flag is passed only if  the  --ll  flag  (pass  control
+     characters literally) is specified to _l_p_r.  _W_i_d_t_h and _l_e_n_g_t_h
+     specify the page width and length (from ppww  and  ppll  respec-
+     tively) in characters.  The --nn and --hh parameters specify the
+     login name and host name of the owner  of	the  job  respec-
+     tively.  _A_c_c_t-_f_i_l_e is passed from the aaff _p_r_i_n_t_c_a_p entry.
+
+     If no iiff is specified, ooff is used instead, with the distinc-
+     tion  that  ooff  is  opened only once, while iiff is opened for
+     every  individual	job.   Thus,  iiff  is  better  suited   to
+
+
+
+Printed 7/9/88		  May 14, 1986				2
+
+
+
+
+
+
+PRINTCAP(5)	    UNIX Programmer's Manual	      PRINTCAP(5)
+
+
+
+     performing  accounting.   The ooff is only given the _w_i_d_t_h and
+     _l_e_n_g_t_h flags.
+
+     All other filters are called as:
+
+	  _f_i_l_t_e_r --xxwidth --yylength --nn login --hh host acct-file
+
+     where _w_i_d_t_h and _l_e_n_g_t_h are represented in pixels,	specified
+     by the ppxx and ppyy entries respectively.
+
+     All filters take _s_t_d_i_n as the file, _s_t_d_o_u_t as  the  printer,
+     may  log  either  to _s_t_d_e_r_r or using _s_y_s_l_o_g(3), and must not
+     ignore SIGINT.
+
+LLOOGGGGIINNGG
+     Error messages generated by the line printer programs  them-
+     selves  (that  is, the _l_p* programs) are logged by _s_y_s_l_o_g(3)
+     using the _L_P_R facility.  Messages printed on _s_t_d_e_r_r  of  one
+     of  the  filters are sent to the corresponding llff file.  The
+     filters may, of course, use _s_y_s_l_o_g themselves.
+
+     Error messages sent to the console have  a  carriage  return
+     and  a  line  feed appended to them, rather than just a line
+     feed.
+
+SSEEEE AALLSSOO
+     termcap(5), lpc(8), lpd(8), pac(8), lpr(1), lpq(1), lprm(1)
+     _4._3_B_S_D _L_i_n_e _P_r_i_n_t_e_r _S_p_o_o_l_e_r _M_a_n_u_a_l
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 14, 1986				3
+
+
+

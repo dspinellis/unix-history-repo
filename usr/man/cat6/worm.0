@@ -1,0 +1,66 @@
+
+
+
+WORM(6)             UNIX Programmer's Manual		  WORM(6)
+
+
+
+NNAAMMEE
+     worm - Play the growing worm game
+
+SSYYNNOOPPSSIISS
+     //uussrr//ggaammeess//wwoorrmm [ _s_i_z_e ]
+
+DDEESSCCRRIIPPTTIIOONN
+     In _w_o_r_m, you are a little worm, your body is the "o"'s on
+     the screen and your head is the "@".  You move with the hjkl
+     keys (as in the game snake).  If you don't press any keys,
+     you continue in the direction you last moved.  The upper
+     case HJKL keys move you as if you had pressed several (9 for
+     HL and 5 for JK) of the corresponding lower case key (unless
+     you run into a digit, then it stops).
+
+     On the screen you will see a digit, if your worm eats the
+     digit is will grow longer, the actual amount longer depends
+     on which digit it was that you ate.  The object of the game
+     is to see how long you can make the worm grow.
+
+     The game ends when the worm runs into either the sides of
+     the screen, or itself.  The current score (how much the worm
+     has grown) is kept in the upper left corner of the screen.
+
+     The optional argument, if present, is the initial length of
+     the worm.
+
+BBUUGGSS
+     If the initial length of the worm is set to less than one or
+     more than 75, various strange things happen.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 20, 1985				1
+
+
+

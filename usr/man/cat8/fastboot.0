@@ -1,0 +1,66 @@
+
+
+
+FASTBOOT(8)	    UNIX Programmer's Manual	      FASTBOOT(8)
+
+
+
+NNAAMMEE
+     fastboot, fasthalt - reboot/halt the system without checking
+     the disks
+
+SSYYNNOOPPSSIISS
+     //eettcc//ffaassttbboooott [ _b_o_o_t-_o_p_t_i_o_n_s ]
+     //eettcc//ffaasstthhaalltt [ _h_a_l_t-_o_p_t_i_o_n_s ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _F_a_s_t_b_o_o_t and _f_a_s_t_h_a_l_t are shell scripts which reboot and
+     halt the system without checking the file systems.  This is
+     done by creating a file /_f_a_s_t_b_o_o_t, then invoking the _r_e_b_o_o_t
+     program.  The system startup script, /_e_t_c/_r_c, looks for this
+     file and, if present, skips the normal invocation of
+     _f_s_c_k(8).
+
+SSEEEE AALLSSOO
+     halt(8), reboot(8), rc(8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 April 27, 1985                         1
+
+
+

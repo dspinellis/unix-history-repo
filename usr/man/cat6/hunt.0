@@ -1,0 +1,264 @@
+
+
+
+HUNT(6)             UNIX Programmer's Manual		  HUNT(6)
+
+
+
+NNAAMMEE
+     hunt - a multi-player multi-terminal game
+
+SSYYNNOOPPSSIISS
+     //uussrr//ggaammeess//hhuunntt [-q] [--mm] [hostname] [--ll name]
+
+DDEESSCCRRIIPPTTIIOONN
+     The object of the game _h_u_n_t is to kill off the other
+     players.  There are no rooms, no treasures, and no monsters.
+     Instead, you wander around a maze, find grenades, trip
+     mines, and shoot down walls and players.  The more players
+     you kill before you die, the better your score is.  If the
+     --mm flag is given, you enter the game as a monitor (you can
+     see the action but you cannot play).
+
+     _H_u_n_t normally looks for an active game on the local network;
+     if none is found, it starts one up on the local host.  One
+     may specify the location of the game by giving the _h_o_s_t_n_a_m_e
+     argument.	The player name may be specified on the command
+     line by using the --ll option.  This command syntax was chosen
+     for _r_l_o_g_i_n/_r_s_h compatibility.  If the --qq flag is given, _h_u_n_t
+     queries the network and reports if an active game were
+     found.  This is useful for .login scripts.
+
+     _H_u_n_t only works on crt (vdt) terminals with at least 24
+     lines, 80 columns, and cursor addressing.	The screen is
+     divided in to 3 areas.  On the right hand side is the status
+     area.  It shows you how much damage you've sustained, how
+     many charges you have left, who's in the game, who's scan-
+     ning (the asterisk in front of the name), who's cloaked (the
+     plus sign in front of the name), and other players' scores.
+     Most of the rest of the screen is taken up by your map of
+     the maze, except for the 24th line, which is used for longer
+     messages that don't fit in the status area.
+
+     _H_u_n_t uses the same keys to move as _v_i does, _i._e., hh,jj,kk, and
+     ll for left, down, up, right respectively.	To change which
+     direction you're facing in the maze, use the upper case ver-
+     sion of the movement key (_i._e., HJKL).
+
+     Other commands are:
+
+	  f	- Fire (in the direction you're facing) (Takes 1 charge)
+	  g	- Throw grenade (in the direction you're facing) (Takes 9 charges)
+	  F	- Throw satchel charge (Takes 25 charges)
+	  G	- Throw bomb (Takes 49 charges)
+	  o	- Throw small slime bomb (Takes 15 charges)
+	  O	- Throw big slime bomb (Takes 30 charges)
+	  s	- Scan (show where other players are) (Takes 1 charge)
+	  c	- Cloak (hide from scanners) (Takes 1 charge)
+
+	  ^L	- Redraw screen
+
+
+
+Printed 7/9/88		 January 9, 1986			1
+
+
+
+
+
+
+HUNT(6)             UNIX Programmer's Manual		  HUNT(6)
+
+
+
+	  q	- Quit
+
+     Knowing what the symbols on the screen often helps:
+
+	  -|+	- walls
+	  /\	- diagonal (deflecting) walls
+	  #	- doors (dispersion walls)
+	  ;	- small mine
+	  g	- large mine
+	  :	- shot
+	  o	- grenade
+	  O	- satchel charge
+	  @	- bomb
+	  s	- small slime bomb
+	  $	- big slime bomb
+	  ><^v	- you facing right, left, up, or down
+	  }{i!	- other players facing right, left, up, or down
+	  *	- explosion
+	  \|/
+	  -*-	- grenade and large mine explosion
+	  /|\
+
+     Satchel and bomb explosions are larger than grenades (5x5, 7x7,
+	  and 3x3 respectively).
+
+     Other helpful hints:
+
+     [] You can only fire in the direction you are facing.
+     [] You can only fire three shots in a row, then the gun must
+	cool.
+     [] A shot only affects the square it hits.
+     [] Shots and grenades move 5 times faster than you do.
+     [] To stab someone, you must face that player and move at
+	them.
+     [] Stabbing does 2 points worth of damage and shooting does
+	5 points.
+     [] Slime does 5 points of damage each time it hits.
+     [] You start with 15 charges and get 5 more for every new
+	player.
+     [] A grenade affects the nine squares centered about the
+	square it hits.
+     [] A satchel affects the twenty-five squares centered about
+	the square it hits.
+     [] A bomb affects the forty-nine squares centered about the
+	square it hits.
+     [] Slime affects all squares it oozes over (15 or 30 respec-
+	tively).
+     [] One small mine and one large mine is placed in the maze
+	for every new player.  A mine has a 5% probability of
+	tripping when you walk directly at it; 50% when going
+	sideways on to it; 95% when backing up on to it.  Trip-
+	ping a mine costs you 5 points or 10 points respectively.
+
+
+
+Printed 7/9/88		 January 9, 1986			2
+
+
+
+
+
+
+HUNT(6)             UNIX Programmer's Manual		  HUNT(6)
+
+
+
+	Defusing a mine is worth 1 charge or 9 charges respec-
+	tively.
+     [] You cannot see behind you.
+     [] Scanning lasts for (20 times the number of players)
+	turns.	Scanning takes 1 ammo charge, so don't waste all
+	your charges scanning.
+     [] Cloaking lasts for 20 turns.
+     [] Whenever you kill someone, you get 2 more damage capacity
+	points and 2 damage points taken away.
+     [] Maximum typeahead is 5 characters.
+     [] A shot destroys normal (_i._e., non-diagonal, non-door)
+	walls.
+     [] Diagonal walls deflect shots and change orientation.
+     [] Doors disperse shots in random directions (up, down,
+	left, right).
+     [] Diagonal walls and doors cannot be destroyed by direct
+	shots but may be destroyed by an adjacent grenade explo-
+	sion.
+     [] Slime goes around walls, not through them.
+     [] Walls regenerate, reappearing in the order they were des-
+	troyed.  One percent of the regenerated walls will be
+	diagonal walls or doors.  When a wall is generated
+	directly beneath a player, he is thrown in a random
+	direction for a random period of time.	When he lands, he
+	sustains damage (up to 20 percent of the amount of damage
+	he had before impact); that is, the less damage he had,
+	the more nimble he is and therefore less likely to hurt
+	himself on landing.
+
+
+
+     [] The environment variable HHUUNNTT is checked to get the
+	player name.  If you don't have this variable set, _h_u_n_t
+	will ask you what name you want to play under.	If it is
+	set, you may also set up a single character keyboard map,
+	but then you have to enumerate the options:
+		  _e._g. setenv HUNT
+	``name=Sneaky,mapkey=zoFfGg1f2g3F4G''
+	sets the player name to Sneaky, and the maps zz to oo, FF to
+	ff, GG to gg, 11 to ff, 22 to gg, 33 to FF, and 44 to GG.	The _m_a_p_-
+	_k_e_y option must be last.
+     [] It's a boring game if you're the only one playing.
+
+     Your score is the ratio of number of kills to number of
+     times you entered the game and is only kept for the duration
+     of a single session of _h_u_n_t.
+
+     _H_u_n_t normally drives up the load average to be about
+     (number_of_players + 0.5) greater than it would be without a
+     _h_u_n_t game executing.  A limit of three players per host and
+     nine players total is enforced by _h_u_n_t.
+
+
+
+
+Printed 7/9/88		 January 9, 1986			3
+
+
+
+
+
+
+HUNT(6)             UNIX Programmer's Manual		  HUNT(6)
+
+
+
+FFIILLEESS
+     /usr/games/lib/hunt.driver   game coordinator
+
+AAUUTTHHOORRSS
+     Conrad Huang, Ken Arnold, and Greg Couch; University of Cal-
+     ifornia, San Francisco, Computer Graphics Lab
+
+AACCKKNNOOWWLLEEDDGGEEMMEENNTTSS
+     We thank Don Kneller, John Thomason, Eric Pettersen, and
+     Scott Weiner for providing endless hours of play-testing to
+     improve the character of the game.  We hope their signifi-
+     cant others will forgive them; we certainly don't.
+
+BBUUGGSS
+     To keep up the pace, not everything is as realistic as pos-
+     sible.
+
+     There were some bugs in early releases of 4.2 BSD that _h_u_n_t
+     helped discover; _h_u_n_t will crash your system if those bugs
+     haven't been fixed.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 January 9, 1986			4
+
+
+

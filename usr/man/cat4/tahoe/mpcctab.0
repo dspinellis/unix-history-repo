@@ -1,0 +1,396 @@
+
+
+
+MPCCTAB(4)	    UNIX Programmer's Manual	       MPCCTAB(4)
+
+
+
+NNAAMMEE
+     mpcctab - MPCC configuration file
+
+DDEESSCCRRIIPPTTIIOONN
+     The file mmppccccttaabb is used to configure CCI's Multi-Protocol
+     Communication Controller (MPCC).  The controller provides
+     high-speed synchronous communications for the POWER 6 family
+     of computers.  This file determines the MPCC board confi-
+     gurations. You can download either a synchronous , bisync or
+     an asynchronous protocol to an MPCC board.  See _d_l_m_p_c_c(8)
+     for details.
+
+     A mmppccccttaabb file is supplied with each MPCC release; however,
+     you can modify this file or create your own file by using
+     one of the UNIX text editors.
+
+     The contents of the file consists of entries that describe
+     supported communication protocols and their unique attri-
+     butes. The protocols supported are X.25, SNA,  ASYNC, and
+     BISYNC.  For ASYNC two different entries are possible in the
+     _p_r_o_c_o_l field - if 16 port MPCC async is configured, then
+     ASYNC is entered; 32 port MPCC async is specified by enter-
+     ing 32PORT.  This file must reside in the directory
+     //eettcc//mmppcccc.
+
+EEnnttrryy LLiinnee FFoorrmmaatt
+     An entry line consists of an _i_t_e_m _i_d_e_n_t_i_f_i_e_r followed by
+     variable width arguments separated by colons. There are
+     three item identifiers: MPCC, PROTOCOL, PORT. The MPCC line
+     in this file identifies the board number. The PROTOCOL line
+     identifies the specific communication protocol.  The PORT
+     line describes the port for the immediately preceding proto-
+     col. The number of arguments  for the PROTOCOL and PORT
+     lines, and the arguments themselves, are protocol dependent.
+     See the individual argument descriptions for details.
+
+     Notes: Use upper case letters for clarity when specifying
+     the item identifier and the protocol name. Make sure that
+     you enter the argument values in the order specified below.
+     Also, use comments liberally, and indicate comment lines by
+     placing a pound sign (##) in column one.
+
+     The item identifiers and their corresponding line formats,
+     with valid argument values, follow:
+
+     MMPPCCCC LLiinnee
+
+     Format:
+
+	  MMPPCCCC::_b_d_n_o::[FFCCCCSS,,_p_o_r_t_n_o,,_t_i_m_e_r]::[SSOOCC,,_p_o_r_t_n_o]
+
+
+
+
+
+Printed 7/9/88		   May 4, 1988				1
+
+
+
+
+
+
+MPCCTAB(4)	    UNIX Programmer's Manual	       MPCCTAB(4)
+
+
+
+     Argument Explanations:
+
+	  _b_d_n_o	  Specifies the board number.
+
+	  FFCCCCSS	  FCCS is a fault-tolerant support system that
+		  allows backup ports to assume the functions of
+		  failed ports.  For example, if port 0 fails for
+		  any reason, another port may be configured to
+		  assume the duties of the failed port.  The key-
+		  word FFCCCCSS identifies this feature and must be
+		  followed by the list of fail-safe port numbers
+		  and a time increment, described below.  This
+		  feature is optional.
+
+	  SSOOCC	  An FCCS port can also be an SOC (Switch On
+		  Close) port, meaning that the port will switch
+		  when it is closed.  And as with FCCS, the port
+		  will switch if it fails.  This feature is
+		  optional.
+
+	  _p_o_r_t_n_o  Portno is a list of port numbers, separated by
+		  commas, specifying the primary ports you want
+		  protected by backup ports.  FCCS boards have
+		  either 4 primary and 4 backup ports, or 8 pri-
+		  mary and 8 backup ports.  The valid port
+		  numbers are 00 through 33 for the 4-port version,
+		  and 00 through 77 for the 8-port version.
+
+		  Each of the ports has a switched connector.  If
+		  the board fails for any reason, the traffic on
+		  these ports is automatically routed through the
+		  switched connector.  These connectors must be
+		  cabled to secondary ports on the other FCCS
+		  connector panels.  The secondary ports are num-
+		  bered 8 through 11 on the 4-port version and 8
+		  through 15 on the 8-port version.  Only the
+		  primary ports need be designated in the FCCS
+		  configuration line, however all ports must be
+		  identified as described in the PORT Line sec-
+		  tion below.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		   May 4, 1988				2
+
+
+
+
+
+
+MPCCTAB(4)	    UNIX Programmer's Manual	       MPCCTAB(4)
+
+
+
+	  _t_i_m_e	  Specifies the time period for the sentinel
+		  relay timer. Each board resets its sentinel
+		  timer after the specified time period. If the
+		  board fails, and therefore can't set the timer,
+		  then control is passed automatically to another
+		  board, which continues the current processing.
+		  This feature ensures PerpetualProcessing and is
+		  transparent to the user. The valid range of
+		  values in milliseconds is from 5500 to 55995500 in 50
+		  millisecond increments.
+
+     PPRROOTTOOCCOOLL LLiinnee
+
+     Format:
+
+	  PPRROOTTOOCCOOLL::_p_r_o_c_o_l::_d_e_p_a_r_g_s
+
+     Argument Explanations:
+
+	  _p_r_o_c_o_l    Specifies the protocol you want associated
+		    with the board specified in the previous MMPPCCCC
+		    line.
+
+	  _d_e_p_a_r_g_s   Specifies the protocol-dependent protocol
+		    attributes. X.25  and SNA have ten (10) argu-
+		    ments, ASYNC has just one (1) argument, and
+		    BISYNC has no arguments.
+
+	  _X_._2_5__D_e_p_e_n_d_e_n_t__A_t_t_r_i_b_u_t_e_s
+
+	  Note: You must be familiar with the X.25 CCITT Yellow
+	  Book (1980) in order to understand the following
+	  values.
+
+	  _N_1	  Specifies the maximum frame size in bytes.
+
+	  _N_2	  Specifies the retry count.
+
+	  _T_1	  Specifies the retry timer in milliseconds.
+
+	  _T_2	  Specifies the response delay timer in mil-
+		  liseconds.
+
+	  _T_3	  Specifies the inactive link timer in mil-
+		  liseconds.
+
+	  _T_4	  Specifies the idle channel timer in mil-
+		  liseconds.
+
+	  _K	  Specifies the Level 2 window size.
+
+
+
+
+
+Printed 7/9/88		   May 4, 1988				3
+
+
+
+
+
+
+MPCCTAB(4)	    UNIX Programmer's Manual	       MPCCTAB(4)
+
+
+
+	  _x_i_d_1	  Specifies the destination type in the XID com-
+		  mand. It must be a number from 1-5:
+
+			  1 = AXE
+			  2 = CTSS
+			  3 = DEX
+			  4 = DMS
+			  5 = WESCOM
+
+	  _x_i_d_2	  Specifies the destination identity in the XID
+		  command. It can be three to nine ASCII charac-
+		  ters.
+
+	  _x_i_d_3	  Specifies the additional information in the XID
+		  command. It can be any ASCII string up to 20
+		  characters long.
+
+	  _A_S_Y_N_C__a_n_d__3_2_P_O_R_T__D_e_p_e_n_d_e_n_t__A_t_t_r_i_b_u_t_e
+
+	  _b_u_f_s_i_z_e   Specifies the size of the transmit/receive
+		    buffers in bytes.
+
+     PPOORRTT LLiinnee
+
+     Format:
+
+	  PPOORRTT::_p_o_r_t_n_o::_p_r_o_c_o_l::_d_e_p_a_r_g_s
+
+     Argument Explanations:
+
+	  _p_o_r_t_n_o    Specifies the port number of the previously
+		    specified board.
+
+	  _p_r_o_c_o_l    Specifies the protocol. You must state the
+		    same protocol as you stated in the preceding
+		    PROTOCOL line.
+
+	  _d_e_p_a_r_g_s   Specifies the protocol-dependent port attri-
+		    butes. X.25 has fourteen (14) arguments.
+		    ASYNC, 32PORT and BISYNC have none. SNA has
+		    14 fixed arguments.
+
+	  _X_._2_5__D_e_p_e_n_d_e_n_t__A_r_g_u_m_e_n_t_s
+
+	  Note: You must be familiar with the X.25 CCITT Yellow
+	  Book (1980) in order to understand the following
+	  values.
+
+	  _i_x_m_i_t_b_u_f    Specifies the number of transmit buffers
+		      allocated for I frames.
+
+	  _s_u_x_m_i_t_b_u_f   Specifies the number of transmit buffers
+
+
+
+Printed 7/9/88		   May 4, 1988				4
+
+
+
+
+
+
+MPCCTAB(4)	    UNIX Programmer's Manual	       MPCCTAB(4)
+
+
+
+		      allocated for S/U frames.
+
+	  _i_r_e_c_v_b_u_f    Specifies the number of receive buffers
+		      allocated for I frames.
+
+	  _s_u_r_e_c_v_b_u_f   Specifies the number of receive buffers
+		      allocated for S/U frames.
+
+	  _x_m_i_t_o       Specifies the Level 1 transmit timeout.
+		      This argument should be 00 so that Level 1
+		      calculates timeout from the baud rate.
+
+	  _r_t_s	      Specifies the modem control value for rts.
+		      Valid values are 11 which equals aasssseerrtt, 22
+		      which equals ddrroopp, and 33 which equals aauuttoo.
+
+	  _d_t_r	      Specifies the modem control value for dtr.
+		      Valid values are 11 which equals aasssseerrtt, and
+		      22 which equals ddrroopp.
+
+	  _l_i_n_e_i_d_l_e    Specifies the line state between transmis-
+		      sions. Valid values are 00 which specifies a
+		      flag fill, and 11 which specifies a mark
+		      fill.
+
+	  _r_c_v_a_d_r      Specifies the port configuration. A 11 makes
+		      the port a DCE, while a 33 makes the port a
+		      DTE.
+
+	  _m_a_s_k	      Specifies the data link receive mask. This
+		      argument must be 33.
+
+	  _x_m_t_r_t_y      Specifies the number of data link retries
+		      after a transmit timeout. This argument
+		      should be zero since upper levels of X25 do
+		      retries.
+
+	  _b_a_u_d	      Specifies the baud rate of a transmission.
+		      All standard rates are supported. Some com-
+		      mon rate values are 00 equals a modem, 1133
+		      equals 9600, and 2266 equals 56KB. See the
+		      header file mmpp__ppoorrtt..hh for other values.
+
+	  _e_n_c_o_d_e      Specifies the physical data encoding. A 00
+		      indicates NRZ, and a 11 indicates NRZI.
+
+	  _t_r_a_c_e       Specifies the data link receive trace mode.
+		      This argument must be 00.
+
+
+
+
+
+
+
+Printed 7/9/88		   May 4, 1988				5
+
+
+
+
+
+
+MPCCTAB(4)	    UNIX Programmer's Manual	       MPCCTAB(4)
+
+
+
+EEXXAAMMPPLLEE
+     The following entry configures five MPCC boards: one for
+     X.25, ASYNC, 32PORT, BISYNC and SNA. Each has two ports.
+
+     MPCC:0
+     PROTOCOL:X25:272:2:6000:1000:30000:20000:8:2:ccice1:remote
+     PORT:0:X25:8:16:8:16:0:1:1:0:1:3:0:0:0:0
+     PORT:1:X25:8:16:8:16:0:1:1:0:3:3:0:0:0:0
+
+     MPCC:1
+     PROTOCOL:ASYNC:128
+     PORT:0:ASYNC
+     PORT:1:ASYNC
+
+     MPCC:2
+     PROTOCOL:32PORT:128
+     PORT:0:32PORT
+     PORT:1:32PORT
+
+     MPCC:3
+     PROTOCOL:BISYNC
+     PORT:0:BISYNC
+     PORT:1:BISYNC
+
+     MPCC:4
+     PROTOCOL:SNA:272:4:800:200:20000:20000:8:2:acey:deucy
+     PORT:0:SNA:8:10:10:24:5:3:1:0:193:193:1:0:0:0
+     PORT:1:SNA:8:10:10:24:5:3:1:0:193:193:1:0:0:0
+
+FFIILLEESS
+     /etc/mpcctab /etc/mpcca /etc/mpccb /etc/mpcc32 /etc/mpccx
+
+SSEEEE AALLSSOO
+     dlmpcc(8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		   May 4, 1988				6
+
+
+

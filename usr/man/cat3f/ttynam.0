@@ -1,0 +1,66 @@
+
+
+
+TTYNAM(3F)	    UNIX Programmer's Manual	       TTYNAM(3F)
+
+
+
+NNAAMMEE
+     ttynam, isatty - find name of a terminal port
+
+SSYYNNOOPPSSIISS
+     cchhaarraacctteerr**((**)) ffuunnccttiioonn ttttyynnaamm ((lluunniitt))
+
+     llooggiiccaall ffuunnccttiioonn iissaattttyy ((lluunniitt))
+
+DDEESSCCRRIIPPTTIIOONN
+     _T_t_y_n_a_m returns a blank padded path name of the terminal dev-
+     ice associated with logical unit _l_u_n_i_t.
+
+     _I_s_a_t_t_y returns ..ttrruuee.. if _l_u_n_i_t is associated with a terminal
+     device, ..ffaallssee.. otherwise.
+
+FFIILLEESS
+     /dev/*
+     /usr/lib/libU77.a
+
+DDIIAAGGNNOOSSTTIICCSS
+     _T_t_y_n_a_m returns an empty string (all blanks) if _l_u_n_i_t is not
+     associated with a terminal device in directory `/dev'.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 15, 1985				1
+
+
+

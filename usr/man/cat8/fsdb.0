@@ -1,0 +1,594 @@
+
+
+
+FSDB(8)             UNIX Programmer's Manual		  FSDB(8)
+
+
+
+NNAAMMEE
+     fsdb - file system debugger
+
+SSYYNNOOPPSSIISS
+     //eettcc//ffssddbb [ooppttiioonnss] special
+
+OOPPTTIIOONNSS
+     The options available to _f_s_d_b are:
+	  --??	       display usage
+	  --oo	       override some error conditions
+	  --pp''ssttrriinngg''   set prompt to string
+	  --ww	       open for write
+
+DDEESSCCRRIIPPTTIIOONN
+     Since _f_s_d_b reads the disk raw, it is able to circumvent nor-
+     mal file system security.	Extreme caution is advised in
+     determining its availability on the system.  Suggested per-
+     missions are 600 and owned by bin.
+
+     _F_s_d_b can be used to patch up a damaged file system after a
+     crash.  It has conversions to translate block and i-numbers
+     into their corresponding disk addresses.  Also included are
+     mnemonic offsets to access different parts of an inode.
+     These greatly simplify the process of correcting control
+     block entries or descending the file system tree.
+
+     _F_s_d_b contains several error-checking routines to verify
+     inode and block addresses.  These can be disabled if neces-
+     sary by invoking _f_s_d_b with the -_o option or by the use of
+     the _o command.
+
+     _F_s_d_b reads a block at a time and will therefore work with
+     raw as well as block I/O. A buffer management routine is
+     used to retain commonly used blocks of data in order to
+     reduce the number of read system calls.  All assignment
+     operations result in an immediate write-through of the
+     corresponding block.  Note that in order to modify any por-
+     tion of the disk, _f_s_d_b must be invoked with the -_w option.
+
+     Wherever possible, _a_d_b-like syntax was adopted to promote
+     the use of _f_s_d_b through familiarity.
+
+     Numbers are considered hexadecimal by default.  However, the
+     user has control over how data is to be displayed or
+     accepted.	The _b_a_s_e command will display or set the
+     input/output base.  Once set, all input will default to this
+     base and all output will be shown in this base.  The base
+     can be overriden temporarily for input by preceding hexade-
+     cimal numbers with '0x', preceding decimal numbers with
+     '0t', or octal numbers with '0'.  Hexadecimal numbers begin-
+     ning with a-f or A-F must be preceded with '0x' to distin-
+     guish them from commands.
+
+
+
+Printed 7/9/88		  July 9, 1988				1
+
+
+
+
+
+
+FSDB(8)             UNIX Programmer's Manual		  FSDB(8)
+
+
+
+     Disk addressing by _f_s_d_b is at the byte level.  However, _f_s_d_b
+     offers many commands to convert a desired inode, directory
+     entry, block, superblock etc. to a byte address.  Once the
+     address has been calculated, _f_s_d_b will record the result in
+     _d_o_t (see next paragraph).
+
+     Several global values are maintained by _f_s_d_b: the current
+     base (referred to as _b_a_s_e), the current address (referred to
+     as _d_o_t), the current inode (referred to as _i_n_o_d_e), the
+     current count (referred to as _c_o_u_n_t), and the current type
+     (referred to as _t_y_p_e).  Most commands use the preset value
+     of _d_o_t in their execution.  For example,
+	  > 2:inode
+     will first set the value of _d_o_t to 2, ':' will alert the
+     start of a command, and the _i_n_o_d_e command will set _i_n_o_d_e to
+     2.  A count is specified after a ','.  Once set, _c_o_u_n_t will
+     remain at this value until a new command is encountered
+     which will then reset the value back to 1 (the default).
+     So, if
+	  > 2000,400/X
+     is typed, 400 hex longs are listed from 2000, and when com-
+     pleted, the value of _d_o_t will be 2000 + 400 * sizeof (long).
+     If a carriage-return is then typed, the output routine will
+     use the current values of _d_o_t, _c_o_u_n_t, and _t_y_p_e and display
+     400 more hex longs.  A '*' will cause the entire block to be
+     displayed.
+
+     End of fragment, block and file are maintained by _f_s_d_b.
+     When displaying data as fragments or blocks, an error mes-
+     sage will be displayed when the end of fragment or block is
+     reached.  When displaying data using the _d_b, _i_b, _d_i_r_e_c_t_o_r_y,
+     or _f_i_l_e commands an error message is displayed if the end of
+     file is reached.  This is mainly needed to avoid passing the
+     end of a directory or file and getting unknown and unwanted
+     results.
+
+     An example showing several commands and the use of
+     carriage-return would be:
+	  > 2:ino; 0:dir?d
+		 or
+	  > 2:ino; 0:db:block?d
+     The two examples are synonymous for getting to the first
+     directory entry of the root of the file system.  Once there,
+     subsequent carriage-returns (or +, -) will advance to subse-
+     quent entries.  Note that
+	  > 2:inode; :ls
+		 or
+	  > :ls /
+     is again synonymous.
+
+EEXXPPRREESSSSIIOONNSS
+
+
+
+
+Printed 7/9/88		  July 9, 1988				2
+
+
+
+
+
+
+FSDB(8)             UNIX Programmer's Manual		  FSDB(8)
+
+
+
+     The symbols recognized by _f_s_d_b are:
+
+     ccaarrrriiaaggee--rreettuurrnn
+	    update the value of _d_o_t by the current value of _t_y_p_e
+	    and display using the current value of _c_o_u_n_t.
+
+     ##	    numeric expressions may be composed of +, -, *, and %
+	    operators (evaluated left to right) and may use
+	    parentheses.  Once evaluated, the value of _d_o_t is
+	    updated.
+
+     ,, _c_o_u_n_t
+	    count indicator.  The global value of _c_o_u_n_t will be
+	    updated to _c_o_u_n_t.  The value of _c_o_u_n_t will remain
+	    until a new command is run.  A count specifier of '*'
+	    will attempt to show a _b_l_o_c_k_s'_s worth of information.
+	    The default for _c_o_u_n_t is 1.
+
+     ?? _f    display in structured style with format specifier _f
+	    (see FORMATTED OUTPUT section).
+
+     // _f    display in unstructured style with format specifier _f
+	    (see FORMATTED OUTPUT section).
+
+     ..	    the value of _d_o_t.
+
+     ++_e     increment the value of _d_o_t by the expression _e.  The
+	    amount actually incremented is dependent on the size
+	    of _t_y_p_e:
+		 dot = dot + e * sizeof (type)
+	    The default for _e is 1.
+
+     --_e     decrement the value of _d_o_t by the expression _e (see
+	    +).
+
+     **_e     multiply the value of _d_o_t by the expression _e.  Mul-
+	    tiplication and division don't use _t_y_p_e.  In the
+	    above calculation of _d_o_t, consider the sizeof ( _t_y_p_e)
+	    to be 1.
+
+     %%_e     divide the value of _d_o_t by the expression _e (see *).
+
+     << _n_a_m_e restore an address saved in register _n_a_m_e.	_n_a_m_e must
+	    be a single letter or digit.
+
+     >> _n_a_m_e save an address in register _n_a_m_e.  _n_a_m_e must be a
+	    single letter or digit.
+
+     == _f    display indicator.	If _f is a legitimate format
+	    specifier (see FORMATTED OUTPUT section), then the
+	    value of _d_o_t is displayed using format specifier _f.
+	    Otherwise, assignment is assumed (see next item).
+
+
+
+Printed 7/9/88		  July 9, 1988				3
+
+
+
+
+
+
+FSDB(8)             UNIX Programmer's Manual		  FSDB(8)
+
+
+
+     == [_s] [_e]
+	    assignment indicator.  The address pointed to by _d_o_t
+	    has its contents changed to the value of the expres-
+	    sion _e or to the _A_S_C_I_I representation of the quoted
+	    (") string _s.  This may be useful for changing direc-
+	    tory names or _A_S_C_I_I file information.
+
+     ==++ _e   incremental assignment.  The address pointed to by
+	    _d_o_t has its contents incremented by expression _e.
+
+     ==-- _e   decremental assignment.  The address pointed to by
+	    _d_o_t has its contents decremented by expression _e.
+
+CCOOMMMMAANNDDSS
+     A command must be prefixed by a ':' character.  Only enough
+     letters of the command to uniquely distinguish it are
+     needed.  Multiple commands may be entered on one line by
+     separating them by a space, tab or ';'.
+
+     In order to view a potentially unmounted disk in a reason-
+     able manner, _f_s_d_b offers the _c_d, _p_w_d, _l_s and _f_i_n_d commands.
+     The functionality of these commands substantially matches
+     those of its _U_N_I_X counterparts (see individual command for
+     details).	The '*', '?', and '[-]' wild card characters are
+     available.
+
+     bbaassee==bb display or set base.  As stated above, all input and
+	    output is governed by the current _b_a_s_e.  If the '=b'
+	    is left off, the current _b_a_s_e is displayed.  Other-
+	    wise, the current _b_a_s_e is set to _b.  Note that this
+	    is interpreted using the old value of _b_a_s_e, so to
+	    ensure correctness use the '0', '0t', or '0x' prefix
+	    when changing the _b_a_s_e.  The default for _b_a_s_e is hex-
+	    adecimal.
+
+     bblloocckk  convert the value of _d_o_t to a block address.
+
+     ccdd ddiirr change the current directory to directory _d_i_r.  The
+	    current values of _i_n_o_d_e and _d_o_t are also updated.  If
+	    no _d_i_r is specified, then change directories to inode
+	    2 ("/").
+
+     ccgg     convert the value of _d_o_t to a cylinder group.
+
+     ddiirreeccttoorryy
+	    If the current _i_n_o_d_e is a directory, then the value
+	    of _d_o_t is converted to a directory slot offset in
+	    that directory and _d_o_t now points to this entry.
+
+     ffiillee   the value of _d_o_t is taken as a relative block count
+	    from the beginning of the file.  The value of _d_o_t is
+	    updated to the first byte of this block.
+
+
+
+Printed 7/9/88		  July 9, 1988				4
+
+
+
+
+
+
+FSDB(8)             UNIX Programmer's Manual		  FSDB(8)
+
+
+
+     ffiinndd _d_i_r [-_n_a_m_e _n] [-_i_n_u_m _i]
+	    find files by name or i-number.  _f_i_n_d recursively
+	    searches directory _d_i_r and below for filenames whose
+	    i-number matches _i or whose name matches pattern _n.
+	    Note that only one of the two options (-name or
+	    -inum) may be used at one time.  Also, the -print is
+	    not needed or accepted.
+
+     ffiillll=_p fill an area of disk with pattern _p.  The area of
+	    disk is delimited by _d_o_t and _c_o_u_n_t.
+
+     ffrraaggmmeenntt
+	    convert the value of _d_o_t to a fragment address.  The
+	    only difference between the _f_r_a_g_m_e_n_t command and the
+	    _b_l_o_c_k command is the amount that is able to be
+	    displayed.
+
+     iinnooddee  convert the value of _d_o_t to an inode address.  If
+	    successful, the current value of _i_n_o_d_e will be
+	    updated as well as the value of _d_o_t.  As a convenient
+	    shorthand, if ':inode' appears at the beginning of
+	    the line, the value of _d_o_t is set to the current
+	    _i_n_o_d_e and that inode is displayed in inode format.
+
+     llss [-_R] [-_l] _p_a_t_1 _p_a_t_2 ...
+	    list directories or files.	If no file is specified,
+	    the current directory is assumed.  Either or both of
+	    the options may be used (but, if used, _m_u_s_t be speci-
+	    fied before the filename specifiers).  Also, as
+	    stated above, wild card characters are available and
+	    multiple arguments may be given.  The long listing
+	    shows only the i-number and the name; use the _i_n_o_d_e
+	    command with '?i' to get more information.
+
+     oovveerrrriiddee
+	    toggle the value of override.  Some error conditions
+	    may be overriden if override is toggled on.
+
+     pprroommpptt _p
+	    change the fsdb prompt to _p.  _p must be surrounded by
+	    (")s.
+
+     ppwwdd    display the current working directory.
+
+     qquuiitt   quit _f_s_d_b.
+
+     ssbb     the value of _d_o_t is taken as a cylinder group number
+	    and then converted to the address of the superblock
+	    in that cylinder group.  As a shorthand, ':sb' at the
+	    beginning of a line will set the value of _d_o_t to _t_h_e
+	    superblock and display it in superblock format.
+
+
+
+
+Printed 7/9/88		  July 9, 1988				5
+
+
+
+
+
+
+FSDB(8)             UNIX Programmer's Manual		  FSDB(8)
+
+
+
+     !!	    escape to shell
+
+IINNOODDEE CCOOMMMMAANNDDSS
+     In addition to the above commands, there are several com-
+     mands that deal with inode fields and operate directly on
+     the current _i_n_o_d_e (they still require the ':').  They may be
+     used to more easily display or change the particular fields.
+     The value of _d_o_t is only used by the ':db' and ':ib' com-
+     mands.  Upon completion of the command, the value of _d_o_t is
+     changed to point to that particular field.  For example,
+	  > :ln=+1
+     would increment the link count of the current _i_n_o_d_e and set
+     the value of _d_o_t to the address of the link count field.
+
+     aatt     access time.
+
+     bbss     block size.
+
+     cctt     creation time.
+
+     ddbb     use the current value of _d_o_t as a direct block index,
+	    where direct blocks number from 0 - 11.  In order to
+	    display the block itself, you need to 'pipe' this
+	    result into the _b_l_o_c_k or _f_r_a_g_m_e_n_t command.	For exam-
+	    ple,
+		 > 1:db:block,20/X
+	    would get the contents of data block field 1 from the
+	    inode and convert it to a block address.  20 longs
+	    are then displayed in hexadecimal (see FORMATTED OUT-
+	    PUT section).
+
+     ggiidd    group id.
+
+     iibb     use the current value of _d_o_t as an indirect block
+	    index where indirect blocks number from 0 - 2.  This
+	    will only get the indirect block itself (the block
+	    containing the pointers to the actual blocks).  Use
+	    the _f_i_l_e command and start at block 12 to get to the
+	    actual blocks.
+
+     llnn     link count.
+
+     mmtt     modification time.
+
+     mmdd     mode.
+
+     mmaajj    major device number.
+
+     mmiinn    minor device number.
+
+     nnmm     although listed here, this command actually operates
+	    on the directory name field.  Once poised at the
+
+
+
+Printed 7/9/88		  July 9, 1988				6
+
+
+
+
+
+
+FSDB(8)             UNIX Programmer's Manual		  FSDB(8)
+
+
+
+	    desired directory entry (using the _d_i_r_e_c_t_o_r_y com-
+	    mand), this command will allow you to change or
+	    display the directory name.  For example,
+		 > 7:dir:nm="foo"
+	    will get the 7th directory entry of the current _i_n_o_d_e
+	    and change its name to foo.  Note that names cannot
+	    be made larger than the field is set up for.  If an
+	    attempt is made, the string is truncated to fit and a
+	    warning message to this effect is displayed.
+
+     sszz     file size.
+
+     uuiidd    user id.
+
+FFOORRMMAATTTTEEDD OOUUTTPPUUTT
+     There are two styles and many format types.  The two styles
+     are structured and unstructured.  Structured output is used
+     to display inodes, directories, superblocks and the like.
+     Unstructured just displays raw data.  The following table
+     shows the different ways of displaying:
+
+     ??
+	    cc		 display as cylinder groups
+	    ii		 display as inodes
+	    dd		 display as directories
+	    ss		 display as superblocks
+
+     //
+	    bb		 display as bytes
+	    cc		 display as characters
+	    oo OO          display as octal shorts or longs
+	    dd DD          display as decimal shorts or longs
+	    xx XX          display as hexadecimal shorts or longs
+
+     The format specifier immediately follows the '/' or '?'
+     character.  The values displayed by '/b' and all '?' formats
+     are displayed in the current _b_a_s_e.  Also, _t_y_p_e is appropri-
+     ately updated upon completion.
+
+EEXXAAMMPPLLEESS
+     > 2000+400%(20+20)=D
+		     will display 2010 in decimal (use of _f_s_d_b as
+		     a calculator for complex arithmetic).
+
+     > 386:ino?i     display i-number 386 in an inode format.
+		     This now becomes the current _i_n_o_d_e.
+
+     > :ln=4	     changes the link count for the current _i_n_o_d_e
+		     to 4.
+
+     > :ln=+1	     increments the link count by 1.
+
+
+
+
+Printed 7/9/88		  July 9, 1988				7
+
+
+
+
+
+
+FSDB(8)             UNIX Programmer's Manual		  FSDB(8)
+
+
+
+     > :ct=X	     display the creation time as a hexadecimal
+		     long.
+
+     > :mt=t	     display the modification time in time for-
+		     mat.
+
+     > 0:file/c      displays, in _A_S_C_I_I, block zero of the file
+		     associated with the current _i_n_o_d_e.
+
+     > 2:ino,*?d     displays the first blocks worth of directory
+		     entries for the root inode of this file sys-
+		     tem.  It will stop prematurely if the eof is
+		     reached.
+
+     > 5:dir:inode; 0:file,*/c
+		     changes the current inode to that associated
+		     with the 5th directory entry (numbered from
+		     zero) of the current _i_n_o_d_e.  The first logi-
+		     cal block of the file is then displayed in
+		     _A_S_C_I_I.
+
+     > :sb	     displays the superblock of this file system.
+
+     > 1:cg?c	     displays cylinder group information and sum-
+		     mary for cylinder group 1.
+
+     > 2:inode; 7:dir=3
+		     changes the i-number for the seventh direc-
+		     tory slot in the root directory to 3.
+
+     > 7:dir:nm="name"
+		     changes the name field in the directory slot
+		     to _n_a_m_e.
+
+     > 2:db:block,*?d
+		     displays the third block of the current
+		     _i_n_o_d_e as directory entries.
+
+     > 3c3:fragment,20:fill=0x20
+		     get fragment 3c3 and fill 20 _t_y_p_e elements
+		     with 0x20.
+
+     > 2050=0xffff   set the contents of address 2050 to
+		     0xffffffff.  0xffffffff may be truncated
+		     depending on the current _t_y_p_e.
+
+     > 1c92434="this is some text"
+		     will place the _A_S_C_I_I for the string at
+		     1c92434.
+
+SSEEEE AALLSSOO
+     fsck(8), dir(4), fs(4).
+
+
+
+Printed 7/9/88		  July 9, 1988				8
+
+
+
+
+
+
+FSDB(8)             UNIX Programmer's Manual		  FSDB(8)
+
+
+
+BBUUGGSS
+     Extreme caution is advised in determining the availability
+     of _f_s_d_b on the system.  Suggested permissions are 600 and
+     owned by bin.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  July 9, 1988				9
+
+
+

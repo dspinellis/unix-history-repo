@@ -1,0 +1,66 @@
+
+
+
+PROTOCOLS(5)	    UNIX Programmer's Manual	     PROTOCOLS(5)
+
+
+
+NNAAMMEE
+     protocols - protocol name data base
+
+DDEESSCCRRIIPPTTIIOONN
+     The _p_r_o_t_o_c_o_l_s file contains information regarding the known
+     protocols used in the DARPA Internet.  For each protocol a
+     single line should be present with the following informa-
+     tion:
+
+     official protocol name
+     protocol number
+     aliases
+
+     Items are separated by any number of blanks and/or tab char-
+     acters.  A ``#'' indicates the beginning of a comment; char-
+     acters up to the end of the line are not interpreted by rou-
+     tines which search the file.
+
+     Protocol names may contain any printable character other
+     than a field delimiter, newline, or comment character.
+
+FFIILLEESS
+     /etc/protocols
+
+SSEEEE AALLSSOO
+     getprotoent(3N)
+
+BBUUGGSS
+     A name server should be used instead of a static file.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		   May 6, 1986				1
+
+
+

@@ -1,0 +1,198 @@
+
+
+
+RX(4)		    UNIX Programmer's Manual		    RX(4)
+
+
+
+NNAAMMEE
+     rx - DEC RX02 floppy disk interface
+
+SSYYNNOOPPSSIISS
+     ccoonnttrroolllleerr ffxx00 aatt uubbaa00 ccssrr 00117777117700  vveeccttoorr rrxxiinnttrr
+     ddiisskk rrxx00 aatt ffxx00 ddrriivvee 00
+     ddiisskk rrxx11 aatt ffxx00 ddrriivvee 11
+
+DDEESSCCRRIIPPTTIIOONN
+     The _r_x device provides access to a DEC RX02 floppy disk unit
+     with M8256 interface module (RX211 configuration). The RX02
+     uses 8-inch, single-sided, soft-sectored floppy disks (with
+     pre-formatted industry-standard headers) in either single or
+     double density.
+
+     Floppy disks handled by the RX02 contain 77 tracks, each
+     with 26 sectors (for a total of 2,002 sectors).  The sector
+     size is 128 bytes for single density, 256 bytes for double
+     density.  Single density disks are compatible with the RX01
+     floppy disk unit and with IBM 3740 Series Diskette 1 sys-
+     tems.
+
+     In addition to normal (`block' and `raw') i/o, the driver
+     supports formatting of disks for either density and the
+     ability to invoke a 2 for 1 interleaved sector mapping com-
+     patible with the DEC operating system RT-11.
+
+     The minor device number is interpreted as follows:
+
+     BBiitt      DDeessccrriippttiioonn
+     0	      Sector interleaving  (1 disables interleaving)
+     1	      Logical sector 1 is on track 1 (0 no, 1 yes)
+     2	      Not used, reserved
+     Other    Drive number
+
+     The two drives in a single RX02 unit are treated as two
+     disks attached to a single controller.  Thus, if there are
+     two RX02's on a system, the drives on the first RX02 are
+     ``rx0'' and ``rx1'', while the drives on the second are
+     ``rx2'' and ``rx3''.
+
+     When the device is opened, the density of the disk currently
+     in the drive is automatically determined. If there is no
+     floppy in the device, open will fail.
+
+     The interleaving parameters are represented in raw device
+     names by the letters `a' through `d'.  Thus, unit 0, drive 0
+     is called by one of the following names:
+
+     MMaappppiinngg	   DDeevviiccee nnaammee	 SSttaarrttiinngg ttrraacckk
+     interleaved   /dev/rrx0a	 0
+     direct	   /dev/rrx0b	 0
+
+
+
+Printed 7/9/88		  May 15, 1985				1
+
+
+
+
+
+
+RX(4)		    UNIX Programmer's Manual		    RX(4)
+
+
+
+     interleaved   /dev/rrx0c	 1
+     direct	   /dev/rrx0d	 1
+
+     The mapping used on the `c' device is compatible with the
+     DEC operating system RT-11.  The `b' device accesses the
+     sectors of the disk in strictly sequential order. The `a'
+     device is the most efficient for disk-to-disk copying.  This
+     mapping is always used by the block device.
+
+     I/O requests must start on a sector boundary, involve an
+     integral number of complete sectors, and not go off the end
+     of the disk.
+
+NNOOTTEESS
+     Even though the storage capacity on a floppy disk is quite
+     small, it is possible to make filesystems on double density
+     disks. For example, the command
+	  % mkfs /dev/rx0 1001 13 1 4096 512 32 0 4
+     makes a file system on the double density disk in rx0 with
+     436 kbytes available for file storage.  Using _t_a_r(1) gives a
+     more efficient utilization of the available space for file
+     storage.  Single density diskettes do not provide sufficient
+     storage capacity to hold file systems.
+
+     A number of _i_o_c_t_l(2) calls apply to the rx devices, and have
+     the form
+	  ##iinncclluuddee <<vvaaxxuubbaa//rrxxrreegg..hh>>
+	  iiooccttll((ffiillddeess,, ccooddee,, aarrgg))
+	  iinntt **aarrgg;;
+     The applicable codes are:
+
+     RXIOC_FORMAT      Format the diskette. The density to use is
+		       specified by the _a_r_g argument, zero gives
+		       single density while non-zero gives double
+		       density.
+
+     RXIOC_GETDENS     Return the density of the diskette (zero
+		       or non-zero as above).
+
+     RXIOC_WDDMK       On the next write, include a _d_e_l_e_t_e_d _d_a_t_a
+		       _a_d_d_r_e_s_s _m_a_r_k in the header of the first
+		       sector.
+
+     RXIOC_RDDMK       Return non-zero if the last sector read
+		       contained a _d_e_l_e_t_e_d _d_a_t_a _a_d_d_r_e_s_s _m_a_r_k in
+		       its header, otherwise return 0.
+
+EERRRROORRSS
+     The following errors may be returned by the driver:
+
+     [ENODEV]	 Drive not ready; usually because no disk is in
+		 the drive or the drive door is open.
+
+
+
+Printed 7/9/88		  May 15, 1985				2
+
+
+
+
+
+
+RX(4)		    UNIX Programmer's Manual		    RX(4)
+
+
+
+     [ENXIO]	 Nonexistent drive (on open); offset is too large
+		 or not on a sector boundary or byte count is not
+		 a multiple of the sector size (on read or
+		 write); or bad (undefined) ioctl code.
+
+     [EIO]	 A physical error other than ``not ready'', prob-
+		 ably bad media or unknown format.
+
+     [EBUSY]	 Drive has been opened for exclusive access.
+
+     [EBADF]	 No write access (on format), or wrong density;
+		 the latter can only happen if the disk is
+		 changed without _c_l_o_s_i_n_g the device (i.e., cal-
+		 ling _c_l_o_s_e(2) ).
+
+FFIILLEESS
+     /dev/rx?
+     /dev/rrx?[a-d]
+
+SSEEEE AALLSSOO
+     rxformat(8V), newfs(8), mkfs(8), tar(1), arff(8V)
+
+DDIIAAGGNNOOSSTTIICCSS
+     rrxx%%dd:: hhaarrdd eerrrroorr,, ttrrkk %%dd ppsseecc %%dd ccss==%%bb,, ddbb==%%bb,, eerrrr==%%xx,, %%xx,,
+     %%xx,, %%xx.  An unrecoverable error was encountered.  The track
+     and physical sector numbers, the device registers and the
+     extended error status are displayed.
+
+     rrxx%%dd:: ssttaattee %%dd ((rreesseett)).  The driver entered a bogus state.
+     This should not happen.
+
+BBUUGGSS
+     A floppy may not be formatted if the header info on sector
+     1, track 0 has been damaged.  Hence, it is not possible to
+     format completely degaussed disks or disks with other for-
+     mats than the two known by the hardware.
+
+     If the drive subsystem is powered down when the machine is
+     booted, the controller won't interrupt.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 15, 1985				3
+
+
+

@@ -1,0 +1,132 @@
+
+
+
+ARFF(8V)	    UNIX Programmer's Manual		 ARFF(8V)
+
+
+
+NNAAMMEE
+     arff, flcopy - archiver and copier for floppy
+
+SSYYNNOOPPSSIISS
+     //eettcc//aarrffff [ key ] [ name ... ]
+     //eettcc//ffllccooppyy [ --hh ] [ --tt_n ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _A_r_f_f saves and restores files on VAX console media (the con-
+     sole floppy on the VAX 11/780 and 785, the cassette on the
+     11/730, and the console RL02 on the 8600/8650).  Its actions
+     are controlled by the _k_e_y argument.  The _k_e_y is a string of
+     characters containing at most one function letter and possi-
+     bly one or more function modifiers.  Other arguments to the
+     command are file names specifying which files are to be
+     dumped or restored.  The default options are correct for the
+     RX01 floppy on the 780; for other console media, the ff and mm
+     flags are required.
+
+     Files names have restrictions, because of radix50 considera-
+     tions.  They must be in the form 1-6 alphanumerics followed
+     by "." followed by 0-3 alphanumerics.  Case distinctions are
+     lost.  Only the trailing component of a pathname is used.
+
+     The function portion of the key is specified by one of the
+     following letters:
+
+     rr	     The named files are replaced where found on the
+	     floppy, or added taking up the minimal possible por-
+	     tion of the first empty spot on the floppy.
+
+     xx	     The named files are extracted from the floppy.
+
+     dd	     The named files are deleted from the floppy.  Arff
+	     will combine contiguous deleted files into one empty
+	     entry in the rt-11 directory.
+
+     tt	     The names of the specified files are listed each
+	     time they occur on the floppy.  If no file argument
+	     is given, all of the names on the floppy are listed.
+
+     The following characters may be used in addition to the
+     letter which selects the function desired.
+
+     vv	       The vv (verbose) option, when used with the tt func-
+	       tion gives more information about the floppy
+	       entries than just the name.
+
+     ff	       causes _a_r_f_f to use the next argument as the name
+	       of the archive instead of /dev/floppy.
+
+     mm	       causes _a_r_f_f not to use the mapping algorithm
+
+
+
+Printed 7/9/88		  May 20, 1986				1
+
+
+
+
+
+
+ARFF(8V)	    UNIX Programmer's Manual		 ARFF(8V)
+
+
+
+	       employed in interleaving sectors around a floppy
+	       disk.  In conjunction with the ff option it may be
+	       used for extracting files from rt11 formatted car-
+	       tridge disks, for example.  It may also be used to
+	       speed up reading from and writing to rx02 floppy
+	       disks, by using the `c' device instead of the `b'
+	       device.	It must be used with TU58 or RL02 media.
+
+     cc	       causes _a_r_f_f to create a new directory on the
+	       floppy, effectively deleting all previously exist-
+	       ing files.
+
+     _F_l_c_o_p_y copies the console floppy disk (opened as
+     `/dev/floppy') to a file created in the current directory,
+     named "floppy", then prints the message "Change Floppy, hit
+     return when done".  Then _f_l_c_o_p_y copies the local file back
+     out to the floppy disk.
+
+     The --hh option to _f_l_c_o_p_y causes it to open a file named
+     "floppy" in the current directory and copy it to
+     /_d_e_v/_f_l_o_p_p_y; the --tt option causes only the first _n tracks to
+     participate in a copy.
+
+FFIILLEESS
+     /dev/floppy or /dev/rrx??
+     floppy (in current directory)
+
+SSEEEE AALLSSOO
+     crl(4), fl(4), rx(4), tu(4), rxformat(8V)
+
+AAUUTTHHOORRSS
+     Keith Sklower, Richard Tuck
+
+BBUUGGSS
+     Device errors are handled ungracefully.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 20, 1986				2
+
+
+

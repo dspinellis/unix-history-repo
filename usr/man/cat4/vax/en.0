@@ -1,0 +1,132 @@
+
+
+
+EN(4)		    UNIX Programmer's Manual		    EN(4)
+
+
+
+NNAAMMEE
+     en - Xerox 3 Mb/s Ethernet interface
+
+SSYYNNOOPPSSIISS
+     ddeevviiccee eenn00 aatt uubbaa00 ccssrr 116611000000 vveeccttoorr eennrriinntt eennxxiinntt eennccoolllliiddee
+
+DDEESSCCRRIIPPTTIIOONN
+     The _e_n interface provides access to a 3 Mb/s Ethernet net-
+     work.  Due to limitations in the hardware, DMA transfers to
+     and from the network must take place in the lower 64K bytes
+     of the UNIBUS address space, and thus this must be among the
+     first UNIBUS devices enabled after boot.
+
+     Each of the host's network addresses is specified at boot
+     time with an SIOCSIFADDR ioctl.  The station address is
+     discovered by probing the on-board Ethernet address regis-
+     ter, and is used to verify the protocol addresses.  No pack-
+     ets will be sent or accepted until a network address is sup-
+     plied.
+
+     The interface software implements an exponential backoff
+     algorithm when notified of a collision on the cable.  This
+     algorithm utilizes a 16-bit mask and the VAX-11's interval
+     timer in calculating a series of random backoff values.  The
+     algorithm is as follows:
+
+     1.   Initialize the mask to be all 1's.
+
+     2.   If the mask is zero, 16 retries have been made and we
+	  give up.
+
+     3.   Shift the mask left one bit and formulate a backoff by
+	  masking the interval timer with the mask (this is actu-
+	  ally the two's complement of the value).
+
+     4.   Use the value calculated in step 3 to delay before
+	  retransmitting the packet.
+
+     The interface handles both Internet and NS protocol fami-
+     lies.  It normally tries to use a ``trailer'' encapsulation
+     to minimize copying data on input and output.  The use of
+     trailers is negotiated with ARP.  This negotiation may be
+     disabled, on a per-interface basis, by setting the
+     IFF_NOTRAILERS flag with an SIOCSIFFLAGS ioctl.
+
+DDIIAAGGNNOOSSTTIICCSS
+     eenn%%dd:: oouuttppuutt eerrrroorr.  The hardware indicated an error on the
+     previous transmission.
+
+     eenn%%dd:: sseenndd eerrrroorr.	After 16 retransmissions using the
+     exponential backoff algorithm described above, the packet
+     was dropped.
+
+
+
+Printed 7/9/88		  May 16, 1986				1
+
+
+
+
+
+
+EN(4)		    UNIX Programmer's Manual		    EN(4)
+
+
+
+     eenn%%dd:: iinnppuutt eerrrroorr.  The hardware indicated an error in read-
+     ing a packet off the cable.
+
+     eenn%%dd:: ccaann''tt hhaannddllee aaff%%dd.  The interface was handed a message
+     with addresses formatted in an unsuitable address family;
+     the packet was dropped.
+
+SSEEEE AALLSSOO
+     intro(4N), inet(4F)
+
+BBUUGGSS
+     The device has insufficient buffering to handle back to back
+     packets.  This makes use in a production environment pain-
+     ful.
+
+     The hardware does word at a time DMA without byte swapping.
+     To compensate, byte swapping of user data must either be
+     done by the user or by the system.  A kludge to byte swap
+     only IP packets is provided if the ENF_SWABIPS flag is
+     defined in the driver and set at boot time with an SIOCSIF-
+     FLAGS ioctl.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 16, 1986				2
+
+
+

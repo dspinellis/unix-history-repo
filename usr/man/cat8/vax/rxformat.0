@@ -1,0 +1,66 @@
+
+
+
+RXFORMAT(8V)	    UNIX Programmer's Manual	     RXFORMAT(8V)
+
+
+
+NNAAMMEE
+     rxformat - format floppy disks
+
+SSYYNNOOPPSSIISS
+     //eettcc//rrxxffoorrmmaatt [ --dd ] special
+
+DDEESSCCRRIIPPTTIIOONN
+     The _r_x_f_o_r_m_a_t program formats a diskette in the specified
+     drive associated with the special device _s_p_e_c_i_a_l.	( _S_p_e_c_i_a_l
+     is normally /dev/rx0, for drive 0, or /dev/rx1, for drive
+     1.) By default, the diskette is formatted single density; a
+     --dd flag may be supplied to force double density formatting.
+     Single density is compatible with the IBM 3740 standard (128
+     bytes/sector). In double density, each sector contains 256
+     bytes of data.
+
+     Before formatting a diskette _r_x_f_o_r_m_a_t prompts for verifica-
+     tion if standard input is a tty (this allows a user to
+     cleanly abort the operation; note that formatting a diskette
+     will destroy any existing data).  Formatting is done by the
+     hardware.	All sectors are zero-filled.
+
+DDIIAAGGNNOOSSTTIICCSS
+     `No such device' means that the drive is not ready, usually
+     because no disk is in the drive or the drive door is open.
+     Other error messages are selfexplanatory.
+
+FFIILLEESS
+     /dev/rx?
+
+SSEEEE AALLSSOO
+     rx(4V)
+
+AAUUTTHHOORR
+     Helge Skrivervik
+
+BBUUGGSS
+     A floppy may not be formatted if the header info on sector
+     1, track 0 has been damaged.  Hence, it is not possible to
+     format a completely degaussed disk. (This is actually a
+     problem in the hardware.)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  June 3, 1986				1
+
+
+

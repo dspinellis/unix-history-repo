@@ -1,0 +1,66 @@
+
+
+
+SYSTEM(3F)	    UNIX Programmer's Manual	       SYSTEM(3F)
+
+
+
+NNAAMMEE
+     system - execute a UNIX command
+
+SSYYNNOOPPSSIISS
+     iinntteeggeerr ffuunnccttiioonn ssyysstteemm ((ssttrriinngg))
+     cchhaarraacctteerr**((**)) ssttrriinngg
+
+DDEESSCCRRIIPPTTIIOONN
+     _S_y_s_t_e_m causes _s_t_r_i_n_g to be given to your shell as input as
+     if the string had been typed as a command.  If environment
+     variable SSHHEELLLL is found, its value will be used as the com-
+     mand interpreter (shell); otherwise _s_h(1) is used.
+
+     The current process waits until the command terminates.  The
+     returned value will be the exit status of the shell.  See
+     _w_a_i_t(2) for an explanation of this value.
+
+FFIILLEESS
+     /usr/lib/libU77.a
+
+SSEEEE AALLSSOO
+     exec(2), wait(2), system(3)
+
+BBUUGGSS
+     _S_t_r_i_n_g can not be longer than NCARGS-50 characters, as
+     defined in <_s_y_s/_p_a_r_a_m._h>.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 15, 1985				1
+
+
+

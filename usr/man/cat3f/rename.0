@@ -1,0 +1,66 @@
+
+
+
+RENAME(3F)	    UNIX Programmer's Manual	       RENAME(3F)
+
+
+
+NNAAMMEE
+     rename - rename a file
+
+SSYYNNOOPPSSIISS
+     iinntteeggeerr ffuunnccttiioonn rreennaammee ((ffrroomm,, ttoo))
+     cchhaarraacctteerr**((**)) ffrroomm,, ttoo
+
+DDEESSCCRRIIPPTTIIOONN
+     _F_r_o_m must be the pathname of an existing file.  _T_o will
+     become the new pathname for the file.  If _t_o exists, then
+     both _f_r_o_m and _t_o must be the same type of file, and must
+     reside on the same filesystem.  If _t_o exists, it will be
+     removed first.
+
+     The returned value will be 0 if successful; a system error
+     code otherwise.
+
+FFIILLEESS
+     /usr/lib/libU77.a
+
+SSEEEE AALLSSOO
+     rename(2), perror(3F)
+
+BBUUGGSS
+     Pathnames can be no longer than MAXPATHLEN as defined in
+     <_s_y_s/_p_a_r_a_m._h>.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 15, 1985				1
+
+
+

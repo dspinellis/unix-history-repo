@@ -1,0 +1,198 @@
+
+
+
+FSCK(8)             UNIX Programmer's Manual		  FSCK(8)
+
+
+
+NNAAMMEE
+     fsck - file system consistency check and interactive repair
+
+SSYYNNOOPPSSIISS
+     //eettcc//ffsscckk --pp [ filesystem ...  ]
+     //eettcc//ffsscckk [ --bb block# ] [ --cc ] [ --yy ] [ --nn ] [ filesystem ]
+     ...
+
+DDEESSCCRRIIPPTTIIOONN
+     The first form of _f_s_c_k preens a standard set of filesystems
+     or the specified file systems.  It is normally used in the
+     script //eettcc//rrcc during automatic reboot.  In this case _f_s_c_k
+     reads the table //eettcc//ffssttaabb to determine which file systems
+     to check.	It uses the information there to inspect groups
+     of disks in parallel taking maximum advantage of i/o overlap
+     to check the file systems as quickly as possible.	Normally,
+     the root file system will be checked on pass 1, other
+     ``root'' (``a'' partition) file systems on pass 2, other
+     small file systems on separate passes (e.g. the ``d'' file
+     systems on pass 3 and the ``e'' file systems on pass 4), and
+     finally the large user file systems on the last pass, e.g.
+     pass 5.  Only partitions in fstab that are mounted ``rw'' or
+     ``rq'' and that have non-zero pass number are checked.
+
+     The system takes care that only a restricted class of inno-
+     cuous inconsistencies can happen unless hardware or software
+     failures intervene.  These are limited to the following:
+
+	  Unreferenced inodes
+
+	  Link counts in inodes too large
+
+	  Missing blocks in the free map
+
+	  Blocks in the free map also in files
+
+	  Counts in the super-block wrong
+
+     These are the only inconsistencies that _f_s_c_k with the --pp
+     option will correct; if it encounters other inconsistencies,
+     it exits with an abnormal return status and an automatic
+     reboot will then fail.  For each corrected inconsistency one
+     or more lines will be printed identifying the file system on
+     which the correction will take place, and the nature of the
+     correction.  After successfully correcting a file system,
+     _f_s_c_k will print the number of files on that file system, the
+     number of used and free blocks, and the percentage of frag-
+     mentation.
+
+     If sent a QUIT signal, _f_s_c_k will finish the file system
+     checks, then exit with an abnormal return status that causes
+     the automatic reboot to fail.  This is useful when you wish
+
+
+
+Printed 7/9/88		   May 5, 1988				1
+
+
+
+
+
+
+FSCK(8)             UNIX Programmer's Manual		  FSCK(8)
+
+
+
+     to finish the file system checks, but do not want the
+     machine to come up multiuser.
+
+     Without the --pp option, _f_s_c_k audits and interactively repairs
+     inconsistent conditions for file systems. If the file system
+     is inconsistent the operator is prompted for concurrence
+     before each correction is attempted.  It should be noted
+     that some of the corrective actions which are not correct-
+     able under the --pp option will result in some loss of data.
+     The amount and severity of data lost may be determined from
+     the diagnostic output.  The default action for each con-
+     sistency correction is to wait for the operator to respond
+     yyeess or nnoo.  If the operator does not have write permission
+     on the file system _f_s_c_k will default to a --nn action.
+
+     _F_s_c_k has more consistency checks than its predecessors
+     _c_h_e_c_k, _d_c_h_e_c_k, _f_c_h_e_c_k, and _i_c_h_e_c_k combined.
+
+     The following flags are interpreted by _f_s_c_k.
+
+     --bb    Use the block specified immediately after the flag as
+	   the super block for the file system.  Block 32 is usu-
+	   ally an alternate super block.
+
+     --yy    Assume a yes response to all questions asked by _f_s_c_k;
+	   this should be used with great caution as this is a
+	   free license to continue after essentially unlimited
+	   trouble has been encountered.
+
+     --nn    Assume a no response to all questions asked by _f_s_c_k;
+	   do not open the file system for writing.
+
+     --cc    If the file system is in the old (static table) for-
+	   mat, convert it to the new (dynamic table) format.  If
+	   the file system is in the new format, convert it to
+	   the old format provided the old format can support the
+	   filesystem configuration.  In interactive mode, _f_s_c_k
+	   will list the direction the conversion is to be made
+	   and ask whether the conversion should be done.  If a
+	   negative answer is given, no further operations are
+	   done on the filesystem.  In preen mode, the direction
+	   of the conversion is listed and done if possible
+	   without user interaction.  Conversion in preen mode is
+	   best used when all the file systems are being con-
+	   verted at once.  The format of a file system can be
+	   determined from the first line of output from
+	   _d_u_m_p_f_s(8).
+
+     If no filesystems are given to _f_s_c_k then a default list of
+     file systems is read from the file //eettcc//ffssttaabb.
+
+
+
+
+
+Printed 7/9/88		   May 5, 1988				2
+
+
+
+
+
+
+FSCK(8)             UNIX Programmer's Manual		  FSCK(8)
+
+
+
+     Inconsistencies checked are as follows:
+
+     1.    Blocks claimed by more than one inode or the free map.
+     2.    Blocks claimed by an inode outside the range of the
+	   file system.
+     3.    Incorrect link counts.
+     4.    Size checks:
+		 Directory size not of proper format.
+		 Partially truncated file.
+     5.    Bad inode format.
+     6.    Blocks not accounted for anywhere.
+     7.    Directory checks:
+		 File pointing to unallocated inode.
+		 Inode number out of range.
+     8.    Super Block checks:
+		 More blocks for inodes than there are in the
+		 file system.
+     9.    Bad free block map format.
+     10.   Total free block and/or free inode count incorrect.
+
+     Orphaned files and directories (allocated but unreferenced)
+     are, with the operator's concurrence, reconnected by placing
+     them in the lloosstt++ffoouunndd directory.	The name assigned is the
+     inode number.  If the _l_o_s_t+_f_o_u_n_d directory does not exist,
+     it is created.  If there is insufficient space its size is
+     increased.
+
+     Checking the raw device is almost always faster.
+
+FFIILLEESS
+     /etc/fstab           contains default list of file systems
+			  to check.
+
+DDIIAAGGNNOOSSTTIICCSS
+     The diagnostics produced by _f_s_c_k are fully enumerated and
+     explained in Appendix A of ``Fsck - The UNIX File System
+     Check Program'' (SMM:5).
+
+SSEEEE AALLSSOO
+     fstab(5), fs(5), fsdb(8), newfs(8), mkfs(8), crash(8V),
+     reboot(8)
+
+BBUUGGSS
+     There should be some way to start a ffsscckk --pp at pass _n.
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		   May 5, 1988				3
+
+
+

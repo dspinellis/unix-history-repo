@@ -1,0 +1,132 @@
+
+
+
+RMT(8C)             UNIX Programmer's Manual		  RMT(8C)
+
+
+
+NNAAMMEE
+     rmt - remote magtape protocol module
+
+SSYYNNOOPPSSIISS
+     //eettcc//rrmmtt
+
+DDEESSCCRRIIPPTTIIOONN
+     _R_m_t is a program used by the remote dump and restore pro-
+     grams in manipulating a magnetic tape drive through an
+     interprocess communication connection.  _R_m_t is normally
+     started up with an _r_e_x_e_c(3X) or _r_c_m_d(3X) call.
+
+     The _r_m_t program accepts requests specific to the manipula-
+     tion of magnetic tapes, performs the commands, then responds
+     with a status indication.	All responses are in ASCII and in
+     one of two forms. Successful commands have responses of
+
+	  AA_n_u_m_b_e_r\n
+
+     where _n_u_m_b_e_r is an ASCII representation of a decimal number.
+     Unsuccessful commands are responded to with
+
+	  EE_e_r_r_o_r-_n_u_m_b_e_r\n_e_r_r_o_r-_m_e_s_s_a_g_e\n,
+
+     where _e_r_r_o_r-_n_u_m_b_e_r is one of the possible error numbers
+     described in _i_n_t_r_o(2) and _e_r_r_o_r-_m_e_s_s_a_g_e is the corresponding
+     error string as printed from a call to _p_e_r_r_o_r(3).	The pro-
+     tocol is comprised of the following commands (a space is
+     present between each token).
+
+     OO ddeevviiccee mmooddee  Open the specified _d_e_v_i_c_e using the indicated
+		    _m_o_d_e.  _D_e_v_i_c_e is a full pathname and _m_o_d_e is
+		    an ASCII representation of a decimal number
+		    suitable for passing to _o_p_e_n(2).  If a device
+		    had already been opened, it is closed before
+		    a new open is performed.
+
+     CC ddeevviiccee	    Close the currently open device.  The _d_e_v_i_c_e
+		    specified is ignored.
+
+     LL wwhheennccee ooffffsseett
+		    Perform an _l_s_e_e_k(2) operation using the
+		    specified parameters.  The response value is
+		    that returned from the _l_s_e_e_k call.
+
+     WW ccoouunntt	    Write data onto the open device.  _R_m_t reads
+		    _c_o_u_n_t bytes from the connection, aborting if
+		    a premature end-of-file is encountered.  The
+		    response value is that returned from the
+		    _w_r_i_t_e(2) call.
+
+     RR ccoouunntt	    Read _c_o_u_n_t bytes of data from the open
+
+
+
+Printed 7/9/88		 April 27, 1985                         1
+
+
+
+
+
+
+RMT(8C)             UNIX Programmer's Manual		  RMT(8C)
+
+
+
+		    device.  If _c_o_u_n_t exceeds the size of the
+		    data buffer (10 kilobytes), it is truncated
+		    to the data buffer size.  _R_m_t then performs
+		    the requested _r_e_a_d(2) and responds with
+		    AA_c_o_u_n_t-_r_e_a_d\n if the read was successful;
+		    otherwise an error in the standard format is
+		    returned.  If the read was successful, the
+		    data read is then sent.
+
+     II ooppeerraattiioonn ccoouunntt
+		    Perform a MTIOCOP _i_o_c_t_l(2) command using the
+		    specified parameters.  The parameters are
+		    interpreted as the ASCII representations of
+		    the decimal values to place in the _m_t__o_p and
+		    _m_t__c_o_u_n_t fields of the structure used in the
+		    _i_o_c_t_l call.  The return value is the _c_o_u_n_t
+		    parameter when the operation is successful.
+
+     SS		    Return the status of the open device, as
+		    obtained with a MTIOCGET _i_o_c_t_l call.  If the
+		    operation was successful, an ``ack'' is sent
+		    with the size of the status buffer, then the
+		    status buffer is sent (in binary).
+
+     Any other command causes _r_m_t to exit.
+
+DDIIAAGGNNOOSSTTIICCSS
+     All responses are of the form described above.
+
+SSEEEE AALLSSOO
+     rcmd(3X), rexec(3X), mtio(4), rdump(8C), rrestore(8C)
+
+BBUUGGSS
+     People tempted to use this for a remote file access protocol
+     are discouraged.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 April 27, 1985                         2
+
+
+

@@ -1,0 +1,66 @@
+
+
+
+WORMS(6)	    UNIX Programmer's Manual		 WORMS(6)
+
+
+
+NNAAMMEE
+     worms  -  animate worms on a display terminal
+
+SSYYNNOOPPSSIISS
+     //uussrr//ggaammeess//wwoorrmmss [ --fftt ] [ --lleennggtthh # ] [ --nnuummbbeerr # ]
+
+DDEESSCCRRIIPPTTIIOONN
+     Brian Horn (cithep!bdh) showed me a _T_O_P_S-_2_0 program  on  the
+     DEC-2136  machine	called _W_O_R_M, and suggested that I write a
+     similar program that would run under _U_n_i_x.  I  did,  and  no
+     apologies.
+
+     --ff makes a "field" for the worm(s) to eat;  --tt  causes  each
+     worm  to  leave  a  trail behind it.  You can figure out the
+     rest by yourself.
+
+FFIILLEESS
+     /etc/termcap
+
+AAUUTTHHOORR
+     Eric P. Scott
+
+SSEEEE AALLSSOO
+     _S_n_a_i_l_s, by Karl Heuer
+
+BBUUGGSS
+     The lower-right-hand character position will not be  updated
+     properly on a terminal that wraps at the right margin.
+
+     Terminal initialization is not performed.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 January 2, 1988			1
+
+
+

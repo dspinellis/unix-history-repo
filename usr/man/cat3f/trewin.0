@@ -1,0 +1,132 @@
+
+
+
+TOPEN(3F)	    UNIX Programmer's Manual		TOPEN(3F)
+
+
+
+NNAAMMEE
+     topen, tclose, tread, twrite, trewin, tskipf, tstate - f77
+     tape I/O
+
+SSYYNNOOPPSSIISS
+     iinntteeggeerr ffuunnccttiioonn ttooppeenn (tlu, devnam, label)
+     iinntteeggeerr tlu
+     cchhaarraacctteerr**((**)) devnam
+     llooggiiccaall label
+
+     iinntteeggeerr ffuunnccttiioonn ttcclloossee (tlu)
+     iinntteeggeerr tlu
+
+     iinntteeggeerr ffuunnccttiioonn ttrreeaadd (tlu, buffer)
+     iinntteeggeerr tlu
+     cchhaarraacctteerr**((**)) buffer
+
+     iinntteeggeerr ffuunnccttiioonn ttwwrriittee (tlu, buffer)
+     iinntteeggeerr tlu
+     cchhaarraacctteerr**((**)) buffer
+
+     iinntteeggeerr ffuunnccttiioonn ttrreewwiinn (tlu)
+     iinntteeggeerr tlu
+
+     iinntteeggeerr ffuunnccttiioonn ttsskkiippff (tlu, nfiles, nrecs)
+     iinntteeggeerr tlu, nfiles, nrecs
+
+     iinntteeggeerr ffuunnccttiioonn ttssttaattee (tlu, fileno, recno, errf, eoff,
+     eotf, tcsr)
+     iinntteeggeerr tlu, fileno, recno, tcsr
+     llooggiiccaall errf, eoff, eotf
+
+DDEESSCCRRIIPPTTIIOONN
+     These functions provide a simple interface between f77 and
+     magnetic tape devices.  A ``tape logical unit'', _t_l_u, is
+     ``topen''ed in much the same way as a normal f77 logical
+     unit is ``open''ed.  All other operations are performed via
+     the _t_l_u.  The _t_l_u has no relationship at all to any normal
+     f77 logical unit.
+
+     _T_o_p_e_n associates a device name with a _t_l_u.  _T_l_u must be in
+     the range 0 to 3.	The logical argument _l_a_b_e_l should indi-
+     cate whether the tape includes a tape label.  This is used
+     by _t_r_e_w_i_n below.  _T_o_p_e_n does not move the tape.  The normal
+     returned value is 0.  If the value of the function is nega-
+     tive, an error has occured.  See _p_e_r_r_o_r(3F) for details.
+
+     _T_c_l_o_s_e closes the tape device channel and removes its asso-
+     ciation with _t_l_u.	The normal returned value is 0.  A nega-
+     tive value indicates an error.
+
+
+
+
+
+Printed 7/9/88		  May 15, 1985				1
+
+
+
+
+
+
+TOPEN(3F)	    UNIX Programmer's Manual		TOPEN(3F)
+
+
+
+     _T_r_e_a_d reads the next physical record from tape to _b_u_f_f_e_r.
+     _B_u_f_f_e_r mmuusstt be of type cchhaarraacctteerr.	The size of _b_u_f_f_e_r should
+     be large enough to hold the largest physical record to be
+     read.  The actual number of bytes read will be returned as
+     the value of the function.  If the value is 0, the end-of-
+     file has been detected.  A negative value indicates an
+     error.
+
+     _T_w_r_i_t_e writes a physical record to tape from _b_u_f_f_e_r.  The
+     physical record length will be the size of _b_u_f_f_e_r.  _B_u_f_f_e_r
+     mmuusstt be of type cchhaarraacctteerr.  The number of bytes written will
+     be returned.  A value of 0 or negative indicates an error.
+
+     _T_r_e_w_i_n rewinds the tape associated with _t_l_u to the beginning
+     of the first data file.  If the tape is a labelled tape (see
+     _t_o_p_e_n above) then the label is skipped over after rewinding.
+     The normal returned value is 0.  A negative value indicates
+     an error.
+
+     _T_s_k_i_p_f allows the user to skip over files and/or records.
+     First, _n_f_i_l_e_s end-of-file marks are skipped. If the current
+     file is at EOF, this counts as 1 file to skip.  (Note: This
+     is the way to reset the EOF status for a _t_l_u.) Next, _n_r_e_c_s
+     physical records are skipped over.  The normal returned
+     value is 0.  A negative value indicates an error.
+
+     Finally, _t_s_t_a_t_e allows the user to determine the logical
+     state of the tape I/O channel and to see the tape drive con-
+     trol status register.  The values of _f_i_l_e_n_o and _r_e_c_n_o will
+     be returned and indicate the current file and record number.
+     The logical values _e_r_r_f, _e_o_f_f, and _e_o_t_f indicate an error
+     has occurred, the current file is at EOF, or the tape has
+     reached logical end-of-tape.  End-of-tape (EOT) is indicated
+     by an empty file, often referred to as a double EOF mark.
+     It is not allowed to read past EOT although it is allowed to
+     write.  The value of _t_c_s_r will reflect the tape drive con-
+     trol status register.  See _h_t(4) for details.
+
+FFIILLEESS
+     /usr/lib/libU77.a
+
+SSEEEE AALLSSOO
+     ht(4), perror(3F), rewind(1)
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 15, 1985				2
+
+
+

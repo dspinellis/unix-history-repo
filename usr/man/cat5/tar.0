@@ -1,0 +1,132 @@
+
+
+
+TAR(5)		    UNIX Programmer's Manual		   TAR(5)
+
+
+
+NNAAMMEE
+     tar - tape archive file format
+
+DDEESSCCRRIIPPTTIIOONN
+     _T_a_r, (the tape archive command) dumps several files into
+     one, in a medium suitable for transportation.
+
+     A ``tar tape'' or file is a series of blocks.  Each block is
+     of size TBLOCK.  A file on the tape is represented by a
+     header block which describes the file, followed by zero or
+     more blocks which give the contents of the file.  At the end
+     of the tape are two blocks filled with binary zeros, as an
+     end-of-file indicator.
+
+     The blocks are grouped for physical I/O operations.  Each
+     group of _n blocks (where _n is set by the bb keyletter on the
+     _t_a_r(1) command line - default is 20 blocks) is written with
+     a single system call; on nine-track tapes, the result of
+     this write is a single tape record.  The last group is
+     always written at the full size, so blocks after the two
+     zero blocks contain random data.  On reading, the specified
+     or default group size is used for the first read, but if
+     that read returns less than a full tape block, the reduced
+     block size is used for further reads.
+
+     The header block looks like:
+
+	  #define TBLOCK 512
+	  #define NAMSIZ 100
+
+	  union hblock {
+	       char dummy[TBLOCK];
+	       struct header {
+		    char name[NAMSIZ];
+		    char mode[8];
+		    char uid[8];
+		    char gid[8];
+		    char size[12];
+		    char mtime[12];
+		    char chksum[8];
+		    char linkflag;
+		    char linkname[NAMSIZ];
+	       } dbuf;
+	  };
+
+     _N_a_m_e is a null-terminated string.	The other fields are
+     zero-filled octal numbers in ASCII.  Each field (of width w)
+     contains w-2 digits, a space, and a null, except _s_i_z_e and
+     _m_t_i_m_e, which do not contain the trailing null and _c_h_k_s_u_m
+     which has a null followed by a space.  _N_a_m_e is the name of
+     the file, as specified on the _t_a_r command line.  Files
+     dumped because they were in a directory which was named in
+
+
+
+Printed 7/9/88		November 7, 1985			1
+
+
+
+
+
+
+TAR(5)		    UNIX Programmer's Manual		   TAR(5)
+
+
+
+     the command line have the directory name as prefix and
+     /_f_i_l_e_n_a_m_e as suffix.  _M_o_d_e is the file mode, with the top
+     bit masked off.  _U_i_d and _g_i_d are the user and group numbers
+     which own the file.  _S_i_z_e is the size of the file in bytes.
+     Links and symbolic links are dumped with this field speci-
+     fied as zero.  _M_t_i_m_e is the modification time of the file at
+     the time it was dumped.  _C_h_k_s_u_m is an octal ASCII value
+     which represents the sum of all the bytes in the header
+     block.  When calculating the checksum, the _c_h_k_s_u_m field is
+     treated as if it were all blanks.	_L_i_n_k_f_l_a_g is NULL if the
+     file is ``normal'' or a special file, ASCII `1' if it is an
+     hard link, and ASCII `2' if it is a symbolic link.  The name
+     linked-to, if any, is in _l_i_n_k_n_a_m_e, with a trailing null.
+     Unused fields of the header are binary zeros (and are
+     included in the checksum).
+
+     The first time a given i-node number is dumped, it is dumped
+     as a regular file.  The second and subsequent times, it is
+     dumped as a link instead.	Upon retrieval, if a link entry
+     is retrieved, but not the file it was linked to, an error
+     message is printed and the tape must be manually re-scanned
+     to retrieve the linked-to file.
+
+     The encoding of the header is designed to be portable across
+     machines.
+
+SSEEEE AALLSSOO
+     tar(1)
+
+BBUUGGSS
+     Names or linknames longer than NAMSIZ produce error reports
+     and cannot be dumped.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		November 7, 1985			2
+
+
+
