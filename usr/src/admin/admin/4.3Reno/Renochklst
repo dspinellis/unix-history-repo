@@ -1,0 +1,65 @@
+.\" @(#)Renochklst	1.1 (CSRG - distribution) %G%
+.so /usr3/staff/sellgren/BSD/LETTERS/UCHEADERS
+.FH
+.ND
+.ll 6.8i
+.nr LL 6.8i
+.sp 3
+.ce 2
+\fB\s18Checklist for Receiving 4.3BSD
+.sp 2
+\s16(Reno Release)
+.sp 2
+.LP 
+After completing the required licensing procedures for the standard 
+release of 4.3BSD,
+the following items are needed by the Computer Systems Research Group 
+and the University of California to complete the purchase of 
+the Reno version of
+4.3BSD:
+.ll 6.3i
+.nr LL 6.3i
+.sp 2
+.IP "_______1." 15
+\fBTWO\fR completed copies of the appropriate Addendum 
+which are included in this information packet. 
+These should be signed in the name of the 
+office holder who signed your 4.3BSD license
+agreement and returned to us with original signatures.
+(One completed copy will be returned after it is signed by a representative
+of The Regents of the University of California).
+\fBPlease fill out the Addenda completely, including:\fR
+.IP "                               a)" 20
+the date of execution;
+.IP "                               b)" 20
+the full name of your organization;
+.IP "                               c)" 20
+the complete address of your organization; and
+.IP "                               d)" 20
+the printed name of the signatory alongside the signature for 
+purposes of clarity.
+.sp 2
+.IP "_______2." 15
+A \fBPREPAYMENT\fR check for  \fIeither\fR  U.S. $495.00 for 
+those ordering 6250bpi tape 
+density  \fIor\fR  U.S. $595.00 for 1600bpi tape orders.  
+\fB(WE DO NOT INVOICE!)\fR
+Make the check payable to 
+``The Regents of the University of California.''
+.sp 2
+.IP "_______3." 15
+A completed Site Information Form.
+.sp 4
+.IP "Send all the documents to:" 29
+Pauline Schwartz
+.br
+Distribution Coordinator
+.br
+Computer Systems Research Group
+.br
+Computer Science Division, EECS
+.br
+University of California
+.br
+Berkeley, CA   94720
+
