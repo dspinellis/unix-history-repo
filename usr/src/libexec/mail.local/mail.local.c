@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mail.local.c	8.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)mail.local.c	8.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -361,30 +361,22 @@ int	locked = 0;
 lockmbox(path)
 	char *path;
 {
-	char locktmp[50];
 	int statfailed = 0;
 
 	if (locked)
 		return;
 	sprintf(lockname, "%s.lock", path);
-	sprintf(locktmp, "%s/tmXXXXXX", _PATH_MAILDIR);
-	mktemp(locktmp);
-	unlink(locktmp);
 	for (;; sleep(5)) {
 		int fd;
 		struct stat st;
 		time_t now;
 
-		fd = open(locktmp, O_WRONLY|O_EXCL|O_CREAT, 0);
-		if (fd < 0)
-			continue;
-		close(fd);
-		if (link(locktmp, lockname) >= 0) {
-			unlink(locktmp);
+		fd = open(lockname, O_WRONLY|O_EXCL|O_CREAT, 0);
+		if (fd >= 0) {
 			locked = 1;
+			close(fd);
 			return;
 		}
-		unlink(locktmp);
 		if (stat(lockname, &st) < 0) {
 			if (statfailed++ > 5)
 				return;
