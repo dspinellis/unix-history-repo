@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.34 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -78,12 +78,18 @@ struct	ltchars ltc = {
 	CSUSP, CDSUSP, CRPRNT, CFLUSH, CWERASE, CLNEXT
 };
 
+char *months[] =
+	{ "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug",
+	  "Sep", "Oct", "Nov", "Dec" };
+
 main(argc, argv)
 	int argc;
 	char **argv;
 {
 	extern int errno, optind;
 	extern char *optarg, **environ;
+	struct timeval tp;
+	struct tm *ttp;
 	struct group *gr;
 	register int ch;
 	register char *p;
@@ -91,7 +97,7 @@ main(argc, argv)
 	int quietlog, passwd_req, ioctlval, timedout();
 	char *domain, *salt, *envinit[1], *ttyn, *pp;
 	char tbuf[MAXPATHLEN + 2];
-	char *ttyname(), *stypeof(), *crypt(), *getpass();
+	char *ctime(), *ttyname(), *stypeof(), *crypt(), *getpass();
 	time_t time();
 	off_t lseek();
 
@@ -280,6 +286,30 @@ main(argc, argv)
 		printf("Logging in with home = \"/\".\n");
 	}
 
+#define	TWOWEEKS	(14*24*60*60)
+	if (pwd->pw_change || pwd->pw_expire)
+		(void)gettimeofday(&tp, (struct timezone *)NULL);
+	if (pwd->pw_change)
+		if (tp.tv_sec >= pwd->pw_change) {
+			printf("Sorry -- your password has expired.\n");
+			sleepexit(1);
+		}
+		else if (tp.tv_sec - pwd->pw_change < TWOWEEKS) {
+			ttp = localtime(&pwd->pw_change);
+			printf("Warning: your password expires on %s %d, 19%d\n",
+			    months[ttp->tm_mon], ttp->tm_mday, ttp->tm_year);
+		}
+	if (pwd->pw_expire)
+		if (tp.tv_sec >= pwd->pw_expire) {
+			printf("Sorry -- your account has expired.\n");
+			sleepexit(1);
+		}
+		else if (tp.tv_sec - pwd->pw_expire < TWOWEEKS) {
+			ttp = localtime(&pwd->pw_expire);
+			printf("Warning: your account expires on %s %d, 19%d\n",
+			    months[ttp->tm_mon], ttp->tm_mday, ttp->tm_year);
+		}
+
 	/* nothing else left to fail -- really log in */
 	{
 		struct utmp utmp;
@@ -446,6 +476,7 @@ dolastlog(quiet)
 {
 	struct lastlog ll;
 	int fd;
+	char *ctime();
 
 	if ((fd = open(LASTLOG, O_RDWR, 0)) >= 0) {
 		(void)lseek(fd, (off_t)pwd->pw_uid * sizeof(ll), L_SET);
