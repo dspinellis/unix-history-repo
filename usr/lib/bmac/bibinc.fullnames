@@ -1,0 +1,86 @@
+# full journal names, and other names
+#
+# journals
+D ACTA Acta Informatica
+D BIT B\&IT
+D BSTJ Bell System Technical Journal
+D CACM Communications of the ACM
+D COMP IEEE Computer
+D COMPJOUR The Computer Journal
+D COMPLANG Journal of Computer Languages
+D COMPSUR ACM Computing Surveys
+D I&C Information and Control
+D IEEETSE IEEE Transactions on Software Engineering
+D IEEETC IEEE Transactions on Computers
+D IPL Information Processing Letters
+D JACM Journal of the ACM
+D JCSS Journal of Computer and System Sciences
+D NMATH Numerical Mathematics
+D SIAMJC Siam Journal on Computing
+D SIAMJNA Siam Journal on Numerical Analysis
+D SIGACT S\&IGACT News
+D SIGPLAN SI\&GPLAN Notices
+D SIGSOFT Software Engineering Notes
+D SP&E Software\*(emPractice & Experience
+D SPE Software\*(emPractice & Experience
+D TODS ACM Transactions on Database Systems
+D TOMS ACM Transactions on Mathematical Software
+D TOPLAS ACM Transactions on Programming Languages and Systems
+#
+# CONFs
+#
+D PROC Proceedings
+D CONF Conference
+D SYMP Symposium
+D POPL ACM SYMP on Principles of Programming Languages
+D POPL5 CONF Record of the Fifth POPL\
+%C Tucson, Arizona\
+%D JAN 1978
+D POPL6 CONF Record of the Sixth POPL\
+%C San Antonio, Texas\
+%D JAN 1979
+D POPL7 CONF Record of the Seventh POPL\
+%C Las Vegas, Nevada\
+%D JAN 1980
+D POPL8 CONF Record of the Eighth POPL\
+%C Williamsburg, Virginia\
+%D JAN 1981
+D POPL9 CONF Record of the Ninth POPL\
+%C Albuquerque, New Mexico\
+%D JAN 1982
+D POPL10 CONF Record of the Tenth POPL
+D STOC Annual ACM SYMP on Theory of Computing
+D FOCS Annual SYMP on Foundations of Computer Science
+D SOSP SYMP on Operating System Principles
+D ICSE International CONF on Software Engineering
+D JICAI Joint International CONF on Artificial Intelligence
+#
+#  publishers
+#
+I BMACLIB/bibinc.publishers
+#
+# months
+#
+D JAN January
+D FEB February
+D MAR March
+D APR April
+D MAY May
+D JUN June
+D JUL July
+D AUG August
+D SEP September
+D OCT October
+D NOV November
+D DEC December
+#
+#  miscellaneous
+#
+D DEPT Department
+D UNIV University
+D TR Technical Report
+D UATR UNIV of Arizona TR
+D DCS  DEPT of Computer Science
+D CSD Computer Science DEPT
+D DISS Dissertation
+
