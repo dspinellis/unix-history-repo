@@ -5,11 +5,37 @@
  * This code is derived from software contributed to Berkeley by
  * Kenneth Almquist.
  *
- * %sccs.include.redist.c%
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Berkeley and its contributors.
+ * 4. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)jobs.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)jobs.c	5.4 (Berkeley) 7/15/92";
 #endif /* not lint */
 
 #include "shell.h"
@@ -57,7 +83,6 @@ STATIC void freejob(struct job *);
 STATIC int procrunning(int);
 STATIC int dowait(int, struct job *);
 STATIC int waitproc(int, int *);
-STATIC char *commandtext(union node *);
 #else
 STATIC void restartjob();
 STATIC struct job *getjob();
@@ -65,7 +90,6 @@ STATIC void freejob();
 STATIC int procrunning();
 STATIC int dowait();
 STATIC int waitproc();
-STATIC char *commandtext();
 #endif
 
 
@@ -834,15 +858,16 @@ stoppedjobs()
 STATIC char *cmdnextc;
 STATIC int cmdnleft;
 STATIC void cmdtxt(), cmdputs();
+#define MAXCMDTEXT	200
 
-STATIC char *
+char *
 commandtext(n)
 	union node *n;
 	{
 	char *name;
 
-	cmdnextc = name = ckmalloc(50);
-	cmdnleft = 50 - 4;
+	cmdnextc = name = ckmalloc(MAXCMDTEXT);
+	cmdnleft = MAXCMDTEXT - 4;
 	cmdtxt(n);
 	*cmdnextc = '\0';
 	return name;

@@ -91,7 +91,7 @@ STATIC int builtinloc = -1;		/* index in path of %builtin, or -1 */
 #ifdef __STDC__
 STATIC void tryexec(char *, char **, char **);
 STATIC void execinterp(char **, char **);
-STATIC void printentry(struct tblentry *);
+STATIC void printentry(struct tblentry *, int);
 STATIC void clearcmdentry(int);
 STATIC struct tblentry *cmdlookup(char *, int);
 STATIC void delete_cmd_entry(void);
@@ -313,14 +313,6 @@ hashcmd(argc, argv)  char **argv; {
 	struct cmdentry entry;
 	char *name;
 
-	if (argc <= 1) {
-		for (pp = cmdtable ; pp < &cmdtable[CMDTABLESIZE] ; pp++) {
-			for (cmdp = *pp ; cmdp ; cmdp = cmdp->next) {
-				printentry(cmdp);
-			}
-		}
-		return 0;
-	}
 	verbose = 0;
 	while ((c = nextopt("rv")) != '\0') {
 		if (c == 'r') {
@@ -328,6 +320,14 @@ hashcmd(argc, argv)  char **argv; {
 		} else if (c == 'v') {
 			verbose++;
 		}
+	}
+	if (*argptr == NULL) {
+		for (pp = cmdtable ; pp < &cmdtable[CMDTABLESIZE] ; pp++) {
+			for (cmdp = *pp ; cmdp ; cmdp = cmdp->next) {
+				printentry(cmdp, verbose);
+			}
+		}
+		return 0;
 	}
 	while ((name = *argptr) != NULL) {
 		if ((cmdp = cmdlookup(name, 0)) != NULL
@@ -338,7 +338,7 @@ hashcmd(argc, argv)  char **argv; {
 		if (verbose) {
 			if (entry.cmdtype != CMDUNKNOWN) {	/* if no error msg */
 				cmdp = cmdlookup(name, 0);
-				printentry(cmdp);
+				printentry(cmdp, verbose);
 			}
 			flushall();
 		}
@@ -349,8 +349,9 @@ hashcmd(argc, argv)  char **argv; {
 
 
 STATIC void
-printentry(cmdp)
+printentry(cmdp, verbose)
 	struct tblentry *cmdp;
+	int verbose;
 	{
 	int index;
 	char *path;
@@ -368,6 +369,14 @@ printentry(cmdp)
 		out1fmt("builtin %s", cmdp->cmdname);
 	} else if (cmdp->cmdtype == CMDFUNCTION) {
 		out1fmt("function %s", cmdp->cmdname);
+		if (verbose) {
+			INTOFF;
+			name = commandtext(cmdp->param.func);
+			out1c(' ');
+			out1str(name);
+			ckfree(name);
+			INTON;
+		}
 #ifdef DEBUG
 	} else {
 		error("internal error: cmdtype %d", cmdp->cmdtype);
