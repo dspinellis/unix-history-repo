@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.138 (Berkeley) %G%
+ *	@(#)conf.h	8.139 (Berkeley) %G%
  */
 
 /*
@@ -40,6 +40,7 @@
 # define MAXALIASDB	12		/* max # of alias databases */
 # define MAXMAPSTACK	12		/* max # of stacked or sequenced maps */
 # define MAXTOCLASS	8		/* max # of message timeout classes */
+# define MAXMIMENESTING	20		/* max depth of MIME nesting */
 
 # ifndef QUEUESIZE
 # define QUEUESIZE	1000		/* max # of jobs per queue run */
