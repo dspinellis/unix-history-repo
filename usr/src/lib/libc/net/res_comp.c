@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)res_comp.c	6.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_comp.c	6.2 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -102,7 +102,7 @@ dn_comp(exp_dn, comp_dn, length, dnptrs, lastdnptr)
 
 	dn = exp_dn;
 	cp = comp_dn;
-	eob = comp_dn + length;
+	eob = cp + length;
 	if (dnptrs != NULL) {
 		if ((msg = *dnptrs++) != NULL) {
 			for (cpp = dnptrs; *cpp != NULL; cpp++)
@@ -242,10 +242,17 @@ getshort(msgp)
 	char *msgp;
 {
 	register u_char *p = (u_char *) msgp;
+#ifdef vax
+	/*
+	 * vax compiler doesn't put shorts in registers
+	 */
+	register u_long u;
+#else
 	register u_short u;
+#endif
 
 	u = *p++ << 8;
-	return (u | *p);
+	return ((u_short)(u | *p));
 }
 
 u_long
