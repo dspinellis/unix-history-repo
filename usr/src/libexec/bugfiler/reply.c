@@ -6,51 +6,58 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)reply.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)reply.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
-#include <fcntl.h>
+
 #include <dirent.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
+
 #include "bug.h"
+#include "extern.h"
 #include "pathnames.h"
 
 /*
  * reply --
  *	tell the user we got their silly little bug report
  */
+void
 reply()
 {
 	register char	*C,			/* traveling pointer */
 			*to;			/* who we're replying to */
 	register int	afd,			/* ack file descriptor */
 			rval;			/* return value */
-	FILE	*pf,				/* pipe pointer */
-		*popen();
-	char	*index();
+	FILE	*pf;				/* pipe pointer */
 
 	if (mailhead[RPLY_TAG].found) {
-		for (C = mailhead[RPLY_TAG].line + mailhead[RPLY_TAG].len;*C != '\n' && (*C == ' ' || *C == '\t');++C);
+		for (C = mailhead[RPLY_TAG].line + mailhead[RPLY_TAG].len;
+		    *C != '\n' && (*C == ' ' || *C == '\t');++C);
 		if (*C)
 			goto gotone;
 	}
 	if (mailhead[FROM_TAG].found) {
-		for (C = mailhead[FROM_TAG].line + mailhead[FROM_TAG].len;*C != '\n' && (*C == ' ' || *C == '\t');++C);
+		for (C = mailhead[FROM_TAG].line + mailhead[FROM_TAG].len;
+		    *C != '\n' && (*C == ' ' || *C == '\t');++C);
 		if (*C)
 			goto gotone;
 	}
 	if (mailhead[CFROM_TAG].found) {
-		for (C = mailhead[CFROM_TAG].line + mailhead[CFROM_TAG].len;*C != '\n' && (*C == ' ' || *C == '\t');++C);
+		for (C = mailhead[CFROM_TAG].line + mailhead[CFROM_TAG].len;
+		     *C != '\n' && (*C == ' ' || *C == '\t');++C);
 		if (*C)
 			goto gotone;
 	}
 	return;
 
 	/* if it's a foo <XXX>, get the XXX, else get foo (first string) */
-gotone:	if (to = index(C, '<'))
-		for (C = ++to;*C != '\n' && *C != ' ' && *C != '\t' && *C != '>';++C);
+gotone:	if (to = strchr(C, '<'))
+		for (C = ++to;
+		    *C != '\n' && *C != ' ' && *C != '\t' && *C != '>';++C);
 	else {
 		to = C;
 		for (to = C++;*C != '\n' && *C != ' ' && *C != '\t';++C);
@@ -60,13 +67,16 @@ gotone:	if (to = index(C, '<'))
 	if (!(pf = popen(MAIL_CMD, "w")))
 		error("sendmail pipe failed.", CHN);
 
-	fprintf(pf, "Reply-To: %s\nFrom: %s (Bugs Bunny)\nTo: %s\n", BUGS_HOME, BUGS_HOME, to);
+	fprintf(pf, "Reply-To: %s\nFrom: %s (Bugs Bunny)\nTo: %s\n",
+	    BUGS_HOME, BUGS_HOME, to);
 	if (mailhead[SUBJ_TAG].found)
-		fprintf(pf, "Subject: Re:%s", mailhead[SUBJ_TAG].line + mailhead[SUBJ_TAG].len);
+		fprintf(pf, "Subject: Re:%s",
+		    mailhead[SUBJ_TAG].line + mailhead[SUBJ_TAG].len);
 	else
 		fputs("Subject: Bug report acknowledgement.\n", pf);
 	if (mailhead[DATE_TAG].found)
-		fprintf(pf, "In-Acknowledgement-Of: Your message of %s", mailhead[DATE_TAG].line + mailhead[DATE_TAG].len);
+		fprintf(pf, "In-Acknowledgement-Of: Your message of %s",
+		    mailhead[DATE_TAG].line + mailhead[DATE_TAG].len);
 	if (mailhead[MSG_TAG].found)
 		fprintf(pf, "\t\t%s", mailhead[MSG_TAG].line);
 	fputs("Precedence: bulk\n\n", pf);	/* vacation(1) uses this... */

@@ -6,20 +6,24 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)gethead.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)gethead.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
+
 #include <dirent.h>
-#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+
 #include "pathnames.h"
 #include "bug.h"
+#include "extern.h"
 
-static int	chk1(), pbuf();
+static int chk1 __P((char *));
+static int pbuf __P((char *));
 
 #define ENT(X)	sizeof(X) - 1, X
 HEADER	mailhead[] = {				/* mail headers */
@@ -44,6 +48,7 @@ char	dir[MAXNAMLEN],			/* subject and folder */
  * gethead --
  *	read mail and bug headers from bug report, construct redist headers
  */
+void
 gethead(redist)
 	int	redist;
 {
@@ -69,7 +74,8 @@ gethead(redist)
 				if (!strncmp(hp->tag, bfr, hp->len)) {
 					if (hp->valid && !((*(hp->valid))(bfr)))
 						break;
-					if (!(hp->line = malloc((u_int)(strlen(bfr) + 1))))
+					if (!(hp->line =
+					    malloc((u_int)(strlen(bfr) + 1))))
 						error("malloc failed.", CHN);
 					(void)strcpy(hp->line, bfr);
 					hp->found = YES;
@@ -87,17 +93,16 @@ gethead(redist)
  * chk1 --
  *	parse the "Index:" line into folder and directory
  */
-static
+static int
 chk1(line)
 	char	*line;
 {
 	register char	*C;		/* tmp pointer */
 	struct stat	sbuf;		/* existence check */
-	char	*index();
 
 	if (sscanf(line, " Index: %s %s ", folder, dir) != 2)
 		return(NO);
-	if (C = index(folder, '/')) {	/* deal with "bin/from.c" */
+	if (C = strchr(folder, '/')) {	/* deal with "bin/from.c" */
 		if (C == folder)
 			return(NO);
 		*C = EOS;
@@ -112,7 +117,7 @@ chk1(line)
  * pbuf --
  *	kludge so that summary file looks pretty
  */
-static
+static int
 pbuf(line)
 	char	*line;
 {

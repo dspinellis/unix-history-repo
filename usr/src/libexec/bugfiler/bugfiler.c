@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)bugfiler.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)bugfiler.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -22,20 +22,27 @@ static char sccsid[] = "@(#)bugfiler.c	5.17 (Berkeley) %G%";
 #include <sys/param.h>
 #include <sys/time.h>
 #include <sys/stat.h>
+
 #include <dirent.h>
 #include <pwd.h>
-#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+
 #include "bug.h"
+#include "extern.h"
 
 char	bfr[MAXBSIZE],			/* general I/O buffer */
 	tmpname[sizeof(TMP_BUG) + 5];	/* temp bug file */
 
+static void logit __P((void));
+static void make_copy __P((void));
+
+int
 main(argc, argv)
 	int	argc;
-	char	**argv;
+	char	*argv[];
 {
 	extern char	*optarg;	/* getopt arguments */
 	register struct passwd	*pwd;	/* bugs password entry */
@@ -43,12 +50,11 @@ main(argc, argv)
 	int	do_ack,			/* acknowledge bug report */
 		do_redist;		/* redistribut BR */
 	char	*argversion;		/* folder name provided */
-	static void logit(), make_copy();
 
 	do_ack = do_redist = YES;
 	argversion = NULL;
 	while ((ch = getopt(argc, argv, "av:r")) != EOF)
-		switch((char)ch) {
+		switch(ch) {
 		case 'a':
 			do_ack = NO;
 			break;
@@ -103,13 +109,13 @@ make_copy()
 {
 	register int	cnt,			/* read return value */
 			tfd;			/* temp file descriptor */
-	char	*strcpy();
 
 	if (access(TMP_DIR, F_OK))
 		(void)mkdir(TMP_DIR, S_IRWXU|S_IRWXG|S_IROTH|S_IXOTH);
 	(void)strcpy(tmpname, TMP_BUG);
 	if (tfd = mkstemp(tmpname)) {
-		while ((cnt = read(fileno(stdin), bfr, sizeof(bfr))) != ERR && cnt)
+		while ((cnt = read(fileno(stdin),
+		    bfr, sizeof(bfr))) != ERR && cnt)
 			write(tfd, bfr, cnt);
 		(void)close(tfd);
 		return;
@@ -125,8 +131,7 @@ static void
 logit()
 {
 	struct timeval	tp;
-	char	*C1, *C2,
-		*ctime();
+	char	*C1, *C2;
 
 	if (gettimeofday(&tp, (struct timezone *)NULL))
 		error("can't get time of day.", CHN);
