@@ -1,5 +1,6 @@
-static	char *sccsid = "@(#)doname.c	4.4 (Berkeley) 84/12/23";
+static	char *sccsid = "@(#)doname.c	4.5 (Berkeley) 85/01/09";
 #include "defs"
+#include <strings.h>
 
 /*  BASIC PROCEDURE.  RECURSIVE.  */
 
@@ -26,7 +27,7 @@ struct shblock *implcom, *explcom;
 register struct lineblock *lp;
 struct lineblock *lp1, *lp2;
 char sourcename[100], prefix[100], temp[100], concsuff[20];
-char *pnamep, *p1namep;
+char *pnamep, *p1namep, *cp;
 char *mkqlist();
 struct chain *qchain, *appendq();
 
@@ -142,7 +143,10 @@ if(dbgflag) printf("TIME(%s)=%ld\n", p2->namep, td);
 				goto endloop;
 				}
 			}
-		setvar("*", rindex(prefix, '/') + 1);
+		cp = rindex(prefix, '/');
+		if (cp++ == 0)
+			cp = prefix;
+		setvar("*", cp);
 		}
 	}
 
