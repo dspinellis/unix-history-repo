@@ -1,4 +1,4 @@
-/*	llib-lc	1.29	86/01/07	*/
+/*	llib-lc	1.30	86/02/14	*/
 /* LINTLIBRARY */
 #include <sys/types.h>
 #include <fstab.h>
@@ -202,7 +202,7 @@ double	modf( v, p ) double v, *p; { return v; }
 char *	mktemp(p) char *p; { return(p);}
 	monitor(l, h, b, s, n) int (*l)(), (*h)(); short *b; {}
 	monstartup( l, h) int (*l)(), (*h)(); {;}
-	nlist( f, n) char *f; struct nlist n[]; {;}
+	nlist( f, n) char *f; struct nlist n[]; { return (0);}
 DIR *	opendir( f ) char *f; { return (DIR *)NULL; }
 	openlog(s, f, l) char *s; {}
 	pause() {;}
