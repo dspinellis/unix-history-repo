@@ -1,4 +1,9 @@
-/*	gethostnamadr.c	4.10	85/03/28	*/
+/*	gethostnamadr.c	4.11	85/04/01	*/
+
+/*
+ * Copyright (c) 1985 Regents of the University of California
+ *	All Rights Reserved
+ */
 
 #include <sys/types.h>
 #include <sys/socket.h>
