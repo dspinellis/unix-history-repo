@@ -1,3 +1,0 @@
-%(lit)%(formataddr{addresses})\
-%<(nonnull)%(void(width))%(putaddr Resent-To: )\n%>\
-Resent-Fcc: outbox

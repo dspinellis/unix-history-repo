@@ -1,9 +1,0 @@
-Tue Nov 13 17:17:59 1990  Richard Stallman  (rms at mole.ai.mit.edu)
-
-	* XMenu.h (struct _xmenu): Use unsigned long for colors.
-
-Mon Nov 12 18:55:06 1990  Richard Stallman  (rms at mole.ai.mit.edu)
-
-	* Internal.c: Declare argument `display' in some functions.
-
-

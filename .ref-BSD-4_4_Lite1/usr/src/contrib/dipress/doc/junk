@@ -1,4 +1,0 @@
-dtbl setup.me intro.me guide.me program.me intertext.me install-unix.me install-vms.me acknowledge.me appendixA.me examples.me char-chart.me preamble.me \
-| deqn -F/a/guest/sklower/dip2/lib/fonts/8044 -Pdp \
-| pic -F/a/guest/sklower/dip2/lib/fonts/8044 -Pdp \
-| ./ditroff -Pdp -F/a/guest/sklower/dip2/lib/fonts/8044 -me -t > doc-.ip

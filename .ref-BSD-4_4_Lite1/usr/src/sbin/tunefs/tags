@@ -1,5 +1,0 @@
-Mtunefs	tunefs.c	/^main(argc, argv)$/
-bread	tunefs.c	/^bread(bno, buf, cnt)$/
-bwrite	tunefs.c	/^bwrite(blk, buf, size)$/
-fatal	tunefs.c	/^fatal(fmt, arg1, arg2)$/
-getsb	tunefs.c	/^getsb(fs, file)$/

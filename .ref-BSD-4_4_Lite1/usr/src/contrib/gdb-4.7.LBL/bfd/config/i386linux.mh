@@ -1,3 +1,0 @@
-ALLOCA = alloca.o
-HDEFINES=-DTRAD_CORE
-HDEPFILES=trad-core.o

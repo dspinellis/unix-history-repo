@@ -1,2 +1,0 @@
-# There is an alloca in -lbsd, but it is limited to 32K
-ALLOCA = alloca.o
