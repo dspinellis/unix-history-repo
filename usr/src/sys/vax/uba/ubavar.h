@@ -1,7 +1,7 @@
-/*	ubavar.h	4.6	%G%	*/
+/*	ubavar.h	4.7	%G%	*/
 
 /*
- * unibus adapter
+ * UNIBUS adaptor
  */
 #if VAX750
 #define	UBA750	((struct uba_regs *)0xf30000)
@@ -92,15 +92,16 @@ struct uba_regs
  * Each UNIBUS mass storage controller has uba_minfo structure,
  * and a uba_dinfo structure (as below) for each attached drive.
  */
-struct	uba_minfo {
+struct uba_minfo {
 	struct	uba_driver *um_driver;
 	short	um_ctlr;	/* controller index in driver */
 	short	um_ubanum;	/* the uba it is on */
 	short	um_alive;	/* controller exists */
 	int	(**um_intr)();	/* interrupt handler(s) */
 	caddr_t	um_addr;	/* address of device in i/o space */
-	struct	uba_info *um_forw;
 	struct	uba_hd *um_hd;
+	int	um_cmd;		/* communication to dgo() */
+	int	um_ubinfo;	/* save unibus registers, etc */
 	struct	buf um_tab;	/* queue for this controller */
 };
 /*
@@ -109,7 +110,7 @@ struct	uba_minfo {
  * be several uba_dinfo structures associated with a single uba_minfo
  * structure.
  */
-struct	uba_dinfo {
+struct uba_dinfo {
 	struct	uba_driver *ui_driver;
 	short	ui_unit;	/* unit number on the system */
 	short	ui_ctlr;	/* mass ctlr number; -1 if none */
@@ -117,10 +118,12 @@ struct	uba_dinfo {
 	short	ui_slave;	/* slave on controller */
 	int	(**ui_intr)();	/* interrupt handler(s) */
 	caddr_t	ui_addr;	/* address of device in i/o space */
+	short	ui_dk;		/* if init 1 set to number for iostat */
+	short	ui_flags;	/* param to device init. */
 	short	ui_alive;	/* device exists */
 	short	ui_type;	/* driver specific type information */
-	short	ui_dk;		/* device number for iostat */
 	caddr_t	ui_physaddr;	/* phys addr, for standalone (dump) code */
+	struct	uba_dinfo *ui_forw;
 /* if the driver isn't also a controller, this is the controller it is on */
 	struct	uba_minfo *ui_mi;
 	struct	uba_hd *ui_hd;
@@ -144,8 +147,8 @@ struct	uba_hd {
 	struct	uba_regs *uh_uba;	/* virt addr of uba */
 	struct	uba_regs *uh_physuba;	/* phys addr of uba */
 	int	(**uh_vec)();		/* interrupt vector */
-	struct	uba_minfo *uh_actf;	/* head of queue to transfer */
-	struct	uba_minfo *uh_actl;	/* tail of queue to transfer */
+	struct	uba_dinfo *uh_actf;	/* head of queue to transfer */
+	struct	uba_dinfo *uh_actl;	/* tail of queue to transfer */
 	short	uh_mrwant;		/* someone is waiting for map reg */
 	short	uh_bdpwant;		/* someone awaits bdp's */
 	int	uh_bdpfree;		/* free bdp's */
@@ -154,11 +157,6 @@ struct	uba_hd {
 #define	UAMSIZ	50
 	struct	map *uh_map;
 } uba_hd[MAXNUBA];
-#ifdef KERNEL
-extern	struct	uba_minfo ubminit[];
-extern	struct	uba_dinfo ubdinit[];
-int	numuba;
-#endif
 /*
  * Each UNIBUS driver defines entries for a set of routines
  * as well as an array of types which are acceptable to it.
@@ -170,8 +168,9 @@ struct uba_driver {
 /* dgo is called back by the unibus (usu ubaalloc), when the bus is ready */
 	short	ud_needexcl;		/* need exclusive use of uba (rk07) */
 	u_short	*ud_addr;		/* device csr addresses */
-	char	*ud_pname;
+	char	*ud_dname;		/* name of a device */
 	struct	uba_dinfo **ud_dinfo;	/* backpointers to ubdinit structs */
+	char	*ud_mname;		/* name of a controller */
 	struct	uba_minfo **ud_minfo;	/* backpointers to ubminit structs */
 };
 
@@ -190,3 +189,18 @@ struct uba_driver {
 #define	UBA_NEEDBDP	1		/* transfer needs a bdp */
 #define	UBA_CANTWAIT	2		/* don't block me */
 #define	UBA_NEED16	3		/* need 16 bit addresses only */
+
+/*
+ * UNIBUS related kernel variables
+ */
+#ifdef KERNEL
+extern	struct	uba_minfo ubminit[];
+extern	struct	uba_dinfo ubdinit[];
+int	numuba;
+extern	struct pte UMEMmap[MAXNUBA][16];
+extern	char umem[MAXNUBA][16*NBPG];
+extern	int (*UNIvec[])();
+#if VAX780
+extern	Xua0int(), Xua1int(), Xua2int(), Xua3int();
+#endif
+#endif
