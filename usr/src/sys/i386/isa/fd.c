@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fd.c	7.4 (Berkeley) %G%
+ *	@(#)fd.c	7.5 (Berkeley) %G%
  */
 
 #include "fd.h"
@@ -105,7 +105,7 @@ struct isa_device *dev;
 }
 
 int
-fdsize(dev)
+Fdsize(dev)
 dev_t	dev;
 {
 	return(2400);
@@ -114,7 +114,7 @@ dev_t	dev;
 /****************************************************************************/
 /*                               fdstrategy                                 */
 /****************************************************************************/
-fdstrategy(bp)
+Fdstrategy(bp)
 	register struct buf *bp;	/* IO operation to perform */
 {
 	register struct buf *dp,*dp0,*dp1;
@@ -285,7 +285,7 @@ Fdopen(dev, flags)
 	return 0;
 }
 
-fdclose(dev, flags)
+Fdclose(dev, flags)
 	dev_t dev;
 {
 }
@@ -296,22 +296,22 @@ fdclose(dev, flags)
 /*
  * Routines to do raw IO for a unit.
  */
-fdread(dev, uio)			/* character read routine */
+Fdread(dev, uio)			/* character read routine */
 dev_t dev;
 struct uio *uio;
 {
  	int unit = FDUNIT(minor(dev)) ;
 	if (unit >= NFD) return(ENXIO);
-	return(physio(fdstrategy,&fd_unit[unit].rhead,dev,B_READ,minphys,uio));
+	return(physio(Fdstrategy,&fd_unit[unit].rhead,dev,B_READ,minphys,uio));
 }
 
-fdwrite(dev, uio)			/* character write routine */
+Fdwrite(dev, uio)			/* character write routine */
 dev_t dev;
 struct uio *uio;
 {
  	int unit = FDUNIT(minor(dev)) ;
 	if (unit >= NFD) return(ENXIO);
-	return(physio(fdstrategy,&fd_unit[unit].rhead,dev,B_WRITE,minphys,uio));
+	return(physio(Fdstrategy,&fd_unit[unit].rhead,dev,B_WRITE,minphys,uio));
 }
 
 /****************************************************************************/
@@ -618,4 +618,7 @@ printf("off|");
 		dp->b_active = 0;
 	}
 }
+
+Fdioctl() {}
+Fddump() {}
 #endif
