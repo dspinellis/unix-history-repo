@@ -1,4 +1,4 @@
-/*	locore.s	1.20	87/06/26	*/
+/*	locore.s	1.21	87/11/03	*/
 
 #include "../tahoe/mtpr.h"
 #include "../tahoe/trap.h"
@@ -1038,7 +1038,7 @@ ENTRY(copyinstr, 0)
  */
 ENTRY(copyoutstr, 0)
 	movl	12(fp),r5		# r5 = max length
-	jlss	5b
+	jlss	5f
 	movl	4(fp),r0		# r0 = kernel address
 	movl	8(fp),r4		# r4 = user address
 	andl3	$(NBPG*CLSIZE-1),r4,r2	# r2 = bytes on first page
@@ -1049,7 +1049,7 @@ ENTRY(copyoutstr, 0)
 	movl	r5,r2
 2:
 	probew	$1,(r4),r2		# bytes accessible?
-	jeql	5b
+	jeql	5f
 	subl2	r2,r5			# update bytes left count
 	movl	r2,r3			# r3 = saved count
 	movl	r0,r1
@@ -1084,6 +1084,16 @@ ENTRY(copyoutstr, 0)
 	jneq	1b
 	movl	$ENOENT,r0		# set error code and return
 	jbr	6b
+5:
+	clrl	*$0		# this should never execute, if it does
+	movl	$EFAULT,r0	#  save me a core dump (mkm - 9/87)
+6:
+	tstl	16(fp)
+	beql	7f
+	subl3	r5,12(fp),*16(fp)
+7:
+	ret
+
 
 /*
  * Copy a null terminated string from one point to another in
@@ -1652,7 +1662,6 @@ ENTRY(skpc, 0)
 2:
 	subl3	r0,r1,r0; ret		# return (end - cp);
 
-#ifdef notdef
 /*
  * locc(mask, size, cp)
  */
@@ -1668,7 +1677,6 @@ ENTRY(locc, 0)
 0:	aoblss	r1,r0,1b		# while (++cp < end);
 2:
 	subl3	r0,r1,r0; ret		# return (end - cp);
-#endif
 
 #ifdef ALIGN
 #include "../tahoealign/align.h"
