@@ -50,7 +50,7 @@ SOFTWARE.
 *INCLUDE
 
 {
-/*	@(#)tp.trans	7.5 (Berkeley) %G% */
+/*	@(#)tp.trans	7.6 (Berkeley) %G% */
 #include "param.h"
 #include "socket.h"
 #include "socketvar.h"
@@ -315,7 +315,6 @@ TP_CONFIRMING		<==		 TP_LISTENING  							CR_TPDU
 			/* n/a for class 0 */
 			ASSERT($P.tp_Xrcv.sb_cc == 0); 
 			sbappendrecord(&$P.tp_Xrcv, $$.e_data);
-			/*$P.tp_flags |= TPF_CONN_DATA_IN;*/
 			$$.e_data = MNULL; 
 		} 
 	}
@@ -348,7 +347,7 @@ TP_AKWAIT		<==		 TP_CONFIRMING  							T_ACPT_req
 			printf("Confirming connection: $P" );
 		ENDDEBUG
 		soisconnecting($P.tp_sock);
-		if($P.tp_rx_strat & TPRX_FASTSTART)
+		if (($P.tp_rx_strat & TPRX_FASTSTART) && ($P.tp_fcredit > 0))
 			$P.tp_cong_win = $P.tp_fcredit;
 		$P.tp_retrans = $P.tp_Nretrans;
 		tp_ctimeout($P.tp_refp, TM_retrans, (int)$P.tp_cc_ticks);
@@ -409,7 +408,6 @@ TP_REFWAIT 		<==		[ TP_CRSENT, TP_AKWAIT, TP_OPEN ] 			DR_TPDU
 		if ($$.e_datalen > 0 && $P.tp_class != TP_CLASS_0) {
 			/*sbdrop(&$P.tp_Xrcv, $P.tp_Xrcv.sb_cc); /* purge expedited data */
 			sbflush(&$P.tp_Xrcv);
-			$P.tp_flags |= TPF_DISC_DATA_IN;
 			sbappendrecord(&$P.tp_Xrcv, $$.e_data);
 			$$.e_data = MNULL;
 		} 
@@ -541,7 +539,7 @@ TP_OPEN			<==		TP_CRSENT									CC_TPDU
 		$P.tp_fref = $$.e_sref;
 		$P.tp_fcredit = $$.e_cdt;
 		$P.tp_ackrcvd = 0;
-		if($P.tp_rx_strat & TPRX_FASTSTART)
+		if (($P.tp_rx_strat & TPRX_FASTSTART) && ($$.e_cdt > 0))
 			$P.tp_cong_win = $$.e_cdt;
 		tp_getoptions($P);
 		tp_cuntimeout($P.tp_refp, TM_retrans);
@@ -557,7 +555,6 @@ TP_OPEN			<==		TP_CRSENT									CC_TPDU
 		if ($$.e_datalen > 0) {
 			ASSERT($P.tp_Xrcv.sb_cc == 0); /* should be empty */
 			sbappendrecord(&$P.tp_Xrcv, $$.e_data);
-			$P.tp_flags |= TPF_CONN_DATA_IN;
 			$$.e_data = MNULL;
 		}
 
@@ -756,7 +753,7 @@ TP_OPEN			<==		TP_AKWAIT										AK_TPDU
 
 /* TP4 only */
 TP_OPEN 		<== 	[ TP_OPEN, TP_AKWAIT ]						XPD_TPDU
-	( $P.tp_Xrcvnxt == $$.e_seq  /* && $P.tp_Xrcv.sb_cc == 0*/)
+	($P.tp_Xrcvnxt == $$.e_seq)
 	{
 		if( $P.tp_state == TP_AKWAIT ) {
 			if ($P.tp_ucddata) {
@@ -775,6 +772,7 @@ TP_OPEN 		<== 	[ TP_OPEN, TP_AKWAIT ]						XPD_TPDU
 		ENDTRACE
 
 		$P.tp_sock->so_state |= SS_RCVATMARK;
+		$$.e_data->m_flags |= M_EOR;
 		sbinsertoob(&$P.tp_Xrcv, $$.e_data);
 		IFDEBUG(D_XPD)
 			dump_mbuf($$.e_data, "XPD TPDU: tp_Xrcv");
@@ -792,7 +790,6 @@ SAME			<==		TP_OPEN 									T_USR_Xrcvd
 	DEFAULT
 	{
 		if( $P.tp_Xrcv.sb_cc == 0 ) {
-			/*$P.tp_flags &= ~TPF_XPD_PRESENT;*/
 			/* kludge for select(): */ 
 			/* $P.tp_sock->so_state &= ~SS_OOBAVAIL; */
 		}
@@ -830,13 +827,6 @@ SAME	 		<== 	[ TP_AKWAIT, TP_OPEN ] 							XPD_TPDU
 		if( $P.tp_Xrcvnxt != $$.e_seq )
 			IncStat(ts_xpd_niw);
 		if( $P.tp_Xrcv.sb_cc ) {
-#ifdef notdef
-			if( $P.tp_flags & TPF_CONN_DATA_IN ) {
-				/* user isn't reading the connection data; see note above */
-				sbdrop(&$P.tp_Xrcv, $P.tp_Xrcv.sb_cc);
-				$P.tp_flags &= ~TPF_CONN_DATA_IN;
-			}
-#endif notdef
 			/* might as well kick 'em again */
 			tp_indicate(T_XDATA, $P, 0);
 			IncStat(ts_xpd_dup);
@@ -1319,7 +1309,10 @@ SAME			<==		TP_OPEN 								TM_sendack
 /* TP0 only */
 SAME			<==		TP_OPEN 									T_USR_rcvd
 	($P.tp_class == TP_CLASS_0)
-	NULLACTION
+	{
+		if (sbspace(&$P.tp_sock->so_rcv) > 0)
+			tp0_openflow($P);
+	}
 ;
 
 /* TP4 only */
