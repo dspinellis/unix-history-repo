@@ -1,4 +1,4 @@
-/*	config.h	1.13	83/06/16	*/
+/*	config.h	1.14	84/08/20	*/
 
 /*
  * Config.
@@ -84,7 +84,7 @@ struct config {
  * Config has a global notion of which machine type is
  * being used.  It uses the name of the machine in choosing
  * files and directories.  Thus if the name of the machine is ``vax'',
- * it will build from ``makefile.vax'' and use ``../vax/asm.sed''
+ * it will build from ``makefile.vax'' and use ``../vax/inline''
  * in the makerules, etc.
  */
 int	machine;
