@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash_page.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash_page.c	5.18 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -500,7 +500,7 @@ __get_page(p, bucket, is_bucket, is_disk, is_bitmap)
 			errno = EFTYPE;
 			return (-1);
 		}
-	if (!bp[0]) {
+	if (!is_bitmap && !bp[0]) {
 		PAGE_INIT(p);
 	} else
 		if (hashp->LORDER != BYTE_ORDER) {
