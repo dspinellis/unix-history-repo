@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)bibdoc.ms	8.1 (Berkeley) %G%
+.\"	@(#)bibdoc.ms	8.2 (Berkeley) %G%
 .\"
 .EH 'USD:28-%''BIB \- A Program for Formatting Bibliographies'
 .OH 'BIB \- A Program for Formatting Bibliographies''USD:28-%'
@@ -13,7 +13,7 @@
 \fBBIB \- A Program for Formatting Bibliographies\fP
 .AU
 Timothy A. Budd
-revised by A. Dain Samples, \*(td
+revised by A. Dain Samples, May 1990
 .PP
 \fIBib\fP is a program for collecting and formatting reference lists in
 documents.  It is a preprocessor to the nroff/troff typesetting systems,
@@ -238,7 +238,7 @@ can be placed in a \fItroff\fP comment.
 .RS
 .nr
 .sp
- .\e" [\&.imprecise citation.]
+\&.\e" [\&.imprecise citation.]
 .sp
 .RE
 .PP
@@ -1037,8 +1037,9 @@ is converted into the following sequence of \fItroff\fP commands
 .PP
 Note that the commands are preceded by a call on the macro `.[\-'.
 This can be used by the macro routines for initialization, for example to
-delete old string values.  (For some reason, the ending macro .e[ also calls
-.[\- which seems redundant.)
+delete old string values.
+(For some reason, the ending macro .e[ also calls .[
+which seems redundant.)
 .PP
 The string [F is the citation string used in the document.
 Note that the string CACM has been expanded.
