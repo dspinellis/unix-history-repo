@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	3.38 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	3.39 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -99,12 +99,28 @@ char **argv;
 		(void) fprintf(stderr, "%s.\n", wwerror());
 		exit(1);
 	}
+
+#ifndef POSIX_TTY
 	if (debug)
 		wwnewtty.ww_tchars.t_quitc = wwoldtty.ww_tchars.t_quitc;
 	if (xflag) {
 		wwnewtty.ww_tchars.t_stopc = wwoldtty.ww_tchars.t_stopc;
 		wwnewtty.ww_tchars.t_startc = wwoldtty.ww_tchars.t_startc;
 	}
+#else
+	if (debug) {
+		wwnewtty.ww_termios.c_cc[VQUIT] =
+			wwoldtty.ww_termios.c_cc[VQUIT];
+		wwnewtty.ww_termios.c_lflag |= ISIG;
+	}
+	if (xflag) {
+		wwnewtty.ww_termios.c_cc[VSTOP] =
+			wwoldtty.ww_termios.c_cc[VSTOP];
+		wwnewtty.ww_termios.c_cc[VSTART] =
+			wwoldtty.ww_termios.c_cc[VSTART];
+		wwnewtty.ww_termios.c_iflag |= IXON;
+	}
+#endif
 	if (debug || xflag)
 		(void) wwsettty(0, &wwnewtty, &wwoldtty);
 

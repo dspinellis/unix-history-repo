@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwtty.c	3.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwtty.c	3.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -25,6 +25,7 @@ static char sccsid[] = "@(#)wwtty.c	3.13 (Berkeley) %G%";
 wwgettty(d, t)
 register struct ww_tty *t;
 {
+#ifndef POSIX_TTY
 	if (ioctl(d, TIOCGETP, (char *)&t->ww_sgttyb) < 0)
 		goto bad;
 	if (ioctl(d, TIOCGETC, (char *)&t->ww_tchars) < 0)
@@ -35,6 +36,10 @@ register struct ww_tty *t;
 		goto bad;
 	if (ioctl(d, TIOCGETD, (char *)&t->ww_ldisc) < 0)
 		goto bad;
+#else
+	if (tcgetattr(d, &t->ww_termios) < 0)
+		goto bad;
+#endif
 	if ((t->ww_fflags = fcntl(d, F_GETFL, 0)) < 0)
 		goto bad;
 	return 0;
@@ -51,7 +56,12 @@ bad:
 wwsettty(d, t, o)
 register struct ww_tty *t, *o;
 {
-	if (ioctl(d, TIOCSETP, (char *)&t->ww_sgttyb) < 0)
+#ifndef POSIX_TTY
+	/* for buggy tty driver that doesn't wait for output to drain */
+	int i;
+	while (ioctl(d, TIOCOUTQ, &i) >= 0 && i > 0)
+		usleep(100000);
+	if (ioctl(d, TIOCSETN, (char *)&t->ww_sgttyb) < 0)
 		goto bad;
 	if (ioctl(d, TIOCSETC, (char *)&t->ww_tchars) < 0)
 		goto bad;
@@ -62,6 +72,10 @@ register struct ww_tty *t, *o;
 	if ((o == 0 || t->ww_ldisc != o->ww_ldisc) &&
 	    ioctl(d, TIOCSETD, (char *)&t->ww_ldisc) < 0)
 		goto bad;
+#else
+	if (tcsetattr(d, TCSADRAIN, &t->ww_termios) < 0)
+		goto bad;
+#endif
 	if (fcntl(d, F_SETFL, t->ww_fflags) < 0)
 		goto bad;
 	return 0;

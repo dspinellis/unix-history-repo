@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwgets.c	3.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwgets.c	3.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -36,13 +36,30 @@ register struct ww *w;
 		wwcurtowin(w);
 		while ((c = wwgetc()) < 0)
 			wwiomux();
-		if (c == wwoldtty.ww_sgttyb.sg_erase) {
+#ifndef POSIX_TTY
+		if (c == wwoldtty.ww_sgttyb.sg_erase)
+#else
+		if (c == wwoldtty.ww_termios.c_cc[VERASE])
+#endif
+		{
 			if (p > buf)
 				rub(*--p, w);
-		} else if (c == wwoldtty.ww_sgttyb.sg_kill) {
+		} else
+#ifndef POSIX_TTY
+		if (c == wwoldtty.ww_sgttyb.sg_kill)
+#else
+		if (c == wwoldtty.ww_termios.c_cc[VKILL])
+#endif
+		{
 			while (p > buf)
 				rub(*--p, w);
-		} else if (c == wwoldtty.ww_ltchars.t_werasc) {
+		} else
+#ifndef POSIX_TTY
+		if (c == wwoldtty.ww_ltchars.t_werasc)
+#else
+		if (c == wwoldtty.ww_termios.c_cc[VWERASE])
+#endif
+		{
 			while (--p >= buf && (*p == ' ' || *p == '\t'))
 				rub(*p, w);
 			while (p >= buf && *p != ' ' && *p != '\t')

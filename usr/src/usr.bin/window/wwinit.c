@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwinit.c	3.36 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwinit.c	3.37 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -46,6 +46,7 @@ wwinit()
 	if (wwgettty(0, &wwoldtty) < 0)
 		return -1;
 	wwwintty = wwoldtty;
+#ifndef POSIX_TTY
 	wwwintty.ww_sgttyb.sg_flags &= ~XTABS;
 	wwnewtty.ww_sgttyb = wwoldtty.ww_sgttyb;
 	wwnewtty.ww_sgttyb.sg_erase = -1;
@@ -66,6 +67,19 @@ wwinit()
 	wwnewtty.ww_ltchars.t_lnextc = -1;
 	wwnewtty.ww_lmode = wwoldtty.ww_lmode | LLITOUT;
 	wwnewtty.ww_ldisc = wwoldtty.ww_ldisc;
+#else
+	wwwintty.ww_termios.c_oflag &= ~OXTABS;
+	wwnewtty.ww_termios = wwoldtty.ww_termios;
+	wwnewtty.ww_termios.c_iflag &=
+		~(ISTRIP | INLCR | IGNCR | ICRNL | IXON | IXOFF | IMAXBEL);
+	wwnewtty.ww_termios.c_iflag |= INPCK;
+	wwnewtty.ww_termios.c_oflag = 0;
+	wwnewtty.ww_termios.c_cflag &= ~(CSIZE | PARENB);
+	wwnewtty.ww_termios.c_cflag |= CS8;
+	wwnewtty.ww_termios.c_lflag = 0;
+	for (i = 0; i < NCC; i++)
+		wwnewtty.ww_termios.c_cc[i] = _POSIX_VDISABLE;
+#endif
 	wwnewtty.ww_fflags = wwoldtty.ww_fflags | FASYNC;
 	if (wwsettty(0, &wwnewtty, &wwoldtty) < 0)
 		goto bad;
@@ -78,7 +92,15 @@ wwinit()
 		wwerrno = WWE_BADTERM;
 		goto bad;
 	}
+#ifndef POSIX_TTY
 	wwbaud = wwbaudmap[wwoldtty.ww_sgttyb.sg_ospeed];
+#else
+#ifdef CBAUD
+	wwbaud = wwbaudmap[wwoldtty.ww_termios.c_cflag & CBAUD];
+#else
+	wwbaud = wwoldtty.ww_termios.c_ospeed;
+#endif
+#endif
 
 	if (xxinit() < 0)
 		goto bad;
