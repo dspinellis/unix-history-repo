@@ -1,4 +1,4 @@
-/*	locore.s	6.22	84/12/20	*/
+/*	locore.s	6.23	85/01/18	*/
 
 #include "psl.h"
 #include "pte.h"
@@ -50,11 +50,10 @@ _doadump:
 #define	_rpbmap	_Sysmap				# rpb, scb, UNI*vec, istack*4
 	bicl2	$PG_PROT,_rpbmap
 	bisl2	$PG_KW,_rpbmap
-	mtpr	$_rpb,$TBIS
+	mtpr	$0,$TBIA
 	tstl	_rpb+RP_FLAG			# dump only once!
 	bneq	1f
 	incl	_rpb+RP_FLAG
-	mtpr	$0,$TBIA
 	movl	sp,erpb
 	movab	erpb,sp
 	mfpr	$PCBB,-(sp)
@@ -84,9 +83,34 @@ _doadump:
 #define	PUSHR		pushr $0x3f
 #define	POPR		popr $0x3f
 
+	.data
+nofault: .long	0	# where to go on predicted machcheck
+	.text
 SCBVEC(machcheck):
+	tstl	nofault
+	bneq	1f
 	PUSHR; pushab 6*4(sp); calls $1,_machinecheck; POPR;
 	addl2 (sp)+,sp; rei
+	.align	2
+1:
+	casel	_cpu,$1,$VAX_MAX
+0:
+	.word	8f-0b		# 1 is 780
+	.word	5f-0b		# 2 is 750
+	.word	5f-0b		# 3 is 730
+5:
+#if defined(VAX750) || defined(VAX730)
+	mtpr	$0xf,$MCESR
+#endif
+	brb	1f
+8:
+#if VAX780
+	mtpr	$0,$SBIFS
+#endif
+1:
+	addl2	(sp)+,sp		# discard mchchk trash
+	movl	nofault,(sp)
+	rei
 SCBVEC(kspnotval):
 	PUSHR; PANIC("KSP not valid");
 SCBVEC(powfail):
@@ -610,11 +634,11 @@ start:
 	bisw2	$0x0fff,_trap
 	bisw2	$0x0fff,_syscall
 	calls	$0,_fixctlrmask
-/* initialize system page table: scb and int stack writeable */
+/* initialize system page table: uba vectors and int stack writeable */
 	clrl	r2
 	movab	eintstack,r1; bbcc $31,r1,0f; 0: ashl $-PGSHIFT,r1,r1
 1:	bisl3	$PG_V|PG_KW,r2,_Sysmap[r2]; aoblss r1,r2,1b
-/* make rpb read-only as red zone for interrupt stack */
+/* make rpb, scb read-only as red zone for interrupt stack */
 	bicl2	$PG_PROT,_rpbmap
 	bisl2	$PG_KR,_rpbmap
 /* make kernel text space read-only */
@@ -732,37 +756,16 @@ _badaddr:
 	movl	$1,r0
 	mfpr	$IPL,r1
 	mtpr	$HIGH,$IPL
-	movl	_scb+MCKVEC,r2
 	movl	4(ap),r3
 	movl	8(ap),r4
-	movab	9f+INTSTK,_scb+MCKVEC
+	movab	2f,nofault		# jump to 2f on machcheck
 	bbc	$0,r4,1f; tstb	(r3)
 1:	bbc	$1,r4,1f; tstw	(r3)
 1:	bbc	$2,r4,1f; tstl	(r3)
 1:	clrl	r0			# made it w/o machine checks
-2:	movl	r2,_scb+MCKVEC
+2:	clrl	nofault
 	mtpr	r1,$IPL
 	ret
-	.align	2
-9:
-	casel	_cpu,$1,$VAX_MAX
-0:
-	.word	8f-0b		# 1 is 780
-	.word	5f-0b		# 2 is 750
-	.word	5f-0b		# 3 is 730
-5:
-#if defined(VAX750) || defined(VAX730)
-	mtpr	$0xf,$MCESR
-#endif
-	brb	1f
-8:
-#if VAX780
-	mtpr	$0,$SBIFS
-#endif
-1:
-	addl2	(sp)+,sp		# discard mchchk trash
-	movab	2b,(sp)
-	rei
 
 /*
  * update profiling information for the user
@@ -1175,7 +1178,7 @@ sw3:
  * Resume(pf)
  */
 JSBENTRY(Resume, R0)
-	mtpr	$0x1f,$IPL			# no interrupts, please
+	mtpr	$HIGH,$IPL			# no interrupts, please
 	movl	_CMAP2,_u+PCB_CMAP2	# yech
 	svpctx
 	mtpr	r0,$PCBB
