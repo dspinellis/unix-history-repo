@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)tty_pty.c	7.10 (Berkeley) %G%
+ *	@(#)tty_pty.c	7.11 (Berkeley) %G%
  */
 
 /*
@@ -140,7 +140,7 @@ again:
 			    u.u_procp->p_pgrp->pg_jobc == 0 ||
 			    u.u_procp->p_flag&SVFORK)
 				return (EIO);
-			pgsignal(u.u_procp->p_pgrp, SIGTTIN);
+			pgsignal(u.u_procp->p_pgrp, SIGTTIN, 1);
 			if (error = tsleep((caddr_t)&lbolt, TTIPRI | PCATCH,
 			    ttybg, 0))
 				return (error);
