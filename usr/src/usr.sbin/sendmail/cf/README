@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.41 (Berkeley) %G%
+		@(#)README	8.42 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -161,6 +161,8 @@ LOCAL_SHELL_FLAGS	[eu] The flags used by the shell mailer.  The
 			flags lsDFM are always included.
 LOCAL_SHELL_ARGS	[sh -c $u] The arguments passed to deliver "prog"
 			mail.
+LOCAL_SHELL_DIR		[$z:/] The directory search path in which the
+			shell should run.
 USENET_MAILER_PATH	[/usr/lib/news/inews] The name of the program
 			used to submit news.
 USENET_MAILER_FLAGS	[rlsDFMmn] The mailer flags for the usenet mailer.
