@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_cluster.c	7.10 (Berkeley) %G%
+ *	@(#)vfs_cluster.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -702,9 +702,9 @@ loop:
 			if ((bp->b_flags & B_DELWRI) == 0)
 				continue;
 			if (bp->b_vp && bp->b_vp->v_mount == mountp) {
+				splx(s);
 				notavail(bp);
 				(void) bawrite(bp);
-				splx(s);
 				goto loop;
 			}
 		}
@@ -730,17 +730,18 @@ binval(mountp)
 #define dp ((struct buf *)hp)
 
 loop:
-	s = splbio();
 	for (hp = bufhash; hp < &bufhash[BUFHSZ]; hp++) {
 		for (bp = dp->b_forw; bp != dp; bp = bp->b_forw) {
 			if (bp->b_vp == NULL || bp->b_vp->v_mount != mountp)
 				continue;
+			s = splbio();
 			if (bp->b_flags & B_BUSY) {
 				bp->b_flags |= B_WANTED;
 				sleep((caddr_t)bp, PRIBIO+1);
 				splx(s);
 				goto loop;
 			}
+			splx(s);
 			notavail(bp);
 			if (bp->b_flags & B_DELWRI) {
 				(void) bawrite(bp);
