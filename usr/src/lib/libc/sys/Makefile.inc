@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.30 (Berkeley) %G%
+#	@(#)Makefile.inc	5.31 (Berkeley) %G%
 
 # Missing: profil.0, ptrace.0
 
@@ -31,8 +31,7 @@ ASM=	accept.o access.o acct.o adjtime.o bind.o chdir.o chflags.o chmod.o \
 	setsid.o setsockopt.o settimeofday.o setuid.o shutdown.o \
 	sigaction.o sigaltstack.o socket.o socketpair.o stat.o statfs.o \
 	swapon.o symlink.o sync.o umask.o unlink.o unmount.o \
-	utimes.o vadvise.o wait4.o write.o writev.o sem_lock.o \
-	sem_wakeup.o __sysctl.o __indir.o
+	utimes.o vadvise.o wait4.o write.o writev.o __sysctl.o __indir.o
 
 PSEUDO=	_exit.o _getlogin.o
 
