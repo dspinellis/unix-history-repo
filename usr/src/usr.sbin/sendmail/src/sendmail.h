@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	6.38 (Berkeley) %G%
+ *	@(#)sendmail.h	6.39 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	6.38		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	6.39		%G%";
 # endif lint
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -702,6 +702,7 @@ EXTERN long	MinBlocksFree;	/* minimum number of blocks free on queue fs */
 EXTERN char	*QueueLimitRecipient;	/* limit queue runs to this recipient */
 EXTERN char	*QueueLimitSender;	/* limit queue runs to this sender */
 EXTERN char	*QueueLimitId;		/* limit queue runs to this id */
+EXTERN char	*FallBackMX;	/* fall back MX host */
 
 
 /*
