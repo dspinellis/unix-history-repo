@@ -114,13 +114,13 @@ bye()
 makeboard()
 {
     mvaddstr(SCORE_Y + 0, SCORE_X, "+---------------------------------------+");
-    mvaddstr(SCORE_Y + 1, SCORE_X, "|                 YOU                   |");
+    mvaddstr(SCORE_Y + 1, SCORE_X, "|  Score:   0     YOU                   |");
     mvaddstr(SCORE_Y + 2, SCORE_X, "| *.....:.....:.....:.....:.....:.....  |");
     mvaddstr(SCORE_Y + 3, SCORE_X, "| *.....:.....:.....:.....:.....:.....  |");
     mvaddstr(SCORE_Y + 4, SCORE_X, "|                                       |");
     mvaddstr(SCORE_Y + 5, SCORE_X, "| *.....:.....:.....:.....:.....:.....  |");
     mvaddstr(SCORE_Y + 6, SCORE_X, "| *.....:.....:.....:.....:.....:.....  |");
-    mvaddstr(SCORE_Y + 7, SCORE_X, "|                  ME                   |");
+    mvaddstr(SCORE_Y + 7, SCORE_X, "|  Score:   0      ME                   |");
     mvaddstr(SCORE_Y + 8, SCORE_X, "+---------------------------------------+");
     gamescore();
 }
@@ -199,7 +199,6 @@ game()
 	    shuffle(deck);
 	    flag = !playhand(compcrib);
 	    compcrib = !compcrib;
-	    msg("You have %d points, I have %d.", pscore, cscore);
 	} while (flag);
 	++gamecount;
 	if (cscore < pscore) {
