@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)init.8	8.1 (Berkeley) %G%
+.\"     @(#)init.8	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt INIT 8
@@ -90,7 +90,7 @@ If the level 2 mode is desired while running multiuser,
 it can be set in the startup script
 .Pa /etc/rc
 using
-.Xr sysctl 1 .
+.Xr sysctl 8 .
 If it is desired to run the system in level 0 mode while multiuser,
 the administrator must build a kernel with the variable
 .Nm securelevel
