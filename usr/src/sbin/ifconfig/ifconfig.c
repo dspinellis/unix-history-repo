@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ifconfig.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)ifconfig.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -147,7 +147,7 @@ main(argc, argv)
 		    "\t[ metric n ]\n",
 		    "\t[ trailers | -trailers ]\n",
 		    "\t[ arp | -arp ]\n",
-		    "\t[ llc0 | -llc0 ] [ llc1 | -llc1 ] [ llc2 | -llc2 ] \n");
+		    "\t[ link0 | -link0 ] [ link1 | -link1 ] [ link2 | -link2 ] \n");
 		exit(1);
 	}
 	argc--, argv++;
