@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)mv.c	4.3 (Berkeley) 81/02/28";
+static	char *sccsid = "@(#)mv.c	4.4 (Berkeley) 81/04/26";
 /*
  * mv file1 file2
  */
@@ -209,10 +209,6 @@ char *source, *target;
 	}
 	if (access(pname(source), 2) < 0) {
 		fprintf(stderr, "mv: no write access to %s\n", pname(source));
-		return(1);
-	}
-	if (access(source, 2) < 0) {
-		fprintf(stderr, "mv: no write access to %s\n", source);
 		return(1);
 	}
 	if (s1.st_dev != s2.st_dev) {
