@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.28 (Berkeley) %G%
+#	@(#)READ_ME	8.29 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -39,6 +39,9 @@ may help if you share a source tree among different architectures.
 IMPORTANT:  DO NOT USE OPTIMIZATION (``-O'') IF YOU ARE RUNNING GCC
 2.4.x.  THERE IS A BUG IN THE GCC OPTIMIZER THAT CAUSES SENDMAIL TO
 FAIL MISERABLY.
+
+IMPORTANT:  Read the appropriate paragraphs in the section on
+``Operating System and Compile Quirks''.
 
 
 +----------------------+
@@ -333,6 +336,49 @@ Linux
 	extern int opterr;
 	extern int optind;
 
+A/UX
+	Date: Tue, 12 Oct 1993 18:28:28 -0400 (EDT)
+	From: "Eric C. Hagberg" <hagberg@med.cornell.edu>
+	Subject: Fix for A/UX ndbm
+
+	I guess this isn't really a sendmail bug, however, it is something
+	that A/UX users should be aware of when compiling sendmail 8.6.
+
+	Apparently, the calls that sendmail is using to the ndbm routines
+	in A/UX 3.0.x contain calls to "broken" routines, in that the
+	aliases database will break when it gets "just a little big"
+	(sorry I don't have exact numbers here, but it broke somewhere
+	around 20-25 aliases for me.), making all aliases non-functional
+	after exceeding this point.
+
+	What I did was to get the gnu-dbm-1.6 package, compile it, and
+	then re-compile sendmail with "-lgdbm", "-DNDBM", and using the
+	ndbm.h header file that comes with the gnu-package. This makes
+	things behave properly.
+
+	I suppose porting the New Berkeley db package is another route,
+	however, I made a quick attempt at it, and found it difficult
+	(not easy at least); the gnu-dbm package "configured" and
+	compiled easily.
+
+DG/UX
+	Apparently, /bin/mail doesn't work properly for delivery on
+	DG/UX -- the person who has this working, Douglas Anderson
+	<dlander@afterlife.ncsc.mil>, used procmail instead.
+
+Non-DNS based sites
+	This version of sendmail always tries to connect to the Domain
+	Name System (DNS) to resolve names, regardless of the setting
+	of the `I' option.  On most systems that are not running DNS,
+	this will fail quickly and sendmail will continue, but on some
+	systems it has a long timeout.  If you have this problem, you
+	will have to recompile without NAMED_BIND.  Some people have
+	claimed that they have successfully used "OI+USEVC" to force
+	sendmail to use a virtual circuit -- this will always time out
+	quickly, but also tells sendmail that a failed connection
+	should requeue the message (probably not what you intended).
+	A future release of sendmail will correct this problem.
+
 Both NEWDB and NDBM
 	If you use both -DNDBM and -DNEWDB, you must delete the module
 	ndbm.o from libdb.a and delete the file "ndbm.h" from the files
@@ -408,4 +454,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.28, last update %G% 16:01:21)
+(Version 8.29, last update %G% 08:34:23)

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.30 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.31 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -591,6 +591,7 @@ deliver(e, firstto)
 	char rpathbuf[MAXNAME];		/* translated return path */
 	extern int checkcompat();
 	extern FILE *fdopen();
+	extern char SmtpError[];
 
 	errno = 0;
 	if (!ForceMail && bitset(QDONTSEND|QPSEUDO, to->q_flags))
@@ -608,6 +609,7 @@ deliver(e, firstto)
 	host = to->q_host;
 	CurEnv = e;			/* just in case */
 	e->e_statmsg = NULL;
+	SmtpError[0] = '\0';
 
 	if (tTd(10, 1))
 		printf("\n--deliver, mailer=%d, host=`%s', first user=`%s'\n",
@@ -718,7 +720,7 @@ deliver(e, firstto)
 		*pvp = NULL;
 # else /* SMTP */
 		/* oops!  we don't implement SMTP */
-		syserr("554 SMTP style mailer");
+		syserr("554 SMTP style mailer not implemented");
 		return (EX_SOFTWARE);
 # endif /* SMTP */
 	}
@@ -928,6 +930,7 @@ deliver(e, firstto)
 
 	curhost = NULL;
 	SmtpPhase = NULL;
+	mci = NULL;
 
 #ifdef XDEBUG
 	{
@@ -938,7 +941,6 @@ deliver(e, firstto)
 		checkfd012(wbuf);
 	}
 #endif
-
 
 	/* check for Local Person Communication -- not for mortals!!! */
 	if (strcmp(m->m_mailer, "[LPC]") == 0)
@@ -970,7 +972,7 @@ deliver(e, firstto)
 		if (!clever)
 		{
 			syserr("554 non-clever IPC");
-			rcode = EX_OSERR;
+			rcode = EX_CONFIG;
 			goto give_up;
 		}
 		if (pv[2] != NULL)
@@ -978,18 +980,20 @@ deliver(e, firstto)
 		else
 			port = 0;
 tryhost:
-		mci = NULL;
 		while (*curhost != '\0')
 		{
 			register char *p;
 			static char hostbuf[MAXNAME];
 
-			mci = NULL;
-
 			/* pull the next host from the signature */
 			p = strchr(curhost, ':');
 			if (p == NULL)
 				p = &curhost[strlen(curhost)];
+			if (p == curhost)
+			{
+				syserr("deliver: null host name in signature");
+				continue;
+			}
 			strncpy(hostbuf, curhost, p - curhost);
 			hostbuf[p - curhost] = '\0';
 			if (*p != '\0')
@@ -1037,16 +1041,24 @@ tryhost:
 				printf("openmailer: makeconnection => stat=%d, errno=%d\n",
 					i, errno);
 
-
 			/* enter status of this host */
 			setstat(i);
+
+			/* should print some message here for -v mode */
+		}
+		if (mci == NULL)
+		{
+			syserr("deliver: no host name");
+			rcode = EX_OSERR;
+			goto give_up;
 		}
 		mci->mci_pid = 0;
 #else /* no DAEMON */
 		syserr("554 openmailer: no IPC");
 		if (tTd(11, 1))
 			printf("openmailer: NULL\n");
-		return NULL;
+		rcode = EX_UNAVAILABLE;
+		goto give_up;
 #endif /* DAEMON */
 	}
 	else
@@ -1387,7 +1399,8 @@ tryhost:
 #endif
 
 	/* arrange a return receipt if requested */
-	if (e->e_receiptto != NULL && bitnset(M_LOCALMAILER, m->m_flags))
+	if (rcode == EX_OK && e->e_receiptto != NULL &&
+	    bitnset(M_LOCALMAILER, m->m_flags))
 	{
 		e->e_flags |= EF_SENDRECEIPT;
 		/* do we want to send back more info? */
@@ -1411,6 +1424,12 @@ tryhost:
 		{
 			to->q_flags |= QSENT;
 			e->e_nsent++;
+			if (e->e_receiptto != NULL &&
+			    bitnset(M_LOCALMAILER, m->m_flags))
+			{
+				fprintf(e->e_xfp, "%s... Successfully delivered\n",
+					to->q_paddr);
+			}
 		}
 	}
 
@@ -1640,7 +1659,13 @@ giveresponse(stat, m, mci, e)
 	*/
 
 	if (stat == EX_OK || stat == EX_TEMPFAIL)
+	{
+		extern char MsgBuf[];
+
 		message(&statmsg[4], errstring(errno));
+		if (stat == EX_TEMPFAIL && e->e_xfp != NULL)
+			fprintf(e->e_xfp, "%s\n", &MsgBuf[4]);
+	}
 	else
 	{
 		Errors++;
@@ -1855,7 +1880,7 @@ putbody(fp, m, e, separator)
 
 		if (ferror(e->e_dfp))
 		{
-			syserr("putbody: read error");
+			syserr("putbody: %s: read error", e->e_df);
 			ExitStat = EX_IOERR;
 		}
 	}

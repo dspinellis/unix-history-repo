@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.37 (Berkeley) %G%
+ *	@(#)conf.h	8.38 (Berkeley) %G%
  */
 
 /*
@@ -165,6 +165,25 @@
 # endif
 #endif
 
+/*
+** DG/UX 5.4.2
+*/
+
+#ifdef	DGUX
+# define SYSTEM5	1
+# define LA_TYPE	LA_SUBR
+# define HASSTATFS	1	/* has the statfs(2) syscall */
+# define HASSETREUID	1	/* has setreuid(2) call */
+# define HASUNAME	1	/* use System V uname(2) system call */
+# define HASSETSID	1	/* has Posix setsid(2) call */
+# define HASINITGROUPS	1	/* has initgroups(3) call */
+# define HASSETVBUF	1	/* we have setvbuf(3) in libc */
+# undef IDENTPROTO		/* TCP/IP implementation is broken */
+# undef SETPROCTITLE
+# define inet_addr	dgux_inet_addr
+extern long	dgux_inet_addr();
+#endif
+
 
 /*
 **  Digital Ultrix 4.2A or 4.3
@@ -276,7 +295,7 @@ typedef int		pid_t;
 # define HASSTATFS	1	/* has the statfs(2) syscall */
 # define FORK		fork
 # define MAXPATHLEN	PATHSIZE
-# define LA_TYPE	LA_ZERO
+# define LA_TYPE	LA_SHORT
 #endif
 
 
@@ -359,6 +378,7 @@ typedef int		pid_t;
 # define HASUSTAT	1	/* use System V ustat(2) syscall */
 # define HASSETVBUF	1	/* we have setvbuf(3) in libc */
 # define SIGFUNC_DEFINED	/* sigfunc_t already defined */
+# undef IDENTPROTO		/* TCP/IP implementation is broken */
 # define FORK		fork
 # ifndef _PATH_SENDMAILCF
 #  define _PATH_SENDMAILCF	"/usr/lib/sendmail.cf"
@@ -431,8 +451,8 @@ extern struct group	*getgrent(), *getgrnam(), *getgrgid();
 
 /* general POSIX defines */
 #ifdef _POSIX_VERSION
-# define HASSETSID	1	/* has setsid(2) call */
-# define HASWAITPID	1	/* has waitpid(2) call */
+# define HASSETSID	1	/* has Posix setsid(2) call */
+# define HASWAITPID	1	/* has Posix waitpid(2) call */
 #endif
 
 /*
@@ -471,6 +491,10 @@ extern struct group	*getgrent(), *getgrnam(), *getgrgid();
 # ifndef EX_CONFIG
 # define EX_CONFIG	78	/* configuration error */
 # endif
+
+/* pseudo-code used in server SMTP */
+# define EX_QUIT	22	/* drop out of server immediately */
+
 
 /*
 **  These are used in a few cases where we need some special

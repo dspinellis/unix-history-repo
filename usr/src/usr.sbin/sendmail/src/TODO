@@ -1,12 +1,10 @@
-(Version 8.5 of %G%)
+(Version 8.6 of %G%)
 
 Key:
   X -- extension (user visible change)
   B -- bug fix
   S -- security fix
   E -- enhancement to existing algorithm
-
-X ****	Database (keyed lookup) locking and rebuild.
 
 X ****	8 -> 7 bit MIME conversion.
 
@@ -20,9 +18,7 @@ X ****	Merge Sun changes.  [8.7]
 X ****	Provide a way to turn off all DNS lookup in the I option, e.g.,
 	``OIoff''.
 
-E ***	Dynamically allocate MAXNAME buffers for headers.
-
-X ***	Should have new mailer flags to override LocalMailer stuff:
+X ****	Should have new mailer flags to override LocalMailer stuff:
 	- M_ALIASABLE (A) -- can use as the LHS of an alias.
 	- M_HASPWENT (w) -- should have a /etc/passwd entry.  If not found
 	  there, implies user unknown.  Also implies .forward and UDB
@@ -34,31 +30,61 @@ X ***	Should have new mailer flags to override LocalMailer stuff:
 	  should also be split apart.
 	[8.8]
 
+E ***	Dynamically allocate MAXNAME buffers for headers.
+
 X ***	Add ability to disable Return-Receipt-To: on a privacy flag. [8.8]
 
-X **	Handle Expires: header field (if still in queue).
+X ***	Add -P to set precedence (e.g., -Pbulk). [8.8]  (BCX)
+
+X ***	Runtime option to enable/disable IDENT protocol.
+
+X ***	Allow $x in -bt mode to expand macro "x".  (BCX)  [8.8]
+
+X ***	Allow /address in -bt mode to expand address through ruleset 0,
+	aliases, etc. and display results.  [8.8]
+
+E ***	Don't send ErrMsgFile to postmaster bounces.  (Josh Smith,
+	josh@osiris.ac.hmc.edu).
+
+X ***	Add "user" map to look up a user name via getpwnam -- so that
+	non-local names can be forwarded to another site.  [8.8]
+
+E **	Allow :include: from command line (not SMTP) to assist in
+	"personal list" management -- i.e., creating lists that
+	cannot be EXPNed.
+
+X **	Database (keyed lookup) auto-rebuild.
 
 X **	Find a good test suite and include in the distribution.
 
-S **	[AEJ] You can use symbolic links to point into protected directories.
+S **	You can use symbolic links to point into protected directories.
+	(AEJ)
 
 X **	Extend OI to allow separate settings for canonification, MX, and A
-	lookups. [8.8?]
+	lookups.  [8.8?]
 
-X **	Add $!x class to match any number of words not in class x [KRE].
+X **	Add $!x class to match any number of words not in class x. (KRE)
 
 X **	LOCAL_RULE_5 (Spencer Sun, spencer@phoenix.Princeton.EDU)
-
-X **	Add "null" map -- no transformation, always returns TRUE, to
-	allow you to break $&x into tokens.  Could be related to dequote.
-	[8.7?]
 
 X **	Add "bestmx" map -- returns "best MX host" for this address.
 	Allows you to do automatic detection of when you are the best
 	MX for a given address.  [8.7?]
 
-E *	Don't send ErrMsgFile to postmaster bounces.  (Josh Smith,
-	josh@osiris.ac.hmc.edu).
+X **	Extend makemap to "gather" values -- i.e., merge entries that
+	have the same keys. [8.8]  (BCX)
+
+E **	Allow error messages on individual addresses in the qf file.
+	(BCX)
+
+X **	Multi-character option names.  [9.1]
+
+X **	User database extensions for mailing lists:
+	list:precedence -- Precedence: value for new message
+	list:envelopefrom -- envelope "from" value for new message
+	others?  [8.8]
+
+X *	Handle Expires: header field (if still in queue).
 
 X *	WIN/3B support (non-atomic rename, no h_addr_list, others?)
 	(Bruce Lilly <blilly!bruce@uu.psi.com>)

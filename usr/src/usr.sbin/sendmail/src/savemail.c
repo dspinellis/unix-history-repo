@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.14 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -571,7 +571,23 @@ errbody(fp, m, e)
 	**  Output introductory information.
 	*/
 
-	sprintf(buf, "The original message was received at %s", arpadate(NULL));
+	for (q = e->e_parent->e_sendqueue; q != NULL; q = q->q_next)
+		if (bitset(QBADADDR, q->q_flags))
+			break;
+	if (q == NULL)
+	{
+		putline("    **********************************************",
+			fp, m);
+		putline("    **      THIS IS A WARNING MESSAGE ONLY      **",
+			fp, m);
+		putline("    **  YOU DO NOT NEED TO RESEND YOUR MESSAGE  **",
+			fp, m);
+		putline("    **********************************************",
+			fp, m);
+		putline("", fp, m);
+	}
+	sprintf(buf, "The original message was received at %s",
+		arpadate(ctime(&e->e_parent->e_ctime)));
 	putline(buf, fp, m);
 	expand("from \201_", buf, &buf[sizeof buf - 1], e->e_parent);
 	putline(buf, fp, m);

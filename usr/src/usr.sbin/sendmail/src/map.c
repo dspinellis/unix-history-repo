@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -59,6 +59,8 @@ static char sccsid[] = "@(#)map.c	8.16 (Berkeley) %G%";
 */
 
 #define DBMMODE		0644
+
+extern bool	aliaswait __P((MAP *, char *, int));
 /*
 **  MAP_PARSEARGS -- parse config line arguments for database lookup
 **
@@ -397,14 +399,19 @@ ndbm_map_open(map, mode)
 	dbm = dbm_open(map->map_file, mode, DBMMODE);
 	if (dbm == NULL)
 	{
+#ifdef MAYBENEXTRELEASE
+		if (aliaswait(map, ".pag", FALSE))
+			return TRUE;
+#endif
 		if (!bitset(MF_OPTIONAL, map->map_mflags))
 			syserr("Cannot open DBM database %s", map->map_file);
 		return FALSE;
 	}
 	map->map_db1 = (void *) dbm;
 	if (mode == O_RDONLY && bitset(MF_ALIAS, map->map_mflags))
-		aliaswait(map, ".pag");
-	if (fstat(dbm_dirfno(dbm), &st) >= 0)
+		if (!aliaswait(map, ".pag", TRUE))
+			return FALSE;
+	if (fstat(dbm_dirfno((DBM *) map->map_db1), &st) >= 0)
 		map->map_mtime = st.st_mtime;
 	return TRUE;
 }
@@ -595,6 +602,10 @@ bt_map_open(map, mode)
 	db = dbopen(buf, omode, DBMMODE, DB_BTREE, NULL);
 	if (db == NULL)
 	{
+#ifdef MAYBENEXTRELEASE
+		if (aliaswait(map, ".db", FALSE))
+			return TRUE;
+#endif
 		if (!bitset(MF_OPTIONAL, map->map_mflags))
 			syserr("Cannot open BTREE database %s", map->map_file);
 		return FALSE;
@@ -628,7 +639,8 @@ bt_map_open(map, mode)
 
 	map->map_db2 = (void *) db;
 	if (mode == O_RDONLY && bitset(MF_ALIAS, map->map_mflags))
-		aliaswait(map, ".db");
+		if (!aliaswait(map, ".db", TRUE))
+			return FALSE;
 	return TRUE;
 }
 
@@ -674,6 +686,10 @@ hash_map_open(map, mode)
 	db = dbopen(buf, omode, DBMMODE, DB_HASH, NULL);
 	if (db == NULL)
 	{
+#ifdef MAYBENEXTRELEASE
+		if (aliaswait(map, ".db", FALSE))
+			return TRUE;
+#endif
 		if (!bitset(MF_OPTIONAL, map->map_mflags))
 			syserr("Cannot open HASH database %s", map->map_file);
 		return FALSE;
@@ -707,7 +723,8 @@ hash_map_open(map, mode)
 
 	map->map_db2 = (void *) db;
 	if (mode == O_RDONLY && bitset(MF_ALIAS, map->map_mflags))
-		aliaswait(map, ".db");
+		if (!aliaswait(map, ".db", TRUE))
+			return FALSE;
 	return TRUE;
 }
 
@@ -1159,11 +1176,13 @@ impl_map_open(map, mode)
 	struct stat stb;
 
 	if (tTd(38, 2))
-		printf("impl_map_open(%s)\n", map->map_file);
+		printf("impl_map_open(%s, %d)\n", map->map_file, mode);
 
 	if (stat(map->map_file, &stb) < 0)
 	{
 		/* no alias file at all */
+		if (tTd(38, 3))
+			printf("no map file\n");
 		return FALSE;
 	}
 

@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	8.16 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.17 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	8.16 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.17 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -90,10 +90,7 @@ static struct cmd	CmdTab[] =
 	NULL,		CMDERROR,
 };
 
-bool	InChild = FALSE;		/* true if running in a subprocess */
 bool	OneXact = FALSE;		/* one xaction only this run */
-
-#define EX_QUIT		22		/* special code for QUIT command */
 
 static char	*skipword();
 
@@ -434,7 +431,9 @@ smtp(e)
 			e->e_to = p;
 			if (!bitset(QBADADDR, a->q_flags))
 			{
-				message("250 Recipient ok");
+				message("250 Recipient ok%s",
+					bitset(QQUEUEUP, a->q_flags) ?
+						" (will queue)" : "");
 				nrcpts++;
 			}
 			else
@@ -452,7 +451,7 @@ smtp(e)
 				message("503 Need MAIL command");
 				break;
 			}
-			else if (e->e_nrcpts <= 0)
+			else if (nrcpts <= 0)
 			{
 				message("503 Need RCPT (recipient)");
 				break;

@@ -10,7 +10,7 @@
 # include <pwd.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)alias.c	8.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)alias.c	8.17 (Berkeley) %G%";
 #endif /* not lint */
 
 
@@ -254,11 +254,25 @@ setalias(spec)
 **  ALIASWAIT -- wait for distinguished @:@ token to appear.
 **
 **	This can decide to reopen or rebuild the alias file
+**
+**	Parameters:
+**		map -- a pointer to the map descriptor for this alias file.
+**		ext -- the filename extension (e.g., ".db") for the
+**			database file.
+**		isopen -- if set, the database is already open, and we
+**			should check for validity; otherwise, we are
+**			just checking to see if it should be created.
+**
+**	Returns:
+**		TRUE -- if the database is open when we return.
+**		FALSE -- if the database is closed when we return.
 */
 
-aliaswait(map, ext)
+bool
+aliaswait(map, ext, isopen)
 	MAP *map;
 	char *ext;
+	int isopen;
 {
 	int atcnt;
 	time_t mtime;
@@ -277,7 +291,7 @@ aliaswait(map, ext)
 	{
 		auto int st;
 
-		while (atcnt-- >= 0 &&
+		while (isopen && atcnt-- >= 0 &&
 		       map->map_class->map_lookup(map, "@", NULL, &st) == NULL)
 		{
 			/*
@@ -290,7 +304,7 @@ aliaswait(map, ext)
 
 			map->map_class->map_close(map);
 			sleep(30);
-			map->map_class->map_open(map, O_RDONLY);
+			isopen = map->map_class->map_open(map, O_RDONLY);
 		}
 	}
 
@@ -300,14 +314,14 @@ aliaswait(map, ext)
 		if (tTd(27, 3))
 			printf("aliaswait: not rebuildable\n");
 		map->map_mflags &= ~MF_ALIASWAIT;
-		return;
+		return isopen;
 	}
 	if (stat(map->map_file, &stb) < 0)
 	{
 		if (tTd(27, 3))
 			printf("aliaswait: no source file\n");
 		map->map_mflags &= ~MF_ALIASWAIT;
-		return;
+		return isopen;
 	}
 	mtime = stb.st_mtime;
 	(void) strcpy(buf, map->map_file);
@@ -319,7 +333,10 @@ aliaswait(map, ext)
 		if (AutoRebuild && stb.st_ino != 0 && stb.st_uid == geteuid())
 		{
 			message("auto-rebuilding alias database %s", buf);
+			if (isopen)
+				map->map_class->map_close(map);
 			rebuildaliases(map, TRUE);
+			isopen = map->map_class->map_open(map, O_RDONLY);
 		}
 		else
 		{
@@ -332,6 +349,7 @@ aliaswait(map, ext)
 		}
 	}
 	map->map_mflags &= ~MF_ALIASWAIT;
+	return isopen;
 }
 /*
 **  REBUILDALIASES -- rebuild the alias database.
