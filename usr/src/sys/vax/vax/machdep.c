@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)machdep.c	6.19 (Berkeley) %G%
+ *	@(#)machdep.c	6.20 (Berkeley) %G%
  */
 
 #include "reg.h"
@@ -233,34 +233,19 @@ startup(firstaddr)
 		nbuf, bufpages * CLBYTES);
 	rminit(kernelmap, (long)USRPTSIZE, (long)1,
 	    "usrpt", nproc);
-	rminit(mbmap, (long)((nmbclusters - 1) * CLSIZE), (long)CLSIZE,
+	rminit(mbmap, (long)(nmbclusters * CLSIZE), (long)CLSIZE,
 	    "mbclusters", nmbclusters/4);
+
+	/*
+	 * Set up CPU-specific registers, cache, etc.
+	 */
+	initcpu();
 
 	/*
 	 * Configure the system.
 	 */
 	configure();
-	switch (cpu) {
 
-	case VAX_780:
-		setcache(0x200000);
-		break;
-	case VAX_750:
-	case VAX_730:
-		setcache(0);
-		break;
-	case VAX_8600:
-		setcache(3);
-		break;
-	}
-
-#if VAX8600
-	/*
-	 * Enable Fbox on 8600 if it exists
-	 */
-	if ((cpu == VAX_8600) && ((mfpr(ACCS) & 0xff) != 0))
-		mtpr(ACCS, 0x8000);
-#endif
 	/*
 	 * Clear restart inhibit flags.
 	 */
@@ -1035,24 +1020,45 @@ physstrat(bp, strat, prio)
 	splx(s);
 }
 
-setcache(val)
-int val;
+initcpu()
 {
-	switch(cpu) {
+	/*
+	 * Enable cache.
+	 */
+	switch (cpu) {
+
 #if VAX780
 	case VAX_780:
-		mtpr(SBIMT, val);
+		mtpr(SBIMT, 0x200000);
 		break;
 #endif
 #if VAX750
 	case VAX_750:
-		mtpr(CADR, val);
+		mtpr(CADR, 0);
 		break;
 #endif
 #if VAX8600
 	case VAX_8600:
-		mtpr(CSWP, val);
+		mtpr(CSWP, 3);
 		break;
+#endif
+	default:
+		break;
+	}
+
+	/*
+	 * Enable floating point accelerator if it exists
+	 * and has control register.
+	 */
+	switch(cpu) {
+
+#if VAX8600 || VAX780
+	case VAX_780:
+	case VAX_8600:
+		if ((mfpr(ACCS) & 0xff) != 0) {
+			printf("Enabling FPA\n");
+			mtpr(ACCS, 0x8000);
+		}
 #endif
 	default:
 		break;
