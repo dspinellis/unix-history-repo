@@ -1,7 +1,7 @@
 .nr DR 1	\" this is a draft copy
 .nr si 3n
 .he 'SENDMAIL''%'
-.if \n(DR .fo 'For Your Eyes Only'\*-DRAFT\*-'\*(td'
+.if \n(DR .fo '\*-DRAFT\*-'\*(td'\*-DRAFT\*-'
 .ls 2
 .+c
 .(l C
@@ -21,7 +21,7 @@ Berkeley, California  94720
 .(f
 This is
 .if \n(DR draft
-version 3.14,
+version 3.15,
 last modified on %G%.
 .if \n(DR Please do not distribute this version without permission
 .if \n(DR of the author.
@@ -127,6 +127,9 @@ In short,
 .i sendmail
 is glue that holds the world together
 until the new world is ready to be inhabited.
+However, it is not unreasonable to expect
+escrow to take several years to close on this
+new world.
 .sp
 .pp
 Section 1 discusses the design goals for
@@ -147,7 +150,7 @@ including future plans.
 .sh 1 "DESIGN GOALS"
 .pp
 .i Sendmail
-was an outgrowth of
+is an outgrowth of
 .i delivermail,
 a previous incarnation of a UNIX internetwork mail router.
 .i Delivermail
@@ -283,14 +286,13 @@ Figure 1 \*- Delivermail System Structure.
 .)z
 The user interacts with a mail generating and sending program.
 When the mail is created,
-generator calls
+the generator calls
 .i delivermail ,
 which routes the message to the correct mailer(s).
 Since some of the senders may be network servers
 and some of the mailers may be network users,
 .i delivermail
-is referred to as an
-.q "internet mailer" .
+may be used as an internet mail gateway.
 .pp
 .i Sendmail
 maintained the goals of
@@ -1925,15 +1927,12 @@ MMDF
 spans a wider problem set than
 .i sendmail .
 For example,
+the domain of
 MMDF includes a
 .q "phone network"
 mailer, whereas
 .i sendmail
 calls on preexisting mailers in most cases.
-MMDF
-did not try to fit into the constraints of existing mailers,
-and thus avoids some of the problems of
-.i sendmail .
 .pp
 MMDF and
 .i sendmail
@@ -1943,6 +1942,10 @@ message batching,
 automatic forwarding to gateways,
 queueing,
 and retransmission.
+MMDF supports two-stage timeout,
+which
+.i sendmail
+does not currently support.
 .sh 2 "Message Processing Module"
 .pp
 The Message Processing Module (MPM)
@@ -2502,6 +2505,9 @@ aliases are printed as expanded
 and mailer functions are printed as they run.
 .ip \-q
 Try to execute the queued up mail.
+.ip \-p
+Verify as much about the addresses and message as possible
+and then politely run in background.
 .ip \-D
 Run as a daemon.
 This automatically runs SMTP.
