@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)trap.c	7.3.1.1 (Berkeley) %G%
+ *	@(#)trap.c	7.6 (Berkeley) %G%
  */
 
 #include "psl.h"
@@ -12,7 +12,6 @@
 
 #include "param.h"
 #include "systm.h"
-#include "dir.h"
 #include "user.h"
 #include "assym.s"
 #include "proc.h"
@@ -20,8 +19,8 @@
 #include "trap.h"
 #include "acct.h"
 #include "kernel.h"
-#ifdef SYSCALLTRACE
-#include "../kern/syscalls.c"
+#ifdef KTRACE
+#include "ktrace.h"
 #endif
 
 #include "mtpr.h"
@@ -61,6 +60,7 @@ trap(sp, type, code, pc, psl)
 {
 	register int *locr0 = ((int *)&psl)-PS;
 	register int i;
+	unsigned ucode = code;
 	register struct proc *p;
 	struct timeval syst;
 
@@ -89,7 +89,7 @@ trap(sp, type, code, pc, psl)
 	case T_PRIVINFLT+USER:	/* privileged instruction fault */
 	case T_RESADFLT+USER:	/* reserved addressing fault */
 	case T_RESOPFLT+USER:	/* reserved operand fault */
-		u.u_code = type &~ USER;
+		ucode = type &~ USER;
 		i = SIGILL;
 		break;
 
@@ -102,7 +102,6 @@ trap(sp, type, code, pc, psl)
 		goto out;
 
 	case T_ARITHTRAP+USER:
-		u.u_code = code;
 		i = SIGFPE;
 		break;
 
@@ -141,11 +140,10 @@ trap(sp, type, code, pc, psl)
 
 	case T_COMPATFLT+USER:	/* compatibility mode fault */
 		u.u_acflag |= ACOMPAT;
-		u.u_code = code;
 		i = SIGILL;
 		break;
 	}
-	psignal(u.u_procp, i);
+	trapsignal(i, ucode);
 out:
 	p = u.u_procp;
 	if (p->p_cursig || ISSIG(p))
@@ -179,9 +177,6 @@ out:
 	curpri = p->p_pri;
 }
 
-#ifdef SYSCALLTRACE
-int syscalltrace = 0;
-#endif
 /*
  * Called from the trap handler when a system call occurs
  */
@@ -223,8 +218,16 @@ syscall(sp, type, code, pc, psl)
 	    (u.u_error = copyin(params, (caddr_t)u.u_arg, (u_int)i)) != 0) {
 		locr0[R0] = u.u_error;
 		locr0[PS] |= PSL_C;	/* carry bit */
+#ifdef KTRACE
+                if (KTRPOINT(p, KTR_SYSCALL))
+                        ktrsyscall(p->p_tracep, code, callp->sy_narg);
+#endif
 		goto done;
 	}
+#ifdef KTRACE
+        if (KTRPOINT(p, KTR_SYSCALL))
+                ktrsyscall(p->p_tracep, code, callp->sy_narg);
+#endif
 	u.u_r.r_val1 = 0;
 	u.u_r.r_val2 = locr0[R1];
 	if (setjmp(&u.u_qsave)) {
@@ -232,26 +235,7 @@ syscall(sp, type, code, pc, psl)
 			u.u_error = EINTR;
 	} else {
 		u.u_eosys = NORMALRETURN;
-#ifdef SYSCALLTRACE
-		if (syscalltrace) {
-			register int i;
-			char *cp;
-
-			if (code >= nsysent)
-				printf("0x%x", code);
-			else
-				printf("%s", syscallnames[code]);
-			cp = "(";
-			for (i= 0; i < callp->sy_narg; i++) {
-				printf("%s%x", cp, u.u_arg[i]);
-				cp = ", ";
-			}
-			if (i)
-				putchar(')', 0);
-			putchar('\n', 0);
-		}
-#endif
-		(*(callp->sy_call))();
+		(*(callp->sy_call))(&u);
 	}
 	if (u.u_eosys == NORMALRETURN) {
 		if (u.u_error) {
@@ -267,6 +251,10 @@ syscall(sp, type, code, pc, psl)
 	/* else if (u.u_eosys == JUSTRETURN) */
 		/* nothing to do */
 done:
+	/*
+	 * Reinitialize proc pointer `p' as it may be different
+	 * if this is a child returning from fork syscall.
+	 */
 	p = u.u_procp;
 	if (p->p_cursig || ISSIG(p))
 		psig();
@@ -295,16 +283,8 @@ done:
 			addupc(locr0[PC], &u.u_prof, ticks);
 	}
 	curpri = p->p_pri;
-}
-
-/*
- * nonexistent system call-- signal process (may want to handle it)
- * flag error if process won't see signal immediately
- * Q: should we do that all the time ??
- */
-nosys()
-{
-	if (u.u_signal[SIGSYS] == SIG_IGN || u.u_signal[SIGSYS] == SIG_HOLD)
-		u.u_error = EINVAL;
-	psignal(u.u_procp, SIGSYS);
+#ifdef KTRACE
+        if (KTRPOINT(p, KTR_SYSRET))
+                ktrsysret(p->p_tracep, code);
+#endif
 }
