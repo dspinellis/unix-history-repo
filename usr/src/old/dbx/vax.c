@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)vax.c 1.3 %G%";
+static char sccsid[] = "@(#)vax.c 1.4 %G%";
 
 /*
  * Target machine dependent stuff.
@@ -418,6 +418,7 @@ String format;
 
 /*
  * Print out an execution time error.
+ * Assumes the source position of the error has been calculated.
  *
  * Have to check if the -r option was specified; if so then
  * the object file information hasn't been read in yet.
@@ -427,7 +428,6 @@ public printerror()
 {
     extern Integer sys_nsig;
     extern String sys_siglist[];
-    String filename;
     Integer err;
 
     if (isfinished(process)) {
@@ -439,10 +439,6 @@ public printerror()
 	init();
 	fprintf(stderr, " type 'help' for help\n");
     }
-    curline = srcline(pc);
-    curfunc = whatblock(pc);
-    filename = srcfilename(pc);
-    setsource(filename);
     err = errnum(process);
     if (err == SIGINT) {
 	printf("\n\ninterrupt ");
