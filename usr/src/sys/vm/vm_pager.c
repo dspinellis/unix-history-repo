@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_pager.c	8.2 (Berkeley) %G%
+ *	@(#)vm_pager.c	8.3 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -64,12 +64,18 @@ extern struct pagerops devicepagerops;
 struct pagerops *pagertab[] = {
 #ifdef SWAPPAGER
 	&swappagerops,		/* PG_SWAP */
+#else
+	NULL,
 #endif
 #ifdef VNODEPAGER
 	&vnodepagerops,		/* PG_VNODE */
+#else
+	NULL,
 #endif
 #ifdef DEVPAGER
 	&devicepagerops,	/* PG_DEV */
+#else
+	NULL,
 #endif
 };
 int npagers = sizeof (pagertab) / sizeof (pagertab[0]);
@@ -98,13 +104,16 @@ vm_pager_init()
 	 * Initialize known pagers
 	 */
 	for (pgops = pagertab; pgops < &pagertab[npagers]; pgops++)
-		(*(*pgops)->pgo_init)();
+		if (pgops)
+			(*(*pgops)->pgo_init)();
 	if (dfltpagerops == NULL)
 		panic("no default pager");
 }
 
 /*
  * Allocate an instance of a pager of the given type.
+ * Size, protection and offset parameters are passed in for pagers that
+ * need to perform page-level validation (e.g. the device pager).
  */
 vm_pager_t
 vm_pager_allocate(type, handle, size, prot, off)
@@ -118,7 +127,9 @@ vm_pager_allocate(type, handle, size, prot, off)
 	struct pagerops *ops;
 
 	ops = (type == PG_DFLT) ? dfltpagerops : pagertab[type];
-	return ((*ops->pgo_alloc)(handle, size, prot, off));
+	if (ops)
+		return ((*ops->pgo_alloc)(handle, size, prot, off));
+	return (NULL);
 }
 
 void
@@ -175,7 +186,8 @@ vm_pager_sync()
 	struct pagerops **pgops;
 
 	for (pgops = pagertab; pgops < &pagertab[npagers]; pgops++)
-		(*(*pgops)->pgo_putpage)(NULL, NULL, FALSE);
+		if (pgops)
+			(*(*pgops)->pgo_putpage)(NULL, NULL, FALSE);
 }
 
 vm_offset_t
