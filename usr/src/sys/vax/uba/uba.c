@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uba.c	7.4 (Berkeley) %G%
+ *	@(#)uba.c	7.5 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -139,13 +139,16 @@ ubadone(um)
  *	Bits 28-31	BDP no.
  */
 ubasetup(uban, bp, flags)
-	struct buf *bp;
+	int uban;
+	register struct buf *bp;
+	register int flags;
 {
 	register struct uba_hd *uh = &uba_hd[uban];
-	int pfnum, temp;
-	int npf, reg, bdp;
-	unsigned v;
 	register struct pte *pte, *io;
+	register int npf;
+	int pfnum, temp;
+	int reg, bdp;
+	unsigned v;
 	struct proc *rp;
 	int a, o, ubinfo;
 
@@ -157,7 +160,6 @@ ubasetup(uban, bp, flags)
 	if (uh->uh_type == QBA)
 		flags &= ~UBA_NEEDBDP;
 #endif
-	v = btop(bp->b_un.b_addr);
 	o = (int)bp->b_un.b_addr & PGOFSET;
 	npf = btoc(bp->b_bcount + o) + 1;
 	a = spluba();
@@ -198,24 +200,27 @@ ubasetup(uban, bp, flags)
 	temp = (bdp << 21) | UBAMR_MRV;
 	if (bdp && (o & 01))
 		temp |= UBAMR_BO;
-	rp = bp->b_flags&B_DIRTY ? &proc[2] : bp->b_proc;
 	if ((bp->b_flags & B_PHYS) == 0)
-		pte = &Sysmap[btop(((int)bp->b_un.b_addr)&0x7fffffff)];
-	else if (bp->b_flags & B_UAREA)
-		pte = &rp->p_addr[v];
+		pte = kvtopte(bp->b_un.b_addr);
 	else if (bp->b_flags & B_PAGET)
 		pte = &Usrptmap[btokmx((struct pte *)bp->b_un.b_addr)];
-	else
-		pte = vtopte(rp, v);
+	else {
+		rp = bp->b_flags&B_DIRTY ? &proc[2] : bp->b_proc;
+		v = btop(bp->b_un.b_addr);
+		if (bp->b_flags & B_UAREA)
+			pte = &rp->p_addr[v];
+		else
+			pte = vtopte(rp, v);
+	}
 	io = &uh->uh_mr[reg];
-	while (--npf != 0) {
+	while (--npf > 0) {
 		pfnum = pte->pg_pfnum;
 		if (pfnum == 0)
 			panic("uba zero uentry");
 		pte++;
 		*(int *)io++ = pfnum | temp;
 	}
-	*(int *)io++ = 0;
+	*(int *)io = 0;
 	return (ubinfo);
 }
 
@@ -266,6 +271,11 @@ ubarelse(uban, amr)
 	bdp = (mr >> 28) & 0x0f;
 	if (bdp) {
 		switch (uh->uh_type) {
+#ifdef DWBUA
+		case DWBUA:
+			BUA(uh->uh_uba)->bua_dpr[bdp] |= BUADPR_PURGE;
+			break;
+#endif
 #ifdef DW780
 		case DW780:
 			uh->uh_uba->uba_dpr[bdp] |= UBADPR_BNE;
@@ -317,6 +327,11 @@ ubapurge(um)
 	register int bdp = (um->um_ubinfo >> 28) & 0x0f;
 
 	switch (uh->uh_type) {
+#ifdef DWBUA
+	case DWBUA:
+		BUA(uh->uh_uba)->bua_dpr[bdp] |= BUADPR_PURGE;
+		break;
+#endif
 #ifdef DW780
 	case DW780:
 		uh->uh_uba->uba_dpr[bdp] |= UBADPR_BNE;
@@ -338,6 +353,11 @@ ubainitmaps(uhp)
 
 	rminit(uhp->uh_map, (long)uhp->uh_memsize, (long)1, "uba", UAMSIZ);
 	switch (uhp->uh_type) {
+#ifdef DWBUA
+	case DWBUA:
+		uhp->uh_bdpfree = (1<<NBDPBUA) - 1;
+		break;
+#endif
 #ifdef DW780
 	case DW780:
 		uhp->uh_bdpfree = (1<<NBDP780) - 1;
@@ -398,13 +418,17 @@ ubainit(uba)
 	register struct uba_regs *uba;
 {
 	register struct uba_hd *uhp;
+#ifdef QBA
 	int isphys = 0;
+#endif
 
 	for (uhp = uba_hd; uhp < uba_hd + numuba; uhp++) {
 		if (uhp->uh_uba == uba)
 			break;
 		if (uhp->uh_physuba == uba) {
+#ifdef QBA
 			isphys++;
+#endif
 			break;
 		}
 	}
@@ -414,6 +438,13 @@ ubainit(uba)
 	}
 
 	switch (uhp->uh_type) {
+#ifdef DWBUA
+	case DWBUA:
+		BUA(uba)->bua_csr |= BUACSR_UPI;
+		/* give devices time to recover from power fail */
+		DELAY(500000);
+		break;
+#endif
 #ifdef DW780
 	case DW780:
 		uba->uba_cr = UBACR_ADINIT;
@@ -644,13 +675,13 @@ maptouser(vaddress)
 	caddr_t vaddress;
 {
 
-	Sysmap[(((unsigned)(vaddress))-0x80000000) >> 9].pg_prot = (PG_UW>>27);
+	kvtopte(vaddress)->pg_prot = (PG_UW >> 27);
 }
 
 unmaptouser(vaddress)
 	caddr_t vaddress;
 {
 
-	Sysmap[(((unsigned)(vaddress))-0x80000000) >> 9].pg_prot = (PG_KW>>27);
+	kvtopte(vaddress)->pg_prot = (PG_KW >> 27);
 }
 #endif

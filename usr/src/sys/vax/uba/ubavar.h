@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ubavar.h	7.3 (Berkeley) %G%
+ *	@(#)ubavar.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -63,6 +63,10 @@ struct	uba_hd {
 #define	UAMSIZ	100
 	struct	map *uh_map;		/* buffered data path regs free */
 };
+
+/* given a pointer to uba_regs, find DWBUA registers */
+/* this should be replaced with a union in uba_hd */
+#define	BUA(uba)	((struct dwbua_regs *)(uba))
 
 /*
  * Per-controller structure.
@@ -184,7 +188,7 @@ extern	struct	uba_ctlr ubminit[];
 extern	struct	uba_device ubdinit[];
 
 /*
- * UNIbus device address space is mapped by UMEMmap
+ * UNIBUS device address space is mapped by UMEMmap
  * into virtual address umem[][].
  * The IO page is mapped to the last 8K of each.
  * This should be enlarged for the Q22 bus.
@@ -196,12 +200,10 @@ extern	char umem[][512*NBPG];		/* uba device addr space */
  * Since some VAXen vector their unibus interrupts
  * just adjacent to the system control block, we must
  * allocate space there when running on ``any'' cpu.  This space is
- * used for the vectors for uba0 and uba1 on all cpu's but 8600's.
+ * used for the vectors for all ubas.
  */
-extern	int (*UNIvec[])();			/* unibus vec for uba0 */
-#if NUBA > 1
-extern	int (*UNI1vec[])();			/* unibus vec for uba1 */
-#endif
+extern	int (*UNIvec[][128])();			/* unibus vec for ubas */
+extern	int (*eUNIvec)();			/* end of unibus vec */
 
 #if defined(VAX780) || defined(VAX8600)
 /*
