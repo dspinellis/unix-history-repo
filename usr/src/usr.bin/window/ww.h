@@ -1,5 +1,5 @@
 /*
- * @(#)ww.h	3.33 %G%	
+ * @(#)ww.h	3.34 %G%	
  */
 
 #include <sgtty.h>
@@ -238,5 +238,3 @@ char *sprintf();
 #undef MAX
 #define MIN(x, y)	((x) > (y) ? (y) : (x))
 #define MAX(x, y)	((x) > (y) ? (x) : (y))
-
-#define sigmask(s)	(1 << (s) - 1)
