@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.15 (Berkeley) %G%
+#	@(#)Makefile	5.16 (Berkeley) %G%
 
 PROG=	boggle
 MAN6=	boggle.0
@@ -7,7 +7,7 @@ LDADD=	-lcompat
 HIDEGAME=hidegame
 CLEANFILES=comp bogdict
 
-all: boggle
+all: ${PROG} ${MAN6}
 
 boggle: bogdict
 
