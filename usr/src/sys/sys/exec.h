@@ -1,17 +1,16 @@
-/*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1982, 1986 The Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)exec.h	7.4 (Berkeley) %G%
+ * %sccs.include.redist.c%
+ *
+ *	@(#)exec.h	7.5 (Berkeley) %G%
  */
 
-#ifndef _EXEC_H_
+#ifndef	_EXEC_H_
 #define	_EXEC_H_
 
-/*
- * Header prepended to each a.out file.
- */
+/* Header prepended to each a.out file. */
 struct exec {
 #if !defined(vax) && !defined(tahoe) && !defined(i386)
 unsigned short	a_mid;		/* machine ID */
@@ -19,20 +18,20 @@ unsigned short	a_magic;	/* magic number */
 #else
 	 long	a_magic;	/* magic number */
 #endif
-unsigned long	a_text;		/* size of text segment */
-unsigned long	a_data;		/* size of initialized data */
-unsigned long	a_bss;		/* size of uninitialized data */
-unsigned long	a_syms;		/* size of symbol table */
+unsigned long	a_text;		/* text segment size */
+unsigned long	a_data;		/* initialized data size */
+unsigned long	a_bss;		/* uninitialized data size */
+unsigned long	a_syms;		/* symbol table size */
 unsigned long	a_entry;	/* entry point */
-unsigned long	a_trsize;	/* size of text relocation */
-unsigned long	a_drsize;	/* size of data relocation */
+unsigned long	a_trsize;	/* text relocation size */
+unsigned long	a_drsize;	/* data relocation size */
 };
 #define	a_machtype	a_mid	/* SUN compatibility */
 
 /* a_magic */
-#define	OMAGIC	0407		/* old impure format */
-#define	NMAGIC	0410		/* read-only text */
-#define	ZMAGIC	0413		/* demand load format */
+#define	OMAGIC		0407	/* old impure format */
+#define	NMAGIC		0410	/* read-only text */
+#define	ZMAGIC		0413	/* demand load format */
 
 /* a_mid */
 #define	MID_ZERO	0	/* unknown - implementation dependent */
