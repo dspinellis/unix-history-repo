@@ -1,4 +1,4 @@
-/*	kdb_access.c	7.1	86/11/20	*/
+/*	kdb_access.c	7.2	86/11/20	*/
 
 /*
  * Access data in kernel address space.
@@ -19,7 +19,7 @@ get(addr, space)
 
 u_int
 chkget(addr, space)
-    off_t addr; { return (get(addr, space)); }
+    off_t addr; { u_int w = get(addr, space); chkerr(); return (w); }
 
 u_int
 bchkget(addr, space) 
