@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	4.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	4.5 (Berkeley) %G%";
 #endif
 
 /*
@@ -90,7 +90,7 @@ abortpr()
 		return;
 	}
 	if (!getline(fp) || flock(fileno(fp), LOCK_SH|LOCK_NB) == 0) {
-		(void) fclose(fp);
+		(void) fclose(fp);	/* unlocks as well */
 		printf("\tno daemon to abort\n");
 		return;
 	}
@@ -501,7 +501,7 @@ prstat()
 		printf("\t%d entries in spool area\n", i);
 	fd = open(line, O_RDONLY);
 	if (fd < 0 || flock(fd, LOCK_SH|LOCK_NB) == 0) {
-		(void) close(fd);
+		(void) close(fd);	/* unlocks as well */
 		printf("\tno daemon present\n");
 		return;
 	}
@@ -513,7 +513,7 @@ prstat()
 		(void) flock(fd, LOCK_SH);
 		while ((i = read(fd, line, sizeof(line))) > 0)
 			(void) fwrite(line, 1, i, stdout);
-		(void) close(fd);
+		(void) close(fd);	/* unlocks as well */
 	}
 }
 
