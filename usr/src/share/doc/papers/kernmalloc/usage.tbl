@@ -1,4 +1,4 @@
-.\"	@(#)usage.tbl	1.1	(Copyright 1988 M. K. McKusick)	88/04/22
+.\"	@(#)usage.tbl	1.2	(Copyright 1988 M. K. McKusick)	88/04/22
 .TS
 box;
 c s s s
@@ -18,6 +18,8 @@ _
 8193\-16384	0	0	0
 16385\-32768	1	0	1
 .TE
+.DE
+.DS B
 .TS
 box;
 c s s s s
