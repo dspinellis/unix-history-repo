@@ -1,5 +1,5 @@
 #include <sys/types.h>
-#include <time.h>
+#include <sys/time.h>
 #include <stdio.h>
 /*
  * Convert a ctime(3) format string into a system format date.
@@ -106,4 +106,4 @@ dcmp(dp, dp2)
 	DECIDE(tm_sec);
 	return(0);
 }
-static	char *sccsid = "@(#)unctime.c	1.3 (Berkeley) 81/04/18";
+static	char *sccsid = "@(#)unctime.c	1.4 (Berkeley) 83/07/03";
