@@ -7,10 +7,12 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vfsops.c	7.24 (Berkeley) %G%
+ *	@(#)nfs_vfsops.c	7.25 (Berkeley) %G%
  */
 
 #include "param.h"
+#include "conf.h"
+#include "ioctl.h"
 #include "signal.h"
 #include "user.h"
 #include "proc.h"
@@ -21,12 +23,16 @@
 #include "mbuf.h"
 #include "socket.h"
 #include "systm.h"
+#include "../net/if.h"
+#include "../net/route.h"
+#include "../netinet/in.h"
 #include "nfsv2.h"
 #include "nfsnode.h"
 #include "nfsmount.h"
 #include "nfs.h"
 #include "xdr_subs.h"
 #include "nfsm_subs.h"
+#include "nfsdiskless.h"
 
 /*
  * nfs vfs operations.
@@ -58,6 +64,7 @@ struct vfsops nfs_vfsops = {
 static u_char nfs_mntid;
 extern u_long nfs_procids[NFS_NPROCS];
 extern u_long nfs_prog, nfs_vers;
+struct nfs_diskless nfs_diskless;
 void nfs_disconnect();
 
 #define TRUE	1
@@ -113,12 +120,131 @@ nfs_statfs(mp, sbp)
 }
 
 /*
- * Called by vfs_mountroot when nfs is going to be mounted as root
- * Not Yet (By a LONG shot)
+ * Mount a remote root fs via. nfs. This depends on the info in the
+ * nfs_diskless structure that has been filled in properly by some primary
+ * bootstrap.
+ * It goes something like this:
+ * - do enough of "ifconfig" by calling ifioctl() so that the system
+ *   can talk to the server
+ * - If nfs_diskless.mygateway is filled in, use that address as
+ *   a default gateway.
+ *   (This is done the 4.3 way with rtioctl() and should be changed)
+ * - hand craft the swap nfs vnode hanging off a fake mount point
+ * - build the rootfs mount point and call mountnfs() to do the rest.
  */
 nfs_mountroot()
 {
-	return (ENODEV);
+	register struct mount *mp;
+	register struct mbuf *m;
+	struct socket *so;
+	struct vnode *vp;
+	int error;
+
+	/*
+	 * Do enough of ifconfig(8) so that critical net interface can
+	 * talk to the server.
+	 */
+	if (socreate(nfs_diskless.myif.ifra_addr.sa_family, &so, SOCK_DGRAM, 0))
+		panic("nfs ifconf");
+	if (ifioctl(so, SIOCAIFADDR, &nfs_diskless.myif))
+		panic("nfs ifconf2");
+	soclose(so);
+
+	/*
+	 * If the gateway field is filled in, set it as the default route.
+	 */
+#ifdef COMPAT_43
+	if (nfs_diskless.mygateway.sa_family == AF_INET) {
+		struct ortentry rt;
+		struct sockaddr_in *sin;
+
+		sin = (struct sockaddr_in *) &rt.rt_dst;
+		sin->sin_len = sizeof (struct sockaddr_in);
+		sin->sin_family = AF_INET;
+		sin->sin_addr.s_addr = 0;	/* default */
+		bcopy((caddr_t)&nfs_diskless.mygateway, (caddr_t)&rt.rt_gateway,
+			sizeof (struct sockaddr_in));
+		rt.rt_flags = (RTF_UP | RTF_GATEWAY);
+		if (rtioctl(SIOCADDRT, (caddr_t)&rt))
+			panic("nfs root route");
+	}
+#endif	/* COMPAT_43 */
+
+	/*
+	 * If swapping to an nfs node (indicated by swdevt[0].sw_dev == NODEV):
+	 * Create a fake mount point just for the swap vnode so that the
+	 * swap file can be on a different server from the rootfs.
+	 */
+	if (swdevt[0].sw_dev == NODEV) {
+		mp = (struct mount *)malloc((u_long)sizeof(struct mount),
+			M_MOUNT, M_NOWAIT);
+		if (mp == NULL)
+			panic("nfs root mount");
+		mp->mnt_op = &nfs_vfsops;
+		mp->mnt_flag = 0;
+		mp->mnt_exroot = 0;
+		mp->mnt_mounth = NULLVP;
+	
+		/*
+		 * Set up the diskless nfs_args for the swap mount point
+		 * and then call mountnfs() to mount it.
+		 * Since the swap file is not the root dir of a file system,
+		 * hack it to a regular file.
+		 */
+		nfs_diskless.swap_args.fh = (nfsv2fh_t *)nfs_diskless.swap_fh;
+		MGET(m, MT_SONAME, M_DONTWAIT);
+		if (m == NULL)
+			panic("nfs root mbuf");
+		bcopy((caddr_t)&nfs_diskless.swap_saddr, mtod(m, caddr_t),
+			nfs_diskless.swap_saddr.sa_len);
+		m->m_len = nfs_diskless.swap_saddr.sa_len;
+		if (mountnfs(&nfs_diskless.swap_args, mp, m, "/swap",
+			nfs_diskless.swap_hostnam, &vp))
+			panic("nfs swap");
+		vp->v_type = VREG;
+		vp->v_flag = 0;
+		swapdev_vp = vp;
+		VREF(vp);
+		swdevt[0].sw_vp = vp;
+		VREF(vp);
+		argdev_vp = vp;
+	}
+
+	/*
+	 * Create the rootfs mount point.
+	 */
+	mp = (struct mount *)malloc((u_long)sizeof(struct mount),
+		M_MOUNT, M_NOWAIT);
+	if (mp == NULL)
+		panic("nfs root mount2");
+	mp->mnt_op = &nfs_vfsops;
+	mp->mnt_flag = MNT_RDONLY;
+	mp->mnt_exroot = 0;
+	mp->mnt_mounth = NULLVP;
+
+	/*
+	 * Set up the root fs args and call mountnfs() to do the rest.
+	 */
+	nfs_diskless.root_args.fh = (nfsv2fh_t *)nfs_diskless.root_fh;
+	MGET(m, MT_SONAME, M_DONTWAIT);
+	if (m == NULL)
+		panic("nfs root mbuf2");
+	bcopy((caddr_t)&nfs_diskless.root_saddr, mtod(m, caddr_t),
+		nfs_diskless.root_saddr.sa_len);
+	m->m_len = nfs_diskless.root_saddr.sa_len;
+	if (mountnfs(&nfs_diskless.root_args, mp, m, "/",
+		nfs_diskless.root_hostnam, &vp))
+		panic("nfs root");
+	if (vfs_lock(mp))
+		panic("nfs root2");
+	rootfs = mp;
+	mp->mnt_next = mp;
+	mp->mnt_prev = mp;
+	mp->mnt_vnodecovered = NULLVP;
+	vfs_unlock(mp);
+	rootvp = vp;
+	inittodr((time_t)0);	/* There is no time in the nfs fsstat so ?? */
+	return (0);
 }
 
 /*
@@ -140,6 +266,7 @@ nfs_mount(mp, path, data, ndp)
 	int error;
 	struct nfs_args args;
 	struct mbuf *nam;
+	struct vnode *vp;
 	char pth[MNAMELEN], hst[MNAMELEN];
 	int len;
 	nfsv2fh_t nfh;
@@ -161,18 +288,19 @@ nfs_mount(mp, path, data, ndp)
 		sizeof (struct sockaddr), MT_SONAME))
 		return (error);
 	args.fh = &nfh;
-	error = mountnfs(&args, mp, nam, pth, hst);
+	error = mountnfs(&args, mp, nam, pth, hst, &vp);
 	return (error);
 }
 
 /*
  * Common code for mount and mountroot
  */
-mountnfs(argp, mp, nam, pth, hst)
+mountnfs(argp, mp, nam, pth, hst, vpp)
 	register struct nfs_args *argp;
 	register struct mount *mp;
 	struct mbuf *nam;
 	char *pth, *hst;
+	struct vnode **vpp;
 {
 	register struct nfsmount *nmp;
 	struct nfsnode *np;
@@ -202,7 +330,7 @@ mountnfs(argp, mp, nam, pth, hst)
 		++nfs_mntid;
 	tfsid.val[0] = makedev(nblkdev, nfs_mntid);
 	tfsid.val[1] = MOUNT_NFS;
-	while (getvfs(&tfsid)) {
+	while (rootfs && getvfs(&tfsid)) {
 		tfsid.val[0]++;
 		nfs_mntid++;
 	}
@@ -287,6 +415,7 @@ mountnfs(argp, mp, nam, pth, hst)
 	 * Unlock it, but keep the reference count.
 	 */
 	nfs_unlock(NFSTOV(np));
+	*vpp = NFSTOV(np);
 
 	return (0);
 bad:

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_subs.c	7.36 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.37 (Berkeley) %G%
  */
 
 /*
@@ -27,6 +27,8 @@
 #include "mbuf.h"
 #include "errno.h"
 #include "map.h"
+#include "../ufs/quota.h"
+#include "../ufs/inode.h"
 #include "rpcv2.h"
 #include "nfsv2.h"
 #include "nfsnode.h"
@@ -586,6 +588,7 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 	int error = 0;
 	struct mbuf *md;
 	enum vtype type;
+	u_short mode;
 	long rdev;
 	struct timeval mtime;
 	struct vnode *nvp;
@@ -597,6 +600,9 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 		return (error);
 	fp = (struct nfsv2_fattr *)cp2;
 	type = nfstov_type(fp->fa_type);
+	mode = fxdr_unsigned(u_short, fp->fa_mode);
+	if (type == VNON)
+		type = IFTOVT(mode);
 	rdev = fxdr_unsigned(long, fp->fa_rdev);
 	fxdr_time(&fp->fa_mtime, &mtime);
 	/*
@@ -646,7 +652,7 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 	}
 	vap = &np->n_vattr;
 	vap->va_type = type;
-	vap->va_mode = nfstov_mode(fp->fa_mode);
+	vap->va_mode = (mode & 07777);
 	vap->va_nlink = fxdr_unsigned(u_short, fp->fa_nlink);
 	vap->va_uid = fxdr_unsigned(uid_t, fp->fa_uid);
 	vap->va_gid = fxdr_unsigned(gid_t, fp->fa_gid);

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vnops.c	7.53 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.54 (Berkeley) %G%
  */
 
 /*
@@ -216,8 +216,8 @@ extern u_long nfs_prog, nfs_vers;
 extern char nfsiobuf[MAXPHYS+NBPG];
 struct map nfsmap[NFS_MSIZ];
 struct buf nfs_bqueue;		/* Queue head for nfsiod's */
-int nfs_asyncdaemons = 0;
 struct proc *nfs_iodwant[NFS_MAXASYNCDAEMON];
+int nfs_numasync = 0;
 static int nfsmap_want = 0;
 
 /*
@@ -406,7 +406,10 @@ nfs_setattr(vp, vap, cred)
 		np = VTONFS(vp);
 		if (np->n_flag & NMODIFIED) {
 			np->n_flag &= ~NMODIFIED;
-			vinvalbuf(vp, TRUE);
+			if (vap->va_size == 0)
+				vinvalbuf(vp, FALSE);
+			else
+				vinvalbuf(vp, TRUE);
 			np->n_attrstamp = 0;
 		}
 	}
@@ -651,14 +654,12 @@ nfs_readlinkrpc(vp, uiop, cred, procp)
 	long len;
 
 	nfsstats.rpccnt[NFSPROC_READLINK]++;
-	nfs_unlock(vp);
 	nfsm_reqhead(nfs_procids[NFSPROC_READLINK], cred, NFSX_FH);
 	nfsm_fhtom(vp);
 	nfsm_request(vp, NFSPROC_READLINK, procp, 0);
 	nfsm_strsiz(len, NFS_MAXPATHLEN);
 	nfsm_mtouio(uiop, len);
 	nfsm_reqdone;
-	nfs_lock(vp);
 	return (error);
 }
 
@@ -821,7 +822,7 @@ nfs_create(ndp, vap)
 	nfsm_fhtom(ndp->ni_dvp);
 	nfsm_strtom(ndp->ni_dent.d_name, ndp->ni_dent.d_namlen, NFS_MAXNAMLEN);
 	nfsm_build(sp, struct nfsv2_sattr *, NFSX_SATTR);
-	sp->sa_mode = vtonfs_mode(VREG, vap->va_mode);
+	sp->sa_mode = vtonfs_mode(vap->va_type, vap->va_mode);
 	sp->sa_uid = txdr_unsigned(ndp->ni_cred->cr_uid);
 	sp->sa_gid = txdr_unsigned(ndp->ni_cred->cr_gid);
 	sp->sa_size = txdr_unsigned(0);
@@ -1488,7 +1489,6 @@ nfs_strategy(bp)
 {
 	register struct buf *dp;
 	register int i;
-	struct proc *rp;
 	int error = 0;
 	int fnd = 0;
 
@@ -1498,27 +1498,21 @@ nfs_strategy(bp)
 	 * Set b_proc == NULL for asynchronous ops, since these may still
 	 * be hanging about after the process terminates.
 	 */
-	if (bp->b_flags & B_ASYNC)
-		bp->b_proc = (struct proc *)0;
-	else
-		bp->b_proc = u.u_procp;
-
+	if ((bp->b_flags & B_PHYS) == 0) {
+		if (bp->b_flags & B_ASYNC)
+			bp->b_proc = (struct proc *)0;
+		else
+			bp->b_proc = u.u_procp;
+	}
 	/*
 	 * If the op is asynchronous and an i/o daemon is waiting
 	 * queue the request, wake it up and wait for completion
 	 * otherwise just do it ourselves.
 	 */
-	if (bp->b_proc == (struct proc *)NULL)
-	    for (i = 0; i < nfs_asyncdaemons; i++) {
-		if (rp = nfs_iodwant[i]) {
-			/*
-			 * Ensure that the async_daemon is still waiting here
-			 */
-			if (rp->p_stat != SSLEEP ||
-			    rp->p_wchan != ((caddr_t)&nfs_iodwant[i])) {
-				nfs_iodwant[i] = (struct proc *)0;
-				continue;
-			}
+	if ((bp->b_flags & B_ASYNC) == 0 || nfs_numasync == 0)
+		return (nfs_doio(bp));
+	for (i = 0; i < NFS_MAXASYNCDAEMON; i++) {
+		if (nfs_iodwant[i]) {
 			dp = &nfs_bqueue;
 			if (dp->b_actf == NULL) {
 				dp->b_actl = bp;
@@ -1530,7 +1524,6 @@ nfs_strategy(bp)
 			dp->b_actf = bp;
 			bp->b_actl = dp;
 			fnd++;
-			nfs_iodwant[i] = (struct proc *)0;
 			wakeup((caddr_t)&nfs_iodwant[i]);
 			break;
 		}
@@ -1584,7 +1577,7 @@ nfs_doio(bp)
 	 */
 	if (bp->b_flags & B_PHYS) {
 		rp = (bp->b_flags & B_DIRTY) ? pageproc : bp->b_proc;
-		bp->b_rcred = cr = crcopy(rp->p_ucred);
+		cr = crcopy(rp->p_ucred);
 #if defined(hp300) || defined(i386)
 		/* mapping was already done by vmapbuf */
 		io.iov_base = bp->b_un.b_addr;
@@ -1637,14 +1630,12 @@ nfs_doio(bp)
 		if (bp->b_flags & B_READ) {
 			uiop->uio_rw = UIO_READ;
 			nfsstats.read_physios++;
-			bp->b_error = error = nfs_readrpc(vp, uiop,
-				bp->b_rcred, bp->b_proc);
+			bp->b_error = error = nfs_readrpc(vp, uiop, cr, rp);
 			(void) vnode_pager_uncache(vp);
 		} else {
 			uiop->uio_rw = UIO_WRITE;
 			nfsstats.write_physios++;
-			bp->b_error = error = nfs_writerpc(vp, uiop,
-				bp->b_wcred, bp->b_proc);
+			bp->b_error = error = nfs_writerpc(vp, uiop, cr, rp);
 		}
 
 		/*
