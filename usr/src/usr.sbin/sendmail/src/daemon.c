@@ -3,7 +3,7 @@
 # include <sys/mx.h>
 
 #ifndef DAEMON
-SCCSID(@(#)daemon.c	3.45		%G%	(w/o daemon mode));
+SCCSID(@(#)daemon.c	3.46		%G%	(w/o daemon mode));
 #else
 
 #include <sys/socket.h>
@@ -11,7 +11,7 @@ SCCSID(@(#)daemon.c	3.45		%G%	(w/o daemon mode));
 #include <netdb.h>
 #include <wait.h>
 
-SCCSID(@(#)daemon.c	3.45		%G%	(with daemon mode));
+SCCSID(@(#)daemon.c	3.46		%G%	(with daemon mode));
 
 /*
 **  DAEMON.C -- routines to use when running as a daemon.
@@ -109,6 +109,13 @@ getrequests()
 # endif LOG
 		finis();
 	}
+
+#ifdef DEBUG
+	/* turn on network debugging? */
+	if (tTd(15, 15))
+		(void) setsockopt(DaemonSocket, SOL_SOCKET, SO_DEBUG, 0, 0);
+#endif DEBUG
+
 	if (bind(DaemonSocket, &SendmailAddress, sizeof SendmailAddress, 0) < 0)
 	{
 		syserr("getrequests: cannot bind");
@@ -233,6 +240,10 @@ makeconnection(host, port, outfile, infile)
 # ifdef DEBUG
 	if (tTd(16, 1))
 		printf("makeconnection: %d\n", s);
+
+	/* turn on network debugging? */
+	if (tTd(16, 14))
+		(void) setsockopt(s, SOL_SOCKET, SO_DEBUG, 0, 0);
 # endif DEBUG
 	(void) fflush(CurEnv->e_xfp);			/* for debugging */
 #ifdef NVMUNIX
