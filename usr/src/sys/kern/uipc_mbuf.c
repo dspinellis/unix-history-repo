@@ -8,7 +8,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)uipc_mbuf.c	7.7 (Berkeley) %G%
+ *	@(#)uipc_mbuf.c	7.8 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -195,6 +195,8 @@ m_more(canwait, type)
 			mbstat.m_wait++;
 			m_want++;
 			sleep((caddr_t)&mfree, PZERO - 1);
+			if (mfree)
+				break;
 		} else {
 			mbstat.m_drops++;
 			return (NULL);
@@ -288,12 +290,11 @@ nospace:
  * Copy data from an mbuf chain starting "off" bytes from the beginning,
  * continuing for "len" bytes, into the indicated buffer.
  */
-struct mbuf *
 m_copydata(m, off, len, cp)
 	register struct mbuf *m;
-	int off;
+	register int off;
 	register int len;
-	caddr_t *cp;
+	caddr_t cp;
 {
 	register unsigned count;
 
@@ -310,9 +311,10 @@ m_copydata(m, off, len, cp)
 	while (len > 0) {
 		if (m == 0)
 			panic("m_copydata");
-		count = MIN(m->m_len, len);
+		count = MIN(m->m_len - off, len);
 		bcopy(mtod(m, caddr_t) + off, cp, count);
 		len -= count;
+		cp += count;
 		off = 0;
 		m = m->m_next;
 	}
