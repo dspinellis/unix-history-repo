@@ -1,4 +1,4 @@
-/*	if_ether.c	6.8	85/04/16	*/
+/*	if_ether.c	6.9	85/04/24	*/
 
 /*
  * Ethernet address resolution protocol.
@@ -218,7 +218,6 @@ arpinput(ac, m)
 	register struct arptab *at = 0;  /* same as "merge" flag */
 	struct sockaddr_in sin;
 	struct sockaddr sa;
-	struct mbuf *mhold;
 	struct in_addr isaddr,itaddr,myaddr;
 
 	if (m->m_len < sizeof *ea)
@@ -248,19 +247,19 @@ arpinput(ac, m)
 		goto out;
 	}
 	ARPTAB_LOOK(at, isaddr.s_addr);
-	if (at) {		/* XXX ? - can overwrite ATF_PERM */
+	if (at && (at->at_flags & ATF_COM) == 0) {
 		bcopy((caddr_t)ea->arp_sha, (caddr_t)at->at_enaddr,
 		    sizeof(ea->arp_sha));
 		at->at_flags |= ATF_COM;
 		if (at->at_hold) {
-			mhold = at->at_hold;
-			at->at_hold = 0;
 			sin.sin_family = AF_INET;
 			sin.sin_addr = isaddr;
 			(*ac->ac_if.if_output)(&ac->ac_if, 
-			    mhold, (struct sockaddr *)&sin);
+			    at->at_hold, (struct sockaddr *)&sin);
+			at->at_hold = 0;
 		}
-	} else if (itaddr.s_addr == myaddr.s_addr) {
+	}
+	if (at == 0 && itaddr.s_addr == myaddr.s_addr) {
 		/* ensure we have a table entry */
 		at = arptnew(&isaddr);
 		bcopy((caddr_t)ea->arp_sha, (caddr_t)at->at_enaddr,
@@ -281,13 +280,14 @@ arpinput(ac, m)
 	if (itaddr.s_addr != myaddr.s_addr && (at->at_flags & ATF_PUBL) == 0)
 		goto out;
 		
-	bcopy((caddr_t)at->at_enaddr, (caddr_t)ea->arp_sha,
-	    sizeof(ea->arp_sha));
 reply:
 	bcopy((caddr_t)ea->arp_sha, (caddr_t)ea->arp_tha,
 	    sizeof(ea->arp_sha));
 	bcopy((caddr_t)ea->arp_spa, (caddr_t)ea->arp_tpa,
 	    sizeof(ea->arp_spa));
+	if (at)		/* done above if at == 0 */
+		bcopy((caddr_t)at->at_enaddr, (caddr_t)ea->arp_sha,
+		    sizeof(ea->arp_sha));
 	bcopy((caddr_t)&itaddr, (caddr_t)ea->arp_spa,
 	    sizeof(ea->arp_spa));
 	ea->arp_op = htons(ARPOP_REPLY);
