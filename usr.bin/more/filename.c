@@ -13,6 +13,8 @@ fexpand(s, t)
 	register int n;
 	register char *e;
 
+	if (*s == '\0')
+		return ((char *) 0);
 	/*
 	 * Make one pass to see how big a buffer we 
 	 * need to allocate for the expanded string.
