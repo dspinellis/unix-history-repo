@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cpu.h	5.6 (Berkeley) %G%
+ *	@(#)cpu.h	5.7 (Berkeley) %G%
  */
 
 /*
@@ -82,3 +82,14 @@ int	want_resched;		/* resched() was called */
 #define	CPU_486SX	2
 #define	CPU_486		3
 #define	CPU_586		4
+
+/*
+ * CTL_MACHDEP definitions.
+ */
+#define	CPU_CONSDEV		1	/* dev_t: console terminal device */
+#define	CPU_MAXID		2	/* number of valid machdep ids */
+
+#define CTL_MACHDEP_NAMES { \
+	{ 0, 0 }, \
+	{ "console_device", CTLTYPE_STRUCT }, \
+}
