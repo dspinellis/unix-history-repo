@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftp.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftp.c	5.16 (Berkeley) %G%";
 #endif not lint
 
 #include "ftp_var.h"
@@ -882,7 +882,7 @@ abort:
  * before we send the command, otherwise the
  * server's connect may fail.
  */
-static int sendport = -1;
+int sendport = -1;
 
 initconn()
 {
@@ -905,7 +905,7 @@ noport:
 	}
 	if (!sendport)
 		if (setsockopt(data, SOL_SOCKET, SO_REUSEADDR, (char *)&on, sizeof (on)) < 0) {
-			perror("ftp: setsockopt (resuse address)");
+			perror("ftp: setsockopt (reuse address)");
 			goto bad;
 		}
 	if (bind(data, (struct sockaddr *)&data_addr, sizeof (data_addr)) < 0) {

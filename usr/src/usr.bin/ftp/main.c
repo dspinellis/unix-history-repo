@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -198,7 +198,6 @@ cmdscanner(top)
 {
 	register struct cmd *c;
 	struct cmd *getcmd();
-	extern struct cmd cmdtab[];
 	extern int help();
 
 	if (!top)
@@ -246,6 +245,7 @@ struct cmd *
 getcmd(name)
 	register char *name;
 {
+	extern struct cmd cmdtab[];
 	register char *p, *q;
 	register struct cmd *c, *found;
 	register int nmatches, longest;
@@ -424,6 +424,7 @@ help(argc, argv)
 	int argc;
 	char *argv[];
 {
+	extern struct cmd cmdtab[];
 	register struct cmd *c;
 
 	if (argc == 1) {
