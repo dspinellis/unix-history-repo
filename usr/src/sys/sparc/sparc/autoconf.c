@@ -13,9 +13,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)autoconf.c	7.4 (Berkeley) %G%
+ *	@(#)autoconf.c	7.5 (Berkeley) %G%
  *
- * from: $Header: autoconf.c,v 1.31 93/04/07 01:34:47 torek Exp $ (LBL)
+ * from: $Header: autoconf.c,v 1.32 93/05/28 03:55:59 torek Exp $ (LBL)
  */
 
 #include <sys/param.h>
@@ -853,8 +853,7 @@ setroot()
 				if (dv != NULL) {
 					bootdv = dv;
 					nswapdev = nrootdev;
-					swaponroot++;
-					goto setswap;
+					goto gotswap;
 				}
 			}
 #endif
@@ -875,6 +874,9 @@ setroot()
 			if (getdisk(buf, len, 1, &nswapdev) != NULL)
 				break;
 		}
+#ifdef GENERIC
+gotswap:
+#endif
 		rootdev = nrootdev;
 		swapdev = nswapdev;
 		dumpdev = nswapdev;		/* ??? */
