@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	8.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	8.23 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -73,7 +73,7 @@ main(argc, argv)
 	int argc;
 	char * const argv[];
 {
-	const char *mntonname, **vfslist, *vfstype;
+	const char **vfslist, *vfstype;
 	struct fstab *fs;
 	struct statfs *mntbuf;
 	FILE *mountdfp;
@@ -165,25 +165,20 @@ main(argc, argv)
 				errx(1,
 				    "unknown special file or file system %s.",
 				    *argv);
-			if ((fs = getfsfile(mntbuf->f_mntonname)) == NULL)
-				errx(1, "can't find fstab entry for %s.",
-				    *argv);
-			/* If it's an update, ignore the fstab file options. */
-			fs->fs_mntops = NULL;
-			mntonname = mntbuf->f_mntonname;
-		} else {
-			if ((fs = getfsfile(*argv)) == NULL &&
-			    (fs = getfsspec(*argv)) == NULL)
-				errx(1,
-				    "%s: unknown special file or file system.",
-				    *argv);
-			if (BADTYPE(fs->fs_type))
-				errx(1, "%s has unknown file system type.",
-				    *argv);
-			mntonname = fs->fs_file;
+			rval = mountfs(mntbuf->f_fstypename,
+			    mntbuf->f_mntfromname, mntbuf->f_mntonname,
+			    init_flags, options, 0);
+			break;
 		}
-		rval = mountfs(fs->fs_vfstype, fs->fs_spec,
-		    mntonname, init_flags, options, fs->fs_mntops);
+		if ((fs = getfsfile(*argv)) == NULL &&
+		    (fs = getfsspec(*argv)) == NULL)
+			errx(1, "%s: unknown special file or file system.",
+			    *argv);
+		if (BADTYPE(fs->fs_type))
+			errx(1, "%s has unknown file system type.",
+			    *argv);
+		rval = mountfs(fs->fs_vfstype, fs->fs_spec, fs->fs_file,
+		    init_flags, options, fs->fs_mntops);
 		break;
 	case 2:
 		/*
