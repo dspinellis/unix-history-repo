@@ -1,5 +1,4 @@
 #!/bin/sh
-set -x
 #
 # Copyright (c) 1989 The Regents of the University of California.
 # All rights reserved.
@@ -40,7 +39,7 @@ set -x
 #	@(#)updatedb.csh	5.1 (Berkeley) 4/2/91
 #
 
-SRCHPATHS="/usr/tmp"			# directories to be put in the database
+SRCHPATHS="/"				# directories to be put in the database
 LIBDIR="/usr/libexec"			# for subprograms
 FCODES="/var/db/locate.database"	# the database
 
