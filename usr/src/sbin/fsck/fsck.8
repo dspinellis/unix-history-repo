@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)fsck.8	6.7 (Berkeley) %G%
+.\"	@(#)fsck.8	6.8 (Berkeley) %G%
 .\"
 .TH FSCK 8 ""
 .UC 4
@@ -42,14 +42,11 @@ preens a standard set of filesystems or the specified file systems.
 It is normally used in the script
 .B /etc/rc
 during automatic reboot.
-In this case
+Here
 .I fsck
 reads the table
 .B /etc/fstab
 to determine which file systems to check.
-It uses the information there to inspect groups of disks in parallel, taking
-maximum advantage of i/o overlap to check the file systems
-as quickly as possible.
 Only partitions in fstab that are mounted ``rw,'' ``rq'' or ``ro''
 and that have non-zero pass number are checked.
 Filesystems with pass number 1 (normally just the root filesystem)
@@ -243,6 +240,9 @@ File pointing to unallocated inode.
 .br
 Inode number out of range.
 .br
+Dot or dot-dot not the first two entries of a directory
+or having the wrong inode number.
+.br
 .br
 .ns
 .TP 6
@@ -277,7 +277,8 @@ If the
 directory does not exist, it is created.
 If there is insufficient space its size is increased.
 .PP
-Checking the raw device is almost always faster.
+Because of inconsistencies between the block device and the buffer cache,
+the raw device should always be used.
 .SH FILES
 .br
 .ns
@@ -295,7 +296,4 @@ fs(5),
 fsdb(8),
 newfs(8),
 mkfs(8),
-crash(8V),
 reboot(8)
-.SH BUGS
-There should be some way to start a \fBfsck \-p\fR at pass \fIn\fR.
