@@ -1,4 +1,4 @@
-/*	kern_clock.c	6.11	85/03/08	*/
+/*	kern_clock.c	6.12	85/04/05	*/
 
 #include "../machine/reg.h"
 #include "../machine/psl.h"
@@ -155,7 +155,7 @@ hardclock(pc, ps)
 	 * This assumes that the current process has been running
 	 * the entire last tick.
 	 */
-	if (noproc == 0 && cpstate != CP_IDLE) {
+	if (noproc == 0) {
 		if ((u.u_ru.ru_utime.tv_sec+u.u_ru.ru_stime.tv_sec+1) >
 		    u.u_rlimit[RLIMIT_CPU].rlim_cur) {
 			psignal(u.u_procp, SIGXCPU);
