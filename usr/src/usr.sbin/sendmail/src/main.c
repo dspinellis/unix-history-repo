@@ -21,13 +21,16 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
-# define  _DEFINE
-# include <signal.h>
-# include <sgtty.h>
-# include "sendmail.h"
+#define	_DEFINE
+
+#include <signal.h>
+#include <sgtty.h>
+#include "sendmail.h"
+#include <arpa/nameser.h>
+#include <resolv.h>
 
 # ifdef lint
 char	edata, end;
@@ -65,9 +68,6 @@ char	edata, end;
 */
 
 
-
-
-
 int		NextMailer;	/* "free" index into Mailer struct */
 char		*FullName;	/* sender's full name */
 ENVELOPE	BlankEnvelope;	/* a "blank" envelope */
@@ -92,11 +92,6 @@ char		*LastArgv = NULL;	/* end of argv */
 ERROR %%%%   Cannot have daemon mode without SMTP   %%%% ERROR
 #endif SMTP
 #endif DAEMON
-
-
-
-
-
 
 main(argc, argv, envp)
 	int argc;
@@ -331,13 +326,14 @@ main(argc, argv, envp)
 		  case 'C':	/* select configuration file (already done) */
 			break;
 
-# ifdef DEBUG
+#ifdef DEBUG
 		  case 'd':	/* debugging -- redo in case frozen */
 			tTsetup(tTdvect, sizeof tTdvect, "0-99.1");
 			tTflag(&p[2]);
 			setbuf(stdout, (char *) NULL);
+			_res.options |= RES_DEBUG;
 			break;
-# endif DEBUG
+#endif
 
 		  case 'f':	/* from address */
 		  case 'r':	/* obsolete -f flag */
