@@ -1,20 +1,16 @@
-/*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1982, 1988 The Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)sys.c	7.14 (Berkeley) %G%
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)sys.c	7.15 (Berkeley) %G%
  */
 
-#include "sys/param.h"
-#include "sys/reboot.h"
-#include "ufs/dir.h"
-#include "stand/saio.h"		/* used from machine/stand dir */
-
-#define	isdigit(c)	((u_int)((c) - '0') <= 9)
-#define	isspace(c)	((c) == ' ' || (c) == '\t')
-#define	isupper(c)	((u_int)((c) - 'A') <= 'Z' - 'A')
-#define	tolower(c)	((c) - 'A' + 'a')
+#include <sys/param.h>
+#include <sys/reboot.h>
+#include <ufs/dir.h>
+#include <stand/saio.h>		/* used from machine/stand dir */
 
 ino_t	dlook();
 
@@ -23,7 +19,7 @@ struct dirstuff {
 	struct iob *io;
 };
 
-struct iob iob[NFILES];
+struct iob iob[SOPEN_MAX];
 
 static
 openi(n, io)
@@ -106,18 +102,13 @@ sbmap(io, bn)
 		return ((daddr_t)0);
 	}
 
-	/*
-	 * blocks 0..NDADDR are direct blocks
-	 */
+	/* The first NDADDR blocks are direct blocks. */
 	if(bn < NDADDR) {
 		nb = ip->di_db[bn];
 		return (nb);
 	}
 
-	/*
-	 * addresses NIADDR have single and double indirect blocks.
-	 * the first step is to determine how many levels of indirection.
-	 */
+	/* Determine the number of levels of indirection. */
 	sh = 1;
 	bn -= NDADDR;
 	for (j = NIADDR; j > 0; j--) {
@@ -131,18 +122,14 @@ sbmap(io, bn)
 		return ((daddr_t)0);
 	}
 
-	/*
-	 * fetch the first indirect block address from the inode
-	 */
+	/* Get the first indirect block address. */
 	nb = ip->di_ib[NIADDR - j];
 	if (nb == 0) {
 		printf("bn void %D\n",bn);
 		return ((daddr_t)0);
 	}
 
-	/*
-	 * fetch through the indirect blocks
-	 */
+	/* Get the indirect blocks. */
 	for (; j <= NIADDR; j++) {
 		if (blknos[j] != nb) {
 			io->i_bn = fsbtodb(&io->i_fs, nb) + io->i_boff;
@@ -168,9 +155,6 @@ sbmap(io, bn)
 	return (nb);
 }
 
-/*
- * get next entry in a directory.
- */
 struct direct *
 readdir(dirp)
 	register struct dirstuff *dirp;
@@ -257,7 +241,7 @@ lseek(fdesc, addr, ptr)
 #endif
 	fdesc -= 3;
 #ifndef SMALL
-	if (fdesc < 0 || fdesc >= NFILES ||
+	if (fdesc < 0 || fdesc >= SOPEN_MAX ||
 	    ((io = &iob[fdesc])->i_flgs & F_ALLOC) == 0) {
 		errno = EBADF;
 		return (-1);
@@ -283,7 +267,7 @@ getc(fdesc)
 		return (getchar());
 #endif
 	fdesc -= 3;
-	if (fdesc < 0 || fdesc >= NFILES ||
+	if (fdesc < 0 || fdesc >= SOPEN_MAX ||
 	    ((io = &iob[fdesc])->i_flgs&F_ALLOC) == 0) {
 		errno = EBADF;
 		return (-1);
@@ -346,7 +330,7 @@ read(fdesc, buf, count)
 	}
 #endif
 	fdesc -= 3;
-	if (fdesc < 0 || fdesc >= NFILES ||
+	if (fdesc < 0 || fdesc >= SOPEN_MAX ||
 	    ((file = &iob[fdesc])->i_flgs&F_ALLOC) == 0) {
 		errno = EBADF;
 		return (-1);
@@ -427,7 +411,7 @@ write(fdesc, buf, count)
 		return (count);
 	}
 	fdesc -= 3;
-	if (fdesc < 0 || fdesc >= NFILES ||
+	if (fdesc < 0 || fdesc >= SOPEN_MAX ||
 	    ((file = &iob[fdesc])->i_flgs&F_ALLOC) == 0) {
 		errno = EBADF;
 		return (-1);
@@ -461,13 +445,13 @@ open(str, how)
 	int fdesc, args[8], *argp;
 
 	if (openfirst) {
-		for (cnt = 0; cnt < NFILES; cnt++)
+		for (cnt = 0; cnt < SOPEN_MAX; cnt++)
 			iob[cnt].i_flgs = 0;
 		openfirst = 0;
 	}
 
 	for (fdesc = 0;; fdesc++) {
-		if (fdesc == NFILES)
+		if (fdesc == SOPEN_MAX)
 			_stop("No more file slots");
 		if (iob[fdesc].i_flgs == 0) {
 			file = &iob[fdesc];
@@ -631,7 +615,7 @@ close(fdesc)
 	struct iob *file;
 
 	fdesc -= 3;
-	if (fdesc < 0 || fdesc >= NFILES ||
+	if (fdesc < 0 || fdesc >= SOPEN_MAX ||
 	    ((file = &iob[fdesc])->i_flgs&F_ALLOC) == 0) {
 		errno = EBADF;
 		return (-1);
@@ -652,7 +636,7 @@ ioctl(fdesc, cmd, arg)
 	int error = 0;
 
 	fdesc -= 3;
-	if (fdesc < 0 || fdesc >= NFILES ||
+	if (fdesc < 0 || fdesc >= SOPEN_MAX ||
 	    ((file = &iob[fdesc])->i_flgs&F_ALLOC) == 0) {
 		errno = EBADF;
 		return (-1);
@@ -704,7 +688,7 @@ _stop(s)
 
 	if (!stopped) {
 		stopped++;
-		for (i = 0; i < NFILES; i++)
+		for (i = 0; i < SOPEN_MAX; i++)
 			if (iob[i].i_flgs != 0)
 				close(i);
 	}
