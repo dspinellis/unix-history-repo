@@ -1,0 +1,34 @@
+       INCLUDES = -I. -I$(TOOLKITSRC) -I$(TOP) -I$(TOP)/X11
+       LINTLIBS = $(LINTXLIB) $(LINTXTOOL)
+#ifdef RtArchitecture
+             CC = pcc
+#endif
+
+SRCS = \
+	Dvi.c \
+	draw.c \
+	font.c \
+	lex.c \
+	page.c \
+	parse.c \
+	XFontName.c \
+	DviChar.c 
+
+OBJS = \
+	Dvi.o \
+	draw.o \
+	font.o \
+	lex.o \
+	page.o \
+	parse.o \
+	XFontName.o \
+	DviChar.o
+
+NormalLibraryObjectRule()
+
+NormalLibraryTarget(Xdvi,$(OBJS))
+LintLibraryTarget(Xdvi,$(SRCS))
+
+DependTarget()
+
+NormalLintTarget($(SRCS))
