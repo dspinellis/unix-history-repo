@@ -1,4 +1,4 @@
-/*	routed.h	82/06/05	4.4	*/
+/*	routed.h	82/06/09	4.5	*/
 /*
  * Routing Information Protocol
  *
@@ -36,11 +36,11 @@ struct rip {
  * Every update forces an entry's timer to be reset.  After
  * EXPIRE_TIME without updates, the entry is marked invalid,
  * but held onto until GARBAGE_TIME so that others may
- * see it "be deleted".  If there's a reason to look for network
- * interface transitions do so every CHECK_INTERVAL seconds.
+ * see it "be deleted".
  */
 #define	TIMER_RATE		30	/* alarm clocks every 30 seconds */
-#define	GARBAGE_TIME		210	/* time to garbage collect */
-#define	EXPIRE_TIME		180	/* time to mark entry invalid */
+
 #define	SUPPLY_INTERVAL		30	/* time to supply tables */
-#define	CHECK_INTERVAL		300	/* time to check for new interfaces */
+
+#define	EXPIRE_TIME		180	/* time to mark entry invalid */
+#define	GARBAGE_TIME		210	/* time to garbage collect */
