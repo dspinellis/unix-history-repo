@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	6.29 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	6.30 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	6.29 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	6.30 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -626,7 +626,7 @@ reply(m)
 
 		/* display the input for verbose mode */
 		if (Verbose)
-			nmessage("%s", bufp);
+			nmessage("050 %s", bufp);
 
 		/* process the line */
 		if (pfunc != NULL && !firstline)
