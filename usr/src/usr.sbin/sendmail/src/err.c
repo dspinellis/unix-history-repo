@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)err.c	6.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)err.c	6.8 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -19,6 +19,11 @@ static char sccsid[] = "@(#)err.c	6.7 (Berkeley) %G%";
 **
 **	Prints an error message via printf to the diagnostic
 **	output.  If LOG is defined, it logs it also.
+**
+**	If the first character of the syserr message is `!' it will
+**	log this as an ALERT message and exit immediately.  This can
+**	leave queue files in an indeterminate state, so it should not
+**	be used lightly.
 **
 **	Parameters:
 **		f -- the format string
@@ -52,7 +57,12 @@ syserr(fmt, va_alist)
 {
 	register char *p;
 	int olderrno = errno;
+	bool panic;
 	VA_LOCAL_DECL
+
+	panic = *fmt == '!';
+	if (panic)
+		fmt++;
 
 	/* format and output the error message */
 	if (olderrno == 0)
@@ -75,10 +85,12 @@ syserr(fmt, va_alist)
 
 # ifdef LOG
 	if (LogLevel > 0)
-		syslog(LOG_CRIT, "%s: SYSERR: %s",
+		syslog(panic ? LOG_ALERT : LOG_CRIT, "%s: SYSERR: %s",
 			CurEnv->e_id == NULL ? "NOQUEUE" : CurEnv->e_id,
 			&MsgBuf[4]);
 # endif /* LOG */
+	if (panic)
+		exit(EX_OSERR);
 	errno = 0;
 	if (QuickAbort)
 		longjmp(TopFrame, 2);

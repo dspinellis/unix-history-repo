@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	6.27 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	6.28 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	6.27 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	6.28 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -115,8 +115,7 @@ queueup(e, queueall, announce)
 			{
 				if (errno == EEXIST)
 					continue;
-				syserr("queueup: cannot create temp file %s", tf);
-				return;
+				syserr("!queueup: cannot create temp file %s", tf);
 			}
 
 			if (lockfile(fd, tf, LOCK_EX|LOCK_NB))
@@ -143,12 +142,7 @@ queueup(e, queueall, announce)
 		e->e_df = newstr(queuename(e, 'd'));
 		fd = open(e->e_df, O_WRONLY|O_CREAT, FileMode);
 		if (fd < 0)
-		{
-			syserr("queueup: cannot create %s", e->e_df);
-			if (!newid)
-				(void) xfclose(tfp, "queueup tfp", e->e_id);
-			return;
-		}
+			syserr("!queueup: cannot create %s", e->e_df);
 		dfp = fdopen(fd, "w");
 		(*e->e_putbody)(dfp, ProgMailer, e);
 		(void) xfclose(dfp, "queueup dfp", e->e_id);

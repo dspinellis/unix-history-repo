@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	6.38 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	6.39 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -117,6 +117,7 @@ main(argc, argv, envp)
 	bool safecf = TRUE;
 	static bool reenter = FALSE;
 	char *argv0 = argv[0];
+	struct stat stb;
 	char jbuf[MAXHOSTNAMELEN];	/* holds MyHostName */
 	extern int DtableSize;
 	extern int optind;
@@ -161,8 +162,13 @@ main(argc, argv, envp)
 	*/
 
 	i = open("/dev/null", O_RDWR);
-	while (i >= 0 && i < 2)
-		i = dup(i);
+	if (fstat(STDIN_FILENO, &stb) < 0)
+		(void) dup2(i, STDIN_FILENO);
+	if (fstat(STDOUT_FILENO, &stb) < 0)
+		(void) dup2(i, STDOUT_FILENO);
+	if (fstat(STDERR_FILENO, &stb) < 0)
+		(void) dup2(i, STDERR_FILENO);
+	(void) close(i);
 
 	i = DtableSize;
 	while (--i > 0)
