@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)mv.c	4.2 (Berkeley) %G%";
+static	char *sccsid = "@(#)mv.c	4.3 (Berkeley) 81/02/28";
 /*
  * mv file1 file2
  */
@@ -176,13 +176,6 @@ char *source, *target;
 		if ((s2.st_mode&S_IFMT) != S_IFDIR) {
 			fprintf(stderr, "mv: %s exists\n", target);
 			return(1);
-		} else if (iflag && !fflag) {
-			fprintf(stderr, "remove %s? ", target);
-			cc = c = getchar();
-			while (c != '\n' && c != EOF)
-				c = getchar();
-			if (cc != 'y')
-				return(1);
 		}
 		if (strlen(target) > MAXN-DIRSIZ-2) {
 			fprintf(stderr, "mv :target name too long\n");
