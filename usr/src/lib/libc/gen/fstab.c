@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)fstab.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)fstab.c	4.3 (Berkeley) %G%";
 #endif
 
 #include <fstab.h>
@@ -35,12 +35,12 @@ fsdigit(backp, string, end)
 		value += *cp - '0';
 	}
 	if (*cp == '\0')
-		return (0);
+		return ((char *)0);
 	*backp = value;
 	while (*cp && *cp != end)
 		cp++;
 	if (*cp == '\0')
-		return (0);
+		return ((char *)0);
 	return (cp+1);
 }
 
@@ -59,15 +59,13 @@ fstabscan(fs)
 	cp = fsskip(cp);
 	fs->fs_type = cp;
 	cp = fsskip(cp);
-	fs->fs_quotafile = cp;
-	cp = fsskip(cp);
 	cp = fsdigit(&fs->fs_freq, cp, ':');
 	if (cp == 0)
-		return (4);
+		return (3);
 	cp = fsdigit(&fs->fs_passno, cp, '\n');
 	if (cp == 0)
-		return (5);
-	return (6);
+		return (4);
+	return (5);
 }
 	
 setfsent()
@@ -96,10 +94,10 @@ getfsent()
 	int nfields;
 
 	if ((fs_file == 0) && (setfsent() == 0))
-		return (0);
+		return ((struct fstab *)0);
 	nfields = fstabscan(&fs);
-	if (nfields == EOF || nfields != 6)
-		return (0);
+	if (nfields == EOF || nfields != 5)
+		return ((struct fstab *)0);
 	return (&fs);
 }
 
@@ -110,11 +108,11 @@ getfsspec(name)
 	register struct fstab *fsp;
 
 	if (setfsent() == 0)	/* start from the beginning */
-		return (0);
+		return ((struct fstab *)0);
 	while((fsp = getfsent()) != 0)
 		if (strcmp(fsp->fs_spec, name) == 0)
 			return (fsp);
-	return (0);
+	return ((struct fstab *)0);
 }
 
 struct fstab *
@@ -124,9 +122,23 @@ getfsfile(name)
 	register struct fstab *fsp;
 
 	if (setfsent() == 0)	/* start from the beginning */
-		return (0);
+		return ((struct fstab *)0);
 	while ((fsp = getfsent()) != 0)
 		if (strcmp(fsp->fs_file, name) == 0)
 			return (fsp);
-	return (0);
+	return ((struct fstab *)0);
+}
+
+struct fstab *
+getfstype(type)
+	char *type;
+{
+	register struct fstab *fs;
+
+	if (setfsent() == 0)
+		return ((struct fstab *)0);
+	while ((fs = getfsent()) != 0)
+		if (strcmp(fs->fs_type, type) == 0)
+			return (fs);
+	return ((struct fstab *)0);
 }
