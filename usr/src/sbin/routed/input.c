@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)input.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)input.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -61,12 +61,16 @@ rip_input(from, size)
 			 * (eg, query).
 			 */
 			if (n->rip_dst.sa_family == AF_UNSPEC &&
-			    n->rip_metric == HOPCNT_INFINITY && size == 0 &&
-			    (supplier || (*afp->af_portcheck)(from) == 0)) {
-				supply(from, 0, ifp);
+			    n->rip_metric == HOPCNT_INFINITY && size == 0) {
+			    	if (supplier || (*afp->af_portmatch)(from) == 0)
+					supply(from, 0, ifp);
 				return;
 			}
-			rt = rtlookup(&n->rip_dst);
+			if (n->rip_dst.sa_family < af_max &&
+			    afswitch[n->rip_dst.sa_family].af_hash)
+				rt = rtlookup(&n->rip_dst);
+			else
+				rt = 0;
 			n->rip_metric = rt == 0 ? HOPCNT_INFINITY :
 				min(rt->rt_metric+1, HOPCNT_INFINITY);
 			if (msg->rip_vers > 0) {
