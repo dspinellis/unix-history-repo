@@ -1,0 +1,27 @@
+Fri Sep 28 22:36:32 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* Makefile (install, install.sysv, install.xenix):
+	Install wakeup instead of loadst.  No need for setuid or setgid.
+
+Tue Aug  7 13:19:35 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* Makefile (clean): Clean etc if that's not the installation dir.
+
+Thu Apr 26 13:36:18 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* Makefile (paths.h): Make sed alter each name in the path.
+
+Tue Aug 30 13:43:43 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* Makefile (install.sysv): Use cpio, not tar.
+
+Wed Aug  3 19:20:13 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* Makefile (lockdir): Rename `lock' target.
+	Depend on it from install*, not from `all'.
+
+Mon May 16 02:08:08 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* Makefile: Changed LIBDIR and BINDIR back to /usr/local/{emacs,bin}
+	to match build-install and paths.h.
+
