@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)fsck.8	6.4 (Berkeley) %G%
+.\"	@(#)fsck.8	6.5 (Berkeley) %G%
 .\"
 .TH FSCK 8 ""
 .UC 4
@@ -15,6 +15,9 @@ fsck \- file system consistency check and interactive repair
 .B /etc/fsck
 .B \-p
 [
+.B \-m
+mode
+] [
 filesystem ...
 ]
 .br
@@ -28,6 +31,9 @@ block#
 .B \-y
 ] [
 .B \-n
+] [
+.B \-m
+mode
 ] [
 filesystem 
 ] ...
@@ -127,6 +133,14 @@ The following flags are interpreted by
 Use the block specified immediately after the flag as
 the super block for the file system.  Block 32 is usually
 an alternate super block.
+.TP 6
+.B \-m
+Use the mode specified in octal immediately after the flag as the
+permission bits to use when creating the lost+found directory
+rather than the default 1777.
+In particular, systems that do not wish to have lost files accessible
+by all users on the system should use a more restrictive
+set of permissions such as 700.
 .TP 6
 .B  \-y
 Assume a yes response to all questions asked by 

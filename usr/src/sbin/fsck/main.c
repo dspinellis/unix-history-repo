@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -21,6 +21,7 @@ static char sccsid[] = "@(#)main.c	5.8 (Berkeley) %G%";
 #include <sys/wait.h>
 #include <fstab.h>
 #include <strings.h>
+#include <ctype.h>
 #include "fsck.h"
 
 char	*rawname(), *unrawname(), *blockcheck();
@@ -66,6 +67,16 @@ main(argc, argv)
 
 		case 'd':
 			debug++;
+			break;
+
+		case 'm':
+			if (!isdigit(argv[1][0]))
+				errexit("-m flag requires a mode\n");
+			sscanf(*++argv, "%o", &lfmode);
+			if (lfmode &~ 07777)
+				errexit("bad mode to -m: %o\n", lfmode);
+			argc--;
+			printf("** lost+found creation mode %o\n", lfmode);
 			break;
 
 		case 'n':	/* default no answer flag */

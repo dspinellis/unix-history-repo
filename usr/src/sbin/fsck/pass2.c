@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass2.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass2.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -33,7 +33,7 @@ pass2()
 		pfatal("ROOT INODE UNALLOCATED");
 		if (reply("ALLOCATE") == 0)
 			errexit("");
-		if (allocdir(ROOTINO, ROOTINO) != ROOTINO)
+		if (allocdir(ROOTINO, ROOTINO, 0755) != ROOTINO)
 			errexit("CANNOT ALLOCATE ROOT INODE\n");
 		descend(&rootdesc, ROOTINO);
 		break;
@@ -42,7 +42,7 @@ pass2()
 		pfatal("DUPS/BAD IN ROOT INODE");
 		if (reply("REALLOCATE")) {
 			freeino(ROOTINO);
-			if (allocdir(ROOTINO, ROOTINO) != ROOTINO)
+			if (allocdir(ROOTINO, ROOTINO, 0755) != ROOTINO)
 				errexit("CANNOT ALLOCATE ROOT INODE\n");
 			descend(&rootdesc, ROOTINO);
 			break;
@@ -58,7 +58,7 @@ pass2()
 		pfatal("ROOT INODE NOT DIRECTORY");
 		if (reply("REALLOCATE")) {
 			freeino(ROOTINO);
-			if (allocdir(ROOTINO, ROOTINO) != ROOTINO)
+			if (allocdir(ROOTINO, ROOTINO, 0755) != ROOTINO)
 				errexit("CANNOT ALLOCATE ROOT INODE\n");
 			descend(&rootdesc, ROOTINO);
 			break;
