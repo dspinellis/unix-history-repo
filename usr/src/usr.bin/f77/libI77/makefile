@@ -1,5 +1,5 @@
 # Makefile for the f77 I/O library
-#	@(#)makefile	1.17	%G%
+#	@(#)makefile	1.18	%G%
 # Originally written by P. Weinberger, Bell Labs, Murray Hill, N.J.
 # Modified by D. Wasley, Univ of California, Berkeley, Calif.
 
@@ -20,14 +20,14 @@ TAPE = /dev/rnmt0.1600
 SOURCES = backspace.c close.c dfe.c due.c endfile.c err.c fmt.c \
 	fmtlib.c iio.c inquire.c lwrite.c lread.c dolio.c open.c \
 	rdfmt.c rewind.c sfe.c sue.c douio.c util.c wrtfmt.c \
-	dofio.c f_errlist.c yes_66.c no_66.c \
+	dofio.c f_errlist.c \
 	f_errno.h fiodefs.h fio.h format.h lio.h ioinit.f
 
 OBJECTS = dfe.o due.o iio.o sue.o sfe.o lread.o lwrite.o \
 	dofio.o douio.o dolio.o \
 	rdfmt.o wrtfmt.o fmt.o fmtlib.o \
 	backspace.o rewind.o open.o close.o endfile.o inquire.o \
-	yes_66.o err.o no_66.o util.o f_errlist.o ioinit.o
+	ioinit.o err.o util.o f_errlist.o
 
 all:	$(LIB)
 
@@ -44,8 +44,8 @@ $(LIBDIR)/$(LIB):	$(LIB)
 	ranlib $(LIBDIR)/$(LIB)
 	@chmod 644 $(LIBDIR)/$(LIB)
 
-$(LIBDIR)/libI66.a:	yes_66.o
-	cp yes_66.o $(LIBDIR)/libI66.a
+$(LIBDIR)/libI66.a:	libI66.o
+	cp libI66.o $(LIBDIR)/libI66.a
 	@chmod 644 $(LIBDIR)/libI66.a
 
 backspace.o:	fio.h backspace.c
@@ -227,14 +227,6 @@ dofio.c:	SCCS/s.dofio.c
 f_errlist.c:	SCCS/s.f_errlist.c
 	@rm -f f_errlist.c
 	get SCCS/s.f_errlist.c
-
-yes_66.c:	SCCS/s.yes_66.c
-	@rm -f yes_66.c
-	get SCCS/s.yes_66.c
-
-no_66.c:	SCCS/s.no_66.c
-	@rm -f no_66.c
-	get SCCS/s.no_66.c
 
 f_errno.h:	SCCS/s.f_errno.h
 	@rm -f f_errno.h
