@@ -1,4 +1,4 @@
-/*	uipc_mbuf.c	1.30	82/03/09	*/
+/*	uipc_mbuf.c	1.31	82/03/12	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -81,6 +81,9 @@ m_pgfree(addr, n)
 {
 
 COUNT(M_PGFREE);
+#ifdef lint
+	addr = addr; n = n;
+#endif
 }
 
 m_expand()
