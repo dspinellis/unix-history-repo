@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_descrip.c	7.38 (Berkeley) %G%
+ *	@(#)kern_descrip.c	7.39 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -42,7 +42,7 @@ getdtablesize(p, uap, retval)
 	int *retval;
 {
 
-	*retval = p->p_rlimit[RLIMIT_OFILE].rlim_cur;
+	*retval = p->p_rlimit[RLIMIT_NOFILE].rlim_cur;
 	return (0);
 }
 
@@ -101,7 +101,7 @@ dup2(p, uap, retval)
 
 	if (old >= fdp->fd_nfiles ||
 	    (fp = fdp->fd_ofiles[old]) == NULL ||
-	    new >= p->p_rlimit[RLIMIT_OFILE].rlim_cur)
+	    new >= p->p_rlimit[RLIMIT_NOFILE].rlim_cur)
 		return (EBADF);
 	*retval = new;
 	if (old == new)
@@ -154,7 +154,7 @@ fcntl(p, uap, retval)
 	pop = &fdp->fd_ofileflags[uap->fd];
 	switch(uap->cmd) {
 	case F_DUPFD:
-		if ((unsigned)uap->arg >= p->p_rlimit[RLIMIT_OFILE].rlim_cur)
+		if ((unsigned)uap->arg >= p->p_rlimit[RLIMIT_NOFILE].rlim_cur)
 			return (EINVAL);
 		if (error = fdalloc(p, uap->arg, &i))
 			return (error);
@@ -413,7 +413,7 @@ fdalloc(p, want, result)
 	 * of want or fd_freefile.  If that fails, consider
 	 * expanding the ofile array.
 	 */
-	lim = p->p_rlimit[RLIMIT_OFILE].rlim_cur;
+	lim = p->p_rlimit[RLIMIT_NOFILE].rlim_cur;
 	for (;;) {
 		last = min(fdp->fd_nfiles, lim);
 		if ((i = want) < fdp->fd_freefile)
@@ -473,7 +473,7 @@ fdavail(p, n)
 	register struct file **fpp;
 	register int i;
 
-	if ((i = p->p_rlimit[RLIMIT_OFILE].rlim_cur - fdp->fd_nfiles) > 0 &&
+	if ((i = p->p_rlimit[RLIMIT_NOFILE].rlim_cur - fdp->fd_nfiles) > 0 &&
 	    (n -= i) <= 0)
 		return (1);
 	fpp = &fdp->fd_ofiles[fdp->fd_freefile];
