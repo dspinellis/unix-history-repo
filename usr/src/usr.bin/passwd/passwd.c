@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)passwd.c	4.15 (Berkeley) 85/08/09";
+static char sccsid[] = "@(#)passwd.c	4.16 (Berkeley) 85/08/09";
 #endif
 
 /*
@@ -35,7 +35,7 @@ main(argc, argv)
 {
 	struct passwd *pwd;
 	char *cp, *uname, *progname;
-	int fd, i, u, dochfn, dochsh;
+	int fd, i, u, dochfn, dochsh, err;
 	FILE *tf;
 	DBM *dp;
 
@@ -110,11 +110,15 @@ main(argc, argv)
 	(void) umask(0);
 	fd = open(temp, O_WRONLY|O_CREAT|O_EXCL, 0644);
 	if (fd < 0) {
+		err = errno;
+
 		fprintf(stderr, "passwd: ");
-		if (errno == EEXIST)
+		if (err == EEXIST)
 			fprintf(stderr, "password file busy - try again.\n");
-		else
+		else {
+			errno = err;
 			perror(temp);
+		}
 		exit(1);
 	}
 	if ((tf = fdopen(fd, "w")) == NULL) {
@@ -122,7 +126,9 @@ main(argc, argv)
 		exit(1);
 	}
 	if ((dp = dbm_open(passwd, O_RDWR, 0644)) == NULL) {
+		err = errno;
 		fprintf(stderr, "Warning: dbm_open failed: ");
+		errno = err;
 		perror(passwd);
 	} else if (flock(dp->dbm_dirf, LOCK_EX) < 0) {
 		perror("Warning: lock failed");
