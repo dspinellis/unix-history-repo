@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1990 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1990, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This software was developed by the Computer Systems Engineering group
  * at Lawrence Berkeley Laboratory under DARPA contract BG 91-66 and
@@ -15,7 +15,7 @@
  *
  * from: hp300/hp300/kgdb_stub.c	7.16 (Berkeley) 12/27/92
  *
- *	@(#)kgdb_stub.c	7.1 (Berkeley) %G%
+ *	@(#)kgdb_stub.c	8.1 (Berkeley) %G%
  */
 
 /*

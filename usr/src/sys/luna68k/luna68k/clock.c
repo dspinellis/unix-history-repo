@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 1988 University of Utah.
  * Copyright (c) 1992 OMRON Corporation.
- * Copyright (c) 1982, 1990, 1992 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1982, 1990, 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * the Systems Programming Group of the University of Utah Computer
@@ -13,7 +13,7 @@
  * from: Utah $Hdr: clock.c 1.18 91/01/21$
  * from: hp300/hp300/clock.c	7.19 (Berkeley) 2/18/93
  *
- *	@(#)clock.c	7.10 (Berkeley) %G%
+ *	@(#)clock.c	8.1 (Berkeley) %G%
  */
 
 #include <sys/param.h>

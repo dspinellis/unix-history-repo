@@ -1,13 +1,13 @@
 /*
  * Copyright (c) 1992 OMRON Corporation.
- * Copyright (c) 1982, 1990, 1992 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1982, 1990, 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
  * from: hp300/hp300/genassym.c	7.14 (Berkeley) 12/30/92
  *
- *	@(#)genassym.c	7.6 (Berkeley) %G%
+ *	@(#)genassym.c	8.1 (Berkeley) %G%
  */
 
 #define KERNEL

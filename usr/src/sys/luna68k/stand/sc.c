@@ -1,14 +1,14 @@
 /*
  * Copyright (c) 1992 OMRON Corporation.
- * Copyright (c) 1992 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * OMRON Corporation.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sc.c	7.1 (Berkeley) %G%
+ *	@(#)sc.c	8.1 (Berkeley) %G%
  */
 
 /*
@@ -370,8 +370,8 @@ scsi_request_sense(ctlr, slave, unit, buf, len)
 	/* $3$3$G$O%G!<%?!<E>Aw?t$rcdb$NAllocation Length$K:GDcD9$G$"$k#8%P%$%H */
 	/* $r8GDj$7$F!"#S#P#C$N=hM}%7!<%1%s%9$rJx$5$J$$$h$&$K$7$F$$$k!#         */
 
-	/* %F!<@(#)sc.c	7.1f%K%C%H$N>uBV$rD4$Y$k$?$a!"Addtional Sens Field$r%"%/%;%9$9$k */
-	/* I,MW$,$"$k$N$G%G%P%$%97.1i%$%PB&$Glen$r7hDj$9$k$3$H$K$9$k            */
+	/* %F!<@(#)sc.c	8.1f%K%C%H$N>uBV$rD4$Y$k$?$a!"Addtional Sens Field$r%"%/%;%9$9$k */
+	/* I,MW$,$"$k$N$G%G%P%$%98.1i%$%PB&$Glen$r7hDj$9$k$3$H$K$9$k            */
 
 	cdb.lun = unit;
 	cdb.len = len;

@@ -1,14 +1,14 @@
 /*
  * Copyright (c) 1992 OMRON Corporation.
- * Copyright (c) 1992 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * OMRON Corporation.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)saio.h	7.1 (Berkeley) %G%
+ *	@(#)saio.h	8.1 (Berkeley) %G%
  */
 
 /*

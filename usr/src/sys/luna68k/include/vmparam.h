@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 1988 University of Utah.
  * Copyright (c) 1992 OMRON Corporation.
- * Copyright (c) 1982, 1986, 1990, 1992 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1982, 1986, 1990, 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * the Systems Programming Group of the University of Utah Computer
@@ -13,7 +13,7 @@
  * from: Utah $Hdr: vmparam.h 1.16 91/01/18$
  * from: hp300/include/vmparam.h	7.4 (Berkeley) 6/5/92
  *
- *	@(#)vmparam.h	7.2 (Berkeley) %G%
+ *	@(#)vmparam.h	8.1 (Berkeley) %G%
  */
 
 /*
