@@ -1,0 +1,157 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)quotactl.2	5.1 (Berkeley) %G%
+.\"
+.TH QUOTA 2 "7 July 1983"
+.UC 5
+.SH NAME
+quota \- manipulate disk quotas
+.SH SYNOPSIS
+.nf
+.B #include <sys/quota.h>
+.PP
+.B quota(cmd, uid, arg, addr)
+.B int cmd, uid, arg;
+.B caddr_t addr;
+.fi
+.SH DESCRIPTION
+The
+.I quota
+call manipulates disk quotas for file systems
+which have had quotas enabled with
+.IR setquota (2).
+The
+.I cmd
+parameter indicates a command to be applied to
+the user ID
+.IR uid .
+.I Arg
+is a command specific argument and
+.I addr
+is the address of an optional, command specific, data structure
+which is copied in or out of the system.  The interpretation of
+.I arg
+and
+.I addr
+is given with each command below.
+.TP
+Q_SETDLIM
+Set disc quota limits and current usage for the user with ID
+.IR uid .
+.I Arg
+is a major-minor device indicating a particular file system.
+.I Addr
+is a pointer to a struct dqblk structure (defined in 
+.RI < sys/quota.h >).
+This call is restricted to the super-user.
+.TP
+Q_GETDLIM
+Get disc quota limits and current usage for the user with ID
+.IR uid .
+The remaining parameters are as for Q_SETDLIM.
+.TP
+Q_SETDUSE
+Set disc usage limits for the user with ID
+.IR uid .
+.I Arg
+is a major-minor device indicating a particular file system.
+.I Addr
+is a pointer to a struct dqusage structure (defined in
+.RI < sys/quota.h >).
+This call is restricted to the super-user.
+.TP
+Q_SYNC
+Update the on-disc copy of quota usages.
+The
+.IR uid ,
+.IR arg ,
+and
+.I addr 
+parameters are ignored.
+.TP
+Q_SETUID
+Change the calling process's quota limits to those of the
+user with ID
+.IR uid .
+The 
+.I arg
+and
+.I addr
+parameters are ignored.  This call is restricted to the super-user.
+.TP
+Q_SETWARN
+Alter the disc usage warning limits for the user with ID
+.IR uid .
+.I Arg
+is a major-minor device indicating a particular file system.
+.I Addr
+is a pointer to a struct dqwarn structure (defined in
+.RI < sys/quota.h >).
+This call is restricted to the super-user.
+.TP
+Q_DOWARN
+Warn the user with user ID
+.I uid
+about excessive disc usage.
+This call causes the system to check its current disc usage
+information and print a message on the terminal of
+the caller for each file system on which the user is over quota.
+If the
+.I arg
+parameter is specified as NODEV, all file systems which have
+disc quotas will be checked.  Otherwise, 
+.I arg
+indicates a specific major-minor device to be checked.
+This call is restricted to the super-user.
+.SH "RETURN VALUE"
+A successful call returns 0 and, possibly, more
+information specific to the 
+.I cmd
+performed; when an error occurs, the value \-1
+is returned and 
+.I errno
+is set to indicate the reason.
+.SH ERRORS
+A
+.I quota
+call will fail when one of the following occurs:
+.TP 15
+[EINVAL]
+.I Cmd
+is invalid.
+.TP 15
+[ESRCH]
+No disc quota is found for the indicated user.
+.TP 15
+[EPERM]
+The call is priviledged and the caller was not the super-user.
+.TP 15
+[EINVAL]
+The 
+.I arg
+parameter is being interpreted as a major-minor
+device and it indicates an unmounted file system.
+.TP 15
+[EFAULT]
+An invalid
+.I addr
+is supplied; the associated structure could not be copied in or out
+of the kernel.
+.TP 15
+[EUSERS]
+The quota table is full.
+.SH "SEE ALSO"
+setquota(2), quotaon(8), quotacheck(8)
+.SH BUGS
+There should be someway to integrate this call with the resource
+limit interface provided by
+.IR setrlimit (2)
+and
+.IR getrlimit (2).
+.PP
+The Australian spelling of
+.I disk
+is used throughout the quota facilities in honor of
+the implementors.
