@@ -1,5 +1,5 @@
 /*
-char id_rdfmt[] = "@(#)rdfmt.c	1.8";
+char id_rdfmt[] = "@(#)rdfmt.c	1.9";
  *
  * formatted read routines
  */
@@ -7,10 +7,8 @@ char id_rdfmt[] = "@(#)rdfmt.c	1.8";
 #include "fio.h"
 #include "format.h"
 
-#define isdigit(c)	(c>='0' && c<='9')
-#define isalpha(c)	(c>='a' && c<='z')
-
 extern char *s_init;
+extern int low_case[256];
 extern int used_data;
 
 rd_ed(p,ptr,len) char *ptr; struct syl *p; ftnlen len;
@@ -97,33 +95,35 @@ rd_mvcur()
 
 rd_I(n,w,len) ftnlen len; uint *n;
 {	long x=0;
-	int i,sign=0,ch,c;
+	int i,sign=0,ch,c,sign_ok=YES;
 	for(i=0;i<w;i++)
 	{
 		if((ch=(*getn)())<0) return(ch);
-		switch(ch=lcase(ch))
+		switch(ch)
 		{
 		case ',': goto done;
-		case '+': break;
-		case '-':
-			sign=1;
-			break;
+		case '-': sign=1;		/* and fall thru */
+		case '+': if(sign_ok == NO) return(errno=F_ERRICHR);
+			  sign_ok = NO;
+			  break;
 		case ' ':
 			if(cblank) x *= radix;
 			break;
-		case '\n':  goto done;
+		case '\n':  if(cblank) {
+				x *= radix;
+				break;
+			    } else {
+				goto done;
+			    }
 		default:
-			if(isdigit(ch))
-			{	if ((c=(ch-'0')) < radix)
-				{	x = (x * radix) + c;
-					break;
-				}
+			sign_ok = NO;
+			if( (c = ch-'0')>=0 && c<radix )
+			{	x = (x * radix) + c;
+				break;
 			}
-			else if(isalpha(ch))
-			{	if ((c=(ch-'a'+10)) < radix)
-				{	x = (x * radix) + c;
-					break;
-				}
+			else if( (c = low_case[ch]-'a'+10)>=0 && c<radix )
+			{	x = (x * radix) + c;
+				break;
 			}
 			return(errno=F_ERRICHR);
 		}
@@ -139,7 +139,7 @@ rd_L(n,w) ftnint *n;
 {	int ch,i,v = -1;
 	for(i=0;i<w;i++)
 	{	if((ch=(*getn)()) < 0) return(ch);
-		if((ch=lcase(ch))=='t' && v==-1) v=1;
+		if((ch=low_case[ch])=='t' && v==-1) v=1;
 		else if(ch=='f' && v==-1) v=0;
 		else if(ch==',') break;
 	}
@@ -150,56 +150,102 @@ rd_L(n,w) ftnint *n;
 
 rd_F(p,w,d,len) ftnlen len; ufloat *p;
 {	double x,y;
-	int i,sx,sz,ch,dot,ny,z,sawz;
+	int i,sx,sz,ch,dot,ny,z,sawz,mode, sign_ok=YES;
 	x=y=0;
 	sawz=z=ny=dot=sx=sz=0;
+	/* modes:	0 in initial blanks,
+			2 blanks plus sign
+			3 found a digit
+	 */
+	mode = 0;
+
 	for(i=0;i<w;)
 	{	i++;
 		if((ch=(*getn)())<0) return(ch);
-		ch=lcase(ch);
-		if(ch==' ' && !cblank || ch=='+') continue;
-		else if(ch=='-') sx=1;
-		else if(ch<='9' && ch>='0')
+
+		if(ch==' ') {	/* blank */
+			if(cblank && (mode==2)) x *= 10;
+		} else if(ch<='9' && ch>='0') { /* digit */
+			mode = 2;
 			x=10*x+ch-'0';
-		else if(ch=='e' || ch=='d' || ch=='.')
+		} else if(ch=='.') {
 			break;
-		else if(cblank && ch==' ') x*=10;
-		else if(ch==',')
-		{	i=w;
-			break;
+		} else if(ch=='e' || ch=='d' || ch=='E' || ch=='D') {
+			goto exponent;
+		} else if(ch=='+' || ch=='-') {
+			if(mode==0) {  /* sign before digits */
+				if(ch=='-') sx=1;
+				mode = 1;
+			} else if(mode==1) {  /* two signs before digits */
+				return(errno=F_ERRFCHR);
+			} else { /* sign after digits, weird but standard!
+				    	means exponent without 'e' or 'd' */
+				    goto exponent;
+			}
+		} else if(ch==',') {
+			goto done;
+		} else if(ch=='\n') {
+			if(cblank && (mode==2)) x *= 10;
+		} else {
+			return(errno=F_ERRFCHR);
 		}
-		else if(ch!='\n') return(errno=F_ERRFCHR);
 	}
+	/* get here if out of characters to scan or found a period */
 	if(ch=='.') dot=1;
-	while(i<w && ch!='e' && ch!='d' && ch!='+' && ch!='-')
+	while(i<w)
 	{	i++;
 		if((ch=(*getn)())<0) return(ch);
-		ch = lcase(ch);
-		if(ch<='9' && ch>='0')
+
+		if(ch<='9' && ch>='0') {
 			y=10*y+ch-'0';
-		else if(cblank && ch==' ')
-			y *= 10;
-		else if(ch==',') {i=w; break;}
-		else if(ch==' ') continue;
-		else continue;
-		ny++;
+			ny++;
+		} else if(ch==' ' || ch=='\n') {
+			if(cblank) {
+				y*= 10;
+				ny++;
+			}
+		} else if(ch==',') {
+			goto done;
+		} else if(ch=='d' || ch=='e' || ch=='+' || ch=='-' || ch=='D' || ch=='E') {
+			break;
+		} else {
+			return(errno=F_ERRFCHR);
+		}
 	}
-	if(ch=='-') sz=1;
+	/*	now for the exponent.
+	 *	mode=3 means seen digit or sign of exponent.
+	 *	either out of characters to scan or 
+	 *		ch is '+', '-', 'd', or 'e'.
+	 */
+exponent:
+	if(ch=='-' || ch=='+') {
+		if(ch=='-') sz=1;
+		mode = 3;
+	} else {
+		mode = 2;
+	}
+
 	while(i<w)
 	{	i++;
 		sawz=1;
 		if((ch=(*getn)())<0) return(ch);
-		ch = lcase(ch);
-		if(ch=='-') sz=1;
-		else if(ch<='9' && ch>='0')
+
+		if(ch<='9' && ch>='0') {
+			mode = 3;
 			z=10*z+ch-'0';
-		else if(cblank && ch==' ')
-			z *= 10;
-		else if(ch==',') break;
-		else if(ch==' ') continue;
-		else if(ch=='+') continue;
-		else if(ch!='\n') return(errno=F_ERRFCHR);
+		} else if(ch=='+' || ch=='-') {
+			if(mode==3 ) return(errno=F_ERRFCHR);
+			mode = 3;
+			if(ch=='-') sz=1;
+		} else if(ch == ' ' || ch=='\n') {
+			if(cblank) z *=10;
+		} else if(ch==',') {
+			break;
+		} else {
+			return(errno=F_ERRFCHR);
+		}
 	}
+done:
 	if(!dot)
 		for(i=0;i<d;i++) x /= 10;
 	for(i=0;i<ny;i++) y /= 10;
