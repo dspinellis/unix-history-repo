@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cgthree.c	8.1 (Berkeley) %G%
+ *	@(#)cgthree.c	8.2 (Berkeley) %G%
  *
  * from: $Header: cgthree.c,v 1.6 92/11/26 02:28:06 torek Exp $
  */
