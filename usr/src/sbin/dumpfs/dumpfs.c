@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)dumpfs.c	1.6 (Berkeley) %G%";
+static	char *sccsid = "@(#)dumpfs.c	1.7 (Berkeley) %G%";
 
 #include "../h/param.h"
 #include "../h/fs.h"
@@ -29,7 +29,7 @@ main(argc, argv)
 	if (open(argv[1], 0) != 0)
 		perror(argv[1]), exit(1);
 	lseek(0, SBLOCK * DEV_BSIZE, 0);
-	if (read(0, &afs, MAXBSIZE) != MAXBSIZE)
+	if (read(0, &afs, SBSIZE) != SBSIZE)
 		perror(argv[1]), exit(1);
 	printf("magic\t%x\n", afs.fs_magic);
 	printf("sblkno\t%d\n", afs.fs_sblkno);
@@ -47,13 +47,14 @@ main(argc, argv)
 	printf("cgsize\t%d\n", afs.fs_cgsize);
 	printf("ntrak\t%d\nnsect\t%d\nspc\t%d\nncyl\t%d\n",
 	    afs.fs_ntrak, afs.fs_nsect, afs.fs_spc, afs.fs_ncyl);
-	printf("cpg\t%d\nfpg\t%d\nipg\t%d\n",
-	    afs.fs_cpg, afs.fs_fpg, afs.fs_ipg);
+	printf("cpg\t%d\nbpg\t%d\nfpg\t%d\nipg\t%d\n",
+	    afs.fs_cpg, afs.fs_fpg / afs.fs_frag, afs.fs_fpg, afs.fs_ipg);
 	printf("ndir\t%d\nnffree\t%d\nnbfree\t%d\nnifree\t%d\n",
 	    afs.fs_cstotal.cs_ndir, afs.fs_cstotal.cs_nffree,
 	    afs.fs_cstotal.cs_nbfree, afs.fs_cstotal.cs_nifree);
-	printf("cgrotor\t%d\nblocks available in each rotational position",
-	    afs.fs_cgrotor);
+	printf("cgrotor\t%d\nfmod\t%d\nronly\t%d\n",
+	    afs.fs_cgrotor, afs.fs_fmod, afs.fs_ronly);
+	printf("blocks available in each rotational position");
 	for (i = 0; i < NRPOS; i++) {
 		if (afs.fs_postbl[i] > -1)
 			printf("\nposition %d:\t", i);
@@ -80,8 +81,12 @@ main(argc, argv)
 		    cs->cs_nbfree, cs->cs_ndir, cs->cs_nifree, cs->cs_nffree);
 	}
 	printf("\n");
-	printf("fmod\t%d\n", afs.fs_fmod);
-	printf("ronly\t%d\n", afs.fs_ronly);
+	if (afs.fs_ncyl % afs.fs_cpg) {
+		printf("cylinders in last group %d\n",
+		    i = afs.fs_ncyl % afs.fs_cpg);
+		printf("blocks in last group %d\n",
+		    i * afs.fs_spc / NSPB(&afs));
+	}
 	printf("\n");
 	for (i = 0; i < afs.fs_ncg; i++)
 		dumpcg(i);

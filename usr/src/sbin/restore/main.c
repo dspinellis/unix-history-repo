@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-char version[] = "@(#)main.c 1.9 %G%";
+char version[] = "@(#)main.c 1.10 %G%";
 
 /*	Modified to include h option (recursively extract all files within
  *	a subtree) and m option (recreate the heirarchical structure of
@@ -507,7 +507,7 @@ ragain:
 			 */
 			if (BIT(ROOTINO, clrimap))
 				BIS(LOSTFOUNDINO + 1, clrimap);
-			for (ino = 1; ino <= maxi; ino++)
+			for (ino = ROOTINO; ino <= maxi; ino++)
 				if (BIT(ino, clrimap) == 0) {
 					if (!iexist(dev, ino))
 						continue;
@@ -698,7 +698,7 @@ dcvt(odp, ndp)
 	for (itp = inotab[INOHASH(odp->d_ino)]; itp; itp = itp->t_next) {
 		if (itp->t_ino != odp->d_ino)
 			continue;
-		ndp->d_mode = IFDIR;
+		ndp->d_fmt = IFDIR;
 		break;
 	}
 }
