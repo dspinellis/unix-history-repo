@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)ifconfig.8	6.6 (Berkeley) %G%
+.\"	@(#)ifconfig.8	6.7 (Berkeley) %G%
 .\"
 .TH IFCONFIG 8 ""
 .UC 5
@@ -53,7 +53,7 @@ each of which may require separate naming schemes, it is necessary
 to specify the
 .IR address_family ,
 which may change the interpretation of the remaining parameters.
-The address families currently supported are ``inet'' and ``ns''.
+The address families currently supported are ``inet'', ``iso'', and ``ns''.
 .LP
 For the DARPA-Internet family,
 the address is either a host name present in the host name data
@@ -75,6 +75,10 @@ are specified in hexadecimal.
 The host number may be omitted on 10Mb/s Ethernet interfaces,
 which use the hardware physical address,
 and on interfaces other than the first.
+For the ISO family, addresses are specified as a long hexadecimal string,
+as in the Xerox family.  However, two consecutive dots imply a zero
+byte, and the dots are optional, if the user wishes to (carefully)
+count out long strings of digits in network byte order.
 .PP
 The following parameters may be set with 
 .IR ifconfig :
@@ -140,7 +144,7 @@ extra console error logging.
 Disable driver dependent debugging code.
 .TP 15
 .BI netmask " mask"
-(Inet only)
+(Inet and Iso)
 Specify how much of the address to reserve for subdividing
 networks into sub-networks.
 The mask includes the network part of the local address
@@ -167,12 +171,29 @@ network.
 The default broadcast address is the address with a host part of all 1's.
 .TP 15
 .B ipdst
-(NS only)
+(NS and ISO)
 This is used to specify an Internet host who is willing to receive
-ip packets encapsulating NS packets bound for a remote network.
-In this case, an apparent point to point link is constructed, and
+ip packets encapsulating packets bound for a remote network.
+For the NS  case, an apparent point to point link is constructed, and
 the address specified will be taken as the NS address and network
 of the destinee.
+For the ISO case, the eon
+.IR eon (5)
+interface must be specified, the supplied iso address must
+conform to RFC1070, IP address will indicate the status bits.
+.TP 15
+.B alias
+Establish an additional network address for this interface.
+This is sometimes useful when changing network numbers, and
+one wishes to accept packets addressed to the old interface.
+.TP 15
+.B delete
+Remove the network address specified.
+This would be used if you incorrectly specified an alias, or it
+was no longer needed.
+If you have incorrectly set an NS address having the side effect
+of specifying the host portion, removing all NS addresses will
+allow you to respecify the host portion.
 .PP
 .I Ifconfig
 displays the current configuration for a network interface
