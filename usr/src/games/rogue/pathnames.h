@@ -4,9 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pathnames.h	5.1 (Berkeley) %G%
+ *	@(#)pathnames.h	5.2 (Berkeley) %G%
  */
 
 #define	_PATH_SCOREFILE	"/var/games/rogue.scores"
-#define	_PATH_LOCKFILE	"/var/games/rogue.lock"
-
