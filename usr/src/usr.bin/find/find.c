@@ -1,5 +1,5 @@
 #ifndef	lint
-static char *sccsid = "@(#)find.c	4.16 (Berkeley) %G%";
+static char *sccsid = "@(#)find.c	4.17 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -714,7 +714,8 @@ register char *s, *p;
 					return(0);
 
 			case '-':
-				k |= lc <= scc && scc <= (cc=p[1]);
+				cc = p[1];
+				k |= lc <= scc && scc <= cc;
 			}
 			if (scc==(lc=cc)) k++;
 		}
