@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)swapgeneric.c	7.5 (Berkeley) %G%
+ *	@(#)swapgeneric.c	7.6 (Berkeley) %G%
  */
 
 #include "mba.h"
@@ -82,13 +82,13 @@ retry:
 		gets(name);
 		for (gc = genericconf; gc->gc_driver; gc++)
 		    for (cp = name, gp = gc->gc_name; *cp == *gp; cp++, gp++)
-			if (*gp == 0)
+			if (*++gp == 0)
 				goto gotit;
 		printf(
 		  "use hp%%d, up%%d, ra%%d, rb%%d, rl%%d, hk%%d or kra%%d\n");
 		goto retry;
 gotit:
-		if (*cp < '0' || *cp > '9') {
+		if (*++cp < '0' || *cp > '9') {
 			printf("bad/missing unit number\n");
 			goto retry;
 		}
