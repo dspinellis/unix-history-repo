@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pstat.c	8.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)pstat.c	8.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -662,7 +662,7 @@ kinfo_vnodes(avnodes)
 	return ((struct e_vnode *)vbuf);
 }
 	
-char hdr[]="  LINE RAW CAN OUT  HWT LWT     COL STATE  SESS  PGID DISC\n";
+char hdr[]="  LINE RAW CAN OUT  HWT LWT     COL STATE  SESS      PGID DISC\n";
 int ttyspace = 128;
 
 void
@@ -672,7 +672,7 @@ ttymode()
 
 	if ((tty = malloc(ttyspace * sizeof(*tty))) == NULL)
 		err(1, NULL);
-#ifndef hp300
+#if !defined(hp300) && !defined(mips)
 	(void)printf("1 console\n");
 	KGET(SCONS, *tty);
 	(void)printf(hdr);
@@ -778,7 +778,7 @@ ttyprt(tp, line)
 	else
 		(void)printf("%7s ", name);
 	(void)printf("%2d %3d ", tp->t_rawq.c_cc, tp->t_canq.c_cc);
-	(void)printf("%3d %4d %3d %3d ", tp->t_outq.c_cc, 
+	(void)printf("%3d %4d %3d %7d ", tp->t_outq.c_cc, 
 		tp->t_hiwat, tp->t_lowat, tp->t_column);
 	for (i = j = 0; ttystates[i].flag; i++)
 		if (tp->t_state&ttystates[i].flag)
@@ -786,7 +786,7 @@ ttyprt(tp, line)
 	if (j == 0)
 		state[j++] = '-';
 	state[j] = '\0';
-	(void)printf("%-4s %6x", state, (u_long)tp->t_session & ~KERNBASE);
+	(void)printf("%-6s %8x", state, (u_long)tp->t_session);
 	pgid = 0;
 	if (tp->t_pgrp != NULL)
 		KGET2(&tp->t_pgrp->pg_id, &pgid, sizeof(pid_t), "pgid");
