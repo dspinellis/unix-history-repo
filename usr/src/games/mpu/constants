@@ -1,0 +1,37 @@
+
+{  *** Intrinsic Properties *** }
+
+VISIT = 1;              { I've been here / seen this }
+OPENS = 2;              { This can be opened }
+LOCKS = 3;              { This can be locked }
+OPEN  = 4;              { This is opened }
+LOCKD = 5;              { This is locked }
+INVIS = 6;              { This is invisible }
+TRANS = 7;              { This is transparent }
+LIGHT = 8;              { This gives off light }
+FLAME = 9;              { This is on fire }
+CONTS = 10;             { Printed contents for the object (Look Kludge) }
+SHRNK = 11;             { Has it been shrunk? }
+CRYST = 12;             { Is it one of our magic thingies? }
+
+MISC1 = 16;             { Miscellaneous Property (Semantics per object) }
+HOLED = MISC1;
+
+RDLOC = 17;             { Location on Highway 8 }
+WEIGH = 18;
+HOLDS = 19;
+HAS   = 20;
+POINT = 21;
+
+{ Constants }
+TRUE = 1; FALSE = 0;
+CAPAC = 500;                    { More than I can carry }
+
+{ Globals }
+DARKG = 1;
+HWY8  = 2;
+LOOKP = 3;
+SCORE = 4;
+Tempr = 5;              { Dragon's Upset? }
+Cel6x = 6;		{ Where he came from to enter Cel06 }
+WASDK = 7;
