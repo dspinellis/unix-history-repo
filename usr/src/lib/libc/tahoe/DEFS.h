@@ -1,4 +1,4 @@
-/*	DEFS.h	5.1	86/08/01	*/
+/*	DEFS.h	5.2	86/08/01	*/
 
 /*
  * Macros used to define entry points
