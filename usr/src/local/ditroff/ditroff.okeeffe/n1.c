@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)n1.c	2.1 (CWI) 85/07/18";
+static char sccsid[] = "@(#)n1.c	2.2 (CWI) 88/03/31";
 #endif lint
 /*
  * n1.c
@@ -620,9 +620,6 @@ g0:
 		return(j);
 	switch (k) {
 
-	case 'X':	/* \X'...' for copy through */
-		setxon();
-		goto g0;
 	case '\n':	/* concealed newline */
 		goto g0;
 	case 'n':	/* number register */
@@ -704,6 +701,9 @@ gx:
 	}
 	switch (k) {
 
+	case 'X':	/* \X'...' for copy through */
+		setxon();
+		goto g0;
 	case 'p':	/* spread */
 		spread++;
 		goto g0;
