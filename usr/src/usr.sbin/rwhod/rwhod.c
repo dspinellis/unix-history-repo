@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rwhod.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)rwhod.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -20,7 +20,7 @@ static char sccsid[] = "@(#)rwhod.c	5.23 (Berkeley) %G%";
 #include <sys/stat.h>
 #include <sys/signal.h>
 #include <sys/ioctl.h>
-#include <sys/kinfo.h>
+#include <sys/sysctl.h>
 
 #include <net/if.h>
 #include <net/if_dl.h>
@@ -403,17 +403,24 @@ configure(s)
 	register struct if_msghdr *ifm;
 	register struct ifa_msghdr *ifam;
 	struct sockaddr_dl *sdl;
-	int needed, rlen = 0, flags = 0, len;
+	size_t needed;
+	int mib[6], flags = 0, len;
 	char *buf, *lim, *next;
 	struct rt_addrinfo info;
 
-	if ((needed = getkerninfo(KINFO_RT_IFLIST, 0, 0, 0)) < 0)
-		quit("route-getkerninfo-estimate");
+	mib[0] = CTL_NET;
+	mib[1] = PF_ROUTE;
+	mib[2] = 0;
+	mib[3] = AF_INET;
+	mib[4] = NET_RT_IFLIST;
+	mib[5] = 0;
+	if (sysctl(mib, 6, NULL, &needed, NULL, 0) < 0)
+		quit("route-sysctl-estimate");
 	if ((buf = malloc(needed)) == NULL)
 		quit("malloc");
-	if ((rlen = getkerninfo(KINFO_RT_IFLIST, buf, &needed, 0)) < 0)
+	if (sysctl(mib, 6, buf, &needed, NULL, 0) < 0)
 		quit("actual retrieval of interface table");
-	lim = buf + rlen;
+	lim = buf + needed;
 
 	for (next = buf; next < lim; next += ifm->ifm_msglen) {
 		ifm = (struct if_msghdr *)next;
@@ -426,7 +433,7 @@ configure(s)
 		    (flags & (IFF_BROADCAST|IFF_POINTOPOINT)) == 0)
 			continue;
 		if (ifm->ifm_type != RTM_NEWADDR)
-			quit("out of sync parsing KINFO_RT_IFLIST");
+			quit("out of sync parsing NET_RT_IFLIST");
 		ifam = (struct ifa_msghdr *)ifm;
 		info.rti_addrs = ifam->ifam_addrs;
 		rt_xaddrs((char *)(ifam + 1), ifam->ifam_msglen + (char *)ifam,
