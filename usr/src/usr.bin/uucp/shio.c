@@ -1,10 +1,9 @@
 #ifndef lint
-static char sccsid[] = "@(#)shio.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)shio.c	5.2 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
 #include <signal.h>
-
 
 /*******
  *	shio(cmd, fi, fo, user)	execute shell of command with
@@ -22,13 +21,17 @@ char *cmd, *fi, *fo, *user;
 	int status, f;
 	int uid, pid, ret;
 	char path[MAXFULLNAME];
+	extern int errno;
 
 	if (fi == NULL)
-		fi = "/dev/null";
+		fi = DEVNULL;
 	if (fo == NULL)
-		fo = "/dev/null";
+		fo = DEVNULL;
 
 	DEBUG(3, "shio - %s\n", cmd);
+#ifdef SIGCHLD
+	signal(SIGCHLD, SIG_IGN);
+#endif SIGCHLD
 	if ((pid = fork()) == 0) {
 		signal(SIGINT, SIG_IGN);
 		signal(SIGHUP, SIG_IGN);
@@ -37,21 +40,25 @@ char *cmd, *fi, *fo, *user;
 		close(Ifn);
 		close(Ofn);
 		close(0);
-		if (user == NULL
-		|| (gninfo(user, &uid, path) != 0)
-		|| setuid(uid))
+		if (user == NULL || (gninfo(user, &uid, path) != 0)
+			|| setuid(uid))
 			setuid(getuid());
 		f = open(subfile(fi), 0);
-		if (f != 0)
-			exit(f);
+		if (f != 0) {
+			logent(fi, "CAN'T READ");
+			exit(-errno);
+		}
 		close(1);
 		f = creat(subfile(fo), 0666);
-		if (f != 1)
-			exit(f);
+		if (f != 1) {
+			logent(fo, "CAN'T WRITE");
+			exit(-errno);
+		}
 		execl(SHELL, "sh", "-c", cmd, (char *)0);
-		exit(100);
+		exit(100+errno);
 	}
-	while ((ret = wait(&status)) != pid && ret != -1);
+	while ((ret = wait(&status)) != pid && ret != -1)
+		;
 	DEBUG(3, "status %d\n", status);
-	return(status);
+	return status;
 }

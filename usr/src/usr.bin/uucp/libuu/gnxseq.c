@@ -1,10 +1,16 @@
 #ifndef lint
-static char sccsid[] = "@(#)gnxseq.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)gnxseq.c	5.3 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
 #include <sys/types.h>
+#ifdef BSD4_2
 #include <sys/time.h>
+#else sane
+#include <time.h>
+#endif sane
+
+#ifdef GNXSEQ
 
 extern	time_t	time();
 
@@ -62,9 +68,16 @@ char *rmtname;
 		count = ++ct;
 		time(&clock);
 		tp = localtime(&clock);
-		fprintf(fp1, "%s %d %d/%d-%d:%02d\n", name, ct,
+#ifdef USG
+		fprintf(fp1, "%s %d %d/%d-%2.2d:%2.2d\n", name, ct,
 		  tp->tm_mon + 1, tp->tm_mday, tp->tm_hour,
 		  tp->tm_min);
+#endif
+#ifndef USG
+		fprintf(fp1, "%s %d %d/%d-%02d:%02d\n", name, ct,
+		  tp->tm_mon + 1, tp->tm_mday, tp->tm_hour,
+		  tp->tm_min);
+#endif
 		while (fgets(buf, BUFSIZ, fp0) != NULL)
 			fputs(buf, fp1);
 	}
@@ -88,7 +101,7 @@ cmtseq()
 {
 	register int ret;
 
-	if ((ret = access(SQTMP, 0400)) != 0) {
+	if ((ret = access(SQTMP, 04)) != 0) {
 		rmlock(SQLOCK);
 		return(0);
 	}
@@ -108,3 +121,4 @@ ulkseq()
 	unlink(SQTMP);
 	rmlock(SQLOCK);
 }
+#endif GNXSEQ

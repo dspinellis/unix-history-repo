@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)expfile.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)expfile.c	5.3 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -19,7 +19,7 @@ expfile(file)
 char *file;
 {
 	register char *fpart, *p;
-	char user[20], *up;
+	char user[WKDSIZE], *up;
 	char full[MAXFULLNAME];
 	int uid;
 
@@ -28,28 +28,27 @@ char *file;
 		return(1);
 	case '~':
 		for (fpart = file + 1, up = user; *fpart != '\0'
-			&& *fpart != '/' && up < user+sizeof(user)-1; fpart++)
+			&& *fpart != '/'; fpart++)
 				*up++ = *fpart;
 		*up = '\0';
-		/* ll1b.105, mn, Mark Nettleingham, defend against
-		 * null login name in /etc/passwd
-		 */
 		if (!*user || gninfo(user, &uid, full) != 0) {
 			strcpy(full, PUBDIR);
 		}
 	
 		strcat(full, fpart);
 		strcpy(file, full);
-		return(1);
+		return 1;
 	default:
 		p = index(file, '/');
-		sprintf(full, "%s/%s", Wrkdir, file);
+		strcpy(full, Wrkdir);
+		strcat(full, "/");
+		strcat(full, file);
 		strcpy(file, full);
 		if (Wrkdir[0] == '\0')
-			return(FAIL);
+			return FAIL;
 		else if (p != NULL)
-			return(1);
-		return(0);
+			return 1;
+		return 0;
 	}
 }
 
@@ -69,10 +68,10 @@ char *name;
 
 	ret = stat(subfile(name), &s);
 	if (ret < 0)
-		return(0);
+		return 0;
 	if ((s.st_mode & S_IFMT) == S_IFDIR)
-		return(1);
-	return(0);
+		return 1;
+	return 0;
 }
 
 
@@ -87,26 +86,26 @@ mkdirs(name)
 char *name;
 {
 	int ret, mask;
-	char cmd[100], dir[100];
+	char cmd[MAXFULLNAME], dir[MAXFULLNAME];
 	register char *p;
 
 	for (p = dir + 1;; p++) {
 		strcpy(dir, name);
 		if ((p = index(p, '/')) == NULL)
-			return(0);
+			return 0;
 		*p = '\0';
 		if (isdir(dir))
 			continue;
 
-		/* rti!trt: add chmod ala 4.1c uucp */
 		sprintf(cmd, "mkdir %s;chmod 0777 %s", dir, dir);
 		DEBUG(4, "mkdir - %s\n", dir);
 		mask = umask(0);
 		ret = shio(cmd, CNULL, CNULL, User);
 		umask(mask);
 		if (ret != 0)
-			return(FAIL);
+			return FAIL;
 	}
+	/* NOTREACHED */
 }
 
 /***
@@ -121,11 +120,11 @@ register char *file;
 {
 
 	if (expfile(file) != FAIL)
-		return(0);
+		return 0;
 
 	/*  could not expand file name */
 	/* the gwd routine failed */
 
-	fprintf(stderr, "Can't expand filename (%s). Pwd failed.\n", file+1);
-	return(FAIL);
+	logent("CAN'T EXPAND FILENAME - PWD FAILED", file+1);
+	return FAIL;
 }

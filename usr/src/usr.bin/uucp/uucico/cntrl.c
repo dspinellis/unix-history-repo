@@ -1,12 +1,13 @@
 #ifndef lint
-static char sccsid[] = "@(#)cntrl.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)cntrl.c	5.4 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
 #include <sys/types.h>
 #include <sys/stat.h>
+#include "uust.h"
 
-
+extern int errno;
 
 struct Proto {
 	char P_id;
@@ -18,30 +19,41 @@ struct Proto {
 	int (*P_turnoff)();
 };
 
-
 extern int gturnon(), gturnoff();
 extern int grdmsg(), grddata();
 extern int gwrmsg(), gwrdata();
-extern int nturnon(), nturnoff();
-extern int nrdmsg(), nrddata();
-extern int nwrmsg(), nwrdata();
 extern int imsg(), omsg();
+#ifdef BSDTCP
+extern int tnullf();
+extern int twrmsg(), trdmsg();
+extern int twrdata(), trddata();
+#endif BSDTCP
+#ifdef PAD
+extern int fturnon(), fturnoff();
+extern int frdmsg(), frddata();
+extern int fwrmsg(), fwrdata();
+#endif PAD
 
 struct Proto Ptbl[]={
-	'n', nturnon, nrdmsg, nwrmsg, nrddata, nwrdata, nturnoff,
+#ifdef BSDTCP
+	't', tnullf, trdmsg, twrmsg, trddata, twrdata, tnullf,
+#endif BSDTCP
+#ifdef PAD
+	'f', fturnon, frdmsg, fwrmsg, frddata, fwrdata, fturnoff,
+#endif PAD
 	'g', gturnon, grdmsg, gwrmsg, grddata, gwrdata, gturnoff,
 	'\0'
 };
 
-int (*Imsg)() = imsg, (*Omsg)() = omsg;	/* avoid SEL compiler limitation */
+int (*Imsg)() = imsg, (*Omsg)() = omsg;
 
 int (*Rdmsg)()=imsg, (*Rddata)();
 int (*Wrmsg)()=omsg, (*Wrdata)();
 int (*Turnon)(), (*Turnoff)();
 
 
-#define YES "Y"
-#define NO "N"
+static char *YES = "Y";
+static char *NO = "N";
 
 /*  failure messages  */
 #define EM_MAX		6
@@ -59,10 +71,8 @@ char *Em_msg[] = {
 	"system error - bad uucp command generated",
 	"remote system can't create temp file",
 	"can't copy to file/directory - file left in PUBDIR/user/file",
-	"can't copy to file/directory - file left in PUBDIR/user/file"
+	"can't copy to file/directory on local system  - file left in PUBDIR/user/file"
 };
-
-/*       */
 
 
 #define XUUCP 'X'	/* execute uucp (string) */
@@ -74,7 +84,6 @@ char *Em_msg[] = {
 #define HUP     'H'	/* ready to hangup (string - yes | no) */
 #define RESET	'X'	/* reset line modes */
 
-
 #define W_TYPE		wrkvec[0]
 #define W_FILE1		wrkvec[1]
 #define W_FILE2		wrkvec[2]
@@ -84,27 +93,23 @@ char *Em_msg[] = {
 #define W_MODE		wrkvec[6]
 #define W_NUSER		wrkvec[7]
 
-#define	XFRRATE	350000L
-#define RMESG(m, s, n) if (rmesg(m, s, n) != 0) {(*Turnoff)(); return(FAIL);} else
-#define RAMESG(s, n) if (rmesg('\0', s, n) != 0) {(*Turnoff)(); return(FAIL);} else
-#define WMESG(m, s) if(wmesg(m, s) != 0) {(*Turnoff)(); return(FAIL);} else
+#define	XFRRATE	35000L
+#define RMESG(m, s, n) if (rmesg(m, s, n) != 0) {(*Turnoff)(); return FAIL;} else
+#define RAMESG(s, n) if (rmesg('\0', s, n) != 0) {(*Turnoff)(); return FAIL;} else
+#define WMESG(m, s) if(wmesg(m, s) != 0) {(*Turnoff)(); return FAIL;} else
 
 char Wfile[MAXFULLNAME] = {'\0'};
 char Dfile[MAXFULLNAME];
 
 /*
  * To avoid a huge backlog of X. files, start uuxqt every so often.
- * To avoid a huge number of uuxqt zombies, 
- * wait for one occasionally!
  */
 static int nXfiles = 0;	/* number of X files since last uuxqt start */
 static int nXQTs = 0;	/* number of uuxqts started */
+static char send_or_receive;
+struct stat stbuf;
 
-/*******
- *	cntrl(role, wkpre)
- *	int role;
- *	char *wkpre;
- *
+/*
  *	cntrl  -  this routine will execute the conversation
  *	between the two machines after both programs are
  *	running.
@@ -121,7 +126,6 @@ char *wkpre;
 	char msg[BUFSIZ], rqstr[BUFSIZ];
 	register FILE *fp;
 	int filemode;
-	struct stat stbuf;
 	char filename[MAXFULLNAME], wrktype, *wrkvec[20];
 	extern (*Rdmsg)(), (*Wrmsg)();
 	extern char *index(), *lastpart();
@@ -130,28 +134,25 @@ char *wkpre;
 	int mailopt, ntfyopt;
 	int ret;
 	static int pnum, tmpnum = 0;
+	extern int ReverseRole;
 
 	pnum = getpid();
-/*
- * ima.247, John Levine, IECC, PO Box 349, Cambridge MA 02238; (617) 491-5450
- * zap Wfile to prevent reuse of wrong C. file
- */
 	Wfile[0] = '\0';
 top:
 	for (i = 0; i < sizeof wrkvec / sizeof wrkvec[0]; i++)
 		wrkvec[i] = 0;
-	DEBUG(4, "*** TOP ***  -  role=%d, ", role);
+	DEBUG(4, "*** TOP ***  -  role=%s\n", role ? "MASTER" : "SLAVE");
 	setline(RESET);
+	send_or_receive = RESET;
 	if (role == MASTER) {
 		/* get work */
-		if ((narg = gtwvec(Wfile, Spool, wkpre, wrkvec)) == 0) {
+		if (ReverseRole || (narg = gtwvec(Wfile, Spool, wkpre, wrkvec)) == 0) {
+			ReverseRole = 0;
 			WMESG(HUP, "");
 			RMESG(HUP, msg, 1);
 			goto process;
 		}
 		wrktype = W_TYPE[0];
-		mailopt = index(W_OPTNS, 'm') != NULL;
-		ntfyopt = index(W_OPTNS, 'n') != NULL;
 
 		msg[0] = '\0';
 		for (i = 1; i < narg; i++) {
@@ -164,8 +165,18 @@ top:
 			logent(rqstr, "REQUEST");
 			goto sendmsg;
 		}
+		mailopt = index(W_OPTNS, 'm') != NULL;
+		ntfyopt = index(W_OPTNS, 'n') != NULL;
 
-		ASSERT(narg > 4, "ARG COUNT<5", "", i);
+		if (narg < 5) {
+			char *bnp;
+			bnp = rindex(Wfile, '/');
+			sprintf(rqstr, "%s/%s", CORRUPT, bnp ? bnp + 1 : Wfile);
+			xmv(Wfile, rqstr);
+			logent(Wfile, "CMD FILE CORRUPTED");
+			Wfile[0] = '\0';
+			goto top;
+		}
 		sprintf(User, "%.9s", W_USER);
 		sprintf(rqstr, "%s %s %s %s", W_TYPE, W_FILE1,
 		  W_FILE2, W_USER);
@@ -173,7 +184,7 @@ top:
 		if (wrktype == SNDFILE ) {
 			strcpy(filename, W_FILE1);
 			i = expfile(filename);
-			DEBUG(4, "expfile type - %d", i);
+			DEBUG(4, "expfile type - %d, ", i);
 			if (i != 0 && chkpth(User, "", filename))
 				goto e_access;
 			strcpy(Dfile, W_DFILE);
@@ -186,7 +197,8 @@ top:
 			if (fp == NULL &&
 			   (fp = fopen(subfile(filename), "r")) == NULL) {
 				/*  can not read data file  */
-				logent("CAN'T READ DATA", "FAILED");
+				logent("CAN'T READ DATA", _FAILED);
+				USRF(USR_LOCACC);
 				unlinkdf(Dfile);
 				lnotify(User, filename, "can't access");
 				goto top;
@@ -199,6 +211,7 @@ top:
 				fclose(fp);
 				fp = NULL;
 				logent("DENIED", "ACCESS");
+				USRF(USR_LOCACC);
 				unlinkdf(W_DFILE);
 				lnotify(User, filename, "access denied");
 				goto top;
@@ -214,20 +227,22 @@ top:
 			 || chkperm(filename, index(W_OPTNS, 'd'))) {
 				/*  access denied  */
 				logent("DENIED", "ACCESS");
+				USRF(USR_LOCACC);
 				lnotify(User, filename, "access denied");
 				goto top;
 			}
 			sprintf(Dfile, "%s/TM.%05d.%03d", Spool, pnum, tmpnum++);
 			if ((fp = fopen(subfile(Dfile), "w")) == NULL) {
 				/*  can not create temp  */
-				logent("CAN'T CREATE TM", "FAILED");
+				logent("CAN'T CREATE TM", _FAILED);
+				USRF(USR_LNOTMP);
 				unlinkdf(Dfile);
 				goto top;
 			}
 			setline(RCVFILE);
 		}
 sendmsg:
-		DEBUG(4, "wrktype - %c\n ", wrktype);
+		DEBUG(4, "wrktype - %c\n", wrktype);
 		WMESG(wrktype, msg);
 		RMESG(wrktype, msg, 1);
 		goto process;
@@ -238,37 +253,44 @@ sendmsg:
 	goto process;
 
 process:
-/*	rti!trt: ultouch is now done in gio.c (yes, kludge)
- *	ultouch();
- */
-	DEBUG(4, " PROCESS: msg - %s\n", msg);
+	DEBUG(4, "PROCESS: msg - %s\n", msg);
 	switch (msg[0]) {
 
 	case RQSTCMPT:
-		DEBUG(4, "%s\n", "RQSTCMPT:");
+		DEBUG(4, "RQSTCMPT:\n", CNULL);
 		if (msg[1] == 'N') {
 			i = atoi(&msg[2]);
 			if (i<0 || i>EM_MAX) i=0;
-			/* duke!rti: only note failed requests */
-			logent(msg, "REQUESTED");
+			USRF( 1 << i );
+				i = 0;
+			logent(Em_msg[i], "REQUEST FAILED");
+			if (strcmp(&msg[1], EM_NOTMP) == 0) {
+				/* dont send him files he can't save */
+				WMESG(HUP, "");
+				RMESG(HUP, msg, 1);
+				goto process;
+			}
 		}
+		if (msg[1] == 'Y')
+			USRF(USR_COK);
 		if (role == MASTER) {
 			notify(mailopt, W_USER, W_FILE1, Rmtname, &msg[1]);
 		}
 		goto top;
 
 	case HUP:
-		DEBUG(4, "%s\n", "HUP:");
+		DEBUG(4, "HUP:\n", CNULL);
 		if (msg[1] == 'Y') {
-			WMESG(HUP, YES);
+			if (role == MASTER)
+				WMESG(HUP, YES);
 			(*Turnoff)();
 			Rdmsg = Imsg;
 			Wrmsg = Omsg;
-			return(0);
+			return SUCCESS;
 		}
 
 		if (msg[1] == 'N') {
-			ASSERT(role == MASTER, "WRONG ROLE", "", role);
+			ASSERT(role == MASTER, "WRONG ROLE - HUP", CNULL, role);
 			role = SLAVE;
 			goto top;
 		}
@@ -290,11 +312,10 @@ process:
 		}
 
 		/*  slave part  */
-		i = getargs(msg, wrkvec);
+		i = getargs(msg, wrkvec, 20);
 		strcpy(filename, W_FILE1);
-		if (index(filename, ';') != NULL
-		  || index(W_FILE2, ';') != NULL
-		  || i < 3) {
+		if (index(filename, ';') != NULL || index(W_FILE2, ';') != NULL
+		    || i < 3) {
 			WMESG(XUUCP, NO);
 			goto top;
 		}
@@ -302,6 +323,7 @@ process:
 		if (chkpth("", Rmtname, filename)) {
 			WMESG(XUUCP, NO);
 			logent("XUUCP DENIED", filename);
+				USRF(USR_XUUCP);
 			goto top;
 		}
 		sprintf(rqstr, "%s %s", filename, W_FILE2);
@@ -317,11 +339,18 @@ process:
 			i = atoi(&msg[2]);
 			if (i < 0 || i > EM_MAX)
 				i = 0;
-			logent(Em_msg[i], "REQUEST");
-			notify(mailopt, W_USER, W_FILE1, Rmtname, &msg[1]);
-			ASSERT(role == MASTER, "WRONG ROLE", "", role);
+			logent(Em_msg[i], "REQUEST FAILED");
+			USRF( 1 << i );
 			fclose(fp);
 			fp = NULL;
+			if (strcmp(&msg[1], EM_NOTMP) == 0) {
+				/* dont send him files he can't save */
+				WMESG(HUP, "");
+				RMESG(HUP, msg, 1);
+				goto process;
+			}
+			notify(mailopt, W_USER, W_FILE1, Rmtname, &msg[1]);
+			ASSERT(role == MASTER, "WRONG ROLE - SN", CNULL, role);
 			if (msg[1] != '4')
 				unlinkdf(W_DFILE);
 			goto top;
@@ -329,32 +358,43 @@ process:
 
 		if (msg[1] == 'Y') {
 			/* send file */
-			ASSERT(role == MASTER, "WRONG ROLE", "", role);
+			ASSERT(role == MASTER, "WRONG ROLE - SY", CNULL, role);
 			ret = fstat(fileno(fp), &stbuf);
 			ASSERT(ret != -1, "STAT FAILED", filename, 0);
 			i = 1 + (int)(stbuf.st_size / XFRRATE);
+			if (send_or_receive != SNDFILE) {
+				send_or_receive = SNDFILE;
+				systat(Rmtname, SS_INPROGRESS, "SENDING");
+			}
 			ret = (*Wrdata)(fp, Ofn);
 			fclose(fp);
 			fp = NULL;
-			if (ret != 0) {
+			if (ret != SUCCESS) {
 				(*Turnoff)();
-				return(FAIL);
+				USRF(USR_CFAIL);
+				return FAIL;
 			}
 			RMESG(RQSTCMPT, msg, i);
-/* put the unlink *after* the RMESG -- fortune!Dave-Yost */
 			unlinkdf(W_DFILE);
 			goto process;
 		}
 
 		/*  SLAVE section of SNDFILE  */
-		ASSERT(role == SLAVE, "WRONG ROLE", "", role);
+		ASSERT(role == SLAVE, "WRONG ROLE - SLAVE", CNULL, role);
 
 		/* request to receive file */
 		/* check permissions */
-		i = getargs(msg, wrkvec);
-		ASSERT(i > 4, "ARG COUNT<5", "", i);
-		sprintf(rqstr, "%s %s %s %s", W_TYPE, W_FILE1,
-		  W_FILE2, W_USER);
+		i = getargs(msg, wrkvec, 20);
+		if (i < 5) {
+			char *bnp;
+			bnp = rindex(Wfile, '/');
+			sprintf(rqstr, "%s/%s", CORRUPT, bnp ? bnp + 1 : Wfile);
+			xmv(Wfile, rqstr);
+			logent(Wfile, "CMD FILE CORRUPTED");
+			Wfile[0] = '\0';
+			goto top;
+		}
+		sprintf(rqstr, "%s %s %s %s", W_TYPE, W_FILE1, W_FILE2, W_USER);
 		logent(rqstr, "REQUESTED");
 		DEBUG(4, "msg - %s\n", msg);
 		strcpy(filename, W_FILE2);
@@ -362,15 +402,18 @@ process:
 		if (filename[0] == XQTPRE) {
 			if (++nXfiles > 10) {
 				nXfiles = 0;
-				/* I sure hope the wait(II) does not hang.
-				 * One can never tell about UNIX variants.
+				/*
+				 * want to create an orphan uuxqt,
+				 * so a double-fork is needed.
 				 */
-				if (++nXQTs > 2)
-					wait((int *)0);
-				xuuxqt();
+				if (fork() == 0) {
+					xuuxqt();
+					_exit(0);
+				}
+				wait((int *)0);
 			}
 		}
-		/* rti!trt: expand filename, i is set to 0 if this is
+		/* expand filename, i is set to 0 if this is
 		 * is a vanilla spool file, so no stat(II)s are needed */
 		i = expfile(filename);
 		DEBUG(4, "expfile type - %d\n", i);
@@ -389,42 +432,51 @@ process:
 		sprintf(User, "%.9s", W_USER);
 
 		DEBUG(4, "chkpth ok Rmtname - %s\n", Rmtname);
+		/* speed things up by OKing file before
+		 * creating TM file.  If the TM file cannot be created,
+		 * then the conversation bombs, but that seems reasonable,
+		 * as there are probably serious problems then.
+		 */
+		WMESG(SNDFILE, YES);
 		sprintf(Dfile, "%s/TM.%05d.%03d", Spool, pnum, tmpnum++);
 		if((fp = fopen(subfile(Dfile), "w")) == NULL) {
-			WMESG(SNDFILE, EM_NOTMP);
-			logent("CAN'T OPEN", "DENIED");
+/*			WMESG(SNDFILE, EM_NOTMP);*/
+			logent("CAN'T OPEN", "TM FILE");
 			unlinkdf(Dfile);
-			goto top;
+			(*Turnoff)();
+			return FAIL;
 		}
 
-		WMESG(SNDFILE, YES);
+		if (send_or_receive != RCVFILE) {
+			send_or_receive = RCVFILE;
+			systat(Rmtname, SS_INPROGRESS, "RECEIVING");
+		}
 		ret = (*Rddata)(Ifn, fp);
-		/* ittvax!swatt: (try to) make sure IO successful */
 		fflush(fp);
 		if (ferror(fp) || fclose(fp))
 			ret = FAIL;
-		if (ret != 0) {
+		if (ret != SUCCESS) {
+			(void) unlinkdf(Dfile);
 			(*Turnoff)();
-			return(FAIL);
+			return FAIL;
 		}
 		/* copy to user directory */
 		ntfyopt = index(W_OPTNS, 'n') != NULL;
 		status = xmv(Dfile, filename);
 		WMESG(RQSTCMPT, status ? EM_RMTCP : YES);
-		if (status == 0) {
-			sscanf(W_MODE, "%o", &filemode);
-			if (filemode <= 0)
+		if (i == 0)
+			;	/* vanilla file, nothing to do */
+		else if (status == 0) {
+			if (W_MODE == 0 || sscanf(W_MODE, "%o", &filemode) != 1)
 				filemode = BASEMODE;
-			chmod(subfile(filename), filemode | BASEMODE);
+			chmod(subfile(filename), (filemode|BASEMODE)&0777);
 			arrived(ntfyopt, filename, W_NUSER, Rmtname, User);
-		}
-		else {
-			logent("FAILED", "COPY");
+		} else {
+			logent(_FAILED, "COPY");
 			status = putinpub(filename, Dfile, W_USER);
 			DEBUG(4, "->PUBDIR %d\n", status);
 			if (status == 0)
-				arrived(ntfyopt, filename, W_NUSER,
-				  Rmtname, User);
+				arrived(ntfyopt, filename, W_NUSER, Rmtname, User);
 		}
 
 		goto top;
@@ -437,25 +489,38 @@ process:
 			i = atoi(&msg[2]);
 			if (i < 0 || i > EM_MAX)
 				i = 0;
-			logent(Em_msg[i], "REQUEST");
-			notify(mailopt, W_USER, W_FILE1, Rmtname, &msg[1]);
-			ASSERT(role == MASTER, "WRONG ROLE", "", role);
+			logent(Em_msg[i], "REQUEST FAILED");
+			USRF( 1 << i );
 			fclose(fp);
+			fp = NULL;
+			if (strcmp(&msg[1], EM_NOTMP) == 0) {
+				/* dont send him files he can't save */
+				WMESG(HUP, "");
+				RMESG(HUP, msg, 1);
+				goto process;
+			}
+			notify(mailopt, W_USER, W_FILE1, Rmtname, &msg[1]);
+			ASSERT(role == MASTER, "WRONG ROLE - RN", CNULL, role);
 			unlinkdf(Dfile);
 			goto top;
 		}
 
 		if (msg[1] == 'Y') {
 			/* receive file */
-			ASSERT(role == MASTER, "WRONG ROLE", "", role);
+			ASSERT(role == MASTER, "WRONG ROLE - RY", CNULL, role);
+			if (send_or_receive != RCVFILE) {
+				send_or_receive = RCVFILE;
+				systat(Rmtname, SS_INPROGRESS, "RECEIVING");
+			}
 			ret = (*Rddata)(Ifn, fp);
-			/* ittvax!swatt: (try to) make sure IO successful */
 			fflush(fp);
 			if (ferror(fp) || fclose(fp))
 				ret = FAIL;
-			if (ret != 0) {
+			if (ret != SUCCESS) {
+				unlinkdf(Dfile);
 				(*Turnoff)();
-				return(FAIL);
+				USRF(USR_CFAIL);
+				return FAIL;
 			}
 			/* copy to user directory */
 			if (isdir(filename)) {
@@ -470,25 +535,35 @@ process:
 				sscanf(&msg[2], "%o", &filemode);
 				if (filemode <= 0)
 					filemode = BASEMODE;
-				chmod(subfile(filename), filemode | BASEMODE);
+				chmod(subfile(filename), (filemode|BASEMODE)&0777);
+				USRF(USR_COK);
 			}
 			else {
-				logent("FAILED", "COPY");
+				logent(_FAILED, "COPY");
 				putinpub(filename, Dfile, W_USER);
+				USRF(USR_LOCCP);
 			}
 			goto top;
 		}
 
 		/*  SLAVE section of RCVFILE  */
-		ASSERT(role == SLAVE, "WRONG ROLE", "", role);
+		ASSERT(role == SLAVE, "WRONG ROLE - SLAVE RCV", CNULL, role);
 
 		/* request to send file */
 		strcpy(rqstr, msg);
 		logent(rqstr, "REQUESTED");
 
 		/* check permissions */
-		i = getargs(msg, wrkvec);
-		ASSERT(i > 3, "ARG COUNT<4", "", i);
+		i = getargs(msg, wrkvec, 20);
+		if (i < 4) {
+			char *bnp;
+			bnp = rindex(Wfile, '/');
+			sprintf(rqstr, "%s/%s", CORRUPT, bnp ? bnp + 1 : Wfile);
+			xmv(Wfile, rqstr);
+			logent(Wfile, "CMD FILE CORRUPTED");
+			Wfile[0] = '\0';
+			goto top;
+		}
 		DEBUG(4, "msg - %s\n", msg);
 		DEBUG(4, "W_FILE1 - %s\n", W_FILE1);
 		strcpy(filename, W_FILE1);
@@ -517,17 +592,21 @@ process:
 		i = 1 + (int)(stbuf.st_size / XFRRATE);
 		sprintf(msg, "%s %o", YES, stbuf.st_mode & 0777);
 		WMESG(RCVFILE, msg);
+		if (send_or_receive != SNDFILE) {
+			send_or_receive = SNDFILE;
+			systat(Rmtname, SS_INPROGRESS, "SENDING");
+		}
 		ret = (*Wrdata)(fp, Ofn);
 		fclose(fp);
-		if (ret != 0) {
+		if (ret != SUCCESS) {
 			(*Turnoff)();
-			return(FAIL);
+			return FAIL;
 		}
 		RMESG(RQSTCMPT, msg, i);
 		goto process;
 	}
 	(*Turnoff)();
-	return(FAIL);
+	return FAIL;
 }
 
 
@@ -543,29 +622,31 @@ rmesg(c, msg, n)
 register char *msg, c;
 register int n;
 {
-	char str[50];
+	char str[128];
 
 	DEBUG(4, "rmesg - '%c' ", c);
-	if (n != 1) {
-		sprintf(str, "%d", n);
-		logent(str, "PATIENCE");
-	}
-	while ((*Rdmsg)(msg, Ifn) != 0) {
-		if (--n > 0)
+	while ((*Rdmsg)(msg, Ifn) != SUCCESS) {
+		if (--n > 0) {
+			sprintf(str, "%d", n);
+			logent(str, "PATIENCE");
 			continue;
-		DEBUG(4, "got %s\n", "FAIL");
-		sprintf(str, "expected '%c' got FAIL", c);
+		}
+		DEBUG(4, "got FAIL\n", CNULL);
+		if (c != '\0')
+			sprintf(str, "expected '%c' got FAIL (%d)", c, errno);
+		else
+			sprintf(str, "expected ANY got FAIL (%d)", errno);
 		logent(str, "BAD READ");
-		return(FAIL);
+		return FAIL;
 	}
 	if (c != '\0' && msg[0] != c) {
 		DEBUG(4, "got %s\n", msg);
-		sprintf(str, "expected '%c' got %.25s", c, msg);
+		sprintf(str, "expected '%c' got %s", c, msg);
 		logent(str, "BAD READ");
-		return(FAIL);
+		return FAIL;
 	}
-	DEBUG(4, "got %.25s\n", msg);
-	return(0);
+	DEBUG(4, "got %s\n", msg);
+	return SUCCESS;
 }
 
 
@@ -579,9 +660,9 @@ register int n;
 wmesg(m, s)
 register char *s, m;
 {
-	DEBUG(4, "wmesg '%c'", m);
-	DEBUG(4, "%.25s\n", s);
-	return((*Wrmsg)(m, s, Ofn));
+	DEBUG(4, "wmesg '%c' ", m);
+	DEBUG(4, "%s\n", s);
+	return (*Wrmsg)(m, s, Ofn);
 }
 
 
@@ -608,9 +689,9 @@ char *user, *file, *sys, *msgcode;
 			i = 0;
 		msg = Em_msg[i];
 	}
-	sprintf(str, "file %s, system %s\n%s\n",
-		file, sys, msg);
-	mailst(user, str, "");
+	sprintf(str, "file %s!%s -- %s\n",
+		sys,file, msg);
+	mailst(user, str, CNULL);
 	return;
 }
 
@@ -624,8 +705,8 @@ lnotify(user, file, mesg)
 char *user, *file, *mesg;
 {
 	char mbuf[200];
-	sprintf(mbuf, "file %s on %s\n%s\n", file, Myname, mesg);
-	mailst(user, mbuf, "");
+	sprintf(mbuf, "file %s!%s -- %s\n", Myname, file, mesg);
+	mailst(user, mbuf, CNULL);
 	return;
 }
 
@@ -648,7 +729,7 @@ int role;
 {
 	extern (*Rdmsg)(), (*Wrmsg)();
 	extern char *blptcl(), fptcl();
-	char msg[BUFSIZ], str[BUFSIZ];
+	char msg[BUFSIZ], str[MAXFULLNAME];
 
 	Rdmsg = Imsg;
 	Wrmsg = Omsg;
@@ -657,26 +738,26 @@ int role;
 		if ((str[0] = fptcl(&msg[1])) == NULL) {
 			/* no protocol match */
 			WMESG(USEPTCL, NO);
-			return(FAIL);
+			return FAIL;
 		}
 		str[1] = '\0';
 		WMESG(USEPTCL, str);
 		if (stptcl(str) != 0)
-			return(FAIL);
+			return FAIL;
 		DEBUG(4, "protocol %s\n", str);
-		return(SUCCESS);
+		return SUCCESS;
 	}
 	else {
 		WMESG(SLTPTCL, blptcl(str));
 		RMESG(USEPTCL, msg, 1);
 		if (msg[1] == 'N') {
-			return(FAIL);
+			return FAIL;
 		}
 
 		if (stptcl(&msg[1]) != 0)
-			return(FAIL);
+			return FAIL;
 		DEBUG(4, "Protocol %s\n", msg);
-		return(SUCCESS);
+		return SUCCESS;
 	}
 }
 
@@ -699,23 +780,22 @@ fptcl(str)
 register char *str;
 {
 	register struct Proto *p;
-	struct stat stbuf;
+	extern char *Flds[];
 
-	if (fstat(Ifn, &stbuf) < 0)
-		return ('\0');
 	for (p = Ptbl; p->P_id != '\0'; p++) {
-		/*
-		 * Hack to avoid using network protocol if not connected
-		 * to network.
-		 */
-		if ((stbuf.st_mode & S_IFMT) != S_IFSOCK && p->P_id == 'n')
+#ifdef BSDTCP
+		if (!IsTcpIp && p->P_id == 't')	/* Only use 't' on TCP/IP */
+			continue;
+#endif BSDTCP
+		/* only use 'f' protocol on PAD */
+		if (strcmp("PAD", Flds[F_LINE]) && p->P_id == 'f')
 			continue;
 		if (index(str, p->P_id) != NULL) {
-			return(p->P_id);
+			return p->P_id;
 		}
 	}
 
-	return('\0');
+	return '\0';
 }
 
 
@@ -738,22 +818,11 @@ register char *str;
 {
 	register struct Proto *p;
 	register char *s;
-	struct stat stbuf;
 
-	if (fstat(Ofn, &stbuf) < 0)
-		stbuf.st_mode = S_IFCHR;
-	for (p = Ptbl, s = str; p->P_id != '\0'; p++) {
-		/*
-		 * Hack to avoid using network protocol if not connected
-		 * to network.
-		 */
-		if ((stbuf.st_mode & S_IFMT) != S_IFSOCK && p->P_id == 'n')
-			continue;
-		*s++ = p->P_id;
-	}
+	for (p = Ptbl, s = str; (*s++ = p->P_id) != '\0'; p++)
+		;
 	*s = '\0';
-
-	return(str);
+	return str;
 }
 
 /***
@@ -784,14 +853,14 @@ register char *c;
 			Wrdata = p->P_wrdata;
 			Turnon = p->P_turnon;
 			Turnoff = p->P_turnoff;
-			if ((*Turnon)() != 0)
-				return(FAIL);
+			if ((*Turnon)() != SUCCESS)
+				return FAIL;
 			DEBUG(4, "Proto started %c\n", *c);
-			return(SUCCESS);
+			return SUCCESS;
 		}
 	}
 	DEBUG(4, "Proto start-fail %c\n", *c);
-	return(FAIL);
+	return FAIL;
 }
 
 /***
@@ -811,7 +880,7 @@ register char *file, *user, *tmp;
 	sprintf(fullname, "%s/%s/", PUBDIR, user);
 	if (mkdirs(fullname) != 0) {
 		/* can not make directories */
-		return(FAIL);
+		return FAIL;
 	}
 	strcat(fullname, lastpart(file));
 	status = xmv(tmp, fullname);
@@ -819,7 +888,7 @@ register char *file, *user, *tmp;
 		strcpy(file, fullname);
 		chmod(subfile(fullname), BASEMODE);
 	}
-	return(status);
+	return status;
 }
 
 /***
@@ -850,6 +919,6 @@ char *file, *nuser, *rmtsys, *rmtuser;
 	if (!opt)
 		return;
 	sprintf(mbuf, "%s from %s!%s arrived\n", file, rmtsys, rmtuser);
-	mailst(nuser, mbuf, "");
+	mailst(nuser, mbuf, CNULL);
 	return;
 }

@@ -1,10 +1,17 @@
 #ifndef lint
-static char sccsid[] = "@(#)logent.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)logent.c	5.3 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
 #include <sys/types.h>
+#ifdef BSD4_2
 #include <sys/time.h>
+#else
+#include <time.h>
+#endif
+#if defined(USG) || defined(BSD4_2)
+#include <fcntl.h>
+#endif
 
 extern	time_t	time();
 
@@ -17,15 +24,13 @@ extern	time_t	time();
  * writes the buffer out.  This could mangle things but
  * it isn't likely. -- ittvax!swatt
  *
- * If the files could be opened with "guaranteed append to end",
- * the lseeks could be removed.
- * Using fseek would be slightly cleaner,
- * but would mangle things slightly more often.
+ * Under USG UNIX & 4.2BSD, the files are opened with "guaranteed append to end"
+ * and the lseeks are removed.
  */
 
 
-FILE *Lp = NULL;
-FILE *Sp = NULL;
+static FILE *Lp = NULL;
+static FILE *Sp = NULL;
 static Ltried = 0;
 static Stried = 0;
 
@@ -43,9 +48,16 @@ char *text, *status;
 	if (Lp == NULL) {
 		if (!Ltried) {
 			int savemask;
+#if defined(USG) || defined(BSD4_2)
+			int flags;
+#endif
 			savemask = umask(LOGMASK);
 			Lp = fopen (LOGFILE, "a");
 			umask(savemask);
+#if defined(USG) || defined(BSD4_2)
+			flags = fcntl(fileno(Lp), F_GETFL, 0);
+			fcntl(fileno(Lp), F_SETFL, flags|O_APPEND);
+#endif
 		}
 		Ltried = 1;
 		if (Lp == NULL)
@@ -70,22 +82,42 @@ register FILE *fp;
 	extern struct tm *localtime();
 	time_t clock;
 
+	if (text == NULL)
+		text = "";
+	if (status == NULL)
+		status = "";
 	if (!pid)
 		pid = getpid();
+	if (Rmtname[0] == '\0')
+		strcpy(Rmtname, Myname);
 	time(&clock);
 	tp = localtime(&clock);
 	fprintf(fp, "%s %s ", User, Rmtname);
-	fprintf(fp, "(%d/%d-%d:%02d-%d) ", tp->tm_mon + 1,
+#ifdef USG
+	fprintf(fp, "(%d/%d-%2.2d:%2.2d-%d) ", tp->tm_mon + 1,
 		tp->tm_mday, tp->tm_hour, tp->tm_min, pid);
+#endif
+#ifndef USG
+	fprintf(fp, "(%d/%d-%02d:%02d-%d) ", tp->tm_mon + 1,
+		tp->tm_mday, tp->tm_hour, tp->tm_min, pid);
+#endif
 	fprintf(fp, "%s (%s)\n", status, text);
 
 	/* Since it's buffered */
+#ifndef USG
 	lseek (fileno(fp), (long)0, 2);
+#endif
 	fflush (fp);
-	if (Debug > 0) {
+	if (Debug) {
 		fprintf(stderr, "%s %s ", User, Rmtname);
-		fprintf(stderr, "(%d/%d-%d:%02d-%d) ", tp->tm_mon + 1,
+#ifdef USG
+		fprintf(stderr, "(%d/%d-%2.2d:%2.2d-%d) ", tp->tm_mon + 1,
 			tp->tm_mday, tp->tm_hour, tp->tm_min, pid);
+#endif
+#ifndef USG
+		fprintf(stderr, "(%d/%d-%02d:%02d-%d) ", tp->tm_mon + 1,
+			tp->tm_mday, tp->tm_hour, tp->tm_min, pid);
+#endif
 		fprintf(stderr, "%s (%s)\n", status, text);
 	}
 }
@@ -127,22 +159,35 @@ char *text;
 	if (Sp == NULL) {
 		if (!Stried) {
 			int savemask;
+#if defined(USG) || defined(BSD4_2)
+			int flags;
+#endif
 			savemask = umask(LOGMASK);
 			Sp = fopen(SYSLOG, "a");
 			umask(savemask);
+#if defined(USG) || defined(BSD4_2)
+			flags = fcntl(fileno(Sp), F_GETFL, 0);
+			fcntl(fileno(Sp), F_SETFL, flags|O_APPEND);
+#endif
 		}
 		Stried = 1;
 		if (Sp == NULL)
 			return;
 		fioclex(fileno(Sp));
 	}
-			
+
 	time(&clock);
 	tp = localtime(&clock);
 
 	fprintf(Sp, "%s %s ", User, Rmtname);
-	fprintf(Sp, "(%d/%d-%d:%02d) ", tp->tm_mon + 1,
+#ifdef USG
+	fprintf(Sp, "(%d/%d-%2.2d:%2.2d) ", tp->tm_mon + 1,
 		tp->tm_mday, tp->tm_hour, tp->tm_min);
+#endif
+#ifndef USG
+	fprintf(Sp, "(%d/%d-%02d:%02d) ", tp->tm_mon + 1,
+		tp->tm_mday, tp->tm_hour, tp->tm_min);
+#endif
 	fprintf(Sp, "(%ld) %s\n", clock, text);
 
 	/* Position at end and flush */
@@ -155,10 +200,7 @@ char *text;
  * Otherwise unwanted file descriptors are inherited
  * by other programs.  And that may be a security hole.
  */
-#ifdef SYSIII
-#include <fcntl.h>
-#endif
-#ifndef	SYSIII
+#ifndef	USG
 #include <sgtty.h>
 #endif
 
@@ -167,10 +209,9 @@ int fd;
 {
 	register int ret;
 
-#ifdef	SYSIII
+#if defined(USG) || defined(BSD4_2)
 	ret = fcntl(fd, F_SETFD, 1);	/* Steve Bellovin says this does it */
-#endif
-#ifndef	SYSIII
+#else
 	ret = ioctl(fd, FIOCLEX, STBNULL);
 #endif
 	if (ret)

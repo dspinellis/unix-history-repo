@@ -1,14 +1,6 @@
 #ifndef lint
-static char sccsid[] = "@(#)gnsys.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)gnsys.c	5.3 (Berkeley) %G%";
 #endif
-
-/*
- * Mods:
- * The "retry" code below prevents uucico from calling
- * a site which it has called earlier.
- * Also, uucico does callok() only once for each system.
- * Done by unc!smb
- */
 
 #include "uucp.h"
 #include <sys/types.h>
@@ -18,19 +10,14 @@ static char sccsid[] = "@(#)gnsys.c	5.2 (Berkeley) %G%";
 #include <sys/dir.h>
 #endif
 
-
 #define LSIZE 100	/* number of systems to store */
 #define WSUFSIZE 6	/* work file name suffix size */
 
-/*******
- *	gnsys(sname, dir, pre)
- *	char *sname, *dir, pre;
- *
- *	gnsys  -  this routine will return the next
- *	system name which has work to be done.
+/*
+ *	this routine will return the next system name which has work to be done.
+ *	"sname" is a string of size DIRSIZ - WSUFSIZE.
  *	"pre" is the prefix for work files.
  *	"dir" is the directory to search.
- *	"sname" is a string of size DIRSIZ - WSUFSIZE.
  *
  *	return codes:
  *		0  -  no more names
@@ -55,7 +42,7 @@ retry:
 	if (nitem == base) {
 		/* get list of systems with work */
 		int i;
-		dirp = opendir(subdir(dir,pre), "r");
+		dirp = opendir(subdir(dir,pre));
 		ASSERT(dirp != NULL, "BAD DIRECTORY", dir, 0);
 		for (i = base; i < LSIZE; i++)
 			list[i] = NULL;
@@ -81,28 +68,22 @@ retry:
 		for (n = 0; n < nitem; n++)
 			if (list[n] != NULL)
 				free(list[n]);
-		return(0);
+		return 0;
 	}
 	while(nitem > n) {
 		strcpy(sname, list[n++]);
 		if (callok(sname) == 0)
-			return(1);
+			return 1;
 	}
 	base = n = nitem;
 	goto retry;
 }
 
-/***
- *	srchst(name, list, n)
- *	char *name, **list;
- *	int n;
- *
- *	srchst  -  this routine will do a linear search
- *	of list (list) to find name (name).
- *	If the name is not found, it is added to the
- *	list.
- *	The number of items in the list (n) is
- *	returned (incremented if a name is added).
+/*
+ *	this routine will do a linear search of list (list) to find name (name).
+ *	If the name is not found, it is added to the list.
+ *	The number of items in the list (n) is returned (incremented if a
+ *	name is added).
  *
  *	return codes:
  *		n - the number of items in the list
@@ -122,9 +103,9 @@ int n;
 	if (i >= n) {
 		if ((p = calloc((unsigned)strlen(name) + 1, sizeof (char)))
 			== NULL)
-			return(n);
+			return n;
 		strcpy(p, name);
 		list[n++] = p;
 	}
-	return(n);
+	return n;
 }

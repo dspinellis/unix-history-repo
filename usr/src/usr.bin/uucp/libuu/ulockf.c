@@ -1,22 +1,17 @@
 #ifndef lint
-static char sccsid[] = "@(#)ulockf.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ulockf.c	5.2 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 
-
 extern time_t	time();
 
 /* File mode for lock files */
 #define	LCKMODE	0444
 
-/*******
- *	ulockf(file, atime)
- *	char *file;
- *	time_t atime;
- *
+/*
  *	ulockf  -  this routine will create a lock file (file).
  *	If one already exists, the create time is checked for
  *	older than the age time (atime).
@@ -38,7 +33,7 @@ time_t atime;
 
 	if (pid < 0) {
 		pid = getpid();
-		sprintf(tempfile, "LTMP.%d", pid);
+		sprintf(tempfile, "%s/LTMP.%d", LOCKDIR, pid);
 	}
 	if (onelock(pid, tempfile, file) == -1) {
 		/* lock file exists */
@@ -48,16 +43,18 @@ time_t atime;
 			time(&ptime);
 			if ((ptime - stbuf.st_ctime) < atime) {
 				/* file not old enough to delete */
-				return(FAIL);
+				return FAIL;
 			}
+			ret = unlink(file);
+			logent(file, "DEAD LOCK");
+			sleep(5);	/* rti!trt: avoid a race */
+			ret = onelock(pid, tempfile, file);
 		}
-		ret = unlink(file);
-		ret = onelock(pid, tempfile, file);
 		if (ret != 0)
-			return(FAIL);
+			return FAIL;
 	}
 	stlock(file);
-	return(0);
+	return SUCCESS;
 }
 
 
@@ -82,7 +79,7 @@ register char *name;
 		if (Lockfile[i] == NULL)
 			break;
 	}
-	ASSERT(i < MAXLOCKS, "TOO MANY LOCKS", "", i);
+	ASSERT(i < MAXLOCKS, "TOO MANY LOCKS", CNULL, i);
 	if (i >= Nlocks)
 		i = Nlocks++;
 	p = calloc((unsigned)(strlen(name)+1), sizeof (char));
@@ -93,9 +90,8 @@ register char *name;
 }
 
 
-/***
- *	rmlock(name)	remove all lock files in list
- *	char *name;	or name
+/*
+ *	remove all lock files in list *	or name
  *
  *	return codes: none
  */
@@ -108,20 +104,15 @@ register char *name;
 	for (i = 0; i < Nlocks; i++) {
 		if (Lockfile[i] == NULL)
 			continue;
-		if (name == NULL
-		|| strcmp(name, Lockfile[i]) == SAME) {
+		if (name == NULL || strcmp(name, Lockfile[i]) == SAME) {
 			unlink(Lockfile[i]);
 			free(Lockfile[i]);
 			Lockfile[i] = NULL;
 		}
 	}
-	return;
 }
 
-
 /*
- *  this stuff from pjw 
- *  /usr/pjw/bin/recover - Check pids to remove unnecessary locks.
  *	isalock(name) returns 0 if the name is a lock.
  *	unlock(name)  unlocks name if it is a lock.
  *	onelock(pid,tempfile,name) makes lock a name
@@ -130,81 +121,95 @@ register char *name;
  *	lock(pid,tempfile,names) either locks all the
  *	names or none of them.
  */
-isalock(name) char *name;
+isalock(name)
+char *name;
 {
 	struct stat xstat;
-	if(stat(name,&xstat)<0) return(0);
-	if(xstat.st_size!=sizeof(int)) return(0);
-	return(1);
+	if (stat(name,&xstat) < 0)
+		return 0;
+	if (xstat.st_size != sizeof(int))
+		return 0;
+	return 1;
 }
-unlock(name) char *name;
+unlock(name)
+char *name;
 {
-	if(isalock(name)) return(unlink(name));
-	else return(-1);
+	if (isalock(name))
+		return unlink(name);
+	else
+		return -1;
 }
-onelock(pid,tempfile,name) char *tempfile,*name;
-{	register int fd;
-	fd=creat(tempfile,LCKMODE);
-	if(fd<0) return(-1);
-	write(fd,(char *) &pid,sizeof(int));
+onelock(pid,tempfile,name)
+char *tempfile,*name;
+{
+	register int fd;
+#ifdef VMS
+	fd = creat(name, LCKMODE, "1version");
+#else !VMS
+	fd = creat(tempfile, LCKMODE);
+#endif !VMS
+	if (fd<0)
+		return FAIL;
+	write(fd, (char *) &pid, sizeof(int));
 	close(fd);
-	if(link(tempfile,name)<0)
-	{	unlink(tempfile);
-		return(-1);
+#ifndef	VMS
+	if (link(tempfile, name) < 0) {
+		unlink(tempfile);
+		return FAIL;
 	}
 	unlink(tempfile);
-	return(0);
+#endif
+	return SUCCESS;
 }
-lock(pid,tempfile,names) char *tempfile;
+
+
+lock(pid, tempfile, names)
+char *tempfile;
 register char **names;
-{	register int i,j;
-	for(i=0;names[i]!=0;i++)
-	{	if(onelock(pid,tempfile,names[i])==0) continue;
-		for(j=0;j<i;j++) unlink(names[j]);
-		return(-1);
+{
+	register int i, j;
+
+	for(i=0; names[i] != 0; i++) {
+		if (onelock(pid, tempfile, names[i]) == 0)
+			continue;
+		for(j=0; j < i ;j++)
+			unlink(names[j]);
+		return FAIL;
 	}
-	return(0);
+	return SUCCESS;
 }
 
 #define LOCKPRE "LCK."
 
-/***
- *	delock(s)	remove a lock file
- *	char *s;
- *
- *	return codes:  0  |  FAIL
+/*
+ *	remove a lock file
  */
-
 delock(s)
 char *s;
 {
-	char ln[30];
+	char ln[NAMESIZE];
 
-	sprintf(ln, "%s.%s", LOCKPRE, s);
+	sprintf(ln, "%s/%s.%s", LOCKDIR, LOCKPRE, s);
 	rmlock(ln);
 }
 
-
-/***
- *	mlock(sys)	create system lock
- *	char *sys;
+/*
+ *	create system lock
  *
- *	return codes:  0  |  FAIL
+ *	return codes:  SUCCESS  |  FAIL
  */
-
 mlock(sys)
 char *sys;
 {
-	char lname[30];
-	sprintf(lname, "%s.%s", LOCKPRE, sys);
-	return(ulockf(lname, (time_t) SLCKTIME ) < 0 ? FAIL : 0);
+	char lname[NAMESIZE];
+
+	sprintf(lname, "%s/%s.%s", LOCKDIR, LOCKPRE, sys);
+	return ulockf(lname, (time_t) SLCKTIME ) < 0 ? FAIL : SUCCESS;
 }
 
-
 /***
- *	ultouch()	update 'change' time for lock files
+ *	update 'change' time for lock files
  *
- *	-- mod by rti!trt --
  *	Only update ctime, not mtime or atime.
  *	The 'chmod' method permits cu(I)-like programs
  *	to determine how long uucp has been on the line.
@@ -237,8 +242,14 @@ ultouch()
 			continue;
 #ifdef	OLDTOUCH
 		utime(Lockfile[i], &ut);
-#else
+#else 	!OLDTOUCH
 		chmod(Lockfile[i], LCKMODE);
-#endif
+#endif !OLDTOUCH
+	/*
+	 * set 'nologinflag' if the file /etc/nologin exists.
+	 * This permits graceful shutdown of uucp.
+	 */
+	if (nologinflag == 0 && access(NOLOGIN, 0) == 0)
+		nologinflag = 1;
 	}
 }

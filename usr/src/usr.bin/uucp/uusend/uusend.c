@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)uusend.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)uusend.c	5.2 (Berkeley) %G%";
 #endif
 
 /*
@@ -27,17 +27,25 @@ static char sccsid[] = "@(#)uusend.c	5.1 (Berkeley) %G%";
 #include <sys/types.h>
 #include <sys/stat.h>
 
+/*
+ * define RECOVER to permit requests like 'uusend file sys1!sys2!~uucp'
+ * (abbreviation for 'uusend file sys1!sys2!~uucp/file').
+ * define DEBUG to keep log of uusend uusage.
+ * define RUUSEND if neighboring sites permit 'ruusend',
+ * which they certainly should to avoid security holes
+ */
 #define	RECOVER
+/*#define	DEBUG	"/usr/spool/uucp/uusend.log"/**/
 
 FILE	*in, *out;
 FILE	*dout;
 
-FILE	*popen();
-char	*index(), *strcpy();
+extern FILE	*popen();
+extern char	*index(), *strcpy(), *strcat(), *ctime();
 
 #ifdef	RUUSEND
 int	rsend;
-#endif
+#endif  RUUSEND
 int	mode = -1;	/* mode to chmod new file to */
 char	*nextsys;	/* next system in the chain */
 char	dnbuf[200];	/* buffer for result of ~user/file */
@@ -60,40 +68,38 @@ char	*filename;	/* file name from end of destname */
 char	*getfname();	/* routine to get filename from destname */
 int	fflg;
 char	f[100];		/* name of default output file */
-#else
+#else	!RECOVER
 char	*f	= "";	/* so we waste a little space */
-#endif
+#endif	!RECOVER
 
 main(argc, argv)
 int	argc;
 char	**argv;
 {
 	register int c;
-	long count = 0;
+	long count;
+	extern char **environ;
 
 #ifdef DEBUG
 	long t;
+	umask(022);
 	dout = fopen(DEBUG, "a");
 	if (dout == NULL) {
 		printf("Cannot append to %s\n", DEBUG);
 		exit(1);
 	}
 	freopen(DEBUG, "a", stdout);
-/*xxx
-	freopen(DEBUG, "a", stderr);
-  xxx*/
-	chmod(DEBUG, 0666);
 	fprintf(dout, "\nuusend run: ");
 	for (c=0; c<argc; c++)
 		fprintf(dout, "%s ", argv[c]);
 	time(&t);
 	fprintf(dout, "%s", ctime(&t));
-#endif
+#endif DEBUG
 
 #ifdef	RUUSEND
 	if(argv[0][0] == 'r')
 		rsend++;
-#endif
+#endif RUUSEND
 	while (argc > 1 && argv[1][0] == '-' && argv[1][1]) {
 		switch(argv[1][1]) {
 		case 'm':
@@ -109,7 +115,7 @@ char	**argv;
 			fflg++;
 			strcpy(f, argv[1]);
 			break;
-#endif
+#endif RECOVER
 		default:
 			fprintf(stderr, "Bad flag: %s\n", argv[1]);
 			break;
@@ -133,7 +139,7 @@ char	**argv;
 			fprintf(stderr, "illegal input\n");
 			exit(2);
 		}
-#endif
+#endif RUUSEND
 		in = fopen(sourcename, "r");
 		if (in == NULL) {
 			perror(argv[1]);
@@ -159,14 +165,14 @@ char	**argv;
 			mode = stbuf.st_mode & 0777;
 		}
 #ifdef	RUUSEND
-		sprintf(cmdbuf,"uux %s- \"%s!ruusend %s -m %o - (%s)\"",
-#else
-		sprintf(cmdbuf, "uux %s- \"%s!uusend %s -m %o - (%s)\"",
-#endif
+		sprintf(cmdbuf,"uux -gn -z %s- \"%s!ruusend %s -m %o - (%s)\"",
+#else !RUUSEND
+		sprintf(cmdbuf, "uux -gn -z %s- \"%s!uusend %s -m %o - (%s)\"",
+#endif !RUUSEND
 			rflg, nextsys, f, mode, destname);
 #ifdef DEBUG
 		fprintf(dout, "remote: nextsys='%s', destname='%s', cmd='%s'\n", nextsys, destname, cmdbuf);
-#endif
+#endif DEBUG
 		out = popen(cmdbuf, "w");
 	} else {
 		/*
@@ -176,7 +182,7 @@ char	**argv;
 #ifdef DEBUG
 			fprintf(dout, "before ~: '%s'\n", destname);
 fflush(dout);
-#endif
+#endif DEBUG
 			sl = index(destname, '/');
 #ifdef	RECOVER
 			if (sl == NULL && !fflg) {
@@ -185,13 +191,13 @@ fflush(dout);
 			}
 			for (sl = destname; *sl != '\0'; sl++)
 				;	/* boy, is this a hack! */
-#else
+#else !RECOVER
 			if (sl == NULL) {
 				fprintf(stderr, "Illegal ~user\n");
 				exit(3);
 			}
 			*sl++ = 0;
-#endif
+#endif !RECOVER
 			user = getpwnam(destname+1);
 			if (user == NULL) {
 				fprintf(stderr, "No such user as %s\n",
@@ -211,19 +217,19 @@ fflush(dout);
 				strcat(dnbuf, "/");
 				strcat(dnbuf, sl);
 			}
-#else
+#else !RECOVER
 				exit(4);
 			}
 			strcpy(dnbuf, user->pw_dir);
 			strcat(dnbuf, "/");
 			strcat(dnbuf, sl);
-#endif
+#endif !RECOVER
 			destname = dnbuf;
 		}
 #ifdef	RECOVER
 		else
 			destname = strcpy(dnbuf, destname);
-#endif
+#endif !RECOVER
 		if(strncmp(UULIB, destname, strlen(UULIB)) == 0) {
 			fprintf(stderr, "illegal file: %s", destname);
 			exit(4);
@@ -232,14 +238,14 @@ fflush(dout);
 		if (stat(destname, &stbuf) == 0 &&
 		    (stbuf.st_mode & S_IFMT) == S_IFDIR &&
 		     fflg) {
-			strcat(dnbuf, "/");
-			strcat(dnbuf, &f[2]);
+			strcat(destname, "/");
+			strcat(destname, &f[2]);
 		}
-#endif
+#endif RECOVER
 		out = fopen(destname, "w");
 #ifdef DEBUG
 		fprintf(dout, "local, file='%s'\n", destname);
-#endif
+#endif DEBUG
 		if (out == NULL) {
 			perror(destname);
 #ifdef	RECOVER
@@ -252,22 +258,19 @@ fflush(dout);
 			if (user != NULL) {
 				strcat(destname, user->pw_name);
 				if (stat(destname, &stbuf) == -1) {
-					mkdir(destname);
-					chmod(destname, 0777);
+					mkdir(destname, 0777);
 				}
 				strcat(destname, "/");
 			}
-#ifdef	RECOVER
 			if (fflg)
 				strcat(destname, &f[2]);
 			else
 				strcat(destname, filename);
-#endif
 			if ((out = fopen(destname, "w")) == NULL)
 				exit(5); /* all for naught! */
-#else
+#else !RECOVER
 			exit(5);
-#endif
+#endif !RECOVER
 		}
 		if (mode > 0)
 			chmod(destname, mode);	/* don't bother to check it */
@@ -277,6 +280,7 @@ fflush(dout);
 	 * Now, in any case, copy from in to out.
 	 */
 
+	count = 0;
 	while ((c=getc(in)) != EOF) {
 		putc(c, out);
 		count++;
@@ -284,8 +288,8 @@ fflush(dout);
 #ifdef DEBUG
 	fprintf(dout, "count %ld bytes\n", count);
 	fclose(dout);
-#endif
-	
+#endif DEBUG
+
 	fclose(in);
 	fclose(out);	/* really should pclose in that case */
 	exit(0);
@@ -329,28 +333,32 @@ register char *p;
 	return (p);
 }
 
-mkdir(dirname)
+#ifndef BSD4_2
+makedir(dirname, mode)
 char *dirname;
+int mode;
 {
 	register int pid;
 	int retcode, status;
 	switch ((pid = fork())) {
 	    case -1:		/* error */
 		return (-1);
-		break;
 	    case 0:		/* child */
 		umask(0);
-		execl("/bin/mkdir", "mkdir", dirname, 0);
+		execl("/bin/mkdir", "mkdir", dirname, (char *)0);
 		exit(1);
-		break;
+		/* NOTREACHED */
 	    default:		/* parent */
 		while ((retcode=wait(&status)) != pid && retcode != -1)
 			;
 		if (retcode == -1)
-			return (-1);
-		else
-			return (status);
-		break;
+			return  -1;
+		else {
+			chmod(dirname, mode);
+			return status;
+		}
 	}
+	/* NOTREACHED */
 }
-#endif
+#endif !BSD4_2
+#endif RECOVER

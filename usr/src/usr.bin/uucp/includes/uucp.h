@@ -1,4 +1,4 @@
-/*	uucp.h	5.3	84/09/04	*/
+/*	uucp.h	5.4	85/01/22	*/
 
 #include "stdio.h"
 
@@ -28,13 +28,14 @@
  * Systems running 3Com's UNET will have the getmyhname() call.
  * If you want to, define GETMYHNAME.
  *
- * You should also define MYNANE to be your uucp name.
+ * You should also define MYNAME to be your uucp name.
  *
  * For each of the above that are defined, uucp checks them in order.
  * It stops on the first method that returns a non null name.
  * If everything fails, it uses "unknown" for the system name.
  */
 #define	GETHOSTNAME
+/*#define CCWHOAMI	*/
 /* If the above fails ... */
 #define	MYNAME	"erewhon"
 
@@ -44,28 +45,35 @@
  * Otherwise, define EX_NOHOST, EX_CANTCREAT, and EX_NOINPUT.
  */
 #include <sysexits.h>
-/*#define EX_NOHOST	101*/
-/*#define EX_CANTCREAT	1*/
-/*#define EX_NOINPUT	2*/
-
-/* define UUDIR for uucp subdirectory kludge (recommended) */
-#define	UUDIR
+/*#define EX_NOINPUT	66*/
+/*#define EX_NOHOST	68*/
+/*#define EX_CANTCREAT	73*/
 
 /*
  * Define the various kinds of connections to include.
  * The complete list is in the condevs array in condevs.c
  */
-#define DN11		/* standard dialer */
-/*#define DATAKIT		/* ATT's datakit */
+/*#define DN11		/* standard dialer */
+/*#define DATAKIT	/* ATT's datakit */
 /*#define PNET		/* Purdue network */
 /*#define DF02		/* Dec's DF02/DF03 */
-#define HAYES		/* Hayes' Smartmodem */
-#define VENTEL		/* ventel dialer */
-#define VADIC		/* Racal-Vadic 3450 */
-/*#define RVMACS		/* Racal-Vadic MACS 831 */
-#define TCPNET		/* 4.2 TCP Network */
-/*#define UNET		/* 3Com's UNET */
+/*#define HAYES		/* Hayes' Smartmodem */
+/*#define VENTEL	/* ventel dialer */
+/*#define VADIC		/* Racal-Vadic 345x */
+/*#define VA212		/* Racal-Vadic 212 */
+/*#define VA811S	/* Racal-Vadic 811S dialer, 831 adaptor */
+#define VA820		/* Racal-Vadic 820 dialer, 831 adaptor */
+/*#define RVMACS	/* Racal-Vadic MACS  820 dialer, 831 adaptor */
+/*#define VMACS		/* Racal-Vadic MACS  811 dialer, 831 adaptor */
+/*#define UNETTCP	/* 3Com's UNET */
+#define BSDTCP		/* 4.2bsd TCP/IP */
+#define PAD		/* X.25 PAD */
 /*#define MICOM		/* micom mux port */
+/*#define NOVATION	/* Novation modem */
+
+#if defined(UNETTCP) || defined(BSDTCP)
+#define TCPIP
+#endif
 
 #ifdef	VENTEL
 /*
@@ -85,24 +93,37 @@
  * You will probably also have to set LIBNDIR in Makefile.
  * Otherwise, <dir.h> is assumed to have the Berkeley directory definitions.
  */
-/*#define	NDIR*/
+/*#define	NDIR	*/
 
 /*
- * If yours is a BTL system III, IV, or so-on site, define SYSIII.
- * Conditional compilations should produce the right code,
- * but if it doesn't (the compiler will probably complain loudly),
- * make the needed adjustments and guard the code with
- * #ifdef SYSIII, (code for system III), #else, (code for V7), #endif
+ * If yours is a BTL system III, IV, or so-on site, define USG.
  */
-/*#define	SYSIII*/
+/*#define	USG	*/
+
+/*
+ * If you are running 4.2bsd, define BSD4_2
+ */
+#define BSD4_2
+
+/*
+ * If you are using /etc/inetd with 4.2bsd, define BSDINETD
+ */
+#define BSDINETD
+
+/*#define VMSDTR	/* Turn on modem control on vms(works DTR) for
+			   develcon and gandalf ports to gain access */
 
 /* define the last characters for ACU */
-/* burl!lda, rti!trt, isn't "<" more widely used than "-"? */
-/* rti!trt: use -< as is done in 4.1c uucp */
 #define ACULAST "-<"
 
 /* define the value of WFMASK - for umask call - used for all uucp work files */
 #define WFMASK 0137
+
+/* define UUSTAT if you need "uustat" command */
+/* #define UUSTAT	*/
+
+/*	define UUSUB if you need "uusub" command */
+/* #define UUSUB /**/
 
 /* define the value of LOGMASK - for LOGFILE, SYSLOG, ERRLOG */
 #define	LOGMASK	0133
@@ -112,9 +133,39 @@
 /* and 444 is minimal (minimally useful, maximally annoying) */
 #define	BASEMODE	0666
 
-/* All users with getuid() <= PRIV_UIDS are 'privileged'. */
-/* Was 10, reduced to 3 as suggested by duke!dbl (David Leonard) */
-#define	PRIV_UIDS	3
+/*
+ * Define NOSTRANGERS if you don't want to accept transactions from
+ * sites that are not in your L.sys file (see cico.c)
+ */
+#define NOSTRANGERS
+/*
+ * Traditionally LCK (lock) files have been kept in /usr/spool/uucp.
+ * If you want that define LOCKDIR to be ".".
+ * If you want the locks kept in a subdirectory, define LOCKDIR as "LCK.".
+ * Good news about LCK. subdirectory: the directory can be mode 777 so
+ * unprivileged programs can share the uucp locking system,
+ * and the subdirectory keeps down clutter in the main directory.
+ * The BAD news: you have to change 'tip' and another programs that
+ * know where the LCK files are kept, and you have to change your /etc/rc
+ * if your rc cleans out the lock files (as it should).
+ */
+/*#define	LOCKDIR	"LCK." */
+#define	LOCKDIR	"."
+
+/* 
+ * If you want uucp and uux to copy the data files by default,
+ * don't define DONTCOPY (This is the way older 4bsd uucps worked)
+ * If you want uucp and uux to use the original files instead of
+ * copies, define DONTCOPY (This is the way System III and V work)
+ */
+#define DONTCOPY
+
+/*
+ * Very few (none I know of) systems use the sequence checking feature.
+ * If you are not going to use it (hint: you are not),
+ * do not define GNXSEQ.  This saves precious room on PDP11s.
+ */
+/*#define	GNXSEQ/* comment this out to save space */
 
 #define XQTDIR		"/usr/spool/uucp/XTMP"
 #define SQFILE		"/usr/lib/uucp/SQFILE"
@@ -128,7 +179,7 @@
 #define	CMDFILE		"/usr/lib/uucp/L.cmds"
 
 #define SPOOL		"/usr/spool/uucp"
-#define SQLOCK		"/usr/spool/uucp/LCK.SQ"
+#define SQLOCK		"LCK.SQ"
 #define SYSLOG		"/usr/spool/uucp/SYSLOG"
 #define PUBDIR		"/usr/spool/uucppublic"
 
@@ -139,21 +190,24 @@
 
 #define LOGFILE	"/usr/spool/uucp/LOGFILE"
 #define ERRLOG	"/usr/spool/uucp/ERRLOG"
+#define CMDSDIR	"/usr/spool/uucp/C."
+#define DATADIR	"/usr/spool/uucp/D."
+#define XEQTDIR	"/usr/spool/uucp/X."
 
 #define RMTDEBUG	"AUDIT"
+#define CORRUPT		"CORRUPT"
 #define SQTIME		60
 #define TRYCALLS	2	/* number of tries to dial call */
 
-/*define PROTODEBUG = 1 if testing protocol - introduce errors */
+#define LLEN	50
+#define MAXRQST	250
+
 #define DEBUG(l, f, s) if (Debug >= l) fprintf(stderr, f, s); else
 
-#define ASSERT(e, s1, s2, i1) if (!(e)) {\
-assert(s1, s2, i1);\
-cleanup(FAIL);} else
-
+#define ASSERT(e, s1, s2, i1) if (!(e)) {assert(s1, s2, i1);cleanup(FAIL);}else
 
 #define SAME 0
-#define ANYREAD 04
+#define ANYREAD 0004
 #define ANYWRITE 02
 #define FAIL -1
 #define SUCCESS 0
@@ -161,15 +215,16 @@ cleanup(FAIL);} else
 #define STBNULL (struct sgttyb *) 0
 #define MASTER 1
 #define SLAVE 0
-#define MAXFULLNAME 250
+#define MAXFULLNAME 255
 #define MAXMSGTIME 45
-#define NAMESIZE 15
+#define NAMESIZE 255
 #define EOTMSG "\04\n\04\n"
 #define CALLBACK 1
+#define ONEDAY	86400L
 
 	/*  commands  */
 #define SHELL		"/bin/sh"
-#define MAIL		"mail"
+#define MAIL		"/usr/lib/sendmail"
 #define UUCICO		"/usr/lib/uucp/uucico"
 #define UUXQT		"/usr/lib/uucp/uuxqt"
 #define UUCP		"uucp"
@@ -202,12 +257,16 @@ struct condev {
 
 	/* This structure tells about a device */
 struct Devices {
-	char D_type[20];
-	char D_line[20];
-	char D_calldev[20];
-	char D_class[20];
-	int D_speed;
-	char D_brand[20];	/* brand name, as 'Hayes' or 'Vadic' */
+#define	D_type		D_arg[0]
+#define	D_line		D_arg[1]
+#define	D_calldev	D_arg[2]
+#define	D_class		D_arg[3]
+#define	D_brand		D_arg[4]
+#define	D_CHAT		5
+	int  D_numargs;
+	int  D_speed;
+	char *D_arg[20];
+	char D_argbfr[100];
 };
 
 	/*  system status stuff  */
@@ -217,9 +276,10 @@ struct Devices {
 #define SS_CALLBACK	2
 #define SS_INPROGRESS	3
 #define SS_BADSEQ	5
+#define SS_WRONGTIME	6
 
 	/*  fail/retry parameters  */
-#define RETRYTIME 3300
+#define RETRYTIME 600
 #define MAXRECALLS 20
 
 	/*  stuff for command execution  */
@@ -230,6 +290,7 @@ struct Devices {
 #define X_USER		'U'
 #define X_SENDFILE	'S'
 #define	X_NONOTI	'N'
+#define X_RETURNTO	'R'
 #define	X_NONZERO	'Z'
 #define X_LOCK		"LCK.XQT"
 #define X_LOCKTIME	3600
@@ -242,31 +303,26 @@ extern char User[];
 extern char Loginuser[];
 extern char *Spool;
 extern char Myname[];
+extern char Myfullname[];
 extern int Debug;
-extern int Pkdebug;
-extern int Pkdrvon;
 extern int Bspeed;
 extern char Wrkdir[];
 extern long Retrytime;
-extern int Unet;
+extern short Usrf;
+extern int IsTcpIp;
 extern char Progname[];
 extern int (*CU_end)();
 extern struct condev condevs[];
+extern int nologinflag;
+extern char NOLOGIN[];
 
-#ifdef	UUDIR
-#define	subfile(s)	SubFile(s)
-#define	subdir(d, p)	SubDir(d, p)
-#define	subchdir(d)	SubChDir(d)
-extern	char DLocal[], DLocalX[], *SubFile(), *SubDir();
-#else
-#define	subfile(s)	s
-#define	subdir(d, p)	d
-#define	subchdir(d)	chdir(d)
-#endif
+extern	char DLocal[], DLocalX[], *subfile(), *subdir();
 
 /* Commonly called routines which return non-int value */
 extern	char *ttyname(), *strcpy(), *strcat(), *index(), *rindex(),
-		*fgets(), *calloc(), *malloc(),
+		*fgets(), *calloc(), *malloc(), *fdig(), *ttyname(),
 		*cfgets();
 extern	long lseek();
 extern	FILE *rpopen();
+
+extern char _FAILED[], CANTOPEN[], DEVNULL[];

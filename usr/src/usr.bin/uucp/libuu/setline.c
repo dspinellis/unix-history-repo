@@ -1,15 +1,9 @@
 #ifndef lint
-static char sccsid[] = "@(#)setline.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)setline.c	5.2 (Berkeley) %G%";
 #endif
 
-/***
- *	setline - optimize line setting for sending or receiving files
- *
- *	return code - none
- */
-
 #include "uucp.h"
-#ifdef	SYSIII
+#ifdef	USG
 #include <termio.h>
 #endif
 
@@ -18,15 +12,20 @@ static char sccsid[] = "@(#)setline.c	5.1 (Berkeley) %G%";
 #define RCVFILE 'R'
 #define RESET	'X'
 
+/*
+ *	optimize line setting for sending or receiving files
+ *
+ *	return code - none
+ */
 setline(type)
 char type;
 {
-#ifdef	SYSIII
+#ifdef	USG
 	static struct termio tbuf, sbuf;
 	static int set = 0;
 
 	DEBUG(2, "setline - %c\n", type);
-	if (Unet)
+	if (IsTcpIp)
 		return;
 	switch(type) {
 	case SNDFILE:
@@ -40,7 +39,6 @@ char type;
 		break;
 	case RESET:
 		if (set == 0) break;
-/* Anticipatory bug fixes: set, sbuf now static, 'set' is now reset.  rti!trt */
 		set = 0;
 		ioctl(Ifn, TCSETAW, &sbuf);
 		break;

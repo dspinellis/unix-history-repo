@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)uuxqt.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)uuxqt.c	5.3 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -10,12 +10,11 @@ static char sccsid[] = "@(#)uuxqt.c	5.2 (Berkeley) %G%";
 #else
 #include <sys/dir.h>
 #endif
+#include <signal.h>
 
 #define APPCMD(d) {\
 char *p;\
-for (p = d; *p != '\0';) *cmdp++ = *p++;\
-*cmdp++ = ' ';\
-*cmdp = '\0';}
+for (p = d; *p != '\0';) *cmdp++ = *p++; *cmdp++ = ' '; *cmdp = '\0';}
 
 /*
  *	uuxqt will execute commands set up by a uux command,
@@ -23,27 +22,43 @@ for (p = d; *p != '\0';) *cmdp++ = *p++;\
  */
 
 #define	NCMDS	50
-char *Cmds[NCMDS];
+char *Cmds[NCMDS+1];
+int Notify[NCMDS+1];
+#define	NT_YES	0	/* if should notify on execution */
+#define	NT_ERR	1	/* if should notify if non-zero exit status (-z equivalent) */
+#define	NT_NO	2	/* if should not notify ever (-n equivalent) */
+
+extern int Nfiles;
 
 int notiok = 1;
 int nonzero = 0;
 
-char PATH[MAXFULLNAME] = "PATH=/bin:/usr/bin";
+#ifdef SIGCHLD
+#include <sys/wait.h>
+reapchild()
+{
+	union wait status;
+
+	while (wait3(&status,WNOHANG,0) > 0)
+		;
+}
+#endif SIGCHLD
+
+char PATH[MAXFULLNAME] = "PATH=/bin:/usr/bin:/usr/ucb";
 /*  to remove restrictions from uuxqt
  *  define ALLOK 1
  *
  *  to add allowable commands, add to the file CMDFILE
  *  A line of form "PATH=..." changes the search path
  */
-
-
 main(argc, argv)
 char *argv[];
 {
 	char xcmd[MAXFULLNAME];
 	int argnok;
-	char xfile[MAXFULLNAME], user[32], buf[BUFSIZ];
-	char lbuf[30];
+	int notiflg;
+	char xfile[MAXFULLNAME], user[MAXFULLNAME], buf[BUFSIZ];
+	char lbuf[MAXFULLNAME];
 	char cfile[NAMESIZE], dfile[MAXFULLNAME];
 	char file[NAMESIZE];
 	char fin[MAXFULLNAME], sysout[NAMESIZE], fout[MAXFULLNAME];
@@ -51,21 +66,19 @@ char *argv[];
 	FILE *dfp;
 	char path[MAXFULLNAME];
 	char cmd[BUFSIZ];
-	/* set size of prm to something large -- cmcl2!salkind */
 	char *cmdp, prm[1000], *ptr;
 	char *getprm(), *lastpart();
-	int uid, ret, badfiles;
+	int uid, ret, ret2, badfiles;
 	register int i;
 	int stcico = 0;
 	char retstat[30];
-	int orig_uid = getuid();
 
 	strcpy(Progname, "uuxqt");
 	uucpname(Myname);
 
-	/* Try to run as uucp -- rti!trt */
-	setgid(getegid());
-	setuid(geteuid());
+#ifdef SIGCHLD
+	signal(SIGCHLD, reapchild);
+#endif SIGCHLD
 
 	umask(WFMASK);
 	Ofn = 1;
@@ -73,7 +86,7 @@ char *argv[];
 	while (argc>1 && argv[1][0] == '-') {
 		switch(argv[1][1]){
 		case 'x':
-			chkdebug(orig_uid);
+			chkdebug();
 			Debug = atoi(&argv[1][2]);
 			if (Debug <= 0)
 				Debug = 1;
@@ -86,18 +99,22 @@ char *argv[];
 	}
 
 	DEBUG(4, "\n\n** %s **\n", "START");
-	subchdir(Spool);
+	ret = subchdir(Spool);
+	ASSERT(ret >= 0, "CHDIR FAILED", Spool, ret);
 	strcpy(Wrkdir, Spool);
 	uid = getuid();
 	guinfo(uid, User, path);
+	/* Try to run as uucp -- rti!trt */
+	setgid(getegid());
+	setuid(geteuid());
+
 	DEBUG(4, "User - %s\n", User);
 	if (ulockf(X_LOCK, (time_t)  X_LOCKTIME) != 0)
 		exit(0);
 
 	fp = fopen(CMDFILE, "r");
 	if (fp == NULL) {
-		/* Fall-back if CMDFILE missing. Sept 1982, rti!trt */
-		logent("CAN'T OPEN", CMDFILE);
+		logent(CANTOPEN, CMDFILE);
 		Cmds[0] = "rmail";
 		Cmds[1] = "rnews";
 		Cmds[2] = "ruusend";
@@ -105,39 +122,80 @@ char *argv[];
 		goto doprocess;
 	}
 	DEBUG(5, "%s opened\n", CMDFILE);
-	for (i=0; i<NCMDS-1 && cfgets(xcmd, sizeof(xcmd), fp) != NULL; i++) {
-		xcmd[strlen(xcmd)-1] = '\0';
+	for (i=0; i<NCMDS && cfgets(xcmd, sizeof(xcmd), fp) != NULL; i++) {
+		int j;
+		/* strip trailing whitespace */
+		for (j = strlen(xcmd)-1; j >= 0; --j)
+			if (xcmd[j] == '\n' || xcmd[j] == ' ' || xcmd[j] == '\t')
+				xcmd[j] = '\0';
+			else
+				break;
+		/* look for imbedded whitespace */
+		for (; j >= 0; --j)
+			if (xcmd[j] == '\n' || xcmd[j] == ' ' || xcmd[j] == '\t')
+				break;
+		/* skip this entry if it has embedded whitespace */
+		/* This defends against a bad PATH=, for example */
+		if (j >= 0) {
+			logent(xcmd, "BAD WHITESPACE");
+			continue;
+		}
 		if (strncmp(xcmd, "PATH=", 5) == 0) {
 			strcpy(PATH, xcmd);
-			i--; /* kludge */
+			i--;	/*kludge */
 			continue;
 		}
 		DEBUG(5, "xcmd = %s\n", xcmd);
-		Cmds[i] = malloc((unsigned)(strlen(xcmd)+1));
+
+		if ((ptr = index(xcmd, ',')) != NULL) {
+			*ptr++ = '\0';
+			if (strncmp(ptr, "Err", 3) == SAME)
+				Notify[i] = NT_ERR;
+			else if (strcmp(ptr, "No") == SAME)
+				Notify[i] = NT_NO;
+			else
+				Notify[i] = NT_YES;
+		} else
+			Notify[i] = NT_YES;
+		if ((Cmds[i] = malloc((unsigned)(strlen(xcmd)+1))) == NULL) {
+			DEBUG(1, "MALLOC FAILED", CNULL);
+			break;
+		}
 		strcpy(Cmds[i], xcmd);
 	}
-	Cmds[i] = 0;
+	Cmds[i] = CNULL;
 	fclose(fp);
 
 doprocess:
-	DEBUG(4, "process %s\n", "");
+	DEBUG(4, "process %s\n", CNULL);
 	while (gtxfile(xfile) > 0) {
-		ultouch();	/* rti!trt */
+		ultouch();
+		/* if /etc/nologin exists, exit cleanly */
+		if (nologinflag) {
+			logent(NOLOGIN, "UUXQT SHUTDOWN");
+			if (Debug)
+				logent("debugging", "continuing anyway");
+			else
+				break;
+		}
 		DEBUG(4, "xfile - %s\n", xfile);
 
 		xfp = fopen(subfile(xfile), "r");
-		ASSERT(xfp != NULL, "CAN'T OPEN", xfile, 0);
+		ASSERT(xfp != NULL, CANTOPEN, xfile, 0);
 
 		/*  initialize to default  */
 		strcpy(user, User);
-		strcpy(fin, "/dev/null");
-		strcpy(fout, "/dev/null");
+		strcpy(fin, DEVNULL);
+		strcpy(fout, DEVNULL);
 		sprintf(sysout, "%.7s", Myname);
-		badfiles = 0;	/* this was missing -- rti!trt */
+		badfiles = 0;
 		while (fgets(buf, BUFSIZ, xfp) != NULL) {
 			switch (buf[0]) {
 			case X_USER:
-				sscanf(&buf[1], "%s%s", user, Rmtname);
+				sscanf(&buf[1], "%s %s", user, Rmtname);
+				break;
+			case X_RETURNTO:
+				sscanf(&buf[1], "%s", user);
 				break;
 			case X_STDIN:
 				sscanf(&buf[1], "%s", fin);
@@ -186,15 +244,15 @@ doprocess:
 		DEBUG(4, "cmd - %s\n", cmd);
 
 		/*  command execution  */
-		if (strcmp(fout, "/dev/null") == SAME)
-			strcpy(dfile,"/dev/null");
+		if (strcmp(fout, DEVNULL) == SAME)
+			strcpy(dfile,DEVNULL);
 		else
 			gename(DATAPRE, sysout, 'O', dfile);
 
 		/* expand file names where necessary */
 		expfile(dfile);
 		strcpy(buf, PATH);
-		strcat(buf, ";export PATH;");
+		strcat(buf, " ");
 		cmdp = buf + strlen(buf);
 		ptr = cmd;
 		xcmd[0] = '\0';
@@ -207,7 +265,7 @@ doprocess:
 				continue;
 			}
 
-			if ((argnok = argok(xcmd, prm)) != 0) 
+			if ((argnok = argok(xcmd, prm)) != SUCCESS)
 				/*  command not valid  */
 				break;
 
@@ -215,6 +273,11 @@ doprocess:
 				expfile(prm);
 			APPCMD(prm);
 		}
+		/*
+		 * clean up trailing ' ' in command.
+		 */
+		if (cmdp > buf && cmdp[0] == '\0' && cmdp[-1] == ' ')
+			*--cmdp = '\0';
 		if (argnok || badfiles) {
 			sprintf(lbuf, "%s XQT DENIED", user);
 			logent(cmd, lbuf);
@@ -227,50 +290,60 @@ doprocess:
 		DEBUG(4, "cmd %s\n", buf);
 
 		mvxfiles(xfile);
-		subchdir(XQTDIR);
-		ret = shio(buf, fin, dfile, (char *)NULL);
-/* watcgl.11, dmmartindale, signal and exit values were reversed */
+		ret = subchdir(XQTDIR);
+		ASSERT(ret >= 0, "CHDIR FAILED", XQTDIR, ret);
+		ret = shio(buf, fin, dfile, CNULL);
 		sprintf(retstat, "signal %d, exit %d", ret & 0377,
 		  (ret>>8) & 0377);
 		if (strcmp(xcmd, "rmail") == SAME)
 			notiok = 0;
 		if (strcmp(xcmd, "rnews") == SAME)
 			nonzero = 1;
-		 if (notiok && (!nonzero || (nonzero && ret != 0)))
+		notiflg = chknotify(xcmd);
+		if (notiok && notiflg != NT_NO &&
+		   (ret != 0 || (!nonzero && notiflg == NT_YES)))
 			notify(user, Rmtname, cmd, retstat);
 		else if (ret != 0 && strcmp(xcmd, "rmail") == SAME) {
 			/* mail failed - return letter to sender  */
-			retosndr(user, Rmtname, fin);
-			sprintf(buf, "ret (%o) from %s!%s", ret, Rmtname, user);
+#ifdef	DANGEROUS
+			/* NOT GUARANTEED SAFE!!! */
+			if (!nonzero)
+				retosndr(user, Rmtname, fin);
+#else
+			notify(user, Rmtname, cmd, retstat);
+#endif
+			sprintf(buf, "%s (%s) from %s!%s", buf, retstat, Rmtname, user);
 			logent("MAIL FAIL", buf);
 		}
 		DEBUG(4, "exit cmd - %d\n", ret);
-		subchdir(Spool);
+		ret2 = subchdir(Spool);
+		ASSERT(ret2 >= 0, "CHDIR FAILED", Spool, ret);
 		rmxfiles(xfile);
 		if (ret != 0) {
 			/*  exit status not zero */
 			dfp = fopen(subfile(dfile), "a");
-			ASSERT(dfp != NULL, "CAN'T OPEN", dfile, 0);
+			ASSERT(dfp != NULL, CANTOPEN, dfile, 0);
 			fprintf(dfp, "exit status %d", ret);
 			fclose(dfp);
 		}
-		if (strcmp(fout, "/dev/null") != SAME) {
+		if (strcmp(fout, DEVNULL) != SAME) {
 			if (prefix(sysout, Myname)) {
 				xmv(dfile, fout);
 				chmod(fout, BASEMODE);
 			}
 			else {
+				char *cp = rindex(user, '!');
 				gename(CMDPRE, sysout, 'O', cfile);
 				fp = fopen(subfile(cfile), "w");
 				ASSERT(fp != NULL, "OPEN", cfile, 0);
-				fprintf(fp, "S %s %s %s - %s 0666\n",
-				dfile, fout, user, lastpart(dfile));
+				fprintf(fp, "S %s %s %s - %s 0666\n", dfile,
+					fout, cp ? cp : user, lastpart(dfile));
 				fclose(fp);
 			}
 		}
 	rmfiles:
 		xfp = fopen(subfile(xfile), "r");
-		ASSERT(xfp != NULL, "CAN'T OPEN", xfile, 0);
+		ASSERT(xfp != NULL, CANTOPEN, xfile, 0);
 		while (fgets(buf, BUFSIZ, xfp) != NULL) {
 			if (buf[0] != X_RQDFILE)
 				continue;
@@ -292,6 +365,13 @@ int code;
 {
 	logcls();
 	rmlock(CNULL);
+#ifdef	VMS
+	/*
+	 *	Since we run as a BATCH job we must wait for all processes to
+	 *	to finish
+	 */
+	while(wait(0) != -1);
+#endif VMS
 	exit(code);
 }
 
@@ -301,16 +381,16 @@ int code;
  *	char *file;
  *
  *	return codes:  0 - no file  |  1 - file to execute
- * Mod to recheck for X-able files. Sept 1982, rti!trt.
- * Suggested by utzoo.2458 (utzoo!henry)
- * Uses iswrk/gtwrkf to keep files in sequence, May 1983.
  */
 
 gtxfile(file)
 register char *file;
 {
 	char pre[3];
-	register int rechecked;
+	int rechecked;
+	time_t ystrdy;		/* yesterday */
+	extern time_t time();
+	struct stat stbuf;	/* for X file age */
 
 	pre[0] = XQTPRE;
 	pre[1] = '.';
@@ -319,20 +399,40 @@ register char *file;
 retry:
 	if (!gtwrkf(Spool, file)) {
 		if (rechecked)
-			return(0);
+			return 0;
 		rechecked = 1;
-		DEBUG(4, "iswrk\n", "");
+		DEBUG(4, "iswrk\n", CNULL);
 		if (!iswrk(file, "get", Spool, pre))
-			return(0);
+			return 0;
 	}
 	DEBUG(4, "file - %s\n", file);
-#ifndef UUDIR
 	/* skip spurious subdirectories */
 	if (strcmp(pre, file) == SAME)
 		goto retry;
-#endif
 	if (gotfiles(file))
-		return(1);
+		return 1;
+	/* check for old X. file with no work files and remove them. */
+	if (Nfiles > LLEN/2) {
+	    time(&ystrdy);
+	    ystrdy -= (4 * 3600L);		/* 4 hours ago */
+	    DEBUG(4, "gtxfile: Nfiles > LLEN/2\n", CNULL);
+	    while (gtwrkf(Spool, file) && !gotfiles(file)) {
+		if (stat(subfile(file), &stbuf) == 0)
+		    if (stbuf.st_mtime <= ystrdy) {
+			char *bnp, cfilename[NAMESIZE];
+			DEBUG(4, "gtxfile: move %s to CORRUPT \n", file);
+			unlink(subfile(file));
+			bnp = rindex(subfile(file), '/');
+			sprintf(cfilename, "%s/%s", CORRUPT,
+				bnp ? bnp + 1 : subfile(file));
+			xmv(subfile(file), cfilename);
+			logent(file, "X. FILE CORRUPTED");
+		    }
+	    }
+	    DEBUG(4, "iswrk\n", CNULL);
+	    if (!iswrk(file, "get", Spool, pre))
+		return 0;
+	}
 	goto retry;
 }
 
@@ -353,7 +453,7 @@ register char *file;
 
 	fp = fopen(subfile(file), "r");
 	if (fp == NULL)
-		return(0);
+		return 0;
 
 	while (fgets(buf, BUFSIZ, fp) != NULL) {
 		DEBUG(4, "%s\n", buf);
@@ -363,12 +463,12 @@ register char *file;
 		expfile(rqfile);
 		if (stat(subfile(rqfile), &stbuf) == -1) {
 			fclose(fp);
-			return(0);
+			return 0;
 		}
 	}
 
 	fclose(fp);
-	return(1);
+	return 1;
 }
 
 
@@ -427,10 +527,9 @@ char *xfile;
 			continue;
 		expfile(ffile);
 		sprintf(tfull, "%s/%s", XQTDIR, tfile);
-		/* duke!rti, ncsu!mcm: use xmv, not link(II) */
 		unlink(subfile(tfull));
 		ret = xmv(ffile, tfull);
-		ASSERT(ret == 0, "XQTDIR ERROR", "", ret);
+		ASSERT(ret == 0, "XQTDIR ERROR", CNULL, ret);
 	}
 	fclose(fp);
 	return;
@@ -464,26 +563,62 @@ register char *xc, *cmd;
 	  || index(cmd, '^') != NULL
 	  || index(cmd, '&') != NULL
 	  || index(cmd, '|') != NULL
-	  || index(cmd, '<') != NULL)
-		return(1);
-#endif
+	  || index(cmd, '<') != NULL) {
+		DEBUG(1,"MAGIC CHARACTER FOUND\n", CNULL);
+		return FAIL;
+	}
+#endif !ALLOK
 
 	if (xc[0] != '\0')
-		return(0);
+		return SUCCESS;
 
 #ifndef ALLOK
 	ptr = Cmds;
+	DEBUG(9, "Compare %s and\n", cmd);
 	while(*ptr != NULL) {
+		DEBUG(9, "\t%s\n", *ptr);
 		if (strcmp(cmd, *ptr) == SAME)
 			break;
-	ptr++;
+		ptr++;
 	}
-	if (*ptr == NULL)
-		return(1);
+	if (*ptr == NULL) {
+		DEBUG(1,"COMMAND NOT FOUND\n", CNULL);
+		return FAIL;
+	}
 #endif
 	strcpy(xc, cmd);
-	return(0);
+	DEBUG(9, "MATCHED %s\n", xc);
+	return SUCCESS;
 }
+
+
+/***
+ *	chknotify(cmd)	check if notification should be sent for
+ *			successful execution of cmd
+ *	char *cmd;
+ *
+ *	return NT_YES - do notification
+ *	       NT_ERR - do notification if exit status != 0
+ *	       NT_NO  - don't do notification ever
+ */
+
+chknotify(cmd)
+char *cmd;
+{
+	register char **ptr;
+	register int *nptr;
+
+	ptr = Cmds;
+	nptr = Notify;
+	while (*ptr != NULL) {
+		if (strcmp(cmd, *ptr) == SAME)
+			return *nptr;
+		ptr++;
+		nptr++;
+	}
+	return NT_YES;		/* "shouldn't happen" */
+}
+
 
 
 /***
@@ -498,12 +633,12 @@ char *user, *rmt, *cmd, *str;
 	char text[MAXFULLNAME];
 	char ruser[MAXFULLNAME];
 
-	sprintf(text, "uuxqt cmd (%.50s) status (%s)", cmd, str);
+	sprintf(text, "uuxqt cmd (%s) status (%s)", cmd, str);
 	if (prefix(rmt, Myname))
 		strcpy(ruser, user);
 	else
 		sprintf(ruser, "%s!%s", rmt, user);
-	mailst(ruser, text, "");
+	mailst(ruser, text, CNULL);
 	return;
 }
 
@@ -516,7 +651,7 @@ char *user, *rmt, *cmd, *str;
 retosndr(user, rmt, file)
 char *user, *rmt, *file;
 {
-	char ruser[100];
+	char ruser[MAXFULLNAME];
 
 	if (strcmp(rmt, Myname) == SAME)
 		strcpy(ruser, user);
@@ -526,6 +661,6 @@ char *user, *rmt, *file;
 	if (anyread(file) == 0)
 		mailst(ruser, "Mail failed.  Letter returned to sender.\n", file);
 	else
-		mailst(ruser, "Mail failed.  Letter returned to sender.\n", "");
+		mailst(ruser, "Mail failed.  Letter returned to sender.\n", CNULL);
 	return;
 }

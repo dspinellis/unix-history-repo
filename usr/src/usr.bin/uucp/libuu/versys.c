@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)versys.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)versys.c	5.2 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -24,20 +24,20 @@ register char *name;
 	sprintf(myname, "%.7s", Myname);
 	sprintf(s1, "%.7s", name);
 	if (strcmp(s1, myname) == 0)
-		return(0);
+		return SUCCESS;
 
 	fp = fopen(SYSFILE, "r");
-	ASSERT(fp != NULL, "CAN'T OPEN", SYSFILE, 0);
+	ASSERT(fp != NULL, CANTOPEN, SYSFILE, 0);
 	while (cfgets(line, sizeof(line), fp) != NULL) {
 		char *targs[100];
 
-		getargs(line, targs);
+		getargs(line, targs, 100);
 		targs[0][7] = '\0';
 		if (strcmp(s1, targs[0]) == SAME) {
 			fclose(fp);
-			return(0);
+			return SUCCESS;
 		}
 	}
 	fclose(fp);
-	return(FAIL);
+	return FAIL;
 }

@@ -23,25 +23,30 @@ char *s1, *s2;
 	time_t clock;
 	int pid;
 
-	if (Debug)
-		errlog = stderr;
-	else {
+	errlog = NULL;
+	if (!Debug) {
 		int savemask;
 		savemask = umask(LOGMASK);
 		errlog = fopen(ERRLOG, "a");
 		umask(savemask);
 	}
 	if (errlog == NULL)
-		return;
+		errlog = stderr;
 
 	pid = getpid();
 	fprintf(errlog, "ASSERT ERROR (%.9s)  ", Progname);
 	fprintf(errlog, "pid: %d  ", pid);
 	time(&clock);
 	tp = localtime(&clock);
-	fprintf(errlog, "(%d/%d-%d:%02d) ", tp->tm_mon + 1,
+#ifdef USG
+	fprintf(errlog, "(%d/%d-%2.2d:%2.2d) ", tp->tm_mon + 1,
 		tp->tm_mday, tp->tm_hour, tp->tm_min);
-	fprintf(errlog, "%s %s (%d)\n", s1, s2, i1);
-	fclose(errlog);
+#else
+	fprintf(errlog, "(%d/%d-%02d:%02d) ", tp->tm_mon + 1,
+		tp->tm_mday, tp->tm_hour, tp->tm_min);
+#endif
+	fprintf(errlog, "%s %s (%d)\n", s1 ? s1 : "", s2 ? s2 : "", i1);
+	if (errlog != stderr)
+		fclose(errlog);
 	return;
 }
