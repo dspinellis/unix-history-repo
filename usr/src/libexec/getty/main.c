@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	4.5 (Berkeley) 83/08/01";
+static char sccsid[] = "@(#)main.c	4.6 (Berkeley) 83/12/13";
 #endif
 
 /*
@@ -354,7 +354,9 @@ prompt()
 putf(cp)
 	register char *cp;
 {
+	char *tp;
 	extern char editedhost[];
+	extern char *ttyname();
 
 	while (*cp) {
 		if (*cp != '%') {
@@ -365,6 +367,15 @@ putf(cp)
 
 		case 'h':
 			puts(editedhost);
+			break;
+
+		case 't':
+			tp = ttyname(0);
+			if (tp != (char *)0) {
+				if (strncmp(tp, "/dev/", 5) == 0)
+					tp += 5;
+				puts(tp);
+			}
 			break;
 
 		case '%':
