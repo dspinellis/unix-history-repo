@@ -13,9 +13,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)printer.h	5.2 (Berkeley) %G%
+ *	@(#)printer.h	5.3 (Berkeley) %G%
  *
- * from: $Header: printer.h,v 1.2 92/05/15 11:24:00 torek Exp $ (LBL)
+ * from: $Header: printer.h,v 1.3 92/12/02 03:52:03 torek Exp $ (LBL)
  */
 
 /*
