@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)pstat.8	6.2 (Berkeley) %G%
+.\"	@(#)pstat.8	6.3 (Berkeley) %G%
 .\"
 .TH PSTAT 8 ""
 .UC 4
@@ -67,7 +67,7 @@ shared lock applied
 .IP E
 exclusive lock applied
 .IP Z
-someone waiting for an exclusive lock
+someone waiting for a lock
 .RE
 .IP CNT
 Number of open file table entries for this inode.
@@ -156,10 +156,10 @@ being created
 .IP 5
 being terminated
 .IP 6
-stopped under trace
+stopped (by signal or  under trace)
 .RE
 .IP F
-Miscellaneous state variables, or-ed together (hexadecimal):
+Miscellaneous state variables, or'ed together (hexadecimal):
 .RS
 .IP 0001 9n
 loaded
@@ -186,7 +186,7 @@ will restore old mask after taking signal
 .IP 0400
 exiting
 .IP 0800
-doing physical i/o (bio.c)
+doing physical I/O (bio.c)
 .IP 1000
 process resulted from a
 .IR vfork (2)
@@ -199,6 +199,18 @@ process has no virtual memory, as it is a parent in the context of
 .IR vfork (2)
 .IP 8000
 process is demand paging data pages from its text inode.
+.IP 10000
+process using sequential VM patterns
+.IP 20000
+process using random VM patterns
+.IP 100000
+using old 4.1-compatible signal semantics
+.IP 200000
+process needs profiling tick
+.IP 400000
+process is scanning descriptors during select
+.IP 1000000
+process page tables have changed
 .RE
 .IP POIP
 number of pages currently being pushed out from this process.
@@ -220,8 +232,7 @@ Nice level,
 see
 .IR setpriority (2).
 .IP PGRP
-Process number of root of process group
-(the opener of the controlling terminal).
+Process number of root of process group.
 .IP PID
 The process ID number.
 .IP PPID
@@ -304,6 +315,8 @@ by
 .IR ps (1).
 The process must be in main memory, or the file used can
 be a core image and the address 0.
+Only the fields located in the first page cluster can be located
+succesfully if the process is in main memory.
 .TP
 .B \-f
 Print the open file table with these headings:
@@ -354,9 +367,12 @@ system is under heavy load.
 .br
 /dev/kmem	default source of tables
 .SH SEE ALSO
+iostat(1),
 ps(1),
+systat(1),
+vmstat(1),
 stat(2),
-fs(5)
+fs(5),
 .br
 K. Thompson,
 .I UNIX Implementation
