@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)lookbib.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)lookbib.c	4.2 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
