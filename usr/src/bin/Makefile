@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.3	(Berkeley)	%G%
+#	@(#)Makefile	4.4	(Berkeley)	%G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -17,7 +17,7 @@ SCRIPT=	false true
 STD=	ar cat cc chgrp chmod cmp date dd df du echo ed expr \
 	grep hostid hostname kill ld ln login ls mail mkdir mt mv nice \
 	nm od pagesize passwd pr pwd rm rmail rmdir size strip stty su sync \
-	tar tee test time wall who write
+	tee test wall who write
 
 # Programs that must run setuid to root
 #
@@ -25,7 +25,7 @@ SETUID=	chgrp df login mail mkdir mv passwd rmdir su
 
 # C programs that live in the current directory and need explicit make lines.
 #
-NSTD=	ps time
+NSTD=	ps tar time
 
 all:	${SUBDIR} ${STD} ${NSTD} cp
 
@@ -75,6 +75,9 @@ depend:
 
 ps:
 	cc ${CFLAGS} -o ps ps.c -lm
+
+tar:
+	cc ${CFLAGS} -o tar tar.c -ljobs
 
 time:
 	cc ${CFLAGS} -o time time.c -ljobs
@@ -207,11 +210,11 @@ mt: /usr/include/ctype.h
 mt: /usr/include/sys/types.h
 mt: /usr/include/sys/mtio.h
 mt: /usr/include/sys/ioctl.h
-mt: /usr/include/sys/mtreg.h
-mt: /usr/include/sys/utreg.h
-mt: /usr/include/sys/htreg.h
-mt: /usr/include/sys/tmreg.h
-mt: /usr/include/sys/tsreg.h
+mt: /usr/include/vaxmba/mtreg.h
+mt: /usr/include/vaxmba/htreg.h
+mt: /usr/include/vaxuba/utreg.h
+mt: /usr/include/vaxuba/tmreg.h
+mt: /usr/include/vaxuba/tsreg.h
 mv: mv.c
 mv: /usr/include/stdio.h
 mv: /usr/include/sys/types.h
