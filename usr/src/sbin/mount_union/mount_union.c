@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount_union.c	8.1 (Berkeley) %G%
+ *	@(#)mount_union.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+static int subdir __P((char *, char *));
 void usage __P((void));
 
 int
@@ -29,6 +30,7 @@ main(argc, argv)
 {
 	struct union_args args;
 	int ch, mntflags;
+	char target[MAXPATHLEN];
 	int error = 0;
 
 	mntflags = 0;
@@ -81,13 +83,43 @@ main(argc, argv)
 	if (error)
 		usage();
 
-	args.target = argv[0];
+	if (realpath(argv[0], target) == 0) {
+		(void)fprintf(stderr, "mount_union: %s: %s\n",
+				target, strerror(errno));
+		exit(1);
+	}
+
+	if (subdir(target, argv[1])) {
+		(void)fprintf(stderr,
+			"mount_union: %s is a sub-directory of %s\n",
+				argv[0], argv[1]);
+		exit(1);
+	}
+
+	args.target = target;
 
 	if (mount(MOUNT_UNION, argv[1], mntflags, &args)) {
 		(void)fprintf(stderr, "mount_union: %s\n", strerror(errno));
 		exit(1);
 	}
 	exit(0);
+}
+
+static int
+subdir(p, dir)
+	char *p;
+	char *dir;
+{
+	int l;
+
+	l = strlen(dir);
+	if (l <= 1)
+		return (1);
+
+	if ((strncmp(p, dir, l) == 0) && (p[l] == '/'))
+		return (1);
+
+	return (0);
 }
 
 void
