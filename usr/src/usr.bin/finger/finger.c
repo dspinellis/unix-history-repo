@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)finger.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)finger.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -38,6 +38,7 @@ static char sccsid[] = "@(#)finger.c	8.2 (Berkeley) %G%";
 #include <stdlib.h>
 #include <string.h>
 #include <db.h>
+#include <err.h>
 #include "finger.h"
 
 DB *db;
@@ -48,6 +49,7 @@ char tbuf[1024];
 static void loginlist __P((void));
 static void userlist __P((int, char **));
 
+int
 main(argc, argv)
 	int argc;
 	char **argv;
@@ -105,7 +107,7 @@ main(argc, argv)
 			lflag_print();
 		else
 			sflag_print();
-	exit(0);
+	return (0);
 }
 
 static void
@@ -119,7 +121,7 @@ loginlist()
 	char name[UT_NAMESIZE + 1];
 
 	if (!freopen(_PATH_UTMP, "r", stdin))
-		err("%s: %s", _PATH_UTMP, strerror(errno));
+		err(1, "%s", _PATH_UTMP);
 	name[UT_NAMESIZE] = NULL;
 	while (fread((char *)&user, sizeof(user), 1, stdin) == 1) {
 		if (!user.ut_name[0])
@@ -134,12 +136,15 @@ loginlist()
 	}
 	if (db && lflag)
 		for (sflag = R_FIRST;; sflag = R_NEXT) {
+			PERSON *tmp;
+
 			r = (*db->seq)(db, &key, &data, sflag);
 			if (r == -1)
-				err("db seq: %s", strerror(errno));
+				err(1, "db seq");
 			if (r == 1)
 				break;
-			enter_lastlog(*(PERSON **)data.data);
+			memcpy(&tmp, data.data, sizeof tmp);
+			enter_lastlog(tmp);
 		}
 }
 
@@ -157,7 +162,7 @@ userlist(argc, argv)
 
 	if ((nargv = malloc((argc+1) * sizeof(char *))) == NULL ||
 	    (used = calloc(argc, sizeof(int))) == NULL)
-		err("%s", strerror(errno));
+		err(1, NULL);
 
 	/* Pull out all network requests. */
 	for (ap = p = argv, np = nargv; *p; ++p)
@@ -178,13 +183,13 @@ userlist(argc, argv)
 	 */
 	if (mflag)
 		for (p = argv; *p; ++p)
-			if (pw = getpwnam(*p))
+			if ((pw = getpwnam(*p)) != NULL)
 				enter_person(pw);
 			else
 				(void)fprintf(stderr,
 				    "finger: %s: no such user\n", *p);
 	else {
-		while (pw = getpwent())
+		while ((pw = getpwent()) != NULL)
 			for (p = argv, ip = used; *p; ++p, ++ip)
 				if (match(pw, *p)) {
 					enter_person(pw);
@@ -208,7 +213,7 @@ net:	for (p = nargv; *p;)
 	 * appropriate data whenever a match occurs.
 	 */
 	if (!freopen(_PATH_UTMP, "r", stdin))
-		err("%s: %s", _PATH_UTMP, strerror(errno));
+		err(1, "%s", _PATH_UTMP);
 	while (fread((char *)&user, sizeof(user), 1, stdin) == 1) {
 		if (!user.ut_name[0])
 			continue;
@@ -218,11 +223,14 @@ net:	for (p = nargv; *p;)
 	}
 	if (db)
 		for (sflag = R_FIRST;; sflag = R_NEXT) {
+			PERSON *tmp;
+
 			r = (*db->seq)(db, &key, &data, sflag);
 			if (r == -1)
-				err("db seq: %s", strerror(errno));
+				err(1, "db seq");
 			if (r == 1)
 				break;
-			enter_lastlog(*(PERSON **)data.data);
+			memcpy(&tmp, data.data, sizeof tmp);
+			enter_lastlog(tmp);
 		}
 }
