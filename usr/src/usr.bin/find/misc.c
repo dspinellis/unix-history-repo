@@ -9,16 +9,16 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)misc.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)misc.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/errno.h>
 #include <stdio.h>
-#include "find.h"
 #include <stdlib.h>
 #include <string.h>
+#include "find.h"
  
 /*
  * brace_subst --
