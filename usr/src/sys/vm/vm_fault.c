@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_fault.c	7.13 (Berkeley) %G%
+ *	@(#)vm_fault.c	7.14 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -318,8 +318,7 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 			}
 		}
 
-		if ((object->pager != NULL) &&
-				(!change_wiring || wired)) {
+		if (object->pager != NULL && (!change_wiring || wired)) {
 			int rv;
 
 			/*
@@ -333,15 +332,19 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 			 *	after releasing the lock on the map.
 			 */
 			UNLOCK_MAP;
-
 			rv = vm_pager_get(object->pager, m, TRUE);
-			if (rv == VM_PAGER_OK) {
-				/*
-				 *	Found the page.
-				 *	Leave it busy while we play with it.
-				 */
-				vm_object_lock(object);
 
+			/*
+			 *	Reaquire the object lock to preserve our
+			 *	invariant.
+			 */
+			vm_object_lock(object);
+
+			/*
+			 *	Found the page.
+			 *	Leave it busy while we play with it.
+			 */
+			if (rv == VM_PAGER_OK) {
 				/*
 				 *	Relookup in case pager changed page.
 				 *	Pager is responsible for disposition
@@ -357,30 +360,27 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 			}
 
 			/*
-			 *	Remove the bogus page (which does not
-			 *	exist at this object/offset); before
-			 *	doing so, we must get back our object
-			 *	lock to preserve our invariant.
-			 *
-			 *	Also wake up any other thread that may want
-			 *	to bring in this page.
-			 *
-			 *	If this is the top-level object, we must
-			 *	leave the busy page to prevent another
-			 *	thread from rushing past us, and inserting
-			 *	the page in that object at the same time
-			 *	that we are.
+			 * IO error or page outside the range of the pager:
+			 * cleanup and return an error.
 			 */
-
-			vm_object_lock(object);
-			/*
-			 * Data outside the range of the pager; an error
-			 */
-			if (rv == VM_PAGER_BAD) {
+			if (rv == VM_PAGER_ERROR || rv == VM_PAGER_BAD) {
 				FREE_PAGE(m);
 				UNLOCK_AND_DEALLOCATE;
 				return(KERN_PROTECTION_FAILURE); /* XXX */
 			}
+			/*
+			 * rv == VM_PAGER_FAIL:
+			 *
+			 * Page does not exist at this object/offset.
+			 * Free the bogus page (waking up anyone waiting
+			 * for it) and continue on to the next object.
+			 *
+			 * If this is the top-level object, we must
+			 * leave the busy page to prevent another
+			 * thread from rushing past us, and inserting
+			 * the page in that object at the same time
+			 * that we are.
+			 */
 			if (object != first_object) {
 				FREE_PAGE(m);
 				/* note that `m' is not used after this */
