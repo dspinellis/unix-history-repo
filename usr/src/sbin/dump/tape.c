@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/file.h>
@@ -338,11 +338,17 @@ lockfile(fd)
 
 	strcpy(tmpname, "/tmp/dumplockXXXXXX");
 	mktemp(tmpname);
-	if ((fd[1] = creat(tmpname, 0400)) < 0)
-		return(fd[1]);
-	fd[0] = open(tmpname, 0);
+	if ((fd[1] = creat(tmpname, 0400)) < 0) {
+		msg("Could not create lockfile ");
+		perror(tmpname);
+		dumpabort();
+	}
+	if ((fd[0] = open(tmpname, 0)) < 0) {
+		msg("Could not reopen lockfile ");
+		perror(tmpname);
+		dumpabort();
+	}
 	unlink(tmpname);
-	return (fd[0] < 0 ? fd[0] : 0);
 }
 
 enslave()
@@ -364,11 +370,15 @@ enslave()
 			prev[1] = next[1];
 			flock(prev[1], LOCK_EX);
 		}
-		next[0] = first[0];
-		next[1] = first[1];	    /* Last slave loops back */
-		if ((i < SLAVES-1 && lockfile(next) < 0) || pipe(cmd) < 0
-				|| (slavepid[i] = fork()) < 0) {
-			perror("  DUMP: too many slaves (recompile smaller)");
+		if (i < SLAVES - 1) {
+			lockfile(next);
+		} else {
+			next[0] = first[0];
+			next[1] = first[1];	    /* Last slave loops back */
+		}
+		if (pipe(cmd) < 0 || (slavepid[i] = fork()) < 0) {
+			msg("too many slaves, %d (recompile smaller) ", i);
+			perror("");
 			dumpabort();
 		}
 		slavefd[i] = cmd[1];
