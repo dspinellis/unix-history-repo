@@ -1,7 +1,7 @@
-/*	up.c	4.20	81/02/23	*/
+/*	up.c	4.21	81/02/23	*/
 
 #include "up.h"
-#if NSC21 > 0
+#if NSC > 0
 /*
  * UNIBUS disk driver with overlapped seeks and ECC recovery.
  */
@@ -30,7 +30,7 @@ struct	up_softc {
 	int	sc_softas;
 	int	sc_ndrive;
 	int	sc_wticks;
-} up_softc[NSC21];
+} up_softc[NSC];
 
 /* THIS SHOULD BE READ OFF THE PACK, PER DRIVE */
 struct	size
@@ -65,9 +65,9 @@ int	upSDIST = _upSDIST;
 int	upRDIST = _upRDIST;
 
 int	upprobe(), upslave(), upattach(), updgo(), upintr();
-struct	uba_minfo *upminfo[NSC21];
+struct	uba_minfo *upminfo[NSC];
 struct	uba_dinfo *updinfo[NUP];
-struct	uba_dinfo *upip[NSC21][4];
+struct	uba_dinfo *upip[NSC][4];
 
 u_short	upstd[] = { 0776700, 0774400, 0776300, 0 };
 struct	uba_driver scdriver =
@@ -570,7 +570,7 @@ upreset(uban)
 	register sc21, unit;
 	int any = 0;
 
-	for (sc21 = 0; sc21 < NSC21; sc21++) {
+	for (sc21 = 0; sc21 < NSC; sc21++) {
 		if ((um = upminfo[sc21]) == 0 || um->um_ubanum != uban ||
 		    um->um_alive == 0)
 			continue;
@@ -611,7 +611,7 @@ upwatch()
 	register struct up_softc *sc;
 
 	timeout(upwatch, (caddr_t)0, HZ);
-	for (sc21 = 0; sc21 < NSC21; sc21++) {
+	for (sc21 = 0; sc21 < NSC; sc21++) {
 		um = upminfo[sc21];
 		if (um == 0 || um->um_alive == 0)
 			continue;
@@ -628,10 +628,8 @@ upwatch()
 		sc->sc_wticks++;
 		if (sc->sc_wticks >= 20) {
 			sc->sc_wticks = 0;
-			printf("LOST INTERRUPT RESET");
-			/* SHOULD JUST RESET ONE CTLR, NOT ALL ON UBA */
-			upreset(um->um_ubanum);
-			printf("\n");
+			printf("LOST upintr ");
+			ubareset(um->um_ubanum);
 		}
 	}
 }

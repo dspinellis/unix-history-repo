@@ -1,7 +1,7 @@
-/*	dz.c	4.16	%G%	*/
+/*	dz.c	4.17	%G%	*/
 
 #include "dz.h"
-#if NDZ11 > 0
+#if NDZ > 0
 #define	DELAY(i)	{ register int j = i; while (--j > 0); }
 /*
  *  DZ-11 Driver
@@ -28,12 +28,12 @@
  * Driver information for auto-configuration stuff.
  */
 int	dzprobe(), dzattach(), dzrint();
-struct	uba_dinfo *dzinfo[NDZ11];
+struct	uba_dinfo *dzinfo[NDZ];
 u_short	dzstd[] = { 0 };
 struct	uba_driver dzdriver =
 	{ dzprobe, 0, dzattach, 0, dzstd, "dz", dzinfo };
 
-#define	NDZ 	(NDZ11*8)
+#define	NDZLINE 	(NDZ*8)
  
 /*
  * Registers and bits
@@ -65,8 +65,8 @@ struct	uba_driver dzdriver =
  
 int	dzstart(), dzxint(), dzdma();
 int	ttrstrt();
-struct	tty dz_tty[NDZ];
-int	dz_cnt = { NDZ };
+struct	tty dz_tty[NDZLINE];
+int	dz_cnt = { NDZLINE };
 int	dzact;
 
 struct device {
@@ -82,8 +82,8 @@ struct device {
 /*
  * Software copy of dzbrk since it isn't readable
  */
-char	dz_brk[NDZ11];
-char	dzsoftCAR[NDZ11];
+char	dz_brk[NDZ];
+char	dzsoftCAR[NDZ];
 
 /*
  * The dz doesn't interrupt on carrier transitions, so
@@ -94,7 +94,7 @@ char	dz_timer;		/* timer started? */
 /*
  * Pdma structures for fast output code
  */
-struct	pdma dzpdma[NDZ];
+struct	pdma dzpdma[NDZLINE];
 
 char	dz_speeds[] =
 	{ 0,020,021,022,023,024,0,025,026,027,030,032,034,036,0,0 };
@@ -123,6 +123,7 @@ dzattach(ui)
 	register struct pdma *pdp = &dzpdma[ui->ui_unit*8];
 	register struct tty *tp = &dz_tty[ui->ui_unit*8];
 	register int cntr;
+	extern dzscan();
 
 	for (cntr = 0; cntr < 8; cntr++) {
 		pdp->p_addr = (struct device *)ui->ui_addr;
@@ -144,7 +145,6 @@ dzopen(dev, flag)
 {
 	register struct tty *tp;
 	register int unit;
-	extern dzscan();
  
 	unit = minor(dev);
 	if (unit >= dz_cnt || dzpdma[unit].p_addr == 0) {
@@ -456,7 +456,7 @@ dztimer()
 {
 	int dz;
 
-	for (dz = 0; dz < NDZ11; dz++)
+	for (dz = 0; dz < NDZ; dz++)
 		dzrint(dz);
 }
 
@@ -472,7 +472,7 @@ dzreset(uban)
 	register struct uba_dinfo *ui;
 	int any = 0;
 
-	for (unit = 0; unit < NDZ; unit++) {
+	for (unit = 0; unit < NDZLINE; unit++) {
 		ui = dzinfo[unit >> 3];
 		if (ui == 0 || ui->ui_ubanum != uban || ui->ui_alive == 0)
 			continue;

@@ -1,4 +1,4 @@
-/*	uba.c	4.13	%G%	*/
+/*	uba.c	4.14	%G%	*/
 
 #define	DELAY(N)	{ register int d; d = N; while (--d > 0); }
 
@@ -261,14 +261,24 @@ ubareset(uban)
 	int uban;
 {
 	register struct cdevsw *cdp;
+	register struct uba_hd *uh = &uba_hd[uban];
 	int s;
 
 	s = spl6();
+	uh->uh_users = 0;
+	uh->uh_zvcnt = 0;
+	uh->uh_xclu = 0;
+	uh->uh_hangcnt = 0;
+	uh->uh_actf = uh->uh_actl = 0;
+	uh->uh_bdpwant = 0;
+	uh->uh_mrwant = 0;
+	wakeup((caddr_t)&uh->uh_bdpwant);
+	wakeup((caddr_t)&uh->uh_mrwant);
 	switch (cpu) {
 #if VAX==780
 	case VAX_780:
 		printf("UBA RESET %d:", uban);
-		ubainit(uba_hd[uban].uh_uba);
+		ubainit(uh->uh_uba);
 		break;
 #endif
 #if VAX==750
