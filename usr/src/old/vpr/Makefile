@@ -3,11 +3,11 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.8	(Berkeley)	%G%
+#	@(#)Makefile	5.9	(Berkeley)	%G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
-SUBDIR=	vtools vtools/fed
+SUBDIR=	vtools vtools/fed man
 SHELLS=	rvtroff.sh vprint.sh vtroff.sh vpq.sh vpr.sh vprm.sh
 SRCS=	vpac.c vpd.c vpq.c vpr.c vprm.c
 OBJS=	vpac.o vpd.o vpq.o vpr.o vprm.o
