@@ -1,6 +1,6 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)p2	6.2 (Berkeley) %G%
+.\"	@(#)p2	8.1 (Berkeley) %G%
 .\"
 .SH
 3.6 I/O calls
