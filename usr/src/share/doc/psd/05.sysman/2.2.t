@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.2.t	8.3 (Berkeley) %G%
+.\"	@(#)2.2.t	8.4 (Berkeley) %G%
 .\"
 .Sh 2 "Filesystem
 .Sh 3 "Overview
@@ -220,7 +220,7 @@ The O_SHLOCK and O_EXLOCK allow the file to be atomically
 and
 .Fn flock 'ed;
 see section
-.Xr 2.2.8
+.Xr 2.2.7
 for the semantics of
 .Fn flock
 style locks.
@@ -260,6 +260,66 @@ char *path; mode_t mode;
 .DE
 The \fImode\fP parameter is used solely specify the access permissions
 on the newly created fifo.
+.Sh 4 "Links and renaming
+.PP
+Links allow multiple names for a file to exist.
+Links exist independently of the file to which they are linked.
+.PP
+Two types of links exist, \fIhard\fP links and \fIsymbolic\fP
+links.  A hard link is a reference counting mechanism that
+allows a file to have multiple names within the same filesystem.
+Each link to a file is equivalent, referring to the file independently
+of any other name.
+Symbolic links cause string substitution
+during the pathname interpretation process, and refer to a file name
+rather than referring directly to a file.
+.PP
+Hard links and symbolic links have different
+properties.  A hard link ensures that the target
+file will always be accessible, even after its original
+directory entry is removed; no such guarantee exists for a symbolic link.
+Symbolic links can span filesystems boundaries.
+.LP
+The following calls create a new link, named \fIpath2\fP,
+to \fIpath1\fP:
+.DS
+.Fd link 2 "make a hard file link
+link(path1, path2);
+char *path1, *path2;
+.DE
+.DS
+.Fd symlink 2 "make a symbolic link to a file
+symlink(path1, path2);
+char *path1, *path2;
+.DE
+The
+.Fn unlink
+primitive may be used to remove
+either type of link. 
+.LP
+If a file is a symbolic link, the ``value'' of the
+link may be read with the
+.Fn readlink
+call:
+.DS
+.Fd readlink 3 "read value of a symbolic link
+len = readlink(path, buf, bufsize);
+result int len; char *path; result char *buf; int bufsize;
+.DE
+This call returns, in \fIbuf\fP, the null-terminated string
+substituted into pathnames passing through \fIpath\fP\|.
+.LP
+Atomic renaming of filesystem resident objects is possible with the
+.Fn rename
+call:
+.DS
+.Fd rename 2 "change the name of a file
+rename(oldname, newname);
+char *oldname, *newname;
+.DE
+where both \fIoldname\fP and \fInewname\fP must be
+in the same filesystem.
+If \fInewname\fP exists and is a directory, then it must be empty.
 .Sh 4 "File, device, and fifo removal
 .LP
 A reference to a file, special device or fifo may be removed with the
@@ -404,127 +464,6 @@ char *path; struct timeval *tvp[2];
 .DE
 This is particularly useful when moving files between media,
 to preserve relationships between the times the file was modified.
-.Sh 3 "Links and renaming
-.PP
-Links allow multiple names for a file to exist.
-Links exist independently of the file to which they are linked.
-.PP
-Two types of links exist, \fIhard\fP links and \fIsymbolic\fP
-links.  A hard link is a reference counting mechanism that
-allows a file to have multiple names within the same filesystem.
-Each link to a file is equivalent, referring to the file independently
-of any other name.
-Symbolic links cause string substitution
-during the pathname interpretation process, and refer to a file name
-rather than referring directly to a file.
-.PP
-Hard links and symbolic links have different
-properties.  A hard link ensures that the target
-file will always be accessible, even after its original
-directory entry is removed; no such guarantee exists for a symbolic link.
-Symbolic links can span filesystems boundaries.
-.LP
-The following calls create a new link, named \fIpath2\fP,
-to \fIpath1\fP:
-.DS
-.Fd link 2 "make a hard file link
-link(path1, path2);
-char *path1, *path2;
-.DE
-.DS
-.Fd symlink 2 "make a symbolic link to a file
-symlink(path1, path2);
-char *path1, *path2;
-.DE
-The
-.Fn unlink
-primitive may be used to remove
-either type of link. 
-.LP
-If a file is a symbolic link, the ``value'' of the
-link may be read with the
-.Fn readlink
-call:
-.DS
-.Fd readlink 3 "read value of a symbolic link
-len = readlink(path, buf, bufsize);
-result int len; char *path; result char *buf; int bufsize;
-.DE
-This call returns, in \fIbuf\fP, the null-terminated string
-substituted into pathnames passing through \fIpath\fP\|.
-.LP
-Atomic renaming of filesystem resident objects is possible with the
-.Fn rename
-call:
-.DS
-.Fd rename 2 "change the name of a file
-rename(oldname, newname);
-char *oldname, *newname;
-.DE
-where both \fIoldname\fP and \fInewname\fP must be
-in the same filesystem.
-If \fInewname\fP exists and is a directory, then it must be empty.
-.Sh 3 "Extension and truncation
-.PP
-Files are created with zero length and may be extended
-simply by writing or appending to them.  While a file is
-open the system maintains a pointer into the file
-indicating the current location in the file associated with
-the descriptor.  This pointer may be moved about in the
-file in a random access fashion.
-To set the current offset into a file, the
-.Fn lseek
-call may be used:
-.DS
-.Fd lseek 3 "reposition read/write file offset
-oldoffset = lseek(fd, offset, type);
-result off_t oldoffset; int fd; off_t offset; int type;
-.DE
-where \fItype\fP is given in \fI<sys/unistd.h>\fP as one of:
-.DS
-.TS
-l l.
-SEEK_SET	/* set file offset to offset */
-SEEK_CUR	/* set file offset to current plus offset */
-SEEK_END	/* set file offset to EOF plus offset */
-.TE
-.DE
-The call ``lseek(fd, 0, SEEK_CUR)''
-returns the current offset into the file.
-.PP
-Files may have ``holes'' in them.  Holes are void areas in the
-linear extent of the file where data has never been
-written.  These may be created by seeking to
-a location in a file past the current end-of-file and writing.
-Holes are treated by the system as zero valued bytes.
-.LP
-A file may be truncated with either of the calls:
-.DS
-.Fd truncate 2 "truncate a file to a specified length
-truncate(path, length);
-char *path; off_t length;
-.DE
-.DS
-.Fd ftruncate 2 "truncate a file to a specified length
-ftruncate(fd, length);
-int fd; off_t length;
-.DE
-reducing the size of the specified file to \fIlength\fP bytes.
-.PP
-Unless opened with the O_FSYNC flag,
-writes to files are held for an indeterminate period of time
-in the system buffer cache.
-The call:
-.DS
-.Fd fsync 1 "synchronize in-core state of a file with that on disk
-fsync(fd)
-int fd;
-.DE
-ensures that the contents of a file are committed to disk
-before returning.
-This feature is used by applications such as editors that
-want to ensure the integrity of a new file before
-deleting the backup copy.
 .Sh 3 "Checking accessibility
 .PP
 A process running with
@@ -579,6 +518,67 @@ the \fIfd\fP argument is an open file descriptor.
 The \fIname\fP argument specifies the system variable to be queried.
 Symbolic constants for each name value are found in the include file
 \fI<unistd.h>\fP.
+.Sh 3 "Extension and truncation
+.PP
+Files are created with zero length and may be extended
+simply by writing or appending to them.  While a file is
+open the system maintains a pointer into the file
+indicating the current location in the file associated with
+the descriptor.  This pointer may be moved about in the
+file in a random access fashion.
+To set the current offset into a file, the
+.Fn lseek
+call may be used:
+.DS
+.Fd lseek 3 "reposition read/write file offset
+oldoffset = lseek(fd, offset, type);
+result off_t oldoffset; int fd; off_t offset; int type;
+.DE
+where \fItype\fP is given in \fI<sys/unistd.h>\fP as one of:
+.DS
+.TS
+l l.
+SEEK_SET	/* set file offset to offset */
+SEEK_CUR	/* set file offset to current plus offset */
+SEEK_END	/* set file offset to EOF plus offset */
+.TE
+.DE
+The call ``lseek(fd, 0, SEEK_CUR)''
+returns the current offset into the file.
+.PP
+Files may have ``holes'' in them.  Holes are void areas in the
+linear extent of the file where data has never been
+written.  These may be created by seeking to
+a location in a file past the current end-of-file and writing.
+Holes are treated by the system as zero valued bytes.
+.LP
+A file may be extended or truncated with either of the calls:
+.DS
+.Fd truncate 2 "truncate a file to a specified length
+truncate(path, length);
+char *path; off_t length;
+.DE
+.DS
+.Fd ftruncate 2 "truncate a file to a specified length
+ftruncate(fd, length);
+int fd; off_t length;
+.DE
+changing the size of the specified file to \fIlength\fP bytes.
+.PP
+Unless opened with the O_FSYNC flag,
+writes to files are held for an indeterminate period of time
+in the system buffer cache.
+The call:
+.DS
+.Fd fsync 1 "synchronize in-core state of a file with that on disk
+fsync(fd)
+int fd;
+.DE
+ensures that the contents of a file are committed to disk
+before returning.
+This feature is used by applications such as editors that
+want to ensure the integrity of a new file before
+deleting the backup copy.
 .Sh 3 "Locking
 .PP
 The filesystem provides basic facilities that allow cooperating processes
