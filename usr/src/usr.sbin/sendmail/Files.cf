@@ -1,4 +1,4 @@
-#	@(#)Files.cf	8.5 (Berkeley) %G%
+#	@(#)Files.cf	8.6 (Berkeley) %G%
 cf/README
 cf/cf/Makefile
 cf/cf/Makefile.dist
@@ -77,6 +77,7 @@ cf/ostype/irix.m4
 cf/ostype/linux.m4
 cf/ostype/nextstep.m4
 cf/ostype/osf1.m4
+cf/ostype/ptx2.m4
 cf/ostype/riscos4.5.m4
 cf/ostype/sco3.2.m4
 cf/ostype/solaris2.m4
