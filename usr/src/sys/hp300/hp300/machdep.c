@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: machdep.c 1.74 92/12/20$
  *
- *	@(#)machdep.c	8.3 (Berkeley) %G%
+ *	@(#)machdep.c	8.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -146,6 +146,11 @@ cpu_startup()
 	int base, residual;
 	vm_offset_t minaddr, maxaddr;
 	vm_size_t size;
+#ifdef BUFFERS_UNMANAGED
+	vm_offset_t bufmemp;
+	caddr_t buffermem;
+	int ix;
+#endif
 #ifdef DEBUG
 	extern int pmapdebug;
 	int opmapdebug = pmapdebug;
@@ -229,6 +234,11 @@ again:
 		firstaddr = (caddr_t) kmem_alloc(kernel_map, round_page(size));
 		if (firstaddr == 0)
 			panic("startup: no room for tables");
+#ifdef BUFFERS_UNMANAGED
+		buffermem = (caddr_t) kmem_alloc(kernel_map, bufpages*CLBYTES);
+		if (buffermem == 0)
+			panic("startup: no room for buffers");
+#endif
 		goto again;
 	}
 	/*
@@ -242,13 +252,16 @@ again:
 	 */
 	size = MAXBSIZE * nbuf;
 	buffer_map = kmem_suballoc(kernel_map, (vm_offset_t *)&buffers,
-				   &maxaddr, size, FALSE);
+				   &maxaddr, size, TRUE);
 	minaddr = (vm_offset_t)buffers;
 	if (vm_map_find(buffer_map, vm_object_allocate(size), (vm_offset_t)0,
 			&minaddr, size, FALSE) != KERN_SUCCESS)
 		panic("startup: cannot allocate buffers");
 	base = bufpages / nbuf;
 	residual = bufpages % nbuf;
+#ifdef BUFFERS_UNMANAGED
+	bufmemp = (vm_offset_t) buffermem;
+#endif
 	for (i = 0; i < nbuf; i++) {
 		vm_size_t curbufsize;
 		vm_offset_t curbuf;
@@ -262,9 +275,36 @@ again:
 		 */
 		curbuf = (vm_offset_t)buffers + i * MAXBSIZE;
 		curbufsize = CLBYTES * (i < residual ? base+1 : base);
+#ifdef BUFFERS_UNMANAGED
+		/*
+		 * Move the physical pages over from buffermem.
+		 */
+		for (ix = 0; ix < curbufsize/CLBYTES; ix++) {
+			vm_offset_t pa;
+
+			pa = pmap_extract(kernel_pmap, bufmemp);
+			if (pa == 0)
+				panic("startup: unmapped buffer");
+			pmap_remove(kernel_pmap, bufmemp, bufmemp+CLBYTES);
+			pmap_enter(kernel_pmap,
+				   (vm_offset_t)(curbuf + ix * CLBYTES),
+				   pa, VM_PROT_READ|VM_PROT_WRITE, TRUE);
+			bufmemp += CLBYTES;
+		}
+#else
 		vm_map_pageable(buffer_map, curbuf, curbuf+curbufsize, FALSE);
 		vm_map_simplify(buffer_map, curbuf);
+#endif
 	}
+#ifdef BUFFERS_UNMANAGED
+#if 0
+	/*
+	 * We would like to free the (now empty) original address range
+	 * but too many bad things will happen if we try.
+	 */
+	kmem_free(kernel_map, (vm_offset_t)buffermem, bufpages*CLBYTES);
+#endif
+#endif
 	/*
 	 * Allocate a submap for exec arguments.  This map effectively
 	 * limits the number of processes exec'ing at any time.
@@ -998,7 +1038,7 @@ boot(howto)
 	register int howto;
 {
 	/* take a snap shot before clobbering any registers */
-	if (curproc)
+	if (curproc && curproc->p_addr)
 		savectx(curproc->p_addr, 0);
 
 	boothowto = howto;
@@ -1015,9 +1055,9 @@ boot(howto)
 		if (panicstr == 0)
 			vnode_pager_umount(NULL);
 #ifdef notdef
-#include "fd.h"
-#if NFD > 0
-		fdshutdown();
+#include "vn.h"
+#if NVN > 0
+		vnshutdown();
 #endif
 #endif
 		sync(&proc0, (void *)NULL, (int *)NULL);
@@ -1234,6 +1274,7 @@ intrhand(sr)
 	register int found = 0;
 	register int ipl;
 	extern struct isr isrqueue[];
+	static int straycount;
 
 	ipl = (sr >> 8) & 7;
 	switch (ipl) {
@@ -1249,7 +1290,11 @@ intrhand(sr)
 				break;
 			}
 		}
-		if (found == 0)
+		if (found)
+			straycount = 0;
+		else if (++straycount > 50)
+			panic("intrhand: stray interrupt");
+		else
 			printf("stray interrupt, sr 0x%x\n", sr);
 		break;
 
@@ -1258,7 +1303,10 @@ intrhand(sr)
 	case 2:
 	case 6:
 	case 7:
-		printf("intrhand: unexpected sr 0x%x\n", sr);
+		if (++straycount > 50)
+			panic("intrhand: unexpected sr");
+		else
+			printf("intrhand: unexpected sr 0x%x\n", sr);
 		break;
 	}
 }
