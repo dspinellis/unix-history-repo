@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_object.c	7.9 (Berkeley) %G%
+ *	@(#)vm_object.c	7.10 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -326,7 +326,7 @@ void vm_object_terminate(object)
  *	vm_object_page_clean
  *
  *	Clean all dirty pages in the specified range of object.
- *	If dequeue is TRUE, pages are removed from any paging queue
+ *	If de_queue is TRUE, pages are removed from any paging queue
  *	they were on, otherwise they are left on whatever queue they
  *	were on before the cleaning operation began.
  *
@@ -334,11 +334,11 @@ void vm_object_terminate(object)
  *
  *	The object must be locked.
  */
-vm_object_page_clean(object, start, end, dequeue)
+vm_object_page_clean(object, start, end, de_queue)
 	register vm_object_t	object;
 	register vm_offset_t	start;
 	register vm_offset_t	end;
-	boolean_t		dequeue;
+	boolean_t		de_queue;
 {
 	register vm_page_t	p;
 	int onqueue;
@@ -369,7 +369,7 @@ again:
 			 * explicitly asked to do so or it is about to
 			 * be cleaned (see comment below).
 			 */
-			if (dequeue || !p->clean) {
+			if (de_queue || !p->clean) {
 				vm_page_lock_queues();
 				if (p->active) {
 					queue_remove(&vm_page_queue_active,
@@ -404,7 +404,7 @@ again:
 				(void) vm_pager_put(object->pager, p, TRUE);
 				vm_object_lock(object);
 				object->paging_in_progress--;
-				if (!dequeue && onqueue) {
+				if (!de_queue && onqueue) {
 					vm_page_lock_queues();
 					if (onqueue > 0)
 						vm_page_activate(p);
