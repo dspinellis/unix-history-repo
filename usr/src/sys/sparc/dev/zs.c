@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)zs.c	7.5 (Berkeley) %G%
+ *	@(#)zs.c	8.1 (Berkeley) %G%
  *
  * from: $Header: zs.c,v 1.29 93/07/15 02:57:07 torek Exp $
  */
