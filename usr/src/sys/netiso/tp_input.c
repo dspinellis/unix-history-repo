@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_input.c	7.27 (Berkeley) %G%
+ *	@(#)tp_input.c	7.28 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -842,11 +842,11 @@ again:
 				/*tpcb->tp_fref = 0;*/
 			ENDDEBUG
 		}
+		LOCAL_CREDIT(tpcb);
 		IncStat(ts_CR_rcvd);
 		if (!tpcb->tp_cebit_off) {
 			tpcb->tp_win_recv = tp_start_win << 8;
 			tpcb->tp_cong_sample.cs_size = 0;
-			LOCAL_CREDIT(tpcb);
 			CONG_INIT_SAMPLE(tpcb);
 			CONG_UPDATE_SAMPLE(tpcb, ce_bit);
 		}
