@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.110 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.111 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -264,9 +264,9 @@ main(argc, argv, envp)
 		int ll;
 		extern char *CompileOptions[];
 
-		printf("Version %s", Version);
+		printf("Version %s\nCompiled with:\t", Version);
 		av = CompileOptions;
-		ll = 100;
+		ll = 7;
 		while (*av != NULL)
 		{
 			if (ll + strlen(*av) > 63)
@@ -275,9 +275,11 @@ main(argc, argv, envp)
 				ll = 0;
 			}
 			if (ll == 0)
+			{
 				putchar('\t');
-			else
-				putchar(' ');
+				putchar('\t');
+			}
+			putchar(' ');
 			printf("%s", *av);
 			ll += strlen(*av++) + 1;
 		}
