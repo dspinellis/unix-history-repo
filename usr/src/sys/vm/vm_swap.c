@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_swap.c	8.1 (Berkeley) %G%
+ *	@(#)vm_swap.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -26,6 +26,10 @@
  */
 
 int	nswap, nswdev;
+#ifdef SEQSWAP
+int	niswdev;		/* number of interleaved swap devices */
+int	niswap;			/* size of interleaved swap area */
+#endif
 
 /*
  * Set up swap devices.
@@ -45,11 +49,49 @@ swapinit()
 
 	/*
 	 * Count swap devices, and adjust total swap space available.
-	 * Some of this space will not be available until a swapon()
-	 * system is issued, usually when the system goes multi-user.
+	 * Some of the space will not be countable until later (dynamically
+	 * configurable devices) and some of the counted space will not be
+	 * available until a swapon() system call is issued, both usually
+	 * happen when the system goes multi-user.
 	 *
 	 * If using NFS for swap, swdevt[0] will already be bdevvp'd.	XXX
 	 */
+#ifdef SEQSWAP
+	nswdev = niswdev = 0;
+	nswap = niswap = 0;
+	/*
+	 * All interleaved devices must come first
+	 */
+	for (swp = swdevt; swp->sw_dev != NODEV || swp->sw_vp != NULL; swp++) {
+		if (swp->sw_flags & SW_SEQUENTIAL)
+			break;
+		niswdev++;
+		if (swp->sw_nblks > niswap)
+			niswap = swp->sw_nblks;
+	}
+	niswap = roundup(niswap, dmmax);
+	niswap *= niswdev;
+	if (swdevt[0].sw_vp == NULL &&
+	    bdevvp(swdevt[0].sw_dev, &swdevt[0].sw_vp))
+		panic("swapvp");
+	/*
+	 * The remainder must be sequential
+	 */
+	for ( ; swp->sw_dev != NODEV; swp++) {
+		if ((swp->sw_flags & SW_SEQUENTIAL) == 0)
+			panic("binit: mis-ordered swap devices");
+		nswdev++;
+		if (swp->sw_nblks > 0) {
+			if (swp->sw_nblks % dmmax)
+				swp->sw_nblks -= (swp->sw_nblks % dmmax);
+			nswap += swp->sw_nblks;
+		}
+	}
+	nswdev += niswdev;
+	if (nswdev == 0)
+		panic("swapinit");
+	nswap += niswap;
+#else
 	nswdev = 0;
 	nswap = 0;
 	for (swp = swdevt; swp->sw_dev != NODEV || swp->sw_vp != NULL; swp++) {
@@ -65,6 +107,7 @@ swapinit()
 	if (swdevt[0].sw_vp == NULL &&
 	    bdevvp(swdevt[0].sw_dev, &swdevt[0].sw_vp))
 		panic("swapvp");
+#endif
 	if (nswap == 0)
 		printf("WARNING: no swap space found\n");
 	else if (error = swfree(p, 0)) {
@@ -111,6 +154,40 @@ swstrategy(bp)
 		return;
 	}
 	if (nswdev > 1) {
+#ifdef SEQSWAP
+		if (bp->b_blkno < niswap) {
+			if (niswdev > 1) {
+				off = bp->b_blkno % dmmax;
+				if (off+sz > dmmax) {
+					bp->b_flags |= B_ERROR;
+					biodone(bp);
+					return;
+				}
+				seg = bp->b_blkno / dmmax;
+				index = seg % niswdev;
+				seg /= niswdev;
+				bp->b_blkno = seg*dmmax + off;
+			} else
+				index = 0;
+		} else {
+			register struct swdevt *swp;
+
+			bp->b_blkno -= niswap;
+			for (index = niswdev, swp = &swdevt[niswdev];
+			     swp->sw_dev != NODEV;
+			     swp++, index++) {
+				if (bp->b_blkno < swp->sw_nblks)
+					break;
+				bp->b_blkno -= swp->sw_nblks;
+			}
+			if (swp->sw_dev == NODEV ||
+			    bp->b_blkno+sz > swp->sw_nblks) {
+				bp->b_flags |= B_ERROR;
+				biodone(bp);
+				return;
+			}
+		}
+#else
 		off = bp->b_blkno % dmmax;
 		if (off+sz > dmmax) {
 			bp->b_flags |= B_ERROR;
@@ -121,6 +198,7 @@ swstrategy(bp)
 		index = seg % nswdev;
 		seg /= nswdev;
 		bp->b_blkno = seg*dmmax + off;
+#endif
 	} else
 		index = 0;
 	sp = &swdevt[index];
@@ -170,15 +248,26 @@ swapon(p, uap, retval)
 		vrele(vp);
 		return (ENXIO);
 	}
-	for (sp = &swdevt[0]; sp->sw_dev != NODEV; sp++)
+	for (sp = &swdevt[0]; sp->sw_dev != NODEV; sp++) {
 		if (sp->sw_dev == dev) {
-			if (sp->sw_freed) {
+			if (sp->sw_flags & SW_FREED) {
 				vrele(vp);
 				return (EBUSY);
 			}
 			u.u_error = swfree(sp - swdevt);
 			return (0);
 		}
+#ifdef SEQSWAP
+		/*
+		 * If we have reached a non-freed sequential device without
+		 * finding what we are looking for, it is an error.
+		 * That is because all interleaved devices must come first
+		 * and sequential devices must be freed in order.
+		 */
+		if ((sp->sw_flags & (SW_SEQUENTIAL|SW_FREED)) == SW_SEQUENTIAL)
+			break;
+#endif
+	}
 	vrele(vp);
 	return (EINVAL);
 }
@@ -216,8 +305,13 @@ swfree(p, index)
 	nblks = sp->sw_nblks;
 	for (dvbase = 0; dvbase < nblks; dvbase += dmmax) {
 		blk = nblks - dvbase;
+#ifdef SEQSWAP
+		if ((vsbase = index*dmmax + dvbase*niswdev) >= niswap)
+			panic("swfree");
+#else
 		if ((vsbase = index*dmmax + dvbase*nswdev) >= nswap)
 			panic("swfree");
+#endif
 		if (blk > dmmax)
 			blk = dmmax;
 		if (vsbase == 0) {
