@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_usrreq.c	7.8 (Berkeley) %G%
+ *	@(#)pk_usrreq.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -229,7 +229,6 @@ struct mbuf *control;
 	 *  Send INTERRUPT packet.
 	 */
 	case PRU_SENDOOB: 
-		m_freem (m);
 		if (lcp -> lcd_intrconf_pending) {
 			error = ETOOMANYREFS;
 			break;
@@ -239,6 +238,7 @@ struct mbuf *control;
 		xp -> packet_data = 0;
 		(dtom (xp)) -> m_len++;
 		pk_output (lcp);
+		m_freem (m);
 		break;
 
 	default: 
@@ -247,8 +247,6 @@ struct mbuf *control;
 release:
 	if (control != NULL)
 		m_freem(control);
-	if (m != NULL)
-		m_freem(m);
 	return (error);
 }
 
@@ -324,6 +322,7 @@ register struct ifnet *ifp;
 			ia->ia_pkcb.pk_ia = ia;
 			ia->ia_pkcb.pk_next = pkcbhead;
 			ia->ia_pkcb.pk_state = DTE_WAITING;
+			ia->ia_pkcb.pk_start = pk_start;
 			pkcbhead = &ia->ia_pkcb;
 		}
 		old_maxlcn = ia->ia_maxlcn;
