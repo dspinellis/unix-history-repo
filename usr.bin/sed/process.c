@@ -315,6 +315,7 @@ substitute(cp)
 	SPACE tspace;
 	regex_t *re;
 	size_t re_off;
+	size_t re_eoff;
 	int n;
 	char *s;
 	char *eos;
@@ -339,14 +340,15 @@ substitute(cp)
 		do {
 			/* Locate start of replaced string. */
 			re_off = match[0].rm_so;
+			re_eoff = match[0].rm_eo;
 			/* Copy leading retained string. */
 			cspace(&SS, s, re_off, APPEND);
 			/* Add in regular expression. */
 			regsub(&SS, s, cp->u.s->new);
 			/* Move past this match. */
 			s += match[0].rm_eo;
-		} while(*s && re_off && regexec_e(re, s, REG_NOTBOL, 0));
-		if (eos - s > 0 && !re_off)
+		} while(*s && re_eoff && regexec_e(re, s, REG_NOTBOL, 0));
+		if (eos - s > 0 && !re_eoff)
 			err(FATAL, "infinite substitution loop");
 		/* Copy trailing retained string. */
 		cspace(&SS, s, strlen(s), APPEND);
