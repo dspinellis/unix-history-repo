@@ -1,4 +1,4 @@
-/* @(#)gets.c	4.1 (Berkeley) %G% */
+/* @(#)gets.c	4.2 (Berkeley) %G% */
 #include	<stdio.h>
 
 char *
@@ -9,9 +9,9 @@ char *s;
 	register char *cs;
 
 	cs = s;
-	while ((c = getchar()) != '\n' && c >= 0)
+	while ((c = getchar()) != '\n' && c != EOF)
 		*cs++ = c;
-	if (c<0 && cs==s)
+	if (c == EOF && cs==s)
 		return(NULL);
 	*cs++ = '\0';
 	return(s);

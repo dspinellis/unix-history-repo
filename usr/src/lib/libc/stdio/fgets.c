@@ -1,4 +1,4 @@
-/* @(#)fgets.c	4.1 (Berkeley) %G% */
+/* @(#)fgets.c	4.2 (Berkeley) %G% */
 #include	<stdio.h>
 
 char *
@@ -10,12 +10,12 @@ register FILE *iop;
 	register char *cs;
 
 	cs = s;
-	while (--n>0 && (c = getc(iop))>=0) {
+	while (--n>0 && (c = getc(iop)) != EOF) {
 		*cs++ = c;
 		if (c=='\n')
 			break;
 	}
-	if (c<0 && cs==s)
+	if (c == EOF && cs==s)
 		return(NULL);
 	*cs++ = '\0';
 	return(s);

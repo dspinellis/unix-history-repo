@@ -1,8 +1,8 @@
-/* @(#)setbuffer.c	4.4 (Berkeley) %G% */
+/* @(#)setbuffer.c	4.5 (Berkeley) %G% */
 #include	<stdio.h>
 
 setbuffer(iop, buf, size)
-	register struct _iobuf *iop;
+	register FILE *iop;
 	char *buf;
 	int size;
 {
@@ -23,7 +23,7 @@ setbuffer(iop, buf, size)
  * set line buffering for either stdout or stderr
  */
 setlinebuf(iop)
-	register struct _iobuf *iop;
+	register FILE *iop;
 {
 	char *buf;
 	extern char *malloc();

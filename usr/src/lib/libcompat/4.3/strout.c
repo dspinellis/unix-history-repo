@@ -1,11 +1,11 @@
-/* @(#)strout.c	4.1 (Berkeley) %G% */
+/* @(#)strout.c	4.2 (Berkeley) %G% */
 #include	<stdio.h>
 
 _strout(count, string, adjust, file, fillch)
 register char *string;
 register count;
 int adjust;
-register struct _iobuf *file;
+register FILE *file;
 {
 	while (adjust < 0) {
 		if (*string=='-' && fillch=='0') {

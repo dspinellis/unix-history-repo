@@ -1,52 +1,53 @@
-/* @(#)fopen.c	4.3 (Berkeley) %G% */
-#include	<stdio.h>
-#include	<errno.h>
+/* @(#)fopen.c	4.4 (Berkeley) %G% */
+#include <sys/types.h>
+#include <sys/file.h>
+#include <stdio.h>
 
 FILE *
 fopen(file, mode)
-char *file;
-register char *mode;
+	char *file;
+	register char *mode;
 {
-	extern int errno;
-	register f, rw;
 	register FILE *iop;
-	extern FILE *_lastbuf;
+	register f, rw, oflags;
+	extern FILE *_findiop();
 
-	for (iop = _iob; iop->_flag&(_IOREAD|_IOWRT|_IORW); )
-		if (++iop >= _lastbuf)
-			return(NULL);
+	iop = _findiop();
+	if (iop == NULL)
+		return (NULL);
 
-	rw = mode[1] == '+';
+	rw = (mode[1] == '+');
 
-	if (*mode=='w') {
-		f = creat(file, 0666);
-		if (rw && f>=0) {
-			close(f);
-			f = open(file, 2);
-		}
-	} else if (*mode=='a') {
-		if ((f = open(file, rw? 2: 1)) < 0) {
-			if (errno == ENOENT) {
-				f = creat(file, 0666);
-				if (rw && f>=0) {
-					close(f);
-					f = open(file, 2);
-				}
-			}
-		}
-		if (f >= 0)
-			lseek(f, 0L, 2);
-	} else
-		f = open(file, rw? 2: 0);
+	switch (*mode) {
+	case 'a':
+		oflags = O_CREAT | (rw ? O_RDWR : O_WRONLY);
+		break;
+	case 'r':
+		oflags = rw ? O_RDWR : O_RDONLY;
+		break;
+	case 'w':
+		oflags = O_TRUNC | O_CREAT | (rw ? O_RDWR : O_WRONLY);
+		break;
+	default:
+		return (NULL);
+	}
+
+	f = open(file, oflags, 0666);
 	if (f < 0)
-		return(NULL);
+		return (NULL);
+
+	if (*mode == 'a')
+		lseek(f, (off_t)0, L_XTND);
+
 	iop->_cnt = 0;
 	iop->_file = f;
+	iop->_bufsiz = 0;
 	if (rw)
-		iop->_flag |= _IORW;
-	else if (*mode != 'r')
-		iop->_flag |= _IOWRT;
+		iop->_flag = _IORW;
+	else if (*mode == 'r')
+		iop->_flag = _IOREAD;
 	else
-		iop->_flag |= _IOREAD;
-	return(iop);
+		iop->_flag = _IOWRT;
+	iop->_base = iop->_ptr = NULL;
+	return (iop);
 }
