@@ -1,4 +1,4 @@
-.\"	@(#)Cover.alpha	1.3 (Berkeley) %G%
+.\"	@(#)Cover.alpha	1.4 (Berkeley) %G%
 .\" use -ms
 .\"
 .so HEADERS
@@ -45,18 +45,19 @@ we cannot provide help with installation
 of this software on other systems, although we are, of course, interested
 in hearing of problems that you encounter.
 .PP
-We are releasing two versions of the software, 4.4BSD and 4.4BSD-Lite.
-The 4.4BSD distribution is available only to sites
+We are releasing two versions of the software, 4.4BSD-Encumbered
+and 4.4BSD-Lite.
+The 4.4BSD-Encumbered distribution is available only to sites
 with UNIX/32V\(dg, System III, or System V
 .FS
 \(dgUNIX, UNIX/32V, UNIX System III, and UNIX System V
 are registered trademarks of USL/AT&T in the USA and other countries.
 .FE
 source licenses with USL/AT&T.
-The 4.4BSD distribution is a complete distribution in the style of
+The 4.4BSD-Encumbered distribution is a complete distribution in the style of
 4.3BSD and contains the complete source for the Berkeley Distribution.
 .PP
-The 4.4BSD-Lite distribution is a subset of 4.4BSD that
+The 4.4BSD-Lite distribution is a subset of 4.4BSD-Encumbered that
 is copyrighted by the University of California
 and others, but may be freely redistributed.
 It is available to anyone and requires no previous license, either from
@@ -78,7 +79,7 @@ distribution, it is not possible to compile or run it
 without a pre-existing system that is already installed and running.
 It includes source code and manual pages for the C library
 and about three-fourths of the utilities contained in
-the 4.4BSD distribution.
+the 4.4BSD-Encumbered distribution.
 .\" An approximate list of the included and excluded utilities is provided
 .\" in the attached utilities list.
 Additionally, the 4.4BSD-Lite distribution includes source code for most
@@ -98,9 +99,11 @@ What is 4.4BSD?
 .PP
 This software distribution is provided on one 6250bpi 1/2'' 9-track tape
 or one 8mm Exabyte cassette only.
-The 4.4BSD distribution contains complete source as well as binaries for
+The 4.4BSD-Encumbered distribution contains complete source
+as well as binaries for
 the HP9000/300 series of workstations.
-The 4.4BSD-Lite distribution contains only the subset of the 4.4BSD
+The 4.4BSD-Lite distribution contains only the subset of the
+4.4BSD-Encumbered
 sources that are freely redistributable.
 .PP
 The architectures that are supported include:
@@ -115,7 +118,7 @@ Omron Luna 68000-based workstations
 .IP \(bu
 DECstation 3100 and 5000 MIPS-based workstations
 .IP \(bu
-Sparcstaion I & II SPARC-based workstations
+Sparcstation I & II SPARC-based workstations
 .LP
 The distribution does
 .B not
@@ -350,14 +353,14 @@ We thank you for your support over the years, your funding, and,
 of course, the software you've contributed to make the BSD system
 what it is today!
 .SH
-How to obtain 4.4BSD-Complete or 4.4BSD-Lite
+How to obtain 4.4BSD-Encumbered or 4.4BSD-Lite
 .PP
-To obtain 4.4BSD-Complete (containing proprietary AT&T code)
+To obtain 4.4BSD-Encumbered (containing proprietary AT&T code)
 or 4.4BSD-Lite (without proprietary AT&T code),
 we require execution of the appropriate Berkeley License Agreement (6/92).
 In addition, foreign licensees must execute Addendum Number One for 
-Foreign Licensees in ordering 4.4BSD-Complete.
-The fee is $2000.00 for 4.4BSD-Complete and
+Foreign Licensees in ordering 4.4BSD-Encumbered.
+The fee is $2000.00 for 4.4BSD-Encumbered and
 $1000.00 for 4.4BSD-Lite.
 .PP
 Because we are a research and development organization
@@ -370,11 +373,11 @@ a formal license arrangement with each
 organization to which we distribute. 
 All material is considered licensed material regardless of its
 availability from other sources that make such material publicly available.
-In addition, for 4.4BSD-Complete, we are required
+In addition, for 4.4BSD-Encumbered, we are required
 to secure a copy of the AT&T Software Agreement with your organization 
 and confirm it with AT&T before the software can be shipped.
 .PP
-Specifically, for 4.4BSD-Complete, we must receive from your organization the
+Specifically, for 4.4BSD-Encumbered, we must receive from your organization the
 following material before the distribution can be sent:
 .IP \(bu
 \fBTwo\fR copies of the \fBcurrent\fR Software Agreement
@@ -428,7 +431,7 @@ The revised Berkeley License Agreement (6/92) prevails.''
 Wire transfers are strongly discouraged.
 .IP \(bu
 The attached Site Information Form completely filled out.
-Your copy of the signed 4.4BSD-Complete License Agreement
+Your copy of the signed 4.4BSD-Encumbered License Agreement
 will be sent to the person listed as the administrative contact.
 The distribution itself will be sent to the technical contact.
 All information is kept confidential;
@@ -501,7 +504,7 @@ package two original copies of the appropriate
 Berkeley License Agreement completed
 and properly signed (\fBwithout modification\fR),
 two complete copies of your AT&T Software Agreement
-(only for 4.4BSD-Complete),
+(only for 4.4BSD-Encumbered),
 the appropriate check properly made out to 
 ``The Regents of the University of California,
 Computer Systems Research Group'' and a completely filled out
@@ -526,7 +529,7 @@ alpha release is that there will not be additional licensing requirements.
 .PP
 If one wishes to order the 4.4BSD-Lite and upgrade,
 the total fee will be $1,400.00.
-If one wishes to order the 4.4BSD-Complete and upgrade,
+If one wishes to order the 4.4BSD-Encumbered and upgrade,
 the total fee will be $2,400.00.
 For those who choose not to order the upgrade now,
 we will notify you when it is available so that you may order
@@ -537,7 +540,7 @@ Special Cases
 \fBUniversity of California Sites\fR.
 If you are a part of the University of California,
 the following requirements apply:
-To run 4.4BSD-Complete on any CPU,
+To run 4.4BSD-Encumbered on any CPU,
 you must have a CPU authorization under
 The Regents of the University of California Software
 Agreement with AT&T.
@@ -547,7 +550,7 @@ A copy of this should be sent to us.
 In addition, the following items must
 be sent to the Computer Systems Research Group:
 1) a letter of authorization signed by the Director or Head of Department 
-requesting 4.4BSD-Complete,
+requesting 4.4BSD-Encumbered,
 stating that you have read and understood the Berkeley
 License Agreement (6/92) and that your organization
 will abide by it;
@@ -563,7 +566,7 @@ with AT&T dated Sept. 1, 1975.
 If you are a government agency operating under the 1975 Software Agreement,
 you do not need a copy of the aforementioned Software Agreement;
 instead you must send a copy of your additional CPU authorization from AT&T.
-The Berkeley License Agreement for 4.4BSD-Complete (6/92)
+The Berkeley License Agreement for 4.4BSD-Encumbered (6/92)
 should be signed by the appropriate Contracting Officer.
 .IP \(bu
 Several government agencies have acquired
@@ -589,7 +592,7 @@ The Contracting Officer should then return the signed
 Berkeley License Agreement (6/92) directly to the
 Computer Systems Research Group with a cover
 letter stating that the contractor is hereby authorized
-to receive a copy of 4.4BSD-Complete.
+to receive a copy of 4.4BSD-Encumbered.
 .IP \(bu
 For those government agencies who wish to obtain 4.4BSD-Lite,
 we need two original copies of
