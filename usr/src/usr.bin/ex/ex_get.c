@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)ex_get.c	7.7 (Berkeley) %G%";
+static char *sccsid = "@(#)ex_get.c	7.8 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -30,7 +30,7 @@ ex_getchar()
 
 	do
 		c = getcd();
-	while (!globp && c == CTRL(d));
+	while (!globp && c == CTRL('d'));
 	return (c);
 }
 
@@ -44,7 +44,7 @@ again:
 		return (c);
 	c &= TRIM;
 	if (!inopen)
-		if (!globp && c == CTRL(d))
+		if (!globp && c == CTRL('d'))
 			setlastchar('\n');
 		else if (junk(c)) {
 			checkjunk(c);
@@ -99,7 +99,7 @@ top:
 		if (c < 0)
 			return (lastc = EOF);
 		if (c == 0 || inline[c-1] != '\n')
-			inline[c++] = CTRL(d);
+			inline[c++] = CTRL('d');
 		if (inline[c-1] == '\n')
 			noteinp();
 		inline[c] = 0;
@@ -147,7 +147,7 @@ gettty()
 				lastin = lindent(dot + 1);
 #endif
 			tab(lastin + offset);
-			while ((c = getcd()) == CTRL(d)) {
+			while ((c = getcd()) == CTRL('d')) {
 				if (lastin == 0 && isatty(0) == -1) {
 					holdcm = 0;
 					return (EOF);
@@ -160,7 +160,7 @@ gettty()
 			case '^':
 			case '0':
 				ch = getcd();
-				if (ch == CTRL(d)) {
+				if (ch == CTRL('d')) {
 					if (c == '0')
 						lastin = 0;
 					if (!OS) {

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)ex_cmds2.c	7.5 (Berkeley) %G%";
+static char *sccsid = "@(#)ex_cmds2.c	7.6 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -515,7 +515,7 @@ vcontin(ask)
 			 * Gobble ^Q/^S since the tty driver should be eating
 			 * them (as far as the user can see)
 			 */
-			while (peekkey() == CTRL(Q) || peekkey() == CTRL(S))
+			while (peekkey() == CTRL('Q') || peekkey() == CTRL('S'))
 				ignore(getkey());
 #endif
 			if(getkey() == ':') {
