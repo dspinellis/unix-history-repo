@@ -1,0 +1,6 @@
+(*(<f+28))&0xffff="pid "X
+,#((*(<f+28)&0xffff)-<4)$<setproc.done
+<l-1>l
+<f+70>f
+,#<l$<
+$<setproc.nxt

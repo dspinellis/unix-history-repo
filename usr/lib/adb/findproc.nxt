@@ -1,0 +1,6 @@
+(*(<f+28)&0xffff)="pid"D
+,#((*(<f+28)&0xffff)-<4)$<
+<l-1>l
+<f+70>f
+,#<l$<
+$<findproc.nxt
