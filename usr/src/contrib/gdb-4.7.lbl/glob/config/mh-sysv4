@@ -1,0 +1,6 @@
+# Define USG as -DUSG if you are using a System V operating system.
+# Define USGr4 also if you are on an SVR4 system.
+H_CFLAGS=-DUSG -DUSGr4
+
+# The l flag generates a warning from the SVR4 archiver, remove it.
+AR_FLAGS = cq
