@@ -1,6 +1,6 @@
-SCCSID = "@(#)Makefile 1.20 %G%"
+SCCSID = "@(#)Makefile 1.21 %G%"
 
-CFLAGS = -O -f
+CFLAGS = -O
 
 LIB = ${DESTDIR}/usr/lib
 SRCDIR = ${DESTDIR}/usr/ucb
