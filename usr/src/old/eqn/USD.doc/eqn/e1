@@ -1,4 +1,6 @@
-.\"	@(#)e1	6.1 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)e1	6.2 (Berkeley) %G%
 .\"
 .2C $gsize 9$
 .nr PS 9

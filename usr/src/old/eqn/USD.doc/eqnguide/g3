@@ -1,4 +1,6 @@
-.\"	@(#)g3	6.1 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)g3	6.2 (Berkeley) %G%
 .\"
 .SC "Shorthand for In-line Equations"
 .PP

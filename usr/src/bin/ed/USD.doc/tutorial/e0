@@ -1,4 +1,6 @@
-.\"	@(#)e0	6.1 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)e0	6.2 (Berkeley) %G%
 .\"
 .EH 'USD:12-%''A Tutorial Introduction to the \s-2UNIX\s+2 Text Editor'
 .OH 'A Tutorial Introduction to the \s-2UNIX\s+2 Text Editor''USD:12-%'

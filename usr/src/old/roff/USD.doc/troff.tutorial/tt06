@@ -1,4 +1,6 @@
-.\"	@(#)tt06	6.1 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)tt06	6.2 (Berkeley) %G%
 .\"
 .NH
 Local Motions: Drawing lines and characters

@@ -1,4 +1,6 @@
-.\"	@(#)tbl	6.1 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)tbl	6.2 (Berkeley) %G%
 .\"
 .EH 'USD:28-%''Tbl \(em A Program to Format Tables'
 .OH 'Tbl \(em A Program to Format Tables''USD:28-%'

@@ -1,4 +1,6 @@
-.\"	@(#)dc	6.1 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)dc	6.2 (Berkeley) %G%
 .\"
 .EH 'USD:5-%''DC \- An Interactive Desk Calculator'
 .OH 'DC \- An Interactive Desk Calculator''USD:5-%'

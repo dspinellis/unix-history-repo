@@ -1,4 +1,6 @@
-.\"	@(#)e.mac	6.1 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)e.mac	6.2 (Berkeley) %G%
 .\"
 .tr _\(em
 .tr *\(**

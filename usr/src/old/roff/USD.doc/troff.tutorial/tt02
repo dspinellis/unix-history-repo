@@ -1,4 +1,6 @@
-.\"	@(#)tt02	6.1 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)tt02	6.2 (Berkeley) %G%
 .\"
 .NH
 Point Sizes; Line Spacing

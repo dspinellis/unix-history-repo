@@ -1,4 +1,6 @@
-.\"	@(#)tt11	6.1 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)tt11	6.2 (Berkeley) %G%
 .\"
 .NH
 Macros with arguments

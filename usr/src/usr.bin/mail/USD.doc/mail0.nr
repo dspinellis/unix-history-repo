@@ -1,8 +1,9 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1980 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)mail0.nr	6.3 (Berkeley) %G%
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)mail0.nr	6.4 (Berkeley) %G%
 .\"
 .eh 'USD:7-%''Mail Reference Manual'
 .oh 'Mail Reference Manual''USD:7-%'

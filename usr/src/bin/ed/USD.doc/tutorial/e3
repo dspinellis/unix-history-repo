@@ -1,4 +1,6 @@
-.\"	@(#)e3	6.1 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)e3	6.2 (Berkeley) %G%
 .\"
 .SH
 The current line \- ``Dot'' or ``.''
