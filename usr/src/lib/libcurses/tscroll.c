@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tscroll.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)tscroll.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "curses.h"
@@ -35,17 +35,17 @@ static char sccsid[] = "@(#)tscroll.c	8.3 (Berkeley) %G%";
  * all other characters are ``self-inserting''.
  */
 char *
-__tscroll(cap, n)
+__tscroll(cap, n1, n2)
 	const char *cap;
-	int n;
+	int n1, n2;
 {
 	static char result[MAXRETURNSIZE];
-	int c;
+	int c, n;
 	char *dp;
 
 	if (cap == NULL)
 		goto err;
-	for (dp = result; (c = *cap++) != '\0';) {
+	for (n = n1, dp = result; (c = *cap++) != '\0';) {
 		if (c != '%') {
 			*dp++ = c;
 			continue;
@@ -67,6 +67,7 @@ __tscroll(cap, n)
 		case '2':
 two:			*dp++ = n / 10 | '0';
 one:			*dp++ = n % 10 | '0';
+			n = n2;
 			continue;
 		case '>':
 			if (n > *cap++)
