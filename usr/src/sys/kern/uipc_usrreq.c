@@ -2,7 +2,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_usrreq.c	7.20 (Berkeley) %G%
+ *	@(#)uipc_usrreq.c	7.21 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -102,7 +102,7 @@ uipc_usrreq(so, req, m, nam, control)
 
 	case PRU_SHUTDOWN:
 		socantsendmore(so);
-		unp_usrclosed(unp);
+		unp_shutdown(unp);
 		break;
 
 	case PRU_RCVD:
@@ -190,8 +190,8 @@ uipc_usrreq(so, req, m, nam, control)
 			 * Wake up readers.
 			 */
 			if (control) {
-				(void)sbappendcontrol(rcv, m, control);
-				control = 0;
+				if (sbappendcontrol(rcv, m, control))
+					control = 0;
 			} else
 				sbappend(rcv, m);
 			snd->sb_mbmax -=
@@ -510,11 +510,14 @@ unp_abort(unp)
 }
 #endif
 
-/*ARGSUSED*/
-unp_usrclosed(unp)
+unp_shutdown(unp)
 	struct unpcb *unp;
 {
+	struct socket *so;
 
+	if (unp->unp_socket->so_type == SOCK_STREAM && unp->unp_conn &&
+	    (so = unp->unp_conn->unp_socket))
+		socantrcvmore(so);
 }
 
 unp_drop(unp, errno)
@@ -636,10 +639,22 @@ restart:
 			if (so->so_proto->pr_domain != &unixdomain ||
 			    (so->so_proto->pr_flags&PR_RIGHTS) == 0)
 				continue;
+#ifdef notdef
 			if (so->so_rcv.sb_flags & SB_LOCK) {
-				sbwait(&so->so_rcv);
+				/*
+				 * This is problematical; it's not clear
+				 * we need to wait for the sockbuf to be
+				 * unlocked (on a uniprocessor, at least),
+				 * and it's also not clear what to do
+				 * if sbwait returns an error due to receipt
+				 * of a signal.  If sbwait does return
+				 * an error, we'll go into an infinite
+				 * loop.  Delete all of this for now.
+				 */
+				(void) sbwait(&so->so_rcv);
 				goto restart;
 			}
+#endif
 			unp_scan(so->so_rcv.sb_mb, unp_mark);
 		}
 	} while (unp_defer);
