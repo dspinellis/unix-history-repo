@@ -6,16 +6,17 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)db.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)db.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
+
+#include <errno.h>
+#include <stddef.h>
+#include <stdio.h>
+
 #define	__DBINTERFACE_PRIVATE
 #include <db.h>
-#include <stdio.h>
-#include <stddef.h>
-#include <errno.h>
-#include "../btree/btree.h"
 
 DB *
 dbopen(fname, flags, mode, type, openinfo)

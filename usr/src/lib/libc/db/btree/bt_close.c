@@ -9,18 +9,18 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_close.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_close.c	5.9 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
 
-#include <db.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
+#include <db.h>
 #include "btree.h"
 
 static int bt_meta __P((BTREE *));

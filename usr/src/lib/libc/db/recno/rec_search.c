@@ -6,15 +6,15 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_search.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_search.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 
-#include <db.h>
 #include <errno.h>
 #include <stdio.h>
 
+#include <db.h>
 #include "recno.h"
 
 /*

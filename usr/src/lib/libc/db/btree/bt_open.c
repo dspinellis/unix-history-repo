@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_open.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_open.c	5.24 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -23,8 +23,6 @@ static char sccsid[] = "@(#)bt_open.c	5.23 (Berkeley) %G%";
 #include <sys/param.h>
 #include <sys/stat.h>
 
-#define	__DBINTERFACE_PRIVATE
-#include <db.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
@@ -34,6 +32,8 @@ static char sccsid[] = "@(#)bt_open.c	5.23 (Berkeley) %G%";
 #include <string.h>
 #include <unistd.h>
 
+#define	__DBINTERFACE_PRIVATE
+#include <db.h>
 #include "btree.h"
 
 static int nroot __P((BTREE *));

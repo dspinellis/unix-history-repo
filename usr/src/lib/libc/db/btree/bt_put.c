@@ -9,17 +9,17 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_put.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_put.c	5.12 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 
-#include <db.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include <db.h>
 #include "btree.h"
 
 static EPG *bt_fast __P((BTREE *, const DBT *, const DBT *, int *));
