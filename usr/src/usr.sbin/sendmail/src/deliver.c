@@ -6,7 +6,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.57	%G%";
+static char SccsId[] = "@(#)deliver.c	3.58	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -825,7 +825,10 @@ putmessage(fp, m, xdot)
 
 	if (!bitset(M_NHDR, m->m_flags))
 	{
-		if (strcmp(m->m_name, "uucp") == 0)
+		register char *p = rindex(m->m_mailer, '/');
+
+		if (p != NULL && strcmp(p, "/uux") == 0 &&
+		    strcmp(m->m_name, "uucp") == 0)
 			(void) expand("From $f  $d remote from $h", buf,
 					&buf[sizeof buf - 1]);
 		else
