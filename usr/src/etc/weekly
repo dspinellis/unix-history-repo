@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)weekly	5.7 (Berkeley) %G%
+#	@(#)weekly	5.8 (Berkeley) %G%
 #
 
 PATH=/bin:/sbin:/usr/sbin:/usr/bin:/usr/libexec
@@ -13,20 +13,20 @@ echo "Subject: $host weekly run output"
 #echo "Removing old .o files:"
 #find /usr/src -name '*.o' -atime +21 -print -a -exec rm -f {} \;
 
-echo "looking for checked out files:"
-TDIR=/tmp/_checkout$$
-
-mkdir $TDIR
-for file in `find /usr/src -name 'p.*' -print | egrep 'SCCS/p\.'`; do
-	owner=`awk '{ print $3 }' $file`
-	echo "$owner	$file"
-	echo $file >> $TDIR/$owner
-done | sed -e 's,SCCS/p.,,'
-for file in $TDIR/*; do
-	sed -e 's,SCCS/p.,,' $file | \
-	    Mail -s 'checked out files' `basename $file`
-done
-rm -rf $TDIR
+#echo "looking for checked out files:"
+#TDIR=/tmp/_checkout$$
+#
+#mkdir $TDIR
+#for file in `find /usr/src -name 'p.*' -print | egrep 'SCCS/p\.'`; do
+#	owner=`awk '{ print $3 }' $file`
+#	echo "$owner	$file"
+#	echo $file >> $TDIR/$owner
+#done | sed -e 's,SCCS/p.,,'
+#for file in $TDIR/*; do
+#	sed -e 's,SCCS/p.,,' $file | \
+#	    Mail -s 'checked out files' `basename $file`
+#done
+#rm -rf $TDIR
 
 if [ -f /usr/lib/uucp/clean.weekly ]; then
 	echo ""
