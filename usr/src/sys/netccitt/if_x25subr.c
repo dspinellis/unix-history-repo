@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_x25subr.c	7.12 (Berkeley) %G%
+ *	@(#)if_x25subr.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -51,6 +51,10 @@ extern	struct ifnet loif;
 struct llinfo_x25 llinfo_x25 = {&llinfo_x25, &llinfo_x25};
 struct sockaddr *x25_dgram_sockmask;
  
+struct if_x25stats {
+	int	ifx_wrongplen;
+	int	ifx_nophdr;
+} if_x25stats;
 int x25_autoconnect = 0;
 
 #define senderr(x) {error = x; goto bad;}
@@ -242,6 +246,11 @@ register struct	rtentry *rt;
 	struct pklcd *lcp;
 	int             s, error = 0;
 
+int plen;
+for (plen = 0; m; m = m->m_next)
+	plen += m->m_len;
+m = m0;
+
 	if ((ifp->if_flags & IFF_UP) == 0)
 		senderr(ENETDOWN);
 	while (rt == 0 || (rt->rt_flags & RTF_GATEWAY)) {
@@ -264,6 +273,18 @@ register struct	rtentry *rt;
 	    ((lx = (struct llinfo_x25 *)rt->rt_llinfo) == 0)) {
 		senderr(ENETUNREACH);
 	}
+if ((m->m_flags & M_PKTHDR) == 0) {
+	if_x25stats.ifx_nophdr++;
+	m = m_gethdr(M_NOWAIT, MT_HEADER);
+	if (m == 0)
+		senderr(ENOBUFS);
+	m->m_pkthdr.len = plen;
+	m->m_next = m0;
+}
+if (plen != m->m_pkthdr.len) {
+	if_x25stats.ifx_wrongplen++;
+	m->m_pkthdr.len = plen;
+}
 next_circuit:
 	lcp = lx->lx_lcd;
 	if (lcp == 0) {
@@ -273,6 +294,7 @@ next_circuit:
 		lcp->lcd_upper = x25_connect_callback;
 		lcp->lcd_upnext = (caddr_t)lx;
 		lcp->lcd_packetsize = lx->lx_ia->ia_xc.xc_psize;
+		lcp->lcd_flags = X25_MBS_HOLD;
 	}
 	switch (lcp->lcd_state) {
 	case READY:

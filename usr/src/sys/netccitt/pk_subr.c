@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_subr.c	7.15 (Berkeley) %G%
+ *	@(#)pk_subr.c	7.16 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -369,7 +369,7 @@ register struct sockaddr_x25 *sa;
 	else
 		sa -> x25_opts.op_wsize = lcp -> lcd_windowsize;
 	sa -> x25_net = pkp -> pk_xcp -> xc_addr.x25_net;
-	lcp -> lcd_flags = sa -> x25_opts.op_flags;
+	lcp -> lcd_flags |= sa -> x25_opts.op_flags;
 	lcp -> lcd_stime = time.tv_sec;
 }
 
@@ -992,12 +992,13 @@ register struct mbuf *m0;
 int len0;
 {
 	register struct mbuf *m, *n;
-	unsigned len = len0;
+	unsigned len = len0, remain;
 
 	for (m = m0; m && len > m -> m_len; m = m -> m_next)
 		len -= m -> m_len;
 	if (m == 0)
 		return (0);
+	remain = m -> m_len - len;
 	if (m0 -> m_flags & M_PKTHDR) {
 		MGETHDR(n, wait, m0 -> m_type);
 		if (n == 0)
@@ -1007,7 +1008,7 @@ int len0;
 		m0 -> m_pkthdr.len = len0;
 		if (m -> m_flags & M_EXT)
 			goto extpacket;
-		if (len > MHLEN) {
+		if (remain > MHLEN) {
 			/* m can't be the lead packet */
 			MH_ALIGN(n, 0);
 			n -> m_next = m_split (m, len, wait);
@@ -1017,30 +1018,28 @@ int len0;
 			} else
 				return (n);
 		} else
-			MH_ALIGN(n, len);
-	} else if (len == m -> m_len) {
+			MH_ALIGN(n, remain);
+	} else if (remain == 0) {
 		n = m -> m_next;
 		m -> m_next = 0;
 		return (n);
+	} else {
+		MGET(n, wait, m -> m_type);
+		if (n == 0)
+			return (0);
+		M_ALIGN(n, remain);
 	}
 extpacket:
-	len = m -> m_len - len;		/* remainder to be copied */
-	m -> m_len -= len;		/* now equals original len */
 	if (m -> m_flags & M_EXT) {
 		n -> m_flags |= M_EXT;
 		n -> m_ext = m -> m_ext;
 		mclrefcnt[mtocl (m -> m_ext.ext_buf)]++;
-		n -> m_data = m -> m_data + m -> m_len;
+		n -> m_data = m -> m_data + len;
 	} else {
-		MGET(n, wait, m -> m_type);
-		if (n == 0) {
-			m -> m_len += len;
-			return (0);
-		}
-		M_ALIGN(n, len);
-		bcopy (mtod (m, caddr_t), mtod (n, caddr_t), len);
+		bcopy (mtod (m, caddr_t) + len, mtod (n, caddr_t), remain);
 	}
-	n -> m_len = len;
+	n -> m_len = remain;
+	m -> m_len = len;
 	n -> m_next = m -> m_next;
 	m -> m_next = 0;
 	return (n);

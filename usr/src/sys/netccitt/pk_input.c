@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_input.c	7.12 (Berkeley) %G%
+ *	@(#)pk_input.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -777,8 +777,8 @@ struct pkcb *pkp;
 		lcp -> lcd_upnext = l -> lcd_upnext;
 		lcp -> lcd_lcn = lcn;
 		lcp -> lcd_state = RECEIVED_CALL;
-		sa -> x25_opts.op_flags |= sxp -> x25_opts.op_flags &
-			~X25_REVERSE_CHARGE;
+		sa -> x25_opts.op_flags |= (sxp -> x25_opts.op_flags &
+			~X25_REVERSE_CHARGE) | l -> lcd_flags;
 		pk_assoc (pkp, lcp, sa);
 		lcp -> lcd_faddr = *sa;
 		lcp -> lcd_laddr.x25_udlen = sxp -> x25_udlen;
