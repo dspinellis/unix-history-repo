@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)termcap.src	5.60 (Berkeley) %G%
+#	@(#)termcap.src	5.61 (Berkeley) %G%
 #
 #	Termcap source file
 #	John Kunze, Berkeley
@@ -204,6 +204,13 @@ Ba|5410|4410|tty5410|att4410|AT&T Teletype 5410 terminal with 80 columns:\
 	:KM=/usr/lib/ua/kmap.5410:is=\E[0m^O\E[?6l:kn#8:\
 	:k1=\EOc:k2=\EOd:k3=\EOe:k4=\EOf:k4=\EOg:k6=\EOh:\
 	:k7=\EOi:k8=\EOj:ko=nd,up,ho:
+Bi|att630|ATT630|630DMD|630MTG|AT&T 630 windowing terminal:\
+	:am:da:db:mi:ms:xo:pt:bs:\
+	:co#80:li#60:cr=\r:up=\E[A:do=\E[B:nd=\E[C:cm=\E[%i%d;%dH:\
+	:ho=\E[H:bt=\E[Z:sf=\E[S:sr=\E[T:us=\E[4m:ue=\E[m:so=\E[7m:se=\E[m:\
+	:ce=\E[K:cd=\E[J:cl=\E[H\E[J:al=\E[L:dl=\E[M:\
+	:im=:ei=:ic=\E[@:dm=:ed=:dc=\E[P:\
+	:kb=\b:kl=\E[D:kr=\E[C:ku=\E[A:kd=\E[B:kh=\E[H:
 # AT&T Teletype 5420 Terminal (a.k.a. 4415) June 5, 1985
 Bb|5420|4415|tty5420|att4415|AT&T Teletype 5420 terminal:\
 	:al=\E[L:am:bs:cd=\E[J:ce=\E[K:cl=\E[H\E[J:\
