@@ -1,4 +1,4 @@
-/*	cgram.y	4.18	87/12/09	*/
+/*	cgram.y	4.19	87/12/09	*/
 
 /*
  * Grammar for the C compiler.
@@ -582,6 +582,10 @@ switchpart:	   SWITCH  LP  e  RP
 				werror("switch expression not type int");
 				q = makety( q, INT, q->fn.cdim, q->fn.csiz );
 				}
+#ifdef LINT
+			    if( hflag && q->in.op == ICON )
+				werror( "constant switch expression" );
+#endif
 			    ecomp( buildtree( FORCE, q, NIL ) );
 			    branch( $$ = getlab() );
 			    swstart();
