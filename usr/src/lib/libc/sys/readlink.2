@@ -1,0 +1,69 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)readlink.2	5.1 (Berkeley) %G%
+.\"
+.TH READLINK 2 "2 July 1983"
+.UC 5
+.SH NAME
+readlink \- read value of a symbolic link
+.SH SYNOPSIS
+.nf
+.ft B
+cc = readlink(path, buf, bufsiz)
+int cc;
+char *path, *buf;
+int bufsiz;
+.fi
+.ft R
+.SH DESCRIPTION
+.I Readlink
+places the contents of the symbolic link
+.I name
+in the buffer
+.I buf
+which has size
+.IR bufsiz . 
+The contents of the link are not null terminated when returned.
+.SH "RETURN VALUE
+The call returns the count of characters placed in the buffer
+if it succeeds, or a \-1 if an error occurs, placing the error
+code in the global variable \fIerrno\fP.
+.SH "ERRORS
+.I Readlink
+will fail and the file mode will be unchanged if:
+.TP 15
+[EPERM]
+The \fIpath\fP argument contained a byte with the high-order bit set.
+.TP 15
+[ENOENT]
+The pathname was too long.
+.TP 15
+[ENOTDIR]
+A component of the path prefix is not a directory.
+.TP 15
+[ENOENT]
+The named file does not exist.
+.TP 15
+[ENXIO]
+The named file is not a symbolic link.
+.TP 15
+[EACCES]
+Search permission is denied on a component of the path prefix.
+.TP 15
+[EPERM]
+The effective user ID does not match the owner of the file and
+the effective user ID is not the super-user.
+.TP 15
+[EINVAL]
+The named file is not a symbolic link.
+.TP 15
+[EFAULT]
+.I Buf
+extends outside the process's allocated address space.
+.TP 15
+[ELOOP]
+Too many symbolic links were encountered in translating the pathname.
+.SH SEE ALSO
+stat(2), lstat(2), symlink(2)
