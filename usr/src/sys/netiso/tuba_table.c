@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tuba_table.c	7.7 (Berkeley) %G%
+ *	@(#)tuba_table.c	7.8 (Berkeley) %G%
  */
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -88,7 +88,7 @@ tuba_lookup(isoa, wait)
 		(i & 1 ? sum_a : sum_b) += tc->tc_siso.siso_data[i];
 	REDUCE(tc->tc_sum, (sum_a << 8) + sum_b);
 	HTONS(tc->tc_sum);
-	tc->tc_ssum = swab(tc->tc_sum);
+	SWAB(tc->tc_ssum, tc->tc_sum);
 	for (i = tuba_table_size; i > 0; i--)
 		if (tuba_table[i] == 0)
 			goto fixup;
@@ -117,8 +117,5 @@ tuba_lookup(isoa, wait)
 fixup:
 	tuba_table[i] = tc;
 	tc->tc_index = i;
-	i ^= 0xffff;
-	REDUCE(tc->tc_sum_d, tc->tc_sum + i);
-	REDUCE(tc->tc_ssum_d, tc->tc_ssum + i);
 	return (tc->tc_index);
 }

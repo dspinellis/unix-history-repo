@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tuba_subr.c	7.9 (Berkeley) %G%
+ *	@(#)tuba_subr.c	7.10 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -72,6 +72,11 @@ struct addr_arg {
 	u_long	sum;
 };
 
+/*
+ * Calculate contribution to fudge factor for TCP checksum,
+ * and coincidentally set pointer for convenience of clnp_output
+ * if we are are responding when there is no isopcb around.
+ */
 static void
 tuba_getaddr(arg, siso, index)
 	register struct addr_arg *arg;
@@ -82,7 +87,8 @@ tuba_getaddr(arg, siso, index)
 	if (index <= tuba_table_size && (tc = tuba_table[index])) {
 		if (siso)
 			*siso = &tc->tc_siso;
-		arg->sum += (arg->offset & 1 ? tc->tc_ssum_d : tc->tc_sum_d);
+		arg->sum += (arg->offset & 1 ? tc->tc_ssum : tc->tc_sum)
+				+ (0xffff ^ index);
 		arg->offset += tc->tc_siso.siso_nlen + 1;
 	} else
 		arg->error = 1;
@@ -191,10 +197,9 @@ tuba_pcbconnect(inp, nam)
  * and do tcp input processing.
  * No return value.  
  */
-tuba_tcpinput(m, src, dst, clnp_len, ce_bit)
+tuba_tcpinput(m, src, dst)
 	register struct mbuf *m;
 	struct sockaddr_iso *src, *dst;
-	int clnp_len, ce_bit;
 {
 	unsigned long sum, lindex, findex;
 	register struct tcpiphdr *ti;
@@ -209,17 +214,8 @@ tuba_tcpinput(m, src, dst, clnp_len, ce_bit)
 	struct in_addr laddr;
 	int dropsocket = 0, iss = 0;
 
-	if ((m->m_flags & M_PKTHDR) == 0) {
-		om = m_gethdr(M_DONTWAIT, MT_DATA);
-		if (om == 0)
-			goto drop;
-		om->m_next = m;
-		for (len = 0; m; m = m->m_next)
-			len += m->m_len;
-		m = om;
-		m->m_pkthdr.len = len;
-	}
-	om = 0;
+	if ((m->m_flags & M_PKTHDR) == 0)
+		panic("tuba_tcpinput");
 	/*
 	 * Do some housekeeping looking up CLNP addresses.
 	 * If we are out of space might as well drop the packet now.
@@ -230,24 +226,11 @@ tuba_tcpinput(m, src, dst, clnp_len, ce_bit)
 	if (lindex == 0 || findex == 0)
 		goto drop;
 	/*
-	 * Get CLNP and TCP header together in first mbuf.
 	 * CLNP gave us an mbuf chain WITH the clnp header pulled up,
-	 * and the length of the clnp header.
+	 * but the data pointer pushed past it.
 	 */
-	len = clnp_len + sizeof(struct tcphdr);
-	if (m->m_len < len) {
-		if ((m = m_pullup(m, len)) == 0) {
-			tcpstat.tcps_rcvshort++;
-			return;
-		}
-	}
-	/*
-	 * Calculate checksum of extended TCP header and data,
-	 * by adjusting the checksum for missing parts of the header.
-	 */
-	m->m_data += clnp_len;
-	m->m_len -= clnp_len;
-	tlen = m->m_pkthdr.len -= clnp_len;
+	len = m->m_len;
+	tlen = m->m_pkthdr.len;
 	m->m_data -= sizeof(struct ip);
 	m->m_len += sizeof(struct ip);
 	m->m_pkthdr.len += sizeof(struct ip);
@@ -262,23 +245,37 @@ tuba_tcpinput(m, src, dst, clnp_len, ce_bit)
 	 */
 	off = ((sizeof (long) - 1) & ((m->m_flags & M_EXT) ?
 		(m->m_data - m->m_ext.ext_buf) :  (m->m_data - m->m_pktdat)));
-	if (off) {
-		struct mbuf *m0 = m_gethdr(M_DONTWAIT, MT_DATA);
-		if (m0 == 0) {
+	if (off || len < sizeof(struct tcphdr)) {
+		struct mbuf *m0 = m;
+
+		MGETHDR(m, M_DONTWAIT, MT_DATA);
+		if (m == 0) { 
+			m = m0;
 			goto drop;
 		}
-		m0->m_data += max_linkhdr;
-		bcopy(mtod(m, caddr_t) + sizeof(struct ip),
-		      mtod(m0, caddr_t) + sizeof(struct ip),
-		      sizeof(struct tcphdr));
-		m->m_data += sizeof(struct tcpiphdr);
-		m->m_len -= sizeof(struct tcpiphdr);
-		m0->m_next = m;
-		m0->m_pkthdr = m->m_pkthdr;
-		m0->m_flags = m->m_flags & M_COPYFLAGS;
-		m0->m_len = sizeof(struct tcpiphdr);
-		m = m0;
+		m->m_next = m0;
+		m->m_data += max_linkhdr;
+		m->m_pkthdr = m->m_pkthdr;
+		m->m_flags = m->m_flags & M_COPYFLAGS;
+		if (len < sizeof(struct tcphdr)) {
+			if ((m = m_pullup(m, sizeof(struct tcpiphdr))) == 0) {
+				tcpstat.tcps_rcvshort++;
+				return;
+			}
+		} else {
+			bcopy(mtod(m, caddr_t) + sizeof(struct ip),
+			      mtod(m0, caddr_t) + sizeof(struct ip),
+			      sizeof(struct tcphdr));
+			m0->m_len -= sizeof(struct tcpiphdr);
+			m0->m_data += sizeof(struct tcpiphdr);
+			m->m_len = sizeof(struct tcpiphdr);
+		}
 	}
+	/*
+	 * Calculate checksum of extended TCP header and data,
+	 * replacing what would have been IP addresses by
+	 * the IP checksum of the CLNP addresses.
+	 */
 	ti = mtod(m, struct tcpiphdr *);
 	ti->ti_dst.s_addr = tuba_table[lindex]->tc_sum;
 	if (dst->siso_nlen & 1)
@@ -307,4 +304,5 @@ tuba_tcpinput(m, src, dst, clnp_len, ce_bit)
 
 #define tcp_slowtimo	tuba_slowtimo
 #define tcp_fasttimo	tuba_fasttimo
+
 #include <netinet/tcp_timer.c>
