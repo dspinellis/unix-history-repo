@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)up.c	7.4 (Berkeley) %G%
+ *	@(#)up.c	7.5 (Berkeley) %G%
  */
 
 #include "up.h"
@@ -230,7 +230,7 @@ upmaptype(ui)
 			break;
 		}
 	if (st->nsect == 0)
-		printf(": uphr=%x", ui->ui_slave, upaddr->uphr);
+		printf(": uphr=%x", upaddr->uphr);
 	if (type == 0) {
 		upaddr->uphr = UPHR_MAXCYL;
 		if (upaddr->uphr == 822)
