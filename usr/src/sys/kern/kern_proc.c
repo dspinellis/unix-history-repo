@@ -1,4 +1,4 @@
-/*	kern_proc.c	3.14	%G%	*/
+/*	kern_proc.c	3.15	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -494,12 +494,11 @@ done:
 		if(q->p_pptr == p) {
 			q->p_pptr = &proc[1];
 			q->p_ppid = 1;
-			q->p_flag |= SDETACH;
 			wakeup((caddr_t)&proc[1]);
 			/*
 			 * Traced processes are killed
 			 * since their existence means someone is screwing up.
-			 * Traced processes are sent a hangup and a continue.
+			 * Stopped processes are sent a hangup and a continue.
 			 * This is designed to be ``safe'' for setuid
 			 * processes since they must be willing to tolerate
 			 * hangups anyways.
@@ -513,7 +512,8 @@ done:
 			}
 			/*
 			 * Protect this process from future
-			 * tty signals, and clear TSTP/TTIN/TTOU if pending.
+			 * tty signals, clear TSTP/TTIN/TTOU if pending,
+			 * and set SDETACH bit on procs.
 			 */
 			spgrp(q, -1);
 		}
