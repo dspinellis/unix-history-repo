@@ -4,36 +4,33 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_ktrace.c	7.10 (Berkeley) %G%
+ *	@(#)kern_ktrace.c	7.11 (Berkeley) %G%
  */
 
 #ifdef KTRACE
 
 #include "param.h"
-#include "user.h"
+#include "namei.h"
 #include "proc.h"
 #include "file.h"
 #include "vnode.h"
 #include "ktrace.h"
 #include "malloc.h"
 #include "syslog.h"
-
-#include "syscalls.c"
-
-extern int nsysent;
-extern char *syscallnames[];
+#include "user.h"		/* XXX for curproc */
 
 struct ktr_header *
 ktrgetheader(type)
 {
 	register struct ktr_header *kth;
+	struct proc *p = curproc;
 
 	MALLOC(kth, struct ktr_header *, sizeof (struct ktr_header), 
 		M_TEMP, M_WAITOK);
 	kth->ktr_type = type;
 	microtime(&kth->ktr_time);
-	kth->ktr_pid = u.u_procp->p_pid;
-	bcopy(u.u_procp->p_comm, kth->ktr_comm, MAXCOMLEN);
+	kth->ktr_pid = p->p_pid;
+	bcopy(p->p_comm, kth->ktr_comm, MAXCOMLEN);
 	return (kth);
 }
 
@@ -161,7 +158,6 @@ ktrace(curp, uap, retval)
 	int *retval;
 {
 	register struct vnode *vp = NULL;
-	register struct nameidata *ndp = &u.u_nd;
 	register struct proc *p;
 	struct pgrp *pg;
 	int facs = uap->facs & ~KTRFAC_ROOT;
@@ -169,16 +165,17 @@ ktrace(curp, uap, retval)
 	int descend = uap->ops & KTRFLAG_DESCEND;
 	int ret = 0;
 	int error = 0;
+	struct nameidata nd;
 
 	if (ops != KTROP_CLEAR) {
 		/*
 		 * an operation which requires a file argument.
 		 */
-		ndp->ni_segflg = UIO_USERSPACE;
-		ndp->ni_dirp = uap->fname;
-		if (error = vn_open(ndp, FREAD|FWRITE, 0))
+		nd.ni_segflg = UIO_USERSPACE;
+		nd.ni_dirp = uap->fname;
+		if (error = vn_open(&nd, curp, FREAD|FWRITE, 0))
 			return (error);
-		vp = ndp->ni_vp;
+		vp = nd.ni_vp;
 		if (vp->v_type != VREG) {
 			vrele(vp);
 			return (EACCES);
@@ -265,7 +262,7 @@ ktrops(curp, p, ops, facs, vp)
 			p->p_tracep = vp;
 		}
 		p->p_traceflag |= facs;
-		if (curp->p_uid == 0)
+		if (curp->p_ucred->cr_uid == 0)
 			p->p_traceflag |= KTRFAC_ROOT;
 	} else {	
 		/* KTROP_CLEAR */
@@ -342,14 +339,15 @@ ktrwrite(vp, kth)
 		auio.uio_resid += kth->ktr_len;
 	}
 	VOP_LOCK(vp);
-	error = VOP_WRITE(vp, &auio, IO_UNIT|IO_APPEND, u.u_cred);
+	error = VOP_WRITE(vp, &auio, IO_UNIT|IO_APPEND, curproc->p_ucred);
 	VOP_UNLOCK(vp);
 	if (!error)
 		return;
 	/*
 	 * If error encountered, give up tracing on this vnode.
 	 */
-	log(LOG_NOTICE, "ktrace write failed, errno %d, tracing stopped\n", error);
+	log(LOG_NOTICE, "ktrace write failed, errno %d, tracing stopped\n",
+	    error);
 	for (p = allproc; p != NULL; p = p->p_nxt) {
 		if (p->p_tracep == vp) {
 			p->p_tracep = NULL;
@@ -366,18 +364,20 @@ ktrwrite(vp, kth)
  * root previously set the tracing status on the target process, and 
  * so, only root may further change it.
  *
- * TODO: check groups  (have to wait till group list is moved
- *       out of u.  use caller effective gid.
+ * TODO: check groups.  use caller effective gid.
  */
-ktrcanset(caller, target)
-	register struct proc *caller, *target;
+ktrcanset(callp, targetp)
+	struct proc *callp, *targetp;
 {
-	if ((caller->p_uid == target->p_ruid &&
+	register struct pcred *caller = callp->p_cred;
+	register struct pcred *target = targetp->p_cred;
+
+	if ((caller->pc_ucred->cr_uid == target->p_ruid &&
 	     target->p_ruid == target->p_svuid &&
 	     caller->p_rgid == target->p_rgid &&	/* XXX */
 	     target->p_rgid == target->p_svgid &&
-	     (target->p_traceflag & KTRFAC_ROOT) == 0) ||
-	     caller->p_uid == 0)
+	     (targetp->p_traceflag & KTRFAC_ROOT) == 0) ||
+	     caller->pc_ucred->cr_uid == 0)
 		return (1);
 
 	return (0);
