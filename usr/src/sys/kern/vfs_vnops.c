@@ -1,4 +1,4 @@
-/*	vfs_vnops.c	4.18	82/01/19	*/
+/*	vfs_vnops.c	4.19	82/01/19	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -13,6 +13,7 @@
 #include "../h/mount.h"
 #include "../h/socket.h"
 #include "../h/socketvar.h"
+#include "../h/proc.h"
 
 /*
  * Convert a user supplied file descriptor into a pointer
@@ -42,8 +43,10 @@ getf(f)
  * Decrement reference count on the inode following
  * removal to the referencing file structure.
  * Call device handler on last close.
+ * Nouser indicates that the user isn't available to present
+ * errors to.
  */
-closef(fp)
+closef(fp, nouser)
 	register struct file *fp;
 {
 	register struct inode *ip;
@@ -60,7 +63,9 @@ closef(fp)
 	}
 	flag = fp->f_flag;
 	if (flag & FSOCKET) {
-		soclose(fp->f_socket, u.u_procp->p_flag&SWEXIT);
+		soclose(fp->f_socket, nouser);
+		if (u.u_error)
+			return;
 		fp->f_socket = 0;
 		fp->f_count = 0;
 		return;

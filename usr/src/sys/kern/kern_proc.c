@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.17	81/11/21	*/
+/*	kern_proc.c	4.18	82/01/19	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -424,7 +424,7 @@ setregs()
 	u.u_ar0[PC] = u.u_exdata.ux_entloc + 2; /* skip over entry mask */
 	for (i=0; i<NOFILE; i++) {
 		if (u.u_pofile[i]&EXCLOSE) {
-			closef(u.u_ofile[i]);
+			closef(u.u_ofile[i], 1);
 			u.u_ofile[i] = NULL;
 			u.u_pofile[i] &= ~EXCLOSE;
 		}
@@ -502,7 +502,7 @@ exit(rv)
 	for (i=0; i<NOFILE; i++) {
 		f = u.u_ofile[i];
 		u.u_ofile[i] = NULL;
-		closef(f);
+		closef(f, 1);
 	}
 	ilock(u.u_cdir);
 	iput(u.u_cdir);

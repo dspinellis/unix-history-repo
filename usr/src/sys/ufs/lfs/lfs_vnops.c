@@ -1,4 +1,4 @@
-/*	lfs_vnops.c	4.16	82/01/16	*/
+/*	lfs_vnops.c	4.17	82/01/19	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -126,7 +126,9 @@ dup()
 	}
 	if (i != uap->fdes) {
 		if (u.u_ofile[i]!=NULL)
-			closef(u.u_ofile[i]);
+			closef(u.u_ofile[i], 0);
+		if (u.u_error)
+			return;
 		u.u_ofile[i] = fp;
 		fp->f_count++;
 	}
