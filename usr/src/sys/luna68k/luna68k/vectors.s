@@ -4,11 +4,9 @@
 |
 | %sccs.include.redist.gas%
 |
-| OMRON:$Id: vectors.s,v 1.1 92/05/29 16:31:21 moti Exp $
+| from: hp300/hp300/vectors.s	7.3 (Berkeley) 6/5/92
 |
-| from: hp300/hp300/vectors.s	7.2 (Berkeley) 5/7/91
-|
-|	@(#)vectors.s	7.1 (Berkeley) %G%
+|	@(#)vectors.s	7.2 (Berkeley) %G%
 |
 
 #define	_fpbsun		_fpfault
