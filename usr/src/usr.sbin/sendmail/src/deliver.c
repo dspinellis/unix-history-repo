@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.18	%G%";
+static char SccsId[] = "@(#)deliver.c	3.19	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a particular address.
@@ -736,9 +736,11 @@ recipient(a)
 		if (pw == NULL)
 			a->q_flags |= QBADADDR;
 		else
+		{
 			a->q_home = newstr(pw->pw_dir);
-		if (strcmp(buf, a->q_user) == 0)
-			forward(a);
+			if (strcmp(buf, a->q_user) == 0)
+				forward(a);
+		}
 	}
 
 	return;
