@@ -1,4 +1,4 @@
-/*	conf.c	3.10	%G%	*/
+/*	conf.c	3.11	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -23,31 +23,25 @@ struct	buf	hptab;
 int	htopen(),htclose(),htstrategy(),htread(),htwrite();
 struct	buf	httab;
 
-#ifdef ERNIE
 int	upstrategy(),upread(),upwrite(),upreset();
 struct	buf	uptab;
-#endif
 
 int	swstrategy(),swread(),swwrite();
 
 struct bdevsw	bdevsw[] =
 {
-/* 0 */	nulldev,	nulldev,	hpstrategy,	&hptab,
-/* 1 */	htopen,		htclose,	htstrategy,	&httab,
-#ifdef ERNIE
-/* 2 */	nulldev,	nulldev,	upstrategy,	&uptab,
-#endif
-/* 3 */	nodev,		nodev,		nodev,		0,
-/* 4 */	nodev,		nodev,		swstrategy,	0,
+	nulldev,	nulldev,	hpstrategy,	&hptab,		/*0*/
+	htopen,		htclose,	htstrategy,	&httab,		/*1*/
+	nulldev,	nulldev,	upstrategy,	&uptab,		/*2*/
+	nodev,		nodev,		nodev,		0,		/*3*/
+	nodev,		nodev,		swstrategy,	0,		/*4*/
 	0,
 };
 
 int	cnopen(),cnclose(),cnread(),cnwrite(),cnioctl();
 
-#ifdef ERNIE
 int	dhopen(),dhclose(),dhread(),dhwrite(),dhioctl(),dhstop(),dhreset();
 struct	tty dh11[];
-#endif
 
 int	flopen(),flclose(),flread(),flwrite();
 
@@ -58,53 +52,43 @@ int	syopen(),syread(),sywrite(),syioctl();
 
 int 	mmread(),mmwrite();
 
-#ifdef ERNIE
 int	vpopen(),vpclose(),vpwrite(),vpioctl(),vpreset();
 int	vaopen(),vaclose(),vawrite(),vaioctl(),vareset();
-#endif
 
 int	mxopen(),mxclose(),mxread(),mxwrite(),mxioctl();
 int	mcread();
 char	*mcwrite();
 
-
 struct cdevsw	cdevsw[] =
 {
-/*0*/	cnopen,		cnclose,	cnread,		cnwrite,
+	cnopen,		cnclose,	cnread,		cnwrite,	/*0*/
 	cnioctl,	nulldev,	nulldev,	0,
-/*1*/	dzopen,		dzclose,	dzread,		dzwrite,
+	dzopen,		dzclose,	dzread,		dzwrite,	/*1*/
 	dzioctl,	dzstop,		dzreset,	dz_tty,
-/*2*/	syopen,		nulldev,	syread,		sywrite,
+	syopen,		nulldev,	syread,		sywrite,	/*2*/
 	syioctl,	nulldev,	nulldev,	0,
-/*3*/	nulldev,	nulldev,	mmread,		mmwrite,
+	nulldev,	nulldev,	mmread,		mmwrite,	/*3*/
 	nodev,		nulldev,	nulldev,	0,
-/*4*/	nulldev,	nulldev,	hpread,		hpwrite,
+	nulldev,	nulldev,	hpread,		hpwrite,	/*4*/
 	nodev,		nodev,		nulldev,	0,
-/*5*/	htopen,		htclose,	htread,		htwrite,
+	htopen,		htclose,	htread,		htwrite,	/*5*/
 	nodev,		nodev,		nulldev,	0,
-#ifdef ERNIE
-/*6*/	vpopen,		vpclose,	nodev,		vpwrite,
+	vpopen,		vpclose,	nodev,		vpwrite,	/*6*/
 	vpioctl,	nulldev,	vpreset,	0,
-#else
-/*6*/	nodev,		nodev,		nodev,		nodev,
+	nulldev,	nulldev,	swread,		swwrite,	/*7*/
 	nodev,		nodev,		nulldev,	0,
-#endif
-/*7*/	nulldev,	nulldev,	swread,		swwrite,
+	flopen,		flclose,	flread,		flwrite,	/*8*/
 	nodev,		nodev,		nulldev,	0,
-/*8*/	flopen,		flclose,	flread,		flwrite,
-	nodev,		nodev,		nulldev,	0,
-/*9*/	mxopen,		mxclose,	mxread,		mxwrite,
+	mxopen,		mxclose,	mxread,		mxwrite,	/*9*/
 	mxioctl,	nulldev,	nulldev,	0,
-#ifdef ERNIE
-/*10*/	vaopen,		vaclose,	nodev,		vawrite,
+	vaopen,		vaclose,	nodev,		vawrite,	/*10*/
 	vaioctl,	nulldev,	vareset,	0,
-/*11*/	nodev,		nodev,		nodev,		nodev,
+	nodev,		nodev,		nodev,		nodev,		/*11*/
 	nodev,		nodev,		nulldev,	0,
-/*12*/	dhopen,		dhclose,	dhread,		dhwrite,
+	dhopen,		dhclose,	dhread,		dhwrite,	/*12*/
 	dhioctl,	dhstop,		dhreset,	dh11,
-/*13*/	nulldev,	nulldev,	upread,		upwrite,
+	nulldev,	nulldev,	upread,		upwrite,	/*13*/
 	nodev,		nodev,		upreset,	0,
-#endif
 	0,	
 };
 
