@@ -11,9 +11,9 @@
  * %sccs.include.redist.c%
  *
  * from: Utah $Hdr: trap.c 1.35 91/12/26$
- * from: hp300/hp300/trap.c	7.26 (Berkeley) 12/27/92
+ * from: hp300/hp300/trap.c	8.4 (Berkeley) 9/23/93
  *
- *	@(#)trap.c	8.4 (Berkeley) %G%
+ *	@(#)trap.c	8.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
