@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)scan.c	2.5 (Berkeley) %G%";
+static char *sccsid ="@(#)scan.c	2.6 (Berkeley) %G%";
 #endif lint
 
 # include "pass1.h"
@@ -1005,7 +1005,7 @@ lxtitle(){
 			cq = ititle;
 			while ( *cp ) if (*cp++ != *cq++) return;
 			if ( *cq ) return;
-			psline();
+			if( nerrors == 0 ) psline();
 #endif
 			return;
 			}
