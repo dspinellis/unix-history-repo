@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -346,7 +346,7 @@ cont:
 eof:
 	goto out;
 err:
-	noreset = 0;
+	noreset--;
 	return collf;
 }
 

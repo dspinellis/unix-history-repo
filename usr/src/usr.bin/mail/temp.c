@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)temp.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)temp.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -37,8 +37,7 @@ char	tempMesg[14];
 tinit()
 {
 	register char *cp;
-	char uname[PATHSIZE];
-	int uid;
+	char buf[PATHSIZE];
 
 	mktemp(strcpy(tempMail, "/tmp/RsXXXXXX"));
 	mktemp(strcpy(tempResid, "/tmp/RqXXXXXX"));
@@ -47,31 +46,34 @@ tinit()
 	mktemp(strcpy(tempSet, "/tmp/RxXXXXXX"));
 	mktemp(strcpy(tempMesg, "/tmp/RxXXXXXX"));
 
-	if (strlen(myname) != 0) {
-		uid = getuserid(myname);
-		if (uid == -1) {
+	/*
+	 * It's okay to call savestr in here because main will
+	 * do a spreserve() after us.
+	 */
+	if (myname != NOSTR) {
+		if (getuserid(myname) < 0) {
 			printf("\"%s\" is not a user of this system\n",
 			    myname);
 			exit(1);
 		}
 	} else {
-		uid = getuid();
-		if (username(uid, uname) < 0) {
-			strcpy(myname, "ubluit");
+		if ((cp = username()) == NOSTR) {
+			myname = "ubluit";
 			if (rcvmode) {
 				printf("Who are you!?\n");
 				exit(1);
 			}
 		} else
-			strcpy(myname, uname);
+			myname = savestr(cp);
 	}
 	if ((cp = value("HOME")) == NOSTR)
 		cp = ".";
-	strcpy(homedir, cp);
-	strcpy(copy(homedir, mailrc), "/.mailrc");
-	strcpy(copy(homedir, deadletter), "/dead.letter");
-	if (debug) {
-		printf("uid = %d, user = %s\n", uid, myname);
-		printf("deadletter = %s, mailrc = %s\n", deadletter, mailrc);
-	}
+	homedir = savestr(cp);
+	sprintf(buf, "%s/.mailrc", homedir);
+	mailrc = savestr(buf);
+	sprintf(buf, "%s/dead.letter", homedir);
+	deadletter = savestr(buf);
+	if (debug)
+		printf("user = %s, deadletter = %s, mailrc = %s\n",
+			myname, deadletter, mailrc);
 }

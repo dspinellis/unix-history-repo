@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)fio.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)fio.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -405,8 +405,8 @@ char *
 expand(name)
 	register char *name;
 {
-	char xname[BUFSIZ];
-	char cmdbuf[BUFSIZ];
+	char xname[PATHSIZE];
+	char cmdbuf[PATHSIZE];		/* also used for file names */
 	register int pid, l;
 	register char *cp, *shell;
 	int pivec[2];
@@ -415,7 +415,8 @@ expand(name)
 
 	switch (*name) {
 	case '%':
-		return savestr(findmail(name[1] ? name + 1 : myname));
+		findmail(name[1] ? name + 1 : myname, xname);
+		return savestr(xname);
 	case '#':
 		if (name[1] != 0)
 			break;

@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)glob.h	5.12 (Berkeley) %G%
+ *	@(#)glob.h	5.13 (Berkeley) %G%
  */
 
 /*
@@ -23,11 +23,9 @@
  */
 
 int	msgCount;			/* Count of messages read in */
-int	mypid;				/* Current process id */
 int	rcvmode;			/* True if receiving mail */
 int	sawcom;				/* Set after first command */
 char	*Tflag;				/* -T temp file for netnews */
-char	nosrc;				/* Don't source /usr/lib/Mail.rc */
 int	senderr;			/* An error while checking */
 int	edit;				/* Indicates editing a file */
 int	readonly;			/* Will be unable to rewrite file */
@@ -42,10 +40,10 @@ int	image;				/* File descriptor for image of msg */
 FILE	*input;				/* Current command input file */
 char	mailname[PATHSIZE];		/* Name of current file */
 char	prevfile[PATHSIZE];		/* Name of previous file */
-char	mailrc[PATHSIZE];		/* Name of startup file */
-char	deadletter[PATHSIZE];		/* Name of #/dead.letter */
-char	homedir[PATHSIZE];		/* Path name of home directory */
-char	myname[PATHSIZE];		/* My login id */
+char	*mailrc;			/* Name of startup file */
+char	*deadletter;			/* Name of #/dead.letter */
+char	*homedir;			/* Path name of home directory */
+char	*myname;			/* My login name */
 off_t	mailsize;			/* Size of system mailbox */
 int	lexnumber;			/* Number of TNUMBER from scan() */
 char	lexstring[STRINGLEN];		/* String from TSTRING, scan() */

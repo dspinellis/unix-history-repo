@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -43,6 +43,7 @@ main(argc, argv)
 	struct name *to, *cc, *bcc, *smopts;
 	char *subject;
 	char *ef;
+	char nosrc = 0;
 	int hdrstop(), (*prevint)();
 	extern int getopt(), optind, opterr;
 	extern char *optarg;
@@ -52,7 +53,6 @@ main(argc, argv)
 	 * Figure out whether we are being run interactively, set up
 	 * all the temporary files, buffer standard output, and so forth.
 	 */
-	mypid = getpid();
 	if (isatty(0))
 		assign("interactive", "");
 	image = -1;
@@ -87,7 +87,7 @@ main(argc, argv)
 			/*
 			 * Next argument is person to pretend to be.
 			 */
-			strcpy(myname, optarg);
+			myname = optarg;
 			break;
 		case 'i':
 			/*
@@ -186,6 +186,7 @@ Usage: mail [-iInv] [-s subject] [-c cc-addr] [-b bcc-addr] to-addr ...\n\
 	setscreensize();
 	input = stdin;
 	rcvmode = !to;
+	spreserve();
 	if (!nosrc)
 		load(MASTER);
 	load(mailrc);

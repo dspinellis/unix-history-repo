@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)getname.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)getname.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <pwd.h>
@@ -33,23 +33,20 @@ static char sccsid[] = "@(#)getname.c	5.5 (Berkeley) %G%";
  * Search the passwd file for a uid.  Return name through ref parameter
  * if found, indicating success with 0 return.  Return -1 on error.
  */
-
-getname(uid, namebuf)
-	char namebuf[];
+char *
+getname(uid)
 {
 	struct passwd *pw;
 
 	if ((pw = getpwuid(uid)) == NULL)
-		return -1;
-	strcpy(namebuf, pw->pw_name);
-	return 0;
+		return NOSTR;
+	return pw->pw_name;
 }
 
 /*
  * Convert the passed name to a user id and return it.  Return -1
  * on error.
  */
-
 getuserid(name)
 	char name[];
 {

@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)strings.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)strings.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -60,8 +60,7 @@ salloc(size)
 		panic("String too large");
 	if (sp->s_topFree == NOSTR) {
 		index = sp - &stringdope[0];
-		sp->s_topFree = (char *) calloc(STRINGSIZE << index,
-		    (unsigned) 1);
+		sp->s_topFree = malloc(STRINGSIZE << index);
 		if (sp->s_topFree == NOSTR) {
 			fprintf(stderr, "No room for space %d\n", index);
 			panic("Internal error");
@@ -80,7 +79,6 @@ salloc(size)
  * Called to free all strings allocated
  * since last reset.
  */
-
 sreset()
 {
 	register struct strings *sp;
@@ -96,4 +94,16 @@ sreset()
 		sp->s_nleft = STRINGSIZE << index;
 		index++;
 	}
+}
+
+/*
+ * Make the string area permanent.
+ * Meant to be called in main, after initialization.
+ */
+spreserve()
+{
+	register struct strings *sp;
+
+	for (sp = &stringdope[0]; sp < &stringdope[NSPACE]; sp++)
+		sp->s_topFree = NOSTR;
 }

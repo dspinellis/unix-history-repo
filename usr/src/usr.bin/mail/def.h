@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)def.h	5.14 (Berkeley) %G%
+ *	@(#)def.h	5.15 (Berkeley) %G%
  */
 
 #include <sys/param.h>		/* includes <sys/types.h> */
@@ -34,10 +34,8 @@
 
 #define	ESCAPE		'~'		/* Default escape for sending */
 #define	NMLSIZE		1024		/* max names in a message list */
-#define	PATHSIZE	1024		/* Size of pathnames throughout */
-#define	NAMESIZE	32		/* Max size of user name */
+#define	PATHSIZE	MAXPATHLEN	/* Size of pathnames throughout */
 #define	HSHSIZE		59		/* Hash size for aliases and vars */
-#define	HDRFIELDS	3		/* Number of header fields */
 #define	LINESIZE	BUFSIZ		/* max readable line width */
 #define	STRINGSIZE	((unsigned) 128)/* Dynamic allocation units */
 #define	MAXARGC		1024		/* Maximum list of raw strings */
@@ -274,8 +272,8 @@ char	*name1();
 char	*nameof();
 char	*nextword();
 char	*getenv();
+char	*getname();
 char	*fgets();
-char	*findmail();
 char	*ishfield();
 char	*malloc();
 char	*mktemp();
@@ -285,6 +283,7 @@ char	*salloc();
 char	*savestr();
 char	*skin();
 char	*snarf();
+char	*username();
 char	*value();
 char	*vcopy();
 char	*yankword();

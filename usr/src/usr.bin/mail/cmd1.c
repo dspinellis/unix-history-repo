@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmd1.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmd1.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -63,7 +63,6 @@ headers(msgvec)
 		if (flag++ >= size)
 			break;
 		printhead(mesg);
-		sreset();
 	}
 	if (flag == 0) {
 		printf("No more mail.\n");
@@ -164,10 +163,8 @@ from(msgvec)
 {
 	register int *ip;
 
-	for (ip = msgvec; *ip != NULL; ip++) {
+	for (ip = msgvec; *ip != NULL; ip++)
 		printhead(*ip);
-		sreset();
-	}
 	if (--ip >= msgvec)
 		dot = &message[*ip - 1];
 	return(0);
