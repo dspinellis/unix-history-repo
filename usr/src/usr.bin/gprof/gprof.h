@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)gprof.h	5.2 (Berkeley) %G%
+ *	@(#)gprof.h	5.3 (Berkeley) %G%
  */
 
 #include <stdio.h>
@@ -167,6 +167,7 @@ bool	eflag;				/* specific functions excluded */
 bool	Eflag;				/* functions excluded with time */
 bool	fflag;				/* specific functions requested */
 bool	Fflag;				/* functions requested with time */
+bool	kflag;				/* arcs to be deleted */
 bool	sflag;				/* sum multiple gmon.out files */
 bool	zflag;				/* zero time/called functions, too */
 
@@ -181,6 +182,8 @@ struct stringlist	*elist;
 struct stringlist	*Elist;
 struct stringlist	*flist;
 struct stringlist	*Flist;
+struct stringlist	*kfromlist;
+struct stringlist	*ktolist;
 
     /*
      *	function declarations
