@@ -11,83 +11,94 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)who.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)who.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
  * who
  */
 
-#include <stdio.h>
+#include <sys/param.h>
 #include <utmp.h>
 #include <pwd.h>
+#include <stdio.h>
+#include <strings.h>
 #include <ctype.h>
 
-#define NMAX sizeof(utmp.ut_name)
-#define LMAX sizeof(utmp.ut_line)
-#define	HMAX sizeof(utmp.ut_host)
+#define NMAX	sizeof(utmp.ut_name)
+#define LMAX	sizeof(utmp.ut_line)
+#define HMAX	sizeof(utmp.ut_host)
 
-struct	utmp utmp;
-struct	passwd *pw;
-struct	passwd *getpwuid();
-char	hostname[32];
+static struct utmp	utmp;		/* read buffer */
 
-char	*ttyname(), *rindex(), *ctime(), *strcpy();
-
-main(argc, argv)
-	int argc;
-	char **argv;
+main(argc,argv)
+int	argc;
+char	**argv;
 {
-	register char *tp, *s;
-	register FILE *fi;
-	extern char _sobuf[];
+	register FILE	*fp;			/* utmp file pointer */
+	register char	*tp,			/* tty name */
+			*fname;			/* utmp file name */
+	struct passwd	*pw,			/* user passwd structure */
+			*getpwuid();
+	char	hostname[MAXHOSTNAMELEN],	/* host name */
+		*ttyname();
+	uid_t	getuid();
+	long	time();
 
-	setbuf(stdout, _sobuf);
-	s = "/etc/utmp";
-	if(argc == 2)
-		s = argv[1];
-	if (argc == 3) {
-		tp = ttyname(0);
-		if (tp)
-			tp = rindex(tp, '/') + 1;
-		else {	/* no tty - use best guess from passwd file */
-			pw = getpwuid(getuid());
-			strncpy(utmp.ut_name, pw ? pw->pw_name : "?", NMAX);
-			strcpy(utmp.ut_line, "tty??");
-			time(&utmp.ut_time);
-			putline();
-			exit(0);
-		}
+	switch(argc) {
+		case 2:
+			fname = argv[1];
+			break;
+		case 3:
+			if (!(tp = ttyname(0))) {
+				/*
+				 * no tty -- use best guess from passwd file.
+				 * next line is a kludge, but as of now getuid
+				 * returns a "uid_t" and getpwuid takes an int.
+				 */
+				pw = getpwuid((int)getuid());
+				strncpy(utmp.ut_name,pw ? pw->pw_name : "?",NMAX);
+				strcpy(utmp.ut_line,"tty??");
+				time(&utmp.ut_time);
+				putline();
+				exit(0);
+			}
+			tp = rindex(tp,'/') + 1;
+			if (gethostname(hostname,sizeof(hostname)) == -1) {
+				perror("gethostname");
+				exit(1);
+			}
+		case 1:
+			fname = "/etc/utmp";
+			break;
+		default:
+			fputs("usage: who [ utmp_file ]\nor who am i\n",stderr);
+			exit(1);
 	}
-	if ((fi = fopen(s, "r")) == NULL) {
-		puts("who: cannot open utmp");
+	if (!(fp = fopen(fname,"r"))) {
+		perror(fname);
 		exit(1);
 	}
-	while (fread((char *)&utmp, sizeof(utmp), 1, fi) == 1) {
+	while (fread((char *)&utmp,sizeof(utmp),1,fp) == 1)
 		if (argc == 3) {
-			gethostname(hostname, sizeof (hostname));
-			if (strcmp(utmp.ut_line, tp))
-				continue;
-			printf("%s!", hostname);
-			putline();
-			exit(0);
+			if (!strcmp(utmp.ut_line,tp)) {
+				printf("%s!",hostname);
+				putline();
+				exit(0);
+			}
 		}
-		if (utmp.ut_name[0] == '\0' && argc == 1)
-			continue;
-		putline();
-	}
+		else if (argc != 1 || *utmp.ut_name)
+			putline();
 }
 
 putline()
 {
-	register char *cbuf;
+	register char	*cbuf;
+	char	*ctime();
 
-	printf("%-*.*s %-*.*s",
-		NMAX, NMAX, utmp.ut_name,
-		LMAX, LMAX, utmp.ut_line);
-	cbuf = ctime(&utmp.ut_time);
-	printf("%.12s", cbuf+4);
-	if (utmp.ut_host[0])
-		printf("\t(%.*s)", HMAX, utmp.ut_host);
+	cbuf = ctime(&utmp.ut_time) + 4;
+	printf("%-*.*s %-*.*s%.12s",NMAX,NMAX,utmp.ut_name,LMAX,LMAX,utmp.ut_line,cbuf);
+	if (*utmp.ut_host)
+		printf("\t(%.*s)",HMAX,utmp.ut_host);
 	putchar('\n');
 }
