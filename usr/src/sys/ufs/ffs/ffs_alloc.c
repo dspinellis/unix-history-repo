@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-static char vers[] = "@(#)ffs_alloc.c 1.4 %G%";
+static char vers[] = "@(#)ffs_alloc.c 1.5 %G%";
 
 /*	alloc.c	4.8	81/03/08	*/
 
@@ -567,7 +567,7 @@ ifree(dev, ino, mode)
  * of some frags
  */
 fragacct(fragmap, fraglist, cnt)
-	char fragmap;
+	int fragmap;
 	short fraglist[];
 	int cnt;
 {
@@ -575,7 +575,7 @@ fragacct(fragmap, fraglist, cnt)
 	register int field, subfield;
 	register int siz, pos;
 
-	inblk = (int)(fragtbl[fragmap] << 1);
+	inblk = (int)(fragtbl[fragmap]) << 1;
 	fragmap <<= 1;
 	for (siz = 1; siz < FRAG; siz++) {
 		if (((1 << siz) & inblk) == 0)

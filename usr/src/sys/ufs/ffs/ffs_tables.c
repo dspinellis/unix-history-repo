@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-/* @(#)ffs_tables.c 1.1 %G% */
+/* @(#)ffs_tables.c 1.2 %G% */
 
 #include "../h/param.h"
 
@@ -13,7 +13,7 @@
  * no special processing on output.
  */
 
-char partab[] = {
+unsigned char partab[] = {
 	0001,0201,0201,0001,0201,0001,0001,0201,
 	0202,0004,0003,0201,0005,0206,0201,0001,
 	0201,0001,0001,0201,0001,0201,0201,0001,
@@ -78,7 +78,7 @@ int inside[9] = {
  * quickly find an appropriate fragment.
  */
 #if FRAG == 4
-char fragtbl[256] = {
+unsigned char fragtbl[256] = {
 	0x0, 0x1, 0x1, 0x2, 0x1, 0x1, 0x2, 0x4,
 	0x1, 0x1, 0x1, 0x3, 0x2, 0x3, 0x4, 0x8,
 	0x1, 0x1, 0x1, 0x3, 0x1, 0x1, 0x3, 0x5,
@@ -115,7 +115,7 @@ char fragtbl[256] = {
 #endif
 
 #if FRAG == 8
-char fragtbl[256] = {
+unsigned char fragtbl[256] = {
 	0x00, 0x01, 0x01, 0x02, 0x01, 0x01, 0x02, 0x04,
 	0x01, 0x01, 0x01, 0x03, 0x02, 0x03, 0x04, 0x08,
 	0x01, 0x01, 0x01, 0x03, 0x01, 0x01, 0x03, 0x05,
