@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)uipc_socket2.c	7.7 (Berkeley) %G%
+ *	@(#)uipc_socket2.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -127,14 +127,13 @@ sonewconn(head)
 	register struct socket *head;
 {
 	register struct socket *so;
-	register struct mbuf *m;
 
 	if (head->so_qlen + head->so_q0len > 3 * head->so_qlimit / 2)
-		goto bad;
-	m = m_getclr(M_DONTWAIT, MT_SOCKET);
-	if (m == NULL)
-		goto bad;
-	so = mtod(m, struct socket *);
+		return ((struct socket *)0);
+	MALLOC(so, struct socket *, sizeof(*so), M_SOCKET, M_DONTWAIT);
+	if (so == NULL) 
+		return ((struct socket *)0);
+	bzero((caddr_t)so, sizeof(*so));
 	so->so_type = head->so_type;
 	so->so_options = head->so_options &~ SO_ACCEPTCONN;
 	so->so_linger = head->so_linger;
@@ -147,12 +146,10 @@ sonewconn(head)
 	if ((*so->so_proto->pr_usrreq)(so, PRU_ATTACH,
 	    (struct mbuf *)0, (struct mbuf *)0, (struct mbuf *)0)) {
 		(void) soqremque(so, 0);
-		(void) m_free(m);
-		goto bad;
+		(void) free((caddr_t)so, M_SOCKET);
+		return ((struct socket *)0);
 	}
 	return (so);
-bad:
-	return ((struct socket *)0);
 }
 
 soqinsque(head, so, q)
@@ -264,7 +261,7 @@ sowakeup(so, sb)
 	register struct socket *so;
 	register struct sockbuf *sb;
 {
-	register struct proc *p;
+	struct proc *p;
 
 	if (sb->sb_sel) {
 		selwakeup(sb->sb_sel, sb->sb_flags & SB_COLL);
@@ -433,6 +430,53 @@ sbappendrecord(sb, m0)
 		sb->sb_mb = m0;
 	m = m0->m_next;
 	m0->m_next = 0;
+	if (m && (m0->m_flags & M_EOR)) {
+		m0->m_flags &= ~M_EOR;
+		m->m_flags |= M_EOR;
+	}
+	sbcompress(sb, m, m0);
+}
+
+/*
+ * As above except that OOB data
+ * is inserted at the beginning of the sockbuf,
+ * but after any other OOB data.
+ */
+sbinsertoob(sb, m0)
+	register struct sockbuf *sb;
+	register struct mbuf *m0;
+{
+	register struct mbuf *m;
+	register struct mbuf **mp;
+
+	if (m0 == 0)
+		return;
+	for (mp = &sb->sb_mb; m = *mp; mp = &((*mp)->m_nextpkt)) {
+	    again:
+		switch (m->m_type) {
+
+		case MT_OOBDATA:
+			continue;		/* WANT next train */
+
+		case MT_CONTROL:
+			if (m = m->m_next)
+				goto again;	/* inspect THIS train further */
+		}
+		break;
+	}
+	/*
+	 * Put the first mbuf on the queue.
+	 * Note this permits zero length records.
+	 */
+	sballoc(sb, m0);
+	m0->m_nextpkt = *mp;
+	*mp = m0;
+	m = m0->m_next;
+	m0->m_next = 0;
+	if (m && (m0->m_flags & M_EOR)) {
+		m0->m_flags &= ~M_EOR;
+		m->m_flags |= M_EOR;
+	}
 	sbcompress(sb, m, m0);
 }
 
@@ -448,7 +492,7 @@ sbappendaddr(sb, asa, m0, rights0)
 	struct mbuf *m0, *rights0;
 {
 	register struct mbuf *m, *n;
-	int space = sizeof (*asa);
+	int space = asa->sa_len;
 
 if (m0 && (m0->m_flags & M_PKTHDR) == 0)
 panic("sbappendaddr");
@@ -461,8 +505,12 @@ panic("sbappendaddr");
 	MGET(m, M_DONTWAIT, MT_SONAME);
 	if (m == 0)
 		return (0);
-	*mtod(m, struct sockaddr *) = *asa;
-	m->m_len = sizeof (*asa);
+	if (asa->sa_len > MLEN) {
+		(void) m_free(m);
+		return (0);
+	}
+	m->m_len = asa->sa_len;
+	bcopy((caddr_t)asa, mtod(m, caddr_t), asa->sa_len);
 	if (rights0 && rights0->m_len) {
 		m->m_next = m_copy(rights0, 0, rights0->m_len);
 		if (m->m_next == 0) {
@@ -524,12 +572,14 @@ sbcompress(sb, m, n)
 	register struct mbuf *m, *n;
 {
 
+	register int eor = 0;
 	while (m) {
+		eor |= m->m_flags & M_EOR;
 		if (m->m_len == 0) {
 			m = m_free(m);
 			continue;
 		}
-		if (n && (n->m_flags & M_EXT) == 0 &&
+		if (n && (n->m_flags & (M_EXT | M_EOR)) == 0 &&
 		    (n->m_data + n->m_len + m->m_len) < &n->m_dat[MLEN] &&
 		    n->m_type == m->m_type) {
 			bcopy(mtod(m, caddr_t), mtod(n, caddr_t) + n->m_len,
@@ -539,15 +589,18 @@ sbcompress(sb, m, n)
 			m = m_free(m);
 			continue;
 		}
-		sballoc(sb, m);
 		if (n)
 			n->m_next = m;
 		else
 			sb->sb_mb = m;
+		sballoc(sb, m);
 		n = m;
+		m->m_flags &= ~M_EOR;
 		m = m->m_next;
 		n->m_next = 0;
 	}
+	if (n)
+		n->m_flags |= eor;
 }
 
 /*
