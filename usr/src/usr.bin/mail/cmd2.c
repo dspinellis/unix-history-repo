@@ -9,7 +9,7 @@
  * More user commands.
  */
 
-static char *SccsId = "@(#)cmd2.c	2.1 %G%";
+static char *SccsId = "@(#)cmd2.c	2.2 %G%";
 
 /*
  * If any arguments were given, go to the next applicable argument
@@ -381,4 +381,34 @@ core()
 		printf(" -- Core dumped\n");
 	else
 		printf("\n");
+}
+
+/*
+ * Clobber as many bytes of stack as the user requests.
+ */
+clobber(argv)
+	char **argv;
+{
+	register int times;
+
+	if (argv[0] == 0)
+		times = 1;
+	else
+		times = (atoi(argv[0]) + 511) / 512;
+	clobber1(times);
+}
+
+/*
+ * Clobber the stack.
+ */
+clobber1(n)
+{
+	char buf[512];
+	register char *cp;
+
+	if (n <= 0)
+		return;
+	for (cp = buf; cp < &buf[512]; *cp++ = 0xFF)
+		;
+	clobber1(n - 1);
 }
