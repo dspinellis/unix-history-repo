@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_clock.c	7.30 (Berkeley) %G%
+ *	@(#)kern_clock.c	7.31 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -19,7 +19,6 @@
 
 #ifdef GPROF
 #include <sys/gmon.h>
-extern u_short *kcount;
 #endif
 
 #define ADJTIME		/* For now... */
@@ -385,8 +384,10 @@ statclock(frame)
 		g = &_gmonparam;
 		if (g->state == GMON_PROF_ON) {
 			i = CLKF_PC(frame) - g->lowpc;
-			if (i < g->textsize)
-				kcount[i / (HISTFRACTION * sizeof(*kcount))]++;
+			if (i < g->textsize) {
+				i /= HISTFRACTION * sizeof(*g->kcount);
+				g->kcount[i]++;
+			}
 		}
 #endif
 		if (--pscnt > 0)
