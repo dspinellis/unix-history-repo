@@ -1,7 +1,7 @@
 /*
  * This file contains header information used by the PC API routines.
  *
- * @(#)api.h	3.1 (Berkeley) %G%
+ * @(#)api.h	3.2 (Berkeley) %G%
  */
 
 #if	!defined(MSDOS)
@@ -308,7 +308,7 @@ struct highlow {
 	dl,
 	dh;
 #endif	/* defined(vax) */
-#if	defined(sun) || defined(tahoe) || defined(ibm032)
+#if	defined(sun) || defined(tahoe) || defined(ibm032) || defined(pyr)
 	ah,
 	al,
 	bh,

@@ -26,7 +26,7 @@ static char copyright[] =
 #endif	/* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)telnet.c	6.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	6.6 (Berkeley) %G%";
 #endif	/* not lint */
 
 /*
@@ -79,6 +79,11 @@ void	setcommandmode(), command();	/* forward declarations */
 #endif	/* !defined(TN3270) */
 
 #include <sys/types.h>
+
+#if     defined(pyr)
+#define fd_set fdset_t
+#endif  /* defined(pyr) */
+ 
 #include <sys/socket.h>
 
 #include <netinet/in.h>
