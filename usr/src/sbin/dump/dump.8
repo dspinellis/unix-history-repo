@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)dump.8	6.1 (Berkeley) %G%
+.\"	@(#)dump.8	6.2 (Berkeley) %G%
 .\"
 .TH DUMP 8 ""
 .UC 4
@@ -211,12 +211,18 @@ fstab(5)
 Many, and verbose.
 .SH BUGS
 .PP
-Sizes are based on 1600 BPI blocked tape;
-the raw magtape device has to be used to approach these densities.
 Fewer than 32 read errors on the filesystem are ignored.
 Each reel requires a new process, so parent processes for
 reels already written just hang around until the entire tape
 is written.
+.PP
+.I Dump
+with the
+.B W
+or
+.B w
+options does not report filesystems that have never been recorded
+in /etc/dumpdates, even if listed in /etc/fstab.
 .PP
 It would be nice if
 .I dump
