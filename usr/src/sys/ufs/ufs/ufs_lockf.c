@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_lockf.c	7.9 (Berkeley) %G%
+ *	@(#)ufs_lockf.c	7.9.1.1 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -37,6 +37,8 @@ int	lockf_debug = 0;
 #define NOLOCKF (struct lockf *)0
 #define SELF	0x1
 #define OTHERS	0x2
+
+#define HASBLOCK 0x100
 
 /*
  * Set a byte-range lock.
@@ -140,6 +142,9 @@ lf_setlock(lock)
 				if (block->lf_block != lock)
 					continue;
 				block->lf_block = block->lf_block->lf_block;
+				block->lf_spare = block->lf_block->lf_block;
+				if ((block->lf_block->lf_flags & HASBLOCK) == 0)
+					block->lf_flags &= ~HASBLOCK;
 				free(lock, M_LOCKF);
 				return (error);
 			}
@@ -535,11 +540,15 @@ lf_addblock(lock, blocked)
 #endif /* LOCKF_DEBUG */
 	if ((lf = lock->lf_block) == NOLOCKF) {
 		lock->lf_block = blocked;
+		lock->lf_spare = blocked;
+		lock->lf_flags |= HASBLOCK;
 		return;
 	}
 	while (lf->lf_block != NOLOCKF)
 		lf = lf->lf_block;
 	lf->lf_block = blocked;
+	lf->lf_spare = blocked;
+	lf->lf_flags |= HASBLOCK;
 	return;
 }
 
@@ -582,6 +591,7 @@ lf_split(lock1, lock2)
 	bcopy((caddr_t)lock1, (caddr_t)splitlock, sizeof *splitlock);
 	splitlock->lf_start = lock2->lf_end + 1;
 	splitlock->lf_block = NOLOCKF;
+	splitlock->lf_spare = NOLOCKF;
 	lock1->lf_end = lock2->lf_start - 1;
 	/*
 	 * OK, now link it in
@@ -600,11 +610,24 @@ lf_wakelock(listhead)
 {
         register struct lockf *blocklist, *wakelock;
 
+	if (listhead->lf_block != NOLOCKF) {
+	    	if ((listhead->lf_flags & HASBLOCK) == 0)
+			panic("lf_wakelock: listhead unexpected ptr");
+		if (listhead->lf_block != listhead->lf_spare)
+			panic("lf_wakelock: listhead corrupted ptr");
+	}
 	blocklist = listhead->lf_block;
-	listhead->lf_block = NOLOCKF;
         while (blocklist != NOLOCKF) {
                 wakelock = blocklist;
                 blocklist = blocklist->lf_block;
+		if (blocklist != NOLOCKF) {
+			if ((wakelock->lf_flags & HASBLOCK) == 0)
+				panic("lf_wakelock: unexpected ptr");
+			if (wakelock->lf_block != wakelock->lf_spare)
+				panic("lf_wakelock: corrupted ptr");
+		}
+		wakelock->lf_flags &= ~HASBLOCK;
+		wakelock->lf_spare = NOLOCKF;
 		wakelock->lf_block = NOLOCKF;
 		wakelock->lf_next = NOLOCKF;
 #ifdef LOCKF_DEBUG
@@ -613,6 +636,9 @@ lf_wakelock(listhead)
 #endif /* LOCKF_DEBUG */
                 wakeup((caddr_t)wakelock);
         }
+	listhead->lf_flags &= ~HASBLOCK;
+	listhead->lf_spare = NOLOCKF;
+	listhead->lf_block = NOLOCKF;
 }
 
 #ifdef LOCKF_DEBUG
