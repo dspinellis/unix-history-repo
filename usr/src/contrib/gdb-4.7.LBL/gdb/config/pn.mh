@@ -1,0 +1,3 @@
+# Host: Gould Powernode
+XDEPFILES= infptrace.o inftarg.o fork-child.o coredep.o corelow.o
+XM_FILE= xm-pn.h

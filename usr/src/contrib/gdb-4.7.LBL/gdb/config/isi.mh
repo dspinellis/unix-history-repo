@@ -1,0 +1,3 @@
+# Host: ISI Optimum V (3.05) under 4.3bsd.
+XDEPFILES= infptrace.o inftarg.o fork-child.o coredep.o corelow.o
+XM_FILE= xm-isi.h
