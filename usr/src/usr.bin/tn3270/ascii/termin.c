@@ -195,7 +195,8 @@ register int	count;			/* how many bytes in this buffer */
 		    RingBell("Invalid control sequence");
 		    regControlPointer = headOfControl;
 		    InControl = 0;
-		    break;
+		    count = 0;		/* Flush current input */
+		    continue;
 		}
 		if ((regControlPointer->match == c) /* hit this character */
 			|| (regControlPointer->match == MATCH_ANY)) {
