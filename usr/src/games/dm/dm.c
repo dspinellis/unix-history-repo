@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dm.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)dm.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -34,6 +34,7 @@ static char sccsid[] = "@(#)dm.c	5.10 (Berkeley) %G%";
 #include <nlist.h>
 #include <stdio.h>
 #include <ctype.h>
+#include "pathnames.h"
 
 static time_t	now;			/* current time value */
 static int	priority = 0;		/* priority game runs at */
@@ -68,7 +69,6 @@ main(argc, argv)
  * play --
  *	play the game
  */
-#define	GAMEHIDE	"/usr/games/hide/"
 static
 play(args)
 	char **args;
@@ -76,8 +76,8 @@ play(args)
 	extern int errno;
 	char pbuf[MAXPATHLEN], *strcpy(), *strerror();
 
-	(void)strcpy(pbuf, GAMEHIDE);
-	(void)strcpy(pbuf + sizeof(GAMEHIDE) - 1, game);
+	(void)strcpy(pbuf, _PATH_HIDE);
+	(void)strcpy(pbuf + sizeof(_PATH_HIDE) - 1, game);
 	if (priority > 0)	/* < 0 requires root */
 		(void)setpriority(PRIO_PROCESS, 0, priority);
 	setgid(getgid());	/* we run setgid kmem; lose it */
@@ -90,29 +90,25 @@ play(args)
  * read_config --
  *	read through config file, looking for key words.
  */
-#define	CONTROL		"/usr/games/dm.config"
 static
 read_config()
 {
 	FILE *cfp;
 	char *control, *host, *index(), *strcpy();
-	char lbuf[BUFSIZ], path[MAXHOSTNAMELEN + sizeof(CONTROL)];
+	char lbuf[BUFSIZ], path[MAXHOSTNAMELEN + sizeof(_PATH_CONFIG)];
 	char f1[40], f2[40], f3[40], f4[40], f5[40];
 
-	host = &path[sizeof(CONTROL)];
+	host = &path[sizeof(_PATH_CONFIG)];
 	if (gethostname(host, MAXHOSTNAMELEN)) {
 		perror("dm: gethostname");
 		exit(1);
 	}
-	(void)strcpy(path, control = CONTROL);
+	(void)strcpy(path, control = _PATH_CONFIG);
 	host[-1] = '.';
 	if (host = index(host, '.'))
 		*host = '\0';
-	if (!(cfp = fopen(path, "r")) && !(cfp = fopen(control, "r"))) {
-		fprintf(stderr, "dm: unable to read %s or %s.\n",
-		    path, control);
-		exit(1);
-	}
+	if (!(cfp = fopen(path, "r")) && !(cfp = fopen(control, "r")))
+		return;
 	while (fgets(lbuf, sizeof(lbuf), cfp))
 		switch(*lbuf) {
 		case 'b':		/* badtty */
@@ -272,19 +268,13 @@ users()
 	return(nusers);
 }
 
-/*
- * nogamefile --
- *	if the file NOGAMING exists, no games allowed.
- *	file may also contain a message for the user.
- */
-#define	NOGAMING	"/usr/games/nogames"
 static
 nogamefile()
 {
 	register int fd, n;
 	char buf[BUFSIZ];
 
-	if ((fd = open(NOGAMING, O_RDONLY, 0)) >= 0) {
+	if ((fd = open(_PATH_NOGAMES, O_RDONLY, 0)) >= 0) {
 #define	MESG	"Sorry, no games right now.\n\n"
 		(void)write(2, MESG, sizeof(MESG) - 1);
 		while ((n = read(fd, buf, sizeof(buf))) > 0)
@@ -321,7 +311,6 @@ hour(h)
  * logfile --
  *	log play of game
  */
-#define	LOGFILE		"/usr/adm/dm.log"
 static
 logfile()
 {
@@ -331,7 +320,7 @@ logfile()
 	int lock_cnt;
 	char *ctime();
 
-	if (lp = fopen(LOGFILE, "a")) {
+	if (lp = fopen(_PATH_LOG, "a")) {
 		for (lock_cnt = 0;; ++lock_cnt) {
 			if (!flock(fileno(lp), LOCK_EX))
 				break;
