@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	8.50 (Berkeley) %G%
+.\"	@(#)op.me	8.51 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:08-%''Sendmail Installation and Operation Guide'
@@ -43,7 +43,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 8.50
+Version 8.51
 .sp
 For Sendmail Version 8.7
 .)l
@@ -3901,6 +3901,8 @@ If the
 .b 7
 option is set, this is essentially always set,
 since the eighth bit was stripped on input.
+Note that this option will only impact messages
+that didn't have 8\(->7 bit MIME conversions performed.
 .ip 8
 If set,
 it is acceptable to send eight bit data to this mailer;
@@ -7396,7 +7398,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 8.50
+.\"Version 8.51
 .\".ce 0
 .bp 2
 .rs
