@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: hpux_compat.c 1.33 89/08/23$
+ * from: Utah $Hdr: hpux_sig.c 1.1 90/07/09$
  *
- *	@(#)hpux_sig.c	7.4 (Berkeley) %G%
+ *	@(#)hpux_sig.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -162,6 +162,162 @@ hpuxkill(p, uap, retval)
 			uap->signo = NSIG;
 	}
 	return (kill(p, uap, retval));
+}
+
+/*
+ * The following (sigprocmask, sigpending, sigsuspend, sigaction are
+ * POSIX calls.  Under BSD, the library routine dereferences the sigset_t
+ * pointers before traping.  Not so under HP-UX.
+ */
+
+/*
+ * Manipulate signal mask.
+ * Note that we receive new mask, not pointer,
+ * and return old mask as return value;
+ * the library stub does the rest.
+ */
+hpuxsigprocmask(p, uap, retval)
+	register struct proc *p;
+	struct args {
+		int		how;
+		hpuxsigset_t	*set;
+		hpuxsigset_t	*oset;
+	} *uap;
+	int *retval;
+{
+	int mask, error = 0;
+	hpuxsigset_t sigset;
+
+	/*
+	 * Copy out old mask first to ensure no errors.
+	 * (proc sigmask should not be changed if call fails for any reason)
+	 */
+	if (uap->oset) {
+		bzero((caddr_t)&sigset, sizeof(sigset));
+		sigset.sigset[0] = bsdtohpuxmask(p->p_sigmask);
+		if (copyout((caddr_t)&sigset, (caddr_t)uap->oset, sizeof(sigset)))
+			return (EFAULT);
+	}
+	if (uap->set) {
+		if (copyin((caddr_t)uap->set, (caddr_t)&sigset, sizeof(sigset)))
+			return (EFAULT);
+		mask = hpuxtobsdmask(sigset.sigset[0]);
+		(void) splhigh();
+		switch (uap->how) {
+		case HPUXSIG_BLOCK:
+			p->p_sigmask |= mask &~ sigcantmask;
+			break;
+		case HPUXSIG_UNBLOCK:
+			p->p_sigmask &= ~mask;
+			break;
+		case HPUXSIG_SETMASK:
+			p->p_sigmask = mask &~ sigcantmask;
+			break;
+		default:
+			error = EINVAL;
+			break;
+		}
+		(void) spl0();
+	}
+	return (error);
+}
+
+hpuxsigpending(p, uap, retval)
+	register struct proc *p;
+	struct args {
+		hpuxsigset_t	*set;
+	} *uap;
+	int *retval;
+{
+	hpuxsigset_t sigset;
+
+	sigset.sigset[0] = bsdtohpuxmask(p->p_sig);
+	return (copyout((caddr_t)&sigset, (caddr_t)uap->set, sizeof(sigset)));
+}
+
+hpuxsigsuspend(p, uap, retval)
+	register struct proc *p;
+	struct args {
+		hpuxsigset_t	*set;
+	} *uap;
+	int *retval;
+{
+	hpuxsigset_t sigset;
+	int mask;
+
+	if (copyin((caddr_t)uap->set, (caddr_t)&sigset, sizeof(sigset)))
+		return (EFAULT);
+	mask = hpuxtobsdmask(sigset.sigset[0]);
+	u.u_oldmask = p->p_sigmask;
+	p->p_flag |= SOMASK;
+	p->p_sigmask = mask &~ sigcantmask;
+	(void) tsleep((caddr_t)&u, PPAUSE | PCATCH, "pause", 0);
+	/* always return EINTR rather than ERESTART... */
+	return (EINTR);
+}
+
+hpuxsigaction(p, uap, retval)
+	struct proc *p;
+	register struct args {
+		int	signo;
+		struct	hpuxsigaction *nsa;
+		struct	hpuxsigaction *osa;
+	} *uap;
+	int *retval;
+{
+	struct hpuxsigaction action;
+	register struct hpuxsigaction *sa;
+	register int sig;
+	int bit;
+
+	sig = hpuxtobsdsig(uap->signo);
+	if (sig <= 0 || sig >= NSIG || sig == SIGKILL || sig == SIGSTOP)
+		return (EINVAL);
+
+	sa = &action;
+	if (uap->osa) {
+		sa->sa_handler = u.u_signal[sig];
+		bzero((caddr_t)&sa->sa_mask, sizeof(sa->sa_mask));
+		sa->sa_mask.sigset[0] = bsdtohpuxmask(u.u_sigmask[sig]);
+		bit = sigmask(sig);
+		sa->sa_flags = 0;
+		if ((u.u_sigonstack & bit) != 0)
+			sa->sa_flags |= HPUXSA_ONSTACK;
+#if 0
+/* XXX -- SOUSIG no longer exists, do something here */
+		if (p->p_flag & SOUSIG)
+			sa->sa_flags |= HPUXSA_RESETHAND;	/* XXX */
+#endif
+		if (p->p_flag & SNOCLDSTOP)
+			sa->sa_flags |= HPUXSA_NOCLDSTOP;
+		if (copyout((caddr_t)sa, (caddr_t)uap->osa, sizeof (action)))
+			return (EFAULT);
+	}
+	if (uap->nsa) {
+		struct sigaction act;
+
+		if (copyin((caddr_t)uap->nsa, (caddr_t)sa, sizeof (action)))
+			return (EFAULT);
+		if (sig == SIGCONT && sa->sa_handler == SIG_IGN)
+			return (EINVAL);
+		/*
+		 * Create a sigaction struct for setsigvec
+		 */
+		act.sa_handler = sa->sa_handler;
+		act.sa_mask = hpuxtobsdmask(sa->sa_mask.sigset[0]);
+		act.sa_flags = 0;
+		if (sa->sa_flags & HPUXSA_ONSTACK)
+			act.sa_flags |= SA_ONSTACK;
+		if (sa->sa_flags & HPUXSA_NOCLDSTOP)
+			act.sa_flags |= SA_NOCLDSTOP;
+		setsigvec(p, sig, &act);
+#if 0
+/* XXX -- SOUSIG no longer exists, do something here */
+		if (sa->sa_flags & HPUXSA_RESETHAND)
+			p->p_flag |= SOUSIG;		/* XXX */
+#endif
+	}
+	return (0);
 }
 
 ohpuxssig(p, uap, retval)

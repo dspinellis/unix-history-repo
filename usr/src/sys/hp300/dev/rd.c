@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: rd.c 1.30 89/09/17$
  *
- *	@(#)rd.c	7.3 (Berkeley) %G%
+ *	@(#)rd.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -30,6 +30,10 @@
 
 #include "device.h"
 #include "rdreg.h"
+
+#include "../vm/vm_param.h"
+#include "../vm/pmap.h"
+#include "../vm/vm_prot.h"
 
 int	rdinit(), rdstart(), rdgo(), rdintr();
 struct	driver rddriver = {
@@ -558,12 +562,12 @@ rdopen(dev, flags)
 rdstrategy(bp)
 	register struct buf *bp;
 {
-	register int part = rdpart(bp->b_dev);
 	register int unit = rdunit(bp->b_dev);
-	register int bn, sz;
 	register struct rd_softc *rs = &rd_softc[unit];
+	register struct size *pinfo = &rs->sc_info->sizes[rdpart(bp->b_dev)];
 	register struct buf *dp = &rdtab[unit];
-	int s;
+	register daddr_t bn;
+	register int sz, s;
 
 #ifdef DEBUG
 	if (rddebug & RDB_FOLLOW)
@@ -572,16 +576,21 @@ rdstrategy(bp)
 		       (bp->b_flags & B_READ) ? 'R' : 'W');
 #endif
 	bn = bp->b_blkno;
-	sz = (bp->b_bcount + (DEV_BSIZE - 1)) >> DEV_BSHIFT;
-	if (bn < 0 || bn + sz > rs->sc_info->sizes[part].nblocks) {
-		if (bn == rs->sc_info->sizes[part].nblocks) {
+	sz = howmany(bp->b_bcount, DEV_BSIZE);
+	if (bn < 0 || bn + sz > pinfo->nblocks) {
+		sz = pinfo->nblocks - bn;
+		if (sz == 0) {
 			bp->b_resid = bp->b_bcount;
 			goto done;
 		}
-		bp->b_error = EINVAL;
-		goto bad;
+		if (sz < 0) {
+			bp->b_error = EINVAL;
+			bp->b_flags |= B_ERROR;
+			goto done;
+		}
+		bp->b_bcount = dbtob(sz);
 	}
-	bp->b_cylin = bn / rs->sc_info->nbpc + rs->sc_info->sizes[part].cyloff;
+	bp->b_cylin = bn / rs->sc_info->nbpc + pinfo->cyloff;
 	s = splbio();
 	disksort(dp, bp);
 	if (dp->b_active == 0) {
@@ -590,8 +599,6 @@ rdstrategy(bp)
 	}
 	splx(s);
 	return;
-bad:
-	bp->b_flags |= B_ERROR;
 done:
 	biodone(bp);
 }
@@ -726,7 +733,7 @@ rdintr(unit)
 	register struct buf *bp = rdtab[unit].b_actf;
 	register struct hp_device *hp = rs->sc_hd;
 	u_char stat = 13;	/* in case hpibrecv fails */
-	int restart;
+	int rv, restart;
 	
 #ifdef DEBUG
 	if (rddebug & RDB_FOLLOW)
@@ -761,7 +768,8 @@ rdintr(unit)
 		}
 	} else
 		rs->sc_flags &= ~RDF_SWAIT;
-	if (!hpibrecv(hp->hp_ctlr, hp->hp_slave, C_QSTAT, &stat, 1) || stat) {
+	rv = hpibrecv(hp->hp_ctlr, hp->hp_slave, C_QSTAT, &stat, 1);
+	if (rv != 1 || stat) {
 #ifdef DEBUG
 		if (rddebug & RDB_ERROR)
 			printf("rdintr: recv failed or bad stat %d\n", stat);
@@ -1010,10 +1018,6 @@ rdprinterr(str, err, tab)
 }
 #endif
 
-#include "machine/pte.h"
-#include "machine/vmparam.h"
-#include "../sys/vmmac.h"
-
 /*
  * Non-interrupt driven, non-dma dump routine.
  */
@@ -1025,10 +1029,13 @@ rddump(dev)
 	register struct rd_softc *rs = &rd_softc[unit];
 	register struct hp_device *hp = rs->sc_hd;
 	register daddr_t baddr;
-	register int maddr;
-	register int pages, i;
+	register int maddr, pages, i;
 	char stat;
 	extern int lowram, dumpsize;
+#ifdef DEBUG
+	extern int pmapdebug;
+	pmapdebug = 0;
+#endif
 
 	pages = dumpsize;
 #ifdef DEBUG
@@ -1088,7 +1095,7 @@ rddump(dev)
 #endif
 			return (EIO);
 		}
-		mapin(mmap, (u_int)vmmap, btop(maddr), PG_URKR|PG_CI|PG_V);
+		pmap_enter(pmap_kernel(), vmmap, maddr, VM_PROT_READ, TRUE);
 		hpibsend(hp->hp_ctlr, hp->hp_slave, C_EXEC, vmmap, NBPG);
 		if (hpibswait(hp->hp_ctlr, hp->hp_slave)) {
 #ifdef DEBUG

@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: autoconf.c 1.25 89/10/07$
  *
- *	@(#)autoconf.c	7.2 (Berkeley) %G%
+ *	@(#)autoconf.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -27,12 +27,10 @@
 #include "map.h"
 #include "buf.h"
 #include "dkstat.h"
-#include "vm.h"
 #include "conf.h"
 #include "dmap.h"
 #include "reboot.h"
 
-#include "pte.h"
 #include "cpu.h"
 #include "isr.h"
 #include "../hpdev/device.h"
@@ -274,7 +272,7 @@ find_device(hw)
 		hd->hp_alive = 1;
 		printf("%s%d", hd->hp_driver->d_name, hd->hp_unit);
 		sc = addrtosc((u_int)hd->hp_addr);
-		if (sc < 32)
+		if (sc < 256)
 			printf(" at sc%d", sc);
 		else
 			printf(" csr 0x%x", sc);
@@ -499,13 +497,6 @@ sctoaddr(addr)
 addrtosc(addr)
 	register u_int addr;
 {
-#if defined(HP360) || defined(HP370)
-	extern char grfregs[];
-
-	if (addr == (u_int)grfregs)
-		addr = 132;
-	else
-#endif
 	if (addr == internalhpib)
 		addr = 7;
 	else if (addr >= IOV(IOBASE)) {
@@ -563,29 +554,14 @@ find_devs()
 	register int addr;
 	register struct hp_hw *hw;
 
+	/*
+	 * XXX record actual address of internal HP-IB if present.
+	 */
+	if (internalhpib)
+		internalhpib = IOV(INTERNALHPIB);
+
 	hw = sc_table;
 	for (sc = -1; sc < 32; sc++) {
-#if defined(HP360) || defined(HP370)
-		/*
-		 * XXX: special check for bit-mapped display
-		 * at SC132 in DIO II space on the 340.
-		 */
-		if (sc == -1 && machineid == HP_340) {
-			extern struct pte Grfmap[];
-			extern char grfregs[];
-
-			physaccess(Grfmap, (caddr_t)DIOIIBASE,
-				   DIOIICSIZE, PG_RW|PG_CI);
-			addr = (int) grfregs;
-			/*
-			 * Nothing there or not a display,
-			 * try the usual internal display address.
-			 */
-			if (badaddr((caddr_t)addr) ||
-			    (((u_char *)addr)[1] & 0xff) != 57)
-				addr = IOV(GRFIADDR);
-		} else
-#endif
 		/*
 		 * Probe all select codes + internal display addr
 		 */
@@ -709,7 +685,7 @@ find_devs()
 			sc++;
 			break;
 		case 52:
-		case 180:
+		case 128+52:
 			hw->hw_name = "98628A";
 			hw->hw_type = COMMDCL;
 			break;

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.c	7.1 (Berkeley) %G%
+ *	@(#)conf.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -130,12 +130,13 @@ struct	tty pt_tty[];
 
 #include "ppi.h"
 #if NPPI > 0
-int	ppiopen(),ppiclose(),ppiread(),ppiwrite();
+int	ppiopen(),ppiclose(),ppiread(),ppiwrite(),ppiioctl();
 #else
 #define ppiopen		nodev
 #define ppiclose	nodev
 #define ppiread		nodev
 #define ppiwrite	nodev
+#define ppiioctl	nodev
 #endif
 
 #include "ite.h"
@@ -234,7 +235,7 @@ struct cdevsw	cdevsw[] =
 	grfioctl,	nodev,		nulldev,	NULL,
 	grfselect,	grfmap,		NULL,
 	ppiopen,	ppiclose,	ppiread,	ppiwrite,	/*11*/
-	nodev,		nodev,		nulldev,	NULL,
+	ppiioctl,	nodev,		nulldev,	NULL,
 	nodev,		nodev,		NULL,
 	dcaopen,	dcaclose,	dcaread,	dcawrite,	/*12*/
 	dcaioctl,	dcastop,	nulldev,	dca_tty,

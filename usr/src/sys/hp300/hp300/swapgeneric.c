@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)swapgeneric.c	7.1 (Berkeley) %G%
+ *	@(#)swapgeneric.c	7.2 (Berkeley) %G%
  */
 
 #include "pte.h"
@@ -12,7 +12,6 @@
 #include "param.h"
 #include "conf.h"
 #include "buf.h"
-#include "vm.h"
 #include "systm.h"
 #include "reboot.h"
 

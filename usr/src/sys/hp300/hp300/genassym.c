@@ -4,22 +4,18 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)genassym.c	7.3 (Berkeley) %G%
+ *	@(#)genassym.c	7.4 (Berkeley) %G%
  */
 
 #define KERNEL
 
-#include "pte.h"
-
 #include "param.h"
 #include "buf.h"
 #include "vmmeter.h"
-#include "vmparam.h"
 #include "user.h"
 #include "cmap.h"
 #include "map.h"
 #include "proc.h"
-#include "text.h"
 #include "mbuf.h"
 #include "msgbuf.h"
 #include "cpu.h"
@@ -28,6 +24,9 @@
 #include "reg.h"
 #include "clockreg.h"
 #include "syscall.h"
+#include "../vm/vm_param.h"
+#include "../vm/vm_map.h"
+#include "pmap.h"
 
 main()
 {
@@ -35,27 +34,23 @@ main()
 	register struct vmmeter *vm = (struct vmmeter *)0;
 	register struct user *up = (struct user *)0;
 	register struct rusage *rup = (struct rusage *)0;
-	struct text *tp = (struct text *)0;
+	vm_map_t map = (vm_map_t)0;
+	pmap_t pmap = (pmap_t)0;
 	struct pcb *pcb = (struct pcb *)0;
 	register unsigned i;
 
 	printf("#define\tP_LINK %d\n", &p->p_link);
 	printf("#define\tP_RLINK %d\n", &p->p_rlink);
-	printf("#define\tP_XLINK %d\n", &p->p_xlink);
+	printf("#define\tP_MAP %d\n", &p->p_map);
+	printf("#define\tPMAP %d\n", &map->pmap);
+	printf("#define\tPM_STCHG %d\n", &pmap->pm_stchanged);
 	printf("#define\tP_ADDR %d\n", &p->p_addr);
 	printf("#define\tP_PRI %d\n", &p->p_pri);
 	printf("#define\tP_STAT %d\n", &p->p_stat);
 	printf("#define\tP_WCHAN %d\n", &p->p_wchan);
-	printf("#define\tP_TSIZE %d\n", &p->p_tsize);
-	printf("#define\tP_DSIZE %d\n", &p->p_dsize);
-	printf("#define\tP_SSIZE %d\n", &p->p_ssize);
-	printf("#define\tP_P0BR %d\n", &p->p_p0br);
-	printf("#define\tP_SZPT %d\n", &p->p_szpt);
-	printf("#define\tP_TEXTP %d\n", &p->p_textp);
 	printf("#define\tP_FLAG %d\n", &p->p_flag);
 	printf("#define\tSSLEEP %d\n", SSLEEP);
 	printf("#define\tSRUN %d\n", SRUN);
-	printf("#define\tX_CADDR %d\n", &tp->x_caddr);
 	printf("#define\tV_SWTCH %d\n", &vm->v_swtch);
 	printf("#define\tV_TRAP %d\n", &vm->v_trap);
 	printf("#define\tV_SYSCALL %d\n", &vm->v_syscall);
@@ -70,6 +65,7 @@ main()
 	printf("#define\tP1PAGES %d\n", P1PAGES);
 	printf("#define\tCLSIZE %d\n", CLSIZE);
 	printf("#define\tNBPG %d\n", NBPG);
+	printf("#define\tNPTEPG %d\n", NPTEPG);
 	printf("#define\tPGSHIFT %d\n", PGSHIFT);
 	printf("#define\tSYSPTSIZE %d\n", SYSPTSIZE);
 	printf("#define\tUSRPTSIZE %d\n", USRPTSIZE);
@@ -118,6 +114,7 @@ main()
 	printf("#define\tMAXADDR %d\n", MAXADDR);
 	printf("#define\tIOMAPSIZE %d\n", IOMAPSIZE);
 	printf("#define\tIOBASE %d\n", IOBASE);
+	printf("#define\tMMUBASE %d\n", MMUBASE);
 	printf("#define\tMMUSTAT %d\n", MMUSTAT);
 	printf("#define\tMMUCMD %d\n", MMUCMD);
 	printf("#define\tMMUSSTP %d\n", MMUSSTP);
@@ -145,16 +142,12 @@ main()
 	printf("#define\tSG_NV %d\n", SG_NV);
 	printf("#define\tSG_RW %d\n", SG_RW);
 	printf("#define\tSG_FRAME %d\n", SG_FRAME);
+	printf("#define\tSG_ISHIFT %d\n", SG_ISHIFT);
 	printf("#define\tPCB_FLAGS %d\n", &pcb->pcb_flags);
 	printf("#define\tPCB_PS %d\n", &pcb->pcb_ps);
 	printf("#define\tPCB_USTP %d\n", &pcb->pcb_ustp);
 	printf("#define\tPCB_USP %d\n", &pcb->pcb_usp);
 	printf("#define\tPCB_REGS %d\n", pcb->pcb_regs);
-	printf("#define\tPCB_P0BR %d\n", &pcb->pcb_p0br);
-	printf("#define\tPCB_P0LR %d\n", &pcb->pcb_p0lr);
-	printf("#define\tPCB_P1BR %d\n", &pcb->pcb_p1br);
-	printf("#define\tPCB_P1LR %d\n", &pcb->pcb_p1lr);
-	printf("#define\tPCB_SZPT %d\n", &pcb->pcb_szpt);
 	printf("#define\tPCB_CMAP2 %d\n", &pcb->pcb_cmap2);
 	printf("#define\tPCB_SSWAP %d\n", &pcb->pcb_sswap);
 	printf("#define\tPCB_SIGC %d\n", pcb->pcb_sigc);
@@ -165,6 +158,7 @@ main()
 	printf("#define\tENOENT %d\n", ENOENT);
 	printf("#define\tEFAULT %d\n", EFAULT);
 	printf("#define\tENAMETOOLONG %d\n", ENAMETOOLONG);
+	printf("#define\tCLKBASE %d\n", CLKBASE);
 	printf("#define\tCLKCR1 %d\n", CLKCR1);
 	printf("#define\tCLKCR2 %d\n", CLKCR2);
 	printf("#define\tCLKCR3 %d\n", CLKCR3);

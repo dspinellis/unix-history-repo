@@ -11,13 +11,12 @@
  *
  * from: Utah $Hdr: trap.c 1.28 89/09/25$
  *
- *	@(#)trap.c	7.7 (Berkeley) %G%
+ *	@(#)trap.c	7.8 (Berkeley) %G%
  */
 
 #include "cpu.h"
 #include "psl.h"
 #include "reg.h"
-#include "pte.h"
 #include "mtpr.h"
 
 #include "param.h"
@@ -28,12 +27,15 @@
 #include "trap.h"
 #include "acct.h"
 #include "kernel.h"
-#include "vm.h"
-#include "cmap.h"
 #include "syslog.h"
 #ifdef KTRACE
 #include "ktrace.h"
 #endif
+
+#include "../vm/vm_param.h"
+#include "../vm/pmap.h"
+#include "../vm/vm_map.h"
+#include "vmmeter.h"
 
 #ifdef HPUXCOMPAT
 #include "../hpux/hpux.h"
@@ -293,183 +295,77 @@ copyfault:
 		goto out;
 
 	case T_MMUFLT:		/* kernel mode page fault */
-		/*
-		 * Could be caused by a page fault in one of the copy to/from
-		 * user space routines.  If so, we will have a catch address.
-		 */
-		if (!u.u_pcb.pcb_onfault)
-			goto dopanic;
 		/* fall into ... */
 
 	case T_MMUFLT+USER:	/* page fault */
-/*
-		printf("trap: T_MMUFLT pid %d, code %x, v %x, pc %x, ps %x\n",
-		       p->p_pid, code, v, frame.f_pc, frame.f_sr);
-*/
-		if (v >= USRSTACK) {
-			if (type == T_MMUFLT)
-				goto copyfault;
-			i = SIGSEGV;
-			break;
-		}
-		ncode = code >> 16;
-#if defined(HP330) || defined(HP360) || defined(HP370)
+	    {
+		register vm_offset_t va;
+		register vm_map_t map;
+		int rv;
+		vm_prot_t ftype;
+		extern vm_map_t kernel_map;
+		unsigned nss;
+
 		/*
-		 * Crudely map PMMU faults into HP MMU faults.
+		 * It is only a kernel address space fault iff:
+		 * 	1. (type & USER) == 0  and
+		 * 	2. pcb_onfault not set or
+		 *	3. pcb_onfault set but supervisor space data fault
+		 * The last can occur during an exec() copyin where the
+		 * argument space is lazy-allocated.
 		 */
-		if (mmutype != MMU_HP) {
-			int ocode = ncode;
-			ncode = 0;
-			if (ocode & PMMU_WP)
-				ncode |= MMU_WPF;
-			else if (ocode & PMMU_INV) {
-				if ((ocode & PMMU_LVLMASK) == 2)
-					ncode |= MMU_PF;
-				else 
-					ncode |= MMU_PTF;
-			}
-			/*
-			 * RMW cycle, must load ATC by hand
-			 */
-			else if ((code & (SSW_DF|SSW_RM)) == (SSW_DF|SSW_RM)) {
+		if (type == T_MMUFLT &&
+		    (!u.u_pcb.pcb_onfault ||
+		     (code & (SSW_DF|FC_SUPERD)) == (SSW_DF|FC_SUPERD)))
+			map = kernel_map;
+		else
+			map = u.u_procp->p_map;
+		if ((code & (SSW_DF|SSW_RW)) == SSW_DF)	/* what about RMW? */
+			ftype = VM_PROT_READ | VM_PROT_WRITE;
+		else
+			ftype = VM_PROT_READ;
+		va = trunc_page((vm_offset_t)v);
 #ifdef DEBUG
-				log(LOG_WARNING,
-				    "RMW fault at %x: MMUSR %x SSW %x\n",
-				    v, ocode, code & 0xFFFF);
-#endif
-				ploadw((caddr_t)v);
-				return;
-			}
-			/*
-			 * Fault with no fault bits, should indicate bad
-			 * hardware but we see this on 340s using starbase
-			 * sometimes (faults accessing catseye registers)
-			 */
-			else {
-				log(LOG_WARNING,
-				    "Bad PMMU fault at %x: MMUSR %x SSW %x\n",
-				    v, ocode, code & 0xFFFF);
-				return;
-			}
-#ifdef DEBUG
-			if (mmudebug && mmudebug == p->p_pid)
-				printf("MMU %d: v%x, os%x, ns%x\n",
-				       p->p_pid, v, ocode, ncode);
-#endif
-		}
-#endif
-#ifdef DEBUG
-		if ((ncode & (MMU_PTF|MMU_PF|MMU_WPF|MMU_FPE)) == 0) {
-			printf("T_MMUFLT with no fault bits\n");
+		if (map == kernel_map && va == 0) {
+			printf("trap: bad kernel access at %x\n", v);
 			goto dopanic;
 		}
 #endif
-		if (ncode & MMU_PTF) {
-#ifdef DEBUG
-			/*
-			 * NOTE: we use a u_int instead of an ste since the
-			 * current compiler generates bogus code for some
-			 * bitfield operations (i.e. attempts to access last
-			 * word of a page as a longword causing fault).
-			 */
-			extern struct ste *vtoste();
-			u_int *ste = (u_int *)vtoste(p, v);
-
-			if (*ste & SG_V) {
-				if (ncode & MMU_WPF) {
-					printf("PTF|WPF...\n");
-					if (type == T_MMUFLT)
-						goto copyfault;
-					i = SIGBUS;
-					break;
-				}
-				printf("MMU_PTF with sg_v, ste@%x = %x\n",
-				       ste, *ste);
-				goto dopanic;
-			}
-#endif
-#ifdef HPUXCOMPAT
-			if (ISHPMMADDR(v)) {
-				extern struct ste *vtoste();
-				u_int *bste, *nste;
-
-				bste = (u_int *)vtoste(p, HPMMBASEADDR(v));
-				nste = (u_int *)vtoste(p, v);
-				if ((*bste & SG_V) && *nste == SG_NV) {
-					*nste = *bste;
-					TBIAU();
-					return;
-				}
-			}
-#endif
-		growit:
-			if (type == T_MMUFLT)
-				goto copyfault;
-			if (grow((unsigned)frame.f_regs[SP]) || grow(v))
-				goto out;
-			i = SIGSEGV;
-			break;
-		}
-#ifdef HPUXCOMPAT
-		if (ISHPMMADDR(v)) {
-			TBIS(v);
-			v = HPMMBASEADDR(v);
-		}
-#endif
 		/*
-		 * NOTE: WPF without PG_V is possible
-		 * (e.g. attempt to write shared text which is paged out)
+		 * XXX: rude hack to make stack limits "work"
 		 */
-		if (ncode & MMU_WPF) {
-#ifdef DEBUG
-			extern struct ste *vtoste();
-			u_int *ste = (u_int *)vtoste(p, v);
-
-			if (!(*ste & SG_V)) {
-				printf("MMU_WPF without sg_v, ste@%x = %x\n",
-				       ste, *ste);
-				goto dopanic;
+		nss = 0;
+		if ((caddr_t)va >= u.u_maxsaddr && map != kernel_map) {
+			nss = clrnd(btoc(USRSTACK-(unsigned)va));
+			if (nss > btoc(u.u_rlimit[RLIMIT_STACK].rlim_cur)) {
+				rv = KERN_FAILURE;
+				goto nogo;
 			}
-#endif
-			if (type == T_MMUFLT)
-				goto copyfault;
-			i = SIGBUS;
-			break;
 		}
-		if (ncode & MMU_PF) {
-			register u_int vp;
-#ifdef DEBUG
-			extern struct ste *vtoste();
-			u_int *ste = (u_int *)vtoste(p, v);
-			struct pte *pte;
-
-			if (!(*ste & SG_V)) {
-				printf("MMU_PF without sg_v, ste@%x = %x\n",
-				       ste, *ste);
-				goto dopanic;
-			}
-#endif
-			vp = btop(v);
-			if (vp >= dptov(p, p->p_dsize) &&
-			    vp < sptov(p, p->p_ssize-1))
-				goto growit;
-#ifdef DEBUG
-			pte = vtopte(p, vp);
-			if (*(u_int *)pte & PG_V) {
-				printf("MMU_PF with pg_v, pte = %x\n",
-				       *(u_int *)pte);
-				goto dopanic;
-			}
-#endif
-			pagein(v, 0);
+		rv = vm_fault(map, va, ftype, FALSE);
+		if (rv == KERN_SUCCESS) {
+			/*
+			 * XXX: continuation of rude stack hack
+			 */
+			if (nss > u.u_ssize)
+				u.u_ssize = nss;
 			if (type == T_MMUFLT)
 				return;
 			goto out;
 		}
-#ifdef DEBUG
-		printf("T_MMUFLT: unrecognized scenerio\n");
-		goto dopanic;
-#endif
+nogo:
+		if (type == T_MMUFLT) {
+			if (u.u_pcb.pcb_onfault)
+				goto copyfault;
+			printf("vm_fault(%x, %x, %x, 0) -> %x\n",
+			       map, va, ftype, rv);
+			printf("  type %x, code [mmu,,ssw]: %x\n",
+			       type, code);
+			goto dopanic;
+		}
+		i = (rv == KERN_PROTECTION_FAILURE) ? SIGBUS : SIGSEGV;
+		break;
+	    }
 	}
 	trapsignal(i, ucode);
 	if ((type & USER) == 0)
