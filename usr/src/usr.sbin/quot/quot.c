@@ -12,12 +12,14 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)quot.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)quot.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
+#include <sys/time.h>
 #include <ufs/ufs/dinode.h>
 #include <ufs/ffs/fs.h>
+
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -56,11 +58,10 @@ int	fflg;
 int	cflg;
 int	vflg;
 int	hflg;
-long	now;
+struct timeval now;
 
 unsigned	ino;
 
-char	*malloc();
 char	*user_from_uid();
 
 main(argc, argv)
@@ -70,7 +71,6 @@ main(argc, argv)
 	extern char *optarg;
 	extern int optind;
 	int ch;
-	time_t time();
 
 	while ((ch = getopt(argc, argv, "cfhnv")) != EOF)
 		switch((char)ch) {
@@ -92,7 +92,7 @@ main(argc, argv)
 	argc -= optind;
 	argv += optind;
 
-	(void)time(&now);
+	(void)gettimeofday(&now, NULL);
 	setpassent(1);
 	if (argc)
 		for (; *argv; ++argv) {
@@ -139,9 +139,8 @@ check(file, fsdir)
 	int c, fd;
 
 	/*
-	 * Initialize tables between checks;
-	 * because of the qsort done in report()
-	 * the hash tables must be rebuilt each time.
+	 * Initialize tables between checks; because of the qsort done in
+	 * report() the hash tables must be rebuilt each time.
 	 */
 	for (i = 0; i < TSIZE; i++)
 		sizes[i] = 0;
@@ -165,7 +164,7 @@ check(file, fsdir)
 		printf(" (%s)", fsdir);
 	printf(":\n");
 	sync();
-	bread(fd, (long)SBOFF, (char *)&sblock, SBSIZE);
+	bread(fd, (off_t)SBOFF, (char *)&sblock, SBSIZE);
 	dev_bsize = sblock.fs_fsize / fsbtodb(&sblock, 1);
 	if (nflg) {
 		if (isdigit(c = getchar()))
@@ -176,7 +175,7 @@ check(file, fsdir)
 	nfiles = sblock.fs_ipg * sblock.fs_ncg;
 	for (ino = 0; ino < nfiles; ) {
 		iblk = fsbtodb(&sblock, itod(&sblock, ino));
-		bread(fd, iblk * dev_bsize, (char *)itab, (int)sblock.fs_bsize);
+		bread(fd, (off_t)iblk * dev_bsize, itab, (int)sblock.fs_bsize);
 		for (j = 0; j < INOPB(&sblock) && ino < nfiles; j++, ino++) {
 			if (ino < ROOTINO)
 				continue;
@@ -240,11 +239,11 @@ qacct(ip)
 	}
 	dp->blocks += size;
 #define	DAY (60 * 60 * 24)	/* seconds per day */
-	if (now - ip->di_atime > 30 * DAY)
+	if (now.tv_sec - ip->di_atime.tv_sec > 30 * DAY)
 		dp->blocks30 += size;
-	if (now - ip->di_atime > 60 * DAY)
+	if (now.tv_sec - ip->di_atime.tv_sec > 60 * DAY)
 		dp->blocks60 += size;
-	if (now - ip->di_atime > 90 * DAY)
+	if (now.tv_sec - ip->di_atime.tv_sec > 90 * DAY)
 		dp->blocks90 += size;
 	dp->nfiles++;
 	while (nflg) {
@@ -278,11 +277,10 @@ qacct(ip)
 }
 
 bread(fd, bno, buf, cnt)
+	int fd, cnt;
 	long bno;
-	char *buf;
+	void *buf;
 {
-	off_t lseek();
-
 	(void)lseek(fd, bno, L_SET);
 	if (read(fd, buf, cnt) != cnt) {
 		fprintf(stderr, "quot: read error at block %ld\n", bno);
