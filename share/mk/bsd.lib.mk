@@ -1,6 +1,9 @@
 #	@(#)bsd.lib.mk	5.26 (Berkeley) 5/2/91
 #
 # $Log: bsd.lib.mk,v $
+# Revision 1.25  1993/12/12  16:51:22  jkh
+# Add profiled .m target
+#
 # Revision 1.24  1993/12/12  15:17:34  jkh
 # Removed <lib>_pic.a file rules - libs are now built directly from shared
 # objects, thus skipping a step and shaving some time off system compilation.
@@ -263,7 +266,6 @@ clean:
 	rm -f lib${LIB}.a llib-l${LIB}.ln
 	rm -f ${POBJS} profiled/*.o lib${LIB}_p.a
 	rm -f ${SOBJS} shared/*.o
-	rm -f lib${LIB}.a lib${LIB}_p.a llib-l${LIB}.ln
 	rm -f lib${LIB}.so.*.*
 .endif
 
