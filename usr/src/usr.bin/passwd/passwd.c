@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)passwd.c	4.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)passwd.c	4.23 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -411,7 +411,7 @@ getfingerinfo(pwd)
 
 	answer[0] = '\0';
 	defaults = get_defaults(pwd->pw_gecos);
-	printf("Default values are printed inside of of '[]'.\n");
+	printf("Default values are printed inside of '[]'.\n");
 	printf("To accept the default, type <return>.\n");
 	printf("To have a blank entry, type the word 'none'.\n");
 	/*
