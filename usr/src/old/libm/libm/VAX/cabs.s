@@ -12,10 +12,10 @@ From Prof. Kahan at UC at Berkeley
 # using "sendbug 4bsd-bugs@BERKELEY", to the authors.
 #
 
-# @(#)cabs.s	1.1 (Berkeley) %G%
+# @(#)cabs.s	1.2 (Berkeley) %G%
 
 # double precision complex absolute value
-# CDABS by W. Kahan, 9/7/80.
+# CABS by W. Kahan, 9/7/80.
 # Revised for reserved operands by E. LeBlanc, 8/18/82
 # argument for complex absolute value by reference, *4(ap)
 # argument for cabs and hypot (C fcns) by value, 4(ap)
@@ -26,8 +26,8 @@ From Prof. Kahan at UC at Berkeley
 	.globl  _cabs
 	.globl  _hypot
 	.globl	_z_abs
-	.globl	cdabs_r6
-	.globl	dsqrt_r5
+	.globl	libm$cdabs_r6
+	.globl	libm$dsqrt_r5
 
 #	entry for c functions cabs and hypot
 _cabs:
@@ -62,7 +62,7 @@ cont:
 return:
 	ret
 
-cdabs_r6:			# ENTRY POINT for cdsqrt
+libm$cdabs_r6:			# ENTRY POINT for cdsqrt
 				# calculates a scaled (factor in r6)
 				# complex absolute value
 
@@ -106,7 +106,6 @@ ordered:
 	addl2	r5,r4
 	cvtld	r4,r2
 	addd2	r2,r0		# r0:1 = scaled x^2 + y^2
-	jmp	dsqrt_r5	# r0:1 = dsqrt(x^2+y^2)/2^r6
+	jmp	libm$dsqrt_r5	# r0:1 = dsqrt(x^2+y^2)/2^r6
 retsb:
 	rsb			# error < 0.86 ulp
-

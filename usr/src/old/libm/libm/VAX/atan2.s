@@ -12,7 +12,7 @@ From Prof. Kahan at UC at Berkeley
 # using "sendbug 4bsd-bugs@BERKELEY", to the authors.
 #
 
-# @(#)atan2.s	1.1 (Berkeley) %G%
+# @(#)atan2.s	1.2 (Berkeley) %G%
 
 # ATAN2(Y,X)
 # RETURN ARG (X+iY)
@@ -52,18 +52,18 @@ From Prof. Kahan at UC at Berkeley
 # Accuracy:
 #	atan2(y,x) returns the exact ARG(x+iy) nearly rounded. 
 #	
-.text
-.align 1
-.globl	_atan2
+	.text
+	.align 1
+	.globl	_atan2
 _atan2 :
 	.word	0x0ff4
 	movq	4(ap),r2		# r2 = y
 	movq	12(ap),r4		# r4 = x
-	bicw3	$0x007f,r2,r0
-	bicw3	$0x007f,r4,r1
-	cmpw	r0,$0x8000		# y is reserved operant
+	bicw3	$0x7f,r2,r0
+	bicw3	$0x7f,r4,r1
+	cmpw	r0,$0x8000		# y is the reserved operand
 	jeql	resop
-	cmpw	r1,$0x8000		# x is reserved operant
+	cmpw	r1,$0x8000		# x is the reserved operand
 	jeql	resop
 	subl2	$8,sp
 	bicw3	$0x7fff,r2,-4(fp)	# copy y sign bit to -4(fp)
@@ -106,11 +106,11 @@ L10:
 	movq	$0xb4d9940f985e407b,r6	# Hi=.98279372324732906796d0
 	movq	$0x21b1879a3bc2a2fc,r8	# Lo=-.17092002525602665777d-17
 	subd3	r4,r2,r0		# y-x
-	addw2	$0x0080,r0		# 2(y-x)
+	addw2	$0x80,r0		# 2(y-x)
 	subd2	r4,r0			# 2(y-x)-x
-	addw2	$0x0080,r4		# 2x	
+	addw2	$0x80,r4		# 2x	
 	movq	r2,r10
-	addw2	$0x0080,r10		# 2y
+	addw2	$0x80,r10		# 2y
 	addd2	r10,r2			# 3y
 	addd2	r4,r2			# 3y+2x
 	divd2	r2,r0			# (2y-3x)/(2x+3y)
@@ -125,9 +125,9 @@ L30:
 	movq	$0xda7b2b0d63383fed,r6	# Hi=.46364760900080611433d0
 	movq	$0xf0ea17b2bf912295,r8	# Lo=.10147340032515978826d-17
 	movq	r2,r0
-	addw2	$0x0080,r0		# 2y
+	addw2	$0x80,r0		# 2y
 	subd2	r4,r0			# 2y-x
-	addw2	$0x0080,r4		# 2x
+	addw2	$0x80,r4		# 2x
 	addd2	r2,r4			# 2x+y
 	divd2	r4,r0 			# (2y-x)/(2x+y)
 	brb	L60
@@ -178,7 +178,7 @@ pio2:
 	bisw2	-4(fp),r0		# return sign(y)*pi/2
 	ret
 resop:
-	movq	$0x8000,r0		# return reserved operand
+	movq	$0x8000,r0		# propagate the reserved operand
 	ret
 	.align 2
 ptable:
