@@ -1,4 +1,4 @@
-/*	ufs_lookup.c	6.21	85/02/22	*/
+/*	ufs_lookup.c	6.21	85/02/24	*/
 
 #include "param.h"
 #include "systm.h"
@@ -136,7 +136,8 @@ namei(ndp)
 	struct inode *pdp;		/* saved dp during symlink work */
 	int error, i;
 	int lockparent;
-	int docache;
+	int docache;			/* == 0 do not cache last component */
+	int makeentry;			/* != 0 if name to be added to cache */
 	unsigned hash;			/* value of name hash for entry */
 	union nchash *nhp;		/* cache chain head for entry */
 	int isdotdot;			/* != 0 if current name is ".." */
@@ -146,7 +147,7 @@ namei(ndp)
 	lockparent = ndp->ni_nameiop & LOCKPARENT;
 	docache = (ndp->ni_nameiop & NOCACHE) ^ NOCACHE;
 	flag = ndp->ni_nameiop &~ (LOCKPARENT|NOCACHE|FOLLOW);
-	if (flag == DELETE)
+	if (flag == DELETE || lockparent)
 		docache = 0;
 	/*
 	 * Get a buffer for the name to be translated, and copy the
@@ -222,6 +223,9 @@ dirloop2:
 	ndp->ni_dent.d_name[i] = '\0';
 	isdotdot = (i == 2 &&
 		ndp->ni_dent.d_name[0] == '.' && ndp->ni_dent.d_name[1] == '.');
+	makeentry = 1;
+	if (*cp == '\0' && docache == 0)
+		makeentry = 0;
 
 	/*
 	 * Check for degenerate name (e.g. / or "")
@@ -250,7 +254,7 @@ dirloop2:
 	 */
 	if (ndp->ni_dent.d_namlen > NCHNAMLEN) {
 		nchstats.ncs_long++;
-		docache = 0;
+		makeentry = 0;
 	} else {
 		nhp = &nchash[NHASH(hash, dp->i_number, dp->i_dev)];
 		for (ncp = nhp->nch_forw; ncp != (struct nch *)nhp;
@@ -269,7 +273,7 @@ dirloop2:
 		} else {
 			if (ncp->nc_id != ncp->nc_ip->i_id) {
 				nchstats.ncs_falsehits++;
-			} else if (*cp == '\0' && !docache) {
+			} else if (!makeentry) {
 				nchstats.ncs_badhits++;
 			} else {
 
@@ -295,19 +299,18 @@ dirloop2:
 				 * an explaination of the locking protocol.
 				 */
 				pdp = dp;
-				dp = ncp->nc_ip;
+				if (!isdotdot || dp != u.u_rdir)
+					dp = ncp->nc_ip;
 				if (dp == NULL)
 					panic("nami: null cache ino");
-				if (pdp == dp)
+				if (pdp == dp) {
 					dp->i_count++;
-				else {
-					if (isdotdot) {
-						IUNLOCK(pdp);
-						igrab(dp);
-					} else {
-						igrab(dp);
-						IUNLOCK(pdp);
-					}
+				} else if (isdotdot) {
+					IUNLOCK(pdp);
+					igrab(dp);
+				} else {
+					igrab(dp);
+					IUNLOCK(pdp);
 				}
 
 				/*
@@ -577,10 +580,11 @@ found:
 		u.u_ncache.nc_time = time.tv_sec;
 	}
 	/*
-	 * Save directory entry in ndp->ni_dent,
+	 * Save directory entry's inode number and reclen in ndp->ni_dent,
 	 * and release directory buffer.
 	 */
-	bcopy((caddr_t)ep, (caddr_t)&ndp->ni_dent, (u_int)DIRSIZ(ep));
+	ndp->ni_dent.d_ino = ep->d_ino;
+	ndp->ni_dent.d_reclen = ep->d_reclen;
 	brelse(bp);
 	bp = NULL;
 
@@ -644,9 +648,10 @@ found:
 	 * in directory file system was mounted on.
 	 */
 	if (isdotdot) {
-		if (dp == u.u_rdir)
+		if (dp == u.u_rdir) {
 			ndp->ni_dent.d_ino = dp->i_number;
-		else if (ndp->ni_dent.d_ino == ROOTINO &&
+			makeentry = 0;
+		} else if (ndp->ni_dent.d_ino == ROOTINO &&
 		   dp->i_number == ROOTINO) {
 			for (i = 1; i < NMOUNT; i++)
 			if (mount[i].m_bufp != NULL &&
@@ -731,7 +736,7 @@ found:
 	 * all other cases where making a cache entry would be wrong
 	 * have already departed from the code sequence somewhere above.
 	 */
-	if (docache) {
+	if (makeentry) {
 		if (ncp != NULL)
 			panic("nami: duplicating cache");
 
