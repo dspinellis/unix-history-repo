@@ -1,4 +1,10 @@
-/*	machdep.c	1.15	87/06/30	*/
+/*
+ * Copyright (c) 1982,1987 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)machdep.c	1.16 (Berkeley) %G%
+ */
 
 #include "param.h"
 #include "systm.h"
