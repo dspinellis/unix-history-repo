@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vfsops.c	7.91 (Berkeley) %G%
+ *	@(#)lfs_vfsops.c	7.92 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -448,13 +448,11 @@ lfs_vget(mp, ino, vpp)
 	if (error =
 	    bread(ump->um_devvp, daddr, (int)fs->lfs_bsize, NOCRED, &bp)) {
 		/*
-		 * The inode does not contain anything useful, so it
-		 * would be misleading to leave it on its hash chain.
-		 * Iput() will return it to the free list.
+		 * The inode does not contain anything useful, so it would
+		 * be misleading to leave it on its hash chain. With mode
+		 * still zero, it will be unlinked and returned to the free
+		 * list by vput().
 		 */
-		ufs_ihashrem(ip);
-
-		/* Unlock and discard unneeded inode. */
 		vput(vp);
 		brelse(bp);
 		*vpp = NULL;
