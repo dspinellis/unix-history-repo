@@ -1,0 +1,203 @@
+#!/bin/sh
+PATH=:/bin:/usr/bin:/usr/ucb:/usr/local/bin
+# -------------------------------------------------------------
+#  Copyright (c) 1989, 1993 Regents of the University of Michigan.
+#  All rights reserved.
+#
+#  Redistribution and use is permitted provided that this notice 
+#  is preserved and that due credit is given to the University of 
+#  Michigan. The name of the University may not be used to endorse 
+#  or promote products derived from this software without specific 
+#  prior written permission. This software is provided "as is" 
+#  without express or implied warranty.
+#
+#  DNS Statistics gatherer
+#  Author:  Bryan Beecher
+#  Last Modified:   3/10/93
+#
+#  To make use of this software, you need to be running the
+#  University of Michigan release of BIND 4.8.3.  This script
+#  may be used with standard BIND 4.8.3 or 4.8 if the ns_req()
+#  function is modified to log the IP address of the originator
+#  of each query, the domain name of the query, and the query
+#  type.
+#
+#  BIND 4.9 can also use this by turning on the QRYLOG option.
+#
+#  The assumption behind this script is that it will be run out
+#  of crontab daily just before some sort of syslog manager
+#  copies the current contents of LOGFILE elsewhere before
+#  emptying the LOGFILE.  However, it can certainly be run on
+#  a LOGFILE that is not emptied daily, and in this case it
+#  would merely report the cumulative statistics.
+# -------------------------------------------------------------
+#  handy files
+# -------------------------------------------------------------
+LOGFILE=/var/log/named
+TMPFILE=/usr/tmp/.dnsstats$$
+OUTFILE=/usr/tmp/.dnsout$$
+ADDRFILE=/usr/tmp/.addrs$$
+NAMEFILE=/usr/tmp/.names$$
+TYPEFILE=/usr/tmp/.types$$
+WEEKFILE=/usr/tmp/.week$$
+
+# -------------------------------------------------------------
+#  handle arguments
+# -------------------------------------------------------------
+#	-d <day>
+#	This flag is used to append a dot-day suffix to the LOGFILE.
+#	Handy where log files are kept around for the last week
+#	and contain a day suffix.
+#
+#	-f <logfile>
+#	Change the LOGFILE value altogether.
+#
+#	-n
+#	Don't try to resolve IP addresses from in-addr.arpa names
+#	to "regular" names.  Handy if the DNS is slow or you just
+#	don't care about the domain names associated with the IP
+#	addresses.
+#
+#	-w
+#	Count up all of the DNS statistics for the whole week.
+#
+#	-c <#>
+#	Print only the top-# of entries in each category.
+#	Default is $STOPAT. 
+#
+#	-a
+#	Print the entire list of entries in each category.
+# -------------------------------------------------------------
+NONAMES=0
+STOPAT=25
+PRINTALL=0
+
+trap "rm -f $TMPFILE $OUTFILE $ADDRFILE $NAMEFILE $TYPEFILE $WEEKFILE ; exit 0" 0 1 2 3 15
+
+while getopts ac:d:f:nw ARG ; do
+	case $ARG in
+		a)	PRINTALL=1
+			;;
+		c)	STOPAT=$OPTARG
+			;;
+		d) 	LOGFILE=$LOGFILE"."$OPTARG
+			;;
+		f)	LOGFILE=$OPTARG
+			;;
+		n)	NONAMES=1
+			;;
+		w)	cat $LOGFILE* > $WEEKFILE
+			LOGFILE=$WEEKFILE
+			;;
+
+	esac
+done
+shift `expr $OPTIND - 1`
+
+# -------------------------------------------------------------
+#  divide the log file into three files:
+#	one for source addrs of incoming querys
+#	one for domain names that were queried upon
+#	one for query types
+# -------------------------------------------------------------
+awk '
+{
+	if ((n == 0) && ($5 == "last"))
+		next
+	else if ($5 == "last")
+		for (i=0; i<$8; i++) {
+			print info[2] >f1
+			print info[3] >f2
+			print info[4] >f3
+		}
+	else if ($6 == "XX") {
+		n = split($0, info, "/")
+		if (n == 4) {
+			print info[2] >f1
+			print info[3] >f2
+			print info[4] >f3
+		}
+	}
+		
+}' f1=$ADDRFILE f2=$NAMEFILE f3=$TYPEFILE $LOGFILE
+
+# -------------------------------------------------------------
+#  Print some general information
+# -------------------------------------------------------------
+echo "DNS stats for" `hostname` "for period ending" `ls -l $LOGFILE | awk '{ print $5, $6, $7 }'`
+echo "Total queries received: " `wc -l $ADDRFILE | awk '{ print $1}'`
+echo
+echo "Part I -- query sources"
+echo
+
+# -------------------------------------------------------------
+#  First, tell who was querying this nameserver
+# -------------------------------------------------------------
+if [ $NONAMES -eq 0 ] ; then
+	echo " Number   Source (by name if available)           IP address"
+	echo " ------   -----------------------------           ----------"
+	sort $ADDRFILE | uniq -c | sort -n -r > $TMPFILE
+	if [ $PRINTALL -eq 1 ] ; then
+		mv $TMPFILE $ADDRFILE
+	else
+		head -$STOPAT $TMPFILE > $ADDRFILE
+	fi
+	while [ 1 ] ; do
+		read COUNT ADDRESS
+		if [ $? -ne 0 ] ; then
+			break
+		fi
+		host $ADDRESS 2>&1 | awk '{
+			if (NF == 1)
+				printf(" %6d  %-39s [%s]\n", count, $1, address)
+			else {
+				i = split($0, msg, ":")
+				printf(" %6d  ** %-33s ** [%s]\n", count, msg[2], address)
+			}
+		}' count=$COUNT address=$ADDRESS -
+	done < $ADDRFILE
+else
+	echo " Number  IP address"
+	echo " ------  ----------"
+	sort $ADDRFILE | uniq -c | sort -n -r > $TMPFILE
+	if [ $PRINTALL -eq 1 ] ; then
+		awk '{ printf(" %6d  [%s]\n", $1, $2) }' $TMPFILE
+	else
+		head -$STOPAT $TMPFILE | awk '{ printf(" %5d  [%s]\n", $1, $2) }'
+	fi
+fi
+
+# -------------------------------------------------------------
+#  Second, tell what names were being queried upon
+# -------------------------------------------------------------
+echo
+echo "Part II -- queried names"
+echo
+echo " Number  Queried name"
+echo " ------  ------------"
+sort $NAMEFILE | uniq -c | sort -n -r > $TMPFILE
+if [ $PRINTALL -eq 1 ] ; then
+	awk '{ printf(" %6d  %s\n", $1, $2) }' $TMPFILE
+else
+	head -$STOPAT $TMPFILE | awk '{ printf(" %6d  %s\n", $1, $2) }'
+fi
+
+# -------------------------------------------------------------
+#  Third, tell what sort of queries there were
+# -------------------------------------------------------------
+echo
+echo "Part III -- query types"
+echo
+echo " Number  Type"
+echo " ------  ----"
+sort $TYPEFILE | uniq -c | sort -n -r > $TMPFILE
+if [ $PRINTALL -eq 1 ] ; then
+	awk '{ printf(" %6d  %s\n", $1, $2) }' $TMPFILE
+else
+	head -$STOPAT $TMPFILE | awk '{ printf(" %6d  %s\n", $1, $2) }'
+fi
+
+# -------------------------------------------------------------
+#  Last, tidy things up
+# -------------------------------------------------------------
+rm -f $TMPFILE $OUTFILE $ADDRFILE $NAMEFILE $TYPEFILE $WEEKFILE

@@ -1,0 +1,209 @@
+(Message inbox:14)
+To:  Pat_Barron@transarc.com
+cc:  bind@Pa.dec.com
+From:  Tim Guarnieri <timg@mv.us.adobe.com>
+Subject:  Re: Problem with BIND 4.8.3 (INRIA version) on SunOS 4.1.3 
+Date:  Fri, 19 Mar 93 16:42:23 PST
+----------------------------------
+
+
+You need to put "-ldl" on the appropriate line(s) when rebuilding
+the libc.so.  Attached is a README that I pulled off the net which
+describes the things you need to do in more detail.
+
+Pay particular attention to step (9) to solve the problem you describe.
+
+Tim
+
+
+			-----------------
+			NEW BIND FOR SUNS			2/11/91
+			-----------------
+
+[Partially taken from the document "Making a libc.so for DNS without NIS"
+ that has been distributed to various SunOS users, and seen on Usenet.
+
+ Original document by Paul Balyoz (pab@naucse.cse.nau.edu).
+ Updated to include OS4.1.2 information, Hal Pomeranz, 3/3/92.
+]
+
+This document tells how to install a NEW version of the BIND Name Server
+resolver routines into the shared C library of a Sparcstation running
+SunOS 4.1 or greater.  The procedure is a bit different when you are
+trying to install a version of BIND distributed from Berkeley, compared
+to the (older) resolver library that comes with SunOS.
+
+
+A.  Get BIND version 4.8.3 or later.  We must fix the Makefile in the
+resolver directory to do what our sparcstation needs.  The whole idea
+here is to compile the C source to .o files with the -pic option,
+and not do anything fancy to the .o files before putting them into
+the new libresolv.a library.  Note that we rename your old libresolv.a
+file, so that it can be recovered if the new one doesn't work!
+
+	cd Bind4.8.3/res
+	vi Makefile
+		Comment out all sets of lines that look something like:
+			-ld -r -x file.o
+			mv a.out file.o
+		Add to the "CFLAGS" variable the option
+			-pic
+		(so that a global tags entry gets added to each .o file)
+		Fix paths and options in Makefile as needed.
+	make
+	mv /usr/lib/libresolv.a /usr/lib/libresolv.a.orig
+	make install
+
+This should have created the new /usr/lib/libresolv.a library.
+
+Please also note that the string(3) man-page which comes with SunOS
+is more complete than the one distributed with BIND!  Therefore you
+should NOT replace it as instructed to by BIND's README instructions.
+
+
+B.  Follow the steps below to make a new shared library on your Sun
+which includes the new resolver library routines in it.
+
+    1.	Become super user by logging in as root, or first as a normal
+	user and then typing:
+		su
+
+    2.  Move into the shared-lib area and make a temporary directory:
+		cd /usr/lib/shlib.etc
+		mkdir tmp
+
+    3.  Move into this new directory, extract the pic (position
+	independent code) object files from libc_pic.a and remove
+	the SYMDEF file.  The renaming (mv commands) is done because
+	the "ar" command truncates names to 16 characters.
+		cd tmp
+		ar x ../libc_pic.a
+		rm __.SYMDEF
+		mv rpc_dtablesize. rpc_dtablesize.o
+		mv rpc_commondata. rpc_commondata.o
+		mv xccs.multibyte. xccs.multibyte.o
+
+    4.  We now need to extract the object files from your new libresolv.a
+	library, making sure not to overwrite two of the Sun objects
+	already in this directory:
+		mv mktemp.o mktemp.o2		# else it gets stomped
+		mv strpbrk.o strpbrk.o2		# else it gets stomped
+		ar x /usr/lib/libresolv.a
+		mv strpbrk.o2 strpbrk.o		# we gotta use Sun's.
+		mv mktemp.o2 mktemp.o		# we gotta use Sun's.
+	(Any other object files that get overwritten are ok.)
+
+	[ Alternatively you can extract Sun's original mktemp.o
+	  and strpbrk.o files again at this point by typing:
+		ar x ../libc_pic.a mktemp.o strpbrk.o		]
+
+    5.  Make sure the old host resolver is not still lying around:
+		rm gethostent.o
+	(ignore error "rm: gethostent.o nonexistent" if you see it.)
+
+    6.  Remove the new resolver's string code because Sun's libraries
+	already includes this, so it would be redundant:
+		rm strcasecmp.o
+
+    7.  Go back up to the shared library building directory and
+	duplicate the list of object files to use:
+		cd ..
+		cp lorder-sparc lorder-sparc.orig
+
+    8.  Edit this object file list and make the following modifications
+	if they haven't already been done before to this file:
+		remove:	gethostent.o
+		add:	gethostnamadr.o
+			sethostent.o
+			res_query.o
+			res_mkquery.o
+			res_send.o
+			res_debug.o
+			res_comp.o
+			res_init.o
+			herror.o
+			strerr.o
+	(the last two are new, which Sun's resolver doesn't use)
+	After deleting gethostent.o, you can use the following
+	patch, or make the changes by hand (in this order):
+
+		***************
+		*** 149,154 ****
+		--- 149,164 ----
+		  listen.o
+		  getwd.o
+		  getnetgrent.o
+		+ gethostnamadr.o
+		+ herror.o
+		+ sethostent.o
+		+ res_query.o
+		+ res_mkquery.o
+		+ res_send.o
+		+ res_debug.o
+		+ res_comp.o
+		+ res_init.o
+		+ strerror.o
+		  ypxdr.o
+		  ttyname.o
+		  setbuffer.o
+
+    9.  The Makefile in shlib.etc for building shared libraries
+	has one problem when you run it as the super user.  So
+	edit it and modify the definition of "OBJSORT" to read:
+
+		OBJSORT=./objsort
+
+	If you are using SunOS 4.1.2, change the lines (there are two)
+	in the Makefile	which read
+
+		ld -assert pure-text `${OBJSORT} lorder-sparc tmp`
+
+	to read
+
+		ld -assert pure-text `${OBJSORT} lorder-sparc tmp` -ldl
+
+   10.  Now we can finally build the shared library.  Type:
+		make libc.so
+
+	What kind of errors might you get?  Here's a couple:
+	a. It blows up on one of the .o files in tmp, saying
+	   that the object file is in an inconsistent state.
+	   SOLUTION: start over; you did something wrong when you
+	   compiled the new libresolv.a in section A, above.
+	   Make SURE not to let Makefile "ld" the object files!
+	b. It lists hundreds of error lines about offsets or
+	   addresses being wrong in all your resolver .o files.
+	   SOLUTION: start over; you needed to specify "-pic"
+	   to the C compiler when building the libresolv.a library.
+
+   11.  If all goes well, you now have a "libc.so.x.y.z" in this
+	directory.  Test it out before installing it systemwide!
+	You can do this by pointing your shell's library path
+	variable to the current directory, then trying various
+	networking commands:
+		setenv LD_LIBRARY_PATH `pwd`
+		ping some.host.edu
+		ftp another.host.com
+		telnet someone.else.ca
+		unsetenv LD_LIBRARY_PATH
+	If anything in the library fails, you need to start
+	section B over again.  Maybe you forgot to use Sun's
+	versions of mktemp.o and strpbrk.o; things just won't
+	work with BIND's new versions of these files.
+
+   12.  When you are sure it's working OK, you can install it
+	into the system library directory:
+		cp lib.so.x.y.z /usr/lib
+		chmod 755 /usr/lib/lib.so.x.y.z
+		ldconfig
+
+   13.  You can prove that you're using the new library now,
+	by watching the output of something like:
+		trace date
+
+	The lastest BIND resolver is now installed on your system.
+	You can go ahead and compile and install the other BIND
+	tools such as named, nslookup, etc.  You do not need to
+	specify the "-lresolv" library when compiling these tools.
+
+
