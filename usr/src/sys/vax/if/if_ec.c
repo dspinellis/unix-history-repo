@@ -1,4 +1,4 @@
-/*	if_ec.c	4.19	82/06/20	*/
+/*	if_ec.c	4.20	82/06/23	*/
 
 #include "ec.h"
 
@@ -280,13 +280,6 @@ ecxint(unit)
 	es->es_oactive = 0;
 	es->es_mask = ~0;
 	addr->ec_xcr = EC_XCLR;
-	/*
-	 * There shouldn't ever be any mbuf's to free, but just in case...
-	 */
-	if (es->es_ifuba.ifu_xtofree) {
-		m_freem(es->es_ifuba.ifu_xtofree);
-		es->es_ifuba.ifu_xtofree = 0;
-	}
 	if (es->es_if.if_snd.ifq_head)
 		ecstart(unit);
 }
@@ -301,7 +294,6 @@ eccollide(unit)
 {
 	struct ec_softc *es = &ec_softc[unit];
 
-	printf("ec%d: collision\n", unit);
 	es->es_if.if_collisions++;
 	if (es->es_oactive)
 		ecdocoll(unit);
@@ -398,7 +390,6 @@ ecread(unit)
 		if (es->es_if.if_ierrors % 100 == 0)
 			printf("ec%d: += 100 input errors\n", unit);
 #endif
-		printf("ec%d: input error (offset=%d)\n", unit, ecoff);
 		goto setup;
 	}
 
@@ -611,18 +602,17 @@ ecput(ecbuf, m)
 	struct mbuf *m;
 {
 	register struct mbuf *mp;
-	register u_char *bp;
 	register int off;
+	u_char *bp;
 
 	for (off = 2048, mp = m; mp; mp = mp->m_next)
 		off -= mp->m_len;
 	*(u_short *)ecbuf = off;
 	bp = (u_char *)(ecbuf + off);
-	for (mp = m; mp; mp = m_free(mp)) {
-		register unsigned len;
-		register u_char *mcp;
+	for (mp = m; mp; mp = mp->m_next) {
+		register unsigned len = mp->m_len;
+		u_char *mcp;
 
-		len = mp->m_len;
 		if (len == 0)
 			continue;
 		mcp = mtod(mp, u_char *);
@@ -630,18 +620,25 @@ ecput(ecbuf, m)
 			*bp++ = *mcp++;
 			len--;
 		}
-		for (; len > 1; len -= sizeof (u_short)) {
-			*(u_short *)bp = *(u_short *)mcp;
-			bp += sizeof (u_short);
-			mcp += sizeof (u_short);
+		if (off = (len >> 1)) {
+			register u_short *to, *from;
+
+			to = (u_short *)bp;
+			from = (u_short *)mcp;
+			do
+				*to++ = *from++;
+			while (--off > 0);
+			bp = (u_char *)to,
+			mcp = (u_char *)from;
 		}
-		if (len)
+		if (len & 01)
 			*bp++ = *mcp++;
 	}
 #ifdef notdef
 	if (bp - ecbuf != 2048)
 		printf("ec: bad ecput, diff=%d\n", bp-ecbuf);
 #endif
+	m_freem(m);
 }
 
 /*
@@ -653,18 +650,19 @@ ecput(ecbuf, m)
  */
 struct mbuf *
 ecget(ecbuf, totlen, off0)
-	char *ecbuf;
+	u_char *ecbuf;
 	int totlen, off0;
 {
-	struct mbuf *top, **mp, *m;
-	int off = off0, len;
-	register char *cp, *mcp;
-	register int i;
+	register struct mbuf *m;
+	struct mbuf *top = 0, **mp = &top;
+	register int off = off0, len;
+	u_char *cp;
 
-	top = 0;
-	mp = &top;
 	cp = ecbuf + ECRDOFF + sizeof (struct ec_header);
 	while (totlen > 0) {
+		register int words;
+		u_char *mcp;
+
 		MGET(m, 0);
 		if (m == 0)
 			goto bad;
@@ -688,26 +686,32 @@ ecget(ecbuf, totlen, off0)
 			m->m_len = len = MIN(MLEN, len);
 			m->m_off = MMINOFF;
 		}
-		mcp = mtod(m, char *);
-		for (i = 0; i < len; i += sizeof (short)) {
-			*(short *)mcp = *(short *)cp;
-			mcp += sizeof (short);
-			cp += sizeof (short);
+		mcp = mtod(m, u_char *);
+		if (words = (len >> 1)) {
+			register u_short *to, *from;
+
+			to = (u_short *)mcp;
+			from = (u_short *)cp;
+			do
+				*to++ = *from++;
+			while (--words > 0);
+			mcp = (u_char *)to;
+			cp = (u_char *)from;
 		}
 		if (len & 01)
 			*mcp++ = *cp++;
 		*mp = m;
 		mp = &m->m_next;
-		if (off) {
-			off += len;
-			if (off == totlen) {
-				cp = ecbuf + ECRDOFF +
-				    sizeof (struct ec_header);
-				off = 0;
-				totlen = off0;
-			}
-		} else
+		if (off == 0) {
 			totlen -= len;
+			continue;
+		}
+		off += len;
+		if (off == totlen) {
+			cp = ecbuf + ECRDOFF + sizeof (struct ec_header);
+			off = 0;
+			totlen = off0;
+		}
 	}
 	return (top);
 bad:
