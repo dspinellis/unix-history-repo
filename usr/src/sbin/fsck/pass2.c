@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass2.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass2.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -300,12 +300,16 @@ chk2:
 again:
 		switch (statemap[dirp->d_ino]) {
 		case USTATE:
+			if (idesc->id_entryno <= 2)
+				break;
 			fileerror(idesc->id_number, dirp->d_ino, "UNALLOCATED");
 			n = reply("REMOVE");
 			break;
 
 		case DCLEAR:
 		case FCLEAR:
+			if (idesc->id_entryno <= 2)
+				break;
 			fileerror(idesc->id_number, dirp->d_ino, "DUP/BAD");
 			if ((n = reply("REMOVE")) == 1)
 				break;
