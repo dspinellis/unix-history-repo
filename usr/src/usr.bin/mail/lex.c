@@ -11,7 +11,7 @@
  */
 
 #ifdef notdef
-static char sccsid[] = "@(#)lex.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)lex.c	5.8 (Berkeley) %G%";
 #endif /* notdef */
 
 #include "rcv.h"
@@ -448,20 +448,13 @@ contin(s)
 }
 
 /*
- * Branch here on hangup signal and simulate quit.
+ * Branch here on hangup signal and simulate "exit".
  */
 /*ARGSUSED*/
 hangup(s)
 {
 
-	holdsigs();
-	if (edit) {
-		if (setexit())
-			exit(0);
-		edstop();
-	}
-	else
-		quit();
+	/* nothing to do? */
 	exit(0);
 }
 
