@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mfs_vnops.c	7.6 (Berkeley) %G%
+ *	@(#)mfs_vnops.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -29,9 +29,9 @@
 #include "vnode.h"
 #include "../ufs/mfsnode.h"
 #include "../ufs/mfsiom.h"
-#include "../machine/vmparam.h"
-#include "../machine/pte.h"
-#include "../machine/mtpr.h"
+#include "machine/vmparam.h"
+#include "machine/pte.h"
+#include "machine/mtpr.h"
 
 static int mfsmap_want;		/* 1 => need kernel I/O resources */
 struct map mfsmap[MFS_MAPSIZE];
