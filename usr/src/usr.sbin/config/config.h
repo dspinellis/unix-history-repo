@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)config.h	5.2 (Berkeley) %G%
+ *	@(#)config.h	5.3 (Berkeley) %G%
  */
 
 /*
@@ -110,12 +110,13 @@ struct cputype {
 /*
  * A set of options may also be specified which are like CPU types,
  * but which may also specify values for the options.
+ * A separate set of options may be defined for make-style options.
  */
 struct opt {
 	char	*op_name;
 	char	*op_value;
 	struct	opt *op_next;
-} *opt;
+} *opt, *mkopt;
 
 char	*ident;
 char	*ns();

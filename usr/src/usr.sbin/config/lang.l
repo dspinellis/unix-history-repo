@@ -5,7 +5,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)lang.l	5.1 (Berkeley) %G%
+ *	@(#)lang.l	5.2 (Berkeley) %G%
  */
 
 #include <ctype.h>
@@ -39,6 +39,7 @@ struct kt {
 	{ "ident",	IDENT },
 	{ "machine",	MACHINE },
 	{ "major",	MAJOR },
+	{ "makeoptions", MAKEOPTIONS },
 	{ "master",	MASTER },
 	{ "maxusers",	MAXUSERS },
 	{ "mba",	MBA },

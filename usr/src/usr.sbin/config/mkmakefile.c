@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkmakefile.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkmakefile.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -150,6 +150,8 @@ makefile()
 		printf("warning: maxusers > %d (%d)\n", up->u_max, maxusers);
 	fprintf(ofp, "PARAM=-DTIMEZONE=%d -DDST=%d -DMAXUSERS=%d\n",
 	    timezone, dst, maxusers);
+	for (op = mkopt; op; op = op->op_next)
+		fprintf(ofp, "%s=%s\n", op->op_name, op->op_value);
 	while (fgets(line, BUFSIZ, ifp) != 0) {
 		if (*line == '%')
 			goto percent;

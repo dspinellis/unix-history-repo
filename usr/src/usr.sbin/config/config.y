@@ -33,6 +33,7 @@
 %token	NEXUS
 %token	ON
 %token	OPTIONS
+%token	MAKEOPTIONS
 %token	PRIORITY
 %token	PSEUDO_DEVICE
 %token	ROOT
@@ -68,7 +69,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)config.y	5.1 (Berkeley) %G%
+ *	@(#)config.y	5.2 (Berkeley) %G%
  */
 
 #include "config.h"
@@ -128,6 +129,8 @@ Config_spec:
 		free(temp_id);
 	      } |
 	OPTIONS Opt_list
+		|
+	MAKEOPTIONS Mkopt_list
 		|
 	IDENT ID
 	      = { ident = ns($2); } |
@@ -350,6 +353,24 @@ Save_id:
 	ID
 	      = { $$ = temp_id = ns($1); }
 	;
+
+Mkopt_list:
+	Mkopt_list COMMA Mkoption
+		|
+	Mkoption
+		;
+
+Mkoption:
+	Save_id EQUALS Opt_value
+	      = {
+		struct opt *op = (struct opt *)malloc(sizeof (struct opt));
+		op->op_name = ns($1);
+		op->op_next = mkopt;
+		op->op_value = ns($3);
+		mkopt = op;
+		free(temp_id);
+		free(val_id);
+	      } ;
 
 Dev:
 	UBA
