@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	6.62 (Berkeley) %G%
+ *	@(#)sendmail.h	6.63 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	6.62		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	6.63		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -850,7 +850,7 @@ EXTERN u_char	tTdvect[100];
 extern ADDRESS	*parseaddr __P((char *, ADDRESS *, int, int, char **, ENVELOPE *));
 extern char	*xalloc __P((int));
 extern bool	sameaddr __P((ADDRESS *, ADDRESS *));
-extern FILE	*dfopen __P((char *, char *));
+extern FILE	*dfopen __P((char *, int, int));
 extern EVENT	*setevent __P((time_t, int(*)(), int));
 extern char	*sfgets __P((char *, int, FILE *, time_t));
 extern char	*queuename __P((ENVELOPE *, int));
