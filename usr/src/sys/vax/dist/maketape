@@ -1,65 +1,74 @@
-#!/bin/sh
+#!/bin/sh -
 #
-# Copyright (c) 1983, 1989 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# Copyright (c) 1990 The Regents of the University of California.
+# All rights reserved.
 #
-#	@(#)maketape	4.32 (Berkeley) %G%
+# %sccs.include.redist.sh%
 #
-#	maketape [ 6250 | 1600 [ tapename [ remotetapemachine ] ] ]
+#	@(#)maketape	4.33 (Berkeley) %G%
+#
 
-miniroot=hp0d
-nbsd=ra0a
-nbsdusr=xxx
-dens=6250
-tarsize=20
-bsize=
+# maketape [ 6250 | 1600 [ tapename [ remotetapemachine ] ] ]
+miniroot=ra1b
+nbsd=ra1a
+nbsdusr=/mnt/usr/DISTUSR
+tape=/dev/rmt20
+type=6250
+block=40
+tflag=cbf
+bprog="/usr/local/20b 20480"
 
-if [ $# -gt 0 ]; then dens=$1; fi
-tape=/dev/rmt0.$dens
-if [ $# -gt 1 ]; then tape=$2; fi
-tartape=$tape
-if [ $# -gt 2 ]; then remote=$3; tartape='-'; fi
-if [ $dens -eq 6250 ];
-then
-	tarsize=40
-	bsize=20480
+if [ $# -gt 0 ]; then
+	type=$1;
 fi
 
-trap "rm -f /tmp/tape.$$; exit" 0 1 2 3 13 15
-$remote mt -t ${tape} rew
+if [ $# -gt 1 ]; then
+	tape=$2;
+fi
+
+tartape=$tape
+if [ $# -gt 2 ]; then
+	remote=$3;
+	tartape='-';
+fi
+
+rsh $remote mt -t ${tape} rew
 date
-umount /dev/$nbsdusr
+#umount /dev/$nbsdusr
 umount /dev/$nbsd
 mount -r /dev/$nbsd /nbsd
-mount -r /dev/$nbsdusr /nbsd/usr
+#mount -r /dev/$nbsdusr /nbsd/usr
+cd /nbsd
+sync
 
-cd tp
+if [ $type = '1600a' ]
+then
+	type=1600
+fi
+
+cd /nbsd/sys/vaxdist/tp
 tp cmf /tmp/tape.$$ boot copy format
 cd /nbsd/sys/mdec
 echo "Build 1st level boot block file"
 cat tsboot htboot tmboot mtboot utboot noboot noboot /tmp/tape.$$ | \
-	$remote dd of=${tape} obs=512 conv=sync
+        rsh $remote dd of=${tape} obs=512 conv=sync
 
-echo "Add dump of mini-root file system"
-sync
-eval dd if=/dev/r${miniroot} count=205 bs=20b conv=sync ${remote+'|'} \
+echo "Add image of mini-root file system"
+eval dd if=/dev/r${miniroot} count=205 bs=20b conv=sync ${remote+"| rsh"} \
 	${remote-"of=$tape"} ${remote+'/usr/local/20b ">" $tape'}
 
 echo "Add full dump of real file system"
-${remote+r}dump 0udf ${dens} $remote${remote+:}${tape} /dev/r$nbsd
+/sbin/${remote+r}dump 0f $remote${remote+:}${tape} /dev/r${nbsd}
 
 echo "Add tar image of /usr"
-cd /nbsd/usr; eval tar cbf ${tarsize} ${tartape} bin contrib games \
-	guest hosts include lib libdata libexec local mdec \
-	sbin share \
-	new ucb \
-		${remote+'| $remote /usr/local/20b ">" $tape $bsize'}
+cd ${nbsdusr}
+tar ${tflag} ${block} ${tartape} bin contrib games include lib libdata \
+	libexec local mdec obj old sbin share | rsh $remote ${bprog} ">" $tape
 
-if [ ${dens} != '6250' ]
+if [ ${type} != '6250' ]
 then
 	echo "Done, rewinding first tape"
-	$remote mt -t ${tape} rew &
+	rsh $remote mt -t ${tape} rew &
 	echo "Mount second tape and hit return when ready"
 	echo "(or type name of next tape drive)"
 	read x
@@ -68,20 +77,14 @@ then
 	fi
 fi
 
-echo "Add tar image of system sources"
-cd /nbsd/sys; eval tar cbf ${tarsize} ${tartape} . \
-	${remote+'| $remote /usr/local/20b ">" $tape $bsize'}
-
+: tape2:
 echo "Add user source code"
-cd /nbsd/usr/src; eval tar cbf ${tarsize} ${tartape} Makefile bin etc games \
-	include lib libexec local man old pgrm root share usr.bin usr.sbin \
-	${remote+'| $remote /usr/local/20b ">" $tape $bsize'}
+FILES="Makefile bin etc games include kerberosIV lib libexec old \
+	pgrm sbin share usr.bin usr.sbin"
+cd /nbsd/usr/src
+tar ${tflag} ${block} ${tartape} ${FILES} | rsh $remote ${bprog} ">" $tape
 
-echo "Add varian fonts"
-cd /usr/lib/vfont; eval tar cbf ${tarsize} ${tartape} . \
-	${remote+'| $remote /usr/local/20b ">" $tape $bsize'}
-
-if [ ${dens} != '6250' ]
+if [ ${type} != '6250' ]
 then
 	echo "Done, rewinding second tape"
 	$remote mt -t ${tape} rew &
@@ -93,29 +96,18 @@ then
 	fi
 fi
 
-echo "Add user contributed software"
-if [ ${dens} != '6250' ]
-then
-	cd /nbsd/usr/src/contrib; eval tar cbf ${tarsize} ${tartape} \
-		README Makefile \
-		B X ansi apl bib courier cpm dipress dsh emacs enet help \
-		hyper icon jove kermit mh mkmf mmdf.tar.Z news notes nntp \
-		np100 patch pathalias rcs rn spms sumacc.tar.Z sunrpc \
-		tac tools umodem xns \
-		${remote+'| $remote /usr/local/20b ">" $tape $bsize'}
-else
-	cd /nbsd/usr/src/contrib; eval tar cbf ${tarsize} ${tartape} \
-		README Makefile \
-		B X ansi apl bib courier cpm dipress dsh emacs enet help \
-		hyper icon jove kermit mh mkmf mmdf news notes nntp \
-		np100 patch pathalias rcs rn spms sumacc sunrpc \
-		tac tools umodem xns \
-		${remote+'| $remote /usr/local/20b ">" $tape $bsize'}
-fi
+: tape3:
+echo "Add tar image of system sources"
+cd /nbsd/usr/src/sys
+tar ${tflag} ${block} ${tartape} . | rsh $remote ${bprog} ">" $tape
 
-echo "Add ingres source"
-cd /nbsd/usr/ingres; eval tar cbf ${tarsize} ${tartape} . \
-	${remote+'| $remote /usr/local/20b ">" $tape $bsize'}
+echo "Add user contributed software"
+# standard (always uncompressed) directories:
+FILES="Makefile Makefile.inc ansi bib emacs emacs-18.55.tar.Z jove kermit \
+	mh.tar.Z patch rcs vmsprep"
+cd /nbsd/usr/src/contrib
+tar ${tflag} ${block} ${tartape} ${FILES} | rsh $remote ${bprog} ">" $tape
+
 
 echo "Done, rewinding tape"
-$remote mt -t ${tape} rew &
+rsh $remote mt -t ${tape} rew &

@@ -1,72 +1,78 @@
-#!/bin/sh
+#!/bin/sh -
 #
-# Copyright (c) 1983 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# Copyright (c) 1990 The Regents of the University of California.
+# All rights reserved.
 #
-#	@(#)get	4.26 (Berkeley) %G%
+# %sccs.include.redist.sh%
 #
-# Shell script to build a mini-root file system
-# in preparation for building a distribution tape.
-# The file system created here is image copied onto
-# tape, then image copied onto disk as the "first"
-# step in a cold boot of 4.3 systems.
+#	@(#)get	4.27 (Berkeley) %G%
 #
-DISTROOT=/nbsd
-#
+
+# Shell script to build a mini-root file system in preparation for building
+# a distribution tape.  The file system created here is image copied onto
+# tape, then image copied onto disk as the "first" step in a cold boot o
+# 4.3 systems.
+
+DISTROOT=/mnt
+DISTUSR=/mnt/usr/DISTUSR
+
 if [ `pwd` = '/' ]
 then
 	echo You just '(almost)' destroyed the root
 	exit
 fi
-cp $DISTROOT/sys/GENERIC/vmunix .
-rm -rf bin; mkdir bin
-rm -rf etc; mkdir etc
-rm -rf a; mkdir a
-rm -rf tmp; mkdir tmp
-rm -rf usr; mkdir usr usr/mdec
-rm -rf sys; mkdir sys sys/floppy sys/cassette sys/consolerl
-cp $DISTROOT/etc/disktab etc
-cp $DISTROOT/etc/newfs etc
-cp $DISTROOT/etc/mkfs etc
-cp $DISTROOT/etc/restore etc
-cp $DISTROOT/etc/init etc
-cp $DISTROOT/etc/mount etc
-cp $DISTROOT/etc/mknod etc
-cp $DISTROOT/etc/fsck etc
-cp $DISTROOT/etc/umount etc
-cp $DISTROOT/etc/arff etc
-cp $DISTROOT/etc/flcopy etc
-cp $DISTROOT/bin/mt bin
-cp $DISTROOT/bin/ed bin
-cp $DISTROOT/bin/ls bin
-cp $DISTROOT/bin/sh bin
-cp $DISTROOT/bin/mv bin
-cp $DISTROOT/bin/sync bin
-cp $DISTROOT/bin/cat bin
-cp $DISTROOT/bin/mkdir bin
-cp $DISTROOT/bin/stty bin; ln bin/stty bin/STTY
-cp $DISTROOT/bin/echo bin
-cp $DISTROOT/bin/rm bin
-cp $DISTROOT/bin/cp bin
-cp $DISTROOT/bin/expr bin
-cp $DISTROOT/bin/[ bin
-cp $DISTROOT/bin/awk bin
-cp $DISTROOT/bin/make bin
-cp $DISTROOT/usr/mdec/* usr/mdec
-cp $DISTROOT/sys/floppy/[Ma-z0-9]* sys/floppy
-cp $DISTROOT/sys/consolerl/[Ma-z0-9]* sys/consolerl
-cp -r $DISTROOT/sys/cassette/[Ma-z0-9]* sys/cassette
-cp $DISTROOT/sys/stand/boot boot
-cp $DISTROOT/sys/stand/pcs750.bin pcs750.bin
+cp /tmp/stripped_vmunix vmunix
+
+# create necessary directories
+DIRLIST="bin dev etc a tmp stand sbin usr usr/mdec sys sys/floppy \
+	sys/cassette sys/consolerl"
+rm -rf $DIRLIST
+mkdir $DIRLIST
+
+ETC="disktab"
+for i in $ETC; do
+	cp $DISTROOT/etc/$i etc/$i
+done
+
+# disklabel
+SBIN="fsck ifconfig init mknod mount newfs restore \
+	rrestore umount"
+USBIN="arff flcopy"
+for i in $SBIN; do
+	cp $DISTROOT/sbin/$i sbin/$i
+done
+for i in $USBIN; do
+	cp $DISTUSR/sbin/$i sbin/$i
+done
+
+# ed
+BIN="[ cat cp dd echo expr ls mkdir mv rcp rm sh stty sync"
+UBIN="awk make mt"
+for i in $BIN; do
+	cp $DISTROOT/bin/$i bin/$i
+done
+for i in $UBIN; do
+	cp $DISTUSR/bin/$i bin/$i
+done
+ln bin/stty bin/STTY
+
+cp /nbsd/sys/floppy/[Ma-z0-9]* sys/floppy
+cp /nbsd/sys/consolerl/[Ma-z0-9]* sys/consolerl
+#cp -r /nbsd/sys/cassette/[Ma-z0-9]* sys/cassette
+cp /nbsd/sys/cassette/[Ma-z0-9]* sys/cassette
+cp $DISTROOT/boot boot
+cp $DISTROOT/pcs750.bin pcs750.bin
 cp $DISTROOT/.profile .profile
+
 cat >etc/passwd <<EOF
 root::0:10::/:/bin/sh
 EOF
+
 cat >etc/group <<EOF
 wheel:*:0:
 staff:*:10:
 EOF
+
 cat >etc/fstab <<EOF
 /dev/hp0a:/a:xx:1:1
 /dev/up0a:/a:xx:1:1
@@ -74,6 +80,7 @@ cat >etc/fstab <<EOF
 /dev/ra0a:/a:xx:1:1
 /dev/rb0a:/a:xx:1:1
 EOF
+
 cat >xtr <<'EOF'
 : ${disk?'Usage: disk=xx0 type=tt tape=yy xtr'}
 : ${type?'Usage: disk=xx0 type=tt tape=yy xtr'}
@@ -102,7 +109,7 @@ echo 'If this is a 730, update the cassette'
 EOF
 chmod +x xtr
 rm -rf dev; mkdir dev
-cp $DISTROOT/sys/dist/MAKEDEV dev
+cp $DISTROOT/dev/MAKEDEV dev
 chmod +x dev/MAKEDEV
 cp /dev/null dev/MAKEDEV.local
 cd dev
