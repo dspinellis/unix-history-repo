@@ -1,4 +1,4 @@
-/*	param.h	3.6	%G%	*/
+/*	param.h	3.7	%G%	*/
 
 /*
  * tunable variables
@@ -9,7 +9,8 @@
 #define	NBUF	48		/* size of buffer cache */
 #define	NINODE	250		/* number of in core inodes */
 #define	NFILE	225		/* number of in core file structures */
-#define	NMOUNT	8		/* number of mountable file systems */
+#define	NMOUNT	15		/* number of mountable file systems */
+#define	MSWAPX	15		/* pseudo mount table index for swapdev */
 #define	MAXUPRC	25		/* max processes per user */
 #define	SSIZE	4		/* initial stack size (*512 bytes) */
 #define	SINCR	4		/* increment of stack (*512 bytes) */
