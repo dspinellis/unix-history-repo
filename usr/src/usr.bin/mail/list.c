@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)list.c	5.3 (Berkeley) %G%";
+static char *sccsid = "@(#)list.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include "rcv.h"
@@ -342,15 +342,18 @@ check(mesg, f)
  * for a RAWLIST.
  */
 
-getrawlist(line, argv)
+getrawlist(line, argv, argc)
 	char line[];
 	char **argv;
+	int  argc;
 {
 	register char **ap, *cp, *cp2;
 	char linebuf[BUFSIZ], quotec;
+	register char **last;
 
 	ap = argv;
 	cp = line;
+	last = argv + argc - 1;
 	while (*cp != '\0') {
 		while (any(*cp, " \t"))
 			cp++;
@@ -370,6 +373,10 @@ getrawlist(line, argv)
 		*cp2 = '\0';
 		if (cp2 == linebuf)
 			break;
+		if (ap >= last) {
+			printf("Too many elements in the list; excess discarded\n");
+			break;
+		}
 		*ap++ = savestr(linebuf);
 	}
 	*ap = NOSTR;
