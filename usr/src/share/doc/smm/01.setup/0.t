@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)0.t	6.4 (Berkeley) %G%
+.\"	@(#)0.t	6.5 (Berkeley) %G%
 .\"
 .ds Ux \s-1UNIX\s0
 .ds Bs \s-1BSD\s0
@@ -36,8 +36,8 @@
 \fI\\$1\fP\^()\\$2
 ..
 .bd S B 3
-.EH 'SMM:1-%''Installing and Operating \*(4B \*(Ux'
-.OH 'Installing and Operating \*(4B \*(Ux''SMM:1-%'
+.EH 'SMM:1-%''Installing and Operating \*(4B UNIX'
+.OH 'Installing and Operating \*(4B UNIX''SMM:1-%'
 .TL
 Installing and Operating \*(4B UNIX
 .br
@@ -71,8 +71,8 @@ as distributed by The University of California at Berkeley.
 UNIX is a registered trademark of USL in the USA and some other countries.
 .FE
 .PP
-It discusses procedures for installing \*(Ux on a new machine,
-and for upgrading an existing \*(Ps \*(Ux system to the new release.
+It discusses procedures for installing UNIX on a new machine,
+and for upgrading an existing \*(Ps UNIX system to the new release.
 An explanation of how to lay out filesystems on available disks,
 how to set up terminal lines and user accounts,
 and how to do system-specific tailoring is provided.
