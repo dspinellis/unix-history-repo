@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.178 (Berkeley) %G%
+ *	@(#)conf.h	8.179 (Berkeley) %G%
  */
 
 /*
@@ -990,13 +990,13 @@ typedef int		pid_t;
 /*
 **  UnixWare 1.1.2.
 **
+**	Updated by Petr Lampa <lampa@fee.vutbr.cz>.
 **	From Evan Champion <evanc@spatial.synapse.org>.
 */
 
 #ifdef UNIXWARE
 # define SYSTEM5		1
 # define HASGETUSERSHELL	0	/* does not have getusershell(3) call */
-# define HASGETDTABLESIZE	1
 # define HASSETREUID		1
 # define HASSETSID		1
 # define HASINITGROUPS		1
