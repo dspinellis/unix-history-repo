@@ -1,0 +1,3 @@
+# Host: Gould NP1
+XDEPFILES= infptrace.o inftarg.o fork-child.o gould-xdep.o
+XM_FILE= xm-np1.h
