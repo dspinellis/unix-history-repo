@@ -328,9 +328,16 @@ ptcselect(dev, rw)
 
 	case FREAD:
 		if ((tp->t_state&TS_ISOPEN) &&
+		     tp->t_outq.c_cc && (tp->t_state&TS_TTSTOP) == 0) {
+			splx(s);
+			return (1);
+		}
+		/* FALLTHROUGH */
+
+	case 0:					/* exceptional */
+		if ((tp->t_state&TS_ISOPEN) &&
 		    (pti->pt_flags&PF_PKT && pti->pt_send ||
-		     pti->pt_flags&PF_UCNTL && pti->pt_ucntl ||
-		     tp->t_outq.c_cc && (tp->t_state&TS_TTSTOP) == 0)) {
+		     pti->pt_flags&PF_UCNTL && pti->pt_ucntl)) {
 			splx(s);
 			return (1);
 		}
@@ -339,6 +346,7 @@ ptcselect(dev, rw)
 		else
 			pti->pt_selr = u.u_procp;
 		break;
+
 
 	case FWRITE:
 		if ((tp->t_state&TS_ISOPEN) &&
@@ -351,6 +359,7 @@ ptcselect(dev, rw)
 		else
 			pti->pt_selw = u.u_procp;
 		break;
+
 	}
 	splx(s);
 	return (0);
