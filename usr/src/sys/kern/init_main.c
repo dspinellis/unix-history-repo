@@ -1,4 +1,4 @@
-/*	init_main.c	4.49	83/04/04	*/
+/*	init_main.c	4.50	83/05/18	*/
 
 #include "../machine/pte.h"
 
@@ -191,7 +191,7 @@ main(regs)
 #ifdef sun
 		icode();
 		usetup();
-		regs.r_context = u.u_pcb.pcb_ctx->ctx_context;
+		regs.r_context = u.u_procp->p_ctx->ctx_context;
 #endif
 		/*
 		 * Return goes to loc. 0 of user init
@@ -275,12 +275,16 @@ binit()
 	 * system is issued, usually when the system goes multi-user.
 	 */
 	nswdev = 0;
-	for (swp = swdevt; swp->sw_dev; swp++)
+	nswap = 0;
+	for (swp = swdevt; swp->sw_dev; swp++) {
 		nswdev++;
+		if (swp->sw_nblks > nswap)
+			nswap = swp->sw_nblks;
+	}
 	if (nswdev == 0)
 		panic("binit");
 	if (nswdev > 1)
-		nswap = (nswap/DMMAX)*DMMAX;
+		nswap = ((nswap + dmmax - 1) / dmmax) * dmmax;
 	nswap *= nswdev;
 	maxpgio *= nswdev;
 	swfree(0);

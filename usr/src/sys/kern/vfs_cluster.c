@@ -1,4 +1,4 @@
-/*	vfs_cluster.c	4.45	83/05/06	*/
+/*	vfs_cluster.c	4.45	83/05/18	*/
 
 #include "../machine/pte.h"
 
@@ -643,26 +643,10 @@ biowait(bp)
 biodone(bp)
 	register struct buf *bp;
 {
-	register int s;
 
 	if (bp->b_flags & B_DONE)
 		panic("dup biodone");
 	bp->b_flags |= B_DONE;
-	if (bp->b_flags & B_DIRTY) {
-		if (bp->b_flags & B_ERROR)
-			panic("IO err in push");
-		s = spl6();
-		bp->av_forw = bclnlist;
-		bp->b_bcount = swsize[bp - swbuf];
-		bp->b_pfcent = swpf[bp - swbuf];
-		cnt.v_pgout++;
-		cnt.v_pgpgout += bp->b_bcount / NBPG;
-		bclnlist = bp;
-		if (bswlist.b_flags & B_WANTED)
-			wakeup((caddr_t)&proc[2]);
-		splx(s);
-		return;
-	}
 	if (bp->b_flags & B_CALL) {
 		bp->b_flags &= ~B_CALL;
 		(*bp->b_iodone)(bp);

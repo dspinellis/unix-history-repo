@@ -1,4 +1,4 @@
-/*	kern_physio.c	4.40	83/05/06	*/
+/*	kern_physio.c	4.40	83/05/18	*/
 
 #include "../machine/pte.h"
 
@@ -12,6 +12,7 @@
 #include "../h/seg.h"
 #include "../h/vm.h"
 #include "../h/trace.h"
+#include "../h/map.h"
 #include "../h/uio.h"
 
 /*
@@ -25,8 +26,6 @@
  * in a list of cleaned pages to be processed by the pageout daemon.
  */
 struct	buf *swbuf;
-short	*swsize;		/* CAN WE JUST USE B_BCOUNT? */
-int	*swpf;
 
 /*
  * swap I/O -
@@ -53,6 +52,7 @@ swap(p, dblkno, addr, nbytes, rdflg, flag, dev, pfcent)
 	int p2dp;
 	register struct pte *dpte, *vpte;
 	int s;
+	extern swdone();
 
 	s = spl6();
 	while (bswlist.av_forw == NULL) {
@@ -79,7 +79,10 @@ swap(p, dblkno, addr, nbytes, rdflg, flag, dev, pfcent)
 				panic("swap bad pte");
 			*dpte++ = *vpte++;
 		}
-		bp->b_un.b_addr = (caddr_t)ctob(p2dp);
+		bp->b_un.b_addr = (caddr_t)ctob(dptov(&proc[2], p2dp));
+		bp->b_flags |= B_CALL;
+		bp->b_iodone = swdone;
+		bp->b_pfcent = pfcent;
 	} else
 		bp->b_un.b_addr = addr;
 	while (nbytes > 0) {
@@ -88,10 +91,6 @@ swap(p, dblkno, addr, nbytes, rdflg, flag, dev, pfcent)
 		c = bp->b_bcount;
 		bp->b_blkno = dblkno;
 		bp->b_dev = dev;
-		if (flag & B_DIRTY) {
-			swpf[bp - swbuf] = pfcent;
-			swsize[bp - swbuf] = nbytes;
-		}
 #ifdef TRACE
 		trace(TR_SWAPIO, dev, bp->b_blkno);
 #endif
@@ -120,6 +119,27 @@ swap(p, dblkno, addr, nbytes, rdflg, flag, dev, pfcent)
 		wakeup((caddr_t)&bswlist);
 		wakeup((caddr_t)&proc[2]);
 	}
+	splx(s);
+}
+
+/*
+ * Put a buffer on the clean list after I/O is done.
+ * Called from biodone.
+ */
+swdone(bp)
+	register struct buf *bp;
+{
+	register int s;
+
+	if (bp->b_flags & B_ERROR)
+		panic("IO err in push");
+	s = spl6();
+	bp->av_forw = bclnlist;
+	cnt.v_pgout++;
+	cnt.v_pgpgout += bp->b_bcount / NBPG;
+	bclnlist = bp;
+	if (bswlist.b_flags & B_WANTED)
+		wakeup((caddr_t)&proc[2]);
 	splx(s);
 }
 

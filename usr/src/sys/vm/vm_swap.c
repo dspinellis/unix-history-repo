@@ -1,4 +1,4 @@
-/*	vm_swap.c	4.17	83/05/10	*/
+/*	vm_swap.c	4.18	83/05/18	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -34,16 +34,24 @@ swstrategy(bp)
 		bp->b_blkno += MINIROOTSIZE;
 #endif
 	sz = howmany(bp->b_bcount, DEV_BSIZE);
-	off = bp->b_blkno % DMMAX;
-	if (bp->b_blkno+sz > nswap || off+sz > DMMAX) {
+	if (bp->b_blkno+sz > nswap) {
 		bp->b_flags |= B_ERROR;
 		iodone(bp);
 		return;
 	}
-	seg = bp->b_blkno / DMMAX;
-	dev = swdevt[seg % nswdev].sw_dev;
-	seg /= nswdev;
-	bp->b_blkno = seg*DMMAX + off;
+	if (nswdev > 1) {
+		off = bp->b_blkno % dmmax;
+		if (off+sz > dmmax) {
+			bp->b_flags |= B_ERROR;
+			iodone(bp);
+			return;
+		}
+		seg = bp->b_blkno / dmmax;
+		dev = swdevt[seg % nswdev].sw_dev;
+		seg /= nswdev;
+		bp->b_blkno = seg*dmmax + off;
+	} else
+		dev = swdevt[0].sw_dev;
 	bp->b_dev = dev;
 	if (dev == 0)
 		panic("swstrategy");
@@ -113,7 +121,7 @@ swapon()
 /*
  * Swfree(index) frees the index'th portion of the swap map.
  * Each of the nswdev devices provides 1/nswdev'th of the swap
- * space, which is laid out with blocks of DMMAX pages circularly
+ * space, which is laid out with blocks of dmmax pages circularly
  * among the devices.
  */
 swfree(index)
@@ -122,14 +130,19 @@ swfree(index)
 	register swblk_t vsbase;
 	register long blk;
 	dev_t dev;
+	register swblk_t dvbase;
+	register int nblks;
 
 	dev = swdevt[index].sw_dev;
 	(*bdevsw[major(dev)].d_open)(dev, FREAD|FWRITE);
 	swdevt[index].sw_freed = 1;
-	for (vsbase = index*DMMAX; vsbase < nswap; vsbase += nswdev*DMMAX) {
-		blk = nswap - vsbase;
-		if (blk > DMMAX)
-			blk = DMMAX;
+	nblks = swdevt[index].sw_nblks;
+	for (dvbase = 0; dvbase < nblks; dvbase += dmmax) {
+		blk = nblks - dvbase;
+		if ((vsbase = index*dmmax + dvbase*nswdev) >= nswap)
+			panic("swfree");
+		if (blk > dmmax)
+			blk = dmmax;
 		if (vsbase == 0) {
 			/*
 			 * Can't free a block starting at 0 in the swapmap
