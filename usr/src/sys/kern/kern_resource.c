@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_resource.c	7.15 (Berkeley) %G%
+ *	@(#)kern_resource.c	7.16 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -291,7 +291,7 @@ ruadd(ru, ru2)
 	if (ru->ru_maxrss < ru2->ru_maxrss)
 		ru->ru_maxrss = ru2->ru_maxrss;
 	ip = &ru->ru_first; ip2 = &ru2->ru_first;
-	for (i = &ru->ru_last - &ru->ru_first; i > 0; i--)
+	for (i = &ru->ru_last - &ru->ru_first; i >= 0; i--)
 		*ip++ += *ip2++;
 }
 
