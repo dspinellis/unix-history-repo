@@ -1,4 +1,4 @@
-#	@(#)Files.cf	8.11 (Berkeley) %G%
+#	@(#)Files.cf	8.12 (Berkeley) %G%
 cf/README
 cf/cf/Makefile
 cf/cf/Makefile.dist
@@ -19,6 +19,7 @@ cf/cf/generic-ultrix4.mc
 cf/cf/huginn.cs.mc
 cf/cf/mail.cs.mc
 cf/cf/mail.eecs.mc
+cf/cf/mailspool.cs.mc
 cf/cf/python.cs.mc
 cf/cf/s2k-osf1.mc
 cf/cf/s2k-ultrix4.mc
@@ -105,6 +106,7 @@ cf/cf/obj/generic-ultrix4.cf
 cf/cf/obj/huginn.cs.cf
 cf/cf/obj/mail.cs.cf
 cf/cf/obj/mail.eecs.cf
+cf/cf/obj/mailspool.cs.cf
 cf/cf/obj/python.cs.cf
 cf/cf/obj/s2k-osf1.cf
 cf/cf/obj/s2k-ultrix4.cf
