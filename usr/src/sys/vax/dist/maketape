@@ -1,17 +1,23 @@
-#! /bin/sh
-#	@(#)maketape	4.1	%G%
+#	@(#)maketape	4.2	%G%
 #
+machine=arpa
 trap "rm -f /tmp/tape.$$; exit" 0 1 2 3 13 15
-arpa rewind
+${machine} rewind
 date
 cd /tp
-tp cmf /tmp/tape.$$ boot copy
+tp cmf /tmp/tape.$$ boot copy upchk hpchk updrtest hpdrtest
 cd /usr/mdec
+echo "Build 1st level boot block file"
 cat tsboot htboot tmboot mtboot noboot noboot noboot /tmp/tape.$$ | \
-	arpa dd of=/dev/rmt12 bs=512 conv=sync
+	${machine} dd of=/dev/rmt12 bs=512 conv=sync
 cd /
 sync
-dd if=/dev/rhp0a bs=8k count=130 | \
-	arpa dd of=/dev/rmt12 ibs=20b obs=20b
-/etc/rdump 0uf arpa:/dev/rmt12 /
-arpa rewind
+echo "Add dump of mini-root file system"
+dd if=/dev/rhk0a bs=8k count=130 | \
+	${machine} dd of=/dev/rmt12 ibs=20b obs=20b
+echo "Add full dump of real file system"
+/etc/rdump 0uf ${machine}:/dev/rmt12 /
+echo "Add tar image of system sources"
+cd /sys; tar cf - . | ${machine} dd of=/dev/rmt12 ibs=20b obs=20b
+echo "Done, rewind"
+${machine} rewind
