@@ -1,8 +1,25 @@
 #	make file for getting source files from sccs files for pascal
 
-SCCSID =	@(#)sccsmakefile	1.1 (Berkeley) %G%
+SCCSID =	@(#)sccsmakefile	1.2 (Berkeley) %G%
 
 PSCCSDIR =	/usr/src/cmd/pascal/SCCS
+
+SRCS =	0.h OPnames.h TRdata.c align.h ato.c				\
+	call.c case.c clas.c const.c conv.c cset.c			\
+	error.c fdec.c fend.c fhdr.c flvalue.c forop.c func.c		\
+	gen.c gram hash.c iorec.h		\
+	lab.c lookup.c lval.c main.c makeSCCS nl.c objfmt.h opc.c	\
+	p2put.c pTree.h pas.y pc.h pccaseop.c	\
+	pcfunc.c pclval.c pcmakefile pcops.h pcproc.c pcwhoami.h	\
+	pic.c pimakefile piwhoami.h proc.c pstab.h put.c \
+	rec.c rval.c send.h				\
+	stab.c stat.c stklval.c stkrval.c string.c subr.c		\
+	tmps.c tree.c tree.h treen.c type.c var.c version.c		\
+	yy.h yycopy.c yycosts.c yyerror.c yyget.c yyid.c yylex.c	\
+	yymain.c yyoptions.c yypanic.c yyparse.c yyprint.c yyput.c	\
+	yyrecover.c yyseman.c yytree.c
+
+sources: ${SRCS}
 
 0.h:		${PSCCSDIR}/s.0.h;		get ${PSCCSDIR}/s.0.h
 OPnames.h:	${PSCCSDIR}/s.OPnames.h;	get ${PSCCSDIR}/s.OPnames.h
@@ -25,10 +42,6 @@ func.c:		${PSCCSDIR}/s.func.c;		get ${PSCCSDIR}/s.func.c
 gen.c:		${PSCCSDIR}/s.gen.c;		get ${PSCCSDIR}/s.gen.c
 gram:		${PSCCSDIR}/s.gram;		get ${PSCCSDIR}/s.gram
 hash.c:		${PSCCSDIR}/s.hash.c;		get ${PSCCSDIR}/s.hash.c
-how_pc:		${PSCCSDIR}/s.how_pc;		get ${PSCCSDIR}/s.how_pc
-how_pi:		${PSCCSDIR}/s.how_pi;		get ${PSCCSDIR}/s.how_pi
-how_pix:	${PSCCSDIR}/s.how_pix;		get ${PSCCSDIR}/s.how_pix
-how_pxp:	${PSCCSDIR}/s.how_pxp;		get ${PSCCSDIR}/s.how_pxp
 iorec.h:	${PSCCSDIR}/s.iorec.h;		get ${PSCCSDIR}/s.iorec.h
 lab.c:		${PSCCSDIR}/s.lab.c;		get ${PSCCSDIR}/s.lab.c
 lookup.c:	${PSCCSDIR}/s.lookup.c;		get ${PSCCSDIR}/s.lookup.c
@@ -38,15 +51,10 @@ makeSCCS:	${PSCCSDIR}/s.makeSCCS;		get ${PSCCSDIR}/s.makeSCCS
 nl.c:		${PSCCSDIR}/s.nl.c;		get ${PSCCSDIR}/s.nl.c
 objfmt.h:	${PSCCSDIR}/s.objfmt.h;		get ${PSCCSDIR}/s.objfmt.h
 opc.c:		${PSCCSDIR}/s.opc.c;		get ${PSCCSDIR}/s.opc.c
-p.a.out.h:	${PSCCSDIR}/s.p.a.out.h;	get ${PSCCSDIR}/s.p.a.out.h
 p2put.c:	${PSCCSDIR}/s.p2put.c;		get ${PSCCSDIR}/s.p2put.c
 pTree.h:	${PSCCSDIR}/s.pTree.h;		get ${PSCCSDIR}/s.pTree.h
 pas.y:		${PSCCSDIR}/s.pas.y;		get ${PSCCSDIR}/s.pas.y
-pc.c:		${PSCCSDIR}/s.pc.c;		get ${PSCCSDIR}/s.pc.c
 pc.h:		${PSCCSDIR}/s.pc.h;		get ${PSCCSDIR}/s.pc.h
-pc2.c:		${PSCCSDIR}/s.pc2.c;		get ${PSCCSDIR}/s.pc2.c
-pc3.c:		${PSCCSDIR}/s.pc3.c;		get ${PSCCSDIR}/s.pc3.c
-pc3.h:		${PSCCSDIR}/s.pc3.h;		get ${PSCCSDIR}/s.pc3.h
 pccaseop.c:	${PSCCSDIR}/s.pccaseop.c;	get ${PSCCSDIR}/s.pccaseop.c
 pcfunc.c:	${PSCCSDIR}/s.pcfunc.c;		get ${PSCCSDIR}/s.pcfunc.c
 pclval.c:	${PSCCSDIR}/s.pclval.c;		get ${PSCCSDIR}/s.pclval.c
@@ -57,13 +65,9 @@ pcwhoami.h:	${PSCCSDIR}/s.pcwhoami.h;	get ${PSCCSDIR}/s.pcwhoami.h
 pic.c:		${PSCCSDIR}/s.pic.c;		get ${PSCCSDIR}/s.pic.c
 pimakefile:	${PSCCSDIR}/s.pimakefile;	get ${PSCCSDIR}/s.pimakefile
 piwhoami.h:	${PSCCSDIR}/s.piwhoami.h;	get ${PSCCSDIR}/s.piwhoami.h
-pix.c:		${PSCCSDIR}/s.pix.c;		get ${PSCCSDIR}/s.pix.c
 proc.c:		${PSCCSDIR}/s.proc.c;		get ${PSCCSDIR}/s.proc.c
 pstab.h:	${PSCCSDIR}/s.pstab.h;		get ${PSCCSDIR}/s.pstab.h
 put.c:		${PSCCSDIR}/s.put.c;		get ${PSCCSDIR}/s.put.c
-putn.c:		${PSCCSDIR}/s.putn.c;		get ${PSCCSDIR}/s.putn.c
-px_header.c:	${PSCCSDIR}/s.px_header.c;	get ${PSCCSDIR}/s.px_header.c
-pxref.p:	${PSCCSDIR}/s.pxref.p;		get ${PSCCSDIR}/s.pxref.p
 rec.c:		${PSCCSDIR}/s.rec.c;		get ${PSCCSDIR}/s.rec.c
 rval.c:		${PSCCSDIR}/s.rval.c;		get ${PSCCSDIR}/s.rval.c
 send.h:		${PSCCSDIR}/s.send.h;		get ${PSCCSDIR}/s.send.h
