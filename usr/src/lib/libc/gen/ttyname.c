@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ttyname.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)ttyname.c	5.10 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -28,6 +28,10 @@ ttyname(fd)
 	struct sgttyb ttyb;
 	DB *db;
 	DBT data, key;
+	struct {
+		mode_t type;
+		dev_t dev;
+	} bkey;
 	static char *__oldttyname();
 
 	/* Must be a terminal. */
@@ -38,8 +42,10 @@ ttyname(fd)
 		return(NULL);
 
 	if (db = hash_open(_PATH_DEVDB, O_RDONLY, 0, NULL)) {
-		key.data = (u_char *)&sb.st_rdev;
-		key.size = sizeof(sb.st_rdev);
+		bkey.type = S_IFCHR;
+		bkey.dev = sb.st_rdev;
+		key.data = &bkey;
+		key.size = sizeof(bkey);
 		if (!(db->get)(db, &key, &data, 0)) {
 			bcopy(data.data,
 			    buf + sizeof(_PATH_DEV) - 1, data.size);
