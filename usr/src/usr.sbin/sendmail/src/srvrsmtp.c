@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	8.37 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.38 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	8.37 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.38 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -534,7 +534,10 @@ smtp(e)
 			collect(TRUE, doublequeue, e);
 			if (Errors != 0)
 				goto abortmessage;
+
+			/* from now on, we have to operate silently */
 			HoldErrs = TRUE;
+			e->e_errormode = EM_MAIL;
 
 			/*
 			**  Arrange to send to everyone.
@@ -555,41 +558,31 @@ smtp(e)
 			*/
 
 			if (rcps != 1)
-			{
-				HoldErrs = TRUE;
-				e->e_errormode = EM_MAIL;
-			}
 			e->e_xfp = freopen(queuename(e, 'x'), "w", e->e_xfp);
 			id = e->e_id;
 
-			/* send to all recipients */
-			sendall(e, doublequeue ? SM_QUEUE : SM_DEFAULT);
-			e->e_to = NULL;
-
-			/* issue success if appropriate and reset */
-			if (Errors == 0 || HoldErrs)
-				message("250 %s Message accepted for delivery", id);
-
-			if (bitset(EF_FATALERRS, e->e_flags) && !HoldErrs)
+			if (doublequeue)
 			{
-				/* avoid sending back an extra message */
-				e->e_flags &= ~EF_FATALERRS;
-				e->e_flags |= EF_CLRQUEUE;
+				/* make sure it is in the queue */
+				queueup(e, TRUE, FALSE);
 			}
 			else
 			{
-				/* from now on, we have to operate silently */
-				HoldErrs = TRUE;
-				e->e_errormode = EM_MAIL;
+				/* send to all recipients */
+				sendall(e, SM_DEFAULT);
+			}
+			e->e_to = NULL;
 
-				/* if we just queued, poke it */
-				if (doublequeue && e->e_sendmode != SM_QUEUE)
-				{
-					extern pid_t dowork();
+			/* issue success message */
+			message("250 %s Message accepted for delivery", id);
 
-					unlockqueue(e);
-					(void) dowork(id, TRUE, TRUE, e);
-				}
+			/* if we just queued, poke it */
+			if (doublequeue && e->e_sendmode != SM_QUEUE)
+			{
+				extern pid_t dowork();
+
+				unlockqueue(e);
+				(void) dowork(id, TRUE, TRUE, e);
 			}
 
   abortmessage:
