@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ip_output.c	8.1 (Berkeley) %G%
+ *	@(#)ip_output.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -460,9 +460,11 @@ ip_ctloutput(op, so, level, optname, mp)
 	register int optval;
 	int error = 0;
 
-	if (level != IPPROTO_IP)
-		goto freeit;
-	else switch (op) {
+	if (level != IPPROTO_IP) {
+		error = EINVAL;
+		if (op == PRCO_SETOPT && *mp)
+			(void) m_free(*mp);
+	} else switch (op) {
 
 	case PRCO_SETOPT:
 		switch (optname) {
@@ -522,9 +524,8 @@ ip_ctloutput(op, so, level, optname, mp)
 			error = ip_setmoptions(optname, &inp->inp_moptions, m);
 			break;
 
-		freeit:
 		default:
-			error = EINVAL;
+			error = ENOPROTOOPT;
 			break;
 		}
 		if (m)
@@ -587,7 +588,7 @@ ip_ctloutput(op, so, level, optname, mp)
 			break;
 
 		default:
-			error = EINVAL;
+			error = ENOPROTOOPT;
 			break;
 		}
 		break;
