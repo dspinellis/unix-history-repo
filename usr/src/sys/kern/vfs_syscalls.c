@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_syscalls.c	7.33 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.34 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -29,6 +29,9 @@
 #include "proc.h"
 #include "uio.h"
 #include "malloc.h"
+
+#undef RETURN
+#define RETURN(val)	{ scp->u_error = (val); if (scp->u_spare[0] != 0) panic("lock count"); return; }
 
 /*
  * Virtual File System System Calls
