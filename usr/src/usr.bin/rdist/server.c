@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)server.c	4.4 (Berkeley) 83/10/12";
+static	char *sccsid = "@(#)server.c	4.5 (Berkeley) 83/10/20";
 #endif
 
 #include "defs.h"
@@ -33,6 +33,7 @@ server()
 	register char *cp;
 	register struct block *bp, *last = NULL;
 	static struct block cmdblk = { EXCEPT };
+	int opts;
 
 	sumask = umask(0);
 	ga();
@@ -111,6 +112,19 @@ server()
 			tp = stp[catname];
 			*tp = '\0';
 			ga();
+			continue;
+
+		case 'C':  /* Clean. Cleanup a directory */
+			if (*cp < '0' || *cp > '7') {
+				error("bad options\n");
+				continue;
+			}
+			opts = *cp++ - '0';
+			if (*cp++ != ' ') {
+				error("options not delimited\n");
+				continue;
+			}
+			clean(cp, opts, 1);
 			continue;
 
 		case 'Q':  /* Query. Does directory exist? */
@@ -327,8 +341,7 @@ update(lname, rname, opts, st)
 	/*
 	 * Check to see if the file exists on the remote machine.
 	 */
-	(void) sprintf(buf, "%c%s\n",
-		(st->st_mode & S_IFMT) == S_IFDIR ? 'Q' : 'q', rname);
+	(void) sprintf(buf, "%c%s\n", ISDIR(st->st_mode) ? 'Q' : 'q', rname);
 	if (debug)
 		printf("buf = %s", buf);
 	(void) write(rem, buf, strlen(buf));
@@ -387,7 +400,7 @@ update(lname, rname, opts, st)
 		if (st->st_mtime == mtime)
 			return(0);
 		if (st->st_mtime < mtime) {
-			log(lfp, "Warning: %s older than remote copy\n", lname);
+			log(lfp, "Warning: %s: remote copy is newer\n", lname);
 			return(0);
 		}
 	} else if (st->st_mtime == mtime && st->st_size == size)
@@ -528,7 +541,7 @@ recvf(cmd, isdir)
 			return;
 		}
 		if (stat(target, &stb) == 0) {
-			if ((stb.st_mode & S_IFMT) != S_IFDIR) {
+			if (!ISDIR(stb.st_mode)) {
 				errno = ENOTDIR;
 				goto bad;
 			}
@@ -742,6 +755,299 @@ ok:
 		return(-1);
 	}
 	return(0);
+}
+
+/*
+ * Check for files on the machine being updated that are not on the master
+ * machine and remove them.
+ */
+rmchk(lname, rname, opts)
+	char *lname, *rname;
+	int opts;
+{
+	register char *cp;
+	struct stat stb;
+
+	if (debug)
+		printf("rmchk(%s, %s, %x)\n", lname,
+			rname != NULL ? rname : "NULL", opts);
+
+	if (exclude(lname))
+		return;
+
+	/*
+	 * First time rmchk() is called?
+	 */
+	if (rname == NULL) {
+		rname = exptilde(target, lname);
+		if (rname == NULL)
+			return;
+		tp = lname = target;
+		while (*tp)
+			tp++;
+		/*
+		 * If we are renaming a directory and we want to preserve
+		 * the directory heirarchy (-w), we must strip off the first
+		 * directory name and preserve the rest.
+		 */
+		if (opts & STRIP) {
+			opts &= ~STRIP;
+			rname = index(rname, '/');
+			if (rname == NULL)
+				rname = tp;
+			else
+				rname++;
+		} else if (!(opts & WHOLE)) {
+			rname = rindex(lname, '/');
+			if (rname == NULL)
+				rname = lname;
+			else
+				rname++;
+		}
+	}
+	if (debug)
+		printf("lname = %s, rname = %s\n", lname, rname);
+	if (access(lname, 4) < 0 || stat(lname, &stb) < 0) {
+		error("%s: %s\n", lname, sys_errlist[errno]);
+		return;
+	}
+	if (!ISDIR(stb.st_mode))
+		return;
+	/*
+	 * Tell the remote to clean the files from the last directory sent.
+	 */
+	(void) sprintf(buf, "C%o %s\n", opts & VERIFY, rname);
+	if (debug)
+		printf("buf = %s", buf);
+	(void) write(rem, buf, strlen(buf));
+	if (response() < 0)
+		return;
+	catname = 0;
+	for (;;) {
+		cp = buf;
+		do {
+			if (read(rem, cp, 1) != 1)
+				lostconn();
+		} while (*cp++ != '\n' && cp < &buf[BUFSIZ]);
+
+		if (debug) {
+			printf("readbuf = ");
+			fwrite(buf, 1, cp - buf, stdout);
+		}
+		switch (buf[0]) {
+		case 'Q': /* its a directory on the remote end */
+		case 'q': /* its a regular file on the remote end */
+			*--cp = '\0';
+			(void) sprintf(tp, "/%s", buf + 1);
+			if (debug)
+				printf("check %s\n", target);
+			if (stat(target, &stb) < 0)
+				(void) write(rem, "N\n", 2);
+			else if (buf[0] == 'Q' && ISDIR(stb.st_mode)) {
+				if (catname >= sizeof(stp)) {
+					error("%s: too many directory levels\n", target);
+					break;
+				}
+				(void) write(rem, "Y\n", 2);
+				if (response() < 0)
+					break;
+				stp[catname++] = tp;
+				while (*tp)
+					tp++;
+			} else
+				(void) write(rem, "y\n", 2);
+			break;
+
+		case 'E':
+			if (catname < 0)
+				fatal("too many 'E's\n");
+			ga();
+			if (catname == 0)
+				return;
+			tp = stp[--catname];
+			*tp = '\0';
+			break;
+
+		case '\0':
+			*--cp = '\0';
+			if (buf[1])
+				log(lfp, "%s\n", buf + 1);
+			break;
+
+		case '\1':
+		case '\2':
+			errs++;
+			if (buf[1] != '\n') {
+				if (!iamremote) {
+					fflush(stdout);
+					(void) write(2, buf + 1, cp - buf + 1);
+				}
+				if (lfp != NULL)
+					(void) fwrite(buf + 1, 1, cp - buf + 1, lfp);
+			}
+			if (buf[0] == '\2')
+				cleanup();
+			break;
+
+		default:
+			error("unknown response type %s\n", buf[0]);
+		}
+	}
+}
+
+/*
+ * Check the directory for extraneous files and remove them.
+ */
+clean(lname, opts, first)
+	char *lname;
+	int opts, first;
+{
+	DIR *d;
+	struct direct *dp;
+	register char *cp;
+	struct stat stb;
+	char *ootp, *otp;
+	int len;
+
+	if (first) {
+		ootp = tp;
+		if (catname) {
+			*tp++ = '/';
+			cp = lname;
+			while (*tp++ = *cp++)
+				;
+			tp--;
+		}
+		if (stat(target, &stb) < 0) {
+			if (errno == ENOENT) {
+				ga();
+				goto done;
+			}
+		bad:
+			error("%s: %s\n", target, sys_errlist[errno]);
+			tp = otp;
+			*tp = '\0';
+			return;
+		}
+		/*
+		 * This should be a directory because its a directory on the
+		 * master machine. If not, let install complain about it.
+		 */
+		if (!ISDIR(stb.st_mode)) {
+			ga();
+			goto done;
+		}
+	}
+	if (access(target, 6) < 0 || (d = opendir(target)) == NULL)
+		goto bad;
+	ga();
+
+	otp = tp;
+	len = tp - target;
+	while (dp = readdir(d)) {
+		if (!strcmp(dp->d_name, ".") || !strcmp(dp->d_name, ".."))
+			continue;
+		if (len + 1 + strlen(dp->d_name) >= BUFSIZ - 1) {
+			error("%s/%s: Name too long\n", target, dp->d_name);
+			continue;
+		}
+		tp = otp;
+		*tp++ = '/';
+		cp = dp->d_name;;
+		while (*tp++ = *cp++)
+			;
+		tp--;
+		if (stat(target, &stb) < 0) {
+			error("%s: %s\n", target, sys_errlist[errno]);
+			continue;
+		}
+		(void) sprintf(buf, "%c%s\n", ISDIR(stb.st_mode) ? 'Q' : 'q',
+			dp->d_name);
+		(void) write(rem, buf, strlen(buf));
+		cp = buf;
+		do {
+			if (read(rem, cp, 1) != 1)
+				lostconn();
+		} while (*cp++ != '\n' && cp < &buf[BUFSIZ]);
+		*--cp = '\0';
+		cp = buf;
+		if (*cp != 'N') {
+			if (*cp == 'Y' && ISDIR(stb.st_mode))
+				clean(dp->d_name, opts, 0);
+			continue;
+		}
+		if (!(opts & VERIFY))
+			remove(&stb);
+	}
+	closedir(d);
+done:
+	tp = (first) ? ootp : otp;
+	*tp = '\0';
+	(void) write(rem, "E\n", 2);
+	(void) response();
+}
+
+remove(st)
+	struct stat *st;
+{
+	DIR *d;
+	struct direct *dp;
+	register char *cp;
+	struct stat stb;
+	char *otp;
+	int len;
+
+	switch (st->st_mode & S_IFMT) {
+	case S_IFREG:
+		if (unlink(target) < 0)
+			goto bad;
+		goto removed;
+
+	case S_IFDIR:
+		break;
+
+	default:
+		error("%s: not a plain file\n", target);
+		return;
+	}
+
+	if (access(target, 6) < 0 || (d = opendir(target)) == NULL)
+		goto bad;
+
+	otp = tp;
+	len = tp - target;
+	while (dp = readdir(d)) {
+		if (!strcmp(dp->d_name, ".") || !strcmp(dp->d_name, ".."))
+			continue;
+		if (len + 1 + strlen(dp->d_name) >= BUFSIZ - 1) {
+			error("%s/%s: Name too long\n", target, dp->d_name);
+			continue;
+		}
+		tp = otp;
+		*tp++ = '/';
+		cp = dp->d_name;;
+		while (*tp++ = *cp++)
+			;
+		tp--;
+		if (stat(target, &stb) < 0) {
+			error("%s: %s\n", target, sys_errlist[errno]);
+			continue;
+		}
+		remove(&stb);
+	}
+	closedir(d);
+	tp = otp;
+	*tp = '\0';
+	if (rmdir(target) < 0) {
+bad:
+		error("%s: %s\n", target, sys_errlist[errno]);
+		return;
+	}
+removed:
+	cp = buf;
+	*cp++ = '\0';
+	(void) sprintf(cp, "removed %s\n", target);
+	(void) write(rem, buf, strlen(cp) + 1);
 }
 
 /*VARARGS2*/

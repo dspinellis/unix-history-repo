@@ -1,4 +1,4 @@
-/*	defs.h	4.4	83/10/12	*/
+/*	defs.h	4.5	83/10/20	*/
 
 #include <stdio.h>
 #include <ctype.h>
@@ -15,34 +15,38 @@
 #define	MAILCMD		"/usr/lib/sendmail -oi -t"
 
 	/* defines for yacc */
-#define EQUAL 1
-#define LP 2
-#define RP 3
-#define ARROW 4
-#define DCOLON 5
-#define NAME 6
-#define INSTALL 7
-#define NOTIFY 8
-#define EXCEPT 9
-#define OPTION 10
-#define VAR 11
+#define EQUAL	1
+#define LP	2
+#define RP	3
+#define SM	4
+#define ARROW	5
+#define DCOLON	6
+#define NAME	7
+#define INSTALL	8
+#define NOTIFY	9
+#define EXCEPT	10
+#define OPTION	11
+#define VAR	12
 
 	/* lexical definitions */
 #define	QUOTE 	0200		/* used internally for quoted characters */
 #define	TRIM	0177		/* Mask to strip quote bit */
 
 	/* table sizes */
-#define HASHSIZE 1021
-#define INMAX 3500
-#define NCARGS 10240
-#define GAVSIZ NCARGS / 6
-#define NSTAMPS 15
+#define HASHSIZE	1021
+#define INMAX	3500
+#define NCARGS	10240
+#define GAVSIZ	NCARGS / 6
+#define NSTAMPS	15
 
 	/* option flags */
-#define VERIFY 1
-#define WHOLE 2
-#define YOUNGER 4
-#define STRIP 8
+#define VERIFY	0x1
+#define WHOLE	0x2
+#define YOUNGER	0x4
+#define STRIP	0x8
+#define REMOVE	0x10
+
+#define ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
 
 #define ALLOC(x) (struct x *) malloc(sizeof(struct x))
 

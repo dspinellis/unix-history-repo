@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	4.5 (Berkeley) 83/10/12";
+static	char *sccsid = "@(#)main.c	4.6 (Berkeley) 83/10/20";
 #endif
 
 #include "defs.h"
@@ -86,6 +86,10 @@ main(argc, argv)
 
 			case 'q':
 				qflag++;
+				break;
+
+			case 'r':
+				options |= REMOVE;
 				break;
 
 			case 'v':

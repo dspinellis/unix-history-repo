@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)expand.c	4.3 (Berkeley) 83/10/10";
+static	char *sccsid = "@(#)expand.c	4.4 (Berkeley) 83/10/20";
 #endif
 
 #include "defs.h"
@@ -257,7 +257,7 @@ matchdir(pattern)
 	}
 	if (fstat(dirp->dd_fd, &stb) < 0)
 		goto patherr1;
-	if ((stb.st_mode & S_IFMT) != S_IFDIR) {
+	if (!ISDIR(stb.st_mode)) {
 		errno = ENOTDIR;
 		goto patherr1;
 	}
@@ -440,8 +440,7 @@ slash:
 			while (*s)
 				addpath(*s++);
 			addpath('/');
-			if (stat(path, &stb) == 0 &&
-			    (stb.st_mode & S_IFMT) == S_IFDIR)
+			if (stat(path, &stb) == 0 && ISDIR(stb.st_mode))
 				if (*p == '\0') {
 					Cat(path, "");
 					argcnt++;
@@ -582,10 +581,9 @@ exptilde(buf, file)
 	}
 	for (s1 = buf; *s1++ = *s2++; )
 		;
-	s1--;
-	if (s3 == NULL)
-		return(s1);
-	while (*s1++ = *s3++)
-		;
-	return(s1 - 1);
+	s2 = --s1;
+	if (s3 != NULL)
+		while (*s1++ = *s3++)
+			;
+	return(s2);
 }

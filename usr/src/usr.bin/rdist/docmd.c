@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)docmd.c	4.4 (Berkeley) 83/10/12";
+static	char *sccsid = "@(#)docmd.c	4.5 (Berkeley) 83/10/20";
 #endif
 
 #include "defs.h"
@@ -51,11 +51,15 @@ dohcmds(files, hosts, cmds)
 			}
 		found:
 			n = 0;
-			for (c = cmds; c != NULL; c = c->b_next)
-				if (c->b_type == INSTALL) {
+			for (c = cmds; c != NULL; c = c->b_next) {
+				if (c->b_type != INSTALL)
+					continue;
+				n++;
+				if (c->b_name == NULL)
+					install(f->b_name, f->b_name, 0, c->b_options);
+				else
 					install(f->b_name, c->b_name, ddir, c->b_options);
-					n++;
-				}
+			}
 			if (n == 0)
 				install(f->b_name, f->b_name, 0, options);
 		}
@@ -123,9 +127,10 @@ install(src, dest, destdir, opts)
 		return;
 
 	if (nflag || debug) {
-		printf("%s%s%s %s %s\n", opts & VERIFY ? "verify":"install",
+		printf("%s%s%s%s %s %s\n", opts & VERIFY ? "verify":"install",
 			opts & WHOLE ? " -w" : "",
-			opts & YOUNGER ? " -y" : "", src, dest);
+			opts & YOUNGER ? " -y" : "",
+			opts & REMOVE ? " -r" : "", src, dest);
 		if (nflag)
 			return;
 	}
@@ -139,6 +144,10 @@ install(src, dest, destdir, opts)
 
 	if (!destdir && (opts & WHOLE))
 		opts |= STRIP;
+	if (opts & REMOVE) {
+		opts &= ~REMOVE;
+		rmchk(src, NULL, opts);
+	}
 	sendf(src, NULL, opts);
 }
 
