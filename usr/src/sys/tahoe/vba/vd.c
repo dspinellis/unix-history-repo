@@ -1,4 +1,4 @@
-/*	vd.c	1.3	86/01/12	*/
+/*	vd.c	1.4	86/01/12	*/
 
 #include "fsd.h"
 #if NVD > 0
@@ -174,6 +174,8 @@ vdslave(vi, addr)
 			addr->cdr_ccf = CCF_STS | XMD_32BIT | BSZ_16WRD |
 			    CCF_ENP | CCF_EPE | CCF_EDE | CCF_ECE | CCF_ERR;
 		}
+		printf("vd%d: %s controller\n", vi->ui_unit,
+		    ci->ctlr_type == SMDCTLR ? "smd" : "xsmd");
 		if (vdnotrailer(addr,
 		    vi->ui_ctlr, vi->ui_slave, INIT, 10) & HRDERR) {
 			printf("vd%d: init error\n", vi->ui_unit);
