@@ -1,8 +1,8 @@
 # ifndef lint
-static char *sccsid ="@(#)local2.c	1.8 (Berkeley) %G%";
+static char *sccsid ="@(#)local2.c	1.9 (Berkeley) %G%";
 # endif
 
-# include "mfile2"
+# include "pass2.h"
 # include "ctype.h"
 # ifdef FORT
 int ftlab1, ftlab2;
