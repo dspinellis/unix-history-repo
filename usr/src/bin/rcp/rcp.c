@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rcp.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)rcp.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -369,7 +369,7 @@ notreg:
 			(void) close(f);
 			continue;
 		}
-		if ((bp = allocbuf(&buffer, f, BUFSIZ)) < 0) {
+		if ((bp = allocbuf(&buffer, f, BUFSIZ)) == 0) {
 			(void) close(f);
 			continue;
 		}
@@ -623,7 +623,7 @@ sink(argc, argv)
 		if (exists && pflag)
 			(void) fchmod(of, mode);
 		ga();
-		if ((bp = allocbuf(&buffer, of, BUFSIZ)) < 0) {
+		if ((bp = allocbuf(&buffer, of, BUFSIZ)) == 0) {
 			(void) close(of);
 			continue;
 		}
@@ -690,7 +690,7 @@ allocbuf(bp, fd, blksize)
 
 	if (fstat(fd, &stb) < 0) {
 		error("rcp: fstat: %s\n", sys_errlist[errno]);
-		return ((struct buffer *)-1);
+		return ((struct buffer *)0);
 	}
 	size = roundup(stb.st_blksize, blksize);
 	if (size == 0)
@@ -701,7 +701,7 @@ allocbuf(bp, fd, blksize)
 		bp->buf = (char *)malloc((unsigned) size);
 		if (bp->buf == 0) {
 			error("rcp: malloc: out of memory\n");
-			return ((struct buffer *)-1);
+			return ((struct buffer *)0);
 		}
 	}
 	bp->cnt = size;
