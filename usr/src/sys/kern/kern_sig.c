@@ -4,13 +4,14 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sig.c	7.28 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.29 (Berkeley) %G%
  */
 
 #define	SIGPROP		/* include signal properties table */
 #include "param.h"
 #include "signalvar.h"
 #include "resourcevar.h"
+#include "namei.h"
 #include "vnode.h"
 #include "proc.h"
 #include "systm.h"
@@ -999,14 +1000,14 @@ coredump(p)
 		return (error);
 	vp = nd.ni_vp;
 	VOP_LOCK(vp);
-	if (vp->v_type != VREG || VOP_GETATTR(vp, &vattr, cred) ||
+	if (vp->v_type != VREG || VOP_GETATTR(vp, &vattr, cred, p) ||
 	    vattr.va_nlink != 1) {
 		vput(vp);
 		return (EFAULT);
 	}
 	VATTR_NULL(&vattr);
 	vattr.va_size = 0;
-	VOP_SETATTR(vp, &vattr, cred);
+	VOP_SETATTR(vp, &vattr, cred, p);
 	p->p_acflag |= ACORE;
 	bcopy(p, &u.u_kproc.kp_proc, sizeof(struct proc));
 	fill_eproc(p, &u.u_kproc.kp_eproc);
@@ -1020,18 +1021,19 @@ coredump(p)
 		error = hpuxdumpu(vp, cred);
 	else
 #endif
-	error = vn_rdwr(UIO_WRITE, vp, (caddr_t)&u, ctob(UPAGES), (off_t)0,
-	    UIO_SYSSPACE, IO_NODELOCKED|IO_UNIT, cred, (int *)0);
+	error = vn_rdwr(UIO_WRITE, vp, (caddr_t)&p->p_addr, ctob(UPAGES),
+	    (off_t)0, UIO_SYSSPACE, IO_NODELOCKED|IO_UNIT, cred, (int *)0,
+	    (struct proc *)0);
 	if (error == 0)
 		error = vn_rdwr(UIO_WRITE, vp, vm->vm_daddr,
 		    (int)ctob(vm->vm_dsize), (off_t)ctob(UPAGES), UIO_USERSPACE,
-		    IO_NODELOCKED|IO_UNIT, cred, (int *)0);
+		    IO_NODELOCKED|IO_UNIT, cred, (int *)0, p);
 	if (error == 0)
 		error = vn_rdwr(UIO_WRITE, vp,
 		    trunc_page(USRSTACK - ctob(vm->vm_ssize)),
 		    round_page(ctob(vm->vm_ssize)),
 		    (off_t)ctob(UPAGES) + ctob(vm->vm_dsize), UIO_USERSPACE,
-		    IO_NODELOCKED|IO_UNIT, cred, (int *)0);
+		    IO_NODELOCKED|IO_UNIT, cred, (int *)0, p);
 	vput(vp);
 	return (error);
 }
