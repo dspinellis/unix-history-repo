@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)tp1.c	4.1 %G%";
+static char sccsid[] = "@(#)tp1.c	4.2 %G%";
 #endif
 
 #include "tp.h"
@@ -63,8 +63,6 @@ char **argv;
 		}
 	}
 	optap();
-	nptr = nameblk = malloc(1000);
-	top = nptr + 1000;
 	(*command)();
 }
 
@@ -166,29 +164,24 @@ done()
 }
 
 encode(pname,dptr)	/* pname points to the pathname
-			 * nptr points to next location in nameblk
 			 * dptr points to the dir entry		   */
 char	*pname;
 struct	dent *dptr;
 {
 	register  char *np;
 	register n;
+	extern char *malloc();
 
-	dptr->d_namep = np = nptr;
-	if (np > top - NAMELEN)  {
-		int size = top - nptr;
-		if (nptr = realloc(nptr, 2 * size) == 0) {
-			printf("Out of core\n");
-			done();
-		}
-		top = nptr + 2 * size;
-	}
 	if((n=strlen(pname)) > NAMELEN) {
 		printf("Pathname too long - %s\nFile ignored\n",pname);
 		clrent(dptr);
 	}
 	else {
-		nptr += n+1;
+		dptr->d_namep = np = malloc(n + 1);
+		if (np == 0) {
+			printf("Out of core\n");
+			done();
+		}
 		strcpy(np, pname);
 	}
 }
