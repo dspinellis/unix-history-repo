@@ -1,4 +1,4 @@
-/*	ip_input.c	1.64	83/02/10	*/
+/*	ip_input.c	1.65	83/02/23	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -79,12 +79,16 @@ next:
 	if (m == 0)
 		return;
 	if ((m->m_off > MMAXOFF || m->m_len < sizeof (struct ip)) &&
-	    (m = m_pullup(m, sizeof (struct ip))) == 0)
-		return;
+	    (m = m_pullup(m, sizeof (struct ip))) == 0) {
+		ipstat.ips_toosmall++;
+		goto next;
+	}
 	ip = mtod(m, struct ip *);
 	if ((hlen = ip->ip_hl << 2) > m->m_len) {
-		if ((m = m_pullup(m, hlen)) == 0)
-			return;
+		if ((m = m_pullup(m, hlen)) == 0) {
+			ipstat.ips_badhlen++;
+			goto next;
+		}
 		ip = mtod(m, struct ip *);
 	}
 	if (ipcksum)
@@ -97,6 +101,10 @@ next:
 	 * Convert fields to host representation.
 	 */
 	ip->ip_len = ntohs((u_short)ip->ip_len);
+	if (ip->ip_len < hlen) {
+		ipstat.ips_badlen++;
+		goto bad;
+	}
 	ip->ip_id = ntohs(ip->ip_id);
 	ip->ip_off = ntohs((u_short)ip->ip_off);
 
@@ -626,7 +634,7 @@ ip_forward(ip)
 	}
 	ip->ip_ttl -= IPTTLDEC;
 	mopt = m_get(M_DONTWAIT, MT_DATA);
-	if (mopt == 0) {
+	if (mopt == NULL) {
 		m_freem(dtom(ip));
 		return;
 	}
