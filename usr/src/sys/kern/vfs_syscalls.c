@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	7.70.1.1 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.71 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -554,7 +554,8 @@ open(p, uap, retval)
 	register struct file *fp;
 	int fmode, cmode;
 	struct file *nfp;
-	int indx, error;
+	int type, indx, error;
+	struct flock lf;
 	struct nameidata nd;
 	extern struct fileops vnops;
 
@@ -581,6 +582,27 @@ open(p, uap, retval)
 		fdp->fd_ofiles[indx] = NULL;
 		return (error);
 	}
+	if (fmode & (O_EXLOCK | O_SHLOCK)) {
+		lf.l_whence = SEEK_SET;
+		lf.l_start = 0;
+		lf.l_len = 0;
+		if (fmode & O_EXLOCK)
+			lf.l_type = F_WRLCK;
+		else
+			lf.l_type = F_RDLCK;
+		type = F_FLOCK;
+		if ((fmode & FNONBLOCK) == 0)
+			type |= F_WAIT;
+		if (error =
+		    VOP_ADVLOCK(ndp->ni_vp, (caddr_t)fp, F_SETLK, &lf, type)) {
+			vput(ndp->ni_vp);
+			crfree(fp->f_cred);
+			fp->f_count--;
+			fdp->fd_ofiles[indx] = NULL;
+			return (error);
+		}
+	}
+	VOP_UNLOCK(ndp->ni_vp);
 	fp->f_flag = fmode & FMASK;
 	fp->f_type = DTYPE_VNODE;
 	fp->f_ops = &vnops;
