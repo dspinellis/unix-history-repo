@@ -297,9 +297,9 @@ diskerr(bp, dname, what, pri, blkdone, lp)
 	register struct disklabel *lp;
 {
 	int unit = dkunit(bp->b_dev), part = dkpart(bp->b_dev);
-	register int (*pr)(), sn;
+	register void (*pr) __P((const char *, ...));
 	char partname = 'a' + part;
-	extern printf(), addlog();
+	int sn;
 
 	if (pri != LOG_PRINTF) {
 		log(pri, "");
