@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)eval.c 1.7 %G%";
+static char sccsid[] = "@(#)eval.c 1.8 %G%";
 
 /*
  * Tree evaluation.
@@ -81,8 +81,8 @@ register Node p;
     File file;
 
     checkref(p);
-    if(debug_flag[2]) {
-                     fprintf(stderr," evaluating %s \n",showoperator(p->op));
+    if (debug_flag[2]) {
+	fprintf(stderr," evaluating %s \n",showoperator(p->op));
     }
     switch (degree(p->op)) {
 	case BINARY:
@@ -705,7 +705,7 @@ Node p;
 	b = true;
     } else {
 	eval(p);
-	b = pop(Boolean);
+	b = (Boolean) pop(Boolrep);
     }
     return b;
 }
@@ -933,7 +933,7 @@ Node cond;
 public stop(p)
 Node p;
 {
-    Node exp, place, cond;
+    Node exp, place, cond, t;
     Symbol s;
     Command action;
     Event e;
@@ -943,28 +943,36 @@ Node p;
     cond = p->value.arg[2];
     if (exp != nil) {
 	stopvar(p->op, exp, place, cond);
-    } else if (cond != nil) {
-	s = (place == nil) ? program : place->value.sym;
-	action = build(O_IF, cond, buildcmdlist(build(O_STOPX)));
-	action = build(O_TRACEON, (p->op == O_STOPI), buildcmdlist(action));
-	cond = build(O_EQ, build(O_SYM, procsym), build(O_SYM, s));
-	action->value.trace.event = addevent(cond, buildcmdlist(action));
-    } else if (place->op == O_SYM) {
-	s = place->value.sym;
-	cond = build(O_EQ, build(O_SYM, procsym), build(O_SYM, s));
-	e = addevent(cond, buildcmdlist(build(O_STOPX)));
-	if (isstdin()) {
-	    printevent(e);
-	}
     } else {
-	stopinst(p->op, place, cond);
+	action = build(O_STOPX);
+	if (cond != nil) {
+	    action = build(O_IF, cond, buildcmdlist(action));
+	}
+	if (place != nil and place->op == O_SYM) {
+	    s = place->value.sym;
+	    t = build(O_EQ, build(O_SYM, procsym), build(O_SYM, s));
+	    if (cond != nil) {
+		action = build(O_TRACEON, (p->op == O_STOPI),
+		    buildcmdlist(action));
+		e = addevent(t, buildcmdlist(action));
+		action->value.trace.event = e;
+	    } else {
+		e = addevent(t, buildcmdlist(action));
+	    }
+	    if (isstdin()) {
+		printevent(e);
+	    }
+	} else {
+	    stopinst(p->op, place, cond, action);
+	}
     }
 }
 
-private stopinst(op, place, cond)
+private stopinst(op, place, cond, action)
 Operator op;
 Node place;
 Node cond;
+Command action;
 {
     Node event;
     Event e;
@@ -974,7 +982,7 @@ Node cond;
     } else {
 	event = build(O_EQ, build(O_SYM, pcsym), place);
     }
-    e = addevent(event, buildcmdlist(build(O_STOPX)));
+    e = addevent(event, buildcmdlist(action));
     if (isstdin()) {
 	printevent(e);
     }
