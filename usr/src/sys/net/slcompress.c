@@ -1,21 +1,23 @@
-/*	slcompress.c	7.6	90/06/28	*/
-/*
- * Routines to compress and uncompess tcp packets (for transmission
- * over low speed serial lines.
- *
- * Copyright (c) 1989 Regents of the University of California.
+/*-
+ * Copyright (c) 1989 The Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	Van Jacobson (van@helios.ee.lbl.gov), Dec 31, 1989:
- *	- Initial distribution.
+ *	@(#)slcompress.c	7.7 (Berkeley) %G%
  */
-#ifndef lint
-static char rcsid[] = "$Header: slcompress.c,v 1.19 89/12/31 08:52:59 van Exp $";
-#endif
 
-#include <sys/types.h>
+/*
+ * Routines to compress and uncompess tcp packets (for transmission
+ * over low speed serial lines.
+ *
+ * Van Jacobson (van@helios.ee.lbl.gov), Dec 31, 1989:
+ *	- Initial distribution.
+ *
+ * static char rcsid[] =
+ * "$Header: slcompress.c,v 1.19 89/12/31 08:52:59 van Exp $";
+ */
+
 #include <sys/param.h>
 #include <sys/mbuf.h>
 #include <netinet/in.h>
