@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)title.urm	8.8 (Berkeley) %G%
+.\"	@(#)title.urm	8.9 (Berkeley) %G%
 .\"
 .af % i
 .EH ''''
@@ -73,9 +73,9 @@ University of California, Berkeley
 .LP
 .ce 4
 A USENIX Association Book
-The MIT Press
+O'Reilly & Associates, Inc.
+Sebastopol, California
 Cambridge, Massachusetts
-London, England
 .bp
 .hy 0
 .nr PS 9
@@ -171,7 +171,7 @@ either expressed or implied, of the Regents of the University of California.
 .LP
 This book was printed and bound in the United States of America.
 .br
-Distributed by The MIT Press.
+Distributed by O'Reilly & Associates, Inc.
 .bp
 \&
 .sp |1.5i
@@ -811,14 +811,14 @@ The vast majority of the 4.4BSD distribution comes from the numerous
 people in the UNIX community that provided their time and energy in
 creating the software contained in this release.
 We dedicate this distribution to them.
-.sp 1
+.sp 0.6
 .in 4i
 .nf
 M. K. McKusick
 K. Bostic
 .fi
 .in 0
-.sp 3
+.sp 1.4
 .nr PS 9
 .nr VS 10
 .LP
@@ -881,7 +881,7 @@ M. J. Karels
 J. M. Bloom
 .fi
 .in 0
-.sp 2
+.sp 1.5
 .ne 2i
 .ce
 \fIPreface to the 4.2 Berkeley distribution\fP
@@ -925,7 +925,7 @@ W. N. Joy
 M. K. McKusick
 .fi
 .in 0
-.sp 2
+.sp 1.5
 .ne 1i
 .ce
 \fIPreface to the 4.1 Berkeley distribution\fP
@@ -954,7 +954,7 @@ R. S. Fabry
 K. Sklower
 .fi
 .in 0
-.sp 2
+.sp 1.5
 .ne 1i
 .ce
 \fIPreface to the Fourth Berkeley distribution\fP
@@ -1045,7 +1045,7 @@ R. S. Fabry
 K. Sklower
 .fi
 .in 0
-.sp 2
+.sp 1.5
 .ne 1i
 .ce
 \fIPreface to the Third Berkeley distribution\fP
@@ -1075,7 +1075,7 @@ W. N. Joy
 .br
 \v'-3p'\h'2p'\*:\v'3p'\h'-2p'O. Babao\*~glu
 .in 0
-.sp 2
+.sp 1.5
 .ne 1i
 .ce
 \fIPreface to the UNIX/32V distribution\fP
@@ -1833,6 +1833,9 @@ Good luck and enjoy BSD.
 .bp
 .EF '\s9\\\\*(Dt''\\\\*(Ed\s0'
 .OF '\s9\\\\*(Ed''\\\\*(Dt\s0'
+.nr PS 10
+.nr VS 11
+.LP
 .ce
 \s+4\fBLIST \|OF \|MANUAL \|PAGES\fP\s-4
 .nr x 0.5
@@ -1848,7 +1851,7 @@ Good luck and enjoy BSD.
 .cs 3
 .ti -\\nxi
 .ss 18
-\f3\s9\\$2. \\$3\s0\fP
+\fB\\$2. \\$3\fP
 .ss 12
 .if t .sp .5v
 .cs 3 36
