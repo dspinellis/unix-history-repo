@@ -11,109 +11,236 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)wc.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)wc.c	5.2 (Berkeley) %G%";
 #endif not lint
 
-/* wc line and word count */
+/* wc line, word and char count */
 
+#include <sys/param.h>
+#include <sys/stat.h>
+#include <sys/file.h>
 #include <stdio.h>
-long	linect, wordct, charct, pagect;
-long	tlinect, twordct, tcharct, tpagect;
-char	*wd = "lwc";
 
-main(argc, argv)
-char **argv;
+#define DEL	0177			/* del char */
+#define ERR	1			/* error exit */
+#define NL	012			/* newline char */
+#define NO	0			/* no/false */
+#define OK	0			/* okay exit */
+#define SPACE	040			/* space char */
+#define TAB	011			/* tab char */
+#define YES	1			/* yes/true */
+
+static long	tlinect,		/* total line count */
+		twordct,		/* total word count */
+		tcharct;		/* total character count */
+static short	doline,			/* if want line count */
+		doword,			/* if want word count */
+		dochar;			/* if want character count */
+
+main(argc,argv)
+int	argc;
+char	**argv;
 {
-	int i, token;
-	register FILE *fp;
-	register int c;
-	char *p;
+	extern char	*optarg;	/* getopt arguments */
+	extern int	optind;
+	register int	ch;		/* getopt character */
 
-	while (argc > 1 && *argv[1] == '-') {
-		switch (argv[1][1]) {
-		case 'l': case 'w': case 'c': 
-			wd = argv[1]+1;
-			break;
-		default:
-		usage:
-			fprintf(stderr, "Usage: wc [-lwc] [files]\n");
-			exit(1);
-		}
-		argc--;
-		argv++;
+	/*
+	 * wc is unusual in that its flags are on by default, so,
+	 * if you don't get any arguments, you have to turn them
+	 * all on.
+	 */
+	if (argc > 1 && argv[1][0] == '-' && argv[1][1]) {
+		while ((ch = getopt(argc,argv,"lwc")) != EOF)
+			switch((char)ch) {
+				case 'l':
+					doline = YES;
+					break;
+				case 'w':
+					doword = YES;
+					break;
+				case 'c':
+					dochar = YES;
+					break;
+				case '?':
+				default:
+					fputs("Usage: wc [-lwc] [files]\n",stderr);
+					exit(ERR);
+			}
+		argv += optind;
+		argc -= optind;
+	}
+	else {
+		++argv;
+		--argc;
+		doline = doword = dochar = YES;
 	}
 
-	i = 1;
-	fp = stdin;
+	/* should print "stdin" as the file name, here */
+	if (argc <= 1) {
+		if (!*argv || !strcmp(*argv,"-")) {
+			cnt((char *)NULL);
+			putchar('\n');
+		}
+		else {
+			cnt(*argv);
+			printf(" %s\n",*argv);
+		}
+		exit(OK);
+	}
+
+	/*
+	 * cat allows "-" as stdin anywhere in the arg list,
+	 * might as well here, too.  Again, should use "stdin"
+	 * as the file name.
+	 */
 	do {
-		if(argc>1 && (fp=fopen(argv[i], "r")) == NULL) {
-			perror(argv[i]);
-			continue;
+		if (!strcmp(*argv,"-")) {
+			cnt((char *)NULL);
+			putchar('\n');
 		}
-		linect = 0;
-		wordct = 0;
-		charct = 0;
-		token = 0;
-		for(;;) {
-			c = getc(fp);
-			if (c == EOF)
-				break;
-			charct++;
-			if(' '<c&&c<0177) {
-				if(!token) {
-					wordct++;
-					token++;
+		else {
+			cnt(*argv);
+			printf(" %s\n",*argv);
+		}
+	} while(*++argv);
+
+	if (doline)
+		printf(" %7ld",tlinect);
+	if (doword)
+		printf(" %7ld",twordct);
+	if (dochar)
+		printf(" %7ld",tcharct);
+	puts(" total");
+	exit(OK);
+}
+
+static
+cnt(file)
+char	*file;
+{
+	register u_char	*C;		/* traveling pointer */
+	register short	gotsp;		/* space toggle */
+	register int	len;		/* length of read */
+	register long	linect,		/* line count */
+			wordct,		/* word count */
+			charct;		/* character count */
+	struct stat	sbuf;		/* stat buffer */
+	int	fd;			/* file descriptor */
+	u_char	buf[MAXBSIZE];		/* read buffer */
+
+	linect = wordct = charct = 0;
+	if (file) {
+		if ((fd = open(file,O_RDONLY)) < 0) {
+			perror(file);
+			exit(ERR);
+		}
+		if (!doword) {
+			/*
+			 * line counting is split out because it's a lot
+			 * faster to get lines than to get words, since
+			 * the word count requires some logic.
+			 */
+			if (doline) {
+				while(len = read(fd,buf,MAXBSIZE)) {
+					if (len == -1) {
+						perror(file);
+						exit(ERR);
+					}
+					charct += len;
+					for (C = buf;len--;++C)
+						if (*C == '\n')
+							++linect;
 				}
-				continue;
+				tlinect += linect;
+				printf(" %7ld",linect);
+				if (dochar) {
+					tcharct += charct;
+					printf(" %7ld",sbuf.st_size);
+				}
+				close(fd);
+				return;
 			}
-			if(c=='\n') {
-				linect++;
+			/*
+			 * if all we need is the number of characters and
+			 * it's a directory or a regular or linked file, just
+			 * stat the puppy.  We avoid testing for it not being
+			 * a special device in case someone adds a new type
+			 * of inode.
+			 */
+			if (dochar) {
+				if (fstat(fd,&sbuf)) {
+					perror(file);
+					exit(ERR);
+				}
+				if (sbuf.st_mode & (S_IFREG | S_IFLNK | S_IFDIR)) {
+					printf(" %7ld",sbuf.st_size);
+					tcharct += sbuf.st_size;
+					close(fd);
+					return;
+				}
 			}
-			else if(c!=' '&&c!='\t')
-				continue;
-			token = 0;
 		}
-		/* print lines, words, chars */
-		wcp(wd, charct, wordct, linect);
-		if(argc>1) {
-			printf(" %s\n", argv[i]);
-		} else
-			printf("\n");
-		fclose(fp);
+	}
+	else
+		fd = 0;
+	/* do it the hard way... */
+	for (gotsp = YES;len = read(fd,buf,MAXBSIZE);) {
+		if (len == -1) {
+			perror(file);
+			exit(ERR);
+		}
+		charct += len;
+		for (C = buf;len--;++C)
+			switch(*C) {
+				case NL:
+					++linect;
+				case TAB:
+				case SPACE:
+					gotsp = YES;
+					continue;
+				default:
+#ifdef NOT_DEFINED
+					/*
+					 * This line of code implements the
+					 * original V7 wc algorithm, i.e.
+					 * a non-printing character doesn't
+					 * toggle the "word" count, so that
+					 * "  ^D^F  " counts as 6 spaces,
+					 * while "foo^D^Fbar" counts as 8
+					 * characters.
+					 *
+					 * test order is important -- gotsp
+					 * will normally be NO, so test it
+					 * first
+					 */
+					if (gotsp && *C > SPACE && *C < DEL) {
+#endif NOT_DEFINED
+					/*
+					 * This line implements the manual
+					 * page, i.e. a word is a "maximal
+					 * string of characters delimited by
+					 * spaces, tabs or newlines."  Notice
+					 * nothing was said about a character
+					 * being printing or non-printing.
+					 */
+					if (gotsp) {
+						gotsp = NO;
+						++wordct;
+					}
+			}
+	}
+	if (doline) {
 		tlinect += linect;
+		printf(" %7ld",linect);
+	}
+	if (doword) {
 		twordct += wordct;
+		printf(" %7ld",wordct);
+	}
+	if (dochar) {
 		tcharct += charct;
-	} while(++i<argc);
-	if(argc > 2) {
-		wcp(wd, tcharct, twordct, tlinect);
-		printf(" total\n");
+		printf(" %7ld",charct);
 	}
-	exit(0);
+	close(fd);
 }
-
-wcp(wd, charct, wordct, linect)
-register char *wd;
-long charct; long wordct; long linect;
-{
-	while (*wd) switch (*wd++) {
-	case 'l':
-		ipr(linect);
-		break;
-
-	case 'w':
-		ipr(wordct);
-		break;
-
-	case 'c':
-		ipr(charct);
-		break;
-
-	}
-}
-
-ipr(num)
-long num;
-{
-	printf(" %7ld", num);
-}
-
