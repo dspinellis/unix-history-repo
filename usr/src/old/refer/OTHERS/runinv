@@ -4,9 +4,10 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)runinv	5.3 (Berkeley) %G%
+#	@(#)runinv	5.4 (Berkeley) %G%
 #
 
+cd $1
 /usr/libexec/mkey R* | /usr/libexec/inv -v -h997 -n Xind
 mv Xind.ia Ind.ia
 mv Xind.ib Ind.ib
