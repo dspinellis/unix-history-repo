@@ -100,6 +100,7 @@ putChar(character)
 int	character;
 {
     *print++ = character;
+    column++;
 }
 
 void
