@@ -20,6 +20,9 @@ static char sccsid[] = "@(#)lab.c 1.8 %G%";
 label(r, l)
 	int *r, l;
 {
+#ifdef PC
+	char	extname[ BUFSIZ ];
+#endif PC
 #ifndef PI0
 	register *ll;
 	register struct nl *p, *lp;
@@ -81,26 +84,10 @@ label(r, l)
 		     *	throw them away if they aren't used in the function
 		     *	which defines them.
 		     */
-		    {
-			char	extname[ BUFSIZ ];
-			char	*starthere;
-			int	i;
-
-			starthere = &extname[0];
-			for ( i = 1 ; i < cbn ; i++ ) {
-			    sprintf( starthere , EXTFORMAT , enclosing[ i ] );
-			    starthere += strlen( enclosing[ i ] ) + 1;
-			}
-			sprintf( starthere , EXTFORMAT , p -> symbol );
-			starthere += strlen( p -> symbol ) + 1;
-			if ( starthere >= &extname[ BUFSIZ ] ) {
-			    panic( "lab decl namelength" );
-			}
-			putprintf( "	.globl	" , 1 );
-			putprintf( NAMEFORMAT , 0 , extname );
-			if ( cbn == 1 ) {
-			    stabglabel( extname , line );
-			}
+		    sextname( extname , p -> symbol , cbn );
+		    putprintf( "	.globl	%s" , 0 , extname );
+		    if ( cbn == 1 ) {
+			stabglabel( extname , line );
 		    }
 #		endif PC
 	}
@@ -125,6 +112,9 @@ gotoop(s)
 	char *s;
 {
 	register struct nl *p;
+#ifdef PC
+	char	extname[ BUFSIZ ];
+#endif PC
 
 	gocnt++;
 	p = lookup(s);
@@ -145,24 +135,8 @@ gotoop(s)
 		putop( P2CALL , P2INT );
 		putdot( filename , line );
 	    }
-	    {
-		char	extname[ BUFSIZ ];
-		char	*starthere;
-		int	i;
-
-		starthere = &extname[0];
-		for ( i = 1 ; i < bn ; i++ ) {
-		    sprintf( starthere , EXTFORMAT , enclosing[ i ] );
-		    starthere += strlen( enclosing[ i ] ) + 1;
-		}
-		sprintf( starthere , EXTFORMAT , p -> symbol );
-		starthere += strlen( p -> symbol ) + 1;
-		if ( starthere >= &extname[ BUFSIZ ] ) {
-		    panic( "goto namelength" );
-		}
-		putprintf( "	jbr	" , 1 );
-		putprintf( NAMEFORMAT , 0 , extname );
-	    }
+	    sextname( extname , p -> symbol , bn );
+	    putprintf( "	jbr	%s" , 0 , extname );
 #	endif PC
 	if (bn == cbn)
 		if (p->nl_flags & NFORWD) {
@@ -188,6 +162,9 @@ labeled(s)
 	char *s;
 {
 	register struct nl *p;
+#ifdef PC
+	char	extname[ BUFSIZ ];
+#endif PC
 
 	p = lookup(s);
 	if (p == NIL)
@@ -205,24 +182,8 @@ labeled(s)
 	    patch4(p->entloc);
 #	endif OBJ
 #	ifdef PC
-	    {
-		char	extname[ BUFSIZ ];
-		char	*starthere;
-		int	i;
-
-		starthere = &extname[0];
-		for ( i = 1 ; i < bn ; i++ ) {
-		    sprintf( starthere , EXTFORMAT , enclosing[ i ] );
-		    starthere += strlen( enclosing[ i ] ) + 1;
-		}
-		sprintf( starthere , EXTFORMAT , p -> symbol );
-		starthere += strlen( p -> symbol ) + 1;
-		if ( starthere >= &extname[ BUFSIZ ] ) {
-		    panic( "labeled namelength" );
-		}
-		putprintf( NAMEFORMAT , 1 , extname );
-		putprintf( ":" , 0 );
-	    }
+	    sextname( extname , p -> symbol , bn );
+	    putprintf( "%s:" , 0 , extname );
 #	endif PC
 	if (p->value[NL_GOLEV] != NOTYET)
 		if (p->value[NL_GOLEV] < level) {
