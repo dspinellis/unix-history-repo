@@ -1,4 +1,4 @@
-/*	uipc_socket.c	6.2	83/09/29	*/
+/*	uipc_socket.c	6.3	84/04/24	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -268,6 +268,7 @@ bad:
  * Lock against other senders.
  * If must go all at once and not enough room now, then
  * inform user that this would block and do nothing.
+ * Otherwise, if nonblocking, send as much as possible.
  */
 sosend(so, nam, uio, flags, rights)
 	register struct socket *so;
@@ -277,40 +278,92 @@ sosend(so, nam, uio, flags, rights)
 	struct mbuf *rights;
 {
 	struct mbuf *top = 0;
-	register struct mbuf *m, **mp = &top;
+	register struct mbuf *m, **mp;
 	register int space;
-	int len, error = 0, s, dontroute;
-	struct sockbuf sendtempbuf;
+	int len, error = 0, s, dontroute, first = 1;
 
 	if (sosendallatonce(so) && uio->uio_resid > so->so_snd.sb_hiwat)
 		return (EMSGSIZE);
 	dontroute =
 	    (flags & MSG_DONTROUTE) && (so->so_options & SO_DONTROUTE) == 0 &&
 	    (so->so_proto->pr_flags & PR_ATOMIC);
-restart:
-	sblock(&so->so_snd);
+	u.u_ru.ru_msgsnd++;
 #define	snderr(errno)	{ error = errno; splx(s); goto release; }
 
-	u.u_ru.ru_msgsnd++;
-again:
-	s = splnet();
-	if (so->so_state & SS_CANTSENDMORE) {
-		psignal(u.u_procp, SIGPIPE);
-		snderr(EPIPE);
-	}
-	if (so->so_error) {
-		error = so->so_error;
-		so->so_error = 0;				/* ??? */
+restart:
+	sblock(&so->so_snd);
+	do {
+		s = splnet();
+		if (so->so_state & SS_CANTSENDMORE) {
+			psignal(u.u_procp, SIGPIPE);
+			snderr(EPIPE);
+		}
+		if (so->so_error) {
+			error = so->so_error;
+			so->so_error = 0;			/* ??? */
+			splx(s);
+			goto release;
+		}
+		if ((so->so_state & SS_ISCONNECTED) == 0) {
+			if (so->so_proto->pr_flags & PR_CONNREQUIRED)
+				snderr(ENOTCONN);
+			if (nam == 0)
+				snderr(EDESTADDRREQ);
+		}
+		if (flags & MSG_OOB)
+			space = 1024;
+		else {
+			space = sbspace(&so->so_snd);
+			if (space <= 0 ||
+			    sosendallatonce(so) && space < uio->uio_resid) {
+				if (so->so_state & SS_NBIO) {
+					if (first)
+						error = EWOULDBLOCK;
+					splx(s);
+					goto release;
+				}
+				sbunlock(&so->so_snd);
+				sbwait(&so->so_snd);
+				splx(s);
+				goto restart;
+			}
+		}
 		splx(s);
-		goto release;
-	}
-	if ((so->so_state & SS_ISCONNECTED) == 0) {
-		if (so->so_proto->pr_flags & PR_CONNREQUIRED)
-			snderr(ENOTCONN);
-		if (nam == 0)
-			snderr(EDESTADDRREQ);
-	}
-	if (top) {
+		mp = &top;
+		while (uio->uio_resid > 0 && space > 0) {
+			register struct iovec *iov = uio->uio_iov;
+
+			if (iov->iov_len == 0) {
+				uio->uio_iov++;
+				uio->uio_iovcnt--;
+				if (uio->uio_iovcnt < 0)
+					panic("sosend");
+				continue;
+			}
+			MGET(m, M_WAIT, MT_DATA);
+			if (m == NULL) {
+				error = ENOBUFS;		/* SIGPIPE? */
+				goto release;
+			}
+			if (iov->iov_len >= CLBYTES && space >= CLBYTES) {
+				register struct mbuf *p;
+				MCLGET(p, 1);
+				if (p == 0)
+					goto nopages;
+				m->m_off = (int)p - (int)m;
+				len = CLBYTES;
+			} else {
+nopages:
+				len = MIN(MLEN, iov->iov_len);
+			}
+			error = uiomove(mtod(m, caddr_t), len, UIO_WRITE, uio);
+			m->m_len = len;
+			*mp = m;
+			if (error)
+				goto release;
+			mp = &m->m_next;
+			space -= len;
+		}
 		if (dontroute)
 			so->so_options |= SO_DONTROUTE;
 		error = (*so->so_proto->pr_usrreq)(so,
@@ -319,77 +372,10 @@ again:
 		if (dontroute)
 			so->so_options &= ~SO_DONTROUTE;
 		top = 0;
-		if (error) {
-			splx(s);
-			goto release;
-		}
-		mp = &top;
-	}
-	if (uio->uio_resid == 0) {
-		splx(s);
-		goto release;
-	}
-	if (flags & MSG_OOB)
-		space = 1024;
-	else {
-		space = sbspace(&so->so_snd);
-		if (space <= 0 ||
-		    sosendallatonce(so) && space < uio->uio_resid) {
-			if (so->so_state & SS_NBIO)
-				snderr(EWOULDBLOCK);
-			sbunlock(&so->so_snd);
-			sbwait(&so->so_snd);
-			splx(s);
-			goto restart;
-		}
-	}
-	splx(s);
-	/*
-	 * Temporary kludge-- don't want to update so_snd in this loop
-	 * (will be done when sent), but need to recalculate
-	 * space on each iteration.  For now, copy so_snd into a tmp.
-	 */
-	sendtempbuf = so->so_snd;
-	while (uio->uio_resid > 0 && space > 0) {
-		register struct iovec *iov = uio->uio_iov;
-
-		if (iov->iov_len == 0) {
-			uio->uio_iov++;
-			uio->uio_iovcnt--;
-			if (uio->uio_iovcnt < 0)
-				panic("sosend");
-			continue;
-		}
-		MGET(m, M_WAIT, MT_DATA);
-		if (m == NULL) {
-			error = ENOBUFS;			/* SIGPIPE? */
-			goto release;
-		}
-		if (iov->iov_len >= CLBYTES && space >= CLBYTES) {
-			register struct mbuf *p;
-			MCLGET(p, 1);
-			if (p == 0)
-				goto nopages;
-			m->m_off = (int)p - (int)m;
-			len = CLBYTES;
-		} else {
-nopages:
-			len = MIN(MLEN, iov->iov_len);
-		}
-		error = uiomove(mtod(m, caddr_t), len, UIO_WRITE, uio);
-		m->m_len = len;
-		*mp = m;
+		first = 0;
 		if (error)
-			goto release;
-		mp = &m->m_next;
-		if (flags & MSG_OOB)
-			space -= len;
-		else {
-			sballoc(&sendtempbuf, m);
-			space = sbspace(&sendtempbuf);
-		}
-	}
-	goto again;
+			break;
+	} while (uio->uio_resid);
 
 release:
 	sbunlock(&so->so_snd);
