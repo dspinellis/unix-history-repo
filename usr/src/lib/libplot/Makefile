@@ -1,4 +1,4 @@
-#	Makefile	4.2	83/07/03
+#	Makefile	4.3	83/07/09
 #
 ALL=	libplot.a libt4014.a libt300.a libt300s.a libt450.a libvt0.a
 
@@ -32,3 +32,6 @@ install: all
 
 clean:
 	rm -f ${ALL} errs a.out core
+	for i in ${ALL}; do \
+		(cd $$i; make ${MFLAGS} clean); \
+	done
