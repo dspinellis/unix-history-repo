@@ -7,9 +7,10 @@
  */
 
 #include "rcv.h"
+#include "configdefs.h"
 #include <ctype.h>
 
-static char *SccsId = "@(#)optim.c	2.2 %G%";
+static char *SccsId = "@(#)optim.c	2.3 %G%";
 
 /*
  * Map a name into the correct network "view" of the
@@ -17,8 +18,6 @@ static char *SccsId = "@(#)optim.c	2.2 %G%";
  * network address of the sender, then optimizing away
  * nonsense.
  */
-
-char	*metanet = "!^:%@.";
 
 char *
 netmap(name, from)
@@ -84,55 +83,10 @@ rename(str)
 		return(savestr(path));
 	return(str);
 }
+
 /*
  * Turn a network machine name into a unique character
- * + give connection-to status.  BN -- connected to Bell Net.
- * AN -- connected to ARPA net, SN -- connected to Schmidt net.
- * CN -- connected to COCANET.
  */
-
-#define	AN	1			/* Connected to ARPA net */
-#define	BN	2			/* Connected to BTL net */
-#define	CN	4			/* Connected to COCANET */
-#define	SN	8			/* Connected to Schmidt net */
-
-struct netmach {
-	char	*nt_machine;
-	char	nt_mid;
-	short	nt_type;
-} netmach[] = {
-	"a",		'a',		SN,
-	"b",		'b',		SN,
-	"c",		'c',		SN,
-	"d",		'd',		SN,
-	"e",		'e',		SN,
-	"f",		'f',		SN,
-	"g",		'g',		SN,
-	"ingres",	'i',		AN|SN,
-	"ing70",	'i',		AN|SN,
-	"berkeley",	'i',		AN|SN,
-	"ingvax",	'j',		SN|BN,
-	"virus",	'k',		SN,
-	"vlsi",		'l',		SN,
-	"image",	'm',		SN,
-	"esvax",	'o',		SN,
-	"sesm",		'o',		SN,
-	"q",		'q',		SN,
-	"research",	'R',		BN,
-	"arpavax",	'r',		SN|BN,
-	"src",		's',		SN,
-	"mathstat",	't',		SN,
-	"csvax",	'v',		BN|SN,
-	"vax",		'v',		BN|SN,
-	"ucb",		'v',		BN|SN,
-	"ucbvax",	'v',		BN|SN,
-	"onyx",		'x',		SN,
-	"vax135",	'X',		BN,
-	"cory",		'y',		SN,
-	"eecs40",	'z',		SN,
-	0,		0,		0
-};
-
 netlook(machine, attnet)
 	char machine[];
 {
@@ -333,6 +287,7 @@ mstash(name, attnet)
 {
 	register struct xtrahash *xp;
 	struct xtrahash *xlocate();
+	int x;
 
 	xp = xlocate(name);
 	if (xp == (struct xtrahash *) 0) {
@@ -348,22 +303,11 @@ mstash(name, attnet)
 		xp->xh_name = savestr(name);
 		xp->xh_mid = 0200 + midfree++;
 	}
-	switch (attnet) {
-	case '!':
-	case '^':
-		xp->xh_attnet |= BN;
-		break;
-
-	default:
-	case ':':
+	x = ntype(attnet);
+	if (x == 0)
 		xp->xh_attnet |= SN;
-		break;
-
-	case '@':
-	case '%':
-		xp->xh_attnet |= AN;
-		break;
-	}
+	else
+		xp->xh_attnet |= x;
 	return(xp->xh_mid);
 }
 
@@ -533,9 +477,6 @@ err:
  * optimizer and concatenating the results.
  */
 
-#define	IMPLICIT	1
-#define	EXPLICIT	2
-
 optim1(netstr, name)
 	char netstr[], name[];
 {
@@ -593,24 +534,12 @@ optim1(netstr, name)
 ntype(nc)
 	register int nc;
 {
+	register struct nettypetab *np;
 
-	switch (nc) {
-	case '^':
-	case '!':
-		return(BN);
-
-	case ':':
-	case '.':
-		return(SN);
-
-	case '@':
-	case '%':
-		return(AN);
-
-	default:
-		return(0);
-	}
-	/* NOTREACHED */
+	for (np = nettypetab; np->nt_char != 0; np++)
+		if (np->nt_char == nc)
+			return(np->nt_type);
+	return(0);
 }
 
 /*
@@ -623,19 +552,12 @@ ntype(nc)
 netkind(nt)
 	register int nt;
 {
+	register struct netkindtab *np;
 
-	switch (nt) {
-	case BN:
-		return(EXPLICIT);
-
-	case AN:
-	case SN:
-		return(IMPLICIT);
-
-	default:
-		return(0);
-	}
-	/* NOTREACHED */
+	for (np = netkindtab; np->nk_type != 0; np++)
+		if (np->nk_type == nt)
+			return(np->nk_kind);
+	return(0);
 }
 
 /*
@@ -761,18 +683,6 @@ prefer(name)
 /*
  * Return the best network separator for the given machine pair.
  */
-
-struct netorder {
-	short	no_stat;
-	char	no_char;
-} netorder[] = {
-	CN,	':',
-	AN,	'@',
-	AN,	'%',
-	SN,	':',
-	BN,	'!',
-	-1,	0
-};
 
 best(src, dest)
 {
@@ -915,14 +825,14 @@ yylex()
 		cp++;
 	if (*cp == 0)
 		return(0);
-	if (any(*cp, "!^@:%")) {
+	if (any(*cp, metanet)) {
 		charp = cp+1;
 		return(*cp);
 	}
 	dot = cp;
-	while (*cp && !any(*cp, " \t!^@:%"))
+	while (*cp && !any(*cp, metanet) && !any(*cp, " \t"))
 		cp++;
-	if (any(*cp, "!^@:%"))
+	if (any(*cp, metanet))
 		nexttok = *cp;
 	if (*cp == 0)
 		charp = cp;
