@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tty_compat.c	7.13 (Berkeley) %G%
+ *	@(#)tty_compat.c	7.14 (Berkeley) %G%
  */
 
 /* 
@@ -20,7 +20,6 @@
 #include "termios.h"
 #include "file.h"
 #include "conf.h"
-#include "dkstat.h"
 #include "kernel.h"
 #include "syslog.h"
 
