@@ -1,4 +1,4 @@
-/*	dvar.c	1.7	83/10/22
+/*	dvar.c	1.8	83/11/30
  *
  * Varian driver for the new troff
  *
@@ -78,7 +78,7 @@ x ..\n	device control functions:
 #define  vmot(n)	vgoto(vpos + n)
 
 
-char	SccsId[]= "dvar.c	1.7	83/10/22";
+char	SccsId[]= "dvar.c	1.8	83/11/30";
 
 int	output	= 0;	/* do we do output at all? */
 int	nolist	= 0;	/* output page list if > 0 */
@@ -421,7 +421,7 @@ register FILE *fp;
 				;
 			break;
 		case 'x':	/* device control */
-			devcntrl(fp);
+			if (devcntrl(fp)) return;
 			break;
 		default:
 			error(FATAL, "unknown input character %o %c", c, c);
@@ -440,8 +440,8 @@ register FILE *fp;
 	}
 }
 
-devcntrl(fp)	/* interpret device control functions */
-FILE *fp;
+int devcntrl(fp)	/* interpret device control functions */
+FILE *fp;		/* returns -1 upon "stop" command */
 {
         char str[20], str1[50], buf[50];
 	int c, n;
@@ -459,7 +459,7 @@ FILE *fp;
 		break;
 	case 's':	/* stop */
 		t_reset('s');
-		break;
+		return -1;
 	case 'r':	/* resolution assumed when prepared */
 		fscanf(fp, "%d", &n);
 		if (n!=RES) error(FATAL,"Input computed with wrong resolution");
@@ -484,7 +484,8 @@ FILE *fp;
 	}
 	while ((c = getc(fp)) != '\n')	/* skip rest of input line */
 		if (c == EOF)
-			break;
+			return -1;
+	return 0;
 }
 
 /* fileinit:	read in font and code files, etc.
@@ -596,18 +597,36 @@ fontprint(i)	/* debugging print of font i (0,...) */
 	fprintf(stderr,"\n");
 }
 
+
 loadfont(n, s, s1)	/* load font info for font s on position n (0...) */
 int n;
 char *s, *s1;
 {
 	char temp[60];
-	int fin, nw, norig;
-
+	register int fin;
+	register int nw;
+	register int norig;
 
 	if (n < 0 || n > NFONTS)
 		error(FATAL, "illegal fp command %d %s", n, s);
 	if (strcmp(s, fontbase[n]->namefont) == 0)
 		return;
+
+	for (fin = 1; fin <= NFONTS; fin++)	/* first check to see if the */
+	    if (strcmp(s, fontbase[fin]->namefont) == 0) {  /* font is loaded */
+		register char *c;			    /* somewhere else */
+
+#define ptrswap(x, y) { c = (char*) (x); x = y; y = c; }
+
+		ptrswap(fontbase[n], fontbase[fin]);
+		ptrswap(codetab[n], codetab[fin]);
+		ptrswap(widtab[n], widtab[fin]);
+		ptrswap(fitab[n], fitab[fin]);
+		t_fp(n, fontbase[n]->namefont, fontbase[n]->intname);
+		t_fp(fin, fontbase[fin]->namefont, fontbase[fin]->intname);
+		return;
+	    }
+
 	if (s1 == NULL || s1[0] == '\0')
 		sprintf(temp, "%s/devva/%s.out", fontdir, s);
 	else
