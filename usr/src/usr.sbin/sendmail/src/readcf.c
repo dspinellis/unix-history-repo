@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	6.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	6.14 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -732,6 +732,18 @@ makemailer(line)
 			m->m_linelimit = SMTPLINELIM;
 		if (ConfigLevel < 2)
 			setbitn(M_7BITS, m->m_flags);
+	}
+
+	/* do some rationality checking */
+	if (m->m_argv == NULL)
+	{
+		syserr("M%s: A= argument required", m->m_name);
+		return;
+	}
+	if (m->m_mailer == NULL)
+	{
+		syserr("M%s: P= argument required", m->m_name);
+		return;
 	}
 
 	if (NextMailer >= MAXMAILERS)
