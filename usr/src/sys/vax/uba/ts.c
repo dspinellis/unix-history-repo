@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ts.c	6.7 (Berkeley) %G%
+ *	@(#)ts.c	6.8 (Berkeley) %G%
  */
 
 #include "ts.h"
@@ -499,7 +499,13 @@ tsdgo(um)
 	register struct ts_softc *sc = &ts_softc[um->um_ctlr];
 	register int i;
 
+	/*
+	 * The uba code uses byte-offset mode if using bdp;
+	 * mask off the low bit here.
+	 */
 	i = um->um_ubinfo & 0777777;
+	if (UBAI_BDP(um->um_ubinfo))
+		i &= ~1;
 	sc->sc_cmd.c_loba = i;
 	sc->sc_cmd.c_hiba = (i>>16)&3;
 	addr->tsdb = sc->sc_uba;
