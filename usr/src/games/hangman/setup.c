@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)setup.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)setup.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	"hangman.h"
@@ -46,8 +46,8 @@ setup()
 	}
 
 	srand(time(NULL) + getpid());
-	if ((Dict = fopen(DICT, "r")) == NULL) {
-		perror(DICT);
+	if ((Dict = fopen(_PATH_DICT, "r")) == NULL) {
+		perror(_PATH_DICT);
 		endwin();
 		exit(1);
 	}
