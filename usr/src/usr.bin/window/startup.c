@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)startup.c	3.12 84/04/16";
+static	char *sccsid = "@(#)startup.c	3.13 84/05/16";
 #endif
 
 #include "defs.h"
@@ -16,13 +16,13 @@ doconfig()
 
 	if ((home = getenv("HOME")) == 0)
 		home = ".";
-	return dosource(sprintf(buf, "%.*s/.windrc",
+	return dosource(sprintf(buf, "%.*s/%s",
 		(sizeof buf - sizeof runcom) / sizeof (char) - 1,
 		home, runcom));
 }
 
 /*
- * The default is two windows of equal sizes.
+ * The default is two windows of equal size.
  */
 dodefault()
 {
@@ -31,15 +31,12 @@ dodefault()
 
 	if ((w = openwin(-1, 1, 0, r, wwncol, nbufline,
 				(char *) 0, 1, 1, shellfile, shell)) == 0)
-		goto bad;
+		return;
 	if (openwin(-1, r + 2, 0, wwnrow - r - 2, wwncol, nbufline,
 				(char *) 0, 1, 1, shellfile, shell) == 0)
-		goto bad;
+		return;
 	wwprintf(w, "Escape character is %s.\r\n", unctrl(escapec));
 	setselwin(w);
-	return;
-bad:
-	error("Can't open default windows.");
 }
 
 setvars()
