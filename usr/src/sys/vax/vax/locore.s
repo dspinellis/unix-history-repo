@@ -3,14 +3,13 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	7.19 (Berkeley) %G%
+ *	@(#)locore.s	7.19.1.1 (Berkeley) %G%
  */
 
 #include "psl.h"
 #include "pte.h"
 
 #include "errno.h"
-#include "syscall.h"
 #include "cmap.h"
 
 #include "mtpr.h"
@@ -872,20 +871,6 @@ _/**/mname:	.globl	_/**/mname;		\
 #ifdef	GPROF
 	SYSMAP(profmap	,profbase	,600*CLSIZE	)
 #endif
-#ifdef MFS
-#include "../ufs/mfsiom.h"
-	/*
-	 * Used by the mfs_doio() routine for physical I/O
-	 */
-	SYSMAP(Mfsiomap	,mfsiobuf	,MFS_MAPREG )
-#endif /* MFS */
-#ifdef NFS
-#include "../nfs/nfsiom.h"
-	/*
-	 * Used by the nfs_doio() routine for physical I/O
-	 */
-	SYSMAP(Nfsiomap	,nfsiobuf	,NFS_MAPREG )
-#endif /* NFS */
 	SYSMAP(ekmempt	,kmemlimit	,0		)
 
 	SYSMAP(UMBAbeg	,umbabeg	,0		)
@@ -1108,12 +1093,14 @@ start:
 sigcode:
 	calls	$4,8(pc)	# params pushed by sendsig
 	movl	sp,ap		# calls frame built by sendsig
-	chmk	$SYS_sigcleanup	# cleanup mask and onsigstack
+	chmk	$103		# cleanup mask and onsigstack
 	halt			# sigreturn() does not return!
 	.word	0x3f		# registers 0-5
 	callg	(ap),*16(ap)	# call the signal handler
 	ret			# return to code above
 
+	.set	exec,11
+	.set	exit,1
 	.globl	_icode
 	.globl	_initflags
 	.globl	_szicode
@@ -1126,9 +1113,9 @@ _icode:
 l0:	pushab	b`init-l1(pc)
 l1:	pushl	$2
 	movl	sp,ap
-	chmk	$SYS_exec
+	chmk	$exec
 	pushl	r0
-	chmk	$SYS_exit
+	chmk	$exit
 
 init:	.asciz	"/sbin/init"
 	.align	2
