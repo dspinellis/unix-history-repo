@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)fend.c 1.9 %G%";
+static char sccsid[] = "@(#)fend.c 1.10 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -120,7 +120,12 @@ funcend(fp, bundle, endline)
 	    putprintf( "	.globl	_main" , 0 );
 	    putprintf( "_main:" , 0 );
 	    putprintf( "	.word	0" , 0 );
-	    putprintf( "	calls	$0,_PCSTART" , 0 );
+	    if ( opt ( 't' ) ) {
+	        putprintf( "	pushl	$1" , 0 );
+	    } else {
+	        putprintf( "	pushl	$0" , 0 );
+	    }
+	    putprintf( "	calls	$1,_PCSTART" , 0 );
 	    putprintf( "	movl	4(ap),__argc" , 0 );
 	    putprintf( "	movl	8(ap),__argv" , 0 );
 	    putprintf( "	calls	$0,_program" , 0 );
@@ -219,6 +224,12 @@ funcend(fp, bundle, endline)
 	     */
 	putprintf( "	movq	%s,%s+%d" , 0
 		, P2APNAME , DISPLAYNAME , cbn * sizeof(struct dispsave) );
+	    /*
+	     *	set underflow checking if runtime tests
+	     */
+	if ( opt( 't' ) ) {
+	    putprintf( "	bispsw	$0xe0" , 0 );
+	}
 	    /*
 	     *	ask second pass to allocate known locals
 	     */
