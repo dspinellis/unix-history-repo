@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)iostat.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)iostat.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -25,35 +25,32 @@ static char sccsid[] = "@(#)iostat.c	5.8 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include <stdlib.h>
-#include <stdarg.h>
 #include <string.h>
 #include <paths.h>
 #include <kvm.h>
 
 struct nlist nl[] = {
-#define	X_DK_BUSY	0
-	{ "_dk_busy" },
-#define	X_DK_TIME	1
+#define	X_DK_TIME	0
 	{ "_dk_time" },
-#define	X_DK_XFER	2
+#define	X_DK_XFER	1
 	{ "_dk_xfer" },
-#define	X_DK_WDS	3
+#define	X_DK_WDS	2
 	{ "_dk_wds" },
-#define	X_TK_NIN	4
+#define	X_TK_NIN	3
 	{ "_tk_nin" },
-#define	X_TK_NOUT	5
+#define	X_TK_NOUT	4
 	{ "_tk_nout" },
-#define	X_DK_SEEK	6
+#define	X_DK_SEEK	5
 	{ "_dk_seek" },
-#define	X_CP_TIME	7
+#define	X_CP_TIME	6
 	{ "_cp_time" },
-#define	X_DK_WPMS	8
+#define	X_DK_WPMS	7
 	{ "_dk_wpms" },
-#define	X_HZ		9
+#define	X_HZ		8
 	{ "_hz" },
-#define	X_PHZ		10
+#define	X_PHZ		9
 	{ "_phz" },
-#define	X_DK_NDRIVE	11
+#define	X_DK_NDRIVE	10
 	{ "_dk_ndrive" },
 #define	X_END		11
 #ifdef hp300
@@ -70,11 +67,10 @@ struct nlist nl[] = {
 	{ "_ubdinit" },
 #define X_UBDINIT	(X_END+2)
 #endif
-	{ 0 },
+	{ NULL },
 };
 
 struct _disk {
-	int	dk_busy;
 	long	cp_time[CPUSTATES];
 	long	*dk_time;
 	long	*dk_wds;
@@ -89,21 +85,22 @@ long *dk_wpms;
 int dk_ndrive, *dr_select, hz, kmemfd, ndrives;
 char **dr_name;
 
-#include "names.c"				/* XXX */
-
 #define nlread(x, v) \
 	kvm_read((void *)nl[x].n_value, (void *)&(v), sizeof(v))
+
+#include "names.c"				/* XXX */
+
+static void cpustats __P((void)), dkstats __P((void)), phdr __P((int));
+static void usage __P((void)), err __P((const char *, ...));
 
 main(argc, argv)
 	int argc;
 	char **argv;
 {
-	extern int optind;
 	register int i;
 	long tmp;
 	int ch, hdrcnt, reps, interval, phz, ndrives;
 	char **cp, *memfile, *namelist, buf[30];
-	void cpustats(), dkstats(), phdr(), read_names(), usage(), error();
 
 	interval = reps = 0;
 	namelist = memfile = NULL;
@@ -128,27 +125,15 @@ main(argc, argv)
 	argc -= optind;
 	argv += optind;
 
-	if (kvm_openfiles(namelist, memfile, NULL) == -1) {
-		error("kvm_openfiles: %s", kvm_geterr());
-		exit(1);
-	}
-	if (kvm_nlist(nl) == -1) {
-		error("kvm_nlist: %s", kvm_geterr());
-		exit(1);
-	}
-	if (nl[X_DK_BUSY].n_type == 0) {
-		error("dk_busy not found namelist");
-		exit(1);
-	}
-	if (nl[X_DK_NDRIVE].n_type == 0) {
-		error("dk_ndrive not found in namelist");
-		exit(1);
-	}
+	if (kvm_openfiles(namelist, memfile, NULL) == -1)
+		err("kvm_openfiles: %s", kvm_geterr());
+	if (kvm_nlist(nl) == -1)
+		err("kvm_nlist: %s", kvm_geterr());
+	if (nl[X_DK_NDRIVE].n_type == 0)
+		err("dk_ndrive not found in namelist");
 	(void)nlread(X_DK_NDRIVE, dk_ndrive);
-	if (dk_ndrive <= 0) {
-		error("invalid dk_ndrive %d\n", dk_ndrive);
-		exit(1);
-	}
+	if (dk_ndrive <= 0)
+		err("invalid dk_ndrive %d\n", dk_ndrive);
 
 	cur.dk_time = calloc(dk_ndrive, sizeof(long));
 	cur.dk_wds = calloc(dk_ndrive, sizeof(long));
@@ -232,10 +217,9 @@ main(argc, argv)
 
 	for (hdrcnt = 1;;) {
 		if (!--hdrcnt) {
-			phdr();
+			phdr(0);
 			hdrcnt = 20;
 		}
-		(void)nlread(X_DK_BUSY, cur.dk_busy);
 		(void)kvm_read((void *)nl[X_DK_TIME].n_value,
 		    cur.dk_time, dk_ndrive * sizeof(long));
 		(void)kvm_read((void *)nl[X_DK_XFER].n_value,
@@ -275,8 +259,8 @@ main(argc, argv)
 		etime /= (float)hz;
 		(void)printf("%4.0f%5.0f",
 		    cur.tk_nin / etime, cur.tk_nout / etime);
-		dkstats(i);
-		cpustats(i);
+		dkstats();
+		cpustats();
 		(void)printf("\n");
 		(void)fflush(stdout);
 
@@ -287,8 +271,10 @@ main(argc, argv)
 	exit(0);
 }
 
+/* ARGUSED */
 void
-phdr()
+phdr(notused)
+	int notused;
 {
 	register int i;
 
@@ -355,15 +341,31 @@ usage()
 	exit(1);
 }
 
+#if __STDC__
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
+
 void
-error(fmt)
+#if __STDC__
+err(const char *fmt, ...)
+#else
+err(fmt, va_alist)
 	char *fmt;
+        va_dcl
+#endif
 {
 	va_list ap;
-
-        va_start(ap, fmt);
-        (void)fprintf(stderr, "iostat: ");
-        (void)vfprintf(stderr, fmt, ap);
-        (void)fprintf(stderr, "\n");
-        va_end(ap);
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
+	(void)fprintf(stderr, "iostat: ");
+	(void)vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	(void)fprintf(stderr, "\n");
+	exit(1);
+	/* NOTREACHED */
 }
