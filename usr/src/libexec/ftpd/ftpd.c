@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	4.4 (Berkeley) 83/01/15";
+static char sccsid[] = "@(#)ftpd.c	4.5 (Berkeley) 83/01/16";
 #endif
 
 /*
@@ -91,8 +91,7 @@ main(argc, argv)
 	if (fork())
 		exit(0);
 	for (s = 0; s < 10; s++)
-		if (s != 2 && debug)		/* don't screw stderr */
-			(void) close(s);
+		(void) close(s);
 	(void) open("/dev/null", 0);
 	(void) dup2(0, 1);
 	{ int tt = open("/dev/tty", 2);
@@ -230,9 +229,12 @@ retrieve(cmd, name)
 	int (*closefunc)();
 
 	if (cmd == 0) {
+#ifdef notdef
+		/* no remote command execution -- it's a security hole */
 		if (*name == '!')
 			fin = popen(name + 1, "r"), closefunc = pclose;
 		else
+#endif
 			fin = fopen(name, "r"), closefunc = fclose;
 	} else {
 		char line[BUFSIZ];
@@ -268,9 +270,13 @@ store(name, mode)
 	FILE *fout, *din;
 	int (*closefunc)(), dochown = 0;
 
+#ifdef notdef
+	/* no remote command execution -- it's a security hole */
 	if (name[0] == '!')
 		fout = popen(&name[1], "w"), closefunc = pclose;
-	else {
+	else
+#endif
+	{
 		struct stat st;
 
 		if (stat(name, &st) < 0)
