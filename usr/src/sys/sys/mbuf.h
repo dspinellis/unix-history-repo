@@ -1,4 +1,4 @@
-/*	mbuf.h	6.1	83/07/29	*/
+/*	mbuf.h	6.2	84/08/21	*/
 
 /*
  * Constants related to memory allocator.
@@ -47,6 +47,7 @@ struct mbuf {
 #define	MT_ZOMBIE	9	/* zombie proc status */
 #define	MT_SOOPTS	10	/* socket options */
 #define	MT_FTABLE	11	/* fragment reassembly header */
+#define	MT_RIGHTS	12	/* access rights */
 
 /* flags to m_get */
 #define	M_DONTWAIT	0
@@ -64,7 +65,7 @@ struct mbuf {
 	{ int ms = splimp(); \
 	  if ((m)=mfree) \
 		{ if ((m)->m_type != MT_FREE) panic("mget"); (m)->m_type = t; \
-		  mbstat.m_mbfree--; mbstat.m_mtypes[t]++; \
+		  mbstat.m_mtypes[MT_FREE]--; mbstat.m_mtypes[t]++; \
 		  mfree = (m)->m_next; (m)->m_next = 0; \
 		  (m)->m_off = MMINOFF; } \
 	  else \
@@ -78,14 +79,15 @@ struct mbuf {
 #define	MFREE(m, n) \
 	{ int ms = splimp(); \
 	  if ((m)->m_type == MT_FREE) panic("mfree"); \
-	  mbstat.m_mtypes[(m)->m_type]--; (m)->m_type = MT_FREE; \
+	  mbstat.m_mtypes[(m)->m_type]--; mbstat.m_mtypes[MT_FREE]++; \
+	  (m)->m_type = MT_FREE; \
 	  if ((m)->m_off > MSIZE) { \
 		(n) = (struct mbuf *)(mtod(m, int)&~CLOFSET); \
 		if (--mclrefcnt[mtocl(n)] == 0) \
 		    { (n)->m_next = mclfree;mclfree = (n);mbstat.m_clfree++;} \
 	  } \
 	  (n) = (m)->m_next; (m)->m_next = mfree; \
-	  (m)->m_off = 0; (m)->m_act = 0; mfree = (m); mbstat.m_mbfree++; \
+	  (m)->m_off = 0; (m)->m_act = 0; mfree = (m); \
 	  splx(ms); }
 
 /*
@@ -93,7 +95,6 @@ struct mbuf {
  */
 struct mbstat {
 	short	m_mbufs;	/* mbufs obtained from page pool */
-	short	m_mbfree;	/* mbufs on our free list */
 	short	m_clusters;	/* clusters obtained from page pool */
 	short	m_clfree;	/* free clusters */
 	short	m_drops;	/* times failed to find space */

@@ -1,4 +1,4 @@
-/*	socketvar.h	6.3	84/03/22	*/
+/*	socketvar.h	6.4	84/08/21	*/
 
 /*
  * Kernel structure per socket.
@@ -133,4 +133,6 @@ struct socket {
 
 #ifdef KERNEL
 struct	socket *sonewconn();
+struct	mbuf *sbdrop();
+struct	mbuf *sbdroprecord();
 #endif
