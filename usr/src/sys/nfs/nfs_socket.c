@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_socket.c	7.15 (Berkeley) %G%
+ *	@(#)nfs_socket.c	7.16 (Berkeley) %G%
  */
 
 /*
@@ -292,10 +292,11 @@ nfs_send(so, nam, top, rep)
 			m_freem(top);
 			return (EINTR);
 		}
-		if ((so = rep->r_nmp->nm_so) == NULL &&
+		if (rep->r_nmp->nm_so == NULL &&
 		    (error = nfs_reconnect(rep, rep->r_nmp)))
 			return (error);
 		rep->r_flags &= ~R_MUSTRESEND;
+		so = rep->r_nmp->nm_so;
 		soflags = rep->r_nmp->nm_soflags;
 	} else
 		soflags = so->so_proto->pr_flags;
