@@ -1,8 +1,11 @@
+%token MACHINE
 %token CPU IDENT CONFIG ANY DEVICE UBA MBA NEXUS CSR DRIVE VECTOR OPTIONS
 %token CONTROLLER PSEUDO_DEVICE FLAGS ID SEMICOLON NUMBER FPNUMBER TRACE
-%token DISK SLAVE AT HZ TIMEZONE DST MAXUSERS MASTER COMMA MINUS EQUALS
+%token DISK SLAVE AT HZ TIMEZONE DST MAXUSERS MASTER PRIORITY COMMA MINUS EQUALS
 %{
-/*	config.y	1.13	82/07/21	*/
+
+/*	config.y	1.14	82/10/24	*/
+
 #include "config.h"
 #include <stdio.h>
 	struct device cur;
@@ -29,6 +32,16 @@ Spec:
 	;
 
 Config_spec:
+	MACHINE Save_id = {
+		if (!strcmp($2, "vax")) {
+			machine = MACHINE_VAX;
+			machinename = "vax";
+		} else if (!strcmp($2, "sun")) {
+			machine = MACHINE_SUN;
+			machinename = "sun";
+		} else
+			yyerror("Unknown machine type");
+		} |
 	CPU Save_id = {
 		    struct cputype *cp = malloc(sizeof (struct cputype));
 		    cp->cpu_name = ns($2);
@@ -37,7 +50,7 @@ Config_spec:
 		    free(temp_id);
 		    } |
 	OPTIONS Opt_list |
-	IDENT ID { ident = ns($2); } |
+	IDENT ID = { ident = ns($2); } |
 	CONFIG Save_id ID = { mkconf(temp_id, $3); free(temp_id); } |
 	HZ NUMBER = {
 		yyerror("HZ specification obsolete; delete");
@@ -166,7 +179,9 @@ Info:
 	;
 
 Int_spec:
-	VECTOR Id_list = { cur.d_vec = $2; } | ;
+	VECTOR Id_list = { cur.d_vec = $2; } |
+	PRIORITY NUMBER = { cur.d_pri = $2; } |
+	;
 
 Id_list:
 	Save_id =
@@ -341,7 +356,7 @@ register struct device *dp;
     dp->d_type = DEVICE;
     dp->d_conn = NULL;
     dp->d_vec = NULL;
-    dp->d_addr = dp->d_flags = dp->d_dk = 0;
+    dp->d_addr = dp->d_pri = dp->d_flags = dp->d_dk = 0;
     dp->d_slave = dp->d_drive = dp->d_unit = UNKNOWN;
 }
 
@@ -355,10 +370,19 @@ check_nexus(dev, num)
 register struct device *dev;
 int num;
 {
-    if (!eq(dev->d_name, "uba") && !eq(dev->d_name, "mba"))
-	yyerror("only uba's and mba's should be connected to the nexus");
-    if (num != QUES)
-	yyerror("can't give specific nexus numbers");
+	switch (machine) {
+	case MACHINE_VAX:
+		if (!eq(dev->d_name, "uba") && !eq(dev->d_name, "mba"))
+			yyerror("only uba's and mba's should be connected to the nexus");
+		if (num != QUES)
+			yyerror("can't give specific nexus numbers");
+		break;
+
+	case MACHINE_SUN:
+		if (!eq(dev->d_name, "mb"))
+			yyerror("only mb's should be connected to the nexus");
+		break;
+	}
 }
 
 /*

@@ -1,5 +1,5 @@
 %{
-/*	lang.l	1.10	82/10/11	*/
+/*	lang.l	1.11	82/10/24	*/
 
 #include <ctype.h>
 #include "y.tab.h"
@@ -17,13 +17,14 @@ struct kt {
 	char *kt_name;
 	int kt_val;
 } key_words[] = {
+	"machine", MACHINE,
 	"cpu", CPU, "ident", IDENT, "config", CONFIG, "options", OPTIONS,
 	"device", DEVICE, "controller", CONTROLLER, "uba", UBA, "mba", MBA,
 	"csr", CSR, "nexus", NEXUS, "drive", DRIVE, "vector", VECTOR,
 	"pseudo-device", PSEUDO_DEVICE, "flags", FLAGS, "trace", TRACE,
 	"disk", DISK, "tape", DEVICE, "slave", SLAVE, "at", AT,
 	"hz", HZ, "timezone", TIMEZONE, "dst", DST, "maxusers", MAXUSERS,
-	"master", MASTER,
+	"master", MASTER, "priority", PRIORITY,
 	0,0,
 };
 %}
@@ -88,6 +89,7 @@ WORD	[A-Za-z_][-A-Za-z_]*
 ";"		{	return SEMICOLON;		}
 ","		{	return COMMA;			}
 "="		{	return EQUALS;			}
+"@"		{	return AT;			}
 .		{	return yytext[0];		}
 
 %%
