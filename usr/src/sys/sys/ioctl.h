@@ -1,4 +1,4 @@
-/*	ioctl.h	4.16	82/02/08	*/
+/*	ioctl.h	4.17	82/02/18	*/
 /*
  * ioctl definitions, and special character and local tty definitions
  */
@@ -109,6 +109,7 @@ struct ltchars {
 #define	TIOCMBIS	(('t'<<8)|108)	/* bis modem bits */
 #define	TIOCMBIC	(('t'<<8)|107)	/* bic modem bits */
 #define	TIOCMGET	(('t'<<8)|106)	/* get all modem bits */
+#define	TIOCREMOTE	(('t'<<8)|105)	/* remote input editing */
 
 #define	OTTYDISC	0		/* old, v7 std tty driver */
 #define	NETLDISC	1		/* line discip for berk net */
