@@ -14,15 +14,16 @@
 char copyright[] =
 "@(#) Copyright (c) 1983 Regents of the University of California.\n\
  All rights reserved.\n";
-#endif not lint
+#endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.11 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)main.c	5.12 (Berkeley) %G%";
+#endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/vmmac.h>
 #include <sys/socket.h>
+#include <sys/file.h>
 #include <machine/pte.h>
 #include <ctype.h>
 #include <errno.h>
@@ -171,7 +172,6 @@ int	tflag;
 int	interval;
 char	*interface;
 int	unit;
-char	usage[] = "[ -Aaihmnrst ] [-f family] [-p proto] [-I interface] [ interval ] [ system ] [ core ]";
 
 int	af = AF_UNSPEC;
 
@@ -182,145 +182,119 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	char *cp, *name;
+	extern char *optarg;
+	extern int optind;
 	register struct protoent *p;
 	register struct protox *tp;	/* for printing cblocks & stats */
 	struct protox *name2protox();	/* for -p */
-	
-	name = argv[0];
-	argc--, argv++;
-  	while (argc > 0 && **argv == '-') {
-		for (cp = &argv[0][1]; *cp; cp++)
-		switch(*cp) {
+	int ch;
 
+	while ((ch = getopt(argc, argv, "AI:af:himnp:rstu")) != EOF)
+		switch((char)ch) {
 		case 'A':
 			Aflag++;
 			break;
+		case 'I': {
+			char *cp;
 
+			iflag++;
+			for (cp = interface = optarg; isalpha(*cp); cp++);
+			unit = atoi(cp);
+			*cp = '\0';
+			break;
+		}
 		case 'a':
 			aflag++;
 			break;
-
+		case 'f':
+			if (strcmp(optarg, "ns") == 0)
+				af = AF_NS;
+			else if (strcmp(optarg, "inet") == 0)
+				af = AF_INET;
+			else if (strcmp(optarg, "unix") == 0)
+				af = AF_UNIX;
+			else {
+				fprintf(stderr, "%s: unknown address family\n", optarg);
+				exit(10);
+			}
+			break;
 		case 'h':
 			hflag++;
 			break;
-
 		case 'i':
 			iflag++;
 			break;
-
 		case 'm':
 			mflag++;
 			break;
-
 		case 'n':
 			nflag++;
 			break;
-
-		case 'r':
-			rflag++;
-			break;
-
-		case 's':
-			sflag++;
-			break;
-
-		case 't':
-			tflag++;
-			break;
-
-		case 'u':
-			af = AF_UNIX;
-			break;
-
 		case 'p':
-			argv++;
-			argc--;
-			if (argc == 0)
-				goto use;
-			if ((tp = name2protox(*argv)) == NULLPROTOX) {
-				fprintf(stderr, "%s: unknown or uninstrumented protocol\n",
-					*argv);
+			if ((tp = name2protox(optarg)) == NULLPROTOX) {
+				fprintf(stderr, "%s: unknown or uninstrumented protocol\n", optarg);
 				exit(10);
 			}
 			pflag++;
 			break;
-
-		case 'f':
-			argv++;
-			argc--;
-			if (strcmp(*argv, "ns") == 0)
-				af = AF_NS;
-			else if (strcmp(*argv, "inet") == 0)
-				af = AF_INET;
-			else if (strcmp(*argv, "unix") == 0)
-				af = AF_UNIX;
-			else {
-				fprintf(stderr, "%s: unknown address family\n",
-					*argv);
-				exit(10);
-			}
+		case 'r':
+			rflag++;
 			break;
-			
-		case 'I':
-			iflag++;
-			if (*(interface = cp + 1) == 0) {
-				if ((interface = argv[1]) == 0)
-					break;
-				argv++;
-				argc--;
-			}
-			for (cp = interface; isalpha(*cp); cp++)
-				;
-			unit = atoi(cp);
-			*cp-- = 0;
+		case 's':
+			sflag++;
 			break;
-
+		case 't':
+			tflag++;
+			break;
+		case 'u':
+			af = AF_UNIX;
+			break;
+		case '?':
 		default:
-use:
-			printf("usage: %s %s\n", name, usage);
-			exit(1);
+			usage();
 		}
-		argv++, argc--;
-	}
-	if (argc > 0 && isdigit(argv[0][0])) {
-		interval = atoi(argv[0]);
-		if (interval <= 0)
-			goto use;
-		argv++, argc--;
-		iflag++;
-	}
+	argv += optind;
+	argc -= optind;
+
 	if (argc > 0) {
-		system = *argv;
-		argv++, argc--;
+		if (isdigit(argv[0][0])) {
+			interval = atoi(argv[0]);
+			if (interval <= 0)
+				usage();
+			argv++, argc--;
+			iflag++;
+		}
+		if (argc > 0) {
+			system = *argv;
+			argv++, argc--;
+			if (argc > 0) {
+				kmemf = *argv;
+				kflag++;
+			}
+		}
 	}
-	nlist(system, nl);
-	if (nl[0].n_type == 0) {
+	if (nlist(system, nl) < 0 || nl[0].n_type == 0) {
 		fprintf(stderr, "%s: no namelist\n", system);
 		exit(1);
 	}
-	if (argc > 0) {
-		kmemf = *argv;
-		kflag++;
-	}
-	kmem = open(kmemf, 0);
+	kmem = open(kmemf, O_RDONLY);
 	if (kmem < 0) {
-		fprintf(stderr, "cannot open ");
 		perror(kmemf);
 		exit(1);
 	}
 	if (kflag) {
 		off_t off;
 
-		off = nl[N_SYSMAP].n_value & 0x7fffffff;
-		lseek(kmem, off, 0);
-		nl[N_SYSSIZE].n_value *= 4;
-		Sysmap = (struct pte *)malloc((u_int)nl[N_SYSSIZE].n_value);
-		if (Sysmap == 0) {
-			perror("Sysmap");
+		Sysmap = (struct pte *)
+		   malloc((u_int)(nl[N_SYSSIZE].n_value * sizeof(struct pte)));
+		if (!Sysmap) {
+			fputs("netstat: can't get memory for Sysmap.\n", stderr);
 			exit(1);
 		}
-		read(kmem, (char *)Sysmap, (int)nl[N_SYSSIZE].n_value);
+		off = nl[N_SYSMAP].n_value & ~KERNBASE;
+		(void)lseek(kmem, off, L_SET);
+		(void)read(kmem, (char *)Sysmap,
+		    (int)(nl[N_SYSSIZE].n_value * sizeof(struct pte)));
 	}
 	if (mflag) {
 		mbpr((off_t)nl[N_MBSTAT].n_value);
@@ -328,7 +302,7 @@ use:
 	}
 	if (pflag) {
 		if (tp->pr_stats)
-			(*tp->pr_stats)(nl[tp->pr_sindex].n_value, 
+			(*tp->pr_stats)(nl[tp->pr_sindex].n_value,
 				tp->pr_name);
 		else
 			printf("%s: no stats routine\n", tp->pr_name);
@@ -428,7 +402,7 @@ knownname(name)
 	char *name;
 {
 	struct protox *tp;
-	
+
 	for (tp = protox; tp->pr_name; tp++)
 		if (strcmp(tp->pr_name, name) == 0)
 			return(tp);
@@ -448,14 +422,14 @@ name2protox(name)
 	struct protox *tp;
 	char **alias;			/* alias from p->aliases */
 	struct protoent *p;
-	
+
 	/*
 	 * Try to find the name in the list of "well-known" names. If that
 	 * fails, check if name is an alias for an Internet protocol.
 	 */
 	if (tp = knownname(name))
 		return(tp);
-		
+
 	setprotoent(1);			/* make protocol lookup cheaper */
 	while (p = getprotoent()) {
 		/* assert: name not same as p->name */
@@ -467,4 +441,10 @@ name2protox(name)
 	}
 	endprotoent();
 	return(NULLPROTOX);
+}
+
+usage()
+{
+	fputs("usage: netstat [-Aan] [-f address_family] [system] [core]\n               [-himnrs] [-f address_family] [system] [core]\n               [-n] [-I interface] interval [system] [core]\n", stderr);
+	exit(1);
 }
