@@ -16,8 +16,8 @@ To ensure that your bug report is handled correctly by bugfiler(8),
 you must replace "folder" (on the line above starting with "Index:")
 with one of the following values:
 
-	folder  ::= bin | etc | games | ideas | include | lib | local |
-			man | misc | new | sys | ucb | usr.bin | usr.lib
+	folder  ::= bin | doc | etc | games | ideas | include | lib | local
+			| man | misc | new | sys | ucb | usr.bin | usr.lib
 
 If you're not running 4.3BSD, you should also replace "4.3BSD" on the
 same line with one of the following values.
