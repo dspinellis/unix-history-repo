@@ -8,6 +8,8 @@
 
 #include <arpa/telnet.h>
 
+#include "ring.h"
+
 #include "externs.h"
 #include "defines.h"
 #include "types.h"
@@ -1061,7 +1063,7 @@ tn(argc, argv)
     if (setjmp(peerdied) == 0)
 	telnet();
     NetClose(net);
-    ExitString(stderr, "Connection closed by foreign host.\n",1);
+    ExitString("Connection closed by foreign host.\n",1);
     /*NOTREACHED*/
 }
 

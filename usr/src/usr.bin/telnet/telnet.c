@@ -8,47 +8,6 @@ static char copyright[] =
 static char sccsid[] = "@(#)telnet.c	1.2 (Berkeley) 9/25/87";
 #endif	/* not lint */
 
-/*
- * User telnet program, modified for use by tn3270.c.
- *
- * Many of the FUNCTIONAL changes in this newest version of TELNET
- * were suggested by Dave Borman of Cray Research, Inc.
- *
- * Other changes in the tn3270 side come from Alan Crosswell (Columbia),
- * Bob Braden (ISI), Steve Jacobson (Berkeley), and Cliff Frost (Berkeley).
- *
- * This code is common between telnet(1c) and tn3270(1c).  There are the
- * following defines used to generate the various versions:
- *
- *	TN3270		- 	This is to be linked with tn3270.
- *
- *	NOT43		-	Allows the program to compile and run on
- *				a 4.2BSD system.
- *
- *	PUTCHAR		-	Within tn3270, on a NOT43 system,
- *				allows the use of the 4.3 curses
- *				(greater speed updating the screen).
- *				You need the 4.3 curses for this to work.
- *
- *	FD_SETSIZE	-	On whichever system, if this isn't defined,
- *				we patch over the FD_SET, etc., macros with
- *				some homebrewed ones.
- *
- *	SO_OOBINLINE	-	This is a socket option which we would like
- *				to set to allow TCP urgent data to come
- *				to us "inline".  This is NECESSARY for
- *				CORRECT operation, and desireable for
- *				simpler operation.
- *
- *	LNOFLSH		-	Detects the presence of the LNOFLSH bit
- *				in the tty structure.
- *
- *	unix		-	Compiles in unix specific stuff.
- *
- *	MSDOS		-	Compiles in MSDOS specific stuff.
- *
- */
-
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/socket.h>
@@ -82,19 +41,15 @@ extern char	*inet_ntoa();
 #include <string.h>
 #endif	/* defined(unix) */
 
+#include "ring.h"
+
 #include "defines.h"
 #include "externs.h"
 #include "types.h"
 #include "general.h"
 
 
-#if	!defined(TN3270)
-#define	ExitString(f,s,r)	{ fprintf(f, s); exit(r); }
-#define	Exit(x)			exit(x)
-#define	SetIn3270()
-
 void	setcommandmode(), command();	/* forward declarations */
-#endif	/* !defined(TN3270) */
 
 #ifndef	FD_SETSIZE
 /*
@@ -315,8 +270,7 @@ willoption(option, reply)
 		fmt = dont;
 		break;
 	}
-	sprintf(nfrontp, fmt, option);
-	nfrontp += sizeof (dont) - 2;
+	netoprint(fmt, option);
 	if (reply)
 		printoption(">SENT", fmt, option, reply);
 	else
@@ -345,8 +299,7 @@ wontoption(option, reply)
 	default:
 		fmt = dont;
 	}
-	sprintf(nfrontp, fmt, option);
-	nfrontp += sizeof (doopt) - 2;
+	netoprint(fmt, option);
 	if (reply)
 		printoption(">SENT", fmt, option, reply);
 	else
@@ -380,8 +333,7 @@ dooption(option)
 		fmt = wont;
 		break;
 	}
-	sprintf(nfrontp, fmt, option);
-	nfrontp += sizeof (doopt) - 2;
+	netoprint(fmt, option);
 	printoption(">SENT", fmt, option, 0);
 }
 
@@ -447,13 +399,12 @@ suboption()
 		NumberColumns = 80;
 		ScreenSize = NumberLines*NumberColumns;
 		if ((MaxNumberLines*MaxNumberColumns) > MAXSCREENSIZE) {
-		    ExitString(stderr,
-			"Programming error:  MAXSCREENSIZE too small.\n", 1);
+		    ExitString("Programming error:  MAXSCREENSIZE too small.\n",
+									1);
 		    /*NOTREACHED*/
 		}
-		memcpy(nfrontp, sb_terminal, sizeof sb_terminal);
-		printsub(">", nfrontp+2, sizeof sb_terminal-2);
-		nfrontp += sizeof sb_terminal;
+		printsub(">", sb_terminal+2, sizeof sb_terminal-2);
+		ring_add_data(&netoring, sb_terminal, sizeof sb_terminal);
 		return;
 	    }
 #endif	/* defined(TN3270) */
@@ -465,12 +416,12 @@ suboption()
 	    if ((len + 4+2) < NETROOM()) {
 		strcpy(namebuf, name);
 		upcase(namebuf);
-		sprintf(nfrontp, "%c%c%c%c%s%c%c", IAC, SB, TELOPT_TTYPE,
+		netoprint("%c%c%c%c%s%c%c", IAC, SB, TELOPT_TTYPE,
 				    TELQUAL_IS, namebuf, IAC, SE);
-		printsub(">", nfrontp+2, 4+strlen(namebuf)+2-2-2);
-		nfrontp += 4+strlen(namebuf)+2;
+		/* XXX */
+		/* printsub(">", nfrontp+2, 4+strlen(namebuf)+2-2-2); */
 	    } else {
-		ExitString(stderr, "No room in buffer for terminal type.\n",
+		ExitString("No room in buffer for terminal type.\n",
 							1);
 		/*NOTREACHED*/
 	    }
@@ -700,8 +651,7 @@ telrcv()
 	    printoption(">RCVD", dont, c, myopts[c]);
 	    if (myopts[c]) {
 		myopts[c] = 0;
-		sprintf(nfrontp, wont, c);
-		nfrontp += sizeof (wont) - 2;
+		netoprint(wont, c);
 		flushline = 1;
 		setconnmode();	/* set new tty mode (maybe) */
 		printoption(">SENT", wont, c, 0);
@@ -762,13 +712,12 @@ int returnCode;
 }
 
 void
-ExitString(file, string, returnCode)
-FILE *file;
+ExitString(string, returnCode)
 char *string;
 int returnCode;
 {
     SetForExit();
-    fwrite(string, 1, strlen(string), file);
+    fwrite(string, 1, strlen(string), stderr);
     exit(returnCode);
 }
 
