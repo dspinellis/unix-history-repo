@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cpp.c 1.4 %G%";
+static char sccsid[] = "@(#)cpp.c	1.5 %G%";
 #endif lint
 
 #ifdef FLEXNAMES
@@ -150,7 +150,7 @@ STATIC	int	fin	= STDIN;
 STATIC	FILE	*fout	= stdout;
 STATIC	int	nd	= 1;
 STATIC	int	pflag;	/* don't put out lines "# 12 foo.c" */
-STATIC	int	passcom;	/* don't delete comments */
+	int	passcom;	/* don't delete comments */
 STATIC	int rflag;	/* allow macro recursion */
 STATIC	int	ifno;
 # define NPREDEF 20
@@ -330,6 +330,8 @@ refill(p) register char *p; {
 					pend=np; *np='\0'; if (plvl<0) plvl=0;
 					return(p);
 				}
+				if (trulvl || flslvl)
+					pperror("missing endif");
 				inp=p; dump(); exit(exfail);
 			}
 			close(fin); fin=fins[--ifno]; dirs[0]=dirnams[ifno]; sayline();
