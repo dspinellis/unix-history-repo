@@ -14,19 +14,19 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-# @(#)Makefile	5.2 (Berkeley) %G%
+# @(#)Makefile	5.3 (Berkeley) %G%
 #
 
 CFLAGS=	-O
 LIBC=	/lib/libc.a
-SRCS=	syslogd.c
-OBJS=
+SRCS=	syslogd.c ttymsg.c
+OBJS=	syslogd.o ttymsg.o
 MAN=	syslogd.0
 
 all: syslogd
 
-syslogd: ${LIBC}
-	${CC} -o $@ ${CFLAGS} $@.c
+syslogd: ${LIBC} ${OBJS}
+	${CC} -o $@ ${CFLAGS} ${OBJS}
 
 clean:
 	rm -f ${OBJS} core syslogd
@@ -35,7 +35,7 @@ cleandir: clean
 	rm -f ${MAN} tags .depend
 
 depend: ${SRCS}
-	mkdep -p ${CFLAGS} ${SRCS}
+	mkdep ${CFLAGS} ${SRCS}
 
 install: ${MAN}
 	install -s -o bin -g bin -m 755 syslogd ${DESTDIR}/usr/sbin
