@@ -17,13 +17,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <pwd.h>
+#include <sys/types.h>
 #include <sys/time.h>
-#include "sendmail.h"
 #include <sys/stat.h>
+#include <pwd.h>
+#include "sendmail.h"
 
 /*
 **  NEWENVELOPE -- allocate a new envelope
