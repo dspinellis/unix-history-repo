@@ -11,7 +11,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pstat.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)pstat.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -37,13 +37,14 @@ static char sccsid[] = "@(#)pstat.c	5.19 (Berkeley) %G%";
 #include <nlist.h>
 #include <machine/pte.h>
 #include <stdio.h>
+#include "pathnames.h"
 
 #define mask(x)		(x&0377)
 #define	clear(x)	((int)x &~ KERNBASE)
 
-char	*fcore	= "/dev/kmem";
-char	*fmem	= "/dev/mem";
-char	*fnlist	= "/vmunix";
+char	*fcore	= _PATH_KMEM;
+char	*fmem	= _PATH_MEM;
+char	*fnlist	= _PATH_UNIX;
 int	fc, fm;
 
 struct nlist nl[] = {
@@ -172,7 +173,7 @@ main(argc, argv)
 			break;
 		case 'k':			/* undocumented */
 			kflg++;
-			fcore = fmem = "/vmcore";
+			fcore = fmem = _PATH_CORE;
 			break;
 		case 't':
 			ttyf++;
