@@ -1,10 +1,9 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 
-.if   (${MACHINE} == "hp300")
-.elif (${MACHINE} == "tahoe")
-SUBDIR=	c2 ccom f1
-.elif (${MACHINE} == "vax")
-SUBDIR=	c2 ccom f1 sccom
+.if	(${MACHINE} == "tahoe")
+SUBDIR=	c2 cc ccom f1
+.elif	(${MACHINE} == "vax")
+SUBDIR=	c2 cc ccom f1 sccom
 .endif
 
 .include <bsd.subdir.mk>
