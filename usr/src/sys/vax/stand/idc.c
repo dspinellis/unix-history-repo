@@ -1,4 +1,4 @@
-/*	idc.c	6.1	83/07/29	*/
+/*	idc.c	6.2	83/12/13	*/
 
 /*
  * IDC (RB730)
@@ -46,10 +46,10 @@ idcopen(io)
 	i = idcaddr->idcmpr;
 	if (idcaddr->idccsr & IDC_R80) {
 		idc_type[io->i_unit] = 1;
-		io->i_boff = rb80_off[io->i_boff];
+		io->i_boff = rb80_off[io->i_boff] * NRB80SECT * NRB80TRK;
 	} else {
 		idc_type[io->i_unit] = 0;
-		io->i_boff = rb02_off[io->i_boff];
+		io->i_boff = rb02_off[io->i_boff] * NRB02SECT/2 * NRB02TRK;
 	}
 	if (io->i_boff < 0)
 		_stop("idc%d: bad unit type", io->i_unit);
@@ -84,7 +84,6 @@ retry:
 	}
 	thiscc = MIN(thiscc, ccleft);
 	ccleft -= thiscc;
-	cn += io->i_boff;
 	idcaddr->idccsr = IDC_CRDY|IDC_SEEK|(dn<<8)|(1<<(dn+16));
 	idcaddr->idcdar = (cn<<16)|(tn<<8)|sn;
 	idcaddr->idccsr = IDC_SEEK|(dn<<8);
@@ -102,8 +101,8 @@ retry:
 	idcaddr->idccsr = com;
 	idcwait(idcaddr);
 	if (idcaddr->idccsr & IDC_ERR) {
-		printf("idc error: (cyl,trk,sec)=(%d,%d,%d) csr=%b\n",
-		    cn, tn, sn, idcaddr->idccsr, IDCCSR_BITS);
+		printf("idc%d error: (cyl,trk,sec)=(%d,%d,%d) csr=%b\n",
+		    dn, cn, tn, sn, idcaddr->idccsr, IDCCSR_BITS);
 		if (errcnt == 10) {
 			printf("idc: unrecovered error\n");
 			ubafree(io, ubinfo);
