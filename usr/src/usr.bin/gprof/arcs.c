@@ -1,5 +1,5 @@
 #ifndef lint
-    static	char *sccsid = "@(#)arcs.c	1.12 (Berkeley) %G%";
+    static	char *sccsid = "@(#)arcs.c	1.13 (Berkeley) %G%";
 #endif lint
 
 #include "gprof.h"
@@ -93,7 +93,7 @@ doarcs()
 	parentp -> propself = 0.0;
 	parentp -> propchild = 0.0;
 	parentp -> printflag = FALSE;
-	parentp -> toporder = 0;
+	parentp -> toporder = DFN_NAN;
 	parentp -> cycleno = 0;
 	parentp -> cyclehead = parentp;
 	parentp -> cnext = 0;
@@ -103,10 +103,11 @@ doarcs()
     }
 	/*
 	 *	topologically order things
-	 *	from each of the roots of the call graph
+	 *	if any node is unnumbered,
+	 *	    number it and any of its descendents.
 	 */
     for ( parentp = nl ; parentp < npe ; parentp++ ) {
-	if ( parentp -> parents == 0 ) {
+	if ( parentp -> toporder == DFN_NAN ) {
 	    dfn( parentp );
 	}
     }
@@ -283,7 +284,7 @@ cyclelink()
 	 */
     cycle = 0;
     for ( nlp = nl ; nlp < npe ; nlp++ ) {
-	if ( nlp -> cyclehead != nlp || nlp -> cnext == 0 ) {
+	if ( !( nlp -> cyclehead == nlp && nlp -> cnext != 0 ) ) {
 	    continue;
 	}
 	cycle += 1;
@@ -299,7 +300,7 @@ cyclelink()
 	cyclenlp -> propchild = 0.0;	/* how much child time propagates */
 	cyclenlp -> printflag = TRUE;	/* should this be printed? */
 	cyclenlp -> index = 0;		/* index in the graph list */
-	cyclenlp -> toporder = 0;	/* graph call chain top-sort order */
+	cyclenlp -> toporder = DFN_NAN;	/* graph call chain top-sort order */
 	cyclenlp -> cycleno = cycle;	/* internal number of cycle on */
 	cyclenlp -> cyclehead = cyclenlp;	/* pointer to head of cycle */
 	cyclenlp -> cnext = nlp;	/* pointer to next member of cycle */
