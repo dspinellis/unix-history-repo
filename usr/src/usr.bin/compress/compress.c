@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)compress.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)compress.c	@(#)compress.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 /* 
@@ -135,7 +135,7 @@ char_type magic_header[] = { "\037\235" };	/* 1F 9D */
 /*
  * compress.c - File compression ala IEEE Computer, June 1984.
  *
- * Authors:	Spencer W. Thomas	(decvax!harpo!utah-cs!utah-gr!thomas)
+ * Authors:	Spencer W. Thomas	(decvax!utah-cs!thomas)
  *		Jim McKie		(decvax!mcvax!jim)
  *		Steve Davies		(decvax!vax135!petsd!peora!srd)
  *		Ken Turkowski		(decvax!decwrl!turtlevax!ken)
@@ -261,6 +261,9 @@ static char rcs_ident[] = "$Header: compress.c,v 4.0 85/07/30 12:50:00 joe Relea
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#ifdef notdef
+#include <sys/ioctl.h>
+#endif
 
 #define ARGVAL() (*++(*argv) || (--argc && *++argv))
 
@@ -299,8 +302,17 @@ unsigned short * codetab[5] = {
 #define codetabof(i)	(codetab[(i) >> 14][(i) & 0x3fff])
 
 #else	/* Normal machine */
+
+#ifdef sel	/* gould base register braindamage */
+/*NOBASE*/
 count_int htab [HSIZE];
 unsigned short codetab [HSIZE];
+/*NOBASE*/
+#else
+count_int htab [HSIZE];
+unsigned short codetab [HSIZE];
+#endif sel
+
 #define htabof(i)	htab[i]
 #define codetabof(i)	codetab[i]
 #endif	/* XENIX_16 */
@@ -326,7 +338,8 @@ count_int fsize;
 #endif	/* XENIX_16 */
 
 code_int free_ent = 0;			/* first unused entry */
-int exit_stat = 0;
+int exit_stat = 0;			/* per-file status */
+int perm_stat = 0;			/* permanent status */
 
 code_int getcode();
 
@@ -365,7 +378,8 @@ char ofname [100];
 #ifdef DEBUG
 int verbose = 0;
 #endif /* DEBUG */
-int (*bgnd_flag)();
+int (*oldint)();
+int bgnd_flag;
 
 int do_decomp = 0;
 
@@ -416,12 +430,20 @@ register int argc; char **argv;
     struct stat statbuf;
     extern onintr(), oops();
 
-
-    if ( (bgnd_flag = signal ( SIGINT, SIG_IGN )) != SIG_IGN ) {
+    /* This bg check only works for sh. */
+    if ( (oldint = signal ( SIGINT, SIG_IGN )) != SIG_IGN ) {
 	signal ( SIGINT, onintr );
 	signal ( SIGSEGV, oops );
     }
-
+    bgnd_flag = oldint != SIG_DFL;
+#ifdef notdef     /* This works for csh but we don't want it. */
+    { int tgrp;
+    if (bgnd_flag == 0 && ioctl(2, TIOCGPGRP, (char *)&tgrp) == 0 &&
+      getpgrp(0) != tgrp)
+	bgnd_flag = 1;
+    }
+#endif
+    
 #ifdef COMPATIBLE
     nomagic = 1;	/* Original didn't have a magic number */
 #endif /* COMPATIBLE */
@@ -530,7 +552,7 @@ register int argc; char **argv;
     if (*filelist != NULL) {
 	for (fileptr = filelist; *fileptr; fileptr++) {
 	    exit_stat = 0;
-	    if (do_decomp != 0) {			/* DECOMPRESSION */
+	    if (do_decomp) {			/* DECOMPRESSION */
 		/* Check for .Z suffix */
 		if (strcmp(*fileptr + strlen(*fileptr) - 2, ".Z") != 0) {
 		    /* No .Z: tack one on */
@@ -540,7 +562,9 @@ register int argc; char **argv;
 		}
 		/* Open input file */
 		if ((freopen(*fileptr, "r", stdin)) == NULL) {
-			perror(*fileptr); continue;
+		    perror(*fileptr);
+		    perm_stat = 1;
+		    continue;
 		}
 		/* Check the magic number */
 		if (nomagic == 0) {
@@ -572,7 +596,9 @@ register int argc; char **argv;
 		}
 		/* Open input file */
 		if ((freopen(*fileptr, "r", stdin)) == NULL) {
-		    perror(*fileptr); continue;
+		    perror(*fileptr);
+		    perm_stat = 1;
+		    continue;
 		}
 		stat ( *fileptr, &statbuf );
 		fsize = (long) statbuf.st_size;
@@ -611,7 +637,7 @@ register int argc; char **argv;
 		    char response[2];
 		    response[0] = 'n';
 		    fprintf(stderr, "%s already exists;", ofname);
-		    if (foreground()) {
+		    if (bgnd_flag == 0 && isatty(2)) {
 			fprintf(stderr, " do you wish to overwrite %s (y or n)? ",
 			ofname);
 			fflush(stderr);
@@ -631,6 +657,7 @@ register int argc; char **argv;
 	    if(zcat_flg == 0) {		/* Open output file */
 		if (freopen(ofname, "w", stdout) == NULL) {
 		    perror(ofname);
+		    perm_stat = 1;
 		    continue;
 		}
 		precious = 0;
@@ -691,7 +718,7 @@ register int argc; char **argv;
 #endif /* DEBUG */
 	}
     }
-    exit(exit_stat);
+    exit(perm_stat ? perm_stat : exit_stat);
 }
 
 static int offset;
@@ -1292,12 +1319,14 @@ char *ifname, *ofname;
 	    	fprintf(stderr, "%s: ", ifname);
 	fprintf(stderr, " -- not a regular file: unchanged");
 	exit_stat = 1;
+	perm_stat = 1;
     } else if (statbuf.st_nlink > 1) {
 	if(quiet)
 	    	fprintf(stderr, "%s: ", ifname);
 	fprintf(stderr, " -- has %d other links: unchanged",
 		statbuf.st_nlink - 1);
 	exit_stat = 1;
+	perm_stat = 1;
     } else if (exit_stat == 2 && (!force)) { /* No compression: remove file.Z */
 	if(!quiet)
 		fprintf(stderr, " -- file unchanged");
@@ -1321,22 +1350,6 @@ char *ifname, *ofname;
     if (unlink(ofname))
 	perror(ofname);
 }
-/*
- * This routine returns 1 if we are running in the foreground and stderr
- * is a tty.
- */
-foreground()
-{
-	if(bgnd_flag) {	/* background? */
-		return(0);
-	} else {			/* foreground */
-		if(isatty(2)) {		/* and stderr is a tty */
-			return(1);
-		} else {
-			return(0);
-		}
-	}
-}
 
 onintr ( )
 {
@@ -1347,7 +1360,7 @@ onintr ( )
 
 oops ( )	/* wild pointer -- assume bad input */
 {
-    if ( do_decomp == 1 ) 
+    if ( do_decomp ) 
     	fprintf ( stderr, "uncompress: corrupt input\n" );
     unlink ( ofname );
     exit ( 1 );
@@ -1467,7 +1480,7 @@ long int num, den;
 
 version()
 {
-	fprintf(stderr, "%s, Berkeley 5.8 %G%\n", rcs_ident);
+	fprintf(stderr, "%s, Berkeley 5.9 %G%\n", rcs_ident);
 	fprintf(stderr, "Options: ");
 #ifdef vax
 	fprintf(stderr, "vax, ");
