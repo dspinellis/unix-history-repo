@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)lcmd1.c	3.24 %G%";
+static char sccsid[] = "@(#)lcmd1.c	3.25 %G%";
 #endif
 
 #include "defs.h"
@@ -18,15 +18,17 @@ struct lcmd_arg arg_window[] = {
 	{ "shell",	1,	ARG_STR },
 	{ "pty",	1,	ARG_ANY },
 	{ "frame",	1,	ARG_ANY },
+	{ "mapnl",	1,	ARG_ANY },
 	0
 };
 
 l_window(v, a)
 register struct value *v, *a;
 {
+	register struct ww *w;
 	int col, row, ncol, nrow, id, nline;
 	char *label;
-	char haspty, hasframe;
+	char haspty, hasframe, mapnl;
 	char *shf, **sh;
 	char *argv[sizeof shell / sizeof *shell];
 
@@ -51,9 +53,12 @@ register struct value *v, *a;
 		return;
 	if ((hasframe = vtobool(a + 8, 1, -1)) < 0)
 		return;
-	if (openwin(id, row, col, nrow, ncol, nline, label,
-			haspty, hasframe, shf, sh) == 0)
+	if ((mapnl = vtobool(a + 9, !haspty, -1)) < 0)
 		return;
+	if ((w = openwin(id, row, col, nrow, ncol, nline, label, haspty,
+	    hasframe, shf, sh)) == 0)
+		return;
+	w->ww_mapnl = mapnl;
 	v->v_type = V_NUM;
 	v->v_num = id + 1;
 }
