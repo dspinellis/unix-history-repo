@@ -1,6 +1,6 @@
 #	@(#)Makefile	5.1.1.2 (Berkeley) 5/9/91
 #
-#	$Id: Makefile,v 1.27 1993/12/13 17:14:54 rich Exp $
+#	$Id: Makefile,v 1.28 1993/12/15 02:10:14 jkh Exp $
 #
 
 SUBDIR=
@@ -97,7 +97,7 @@ includes:
 	chmod 755 ${DESTDIR}/usr/include
 .endif
 	cd ${.CURDIR}/include;			make install
- 	cd ${.CURDIR}/gnu/gcc2/libobjc;		make beforeinstall
+	cd ${.CURDIR}/gnu/gcc2/libobjc;		make beforeinstall
 	cd ${.CURDIR}/gnu/libg++;		make beforeinstall
 	cd ${.CURDIR}/gnu/libregex;		make beforeinstall
 	cd ${.CURDIR}/lib/libcurses;		make beforeinstall
