@@ -18,7 +18,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)regexp.h	1.2 (Berkeley) %G%
+ *	@(#)regexp.h	1.3 (Berkeley) %G%
  */
 
 /*
@@ -38,7 +38,14 @@ typedef struct regexp {
 	char program[1];	/* Unwarranted chumminess with compiler. */
 } regexp;
 
+#ifdef __STDC__
+extern regexp *regcomp(const char *);
+extern int regexec(const  regexp *, const char *);
+extern void regsub(const  regexp *, const char *, char *);
+extern void regerror(const char *);
+#else
 extern regexp *regcomp();
 extern int regexec();
 extern void regsub();
 extern void regerror();
+#endif

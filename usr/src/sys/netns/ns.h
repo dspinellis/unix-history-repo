@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ns.h	7.5 (Berkeley) %G%
+ *	@(#)ns.h	7.6 (Berkeley) %G%
  */
 
 /*
@@ -123,4 +123,12 @@ union ns_host ns_broadhost;
 union ns_net ns_zeronet;
 union ns_net ns_broadnet;
 u_short ns_cksum();
+#else
+#ifdef __STDC__
+extern struct ns_addr ns_addr(const char *);
+extern char *ns_ntoa(struct ns_addr);
+#else
+extern struct ns_addr ns_addr();
+extern char *ns_ntoa();
+#endif
 #endif
