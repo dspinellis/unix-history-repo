@@ -1,8 +1,0 @@
-width=80,overflowoffset=10
-leftadjust,compress,compwidth=9
-addrfield,formatfield="%<{error}%{text}%|%(putstr(friendly{text}))%>"
-: -- using template mhl.rcvtty --
-From:
-Date:
-Subject:
-: -- end of summary --

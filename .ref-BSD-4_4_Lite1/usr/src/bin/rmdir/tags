@@ -1,2 +1,0 @@
-Mrmdir	rmdir.c	/^main(argc, argv)$/
-usage	rmdir.c	/^usage()$/

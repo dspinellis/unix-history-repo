@@ -1,6 +1,0 @@
-Use bind.pl instead of dig  (This fixes a whole host of problems,
-not the least of which is speed, but puts more trust in Perl's resolver)
-
-Better error checking so it doesn't create a foo/bar/baz directory
-when the baz/bar/foo domain doesn't exist.
-

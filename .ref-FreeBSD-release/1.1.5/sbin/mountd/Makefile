@@ -1,9 +1,0 @@
-#	@(#)Makefile	5.4 (Berkeley) 6/29/90
-
-PROG=	mountd
-CFLAGS+=-DNFS
-MAN5=	exports.5
-MAN8=	mountd.8
-LDADD=	-lutil
-
-.include <bsd.prog.mk>

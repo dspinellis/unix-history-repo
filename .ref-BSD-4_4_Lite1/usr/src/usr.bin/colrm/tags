@@ -1,4 +1,0 @@
-Mcolrm	colrm.c	/^main(argc, argv)$/
-check	colrm.c	/^check(stream)$/
-err	colrm.c	/^err(fmt, va_alist)$/
-usage	colrm.c	/^usage()$/

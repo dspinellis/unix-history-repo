@@ -1,4 +1,0 @@
-DEC	uudecode.c	/^#define	DEC(c)	(((c) - ' ') & 077)		\/* single cha/
-Muudecode	uudecode.c	/^main(argc, argv)$/
-decode	uudecode.c	/^decode()$/
-usage	uudecode.c	/^usage()$/

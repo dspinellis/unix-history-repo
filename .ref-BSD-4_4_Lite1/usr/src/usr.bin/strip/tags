@@ -1,5 +1,0 @@
-Mstrip	strip.c	/^main(argc, argv)$/
-err	strip.c	/^err(fatal, fmt, va_alist)$/
-s_stab	strip.c	/^s_stab(fn, fd, ep)$/
-s_sym	strip.c	/^s_sym(fn, fd, ep)$/
-usage	strip.c	/^usage()$/

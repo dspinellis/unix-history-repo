@@ -1,5 +1,0 @@
-Mpaste	paste.c	/^main(argc, argv)$/
-parallel	paste.c	/^parallel(argv)$/
-sequential	paste.c	/^sequential(argv)$/
-tr	paste.c	/^tr(arg)$/
-usage	paste.c	/^usage()$/
