@@ -1,4 +1,4 @@
-/*	syslog.h	4.1	83/05/27	*/
+/*	syslog.h	4.2	84/04/25	*/
 
 /*
  *  SYSLOG.H -- declarations for system logging program
@@ -39,10 +39,6 @@
  *		information.  Normally this will be thrown away.
  */
 
-/* some configuration parameters..... */
-#define LOG_IPC				/* set if using 4.2 IPC, else mpx */
-#define LOG_HOST 	"localhost"	/* name of host to log on */
-
 /* defines for priorities */
 #define	LOG_ALERT	1	/* alert -- send to all users */
 #define	LOG_SALERT	2	/* subalert -- send to special users */
@@ -56,18 +52,6 @@
 #define	LOG_DEBUG	9	/* debug level info */
 
 /*
- *  Mode parameters to initlog.
+ *  Option flags for openlog.
  */
-#define	LOG_NULL	0	/* don't touch log */
-#define	LOG_SOUT	1	/* log standard & diag output */
-#define	LOG_DIAG	2	/* log diagnostic output */
-#define	LOG_INDEP	3	/* log independently */
-#define	LOG_CLOSE	4	/* close the log */
-
-/*
- *  Status parameters to initlog.
- */
-#define	LOG_PID		0001	/* log the pid with each message */
-#define	LOG_TIME	0002	/* log the time with each message */
-#define	LOG_COOLIT	0004	/* suppress priority stuff */
-#define	LOG_DGRAM	0010	/* running over a datagram socket */
+#define	LOG_PID		01	/* log the pid with each message */
