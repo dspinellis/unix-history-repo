@@ -1,3 +1,7 @@
+#ifndef lint
+static char sccsid[] = "@(#)bibargs.c	1.4	%G%";
+#endif not lint
+
 /*
         read argument strings for bib and listrefs
         do name formatting, printing lines, other actions common to both

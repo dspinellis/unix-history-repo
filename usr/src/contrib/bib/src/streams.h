@@ -1,5 +1,6 @@
-#
-
+/*
+ *	@(#)streams.h	1.2	%G%
+ */
 long int nextrecord(), recsize(), nextline();
 
 # define  maxstr            256

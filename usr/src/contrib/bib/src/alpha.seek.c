@@ -1,4 +1,6 @@
-#
+#ifndef lint
+static char sccsid[] = "@(#)alpha.seek.c	1.2	%G%";
+#endif not lint
 
 # include "stdio.h"
 # include "ctype.h"
