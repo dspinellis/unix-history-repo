@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_syscalls.c	7.10 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -1062,17 +1062,10 @@ rename()
 	if (error = namei(ndp))
 		RETURN (error);
 	fvp = ndp->ni_vp;
-	bzero((caddr_t)&tond, sizeof(tond));
+	nddup(ndp, &tond);
 	tond.ni_nameiop = RENAME | LOCKPARENT | LOCKLEAF | NOCACHE;
 	tond.ni_segflg = UIO_USERSPACE;
 	tond.ni_dirp = uap->to;
-	tond.ni_cdir = ndp->ni_cdir;
-	tond.ni_cdir->v_count++;
-	tond.ni_rdir = ndp->ni_rdir;
-	if (tond.ni_rdir)
-		tond.ni_rdir->v_count++;
-	tond.ni_cred = ndp->ni_cred;
-	crhold(tond.ni_cred);
 	error = namei(&tond);
 	tdvp = tond.ni_dvp;
 	tvp = tond.ni_vp;
@@ -1103,10 +1096,7 @@ out:
 		error = VOP_RENAME(ndp, &tond);
 	}
 out1:
-	vrele(tond.ni_cdir);
-	if (tond.ni_rdir)
-		vrele(tond.ni_rdir);
-	crfree(tond.ni_cred);
+	ndrele(&tond);
 	RETURN (error);
 }
 
