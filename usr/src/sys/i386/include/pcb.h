@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pcb.h	5.13 (Berkeley) %G%
+ *	@(#)pcb.h	8.1 (Berkeley) %G%
  */
 
 /*
