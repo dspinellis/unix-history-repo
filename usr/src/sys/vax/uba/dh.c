@@ -1,4 +1,4 @@
-/*	dh.c	4.33	81/04/09	*/
+/*	dh.c	4.32	81/04/22	*/
 
 #include "dh.h"
 #if NDH > 0
@@ -559,11 +559,17 @@ dhstart(tp)
 	if (nch) {
 		car = UBACVT(tp->t_outq.c_cf, dhinfo[dh]->ui_ubanum);
 		addr->un.dhcsrl = unit|((car>>12)&0x30)|DH_IE;
-		unit = 1 << unit;
-		dhsar[dh] |= unit;
+		/*
+		 * The following nonsense with short word
+		 * is to make sure the dhbar |= word below
+		 * is done with an interlocking bisw2 instruction.
+		 */
+		{ short word = 1 << unit;
+		dhsar[dh] |= word;
 		addr->dhcar = car;
 		addr->dhbcr = -nch;
-		addr->dhbar |= unit;
+		addr->dhbar |= word;
+		}
 		tp->t_state |= BUSY;
 	}
 out:
