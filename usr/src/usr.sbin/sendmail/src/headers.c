@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	6.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	6.10 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -342,6 +342,10 @@ eatheader(e, queuejob)
 	}
 	if (tTd(32, 1))
 		printf("----------------------------\n");
+
+	/* if we are just verifying (that is, sendmail -t -bv), drop out now */
+	if (OpMode == MD_VERIFY)
+		return;
 
 	/* store hop count */
 	if (hopcnt > e->e_hopcount)
