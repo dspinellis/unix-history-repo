@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)version.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)version.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/time.h>
@@ -34,4 +34,5 @@ main()
     minor += 1;
     printf("char	version[] = \"%d.%d (%d/%d/%d)\";\n",
 	    major, minor, tmp->tm_mon+1, tmp->tm_mday, tmp->tm_year);
+    exit(0);
 }
