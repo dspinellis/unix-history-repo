@@ -1,0 +1,418 @@
+   Copyright (C) 1989, 1990, 1991 Aladdin Enterprises.  All rights reserved.
+   Distributed by Free Software Foundation, Inc.
+
+This file is part of Ghostscript.
+
+Ghostscript is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY.  No author or distributor accepts responsibility
+to anyone for the consequences of using it or for whether it serves any
+particular purpose or works at all, unless he says so in writing.  Refer
+to the Ghostscript General Public License for full details.
+
+Everyone is granted permission to copy, modify and redistribute
+Ghostscript, but only under the conditions described in the Ghostscript
+General Public License.  A copy of this license is supposed to have been
+given to you along with Ghostscript so you can know your rights and
+responsibilities.  It should be in a file named COPYING.  Among other
+things, the copyright notice and this notice must be preserved on all
+copies.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+This file, language.doc, describes the Ghostscript language.
+
+For an overview of Ghostscript and a list of the documentation files, see
+README.
+
+The Ghostscript interpreter, except as noted below, is intended to execute
+properly any source program written in a language defined by reference to
+the December 1990 printing of the PostScript Language Reference Manual
+(Second Edition) published by Addison-Wesley (ISBN 0-201-18127-4).  The
+Ghostscript language includes the following elements of the PostScript
+(TM) language:
+
+	- The full PostScript Level 1 language, as also defined in the
+first edition of the PostScript Language Reference Manual, ISBN
+0-201-10174-2, Addison-Wesley, 1985.
+
+	- The CMYK color, file system, version 25.0 language, and
+miscellaneous additions listed in sections A.1.4, A.1.6, A.1.7, and A.1.8
+of the Second Edition respectively.
+
+	- The Display PostScript extensions listed in section A.1.3 of the
+Second Edition, but excluding the operators listed in section A.1.2, and
+also excluding setbbox, xshow, xyshow, and yshow.  These extensions are
+only available if the dps feature was selected at the time that
+Ghostscript was compiled and linked.
+
+	- A few other PostScript Level 2 operators, listed below.
+
+Ghostscript also includes a number of operators defined below that are not
+in the PostScript language.
+
+Stub facilities
+---------------
+
+The following operators, while provided in the current release, have only
+a partial or dummy implementation.
+
+Character and font operators:
+	cshow, rootfont, setcachedevice2
+
+Graphics state operators:
+	currentblackgeneration, currentcmykcolor, currentcolorscreen,
+	currentcolortransfer, currenthalftonephase, currentundercolorremoval,
+	setblackgeneration, setcmykcolor, setcolorscreen,
+	setcolortransfer, sethalftonephase, setundercolorremoval,
+	currenthalftone, sethalftone,
+	currentstrokeadjust, setstrokeadjust,
+	setbbox
+
+Interpreter parameter operators:
+	setucacheparams, ucachestatus
+
+Path construction operators:
+	ucache
+
+Virtual memory operators:
+	currentshared, scheck, setshared, setvmthreshold, shareddict,
+	SharedFontDirectory, vmreclaim
+
+Level 2 operators
+-----------------
+
+The following PostScript Level 2 operators are available in Ghostscript:
+
+   	filter (not all filters are implemented, and most of the
+	  implemented ones are only available if the filter feature was
+	  selected when Ghostscript was built)
+
+Ghostscript-specific additions
+==============================
+
+Miscellaneous
+-------------
+
+^Z is counted as whitespace.
+
+run can take either a string or a file as its argument.  In the former
+case, it uses findlibfile to open the file (searching directories as
+needed).  In the latter case, it just runs the file, closing it at the
+end, and trapping errors just as for the string case.
+
+copy works on devices, as well as on the standard PostScript types.
+
+Mathematical operators
+----------------------
+
+	<number> arccos <number>
+		Computes the arc cosine of a number between -1 and 1.
+
+	<number> arcsin <number>
+		Computes the arc sine of a number between -1 and 1.
+
+Dictionary operators
+--------------------
+
+	<dict> <integer> setmaxlength -
+		Changes the capacity of a dictionary, preserving its
+		  contents.  Causes a dictfull error if the requested
+		  capacity is less than the current number of occupied
+		  entries.
+
+String operators
+----------------
+
+	<string|name|other> <patternString> stringmatch <boolean>
+		Determines whether the string or name matches the given
+		  pattern.  In the pattern, `*' matches any substring of
+		  the string, `?' matches any single character, and `\'
+		  quotes the next character.  If the first argument is not
+		  a string or name, stringmatch returns true if
+		  patternString is a single *, and false otherwise.
+
+	<state> <fromString> <toString> type1encrypt <newState> <toSubstring>
+		Encrypts fromString according to the algorithm for Adobe
+		  Type 1 fonts, writing the result into toString.
+		  toString must be at least as long as fromString or a
+		  rangecheck error occurs.  state is the initial state of
+		  the encryption algorithm (a 16-bit non-negative
+		  integer); newState is the new state of the algorithm.
+
+	<state> <fromString> <toString> type1decrypt <newState> <toSubstring>
+		Decrypts fromString according to the algorithm for Adobe
+		  Type 1 fonts, writing the result into toString.  Other
+		  specifications are as for type1encrypt.
+
+Relational operators
+--------------------
+
+	<number|string> <number|string> max <number|string>
+		Returns the larger of two numbers or strings.
+
+	<number|string> <number|string> min <number|string>
+		Returns the smaller of two numbers or strings.
+
+File operators
+--------------
+
+	<string> findlibfile <foundstring> <file> true or <string> false
+		Opens the file of the given name for reading.  If the file
+		  cannot be opened using the supplied name, searches
+		  through directories as described in use.doc.  If the
+		  search fails, findlibfile simply pushes false on the
+		  stack and returns, rather than causing an error.
+
+	<file> <integer> unread -
+	 	Pushes back the given character onto the front of the
+		  file.  If the file is only open for writing, or if the
+		  C library call (ungetc) fails, causes an ioerror error.
+		  If the integer is not in the range [0..255], causes
+		  a rangecheck error.
+
+	<file> <device> writeppmfile -
+		Writes the contents of the device, which must be an image
+		  device, onto the file, in Portable PixMap (ppm) format.
+		  Does not close the file.
+
+Path operators
+--------------
+
+	<x> <y> <width> <height> rectappend -
+	<numarray> rectappend -
+	<numstring> rectappend -
+		Appends a rectangle or rectangles to the current path, in
+		  the same manner as rectfill, rectclip, etc.  Only
+		  defined if the dps option is selected.
+
+Filters
+-------
+
+Ghostscript supports only the filters listed below.  Ghostscript does not
+support the use of a procedure as a data source or sink, only a file or a
+string.  The eexecDecode filter is specific to Ghostscript.
+
+The LZW filters are not provided, even though they have been implemented,
+because IBM and Unisys both claim a legal monopoly right (patent) to
+prevent anyone else from distributing any implementation of the (freely
+available) specification of these algorithms.  For more information about
+the damaging effects of software patents, contact the League for
+Programming Freedom, Cambridge, Massachusetts, U.S.A.
+
+	<file|string> /ASCII85Encode filter <file>
+		Creates a filter that converts each group of 4 bytes to 5
+		  printable characters.  Closing the filter writes a '~>'
+		  on the underlying file.
+
+	<file|string> /ASCII85Decode filter <file>
+		Creates a filter that reverses the action of
+		  ASCII85Encode.
+
+	<file|string> /ASCIIHexEncode filter <file>
+		Creates a filter that converts each byte to two hex
+		  digits.  Closing the filter writes a '>' on the
+		  underlying file.
+
+	<file|string> /ASCIIHexDecode filter <file>
+		Creates a filter that reverses the action of
+		  ASCIIHexEncode.
+
+	<file|string> <seed_integer> /eexecDecode filter <file>
+		Creates a filter for decrypting data that has been
+		  encrypted using eexec encryption as described in the
+		  Adobe Type 1 Font Format documentation.  The
+		  seed_integer must be 55665 for proper operation.
+
+	<file|string> /NullEncode filter <file>
+		Creates a filter that does no transformations.  Only
+		  useful for creating a "file" that writes to a string.
+
+	<file|string> /PFBDecode filter <file>
+		Creates a filter that decodes data in .PFB format, the
+		  usual semi-binary representation for Type 1 font files
+		  on IBM PC and compatible systems.
+
+	<file|string> 0 () /SubFileDecode filter <file>
+		Creates a filter that does no transformations.  Only
+		  useful for creating a "file" that reads from a string.
+		  (This is the null subcase of the general SubFileDecode
+		  filter, which Ghostscript does not yet support.)
+
+Miscellaneous operators
+-----------------------
+
+	- currenttime <number>
+		Returns the current value of a continuously-running timer,
+		  in minutes.  The initial value of this timer is undefined.
+
+	<string> getenv   <string> true  or  false
+		Looks up a name in the shell environment.  If the name is
+		  found, returns the corresponding value and true; if the
+		  name is not found, returns false.
+
+	<name> <array> makeoperator <operator>
+		Constructs and returns a new operator that is actually the
+		  given procedure in disguise.  The name is only used for
+		  printing.  The operator has the executable attribute.
+
+	<string> <boolean> setdebug -
+		If the Ghostscript interpreter was built with the DEBUG
+		  flag set, sets or resets any subset of the debugging
+		  flags normally controlled by -Z in the command line.
+		  Has no effect otherwise.
+
+Device operators
+----------------
+
+	<index> getdevice <device>
+		Returns a device from the set of devices known to the
+		  system.  The first device, which is default, is numbered
+		  0.  If the index is out of range, causes a rangecheck
+		  error.
+
+	<matrix> <width> <height> <palette> makeimagedevice <device>
+		Makes a new device that accumulates an image in memory.
+		  matrix is the initial transformation matrix: it must be
+		  orthogonal (i.e., [a 0 0 b x y] or [0 a b 0 x y]).
+		  palette is a string of 2^N or 3*2^N elements, specifying
+		  how the 2^N possible pixel values will be interpreted.
+		  Each element is interpreted as a gray value, or as RGB
+		  values, multiplied by 255.  For example, if you want
+		  a monochrome image for which 0=white and 1=black, the
+		  palette should be <ff 00>; if you want a 3-bit deep
+		  image with just the primary colors and their complements
+		  (ignoring the fact that 3-bit images are not supported),
+		  the palette might be <000000 0000ff 00ff00 00ffff
+		  ff0000 ff00ff ffff00 ffffff>.  At present,
+		  the palette must contain exactly 2 or 256 entries,
+		  and must contain an entry for black and an entry
+		  for white; if it contains any entries that aren't black,
+		  white, or gray, it must contain at least the six primary
+		  colors (red, green, blue, and their complements cyan,
+		  magenta, and yellow); aside from this, its contents are
+		  arbitrary.  (4-entry or 16-entry palettes, corresponding
+		  to 2- or 4-bit pixels, may be supported eventually.)
+		Alternatively, palette can be null.  This is interpreted
+		  as 32-bit-per-pixel color, where the four bytes of each
+		  pixel are respectively unused, R, G, and B.
+		Note that one can also make an image device (with the same
+		  palette as an existing image device) by copying a device
+		  using the copy operator.
+
+	<device> <index> <string> copyscanlines <substring>
+		Copies one or more scan lines from an image device into a
+		  string, starting at a given scan line in the image.
+		  The data is in the same format as for the image
+		  operator.  Error if the device is not an image device or
+		  if the string is too small to hold at least one complete
+		  scan line.  Always copies an integral number of scan
+		  lines.
+
+	<device> setdevice -
+		Sets the current device to the specified device.  Also
+		  resets the transformation and clipping path to the
+		  initial values for the device.
+
+	- currentdevice <device>
+		Gets the current device from the graphics state.
+
+	<device> devicename <string>
+		Gets the name of a device.
+
+	<device> <matrix> deviceinitialmatrix <matrix>
+		Gets the initial matrix of a device, i.e., the one that
+		  defaultmatrix would return if the device were the
+		  current device.
+
+	<device> getdeviceprops <mark> <name1> <value1> ... <namen> <valuen>
+		Gets all the properties of a device.  Currently defined
+		  names and values for all devices are:
+			Name <string>
+				device name
+			HWResolution [<float> <float>]
+				X and Y resolution in pixels/inch
+			HWSize [<integer> <integer>]
+				X and Y size in pixels
+			InitialMatrix [<6 floats>]
+				initial transformation matrix
+		For printers, the following are also defined:
+			MaxBitmap <integer>
+				maximum space for a full bitmap in RAM
+			BufferSpace <integer>
+				buffer space for band lists, if the bitmap
+				  is too big to fit in RAM
+			OutputFile <string>
+				() means send to printer directly,
+				  otherwise specifies the file name for
+				  output; a * is replaced by the page #;
+				  on Unix systems, (|command) writes to a pipe
+
+	<mark> <name1> <value1> ... <namen> <valuen> <device>
+	    putdeviceprops <device>
+		Sets properties of a device.  May cause undefined,
+		  typecheck, rangecheck, or limitcheck errors.
+
+	- flushpage -
+		On displays, flushes any buffered output, so that it
+		  is guaranteed to show up on the screen; on printers,
+		  has no effect.
+
+Character operators
+-------------------
+
+	<string> type1addpath -
+		Adds the description of a character to the current path,
+		  and then optionally renders the character.  The string
+		  argument is a scalable description encoded in Adobe Type
+		  1 format.  This operator is only valid in the context of
+		  a show operator, like setcharwidth and setcachedevice.
+		  It uses information from the current font, in addition
+		  to the argument.
+
+	<image> <width> <height> <wx> <wy> <ox> <oy> <string>
+	  type1imagepath <substring>
+		Converts an image (bitmap) description of a character into
+		  a scalable description in Adobe Type 1 format.  The
+		  current transformation matrix should be the same as the
+		  FontMatrix of the font in which this character will be
+		  used: this establishes the scaling relationship between
+		  image pixels (the image is assumed to be 1 unit high in
+		  user space) and the character coordinate system used in
+		  the scalable description.  wx and wy are the character
+		  width, and ox and oy are the character origin relative
+		  to the lower left corner of the bitmap, in *pixels*.
+		All coordinates in the scalable description are rounded to
+		  integers, so the coefficients in the FontMatrix should
+		  be on the order of 1/N for some value of N that is
+		  either a multiple of the height/width or is large
+		  compared to the width and height.  (There is a
+		  convention, which some PostScript programs rely on, that
+		  N=1000.)
+		Note that the encoded description has *not* been subjected
+		  to CharString encryption, which is necessary before the
+		  description can be given to type1addpath: to do this,
+		  follow the type1imagepath with
+			4330 exch dup type1encrypt exch pop
+		If the description is too complex to fit into the supplied
+		  string, a limitcheck error results.  A good rule of
+		  thumb is that the size of the string should be about 6
+		  times the number of 1-bits in the image that are not
+		  completely surrounded by other 1-bits.
+
+	<font> <char> Type1BuildChar -
+		This is not a new operator: rather, it is a name known
+		  specially to the interpreter.  Whenever the interpreter
+		  needs to render a character (during a ...show,
+		  stringwidth, or charpath), it looks up the name
+		  BuildChar in the font dictionary to find a procedure to
+		  run.  If it does not find this name, and if the FontType
+		  is 1, the interpreter instead uses the value (looked up
+		  on the dictionary stack in the usual way) of the name
+		  Type1BuildChar.
+		The standard definition of Type1BuildChar is in gs_fonts.ps.
+		  Users should not need to redefine Type1BuildChar, except
+		  perhaps for tracing or debugging.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+PostScript is a trademark of Adobe Systems, Incorporated.
