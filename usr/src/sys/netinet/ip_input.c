@@ -1,4 +1,4 @@
-/*	ip_input.c	1.38	82/03/31	*/
+/*	ip_input.c	1.39	82/04/04	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -105,20 +105,25 @@ next:
 	 * Trim mbufs if longer than we expect.
 	 * Drop packet if shorter than we expect.
 	 */
-	i = 0;
+	i = -ip->ip_len;
 	m0 = m;
-	for (; m != NULL; m = m->m_next) {
-		if (m->m_free) panic("ipinput already free");
+	for (;;) {
 		i += m->m_len;
+		if (m->m_next == 0)
+			break;
+		m = m->m_next;
 	}
-	m = m0;
-	if (i != ip->ip_len) {
-		if (i < ip->ip_len) {
+	if (i != 0) {
+		if (i < 0) {
 			ipstat.ips_tooshort++;
 			goto bad;
 		}
-		m_adj(m, ip->ip_len - i);
+		if (i <= m->m_len)
+			m->m_len -= i;
+		else
+			m_adj(m0, -i);
 	}
+	m = m0;
 
 	/*
 	 * Process options and, if not destined for us,
