@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_de.c	7.3 (Berkeley) %G%
+ *	@(#)if_de.c	7.4 (Berkeley) %G%
  */
 #include "de.h"
 #if NDE > 0
@@ -807,12 +807,12 @@ de_setaddr(physaddr, unit)
 	if (! (ds->ds_flags & DSF_RUNNING))
 		return;
 		
-	bcopy(physaddr, &ds->ds_pcbb.pcbb2, 6);
+	bcopy((caddr_t) physaddr, (caddr_t) &ds->ds_pcbb.pcbb2, 6);
 	ds->ds_pcbb.pcbb0 = FC_WTPHYAD;
 	addr->pclow = PCSR0_INTE|CMD_GETCMD;
 	if (dewait(ui, "address change") == 0) {
 		ds->ds_flags |= DSF_SETADDR;
-		bcopy(physaddr, ds->ds_addr, 6);
+		bcopy((caddr_t) physaddr, (caddr_t) ds->ds_addr, 6);
 	}
 }
 
