@@ -63,9 +63,9 @@ static char sccsid[] = "@(#)disklabel.c	5.20 (Berkeley) 2/9/91";
 #include <sys/disklabel.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <unistd.h>
 #include "pathnames.h"
 
-extern off_t lseek();
 
 /*
  * Disklabel: read and write disklabels.
