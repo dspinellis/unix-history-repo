@@ -1,10 +1,22 @@
-/* vi: set tabstop=4 : */
+/*-
+ * Copyright (c) 1993 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Barry Brachman.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)prtable.c	5.2 (Berkeley) %G%
+ */
 
 #include <curses.h>
 
+#include "extern.h"
+
 #define NCOLS	5
 
-static int get_maxlen();
+static int	get_maxlen __P((char *[], int, int (*)(char **, int)));
 
 /*
  * Routine to print a table
@@ -21,10 +33,12 @@ static int get_maxlen();
  * prtable and length are called with the the address of the base and
  * an index
  */
+void
 prtable(base, num, d_cols, width, prentry, length)
-char *base;
-int num, d_cols;
-int (*prentry)(), (*length)();
+	char *base[];
+	int num, d_cols, width;
+	void (*prentry) __P((char *[], int));
+	int (*length) __P((char *[], int));
 {
         register int c, j;
         register int a, b, cols, loc, maxlen, nrows, z;
@@ -72,9 +86,9 @@ int (*prentry)(), (*length)();
 
 static int
 get_maxlen(base, num, length)
-char *base;
-int num;
-int (*length)();
+	char *base[];
+	int num;
+	int (*length) __P((char **, int));
 {
 	register int i, len, max;
 
@@ -85,4 +99,3 @@ int (*length)();
 	}
 	return(max);
 }
-

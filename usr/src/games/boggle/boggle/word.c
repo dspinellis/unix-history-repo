@@ -1,25 +1,31 @@
-/* vi: set tabstop=4 : */
+/*-
+ * Copyright (c) 1993 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Barry Brachman.
+ *
+ * %sccs.include.redist.c%
+ */
 
-#include <stdio.h>
+#ifndef lint
+static char sccsid[] = "@(#)word.c	5.2 (Berkeley) %G%";
+#endif /* not lint */
 
-#include "bog.h"
-
-#ifdef ATARI
-#include <stat.h>
-#include <osbind.h>
-#define malloc(x)       Malloc(x)
-#else
 #include <sys/types.h>
 #include <sys/stat.h>
-#endif
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "bog.h"
+#include "extern.h"
 
 static char *dictspace, *dictend;
 static char *sp;
 
 static int first = 1, lastch = 0;
-
-char *index();
-long atol();
 
 /*
  * Return the next word in the compressed dictionary in 'buffer' or
@@ -27,133 +33,117 @@ long atol();
  */
 char *
 nextword(fp)
-FILE *fp;
+	FILE *fp;
 {
-    register int ch, pcount;
+	extern int wordlen;
+	register int ch, pcount;
 	register char *p;
 	static char buf[MAXWORDLEN + 1];
-	extern int wordlen;
 
-	if (fp == (FILE *) NULL) {
-	    if (sp == dictend)
-			return((char *) NULL);
-
+	if (fp == NULL) {
+		if (sp == dictend)
+			return (NULL);
+	
 		p = buf + (int) *sp++;
 
 		/*
 		 * The dictionary ends with a null byte
 		 */
-	    while (*sp >= 'a') {
+		while (*sp >= 'a')
 			if ((*p++ = *sp++) == 'q')
 				*p++ = 'u';
-		}
-	}
-	else {
-    	if (first) {
-	        if ((pcount = getc(fp)) == EOF)
-				return((char *) NULL);
+	} else {
+		if (first) {
+			if ((pcount = getc(fp)) == EOF)
+				return (NULL);
 			first = 0;
-		}
-		else if ((pcount = lastch) == EOF)
-			return((char *) NULL);
+		} else if ((pcount = lastch) == EOF)
+			return (NULL);
 
 		p = buf + pcount;
  
-	    while ((ch = getc(fp)) != EOF && ch >= 'a') {
+		while ((ch = getc(fp)) != EOF && ch >= 'a')
 			if ((*p++ = ch) == 'q')
 				*p++ = 'u';
-		}
-	    lastch = ch;
+		lastch = ch;
 	}
 	wordlen = (int) (p - buf);
-    *p = '\0';
-    return(buf);
+	*p = '\0';
+	return (buf);
 }
  
 /*
  * Reset the state of nextword() and do the fseek()
  */
+long
 dictseek(fp, offset, ptrname)
-FILE *fp;
-long offset;
-int ptrname;
+	FILE *fp;
+	long offset;
+	int ptrname;
 {
-
-	if (fp == (FILE *) NULL) {
+	if (fp == NULL) {
 		if ((sp = dictspace + offset) >= dictend)
-			return(-1);
-		return(0);
+			return (-1);
+		return (0);
 	}
 
 	first = 1;
-	return(fseek(fp, offset, ptrname));
+	return (fseek(fp, offset, ptrname));
 }
 
 FILE *
 opendict(dict)
-char *dict;
+	char *dict;
 {
 	FILE *fp;
 
-#ifdef ATARI
-	if ((fp = fopen(dict, "rb")) == (FILE *) NULL)
-		return((FILE *) NULL);
-#else
-	if ((fp = fopen(dict, "r")) == (FILE *) NULL)
-		return((FILE *) NULL);
-#endif
-	return(fp);
+	if ((fp = fopen(dict, "r")) == NULL)
+		return (NULL);
+	return (fp);
 }
 
 /*
  * Load the given dictionary and initialize the pointers
  */
+int
 loaddict(fp)
-FILE *fp;
+	FILE *fp;
 {
+	struct stat statb;
+	long n;
 	int st;
 	char *p;
-	long n;
-	struct stat statb;
-
-#ifdef ATARI
-	if (stat(DICT, &statb) < 0) {
-		(void) fclose(fp);
-		return(-1);
-	}
-#else
-	char *malloc();
 
 	if (fstat(fileno(fp), &statb) < 0) {
-		(void) fclose(fp);
-		return(-1);
+		(void)fclose(fp);
+		return (-1);
 	}
-#endif
 
 	/*
-	 * An extra character (a sentinel) is allocated and set to null to improve
-	 * the expansion loop in nextword()
+	 * An extra character (a sentinel) is allocated and set to null
+	 * to improve the expansion loop in nextword().
 	 */
-	if ((dictspace = (char *) malloc(statb.st_size + 1)) == (char *) NULL) {
-		(void) fclose(fp);
-		return(-1);
+	if ((dictspace = malloc(statb.st_size + 1)) == NULL) {
+		(void)fclose(fp);
+		return (-1);
 	}
-	n = (long) statb.st_size;
+	n = (long)statb.st_size;
 	sp = dictspace;
 	dictend = dictspace + n;
 
 	p = dictspace;
+	st = -1;
 	while (n > 0 && (st = fread(p, 1, BUFSIZ, fp)) > 0) {
 		p += st;
 		n -= st;
 	}
 	if (st < 0) {
-		(void) fclose(fp);
-		(void) fprintf(stderr, "Error reading dictionary\n");
-		return(-1);
+		(void)fclose(fp);
+		(void)fprintf(stderr, "Error reading dictionary\n");
+		return (-1);
 	}
 	*p = '\0';
-	return(0);
+	return (0);
 }
 
 /*
@@ -162,38 +152,39 @@ FILE *fp;
  * Taking the easy way out, the input buffer is made "large" and a check
  * is made for lines that are too long
  */
+int
 loadindex(indexfile)
-char *indexfile;
+	char *indexfile;
 {
-    register int i, j;
-    char buf[BUFSIZ];
-    FILE *fp;
+	register int i, j;
+	char buf[BUFSIZ];
+	FILE *fp;
 	extern struct dictindex dictindex[];
  
-    if ((fp = fopen(indexfile, "r")) == (FILE *) NULL) {
-        (void) fprintf(stderr, "Can't open '%s'\n", indexfile);
-        return(-1);
-    }
-    i = 0;
-    while (fgets(buf, sizeof(buf), fp) != (char *) NULL) {
-		if (index(buf, '\n') == (char *) NULL) {
-			(void) fprintf(stderr, "A line in the index file is too long\n");
+	if ((fp = fopen(indexfile, "r")) == NULL) {
+		(void) fprintf(stderr, "Can't open '%s'\n", indexfile);
+		return (-1);
+	}
+	i = 0;
+	while (fgets(buf, sizeof(buf), fp) != NULL) {
+		if (strchr(buf, '\n') == NULL) {
+			(void)fprintf(stderr,
+				"A line in the index file is too long\n");
 			return(-1);
 		}
-        j = *buf - 'a';
-        if (i != j) {
-            (void) fprintf(stderr, "Bad index order\n");
-            return(-1);
-        }
-        dictindex[j].start = atol(buf + 1);
-        dictindex[j].length = atol(buf + 9) - dictindex[j].start;
-        i++;
-    }
-    if (i != 26) {
-        (void) fprintf(stderr, "Bad index length\n");
-        return(-1);
-    }
-    (void) fclose(fp);
+		j = *buf - 'a';
+		if (i != j) {
+		    (void) fprintf(stderr, "Bad index order\n");
+		    return(-1);
+		}
+		dictindex[j].start = atol(buf + 1);
+		dictindex[j].length = atol(buf + 9) - dictindex[j].start;
+		i++;
+	}
+	if (i != 26) {
+		(void) fprintf(stderr, "Bad index length\n");
+		return(-1);
+	}
+	(void) fclose(fp);
 	return(0);
 } 
- 
