@@ -24,9 +24,6 @@ static	char	sccsid[] = "@(#)outbound.c	3.1  10/29/86";
 #endif	/* lint */
 
 
-#if	defined(unix)
-#include <signal.h>
-#endif	/* defined(unix) */
 #include <stdio.h>
 
 #include "hostctlr.h"
@@ -49,15 +46,6 @@ static	char	sccsid[] = "@(#)outbound.c	3.1  10/29/86";
 					} \
 				    }
 
-#if	defined(unix)
-extern int	tin, tout;		/* file descriptors */
-#endif	/* defined(unix) */
-
-
-#if	defined(unix)
-static int tcflag = -1;			/* transparent mode command flag */
-static int savefd[2];			/* for storing fds during transcom */
-#endif	/* defined(unix) */
 
 /* some globals */
 
@@ -174,10 +162,6 @@ int	control;				/* this buffer ended block? */
     static int Command;
     static int Wcc;
     static int	LastWasTerminated = 1;	/* was "control" = 1 last time? */
-#if	defined(unix)
-    extern char *transcom;
-    int inpipefd[2], outpipefd[2], savemode, aborttc();
-#endif	/* defined(unix) */
 
     origCount = count;
 
@@ -185,7 +169,7 @@ int	control;				/* this buffer ended block? */
 
 	if (count < 2) {
 	    if (count == 0) {
-		StringToTerminal("Short count received from host!\n");
+		ExitString("Short count received from host!\n", 1);
 		return(count);
 	    }
 	    Command = buffer[0];
@@ -224,21 +208,6 @@ int	control;				/* this buffer ended block? */
 	    {
 		int newlines, newcolumns;
 
-#if	defined(unix)
-		if (tcflag == 0) {
-		   tcflag = -1;
-		   (void) signal(SIGCHLD, SIG_DFL);
-		} else if (tcflag > 0) {
-		   setcommandmode();
-		   (void) close(tin);
-		   (void) close(tout);
-		   tin = savefd[0];
-		   tout = savefd[1];
-		   setconnmode();
-		   tcflag = -1;
-		   (void) signal(SIGCHLD, SIG_DFL);
-		}
-#endif	/* defined(unix) */
 		if ((Command == CMD_ERASE_WRITE)
 				|| (Command == CMD_SNA_ERASE_WRITE)) {
 		    newlines = 24;
@@ -263,7 +232,7 @@ int	control;				/* this buffer ended block? */
 		}
 		Clear3270();
 		if (TransparentClock == OutputClock) {
-		    RefreshScreen();
+		    TransStop();
 		}
 		break;
 	    }
@@ -297,7 +266,7 @@ int	control;				/* this buffer ended block? */
 
 		sprintf(buffer, "Unexpected command code 0x%x received.\n",
 								Command);
-		ExitString(stderr, buffer, 1);
+		ExitString(buffer, 1);
 		break;
 	    }
 	}
@@ -342,57 +311,9 @@ int	control;				/* this buffer ended block? */
 		    if (!control) {
 			return(origCount-(count+1));
 		    } else {
-			while (DoTerminalOutput() == 0) {
-#if defined(unix)
-			    HaveInput = 0;
-#endif /* defined(unix) */
-			}
-			TransparentClock = OutputClock; 	/* this clock */
-#if	defined(unix)
-			if (transcom && tcflag == -1) {
-			   while (1) {			  /* go thru once */
-				 if (pipe(outpipefd) < 0) {
-				    break;
-				 }
-				 if (pipe(inpipefd) < 0) {
-				    break;
-				 }
-			         if ((tcflag = fork()) == 0) {
-				    (void) close(outpipefd[1]);
-				    (void) close(0);
-				    if (dup(outpipefd[0]) < 0) {
-				       exit(1);
-				    }
-				    (void) close(outpipefd[0]);
-				    (void) close(inpipefd[0]);
-				    (void) close(1);
-				    if (dup(inpipefd[1]) < 0) {
-				       exit(1);
-				    }
-				    (void) close(inpipefd[1]);
-				    if (execl("/bin/csh", "csh", "-c", transcom, (char *) 0)) {
-					exit(1);
-				    }
-				 }
-				 (void) close(inpipefd[1]);
-				 (void) close(outpipefd[0]);
-				 savefd[0] = tin;
-				 savefd[1] = tout;
-				 setcommandmode();
-				 tin = inpipefd[0];
-				 tout = outpipefd[1];
-				 (void) signal(SIGCHLD, aborttc);
-				 setconnmode();
-				 tcflag = 1;
-				 break;
-			   }
-			   if (tcflag < 1) {
-			      tcflag = 0;
-			   }
-			}
-#endif	/* defined(unix) */
-			(void) DataToTerminal(buffer+2, count-2);
-			SendToIBM();
+			TransparentClock = OutputClock;		/* clock next */
+			TransOut(buffer+2, count-2);		/* output */
+			SendToIBM();				/* ack block */
 			TransparentClock = OutputClock+1;	/* clock next */
 			buffer += count;
 			count -= count;
@@ -514,19 +435,3 @@ int	control;				/* this buffer ended block? */
 	return(origCount-count);
     }
 }
-
-
-#if	defined(unix)
-aborttc()
-{
-	int savemode;
-
-	setcommandmode();
-	(void) close(tin);
-	(void) close(tout);
-	tin = savefd[0];
-	tout = savefd[1];
-	setconnmode();
-	tcflag = 0;
-}
-#endif	/* defined(unix) */
