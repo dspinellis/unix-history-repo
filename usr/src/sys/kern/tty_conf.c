@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty_conf.c	7.4 (Berkeley) %G%
+ *	@(#)tty_conf.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -13,19 +13,17 @@
 #include "tty.h"
 #include "conf.h"
 
-int	nodev();
-int	nulldev();
+int	enodev();
+int	nullop();
 
 int	ttyopen(),ttylclose(),ttread(),ttwrite(),nullioctl(),ttstart();
 int	ttymodem(), nullmodem(), ttyinput();
-
-int	ottyopen(), ottylclose(), ottread(), ottwrite();
-int	ottyinput(), ottstart(), ottymodem();
 
 #include "tb.h"
 #if NTB > 0
 int	tbopen(),tbclose(),tbread(),tbinput(),tbioctl();
 #endif
+
 #include "sl.h"
 #if NSL > 0
 int	slopen(),slclose(),slinput(),sltioctl(),slstart();
@@ -35,26 +33,26 @@ int	slopen(),slclose(),slinput(),sltioctl(),slstart();
 struct	linesw linesw[] =
 {
 	ttyopen, ttylclose, ttread, ttwrite, nullioctl,
-	ttyinput, nodev, nulldev, ttstart, ttymodem,	/* 0- termios */
+	ttyinput, enodev, nullop, ttstart, ttymodem,	/* 0- termios */
 
-	nodev, nodev, nodev, nodev, nodev,		/* 1- defunct */
-	nodev, nodev, nodev, nodev, nodev,
+	enodev, enodev, enodev, enodev, enodev,		/* 1- defunct */
+	enodev, enodev, enodev, enodev, enodev,
 
-	nodev, nodev, nodev, nodev, nodev,		/* 2- defunct */
-	nodev, nodev, nodev, nodev, nodev,
+	enodev, enodev, enodev, enodev, enodev,		/* 2- defunct */
+	enodev, enodev, enodev, enodev, enodev,
 #if NTB > 0
-	tbopen, tbclose, tbread, nodev, tbioctl,
-	tbinput, nodev, nulldev, ttstart, nullmodem,	/* 3- TABLDISC */
+	tbopen, tbclose, tbread, enodev, tbioctl,
+	tbinput, enodev, nullop, ttstart, nullmodem,	/* 3- TABLDISC */
 #else
-	nodev, nodev, nodev, nodev, nodev,
-	nodev, nodev, nodev, nodev, nodev,
+	enodev, enodev, enodev, enodev, enodev,
+	enodev, enodev, enodev, enodev, enodev,
 #endif
 #if NSL > 0
-	slopen, slclose, nodev, nodev, sltioctl,
-	slinput, nodev, nulldev, slstart, nullmodem,	/* 4- SLIPDISC */
+	slopen, slclose, enodev, enodev, sltioctl,
+	slinput, enodev, nullop, slstart, nullmodem,	/* 4- SLIPDISC */
 #else
-	nodev, nodev, nodev, nodev, nodev,
-	nodev, nodev, nodev, nodev, nodev,
+	enodev, enodev, enodev, enodev, enodev,
+	enodev, enodev, enodev, enodev, enodev,
 #endif
 };
 
