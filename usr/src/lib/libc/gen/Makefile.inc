@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.47 (Berkeley) %G%
+#	@(#)Makefile.inc	5.48 (Berkeley) %G%
 
 # machine-independent gen sources
 .PATH: ${.CURDIR}/${MACHINE}/gen ${.CURDIR}/gen
@@ -9,7 +9,7 @@ SRCS+=	alarm.c assert.c clock.c closedir.c confstr.c crypt.c ctermid.c \
 	getgrent.c getgrouplist.c gethostname.c getloadavg.c getlogin.c \
 	getmntinfo.c getnetgrent.c getpagesize.c getpass.c getpwent.c \
 	getttyent.c getusershell.c glob.c initgroups.c isatty.c isctype.c \
-	isinf.c nice.c nlist.c opendir.c pathconf.c pause.c \
+	isinf.c nice.c nlist.c opendir.c pause.c \
 	popen.c psignal.c pwcache.c raise.c readdir.c rewinddir.c \
 	scandir.c seekdir.c sethostname.c setjmperr.c setmode.c \
 	siginterrupt.c siglist.c signal.c sigsetops.c sleep.c sysconf.c \
@@ -36,7 +36,7 @@ MAN3+=	alarm.0 clock.0 confstr.0 crypt.0 ctermid.0 ctime.0 ctype.0 \
 	glob.0 initgroups.0 isalnum.0 isalpha.0 isascii.0 isblank.0 \
 	iscntrl.0 isdigit.0 isgraph.0 isinf.0 islower.0 isprint.0 \
 	ispunct.0 isspace.0 isupper.0 isxdigit.0 ldexp.0 modf.0 nice.0 \
-	nlist.0 pathconf.0 pause.0 popen.0 psignal.0 pwcache.0 raise.0 \
+	nlist.0 pause.0 popen.0 psignal.0 pwcache.0 raise.0 \
 	scandir.0 setjmp.0 setmode.0 siginterrupt.0 signal.0 sigsetops.0 \
 	sleep.0 sysconf.0 sysctl.0 syslog.0 tcgetpgrp.0 tcsendbreak.0 \
 	tcsetattr.0 tcsetpgrp.0 time.0 times.0 timezone.0 toascii.0 \
