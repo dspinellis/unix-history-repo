@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_clock.c	7.14 (Berkeley) %G%
+ *	@(#)kern_clock.c	7.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -402,27 +402,4 @@ hzto(tv)
 		ticks = 0x7fffffff;
 	splx(s);
 	return (ticks);
-}
-
-/* ARGSUSED */
-profil(p, uap, retval)
-	struct proc *p;
-	register struct args {
-		short	*bufbase;
-		unsigned bufsize;
-		unsigned pcoffset;
-		unsigned pcscale;
-	} *uap;
-	int *retval;
-{
-	register struct uprof *upp = &p->p_stats->p_prof;
-
-	upp->pr_base = uap->bufbase;
-	upp->pr_size = uap->bufsize;
-	upp->pr_off = uap->pcoffset;
-	upp->pr_scale = uap->pcscale;
-#ifdef PROFTIMER
-	initprofclock();
-#endif
-	return (0);
 }
