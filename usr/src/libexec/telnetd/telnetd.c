@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	4.20 83/05/22";
+static char sccsid[] = "@(#)telnetd.c	4.21 83/05/24";
 #endif
 
 /*
@@ -18,6 +18,7 @@ static char sccsid[] = "@(#)telnetd.c	4.20 83/05/22";
 #include <sgtty.h>
 #include <wait.h>
 #include <netdb.h>
+#include <getty.h>
 
 #define	BELL		'\07'
 
@@ -190,7 +191,7 @@ gotpty:
 	dup2(t, 1);
 	dup2(t, 2);
 	close(t);
-	execl("/bin/login", "telnet-login", "-h", host, 0);
+	execl("/bin/login", "login", "-h", host, 0);
 	fatalperror(f, "/bin/login", errno);
 	/*NOTREACHED*/
 }
@@ -225,6 +226,7 @@ fatalperror(f, msg, errno)
 telnet(f, p)
 {
 	int on = 1;
+	char hostname[32];
 
 	net = f, pty = p;
 	ioctl(f, FIONBIO, &on);
@@ -237,6 +239,12 @@ telnet(f, p)
 	 */
 	dooption(TELOPT_ECHO);
 	myopts[TELOPT_ECHO] = 1;
+	/*
+	 * Show banner that getty never gave.
+	 */
+	gethostname(hostname, sizeof (hostname));
+	sprintf(nfrontp, BANNER, hostname, "");
+	nfrontp += strlen(nfrontp);
 	for (;;) {
 		int ibits = 0, obits = 0;
 		register int c;
