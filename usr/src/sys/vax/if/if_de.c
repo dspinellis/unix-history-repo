@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_de.c	7.2 (Berkeley) %G%
+ *	@(#)if_de.c	7.3 (Berkeley) %G%
  */
 #include "de.h"
 #if NDE > 0
@@ -234,6 +234,8 @@ dereset(unit, uban)
 	printf(" de%d", unit);
 	de_softc[unit].ds_if.if_flags &= ~IFF_RUNNING;
 	de_softc[unit].ds_flags &= ~(DSF_LOCK | DSF_RUNNING);
+	((struct dedevice *)ui->ui_addr)->pcsr0 = PCSR0_RSET;
+	(void)dewait(ui, "reset");
 	deinit(unit);
 }
 
