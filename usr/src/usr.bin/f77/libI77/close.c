@@ -26,11 +26,11 @@ f_clos(a) cllist *a;
 	external = YES;
 	errflag = a->cerr;
 	lunit = a->cunit;
-	if(not_legal(lunit)) err(errflag,F_ERUNIT,clse);
+	if(not_legal(lunit)) return(OK);
 	if(lunit==STDERR && (!a->csta || *a->csta != FROM_OPEN[0]))
 		err(errflag,F_ERUNIT,"can't close stderr");
 	b= &units[lunit];
-	if(!b->ufd) err(errflag,F_ERNOPEN,clse);
+	if(!b->ufd) return(OK);
 	if(a->csta && *a->csta != FROM_OPEN[0])
 		switch(lcase(*a->csta))
 		{
