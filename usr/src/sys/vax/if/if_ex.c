@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_ex.c	7.1 (Berkeley) %G%
+ *	@(#)if_ex.c	7.2 (Berkeley) %G%
  */
 
 
@@ -27,6 +27,7 @@
 #include "socket.h"
 #include "vmmac.h"
 #include "ioctl.h"
+#include "syslog.h"
 #include "errno.h"
 
 #include "../net/if.h"
@@ -490,7 +491,7 @@ excdint(unit)
 				xs->xs_if.if_collisions += 2;	/* guess */
 			} else if (bp->mb_rply & LLXM_ERROR) {
 				xs->xs_if.if_oerrors++;
-				printf("ex%d: transmit error=%b\n",
+				log(LOG_ERR, "ex%d: transmit error=%b\n",
 					unit, bp->mb_rply, XMIT_BITS);
 			}
 			if (xs->xs_ifuba.ifu_xtofree) {
@@ -555,12 +556,13 @@ exrecv(unit, bp)
     	struct mbuf *m;
 	register int len, off, resid;
 	register struct ifqueue *inq;
+	int s;
 
 	xs->xs_if.if_ipackets++;
 	len = bp->mb_er.er_blks[0].bb_len - sizeof(struct ether_header) - 4;
 	if (bp->mb_rply != LL_OK) {
 		xs->xs_if.if_ierrors++;
-		printf("ex%d: receive error=%b\n",
+		log(LOG_ERR, "ex%d: receive error=%b\n",
 			unit, bp->mb_rply, RECV_BITS);
 		return;
 	}
@@ -629,12 +631,13 @@ exrecv(unit, bp)
 		return;
 	}
 
+	s = splimp();
 	if (IF_QFULL(inq)) {
 		IF_DROP(inq);
 		m_freem(m);
-		return;
-	}
-	IF_ENQUEUE(inq, m);
+	} else
+		IF_ENQUEUE(inq, m);
+	splx(s);
 }
 
 /*
@@ -912,7 +915,7 @@ ex_setaddr(physaddr, unit)
 	while ((bp->mb_status & MH_OWNER) == MH_EXOS)	/* poll for reply */
 		;
 #ifdef	DEBUG
-	printf("ex%d: reset addr %s\n", ui->ui_unit,
+	log(LOG_DEBUG, "ex%d: reset addr %s\n", ui->ui_unit,
 		ether_sprintf(bp->mb_na.na_addrs));
 #endif
 	/*
