@@ -1,0 +1,655 @@
+.\"
+.\" This highly condensed manual page was prepared from perl.man.
+.\"
+.TH PERL 1 "June 30, 1993"
+.UC 6
+.SH NAME
+perl \- practical extraction and report language
+.SH SYNOPSIS
+.B perl
+[options] filename args
+.SH DESCRIPTION
+.I Perl
+is an interpreted language optimized for scanning arbitrary text files,
+extracting information from those text files, and printing reports based
+on that information.
+It's also a good language for many system management tasks.
+The language is intended to be practical (easy to use, efficient, complete)
+rather than beautiful (tiny, elegant, minimal).
+It combines (in the author's opinion, anyway) some of the best features of C,
+\fIsed\fR, \fIawk\fR, and \fIsh\fR,
+so people familiar with those languages should have little difficulty with it.
+(Language historians will also note some vestiges of \fIcsh\fR, Pascal, and
+even BASIC-PLUS.)
+Expression syntax corresponds quite closely to C expression syntax.
+Unlike most Unix utilities,
+.I perl
+does not arbitrarily limit the size of your data\(emif you've got
+the memory,
+.I perl
+can slurp in your whole file as a single string.
+Recursion is of unlimited depth.
+And the hash tables used by associative arrays grow as necessary to prevent
+degraded performance.
+.I Perl
+uses sophisticated pattern matching techniques to scan large amounts of
+data very quickly.
+Although optimized for scanning text,
+.I perl
+can also deal with binary data, and can make dbm files look like associative
+arrays (where dbm is available).
+Setuid
+.I perl
+scripts are safer than C programs
+through a dataflow tracing mechanism which prevents many stupid security holes.
+If you have a problem that would ordinarily use \fIsed\fR
+or \fIawk\fR or \fIsh\fR, but it
+exceeds their capabilities or must run a little faster,
+and you don't want to write the silly thing in C, then
+.I perl
+may be for you.
+There are also translators to turn your
+.I sed
+and
+.I awk
+scripts into
+.I perl
+scripts.
+.PP
+Upon startup,
+.I perl
+looks for your script in one of the following places:
+.Ip 1. 4 2
+Specified line by line via
+.B \-e
+switches on the command line.
+.Ip 2. 4 2
+Contained in the file specified by the first filename on the command line.
+(Note that systems supporting the #! notation invoke interpreters this way.)
+.Ip 3. 4 2
+Passed in implicitly via standard input.
+This only works if there are no filename arguments\(emto pass
+arguments to a
+.I stdin
+script you must explicitly specify a \- for the script name.
+.PP
+After locating your script,
+.I perl
+compiles it to an internal form.
+If the script is syntactically correct, it is executed.
+.PP
+A single-character option may be combined with the following option, if any.
+This is particularly useful when invoking a script using the #! construct which
+only allows one argument.  Example:
+.nf
+
+.ne 2
+	#!/usr/bin/perl \-spi.bak	# same as \-s \-p \-i.bak
+	.\|.\|.
+
+.fi
+Options include:
+.TP 5
+.BI \-0 digits
+specifies the record separator ($/) as an octal number.
+If there are no digits, the null character is the separator.
+Other switches may precede or follow the digits.
+For example, if you have a version of
+.I find
+which can print filenames terminated by the null character, you can say this:
+.nf
+
+    find . \-name '*.bak' \-print0 | perl \-n0e unlink
+
+.fi
+The special value 00 will cause Perl to slurp files in paragraph mode.
+The value 0777 will cause Perl to slurp files whole since there is no
+legal character with that value.
+.TP 5
+.B \-a
+turns on autosplit mode when used with a
+.B \-n
+or
+.BR \-p .
+An implicit split command to the @F array
+is done as the first thing inside the implicit while loop produced by
+the
+.B \-n
+or
+.BR \-p .
+.nf
+
+	perl \-ane \'print pop(@F), "\en";\'
+
+is equivalent to
+
+	while (<>) {
+		@F = split(\' \');
+		print pop(@F), "\en";
+	}
+
+.fi
+.TP 5
+.B \-c
+causes
+.I perl
+to check the syntax of the script and then exit without executing it.
+.TP 5
+.BI \-d
+runs the script under the perl debugger.
+See the section on Debugging.
+.TP 5
+.BI \-D number
+sets debugging flags.
+To watch how it executes your script, use
+.BR \-D14 .
+(This only works if debugging is compiled into your
+.IR perl .)
+Another nice value is \-D1024, which lists your compiled syntax tree.
+And \-D512 displays compiled regular expressions.
+.TP 5
+.BI \-e " commandline"
+may be used to enter one line of script.
+Multiple
+.B \-e
+commands may be given to build up a multi-line script.
+If
+.B \-e
+is given,
+.I perl
+will not look for a script filename in the argument list.
+.TP 5
+.BI \-i extension
+specifies that files processed by the <> construct are to be edited
+in-place.
+It does this by renaming the input file, opening the output file by the
+same name, and selecting that output file as the default for print statements.
+The extension, if supplied, is added to the name of the
+old file to make a backup copy.
+If no extension is supplied, no backup is made.
+Saying \*(L"perl \-p \-i.bak \-e "s/foo/bar/;" .\|.\|. \*(R" is the same as using
+the script:
+.nf
+
+.ne 2
+	#!/usr/bin/perl \-pi.bak
+	s/foo/bar/;
+
+which is equivalent to
+
+.ne 14
+	#!/usr/bin/perl
+	while (<>) {
+		if ($ARGV ne $oldargv) {
+			rename($ARGV, $ARGV . \'.bak\');
+			open(ARGVOUT, ">$ARGV");
+			select(ARGVOUT);
+			$oldargv = $ARGV;
+		}
+		s/foo/bar/;
+	}
+	continue {
+	    print;	# this prints to original filename
+	}
+	select(STDOUT);
+
+.fi
+except that the
+.B \-i
+form doesn't need to compare $ARGV to $oldargv to know when
+the filename has changed.
+It does, however, use ARGVOUT for the selected filehandle.
+Note that
+.I STDOUT
+is restored as the default output filehandle after the loop.
+.Sp
+You can use eof to locate the end of each input file, in case you want
+to append to each file, or reset line numbering (see example under eof).
+.TP 5
+.BI \-I directory
+may be used in conjunction with
+.B \-P
+to tell the C preprocessor where to look for include files.
+By default /usr/include and /usr/lib/perl are searched.
+.TP 5
+.BI \-l octnum
+enables automatic line-ending processing.  It has two effects:
+first, it automatically chops the line terminator when used with
+.B \-n
+or
+.B \-p ,
+and second, it assigns $\e to have the value of
+.I octnum
+so that any print statements will have that line terminator added back on.  If
+.I octnum
+is omitted, sets $\e to the current value of $/.
+For instance, to trim lines to 80 columns:
+.nf
+
+	perl -lpe \'substr($_, 80) = ""\'
+
+.fi
+Note that the assignment $\e = $/ is done when the switch is processed,
+so the input record separator can be different than the output record
+separator if the
+.B \-l
+switch is followed by a
+.B \-0
+switch:
+.nf
+
+	gnufind / -print0 | perl -ln0e 'print "found $_" if -p'
+
+.fi
+This sets $\e to newline and then sets $/ to the null character.
+.TP 5
+.B \-n
+causes
+.I perl
+to assume the following loop around your script, which makes it iterate
+over filename arguments somewhat like \*(L"sed \-n\*(R" or \fIawk\fR:
+.nf
+
+.ne 3
+	while (<>) {
+		.\|.\|.		# your script goes here
+	}
+
+.fi
+Note that the lines are not printed by default.
+See
+.B \-p
+to have lines printed.
+Here is an efficient way to delete all files older than a week:
+.nf
+
+	find . \-mtime +7 \-print | perl \-nle \'unlink;\'
+
+.fi
+This is faster than using the \-exec switch of find because you don't have to
+start a process on every filename found.
+.TP 5
+.B \-p
+causes
+.I perl
+to assume the following loop around your script, which makes it iterate
+over filename arguments somewhat like \fIsed\fR:
+.nf
+
+.ne 5
+	while (<>) {
+		.\|.\|.		# your script goes here
+	} continue {
+		print;
+	}
+
+.fi
+Note that the lines are printed automatically.
+To suppress printing use the
+.B \-n
+switch.
+A
+.B \-p
+overrides a
+.B \-n
+switch.
+.TP 5
+.B \-P
+causes your script to be run through the C preprocessor before
+compilation by
+.IR perl .
+(Since both comments and cpp directives begin with the # character,
+you should avoid starting comments with any words recognized
+by the C preprocessor such as \*(L"if\*(R", \*(L"else\*(R" or \*(L"define\*(R".)
+.TP 5
+.B \-s
+enables some rudimentary switch parsing for switches on the command line
+after the script name but before any filename arguments (or before a \-\|\-).
+Any switch found there is removed from @ARGV and sets the corresponding variable in the
+.I perl
+script.
+The following script prints \*(L"true\*(R" if and only if the script is
+invoked with a \-xyz switch.
+.nf
+
+.ne 2
+	#!/usr/bin/perl \-s
+	if ($xyz) { print "true\en"; }
+
+.fi
+.TP 5
+.B \-S
+makes
+.I perl
+use the PATH environment variable to search for the script
+(unless the name of the script starts with a slash).
+Typically this is used to emulate #! startup on machines that don't
+support #!, in the following manner:
+.nf
+
+	#!/usr/bin/perl
+	eval "exec /usr/bin/perl \-S $0 $*"
+		if $running_under_some_shell;
+
+.fi
+The system ignores the first line and feeds the script to /bin/sh,
+which proceeds to try to execute the
+.I perl
+script as a shell script.
+The shell executes the second line as a normal shell command, and thus
+starts up the
+.I perl
+interpreter.
+On some systems $0 doesn't always contain the full pathname,
+so the
+.B \-S
+tells
+.I perl
+to search for the script if necessary.
+After
+.I perl
+locates the script, it parses the lines and ignores them because
+the variable $running_under_some_shell is never true.
+A better construct than $* would be ${1+"$@"}, which handles embedded spaces
+and such in the filenames, but doesn't work if the script is being interpreted
+by csh.
+In order to start up sh rather than csh, some systems may have to replace the
+#! line with a line containing just
+a colon, which will be politely ignored by perl.
+Other systems can't control that, and need a totally devious construct that
+will work under any of csh, sh or perl, such as the following:
+.nf
+
+.ne 3
+	eval '(exit $?0)' && eval 'exec /usr/bin/perl -S $0 ${1+"$@"}'
+	& eval 'exec /usr/bin/perl -S $0 $argv:q'
+		if 0;
+
+.fi
+.TP 5
+.B \-u
+causes
+.I perl
+to dump core after compiling your script.
+You can then take this core dump and turn it into an executable file
+by using the undump program (not supplied).
+This speeds startup at the expense of some disk space (which you can
+minimize by stripping the executable).
+(Still, a "hello world" executable comes out to about 200K on my machine.)
+If you are going to run your executable as a set-id program then you
+should probably compile it using taintperl rather than normal perl.
+If you want to execute a portion of your script before dumping, use the
+dump operator instead.
+Note: availability of undump is platform specific and may not be available
+for a specific port of perl.
+.TP 5
+.B \-U
+allows
+.I perl
+to do unsafe operations.
+Currently the only \*(L"unsafe\*(R" operations are the unlinking of directories while
+running as superuser, and running setuid programs with fatal taint checks
+turned into warnings.
+.TP 5
+.B \-v
+prints the version and patchlevel of your
+.I perl
+executable.
+.TP 5
+.B \-w
+prints warnings about identifiers that are mentioned only once, and scalar
+variables that are used before being set.
+Also warns about redefined subroutines, and references to undefined
+filehandles or filehandles opened readonly that you are attempting to
+write on.
+Also warns you if you use == on values that don't look like numbers, and if
+your subroutines recurse more than 100 deep.
+.TP 5
+.BI \-x directory
+tells
+.I perl
+that the script is embedded in a message.
+Leading garbage will be discarded until the first line that starts
+with #! and contains the string "perl".
+Any meaningful switches on that line will be applied (but only one
+group of switches, as with normal #! processing).
+If a directory name is specified, Perl will switch to that directory
+before running the script.
+The
+.B \-x
+switch only controls the the disposal of leading garbage.
+The script must be terminated with _\|_END_\|_ if there is trailing garbage
+to be ignored (the script can process any or all of the trailing garbage
+via the DATA filehandle if desired).
+.SH ENVIRONMENT
+.Ip HOME 12 4
+Used if chdir has no argument.
+.Ip LOGDIR 12 4
+Used if chdir has no argument and HOME is not set.
+.Ip PATH 12 4
+Used in executing subprocesses, and in finding the script if \-S
+is used.
+.Ip PERLLIB 12 4
+A colon-separated list of directories in which to look for Perl library
+files before looking in the standard library and the current directory.
+.Ip PERLDB 12 4
+The command used to get the debugger code.  If unset, uses
+.br
+
+	require 'perldb.pl'
+
+.PP
+Apart from these,
+.I perl
+uses no other environment variables, except to make them available
+to the script being executed, and to child processes.
+However, scripts running setuid would do well to execute the following lines
+before doing anything else, just to keep people honest:
+.nf
+
+.ne 3
+    $ENV{\'PATH\'} = \'/bin:/usr/bin\';    # or whatever you need
+    $ENV{\'SHELL\'} = \'/bin/sh\' if $ENV{\'SHELL\'} ne \'\';
+    $ENV{\'IFS\'} = \'\' if $ENV{\'IFS\'} ne \'\';
+
+.fi
+.SH FILES
+/tmp/perl\-eXXXXXX	temporary file for
+.B \-e
+commands.
+.SH SEE ALSO
+The complete perl documentation can be found in the
+UNIX System manager's Manual (SMM:19).
+.br
+a2p	awk to perl translator
+.br
+s2p	sed to perl translator
+.SH DIAGNOSTICS
+Compilation errors will tell you the line number of the error, with an
+indication of the next token or token type that was to be examined.
+(In the case of a script passed to
+.I perl
+via
+.B \-e
+switches, each
+.B \-e
+is counted as one line.)
+.PP
+Setuid scripts have additional constraints that can produce error messages
+such as \*(L"Insecure dependency\*(R".
+See the section on setuid scripts.
+.SH TRAPS
+Accustomed
+.IR awk
+users should take special note of the following:
+.Ip * 4 2
+Semicolons are required after all simple statements in
+.I perl
+(except at the end of a block).
+Newline is not a statement delimiter.
+.Ip * 4 2
+Curly brackets are required on ifs and whiles.
+.Ip * 4 2
+Variables begin with $ or @ in
+.IR perl .
+.Ip * 4 2
+Arrays index from 0 unless you set $[.
+Likewise string positions in substr() and index().
+.Ip * 4 2
+You have to decide whether your array has numeric or string indices.
+.Ip * 4 2
+Associative array values do not spring into existence upon mere reference.
+.Ip * 4 2
+You have to decide whether you want to use string or numeric comparisons.
+.Ip * 4 2
+Reading an input line does not split it for you.  You get to split it yourself
+to an array.
+And the
+.I split
+operator has different arguments.
+.Ip * 4 2
+The current input line is normally in $_, not $0.
+It generally does not have the newline stripped.
+($0 is the name of the program executed.)
+.Ip * 4 2
+$<digit> does not refer to fields\(emit refers to substrings matched by the last
+match pattern.
+.Ip * 4 2
+The
+.I print
+statement does not add field and record separators unless you set
+$, and $\e.
+.Ip * 4 2
+You must open your files before you print to them.
+.Ip * 4 2
+The range operator is \*(L".\|.\*(R", not comma.
+(The comma operator works as in C.)
+.Ip * 4 2
+The match operator is \*(L"=~\*(R", not \*(L"~\*(R".
+(\*(L"~\*(R" is the one's complement operator, as in C.)
+.Ip * 4 2
+The exponentiation operator is \*(L"**\*(R", not \*(L"^\*(R".
+(\*(L"^\*(R" is the XOR operator, as in C.)
+.Ip * 4 2
+The concatenation operator is \*(L".\*(R", not the null string.
+(Using the null string would render \*(L"/pat/ /pat/\*(R" unparsable,
+since the third slash would be interpreted as a division operator\(emthe
+tokener is in fact slightly context sensitive for operators like /, ?, and <.
+And in fact, . itself can be the beginning of a number.)
+.Ip * 4 2
+.IR Next ,
+.I exit
+and
+.I continue
+work differently.
+.Ip * 4 2
+The following variables work differently
+.nf
+
+	  Awk	\h'|2.5i'Perl
+	  ARGC	\h'|2.5i'$#ARGV
+	  ARGV[0]	\h'|2.5i'$0
+	  FILENAME\h'|2.5i'$ARGV
+	  FNR	\h'|2.5i'$. \- something
+	  FS	\h'|2.5i'(whatever you like)
+	  NF	\h'|2.5i'$#Fld, or some such
+	  NR	\h'|2.5i'$.
+	  OFMT	\h'|2.5i'$#
+	  OFS	\h'|2.5i'$,
+	  ORS	\h'|2.5i'$\e
+	  RLENGTH	\h'|2.5i'length($&)
+	  RS	\h'|2.5i'$/
+	  RSTART	\h'|2.5i'length($\`)
+	  SUBSEP	\h'|2.5i'$;
+
+.fi
+.Ip * 4 2
+When in doubt, run the
+.I awk
+construct through a2p and see what it gives you.
+.PP
+Cerebral C programmers should take note of the following:
+.Ip * 4 2
+Curly brackets are required on ifs and whiles.
+.Ip * 4 2
+You should use \*(L"elsif\*(R" rather than \*(L"else if\*(R"
+.Ip * 4 2
+.I Break
+and
+.I continue
+become
+.I last
+and
+.IR next ,
+respectively.
+.Ip * 4 2
+There's no switch statement.
+.Ip * 4 2
+Variables begin with $ or @ in
+.IR perl .
+.Ip * 4 2
+Printf does not implement *.
+.Ip * 4 2
+Comments begin with #, not /*.
+.Ip * 4 2
+You can't take the address of anything.
+.Ip * 4 2
+ARGV must be capitalized.
+.Ip * 4 2
+The \*(L"system\*(R" calls link, unlink, rename, etc. return nonzero for success, not 0.
+.Ip * 4 2
+Signal handlers deal with signal names, not numbers.
+.PP
+Seasoned
+.I sed
+programmers should take note of the following:
+.Ip * 4 2
+Backreferences in substitutions use $ rather than \e.
+.Ip * 4 2
+The pattern matching metacharacters (, ), and | do not have backslashes in front.
+.Ip * 4 2
+The range operator is .\|. rather than comma.
+.PP
+Sharp shell programmers should take note of the following:
+.Ip * 4 2
+The backtick operator does variable interpretation without regard to the
+presence of single quotes in the command.
+.Ip * 4 2
+The backtick operator does no translation of the return value, unlike csh.
+.Ip * 4 2
+Shells (especially csh) do several levels of substitution on each command line.
+.I Perl
+does substitution only in certain constructs such as double quotes,
+backticks, angle brackets and search patterns.
+.Ip * 4 2
+Shells interpret scripts a little bit at a time.
+.I Perl
+compiles the whole program before executing it.
+.Ip * 4 2
+The arguments are available via @ARGV, not $1, $2, etc.
+.Ip * 4 2
+The environment is not automatically made available as variables.
+.SH BUGS
+.PP
+.I Perl
+is at the mercy of your machine's definitions of various operations
+such as type casting, atof() and sprintf().
+.PP
+If your stdio requires a seek or eof between reads and writes on a particular
+stream, so does
+.IR perl .
+(This doesn't apply to sysread() and syswrite().)
+.PP
+While none of the built-in data types have any arbitrary size limits (apart
+from memory size), there are still a few arbitrary limits:
+a given identifier may not be longer than 255 characters,
+and no component of your PATH may be longer than 255 if you use \-S.
+A regular expression may not compile to more than 32767 bytes internally.
+.PP
+.I Perl
+actually stands for Pathologically Eclectic Rubbish Lister, but don't tell
+anyone I said that.
+.SH AUTHOR
+Larry Wall <lwall@netlabs.com>
+.br
+MS-DOS port by Diomidis Spinellis <dds@cc.ic.ac.uk>
