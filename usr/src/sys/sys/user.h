@@ -1,15 +1,17 @@
-/*	user.h	6.2	83/11/21	*/
+/*	user.h	6.3	84/07/08	*/
 
 #ifdef KERNEL
 #include "../machine/pcb.h"
 #include "../h/dmap.h"
 #include "../h/time.h"
 #include "../h/resource.h"
+#include "../h/namei.h"
 #else
 #include <machine/pcb.h>
 #include <sys/dmap.h>
 #include <sys/time.h>
 #include <sys/resource.h>
+#include <sys/namei.h>
 #endif
 
 /*
@@ -30,7 +32,6 @@ struct	user {
 	int	u_arg[8];		/* arguments to current system call */
 	int	*u_ap;			/* pointer to arglist */
 	label_t	u_qsave;		/* for non-local gotos on interrupts */
-	char	u_error;		/* return error code */
 	union {				/* syscall return values */
 		struct	{
 			int	R_val1;
@@ -41,6 +42,7 @@ struct	user {
 		off_t	r_off;
 		time_t	r_time;
 	} u_r;
+	char	u_error;		/* return error code */
 	char	u_eosys;		/* special action on end of syscall */
 
 /* 1.1 - processes and protection */
@@ -91,16 +93,28 @@ struct	user {
 	time_t	u_start;
 	short	u_acflag;
 
+	struct uprof {			/* profile arguments */
+		short	*pr_base;	/* buffer base */
+		unsigned pr_size;	/* buffer size */
+		unsigned pr_off;	/* pc offset */
+		unsigned pr_scale;	/* pc scaling */
+	} u_prof;
+
 /* 1.6 - resource controls */
 	struct	rlimit u_rlimit[RLIM_NLIMITS];
 	struct	quota *u_quota;		/* user's quota structure */
 	int	u_qflags;		/* per process quota flags */
 
+/* namei & co. */
+	struct nameicache {		/* last successful directory search */
+		int nc_prevoffset;	/* offset at which last entry found */
+		ino_t nc_inumber;	/* inum of cached directory */
+		dev_t nc_dev;		/* dev of cached directory */
+		time_t nc_time;		/* time stamp for cache entry */
+	} u_ncache;
+	struct	nameidata u_nd;
+
 /* BEGIN TRASH */
-	char	u_segflg;		/* 0:user D; 1:system; 2:user I */
-	caddr_t	u_base;			/* base address for IO */
-	unsigned int u_count;		/* bytes remaining for IO */
-	off_t	u_offset;		/* offset in file for IO */
 	union {
 	   struct {			/* header of executable file */
 		int	Ux_mag;		/* magic number */
@@ -122,22 +136,7 @@ struct	user {
 #define	ux_entloc	Ux_A.Ux_entloc
 #define	ux_unused	Ux_A.Ux_unused
 #define	ux_relflg	Ux_A.Ux_relflg
-	caddr_t	u_dirp;			/* pathname pointer */
-	struct	direct u_dent;		/* current directory entry */
-	struct	inode *u_pdir;		/* inode of parent directory of dirp */
 /* END TRASH */
-	struct uprof {			/* profile arguments */
-		short	*pr_base;	/* buffer base */
-		unsigned pr_size;	/* buffer size */
-		unsigned pr_off;	/* pc offset */
-		unsigned pr_scale;	/* pc scaling */
-	} u_prof;
-	struct nameicache {		/* last successful directory search */
-		int nc_prevoffset;	/* offset at which last entry found */
-		ino_t nc_inumber;	/* inum of cached directory */
-		dev_t nc_dev;		/* dev of cached directory */
-		time_t nc_time;		/* time stamp for cache entry */
-	} u_ncache;
 	int	u_stack[1];
 };
 
