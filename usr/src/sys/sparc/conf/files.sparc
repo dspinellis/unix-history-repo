@@ -1,4 +1,4 @@
-#	@(#)files.sparc	8.1 (Berkeley) %G%
+#	@(#)files.sparc	8.2 (Berkeley) %G%
 #
 # sparc-specific configuration info
 
@@ -35,8 +35,14 @@ file	sparc/sbus/esp.c		esp dma
 device bwtwo at sbus
 file	sparc/sbus/bwtwo.c		bwtwo needs-flag
 
+# shared code between cg3/cg6 drivers
+file	sparc/sbus/bt_subr.c		cgthree cgsix
+
 device cgthree at sbus
 file	sparc/sbus/cgthree.c		cgthree needs-flag
+
+device cgsix at sbus
+file	sparc/sbus/cgsix.c		cgsix needs-flag
 
 device le at sbus: ifnet, ether
 file	sparc/sbus/if_le.c		le
@@ -60,7 +66,7 @@ file	sparc/fpu/fpu_mul.c
 file	sparc/fpu/fpu_sqrt.c
 file	sparc/fpu/fpu_subr.c
 
-file	sparc/rcons/raster_op.c	rconsole
+file	sparc/rcons/raster_op.c		rconsole
 file	sparc/rcons/raster_text.c	rconsole
 file	sparc/rcons/rcons_font.c	rconsole
 file	sparc/rcons/rcons_kern.c	rconsole
