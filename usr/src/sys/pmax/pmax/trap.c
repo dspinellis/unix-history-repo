@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: trap.c 1.32 91/04/06$
  *
- *	@(#)trap.c	7.5 (Berkeley) %G%
+ *	@(#)trap.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -228,17 +228,25 @@ trap(statusReg, causeReg, vadr, pc, args)
 			panic("tlbmod");
 #endif
 		hp = &((pmap_hash_t)PMAP_HASH_UADDR)[PMAP_HASH(vadr)];
-		if (hp->low & PG_RO) {
+		if (((hp->pmh_pte[0].high ^ vadr) & ~PGOFSET) == 0)
+			i = 0;
+		else if (((hp->pmh_pte[1].high ^ vadr) & ~PGOFSET) == 0)
+			i = 1;
+		else
+			panic("trap: tlb umod not found");
+		if (hp->pmh_pte[i].low & PG_RO) {
 			ftype = VM_PROT_WRITE;
 			goto dofault;
 		}
-		hp->low |= PG_M;
-		printf("trap: TLBupdate hi %x lo %x i %x\n", hp->high, hp->low,
-			MachTLBUpdate(hp->high, hp->low)); /* XXX */
+		hp->pmh_pte[i].low |= PG_M;
+		printf("trap: TLBupdate hi %x lo %x i %x\n",
+			hp->pmh_pte[i].high, hp->pmh_pte[i].low,
+			MachTLBUpdate(hp->pmh_pte[i].high, hp->pmh_pte[i].low)); /* XXX */
 #ifdef ATTR
-		pmap_attributes[atop(hp->low - KERNBASE)] |= PMAP_ATTR_MOD;
+		pmap_attributes[atop(hp->pmh_pte[i].low - KERNBASE)] |=
+			PMAP_ATTR_MOD;
 #else
-		pa = hp->low & PG_FRAME;
+		pa = hp->pmh_pte[i].low & PG_FRAME;
 		if (!IS_VM_PHYSADDR(pa))
 			panic("trap: umod");
 		PHYS_TO_VM_PAGE(pa)->clean = FALSE;
@@ -514,7 +522,7 @@ trap(statusReg, causeReg, vadr, pc, args)
 			va += 4;
 
 		/* read break instruction */
-		instr = fuiword(va);
+		instr = fuiword((caddr_t)va);
 #ifdef KADB
 		if (instr == MACH_BREAK_BRKPT || instr == MACH_BREAK_SSTEP)
 			goto err;
@@ -614,6 +622,10 @@ trap(statusReg, causeReg, vadr, pc, args)
 		if (kdb(causeReg, vadr, p, !USERMODE(statusReg)))
 			return (kdbpcb.pcb_regs[PC]);
 	    }
+#else
+#ifdef DEBUG
+		trapDump("trap");
+#endif
 #endif
 		panic("trap");
 	}
@@ -799,6 +811,7 @@ interrupt(statusReg, causeReg, pc)
 		clockframe cf;
 
 		clearsoftclock();
+		cnt.v_soft++;
 		cf.pc = pc;
 		cf.ps = statusReg;
 		softclock(cf);
@@ -807,6 +820,7 @@ interrupt(statusReg, causeReg, pc)
 	if ((mask & MACH_SOFT_INT_MASK_1) ||
 	    netisr && (statusReg & MACH_SOFT_INT_MASK_1)) {
 		clearsoftnet();
+		cnt.v_soft++;
 #ifdef INET
 		if (netisr & (1 << NETISR_ARP)) {
 			netisr &= ~(1 << NETISR_ARP);
@@ -1137,7 +1151,7 @@ cpu_singlestep(p)
 		return (EFAULT);
 	}
 	p->p_md.md_ss_addr = va;
-	p->p_md.md_ss_instr = fuiword(va);
+	p->p_md.md_ss_instr = fuiword((caddr_t)va);
 	i = suiword((caddr_t)va, MACH_BREAK_SSTEP);
 	if (i < 0) {
 		vm_offset_t sa, ea;
