@@ -1,4 +1,4 @@
-SCCSID = @(#)Makefile 1.9 %G%
+SCCSID = @(#)Makefile 1.10 %G%
 INSTALL = ${DESTDIR}/usr/ucb
 INSTALLIB = ${DESTDIR}/usr/lib
 PX_HEADER = px_header
@@ -17,14 +17,14 @@ install: all pxref.p
 	cp pmerge ${INSTALL}/pmerge
 	-pc -w pxref.p -o ${INSTALL}/pxref
 
-pix: pix.c
-	${CC} -O -o pix pix.c
+pix: pix.c config.o
+	${CC} -O -o pix pix.c config.o
 
 pmerge: pmerge.c
 	${CC} -O -o pmerge pmerge.c
 
-px_header: px_header.c objfmt.h
-	${CC} -O -d2 -o px_header px_header.c -N
+px_header: px_header.c objfmt.h config.o
+	${CC} -O -o px_header px_header.c config.o -N
 	strip px_header
 
 pc2: pc2.c
