@@ -11,6 +11,6 @@ afterinstall:
 	install -c -o $(BINOWN) -g $(BINGRP) -m $(BINMODE) \
 		$(.CURDIR)/g++.script $(DESTDIR)/usr/bin/g++
 	rm -f $(DESTDIR)$(BINDIR)/cc
-	cd $(DESTDIR)$(BINDIR); ln -s cc gcc
+	cd $(DESTDIR)$(BINDIR); ln -s gcc cc
 
 .include <bsd.prog.mk>
