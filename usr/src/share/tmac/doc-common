@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)doc-common	5.2 (Berkeley) %G%
+.\"     @(#)doc-common	5.3 (Berkeley) %G%
 .\"
 .\"     %beginstrip%
 .nr %A 1
