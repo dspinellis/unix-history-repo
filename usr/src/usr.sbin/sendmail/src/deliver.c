@@ -6,7 +6,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)deliver.c	3.71		%G%);
+SCCSID(@(#)deliver.c	3.72		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -168,8 +168,7 @@ deliver(firstto, editfcn)
 		*pvp = NULL;
 
 		/* send the initial SMTP protocol */
-		i = smtpinit(m, pv, (ADDRESS *) NULL);
-		giveresponse(i, TRUE, m);
+		smtpinit(m, pv, (ADDRESS *) NULL);
 # ifdef QUEUE
 		if (i == EX_TEMPFAIL)
 		{
@@ -649,7 +648,10 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 			syserr("non-clever IPC");
 		i = makeconnection(pvp[1], pmfile, prfile);
 		if (i != EX_OK)
+		{
+			ExitStat = i;
 			return (-1);
+		}
 		else
 			return (0);
 	}
@@ -849,6 +851,7 @@ giveresponse(stat, force, m)
 	else
 	{
 		Errors++;
+		FatalErrors = TRUE;
 		if (statmsg == NULL && m->m_badstat != 0)
 		{
 			stat = m->m_badstat;
@@ -966,7 +969,7 @@ putmessage(fp, m, xdot)
 		if (ferror(TempFile))
 		{
 			syserr("putmessage: read error");
-			setstat(EX_IOERR);
+			ExitStat = EX_IOERR;
 		}
 	}
 
@@ -974,7 +977,7 @@ putmessage(fp, m, xdot)
 	if (ferror(fp) && errno != EPIPE)
 	{
 		syserr("putmessage: write error");
-		setstat(EX_IOERR);
+		ExitStat = EX_IOERR;
 	}
 	errno = 0;
 }

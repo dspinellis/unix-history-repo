@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	3.62		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.63		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -331,7 +331,7 @@ EXTERN bool	Daemon;		/* running as a daemon */
 EXTERN bool	Smtp;		/* using SMTP over connection */
 EXTERN bool	SuprErrs;	/* set if we are suppressing errors */
 EXTERN bool	QueueUp;	/* queue this message for future xmission */
-EXTERN bool	QueueRun;	/* currently running something from the queue */
+EXTERN bool	QueueRun;	/* currently running message from the queue */
 EXTERN bool	HoldErrs;	/* only output errors to transcript */
 EXTERN bool	ArpaMode;	/* set if running arpanet protocol */
 EXTERN bool	ForkOff;	/* fork after initial verification */
@@ -339,6 +339,7 @@ EXTERN bool	OldStyle;	/* spaces (not commas) delimit addresses */
 EXTERN bool	NoConnect;	/* don't connect to non-local mailers */
 EXTERN bool	RetReceipt;	/* give a return receipt if delivery occurs */
 EXTERN bool	SendReceipt;	/* actually send a receipt back */
+EXTERN bool	FatalErrors;	/* set if fatal errors during processing */
 extern time_t	TimeOut;	/* time until timeout */
 EXTERN FILE	*InChannel;	/* input connection */
 EXTERN FILE	*OutChannel;	/* output connection */
@@ -350,7 +351,7 @@ extern int	DefUid;		/* default uid to run as */
 extern int	DefGid;		/* default gid to run as */
 EXTERN int	OldUmask;	/* umask when sendmail starts up */
 EXTERN int	Debug;		/* debugging level */
-EXTERN int	Errors;		/* set if errors */
+EXTERN int	Errors;		/* set if errors (local to single pass) */
 EXTERN int	ExitStat;	/* exit status code */
 EXTERN int	HopCount;	/* hop count */
 EXTERN int	AliasLevel;	/* depth of aliasing */

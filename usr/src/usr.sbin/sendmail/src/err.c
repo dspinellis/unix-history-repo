@@ -3,7 +3,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)err.c	3.18		%G%);
+SCCSID(@(#)err.c	3.19		%G%);
 
 /*
 **  SYSERR -- Print error message.
@@ -52,6 +52,7 @@ syserr(fmt, a, b, c, d, e)
 	}
 
 	Errors++;
+	FatalErrors = TRUE;
 
 	/* determine exit status if not already set */
 	if (ExitStat == EX_OK)
@@ -92,6 +93,7 @@ usrerr(fmt, a, b, c, d, e)
 	if (SuprErrs)
 		return;
 	Errors++;
+	FatalErrors = TRUE;
 
 	message(Arpa_Usrerr, fmt, a, b, c, d, e);
 }
