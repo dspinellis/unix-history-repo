@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)objfmt.h 1.5 %G%"; */
+/* static char sccsid[] = "@(#)objfmt.h 1.6 %G%"; */
 
 #ifdef OBJ
 	/*
@@ -44,6 +44,8 @@
 #	define PTR_IND O_IND4
 #	define PTR_CON O_CON4
 #	define PTR_DUP O_SDUP4
+#	define CON_INT O_CON24
+#	define INT_TYP (nl + T4INT)
 #	define PTR_DCL unsigned long		/* for pointer variables */
 #	define SHORTADDR 32768			/* maximum short address */
 #	define TOOMUCH 65536			/* maximum variable size */
@@ -85,6 +87,8 @@
 #	define PTR_IND O_IND2
 #	define PTR_CON O_CON2
 #	define PTR_DUP O_SDUP2
+#	define CON_INT O_CON2
+#	define INT_TYP (nl + T2INT)
 #	define PTR_DCL char *
 #	define TOOMUCH 50000
 #	define SHORTADDR 65536

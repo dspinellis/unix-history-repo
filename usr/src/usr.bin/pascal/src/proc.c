@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)proc.c 1.5 %G%";
+static char sccsid[] = "@(#)proc.c 1.6 %G%";
 
 #include "whoami.h"
 #ifdef OBJ
@@ -195,7 +195,7 @@ proc(r)
 			 *	and number (none, WIDTH, and/or PRECision)
 			 *	of the fields in the printf format for this
 			 *	output variable.
-			 * stkcnt is the number of longs pushed on the stack
+			 * stkcnt is the number of bytes pushed on the stack
 			 * fmt is the format output indicator (D, E, F, O, X, S)
 			 * fmtstart = 0 for leading blank; = 1 for no blank
 			 */
@@ -337,11 +337,11 @@ proc(r)
 			case TINT:
 				if (fmt != 'f') {
 					ap = stkrval(alv, NIL , RREQ );
-					stkcnt++;
+					stkcnt += sizeof(long);
 				} else {
 					ap = stkrval(alv, NIL , RREQ );
 					put(1, O_ITOD);
-					stkcnt += 2;
+					stkcnt += sizeof(double);
 					typ = TDOUBLE;
 					goto tdouble;
 				}
@@ -362,12 +362,15 @@ proc(r)
 				if (fmtspec == NIL) {
 					put(1, O_FILE);
 					ap = stkrval(alv, NIL , RREQ );
-					put(1, O_WRITEC);
+					convert(nl + T4INT, INT_TYP);
+					put(2, O_WRITEC,
+						sizeof(char *) + sizeof(int));
 					fmtspec = SKIP;
 					break;
 				}
 				ap = stkrval(alv, NIL , RREQ );
-				stkcnt++;
+				convert(nl + T4INT, INT_TYP);
+				stkcnt += sizeof(int);
 				fmt = 'c';
 				break;
 			case TSCAL:
@@ -379,15 +382,12 @@ proc(r)
 			case TBOOL:
 				stkrval(alv, NIL , RREQ );
 				put(2, O_NAM, (long)listnames(ap));
-#				ifdef PDP11
-					put(2, O_CON2, 0);  /* long align ptr */
-#				endif PDP11
-				stkcnt++;
+				stkcnt += sizeof(char *);
 				fmt = 's';
 				break;
 			case TDOUBLE:
 				ap = stkrval(alv, TDOUBLE , RREQ );
-				stkcnt += 2;
+				stkcnt += sizeof(double);
 			     tdouble:
 				switch (fmtspec) {
 				case NIL:
@@ -454,10 +454,7 @@ proc(r)
 				 */
 				put(2, O_LVCON, 2);
 				putstr("", 0);
-#				ifdef PDP11
-					put(2, O_CON2, 0);  /* long align ptr */
-#				endif PDP11
-				stkcnt++;
+				stkcnt += sizeof(char *);
 				break;
 			default:
 				error("Can't write %ss to a text file", clnames[typ]);
@@ -478,7 +475,8 @@ proc(r)
 				if ( opt( 't' ) ) {
 				    put(3, O_MAX, 0, 0);
 				}
-				stkcnt++;
+				convert(nl+T4INT, INT_TYP);
+				stkcnt += sizeof(int);
 			}
 			/*
 			 * If there is a variable width, evaluate it onto
@@ -499,7 +497,6 @@ proc(r)
 					error("First write width must be integer, not %s", nameof(ap));
 					continue;
 				}
-				stkcnt++;
 				/*
 				 * Perform special processing on widths based
 				 * on data type 
@@ -515,8 +512,9 @@ proc(r)
 #						else
 						    put(3, O_MAX, 9, 1);
 #						endif DEC11
+						convert(nl+T4INT, INT_TYP);
+						stkcnt += sizeof(int);
 						put(2, O_RV4 | cbn << 8 + INDX, i);
-						stkcnt++;
 						fmtspec += VARPREC;
 					}
 					put(3, O_MAX, 1, 1);
@@ -532,6 +530,8 @@ proc(r)
 					}
 					break;
 				}
+				convert(nl+T4INT, INT_TYP);
+				stkcnt += sizeof(int);
 			}
 			/*
 			 * Generate the format string
@@ -566,7 +566,7 @@ proc(r)
 				put(2, O_LVCON, fmtlen);
 				putstr(&format[fmtstart], 0);
 				put(1, O_FILE);
-				stkcnt += 2;
+				stkcnt += 2 * sizeof(char *);
 				put(2, O_WRITEF, stkcnt);
 			}
 			/*
@@ -574,19 +574,21 @@ proc(r)
 			 */
 			if (typ == TSTR) {
 				put(1, O_FILE);
-				put(2, O_CON24, 1);
+				put(2, CON_INT, 1);
 				if (strfmt & VARWIDTH) {
 					put(2, O_RV4 | cbn << 8 + INDX , i );
 					put(2, O_MIN, strnglen);
+					convert(nl+T4INT, INT_TYP);
 				} else {
 					if ((fmtspec & SKIP) &&
 					   (strfmt & CONWIDTH)) {
 						strnglen = field;
 					}
-					put(2, O_CON24, strnglen);
+					put(2, CON_INT, strnglen);
 				}
 				ap = stkrval(alv, NIL , RREQ );
-				put(1, O_WRITES);
+				put(2, O_WRITES,
+					2 * sizeof(char *) + 2 * sizeof(int));
 			}
 		}
 		/*
