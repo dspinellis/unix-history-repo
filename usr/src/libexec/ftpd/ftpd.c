@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	5.29	(Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	5.30	(Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -1288,7 +1288,8 @@ send_file_list(whichfiles)
 					return;
 				transflag++;
 			}
-			fprintf(dout, "%s\n", dirname);
+			fprintf(dout, "%s%s\n", dirname,
+				type == TYPE_A ? "\r" : "");
 			byte_count += strlen(dirname) + 1;
 			continue;
 		} else if ((st.st_mode&S_IFMT) != S_IFDIR)
@@ -1322,9 +1323,11 @@ send_file_list(whichfiles)
 					transflag++;
 				}
 				if (nbuf[0] == '.' && nbuf[1] == '/')
-					fprintf(dout, "%s\n", &nbuf[2]);
+					fprintf(dout, "%s%s\n", &nbuf[2],
+						type == TYPE_A ? "\r" : "");
 				else
-					fprintf(dout, "%s\n", nbuf);
+					fprintf(dout, "%s%s\n", nbuf,
+						type == TYPE_A ? "\r" : "");
 				byte_count += strlen(nbuf) + 1;
 			}
 		}
