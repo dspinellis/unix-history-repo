@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.76 (Berkeley) %G%
+ *	@(#)conf.h	8.77 (Berkeley) %G%
  */
 
 /*
@@ -105,10 +105,10 @@
 # undef m_flags
 # define SYSTEM5	1	/* include all the System V defines */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
-# define HASSTATFS	1	/* has the statfs(2) syscall */
 # define HASSETREUID	1	/* has setreuid(2) call */
 # define setreuid(r, e)		setresuid(r, e, -1)	
 # define LA_TYPE	LA_FLOAT
+# define SFS_TYPE	SFS_VFS	/* use <sys/vfs.h> statfs() implementation */
 # define GIDSET_T	gid_t
 # define _PATH_UNIX	"/hp-ux"
 # ifndef _PATH_SENDMAILCF
@@ -133,11 +133,11 @@ extern int	syslog(int, char *, ...);
 
 # ifdef _AIX3
 # define HASINITGROUPS	1	/* has initgroups(3) call */
-# define HASSTATFS	1	/* has the statfs(2) syscall */
 # define HASUNAME	1	/* use System V uname(2) system call */
 # define HASGETUSERSHELL 0	/* does not have getusershell(3) call */
 # define FORK		fork	/* no vfork primitive available */
 # undef  SETPROCTITLE		/* setproctitle confuses AIX */
+# define SFS_TYPE	SFS_STATFS	/* use <sys/statfs.h> statfs() impl */
 # endif
 
 
@@ -151,12 +151,12 @@ extern int	syslog(int, char *, ...);
 # include <sys/sysmacros.h>
 # define HASSETREUID	1	/* has setreuid(2) call */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
-# define HASSTATFS	1	/* has the statfs(2) syscall */
 # define HASGETUSERSHELL 0	/* does not have getusershell(3) call */
 # define FORK		fork	/* no vfork primitive available */
 # define WAITUNION	1	/* use "union wait" as wait argument type */
 # define setpgid	BSDsetpgrp
 # define GIDSET_T	gid_t
+# define SFS_TYPE	SFS_4ARGS	/* four argument statfs() call */
 # endif
 
 
@@ -169,10 +169,10 @@ extern int	syslog(int, char *, ...);
 
 #if defined(sun) && !defined(BSD)
 
-# define LA_TYPE	LA_INT
 # define HASINITGROUPS	1	/* has initgroups(3) call */
 # define HASUNAME	1	/* use System V uname(2) system call */
 # define HASGETUSERSHELL 1	/* DOES have getusershell(3) call in libc */
+# define LA_TYPE	LA_INT
 
 # ifdef SOLARIS_2_3
 #  define SOLARIS
@@ -200,8 +200,8 @@ extern int	syslog(int, char *, ...);
 # else
 			/* SunOS 4.0.3 or 4.1.x */
 #  define HASSETREUID	1	/* has setreuid(2) call */
-#  define HASSTATFS	1	/* has the statfs(2) syscall */
 #  define HASFLOCK	1	/* has flock(2) call */
+#  define SFS_TYPE	SFS_VFS	/* use <sys/vfs.h> statfs() implementation */
 #  include <vfork.h>
 
 #  ifdef SUNOS403
@@ -229,7 +229,6 @@ extern char		*getenv();
 #ifdef	DGUX
 # define SYSTEM5	1
 # define LA_TYPE	LA_SUBR
-# define HASSTATFS	1	/* has the statfs(2) syscall */
 # define HASSETREUID	1	/* has setreuid(2) call */
 # define HASUNAME	1	/* use System V uname(2) system call */
 # define HASSETSID	1	/* has Posix setsid(2) call */
@@ -238,6 +237,7 @@ extern char		*getenv();
 #  define IDENTPROTO	0	/* TCP/IP implementation is broken */
 # endif
 # undef SETPROCTITLE
+# define SFS_TYPE	SFS_4ARGS	/* four argument statfs() call */
 
 /* these include files must be included early on DG/UX */
 # include <netinet/in.h>
@@ -257,7 +257,6 @@ extern long	dgux_inet_addr();
 */
 
 #ifdef ultrix
-# define HASSTATFS	1	/* has the statfs(2) syscall */
 # define HASSETREUID	1	/* has setreuid(2) call */
 # define HASUNSETENV	1	/* has unsetenv(3) call */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
@@ -269,6 +268,7 @@ extern long	dgux_inet_addr();
 #  define LA_TYPE	LA_INT
 #  define LA_AVENRUN	"avenrun"
 # endif
+# define SFS_TYPE	SFS_MOUNT	/* use <sys/mount.h> statfs() impl */
 # ifndef IDENTPROTO
 #  define IDENTPROTO	0	/* TCP/IP implementation is broken */
 # endif
@@ -280,12 +280,12 @@ extern long	dgux_inet_addr();
 */
 
 #ifdef __osf__
-# define HASSTATFS	1	/* has the statfs(2) syscall */
 # define HASUNSETENV	1	/* has unsetenv(3) call */
 # define HASSETREUID	1	/* has setreuid(2) call */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
 # define HASFLOCK	1	/* has flock(2) call */
 # define LA_TYPE	LA_INT
+# define SFS_TYPE	SFS_MOUNT	/* use <sys/mount.h> statfs() impl */
 # ifndef _PATH_SENDMAILPID
 #  define _PATH_SENDMAILPID	"/var/run/sendmail.pid"
 # endif
@@ -300,13 +300,13 @@ extern long	dgux_inet_addr();
 # define HASINITGROUPS	1	/* has initgroups(3) call */
 # define HASFLOCK	1	/* has flock(2) call */
 # define NEEDGETOPT	1	/* need a replacement for getopt(3) */
-# define HASSTATFS	1	/* has the statfs(2) syscall */
 # define WAITUNION	1	/* use "union wait" as wait argument type */
 # define sleep		sleepX
 # define setpgid	setpgrp
 # ifndef LA_TYPE
 #  define LA_TYPE	LA_MACH
 # endif
+# define SFS_TYPE	SFS_VFS	/* use <sys/vfs.h> statfs() implementation */
 # ifndef _POSIX_SOURCE
 typedef int		pid_t;
 #  undef WEXITSTATUS
@@ -329,12 +329,12 @@ typedef int		pid_t;
 
 #ifdef BSD4_4
 # define HASUNSETENV	1	/* has unsetenv(3) call */
-# define HASSTATFS	1	/* has the statfs(2) syscall */
 # include <sys/cdefs.h>
 # define ERRLIST_PREDEFINED	/* don't declare sys_errlist */
 # ifndef LA_TYPE
 #  define LA_TYPE	LA_SUBR
 # endif
+# define SFS_TYPE	SFS_MOUNT	/* use <sys/mount.h> statfs() impl */
 #endif
 
 
@@ -349,12 +349,12 @@ typedef int		pid_t;
 #if defined(__386BSD__) || defined(__FreeBSD__) || defined(__NetBSD__)
 # define HASUNSETENV	1	/* has unsetenv(3) call */
 # define HASSETSID	1	/* has the setsid(2) POSIX syscall */
-# define HASSTATFS	1	/* has the statfs(2) syscall */
 # include <sys/cdefs.h>
 # define ERRLIST_PREDEFINED	/* don't declare sys_errlist */
 # ifndef LA_TYPE
 #  define LA_TYPE	LA_SUBR
 # endif
+# define SFS_TYPE	SFS_MOUNT	/* use <sys/mount.h> statfs() impl */
 #endif
 
 
@@ -369,13 +369,13 @@ typedef int		pid_t;
 # define HASUNSETENV	1	/* has unsetenv(3) call */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
 # define HASFLOCK	1	/* has flock(2) call */
-# define HASSTATFS	1	/* has the statfs(2) syscall */
 # define NEEDGETOPT	1	/* need a replacement for getopt(3) */
 # define NEEDSTRTOL	1	/* need the strtol() function */
 # define setpgid	setpgrp
 # ifndef LA_TYPE
 #  define LA_TYPE	LA_FLOAT
 # endif
+# define SFS_TYPE	SFS_VFS	/* use <sys/vfs.h> statfs() implementation */
 # undef HASSETVBUF		/* don't actually have setvbuf(3) */
 # undef WEXITSTATUS
 # undef WIFEXITED
@@ -439,11 +439,11 @@ extern int		errno;
 #ifdef _SCO_unix_
 # define SYSTEM5	1	/* include all the System V defines */
 # define SYS5SIGNALS	1	/* SysV signal semantics -- reset on each sig */
-# define HASSTATFS	1	/* has the statfs(2) syscall */
 # define HASGETUSERSHELL 0	/* does not have getusershell(3) call */
 # define FORK		fork
 # define MAXPATHLEN	PATHSIZE
 # define LA_TYPE	LA_SHORT
+# define SFS_TYPE	SFS_STATFS	/* use <sys/statfs.h> statfs() impl */
 # undef NETUNIX			/* no unix domain socket support */
 #endif
 
@@ -455,10 +455,10 @@ extern int		errno;
 #ifdef _CONVEX_SOURCE
 # define BSD		1	/* include all the BSD defines */
 # define HASUNAME	1	/* use System V uname(2) system call */
-# define HASSTATFS	1	/* has the statfs(2) syscall */
 # define HASSETSID	1	/* has POSIX setsid(2) call */
 # define NEEDGETOPT	1	/* need replacement for getopt(3) */
 # define LA_TYPE	LA_FLOAT
+# define SFS_TYPE	SFS_VFS	/* use <sys/vfs.h> statfs() implementation */
 # ifndef IDENTPROTO
 #  define IDENTPROTO	0	/* TCP/IP implementation is broken */
 # endif
@@ -537,9 +537,7 @@ extern void		*malloc();
 #ifdef _AUX_SOURCE
 # include <sys/sysmacros.h>
 # define BSD			/* has BSD routines */
-# define HASSTATFS	1	/* has the statfs(2) syscall */
 # define HASUNAME	1	/* use System V uname(2) system call */
-# define HASUSTAT	1	/* use System V ustat(2) syscall */
 # define HASSETVBUF	1	/* we have setvbuf(3) in libc */
 # define SIGFUNC_DEFINED	/* sigfunc_t already defined */
 # ifndef IDENTPROTO
@@ -552,6 +550,7 @@ extern void		*malloc();
 # ifndef LA_TYPE
 #  define LA_TYPE	LA_ZERO
 # endif
+# define SFS_TYPE	SFS_VFS	/* use <sys/vfs.h> statfs() implementation */
 # undef WIFEXITED
 # undef WEXITSTATUS
 #endif
@@ -566,13 +565,13 @@ extern void		*malloc();
 #ifdef UMAXV
 # include <limits.h>
 # define HASUNAME	1	/* use System V uname(2) system call */
-# define HASSTATFS	1	/* has the statfs(2) syscall */
 # define HASSETVBUF	1	/* we have setvbuf(3) in libc */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
 # define HASGETUSERSHELL 0	/* does not have getusershell(3) call */
 # define SYS5SIGNALS	1	/* SysV signal semantics -- reset on each sig */
 # define SYS5SETPGRP	1	/* use System V setpgrp(2) syscall */
 # define FORK		fork	/* no vfork(2) primitive available */
+# define SFS_TYPE	SFS_4ARGS	/* four argument statfs() call */
 # define MAXPATHLEN	PATH_MAX
 extern struct passwd	*getpwent(), *getpwnam(), *getpwuid();
 extern struct group	*getgrent(), *getgrnam(), *getgrgid();
@@ -644,9 +643,9 @@ typedef int		pid_t;
 #ifdef UNICOS
 # define SYSTEM5	1	/* include all the System V defines */
 # define SYS5SIGNALS	1	/* SysV signal semantics -- reset on each sig */
-# define HASSTATFS	1	/* has the statfs(2) syscall */
 # define MAXPATHLEN	PATHSIZE
 # define LA_TYPE	LA_ZERO
+# define SFS_TYPE	SFS_4ARGS	/* four argument statfs() call */
 #endif
 
 
@@ -694,11 +693,13 @@ typedef int		pid_t;
 # ifdef SYSTEM5
 # include <sys/sysmacros.h>
 # define HASUNAME	1	/* use System V uname(2) system call */
-# define HASUSTAT	1	/* use System V ustat(2) syscall */
 # define SYS5SETPGRP	1	/* use System V setpgrp(2) syscall */
 # define HASSETVBUF	1	/* we have setvbuf(3) in libc */
 # ifndef LA_TYPE
-#  define LA_TYPE	LA_INT
+#  define LA_TYPE	LA_INT		/* assume integer load average */
+# endif
+# ifndef SFS_TYPE
+#  define SFS_TYPE	SFS_USTAT	/* use System V ustat(2) syscall */
 # endif
 # define bcopy(s, d, l)		(memmove((d), (s), (l)))
 # define bzero(d, l)		(memset((d), '\0', (l)))
