@@ -1,12 +1,14 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwenviron.c	3.4 83/11/29";
+static	char *sccsid = "@(#)wwenviron.c	3.5 83/12/01";
 #endif
 
 #include "ww.h"
 
 /*
  * Set up the environment of this process to run in window 'wp'.
- * Can't report errors in any intelligent way, so don't.
+ * Can't report errors in any intelligent way, because the parent
+ * hangs in vfork() until we die, but we can't die until output
+ * drains (i.e. deadlock).  So don't say anything.
  */
 wwenviron(wp)
 register struct ww *wp;
@@ -15,26 +17,19 @@ register struct ww *wp;
 	static char *tbuf;
 	register i;
 
-	(void) dup2(wp->ww_tty, 0);
-	(void) dup2(wp->ww_tty, 1);
-	(void) dup2(wp->ww_tty, 2);
+	i = open("/dev/tty", 0);
+	if (i < 0)
+		return;
+	if (ioctl(i, (int)TIOCNOTTY, (char *)0) < 0)
+		return;
+	(void) close(i);
+	if ((i = open(wp->ww_ttyname, 2)) < 0)
+		return;
+	(void) dup2(i, 0);
+	(void) dup2(i, 1);
+	(void) dup2(i, 2);
 	for (i = wwdtablesize - 1; i > 2; i--)
 		(void) close(i);
-
-	i = open("/dev/tty", 0);
-	if (i < 0) {
-		perror("/dev/tty");
-		return;
-	}
-	if (ioctl(i, (int)TIOCNOTTY, (char *)0) < 0) {
-		perror("ioctl(TIOCNOTTY)");
-		return;
-	}
-	(void) close(i);
-	if (open(wp->ww_ttyname, 0) < 0) {
-		perror(wp->ww_ttyname);
-		return;
-	}
 
 	/*
 	 * Do this only once if vfork().

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwiomux.c	3.4 83/10/27";
+static	char *sccsid = "@(#)wwiomux.c	3.5 83/12/01";
 #endif
 
 #include "ww.h"
@@ -24,9 +24,8 @@ register int *imask;
 		if (*imask & 1<<w->ww_pty) {
 			n = read(w->ww_pty, buf, sizeof buf);
 			if (n < 0) {
-				(*w)->ww_haspty = 0;
 				(void) close((*w)->ww_pty);
-				(void) close((*w)->ww_tty);
+				(*w)->ww_pty = -1;
 			} else if (n > 0)
 				wwwrite(w, buf, n);
 		}

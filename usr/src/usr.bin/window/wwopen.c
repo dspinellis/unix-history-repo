@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwopen.c	3.13 83/11/23";
+static	char *sccsid = "@(#)wwopen.c	3.14 83/12/01";
 #endif
 
 #include "ww.h"
@@ -16,6 +16,7 @@ wwopen(mode, id, nrow, ncol, row, col)
 		wwerrno = WWE_NOMEM;
 		goto bad;
 	}
+	w->ww_pty = -1;
 
 	w = (struct ww *)calloc(sizeof (struct ww), 1);
 		goto bad;

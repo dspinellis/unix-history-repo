@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwpty.c	3.3 83/08/26";
+static	char *sccsid = "@(#)wwpty.c	3.4 83/12/01";
 #endif
 
 #include "ww.h"
@@ -25,16 +25,12 @@ wwgetpty(w)
 			w->ww_pty = open(line, 2);
 			if (w->ww_pty >= 0) {
 				line[sizeof PTY - 6] = 't';
-				w->ww_tty = open(line, 2);
-				if (w->ww_tty >= 0)
-					goto good;
-				(void) close(w->ww_pty);
+				(void) strcpy(w->ww_ttyname, line);
+				return 0;
 			}
 		}
 	}
+	w->ww_pty = -1;
 	wwerrno = WWE_NOPTY;
 	return -1;
-good:
-	(void) strcpy(w->ww_ttyname, line);
-	return 0;
 }
