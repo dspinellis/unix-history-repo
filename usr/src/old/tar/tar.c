@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)tar.c	4.12 (Berkeley) 82/12/09";
+static	char *sccsid = "@(#)tar.c	4.13 (Berkeley) 82/12/19";
 
 /*
  * Tape Archival Program
@@ -80,6 +80,7 @@ char	magtape[] = "/dev/rmt8";
 char	*malloc();
 char	*sprintf();
 char	*strcat();
+char	*getwd();
 
 main(argc, argv)
 int	argc;
@@ -271,7 +272,7 @@ dorep(argv)
 		}
 	}
 
-	getwdir(wdir);
+	(void) getwd(wdir);
 	while (*argv && ! term) {
 		cp2 = *argv;
 		if (!strcmp(cp2, "-C") && argv[1]) {
@@ -279,7 +280,7 @@ dorep(argv)
 			if (chdir(*argv) < 0)
 				perror(*argv);
 			else
-				getwdir(wdir);
+				(void) getwd(wdir);
 			argv++;
 			continue;
 		}
@@ -293,8 +294,7 @@ dorep(argv)
 				perror(*argv);
 				continue;
 			}
-			getwdir(tempdir);
-			parent = tempdir;
+			parent = getwd(tempdir);
 			*cp2 = '/';
 			cp2++;
 		}
@@ -742,20 +742,13 @@ checkdir(name)
 			continue;
 		*cp = '\0';
 		if (access(name, 1) < 0) {
-			register int pid, rp;
-			int i;
-
-			if ((pid = fork()) == 0) {
-				execl("/bin/mkdir", "mkdir", name, 0);
-				execl("/usr/bin/mkdir", "mkdir", name, 0);
-				fprintf(stderr, "tar: cannot find mkdir!\n");
+			if (mkdir(name, 0777) < 0) {
+				perror(name);
 				done(0);
 			}
-			while ((rp = wait(&i)) >= 0 && rp != pid)
-				;
 			chown(name, stbuf.st_uid, stbuf.st_gid);
 			if (pflag)
-				chmod(dblock.dbuf.name, stbuf.st_mode & 0777);
+				chmod(name, stbuf.st_mode & 0777);
 		}
 		*cp = '/';
 	}
@@ -872,32 +865,6 @@ prefix(s1, s2)
 	if (*s2)
 		return (*s2 == '/');
 	return (1);
-}
-
-getwdir(s)
-	char *s;
-{
-	int i, pipdes[2];
-
-	pipe(pipdes);
-	if ((i = fork()) == 0) {
-		close(1);
-		dup(pipdes[1]);
-		execl("/bin/pwd", "pwd", 0);
-		execl("/usr/bin/pwd", "pwd", 0);
-		fprintf(stderr, "pwd failed!\n");
-		printf("/\n");
-		exit(1);
-	}
-	while (wait((int *)NULL) != -1)
-			;
-	read(pipdes[0], s, 50);
-	read(pipdes[0], s, 50);
-	while (*s != '\n')
-		s++;
-	*s = '\0';
-	close(pipdes[0]);
-	close(pipdes[1]);
 }
 
 #define	N	200
