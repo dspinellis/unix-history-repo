@@ -51,7 +51,7 @@ typedef struct same {
 %token <intval> MACRO_CHAR NL WHITE_SPACE
 %token <intval> ':' '=' '$' '{' '}' ';' '-' '@' '(' ')' ' ' '\t'
 %type <same> target target1 assignment assign1 actions action
-%type <same> command_list command list
+%type <same> command_list list list_element
 %type <same> for_statement maybe_at_minus tokens token
 %type <same> maybe_white_space
 %type <intval> white_space macro_char
@@ -68,8 +68,7 @@ line : NL
     | target_action
     ;
 
-assignment :
-    assign1 tokens NL
+assignment : assign1 tokens NL
     {
 	assign($1, $2);
     }
@@ -92,8 +91,7 @@ target_action: target actions
     }
     ;
 
-target :
-    target1 tokens NL
+target : target1 tokens NL
     {
 	$$ = add_depends($1, $2);
     }
@@ -112,7 +110,7 @@ target1: tokens maybe_white_space ':' maybe_white_space
 actions: action
     | actions action
     {
-	$$ = same_cat($1, $2);
+	$$ = same_cat(same_cat($1, same_copy(newline)), $2);
     }
     ;
 
@@ -150,14 +148,22 @@ command_list: list
     }
     ;
 
-list: command
-    | list semi_colon maybe_white_space command
+list: token
+    | list list_element
     {
-	$$ = same_cat($1, same_cat(same_copy(newline), $4));
+	$$ = same_cat($1, $2);
+    }
+    | list white_space list_element
+    {
+	$$ = same_cat($1, same_cat(same_copy(blank), $3));
     }
     ;
 
-command: tokens
+list_element: token
+    | semi_colon
+    {
+	$$ = same_copy(newline);
+    }
     ;
 
 maybe_at_minus: /* empty */
@@ -1025,9 +1031,9 @@ do_dump()
     }
     visit_end();
 
-    printf("#targets...\n");
+    printf("\n\n#targets...\n");
     for (visit(targets, same); !visited(same); visit_next(same)) {
-	printf("%s:\t", same->string->string);
+	printf("\n%s:\t", same->string->string);
 	for (visit(same->depend_list, same2); !visited(same2);
 						visit_next(same2)) {
 	    printf(same2->string->string);
