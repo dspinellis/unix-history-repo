@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	6.39 (Berkeley) %G%
+.\"	@(#)op.me	6.40 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,7 +40,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 6.39
+Version 6.40
 .sp
 For Sendmail Version 6.53
 .)l
@@ -5280,7 +5280,7 @@ otherwise.
 .pp
 The lookup function is called as
 .(b
-\fIxxx\fP_map_lookup(MAP *map, char buf[], int bufsize, char **av)
+\fIxxx\fP_map_lookup(MAP *map, char buf[], int bufsize, char **av, int *statp)
 .)b
 The
 .i map
@@ -5295,6 +5295,12 @@ The
 .i av
 is a list of arguments passed in from the rewrite line.
 The lookup function should return a pointer to the new value.
+IF the map lookup fails,
+.i *statp
+should be set to an exit status code;
+in particular, it should be set to
+.sm EX_TEMPFAIL
+if recovery is to be attempted by the higher level code.
 .sh 3 "Queueing Function"
 .pp
 The routine
@@ -6065,7 +6071,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 6.39
+.\"Version 6.40
 .\".ce 0
 .pn 2
 .bp
