@@ -2,7 +2,7 @@
 # include <ctype.h>
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)parseaddr.c	3.11	%G%";
+static char	SccsId[] = "@(#)parseaddr.c	3.12	%G%";
 
 /*
 **  PARSE -- Parse an address
@@ -436,10 +436,11 @@ toktype(c)
 	register char c;
 {
 	static char buf[50];
-	static char firstime;
+	static bool firstime = TRUE;
 
-	if (firstime++ == 0)
+	if (firstime)
 	{
+		firstime = FALSE;
 		expand("$o", buf, &buf[sizeof buf - 1]);
 		strcat(buf, DELIMCHARS);
 	}
