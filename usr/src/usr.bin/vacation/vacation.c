@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)vacation.c	5.5 (Berkeley) %G%";
+static char	SccsId[] = "@(#)vacation.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -249,7 +249,7 @@ junkmail(from)
 		}
 	len = p - from;
 	for (I = ignore; I->name; ++I)
-		if (len >= I->len && !strcasencmp(I->name, p - I->len, I->len)) {
+		if (len >= I->len && !strncasecmp(I->name, p - I->len, I->len)) {
 			if (debug)
 				fprintf(stderr, "not sending to %s {%s}\n", from, I->name);
 			return(YES);
@@ -257,7 +257,7 @@ junkmail(from)
 
 	/* read the header looking for a "Precedence:" line */
 	while (gets(buf) && *buf) {
-		if (strcasencmp(buf, "Precedence", 10) ||
+		if (strncasecmp(buf, "Precedence", 10) ||
 		   buf[10] != ':' && buf[10] != ' ' && buf[10] != '\t')
 			continue;
 
@@ -269,7 +269,7 @@ junkmail(from)
 			continue;
 
 		/* see if it is "junk" or "bulk" */
-		if (!strcasencmp(p, "junk", 4) || !strcasecmp(p, "bulk", 4)) {
+		if (!strncasecmp(p, "junk", 4) || !strncasecmp(p, "bulk", 4)) {
 			if (debug)
 				fprintf(stderr, "not sending to %s {junk/bulk}\n", from);
 			return(YES);
