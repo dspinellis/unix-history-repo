@@ -1,4 +1,4 @@
-/*	tcp_output.c	4.25	81/12/20	*/
+/*	tcp_output.c	4.26	81/12/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -46,23 +46,20 @@ COUNT(TCP_OUTPUT);
 	 */
 	off = tp->snd_nxt - tp->snd_una;
 	len = MIN(so->so_snd.sb_cc, tp->snd_wnd+tp->t_force) - off;
+	if (len < 0)
+		return;			/* past FIN */
 	if (len > tp->t_maxseg)
 		len = tp->t_maxseg;
-	if (len < 0)
-		len = 0;		/* FIN can cause -1 */
 	flags = tcp_outflags[tp->t_state];
 	if (len < so->so_snd.sb_cc)
 		flags &= ~TH_FIN;
-	if (len || (flags & (TH_SYN|TH_RST)))
+	if (len || (flags & (TH_SYN|TH_RST|TH_FIN)))
 		goto send;
 
 	/*
-	 * See if we owe peer an ACK or have a unacked FIN to send.
+	 * Send if we owe peer an ACK.
 	 */
 	if (tp->t_flags & TF_ACKNOW)
-		goto send;
-	if ((so->so_state & SS_CANTSENDMORE) &&
-	    TCPS_OURFINNOTACKED(tp->t_state))
 		goto send;
 
 	/*
@@ -203,8 +200,10 @@ send:
 	 */
 	((struct ip *)ti)->ip_len = len + sizeof (struct tcpiphdr);
 	((struct ip *)ti)->ip_ttl = TCP_TTL;
-	if (ip_output(m, tp->t_ipopt) == 0)
+	if (ip_output(m, tp->t_ipopt) == 0) {
+printf("ip_output failed\n");
 		return (0);
+}
 
 	/*
 	 * Data sent (as far as we can tell).
