@@ -1,4 +1,4 @@
-/*	cons.c	4.2	%G%	*/
+/*	cons.c	4.3	%G%	*/
 
 /*
  * Vax console driver and floppy interface
@@ -104,7 +104,9 @@ dev_t dev;
 
 	c = mfpr(RXDB);
 	if (c&RXDB_ID) {
+#if VAX==780
 		cnrfl(c);
+#endif
 		return;
 	}
 	tp = &cons;
@@ -122,10 +124,13 @@ caddr_t addr;
 	cmd = (*linesw[tp->t_line].l_ioctl)(tp, cmd, addr);
 	if (cmd == 0)
 		return;
-	if (ttioctl(cmd, tp, addr, dev, flag) == 0)
+	if (ttioctl(tp, cmd, addr, flag) == 0)
 		u.u_error = ENOTTY;
 }
 
+#if VAX==750
+int	consdone = 1;
+#endif
 /*
  * Got a level-20 transmission interrupt -
  * the LSI wants another character.  First,
@@ -138,14 +143,19 @@ dev_t dev;
 {
 	register struct tty *tp;
 
+#if VAX==750
+	consdone++;
+#endif
 	tp = &cons;
 	tp->t_state &= ~BUSY;
 	if (tp->t_line)
 		(*linesw[tp->t_line].l_start)(tp);
 	else
 		cnstart(tp);
+#if VAX==780
 	if ((tp->t_state & BUSY) == 0)
 		conxfl();
+#endif
 }
 
 cnstart(tp)
@@ -166,9 +176,17 @@ register struct tty *tp;
 	}
 	if (tp->t_outq.c_cc == 0)
 		goto out;
+#if VAX==750
+	if (consdone == 0)
+		return;
+#else
 	if ((mfpr(TXCS)&TXCS_RDY) == 0)
 		return;
+#endif
 	if ((c=getc(&tp->t_outq)) >= 0) {
+#if VAX==750
+		consdone = 0;
+#endif
 		if (tp->t_flags&RAW)
 			mtpr(TXDB, c&0xff);
 		else if (c<=0177)
