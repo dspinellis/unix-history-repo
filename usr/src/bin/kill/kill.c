@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)kill.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)kill.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <signal.h>
@@ -22,14 +22,9 @@ static char sccsid[] = "@(#)kill.c	5.3 (Berkeley) %G%";
 #include <string.h>
 #include <ctype.h>
 
-static char *signals[] = {
-	"hup", "int", "quit", "ill", "trap", "iot",		/*  1 - 6  */
-	"emt", "fpe", "kill", "bus", "segv", "sys",		/*  7 - 12 */
-	"pipe", "alrm",  "term", "urg", "stop", "tstp",		/* 13 - 18 */
-	"cont", "chld", "ttin", "ttou", "io", "xcpu",		/* 19 - 24 */
-	"xfsz", "vtalrm", "prof", "winch", "info", "usr1",	/* 25 - 30 */
-	"usr2", NULL,						/* 31 - 32 */
-};
+void nosig __P((char *));
+void printsig __P((FILE *));
+void usage __P((void));
 
 main(argc, argv)
 	int argc;
@@ -53,11 +48,11 @@ main(argc, argv)
 		if (isalpha(**argv)) {
 			if (!strncasecmp(*argv, "sig", 3))
 				*argv += 3;
-			for (p = signals;; ++p) {
+			for (p = sys_signame;; ++p) {
 				if (!*p)
 					nosig(*argv);
 				if (!strcasecmp(*p, *argv)) {
-					numsig = p - signals + 1;
+					numsig = p - sys_signame;
 					break;
 				}
 			}
@@ -94,6 +89,7 @@ main(argc, argv)
 	exit(errors);
 }
 
+void
 nosig(name)
 	char *name;
 {
@@ -103,19 +99,22 @@ nosig(name)
 	exit(1);
 }
 
+void
 printsig(fp)
 	FILE *fp;
 {
+	register int cnt;
 	register char **p;
 
-	for (p = signals; *p; ++p) {
+	for (cnt = NSIG, p = sys_signame + 1; --cnt; ++p) {
 		(void)fprintf(fp, "%s ", *p);
-		if ((p - signals) == NSIG / 2 - 1)
+		if (cnt == NSIG / 2)
 			(void)fprintf(fp, "\n");
 	}
 	(void)fprintf(fp, "\n");
 }
 
+void
 usage()
 {
 	(void)fprintf(stderr, "usage: kill [-l] [-sig] pid ...\n");
