@@ -1,0 +1,3 @@
+NAME GZIP WINDOWCOMPAT
+DESCRIPTION 'GNU gzip file compression program'
+STACKSIZE 0x80000
