@@ -1,17 +1,15 @@
 #ifndef lint
-static char sccsid[] = "@(#)gename.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)gename.c	5.5 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
-#include <sys/types.h>
 
 #define SEQLEN 4
 
-/*******
- *	gename(pre, sys, grade, file)	generate file name
- *	char grade, *sys, pre, *file;
- *
- *	return codes:  none
+/*LINTLIBRARY*/
+
+/*
+ *	generate file name
  */
 gename(pre, sys, grade, file)
 char pre, *sys, grade, *file;
@@ -19,19 +17,15 @@ char pre, *sys, grade, *file;
 	static char sqnum[5];
 
 	getseq(sqnum);
-	sprintf(file, "%c.%.7s%c%.*s", pre, sys, grade, SEQLEN, sqnum);
+	sprintf(file,"%c.%.*s%c%.*s", pre, SYSNSIZE, sys, grade, SEQLEN, sqnum);
 	DEBUG(4, "file - %s\n", file);
 }
-
 
 #define SLOCKTIME 10L
 #define SLOCKTRIES 5
 
-/*******
- *	getseq(snum)	get next sequence number
- *	char *snum;
- *
- *	return codes:  none
+/*
+ *	get next sequence number
  */
 
 static
@@ -45,16 +39,26 @@ register char *snum;
 	char	*alphabet =
 	    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 	register int i, fd;
-	static char *lastchar;
+	static char *lastchar = NULL;
 
 	if (lastchar == NULL || (snum[SEQLEN-1] = *(lastchar++)) == '\0') {
 		for (i = 0; i < SLOCKTRIES; i++) {
-			if (!ulockf(SEQLOCK, (time_t)SLOCKTIME))
+			if (!ulockf(SEQLOCK, SLOCKTIME))
 				break;
 			sleep(5);
 		}
 
-		ASSERT(i < SLOCKTRIES, "CAN NOT GET", SEQLOCK, 0);
+		if (i >= SLOCKTRIES) {
+			int alphalen;
+			logent(SEQLOCK, "CAN NOT LOCK");
+			alphalen = strlen(alphabet);
+			srand((int)time((time_t *)0));
+			for (i=1;i<SEQLEN;i++)
+				*snum++ = alphabet[rand() % alphalen];
+			lastchar = alphabet;
+			*snum = *lastchar++;
+			return;
+		}
 
 		if ((fd = open(SEQFILE, 2)) >= 0) {
 			int alphalen;
@@ -79,10 +83,10 @@ register char *snum;
 			}
 			snum[SEQLEN-1] = alphabet[0];
 		} else {
-			if ((fd = creat(SEQFILE, 0666)) < 0)
-				return(FAIL);
 			for (i = 0; i < SEQLEN; i++)
 				snum[i] = alphabet[0];
+			if ((fd = creat(SEQFILE, 0666)) < 0)
+				return;
 		}
 
 		lseek(fd, 0L, 0);
@@ -91,5 +95,5 @@ register char *snum;
 		rmlock(SEQLOCK);
 		lastchar = alphabet + 1;
 	}
-	return(0);
+	return;
 }
