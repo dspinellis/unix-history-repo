@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.54 (Berkeley) %G%
+		@(#)README	8.55 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -193,6 +193,10 @@ LOCAL_MAILER_ARGS	[mail -d $u] The arguments passed to deliver local
 			mail.
 LOCAL_MAILER_MAX	[undefined] If defined, the maximum size of local
 			mail that you are willing to accept.
+LOCAL_MAILER_CHARSET	[undefined] If defined, messages containing 8-bit data
+			that ARRIVE from an address that resolves to the
+			local mailer and which are converted to MIME will be
+			labelled with this character set.
 LOCAL_SHELL_PATH	[/bin/sh] The shell used to deliver piped email.
 LOCAL_SHELL_FLAGS	[eu] The flags used by the shell mailer.  The
 			flags lsDFM are always included.
@@ -219,13 +223,21 @@ SMTP_MAILER_ARGS	[IPC $h] The arguments passed to the smtp mailer.
 ESMTP_MAILER_ARGS	[IPC $h] The arguments passed to the esmtp mailer.
 SMTP8_MAILER_ARGS	[IPC $h] The arguments passed to the smtp8 mailer.
 RELAY_MAILER_ARGS	[IPC $h] The arguments passed to the relay mailer.
+SMTP_MAILER_CHARSET	[undefined] If defined, messages containing 8-bit data
+			that ARRIVE from an address that resolves to one of
+			the SMTP mailers and which are converted to MIME will
+			be labelled with this character set.
 UUCP_MAILER_FLAGS	[undefined] Flags added to UUCP mailer.  Default
 			flags are `DFMhuU' (and `m' for uucp-new mailer,
 			minus `U' for uucp-dom mailer).
 UUCP_MAILER_ARGS	[uux - -r -z -a$g -gC $h!rmail ($u)] The arguments
 			passed to the UUCP mailer.
-UUCP_MAX_SIZE		[100000] The maximum size message accepted for
+UUCP_MAILER_MAX		[100000] The maximum size message accepted for
 			transmission by the UUCP mailers.
+UUCP_MAILER_CHARSET	[undefined] If defined, messages containing 8-bit data
+			that ARRIVE from an address that resolves to one of
+			the UUCP mailers and which are converted to MIME will
+			be labelled with this character set.
 FAX_MAILER_PATH		[/usr/local/lib/fax/mailfax] The program used to
 			submit FAX messages.
 FAX_MAILER_MAX		[100000] The maximum size message accepted for
