@@ -1,4 +1,4 @@
-/* @(#)dterm.c	1.8	(Berkeley)	%G%"
+/* @(#)dterm.c	1.9	(Berkeley)	%G%"
  *
  *	Converts ditroff output to text on a terminal.  It is NOT meant to
  *	produce readable output, but is to show one how one's paper is (in
@@ -41,7 +41,7 @@
 #define	PGWIDTH		266		/* WAY too big - for good measure */
 #define	PGHEIGHT	220
 #define LINELEN		78
-#define SPECFILE	"/usr/lib/font/devter/specfile"
+#define SPECFILE	"/usr/local/lib/font/devter/specfile"
 
 #define hgoto(n)	hpos = n
 #define vgoto(n)	vpos = n
@@ -56,7 +56,7 @@
 #define sqr(x)		(long int)(x)*(x)
 
 
-char	SccsId [] = "@(#)dterm.c	1.8	(Berkeley)	%G%";
+char	SccsId [] = "@(#)dterm.c	1.9	(Berkeley)	%G%";
 
 char	**spectab;		/* here go the special characters */
 char	*specfile = SPECFILE;	/* place to look up special characters */
