@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)runtime.tahoe.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)runtime.tahoe.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -1014,6 +1014,7 @@ private pushenv()
     push(CallEnv, endproc);
     push(Word, reg(PROGCTR));
     push(Word, reg(STKP));
+    push(Word, reg(FRP));
 }
 
 /*
@@ -1024,6 +1025,7 @@ public popenv()
 {
     String filename;
 
+    setreg(FRP, pop(Word));
     setreg(STKP, pop(Word));
     setreg(PROGCTR, pop(Word));
     endproc = pop(CallEnv);
