@@ -1,4 +1,4 @@
-/*	hp.c	4.56	82/10/17	*/
+/*	hp.c	4.57	82/10/31	*/
 
 #ifdef HPDEBUG
 int	hpdebug;
@@ -33,9 +33,9 @@ int	hpbdebug;
 #include "../h/cmap.h"
 #include "../h/dkbad.h"
 #include "../h/ioctl.h"
-#include "../h/dkio.h"
 #include "../h/uio.h"
 
+#include "../vax/dkio.h"
 #include "../vaxmba/mbareg.h"
 #include "../vaxmba/mbavar.h"
 #include "../vaxmba/hpreg.h"
