@@ -33,6 +33,14 @@
 #
 #	@(#)newvers.sh	7.4 (Berkeley) 12/7/90
 #
+# PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+#  --------------------         -----   ----------------------
+#  CURRENT PATCH LEVEL:         1       00105
+#  --------------------         -----   ----------------------
+# 
+#  28 Mar 93 Kent Talarico & Charles Hannum
+#                                       Don't update version number twice and
+#                                       include kernel name in version string.
 
 if [ ! -r version ]
 then
@@ -44,6 +52,5 @@ fi
 touch version
 v=`cat version` t=`date "+ %m/%d/%y %H:%M"`
 (
-  echo "char version[] = \"version: ${v} ${t}\";"
+  echo "char version[] = \"version: ${v} ($1) ${t}\";"
 ) > vers.c
-echo `expr ${v} + 1` > version
