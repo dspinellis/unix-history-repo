@@ -1,6 +1,6 @@
 /* Copyright (c) 1980 Regents of the University of California */
 
-static char sccsid[] = "@(#)flvalue.c 1.8 %G%";
+static char sccsid[] = "@(#)flvalue.c 1.9 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -11,15 +11,6 @@ static char sccsid[] = "@(#)flvalue.c 1.8 %G%";
 #   include "pc.h"
 #   include "pcops.h"
 #endif PC
-#ifdef OBJ
-/*
- * runtime display structure
- */
-struct dispsave {
-	char *locvars;		/* pointer to local variables */
-	struct stack *stp;	/* pointer to local stack frame */
-};
-#endif OBJ
 
     /*
      *	flvalue generates the code to either pass on a formal routine,
@@ -80,16 +71,10 @@ flvalue( r , formalp )
 			return NIL;
 		    }
 			/*
-			 *	formal routine structure:
-			 *
-			 *	struct formalrtn {
-			 *		long		(*entryaddr)();
-			 *		long		cbn;
-			 *		struct dispsave	disp[2*MAXLVL];
-			 *	};
+			 *	allocate space for the thunk
 			 */
-		    tempoff = tmpalloc(sizeof (long (*)()) + sizeof (long)
-			+ 2*bn*sizeof (struct dispsave), nl+TSTR, NOREG);
+		    tempoff = tmpalloc( sizeof ( struct formalrtn ) ,
+				nl+TSTR, NOREG);
 #		    ifdef OBJ
 			put(2 , O_LV | cbn << 8 + INDX , (int)tempoff );
 			put(2, O_FSAV | bn << 8, (long)p->entloc);
@@ -98,7 +83,9 @@ flvalue( r , formalp )
 			putleaf( P2ICON , 0 , 0 ,
 			    ADDTYPE( P2PTR , ADDTYPE( P2FTN , P2PTR|P2STRTY ) ) ,
 			    "_FSAV" );
-			sextname( extname , p -> symbol , bn );
+			sprintf( extname , "%s" , FORMALPREFIX );
+			sextname( &extname[ strlen( extname ) ] ,
+				    p -> symbol , bn );
 			putleaf( P2ICON , 0 , 0 , p2type( p ) , extname );
 			putleaf( P2ICON , bn , 0 , P2INT , 0 );
 			putop( P2LISTOP , P2INT );

@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)fend.c 1.5 %G%";
+static char sccsid[] = "@(#)fend.c 1.6 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -135,6 +135,7 @@ funcend(fp, bundle, endline)
 	    putprintf( "	.text" , 0 );
 	    putprintf( "	.align	1" , 0 );
 	    sextname( extname , fp -> symbol , cbn - 1 );
+	    putprintf( "	.globl	%s%s" , 0 , FORMALPREFIX , extname );
 	    putprintf( "	.globl	%s" , 0 , extname );
 	    putprintf( "%s:" , 0 , extname );
 	    stabfunc( fp -> symbol , fp -> class , bundle[1] , cbn - 1 );
@@ -535,6 +536,26 @@ funcend(fp, bundle, endline)
 	    putprintf( "	subl2	$LF%d,sp" , 0 , ftnno );
 	    putrbracket( ftnno );
 	    putjbr( toplabel );
+		/*
+		 *  put down the entry point for formal calls
+		 *  the arguments for FCALL have been passed to us
+		 *  as hidden parameters after the regular arguments.
+		 */
+	    if ( fp -> class != PROG ) {
+		putprintf( "%s%s:" , 0 , FORMALPREFIX , extname );
+		putprintf( "	.word	" , 1 );
+		putprintf( PREFIXFORMAT , 0 , LABELPREFIX , savlabel );
+		putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR ) ,
+			"_FCALL" );
+		putRV( 0 , cbn ,
+		    fp -> value[ NL_OFFS ] + sizeof( struct formalrtn * ) ,
+		    P2PTR | P2STRTY );
+		putRV( 0 , cbn , fp -> value[ NL_OFFS ] , P2PTR|P2STRTY );
+		putop( P2LISTOP , P2INT );
+		putop( P2CALL , P2INT );
+		putdot( filename , line );
+		putjbr( botlabel );
+	    }
 		/*
 		 *	declare pcp counters, if any
 		 */
