@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)subr_prf.c	6.12 (Berkeley) %G%
+ *	@(#)subr_prf.c	6.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -324,9 +324,9 @@ putchar(c, flags, tp)
 			for (i=0; i < MSG_BSIZE; i++)
 				msgbuf.msg_bufc[i] = 0;
 		}
+		msgbuf.msg_bufc[msgbuf.msg_bufx++] = c;
 		if (msgbuf.msg_bufx < 0 || msgbuf.msg_bufx >= MSG_BSIZE)
 			msgbuf.msg_bufx = 0;
-		msgbuf.msg_bufc[msgbuf.msg_bufx++] = c;
 	}
 	if ((flags & TOCONS) && c != '\0')
 		cnputc(c);
