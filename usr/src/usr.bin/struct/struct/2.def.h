@@ -1,7 +1,7 @@
 /*-
  * %sccs.include.proprietary.c%
  *
- *	@(#)2.def.h	4.3 (Berkeley) %G%
+ *	@(#)2.def.h	8.1 (Berkeley) %G%
  */
 
 extern int accessnum;		/* number of nodes accessible from START */
