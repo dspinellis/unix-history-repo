@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)savecore.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)savecore.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -34,7 +34,11 @@ static char sccsid[] = "@(#)savecore.c	5.8 (Berkeley) %G%";
 #ifdef vax
 #define ok(number) ((number)&0x7fffffff)
 #else
+#ifdef tahoe
+#define ok(number) ((number)&~0xc0000000)
+#else
 #define ok(number) (number)
+#endif
 #endif
 
 struct nlist current_nl[] = {	/* namelist for currently running system */
@@ -117,11 +121,7 @@ main(argc, argv)
 		system = argv[1];
 	openlog("savecore", LOG_ODELAY, LOG_AUTH);
 	if (access(dirname, W_OK) < 0) {
-		int oerrno = errno;
-
-		perror(dirname);
-		errno = oerrno;
-		syslog(LOG_ERR, "%s: %m", dirname);
+		Perror(LOG_ERR, "%s: %m", dirname);
 		exit(1);
 	}
 	read_kmem();
@@ -175,7 +175,7 @@ find_dev(dev, type)
 			return (dp);
 		}
 	}
-	syslog(LOG_ERR, "Can't find device %d/%d\n", major(dev), minor(dev));
+	log(LOG_ERR, "Can't find device %d/%d\n", major(dev), minor(dev));
 	exit(1);
 	/*NOTREACHED*/
 }
@@ -204,17 +204,13 @@ read_kmem()
 	 */
 	for (i = 0; cursyms[i] != -1; i++)
 		if (current_nl[cursyms[i]].n_value == 0) {
-			fprintf(stderr, "/vmunix: %s not in namelist",
-			    current_nl[cursyms[i]].n_name);
-			syslog(LOG_ERR, "/vmunix: %s not in namelist",
+			log(LOG_ERR, "/vmunix: %s not in namelist",
 			    current_nl[cursyms[i]].n_name);
 			exit(1);
 		}
 	for (i = 0; dumpsyms[i] != -1; i++)
 		if (dump_nl[dumpsyms[i]].n_value == 0) {
-			fprintf(stderr, "%s: %s not in namelist", dump_sys,
-			    dump_nl[dumpsyms[i]].n_name);
-			syslog(LOG_ERR, "%s: %s not in namelist", dump_sys,
+			log(LOG_ERR, "%s: %s not in namelist", dump_sys,
 			    dump_nl[dumpsyms[i]].n_name);
 			exit(1);
 		}
@@ -229,7 +225,7 @@ read_kmem()
 	ddname = find_dev(dumpdev, S_IFBLK);
 	fp = fdopen(kmem, "r");
 	if (fp == NULL) {
-		syslog(LOG_ERR, "Couldn't fdopen kmem");
+		log(LOG_ERR, "Couldn't fdopen kmem");
 		exit(1);
 	}
 	if (system)
@@ -246,22 +242,15 @@ check_kmem()
 
 	fp = fopen(ddname, "r");
 	if (fp == NULL) {
-		int oerrno = errno;
-
-		perror(ddname);
-		errno = oerrno;
-		syslog(LOG_ERR, "%s: %m", ddname);
+		Perror(LOG_ERR, "%s: %m", ddname);
 		exit(1);
 	}
 	fseek(fp, (off_t)(dumplo+ok(dump_nl[X_VERSION].n_value)), L_SET);
 	fgets(core_vers, sizeof (core_vers), fp);
 	fclose(fp);
 	if (!eq(vers, core_vers) && system == 0)
-		fprintf(stderr,
+		log(LOG_WARNING,
 		   "Warning: vmunix version mismatch:\n\t%sand\n\t%s",
-		   vers, core_vers);
-		syslog(LOG_WARNING,
-		   "Warning: vmunix version mismatch: %s and %s",
 		   vers, core_vers);
 	fp = fopen(ddname, "r");
 	fseek(fp, (off_t)(dumplo + ok(dump_nl[X_PANICSTR].n_value)), L_SET);
@@ -318,11 +307,7 @@ check_space()
 	struct fs fs;
 
 	if (stat(dirname, &dsb) < 0) {
-		int oerrno = errno;
-
-		perror(dirname);
-		errno = oerrno;
-		syslog(LOG_ERR, "%s: %m", dirname);
+		Perror(LOG_ERR, "%s: %m", dirname);
 		exit(1);
 	}
 	ddev = find_dev(dsb.st_dev, S_IFBLK);
@@ -332,15 +317,12 @@ check_space()
 	close(dfd);
  	spacefree = freespace(&fs, fs.fs_minfree) * fs.fs_fsize / 1024;
  	if (spacefree < read_number("minfree")) {
-		printf("Dump omitted, not enough space on device");
-		syslog(LOG_WARNING, "Dump omitted, not enough space on device");
+		log(LOG_WARNING, "Dump omitted, not enough space on device");
 		return (0);
 	}
-	if (freespace(&fs, fs.fs_minfree) < 0) {
-		printf("Dump performed, but free space threshold crossed");
-		syslog(LOG_WARNING,
+	if (freespace(&fs, fs.fs_minfree) < 0)
+		log(LOG_WARNING,
 		    "Dump performed, but free space threshold crossed");
-	}
 	return (1);
 }
 
@@ -387,17 +369,13 @@ save_core()
 	sprintf(cp, "vmcore.%d", bounds);
 	ofd = Create(path(cp), 0644);
 	Lseek(ifd, (off_t)dumplo, L_SET);
-	printf("Saving %d bytes of image in vmcore.%d\n", NBPG*dumpsize,
-		bounds);
-	syslog(LOG_NOTICE, "Saving %d bytes of image in vmcore.%d\n",
-		NBPG*dumpsize, bounds);
+	log(LOG_NOTICE, "Saving %d bytes of image in vmcore.%d\n",
+	    NBPG*dumpsize, bounds);
 	while (dumpsize > 0) {
 		n = Read(ifd, cp,
 		    (dumpsize > BUFPAGES ? BUFPAGES : dumpsize) * NBPG);
 		if (n == 0) {
-			syslog(LOG_WARNING,
-			    "WARNING: vmcore may be incomplete\n");
-			printf("WARNING: vmcore may be incomplete\n");
+			log(LOG_WARNING, "WARNING: vmcore may be incomplete");
 			break;
 		}
 		Write(ofd, cp, n);
@@ -422,11 +400,7 @@ Open(name, rw)
 
 	fd = open(name, rw);
 	if (fd < 0) {
-		int oerrno = errno;
-
-		perror(name);
-		errno = oerrno;
-		syslog(LOG_ERR, "%s: %m", name);
+		Perror(LOG_ERR, "%s: %m", name);
 		exit(1);
 	}
 	return (fd);
@@ -440,11 +414,7 @@ Read(fd, buff, size)
 
 	ret = read(fd, buff, size);
 	if (ret < 0) {
-		int oerrno = errno;
-
-		perror("read");
-		errno = oerrno;
-		syslog(LOG_ERR, "read: %m");
+		Perror(LOG_ERR, "read: %m");
 		exit(1);
 	}
 	return (ret);
@@ -459,11 +429,7 @@ Lseek(fd, off, flag)
 
 	ret = lseek(fd, off, flag);
 	if (ret == -1) {
-		int oerrno = errno;
-
-		perror("lseek");
-		errno = oerrno;
-		syslog(LOG_ERR, "lseek: %m");
+		Perror(LOG_ERR, "lseek: %m");
 		exit(1);
 	}
 	return (ret);
@@ -477,11 +443,7 @@ Create(file, mode)
 
 	fd = creat(file, mode);
 	if (fd < 0) {
-		int oerrno = errno;
-
-		perror(file);
-		errno = oerrno;
-		syslog(LOG_ERR, "%s: %m", file);
+		Perror(LOG_ERR, "%s: %m", file);
 		exit(1);
 	}
 	return (fd);
@@ -493,11 +455,27 @@ Write(fd, buf, size)
 {
 
 	if (write(fd, buf, size) < size) {
-		int oerrno = errno;
-
-		perror("write");
-		errno = oerrno;
-		syslog(LOG_ERR, "write: %m");
+		Perror(LOG_ERR, "write: %m");
 		exit(1);
 	}
+}
+
+log(level, msg, a1, a2)
+	int level;
+	char *msg;
+{
+
+	fprintf(stderr, msg, a1, a2);
+	syslog(level, msg, a1, a2);
+}
+
+Perror(level, msg, s)
+	int level;
+	char *msg;
+{
+	int oerrno = errno;
+	
+	perror(s);
+	errno = oerrno;
+	syslog(level, msg, s);
 }
