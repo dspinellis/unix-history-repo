@@ -1,4 +1,4 @@
-.\"	@(#)contrib	5.15 (Berkeley) %G%
+.\"	@(#)contrib	5.16 (Berkeley) %G%
 .\"
 .\" To build a document, pipe the bottom list through column -c140, making
 .\" it two columns wide (remove the .TE at the end of the file first).
@@ -165,6 +165,7 @@ sendmail(8)	Eric Allman
 sh(1)	Kenneth Almquist
 slattach(8)	Rick Adams
 slip(8)	Rick Adams
+tail(1)	Edward Sze-Tyan Wang
 telnet(1)	Dave Borman
 tn3270(1)	Gregory Minshall
 traceroute(8)	Van Jacobson
