@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)more.c	4.14 (Berkeley) 83/07/02";
+static	char *sccsid = "@(#)more.c	4.15 (Berkeley) 83/07/07";
 #endif
 
 /*
@@ -39,7 +39,7 @@ static	char *sccsid = "@(#)more.c	4.14 (Berkeley) 83/07/02";
 #define ESC	'\033'
 #define QUIT	'\034'
 
-struct sgttyb 	otty;
+struct sgttyb 	otty, savetty;
 long		file_pos, file_size;
 int		fnum, no_intty, no_tty, slow_tty;
 int		dum_opt, dlines, onquit(), end_it();
@@ -1325,7 +1325,7 @@ initterm ()
 
     setbuf(stdout, obuf);
     if (!(no_tty = gtty(1, &otty))) {
-	if ((term = getenv("TERM")) || tgetent(buf, term) <= 0) {
+	if ((term = getenv("TERM")) == 0 || tgetent(buf, term) <= 0) {
 	    dumb++; ul_opt = 0;
 	}
 	else {
@@ -1381,6 +1381,7 @@ initterm ()
     }
     no_intty = gtty(0, &otty);
     gtty(2, &otty);
+    savetty = otty;
     ospeed = otty.sg_ospeed;
     slow_tty = ospeed < B1200;
     hardtabs =  !(otty.sg_flags & XTABS);
@@ -1575,7 +1576,7 @@ reset_tty ()
 {
     otty.sg_flags |= ECHO;
     otty.sg_flags &= ~MBIT;
-    stty(2, &otty);
+    stty(2, &savetty);
 }
 
 rdline (f)
