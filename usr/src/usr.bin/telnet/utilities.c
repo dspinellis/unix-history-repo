@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	1.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	1.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	TELOPTS
@@ -19,6 +19,8 @@ static char sccsid[] = "@(#)utilities.c	1.4 (Berkeley) %G%";
 #include <sys/types.h>
 
 #include <ctype.h>
+
+#include "general.h"
 
 #include "ring.h"
 
