@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)tape.c	1.9 (Berkeley) %G%";
+static	char *sccsid = "@(#)tape.c	1.10 (Berkeley) %G%";
 #endif
 
 #include "dump.h"
@@ -385,7 +385,7 @@ doslave(num, cmd, prev, next)
 		kill(master, SIGPIPE);
 		Exit(X_ABORT);
 	}
-	while (read(cmd, req, reqsiz) == reqsiz) {
+	while (readpipe(cmd, req, reqsiz) == reqsiz) {
 		register struct req *p = req;
 		for (trecno = 0; trecno < ntrec; trecno += p->count, p += p->count) {
 			if (p->dblk) {
@@ -396,7 +396,7 @@ doslave(num, cmd, prev, next)
 				tmsg("%d PIPEIN %d\n", num, p->count);
 				if (p->count != 1)
 					ringerr();
-				if (read(cmd, tblock[trecno], TP_BSIZE) != TP_BSIZE)
+				if (readpipe(cmd, tblock[trecno], TP_BSIZE) != TP_BSIZE)
 					senderr();
 			}
 		}
@@ -422,4 +422,26 @@ doslave(num, cmd, prev, next)
 			ringerr(); /* Next slave's turn */
 	}
 	tmsg("%d CLOSE\n", num);
+}
+
+/*
+ * Since a read from a pipe may not return all we asked for
+ * we must loop until we get all we need
+ */
+readpipe(fd, buf, cnt)
+	int fd;
+	char *buf;
+	int cnt;
+{
+	int rd, got;
+
+	for (rd = cnt; rd > 0; rd -= got) {
+		got = read(fd, buf, rd);
+		if (got < 0)
+			return (got);
+		if (got == 0)
+			return (cnt - rd);
+		buf += got;
+	}
+	return (cnt);
 }
