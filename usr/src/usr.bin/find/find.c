@@ -1,19 +1,24 @@
-static char *sccsid = "@(#)find.c	4.11 (Berkeley) %G%";
+#ifndef	lint
+static char *sccsid = "@(#)find.c	4.12 (Berkeley) %G%";
+#endif
 
 #include <stdio.h>
 #include <sys/param.h>
 #include <sys/dir.h>
 #include <sys/stat.h>
+
 #define A_DAY	86400L /* a day full of seconds */
 #define EQ(x, y)	(strcmp(x, y)==0)
 
 int	Randlast;
 char	Pathname[MAXPATHLEN+1];
 
+#define MAXNODES	100
+
 struct anode {
 	int (*F)();
 	struct anode *L, *R;
-} Node[100];
+} Node[MAXNODES];
 int Nn;  /* number of nodes */
 char	*Fname;
 long	Now;
@@ -29,6 +34,9 @@ int	Wct = 2560;
 
 long	Newer;
 
+int	Xdev = 1;	/* true if SHOULD cross devices (file systems) */
+struct	stat Devstat;	/* stats of each argument path's file system */
+
 struct stat Statb;
 
 struct	anode	*exp(),
@@ -37,7 +45,7 @@ struct	anode	*exp(),
 		*e3(),
 		*mk();
 char	*nxtarg();
-char	Home[128];
+char	Home[MAXPATHLEN + 1];
 long	Blocks;
 char *rindex();
 char *sbrk();
@@ -70,7 +78,9 @@ main(argc, argv)
 	struct anode *exlist;
 	int paths;
 	register char *cp, *sp = 0;
+#ifdef	SUID_PWD
 	FILE *pwd, *popen();
+#endif
 
 #ifdef  AMES
 	if (argc < 2) {
@@ -84,10 +94,17 @@ main(argc, argv)
 	}
 #endif
 	time(&Now);
+#ifdef	SUID_PWD
 	pwd = popen("pwd", "r");
-	fgets(Home, 128, pwd);
+	fgets(Home, sizeof Home, pwd);
 	pclose(pwd);
 	Home[strlen(Home) - 1] = '\0';
+#else
+	if (getwd(Home) == NULL) {
+		fprintf(stderr, "find: Can't get current working directory\n");
+		exit(1);
+	}
+#endif
 	Argc = argc; Argv = argv;
 	if(argc<3) {
 usage:		fprintf(stderr, "Usage: find path-list predicate-list\n");
@@ -120,6 +137,8 @@ usage:		fprintf(stderr, "Usage: find path-list predicate-list\n");
 			*cp = '/';
 		}
 		Fname = sp? sp: Pathname;
+		if (!Xdev)
+			stat(Pathname, &Devstat);
 		descend(Pathname, Fname, exlist); /* to find files that match  */
 	}
 	if(Cpio) {
@@ -178,7 +197,8 @@ struct anode *e2() { /* parse NOT (!) */
 struct anode *e3() { /* parse parens and predicates */
 	int exeq(), ok(), glob(),  mtime(), atime(), user(),
 		group(), size(), perm(), links(), print(),
-		type(), ino(), cpio(), newer();
+		type(), ino(), cpio(), newer(),
+		nouser(), nogroup(), ls(), dummy();
 	struct anode *p1;
 	int i;
 	register char *a, *b, s;
@@ -194,6 +214,19 @@ struct anode *e3() { /* parse parens and predicates */
 	else if(EQ(a, "-print")) {
 		return(mk(print, (struct anode *)0, (struct anode *)0));
 	}
+	else if (EQ(a, "-nouser")) {
+		return (mk(nouser, (struct anode *)0, (struct anode *)0));
+	}
+	else if (EQ(a, "-nogroup")) {
+		return (mk(nogroup, (struct anode *)0, (struct anode *)0));
+	}
+	else if (EQ(a, "-ls")) {
+		return (mk(ls, (struct anode *)0, (struct anode *)0));
+	}
+	else if (EQ(a, "-xdev")) {
+		Xdev = 0;
+		return (mk(dummy, (struct anode *)0, (struct anode *)0));
+	}
 	b = nxtarg();
 	s = *b;
 	if(s=='+') b++;
@@ -204,7 +237,7 @@ struct anode *e3() { /* parse parens and predicates */
 	else if(EQ(a, "-atime"))
 		return(mk(atime, (struct anode *)atoi(b), (struct anode *)s));
 	else if(EQ(a, "-user")) {
-		if((i=getunum("/etc/passwd", b)) == -1) {
+		if((i=getuid(b)) == -1) {
 			if(gmatch(b, "[0-9]*"))
 				return mk(user, (struct anode *)atoi(b), (struct anode *)s);
 			fprintf(stderr, "find: cannot find -user name\n");
@@ -215,7 +248,7 @@ struct anode *e3() { /* parse parens and predicates */
 	else if(EQ(a, "-inum"))
 		return(mk(ino, (struct anode *)atoi(b), (struct anode *)s));
 	else if(EQ(a, "-group")) {
-		if((i=getunum("/etc/group", b)) == -1) {
+		if((i=getgid(b)) == -1) {
 			if(gmatch(b, "[0-9]*"))
 				return mk(group, (struct anode *)atoi(b), (struct anode *)s);
 			fprintf(stderr, "find: cannot find -group name\n");
@@ -278,6 +311,11 @@ struct anode *mk(f, l, r)
 int (*f)();
 struct anode *l, *r;
 {
+	if (Nn >= MAXNODES) {
+		fprintf(stderr, "find: Too many options\n");
+		exit(1);
+	}
+
 	Node[Nn].F = f;
 	Node[Nn].L = l;
 	Node[Nn].R = r;
@@ -320,7 +358,8 @@ register struct { int f; char *pat; } *p;
 {
 	return(gmatch(Fname, p->pat));
 }
-print()
+print(p)
+struct anode *p;
 {
 	puts(Pathname);
 	return(1);
@@ -340,6 +379,13 @@ register struct { int f, u, s; } *p;
 {
 	return(scomp(Statb.st_uid, p->u, p->s));
 }
+nouser(p)
+struct anode *p;
+{
+	char *getname();
+
+	return (getname(Statb.st_uid) == NULL);
+}
 ino(p)
 register struct { int f, u, s; } *p;
 {
@@ -349,6 +395,13 @@ group(p)
 register struct { int f, u; } *p; 
 {
 	return(p->u == Statb.st_gid);
+}
+nogroup(p)
+struct anode *p;
+{
+	char *getgroup();
+
+	return (getgroup(Statb.st_gid) == NULL);
 }
 links(p)
 register struct { int f, link, s; } *p; 
@@ -404,7 +457,8 @@ short v[];
 		U.s[0] = v[0], U.s[1] = v[1];
 	return U.l;
 }
-cpio()
+cpio(p)
+struct anode *p;
 {
 #define MAGIC 070707
 	struct header {
@@ -461,9 +515,22 @@ cerror:
 	close(ifile);
 	return;
 }
-newer()
+newer(p)
+struct anode *p;
 {
 	return Statb.st_mtime > Newer;
+}
+ls(p)
+struct anode *p;
+{
+	list(Pathname, &Statb);
+	return (1);
+}
+dummy(p)
+struct anode *p;
+{
+	/* dummy */
+	return (1);
 }
 
 /* support functions */
@@ -484,28 +551,49 @@ doex(com)
 	register char *na;
 	static char *nargv[50];
 	static ccode;
+	register int w, pid, (*sigint)(), (*sigquit)(), cantexec;
 
 	ccode = np = 0;
 	while (na=Argv[com++]) {
+		if(np >= sizeof nargv / sizeof *nargv - 1) break;
 		if(strcmp(na, ";")==0) break;
 		if(strcmp(na, "{}")==0) nargv[np++] = Pathname;
 		else nargv[np++] = na;
 	}
 	nargv[np] = 0;
 	if (np==0) return(9);
-	if(fork()) /*parent*/ {
-#include <signal.h>
-		int (*old)() = signal(SIGINT, SIG_IGN);
-		int (*oldq)() = signal(SIGQUIT, SIG_IGN);
-		wait(&ccode);
-		signal(SIGINT, old);
-		signal(SIGQUIT, oldq);
-	} else { /*child*/
+	/*
+	 * This is a kludge, but the alternative is to reserve
+	 * some exit code (e.g. 0xff) to denote inability to exec.
+	 */
+	cantexec = 0;
+	switch (pid = vfork()) {
+	case -1:
+		perror("find: Can't fork");
+		exit(1);
+		break;
+
+	case 0:
 		chdir(Home);
 		execvp(nargv[0], nargv, np);
-		exit(1);
+		cantexec = 1;	/* XXX */
+		_exit(1);
+		break;
+
+	default:
+		sigint = signal(SIGINT, SIG_IGN);
+		sigquit = signal(SIGQUIT, SIG_IGN);
+		while ((w = wait(&ccode)) != pid && w != -1)
+			;
+		signal(SIGQUIT, sigquit);
+		signal(SIGINT, sigint);
+		if (cantexec) {	/* XXX */
+			fprintf(stderr, "find: Can't execute ");
+			perror(nargv[0]);
+			exit(1);
+		}
+		return (ccode != 0 ? 0 : 1);
 	}
-	return(ccode ? 0:1);
 }
 
 getunum(f, s) char *f, *s; { /* find user/group name and return number */
@@ -555,7 +643,8 @@ descend(name, fname, exlist)
 		return(0);
 	}
 	(*exlist->F)(exlist);
-	if((Statb.st_mode&S_IFMT)!=S_IFDIR)
+	if((Statb.st_mode&S_IFMT)!=S_IFDIR ||
+	   !Xdev && Devstat.st_dev != Statb.st_dev)
 		return(1);
 
 	for (c1 = name; *c1; ++c1);
@@ -629,7 +718,7 @@ register char *s, *p;
 					return(0);
 
 			case '-':
-				k |= lc <= scc & scc <= (cc=p[1]);
+				k |= lc <= scc && scc <= (cc=p[1]);
 			}
 			if (scc==(lc=cc)) k++;
 		}
@@ -747,7 +836,7 @@ fastfind ( pathpart )
 	register char *p, *s;
 	register int c; 
 	char *q, *index(), *patprep();
-	int i, count, globflag;
+	int i, count = 0, globflag;
 	FILE *fp, *fopen();
 	char *patend, *cutoff;
 	char path[1024];
@@ -755,7 +844,7 @@ fastfind ( pathpart )
 	int found = NO;
 
 	if ( (fp = fopen ( FCODES, "r" )) == NULL ) {
-		fprintf ( "find: can't open %s\n", FCODES );
+		fprintf ( stderr, "find: can't open %s\n", FCODES );
 		exit ( 1 );
 	}
 	for ( i = 0; i < 128; i++ ) 
@@ -843,3 +932,277 @@ patprep ( name )
 	return ( --subp );
 }
 #endif
+
+/* rest should be done with nameserver or database */
+
+#include <pwd.h>
+#include <grp.h>
+#include <utmp.h>
+
+struct	utmp utmp;
+#define	NMAX	(sizeof (utmp.ut_name))
+#define SCPYN(a, b)	strncpy(a, b, NMAX)
+
+#define NUID	64
+#define NGID	300
+
+struct ncache {
+	int	uid;
+	char	name[NMAX+1];
+} nc[NUID];
+char	outrangename[NMAX+1];
+int	outrangeuid = -1;
+char	groups[NGID][NMAX+1];
+char	outrangegroup[NMAX+1];
+int	outrangegid = -1;
+
+/*
+ * This function assumes that the password file is hashed
+ * (or some such) to allow fast access based on a name key.
+ * If this isn't true, duplicate the code for getgroup().
+ */
+char *
+getname(uid)
+{
+	register struct passwd *pw;
+	struct passwd *getpwent();
+	register int cp;
+#ifndef	NO_PW_STAYOPEN
+	extern int _pw_stayopen;
+
+	_pw_stayopen = 1;
+#endif
+
+#if	((NUID) & ((NUID) - 1) != 0)
+	cp = uid % (NUID);
+#else
+	cp = uid & ((NUID) - 1);
+#endif
+	if (uid >= 0 && nc[cp].uid == uid && nc[cp].name[0])
+		return (nc[cp].name);
+	pw = getpwuid(uid);
+	if (!pw)
+		return (0);
+	nc[cp].uid = uid;
+	SCPYN(nc[cp].name, pw->pw_name);
+	return (nc[cp].name);
+}
+
+char *
+getgroup(gid)
+{
+	register struct group *gr;
+	static init;
+	struct group *getgrent();
+
+	if (gid >= 0 && gid < NGID && groups[gid][0])
+		return (&groups[gid][0]);
+	if (gid >= 0 && gid == outrangegid)
+		return (outrangegroup);
+rescan:
+	if (init == 2) {
+		if (gid < NGID)
+			return (0);
+		setgrent();
+		while (gr = getgrent()) {
+			if (gr->gr_gid != gid)
+				continue;
+			outrangegid = gr->gr_gid;
+			SCPYN(outrangegroup, gr->gr_name);
+			endgrent();
+			return (outrangegroup);
+		}
+		endgrent();
+		return (0);
+	}
+	if (init == 0)
+		setgrent(), init = 1;
+	while (gr = getgrent()) {
+		if (gr->gr_gid < 0 || gr->gr_gid >= NGID) {
+			if (gr->gr_gid == gid) {
+				outrangegid = gr->gr_gid;
+				SCPYN(outrangegroup, gr->gr_name);
+				return (outrangegroup);
+			}
+			continue;
+		}
+		if (groups[gr->gr_gid][0])
+			continue;
+		SCPYN(groups[gr->gr_gid], gr->gr_name);
+		if (gr->gr_gid == gid)
+			return (&groups[gid][0]);
+	}
+	init = 2;
+	goto rescan;
+}
+
+int
+getuid(username)
+	char *username;
+{
+	register struct passwd *pw;
+	struct passwd *getpwnam();
+#ifndef	NO_PW_STAYOPEN
+	extern int _pw_stayopen;
+
+	_pw_stayopen = 1;
+#endif
+
+	pw = getpwnam(username);
+	if (pw != NULL)
+		return (pw->pw_uid);
+	else
+		return (-1);
+}
+
+int
+getgid(groupname)
+	char *groupname;
+{
+	register struct group *gr;
+	struct group *getgrnam();
+
+	gr = getgrnam(groupname);
+	if (gr != NULL)
+		return (gr->gr_gid);
+	else
+		return (-1);
+}
+
+#define permoffset(who)		((who) * 3)
+#define permission(who, type)	((type) >> permoffset(who))
+#define kbytes(bytes)		(((bytes) + 1023) / 1024)
+
+list(file, stp)
+	char *file;
+	register struct stat *stp;
+{
+	char pmode[32], uname[32], gname[32], fsize[32], ftime[32];
+	char *getname(), *getgroup(), *ctime();
+	static long special[] = { S_ISUID, 's', S_ISGID, 's', S_ISVTX, 't' };
+	static time_t sixmonthsago = -1;
+#ifdef	S_IFLNK
+	char flink[MAXPATHLEN + 1];
+#endif
+	register int who;
+	register char *cp;
+	time_t now;
+
+	if (file == NULL || stp == NULL)
+		return (-1);
+
+	time(&now);
+	if (sixmonthsago == -1)
+		sixmonthsago = now - 6L*30L*24L*60L*60L;
+
+	switch (stp->st_mode & S_IFMT) {
+#ifdef	S_IFDIR
+	case S_IFDIR:	/* directory */
+		pmode[0] = 'd';
+		break;
+#endif
+#ifdef	S_IFCHR
+	case S_IFCHR:	/* character special */
+		pmode[0] = 'c';
+		break;
+#endif
+#ifdef	S_IFBLK
+	case S_IFBLK:	/* block special */
+		pmode[0] = 'b';
+		break;
+#endif
+#ifdef	S_IFLNK
+	case S_IFLNK:	/* symbolic link */
+		pmode[0] = 'l';
+		break;
+#endif
+#ifdef	S_IFSOCK
+	case S_IFSOCK:	/* socket */
+		pmode[0] = 's';
+		break;
+#endif
+#ifdef	S_IFREG
+	case S_IFREG:	/* regular */
+#endif
+	default:
+		pmode[0] = '-';
+		break;
+	}
+
+	for (who = 0; who < 3; who++) {
+		if (stp->st_mode & permission(who, S_IREAD))
+			pmode[permoffset(who) + 1] = 'r';
+		else
+			pmode[permoffset(who) + 1] = '-';
+
+		if (stp->st_mode & permission(who, S_IWRITE))
+			pmode[permoffset(who) + 2] = 'w';
+		else
+			pmode[permoffset(who) + 2] = '-';
+
+		if (stp->st_mode & special[who * 2])
+			pmode[permoffset(who) + 3] = special[who * 2 + 1];
+		else if (stp->st_mode & permission(who, S_IEXEC))
+			pmode[permoffset(who) + 3] = 'x';
+		else
+			pmode[permoffset(who) + 3] = '-';
+	}
+	pmode[permoffset(who) + 1] = '\0';
+
+	cp = getname(stp->st_uid);
+	if (cp != NULL)
+		sprintf(uname, "%-9.9s", cp);
+	else
+		sprintf(uname, "%-9d", stp->st_uid);
+
+	cp = getgroup(stp->st_gid);
+	if (cp != NULL)
+		sprintf(gname, "%-9.9s", cp);
+	else
+		sprintf(gname, "%-9d", stp->st_gid);
+
+	if (pmode[0] == 'b' || pmode[0] == 'c')
+		sprintf(fsize, "%3d,%4d",
+			major(stp->st_rdev), minor(stp->st_rdev));
+	else {
+		sprintf(fsize, "%8ld", stp->st_size);
+#ifdef	S_IFLNK
+		if (pmode[0] == 'l') {
+			who = readlink(file, flink, sizeof flink - 1);
+			if (who >= 0)
+				flink[who] = '\0';
+		}
+#endif
+	}
+
+	cp = ctime(&stp->st_mtime);
+	if (stp->st_mtime < sixmonthsago || stp->st_mtime > now)
+		sprintf(ftime, "%-7.7s %-4.4s", cp + 4, cp + 20);
+	else
+		sprintf(ftime, "%-12.12s", cp + 4);
+
+	printf("%5lu %4ld %s %2d %s%s%s %s %s%s%s\n",
+		stp->st_ino,				/* inode #	*/
+#ifdef	S_IFSOCK
+		(long) kbytes(dbtob(stp->st_blocks)),	/* kbytes       */
+#else
+		(long) kbytes(stp->st_size),		/* kbytes       */
+#endif
+		pmode,					/* protection	*/
+		stp->st_nlink,				/* # of links	*/
+		uname,					/* owner	*/
+		gname,					/* group	*/
+		fsize,					/* # of bytes	*/
+		ftime,					/* modify time	*/
+		file,					/* name		*/
+#ifdef	S_IFLNK
+		(pmode[0] == 'l') ? " -> " : "",
+		(pmode[0] == 'l') ? flink  : ""		/* symlink	*/
+#else
+		"",
+		""
+#endif
+	);
+
+	return (0);
+}
