@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)lex.c	5.5 (Berkeley) %G%";
+static char *sccsid = "@(#)lex.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 #include "rcv.h"
@@ -659,6 +659,7 @@ newfileinfo()
 /*ARGSUSED*/
 pversion(e)
 {
+	extern char *version;
 
 	printf(greeting, version);
 	return(0);
