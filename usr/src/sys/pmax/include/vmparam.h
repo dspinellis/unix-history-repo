@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vmparam.h 1.16 91/01/18$
  *
- *	@(#)vmparam.h	7.1 (Berkeley) %G%
+ *	@(#)vmparam.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -203,7 +203,7 @@
  */
 
 /* user/kernel map constants */
-#define VM_MIN_ADDRESS		((vm_offset_t)0)
+#define VM_MIN_ADDRESS		((vm_offset_t)0x1000)
 #define VM_MAXUSER_ADDRESS	((vm_offset_t)0x80000000)
 #define VM_MAX_ADDRESS		((vm_offset_t)0x80000000)
 #define VM_MIN_KERNEL_ADDRESS	((vm_offset_t)0xC0000000)
