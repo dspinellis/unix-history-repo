@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)uudecode.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)uudecode.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -104,7 +104,8 @@ decode()
 	}
 
 	/* create output file, set mode */
-	if (!freopen(buf, "w", stdout) || fchmod(fileno(stdout), mode)) {
+	if (!freopen(buf, "w", stdout) ||
+	    fchmod(fileno(stdout), mode&0666)) {
 		(void)fprintf(stderr, "uudecode: %s: %s: %s\n", buf,
 		    filename, strerror(errno));
 		return(1);
