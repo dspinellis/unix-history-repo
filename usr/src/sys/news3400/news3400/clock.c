@@ -12,7 +12,7 @@
  *
  * from: Utah $Hdr: clock.c 1.18 91/01/21$
  *
- *	@(#)clock.c	7.1 (Berkeley) %G%
+ *	@(#)clock.c	7.2 (Berkeley) %G%
  */
 
 #include "../include/fix_machine_type.h"
@@ -62,7 +62,7 @@ static short dayyr[12] = {
 	0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334
 };
 
-#define	bcd_to_int(BCD)	(i = BCD, (((i) >> 4) & 0xf) * 10 + (i) & 0xf)
+#define	bcd_to_int(BCD)	(i = BCD, (((i) >> 4) & 0xf) * 10 + ((i) & 0xf))
 #define	int_to_bcd(INT)	(i = INT, ((((i) / 10) % 10) << 4) + (i) % 10)
 
 /*
@@ -78,7 +78,7 @@ inittodr(base)
 	register int days, yr;
 	int sec, min, hour, week, day, mon, year;
 	long deltat, badbase = 0;
-	register int i;
+	register u_int i;
 
 	if (base < 5*SECYR) {
 		printf("WARNING: preposterous time in file system\n");
@@ -100,7 +100,7 @@ inittodr(base)
 	/* simple sanity checks */
 	if (year < 70 || mon < 1 || mon > 12 || day < 1 || day > 31 ||
 	    hour > 23 || min > 59 || sec > 59) {
-		printf("WARNING: preposterous clock chip time");
+		printf("WARNING: preposterous clock chip time\n");
 		/*
 		 * Believe the time in the file system for lack of
 		 * anything better, resetting the TODR.
