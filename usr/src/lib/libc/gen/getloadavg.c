@@ -6,12 +6,14 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getloadavg.c	6.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)getloadavg.c	6.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
 #include <sys/types.h>
 #include <sys/file.h>
+#include <sys/kernel.h>
+#include <sys/kinfo.h>
 #include <nlist.h>
 
 static struct nlist nl[] = {
@@ -33,29 +35,37 @@ getloadavg(loadavg, nelem)
 	int nelem;
 {
 	static int need_nlist = 1;
-	fixpt_t	averunnable[3];
-	int fscale, kmemfd, i;
-	int alreadyopen;
+	struct loadavg loadinfo;
+	int size, kmemfd, i;
+	int alreadyopen = 1;
+	int fscale;
 
-	if ((alreadyopen = kvm_openfiles(NULL, NULL, NULL)) == -1)
-		return (-1);
-	/* 
-	 * cache nlist 
-	 */
-	if (need_nlist) {
-		if (kvm_nlist(nl) != 0)
+	size = sizeof(loadinfo);
+	if (getkerninfo(KINFO_LOADAVG, &loadinfo, &size, 0) < 0) {
+		if ((alreadyopen = kvm_openfiles(NULL, NULL, NULL)) == -1)
+			return (-1);
+		/* 
+		 * cache nlist 
+		 */
+		if (need_nlist) {
+			if (kvm_nlist(nl) != 0)
+				goto bad;
+			need_nlist = 0;
+		}
+		if (kvm_read((off_t)nl[X_AVERUNNABLE].n_value,
+		    (char *)&loadinfo, sizeof(loadinfo)) != size)
 			goto bad;
-		need_nlist = 0;
+		/*
+		 * Old kernel have fscale separately; if not found assume
+		 * running new format.
+		 */
+		if (kvm_read( (off_t)nl[X_FSCALE].n_value, (char *)&fscale, 
+		    sizeof(fscale)) == sizeof(fscale))
+			loadinfo.fscale = fscale;
 	}
-	if (kvm_read((off_t)nl[X_AVERUNNABLE].n_value, (char *)averunnable, 
-	    sizeof(averunnable)) != sizeof(averunnable))
-		goto bad;
-	if (kvm_read( (off_t)nl[X_FSCALE].n_value, (char *)&fscale, 
-	    sizeof(fscale)) != sizeof(fscale))
-		goto bad;
-	nelem = MIN(nelem, sizeof(averunnable) / sizeof(averunnable[0]));
+	nelem = MIN(nelem, sizeof(loadinfo.ldavg) / sizeof(fixpt_t));
 	for (i = 0; i < nelem; i++)
-		loadavg[i] = (double) averunnable[i] / fscale;
+		loadavg[i] = (double) loadinfo.ldavg[i] / loadinfo.fscale;
 	if (!alreadyopen)
 		kvm_close();
 	return (nelem);
