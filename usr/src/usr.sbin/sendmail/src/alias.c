@@ -3,14 +3,14 @@
 # include <pwd.h>
 # include "dlvrmail.h"
 
-static char SccsId[] = "@(#)alias.c	1.3	%G%";
+static char SccsId[] = "@(#)alias.c	1.4	%G%";
 
 /*
 **  ALIAS -- Compute aliases.
 **
-**	Scans the file /usr/lib/mailaliases for a set of aliases.
+**	Scans the file ALIASFILE for a set of aliases.
 **	If found, it arranges to deliver to them by inserting the
-**	new names onto the SendQ queue.
+**	new names onto the SendQ queue.  Uses libdbm database if -DDBM.
 **
 **	Parameters:
 **		none
@@ -37,6 +37,9 @@ static char SccsId[] = "@(#)alias.c	1.3	%G%";
 **			where 'alias' expands to all of
 **			'name[i]'.  Continuations begin with
 **			space or tab.
+**		ALIASFILE.pag, ALIASFILE.dir: libdbm version
+**			of alias file.  Keys are aliases, datums
+**			(data?) are name1,name2, ...
 **
 **	Notes:
 **		If NoAlias (the "-n" flag) is set, no aliasing is
@@ -52,6 +55,11 @@ static char SccsId[] = "@(#)alias.c	1.3	%G%";
 # define ALIASFILE	"/usr/lib/mailaliases"
 # define MAXRCRSN	10
 
+#ifdef DBM
+typedef struct {char *dptr; int dsize;} datum;
+datum lhs, rhs;
+datum fetch();
+#endif DBM
 
 alias()
 {
@@ -74,6 +82,7 @@ alias()
 # endif
 
 	/* open alias file if not already open */
+#ifndef DBM
 # ifdef DEBUG
 	if (Debug && (af = fopen("mailaliases", "r")) != NULL)
 		printf(" [using local alias file]\n");
@@ -88,7 +97,11 @@ alias()
 		errno = 0;
 		return;
 	}
+#else DBM
+	dbminit(ALIASFILE);
+#endif DBM
 
+#ifndef DBM
 	/*
 	**  Scan alias file.
 	**	If we find any user that any line matches any user, we
@@ -102,8 +115,7 @@ alias()
 	**	continuation lines.
 	*/
 
-	didalias = TRUE;
-	while (didalias)
+	do
 	{
 		didalias = FALSE;
 		gotmatch = FALSE;
@@ -119,10 +131,6 @@ alias()
 			{
 				if (gotmatch)
 				{
-# ifdef DEBUG
-					if (Debug)
-						printf("   ... also aliased to %s", line);
-# endif
 					sendto(line, 1);
 				}
 				continue;
@@ -160,6 +168,28 @@ alias()
 			}
 			if (q != NULL)
 			{
+#else DBM
+	/*
+	**  Scan SendQ
+	**	We pass through the queue several times.  Didalias tells
+	**	us if we took some alias on this pass through the queue;
+	**	when it goes false at the top of the loop we don't have
+	**	to scan any more.
+	*/
+
+	do
+	{
+		didalias = FALSE;
+		/*  Scan SendQ for that canonical form. */
+		for (q = &SendQ; (q = nxtinq(q)) != NULL; )
+		{
+			lhs.dptr = q -> q_paddr;
+			lhs.dsize = strlen(lhs.dptr)+1;
+			rhs = fetch(lhs);
+			p = rhs.dptr;
+			if (p != NULL)
+			{
+#endif
 				/*
 				**  Match on Alias.
 				**	Deliver to the target list.
@@ -180,8 +210,10 @@ alias()
 				sendto(p, 1);
 			}
 		}
-	}
+	} while (didalias);
+#ifndef DBM
 	fclose(af);
+#endif
 }
 /*
 **  FORWARD -- Try to forward mail

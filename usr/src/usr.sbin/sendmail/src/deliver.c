@@ -6,7 +6,7 @@
 # include <log.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	1.5	%G%";
+static char SccsId[] = "@(#)deliver.c	1.6	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a particular address.
@@ -182,7 +182,11 @@ deliver(to, editfcn)
 		syserr("pipe");
 		return (-1);
 	}
+# ifdef VFORK
+	pid = vfork();
+# else
 	pid = fork();
+# endif
 	if (pid < 0)
 	{
 		syserr("Cannot fork");
@@ -213,7 +217,20 @@ deliver(to, editfcn)
 # ifdef LOG
 		initlog(NULL, 0, LOG_CLOSE);
 # endif LOG
+# ifndef VFORK
+		/*
+		 * We have to be careful with vfork - we can't mung up the
+		 * memory but we don't want the mailer to inherit any extra
+		 * open files.  Chances are the mailer won't
+		 * care about an extra file, but then again you never know.
+		 * Actually, we would like to close(fileno(pwf)), but it's
+		 * declared static so we can't.  But if we fclose(pwf), which
+		 * is what endpwent does, it closes it in the parent too and
+		 * the next getpwnam will be slower.  If you have a weird mailer
+		 * that chokes on the extra file you should do the endpwent().
+		 */
 		endpwent();
+# endif
 		execv(m->m_mailer, pvp);
 		/* syserr fails because log is closed */
 		/* syserr("Cannot exec %s", m->m_mailer); */
