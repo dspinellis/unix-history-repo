@@ -44,7 +44,6 @@ static char sccsid[] = "@(#)clnt_perror.c 1.15 87/10/07 Copyr 1984 Sun Micro";
 #include <rpc/clnt.h>
 
 extern char *sys_errlist[];
-extern char *sprintf();
 static char *auth_errmsg();
 
 extern char *strcpy();
