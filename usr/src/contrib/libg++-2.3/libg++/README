@@ -1,0 +1,203 @@
+This is version 2.3 of libg++, the GNU C++ class library.
+Release date December 9, 1992 by Cygnus Support
+
+* Please skim through this once BEFORE attempting to make and install libg++.
+
+* Contents
+
+    * g++ source files are in the ./src directory
+    * The iostream classes are in ./iostream.
+    * Some simple tests and demo programs are in ./tests
+    * Header files are in ./g++-include (and ./src and ./iostream).
+    * documentation is in ./libg++.texinfo.
+    * A perfect hash function generator is in ./gperf.
+    * Some miscellaneous files of possible interest are in ./etc
+      (These files are not officially a part of the libg++ distribution,
+      and are subject to arbitrary changes, deletions, etc. from release
+      to release.)
+
+* Copyright restrictions
+
+The GNU Library General Public License (which is in the file
+../COPYING.LIB) covers all libraries (specificly libg++.a) and
+include files that get installed (by 'make install').
+
+A few source files and subroutines have less restrictive licenses.
+E.g. some code (such as iostream/sbufvform.C) is  based on software
+that was developed by the University of California, Berkeley, for the
+Berkeley Software Distribution (BSD-4.4), and bears their copyright; and
+one file (iostream/dtoa.C) is derived from ("free") code copyrighted AT&T.
+
+Other parts of the libg++ *distribution* that are not part the libg++
+*library* per se have the GNU General Public License (which is in the
+file ../COPYING).
+
+Individual files should bear the appropriate Copyright (let us know
+if you think there is a mistake).  But specificly, if your application
+only uses files that are installed by the normal build+install
+procedure, then it is bound by the restrictions of the GNU Library
+General Public License, but not those of the GNU General Public License.
+
+* Pre-installation
+
+    * This version of libg++ works best with gcc-2.3 or newer.  If you're
+      using gcc-2.0 or 2.1 you made need to move aside any installed
+      g++-include header files installed from previous versions of
+      libg++, since they might conflict with the new ones.
+      This is not necessary if your version of gcc supports the
+      -nostdinc++ flag.
+
+      In general, install a version of gcc (which now includes g++)
+      with at least as high a version number as this version of libg++.
+
+    * With only trivial modifications (like changing file extensions,
+      etc.) everything (perhaps except for some demos in ./etc)
+      should compile and run with any 2.0 C++ compiler. Please tell me
+      if this is not so.
+
+* Installation (see libg++.texinfo more more details)
+
+    * For VMS, cd to ./vms, and read AAAREADME.TXT
+
+    * In the directory *above* libg++ (i.e.. libg++-2.3),
+	run './configure' to configure the tree and create Makefiles.
+
+	Typical example:
+	./configure sun4 --prefix=/usr/gnu
+
+	The prefix says that installation should be into
+	/usr/gnu/lib, /usr/gnu/bin, etc as appropriate.
+
+	See etc/cfg-paper.texi for more details.  (This paper is
+	in texinfo format;  see the section below on Installing
+	the Documentation on how to make it more readable.)
+
+    * type `make all' (Builds libg++.a and some other things.)
+
+    * Optionally, type `make check' to make and run some tests/demos of libg++.
+
+    * Type `make install'  to install 
+
+        libg++.a          (from .)
+        include files     (from g++-include, src, and iostream)
+        prototype files   (from src/gen)
+        etags             (from etc)
+        g++dep            (from etc)
+
+        You may also want to install etc/c++-mode.el in your
+        emacs/lisp directory, probably in byte-compiled form.
+
+    * Install the documentation
+
+    If you are a systems administrator installing libg++ for others,
+    please make the documentation available to users!
+
+    The libg++.texinfo file may be formatted as a paper document by
+
+        * Get a copy of texinfo.tex. 
+            This file defines various tex macros used in libg++.texinfo
+            One is in the gcc release.
+            You can temporarily copy it into the current directory.
+        * Run tex on libg++.texinfo
+             and do whatever you normally do from there to print it.
+
+    It may be made into an emacs info file:
+
+	* use the 'makeinfo' program (from the texinfo distribution).
+
+        * Copy these files into your emacs info directory
+            (normally somewhere like /usr/gnu/emacs/info).
+        * If you have not done so before, edit the emacs/info/dir file
+            to add a libg++ node, by inserting a line like
+		
+            * Libg++: (libg++).	The GNU C++ Library
+
+            to the bottom of the file.
+
+    * (Optional) Install, from ./etc
+        etags (version of etags that understands c++)
+        g++dep (a version of mkdep that understands c++)
+        c++-mode.el (a c++-mode for GNU emacs)
+
+* Notes on compiling and running libg++/tests
+
+tCurses is not automatically run through `checktests'.
+You must run it manually:
+
+tCurses attempts to place one of each curses library primitive (boxes,
+strings, numbers...) on your screen, and asks for some input, to test
+curses input routines. Since there is no way to describe the output
+in a system- and terminal- independent way, you will have to be the 
+judge of whether it works acceptably.
+
+tCurses (and the curses-based classes generally) may fail on the
+Sequent and perhaps other systems with unusual or old curses library
+implementations if you do not end input with a <linefeed> instead of
+the normal <carriage-return>.
+
+It is a very good idea to also cd to the test directory and run tests
+manually, to see what they do. 
+
+Compiling and running the tests consumes a fair amount of time and
+disk space!
+
+Some reported diffs may be perfectly reasonable, owing to things like
+floating point precision differences: The expected.out file was created
+on a Sun4/110.
+
+    Some tRational and tFix results depend on floating point precision
+    and may generate slightly different output on different machines.
+
+    tRandom seeds some random-numbers in a way that also relies on
+    floating-point representations -- Your output should be numerically
+    similar, but probably not identical.
+
+* Changes since previous versions(s).
+
+    See the file NEWS.
+
+* Known bugs and problems
+
+    * The file etc/HINTS is an emacs RMAIL file that contains recent
+        bug-lib-g++ list mail and related messages that may be useful.
+
+* Lots of other information is in the libg++.texinfo file. It really is
+  very important to actually read the documentation before using 
+  library classes. Examination of the demo files in the test directory
+  may also be useful. (Note however, that the demo files are merely
+  designed to test examples of each class capability,
+  and are not especially good examples of client functions that might
+  use these classes.)
+
+* There is now a gnu libg++ mailing list (bug-lib-g++@prep.ai.mit.edu) and
+    associated usenet gnu news group.
+
+* You will be performing a valuable service if you use libg++
+   classes and report back any comments, and suggestions, or bugs,
+   preferably to the bug-lib-g++ list. Your feedback is extremely 
+   helpful in efforts to make libg++ as useful and reliable as possible.
+
+* We continue to solicit
+
+  * bug reports.
+  * suggestions.
+  * comments.
+  * questions about installing and using libg++
+  * other contributions to be incorporated into libg++.
+  * sample programs using libg++.
+
+  Often, the best place to send such things is bug-lib-g++@prep.ai.mit.edu,
+  although direct mail is also welcome.
+
+* Good luck!
+
+Doug Lea designed and implemented most of the classes,
+and was the original maintainer and "owner" of libg++.
+He has handed over "ownership" to Cygnus Support.
+
+Doug Lea, Computer Science Dept., SUNY Oswego, Oswego, NY, 13126 (315)341-2367
+email: dl@g.oswego.edu            or dl@cat.syr.edu
+UUCP :...cornell!devvax!oswego!dl or ...rutgers!sunybcs!oswego!dl
+
+Per Bothner, Cygnus Support, bothner@cygnus.com
+Cygnus Support, 1937 Landings Drive, Mountain View, CA 94043
