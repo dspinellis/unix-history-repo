@@ -1,4 +1,4 @@
-.\"	@(#)HP.06.91	1.1	91/06/19
+.\"	@(#)HP.06.91	1.2	91/06/19
 .if n \{\
 .ND
 .rm CH
@@ -45,20 +45,7 @@ We are very excited by the new HP700 ``Snake'' workstations.
 In the coming year, we plan to work with the people in the systems
 group at the University of Utah to get Berkeley UNIX fully supported
 on that platform.
-The initial plan will be to have Utah complete
-their port of 4.3BSD to the HP700;
-they hope to able to make that port available by the end
-of summer for those sites that want a system to run immediately.
-Once they have the port running successfully,
-they will work with CSRG to get it converted to run under
-the new virtual memory system used in 4.4BSD.
-Utah already has a MACH kernel running on the HP800;
-since the 4.4BSD virtual memory system is
-derived from the MACH vm implementation,
-we anticipate that it will not take long to get the conversion done.
-CSRG will then complete the integration of 4.4BSD.
-We hope to have a test release ready late in the year
-and a more general beta distribution available early in 1992.
+We hope leverage off their 4.3BSD port to bring 4.4BSD to the Snake.
 .PP
 To support the 4.4BSD development on the HP700 platform
 we anticipate the need for six machines consisting of
