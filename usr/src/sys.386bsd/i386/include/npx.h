@@ -34,6 +34,14 @@
  * SUCH DAMAGE.
  *
  *	@(#)npx.h	5.3 (Berkeley) 1/18/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00154
+ * --------------------         -----   ----------------------
+ *
+ * 20 Apr 93	Bruce Evans		New npx-0.5 code
+ *
  */
 
 /*
@@ -58,16 +66,25 @@ struct	env87 {
 
 /* Contents of each floating point accumulator */
 struct	fpacc87 {
+#ifdef dontdef /* too unportable */
 	u_long	fp_mantlo;	/* mantissa low (31:0) */
 	u_long	fp_manthi;	/* mantissa high (63:32) */
 	int	fp_exp:15;	/* exponent */
 	int	fp_sgn:1;	/* mantissa sign */
+#else
+	u_char	fp_bytes[10];
+#endif
 };
 
 /* Floating point context */
 struct	save87 {
 	struct	env87 sv_env;		/* floating point control/status */
 	struct	fpacc87	sv_ac[8];	/* accumulator contents, 0-7 */
+#ifndef dontdef
+	u_long	sv_ex_sw;	/* status word for last exception (was pad) */
+	u_long	sv_ex_tw;	/* tag word for last exception (was pad) */
+	u_char	sv_pad[8 * 2 - 2 * 4];	/* bogus historical padding */
+#endif
 };
 
 /* Cyrix EMC memory - mapped coprocessor context switch information */
@@ -77,15 +94,53 @@ struct	emcsts {
 	long	em_dl;		/* memory mapped D low register when swtched */
 };
 
-/* Intel prefer's long real (53 bit) precision */
+/* Intel prefers long real (53 bit) precision */
 #define	__iBCS_NPXCW__		0x262
-/* wfj prefer's temporary real (64 bit) precision */
+/* wfj prefers temporary real (64 bit) precision */
 #define	__386BSD_NPXCW__	0x362
+/*
+ * bde prefers 53 bit precision and all exceptions masked.
+ *
+ * The standard control word from finit is 0x37F, giving:
+ *
+ *	round to nearest
+ *	64-bit precision
+ *	all exceptions masked.
+ *
+ * Now I want:
+ *
+ *	affine mode for 287's (if they work at all) (1 in bitfield 1<<12)
+ *	53-bit precision (2 in bitfield 3<<8)
+ *	overflow exception unmasked (0 in bitfield 1<<3)
+ *	zero divide exception unmasked (0 in bitfield 1<<2)
+ *	invalid-operand exception unmasked (0 in bitfield 1<<0).
+ *
+ * 64-bit precision often gives bad results with high level languages
+ * because it makes the results of calculations depend on whether
+ * intermediate values are stored in memory or in FPU registers.
+ *
+ * The "Intel" and wfj control words have:
+ *
+ *	underflow exception unmasked (0 in bitfield 1<<4)
+ *
+ * but that causes an unexpected exception in the test program 'paranoia'
+ * and makes denormals useless (DBL_MIN / 2 underflows).  It doesn't make
+ * a lot of sense to trap underflow without trapping denormals.
+ *
+ * Later I will want the IEEE default of all exceptions masked.  See the
+ * 0.0 math manpage for why this is better.  The 0.1 math manpage is empty.
+ */
+#define	__BDE_NPXCW__		0x1272
+#define	__BETTER_BDE_NPXCW__	0x127f
 
+#ifdef __BROKEN_NPXCW__
 #ifdef __386BSD__
 #define	__INITIAL_NPXCW__	__386BSD_NPXCW__
 #else
 #define	__INITIAL_NPXCW__	__iBCS_NPXCW__
+#endif
+#else
+#define	__INITIAL_NPXCW__	__BDE_NPXCW__
 #endif
 
 #endif	___NPX87___

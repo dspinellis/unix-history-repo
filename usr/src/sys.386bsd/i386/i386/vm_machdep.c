@@ -36,6 +36,14 @@
  * SUCH DAMAGE.
  *
  *	@(#)vm_machdep.c	7.3 (Berkeley) 5/13/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00154
+ * --------------------         -----   ----------------------
+ *
+ * 20 Apr 93	Bruce Evans		New npx-0.5 code
+ *
  */
 
 /*
@@ -115,8 +123,6 @@ cpu_fork(p1, p2)
 	return (0);
 }
 
-extern struct proc *npxproc;
-
 #ifdef notyet
 /*
  * cpu_exit is called as the last action during exit.
@@ -138,8 +144,9 @@ cpu_exit(p)
 {
 	static struct pcb nullpcb;	/* pcb to overwrite on last swtch */
 
-	/* free cporcessor (if we have it) */
-	if( p == npxproc) npxproc =0;
+#ifdef NPX
+	npxexit(p);
+#endif
 
 	/* move to inactive space and stack, passing arg accross */
 	p = swtch_to_inactive(p);
@@ -158,9 +165,9 @@ cpu_exit(p)
 	register struct proc *p;
 {
 	
-	/* free coprocessor (if we have it) */
-	if( p == npxproc) npxproc =0;
-
+#ifdef NPX
+	npxexit(p);
+#endif
 	splclock();
 	swtch();
 }

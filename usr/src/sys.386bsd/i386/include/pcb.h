@@ -34,6 +34,14 @@
  * SUCH DAMAGE.
  *
  *	@(#)pcb.h	5.10 (Berkeley) 5/12/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00154
+ * --------------------         -----   ----------------------
+ *
+ * 20 Apr 93	Bruce Evans		New npx-0.5 code
+ *
  */
 
 /*
@@ -60,9 +68,11 @@ struct pcb {
  * Software pcb (extension)
  */
 	int	pcb_flags;
+#ifdef notused
 #define	FP_WASUSED	0x01	/* process has used fltng pnt hardware */
 #define	FP_NEEDSSAVE	0x02	/* ... that needs save on next context switch */
 #define	FP_NEEDSRESTORE	0x04	/* ... that needs restore on next DNA fault */
+#endif
 #define	FP_USESEMC	0x08	/* process uses EMC memory-mapped mode */
 #define	FM_TRAP		0x10	/* process entered kernel on a trap frame */
 #define	FP_SOFTFP	0x20	/* process using software fltng pnt emulator */

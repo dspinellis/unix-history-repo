@@ -31,15 +31,37 @@
  * SUCH DAMAGE.
  *
  *	@(#)specialreg.h	7.1 (Berkeley) 5/9/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00154
+ * --------------------         -----   ----------------------
+ *
+ * 20 Apr 93	Bruce Evans		New npx-0.5 code
+ *
  */
 
 /*
- * 386 Special registers:
+ * Bits in 386 special registers:
  */
 
 #define	CR0_PE	0x00000001	/* Protected mode Enable */
-#define	CR0_MP	0x00000002	/* "Math" Present (e.g. npx), wait for it */
-#define	CR0_EM	0x00000004	/* EMulate NPX, e.g. trap, don't execute code */
-#define	CR0_TS	0x00000008	/* Process has done Task Switch, do NPX save */
-#define	CR0_ET	0x00000010	/* 32 bit (if set) vs 16 bit (387 vs 287) */
-#define	CR0_PG	0x80000000	/* Paging Enable */
+#define	CR0_MP	0x00000002	/* "Math" Present (NPX or NPX emulator) */
+#ifdef notused
+#define	CR0_EM	0x00000004	/* EMulate non-NPX coproc. (trap ESC only) */
+#endif
+#define	CR0_TS	0x00000008	/* Task Switched (if MP, trap ESC and WAIT) */
+#ifdef notused
+#define	CR0_ET	0x00000010	/* Extension Type (387 (if set) vs 287) */
+#endif
+#define	CR0_PG	0x80000000	/* PaGing enable */
+
+/*
+ * Bits in 486 special registers:
+ */
+
+#define CR0_NE	0x00000020	/* Numeric Error enable (EX16 vs IRQ13) */
+#define CR0_WP	0x00010000	/* Write Protect (honor ~PG_W in all modes) */
+#ifdef notyet
+#define CR0_AM	0x00040000	/* Alignment Mask (set to enable AC flag) */
+#endif
