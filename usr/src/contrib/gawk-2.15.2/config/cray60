@@ -1,0 +1,5 @@
+Cray Research system running Unicos 6.0
+SIGTYPE	void 
+RANDOM_MISSING	1 
+STDC_HEADERS	1 
+CHAR_UNSIGNED	1
