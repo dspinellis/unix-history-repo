@@ -2,14 +2,14 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)dmesg.8	6.2 (Berkeley) %G%
+.\"	@(#)dmesg.8	6.3 (Berkeley) %G%
 .\"
 .TH DMESG 8 ""
 .UC 4
 .SH NAME
 dmesg \- collect system diagnostic messages to form error log
 .SH SYNOPSIS
-.B /etc/dmesg
+.B dmesg
 [ \- ]
 .SH DESCRIPTION
 .B N.B.:
@@ -31,6 +31,6 @@ computes (incrementally) the new messages since the last time it
 was run and places these on the standard output.
 .SH FILES
 .ta 2i
-/usr/adm/msgbuf	scratch file for memory of \- option
+/var/log/msgbuf	scratch file for memory of \- option
 .SH SEE ALSO
 syslogd(8)
