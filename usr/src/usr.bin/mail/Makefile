@@ -1,7 +1,7 @@
 #
 # Unix version 7.
 #
-# Sccs Id = "@(#)Makefile	1.6 %G%";
+# Sccs Id = "@(#)Makefile	1.7 %G%";
 #
 
 CFLAGS=-O -DVMUNIX -DV7
@@ -9,6 +9,7 @@ XSTR=/usr/ucb/xstr
 DESTDIR=/usr/src
 CTAGS=/usr/ucb/ctags -w
 VPRINT=/usr/ucb/vprint
+CGRAF=/ja/rigel/rigel/bin/cgraf
 LIBES=-ljobs
 ED=-ed
 AS=-as
@@ -41,7 +42,7 @@ Mail:	$S $(OBJS) tags
 	@size Mail
 
 mail.g:	$(SRCS)
-	/va/rigel/bin/cgraf $(SRCS) > mail.g
+	$(CGRAF) $(SRCS) > mail.g
 
 install:
 	install -s Mail ${DESTDIR}/usr/ucb
