@@ -1,4 +1,4 @@
-/*	if_en.c	4.41	82/03/15	*/
+/*	if_en.c	4.42	82/03/15	*/
 
 #include "en.h"
 
@@ -240,21 +240,22 @@ enxint(unit)
 {
 	register struct uba_device *ui = eninfo[unit];
 	register struct en_softc *es = &en_softc[unit];
-	register struct endevice *addr;
+	register struct endevice *addr = (struct endevice *)ui->ui_addr;
 COUNT(ENXINT);
 
 	if (es->es_oactive == 0)
 		return;
-	addr = (struct endevice *)ui->ui_addr;
+	if (es->es_mask && (addr->en_ostat&EN_OERROR)) {
+		es->es_if.if_oerrors++;
+		if (es->es_if.if_oerrors % 100 == 0)
+			printf("en%d: += 100 output errors\n", unit);
+		endocoll(unit);
+		return;
+	}
 	es->es_if.if_opackets++;
 	es->es_oactive = 0;
 	es->es_delay = 0;
 	es->es_mask = ~0;
-	if (addr->en_ostat&EN_OERROR) {
-		es->es_if.if_oerrors++;
-		if (es->es_if.if_oerrors % 100 == 0)
-			printf("en%d: += 100 output errors\n", unit);
-	}
 	if (es->es_ifuba.ifu_xtofree) {
 		m_freem(es->es_ifuba.ifu_xtofree);
 		es->es_ifuba.ifu_xtofree = 0;
@@ -274,12 +275,20 @@ COUNT(ENXINT);
 encollide(unit)
 	int unit;
 {
-	register struct en_softc *es = &en_softc[unit];
+	struct en_softc *es = &en_softc[unit];
 COUNT(ENCOLLIDE);
 
 	es->es_if.if_collisions++;
 	if (es->es_oactive == 0)
 		return;
+	endocoll(unit);
+}
+
+endocoll(unit)
+	int unit;
+{
+	register struct en_softc *es = &en_softc[unit];
+
 	/*
 	 * Es_mask is a 16 bit number with n low zero bits, with
 	 * n the number of backoffs.  When es_mask is 0 we have
