@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stat.h	7.16 (Berkeley) %G%
+ *	@(#)stat.h	7.17 (Berkeley) %G%
  */
 
 #include <sys/time.h>
@@ -77,6 +77,9 @@ struct stat {
 #define	S_IWOTH	0000002			/* W for other */
 #define	S_IXOTH	0000001			/* X for other */
 
+					/* 0666 */
+#define	DEFFILEMODE	(S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH)
+
 #ifndef _POSIX_SOURCE
 #define	S_IFMT	 0170000		/* type of file */
 #define	S_IFIFO	 0010000		/* named pipe (fifo) */
@@ -91,19 +94,26 @@ struct stat {
 
 #define S_BLKSIZE	512		/* block size used in the stat struct */
 
-					/* 0666 */
-#define	DEFFILEMODE	(S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH)
+#define	S_ISDIR(m)	((m & 0170000) == 0040000)	/* directory */
+#define	S_ISCHR(m)	((m & 0170000) == 0020000)	/* char special */
+#define	S_ISBLK(m)	((m & 0170000) == 0060000)	/* block special */
+#define	S_ISREG(m)	((m & 0170000) == 0100000)	/* regular file */
+#define	S_ISFIFO(m)	((m & 0170000) == 0010000)	/* fifo */
+#ifndef _POSIX_SOURCE
+#define	S_ISLNK(m)	((m & 0170000) == 0120000)	/* symbolic link */
+#define	S_ISSOCK(m)	((m & 0170000) == 0140000)	/* socket */
+#endif
 
 /*
  * Definitions of flags stored in file flags word.
  *
- * Low 16-bits owner setable.
+ * Low 16-bits: super-user and owner settable.
  */
 #define	NODUMP		0x00000001	/* do not dump file */
 #define	USR_IMMUTABLE	0x00000002	/* file may not be changed */
 #define	USR_APPEND	0x00000004	/* writes to file may only append */
 /*
- * High 16-bits only super-user setable.
+ * High 16-bits: super-user settable.
  */
 #define	ARCHIVED	0x00010000	/* file is archived */
 #define	SYS_IMMUTABLE	0x00020000	/* file may not be changed */
@@ -115,29 +125,21 @@ struct stat {
 #define	APPEND		(USR_APPEND | SYS_APPEND)
 #endif
 
-#define	S_ISDIR(m)	((m & 0170000) == 0040000)	/* directory */
-#define	S_ISCHR(m)	((m & 0170000) == 0020000)	/* char special */
-#define	S_ISBLK(m)	((m & 0170000) == 0060000)	/* block special */
-#define	S_ISREG(m)	((m & 0170000) == 0100000)	/* regular file */
-#define	S_ISFIFO(m)	((m & 0170000) == 0010000)	/* fifo */
-#ifndef _POSIX_SOURCE
-#define	S_ISLNK(m)	((m & 0170000) == 0120000)	/* symbolic link */
-#define	S_ISSOCK(m)	((m & 0170000) == 0140000)	/* socket */
-#endif
-
 #ifndef KERNEL
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
-mode_t	umask __P((mode_t));
 int	chmod __P((const char *, mode_t));
 int	fstat __P((int, struct stat *));
 int	mkdir __P((const char *, mode_t));
 int	mkfifo __P((const char *, mode_t));
 int	stat __P((const char *, struct stat *));
+mode_t	umask __P((mode_t));
 #ifndef _POSIX_SOURCE
+int	chflags __P((const char *, u_long));
+int	fchflags __P((int, u_long));
 int	fchmod __P((int, mode_t));
 int	lstat __P((const char *, struct stat *));
-#endif /* not POSIX */
+#endif
 __END_DECLS
 #endif
