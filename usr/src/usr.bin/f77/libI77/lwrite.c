@@ -1,5 +1,5 @@
 /*
-char id_lwrite[] = "@(#)lwrite.c	1.5";
+char id_lwrite[] = "@(#)lwrite.c	1.6";
  *
  * list directed write
  */
@@ -77,7 +77,11 @@ l_write(number,ptr,len,type) ftnint *number,type; flex *ptr; ftnlen len;
 			ERR(lwrt_DC(yd,zd));
 			break;
 		case TYLOGICAL:
-			ERR(lwrt_L(ptr->flint));
+			if(len == sizeof(short))
+				x = ptr->flshort;
+			else
+				x = ptr->flint;
+			ERR(lwrt_L(x));
 			break;
 		case TYCHAR:
 			ERR(lwrt_A((char *)ptr,len));
