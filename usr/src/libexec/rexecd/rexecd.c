@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rexecd.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)rexecd.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/ioctl.h>
@@ -85,7 +85,7 @@ doit(f, fromp)
 	char user[16], pass[16];
 	struct passwd *pwd;
 	int s;
-	short port;
+	u_short port;
 	int pv[2], pid, ready, readfrom, cc;
 	char buf[BUFSIZ], sig;
 	int one = 1;
@@ -122,7 +122,7 @@ doit(f, fromp)
 		if (bind(s, &asin, sizeof (asin)) < 0)
 			exit(1);
 		(void) alarm(60);
-		fromp->sin_port = htons((u_short)port);
+		fromp->sin_port = htons(port);
 		if (connect(s, fromp, sizeof (*fromp)) < 0)
 			exit(1);
 		(void) alarm(0);
