@@ -1,4 +1,4 @@
-\"	@(#)postp.me	1.11 %G%
+\"	@(#)postp.me	1.12 %G%
 .EQ
 delim ##
 gsize 12
@@ -18,8 +18,9 @@ assigned by a topological numbering algorithm.
 The topological numbering ensures that
 all edges in the graph go from higher numbered nodes to lower
 numbered nodes.
+An example is given in Figure 1.
 If we propagate time from nodes in the
-reverse order assigned by the algorithm,
+order assigned by the algorithm,
 execution time can be propagated from descendants to ancestors
 after a single traversal of each arc in the call graph.
 Each parent receives some fraction of a child's time.
@@ -43,7 +44,7 @@ c c c c c.
 
 .TE
 .ce 1
-Topological ordering
+Figure 1.  Topological ordering
 .ce 0
 .)b
 .pp
@@ -109,6 +110,12 @@ propagate time into the cycle as a whole.
 Calls among the members of the cycle 
 do not propagate any time,
 though they are listed in the call graph profile.
+.pp
+Figure 2 shows a modified version of the call graph of Figure 1,
+in which the nodes labelled 3 and 7 in Figure 1 are mutually
+recursive.
+The topologically sorted graph after the cycle is collapsed is
+given in Figure 3.
 .(b
 .TS
 center;
@@ -127,7 +134,7 @@ o		o		o
 
 .TE
 .ce 1
-Cycle to be collapsed.
+Figure 2.  Cycle to be collapsed.
 .ce 0
 .)b
 .(b
@@ -148,7 +155,7 @@ c c c c c.
 
 .TE
 .ce 1
-Topological numbering after cycle collapsing.
+Figure 3.  Topological numbering after cycle collapsing.
 .ce 0
 .)b
 .pp
@@ -170,6 +177,7 @@ finding the source text for the program
 (which may not be available),
 and scanning and parsing that text,
 which may be in any one of several languages.
+.pp
 In our programming system,
 the static calling information is also contained in the 
 executable version of the program,
