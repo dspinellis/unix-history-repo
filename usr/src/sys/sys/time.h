@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)time.h	7.7 (Berkeley) %G%
+ *	@(#)time.h	7.8 (Berkeley) %G%
  */
 
 #ifndef _SYS_TIME_H_
@@ -17,6 +17,14 @@
 struct timeval {
 	long	tv_sec;		/* seconds */
 	long	tv_usec;	/* and microseconds */
+};
+
+/*
+ * Structure defined by POSIX.4 to be like a timeval.
+ */
+struct timespec {
+	long	ts_sec;		/* seconds */
+	long	ts_nsec;	/* and nanoseconds */
 };
 
 struct timezone {
