@@ -2,12 +2,13 @@
 # Copyright (c) 1986, 1993 Regents of the University of California.
 # All rights reserved.
 #
-#	@(#)Makefile	8.2 (Berkeley) %G%
+#	@(#)Makefile	8.3 (Berkeley) %G%
 #
 SRCS=	man1 man2 man3 man4 man5 man6 man7 man8
 
 MACROS=	-ms
 PRINTER=Pps
+EQN=	eqn
 TBL=	tbl
 TROFF=	groff
 
@@ -18,7 +19,7 @@ print: title.urm.${PRINTER} title.prm.${PRINTER}
 	lpr -${PRINTER} title.prm.${PRINTER}
 
 title.urm.${PRINTER}: title.urm ptxx
-	${TBL} title.urm | ${TROFF} ${MACROS} >title.urm.${PRINTER}
+	${EQN} title.urm | ${TBL} | ${TROFF} ${MACROS} >title.urm.${PRINTER}
 
 title.prm.${PRINTER}: ${SRCS} title.prm ptxx
 	${TROFF} title.prm >title.prm.${PRINTER}
