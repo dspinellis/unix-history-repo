@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	1.24	(Berkeley)	%G%
+#	@(#)Makefile	1.25	(Berkeley)	%G%
 #
 CFLAGS=	-O
 CMDS=	ACTFILE.c ADDT.c ARGV.c ASRT.c ASRTS.c ATAN.c BUFF.c CARD.c \
@@ -50,135 +50,30 @@ OBJS=	${COBJS} ${SYOBJ} ${EXOBJ}
 all: libpc libpc_p
 
 libpc libpc_p: ${OBJS}
-	cd profiled; ar cru ../libpc_p ${OBJS}
-	ranlib libpc_p
-	ar cru libpc ${OBJS}
+	@echo building normal libpc
+	@ar cru libpc ${OBJS}
 	ranlib libpc
+	@echo building profiled libpc
+	@cd profiled; ar cru ../libpc_p ${OBJS}
+	ranlib libpc_p
 
-clean: FRC
+clean:
 	rm -f ${OBJS} core libpc libpc_p profiled/*.o tmp tmp.o
 
-depend: FRC
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
+depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
-install: FRC
+install: ${MAN}
 	install -o bin -g bin -m 644 libpc_p ${DESTDIR}/usr/lib/libpc_p.a
-	ranlib ${DESTDIR}/usr/lib/libpc_p.a
+	ranlib -t ${DESTDIR}/usr/lib/libpc_p.a
 	install -o bin -g bin -m 644 libpc ${DESTDIR}/usr/lib/libpc.a
-	ranlib ${DESTDIR}/usr/lib/libpc.a
+	ranlib -t ${DESTDIR}/usr/lib/libpc.a
 
-lint: FRC
+lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
 
-tags: FRC
+tags: ${SRCS}
 	ctags ${SRCS}
-
-FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-ACTFILE.o: ACTFILE.c h00vars.h /usr/include/stdio.h whoami.h
-ADDT.o: ADDT.c
-ARGV.o: ARGV.c h00vars.h /usr/include/stdio.h whoami.h
-ASRT.o: ASRT.c
-ASRTS.o: ASRTS.c
-ATAN.o: ATAN.c /usr/include/math.h
-BUFF.o: BUFF.c h00vars.h /usr/include/stdio.h whoami.h
-CARD.o: CARD.c
-CASERNG.o: CASERNG.c
-CHR.o: CHR.c
-CLCK.o: CLCK.c
-COS.o: COS.c /usr/include/math.h
-CTTOT.o: CTTOT.c whoami.h h00vars.h /usr/include/stdio.h whoami.h
-DATE.o: DATE.c
-DEFNAME.o: DEFNAME.c h00vars.h /usr/include/stdio.h whoami.h
-DFDISPOSE.o: DFDISPOSE.c h00vars.h /usr/include/stdio.h whoami.h libpc.h
-DISPOSE.o: DISPOSE.c h00vars.h /usr/include/stdio.h whoami.h
-EXCEPT.o: EXCEPT.c /usr/include/signal.h /usr/include/machine/trap.h
-EXP.o: EXP.c /usr/include/math.h
-EXPO.o: EXPO.c
-FCALL.o: FCALL.c h00vars.h /usr/include/stdio.h whoami.h
-FLUSH.o: FLUSH.c h00vars.h /usr/include/stdio.h whoami.h
-FNIL.o: FNIL.c h00vars.h /usr/include/stdio.h whoami.h
-FRTN.o: FRTN.c h00vars.h /usr/include/stdio.h whoami.h
-FSAV.o: FSAV.c h00vars.h /usr/include/stdio.h whoami.h
-GET.o: GET.c h00vars.h /usr/include/stdio.h whoami.h
-HALT.o: HALT.c h00vars.h /usr/include/stdio.h whoami.h
-IN.o: IN.c h00vars.h /usr/include/stdio.h whoami.h
-INCT.o: INCT.c h00vars.h /usr/include/stdio.h whoami.h
-LINO.o: LINO.c h00vars.h /usr/include/stdio.h whoami.h
-LLIMIT.o: LLIMIT.c h00vars.h /usr/include/stdio.h whoami.h
-LN.o: LN.c /usr/include/math.h
-MAX.o: MAX.c h00vars.h /usr/include/stdio.h whoami.h
-MULT.o: MULT.c
-NAM.o: NAM.c h00vars.h /usr/include/stdio.h whoami.h
-NEW.o: NEW.c h00vars.h /usr/include/stdio.h whoami.h
-NIL.o: NIL.c h00vars.h /usr/include/stdio.h whoami.h
-PACK.o: PACK.c
-PAGE.o: PAGE.c h00vars.h /usr/include/stdio.h whoami.h
-PRED.o: PRED.c
-PUT.o: PUT.c h00vars.h /usr/include/stdio.h whoami.h
-RANDOM.o: RANDOM.c h00vars.h /usr/include/stdio.h whoami.h
-RANG4.o: RANG4.c
-READ4.o: READ4.c h00vars.h /usr/include/stdio.h whoami.h /usr/include/errno.h
-READ8.o: READ8.c h00vars.h /usr/include/stdio.h whoami.h /usr/include/errno.h
-READC.o: READC.c h00vars.h /usr/include/stdio.h whoami.h
-READE.o: READE.c h00vars.h /usr/include/stdio.h whoami.h
-READLN.o: READLN.c h00vars.h /usr/include/stdio.h whoami.h
-RELEQ.o: RELEQ.c h00vars.h /usr/include/stdio.h whoami.h
-RELNE.o: RELNE.c h00vars.h /usr/include/stdio.h whoami.h
-RELSGE.o: RELSGE.c h00vars.h /usr/include/stdio.h whoami.h
-RELSGT.o: RELSGT.c h00vars.h /usr/include/stdio.h whoami.h
-RELSLE.o: RELSLE.c h00vars.h /usr/include/stdio.h whoami.h
-RELSLT.o: RELSLT.c h00vars.h /usr/include/stdio.h whoami.h
-RELTGE.o: RELTGE.c h00vars.h /usr/include/stdio.h whoami.h
-RELTGT.o: RELTGT.c h00vars.h /usr/include/stdio.h whoami.h
-RELTLE.o: RELTLE.c h00vars.h /usr/include/stdio.h whoami.h
-RELTLT.o: RELTLT.c h00vars.h /usr/include/stdio.h whoami.h
-REMOVE.o: REMOVE.c h00vars.h /usr/include/stdio.h whoami.h
-RESET.o: RESET.c h00vars.h /usr/include/stdio.h whoami.h
-REWRITE.o: REWRITE.c h00vars.h /usr/include/stdio.h whoami.h
-ROUND.o: ROUND.c
-RSNG4.o: RSNG4.c
-SCLCK.o: SCLCK.c
-SEED.o: SEED.c h00vars.h /usr/include/stdio.h whoami.h
-SIN.o: SIN.c /usr/include/math.h
-SQRT.o: SQRT.c /usr/include/math.h
-STLIM.o: STLIM.c h00vars.h /usr/include/stdio.h whoami.h
-SUBSC.o: SUBSC.c
-SUBSCZ.o: SUBSCZ.c
-SUBT.o: SUBT.c
-SUCC.o: SUCC.c
-TEOF.o: TEOF.c h00vars.h /usr/include/stdio.h whoami.h
-TEOLN.o: TEOLN.c h00vars.h /usr/include/stdio.h whoami.h
-TIME.o: TIME.c
-TRUNC.o: TRUNC.c
-UNIT.o: UNIT.c h00vars.h /usr/include/stdio.h whoami.h
-UNPACK.o: UNPACK.c
-VWRITEF.o: VWRITEF.c h00vars.h /usr/include/stdio.h whoami.h
-WRITEC.o: WRITEC.c h00vars.h /usr/include/stdio.h whoami.h
-WRITEF.o: WRITEF.c h00vars.h /usr/include/stdio.h whoami.h
-WRITES.o: WRITES.c h00vars.h /usr/include/stdio.h whoami.h
-WRITLN.o: WRITLN.c h00vars.h /usr/include/stdio.h whoami.h
-ERROR.o: ERROR.c /usr/include/stdio.h /usr/include/signal.h
-ERROR.o: /usr/include/machine/trap.h
-GETNAME.o: GETNAME.c h00vars.h /usr/include/stdio.h whoami.h libpc.h
-IOSYNC.o: IOSYNC.c h00vars.h /usr/include/stdio.h whoami.h
-PCEXIT.o: PCEXIT.c h00vars.h /usr/include/stdio.h whoami.h
-PCLOSE.o: PCLOSE.c h00vars.h /usr/include/stdio.h whoami.h libpc.h
-PCSTART.o: PCSTART.c /usr/include/signal.h /usr/include/machine/trap.h
-PCSTART.o: h00vars.h /usr/include/stdio.h whoami.h libpc.h
-PFCLOSE.o: PFCLOSE.c h00vars.h /usr/include/stdio.h whoami.h libpc.h
-PERROR.o: PERROR.c /usr/include/stdio.h /usr/include/signal.h
-PERROR.o: /usr/include/machine/trap.h
-PFLUSH.o: PFLUSH.c h00vars.h /usr/include/stdio.h whoami.h
-PMFLUSH.o: PMFLUSH.c h00vars.h /usr/include/stdio.h whoami.h
-UNSYNC.o: UNSYNC.c h00vars.h /usr/include/stdio.h whoami.h
-blkclr.o: blkclr.c
-blkcpy.o: blkcpy.c
-APPEND.o: APPEND.c h00vars.h /usr/include/stdio.h whoami.h
-SEEK.o: SEEK.c h00vars.h /usr/include/stdio.h whoami.h
-TELL.o: TELL.c h00vars.h /usr/include/stdio.h whoami.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
