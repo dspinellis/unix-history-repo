@@ -1,4 +1,4 @@
-/*	tcp_output.c	4.26	81/12/21	*/
+/*	tcp_output.c	4.27	81/12/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -51,7 +51,7 @@ COUNT(TCP_OUTPUT);
 	if (len > tp->t_maxseg)
 		len = tp->t_maxseg;
 	flags = tcp_outflags[tp->t_state];
-	if (len < so->so_snd.sb_cc)
+	if (tp->snd_nxt + len < tp->snd_una + so->so_snd.sb_cc)
 		flags &= ~TH_FIN;
 	if (len || (flags & (TH_SYN|TH_RST|TH_FIN)))
 		goto send;
@@ -162,7 +162,7 @@ send:
 	 * but at least TCPTV_PERSMIN ticks.
 	 */
 	if (TCPS_HAVERCVDSYN(tp->t_state) &&
-	    SEQ_GT(tp->snd_nxt, tp->snd_una+tp->snd_wnd) &&
+	    SEQ_GEQ(tp->snd_nxt, tp->snd_una+tp->snd_wnd) &&
 	    tp->t_timer[TCPT_PERSIST] == 0)
 		TCPT_RANGESET(tp->t_timer[TCPT_PERSIST],
 		    2 * tp->t_srtt, TCPTV_PERSMIN, TCPTV_MAX);
@@ -185,6 +185,7 @@ send:
 	if (tp->t_timer[TCPT_REXMT] == 0 && tp->snd_nxt != tp->snd_una) {
 		TCPT_RANGESET(tp->t_timer[TCPT_REXMT],
 		    tcp_beta * tp->t_srtt, TCPTV_MIN, TCPTV_MAX);
+		tp->t_rtt = 0;
 		tp->t_rxtshift = 0;
 	}
 
