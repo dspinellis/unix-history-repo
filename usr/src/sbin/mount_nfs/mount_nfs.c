@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount_nfs.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount_nfs.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -181,6 +181,7 @@ main(argc, argv, arge)
 			break;
 		case 'g':
 			if ((num = atoi(optarg)) > 0) {
+				set_rpc_maxgrouplist(num);
 				nfsargsp->maxgrouplist = num;
 				nfsargsp->flags |= NFSMNT_MAXGRPS;
 			}

@@ -161,6 +161,22 @@ authunix_create(machname, uid, gid, len, aup_gids)
 }
 
 /*
+ * Some servers will refuse mounts if the group list is larger
+ * than it expects (like 8). This allows the application to set
+ * the maximum size of the group list that will be sent.
+ */
+
+static maxgrplist = NGRPS;
+
+set_rpc_maxgrouplist(num)
+	int num;
+{
+
+	if (num < NGRPS)
+		maxgrplist = num;
+}
+
+/*
  * Returns an auth handle with parameters determined by doing lots of
  * syscalls.
  */
@@ -180,6 +196,8 @@ authunix_create_default()
 	gid = getegid();
 	if ((len = getgroups(NGRPS, gids)) < 0)
 		abort();
+	if (len > maxgrplist)
+		len = maxgrplist;
 	return (authunix_create(machname, uid, gid, len, gids));
 }
 
