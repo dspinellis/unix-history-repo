@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_inode.c	7.54 (Berkeley) %G%
+ *	@(#)lfs_inode.c	7.55 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -174,12 +174,13 @@ lfs_update(vp, ta, tm, waitfor)
 }
 
 /* Update segment usage information when removing a block. */
-#define UPDATE_SEGUSE { \
-	LFS_SEGENTRY(sup, fs, lastseg, bp); \
-	sup->su_nbytes -= fs->lfs_bsize * num; \
-	LFS_UBWRITE(bp); \
-	blocksreleased += num; \
-}
+#define UPDATE_SEGUSE \
+	if (lastseg != -1) { \
+		LFS_SEGENTRY(sup, fs, lastseg, sup_bp); \
+		sup->su_nbytes -= fs->lfs_bsize * num; \
+		LFS_UBWRITE(sup_bp); \
+		blocksreleased += num; \
+	}
 
 #define SEGDEC { \
 	if (daddr != UNASSIGNED) { \
@@ -206,7 +207,7 @@ lfs_truncate(vp, length, flags)
 	register INDIR *ap;
 	register int i;
 	register daddr_t *daddrp;
-	struct buf *bp;
+	struct buf *bp, *sup_bp;
 	struct inode *ip;
 	struct lfs *fs;
 	INDIR a[NIADDR + 2], a_end[NIADDR + 2];
@@ -333,9 +334,7 @@ lfs_truncate(vp, length, flags)
 			}
 		}
 	}
-	if (lastseg != -1)
-		UPDATE_SEGUSE;
-
+	UPDATE_SEGUSE;
 	ip->i_blocks -= blocksreleased;
 	/* 
 	 * XXX
