@@ -11,23 +11,37 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)umount.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)umount.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
  * umount
  */
 #include <sys/param.h>
-#include <sys/mount.h>
-
 #include <stdio.h>
 #include <fstab.h>
 #include <mtab.h>
+#include <sys/mount.h>
+#ifdef NFS
+#include <sys/time.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <netdb.h>
+#include <rpc/rpc.h>
+#include <rpc/pmap_clnt.h>
+#include <rpc/pmap_prot.h>
+#include <nfs/rpcv2.h>
+#endif
 
 struct	mtab mtab[NMOUNT];
 
 char	*rindex();
 int	vflag, all, errs;
+#ifdef NFS
+extern int errno;
+int xdr_dir();
+char	*index();
+#endif
 
 main(argc, argv)
 	int argc;
@@ -61,7 +75,8 @@ again:
 			perror(FSTAB), exit(1);
 		umountall();
 		exit(0);
-	}
+	} else
+		setfsent();
 	while (argc > 0) {
 		if (umountfs(*argv++) == 0)
 			errs++;
@@ -138,14 +153,63 @@ umountfs(name)
 	register struct	mtab *mp;
 	int mf;
 	struct fstab *fs;
+#ifdef NFS
+	register CLIENT *clp;
+	struct hostent *hp;
+	struct sockaddr_in saddr;
+	struct timeval pertry, try;
+	enum clnt_stat clnt_stat;
+	int so = RPC_ANYSOCK;
+	u_short tport;
+	char *hostp, *delimp;
+#endif
 
 	fs = getfsspec(name);
 	if (fs != NULL)
 		name = fs->fs_file;
+#ifdef NFS
+	else
+		fs = getfsfile(name);
+#endif
 	if (umount(name, MNT_NOFORCE) < 0) {
 		perror(name);
 		return (0);
 	}
+#ifdef NFS
+	if (fs != NULL) {
+		if ((delimp = index(fs->fs_spec, '@')) != NULL) {
+			hostp = delimp+1;
+			*delimp = '\0';
+		} else {
+			goto out;
+		}
+		if ((hp = gethostbyname(hostp)) != NULL) {
+			bcopy(hp->h_addr,(caddr_t)&saddr.sin_addr,hp->h_length);
+			saddr.sin_family = AF_INET;
+			saddr.sin_port = 0;
+			pertry.tv_sec = 3;
+			pertry.tv_usec = 0;
+			if ((clp = clntudp_create(&saddr, RPCPROG_MNT,
+				RPCMNT_VER1, pertry, &so)) == NULL) {
+				clnt_pcreateerror("Cannot MNT PRC");
+				goto out;
+			}
+			clp->cl_auth = authunix_create_default();
+			try.tv_sec = 20;
+			try.tv_usec = 0;
+			clnt_stat = clnt_call(clp, RPCMNT_UMOUNT, xdr_dir, fs->fs_spec,
+				xdr_void, (caddr_t)0, try);
+			if (clnt_stat != RPC_SUCCESS) {
+				clnt_perror(clp, "Bad MNT RPC");
+				goto out;
+			}
+			auth_destroy(clp->cl_auth);
+			clnt_destroy(clp);
+		}
+	} else
+		fprintf(stderr, "Warning: no /etc/fstab entry found\n");
+out:
+#endif NFS
 	if (vflag)
 		fprintf(stderr, "%s: Unmounted\n", name);
 	for (mp = mtab; mp < &mtab[NMOUNT]; mp++) {
@@ -163,3 +227,15 @@ umountfs(name)
 	fprintf(stderr, "%s: Not mounted\n", name);
 	return (0);
 }
+
+#ifdef NFS
+/*
+ * xdr routines for mount rpc's
+ */
+xdr_dir(xdrsp, dirp)
+	XDR *xdrsp;
+	char *dirp;
+{
+	return (xdr_string(xdrsp, &dirp, RPCMNT_PATHLEN));
+}
+#endif NFS
