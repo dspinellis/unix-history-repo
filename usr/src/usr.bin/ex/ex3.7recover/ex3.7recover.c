@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ex3.7recover.c	7.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)ex3.7recover.c	7.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>	/* mjm: BUFSIZ: stdio = 512, VMUNIX = 1024 */
@@ -24,10 +24,20 @@ static char sccsid[] = "@(#)ex3.7recover.c	7.14 (Berkeley) %G%";
 #include "ex_temp.h"
 #include "ex_tty.h"
 #include <sys/dir.h>
+#if __STDC__
 #include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
 
 char xstr[1];		/* make loader happy */
 short tfile = -1;	/* ditto */
+
+#if __STDC__
+void	fpr(const char *fmt, ...);
+#else
+void	fpr();
+#endif
 
 /*
  *
@@ -760,14 +770,24 @@ syserror()
  * Must avoid stdio because expreserve uses sbrk to do memory
  * allocation and stdio uses malloc.
  */
-fpr(fmt)
+void
+#if __STDC__
+fpr(const char *fmt, ...)
+#else
+fpr(fmt, va_alist)
 	char *fmt;
+	va_dcl
+#endif
 {
 	va_list ap;
 	int len;
 	char buf[BUFSIZ];
 
+#if __STDC__
 	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
 	len = vsnprintf(buf, sizeof(buf), fmt, ap);
 	va_end(ap);
 	write(2, buf, len);
