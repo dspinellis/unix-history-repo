@@ -1,4 +1,4 @@
-/* ip_input.c 1.16 81/11/20 */
+/* ip_input.c 1.17 81/11/23 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -64,13 +64,14 @@ COUNT(IP_INPUT);
 	/*
 	 * Check header and byteswap.
 	 */
+	printf("ip_input\n");
 	ip = mtod(m, struct ip *);
 	if ((hlen = ip->ip_hl << 2) > m->m_len) {
 		printf("ip hdr ovflo\n");
 		goto bad;
 	}
 	if (ipcksum)
-		if (ip->ip_sum = inet_cksum(m, hlen)) {
+		if ((ip->ip_sum = inet_cksum(m, hlen)) != 0xffff) {
 			printf("ip_sum %x\n", ip->ip_sum);
 			ipstat.ips_badsum++;
 			goto bad;
@@ -89,15 +90,20 @@ COUNT(IP_INPUT);
 	 * Trim mbufs if longer than we expect.
 	 * Drop packet if shorter than we expect.
 	 */
+	printf("ip_input: %d:", ip->ip_len);
 	i = 0;
-	for (; m != NULL; m = m->m_next)
+	for (; m != NULL; m = m->m_next) {
 		i += m->m_len;
+		printf(" %d", m->m_len);
+	}
+	printf("\n");
 	m = m0;
 	if (i != ip->ip_len) {
 		if (i < ip->ip_len) {
 			printf("ip_input: short packet\n");
 			goto bad;
 		}
+		printf("m_adj %d\n", ip->ip_len - i);
 		m_adj(m, ip->ip_len - i);
 	}
 
@@ -107,7 +113,8 @@ COUNT(IP_INPUT);
 	 */
 	if (hlen > sizeof (struct ip))
 		ip_dooptions(ip);
-	if (ip->ip_dst.s_addr != n_lhost.s_addr) {
+	if (ip->ip_dst.s_addr != n_lhost.s_addr &&
+	    if_ifwithaddr(ip->ip_dst) == 0) {
 		if (--ip->ip_ttl == 0) {
 			icmp_error(ip, ICMP_TIMXCEED, 0);
 			return;
