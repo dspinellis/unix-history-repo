@@ -2,21 +2,21 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ncheck.8	6.1 (Berkeley) %G%
+.\"	@(#)ncheck.8	6.2 (Berkeley) %G%
 .\"
 .TH NCHECK 8 ""
 .UC 4
 .SH NAME
-ncheck \-  generate names from i-numbers
+ncheck \- generate names from i-numbers
 .SH SYNOPSIS
 .B /etc/ncheck
 [
 .B \-i
-numbers ]  [
+numbers ] [
 .B \-a
 ] [
 .B \-s
-]  [ filesystem ]
+] filesystems ...
 .SH DESCRIPTION
 .B N.B.:
 For most normal file system maintenance, the function of
@@ -25,10 +25,10 @@ is subsumed by
 .IR fsck (8).
 .PP
 .I Ncheck
-with no argument
+with no options
 generates a pathname vs. i-number
 list of all files
-on a set of default file systems.
+on every specified filesystem.
 Names of directory files are followed by `/\fB.\fR'.
 The
 .B \-i
@@ -47,8 +47,6 @@ option reduces the report to special files
 and files with set-user-ID mode;
 it is intended to discover concealed violations
 of security policy.
-.PP
-A file system may be specified.
 .PP
 The report is in no useful
 order, and probably should be sorted.
