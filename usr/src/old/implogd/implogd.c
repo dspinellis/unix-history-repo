@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)implogd.c	4.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)implogd.c	4.7 (Berkeley) %G%";
 #endif
 
 #include <time.h>
@@ -58,7 +58,7 @@ main(argc, argv)
 	  }
 	}
 #endif
-	log = open(LOGFILE, FCREATE|FWRONLY|FAPPEND, 0644);
+	log = open(LOGFILE, O_CREAT|O_WRONLY|O_APPEND, 0644);
 	if (log < 0) {
 		perror("implogd: open");
 		exit(1);

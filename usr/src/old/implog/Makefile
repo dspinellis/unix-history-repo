@@ -1,4 +1,4 @@
-# @(#)Makefile	4.4 %G%
+# @(#)Makefile	4.5 %G%
 ALL=	implog implogd
 DESTDIR=
 CFLAGS=-O
@@ -6,7 +6,7 @@ CFLAGS=-O
 all:	${ALL}
 
 implog:	implog.o
-	${CC} implog.o -o implog -ljobs
+	${CC} implog.o -o implog
 
 implogd: implogd.o
 	${CC} implogd.o -o implogd
