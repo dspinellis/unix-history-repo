@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lofs_vnops.c	1.2 (Berkeley) %G%
+ *	@(#)lofs_vnops.c	1.3 (Berkeley) %G%
  *
  * $Id: lofs_vnops.c,v 1.11 1992/05/30 10:05:43 jsp Exp jsp $
  */
@@ -61,7 +61,6 @@
 lofs_lookup (ap)
 	struct vop_lookup_args *ap;
 {
-	USES_VOP_LOOKUP;
 	struct vnode *dvp = ap->a_dvp;
 	struct vnode *newvp;
 	struct vnode *targetdvp;
@@ -136,7 +135,6 @@ lofs_lookup (ap)
 lofs_mknod (ap)
 	struct vop_mknod_args *ap;
 {
-	USES_VOP_MKNOD;
 	int error;
 
 #ifdef LOFS_DIAGNOSTIC
@@ -162,7 +160,6 @@ lofs_mknod (ap)
 lofs_create (ap)
 	struct vop_create_args *ap;
 {
-	USES_VOP_CREATE;
 	int error;
 
 #ifdef LOFS_DIAGNOSTIC
@@ -187,7 +184,6 @@ lofs_create (ap)
 lofs_open (ap)
 	struct vop_open_args *ap;
 {
-	USES_VOP_OPEN;
 #ifdef LOFS_DIAGNOSTIC
 	printf("lofs_open(ap->a_vp = %x->%x)\n", ap->a_vp, LOFSVP(ap->a_vp));
 #endif
@@ -198,7 +194,6 @@ lofs_open (ap)
 lofs_close (ap)
 	struct vop_close_args *ap;
 {
-	USES_VOP_CLOSE;
 #ifdef LOFS_DIAGNOSTIC
 	printf("lofs_close(ap->a_vp = %x->%x)\n", ap->a_vp, LOFSVP(ap->a_vp));
 #endif
@@ -209,7 +204,6 @@ lofs_close (ap)
 lofs_access (ap)
 	struct vop_access_args *ap;
 {
-	USES_VOP_ACCESS;
 #ifdef LOFS_DIAGNOSTIC
 	printf("lofs_access(ap->a_vp = %x->%x)\n", ap->a_vp, LOFSVP(ap->a_vp));
 #endif
@@ -220,7 +214,6 @@ lofs_access (ap)
 lofs_getattr (ap)
 	struct vop_getattr_args *ap;
 {
-	USES_VOP_GETATTR;
 	int error;
 
 #ifdef LOFS_DIAGNOSTIC
@@ -244,7 +237,6 @@ lofs_getattr (ap)
 lofs_setattr (ap)
 	struct vop_setattr_args *ap;
 {
-	USES_VOP_SETATTR;
 #ifdef LOFS_DIAGNOSTIC
 	printf("lofs_setattr(ap->a_vp = %x->%x)\n", ap->a_vp, LOFSVP(ap->a_vp));
 #endif
@@ -255,7 +247,6 @@ lofs_setattr (ap)
 lofs_read (ap)
 	struct vop_read_args *ap;
 {
-	USES_VOP_READ;
 #ifdef LOFS_DIAGNOSTIC
 	printf("lofs_read(ap->a_vp = %x->%x)\n", ap->a_vp, LOFSVP(ap->a_vp));
 #endif
@@ -266,7 +257,6 @@ lofs_read (ap)
 lofs_write (ap)
 	struct vop_write_args *ap;
 {
-	USES_VOP_WRITE;
 #ifdef LOFS_DIAGNOSTIC
 	printf("lofs_write(ap->a_vp = %x->%x)\n", ap->a_vp, LOFSVP(ap->a_vp));
 #endif
@@ -277,7 +267,6 @@ lofs_write (ap)
 lofs_ioctl (ap)
 	struct vop_ioctl_args *ap;
 {
-	USES_VOP_IOCTL;
 #ifdef LOFS_DIAGNOSTIC
 	printf("lofs_ioctl(ap->a_vp = %x->%x)\n", ap->a_vp, LOFSVP(ap->a_vp));
 #endif
@@ -288,7 +277,6 @@ lofs_ioctl (ap)
 lofs_select (ap)
 	struct vop_select_args *ap;
 {
-	USES_VOP_SELECT;
 #ifdef LOFS_DIAGNOSTIC
 	printf("lofs_select(ap->a_vp = %x->%x)\n", ap->a_vp, LOFSVP(ap->a_vp));
 #endif
@@ -299,7 +287,6 @@ lofs_select (ap)
 lofs_mmap (ap)
 	struct vop_mmap_args *ap;
 {
-	USES_VOP_MMAP;
 #ifdef LOFS_DIAGNOSTIC
 	printf("lofs_mmap(ap->a_vp = %x->%x)\n", ap->a_vp, LOFSVP(ap->a_vp));
 #endif
@@ -310,18 +297,16 @@ lofs_mmap (ap)
 lofs_fsync (ap)
 	struct vop_fsync_args *ap;
 {
-	USES_VOP_FSYNC;
 #ifdef LOFS_DIAGNOSTIC
 	printf("lofs_fsync(ap->a_vp = %x->%x)\n", ap->a_vp, LOFSVP(ap->a_vp));
 #endif
 
-	return VOP_FSYNC(LOFSVP(ap->a_vp), ap->a_fflags, ap->a_cred, ap->a_waitfor, ap->a_p);
+	return VOP_FSYNC(LOFSVP(ap->a_vp), ap->a_cred, ap->a_waitfor, ap->a_p);
 }
 
 lofs_seek (ap)
 	struct vop_seek_args *ap;
 {
-	USES_VOP_SEEK;
 #ifdef LOFS_DIAGNOSTIC
 	printf("lofs_seek(ap->a_vp = %x->%x)\n", ap->a_vp, LOFSVP(ap->a_vp));
 #endif
@@ -332,7 +317,6 @@ lofs_seek (ap)
 lofs_remove (ap)
 	struct vop_remove_args *ap;
 {
-	USES_VOP_REMOVE;
 	int error;
 
 #ifdef LOFS_DIAGNOSTIC
@@ -362,7 +346,6 @@ lofs_remove (ap)
 lofs_link (ap)
 	struct vop_link_args *ap;
 {
-	USES_VOP_LINK;
 	int error;
 
 #ifdef LOFS_DIAGNOSTIC
@@ -383,7 +366,6 @@ lofs_link (ap)
 lofs_rename (ap)
 	struct vop_rename_args *ap;
 {
-	USES_VOP_RENAME;
 	struct vnode *fvp, *tvp;
 	struct vnode *tdvp;
 #if 0
@@ -564,7 +546,6 @@ lofs_rename (ap)
 lofs_mkdir (ap)
 	struct vop_mkdir_args *ap;
 {
-	USES_VOP_MKDIR;
 	int error;
 	struct vnode *dvp = ap->a_dvp;
 	struct vnode *xdvp;
@@ -605,7 +586,6 @@ lofs_mkdir (ap)
 lofs_rmdir (ap)
 	struct vop_rmdir_args *ap;
 {
-	USES_VOP_RMDIR;
 	struct vnode *vp = ap->a_vp;
 	struct vnode *dvp = ap->a_dvp;
 	int error;
@@ -636,7 +616,6 @@ lofs_rmdir (ap)
 lofs_symlink (ap)
 	struct vop_symlink_args *ap;
 {
-	USES_VOP_SYMLINK;
 	int error;
 
 #ifdef LOFS_DIAGNOSTIC
@@ -657,18 +636,16 @@ lofs_symlink (ap)
 lofs_readdir (ap)
 	struct vop_readdir_args *ap;
 {
-	USES_VOP_READDIR;
 #ifdef LOFS_DIAGNOSTIC
 	printf("lofs_readdir(ap->a_vp = %x->%x)\n", ap->a_vp, LOFSVP(ap->a_vp));
 #endif
 
-	return VOP_READDIR(LOFSVP(ap->a_vp), ap->a_uio, ap->a_cred, ap->a_eofflagp);
+	return VOP_READDIR(LOFSVP(ap->a_vp), ap->a_uio, ap->a_cred);
 }
 
 lofs_readlink (ap)
 	struct vop_readlink_args *ap;
 {
-	USES_VOP_READLINK;
 #ifdef LOFS_DIAGNOSTIC
 	printf("lofs_readlink(ap->a_vp = %x->%x)\n", ap->a_vp, LOFSVP(ap->a_vp));
 #endif
@@ -682,7 +659,6 @@ lofs_readlink (ap)
 lofs_abortop (ap)
 	struct vop_abortop_args *ap;
 {
-	USES_VOP_ABORTOP;
 	int error;
 
 	PUSHREF(xdvp, ap->a_dvp);
@@ -697,7 +673,6 @@ lofs_abortop (ap)
 lofs_inactive (ap)
 	struct vop_inactive_args *ap;
 {
-	USES_VOP_INACTIVE;
 	struct vnode *targetvp = LOFSVP(ap->a_vp);
 #ifdef LOFS_DIAGNOSTIC
 	printf("lofs_inactive(ap->a_vp = %x->%x)\n", ap->a_vp, targetvp);
@@ -719,7 +694,6 @@ lofs_inactive (ap)
 lofs_reclaim (ap)
 	struct vop_reclaim_args *ap;
 {
-	USES_VOP_RECLAIM;
 	struct vnode *targetvp;
 #ifdef LOFS_DIAGNOSTIC
 	printf("lofs_reclaim(ap->a_vp = %x->%x)\n", ap->a_vp, LOFSVP(ap->a_vp));
@@ -738,7 +712,6 @@ lofs_reclaim (ap)
 lofs_lock (ap)
 	struct vop_lock_args *ap;
 {
-	USES_VOP_LOCK;
 	int error;
 	struct vnode *targetvp = LOFSVP(ap->a_vp);
 
@@ -763,7 +736,6 @@ lofs_lock (ap)
 lofs_unlock (ap)
 	struct vop_unlock_args *ap;
 {
-	USES_VOP_UNLOCK;
 	struct vnode *targetvp = LOFSVP(ap->a_vp);
 
 #ifdef LOFS_DIAGNOSTIC
@@ -778,7 +750,6 @@ lofs_unlock (ap)
 lofs_bmap (ap)
 	struct vop_bmap_args *ap;
 {
-	USES_VOP_BMAP;
 #ifdef LOFS_DIAGNOSTIC
 	printf("lofs_bmap(ap->a_vp = %x->%x)\n", ap->a_vp, LOFSVP(ap->a_vp));
 #endif
@@ -789,7 +760,6 @@ lofs_bmap (ap)
 lofs_strategy (ap)
 	struct vop_strategy_args *ap;
 {
-	USES_VOP_STRATEGY;
 	int error;
 
 #ifdef LOFS_DIAGNOSTIC
@@ -808,7 +778,6 @@ lofs_strategy (ap)
 lofs_print (ap)
 	struct vop_print_args *ap;
 {
-	USES_VOP_PRINT;
 	struct vnode *targetvp = LOFSVP(ap->a_vp);
 	printf("tag VT_LOFS ref ");
 	if (targetvp)
@@ -820,7 +789,6 @@ lofs_print (ap)
 lofs_islocked (ap)
 	struct vop_islocked_args *ap;
 {
-	USES_VOP_ISLOCKED;
 	struct vnode *targetvp = LOFSVP(ap->a_vp);
 	if (targetvp)
 		return (VOP_ISLOCKED(targetvp));
@@ -830,7 +798,6 @@ lofs_islocked (ap)
 lofs_advlock (ap)
 	struct vop_advlock_args *ap;
 {
-	USES_VOP_ADVLOCK;
 	return VOP_ADVLOCK(LOFSVP(ap->a_vp), ap->a_id, ap->a_op, ap->a_fl, ap->a_flags);
 }
 
@@ -840,17 +807,6 @@ lofs_advlock (ap)
  */
 lofs_blkatoff (ap)
 	struct vop_blkatoff_args *ap;
-{
-
-	return (EOPNOTSUPP);
-}
-
-/*
- * LOFS flat namespace lookup.
- * Currently unsupported.
- */
-lofs_vget (ap)
-	struct vop_vget_args *ap;
 {
 
 	return (EOPNOTSUPP);
@@ -952,7 +908,6 @@ struct vnodeopv_entry_desc lofs_vnodeop_entries[] = {
 	{ &vop_islocked_desc, lofs_islocked },		/* islocked */
 	{ &vop_advlock_desc, lofs_advlock },		/* advlock */
 	{ &vop_blkatoff_desc, lofs_blkatoff },		/* blkatoff */
-	{ &vop_vget_desc, lofs_vget },		/* vget */
 	{ &vop_valloc_desc, lofs_valloc },		/* valloc */
 	{ &vop_vfree_desc, lofs_vfree },		/* vfree */
 	{ &vop_truncate_desc, lofs_truncate },		/* truncate */
