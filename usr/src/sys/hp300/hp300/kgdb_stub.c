@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kgdb_stub.c	7.11 (Berkeley) %G%
+ *	@(#)kgdb_stub.c	7.12 (Berkeley) %G%
  */
 /*
  * "Stub" to allow remote cpu to debug over a serial line using gdb.
@@ -427,6 +427,7 @@ kgdb_trap(int type, struct frame *frame)
 				if (!kgdb_acc(addr, len, B_WRITE))
 					chgkprot(addr, len, B_WRITE);
 				kgdb_copy(&inbuffer[4], addr, len);
+				ICIA();
 			}
 			break;
 
