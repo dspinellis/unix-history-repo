@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_usrreq.c,v 5.4 88/11/18 17:29:18 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_usrreq.c,v $
- *	@(#)tp_usrreq.c	7.7 (Berkeley) %G%
+ *	@(#)tp_usrreq.c	7.8 (Berkeley) %G%
  *
  * tp_usrreq(), the fellow that gets called from most of the socket code.
  * Pretty straighforward.
@@ -343,10 +343,10 @@ tp_sendoob(tpcb, so, xdata, outflags)
  */
 /*ARGSUSED*/
 ProtoHook
-tp_usrreq(so, req, m, nam, rightsp, controlp)
+tp_usrreq(so, req, m, nam, controlp)
 	struct socket *so;
 	u_int req;
-	struct mbuf *m, *nam, *rightsp, *controlp;
+	struct mbuf *m, *nam, *controlp;
 {	
 	register struct tp_pcb *tpcb =  sototpcb(so);
 	int s = splnet();
@@ -782,7 +782,7 @@ tp_snd_control(m0, so, data)
 				*data = 0;
 			}
 			m0 = 0;
-			error = tp_usrreq(so, PRU_DISCONNECT, m0, (caddr_t)0, m0, m0);
+			error = tp_usrreq(so, PRU_DISCONNECT, m0, (caddr_t)0, m0);
 		}
 	}
 	return error;
