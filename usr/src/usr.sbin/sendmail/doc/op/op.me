@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	6.20 (Berkeley) %G%
+.\"	@(#)op.me	6.21 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,9 +40,9 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 6.20
+Version 6.21
 .sp
-For Sendmail Version 6.27
+For Sendmail Version 6.32
 .)l
 .sp 2
 .pp
@@ -77,8 +77,9 @@ incrementally.
 is based on
 RFC822 (Internet Mail Format Protocol),
 RFC821 (Simple Mail Transport Protocol),
+RFC1123 (Internet Host Requirements),
 and
-RFC1123 (Internet Host Requirements).
+RFC1425 (SMTP Service Extensions).
 However, since
 .i sendmail
 is designed to work in a wider world,
@@ -404,9 +405,11 @@ referenced using the
 .b m4
 macro.
 Defined mailer types in this distribution are
+fax,
 local,
 smtp,
-and uucp.
+uucp,
+and usenet.
 .ip ostype
 Definitions describing various operating system environments
 (such as the location of support files).
@@ -1358,7 +1361,7 @@ allowed by RFC 1123 section 5.3.2 are:
 The wait for the initial 220 greeting message
 [5m, 5m].
 .ip helo
-The wait for a reply from a HELO command
+The wait for a reply from a HELO or EHLO command
 [5m, unspecified].
 This may require a host name lookup, so
 five minutes is probably a reasonable minimum.
@@ -1947,7 +1950,7 @@ For example:
 .(b
 Ob needmailhelo, noexpn
 .)b
-insists that the HELO command be used before a MAIL command is accepted
+insists that the HELO or EHLO command be used before a MAIL command is accepted
 and disables the EXPN command.
 .pp
 The
@@ -2243,7 +2246,154 @@ and finally
 and
 .b $:
 are processed.
-..sh 3 "D \*- define macro"
+.sh 4 "Semantics of rewriting rule sets"
+.pp
+There are five rewriting sets
+that have specific semantics.
+These are related as depicted by figure 2.
+.(z
+.hl
+.ie n \{\
+.(c
+                    +---+
+                 -->| 0 |-->resolved address
+                /   +---+
+               /            +---+   +---+
+              /        ---->| 1 |-->| S |--
+       +---+ / +---+  /     +---+   +---+  \e    +---+
+addr-->| 3 |-->| D |--                      --->| 4 |-->msg
+       +---+   +---+  \e     +---+   +---+  /    +---+
+                        --->| 2 |-->| R |--
+                            +---+   +---+
+.)c
+
+.\}
+.el .ie !"\*(.T"" \
+\{\
+.PS
+boxwid = 0.3i
+boxht = 0.3i
+movewid = 0.3i
+moveht = 0.3i
+linewid = 0.3i
+lineht = 0.3i
+
+	box invis "addr"; arrow
+Box3:	box "3"
+A1:	arrow
+BoxD:	box "D"; line; L1: Here
+C:	[
+	C1:	arrow; box "1"; arrow; box "S"; line; E1: Here
+		move to C1 down 0.5; right
+	C2:	arrow; box "2"; arrow; box "R"; line; E2: Here
+	] with .w at L1 + (0.5, 0)
+	move to C.e right 0.5
+L4:	arrow; box "4"; arrow; box invis "msg"
+	line from L1 to C.C1
+	line from L1 to C.C2
+	line from C.E1 to L4
+	line from C.E2 to L4
+	move to BoxD.n up 0.6; right
+Box0:	arrow; box "0"
+	arrow; box invis "resolved address" width 1.3
+	line from 1/3 of the way between A1 and BoxD.w to Box0
+.PE
+.\}
+.el .sp 2i
+.ce
+Figure 2 \*- Rewriting set semantics
+.(c
+D \*- sender domain addition
+S \*- mailer-specific sender rewriting
+R \*- mailer-specific recipient rewriting
+.)c
+.hl
+.)z
+.pp
+Ruleset three
+should turn the address into
+.q "canonical form."
+This form should have the basic syntax:
+.(b
+local-part@host-domain-spec
+.)b
+If no
+.q @
+sign is specified,
+then the
+host-domain-spec
+.i may
+be appended from the
+sender address
+(if the
+.b C
+flag is set in the mailer definition
+corresponding to the
+.i sending
+mailer).
+Ruleset three
+is applied by sendmail
+before doing anything with any address.
+.pp
+Ruleset zero
+is applied after ruleset three
+to addresses that are going to actually specify recipients.
+It must resolve to a
+.i "{mailer, host, user}"
+triple.
+The
+.i mailer
+must be defined in the mailer definitions
+from the configuration file.
+The
+.i host
+is defined into the
+.b $h
+macro
+for use in the argv expansion of the specified mailer.
+.pp
+Rulesets one and two
+are applied to all sender and recipient addresses respectively.
+They are applied before any specification
+in the mailer definition.
+They must never resolve.
+.pp
+Ruleset four is applied to all addresses
+in the message.
+It is typically used
+to translate internal to external form.
+.sh 4 "IPC mailers"
+.pp
+Some special processing occurs
+if the ruleset zero resolves to an IPC mailer.
+The host name passed after
+.q $@
+has MX expansion performed;
+this looks the name up in DNS to find alternate delivery sites.
+.pp
+The host name can also be provided as a dotted quad in square brackets;
+for example:
+.(b
+[128.32.149.78]
+.)b
+This causes direct conversion of the numeric value
+to a TCP/IP host address.
+.pp
+As a final special case, the host name can be passed in
+as a text string
+in square brackets:
+.(b
+[ucbvax.berkeley.edu]
+.)b
+This form avoids the MX mapping.
+.b N.B.:
+This is intended only for situations where you have a network firewall,
+so that your MX record points to a gateway machine;
+this machine could then do direct delivery to machines
+within your local domain.
+Use of this feature directly violates RFC 1123 section 5.3.5:
+it should not be used lightly.
+.sh 3 "D \*- define macro"
 .pp
 Macros are named with a single character.
 These may be selected from the entire ASCII set,
@@ -2530,122 +2680,6 @@ and
 .b $s
 fields are set to the protocol used to communicate with sendmail
 and the sending hostname.
-.sh 4 "Semantics of rewriting rule sets"
-.pp
-There are five rewriting sets
-that have specific semantics.
-These are related as depicted by figure 2.
-.(z
-.hl
-.ie n \{\
-.(c
-                    +---+
-                 -->| 0 |-->resolved address
-                /   +---+
-               /            +---+   +---+
-              /        ---->| 1 |-->| S |--
-       +---+ / +---+  /     +---+   +---+  \e    +---+
-addr-->| 3 |-->| D |--                      --->| 4 |-->msg
-       +---+   +---+  \e     +---+   +---+  /    +---+
-                        --->| 2 |-->| R |--
-                            +---+   +---+
-.)c
-
-.\}
-.el .ie !"\*(.T"" \
-\{\
-.PS
-boxwid = 0.3i
-boxht = 0.3i
-movewid = 0.3i
-moveht = 0.3i
-linewid = 0.3i
-lineht = 0.3i
-
-	box invis "addr"; arrow
-Box3:	box "3"
-A1:	arrow
-BoxD:	box "D"; line; L1: Here
-C:	[
-	C1:	arrow; box "1"; arrow; box "S"; line; E1: Here
-		move to C1 down 0.5; right
-	C2:	arrow; box "2"; arrow; box "R"; line; E2: Here
-	] with .w at L1 + (0.5, 0)
-	move to C.e right 0.5
-L4:	arrow; box "4"; arrow; box invis "msg"
-	line from L1 to C.C1
-	line from L1 to C.C2
-	line from C.E1 to L4
-	line from C.E2 to L4
-	move to BoxD.n up 0.6; right
-Box0:	arrow; box "0"
-	arrow; box invis "resolved address" width 1.3
-	line from 1/3 of the way between A1 and BoxD.w to Box0
-.PE
-.\}
-.el .sp 2i
-.ce
-Figure 2 \*- Rewriting set semantics
-.(c
-D \*- sender domain addition
-S \*- mailer-specific sender rewriting
-R \*- mailer-specific recipient rewriting
-.)c
-.hl
-.)z
-.pp
-Ruleset three
-should turn the address into
-.q "canonical form."
-This form should have the basic syntax:
-.(b
-local-part@host-domain-spec
-.)b
-If no
-.q @
-sign is specified,
-then the
-host-domain-spec
-.i may
-be appended from the
-sender address
-(if the
-.b C
-flag is set in the mailer definition
-corresponding to the
-.i sending
-mailer).
-Ruleset three
-is applied by sendmail
-before doing anything with any address.
-.pp
-Ruleset zero
-is applied after ruleset three
-to addresses that are going to actually specify recipients.
-It must resolve to a
-.i "{mailer, host, user}"
-triple.
-The
-.i mailer
-must be defined in the mailer definitions
-from the configuration file.
-The
-.i host
-is defined into the
-.b $h
-macro
-for use in the argv expansion of the specified mailer.
-.pp
-Rulesets one and two
-are applied to all sender and recipient addresses respectively.
-They are applied before any specification
-in the mailer definition.
-They must never resolve.
-.pp
-Ruleset four is applied to all addresses
-in the message.
-It is typically used
-to translate internal to external form.
 .sh 3 "C and F \*- define classes"
 .pp
 Classes of words may be defined
@@ -3262,10 +3296,10 @@ can be selected from:
 .(b
 .ta \w'needvrfyhelo'u+3n
 public	Allow open access
-needmailhelo	Insist on HELO command before MAIL
-needexpnhelo	Insist on HELO command before EXPN
+needmailhelo	Insist on HELO or EHLO command before MAIL
+needexpnhelo	Insist on HELO or EHLO command before EXPN
 noexpn	Disallow EXPN entirely
-needvrfyhelo	Insist on HELO command before VRFY
+needvrfyhelo	Insist on HELO or EHLO command before VRFY
 novrfy	Disallow VRFY entirely
 restrictmailq	Restrict mailq command
 goaway	Disallow essentially all SMTP status queries
@@ -3281,6 +3315,7 @@ can print the queue.
 If set,
 copies of error messages will be sent to the named
 .i postmaster .
+Only the header of the failed message is sent.
 Since most errors are user problems,
 this is probably not a good idea on large sites,
 and arguably contains all sorts of privacy violations,
@@ -3316,7 +3351,7 @@ minimum values specified in RFC 1123 section 5.3.2 are:
 .(b
 .ta \w'datafinal'u+3n
 initial	wait for initial greeting message [5m, 5m]
-helo	reply to HELO command [5m, none]
+helo	reply to HELO or EHLO command [5m, none]
 mail	reply to MAIL command [10m, 5m]
 rcpt	reply to RCPT command [1h, 5m]
 datainit	reply to DATA command [5m, 2m]
@@ -5728,7 +5763,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 6.20
+.\"Version 6.21
 .\".ce 0
 .pn 2
 .bp
