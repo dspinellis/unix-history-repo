@@ -1,8 +1,8 @@
 #! /bin/sh
 #
-#	@(#)style.sh	4.4	(Berkeley)	82/11/06
+#	@(#)style.sh	4.5	(Berkeley)	82/11/06
 #
-L=/usr/lib/style
+L=/usr/lib
 B=/usr/bin
 echo " " $*
 sflag=-s
