@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sys.c	7.13 (Berkeley) %G%
+ *	@(#)sys.c	7.14 (Berkeley) %G%
  */
 
 #include "sys/param.h"
@@ -256,11 +256,13 @@ lseek(fdesc, addr, ptr)
 	}
 #endif
 	fdesc -= 3;
+#ifndef SMALL
 	if (fdesc < 0 || fdesc >= NFILES ||
 	    ((io = &iob[fdesc])->i_flgs & F_ALLOC) == 0) {
 		errno = EBADF;
 		return (-1);
 	}
+#endif
 	io->i_offset = addr;
 	io->i_bn = addr / DEV_BSIZE;
 	io->i_cc = 0;
@@ -276,8 +278,10 @@ getc(fdesc)
 	int c, lbn, off, size, diff;
 
 
+#ifndef SMALL
 	if (fdesc >= 0 && fdesc <= 2)
 		return (getchar());
+#endif
 	fdesc -= 3;
 	if (fdesc < 0 || fdesc >= NFILES ||
 	    ((io = &iob[fdesc])->i_flgs&F_ALLOC) == 0) {
@@ -296,7 +300,7 @@ getc(fdesc)
 			off = blkoff(fs, io->i_offset);
 			size = dblksize(fs, &io->i_ino, lbn);
 		} else {
-			io->i_bn = io->i_offset / DEV_BSIZE;
+			io->i_bn = io->i_offset / DEV_BSIZE + io->i_boff;
 			off = 0;
 			size = DEV_BSIZE;
 		}
@@ -332,6 +336,7 @@ read(fdesc, buf, count)
 	int lbn, off;
 
 	errno = 0;
+#ifndef SMALL
 	if (fdesc >= 0 && fdesc <= 2) {
 		i = count;
 		do {
@@ -339,6 +344,7 @@ read(fdesc, buf, count)
 		} while (--i && *buf++ != '\n');
 		return (count - i);
 	}
+#endif
 	fdesc -= 3;
 	if (fdesc < 0 || fdesc >= NFILES ||
 	    ((file = &iob[fdesc])->i_flgs&F_ALLOC) == 0) {
@@ -375,6 +381,7 @@ read(fdesc, buf, count)
 		off = blkoff(fs, file->i_offset);
 		lbn = lblkno(fs, file->i_offset);
 		size = dblksize(fs, &file->i_ino, lbn);
+#ifndef SMALL
 		if (off == 0 && size <= i) {
 			file->i_bn = fsbtodb(fs, sbmap(file, lbn)) +
 			    file->i_boff;
@@ -389,6 +396,7 @@ read(fdesc, buf, count)
 			buf += size;
 			i -= size;
 		} else {
+#endif
 			size -= off;
 			if (size > i)
 				size = i;
@@ -396,7 +404,9 @@ read(fdesc, buf, count)
 			do {
 				*buf++ = getc(fdesc+3);
 			} while (--size);
+#ifndef	SMALL
 		}
+#endif
 	}
 	return (count);
 }
@@ -566,7 +576,7 @@ open(str, how)
 
 #ifndef SMALL
 badspec:
-	printf("malformed device specification\nusage: device(adaptor, controller, drive, partition)file\n");
+	printf("malformed device specification\nusage: device(adaptor, controller, drive, partition)file -or- <device><unit><partitionletter>:<file>\n");
 #endif
 bad:
 	file->i_flgs = 0;
@@ -617,6 +627,7 @@ getunit(cp)
 close(fdesc)
 	int fdesc;
 {
+#ifndef SMALL
 	struct iob *file;
 
 	fdesc -= 3;
@@ -628,6 +639,7 @@ close(fdesc)
 	if ((file->i_flgs&F_FILE) == 0)
 		devclose(file);
 	file->i_flgs = 0;
+#endif
 	return (0);
 }
 
@@ -677,10 +689,12 @@ ioctl(fdesc, cmd, arg)
 }
 #endif /* SMALL */
 
+#ifndef i386
 exit()
 {
 	_stop("Exit called");
 }
+#endif
 
 _stop(s)
 	char *s;
