@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)line.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)line.c	4.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "con.h"
@@ -22,7 +22,7 @@ iline(cx0,cy0,cx1,cy1){
 	int maxp,tt,j,np;
 	char chx,chy;
 	float xd,yd;
-	float dist2(),sqrt();
+	double dist2(),sqrt();
 		movep(cx0,cy0);
 		maxp = sqrt(dist2(cx0,cy0,cx1,cy1))/2.;
 		xd = cx1-cx0;
