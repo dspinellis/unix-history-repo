@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dead_vnops.c	7.21 (Berkeley) %G%
+ *	@(#)dead_vnops.c	7.22 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -54,7 +54,6 @@ int	dead_print __P((struct vop_print_args *));
 #define dead_islocked ((int (*) __P((struct  vop_islocked_args *)))nullop)
 #define dead_advlock ((int (*) __P((struct  vop_advlock_args *)))dead_ebadf)
 #define dead_blkatoff ((int (*) __P((struct  vop_blkatoff_args *)))dead_badop)
-#define dead_vget ((int (*) __P((struct  vop_vget_args *)))dead_badop)
 #define dead_valloc ((int (*) __P((struct  vop_valloc_args *)))dead_badop)
 #define dead_vfree ((int (*) __P((struct  vop_vfree_args *)))dead_badop)
 #define dead_truncate ((int (*) __P((struct  vop_truncate_args *)))nullop)
@@ -98,7 +97,6 @@ struct vnodeopv_entry_desc dead_vnodeop_entries[] = {
 	{ &vop_islocked_desc, dead_islocked },	/* islocked */
 	{ &vop_advlock_desc, dead_advlock },	/* advlock */
 	{ &vop_blkatoff_desc, dead_blkatoff },	/* blkatoff */
-	{ &vop_vget_desc, dead_vget },	/* vget */
 	{ &vop_valloc_desc, dead_valloc },	/* valloc */
 	{ &vop_vfree_desc, dead_vfree },	/* vfree */
 	{ &vop_truncate_desc, dead_truncate },	/* truncate */
@@ -114,8 +112,12 @@ struct vnodeopv_desc dead_vnodeop_opv_desc =
  */
 /* ARGSUSED */
 int
-dead_lookup (ap)
-	struct vop_lookup_args *ap;
+dead_lookup(ap)
+	struct vop_lookup_args /* {
+		struct vnode * a_dvp;
+		struct vnode ** a_vpp;
+		struct componentname * a_cnp;
+	} */ *ap;
 {
 
 	*ap->a_vpp = NULL;
@@ -126,8 +128,13 @@ dead_lookup (ap)
  * Open always fails as if device did not exist.
  */
 /* ARGSUSED */
-dead_open (ap)
-	struct vop_open_args *ap;
+dead_open(ap)
+	struct vop_open_args /* {
+		struct vnode *a_vp;
+		int  a_mode;
+		struct ucred *a_cred;
+		struct proc *a_p;
+	} */ *ap;
 {
 
 	return (ENXIO);
@@ -137,8 +144,13 @@ dead_open (ap)
  * Vnode op for read
  */
 /* ARGSUSED */
-dead_read (ap)
-	struct vop_read_args *ap;
+dead_read(ap)
+	struct vop_read_args /* {
+		struct vnode *a_vp;
+		struct uio *a_uio;
+		int  a_ioflag;
+		struct ucred *a_cred;
+	} */ *ap;
 {
 
 	if (chkvnlock(ap->a_vp))
@@ -155,8 +167,13 @@ dead_read (ap)
  * Vnode op for write
  */
 /* ARGSUSED */
-dead_write (ap)
-	struct vop_write_args *ap;
+dead_write(ap)
+	struct vop_write_args /* {
+		struct vnode *a_vp;
+		struct uio *a_uio;
+		int  a_ioflag;
+		struct ucred *a_cred;
+	} */ *ap;
 {
 
 	if (chkvnlock(ap->a_vp))
@@ -168,10 +185,16 @@ dead_write (ap)
  * Device ioctl operation.
  */
 /* ARGSUSED */
-dead_ioctl (ap)
-	struct vop_ioctl_args *ap;
+dead_ioctl(ap)
+	struct vop_ioctl_args /* {
+		struct vnode *a_vp;
+		int  a_command;
+		caddr_t  a_data;
+		int  a_fflag;
+		struct ucred *a_cred;
+		struct proc *a_p;
+	} */ *ap;
 {
-	USES_VOP_IOCTL;
 
 	if (!chkvnlock(ap->a_vp))
 		return (EBADF);
@@ -179,8 +202,14 @@ dead_ioctl (ap)
 }
 
 /* ARGSUSED */
-dead_select (ap)
-	struct vop_select_args *ap;
+dead_select(ap)
+	struct vop_select_args /* {
+		struct vnode *a_vp;
+		int  a_which;
+		int  a_fflags;
+		struct ucred *a_cred;
+		struct proc *a_p;
+	} */ *ap;
 {
 
 	/*
@@ -192,10 +221,11 @@ dead_select (ap)
 /*
  * Just call the device strategy routine
  */
-dead_strategy (ap)
-	struct vop_strategy_args *ap;
+dead_strategy(ap)
+	struct vop_strategy_args /* {
+		struct buf *a_bp;
+	} */ *ap;
 {
-	USES_VOP_STRATEGY;
 
 	if (ap->a_bp->b_vp == NULL || !chkvnlock(ap->a_bp->b_vp)) {
 		ap->a_bp->b_flags |= B_ERROR;
@@ -208,10 +238,11 @@ dead_strategy (ap)
 /*
  * Wait until the vnode has finished changing state.
  */
-dead_lock (ap)
-	struct vop_lock_args *ap;
+dead_lock(ap)
+	struct vop_lock_args /* {
+		struct vnode *a_vp;
+	} */ *ap;
 {
-	USES_VOP_LOCK;
 
 	if (!chkvnlock(ap->a_vp))
 		return (0);
@@ -221,10 +252,14 @@ dead_lock (ap)
 /*
  * Wait until the vnode has finished changing state.
  */
-dead_bmap (ap)
-	struct vop_bmap_args *ap;
+dead_bmap(ap)
+	struct vop_bmap_args /* {
+		struct vnode *a_vp;
+		daddr_t  a_bn;
+		struct vnode **a_vpp;
+		daddr_t *a_bnp;
+	} */ *ap;
 {
-	USES_VOP_BMAP;
 
 	if (!chkvnlock(ap->a_vp))
 		return (EIO);
@@ -235,8 +270,10 @@ dead_bmap (ap)
  * Print out the contents of a dead vnode.
  */
 /* ARGSUSED */
-dead_print (ap)
-	struct vop_print_args *ap;
+dead_print(ap)
+	struct vop_print_args /* {
+		struct vnode *a_vp;
+	} */ *ap;
 {
 
 	printf("tag VT_NON, dead vnode\n");
