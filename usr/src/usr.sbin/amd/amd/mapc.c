@@ -13,7 +13,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mapc.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)mapc.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -628,7 +628,7 @@ int recurse;
 		for (i = 0; i < NKVHASH; i++) {
 			k = m->kvhash[i];
 			while (k) {
-				if (regexec(k->key, key))
+				if (regexec((regexp *) k->key, key))
 					break;
 				k = k->next;
 			}
