@@ -24,7 +24,7 @@ sys.lib:	$(ALLO)
 	ranlib sys.lib
 
 clean:
-	rm -f $(ALLO) disp_asc.out errs makefile.bak sys.lib
+	rm -f $(ALLO) errs makefile.bak sys.lib
 
 print:
 	${PRINT} ${ALLC} ${ALLH}
@@ -42,11 +42,6 @@ lint:
 
 .DEFAULT:
 	sccs get $<
-
-disp_asc.out:	../ctlr/ebc_disp.o
-	(cd ../tools; make mkdstoas $(MFLAGS) )
-	-/bin/rm $@
-	../tools/mkdstoas > $@
 
 depend:
 	grep '^#include' ${ALLC} ${ALLH} | grep -v '<' | \
@@ -66,7 +61,7 @@ depend:
 
 # DO NOT DELETE THIS LINE
 
-termout.o: ../general/general.h terminal.h ../telnet.ext ../ctlr/hostctlr.h
-termout.o: ../ctlr/inbound.ext ../ctlr/oia.h ../ctlr/options.ext
-termout.o: ../ctlr/outbound.ext ../ctlr/screen.h ../ascii/map3270.ext
-termout.o: ../general/globals.h disp_asc.out
+termout.o: ../general/general.h terminal.h ../telnet.ext ../ascii/disp_asc.h
+termout.o: ../ctlr/hostctlr.h ../ctlr/inbound.ext ../ctlr/oia.h
+termout.o: ../ctlr/options.ext ../ctlr/outbound.ext ../ctlr/screen.h
+termout.o: ../ascii/map3270.ext ../general/globals.h
