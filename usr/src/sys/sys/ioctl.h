@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ioctl.h	6.19 (Berkeley) %G%
+ *	@(#)ioctl.h	6.20 (Berkeley) %G%
  */
 
 /*
@@ -52,12 +52,29 @@ struct sgttyb {
 #endif
 
 /*
- * Window size structure
+ * Window/terminal size structure.
+ * This information is stored by the kernel
+ * in order to provide a consistent interface,
+ * but is not used by the kernel.
  */
 struct winsize {
-	unsigned short	ws_row, ws_col;		/* character size of window */
-	unsigned short	ws_xpixel, ws_ypixel;	/* pixel size of window */
+	u_short	ws_row;			/* rows, in characters */
+	u_short	ws_col;			/* columns, in characters */
+	u_short	ws_xpixel;		/* horizontal size, pixels */
+	u_short	ws_ypixel;		/* vertical size, pixels */
 };
+
+/*
+ * Pun for SUN.
+ */
+struct ttysize {
+	u_short	ts_lines;
+	u_short	ts_cols;
+	u_short	ts_xxx;
+	u_short	ts_yyy;
+};
+#define	TIOCGSIZE	TIOCGWINSZ
+#define	TIOCSSIZE	TIOCSWINSZ
 
 #ifndef _IO
 /*
@@ -137,7 +154,7 @@ struct winsize {
 #define		BSDELAY		0x00008000	/* \b delay */
 #define			BS0	0x00000000
 #define			BS1	0x00008000
-#define 	ALLDELAY	(NLDELAY|TBDELAY|CRDELAY|VTDELAY|BSDELAY)
+#define		ALLDELAY	(NLDELAY|TBDELAY|CRDELAY|VTDELAY|BSDELAY)
 #define		CRTBS		0x00010000	/* do backspacing for crt */
 #define		PRTERA		0x00020000	/* \ ... / erase */
 #define		CRTERA		0x00040000	/* " \b " to wipe out char */
@@ -200,9 +217,9 @@ struct winsize {
 #define	TIOCMBIC	_IOW(t, 107, int)	/* bic modem bits */
 #define	TIOCMGET	_IOR(t, 106, int)	/* get all modem bits */
 #define	TIOCREMOTE	_IOW(t, 105, int)	/* remote input editing */
-#define TIOCGWINSZ	_IOR(t, 104, struct winsize)	/* get window size */
-#define TIOCSWINSZ	_IOW(t, 103, struct winsize)	/* set window size */
-#define TIOCUCNTL	_IOW(t, 102, int)	/* pty: set/clr usr cntl mode */
+#define	TIOCGWINSZ	_IOR(t, 104, struct winsize)	/* get window size */
+#define	TIOCSWINSZ	_IOW(t, 103, struct winsize)	/* set window size */
+#define	TIOCUCNTL	_IOW(t, 102, int)	/* pty: set/clr usr cntl mode */
 
 #define	OTTYDISC	0		/* old, v7 std tty driver */
 #define	NETLDISC	1		/* line discip for berk net */
