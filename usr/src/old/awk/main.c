@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	4.3 %G%";
+static char sccsid[] = "@(#)main.c	4.4 (Berkeley) %G%";
 #endif
 
 #include "stdio.h"
@@ -9,6 +9,7 @@ static char sccsid[] = "@(#)main.c	4.3 %G%";
 #define TOLOWER(c)	(isupper(c) ? tolower(c) : c) /* ugh!!! */
 
 int	dbg	= 0;
+int	ldbg	= 0;
 int	svflg	= 0;
 int	rstflg	= 0;
 int	svargc;
@@ -52,6 +53,9 @@ main(argc, argv) int argc; char *argv[]; {
 			break;
 		} else if (strcmp("-d", argv[0])==0) {
 			dbg = 1;
+		}
+		else if (strcmp("-l", argv[0])==0) {
+			ldbg = 1;
 		}
 		else if(strcmp("-S", argv[0]) == 0) {
 			svflg = 1;
