@@ -1,4 +1,4 @@
-/*	ufs_vnops.c	4.29	82/07/22	*/
+/*	ufs_vnops.c	4.30	82/07/24	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -16,6 +16,7 @@
 #include "../h/efs.h"
 #endif
 #include "../h/quota.h"
+#include "../h/descrip.h"
 
 chdir()
 {
@@ -78,7 +79,7 @@ open()
 /*
  * Creat system call.
  */
-creat()
+ocreat()
 {
 	register struct inode *ip;
 	register struct a {
@@ -130,6 +131,7 @@ open1(ip, mode, trf)
 	if ((fp = falloc()) == NULL)
 		goto out;
 	fp->f_flag = mode&(FREAD|FWRITE);
+	fp->f_type = DTYPE_FILE;
 	i = u.u_r.r_val1;
 	fp->f_inode = ip;
 #ifdef EFS
@@ -346,6 +348,8 @@ unlink()
 		/*
 		 * first entry in block, so set d_ino to zero.
 		 */
+/*ZZ*/if(u.u_offset&0x1ff)printf("missed dir compact dir %s/%d off %d file %s\n"
+/*ZZ*/,pp->i_fs->fs_fsmnt,pp->i_number,u.u_offset,u.u_dent.d_name);
 		u.u_base = (caddr_t)&u.u_dent;
 		u.u_count = DIRSIZ(&u.u_dent);
 		u.u_dent.d_ino = 0;
@@ -365,6 +369,8 @@ unlink()
 		}
 		((struct direct *)(bp->b_un.b_addr + base))->d_reclen +=
 		    u.u_dent.d_reclen;
+/*ZZ*/if(((int)(bp->b_un.b_addr + base)&0x1ff)+u.u_dent.d_reclen>512)
+/*ZZ*/	panic("unlink: reclen");
 		bwrite(bp);
 		pp->i_flag |= IUPD|ICHG;
 	}
@@ -396,7 +402,7 @@ seek()
 	fp = getf(uap->fdes);
 	if (fp == NULL)
 		return;
-	if (fp->f_flag&FSOCKET) {
+	if (fp->f_type == DTYPE_SOCKET) {
 		u.u_error = ESPIPE;
 		return;
 	}
@@ -479,7 +485,7 @@ fstat()
 		return;
 	}
 #endif
-	if (fp->f_flag & FSOCKET)
+	if (fp->f_type == DTYPE_SOCKET)
 		u.u_error = sostat(fp->f_socket, uap->sb);
 	else
 		stat1(fp->f_inode, uap->sb);

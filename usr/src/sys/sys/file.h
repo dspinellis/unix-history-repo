@@ -1,27 +1,25 @@
-/*	file.h	4.10	81/11/14	*/
+/*	file.h	4.11	82/07/24	*/
 
 /*
- * One file structure is allocated
- * for each open/creat/pipe call.
- * Main use is to hold the read/write
- * pointer associated with each open
- * file.
+ * Descriptor table entry.
+ * One for each kernel object.
  */
 struct	file {
 	short	f_flag;			/* see below */
+	short	f_type;		/* descriptor type */
+	char	f_nbhow;	/* state from dnblock */
+	char	f_sighow;	/* state from dsignal */
 	short	f_count;		/* reference count */
+/* begin XXX */
 	struct	inode *f_inode;		/* inode */
 	union {
-		struct f_in {
-			off_t fi_offset;
-		} f_in;
-		struct f_so {
-			struct socket *fs_socket;
-		} f_so;
+		struct f_in { off_t fi_offset; } f_in;
+		struct f_so { struct socket *fs_socket; } f_so;
 	} f_un;
-};
 #define f_offset	f_un.f_in.fi_offset
 #define	f_socket	f_un.f_so.fs_socket
+/* end XXX */
+};
 
 #ifdef	KERNEL
 struct	file *file, *fileNFILE;
@@ -31,8 +29,6 @@ struct	file *falloc();
 #endif
 
 /* flags */
-#define	FINODE		0x0		/* descriptor of an inode (pseudo) */
 #define	FREAD		0x1		/* descriptor read/receive'able */
 #define	FWRITE		0x2		/* descriptor write/send'able */
-#define	FSOCKET		0x4		/* descriptor of a socket */
-#define	FPORTAL		0x8		/* descriptor of a portal */
+/* note: other flags for f_flag defined in fcntl.h */

@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.27	82/07/22	*/
+/*	kern_proc.c	4.28	82/07/24	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -20,6 +20,7 @@
 #include "../h/vlimit.h"
 #include "../h/file.h"
 #include "../h/quota.h"
+#include "../h/descrip.h"
 
 /*
  * exec system call, with and without environments.
@@ -301,9 +302,8 @@ register struct inode *ip;
 		register struct file *fp;
 
 		for (fp = file; fp < fileNFILE; fp++) {
-			if (fp->f_flag & FSOCKET)
-				continue;
-			if (fp->f_inode == ip && (fp->f_flag&FWRITE)) {
+			if (fp->f_type == DTYPE_FILE &&
+			    fp->f_inode == ip && (fp->f_flag&FWRITE)) {
 				u.u_error = ETXTBSY;
 				goto bad;
 			}
@@ -758,35 +758,49 @@ out:
 	u.u_r.r_val2 = 0;
 }
 
-/*
- * break system call.
- *  -- bad planning: "break" is a dirty word in C.
- */
-sbreak()
+spgrp(top, npgrp)
+register struct proc *top;
 {
-	struct a {
-		char	*nsiz;
-	};
-	register int n, d;
+	register struct proc *pp, *p;
+	int f = 0;
 
-	/*
-	 * set n to new data size
-	 * set d to new-old
-	 */
-
-	n = btoc(((struct a *)u.u_ap)->nsiz);
-	if (!u.u_sep)
-		n -= ctos(u.u_tsize) * stoc(1);
-	if (n < 0)
-		n = 0;
-	d = clrnd(n - u.u_dsize);
-	if (ctob(u.u_dsize+d) > u.u_limit[LIM_DATA]) {
-		u.u_error = ENOMEM;
-		return;
+	for (p = top; npgrp == -1 || u.u_uid == p->p_uid ||
+	    !u.u_uid || inferior(p); p = pp) {
+		if (npgrp == -1) {
+#define	bit(a)	(1<<(a-1))
+			p->p_sig &= ~(bit(SIGTSTP)|bit(SIGTTIN)|bit(SIGTTOU));
+		} else
+			p->p_pgrp = npgrp;
+		f++;
+		/*
+		 * Search for children.
+		 */
+		for (pp = proc; pp < procNPROC; pp++)
+			if (pp->p_pptr == p)
+				goto cont;
+		/*
+		 * Search for siblings.
+		 */
+		for (; p != top; p = p->p_pptr)
+			for (pp = p + 1; pp < procNPROC; pp++)
+				if (pp->p_pptr == p->p_pptr)
+					goto cont;
+		break;
+	cont:
+		;
 	}
-	if (chksize(u.u_tsize, u.u_dsize+d, u.u_ssize))
-		return;
-	if (swpexpand(u.u_dsize+d, u.u_ssize, &u.u_dmap, &u.u_smap)==0)
-		return;
-	expand(d, P0BR);
+	return (f);
+}
+
+/*
+ * Is p an inferior of the current process?
+ */
+inferior(p)
+register struct proc *p;
+{
+
+	for (; p != u.u_procp; p = p->p_pptr)
+		if (p->p_ppid == 0)
+			return (0);
+	return (1);
 }

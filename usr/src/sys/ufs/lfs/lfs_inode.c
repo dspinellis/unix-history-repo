@@ -1,4 +1,4 @@
-/*	lfs_inode.c	4.18	82/07/22	*/
+/*	lfs_inode.c	4.19	82/07/24	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -10,6 +10,9 @@
 #include "../h/conf.h"
 #include "../h/buf.h"
 #include "../h/inline.h"
+#ifdef	QUOTA
+#include "../h/quota.h"
+#endif
 
 #define	INOHSZ	63
 #if	((INOHSZ&(INOHSZ-1)) == 0)
@@ -208,6 +211,7 @@ loop:
 	return (ip);
 }
 
+int	badinum = -1;
 /*
  * Decrement reference count of
  * an inode structure.
@@ -221,6 +225,11 @@ iput(ip)
 
 	if ((ip->i_flag & ILOCK) == 0)
 		panic("iput");
+/* XXX */
+	if (ip->i_number == badinum && (ip->i_mode&IFMT) == IFCHR &&
+	    (major(ip->i_dev) != 3 || minor(ip->i_dev) != 2))
+		panic("/dev/null");
+/* XXX */
 	iunlock(ip);
 	irele(ip);
 }
@@ -543,6 +552,7 @@ wdir(ip)
 		u.u_dent.d_reclen = DIRBLKSIZ;
 		u.u_count = newsize;
 		u.u_base = (caddr_t)&u.u_dent;
+/*ZZ*/if((u.u_offset&0x1ff))panic("wdir: newblk");
 		writei(u.u_pdir);
 		iput(u.u_pdir);
 		return;
@@ -556,7 +566,12 @@ wdir(ip)
 	base = blkoff(fs, u.u_offset);
 	bn = fsbtodb(fs, bmap(u.u_pdir, lbn, B_WRITE, base + u.u_count));
 	if (u.u_offset + u.u_count > u.u_pdir->i_size)
+/*ZZ*/{if((u.u_offset+u.u_count-1&~0x1ff)!=(u.u_pdir->i_size-1&~0x1ff))
+/*ZZ*/  printf("wdir i_size dir %s/%d (of=%d,cnt=%d,psz=%d))\n",
+/*ZZ*/       u.u_pdir->i_fs->fs_fsmnt,u.u_pdir->i_number,u.u_offset,
+/*ZZ*/       u.u_count,u.u_pdir->i_size);
 		u.u_pdir->i_size = u.u_offset + u.u_count;
+/*ZZ*/}
 	bp = bread(u.u_pdir->i_dev, bn, blksize(fs, u.u_pdir, lbn));
 	if (bp->b_flags & B_ERROR) {
 		brelse(bp);
@@ -581,6 +596,10 @@ wdir(ip)
 		}
 		dsize = DIRSIZ(ndp);
 		spccnt += ndp->d_reclen - dsize;
+/*ZZ*/if(spccnt>512)panic("wdir spccnt");
+/*ZZ*/if((loc&~0x1ff)!=(loc+ndp->d_reclen-1&~0x1ff))
+/*ZZ*/printf("wdir: compact loc %d reclen %d (dir %s/%d)\n",loc,ndp->d_reclen,
+/*ZZ*/u.u_pdir->i_fs->fs_fsmnt,u.u_pdir->i_number);
 		loc += ndp->d_reclen;
 		bcopy(ndp, dp, dsize);
 	}
@@ -590,15 +609,18 @@ wdir(ip)
 	 */
 	if (dp->d_ino == 0) {
 		if (spccnt + dsize < newsize)
-			panic("wdir: compact failed");
+			panic("wdir: compact failed (1)");
+/*ZZ*/if(spccnt+dsize>512)panic("wdir: compact screwup");
 		u.u_dent.d_reclen = spccnt + dsize;
 	} else {
 		if (spccnt < newsize)
-			panic("wdir: compact failed");
+			panic("wdir: compact failed (2)");
 		u.u_dent.d_reclen = spccnt;
+/*ZZ*/if ((((char *)dp-bp->b_un.b_addr)&0x1ff)+dsize>512) panic("wdir: reclen");
 		dp->d_reclen = dsize;
 		dp = (struct direct *)((char *)dp + dsize);
 	}
+/*ZZ*/if((((char*)dp-bp->b_un.b_addr)&0x1ff)+u.u_dent.d_reclen>512)panic("wdir: botch");
 	bcopy(&u.u_dent, dp, newsize);
 	bwrite(bp);
 	u.u_pdir->i_flag |= IUPD|ICHG;
@@ -619,9 +641,9 @@ wdir(ip)
  * this is called from sumount()/sys3.c when dev is being unmounted
  */
 #ifdef	QUOTA
-iflush(dev, qi);
+iflush(dev, iq)
 	dev_t dev;
-	struct inode *qi;
+	struct inode *iq;
 #else
 iflush(dev)
 	dev_t dev;

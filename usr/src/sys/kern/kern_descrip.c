@@ -1,70 +1,172 @@
-/*	kern_descrip.c	5.1	82/07/15	*/
+/*	kern_descrip.c	5.2	82/07/24	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/dir.h"
 #include "../h/user.h"
-#include "../h/reg.h"
 #include "../h/inode.h"
 #include "../h/proc.h"
-#include "../h/clock.h"
-#include "../h/mtpr.h"
-#include "../h/timeb.h"
-#include "../h/times.h"
-#include "../h/reboot.h"
-#include "../h/fs.h"
 #include "../h/conf.h"
-#include "../h/buf.h"
-#include "../h/mount.h"
 #include "../h/file.h"
 #include "../h/inline.h"
 #include "../h/socket.h"
 #include "../h/socketvar.h"
+#include "../h/mount.h"
+
+#include "../h/descrip.h"
 
 /*
- * the dup system call.
+ * Descriptor management.
  */
+
+/*
+ * TODO:
+ *	getf should be renamed
+ *	ufalloc side effects are gross
+ */
+
+/*
+ * System calls on descriptors.
+ */
+dstd()
+{
+
+	u.u_r.r_val1 = NOFILE;
+}
+
 dup()
 {
-	register struct file *fp;
 	register struct a {
-		int	fdes;
-		int	fdes2;
-	} *uap;
-	register i, m;
+		int	i;
+	} *uap = (struct a *) u.u_ap;
+	register struct file *fp;
+	register int j;
 
-	uap = (struct a *)u.u_ap;
-	m = uap->fdes & ~077;
-	uap->fdes &= 077;
-	fp = getf(uap->fdes);
-	if (fp == NULL)
+	if (uap->i &~ 077) { uap->i &= 077; dup2(); return; }	/* XXX */
+
+	fp = getf(uap->i);
+	if (fp == 0)
 		return;
-	if ((m&0100) == 0) {
-		if ((i = ufalloc()) < 0)
-			return;
-	} else {
-		i = uap->fdes2;
-		if (i<0 || i>=NOFILE) {
-			u.u_error = EBADF;
-			return;
-		}
-		u.u_r.r_val1 = i;
+	j = ufalloc();
+	if (j < 0)
+		return;
+	u.u_ofile[j] = fp;
+	fp->f_count++;
+}
+
+dup2()
+{
+	register struct a {
+		int	i, j;
+	} *uap = (struct a *) u.u_ap;
+	register struct file *fp;
+
+	fp = getf(uap->i);
+	if (fp == 0)
+		return;
+	if (uap->j < 0 || uap->j >= NOFILE) {
+		u.u_error = EBADF;
+		return;
 	}
-	if (i != uap->fdes) {
-		if (u.u_ofile[i]!=NULL)
-			closef(u.u_ofile[i], 0);
+	u.u_r.r_val1 = uap->j;
+	if (uap->i == uap->j)
+		return;
+	if (u.u_ofile[uap->j]) {
+		closef(u.u_ofile[uap->j], 0);
 		if (u.u_error)
 			return;
-		u.u_ofile[i] = fp;
-		fp->f_count++;
+		/* u.u_ofile[uap->j] = 0; */
 	}
+	u.u_ofile[uap->j] = fp;
+	fp->f_count++;
+}
+
+close()
+{
+	register struct a {
+		int	i;
+	} *uap = (struct a *)u.u_ap;
+	register struct file *fp;
+
+	fp = getf(uap->i);
+	if (fp == 0)
+		return;
+	u.u_ofile[uap->i] = 0;
+	closef(fp, 0);
+	/* WHAT IF u.u_error ? */
+}
+
+dtype()
+{
+	register struct a {
+		int	d;
+		struct	dtype *dtypeb;
+	} *uap = (struct a *)u.u_ap;
+	register struct file *fp;
+	struct dtype adtype;
+
+	fp = getf(uap->d);
+	if (fp == 0)
+		return;
+	adtype.dt_type = 0;		/* XXX */
+	adtype.dt_protocol = 0;		/* XXX */
+	if (copyout((caddr_t)&adtype, (caddr_t)uap->dtypeb,
+	    sizeof (struct dtype)) < 0) {
+		u.u_error = EFAULT;
+		return;
+	}
+}
+
+dwrap()
+{
+	register struct a {
+		int	d;
+		struct	dtype *dtypeb;
+	} *uap = (struct a *)u.u_ap;
+	register struct file *fp;
+	struct dtype adtype;
+
+	fp = getf(uap->d);
+	if (fp == 0)
+		return;
+	if (copyin((caddr_t)uap->dtypeb, (caddr_t)&adtype,
+	    sizeof (struct dtype)) < 0) {
+		u.u_error = EFAULT;
+		return;
+	}
+	/* DO WRAP */
+}
+
+dselect()
+{
+
+}
+
+dnblock()
+{
+	register struct a {
+		int	d;
+		int	how;
+	} *uap = (struct a *)u.u_ap;
+
+	/* XXX */
+}
+
+dsignal()
+{
+	register struct a {
+		int	d;
+		int	how;
+	} *uap = (struct a *)u.u_ap;
+
+	/* XXX */
 }
 
 int	nselcoll;
 /*
  * Select system call.
  */
-select()
+oselect()
 {
 	register struct uap  {
 		int	nfd;
@@ -154,7 +256,7 @@ selscan(nfd, fds, nfdp, flag)
 			u.u_error = EBADF;
 			return (0);
 		}
-		if (fp->f_flag & FSOCKET)
+		if (fp->f_type == DTYPE_SOCKET)
 			able = soselect(fp->f_socket, flag);
 		else {
 			ip = fp->f_inode;
@@ -172,6 +274,7 @@ selscan(nfd, fds, nfdp, flag)
 				able = 1;
 				break;
 			}
+
 		}
 		if (able) {
 			res |= (1<<(i-1));
@@ -212,24 +315,244 @@ selwakeup(p, coll)
 	}
 }
 
+
 /*
- * Close system call
+ * Allocate a user file descriptor.
  */
-close()
+ufalloc()
+{
+	register i;
+
+	for (i=0; i<NOFILE; i++)
+		if (u.u_ofile[i] == NULL) {
+			u.u_r.r_val1 = i;
+			u.u_pofile[i] = 0;
+			return (i);
+		}
+	u.u_error = EMFILE;
+	return (-1);
+}
+
+struct	file *lastf;
+/*
+ * Allocate a user file descriptor
+ * and a file structure.
+ * Initialize the descriptor
+ * to point at the file structure.
+ */
+struct file *
+falloc()
 {
 	register struct file *fp;
-	register struct a {
-		int	fdes;
-	} *uap;
+	register i;
 
-	uap = (struct a *)u.u_ap;
-	fp = getf(uap->fdes);
+	i = ufalloc();
+	if (i < 0)
+		return (NULL);
+	if (lastf == 0)
+		lastf = file;
+	for (fp = lastf; fp < fileNFILE; fp++)
+		if (fp->f_count == 0)
+			goto slot;
+	for (fp = file; fp < lastf; fp++)
+		if (fp->f_count == 0)
+			goto slot;
+	tablefull("file");
+	u.u_error = ENFILE;
+	return (NULL);
+slot:
+	u.u_ofile[i] = fp;
+	fp->f_count++;
+	fp->f_offset = 0;
+	fp->f_inode = 0;
+	lastf = fp + 1;
+	return (fp);
+}
+/*
+ * Convert a user supplied file descriptor into a pointer
+ * to a file structure.  Only task is to check range of the descriptor.
+ * Critical paths should use the GETF macro, defined in inline.h.
+ */
+struct file *
+getf(f)
+	register int f;
+{
+	register struct file *fp;
+
+	if ((unsigned)f >= NOFILE || (fp = u.u_ofile[f]) == NULL) {
+		u.u_error = EBADF;
+		return (NULL);
+	}
+	return (fp);
+}
+
+/*
+ * Internal form of close.
+ * Decrement reference count on
+ * file structure.
+ * Also make sure the pipe protocol
+ * does not constipate.
+ *
+ * Decrement reference count on the inode following
+ * removal to the referencing file structure.
+ * Call device handler on last close.
+ * Nouser indicates that the user isn't available to present
+ * errors to.
+ */
+closef(fp, nouser)
+	register struct file *fp;
+{
+	register struct inode *ip;
+	register struct mount *mp;
+	int flag, mode;
+	dev_t dev;
+	register int (*cfunc)();
+
 	if (fp == NULL)
 		return;
-	if (u.u_vrpages[uap->fdes]) {
-		u.u_error = ETXTBSY;
+	if (fp->f_count > 1) {
+		fp->f_count--;
 		return;
 	}
-	u.u_ofile[uap->fdes] = NULL;
-	closef(fp, 0);
+	if (fp->f_type == DTYPE_SOCKET) {
+		u.u_error = 0;			/* XXX */
+		soclose(fp->f_socket, nouser);
+		if (nouser == 0 && u.u_error)
+			return;
+		fp->f_socket = 0;
+		fp->f_count = 0;
+		return;
+	}
+	flag = fp->f_flag;
+	ip = fp->f_inode;
+	dev = (dev_t)ip->i_rdev;
+	mode = ip->i_mode & IFMT;
+	ilock(ip);
+	iput(ip);
+	fp->f_count = 0;
+
+	switch (mode) {
+
+	case IFCHR:
+		cfunc = cdevsw[major(dev)].d_close;
+#ifdef EFS
+		/*
+		 * Every close() must call the driver if the
+		 * extended file system is being used -- not
+		 * just the last close.  Pass along the file
+		 * pointer for reference later.
+		 */
+		if (major(dev) == efs_major) {
+			(*cfunc)(dev, flag, fp, nouser);
+			return;
+		}
+#endif
+		break;
+
+	case IFBLK:
+		/*
+		 * We don't want to really close the device if it is mounted
+		 */
+		for (mp = mount; mp < &mount[NMOUNT]; mp++)
+			if (mp->m_bufp != NULL && mp->m_dev == dev)
+				return;
+		cfunc = bdevsw[major(dev)].d_close;
+		break;
+
+	default:
+		return;
+	}
+	for (fp = file; fp < fileNFILE; fp++) {
+		if (fp->f_type == DTYPE_SOCKET)		/* XXX */
+			continue;
+		if (fp->f_count && (ip = fp->f_inode) &&
+		    ip->i_rdev == dev && (ip->i_mode&IFMT) == mode)
+			return;
+	}
+	if (mode == IFBLK) {
+		/*
+		 * On last close of a block device (that isn't mounted)
+		 * we must invalidate any in core blocks
+		 */
+		bflush(dev);
+		binval(dev);
+	}
+	(*cfunc)(dev, flag, fp);
 }
+
+#ifdef CAD
+/*
+ * chfile -- change all references to the inode named by
+ *	     device/inum to the file referred to by fd.
+ * Used by init to remove all references to the device.
+ */
+chfile()
+{
+	register struct file *fp;
+	register struct inode *from;
+	register struct inode *to;
+	off_t offset;
+	dev_t dev;
+	int rw;
+	struct a {
+		int	device;		/* actually dev_t */
+		int	inum;		/* actually ino_t */
+		int	fd;
+	} *uap;
+
+	if (!suser()) {
+		u.u_error = EPERM;
+		return;
+	}
+	uap = (struct a *) u.u_ap;
+	fp = getf(uap->fd);
+	if (fp == NULL) {
+		u.u_error = EBADF;
+		return;
+	}
+	if (fp->f_type == DTYPE_SOCKET) {
+		u.u_error = EINVAL;
+		return;
+	}
+	for (from = &inode[0]; from < &inode[ninode]; from++)
+		if (from->i_number == (ino_t)uap->inum
+		   && from->i_dev == (dev_t)uap->device)
+			break;
+	if (from >= &inode[ninode]) {
+		u.u_error = ENXIO;
+		return;
+	}
+	offset = fp->f_offset;
+	to = fp->f_inode;
+	from->i_count++;
+	for (fp = &file[0]; fp < &file[nfile]; fp++) {
+		if (fp->f_count > 0 && fp->f_inode == from) {
+			fp->f_inode = to;
+			to->i_count++;
+			fp->f_offset = offset;
+			rw |= fp->f_flag & FWRITE;
+			iput(from);
+		}
+	}
+	/*
+	 * This inode is no longer referenced.
+	 * Switch out to the appropriate close
+	 * routine, if required
+	 */
+	dev = (dev_t)from->i_un.i_rdev;
+	switch(from->i_mode & IFMT) {
+
+	case IFCHR:
+		(*cdevsw[major(dev)].d_close)(dev, rw);
+		break;
+	
+	case IFBLK:
+		(*bdevsw[major(dev)].d_close)(dev, rw);
+		break;
+
+	default:
+		break;
+	}
+	iput(from);
+}
+#endif

@@ -1,4 +1,4 @@
-/*	subr_xxx.c	4.12	82/07/15	*/
+/*	subr_xxx.c	4.13	82/07/24	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -172,3 +172,18 @@ ffs(mask)
 	return (0);
 }
 #endif
+#ifndef vax
+ffs(mask)
+	register long mask;
+{
+	register int i;
+
+	for(i=1; i<NSIG; i++) {
+		if (mask & 1)
+			return (i);
+		mask >>= 1;
+	}
+	return (0);
+}
+#endif
+

@@ -1,8 +1,10 @@
-/*	kern_prot.c	5.2	82/07/22	*/
+/*	kern_prot.c	5.3	82/07/24	*/
 
 /*
- * System calls related to protection
+ * System calls related to processes and protection
  */
+
+/* NEED ALLOCATION AND PROTECTION MECHANISM FOR PROCESS GROUPS */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -22,11 +24,77 @@
 #include "../h/mount.h"
 #include "../h/quota.h"
 
+getpid()
+{
+
+	u.u_r.r_val1 = u.u_procp->p_pid;
+	u.u_r.r_val2 = u.u_procp->p_ppid;
+}
+
+getpgrp()
+{
+	register struct a {
+		int	pid;
+	} *uap = (struct a *)u.u_ap;
+	register struct proc *p;
+
+	if (uap->pid == 0)
+		uap->pid = u.u_procp->p_pid;
+	p = pfind(uap->pid);
+	if (p == 0) {
+		u.u_error = ESRCH;
+		return;
+	}
+	u.u_r.r_val1 = p->p_pgrp;
+}
+
 getuid()
 {
 
 	u.u_r.r_val1 = u.u_ruid;
 	u.u_r.r_val2 = u.u_uid;
+}
+
+getgid()
+{
+
+	u.u_r.r_val1 = u.u_rgid;
+	u.u_r.r_val2 = u.u_gid;
+}
+
+getgrp()
+{
+	register struct	a {
+		int	*gidset;
+	} *uap = (struct a *)u.u_ap;
+
+	if (copyout((caddr_t)u.u_grps, (caddr_t)uap->gidset,
+	    sizeof (u.u_grps))) {
+		u.u_error = EFAULT;
+		return;
+	}
+}
+
+setpgrp()
+{
+	register struct proc *p;
+	register struct a {
+		int	pid;
+		int	pgrp;
+	} *uap = (struct a *)u.u_ap;
+
+	if (uap->pid == 0)
+		uap->pid = u.u_procp->p_pid;
+	p = pfind(uap->pid);
+	if (p == 0) {
+		u.u_error = ESRCH;
+		return;
+	}
+	if (p->p_uid != u.u_uid && u.u_uid && !inferior(p)) {
+		u.u_error = EPERM;
+		return;
+	}
+	p->p_pgrp = uap->pgrp;
 }
 
 setuid()
@@ -51,13 +119,6 @@ setuid()
 	}
 }
 
-getgid()
-{
-
-	u.u_r.r_val1 = u.u_rgid;
-	u.u_r.r_val2 = u.u_gid;
-}
-
 setgid()
 {
 	register gid;
@@ -72,3 +133,78 @@ setgid()
 		u.u_rgid = gid;
 	}
 }
+
+setgrp()
+{
+	register struct	a {
+		int	*gidset;
+	} *uap = (struct a *)u.u_ap;
+
+	if (suser())
+		return;
+	if (copyin((caddr_t)uap->gidset, (caddr_t)u.u_grps,
+	    sizeof (u.u_grps))) {
+		u.u_error = EFAULT;
+		return;
+	}
+}
+
+/* BEGIN DEFUNCT */
+osetgrp()
+{
+	register struct	a {
+		int *ngrps;
+		int *ogrps;
+	} *uap = (struct a *)u.u_ap;
+	int thegroups[NGRPS/(sizeof(int)*8)];
+
+	if (uap->ogrps && copyout((caddr_t)u.u_grps, (caddr_t)uap->ogrps,
+	    sizeof (thegroups))) {
+		u.u_error = EFAULT;
+		return;
+	}
+	if (uap->ngrps == 0)
+		return;
+	if (copyin((caddr_t)uap->ngrps, (caddr_t)thegroups,
+	    sizeof (thegroups))) {
+		u.u_error = EFAULT;
+		return;
+	}
+	if (suser())
+		bcopy((caddr_t)thegroups, (caddr_t)u.u_grps, sizeof (u.u_grps));
+}
+
+/*
+ * Pid of zero implies current process.
+ * Pgrp -1 is getpgrp system call returning
+ * current process group.
+ */
+osetpgrp()
+{
+	register struct proc *p;
+	register struct a {
+		int	pid;
+		int	pgrp;
+	} *uap;
+
+	uap = (struct a *)u.u_ap;
+	if (uap->pid == 0)
+		p = u.u_procp;
+	else {
+		p = pfind(uap->pid);
+		if (p == 0) {
+			u.u_error = ESRCH;
+			return;
+		}
+	}
+	if (uap->pgrp <= 0) {
+		u.u_r.r_val1 = p->p_pgrp;
+		return;
+	}
+	if (p->p_uid != u.u_uid && u.u_uid && !inferior(p)) {
+		u.u_error = EPERM;
+		return;
+	}
+	p->p_pgrp = uap->pgrp;
+}
+/* END DEFUNCT */

@@ -1,4 +1,4 @@
-/*	kern_sig.c	5.1	82/07/15	*/
+/*	kern_sig.c	5.2	82/07/24	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -22,70 +22,35 @@
 #include "../h/vlimit.h"
 #include "../h/acct.h"
 
-ssig()
-{
-	register int (*f)();
-	struct a {
-		int	signo;
-		int	(*fun)();
-	} *uap;
-	register struct proc *p = u.u_procp;
-	register a;
-	long sigmask;
+/* KILL CODE SHOULDNT KNOW ABOUT PROCESS INTERNALS !?! */
 
-	uap = (struct a *)u.u_ap;
-	a = uap->signo & SIGNUMMASK;
-	f = uap->fun;
-	if (a<=0 || a>=NSIG || a==SIGKILL || a==SIGSTOP ||
-	    a==SIGCONT && (f == SIG_IGN || f == SIG_HOLD)) {
-		u.u_error = EINVAL;
-		return;
-	}
-	if ((uap->signo &~ SIGNUMMASK) || (f != SIG_DFL && f != SIG_IGN &&
-	    SIGISDEFER(f)))
-		u.u_procp->p_flag |= SNUSIG;
-	/* 
-	 * Don't clobber registers if we are to simulate
-	 * a ret+rti.
-	 */
-	if ((uap->signo&SIGDORTI) == 0)
-		u.u_r.r_val1 = (int)u.u_signal[a];
-	/*
-	 * Change setting atomically.
-	 */
-	(void) spl6();
-	sigmask = 1L << (a-1);
-	if (u.u_signal[a] == SIG_IGN)
-		p->p_sig &= ~sigmask;		/* never to be seen again */
-	u.u_signal[a] = f;
-	if (f != SIG_DFL && f != SIG_IGN && f != SIG_HOLD)
-		f = SIG_CATCH;
-	if ((int)f & 1)
-		p->p_siga0 |= sigmask;
-	else
-		p->p_siga0 &= ~sigmask;
-	if ((int)f & 2)
-		p->p_siga1 |= sigmask;
-	else
-		p->p_siga1 &= ~sigmask;
-	(void) spl0();
-	/*
-	 * Now handle options.
-	 */
-	if (uap->signo & SIGDOPAUSE) {
-		/*
-		 * Simulate a PDP11 style wait instrution which
-		 * atomically lowers priority, enables interrupts
-		 * and hangs.
-		 */
-		pause();
-		/*NOTREACHED*/
-	}
-	if (uap->signo & SIGDORTI)
-		u.u_eosys = SIMULATERTI;
+sigvec()
+{
+
 }
 
-kill()
+sigblock()
+{
+
+}
+
+sigsetmask()
+{
+
+}
+
+sigpause()
+{
+
+}
+
+sigstack()
+{
+
+}
+
+/* BEGIN DEFUNCT */
+okill()
 {
 	register struct proc *p;
 	register a, sig;
@@ -152,25 +117,68 @@ kill()
 		u.u_error = ESRCH;
 }
 
-/*
- * Priority for tracing
- */
-#define	IPCPRI	PZERO
+ossig()
+{
+	register int (*f)();
+	struct a {
+		int	signo;
+		int	(*fun)();
+	} *uap;
+	register struct proc *p = u.u_procp;
+	register a;
+	long sigmask;
 
-/*
- * Tracing variables.
- * Used to pass trace command from
- * parent to child being traced.
- * This data base cannot be
- * shared and is locked
- * per user.
- */
-struct {
-	int	ip_lock;
-	int	ip_req;
-	int	*ip_addr;
-	int	ip_data;
-} ipc;
+	uap = (struct a *)u.u_ap;
+	a = uap->signo & SIGNUMMASK;
+	f = uap->fun;
+	if (a<=0 || a>=NSIG || a==SIGKILL || a==SIGSTOP ||
+	    a==SIGCONT && (f == SIG_IGN || f == SIG_HOLD)) {
+		u.u_error = EINVAL;
+		return;
+	}
+	if ((uap->signo &~ SIGNUMMASK) || (f != SIG_DFL && f != SIG_IGN &&
+	    SIGISDEFER(f)))
+		u.u_procp->p_flag |= SNUSIG;
+	/* 
+	 * Don't clobber registers if we are to simulate
+	 * a ret+rti.
+	 */
+	if ((uap->signo&SIGDORTI) == 0)
+		u.u_r.r_val1 = (int)u.u_signal[a];
+	/*
+	 * Change setting atomically.
+	 */
+	(void) spl6();
+	sigmask = 1L << (a-1);
+	if (u.u_signal[a] == SIG_IGN)
+		p->p_sig &= ~sigmask;		/* never to be seen again */
+	u.u_signal[a] = f;
+	if (f != SIG_DFL && f != SIG_IGN && f != SIG_HOLD)
+		f = SIG_CATCH;
+	if ((int)f & 1)
+		p->p_siga0 |= sigmask;
+	else
+		p->p_siga0 &= ~sigmask;
+	if ((int)f & 2)
+		p->p_siga1 |= sigmask;
+	else
+		p->p_siga1 &= ~sigmask;
+	(void) spl0();
+	/*
+	 * Now handle options.
+	 */
+	if (uap->signo & SIGDOPAUSE) {
+		/*
+		 * Simulate a PDP11 style wait instrution which
+		 * atomically lowers priority, enables interrupts
+		 * and hangs.
+		 */
+		opause();
+		/*NOTREACHED*/
+	}
+	if (uap->signo & SIGDORTI)
+		u.u_eosys = SIMULATERTI;
+}
 
 /*
  * Send the specified signal to
@@ -551,21 +559,6 @@ send:
 	return (sig);
 }
 
-#ifndef vax
-ffs(mask)
-	register long mask;
-{
-	register int i;
-
-	for(i=1; i<NSIG; i++) {
-		if (mask & 1)
-			return (i);
-		mask >>= 1;
-	}
-	return (0);
-}
-#endif
-
 /*
  * Put the argument process into the stopped
  * state and notify the parent via wakeup and/or signal.
@@ -716,184 +709,32 @@ core()
 	iput(ip);
 	return (u.u_error==0);
 }
-
 /*
- * grow the stack to include the SP
- * true return if successful.
+ * alarm clock signal
  */
-grow(sp)
-	unsigned sp;
-{
-	register si;
-
-	if (sp >= USRSTACK-ctob(u.u_ssize))
-		return (0);
-	si = clrnd(btoc((USRSTACK-sp)) - u.u_ssize + SINCR);
-	if (ctob(u.u_ssize+si) > u.u_limit[LIM_STACK])
-		return (0);
-	if (chksize(u.u_tsize, u.u_dsize, u.u_ssize+si))
-		return (0);
-	if (swpexpand(u.u_dsize, u.u_ssize+si, &u.u_dmap, &u.u_smap)==0)
-		return (0);
-	
-	expand(si, P1BR);
-	return (1);
-}
-
-/*
- * sys-trace system call.
- */
-ptrace()
+oalarm()
 {
 	register struct proc *p;
+	register c;
 	register struct a {
-		int	req;
-		int	pid;
-		int	*addr;
-		int	data;
+		int	deltat;
 	} *uap;
 
 	uap = (struct a *)u.u_ap;
-	if (uap->req <= 0) {
-		u.u_procp->p_flag |= STRC;
-		return;
-	}
-	p = pfind(uap->pid);
-	if (p == 0 || p->p_stat != SSTOP || p->p_ppid != u.u_procp->p_pid) {
-		u.u_error = ESRCH;
-		return;
-	}
-	while (ipc.ip_lock)
-		sleep((caddr_t)&ipc, IPCPRI);
-	ipc.ip_lock = p->p_pid;
-	ipc.ip_data = uap->data;
-	ipc.ip_addr = uap->addr;
-	ipc.ip_req = uap->req;
-	p->p_flag &= ~SWTED;
-	while (ipc.ip_req > 0) {
-		if (p->p_stat==SSTOP)
-			setrun(p);
-		sleep((caddr_t)&ipc, IPCPRI);
-	}
-	u.u_r.r_val1 = ipc.ip_data;
-	if (ipc.ip_req < 0)
-		u.u_error = EIO;
-	ipc.ip_lock = 0;
-	wakeup((caddr_t)&ipc);
+	p = u.u_procp;
+	c = p->p_clktim;
+	p->p_clktim = uap->deltat;
+	u.u_r.r_val1 = c;
 }
 
-int ipcreg[] = {R0,R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,AP,FP,SP,PC};
 /*
- * Code that the child process
- * executes to implement the command
- * of the parent process in tracing.
+ * indefinite wait.
+ * no one should wakeup(&u)
  */
-procxmt()
+opause()
 {
-	register int i;
-	register *p;
-	register struct text *xp;
 
-	if (ipc.ip_lock != u.u_procp->p_pid)
-		return (0);
-	u.u_procp->p_slptime = 0;
-	i = ipc.ip_req;
-	ipc.ip_req = 0;
-	switch (i) {
-
-	/* read user I */
-	case 1:
-		if (!useracc((caddr_t)ipc.ip_addr, 4, B_READ))
-			goto error;
-		ipc.ip_data = fuiword((caddr_t)ipc.ip_addr);
-		break;
-
-	/* read user D */
-	case 2:
-		if (!useracc((caddr_t)ipc.ip_addr, 4, B_READ))
-			goto error;
-		ipc.ip_data = fuword((caddr_t)ipc.ip_addr);
-		break;
-
-	/* read u */
-	case 3:
-		i = (int)ipc.ip_addr;
-		if (i<0 || i >= ctob(UPAGES))
-			goto error;
-		ipc.ip_data = ((physadr)&u)->r[i>>2];
-		break;
-
-	/* write user I */
-	/* Must set up to allow writing */
-	case 4:
-		/*
-		 * If text, must assure exclusive use
-		 */
-		if (xp = u.u_procp->p_textp) {
-			if (xp->x_count!=1 || xp->x_iptr->i_mode&ISVTX)
-				goto error;
-			xp->x_iptr->i_flag &= ~ITEXT;
-		}
-		i = -1;
-		if (chgprot((caddr_t)ipc.ip_addr, RW) &&
-		    chgprot((caddr_t)ipc.ip_addr+(sizeof(int)-1), RW))
-			i = suiword((caddr_t)ipc.ip_addr, ipc.ip_data);
-		(void) chgprot((caddr_t)ipc.ip_addr, RO);
-		(void) chgprot((caddr_t)ipc.ip_addr+(sizeof(int)-1), RO);
-		if (i < 0)
-			goto error;
-		if (xp)
-			xp->x_flag |= XWRIT;
-		break;
-
-	/* write user D */
-	case 5:
-		if (suword((caddr_t)ipc.ip_addr, 0) < 0)
-			goto error;
-		(void) suword((caddr_t)ipc.ip_addr, ipc.ip_data);
-		break;
-
-	/* write u */
-	case 6:
-		i = (int)ipc.ip_addr;
-		p = (int *)&((physadr)&u)->r[i>>2];
-		for (i=0; i<16; i++)
-			if (p == &u.u_ar0[ipcreg[i]])
-				goto ok;
-		if (p == &u.u_ar0[PS]) {
-			ipc.ip_data |= PSL_CURMOD|PSL_PRVMOD;
-			ipc.ip_data &=  ~PSL_USERCLR;
-			goto ok;
-		}
-		goto error;
-
-	ok:
-		*p = ipc.ip_data;
-		break;
-
-	/* set signal and continue */
-	/* one version causes a trace-trap */
-	case 9:
-	case 7:
-		if ((int)ipc.ip_addr != 1)
-			u.u_ar0[PC] = (int)ipc.ip_addr;
-		if ((unsigned)ipc.ip_data > NSIG)
-			goto error;
-		u.u_procp->p_cursig = ipc.ip_data;	/* see issig */
-		if (i == 9)
-			u.u_ar0[PS] |= PSL_T;
-		wakeup((caddr_t)&ipc);
-		return (1);
-
-	/* force exit */
-	case 8:
-		wakeup((caddr_t)&ipc);
-		exit(u.u_procp->p_cursig);
-
-	default:
-	error:
-		ipc.ip_req = -1;
-	}
-	wakeup((caddr_t)&ipc);
-	return (0);
+	for (;;)
+		sleep((caddr_t)&u, PSLEP);
 }
+

@@ -1,4 +1,4 @@
-/*	uipc_syscalls.c	4.20	82/06/20	*/
+/*	uipc_syscalls.c	4.21	82/07/24	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -14,6 +14,72 @@
 #include "../h/socketvar.h"
 #include "../net/in.h"
 #include "../net/in_systm.h"
+#include "../h/descrip.h"
+
+ssocreate()
+{
+
+}
+
+ssobind()
+{
+
+}
+
+ssolisten()
+{
+
+}
+
+ssoaccept()
+{
+
+}
+
+ssoconnect()
+{
+
+}
+
+ssocreatepair()
+{
+
+}
+
+ssosendto()
+{
+
+}
+
+ssosend()
+{
+
+}
+
+ssorecvfrom()
+{
+
+}
+
+ssorecv()
+{
+
+}
+
+ssosendm()
+{
+
+}
+
+ssorecvm()
+{
+
+}
+
+ssoshutdown()
+{
+
+}
 
 /*
  * Socket system call interface.
@@ -47,12 +113,14 @@ spipe()
 	if (rf == NULL)
 		goto free2;
 	r = u.u_r.r_val1;
-	rf->f_flag = FREAD|FSOCKET;
+	rf->f_flag = FREAD;
+	rf->f_type = DTYPE_SOCKET;
 	rf->f_socket = rso;
 	wf = falloc();
 	if (wf == NULL)
 		goto free3;
-	wf->f_flag = FWRITE|FSOCKET;
+	wf->f_flag = FWRITE;
+	wf->f_type = DTYPE_SOCKET;
 	wf->f_socket = wso;
 	u.u_r.r_val2 = u.u_r.r_val1;
 	u.u_r.r_val1 = r;
@@ -66,10 +134,10 @@ free3:
 	rf->f_count = 0;
 	u.u_ofile[r] = 0;
 free2:
-	wso->so_state |= SS_USERGONE;
+	wso->so_state |= SS_NOFDREF;
 	sofree(wso);
 free:
-	rso->so_state |= SS_USERGONE;
+	rso->so_state |= SS_NOFDREF;
 	sofree(rso);
 }
 
@@ -93,7 +161,8 @@ ssocket()
 
 	if ((fp = falloc()) == NULL)
 		return;
-	fp->f_flag = FSOCKET|FREAD|FWRITE;
+	fp->f_flag = FREAD|FWRITE;
+	fp->f_type = DTYPE_SOCKET;
 	if (uap->asp && copyin((caddr_t)uap->asp, (caddr_t)&sp, sizeof (sp)) ||
 	    uap->asa && copyin((caddr_t)uap->asa, (caddr_t)&sa, sizeof (sa))) {
 		u.u_error = EFAULT;
@@ -131,19 +200,23 @@ saccept()
 	fp = getf(uap->fdes);
 	if (fp == 0)
 		return;
-	if ((fp->f_flag & FSOCKET) == 0) {
+	if (fp->f_type != DTYPE_SOCKET) {
 		u.u_error = ENOTSOCK;
 		return;
 	}
 	s = splnet();
 	so = fp->f_socket;
-	if ((so->so_state & SS_NBIO) &&
-	    (so->so_state & SS_CONNAWAITING) == 0) {
+	if ((so->so_options & SO_ACCEPTCONN) == 0) {
+		u.u_error = EINVAL;
+		splx(s);
+		return;
+	}
+	if ((so->so_state & SS_NBIO) && so->so_qlen == 0) {
 		u.u_error = EWOULDBLOCK;
 		splx(s);
 		return;
 	}
-	while ((so->so_state & SS_CONNAWAITING) == 0 && so->so_error == 0) {
+	while (so->so_qlen == 0 && so->so_error == 0) {
 		if (so->so_state & SS_CANTRCVMORE) {
 			so->so_error = ECONNABORTED;
 			break;
@@ -155,15 +228,34 @@ saccept()
 		splx(s);
 		return;
 	}
-	u.u_error = soaccept(so, &sa);
-	if (u.u_error) {
+	if ((so->so_options & SO_NEWFDONCONN) == 0) {
+		struct socket *nso = so->so_q;
+		(void) soqremque(nso, 1);
+		soclose(so, 1);
+		fp->f_socket = nso;
+		nso->so_q = 0;
+		so = nso;
+		goto ret;
+	}
+	if (ufalloc() < 0) {
 		splx(s);
 		return;
 	}
+	fp = falloc();
+	if (fp == 0) {
+		u.u_ofile[u.u_r.r_val1] = 0;
+		splx(s);
+		return;
+	}
+	fp->f_type = DTYPE_SOCKET;
+	fp->f_flag = FREAD|FWRITE;
+	fp->f_socket = so->so_q;
+	so->so_q = so->so_q->so_q;
+	so->so_qlen--;
+ret:
+	soaccept(so, &sa);
 	if (uap->asa)
 		(void) copyout((caddr_t)&sa, (caddr_t)uap->asa, sizeof (sa));
-	/* deal with new file descriptor case */
-	/* u.u_r.r_val1 = ... */
 	splx(s);
 }
 
@@ -189,7 +281,7 @@ sconnect()
 	fp = getf(uap->fdes);
 	if (fp == 0)
 		return;
-	if ((fp->f_flag & FSOCKET) == 0) {
+	if (fp->f_type != DTYPE_SOCKET) {
 		u.u_error = ENOTSOCK;
 		return;
 	}
@@ -228,7 +320,7 @@ ssend()
 	fp = getf(uap->fdes);
 	if (fp == 0)
 		return;
-	if ((fp->f_flag & FSOCKET) == 0) {
+	if (fp->f_type != DTYPE_SOCKET) {
 		u.u_error = ENOTSOCK;
 		return;
 	}
@@ -261,7 +353,7 @@ sreceive()
 	fp = getf(uap->fdes);
 	if (fp == 0)
 		return;
-	if ((fp->f_flag & FSOCKET) == 0) {
+	if (fp->f_type != DTYPE_SOCKET) {
 		u.u_error = ENOTSOCK;
 		return;
 	}
@@ -297,7 +389,7 @@ ssocketaddr()
 	fp = getf(uap->fdes);
 	if (fp == 0)
 		return;
-	if ((fp->f_flag & FSOCKET) == 0) {
+	if (fp->f_type != DTYPE_SOCKET) {
 		u.u_error = ENOTSOCK;
 		return;
 	}

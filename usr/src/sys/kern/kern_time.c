@@ -1,4 +1,4 @@
-/*	kern_time.c	5.1	82/07/15	*/
+/*	kern_time.c	5.2	82/07/24	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -17,11 +17,25 @@
 #include "../h/buf.h"
 #include "../h/mount.h"
 
-/*
- * return the current time (old-style entry)
- */
-gtime()
+rtime()
 {
+
+}
+
+rusage()
+{
+
+}
+
+itimer()
+{
+
+}
+
+/* BEGIN DEPRECATED */
+ogtime()
+{
+
 	u.u_r.r_time = time;
 	if (clkwrap())
 		clkset();
@@ -31,7 +45,7 @@ gtime()
  * New time entry-- return TOD with milliseconds, timezone,
  * DST flag
  */
-ftime()
+oftime()
 {
 	register struct a {
 		struct	timeb	*tp;
@@ -56,6 +70,7 @@ ftime()
 	if (clkwrap())
 		clkset();
 }
+/* END DEPRECATED */
 
 /*
  * Set the time

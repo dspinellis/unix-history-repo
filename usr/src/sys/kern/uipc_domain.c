@@ -1,4 +1,4 @@
-/*	uipc_domain.c	5.1	82/07/15	*/
+/*	uipc_domain.c	5.2	82/07/24	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -17,3 +17,8 @@
 #include "../h/buf.h"
 #include "../h/mount.h"
 
+cdomain()
+{
+
+	/* return a descriptor for the domain */
+}
