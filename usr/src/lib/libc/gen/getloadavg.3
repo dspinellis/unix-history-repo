@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)getloadavg.3	6.3 (Berkeley) %G%
+.\"     @(#)getloadavg.3	6.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt GETLOADAVG 3
@@ -34,8 +34,8 @@ the number of samples actually retrieved is returned.
 .Sh HISTORY
 The
 .Fn getloadavg
-function is
-.Ud .
+function appeared in
+.Bx 4.3 Reno .
 .Sh BUGS
 Programs using this utility must have read permission on
 .Pa /dev/kmem .
