@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mbuf.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)mbuf.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -82,8 +82,8 @@ mbpr(mbaddr)
 		}
 	printf("%u/%u mapped pages in use\n",
 		mbstat.m_clusters - mbstat.m_clfree, mbstat.m_clusters);
-	totmem = totmbufs * MSIZE + mbstat.m_clusters * CLBYTES;
-	totfree = mbstat.m_clfree * CLBYTES;
+	totmem = totmbufs * MSIZE + mbstat.m_clusters * MCLBYTES;
+	totfree = mbstat.m_clfree * MCLBYTES;
 	printf("%u Kbytes allocated to network (%d%% in use)\n",
 		totmem / 1024, (totmem - totfree) * 100 / totmem);
 	printf("%u requests for memory denied\n", mbstat.m_drops);
