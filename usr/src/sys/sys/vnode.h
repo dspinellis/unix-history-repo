@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vnode.h	7.26 (Berkeley) %G%
+ *	@(#)vnode.h	7.27 (Berkeley) %G%
  */
 
 #include <machine/endian.h>
@@ -84,13 +84,14 @@ struct vnode {
  */
 #define	VROOT		0x0001	/* root of its file system */
 #define	VTEXT		0x0002	/* vnode is a pure text prototype */
-#define	VXLOCK		0x0004	/* vnode is locked to change underlying type */
-#define	VXWANT		0x0008	/* process is waiting for vnode */
+#define	VSYSTEM		0x0004	/* vnode being used by kernel */
 #define	VEXLOCK		0x0010	/* exclusive lock */
 #define	VSHLOCK		0x0020	/* shared lock */
 #define	VLWAIT		0x0040	/* proc is waiting on shared or excl. lock */
-#define	VALIASED	0x0080	/* vnode has an alias */
-#define	VBWAIT		0x0100	/* waiting for output to complete */
+#define	VXLOCK		0x0100	/* vnode is locked to change underlying type */
+#define	VXWANT		0x0200	/* process is waiting for vnode */
+#define	VBWAIT		0x0400	/* waiting for output to complete */
+#define	VALIASED	0x0800	/* vnode has an alias */
 
 /*
  * Operations on vnodes.
@@ -247,20 +248,28 @@ extern void vrele();			/* release vnode */
 extern void vgone();			/* completely recycle vnode */
 extern void vgoneall();			/* recycle vnode and all its aliases */
 
-#ifdef notdef
+/*
+ * Flags to various vnode functions.
+ */
+#define	SKIPSYSTEM	0x0001		/* vflush: skip vnodes marked VSYSTEM */
+#define	FORCECLOSE	0x0002		/* vflush: force file closeure */
+#define	DOCLOSE		0x0004		/* vclean: close active files */
+
+#ifndef DIAGNOSTIC
 #define VREF(vp)    (vp)->v_usecount++;	/* increase reference to a vnode */
 #define VHOLD(vp)   (vp)->v_holdcnt++;	/* increase buf or page ref to vnode */
 #define HOLDRELE(vp) (vp)->v_holdcnt--;	/* decrease buf or page ref to vnode */
-#else
+#else /* DIAGNOSTIC */
 #define VREF(vp)    vref(vp)
 #define VHOLD(vp)   vhold(vp)
 #define HOLDRELE(vp) holdrele(vp)
 #endif
 
+#define	NULLVP	((struct vnode *)0)
+
 /*
  * Global vnode data.
  */
 extern	struct vnode *rootdir;		/* root (i.e. "/") vnode */
-
 extern	int desiredvnodes;		/* number of vnodes desired */
 #endif
