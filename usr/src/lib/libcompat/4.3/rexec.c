@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rexec.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)rexec.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -39,11 +39,11 @@ rexec(ahost, rport, name, pass, cmd, fd2p)
 	char *name, *pass, *cmd;
 	int *fd2p;
 {
-	int s, timo = 1, s3;
 	struct sockaddr_in sin, sin2, from;
-	char c;
-	short port;
 	struct hostent *hp;
+	u_short port;
+	int s, timo = 1, s3;
+	char c;
 
 	hp = gethostbyname(*ahost);
 	if (hp == 0) {
@@ -92,7 +92,7 @@ retry:
 			goto bad;
 		}
 		port = ntohs((u_short)sin2.sin_port);
-		(void) sprintf(num, "%d", port);
+		(void) sprintf(num, "%u", port);
 		(void) write(s, num, strlen(num)+1);
 		{ int len = sizeof (from);
 		  s3 = accept(s2, &from, &len, 0);
