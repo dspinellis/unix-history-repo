@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_subr2.c,v 5.5 88/11/18 17:28:55 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_subr2.c,v $
- *	@(#)tp_subr2.c	7.6 (Berkeley) %G%
+ *	@(#)tp_subr2.c	7.7 (Berkeley) %G%
  *
  * Some auxiliary routines:
  * 		tp_protocol_error: required by xebec- called when a combo of state,
@@ -209,9 +209,27 @@ tp_indicate(ind, tpcb, error)
 		tpcb->tp_lref);
 	ENDDEBUG
 
+	if (ind == ER_TPDU) {
+		register struct mbuf *m;
+		struct tp_disc_reason x;
+
+		if ((so->so_state & SS_CANTRCVMORE) == 0 &&
+				(m = m_get(M_DONTWAIT, MT_OOBDATA)) != 0) {
+
+			x.dr_hdr.cmsg_len = m->m_len = sizeof(x);
+			x.dr_hdr.cmsg_level = SOL_TRANSPORT;
+			x.dr_hdr.cmsg_type= TPOPT_DISC_REASON;
+			x.dr_reason = error;
+			*mtod(m, struct tp_disc_reason *) = x;
+			sbappendrecord(&tpcb->tp_Xrcv, m);
+			error = 0;
+		} else
+			error = ECONNRESET;
+	}
 	so->so_error = error;
 
 	if (ind == T_DISCONNECT)  {
+		so->so_error = ENOTCONN;
 		if ( tpcb->tp_no_disc_indications )
 			return;
 	}
