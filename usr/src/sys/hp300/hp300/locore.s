@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: locore.s 1.66 92/12/22$
  *
- *	@(#)locore.s	7.22 (Berkeley) %G%
+ *	@(#)locore.s	7.23 (Berkeley) %G%
  */
 
 /*
@@ -599,7 +599,7 @@ _lev6intr:
 	.globl	_panicstr,_badkstack
 	cmpl	#_kstack+NBPG,sp	| are we still in stack page?
 	jcc	Lstackok		| yes, continue normally
-	tstl	_curproc		| if !curproc could have swtch_exit'ed,
+	tstl	_curproc		| if !curproc could have swtch_exited,
 	jeq	Lstackok		|     might be on tmpstk
 	tstl	_panicstr		| have we paniced?
 	jne	Lstackok		| yes, do not re-panic
@@ -1156,16 +1156,21 @@ _szicode:
  * Primitives
  */ 
 
+#ifdef __STDC__
+#define EXPORT(name)	.globl _ ## name; _ ## name:
+#else
+#define EXPORT(name)	.globl _/**/name; _/**/name:
+#endif
 #ifdef GPROF
 #define	ENTRY(name) \
-	.globl _/**/name; _/**/name: link a6,#0; jbsr mcount; unlk a6
+	EXPORT(name) link a6,\#0; jbsr mcount; unlk a6
 #define ALTENTRY(name, rname) \
 	ENTRY(name); jra rname+12
 #else
 #define	ENTRY(name) \
-	.globl _/**/name; _/**/name:
+	EXPORT(name)
 #define ALTENTRY(name, rname) \
-	.globl _/**/name; _/**/name:
+	ENTRY(name)
 #endif
 
 /*
