@@ -1,13 +1,15 @@
-static char *sccsid = "@(#)cat.c	4.1 (Berkeley) %G%";
 /*
  * Concatenate files.
  */
+static	char *Sccsid = "@(#)cat.c	4.2 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
 char	stdbuf[BUFSIZ];
+int	bflg, eflg, nflg, sflg, tflg, vflg;
+int	spaced, col, lno, inline;
 
 main(argc, argv)
 char **argv;
@@ -18,6 +20,7 @@ char **argv;
 	int dev, ino = -1;
 	struct stat statb;
 
+	lno = 1;
 	setbuf(stdout, stdbuf);
 	for( ; argc>1 && argv[1][0]=='-'; argc--,argv++) {
 		switch(argv[1][1]) {
@@ -25,6 +28,27 @@ char **argv;
 			break;
 		case 'u':
 			setbuf(stdout, (char *)NULL);
+			continue;
+		case 'n':
+			nflg++;
+			continue;
+		case 'b':
+			bflg++;
+			nflg++;
+			continue;
+		case 'v':
+			vflg++;
+			continue;
+		case 's':
+			sflg++;
+			continue;
+		case 'e':
+			eflg++;
+			vflg++;
+			continue;
+		case 't':
+			tflg++;
+			vflg++;
 			continue;
 		}
 		break;
@@ -55,10 +79,63 @@ char **argv;
 			fclose(fi);
 			continue;
 		}
-		while ((c = getc(fi)) != EOF)
-			putchar(c);
+		if (nflg||sflg||vflg)
+			copyopt(fi);
+		else {
+			while ((c = getc(fi)) != EOF)
+				putchar(c);
+		}
 		if (fi!=stdin)
 			fclose(fi);
 	}
+	if (ferror(stdout))
+		fprintf(stderr, "cat: output write error\n");
 	return(0);
+}
+
+copyopt(f)
+	register FILE *f;
+{
+	register int c;
+
+top:
+	c = getc(f);
+	if (c == EOF)
+		return;
+	if (c == '\n') {
+		if (inline == 0) {
+			if (sflg && spaced)
+				goto top;
+			spaced = 1;
+		}
+		if (nflg && bflg==0 && inline == 0)
+			printf("%6d\t", lno++);
+		if (eflg)
+			putchar('$');
+		putchar('\n');
+		inline = 0;
+		goto top;
+	}
+	if (nflg && inline == 0)
+		printf("%6d\t", lno++);
+	inline = 1;
+	if (vflg) {
+		if (tflg==0 && c == '\t')
+			putchar(c);
+		else {
+			if (c > 0177) {
+				printf("M-");
+				c &= 0177;
+			}
+			if (c < ' ')
+				printf("^%c", c+'@');
+			else if (c == 0177)
+				printf("^?");
+			else
+				putchar(c);
+		}
+	} else
+		putchar(c);
+	spaced = 0;
+	goto top;
 }
