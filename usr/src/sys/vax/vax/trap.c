@@ -1,4 +1,4 @@
-/*	trap.c	4.28	83/06/02	*/
+/*	trap.c	4.29	83/06/26	*/
 
 #include "../machine/psl.h"
 #include "../machine/reg.h"
@@ -203,7 +203,7 @@ syscall(sp, type, code, pc, psl)
 	if (callp == sysent) {
 		i = fuword(params);
 		params += NBPW;
-		callp = (code >= nsysent) ? &sysent[63] : &sysent[code];
+		callp = (code >= nsysent) ? &sysent[63] : &sysent[i];
 	}
 	if (i = callp->sy_narg * sizeof (int)) {
 #ifndef lint
