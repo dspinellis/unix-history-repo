@@ -1,4 +1,4 @@
-/*	dn.c	4.3	82/03/14	*/
+/*	dn.c	4.4	82/04/25	*/
 
 #include "dn.h"
 #if NDN > 0
@@ -18,7 +18,7 @@
 #include "../h/ioctl.h"
 
 struct dndevice {
-	int	dn_reg[4];
+	u_short	dn_reg[4];
 };
 
 struct uba_device *dninfo[NDN];
@@ -27,17 +27,17 @@ u_short dnstd[] = { 0175200 };
 struct uba_driver dndriver =
 	{ dnprobe, 0, dnattach, 0, dnstd, "dn", dninfo };
 
-#define	PWI	0100000		/* power indicate */
-#define	ACR	040000		/* abandon call and retry */
-#define	DLO	010000		/* data line occupied */
-#define	DONE	0200		/* operation complete */
-#define	IENABLE	0100		/* interrupt enable */
-#define	DSS	040		/* data set status */
-#define	PND	020		/* present next digit */
-#define MAINT	010		/* maintenance mode */
-#define	MENABLE	04		/* master enable */
-#define	DPR	02		/* digit present */
-#define	CRQ	01		/* call request */
+#define	CRQ	0x001		/* call request */
+#define	DPR	0x002		/* digit present */
+#define	MENABLE	0x004		/* master enable */
+#define MAINT	0x008		/* maintenance mode */
+#define	PND	0x010		/* present next digit */
+#define	DSS	0x020		/* data set status */
+#define	IENABLE	0x040		/* interrupt enable */
+#define	DONE	0x080		/* operation complete */
+#define	DLO	0x1000		/* data line occupied */
+#define	ACR	0x4000		/* abandon call and retry */
+#define	PWI	0x8000		/* power indicate */
 
 #define	DNPRI	(PZERO+5)
 #define DNUNIT(dev)	(minor(dev)>>2)
@@ -48,24 +48,17 @@ struct uba_driver dndriver =
 /*
  * There's no good way to determine the correct number of dialers attached
  * to a single device (especially when dialers such as Vadic-821 MACS
- * exist which can address four chassis, each with its own dialer), so
- * we take the "flags" value supplied by config as the number of devices
- * attached (see dnintr).
+ * exist which can address four chassis, each with its own dialer).
  */
 dnprobe(reg)
 	caddr_t reg;
 {
-	register int br, cvec;		/* value-result */
+	register int br, cvec;	/* value-result, must be r11, r10 */
 	register struct dndevice *dnaddr = (struct dndevice *)reg;
-
-#ifdef lint
-	br = 0; cvec = br; br = cvec;
-	dnintr(0);
-#endif
 
 	/*
 	 * If there's at least one dialer out there it better be
-	 * at chassis 0.
+	 *  at chassis 0.
 	 */
 	dnaddr->dn_reg[0] = MENABLE|IENABLE|DONE;
 	DELAY(5);
@@ -74,30 +67,25 @@ dnprobe(reg)
 
 dnattach(ui)
 	struct uba_device *ui;
-{
-
-	if (ui->ui_flags == 0)	/* no flags =>'s don't care */
-		ui->ui_flags = 4;
-	else if (ui->ui_flags > 4 || ui->ui_flags < 0) {
-		printf("dn%d: bad flags value %d (disabled)\n", ui->ui_unit,
-			ui->ui_flags);
-		ui->ui_flags = 0;
-		ui->ui_alive = 0;
-	}
-}
+{}
 
 /*ARGSUSED*/
 dnopen(dev, flag)
 	dev_t dev;
 {
 	register struct dndevice *dp;
-	register int unit, *dnreg;
+	register u_short unit, *dnreg;
 	register struct uba_device *ui;
 	register short dialer;
 
 	if ((unit = DNUNIT(dev)) >= NDN || (ui = dninfo[unit]) == 0 ||
-	    ui->ui_alive == 0 || (dialer = DNREG(dev)) >= ui->ui_flags ||
-	    ((dp = (struct dndevice *)ui->ui_addr)->dn_reg[dialer]&PWI)) {
+	    ui->ui_alive == 0) {
+		u.u_error = ENXIO;
+		return;
+	}
+	dialer = DNREG(dev);
+	dp = (struct dndevice *)ui->ui_addr;
+	if (dp->dn_reg[dialer] & PWI) {
 		u.u_error = ENXIO;
 		return;
 	}
@@ -123,22 +111,23 @@ dnclose(dev, flag)
 dnwrite(dev)
 	dev_t dev;
 {
-	register int *dnreg, cc;
+	register u_short *dnreg;
+	register int cc;
 	register struct dndevice *dp;
-	char digits[OBUFSIZ];
+	char buf[OBUFSIZ];
 	register char *cp;
 	extern lbolt;
 
 	dp = (struct dndevice *)dninfo[DNUNIT(dev)]->ui_addr;
 	dnreg = &(dp->dn_reg[DNREG(dev)]);
 	cc = MIN(u.u_count, OBUFSIZ);
-	cp = digits;
+	cp = buf;
 	iomove(cp, (unsigned)cc, B_WRITE);
 	if (u.u_error)
 		return;
 	while ((*dnreg & (PWI|ACR|DSS)) == 0 && cc >= 0) {
-		(void) spl4();
-		if ((*dnreg&PND) == 0 || cc == 0)
+		spl4();
+		if ((*dnreg & PND) == 0 || cc == 0)
 			sleep((caddr_t)dnreg, DNPRI);
 		else switch(*cp) {
 		
@@ -173,30 +162,25 @@ dnwrite(dev)
 			if (*cp < '0' || *cp > '9')
 				break;
 		dial:
-			*dnreg = (*cp<<8)|IENABLE|MENABLE|DPR|CRQ;
+			*dnreg = (*cp << 8) | (IENABLE|MENABLE|DPR|CRQ);
 			sleep((caddr_t)dnreg, DNPRI);
 		}
 		cp++, cc--;
 		spl0();
 	}
-	if (*dnreg&(PWI|ACR))
+	if (*dnreg & (PWI|ACR))
 		u.u_error = EIO;
 }
 
-/*
- * NOTE that the flags from the config file define the number
- * of dialers attached to this controller.
- */
 dnintr(dev)
 	dev_t dev;
 {
-	register int *basereg, *dnreg, *lastreg;
+	register u_short *basereg, *dnreg;
 
-	basereg = (int *)dninfo[dev]->ui_addr;
+	basereg = (u_short *)dninfo[dev]->ui_addr;
 	*basereg &= ~MENABLE;
-	lastreg = basereg+dninfo[dev]->ui_flags;
-	for (dnreg = basereg; dnreg < lastreg; dnreg++)
-		if (*dnreg&DONE) {
+	for (dnreg = basereg; dnreg < basereg + 4; dnreg++)
+		if (*dnreg & DONE) {
 			*dnreg &= ~(DONE|DPR);
 			wakeup((caddr_t)dnreg);
 		}
