@@ -1,5 +1,4 @@
 .TH SCCS 1
-.UC
 .SH NAME
 sccs \- front end for the
 .SM SCCS
@@ -14,8 +13,10 @@ subsystem
 .SH DESCRIPTION
 .I Sccs
 is a front end
-to csvax:eric.
-that make them mesh more cleanly
+to the
+.SM SCCS
+programs
+that help them mesh more cleanly
 with the rest of UNIX.
 It also includes the capability to run
 ``set user id'' to another user
@@ -87,22 +88,22 @@ To get a file for editting,
 edit it,
 and produce a new delta:
 .BX
-% sccs get \-e file.c
-% ex file.c
-% sccs delta file.c
+sccs get \-e file.c
+ex file.c
+sccs delta file.c
 .EX
 To get a file from another directory:
 .BX
-% sccs \-p/usr/src/sccs/s. get cc.c
+sccs \-p/usr/src/sccs/s. get cc.c
 .EX
 or
 .BX
-% sccs get /usr/src/sccs/s.cc.c
+sccs get /usr/src/sccs/s.cc.c
 .EX
 To make a delta of a large number of files
 in the current directory:
 .BX
-% sccs delta *.c
+sccs delta *.c
 .EX
 In a makefile, to get source files
 from an
@@ -129,7 +130,7 @@ rmdel(SCCS),
 sccsdiff(SCCS),
 what(SCCS),
 .SH AUTHOR
-Eric Allman (csvax:eric)
+Eric Allman (ingres:eric)
 .SH DISCLAIMER
 Since it is not yet clear
 what this program should do,
@@ -137,4 +138,4 @@ it should not be considered
 a stable program product.
 Please send any
 constructive suggestions
-to csvax:eric.
+to ingres:eric.
