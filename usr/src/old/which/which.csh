@@ -1,17 +1,16 @@
-#!/bin/csh -f
+#!/bin/csh
+#
+# DO NOT USE "csh -f"
 #
 # Copyright (c) 1980 Regents of the University of California.
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)which.csh	5.2 (Berkeley) %G%
+#	@(#)which.csh	5.3 (Berkeley) %G%
 #
 #	which : tells you which program you get
 #
 set prompt = "% "
-if ( -f ~/.cshrc) then
-	source ~/.cshrc
-endif
 set noglob
 foreach arg ( $argv )
     set alius = `alias $arg`
