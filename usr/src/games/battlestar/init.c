@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)init.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)init.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -24,8 +24,8 @@ initialize(startup)
 	puts("Admiral D.W. Riggle\n");
 	location = dayfile;
 	srand(getpid());
-	getutmp(usrname);
-	wiz = wizard(usrname);
+	getutmp(uname);
+	wiz = wizard(uname);
 	wordinit();
 	if (startup) {
 		direction = NORTH;
