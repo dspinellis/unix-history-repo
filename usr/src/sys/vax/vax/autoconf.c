@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)autoconf.c	6.19 (Berkeley) %G%
+ *	@(#)autoconf.c	6.20 (Berkeley) %G%
  */
 
 /*
@@ -114,7 +114,8 @@ configure()
 			mtpr(TBIS, Sysbase);
 #if GENERIC
 			setconf();
-#else
+#endif
+#if !GENERIC || lint
 			setroot();
 #endif
 			/*
@@ -893,7 +894,7 @@ static	char devname[][2] = {
  */
 setroot()
 {
-	int  majdev, mindev, unit, part, adaptor, i;
+	int  majdev, mindev, unit, part, adaptor;
 	dev_t temp, orootdev;
 	struct swdevt *swp;
 
