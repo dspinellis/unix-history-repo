@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_open.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_open.c	5.11 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -30,6 +30,7 @@ static char sccsid[] = "@(#)bt_open.c	5.10 (Berkeley) %G%";
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <string.h>
 #include "btree.h"
 
 static int nroot __P((BTREE *));
@@ -57,10 +58,10 @@ __bt_open(fname, flags, mode, openinfo)
 	int flags, mode;
 	const BTREEINFO *openinfo;
 {
-	BTREE *t;
-	DB *dbp;
 	BTMETA m;
+	BTREE *t;
 	BTREEINFO b;
+	DB *dbp;
 	pgno_t ncache;
 	struct stat sb;
 	int nr;
@@ -76,7 +77,7 @@ __bt_open(fname, flags, mode, openinfo)
 		b = *openinfo;
 
 		/* Flags: R_DUP. */
-		if (b.flags && b.flags != R_DUP)
+		if (b.flags & ~(R_DUP))
 			goto einval;
 
 		/*
@@ -88,20 +89,14 @@ __bt_open(fname, flags, mode, openinfo)
 		    (b.psize < MINPSIZE || b.psize > MAX_PAGE_OFFSET ||
 		    b.psize & sizeof(index_t) - 1))
 				goto einval;
-#ifdef notdef
-		if (b.maxkeypage && b.maxkeypage < 1) 
-			goto einval;
 
+		/* Minimum number of keys per page; absolute minimum is 2. */
 		if (b.minkeypage) {
 			if (b.minkeypage < 2)
 				goto einval;
 		} else
-			b.minkeypage = 2;
-#else
-		b.maxkeypage = DEFMAXKEYPAGE;
-		b.minkeypage = DEFMINKEYPAGE;
-#endif
-		
+			b.minkeypage = DEFMINKEYPAGE;
+
 		/* If no comparison, use default comparison and prefix. */
 		if (b.compare == NULL) {
 			b.compare = __bt_defcmp;
@@ -115,7 +110,6 @@ __bt_open(fname, flags, mode, openinfo)
 			goto einval;
 	} else {
 		b.flags = 0;
-		b.maxkeypage = DEFMAXKEYPAGE;
 		b.minkeypage = DEFMINKEYPAGE;
 		b.compare = __bt_defcmp;
 		b.prefix = __bt_defpfx;
@@ -134,8 +128,6 @@ __bt_open(fname, flags, mode, openinfo)
 	t->bt_sp = t->bt_maxstack = 0;
 	t->bt_kbuf = t->bt_dbuf = NULL;
 	t->bt_kbufsz = t->bt_dbufsz = 0;
-	t->bt_maxkeypage = b.maxkeypage;
-	t->bt_minkeypage = b.minkeypage;
 	t->bt_order = NOT;
 	t->bt_cmp = b.compare;
 	t->bt_pfx = b.prefix;
@@ -203,9 +195,8 @@ __bt_open(fname, flags, mode, openinfo)
 			goto eftype;
 		if (m.m_flags | ~SAVEMETA)
 			goto eftype;
-
 		b.psize = m.m_psize;
-		t->bt_flags = m.m_flags;
+		t->bt_flags |= m.m_flags;
 		t->bt_free = m.m_free;
 		t->bt_lorder = m.m_lorder;
 		t->bt_nrecs = m.m_nrecs;
@@ -221,7 +212,7 @@ __bt_open(fname, flags, mode, openinfo)
 			if (b.psize > MAX_PAGE_OFFSET)
 				b.psize = MAX_PAGE_OFFSET;
 		}
-		t->bt_flags = b.flags & R_DUP ? 0 : BTF_NODUPS;
+		t->bt_flags |= b.flags & R_DUP ? 0 : BTF_NODUPS;
 		t->bt_free = P_INVALID;
 		t->bt_lorder = b.lorder;
 		t->bt_nrecs = 0;
@@ -240,19 +231,28 @@ __bt_open(fname, flags, mode, openinfo)
 	ncache = (b.cachesize + t->bt_psize - 1) / t->bt_psize;
 
 	/*
-	 * The btree data structure requires that at least two keys can fit
-	 * on a page, but other than that there's no fixed requirement.  The
-	 * user can specify the minimum number per page, and we translate
-	 * that into the maximum number of bytes a key can use before being
-	 * placed on an overflow page.
+	 * The btree data structure requires that at least two keys can fit on
+	 * a page, but other than that there's no fixed requirement.  The user
+	 * specified a minimum number per page, and we translated that into the
+	 * number of bytes a key/data pair can use before being placed on an
+	 * overflow page.  This calculation includes the page header, the size
+	 * of the index referencing the leaf item and the size of the leaf item
+	 * structure.  Also, don't let the user specify a minkeypage such that
+	 * a key/data pair won't fit even if both key and data are on overflow
+	 * pages.
 	 */
-	t->bt_minkeypage = (t->bt_psize - BTDATAOFF) / b.minkeypage;
+	t->bt_ovflsize = (t->bt_psize - BTDATAOFF) / b.minkeypage -
+	    (sizeof(index_t) + NBLEAFDBT(0, 0));
+	if (t->bt_ovflsize < NBLEAFDBT(NOVFLSIZE, NOVFLSIZE) + sizeof(index_t))
+		t->bt_ovflsize =
+		    NBLEAFDBT(NOVFLSIZE, NOVFLSIZE) + sizeof(index_t);
 
 	/* Initialize the buffer pool. */
 	if ((t->bt_mp =
 	    mpool_open(NULL, t->bt_fd, t->bt_psize, ncache)) == NULL)
 		goto err;
-	mpool_filter(t->bt_mp, __bt_pgin, __bt_pgout, t);
+	if (NOTSET(t, BTF_INMEM))
+		mpool_filter(t->bt_mp, __bt_pgin, __bt_pgout, t);
 
 	/* Create a root page if new tree. */
 	if (nroot(t) == RET_ERROR)
@@ -312,6 +312,7 @@ nroot(t)
 	root->lower = BTDATAOFF;
 	root->upper = t->bt_psize;
 	root->flags = P_BLEAF;
+	bzero(meta, t->bt_psize);
 	mpool_put(t->bt_mp, meta, MPOOL_DIRTY);
 	mpool_put(t->bt_mp, root, MPOOL_DIRTY);
 	return (RET_SUCCESS);
