@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)route.c	6.14 (Berkeley) %G%
+ *	@(#)route.c	6.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -129,9 +129,11 @@ rtredirect(dst, gateway, flags, src)
 	(bcmp((caddr_t)(a1), (caddr_t)(a2), sizeof(struct sockaddr)) == 0)
 	/*
 	 * If the redirect isn't from our current router for this dst,
-	 * it's either old or wrong.
+	 * it's either old or wrong.  If it redirects us to ourselves,
+	 * we have a routing loop, perhaps as a result of an interface
+	 * going down recently.
 	 */
-	if (rt && !equal(src, &rt->rt_gateway)) {
+	if ((rt && !equal(src, &rt->rt_gateway)) || ifa_ifwithaddr(gateway)) {
 		rtstat.rts_badredirect++;
 		rtfree(rt);
 		return;
