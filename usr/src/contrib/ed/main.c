@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -88,9 +88,10 @@ main(argc, argv)
 	char *argv[];
 {
 	int l_num, errnum = 0, l_err = 0;
-	char *l_fnametmp, *l_col;
+	char *l_fnametmp, *l_col, buf[2];
 	struct winsize win;
 
+	setbuffer(stdin, buf, 1);
 	line_length = ((l_col = getenv("COLUMNS")) == NULL ? 0 : atoi(l_col));
 	if (line_length == 0 && isatty(STDOUT_FILENO) &&
 		ioctl(STDOUT_FILENO, TIOCGWINSZ, &win) != -1)
@@ -142,6 +143,13 @@ main(argc, argv)
 					break;
 				}
 				l_err = 1;
+			case 'v':
+#ifdef BSD
+				printf("ed: in BSD mode:\n");
+#endif
+#ifdef POSIX
+				printf("ed: in POSIX mode:\n");
+#endif
 			default:
 				l_err++;
 				ed_exit(l_err);
@@ -330,7 +338,7 @@ cmd_loop(inputt, errnum)
 				clearerr(inputt);
 				if (g_flag > 0)
 					return;
-				ss = 'q';
+				/*ss = 'q';*/
 			case 'q':
 			case 'Q':
 				q(inputt, errnum);
@@ -541,10 +549,6 @@ sigint_handler(signo)
 	if (sigspecial3) {
 		sigspecial3 = 0;
 		SIGINT_ILACTION;
-	}
-	if (sigspecial2) {
-		sigspecial2 = 0;
-		SIGINT_ALACTION;
 	}
 	else
 		if (sigspecial);

@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)input_lines.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)input_lines.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -70,7 +70,7 @@ input_lines(fp, errnum)
                 goto point;
 
 	for (;;) {
-		if (sigint_flag && (!sigspecial))
+		if (sigint_flag)
 			goto point;
         	sigspecial3 = 1;
 		l_ss = getc(fp);
@@ -82,11 +82,11 @@ input_lines(fp, errnum)
 			}
 			break;
 		}
-		if (!l_ss) /* 8-bit okay, but NULL not */
-			continue;
+		/*if (!l_ss)*/ /* 8-bit okay, but NULL not */
+			/*continue;*/
 		l_text[l_nn++] = (char)l_ss;
 		if (l_ss == '\n') {
-			if (sigint_flag && (!sigspecial))
+			if (sigint_flag)
 				goto point;
 			l_text[l_nn - 1] = '\0';
 			if ((l_nn == 2) && (l_text[0] == '.') && add_flag)

@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)g.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)g.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -154,10 +154,10 @@ g(inputt, errnum)
 		if ((l_fp = fopen(l_template_g, "w+")) == NULL) {
 			perror("ed: file I/O error, save buffer in ed.hup");
 			do_hup(); /* does not return */
+		}
 		sigspecial--;
 		if (sigint_flag && (!sigspecial))
 			goto point;
-		}
 	}
 
 	ss = getc(inputt);
