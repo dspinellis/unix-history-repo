@@ -70,6 +70,7 @@ J.T. Conklin <jtc@winsey.com>
 James Clark <jjc@jclark.com>
 James da Silva <jds@cs.umd.edu> et al
 Jim Wilson <wilson@moria.cygnus.com>
+Joerg Wunsch <joerg_wunsch@uriah.sax.de>
 Julian Elischer <julian@dialix.oz.au>
 Julian Stacey <stacey@guug.de> <fallback: <julian@meepmeep.pcs.com>>
 Keith Bostic <bostic@toe.CS.Berkeley.EDU>
@@ -181,4 +182,4 @@ Wolfgang Solfrank <ws@tools.de>
 Wolfgang Stanglmeier <wolf@dentaro.GUN.de>
 Yuval Yarom <yval@cs.huji.ac.il>
 
-$Id: CONTRIB.FreeBSD,v 1.33 1994/02/24 06:49:41 jkh Exp $
+$Id: CONTRIB.FreeBSD,v 1.34 1994/05/13 12:54:49 jkh Exp $
