@@ -1,7 +1,7 @@
 # include "../hdr/defines.h"
 # include "../hdr/had.h"
 
-static char Sccsid[] = "@(#)rmchg.c	4.4	%G%";
+static char Sccsid[] = "@(#)rmchg.c	4.5	%G%";
 
 /*
 	Program to remove a specified delta from an SCCS file,
@@ -239,7 +239,7 @@ char *file;
 	if (D_type == 'R') {
 		for (n = maxser(&gpkt); n > D_serial; n--) {
 			p = &gpkt.p_idel[n];
-			if (p->i_pred == D_serial)
+			if (((struct idel *)p)->i_pred == D_serial)
 				fatal("not a 'leaf' delta (rc5)");
 		}
 
