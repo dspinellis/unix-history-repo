@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	6.41 (Berkeley) %G%
+.\"	@(#)op.me	6.42 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,9 +40,9 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 6.41
+Version 6.42
 .sp
-For Sendmail Version 6.53
+For Sendmail Version 6.55
 .)l
 .sp 2
 .pp
@@ -1128,8 +1128,7 @@ flag (local delivery) set in the mailer descriptor.
 .pp
 If errors occur anywhere during processing,
 this header will cause error messages to go to
-the listed addresses
-rather than to the sender.
+the listed addresses.
 This is intended for mailing lists.
 .pp
 The Errors-To: header was created in the bad old days
@@ -1992,6 +1991,10 @@ This invites the SMTP client to try again later.
 Beware of setting this option too high;
 it can cause rejection of email
 when that mail would be processed without difficulty.
+.pp
+This option can also specify an advertised
+.q "maximum message size"
+for hosts that speak ESMTP.
 .sh 2 "Privacy Flags"
 .pp
 The
@@ -2904,6 +2907,8 @@ Any other flags may be used freely
 to conditionally assign headers to messages
 destined for particular mailers.
 .nr ii 4n
+.ip a
+Run Extended SMTP (ESMTP) protocol (defined in RFCs 1425, 1426, and 1427).
 .ip c
 Do not include comments in addresses.
 This should only be used if you have to work around
@@ -3224,7 +3229,7 @@ If no file is specified,
 use
 .i aliases
 in the current directory.
-.ip b\fIN\fP
+.ip b\fIN\fP/\fIM\fP
 Insist on at least
 .i N
 blocks free on the filesystem that holds the queue files
@@ -3234,6 +3239,10 @@ If there is insufficient space
 gives a 452 response
 to the MAIL command.
 This invites the sender to try again later.
+The optional
+.i M
+is a maximum message size advertised in the ESMTP EHLO response.
+It is currently otherwise unused.
 .ip B\fIc\fP
 Set the blank substitution character to
 .i c .
@@ -3765,17 +3774,6 @@ Version level three files
 allow # initiated comments on all lines.
 Exceptions are backslash escaped # marks
 and the $# syntax.
-.pp
-Version level four configuration files
-send error messages with a return path of
-.q <>
-as permitted by RFC 821 section 3.6
-and required by RFC 1123 section 5.3.3.
-This is not the default
-because this breaks older configuration files.
-Note that the macro
-.b $n
-is still used to specify the envelope From: header value.
 .sh 3 "K \*- key file declaration"
 .pp
 Special maps can be defined using the line:
@@ -5685,6 +5683,29 @@ Bryan was also available to bounce ideas off of.
 Many, many people contributed chunks of code and ideas to
 .i sendmail .
 It has proven to be a group network effort.
+Version 6 in particular was a group project.
+The following people made notable contributions:
+.(l
+Keith Bostic, CSRG, University of California, Berkeley
+Michael J. Corrigan, University of California, San Diego
+Bryan Costales, International Computer Science Institute
+P{r (Pell) Emanuelsson
+Craig Everhart, Transarc Corporation
+Tom Ivar Helbekkmo, Norwegian School of Economics
+Allan E. Johannesen, WPI
+Takahiro Kanbe, FujiXerox
+Brian Kantor, University of California, San Diego
+Bruce Lilly, Sony U.S.
+Nakamura Motonori, Kyoto University
+John Gardiner Myers, Carnegie Mellon University
+Neil Rickert, Northern Illinois University
+Eric Wassenaar, National Institute for Nuclear and High Energy Physics, Amsterdam
+Christophe Wolfhugel, INSA (???)
+.)l
+I apologize for anyone I have omitted, misspelled, misattributed, or
+otherwise missed.
+Many other people have contributed ideas, comments, and encouragement.
+I appreciate their contribution as well.
 .++ A
 .+c "COMMAND LINE FLAGS"
 .ba 0
@@ -6082,7 +6103,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 6.41
+.\"Version 6.42
 .\".ce 0
 .pn 2
 .bp
