@@ -30,7 +30,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	$Id: kvm.c,v 1.8 1994/02/23 09:56:45 rgrimes Exp $
+ *	$Id: kvm.c,v 1.9 1994/03/22 19:03:01 davidg Exp $
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
@@ -290,35 +290,6 @@ kvm_nlist(nl)
 	sprintf(dbname, "%s/kvm_%s", _PATH_VARRUN, basename(unixf));
 	if ((db = dbm_open(dbname, O_RDONLY, 0)) == NULL)
 		goto hard2;
-	/*
-	 * read version out of database
-	 */
-	bcopy("VERSION", symbuf, sizeof ("VERSION")-1);
-	key.dsize = (sizeof ("VERSION") - 1);
-	data = dbm_fetch(db, key);
-	if (data.dptr == NULL)
-		goto hard1;
-	bcopy(data.dptr, dbversion, data.dsize);
-	dbversionlen = data.dsize;
-	/*
-	 * read version string from kernel memory
-	 */
-	bcopy("_version", symbuf, sizeof ("_version")-1);
-	key.dsize = (sizeof ("_version")-1);
-	data = dbm_fetch(db, key);
-	if (data.dptr == NULL)
-		goto hard1;
-	if (data.dsize != sizeof (struct nlist))
-		goto hard1;
-	bcopy(data.dptr, &nbuf, sizeof (struct nlist));
-	lseek(kmem, nbuf.n_value, 0);
-	if (read(kmem, kversion, dbversionlen) != dbversionlen)
-		goto hard1;
-	/*
-	 * if they match, we win - otherwise do it the hard way
-	 */
-	if (bcmp(dbversion, kversion, dbversionlen) != 0)
-		goto hard1;
 	/*
 	 * getem from the database.
 	 */
