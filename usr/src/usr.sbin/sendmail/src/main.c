@@ -6,7 +6,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)main.c	3.127		%G%);
+SCCSID(@(#)main.c	3.128		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -109,6 +109,7 @@ SCCSID(@(#)main.c	3.127		%G%);
 
 int		NextMailer = 0;	/* "free" index into Mailer struct */
 static char	*FullName;	/* sender's full name */
+ENVELOPE	BlankEnvelope;	/* a "blank" envelope */
 ENVELOPE	MainEnvelope;	/* the envelope around the basic letter */
 
 #ifdef DAEMON
@@ -132,16 +133,17 @@ main(argc, argv)
 	extern char Version[];
 	char *from;
 	typedef int (*fnptr)();
+	STAB *st;
 	register int i;
 	bool safecf = TRUE;		/* this conf file is sys default */
-	char jbuf[30];			/* holds HostName */
 	bool queuemode = FALSE;		/* process queue requests */
 	bool aliasinit = FALSE;
+	static bool reenter = FALSE;
+	char jbuf[30];			/* holds HostName */
 	extern bool safefile();
-	STAB *st;
 	extern time_t convtime();
 	extern putheader(), putbody();
-	static bool reenter = FALSE;
+	extern ENVELOPE *newenvelope();
 
 	if (reenter)
 	{
@@ -167,10 +169,10 @@ main(argc, argv)
 	FullName = getenv("NAME");
 # endif V6
 
-	/* set up the main envelope */
-	MainEnvelope.e_puthdr = putheader;
-	MainEnvelope.e_putbody = putbody;
-	CurEnv = &MainEnvelope;
+	/* set up the blank envelope */
+	BlankEnvelope.e_puthdr = putheader;
+	BlankEnvelope.e_putbody = putbody;
+	CurEnv = &BlankEnvelope;
 
 # ifdef LOG
 	openlog("sendmail", 0);
@@ -380,6 +382,12 @@ main(argc, argv)
 		}
 	}
 # endif DEBUG
+
+	/*
+	**  Switch to the main envelope.
+	*/
+
+	CurEnv = newenvelope(&MainEnvelope);
 
 	/*
 	**  If test mode, read addresses from stdin and process.
@@ -889,7 +897,7 @@ openxscrpt()
 		syserr("Can't create %s", p);
 	}
 	Transcript = p;
-	(void) chmod(p, FileMode);
+	(void) chmod(p, 0644);
 }
 /*
 **  SETSENDER -- set sendmail's idea of the sender.
@@ -1159,12 +1167,24 @@ ENVELOPE *
 newenvelope(e)
 	register ENVELOPE *e;
 {
+	register HDR *bh;
+	register HDR **nhp;
+
 	clear((char *) e, sizeof *e);
 	bmove(&CurEnv->e_from, &e->e_from, sizeof e->e_from);
 	e->e_parent = CurEnv;
 	e->e_ctime = curtime();
 	e->e_puthdr = CurEnv->e_puthdr;
 	e->e_putbody = CurEnv->e_putbody;
+	bh = BlankEnvelope.e_header;
+	nhp = &e->e_header;
+	while (bh != NULL)
+	{
+		*nhp = (HDR *) xalloc(sizeof *bh);
+		bmove((char *) bh, (char *) *nhp, sizeof *bh);
+		bh = bh->h_link;
+		nhp = &(*nhp)->h_link;
+	}
 
 	return (e);
 }

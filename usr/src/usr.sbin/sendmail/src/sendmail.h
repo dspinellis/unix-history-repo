@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	3.95		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.96		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -158,7 +158,6 @@ struct hdrinfo
 {
 	char	*hi_field;	/* the name of the field */
 	u_short	hi_flags;	/* status bits, see below */
-	u_short	hi_mflags;	/* m_flags needed for this field */
 };
 
 extern struct hdrinfo	HdrInfo[];

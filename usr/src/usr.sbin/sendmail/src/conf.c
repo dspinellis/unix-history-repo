@@ -32,7 +32,7 @@
 
 
 
-SCCSID(@(#)conf.c	3.61		%G%);
+SCCSID(@(#)conf.c	3.62		%G%);
 /*
 **  Header info table
 **	Final (null) entry contains the flags used for any other field.
@@ -45,39 +45,30 @@ SCCSID(@(#)conf.c	3.61		%G%);
 
 struct hdrinfo	HdrInfo[] =
 {
-		/* date information */
-	"posted-date",		0,			0,
-	"date",			H_CHECK,		M_NEEDDATE,
-	"resent-date",		0,			0,
-	"received-date",	H_CHECK,		M_LOCAL,
 		/* originator fields, most to least significant  */
-	"resent-sender",	H_FROM,			0,
-	"resent-from",		H_FROM,			0,
-	"sender",		H_FROM,			0,
-	"from",			H_FROM|H_CHECK,		M_NEEDFROM,
-	"full-name",		H_ACHECK,		M_FULLNAME,
-	"received-from",	H_CHECK,		M_LOCAL,
-	"return-receipt-to",	H_FROM,			0,
-	"errors-to",		H_FROM,			0,
+	"resent-sender",	H_FROM,
+	"resent-from",		H_FROM,
+	"sender",		H_FROM,
+	"from",			H_FROM,
+	"full-name",		H_ACHECK,
+	"return-receipt-to",	H_FROM,
+	"errors-to",		H_FROM,
 		/* destination fields */
-	"to",			H_RCPT,			0,
-	"resent-to",		H_RCPT,			0,
-	"cc",			H_RCPT,			0,
-	"resent-cc",		H_RCPT,			0,
-	"bcc",			H_RCPT|H_ACHECK,	0,
-	"resent-bcc",		H_RCPT|H_ACHECK,	0,
+	"to",			H_RCPT,
+	"resent-to",		H_RCPT,
+	"cc",			H_RCPT,
+	"resent-cc",		H_RCPT,
+	"bcc",			H_RCPT|H_ACHECK,
+	"resent-bcc",		H_RCPT|H_ACHECK,
 		/* message identification and control */
-	"message-id",		0,			0,
-	"resent-message-id",	0,			0,
-	"precedence",		0,			0,
-	"message",		H_EOH,			0,
-	"text",			H_EOH,			0,
+	"message",		H_EOH,
+	"text",			H_EOH,
 		/* trace fields */
-	"received",		H_TRACE|H_FORCE,	0,
-	"via",			H_TRACE|H_FORCE,	0,
-	"mail-from",		H_TRACE|H_FORCE,	0,
+	"received",		H_TRACE|H_FORCE,
+	"via",			H_TRACE|H_FORCE,
+	"mail-from",		H_TRACE|H_FORCE,
 
-	NULL,			0,			0,
+	NULL,			0,
 };
 
 

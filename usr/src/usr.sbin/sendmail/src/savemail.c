@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-SCCSID(@(#)savemail.c	3.45		%G%);
+SCCSID(@(#)savemail.c	3.46		%G%);
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -242,8 +242,6 @@ returntosender(msg, returnto, sendbody)
 	ee->e_puthdr = putheader;
 	ee->e_putbody = errbody;
 	queuename(ee, '\0');
-	addheader("date", "$b", ee);
-	addheader("from", "$g (Mail Delivery Subsystem)", ee);
 	addheader("to", returnto->q_paddr, ee);
 	addheader("subject", msg, ee);
 
@@ -304,19 +302,25 @@ errbody(fp, m, xdot)
 	char buf[MAXLINE];
 	bool fullsmtp = bitset(M_FULLSMTP, m->m_flags);
 
-	(void) fflush(stdout);
-	if ((xfile = fopen(Transcript, "r")) == NULL)
-		syserr("Cannot open %s", Transcript);
-	errno = 0;
-
 	/*
 	**  Output transcript of errors
 	*/
 
-	fprintf(fp, "   ----- Transcript of session follows -----\n");
-	(void) fflush(Xscript);
-	while (fgets(buf, sizeof buf, xfile) != NULL)
-		putline(buf, fp, fullsmtp);
+	(void) fflush(stdout);
+	if ((xfile = fopen(Transcript, "r")) == NULL)
+	{
+		syserr("Cannot open %s", Transcript);
+		fprintf(fp, "  ----- Transcript of session is unavailable -----\n");
+	}
+	else
+	{
+		fprintf(fp, "   ----- Transcript of session follows -----\n");
+		(void) fflush(Xscript);
+		while (fgets(buf, sizeof buf, xfile) != NULL)
+			putline(buf, fp, fullsmtp);
+		(void) fclose(xfile);
+	}
+	errno = 0;
 
 	/*
 	**  Output text of original message
@@ -348,7 +352,6 @@ errbody(fp, m, xdot)
 	**  Cleanup and exit
 	*/
 
-	(void) fclose(xfile);
 	if (errno != 0)
 		syserr("errbody: I/O error");
 }

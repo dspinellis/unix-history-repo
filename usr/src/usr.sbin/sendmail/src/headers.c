@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)headers.c	3.35		%G%);
+SCCSID(@(#)headers.c	3.36		%G%);
 
 /*
 **  CHOMPHEADER -- process and save a header line.
@@ -30,6 +30,7 @@ chompheader(line, def)
 	char *fname;
 	char *fvalue;
 	struct hdrinfo *hi;
+	bool cond = FALSE;
 	u_long mopts;
 	extern u_long mfencode();
 	extern char *crackaddr();
@@ -56,6 +57,7 @@ chompheader(line, def)
 		}
 		else
 			syserr("chompheader: syntax error, line \"%s\"", line);
+		cond = TRUE;
 	}
 
 	/* find canonical name */
@@ -101,14 +103,14 @@ chompheader(line, def)
 		h->h_field = newstr(fname);
 		h->h_value = NULL;
 		h->h_link = *hp;
-		h->h_mflags = mopts | hi->hi_mflags;
+		h->h_mflags = mopts;
 		*hp = h;
 	}
 	h->h_flags = hi->hi_flags;
 	if (def)
 		h->h_flags |= H_DEFAULT;
-	else if (mopts == 0)
-		h->h_flags &= ~H_CHECK;
+	if (cond)
+		h->h_flags |= H_CHECK;
 	if (h->h_value != NULL)
 		free(h->h_value);
 		(void) sendto(h->h_value, 0, (ADDRESS *) NULL, 0);
@@ -173,7 +175,7 @@ addheader(field, value, e)
 	h->h_value = newstr(value);
 	h->h_link = *hp;
 	h->h_flags = hi->hi_flags | H_DEFAULT;
-	h->h_mflags = hi->hi_mflags;
+	h->h_mflags = 0;
 	*hp = h;
 }
 /*
