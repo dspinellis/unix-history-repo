@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_srvcache.c	7.20 (Berkeley) %G%
+ *	@(#)nfs_srvcache.c	7.21 (Berkeley) %G%
  */
 
 /*
@@ -39,7 +39,7 @@
 
 long numnfsrvcache, desirednfsrvcache = NFSRVCACHESIZ;
 
-#define	NFSRCHASH(xid)		(((xid) + ((xid) >> 16)) & rheadhash)
+#define	NFSRCHASH(xid)		(((xid) + ((xid) >> 24)) & rheadhash)
 static struct nfsrvcache *nfsrvlruhead, **nfsrvlrutail = &nfsrvlruhead;
 static struct nfsrvcache **rheadhtbl;
 static u_long rheadhash;
@@ -166,24 +166,21 @@ loop:
 			}
 			if (rp->rc_state == RC_UNUSED)
 				panic("nfsrv cache");
-			if (rp->rc_state == RC_INPROG ||
-			   (time.tv_sec - rp->rc_timestamp) < RC_DELAY) {
+			if (rp->rc_state == RC_INPROG) {
 				nfsstats.srvcache_inproghits++;
 				ret = RC_DROPIT;
 			} else if (rp->rc_flag & RC_REPSTATUS) {
-				nfsstats.srvcache_idemdonehits++;
+				nfsstats.srvcache_nonidemdonehits++;
 				nfs_rephead(0, nd, rp->rc_status,
 				   0, (u_quad_t *)0, repp, &mb, &bpos);
-				rp->rc_timestamp = time.tv_sec;
 				ret = RC_REPLY;
 			} else if (rp->rc_flag & RC_REPMBUF) {
-				nfsstats.srvcache_idemdonehits++;
+				nfsstats.srvcache_nonidemdonehits++;
 				*repp = m_copym(rp->rc_reply, 0, M_COPYALL,
 						M_WAIT);
-				rp->rc_timestamp = time.tv_sec;
 				ret = RC_REPLY;
 			} else {
-				nfsstats.srvcache_nonidemdonehits++;
+				nfsstats.srvcache_idemdonehits++;
 				rp->rc_state = RC_INPROG;
 				ret = RC_DOIT;
 			}
@@ -285,23 +282,16 @@ loop:
 			/*
 			 * If we have a valid reply update status and save
 			 * the reply for non-idempotent rpc's.
-			 * Otherwise invalidate entry by setting the timestamp
-			 * to nil.
 			 */
-			if (repvalid) {
-				rp->rc_timestamp = time.tv_sec;
-				if (nonidempotent[nd->nd_procnum]) {
-					if (repliesstatus[nd->nd_procnum]) {
-						rp->rc_status = nd->nd_repstat;
-						rp->rc_flag |= RC_REPSTATUS;
-					} else {
-						rp->rc_reply = m_copym(repmbuf,
-							0, M_COPYALL, M_WAIT);
-						rp->rc_flag |= RC_REPMBUF;
-					}
+			if (repvalid && nonidempotent[nd->nd_procnum]) {
+				if (repliesstatus[nd->nd_procnum]) {
+					rp->rc_status = nd->nd_repstat;
+					rp->rc_flag |= RC_REPSTATUS;
+				} else {
+					rp->rc_reply = m_copym(repmbuf,
+						0, M_COPYALL, M_WAIT);
+					rp->rc_flag |= RC_REPMBUF;
 				}
-			} else {
-				rp->rc_timestamp = 0;
 			}
 			rp->rc_flag &= ~RC_LOCKED;
 			if (rp->rc_flag & RC_WANTED) {
