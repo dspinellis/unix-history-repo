@@ -3,18 +3,16 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	7.29 (Berkeley) %G%
+#	@(#)Makefile	7.30 (Berkeley) %G%
 #
 #
 # Copyright (c) 1980 Regents of the University of California.
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	7.29 (Berkeley) %G%
+#	@(#)Makefile	7.30 (Berkeley) %G%
 #
-#	@(#)Makefile	7.29 (Berkeley) %G%
-
-VERSION=3.7
+#	@(#)Makefile	7.30 (Berkeley) %G%
 
 # Things that can be turned off to save space:
 #	LISPCODE (-l flag, showmatch and lisp options)
@@ -28,7 +26,7 @@ VERSION=3.7
 #
 PROG=	ex
 SUBDIR=	ex3.7recover ex3.7preserve
-CFLAGS+=-DTABS=8 -DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX \
+CFLAGS+=-I. -DTABS=8 -DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX \
 	-DFASTTAG -DUNIX_SBRK
 SRCS=	ex.c ex_addr.c ex_cmds.c ex_cmds2.c ex_cmdsub.c ex_data.c ex_extern.c \
 	ex_get.c ex_io.c ex_put.c ex_re.c ex_set.c ex_subr.c ex_tagio.c \
@@ -42,13 +40,15 @@ MAN1=	ex.0 vi.0
 LINKS=	${BINDIR}/ex ${BINDIR}/vi ${BINDIR}/ex ${BINDIR}/view \
 	${BINDIR}/ex ${BINDIR}/edit
 
-# If we don't have ex we can't make ex_vars.h, so don't remove it!
-CLEANFILES+=	strings xs.c strings.o
+# There's a boostrap problem here -- ex is necessary to build ex_vars.h.
+# The file ex_vars.h.init can be used to build a version of ex to start
+# with.
+CLEANFILES+=ex_vars.h strings xs.c xs.s x.c strings.o
 
 SHAREDSTRINGS=	sharedstrings
 
 ex_vars.h: ex_data.c
-	csh makeoptions ${CFLAGS}
+	csh -f ${.CURDIR}/makeoptions ${.CURDIR}/ex_data.c ${CFLAGS}
 
 # xstr: hands off!
 strings.o: strings
@@ -59,3 +59,8 @@ strings.o: strings
 	rm xs.s
 
 .include <bsd.prog.mk>
+
+${SUBDIR} .depend: ex_vars.h
+${OBJS}: strings
+strings:
+	touch strings
