@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)startup.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)startup.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -63,7 +63,7 @@ ifinit()
         if (ioctl(s, SIOCGIFCONF, (char *)&ifc) < 0) {
                 syslog(LOG_ERR, "ioctl (get interface configuration)");
 		close(s);
-                return (0);
+                exit(1);
         }
         ifr = ifc.ifc_req;
 	lookforinterfaces = 0;
@@ -136,7 +136,7 @@ ifinit()
 		ifp->int_name = malloc(strlen(ifr->ifr_name) + 1);
 		if (ifp->int_name == 0) {
 			syslog(LOG_ERR,"XNSrouted: out of memory\n");
-			goto bad;		/* ??? */
+			exit(1);
 		}
 		strcpy(ifp->int_name, ifr->ifr_name);
 		ifp->int_metric = 0;
@@ -148,13 +148,6 @@ ifinit()
 	if (externalinterfaces > 1 && supplier < 0)
 		supplier = 1;
 	close(s);
-	return;
-bad:
-	sleep(60);
-	close(s);
-	sleep(60);
-	execv("/etc/XNSrouted", argv0);
-	_exit(0177);
 }
 
 addrouteforif(ifp)
