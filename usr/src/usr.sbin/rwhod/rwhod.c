@@ -1,11 +1,12 @@
 #ifndef lint
-static char sccsid[] = "@(#)rwhod.c	4.15 (Berkeley) 83/06/12";
+static char sccsid[] = "@(#)rwhod.c	4.16 (Berkeley) 83/06/18";
 #endif
 
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
+#include <sys/file.h>
 
 #include <net/if.h>
 #include <netinet/in.h>
@@ -103,17 +104,17 @@ main()
 		exit(1);
 	}
 	strncpy(mywd.wd_hostname, myname, sizeof (myname) - 1);
-	utmpf = open("/etc/utmp", 0);
+	utmpf = open("/etc/utmp", O_RDONLY);
 	if (utmpf < 0) {
 		(void) close(creat("/etc/utmp", 0644));
-		utmpf = open("/etc/utmp", 0);
+		utmpf = open("/etc/utmp", O_RDONLY);
 	}
 	if (utmpf < 0) {
 		perror("rwhod: /etc/utmp");
 		exit(1);
 	}
 	getkmem();
-	if ((s = socket(AF_INET, SOCK_DGRAM, 0, 0)) < 0) {
+	if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
 		perror("rwhod: socket");
 		exit(1);
 	}
@@ -124,7 +125,7 @@ main()
 	}
 	sin.sin_family = hp->h_addrtype;
 	sin.sin_port = sp->s_port;
-	if (bind(s, &sin, sizeof (sin), 0) < 0) {
+	if (bind(s, &sin, sizeof (sin)) < 0) {
 		perror("rwhod: bind");
 		exit(1);
 	}
@@ -173,7 +174,7 @@ main()
 		}
 #if vax || pdp11
 		{
-			int i, n = (cc - WHDRSIZE)/sizeof(struct utmp);
+			int i, n = (cc - WHDRSIZE)/sizeof(struct whoent);
 			struct whoent *we;
 
 			/* undo header byte swapping before writing to file */
@@ -234,7 +235,7 @@ onalrm()
 	alarmcount++;
 	(void) fstat(utmpf, &stb);
 	if (stb.st_mtime != utmptime) {
-		(void) lseek(utmpf, (long)0, 0);
+		(void) lseek(utmpf, (long)0, L_SET);
 		cc = read(utmpf, (char *)utmp, sizeof (utmp));
 		if (cc < 0) {
 			perror("/etc/utmp");
@@ -261,7 +262,7 @@ onalrm()
 			we->we_idle = htonl(now - stb.st_atime);
 		we++;
 	}
-	(void) lseek(kmemf, (long)nl[NL_AVENRUN].n_value, 0);
+	(void) lseek(kmemf, (long)nl[NL_AVENRUN].n_value, L_SET);
 	(void) read(kmemf, (char *)avenrun, sizeof (avenrun));
 	for (i = 0; i < 3; i++)
 		mywd.wd_loadav[i] = htonl((u_long)(avenrun[i] * 100));
@@ -293,14 +294,15 @@ loop:
 		sleep(300);
 		goto loop;
 	}
-	kmemf = open("/dev/kmem", 0);
+	kmemf = open("/dev/kmem", O_RDONLY);
 	if (kmemf < 0) {
 		perror("/dev/kmem");
 		sleep(300);
 		goto loop;
 	}
-	(void) lseek(kmemf, (long)nl[NL_BOOTTIME].n_value, 0);
-	(void) read(kmemf, (char *)&mywd.wd_boottime, sizeof (mywd.wd_boottime));
+	(void) lseek(kmemf, (long)nl[NL_BOOTTIME].n_value, L_SET);
+	(void) read(kmemf, (char *)&mywd.wd_boottime,
+	    sizeof (mywd.wd_boottime));
 	mywd.wd_boottime = htonl(mywd.wd_boottime);
 }
 
@@ -314,9 +316,9 @@ configure(s)
 	char buf[BUFSIZ];
 	struct ifconf ifc;
 	struct ifreq ifreq, *ifr;
-	int n;
 	struct sockaddr_in *sin;
 	register struct neighbor *np;
+	int n;
 
 	ifc.ifc_len = sizeof (buf);
 	ifc.ifc_buf = buf;
@@ -400,17 +402,18 @@ sendto(s, buf, cc, flags, to, tolen)
 
 	printf("sendto %x.%d\n", ntohl(sin->sin_addr), ntohs(sin->sin_port));
 	printf("hostname %s %s\n", w->wd_hostname,
-	   interval(w->wd_sendtime - w->wd_boottime, "  up"));
+	   interval(ntohl(w->wd_sendtime) - ntohl(w->wd_boottime), "  up"));
 	printf("load %4.2f, %4.2f, %4.2f\n",
-	    w->wd_loadav[0] / 100.0, w->wd_loadav[1] / 100.0,
-	    w->wd_loadav[2] / 100.0);
+	    ntohl(w->wd_loadav[0]) / 100.0, ntohl(w->wd_loadav[1]) / 100.0,
+	    ntohl(w->wd_loadav[2]) / 100.0);
 	cc -= WHDRSIZE;
 	for (we = w->wd_we, cc /= sizeof (struct whoent); cc > 0; cc--, we++) {
+		time_t t = ntohl(we->we_utmp.out_time);
 		printf("%-8.8s %s:%s %.12s",
-			 we->we_utmp.out_name,
-			 w->wd_hostname, we->we_utmp.out_line,
-			ctime((time_t *)&we->we_utmp.out_time)+4);
-		we->we_idle /= 60;
+			we->we_utmp.out_name,
+			w->wd_hostname, we->we_utmp.out_line,
+			ctime(&t)+4);
+		we->we_idle = ntohl(we->we_idle) / 60;
 		if (we->we_idle) {
 			if (we->we_idle >= 100*60)
 				we->we_idle = 100*60 - 1;
