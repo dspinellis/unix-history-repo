@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -53,7 +53,8 @@ dbm_map_init(map, mapname, args)
 	dbm = dbm_open(map->map_file, O_RDONLY, 0644);
 	if (dbm == NULL)
 	{
-		syserr("Cannot open DBM database %s", map->map_file);
+		if (!bitset(MF_OPTIONAL, map->map_flags))
+			syserr("Cannot open DBM database %s", map->map_file);
 		return FALSE;
 	}
 	map->map_db = (void *) dbm;
@@ -131,7 +132,8 @@ bt_map_init(map, mapname, args)
 	db = dbopen(map->map_file, O_RDONLY, 0644, DB_BTREE, NULL);
 	if (db == NULL)
 	{
-		syserr("Cannot open BTREE database %s", map->map_file);
+		if (!bitset(MF_OPTIONAL, map->map_flags))
+			syserr("Cannot open BTREE database %s", map->map_file);
 		return FALSE;
 	}
 	map->map_db = (void *) db;
@@ -172,7 +174,8 @@ hash_map_init(map, mapname, args)
 	db = dbopen(map->map_file, O_RDONLY, 0644, DB_HASH, NULL);
 	if (db == NULL)
 	{
-		syserr("Cannot open HASH database %s", map->map_file);
+		if (!bitset(MF_OPTIONAL, map->map_flags))
+			syserr("Cannot open HASH database %s", map->map_file);
 		return FALSE;
 	}
 	map->map_db = (void *) db;
@@ -214,7 +217,7 @@ db_map_lookup(map, buf, bufsiz, av)
 	key.size = strlen(buf);
 	if (bitset(MF_INCLNULL, map->map_flags))
 		key.size++;
-	if ((*((DB *) map->map_db)->get)((DB *) map->map_db, &key, &val, 0) != 0)
+	if (((DB *) map->map_db)->get((DB *) map->map_db, &key, &val, 0) != 0)
 		return NULL;
 	map_rewrite(val.data, val.size, buf, bufsiz, av);
 	return buf;
@@ -256,10 +259,22 @@ map_parseargs(map, pp, mapname)
 		  case 'N':
 			map->map_flags |= MF_INCLNULL;
 			break;
+
+		  case 'o':
+			map->map_flags |= MF_OPTIONAL;
+			break;
+
+		  case 'a':
+			map->map_app = ++p;
+			break;
 		}
 		while (*p != '\0' && !isspace(*p))
 			p++;
+		if (*p != '\0')
+			*p++ = 0;
 	}
+	if (map->map_app != NULL)
+		map->map_app = newstr(map->map_app);
 
 	if (*p == '\0')
 	{
@@ -271,6 +286,7 @@ map_parseargs(map, pp, mapname)
 		p++;
 	if (*p != '\0')
 		*p++ = '\0';
+	map->map_file = newstr(map->map_file);
 	*pp = p;
 }
 /*

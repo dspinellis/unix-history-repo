@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	5.52 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	5.53 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	5.52 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	5.53 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -424,10 +424,8 @@ maphostname(map, hbuf, hbsize, avp)
 	char *cp;
 	struct hostent *gethostbyaddr();
 
-	/* allow room for null & trailing dot on correct match */
+	/* allow room for null */
 	hbsize--;
-	if (ConfigLevel >= 2)
-		hbsize--;
 
 	/*
 	 * If first character is a bracket, then it is an address
@@ -441,17 +439,7 @@ maphostname(map, hbuf, hbsize, avp)
 		extern bool getcanonname();
 
 		if (getcanonname(hbuf, hbsize))
-		{
-			/* found a match -- add the trailing dot */
-			if (ConfigLevel >= 2)
-			{
-				int i = strlen(hbuf) - 1;
-
-				if (hbuf[i] != '.')
-					(void) strcpy(&hbuf[++i], ".");
-			}
 			return hbuf;
-		}
 		else
 			return NULL;
 	}
@@ -467,8 +455,6 @@ maphostname(map, hbuf, hbsize, avp)
 	if (strlen(hp->h_name) > hbsize)
 		hp->h_name[hbsize] = '\0';
 	(void) strcpy(hbuf, hp->h_name);
-	if (ConfigLevel >= 2)
-		(void) strcat(hbuf, ".");
 	return hbuf;
 }
 
