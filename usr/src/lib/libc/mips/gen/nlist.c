@@ -1,99 +1,113 @@
 /*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1989 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)nlist.c	5.2 (Berkeley) %G%";
-#endif LIBC_SCCS and not lint
+static char sccsid[] = "@(#)nlist.c	5.3 (Berkeley) %G%";
+#endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
+#include <sys/file.h>
 #include <a.out.h>
 #include <stdio.h>
+#include <unistd.h>
 
-/*
- * nlist - retreive attributes from name list (string table version)
- */
+typedef struct nlist NLIST;
+#define	_strx	n_un.n_strx
+#define	_name	n_un.n_name
+#define	ISVALID(p)	(p->_name && p->_name[0])
+
 nlist(name, list)
 	char *name;
-	struct nlist *list;
+	NLIST *list;
 {
-	register struct nlist *p, *q;
-	register char *s1, *s2;
-	register n, m;
-	int maxlen, nreq;
-	FILE *f;
-	FILE *sf;
-	off_t sa;		/* symbol address */
-	off_t ss;		/* start of strings */
-	struct exec buf;
-	struct nlist space[BUFSIZ/sizeof (struct nlist)];
+	register NLIST *p, *s;
+	struct exec ebuf;
+	FILE *fstr, *fsym;
+	NLIST nbuf;
+	off_t curoff, strings_offset, symbol_offset, symbol_size, lseek();
+	int entries, len, maxlen;
+	char sbuf[256];
 
-	maxlen = 0;
-	for (q = list, nreq = 0; q->n_un.n_name && q->n_un.n_name[0]; q++, nreq++) {
-		q->n_type = 0;
-		q->n_value = 0;
-		q->n_desc = 0;
-		q->n_other = 0;
-		n = strlen(q->n_un.n_name);
-		if (n > maxlen)
-			maxlen = n;
-	}
-	f = fopen(name, "r");
-	if (f == NULL)
-		return (-1);
-	fread((char *)&buf, sizeof buf, 1, f);
-	if (N_BADMAG(buf)) {
-		fclose(f);
-		return (-1);
-	}
-	sf = fopen(name, "r");
-	if (sf == NULL) {
-		/* ??? */
-		fclose(f);
+	entries = -1;
+
+	if (!(fsym = fopen(name, "r")))
 		return(-1);
-	}
-	sa = N_SYMOFF(buf);
-	ss = sa + buf.a_syms;
-	n = buf.a_syms;
-	fseek(f, sa, 0);
-	while (n) {
-		m = sizeof (space);
-		if (n < m)
-			m = n;
-		if (fread((char *)space, m, 1, f) != 1)
-			break;
-		n -= m;
-		for (q = space; (m -= sizeof(struct nlist)) >= 0; q++) {
-			char nambuf[BUFSIZ];
+	if (fread((char *)&ebuf, sizeof(struct exec), 1, fsym) != 1 ||
+	    N_BADMAG(ebuf))
+		goto done1;
 
-			if (q->n_un.n_strx == 0 || q->n_type & N_STAB)
-				continue;
-			fseek(sf, ss+q->n_un.n_strx, 0);
-			fread(nambuf, maxlen+1, 1, sf);
-			for (p = list; p->n_un.n_name && p->n_un.n_name[0]; p++) {
-				s1 = p->n_un.n_name;
-				s2 = nambuf;
-				while (*s1) {
-					if (*s1++ != *s2++)
-						goto cont;
-				}
-				if (*s2)
-					goto cont;
-				p->n_value = q->n_value;
-				p->n_type = q->n_type;
-				p->n_desc = q->n_desc;
-				p->n_other = q->n_other;
-				if (--nreq == 0)
-					goto alldone;
-				break;
-		cont:		;
-			}
-		}
+	symbol_offset = N_SYMOFF(ebuf);
+	symbol_size = ebuf.a_syms;
+	strings_offset = symbol_offset + symbol_size;
+	if (fseek(fsym, symbol_offset, SEEK_SET))
+		goto done1;
+
+	/*
+	 * some versions of stdio do lseek's on every fseek call relative
+	 * to the beginning of the file.  For this reason, all string seeks
+	 * are made relative to the beginning of the symbol table.
+	 */
+	curoff = 0;
+	if (!(fstr = fopen(name, "r")))
+		goto done1;
+	if (fseek(fstr, strings_offset, SEEK_SET))
+		goto done2;
+
+	/*
+	 * clean out any left-over information for all valid entries.
+	 * Type and value defined to be 0 if not found; historical
+	 * versions cleared other and desc as well.  Also figure out
+	 * the largest string length so don't read any more of the
+	 * string table than we have to.
+	 */
+	for (p = list, entries = maxlen = 0; ISVALID(p); ++p, ++entries) {
+		p->n_type = 0;
+		p->n_other = 0;
+		p->n_desc = 0;
+		p->n_value = 0;
+		if ((len = strlen(p->_name)) > maxlen)
+			maxlen = len;
 	}
-alldone:
-	fclose(f);
-	fclose(sf);
-	return (nreq);
+	if (++maxlen > sizeof(sbuf)) {		/* for the NULL */
+		(void)fprintf(stderr, "nlist: symbol too large.\n");
+		entries = -1;
+		goto done2;
+	}
+
+	for (s = &nbuf; symbol_size--;) {
+		if (fread((char *)s, sizeof(NLIST), 1, fsym) != 1)
+			goto done2;
+		if (!s->_strx || s->n_type&N_STAB)
+			continue;
+		if (fseek(fstr, s->_strx - curoff, SEEK_CUR))
+			goto done2;
+		curoff = s->_strx +
+		    fread(sbuf, sizeof(sbuf[0]), maxlen, fstr);
+		for (p = list; ISVALID(p); p++)
+			if (!strcmp(p->_name, sbuf)) {
+				p->n_value = s->n_value;
+				p->n_type = s->n_type;
+				p->n_desc = s->n_desc;
+				p->n_other = s->n_other;
+				if (!--entries)
+					goto done2;
+			}
+	}
+done2:	(void)fclose(fstr);
+done1:	(void)fclose(fsym);
+	return(entries);
 }
