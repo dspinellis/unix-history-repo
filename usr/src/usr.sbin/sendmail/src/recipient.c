@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.64 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.65 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -65,9 +65,9 @@ sendto(list, copyf, ctladdr, qflags)
 	bool firstone;		/* set on first address sent */
 	char delimiter;		/* the address delimiter */
 	int naddrs;
+	int i;
 	char *oldto = e->e_to;
-	static char *bufp = NULL;
-	static int buflen;
+	char *bufp;
 	char buf[MAXNAME + 1];
 	ADDRESS *sibl;		/* sibling pointer in tree */
 	ADDRESS *prev;		/* previous sibling */
@@ -97,20 +97,13 @@ sendto(list, copyf, ctladdr, qflags)
 	al = NULL;
 	naddrs = 0;
 
-	if (bufp == NULL)
-	{
+	/* make sure we have enough space to copy the string */
+	i = strlen(list) + 1;
+	if (i <= sizeof buf)
 		bufp = buf;
-		buflen = sizeof buf - 1;
-	}
-	if (strlen(list) > buflen)
-	{
-		/* allocate additional space */
-		if (bufp != buf)
-			free(bufp);
-		buflen = strlen(list);
-		bufp = malloc(buflen + 1);
-	}
-	strcpy(bufp, list);
+	else
+		bufp = xalloc(i);
+	strcpy(bufp, denlstring(list));
 
 	for (p = bufp; *p != '\0'; )
 	{
@@ -154,6 +147,8 @@ sendto(list, copyf, ctladdr, qflags)
 	}
 
 	e->e_to = oldto;
+	if (bufp != buf)
+		free(bufp);
 	return (naddrs);
 	if (ctladdr != NULL)
 		ctladdr->q_child = prev;
