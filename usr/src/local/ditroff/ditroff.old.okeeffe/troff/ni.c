@@ -7,16 +7,14 @@
 #	define FONTDIR "/usr/lib/font"
 #endif
 #ifndef MACROLIB
-#	define MACROLIB "/usr/lib/tmac/tmac.xxxxx"
-#endif
-#ifndef MACROINDEX
-#	define MACROINDEX 19
+			/* MACROLIB is the prefix of the macro filenames */
+#	define MACROLIB "/usr/lib/tmac/tmac."
 #endif
 
 #ifndef NROFF
 char	termtab[NS] = FONTDIR;		/* rest added in ptinit() */
 char	fontfile[NS] = FONTDIR;		/* rest added in casefp() */
-char	devname[10]	 = "va";	/* default typesetter */
+char	devname[20]	 = "va";	/* default typesetter */
 #endif
 char	obuf[OBUFSZ];	/* characters collected here for actual typesetter output */
 char	*obufp = obuf;
@@ -43,7 +41,7 @@ int	pto = 10000;
 int	pfrom = 1;
 int	print = 1;
 char	nextf[NS] = MACROLIB;
-int	nfi = MACROINDEX;
+int	nfi;
 #ifdef NROFF
 char	termtab[NS] = "/usr/lib/term/tab37";
 #endif
