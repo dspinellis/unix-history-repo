@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dmz.c	6.4 (Berkeley) %G%
+ *	@(#)dmz.c	6.5 (Berkeley) %G%
  */
 
 /*
@@ -12,7 +12,6 @@
  * 23-Apr-85  Joe Camaratta (jcc) at Siemens RTL
  *	Driver for DEC's DMZ32 24-line asynchronous multiplexor.
  *	Based on Chris Maloney's driver for DEC's DMF32
- *	NOTE: The modem control routines have NOT been tested yet!!!
  *
  * 9-Aug-85	Mike Meyer (mwm) at ucb
  *	Mangled into shape for 4.3.
@@ -151,7 +150,7 @@ dmzattach(ui)
 	struct uba_device *ui;
 {
 	dmzsoftCAR[ui->ui_unit] = ui->ui_flags;
-	return;
+	cbase[ui->ui_ubanum] = -1;
 }
 
 /* ARGSUSED */
@@ -189,7 +188,7 @@ dmzopen(device, flag)
 	 * clear the state.
 	 */
 	priority = spl5();
-	if (cbase[ui->ui_ubanum] == 0) {
+	if (cbase[ui->ui_ubanum] == -1) {
 		dmz_ubinfo[ui->ui_ubanum] = 
 			uballoc(ui->ui_ubanum, (caddr_t)cfree,
 				nclist * sizeof(struct cblock), 0);
@@ -198,7 +197,7 @@ dmzopen(device, flag)
 			printf("dmz: insufficient unibus map regs\n");
 			return (ENOMEM);
 		}
-		cbase[ui->ui_ubanum] = dmz_ubinfo[ui->ui_ubanum] & 0x3ffff;
+		cbase[ui->ui_ubanum] = UBAI_ADDR(dmz_ubinfo[ui->ui_ubanum]);
 	}
 
 	if ((dmzact[controller] & (1 << octet)) == 0) {
@@ -314,10 +313,10 @@ dmzreset(uban)
 		printf("dmz%d ", controller);
 		dmz_addr = (struct dmzdevice *) ui->ui_addr;
 
-		if (cbase[uban] == 0) {
+		if (dmz_ubinfo[uban]) {
 			dmz_ubinfo[uban] = uballoc(uban, (caddr_t)cfree,
 				nclist * sizeof(struct cblock), 0);
-			cbase[uban] = dmz_ubinfo[uban] & 0x3ffff;
+			cbase[uban] = UBAI_ADDR(dmz_ubinfo[uban]);
 		}
 
 		for (octet = 0; octet < 3; octet++)
@@ -412,12 +411,13 @@ dmzrint(controller, octet)
 		unit = (character >> 8) & 07;	/* unit is bits 8-10 of rb */
 		tp = tp0 + (octet * 8 + unit);
 
-		if (character & DMZ_DSC &&
-		    (dmzsoftCAR[controller] & (1 << (octet * 8 + unit))) == 0) {
+		if (character & DMZ_DSC) {
 			dmz_addr->octet[octet].octet_csr = DMZ_IE | IR_RMSTSC | unit;
 			if (dmz_addr->octet[octet].octet_rmstsc & DMZ_CAR)
 				(void)(*linesw[tp->t_line].l_modem)(tp, 1);
-			else if ((*linesw[tp->t_line].l_modem)(tp, 0) == 0)
+			else if (dmzsoftCAR[controller] &
+			  (1 << (octet * 8 + unit)) == 0 &&
+			    (*linesw[tp->t_line].l_modem)(tp, 0) == 0)
 				(void)dmzmctl(tp - dmz_tty, DMZ_OFF, DMSET);
 			continue;
 		}
