@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_socket.c	7.8 (Berkeley) %G%
+ *	@(#)nfs_socket.c	7.9 (Berkeley) %G%
  */
 
 /*
@@ -449,7 +449,7 @@ giveup:
 		}
 		/* Allow signals to interrupt request? (nfs_timer wakes up) */
 		if ((mntp->nm_flag & NFSMNT_INT) &&
-		    u.u_procp->p_sig & ~u.u_procp->p_sigmask) {
+		    (u.u_sigintr & sigmask(u.u_procp->p_cursig)) != 0) {
 			error = EINTR;
 			goto giveup;
 		}
