@@ -165,7 +165,7 @@ struct var {
 		USER, uvar, 3, UOFF(u_acflag), SHORT, "x"},
 	{{"start"}, "STARTED", USER|LJUST, started, 8},
 	{{"lstart"}, "STARTED", USER|LJUST, lstarted, 28},
-	{{"cputime", "time"}, "TIME", USER, cputime, 6},
+	{{"cputime", "time"}, "TIME", USER, cputime, 9},
 	{{"p_ru"}, "P_RU", 0, pvar, 6, POFF(p_ru), KPTR, "x"},
 	{{"pcpu", "%cpu"}, "%CPU", NLIST, pcpu, 4},
 	{{"pmem", "%mem"}, "%MEM", NLIST, pmem, 4},
@@ -299,7 +299,7 @@ main (argc, argv)
 	if (argc > 1)
 		argv[1] = kludge_oldps_options(argv[1]);
 
-	while ((ch = getopt(argc, argv, "o:O:wlvujnsaxt:p:SCLmchT")) != EOF)
+	while ((ch = getopt(argc, argv, "o:O:wlvujnsaxt:p:SCLmchTg")) != EOF)
 		switch((char)ch) {
 		case 'o':
 			parsefmt(optarg);
@@ -416,6 +416,8 @@ main (argc, argv)
 		case 'h':
 			prtheader = ws.ws_row > 5 ? ws.ws_row : 22;
 			break;
+		case 'g':
+			break;	/* no-op */
 		case '?':
 		default:
 			fprintf(stderr, "usage: %s\n", USAGE);
@@ -858,18 +860,33 @@ cputime(k, v)
 	struct var *v;
 {
 	long secs;
-	char obuff[8];
+	long psecs;	/* "parts" of a second. first micro, then centi */
+	char obuff[128];
 
-	if (k->ki_p->p_stat == SZOMB || k->ki_u == NULL)
+	if (k->ki_p->p_stat == SZOMB || k->ki_u == NULL) {
 		secs = 0;
-	else {
+		psecs = 0;
+	} else {
 		secs = k->ki_p->p_utime.tv_sec + 
 			k->ki_p->p_stime.tv_sec;
-		if (sumrusage)
+		psecs = k->ki_p->p_utime.tv_usec + 
+			k->ki_p->p_stime.tv_usec;
+		if (sumrusage) {
 			secs += k->ki_u->u_cru.ru_utime.tv_sec + 
 				k->ki_u->u_cru.ru_stime.tv_sec;
+			psecs += k->ki_u->u_cru.ru_utime.tv_usec + 
+				k->ki_u->u_cru.ru_stime.tv_usec;
+		}
+		/*
+		 * round and scale to 100's
+		 */
+		psecs = (psecs + 5000) / 10000;
+		if (psecs >= 100) {
+			psecs -= 100;
+			secs++;
+		}
 	}
-	sprintf(obuff, "%3ld:%02ld", secs/60, secs%60);
+	sprintf(obuff, "%3ld:%02ld.%02ld", secs/60, secs%60, psecs);
 	printf("%*s", v->width, obuff);
 }
 
