@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)sysline.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)sysline.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -55,9 +55,7 @@ static char sccsid[] = "@(#)sysline.c	5.16 (Berkeley) %G%";
 
 #define BSD4_2			/* for 4.2 BSD */
 #define WHO			/* turn this on always */
-#define HOSTNAME		/* 4.1a or greater, with hostname() */
 #define RWHO			/* 4.1a or greater, with rwho */
-#define VMUNIX			/* turn this on if you are running on vmunix */
 #define NEW_BOOTTIME		/* 4.1c or greater */
 
 #define NETPREFIX "ucb"
@@ -70,31 +68,27 @@ static char sccsid[] = "@(#)sysline.c	5.16 (Berkeley) %G%";
  */
 #define MAXLOAD 6.0
 
-#include <stdio.h>
 #include <sys/param.h>
-#include <sys/types.h>
-#include <sys/signal.h>
-#include <utmp.h>
-#include <ctype.h>
-#ifndef BSD4_2
-#include <unctrl.h>
-#endif
 #include <sys/time.h>
 #include <sys/stat.h>
-#ifdef VMUNIX
-#include <nlist.h>
 #include <sys/vtimes.h>
 #include <sys/proc.h>
-#endif
-#ifdef pdp11
-#include <a.out.h>
-#include <sys/proc.h>
-#endif
+#include <sys/ioctl.h>
+#include <signal.h>
+#include <fcntl.h>
+#include <utmp.h>
+#include <nlist.h>
 #include <curses.h>
 #undef nl
 #ifdef TERMINFO
 #include <term.h>
-#endif TERMINFO
+#endif
+#include <stdarg.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <ctype.h>
 
 #ifdef RWHO
 #include <protocols/rwhod.h>
@@ -111,18 +105,12 @@ int nremotes = 0;
 #include "pathnames.h"
 
 struct nlist nl[] = {
-#ifdef NEW_BOOTTIME
-	{ "_boottime" },	/* After 4.1a the label changed to "boottime" */
-#else
-	{ "_bootime" },		/* Under 4.1a and earlier it is "bootime" */
-#endif
+	{ "_boottime" },
 #define	NL_BOOT 0
 	{ "_proc" },
 #define NL_PROC 1
-#ifdef VMUNIX
 	{ "_nproc" },
 #define NL_NPROC 2
-#endif
 	0
 };
 
@@ -159,10 +147,7 @@ char whofilename[100];
 char whofilename2[100];
 #endif
 
-#ifdef HOSTNAME
 char hostname[MAXHOSTNAMELEN+1];	/* one more for null termination */
-#endif
-
 char lockfilename[100];		/* if exists, will prevent us from running */
 
 	/* flags which determine which info is printed */
@@ -228,7 +213,7 @@ char	*tgoto();
 
 	/* to deal with window size changes */
 #ifdef SIGWINCH
-int sigwinch();
+void sigwinch();
 char winchanged;	/* window size has changed since last update */
 #endif
 
@@ -241,28 +226,23 @@ uid_t uid;
 double loadavg = 0.0;		/* current load average */
 int users = 0;
 
-char *getenv();
-char *ttyname();
 char *strcpy1();
 char *sysrup();
-char *calloc();
-char *malloc();
 int outc();
 int erroutc();
 
-main(argc,argv)
+main(argc, argv)
+	int argc;
 	register char **argv;
 {
-	int clearbotl();
 	register char *cp;
 	char *home;
-	extern char *index();
+	void clearbotl();
 
-#ifdef HOSTNAME
 	gethostname(hostname, sizeof hostname - 1);
 	if ((cp = index(hostname, '.')) != NULL)
 		*cp = '\0';
-#endif
+	(void)setvbuf(stdout, (char *)NULL, _IOFBF, 0);
 
 	for (argv++; *argv != 0; argv++)
 		switch (**argv) {
@@ -363,9 +343,7 @@ main(argc,argv)
 		/* pgrp should take care of things, but ignore them anyway */
 		signal(SIGINT, SIG_IGN);
 		signal(SIGQUIT, SIG_IGN);
-#ifdef VMUNIX
 		signal(SIGTTOU, SIG_IGN);
-#endif
 	}
 	/*
 	 * When we logoff, init will do a "vhangup()" on this
@@ -511,16 +489,10 @@ initprocread()
 
 	if (nl[NL_PROC].n_value == 0)
 		return;
-#ifdef VMUNIX
 	lseek(kmem, (long)nl[NL_PROC].n_value, 0);
 	read(kmem, &procadr, sizeof procadr);
 	lseek(kmem, (long)nl[NL_NPROC].n_value, 0);
 	read(kmem, &nproc, sizeof nproc);
-#endif
-#ifdef pdp11
-	procadr = nl[NL_PROC].n_value;
-	nproc = NPROC;			/* from param.h */
-#endif
 	if ((proc = (struct proc *) calloc(nproc, sizeof (struct proc))) == 0) {
 		fprintf(stderr, "Out of memory.\n");
 		exit(1);
@@ -568,7 +540,6 @@ prtinfo()
 	 */
 	if (mailcheck && (sawmail = mailseen()))
 		goto bottom;
-#ifdef HOSTNAME
 #ifdef RWHO
 	for (i = 0; i < nremotes; i++) {
 		char *tmp;
@@ -585,7 +556,6 @@ prtinfo()
 		stringspace();
 		stringcat(hostname, -1);
 	}
-#endif
 	/*
 	 * print load average and difference between current load average
 	 * and the load average 5 minutes ago
@@ -954,12 +924,15 @@ stringinit()
 }
 
 /*VARARGS1*/
-stringprt(format, a, b, c)
-	char *format;
+stringprt(fmt)
+	char *fmt;
 {
+	va_list ap;
 	char tempbuf[150];
 
-	(void)sprintf(tempbuf, format, a, b, c);
+	va_start(ap, fmt);
+	(void)vsnprintf(tempbuf, sizeof(tempbuf), fmt, ap);
+	va_end(ap);
 	stringcat(tempbuf, -1);
 }
 
@@ -1078,9 +1051,9 @@ touch(name)
 clearbotl()
 {
 	register int fd;
-	int exit();
+	void sigexit();
 
-	signal(SIGALRM, exit);
+	signal(SIGALRM, sigexit);
 	alarm(30);	/* if can't open in 30 secs, just die */
 	if (!emacs && (fd = open(ourtty, 1)) >= 0) {
 		write(fd, dis_status_line, strlen(dis_status_line));
@@ -1285,11 +1258,18 @@ getwinsize()
 }
 
 #ifdef SIGWINCH
+void
 sigwinch()
 {
 	winchanged++;
 }
 #endif
+
+void
+sigexit()
+{
+	exit(1);
+}
 
 char *
 strcpy1(p, q)
