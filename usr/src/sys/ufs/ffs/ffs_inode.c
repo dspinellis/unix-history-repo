@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_inode.c	7.53 (Berkeley) %G%
+ *	@(#)ffs_inode.c	7.54 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -143,8 +143,10 @@ ffs_vget (ap)
 	 * Ensure that uid and gid are correct. This is a temporary
 	 * fix until fsck has been changed to do the update.
 	 */
-	ip->i_uid = ip->i_din.di_ouid;
-	ip->i_gid = ip->i_din.di_ogid;
+	if (fs->fs_inodefmt < FS_44INODEFMT) {		/* XXX */
+		ip->i_uid = ip->i_din.di_ouid;		/* XXX */
+		ip->i_gid = ip->i_din.di_ogid;		/* XXX */
+	}						/* XXX */
 
 	*ap->a_vpp = vp;
 	return (0);
@@ -182,14 +184,15 @@ ffs_update (ap)
 	if (ip->i_flag&ICHG)
 		ip->i_ctime.tv_sec = time.tv_sec;
 	ip->i_flag &= ~(IUPD|IACC|ICHG|IMOD);
+	fs = ip->i_fs;
 	/*
 	 * Ensure that uid and gid are correct. This is a temporary
 	 * fix until fsck has been changed to do the update.
 	 */
-	ip->i_din.di_ouid = ip->i_uid;
-	ip->i_din.di_ogid = ip->i_gid;
-
-	fs = ip->i_fs;
+	if (fs->fs_inodefmt < FS_44INODEFMT) {		/* XXX */
+		ip->i_din.di_ouid = ip->i_uid;		/* XXX */
+		ip->i_din.di_ogid = ip->i_gid;		/* XXX */
+	}						/* XXX */
 	if (error = bread(ip->i_devvp, fsbtodb(fs, itod(fs, ip->i_number)),
 		(int)fs->fs_bsize, NOCRED, &bp)) {
 		brelse(bp);
