@@ -2,7 +2,7 @@
 # include <ctype.h>
 # include "postbox.h"
 
-static char	SccsId[] = "@(#)parseaddr.c	3.1	%G%";
+static char	SccsId[] = "@(#)parseaddr.c	3.2	%G%";
 
 /*
 **  PARSE -- Parse an address
@@ -173,6 +173,7 @@ parse(addr, a, copyf)
 		a->q_paddr = newstr(addr);
 	else
 		a->q_paddr = addr;
+	a->q_rmailer = t->p_mailer;
 	a->q_mailer = &Mailer[t->p_mailer];
 
 	if (bitset(P_MOVE, t->p_flags))
