@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)unistd.h	5.11 (Berkeley) %G%
+ *	@(#)unistd.h	5.12 (Berkeley) %G%
  */
 
 #ifndef _UNISTD_H_
@@ -27,10 +27,17 @@
 #define	W_OK		0x02	/* test for write permission */
 #define	R_OK		0x04	/* test for read permission */
 
-/* lseek function */
+/* whence values for lseek(2) */
 #define	SEEK_SET	0	/* set file offset to offset */
 #define	SEEK_CUR	1	/* set file offset to current plus offset */
 #define	SEEK_END	2	/* set file offset to EOF plus offset */
+
+#ifndef _POSIX_SOURCE
+/* whence values for lseek(2); renamed by POSIX 1003.1 */
+#define	L_SET		SEEK_SET
+#define	L_INCR		SEEK_CUR
+#define	L_XTND		SEEK_END
+#endif
 
 /* map a stream pointer to a file descriptor */
 #define	STDIN_FILENO	0	/* standard input value, stdin */
@@ -79,6 +86,7 @@ typedef	_SIZE_T_	size_t;
 /* ugly, but the only reasonable value for the time being */
 typedef	int		ssize_t;		/* what read() returns */
 
+#ifndef KERNEL
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
@@ -132,6 +140,8 @@ ssize_t		write __P((int, const void *, size_t));
 #ifndef	_POSIX_SOURCE
 /* a number of BSD-specific declarations will go here */
 #endif
+
+#endif /* KERNEL */
 
 __END_DECLS
 
