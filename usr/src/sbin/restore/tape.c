@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	5.23 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "restore.h"
@@ -27,6 +27,7 @@ static int	numtrec;
 static char	*tbf;
 static union	u_spcl endoftapemark;
 static long	blksread;		/* blocks read since last header */
+static long	tpblksread = 0;		/* TP_BSIZE blocks read */
 static long	tapesread;
 static jmp_buf	restart;
 static int	gettingfile = 0;	/* restart has a valid frame */
@@ -138,6 +139,7 @@ setup()
 	if (gethead(&spcl) == FAIL) {
 		bct--; /* push back this block */
 		blksread--;
+		tpblksread--;
 		cvtflag++;
 		if (gethead(&spcl) == FAIL) {
 			fprintf(stderr, "Tape is not a dump tape\n");
@@ -211,7 +213,7 @@ setup()
 getvol(nextvol)
 	long nextvol;
 {
-	long newvol, savecnt, i;
+	long newvol, savecnt, wantnext, i;
 	union u_spcl tmpspcl;
 #	define tmpbuf tmpspcl.s_spcl
 	char buf[TP_BSIZE];
@@ -232,10 +234,13 @@ getvol(nextvol)
 again:
 	if (pipein)
 		done(1); /* pipes do not get a second chance */
-	if (command == 'R' || command == 'r' || curfile.action != SKIP)
+	if (command == 'R' || command == 'r' || curfile.action != SKIP) {
 		newvol = nextvol;
-	else
+		wantnext = 1;
+	} else { 
 		newvol = 0;
+		wantnext = 0;
+	}
 	while (newvol <= 0) {
 		if (tapesread == 0) {
 			fprintf(stderr, "%s%s%s%s%s",
@@ -328,6 +333,32 @@ gethdr:
 	}
 	tapesread |= 1 << volno;
 	blksread = savecnt;
+ 	/*
+ 	 * If continuing from the previous volume, skip over any
+ 	 * blocks read already at the end of the previous volume.
+ 	 *
+ 	 * If coming to this volume at random, skip to the beginning
+ 	 * of the next record.
+ 	 */
+	dprintf(stdout, "read %ld recs, tape starts with %ld\n", 
+		tpblksread, tmpbuf.c_firstrec);
+ 	if (tmpbuf.c_type == TS_TAPE && (tmpbuf.c_flags & DR_NEWHEADER)) {
+ 		if (!wantnext) {
+ 			tpblksread = tmpbuf.c_firstrec;
+ 			for (i = tmpbuf.c_count; i > 0; i--)
+ 				readtape(buf);
+ 		} else if (tmpbuf.c_firstrec > 0 &&
+			   tmpbuf.c_firstrec < tpblksread - 1) {
+			/*
+			 * -1 since we've read the volume header
+			 */
+ 			i = tpblksread - tmpbuf.c_firstrec - 1;
+			dprintf(stderr, "Skipping %d duplicate record%s.\n",
+				i, i > 1 ? "s" : "");
+ 			while (--i >= 0)
+ 				readtape(buf);
+ 		}
+ 	}
 	if (curfile.action == USING) {
 		if (volno == 1)
 			panic("active file into volume 1\n");
@@ -661,6 +692,7 @@ readtape(b)
 	if (bct < numtrec) {
 		bcopy(&tbf[(bct++*TP_BSIZE)], b, (long)TP_BSIZE);
 		blksread++;
+		tpblksread++;
 		return;
 	}
 	for (i = 0; i < ntrec; i++)
@@ -762,6 +794,7 @@ getmore:
 	bct = 0;
 	bcopy(&tbf[(bct++*TP_BSIZE)], b, (long)TP_BSIZE);
 	blksread++;
+	tpblksread++;
 }
 
 findtapeblksize()
@@ -967,7 +1000,11 @@ accthdr(header)
 	long blks, i;
 
 	if (header->c_type == TS_TAPE) {
-		fprintf(stderr, "Volume header\n");
+		fprintf(stderr, "Volume header");
+ 		if (header->c_firstrec)
+ 			fprintf(stderr, " begins with record %d",
+ 				header->c_firstrec);
+ 		fprintf(stderr, "\n");
 		previno = 0x7fffffff;
 		return;
 	}
