@@ -1,10 +1,76 @@
-static	char *sccsid = "@(#)mkfs.c	2.4 (Berkeley) %G%";
+static	char *sccsid = "@(#)mkfs.c	2.5 (Berkeley) %G%";
 
 /*
  * make file system for cylinder-group style file systems
  *
  * usage: mkfs special size [ nsect ntrak bsize fsize cpg ]
  */
+
+/*
+ * The following constants set the defaults used for the number
+ * of sectors (fs_nsect), and number of tracks (fs_ntrak).
+ */
+#define DFLNSECT	32
+#define DFLNTRAK	16
+
+/*
+ * The following two constants set the default block and fragment sizes.
+ * Both constants must be a power of 2 and meet the following constraints:
+ *	MINBSIZE <= DESBLKSIZE <= MAXBSIZE
+ *	DEV_BSIZE <= DESFRAGSIZE <= DESBLKSIZE
+ *	DESBLKSIZE / DESFRAGSIZE <= 8
+ */
+#define DESBLKSIZE	8192
+#define DESFRAGSIZE	1024
+
+/*
+ * Cylinder groups may have up to MAXCPG cylinders. The actual
+ * number used depends upon how much information can be stored
+ * on a single cylinder. The default is to used 16 cylinders
+ * per group.
+ */
+#define	DESCPG		16	/* desired fs_cpg */
+
+/*
+ * MINFREE gives the minimum acceptable percentage of file system
+ * blocks which may be free. If the freelist drops below this level
+ * only the superuser may continue to allocate blocks. This may
+ * be set to 0 if no reserve of free blocks is deemed necessary,
+ * however throughput drops by fifty percent if the file system
+ * is run at between 90% and 100% full; thus the default value of
+ * fs_minfree is 10%.
+ */
+#define MINFREE		10
+
+/*
+ * ROTDELAY gives the minimum number of milliseconds to initiate
+ * another disk transfer on the same cylinder. It is used in
+ * determining the rotationally optimal layout for disk blocks
+ * within a file; the default of fs_rotdelay is 2ms.
+ */
+#define ROTDELAY	2
+
+/*
+ * MAXCONTIG sets the default for the maximum number of blocks
+ * that may be allocated sequentially. Since UNIX drivers are
+ * not capable of scheduling multi-block transfers, this defaults
+ * to 1 (ie no contiguous blocks are allocated).
+ */
+#define MAXCONTIG	1
+
+/*
+ * MAXBLKPG determines the maximum number of data blocks which are
+ * placed in a single cylinder group. This is currently a function
+ * of the block and fragment size of the file system.
+ */
+#define MAXBLKPG(fs)	((fs)->fs_fsize / sizeof(daddr_t))
+
+/*
+ * Each file system has a number of inodes statically allocated.
+ * We allocate one inode slot per NBPI bytes, expecting this
+ * to be far more than we will ever need.
+ */
+#define	NBPI		2048
 
 #ifndef STANDALONE
 #include <stdio.h>
@@ -113,11 +179,11 @@ main(argc, argv)
 	if (argc > 4)
 		sblock.fs_bsize = atoi(argv[4]);
 	else
-		sblock.fs_bsize = MAXBSIZE;
+		sblock.fs_bsize = DESBLKSIZE;
 	if (argc > 5)
 		sblock.fs_fsize = atoi(argv[5]);
 	else
-		sblock.fs_fsize = MAX(sblock.fs_bsize / DESFRAG, DEV_BSIZE);
+		sblock.fs_fsize = DESFRAGSIZE;
 	if (!POWEROF2(sblock.fs_bsize)) {
 		printf("block size must be a power of 2, not %d\n",
 		    sblock.fs_bsize);
@@ -351,6 +417,8 @@ next:
 	sblock.fs_magic = FS_MAGIC;
 	sblock.fs_rotdelay = ROTDELAY;
 	sblock.fs_minfree = MINFREE;
+	sblock.fs_maxcontig = MAXCONTIG;
+	sblock.fs_maxbpg = MAXBLKPG(&sblock);
 	sblock.fs_rps = 60;	/* assume disk speed == 60 HZ */
 	sblock.fs_cgrotor = 0;
 	sblock.fs_cstotal.cs_ndir = 0;
