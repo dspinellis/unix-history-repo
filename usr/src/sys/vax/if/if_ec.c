@@ -1,4 +1,4 @@
-/*	if_ec.c	4.28	82/10/24	*/
+/*	if_ec.c	4.28	82/10/31	*/
 
 #include "ec.h"
 
@@ -198,7 +198,7 @@ ecattach(ui)
 
 	ifp->if_init = ecinit;
 	ifp->if_output = ecoutput;
-	ifp->if_ubareset = ecreset;
+	ifp->if_reset = ecreset;
 	for (i=0; i<16; i++)
 		es->es_buf[i] = (u_char *)&umem[ui->ui_ubanum][ECMEM+2048*i];
 	if_attach(ifp);

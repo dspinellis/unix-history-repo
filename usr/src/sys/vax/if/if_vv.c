@@ -1,4 +1,4 @@
-/*	if_vv.c	4.9	82/10/24	*/
+/*	if_vv.c	4.9	82/10/31	*/
 
 /*
  * Proteon 10 Meg Ring Driver.
@@ -137,7 +137,7 @@ vvattach(ui)
 
 	vs->vs_if.if_init = vvinit;
 	vs->vs_if.if_output = vvoutput;
-	vs->vs_if.if_ubareset = vvreset;
+	vs->vs_if.if_reset = vvreset;
 	vs->vs_ifuba.ifu_flags = UBA_CANTWAIT | UBA_NEEDBDP | UBA_NEED16;
 	if_attach(&vs->vs_if);
 }

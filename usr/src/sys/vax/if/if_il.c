@@ -1,4 +1,4 @@
-/*	if_il.c	4.12	82/10/10	*/
+/*	if_il.c	4.13	82/10/31	*/
 
 #include "il.h"
 
@@ -154,7 +154,7 @@ ilattach(ui)
 
 	ifp->if_init = ilinit;
 	ifp->if_output = iloutput;
-	ifp->if_ubareset = ilreset;
+	ifp->if_reset = ilreset;
 	ifp->if_watchdog = ilwatch;
 	is->is_scaninterval = ILWATCHINTERVAL;
 	ifp->if_timer = is->is_scaninterval;

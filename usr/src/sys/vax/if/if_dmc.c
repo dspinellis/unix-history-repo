@@ -1,4 +1,4 @@
-/*	if_dmc.c	4.19	82/10/10	*/
+/*	if_dmc.c	4.20	82/10/31	*/
 
 #include "dmc.h"
 #if NDMC > 0
@@ -127,7 +127,7 @@ dmcattach(ui)
 	sin->sin_addr = if_makeaddr(sc->sc_if.if_net, sc->sc_if.if_host[0]);
 	sc->sc_if.if_init = dmcinit;
 	sc->sc_if.if_output = dmcoutput;
-	sc->sc_if.if_ubareset = dmcreset;
+	sc->sc_if.if_reset = dmcreset;
 	/* DON'T KNOW IF THIS WILL WORK WITH A BDP AT HIGH SPEEDS */
 	sc->sc_ifuba.ifu_flags = UBA_NEEDBDP | UBA_CANTWAIT;
 	if_attach(&sc->sc_if);
