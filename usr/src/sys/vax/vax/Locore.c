@@ -1,7 +1,8 @@
-/*	Locore.c	6.1	83/08/01	*/
+/*	Locore.c	4.27	83/08/11	*/
 
 #include "dz.h"
 #include "mba.h"
+#include "uba.h"
 
 #include "../machine/pte.h"
 
