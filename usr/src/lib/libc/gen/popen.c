@@ -1,4 +1,4 @@
-/* @(#)popen.c	4.7 (Berkeley) %G% */
+/* @(#)popen.c	5.1 (Berkeley) %G% */
 
 #include <stdio.h>
 #include <signal.h>

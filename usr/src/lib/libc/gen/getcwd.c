@@ -1,4 +1,12 @@
-/*	@(#)getcwd.c	4.10	(Berkeley)	%G%	*/
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)getcwd.c	5.1 (Berkeley) %G%";
+#endif not lint
 
 /*
  * getwd() returns the pathname of the current working directory. On error
