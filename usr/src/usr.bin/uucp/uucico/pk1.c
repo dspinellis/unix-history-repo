@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)pk1.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)pk1.c	5.9 (Berkeley) %G%";
 #endif
 
 #include <signal.h>
@@ -31,6 +31,7 @@ extern	char *malloc();
 int Connodata = 0;
 int Ntimeout = 0;
 int pktimeout = 4;
+int pktimeskew = 2;
 /*
  * packet driver support routines
  *
@@ -195,7 +196,7 @@ register struct pack *pk;
 		return;
 	}
 	if (k && pksizes[k] == pk->p_rsize) {
-		pk->p_rpr = h->cntl & MOD8;
+		pk->p_rpr = (h->cntl >> 3) & MOD8;
 		pksack(pk);
 		bp = pk->p_ipool;
 		if (bp == NULL) {
@@ -370,10 +371,10 @@ register int n;
 
 	if (setjmp(Getjbuf)) {
 		Ntimeout++;
-		pktimeout += 2;
+		DEBUG(4, "pkcget: alarm %d\n", pktimeout * 1000 + Ntimeout);
+		pktimeout += pktimeskew;
 		if (pktimeout > MAXPKTIME)
 			pktimeout = MAXPKTIME;
-		DEBUG(4, "pkcget: alarm %d\n", Ntimeout);
 		return FAIL;
 	}
 	signal(SIGALRM, cgalarm);
