@@ -82,12 +82,16 @@ void	setcommandmode(), command();	/* forward declarations */
 
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <sys/ioctl.h>
-#include <sys/time.h>
 
 #include <netinet/in.h>
 
+#if	defined(unix)
+/* By the way, we need to include curses.h before telnet.h since,
+ * among other things, telnet.h #defines 'DO', which is a variable
+ * declared in curses.h.
+ */
 #include <curses.h>
+#endif	/* defined(unix) */
 
 #define	TELOPTS
 #include <arpa/telnet.h>
@@ -102,10 +106,14 @@ extern char	*inet_ntoa();
 #include <stdio.h>
 #include <ctype.h>
 #include <errno.h>
-#include <signal.h>
 #include <setjmp.h>
 #include <netdb.h>
+
+#if	defined(unix)
 #include <strings.h>
+#else	/* defined(unix) */
+#include <string.h>
+#endif	/* defined(unix) */
 
 #if	defined(TN3270)
 #include "ctlr/screen.h"
@@ -223,7 +231,8 @@ static int
 	autosynch,		/* send interrupt characters with SYNCH? */
 	localchars,		/* we recognize interrupt/quit */
 	donelclchars,	/* the user has set "localchars" */
-	dontlecho;		/* do we suppress local echoing right now? */
+	dontlecho,		/* do we suppress local echoing right now? */
+	globalmode;
 
 /*	The following are some tn3270 specific flags */
 #if	defined(TN3270)
@@ -247,27 +256,18 @@ static int
 static int	telrcv_state = TS_DATA;
 /* Some real, live, globals. */
 int
-#if	defined(unix)
-	HaveInput,		/* There is input available to scan */
-#endif	/* defined(unix) */
 	tout,			/* Output file descriptor */
 	tin;			/* Input file descriptor */
-#if	defined(unix)
-char	*transcom = 0;	/* transparent mode command (default: none) */
-#endif	/* defined(unix) */
 
 #else	/* defined(TN3270) */
 static int tin, tout;		/* file descriptors */
 #endif	/* defined(TN3270) */
 
 static char	line[200];
-#if	defined(TN3270) && defined(unix)
-static char	tline[200];
-#endif	/* defined(TN3270) && defined(unix) */
 static int	margc;
 static char	*margv[20];
 
-static jmp_buf	toplevel = 0;
+static jmp_buf	toplevel = { 0 };
 static jmp_buf	peerdied;
 
 extern	int errno;
@@ -277,9 +277,6 @@ static struct sockaddr_in sin;
 
 static struct	servent *sp = 0;
 
-static struct	tchars otc = { 0 }, ntc = { 0 };
-static struct	ltchars oltc = { 0 }, nltc = { 0 };
-static struct	sgttyb ottyb = { 0 }, nttyb = { 0 };
 static int	flushline;
 
 static char	*hostname;
@@ -301,6 +298,360 @@ static struct {
 
 #define	settimer(x)	clocks.x = clocks.system++
 
+/*	Various modes */
+#define	MODE_LINE(m)	(modelist[m].modetype & LINE)
+#define	MODE_LOCAL_CHARS(m)	(modelist[m].modetype &  LOCAL_CHARS)
+
+#define	LOCAL_CHARS	0x01		/* Characters processed locally */
+#define	LINE		0x02		/* Line-by-line mode of operation */
+
+static struct {
+    char *modedescriptions;
+    char modetype;
+} modelist[] = {
+	{ "telnet command mode", 0 },
+	{ "character-at-a-time mode", 0 },
+	{ "character-at-a-time mode (local echo)", LOCAL_CHARS },
+	{ "line-by-line mode (remote echo)", LINE | LOCAL_CHARS },
+	{ "line-by-line mode", LINE | LOCAL_CHARS },
+	{ "line-by-line mode (local echoing suppressed)", LINE | LOCAL_CHARS },
+	{ "3270 mode", 0 },
+};
+
+
+/*
+ * The following routines try to encapsulate what is system dependent
+ * (at least between 4.x and dos) which is used in telnet.c.
+ */
+
+#if	defined(unix)
+#include <sys/ioctl.h>
+#include <sys/time.h>
+#include <signal.h>
+
+int
+	HaveInput;		/* There is input available to scan */
+
+#if	defined(TN3270)
+static char	tline[200];
+char	*transcom = 0;	/* transparent mode command (default: none) */
+#endif	/* defined(TN3270) */
+
+static struct	tchars otc = { 0 }, ntc = { 0 };
+static struct	ltchars oltc = { 0 }, nltc = { 0 };
+static struct	sgttyb ottyb = { 0 }, nttyb = { 0 };
+
+
+/*
+ *
+ */
+
+static int
+TerminalAutoFlush()
+{
+#if	defined(LNOFLSH)
+    ioctl(0, TIOCLGET, (char *)&autoflush);
+    return !(autoflush&LNOFLSH);	/* if LNOFLSH, no autoflush */
+#else	/* LNOFLSH */
+    return 1;
+#endif	/* LNOFLSH */
+}
+
+/*
+ * TerminalEditLine()
+ *
+ * Look at an input character, and decide what to do.
+ *
+ * Output:
+ *
+ *	0	Don't add this character.
+ *	1	Do add this character
+ */
+
+int
+TerminalEditLine(c)			/* unix */
+int	c;
+{
+    void doflush(), intp(), sendbrk();
+
+    if (c == ntc.t_intrc) {
+	intp();
+	return 0;
+    } else if (c == ntc.t_quitc) {
+	sendbrk();
+	return 0;
+    } else if (c == nltc.t_flushc) {
+	NET2ADD(IAC, AO);
+	if (autoflush) {
+	    doflush();
+	}
+	return 0;
+    } else if (!MODE_LOCAL_CHARS(globalmode)) {
+	if (c == nttyb.sg_kill) {
+	    NET2ADD(IAC, EL);
+	    return 0;
+	} else if (c == nttyb.sg_erase) {
+	    NET2ADD(IAC, EC);
+	    return 0;
+	}
+    }
+    return 1;
+}
+
+
+/*
+ * Flush output to the terminal
+ */
+ 
+static void
+TerminalFlushOutput()				/* unix */
+{
+    (void) ioctl(fileno(stdout), TIOCFLUSH, (char *) 0);
+}
+
+static void
+TerminalSaveState()				/* unix */
+{
+    ioctl(0, TIOCGETP, (char *)&ottyb);
+    ioctl(0, TIOCGETC, (char *)&otc);
+    ioctl(0, TIOCGLTC, (char *)&oltc);
+
+    ntc = otc;
+    nltc = oltc;
+    nttyb = ottyb;
+}
+
+static void
+TerminalRestoreState()				/* unix */
+{
+}
+
+/*
+ * TerminalNewMode - set up terminal to a specific mode.
+ */
+
+
+static void
+TerminalNewMode(f)
+register int f;
+{
+    static int prevmode = 0;
+    struct tchars *tc;
+    struct tchars tc3;
+    struct ltchars *ltc;
+    struct sgttyb sb;
+    int onoff;
+    int old;
+    struct	tchars notc2;
+    struct	ltchars noltc2;
+    static struct	tchars notc =	{ -1, -1, -1, -1, -1, -1 };
+    static struct	ltchars noltc =	{ -1, -1, -1, -1, -1, -1 };
+
+    globalmode = f;
+    if (prevmode == f)
+	return;
+    old = prevmode;
+    prevmode = f;
+    sb = nttyb;
+
+    switch (f) {
+
+    case 0:
+	onoff = 0;
+	tc = &otc;
+	ltc = &oltc;
+	break;
+
+    case 1:		/* remote character processing, remote echo */
+    case 2:		/* remote character processing, local echo */
+    case 6:		/* 3270 mode - like 1, but with xon/xoff local */
+		    /* (might be nice to have "6" in telnet also...) */
+	    sb.sg_flags |= CBREAK;
+	    if ((f == 1) || (f == 6)) {
+		sb.sg_flags &= ~(ECHO|CRMOD);
+	    } else {
+		sb.sg_flags |= ECHO|CRMOD;
+	    }
+	    sb.sg_erase = sb.sg_kill = -1;
+	    if (f == 6) {
+		tc = &tc3;
+		tc3 = notc;
+		    /* get XON, XOFF characters */
+		tc3.t_startc = otc.t_startc;
+		tc3.t_stopc = otc.t_stopc;
+	    } else {
+		/*
+		 * If user hasn't specified one way or the other,
+		 * then default to not trapping signals.
+		 */
+		if (!donelclchars) {
+		    localchars = 0;
+		}
+		if (localchars) {
+		    notc2 = notc;
+		    notc2.t_intrc = ntc.t_intrc;
+		    notc2.t_quitc = ntc.t_quitc;
+		    tc = &notc2;
+		} else {
+		    tc = &notc;
+		}
+	    }
+	    ltc = &noltc;
+	    onoff = 1;
+	    break;
+    case 3:		/* local character processing, remote echo */
+    case 4:		/* local character processing, local echo */
+    case 5:		/* local character processing, no echo */
+	    sb.sg_flags &= ~CBREAK;
+	    sb.sg_flags |= CRMOD;
+	    if (f == 4)
+		sb.sg_flags |= ECHO;
+	    else
+		sb.sg_flags &= ~ECHO;
+	    notc2 = ntc;
+	    tc = &notc2;
+	    noltc2 = oltc;
+	    ltc = &noltc2;
+	    /*
+	     * If user hasn't specified one way or the other,
+	     * then default to trapping signals.
+	     */
+	    if (!donelclchars) {
+		localchars = 1;
+	    }
+	    if (localchars) {
+		notc2.t_brkc = nltc.t_flushc;
+		noltc2.t_flushc = -1;
+	    } else {
+		notc2.t_intrc = notc2.t_quitc = -1;
+	    }
+	    noltc2.t_suspc = escape;
+	    noltc2.t_dsuspc = -1;
+	    onoff = 1;
+	    break;
+
+    default:
+	    return;
+    }
+    ioctl(tin, TIOCSLTC, (char *)ltc);
+    ioctl(tin, TIOCSETC, (char *)tc);
+    ioctl(tin, TIOCSETP, (char *)&sb);
+#if	(!defined(TN3270)) || ((!defined(NOT43)) || defined(PUTCHAR))
+    ioctl(tin, FIONBIO, (char *)&onoff);
+    ioctl(tout, FIONBIO, (char *)&onoff);
+#endif	/* (!defined(TN3270)) || ((!defined(NOT43)) || defined(PUTCHAR)) */
+#if	defined(TN3270) && !defined(DEBUG)
+    ioctl(tin, FIOASYNC, (char *)&onoff);
+#endif	/* defined(TN3270) && !defined(DEBUG) */
+
+    if (MODE_LINE(f)) {
+	void doescape();
+
+	signal(SIGTSTP, doescape);
+    } else if (MODE_LINE(old)) {
+	signal(SIGTSTP, SIG_DFL);
+	sigsetmask(sigblock(0) & ~(1<<(SIGTSTP-1)));
+    }
+}
+
+
+static void
+NetNonblockingIO(fd, onoff)				/* unix */
+int
+	fd,
+	onoff;
+{
+    ioctl(net, FIONBIO, (char *)&onoff);
+}
+
+static void
+NetSigIO(fd, onoff)				/* unix */
+int
+	fd,
+	onoff;
+{
+    ioctl(net, FIOASYNC, (char *)&onoff);	/* hear about input */
+}
+
+static void
+NetSetPgrp(fd)				/* unix */
+int fd;
+{
+    int myPid;
+
+    myPid = getpid();
+#if	defined(NOT43)
+    myPid = -myPid;
+#endif	/* defined(NOT43) */
+    ioctl(net, SIOCSPGRP, (char *)&myPid);	/* set my pid */
+}
+
+
+#endif	/* defined(unix) */
+
+#if	defined(MSDOS)
+#include <time.h>
+
+#if	!defined(SO_OOBINLINE)
+#define	SO_OOBINLINE
+#endif	/* !defined(SO_OOBINLINE) */
+
+
+static char
+    termEraseChar,
+    termFlushChar,
+    termIntChar,
+    termKillChar,
+    termQuitChar,
+    termEofChar;
+
+
+/*
+ * Flush output to the terminal
+ */
+ 
+static void
+TerminalFlushOutput()				/* MSDOS */
+{
+}
+
+static void
+TerminalSaveState()				/* MSDOS */
+{
+}
+
+static void
+TerminalRestoreState()				/* MSDOS */
+{
+}
+
+static void
+NetNonblockingIO(fd, onoff)				/* MSDOS */
+int
+	fd,
+	onoff;
+{
+    if (SetSockOpt(net, SOL_SOCKET, SO_NONBLOCKING, onoff)) {
+	perror("setsockop (SO_NONBLOCKING) ");
+	XXX();
+    }
+}
+
+static void
+NetSigIO(fd)				/* MSDOS */
+int fd;
+{
+}
+
+static void
+NetSetPgrp(fd)				/* MSDOS */
+int fd;
+{
+}
+
+
+#endif	/* defined(MSDOS) */
+
 /*
  * Initialize variables.
  */
@@ -321,13 +672,13 @@ tninit()
 
     connected = net = scc = tcc = In3270 = ISend = 0;
     telnetport = 0;
+#if	defined(unix)
+    HaveInput = 0;
+#endif	/* defined(unix) */
 
     SYNCHing = 0;
     Sent3270TerminalType = 0;
 
-#if	defined(unix)
-    HaveInput = 0;
-#endif	/* defined(unix) */
     errno = 0;
 
     flushline = 0;
@@ -489,6 +840,33 @@ register char *argument;
 	}
 	argument++;
     }
+}
+
+/*
+ * SetSockOpt()
+ *
+ * Compensate for differences in 4.2 and 4.3 systems.
+ */
+
+static int
+SetSockOpt(fd, level, option, yesno)
+int
+	fd,
+	level,
+	option,
+	yesno;
+{
+#ifndef	NOT43
+    return setsockopt(fd, level, option,
+				(char *)&yesno, sizeof yesno);
+#else	/* NOT43 */
+    if (yesno == 0) {		/* Can't do that in 4.2! */
+	fprintf(stderr, "Error: attempt to turn off an option 0x%x.\n",
+				option);
+	return -1;
+    }
+    return setsockopt(fd, level, option, 0, 0);
+#endif	/* NOT43 */
 }
 
 /*
@@ -857,7 +1235,7 @@ ttyflush()
 	if (!(SYNCHing||flushout)) {
 	    n = write(tout, tbackp, n);
 	} else {
-	    ioctl(fileno(stdout), TIOCFLUSH, (char *) 0);
+	    TerminalFlushOutput();
 	    /* we leave 'n' alone! */
 	}
     }
@@ -933,162 +1311,6 @@ doescape()
 }
 #endif	/* defined(unix) */
 
-static int	globalmode = 0;
-/*	Various modes */
-#define	MODE_LINE(m)	(modelist[m].modetype & LINE)
-#define	MODE_LOCAL_CHARS(m)	(modelist[m].modetype &  LOCAL_CHARS)
-
-#define	LOCAL_CHARS	0x01		/* Characters processed locally */
-#define	LINE		0x02		/* Line-by-line mode of operation */
-
-static struct {
-    char *modedescriptions;
-    char modetype;
-} modelist[] = {
-	{ "telnet command mode", 0 },
-	{ "character-at-a-time mode", 0 },
-	{ "character-at-a-time mode (local echo)", LOCAL_CHARS },
-	{ "line-by-line mode (remote echo)", LINE | LOCAL_CHARS },
-	{ "line-by-line mode", LINE | LOCAL_CHARS },
-	{ "line-by-line mode (local echoing suppressed)", LINE | LOCAL_CHARS },
-	{ "3270 mode", 0 },
-};
-/*
- * Mode - set up terminal to a specific mode.
- */
-
-
-static void
-mode(f)
-	register int f;
-{
-    static int prevmode = 0;
-    struct tchars *tc;
-    struct tchars tc3;
-    struct ltchars *ltc;
-    struct sgttyb sb;
-    int onoff;
-#if	defined(unix)
-    int old;
-#endif	/* defined(unix) */
-    struct	tchars notc2;
-    struct	ltchars noltc2;
-    static struct	tchars notc =	{ -1, -1, -1, -1, -1, -1 };
-    static struct	ltchars noltc =	{ -1, -1, -1, -1, -1, -1 };
-
-    globalmode = f;
-    if (prevmode == f)
-	return;
-#if	defined(unix)
-    old = prevmode;
-#endif	/* defined(unix) */
-    prevmode = f;
-    sb = nttyb;
-
-    switch (f) {
-
-    case 0:
-	onoff = 0;
-	tc = &otc;
-	ltc = &oltc;
-	break;
-
-    case 1:		/* remote character processing, remote echo */
-    case 2:		/* remote character processing, local echo */
-    case 6:		/* 3270 mode - like 1, but with xon/xoff local */
-		    /* (might be nice to have "6" in telnet also...) */
-	    sb.sg_flags |= CBREAK;
-	    if ((f == 1) || (f == 6)) {
-		sb.sg_flags &= ~(ECHO|CRMOD);
-	    } else {
-		sb.sg_flags |= ECHO|CRMOD;
-	    }
-	    sb.sg_erase = sb.sg_kill = -1;
-	    if (f == 6) {
-		tc = &tc3;
-		tc3 = notc;
-		    /* get XON, XOFF characters */
-		tc3.t_startc = otc.t_startc;
-		tc3.t_stopc = otc.t_stopc;
-	    } else {
-		/*
-		 * If user hasn't specified one way or the other,
-		 * then default to not trapping signals.
-		 */
-		if (!donelclchars) {
-		    localchars = 0;
-		}
-		if (localchars) {
-		    notc2 = notc;
-		    notc2.t_intrc = ntc.t_intrc;
-		    notc2.t_quitc = ntc.t_quitc;
-		    tc = &notc2;
-		} else {
-		    tc = &notc;
-		}
-	    }
-	    ltc = &noltc;
-	    onoff = 1;
-	    break;
-    case 3:		/* local character processing, remote echo */
-    case 4:		/* local character processing, local echo */
-    case 5:		/* local character processing, no echo */
-	    sb.sg_flags &= ~CBREAK;
-	    sb.sg_flags |= CRMOD;
-	    if (f == 4)
-		sb.sg_flags |= ECHO;
-	    else
-		sb.sg_flags &= ~ECHO;
-	    notc2 = ntc;
-	    tc = &notc2;
-	    noltc2 = oltc;
-	    ltc = &noltc2;
-#if defined(unix)
-	    /*
-	     * If user hasn't specified one way or the other,
-	     * then default to trapping signals.
-	     */
-	    if (!donelclchars) {
-		localchars = 1;
-	    }
-	    if (localchars) {
-		notc2.t_brkc = nltc.t_flushc;
-		noltc2.t_flushc = -1;
-	    } else {
-		notc2.t_intrc = notc2.t_quitc = -1;
-	    }
-#else	/* defined(unix) */
-	    notc2.t_intrc = -1;
-#endif	/* defined(unix) */
-	    noltc2.t_suspc = escape;
-	    noltc2.t_dsuspc = -1;
-	    onoff = 1;
-	    break;
-
-    default:
-	    return;
-    }
-    ioctl(tin, TIOCSLTC, (char *)ltc);
-    ioctl(tin, TIOCSETC, (char *)tc);
-    ioctl(tin, TIOCSETP, (char *)&sb);
-#if	(!defined(TN3270)) || ((!defined(NOT43)) || defined(PUTCHAR))
-    ioctl(tin, FIONBIO, (char *)&onoff);
-    ioctl(tout, FIONBIO, (char *)&onoff);
-#endif	/* (!defined(TN3270)) || ((!defined(NOT43)) || defined(PUTCHAR)) */
-#if	defined(TN3270) && !defined(DEBUG)
-    ioctl(tin, FIOASYNC, (char *)&onoff);
-#endif	/* defined(TN3270) && !defined(DEBUG) */
-
-#if	defined(unix)
-    if (MODE_LINE(f)) {
-	signal(SIGTSTP, doescape);
-    } else if (MODE_LINE(old)) {
-	signal(SIGTSTP, SIG_DFL);
-	sigsetmask(sigblock(0) & ~(1<<(SIGTSTP-1)));
-    }
-#endif	/* defined(unix) */
-}
-
 /*
  * These routines decides on what the mode should be (based on the values
  * of various global variables).
@@ -1120,14 +1342,14 @@ getconnmode()
 void
 setconnmode()
 {
-    mode(getconnmode());
+    TerminalNewMode(getconnmode());
 }
 
 
 void
 setcommandmode()
 {
-    mode(0);
+    TerminalNewMode(0);
 }
 
 static void
@@ -1280,6 +1502,7 @@ suboption()
 	     * on the format of our screen, and (in the future) color
 	     * capaiblities.
 	     */
+#if	defined(unix)
 	    if ((initscr() != ERR) &&	/* Initialize curses to get line size */
 		(LINES >= 24) && (COLS >= 80)) {
 		Sent3270TerminalType = 1;
@@ -1313,6 +1536,9 @@ suboption()
 		nfrontp += sizeof sb_terminal;
 		return;
 	    }
+#else	/* defined(unix) */
+	    XXX();
+#endif	/* defined(unix) */
 #endif	/* defined(TN3270) */
 
 	    name = getenv("TERM");
@@ -2011,12 +2237,14 @@ int	block;			/* should we block in the select ? */
 	if (c < 0 && errno == EWOULDBLOCK) {
 	    c = 0;
 	} else {
+#if	defined(unix)
 	    /* EOF detection for line mode!!!! */
 	    if (c == 0 && MODE_LOCAL_CHARS(globalmode)) {
 			/* must be an EOF... */
 		*tbp = ntc.t_eofc;
 		c = 1;
 	    }
+#endif	/* defined(unix) */
 	    if (c <= 0) {
 		tcc = c;
 		return -1;
@@ -2065,25 +2293,7 @@ int	block;			/* should we block in the select ? */
 		    }
 		}
 		if (localchars) {
-		    if (sc == ntc.t_intrc) {
-			intp();
-			break;
-		    } else if (sc == ntc.t_quitc) {
-			sendbrk();
-			break;
-		    } else if (sc == nltc.t_flushc) {
-			NET2ADD(IAC, AO);
-			if (autoflush) {
-			    doflush();
-			}
-			break;
-		    } else if (MODE_LOCAL_CHARS(globalmode)) {
-			;
-		    } else if (sc == nttyb.sg_kill) {
-			NET2ADD(IAC, EL);
-			break;
-		    } else if (sc == nttyb.sg_erase) {
-			NET2ADD(IAC, EC);
+		    if (TerminalEditLine(sc) == 0) {
 			break;
 		    }
 		}
@@ -2143,7 +2353,6 @@ int	block;			/* should we block in the select ? */
 static void
 telnet()
 {
-    int on = 1;
 #if	defined(TN3270) && defined(unix)
     int myPid;
 #endif	/* defined(TN3270) */
@@ -2157,26 +2366,20 @@ telnet()
     FD_ZERO(&obits);
     FD_ZERO(&xbits);
 
-    ioctl(net, FIONBIO, (char *)&on);
+    NetNonblockingIO(net, 1);
 
 #if	defined(TN3270)
 #if	!defined(DEBUG)		/* DBX can't handle! */
-    ioctl(net, FIOASYNC, (char *)&on);	/* hear about input */
+    NetSigIO(net, 1);
 #endif	/* !defined(DEBUG) */
 
-#if	defined(unix)
-    myPid = getpid();
-#if	defined(NOT43)
-    myPid = -myPid;
-#endif	/* defined(NOT43) */
-    ioctl(net, SIOCSPGRP, (char *)&myPid);	/* set my pid */
-#endif	/* defined(unix) */
-
+    NetSetPgrp(net);
 #endif	/* defined(TN3270) */
 
-#if	defined(SO_OOBINLINE)
-    setsockopt(net, SOL_SOCKET, SO_OOBINLINE, &on, sizeof on);
-#endif	/* defined(SO_OOBINLINE) */
+
+#if	defined(SO_OOBINLINE) && !defined(MSDOS)
+    SetSockOpt(net, SOL_SOCKET, SO_OOBINLINE, 1);
+#endif	/* defined(SO_OOBINLINE) && !defined(MSDOS) */
 
 #   if !defined(TN3270)
     if (telnetport) {
@@ -2413,13 +2616,12 @@ togdebug()
 {
 #ifndef	NOT43
     if (net > 0 &&
-	setsockopt(net, SOL_SOCKET, SO_DEBUG, (char *)&debug, sizeof(debug))
-									< 0) {
+	(SetSockOpt(net, SOL_SOCKET, SO_DEBUG, debug)) < 0) {
 	    perror("setsockopt (SO_DEBUG)");
     }
 #else	/* NOT43 */
     if (debug) {
-	if (net > 0 && setsockopt(net, SOL_SOCKET, SO_DEBUG, 0, 0) < 0)
+	if (net > 0 && SetSockOpt(net, SOL_SOCKET, SO_DEBUG, 0, 0) < 0)
 	    perror("setsockopt (SO_DEBUG)");
     } else
 	printf("Cannot turn off socket debugging\n");
@@ -2582,12 +2784,22 @@ static struct setlist Setlist[] = {
     { "escape",	"character to escape back to telnet command mode", &escape },
     { " ", "" },
     { " ", "The following need 'localchars' to be toggled true", 0 },
+#if	defined(unix)
     { "erase",	"character to cause an Erase Character", &nttyb.sg_erase },
     { "flushoutput", "character to cause an Abort Oubput", &nltc.t_flushc },
     { "interrupt", "character to cause an Interrupt Process", &ntc.t_intrc },
     { "kill",	"character to cause an Erase Line", &nttyb.sg_kill },
     { "quit",	"character to cause a Break", &ntc.t_quitc },
     { "eof",	"character to cause an EOF ", &ntc.t_eofc },
+#endif	/* defined(unix) */
+#if	defined(MSDOS)
+    { "erase",	"character to cause an Erase Character", &termEraseChar },
+    { "flushoutput", "character to cause an Abort Oubput", &termFlushChar },
+    { "interrupt", "character to cause an Interrupt Process", &termIntChar },
+    { "kill",	"character to cause an Erase Line", &termKillChar },
+    { "quit",	"character to cause a Break", &termQuitChar },
+    { "eof",	"character to cause an EOF ", &termEofChar },
+#endif	/* defined(MSDOS) */
     { 0 }
 };
 
@@ -2842,11 +3054,9 @@ suspend()
 	setcommandmode();
 #if	defined(unix)
 	kill(0, SIGTSTP);
-#endif	/* defined(unix) */
 	/* reget parameters in case they were changed */
-	ioctl(0, TIOCGETP, (char *)&ottyb);
-	ioctl(0, TIOCGETC, (char *)&otc);
-	ioctl(0, TIOCGLTC, (char *)&oltc);
+	TerminalSaveState();
+#endif	/* defined(unix) */
 	return 1;
 }
 
@@ -3035,13 +3245,9 @@ tn(argc, argv)
 	    perror("telnet: socket");
 	    return 0;
 	}
-#ifndef	NOT43
-	if (debug && setsockopt(net, SOL_SOCKET, SO_DEBUG,
-				(char *)&debug, sizeof(debug)) < 0)
-#else	/* NOT43 */
-	if (debug && setsockopt(net, SOL_SOCKET, SO_DEBUG, 0, 0) < 0)
-#endif	/* NOT43 */
+	if (debug && SetSockOpt(net, SOL_SOCKET, SO_DEBUG, 1) < 0) {
 		perror("setsockopt (SO_DEBUG)");
+	}
 
 	if (connect(net, (struct sockaddr *)&sin, sizeof (sin)) < 0) {
 #if	defined(h_addr)		/* In 4.3, this is a #define */
@@ -3262,20 +3468,9 @@ main(argc, argv)
     tninit();		/* Clear out things */
 
     NetTrace = stdout;
-    ioctl(0, TIOCGETP, (char *)&ottyb);
-    ioctl(0, TIOCGETC, (char *)&otc);
-    ioctl(0, TIOCGLTC, (char *)&oltc);
-#if	defined(LNOFLSH)
-    ioctl(0, TIOCLGET, (char *)&autoflush);
-    autoflush = !(autoflush&LNOFLSH);	/* if LNOFLSH, no autoflush */
-#else	/* LNOFLSH */
-    autoflush = 1;
-#endif	/* LNOFLSH */
-    ntc = otc;
-    nltc = oltc;
-    nttyb = ottyb;
-    setbuf(stdin, (char *)0);
-    setbuf(stdout, (char *)0);
+    TerminalSaveState();
+    autoflush = TerminalAutoFlush();
+
     prompt = argv[0];
     if (argc > 1 && !strcmp(argv[1], "-d")) {
 	debug = 1;
