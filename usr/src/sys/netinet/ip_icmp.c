@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ip_icmp.c	7.11 (Berkeley) %G%
+ *	@(#)ip_icmp.c	7.8.1.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -449,6 +449,7 @@ icmp_reflect(m)
 		bcopy((caddr_t)ip + optlen, (caddr_t)(ip + 1),
 		    m->m_len - sizeof(struct ip));
 	}
+
 	icmp_send(m, opts);
 	if (opts)
 		(void)m_free(opts);
