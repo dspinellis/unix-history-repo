@@ -1,4 +1,4 @@
-/*	ubareg.h	6.2	83/09/29	*/
+/*	ubareg.h	6.3	84/02/15	*/
 
 /*
  * VAX UNIBUS adapter registers
@@ -148,17 +148,8 @@ struct uba_regs
 #define	MAXNBDP	15
 
 #define	NUBA780	4
-#define	NUBA750	1
+#define	NUBA750	2
 #define	NUBA730	1
-#if VAX780
-#define	MAXNUBA	4
-#else
-#if VAX750
-#define	MAXNUBA	2
-#else
-#define	MAXNUBA	1
-#endif
-#endif
 
 /*
  * Symbolic addresses of UNIBUS memory for UBAs.
