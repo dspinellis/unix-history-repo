@@ -25,13 +25,13 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cp.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)cp.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
  * cp copies source files to target files.
  * 
- * The global path_t structures "to" and "from" always contain paths to the
+ * The global PATH_T structures "to" and "from" always contain paths to the
  * current source and target files, respectively.  Since cp does not change
  * directories, these paths can be either absolute or dot-realative.
  * 
@@ -47,29 +47,26 @@ static char sccsid[] = "@(#)cp.c	5.11 (Berkeley) %G%";
 #include <sys/file.h>
 #include <sys/dir.h>
 #include <sys/time.h>
-
 #include <stdio.h>
 #include <errno.h>
 #include <strings.h>
 
-typedef struct {
-	char	*p_path;	/* pointer to the start of a path. */
-	char	*p_end;		/* pointer to NULL at end of path. */
-} path_t;
-
 #define	type(st)	((st).st_mode & S_IFMT)
+
+typedef struct {
+	char	p_path[MAXPATHLEN + 1];	/* pointer to the start of a path. */
+	char	*p_end;			/* pointer to NULL at end of path. */
+} PATH_T;
+
+PATH_T from = { "", from.p_path };
+PATH_T to = { "", to.p_path };
 
 uid_t myuid;
 int exit_val, myumask;
 int interactive_flag, preserve_flag, recursive_flag;
 int (*statfcn)();			/* stat function to use */
 char *buf;				/* I/O; malloc for best alignment. */
-void path_restore();
 char *path_append(), *path_basename();
-
-char from_buf[MAXPATHLEN + 1], to_buf[MAXPATHLEN + 1];
-path_t from = {from_buf, from_buf};
-path_t to = {to_buf, to_buf};
 
 main(argc, argv)
 	int argc;
@@ -540,7 +537,7 @@ error(s)
  ********************************************************************/
 
 /*
- * These functions manipulate paths in "path_t" structures.
+ * These functions manipulate paths in PATH_T structures.
  * 
  * They eliminate multiple slashes in paths when they notice them, and keep
  * the path non-slash terminated.
@@ -559,7 +556,7 @@ error(s)
  * semantics for a null path.  Strip trailing slashes.
  */
 path_set(p, string)
-	register path_t *p;
+	register PATH_T *p;
 	char *string;
 {
 	if (strlen(string) > MAXPATHLEN) {
@@ -586,7 +583,7 @@ path_set(p, string)
  */
 char *
 path_append(p, name, len)
-	register path_t *p;
+	register PATH_T *p;
 	char *name;
 	int len;
 {
@@ -626,9 +623,8 @@ path_append(p, name, len)
 /*
  * Restore path to previous value.  (As returned by path_append.)
  */
-void
 path_restore(p, old)
-	path_t *p;
+	PATH_T *p;
 	char *old;
 {
 	p->p_end = old;
@@ -640,7 +636,7 @@ path_restore(p, old)
  */
 char *
 path_basename(p)
-	path_t *p;
+	PATH_T *p;
 {
 	char *basename;
 
@@ -651,6 +647,6 @@ path_basename(p)
 usage()
 {
 	(void)fprintf(stderr,
-	   "usage: cp [-ip] f1 f2; or: cp [-irp] f1 ... fn directory\n");
+"usage: cp [-fhipr] src target;\n   or: cp [-fhipr] src1 ... srcN directory\n");
 	exit(1);
 }
