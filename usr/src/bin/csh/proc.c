@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)proc.c 4.2 %G%";
+static	char *sccsid = "@(#)proc.c 4.3 %G%";
 
 #include "sh.h"
 #include "sh.dir.h"
@@ -127,9 +127,7 @@ found:
 			    jobflags & PAEXITED ||
 #endif
 			    !eq(dcwd->di_name, fp->p_cwd->di_name)) {
-				if (jobflags & PSTOPPED)
-					printf("\n");
-				pprint(fp, AREASON|SHELLDIR);
+				;	/* print in pjwait */
 			} else if ((jobflags & (PTIME|PSTOPPED)) == PTIME)
 				ptprint(fp);
 		} else {
@@ -226,12 +224,15 @@ pjwait(pp)
 	sigrelse(SIGCHLD);
 	if (tpgrp > 0)
 		ioctl(FSHTTY, TIOCSPGRP, &tpgrp);	/* get tty back */
-	if (jobflags & PSTOPPED)
-		return;
-	if ((jobflags&PINTERRUPTED) && setintr &&
+	if ((jobflags&(PINTERRUPTED|PSTOPPED)) && setintr &&
 	    (!gointr || !eq(gointr, "-"))) {
-		pflush(pp);
-		pintr();
+		if ((jobflags & PSTOPPED) == 0)
+			pflush(pp);
+		else {
+			printf("\n");
+			pprint(pp, AREASON|SHELLDIR);
+		}
+		pintr1(0);
 		/*NOTREACHED*/
 	}
 	reason = 0;

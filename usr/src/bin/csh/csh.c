@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)csh.c 4.1 %G%";
+static	char *sccsid = "@(#)csh.c 4.2 %G%";
 
 #include "sh.h"
 #include <sys/ioctl.h>
@@ -559,6 +559,12 @@ char	*jobargv[2] = { "jobs", 0 };
  */
 pintr()
 {
+	pintr1(1);
+}
+
+pintr1(wantnl)
+	bool wantnl;
+{
 	register char **v;
 
 	if (setintr) {
@@ -588,7 +594,7 @@ pintr()
 		if (v = gargv)
 			gargv = 0, blkfree(v);
 		reset();
-	} else if (intty)
+	} else if (intty && wantnl)
 		printf("\n");		/* Some like this, others don't */
 	error(NOSTR);
 }

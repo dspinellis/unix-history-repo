@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)glob.c 4.1 %G%";
+static	char *sccsid = "@(#)glob.c 4.2 %G%";
 #include "sh.h"
 
 /*
@@ -75,9 +75,10 @@ collect(as)
 #ifdef GDEBUG
 		printf("acollect done\n");
 #endif
-	} else if (noglob)
+	} else if (noglob || eq(as, "{") || eq(as, "{}")) {
 		Gcat(as, "");
-	else
+		sort();
+	} else
 		acollect(as);
 }
 
