@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.156 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.157 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -2009,12 +2009,21 @@ char	*DefaultUserShells[] =
 	"/bin/csh",		/* C shell */
 	"/usr/bin/csh",
 #ifdef __hpux
+# ifdef V4FS
+	"/usr/bin/rsh",		/* restricted Bourne shell */
+	"/usr/bin/ksh",		/* Korn shell */
+	"/usr/bin/rksh",	/* restricted Korn shell */
+	"/usr/bin/pam",
+	"/usr/bin/keysh",	/* key shell (extended Korn shell) */
+	"/usr/bin/posix/sh",
+# else
 	"/bin/rsh",		/* restricted Bourne shell */
 	"/bin/ksh",		/* Korn shell */
 	"/bin/rksh",		/* restricted Korn shell */
 	"/bin/pam",
 	"/usr/bin/keysh",	/* key shell (extended Korn shell) */
 	"/bin/posix/sh",
+# endif
 #endif
 #ifdef _AIX3
 	"/bin/ksh",		/* Korn shell */

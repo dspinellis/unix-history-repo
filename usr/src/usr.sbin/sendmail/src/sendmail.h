@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.128 (Berkeley) %G%
+ *	@(#)sendmail.h	8.129 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.128		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.129		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -895,6 +895,7 @@ union bigsockaddr
 
 #define VENDOR_BERKELEY	1	/* Berkeley-native configuration file */
 #define VENDOR_SUN	2	/* Sun-native configuration file */
+#define VENDOR_HP	3	/* Hewlett-Packard specific config syntax */
 
 EXTERN int	VendorCode;	/* vendor-specific operation enhancements */
 /*

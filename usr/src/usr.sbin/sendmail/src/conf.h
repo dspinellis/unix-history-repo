@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.153 (Berkeley) %G%
+ *	@(#)conf.h	8.154 (Berkeley) %G%
  */
 
 /*
@@ -115,11 +115,13 @@
 
 /*
 **  HP-UX -- tested for 8.07, 9.00, and 9.01.
+**
+**	If V4FS is defined, compile for HP-UX 10.0.
 */
 
 #ifdef __hpux
-/* avoid m_flags conflict between db.h & sys/sysmacros.h on HP 300 */
-# undef m_flags
+		/* common definitions for HP-UX 9.x and 10.x */
+# undef m_flags		/* conflict between db.h & sys/sysmacros.h on HP 300 */
 # define SYSTEM5	1	/* include all the System V defines */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
 # define HASSETREUID	1	/* has setreuid(2) call */
@@ -128,13 +130,6 @@
 # define SPT_TYPE	SPT_PSTAT
 # define SFS_TYPE	SFS_VFS	/* use <sys/vfs.h> statfs() implementation */
 # define GIDSET_T	gid_t
-# define _PATH_UNIX	"/hp-ux"
-# ifndef _PATH_SENDMAILCF
-#  define _PATH_SENDMAILCF	"/usr/lib/sendmail.cf"
-# endif
-# ifndef IDENTPROTO
-#  define IDENTPROTO	0	/* TCP/IP implementation is broken */
-# endif
 # ifndef HASGETUSERSHELL
 #  define HASGETUSERSHELL 0	/* getusershell(3) causes core dumps */
 # endif
@@ -142,6 +137,31 @@
 # ifdef __STDC__
 extern int	syslog(int, char *, ...);
 # endif
+
+# ifdef V4FS
+		/* HP-UX 10.x */
+#  define _PATH_UNIX	"/stand/vmunix"
+#  ifndef _PATH_SENDMAILCF
+#   define _PATH_SENDMAILCF	"/etc/mail/sendmail.cf"
+#  endif
+#  ifndef _PATH_SENDMAILPID
+#   define _PATH_SENDMAILPID	"/etc/mail/sendmail.pid"
+#  endif
+#  ifndef IDENTPROTO
+#   define IDENTPROTO	1	/* TCP/IP implementation fixed in 10.0 */
+#  endif
+
+# else
+		/* HP-UX 9.x */
+#  define _PATH_UNIX	"/hp-ux"
+#  ifndef _PATH_SENDMAILCF
+#   define _PATH_SENDMAILCF	"/usr/lib/sendmail.cf"
+#  endif
+#  ifndef IDENTPROTO
+#   define IDENTPROTO	0	/* TCP/IP implementation is broken */
+#  endif
+# endif
+
 #endif
 
 
