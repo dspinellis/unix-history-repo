@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfsdiskless.h	7.3 (Berkeley) %G%
+ *	@(#)nfsdiskless.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -30,9 +30,11 @@ struct nfs_diskless {
 	struct sockaddr_in swap_saddr;		/* Address of swap server */
 	char		swap_hostnam[MNAMELEN];	/* Host name for mount pt */
 	int		swap_nblks;		/* Size of server swap file */
+	struct ucred	swap_ucred;		/* Swap credentials */
 	struct nfs_args	root_args;		/* Mount args for root fs */
 	u_char		root_fh[NFS_FHSIZE];	/* File handle of root dir */
 	struct sockaddr_in root_saddr;		/* Address of root server */
 	char		root_hostnam[MNAMELEN];	/* Host name for mount pt */
+	time_t		root_time;		/* Timestamp of root fs */
 	char		my_hostnam[MAXHOSTNAMELEN]; /* Client host name */
 };
