@@ -4,34 +4,34 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_disksubr.c	7.16 (Berkeley) %G%
+ *	@(#)ufs_disksubr.c	7.17 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "buf.h"
-#include "disklabel.h"
-#include "syslog.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/buf.h>
+#include <sys/disklabel.h>
+#include <sys/syslog.h>
 
 /*
- * Seek sort for disks.  We depend on the driver
- * which calls us using b_resid as the current cylinder number.
+ * Seek sort for disks.  We depend on the driver which calls us using b_resid
+ * as the current cylinder number.
  *
- * The argument dp structure holds a b_actf activity chain pointer
- * on which we keep two queues, sorted in ascending cylinder order.
- * The first queue holds those requests which are positioned after
- * the current cylinder (in the first request); the second holds
- * requests which came in after their cylinder number was passed.
- * Thus we implement a one way scan, retracting after reaching the
- * end of the drive to the first request on the second queue,
- * at which time it becomes the first queue.
+ * The argument dp structure holds a b_actf activity chain pointer on which we
+ * keep two queues, sorted in ascending cylinder order.  The first queue holds
+ * those requests which are positioned after the current cylinder (in the first
+ * request); the second holds requests which came in after their cylinder number
+ * was passed.  Thus we implement a one way scan, retracting after reaching the
+ * end of the drive to the first request on the second queue, at which time it
+ * becomes the first queue.
  *
- * A one-way scan is natural because of the way UNIX read-ahead
- * blocks are allocated.
+ * A one-way scan is natural because of the way UNIX read-ahead blocks are
+ * allocated.
  */
 
 #define	b_cylin	b_resid
 
+void
 disksort(dp, bp)
 	register struct buf *dp, *bp;
 {
@@ -116,12 +116,11 @@ insert:
 }
 
 /*
- * Attempt to read a disk label from a device
- * using the indicated stategy routine.
- * The label must be partly set up before this:
- * secpercyl and anything required in the strategy routine
- * (e.g., sector size) must be filled in before calling us.
- * Returns null on success and an error string on failure.
+ * Attempt to read a disk label from a device using the indicated stategy
+ * routine.  The label must be partly set up before this: secpercyl and
+ * anything required in the strategy routine (e.g., sector size) must be
+ * filled in before calling us.  Returns NULL on success and an error
+ * string on failure.
  */
 char *
 readdisklabel(dev, strat, lp)
@@ -170,9 +169,9 @@ readdisklabel(dev, strat, lp)
 }
 
 /*
- * Check new disk label for sensibility
- * before setting it.
+ * Check new disk label for sensibility before setting it.
  */
+int
 setdisklabel(olp, nlp, openmask)
 	register struct disklabel *olp, *nlp;
 	u_long openmask;
@@ -217,6 +216,7 @@ setdisklabel(olp, nlp, openmask)
 /*
  * Write disk label back to device after modification.
  */
+int
 writedisklabel(dev, strat, lp)
 	dev_t dev;
 	int (*strat)();
@@ -290,6 +290,7 @@ hp0g: hard error reading fsbn 12345 of 12344-12347 (hp0 bn %d cn %d tn %d sn %d)
  * The message should be completed (with at least a newline) with printf
  * or addlog, respectively.  There is no trailing space.
  */
+void
 diskerr(bp, dname, what, pri, blkdone, lp)
 	register struct buf *bp;
 	char *dname, *what;
