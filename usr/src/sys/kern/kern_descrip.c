@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_descrip.c	7.8 (Berkeley) %G%
+ *	@(#)kern_descrip.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -463,8 +463,8 @@ fdopen(dev, mode, type)
 	dupit(indx, wfp, u.u_pofile[dfd]);
 	/*
 	 * Delete references to this pseudo-device by returning
-	 * a special error (-1) that will cause all resources to
+	 * a special error (EJUSTRETURN) that will cause all resources to
 	 * be freed, then detected and cleared by copen.
 	 */
-	return (-1);
+	return (EJUSTRETURN);			/* XXX */
 }
