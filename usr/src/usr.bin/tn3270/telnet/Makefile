@@ -14,11 +14,34 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	4.1 (Berkeley) %G%
+#	@(#)Makefile	4.2 (Berkeley) %G%
 #
 
 # The following is the telnet makefile for tn3270, using the shared telnet
 # sources.
+
+#
+# TERMCAP	Define this if your system is termcap based,
+#		otherwise a terminfo based system is assumed.
+#
+# SRCRT		Includes code to allow you to specify source routes.
+#		Format is:
+#			[!]@hop1@hop2...[@|:]dst
+#		Leading ! means strict source route.
+#
+# NOSTRNCASECMP	Define this if you do not have strncasecmp() in
+#		your C libarary.
+#
+# USE_TERMIO	Define this if you have System V termio structures.
+#		What is here is how things are on Cray computers.
+#
+# KLUDGELINEMODE Define this to get the kludged up version of linemode
+#		that was in 4.3BSD.  This is a good thing to have
+#		around for talking to older systems.
+#
+
+DEFINES= -DTERMCAP -DSRCRT -DKLUDGELINEMODE
+
 
 VPATH	=	../../telnet/Source
 XINCLUDES=	-I../../telnet/Source
