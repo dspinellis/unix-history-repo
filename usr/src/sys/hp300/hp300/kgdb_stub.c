@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kgdb_stub.c	7.1 (Berkeley) %G%
+ *	@(#)kgdb_stub.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -84,15 +84,27 @@ static int frame_bytes[16] = {
  */
 #define BUFMAX 512
 
-int kgdb_dev = -1;		/* remote debugging device (-1 if none) */
-int kgdb_baud = 9600;		/* baud rate of serial line */
+#ifndef KGDBDEV
+#define KGDBDEV -1
+#endif
+#ifndef KGDBRATE
+#define KGDBRATE 9600
+#endif
+
+int kgdb_dev = KGDBDEV;		/* remote debugging device (-1 if none) */
+int kgdb_rate = KGDBRATE;	/* remote debugging baud rate */
 int kgdb_debug_init = 0;	/* != 0 waits for remote at system init */
 int kgdb_debug = 0;		/* > 0 prints command & checksum errors */
 
-extern int dcacngetc();
-extern void dcacnputc();
-#define GETC (dcacngetc(kgdb_dev))
-#define PUTC(c) (dcacnputc(kgdb_dev, c))
+#include "../hp300/cons.h"
+
+#define GETC	\
+	(constab[major(kgdb_dev)].cn_getc ? \
+		(*constab[major(kgdb_dev)].cn_getc)(kgdb_dev) : 0)
+#define PUTC(c)	{ \
+	if (constab[major(kgdb_dev)].cn_putc) \
+		(*constab[major(kgdb_dev)].cn_putc)(kgdb_dev, c); \
+}
 
 static char hexchars[] = "0123456789abcdef";
 
@@ -156,9 +168,9 @@ getpacket(char *buffer)
 			"bad checksum.  My count = 0x%x, sent=0x%x. buf=%s\n",
 					checksum, xmitcsum, buffer);
 			}
-			if (checksum != xmitcsum)
+			if (checksum != xmitcsum) {
 				PUTC('-');	/* failed checksum */
-			else {
+			} else {
 				PUTC('+');	/* successful transfer */
 				/*
 				 * if a sequence char is present, reply the

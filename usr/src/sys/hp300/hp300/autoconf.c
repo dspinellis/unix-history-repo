@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: autoconf.c 1.25 89/10/07$
  *
- *	@(#)autoconf.c	7.1 (Berkeley) %G%
+ *	@(#)autoconf.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -49,6 +49,8 @@ int	dkn;		    /* number of iostat dk numbers assigned so far */
 int	cpuspeed = MHZ_8;   /* relative cpu speed */
 struct	isr isrqueue[NISR];
 struct	hp_hw sc_table[MAX_CTLR];
+
+extern	int internalhpib;
 
 #ifdef DEBUG
 int	acdebug = 0;
@@ -111,7 +113,7 @@ configure()
 }
 
 #define dr_type(d, s)	\
-	((d)->d_name[0] == (s)[0] && (d)->d_name[1] == (s)[1])
+	(strcmp((d)->d_name, (s)) == 0)
 
 #define same_hw_ctlr(hw, hc) \
 	((hw)->hw_type == HPIB && dr_type((hc)->hp_driver, "hpib") || \
@@ -485,9 +487,7 @@ find_busslaves(hc, maxslaves)
 sctoaddr(addr)
 	register int addr;
 {
-	extern int internalhpib;
-
-	if (addr == 7)
+	if (addr == 7 && internalhpib)
 		addr = internalhpib;
 	else if (addr < 32)
 		addr = IOV(EXTIOBASE + (addr * IOCARDSIZE));
@@ -499,8 +499,6 @@ sctoaddr(addr)
 addrtosc(addr)
 	register u_int addr;
 {
-	extern int internalhpib;
-
 #if defined(HP360) || defined(HP370)
 	extern char grfregs[];
 
@@ -537,9 +535,14 @@ same_hw_device(hw, hd)
 	case NET:
 		found = dr_type(hd->hp_driver, "le");
 		break;
-	case COMM:
-		found = dr_type(hd->hp_driver, "dca") ||
-			dr_type(hd->hp_driver, "dcm");
+	case COMMDCA:
+		found = dr_type(hd->hp_driver, "dca");
+		break;
+	case COMMDCL:
+		found = dr_type(hd->hp_driver, "dcl");
+		break;
+	case COMMDCM:
+		found = dr_type(hd->hp_driver, "dcm");
 		break;
 	case SCSI:
 		found = dr_type(hd->hp_driver, "scsi");
@@ -597,7 +600,17 @@ find_devs()
 		hw->hw_id = id_reg[1] & 0xff;
 		hw->hw_sc = sc;
 		hw->hw_addr = (char *) addr;
-
+		/*
+		 * Internal HP-IB on some machines (345/375) doesn't return
+		 * consistant id info so we use the info gleaned from the
+		 * boot ROMs SYSFLAG.
+		 */
+		if (sc == 7 && internalhpib) {
+			hw->hw_name = "98624A";
+			hw->hw_type = HPIB;
+			hw++;
+			continue;
+		}
 		/*
 		 * XXX: the following could be in a big static table
 		 */
@@ -606,8 +619,9 @@ find_devs()
 		case 0:
 			break;
 		case 2:
+		case 128+2:
 			hw->hw_name = "98626A";
-			hw->hw_type = COMM;
+			hw->hw_type = COMMDCA;
 			break;
 		case 3:
 			hw->hw_name = "98622A";
@@ -618,8 +632,13 @@ find_devs()
 			hw->hw_type = MISC;
 			break;
 		case 5:
+		case 128+5:
 			hw->hw_name = "98642A";
-			hw->hw_type = COMM;
+			hw->hw_type = COMMDCM;
+			break;
+		case 6:
+			hw->hw_name = "Parallel Port";
+			hw->hw_type = PPORT;
 			break;
 		case 7:
 		case 39:
@@ -648,17 +667,13 @@ find_devs()
 			hw->hw_name = "98640A";
 			hw->hw_type = MISC;
 			break;
-		case 20:
-			hw->hw_name = "98628A";
-			hw->hw_type = COMM;
-			break;
 		case 21:
 			hw->hw_name = "98643A";
 			hw->hw_type = NET;
 			break;
 		case 22:
 			hw->hw_name = "98659A";
-			hw->hw_type = COMM;
+			hw->hw_type = MISC;
 			break;
 		case 25:
 			hw->hw_name = "237";
@@ -693,6 +708,11 @@ find_devs()
 			hw->hw_type = VME;
 			sc++;
 			break;
+		case 52:
+		case 180:
+			hw->hw_name = "98628A";
+			hw->hw_type = COMMDCL;
+			break;
 		case 57:
 			hw->hw_type = BITMAP;
 			hw->hw_id2 = id_reg[0x15];
@@ -723,8 +743,9 @@ find_devs()
 			}
 			break;
 		case 66:
+		case 128+66:
 			hw->hw_name = "98644A";
-			hw->hw_type = COMM;
+			hw->hw_type = COMMDCA;
 			break;
 		case 128:
 			hw->hw_name = "98624A";
@@ -914,4 +935,13 @@ setroot()
 	if (temp == argdev)
 		argdev = swdevt[0].sw_dev;
 #endif
+}
+
+strcmp(s1, s2)
+	register char *s1, *s2;
+{
+	while (*s1 == *s2++)
+		if (*s1++=='\0')
+			return (0);
+	return (*s1 - *--s2);
 }
