@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)allo.c	4.6 (Berkeley) %G%";
+static char *sccsid ="@(#)allo.c	4.7 (Berkeley) %G%";
 #endif lint
 
 # include "pass2.h"
@@ -507,6 +507,7 @@ reclaim( p, rw, cookie ) NODE *p; {
 
 	}
 
+#ifndef ncopy
 ncopy( q, p ) NODE *p, *q; {
 	/* copy the contents of p into q, without any feeling for
 	   the contents */
@@ -530,6 +531,7 @@ ncopy( q, p ) NODE *p, *q; {
 #endif
 
 	}
+#endif
 
 NODE *
 tcopy( p ) register NODE *p; {

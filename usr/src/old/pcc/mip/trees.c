@@ -1,8 +1,10 @@
 #ifndef lint
-static char *sccsid ="@(#)trees.c	4.8 (Berkeley) %G%";
+static char *sccsid ="@(#)trees.c	4.9 (Berkeley) %G%";
 #endif
 
 # include "pass1.h"
+
+# include <setjmp.h>
 
 int bdebug = 0;
 int adebug = 0;
@@ -172,84 +174,59 @@ buildtree( o, l, r ) register NODE *l, *r; {
 			break;
 			}
 		}
-	else if (opty == BITYPE) {
-		if ((l->in.op == FCON || l->in.op == ICON) &&
-		    (r->in.op == FCON || r->in.op == ICON))
-			switch (o) {
+	else if (opty == BITYPE &&
+		(l->in.op == FCON || l->in.op == DCON || l->in.op == ICON) &&
+		(r->in.op == FCON || r->in.op == DCON || r->in.op == ICON)) {
+			if (o == PLUS || o == MINUS || o == MUL || o == DIV) {
+				extern int fpe_count;
+				extern jmp_buf gotfpe;
 
-			case PLUS:
-			case MINUS:
-			case MUL:
-			case DIV:
-				if (l->in.op == ICON)
-					l->fpn.fval = l->tn.lval;
-				if (r->in.op == ICON)
-					r->fpn.fval = r->tn.lval;
-				l->in.op = FCON;
-				l->in.type = l->fn.csiz = FLOAT;
-				r->in.op = FREE;
-				switch (o) {
-
-				case PLUS:
-					l->fpn.fval += r->fpn.fval;
-					return (l);
-
-				case MINUS:
-					l->fpn.fval -= r->fpn.fval;
-					return (l);
-
-				case MUL:
-					l->fpn.fval *= r->fpn.fval;
-					return (l);
-
-				case DIV:
-					if (r->fpn.fval == 0)
-						uerror("division by 0.");
-					else
-						l->fpn.fval /= r->fpn.fval;
-					return (l);
-				}
-			}
-		else if ((l->in.op == DCON || l->in.op == ICON) &&
-		    (r->in.op == DCON || r->in.op == ICON))
-			switch (o) {
-
-			case PLUS:
-			case MINUS:
-			case MUL:
-			case DIV:
+				fpe_count = 0;
+				if (setjmp(gotfpe))
+					goto treatfpe;
 				if (l->in.op == ICON)
 					l->dpn.dval = l->tn.lval;
+				else if (l->in.op == FCON)
+					l->dpn.dval = l->fpn.fval;
 				if (r->in.op == ICON)
 					r->dpn.dval = r->tn.lval;
-				l->in.op = DCON;
-				l->in.type = l->fn.csiz = DOUBLE;
-				r->in.op = FREE;
+				else if (r->in.op == FCON)
+					r->dpn.dval = r->fpn.fval;
 				switch (o) {
 
 				case PLUS:
 					l->dpn.dval += r->dpn.dval;
-					return (l);
+					break;
 
 				case MINUS:
 					l->dpn.dval -= r->dpn.dval;
-					return (l);
+					break;
 
 				case MUL:
 					l->dpn.dval *= r->dpn.dval;
-					return (l);
+					break;
 
 				case DIV:
 					if (r->dpn.dval == 0)
 						uerror("division by 0.");
 					else
 						l->dpn.dval /= r->dpn.dval;
-					return (l);
-				}
+					break;
+					}
+			treatfpe:
+				if (fpe_count > 0) {
+					uerror("floating point exception in constant expression");
+					l->dpn.dval = 1.0; /* Fairly harmless */
+					}
+				fpe_count = -1;
+				l->in.op = DCON;
+				l->in.type = l->fn.csiz = DOUBLE;
+				r->in.op = FREE;
+				return (l);
 			}
-	}
+		}
 
-	/* its real; we must make a new node */
+	/* it's real; we must make a new node */
 
 	p = block( o, l, r, INT, 0, INT );
 
@@ -585,6 +562,16 @@ buildtree( o, l, r ) register NODE *l, *r; {
 
 	return(p);
 
+	}
+
+int fpe_count = -1;
+jmp_buf gotfpe;
+
+fpe() {
+	if (fpe_count < 0)
+		cerror("floating point exception");
+	++fpe_count;
+	longjmp(gotfpe, 1);
 	}
 
 /*
@@ -1301,21 +1288,35 @@ icons(p) register NODE *p; {
 # define MPTR 010  /* pointer */
 # define MPTI 020  /* pointer or integer */
 # define MENU 040 /* enumeration variable or member */
+# define MVOID 0100000 /* void type */
 
 opact( p )  NODE *p; {
 
 	register mt12, mt1, mt2, o;
 
-	mt12 = 0;
+	mt1 = mt2 = mt12 = 0;
 
 	switch( optype(o=p->in.op) ){
 
 	case BITYPE:
-		mt12=mt2 = moditype( p->in.right->in.type );
+		mt2 = moditype( p->in.right->in.type );
 	case UTYPE:
-		mt12 &= (mt1 = moditype( p->in.left->in.type ));
+		mt1 = moditype( p->in.left->in.type );
+		break;
 
 		}
+
+	if( ((mt1 | mt2) & MVOID) &&
+	    o != COMOP &&
+	    !(o == CAST && (mt1 & MVOID)) ){
+		/* if lhs of RETURN is void, grammar will complain */
+		if( o != RETURN )
+			uerror( "value of void expression used" );
+		return( NCVT );
+		}
+	mt1 &= ~MVOID;
+	mt2 &= ~MVOID;
+	mt12 = mt1 & mt2;
 
 	switch( o ){
 
@@ -1449,7 +1450,10 @@ opact( p )  NODE *p; {
 		else if( (mt1&MINT) && (mt2&MPTR) ) return( TYPR+CVTL );
 
 		}
-	uerror( "operands of %s have incompatible types", opst[o] );
+	if( mt12 == MSTR )
+		uerror( "%s is not a permitted struct/union operation", opst[o] );
+	else
+		uerror( "operands of %s have incompatible types", opst[o] );
 	return( NCVT );
 	}
 
@@ -1460,7 +1464,7 @@ moditype( ty ) TWORD ty; {
 	case TVOID:
 		return( MPTR );
 	case UNDEF:
-		return(0); /* type is void */
+		return( MVOID );
 	case ENUMTY:
 	case MOETY:
 		return( MENU );

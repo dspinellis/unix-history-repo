@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)fort.c	4.6 (Berkeley) %G%";
+static char *sccsid ="@(#)fort.c	4.7 (Berkeley) %G%";
 #endif lint
 
 # ifndef FORT
@@ -22,6 +22,18 @@ static char *sccsid ="@(#)fort.c	4.6 (Berkeley) %G%";
 
 # ifndef REST
 # define REST(x) (((x)>>16)&0177777)
+# endif
+
+# ifndef FIXINT
+# if SZINT == SZLONG
+# define FIXINT(x) ((x) == LONG || (x) == ULONG ? (x) - 1 : (x))
+# else
+# if SZINT == SZSHORT
+# define FIXINT(x) ((x) == SHORT || (x) == USHORT ? (x) + 1 : (x))
+# else
+# define FIXINT(x) (x)
+# endif
+# endif
 # endif
 
 FILE * lrd;  /* for default reading routines */
@@ -169,7 +181,7 @@ mainp2( argc, argv ) char *argv[]; {
 		case ICON:
 			p = talloc();
 			p->in.op = ICON;
-			p->in.type = REST(x);
+			p->in.type = FIXINT(REST(x));
 			p->tn.rval = 0;
 			p->tn.lval = lread();
 			if( VAL(x) ){
@@ -195,7 +207,7 @@ mainp2( argc, argv ) char *argv[]; {
 		case NAME:
 			p = talloc();
 			p->in.op = NAME;
-			p->in.type = REST(x);
+			p->in.type = FIXINT(REST(x));
 			p->tn.rval = 0;
 			if( VAL(x) ) p->tn.lval = lread();
 			else p->tn.lval = 0;
@@ -209,8 +221,9 @@ mainp2( argc, argv ) char *argv[]; {
 		case OREG:
 			p = talloc();
 			p->in.op = OREG;
-			p->in.type = REST(x);
+			p->in.type = FIXINT(REST(x));
 			p->tn.rval = VAL(x);
+			rbusy( p->tn.rval, PTR | p->in.type );
 			p->tn.lval = lread();
 #ifndef FLEXNAMES
 			lcread( p->in.name, 2 );
@@ -222,7 +235,7 @@ mainp2( argc, argv ) char *argv[]; {
 		case REG:
 			p = talloc();
 			p->in.op = REG;
-			p->in.type = REST(x);
+			p->in.type = FIXINT(REST(x));
 			p->tn.rval = VAL(x);
 			rbusy( p->tn.rval, p->in.type );
 			p->tn.lval = 0;
@@ -287,7 +300,7 @@ mainp2( argc, argv ) char *argv[]; {
 			p = talloc();
 		defa:
 			p->in.op = FOP(x);
-			p->in.type = REST(x);
+			p->in.type = FIXINT(REST(x));
 
 			switch( optype( p->in.op ) ){
 

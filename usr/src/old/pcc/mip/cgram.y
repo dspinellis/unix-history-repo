@@ -1,9 +1,10 @@
-/*	cgram.y	4.3	85/03/19	*/
+/*	cgram.y	4.4	85/08/22	*/
 
 /*
  * Grammar for the C compiler.
  *
- * This grammar requires definitions of terminals extracted from pcclocal.h.
+ * This grammar requires the definitions of terminals in the file 'pcctokens'.
+ * (YACC doesn't have an 'include' mechanism, unfortunately.)
  */
 
 
@@ -563,9 +564,22 @@ forprefix:	  FOR  LP  .e  SM .e  SM
 			    }
 		;
 switchpart:	   SWITCH  LP  e  RP
-			={  savebc();
+			={  register NODE *q;
+			
+			    savebc();
 			    brklab = getlab();
-			    ecomp( buildtree( FORCE, $3, NIL ) );
+			    q = $3;
+			    switch( q->in.type ) {
+			    case CHAR:	case UCHAR:
+			    case SHORT:	case USHORT:
+			    case INT:	case UNSIGNED:
+			    case MOE:	case ENUMTY:
+				    break;
+			    default:
+				werror("switch expression not type int");
+				q = makety( q, INT, q->fn.cdim, q->fn.csiz );
+				}
+			    ecomp( buildtree( FORCE, q, NIL ) );
 			    branch( $$ = getlab() );
 			    swstart();
 			    reached = 0;

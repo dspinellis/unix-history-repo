@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)match.c	4.3 (Berkeley) %G%";
+static char *sccsid ="@(#)match.c	4.4 (Berkeley) %G%";
 #endif lint
 
 # include "pass2.h"
@@ -50,7 +50,9 @@ tshape( p, shape ) NODE *p; {
 
 # ifndef BUG3
 	if( sdebug ){
-		printf( "tshape( %o, %o), op = %d\n", p, shape, o );
+		printf( "tshape( %o, ", p );
+		prcook( shape );
+		printf( " ) op = %s\n", opst[o] );
 		}
 # endif
 

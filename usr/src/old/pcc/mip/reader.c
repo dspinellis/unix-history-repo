@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)reader.c	4.3 (Berkeley) %G%";
+static char *sccsid ="@(#)reader.c	4.4 (Berkeley) %G%";
 #endif lint
 
 # include "pass2.h"
@@ -344,7 +344,7 @@ delay2( p ) register NODE *p; {
 	case UNARY FORTCALL:
 	case COMOP:
 	case CBRANCH:
-		/* for the moment, don7t delay past a conditional context, or
+		/* for the moment, don't delay past a conditional context, or
 		/* inside of a call */
 		return;
 
@@ -438,6 +438,9 @@ prcook( cookie ){
 		if( cookie == SZERO ) printf( "SZERO" );
 		else if( cookie == SONE ) printf( "SONE" );
 		else if( cookie == SMONE ) printf( "SMONE" );
+		else if( cookie == SCCON ) printf( "SCCON" );
+		else if( cookie == SSCON ) printf( "SSCON" );
+		else if( cookie == SSOREG ) printf( "SSOREG" );
 		else printf( "SPECIAL+%d", cookie & ~SPECIAL );
 		return;
 		}

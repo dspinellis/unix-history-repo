@@ -1,4 +1,4 @@
-/*	c2.h	4.9	85/03/19	*/
+/*	c2.h	4.10	85/08/22	*/
 
 /*
  * Header for object code improver
@@ -171,9 +171,6 @@ int nfield;
 int	nchange;
 long	isn;
 int	debug;
-char	*lasta;
-char	*lastr;
-char	*firstr;
 char	revbr[];
 #define	NREG	12
 char	*regs[NREG+5]; /* 0-11, 4 for operands, 1 for running off end */
@@ -192,7 +189,6 @@ long getnum();
 struct node *codemove();
 struct node *insertl();
 struct node *nonlab();
-struct node *alloc();
 
 #ifdef notdef
 #define decref(p) \
@@ -200,3 +196,15 @@ struct node *alloc();
 #define delnode(p) \
 	((p)->back->forw = (p)->forw, (p)->forw->back = (p)->back)
 #endif notdef
+
+char *xalloc();
+extern char *newa;
+extern char *lasta;
+extern char *lastr;
+#define	XALIGN(n) \
+		(((n)+(sizeof (char *) - 1)) & ~(sizeof (char *) - 1))
+#define	alloc(n) \
+		((struct node *) \
+		 ((newa = lasta) + (n) > lastr ? \
+			xalloc(n) : \
+			(lasta += XALIGN(n), newa)))

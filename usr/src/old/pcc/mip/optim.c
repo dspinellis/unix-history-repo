@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)optim.c	4.5 (Berkeley) %G%";
+static char *sccsid ="@(#)optim.c	4.6 (Berkeley) %G%";
 #endif lint
 
 # include "pass1.h"
@@ -11,6 +11,9 @@ static char *sccsid ="@(#)optim.c	4.5 (Berkeley) %G%";
 # define LCON(p) (p->in.left->in.op==ICON)
 # define LO(p) p->in.left->in.op
 # define LV(p) p->in.left->tn.lval
+
+	/* is p a constant without a name */
+# define nncon(p)	((p)->in.op == ICON && (p)->tn.rval == NONAME)
 
 int oflag = 0;
 
@@ -106,32 +109,45 @@ optim(p) register NODE *p; {
 			p->in.right = t3;
 			}
 		if(o == PLUS && LO(p) == MINUS && RCON(p) && RCON(p->in.left) &&
-		  conval(p->in.right, MINUS, p->in.left->in.right)){
+		   conval(p->in.right, MINUS, p->in.left->in.right)){
 			zapleft:
 			RO(p->in.left) = FREE;
 			LO(p) = FREE;
 			p->in.left = p->in.left->in.left;
 		}
-		if( RCON(p) && LO(p)==o && RCON(p->in.left) && conval( p->in.right, o, p->in.left->in.right ) ){
+		if( RCON(p) && LO(p)==o && RCON(p->in.left) &&
+		    conval( p->in.right, o, p->in.left->in.right ) ){
 			goto zapleft;
 			}
-		else if( LCON(p) && RCON(p) && conval( p->in.left, o, p->in.right ) ){
+		else if( LCON(p) && RCON(p) &&
+			 conval( p->in.left, o, p->in.right ) ){
 			zapright:
 			RO(p) = FREE;
 			p->in.left = makety( p->in.left, p->in.type, p->fn.cdim, p->fn.csiz );
 			p->in.op = FREE;
 			return( clocal( p->in.left ) );
 			}
+		/* FALL THROUGH */
 
-		/* change muls to shifts */
+	case ASG MUL:
+		/* change muls to adds or shifts */
 
-		if( o==MUL && nncon(p->in.right) && (i=ispow2(RV(p)))>=0){
-			if( i == 0 ){ /* multiplication by 1 */
+		if( (o == MUL || o == ASG MUL) &&
+		    nncon(p->in.right) && (i=ispow2(RV(p)))>=0){
+			if( i == 0 ) /* multiplication by 1 */
 				goto zapright;
+			if( i == 1 && optype(LO(p)) == LTYPE){
+				/* multiplication by 2 */
+				p->in.op = (asgop(o) ? ASG PLUS : PLUS);
+				o = p->in.op;
+				ncopy(p->in.right, p->in.left);
 				}
-			o = p->in.op = LS;
-			p->in.right->in.type = p->in.right->fn.csiz = INT;
-			RV(p) = i;
+			else {
+				p->in.op = (asgop(o) ? ASG LS : LS);
+				o = p->in.op;
+				p->in.right->in.type = p->in.right->fn.csiz = INT;
+				RV(p) = i;
+				}
 			}
 
 		/* change +'s of negative consts back to - */
@@ -139,31 +155,73 @@ optim(p) register NODE *p; {
 			RV(p) = -RV(p);
 			o = p->in.op = MINUS;
 			}
-		/*FALLTHROUGH*/
+		/* FALL THROUGH */
+	case ASG AND:
+	case ASG PLUS:
+	case ASG MINUS:
 	case RS:
 	case LS:
-		/* Operations with zero -- DAS 1/20/85 */
-		if( (o==PLUS || o==MINUS || o==OR || o==ER || o==LS || o==RS)
-		    && nncon(p->in.right) && RV(p)==0 ) goto zapright;
-			break;
-
-	case DIV:
-		if( nncon( p->in.right ) && p->in.right->tn.lval == 1 ) goto zapright;
-		/* Unsigned division by a power of two -- DAS 1/13/85 */
-		if( nncon(p->in.right) && (i=ispow2(RV(p)))>=0 &&
-		    ISUNSIGNED(p->in.type) ){
-			o = p->in.op = RS;
-			p->in.right->in.type = p->in.right->fn.csiz = INT;
-			RV(p) = i;
+		/* Operations with zero */
+		if( nncon(p->in.right) && RV(p) == 0 ) {
+			if( o == MUL || o == ASG MUL ||
+			    o == AND || o == ASG AND ) {
+				if( asgop(o) )
+					p->in.op = ASSIGN;
+				else if( optype(LO(p)) == LTYPE ) {
+					p->in.op = FREE;
+					LO(p) = FREE;
+					p = p->in.right;
+					}
+				else
+					p->in.op = COMOP; /* side effects */
+				}
+			else if( o == PLUS || o == MINUS ||
+				 o == ASG PLUS || o == ASG MINUS ||
+				 o == OR || o == ER ||
+				 o == LS || o == RS )
+				goto zapright;
 			}
 		break;
 
+	case ASG DIV:
+	case DIV:
+		if( nncon( p->in.right ) ){
+			if( RV(p) == 0 ) uerror("division by zero");
+			else if( RV(p) == 1 ) goto zapright;
+			/* Unsigned division by a power of two */
+			else if( (i=ispow2(RV(p)))>=0 &&
+				 (ISUNSIGNED(p->in.left->in.type) ||
+				  ISUNSIGNED(p->in.right->in.type)) ){
+				p->in.op = (asgop(o) ? ASG RS : RS);
+				p->in.right->in.type = p->in.right->fn.csiz = INT;
+				RV(p) = i;
+				}
+			}
+		break;
+
+	case ASG MOD:
 	case MOD:
-		/* Unsigned mod by a power of two -- DAS 1/13/85 */
-		if( nncon(p->in.right) && (i=ispow2(RV(p)))>=0 &&
-		    ISUNSIGNED(p->in.type) ){
-			o = p->in.op = AND;
-			RV(p)--;
+		if( nncon(p->in.right) ){
+			if( RV(p) == 0 ) uerror("modulus of zero");
+			else if( RV(p) == 1 ){ /* mod by one gives zero */
+				RV(p) = 0;
+				if( asgop(o) )
+					p->in.op = ASSIGN;
+				else if( optype(LO(p)) == LTYPE ) {
+					p->in.op = FREE;
+					LO(p) = FREE;
+					p = p->in.right;
+					}
+				else
+					p->in.op = COMOP; /* side effects */
+				}
+			else if ((i=ispow2(RV(p)))>=0 &&
+				 (ISUNSIGNED(p->in.left->in.type) ||
+				  ISUNSIGNED(p->in.right->in.type)) ){
+				/* Unsigned mod by a power of two */
+				p->in.op = (asgop(o) ? ASG AND : AND);
+				RV(p)--;
+				}
 			}
 		break;
 
@@ -197,9 +255,4 @@ ispow2( c ) CONSZ c; {
 	if( c <= 0 || (c&(c-1)) ) return(-1);
 	for( i=0; c>1; ++i) c >>= 1;
 	return(i);
-	}
-
-nncon( p ) NODE *p; {
-	/* is p a constant without a name */
-	return( p->in.op == ICON && p->tn.rval == NONAME );
 	}
