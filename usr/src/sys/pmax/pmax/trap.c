@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: trap.c 1.32 91/04/06$
  *
- *	@(#)trap.c	7.15 (Berkeley) %G%
+ *	@(#)trap.c	7.16 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -53,19 +53,6 @@
 #include <sii.h>
 #include <le.h>
 #include <dc.h>
-
-/*
- * This is a kludge to allow X windows to work.
- */
-#define X_KLUGE
-
-#ifdef X_KLUGE
-#define USER_MAP_ADDR	0x4000
-#define NPTES 550
-static pt_entry_t UserMapPtes[NPTES];
-static unsigned nUserMapPtes;
-static pid_t UserMapPid;
-#endif
 
 struct	proc *machFPCurProcPtr;		/* pointer to last proc to use FP */
 
@@ -331,18 +318,6 @@ trap(statusReg, causeReg, vadr, pc, args)
 		register vm_map_t map = &vm->vm_map;
 		int rv;
 
-#ifdef X_KLUGE
-		if (p->p_pid == UserMapPid &&
-		    (va = pmax_btop(vadr - USER_MAP_ADDR)) < nUserMapPtes) {
-			register pt_entry_t *pte;
-
-			pte = &UserMapPtes[va];
-			MachTLBWriteRandom((vadr & PG_FRAME) |
-				(vm->vm_pmap.pm_tlbpid << VMMACH_TLB_PID_SHIFT),
-				pte->pt_entry);
-			return (pc);
-		}
-#endif
 		va = trunc_page((vm_offset_t)vadr);
 		rv = vm_fault(map, va, ftype, FALSE);
 		if (rv != KERN_SUCCESS) {
@@ -1287,53 +1262,6 @@ trapDump(msg)
 	bzero(trapdebug, sizeof(trapdebug));
 	trp = trapdebug;
 	splx(s);
-}
-#endif
-
-#ifdef X_KLUGE
-/*
- * This is a kludge to allow X windows to work.
- */
-caddr_t
-vmUserMap(size, pa)
-	int size;
-	unsigned pa;
-{
-	register caddr_t v;
-	unsigned off, entry;
-
-	if (nUserMapPtes == 0)
-		UserMapPid = curproc->p_pid;
-	else if (UserMapPid != curproc->p_pid)
-		return ((caddr_t)0);
-	off = pa & PGOFSET;
-	size = btoc(off + size);
-	if (nUserMapPtes + size > NPTES)
-		return ((caddr_t)0);
-	v = (caddr_t)(USER_MAP_ADDR + pmax_ptob(nUserMapPtes) + off);
-	entry = (pa & 0x9ffff000) | PG_V | PG_M;
-	if (pa >= MACH_UNCACHED_MEMORY_ADDR)
-		entry |= PG_N;
-	while (size > 0) {
-		UserMapPtes[nUserMapPtes].pt_entry = entry;
-		entry += NBPG;
-		nUserMapPtes++;
-		size--;
-	}
-	return (v);
-}
-
-vmUserUnmap()
-{
-	int id;
-
-	nUserMapPtes = 0;
-	if (UserMapPid == curproc->p_pid) {
-		id = curproc->p_vmspace->vm_pmap.pm_tlbpid;
-		if (id >= 0)
-			MachTLBFlushPID(id);
-	}
-	UserMapPid = 0;
 }
 #endif
 
