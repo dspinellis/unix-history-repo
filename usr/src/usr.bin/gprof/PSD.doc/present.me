@@ -1,4 +1,4 @@
-\"	@(#)present.me	1.4	%G%
+\"	@(#)present.me	1.5	%G%
 .sh 1 "Data Presentation"
 .pp
 The data is presented to the user in two different formats.
@@ -94,6 +94,7 @@ Sub1	Sub2	Sub3
 .)b
 This example would have the following form of entry
 in the profile listing.
+.sz 10
 .(b
 .TS
 box center;
@@ -113,6 +114,7 @@ _
 		0.00	0.00	0/5	\ \ Sub3 	[11]
 .TE
 .)b
+.sz 12
 .pp
 The entry is for routine Example, which has
 the Caller routines as its parents,
@@ -285,4 +287,5 @@ being profiled,
 produces no additional output until after the program finishes,
 and allows the program to be measured in its actual environment.
 Finally, the profiler runs on a time-sharing system 
-using only the normal services provided by the operating system.
+using only the normal services provided by the operating system
+and compilers.
