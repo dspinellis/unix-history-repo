@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.t	6.10 (Berkeley) %G%
+.\"	@(#)2.t	6.11 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -801,8 +801,11 @@ DEC 5000:	boot 6/tftp/vmunix.net m
 .DE
 This command should load the kernel and mini-root into memory and
 run the same as the tape install (procedure B).
-The rest of the steps are the same except you will need to
-execute the following to start the networking:
+The rest of the steps are the same except
+you will need to start the network
+(if you are unsure how to fill in the <name> fields below,
+see sections 4.4 and 5).
+Execute the following to start the networking:
 .DS
 .ft CW
 # mount -u /
