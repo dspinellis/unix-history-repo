@@ -2,7 +2,7 @@
 # include "sendmail.h"
 
 #ifndef DAEMON
-SCCSID(@(#)daemon.c	3.43		%G%	(w/o daemon mode));
+SCCSID(@(#)daemon.c	3.44		%G%	(w/o daemon mode));
 #else
 
 #include <sys/socket.h>
@@ -10,7 +10,7 @@ SCCSID(@(#)daemon.c	3.43		%G%	(w/o daemon mode));
 #include <netdb.h>
 #include <wait.h>
 
-SCCSID(@(#)daemon.c	3.43		%G%	(with daemon mode));
+SCCSID(@(#)daemon.c	3.44		%G%	(with daemon mode));
 
 /*
 **  DAEMON.C -- routines to use when running as a daemon.
@@ -26,6 +26,12 @@ SCCSID(@(#)daemon.c	3.43		%G%	(with daemon mode));
 **		Opens a port and initiates a connection.
 **		Returns in a child.  Must set InChannel and
 **		OutChannel appropriately.
+**	clrdaemon()
+**		Close any open files associated with getting
+**		the connection; this is used when running the queue,
+**		etc., to avoid having extra file descriptors during
+**		the queue run and to avoid confusing the network
+**		code (if it cares).
 **	makeconnection(host, port, outfile, infile)
 **		Make a connection to the named host on the given
 **		port.  Set *outfile and *infile to the files
@@ -55,11 +61,11 @@ SCCSID(@(#)daemon.c	3.43		%G%	(with daemon mode));
 
 # define MAXCONNS	4	/* maximum simultaneous sendmails */
 
-struct sockaddr_in SendmailAddress;
+struct sockaddr_in	SendmailAddress;/* internet address of sendmail */
+int	DaemonSocket = -1;		/* fd describing socket */
 
 getrequests()
 {
-	int s;
 	int t;
 	union wait status;
 	int numconnections = 0;
@@ -89,8 +95,8 @@ getrequests()
 # endif DEBUG
 
 	/* get a socket for the SMTP connection */
-	s = socket(AF_INET, SOCK_STREAM, 0, 0);
-	if (s < 0)
+	DaemonSocket = socket(AF_INET, SOCK_STREAM, 0, 0);
+	if (DaemonSocket < 0)
 	{
 		/* probably another daemon already */
 		syserr("getrequests: can't create socket");
@@ -101,17 +107,17 @@ getrequests()
 # endif LOG
 		finis();
 	}
-	if (bind(s, &SendmailAddress, sizeof SendmailAddress, 0) < 0)
+	if (bind(DaemonSocket, &SendmailAddress, sizeof SendmailAddress, 0) < 0)
 	{
 		syserr("getrequests: cannot bind");
-		close(s);
+		(void) close(DaemonSocket);
 		goto severe;
 	}
-	listen(s, 10);
+	listen(DaemonSocket, 10);
 
 # ifdef DEBUG
 	if (tTd(15, 1))
-		printf("getrequests: %d\n", s);
+		printf("getrequests: %d\n", DaemonSocket);
 # endif DEBUG
 
 	for (;;)
@@ -126,7 +132,7 @@ getrequests()
 
 			errno = 0;
 			lotherend = sizeof otherend;
-			t = accept(s, &otherend, &lotherend, 0);
+			t = accept(DaemonSocket, &otherend, &lotherend, 0);
 		} while (t < 0 && errno == EINTR);
 		if (t < 0)
 		{
@@ -160,7 +166,7 @@ getrequests()
 			**	Verify calling user id if possible here.
 			*/
 
-			close(s);
+			(void) close(DaemonSocket);
 			InChannel = fdopen(t, "r");
 			OutChannel = fdopen(t, "w");
 # ifdef DEBUG
@@ -196,6 +202,25 @@ getrequests()
 			numconnections--;
 	}
 	/*NOTREACHED*/
+}
+/*
+**  CLRDAEMON -- reset the daemon connection
+**
+**	Parameters:
+**		none.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		releases any resources used by the passive daemon.
+*/
+
+clrdaemon()
+{
+	if (DaemonSocket >= 0)
+		(void) close(DaemonSocket);
+	DaemonSocket = -1;
 }
 /*
 **  MAKECONNECTION -- make a connection to an SMTP socket on another machine.
