@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)dmc.4	6.3 (Berkeley) %G%
+.\"	@(#)dmc.4	6.4 (Berkeley) %G%
 .\"
 .TH DMC 4 ""
 .UC 5
@@ -22,7 +22,7 @@ The
 interface driver also supports a DEC DMR-11 providing point-to-point
 communication running at data rates from 2.4 Kb/s to 1 Mb/s.
 DMR-11's are a more recent design and thus are preferred over DMC-11's.
-The NXMT and NRCV constants in the driver should be increased in this case,
+The NXMT and NRCV constants in the driver may be increased in this case,
 as the DMR can accept up to 64 transmit and receive buffers, as opposed
 to 7 for the DMC.
 .PP
