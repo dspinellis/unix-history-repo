@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -925,22 +925,35 @@ pclose(ptr)
 
 /*
  * Check user requesting login priviledges.
+ * Disallow anyone who does not have a standard
+ * shell returned by getusershell() (/etc/shells).
  * Disallow anyone mentioned in the file FTPUSERS
  * to allow people such as uucp to be avoided.
  */
 checkuser(name)
 	register char *name;
 {
-	char line[BUFSIZ], *index();
+	register char *cp;
+	char line[BUFSIZ], *index(), *getusershell();
 	FILE *fd;
+	struct passwd *pw;
 	int found = 0;
 
+	pw = getpwnam(name);
+	if (pw == NULL)
+		return (0);
+	while ((cp = getusershell()) != NULL)
+		if (strcmp(cp, pw->pw_shell) == 0)
+			break;
+	endpwent();
+	endusershell();
+	if (cp == NULL)
+		return (0);
 	fd = fopen(FTPUSERS, "r");
 	if (fd == NULL)
 		return (1);
 	while (fgets(line, sizeof (line), fd) != NULL) {
-		register char *cp = index(line, '\n');
-
+		cp = index(line, '\n');
 		if (cp)
 			*cp = '\0';
 		if (strcmp(line, name) == 0) {
