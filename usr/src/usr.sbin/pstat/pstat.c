@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#) (Berkeley) 82/12/13";
+static char *sccsid = "@(#) (Berkeley) 82/12/24";
 #endif
 /*
  * Print system stuff
@@ -23,7 +23,7 @@ static char *sccsid = "@(#) (Berkeley) 82/12/13";
 #include <sys/conf.h>
 #include <sys/vm.h>
 #include <nlist.h>
-#include <sys/pte.h>
+#include <machine/pte.h>
 #include <sys/descrip.h>
 
 char	*fcore	= "/dev/kmem";

@@ -1,8 +1,8 @@
-static char *sccsid = "@(#)analyze.c	4.4 (Berkeley) %G%";
+static char *sccsid = "@(#)analyze.c	4.5 (Berkeley) %G%";
 #include <stdio.h>
 #include <sys/param.h>
 #include <sys/dir.h>
-#include <sys/pte.h>
+#include <machine/pte.h>
 #include <nlist.h>
 #include <sys/map.h>
 #include <sys/user.h>

@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.4	(Berkeley)	%G%
+#	@(#)Makefile	4.5	(Berkeley)	%G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -323,7 +323,7 @@ ps: /usr/include/sys/tty.h
 ps: /usr/include/dir.h
 ps: /usr/include/sys/user.h
 ps: /usr/include/sys/proc.h
-ps: /usr/include/sys/pte.h
+ps: /usr/include/machine/pte.h
 ps: /usr/include/sys/vm.h
 ps: /usr/include/sys/text.h
 ps: /usr/include/sys/stat.h
