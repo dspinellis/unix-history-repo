@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)dbm.3	6.3 (Berkeley) %G%
+.\"	@(#)dbm.3	6.4 (Berkeley) %G%
 .\"
 .TH DBM 3X  ""
 .UC 4
@@ -36,9 +36,10 @@ dbminit, fetch, store, delete, firstkey, nextkey \- data base subroutines
 .B datum key;
 .SH DESCRIPTION
 .ft B
-Note: the dbm library has been superceded by ndbm(3),
+The dbm library has been obsoleted by ndbm(3),
 and is now implemented using ndbm.
 .ft R
+.PP
 These functions maintain key/content pairs in a data base.
 The functions will handle very large (a billion blocks)
 databases and will access a keyed item in one or two file system accesses.
