@@ -1,4 +1,4 @@
-/*	lp.local.h	1.1	81/05/09	*/
+/*	lp.local.h	1.2	81/09/04	*/
 /*
  * Possibly, local parameters to the spooling system
  */
@@ -75,3 +75,8 @@
 #define WIDTH	8		/* width of characters */
 #define DROP	3		/* offset to drop characters with descenders */
 
+/*
+ * Does lpd driver give a form feed on first open?  If so, set TOF to 1
+ *  to save one page.
+ */
+#define TOF	1
