@@ -1,0 +1,5 @@
+#	@(#)VERSION	5.1 (Berkeley) %G%
+
+This is version @(#)VERSION	5.1 of the Berkeley DB code.
+
+(If there's no version file in yours, it's *really* old.)
