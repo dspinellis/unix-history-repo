@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_emit.c	7.10 (Berkeley) %G%
+ *	@(#)tp_emit.c	7.11 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -874,8 +874,7 @@ tp_error_emit(error, sref, faddr, laddr, erdata, erlen, tpcb, cons_channel,
 	ENDTRACE
 
 	datalen = m_datalen( m);
-
-	if(tpcb) {
+	if (tpcb) {
 		if( tpcb->tp_use_checksum ) {
 			IFTRACE(D_ERROR_EMIT)
 				tptrace(TPPTmisc, "before gen csum datalen", datalen,0,0,0);
@@ -892,11 +891,27 @@ tp_error_emit(error, sref, faddr, laddr, erdata, erlen, tpcb, cons_channel,
 			printf("OUTPUT: tpcb 0x%x, isop 0x%x, so 0x%x\n",
 				tpcb,  tpcb->tp_npcb,  tpcb->tp_sock);
 		ENDDEBUG
-		/* Problem: if packet comes in on ISO but sock is listening
-		 * in INET, this assertion will fail.
-		 * Have to believe the argument, not the nlp_proto.
-		ASSERT( tpcb->tp_nlproto->nlp_dgoutput == dgout_routine );
-		 */
+	}
+	if (cons_channel) {
+#ifdef TPCONS
+		struct pklcd *lcp = (struct pklcd *)cons_channel;
+		struct isopcb *isop = (struct isopcb *)lcp->lcd_upnext;
+
+		tpcons_dg_output(cons_channel, m, datalen);
+		/* was if (tpcb == 0) iso_pcbdetach(isop); */
+		/* but other side may want to try again over same VC,
+		   so, we'll depend on him closing it, but in case it gets forgotten
+		   we'll mark it for garbage collection */
+		lcp->lcd_flags |= X25_DG_CIRCUIT;
+		IFDEBUG(D_ERROR_EMIT)
+			printf("OUTPUT: dutype 0x%x channel 0x%x\n",
+				dutype, cons_channel);
+		ENDDEBUG
+#else
+		printf("TP panic! cons channel 0x%x but not cons configured\n",
+			cons_channel);
+#endif
+	} else if (tpcb) {
 
 		IFDEBUG(D_ERROR_EMIT)
 			printf("tp_error_emit 1 sending DG: Laddr\n");
@@ -909,38 +924,22 @@ tp_error_emit(error, sref, faddr, laddr, erdata, erlen, tpcb, cons_channel,
 			&faddr->siso_addr, 
 			m, datalen, 
 					/* no route */	(caddr_t)0, !tpcb->tp_use_checksum); 
-	} else  {
-		if( cons_channel ) {
-#ifdef TPCONS
-			tpcons_dg_output(cons_channel, m, datalen);
-			pk_disconnect((struct pklcd *)cons_channel);
-			IFDEBUG(D_ERROR_EMIT)
-				printf("OUTPUT: dutype 0x%x channel 0x%x\n",
-					dutype, cons_channel);
-			ENDDEBUG
-#else
-			printf("TP panic! cons channel 0x%x but not cons configured\n",
-				cons_channel);
-#endif
-		} else {
-#ifndef notdef
+	} else if (dgout_routine) {
 			IFDEBUG(D_ERROR_EMIT)
 				printf("tp_error_emit sending DG: Laddr\n");
 				dump_addr((struct sockaddr *)laddr);
 				printf("Faddr\n");
 				dump_addr((struct sockaddr *)faddr);
 			ENDDEBUG
-			return (*dgout_routine)( &laddr->siso_addr, &faddr->siso_addr, 
-				m, datalen, /* no route */ 
-				(caddr_t)0, /* nochecksum==false */0);
-#else notdef
+				return (*dgout_routine)( &laddr->siso_addr, &faddr->siso_addr, 
+					m, datalen, /* no route */ 
+					(caddr_t)0, /* nochecksum==false */0);
+	} else {
 			IFDEBUG(D_ERROR_EMIT)
 				printf("tp_error_emit DROPPING \n", m);
 			ENDDEBUG
 			IncStat(ts_send_drop);
 			m_freem(m);
 			return 0;
-#endif notdef
-		}
 	}
 }

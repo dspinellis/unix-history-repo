@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_usrreq.c	7.19 (Berkeley) %G%
+ *	@(#)tp_usrreq.c	7.20 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -382,18 +382,15 @@ tp_usrreq(so, req, m, nam, controlp)
 	case PRU_ATTACH:
 		if (tpcb) {
 			error = EISCONN;
-			break;
-		}
-		if (error = tp_attach(so, so->so_proto->pr_domain->dom_family))
-			break;
-		tpcb = sototpcb(so);
+		} else if ((error = tp_attach(so, (int)nam)) == 0)
+			tpcb = sototpcb(so);
 		break;
 
 	case PRU_ABORT: 	/* called from close() */
 		/* called for each incoming connect queued on the 
 		 *	parent (accepting) socket 
 		 */
-		if (tpcb->tp_state == TP_OPEN) {
+		if (tpcb->tp_state == TP_OPEN || tpcb->tp_state == TP_CONFIRMING) {
 			E.ATTR(T_DISC_req).e_reason = E_TP_NO_SESSION;
 			error = DoEvent(T_DISC_req); /* pretend it was a close() */
 			break;
@@ -467,16 +464,13 @@ tp_usrreq(so, req, m, nam, controlp)
 				tpcb->tp_class);
 		ENDDEBUG
 		if (tpcb->tp_lsuffixlen == 0) {
-			if (error = (tpcb->tp_nlproto->nlp_pcbbind)(tpcb->tp_npcb, MNULL)) {
+			if (error = tp_pcbbind(tpcb, MNULL)) {
 				IFDEBUG(D_CONN)
 					printf("pcbbind returns error 0x%x\n", error);
 				ENDDEBUG
 				break;
 			}
-			(tpcb->tp_nlproto->nlp_getsufx)(tpcb->tp_npcb, &tpcb->tp_lsuffixlen,
-				tpcb->tp_lsuffix, TP_LOCAL);
 		}
-
 		IFDEBUG(D_CONN)
 			printf("isop 0x%x isop->isop_socket offset 12 :\n", tpcb->tp_npcb);
 			dump_buf(tpcb->tp_npcb, 16);

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_cons.c	7.9 (Berkeley) %G%
+ *	@(#)tp_cons.c	7.10 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -126,16 +126,18 @@ tpcons_ctlinput(cmd, siso, isop)
 	struct sockaddr_iso *siso;
 	struct isopcb *isop;
 {
+	register struct tp_pcb *tpcb = 0;
+
+	if (isop->isop_socket)
+		tpcb = (struct tp_pcb *)isop->isop_socket->so_pcb;
 	switch (cmd) {
 
 	case PRC_CONS_SEND_DONE:
-		if( isop->isop_socket ) { /* tp 0 only */
-			register struct tp_pcb *tpcb = 
-				(struct tp_pcb *)isop->isop_socket->so_pcb;
+		if (tpcb) {
 			struct 	tp_event 		E;
 			int 					error = 0;
 
-			if( tpcb->tp_class == TP_CLASS_0 ) {
+			if (tpcb->tp_class == TP_CLASS_0) {
 				/* only if class is exactly class zero, not
 				 * still in class negotiation
 				 */
@@ -158,10 +160,10 @@ tpcons_ctlinput(cmd, siso, isop)
 					tpcb->tp_sock->so_error = error;
 				}
 			} /* else ignore it */
-		} 
+		}
 		break;
 	case PRC_ROUTEDEAD:
-		if( isop->isop_socket ) { /* tp 0 only */
+		if (tpcb && tpcb->tp_class == TP_CLASS_0) {
 			tpiso_reset(isop);
 			break;
 		} /* else drop through */
@@ -236,9 +238,25 @@ tpcons_output(isop, m0, datalen, nochksum)
 		m->m_next = m0;
 	}
 	m->m_pkthdr.len = datalen;
-	error = pk_send(isop->isop_chan, m);
-	IncStat(ts_tpdu_sent);
-
+	if (isop->isop_chan == 0) {
+		/* got a restart maybe? */
+		if ((isop->isop_chan = (caddr_t) pk_attach((struct socket *)0)) == 0) {
+			IFDEBUG(D_CCONS)
+				printf("tpcons_output: no pklcd\n");
+			ENDDEBUG
+			error = ENOBUFS;
+		}
+		if (error = cons_connect(isop)) {
+			pk_disconnect((struct pklcd *)isop->isop_chan);
+			isop->isop_chan = 0;
+			IFDEBUG(D_CCONS)
+				printf("tpcons_output: can't reconnect\n");
+			ENDDEBUG
+		}
+	} else {
+		error = pk_send(isop->isop_chan, m);
+		IncStat(ts_tpdu_sent);
+	}
 	return error;
 }
 /*

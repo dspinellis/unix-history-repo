@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_pcb.c	7.13 (Berkeley) %G%
+ *	@(#)tp_pcb.c	7.14 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -52,11 +52,12 @@ SOFTWARE.
  *
  */
 
-#include "types.h"
 #include "param.h"
+#include "systm.h"
 #include "mbuf.h"
 #include "socket.h"
 #include "socketvar.h"
+#include "domain.h"
 #include "protosw.h"
 #include "errno.h"
 #include "time.h"
@@ -543,6 +544,35 @@ tp_getref(tpcb)
 }
 
 /*
+ * NAME: tp_set_npcb()
+ *
+ * CALLED FROM:
+ *	tp_attach(), tp_route_to()
+ *
+ * FUNCTION and ARGUMENTS:
+ *  given a tpcb, allocate an appropriate lower-lever npcb, freeing
+ *  any old ones that might need re-assigning.
+ */
+tp_set_npcb(tpcb)
+register struct tp_pcb *tpcb;
+{
+	register struct socket *so = tpcb->tp_sock;
+	int error;
+
+	if (tpcb->tp_nlproto && tpcb->tp_npcb) {
+		short so_state = so->so_state;
+		so->so_state &= ~SS_NOFDREF;
+		tpcb->tp_nlproto->nlp_pcbdetach(tpcb->tp_npcb);
+		so->so_state = so_state;
+	}
+	tpcb->tp_nlproto = &nl_protosw[tpcb->tp_netservice];
+	/* xx_pcballoc sets so_pcb */
+	error = tpcb->tp_nlproto->nlp_pcballoc(so, tpcb->tp_nlproto->nlp_pcblist);
+	tpcb->tp_npcb = so->so_pcb;
+	so->so_pcb = (caddr_t)tpcb;
+	return (error);
+}
+/*
  * NAME: tp_attach()
  *
  * CALLED FROM:
@@ -567,13 +597,13 @@ tp_getref(tpcb)
  *
  * NOTES:
  */
-tp_attach(so, dom)
-	struct socket 	*so;
-	int 			dom;
+tp_attach(so, protocol)
+	struct socket 			*so;
+	int 					protocol;
 {
 	register struct tp_pcb	*tpcb;
 	int 					error;
-	int 					protocol = so->so_proto->pr_protocol;
+	int 					dom = so->so_proto->pr_domain->dom_family;
 	extern struct tp_conn_param tp_conn_param[];
 
 	IFDEBUG(D_CONN)
@@ -610,7 +640,8 @@ tp_attach(so, dom)
 	}
 	tpcb->tp_sock =  so;
 	tpcb->tp_domain = dom;
-	if (protocol<ISOPROTO_TP4) {
+	/* tpcb->tp_proto = protocol; someday maybe? */
+	if (protocol && protocol<ISOPROTO_TP4) {
 		tpcb->tp_netservice = ISO_CONS;
 		tpcb->tp_snduna = (SeqNum) -1;/* kludge so the pseudo-ack from the CR/CC
 								 * will generate correct fake-ack values
@@ -643,37 +674,13 @@ tp_attach(so, dom)
 	tpcb->tp_s_subseq = 0;
 
 	/* attach to a network-layer protoswitch */
-	/* new way */
-	tpcb->tp_nlproto = & nl_protosw[tpcb->tp_netservice];
-	ASSERT( tpcb->tp_nlproto->nlp_afamily == tpcb->tp_domain);
-#ifdef notdef
-	/* OLD WAY */
-	/* TODO: properly, this search would be on the basis of 
-	* domain,netservice or just netservice only (if you have
-	* IN_CLNS, ISO_CLNS, and ISO_CONS)
-	*/
-	tpcb->tp_nlproto = nl_protosw;
-	while(tpcb->tp_nlproto->nlp_afamily != tpcb->tp_domain )  {
-		if( tpcb->tp_nlproto->nlp_afamily == 0 ) {
-			error = EAFNOSUPPORT;
-			goto bad4;
-		}
-		tpcb->tp_nlproto ++;
-	}
-#endif notdef
-
-	/* xx_pcballoc sets so_pcb */
-	if ( error =  (tpcb->tp_nlproto->nlp_pcballoc) ( 
-							so, tpcb->tp_nlproto->nlp_pcblist ) ) {
+	if ( error =  tp_set_npcb(tpcb))
 		goto bad4;
-	}
+	ASSERT( tpcb->tp_nlproto->nlp_afamily == tpcb->tp_domain);
 
+	/* nothing to do for iso case */
 	if( dom == AF_INET )
 		sotoinpcb(so)->inp_ppcb = (caddr_t) tpcb;
-		/* nothing to do for iso case */
-
-	tpcb->tp_npcb = so->so_pcb;
-	so->so_pcb = (caddr_t) tpcb;
 
 	return 0;
 
@@ -742,12 +749,6 @@ tp_detach(tpcb)
 			tpcb, so, *(u_short *)(tpcb->tp_lsuffix), 0);
 	ENDTRACE
 
-	if (so->so_head) {
-		if (!soqremque(so, 0) && !soqremque(so, 1))
-			panic("sofree dq");
-		so->so_head = 0;
-	}
-
 	IFDEBUG(D_CONN)
 		printf("tp_detach(freeing RTC list snduna 0x%x rcvnxt 0x%x)\n",
 		tpcb->tp_snduna_rtc,
@@ -776,10 +777,10 @@ tp_detach(tpcb)
 				tpcb->tp_nlproto, tpcb->tp_nlproto->nlp_pcbdetach);
 	ENDDEBUG
 
-	if (so->so_snd.sb_cc != 0)
-		sbflush(&so->so_snd);
-	if (tpcb->tp_Xrcv.sb_cc != 0)
-		sbdrop(&tpcb->tp_Xrcv, (int)tpcb->tp_Xrcv.sb_cc);
+	if (tpcb->tp_Xsnd.sb_mb) {
+		printf("Unsent Xdata on detach; would panic");
+		sbflush(&tpcb->tp_Xsnd);
+	}
 	if (tpcb->tp_ucddata)
 		m_freem(tpcb->tp_ucddata);
 
@@ -793,7 +794,7 @@ tp_detach(tpcb)
 
 
 	(tpcb->tp_nlproto->nlp_pcbdetach)(tpcb->tp_npcb);
-				/* does an sofree(so) */
+				/* does an so->so_pcb = 0; sofree(so) */
 
 	IFDEBUG(D_CONN)
 		printf("after xxx_pcbdetach\n");
@@ -808,13 +809,7 @@ tp_detach(tpcb)
 
 		tp_freeref(tpcb->tp_refp);
 	}
-
-	if (tpcb->tp_Xsnd.sb_mb) {
-		printf("Unsent Xdata on detach; would panic");
-		sbflush(&tpcb->tp_Xsnd);
-	}
-	so->so_pcb = 0;
-
+#ifdef TP_PERF_MEAS
 	/* 
 	 * Get rid of the cluster mbuf allocated for performance measurements, if
 	 * there is one.  Note that tpcb->tp_perf_on says nothing about whether or 
@@ -822,7 +817,6 @@ tp_detach(tpcb)
 	 * to one (that is, we need the TP_PERF_MEASs around the following section 
 	 * of code, not the IFPERFs)
 	 */
-#ifdef TP_PERF_MEAS
 	if (tpcb->tp_p_mbuf) {
 		register struct mbuf *m = tpcb->tp_p_mbuf;
 		struct mbuf *n;
@@ -920,7 +914,7 @@ register struct mbuf *nam;
 	}
 	if (tpcb->tp_lsuffixlen == 0) {
 		if (tlen) {
-			if (tp_tselinuse(tsel, tlen, siso,
+			if (tp_tselinuse(tlen, tsel, siso,
 								tpcb->tp_sock->so_options & SO_REUSEADDR))
 				return (EINVAL);
 		} else for (tsel = (caddr_t)&tp_unique, tlen = 2;;){
@@ -930,7 +924,7 @@ register struct mbuf *nam;
 						return ESRCH;
 					tp_unique = ISO_PORT_RESERVED;
 			}
-			if (tp_tselinuse(tsel, tlen, siso, 0) == 0)
+			if (tp_tselinuse(tlen, tsel, siso, 0) == 0)
 				break;
 		}
 		bcopy(tsel, tpcb->tp_lsuffix, (tpcb->tp_lsuffixlen = tlen));
