@@ -29,6 +29,14 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00035
+ * --------------------         -----   ----------------------
+ *
+ * 27 Nov 1992	Felix Gaehtgens		Removed KLUDGELINEMODE
+ *
  */
 
 #ifndef lint
@@ -1035,7 +1043,7 @@ dontoption(option)
 				send_wont(option, 0);
 			set_my_state_wont(option);
 			if (turn_on_sga ^= 1)
-				send_will(option);
+				send_will(option,1);
 			return;
 #endif	/* defined(LINEMODE) && defined(KLUDGELINEMODE) */
 
