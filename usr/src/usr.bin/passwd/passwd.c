@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)passwd.c	4.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)passwd.c	4.25 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -353,6 +353,7 @@ getloginshell(pwd, u, arg)
 			exit(1);
 		}
 	}
+	setusershell();
 	if (arg != 0) {
 		(void) strncpy(newshell, arg, sizeof newshell - 1);
 		newshell[sizeof newshell - 1] = 0;
