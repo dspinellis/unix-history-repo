@@ -5,9 +5,11 @@
  * This code is derived from software contributed to Berkeley by
  * William Jolitz.
  *
+ * Added support for ibmpc term type and improved keyboard support. -Don Ahn
+ *
  * %sccs.include.386.c%
  *
- *	@(#)pccons.c	5.1 (Berkeley) %G%
+ *	@(#)pccons.c	5.2 (Berkeley) %G%
  */
 
 /*
@@ -21,6 +23,7 @@
 #include "proc.h"
 #include "tty.h"
 #include "uio.h"
+#include "machine/device.h"
 #include "callout.h"
 #include "systm.h"
 #include "kernel.h"
@@ -37,6 +40,12 @@ struct	consoftc {
 	int	cs_timo;	/* timeouts since interrupt */
 	u_long	cs_wedgecnt;	/* times restarted */
 } consoftc;
+
+int cnprobe(), cnattach();
+
+struct	driver cndriver = {
+	cnprobe, cnattach, "cn",
+};
 
 /*
  * We check the console periodically to make sure
@@ -66,6 +75,39 @@ char	partab[];
 
 u_char inb();
 
+cnprobe(dev)
+struct device *dev;
+{
+	u_char c;
+	int again = 0;
+
+	/* Enable interrupts and keyboard controller */
+	while (inb(0x64)&2); outb(0x64,0x60);
+	while (inb(0x64)&2); outb(0x60,0x4D);
+
+	/* Start keyboard stuff RESET */
+	while (inb(0x64)&2);	/* wait input ready */
+	outb(0x60,0xFF);	/* RESET */
+	while((c=inb(0x60))!=0xFA) {
+		if ((c == 0xFE) ||  (c == 0xFF)) {
+			if(!again)printf("KEYBOARD disconnected: RECONNECT \n");
+			while (inb(0x64)&2);	/* wait input ready */
+			outb(0x60,0xFF);	/* RESET */
+			again = 1;
+		}
+	}
+	if (again) printf("KEYBOARD Reconnected\n");
+	/* pick up keyboard reset return code */
+	sgetc(1);
+	return 1;
+}
+
+cnattach(dev)
+struct device *dev;
+{
+	INTREN(IRQ1);
+}
+
 /*ARGSUSED*/
 cnopen(dev, flag)
 	dev_t dev;
@@ -81,7 +123,6 @@ cnopen(dev, flag)
 		ttychars(tp);
 		tp->t_state = TS_ISOPEN|TS_CARR_ON;
 		tp->t_flags = EVENP|ECHO|XTABS|CRMOD;
-		INTREN(IRQ1);
 		splnone();
 	}
 	return ((*linesw[tp->t_line].l_open)(dev, tp));
@@ -201,7 +242,9 @@ cnstart(tp)
 			}
 			c &= 0177;
 		}
-		sput(c,0xc);
+		splx(s);
+		sput(c,0x7);
+		s = spltty();
 	}
 out:
 	splx(s);
@@ -210,10 +253,9 @@ out:
 cnputc(c)
 	char c;
 {
-
 	if (c == '\n')
-		sput('\r',0xb);
-	sput(c, 0xb);
+		sput('\r',0x3);
+	sput(c, 0x3);
 }
 
 /*
@@ -223,7 +265,7 @@ cnputchar(c, tp)
 	char c;
 	register struct tty *tp;
 {
-	sput(c,0xa);
+	sput(c,0x2);
 	if (c=='\n') getchar();
 }
 
@@ -233,8 +275,8 @@ cngetc()
 	register int c, s;
 
 	s = spltty();		/* block cnrint while we poll */
-	if (c == '\r')
-		c = '\n';
+	c = sgetc(0);
+	if (c == '\r') c = '\n';
 	splx(s);
 	return (c);
 }
@@ -266,33 +308,90 @@ cnpoll(onoff)
 }
 #endif
 
-#define	CRT_TXTADDR	Crtat
+extern int hz;
+
+sysbeepstop()
+{
+	/* disable counter 2 */
+	outb(0x61,inb(0x61)&0xFC);
+}
+
+sysbeep()
+{
+	/* enable counter 2 */
+	outb(0x61,inb(0x61)|3);
+	/* set command for counter 2, 2 byte write */
+	outb(0x43,0xB6);
+	/* send 0x637 for 750 HZ */
+	outb(0x42,0x37);
+	outb(0x42,0x06);
+	timeout(sysbeepstop,0,hz/4);
+}
+
 #define	COL		80
 #define	ROW		25
 #define	CHR		2
+#define MONO_BASE	0x3B4
+#define MONO_BUF	0xB0000
+#define CGA_BASE	0x3D4
+#define CGA_BUF		0xB8000
+#define IOPHYSMEM	0xA0000
 
-
-u_short *Crtat = ((u_short *)0xb8000);
-u_short	*crtat ;
 u_char	color = 0xe ;
-int row;
+static unsigned int addr_6845;
+u_short *Crtat = (u_short *)MONO_BUF;
 
-sput(c, ca) u_char c, ca; {
+/* cursor() sets an offset (0-1999) into the 80x25 text area    */
+/* Theoretically there should be a slight delay between outb's  */
+/* and if your display has cursor problems that may be it.      */
+/* This may have to be left as is since it is done after every  */
+/* char and can seriously affect performance .                  */
 
-	if(inb(0x64)&2 == 0)sgetc(1);
+cursor(pos)
+int pos;
+{
+	outb(addr_6845,14);
+	outb(addr_6845+1,pos >> 8);
+	outb(addr_6845,15);
+	outb(addr_6845+1,pos&0xff);
+}
+
+/* sput has support for emulation of the 'ibmpc' termcap entry. */
+/* This is a bare-bones implementation of a bare-bones entry    */
+/* One modification: Change li#24 to li#25 to reflect 25 lines  */
+/* sput tries to do 16-bit writes.  This may not work on all.   */
+
+sput(c, ca)
+u_char c, ca;
+{
+
+	static int esc,ebrac,eparm,cx,cy,row,so;
+	static u_short *crtat = 0;
+	int s;
+
+	s = splnone();
+
+/*
+	if(inb(0x64)&1)sgetc(1);
+*/
 	if (crtat == 0) {
-		INTREN(IRQ1); /* XXX */
-		crtat = CRT_TXTADDR; bzero (crtat,COL*ROW*CHR);
+
+		/* Crtat initialized to point to MONO buffer   */
+		/* if not present change to CGA_BUF offset     */
+		/* ONLY ADD the difference since locore.s adds */
+		/* in the remapped offset at the right time    */
+
+		*Crtat = (u_short) 0xA55A;
+		if (*Crtat != 0xA55A) {
+			Crtat = Crtat + (CGA_BUF-MONO_BUF)/CHR;
+			addr_6845 = CGA_BASE;
+		} else addr_6845 = MONO_BASE;
+		crtat = Crtat; bzero (crtat,COL*ROW*CHR);
 	}
-	/*if (crtat >= (CRT_TXTADDR+COL*(ROW-1))) {
-		crtat = CRT_TXTADDR+COL*(ROW-1); row = 0;
-	}*/
-		if (crtat >= CRT_TXTADDR+COL*(ROW-1)) { /* scroll */
-			bcopy(CRT_TXTADDR+COL, CRT_TXTADDR,COL*(ROW-1)*CHR);
-			bzero (CRT_TXTADDR+COL*(ROW-1),COL*CHR) ;
-			crtat -= COL ;
-		}
 	switch(c) {
+	case 0x1B:
+		esc = 1; ebrac = 0; eparm = 0;
+		break;
 
 	case '\t':
 		do {
@@ -302,35 +401,112 @@ sput(c, ca) u_char c, ca; {
 
 	case '\010':
 		crtat--; row--;
+		if (row < 0) row += COL;  /* non-destructive backspace */
 		break;
 
 	case '\r':
-		/*bzero (crtat,(COL-row)*CHR) ;*/ crtat -= row ; row = 0;
+		crtat -= row ; row = 0;
 		break;
 
 	case '\n':
-		if (crtat >= CRT_TXTADDR+COL*(ROW-1)) { /* scroll */
-			bcopy(CRT_TXTADDR+COL, CRT_TXTADDR,COL*(ROW-1)*CHR);
-			bzero (CRT_TXTADDR+COL*(ROW-1),COL*CHR) ;
-			crtat -= COL ;
-		}
 		crtat += COL ;
 		break;
 
 	default:
-		*crtat++ = (ca<<8)| c; row++ ;
-		if (row >= COL) {
-		/*bzero (crtat,(COL-row)*CHR) ;*/ crtat -= row ; row = 0;
-		if (crtat >= CRT_TXTADDR+COL*(ROW-1)) { /* scroll */
-			bcopy(CRT_TXTADDR+COL, CRT_TXTADDR,COL*(ROW-1)*CHR);
-			bzero (CRT_TXTADDR+COL*(ROW-1),COL*CHR) ;
-			crtat -= COL ;
+		if (esc) {
+			if (ebrac) {
+				switch(c) {
+				case 'm': /* no support for standout */
+					if (!cx) so = 0;
+					else so = 1;
+					esc = 0; ebrac = 0; eparm = 0;
+					break;
+				case 'A': /* back one row */
+					crtat -= COL;
+					esc = 0; ebrac = 0; eparm = 0;
+					break;
+				case 'B': /* down one row */
+					crtat += COL;
+					esc = 0; ebrac = 0; eparm = 0;
+					break;
+				case 'C': /* right cursor */
+					crtat++; row++;
+					esc = 0; ebrac = 0; eparm = 0;
+					break;
+				case 'J': /* Clear to end of display */
+					bzero(crtat,(Crtat+COL*ROW-crtat)*CHR);
+					esc = 0; ebrac = 0; eparm = 0;
+					break;
+				case 'K': /* Clear to EOL */
+					bzero(crtat,(COL-row)*CHR);
+					esc = 0; ebrac = 0; eparm = 0;
+					break;
+				case 'H': /* Cursor move */
+					if ((!cx)||(!cy)) {
+						crtat = Crtat;
+						row = 0;
+					} else {
+						crtat = Crtat+(cx-1)*COL+cy-1;
+						row = cy-1;
+					}
+					esc = 0; ebrac = 0; eparm = 0;
+					break;
+				case ';': /* Switch params in cursor def */
+					eparm = 1;
+					splx(s);
+					return;
+				default: /* Only numbers valid here */
+					if ((c >= '0')&&(c <= '9')) {
+						if (eparm) {
+							cy *= 10;
+							cy += c - '0';
+						} else {
+							cx *= 10;
+							cx += c - '0';
+						}
+					} else {
+						esc = 0; ebrac = 0; eparm = 0;
+					}
+					splx(s);
+					return;
+				}
+				break;
+			} else if (c == 'c') { /* Clear screen & home */
+				bzero(Crtat,COL*ROW*CHR);
+				crtat = Crtat; row = 0;
+				esc = 0; ebrac = 0; eparm = 0;
+			}else if (c == '[') { /* Start ESC [ sequence */
+				ebrac = 1; cx = 0; cy = 0; eparm = 0;
+			}else{ /* Invalid, clear state */
+				 esc = 0; ebrac = 0; eparm = 0;
+			}
+		} else {
+			if (c == 7) {
+				sysbeep();
+			}
+			/* Print only printables */
+			else if (c >= ' ') {
+				if (so) {
+					*crtat++ = 0x7000| c; row++ ;
+				} else {
+					*crtat++ = (ca<<8)| c; row++ ;
+				}
+				if (row >= COL) row = 0;
+				break ;
+			}
 		}
-		crtat += COL ;
-		}
-		break ;
 	}
+	if (crtat >= Crtat+COL*(ROW)) { /* scroll check */
+		bcopy(Crtat+COL,Crtat,COL*(ROW-1)*CHR);
+		bzero (Crtat+COL*(ROW-1),COL*CHR) ;
+		crtat -= COL ;
+	}
+	cursor(crtat-Crtat);
+	splx(s);
 }
+
+
+
 #define	L		0x0001	/* locking function */
 #define	SHF		0x0002	/* keyboard shift */
 #define	ALT		0x0004	/* alternate shift -- alternate chars */
@@ -340,9 +516,9 @@ sput(c, ca) u_char c, ca; {
 #define	ASCII		0x0040	/* ascii code for this key */
 #define	STP		0x0080	/* stop output */
 #define	FUNC		0x0100	/* function key */
-#define	SYSREQ		0x0200	/* sys req key */
+#define	SCROLL		0x0200	/* scroll lock key */
 
-unsigned	__debug ;
+unsigned	__debug = 0 ;
 u_short action[] = {
 0,     ASCII, ASCII, ASCII, ASCII, ASCII, ASCII, ASCII,		/* scan  0- 7 */
 ASCII, ASCII, ASCII, ASCII, ASCII, ASCII, ASCII, ASCII,		/* scan  8-15 */
@@ -351,8 +527,8 @@ ASCII, ASCII, ASCII, ASCII, ASCII,   CTL, ASCII, ASCII,		/* scan 24-31 */
 ASCII, ASCII, ASCII, ASCII, ASCII, ASCII, ASCII, ASCII,		/* scan 32-39 */
 ASCII, ASCII, SHF  , ASCII, ASCII, ASCII, ASCII, ASCII,		/* scan 40-47 */
 ASCII, ASCII, ASCII, ASCII, ASCII, ASCII,  SHF,  ASCII,		/* scan 48-55 */
-  ALT, ASCII, CPS|L, FUNC , FUNC , FUNC , FUNC , FUNC ,		/* scan 56-63 */
-FUNC , FUNC , FUNC , FUNC , FUNC , NUM|L, STP|L, ASCII,		/* scan 64-71 */
+  ALT, ASCII, CPS  , FUNC , FUNC , FUNC , FUNC , FUNC ,		/* scan 56-63 */
+FUNC , FUNC , FUNC , FUNC , FUNC , NUM, STP, ASCII,		/* scan 64-71 */
 ASCII, ASCII, ASCII, ASCII, ASCII, ASCII, ASCII, ASCII,		/* scan 72-79 */
 ASCII, ASCII, ASCII, ASCII,     0,     0,     0,     0,		/* scan 80-87 */
 0,0,0,0,0,0,0,0,
@@ -370,9 +546,9 @@ u_char unshift[] = {	/* no shift */
 '\'' , '`'  , SHF  , '\\' , 'z'  , 'x'  , 'c'  , 'v'  ,		/* scan 40-47 */
 
 'b'  , 'n'  , 'm'  , ','  , '.'  , '/'  , SHF  ,   '*',		/* scan 48-55 */
-ALT  , ' '  , CPS|L,     1,     2,    3 ,     4,     5,		/* scan 56-63 */
+ALT  , ' '  , CPS,     1,     2,    3 ,     4,     5,		/* scan 56-63 */
 
-    6,     7,     8,     9,    10, NUM|L, STP|L,   '7',		/* scan 64-71 */
+    6,     7,     8,     9,    10, NUM, STP,   '7',		/* scan 64-71 */
   '8',   '9',   '-',   '4',   '5',   '6',   '+',   '1',		/* scan 72-79 */
 
   '2',   '3',   '0',   '.',     0,     0,     0,     0,		/* scan 80-87 */
@@ -388,8 +564,8 @@ u_char shift[] = {	/* shift shift */
 'D'  , 'F'  , 'G'  , 'H'  , 'J'  , 'K'  , 'L'  , ':'  ,		/* scan 32-39 */
 '"'  , '~'  , SHF  , '|'  , 'Z'  , 'X'  , 'C'  , 'V'  ,		/* scan 40-47 */
 'B'  , 'N'  , 'M'  , '<'  , '>'  , '?'  , SHF  ,   '*',		/* scan 48-55 */
-ALT  , ' '  , CPS|L,     0,     0, ' '  ,     0,     0,		/* scan 56-63 */
-    0,     0,     0,     0,     0, NUM|L, STP|L,   '7',		/* scan 64-71 */
+ALT  , ' '  , CPS,     0,     0, ' '  ,     0,     0,		/* scan 56-63 */
+    0,     0,     0,     0,     0, NUM, STP,   '7',		/* scan 64-71 */
   '8',   '9',   '-',   '4',   '5',   '6',   '+',   '1',		/* scan 72-79 */
   '2',   '3',   '0',   '.',     0,     0,     0,     0,		/* scan 80-87 */
 0,0,0,0,0,0,0,0,
@@ -404,12 +580,12 @@ u_char ctl[] = {	/* CTL shift */
 004  , 006  , 007  , 010  , 012  , 013  , 014  , ';'  ,		/* scan 32-39 */
 '\'' , '`'  , SHF  , 034  , 032  , 030  , 003  , 026  ,		/* scan 40-47 */
 002  , 016  , 015  , '<'  , '>'  , '?'  , SHF  ,   '*',		/* scan 48-55 */
-ALT  , ' '  , CPS|L,     0,     0, ' '  ,     0,     0,		/* scan 56-63 */
-CPS|L,     0,     0,     0,     0,     0,     0,     0,		/* scan 64-71 */
+ALT  , ' '  , CPS,     0,     0, ' '  ,     0,     0,		/* scan 56-63 */
+CPS,     0,     0,     0,     0,     0,     0,     0,		/* scan 64-71 */
     0,     0,     0,     0,     0,     0,     0,     0,		/* scan 72-79 */
     0,     0,     0,     0,     0,     0,     0,     0,		/* scan 80-87 */
-    0,     0,   033, '7'  , '4'  , '1'  ,     0, NUM|L,		/* scan 88-95 */
-'8'  , '5'  , '2'  ,     0, STP|L, '9'  , '6'  , '3'  ,		/*scan  96-103*/
+    0,     0,   033, '7'  , '4'  , '1'  ,     0, NUM,		/* scan 88-95 */
+'8'  , '5'  , '2'  ,     0, STP, '9'  , '6'  , '3'  ,		/*scan  96-103*/
 '.'  ,     0, '*'  , '-'  , '+'  ,     0,     0,     0,		/*scan 104-111*/
 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,	} ;
 
@@ -420,75 +596,74 @@ struct key {
 };
 #endif
 
-u_char shfts, ctls, alts, caps, num, stp;
+u_char shfts, ctls, alts, caps, num, stp, scroll;
 
-#define	KBSTATP	0x64	/* kbd status port */
-#define		KBS_INP_BUF_FUL	0x02	/* kbd char ready */
-#define	KBDATAP	0x60	/* kbd data port */
+#define	KBSTAT		0x64	/* kbd status port */
+#define	KBS_INP_BUF_FUL	0x02	/* kbd char ready */
+#define	KBDATA		0x60	/* kbd data port */
 #define	KBSTATUSPORT	0x61	/* kbd status */
 
-u_char odt;
+update_led()
+{
+	while (inb(0x64)&2);	/* wait input ready */
+	outb(0x60,0xED);	/* LED Command */
+	while (inb(0x64)&2);	/* wait input ready */
+	outb(0x60,scroll | 2*num | 4*caps);
+}
 
-int sgetc(on) {
-	u_char dt, brk;
-	u_short act;
-	
+/*
+sgetc(noblock) : get a character from the keyboard. If noblock = 0 wait until
+a key is gotten.  Otherwise return a 0x100 (256).
+*/
+int sgetc(noblock)
+{
+	u_char dt; unsigned key;
 loop:
-	do {
-		while (inb(0x64)&2) ;
-		dt = inb(0x60);
-	} while (dt == odt);
-	odt = dt;
-if(dt == 0x54) _exit();
-	brk = dt & 0x80 ; dt = dt & 0x7f ;
+	/* First see if there is something in the keyboard port */
+	if (inb(KBSTAT)&1) dt = inb(KBDATA);
+	else { if (noblock) return (0x100); else goto loop; }
 
-	act = action[dt];
-	if (act&SHF) {
-		if(brk)	shfts = 0; else shfts = 1;
-	}
-	if (act&ALT) {
-		if(brk)	alts = 0; else alts = 1;
-	}
-	if (act&NUM) {
-		if (act&L) {
-			if(!brk) num ^= 1;
-		} else if(brk)	num = 0; else num = 1;
-	}
-	if (act&CTL) {
-		if(brk)	ctls = 0; else ctls = 1;
-	}
-	if (act&CPS) {
-		if (act&L) {
-			if(!brk) caps ^= 1;
-		} else if(brk)	caps = 0; else caps = 1;
-	}
-	if (act&STP) {
-		if (act&L) {
-			if(!brk) stp ^= 1;
-		} else if(brk)	stp = 0; else stp = 1;
-	}
-	if ((act&FUNC) &&  brk) {
-		unsigned key = unshift[dt] ;
-		if(__debug & (1<<key))
-			__debug &= ~(1<<key) ;
-		else
-			__debug |= (1<<key) ;
-	}
-	if(stp) goto loop;
-	if ((act&ASCII) && !brk) {
-		u_char chr;
+	/* Check for cntl-alt-del */
+	if ((dt == 83)&&ctls&&alts) _exit();
 
-		if (shfts){
-			 chr = shift[dt] ; } else {
-		if (ctls) {
-			chr = ctl[dt] ; } else {
-		chr = unshift[dt] ; } }
-		if (caps && (chr >= 'a' && chr <= 'z')) {
-			chr -= 'a' - 'A' ;
+	/* Check for make/break */
+	if (dt & 0x80) {
+		/* break */
+		dt = dt & 0x7f ;
+		switch (action[dt]) {
+		case SHF: shfts = 0; break;
+		case ALT: alts = 0; break;
+		case CTL: ctls = 0; break;
+		case FUNC:
+			/* Toggle debug flags */
+			key = unshift[dt];
+			if(__debug & (1<<key)) __debug &= ~(1<<key) ;
+			else __debug |= (1<<key) ;
+			break;
 		}
-		return(chr);
+	} else {
+		/* make */
+		dt = dt & 0x7f ;
+		switch (action[dt]) {
+		/* LOCKING KEYS */
+		case NUM: num ^= 1; update_led(); break;
+		case CPS: caps ^= 1; update_led(); break;
+		case SCROLL: scroll ^= 1; update_led(); break;
+		case STP: stp ^= 1; if(stp) goto loop; break;
+
+		/* NON-LOCKING KEYS */
+		case SHF: shfts = 1; break;
+		case ALT: alts = 1; break;
+		case CTL: ctls = 1; break;
+		case ASCII:
+			if (shfts) dt = shift[dt];
+			else if (ctls) dt = ctl[dt];
+			else dt = unshift[dt];
+			if (caps && (dt >= 'a' && dt <= 'z')) dt -= 'a' - 'A';
+			return(dt);
+		}
 	}
-	if(on) return (0x100); else goto loop;
+	if (noblock) return (0x100); else goto loop;
 }
 
 pg(p,q,r,s,t,u,v,w,x,y,z) char *p; {
@@ -513,30 +688,30 @@ getchar()
 
 	consoftc.cs_flags |= CSF_POLLING;
 	x=splhigh();
-sput('>',0xe);
+	sput('>',0x6);
 	while (1) {
 		thechar = (char) sgetc(0);
-	consoftc.cs_flags &= ~CSF_POLLING;
-	splx(x);
+		consoftc.cs_flags &= ~CSF_POLLING;
+		splx(x);
 		switch (thechar) {
 		    default: if (thechar >= ' ')
-			     	sput(thechar,0xe);
+			     	sput(thechar,0x6);
 			     return(thechar);
 		    case cr:
-		    case lf: sput(cr,0xe);
-			     sput(lf,0xe);
+		    case lf: sput(cr,0x6);
+			     sput(lf,0x6);
 			     return(lf);
 		    case bs:
 		    case del:
-			     sput(bs,0xe);
-			     sput(' ',0xe);
-			     sput(bs,0xe);
+			     sput(bs,0x6);
+			     sput(' ',0x6);
+			     sput(bs,0x6);
 			     return(thechar);
-		    case cntlc:
+		    /*case cntlc:
 			     sput('^',0xe) ; sput('C',0xe) ; sput('\r',0xe) ; sput('\n',0xe) ;
-			     _exit(-2) ;
+			     _exit(-2) ; */
 		    case cntld:
-			     sput('^',0xe) ; sput('D',0xe) ; sput('\r',0xe) ; sput('\n',0xe) ;
+			     sput('^',0x6) ; sput('D',0x6) ; sput('\r',0x6) ; sput('\n',0x6) ;
 			     return(0);
 		}
 	}
