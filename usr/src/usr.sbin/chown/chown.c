@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)chown.c	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)chown.c	4.3 (Berkeley) %G%";
 /*
  * chown uid file ...
  */
@@ -40,7 +40,7 @@ char *argv[];
 
 cho:
 	for(c=2; c<argc; c++) {
-		stat(argv[c], &stbuf);
+		lstat(argv[c], &stbuf);
 		if(chown(argv[c], uid, stbuf.st_gid) < 0 && !fflag) {
 			perror(argv[c]);
 			status = 1;
