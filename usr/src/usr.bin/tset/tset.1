@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)tset.1	6.1 (Berkeley) %G%
+.\"	@(#)tset.1	6.2 (Berkeley) %G%
 .\"
 .TH TSET 1 ""
 .UC 4
@@ -15,7 +15,9 @@ tset \- terminal dependent initialization
 [ident][test baudrate]:type ] \&... [ type ]
 .sp 1
 .B reset
-\&...
+[ options ] [
+.B \-m
+[ident][test baudrate]:type ] \&... [ type ]
 .SH DESCRIPTION
 .I Tset
 sets up your terminal when you first log in to a UNIX system.
@@ -227,6 +229,13 @@ The kill characters is left alone if
 is not specified.
 The hat notation can also be used for this option.
 .TP
+.B \-i\fIc
+is similar to
+.B \-e
+but for the interrupt character rather than the erase character;
+.I c
+defaults to ^C.  The hat notation can also be used for this option.
+.TP
 .B \-
 The name of the terminal finally decided upon is output on the
 standard output.
@@ -262,7 +271,9 @@ it will set cooked and echo modes, turn off cbreak and raw modes,
 turn on newline translation, and restore special characters
 to a sensible state before any terminal dependent processing is done.
 Any special character that is found to be \s-2NULL\s0
-or ``\-1'' is reset to its default value.
+or ``\-1'' is reset to its default value.  All arguments to
+.I tset
+may be used with reset.
 .PP
 This is most useful after a program dies leaving a terminal in a funny
 state. You may have to type ``\s-2<LF>\s0reset\s-2<LF>\s0'' to get it to work
@@ -363,12 +374,6 @@ export TERM; TERM=\`tset \-e \-k^U \-Q \- \-m 'switch<=1200:concept100' \-m 'swi
 /etc/termcap	terminal capability database
 .SH SEE\ ALSO
 csh(1), sh(1), stty(1), ttys(5), termcap(5), environ(7)
-.SH AUTHORS
-Eric Allman
-.br
-David Wasley
-.br
-Mark Horton
 .SH BUGS
 .PP
 The
@@ -384,6 +389,10 @@ either the
 program should do this stuff,
 or a default shell alias should be made,
 or a way to set the environment of the parent should exist.
+.PP
+This program can't intuit personal choices for erase, interrupt
+and line kill characters, so it leaves these set to the local system
+standards.
 .ig
 .SH NOTES
 For compatibility with earlier versions of
