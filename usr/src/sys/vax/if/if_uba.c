@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_uba.c	7.12 (Berkeley) %G%
+ *	@(#)if_uba.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -143,14 +143,14 @@ if_ubaalloc(ifu, ifrw, nmr)
 
 /*
  * Pull read data off a interface.
- * Len is length of data, with local net header stripped.
+ * Totlen is length of data, with local net header stripped.
  * Off is non-zero if a trailer protocol was used, and
  * gives the offset of the trailer information.
- * We copy the trailer information and then all the normal
+ * We copy the header from the trailer and then all the normal
  * data into mbufs.  When full cluster sized units are present
  * on the interface on cluster boundaries we can get them more
  * easily by remapping, and take advantage of this here.
- * Prepend a pointer to the interface structure,
+ * Save a pointer to the interface structure and the total length,
  * so that protocols can determine where incoming packets arrived.
  * Note: we may be called to receive from a transmit buffer by some
  * devices.  In that case, we must force normal mapping of the buffer,
@@ -158,43 +158,50 @@ if_ubaalloc(ifu, ifrw, nmr)
  * changed when remapping the transmit buffers).
  */
 struct mbuf *
-if_ubaget(ifu, ifr, totlen, off0, ifp)
+if_ubaget(ifu, ifr, totlen, off, ifp)
 	struct ifubinfo *ifu;
 	register struct ifrw *ifr;
-	int totlen, off0;
+	register int totlen;
+	int off;
 	struct ifnet *ifp;
 {
 	struct mbuf *top, **mp;
 	register struct mbuf *m;
 	register caddr_t cp = ifr->ifrw_addr + ifu->iff_hlen, pp;
-	register int len, off = off0;
+	register int len;
+	caddr_t epkt = cp + totlen;
 
 	top = 0;
 	mp = &top;
+	/*
+	 * Skip the trailer header (type and trailer length).
+	 */
+	if (off) {
+		off += 2 * sizeof(u_short);
+		totlen -= 2 * sizeof(u_short);
+		cp += off;
+	}
+	MGETHDR(m, M_DONTWAIT, MT_DATA);
+	if (m == 0)
+		return ((struct mbuf *)NULL);
+	m->m_pkthdr.rcvif = ifp;
+	m->m_pkthdr.len = totlen;
+	m->m_len = MHLEN;
+
 	if (ifr->ifrw_flags & IFRW_W)
 		rcv_xmtbuf((struct ifxmt *)ifr);
+
 	while (totlen > 0) {
-		if (top == 0) {
-			MGETHDR(m, M_DONTWAIT, MT_DATA);
-		} else {
+		if (top) {
 			MGET(m, M_DONTWAIT, MT_DATA);
-		}
-		if (m == 0) {
-			m_freem(top);
-			top = 0;
-			goto out;
-		}
-		if (off) {
-			len = totlen - off;
-			cp = ifr->ifrw_addr + ifu->iff_hlen + off;
-		} else
-			len = totlen;
-		if (top == 0) {
-			m->m_pkthdr.rcvif = ifp;
-			m->m_pkthdr.len = totlen; /* should subtract trailer */
-			m->m_len = MHLEN;
-		} else
+			if (m == 0) {
+				m_freem(top);
+				top = 0;
+				goto out;
+			}
 			m->m_len = MLEN;
+		}
+		len = min(totlen, epkt - cp);
 		if (len >= MINCLSIZE) {
 			struct pte *cpte, *ppte;
 			int x, *ip, i;
@@ -202,7 +209,7 @@ if_ubaget(ifu, ifr, totlen, off0, ifp)
 			MCLGET(m, M_DONTWAIT);
 			if ((m->m_flags & M_EXT) == 0)
 				goto nopage;
-			len = MIN(len, MCLBYTES);
+			len = min(len, MCLBYTES);
 			m->m_len = len;
 			if (!claligned(cp))
 				goto copy;
@@ -243,22 +250,9 @@ copy:
 nocopy:
 		*mp = m;
 		mp = &m->m_next;
-		if (off) {
-			/* sort of an ALGOL-W style for statement... */
-			off += len;
-			if (off == totlen) {
-				cp = ifr->ifrw_addr + ifu->iff_hlen;
-				off = 0;
-				totlen = off0;
-			}
-		} else
-			totlen -= len;
-	}
-	if (off0) {
-		m = top;
-		m->m_pkthdr.len -= 2*sizeof(u_short);
-		m->m_len -= 2*sizeof(u_short);
-		m->m_data += 2*sizeof(u_short);
+		totlen -= len;
+		if (cp == epkt)
+			cp = ifr->ifrw_addr + ifu->iff_hlen;
 	}
 out:
 	if (ifr->ifrw_flags & IFRW_W)
