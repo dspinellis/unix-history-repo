@@ -1,9 +1,20 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1982, 1986, 1989 Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)file.h	7.2 (Berkeley) %G%
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ *	@(#)file.h	7.3 (Berkeley) %G%
  */
 
 #ifdef KERNEL
@@ -16,8 +27,10 @@ struct	file {
 	short	f_type;		/* descriptor type */
 	short	f_count;	/* reference count */
 	short	f_msgcount;	/* references from message queue */
+	struct	ucred *f_cred;	/* credentials associated with descriptor */
 	struct	fileops {
-		int	(*fo_rw)();
+		int	(*fo_read)();
+		int	(*fo_write)();
 		int	(*fo_ioctl)();
 		int	(*fo_select)();
 		int	(*fo_close)();
@@ -28,8 +41,6 @@ struct	file {
 
 struct	file *file, *fileNFILE;
 int	nfile;
-struct	file *getf();
-struct	file *falloc();
 #endif
 
 /*
@@ -111,12 +122,6 @@ struct	file *falloc();
 #define	L_XTND		2	/* relative to end of file */
 
 #ifdef KERNEL
-#define	GETF(fp, fd) { \
-	if ((unsigned)(fd) >= NOFILE || ((fp) = u.u_ofile[fd]) == NULL) { \
-		u.u_error = EBADF; \
-		return; \
-	} \
-}
-#define	DTYPE_INODE	1	/* file */
+#define	DTYPE_VNODE	1	/* file */
 #define	DTYPE_SOCKET	2	/* communications endpoint */
 #endif

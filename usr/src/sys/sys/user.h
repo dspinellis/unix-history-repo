@@ -1,9 +1,20 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1982, 1986, 1989 Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)user.h	7.4 (Berkeley) %G%
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ *	@(#)user.h	7.5 (Berkeley) %G%
  */
 
 #ifdef KERNEL
@@ -12,12 +23,14 @@
 #include "time.h"
 #include "resource.h"
 #include "namei.h"
+#include "ucred.h"
 #else
 #include <machine/pcb.h>
 #include <sys/dmap.h>
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/namei.h>
+#include <sys/ucred.h>
 #endif
 
 /*
@@ -52,12 +65,13 @@ struct	user {
 	char	u_eosys;		/* special action on end of syscall */
 
 /* 1.1 - processes and protection */
-	uid_t	u_uid;			/* effective user id */
-	uid_t	u_ruid;			/* real user id */
-	gid_t	u_gid;			/* effective group id */
+#define	u_ruid	u_cred->cr_ruid		/* real user id */
 	gid_t	u_rgid;			/* real group id */
-	gid_t	u_groups[NGROUPS];	/* groups, 0 terminated */
-#define u_cred u_uid
+#define u_cred u_nd.ni_cred
+#define u_uid	u_cred->cr_uid		/* effective user id */
+#define u_gid	u_cred->cr_gid		/* effective group id */
+#define u_ngroups u_cred->cr_ngroups	/* number of group id's */
+#define u_groups u_cred->cr_groups	/* list of effective grp id's */
 
 /* 1.2 - memory management */
 	size_t	u_tsize;		/* text size (clicks) */
@@ -65,8 +79,8 @@ struct	user {
 	size_t	u_ssize;		/* stack size (clicks) */
 	struct	dmap u_dmap;		/* disk map for data segment */
 	struct	dmap u_smap;		/* disk map for stack segment */
-	struct	dmap u_cdmap, u_csmap;	/* shadows of u_dmap, u_smap, for
-					   use of parent during fork */
+	struct	dmap u_cdmap;		/* temp data segment disk map */
+	struct	dmap u_csmap;		/* temp stack segment disk map */
 	label_t u_ssave;		/* label variable for swapping */
 	size_t	u_odsize, u_ossize;	/* for (clumsy) expansion swaps */
 	time_t	u_outime;		/* user time at last sample */
@@ -88,8 +102,8 @@ struct	user {
 	int	u_lastfile;		/* high-water mark of u_ofile */
 #define	UF_EXCLOSE 	0x1		/* auto-close on exec */
 #define	UF_MAPPED 	0x2		/* mapped from device */
-	struct	inode *u_cdir;		/* current directory */
-	struct	inode *u_rdir;		/* root directory of current process */
+#define u_cdir u_nd.ni_cdir		/* current directory */
+#define u_rdir u_nd.ni_rdir		/* root directory of current process */
 	struct	tty *u_ttyp;		/* controlling tty pointer */
 	dev_t	u_ttyd;			/* controlling tty dev */
 	short	u_cmask;		/* mask for file creation */
@@ -115,12 +129,6 @@ struct	user {
 	int	u_qflags;		/* per process quota flags */
 
 /* namei & co. */
-	struct nameicache {		/* last successful directory search */
-		int nc_prevoffset;	/* offset at which last entry found */
-		ino_t nc_inumber;	/* inum of cached directory */
-		dev_t nc_dev;		/* dev of cached directory */
-		time_t nc_time;		/* time stamp for cache entry */
-	} u_ncache;
 	struct	nameidata u_nd;
 
 	int	u_stack[1];

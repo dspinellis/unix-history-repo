@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)proc.h	7.4 (Berkeley) %G%
+ *	@(#)proc.h	7.5 (Berkeley) %G%
  */
 
 /*
@@ -85,7 +85,7 @@ struct	proc {
 	struct	itimerval p_realtimer;
 	struct	quota *p_quota;	/* quotas for this process */
 	int	p_traceflag;	/* kernel tracing flags (facilities) */
-	struct	inode *p_tracep;/* trace to inode */
+	struct	vnode *p_tracep;/* trace to vnode */
 #if defined(tahoe)
 	int	p_ckey;		/* code cache key */
 	int	p_dkey;		/* data cache key */
@@ -141,7 +141,7 @@ int	whichqs;		/* bit mask summarizing non-empty qs's */
 #define	SVFORK	0x0001000	/* process resulted from vfork() */
 #define	SVFDONE	0x0002000	/* another vfork flag */
 #define	SNOVM	0x0004000	/* no vm, parent in a vfork() */
-#define	SPAGI	0x0008000	/* init data space on demand, from inode */
+#define	SPAGV	0x0008000	/* init data space on demand, from vnode */
 #define	SSEQL	0x0010000	/* user warned of sequential vm behavior */
 #define	SUANOM	0x0020000	/* user warned of random vm behavior */
 #define	STIMO	0x0040000	/* timing out during sleep */

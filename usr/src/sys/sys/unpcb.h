@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1989 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -12,18 +12,18 @@
  * from this software without specific prior written permission.
  * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)unpcb.h	7.3 (Berkeley) %G%
+ *	@(#)unpcb.h	7.4 (Berkeley) %G%
  */
 
 /*
  * Protocol control block for an active
  * instance of a UNIX internal protocol.
  *
- * A socket may be associated with an inode in the
- * file system.  If so, the unp_inode pointer holds
- * a reference count to this inode, which should be irele'd
+ * A socket may be associated with an vnode in the
+ * file system.  If so, the unp_vnode pointer holds
+ * a reference count to this vnode, which should be irele'd
  * when the socket goes away.
  *
  * A socket may be connected to another socket, in which
@@ -44,8 +44,8 @@
  */
 struct	unpcb {
 	struct	socket *unp_socket;	/* pointer back to socket */
-	struct	inode *unp_inode;	/* if associated with file */
-	ino_t	unp_ino;		/* fake inode number */
+	struct	vnode *unp_vnode;	/* if associated with file */
+	ino_t	unp_vno;		/* fake vnode number */
 	struct	unpcb *unp_conn;	/* control block of connected socket */
 	struct	unpcb *unp_refs;	/* referencing socket linked list */
 	struct 	unpcb *unp_nextref;	/* link in unp_refs list */
