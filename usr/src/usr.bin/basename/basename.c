@@ -1,6 +1,20 @@
-static char *sccsid = "@(#)basename.c	4.2 (Berkeley) %G%";
+/*
+ * Copyright (c) 1987 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
 
-#include	<stdio.h>
+#ifndef lint
+char copyright[] =
+"@(#) Copyright (c) 1987 Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)basename.c	4.3 (Berkeley) %G%";
+#endif /* not lint */
+
+#include <stdio.h>
 
 main(argc, argv)
 char **argv;
@@ -20,8 +34,8 @@ char **argv;
 	if (argc>2) {
 		for(p3=argv[2]; *p3; p3++) 
 			;
-		while(p1>p2 && p3>argv[2])
-			if(*--p3 != *--p1)
+		while(p3>argv[2])
+			if(p1 <= p2 || *--p3 != *--p1)
 				goto output;
 		*p1 = '\0';
 	}
