@@ -4,7 +4,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)MAKEDEV	4.21 (Berkeley) %G%
+#	@(#)MAKEDEV	4.22 (Berkeley) %G%
 #
 # Device "make" file.  Valid arguments:
 #	std	standard devices
@@ -29,6 +29,7 @@
 #	dh*	unibus dh11 and emulations (e.g. Able dmax, Emulex cs-11)
 #	dmf*	unibus dmf32
 #	dhu*    unibus dhu11
+#	dmz*    unibus dmz32
 # Pseudo terminals:
 #	pty*	set of 16 master and slave pseudo terminals
 # Printers:
@@ -186,26 +187,44 @@ dz*)
 	esac
 	;;
 
-dhu*|dh*|dmf*)
+dhu*|dh*|dmf*|dmz*)
 	case $i in
-	dhu*) name=dhu; major=34;;
-	dh*) name=dh; major=12;;
-	dmf*) name=dmf; major=22;;
+	dmz*)	name=dmz; major=37; count=24;
+		unit=`expr $i : "$name\(.*\)"`
+		case $unit in
+		0) ch=a ;; 1) ch=b ;; 2) ch=c ;; 3) ch=e ;;
+		4) ch=f ;; 5) ch=g ;;
+		*) echo bad unit for $name in: $i ;;
+		esac;;
+	dmf*)	name=dmf; major=22; count=8;
+		unit=`expr $i : "$name\(.*\)"`
+		case $unit in
+		0) ch=A ;; 1) ch=B ;; 2) ch=C ;; 3) ch=E ;;
+		4) ch=F ;; 5) ch=G ;; 6) ch=H ;; 7) ch=I ;;
+		*) echo bad unit for $name in: $i ;;
+		esac;;
+	dhu*)	name=dhu; major=34; count=16;
+		unit=`expr $i : "$name\(.*\)"`;
+		case $unit in
+		0) ch=S ;; 1) ch=T ;; 2) ch=U ;; 3) ch=V ;;
+		4) ch=W ;; 5) ch=X ;; 6) ch=Y ;; 7) ch=Z ;;
+		*) echo bad unit for $name in: $i ;;
+		esac;;
+	dh*)	name=dh; major=12; count=16;
+		unit=`expr $i : "$name\(.*\)"`
+		case $unit in
+		0) ch=h ;; 1) ch=i ;; 2) ch=j ;; 3) ch=k ;;
+		4) ch=l ;; 5) ch=m ;; 6) ch=n ;; 7) ch=o ;;
+		*) echo bad unit for $name in: $i ;;
+		esac;;
 	esac
-	unit=`expr $i : "$name\(.*\)"`
-	case $unit in
-	0) ch=h ;; 1) ch=i ;; 2) ch=j ;; 3) ch=k ;;
-	4) ch=l ;; 5) ch=m ;; 6) ch=n ;; 7) ch=o ;;
-	*) echo bad unit for $name in: $i ;;
-	esac
-	case $ch in
-	h|i|j|k|l|m|n|o)
-		eval `echo $ch $unit $major |
-		  awk ' { ch = $1; u = 16 * $2; m = $3 } END {
-		    for (i = 0; i < 16; i++)
-			printf("/etc/mknod tty%s%x c %d %d; ",ch,i,m,u+i); }'`
-		;;
-	esac
+	eval `echo $ch $unit $major $count |
+	  awk ' { ch = $1; u = $4 * $2; m = $3; cnt = $4 } END {
+	    for (i = 0; i < cnt; i++)
+	      if (i < 10)
+		printf("/etc/mknod tty%s%x c %d %d; ",ch,i,m,u+i);
+	      else
+		printf("/etc/mknod tty%s%c c %d %d; ",ch,87+i,m,u+i); }'`
 	;;
 
 lp*|va*|vp*)
