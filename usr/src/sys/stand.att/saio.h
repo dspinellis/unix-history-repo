@@ -1,4 +1,4 @@
-/*	saio.h	4.8	%G%	*/
+/*	saio.h	4.9	%G%	*/
 
 /*
  * header file for standalone package
@@ -60,16 +60,12 @@ struct devsw {
 
 struct devsw devsw[];
 
-/* 
- * device data structure,
- * used by the ioctl-command SAIODEVDATA ( for disks only)
- */
-
-struct devdata {
-	int	nsect;	/* number of sectors per track */
-	int	ntrak;	/* number of tracks/surfaces/heads... */
-	int	nspc;	/* number of sectors per cylinder */
-	int	ncyl;	/* number of cylinders */
+struct st {
+	short	nsect;	/* number of sectors per track */
+	short	ntrak;	/* number of tracks/surfaces/heads... */
+	short	nspc;	/* number of sectors per cylinder */
+	short	ncyl;	/* number of cylinders */
+	short	*off;
 };
 
 /*
