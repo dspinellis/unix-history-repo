@@ -1,6 +1,5 @@
-
 #ifndef lint
-static char sccsid[] = "@(#)gettable.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)gettable.c	4.4 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
@@ -12,7 +11,9 @@ static char sccsid[] = "@(#)gettable.c	4.3 (Berkeley) %G%";
 #include <netdb.h>
 
 #define	OUTFILE		"hosts.txt"	/* default output file */
+#define	VERFILE		"hosts.ver"	/* default version file */
 #define	QUERY		"ALL\r\n"	/* query to hostname server */
+#define	VERSION		"VERSION\r\n"	/* get version number */
 
 #define	equaln(s1, s2, n)	(!strncmp(s1, s2, n))
 
@@ -31,10 +32,18 @@ main(argc, argv)
 	char *host;
 	register struct hostent *hp;
 	struct servent *sp;
+	int version = 0;
 
 	argv++, argc--;
+	if (**argv == '-') {
+		if (argv[0][1] != 'v')
+			fprintf(stderr, "unknown option %s ignored\n", *argv);
+		else
+			version++, outfile = VERFILE;
+		argv++, argc--;
+	}
 	if (argc < 1 || argc > 2) {
-		fprintf(stderr, "usage: gettable host [ file ]\n");
+		fprintf(stderr, "usage: gettable [-v] host [ file ]\n");
 		exit(1);
 	}
 	sp = getservbyname("hostnames", "tcp");
@@ -82,7 +91,7 @@ main(argc, argv)
 		close(s);
 		exit(1);
 	}
-	fprintf(sfo, QUERY);
+	fprintf(sfo, version ? VERSION : QUERY);
 	fflush(sfo);
 	while (fgets(buf, sizeof(buf), sfi) != NULL) {
 		len = strlen(buf);
@@ -97,7 +106,11 @@ main(argc, argv)
 		fprintf(hf, "%s\n", buf);
 	}
 	fclose(hf);
-	fprintf(stderr, "Host table received.\n");
+	if (version)
+		fprintf(stderr, "Version number received.\n");
+	else
+		fprintf(stderr, "Host table received.\n");
 	close(s);
 	fprintf(stderr, "Connection to %s closed\n", host);
+	exit(0);
 }
