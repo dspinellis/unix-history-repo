@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_balloc.c	7.25 (Berkeley) %G%
+ *	@(#)lfs_balloc.c	7.26 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -280,10 +280,10 @@ lfs_balloc(vp, iosize, lbn, bpp)
 	if (!newblock && (error = lfs_bmap(vp, lbn, NULL, &daddr)))
 		return(error);
 
-	if (newblock || daddr == LFS_UNUSED_DADDR || iosize == fs->lfs_bsize) {
+	if (newblock || daddr == UNASSIGNED || iosize == fs->lfs_bsize) {
 		*bpp = bp = getblk(vp, lbn, fs->lfs_bsize);
 		if (newblock ||
-		    daddr == LFS_UNUSED_DADDR && !(bp->b_flags & B_CACHE)) {
+		    daddr == UNASSIGNED && !(bp->b_flags & B_CACHE)) {
 			++ip->i_blocks;
 			if (iosize != fs->lfs_bsize)
 				clrbuf(bp);
