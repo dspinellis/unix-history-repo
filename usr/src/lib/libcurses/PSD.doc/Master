@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)Master	6.6 (Berkeley) %G%
+.\"	@(#)Master	8.1 (Berkeley) %G%
 .\"
 .ds Ln Screen Package
 .so macros
