@@ -26,7 +26,7 @@ SOFTWARE.
  */
 /* $Header: /var/src/sys/netiso/RCS/clnp_options.c,v 5.1 89/02/09 16:20:37 hagens Exp $ */
 /* $Source: /var/src/sys/netiso/RCS/clnp_options.c,v $ */
-/*	@(#)clnp_options.c	7.6 (Berkeley) %G% */
+/*	@(#)clnp_options.c	7.7 (Berkeley) %G% */
 
 #ifndef lint
 static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_options.c,v 5.1 89/02/09 16:20:37 hagens Exp $";
@@ -204,14 +204,15 @@ struct mbuf	**data;		/* source of option information */
 		/*
 		 *	Insure that the options are reasonable.
 		 *
-		 *	Also, we do not support security, priority, or QOS
+		 *	Also, we do not support security, priority,
 		 *	nor do we allow one to send an ER option
+		 *
+		 *	The QOS parameter is checked for the DECBIT.
 		 */
 		if ((clnp_opt_sanity(*data, mtod(*data, caddr_t), (*data)->m_len, 
 			&dummy) != 0) ||
 				(dummy.cni_securep) ||
 				(dummy.cni_priorp) ||
-				(dummy.cni_qos_formatp) ||
 				(dummy.cni_er_reason != ER_INVALREAS)) {
 			error = EINVAL;
 		} else {
