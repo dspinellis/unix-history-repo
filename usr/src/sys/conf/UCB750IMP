@@ -1,0 +1,37 @@
+#
+# UCBVAX - Gateway to the world
+#
+machine		vax
+cpu		"VAX780"
+cpu		"VAX750"
+cpu		"VAX750"
+ident		UCBVAX
+timezone	8 dst
+maxusers	32
+options		INET
+options		GATEWAY
+options		QUOTA
+options		NS
+
+config		vmunix		root on hp
+config  	hkvmunix	root on hk
+
+controller	mba0	at nexus ?
+controller	uba0	at nexus ?
+disk		hp0	at mba? drive 0
+disk		hp1	at mba? drive 1
+controller	hk0	at uba? csr 0177440 		vector rkintr
+disk		rk0	at hk0 drive 0
+disk		rk1	at hk0 drive 1
+device		dz0	at uba? csr 0160100 flags 0xff	vector dzrint dzxint
+device		dz1	at uba? csr 0160110 flags 0x0f	vector dzrint dzxint
+pseudo-device	loop
+pseudo-device	ether
+pseudo-device	imp
+device		acc0	at uba? csr 0167600	vector accrint accxint
+device		en0	at uba0 csr 0161000	vector enxint enrint encollide
+device		il0	at uba? csr 0164000	vector ilrint ilcint
+device		dmc0	at uba? csr 0167000	vector dmcrint dmcxint
+pseudo-device	pty
+device		lp0	at uba? csr 0164014		vector lpintr
+device		kg0	at uba? csr 0175620 		vector kgclock
