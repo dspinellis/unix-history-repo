@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	8.18 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	8.19 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -274,7 +274,7 @@ ffs_reload(mountp, cred, p)
 		size = DEV_BSIZE;
 	else
 		size = dpart.disklab->d_secsize;
-	if (error = bread(devvp, (daddr_t)(SBOFF / size), SBSIZE, NOCRED, &bp))
+	if (error = bread(devvp, (ufs_daddr_t)(SBOFF/size), SBSIZE, NOCRED,&bp))
 		return (error);
 	newfs = (struct fs *)bp->b_data;
 	if (newfs->fs_magic != FS_MAGIC || newfs->fs_bsize > MAXBSIZE ||
@@ -376,7 +376,7 @@ ffs_mountfs(devvp, mp, p)
 
 	bp = NULL;
 	ump = NULL;
-	if (error = bread(devvp, (daddr_t)(SBOFF / size), SBSIZE, cred, &bp))
+	if (error = bread(devvp, (ufs_daddr_t)(SBOFF/size), SBSIZE, cred, &bp))
 		goto out;
 	fs = (struct fs *)bp->b_data;
 		error = EINVAL;		/* XXX needs translation */

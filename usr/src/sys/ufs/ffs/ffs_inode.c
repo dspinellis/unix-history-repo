@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_inode.c	8.10 (Berkeley) %G%
+ *	@(#)ffs_inode.c	8.11 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -29,8 +29,8 @@
 #include <ufs/ffs/fs.h>
 #include <ufs/ffs/ffs_extern.h>
 
-static int ffs_indirtrunc __P((struct inode *, daddr_t, daddr_t, daddr_t, int,
-	    long *));
+static int ffs_indirtrunc __P((struct inode *, ufs_daddr_t, ufs_daddr_t,
+	    ufs_daddr_t, int, long *));
 
 int
 ffs_init()
@@ -71,13 +71,13 @@ ffs_update(ap)
 	    (IN_ACCESS | IN_CHANGE | IN_MODIFIED | IN_UPDATE)) == 0)
 		return (0);
 	if (ip->i_flag & IN_ACCESS)
-		ip->i_atime.ts_sec = ap->a_access->tv_sec;
+		ip->i_atime = ap->a_access->tv_sec;
 	if (ip->i_flag & IN_UPDATE) {
-		ip->i_mtime.ts_sec = ap->a_modify->tv_sec;
+		ip->i_mtime = ap->a_modify->tv_sec;
 		ip->i_modrev++;
 	}
 	if (ip->i_flag & IN_CHANGE)
-		ip->i_ctime.ts_sec = time.tv_sec;
+		ip->i_ctime = time.tv_sec;
 	ip->i_flag &= ~(IN_ACCESS | IN_CHANGE | IN_MODIFIED | IN_UPDATE);
 	fs = ip->i_fs;
 	/*
@@ -121,10 +121,10 @@ ffs_truncate(ap)
 	} */ *ap;
 {
 	register struct vnode *ovp = ap->a_vp;
-	register daddr_t lastblock;
+	ufs_daddr_t lastblock;
 	register struct inode *oip;
-	daddr_t bn, lbn, lastiblock[NIADDR], indir_lbn[NIADDR];
-	daddr_t oldblks[NDADDR + NIADDR], newblks[NDADDR + NIADDR];
+	ufs_daddr_t bn, lbn, lastiblock[NIADDR], indir_lbn[NIADDR];
+	ufs_daddr_t oldblks[NDADDR + NIADDR], newblks[NDADDR + NIADDR];
 	off_t length = ap->a_length;
 	register struct fs *fs;
 	struct buf *bp;
@@ -361,17 +361,17 @@ done:
 static int
 ffs_indirtrunc(ip, lbn, dbn, lastbn, level, countp)
 	register struct inode *ip;
-	daddr_t lbn, lastbn;
-	daddr_t dbn;
+	ufs_daddr_t lbn, lastbn;
+	ufs_daddr_t dbn;
 	int level;
 	long *countp;
 {
 	register int i;
 	struct buf *bp;
 	register struct fs *fs = ip->i_fs;
-	register daddr_t *bap;
+	register ufs_daddr_t *bap;
 	struct vnode *vp;
-	daddr_t *copy, nb, nlbn, last;
+	ufs_daddr_t *copy, nb, nlbn, last;
 	long blkcount, factor;
 	int nblocks, blocksreleased = 0;
 	int error = 0, allerror = 0;
@@ -421,11 +421,11 @@ ffs_indirtrunc(ip, lbn, dbn, lastbn, level, countp)
 		return (error);
 	}
 
-	bap = (daddr_t *)bp->b_data;
-	MALLOC(copy, daddr_t *, fs->fs_bsize, M_TEMP, M_WAITOK);
+	bap = (ufs_daddr_t *)bp->b_data;
+	MALLOC(copy, ufs_daddr_t *, fs->fs_bsize, M_TEMP, M_WAITOK);
 	bcopy((caddr_t)bap, (caddr_t)copy, (u_int)fs->fs_bsize);
 	bzero((caddr_t)&bap[last + 1],
-	  (u_int)(NINDIR(fs) - (last + 1)) * sizeof (daddr_t));
+	  (u_int)(NINDIR(fs) - (last + 1)) * sizeof (ufs_daddr_t));
 	if (last == -1)
 		bp->b_flags |= B_INVAL;
 	error = bwrite(bp);
@@ -442,8 +442,8 @@ ffs_indirtrunc(ip, lbn, dbn, lastbn, level, countp)
 		if (nb == 0)
 			continue;
 		if (level > SINGLE) {
-			if (error = ffs_indirtrunc(ip, nlbn,
-			    fsbtodb(fs, nb), (daddr_t)-1, level - 1, &blkcount))
+			if (error = ffs_indirtrunc(ip, nlbn, fsbtodb(fs, nb),
+			    (ufs_daddr_t)-1, level - 1, &blkcount))
 				allerror = error;
 			blocksreleased += blkcount;
 		}

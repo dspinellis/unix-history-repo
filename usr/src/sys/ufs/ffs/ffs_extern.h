@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_extern.h	8.4 (Berkeley) %G%
+ *	@(#)ffs_extern.h	8.5 (Berkeley) %G%
  */
 
 struct buf;
@@ -23,20 +23,20 @@ struct mbuf;
 
 __BEGIN_DECLS
 int	ffs_alloc __P((struct inode *,
-	    daddr_t, daddr_t, int, struct ucred *, daddr_t *));
+	    ufs_daddr_t, ufs_daddr_t, int, struct ucred *, ufs_daddr_t *));
 int	ffs_balloc __P((struct inode *,
-	    daddr_t, int, struct ucred *, struct buf **, int));
+	    ufs_daddr_t, int, struct ucred *, struct buf **, int));
 int	ffs_blkatoff __P((struct vop_blkatoff_args *));
-int	ffs_blkfree __P((struct inode *, daddr_t, long));
-daddr_t	ffs_blkpref __P((struct inode *, daddr_t, int, daddr_t *));
+int	ffs_blkfree __P((struct inode *, ufs_daddr_t, long));
+ufs_daddr_t ffs_blkpref __P((struct inode *, ufs_daddr_t, int, ufs_daddr_t *));
 int	ffs_bmap __P((struct vop_bmap_args *));
-void	ffs_clrblock __P((struct fs *, u_char *, daddr_t));
+void	ffs_clrblock __P((struct fs *, u_char *, ufs_daddr_t));
 int	ffs_fhtovp __P((struct mount *, struct fid *, struct mbuf *,
 	    struct vnode **, int *, struct ucred **));
 void	ffs_fragacct __P((struct fs *, int, int32_t [], int));
 int	ffs_fsync __P((struct vop_fsync_args *));
 int	ffs_init __P((void));
-int	ffs_isblock __P((struct fs *, u_char *, daddr_t));
+int	ffs_isblock __P((struct fs *, u_char *, ufs_daddr_t));
 int	ffs_mount __P((struct mount *,
 	    char *, caddr_t, struct nameidata *, struct proc *));
 int	ffs_mountfs __P((struct vnode *, struct mount *, struct proc *));
@@ -44,9 +44,9 @@ int	ffs_mountroot __P((void));
 int	ffs_read __P((struct vop_read_args *));
 int	ffs_reallocblks __P((struct vop_reallocblks_args *));
 int	ffs_realloccg __P((struct inode *,
-	    daddr_t, daddr_t, int, int, struct ucred *, struct buf **));
+	    ufs_daddr_t, ufs_daddr_t, int, int, struct ucred *, struct buf **));
 int	ffs_reclaim __P((struct vop_reclaim_args *));
-void	ffs_setblock __P((struct fs *, u_char *, daddr_t));
+void	ffs_setblock __P((struct fs *, u_char *, ufs_daddr_t));
 int	ffs_statfs __P((struct mount *, struct statfs *, struct proc *));
 int	ffs_sync __P((struct mount *, int, struct ucred *, struct proc *));
 int	ffs_truncate __P((struct vop_truncate_args *));

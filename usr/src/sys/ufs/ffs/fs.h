@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fs.h	8.12 (Berkeley) %G%
+ *	@(#)fs.h	8.13 (Berkeley) %G%
  */
 
 /*
@@ -39,8 +39,8 @@
 #define	BBOFF		((off_t)(0))
 #define	SBOFF		((off_t)(BBOFF + BBSIZE))
 #ifndef SECSIZE
-#define	BBLOCK		((daddr_t)(0))
-#define	SBLOCK		((daddr_t)(BBLOCK + BBSIZE / DEV_BSIZE))
+#define	BBLOCK		((ufs_daddr_t)(0))
+#define	SBLOCK		((ufs_daddr_t)(BBLOCK + BBSIZE / DEV_BSIZE))
 #endif SECSIZE
 
 /*
@@ -135,10 +135,10 @@ struct csum {
 struct fs {
 	int32_t	 fs_firstfield;		/* historic file system linked list, */
 	int32_t	 fs_unused_1;		/*     used for incore super blocks */
-	daddr_t	 fs_sblkno;		/* addr of super-block in filesys */
-	daddr_t	 fs_cblkno;		/* offset of cyl-block in filesys */
-	daddr_t	 fs_iblkno;		/* offset of inode-blocks in filesys */
-	daddr_t	 fs_dblkno;		/* offset of first data after cg */
+	ufs_daddr_t fs_sblkno;		/* addr of super-block in filesys */
+	ufs_daddr_t fs_cblkno;		/* offset of cyl-block in filesys */
+	ufs_daddr_t fs_iblkno;		/* offset of inode-blocks in filesys */
+	ufs_daddr_t fs_dblkno;		/* offset of first data after cg */
 	int32_t	 fs_cgoffset;		/* cylinder group offset in cylinder */
 	int32_t	 fs_cgmask;		/* used to calc mod fs_ntrak */
 	time_t 	 fs_time;		/* last time written */
@@ -178,7 +178,7 @@ struct fs {
 	int32_t	 fs_headswitch;		/* head switch time, usec */
 	int32_t	 fs_trkseek;		/* track-to-track seek, usec */
 /* sizes determined by number of cylinder groups and their sizes */
-	daddr_t  fs_csaddr;		/* blk addr of cyl grp summary area */
+	ufs_daddr_t fs_csaddr;		/* blk addr of cyl grp summary area */
 	int32_t	 fs_cssize;		/* size of cyl grp summary area */
 	int32_t	 fs_cgsize;		/* cylinder group size */
 /* these fields are derived from the hardware */
@@ -372,7 +372,7 @@ struct ocg {
  * Cylinder group macros to locate things in cylinder groups.
  * They calc file system addresses of cylinder group data structures.
  */
-#define	cgbase(fs, c)	((daddr_t)((fs)->fs_fpg * (c)))
+#define	cgbase(fs, c)	((ufs_daddr_t)((fs)->fs_fpg * (c)))
 #define	cgdmin(fs, c)	(cgstart(fs, c) + (fs)->fs_dblkno)	/* 1st data */
 #define	cgimin(fs, c)	(cgstart(fs, c) + (fs)->fs_iblkno)	/* inode blk */
 #define	cgsblock(fs, c)	(cgstart(fs, c) + (fs)->fs_sblkno)	/* super blk */
@@ -388,7 +388,7 @@ struct ocg {
  */
 #define	ino_to_cg(fs, x)	((x) / (fs)->fs_ipg)
 #define	ino_to_fsba(fs, x)						\
-	((daddr_t)(cgimin(fs, ino_to_cg(fs, x)) +			\
+	((ufs_daddr_t)(cgimin(fs, ino_to_cg(fs, x)) +			\
 	    (blkstofrags((fs), (((x) % (fs)->fs_ipg) / INOPB(fs))))))
 #define	ino_to_fsbo(fs, x)	((x) % INOPB(fs))
 
