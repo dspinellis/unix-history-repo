@@ -2,13 +2,11 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)Master	5.1 (Berkeley) %G%
+.\"	@(#)Master	6.1 (Berkeley) %G%
 .\"
 .ds Ln Screen Package
 .so macros
 .so intro.0
-.	\" .bp
-.	\" .so disclaim
 .bp
 .so intro.1
 .so intro.2.tbl
