@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.35		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.36		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.35		%G%);
+SCCSID(@(#)queue.c	3.36		%G%);
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -205,6 +205,10 @@ runqueue(forkflag)
 			return;
 		}
 	}
+# ifdef LOG
+	if (LogLevel > 11)
+		syslog(LOG_DEBUG, "runqueue, pid=%d", getpid());
+# endif LOG
 
 	/*
 	**  Start making passes through the queue.
@@ -511,6 +515,11 @@ dowork(w)
 		MailBack = TRUE;
 		CurEnv->e_qf = w->w_name;
 		CurEnv->e_id = &w->w_name[strlen(QueueDir) + 3];
+# ifdef LOG
+		if (LogLevel > 11)
+			syslog(LOG_DEBUG, "dowork, pid=%d, id=%s", getpid(),
+			       CurEnv->e_id);
+# endif LOG
 
 		/* don't use the headers from sendmail.cf... */
 		CurEnv->e_header = NULL;

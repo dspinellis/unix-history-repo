@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.101		%G%);
+SCCSID(@(#)deliver.c	3.102		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -75,7 +75,8 @@ deliver(firstto)
 	if (NoConnect && !QueueRun && bitset(M_EXPENSIVE, m->m_flags))
 	{
 		for (; to != NULL; to = to->q_next)
-			if (!bitset(QDONTSEND, to->q_flags))
+			if (!bitset(QDONTSEND, to->q_flags) &&
+			    to->q_mailer == firstto->q_mailer)
 				to->q_flags |= QQUEUEUP|QDONTSEND;
 		return (0);
 	}
@@ -824,16 +825,13 @@ giveresponse(stat, force, m)
 		statmsg = SysExMsg[i];
 	if (stat == 0)
 	{
-		if (bitset(M_LOCAL, m->m_flags))
-			statmsg = "delivered";
-		else
-			statmsg = "queued";
+		statmsg = "sent";
 		message(Arpa_Info, statmsg);
 	}
 # ifdef QUEUE
 	else if (stat == EX_TEMPFAIL)
 	{
-		message(Arpa_Info, "transmission deferred");
+		message(Arpa_Info, "deferred");
 	}
 # endif QUEUE
 	else
