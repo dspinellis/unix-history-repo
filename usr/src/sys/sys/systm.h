@@ -1,4 +1,4 @@
-/*	systm.h	4.6	%G%	*/
+/*	systm.h	4.7	%G%	*/
 
 /*
  * Random set of variables
@@ -6,7 +6,7 @@
  * routine.
  */
 char	canonb[CANBSIZ];	/* buffer for erase and kill (#@) */
-int	cpusid;			/* cpu SID register */
+int	cpu;			/* cpu SID register */
 char	version[];		/* system version */
 int	lbolt;			/* time of day in 60th not in time */
 time_t	time;			/* time in sec from 1970 */
