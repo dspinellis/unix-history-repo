@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_exit.c	7.11 (Berkeley) %G%
+ *	@(#)kern_exit.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -107,7 +107,7 @@ exit(rv)
 	if (SESS_LEADER(p)) {
 		p->p_session->s_leader = 0;
 		if (p->p_session->s_ttyvp) {
-			vgone(p->p_session->s_ttyvp);
+			vgoneall(p->p_session->s_ttyvp);
 			vrele(p->p_session->s_ttyvp);
 			p->p_session->s_ttyvp = NULL;
 			p->p_session->s_ttyp = NULL;
