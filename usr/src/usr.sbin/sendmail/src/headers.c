@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)headers.c	3.37		%G%);
+SCCSID(@(#)headers.c	3.38		%G%);
 
 /*
 **  CHOMPHEADER -- process and save a header line.
@@ -120,7 +120,7 @@ chompheader(line, def)
 	    (index(fvalue, ',') != NULL || index(fvalue, '(') != NULL ||
 	     index(fvalue, '<') != NULL || index(fvalue, ';') != NULL))
 	{
-		CurEnv->e_oldstyle = FALSE;
+		CurEnv->e_flags &= ~EF_OLDSTYLE;
 	}
 
 	/* send to this person if we so desire */

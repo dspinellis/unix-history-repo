@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.51		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.52		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.51		%G%);
+SCCSID(@(#)queue.c	3.52		%G%);
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -99,17 +99,6 @@ queueup(e, queueall)
 	/* output message class */
 	fprintf(tfp, "C%d\n", e->e_class);
 
-	/* output macro definitions */
-	/* I don't think this is needed any more.....
-	for (i = 0; i < 128; i++)
-	{
-		register char *p = e->e_macro[i];
-
-		if (p != NULL && i != (int) 'b')
-			fprintf(tfp, "M%c%s\n", i, p);
-	}
-	.....  */
-
 	/* output list of recipient addresses */
 	for (q = e->e_sendqueue; q != NULL; q = q->q_next)
 	{
@@ -142,7 +131,8 @@ queueup(e, queueall)
 			fprintf(tfp, "%s: %s\n", h->h_field, buf);
 		}
 		else if (bitset(H_FROM|H_RCPT, h->h_flags))
-			commaize(h, h->h_value, tfp, e->e_oldstyle, NULL);
+			commaize(h, h->h_value, tfp,
+				 bitset(EF_OLDSTYLE, e->e_flags), NULL);
 		else
 			fprintf(tfp, "%s: %s\n", h->h_field, h->h_value);
 	}
@@ -447,10 +437,9 @@ dowork(w)
 
 		/* set basic modes, etc. */
 		(void) alarm(0);
-		FatalErrors = FALSE;
+		CurEnv->e_flags &= ~EF_FATALERRS;
 		QueueRun = TRUE;
 		MailBack = TRUE;
-		CurEnv->e_qf = w->w_name;
 		CurEnv->e_id = &w->w_name[2];
 # ifdef LOG
 		if (LogLevel > 11)
@@ -480,11 +469,12 @@ dowork(w)
 		initsys();
 
 		/* read the queue control file */
-		readqf(CurEnv->e_qf);
+		readqf(queuename(CurEnv, 'q'));
+		CurEnv->e_flags |= EF_INQUEUE;
 		eatheader();
 
 		/* do the delivery */
-		if (!FatalErrors)
+		if (!bitset(EF_FATALERRS, CurEnv->e_flags))
 			sendall(CurEnv, SM_DELIVER);
 
 		/* if still not sent, perhaps we should time out.... */
@@ -493,8 +483,8 @@ dowork(w)
 			printf("curtime=%ld, TimeOut=%ld\n", curtime(),
 					     CurEnv->e_ctime + TimeOut);
 # endif DEBUG
-		if (CurEnv->e_queueup && curtime() > CurEnv->e_ctime + TimeOut)
-			timeout(w);
+		if (curtime() > CurEnv->e_ctime + TimeOut)
+			CurEnv->e_flags |= EF_TIMEOUT;
 
 		/* finish up and exit */
 		finis();
@@ -605,7 +595,7 @@ readqf(cf)
 **  TIMEOUT -- process timeout on queue file.
 **
 **	Parameters:
-**		w -- pointer to work request that timed out.
+**		e -- the envelope that timed out.
 **
 **	Returns:
 **		none.
@@ -615,24 +605,25 @@ readqf(cf)
 **		message has timed out.
 */
 
-timeout(w)
-	register WORK *w;
+timeout(e)
+	register ENVELOPE *e;
 {
 	char buf[MAXLINE];
 	extern char *pintvl();
 
 # ifdef DEBUG
 	if (tTd(40, 3))
-		printf("timeout(%s)\n", w->w_name);
+		printf("timeout(%s)\n", e->e_id);
 # endif DEBUG
+	e->e_to = NULL;
 	message(Arpa_Info, "Message has timed out");
 
 	/* return message to sender */
 	(void) sprintf(buf, "Cannot send mail for %s", pintvl(TimeOut, FALSE));
-	(void) returntosender(buf, &CurEnv->e_from, TRUE);
+	(void) returntosender(buf, &e->e_from, TRUE);
 
 	/* arrange to remove files from queue */
-	CurEnv->e_dontqueue = TRUE;
+	e->e_flags |= EF_CLRQUEUE;
 }
 
 # endif QUEUE

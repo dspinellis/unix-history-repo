@@ -2,7 +2,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)recipient.c	3.46		%G%);
+SCCSID(@(#)recipient.c	3.47		%G%);
 
 /*
 **  SENDTO -- Designate a send list.
@@ -61,7 +61,7 @@ sendto(list, copyf, ctladdr, qflags)
 	if (ctladdr == NULL &&
 	    (index(list, ',') != NULL || index(list, ';') != NULL ||
 	     index(list, '<') != NULL || index(list, '(') != NULL))
-		CurEnv->e_oldstyle = FALSE;
+		CurEnv->e_flags &= ~EF_OLDSTYLE;
 
 	firstone = TRUE;
 	selfref = FALSE;

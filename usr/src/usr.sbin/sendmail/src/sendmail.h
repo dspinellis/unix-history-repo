@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	3.100		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.101		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -173,10 +173,6 @@ struct envelope
 	HDR		*e_header;	/* head of header list */
 	long		e_msgpriority;	/* adjusted priority of this message */
 	time_t		e_ctime;	/* time message appeared in the queue */
-	bool		e_queueup;	/* queue this message */
-	bool		e_dontqueue;	/* override queueing */
-	bool		e_oldstyle;	/* use spaces (not commas) in hdrs */
-	bool		e_sendreceipt;	/* actually send a receipt back */
 	char		*e_to;		/* the target person */
 	char		*e_receiptto;	/* return receipt address */
 	ADDRESS		e_from;		/* the person it is from */
@@ -186,16 +182,26 @@ struct envelope
 	ADDRESS		*e_errorqueue;	/* the queue for error responses */
 	long		e_msgsize;	/* size of the message in bytes */
 	short		e_class;	/* msg class (priority, junk, etc.) */
+	short		e_flags;	/* flags, see below */
 	int		(*e_puthdr)();	/* function to put header of message */
 	int		(*e_putbody)();	/* function to put body of message */
 	struct envelope	*e_parent;	/* the message this one encloses */
+	struct envelope *e_sibling;	/* the next envelope of interest */
 	char		*e_df;		/* location of temp file */
-	char		*e_qf;		/* queue control file */
 	char		*e_id;		/* code for this entry in queue */
 	char		*e_macro[128];	/* macro definitions */
 };
 
 typedef struct envelope	ENVELOPE;
+
+/* values for e_flags */
+#define EF_OLDSTYLE	000001		/* use spaces (not commas) in hdrs */
+#define EF_INQUEUE	000002		/* this message is fully queued */
+#define EF_TIMEOUT	000004		/* this message is too old */
+#define EF_CLRQUEUE	000010		/* disk copy is no longer needed */
+#define EF_SENDRECEIPT	000020		/* send a return receipt */
+#define EF_FATALERRS	000040		/* fatal errors occured */
+#define EF_KEEPQUEUE	000100		/* keep queue files always */
 
 EXTERN ENVELOPE	*CurEnv;	/* envelope currently being processed */
 /*
@@ -409,7 +415,6 @@ EXTERN bool	SuprErrs;	/* set if we are suppressing errors */
 EXTERN bool	QueueRun;	/* currently running message from the queue */
 EXTERN bool	HoldErrs;	/* only output errors to transcript */
 EXTERN bool	NoConnect;	/* don't connect to non-local mailers */
-EXTERN bool	FatalErrors;	/* set if fatal errors during processing */
 EXTERN bool	SuperSafe;	/* be extra careful, even if expensive */
 EXTERN bool	SafeAlias;	/* alias file must have "@:@" to be complete */
 EXTERN bool	AutoRebuild;	/* auto-rebuild the alias database as needed */
@@ -434,7 +439,6 @@ EXTERN int	LogLevel;	/* level of logging to perform */
 EXTERN int	FileMode;	/* mode on files */
 EXTERN time_t	QueueIntvl;	/* intervals between running the queue */
 EXTERN char	*HostName;	/* name of this host for SMTP messages */
-EXTERN char	*Transcript;	/* the transcript file name */
 EXTERN char	*AliasFile;	/* location of alias file */
 EXTERN char	*HelpFile;	/* location of SMTP help file */
 EXTERN char	*StatFile;	/* location of statistics summary */

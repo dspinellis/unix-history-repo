@@ -1,10 +1,11 @@
+# include <errno.h>
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)srvrsmtp.c	3.36		%G%	(no SMTP));
+SCCSID(@(#)srvrsmtp.c	3.37		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)srvrsmtp.c	3.36		%G%);
+SCCSID(@(#)srvrsmtp.c	3.37		%G%);
 
 /*
 **  SMTP -- run the SMTP protocol.
@@ -32,25 +33,24 @@ struct cmd
 # define CMDRCPT	2	/* rcpt -- designate recipient */
 # define CMDDATA	3	/* data -- send message text */
 # define CMDHOPS	4	/* hops -- specify hop count */
-# define CMDRSET	5	/* rset -- reset state */
-# define CMDVRFY	6	/* vrfy -- verify address */
-# define CMDHELP	7	/* help -- give usage info */
-# define CMDNOOP	8	/* noop -- do nothing */
-# define CMDQUIT	9	/* quit -- close connection and die */
-# define CMDMRSQ	10	/* mrsq -- for old mtp compat only */
-# define CMDHELO	11	/* helo -- be polite */
-# define CMDDBGSHOWQ	12	/* showq -- show send queue (DEBUG) */
-# define CMDDBGDEBUG	13	/* debug -- set debug mode */
-# define CMDVERB	14	/* verb -- go into verbose mode */
-# define CMDDBGKILL	15	/* kill -- kill sendmail */
-# define CMDDBGWIZ	16	/* wiz -- become a wizard */
-# define CMDONEX	17	/* onex -- sending one transaction only */
+# define CMDRSET	4	/* rset -- reset state */
+# define CMDVRFY	5	/* vrfy -- verify address */
+# define CMDHELP	6	/* help -- give usage info */
+# define CMDNOOP	7	/* noop -- do nothing */
+# define CMDQUIT	8	/* quit -- close connection and die */
+# define CMDHELO	9	/* helo -- be polite */
+# define CMDDBGQSHOW	10	/* showq -- show send queue (DEBUG) */
+# define CMDDBGDEBUG	11	/* debug -- set debug mode */
+# define CMDVERB	12	/* verb -- go into verbose mode */
+# define CMDDBGKILL	13	/* kill -- kill sendmail */
+# define CMDDBGWIZ	14	/* wiz -- become a wizard */
+# define CMDONEX	15	/* onex -- sending one transaction only */
+# define CMDDBGSHELL	16	/* shell -- give us a shell */
 
 static struct cmd	CmdTab[] =
 {
 	"mail",		CMDMAIL,
 	"rcpt",		CMDRCPT,
-	"mrcp",		CMDRCPT,	/* for old MTP compatability */
 	"data",		CMDDATA,
 	"rset",		CMDRSET,
 	"vrfy",		CMDVRFY,
@@ -59,16 +59,16 @@ static struct cmd	CmdTab[] =
 	"help",		CMDHELP,
 	"noop",		CMDNOOP,
 	"quit",		CMDQUIT,
-	"mrsq",		CMDMRSQ,
 	"helo",		CMDHELO,
 	"verb",		CMDVERB,
 	"onex",		CMDONEX,
 	"hops",		CMDHOPS,
 # ifdef DEBUG
-	"showq",	CMDDBGSHOWQ,
+	"showq",	CMDDBGQSHOW,
 	"debug",	CMDDBGDEBUG,
 	"kill",		CMDDBGKILL,
 	"wiz",		CMDDBGWIZ,
+	"shell",	CMDDBGSHELL,
 # endif DEBUG
 	NULL,		CMDERROR,
 };
@@ -77,6 +77,8 @@ static struct cmd	CmdTab[] =
 bool	IsWiz = FALSE;			/* set if we are a wizard */
 char	*WizWord = NULL;		/* the wizard word to compare against */
 # endif DEBUG
+bool	InChild = FALSE;		/* true if running in a subprocess */
+#define EX_QUIT		22		/* special code for QUIT command */
 
 smtp()
 {
@@ -124,7 +126,8 @@ smtp()
 		fixcrlf(inp, TRUE);
 
 		/* echo command to transcript */
-		fprintf(Xscript, "<<< %s\n", inp);
+		if (Xscript != NULL)
+			fprintf(Xscript, "<<< %s\n", inp);
 
 		/* break off command */
 		for (p = inp; isspace(*p); p++)
@@ -159,21 +162,29 @@ smtp()
 				message("503", "Sender already specified");
 				break;
 			}
+			if (InChild)
+			{
+				syserr("Nested MAIL command");
+				exit(0);
+			}
+
+			/* fork a subprocess to process this command */
+			if (runinchild("SMTP-MAIL") > 0)
+				break;
+			initsys();
+
+			/* child -- go do the processing */
 			p = skipword(p, "from");
 			if (p == NULL)
 				break;
-			if (index(p, ',') != NULL)
-			{
-				message("501", "Source routing not implemented");
-				Errors++;
-				break;
-			}
 			setsender(p);
 			if (Errors == 0)
 			{
 				message("250", "Sender ok");
 				hasmail = TRUE;
 			}
+			else if (InChild)
+				finis();
 			break;
 
 		  case CMDRCPT:		/* rcpt -- designate recipient */
@@ -220,12 +231,12 @@ smtp()
 			**	Finally give a reply code.  If an error has
 			**		already been given, don't mail a
 			**		message back.
-			**	We goose error returns by clearing FatalErrors.
+			**	We goose error returns by clearing error bit.
 			*/
 
 			if (rcps != 1)
 				HoldErrs = MailBack = TRUE;
-			FatalErrors = FALSE;
+			CurEnv->e_flags &= ~EF_FATALERRS;
 
 			/* send to all recipients */
 			sendall(CurEnv, SendMode);
@@ -238,14 +249,22 @@ smtp()
 				message("250", "Ok");
 			}
 			else
-				FatalErrors = FALSE;
+				CurEnv->e_flags &= ~EF_FATALERRS;
+
+			/* if in a child, pop back to our parent */
+			if (InChild)
+				finis();
 			break;
 
 		  case CMDRSET:		/* rset -- reset state */
 			message("250", "Reset state");
-			finis();
+			if (InChild)
+				finis();
+			break;
 
 		  case CMDVRFY:		/* vrfy -- verify address */
+			if (runinchild("SMTP-VRFY") > 0)
+				break;
 				paddrtree(a);
 			break;
 
@@ -261,38 +280,9 @@ smtp()
 
 		  case CMDQUIT:		/* quit -- leave mail */
 			message("221", "%s closing connection", HostName);
+			if (InChild)
+				ExitStat = EX_QUIT;
 			finis();
-
-		  case CMDMRSQ:		/* mrsq -- negotiate protocol */
-			if (*p == 'R' || *p == 'T')
-			{
-				/* recipients first or text first */
-				message("200", "%c ok, please continue", *p);
-			}
-			else if (*p == '?')
-			{
-				/* what do I prefer?  anything, anytime */
-				message("215", "R Recipients first is my choice");
-			}
-			else if (*p == '\0')
-			{
-				/* no meaningful scheme */
-				message("200", "okey dokie boobie");
-			}
-			else
-			{
-				/* bad argument */
-				message("504", "Scheme unknown");
-			}
-			break;
-
-		  case CMDHOPS:		/* specify hop count */
-			HopCount = atoi(p);
-			if (++HopCount > MAXHOP)
-				message("501", "Hop count exceeded");
-			else
-				message("200", "Hop count ok");
-			break;
 
 		  case CMDVERB:		/* set verbose mode */
 			Verbose = TRUE;
@@ -305,7 +295,7 @@ smtp()
 			break;
 
 # ifdef DEBUG
-		  case CMDDBGSHOWQ:	/* show queues */
+		  case CMDDBGQSHOW:	/* show queues */
 			printf("Send Queue=");
 			printaddr(CurEnv->e_sendqueue, TRUE);
 			break;
@@ -323,6 +313,14 @@ smtp()
 				message("200", "Mother is dead");
 			else
 				message("500", "Can't kill Mom");
+			break;
+
+		  case CMDDBGSHELL:	/* give us an interactive shell */
+			if (!iswiz())
+				break;
+			execl("/bin/csh", "sendmail", 0);
+			execl("/bin/sh", "sendmail", 0);
+			message("500", "Can't");
 			break;
 
 		  case CMDDBGWIZ:	/* become a wizard */
@@ -480,6 +478,58 @@ iswiz()
 	if (!IsWiz)
 		message("500", "Mere mortals musn't mutter that mantra");
 	return (IsWiz);
+}
+/*
+**  RUNINCHILD -- return twice -- once in the child, then in the parent again
+**
+**	Parameters:
+**		label -- a string used in error messages
+**
+**	Returns:
+**		zero in the child
+**		one in the parent
+**
+**	Side Effects:
+**		none.
+*/
+
+runinchild(label)
+	char *label;
+{
+	int childpid;
+
+	childpid = dofork();
+	if (childpid < 0)
+	{
+		syserr("%s: cannot fork", label);
+		return (1);
+	}
+	if (childpid > 0)
+	{
+		/* parent -- wait for child to complete */
+		auto int st;
+		int i;
+
+		while ((i = wait(&st)) != childpid)
+		{
+			if (i < 0 && errno != EINTR)
+				break;
+		}
+		if (i < 0)
+			syserr("%s: lost child", label);
+
+		/* if we exited on a QUIT command, complete the process */
+		if (st == (EX_QUIT << 8))
+			finis();
+
+		return (1);
+	}
+	else
+	{
+		/* child */
+		InChild = TRUE;
+		return (0);
+	}
 }
 /*
 **  PADDRTREE -- print address tree

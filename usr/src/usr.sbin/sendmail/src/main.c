@@ -6,7 +6,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)main.c	3.138		%G%);
+SCCSID(@(#)main.c	3.139		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -180,7 +180,7 @@ main(argc, argv)
 # ifdef LOG
 	openlog("sendmail", 0);
 # endif LOG
-	Xscript = stderr;
+	Xscript = NULL;
 	errno = 0;
 	from = NULL;
 	initmacros();
@@ -439,7 +439,7 @@ main(argc, argv)
 	*/
 
 	CurEnv = newenvelope(&MainEnvelope);
-	MainEnvelope.e_oldstyle = BlankEnvelope.e_oldstyle;
+	MainEnvelope.e_flags = BlankEnvelope.e_flags;
 
 	/*
 	**  If test mode, read addresses from stdin and process.
@@ -541,14 +541,11 @@ main(argc, argv)
 		/* at this point we are in a child: reset state */
 		OpMode = MD_SMTP;
 		dropenvelope(CurEnv);
-		CurEnv->e_id = CurEnv->e_qf = CurEnv->e_df = NULL;
-		FatalErrors = FALSE;
+		CurEnv->e_id = CurEnv->e_df = NULL;
+		CurEnv->e_flags &= ~EF_FATALERRS;
 		openxscrpt();
 	}
 #endif DAEMON
-
-	/* do basic system initialization */
-	initsys();
 	
 # ifdef SMTP
 	/*
@@ -561,9 +558,10 @@ main(argc, argv)
 # endif SMTP
 
 	/*
-	**  Set the sender
+	**  Do basic system initialization and set the sender
 	*/
 
+	initsys();
 	setsender(from);
 
 	if (OpMode != MD_DAEMON && ac <= 0 && !GrabTo)
@@ -817,41 +815,19 @@ finis()
 
 # ifdef DEBUG
 	if (tTd(2, 1))
-	{
-		printf("\n====finis: stat %d sendreceipt %d FatalErrors %d\n",
-		     ExitStat, CurEnv->e_sendreceipt, FatalErrors);
-	}
+		printf("\n====finis: stat %d e_flags %o\n", ExitStat, CurEnv->e_flags);
 # endif DEBUG
 
 	/*
-	**  Send back return receipts as requested.
+	**  Clean up temp files.
 	*/
 
-	if (CurEnv->e_receiptto != NULL &&
-	    (CurEnv->e_sendreceipt || ExitStat != EX_OK))
-	{
-		auto ADDRESS *rlist;
-
-		sendto(CurEnv->e_receiptto, (ADDRESS *) NULL, &rlist);
-		(void) returntosender("Return receipt", rlist, FALSE);
-	}
-
-	/*
-	**  Arrange to return errors or queue up as appropriate.
-	**	If we are running a queue file and exiting abnormally,
-	**		be sure we save the queue file.
-	**	This clause will arrange to return error messages.
-	*/
-
-	checkerrors(CurEnv);
-
-	/*
-	**  Now clean up temp files and exit.
-	*/
-
-	if (Transcript != NULL)
-		xunlink(Transcript);
 	dropenvelope(CurEnv);
+
+	/*
+	**  And exit.
+	*/
+
 # ifdef LOG
 	if (LogLevel > 11)
 		syslog(LOG_DEBUG, "finis, pid=%d", getpid());
@@ -875,7 +851,7 @@ finis()
 
 intsig()
 {
-	CurEnv->e_df = CurEnv->e_qf = NULL;
+	CurEnv->e_df = NULL;
 	finis();
 }
 /*
@@ -901,12 +877,9 @@ openxscrpt()
 	p = queuename(CurEnv, 'x');
 	Xscript = fopen(p, "w");
 	if (Xscript == NULL)
-	{
-		Xscript = stdout;
 		syserr("Can't create %s", p);
-	}
-	(void) chmod(p, 0644);
-	Transcript = newstr(p);
+	else
+		(void) chmod(p, 0644);
 }
 /*
 **  SETSENDER -- set sendmail's idea of the sender.
@@ -1208,17 +1181,86 @@ newenvelope(e)
 **
 **	Side Effects:
 **		housekeeping necessary to dispose of an envelope.
+**		Unlocks this queue file.
 */
 
 dropenvelope(e)
 	register ENVELOPE *e;
 {
-	if (e->e_df != NULL)
-		xunlink(e->e_df);
-	if (e->e_qf != NULL)
-		xunlink(e->e_qf);
-	if (e->e_id != NULL)
-		xunlink(queuename(e, 'l'));
+	bool queueit = FALSE;
+	bool sendreceipt = bitset(EF_SENDRECEIPT, e->e_flags);
+	register ADDRESS *q;
+
+#ifdef DEBUG
+	if (tTd(50, 1))
+		printf("dropenvelope %x id=\"%s\" flags=%o\n", e, e->e_id,
+			e->e_flags);
+#endif DEBUG
+
+	/* we must have an id to remove disk files */
+	if (e->e_id == NULL)
+		return;
+
+	/*
+	**  Extract state information from dregs of send list.
+	*/
+
+	for (q = e->e_sendqueue; q != NULL; q = q->q_next)
+	{
+		if (bitset(QQUEUEUP, q->q_flags))
+			queueit = TRUE;
+		if (bitset(QBADADDR, q->q_flags))
+			sendreceipt = TRUE;
+	}
+
+	/*
+	**  Send back return receipts as requested.
+	*/
+
+	if (e->e_receiptto != NULL && sendreceipt)
+	{
+		auto ADDRESS *rlist;
+
+		sendto(CurEnv->e_receiptto, (ADDRESS *) NULL, &rlist);
+		(void) returntosender("Return receipt", rlist, FALSE);
+	}
+
+	/*
+	**  See if this message has timed out
+	*/
+
+	if (bitset(EF_TIMEOUT, e->e_flags) && queueit)
+		timeout(e);
+
+	/*
+	**  Arrange to send error messages if there are fatal errors.
+	*/
+
+	if (bitset(EF_FATALERRS, e->e_flags))
+		savemail(e);
+
+	/*
+	**  Instantiate or deinstantiate the queue.
+	*/
+
+	if ((!queueit && !bitset(EF_KEEPQUEUE, e->e_flags)) ||
+	    bitset(EF_CLRQUEUE, e->e_flags))
+	{
+		if (e->e_df != NULL)
+			xunlink(e->e_df);
+		xunlink(queuename(e, 'q'));
+	}
+	else if (queueit || !bitset(EF_INQUEUE, e->e_flags))
+		queueup(e, FALSE);
+
+	/* in any case, remove the transcript */
+#ifdef DEBUG
+	if (!tTd(51, 4))
+#endif DEBUG
+		xunlink(queuename(e, 'x'));
+
+	/* last but not least, remove the lock */
+	xunlink(queuename(e, 'l'));
 }
 /*
 **  QUEUENAME -- build a file name in the queue directory for this envelope.
@@ -1314,8 +1356,7 @@ queuename(e, type)
 				lf, QueueDir);
 			exit(EX_OSERR);
 		}
-		e->e_qf = newstr(qf);
-		e->e_id = &e->e_qf[2];
+		e->e_id = newstr(&qf[2]);
 		define('i', e->e_id);
 # ifdef DEBUG
 		if (tTd(7, 1))
@@ -1465,15 +1506,16 @@ disconnect(all)
 {
 	int fd;
 
-#ifdef TIOCNOTTY
-	/* drop our controlling TTY completely if possible */
-	fd = open("/dev/tty", 2);
-	if (fd >= 0)
+#ifdef DEBUG
+	if (tTd(52, 1))
+		printf("disconnect(%d): In %d Out %d Xs %d\n", all,
+			fileno(InChannel), fileno(OutChannel), fileno(Xscript));
+	if (tTd(52, 5))
 	{
-		(void) ioctl(fd, TIOCNOTTY, 0);
-		(void) close(fd);
+		printf("don't\n");
+		return;
 	}
-#endif TIOCNOTTY
+#endif DEBUG
 
 	/* be sure we don't get nasty signals */
 	signal(SIGHUP, SIG_IGN);
@@ -1493,11 +1535,27 @@ disconnect(all)
 	/* output to the transcript */
 	if (all || OutChannel != stdout)
 	{
+		if (OutChannel != stdout)
+		{
+			(void) fclose(OutChannel);
+			OutChannel = Xscript;
+		}
+		(void) fflush(stdout);
 		(void) close(1);
-		(void) dup(fileno(Xscript));
-		(void) fclose(OutChannel);
-		OutChannel = Xscript;
+		(void) close(2);
+		while ((fd = dup(fileno(Xscript))) < 2 && fd > 0)
+			continue;
 	}
+
+#ifdef TIOCNOTTY
+	/* drop our controlling TTY completely if possible */
+	fd = open("/dev/tty", 2);
+	if (fd >= 0)
+	{
+		(void) ioctl(fd, TIOCNOTTY, 0);
+		(void) close(fd);
+	}
+#endif TIOCNOTTY
 
 # ifdef LOG
 	if (LogLevel > 11)

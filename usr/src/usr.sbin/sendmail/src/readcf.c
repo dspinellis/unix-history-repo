@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)readcf.c	3.45		%G%);
+SCCSID(@(#)readcf.c	3.46		%G%);
 
 /*
 **  READCF -- read control file.
@@ -591,7 +591,7 @@ setoption(opt, val, safe, sticky)
 
 # ifdef DEBUG
 	if (tTd(37, 1))
-		printf("setoption %c=%s\n", opt, val);
+		printf("setoption %c=%s", opt, val);
 # endif DEBUG
 
 	/*
@@ -604,11 +604,15 @@ setoption(opt, val, safe, sticky)
 	if (bitset(smask, StickyOpt[sindex]))
 	{
 # ifdef DEBUG
-		if (tTd(37, 2))
-			printf("(ignored)\n");
+		if (tTd(37, 1))
+			printf(" (ignored)\n");
 # endif DEBUG
 		return;
 	}
+#ifdef DEBUG
+	else if (tTd(37, 1))
+		printf("\n");
+#endif DEBUG
 	if (sticky)
 		StickyOpt[sindex] |= smask;
 
@@ -740,7 +744,10 @@ setoption(opt, val, safe, sticky)
 		break;
 
 	  case 'o':		/* assume old style headers */
-		CurEnv->e_oldstyle = bval;
+		if (bval)
+			CurEnv->e_flags |= EF_OLDSTYLE;
+		else
+			CurEnv->e_flags &= ~EF_OLDSTYLE;
 		break;
 
 	  case 'Q':		/* queue directory */
