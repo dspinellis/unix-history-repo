@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)bib.c	2.5	%G%";
+static char sccsid[] = "@(#)bib.c	2.6	%G%";
 #endif not lint
 /*
         Bib - bibliographic formatter
@@ -46,7 +46,7 @@ static char sccsid[] = "@(#)bib.c	2.5	%G%";
    int  findex = false;         /* can we read the file INDEX ?          */
 
 /* global variables in bibargs */
-   extern int foot, sort, personal;
+   extern int foot, doacite, sort, personal;
    extern int hyphen, ordcite, biblineno;
    extern char sortstr[], pfile[], citetemplate[], bibfname[];
 
@@ -187,9 +187,9 @@ cleanup(val)
    char huntstr[HUNTSIZE], c, info[HUNTSIZE];
 
    if (ch == '[')
-      fputs("\\*([[", tfd);
+      if (doacite) fputs("\\*([[", tfd);
    else
-      fputs("\\*([{", tfd);
+      if (doacite) fputs("\\*([{", tfd);
    huntstr[0] = info[0] = 0;
    while (getch(c, fd) != EOF)
       switch (c) {
@@ -245,7 +245,7 @@ citemark(info, huntstr, tail)
 		fprintf(tfd, "%c%s%c", FMTSTART, ncitetemplate, FMTEND);
 		ncitetemplate[0] = 0;
 	}
-	fprintf(tfd, "%c%d%c%s%c%s", c ,n, c, info, CITEEND, tail);
+	fprintf(tfd, "%c%d%c%s%c%s", c ,n, c, info, CITEEND, doacite?tail:0);
 }
 
 /* addc - add a character to hunt string */
@@ -475,13 +475,15 @@ int  fn, footrefs[];
 				rdref(p, ref);
 				bldcite(tempcite, cites[i].num, ref);
 				strcat(tempcite, p->ri_disambig);
-				fputs(tempcite, ofd);
+				if (doacite) fputs(tempcite, ofd);
 			} else {
-				fputs(refinfo[cites[i].num].ri_cite, ofd);
+				if (doacite) fputs(refinfo[cites[i].num].ri_cite, ofd);
 			}
+			if (!doacite) fputs("\\&", ofd);
 		}
 		if (cites[i].info) {
-			fputs(cites[i].info, ofd);
+			if (doacite) fputs(cites[i].info, ofd);
+			if (!doacite) fputs("\\&", ofd);
 			free(cites[i].info);
 		}
 		if (hyphen) {
