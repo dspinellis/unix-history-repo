@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)hardware.t	1.1 (Berkeley) %G%
+.\"	@(#)hardware.t	1.2 (Berkeley) %G%
 .\"
 .TL
 Berkeley Software for UNIX:\s-4\u\(dg\d\s0
@@ -157,7 +157,7 @@ In addition, DH11 emulators such as
 the ABLE DH/DM (which replaces the ABLE DMAX)
 and EMULEX CS-11 and CS-21 are supported.
 The system also provides support for standard line printer
-interfaces emulting the DEC LP11 or the parallel port of the DMF32.
+interfaces emulating the DEC LP11 or the parallel port of the DMF32.
 Support for serial printers such as a DECwriter-III and printer-plotters
 such as those made by BENSON/VARIAN or VERSATEC is 
 available with standard drivers.
@@ -185,7 +185,7 @@ on the appropriate I/O buss:
 center, box;
 c s
 l l.
-VAX Ethernet controller support
+VAX 10Mb/s Ethernet controller support
 name	controller
 _
 de	DEC DEUNA, DELUA (UNIBUS)
@@ -194,6 +194,25 @@ ex	Excelan EXOS-204 (UNIBUS), EXOS-203 (Q-bus)
 il	Interlan NI1010, NI1010A (UNIBUS)
 np	Interlan NP100 (UNIBUS)
 qe	DEC DEQNA, DELQA (Q-bus)
+.TE
+.KE
+.KS
+.PP
+The following controllers may be used for the indicated network types:
+.TS
+center, box;
+l l l.
+Name	Controller	Network Type
+_
+hdh	ACC HDH	Arpanet HDH
+acc	ACC LH/DH	Arpanet 1822
+css	DEC CSS IMP-11	Arpanet 1822
+hy	NSC Hyperchannel Adaptor	Hyperchannel
+pcl	DEC PCL-11	PCL TDM Bus
+vv	Proteon p1000, p1080	Proteon ProNET 10, 80
+dmc	DEC DMC-11, DMR-11	DEC DDCMP synchronous serial
+dmv	DEC DMV-11	DEC DDCMP synchronous serial
+sl	Terminal Mux	Serial Line IP (SLIP)
 .TE
 .KE
 .PP
