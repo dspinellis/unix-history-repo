@@ -1,4 +1,5 @@
 .	\" letter HEad
+.	\" @(#)hed.ms	1.2 %G%
 .de HE
 .nr xx \\n(.d
 .nr xy \\n(.u
@@ -8,6 +9,8 @@
 .nr xw \\n(.s
 .nf
 .ie "\*(.T"ip" \{\
+.	ft R \}
+.ie "\*(.T"psc" \{\
 .	ft R \}
 .el \{\
 .	ft cr\}
@@ -22,13 +25,20 @@
 .	sp |0.5i\}
 UNIVERSITY OF CALIFORNIA, BERKELEY
 .sp 0.3i-1v
+.ie "\*(.T"psc" \{\
+\l'11.5c' \h'|13.7c'\l'4.2c'
+.br
+\s6BERKELEY    \(bu    DAVIS    \(bu    IRVINE    \(bu    LOS  ANGELES    \(bu    RIVERSIDE    \(bu    SAN  DIEGO    \(bu    SAN  FRANCISCO \h'|11.55c' \z\(uc \h'|14c' SANTA  BARBARA    \(bu    SANTA  CRUZ\s10
+.sp -0.2c
+\l'11.5c' \h'|13.7c'\l'4.2c'\s7 \}
+.el \{\
 .ps 7
 \D't 0.013i'\D'l 4.5i 0'\h'0.83i'\D'l 1.85i 0'
 .sp 0.13i-1v
 \!s5
 \D't 0.024i'\|BERKELEY \v'-0.035i'\D'l 0 0'\v'0.035i' DAVIS \v'-0.035i'\D'l 0 0'\v'0.035i' IRVINE \v'-0.035i'\D'l 0 0'\v'0.035i' LOS ANGELES \v'-0.035i'\D'l 0 0'\v'0.035i' RIVERSIDE \v'-0.035i'\D'l 0 0'\v'0.035i' SAN DIEGO \v'-0.035i'\D'l 0 0'\v'0.035i' SAN FRANCISCO\h'|4.9i'\u\f(slseal\fP\h'|5.475i'\dSANTA BARBARA \v'-0.035i'\D'l 0 0'\v'0.035i' SANTA CRUZ
 .sp 0.07i-1v
-\D't 0.013i'\D'l 4.5i 0'\h'0.83i'\D'l 1.85i 0'
+\D't 0.013i'\D'l 4.5i 0'\h'0.83i'\D'l 1.85i 0' \}
 .sp 0.5i-1v
 \|COLLEGE OF ENGINEERING\h'|4.1i'BERKELEY, CALIFORNIA  94720
 \|DEPARTMENT OF ELECTRICAL ENGINEERING
