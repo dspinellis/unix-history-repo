@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file @(#)termcap.src	1.4	(Berkeley) %G%
+#	Termcap source file @(#)termcap.src	1.5	(Berkeley) %G%
 #	Mark Horton, U.C. Berkeley
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
@@ -80,7 +80,7 @@
 Aa|agile|agiles|sri agiles:\
 	:bs:hc:os:pl:co#132:\
 	:bl=^G:bc=^H:ta=^I:do=^J:nl=^J:cr=^M:kb=^H:up=\E\n:\
-	:hu=\E0:hd=\E9:.if=/usr/lib/tabset/std:is=\EE\EF\EJ:
+	:hu=\E0:hd=\E9:if=/usr/lib/tabset/std:is=\EE\EF\EJ:
 A6|1620|1640|450|diablo 1620:\
 	:cr=^M:do=^J:nl=^J:bl=^G:\
 	:ct=\E2:st=\E1:ch=\E\t%i%.:\
@@ -551,37 +551,13 @@ Ms|swtp|ct82|southwest technical products ct82:\
 Mt|terak|Terak emulating Datamedia 1520:\
 	:tc=dm1520:
 # SUN MicroSystems Inc.
-# the vs/ve and MT termcap capabilities do not work very well
-# on the sun.  Right now, the first entry works best.
-Mu|sun|SUN microsystems inc:\
+Mu|sun|Sun Microsystems Workstation console:\
 	:li#34:co#80:cl=^L:cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
 	:am:bs:mi:ms:pt:\
 	:ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:\
 	:kd=\E[B:kl=\E[D:ku=\E[A:kr=\E[C:kh=\E[H:\
 	:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:\
 	:al=\E[L:dl=\E[M:im=:ei=:ic=\E[@:dc=\E[P:
-#what does the :MT: do?  Taking it out seems to have fixed the sun entry.
-Mu|origsun|sun:\
-	:am:bs:mi:MT:ms:pt:\
-	:li#34:co#80:\
-	:cl=^L:\
-        :cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
-        :ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:\
-        :kd=\E[B:kl=\E[D:ku=\E[A:kr=\E[C:kh=\E[H:\
-	:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:\
-	:al=\E[L:dl=\E[M:im=:ei=:ic=\E[@:dc=\E[P:
-#the following entry uses vs/ve very unsuccessfully.
-Mu|badsun|sun:\
-	:am:bs:mi:ms:pt:\
-	:li#34:co#80:\
-	:cl=^L:\
-        :cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
-        :ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:\
-        :kd=\E[B:kl=\E[D:ku=\E[A:kr=\E[C:kh=\E[H:\
-	:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:\
-	:al=\E[L:dl=\E[M:im=:ei=:ic=\E[@:dc=\E[P:\
-	:vs=\E[r:ve=\E[3r:
-#end SUN
 Mv|virtual|VIRTUAL|cb unix virtual terminal:\
 	:cr=^M:do=^J:nl=^J:bl=^G:\
 	:co#80:li#24:am:cl=\E\112:le=^H:bs:cm=\E\107%r%.%.:nd=\E\103:\
@@ -1123,31 +1099,27 @@ Xu|4112-5|4112 in 5 line dialog area:li#5:tc=4112:
 # a: ADDS
 #
 # Regent: lowest common denominator, works on all regents.
-a0|regent|adds regent series:\
-	:cr=^M:do=^J:nl=^J:bl=^G:\
-	:am:le=^H:bs:cl=^L:cm=^K%+ %\102^P%.:co#80:ho=^A:li#24:ll=^A^Z:nd=^F:up=^Z:
+a0|regent|Adds Regent Series:li#24:co#80:am:cl=^L:ll=^A:up=^Z:\
+	:bs:bc=^U:nd=^F:do=^J:bl=^G:ho=\EY  :
 # Regent 100 has a bug where if computer sends escape when user is holding
 # down shift key it gets confused, so we avoid escape.
-a1|regent100|adds regent 100:\
-	:cm=^K%+ %\102^P%.:k1=^B1\r:k2=^B2\r:k3=^B3\r:k4=^B4\r:\
-	:k5=^B5\r:k6=^B6\r:k7=^B7\r:k8=^B8\r:\
-	:kh=^A:kl=^U:kr=^F:ku=^Z:kd=^J:tc=regent:
-# Regent 20, untested
-a2|regent20|adds regent 20:\
-	:cd=\Ek:ce=\EK:cm=\EY%+ %+ :tc=regent:
-a3|regent25|adds regent 25:\
-	:k0=^B0\r:k1=^B1\r:k2=^B2\r:k3=^B3\r:k4=^B4\r:\
-	:k5=^B5\r:k6=^B6\r:k7=^B7\r:k8=^B8\r:k9=^B9\r:\
-	:kh=^A:kl=^U:kr=^F:ku=^Z:kd=^J:tc=regent20:
-# Regent 40: untested
-a4|regent40|adds regent 40:\
-	:al=\EM:dl=\El:is=\EB:se=\E0@:so=\E0P:ue=\E0@:us=\E0`:vb=\ED\Ed:\
-	:tc=regent25:
-# If you have standout problem with regent 200, try so=\ER\EOP:se=\E0@\EV:
-a6|regent60|regent200|adds Regent 60:\
-	:dc=\EE:ei=\EF:im=\EF:is=\EV\EB:ko=dc,im,ei:tc=regent40:
+a1|regent100|Adds Regent 100:k0=^B1^M:k1=^B2^M:k2=^B3^M:k3=^B4^M:\
+	:k4=^B5^M:k5=^B6^M:k6=^B7^M:k7=^B8^M:\
+	:l0=F1:l1=F2:l2=F3:l3=F4:l4=F5:l5=F6:l6=F7:l7=F8:\
+	:so=\E0P:ue=\E0@:us=\E0`:se=\E0@:\
+	:cm=^K%+ %B^P%.:ug#1:sg#1:tc=regent:
+a2|regent20|Adds Regent 20:cd=\Ek:ce=\EK:cm=\EY%+ %+ :tc=regent:
+a3|regent25|Adds Regent 25:kh=^A:kl=^U:kr=^F:ku=^Z:kd=^J:tc=regent20:
+a4|regent40|Adds Regent 40:k0=^B1^M:k1=^B2^M:k2=^B3^M:k3=^B4^M:\
+	:k4=^B5^M:k5=^B6^M:k6=^B7^M:k7=^B8^M:\
+	:l0=F1:l1=F2:l2=F3:l3=F4:l4=F5:l5=F6:l6=F7:l7=F8:\
+	:al=2*\EM:dl=2*\El:\
+	:so=\E0P:ue=\E0@:us=\E0`:se=\E0@:ug#1:sg#1:tc=regent25:
+a5|regent40+|Adds Regent 40+:is=\EB:tc=regent40:
+a6|regent60|regent200|Adds Regent 60:se=\ER\E0@\EV:so=\ER\E0P\EV:dc=\EE:ei=\EF:\
+	:im=\EF:is=\EV\EB:ko=dc,im,ei:tc=regent40+:
 a7|regent60na|regent 60 w/no arrow keys:\
-	:kl@:kr@:ku@:kd@:tc=regent60:
+	kl@:kr@:ku@:kd@:tc=regent60:
 # Note: if return acts weird on a980, check internal switch #2
 # on the top chip on the CONTROL pc board.
 ac|a980|adds consul 980:\
@@ -1155,12 +1127,16 @@ ac|a980|adds consul 980:\
 	:al=13\E^N:am:le=^H:bs:cl=^L\200^K@:cm=^K%+@\E^E%2:co#80:dl=13\E^O:\
 	:k0=\E0:k1=\E1:k2=\E2:k3=\E3:k4=\E4:k5=\E5:k6=\E6:k7=\E7:k8=\E8:k9=\E9:\
 	:li#24:nd=\E^E01:so=^Y^^^N:se=^O:up=9:
+as|viewpt60|viewpoint60|addsviewpoint60|adds viewpoint60:\
+	:tc=regent40:
 # From Onyx:edward  Thu Jul  9 09:27:33 1981
 av|viewpoint|addsviewpoint|adds viewpoint:\
 	:cr=^M:do=^J:nl=^J:bl=^G:\
 	:am:le=^H:bs:li#24:co#80:cm=\EY%+ %+ :cd=\Ek:ce=\EK:nd=^F:\
 	:up=^Z:cl=^L:ll=^A:kl=^U:kr=^F:kd=^J:ku=^Z:kh=^A:\
 	:so=^N:se=^O:us=^N:ue=^O:is=^O\E0`:vs=^O\E0P:ve=^O\E0`:
+
+
 # # --------------------------------
 #
 # b: BEEHIVE
@@ -1233,6 +1209,18 @@ bs|sb1|superbee|superb|beehive super bee:\
 #	1/2 bright on, goto(line#0, col#?)
 # fs - from status line - 1/2 bright off, select window 0
 # ds - disable status display - set bkgnd status mesg with illegal window #
+c5|avt|concept avt w/4 or 8 pages, 80 columns:\
+	:is=\E[1*q\E[2!t\E[7!t\E[=4;101;103;119;205l\E[=107;118;207h\E)1\E[1Q\EW\E[7!y\E[!z\E>\E[0\0720\07232!r\E[w\E2\r\n:\
+	:ae=^O:al=\E[L:am:as=^N:bs:bt=\E[Z:cd=\E[J:ce=\E[K:ch=\E[%i%2G:\
+	:cl=\E[H\E[J:cm=\E[%i%2;%2H:co#80:cv=\E[%i%2d:dc=\E[P:dl=\E[M:\
+	:do=\E[B:ei=\E1:eo:ho=\E[H:im=\E1:kb=^H:kd=\E[B:ke=\E[!z:kh=\E[H:\
+	:kl=\E[D:ko=do,ho,nd,up:kr=\E[C:\
+	:ks=\E[!z\E[1;4!z\E[1;8!z\E[1;10!z\E[1;11!z\E[1;12!z\E[1;14!z\E[3;7!z\E[3;9!z:\
+	:ku=\E[A:li#24:mi:nd=\E[C:pt:se=\E[7!{:so=\E[7m:te=\E[w\E2\r\n:\
+	:ti=\E[1;24w\E2\r:ue=\E[4!{:ul:up=\E[A:us=\E[4m:ve=\E[=4;119l:\
+	:vs=\E[=4l\E[=119h:xn:
+c6|avt-rv|concept avt w/4 or 8 pages, 80 columns:\
+	:is=\E[1*q\E[2!t\E[7!t\E[=4;101;103;119l\E[=107;118;205;207h\E)1\E[1Q\EW\E[7!y\E[!z\E>\E[0\0720\07232!r\E[w\E2\r\n:tc=avt
 c8|c108|c108-8p|concept108-8p|concept 108 w/8 pages:\
 	:i2=\EU\E z"\Ev^A\177 !p\E ;"\E z \Ev  ^A\177p\Ep\n:\
 	:te=\Ev  ^A\177p\Ep\r\n:tc=c108-4p:
@@ -1349,6 +1337,7 @@ d0|vt100|vt100-am|vt100|dec vt100:\
 	:le=^H:bs:am:cm=5\E[%i%d;%dH:nd=2\E[C:up=2\E[A:\
 	:ce=3\E[K:cd=50\E[J:so=2\E[7m:se=2\E[m:us=2\E[4m:ue=2\E[m:\
 	:md=2\E[1m:mr=2\E[7m:mb=2\E[5m:me=2\E[m:is=\E[1;24r\E[24;1H:\
+	:rf=/usr/lib/tabset/vt100:\
 	:rs=\E>\E[?3l\E[?4l\E[?5l\E[?7h\E[?8h:ks=\E[?1h\E=:ke=\E[?1l\E>:\
 	:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:kb=^H:\
 	:ho=\E[H:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:ta=^I:pt:sr=5\EM:vt#3:xn:\
@@ -1784,15 +1773,16 @@ v7|tvi950-ns|tvi950 w/no standout:\
 	:so@:se@:us@:ue@:tc=tvi950:
 v8|tvi925|925|televideo model 925:\
 	:xn:am:bs:co#80:li#24:cm=\E=%+ %+ :cl=^Z:cd=\EY:ce=\ET:is=\El\E":\
-	:al=\EE:dl=\ER:im=:ei=:ic=\EQ:dc=\EW:if=tabset.stdcrt:\
+	:al=\EE:dl=\ER:im=:ei=:ic=\EQ:dc=\EW:if=/usr/lib/tabset/std:\
 	:ho=^^:nd=^L:bt=\EI:pt:so=\EG4:se=\EG0:sg#1:us=\EG8:ue=\EG0:ug#1:\
 	:up=^K:do=^V:kb=^H:ku=^K:kd=^V:kl=^H:kr=^L:kh=^^:ma=^V^J^L :\
 	:k1=^A@\r:k2=^AA\r:k3=^AB\r:k4=^AC\r:k5=^AD\r:k6=^AE\r:k7=^AF\r:\
-	:k8=^AG\r:k9=^AH\r:k0=^AI\r:ko=ic,dc,al,dl,cl,ce,cd,bt:
+	:k8=^AG\r:k9=^AH\r:k0=^AI\r:ko=ic,dc,al,dl,cl,ce,cd,bt:\
+	:ts=\Ef:fs=\Eg:
 # entry by Tim Curry 5/21/82 Univ. of Central Fla. duke!ucf-cs!tim
 v9|925a|tvi925a|TeleVideo Model 925:\
         :al=\EE:am:bs:bt=\EI:bw:cd=\EY:ce=\ET:cl=^Z:cm=\E=%+ %+ :co#80:dc=\EW:\
-        :dl=\ER:do=^V:ei=:ic=\EQ:if=/usr/lib/tabset/stdcrt:im=:kb=^H:kd=^V:\
+        :dl=\ER:do=^V:ei=:ic=\EQ:if=/usr/lib/tabset/std:im=:kb=^H:kd=^V:\
         :kh=^^:kl=^H:kn#12:kr=^L:ku=^K:li#24:nd=^L:pt:se=\EG0:sg=#1:so=\EG4:\
         :ue=\EG0:ug#1:ul:up=^K:us=\EG8:is=\El\
         :vb=\Eb\200\200\200\200\200\200\200\200\200\200\200\200\200\200\Ed:\
@@ -1871,7 +1861,7 @@ vc|tvi950-4p|950-4p|televideo950 w/4 pages:\
 #
 vd|tvi950-rv|950-rv|televideo950 rev video:\
 	:is=\EDF\EC\Eb\EG0\Eg\Er\EO\E\047\E(\E%\Ew\EX\Ee ^O\
-	\Ek\E016\E004\Ex0\200\200\Ex1\200\200\Ex2\200\200\
+	\El\E016\E004\Ex0\200\200\Ex1\200\200\Ex2\200\200\
 	\Ex3\200\200\Ex4\r\200:\
 	:vb=\Ed\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\Eb:\
 	:tc=tvi950:
@@ -1880,7 +1870,7 @@ vd|tvi950-rv|950-rv|televideo950 rev video:\
 #
 ve|tvi950-rv-2p|950-rv-2p|televideo950 rev video w/2 pages:\
 	:is=\EDF\EC\Eb\EG0\Eg\Er\EO\E\047\E(\E%\Ew\EX\Ee ^O\
-	\El\E016\E004\Ex0\200\200\Ex1\200\200\Ex2\200\200\
+	\Ek\E016\E004\Ex0\200\200\Ex1\200\200\Ex2\200\200\
 	\Ex3\200\200\Ex4\r\200\E\\2\E-07 :\
 	:vb=\Ed\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\Eb:\
 	:te=\E\\2\E-07 :ti=\E\\1\E-07 :ks=\El:ke=\Ek:tc=tvi950:
@@ -1889,7 +1879,7 @@ ve|tvi950-rv-2p|950-rv-2p|televideo950 rev video w/2 pages:\
 #
 vf|tvi950-rv-4p|950-rv-4p|televideo950 rev video w/4 pages:\
 	:is=\EDF\EC\Eb\EG0\Er\EO\E\047\E(\E%\Ew\EX\Ee ^O\
-	\El\E016\E004\Ex0\200\200\Ex1\200\200\Ex2\200\200\
+	\Ek\E016\E004\Ex0\200\200\Ex1\200\200\Ex2\200\200\
 	\Ex3\200\200\Ex4\r\200\E\\3\E-07 :\
 	:vb=\Ed\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\Eb:\
 	:te=\E\\3\E-07 :ti=\E\\1\E-07 :ks=\El:ke=\Ek:tc=tvi950:
