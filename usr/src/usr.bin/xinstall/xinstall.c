@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)xinstall.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)xinstall.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -85,7 +85,7 @@ main(argc, argv)
 	}
 
 	no_target = stat(to_name = argv[argc - 1], &to_sb);
-	if (!no_target && to_sb.st_mode & S_IFDIR) {
+	if (!no_target && (to_sb.st_mode & S_IFMT) == S_IFDIR) {
 		for (; *argv != to_name; ++argv)
 			install(*argv, to_name, YES);
 		exit(0);
@@ -100,7 +100,7 @@ main(argc, argv)
 			fprintf(stderr, "install: can't find %s.\n", *argv);
 			exit(1);
 		}
-		if (!(to_sb.st_mode & S_IFREG)) {
+		if ((to_sb.st_mode & S_IFMT) != S_IFREG) {
 			fprintf(stderr, "install: %s isn't a regular file.\n", to_name);
 			exit(1);
 		}
@@ -141,7 +141,7 @@ install(from_name, to_name, isdir)
 			fprintf(stderr, "install: can't find %s.\n", from_name);
 			exit(1);
 		}
-		if (!(from_sb.st_mode & S_IFREG)) {
+		if ((from_sb.st_mode & S_IFMT) != S_IFREG) {
 			fprintf(stderr, "install: %s isn't a regular file.\n", from_name);
 			exit(1);
 		}
