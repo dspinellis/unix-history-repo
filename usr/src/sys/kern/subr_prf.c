@@ -1,4 +1,4 @@
-/*	subr_prf.c	4.20	82/01/14	*/
+/*	subr_prf.c	4.21	82/01/16	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -170,11 +170,12 @@ printn(n, b, touser)
 panic(s)
 	char *s;
 {
-	int bootopt = panicstr ? RB_AUTOBOOT : RB_AUTOBOOT|RB_NOSYNC;
+	int bootopt = RB_AUTOBOOT;
 
+	if (panicstr)
+		bootopt |= RB_NOSYNC;
 	panicstr = s;
 	printf("panic: %s\n", s);
-	(void) spl0();
 	boot(RB_PANIC, bootopt);
 }
 

@@ -1,4 +1,4 @@
-/*	vfs_syscalls.c	4.15	81/11/18	*/
+/*	vfs_syscalls.c	4.16	82/01/16	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -224,7 +224,7 @@ sumount()
 	if (u.u_error)
 		return;
 	xumount(dev);	/* remove unused sticky files from text table */
-	update();
+	update(0);
 	for (mp = &mount[0]; mp < &mount[NMOUNT]; mp++)
 		if (mp->m_bufp != NULL && dev == mp->m_dev)
 			goto found;
