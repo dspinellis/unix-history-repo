@@ -1,10 +1,11 @@
 #ifndef lint
-static	char *sccsid = "@(#)string.c	3.1 83/11/22";
+static	char *sccsid = "@(#)string.c	3.2 83/11/25";
 #endif
 
 #include "string.h"
 
 char *malloc();
+char *sprintf();
 
 char *
 str_cpy(s)
