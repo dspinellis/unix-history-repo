@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.20	%G%";
+static char	SccsId[] = "@(#)main.c	3.21	%G%";
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -526,7 +526,11 @@ main(argc, argv)
 	/* no errors, tell arpanet to go ahead */
 	To = NULL;
 	if (ArpaMode == ARPA_MAIL)
-		message("350", "Enter mail, end with \".\" on a line by itself");
+	{
+		extern char Arpa_Enter[];
+
+		message(Arpa_Enter, "Enter mail, end with \".\" on a line by itself");
+	}
 	errno = 0;
 
 	/*
@@ -575,13 +579,14 @@ main(argc, argv)
 		switch (ArpaMode)
 		{
 			static char *okmsg = "Mail accepted";
+			extern char Arpa_Fmsg[], Arpa_Mmsg[];
 
 		  case ARPA_FILE:
-			message("252", okmsg);
+			message(Arpa_Fmsg, okmsg);
 			break;
 
 		  case ARPA_MAIL:
-			message("256", okmsg);
+			message(Arpa_Mmsg, okmsg);
 			break;
 		}
 	}

@@ -5,7 +5,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)err.c	3.7	%G%";
+static char	SccsId[] = "@(#)err.c	3.8	%G%";
 
 extern bool	HasXscrpt;
 
@@ -40,11 +40,13 @@ syserr(fmt, a, b, c, d, e)
 	extern char *sys_errlist[];
 	extern int sys_nerr;
 	register char *eb = errbuf;
+	extern char Arpa_Syserr[];
 
 	/* add arpanet error number if not present */
 	if (!isdigit(*fmt))
 	{
-		(void) strcpy(eb, "455 ");
+		(void) strcpy(eb, Arpa_Syserr);
+		eb[3] = ' ';
 		eb += 4;
 	}
 
@@ -100,12 +102,13 @@ usrerr(fmt, a, b, c, d, e)
 	char *fmt;
 {
 	extern char SuprErrs;
+	extern char Arpa_Usrerr[];
 
 	if (SuprErrs)
 		return;
 	Errors++;
 
-	message("450", fmt, a, b, c, d, e);
+	message(Arpa_Usrerr, fmt, a, b, c, d, e);
 }
 /*
 **  MESSAGE -- print message (not necessarily an error)

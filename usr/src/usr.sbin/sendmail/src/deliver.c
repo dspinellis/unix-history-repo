@@ -8,7 +8,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.22	%G%";
+static char SccsId[] = "@(#)deliver.c	3.23	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a particular address.
@@ -441,7 +441,7 @@ giveresponse(stat, force, m)
 		else
 			statmsg = "queued";
 		if (Verbose)
-			message("050", statmsg);
+			message(Arpa_Info, statmsg);
 	}
 	else
 	{
@@ -679,7 +679,7 @@ recipient(a)
 					printf("(%s in sendq)\n", a->q_paddr);
 # endif DEBUG
 				if (Verbose && !bitset(QDONTSEND, a->q_flags))
-					message("050", "duplicate supressed");
+					message(Arpa_Info, "duplicate supressed");
 				return;
 			}
 		}
@@ -769,7 +769,7 @@ include(fname)
 	register FILE *fp;
 
 	if (Verbose)
-		message("050", "Including file %s", fname);
+		message(Arpa_Info, "Including file %s", fname);
 	fp = fopen(fname, "r");
 	if (fp == NULL)
 	{
@@ -788,7 +788,7 @@ include(fname)
 			continue;
 		To = fname;
 		if (Verbose)
-			message("050", " >> %s", buf);
+			message(Arpa_Info, " >> %s", buf);
 		sendto(buf, 1);
 	}
 

@@ -1,7 +1,7 @@
 /*
 **  SENDMAIL.H -- Global definitions for sendmail.
 **
-**	@(#)sendmail.h	3.25	%G%
+**	@(#)sendmail.h	3.26	%G%
 */
 
 
@@ -28,6 +28,8 @@
 # define ARPA_OLD	1	/* in old arpanet mode */
 # define ARPA_MAIL	2	/* in regular arpanet mail */
 # define ARPA_FILE	3	/* reading over data connection */
+
+extern char	Arpa_Info[];	/* the message number for Arpanet info */
 
 
 
