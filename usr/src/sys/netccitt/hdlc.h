@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)hdlc.h	7.2 (Berkeley) %G%
+ *	@(#)hdlc.h	7.3 (Berkeley) %G%
  */
 
 typedef char    bool;
