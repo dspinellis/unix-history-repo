@@ -3,10 +3,13 @@ static char sccsid[] = "@(#)old.ucb.grep.c	4.5 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 /*
  * grep -- print lines matching (or not matching) a pattern
  */
 
+#define BLKSIZE 8192
 #define	CCHR	2
 #define	CDOT	4
 #define	CCL	6
@@ -18,12 +21,11 @@ static char sccsid[] = "@(#)old.ucb.grep.c	4.5 (Berkeley) %G%";
 #define	CLET	15
 #define	STAR	01
 
-#define	LBSIZE	BUFSIZ
 #define	ESIZE	256
 
 char	expbuf[ESIZE];
 long	lnum;
-char	linebuf[LBSIZE+1];
+char	linebuf[BUFSIZ+1];
 int	bflag;
 int	nflag;
 int	cflag;
@@ -36,7 +38,6 @@ int	sflag;
 int	nsucc;
 int	circf;
 int	blkno;
-char	ibuf[BUFSIZ];
 long	tln;
 
 main(argc, argv)
@@ -212,6 +213,9 @@ execute(file)
 	register c;
 	int f;
 	char *ebp, *cbp;
+	static char *buf;
+	static int blksize;
+	struct stat stb;
 
 	if (file) {
 		if ((f = open(file, 0)) < 0) {
@@ -219,8 +223,19 @@ execute(file)
 		}
 	} else
 		f = 0;
-	ebp = ibuf;
-	cbp = ibuf;
+	if (buf == NULL) {
+		if (fstat(f, &stb) > 0 && stb.st_blksize > 0)
+			blksize = stb.st_blksize;
+		else
+			blksize = BLKSIZE;
+		buf = (char *)malloc(blksize);
+		if (buf == NULL) {
+			fprintf(stderr, "egrep: no memory for %s\n", file);
+			return;
+		}
+	}
+	ebp = buf;
+	cbp = buf;
 	lnum = 0;
 	tln = 0;
 	blkno = -1;
@@ -232,7 +247,7 @@ execute(file)
 		p2 = cbp;
 		for (;;) {
 			if (p2 >= ebp) {
-				if ((c = read(f, ibuf, BUFSIZ)) <= 0) {
+				if ((c = read(f, buf, blksize)) <= 0) {
 					close(f);
 					if (cflag) {
 						if (lflag) {
@@ -247,13 +262,13 @@ execute(file)
 					return;
 				}
 				blkno++;
-				p2 = ibuf;
-				ebp = ibuf+c;
+				p2 = buf;
+				ebp = buf+c;
 			}
 			if ((c = *p2++) == '\n')
 				break;
 			if(c)
-			if (p1 < &linebuf[LBSIZE-1])
+			if (p1 < &linebuf[BUFSIZ-1])
 				*p1++ = c;
 		}
 		*p1++ = 0;
