@@ -4,25 +4,25 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)setjmp.h	5.4 (Berkeley) %G%
+ *	@(#)setjmp.h	5.5 (Berkeley) %G%
  */
 
 #ifndef _SETJMP_H_
 #define _SETJMP_H_
 
-#ifdef hp300
+#if defined(hp300) || defined(__hp300__)
 #define _JBLEN	17
 #endif
 
-#ifdef i386
+#if defined(i386) || defined(__i386__)
 #define _JBLEN	10
 #endif
 
-#ifdef tahoe
+#if defined(tahoe) || defined(__tahoe__)
 #define _JBLEN	10
 #endif
 
-#ifdef vax
+#if defined(vax) || defined(__vax__)
 #define _JBLEN	10
 #endif
 
