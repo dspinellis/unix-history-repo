@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftp.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftp.c	8.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -594,10 +594,10 @@ sendrequest(cmd, local, remote, printnames)
 		}
 		break;
 	}
-	(void) gettimeofday(&stop, (struct timezone *)0);
 	if (closefunc != NULL)
 		(*closefunc)(fin);
 	(void) fclose(dout);
+	(void) gettimeofday(&stop, (struct timezone *)0);
 	(void) getreply(0);
 	(void) signal(SIGINT, oldintr);
 	if (oldintp)
@@ -606,7 +606,6 @@ sendrequest(cmd, local, remote, printnames)
 		ptransfer("sent", bytes, &start, &stop);
 	return;
 abort:
-	(void) gettimeofday(&stop, (struct timezone *)0);
 	(void) signal(SIGINT, oldintr);
 	if (oldintp)
 		(void) signal(SIGPIPE, oldintp);
@@ -624,6 +623,7 @@ abort:
 	code = -1;
 	if (closefunc != NULL && fin != NULL)
 		(*closefunc)(fin);
+	(void) gettimeofday(&stop, (struct timezone *)0);
 	if (bytes > 0)
 		ptransfer("sent", bytes, &start, &stop);
 }
@@ -878,8 +878,8 @@ break2:
 	(void) signal(SIGINT, oldintr);
 	if (oldintp)
 		(void) signal(SIGPIPE, oldintp);
-	(void) gettimeofday(&stop, (struct timezone *)0);
 	(void) fclose(din);
+	(void) gettimeofday(&stop, (struct timezone *)0);
 	(void) getreply(0);
 	if (bytes > 0 && is_retr)
 		ptransfer("received", bytes, &start, &stop);
@@ -888,7 +888,6 @@ abort:
 
 /* abort using RFC959 recommended IP,SYNC sequence  */
 
-	(void) gettimeofday(&stop, (struct timezone *)0);
 	if (oldintp)
 		(void) signal(SIGPIPE, oldintr);
 	(void) signal(SIGINT, SIG_IGN);
@@ -908,6 +907,7 @@ abort:
 		(*closefunc)(fout);
 	if (din)
 		(void) fclose(din);
+	(void) gettimeofday(&stop, (struct timezone *)0);
 	if (bytes > 0)
 		ptransfer("received", bytes, &start, &stop);
 	(void) signal(SIGINT, oldintr);
