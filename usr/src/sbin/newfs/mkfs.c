@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkfs.c	6.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkfs.c	6.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -37,21 +37,26 @@ static char sccsid[] = "@(#)mkfs.c	6.1 (Berkeley) %G%";
 /*
  * variables set up by front end.
  */
-int	Nflag;			/* run mkfs without writing file system */
-int	fssize;			/* file system size */
-int	ntracks;		/* # tracks/cylinder */
-int	nsectors;		/* # sectors/track */
-int     secpercyl;              /* sectors per cylinder */
-int	sectorsize;		/* bytes/sector */
-int	rpm;			/* revolutions/minute of drive */
-int	fsize;			/* fragment size */
-int	bsize;			/* block size */
-int	cpg;			/* cylinders/cylinder group */
-int	minfree;		/* free space threshold */
-int	opt;			/* optimization preference (space or time) */
-int	density;		/* number of bytes per inode */
-int	maxcontig;		/* max contiguous blocks to allocate */
-int	rotdelay;		/* rotational delay between blocks */
+extern int	Nflag;		/* run mkfs without writing file system */
+extern int	fssize;		/* file system size */
+extern int	ntracks;	/* # tracks/cylinder */
+extern int	nsectors;	/* # sectors/track */
+extern int	nphyssectors;	/* # sectors/track including spares */
+extern int	secpercyl;	/* sectors per cylinder */
+extern int	sectorsize;	/* bytes/sector */
+extern int	rpm;		/* revolutions/minute of drive */
+extern int	interleave;	/* hardware sector interleave */
+extern int	trackskew;	/* sector 0 skew, per track */
+extern int	headswitch;	/* head switch time, usec */
+extern int	trackseek;	/* track-to-track seek, usec */
+extern int	fsize;		/* fragment size */
+extern int	bsize;		/* block size */
+extern int	cpg;		/* cylinders/cylinder group */
+extern int	minfree;	/* free space threshold */
+extern int	opt;		/* optimization preference (space or time) */
+extern int	density;	/* number of bytes per inode */
+extern int	maxcontig;	/* max contiguous blocks to allocate */
+extern int	rotdelay;	/* rotational delay between blocks */
 
 union {
 	struct fs fs;
@@ -231,6 +236,9 @@ mkfs(pp, fsys, fi, fo)
 	/*
 	 * calculate the available blocks for each rotational position
 	 */
+	sblock.fs_interleave = interleave;
+	sblock.fs_trackskew = trackskew;
+	sblock.fs_npsect = nphyssectors;
 	for (cylno = 0; cylno < MAXCPG; cylno++)
 		for (rpos = 0; rpos < NRPOS; rpos++)
 			sblock.fs_postbl[cylno][rpos] = -1;
@@ -349,6 +357,8 @@ next:
 	sblock.fs_rotdelay = rotdelay;
 	sblock.fs_minfree = minfree;
 	sblock.fs_maxcontig = maxcontig;
+	sblock.fs_headswitch = headswitch;
+	sblock.fs_trkseek = trackseek;
 	sblock.fs_maxbpg = MAXBLKPG(&sblock);
 	sblock.fs_rps = rpm / 60;
 	sblock.fs_optim = opt;
