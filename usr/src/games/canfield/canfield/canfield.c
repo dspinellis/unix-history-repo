@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)canfield.c 4.4 %G%";
+static char sccsid[] = "@(#)canfield.c 4.5 %G%";
 
 /*
  * The canfield program
@@ -16,6 +16,7 @@ static char sccsid[] = "@(#)canfield.c 4.4 %G%";
 #include <curses.h>
 #include <ctype.h>
 #include <signal.h>
+#include <sys/types.h>
 
 #define	decksize	52
 #define originrow	0
@@ -125,6 +126,7 @@ int status = INSTRUCTIONBOX;
 #define costofgame		26
 #define costofrunthroughhand	 5
 #define costofinformation	 1
+#define secondsperdollar	60
 #define valuepercardup	 	 5
 /*
  * Variables associated with betting 
@@ -135,12 +137,13 @@ struct betinfo {
 	long	game;		/* cost of buying game */
 	long	runs;		/* cost of running through hands */
 	long	information;	/* cost of information */
-	long	costs;		/* total costs */
+	long	thinktime;	/* cost of thinking time */
 	long	wins;		/* total winnings */
 	long	worth;		/* net worth after costs */
 };
 struct betinfo this, total;
 bool startedgame = FALSE, infullgame = FALSE;
+time_t acctstart;
 int dbfd = -1;
 
 /*
@@ -219,26 +222,25 @@ printtopinstructions()
  */
 printtopbettingbox()
 {
-	    int i;
 
-	    for (i = 0; i <= 1; i++) {
-		    move(tboxrow + i, boxcol);
-		    printw("                            ");
-	    }
-	    move(tboxrow + 2, boxcol);
+	    move(tboxrow, boxcol);
+	    printw("                            ");
+	    move(tboxrow + 1, boxcol);
 	    printw("*--------------------------*");
-	    move(tboxrow + 3, boxcol);
+	    move(tboxrow + 2, boxcol);
 	    printw("|Costs        Hand   Total |");
-	    move(tboxrow + 4, boxcol);
+	    move(tboxrow + 3, boxcol);
 	    printw("| Hands                    |");
-	    move(tboxrow + 5, boxcol);
+	    move(tboxrow + 4, boxcol);
 	    printw("| Inspections              |");
-	    move(tboxrow + 6, boxcol);
+	    move(tboxrow + 5, boxcol);
 	    printw("| Games                    |");
-	    move(tboxrow + 7, boxcol);
+	    move(tboxrow + 6, boxcol);
 	    printw("| Runs                     |");
-	    move(tboxrow + 8, boxcol);
+	    move(tboxrow + 7, boxcol);
 	    printw("| Information              |");
+	    move(tboxrow + 8, boxcol);
+	    printw("| Think time               |");
 	    move(tboxrow + 9, boxcol);
 	    printw("|Total Costs               |");
 	    move(tboxrow + 10, boxcol);
@@ -960,26 +962,39 @@ showcards()
  */
 updatebettinginfo()
 {
-	this.costs = this.hand + this.inspection +
-		this.game + this.runs + this.information;
-	total.costs = total.hand + total.inspection +
-		total.game + total.runs + total.information;
-	this.worth = this.wins - this.costs;
-	total.worth = total.wins - total.costs;
+	long thiscosts, totalcosts;
+	time_t now;
+	register long dollars;
+
+	thiscosts = this.hand + this.inspection + this.game +
+		this.runs + this.information + this.thinktime;
+	totalcosts = total.hand + total.inspection + total.game +
+		total.runs + total.information + total.thinktime;
+	this.worth = this.wins - thiscosts;
+	total.worth = total.wins - totalcosts;
+	time(&now);
+	dollars = (now - acctstart) / secondsperdollar;
+	if (dollars > 0) {
+		this.thinktime += dollars;
+		total.thinktime += dollars;
+		acctstart += dollars * secondsperdollar;
+	}
 	if (status != BETTINGBOX)
 		return;
-	move(tboxrow + 4, boxcol + 13);
+	move(tboxrow + 3, boxcol + 13);
 	printw("%4d%9d", this.hand, total.hand);
-	move(tboxrow + 5, boxcol + 13);
+	move(tboxrow + 4, boxcol + 13);
 	printw("%4d%9d", this.inspection, total.inspection);
-	move(tboxrow + 6, boxcol + 13);
+	move(tboxrow + 5, boxcol + 13);
 	printw("%4d%9d", this.game, total.game);
-	move(tboxrow + 7, boxcol + 13);
+	move(tboxrow + 6, boxcol + 13);
 	printw("%4d%9d", this.runs, total.runs);
-	move(tboxrow + 8, boxcol + 13);
+	move(tboxrow + 7, boxcol + 13);
 	printw("%4d%9d", this.information, total.information);
+	move(tboxrow + 8, boxcol + 13);
+	printw("%4d%9d", this.thinktime, total.thinktime);
 	move(tboxrow + 9, boxcol + 13);
-	printw("%4d%9d", this.costs, total.costs);
+	printw("%4d%9d", thiscosts, totalcosts);
 	move(tboxrow + 10, boxcol + 13);
 	printw("%4d%9d", this.wins, total.wins);
 	move(tboxrow + 11, boxcol + 13);
@@ -1378,7 +1393,8 @@ char *bettinginstructions[] = {
 	"costs  $1  for  each unknown card that is identified. If the\n",
 	"information is toggled on, you are only  charged  for  cards\n",
 	"that  became  visible  since it was last turned on. Thus the\n",
-	"maximum cost of information is $34.\n\n",
+	"maximum cost of information is $34.  Playing time is charged\n",
+	"at a rate of $1 per minute.\n\n",
 	"push any key when you are finished: ",
 	0 };
 
@@ -1424,6 +1440,7 @@ initall()
 	int uid, i;
 
 	srandom(getpid());
+	time(&acctstart);
 	initdeck(deck);
 	uid = getuid();
 	if (uid < 0)
@@ -1509,6 +1526,7 @@ askquit()
 cleanup()
 {
 
+	total.thinktime += 1;
 	if (dbfd != -1) {
 		write(dbfd, (char *)&total, sizeof(total));
 		close(dbfd);
