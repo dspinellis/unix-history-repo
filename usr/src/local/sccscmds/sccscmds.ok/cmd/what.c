@@ -1,10 +1,10 @@
 # include	"stdio.h"
 # include	"../hdr/macros.h"
 
-SCCSID(@(#)what.c	4.1);
+SCCSID(@(#)what.c	4.2);
 
-char pattern[] "@(#)";
-char opattern[] "~|^`";
+char *pattern = "@(#)";
+char *opattern = "~|^`";
 
 
 main(argc,argv)
