@@ -7,12 +7,13 @@
 
 long lseek();
 
+long
 fseek(iop, offset, ptrname)
-FILE *iop;
-long offset;
+	register FILE *iop;
+	long offset;
 {
 	register resync, c;
-	long p;
+	long p, curpos = -1;
 
 	iop->_flag &= ~_IOEOF;
 	if (iop->_flag&_IOREAD) {
@@ -20,15 +21,20 @@ long offset;
 			!(iop->_flag&_IONBF)) {
 			c = iop->_cnt;
 			p = offset;
-			if (ptrname==0)
-				p += c - lseek(fileno(iop),0L,1);
-			else
+			if (ptrname==0) {
+				curpos = lseek(fileno(iop), 0L, 1);
+				if (curpos == -1)
+					return (-1);
+				p += c - curpos;
+			} else
 				offset -= c;
 			if(!(iop->_flag&_IORW) && c>0&&p<=c
 			    && p>=iop->_base-iop->_ptr){
 				iop->_ptr += (int)p;
 				iop->_cnt -= (int)p;
-				return(0);
+				if (curpos == -1)
+					curpos = lseek(fileno(iop), 0L, 1);
+				return (curpos == -1? -1: curpos - iop->_cnt);
 			}
 			resync = offset&01;
 		} else 
@@ -40,8 +46,8 @@ long offset;
 		}
 		p = lseek(fileno(iop), offset-resync, ptrname);
 		iop->_cnt = 0;
-		if (resync)
-			getc(iop);
+		if (resync && getc(iop) != EOF && p != -1)
+			p++;
 	}
 	else if (iop->_flag & (_IOWRT|_IORW)) {
 		fflush(iop);
@@ -52,5 +58,5 @@ long offset;
 		}
 		p = lseek(fileno(iop), offset, ptrname);
 	}
-	return(p==-1?-1:0);
+	return(p);
 }
