@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.9 (Berkeley) %G%
+#	@(#)Makefile	5.10 (Berkeley) %G%
 #
 # Ownerships {see note at the top of lpd.c}
 # ROOT		a user that can access any and all files
@@ -25,7 +25,6 @@ CFLAGS=	-O
 LIBDIR=	/usr/lib
 BINDIR=	/usr/ucb
 SPLDIR=	/usr/spool/lpd
-ROOT=	root
 DAEMON=	daemon
 SPGRP=	daemon
 LIBC=	/lib/libc.a
@@ -49,23 +48,26 @@ SRCS=	lpd.c lpr.c lpq.c lprm.c pac.c lpd.c cmds.c cmdtab.c printjob.c \
 	recvjob.c displayq.c rmjob.c startdaemon.c common.c printcap.c \
 	lpdchar.c
 OBJS=	${L1OBJS} ${L2OBJS} ${L3OBJS} ${L4OBJS} ${L5OBJS} ${L6OBJS} ${L7OBJS}
+MAN1=	lpq.0 lpr.0 lprm.0 lptest.0
+MAN8=	lpc.0 lpd.0 pac.0
+MAN=	${MAN1} ${MAN8}
 ALL=	lpd lpr lpq lprm lpc lptest pac
 
-all:	${ALL} FILTERS VFILTERS
+all: ${ALL} FILTERS VFILTERS
 
-lpd:	${L1OBJS} ${LIBC}
+lpd: ${L1OBJS} ${LIBC}
 	${CC} -o $@ ${L1OBJS}
 
-lpr:	${L2OBJS} ${LIBC}
+lpr: ${L2OBJS} ${LIBC}
 	${CC} -o $@ ${L2OBJS}
 
-lpq:	${L3OBJS} ${LIBC}
+lpq: ${L3OBJS} ${LIBC}
 	${CC} -o $@ ${L3OBJS}
 
-lprm:	${L4OBJS} ${LIBC}
+lprm: ${L4OBJS} ${LIBC}
 	${CC} -o $@ ${L4OBJS}
 
-lpc:	${L5OBJS} ${LIBC}
+lpc: ${L5OBJS} ${LIBC}
 	${CC} -o $@ ${L5OBJS}
 
 lptest: ${L6OBJS} ${LIBC}
@@ -80,31 +82,38 @@ FILTERS:
 VFILTERS:
 	cd vfilters; make ${MFLAGS}
 
-clean: FRC
+clean:
 	rm -f ${OBJS} core ${ALL}
 	cd filters; make ${MFLAGS} clean
 	cd vfilters; make ${MFLAGS} clean
 
-depend: FRC
+cleandir: clean
+	rm -f ${MAN} tags .depend
+	cd filters; make ${MFLAGS} clean
+	cd vfilters; make ${MFLAGS} clean
+
+depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 	cd filters; make ${MFLAGS} depend
 	cd vfilters; make ${MFLAGS} depend
 
-install: FRC
-	install -s -o ${ROOT} -g ${SPGRP} -m 6711 lpd ${DESTDIR}/${LIBDIR}/lpd
-	install -s -o ${ROOT} -g ${SPGRP} -m 6711 lpr ${DESTDIR}/${BINDIR}/lpr
-	install -s -o ${ROOT} -g ${SPGRP} -m 6711 lpq ${DESTDIR}/${BINDIR}/lpq
-	install -s -o ${ROOT} -g ${SPGRP} -m 6711 lprm ${DESTDIR}/${BINDIR}/lprm
+install: ${MAN}
+	install -s -o root -g ${SPGRP} -m 6711 lpd ${DESTDIR}/${LIBDIR}/lpd
+	install -s -o root -g ${SPGRP} -m 6711 lpr ${DESTDIR}/${BINDIR}/lpr
+	install -s -o root -g ${SPGRP} -m 6711 lpq ${DESTDIR}/${BINDIR}/lpq
+	install -s -o root -g ${SPGRP} -m 6711 lprm ${DESTDIR}/${BINDIR}/lprm
 	install -s -o bin -g ${SPGRP} -m 2711 lpc ${DESTDIR}/etc/lpc
 	install -s -o bin -g bin -m 755 lptest ${DESTDIR}/${BINDIR}/lptest
 	install -s -o bin -g bin -m 755 pac ${DESTDIR}/etc/pac
 	/etc/chown ${DAEMON} ${DESTDIR}/${SPLDIR}
 	chgrp ${SPGRP} ${DESTDIR}/${SPLDIR}
 	chmod 775 ${DESTDIR}/${SPLDIR}
+	install -c -o bin -g bin -m 444 ${MAN1} ${DESTDIR}/usr/man/cat1
+	install -c -o bin -g bin -m 444 ${MAN8} ${DESTDIR}/usr/man/cat8
 	cd filters; make ${MFLAGS} DESTDIR=${DESTDIR} install
 	cd vfilters; make ${MFLAGS} DESTDIR=${DESTDIR} install
 
-lint: FRC
+lint: ${SRCS}
 	lint ${CFLAGS} ${L1SRCS}
 	lint ${CFLAGS} ${L2SRCS}
 	lint ${CFLAGS} ${L3SRCS}
@@ -113,7 +122,7 @@ lint: FRC
 	lint ${CFLAGS} ${L6SRCS}
 	lint ${CFLAGS} ${L7SRCS}
 
-tags: FRC
+tags: ${SRCS}
 	ctags ${L1SRCS}
 	ctags -a ${L2SRCS}
 	ctags -a ${L3SRCS}
@@ -122,152 +131,3 @@ tags: FRC
 	ctags -a ${L6SRCS}
 	ctags -a ${L7SRCS}
 	sort -o tags tags
-
-FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-lpd.o: lpd.c lp.h /usr/include/stdio.h /usr/include/sys/param.h
-lpd.o: /usr/include/sys/types.h /usr/include/signal.h
-lpd.o: /usr/include/machine/trap.h /usr/include/machine/machparam.h
-lpd.o: /usr/include/machine/endian.h /usr/include/sys/file.h
-lpd.o: /usr/include/sys/dir.h /usr/include/sys/stat.h /usr/include/sys/socket.h
-lpd.o: /usr/include/sys/un.h /usr/include/netinet/in.h /usr/include/netdb.h
-lpd.o: /usr/include/pwd.h /usr/include/syslog.h /usr/include/signal.h
-lpd.o: /usr/include/sys/wait.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
-lpd.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydefaults.h
-lpd.o: /usr/include/sys/ttydev.h /usr/include/ctype.h /usr/include/errno.h
-lpd.o: lp.local.h /usr/include/a.out.h /usr/include/sys/exec.h
-lpd.o: /usr/include/ar.h
-lpr.o: lpr.c /usr/include/stdio.h /usr/include/sys/types.h
-lpr.o: /usr/include/sys/file.h /usr/include/sys/stat.h /usr/include/pwd.h
-lpr.o: /usr/include/grp.h /usr/include/signal.h /usr/include/machine/trap.h
-lpr.o: /usr/include/ctype.h /usr/include/syslog.h lp.local.h
-lpr.o: /usr/include/a.out.h /usr/include/sys/exec.h /usr/include/ar.h
-lpq.o: lpq.c lp.h /usr/include/stdio.h /usr/include/sys/param.h
-lpq.o: /usr/include/sys/types.h /usr/include/signal.h
-lpq.o: /usr/include/machine/trap.h /usr/include/machine/machparam.h
-lpq.o: /usr/include/machine/endian.h /usr/include/sys/file.h
-lpq.o: /usr/include/sys/dir.h /usr/include/sys/stat.h /usr/include/sys/socket.h
-lpq.o: /usr/include/sys/un.h /usr/include/netinet/in.h /usr/include/netdb.h
-lpq.o: /usr/include/pwd.h /usr/include/syslog.h /usr/include/signal.h
-lpq.o: /usr/include/sys/wait.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
-lpq.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydefaults.h
-lpq.o: /usr/include/sys/ttydev.h /usr/include/ctype.h /usr/include/errno.h
-lpq.o: lp.local.h /usr/include/a.out.h /usr/include/sys/exec.h
-lpq.o: /usr/include/ar.h
-lprm.o: lprm.c lp.h /usr/include/stdio.h /usr/include/sys/param.h
-lprm.o: /usr/include/sys/types.h /usr/include/signal.h
-lprm.o: /usr/include/machine/trap.h /usr/include/machine/machparam.h
-lprm.o: /usr/include/machine/endian.h /usr/include/sys/file.h
-lprm.o: /usr/include/sys/dir.h /usr/include/sys/stat.h
-lprm.o: /usr/include/sys/socket.h /usr/include/sys/un.h
-lprm.o: /usr/include/netinet/in.h /usr/include/netdb.h /usr/include/pwd.h
-lprm.o: /usr/include/syslog.h /usr/include/signal.h /usr/include/sys/wait.h
-lprm.o: /usr/include/sgtty.h /usr/include/sys/ioctl.h
-lprm.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydefaults.h
-lprm.o: /usr/include/sys/ttydev.h /usr/include/ctype.h /usr/include/errno.h
-lprm.o: lp.local.h /usr/include/a.out.h /usr/include/sys/exec.h
-lprm.o: /usr/include/ar.h
-pac.o: pac.c /usr/include/stdio.h lp.local.h /usr/include/a.out.h
-pac.o: /usr/include/sys/exec.h /usr/include/ar.h
-lpd.o: lpd.c lp.h /usr/include/stdio.h /usr/include/sys/param.h
-lpd.o: /usr/include/sys/types.h /usr/include/signal.h
-lpd.o: /usr/include/machine/trap.h /usr/include/machine/machparam.h
-lpd.o: /usr/include/machine/endian.h /usr/include/sys/file.h
-lpd.o: /usr/include/sys/dir.h /usr/include/sys/stat.h /usr/include/sys/socket.h
-lpd.o: /usr/include/sys/un.h /usr/include/netinet/in.h /usr/include/netdb.h
-lpd.o: /usr/include/pwd.h /usr/include/syslog.h /usr/include/signal.h
-lpd.o: /usr/include/sys/wait.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
-lpd.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydefaults.h
-lpd.o: /usr/include/sys/ttydev.h /usr/include/ctype.h /usr/include/errno.h
-lpd.o: lp.local.h /usr/include/a.out.h /usr/include/sys/exec.h
-lpd.o: /usr/include/ar.h
-cmds.o: cmds.c lp.h /usr/include/stdio.h /usr/include/sys/param.h
-cmds.o: /usr/include/sys/types.h /usr/include/signal.h
-cmds.o: /usr/include/machine/trap.h /usr/include/machine/machparam.h
-cmds.o: /usr/include/machine/endian.h /usr/include/sys/file.h
-cmds.o: /usr/include/sys/dir.h /usr/include/sys/stat.h
-cmds.o: /usr/include/sys/socket.h /usr/include/sys/un.h
-cmds.o: /usr/include/netinet/in.h /usr/include/netdb.h /usr/include/pwd.h
-cmds.o: /usr/include/syslog.h /usr/include/signal.h /usr/include/sys/wait.h
-cmds.o: /usr/include/sgtty.h /usr/include/sys/ioctl.h
-cmds.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydefaults.h
-cmds.o: /usr/include/sys/ttydev.h /usr/include/ctype.h /usr/include/errno.h
-cmds.o: lp.local.h /usr/include/a.out.h /usr/include/sys/exec.h
-cmds.o: /usr/include/ar.h /usr/include/sys/time.h /usr/include/time.h
-cmdtab.o: cmdtab.c lpc.h
-printjob.o: printjob.c lp.h /usr/include/stdio.h /usr/include/sys/param.h
-printjob.o: /usr/include/sys/types.h /usr/include/signal.h
-printjob.o: /usr/include/machine/trap.h /usr/include/machine/machparam.h
-printjob.o: /usr/include/machine/endian.h /usr/include/sys/file.h
-printjob.o: /usr/include/sys/dir.h /usr/include/sys/stat.h
-printjob.o: /usr/include/sys/socket.h /usr/include/sys/un.h
-printjob.o: /usr/include/netinet/in.h /usr/include/netdb.h /usr/include/pwd.h
-printjob.o: /usr/include/syslog.h /usr/include/signal.h /usr/include/sys/wait.h
-printjob.o: /usr/include/sgtty.h /usr/include/sys/ioctl.h
-printjob.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydefaults.h
-printjob.o: /usr/include/sys/ttydev.h /usr/include/ctype.h /usr/include/errno.h
-printjob.o: lp.local.h /usr/include/a.out.h /usr/include/sys/exec.h
-printjob.o: /usr/include/ar.h
-recvjob.o: recvjob.c lp.h /usr/include/stdio.h /usr/include/sys/param.h
-recvjob.o: /usr/include/sys/types.h /usr/include/signal.h
-recvjob.o: /usr/include/machine/trap.h /usr/include/machine/machparam.h
-recvjob.o: /usr/include/machine/endian.h /usr/include/sys/file.h
-recvjob.o: /usr/include/sys/dir.h /usr/include/sys/stat.h
-recvjob.o: /usr/include/sys/socket.h /usr/include/sys/un.h
-recvjob.o: /usr/include/netinet/in.h /usr/include/netdb.h /usr/include/pwd.h
-recvjob.o: /usr/include/syslog.h /usr/include/signal.h /usr/include/sys/wait.h
-recvjob.o: /usr/include/sgtty.h /usr/include/sys/ioctl.h
-recvjob.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydefaults.h
-recvjob.o: /usr/include/sys/ttydev.h /usr/include/ctype.h /usr/include/errno.h
-recvjob.o: lp.local.h /usr/include/a.out.h /usr/include/sys/exec.h
-recvjob.o: /usr/include/ar.h /usr/include/sys/fs.h
-displayq.o: displayq.c lp.h /usr/include/stdio.h /usr/include/sys/param.h
-displayq.o: /usr/include/sys/types.h /usr/include/signal.h
-displayq.o: /usr/include/machine/trap.h /usr/include/machine/machparam.h
-displayq.o: /usr/include/machine/endian.h /usr/include/sys/file.h
-displayq.o: /usr/include/sys/dir.h /usr/include/sys/stat.h
-displayq.o: /usr/include/sys/socket.h /usr/include/sys/un.h
-displayq.o: /usr/include/netinet/in.h /usr/include/netdb.h /usr/include/pwd.h
-displayq.o: /usr/include/syslog.h /usr/include/signal.h /usr/include/sys/wait.h
-displayq.o: /usr/include/sgtty.h /usr/include/sys/ioctl.h
-displayq.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydefaults.h
-displayq.o: /usr/include/sys/ttydev.h /usr/include/ctype.h /usr/include/errno.h
-displayq.o: lp.local.h /usr/include/a.out.h /usr/include/sys/exec.h
-displayq.o: /usr/include/ar.h
-rmjob.o: rmjob.c lp.h /usr/include/stdio.h /usr/include/sys/param.h
-rmjob.o: /usr/include/sys/types.h /usr/include/signal.h
-rmjob.o: /usr/include/machine/trap.h /usr/include/machine/machparam.h
-rmjob.o: /usr/include/machine/endian.h /usr/include/sys/file.h
-rmjob.o: /usr/include/sys/dir.h /usr/include/sys/stat.h
-rmjob.o: /usr/include/sys/socket.h /usr/include/sys/un.h
-rmjob.o: /usr/include/netinet/in.h /usr/include/netdb.h /usr/include/pwd.h
-rmjob.o: /usr/include/syslog.h /usr/include/signal.h /usr/include/sys/wait.h
-rmjob.o: /usr/include/sgtty.h /usr/include/sys/ioctl.h
-rmjob.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydefaults.h
-rmjob.o: /usr/include/sys/ttydev.h /usr/include/ctype.h /usr/include/errno.h
-rmjob.o: lp.local.h /usr/include/a.out.h /usr/include/sys/exec.h
-rmjob.o: /usr/include/ar.h
-startdaemon.o: startdaemon.c /usr/include/stdio.h /usr/include/sys/types.h
-startdaemon.o: /usr/include/sys/socket.h /usr/include/sys/un.h lp.local.h
-startdaemon.o: /usr/include/a.out.h /usr/include/sys/exec.h /usr/include/ar.h
-common.o: common.c lp.h /usr/include/stdio.h /usr/include/sys/param.h
-common.o: /usr/include/sys/types.h /usr/include/signal.h
-common.o: /usr/include/machine/trap.h /usr/include/machine/machparam.h
-common.o: /usr/include/machine/endian.h /usr/include/sys/file.h
-common.o: /usr/include/sys/dir.h /usr/include/sys/stat.h
-common.o: /usr/include/sys/socket.h /usr/include/sys/un.h
-common.o: /usr/include/netinet/in.h /usr/include/netdb.h /usr/include/pwd.h
-common.o: /usr/include/syslog.h /usr/include/signal.h /usr/include/sys/wait.h
-common.o: /usr/include/sgtty.h /usr/include/sys/ioctl.h
-common.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydefaults.h
-common.o: /usr/include/sys/ttydev.h /usr/include/ctype.h /usr/include/errno.h
-common.o: lp.local.h /usr/include/a.out.h /usr/include/sys/exec.h
-common.o: /usr/include/ar.h
-printcap.o: printcap.c /usr/include/ctype.h /usr/include/stdio.h
-lpdchar.o: lpdchar.c lp.local.h /usr/include/a.out.h /usr/include/sys/exec.h
-lpdchar.o: /usr/include/ar.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
