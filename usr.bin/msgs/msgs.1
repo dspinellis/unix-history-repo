@@ -69,27 +69,27 @@ If there is more to the message, you will be told how
 long it is and asked whether you wish to see the rest of the message.
 The possible responses are:
 .Bl -tag -width Fl
-.It Fl y
+.It Cm y
 Type the rest of the message.
 .It Ic RETURN
 Synonym for y.
-.It Fl n
+.It Cm n
 Skip this message
 and go on to the next message.
 .It Fl
 Redisplay the last message.
-.It Fl q
+.It Cm q
 Drop out of
 .Nm msgs ;
 the next time
 .Nm msgs
 will pick up where it last left off.
-.It Fl s
+.It Cm s
 Append the current message to the file ``Messages'' in the current directory;
 `s\-' will save the previously displayed message. A `s' or `s\-' may
 be followed by a space and a file name to receive the message replacing
 the default ``Messages''.
-.It Fl m
+.It Cm m
 A copy of the specified message is placed in a temporary
 mailbox and
 .Xr mail  1
