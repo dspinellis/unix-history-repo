@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)rcmd.3	6.7 (Berkeley) %G%
+.\"	@(#)rcmd.3	6.8 (Berkeley) %G%
 .\"
 .TH RCMD 3 ""
 .UC 5
@@ -105,8 +105,7 @@ checks the file
 .I /etc/hosts.equiv
 and, possibly, 
 .I .rhosts
-in the current working directory (normally the local
-user's home directory) to see if the request for
+in the local user's home directory to see if the request for
 service is allowed.  A 0 is returned if the machine
 name is listed in the ``hosts.equiv'' file, or the
 host and remote user name are found in the ``.rhosts''
@@ -114,7 +113,7 @@ file; otherwise
 .I ruserok
 returns \-1.  If the
 .I superuser
-flag is 1, the checking of the ``host.equiv'' file is
+flag is 1, the checking of the ``hosts.equiv'' file is
 bypassed.
 If the local domain (as obtained from \fIgethostname\fP\|(2))
 is the same as the remote domain, only the machine name need be specified.
