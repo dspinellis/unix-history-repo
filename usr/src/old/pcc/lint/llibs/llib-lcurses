@@ -1,4 +1,4 @@
-/* %G% (Berkely) @(#)llib-lcurses	1.3 */
+/* %G% (Berkely) @(#)llib-lcurses	1.4 */
 
 /* LINTLIBRARY */
 
@@ -17,6 +17,7 @@ int	_sscans(win, fmt, args) WINDOW *win; char *fmt; { return 0; }
 	endwin() {}
 	fgoto() {}
 	gettmode() {}
+char   *getcap(name) char *name; { return name; }
 WINDOW *initscr() { return wp; }
 char   *longname(bp, def) char *bp ,*def; { return sp; }
 	mvcur(ly, lx, y, x) int ly, lx, y, x; {}
