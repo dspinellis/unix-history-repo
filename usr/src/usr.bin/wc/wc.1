@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)wc.1	6.4 (Berkeley) %G%
+.\"     @(#)wc.1	6.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt WC 1
@@ -21,16 +21,19 @@
 .Sh DESCRIPTION
 The
 .Nm wc
-utility reads one or more input text files, and, by
-default, writes the number of lines, words, and bytes
-contained in each input file to the standard output.
-If more than one input file is specified,
-a line of cumulative count(s) for all named files is output on a
-separate line
-following the last file count.
-.Nm Wc
-considers a word to be a maximal string of
-characters delimited by white space.
+utility displays the number of lines, words, and bytes contained in each
+input
+.Ar file
+(or standard input, by default) to the standard output.
+A line is defined as a string of chacters delimited by a <newline> character,
+and a word is defined as a string of characters delimited by white space
+characters.
+White space characters are the set of characters for which the
+.Xr isspace 3
+function returns true.
+If more than one input file is specified, a line of cumulative counts
+for all the files is displayed on a separate line after the output for
+the last file.
 .Pp
 The following options are available:
 .Bl -tag -width Ds
@@ -47,40 +50,31 @@ is written to the standard output.
 .Pp
 When an option is specified,
 .Nm wc
-only
-reports the
-information requested by that option. The
-default action is equivalent to all the
-flags
-.Fl clw
-having been specified.
+only reports the information requested by that option.
+The default action is equivalent to specifying all of the flags.
 .Pp
-The following operands are available:
-.Bl -tag -width Ds
-.It Ar file
-A pathname of an input file.
-.El
-.Pp
-If no file names
-are specified, the standard input is used and
-a file name is not output. The resulting output is one
-line of the requested count(s) with the cumulative sum
-of all files read in via standard input.
-.Pp
-By default, the standard output contains a line for each
-input file of the form:
-.Bd -literal -offset indent
-lines	 words	bytes	file_name
-.Ed
-.Pp
-The counts for lines, words and bytes are integers separated
-by spaces.
-The ordering of the display of the number of lines, words,
-and/or bytes is the order in which the options were specified.
+If no files are specified, the standard input is used and no
+file name is displayed.
 .Pp
 The
 .Nm wc
 utility exits 0 on success, and >0 if an error occurs.
+.Sh SEE ALSO
+.Xr isspace 3
+.Sh COMPATIBILITY
+Historically, the
+.Nm wc
+utility was documented to define a word as a ``maximal string of
+characters delimited by <space>, <tab> or <newline> characters''.
+The implementation, however, didn't handle non-printing characters
+correctly so that ``  ^D^E  '' counted as 6 spaces, while ``foo^D^Ebar''
+counted as 8 characters.
+4BSD systems after 4.3BSD modified the implementation to be consistent
+with the documentation.
+This implementation defines a ``word'' in terms of the
+.Xr isspace 3
+function, as required by
+.St -p1003.2 .
 .Sh STANDARDS
 The
 .Nm wc
