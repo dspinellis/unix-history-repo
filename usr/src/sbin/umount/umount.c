@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)umount.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)umount.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -102,7 +102,7 @@ main(argc, argv)
 		errs = umountall();
 	} else
 		for (errs = 0; *argv != NULL; ++argv)
-			if (umountfs(*argv) == 0)
+			if (umountfs(*argv) != 0)
 				errs = 1;
 	exit(errs);
 }
@@ -163,7 +163,7 @@ umountfs(name)
 
 	if (realpath(name, rname) == NULL) {
 		warn("%s", rname);
-		return (0);
+		return (1);
 	}
 
 	name = rname;
@@ -191,7 +191,7 @@ umountfs(name)
 	}
 
 	if (!selected(type))
-		return (0);
+		return (1);
 
 	if ((delimp = strchr(name, '@')) != NULL) {
 		hostp = delimp + 1;
@@ -207,7 +207,7 @@ umountfs(name)
 	} else
 		hp = NULL;
 	if (!namematch(hp))
-		return (0);
+		return (1);
 
 	if (vflag)
 		(void)printf("%s: unmount from %s\n", name, mntpt);
