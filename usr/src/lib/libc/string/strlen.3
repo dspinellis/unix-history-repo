@@ -1,0 +1,32 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)strlen.3	5.1 (Berkeley) %G%
+.\"
+.TH STRLEN 3 ""
+.UC 4
+.SH NAME
+strlen \- find length of string
+.SH SYNOPSIS
+.nf
+.ft B
+#include <string.h>
+
+size_t
+strlen(const char *s);
+.ft R
+.fi
+.SH DESCRIPTION
+.B Strlen
+returns the number of non-null characters in
+.IR s .
+.SH SEE ALSO
+string(3)
+.SH STANDARDS
+.B Strlen
+conforms to ANSI X3.159-1989 (``ANSI C'').
