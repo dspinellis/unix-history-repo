@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)rogue.me	4.1 (Berkeley) %G%
+.\"	@(#)rogue.me	5.1 (Berkeley) %G%
 .\"
 .ds E \s-2<ESCAPE>\s0
 .ds R \s-2<RETURN>\s0
@@ -77,7 +77,7 @@ that mark the entrance to the Dungeons of Doom.
 It is late at night,
 so you make camp at the entrance
 and spend the night sleeping under the open skies.
-In the morning you gather your sword,
+In the morning you gather your weapons,
 put on your armor,
 eat what is almost your last food,
 and enter the dungeons.
@@ -100,7 +100,12 @@ Commands are all one or two keystrokes\**
 .)f
 and the results of your commands
 are displayed graphically on the screen rather
-than being explained in words.
+than being explained in words.\**
+.(f
+\** A minimum screen size of 24 lines by 80 columns is required.
+If the screen is larger, only the 24x80 section will be used
+for the map.
+.)f
 .pp
 Another major difference between rogue and other computer fantasy games
 is that once you have solved all the puzzles in a standard fantasy game,
@@ -133,7 +138,7 @@ ce0 ce0 ce0 ce0 ce0 ce0 ce0 ce0 ce0 ce0 ce0 ce.
 
 
 .ce 1000
-Level: 1  Gold: 0      Hp: 12(12)  Str: 16  Ac: 6  Exp: 1/0
+Level: 1  Gold: 0      Hp: 12(12)  Str: 16(16)  Ac: 6  Exp: 1/0
 
 Figure 1
 .ce
@@ -160,11 +165,13 @@ You can regain hit points by resting.
 The number in parentheses
 is the maximum number your hit points can reach.
 .ip Str \w'Level\ \ 'u
-Your current strength.
+Your current strength and maximum ever strength.
 This can be any integer less than or equal to 31,
 or greater than or equal to three.
 The higher the number,
 the stronger you are.
+The number in the parentheses
+is the maximum strength you have attained so far this game.
 .ip Ac \w'Level\ \ 'u
 Your current armor class.
 This number indicates how effective your armor is
@@ -267,7 +274,7 @@ typing
 will tell you that the
 .Cs @
 symbol represents you, the player.
-.ip "h, H"
+.ip "h, H, ^H"
 Move left.
 You move one space to the left.
 If you use upper case
@@ -278,6 +285,14 @@ This works for all movement commands
 .Cs L
 means run in direction 
 .Cs l )
+If you use the \*(lqcontrol\*(rq
+.Cs h ,
+you will continue moving in the specified direction
+until you pass something interesting or run into a wall.
+You should experiment with this,
+since it is a very useful command,
+but very difficult to describe.
+This also works for all movement commands.
 .ip j
 Move down.
 .ip k
@@ -302,13 +317,15 @@ it throws an object in the specified direction.
 to throw
 something to the left.)
 .ip f
-Find prefix.
-When followed by a direction
-it means to continue moving in the specified direction
-until you pass something interesting or run into a wall.
-You should experiment with this,
-since it is a very useful command,
-but very difficult to describe.
+Fight until someone dies.
+When followed with a direction
+this will force you to fight the creature in that direction
+until either you or it bites the big one.
+.ip m
+Move onto something without picking it up.
+This will move you one space in the direction you specify and,
+if there is an object there you can pick up,
+it won't do it.
 .ip z
 Zap prefix.
 Point a staff or wand in a given direction
@@ -340,7 +357,7 @@ This can't be done without the Amulet of Yendor in your possession.
 Rest.
 This is the \*(lqdo nothing\*(rq command.
 This is good for waiting and healing.
-.ip i
+.ip *
 Inventory.
 List what you are carrying in your pack.
 .ip I
@@ -391,10 +408,9 @@ which you wish to remember something about,
 you can use the call command to give a name to that type of object.
 This is usually used when you figure out what a
 potion, scroll, ring, or staff is
-after you pick it up.
-(See the
-.Cs askme
-option below.)
+after you pick it up,
+or when you want to remember
+which of those swords in your pack you were wielding.
 .ip D
 Print out which things you've discovered something about.
 This command will ask you what type of thing you are interested in.
@@ -408,17 +424,17 @@ This command works for potions, scrolls, rings, and staves and wands.
 .ip o
 Examine and set options.
 This command is further explained in the section on options.
-.ip ^L
+.ip ^R
 Redraws the screen.
 Useful if spurious messages or transmission errors
 have messed up the display.
-.ip ^R
-Repeat last message.
+.ip ^P
+Print last message.
 Useful when a message disappears before you can read it.
 This only repeats the last message
 that was not a mistyped command
 so that you don't loose anything by accidentally typing
-the wrong character instead of ^R.
+the wrong character instead of ^P.
 .ip \*E
 Cancel a command, prefix, or count.
 .ip !
@@ -448,6 +464,14 @@ run
 % rogue \-r
 .ip v
 Prints the program version number.
+.ip )
+Print the weapon you are currently wielding
+.ip ]
+Print the armor you are currently wearing
+.ip =
+Print the rings you are currently wearing
+.ip @
+Reprint the status line on the message line
 .sh 1 Rooms
 .pp
 Rooms in the dungeons are either lit or dark.
@@ -456,8 +480,7 @@ the entire room will be drawn on the screen as soon as you enter.
 If you walk into a dark room,
 it will only be displayed as you explore it.
 Upon leaving a room,
-all objects inside the room which might move
-or be removed
+all monsters inside the room
 are erased from the screen.
 In the darkness you can only see one space
 in all directions around you.
@@ -473,7 +496,10 @@ It is often the case that discretion is the better part of valor.
 .pp
 When you find something in the dungeon,
 it is common to want to pick the object up.
-This is accomplished in rogue by walking over the object.
+This is accomplished in rogue by walking over the object
+(unless you use the
+.Cs m
+prefix, see above).
 If you are carrying too many things,
 the program will tell you and it won't pick up the object,
 otherwise it will add it to your pack
@@ -498,16 +524,13 @@ the labels will vary from game to game.
 When you use one of these labeled objects,
 if its effect is obvious,
 rogue will remember what it is for you.
-If it's effect isn't extremely obvious, you can use the
+If it's effect isn't extremely obvious
+you will be asked what you want to scribble on it
+so you will recognize it later,
+or you can use the
 .Cs call
 command
-(see above)
-or the
-.Cs askme
-option
-(see below)
-to scribble down something about it
-so you will recognize it later.
+(see above).
 .sh 2 Weapons
 .pp
 Some weapons,
@@ -522,6 +545,12 @@ then throw the arrow.
 You can only wield one weapon at a time,
 but you can't change weapons if the one
 you are currently wielding is cursed.
+The commands to use weapons are
+.Cs w
+(wield)
+and
+.Cs t
+(throw).
 .sh 2 Armor
 .pp
 There are various sorts of armor lying around in the dungeon.
@@ -534,10 +563,9 @@ the more protection the armor affords against the blows of monsters.
 Here is a list of the various armor types and their normal armor class:
 .(b
 .TS
-center;
+box center;
 l r.
-Type	Class
-=
+\ \ \fIType	Class\fP
 None	10
 Leather armor	8
 Studded leather / Ring mail	7
@@ -554,15 +582,35 @@ If a suit of armor is cursed,
 its armor class will be higher,
 and you will not be able to remove it.
 However, not all armor with a class that is higher than normal is cursed.
+.pp
+The commands to use weapons are
+.Cs W
+(wear)
+and
+.Cs T
+(take off).
 .sh 2 Scrolls
 .pp
-Scrolls come with titles in an unknown tongue.
+Scrolls come with titles in an unknown tongue\**.
+.(f
+\** Actually, it's a dialect spoken only by the twenty-seven members
+of a tribe in Outer Mongolia,
+but you're not supposed to
+.i know
+that.
+.)f
 After you read a scroll,
 it disappears from your pack.
+The command to use a scroll is
+.Cs r
+(read).
 .sh 2 Potions
 .pp
 Potions are labeled by the color of the liquid inside the flask.
 They disappear after being quaffed.
+The command to use a scroll is
+.Cs q
+(quaff).
 .sh 2 "Staves and Wands"
 .pp
 Staves and wands do the same kinds of things.
@@ -577,6 +625,10 @@ Staves come with multiple magic charges,
 the number being random,
 and when they are used up,
 the staff is just a piece of wood or metal.
+.pp
+The command to use a wand or staff is
+.Cs z
+(zap)
 .sh 2 Rings
 .pp
 Rings are very useful items,
@@ -587,6 +639,20 @@ the bad rings are also more powerful.
 Most rings also cause you to use up food more rapidly,
 the rate varying with the type of ring.
 Rings are differentiated by their stone settings.
+The commands to use rings are
+.Cs P
+(put on)
+and
+.Cs R
+(remove).
+.sh 2 Food
+.pp
+Food is necessary to keep you going.
+If you go too long without eating you will faint,
+and eventually die of starvation.
+The command to use food is
+.Cs e
+(eat).
 .sh 1 Options
 .pp
 Due to variations in personal tastes
@@ -669,12 +735,14 @@ $ export ROGUEOPTS
 Here is a list of the options
 and an explanation of what each one is for.
 The default value for each is enclosed in square brackets.
+For character string options,
+input over fifty characters will be ignored.
 .ip "\fBterse\fP [\fI\^noterse\^\fP]"
 Useful for those who are tired of the sometimes lengthy messages of rogue.
 This is a useful option for playing on slow terminals,
 so this option defaults to
-.b terse
-if your
+.i terse
+if you
 are on a slow (1200 baud or under) terminal.
 .ip "\fBjump\fP [\fI\^nojump\^\fP]"
 If this option is set,
@@ -682,30 +750,19 @@ running moves will not be displayed
 until you reach the end of the move.
 This saves considerable cpu and display time.
 This option defaults to
-.b jump
+.i jump
 if you are using a slow terminal.
-.ip "\fBstep\fP [\fI\^nostep\^\fP]"
-When
-.b step
-is set,
-lists of things,
-like inventories or
-.Cs *
-responses to
-\*(lqWhich item do you wish to \fB. . .\fP? \*(rq questions,
-are displayed one item at a time on the top of the screen,
-rather than clearing the screen,
-displaying the list,
-then re-displaying the dungeon level.
 .ip "\fBflush\fP [\fI\^noflush\^\fP]"
 All typeahead is thrown away after each round of battle.
 This is useful for those who type far ahead
-and then watch in dismay as a Kobold kills them.
-.ip "\fBaskme\fP [\fI\^noaskme\^\fP]"
-Upon reading a scroll or quaffing a potion
-which does not automatically identify itself upon use,
-rogue will ask you what to name it
-so you can recognize it if you encounter it again.
+and then watch in dismay as a Bat kills them.
+.ip "\fBseefloor\fP [\fI\^seefloor\^\fP]"
+Display the floor around you on the screen
+as you move through dark rooms.
+Due to the amount of characters generated,
+this option defaults to
+.i noseefloor
+if you are using a slow terminal.
 .ip "\fBpassgo\fP [\fI\^nopassgo\^\fP]"
 Follow turnings in passageways.
 If you run in a passage
@@ -717,47 +774,87 @@ If it can turn either or neither,
 it will stop.
 This is followed strictly,
 which can sometimes lead to slightly confusing occurrences
-(which is why it defaults to being off).
-The
-.Cs f
-prefix still works.
+(which is why it defaults to 
+.i nopassgo ).
+.ip "\fBtombstone\fP [\fI\^tombstone\^\fP]"
+Print out the tombstone at the end if you get killed.
+This is nice but slow, so you can turn it off if you like.
+.ip "\fBinven\fP [\fI\^overwrite\^\fP]"
+Inventory type.
+This can have one of three values:
+.i overwrite ,
+.i slow ,
+or
+.i clear .
+With
+.i overwrite
+the top lines of the map are overwritten
+with the list
+when inventory is requested
+or when
+\*(lqWhich item do you wish to \fB. . .\fP? \*(rq questions
+are answered with a
+.Cs * .
+However, if the list is longer than a screenful,
+the screen is cleared.
+With
+.i slow ,
+lists are displayed one item at a time on the top of the screen,
+and with
+.i clear ,
+the screen is cleared,
+the list is displayed,
+and then the dungeon level is re-displayed.
+Due to speed considerations,
+.i clear
+is the default for terminals without
+clear-to-end-of-line capabilities.
 .ip "\fBname\fP [account name]"
 This is the name of your character.
 It is used if you get on the top ten scorer's list.
-It should be less than forty characters long.
 .ip "\fBfruit\fP [\fI\^slime-mold\^\fP]"
 This should hold the name of a fruit that you enjoy eating.
-It is basically a whimsey that the program uses in a couple of places.
+It is basically a whimsey that rogue uses in a couple of places.
 .ip "\fBfile\fP [\fI\^~/rogue.save\^\fP]"
 The default file name for saving the game.
 If your phone is hung up by accident,
 rogue will automatically save the game in this file.
-The file name may contain the special character
+The file name may start with the special character
 .Cs ~
 which expands to be your home directory.
 .sh 1 Scoring
 .pp
 Rogue usually maintains a list
-of the top ten scoring people on your machine.
-Each account on the machine
+of the top scoring people or scores on your machine.
+Depending on how it is set up,
+it can post either the top scores
+or the top players.
+In the latter case,
+each account on the machine
 can post only one non-winning score on this list.
 If you score higher than someone else on this list,
 or better your previous score on the list,
 you will be inserted in the proper place
 under your current name.
+How many scores are kept
+can also be set up by whoever installs it on your machine.
 .pp
 If you quit the game, you get out with all of your gold intact.
 If, however, you get killed in the Dungeons of Doom,
 your body is forwarded to your next-of-kin,
 along with 90% of your gold;
-ten percent of your gold is kept by the Dungeons' wizard as a fee.
+ten percent of your gold is kept by the Dungeons' wizard as a fee\**.
+.(f
+\** The Dungeon's wizard is named Wally the Wonder Badger.
+Invocations should be accompanied by a sizable donative.
+.)f
 This should make you consider whether you want to take one last hit
 at that monster and possibly live,
 or quit and thus stop with whatever you have.
 If you quit, you do get all your gold,
 but if you swing and live, you might find more.
 .pp
-If you just want to see what the current top ten list is,
+If you just want to see what the current top players/games list is,
 you can type
 .ti +1i
 .nf
@@ -782,7 +879,7 @@ Marty McNary,
 Jan Miller,
 and
 Scott Nelson
-for their ideas and assistance,
+for their ideas and assistance;
 and also the teeming multitudes
 who graciously ignored work, school, and social life to play rogue
 and send us bugs, complaints, suggestions, and just plain flames.
