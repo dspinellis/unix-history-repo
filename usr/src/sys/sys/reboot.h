@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)reboot.h	7.2 (Berkeley) %G%
+ *	@(#)reboot.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -20,9 +20,8 @@
 #define	RB_INITNAME	0x10	/* name given for /etc/init */
 #define	RB_DFLTROOT	0x20	/* use compiled-in rootdev */
 #define	RB_KDB		0x40	/* give control to kernel debugger */
-
-#define	RB_PANIC	0	/* reboot due to panic */
-#define	RB_BOOT		1	/* reboot due to boot() */
+#define	RB_RDONLY	0x80	/* mount root fs read-only */
+#define	RB_DUMP		0x100	/* dump kernel memory before reboot */
 
 /*
  * Constants for converting boot-style device number to type,
