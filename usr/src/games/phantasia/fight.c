@@ -38,7 +38,7 @@ encounter(particular)
 int	particular;
 {
 bool	firsthit = Player.p_blessing;	/* set if player gets the first hit */
-int	howmany = 1;			/* how many time flocked */
+int	flockcnt = 1;			/* how many time flocked */
 
     /* let others know what we are doing */
     Player.p_status = S_MONSTER;
@@ -159,13 +159,13 @@ int	howmany = 1;			/* how many time flocked */
 	/* monster flocks */
 	{
 	more(Lines);
-	++howmany;
+	++flockcnt;
 	longjmp(Fightenv, 0);
 	/*NOTREACHED*/
 	}
     else if (Circle > 1.0
 	&& Curmonster.m_treasuretype > 0
-	&& drandom() > 0.2 + pow(0.4, (double) (howmany / 3 + Circle / 3.0)))
+	&& drandom() > 0.2 + pow(0.4, (double) (flockcnt / 3 + Circle / 3.0)))
 	/* monster has treasure; this takes # of flocks and size into account */
 	{
 	more(Lines);
@@ -173,7 +173,7 @@ int	howmany = 1;			/* how many time flocked */
 	}
 
     /* pause before returning */
-    getyx(stdscr, Lines, howmany);
+    getyx(stdscr, Lines, flockcnt);
     more(Lines + 1);
 
     Player.p_ring.ring_inuse = FALSE;	/* not using ring */
