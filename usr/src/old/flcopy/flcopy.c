@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)flcopy.c	4.5 (Berkeley) %G%";
+static char *sccsid ="@(#)flcopy.c	4.6 (Berkeley) %G%";
 #endif
 
 #include <sys/file.h>
@@ -92,6 +92,7 @@ main(argc, argv)
 		lwrite(startad, n, buff);
 		startad += 512;
 	}
+	exit(0);
 }
 
 rt_init()
