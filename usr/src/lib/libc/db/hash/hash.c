@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash.c	5.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash.c	5.27 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -77,7 +77,7 @@ __hash_open(file, flags, mode, info)
 	DB *dbp;
 	int bpages, hdrsize, new_table, nsegs, save_errno;
 
-	if (flags & O_WRONLY) {
+	if ((flags & O_ACCMODE) == O_WRONLY) {
 		errno = EINVAL;
 		return (NULL);
 	}
