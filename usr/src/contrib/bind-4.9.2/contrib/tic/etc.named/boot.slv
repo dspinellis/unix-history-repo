@@ -1,0 +1,12 @@
+; %Z% %M% %I% %E% %Z%
+; type		domain			source file or host
+;
+; caching server configuration
+;
+directory					/etc/named
+domain		lgc.com
+primary		0.0.127.IN-ADDR.ARPA		f.127.0.0.0
+primary		localhost			localhost
+forwarders	134.132.1.2 
+cache		.				cache
+slave
