@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fsck.h	5.18 (Berkeley) %G%
+ *	@(#)fsck.h	5.19 (Berkeley) %G%
  */
 
 #define	MAXDUP		10	/* limit on dup blks (per inode) */
@@ -142,7 +142,10 @@ char	nflag;			/* assume a no response */
 char	yflag;			/* assume a yes response */
 int	bflag;			/* location of alternate super block */
 int	debug;			/* output debugging info */
-int	cvtflag;		/* convert to old file system format */
+int	cvtlevel;		/* convert to newer file system format */
+int	doinglevel1;		/* converting to new cylinder group format */
+int	doinglevel2;		/* converting to new inode format */
+int	newinofmt;		/* filesystem has new inode format */
 char	preen;			/* just fix normal inconsistencies */
 char	hotroot;		/* checking root device */
 char	havesb;			/* superblock has been read */
@@ -155,6 +158,7 @@ char	*blockmap;		/* ptr to primary blk allocation map */
 ino_t	maxino;			/* number of inodes in file system */
 ino_t	lastino;		/* last inode in use */
 char	*statemap;		/* ptr to inode state table */
+char	*typemap;		/* ptr to inode type table */
 short	*lncntp;		/* ptr to link count table */
 
 ino_t	lfdir;			/* lost & found directory inode number */
