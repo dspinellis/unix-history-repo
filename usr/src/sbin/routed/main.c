@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -35,7 +35,7 @@ int	debug = 0;
 int	bufspace = 127*1024;	/* max. input buffer size to request */
 
 struct	rip *msg = (struct rip *)packet;
-int	hup(), rtdeleteall(), sigtrace();
+void	hup(), rtdeleteall(), sigtrace(), timer();
 
 main(argc, argv)
 	int argc;
@@ -130,7 +130,7 @@ main(argc, argv)
 	else
 		query->rip_nets[0].rip_dst.sa_family = AF_UNSPEC;
 	query->rip_nets[0].rip_metric = htonl((u_long)HOPCNT_INFINITY);
-	toall(sendmsg);
+	toall(sndmsg);
 	signal(SIGALRM, timer);
 	signal(SIGHUP, hup);
 	signal(SIGTERM, hup);
@@ -300,7 +300,7 @@ getsocket(domain, type, sin)
 	if (traceactions)
 		fprintf(ftrace, "recv buf %d\n", on);
 #endif
-	if (bind(sock, sin, sizeof (*sin), 0) < 0) {
+	if (bind(sock, (struct sockaddr *)sin, sizeof (*sin)) < 0) {
 		perror("bind");
 		syslog(LOG_ERR, "bind: %m");
 		close(sock);

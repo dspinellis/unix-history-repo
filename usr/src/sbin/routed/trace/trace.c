@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1983,1988 Regents of the University of California.
+ * Copyright (c) 1983, 1988 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -17,29 +17,31 @@
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1983,1988 Regents of the University of California.\n\
+"@(#) Copyright (c) 1983, 1988 Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)trace.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)trace.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/protosw.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <errno.h>
-#include <stdio.h>
-#include <netdb.h>
 #include <protocols/routed.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 struct	sockaddr_in myaddr;
 char	packet[MAXPACKETSIZE];
 
 main(argc, argv)
 	int argc;
-	char *argv[];
+	char **argv;
 {
 	int size, s;
 	struct sockaddr from;
@@ -61,7 +63,7 @@ usage:
 	}
 	myaddr.sin_family = AF_INET;
 	myaddr.sin_port = htons(IPPORT_RESERVED-1);
-	if (bind(s, &myaddr, sizeof(myaddr)) < 0) {
+	if (bind(s, (struct sockaddr *)&myaddr, sizeof(myaddr)) < 0) {
 		perror("bind");
 		exit(2);
 	}
@@ -99,7 +101,8 @@ usage:
 			}
 			bcopy(hp->h_addr, &router.sin_addr, hp->h_length);
 		}
-		if (sendto(s, packet, size, 0, &router, sizeof(router)) < 0)
+		if (sendto(s, packet, size, 0,
+		    (struct sockaddr *)&router, sizeof(router)) < 0)
 			perror(*argv);
 		argv++, argc--;
 	}
