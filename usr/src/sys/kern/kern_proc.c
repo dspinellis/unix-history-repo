@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.48	82/11/13	*/
+/*	kern_proc.c	4.49	82/12/05	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -582,16 +582,14 @@ exit(rv)
 		p->p_flag &= ~SVFDONE;
 	}
 	for (i = 0; i < NOFILE; i++) {
-#ifdef notdef
-		/* why was this like this? */
+		struct file *f;
+		int p;
+
 		f = u.u_ofile[i];
 		u.u_ofile[i] = NULL;
-		closef(f, 1);
-#else
-		closef(u.u_ofile[i], 1, u.u_pofile[i]);
-		u.u_ofile[i] = NULL;
+		p = u.u_pofile[i];
 		u.u_pofile[i] = 0;
-#endif
+		closef(f, 1, p);
 	}
 	ilock(u.u_cdir);
 	iput(u.u_cdir);
@@ -629,6 +627,8 @@ exit(rv)
 		panic("init died");
 done:
 	p->p_xstat = rv;
+if (m == 0)
+panic("exit: m_getclr");
 	p->p_ru = mtod(m, struct rusage *);
 	*p->p_ru = u.u_ru;
 	ruadd(p->p_ru, &u.u_cru);
