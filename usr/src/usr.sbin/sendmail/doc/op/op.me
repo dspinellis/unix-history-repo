@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	8.9 (Berkeley) %G%
+.\"	@(#)op.me	8.10 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:08-%''Sendmail Installation and Operation Guide'
@@ -43,7 +43,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 8.9
+Version 8.10
 .sp
 For Sendmail Version 8.6
 .)l
@@ -522,8 +522,7 @@ and permissions are
 .pp
 This is the configuration file for
 .i sendmail .
-This and the frozen configuration file
-are the only two non-library file names compiled into
+This is the only non-library file name compiled into
 .i sendmail \**.
 .(f
 \**The system libraries can reference other files;
@@ -623,29 +622,6 @@ is defined in the
 option of the
 .i sendmail.cf
 file.
-.sh 3 "/etc/sendmail.fc"
-.pp
-If you intend to install the frozen version of the configuration file
-(for quick startup)
-you should create the file /etc/sendmail.fc
-and initialize it.
-This step may be safely skipped.
-.(b
-cp /dev/null /etc/sendmail.fc
-chmod 644 /etc/sendmail.fc
-/usr/\*(SD/sendmail \-bz
-.)b
-In general, freeze files are not worth doing
-unless your disks are much faster than your CPU;
-this is seldom true any more.
-.pp
-If your
-.i sendmail
-was not compiled with
-.sm FROZENCONFIG
-defined, the
-.b \-bz
-flag will be ignored.
 .sh 3 "/etc/rc"
 .pp
 It will be necessary to start up the
@@ -799,48 +775,6 @@ will print the contents of the mail queue;
 see below).
 This should be a link to /usr/\*(SD/sendmail.
 .sh 1 "NORMAL OPERATIONS"
-.sh 2 "``Quick'' Configuration Startup"
-.pp
-if the
-.sm FROZENCONFIG
-option is included during compilation,
-a precompiled (``frozen'') version of the configuration file
-can be created using the
-.b \-bz
-flag.
-This is really only worthwhile doing
-if you are on a slow processor with a relatively fast I/O system
-(a VAX 11/750 is a good example).
-Since it creates other problems,
-I recommend against using the frozen configuration
-on most current architectures.
-.pp
-To create the freeze file, use
-.(b
-/usr/\*(SD/sendmail \-bz
-.)b
-This creates the frozen configuration file
-.i /etc/sendmail.fc .
-This file is an image of
-.i sendmail 's
-data space after reading in the configuration file.
-If this file exists,
-it is used instead of
-.i /etc/sendmail.cf
-.i sendmail.fc
-must be rebuilt manually every time
-.i sendmail.cf
-is changed.
-.pp
-The frozen configuration file will be ignored
-if a
-.b \-C
-flag is specified
-or if
-.i sendmail
-detects that it is out of date.
-However, the heuristics are not strong
-so this should not be trusted.
 .sh 2 "The System Log"
 .pp
 The system log is supported by the
@@ -5241,8 +5175,6 @@ You should only set one of HASSTATFS or HASUSTAT;
 the first is preferred.
 .ip _PATH_SENDMAILCF
 The pathname of the sendmail.cf file.
-.ip _PATH_SENDMAILFC
-The pathname of the sendmail.fc file.
 .ip _PATH_SENDMAILPID
 The pathname of the sendmail.pid file.
 .ip LA_TYPE
@@ -6336,7 +6268,6 @@ t	Run in test mode
 v	Just verify addresses, don't collect or deliver
 i	Initialize the alias database
 p	Print the mail queue
-z	Freeze the configuration file
 .)b
 .ip \-B\fItype\fP
 Indicate body type.
@@ -6680,9 +6611,6 @@ flag to
 .ip /etc/sendmail.cf
 The configuration file,
 in textual form.
-.ip /etc/sendmail.fc
-The configuration file
-represented as a memory image.
 .ip /usr/lib/sendmail.hf
 The SMTP help file.
 .ip /etc/sendmail.st
@@ -6729,7 +6657,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 8.9
+.\"Version 8.10
 .\".ce 0
 .bp 2
 .ce
