@@ -1,8 +1,8 @@
-static char *sccsid = "@(#)tail.c	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)tail.c	4.3 (Berkeley) %G%";
 /* tail command 
  *
  *	tail where [file]
- *	where is +_n[type]
+ *	where is +/-n[type]
  *	- means n lines before end
  *	+ means nth line from beginning
  *	type 'b' means tail n blocks, not lines
