@@ -1,4 +1,10 @@
-/*	rwhod.h	4.8	83/06/01	*/
+/*
+ * Copyright (c) 1983 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)rwhod.h	5.1 (Berkeley) %G%
+ */
 
 /*
  * rwho protocol packet format.

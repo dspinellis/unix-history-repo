@@ -1,8 +1,12 @@
-#ifndef lint
-static char sccsid[] = "@(#)symtab.c	3.17	(Berkeley)	85/03/24";
-#endif
+/*
+ * Copyright (c) 1983 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
 
-/* Copyright (c) 1983 Regents of the University of California */
+#ifndef lint
+static char sccsid[] = "@(#)symtab.c	5.1 (Berkeley) %G%";
+#endif not lint
 
 /*
  * These routines maintain the symbol table which tracks the state

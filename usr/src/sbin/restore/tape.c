@@ -1,8 +1,12 @@
-#ifndef lint
-static char sccsid[] = "@(#)tape.c	3.28	(Berkeley)	85/04/23";
-#endif
+/*
+ * Copyright (c) 1983 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
 
-/* Copyright (c) 1983 Regents of the University of California */
+#ifndef lint
+static char sccsid[] = "@(#)tape.c	5.1 (Berkeley) %G%";
+#endif not lint
 
 #include "restore.h"
 #include <dumprestor.h>
