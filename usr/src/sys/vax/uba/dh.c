@@ -1,4 +1,4 @@
-/*	dh.c	4.18	81/02/18	*/
+/*	dh.c	4.19	81/02/19	*/
 
 #include "dh.h"
 #if NDH11 > 0
@@ -14,6 +14,7 @@
 #include "../h/map.h"
 #include "../h/pte.h"
 #include "../h/buf.h"
+#include "../h/vm.h"
 #include "../h/uba.h"
 #include "../h/bk.h"
 #include "../h/clist.h"
@@ -28,13 +29,13 @@ int	dhcntrlr(), dhslave(), dhrint(), dhxint();
 struct	uba_dinfo *dhinfo[NDH11];
 u_short	dhstd[] = { 0 };
 struct	uba_driver dhdriver =
-	{ dhcntrlr, dhslave, 0, 0, dhstd, "dh11", dhinfo };
+	{ dhcntrlr, dhslave, 0, 0, dhstd, "dh", dhinfo };
 
 int	dmcntrlr(), dmslave(), dmintr();
 struct	uba_dinfo *dminfo[NDH11];
 u_short	dmstd[] = { 0 };
 struct	uba_driver dmdriver =
-	{ dmcntrlr, dmslave, 0, 0, dmstd, "dm11", dminfo };
+	{ dmcntrlr, dmslave, 0, 0, dmstd, "dm", dminfo };
 
 struct dhdevice
 {
@@ -118,6 +119,7 @@ struct dmdevice
  * Local variables for the driver
  */
 short	dhsar[NDH11];			/* software copy of last bar */
+short	dhsoftCAR[NDH11];
 
 struct	tty dh11[NDH11*16];
 int	ndh11	= NDH11*16;
@@ -146,6 +148,11 @@ dhcntrlr(ui, reg)
 	register struct dhdevice *dhaddr = (struct dhdevice *)reg;
 	int i;
 
+#ifdef notdef
+	dhaddr->un.dhcsr = DH_RIE|DH_MM|DH_RI;
+	DELAY(5);
+	dhaddr->un.dhcsr = 0;
+#else
 	dhaddr->un.dhcsr = DH_TIE;
 	DELAY(5);
 	dhaddr->dhlpr = (B9600 << 10) | (B9600 << 6) | BITS7|PENABLE;
@@ -156,12 +163,6 @@ dhcntrlr(ui, reg)
 	dhaddr->un.dhcsr = 0;
 	if (cvec && cvec != 0x200)
 		cvec -= 4;		/* transmit -> receive */
-#ifdef notdef
-	dhaddr->un.dhcsr = DH_RIE|DH_MM;
-	DELAY(5);
-	dhaddr->un.dhcsrl |= DH_RI;
-	DELAY(5);
-	dhaddr->un.dhcsr = 0;
 #endif
 	return (1);
 }
@@ -169,12 +170,12 @@ dhcntrlr(ui, reg)
 /*
  * Routine called to init slave tables.
  */
-dhslave(ui, reg, slaveno)
+dhslave(ui, reg)
 	struct uba_dinfo *ui;
 	caddr_t reg;
 {
 
-	/* no tables to set up */
+	dhsoftCAR[ui->ui_unit] = ui->ui_flags;
 }
 
 /*
@@ -665,7 +666,9 @@ dmopen(dev)
 	unit = minor(dev);
 	dm = unit >> 4;
 	tp = &dh11[unit];
-	if (dm >= NDH11 || (ui = dminfo[dm]) == 0 || ui->ui_alive == 0) {
+	unit &= 0xf;
+	if (dm >= NDH11 || (ui = dminfo[dm]) == 0 || ui->ui_alive == 0 ||
+	    (dhsoftCAR[dm]&(1<<unit))) {
 		tp->t_state |= CARR_ON;
 		return;
 	}
@@ -674,7 +677,7 @@ dmopen(dev)
 	addr->dmcsr &= ~DM_SE;
 	while (addr->dmcsr & DM_BUSY)
 		;
-	addr->dmcsr = unit & 0xf;
+	addr->dmcsr = unit;
 	addr->dmlstat = DML_ON;
 	if (addr->dmlstat&DML_CAR)
 		tp->t_state |= CARR_ON;
