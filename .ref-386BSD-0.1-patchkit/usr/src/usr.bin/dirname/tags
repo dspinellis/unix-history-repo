@@ -1,2 +1,0 @@
-Mdirname	dirname.c	/^main(argc, argv)$/
-usage	dirname.c	/^usage()$/
