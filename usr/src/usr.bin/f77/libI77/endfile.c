@@ -1,5 +1,5 @@
 /*
-char id_endfile[] = "@(#)endfile.c	1.4";
+char id_endfile[] = "@(#)endfile.c	1.5";
  *
  * endfile
  */
@@ -37,7 +37,7 @@ t_runc(b,flag) unit *b; ioflag flag;
 	loc=ftell(b->ufd);
 	fseek(b->ufd,0L,2);
 	len=ftell(b->ufd);
-	if (loc==len) return(OK);
+	if (loc>=len) return(OK);
 	strcpy(nm,tmplate);
 	mktemp(nm);
 	if(!(tmp=fopen(nm,"w"))) err(flag,errno,endf);
