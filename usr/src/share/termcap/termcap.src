@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)termcap.src	5.76 (Berkeley) %G%
+#	@(#)termcap.src	5.77 (Berkeley) %G%
 #
 #	Termcap source file
 #	John Kunze, Berkeley
@@ -1921,6 +1921,12 @@ d7|gigi|dec gigi terminal:\
 	:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:\
 	:kh=\E[H:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:pt:sr=200\EM:\
 	:dC=50:dF=200:dN#50:dT=50:
+#From William King <abvax!wrk@uunet.UU.NET>, basic ln03 entries
+da|ln03|dec ln03 LaserPrinter:\
+	:co#80:li#66:hc:hu=\EL:hd=\EK:so=\E[1m:se=\E[22m:\
+	:us=\E[4m:ue=\E[24m:
+db|ln03-w|dec ln03 LaserPrinter 132 cols:\
+	:co#132:tc=ln03:
 dI|dw1|decwriter I:\
 	:do=^J:le=^H:bs:co#72:hc:os:
 # From tut@Topaz.CC Thu May 12 14:49:02 1983
