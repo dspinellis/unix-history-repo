@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: reg.h 1.1 90/07/09$
  *
- *	@(#)reg.h	8.1 (Berkeley) %G%
+ *	@(#)reg.h	8.2 (Berkeley) %G%
  */
 
 /*
@@ -102,3 +102,12 @@ int ipcreg[NIPCREG] = {
 	F24, F25, F26, F27, F28, F29, F30, F31, FSR,
 };
 #endif
+
+#ifdef LANGUAGE_C
+/*
+ * Register set accessible via /proc/$pid/reg
+ */
+struct reg {
+        int     r_regs[69];	/* numbered as above */
+};
+#endif /* LANGUAGE_C */
