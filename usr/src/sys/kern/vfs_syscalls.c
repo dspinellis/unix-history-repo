@@ -1,4 +1,4 @@
-/*	vfs_syscalls.c	4.9	81/03/09	*/
+/*	vfs_syscalls.c	4.10	81/04/28	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -30,7 +30,11 @@ fstat()
 	fp = getf(uap->fdes);
 	if(fp == NULL)
 		return;
-	stat1(fp->f_inode, uap->sb, fp->f_flag&FPIPE? fp->f_un.f_offset: 0);
+	if (fp->f_flag&FPORT) {
+		ptstat(fp);
+		return;
+	}
+	stat1(fp->f_inode, uap->sb);
 }
 
 /*
@@ -48,7 +52,7 @@ stat()
 	ip = namei(uchar, 0);
 	if(ip == NULL)
 		return;
-	stat1(ip, uap->sb, (off_t)0);
+	stat1(ip, uap->sb);
 	iput(ip);
 }
 
@@ -56,10 +60,9 @@ stat()
  * The basic routine for fstat and stat:
  * get the inode and pass appropriate parts back.
  */
-stat1(ip, ub, pipeadj)
+stat1(ip, ub)
 register struct inode *ip;
 struct stat *ub;
-off_t pipeadj;
 {
 	register struct dinode *dp;
 	register struct buf *bp;
@@ -76,7 +79,7 @@ off_t pipeadj;
 	ds.st_uid = ip->i_uid;
 	ds.st_gid = ip->i_gid;
 	ds.st_rdev = (dev_t)ip->i_un.i_rdev;
-	ds.st_size = ip->i_size - pipeadj;
+	ds.st_size = ip->i_size;
 	/*
 	 * next the dates in the disk
 	 */
