@@ -1,0 +1,118 @@
+.\" -*- nroff -*-
+.\" Copyright 1991, 1992 Free Software Foundation, Inc.
+.\" written by K. Richard Pixley
+.TH configure 1 "13 December 1991" "cygnus support" "Cygnus Support"
+.de BP
+.sp
+.ti \-.2i
+\(**
+..
+
+.SH NAME
+configure \(em\& prepare source code to be built
+
+.SH SYNOPSIS
+configure host1 [host2 [host3 ...]] [-exec_prefix=dir] [-gas] [-help]
+[-host=h] [-nfp] [-norecursion]
+[-prefix=dir] [-s] [-rm] [-site=s] [-srcdir=dir]
+[-target=t] [-v] [-x]
+
+.SH DESCRIPTION
+.I Configure
+is a program used to prepare souce code to be built.  It does this by
+generating Makefiles and .gdbinit files, creating symlinks, digging
+directories, and some other miscellaneous file editting.
+
+.SH OPTIONS
+.I Configure
+accepts the following options:
+
+.TP
+.I \-exec_prefix=dir
+sets the root directory for host dependent files to
+.I dir.
+The default location is the same as
+.I prefix.
+
+.TP
+.I \-gas
+tells configure that the GNU assembler is available on this machine
+even if it is not ordinarily.
+
+.TP
+.I \-help
+displays a brief summary of the calling convention.
+
+.TP
+.I \-host=h
+asks configure to prepare the source to be compiled in an environment
+called
+.I h.
+This option is very confusing and is best ignored.  FIXME: I don't
+think it should even be documented.
+
+.TP
+.I \-nfp
+Notifies configure that all of the specified hosts have
+.I no floating point
+units.
+
+.TP
+.I \-norecursion
+asks that only the current directory be configured.  Normally
+configure recurs on subdirectories.
+
+.TP
+.I \-prefix=dir
+sets the default location in which to install files to dir.  The
+default is "/usr/local".
+
+.TP
+.I \-s
+used internally by configure to supress status messages on
+subdirectory recursions.
+
+.TP
+.I \-rm
+asks configure to remove a configuration rather than creating one.
+
+.TP
+.I \-site=s
+asks configure to use any site specific Makefile fragments for s when
+building Makefiles.
+
+.TP
+.I \-srcdir=dir
+tells configure to find the source in srcdir.
+
+.TP
+.I \-target=t
+Requests that the sources be configured to target the t machine.  If
+no targets are specified explicitly, the target is assumed to be the
+same as the host. 
+
+.TP
+.I \-tmpdir=dir
+Sets the directory in which configure creates temporary files to
+tmpdir.
+
+.TP
+.I \-verbose
+.I \-v
+Asks that configure print status lines for each directory configured.
+Normally, only the status lines for the current directory are printed.
+
+.TP
+.I \-x
+Tells configure that MIT style X11 header files and libraries are
+available on this machine, even if they are not normally available.
+
+.SH FILES
+configure.in	for each directory's individual needs
+config.sub	for parsing configuration names
+
+.SH "SEE ALSO"
+.RB "`\|" configure "\|'"
+entry in 
+.B
+info. (not yet available).
