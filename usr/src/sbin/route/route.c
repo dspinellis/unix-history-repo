@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.43 (Berkeley) %G%";
+static char sccsid[] = "@(#)route.c	5.44 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -1101,8 +1101,8 @@ print_rtmsg(rtm, msglen)
 		break;
 	case RTM_NEWADDR:
 	case RTM_DELADDR:
-		(void) printf("flags:");
 		ifam = (struct ifa_msghdr *)rtm;
+		(void) printf("metric %d, flags:", ifam->ifam_metric);
 		bprintf(stdout, ifam->ifam_flags, routeflags);
 		pmsg_addrs((char *)(ifam + 1), ifam->ifam_addrs);
 		break;
