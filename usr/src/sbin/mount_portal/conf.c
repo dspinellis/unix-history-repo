@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.c	8.1 (Berkeley) %G%
+ *	@(#)conf.c	8.2 (Berkeley) %G%
  *
  * $Id: conf.c,v 1.2 1992/05/27 07:09:27 jsp Exp jsp $
  */
@@ -214,7 +214,7 @@ qelem *xq;
 	 * and free it.
 	 */
 	while (q0->q_forw != q0) {
-		qelem *q = q->q_forw;
+		qelem *q = q0->q_forw;
 		rem_que(q);
 		pfree((path *) q);
 	}
