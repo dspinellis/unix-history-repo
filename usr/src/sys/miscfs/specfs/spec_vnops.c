@@ -4,24 +4,24 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)spec_vnops.c	7.38 (Berkeley) %G%
+ *	@(#)spec_vnops.c	7.39 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "proc.h"
-#include "systm.h"
-#include "kernel.h"
-#include "conf.h"
-#include "buf.h"
-#include "mount.h"
-#include "namei.h"
-#include "vnode.h"
-#include "specdev.h"
-#include "stat.h"
-#include "errno.h"
-#include "ioctl.h"
-#include "file.h"
-#include "disklabel.h"
+#include <sys/param.h>
+#include <sys/proc.h>
+#include <sys/systm.h>
+#include <sys/kernel.h>
+#include <sys/conf.h>
+#include <sys/buf.h>
+#include <sys/mount.h>
+#include <sys/namei.h>
+#include <sys/vnode.h>
+#include <sys/specdev.h>
+#include <sys/stat.h>
+#include <sys/errno.h>
+#include <sys/ioctl.h>
+#include <sys/file.h>
+#include <sys/disklabel.h>
 
 /* symbolic sleep message strings for devices */
 char	devopn[] = "devopn";
@@ -114,7 +114,7 @@ spec_open(vp, mode, cred, p)
 	case VBLK:
 		if ((u_int)maj >= nblkdev)
 			return (ENXIO);
-		if (error = mountedon(vp))
+		if (error = ufs_mountedon(vp))
 			return (error);
 		return ((*bdevsw[maj].d_open)(dev, mode, S_IFBLK, p));
 	}
