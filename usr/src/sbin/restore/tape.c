@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	3.14	(Berkeley)	83/05/06";
+static char sccsid[] = "@(#)tape.c	3.15	(Berkeley)	83/05/06";
 #endif
 
 #include "restore.h"
@@ -228,8 +228,9 @@ gethdr:
 		goto again;
 	}
 	if (tmpbuf.c_date != dumpdate || tmpbuf.c_ddate != dumptime) {
-		fprintf(stderr, "Wrong dump date\n\tgot: %s\twanted %s",
-			ctime(&tmpbuf.c_date), ctime(dumpdate));
+		fprintf(stderr, "Wrong dump date\n\tgot: %s",
+			ctime(&tmpbuf.c_date));
+		fprintf(stderr, "\twanted: %s", ctime(&dumpdate));
 		volno = 0;
 		goto again;
 	}
