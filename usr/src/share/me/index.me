@@ -1,5 +1,5 @@
 .nr _0 \n(c.
-.\"	@(#)index.me	2.7	%G%
+.\"	@(#)index.me	2.8	%G%
 .\"	%beginstrip%
 .de (x			\" *** begin index entry
 .if \n@>4 .tm >> (x, .z=\\n(.z
@@ -17,6 +17,7 @@
 \{\
 .	am %\\*(|X )x
 .	sp \\n(xsu
+.	ti -\\n(piu
 .\}
 ..
 .de )x			\" *** end index entry
@@ -49,6 +50,7 @@
 .ls 1
 .vs \\n(.su*\\n($Ru
 .fi
+.in +\\n(piu
 .ds |X x
 .if \\n(.$>0 \
 .	ds |X \\$1
