@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.50 (Berkeley) %G%
+#	@(#)Makefile	5.51 (Berkeley) %G%
 #
 # Doing a make install builds /usr/include
 #
@@ -20,7 +20,7 @@ MFILES=	float.h frame.h stdarg.h varargs.h
 LFILES=	errno.h fcntl.h syslog.h termios.h
 
 DIRS=arpa protocols
-LDIRS=	net netccitt netimp netinet netiso netns netrmp nfs sys ufs vm
+LDIRS=	miscfs net netccitt netimp netinet netiso netns netrmp nfs sys ufs vm
 
 NOOBJ=	noobj
 
