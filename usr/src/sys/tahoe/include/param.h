@@ -1,4 +1,4 @@
-/*	param.h	1.3	86/01/24	*/
+/*	param.h	1.4	86/10/13	*/
 
 /*
  * Machine dependent constants for TAHOE.
