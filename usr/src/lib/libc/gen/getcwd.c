@@ -1,4 +1,4 @@
-/*	@(#)getcwd.c	4.8	(Berkeley)	%G%	*/
+/*	@(#)getcwd.c	4.9	(Berkeley)	%G%	*/
 
 /*
  * getwd() returns the pathname of the current working directory. On error
@@ -68,7 +68,7 @@ getwd(pathname)
 					GETWDERR("getwd: read error in ..");
 					goto fail;
 				}
-				stat(dir->d_name, &dd);
+				lstat(dir->d_name, &dd);
 			} while(dd.st_ino != d.st_ino || dd.st_dev != d.st_dev);
 		closedir(dirp);
 		pnptr = prepend(PATHSEP, prepend(dir->d_name, pnptr));
