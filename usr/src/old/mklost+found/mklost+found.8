@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)mklost+found.8	4.1 (Berkeley) %G%
+.\"	@(#)mklost+found.8	5.1 (Berkeley) %G%
 .\"
-.TH MKLOST+FOUND 8 "4/1/81"
+.TH MKLOST+FOUND 8 "25 February 1983"
 .UC 4
 .SH NAME
 mklost+found \- make a lost+found directory for fsck
@@ -17,10 +17,11 @@ is created in the current directory and a number of empty files
 are created therein and then removed so that there will be
 empty slots for
 .IR fsck (8).
-This command should be run immediately after first mounting a newly
-created file system.
-.SH SEE\ ALSO
-fsck(8), mkfs(8)
-.SH BUGS
-Should be done automatically by
-.I mkfs.
+This command should not normally be needed since 
+.IR mkfs (8)
+automatically creates the
+.I lost+found
+directory when a new file system is created.
+.SH "SEE ALSO"
+fsck(8),
+mkfs(8)
