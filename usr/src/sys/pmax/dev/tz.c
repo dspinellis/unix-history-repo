@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tz.c	8.1 (Berkeley) %G%
+ *	@(#)tz.c	7.10 (Berkeley) %G%
  *
  * from: $Header: /sprite/src/kernel/dev/RCS/devSCSITape.c,
  *	v 8.14 89/07/31 17:26:13 mendel Exp $ SPRITE (Berkeley)
@@ -487,7 +487,7 @@ tzopen(dev, flags, type, p)
 	register struct tz_softc *sc = &tz_softc[unit];
 	int error;
 
-	if (unit >= NTZ)
+	if (unit >= NTZ || sc->sc_sd == NULL)
 		return (ENXIO);
 	if (!(sc->sc_flags & TZF_ALIVE)) {
 		/* check again, tape may have been turned off at boot time */
