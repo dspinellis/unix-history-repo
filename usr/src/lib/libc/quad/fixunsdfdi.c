@@ -10,14 +10,10 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fixunsdfdi.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)fixunsdfdi.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include "quad.h"
-
-#ifndef UQUAD_MAX	/* should be in <limits.h> maybe? */
-#define	UQUAD_MAX ((u_quad)0 - 1)
-#endif
 
 #define	ONE_FOURTH	(1 << (LONG_BITS - 2))
 #define	ONE_HALF	(ONE_FOURTH * 2.0)
@@ -28,8 +24,9 @@ static char sccsid[] = "@(#)fixunsdfdi.c	5.3 (Berkeley) %G%";
  * Not sure what to do with negative numbers---for now, anything out
  * of range becomes UQUAD_MAX.
  */
-u_quad
-__fixunsdfdi(double x)
+u_quad_t
+__fixunsdfdi(x)
+	double x;
 {
 	double toppart;
 	union uu t;
@@ -45,7 +42,7 @@ __fixunsdfdi(double x)
 	 */
 	toppart = (x - ONE_HALF) / ONE;
 	/*
-	 * Now build a u_quad out of the top part.  The difference
+	 * Now build a u_quad_t out of the top part.  The difference
 	 * between x and this is the bottom part (this may introduce
 	 * a few fuzzy bits, but what the heck).  With any luck this
 	 * difference will be nonnegative: x should wind up in the

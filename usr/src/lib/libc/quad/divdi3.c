@@ -10,7 +10,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)divdi3.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)divdi3.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include "quad.h"
@@ -19,20 +19,21 @@ static char sccsid[] = "@(#)divdi3.c	5.3 (Berkeley) %G%";
  * Divide two signed quads.
  * ??? if -1/2 should produce -1 on this machine, this code is wrong
  */
-quad
-__divdi3(quad a, quad b)
+quad_t
+__divdi3(a, b)
+	quad_t a, b;
 {
-	u_quad ua, ub, uq;
+	u_quad_t ua, ub, uq;
 	int neg;
 
 	if (a < 0)
-		ua = -(u_quad)a, neg = 1;
+		ua = -(u_quad_t)a, neg = 1;
 	else
 		ua = a, neg = 0;
 	if (b < 0)
-		ub = -(u_quad)b, neg ^= 1;
+		ub = -(u_quad_t)b, neg ^= 1;
 	else
 		ub = b;
-	uq = __qdivrem(ua, ub, (u_quad *)0);
+	uq = __qdivrem(ua, ub, (u_quad_t *)0);
 	return (neg ? -uq : uq);
 }

@@ -10,7 +10,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)qdivrem.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)qdivrem.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -55,8 +55,9 @@ shl(register digit *p, register int len, register int sh)
  * divisor are 4 `digits' in this base (they are shorter if they have
  * leading zeros).
  */
-u_quad
-__qdivrem(u_quad uq, u_quad vq, u_quad *arq)
+u_quad_t
+__qdivrem(uq, vq, arq)
+	u_quad_t uq, vq, *arq;
 {
 	union uu tmp;
 	digit *u, *v, *q;

@@ -10,7 +10,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)lshldi3.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)lshldi3.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include "quad.h"
@@ -19,8 +19,10 @@ static char sccsid[] = "@(#)lshldi3.c	5.6 (Berkeley) %G%";
  * Shift an (unsigned) quad value left (logical shift left).
  * This is the same as arithmetic shift left!
  */
-quad
-__lshldi3(quad a, qshift_t shift)
+quad_t
+__lshldi3(a, shift)
+	quad_t a;
+	qshift_t shift;
 {
 	union uu aa;
 

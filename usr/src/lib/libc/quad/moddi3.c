@@ -10,7 +10,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)moddi3.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)moddi3.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include "quad.h"
@@ -21,18 +21,19 @@ static char sccsid[] = "@(#)moddi3.c	5.4 (Berkeley) %G%";
  * XXX
  * If -1/2 should produce -1 on this machine, this code is wrong.
  */
-quad
-__moddi3(quad a, quad b)
+quad_t
+__moddi3(a, b)
+	quad_t a, b;
 {
-	u_quad ua, ub, ur;
+	u_quad_t ua, ub, ur;
 	int neg;
 
 	if (a < 0)
-		ua = -(u_quad)a, neg = 1;
+		ua = -(u_quad_t)a, neg = 1;
 	else
 		ua = a, neg = 0;
 	if (b < 0)
-		ub = -(u_quad)b, neg ^= 1;
+		ub = -(u_quad_t)b, neg ^= 1;
 	else
 		ub = b;
 	(void)__qdivrem(ua, ub, &ur);

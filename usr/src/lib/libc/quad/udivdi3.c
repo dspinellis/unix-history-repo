@@ -10,7 +10,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)udivdi3.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)udivdi3.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include "quad.h"
@@ -18,9 +18,10 @@ static char sccsid[] = "@(#)udivdi3.c	5.3 (Berkeley) %G%";
 /*
  * Divide two unsigned quads.
  */
-u_quad
-__udivdi3(u_quad a, u_quad b)
+u_quad_t
+__udivdi3(a, b)
+	u_quad_t a, b;
 {
 
-	return (__qdivrem(a, b, (u_quad *)0));
+	return (__qdivrem(a, b, (u_quad_t *)0));
 }

@@ -10,7 +10,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)muldi3.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)muldi3.c	5.8 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include "quad.h"
@@ -72,10 +72,11 @@ static char sccsid[] = "@(#)muldi3.c	5.7 (Berkeley) %G%";
  * of 2^n in either one will also vanish.  Only `low' need be computed
  * mod 2^2n, and only because of the final term above.
  */
-static quad __lmulq(u_long, u_long);
+static quad_t __lmulq(u_long, u_long);
 
-quad
-__muldi3(quad a, quad b)
+quad_t
+__muldi3(a, b)
+	quad_t a, b;
 {
 	union uu u, v, low, prod;
 	register u_long high, mid, udiff, vdiff;
@@ -158,7 +159,7 @@ __muldi3(quad a, quad b)
  *
  * splits into high and low longs as HHALF(l) and LHUP(l) respectively.
  */
-static quad
+static quad_t
 __lmulq(u_long u, u_long v)
 {
 	u_long u1, u0, v1, v0, udiff, vdiff, high, mid, low;

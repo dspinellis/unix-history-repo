@@ -10,7 +10,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)negdi2.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)negdi2.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include "quad.h"
@@ -18,8 +18,9 @@ static char sccsid[] = "@(#)negdi2.c	5.4 (Berkeley) %G%";
 /*
  * Return -a (or, equivalently, 0 - a), in quad.  See subdi3.c.
  */
-quad
-__negdi2(quad a)
+quad_t
+__negdi2(a)
+	quad_t a;
 {
 	union uu aa, res;
 
