@@ -3,11 +3,12 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)machdep.c	7.20 (Berkeley) %G%
+ *	@(#)machdep.c	7.17.1.1 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
+#include "dir.h"
 #include "user.h"
 #include "kernel.h"
 #include "malloc.h"
@@ -17,12 +18,7 @@
 #include "buf.h"
 #include "reboot.h"
 #include "conf.h"
-#include "vnode.h"
-#include "../ufs/inode.h"
-#ifdef NFS
-#include "mount.h"
-#include "../nfs/nfsnode.h"
-#endif /* NFS */
+#include "inode.h"
 #include "file.h"
 #include "text.h"
 #include "clist.h"
@@ -30,7 +26,7 @@
 #include "cmap.h"
 #include "mbuf.h"
 #include "msgbuf.h"
-#include "../ufs/quota.h"
+#include "quota.h"
 
 #include "reg.h"
 #include "pte.h"
@@ -63,7 +59,6 @@ int	bufpages = BUFPAGES;
 int	bufpages = 0;
 #endif
 int	msgbufmapped;		/* set when safe to use msgbuf */
-int	physmem = MAXMEM;	/* max supported memory, changes to actual */
 
 /*
  * Machine-dependent startup code
@@ -81,10 +76,10 @@ startup(firstaddr)
 	/*
 	 * Initialize error message buffer (at end of core).
 	 */
-	maxmem = physmem - btoc(sizeof (struct msgbuf));
+	maxmem -= btoc(sizeof (struct msgbuf));
 	pte = msgbufmap;
-	for (i = 1; i < btoc(sizeof (struct msgbuf)) + 1; i++)
-		*(int *)pte++ = PG_V | PG_KW | (physmem - i);
+	for (i = 0; i < btoc(sizeof (struct msgbuf)); i++)
+		*(int *)pte++ = PG_V | PG_KW | (maxmem + i);
 	mtpr(TBIA, 0);
 	msgbufmapped = 1;
 
@@ -112,7 +107,7 @@ startup(firstaddr)
 	 * Good {morning,afternoon,evening,night}.
 	 */
 	printf(version);
-	printf("real mem = %d\n", ctob(physmem));
+	printf("real mem  = %d\n", ctob(physmem));
 
 	/*
 	 * Allocate space for system data structures.
@@ -130,9 +125,6 @@ startup(firstaddr)
 #define	valloclim(name, type, num, lim) \
 	    (name) = (type *)v; v = (caddr_t)((lim) = ((name)+(num)))
 	valloclim(inode, struct inode, ninode, inodeNINODE);
-#ifdef NFS
-	valloclim(nfsnode, struct nfsnode, nnfsnode, nfsnodeNNFSNODE);
-#endif /* NFS */
 	valloclim(file, struct file, nfile, fileNFILE);
 	valloclim(proc, struct proc, nproc, procNPROC);
 	valloclim(text, struct text, ntext, textNTEXT);
@@ -576,11 +568,11 @@ boot(howto)
 		(void) splnet();
 		printf("syncing disks... ");
 		/*
-		 * Release inodes held by texts before sync.
+		 * Release inodes held by texts before update.
 		 */
 		if (panicstr == 0)
-			xumount(NULL);
-		sync();
+			xumount(NODEV);
+		update();
 
 		for (iter = 0; iter < 20; iter++) {
 			nbusy = 0;
@@ -726,27 +718,6 @@ tocons(c)
 
 int	dumpmag = 0x8fca0101;	/* magic number for savecore */
 int	dumpsize = 0;		/* also for savecore */
-
-dumpconf()
-{
-	int nblks;
-
-	dumpsize = physmem;
-	if (dumpdev != NODEV && bdevsw[major(dumpdev)].d_psize) {
-		nblks = (*bdevsw[major(dumpdev)].d_psize)(dumpdev);
-		if (dumpsize > btoc(dbtob(nblks - dumplo)))
-			dumpsize = btoc(dbtob(nblks - dumplo));
-		else if (dumplo == 0)
-			dumplo = nblks - btodb(ctob(physmem));
-	}
-	/*
-	 * Don't dump on the first CLSIZE pages,
-	 * in case the dump device includes a disk label.
-	 */
-	if (dumplo < CLSIZE)
-		dumplo = CLSIZE;
-}
-
 /*
  * Doadump comes here after turning off memory management and
  * getting on the dump stack, either when called above, or by
@@ -763,10 +734,11 @@ dumpsys()
 	 * For dumps during autoconfiguration,
 	 * if dump device has already configured...
 	 */
-	if (dumpsize == 0)
-		dumpconf();
+	if (dumplo == 0 && bdevsw[major(dumpdev)].d_psize)
+		dumplo = (*bdevsw[major(dumpdev)].d_psize)(dumpdev) - physmem;
 	if (dumplo < 0)
-		return;
+		dumplo = 0;
+	dumpsize = physmem;
 	printf("\ndumping to dev %x, offset %d\n", dumpdev, dumplo);
 	printf("dump ");
 	switch ((*bdevsw[major(dumpdev)].d_dump)(dumpdev)) {
@@ -779,7 +751,7 @@ dumpsys()
 		printf("device not ready\n");
 		break;
 
-	case EINVAL:					/* XXX */
+	case EINVAL:
 		printf("area improper\n");
 		break;
 
