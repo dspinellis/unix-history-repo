@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ttgeneric.c	3.27 %G%";
+static char sccsid[] = "@(#)ttgeneric.c	3.28 %G%";
 #endif
 
 /*
@@ -161,7 +161,6 @@ gen_write(p, n)
 		gen_setinsert(tt.tt_ninsert);
 	if (tt.tt_nmodes != tt.tt_modes)
 		gen_setmodes(tt.tt_nmodes);
-	tt.tt_col += n;
 	if (tt.tt_insert && (gen_IC || gen_IP)) {
 		while (--n >= 0) {
 			if (gen_IC)
