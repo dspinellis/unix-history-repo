@@ -1,5 +1,5 @@
 #! /bin/sh
-#	@(#)MAKEDEV	5.4	%G%
+#	@(#)MAKEDEV	5.5	%G%
 #
 # Device "make" file.  Valid arguments:
 #	std	standard devices
@@ -147,25 +147,19 @@ pty*)
 	0) offset=0 name=p;;
 	1) offset=16 name=q;;
 	2) offset=32 name=r;;
-	3) offset=32 name=s;;
+	3) offset=48 name=s;;
+	4) offset=64 name=s;;
+	5) offset=80 name=s;;
 	*) echo bad unit for pty in: $i;;
 	esac
 	case $class in
-	0|1|2|3)
+	0|1|2|3|4|5)
 		umask 0
 		eval `echo $offset $name | awk ' { b=$1; n=$2 } END {
 			for (i = 0; i < 16; i++)
 				printf("/etc/mknod tty%s%x c 9 %d; \
 					/etc/mknod pty%s%x c 10 %d; ", \
 					n, i, b+i, n, i, b+i); }'`
-		ls -1 tty?? | grep [A-F] | while read x; do
-			y=`echo $x | tr [A-F] [a-f]`
-			mv $x $y
-		done
-		ls -1 pty?? | grep [A-F] | while read x; do
-			y=`echo $x | tr [A-F] [a-f]`
-			mv $x $y
-		done
 		umask 77
 		;;
 	esac
