@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_subr2.c	7.15 (Berkeley) %G%
+ *	@(#)tp_subr2.c	7.16 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -116,7 +116,7 @@ tp_local_credit(tpcb)
 	LOCAL_CREDIT(tpcb);
 	IFDEBUG(D_CREDIT)
 		printf("ref 0x%x lcdt 0x%x l_tpdusize 0x%x decbit 0x%x\n",
-			tpcb->tp_refp - tp_ref, 
+			tpcb->tp_lref, 
 			tpcb->tp_lcredit, 
 			tpcb->tp_l_tpdusize, 
 			tpcb->tp_decbit, 

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_pcb.h	7.17 (Berkeley) %G%
+ *	@(#)tp_pcb.h	7.18 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -129,12 +129,12 @@ struct tp_pcb {
 	struct tp_pcb		*tp_next;
 	struct tp_pcb		*tp_prev;
 	struct tp_pcb		*tp_nextlisten; /* chain all listeners */
+	struct socket 		*tp_sock;		/* back ptr */
 	u_short 			tp_state;		/* state of fsm */
 	short 				tp_retrans;		/* # times can still retrans */
-	struct tp_ref 		*tp_refp;		/* rest of pcb	*/
 	caddr_t				tp_npcb;		/* to lower layer pcb */
 	struct nl_protosw	*tp_nlproto;	/* lower-layer dependent routines */
-	struct socket 		*tp_sock;		/* back ptr */
+	struct rtentry		**tp_routep;	/* obtain mtu; inside npcb */
 
 
 	RefNum				tp_lref;	 	/* local reference */
