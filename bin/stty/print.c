@@ -74,6 +74,9 @@ print(tp, wp, ldisc, fmt)
 		case NTTYDISC:
 			cnt += printf("new tty disc; ");
 			break;
+		case PPPDISC:
+			cnt += printf("ppp disc; ");
+			break;
 		default:	
 			cnt += printf("#%d disc; ", ldisc);
 			break;
