@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: $Hdr: dcm.c 1.17 89/10/01$
+ * from: $Hdr: dcm.c 1.1 90/07/09$
  *
- *	@(#)dcm.c	7.8 (Berkeley) %G%
+ *	@(#)dcm.c	7.9 (Berkeley) %G%
  */
 
 /*
@@ -56,6 +56,7 @@ struct	driver dcmdriver = {
 #define NDCMLINE (NDCM*4)
 
 struct	tty dcm_tty[NDCMLINE];
+struct	modemreg *dcm_modem[NDCMLINE];
 char	mcndlast[NDCMLINE];	/* XXX last modem status for line */
 int	ndcm = NDCMLINE;
 
@@ -123,7 +124,7 @@ extern int kgdb_debug_init;
 /* #define IOSTATS */
 
 #ifdef DEBUG
-int	dcmdebug = 0x00;
+int	dcmdebug = 0x0;
 #define DDB_SIOERR	0x01
 #define DDB_PARAM	0x02
 #define DDB_INPUT	0x04
@@ -234,7 +235,16 @@ dcmprobe(hd)
 		dcmsetischeme(brd, DIS_RESET|DIS_TIMER);
 	else
 		dcmsetischeme(brd, DIS_RESET|DIS_PERCHAR);
-	dcm->dcm_mdmmsk = MI_CD|MI_CTS;	/* DCD (modem) and CTS (flow ctrl) */
+
+	/* load pointers to modem control */
+	dcm_modem[MKUNIT(brd, 0)] = &dcm->dcm_modem0;
+	dcm_modem[MKUNIT(brd, 1)] = &dcm->dcm_modem1;
+	dcm_modem[MKUNIT(brd, 2)] = &dcm->dcm_modem2;
+	dcm_modem[MKUNIT(brd, 3)] = &dcm->dcm_modem3;
+	/* set DCD (modem) and CTS (flow control) on all ports */
+	for (i = 0; i < 4; i++)
+		dcm_modem[MKUNIT(brd, i)]->mdmmsk = MI_CD|MI_CTS;
+
 	dcm->dcm_ic = IC_IE;		/* turn all interrupts on */
 	/*
 	 * Need to reset baud rate, etc. of next print so reset dcmconsole.
@@ -278,14 +288,16 @@ dcmopen(dev, flag)
 		ttsetwater(tp);
 	} else if (tp->t_state&TS_XCLUDE && u.u_uid != 0)
 		return (EBUSY);
-	if (PORT(unit) == 0)	/* enable port 0 */
-		(void) dcmmctl(dev, MO_ON, DMSET);
+	(void) dcmmctl(dev, MO_ON, DMSET);	/* enable port */
 	if (dcmsoftCAR[brd] & (1 << PORT(unit)))
-		tp->t_state |= TS_CARR_ON;
-	else if (PORT(unit))		/* Only port 0 has modem control */
 		tp->t_state |= TS_CARR_ON;
 	else if (dcmmctl(dev, MO_OFF, DMGET) & MI_CD)
 		tp->t_state |= TS_CARR_ON;
+#ifdef DEBUG
+	if (dcmdebug & DDB_MODEM)
+		printf("dcm%d: dcmopen port %d softcarr %c\n",
+		       brd, unit, (tp->t_state & TS_CARR_ON) ? '1' : '0');
+#endif
 	(void) spltty();
 	while ((flag&O_NONBLOCK) == 0 && (tp->t_cflag&CLOCAL) == 0 &&
 	       (tp->t_state & TS_CARR_ON) == 0) {
@@ -295,6 +307,7 @@ dcmopen(dev, flag)
 			break;
 	}
 	(void) spl0();
+
 #ifdef DEBUG
 	if (dcmdebug & DDB_OPENCLOSE)
 		printf("dcmopen: u %x st %x fl %x\n",
@@ -361,7 +374,9 @@ dcmintr(brd)
 {
 	register struct dcmdevice *dcm = dcm_addr[brd];
 	register struct dcmischeme *dis;
-	int i, code, pcnd[4], mcnd, delta;
+	register int unit = MKUNIT(brd, 0);
+	register int code, i;
+	int pcnd[4], mcode, mcnd[4];
 
 	/*
 	 * Do all guarded register accesses right off to minimize
@@ -375,29 +390,42 @@ dcmintr(brd)
 	for (i = 0; i < 4; i++) {
 		pcnd[i] = dcm->dcm_icrtab[i].dcm_data;
 		dcm->dcm_icrtab[i].dcm_data = 0;
+		mcnd[i] = dcm_modem[unit+i]->mdmin;
 	}
-	mcnd = dcm->dcm_mdmin;
 	code = dcm->dcm_iir & IIR_MASK;
 	dcm->dcm_iir = 0;	/* XXX doc claims read clears interrupt?! */
+	mcode = dcm->dcm_modemintr;
+	dcm->dcm_modemintr = 0;
 	SEM_UNLOCK(dcm);
 
 #ifdef DEBUG
-	if (dcmdebug & DDB_INTR)
-		printf("dcmintr(%d): iir %x p0 %x p1 %x p2 %x p3 %x m %x\n", 
-		       brd, code, pcnd[0], pcnd[1], pcnd[2], pcnd[3], mcnd);
+	if (dcmdebug & DDB_INTR) {
+		printf("dcmintr(%d): iir %x pc %x/%x/%x/%x ",
+		       brd, code, pcnd[0], pcnd[1], pcnd[2], pcnd[3]); 
+		printf("miir %x mc %x/%x/%x/%x\n",
+		       mcode, mcnd[0], mcnd[1], mcnd[2], mcnd[3]);
+	}
 #endif
 	if (code & IIR_TIMEO)
 		dcmrint(brd, dcm);
 	if (code & IIR_PORT0)
-		dcmpint(MKUNIT(brd, 0), pcnd[0], dcm);
+		dcmpint(unit+0, pcnd[0], dcm);
 	if (code & IIR_PORT1)
-		dcmpint(MKUNIT(brd, 1), pcnd[1],  dcm);
+		dcmpint(unit+1, pcnd[1], dcm);
 	if (code & IIR_PORT2)
-		dcmpint(MKUNIT(brd, 2), pcnd[2], dcm);
+		dcmpint(unit+2, pcnd[2], dcm);
 	if (code & IIR_PORT3)
-		dcmpint(MKUNIT(brd, 3), pcnd[3], dcm);
-	if (code & IIR_MODM)
-		dcmmint(MKUNIT(brd, 0), mcnd, dcm);	/* XXX always port 0 */
+		dcmpint(unit+3, pcnd[3], dcm);
+	if (code & IIR_MODM) {
+		if (mcode == 0 || mcode & 0x1)	/* mcode==0 -> 98642 board */
+			dcmmint(unit+0, mcnd[0], dcm);
+		if (mcode & 0x2)
+			dcmmint(unit+1, mcnd[1], dcm);
+		if (mcode & 0x4)
+			dcmmint(unit+2, mcnd[2], dcm);
+		if (mcode & 0x8)
+			dcmmint(unit+3, mcnd[3], dcm);
+	}
 
 	dis = &dcmischeme[brd];
 	/*
@@ -411,7 +439,7 @@ dcmintr(brd)
 	 * See if it is time to check/change the interrupt rate.
 	 */
 	if (dcmistype < 0 &&
-	    (delta = time.tv_sec - dis->dis_time) >= dcminterval) {
+	    (i = time.tv_sec - dis->dis_time) >= dcminterval) {
 		/*
 		 * If currently per-character and averaged over 70 interrupts
 		 * per-second (66 is threshold of 600 baud) in last interval,
@@ -419,7 +447,7 @@ dcmintr(brd)
 		 *
 		 * XXX decay counts ala load average to avoid spikes?
 		 */
-		if (dis->dis_perchar && dis->dis_intr > 70 * delta)
+		if (dis->dis_perchar && dis->dis_intr > 70 * i)
 			dcmsetischeme(brd, DIS_TIMER);
 		/*
 		 * If currently using timer and had more interrupts than
@@ -581,7 +609,7 @@ dcmmint(unit, mcnd, dcm)
 
 #ifdef DEBUG
 	if (dcmdebug & DDB_MODEM)
-		printf("dcmmint: unit %x mcnd %x mcndlast\n",
+		printf("dcmmint: port %d mcnd %x mcndlast %x\n",
 		       unit, mcnd, mcndlast[unit]);
 #endif
 	tp = &dcm_tty[unit];
@@ -592,8 +620,9 @@ dcmmint(unit, mcnd, dcm)
 		if (mcnd & MI_CD)
 			(void)(*linesw[tp->t_line].l_modem)(tp, 1);
 		else if ((*linesw[tp->t_line].l_modem)(tp, 0) == 0) {
-			dcm->dcm_mdmout &= ~(MO_DTR|MO_RTS);
+			dcm_modem[unit]->mdmout &= ~(MO_DTR|MO_RTS);
 			SEM_LOCK(dcm);
+			dcm->dcm_modemchng |= 1<<(unit & 3);
 			dcm->dcm_cr |= CR_MODM;
 			SEM_UNLOCK(dcm);
 			DELAY(10); /* time to change lines */
@@ -898,47 +927,49 @@ dcmstop(tp, flag)
 	splx(s);
 }
  
-/* Modem control */
-
+/*
+ * Modem control
+ */
 dcmmctl(dev, bits, how)
 	dev_t dev;
 	int bits, how;
 {
 	register struct dcmdevice *dcm;
-	int s, hit = 0;
+	int s, unit, hit = 0;
 
-	/*
-	 * Only port 0 has modem control lines.
-	 * XXX ok for now but needs to changed for the 8 port board.
-	 */
-	if (PORT(UNIT(dev)) != 0)
-		return(bits);
+	unit = UNIT(dev);
+#ifdef DEBUG
+	if (dcmdebug & DDB_MODEM)
+		printf("dcmmctl(%d) unit %d  bits 0x%x how %x\n",
+		       BOARD(unit), unit, bits, how);
+#endif
 
-	dcm = dcm_addr[BOARD(UNIT(dev))];
+	dcm = dcm_addr[BOARD(unit)];
 	s = spltty();
 	switch (how) {
 
 	case DMSET:
-		dcm->dcm_mdmout = bits;
+		dcm_modem[unit]->mdmout = bits;
 		hit++;
 		break;
 
 	case DMBIS:
-		dcm->dcm_mdmout |= bits;
+		dcm_modem[unit]->mdmout |= bits;
 		hit++;
 		break;
 
 	case DMBIC:
-		dcm->dcm_mdmout &= ~bits;
+		dcm_modem[unit]->mdmout &= ~bits;
 		hit++;
 		break;
 
 	case DMGET:
-		bits = dcm->dcm_mdmin;
+		bits = dcm_modem[unit]->mdmin;
 		break;
 	}
 	if (hit) {
 		SEM_LOCK(dcm);
+		dcm->dcm_modemchng |= 1<<(unit & 3);
 		dcm->dcm_cr |= CR_MODM;
 		SEM_UNLOCK(dcm);
 		DELAY(10); /* delay until done */

@@ -11,26 +11,27 @@
  *
  * from: Utah $Hdr: mem.c 1.13 89/10/08$
  *
- *	@(#)mem.c	7.1 (Berkeley) %G%
+ *	@(#)mem.c	7.2 (Berkeley) %G%
  */
 
 /*
  * Memory special file
  */
 
-#include "pte.h"
-
 #include "param.h"
 #include "user.h"
 #include "conf.h"
 #include "buf.h"
 #include "systm.h"
-#include "vm.h"
 #include "cmap.h"
 #include "uio.h"
 #include "malloc.h"
 
 #include "cpu.h"
+
+#include "../vm/vm_param.h"
+#include "../vm/pmap.h"
+#include "../vm/vm_prot.h"
 
 /*ARGSUSED*/
 mmrw(dev, uio, flags)
@@ -62,24 +63,25 @@ mmrw(dev, uio, flags)
 #ifndef DEBUG
 			/* allow reads only in RAM (except for DEBUG) */
 			if (v >= 0xFFFFFFFC || v < lowram)
-				goto fault;
+				return (EFAULT);
 #endif
-			*(int *)mmap = (v & PG_FRAME) | PG_CI | PG_V |
-				(uio->uio_rw == UIO_READ ? PG_RO : PG_RW);
-			TBIS(vmmap);
+			pmap_enter(pmap_kernel(), vmmap, v,
+				uio->uio_rw == UIO_READ ? VM_PROT_READ : VM_PROT_WRITE,
+				TRUE);
 			o = (int)uio->uio_offset & PGOFSET;
 			c = (u_int)(NBPG - ((int)iov->iov_base & PGOFSET));
 			c = MIN(c, (u_int)(NBPG - o));
 			c = MIN(c, (u_int)iov->iov_len);
 			error = uiomove((caddr_t)&vmmap[o], (int)c, uio);
+			pmap_remove(pmap_kernel(), vmmap, &vmmap[NBPG]);
 			continue;
 
 /* minor device 1 is kernel memory */
 		case 1:
-			c = iov->iov_len;
+			c = MIN(iov->iov_len, MAXPHYS);
 			if (!kernacc((caddr_t)uio->uio_offset, c,
 			    uio->uio_rw == UIO_READ ? B_READ : B_WRITE))
-				goto fault;
+				return (EFAULT);
 			error = uiomove((caddr_t)uio->uio_offset, (int)c, uio);
 			continue;
 
@@ -118,6 +120,4 @@ mmrw(dev, uio, flags)
 	if (zbuf)
 		free(zbuf, M_TEMP);
 	return (error);
-fault:
-	return (EFAULT);
 }

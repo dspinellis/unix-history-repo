@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: hpux_compat.c 1.33 89/08/23$
+ * from: Utah $Hdr: hpux_compat.c 1.3 90/09/17$
  *
- *	@(#)hpux_compat.c	7.9 (Berkeley) %G%
+ *	@(#)hpux_compat.c	7.10 (Berkeley) %G%
  */
 
 /*
@@ -48,9 +48,6 @@
 #ifdef DEBUG
 int unimpresponse = 0;
 #endif
-
-/* "tick" value for HZ==50 */
-int hpuxtick = 1000000 / 50;
 
 /* SYS5 style UTSNAME info */
 struct hpuxutsname protoutsname = {
@@ -386,7 +383,7 @@ hpuxdup(p, uap, retval)
 	return (0);
 }
 
-hpuxuname(p, uap, retval)
+hpuxutssys(p, uap, retval)
 	struct proc *p;
 	register struct args {
 		struct hpuxutsname *uts;
@@ -434,8 +431,20 @@ hpuxuname(p, uap, retval)
 		error = copyout((caddr_t)&protoutsname, (caddr_t)uap->uts,
 				sizeof(struct hpuxutsname));
 		break;
-	/* ustat - who cares? */
-	case 2:
+
+	/* gethostname */
+	case 5:
+		/* uap->dev is length */
+		if (uap->dev > hostnamelen + 1)
+			uap->dev = hostnamelen + 1;
+		error = copyout((caddr_t)hostname, (caddr_t)uap->uts,
+				uap->dev);
+		break;
+
+	case 1:	/* ?? */
+	case 2:	/* ustat */
+	case 3:	/* ?? */
+	case 4:	/* sethostname */
 	default:
 		error = EINVAL;
 		break;
@@ -523,12 +532,12 @@ hpuxulimit(p, uap, retval)
 		/* else fall into... */
 
 	case 1:
-		*retval = limp->rlim_max / 512;		/* XXX */
+		*retval = limp->rlim_max / 512;
 		break;
 
 	case 3:
 		limp = &u.u_rlimit[RLIMIT_DATA];
-		*retval = ctob(u.u_tsize) + limp->rlim_max;	/* XXX */
+		*retval = ctob(u.u_tsize) + limp->rlim_max;
 		break;
 
 	default:
@@ -967,25 +976,6 @@ hpuxgetcontext(p, uap, retval)
 }
 
 /*
- * XXX: simple recognition hack to see if we can make grmd work.
- */
-hpuxlockf(p, uap, retval)
-	struct proc *p;
-	struct args {
-		int fd;
-		int func;
-		long size;
-	} *uap;
-	int *retval;
-{
-#ifdef DEBUG
-	log(LOG_DEBUG, "%d: lockf(%d, %d, %d)\n",
-	    p->p_pid, uap->fd, uap->func, uap->size);
-#endif
-	return (0);
-}
-
-/*
  * This is the equivalent of BSD getpgrp but with more restrictions.
  * Note we do not check the real uid or "saved" uid.
  */
@@ -1025,6 +1015,158 @@ hpuxsetpgrp2(p, uap, retval)
 	if (uap->pgrp < 0 || uap->pgrp >= 30000)
 		return (EINVAL);
 	return (setpgrp(p, uap, retval));
+}
+
+/*
+ * XXX Same as BSD setre[ug]id right now.  Need to consider saved ids.
+ */
+hpuxsetresuid(p, uap, retval)
+	struct proc *p;
+	struct args {
+		int	ruid;
+		int	euid;
+		int	suid;
+	} *uap;
+	int *retval;
+{
+	return (osetreuid(p, uap, retval));
+}
+
+hpuxsetresgid(p, uap, retval)
+	struct proc *p;
+	struct args {
+		int	rgid;
+		int	egid;
+		int	sgid;
+	} *uap;
+	int *retval;
+{
+	return (osetregid(p, uap, retval));
+}
+
+/*
+ * XXX: simple recognition hack to see if we can make grmd work.
+ */
+hpuxlockf(p, uap, retval)
+	struct proc *p;
+	struct args {
+		int fd;
+		int func;
+		long size;
+	} *uap;
+	int *retval;
+{
+#ifdef DEBUG
+	log(LOG_DEBUG, "%d: lockf(%d, %d, %d)\n",
+	    p->p_pid, uap->fd, uap->func, uap->size);
+#endif
+	return (0);
+}
+
+hpuxgetaccess(p, uap, retval)
+	register struct proc *p;
+	register struct args {
+		char	*path;
+		int	uid;
+		int	ngroups;
+		int	*gidset;
+		void	*label;
+		void	*privs;
+	} *uap;
+	int *retval;
+{
+	struct nameidata *ndp = &u.u_nd;
+	int lgroups[NGROUPS];
+	int error = 0;
+	register struct ucred *cred;
+	register struct vnode *vp;
+
+	/*
+	 * Build an appropriate credential structure
+	 */
+	cred = crdup(ndp->ni_cred);
+	switch (uap->uid) {
+	case 65502:	/* UID_EUID */
+		break;
+	case 65503:	/* UID_RUID */
+		cred->cr_uid = p->p_ruid;
+		break;
+	case 65504:	/* UID_SUID */
+		error = EINVAL;
+		break;
+	default:
+		if (uap->uid > 65504)
+			error = EINVAL;
+		cred->cr_uid = uap->uid;
+		break;
+	}
+	switch (uap->ngroups) {
+	case -1:	/* NGROUPS_EGID */
+		cred->cr_ngroups = 1;
+		break;
+	case -5:	/* NGROUPS_EGID_SUPP */
+		break;
+	case -2:	/* NGROUPS_RGID */
+		cred->cr_ngroups = 1;
+		cred->cr_gid = p->p_rgid;
+		break;
+	case -6:	/* NGROUPS_RGID_SUPP */
+		cred->cr_gid = p->p_rgid;
+		break;
+	case -3:	/* NGROUPS_SGID */
+	case -7:	/* NGROUPS_SGID_SUPP */
+		error = EINVAL;
+		break;
+	case -4:	/* NGROUPS_SUPP */
+		if (cred->cr_ngroups > 1)
+			cred->cr_gid = cred->cr_groups[1];
+		else
+			error = EINVAL;
+		break;
+	default:
+		if (uap->ngroups > 0 && uap->ngroups <= NGROUPS)
+			error = copyin((caddr_t)uap->gidset,
+				       (caddr_t)&lgroups[0],
+				       uap->ngroups * sizeof(lgroups[0]));
+		else
+			error = EINVAL;
+		if (error == 0) {
+			int gid;
+
+			for (gid = 0; gid < uap->ngroups; gid++)
+				cred->cr_groups[gid] = lgroups[gid];
+			cred->cr_ngroups = uap->ngroups;
+		}
+		break;
+	}
+	/*
+	 * Lookup file using caller's effective IDs.
+	 */
+	if (error == 0) {
+		ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
+		ndp->ni_segflg = UIO_USERSPACE;
+		ndp->ni_dirp = uap->path;
+		error = namei(ndp);
+	}
+	if (error) {
+		crfree(cred);
+		return (error);
+	}
+	/*
+	 * Use the constructed credentials for access checks.
+	 */
+	vp = ndp->ni_vp;
+	*retval = 0;
+	if (VOP_ACCESS(vp, VREAD, cred) == 0)
+		*retval |= R_OK;
+	if (vn_writechk(vp) == 0 && VOP_ACCESS(vp, VWRITE, cred) == 0)
+		*retval |= W_OK;
+	/* XXX we return X_OK for root on VREG even if not */
+	if (VOP_ACCESS(vp, VEXEC, cred) == 0)
+		*retval |= X_OK;
+	vput(vp);
+	crfree(cred);
+	return (error);
 }
 
 /*
@@ -1187,6 +1329,8 @@ hpuxdumpu(vp, cred)
  */
 /* #ifdef COMPAT */
 
+#define HPUX_HZ	50
+
 #include "../sys/times.h"
 
 /* from old timeb.h */
@@ -1222,6 +1366,7 @@ ohpuxsetpgrp(p, uap, retval)
 	if (p->p_pid != p->p_pgid)
 		pgmv(p, p->p_pid, 0);
 	*retval = p->p_pgid;
+	return (0);
 }
 
 ohpuxtime(p, uap, retval)
@@ -1231,12 +1376,12 @@ ohpuxtime(p, uap, retval)
 	} *uap;
 	time_t *retval;
 {
-	int error;
+	int error = 0;
 
 	if (uap->tp)
 		error = copyout((caddr_t)&time.tv_sec, (caddr_t)uap->tp,
 				sizeof (long));
-	*retval = time.tv_sec;		/* XXX */
+	*retval = time.tv_sec;
 	return (error);
 }
 
@@ -1333,27 +1478,25 @@ ohpuxtimes(p, uap, retval)
 	struct tms atms;
 	int error;
 
-	atms.tms_utime = scale50(&u.u_ru.ru_utime);
-	atms.tms_stime = scale50(&u.u_ru.ru_stime);
-	atms.tms_cutime = scale50(&u.u_cru.ru_utime);
-	atms.tms_cstime = scale50(&u.u_cru.ru_stime);
+	atms.tms_utime = hpuxscale(&u.u_ru.ru_utime);
+	atms.tms_stime = hpuxscale(&u.u_ru.ru_stime);
+	atms.tms_cutime = hpuxscale(&u.u_cru.ru_utime);
+	atms.tms_cstime = hpuxscale(&u.u_cru.ru_stime);
 	error = copyout((caddr_t)&atms, (caddr_t)uap->tmsb, sizeof (atms));
 	if (error == 0)
-		*retval = scale50(&time) - scale50(&boottime); /* XXX */
+		*retval = hpuxscale(&time) - hpuxscale(&boottime);
 	return (error);
 }
 
-scale50(tvp)
+/*
+ * Doesn't exactly do what the documentation says.
+ * What we really do is return 1/HPUX_HZ-th of a second since that
+ * is what HP-UX returns.
+ */
+hpuxscale(tvp)
 	register struct timeval *tvp;
 {
-	extern int hpuxtick;
-
-	/*
-	 * Doesn't exactly do what the documentation says.
-	 * What we really do is return 50th of a second since that
-	 * is what HZ is on all bobcats I know of.
-	 */
-	return ((tvp->tv_sec * 50 + tvp->tv_usec / hpuxtick));
+	return (tvp->tv_sec * HPUX_HZ + tvp->tv_usec * HPUX_HZ / 1000000);
 }
 
 /*

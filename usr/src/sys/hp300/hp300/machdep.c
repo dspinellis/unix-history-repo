@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: machdep.c 1.51 89/11/28$
  *
- *	@(#)machdep.c	7.7 (Berkeley) %G%
+ *	@(#)machdep.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -19,16 +19,13 @@
 #include "user.h"
 #include "kernel.h"
 #include "map.h"
-#include "vm.h"
 #include "proc.h"
 #include "buf.h"
 #include "reboot.h"
 #include "conf.h"
 #include "file.h"
-#include "text.h"
 #include "clist.h"
 #include "callout.h"
-#include "cmap.h"
 #include "malloc.h"
 #include "mbuf.h"
 #include "msgbuf.h"
@@ -41,10 +38,19 @@
 
 #include "cpu.h"
 #include "reg.h"
-#include "pte.h"
 #include "psl.h"
 #include "isr.h"
 #include "../net/netisr.h"
+
+#define	MAXMEM	64*1024*CLSIZE	/* XXX - from cmap.h */
+#include "../vm/vm_param.h"
+#include "../vm/pmap.h"
+#include "../vm/vm_map.h"
+#include "../vm/vm_object.h"
+#include "../vm/vm_kern.h"
+#include "../vm/vm_page.h"
+vm_map_t buffer_map;
+extern vm_offset_t avail_end;
 
 /*
  * Declare these as initialized data so we can patch them.
@@ -71,14 +77,17 @@ extern	u_int lowram;
 startup(firstaddr)
 	int firstaddr;
 {
-	register int unixsize;
 	register unsigned i;
-	register struct pte *pte;
-	int mapaddr, j, n;
 	register caddr_t v;
-	int maxbufs, base, residual;
+	int base, residual;
 	extern long Usrptsize;
 	extern struct map *useriomap;
+#ifdef DEBUG
+	extern int pmapdebug;
+	int opmapdebug = pmapdebug;
+#endif
+	vm_offset_t minaddr, maxaddr;
+	vm_size_t size;
 
 	/*
 	 * Set cpuspeed immediately since cninit() called routines
@@ -101,6 +110,7 @@ startup(firstaddr)
 		cpuspeed = MHZ_50;
 		break;
 	}
+#ifndef DEBUG
 	/*
          * Find what hardware is attached to this machine.
          */
@@ -109,14 +119,17 @@ startup(firstaddr)
 	 * Initialize the console before we print anything out.
 	 */
 	cninit();
+#endif
 	/*
 	 * Initialize error message buffer (at end of core).
 	 */
-	maxmem -= btoc(sizeof (struct msgbuf));
-	pte = msgbufmap;
+#ifdef DEBUG
+	pmapdebug = 0;
+#endif
+	/* avail_end was pre-decremented in pmap_bootstrap to compensate */
 	for (i = 0; i < btoc(sizeof (struct msgbuf)); i++)
-		*(int *)pte++ = PG_CI | PG_V | PG_KW | (ctob(maxmem + i));
-	TBIAS();
+		pmap_enter(pmap_kernel(), msgbufp, avail_end + i * NBPG,
+			   VM_PROT_ALL, TRUE);
 	msgbufmapped = 1;
 
 	/*
@@ -136,24 +149,24 @@ startup(firstaddr)
 	 * An index into the kernel page table corresponding to the
 	 * virtual memory address maintained in "v" is kept in "mapaddr".
 	 */
-	v = (caddr_t)((firstaddr * NBPG) - lowram);
-	mapaddr = (int)v;
+	/*
+	 * Make two passes.  The first pass calculates how much memory is
+	 * needed and allocates it.  The second pass assigns virtual
+	 * addresses to the various data structures.
+	 */
+	firstaddr = 0;
+again:
+	v = (caddr_t)firstaddr;
+
 #define	valloc(name, type, num) \
 	    (name) = (type *)v; v = (caddr_t)((name)+(num))
 #define	valloclim(name, type, num, lim) \
 	    (name) = (type *)v; v = (caddr_t)((lim) = ((name)+(num)))
 	valloclim(file, struct file, nfile, fileNFILE);
 	valloclim(proc, struct proc, nproc, procNPROC);
-	valloclim(text, struct text, ntext, textNTEXT);
 	valloc(cfree, struct cblock, nclist);
 	valloc(callout, struct callout, ncallout);
 	valloc(swapmap, struct map, nswapmap = nproc * 2);
-	valloc(argmap, struct map, ARGMAPSIZE);
-	valloc(kernelmap, struct map, nproc);
-	valloc(mbmap, struct map, nmbclusters/4);
-	valloc(kmemmap, struct map, ekmempt - kmempt);
-	valloc(kmemusage, struct kmemusage, ekmempt - kmempt);
-	valloc(useriomap, struct map, nproc);
 #ifdef SYSVSHM
 	valloc(shmsegs, struct shmid_ds, shminfo.shmmni);
 #endif
@@ -179,77 +192,72 @@ startup(firstaddr)
 			nswbuf = 256;		/* sanity */
 	}
 	valloc(swbuf, struct buf, nswbuf);
-
-	/*
-	 * Now the amount of virtual memory remaining for buffers
-	 * can be calculated, estimating needs for the cmap.
-	 */
-	ncmap = (maxmem*NBPG - (firstaddr*NBPG + ((int)v - mapaddr))) /
-		(CLBYTES + sizeof(struct cmap)) + 2;
-	maxbufs = ((SYSPTSIZE * NBPG) -
-		(int)(v + ncmap * sizeof(struct cmap))) /
-		(MAXBSIZE + sizeof(struct buf));
-	if (maxbufs < 16)
-		panic("sys pt too small");
-	if (nbuf > maxbufs) {
-		printf("SYSPTSIZE limits number of buffers to %d\n", maxbufs);
-		nbuf = maxbufs;
-	}
-	if (bufpages > nbuf * (MAXBSIZE / CLBYTES))
-		bufpages = nbuf * (MAXBSIZE / CLBYTES);
 	valloc(buf, struct buf, nbuf);
-
 	/*
-	 * Allocate space for core map.
-	 * Allow space for all of physical memory minus the amount 
-	 * dedicated to the system. The amount of physical memory
-	 * dedicated to the system is the total virtual memory of
-	 * the system thus far, plus core map, buffer pages,
-	 * and buffer headers not yet allocated.
-	 * Add 2: 1 because the 0th entry is unused, 1 for rounding.
+	 * End of first pass, size has been calculated so allocate memory
 	 */
-	ncmap = (maxmem*NBPG - (firstaddr * NBPG +
-		((int)(v + bufpages*CLBYTES) - mapaddr))) /
-		(CLBYTES + sizeof(struct cmap)) + 2;
-	valloclim(cmap, struct cmap, ncmap, ecmap);
-
-	/*
-	 * Clear space allocated thus far, and make r/w entries
-	 * for the space in the kernel map.
-	 */
-	unixsize = btoc(v);
-	mapaddr = btoc(mapaddr);
-	while (mapaddr < unixsize) {
-		*(int *)(&Sysmap[mapaddr]) = PG_V | PG_KW | ctob(firstaddr);
-		clearseg((unsigned)firstaddr);
-		firstaddr++;
-		mapaddr++;
+	if (firstaddr == 0) {
+		size = (vm_size_t)(v - firstaddr);
+		firstaddr = (int)kmem_alloc(kernel_map, round_page(size));
+		if (firstaddr == 0)
+			panic("startup: no room for tables");
+		goto again;
 	}
-
+	/*
+	 * End of second pass, addresses have been assigned
+	 */
+	if ((vm_size_t)(v - firstaddr) != size)
+		panic("startup: table size inconsistency");
 	/*
 	 * Now allocate buffers proper.  They are different than the above
 	 * in that they usually occupy more virtual memory than physical.
 	 */
-	v = (caddr_t) ((int)(v + PGOFSET) &~ PGOFSET);
-	valloc(buffers, char, MAXBSIZE * nbuf);
+	size = MAXBSIZE * nbuf;
+	buffer_map = kmem_suballoc(kernel_map, (vm_offset_t)&buffers,
+				   &maxaddr, size, FALSE);
+	minaddr = (vm_offset_t)buffers;
+	if (vm_map_find(buffer_map, vm_object_allocate(size), (vm_offset_t)0,
+			&minaddr, size, FALSE) != KERN_SUCCESS)
+		panic("startup: cannot allocate buffers");
 	base = bufpages / nbuf;
 	residual = bufpages % nbuf;
 	for (i = 0; i < nbuf; i++) {
-		n = (i < residual ? base + 1 : base) * CLSIZE;
-		for (j = 0; j < n; j++) {
-			*(int *)(&Sysmap[mapaddr+j]) =
-			    PG_CI | PG_V | PG_KW | ctob(firstaddr);
-			clearseg((unsigned)firstaddr);
-			firstaddr++;
-		}
-		mapaddr += MAXBSIZE / NBPG;
+		vm_size_t curbufsize;
+		vm_offset_t curbuf;
+
+		/*
+		 * First <residual> buffers get (base+1) physical pages
+		 * allocated for them.  The rest get (base) physical pages.
+		 *
+		 * The rest of each buffer occupies virtual space,
+		 * but has no physical memory allocated for it.
+		 */
+		curbuf = (vm_offset_t)buffers + i * MAXBSIZE;
+		curbufsize = CLBYTES * (i < residual ? base+1 : base);
+		vm_map_pageable(buffer_map, curbuf, curbuf+curbufsize, FALSE);
+		vm_map_simplify(buffer_map, curbuf);
 	}
+	/*
+	 * Allocate a submap for exec arguments.  This map effectively
+	 * limits the number of processes exec'ing at any time.
+	 */
+	exec_map = kmem_suballoc(kernel_map, &minaddr, &maxaddr,
+				 16*NCARGS, TRUE);
+	/*
+	 * Allocate a submap for physio
+	 */
+	phys_map = kmem_suballoc(kernel_map, &minaddr, &maxaddr,
+				 VM_PHYS_SIZE, TRUE);
 
-	unixsize = btoc(v);
-	if (firstaddr - Sysmap[0].pg_pfnum >= physmem - 8*UPAGES)
-		panic("no memory");
-	TBIA();				/* After we just cleared it all! */
-
+	/*
+	 * Finally, allocate mbuf pool.  Since mclrefcnt is an off-size
+	 * we use the more space efficient malloc in place of kmem_alloc.
+	 */
+	mclrefcnt = (char *)malloc(NMBCLUSTERS+CLBYTES/MCLBYTES,
+				   M_MBUF, M_NOWAIT);
+	bzero(mclrefcnt, NMBCLUSTERS+CLBYTES/MCLBYTES);
+	mb_map = kmem_suballoc(kernel_map, (vm_offset_t)&mbutl, &maxaddr,
+			       VM_MBUF_SIZE, FALSE);
 	/*
 	 * Initialize callouts
 	 */
@@ -257,24 +265,12 @@ startup(firstaddr)
 	for (i = 1; i < ncallout; i++)
 		callout[i-1].c_next = &callout[i];
 
-	/*
-	 * Initialize memory allocator and swap
-	 * and user page table maps.
-	 *
-	 * THE USER PAGE TABLE MAP IS CALLED ``kernelmap''
-	 * WHICH IS A VERY UNDESCRIPTIVE AND INCONSISTENT NAME.
-	 */
-	meminit(firstaddr, maxmem);
-	maxmem = freemem;
-	printf("avail mem = %d\n", ctob(maxmem));
+#ifdef DEBUG
+	pmapdebug = opmapdebug;
+#endif
+	printf("avail mem = %d\n", ptoa(vm_page_free_count));
 	printf("using %d buffers containing %d bytes of memory\n",
 		nbuf, bufpages * CLBYTES);
-	rminit(kernelmap, (long)&Usrptsize-CLSIZE, (long)1, "usrpt", nproc);
-	rminit(useriomap, (long)USRIOSIZE, (long)1, "usrio", nproc);
-	rminit(mbmap, (long)(nmbclusters * MCLBYTES / NBPG), (long)CLSIZE,
-	    "mbclusters", nmbclusters/4);
-	kmeminit();	/* now safe to do malloc/free */
-
 	/*
 	 * Set up CPU-specific registers, cache, etc.
 	 */
@@ -684,11 +680,9 @@ sendsig(catcher, sig, mask, code)
 		       kfp->sf_sc.sc_sp, kfp->sf_sc.sc_ap);
 #endif
 	/*
-	 * User PC is set to signal trampoline code.  The catch is that
-	 * it must be set to reference the pcb via the user space address
-	 * NOT via u.  Assumption: u-area is at USRSTACK.
+	 * Signal trampoline code is at base of user stack.
 	 */
-	frame->f_pc = (int)((struct user *)USRSTACK)->u_pcb.pcb_sigc;
+	frame->f_pc = USRSTACK - sizeof(u.u_pcb.pcb_sigc);
 #ifdef DEBUG
 	if ((sigdebug & SDB_KSTACK) && p->p_pid == sigpid)
 		printf("sendsig(%d): sig %d returns\n",
@@ -877,7 +871,8 @@ boot(howto)
 	register int howto;
 {
 	/* take a snap shot before clobbering any registers */
-	resume((u_int)pcbb(u.u_procp));
+	if (u.u_procp)
+		resume((u_int)pcbb(u.u_procp));
 
 	boothowto = howto;
 	if ((howto&RB_NOSYNC) == 0 && waittime < 0 && bfreelist[0].b_forw) {
@@ -891,7 +886,7 @@ boot(howto)
 		 * Release vnodes held by texts before sync.
 		 */
 		if (panicstr == 0)
-			xumount(NULL);
+			vnode_pager_umount(NULL);
 #include "fd.h"
 #if NFD > 0
 		fdshutdown();
@@ -1292,14 +1287,10 @@ findparerror()
 	 */
 	looking = 1;
 	ecacheoff();
-	opte = mmap[0];
 	for (pg = btoc(lowram); pg < btoc(lowram)+physmem; pg++) {
-		*(u_int *)mmap = PG_RO|PG_CI|PG_V;
-		mmap[0].pg_pfnum = pg;
-		TBIS(vmmap);
-		ip = (int *)vmmap;
+		pmap_enter(pmap_kernel(), vmmap, ctob(pg), VM_PROT_READ, TRUE);
 		for (o = 0; o < NBPG; o += sizeof(int))
-			i = *ip++;
+			i = *(int *)(&vmmap[o]);
 	}
 	/*
 	 * Getting here implies no fault was found.  Should never happen.
@@ -1308,8 +1299,7 @@ findparerror()
 	found = 0;
 done:
 	looking = 0;
-	mmap[0] = opte;
-	TBIS(vmmap);
+	pmap_remove(pmap_kernel(), vmmap, &vmmap[NBPG]);
 	ecacheon();
 	splx(s);
 	return(found);
@@ -1332,10 +1322,6 @@ regdump(rp, sbytes)
 	printf("ps = %s, ", hexstr(rp[PS], 4));
 	printf("sfc = %s, ", hexstr(getsfc(), 4));
 	printf("dfc = %s\n", hexstr(getdfc(), 4));
-	printf("p0 = %x@%s, ",
-	       u.u_pcb.pcb_p0lr, hexstr((int)u.u_pcb.pcb_p0br, 8));
-	printf("p1 = %x@%s\n\n",
-	       u.u_pcb.pcb_p1lr, hexstr((int)u.u_pcb.pcb_p1br, 8));
 	printf("Registers:\n     ");
 	for (i = 0; i < 8; i++)
 		printf("        %d", i);

@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: grf_tc.c 1.13 89/08/25$
  *
- *	@(#)grf_tc.c	7.1 (Berkeley) %G%
+ *	@(#)grf_tc.c	7.2 (Berkeley) %G%
  */
 
 #include "grf.h"
@@ -44,26 +44,12 @@ tc_init(gp, addr)
 	u_char save;
 	int fboff;
 
-#if defined(HP360) || defined(HP370)
-	extern char grfregs[];
-	if (addr == (u_char *)grfregs)
-		gi->gd_regaddr = (caddr_t) DIOIIBASE;
-	else
-#endif
 	gi->gd_regaddr = (caddr_t) UNIOV(addr);
 	gi->gd_regsize = 0x10000;
 	gi->gd_fbwidth = (tp->fbwmsb << 8) | tp->fbwlsb;
 	gi->gd_fbheight = (tp->fbhmsb << 8) | tp->fbhlsb;
 	fboff = (tp->fbomsb << 8) | tp->fbolsb;
 	gi->gd_fbaddr = (caddr_t) (*(addr + fboff) << 16);
-#if defined(HP360) || defined(HP370)
-	/*
-	 * For DIO II space addresses offset is relative to the DIO II space.
-	 * XXX: this should apply to all frame buffer types.
-	 */
-	if (gi->gd_regaddr >= (caddr_t)DIOIIBASE)
-		gi->gd_fbaddr += (int) gi->gd_regaddr;
-#endif
 	gi->gd_fbsize = gi->gd_fbwidth * gi->gd_fbheight;
 	gi->gd_dwidth = (tp->dwmsb << 8) | tp->dwlsb;
 	gi->gd_dheight = (tp->dhmsb << 8) | tp->dhlsb;

@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: clockreg.h 1.13 89/11/30$
  *
- *	@(#)clockreg.h	7.1 (Berkeley) %G%
+ *	@(#)clockreg.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -39,13 +39,15 @@ struct clkreg {
 	u_char	clk_lsb3;
 };
 
-#define CLKCR1		IOP(0x5F8001)
-#define CLKCR2		IOP(0x5F8003)
-#define CLKCR3		CLKCR1
+/* base/offsets for register access (for locore.s) */
+#define	CLKBASE		IOP(0x5F8000)
+#define	CLKCR1		0x1
+#define	CLKCR2		0x3
+#define	CLKCR3		CLKCR1
 #define	CLKSR		CLKCR2
-#define	CLKMSB1		IOP(0x5F8005)
-#define	CLKMSB2		IOP(0x5F8009)
-#define	CLKMSB3		IOP(0x5F800D)
+#define	CLKMSB1		0x5
+#define	CLKMSB2		0x9
+#define	CLKMSB3		0xD
 
 /* output of counter 3 clocks counter 2 */
 

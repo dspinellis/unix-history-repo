@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: clock.c 1.17 89/11/30$
  *
- *	@(#)clock.c	7.2 (Berkeley) %G%
+ *	@(#)clock.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -27,7 +27,7 @@
 #include "gprof.h"
 #endif
 
-int    clkstd[] = { IOV(0x5F8000) };
+int    clkstd[1];
 
 static int month_days[12] = {
 	31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
@@ -59,7 +59,10 @@ struct hil_dev *bbcaddr = NULL;
  */
 startrtclock()
 {
-	register struct clkreg *clk = (struct clkreg *)clkstd[0];
+	register struct clkreg *clk;
+
+	clkstd[0] = IOV(0x5F8000);
+	clk = (struct clkreg *) clkstd[0];
 
 	clk->clk_cr2 = CLK_CR1;
 	clk->clk_cr1 = CLK_RESET;
@@ -115,9 +118,14 @@ clkread()
  */
 #include "proc.h"
 #include "ioctl.h"
-#include "mapmem.h"
 #include "malloc.h"
 #include "clockioctl.h"
+#include "../vm/vm_param.h"
+#include "../vm/vm_pager.h"
+#include "../vm/vm_prot.h"
+#include "specdev.h"
+#include "vnode.h"
+#include "mman.h"
 
 int clockon = 0;		/* non-zero if high-res timer enabled */
 #ifdef PROFTIMER
@@ -156,9 +164,7 @@ clockopen(dev, flags)
 clockclose(dev, flags)
 	dev_t dev;
 {
-#ifdef MAPMEM
 	(void) clockunmmap(dev, (caddr_t)0);
-#endif
 	stopclock();
 	clockon = 0;
 	return(0);
@@ -173,7 +179,6 @@ clockioctl(dev, cmd, data, flag)
 	
 	switch (cmd) {
 
-#ifdef MAPMEM
 	case CLOCKMAP:
 		error = clockmmap(dev, (caddr_t *)data);
 		break;
@@ -185,7 +190,6 @@ clockioctl(dev, cmd, data, flag)
 	case CLOCKGETRES:
 		*(int *)data = CLK_RESOLUTION;
 		break;
-#endif
 
 	default:
 		error = EINVAL;
@@ -198,35 +202,29 @@ clockioctl(dev, cmd, data, flag)
 clockmap(dev, off, prot)
 	dev_t dev;
 {
-#ifdef MMAP
-	return((off + (IOBASE+CLKSR-1)) >> PGSHIFT);
-#endif
+	return((off + (IOBASE+CLKBASE+CLKSR-1)) >> PGSHIFT);
 }
-
-#ifdef MAPMEM
-
-struct mapmemops clockops = {
-	(int (*)())0, (int (*)())0, (int (*)())0, (int (*)())0
-};
 
 clockmmap(dev, addrp)
 	dev_t dev;
 	caddr_t *addrp;
 {
 	struct proc *p = u.u_procp;		/* XXX */
-	struct mapmem *mp;
-	int id, error, clockmapin();
+	int error;
+	struct vnode vn;
+	struct specinfo si;
+	int flags;
 
-	id = minor(dev);	/* XXX */
-	error = mmalloc(p, id, addrp, NBPG, MM_RO|MM_CI|MM_NOCORE,
-			&clockops, &mp);
-#ifdef DEBUG
-	if (clockdebug)
-		printf("clockmmap(%d): addr %x\n", p->p_pid, *addrp);
-#endif
-	if (error == 0)
-		if (error = mmmapin(p, mp, clockmapin))
-			(void) mmfree(p, mp);
+	flags = MAP_FILE|MAP_SHARED;
+	if (*addrp)
+		flags |= MAP_FIXED;
+	else
+		*addrp = (caddr_t)0x1000000;	/* XXX */
+	vn.v_type = VCHR;			/* XXX */
+	vn.v_specinfo = &si;			/* XXX */
+	vn.v_rdev = dev;			/* XXX */
+	error = vm_mmap(u.u_procp->p_map, (vm_offset_t *)addrp,
+			PAGE_SIZE, VM_PROT_ALL, flags, (caddr_t)&vn, 0);
 	return(error);
 }
 
@@ -235,40 +233,13 @@ clockunmmap(dev, addr)
 	caddr_t addr;
 {
 	struct proc *p = u.u_procp;		/* XXX */
-	register struct mapmem *mp, **mpp;
-	int found, id;
+	int rv;
 
-#ifdef DEBUG
-	if (clockdebug)
-		printf("clockunmmap(%d): addr %x\n", p->p_pid, addr);
-#endif
-	id = minor(dev);	/* XXX */
-	found = 0;
-	mpp = &u.u_mmap;
-	for (mp = *mpp; mp; mp = *mpp) {
-		if (mp->mm_id != id || mp->mm_ops != &clockops) {
-			mpp = &mp->mm_next;
-			continue;
-		}
-		if (addr &&
-		    (addr < mp->mm_uva || addr >= mp->mm_uva+mp->mm_size)) {
-			mpp = &mp->mm_next;
-			continue;
-		}
-		mmmapout(p, mp);
-		(void) mmfree(p, mp);
-		found++;
-	}
-	return(found ? 0 : EINVAL);
+	if (addr == 0)
+		return(EINVAL);		/* XXX: how do we deal with this? */
+	rv = vm_deallocate(u.u_procp->p_map, (vm_offset_t)addr, PAGE_SIZE);
+	return(rv == KERN_SUCCESS ? 0 : EINVAL);
 }
-
-/*ARGSUSED*/
-clockmapin(mp, off)
-	struct mapmem *mp;
-{
-	return((off + (IOBASE+CLKSR-1)) >> PGSHIFT);
-}
-#endif
 
 startclock()
 {

@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: hpux.h 1.15 89/09/25$
+ * from: Utah $Hdr: hpux.h 1.1 90/07/09$
  *
- *	@(#)hpux.h	7.1 (Berkeley) %G%
+ *	@(#)hpux.h	7.2 (Berkeley) %G%
  */
 
 #include "hpux_exec.h"
@@ -57,20 +57,6 @@ struct hpuxsgttyb {
 #define	HPUXTIOCGPGRP	_IOR('T', 30, int)
 #define HPUXTIOCCONS	_IO('t', 104)
 
-/* HP-UX directory stuff */
-
-#define HPUXNSIZ	14
-#define HPUXPSIZ	10
-#define HPUXDSIZ	sizeof(struct hpuxdirect)
-
-struct hpuxdirect {
-	u_long	hpuxd_ino;
-	u_short hpuxd_reclen;
-	u_short	hpuxd_namlen;
-	char	hpuxd_name[HPUXNSIZ];
-	char	hpuxd_pad[HPUXPSIZ];
-};
-
 /* HP-UX stat structure */
 
 #define bsdtohpuxdev(d)	((major(d) << 24) | minor(d))
@@ -104,16 +90,22 @@ struct	hpuxstat {
  */
 
 /* 6.0/6.2 offsets */
-#define oHU_AROFF	0x004
-#define oHU_TSOFF	0x092
-#define oHU_EDOFF	0x91E
-#define oHU_FPOFF	0xA66
+#define ooHU_AROFF	0x004
+#define ooHU_TSOFF	0x092
+#define ooHU_EDOFF	0x91E
+#define ooHU_FPOFF	0xA66
 
 /* 6.5 offsets */
+#define oHU_AROFF	0x004
+#define oHU_TSOFF	0x0B2
+#define oHU_EDOFF	0x93A
+#define oHU_FPOFF	0xA86
+
+/* 7.X offsets */
 #define HU_AROFF	0x004
-#define HU_TSOFF	0x0B2
-#define HU_EDOFF	0x93A
-#define HU_FPOFF	0xA86
+#define HU_TSOFF	0x0B4
+#define HU_EDOFF	0x8C8
+#define HU_FPOFF	0xA28
 
 #define HU_PAD1	(HU_AROFF)
 #define HU_PAD2	(HU_TSOFF-HU_AROFF-4)
@@ -174,3 +166,18 @@ struct hpuxuser {
 
 /* SIGFPE codes */
 #define	HPUX_FPE_INTDIV_TRAP	5	/* T_ZERODIV+USER */
+
+/* HP-UX POSIX signal stuff implementation */
+typedef struct __hpuxsigset_t { long sigset[8]; } hpuxsigset_t;
+struct hpuxsigaction {
+	void		(*sa_handler)();
+	hpuxsigset_t	sa_mask;
+	int		sa_flags;
+};
+#define HPUXSA_ONSTACK		1
+#define HPUXSA_RESETHAND	4
+#define HPUXSA_NOCLDSTOP	8
+
+#define	HPUXSIG_BLOCK	0	/* block specified signal set */
+#define	HPUXSIG_UNBLOCK	1	/* unblock specified signal set */
+#define	HPUXSIG_SETMASK	2	/* set specified signal set */

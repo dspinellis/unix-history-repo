@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: grf.c 1.28 89/08/14$
  *
- *	@(#)grf.c	7.4 (Berkeley) %G%
+ *	@(#)grf.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -28,7 +28,6 @@
 #include "proc.h"
 #include "ioctl.h"
 #include "file.h"
-#include "mapmem.h"
 #include "malloc.h"
 
 #include "device.h"
@@ -40,6 +39,15 @@
 #ifdef HPUXCOMPAT
 #include "../hpux/hpux.h"
 #endif
+
+#include "../vm/vm_param.h"
+#include "../vm/vm_map.h"
+#include "../vm/vm_kern.h"
+#include "../vm/vm_page.h"
+#include "../vm/vm_pager.h"
+#include "specdev.h"
+#include "vnode.h"
+#include "mman.h"
 
 #include "ite.h"
 #if NITE == 0
@@ -73,15 +81,6 @@ int	ngrfdev = sizeof(grfdev) / sizeof(grfdev[0]);
 
 struct	driver grfdriver = { grfprobe, "grf" };
 struct	grf_softc grf_softc[NGRF];
-
-#ifdef MAPMEM
-int grfexit();
-struct mapmemops grfops = { (int (*)())0, (int (*)())0, grfexit, grfexit };
-#ifdef HPUXCOMPAT
-struct mapmemops grflckops = { (int (*)())0, (int (*)())0, grfexit, grfexit };
-struct mapmemops grfiomops = { (int (*)())0, (int (*)())0, grfexit, grfexit };
-#endif
-#endif
 
 #ifdef DEBUG
 int grfdebug = 0;
@@ -264,7 +263,6 @@ grfioctl(dev, cmd, data, flag)
 		error = grfoff(dev);
 		break;
 
-#ifdef MAPMEM
 	case GRFIOCMAP:
 		error = grfmmap(dev, (caddr_t *)data);
 		break;
@@ -272,7 +270,6 @@ grfioctl(dev, cmd, data, flag)
 	case GRFIOCUNMAP:
 		error = grfunmmap(dev, *(caddr_t *)data);
 		break;
-#endif
 
 	default:
 		error = EINVAL;
@@ -427,7 +424,6 @@ hpuxgrfioctl(dev, cmd, data, flag)
 	case GCVARIABLE_CMAP:
 		break;
 
-#ifdef MAPMEM
 	/* map in control regs and frame buffer */
 	case GCMAP:
 		error = grfmmap(dev, (caddr_t *)data);
@@ -445,9 +441,13 @@ hpuxgrfioctl(dev, cmd, data, flag)
 		struct grf_slot *sp = (struct grf_slot *)data;
 
 		sp->slot = grffindpid(gp);
-		if (sp->slot)
+		if (sp->slot) {
 			error = grflckmmap(dev, (caddr_t *)&sp->addr);
-		else
+			if (error && gp->g_pid) {
+				free((caddr_t)gp->g_pid, M_DEVBUF);
+				gp->g_pid = NULL;
+			}
+		} else
 			error = EINVAL;		/* XXX */
 		break;
 	}
@@ -474,7 +474,6 @@ hpuxgrfioctl(dev, cmd, data, flag)
 	case IOMAPUNMAP:
 		error = iounmmap(dev, *(caddr_t *)data);
 		break;
-#endif
 
 	default:
 		error = EINVAL;
@@ -508,9 +507,7 @@ grfoff(dev)
 	struct grf_softc *gp = &grf_softc[unit];
 	int error;
 
-#ifdef MAPMEM
 	(void) grfunmmap(dev, (caddr_t)0);
-#endif
 	error = (*grfdev[gp->g_type].gd_mode)
 			(gp, (dev&GRFOVDEV) ? GM_GRFOVOFF : GM_GRFOFF);
 	/* XXX: see comment for iteoff above */
@@ -522,7 +519,6 @@ grfaddr(gp, off)
 	struct grf_softc *gp;
 	register int off;
 {
-#ifdef MAPMEM
 	register struct grfinfo *gi = &gp->g_display;
 
 	/* control registers */
@@ -534,7 +530,6 @@ grfaddr(gp, off)
 		off -= gi->gd_regsize;
 		return(((u_int)gi->gd_fbaddr + off) >> PGSHIFT);
 	}
-#endif
 	/* bogus */
 	return(-1);
 }
@@ -559,11 +554,6 @@ grfdevno(dev)
 	/* magic major number */
 	newdev = 12 << 24;
 	/* now construct minor number */
-#if defined(HP360) || defined(HP370)
-	if (gp->g_display.gd_regaddr == (caddr_t)DIOIIBASE)
-		newdev |= 0x840200;
-	else
-#endif
 	if (gp->g_display.gd_regaddr != (caddr_t)GRFIADDR)
 		newdev |= ((u_int)gp->g_display.gd_regaddr-EXTIOBASE) | 0x200;
 	if (dev & GRFIMDEV)
@@ -578,32 +568,32 @@ grfdevno(dev)
 }
 #endif
 
-#ifdef MAPMEM
-grfmapin(mp, off)
-	struct mapmem *mp;
-{
-	return(grfaddr(&grf_softc[GRFUNIT(mp->mm_id)], off));
-}
-
 grfmmap(dev, addrp)
 	dev_t dev;
 	caddr_t *addrp;
 {
 	struct proc *p = u.u_procp;		/* XXX */
 	struct grf_softc *gp = &grf_softc[GRFUNIT(dev)];
-	struct mapmem *mp;
-	int len, error, grfmapin();
+	int len, error;
+	struct vnode vn;
+	struct specinfo si;
+	int flags;
 
 #ifdef DEBUG
 	if (grfdebug & GDB_MMAP)
 		printf("grfmmap(%d): addr %x\n", p->p_pid, *addrp);
 #endif
 	len = gp->g_display.gd_regsize + gp->g_display.gd_fbsize;
-	error = mmalloc(p, minor(dev), addrp, len, MM_RW|MM_CI|MM_NOCORE,
-			&grfops, &mp);
-	if (error == 0)
-		if (error = mmmapin(p, mp, grfmapin))
-			(void) mmfree(p, mp);
+	flags = MAP_FILE|MAP_SHARED;
+	if (*addrp)
+		flags |= MAP_FIXED;
+	else
+		*addrp = (caddr_t)0x1000000;	/* XXX */
+	vn.v_type = VCHR;			/* XXX */
+	vn.v_specinfo = &si;			/* XXX */
+	vn.v_rdev = dev;			/* XXX */
+	error = vm_mmap(u.u_procp->p_map, (vm_offset_t *)addrp,
+			(vm_size_t)len, VM_PROT_ALL, flags, (caddr_t)&vn, 0);
 	return(error);
 }
 
@@ -611,49 +601,20 @@ grfunmmap(dev, addr)
 	dev_t dev;
 	caddr_t addr;
 {
-	register struct mapmem *mp, **mpp;
-	int found, unit = minor(dev);
-
-#ifdef DEBUG
-	if (grfdebug & GDB_MMAP)
-		printf("grfunmmap(%d): id %d addr %x\n",
-		       u.u_procp->p_pid, unit, addr);
-#endif
-	found = 0;
-	mpp = &u.u_mmap;
-	for (mp = *mpp; mp; mp = *mpp) {
-		if (mp->mm_ops != &grfops || mp->mm_id != unit) {
-			mpp = &mp->mm_next;
-			continue;
-		}
-		if (addr &&
-		    (addr < mp->mm_uva || addr >= mp->mm_uva+mp->mm_size)) {
-			mpp = &mp->mm_next;
-			continue;
-		}
-		(void) grfexit(mp);
-		found++;
-	}
-	return(found ? 0 : EINVAL);
-}
-
-grfexit(mp)
-	struct mapmem *mp;
-{
 	struct proc *p = u.u_procp;		/* XXX */
-	struct grf_softc *gp = &grf_softc[GRFUNIT(mp->mm_id)];
+	struct grf_softc *gp = &grf_softc[GRFUNIT(dev)];
+	vm_size_t size;
+	int rv;
 
 #ifdef DEBUG
 	if (grfdebug & GDB_MMAP)
-		printf("grfexit(%d): id %d %x@%x\n",
-		       p->p_pid, mp->mm_id, mp->mm_size, mp->mm_uva);
+		printf("grfunmmap(%d): dev %x addr %x\n", p->p_pid, dev, addr);
 #endif
-	(void) grfunlock(gp);
-#ifdef HPUXCOMPAT
-	grfrmpid(gp);
-#endif
-	mmmapout(p, mp);
-	return(mmfree(p, mp));
+	if (addr == 0)
+		return(EINVAL);		/* XXX: how do we deal with this? */
+	size = round_page(gp->g_display.gd_regsize + gp->g_display.gd_fbsize);
+	rv = vm_deallocate(p->p_map, (vm_offset_t)addr, size);
+	return(rv == KERN_SUCCESS ? 0 : EINVAL);
 }
 
 #ifdef HPUXCOMPAT
@@ -663,53 +624,26 @@ iommap(dev, addrp)
 {
 	struct proc *p = u.u_procp;		/* XXX */
 	struct grf_softc *gp = &grf_softc[GRFUNIT(dev)];
-	struct mapmem *mp;
-	int len, error, grfmapin();
 
 #ifdef DEBUG
 	if (grfdebug & (GDB_MMAP|GDB_IOMAP))
 		printf("iommap(%d): addr %x\n", p->p_pid, *addrp);
 #endif
-	len = gp->g_display.gd_regsize;
-	error = mmalloc(p, minor(dev), addrp, len, MM_RW|MM_CI|MM_NOCORE,
-			&grfiomops, &mp);
-	if (error == 0)
-		if (error = mmmapin(p, mp, grfmapin))
-			(void) mmfree(p, mp);
-	return(error);
+	return(EINVAL);
 }
 
 iounmmap(dev, addr)
 	dev_t dev;
 	caddr_t addr;
 {
-	struct grf_softc *gp = &grf_softc[GRFUNIT(dev)];
-	register struct mapmem *mp, **mpp;
-	int found, len, unit = minor(dev);
+	int unit = minor(dev);
 
 #ifdef DEBUG
 	if (grfdebug & (GDB_MMAP|GDB_IOMAP))
 		printf("iounmmap(%d): id %d addr %x\n",
 		       u.u_procp->p_pid, unit, addr);
 #endif
-	found = 0;
-	len = gp->g_display.gd_regsize;
-	mpp = &u.u_mmap;
-	for (mp = *mpp; mp; mp = *mpp) {
-		if (mp->mm_ops != &grfiomops || mp->mm_id != unit) {
-			mpp = &mp->mm_next;
-			continue;
-		}
-		if (addr &&
-		    (addr < mp->mm_uva || addr >= mp->mm_uva+mp->mm_size ||
-		    len != mp->mm_size)) {
-			mpp = &mp->mm_next;
-			continue;
-		}
-		(void) grfexit(mp);
-		found++;
-	}
-	return(found ? 0 : EINVAL);
+	return(0);
 }
 
 /*
@@ -785,52 +719,24 @@ grfrmpid(gp)
 #endif
 }
 
-/*ARGSUSED*/
-grflckmapin(mp, off)
-	struct mapmem *mp;
-{
-	u_int pa = kvtop((u_int)grf_softc[GRFUNIT(mp->mm_id)].g_locks);
-
-#ifdef DEBUG
-	if (grfdebug & GDB_LOCK)
-		printf("grflckmapin(%d): va %x pa %x\n", u.u_procp->p_pid,
-		       grf_softc[GRFUNIT(mp->mm_id)].g_locks, pa);
-#endif
-	return(pa >> PGSHIFT);
-}
-
 grflckmmap(dev, addrp)
 	dev_t dev;
 	caddr_t *addrp;
 {
 	struct proc *p = u.u_procp;		/* XXX */
-	struct grf_softc *gp = &grf_softc[GRFUNIT(dev)];
-	struct mapmem *mp;
-	int error, grflckmapin();
 
 #ifdef DEBUG
 	if (grfdebug & (GDB_MMAP|GDB_LOCK))
 		printf("grflckmmap(%d): addr %x\n",
 		       p->p_pid, *addrp);
 #endif
-	if (gp->g_locks == NULL) {
-		gp->g_locks = (u_char *) cialloc(NBPG);
-		if (gp->g_locks == NULL)
-			return(ENOMEM);
-	}
-	error = mmalloc(p, minor(dev), addrp, NBPG, MM_RW|MM_CI,
-			&grflckops, &mp);
-	if (error == 0)
-		if (error = mmmapin(p, mp, grflckmapin))
-			(void) mmfree(p, mp);
-	return(error);
+	return(EINVAL);
 }
 
 grflckunmmap(dev, addr)
 	dev_t dev;
 	caddr_t addr;
 {
-	register struct mapmem *mp;
 	int unit = minor(dev);
 
 #ifdef DEBUG
@@ -838,14 +744,8 @@ grflckunmmap(dev, addr)
 		printf("grflckunmmap(%d): id %d addr %x\n",
 		       u.u_procp->p_pid, unit, addr);
 #endif
-	for (mp = u.u_mmap; mp; mp = mp->mm_next)
-		if (mp->mm_ops == &grflckops && mp->mm_id == unit &&
-		    mp->mm_uva == addr) {
-			(void) grfexit(mp);
-			return(0);
-		}
 	return(EINVAL);
 }
 #endif	/* HPUXCOMPAT */
-#endif	/* MAPMEM */
+
 #endif	/* NGRF > 0 */

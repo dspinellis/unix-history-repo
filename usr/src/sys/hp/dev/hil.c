@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hil.c 1.33 89/12/22$
  *
- *	@(#)hil.c	7.4 (Berkeley) %G%
+ *	@(#)hil.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -24,7 +24,6 @@
 #include "systm.h"
 #include "uio.h"
 #include "kernel.h"
-#include "mapmem.h"
 
 #include "hilreg.h"
 #include "hilioctl.h"
@@ -33,13 +32,14 @@
 
 #include "machine/cpu.h"
 
+#include "../vm/vm_param.h"
+#include "../vm/vm_map.h"
+#include "../vm/vm_kern.h"
+#include "../vm/vm_page.h"
+#include "../vm/vm_pager.h"
+
 struct	hilloop	hil0;
 struct	_hilbell default_bell = { BELLDUR, BELLFREQ };
-
-#ifdef MAPMEM
-int	hilqfork(), hilqvfork(), hilqexit();
-struct	mapmemops hilqops = { hilqfork, hilqvfork, hilqexit, hilqexit };
-#endif
 
 #ifdef DEBUG
 int 	hildebug = 0;
@@ -953,90 +953,25 @@ hpuxhilevent(hilp, dptr)
 hilqalloc(qip)
 	struct hilqinfo *qip;
 {
-#ifdef MAPMEM
 	struct proc *p = u.u_procp;		/* XXX */
-	register struct hilloop *hilp = &hil0;	/* XXX */
-	register HILQ *hq;
-	register int qnum;
-	struct mapmem *mp;
-	int error, hilqmapin();
 
 #ifdef DEBUG
 	if (hildebug & HDB_FOLLOW)
-		printf("hilqalloc(%d): addr %x\n",
-		       p->p_pid, qip->addr);
+		printf("hilqalloc(%d): addr %x\n", p->p_pid, qip->addr);
 #endif
-	/*
-	 * Find a free queue
-	 */
-	for (qnum = 0; qnum < NHILQ; qnum++)
-		if (hilp->hl_queue[qnum].hq_procp == NULL)
-			break;
-	if (qnum == NHILQ)
-		return(EMFILE);
-
-	/*
-	 * Allocate and clear memory for the queue
-	 */
-	if (hilp->hl_queue[qnum].hq_eventqueue)
-		panic("hilqalloc");
-	hq = (HILQ *) cialloc(sizeof(HILQ));
-	if (hq == NULL)
-		return(ENOMEM);
-	bzero((caddr_t)hq, sizeof(HILQ));
-	hilp->hl_queue[qnum].hq_eventqueue = hq;
-	hq->hil_evqueue.size = HEVQSIZE;
-
-	/*
-	 * Map queue into user address space as instructed
-	 */
-	error = mmalloc(p, qnum, &qip->addr, sizeof(HILQ), MM_RW|MM_CI,
-			&hilqops, &mp);
-	if (error) {
-		cifree((caddr_t)hq, sizeof(HILQ));
-		hilp->hl_queue[qnum].hq_eventqueue = NULL;
-		return(error);
-	}
-	qip->qid = qnum;
-	if (error = mmmapin(p, mp, hilqmapin)) {
-		(void) mmfree(p, mp);
-		cifree((caddr_t)hq, sizeof(HILQ));
-		hilp->hl_queue[qnum].hq_eventqueue = NULL;
-		return(error);
-	}
-	hilp->hl_queue[qnum].hq_procp = p;
-	hilp->hl_queue[qnum].hq_devmask = 0;
-	return(0);
-#else
 	return(EINVAL);
-#endif
 }
 
 hilqfree(qnum)
 	register int qnum;
 {
-#ifdef MAPMEM
 	struct proc *p = u.u_procp;		/* XXX */
-	register struct hilloop *hilp = &hil0;	/* XXX */
-	register struct mapmem *mp;
 
 #ifdef DEBUG
 	if (hildebug & HDB_FOLLOW)
-		printf("hilqfree(%d): qnum %d\n",
-		       p->p_pid, qnum);
+		printf("hilqfree(%d): qnum %d\n", p->p_pid, qnum);
 #endif
-	if (qnum >= NHILQ || hilp->hl_queue[qnum].hq_procp != p)
-		return(EINVAL);
-	for (mp = u.u_mmap; mp; mp = mp->mm_next)
-		if (qnum == mp->mm_id && mp->mm_ops == &hilqops) {
-			(void) hilqexit(mp);
-			return(0);
-		}
-	panic("hilqfree");
-	/* NOTREACHED */
-#else
 	return(EINVAL);
-#endif
 }
 
 hilqmap(qnum, device)
@@ -1102,93 +1037,6 @@ hilqunmap(qnum, device)
 #endif
 	return(0);
 }
-
-#ifdef MAPMEM
-hilqmapin(mp, off)
-	struct mapmem *mp;
-{
-	struct hilloop *hilp = &hil0;		/* XXX */
-	register HILQ *hq = hilp->hl_queue[mp->mm_id].hq_eventqueue;
-
-	if (hq == NULL || off >= sizeof(HILQ))
-		return(-1);
-	return(kvtop((u_int)hq + off) >> PGSHIFT);
-}
-
-/*
- * Fork hook.
- * Unmap queue from child's address space
- */
-hilqfork(mp, ischild)
-	struct mapmem *mp;
-{
-	struct proc *p = u.u_procp;		/* XXX */
-#ifdef DEBUG
-	if (hildebug & HDB_MMAP)
-		printf("hilqfork(%d): %s qnum %d\n", p->p_pid,
-		       ischild ? "child" : "parent", mp->mm_id);
-#endif
-	if (ischild) {
-		mmmapout(p, mp);
-		(void) mmfree(p, mp);
-	}
-}
-
-/*
- * Vfork hook.
- * Associate queue with child when VM resources are passed.
- */
-hilqvfork(mp, fup, tup)
-	struct mapmem *mp;
-	struct user *fup, *tup;
-{
-	struct hilloop *hilp = &hil0;		/* XXX */
-	register struct hiliqueue *qp = &hilp->hl_queue[mp->mm_id];
-
-#ifdef DEBUG
-	if (hildebug & HDB_MMAP)
-		printf("hilqvfork(%d): from %x to %x qnum %d, qprocp %x\n",
-		       u.u_procp->p_pid, fup->u_procp, tup->u_procp,
-		       mp->mm_id, qp->hq_procp);
-#endif
-	if (qp->hq_procp == fup->u_procp)
-		qp->hq_procp = tup->u_procp;
-}
-
-/*
- * Exit hook.
- * Unmap all devices and free all queues.
- */
-hilqexit(mp)
-	struct mapmem *mp;
-{
-	struct proc *p = u.u_procp;		/* XXX */
-	register struct hilloop *hilp = &hil0;	/* XXX */
-	register int mask, i;
-	int s;
-
-#ifdef DEBUG
-	if (hildebug & HDB_MMAP)
-		printf("hilqexit(%d): qnum %d\n", p->p_pid, mp->mm_id);
-#endif
-	/*
-	 * Atomically take all devices off the queue
-	 */
-	mask = ~hilqmask(mp->mm_id);
-	s = splhil();
-	for (i = 0; i < NHILD; i++)
-		hilp->hl_device[i].hd_qmask &= mask;
-	splx(s);
-	/*
-	 * Now unmap from user address space and free queue
-	 */
-	i = mp->mm_id;
-	cifree((caddr_t)hilp->hl_queue[i].hq_eventqueue, sizeof(HILQ));
-	hilp->hl_queue[i].hq_eventqueue = NULL;
-	hilp->hl_queue[i].hq_procp = NULL;
-	return(mmfree(p, mp));
-}
-#endif
 
 #include "clist.h"
 
