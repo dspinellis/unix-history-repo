@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)symtab.c	3.3	(Berkeley)	83/02/27";
+static char sccsid[] = "@(#)symtab.c	3.4	(Berkeley)	83/02/28";
 #endif
 
 #include "restore.h"
@@ -437,20 +437,10 @@ initsymtable(filename)
 		/*
 		 * For restart, insure that we are using the same tape
 		 */
-		if (hdr.volno == 1) {
-			setup();
-			if (dumptime != hdr.dumptime ||
-			    dumpdate != hdr.dumpdate) {
-				fprintf(stderr, "Wrong dump tape\n");
-				done(1);
-			}
-			extractdirs();
-		} else {
-			curfile.action = SKIP;
-			dumptime = hdr.dumptime;
-			dumpdate = hdr.dumpdate;
-			getvol(hdr.volno);
-		}
+		curfile.action = SKIP;
+		dumptime = hdr.dumptime;
+		dumpdate = hdr.dumpdate;
+		getvol(hdr.volno);
 		break;
 	default:
 		panic("initsymtable called from command %c\n", command);
