@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)string.h	5.5 (Berkeley) %G%
+ *	@(#)string.h	5.6 (Berkeley) %G%
  */
 
 #ifndef _STRING_H_
@@ -87,7 +87,7 @@ int	 strcasecmp(const char *, const char *);
 char	*strdup(const char *);
 void	 strmode(int, char *);
 int	 strncasecmp(const char *, const char *, size_t);
-char	*strsep(char *, const char *);
+char	*strsep(char **, const char *);
 void	 swab(const char *, char *, size_t);
 
 #else
