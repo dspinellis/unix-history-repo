@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_resource.c	7.24 (Berkeley) %G%
+ *	@(#)kern_resource.c	7.25 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -163,7 +163,7 @@ struct setrlimit_args {
 	struct	orlimit *lim;
 };
 /* ARGSUSED */
-setrlimit(p, uap, retval)
+osetrlimit(p, uap, retval)
 	struct proc *p;
 	register struct setrlimit_args *uap;
 	int *retval;
@@ -185,7 +185,7 @@ struct getrlimit_args {
 	struct	orlimit *rlp;
 };
 /* ARGSUSED */
-getrlimit(p, uap, retval)
+ogetrlimit(p, uap, retval)
 	struct proc *p;
 	register struct getrlimit_args *uap;
 	int *retval;
