@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_usrreq.c	7.7 (Berkeley) %G%
+ *	@(#)pk_usrreq.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -278,7 +278,7 @@ register struct ifnet *ifp;
 	register struct ifaddr *ifa = 0;
 	register struct x25_ifaddr *ia = 0;
 	struct pklcd *dev_lcp = 0;
-	int error, s;
+	int error, s, old_maxlcn;
 	unsigned n;
 
 	/*
@@ -309,6 +309,7 @@ register struct ifnet *ifp;
 				M_IFADDR, M_WAITOK);
 			if (ia == 0)
 				return (ENOBUFS);
+			bzero((caddr_t)ia, sizeof (*ia));
 			if (ifa = ifp->if_addrlist) {
 				for ( ; ifa->ifa_next; ifa = ifa->ifa_next)
 					;
@@ -318,30 +319,34 @@ register struct ifnet *ifp;
 			ifa = &ia->ia_ifa;
 			ifa->ifa_netmask = (struct sockaddr *)&ia->ia_sockmask;
 			ifa->ifa_addr = (struct sockaddr *)&ia->ia_xc.xc_addr;
+			ia->ia_xcp = &ia->ia_xc;
 			ia->ia_ifp = ifp;
 			ia->ia_pkcb.pk_ia = ia;
 			ia->ia_pkcb.pk_next = pkcbhead;
+			ia->ia_pkcb.pk_state = DTE_WAITING;
 			pkcbhead = &ia->ia_pkcb;
 		}
-		ia->ia_xcp = &(ifr->ifr_xc);
-		if (ia->ia_chan && (ia->ia_maxlcn != ia->ia_xcp->xc_maxlcn)) {
+		old_maxlcn = ia->ia_maxlcn;
+		ia->ia_xc = ifr->ifr_xc;
+		if (ia->ia_chan && (ia->ia_maxlcn != old_maxlcn)) {
 			pk_restart(&ia->ia_pkcb, X25_RESTART_NETWORK_CONGESTION);
 			dev_lcp = ia->ia_chan[0];
 			free((caddr_t)ia->ia_chan, M_IFADDR);
 			ia->ia_chan = 0;
 		}
 		if (ia->ia_chan == 0) {
-			n = ia->ia_maxlcn * sizeof(struct pklcd *);
-			ia->ia_chan = (struct pklcd **) malloc(n, M_IFADDR);
+			n = (ia->ia_maxlcn + 1) * sizeof(struct pklcd *);
+			ia->ia_chan = (struct pklcd **) malloc(n, M_IFADDR, M_WAITOK);
 			if (ia->ia_chan) {
 				bzero((caddr_t)ia->ia_chan, n);
 				if (dev_lcp == 0)
 					dev_lcp = pk_attach((struct socket *)0);
 				ia->ia_chan[0] = dev_lcp;
+				dev_lcp->lcd_state = READY;
+				dev_lcp->lcd_pkp = &ia->ia_pkcb;
 			} else {
 				if (dev_lcp)
 					pk_close(dev_lcp);
-				ia->ia_xcp = &ia->ia_xc;
 				return (ENOBUFS);
 			}
 		}
@@ -352,11 +357,9 @@ register struct ifnet *ifp;
 		s = splimp();
 		if (ifp->if_ioctl)
 			error = (*ifp->if_ioctl)(ifp, SIOCSIFCONF_X25, ifa);
+		if (error)
+			ifp->if_flags &= ~IFF_UP;
 		splx(s);
-		if (error == 0) {
-			ia->ia_xc = *ia->ia_xcp;
-		}
-		ia->ia_xcp = &ia->ia_xc;
 		return (error);
 
 	default:
@@ -470,49 +473,27 @@ register struct mbuf *m;
 }
 
 pk_send (lcp, m)
-register struct pklcd *lcp;
+struct pklcd *lcp;
 register struct mbuf *m;
 {
-	register struct x25_packet *xp;
-	register struct mbuf *m0;
-	register int len;
+	int mqbit = 0, error;
 
-	m0 = dtom ((xp = pk_template (lcp -> lcd_lcn, X25_DATA)));
-	m0 -> m_next = m;
 	/*
 	 * Application has elected (at call setup time) to prepend
 	 * a control byte to each packet written indicating m-bit
 	 * and q-bit status.  Examine and then discard this byte.
 	 */
 	if (lcp -> lcd_flags & X25_MQBIT) {
-		register octet *cp;
-
 		if (m -> m_len < 1) {
-			m_freem (m0);
+			m_freem (m);
 			return (EMSGSIZE);
 		}
-		cp = mtod (m, octet *);
-		if (*cp & 0x80)					/* XXX */
-			xp -> q_bit = 1;
-		xp -> packet_type |= (*cp & 0x40) >> 2;		/* XXX */
+		mqbit = *(mtod(m, u_char *));
 		m -> m_len--;
 		m -> m_data++;
+		m -> m_pkthdr.len--;
 	}
-	len = m -> m_len;
-	while (m -> m_next) {
-		m = m -> m_next;
-		len += m -> m_len;
-	}
-	if (len > (1 << lcp -> lcd_packetsize)) {
-		m_freem (m0);
-		return (EMSGSIZE);
-	}
-	if (lcp -> lcd_so)
-		sbappendrecord (&lcp -> lcd_so -> so_snd, m0);
-	else
-		sbappendrecord (&lcp -> lcd_sb, m0);
-	lcp -> lcd_template = 0;
-	lcp -> lcd_txcnt++;
-	pk_output (lcp);
-	return (0);
+	if ((error = pk_fragment(lcp, m, mqbit & 0x80, mqbit &0x40, 1)) == 0)
+		error = pk_output (lcp);
+	return (error);
 }

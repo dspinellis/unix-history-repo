@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_output.c	7.5 (Berkeley) %G%
+ *	@(#)pk_output.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -144,7 +144,7 @@ register struct pklcd *lcp;
 		pk_trace (pkp -> pk_xcp, xp, "P-Out");
 
 		/* Pass the packet on down to the link layer */
-		(*pkp -> pk_lloutput) (m, pkp -> pk_llnext);
+		(*pkp -> pk_lloutput) (pkp -> pk_llnext, m);
 	}
 }
 

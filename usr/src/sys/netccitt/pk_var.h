@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_var.h	7.6 (Berkeley) %G%
+ *	@(#)pk_var.h	7.7 (Berkeley) %G%
  */
 
 
@@ -52,6 +52,7 @@ struct pklcd {
 	short   lcd_intrcnt;		/* Interrupt packet transmit count */
 	struct	pklcd *lcd_listen;	/* Next lcd on listen queue */
 	struct	pkcb *lcd_pkp;		/* Network this lcd is attached to */
+	struct	mbuf *lcd_ifrag;	/* IP, CLNP reassembly */
 	struct	sockaddr_x25 lcd_faddr;	/* Remote Address (Calling) */
 	struct	sockaddr_x25 lcd_laddr;	/* Local Address (Called) */
 	struct	sockbuf lcd_sb;		/* alternate for datagram service */
@@ -101,12 +102,15 @@ struct x25_ifaddr {
  * packet switching via X.25 virtual circuits.
  */
 struct llinfo_x25 {
-	struct	pklcd *lx_lcd;		/* local connection block */
+	struct	llinfo_x25 *lx_next;	/* chain together in linked list */
+	struct	llinfo_x25 *lx_prev;	/* chain together in linked list */
 	struct	rtentry *lx_rt;		/* back pointer to route */
+	struct	pklcd *lx_lcd;		/* local connection block */
 	struct	x25_ifaddr *lx_ia;	/* may not be same as rt_ifa */
 	int	lx_state;		/* can't trust lcd->lcd_state */
 	int	lx_flags;
 	int	lx_timer;		/* for idle timeout */
+	int	lx_family;		/* for dispatch */
 };
 
 /* States for lx_state */
@@ -116,10 +120,12 @@ struct llinfo_x25 {
 #define LXS_CONNECTED		3
 #define LXS_CONNECTING		4
 #define LXS_DISCONNECTING 	5
+#define LXS_LISTENING 		6
 
 /* flags */
 #define LXF_VALID	0x1		/* Circuit is live, etc. */
 #define LXF_RTHELD	0x2		/* this lcb references rtentry */
+#define LXF_LISTEN	0x4		/* accepting incoming calls */
 
 #ifdef KERNEL
 struct	pkcb *pkcbhead;		/* head of linked list of networks */

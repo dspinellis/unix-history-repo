@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_input.c	7.5 (Berkeley) %G%
+ *	@(#)pk_input.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -31,12 +31,19 @@
  *  becomes operational, is reset, or when the link goes down. 
  */
 
-pk_ctlinput (code, pkp)
-register struct pkcb *pkp;
+pk_ctlinput (code, xcp)
+register struct x25config *xcp;
 {
+
+	register struct pkcb *pkp;
+
+	for (pkp = pkcbhead; pkp; pkp = pkp -> pk_next)
+		if (pkp -> pk_xcp == xcp)
+			break;
 
 	if (pkp == 0)
 		return (EINVAL);
+
 	switch (code) {
 	case PRC_LINKUP: 
 		if (pkp -> pk_state == DTE_WAITING)
@@ -55,7 +62,45 @@ register struct pkcb *pkp;
 	}
 	return (0);
 }
+struct ifqueue pkintrq;
+/*
+ * This routine is called if there are semi-smart devices that do HDLC
+ * in hardware and want to queue the packet and call level 3 directly
+ */
+pkintr ()
+{
+	register struct mbuf *m;
+	register struct ifaddr *ifa;
+	register struct ifnet *ifp;
+	register int s;
 
+	for (;;) {
+		s = splimp ();
+		IF_DEQUEUE (&pkintrq, m);
+		splx (s);
+		if (m == 0)
+			break;
+		if (m->m_len < PKHEADERLN) {
+			printf ("pkintr: packet too short (len=%d)\n",
+				m->m_len);
+			m_freem (m);
+			continue;
+		}
+		if ((m->m_flags & M_PKTHDR) == 0)
+			panic("pkintr");
+		ifp = m->m_pkthdr.rcvif;
+		/*
+		 * look up the appropriate control block
+		 */
+		for (ifa = ifp->if_addrlist; ifa; ifa = ifa->ifa_next)
+			if (ifa->ifa_addr->sa_family == AF_CCITT)
+				break;
+		if (ifa == 0)
+			continue;
+		pk_input(m, ((struct x25_ifaddr *)ifa)->ia_xcp);
+	}
+}
+struct mbuf *pk_bad_packet;
 /* 
  *  X.25 PACKET INPUT
  *
@@ -131,9 +176,11 @@ struct x25config *xcp;
 	}
 
 	if (lcn == 0 && ptype != RESTART && ptype != RESTART_CONF) {
-		pk_message (0, pkp -> pk_xcp, "illegal ptype (%s) on lcn 0",
-			pk_name[ptype / MAXSTATES]);
-		m_freem (m);
+		pk_message (0, pkp -> pk_xcp, "illegal ptype (%d, %s) on lcn 0",
+			ptype, pk_name[ptype / MAXSTATES]);
+		if (pk_bad_packet)
+			m_freem (pk_bad_packet);
+		pk_bad_packet = m;
 		return;
 	}
 
@@ -238,7 +285,8 @@ struct x25config *xcp;
 			m_freem (m);
 			break;
 		}
-
+		if (so == 0)
+			break;
 		m -> m_data += PKHEADERLN;
 		m -> m_len -= PKHEADERLN;
 		if (lcp -> lcd_flags & X25_MQBIT) {
@@ -286,9 +334,11 @@ struct x25config *xcp;
 		if (lcp -> lcd_reset_condition)
 			break;
 		lcp -> lcd_intrdata = xp -> packet_data;
-		sohasoutofband (so);
 		lcp -> lcd_template = pk_template (lcp -> lcd_lcn, X25_INTERRUPT_CONFIRM);
 		pk_output (lcp);
+		MCHTYPE(m, MT_OOBDATA);
+		if (so)
+			sohasoutofband (so);
 		break;
 
 	/* 
@@ -301,6 +351,7 @@ struct x25config *xcp;
 			lcp -> lcd_intrconf_pending = FALSE;
 		else
 			pk_procerror (RESET, lcp, "unexpected packet");
+		MCHTYPE(m, MT_CONTROL);
 		break;
 
 	/* 
@@ -308,13 +359,15 @@ struct x25config *xcp;
 	 *  any data packets waiting transmission.
 	 */
 	case RR + DATA_TRANSFER: 
-		if (lcp -> lcd_reset_condition)
+		if (lcp -> lcd_reset_condition ||
+		    pk_ack (lcp, PR(xp)) != PACKET_OK) {
+			ptype = DELETE_PACKET;
 			break;
-		if (pk_ack (lcp, PR(xp)) != PACKET_OK)
-			break;
+		}
 		if (lcp -> lcd_rnr_condition == TRUE)
 			lcp -> lcd_rnr_condition = FALSE;
 		pk_output (lcp);
+		MCHTYPE(m, MT_CONTROL);
 		break;
 
 	/* 
@@ -322,11 +375,13 @@ struct x25config *xcp;
 	 *  be sent. Condition is cleared with a RR.
 	 */
 	case RNR + DATA_TRANSFER: 
-		if (lcp -> lcd_reset_condition)
+		if (lcp -> lcd_reset_condition ||
+		    pk_ack (lcp, PR(xp)) != PACKET_OK) {
+			ptype = DELETE_PACKET;
 			break;
-		if (pk_ack (lcp, PR(xp)) != PACKET_OK)
-			break;
+		}
 		lcp -> lcd_rnr_condition = TRUE;
+		MCHTYPE(m, MT_CONTROL);
 		break;
 
 	/* 
@@ -340,13 +395,6 @@ struct x25config *xcp;
 			break;
 
 		pk_resetcause (pkp, xp);
-		sbflush (&so -> so_snd);
-		sbflush (&so -> so_rcv);
-
-		wakeup ((caddr_t) & so -> so_timeo);
-		sorwakeup (so);
-		sowwakeup (so);
-
 		lcp -> lcd_window_condition = lcp -> lcd_rnr_condition =
 			lcp -> lcd_intrconf_pending = FALSE;
 		lcp -> lcd_output_window = lcp -> lcd_input_window =
@@ -356,6 +404,15 @@ struct x25config *xcp;
 
 		lcp -> lcd_template = pk_template (lcp -> lcd_lcn, X25_RESET_CONFIRM);
 		pk_output (lcp);
+
+		MCHTYPE(m, MT_CONTROL);
+		if (so == 0)
+			break;
+		sbflush (&so -> so_snd);
+		sbflush (&so -> so_rcv);
+		wakeup ((caddr_t) & so -> so_timeo);
+		sorwakeup (so);
+		sowwakeup (so);
 		break;
 
 	/* 
@@ -368,6 +425,7 @@ struct x25config *xcp;
 		}
 		else
 			pk_procerror (RESET, lcp, "unexpected packet");
+		MCHTYPE(m, MT_CONTROL);
 		break;
 
 	case DATA + SENT_CLEAR: 
@@ -378,7 +436,7 @@ struct x25config *xcp;
 	case INTERRUPT_CONF + SENT_CLEAR: 
 	case RESET + SENT_CLEAR: 
 	case RESET_CONF + SENT_CLEAR: 
-		/* Just ignore packet if we have sent a CLEAR already.
+		/* Just ignore p if we have sent a CLEAR already.
 		   */
 		break;
 
@@ -437,7 +495,9 @@ struct x25config *xcp;
 				"packet arrived on unassigned lcn");
 		break;
 	}
-	if (ptype != DATA)
+	if (so == 0 && lcdstate == DATA_TRANSFER && lcp -> lcd_upper)
+		lcp -> lcd_upper (lcp, m);
+	else if (ptype != DATA)
 		m_freem (m);
 }
 
@@ -469,7 +529,7 @@ struct x25_packet *xp;
 	a = (struct x25_calladdr *) &xp -> packet_data;
 	l1 = a -> calling_addrlen;
 	l2 = a -> called_addrlen;
-	if ((m = m_getclr (M_DONTWAIT, MT_HEADER)) == 0)
+	if ((m = m_getclr (M_DONTWAIT, MT_SONAME)) == 0)
 		return;
 	sa = mtod (m, struct sockaddr_x25 *);
 	u = (octet *) (a -> address_field + l2 / 2);
@@ -539,7 +599,7 @@ struct x25_packet *xp;
 			pk_output (lcp);
 			soisconnected (so);
 		} else if (lcp->lcd_upper)
-			(*lcp->lcd_upper)(lcp);
+			(*lcp->lcd_upper)(lcp, m);
 		return;
 	}
 
@@ -561,15 +621,14 @@ struct x25_packet *xp;
 		sa -> x25_addr, sa -> x25_udata[0] & 0xff,
 		sa -> x25_udata[1] & 0xff, sa -> x25_udata[2] & 0xff,
 		sa -> x25_udata[3] & 0xff, errstr);
-	if ((m = m_getclr (M_DONTWAIT, MT_HEADER)) == 0) {
-		(void) m_free (dtom (sa));
+	if ((lcp = pk_attach((struct socket *)0)) == 0) {
+		(void) m_free (m);
 		return;
 	}
-	lcp = mtod (m, struct pklcd *);
 	lcp -> lcd_lcn = lcn;
 	lcp -> lcd_state = RECEIVED_CALL;
 	pk_assoc (pkp, lcp, sa);
-	(void) m_free (dtom (sa));
+	(void) m_free (m);
 	pk_clear (lcp);
 }
 
@@ -582,7 +641,8 @@ struct x25_packet *xp;
 	register octet *fcp;
 
 	lcp -> lcd_state = DATA_TRANSFER;
-	soisconnected (lcp -> lcd_so);
+	if (lcp -> lcd_so)
+		soisconnected (lcp -> lcd_so);
 	if (len > 3) {
 		ap = (struct x25_calladdr *) &xp -> packet_data;
 		fcp = (octet *) ap -> address_field + (ap -> calling_addrlen +
