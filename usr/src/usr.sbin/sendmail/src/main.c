@@ -6,7 +6,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)main.c	3.131		%G%);
+SCCSID(@(#)main.c	3.132		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -140,8 +140,6 @@ main(argc, argv)
 	int pass = 0;
 	bool safecf = TRUE;		/* this conf file is sys default */
 	bool queuemode = FALSE;		/* process queue requests */
-	bool aliasinit = FALSE;
-	bool dofreeze = FALSE;		/* freeze the .cf file after read */
 	static bool reenter = FALSE;
 	char jbuf[30];			/* holds HostName */
 	extern bool safefile();
@@ -195,6 +193,13 @@ main(argc, argv)
 	ac = argc;
 	av = argv;
 	pass++;
+	p = rindex(*av, '/');
+	if (p++ == NULL)
+		p = *av;
+	if (strcmp(p, "newaliases") == 0)
+		setoption('b', "i", FALSE, TRUE);
+	else if (strcmp(p, "mailq") == 0)
+		setoption('b', "p", FALSE, TRUE);
 	while (--ac > 0 && (p = *++av)[0] == '-')
 	{
 		switch (p[1])
@@ -281,13 +286,6 @@ main(argc, argv)
 			}
 			HopCount = atoi(p);
 			break;
-
-# ifdef DBM
-		  case 'I':	/* initialize alias DBM file */
-			aliasinit = TRUE;
-			Verbose = TRUE;
-			break;
-# endif DBM
 		
 		  case 'n':	/* don't alias */
 			NoAlias = TRUE;
@@ -310,10 +308,6 @@ main(argc, argv)
 			GrabTo = TRUE;
 			break;
 
-		  case 'Z':	/* freeze the configuration file */
-			dofreeze = TRUE;
-			break;
-
 			/* compatibility flags */
 		  case 'b':	/* operations mode */
 		  case 'c':	/* connect to non-local mailers */
@@ -328,6 +322,12 @@ main(argc, argv)
 		  case 's':	/* save From lines in headers */
 			setoption('f', &p[2], FALSE, TRUE);
 			break;
+
+# ifdef DBM
+		  case 'I':	/* initialize alias DBM file */
+			setoption('b', "i", FALSE, TRUE);
+			break;
+# endif DBM
 		}
 	}
 
@@ -339,15 +339,24 @@ main(argc, argv)
 
 	if (pass <= 1)
 	{
-		if (!safecf || dofreeze || !thaw())
+		if (!safecf || Mode == MD_FREEZE || !thaw())
 			readcf(ConfFile, safecf);
 		else
 			goto crackargs;
 	}
-	if (dofreeze)
+	switch (Mode)
 	{
+	  case MD_FREEZE:
 		freeze();
 		exit(EX_OK);
+
+	  case MD_INITALIAS:
+		Verbose = TRUE;
+		break;
+
+	  case MD_PRINT:
+		usrerr("mailq mode not yet implemented");
+		finis();
 	}
 
 	/* do heuristic mode adjustment */
@@ -381,9 +390,9 @@ main(argc, argv)
 	**  Initialize aliases.
 	*/
 
-	initaliases(AliasFile, aliasinit);
+	initaliases(AliasFile, Mode == MD_INITALIAS);
 # ifdef DBM
-	if (aliasinit)
+	if (Mode == MD_INITALIAS)
 		exit(EX_OK);
 # endif DBM
 
