@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)bstring.3	6.2 (Berkeley) %G%
+.\"	@(#)bstring.3	6.3 (Berkeley) %G%
 .\"
 .TH BSTRING 3  ""
 .UC 5
@@ -54,6 +54,10 @@ non-zero otherwise.  Both strings are
 assumed to be
 .I length
 bytes long.
+.B Bcmp
+of
+.I length
+zero bytes always returns zero.
 .PP
 .I Bzero
 places
