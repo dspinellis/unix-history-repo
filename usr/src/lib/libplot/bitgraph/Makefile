@@ -1,8 +1,8 @@
-#	Makefile	4.1	83/11/10
+#	Makefile	4.2	83/11/10
 #
 CFLAGS=	-O
-OBJS=	arc.o box.o circle.o close.o dot.o erase.o label.o \
-	line.o linemod.o move.o open.o point.o space.o
+OBJS=	box.o circle.o arc.o dot.o erase.o line.o linemod.o point.o \
+	label.o move.o open.o close.o space.o
 
 ../libbg:	${OBJS}
 	ar cu ../libbg ${OBJS}
