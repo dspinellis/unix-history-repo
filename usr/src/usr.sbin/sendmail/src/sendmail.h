@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.51 (Berkeley) %G%
+ *	@(#)sendmail.h	8.52 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.51		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.52		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -66,10 +66,10 @@ static char SmailSccsId[] =	"@(#)sendmail.h	8.51		%G%";
 **  Data structure for bit maps.
 **
 **	Each bit in this map can be referenced by an ascii character.
-**	This is 128 possible bits, or 12 8-bit bytes.
+**	This is 256 possible bits, or 32 8-bit bytes.
 */
 
-#define BITMAPBYTES	16	/* number of bytes in a bit map */
+#define BITMAPBYTES	32	/* number of bytes in a bit map */
 #define BYTEBITS	8	/* number of bits in a byte */
 
 /* internal macros */
