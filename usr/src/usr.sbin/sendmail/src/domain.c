@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef NAMED_BIND
-static char sccsid[] = "@(#)domain.c	8.8.1.1 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	8.9 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	8.8.1.1 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	8.9 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -132,6 +132,12 @@ getmxrr(host, mxhosts, droplocalhost, rcode)
 		  case HOST_NOT_FOUND:
 			/* the host just doesn't exist */
 			*rcode = EX_NOHOST;
+
+			if (!UseNameServer)
+			{
+				/* might exist in /etc/hosts */
+				goto punt;
+			}
 			break;
 
 		  case TRY_AGAIN:
