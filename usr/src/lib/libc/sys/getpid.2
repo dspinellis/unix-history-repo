@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)getpid.2	6.2 (Berkeley) %G%
+.\"	@(#)getpid.2	6.3 (Berkeley) %G%
 .\"
 .TH GETPID 2 ""
 .UC 4
@@ -23,8 +23,7 @@ int ppid;
 returns
 the process ID of
 the current process.
-Most often it is used with the host identifier
-.IR gethostid (2)
+Most often it is used
 to generate uniquely-named temporary files.
 .PP
 .I Getppid
