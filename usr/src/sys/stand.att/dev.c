@@ -4,12 +4,12 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dev.c	7.15 (Berkeley) %G%
+ *	@(#)dev.c	7.16 (Berkeley) %G%
  */
 
 #include <sys/param.h>
 #include <setjmp.h>
-#include <stand/saio.h>
+#include <stand.att/saio.h>
 
 /*
  * NB: the value "io->i_dev", used to offset the devsw[] array in the

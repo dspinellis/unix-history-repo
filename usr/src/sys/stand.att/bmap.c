@@ -4,11 +4,11 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)bmap.c	7.3 (Berkeley) %G%
+ *	@(#)bmap.c	7.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
-#include <stand/saio.h>
+#include <stand.att/saio.h>
 
 #define	NBUFS	4
 static char	b[NBUFS][MAXBSIZE];
