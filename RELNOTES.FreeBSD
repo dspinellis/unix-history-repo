@@ -154,31 +154,6 @@ you need to contact the FreeBSD team for that.  Please see section 4 for
 more information.
 
 
-3. 1/4" Tape, 4mm DAT, floppy
-
-  Winning Strategies, Inc.  61 Crestwood Drive #18,  Daly City, CA 94015
-  <jtc@wimsey.com>
-
-  3.5" & 5.25" floppies				$200.00
-   Contains "core" FreeBSD.
-   Shipping - add $15 for U.S. and Canada, $25 for overseas.
-
-  150MB QIC tape				$100.00
-   Contains "core" FreeBSD + XFree86.
-   Choice of either 3.5" or 5.25" boot floppies.
-   Shipping - add $10 for U.S. and Canada, $30 for overseas.
-
-  DAT & Exabyte tapes				$100.00
-   Contains everything on the Walnut Creek CD ROM.
-   Choice of either 3.5" or 5.25" boot floppies.
-   Shipping - same as for QIC tape.
-
-  All packages contain printed copies of the release and installation notes.
-
-  Visa, Mastercard, U.S. $ Money Orders, or U.S. $ checks drawn on a
-  U.S. bank accepted for payment.
-
-
 It should be noted, lest you get the wrong impression that "FreeBSD"
 is anything but, that almost no one in the "core team" makes money
 from distributions or anything else connected with FreeBSD.  We simply
@@ -287,4 +262,4 @@ hope you enjoy this release of FreeBSD!
 
 			The FreeBSD Core Group
 
-$Id: RELNOTES.FreeBSD,v 1.14 1993/10/16 12:02:43 rgrimes Exp $
+$Id: RELNOTES.FreeBSD,v 1.15 1993/10/18 19:32:45 jkh Exp $
