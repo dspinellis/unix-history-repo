@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -756,6 +756,8 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 			return (0);
 #else /* no DAEMON */
 		syserr("openmailer: no IPC");
+		if (tTd(11, 1))
+			printf("openmailer: NULL\n");
 		return (-1);
 #endif /* DAEMON */
 	}
@@ -765,6 +767,8 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 		if (pipe(mpvect) < 0)
 		{
 			syserr("openmailer: pipe (to mailer)");
+			if (tTd(11, 1))
+				printf("openmailer: NULL\n");
 			return NULL;
 		}
 
@@ -774,6 +778,8 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 			syserr("openmailer: pipe (from mailer)");
 			(void) close(mpvect[0]);
 			(void) close(mpvect[1]);
+			if (tTd(11, 1))
+				printf("openmailer: NULL\n");
 			return NULL;
 		}
 
@@ -804,6 +810,8 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 				(void) close(rpvect[0]);
 				(void) close(rpvect[1]);
 			}
+			if (tTd(11, 1))
+				printf("openmailer: NULL\n");
 			return NULL;
 		}
 		else if (pid == 0)
