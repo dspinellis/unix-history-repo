@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ip_input.c	6.21 (Berkeley) %G%
+ *	@(#)ip_input.c	6.22 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -884,9 +884,8 @@ ip_forward(ip, ifp)
 			dest = ip->ip_dst;
 		    /*
 		     * If the destination is reached by a route to host,
-		     * is directly on the attached net (!),
-		     * or if the destination is on a subnet of a local net
-		     * not known to the source net, use host redirect.
+		     * is on a subnet of a local net, or is directly
+		     * on the attached net (!), use host redirect.
 		     * (We may be the correct first hop for other subnets.)
 		     */
 		    type = ICMP_REDIRECT;
@@ -896,8 +895,8 @@ ip_forward(ip, ifp)
 			code = ICMP_REDIRECT_HOST;
 		    else for (ia = in_ifaddr; ia = ia->ia_next; )
 			if ((dst & ia->ia_netmask) == ia->ia_net) {
-			    if ((src & ia->ia_netmask) != ia->ia_net)
-				code = ICMP_REDIRECT_HOST;
+			    if (ia->ia_subnetmask != ia->ia_netmask)
+				    code = ICMP_REDIRECT_HOST;
 			    break;
 			}
 		    if (ipprintfs)
