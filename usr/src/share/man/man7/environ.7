@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)environ.7	6.6 (Berkeley) %G%
+.\"	@(#)environ.7	6.7 (Berkeley) %G%
 .\"
 .Dd 
 .Dt ENVIRON 7
@@ -21,7 +21,19 @@ is made available by
 when a process begins.  By convention these strings have the form
 .Dq Ar name=value .
 The following names are used by various commands:
-.Bl -tag -width Fl
+.Bl -tag -width BLOCKSIZE
+.It Ev BLOCKSIZE
+The size of the block units used by several commands, most notably
+.Xr df 1 ,
+.Xr du 1
+and
+.Xr ls 1 .
+BLOCKSIZE may be specified in units of a byte by specifying a number, 
+in units of a kilobyte by specifying a number followed by ``K'' or
+``k'', in units of a megabyte by specifying a number followed by ``M''
+or ``m'' and in units of a gigabyte by specifying a number followed
+by ``G'' or ``g''.
+Sizes less than 512 bytes or greater than a gigabyte are ignored.
 .It Ev EXINIT
 A startup list of commands read by
 .Xr ex  1  ,
