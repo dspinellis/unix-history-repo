@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)device_pager.c	8.1 (Berkeley) %G%
+ *	@(#)device_pager.c	8.2 (Berkeley) %G%
  */
 
 /*
@@ -27,7 +27,8 @@
 #include <vm/vm_page.h>
 #include <vm/device_pager.h>
 
-queue_head_t	dev_pager_list;	/* list of managed devices */
+queue_head_t	dev_pager_list;		/* list of managed devices */
+queue_head_t	dev_pager_fakelist;	/* list of available vm_page_t's */
 
 #ifdef DEBUG
 int	dpagerdebug = 0;
@@ -37,7 +38,8 @@ int	dpagerdebug = 0;
 #define DDB_FAIL	0x08
 #endif
 
-static vm_pager_t	 dev_pager_alloc __P((caddr_t, vm_size_t, vm_prot_t));
+static vm_pager_t	 dev_pager_alloc
+			    __P((caddr_t, vm_size_t, vm_prot_t, vm_offset_t));
 static void		 dev_pager_dealloc __P((vm_pager_t));
 static int		 dev_pager_getpage
 			    __P((vm_pager_t, vm_page_t, boolean_t));
@@ -45,6 +47,8 @@ static boolean_t	 dev_pager_haspage __P((vm_pager_t, vm_offset_t));
 static void		 dev_pager_init __P((void));
 static int		 dev_pager_putpage
 			    __P((vm_pager_t, vm_page_t, boolean_t));
+static vm_page_t	 dev_pager_getfake __P((vm_offset_t));
+static void		 dev_pager_putfake __P((vm_page_t));
 
 struct pagerops devicepagerops = {
 	dev_pager_init,
@@ -63,58 +67,67 @@ dev_pager_init()
 		printf("dev_pager_init()\n");
 #endif
 	queue_init(&dev_pager_list);
+	queue_init(&dev_pager_fakelist);
 }
 
 static vm_pager_t
-dev_pager_alloc(handle, size, prot)
+dev_pager_alloc(handle, size, prot, foff)
 	caddr_t handle;
 	vm_size_t size;
 	vm_prot_t prot;
+	vm_offset_t foff;
 {
 	dev_t dev;
 	vm_pager_t pager;
-	int (*mapfunc)(), nprot;
-	register vm_object_t object;
-	register vm_page_t page;
-	register dev_pager_t devp;
-	register int npages, off;
-	extern int nullop(), enodev();
-
+	int (*mapfunc)();
+	vm_object_t object;
+	dev_pager_t devp;
+	int npages, off;
 
 #ifdef DEBUG
 	if (dpagerdebug & DDB_FOLLOW)
-		printf("dev_pager_alloc(%x, %x, %x)\n", handle, size, prot);
+		printf("dev_pager_alloc(%x, %x, %x, %x)\n",
+		       handle, size, prot, foff);
 #endif
+#ifdef DIAGNOSTIC
 	/*
 	 * Pageout to device, should never happen.
 	 */
 	if (handle == NULL)
 		panic("dev_pager_alloc called");
+#endif
 
 	/*
-	 * Look it up, creating as necessary
+	 * Make sure this device can be mapped.
 	 */
+	dev = (dev_t)handle;
+	mapfunc = cdevsw[major(dev)].d_mmap;
+	if (mapfunc == NULL || mapfunc == enodev || mapfunc == nullop)
+		return(NULL);
+
+	/*
+	 * Offset should be page aligned.
+	 */
+	if (foff & PAGE_MASK)
+		return(NULL);
+
+	/*
+	 * Check that the specified range of the device allows the
+	 * desired protection.
+	 *
+	 * XXX assumes VM_PROT_* == PROT_*
+	 */
+	npages = atop(round_page(size));
+	for (off = foff; npages--; off += PAGE_SIZE)
+		if ((*mapfunc)(dev, off, (int)prot) == -1)
+			return(NULL);
+
+	/*
+	 * Look up pager, creating as necessary.
+	 */
+top:
 	pager = vm_pager_lookup(&dev_pager_list, handle);
 	if (pager == NULL) {
-		/*
-		 * Validation.  Make sure this device can be mapped
-		 * and that range to map is acceptible to device.
-		 */
-		dev = (dev_t)handle;
-		mapfunc = cdevsw[major(dev)].d_mmap;
-		if (!mapfunc || mapfunc == enodev || mapfunc == nullop)
-			return(NULL);
-		nprot = 0;
-		if (prot & VM_PROT_READ)
-			nprot |= PROT_READ;
-		if (prot & VM_PROT_WRITE)
-			nprot |= PROT_WRITE;
-		if (prot & VM_PROT_EXECUTE)
-			nprot |= PROT_EXEC;
-		npages = atop(round_page(size));
-		for (off = 0; npages--; off += PAGE_SIZE)
-			if ((*mapfunc)(dev, off, nprot) == -1)
-				return(NULL);
 		/*
 		 * Allocate and initialize pager structs
 		 */
@@ -126,42 +139,31 @@ dev_pager_alloc(handle, size, prot)
 			free((caddr_t)pager, M_VMPAGER);
 			return(NULL);
 		}
-		devp->devp_dev = dev;
-		devp->devp_npages = atop(round_page(size));
 		pager->pg_handle = handle;
 		pager->pg_ops = &devicepagerops;
 		pager->pg_type = PG_DEVICE;
-		pager->pg_data = (caddr_t)devp;
+		pager->pg_data = devp;
+		queue_init(&devp->devp_pglist);
 		/*
-		 * Allocate object and vm_page structures to describe memory
+		 * Allocate object and associate it with the pager.
 		 */
-		npages = devp->devp_npages;
-		object = devp->devp_object = vm_object_allocate(ptoa(npages));
+		object = devp->devp_object = vm_object_allocate(0);
 		vm_object_enter(object, pager);
 		vm_object_setpager(object, pager, (vm_offset_t)0, FALSE);
-		devp->devp_pages = (vm_page_t)
-			kmem_alloc(kernel_map, npages*sizeof(struct vm_page));
-		off = 0;
-		for (page = devp->devp_pages;
-		     page < &devp->devp_pages[npages]; page++) {
-			vm_object_lock(object);
-			VM_PAGE_INIT(page, object, off);
-			page->phys_addr =
-				pmap_phys_address((*mapfunc)(dev, off, nprot));
-			page->wire_count = 1;
-			page->flags |= PG_FICTITIOUS;
-			PAGE_WAKEUP(page);
-			vm_object_unlock(object);
-			off += PAGE_SIZE;
-		}
 		/*
 		 * Finally, put it on the managed list so other can find it.
+		 * First we re-lookup in case someone else beat us to this
+		 * point (due to blocking in the various mallocs).  If so,
+		 * we free everything and start over.
 		 */
-		queue_enter(&dev_pager_list, devp, dev_pager_t, devp_list);
+		if (vm_pager_lookup(&dev_pager_list, handle)) {
+			free((caddr_t)devp, M_VMPGDATA);
+			free((caddr_t)pager, M_VMPAGER);
+			goto top;
+		}
+		queue_enter(&dev_pager_list, pager, vm_pager_t, pg_list);
 #ifdef DEBUG
 		if (dpagerdebug & DDB_ALLOC) {
-			printf("dev_pager_alloc: pages %d@%x\n",
-			       devp->devp_npages, devp->devp_pages);
 			printf("dev_pager_alloc: pager %x devp %x object %x\n",
 			       pager, devp, object);
 			vm_object_print(object, FALSE);
@@ -172,38 +174,49 @@ dev_pager_alloc(handle, size, prot)
 		 * vm_object_lookup() gains a reference and also
 		 * removes the object from the cache.
 		 */
+		object = vm_object_lookup(pager);
+#ifdef DIAGNOSTIC
 		devp = (dev_pager_t)pager->pg_data;
-		if (vm_object_lookup(pager) != devp->devp_object)
+		if (object != devp->devp_object)
 			panic("dev_pager_setup: bad object");
+#endif
 	}
 	return(pager);
-
 }
 
 static void
 dev_pager_dealloc(pager)
 	vm_pager_t pager;
 {
-	dev_pager_t devp = (dev_pager_t)pager->pg_data;
-	register vm_object_t object;
+	dev_pager_t devp;
+	vm_object_t object;
+	vm_page_t m;
 
 #ifdef DEBUG
 	if (dpagerdebug & DDB_FOLLOW)
 		printf("dev_pager_dealloc(%x)\n", pager);
 #endif
-	queue_remove(&dev_pager_list, devp, dev_pager_t, devp_list);
+	queue_remove(&dev_pager_list, pager, vm_pager_t, pg_list);
+	/*
+	 * Get the object.
+	 * Note: cannot use vm_object_lookup since object has already
+	 * been removed from the hash chain.
+	 */
+	devp = (dev_pager_t)pager->pg_data;
 	object = devp->devp_object;
 #ifdef DEBUG
 	if (dpagerdebug & DDB_ALLOC)
-		printf("dev_pager_dealloc: devp %x object %x pages %d@%x\n",
-		       devp, object, devp->devp_npages, devp->devp_pages);
+		printf("dev_pager_dealloc: devp %x object %x\n", devp, object);
 #endif
-	while (!queue_empty(&object->memq))
-		vm_page_remove((vm_page_t)queue_first(&object->memq));
-	kmem_free(kernel_map, (vm_offset_t)devp->devp_pages,
-		  devp->devp_npages * sizeof(struct vm_page));
+	/*
+	 * Free up our fake pages.
+	 */
+	while (!queue_empty(&devp->devp_pglist)) {
+		queue_remove_first(&devp->devp_pglist, m, vm_page_t, pageq);
+		dev_pager_putfake(m);
+	}
 	free((caddr_t)devp, M_VMPGDATA);
-	pager->pg_data = 0;
+	free((caddr_t)pager, M_VMPAGER);
 }
 
 static int
@@ -212,11 +225,49 @@ dev_pager_getpage(pager, m, sync)
 	vm_page_t m;
 	boolean_t sync;
 {
+	register vm_object_t object;
+	vm_offset_t offset, paddr;
+	vm_page_t page;
+	dev_t dev;
+	int (*mapfunc)(), prot;
+
 #ifdef DEBUG
 	if (dpagerdebug & DDB_FOLLOW)
 		printf("dev_pager_getpage(%x, %x)\n", pager, m);
 #endif
-	return(VM_PAGER_BAD);
+
+	object = m->object;
+	dev = (dev_t)pager->pg_handle;
+	offset = m->offset + object->paging_offset;
+	prot = PROT_READ;	/* XXX should pass in? */
+	mapfunc = cdevsw[major(dev)].d_mmap;
+#ifdef DIAGNOSTIC
+	if (mapfunc == NULL || mapfunc == enodev || mapfunc == nullop)
+		panic("dev_pager_getpage: no map function");
+#endif
+	paddr = pmap_phys_address((*mapfunc)(dev, (int)offset, prot));
+#ifdef DIAGNOSTIC
+	if (paddr == -1)
+		panic("dev_pager_getpage: map function returns error");
+#endif
+	/*
+	 * Replace the passed in page with our own fake page and free
+	 * up the original.
+	 */
+	page = dev_pager_getfake(paddr);
+	queue_enter(&((dev_pager_t)pager->pg_data)->devp_pglist,
+		    page, vm_page_t, pageq);
+	vm_object_lock(object);
+	vm_page_lock_queues();
+	vm_page_free(m);
+	vm_page_unlock_queues();
+	vm_page_insert(page, object, offset);
+	PAGE_WAKEUP(m);
+	if (offset + PAGE_SIZE > object->size)
+		object->size = offset + PAGE_SIZE;	/* XXX anal */
+	vm_object_unlock(object);
+
+	return(VM_PAGER_OK);
 }
 
 static int
@@ -244,4 +295,36 @@ dev_pager_haspage(pager, offset)
 		printf("dev_pager_haspage(%x, %x)\n", pager, offset);
 #endif
 	return(TRUE);
+}
+
+static vm_page_t
+dev_pager_getfake(paddr)
+	vm_offset_t paddr;
+{
+	vm_page_t m;
+	int i;
+
+	if (queue_empty(&dev_pager_fakelist)) {
+		m = (vm_page_t)malloc(PAGE_SIZE, M_VMPGDATA, M_WAITOK);
+		for (i = PAGE_SIZE / sizeof(*m); i > 0; i--) {
+			queue_enter(&dev_pager_fakelist, m, vm_page_t, pageq);
+			m++;
+		}
+	}
+	queue_remove_first(&dev_pager_fakelist, m, vm_page_t, pageq);
+	m->flags = PG_BUSY | PG_CLEAN | PG_FAKE | PG_FICTITIOUS;
+	m->phys_addr = paddr;
+	m->wire_count = 1;
+	return(m);
+}
+
+static void
+dev_pager_putfake(m)
+	vm_page_t m;
+{
+#ifdef DIAGNOSTIC
+	if (!(m->flags & PG_FICTITIOUS))
+		panic("dev_pager_putfake: bad page");
+#endif
+	queue_enter(&dev_pager_fakelist, m, vm_page_t, pageq);
 }

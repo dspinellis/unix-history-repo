@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)device_pager.h	8.1 (Berkeley) %G%
+ *	@(#)device_pager.h	8.2 (Berkeley) %G%
  */
 
 #ifndef	_DEVICE_PAGER_
@@ -19,15 +19,9 @@
  * Device pager private data.
  */
 struct devpager {
-	queue_head_t	devp_list;	/* list of managed devices */
-	dev_t		devp_dev;	/* devno of device */
-	vm_page_t	devp_pages;	/* page structs for device */
-	int		devp_npages;	/* size of device in pages */
-	int		devp_count;	/* reference count */
+	queue_head_t	devp_pglist;	/* list of pages allocated */
 	vm_object_t	devp_object;	/* object representing this device */
 };
 typedef struct devpager	*dev_pager_t;
-
-#define DEV_PAGER_NULL	((dev_pager_t)0)
 
 #endif	/* _DEVICE_PAGER_ */
