@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_iso.c	7.15 (Berkeley) %G%
+ *	@(#)tp_iso.c	7.16 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -664,4 +664,4 @@ tpiso_reset(isop)
 
 }
 
-#endif ISO
+#endif /* ISO */

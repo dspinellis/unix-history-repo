@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)clnp.h	7.9 (Berkeley) %G%
+ *	@(#)clnp.h	7.10 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -50,7 +50,7 @@ SOFTWARE.
 #else
 #define	BYTE_ORDER	BIG_ENDIAN	/* mc68000, tahoe, most others */
 #endif
-#endif BYTE_ORDER
+#endif /* BYTE_ORDER */
 
 /* should be config option but cpp breaks with too many #defines */
 #define	DECBIT
@@ -390,7 +390,7 @@ extern float troll_random;
 #define	SN_MTU(ifp, rt) (((rt && rt->rt_rmx.rmx_mtu) ?\
 	rt->rt_rmx.rmx_mtu : clnp_badmtu(ifp, rt, __LINE__, __FILE__)))
 
-#endif	TROLL
+#endif	/* TROLL */
 
 /*
  *	Macro to remove an address from a clnp header
@@ -449,5 +449,5 @@ struct iso_addr	*clnp_srcaddr();
 struct mbuf		*clnp_reass();
 #ifdef	TROLL
 struct troll	trollctl;
-#endif	TROLL
-#endif	KERNEL
+#endif	/* TROLL */
+#endif	/* KERNEL */

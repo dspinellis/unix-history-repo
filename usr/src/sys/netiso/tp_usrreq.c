@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_usrreq.c	7.27 (Berkeley) %G%
+ *	@(#)tp_usrreq.c	7.28 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -113,7 +113,7 @@ dump_mbuf(n, str)
 				}
 				printf("\n");
 			}
-#endif notdef
+#endif /* notdef */
 			if (n->m_next == n) {
 				printf("LOOP!\n");
 				return;
@@ -125,7 +125,7 @@ dump_mbuf(n, str)
 	printf("\n");
 }
 
-#endif ARGO_DEBUG
+#endif /* ARGO_DEBUG */
 
 /*
  * CALLED FROM:
@@ -653,7 +653,7 @@ tp_usrreq(so, req, m, nam, controlp)
 	default:
 #ifdef ARGO_DEBUG
 		printf("tp_usrreq UNKNOWN PRU %d\n", req);
-#endif ARGO_DEBUG
+#endif /* ARGO_DEBUG */
 		error = EOPNOTSUPP;
 	}
 

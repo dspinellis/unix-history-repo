@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cons_pcb.h	7.4 (Berkeley) %G%
+ *	@(#)cons_pcb.h	7.5 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -52,9 +52,9 @@ SOFTWARE.
 
 #ifndef ARGO_DEBUG
 #define X25_TTL 600 /* 5 min */
-#else ARGO_DEBUG
+#else /* ARGO_DEBUG */
 #define X25_TTL 120 /* 1 min */
-#endif ARGO_DEBUG
+#endif /* ARGO_DEBUG */
 
 struct cons_pcb {
 	struct isopcb 	_co_isopcb;
@@ -164,4 +164,4 @@ struct e_clear_data 				{
 
 #ifdef KERNEL
 #define IncStat(XYZ) cons_stat.XYZ++
-#endif KERNEL
+#endif /* KERNEL */

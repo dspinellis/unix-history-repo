@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_pcb.c	7.25 (Berkeley) %G%
+ *	@(#)tp_pcb.c	7.26 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -241,7 +241,7 @@ int 	in_pcballoc();
 int 	tpip_output(); 
 int 	tpip_output_dg(); 
 struct inpcb	tp_inpcb;
-#endif INET
+#endif /* INET */
 #ifdef ISO
 int		iso_putnetaddr();
 int		iso_getnetaddr();
@@ -259,7 +259,7 @@ int 	tpclnp_output();
 int 	tpclnp_output_dg(); 
 int		iso_nlctloutput();
 struct isopcb	tp_isopcb;
-#endif ISO
+#endif /* ISO */
 #ifdef TPCONS
 int		iso_putnetaddr();
 int		iso_getnetaddr();
@@ -275,7 +275,7 @@ int 	iso_pcbdetach();
 int 	iso_pcballoc(); 
 int 	tpcons_output(); 
 struct isopcb	tp_isopcb;
-#endif TPCONS
+#endif /* TPCONS */
 
 
 struct nl_protosw nl_protosw[] = {
@@ -292,7 +292,7 @@ struct nl_protosw nl_protosw[] = {
 		},
 #else
 	{ 0 },
-#endif ISO
+#endif /* ISO */
 	/* IN_CLNS */
 #ifdef INET
 	{ AF_INET, in_putnetaddr, in_getnetaddr, in_cmpnetaddr,
@@ -306,7 +306,7 @@ struct nl_protosw nl_protosw[] = {
 		},
 #else
 	{ 0 },
-#endif INET
+#endif /* INET */
 	/* ISO_CONS */
 #if defined(ISO) && defined(TPCONS)
 	{ AF_ISO, iso_putnetaddr, iso_getnetaddr, iso_cmpnetaddr,
@@ -320,7 +320,7 @@ struct nl_protosw nl_protosw[] = {
 		},
 #else
 	{ 0 },
-#endif ISO_CONS
+#endif /* ISO_CONS */
 	/* End of protosw marker */
 	{ 0 }
 };
@@ -847,7 +847,7 @@ tp_detach(tpcb)
 		tpcb->tp_p_meas = 0;
 		tpcb->tp_p_mbuf = 0;
 	}
-#endif TP_PERF_MEAS
+#endif /* TP_PERF_MEAS */
 
 	IFDEBUG(D_CONN)
 		printf( "end of detach, NOT single, tpcb 0x%x\n", tpcb);

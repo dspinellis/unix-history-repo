@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_inet.c	7.11 (Berkeley) %G%
+ *	@(#)tp_inet.c	7.12 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -658,5 +658,5 @@ dump_inaddr(addr)
 {
 	printf("INET: port 0x%x; addr 0x%x\n", addr->sin_port, addr->sin_addr);
 }
-#endif ARGO_DEBUG
-#endif INET
+#endif /* ARGO_DEBUG */
+#endif /* INET */

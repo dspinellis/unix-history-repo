@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)esis.h	7.4 (Berkeley) %G%
+ *	@(#)esis.h	7.5 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -52,7 +52,7 @@ SOFTWARE.
 #else
 #define	BYTE_ORDER	BIG_ENDIAN	/* mc68000, tahoe, most others */
 #endif
-#endif BYTE_ORDER
+#endif /* BYTE_ORDER */
 
 #define	SNPAC_AGE		60			/* seconds */
 #define	ESIS_CONFIG		60			/* seconds */
@@ -106,4 +106,4 @@ struct esis_stat {
 
 #ifdef	KERNEL
 struct esis_stat esis_stat;
-#endif	KERNEL
+#endif	/* KERNEL */

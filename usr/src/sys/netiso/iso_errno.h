@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)iso_errno.h	7.5 (Berkeley) %G%
+ *	@(#)iso_errno.h	7.6 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -245,4 +245,4 @@ SOFTWARE.
 
 #define CONL_ERROR_MAX 0x1c3
 
-#endif __ISO_ERRNO__
+#endif /* __ISO_ERRNO__ */

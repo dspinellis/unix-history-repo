@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)iso_var.h	7.5 (Berkeley) %G%
+ *	@(#)iso_var.h	7.6 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -108,4 +108,4 @@ struct snpa_hdr {
 struct iso_ifaddr	*iso_ifaddr;	/* linked list of iso address ifaces */
 struct iso_ifaddr	*iso_localifa();	/* linked list of iso address ifaces */
 struct ifqueue 		clnlintrq;		/* clnl packet input queue */
-#endif KERNEL
+#endif /* KERNEL */

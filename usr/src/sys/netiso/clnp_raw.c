@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)clnp_raw.c	7.10 (Berkeley) %G%
+ *	@(#)clnp_raw.c	7.11 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -83,7 +83,7 @@ int					hdrlen; /* length (in bytes) of clnp header */
 		m_freem(m);
 		return;
 	}
-#endif	TROLL
+#endif	/* TROLL */
 
 	if (raw_input(m, &rclnp_proto, (struct sockaddr *)src,
 		(struct sockaddr *)dst) == 0) {
@@ -184,7 +184,7 @@ struct mbuf		**m;			/* ptr to ptr to option data */
 	else switch (op) {
 #else
 	switch (op) {
-#endif SOL_NETWORK
+#endif /* SOL_NETWORK */
 		case PRCO_SETOPT:
 			switch (optname) {
 				case CLNPOPT_FLAGS: {
@@ -230,7 +230,7 @@ struct mbuf		**m;			/* ptr to ptr to option data */
 					error = EINVAL;
 					break;
 			}
-#endif notdef
+#endif /* notdef */
 			break;
 		default:
 			error = EINVAL;
