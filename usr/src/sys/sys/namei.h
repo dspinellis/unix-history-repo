@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)namei.h	7.8 (Berkeley) %G%
+ *	@(#)namei.h	7.9 (Berkeley) %G%
  */
 
 #ifndef _NAMEI_
@@ -87,13 +87,15 @@ struct nameidata {
 #define	DELETE		2	/* setup for file deletion */
 #define	RENAME		3	/* setup for file renaming */
 #define	OPFLAG		3	/* mask for operation */
-#define	LOCKLEAF	0x04	/* lock inode on return */
-#define	LOCKPARENT	0x08	/* want parent vnode returned locked */
-#define	WANTPARENT	0x10	/* want parent vnode returned unlocked */
-#define NOCACHE		0x20	/* name must not be left in cache */
-#define FOLLOW		0x40	/* follow symbolic links */
-#define	NOFOLLOW	0x0	/* don't follow symbolic links (pseudo) */
-#define	NOMOUNT		0x80	/* don't cross mount points */
+#define	LOCKLEAF	0x004	/* lock inode on return */
+#define	LOCKPARENT	0x008	/* want parent vnode returned locked */
+#define	WANTPARENT	0x010	/* want parent vnode returned unlocked */
+#define	NOCACHE		0x020	/* name must not be left in cache */
+#define	FOLLOW		0x040	/* follow symbolic links */
+#define	NOFOLLOW	0x000	/* do not follow symbolic links (pseudo) */
+#define	NOCROSSMOUNT	0x080	/* do not cross mount points */
+#define	REMOTE		0x100	/* lookup for remote filesystem servers */
+#define	HASBUF		0x200	/* has preallocated pathname buffer */
 #endif
 
 /*
