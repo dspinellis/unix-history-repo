@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lexi.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)lexi.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -101,7 +101,6 @@ char        chartype[128] =
 int
 lexi()
 {
-    register char *tok;		/* local pointer to next char in token */
     int         unary_delim;	/* this is set to 1 if the current token
 				 * 
 				 * forces a following operator to be unary */
@@ -110,7 +109,7 @@ lexi()
     int         code;		/* internal code to be returned */
     char        qchar;		/* the delimiter character for a string */
 
-    tok = token;		/* point to start of place to save token */
+    e_token = s_token;		/* point to start of place to save token */
     unary_delim = false;
     ps.col_1 = ps.last_nl;	/* tell world that this token started in
 				 * column 1 iff the last thing scanned was nl */
@@ -138,10 +137,12 @@ lexi()
 	                seenexp = 0;
 	    if (*buf_ptr == '0' &&
 		    (buf_ptr[1] == 'x' || buf_ptr[1] == 'X')) {
-		*tok++ = *buf_ptr++;
-		*tok++ = *buf_ptr++;
-		while (isxdigit(*buf_ptr))
-		    *tok++ = *buf_ptr++;
+		*e_token++ = *buf_ptr++;
+		*e_token++ = *buf_ptr++;
+		while (isxdigit(*buf_ptr)) {
+		    check_size(token);
+		    *e_token++ = *buf_ptr++;
+		}
 	    }
 	    else
 		while (1) {
@@ -150,28 +151,31 @@ lexi()
 			    break;
 			else
 			    seendot++;
-		    *tok++ = *buf_ptr++;
+		    check_size(token);
+		    *e_token++ = *buf_ptr++;
 		    if (!isdigit(*buf_ptr) && *buf_ptr != '.')
 			if ((*buf_ptr != 'E' && *buf_ptr != 'e') || seenexp)
 			    break;
 			else {
 			    seenexp++;
 			    seendot++;
-			    *tok++ = *buf_ptr++;
+			    check_size(token);
+			    *e_token++ = *buf_ptr++;
 			    if (*buf_ptr == '+' || *buf_ptr == '-')
-				*tok++ = *buf_ptr++;
+				*e_token++ = *buf_ptr++;
 			}
 		}
 	    if (*buf_ptr == 'L' || *buf_ptr == 'l')
-		*tok++ = *buf_ptr++;
+		*e_token++ = *buf_ptr++;
 	}
 	else
 	    while (chartype[*buf_ptr] == alphanum) {	/* copy it over */
-		*tok++ = *buf_ptr++;
+		check_size(token);
+		*e_token++ = *buf_ptr++;
 		if (buf_ptr >= buf_end)
 		    fill_buffer();
 	    }
-	*tok++ = '\0';
+	*e_token++ = '\0';
 	while (*buf_ptr == ' ' || *buf_ptr == '\t') {	/* get rid of blanks */
 	    if (++buf_ptr >= buf_end)
 		fill_buffer();
@@ -193,15 +197,15 @@ lexi()
 	 * This loop will check if the token is a keyword.
 	 */
 	for (p = specials; (j = p->rwd) != 0; p++) {
-	    tok = token;	/* point at scanned token */
-	    if (*j++ != *tok++ || *j++ != *tok++)
+	    register char *p = s_token;	/* point at scanned token */
+	    if (*j++ != *p++ || *j++ != *p++)
 		continue;	/* This test depends on the fact that
 				 * identifiers are always at least 1 character
 				 * long (ie. the first two bytes of the
 				 * identifier are always meaningful) */
-	    if (tok[-1] == 0)
+	    if (p[-1] == 0)
 		break;		/* If its a one-character identifier */
-	    while (*tok++ == *j)
+	    while (*p++ == *j)
 		if (*j++ == 0)
 		    goto found_keyword;	/* I wish that C had a multi-level
 					 * break... */
@@ -249,10 +253,11 @@ lexi()
 	if (*buf_ptr == '(' && ps.tos <= 1 && ps.ind_level == 0) {
 	    register char *tp = buf_ptr;
 	    while (tp < buf_end)
-		if (*tp++ == ')' && *tp == ';')
+		if (*tp++ == ')' && (*tp == ';' || *tp == ','))
 		    goto not_proc;
 	    strncpy(ps.procname, token, sizeof ps.procname - 1);
 	    ps.in_parameter_declaration = 1;
+	    rparen_count = 1;
     not_proc:;
 	}
 	/*
@@ -277,11 +282,12 @@ lexi()
 	last_code = ident;
 	return (ident);		/* the ident is not in the list */
     }				/* end of procesing for alpanum character */
-    /* l l l Scan a non-alphanumeric token */
 
-    *tok++ = *buf_ptr;		/* if it is only a one-character token, it is
+    /* Scan a non-alphanumeric token */
+
+    *e_token++ = *buf_ptr;		/* if it is only a one-character token, it is
 				 * moved here */
-    *tok = '\0';
+    *e_token = '\0';
     if (++buf_ptr >= buf_end)
 	fill_buffer();
 
@@ -301,10 +307,10 @@ lexi()
     case '"':			/* start of string */
 	qchar = *token;
 	if (troff) {
-	    tok[-1] = '`';
+	    e_token[-1] = '`';
 	    if (qchar == '"')
-		*tok++ = '`';
-	    tok = chfont(&bodyf, &stringf, tok);
+		*e_token++ = '`';
+	    e_token = chfont(&bodyf, &stringf, e_token);
 	}
 	do {			/* copy the string */
 	    while (1) {		/* move one character or [/<char>]<char> */
@@ -312,25 +318,22 @@ lexi()
 		    printf("%d: Unterminated literal\n", line_no);
 		    goto stop_lit;
 		}
-		*tok = *buf_ptr++;
+		check_size(token);	/* Only have to do this once in this loop,
+					 * since check_size guarantees that there
+					 * are at least 5 entries left */
+		*e_token = *buf_ptr++;
 		if (buf_ptr >= buf_end)
 		    fill_buffer();
-		if (had_eof || ((tok - token) > (bufsize - 2))) {
-		    printf("Unterminated literal\n");
-		    ++tok;
-		    goto stop_lit;
-		    /* get outof literal copying loop */
-		}
-		if (*tok == BACKSLASH) {	/* if escape, copy extra char */
+		if (*e_token == BACKSLASH) {	/* if escape, copy extra char */
 		    if (*buf_ptr == '\n')	/* check for escaped newline */
 			++line_no;
 		    if (troff) {
-			*++tok = BACKSLASH;
+			*++e_token = BACKSLASH;
 			if (*buf_ptr == BACKSLASH)
-			    *++tok = BACKSLASH;
+			    *++e_token = BACKSLASH;
 		    }
-		    *++tok = *buf_ptr++;
-		    ++tok;	/* we must increment this again because we
+		    *++e_token = *buf_ptr++;
+		    ++e_token;	/* we must increment this again because we
 				 * copied two chars */
 		    if (buf_ptr >= buf_end)
 			fill_buffer();
@@ -338,11 +341,11 @@ lexi()
 		else
 		    break;	/* we copied one character */
 	    }			/* end of while (1) */
-	} while (*tok++ != qchar);
+	} while (*e_token++ != qchar);
 	if (troff) {
-	    tok = chfont(&stringf, &bodyf, tok - 1);
+	    e_token = chfont(&stringf, &bodyf, e_token - 1);
 	    if (qchar == '"')
-		*tok++ = '\'';
+		*e_token++ = '\'';
 	}
 stop_lit:
 	code = ident;
@@ -419,7 +422,7 @@ stop_lit:
 
 	if (*buf_ptr == token[0]) {
 	    /* check for doubled character */
-	    *tok++ = *buf_ptr++;
+	    *e_token++ = *buf_ptr++;
 	    /* buffer overflow will be checked at end of loop */
 	    if (last_code == ident || last_code == rparen) {
 		code = (ps.last_u_d ? unary_op : postop);
@@ -429,10 +432,10 @@ stop_lit:
 	}
 	else if (*buf_ptr == '=')
 	    /* check for operator += */
-	    *tok++ = *buf_ptr++;
+	    *e_token++ = *buf_ptr++;
 	else if (*buf_ptr == '>') {
 	    /* check for operator -> */
-	    *tok++ = *buf_ptr++;
+	    *e_token++ = *buf_ptr++;
 	    if (!pointer_as_binop) {
 		unary_delim = false;
 		code = unary_op;
@@ -447,17 +450,17 @@ stop_lit:
 	    ps.block_init = 1;
 #ifdef undef
 	if (chartype[*buf_ptr] == opchar) {	/* we have two char assignment */
-	    tok[-1] = *buf_ptr++;
-	    if ((tok[-1] == '<' || tok[-1] == '>') && tok[-1] == *buf_ptr)
-		*tok++ = *buf_ptr++;
-	    *tok++ = '=';	/* Flip =+ to += */
-	    *tok = 0;
+	    e_token[-1] = *buf_ptr++;
+	    if ((e_token[-1] == '<' || e_token[-1] == '>') && e_token[-1] == *buf_ptr)
+		*e_token++ = *buf_ptr++;
+	    *e_token++ = '=';	/* Flip =+ to += */
+	    *e_token = 0;
 	}
 #else
 	if (*buf_ptr == '=') {/* == */
-	    *tok++ = '=';	/* Flip =+ to += */
+	    *e_token++ = '=';	/* Flip =+ to += */
 	    buf_ptr++;
-	    *tok = 0;
+	    *e_token = 0;
 	}
 #endif
 	code = binary_op;
@@ -469,12 +472,12 @@ stop_lit:
     case '<':
     case '!':			/* ops like <, <<, <=, !=, etc */
 	if (*buf_ptr == '>' || *buf_ptr == '<' || *buf_ptr == '=') {
-	    *tok++ = *buf_ptr;
+	    *e_token++ = *buf_ptr;
 	    if (++buf_ptr >= buf_end)
 		fill_buffer();
 	}
 	if (*buf_ptr == '=')
-	    *tok++ = *buf_ptr++;
+	    *e_token++ = *buf_ptr++;
 	code = (ps.last_u_d ? unary_op : binary_op);
 	unary_delim = true;
 	break;
@@ -482,7 +485,7 @@ stop_lit:
     default:
 	if (token[0] == '/' && *buf_ptr == '*') {
 	    /* it is start of comment */
-	    *tok++ = '*';
+	    *e_token++ = '*';
 
 	    if (++buf_ptr >= buf_end)
 		fill_buffer();
@@ -491,11 +494,11 @@ stop_lit:
 	    unary_delim = ps.last_u_d;
 	    break;
 	}
-	while (*(tok - 1) == *buf_ptr || *buf_ptr == '=') {
+	while (*(e_token - 1) == *buf_ptr || *buf_ptr == '=') {
 	    /*
 	     * handle ||, &&, etc, and also things as in int *****i
 	     */
-	    *tok++ = *buf_ptr;
+	    *e_token++ = *buf_ptr;
 	    if (++buf_ptr >= buf_end)
 		fill_buffer();
 	}
@@ -511,7 +514,7 @@ stop_lit:
     if (buf_ptr >= buf_end)	/* check for input buffer empty */
 	fill_buffer();
     ps.last_u_d = unary_delim;
-    *tok = '\0';		/* null terminate the token */
+    *e_token = '\0';		/* null terminate the token */
     return (code);
 }
 
