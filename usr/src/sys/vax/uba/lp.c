@@ -1,4 +1,4 @@
-/*	lp.c	4.10	81/03/07	*/
+/*	lp.c	4.11	81/03/07	*/
 
 #include "lp.h"
 #if NLP > 0
@@ -324,4 +324,18 @@ struct uba_device *ui;
 
 	sc = &lp_softc[ui->ui_unit];
 	sc->sc_lpchar = -1;
+}
+
+lpprobe(reg)
+caddr_t reg;
+{
+	register struct lpdevice *lpaddr;
+	register int delay = 10000;
+
+	lpaddr = (struct lpdevice *) reg;
+	lpaddr->lpsr |= IENABLE;
+	lpaddr->lpbuf = ' ';
+	while(delay--)
+		continue;
+	lpaddr->lpsr &= ~IENABLE;
 }
