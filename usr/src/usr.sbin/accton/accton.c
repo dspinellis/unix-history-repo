@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)accton.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)accton.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -41,15 +41,15 @@ main(argc, argv)
 	argv += optind;
 
 	switch(argc) {
-	case 1: 
+	case 0: 
 		if (acct(NULL)) {
 			(void)fprintf(stderr,
 			    "accton: %s\n", strerror(errno));
 			exit(1);
 		}
 		break;
-	case 2:
-		if (acct(*++argv)) {
+	case 1:
+		if (acct(*argv)) {
 			(void)fprintf(stderr,
 			    "accton: %s: %s\n", *argv, strerror(errno));
 			exit(1);
