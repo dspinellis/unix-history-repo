@@ -1,0 +1,220 @@
+.ce 100
+RATFOR _ A Rational Fortran
+.sp 2
+B. W. Kernighan
+.sp
+Bell Laboratories
+Murray Hill, N. J. 07974
+.ce 0
+.fi
+.sp 
+.de PP
+.sp
+.ti +5
+..
+.PP
+Fortran programs are hard to read, write and debug.
+To make program development easier,
+RATFOR 
+provides a set of decent control structures:
+.sp
+.nf
+  statement grouping
+  completely general \fBif - else\fR statements
+  \fBwhile\fR, \fBfor\fR and \fBdo\fR for looping
+  \fBbreak\fR and \fBnext\fR for controlling loop exits
+.sp
+.fi
+and some ``syntactic sugar'':
+.sp
+.nf
+  free form input (e.g., multiple statements/line)
+  unobtrusive comment convention
+  translation of >, >=, etc., into .GT., .GE., etc.
+  ``define'' statement for symbolic parameters
+  ``include'' statement for including source files
+.sp
+.fi
+.PP
+RATFOR
+not only
+makes programming in Fortran more enjoyable,
+but also allows structured programming, in the sense of
+coding without
+GOTO's.
+RATFOR
+programs tend to be markedly easier
+to write, read, and make correct than their equivalents
+in standard Fortran.
+.PP
+RATFOR
+is a preprocessor,
+translating the input into standard Fortran constructions.
+RATFOR
+programs may readily be written so the generated Fortran
+is portable;
+program transferability is easy to achieve.
+RATFOR
+is written in itself,
+so it is also portable.
+.sp
+.PP
+The grammar of
+RATFOR 
+is as follows:
+.nf
+.sp
+prog	: stat 
+	| prog  stat
+stat	: \fBif\fP( condition ) stat 
+	| \fBif\fP( condition ) stat \fBelse\fP stat
+	| \fBwhile\fP( condition ) stat
+	| \fBfor\fP( initialization; condition; increment ) stat
+	| \fBdo\fP do-part stat
+	| break
+	| next
+	| digits  stat
+	| { prog }
+	| anything unrecognizable
+.fi
+.sp
+In the grammar above,
+condition
+can be any legal Fortran condition like 
+"`A .EQ. B',"
+i.e., anything that could appear in a legal Fortran logical 
+IF
+statement.
+stat 
+is, of course, any Fortran or
+RATFOR
+statement,
+or any collection of these enclosed in braces.
+.PP
+The
+while
+statement performs a loop while some specified condition is true.
+The test is performed at the \fIbeginning\fR of the loop,
+so it is
+possible to do a
+while
+zero times,
+which can't be done with a Fortran
+DO.
+.PP
+The
+for
+statement
+is a somewhat generalized
+while
+statement
+that allows an initialization and an
+incrementing step as well as a termination condition
+on a loop.
+initialization
+is any single \fIFortran\fR statement, which gets done once
+before the loop begins.
+increment
+is any single \fIFortran\fR statement,
+which gets done at the end of each pass through the loop,
+before the test.
+.PP
+for
+and
+while
+are useful for
+backward loops, chaining along lists,
+loops that must be done zero times,
+and similar things which are hard to express with a 
+DO
+statement,
+and obscure to write out directly.
+.PP
+The
+do
+statement is like a Fortran 
+DO,
+except that no label or 
+CONTINUE
+is needed.
+The \fBdo-part\fP that follows the 
+do
+keyword has to be something that can legally go into
+a Fortran 
+DO
+statement.
+.PP
+A
+break
+causes an immediate exit from a
+for,
+while
+or
+do
+to the following statement.
+The
+next
+statement causes an immediate transfer to the
+increment
+part of a
+for
+or
+do,
+and the test part of a
+while.
+Both
+break
+and
+next
+refer to the innermost enclosing 
+for,
+while
+or
+do.
+.sp
+.br
+.PP
+Statements can be placed anywhere on a line;
+long statements are continued automatically.
+Multiple statements may appear on one line,
+if they are separated by semicolons.
+No semi-colon is needed at the end of a line,
+if
+RATFOR
+can guess whether the statement
+ends there.
+Lines ending with any characters
+obviously a continuation, like plus or comma,
+are assumed to be continued on the next line.
+Any statement that begins with an all-numeric field is
+assumed to be a Fortran label,
+and placed in columns 1-5.
+PP
+A
+`#'
+character in a line marks the beginning
+of a comment;
+the comment is terminated by the end of a line.
+.PP
+Text enclosed in matching single or double quotes
+is converted to
+nH...
+by
+RATFOR,
+but is otherwise unaltered.
+Characters like `>', `>=', and `&'
+are translated into their longer Fortran equivalents
+`.GT.', 
+`.GE',
+and
+`.AND',
+except within quotes.
+.PP
+Any string of alphanumeric characters can be defined as a name;
+thereafter, whenever that name occurs in the input
+(delimited by non-alphanumerics)
+it is replaced by the rest of the definition line
+(comments are stripped off).
+.PP
+An entire source file may be included by saying
+``include filename'' at the appropriate place.
