@@ -317,6 +317,7 @@ usage:
 		sn = getold(f, &oldbad);
 		printf("\nbad block information at sector %d in %s:\n",
 		    sn, name);
+		printf("cartridge serial number: %d(10)\n", oldbad.bt_csn);
 		switch (oldbad.bt_flag) {
 
 		case (u_short)-1:
