@@ -3,13 +3,11 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)systm.h	7.11 (Berkeley) %G%
+ *	@(#)systm.h	7.12 (Berkeley) %G%
  */
 
 /*
- * Random set of variables
- * used by more than one
- * routine.
+ * Random set of variables used by more than one routine.
  */
 extern	char version[];		/* system version */
 
@@ -57,15 +55,12 @@ extern struct sysent {
 	int	(*sy_call)();		/* handler */
 } sysent[];
 
-int	noproc;			/* no one is running just now */
 char	*panicstr;
 int	boothowto;		/* reboot flags, from console subsystem */
 #ifdef	KADB
 char	*bootesym;		/* end of symbol info from boot */
 #endif
 int	selwait;
-
-extern	char *vmmap;		/* poor name! */
 
 /* casts to keep lint happy */
 #define	insque(q,p)	_insque((caddr_t)q,(caddr_t)p)
@@ -76,6 +71,7 @@ extern	char *vmmap;		/* poor name! */
  */
 int	nullop __P((void));
 int	enodev __P((void));
+int	enoioctl __P((void));
 int	enxio __P((void));
 int	eopnotsupp __P((void));
 int	seltrue __P((dev_t dev, int which, struct proc *p));
