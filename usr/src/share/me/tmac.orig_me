@@ -12,14 +12,14 @@
 .\"*		1919 Addison Street Suite 304				*
 .\"*		Berkeley, California  94704				*
 .\"*									*
-.\"*	VERSION 2.21	First Release: 11 Sept 1978			*
+.\"*	VERSION 2.22	First Release: 11 Sept 1978			*
 .\"*	See file \*(||/revisions for revision history			*
 .\"*									*
 .\"*	Documentation is available.					*
 .\"*									*
 .\"**********************************************************************
 .\"
-.\"	@(#)tmac.orig_me	2.21	%G%
+.\"	@(#)tmac.orig_me	2.22	%G%
 .\"	%beginstrip%
 .\"
 .\"	Code on .de commands:
@@ -554,7 +554,7 @@
 .	if \\$3>0 \
 .		$\\$3
 .	if \w"\\$2">0 \\$2.
-.	if \w"\\$1">0 \\$1\f1\ \  \"
+.	if \w"\\$1">0 \\$1\f1\ \ \&
 .\}
 .el \
 .	sp \\n(psu
