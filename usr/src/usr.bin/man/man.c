@@ -17,7 +17,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)man.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)man.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -26,41 +26,16 @@ static char sccsid[] = "@(#)man.c	5.11 (Berkeley) %G%";
 
 #define	DEF_PAGER	"/usr/ucb/more -s"
 #define	DEF_PATH	"/usr/man:/usr/new/man:/usr/local/man"
-
 #define	LOCAL_PATH	"/usr/local/man"
-#define	LOCAL_NAME	"local"
-
 #define	NEW_PATH	"/usr/new/man"
-#define	NEW_NAME	"new"
 
 #define	NO		0
 #define	YES		1
 
-#define	NO_SECTION	0
-#define	S_THREEF	9
-#define	S_OLD		10
-
-/* this array maps a character (ex: '4') to an offset in stanlist */
-#define	secno(x)	(seclist[(int)(x - '0')])
-static int	seclist[] = { -1, 1, 4, 5, 6, 7, 3, 8, 2, -1, -1 };
-
-/* sub directory list, ordered for searching */
 typedef struct {
-	char	*name,
-		*msg;
+	char	*name, *msg;
 } DIR;
 
-DIR	stanlist[] = {		/* standard sub-directory list */
-	"notused", "",		"cat1", "1st",		"cat8", "8th",
-	"cat6", "6th",		"cat2", "2nd",		"cat3", "3rd",
-	"cat4", "4th",		"cat5", "5th", 		"cat7", "7th",
-	"cat3f", "3rd (F)",	"cat.old", "old",	NULL, NULL,
-},	sec1list[] = {		/* section one list */
-	"notused", "",		"cat1", "1st",		"cat8", "8th",
-	"cat6", "6th",		"cat.old", "old",	NULL, NULL,
-};
-
-static DIR	*dirlist;		/* list of directories to search */
 static int	nomore,			/* copy file to stdout */
 		where;			/* just tell me where */
 static char	*defpath,		/* default search path */
@@ -71,12 +46,10 @@ static char	*defpath,		/* default search path */
 		*pager;			/* requested pager */
 
 main(argc, argv)
-	int	argc;
-	register char	**argv;
+	int argc;
+	register char **argv;
 {
-	int	section;
-	char	**arg_start, **arg,
-		*getenv(), *malloc();
+	char **arg_start, **arg, *getenv(), *malloc(), *strcpy();
 
 	arg_start = argv;
 	for (--argc, ++argv; argc && (*argv)[0] == '-'; --argc, ++argv)
@@ -114,48 +87,50 @@ main(argc, argv)
 			execvp(*arg_start, arg_start);
 			fputs("apropos: Command not found.\n", stderr);
 			exit(1);
+		/*
+		 * Deliberately undocumented; really only useful when
+		 * you're moving man pages around.  Not worth adding.
+		 */
 		case 'w':
-			/*
-			 * Deliberately undocumented; really only useful when
-			 * you're moving man pages around.  Not worth adding.
-			 */
 			where = YES;
 			break;
 		case '?':
 		default:
 			fprintf(stderr, "man: illegal option -- %c\n", (*argv)[1]);
-			usage();
+			goto usage;
 		}
-	if (!argc)
-		usage();
+
+	if (!argc) {
+usage:		fputs("usage: man [-] [-M path] [section] title ...\n", stderr);
+		exit(1);
+	}
 
 	if (!nomore)
 		if (!isatty(1))
 			nomore = YES;
 		else if (pager = getenv("PAGER")) {
-			register char	*C;
+			register char *p;
 
 			/*
 			 * if the user uses "more", we make it "more -s"
 			 * watch out for PAGER = "mypager /usr/ucb/more"
 			 */
-			for (C = pager; *C && !isspace(*C); ++C);
-			for (; C > pager && *C != '/'; --C);
-			if (C != pager)
-				++C;
+			for (p = pager; *p && !isspace(*p); ++p);
+			for (; p > pager && *p != '/'; --p);
+			if (p != pager)
+				++p;
 			/* make sure it's "more", not "morex" */
-			if (!strncmp(C, "more", 4) && (!C[4] || isspace(C[4]))) {
-				C += 4;
+			if (!strncmp(p, "more", 4) && (!p[4] || isspace(p[4]))) {
+				p += 4;
 				/*
-				 * sizeof is 1 more than # of chars, so,
 				 * allocate for the rest of the PAGER
 				 * environment variable, a space, and the EOS.
 				 */
-				if (!(pager = malloc((u_int)(strlen(C) + sizeof(DEF_PAGER) + 1)))) {
+				if (!(pager = malloc((u_int)(strlen(p) + sizeof(DEF_PAGER) + 1)))) {
 					fputs("man: out of space.\n", stderr);
 					exit(1);
 				}
-				(void)sprintf(pager, "%s %s", DEF_PAGER, C);
+				(void)sprintf(pager, "%s %s", DEF_PAGER, p);
 			}
 		}
 		else
@@ -166,132 +141,90 @@ main(argc, argv)
 		defpath = DEF_PATH;
 	locpath = LOCAL_PATH;
 	newpath = NEW_PATH;
-	for (; *defpath && *defpath == ':'; ++defpath);
-
-	/* Gentlemen... start your kludges! */
-	for (; *argv; ++argv) {
-		section = NO_SECTION;
-		manpath = defpath;
-		switch(**argv) {
-		/*
-		 * Section 1 requests are really for section 1, 6, 8, in the
-		 * standard, local and new directories and section old. Since
-		 * old isn't broken up into a directory of cat[1-8], we just
-		 * treat it like a subdirectory of the others.
-		 */
-		case '1': case '2': case '4': case '5': case '6':
-		case '7': case '8':
-			if (!(*argv)[1]) {
-				section = secno((*argv)[0]);
-				goto numtest;
-			}
-			break;
-
-		/* sect. 3 requests are for either section 3, or section 3F. */
-		case '3':
-			if (!(*argv)[1]) {			/* "3" */
-				section = secno((*argv)[0]);
-numtest:			if (!*++argv) {
-					fprintf(stderr, "man: what do you want from the %s section of the manual?\n", stanlist[section].msg);
-					exit(1);
-				}
-			}					/* "3[fF]" */
-			else if (((*argv)[1] == 'f'  || (*argv)[1] == 'F') && !(*argv)[2]) {
-				section = S_THREEF;
-				if (!*++argv) {
-					fprintf(stderr, "man: what do you want from the %s section of the manual?\n", stanlist[S_THREEF].msg);
-					exit(1);
-				}
-			}
-			break;
-		/*
-		 * Requests for the new or local sections can have subsection
-		 * numbers appended to them, i.e. "local3" is really
-		 * local/cat3.
-		 */
-		case 'l':					/* local */
-			if (!(*argv)[1])			/* "l" */
-				section = NO_SECTION;		/* "l2" */
-			else if (isdigit((*argv)[1]) && !(*argv)[2])
-				section = secno((*argv)[1]);
-			else {
-				int	lex;
-				lex = strcmp(LOCAL_NAME, *argv);
-				if (!lex)			/* "local" */
-					section = NO_SECTION;	/* "local2" */
-				else if (lex < 0 && isdigit((*argv)[sizeof(LOCAL_NAME) - 1]) && !(*argv)[sizeof(LOCAL_NAME)])
-					section = secno((*argv)[sizeof(LOCAL_NAME) - 1]);
-				else
-					break;
-			}
-			if (!*++argv) {
-				fputs("man: what do you want from the local section of the manual?\n", stderr);
-				exit(1);
-			}
-			manpath = locpath;
-			break;
-		case 'n':					/* new */
-			if (!(*argv)[1])			/* "n" */
-				section = NO_SECTION;		/* "n2" */
-			else if (isdigit((*argv)[1]) && !(*argv)[2])
-				section = secno((*argv)[1]);
-			else {
-				int	lex;
-				lex = strcmp(NEW_NAME, *argv);
-				if (!lex)			/* "new" */
-					section = NO_SECTION;	/* "new2" */
-				else if (lex < 0 && isdigit((*argv)[sizeof(NEW_NAME) - 1]) && !(*argv)[sizeof(NEW_NAME)])
-					section = secno((*argv)[sizeof(NEW_NAME) - 1]);
-				else
-					break;
-			}
-			if (!*++argv) {
-				fputs("man: what do you want from the new section of the manual?\n", stderr);
-				exit(1);
-			}
-			manpath = newpath;
-			break;
-		case 'o':					/* old */
-			if (!(*argv)[1] || !strcmp(*argv, stanlist[S_OLD].msg)) {
-				section = S_OLD;
-				if (!*++argv) {
-					fprintf(stderr, "man: what do you want from the %s section of the manual?\n", stanlist[section].msg);
-					exit(1);
-				}
-			}
-			break;
-		}
-		if (section == 1) {
-			dirlist = sec1list;
-			section = NO_SECTION;
-		}
-		else
-			dirlist = stanlist;
-		/*
-		 * This is really silly, but I wanted to put out rational
-		 * errors, not just "I couldn't find it."  This if statement
-		 * knows an awful lot about what gets assigned to what in
-		 * the switch statement we just passed through.  Sorry.
-		 */
-		if (!manual(section, *argv) && !where)
-			if (manpath == locpath)
-				if (section == NO_SECTION)
-					fprintf(stderr, "No entry for %s in the local manual.\n", *argv);
-				else
-					fprintf(stderr, "No entry for %s in the %s section of the local manual.\n", *argv, stanlist[section].msg);
-			else if (manpath == newpath)
-				if (section == NO_SECTION)
-					fprintf(stderr, "No entry for %s in the new manual.\n", *argv);
-				else
-					fprintf(stderr, "No entry for %s in the %s section of the new manual.\n", *argv, stanlist[section].msg);
-			else if (dirlist == sec1list)
-				fprintf(stderr, "No entry for %s in the 1st section of the manual.\n", *argv);
-			else if (section == NO_SECTION)
-				fprintf(stderr, "No entry for %s in the manual.\n", *argv);
-			else
-				fprintf(stderr, "No entry for %s in the %s section of the manual.\n", *argv, stanlist[section].msg);
-	}
+	man(argv);
 	exit(0);
+}
+
+static DIR	list1[] = {		/* section one list */
+	"cat1", "1st",		"cat8", "8th",		"cat6", "6th",
+	"cat.old", "old",	NULL, NULL,
+},		list2[] = {		/* rest of the list */
+	"cat2", "2nd",		"cat3", "3rd",		"cat4", "4th",
+	"cat5", "5th", 		"cat7", "7th",		"cat3f", "3rd (F)",
+	NULL, NULL,
+},		list3[2];		/* single section */
+
+static
+man(argv)
+	char **argv;
+{
+	register char *p;
+	DIR *section, *getsect();
+	int res;
+
+	for (; *argv; ++argv) {
+		manpath = defpath;
+		section = NULL;
+		switch(**argv) {
+		case 'l':				/* local */
+			for (p = *argv; isalpha(*p); ++p);
+			if (!strncmp(*argv, "l", p - *argv) ||
+			    !strncmp(*argv, "local", p - *argv)) {
+				manpath = locpath;
+				if (section = getsect(p))
+					goto argtest;
+			}
+			break;
+		case 'n':				/* new */
+			for (p = *argv; isalpha(*p); ++p);
+			if (!strncmp(*argv, "n", p - *argv) ||
+			    !strncmp(*argv, "new", p - *argv)) {
+				manpath = newpath;
+				if (section = getsect(p))
+					goto argtest;
+			}
+			break;
+		/*
+		 * old isn't really a separate section of the manual,
+		 * and its entries are all in a single directory.
+		 */
+		case 'o':				/* old */
+			for (p = *argv; isalpha(*p); ++p);
+			if (!strncmp(*argv, "o", p - *argv) ||
+			    !strncmp(*argv, "old", p - *argv)) {
+				list3[0] = list1[3];
+				section = list3;
+				goto argtest;
+			}
+			break;
+		case '1': case '2': case '3': case '4':
+		case '5': case '6': case '7': case '8':
+			if (!(section = getsect(*argv)))
+				break;
+argtest:		if (!*++argv) {
+				fprintf(stderr, "man: what do you want from the %s section of the manual?\n", section->msg);
+				exit(1);
+			}
+		}
+
+		res = section ? manual(section, *argv) :
+		    manual(list1, *argv) || manual(list2, *argv);
+		if (!res && !where)
+			if (manpath == locpath)
+				if (section)
+					fprintf(stderr, "No entry for %s in the %s section of the local manual.\n", *argv, section->msg);
+				else
+					fprintf(stderr, "No entry for %s in the local manual.\n", *argv);
+			else if (manpath == newpath)
+				if (section)
+					fprintf(stderr, "No entry for %s in the %s section of the new manual.\n", *argv, section->msg);
+				else
+					fprintf(stderr, "No entry for %s in the new manual.\n", *argv);
+			else if (section)
+				fprintf(stderr, "No entry for %s in the %s section of the manual.\n", *argv, section->msg);
+			else
+				fprintf(stderr, "No entry for %s in the manual.\n", *argv);
+	}
 }
 
 /*
@@ -301,26 +234,22 @@ numtest:			if (!*++argv) {
  */
 static
 manual(section, name)
-	int	section;
-	char	*name;
+	DIR *section;
+	char *name;
 {
-	register DIR	*dir;
-	register char	*beg, *end;
-	char	*index();
+	register char *beg, *end;
+	register DIR *dp;
+	char *index();
 
 	for (beg = manpath;; beg = end + 1) {
 		if (end = index(beg, ':'))
 			*end = '\0';
-		if (section == NO_SECTION)
-			for (dir = dirlist; (++dir)->name;) {
-				if (find(beg, dir->name, name))
-					goto found;
+		for (dp = section; dp->name; ++dp)
+			if (find(beg, dp->name, name)) {
+				if (end)
+					*end = ':';
+				return(YES);
 			}
-		else if (find(beg, stanlist[section].name, name)) {
-found:			if (end)
-				*end = ':';
-			return(YES);
-		}
 		if (!end)
 			return(NO);
 		*end = ':';
@@ -336,9 +265,9 @@ found:			if (end)
  */
 static
 find(beg, dir, name)
-	char	*beg, *dir, *name;
+	char *beg, *dir, *name;
 {
-	char	fname[MAXPATHLEN + 1];
+	char fname[MAXPATHLEN + 1];
 
 	(void)sprintf(fname, "%s/%s/%s.0", beg, dir, name);
 	if (access(fname, R_OK)) {
@@ -359,10 +288,10 @@ find(beg, dir, name)
  */
 static
 show(fname)
-	char	*fname;
+	char *fname;
 {
-	register int	fd, n;
-	char	buf[BUFSIZ];
+	register int fd, n;
+	char buf[BUFSIZ];
 
 	if (nomore) {
 		if (!(fd = open(fname, O_RDONLY, 0))) {
@@ -382,7 +311,7 @@ show(fname)
 	}
 	else {
 		/*
-		 * use system(2) in case someone's pager is
+		 * use system(3) in case someone's pager is
 		 * "command arg1 arg2"
 		 */
 		(void)sprintf(buf, "%s %s", pager, fname);
@@ -391,12 +320,64 @@ show(fname)
 }
 
 /*
- * usage --
- *	print out a usage message and die
+ * getsect --
+ *	return a point to the section structure for a particular suffix
  */
-static
-usage()
+static DIR *
+getsect(s)
+	char *s;
 {
-	fputs("usage: man [-] [-M path] [section] title ...\n", stderr);
-	exit(1);
+	switch(*s++) {
+	case '1':
+		if (!*s)
+			return(list1);
+		break;
+	case '2':
+		if (!*s) {
+			list3[0] = list2[0];
+			return(list3);
+		}
+		break;
+	/* sect. 3 requests are for either section 3, or section 3[fF]. */
+	case '3':
+		if (!*s) {
+			list3[0] = list2[1];
+			return(list3);
+		}
+		else if ((*s == 'f'  || *s == 'F') && !*++s) {
+			list3[0] = list2[5];
+			return(list3);
+		}
+		break;
+	case '4':
+		if (!*s) {
+			list3[0] = list2[2];
+			return(list3);
+		}
+		break;
+	case '5':
+		if (!*s) {
+			list3[0] = list2[3];
+			return(list3);
+		}
+		break;
+	case '6':
+		if (!*s) {
+			list3[0] = list1[2];
+			return(list3);
+		}
+		break;
+	case '7':
+		if (!*s) {
+			list3[0] = list2[4];
+			return(list3);
+		}
+		break;
+	case '8':
+		if (!*s) {
+			list3[0] = list1[1];
+			return(list3);
+		}
+	}
+	return((DIR *)NULL);
 }
