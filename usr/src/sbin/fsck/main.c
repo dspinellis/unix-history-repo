@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	1.15 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	1.16 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -14,8 +14,8 @@ typedef	int	(*SIG_TYP)();
 
 #define	NDIRECT(fs)	((fs)->fs_bsize / sizeof(struct direct))
 #define	MAXNDIRECT	(MAXBSIZE / sizeof(struct direct))
-#define	MAXINOPB	(MAXBSIZE / sizeof(struct dinode))
-#define	MAXNINDIR	(MAXBSIZE / sizeof(daddr_t))
+#define	MAXNINDIR	(MAXBSIZE / sizeof (daddr_t))
+#define	MAXINOPB	(MAXBSIZE / sizeof (struct dinode))
 #define	SPERB		(MAXBSIZE / sizeof(short))
 
 #define	MAXDUP	10		/* limit on dup blks (per inode) */
@@ -1193,10 +1193,10 @@ setup(dev)
 	initbarea(&fileblk);
 	initbarea(&inoblk);
 	initbarea(&cgblk);
-	if (bread(&dfile, &sblock, super, MAXBSIZE) == 0)
+	if (bread(&dfile, &sblock, super, SBSIZE) == 0)
 		return (0);
 	sblk.b_bno = super;
-	sblk.b_size = MAXBSIZE;
+	sblk.b_size = SBSIZE;
 	if (sblock.fs_magic != FS_MAGIC)
 		{ badsb("MAGIC NUMBER WRONG"); return (0); }
 	if (sblock.fs_ncg < 1)
@@ -1230,7 +1230,8 @@ setup(dev)
 	if (sblock.fs_spc != sblock.fs_nsect * sblock.fs_ntrak)
 		{ badsb("SPC DOES NOT JIVE w/NTRAK*NSECT"); return (0); }
 	if (sblock.fs_cgsize !=
-	    sizeof(struct cg) + howmany(sblock.fs_fpg, NBBY))
+	    roundup(sizeof(struct cg) + howmany(sblock.fs_fpg, NBBY),
+	    sblock.fs_fsize))
 		{ badsb("CGSIZE INCORRECT"); return (0); }
 	if (sblock.fs_cssize != sblock.fs_ncg * sizeof(struct csum))
 		{ badsb("CSSIZE INCORRECT"); return (0); }

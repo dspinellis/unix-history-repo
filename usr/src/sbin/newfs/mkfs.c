@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)mkfs.c	1.11 (Berkeley) %G%";
+static	char *sccsid = "@(#)mkfs.c	1.12 (Berkeley) %G%";
 
 /*
  * make file system for cylinder-group style file systems
@@ -18,6 +18,7 @@ static	char *sccsid = "@(#)mkfs.c	1.11 (Berkeley) %G%";
 
 #define UMASK		0755
 #define MAXNDIR		(MAXBSIZE / sizeof(struct direct))
+#define MAXINOPB	(MAXBSIZE / sizeof(struct dinode))
 #define POWEROF2(num)	(((num) & ((num) - 1)) == 0)
 
 union {
@@ -296,10 +297,9 @@ main(argc, argv)
 		printf("Warning, no super-block backups with only one cylinder group\n");
 	else
 		printf("\tsuper-block backups (for fsck -b#) at %d+k*%d (%d .. %d)\n",
-		    SBLOCK, fsbtodb(&sblock, sblock.fs_fpg),
-		    SBLOCK + fsbtodb(&sblock, sblock.fs_fpg),
-		    SBLOCK + fsbtodb(&sblock, (sblock.fs_ncg - 1) *
-			sblock.fs_fpg));
+		    SBLOCK, fsbtodb(&sblock, cgsblock(1, &sblock)) - SBLOCK,
+		    fsbtodb(&sblock, cgsblock(1, &sblock)),
+		    fsbtodb(&sblock, cgsblock(sblock.fs_ncg - 1, &sblock)));
 	/*
 	 * Now construct the initial file system,
 	 * then write out the super-block.
@@ -548,10 +548,15 @@ rdfs(bno, size, bf)
 {
 	int n;
 
-	lseek(fsi, bno * DEV_BSIZE, 0);
+	if (lseek(fsi, bno * DEV_BSIZE, 0) < 0) {
+		printf("seek error: %ld\n", bno);
+		perror("rdfs");
+		exit(1);
+	}
 	n = read(fsi, bf, size);
 	if(n != size) {
 		printf("read error: %ld\n", bno);
+		perror("rdfs");
 		exit(1);
 	}
 }
@@ -566,11 +571,16 @@ wtfs(bno, size, bf)
 {
 	int n;
 
-	printf("wtfs: bno %d, size %d, buf %d\n", bno, size, bf);
 	lseek(fso, bno * DEV_BSIZE, 0);
+	if (lseek(fso, bno * DEV_BSIZE, 0) < 0) {
+		printf("seek error: %ld\n", bno);
+		perror("wtfs");
+		exit(1);
+	}
 	n = write(fso, bf, size);
 	if(n != size) {
 		printf("write error: %D\n", bno);
+		perror("wtfs");
 		exit(1);
 	}
 }

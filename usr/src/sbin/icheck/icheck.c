@@ -1,11 +1,11 @@
-static	char *sccsid = "@(#)icheck.c	1.11 (Berkeley) %G%";
+static	char *sccsid = "@(#)icheck.c	1.12 (Berkeley) %G%";
 
 /*
  * icheck
  */
 #define	NB	500
 #define	MAXFN	500
-#define MAXNINDIR (MAXBSIZE / sizeof (daddr_t))
+#define	MAXNINDIR	(MAXBSIZE / sizeof (daddr_t))
 
 #ifndef STANDALONE
 #include <stdio.h>
@@ -524,7 +524,7 @@ makecg()
 	}
 	sblock.fs_ronly = 0;
 	sblock.fs_fmod = 0;
-	bwrite(SBLOCK, (char *)&sblock, MAXBSIZE);
+	bwrite(SBLOCK, (char *)&sblock, SBSIZE);
 }
 
 /*
@@ -567,7 +567,7 @@ getsb(fs, file)
 {
 	int i;
 
-	if (bread(SBLOCK, fs, MAXBSIZE)) {
+	if (bread(SBLOCK, fs, SBSIZE)) {
 		printf("bad super block");
 		perror(file);
 		nerror |= 04;

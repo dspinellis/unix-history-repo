@@ -1,11 +1,11 @@
-static	char *sccsid = "@(#)dcheck.c	1.4 (Berkeley) %G%";
+static	char *sccsid = "@(#)dcheck.c	1.5 (Berkeley) %G%";
 /*
  * dcheck - check directory consistency
  */
 #define	NB	10
 #define	NDIR(fs)	((fs)->fs_bsize/sizeof(struct direct))
 #define	MAXNDIR		(MAXBSIZE/sizeof(struct direct))
-#define	MAXNINDIR	(MAXBSIZE/sizeof(daddr_t))
+#define	MAXNINDIR	(MAXBSIZE / sizeof (daddr_t))
 
 #include <stdio.h>
 #include "../h/param.h"
@@ -80,7 +80,7 @@ char *file;
 	headpr = 0;
 	printf("%s:\n", file);
 	sync();
-	bread(SBLOCK, (char *)&sblock, MAXBSIZE);
+	bread(SBLOCK, (char *)&sblock, SBSIZE);
 	if (sblock.fs_magic != FS_MAGIC) {
 		printf("%s: not a file system\n", file);
 		nerror++;

@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)ncheck.c	1.4 (Berkeley) %G%";
+static	char *sccsid = "@(#)ncheck.c	1.5 (Berkeley) %G%";
 /*
  * ncheck -- obtain file names from reading filesystem
  */
@@ -7,7 +7,7 @@ static	char *sccsid = "@(#)ncheck.c	1.4 (Berkeley) %G%";
 #define	HSIZE		2503
 #define	NDIR(fs)	((fs)->fs_bsize/sizeof(struct direct))
 #define	MAXNDIR		(MAXBSIZE/sizeof(struct direct))
-#define	MAXNINDIR	(MAXBSIZE/sizeof(daddr_t))
+#define	MAXNINDIR	(MAXBSIZE / sizeof (daddr_t))
 
 #include <stdio.h>
 #include "../h/param.h"
@@ -94,7 +94,7 @@ check(file)
 	nhent = 0;
 	printf("%s:\n", file);
 	sync();
-	bread(SBLOCK, (char *)&sblock, MAXBSIZE);
+	bread(SBLOCK, (char *)&sblock, SBSIZE);
 	if (sblock.fs_magic != FS_MAGIC) {
 		printf("%s: not a file system\n", file);
 		nerror++;
