@@ -1,4 +1,4 @@
-/* mbuf.h 4.11 82/01/24 */
+/*	mbuf.h	4.12	82/05/18	*/
 
 /*
  * Constants related to memory allocator.
@@ -9,6 +9,7 @@
 #define	MMAXOFF		(MSIZE-MTAIL)		/* offset where data ends */
 #define	MLEN		(MSIZE-MMINOFF-MTAIL)	/* mbuf data length */
 #define	NMBCLUSTERS	256
+#define	NMBPCL		(CLBYTES/MSIZE)		/* # mbufs per cluster */
 
 /*
  * Macros for type conversion
@@ -49,14 +50,14 @@ struct mbuf {
 	{ int ms = splimp(); \
 	  if ((m)=mfree) \
 		{ if ((m)->m_free == 0) panic("mget"); (m)->m_free = 0; \
-		  mbstat.m_bufs--; mfree = (m)->m_next; (m)->m_next = 0; } \
+		  mbstat.m_mbfree--; mfree = (m)->m_next; (m)->m_next = 0; } \
 	  else \
 		(m) = m_more(i); \
 	  splx(ms); }
 #define	MCLGET(m, i) \
 	{ int ms = splimp(); \
 	  if ((m)=mclfree) \
-	      { ++mclrefcnt[mtocl(m)]; nmclfree--; mclfree = (m)->m_next; } \
+	     {++mclrefcnt[mtocl(m)];mbstat.m_clfree--;mclfree = (m)->m_next;} \
 	  splx(ms); }
 #define	MFREE(m, n) \
 	{ int ms = splimp(); \
@@ -64,17 +65,26 @@ struct mbuf {
 	  if ((m)->m_off > MSIZE) { \
 		(n) = (struct mbuf *)(mtod(m, int)&~0x3ff); \
 		if (--mclrefcnt[mtocl(n)] == 0) \
-		    { (n)->m_next = mclfree; mclfree = (n); nmclfree++; } \
+		    { (n)->m_next = mclfree;mclfree = (n);mbstat.m_clfree++;} \
 	  } \
 	  (n) = (m)->m_next; (m)->m_next = mfree; \
-	  (m)->m_off = 0; (m)->m_act = 0; mfree = (m); mbstat.m_bufs++; \
+	  (m)->m_off = 0; (m)->m_act = 0; mfree = (m); mbstat.m_mbfree++; \
 	  splx(ms); }
 
+/*
+ * Mbuf statistics.  Clients can committ hunks of space until we are
+ * overcommitted by the fraction represented by MBUFOVERALLOCFRAG.
+ * We keep track of the amount of space committed, the number
+ * of mbufs and clusters allocated from the free memory pool, and
+ * the number of mbufs and clusters on our free lists.
+ */
+#define	MBUFOVERALLOCFRACTION	3 / 2		/* don't parenthesize ! */
 struct mbstat {
-	short	m_bufs;			/* # free msg buffers */
-	short	m_hiwat;		/* # free mbufs allocated */
-	short	m_lowat;		/* min. # free mbufs */
-	short	m_clusters;		/* # pages owned by network */
+	short	m_mbcommitted;		/* most we'll allow pool size to get */
+	short	m_mbufs;		/* mbufs obtained from page pool */
+	short	m_mbfree;		/* mbufs on our free list */
+	short	m_clusters;		/* clusters obtained from page pool */
+	short	m_clfree;		/* free clusters */
 	short	m_drops;		/* times failed to find space */
 };
 
@@ -82,9 +92,8 @@ struct mbstat {
 extern	struct mbuf mbutl[];		/* virtual address of net free mem */
 extern	struct pte Mbmap[];		/* page tables to map Netutl */
 struct	mbstat mbstat;
-int	nmbclusters;
+extern	int nmbclusters;
 struct	mbuf *mfree, *mclfree;
-int	nmclfree;
 char	mclrefcnt[NMBCLUSTERS];
 struct	mbuf *m_get(),*m_getclr(),*m_free(),*m_more(),*m_copy(),*m_pullup();
 caddr_t	m_clalloc();
