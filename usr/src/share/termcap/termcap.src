@@ -3,7 +3,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)termcap.src	5.89 (Berkeley) %G%
+#	@(#)termcap.src	5.90 (Berkeley) %G%
 #
 
 #	Termcap source file
@@ -504,6 +504,17 @@ MA|vc404-na|volker-craig 404 w/no arrow keys:\
 	:ma@:kr@:ku@:tc=vc404:
 MB|vc404-s-na|volker-craig 404 w/standout mode and no arrow keys:\
 	:se=^O:so=^N:tc=vc404-na:
+# From: wolfgang@cs.sfu.ca
+ua|vc414|vc414h|Volker-Craig 414H in sane escape mode.:\
+	:am:ic=\E\072:dc=\E\063:so=\E\031:se=\E\037:\
+	:kl=^H:kr=^P:ku=\E^L:kd=\E^K:kh=\E^R:\
+	:k0=\EA:k1=\EB:k2=\EC:k3=\ED:k4=\EE:k5=\EF:k6=\EG:k7=\EH:\
+	:l0=PF1:l1=PF2:l2=PF3:l3=PF4:l4=PF5:l5=PF6:l6=PF7:l7=PF8:\
+	:al=40\E^Z:bs:cd=\E^X:ce=10\E^O:cl=40\E^\:co#80:\
+	:do=\E^K:li#24:nd=^P:up=\E^L:
+ub|vc414h-noxon:\
+	:dl=40\E^S:cm=40\E^Q%r%.%.:ho=\E^R:\
+	:tc=vc414h:
 # missing in vc303a and vc303 descriptions:  they scroll 2 lines at a time
 MC|vc303a|vc403a|volker-craig 303a:\
 	:do=^J:am:le=^H:bs:ce=20^V:cl=40^X:co#80:ho=40^Y:kd=^J:kl=^H::kr=^U:\
