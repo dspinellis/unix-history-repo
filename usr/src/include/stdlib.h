@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stdlib.h	5.25 (Berkeley) %G%
+ *	@(#)stdlib.h	5.26 (Berkeley) %G%
  */
 
 #ifndef _STDLIB_H_
@@ -87,6 +87,7 @@ int	 setenv __P((const char *, const char *, int));
 #endif
 
 #if !defined(_ANSI_SOURCE) && !defined(_POSIX_SOURCE)
+void	*alloca __P((size_t));		/* built-in for gcc */
 					/* getcap(3) functions */
 char	*cgetcap __P((char *, char *, int));
 int	 cgetclose __P((void));
@@ -99,7 +100,9 @@ int	 cgetset __P((char *));
 int	 cgetstr __P((char *, char *, char **));
 int	 cgetustr __P((char *, char *, char **));
 
+int	 daemon __P((int, int));
 int	 getloadavg __P((double [], int));
+
 extern char *optarg;			/* getopt(3) external variables */
 extern int opterr, optind, optopt;
 int	 getopt __P((int, char * const *, const char *));
@@ -107,7 +110,7 @@ int	 getopt __P((int, char * const *, const char *));
 extern char *suboptarg;			/* getsubopt(3) external variable */
 int	 getsubopt __P((char **, char * const *, char **));
 
-void	*alloca __P((size_t));		/* built-in for gcc */
+char	*group_from_gid __P((unsigned long, int));
 int	 heapsort __P((void *, size_t, size_t,
 	    int (*)(const void *, const void *)));
 char	*initstate __P((unsigned, char *, int));
@@ -120,6 +123,7 @@ int	 sradixsort __P((const unsigned char **, int, const unsigned char *,
 long	 random __P((void));
 char	*setstate __P((char *));
 void	 srandom __P((unsigned));
+char	*user_from_uid __P((unsigned long, int));
 #ifndef __STRICT_ANSI__
 long long
 	 strtoq __P((const char *, char **, int));
