@@ -92,7 +92,8 @@ controllers.
 2.2. Ethernet cards
 
 SMC Elite 16 WD8013 ethernet interface, and most other WD8003E,
-WD8003EBT, WD8003S, WD8003SBT and WD8013EBT based clones.
+WD8003EBT, WD8003W, WD8013W, WD8003S, WD8003SBT and WD8013EBT
+based clones.
 
 Isolan AT 4141-0 (16 bit)
 
@@ -106,7 +107,7 @@ Novell NE1000, NE2000, and NE2100 ethernet interface.
 
 Toshiba ethernet cards
 
-WD Elite Ultra
+SMC Elite Ultra
 
 
 2.3. Misc
@@ -296,4 +297,4 @@ hope you enjoy this release of FreeBSD!
 
 			The FreeBSD Core Group
 
-$Id: RELNOTES.FreeBSD,v 1.25 1994/03/20 00:22:08 jkh Exp $
+$Id: RELNOTES.FreeBSD,v 1.26 1994/03/22 16:43:59 jkh Exp $
