@@ -1,5 +1,5 @@
 /*
-char id_fio[] = "@(#)fio.h	1.1";
+char id_fio[] = "@(#)fio.h	1.2";
  *
  * f77 file i/o common definitions
  */
@@ -37,3 +37,4 @@ extern char *fmtbuf, *icptr, *icend, *fmtptr;
 extern int scale;
 extern int cursor;
 extern int radix;
+extern struct ioiflg	ioiflg_;
