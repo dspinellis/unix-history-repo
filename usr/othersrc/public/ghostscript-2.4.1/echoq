@@ -1,0 +1,7 @@
+# Figure out what we have to do to get a \ in the output of 'echo'.
+# System V `echo' strips \s, but doesn't recognize -n;
+# bsd `echo' does the opposite.  Figure out which one we have.
+	echo -n >_temp_.echo
+	if ( test -s _temp_.echo ) ; then echo $* \\\\; fi
+	if ( test \! -s _temp_.echo ) ; then echo $* \\; fi
+	rm _temp_.echo
