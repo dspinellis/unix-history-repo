@@ -3,16 +3,16 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.4	(Berkeley)	%G%
+#	@(#)Makefile	5.5	(Berkeley)	%G%
 #
 CFLAGS=	-O -I.
 LIBC=	/lib/libc.a
 SRCS=	dc.c
-OBJS=	dc.h
+OBJS=
 
 all: dc
 
-dc:	dc.c ${LIBC}
+dc: dc.c ${LIBC}
 	${CC} ${CFLAGS} dc.c -o $@
 
 clean: FRC
@@ -35,6 +35,7 @@ FRC:
 # DO NOT DELETE THIS LINE -- mkdep uses it.
 # DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
 
-dc: dc.c /usr/include/stdio.h /usr/include/signal.h dc.h
+dc: dc.c /usr/include/stdio.h /usr/include/signal.h /usr/include/machine/trap.h
+dc: dc.h
 
 # IF YOU PUT ANYTHING HERE IT WILL GO AWAY
