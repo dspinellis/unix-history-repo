@@ -1,0 +1,140 @@
+.\"	@(#)uucico.8	6.1 (Berkeley) %G%
+.\"
+.TH UUCICO 8C ""
+.UC 6
+.SH NAME
+uucicio \- uupoll transfer files queued by uucp or uux
+.SH SYNOPSIS
+.B uucico
+[
+.BI \-d spooldir
+] [
+.BI \-g grade
+] [
+.BI \-r role
+] [
+.B \-R
+] [
+.BI \-s system
+] [
+.BI \-x debug
+] [
+.B \-L
+] [
+.BI \-t turnaround
+]
+.PP
+.B uupoll 
+[
+.BI \-g grade
+] [
+.B -n
+]
+system [ system1 ... ]
+.SH DESCRIPTION
+.I uucico
+performs the actual work involved in transferring files between
+systems. 
+.I uucp
+and
+.I uux
+merely queue requests for data transfer which uucico processes.
+.PP
+The following options are available.
+.TP 8
+.BI \-d spooldir
+Use
+.I spooldir
+as the spool directory.
+.TP 8
+.BI \-g grade
+Only send jobs of grade
+.I grade
+or higher this transfer.
+.TP 8
+.B \-R
+Reverse roles. This tells the remote system to begin sending its
+jobs first, instead of waiting for the local machine to finish.
+.TP 8
+.BI \-r role
+.I role
+is either 1 or 0. It signifies whether uucico is to run in 
+master or slave mode. 1 is used when starting 
+.I uucico
+by hand. 0 is used when another system calls the local system.
+.TP 8
+.BI \-s system
+Call only system
+.IR system .
+If 
+.B \-s
+is not specified, and \-r1 is specifed,
+.I uucico
+will attempt to call all systems for which there is work.
+If
+.B \-s
+is specified, a call will be made even if there is
+no work for that system. This is useful for polling
+systems.
+.TP 8
+.BI \-x debug
+Turn on debugging at level
+.IR debug .
+Level 5 is a good start when trying to find out why a call
+failed. Level 9 is very detailed. Level 99 is absurdly verbose.
+.TP 8
+.B \-L
+Only call ``local'' sites. A site is considered local if
+the device-type field in 
+.I L.sys
+is one of LOCAL, DIR or TCP.
+.TP 8
+.BI \-t turnaround
+Use
+.I turnaround
+as the line turnaround time (in minutes) instead of the default 30.  If 
+.I turnaround
+is missing or 0, line turnaround will be disabled.
+After uucico has been running in Slave mode for
+.I turnaround 
+minutes, it will attempt to run in master mode by negotiating with the
+remote machine.  In the past, a large transfer of news in
+one direction would hold up mail going in the other direction.
+With the turnaround code working, the message flow will be more
+bidirectional in the short term.
+This option only works with newer uucicos and is ignored by older ones.
+.PP
+If
+.I uucico
+receives a
+.B SIGFPE
+(see
+.IR kill (1))
+it will toggle the debugging on or off.
+.PP
+This program will typically be started by
+.IR cron (8).
+.PP
+.B uupoll
+is used to force a poll of a remote system. It queues a null job
+for the remote system and invokes 
+.I uucico.
+If the
+.I \-g
+flag is specified, the null job will be queued with grade 
+.IR grade .
+If
+.I \-n
+is specified, the null job will be queued, but an immediate
+.I uucico
+will not be invoked.
+.SH FILES
+.TP 22
+/usr/lib/uucp
+directory with commands used by uucico internally
+.TP
+/usr/spoool/uucp
+spool directory
+.SH SEE ALSO
+D. A. Nowitz,
+Uucp Implementation Description
