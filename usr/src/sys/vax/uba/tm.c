@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tm.c	7.5 (Berkeley) %G%
+ *	@(#)tm.c	7.6 (Berkeley) %G%
  */
 
 #include "te.h"
@@ -449,16 +449,15 @@ loop:
 		goto dobpcmd;
 	}
 	/*
-	 * For raw I/O, save the current block
-	 * number in case we have to retry.
+	 * For raw I/O, fudge the current block number
+	 * so we don't seek except on a retry.
 	 */
 	if (bp->b_flags & B_RAW) {
 		if (um->um_tab.b_errcnt == 0) {
 			sc->sc_blkno = bdbtofsb(bp->b_blkno);
 			sc->sc_nxrec = sc->sc_blkno + 1;
 		}
-	}
-	else {
+	} else {
 		/*
 		 * Handle boundary cases for operation
 		 * on non-raw tapes.
@@ -610,7 +609,7 @@ tmintr(tm11)
 	 * An operation completed... record status
 	 */
 	sc->sc_timo = INF;
-	if (um->um_tab.b_active = SIO)
+	if (um->um_tab.b_active == SIO)
 		sc->sc_ioerreg = addr->tmer;
 	sc->sc_dsreg = addr->tmcs;
 	sc->sc_erreg = addr->tmer;
