@@ -1,5 +1,5 @@
-: calendar.sh 4.5 84/02/14
-PATH=/bin:/usr/bin:
+: calendar.sh 4.6 87/10/14
+PATH=/bin:/usr/bin:/usr/ucb
 tmp=/tmp/cal0$$
 trap "rm -f $tmp /tmp/cal1$$ /tmp/cal2$$"
 trap exit 1 2 13 15
