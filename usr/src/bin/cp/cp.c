@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cp.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)cp.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -64,8 +64,8 @@ PATH_T to = { "", to.p_path };
 uid_t myuid;
 int exit_val, myumask;
 int interactive_flag, preserve_flag, recursive_flag;
-int (*statfcn)();			/* stat function to use */
-char *buf;				/* I/O; malloc for best alignment. */
+int (*statfcn)();
+char *buf, *pname;
 char *path_append(), *path_basename();
 
 main(argc, argv)
@@ -76,7 +76,13 @@ main(argc, argv)
 	struct stat to_stat;
 	register int c, r;
 	int force_flag, symfollow, lstat(), stat();
-	char *old_to, *malloc();
+	char *old_to, *p, *malloc();
+
+	/*
+	 * cp is used by mv(1) -- except for usage statements, print
+	 * the "called as" program name.
+	 */
+	pname = (p = rindex(*argv,'/')) ? ++p : *argv;
 
 	force_flag = symfollow = 0;
 	while ((c = getopt(argc, argv, "Rfhipr")) != EOF) {
@@ -114,7 +120,7 @@ main(argc, argv)
 
 	buf = (char *)malloc(MAXBSIZE);
 	if (!buf) {
-		(void)fprintf(stderr, "cp: out of space.\n");
+		(void)fprintf(stderr, "%s: out of space.\n", pname);
 		exit(1);
 	}
 
@@ -201,8 +207,8 @@ copy()
 		if (to_stat.st_dev == from_stat.st_dev &&
 		    to_stat.st_ino == from_stat.st_ino) {
 			(void)fprintf(stderr,
-			    "cp: %s and %s are identical (not copied).\n",
-			    to.p_path, from.p_path);
+			    "%s: %s and %s are identical (not copied).\n",
+			    pname, to.p_path, from.p_path);
 			exit_val = 1;
 			return;
 		}
@@ -216,8 +222,8 @@ copy()
 	case S_IFDIR:
 		if (!recursive_flag) {
 			(void)fprintf(stderr,
-			    "cp: %s is a directory (not copied).\n",
-			    from.p_path);
+			    "%s: %s is a directory (not copied).\n",
+			    pname, from.p_path);
 			exit_val = 1;
 			return;
 		}
@@ -236,8 +242,8 @@ copy()
 			}
 		}
 		else if (type(to_stat) != S_IFDIR) {
-			(void)fprintf(stderr, "cp: %s: not a directory.\n",
-			    to.p_path);
+			(void)fprintf(stderr, "%s: %s: not a directory.\n",
+			    pname, to.p_path);
 			return;
 		}
 		copy_dir();
@@ -362,8 +368,8 @@ copy_dir()
 
 	dir_cnt = scandir(from.p_path, &dir_list, NULL, NULL);
 	if (dir_cnt == -1) {
-		(void)fprintf(stderr, "cp: can't read directory %s.\n",
-		    from.p_path);
+		(void)fprintf(stderr, "%s: can't read directory %s.\n",
+		    pname, from.p_path);
 		exit_val = 1;
 	}
 
@@ -513,7 +519,8 @@ ismember(gid)
 		if (ngroups == -1) {
 			ngroups = 0;
 			exit_val = 1;
-			(void)fprintf(stderr, "cp: %s\n", strerror(errno));
+			(void)fprintf(stderr, "%s: %s\n",
+			    pname, strerror(errno));
 			return(0);
 		}
 	}
@@ -529,7 +536,7 @@ error(s)
 	extern int errno;
 
 	exit_val = 1;
-	(void)fprintf(stderr, "cp: %s: %s\n", s, strerror(errno));
+	(void)fprintf(stderr, "%s: %s: %s\n", pname, s, strerror(errno));
 }
 
 /********************************************************************
@@ -560,7 +567,8 @@ path_set(p, string)
 	char *string;
 {
 	if (strlen(string) > MAXPATHLEN) {
-		(void)fprintf(stderr, "cp: %s: name too long.\n", string);
+		(void)fprintf(stderr, "%s: %s: name too long.\n",
+		    pname, string);
 		exit_val = 1;
 		return(0);
 	}
@@ -598,7 +606,7 @@ path_append(p, name, len)
 	 */
 	if ((len + p->p_end - p->p_path + 1) > MAXPATHLEN) {
 		(void)fprintf(stderr,
-		    "cp: %s/%s: name too long.\n", p->p_path, name);
+		    "%s: %s/%s: name too long.\n", pname, p->p_path, name);
 		exit_val = 1;
 		return(0);
 	}
