@@ -1,4 +1,4 @@
-/*	tm.c	4.47	82/03/28	*/
+/*	tm.c	4.48	82/05/27	*/
 
 #include "te.h"
 #include "ts.h"
@@ -100,7 +100,7 @@ struct	te_softc {
 	u_short	sc_dens;	/* prototype command with density info */
 	daddr_t	sc_timo;	/* time until timeout expires */
 	short	sc_tact;	/* timeout is active */
-} te_softc[NTM];
+} te_softc[NTE];
 #ifdef unneeded
 int	tmgapsdcnt;		/* DEBUG */
 #endif
