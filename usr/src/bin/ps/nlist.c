@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)nlist.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)nlist.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -57,7 +57,7 @@ donlist()
 	rval = 0;
 	nlistread = 1;
 	if (kvm_nlist(psnl)) {
-		(void)fprintf(stderr, "ps: kvm_nlist: %s\n", kvm_geterr());
+		nlisterr(psnl);
 		eval = 1;
 		return(1);
 	}
@@ -86,4 +86,16 @@ donlist()
 		eval = rval = 1;
 	}
 	return(rval);
+}
+
+nlisterr(nl)
+	struct nlist nl[];
+{
+	int i;
+
+	fprintf(stderr, "ps: nlist: can't find following symbols:");
+	for (i = 0; nl[i].n_name != NULL; i++)
+		if (nl[i].n_value == 0)
+			fprintf(stderr, " %s", nl[i].n_name);
+	fprintf(stderr, "\n");
 }
