@@ -1,19 +1,26 @@
 /*
  * Copyright (c) 1983 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * All rights reserved.
  *
- *	@(#)htable.h	5.1 (Berkeley) %G%
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
+ *
+ *	@(#)htable.h	5.2 (Berkeley) %G%
  */
 
 #include <sys/types.h>
+#include <netinet/in.h>
 
 /*
  * common definitions for htable
  */
 
 struct addr {
-	u_long	addr_val;
+	struct	in_addr addr_val;
 	struct	addr *addr_link;
 };
 
@@ -28,7 +35,7 @@ struct gateway {
 	struct	gateway *g_firstent;	/* first entry for this gateway */
 	struct	name	*g_name;
 	int	g_net;
-	u_long	g_addr;			/* address on g_net */
+	struct	in_addr g_addr;		/* address on g_net */
 	int	g_metric;		/* hops to this net */
 };
 
