@@ -3,10 +3,11 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)man.conf.5	5.6 (Berkeley) %G%
+.\"	@(#)man.conf.5	5.7 (Berkeley) %G%
 .\"
 .Dd 
 .Dt MAN.CONF 5
+.Os
 .Sh NAME
 .Nm man.conf
 .Nd configuration file for
@@ -60,7 +61,7 @@ searched if no section is specified.
 The second type of line is preceded with a ``keyword''.
 The possible keywords and their meanings are as follows:
 .Pp
-.Bl -tag -width indent
+.Bl -tag -width "_version"
 .It _subdir
 The list (in search order) of subdirectories which will be searched in
 any directory named with a trailing slash (``/'') character.  This
@@ -140,5 +141,5 @@ Standard manual directory search path.
 .Sh HISTORY
 The
 .Nm
-file format
+file format is
 .Ud .
