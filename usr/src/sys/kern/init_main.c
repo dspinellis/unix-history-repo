@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)init_main.c	7.2 (Berkeley) %G%
+ *	@(#)init_main.c	7.3 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -104,8 +104,8 @@ main(firstaddr)
 	qtinit();
 	p->p_quota = u.u_quota = getquota(0, 0, Q_NDQ);
 #endif
-#if defined(vax)
 	startrtclock();
+#if defined(vax)
 #include "kg.h"
 #if NKG > 0
 	startkgclock();
@@ -166,6 +166,7 @@ main(firstaddr)
 	u.u_dmap = zdmap;
 	u.u_smap = zdmap;
 
+	enablertclock();		/* enable realtime clock interrupts */
 #if defined(tahoe)
 	clk_enable = 1;			/* enable clock interrupt */
 #endif
