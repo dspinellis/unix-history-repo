@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lfs.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)lfs.c	5.23 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -105,6 +105,7 @@ static struct lfs lfs_default =  {
 	/* lfs_sp */		NULL,
 	/* lfs_ivnode */	NULL,
 	/* lfs_seglock */	0,
+	/* lfs_lockpid */	0,
 	/* lfs_iocount */	0,
 	/* lfs_writer */	0,
 	/* lfs_dirops */	0,
