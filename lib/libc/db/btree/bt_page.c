@@ -2,9 +2,6 @@
  * Copyright (c) 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
- * This code is derived from software contributed to Berkeley by
- * Margo Seltzer.
- *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -35,74 +32,63 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hsearch.c	8.1 (Berkeley) 6/4/93";
+static char sccsid[] = "@(#)bt_page.c	8.1 (Berkeley) 6/4/93";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 
-#include <fcntl.h>
-#include <string.h>
-
 #define	__DBINTERFACE_PRIVATE
+#include <stdio.h>
+
 #include <db.h>
-#include "search.h"
+#include "btree.h"
 
-static DB *dbp = NULL;
-static ENTRY retval;
-
-extern int
-hcreate(nel)
-	u_int nel;
+/*
+ * __BT_FREE -- Put a page on the freelist.
+ *
+ * Parameters:
+ *	t:	tree
+ *	h:	page to free
+ *
+ * Returns:
+ *	RET_ERROR, RET_SUCCESS
+ */
+int
+__bt_free(t, h)
+	BTREE *t;
+	PAGE *h;
 {
-	HASHINFO info;
+	/* Insert the page at the start of the free list. */
+	h->prevpg = P_INVALID;
+	h->nextpg = t->bt_free;
+	t->bt_free = h->pgno;
 
-	info.nelem = nel;
-	info.bsize = 256;
-	info.ffactor = 8;
-	info.cachesize = NULL;
-	info.hash = NULL;
-	info.lorder = 0;
-	dbp = (DB *)__hash_open(NULL, O_CREAT | O_RDWR, 0600, &info);
-	return ((int)dbp);
+	/* Make sure the page gets written back. */
+	return (mpool_put(t->bt_mp, h, MPOOL_DIRTY));
 }
 
-extern ENTRY *
-hsearch(item, action)
-	ENTRY item;
-	ACTION action;
+/*
+ * __BT_NEW -- Get a new page, preferably from the freelist.
+ *
+ * Parameters:
+ *	t:	tree
+ *	npg:	storage for page number.
+ *
+ * Returns:
+ *	Pointer to a page, NULL on error.
+ */
+PAGE *
+__bt_new(t, npg)
+	BTREE *t;
+	pgno_t *npg;
 {
-	DBT key, val;
-	int status;
+	PAGE *h;
 
-	if (!dbp)
-		return (NULL);
-	key.data = (u_char *)item.key;
-	key.size = strlen(item.key) + 1;
-
-	if (action == ENTER) {
-		val.data = (u_char *)item.data;
-		val.size = strlen(item.data) + 1;
-		status = (dbp->put)(dbp, &key, &val, R_NOOVERWRITE);
-		if (status)
-			return (NULL);
-	} else {
-		/* FIND */
-		status = (dbp->get)(dbp, &key, &val, 0);
-		if (status)
-			return (NULL);
-		else
-			item.data = (char *)val.data;
+	if (t->bt_free != P_INVALID &&
+	    (h = mpool_get(t->bt_mp, t->bt_free, 0)) != NULL) {
+			*npg = t->bt_free;
+			t->bt_free = h->nextpg;
+			return (h);
 	}
-	retval.key = item.key;
-	retval.data = item.data;
-	return (&retval);
-}
-
-extern void
-hdestroy()
-{
-	if (dbp) {
-		(void)(dbp->close)(dbp);
-		dbp = NULL;
-	}
+	return (mpool_new(t->bt_mp, npg));
 }

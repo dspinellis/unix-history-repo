@@ -1,9 +1,6 @@
 /*-
- * Copyright (c) 1990, 1993
+ * Copyright (c) 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
- *
- * This code is derived from software contributed to Berkeley by
- * Margo Seltzer.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -34,75 +31,92 @@
  * SUCH DAMAGE.
  */
 
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hsearch.c	8.1 (Berkeley) 6/4/93";
-#endif /* LIBC_SCCS and not lint */
+#ifndef lint
+static char sccsid[] = "@(#)rec_seq.c	8.1 (Berkeley) 6/4/93";
+#endif /* not lint */
 
 #include <sys/types.h>
 
-#include <fcntl.h>
+#include <errno.h>
+#include <limits.h>
+#include <stdio.h>
 #include <string.h>
 
-#define	__DBINTERFACE_PRIVATE
 #include <db.h>
-#include "search.h"
+#include "recno.h"
 
-static DB *dbp = NULL;
-static ENTRY retval;
-
-extern int
-hcreate(nel)
-	u_int nel;
+/*
+ * __REC_SEQ -- Recno sequential scan interface.
+ *
+ * Parameters:
+ *	dbp:	pointer to access method
+ *	key:	key for positioning and return value
+ *	data:	data return value
+ *	flags:	R_CURSOR, R_FIRST, R_LAST, R_NEXT, R_PREV.
+ *
+ * Returns:
+ *	RET_ERROR, RET_SUCCESS or RET_SPECIAL if there's no next key.
+ */
+int
+__rec_seq(dbp, key, data, flags)
+	const DB *dbp;
+	DBT *key, *data;
+	u_int flags;
 {
-	HASHINFO info;
-
-	info.nelem = nel;
-	info.bsize = 256;
-	info.ffactor = 8;
-	info.cachesize = NULL;
-	info.hash = NULL;
-	info.lorder = 0;
-	dbp = (DB *)__hash_open(NULL, O_CREAT | O_RDWR, 0600, &info);
-	return ((int)dbp);
-}
-
-extern ENTRY *
-hsearch(item, action)
-	ENTRY item;
-	ACTION action;
-{
-	DBT key, val;
+	BTREE *t;
+	EPG *e;
+	recno_t nrec;
 	int status;
 
-	if (!dbp)
-		return (NULL);
-	key.data = (u_char *)item.key;
-	key.size = strlen(item.key) + 1;
-
-	if (action == ENTER) {
-		val.data = (u_char *)item.data;
-		val.size = strlen(item.data) + 1;
-		status = (dbp->put)(dbp, &key, &val, R_NOOVERWRITE);
-		if (status)
-			return (NULL);
-	} else {
-		/* FIND */
-		status = (dbp->get)(dbp, &key, &val, 0);
-		if (status)
-			return (NULL);
-		else
-			item.data = (char *)val.data;
+	t = dbp->internal;
+	switch(flags) {
+	case R_CURSOR:
+		if ((nrec = *(recno_t *)key->data) == 0)
+			goto einval;
+		break;
+	case R_NEXT:
+		if (ISSET(t, B_SEQINIT)) {
+			nrec = t->bt_rcursor + 1;
+			break;
+		}
+		/* FALLTHROUGH */
+	case R_FIRST:
+		nrec = 1;
+		break;
+	case R_PREV:
+		if (ISSET(t, B_SEQINIT)) {
+			if ((nrec = t->bt_rcursor - 1) == 0)
+				return (RET_SPECIAL);
+			break;
+		}
+		/* FALLTHROUGH */
+	case R_LAST:
+		if (!ISSET(t, R_EOF | R_INMEM) &&
+		    t->bt_irec(t, MAX_REC_NUMBER) == RET_ERROR)
+			return (RET_ERROR);
+		nrec = t->bt_nrecs;
+		break;
+	default:
+einval:		errno = EINVAL;
+		return (RET_ERROR);
 	}
-	retval.key = item.key;
-	retval.data = item.data;
-	return (&retval);
-}
-
-extern void
-hdestroy()
-{
-	if (dbp) {
-		(void)(dbp->close)(dbp);
-		dbp = NULL;
+	
+	if (t->bt_nrecs == 0 || nrec > t->bt_nrecs) {
+		if (!ISSET(t, R_EOF | R_INMEM) &&
+		    (status = t->bt_irec(t, nrec)) != RET_SUCCESS)
+			return (status);
+		if (t->bt_nrecs == 0 || nrec > t->bt_nrecs)
+			return (RET_SPECIAL);
 	}
+
+	if ((e = __rec_search(t, nrec - 1, SEARCH)) == NULL)
+		return (RET_ERROR);
+
+	SET(t, B_SEQINIT);
+	t->bt_rcursor = nrec;
+
+	status = __rec_ret(t, e, nrec, key, data);
+
+	mpool_put(t->bt_mp, e->page, 0);
+	return (status);
 }

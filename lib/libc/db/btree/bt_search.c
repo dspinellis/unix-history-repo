@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
- * Margo Seltzer.
+ * Mike Olson.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -35,74 +35,85 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hsearch.c	8.1 (Berkeley) 6/4/93";
+static char sccsid[] = "@(#)bt_search.c	8.1 (Berkeley) 6/4/93";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 
-#include <fcntl.h>
-#include <string.h>
+#include <stdio.h>
 
-#define	__DBINTERFACE_PRIVATE
 #include <db.h>
-#include "search.h"
+#include "btree.h"
 
-static DB *dbp = NULL;
-static ENTRY retval;
-
-extern int
-hcreate(nel)
-	u_int nel;
+/*
+ * __BT_SEARCH -- Search a btree for a key.
+ *
+ * Parameters:
+ *	t:	tree to search
+ *	key:	key to find
+ *	exactp:	pointer to exact match flag
+ *
+ * Returns:
+ *	EPG for matching record, if any, or the EPG for the location of the
+ *	key, if it were inserted into the tree.
+ *
+ * Warnings:
+ *	The EPG returned is in static memory, and will be overwritten by the
+ *	next search of any kind in any tree.
+ */
+EPG *
+__bt_search(t, key, exactp)
+	BTREE *t;
+	const DBT *key;
+	int *exactp;
 {
-	HASHINFO info;
+	register indx_t index;
+	register int base, cmp, lim;
+	register PAGE *h;
+	pgno_t pg;
+	static EPG e;
 
-	info.nelem = nel;
-	info.bsize = 256;
-	info.ffactor = 8;
-	info.cachesize = NULL;
-	info.hash = NULL;
-	info.lorder = 0;
-	dbp = (DB *)__hash_open(NULL, O_CREAT | O_RDWR, 0600, &info);
-	return ((int)dbp);
-}
-
-extern ENTRY *
-hsearch(item, action)
-	ENTRY item;
-	ACTION action;
-{
-	DBT key, val;
-	int status;
-
-	if (!dbp)
-		return (NULL);
-	key.data = (u_char *)item.key;
-	key.size = strlen(item.key) + 1;
-
-	if (action == ENTER) {
-		val.data = (u_char *)item.data;
-		val.size = strlen(item.data) + 1;
-		status = (dbp->put)(dbp, &key, &val, R_NOOVERWRITE);
-		if (status)
+	BT_CLR(t);
+	for (pg = P_ROOT;;) {
+		if ((h = mpool_get(t->bt_mp, pg, 0)) == NULL)
 			return (NULL);
-	} else {
-		/* FIND */
-		status = (dbp->get)(dbp, &key, &val, 0);
-		if (status)
-			return (NULL);
-		else
-			item.data = (char *)val.data;
-	}
-	retval.key = item.key;
-	retval.data = item.data;
-	return (&retval);
-}
 
-extern void
-hdestroy()
-{
-	if (dbp) {
-		(void)(dbp->close)(dbp);
-		dbp = NULL;
+		/* Do a binary search on the current page. */
+		e.page = h;
+		for (base = 0, lim = NEXTINDEX(h); lim; lim >>= 1) {
+			e.index = index = base + (lim >> 1);
+			if ((cmp = __bt_cmp(t, key, &e)) == 0) {
+				if (h->flags & P_BLEAF) {
+					*exactp = 1;
+					return (&e);
+				}
+				goto next;
+			}
+			if (cmp > 0) {
+				base = index + 1;
+				--lim;
+			}
+		}
+
+		/* If it's a leaf page, we're done. */
+		if (h->flags & P_BLEAF) {
+			e.index = base;
+			*exactp = 0;
+			return (&e);
+		}
+
+		/*
+		 * No match found.  Base is the smallest index greater than
+		 * key and may be zero or a last + 1 index.  If it's non-zero,
+		 * decrement by one, and record the internal page which should
+		 * be a parent page for the key.  If a split later occurs, the
+		 * inserted page will be to the right of the saved page.
+		 */
+		index = base ? base - 1 : base;
+
+next:		if (__bt_push(t, h->pgno, index) == RET_ERROR)
+			return (NULL);
+		pg = GETBINTERNAL(h, index)->pgno;
+		mpool_put(t->bt_mp, h, 0);
 	}
 }

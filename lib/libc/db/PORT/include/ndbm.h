@@ -32,77 +32,46 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ *	@(#)ndbm.h	8.1 (Berkeley) 6/2/93
  */
 
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hsearch.c	8.1 (Berkeley) 6/4/93";
-#endif /* LIBC_SCCS and not lint */
+#ifndef _NDBM_H_
+#define	_NDBM_H_
 
-#include <sys/types.h>
-
-#include <fcntl.h>
-#include <string.h>
-
-#define	__DBINTERFACE_PRIVATE
 #include <db.h>
-#include "search.h"
 
-static DB *dbp = NULL;
-static ENTRY retval;
+/* Map dbm interface onto db(3). */
+#define DBM_RDONLY	O_RDONLY
 
-extern int
-hcreate(nel)
-	u_int nel;
-{
-	HASHINFO info;
+/* Flags to dbm_store(). */
+#define DBM_INSERT      0
+#define DBM_REPLACE     1
 
-	info.nelem = nel;
-	info.bsize = 256;
-	info.ffactor = 8;
-	info.cachesize = NULL;
-	info.hash = NULL;
-	info.lorder = 0;
-	dbp = (DB *)__hash_open(NULL, O_CREAT | O_RDWR, 0600, &info);
-	return ((int)dbp);
-}
+/*
+ * The db(3) support for ndbm(3) always appends this suffix to the
+ * file name to avoid overwriting the user's original database.
+ */
+#define	DBM_SUFFIX	".db"
 
-extern ENTRY *
-hsearch(item, action)
-	ENTRY item;
-	ACTION action;
-{
-	DBT key, val;
-	int status;
+typedef struct {
+	char *dptr;
+	int dsize;
+} datum;
 
-	if (!dbp)
-		return (NULL);
-	key.data = (u_char *)item.key;
-	key.size = strlen(item.key) + 1;
+typedef DB DBM;
+#define	dbm_pagfno(a)	DBM_PAGFNO_NOT_AVAILABLE
 
-	if (action == ENTER) {
-		val.data = (u_char *)item.data;
-		val.size = strlen(item.data) + 1;
-		status = (dbp->put)(dbp, &key, &val, R_NOOVERWRITE);
-		if (status)
-			return (NULL);
-	} else {
-		/* FIND */
-		status = (dbp->get)(dbp, &key, &val, 0);
-		if (status)
-			return (NULL);
-		else
-			item.data = (char *)val.data;
-	}
-	retval.key = item.key;
-	retval.data = item.data;
-	return (&retval);
-}
+__BEGIN_DECLS
+void	 dbm_close __P((DBM *));
+int	 dbm_delete __P((DBM *, datum));
+datum	 dbm_fetch __P((DBM *, datum));
+datum	 dbm_firstkey __P((DBM *));
+long	 dbm_forder __P((DBM *, datum));
+datum	 dbm_nextkey __P((DBM *));
+DBM	*dbm_open __P((const char *, int, int));
+int	 dbm_store __P((DBM *, datum, datum, int));
+int	 dbm_dirfno __P((DBM *));
+__END_DECLS
 
-extern void
-hdestroy()
-{
-	if (dbp) {
-		(void)(dbp->close)(dbp);
-		dbp = NULL;
-	}
-}
+#endif /* !_NDBM_H_ */

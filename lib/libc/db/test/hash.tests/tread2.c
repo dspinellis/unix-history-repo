@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 1990, 1993
+ * Copyright (c) 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -34,75 +34,72 @@
  * SUCH DAMAGE.
  */
 
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hsearch.c	8.1 (Berkeley) 6/4/93";
-#endif /* LIBC_SCCS and not lint */
+#ifndef lint
+static char copyright[] =
+"@(#) Copyright (c) 1991, 1993\n\
+	The Regents of the University of California.  All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)tread2.c	8.1 (Berkeley) 6/4/93";
+#endif /* not lint */
 
 #include <sys/types.h>
-
-#include <fcntl.h>
-#include <string.h>
-
-#define	__DBINTERFACE_PRIVATE
+#include <sys/file.h>
+#include <stdio.h>
 #include <db.h>
-#include "search.h"
 
-static DB *dbp = NULL;
-static ENTRY retval;
+#define INITIAL	25000
+#define MAXWORDS    25000	       /* # of elements in search table */
 
-extern int
-hcreate(nel)
-	u_int nel;
+typedef struct {		       /* info to be stored */
+	int num, siz;
+} info;
+
+char	wp1[8192];
+char	wp2[8192];
+main(argc, argv)
+char **argv;
 {
-	HASHINFO info;
+	DBT item, key, res;
+	DB	*dbp;
+	HASHINFO ctl;
+	int	stat;
 
-	info.nelem = nel;
-	info.bsize = 256;
-	info.ffactor = 8;
-	info.cachesize = NULL;
-	info.hash = NULL;
-	info.lorder = 0;
-	dbp = (DB *)__hash_open(NULL, O_CREAT | O_RDWR, 0600, &info);
-	return ((int)dbp);
-}
+	int i = 0;
 
-extern ENTRY *
-hsearch(item, action)
-	ENTRY item;
-	ACTION action;
-{
-	DBT key, val;
-	int status;
-
-	if (!dbp)
-		return (NULL);
-	key.data = (u_char *)item.key;
-	key.size = strlen(item.key) + 1;
-
-	if (action == ENTER) {
-		val.data = (u_char *)item.data;
-		val.size = strlen(item.data) + 1;
-		status = (dbp->put)(dbp, &key, &val, R_NOOVERWRITE);
-		if (status)
-			return (NULL);
-	} else {
-		/* FIND */
-		status = (dbp->get)(dbp, &key, &val, 0);
-		if (status)
-			return (NULL);
-		else
-			item.data = (char *)val.data;
+	ctl.nelem = INITIAL;
+	ctl.hash = NULL;
+	ctl.bsize = 64;
+	ctl.ffactor = 1;
+	ctl.cachesize = atoi(*argv++);
+	ctl.lorder = 0;
+	if (!(dbp = dbopen( "hashtest", O_RDONLY, 0400, DB_HASH, &ctl))) {
+		/* create table */
+		fprintf(stderr, "cannot open: hash table\n" );
+		exit(1);
 	}
-	retval.key = item.key;
-	retval.data = item.data;
-	return (&retval);
-}
 
-extern void
-hdestroy()
-{
-	if (dbp) {
-		(void)(dbp->close)(dbp);
-		dbp = NULL;
+	key.data = wp1;
+	item.data = wp2;
+	while ( fgets(wp1, 8192, stdin) &&
+		fgets(wp2, 8192, stdin) &&
+		i++ < MAXWORDS) {
+/*
+* put info in structure, and structure in the item
+*/
+		key.size = strlen(wp1);
+		item.size = strlen(wp2);
+
+		stat = (dbp->get)(dbp, &key, &res,0);
+		if (stat < 0) {
+		    fprintf ( stderr, "Error retrieving %s\n", key.data );
+		    exit(1);
+		} else if ( stat > 0 ) {
+		    fprintf ( stderr, "%s not found\n", key.data );
+		    exit(1);
+		}
 	}
+	(dbp->close)(dbp);
+	exit(0);
 }

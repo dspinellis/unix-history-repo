@@ -2,9 +2,6 @@
  * Copyright (c) 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
- * This code is derived from software contributed to Berkeley by
- * Margo Seltzer.
- *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -35,74 +32,72 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hsearch.c	8.1 (Berkeley) 6/4/93";
+static char sccsid[] = "@(#)rec_utils.c	8.1 (Berkeley) 6/4/93";
 #endif /* LIBC_SCCS and not lint */
 
-#include <sys/types.h>
+#include <sys/param.h>
 
-#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
-#define	__DBINTERFACE_PRIVATE
 #include <db.h>
-#include "search.h"
+#include "recno.h"
 
-static DB *dbp = NULL;
-static ENTRY retval;
-
-extern int
-hcreate(nel)
-	u_int nel;
+/*
+ * __REC_RET -- Build return data as a result of search or scan.
+ *
+ * Parameters:
+ *	t:	tree
+ *	d:	LEAF to be returned to the user.
+ *	data:	user's data structure
+ *
+ * Returns:
+ *	RET_SUCCESS, RET_ERROR.
+ */
+int
+__rec_ret(t, e, nrec, key, data)
+	BTREE *t;
+	EPG *e;
+	recno_t nrec;
+	DBT *key, *data;
 {
-	HASHINFO info;
+	register RLEAF *rl;
+	register void *p;
 
-	info.nelem = nel;
-	info.bsize = 256;
-	info.ffactor = 8;
-	info.cachesize = NULL;
-	info.hash = NULL;
-	info.lorder = 0;
-	dbp = (DB *)__hash_open(NULL, O_CREAT | O_RDWR, 0600, &info);
-	return ((int)dbp);
-}
+	if (data == NULL)
+		goto retkey;
 
-extern ENTRY *
-hsearch(item, action)
-	ENTRY item;
-	ACTION action;
-{
-	DBT key, val;
-	int status;
+	rl = GETRLEAF(e->page, e->index);
 
-	if (!dbp)
-		return (NULL);
-	key.data = (u_char *)item.key;
-	key.size = strlen(item.key) + 1;
-
-	if (action == ENTER) {
-		val.data = (u_char *)item.data;
-		val.size = strlen(item.data) + 1;
-		status = (dbp->put)(dbp, &key, &val, R_NOOVERWRITE);
-		if (status)
-			return (NULL);
+	if (rl->flags & P_BIGDATA) {
+		if (__ovfl_get(t, rl->bytes,
+		    &data->size, &t->bt_dbuf, &t->bt_dbufsz))
+			return (RET_ERROR);
 	} else {
-		/* FIND */
-		status = (dbp->get)(dbp, &key, &val, 0);
-		if (status)
-			return (NULL);
-		else
-			item.data = (char *)val.data;
+		/* Use +1 in case the first record retrieved is 0 length. */
+		if (rl->dsize + 1 > t->bt_dbufsz) {
+			if ((p = realloc(t->bt_dbuf, rl->dsize + 1)) == NULL)
+				return (RET_ERROR);
+			t->bt_dbuf = p;
+			t->bt_dbufsz = rl->dsize + 1;
+		}
+		memmove(t->bt_dbuf, rl->bytes, rl->dsize);
+		data->size = rl->dsize;
 	}
-	retval.key = item.key;
-	retval.data = item.data;
-	return (&retval);
-}
+	data->data = t->bt_dbuf;
 
-extern void
-hdestroy()
-{
-	if (dbp) {
-		(void)(dbp->close)(dbp);
-		dbp = NULL;
+retkey:	if (key == NULL)
+		return (RET_SUCCESS);
+
+	if (sizeof(recno_t) > t->bt_kbufsz) {
+		if ((p = realloc(t->bt_kbuf, sizeof(recno_t))) == NULL)
+			return (RET_ERROR);
+		t->bt_kbuf = p;
+		t->bt_kbufsz = sizeof(recno_t);
 	}
+	memmove(t->bt_kbuf, &nrec, sizeof(recno_t));
+	key->size = sizeof(recno_t);
+	key->data = t->bt_kbuf;
+	return (RET_SUCCESS);
 }

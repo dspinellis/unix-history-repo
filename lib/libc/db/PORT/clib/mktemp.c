@@ -1,9 +1,6 @@
-/*-
- * Copyright (c) 1990, 1993
+/*
+ * Copyright (c) 1987, 1993
  *	The Regents of the University of California.  All rights reserved.
- *
- * This code is derived from software contributed to Berkeley by
- * Margo Seltzer.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -35,74 +32,95 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hsearch.c	8.1 (Berkeley) 6/4/93";
+static char sccsid[] = "@(#)mktemp.c	8.1 (Berkeley) 6/4/93";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
-
+#include <sys/stat.h>
 #include <fcntl.h>
-#include <string.h>
+#include <errno.h>
+#include <stdio.h>
+#include <ctype.h>
 
-#define	__DBINTERFACE_PRIVATE
-#include <db.h>
-#include "search.h"
+static int _gettemp();
 
-static DB *dbp = NULL;
-static ENTRY retval;
-
-extern int
-hcreate(nel)
-	u_int nel;
+mkstemp(path)
+	char *path;
 {
-	HASHINFO info;
+	int fd;
 
-	info.nelem = nel;
-	info.bsize = 256;
-	info.ffactor = 8;
-	info.cachesize = NULL;
-	info.hash = NULL;
-	info.lorder = 0;
-	dbp = (DB *)__hash_open(NULL, O_CREAT | O_RDWR, 0600, &info);
-	return ((int)dbp);
+	return (_gettemp(path, &fd) ? fd : -1);
 }
 
-extern ENTRY *
-hsearch(item, action)
-	ENTRY item;
-	ACTION action;
+char *
+mktemp(path)
+	char *path;
 {
-	DBT key, val;
-	int status;
-
-	if (!dbp)
-		return (NULL);
-	key.data = (u_char *)item.key;
-	key.size = strlen(item.key) + 1;
-
-	if (action == ENTER) {
-		val.data = (u_char *)item.data;
-		val.size = strlen(item.data) + 1;
-		status = (dbp->put)(dbp, &key, &val, R_NOOVERWRITE);
-		if (status)
-			return (NULL);
-	} else {
-		/* FIND */
-		status = (dbp->get)(dbp, &key, &val, 0);
-		if (status)
-			return (NULL);
-		else
-			item.data = (char *)val.data;
-	}
-	retval.key = item.key;
-	retval.data = item.data;
-	return (&retval);
+	return(_gettemp(path, (int *)NULL) ? path : (char *)NULL);
 }
 
-extern void
-hdestroy()
+static
+_gettemp(path, doopen)
+	char *path;
+	register int *doopen;
 {
-	if (dbp) {
-		(void)(dbp->close)(dbp);
-		dbp = NULL;
+	extern int errno;
+	register char *start, *trv;
+	struct stat sbuf;
+	u_int pid;
+
+	pid = getpid();
+	for (trv = path; *trv; ++trv);		/* extra X's get set to 0's */
+	while (*--trv == 'X') {
+		*trv = (pid % 10) + '0';
+		pid /= 10;
 	}
+
+	/*
+	 * check the target directory; if you have six X's and it
+	 * doesn't exist this runs for a *very* long time.
+	 */
+	for (start = trv + 1;; --trv) {
+		if (trv <= path)
+			break;
+		if (*trv == '/') {
+			*trv = '\0';
+			if (stat(path, &sbuf))
+				return(0);
+			if (!S_ISDIR(sbuf.st_mode)) {
+				errno = ENOTDIR;
+				return(0);
+			}
+			*trv = '/';
+			break;
+		}
+	}
+
+	for (;;) {
+		if (doopen) {
+			if ((*doopen =
+			    open(path, O_CREAT|O_EXCL|O_RDWR, 0600)) >= 0)
+				return(1);
+			if (errno != EEXIST)
+				return(0);
+		}
+		else if (stat(path, &sbuf))
+			return(errno == ENOENT ? 1 : 0);
+
+		/* tricky little algorithm for backward compatibility */
+		for (trv = start;;) {
+			if (!*trv)
+				return(0);
+			if (*trv == 'z')
+				*trv++ = 'a';
+			else {
+				if (isdigit(*trv))
+					*trv = 'a';
+				else
+					++*trv;
+				break;
+			}
+		}
+	}
+	/*NOTREACHED*/
 }

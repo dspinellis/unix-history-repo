@@ -1,9 +1,6 @@
 /*-
- * Copyright (c) 1990, 1993
+ * Copyright (c) 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
- *
- * This code is derived from software contributed to Berkeley by
- * Margo Seltzer.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,77 +29,37 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ *	@(#)extern.h	8.1 (Berkeley) 6/4/93
  */
 
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hsearch.c	8.1 (Berkeley) 6/4/93";
-#endif /* LIBC_SCCS and not lint */
+BUFHEAD	*__add_ovflpage __P((HTAB *, BUFHEAD *));
+int	 __addel __P((HTAB *, BUFHEAD *, const DBT *, const DBT *));
+int	 __big_delete __P((HTAB *, BUFHEAD *));
+int	 __big_insert __P((HTAB *, BUFHEAD *, const DBT *, const DBT *));
+int	 __big_keydata __P((HTAB *, BUFHEAD *, DBT *, DBT *, int));
+int	 __big_return __P((HTAB *, BUFHEAD *, int, DBT *, int));
+int	 __big_split __P((HTAB *, BUFHEAD *, BUFHEAD *, BUFHEAD *,
+		int, u_int, SPLIT_RETURN *));
+int	 __buf_free __P((HTAB *, int, int));
+void	 __buf_init __P((HTAB *, int));
+u_int	 __call_hash __P((HTAB *, char *, int));
+int	 __delpair __P((HTAB *, BUFHEAD *, int));
+int	 __expand_table __P((HTAB *));
+int	 __find_bigpair __P((HTAB *, BUFHEAD *, int, char *, int));
+u_short	 __find_last_page __P((HTAB *, BUFHEAD **));
+void	 __free_ovflpage __P((HTAB *, BUFHEAD *));
+BUFHEAD	*__get_buf __P((HTAB *, u_int, BUFHEAD *, int));
+int	 __get_page __P((HTAB *, char *, u_int, int, int, int));
+int	 __init_bitmap __P((HTAB *, int, int, int));
+u_int	 __log2 __P((u_int));
+int	 __put_page __P((HTAB *, char *, u_int, int, int));
+void	 __reclaim_buf __P((HTAB *, BUFHEAD *));
+int	 __split_page __P((HTAB *, u_int, u_int));
 
-#include <sys/types.h>
+/* Default hash routine. */
+extern int	(*__default_hash) __P((u_char *, int));
 
-#include <fcntl.h>
-#include <string.h>
-
-#define	__DBINTERFACE_PRIVATE
-#include <db.h>
-#include "search.h"
-
-static DB *dbp = NULL;
-static ENTRY retval;
-
-extern int
-hcreate(nel)
-	u_int nel;
-{
-	HASHINFO info;
-
-	info.nelem = nel;
-	info.bsize = 256;
-	info.ffactor = 8;
-	info.cachesize = NULL;
-	info.hash = NULL;
-	info.lorder = 0;
-	dbp = (DB *)__hash_open(NULL, O_CREAT | O_RDWR, 0600, &info);
-	return ((int)dbp);
-}
-
-extern ENTRY *
-hsearch(item, action)
-	ENTRY item;
-	ACTION action;
-{
-	DBT key, val;
-	int status;
-
-	if (!dbp)
-		return (NULL);
-	key.data = (u_char *)item.key;
-	key.size = strlen(item.key) + 1;
-
-	if (action == ENTER) {
-		val.data = (u_char *)item.data;
-		val.size = strlen(item.data) + 1;
-		status = (dbp->put)(dbp, &key, &val, R_NOOVERWRITE);
-		if (status)
-			return (NULL);
-	} else {
-		/* FIND */
-		status = (dbp->get)(dbp, &key, &val, 0);
-		if (status)
-			return (NULL);
-		else
-			item.data = (char *)val.data;
-	}
-	retval.key = item.key;
-	retval.data = item.data;
-	return (&retval);
-}
-
-extern void
-hdestroy()
-{
-	if (dbp) {
-		(void)(dbp->close)(dbp);
-		dbp = NULL;
-	}
-}
+#ifdef HASH_STATISTICS
+extern long hash_accesses, hash_collisions, hash_expansions, hash_overflows;
+#endif

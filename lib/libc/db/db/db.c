@@ -1,9 +1,6 @@
 /*-
- * Copyright (c) 1990, 1993
+ * Copyright (c) 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
- *
- * This code is derived from software contributed to Berkeley by
- * Margo Seltzer.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -35,74 +32,58 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hsearch.c	8.1 (Berkeley) 6/4/93";
+static char sccsid[] = "@(#)db.c	8.1 (Berkeley) 6/4/93";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 
-#include <fcntl.h>
-#include <string.h>
+#include <errno.h>
+#include <stddef.h>
+#include <stdio.h>
 
 #define	__DBINTERFACE_PRIVATE
 #include <db.h>
-#include "search.h"
 
-static DB *dbp = NULL;
-static ENTRY retval;
-
-extern int
-hcreate(nel)
-	u_int nel;
+DB *
+dbopen(fname, flags, mode, type, openinfo)
+	const char *fname;
+	int flags, mode;
+	DBTYPE type;
+	const void *openinfo;
 {
-	HASHINFO info;
-
-	info.nelem = nel;
-	info.bsize = 256;
-	info.ffactor = 8;
-	info.cachesize = NULL;
-	info.hash = NULL;
-	info.lorder = 0;
-	dbp = (DB *)__hash_open(NULL, O_CREAT | O_RDWR, 0600, &info);
-	return ((int)dbp);
+	switch (type) {
+	case DB_BTREE:
+		return (__bt_open(fname, flags, mode, openinfo));
+	case DB_HASH:
+		return (__hash_open(fname, flags, mode, openinfo));
+	case DB_RECNO:
+		return (__rec_open(fname, flags, mode, openinfo));
+	}
+	errno = EINVAL;
+	return (NULL);
 }
 
-extern ENTRY *
-hsearch(item, action)
-	ENTRY item;
-	ACTION action;
+static int
+__dberr()
 {
-	DBT key, val;
-	int status;
-
-	if (!dbp)
-		return (NULL);
-	key.data = (u_char *)item.key;
-	key.size = strlen(item.key) + 1;
-
-	if (action == ENTER) {
-		val.data = (u_char *)item.data;
-		val.size = strlen(item.data) + 1;
-		status = (dbp->put)(dbp, &key, &val, R_NOOVERWRITE);
-		if (status)
-			return (NULL);
-	} else {
-		/* FIND */
-		status = (dbp->get)(dbp, &key, &val, 0);
-		if (status)
-			return (NULL);
-		else
-			item.data = (char *)val.data;
-	}
-	retval.key = item.key;
-	retval.data = item.data;
-	return (&retval);
+	return (RET_ERROR);
 }
 
-extern void
-hdestroy()
+/*
+ * __DBPANIC -- Stop.
+ *
+ * Parameters:
+ *	dbp:	pointer to the DB structure.
+ */
+void
+__dbpanic(dbp)
+	DB *dbp;
 {
-	if (dbp) {
-		(void)(dbp->close)(dbp);
-		dbp = NULL;
-	}
+	/* The only thing that can succeed is a close. */
+	dbp->del = (int (*)())__dberr;
+	dbp->fd = (int (*)())__dberr;
+	dbp->get = (int (*)())__dberr;
+	dbp->put = (int (*)())__dberr;
+	dbp->seq = (int (*)())__dberr;
+	dbp->sync = (int (*)())__dberr;
 }

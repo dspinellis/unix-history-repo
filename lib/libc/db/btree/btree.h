@@ -1,6 +1,6 @@
 /*-
- * Copyright (c) 1990 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1991, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Mike Olson.
@@ -32,295 +32,314 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ *	@(#)btree.h	8.1 (Berkeley) 6/4/93
  */
+
+#include <mpool.h>
+
+#define	DEFMINKEYPAGE	(2)		/* Minimum keys per page */
+#define	MINCACHE	(5)		/* Minimum cached pages */
+#define	MINPSIZE	(512)		/* Minimum page size */
 
 /*
- *  @(#)btree.h	5.2 (Berkeley) 2/22/91
+ * Page 0 of a btree file contains a copy of the meta-data.  This page is also
+ * used as an out-of-band page, i.e. page pointers that point to nowhere point
+ * to page 0.  Page 1 is the root of the btree.
  */
-
-typedef char	*BTREE;		/* should really be (void *) */ 
-
-/* #define	DEBUG */
-
-#define RET_ERROR	-1
-#define RET_SUCCESS	 0
-#define RET_SPECIAL	 1
-
-#ifndef TRUE
-#define TRUE	1
-#define FALSE	0
-#endif /* ndef TRUE */
-
-#ifndef NULL
-#define NULL	0
-#endif /* ndef NULL */
-
-/* these are defined in lrucache.c */
-extern char	*lruinit();
-extern char	*lruget();
-extern char	*lrugetnew();
-extern int	lrusync();
-extern int	lruwrite();
-extern int	lrurelease();
-extern void	lrufree();
-
-/* these are defined here */
-extern BTREE	bt_open();
-extern int	bt_close();
-extern int	bt_delete();
-extern int	bt_get();
-extern int	bt_put();
-extern int	bt_seq();
-extern int	bt_sync();
+#define	P_INVALID	 0		/* Invalid tree page number. */
+#define	P_META		 0		/* Tree metadata page number. */
+#define	P_ROOT		 1		/* Tree root page number. */
 
 /*
- *  Private types.  What you choose for these depends on how big you
- *  want to let files get, and how big you want to let pages get.
+ * There are five page layouts in the btree: btree internal pages (BINTERNAL),
+ * btree leaf pages (BLEAF), recno internal pages (RINTERNAL), recno leaf pages
+ * (RLEAF) and overflow pages.  All five page types have a page header (PAGE).
+ * This implementation requires that longs within structures are NOT padded.
+ * (ANSI C permits random padding.)  If your compiler pads randomly you'll have
+ * to do some work to get this package to run.
  */
+typedef struct PAGE {
+	pgno_t	pgno;			/* this page's page number */
+	pgno_t	prevpg;			/* left sibling */
+	pgno_t	nextpg;			/* right sibling */
 
-typedef u_long	index_t;	/* so # bytes on a page fits in a long */
-typedef u_long	pgno_t;		/* so # of pages in a btree fits in a long */
+#define	P_BINTERNAL	0x01		/* btree internal page */
+#define	P_BLEAF		0x02		/* leaf page */
+#define	P_OVERFLOW	0x04		/* overflow page */
+#define	P_RINTERNAL	0x08		/* recno internal page */
+#define	P_RLEAF		0x10		/* leaf page */
+#define P_TYPE		0x1f		/* type mask */
+
+#define	P_PRESERVE	0x20		/* never delete this chain of pages */
+	u_long	flags;
+
+	indx_t	lower;			/* lower bound of free space on page */
+	indx_t	upper;			/* upper bound of free space on page */
+	indx_t	linp[1];		/* long-aligned VARIABLE LENGTH DATA */
+} PAGE;
+
+/* First and next index. */
+#define	BTDATAOFF	(sizeof(pgno_t) + sizeof(pgno_t) + sizeof(pgno_t) + \
+			    sizeof(u_long) + sizeof(indx_t) + sizeof(indx_t))
+#define	NEXTINDEX(p)	(((p)->lower - BTDATAOFF) / sizeof(indx_t))
 
 /*
- *  When we do searches, we push the parent page numbers onto a stack
- *  as we descend the tree.  This is so that for insertions, we can
- *  find our way back up to do internal page insertions and splits.
+ * For pages other than overflow pages, there is an array of offsets into the
+ * rest of the page immediately following the page header.  Each offset is to
+ * an item which is unique to the type of page.  The h_lower offset is just
+ * past the last filled-in index.  The h_upper offset is the first item on the
+ * page.  Offsets are from the beginning of the page.
+ *
+ * If an item is too big to store on a single page, a flag is set and the item
+ * is a { page, size } pair such that the page is the first page of an overflow
+ * chain with size bytes of item.  Overflow pages are simply bytes without any
+ * external structure.
+ *
+ * The size and page number fields in the items are long aligned so they can be
+ * manipulated without copying.
  */
-
-typedef struct BTSTACK {
-	pgno_t		bts_pgno;
-	struct BTSTACK	*bts_next;
-} BTSTACK;
+#define	LALIGN(n)	(((n) + sizeof(u_long) - 1) & ~(sizeof(u_long) - 1))
+#define	NOVFLSIZE	(sizeof(pgno_t) + sizeof(size_t))
 
 /*
- *  Every btree page has a header that looks like this.  Flags are given
- *  in the #define's for the F_ flags (see below).
+ * For the btree internal pages, the item is a key.  BINTERNALs are {key, pgno}
+ * pairs, such that the key compares less than or equal to all of the records
+ * on that page.  For a tree without duplicate keys, an internal page with two
+ * consecutive keys, a and b, will have all records greater than or equal to a
+ * and less than b stored on the page associated with a.  Duplicate keys are
+ * somewhat special and can cause duplicate internal and leaf page records and
+ * some minor modifications of the above rule.
  */
+typedef struct BINTERNAL {
+	size_t	ksize;			/* key size */
+	pgno_t	pgno;			/* page number stored on */
+#define	P_BIGDATA	0x01		/* overflow data */
+#define	P_BIGKEY	0x02		/* overflow key */
+	u_char	flags;
+	char	bytes[1];		/* data */
+} BINTERNAL;
 
-typedef struct BTHEADER {
-	pgno_t h_pgno;		/* page number of this page */
-	pgno_t h_prevpg;	/* left sibling */
-	pgno_t h_nextpg;	/* right sibling */
+/* Get the page's BINTERNAL structure at index indx. */
+#define	GETBINTERNAL(pg, indx) \
+	((BINTERNAL *)((char *)(pg) + (pg)->linp[indx]))
 
-#define F_LEAF		0x01	/* leaf page, contains user data */
-#define F_CONT		0x02	/* continuation page (large items) */
-#define F_DIRTY		0x04	/* need to write to disk */
-#define F_PRESERVE	0x08	/* never delete this chain of pages */
+/* Get the number of bytes in the entry. */
+#define NBINTERNAL(len) \
+	LALIGN(sizeof(size_t) + sizeof(pgno_t) + sizeof(u_char) + (len))
 
-	u_long h_flags;		/* page state */
-	index_t h_lower;	/* lower bound of free space on page */
-	index_t h_upper;	/* upper bound of free space on page */
-	index_t h_linp[1];	/* VARIABLE LENGTH DATA AT END OF STRUCT */
-} BTHEADER;
+/* Copy a BINTERNAL entry to the page. */
+#define	WR_BINTERNAL(p, size, pgno, flags) { \
+	*(size_t *)p = size; \
+	p += sizeof(size_t); \
+	*(pgno_t *)p = pgno; \
+	p += sizeof(pgno_t); \
+	*(u_char *)p = flags; \
+	p += sizeof(u_char); \
+}
 
 /*
- *  HTBUCKETs are hash table buckets for looking up pages of in-memory
- *  btrees by page number.  We use this indirection, rather than direct
- *  pointers, so that the code for manipulating in-memory trees is the
- *  same as that for manipulating on-disk trees.
+ * For the recno internal pages, the item is a page number with the number of
+ * keys found on that page and below.
  */
+typedef struct RINTERNAL {
+	recno_t	nrecs;			/* number of records */
+	pgno_t	pgno;			/* page number stored below */
+} RINTERNAL;
 
-typedef struct HTBUCKET {
-	pgno_t		ht_pgno;
-	BTHEADER	*ht_page;
-	struct HTBUCKET	*ht_next;
-} HTBUCKET;
+/* Get the page's RINTERNAL structure at index indx. */
+#define	GETRINTERNAL(pg, indx) \
+	((RINTERNAL *)((char *)(pg) + (pg)->linp[indx]))
 
-typedef HTBUCKET	**HTABLE;
+/* Get the number of bytes in the entry. */
+#define NRINTERNAL \
+	LALIGN(sizeof(recno_t) + sizeof(pgno_t))
 
-/* minimum size we'll let a page be */
-#define MINPSIZE	512
+/* Copy a RINTERAL entry to the page. */
+#define	WR_RINTERNAL(p, nrecs, pgno) { \
+	*(recno_t *)p = nrecs; \
+	p += sizeof(recno_t); \
+	*(pgno_t *)p = pgno; \
+}
 
-/* default cache size, in bytes */
-#define DEFCACHE	(20 * 1024)
+/* For the btree leaf pages, the item is a key and data pair. */
+typedef struct BLEAF {
+	size_t	ksize;			/* size of key */
+	size_t	dsize;			/* size of data */
+	u_char	flags;			/* P_BIGDATA, P_BIGKEY */
+	char	bytes[1];		/* data */
+} BLEAF;
 
-/* hash table size for in-memory trees */
-#define	HTSIZE		128
+/* Get the page's BLEAF structure at index indx. */
+#define	GETBLEAF(pg, indx) \
+	((BLEAF *)((char *)(pg) + (pg)->linp[indx]))
 
-/* generate a hash key from a page number */
-#define HASHKEY(pgno)	((pgno - 1) % HTSIZE)
+/* Get the number of bytes in the entry. */
+#define NBLEAF(p)	NBLEAFDBT((p)->ksize, (p)->dsize)
+
+/* Get the number of bytes in the user's key/data pair. */
+#define NBLEAFDBT(ksize, dsize) \
+	LALIGN(sizeof(size_t) + sizeof(size_t) + sizeof(u_char) + \
+	    (ksize) + (dsize))
+
+/* Copy a BLEAF entry to the page. */
+#define	WR_BLEAF(p, key, data, flags) { \
+	*(size_t *)p = key->size; \
+	p += sizeof(size_t); \
+	*(size_t *)p = data->size; \
+	p += sizeof(size_t); \
+	*(u_char *)p = flags; \
+	p += sizeof(u_char); \
+	memmove(p, key->data, key->size); \
+	p += key->size; \
+	memmove(p, data->data, data->size); \
+}
+
+/* For the recno leaf pages, the item is a data entry. */
+typedef struct RLEAF {
+	size_t	dsize;			/* size of data */
+	u_char	flags;			/* P_BIGDATA */
+	char	bytes[1];
+} RLEAF;
+
+/* Get the page's RLEAF structure at index indx. */
+#define	GETRLEAF(pg, indx) \
+	((RLEAF *)((char *)(pg) + (pg)->linp[indx]))
+
+/* Get the number of bytes in the entry. */
+#define NRLEAF(p)	NRLEAFDBT((p)->dsize)
+
+/* Get the number of bytes from the user's data. */
+#define	NRLEAFDBT(dsize) \
+	LALIGN(sizeof(size_t) + sizeof(u_char) + (dsize))
+
+/* Copy a RLEAF entry to the page. */
+#define	WR_RLEAF(p, data, flags) { \
+	*(size_t *)p = data->size; \
+	p += sizeof(size_t); \
+	*(u_char *)p = flags; \
+	p += sizeof(u_char); \
+	memmove(p, data->data, data->size); \
+}
 
 /*
- *  Disk btrees have a file descriptor, and may also have an lru buffer
- *  cache, if the user asked for one.
+ * A record in the tree is either a pointer to a page and an index in the page
+ * or a page number and an index.  These structures are used as a cursor, stack
+ * entry and search returns as well as to pass records to other routines.
+ *
+ * One comment about searches.  Internal page searches must find the largest
+ * record less than key in the tree so that descents work.  Leaf page searches
+ * must find the smallest record greater than key so that the returned index
+ * is the record's correct position for insertion.
+ *
+ * One comment about cursors.  The cursor key is never removed from the tree,
+ * even if deleted.  This is because it is quite difficult to decide where the
+ * cursor should be when other keys have been inserted/deleted in the tree;
+ * duplicate keys make it impossible.  This scheme does require extra work
+ * though, to make sure that we don't perform an operation on a deleted key.
  */
+typedef struct EPGNO {
+	pgno_t	pgno;			/* the page number */
+	indx_t	index;			/* the index on the page */
+} EPGNO;
 
-typedef struct BTDISK {
-	int	d_fd;
-	char	*d_cache;
-} BTDISK;
+typedef struct EPG {
+	PAGE	*page;			/* the (pinned) page */
+	indx_t	 index;			/* the index on the page */
+} EPG;
 
 /*
- *  Cursors keep track of the current location in a sequential scan of
- *  the database.  Since btrees impose a total ordering on keys, we can
- *  walk forward or backward through the database from any point.  Cursors
- *  survive updates to the tree, and can be used to delete a particular
- *  record.
+ * The metadata of the tree.  The m_nrecs field is used only by the RECNO code.
+ * This is because the btree doesn't really need it and it requires that every
+ * put or delete call modify the metadata.
  */
-
-typedef struct CURSOR {
-	pgno_t		c_pgno;		/* pgno of current item in scan */
-	index_t		c_index;	/* index of current item in scan */
-	char		*c_key;		/* current key, used for updates */
-
-#define CRSR_BEFORE	0x01
-
-	u_char		c_flags;	/* to handle updates properly */
-} CURSOR;
-
-/*
- *  The private btree data structure.  The user passes a pointer to one of
- *  these when we are to manipulate a tree, but the BTREE type is opaque
- *  to him.
- */
-
-typedef struct BTREEDATA_P {
-	char		*bt_fname;		/* NULL for in-memory trees */
-	union {
-		BTDISK	bt_d;			/* for on-disk btrees */
-		HTABLE	bt_ht;			/* hash table for mem trees */
-	} bt_s;
-	size_t		bt_psize;		/* page size for btree pages */
-	int		(*bt_compare)();	/* key comparison function */
-	pgno_t		bt_npages;		/* number of pages in tree */
-	BTHEADER	*bt_curpage;		/* current page contents */
-	pgno_t		bt_free;		/* free pg list for big data */
-	CURSOR		bt_cursor;		/* cursor for scans */
-	BTSTACK		*bt_stack;		/* parent stack for inserts */
-	u_long		bt_lorder;		/* byte order (endian.h) */
-
-#define BTF_METAOK	0x01	/* meta-data written to start of file */
-#define BTF_SEQINIT	0x02	/* we have called bt_seq */
-#define BTF_ISWRITE	0x04	/* tree was opened for write */
-#define BTF_NODUPS	0x08	/* tree created for unique keys */
-
-	u_long		bt_flags;		/* btree state */
-} BTREEDATA_P;
-
-typedef BTREEDATA_P	*BTREE_P;
-
-/*
- *  The first thing in a btree file is a BTMETA structure.  The rest of
- *  the first page is empty, so that all disk operations are page-aligned.
- */
-
 typedef struct BTMETA {
-	u_long	m_magic;
-	u_long	m_version;
-	size_t	m_psize;
-	pgno_t	m_free;
-	u_long	m_flags;
-	u_long	m_lorder;
+	u_long	m_magic;		/* magic number */
+	u_long	m_version;		/* version */
+	u_long	m_psize;		/* page size */
+	u_long	m_free;			/* page number of first free page */
+	u_long	m_nrecs;		/* R: number of records */
+#define	SAVEMETA	(B_NODUPS | R_RECNO)
+	u_long	m_flags;		/* bt_flags & SAVEMETA */
+	u_long	m_unused;		/* unused */
 } BTMETA;
 
-#define P_NONE		0		/* invalid page number in tree */
-#define P_ROOT		1		/* page number of root pg in btree */
+/* The in-memory btree/recno data structure. */
+typedef struct BTREE {
+	MPOOL	*bt_mp;			/* memory pool cookie */
 
-#define NORELEASE	0		/* don't release a page during write */
-#define RELEASE		1		/* release a page during write */
+	DB	*bt_dbp;		/* pointer to enclosing DB */
 
-#define INSERT		0		/* doing an insert operation */
-#define DELETE		1		/* doing a delete operation */
+	EPGNO	bt_bcursor;		/* B: btree cursor */
+	recno_t	bt_rcursor;		/* R: recno cursor (1-based) */
 
-/* get the next free index on a btree page */
-#define NEXTINDEX(p)	((((int)(p)->h_lower) - ((int)((((char *)(&(p)->h_linp[0]))) - ((char *) (p)))))/(sizeof(index_t)))
+#define	BT_POP(t)	(t->bt_sp ? t->bt_stack + --t->bt_sp : NULL)
+#define	BT_CLR(t)	(t->bt_sp = 0)
+	EPGNO	*bt_stack;		/* stack of parent pages */
+	u_int	bt_sp;			/* current stack pointer */
+	u_int	bt_maxstack;		/* largest stack */
 
-/* is a BTITEM actually on the btree page? */
-#define VALIDITEM(t, i)	((i)->bti_index < NEXTINDEX((t)->bt_curpage))
+	char	*bt_kbuf;		/* key buffer */
+	size_t	bt_kbufsz;		/* key buffer size */
+	char	*bt_dbuf;		/* data buffer */
+	size_t	bt_dbufsz;		/* data buffer size */
 
-/* guarantee longword alignment so structure refs work */
-#define LONGALIGN(p) (((long)(p) + 3) & ~ 0x03)
+	int	bt_fd;			/* tree file descriptor */
 
-/* get a particular datum (or idatum) off a page */
-#define GETDATUM(h,i)	 (((char *) h) + h->h_linp[i])
+	pgno_t	bt_free;		/* next free page */
+	u_long	bt_psize;		/* page size */
+	indx_t	bt_ovflsize;		/* cut-off for key/data overflow */
+	int	bt_lorder;		/* byte order */
+					/* sorted order */
+	enum { NOT, BACK, FORWARD, } bt_order;
+	EPGNO	bt_last;		/* last insert */
 
-/* is a {key,datum} too big to put on a single page? */
-#define TOOBIG(t, sz)	(sz >= t->bt_psize / 5)
+					/* B: key comparison function */
+	int	(*bt_cmp) __P((const DBT *, const DBT *));
+					/* B: prefix comparison function */
+	int	(*bt_pfx) __P((const DBT *, const DBT *));
+					/* R: recno input function */
+	int	(*bt_irec) __P((struct BTREE *, recno_t));
 
-/* is this a disk tree or a memory tree? */
-#define ISDISK(t)	(t->bt_fname != (char *) NULL)
+	FILE	*bt_rfp;		/* R: record FILE pointer */
+	int	bt_rfd;			/* R: record file descriptor */
 
-/* does the disk tree use a cache? */
-#define ISCACHE(t)	(t->bt_s.bt_d.d_cache != (char *) NULL)
+	caddr_t	bt_cmap;		/* R: current point in mapped space */
+	caddr_t	bt_smap;		/* R: start of mapped space */
+	caddr_t bt_emap;		/* R: end of mapped space */
+	size_t	bt_msize;		/* R: size of mapped region. */
 
-/*
- *  DATUMs are for user data -- one appears on leaf pages for every
- *  tree entry.  The d_bytes[] array contains the key first, then the data.
- *
- *  If either the key or the datum is too big to store on a single page,
- *  a bit is set in the flags entry, and the d_bytes[] array contains a
- *  pgno pointing to the page at which the data is actually stored.
- *
- *  Note on alignment:  every DATUM is guaranteed to be longword aligned
- *  on the disk page.  In order to force longword alignment of user key
- *  and data values, we must guarantee that the d_bytes[] array starts
- *  on a longword boundary.  This is the reason that d_flags is a u_long,
- *  rather than a u_char (it really only needs to be two bits big).  This
- *  is necessary because we call the user's comparison function with a
- *  pointer to the start of the d_bytes array.  We don't need to force
- *  longword alignment of the data following the key, since that is copied
- *  to a longword-aligned buffer before being returned to the user.
- */
-
-typedef struct DATUM {
-	size_t d_ksize;		/* size of key */
-	size_t d_dsize;		/* size of data */
-
-#define D_BIGDATA	0x01	/* indirect datum ptr flag */
-#define D_BIGKEY	0x02	/* indirect key ptr flag */
-
-	u_long d_flags;		/* flags (indirect bit) */
-	char d_bytes[1];	/* VARIABLE LENGTH DATA AT END OF STRUCT */
-} DATUM;
-
-/* BTITEMs are used to return (page, index, datum) tuples from searches */
-typedef struct BTITEM {
-	pgno_t bti_pgno;
-	index_t bti_index;
-	DATUM *bti_datum;
-} BTITEM;
+	recno_t	bt_nrecs;		/* R: number of records */
+	size_t	bt_reclen;		/* R: fixed record length */
+	u_char	bt_bval;		/* R: delimiting byte/pad character */
 
 /*
- *  IDATUMs are for data stored on internal pages.  This is the (key, pgno)
- *  pair, such that key 'key' is the first entry on page 'pgno'.  If our
- *  internal page contains keys (a) and (b) next to each other, then all
- *  items >= to (a) and < (b) go on the same page as (a).  There are some
- *  gotchas with duplicate keys, however.  See the split code for details.
- *
- *  If a key is too big to fit on a single page, then the i_bytes[] array
- *  contains a pgno pointing to the start of a chain that actually stores
- *  the bytes.  Since items on internal pages are never deleted from the
- *  tree, these indirect chains are marked as special, so that they won't
- *  be deleted if the corresponding leaf item is deleted.
- *
- *  As for DATUMs, IDATUMs have a u_long flag entry (rather than u_char)
- *  in order to guarantee that user keys are longword aligned on the disk
- *  page.
+ * NB:
+ * B_NODUPS and R_RECNO are stored on disk, and may not be changed.
  */
+#define	B_DELCRSR	0x00001		/* cursor has been deleted */
+#define	B_INMEM		0x00002		/* in-memory tree */
+#define	B_METADIRTY	0x00004		/* need to write metadata */
+#define	B_MODIFIED	0x00008		/* tree modified */
+#define	B_NEEDSWAP	0x00010		/* if byte order requires swapping */
+#define	B_NODUPS	0x00020		/* no duplicate keys permitted */
+#define	B_RDONLY	0x00040		/* read-only tree */
+#define	B_SEQINIT	0x00100		/* sequential scan initialized */
 
-typedef struct IDATUM {
-	size_t i_size;
-	pgno_t i_pgno;
-	u_long i_flags;		/* see DATUM.d_flags, above */
-	char i_bytes[1];	/* VARIABLE LENGTH DATA AT END OF STRUCT */
-} IDATUM;
+#define	R_CLOSEFP	0x00200		/* opened a file pointer */
+#define	R_EOF		0x00400		/* end of input file reached. */
+#define	R_FIXLEN	0x00800		/* fixed length records */
+#define	R_MEMMAPPED	0x01000		/* memory mapped file. */
+#define	R_RECNO		0x00080		/* record oriented tree */
+#define	R_INMEM		0x02000		/* in-memory file */
+#define	R_MODIFIED	0x04000		/* modified file */
+#define	R_RDONLY	0x08000		/* read-only file */
 
-/* all private interfaces have a leading _ in their names */
-extern BTITEM	*_bt_search();
-extern BTITEM	*_bt_searchr();
-extern BTHEADER	*_bt_allocpg();
-extern index_t	_bt_binsrch();
-extern int	_bt_isonpage();
-extern BTITEM	*_bt_first();
-extern int	_bt_release();
-extern int	_bt_wrtmeta();
-extern int	_bt_delindir();
-extern int	_bt_pgout();
-extern int	_bt_pgin();
-extern int	_bt_fixscan();
-extern int	_bt_indirect();
-extern int	_bt_crsrdel();
-extern int	_bt_push();
-extern pgno_t	_bt_pop();
-extern int	strcmp();
+	u_long		bt_flags;	/* btree state */
+} BTREE;
 
+#define	SET(t, f)	((t)->bt_flags |= (f))
+#define	CLR(t, f)	((t)->bt_flags &= ~(f))
+#define	ISSET(t, f)	((t)->bt_flags & (f))
+
+#include "extern.h"

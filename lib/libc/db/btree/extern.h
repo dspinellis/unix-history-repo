@@ -1,9 +1,6 @@
 /*-
- * Copyright (c) 1990, 1993
+ * Copyright (c) 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
- *
- * This code is derived from software contributed to Berkeley by
- * Margo Seltzer.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,77 +29,43 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ *	@(#)extern.h	8.1 (Berkeley) 6/4/93
  */
 
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hsearch.c	8.1 (Berkeley) 6/4/93";
-#endif /* LIBC_SCCS and not lint */
+int	 __bt_close __P((DB *));
+int	 __bt_cmp __P((BTREE *, const DBT *, EPG *));
+int	 __bt_crsrdel __P((BTREE *, EPGNO *));
+int	 __bt_defcmp __P((const DBT *, const DBT *));
+int	 __bt_defpfx __P((const DBT *, const DBT *));
+int	 __bt_delete __P((const DB *, const DBT *, u_int));
+int	 __bt_dleaf __P((BTREE *, PAGE *, int));
+int	 __bt_fd __P((const DB *));
+EPG	*__bt_first __P((BTREE *, const DBT *, int *));
+int	 __bt_free __P((BTREE *, PAGE *));
+int	 __bt_get __P((const DB *, const DBT *, DBT *, u_int));
+PAGE	*__bt_new __P((BTREE *, pgno_t *));
+DB	*__bt_open __P((const char *, int, int, const BTREEINFO *));
+void	 __bt_pgin __P((void *, pgno_t, void *));
+void	 __bt_pgout __P((void *, pgno_t, void *));
+int	 __bt_push __P((BTREE *, pgno_t, int));
+int	 __bt_put __P((const DB *dbp, DBT *, const DBT *, u_int));
+int	 __bt_ret __P((BTREE *, EPG *, DBT *, DBT *));
+EPG	*__bt_search __P((BTREE *, const DBT *, int *));
+int	 __bt_seq __P((const DB *, DBT *, DBT *, u_int));
+int	 __bt_split __P((BTREE *, PAGE *,
+	    const DBT *, const DBT *, u_long, size_t, u_int));
+int	 __bt_sync __P((const DB *, u_int));
 
-#include <sys/types.h>
+int	 __ovfl_delete __P((BTREE *, void *));
+int	 __ovfl_get __P((BTREE *, void *, size_t *, char **, size_t *));
+int	 __ovfl_put __P((BTREE *, const DBT *, pgno_t *));
 
-#include <fcntl.h>
-#include <string.h>
-
-#define	__DBINTERFACE_PRIVATE
-#include <db.h>
-#include "search.h"
-
-static DB *dbp = NULL;
-static ENTRY retval;
-
-extern int
-hcreate(nel)
-	u_int nel;
-{
-	HASHINFO info;
-
-	info.nelem = nel;
-	info.bsize = 256;
-	info.ffactor = 8;
-	info.cachesize = NULL;
-	info.hash = NULL;
-	info.lorder = 0;
-	dbp = (DB *)__hash_open(NULL, O_CREAT | O_RDWR, 0600, &info);
-	return ((int)dbp);
-}
-
-extern ENTRY *
-hsearch(item, action)
-	ENTRY item;
-	ACTION action;
-{
-	DBT key, val;
-	int status;
-
-	if (!dbp)
-		return (NULL);
-	key.data = (u_char *)item.key;
-	key.size = strlen(item.key) + 1;
-
-	if (action == ENTER) {
-		val.data = (u_char *)item.data;
-		val.size = strlen(item.data) + 1;
-		status = (dbp->put)(dbp, &key, &val, R_NOOVERWRITE);
-		if (status)
-			return (NULL);
-	} else {
-		/* FIND */
-		status = (dbp->get)(dbp, &key, &val, 0);
-		if (status)
-			return (NULL);
-		else
-			item.data = (char *)val.data;
-	}
-	retval.key = item.key;
-	retval.data = item.data;
-	return (&retval);
-}
-
-extern void
-hdestroy()
-{
-	if (dbp) {
-		(void)(dbp->close)(dbp);
-		dbp = NULL;
-	}
-}
+#ifdef DEBUG
+void	 __bt_dnpage __P((DB *, pgno_t));
+void	 __bt_dpage __P((PAGE *));
+void	 __bt_dump __P((DB *));
+#endif
+#ifdef STATISTICS
+void	 __bt_stat __P((DB *));
+#endif

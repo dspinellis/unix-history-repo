@@ -2,9 +2,6 @@
  * Copyright (c) 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
- * This code is derived from software contributed to Berkeley by
- * Margo Seltzer.
- *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -35,74 +32,96 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hsearch.c	8.1 (Berkeley) 6/4/93";
+static char sccsid[] = "@(#)rec_search.c	8.1 (Berkeley) 6/4/93";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 
-#include <fcntl.h>
-#include <string.h>
+#include <errno.h>
+#include <stdio.h>
 
-#define	__DBINTERFACE_PRIVATE
 #include <db.h>
-#include "search.h"
+#include "recno.h"
 
-static DB *dbp = NULL;
-static ENTRY retval;
-
-extern int
-hcreate(nel)
-	u_int nel;
+/*
+ * __REC_SEARCH -- Search a btree for a key.
+ *
+ * Parameters:
+ *	t:	tree to search
+ *	recno:	key to find
+ *	op: 	search operation
+ *
+ * Returns:
+ *	EPG for matching record, if any, or the EPG for the location of the
+ *	key, if it were inserted into the tree.
+ *
+ * Warnings:
+ *	The EPG returned is in static memory, and will be overwritten by the
+ *	next search of any kind in any tree.
+ */
+EPG *
+__rec_search(t, recno, op)
+	BTREE *t;
+	recno_t recno;
+	enum SRCHOP op;
 {
-	HASHINFO info;
+	static EPG e;
+	register indx_t index;
+	register PAGE *h;
+	EPGNO *parent;
+	RINTERNAL *r;
+	pgno_t pg;
+	indx_t top;
+	recno_t total;
+	int serrno;
 
-	info.nelem = nel;
-	info.bsize = 256;
-	info.ffactor = 8;
-	info.cachesize = NULL;
-	info.hash = NULL;
-	info.lorder = 0;
-	dbp = (DB *)__hash_open(NULL, O_CREAT | O_RDWR, 0600, &info);
-	return ((int)dbp);
-}
+	BT_CLR(t);
+	for (pg = P_ROOT, total = 0;;) {
+		if ((h = mpool_get(t->bt_mp, pg, 0)) == NULL)
+			goto err;
+		if (h->flags & P_RLEAF) {
+			e.page = h;
+			e.index = recno - total;
+			return (&e);
+		}
+		for (index = 0, top = NEXTINDEX(h);;) {
+			r = GETRINTERNAL(h, index);
+			if (++index == top || total + r->nrecs > recno)
+				break;
+			total += r->nrecs;
+		}
 
-extern ENTRY *
-hsearch(item, action)
-	ENTRY item;
-	ACTION action;
-{
-	DBT key, val;
-	int status;
-
-	if (!dbp)
-		return (NULL);
-	key.data = (u_char *)item.key;
-	key.size = strlen(item.key) + 1;
-
-	if (action == ENTER) {
-		val.data = (u_char *)item.data;
-		val.size = strlen(item.data) + 1;
-		status = (dbp->put)(dbp, &key, &val, R_NOOVERWRITE);
-		if (status)
+		if (__bt_push(t, pg, index - 1) == RET_ERROR)
 			return (NULL);
-	} else {
-		/* FIND */
-		status = (dbp->get)(dbp, &key, &val, 0);
-		if (status)
-			return (NULL);
-		else
-			item.data = (char *)val.data;
-	}
-	retval.key = item.key;
-	retval.data = item.data;
-	return (&retval);
-}
+		
+		pg = r->pgno;
+		switch (op) {
+		case SDELETE:
+			--GETRINTERNAL(h, (index - 1))->nrecs;
+			mpool_put(t->bt_mp, h, MPOOL_DIRTY);
+			break;
+		case SINSERT:
+			++GETRINTERNAL(h, (index - 1))->nrecs;
+			mpool_put(t->bt_mp, h, MPOOL_DIRTY);
+			break;
+		case SEARCH:
+			mpool_put(t->bt_mp, h, 0);
+			break;
+		}
 
-extern void
-hdestroy()
-{
-	if (dbp) {
-		(void)(dbp->close)(dbp);
-		dbp = NULL;
 	}
+	/* Try and recover the tree. */
+err:	serrno = errno;
+	if (op != SEARCH)
+		while  ((parent = BT_POP(t)) != NULL) {
+			if ((h = mpool_get(t->bt_mp, parent->pgno, 0)) == NULL)
+				break;
+			if (op == SINSERT)
+				--GETRINTERNAL(h, parent->index)->nrecs;
+			else
+				++GETRINTERNAL(h, parent->index)->nrecs;
+                        mpool_put(t->bt_mp, h, MPOOL_DIRTY);
+                }
+	errno = serrno;
+	return (NULL);
 }

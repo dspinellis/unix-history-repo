@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
- * Margo Seltzer.
+ * Mike Olson.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -35,74 +35,58 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hsearch.c	8.1 (Berkeley) 6/4/93";
+static char sccsid[] = "@(#)bt_stack.c	8.1 (Berkeley) 6/4/93";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 
-#include <fcntl.h>
-#include <string.h>
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-#define	__DBINTERFACE_PRIVATE
 #include <db.h>
-#include "search.h"
+#include "btree.h"
 
-static DB *dbp = NULL;
-static ENTRY retval;
+/*
+ * When a page splits, a new record has to be inserted into its parent page.
+ * This page may have to split as well, all the way up to the root.  Since
+ * parent pointers in each page would be expensive, we maintain a stack of
+ * parent pages as we descend the tree.
+ *
+ * XXX
+ * This is a concurrency problem -- if user a builds a stack, then user b
+ * splits the tree, then user a tries to split the tree, there's a new level
+ * in the tree that user a doesn't know about.
+ */
 
-extern int
-hcreate(nel)
-	u_int nel;
+/*
+ * __BT_PUSH -- Push parent page info onto the stack (LIFO).
+ *
+ * Parameters:
+ *	t:	tree
+ *	pgno:	page
+ *	index:	page index
+ *
+ * Returns:
+ * 	RET_ERROR, RET_SUCCESS
+ */
+int
+__bt_push(t, pgno, index)
+	BTREE *t;
+	pgno_t pgno;
+	int index;
 {
-	HASHINFO info;
-
-	info.nelem = nel;
-	info.bsize = 256;
-	info.ffactor = 8;
-	info.cachesize = NULL;
-	info.hash = NULL;
-	info.lorder = 0;
-	dbp = (DB *)__hash_open(NULL, O_CREAT | O_RDWR, 0600, &info);
-	return ((int)dbp);
-}
-
-extern ENTRY *
-hsearch(item, action)
-	ENTRY item;
-	ACTION action;
-{
-	DBT key, val;
-	int status;
-
-	if (!dbp)
-		return (NULL);
-	key.data = (u_char *)item.key;
-	key.size = strlen(item.key) + 1;
-
-	if (action == ENTER) {
-		val.data = (u_char *)item.data;
-		val.size = strlen(item.data) + 1;
-		status = (dbp->put)(dbp, &key, &val, R_NOOVERWRITE);
-		if (status)
-			return (NULL);
-	} else {
-		/* FIND */
-		status = (dbp->get)(dbp, &key, &val, 0);
-		if (status)
-			return (NULL);
-		else
-			item.data = (char *)val.data;
+	if (t->bt_sp == t->bt_maxstack) {
+		t->bt_maxstack += 50;
+		if ((t->bt_stack = realloc(t->bt_stack,
+		    t->bt_maxstack * sizeof(EPGNO))) == NULL) {
+			t->bt_maxstack -= 50;
+			return (RET_ERROR);
+		}
 	}
-	retval.key = item.key;
-	retval.data = item.data;
-	return (&retval);
-}
 
-extern void
-hdestroy()
-{
-	if (dbp) {
-		(void)(dbp->close)(dbp);
-		dbp = NULL;
-	}
+	t->bt_stack[t->bt_sp].pgno = pgno;
+	t->bt_stack[t->bt_sp].index = index;
+	++t->bt_sp;
+	return (RET_SUCCESS);
 }
