@@ -1,6 +1,6 @@
 .ls 2
 .he 'Sendmail Installation and Operation Guide''%'
-.fo 'Version 3.6'DRAFT'Last Mod %G%'
+.fo 'Version 3.7'DRAFT'Last Mod %G%'
 .nr si 3n
 .de $0
 .(x
@@ -26,7 +26,7 @@ INSTALLATION AND OPERATION GUIDE
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 3.6
+Version 3.7
 .)l
 .sp 3
 .pp
@@ -1978,7 +1978,8 @@ These are related as depicted by figure 2.
 .(z
 .hl
 .ie t .sp 2i
-.el \{.(c
+.el \{\
+.(c
                     +---+
                  -->| 0 |-->resolved address
                 /   +---+
@@ -3492,10 +3493,23 @@ INSTALLATION AND OPERATION GUIDE
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 3.6
+Version 3.7
 .ce 0
 .bp 1
 .ce
 TABLE OF CONTENTS
 .sp 2
+.\" remove some things to avoid "out of temp file space" problem
+.rm sh
+.rm (x
+.rm )x
+.rm ip
+.rm pp
+.rm lp
+.rm he
+.rm fo
+.rm eh
+.rm oh
+.rm ef
+.rm of
 .xp
