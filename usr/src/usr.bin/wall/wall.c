@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)wall.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)wall.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -31,13 +31,11 @@ static char sccsid[] = "@(#)wall.c	5.9 (Berkeley) %G%";
  */
 
 #include <sys/param.h>
-#include <sys/time.h>
 #include <sys/stat.h>
-#include <sys/dir.h>
-#include <sys/file.h>
+#include <sys/time.h>
+#include <sys/uio.h>
 #include <utmp.h>
 #include <pwd.h>
-#include <errno.h>
 #include <stdio.h>
 #include <paths.h>
 
@@ -51,29 +49,37 @@ main(argc, argv)
 	int argc;
 	char **argv;
 {
+	struct iovec iov;
 	struct utmp utmp;
 	FILE *fp;
+	char *p, *ttymsg();
 
 	if (argc > 2) {
-		fprintf(stderr, "usage: wall [file]\n");
+		(void)fprintf(stderr, "usage: wall [file]\n");
 		exit(1);
 	}
-	makemsg(argv);
+
+	makemsg(*++argv);
 
 	if (!(fp = fopen(_PATH_UTMP, "r"))) {
-		fprintf(stderr, "wall: cannot read %s.\n", _PATH_UTMP);
+		(void)fprintf(stderr, "wall: cannot read %s.\n", _PATH_UTMP);
 		exit(1);
 	}
+	iov.iov_base = mbuf;
+	iov.iov_len = mbufsize;
 	/* NOSTRICT */
-	while (fread((char *)&utmp, sizeof(utmp), 1, fp) == 1)
-		if (utmp.ut_name[0] &&
-		    strncmp(utmp.ut_name, IGNOREUSER, sizeof(utmp.ut_name)))
-			sendmsg(utmp.ut_line, 1, mbufsize);
+	while (fread((char *)&utmp, sizeof(utmp), 1, fp) == 1) {
+		if (!utmp.ut_name[0] ||
+		    !strncmp(utmp.ut_name, IGNOREUSER, sizeof(utmp.ut_name)))
+			continue;
+		if (p = ttymsg(&iov, 1, utmp.ut_line, 1))
+			(void)fprintf(stderr, "wall: %s\n", p);
+	}
 	exit(0);
 }
 
-makemsg(argv)
-	char **argv;
+makemsg(fname)
+	char *fname;
 {
 	register int ch, cnt;
 	struct tm *lt;
@@ -88,7 +94,7 @@ makemsg(argv)
 	(void)strcpy(tmpname, _PATH_TMP);
 	(void)strcat(tmpname, "/wall.XXXXXX");
 	if (!(fd = mkstemp(tmpname)) || !(fp = fdopen(fd, "r+"))) {
-		fprintf(stderr, "wall: can't open temporary file.\n");
+		(void)fprintf(stderr, "wall: can't open temporary file.\n");
 		exit(1);
 	}
 	(void)unlink(tmpname);
@@ -100,95 +106,50 @@ makemsg(argv)
 	lt = localtime(&now);
 
 	/*
-	 * all this stuff is to blank out a square for the message; we
-	 * wrap message lines at column 79, not 80, because some terminals
-	 * wrap after 79, some do not, and we can't tell.
+	 * all this stuff is to blank out a square for the message; we wrap
+	 * message lines at column 79, not 80, because some terminals wrap
+	 * after 79, some do not, and we can't tell.  Which means that we
+	 * may leave a non-blank character in column 80, but that can't be
+	 * helped.
 	 */
-	fprintf(fp, "\r%79s\r\n", " ");
+	(void)fprintf(fp, "\r%79s\r\n", " ");
 	(void)sprintf(lbuf, "Broadcast Message from %s@%s", whom, hostname);
-	fprintf(fp, "%-79.79s\007\007\r\n", lbuf);
+	(void)fprintf(fp, "%-79.79s\007\007\r\n", lbuf);
 	(void)sprintf(lbuf, "        (%s) at %d:%02d ...", ttyname(2),
 	    lt->tm_hour, lt->tm_min);
-	fprintf(fp, "%-79.79s\r\n", lbuf);
-	fprintf(fp, "%79s\r\n", " ");
+	(void)fprintf(fp, "%-79.79s\r\n", lbuf);
+	(void)fprintf(fp, "%79s\r\n", " ");
 
-	if (*++argv && !(freopen(*argv, "r", stdin))) {
-		fprintf(stderr, "wall: can't read %s.\n", *argv);
+	if (*fname && !(freopen(fname, "r", stdin))) {
+		(void)fprintf(stderr, "wall: can't read %s.\n", fname);
 		exit(1);
 	}
 	while (fgets(lbuf, sizeof(lbuf), stdin))
 		for (cnt = 0, p = lbuf; ch = *p; ++p, ++cnt) {
 			if (cnt == 79 || ch == '\n') {
+				for (; cnt < 79; ++cnt)
+					putc(' ', fp);
 				putc('\r', fp);
 				putc('\n', fp);
 				cnt = 0;
 			} else
 				putc(ch, fp);
 		}
-	fprintf(fp, "%79s\r\n", " ");
+	(void)fprintf(fp, "%79s\r\n", " ");
 	rewind(fp);
 
 	if (fstat(fd, &sbuf)) {
-		fprintf(stderr, "wall: can't stat temporary file.\n");
+		(void)fprintf(stderr, "wall: can't stat temporary file.\n");
 		exit(1);
 	}
 	mbufsize = sbuf.st_size;
 	if (!(mbuf = malloc((u_int)mbufsize))) {
-		fprintf(stderr, "wall: out of memory.\n");
+		(void)fprintf(stderr, "wall: out of memory.\n");
 		exit(1);
 	}
 	if (fread(mbuf, sizeof(*mbuf), mbufsize, fp) != mbufsize) {
-		fprintf(stderr, "wall: can't read temporary file.\n");
+		(void)fprintf(stderr, "wall: can't read temporary file.\n");
 		exit(1);
-	}
-	(void)close(fd);
-}
-
-sendmsg(line, nonblock, left)
-	char *line;
-{
-	extern int errno;
-	static char device[MAXNAMLEN] = _PATH_DEV;
-	register int fd, wret;
-	char *lp, *strcpy(), *strerror();
-
-	(void)strcpy(device + 5, line);
-	/*
-	 * open will fail on slip lines or exclusive-use lines
-	 * if not running as root
-	 */
-	if ((fd = open(device, O_WRONLY|(nonblock ? O_NONBLOCK : 0), 0)) < 0) {
-		if (errno != EBUSY && errno != EPERM)
-			(void)fprintf(stderr, "wall: %s: %s\n",
-			    device, strerror(errno));
-		return;
-	}
-	lp = mbuf + mbufsize - left;
-	while (left) {
-		wret = write(fd, lp, left);
-		if (wret >= 0) {
-			lp += wret;
-			left -= wret;
-		} else
-		if (errno == EWOULDBLOCK) {
-			if (fork()) {
-				(void)close(fd);
-				return;
-			}
-			/* wait at most 5 minutes */
-			(void)alarm((u_int)(60 * 5));
-			sendmsg(line, 0, left);
-			exit(0);
-		} else {
-			/*
-			 * We get ENODEV on a slip line
-			 * if we're running as root
-			 */
-			if (errno != ENODEV)
-				(void)fprintf(stderr, "wall: %s: %s\n",
-				    device, strerror(errno));
-			break;
-		}
 	}
 	(void)close(fd);
 }
