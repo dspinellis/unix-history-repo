@@ -14,26 +14,17 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	4.18 (Berkeley) %G%
+#	@(#)Makefile	4.19 (Berkeley) %G%
 #
-# This makefile is designed to be run in one of three ways:
+# This makefile is designed to be run in one of two ways:
 #
-#	make clean
-#	make depend
 #	make build
 #	make installsrc
-# This is the most rigorous way to rebuild the source tree.
-# The first two steps will clean the source tree and remake the dependencies.
-# The `make build' will compile and install the libraries and the compiler
-# twice before building the rest of the sources.  The `make installsrc' will
-# then install the remaining binaries.
-#
-#	make libthenall
-#	make installsrc
-# The `make libthenall' will compile and install the libraries, compile
-# and install the compiler and then compile everything else.  Note,
-# however, that the libraries will have been built with the old compiler.
-# The `make installsrc' will then install the remaining binaries.
+# This is the most rigorous way to rebuild the source tree.  `make build'
+# will clean the source tree, install the include files, remake the
+# dependencies, and then compile and install the libraries and the compiler
+# twice before building the rest of the sources.  The `make installsrc'
+# will then install the remaining binaries.
 #
 #	make all
 #	make install
@@ -41,7 +32,7 @@
 # nothing.  The `make install' will then install everything.
 #
 # C library options: passed to libc makefile.
-# See lib/libc/Makefile for explanation.
+# See usr.lib/libc/Makefile for explanation.
 #
 # HOSTLOOKUP must be either named or hosttable.
 # DFLMON must be either mon.o or gmon.o.
@@ -49,8 +40,7 @@
 #
 DEFS=		-DLIBC_SCCS
 DFLMON=		mon.o
-HOSTLOOKUP=	named
-LIBCDEFS=	HOSTLOOKUP=${HOSTLOOKUP} DFLMON=${DFLMON} DEFS="${DEFS}"
+LIBCDEFS=	DFLMON=${DFLMON} DEFS="${DEFS}"
 
 # global flags
 # SRC_MFLAGS are used on makes in command source directories,
@@ -61,105 +51,115 @@ DESTDIR=
 CFLAGS=		-O
 SRC_MFLAGS=	-k
 
-LIBDIR=	lib usr.lib
-# order is important, old and man must be #1 and #2
-SRCDIR=	old man bin usr.bin etc ucb new games local
+SRCLIB=	lib
+# order is important, old must be first, man must be last; contrib is
+# too big for the current file system
+# bin
+SRC=	old games libexec pgrm sbin share usr.bin usr.sbin local man
+ALL=	${SRCLIB} ${SRC}
 
-all: ${LIBDIR} ${SRCDIR}
+all: ${ALL}
 
-libthenall: buildlib1 buildlib3 src
+build: cleandir build1 ${SRC}
 
-build: buildlib1 buildlib2 buildlib3 src
+${ALL}: FRC
+	@echo; echo +++ compiling $@
+	cd $@; make ${MFLAGS}
 
-src: ${SRCDIR}
-
-lib: FRC
-	cd lib/libc; make ${MFLAGS} ${LIBCDEFS}
-	cd lib; make ${MFLAGS} pcc cpp c2
-
-usr.lib ${SRCDIR}: FRC
-	@echo
-	@echo === compiling $@
-	cd $@; make ${MFLAGS} ${SRC_MFLAGS}
-
-buildlib1: FRC
-	@echo === installing /usr/include
+build1:
+	@echo +++ installing includes
 	cd include; make ${MFLAGS} DESTDIR=${DESTDIR} install
 	@echo
-	@echo === compiling libc.a
-	cd lib/libc; make ${MFLAGS} ${LIBCDEFS}
-	@echo === installing /lib/libc.a
-	cd lib/libc; make ${MFLAGS} DESTDIR=${DESTDIR} install
-	@echo
-	@echo === compiling C compiler
-	cd lib; make ${MFLAGS} pcc cpp c2
-	@echo
-	@echo === installing C compiler
-	cd lib/pcc; make ${MFLAGS} DESTDIR=${DESTDIR} install
-	cd lib/cpp; make ${MFLAGS} DESTDIR=${DESTDIR} install
-	cd lib/c2; make ${MFLAGS} DESTDIR=${DESTDIR} install
-	@echo
-
-buildlib2: FRC
-	@echo === cleaning lib
-	cd lib; make ${MFLAGS} clean
-	@echo === re-compiling libc.a
-	cd lib/libc; make ${MFLAGS} ${LIBCDEFS}
-	@echo === re-installing /lib/libc.a
-	cd lib/libc; make ${MFLAGS} DESTDIR=${DESTDIR} install
-	@echo
-	@echo === re-compiling C compiler
-	cd lib; make ${MFLAGS} pcc cpp c2
-	@echo === re-installing C compiler
-	cd lib/pcc; make ${MFLAGS} DESTDIR=${DESTDIR} install
-	cd lib/cpp; make ${MFLAGS} DESTDIR=${DESTDIR} install
-	cd lib/c2; make ${MFLAGS} DESTDIR=${DESTDIR} install
-	@echo
-
-buildlib3: FRC
-	@echo === compiling usr.lib
-	cd usr.lib; make ${MFLAGS} ${SRC_MFLAGS}
-	@echo === installing /usr/lib
-	cd usr.lib; make ${MFLAGS} ${SRC_MFLAGS} DESTDIR=${DESTDIR} install
-	@echo === done with libraries
-	@echo
-
-install: FRC
-	-for i in ${LIBDIR} ${SRCDIR}; do \
-		echo; \
-		echo === installing $$i; \
-		(cd $$i; \
-		make ${MFLAGS} ${SRC_MFLAGS} DESTDIR=${DESTDIR} install); \
+	@echo +++ building dependencies
+	@for i in ${ALL}; do \
+		echo; echo +++ dependencies for $$i; \
+		(cd $$i; make ${MFLAGS} depend); \
 	done
+	@echo +++ compiling C compiler
+	cd usr.bin/cpp; make ${MFLAGS}
+	cd usr.libexec/c2; make ${MFLAGS}
+	cd usr.libexec/pcc; make ${MFLAGS}
+	@echo
+	@echo +++ installing C compiler
+	cd usr.bin/cpp; make ${MFLAGS} install
+	cd usr.libexec/c2; make ${MFLAGS} install
+	cd usr.libexec/pcc; make ${MFLAGS} install
+	@echo
+	@echo +++ compiling C library
+	cd usr.lib/libc; make ${MFLAGS} ${LIBCDEFS}
+	@echo
+	@echo +++ installing C library
+	cd usr.lib/libc; make ${MFLAGS} DESTDIR=${DESTDIR} install
+	@echo
+	@echo +++ cleaning C compiler
+	cd usr.bin/cpp; make ${MFLAGS} clean
+	cd usr.libexec/c2; make ${MFLAGS} clean
+	cd usr.libexec/pcc; make ${MFLAGS} clean
+	@echo
+	@echo +++ re-compiling C compiler
+	cd usr.bin/cpp; make ${MFLAGS}
+	cd usr.libexec/c2; make ${MFLAGS}
+	cd usr.libexec/pcc; make ${MFLAGS}
+	@echo
+	@echo +++ re-installing C compiler
+	cd usr.bin/cpp; make ${MFLAGS} install
+	cd usr.libexec/c2; make ${MFLAGS} install
+	cd usr.libexec/pcc; make ${MFLAGS} install
+	@echo
+	@echo +++ cleaning C library
+	cd usr.lib/libc; make ${MFLAGS} clean
+	@echo
+	@echo +++ compiling all libraries
+	cd usr.lib; make ${MFLAGS} ${LIBCDEFS}
+	@echo
+	@echo +++ installing all libraries
+	cd usr.lib; make ${MFLAGS} DESTDIR=${DESTDIR} install
+	@echo
+	@echo +++ libraries done
+	@echo
 
 installsrc: FRC
-	-for i in ${SRCDIR}; do \
+	@for i in ${SRC}; do \
 		echo; \
-		echo === installing $$i; \
+		echo +++ installing $$i; \
 		(cd $$i; \
-		make ${MFLAGS} ${SRC_MFLAGS} DESTDIR=${DESTDIR} install); \
+		    make ${MFLAGS} ${SRC_MFLAGS} DESTDIR=${DESTDIR} install); \
+	done
+
+clean: FRC
+	@for i in ${ALL}; do \
+		echo; \
+		echo +++ cleaning $$i; \
+		(cd $$i; make ${SRC_MFLAGS} clean); \
+	done
+
+cleandir: FRC
+	@for i in include ${ALL}; do \
+		echo; echo '+++ cleaning (cleandir)' $$i; \
+		(cd $$i; make ${SRC_MFLAGS} cleandir); \
 	done
 
 depend: FRC
-	for i in ${LIBDIR} ${SRCDIR}; do \
+	@for i in ${ALL}; do \
 		echo; \
-		echo === doing dependencies for $$i; \
-		(cd $$i; make ${MFLAGS} depend); \
+		echo +++ doing dependencies for $$i; \
+		(cd $$i; make ${SRC_MFLAGS} depend); \
+	done
+
+install: FRC
+	@for i in ${ALL}; do \
+		echo; \
+		echo +++ installing $$i; \
+		(cd $$i; \
+		    make ${MFLAGS} ${SRC_MFLAGS} DESTDIR=${DESTDIR} install); \
 	done
 
 tags: FRC
-	for i in include lib usr.lib; do \
+	@for i in include lib usr.lib; do \
 		echo; \
-		echo === making tags for $$i; \
-		(cd $$i; make ${MFLAGS} TAGSFILE=../tags tags); \
+		echo +++ making tags for $$i; \
+		(cd $$i; make ${SRC_MFLAGS} TAGSFILE=../tags tags); \
 	done
 	sort -u +0 -1 -o tags tags
-
-clean: FRC
-	for i in ${LIBDIR} ${SRCDIR}; do \
-		echo; \
-		echo === cleaning $$i; \
-		(cd $$i; make -k ${MFLAGS} clean); \
-	done
 
 FRC:
