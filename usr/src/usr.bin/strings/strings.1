@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)strings.1	6.7 (Berkeley) %G%
+.\"     @(#)strings.1	6.8 (Berkeley) %G%
 .\"
 .TH STRINGS 1 "%Q"
 .UC
@@ -11,7 +11,7 @@
 strings \- find the printable strings in a file
 .SH SYNOPSIS
 .ft B
-strings [ \-ao ] [ \-n number ] [ file ... ]
+strings [ \-aof ] [ \-n number ] [ file ... ]
 .ft R
 .SH DESCRIPTION
 .I String
@@ -42,6 +42,12 @@ The
 .I \-o
 option causes each string to be preceded by its decimal offset in the
 file.
+.TP
+\-f
+The
+.I \-f
+option causes each string to be preceded by the name of the file
+in which it was found.
 .PP
 .I Strings
 is useful for identifying random binaries, among other things.
