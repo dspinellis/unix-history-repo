@@ -1,2 +1,0 @@
-Musers	users.c	/^main(argc, argv)$/
-scmp	users.c	/^scmp(p, q)$/

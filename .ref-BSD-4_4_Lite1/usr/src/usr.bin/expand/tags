@@ -1,2 +1,0 @@
-Mexpand	expand.c	/^main(argc, argv)$/
-getstops	expand.c	/^getstops(cp)$/

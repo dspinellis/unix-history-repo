@@ -1,1 +1,0 @@
-../../../usr.bin/pascal/USD.doc
