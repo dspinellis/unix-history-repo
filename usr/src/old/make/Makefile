@@ -14,9 +14,9 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	4.8 (Berkeley) %G%
+#	@(#)Makefile	4.9 (Berkeley) %G%
 #
-CFLAGS=	-O -DASCARCH -I. -I/usr/src/bin/make 
+CFLAGS=	-O -DASCARCH -I.
 LIBC=	/lib/libc.a
 SRCS=	main.c doname.c misc.c files.c dosys.c gram.c
 OBJS=	main.o doname.o misc.o files.o dosys.o gram.o
@@ -37,8 +37,8 @@ depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -s -o bin -g bin -m 755 make ${DESTDIR}/usr/bin
-	install -c -o bin -g bin -m 444 make.0 ${DESTDIR}/usr/man/cat1
+	install -s -o bin -g bin -m 755 make ${DESTDIR}/usr/old
+	install -c -o bin -g bin -m 444 make.0 ${DESTDIR}/usr/man/cat.old
 
 lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
