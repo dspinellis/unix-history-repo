@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_balloc.c	8.5 (Berkeley) %G%
+ *	@(#)ffs_balloc.c	8.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -30,18 +30,18 @@
  */
 ffs_balloc(ip, lbn, size, cred, bpp, flags)
 	register struct inode *ip;
-	register daddr_t lbn;
+	register ufs_daddr_t lbn;
 	int size;
 	struct ucred *cred;
 	struct buf **bpp;
 	int flags;
 {
 	register struct fs *fs;
-	register daddr_t nb;
+	register ufs_daddr_t nb;
 	struct buf *bp, *nbp;
 	struct vnode *vp = ITOV(ip);
 	struct indir indirs[NIADDR + 2];
-	daddr_t newb, *bap, pref;
+	ufs_daddr_t newb, *bap, pref;
 	int osize, nsize, num, i, error;
 
 	*bpp = NULL;
@@ -142,7 +142,7 @@ ffs_balloc(ip, lbn, size, cred, bpp, flags)
 	--num;
 	nb = ip->i_ib[indirs[0].in_off];
 	if (nb == 0) {
-		pref = ffs_blkpref(ip, lbn, 0, (daddr_t *)0);
+		pref = ffs_blkpref(ip, lbn, 0, (ufs_daddr_t *)0);
 	        if (error = ffs_alloc(ip, lbn, pref, (int)fs->fs_bsize,
 		    cred, &newb))
 			return (error);
@@ -171,7 +171,7 @@ ffs_balloc(ip, lbn, size, cred, bpp, flags)
 			brelse(bp);
 			return (error);
 		}
-		bap = (daddr_t *)bp->b_data;
+		bap = (ufs_daddr_t *)bp->b_data;
 		nb = bap[indirs[i].in_off];
 		if (i == num)
 			break;
@@ -181,7 +181,7 @@ ffs_balloc(ip, lbn, size, cred, bpp, flags)
 			continue;
 		}
 		if (pref == 0)
-			pref = ffs_blkpref(ip, lbn, 0, (daddr_t *)0);
+			pref = ffs_blkpref(ip, lbn, 0, (ufs_daddr_t *)0);
 		if (error =
 		    ffs_alloc(ip, lbn, pref, (int)fs->fs_bsize, cred, &newb)) {
 			brelse(bp);

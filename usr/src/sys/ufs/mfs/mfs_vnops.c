@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mfs_vnops.c	8.8 (Berkeley) %G%
+ *	@(#)mfs_vnops.c	8.9 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -186,9 +186,9 @@ int
 mfs_bmap(ap)
 	struct vop_bmap_args /* {
 		struct vnode *a_vp;
-		daddr_t  a_bn;
+		ufs_daddr_t  a_bn;
 		struct vnode **a_vpp;
-		daddr_t *a_bnp;
+		ufs_daddr_t *a_bnp;
 		int *a_runp;
 	} */ *ap;
 {

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_extern.h	8.7 (Berkeley) %G%
+ *	@(#)ufs_extern.h	8.8 (Berkeley) %G%
  */
 
 struct buf;
@@ -49,7 +49,7 @@ int	 ufs_dirremove __P((struct vnode *, struct componentname*));
 int	 ufs_dirrewrite
 	    __P((struct inode *, struct inode *, struct componentname *));
 int	 ufs_getattr __P((struct vop_getattr_args *));
-int	 ufs_getlbns __P((struct vnode *, daddr_t, struct indir *, int *));
+int	 ufs_getlbns __P((struct vnode *, ufs_daddr_t, struct indir *, int *));
 struct vnode *
 	 ufs_ihashget __P((dev_t, ino_t));
 void	 ufs_ihashinit __P((void));
