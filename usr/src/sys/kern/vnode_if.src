@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)vnode_if.src	8.11 (Berkeley) %G%
+#	@(#)vnode_if.src	8.12 (Berkeley) %G%
 #
 
 #
@@ -316,10 +316,11 @@ vop_abortop {
 };
 
 #
-#% inactive	vp	U U U
+#% inactive	vp	L U U
 #
 vop_inactive {
 	IN struct vnode *vp;
+	IN struct proc *p;
 };
 
 #
@@ -327,6 +328,7 @@ vop_inactive {
 #
 vop_reclaim {
 	IN struct vnode *vp;
+	IN struct proc *p;
 };
 
 #
