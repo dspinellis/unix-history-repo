@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)umap_subr.c	8.7 (Berkeley) %G%
+ *	@(#)umap_subr.c	8.8 (Berkeley) %G%
  *
  * $Id: lofs_subr.c, v 1.11 1992/05/30 10:05:43 jsp Exp jsp $
  */
@@ -41,7 +41,8 @@ u_long umap_node_hash;
 /*
  * Initialise cache headers
  */
-umapfs_init()
+umapfs_init(vfsp)
+	struct vfsconf *vfsp;
 {
 
 #ifdef UMAPFS_DIAGNOSTIC
