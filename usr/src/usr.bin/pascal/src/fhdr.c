@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)fhdr.c 1.3 %G%";
+static char sccsid[] = "@(#)fhdr.c 1.4 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -59,8 +59,13 @@ funchdr(r)
 		 * a redeclared symbol (error)
 		 * a forward declaration,
 		 * or an external declaration.
+		 * check that forwards are of the right kind:
+		 *     if this fails, we are trying to redefine it
+		 *     and enter() will complain.
 		 */
-		if ((p->class == FUNC || p->class == PROC) && (p->nl_flags & NFORWD) != 0) {
+		if (  ( ( p->nl_flags & NFORWD ) != 0 )
+		   && (  ( p->class == FUNC && r[0] == T_FDEC )
+		      || ( p->class == PROC && r[0] == T_PDEC ) ) ) {
 			/*
 			 * Grammar doesnt forbid
 			 * types on a resolution
