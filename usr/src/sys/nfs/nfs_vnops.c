@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vnops.c	7.102 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.103 (Berkeley) %G%
  */
 
 /*
@@ -90,7 +90,7 @@ struct vnodeopv_entry_desc nfsv2_vnodeop_entries[] = {
 	{ &vop_vfree_desc, nfs_vfree },		/* vfree */
 	{ &vop_truncate_desc, nfs_truncate },	/* truncate */
 	{ &vop_update_desc, nfs_update },	/* update */
-	{ &vop_bwrite_desc, nfs_bwrite },
+	{ &vop_bwrite_desc, vn_bwrite },
 	{ (struct vnodeop_desc*)NULL, (int(*)())NULL }
 };
 struct vnodeopv_desc nfsv2_vnodeop_opv_desc =
@@ -140,7 +140,7 @@ struct vnodeopv_entry_desc spec_nfsv2nodeop_entries[] = {
 	{ &vop_vfree_desc, spec_vfree },	/* vfree */
 	{ &vop_truncate_desc, spec_truncate },	/* truncate */
 	{ &vop_update_desc, nfs_update },	/* update */
-	{ &vop_bwrite_desc, nfs_bwrite },
+	{ &vop_bwrite_desc, vn_bwrite },
 	{ (struct vnodeop_desc*)NULL, (int(*)())NULL }
 };
 struct vnodeopv_desc spec_nfsv2nodeop_opv_desc =
@@ -188,7 +188,7 @@ struct vnodeopv_entry_desc fifo_nfsv2nodeop_entries[] = {
 	{ &vop_vfree_desc, fifo_vfree },	/* vfree */
 	{ &vop_truncate_desc, fifo_truncate },	/* truncate */
 	{ &vop_update_desc, nfs_update },	/* update */
-	{ &vop_bwrite_desc, nfs_bwrite },
+	{ &vop_bwrite_desc, vn_bwrite },
 	{ (struct vnodeop_desc*)NULL, (int(*)())NULL }
 };
 struct vnodeopv_desc fifo_nfsv2nodeop_opv_desc =
