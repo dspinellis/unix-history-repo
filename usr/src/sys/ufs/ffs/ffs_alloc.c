@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_alloc.c	8.9 (Berkeley) %G%
+ *	@(#)ffs_alloc.c	8.10 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -34,7 +34,7 @@ static daddr_t	ffs_fragextend __P((struct inode *, int, long, int, int));
 static void	ffs_fserr __P((struct fs *, u_int, char *));
 static u_long	ffs_hashalloc
 		    __P((struct inode *, int, long, int, u_long (*)()));
-static ino_t	ffs_nodealloccg __P((struct inode *, int, daddr_t, int));
+static u_long	ffs_nodealloccg __P((struct inode *, int, daddr_t, int));
 static daddr_t	ffs_mapsearch __P((struct fs *, struct cg *, daddr_t, int));
 
 /*
@@ -385,7 +385,7 @@ ffs_reallocblks(ap)
 		if (i == ssize)
 			bap = ebap;
 #ifdef DIAGNOSTIC
-		if (buflist->bs_children[i]->b_blkno != fsbtodb(fs, *bap))
+		if (dbtofsb(fs, buflist->bs_children[i]->b_blkno) != *bap)
 			panic("ffs_reallocblks: alloc mismatch");
 #endif
 		*bap++ = blkno;
@@ -987,9 +987,10 @@ ffs_clusteralloc(ip, cg, bpref, len)
 	struct buf *bp;
 	int i, run, bno, bit, map;
 	u_char *mapp;
+	int32_t *lp;
 
 	fs = ip->i_fs;
-	if (fs->fs_cs(fs, cg).cs_nbfree < len)
+	if (fs->fs_maxcluster[cg] < len)
 		return (NULL);
 	if (bread(ip->i_devvp, fsbtodb(fs, cgtod(fs, cg)), (int)fs->fs_cgsize,
 	    NOCRED, &bp))
@@ -1001,11 +1002,25 @@ ffs_clusteralloc(ip, cg, bpref, len)
 	 * Check to see if a cluster of the needed size (or bigger) is
 	 * available in this cylinder group.
 	 */
+	lp = &cg_clustersum(cgp)[len];
 	for (i = len; i <= fs->fs_contigsumsize; i++)
-		if (cg_clustersum(cgp)[i] > 0)
+		if (*lp++ > 0)
 			break;
-	if (i > fs->fs_contigsumsize)
+	if (i > fs->fs_contigsumsize) {
+		/*
+		 * This is the first time looking for a cluster in this
+		 * cylinder group. Update the cluster summary information
+		 * to reflect the true maximum sized cluster so that
+		 * future cluster allocation requests can avoid reading
+		 * the cylinder group map only to find no clusters.
+		 */
+		lp = &cg_clustersum(cgp)[len - 1];
+		for (i = len - 1; i > 0; i--)
+			if (*lp-- > 0)
+				break;
+		fs->fs_maxcluster[cg] = i;
 		goto fail;
+	}
 	/*
 	 * Search the cluster map to find a big enough cluster.
 	 * We take the first one that we find, even if it is larger
@@ -1066,7 +1081,7 @@ fail:
  *   2) allocate the next available inode after the requested
  *      inode in the specified cylinder group.
  */
-static ino_t
+static u_long
 ffs_nodealloccg(ip, cg, ipref, mode)
 	struct inode *ip;
 	int cg;
@@ -1398,6 +1413,7 @@ ffs_clusteracct(fs, cgp, blkno, cnt)
 	int cnt;
 {
 	long *sump;
+	int32_t *lp;
 	u_char *freemapp, *mapp;
 	int i, start, end, forw, back, map, bit;
 
@@ -1466,6 +1482,14 @@ ffs_clusteracct(fs, cgp, blkno, cnt)
 		sump[back] -= cnt;
 	if (forw > 0)
 		sump[forw] -= cnt;
+	/*
+	 * Update cluster summary information.
+	 */
+	lp = &sump[fs->fs_contigsumsize];
+	for (i = fs->fs_contigsumsize; i > 0; i--)
+		if (*lp-- > 0)
+			break;
+	fs->fs_maxcluster[cgp->cg_cgx] = i;
 }
 
 /*
