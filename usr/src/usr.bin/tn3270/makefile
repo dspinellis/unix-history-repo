@@ -13,8 +13,6 @@
 #	TN3270		- 	This is to be linked with tn3270.  Necessary
 #				for creating tn3270.
 #
-#	DEBUG		-	Allow for some extra debugging operations.
-#
 #	NOT43		-	Allows the program to compile and run on
 #				a 4.2BSD system.
 #
@@ -55,7 +53,7 @@ CC	= cc
 PRINT	= print
 
 DEFINES = -DSLOWSCREEN
-DEFINES = -DSLOWSCREEN -DDEBUG
+DEFINES = -DSLOWSCREEN
 
 INCLUDES = -I. -I..
 
@@ -118,7 +116,8 @@ ${SUBDIR}: FRC
 FRC:
 
 tn3270:	telnet.o tn3270.a
-	${CC} ${CFLAGS} -o tn3270 telnet.o tn3270.a $(LIBCURSES) $(LIBTERM)
+	${CC} ${CFLAGS} -o tn3270 telnet.o tn3270.a apilib/apilib.a \
+					$(LIBCURSES) $(LIBTERM)
 
 mset:	mset.o ascii/map3270.o ascii/astosc.o
 	${CC} ${CFLAGS} -o mset mset.o ascii/map3270.o ascii/astosc.o
