@@ -1,4 +1,4 @@
-.\"	@(#)m.mac	4.1 (Berkeley) %G%
+.\"	@(#)m.mac	5.1 (Berkeley) %G%
 .\"
 .if \n(mo=1 .ds mo January
 .if \n(mo=2 .ds mo February
