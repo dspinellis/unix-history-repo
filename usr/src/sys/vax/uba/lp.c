@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)lp.c	7.6 (Berkeley) %G%
+ *	@(#)lp.c	7.7 (Berkeley) %G%
  */
 
 #include "lp.h"
@@ -19,6 +19,7 @@
 #include "param.h"
 #include "user.h"
 #include "buf.h"
+#include "conf.h"
 #include "systm.h"
 #include "map.h"
 #include "uio.h"
