@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_subr.c	7.3 (Berkeley) %G%
+ *	@(#)kern_subr.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -129,7 +129,7 @@ strncpy(to, from, cnt)
 	*to = '\0';
 }
 
-#ifdef notdef	/* unused */
+#ifndef lint	/* unused except by ct.c, other oddities */
 /*
  * Get next character written in by user from uio.
  */
