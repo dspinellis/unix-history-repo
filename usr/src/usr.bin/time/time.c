@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)time.c	4.6 (Berkeley) %G%";
+static	char *sccsid = "@(#)time.c	4.7 (Berkeley) %G%";
 #endif
 
 /*
@@ -27,7 +27,7 @@ main(argc, argv)
 		argc--;
 		argv++;
 	}
-	gettimeofday(&before, 0);
+	gettimeofday(&before, (struct timezone *)NULL);
 	p = fork();
 	if (p < 0) {
 		perror("time");
@@ -38,11 +38,11 @@ main(argc, argv)
 		perror(argv[1]);
 		exit(1);
 	}
-	signal(SIGINT, SIG_IGN);
-	signal(SIGQUIT, SIG_IGN);
+	(void)signal(SIGINT, SIG_IGN);
+	(void)signal(SIGQUIT, SIG_IGN);
 	while (wait3(&status, 0, &ru) != p)
 		;
-	gettimeofday(&after, 0);
+	gettimeofday(&after, (struct timezone *)NULL);
 	if ((status&0377) != 0)
 		fprintf(stderr, "Command terminated abnormally.\n");
 	after.tv_sec -= before.tv_sec;
@@ -59,33 +59,33 @@ main(argc, argv)
 
 		ticks = hz * (ru.ru_utime.tv_sec + ru.ru_stime.tv_sec) +
 		     hz * (ru.ru_utime.tv_usec + ru.ru_stime.tv_usec) / 1000000;
-		fprintf(stderr, "%10D  %s\n",
+		fprintf(stderr, "%10ld  %s\n",
 			ru.ru_maxrss, "maximum resident set size");
-		fprintf(stderr, "%10D  %s\n",
+		fprintf(stderr, "%10ld  %s\n",
 			ru.ru_ixrss / ticks, "average shared memory size");
-		fprintf(stderr, "%10D  %s\n",
+		fprintf(stderr, "%10ld  %s\n",
 			ru.ru_idrss / ticks, "average unshared data size");
-		fprintf(stderr, "%10D  %s\n",
+		fprintf(stderr, "%10ld  %s\n",
 			ru.ru_isrss / ticks, "average unshared stack size");
-		fprintf(stderr, "%10D  %s\n",
+		fprintf(stderr, "%10ld  %s\n",
 			ru.ru_minflt, "page reclaims");
-		fprintf(stderr, "%10D  %s\n",
+		fprintf(stderr, "%10ld  %s\n",
 			ru.ru_majflt, "page faults");
-		fprintf(stderr, "%10D  %s\n",
+		fprintf(stderr, "%10ld  %s\n",
 			ru.ru_nswap, "swaps");
-		fprintf(stderr, "%10D  %s\n",
+		fprintf(stderr, "%10ld  %s\n",
 			ru.ru_inblock, "block input operations");
-		fprintf(stderr, "%10D  %s\n",
+		fprintf(stderr, "%10ld  %s\n",
 			ru.ru_oublock, "block output operations");
-		fprintf(stderr, "%10D  %s\n",
+		fprintf(stderr, "%10ld  %s\n",
 			ru.ru_msgsnd, "messages sent");
-		fprintf(stderr, "%10D  %s\n",
+		fprintf(stderr, "%10ld  %s\n",
 			ru.ru_msgrcv, "messages received");
-		fprintf(stderr, "%10D  %s\n",
+		fprintf(stderr, "%10ld  %s\n",
 			ru.ru_nsignals, "signals received");
-		fprintf(stderr, "%10D  %s\n",
+		fprintf(stderr, "%10ld  %s\n",
 			ru.ru_nvcsw, "voluntary context switches");
-		fprintf(stderr, "%10D  %s\n",
+		fprintf(stderr, "%10ld  %s\n",
 			ru.ru_nivcsw, "involuntary context switches");
 	}
 	exit (status>>8);
@@ -96,5 +96,5 @@ printt(s, tv)
 	struct timeval *tv;
 {
 
-	fprintf(stderr, "%9d.%02d %s ", tv->tv_sec, tv->tv_usec/10000, s);
+	fprintf(stderr, "%9ld.%02ld %s ", tv->tv_sec, tv->tv_usec/10000, s);
 }
