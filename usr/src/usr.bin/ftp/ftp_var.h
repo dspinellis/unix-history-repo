@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1985, 1989 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1985, 1989, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ftp_var.h	5.9 (Berkeley) %G%
+ *	@(#)ftp_var.h	8.1 (Berkeley) %G%
  */
 
 /*
