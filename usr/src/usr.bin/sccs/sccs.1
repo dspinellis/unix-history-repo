@@ -1,4 +1,4 @@
-.TH SCCS 1
+.TH SCCS LOCAL
 .SH NAME
 sccs \- front end for the
 .SM SCCS
@@ -96,6 +96,17 @@ since any changes you made since the get
 will be irretrievably lost.
 .IP info
 Gives a listing of all files being editted.
+.IP check
+Like ``info''
+except that nothing is printed if nothing is being edited,
+and a non-zero exit status is returned if anything
+is being edited.
+The intent is to have this included in an ``install''
+entry in a makefile
+to insure that everything is included into the
+.SM SCCS
+file
+before a version is installed.
 .PP
 The
 .B \-r
