@@ -45,7 +45,17 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- */
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00133
+ * --------------------         -----   ----------------------
+ *
+ * 06 Apr 93	Eric Haug		Fixed comments and includes. [Ed: I did
+ *					not include the unit-1 thing, that is a
+ *					DOSism, fixed the config file instead]
+ * 06 Apr 93	Rodney W. Grimes	A real probe routine, may even cause on
+ *					interrupt if a printer is attached.
+ *
  */
 
 /*
@@ -57,14 +67,16 @@
 #if NLPT > 0
 
 #include "param.h"
+#include "systm.h"
+#include "proc.h"
 #include "user.h"
 #include "buf.h"
-#include "systm.h"
 #include "kernel.h"
 #include "ioctl.h"
 #include "tty.h"
 #include "uio.h"
 
+#include "i386/isa/isa.h"
 #include "i386/isa/isa_device.h"
 #include "i386/isa/lptreg.h"
 
@@ -121,26 +133,90 @@ struct lpt_softc {
 #define TOUT		(1<<5)	/* timeout while not selected	*/
 #define INIT		(1<<6)	/* waiting to initialize for open */
 
-lptprobe(idp)
-	struct isa_device *idp;
-{	unsigned v;
+/*
+ * Internal routine to lptprobe to do port tests of one byte value
+ */
+int
+lpt_port_test(short port, u_char data, u_char mask)
+	{
+	int	temp;
 
-	outb(idp->id_iobase+lpt_status,0xf0);
-	v = inb(idp->id_iobase+lpt_status);
-	outb(idp->id_iobase+lpt_status,0);
-	if (inb(idp->id_iobase+lpt_status) == v) {
-		outb(idp->id_iobase+lpt_control,0xff);
-		DELAY(100);
-		if (inb(idp->id_iobase+lpt_control) != 0xff)
-			return(0);
-		outb(idp->id_iobase+lpt_control,0);
-		DELAY(100);
-		if (inb(idp->id_iobase+lpt_control) != 0xe0)
-			return(0);
-		return(1);
+	data = data & mask;
+	outb(port, data);
+	temp = inb(port) & mask;
+	lprintf("Port 0x%x\tout=%x\tin=%x\n", port, data, temp);
+	return (temp == data);
 	}
-	return(0);
-}
+
+/*
+ * New lptprobe routine written by Rodney W. Grimes, 3/25/1993
+ *
+ * Logic:
+ *	1) You should be able to write to and read back the same value
+ *	   to the data port.  Do an alternating zeros, alternating ones,
+ *	   walking zero, and walking one test to check for stuck bits.
+ *
+ *	2) You should be able to write to and read back the same value
+ *	   to the control port lower 5 bits, the upper 3 bits are reserved
+ *	   per the IBM PC technical reference manauls and different boards
+ *	   do different things with them.  Do an alternating zeros, alternating
+ *	   ones, walking zero, and walking one test to check for stuck bits.
+ *
+ *	   Some printers drag the strobe line down when the are powered off
+ * 	   so this bit has been masked out of the control port test.
+ *
+ *	   XXX Some printers may not like a fast pulse on init or strobe, I
+ *	   don't know at this point, if that becomes a problem these bits
+ *	   should be turned off in the mask byte for the control port test.
+ *
+ *	3) Set the data and control ports to a value of 0
+ */
+
+int
+lptprobe(struct isa_device *dvp)
+	{
+	int	status;
+	short	port;
+	u_char	data;
+	u_char	mask;
+	int	i;
+
+	status = IO_LPTSIZE;
+
+	port = dvp->id_iobase + lpt_data;
+	mask = 0xff;
+	while (mask != 0)
+	{
+		data = 0x55;				/* Alternating zeros */
+		if (!lpt_port_test(port, data, mask)) status = 0;
+
+		data = 0xaa;				/* Alternating ones */
+		if (!lpt_port_test(port, data, mask)) status = 0;
+
+		for (i = 0; i < 8; i++)			/* Walking zero */
+			{
+			data = ~(1 << i);
+			if (!lpt_port_test(port, data, mask)) status = 0;
+			}
+
+		for (i = 0; i < 8; i++)			/* Walking one */
+			{
+			data = (1 << i);
+			if (!lpt_port_test(port, data, mask)) status = 0;
+			}
+
+		if (port == dvp->id_iobase + lpt_data)
+			{
+			port = dvp->id_iobase + lpt_control;
+			mask = 0x1e;
+			}
+		else
+			mask = 0;
+		}
+	outb(dvp->id_iobase+lpt_data, 0);
+	outb(dvp->id_iobase+lpt_control, 0);
+	return (status);
+	}
 
 lptattach(isdp)
 	struct isa_device *isdp;
@@ -347,4 +423,24 @@ return;
 lprintf("sts %x ", sts);
 }
 
-#endif NLP
+int
+lptioctl(dev_t dev, int cmd, caddr_t data, int flag)
+{
+	int	error;
+
+	error = 0;
+	switch (cmd) {
+#ifdef THISISASAMPLE
+	case XXX:
+		dothis; andthis; andthat;
+		error=x;
+		break;
+#endif /* THISISASAMPLE */
+	default:
+		error = ENODEV;
+	}
+
+	return(error);
+}
+
+#endif	/* NLPT */
