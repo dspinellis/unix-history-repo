@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)rshd.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -374,9 +374,19 @@ doit(fromp)
 	else
 		cp = pwd->pw_shell;
 	endpwent();
-	if (!pwd->pw_uid)
-		syslog(LOG_NOTICE, "ROOT shell from %s@%s, comm: %s\n",
-			remuser, hostname, cmdbuf);
+	if (!pwd->pw_uid) {
+#ifdef	KERBEROS
+		if (use_kerberos)
+			syslog(LOG_NOTICE|LOG_AUTH,
+				"ROOT Kerberos shell from %s.%s@%s on %s, comm: %s\n",
+				kdata->pname, kdata->pinst, kdata->prealm,
+				hostname, cmdbuf);
+		else
+#endif
+			syslog(LOG_NOTICE|LOG_AUTH,
+				"ROOT shell from %s@%s, comm: %s\n",
+				remuser, hostname, cmdbuf);
+	}
 	execl(pwd->pw_shell, cp, "-c", cmdbuf, 0);
 	perror(pwd->pw_shell);
 	exit(1);
