@@ -16,34 +16,41 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)make_keypair.c	1.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)make_keypair.c	1.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
-#include <krb.h>
+#include <sys/file.h>
+#include <netinet/in.h>
 #include <stdio.h>
 #include <netdb.h>
-#include <netinet/in.h>
-#include <sys/file.h>
+#include <kerberosIV/des.h>
+#include <kerberosIV/krb.h>
 #include "pathnames.h"
 #include "register_proto.h"
 
+extern void random_key(), herror();
+void make_key(), usage();
+
 main(argc, argv)
-char	**argv;
+	int	argc;
+	char	**argv;
 {
-	char		namebuf[255];
-	int		fd;
 	struct hostent	*hp;
 	char		*addr;
 	int		i;
 	struct sockaddr_in	sin;
 
-	if(argc != 2) {
+	if (argc != 2) {
 		usage(argv[0]);
 		exit(1);
 	}
 
-	hp = gethostbyname(argv[1]);
+	if ((hp = gethostbyname(argv[1])) == NULL) {
+		herror(argv[1]);
+		exit(1);
+	}
+
 	for (i = 0; addr = hp->h_addr_list[i]; i++) {
 		addr = hp->h_addr_list[i];
 		bcopy(addr, &sin.sin_addr, hp->h_length);
@@ -60,9 +67,11 @@ char	**argv;
 	printf("client as %sXXX.XXX.XXX.XXX (same modes as above),\n",
 		CLIENT_KEYFILE);
 	printf("where the X's refer to digits of the host's inet address.\n");
-	fflush(stdout);
+	(void)fflush(stdout);
+	exit(0);
 }
 
+void
 make_key(addr)
 	struct in_addr	addr;
 {
@@ -70,7 +79,7 @@ make_key(addr)
 	char		namebuf[255];
 	int		fd;
 
-	sprintf(namebuf, ".%s%s",
+	(void)sprintf(namebuf, ".%s%s",
 		CLIENT_KEYFILE,
 		inet_ntoa(addr));
 	fd = open(namebuf, O_WRONLY|O_CREAT, 0600);
@@ -84,8 +93,11 @@ make_key(addr)
 		fprintf(stderr, "error writing file %s\n", namebuf);
 	}
 	printf("done.\n");
-	close(fd);
+	(void)close(fd);
+	return;
 }
+
+void
 usage(name)
 	char	*name;
 {
