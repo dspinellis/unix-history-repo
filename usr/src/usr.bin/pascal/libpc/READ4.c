@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)READ4.c 1.2 %G%";
+static char sccsid[] = "@(#)READ4.c 1.3 %G%";
 
 #include "h00vars.h"
 #include "h01errs.h"
@@ -25,6 +25,7 @@ READ4(curfile)
 		ERROR(EBADINUM, curfile->pfname);
 		return;
 	}
+	curfile->funit &= ~EOLN;
 	curfile->funit |= SYNC;
 	return data;
 }
