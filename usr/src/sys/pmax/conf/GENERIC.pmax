@@ -1,13 +1,14 @@
 #
 # GENERIC DECstation (3100 or 5000/xxx)
 #
-#	@(#)GENERIC.pmax	7.2 (Berkeley) %G%
+#	@(#)GENERIC.pmax	7.3 (Berkeley) %G%
 #
 machine		pmax
 
 cpu		"DS5000"
 ident		GENERIC
 
+# Need to set locally
 timezone	8 dst
 maxusers	48
 
