@@ -1,0 +1,23 @@
+			pfatal("CAN'T CHECK FILE SYSTEM.");
+			pfatal("INTERNAL ERROR: dups with -p");
+			pfatal("NO WRITE ACCESS");
+			pfatal("cg %d: bad magic number\n", c);
+						pfatal("LINK COUNT TABLE OVERFLOW");
+				pfatal("UNKNOWN FILE TYPE I=%u", inum);
+					pfatal("PARTIALLY ALLOCATED INODE I=%u", inum);
+				pfatal("DUP TABLE OVERFLOW.");
+		pfatal("ROOT INODE NOT DIRECTORY");
+		pfatal("DUPS/BAD IN ROOT INODE");
+			pfatal("cg %d: bad magic number\n", c);
+			pfatal("BAD BLOCKS IN BIT MAPS.");
+	pfatal("%ld %s I=%u", blk, s, inum);
+		pfatal("%s=%s", DIRCT?"DIR":"FILE", pathname);
+		pfatal("NAME=%s", pathname);
+	pfatal("SUPER-BLOCK TO SUPPLY NEEDED INFORMATION; SEE fsck(8).\n");
+		pfatal("INTERNAL ERROR: GOT TO reply()");
+	pfatal("CANNOT %s: BLK %ld", s, blk);
+			pfatal("SORRY. NO lost+found DIRECTORY");
+		pfatal("SORRY. NO lost+found DIRECTORY");
+		pfatal("SORRY. NO SPACE IN lost+found DIRECTORY");
+pfatal(s, a1, a2, a3)
+	pfatal("internal inconsistency: %s\n");
