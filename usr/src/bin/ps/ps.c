@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)ps.c	4.18 (Berkeley) %G%";
+static	char *sccsid = "@(#)ps.c	4.19 (Berkeley) %G%";
 #endif
 
 /*
@@ -43,8 +43,6 @@ struct nlist nl[] = {
 #define	X_NPROC		8
 	{ "_ntext" },
 #define	X_NTEXT		9
-	{ "_hz" },
-#define	X_HZ		10
 	{ 0 },
 };
 
@@ -249,7 +247,6 @@ main(argc, argv)
 	printhdr();
 	procp = getw(nl[X_PROC].n_value);
 	nproc = getw(nl[X_NPROC].n_value);
-	hz = getw(nl[X_HZ].n_value);
 	savcom = (struct savcom *)calloc(nproc, sizeof (*savcom));
 	for (i=0; i<nproc; i += 8) {
 		klseek(kmem, (long)procp, 0);
@@ -643,14 +640,14 @@ save()
 	if (ap->a_stat == SZOMB) {
 		register struct xproc *xp = (struct xproc *)mproc;
 
-		ap->a_cpu = xp->xp_vm.vm_utime + xp->xp_vm.vm_stime;
+		ap->a_cpu = 0;
 	} else {
 		ap->a_size = mproc->p_dsize + mproc->p_ssize;
 		e(a_rss, p_rssize); 
 		ap->a_ttyd = u.u_ttyd;
-		ap->a_cpu = u.u_vm.vm_utime + u.u_vm.vm_stime;
+		ap->a_cpu = u.u_ru.ru_utime.tv_sec + u.u_ru.ru_stime.tv_sec;
 		if (sumcpu)
-			ap->a_cpu += u.u_cvm.vm_utime + u.u_cvm.vm_stime;
+			ap->a_cpu += u.u_cru.ru_utime.tv_sec + u.u_cru.ru_stime.tv_sec;
 		if (mproc->p_textp && text) {
 			xp = &text[mproc->p_textp - atext];
 			ap->a_tsiz = xp->x_size;
@@ -659,7 +656,6 @@ save()
 		}
 	}
 #undef e
-	ap->a_cpu /= hz;
 	ap->a_maxrss = mproc->p_maxrss;
 	if (lflg) {
 		register struct lsav *lp;
@@ -678,7 +674,7 @@ save()
 #define e(a,b) vp->a = mproc->b
 		if (ap->a_stat != SZOMB) {
 			e(v_swrss, p_swrss);
-			vp->v_majflt = u.u_vm.vm_majflt;
+			vp->v_majflt = u.u_ru.ru_majflt;
 			if (mproc->p_textp)
 				vp->v_txtswrss = xp->x_swrss;
 		}
@@ -911,7 +907,7 @@ ptime(ap)
 	struct asav *ap;
 {
 
-	printf("%3ld:%02ld", ap->a_cpu / hz, ap->a_cpu % hz);
+	printf("%3ld:%02ld", ap->a_cpu / 60, ap->a_cpu % 60);
 }
 
 char	*uhdr =
