@@ -4,14 +4,14 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)termios.h	8.1 (Berkeley) %G%
+ *	@(#)termios.h	8.2 (Berkeley) %G%
  */
 
 /*
  *  termios structure
  */
-#ifndef _TERMIOS_H_
-#define _TERMIOS_H_
+#ifndef _SYS_TERMIOS_H_
+#define _SYS_TERMIOS_H_
 
 /* 
  * Special Control Characters 
@@ -231,7 +231,7 @@ __END_DECLS
 /*
  * END OF PROTECTED INCLUDE.
  */
-#endif /* !_TERMIOS_H_ */
+#endif /* !_SYS_TERMIOS_H_ */
 
 #ifndef _POSIX_SOURCE
 #ifdef KERNEL
@@ -239,4 +239,4 @@ __END_DECLS
 #else
 #include <sys/ttydefaults.h>
 #endif
-#endif  /*_POSIX_SOURCE */
+#endif

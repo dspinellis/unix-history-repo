@@ -4,11 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)gmon.h	8.1 (Berkeley) %G%
+ *	@(#)gmon.h	8.2 (Berkeley) %G%
  */
 
-#ifndef _GMON_H_
-#define _GMON_H_
+#ifndef _SYS_GMON_H_
+#define _SYS_GMON_H_
 
 #include <machine/profile.h>
 
@@ -130,4 +130,4 @@ extern struct gmonparam _gmonparam;
 #define	GPROF_FROMS	2	/* struct: from location hash bucket */
 #define	GPROF_TOS	3	/* struct: destination/count structure */
 #define	GPROF_GMONPARAM	4	/* struct: profiling parameters (see above) */
-#endif
+#endif /* !_SYS_GMON_H_ */

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ttychars.h	8.1 (Berkeley) %G%
+ *	@(#)ttychars.h	8.2 (Berkeley) %G%
  */
 
 /*
@@ -12,8 +12,8 @@
  *
  * User visible structures and constants related to terminal handling.
  */
-#ifndef _TTYCHARS_H_
-#define	_TTYCHARS_H_
+#ifndef _SYS_TTYCHARS_H_
+#define	_SYS_TTYCHARS_H_
 
 struct ttychars {
 	char	tc_erase;	/* erase last character */
@@ -34,4 +34,4 @@ struct ttychars {
 #ifdef USE_OLD_TTY
 #include <sys/ttydefaults.h>	/* to pick up character defaults */
 #endif
-#endif /* !_TTYCHARS_H_ */
+#endif /* !_SYS_TTYCHARS_H_ */

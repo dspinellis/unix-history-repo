@@ -4,11 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)resource.h	8.1 (Berkeley) %G%
+ *	@(#)resource.h	8.2 (Berkeley) %G%
  */
 
-#ifndef _RESOURCE_H_
-#define	_RESOURCE_H_
+#ifndef _SYS_RESOURCE_H_
+#define	_SYS_RESOURCE_H_
 
 /*
  * Process priority specifications to get/setpriority.
@@ -96,4 +96,4 @@ int	setrlimit __P((int, const struct rlimit *));
 __END_DECLS
 
 #endif	/* KERNEL */
-#endif	/* !_RESOURCE_H_ */
+#endif	/* !_SYS_RESOURCE_H_ */

@@ -4,11 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dmap.h	8.1 (Berkeley) %G%
+ *	@(#)dmap.h	8.2 (Berkeley) %G%
  */
 
-#ifndef _DMAP_H_
-#define	_DMAP_H_
+#ifndef _SYS_DMAP_H_
+#define	_SYS_DMAP_H_
 
 /*
  * Definitions for the mapping of vitual swap space to the physical swap
@@ -31,4 +31,4 @@ struct dblock {
 	swblk_t db_base;	/* base of physical contig drum block */
 	swblk_t db_size;	/* size of block */
 };
-#endif	/* !_DMAP_H_ */
+#endif	/* !_SYS_DMAP_H_ */

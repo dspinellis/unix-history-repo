@@ -4,11 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)times.h	8.2 (Berkeley) %G%
+ *	@(#)times.h	8.3 (Berkeley) %G%
  */
 
-#ifndef	_TIMES_H_
-#define	_TIMES_H_
+#ifndef	_SYS_TIMES_H_
+#define	_SYS_TIMES_H_
 
 #include <machine/ansi.h>
 
@@ -31,4 +31,4 @@ __BEGIN_DECLS
 clock_t	times __P((struct tms *));
 __END_DECLS
 #endif
-#endif /* !_TIMES_H_ */
+#endif /* !_SYS_TIMES_H_ */

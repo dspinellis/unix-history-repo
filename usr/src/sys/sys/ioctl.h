@@ -5,11 +5,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ioctl.h	8.1 (Berkeley) %G%
+ *	@(#)ioctl.h	8.2 (Berkeley) %G%
  */
 
-#ifndef	_IOCTL_H_
-#define	_IOCTL_H_
+#ifndef	_SYS_IOCTL_H_
+#define	_SYS_IOCTL_H_
 
 /*
  * Window/terminal size structure.  This information is stored by the kernel
@@ -182,12 +182,10 @@ struct ttysize {
 __BEGIN_DECLS
 int	ioctl __P((int, unsigned long, ...));
 __END_DECLS
-
 #endif /* !KERNEL */
+#endif /* !_SYS_IOCTL_H_ */
 
-#endif /* !_IOCTL_H_ */
-
-/* - note: keep outside _IOCTL_H_
+/* Keep outside _SYS_IOCTL_H_
  * Compatability with old terminal driver
  *
  * Source level -> #define USE_OLD_TTY

@@ -4,11 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fcntl.h	8.1 (Berkeley) %G%
+ *	@(#)fcntl.h	8.2 (Berkeley) %G%
  */
 
-#ifndef _FCNTL_H_
-#define	_FCNTL_H_
+#ifndef _SYS_FCNTL_H_
+#define	_SYS_FCNTL_H_
 
 /*
  * This file includes the definitions for open and fcntl
@@ -156,4 +156,4 @@ int	flock __P((int, int));
 __END_DECLS
 #endif
 
-#endif /* !_FCNTL_H_ */
+#endif /* !_SYS_FCNTL_H_ */

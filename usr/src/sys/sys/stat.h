@@ -4,11 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stat.h	8.3 (Berkeley) %G%
+ *	@(#)stat.h	8.4 (Berkeley) %G%
  */
 
-#ifndef _STAT_H_
-#define	_STAT_H_
+#ifndef _SYS_STAT_H_
+#define	_SYS_STAT_H_
 
 #include <sys/time.h>
 
@@ -158,4 +158,4 @@ int	lstat __P((const char *, struct stat *));
 #endif
 __END_DECLS
 #endif
-#endif /* !_STAT_H_ */
+#endif /* !_SYS_STAT_H_ */
