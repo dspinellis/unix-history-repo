@@ -1,0 +1,23 @@
+.TH SYNC 8  "4 February 1983"
+.UC 4
+.SH NAME
+sync \- update the super block
+.SH SYNOPSIS
+.B sync
+.SH DESCRIPTION
+.I Sync
+executes the
+.I sync
+system primitive.
+.I Sync
+can be called to insure all disk writes have been completed before the
+processor is halted in a way not suitably done by
+.IR reboot (8)
+or
+.IR halt (8).
+.PP
+See
+.IR sync (2)
+for details on the system primitive.
+.SH "SEE ALSO"
+sync(2), halt(8), reboot(8), update(8)

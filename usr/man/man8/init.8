@@ -1,0 +1,152 @@
+.TH INIT 8 "1 April 1981"
+.UC 4
+.SH NAME
+init \- process control initialization
+.SH SYNOPSIS
+.B /etc/init
+.SH DESCRIPTION
+.I Init
+is invoked inside UNIX as the last step in the boot procedure.
+It normally then runs the automatic reboot sequence as described in
+.IR reboot (8),
+and if this succeeds, begins multi-user operation.
+If the reboot fails, it commences single user operation by giving
+the super-user a shell on the console.  It is possible to pass parameters
+from the boot program to
+.I init
+so that single user operation is commenced immediately.
+When such single user operation is terminated by killing the single-user
+shell (i.e. by hitting ^D),
+.I init
+runs
+.I /etc/rc
+without the reboot parameter.
+This command file
+performs housekeeping operations
+such as removing temporary files,
+mounting file systems, and starting
+daemons.
+.PP
+In multi-user operation, 
+.I init's
+role is to create a process for each
+terminal port on which a user may log in.
+To begin such operations, it reads the file
+.I /etc/ttys
+and
+forks several times to create a process
+for each terminal specified in the file.
+Each of these processes opens the appropriate terminal
+for reading and writing.  These channels thus
+receive file descriptors 0, 1 and 2, the standard input and
+output and the diagnostic output.
+Opening the terminal will usually involve a delay,
+since the
+.IR open ""
+is not completed until someone
+is dialed up and carrier established on the channel.
+If a terminal exists but an error occurs when trying to open the terminal
+.I init
+complains by writing a message to the system console;
+the message is repeated every 10 minutes for each such terminal
+until the terminal is shut off in /etc/ttys and init notified (by
+a hangup, as described below), or the terminal becomes accessible
+(init checks again every minute).
+After an open succeeds,
+.I /etc/getty
+is called with argument as specified by the second character of
+the
+.I ttys
+file line.
+.I Getty
+reads the user's name and invokes
+.I login
+to log in the user and execute the Shell.
+.PP
+Ultimately the Shell will terminate
+because of an end-of-file either
+typed explicitly or generated as a result of hanging up.
+The main path of
+.IR init ,
+which has been waiting
+for such an event,
+wakes up and removes the appropriate entry from the
+file
+.IR utmp ,
+which records current users, and
+makes an entry in
+.IR /usr/adm/wtmp ,
+which maintains a history
+of logins and logouts.
+The
+.I wtmp
+entry is made only if a user logged in successfully on the line.
+Then the appropriate terminal is reopened and
+.I getty
+is
+reinvoked.
+.PP
+.I Init
+catches the
+.I hangup
+signal (signal SIGHUP) and interprets it to mean that
+the file
+.I /etc/ttys
+should be read again.
+The Shell process on each line which used to be active
+in
+.I ttys
+but is no longer there is terminated;
+a new process is created for each added line;
+lines unchanged in the file are undisturbed.
+Thus it is possible to drop or add phone lines without
+rebooting the system by changing the
+.I ttys
+file and sending a
+.I hangup
+signal to the
+.I init
+process: use `kill \-HUP 1.'
+.PP
+.I Init
+will terminate multi-user operations and resume single-user mode
+if sent a terminate (TERM) signal, i.e. ``kill \-TERM 1''.
+If there are processes outstanding which are deadlocked (due to
+hardware or software failure),
+.I init
+will not wait for them all to die (which might take forever), but
+will time out after 30 seconds and print a warning message.
+.PP
+.I Init
+will cease creating new
+.IR getty 's
+and allow the system to slowly die away, if it is sent a terminal stop (TSTP)
+signal, i.e. ``kill \-TSTP 1''.  A later hangup will resume full
+multi-user operations, or a terminate will initiate a single user shell.
+This hook is used by
+.IR reboot (8)
+and
+.IR halt (8).
+.PP
+.I Init's
+role is so critical that if it dies, the system will reboot itself
+automatically.
+If, at bootstrap time, the
+.I init
+process cannot be located, the system will loop in user mode at location
+0x13.
+.SH DIAGNOSTICS
+\fBinit: \fR\fItty\fR\|\fB: cannot open\fR.  A terminal which is turned
+on in the \fIrc\fR file cannot be opened, likely because the requisite
+lines are either not configured into the system or the associated device
+was not attached during boot-time system configuration.
+.LP
+\fBWARNING: Something is hung (wont die); ps axl advised\fR.  A process
+is hung and could not be killed when the system was shutting down.
+This is usually caused by a process
+which is stuck in a device driver due to a persistent device error condition.
+.SH FILES
+/dev/console, /dev/tty?, /etc/utmp, /usr/adm/wtmp, /etc/ttys, /etc/rc
+.SH "SEE ALSO"
+login(1), kill(1), sh(1), ttys(5), crash(8), getty(8), rc(8), reboot(8),
+halt(8), shutdown(8)

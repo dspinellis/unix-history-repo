@@ -1,0 +1,170 @@
+.TH RESTORE 8 4/1/81
+.UC 4
+.SH NAME
+restore \- incremental file system restore
+.SH SYNOPSIS
+.B /etc/restore
+key [ name ... ]
+.SH DESCRIPTION
+.PP
+.I Restore
+is used to read tapes dumped with the
+.IR dump (8)
+command.
+Its actions are controlled by the
+.I key
+argument.
+The
+.I key
+is a string of characters containing
+at most one function letter and possibly
+one or more function modifiers.
+Other arguments to the command are file or directory
+names specifying which files are to be restored.
+Unless the
+.B \-h
+flag is specified (see below),
+the appearance of a directory name refers to
+the files and (recursively) subdirectories of that directory.
+.PP
+The function portion of
+the key is specified by one of the following letters:
+.TP 7
+.B  r or R
+The tape
+is read and loaded into the current directory.
+[If the key is
+.B R
+.I restore
+asks which tape of a multi volume set to start on.
+This allows restore to be interrupted and then restarted.]
+This should not be done lightly; the
+.B r
+option should only be used to restore
+a complete dump tape onto a clear file system
+or to restore an incremental dump tape onto this.
+Thus
+.IP "" 7
+	/etc/mkfs /dev/rrp0g 145673 ...
+.br
+	/etc/mount /dev/rp0g /mnt
+.br
+	cd /mnt
+.br
+	restore r
+.IP "" 7
+is a typical sequence to restore a complete dump.
+[Another
+.I restore
+can be done to get an incremental dump
+in on top of this.]
+.IP "" 7
+A
+.IR dump (8)
+followed by a
+.I mkfs
+and a
+.I restore
+is used to
+change the size of a file system.
+.TP 7
+.B  x
+The named files are extracted from the tape.
+If the named file matches a directory whose contents 
+had been written onto the tape, this directory is (recursively) extracted.
+The owner, modification time, and mode are restored (if possible).
+If no file argument is given, the entire content of the
+tape is extracted.
+.TP 7
+.B  t
+The names of the specified files are listed if they occur
+on the tape.
+If no file argument is given,
+all of the names on the tape are listed.
+Note that this key replaces the function of 
+.IR dumpdir (8).
+.PP
+The following characters may be used in addition to the letter
+which selects the function desired.
+.TP 7
+.B  v
+Normally
+.I restore
+does its work silently.
+The
+.B v
+(verbose)
+option causes it to type the name of each file it treats
+preceded by the function letter.
+[With the
+.B t
+function,
+.B v
+gives more information about the
+tape entries than just the name.]
+.TP 7
+.B f
+causes 
+.I restore
+to use the next argument as the name of the archive instead
+of /dev/rmt?. 
+[If the name of the file is `\-', restore 
+reads from standard input.
+Thus,
+.IR dump (8)
+and
+.I restore
+can be used in a pipeline to dump and restore a file system
+with the command
+.IP "" 7
+	dump 0f - /usr | (cd /mnt; restore xf -) ]
+.TP 7
+.B y
+tells
+.I restore
+not to complain if gets a tape error,
+but simply to skip over the bad tape blocks and continue as
+best it can.
+.TP 7
+.B m
+causes
+.I restore
+to extract by inode numbers rather than by file name.
+.TP 7
+.B h
+causes
+.I restore
+to extract the actual directory, 
+rather than the files that it references.
+.SH SEE ALSO
+dump(8), mkfs(8)
+.SH FILES
+/dev/rmt?	the default tape drive
+.br
+rst*		the temporary file used by restore.
+.SH DIAGNOSTICS
+Complaints about bad key characters.
+.PP
+Complaints if it gets a read error.
+If 
+.B \-y
+has been specified, or the user responds "y",
+.I restore
+will attempt to continue the restore.
+.PP
+If the dump extends over more than one tape,
+.I restore
+will ask the user to change tapes.
+[If the
+.B \-x
+flag has been specified,
+.I restore
+will also ask which volume the user wishes to mount.
+The fastest way to extract a small number of files is to
+start with the last volume, and work towards the first volume.]
+.SH BUGS
+The sections in brackets are not yet implemented.
+Most importantly the
+.B \-r
+option can only restore level zero dumps,
+it cannot restore incremental dumps.
