@@ -5,13 +5,13 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)res_comp.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_comp.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
 #include <stdio.h>
 #include <ctype.h>
-#include <nameser.h>
+#include <arpa/nameser.h>
 
 
 /*
