@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file @(#)termcap.src	1.23	(Berkeley) %G%
+#	Termcap source file @(#)termcap.src	1.24	(Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -1006,6 +1006,15 @@ TT|4424|tty4424|teletype 4424M:\
 	:is=\E[m\E[2;24r:\
 	:kd=\E[B:kl=\E[D:ku=\E[A:kr=\E[C:\
 	:kh=\E[H:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:
+# Teletype blit. 
+TD|dmd|5620|ttydmd|tty5620|5620	terminal 88 columns:\
+	:co#88:li#70:am:bs:pt:\
+	:cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
+	:cl=\E[H\E[J:cd=\E[J:ce=\E[K:\
+	:al=\E[L:dl=\E[M:\
+	:im=:ei=:ic=\E[@:dm=:ed=:dc=\E[P:\
+	:sr=\E[T:sf=\E[S:\
+	:kl=\E[D:kr=\E[C:ku=\E[A:kd=\E[B:kh=\E[H:
 # # --------------------------------
 #
 # V: VISUAL
