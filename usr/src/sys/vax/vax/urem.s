@@ -1,4 +1,4 @@
-#	urem.s	6.1	83/07/29
+#	urem.s	6.2	84/08/01
 #
 #	urem - unsigned remainder for vax-11
 #
