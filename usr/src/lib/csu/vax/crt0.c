@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)crt0.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)crt0.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -29,6 +29,7 @@ static char sccsid[] = "@(#)crt0.c	5.1 (Berkeley) %G%";
  */
 
 char **environ = (char **)0;
+static int fd;
 
 asm("#define _start start");
 asm("#define _eprol eprol");
@@ -49,6 +50,7 @@ start()
 	register struct kframe *kfp;	/* r10 */
 	register char **targv;
 	register char **argv;
+	extern int errno;
 
 #ifdef lint
 	kfp = 0;
@@ -62,9 +64,26 @@ start()
 		--targv;
 	environ = targv;
 asm("eprol:");
+
+#ifdef paranoid
+	/*
+	 * The standard I/O library assumes that file descriptors 0, 1, and 2
+	 * are open. If one of these descriptors is closed prior to the start 
+	 * of the process, I/O gets very confused. To avoid this problem, we
+	 * insure that the first three file descriptors are open before calling
+	 * main(). Normally this is undefined, as it adds two unnecessary
+	 * system calls.
+	 */
+	do	{
+		fd = open("/dev/null", 2);
+	} while (fd >= 0 && fd < 3);
+	close(fd);
+#endif paranoid
+
 #ifdef MCRT0
 	monstartup(&eprol, &etext);
 #endif MCRT0
+	errno = 0;
 	exit(main(kfp->kargc, argv, environ));
 }
 asm("#undef _start");
