@@ -1,4 +1,4 @@
-/*	cons.c	4.10	81/05/09	*/
+/*	cons.c	4.11	81/10/11	*/
 
 /*
  * Vax console driver and floppy interface
@@ -15,7 +15,6 @@
 #include "../h/systm.h"
 #include "../h/cons.h"
 #include "../h/mtpr.h"
-#include "../h/mx.h"
 #include "../h/cpu.h"
 
 struct	tty cons;
@@ -31,7 +30,6 @@ dev_t dev;
 
 	tp = &cons;
 	tp->t_oproc = cnstart;
-	tp->t_iproc = NULL;
 	if ((tp->t_state&ISOPEN) == 0) {
 		ttychars(tp);
 		tp->t_state = ISOPEN|CARR_ON;
@@ -153,10 +151,7 @@ register struct tty *tp;
 		goto out;
 	if (tp->t_state&ASLEEP && tp->t_outq.c_cc <= TTLOWAT(tp)) {
 		tp->t_state &= ~ASLEEP;
-		if (tp->t_chan)
-			mcstart(tp->t_chan, (caddr_t)&tp->t_outq);
-		else
-			wakeup((caddr_t)&tp->t_outq);
+		wakeup((caddr_t)&tp->t_outq);
 	}
 	if (tp->t_outq.c_cc == 0)
 		goto out;

@@ -1,4 +1,4 @@
-/*	tty.c	4.12	81/07/22	*/
+/*	tty.c	4.13	81/10/11	*/
 
 /*
  * TTY subroutines common to more than one line discipline
@@ -9,7 +9,6 @@
 #include "../h/user.h"
 #include "../h/tty.h"
 #include "../h/proc.h"
-#include "../h/mx.h"
 #include "../h/inode.h"
 #include "../h/file.h"
 #include "../h/reg.h"
@@ -104,8 +103,6 @@ register struct tty *tp;
 {
 	register s;
 
-	if (tp->t_line == NETLDISC)
-		return;
 	s = spl6();
 	if (rw & FREAD) {
 		while (getc(&tp->t_canq) >= 0)
@@ -285,17 +282,6 @@ caddr_t addr;
 		break;
 
 	/*
-	 * Prevent more opens on channel
-	 */
-	case TIOCEXCL:
-		tp->t_state |= XCLUDE;
-		break;
-
-	case TIOCNXCL:
-		tp->t_state &= ~XCLUDE;
-		break;
-
-	/*
 	 * Set new parameters
 	 */
 	case TIOCSETP:
@@ -305,41 +291,22 @@ caddr_t addr;
 			return(1);
 		}
 		(void) spl5();
-		if (tp->t_line == 0) {
-			if (com == TIOCSETP)
-				wflushtty(tp);
-			while (canon(tp)>=0) 
-				;
-#ifdef notdef
-			wakeup((caddr_t)&tp->t_rawq);
-#endif
-		} else if (tp->t_line == NTTYDISC) {
-			if (tp->t_flags&RAW || iocb.sg_flags&RAW ||
-			    com == TIOCSETP)
-				wflushtty(tp);
-			else if ((tp->t_flags&CBREAK) != (iocb.sg_flags&CBREAK)) {
-				if (iocb.sg_flags & CBREAK) {
-					catq(&tp->t_rawq, &tp->t_canq);
-					tq = tp->t_rawq;
-					tp->t_rawq = tp->t_canq;
-					tp->t_canq = tq;
-				} else {
-					tp->t_local |= LPENDIN;
-					if (tp->t_canq.c_cc)
-						panic("ioccom canq");
-#ifdef notdef
-					if (tp->t_chan)
-						(void) sdata(tp->t_chan);
-					else
-#endif
-						wakeup((caddr_t)&tp->t_rawq);
-				}
+		if (tp->t_flags&RAW || iocb.sg_flags&RAW ||
+		    com == TIOCSETP)
+			wflushtty(tp);
+		else if ((tp->t_flags&CBREAK) != (iocb.sg_flags&CBREAK)) {
+			if (iocb.sg_flags & CBREAK) {
+				catq(&tp->t_rawq, &tp->t_canq);
+				tq = tp->t_rawq;
+				tp->t_rawq = tp->t_canq;
+				tp->t_canq = tq;
+			} else {
+				tp->t_local |= LPENDIN;
+				ttwakeup(tp);
 			}
 		}
-		if ((tp->t_state&SPEEDS)==0) {
-			tp->t_ispeed = iocb.sg_ispeed;
-			tp->t_ospeed = iocb.sg_ospeed;
-		}
+		tp->t_ispeed = iocb.sg_ispeed;
+		tp->t_ospeed = iocb.sg_ospeed;
 		tp->t_erase = iocb.sg_erase;
 		tp->t_kill = iocb.sg_kill;
 		tp->t_flags = iocb.sg_flags;
@@ -413,30 +380,7 @@ caddr_t addr;
 	 * Return number of characters immediately available.
 	 */
 	case FIONREAD: {
-		off_t nread;
-
-		switch (tp->t_line) {
-
-		case NETLDISC:
-			nread = tp->t_rec ? tp->t_inbuf : 0;
-			break;
-
-		case 0:
-			(void) spl5();
-			while (canon(tp)>=0)
-				;
-			(void) spl0();
-			/* fall into ... */
-
-		case NTTYDISC:
-			if (tp->t_local & LPENDIN)
-				ntypend(tp);
-			nread = tp->t_canq.c_cc;
-			if (tp->t_flags & (RAW|CBREAK))
-				nread += tp->t_rawq.c_cc;
-			break;
-
-		}
+		off_t nread = ttnread(tp);
 		if (copyout((caddr_t)&nread, addr, sizeof (off_t)))
 			u.u_error = EFAULT;
 		break;
@@ -509,4 +453,41 @@ caddr_t addr;
 		return(0);
 	}
 	return(1);
+}
+
+ttnread(tp)
+	struct tty *tp;
+{
+	int nread = 0;
+
+	if (tp->t_local & LPENDIN)
+		ttypend(tp);
+	nread = tp->t_canq.c_cc;
+	if (tp->t_flags & (RAW|CBREAK))
+		nread += tp->t_rawq.c_cc;
+	return (nread);
+}
+
+ttselect(dev, flag)
+	dev_t dev;
+	int flag;
+{
+	register struct tty *tp = &cdevsw[major(dev)].d_ttys[minor(dev)];
+	int nread;
+
+	switch (flag) {
+
+	case FREAD:
+		nread = ttnread(tp);
+		if (nread > 0)
+			return (1);
+		if (tp->t_rsel && tp->t_rsel->p_wchan == (caddr_t)select)
+			tp->t_state |= RCOLL;
+		else
+			tp->t_rsel = u.u_procp;
+		return (0);
+
+	default:
+		return (1);
+	}
 }
