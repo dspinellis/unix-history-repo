@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)setup.c	5.35 (Berkeley) %G%";
+static char sccsid[] = "@(#)setup.c	5.36 (Berkeley) %G%";
 #endif /* not lint */
 
 #define DKTYPENAMES
@@ -313,6 +313,10 @@ readsb(listerr)
 	super *= dev_bsize;
 	dev_bsize = sblock.fs_fsize / fsbtodb(&sblock, 1);
 	sblk.b_bno = super / dev_bsize;
+	if (bflag) {
+		havesb = 1;
+		return (1);
+	}
 	/*
 	 * Set all possible fields that could differ, then do check
 	 * of whole super block against an alternate super block.
@@ -321,10 +325,6 @@ readsb(listerr)
 	getblk(&asblk, cgsblock(&sblock, sblock.fs_ncg - 1), sblock.fs_sbsize);
 	if (asblk.b_errs)
 		return (0);
-	if (bflag) {
-		havesb = 1;
-		return (1);
-	}
 	altsblock.fs_link = sblock.fs_link;
 	altsblock.fs_rlink = sblock.fs_rlink;
 	altsblock.fs_time = sblock.fs_time;
