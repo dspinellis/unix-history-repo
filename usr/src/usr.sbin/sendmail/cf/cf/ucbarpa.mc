@@ -8,7 +8,7 @@ divert(-1)
 #
 
 include(`../m4/cf.m4')
-VERSIONID(`@(#)ucbarpa.mc	2.2 (Berkeley) %G%')
+VERSIONID(`@(#)ucbarpa.mc	6.1 (Berkeley) %G%')
 DOMAIN(cs.exposed)dnl
 OSTYPE(bsd4.4)dnl
 MAILER(local)dnl

@@ -8,7 +8,7 @@ divert(-1)
 #
 
 include(`../m4/cf.m4')
-VERSIONID(`@(#)ucbvax.mc	2.5 (Berkeley) %G%')
+VERSIONID(`@(#)ucbvax.mc	6.1 (Berkeley) %G%')
 OSTYPE(bsd4.3)
 DOMAIN(cs.hidden)
 MAILER(local)

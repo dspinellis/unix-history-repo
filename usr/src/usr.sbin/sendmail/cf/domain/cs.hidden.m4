@@ -7,6 +7,6 @@ divert(-1)
 # %sccs.include.redist.sh%
 #
 divert(0)
-VERSIONID(`@(#)cs.hidden.m4	2.4 (Berkeley) %G%')
+VERSIONID(`@(#)cs.hidden.m4	6.1 (Berkeley) %G%')
 DOMAIN(cs.exposed)dnl
 MASQUERADE_AS(CS.Berkeley.EDU)dnl

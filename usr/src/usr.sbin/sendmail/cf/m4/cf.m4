@@ -62,4 +62,4 @@ define(`MASQUERADE_AS', `define(`MASQUERADE_NAME', $1)')
 m4wrap(`include(`../m4/proto.m4')')
 
 divert(0)dnl
-VERSIONID(`@(#)cf.m4	2.21 (Berkeley) %G%')
+VERSIONID(`@(#)cf.m4	6.1 (Berkeley) %G%')

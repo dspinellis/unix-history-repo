@@ -8,7 +8,7 @@ divert(-1)
 #
 
 include(`../m4/cf.m4')
-VERSIONID(`@(#)knecht.cs.mc	2.3 (Berkeley) %G%')
+VERSIONID(`@(#)knecht.cs.mc	6.1 (Berkeley) %G%')
 OSTYPE(ultrix4.1)dnl
 DOMAIN(cs.exposed)dnl
 define(`LOCAL_RELAY', CS.Berkeley.EDU)dnl

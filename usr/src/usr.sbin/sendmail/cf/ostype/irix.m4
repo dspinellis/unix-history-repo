@@ -8,5 +8,5 @@ divert(-1)
 #
 
 divert(0)
-VERSIONID(`@(#)irix.m4	2.2 (Berkeley) %G%')
+VERSIONID(`@(#)irix.m4	6.1 (Berkeley) %G%')
 define(`LOCAL_MAILER_FLAGS', Ehu)dnl

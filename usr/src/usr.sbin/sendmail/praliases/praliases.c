@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)praliases.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)praliases.c	6.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sendmail.h>

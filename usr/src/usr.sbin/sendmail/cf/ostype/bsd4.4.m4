@@ -9,7 +9,7 @@ divert(-1)
 #
 
 divert(0)
-VERSIONID(`@(#)bsd4.4.m4	2.4 (Berkeley) %G%')
+VERSIONID(`@(#)bsd4.4.m4	6.1 (Berkeley) %G%')
 define(`HELP_FILE', /usr/share/misc/sendmail.hf)dnl
 define(`STATUS_FILE', /var/log/sendmail.st)dnl
 define(`LOCAL_MAILER', /usr/libexec/mail.local)dnl
