@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.31 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.32 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -579,7 +579,7 @@ R$* < @ $+ .UUCP. > $*		$#uucp $@ $2 $: $1 < @ $2 .UUCP. > $3	user@host.UUCP',
 	`dnl')')
 ifdef(`_MAILER_usenet_', `
 # addresses sent to net.group.USENET will get forwarded to a newsgroup
-R$+ . USENET.		$#usenet $: $1',
+R$+ . USENET		$#usenet $: $1',
 	`dnl')
 
 ifdef(`_LOCAL_RULES_',
