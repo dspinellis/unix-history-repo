@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	6.14 (Berkeley) %G%
+ *	@(#)conf.h	6.15 (Berkeley) %G%
  */
 
 /*
@@ -69,7 +69,10 @@
 # endif
 
 /*
-**  Some general configuration -- you shouldn't have to touch these
+**  Operating system configuration.
+**
+**	Unless you are porting to a new OS, you shouldn't have to
+**	change these.
 */
 
 # ifdef hpux
@@ -82,7 +85,16 @@
 # define SYS5TZ		1	/* use System V style timezones */
 # define HASUNAME	1	/* use System V uname system call */
 
+#ifdef sun
+# include <vfork.h>
+#endif
+
 # endif
+
+/*
+**  Remaining definitions should never have to be changed.  They are
+**  primarily to provide back compatibility for older systems -- for
+**  example, it includes some POSIX compatibility definitions */
 
 /*
 **  Older systems don't have this error code -- it should be in
@@ -138,10 +150,6 @@ struct utsname
 	char nodename[NODE_LENGTH+1];
 };
 #endif /* HASUNAME */
-
-#ifdef sun
-# include <vfork.h>
-#endif
 
 #ifndef MAXHOSTNAMELEN
 #define MAXHOSTNAMELEN	256
