@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fts.h	5.19 (Berkeley) %G%
+ *	@(#)fts.h	5.20 (Berkeley) %G%
  */
 
 #ifndef	_FTS_H_
@@ -44,6 +44,7 @@ typedef struct _ftsent {
 	char *fts_accpath;		/* access path */
 	char *fts_path;			/* root path */
 	int fts_errno;			/* errno for this node */
+	int fts_symfd;			/* fd for symlink */
 	u_short fts_pathlen;		/* strlen(fts_path) */
 	u_short fts_namelen;		/* strlen(fts_name) */
 
@@ -69,6 +70,10 @@ typedef struct _ftsent {
 #define	FTS_SL		12		/* symbolic link */
 #define	FTS_SLNONE	13		/* symbolic link without target */
 	u_short fts_info;		/* user flags for FTSENT structure */
+
+#define	FTS_DONTCHDIR	 0x01		/* don't chdir .. to the parent */
+#define	FTS_SYMFOLLOW	 0x01		/* followed a symlink to get here */
+	u_short fts_flags;		/* private flags for FTSENT structure */
 
 #define	FTS_AGAIN	 1		/* read node again */
 #define	FTS_FOLLOW	 2		/* follow symbolic link */
