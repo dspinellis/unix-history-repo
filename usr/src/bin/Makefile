@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -20,7 +20,7 @@ SCRIPT=	false true
 # explicit make lines.
 #
 STD=	ar cat cc chmod cmp date dd du echo ed expr grep hostid hostname \
-	kill ld ln ls mkdir mt nice nm od pagesize pr pwd rm rmail \
+	kill ld ln ls mkdir mt nice nm od pagesize pr pwd rcp rm rmail \
 	rmdir size strip stty sync tar tee test time wall who write
 
 # C programs that live in the current directory and need explicit make lines.
@@ -29,7 +29,7 @@ NSTD=
 
 # Programs that must run setuid to root
 #
-SETUID=	chgrp df login mail passwd su
+SETUID=	chgrp df login mail passwd rcp su
 
 # Programs that must run set-group-id kmem.
 #
@@ -211,6 +211,19 @@ pr: /usr/include/sys/stat.h
 pwd: pwd.c
 pwd: /usr/include/stdio.h
 pwd: /usr/include/sys/param.h
+rcp: rcp.c
+rcp: /usr/include/sys/param.h
+rcp: /usr/include/sys/stat.h
+rcp: /usr/include/sys/time.h
+rcp: /usr/include/sys/ioctl.h
+rcp: /usr/include/netinet/in.h
+rcp: /usr/include/stdio.h
+rcp: /usr/include/signal.h
+rcp: /usr/include/pwd.h
+rcp: /usr/include/ctype.h
+rcp: /usr/include/netdb.h
+rcp: /usr/include/errno.h
+rcp: /usr/include/sys/dir.h
 rm: rm.c
 rm: /usr/include/stdio.h
 rm: /usr/include/sys/param.h
