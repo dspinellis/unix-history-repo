@@ -9,7 +9,7 @@
 #include <string.h>
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char sccsid[] = "@(#)strcasecmp.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)strcasecmp.c	5.11 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 typedef unsigned char u_char;
