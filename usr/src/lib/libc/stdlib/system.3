@@ -1,4 +1,9 @@
-.\"	@(#)system.3	6.1 (Berkeley) %G%
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)system.3	6.2 (Berkeley) %G%
 .\"
 .TH SYSTEM 3 ""
 .AT 3
@@ -6,22 +11,35 @@
 system \- issue a shell command
 .SH SYNOPSIS
 .nf
-.B system(string)
-.B char *string;
+.ft B
+system(const char *string);
+.ft R
 .fi
 .SH DESCRIPTION
 .I System
-causes the
+hands
 .I string
-to be given to
-.IR  sh (1)
-as input as if the string had been typed as a command
-at a terminal.
-The current process waits until the shell has
-completed, then returns the exit status of the shell.
+to the command interpreter
+.IR sh (1).
+The calling process waits until the shell has completed,
+ignoring SIGINT and SIGQUIT, and blocking SIGCHLD.
+.PP
+If
+.I string
+is a NULL pointer,
+.I system
+will return non-zero if the command interpreter
+.IR sh (1)
+is available, and zero if it is not.
+.PP
+.I System
+returns the exit status of the shell, or \-1 if the
+.IR wait (3)
+for the shell failed.
+A return status of 127 indicates that the execution of the shell
+failed.
 .SH "SEE ALSO"
-popen(3S),
-execve(2),
-wait(2)
-.SH DIAGNOSTICS
-Exit status 127 indicates the shell couldn't be executed.
+sh(1), execve(2), wait(2), popen(3)
+.SH STANDARDS
+.B System
+conforms to ANSI X3.159-1989 (``ANSI C'').
