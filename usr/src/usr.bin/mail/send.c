@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)send.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)send.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -47,7 +47,16 @@ send(mp, obuf, doign, prefix)
 	register char *cp, *cp2;
 	register int c;
 	int length;
+	int prefixlen;
 
+	/*
+	 * Compute the prefix string, without trailing whitespace
+	 */
+	cp2 = 0;
+	for (cp = prefix; *cp; cp++)
+		if (*cp != ' ' && *cp != '\t')
+			cp2 = cp;
+	prefixlen = cp2 == 0 ? 0 : cp2 - prefix + 1;
 	ibuf = setinput(mp);
 	count = mp->m_size;
 	ishead = 1;
@@ -139,8 +148,16 @@ send(mp, obuf, doign, prefix)
 			}
 		}
 		if (!ignoring) {
-			if (prefix != NOSTR && length > 1)
-				fputs(prefix, obuf);
+			/*
+			 * Strip trailing whitespace from prefix
+			 * if line is blank.
+			 */
+			if (prefix != NOSTR)
+				if (length > 1)
+					fputs(prefix, obuf);
+				else
+					(void) fwrite(prefix, sizeof *prefix,
+							prefixlen, obuf);
 			(void) fwrite(line, sizeof *line, length, obuf);
 			if (ferror(obuf))
 				return -1;
@@ -158,8 +175,15 @@ send(mp, obuf, doign, prefix)
 				break;
 			}
 			count -= c = strlen(line);
+			/*
+			 * Strip trailing whitespace from prefix
+			 * if line is blank.
+			 */
 			if (c > 1)
 				fputs(prefix, obuf);
+			else
+				(void) fwrite(prefix, sizeof *prefix,
+						prefixlen, obuf);
 			(void) fwrite(line, sizeof *line, c, obuf);
 			if (ferror(obuf))
 				return -1;
