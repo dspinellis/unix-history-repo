@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	6.35 (Berkeley) %G%
+ *	@(#)conf.h	6.36 (Berkeley) %G%
  */
 
 /*
@@ -87,9 +87,13 @@
 
 #if defined(sun) && !defined(BSD)
 # define UNSETENV	1	/* need unsetenv(3) support */
-# define HASSTATFS	1	/* has the statfs(2) syscall */
 
-# if !defined(SOLARIS)
+# ifdef SOLARIS
+#  define LOCKF		1	/* use System V lockf instead of flock */
+#  define UNSETENV	1	/* need unsetenv(3) support */
+#  define HASUSTAT	1	/* has the ustat(2) syscall */
+# else
+#  define HASSTATFS	1	/* has the statfs(2) syscall */
 #  include <vfork.h>
 # endif
 

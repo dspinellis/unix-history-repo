@@ -7,11 +7,15 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)clock.c	6.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)clock.c	6.4 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
 # include <signal.h>
+
+# ifndef sigmask
+#  define sigmask(s)	(1 << ((s) - 1))
+# endif
 
 /*
 **  SETEVENT -- set an event to happen at a specific time.
