@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)parseaddr.c	3.58		%G%);
+SCCSID(@(#)parseaddr.c	3.59		%G%);
 
 /*
 **  PARSE -- Parse an address
@@ -1037,6 +1037,7 @@ remotename(name, m, senderaddress)
 **
 **	Parameters:
 **		name -- the name to make canonical.
+**		ruleset -- the canonicalizing ruleset.
 **
 **	Returns:
 **		pointer to canonical name.
@@ -1049,14 +1050,16 @@ remotename(name, m, senderaddress)
 */
 
 char *
-canonname(name)
+canonname(name, ruleset)
 	char *name;
+	int ruleset;
 {
 	static char nbuf[MAXNAME];
 	register char **pvp;
 
 	pvp = prescan(name, '\0');
 	rewrite(pvp, 3);
+	rewrite(pvp, ruleset);
 	cataddr(pvp, nbuf, sizeof nbuf);
 	return (nbuf);
 }
