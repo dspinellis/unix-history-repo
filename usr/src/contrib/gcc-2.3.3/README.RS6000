@@ -1,0 +1,30 @@
+Debugging code compiled with GCC on the RS/6000 requires that you
+upgrade the AIX assembler /bin/as with a replacement that is available
+from IBM.
+
+Any customer can order and get the replacement assembler, and install
+it on one or more machines.  It is distributed both on diskette and
+via VNET, for downloading via ftp.  VNET distribution may be desirable
+if you have a friendly IBM rep nearby with a networked VM machine.
+
+In either case, to order, execute
+    lslpp -h bos.obj to determine your release level.  (Look on the
+ACTIVE line for something like 03.01.0005.0012.) Then call IBM Support
+at 800-237-5511.  Ask for emergency shipment of the rs6000 AIX fix for
+APAR IX26107.  They may ask you to verify that it's a fix for "Don't
+allow .csect name[BS] or [UC]"; say yes.  They may also ask you for
+your customer number.  If you do not know it, you will still be able
+to getthe fix, but you will have to be persistent.
+
+You will receive a tar or tar.Z file containing an assembler plus
+installation instructions.
+
+If you tell them you're running AIX version 3.2, you may be told that
+no fix is available yet.  In fact the 3.15 fix works fine on version
+3.2.  Talk them into shipping it to you anyway.
+
+IBM has corresponding support organizations outside of North America.
+Call your IBM branch office and ask them to put you in touch with the
+department that handles emergency fixes for AIX on the RS/6000.  If
+that doesn't work, ask for the department that handles software defect
+support for AIX on the RS/6000.  Then ask for the emergency APAR fix.
