@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-/* "@(#)as.h 4.5 %G%" */
+/* "@(#)as.h 4.6 %G%" */
 #ifdef VMS
 # define	vax	1
 # define	VAX	1
@@ -91,12 +91,14 @@
 /*
  * Argument access types used to test validity of operands to operators
  */
-#define	ACCA	(8<<3)	/* address only */
-#define	ACCR	(1<<3)	/* read */
-#define	ACCW	(2<<3)	/* write */
-#define	ACCM	(3<<3)	/* modify */
-#define	ACCB	(4<<3)	/* branch displacement */
-#define	ACCI	(5<<3)	/* XFC code */
+#define	ACCR	(1<<3)				/* read */
+#define	ACCW	(2<<3)				/* write */
+#define	ACCB	(4<<3)				/* branch displacement */
+#define	ACCA	(8<<3)				/* address only */
+#define	ACCM	(ACCR | ACCW)			/* modify */
+#define	ACCI	(ACCB | ACCR)			/* XFC code */
+
+#define AMASK	(ACCA | ACCR | ACCW | ACCB)	/* the mask */
 
 /*
  * Argument data types
