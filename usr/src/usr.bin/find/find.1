@@ -4,11 +4,10 @@
 .\" This code is derived from software contributed to Berkeley by
 .\" the Institute of Electrical and Electronics Engineers, Inc.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)find.1	6.27 (Berkeley) %G%
+.\"	@(#)find.1	6.28 (Berkeley) %G%
 .\"
-.Vx
 .Dd 
 .Dt FIND 1
 .Os
@@ -37,8 +36,8 @@ referenced by the link is descended instead of the link itself.
 .Pp
 The options are as follows:
 .Pp
-.Tw Ds
-.Tp Fl d
+.Bl -tag -width Ds
+.It Fl d
 The
 .Fl d
 option causes
@@ -52,7 +51,7 @@ visits directories in pre\-order, i.e. before their contents.
 Note, the default is
 .Ar not
 a breadth\-first traversal.
-.Tp Fl f
+.It Fl f
 The
 .Fl f
 option specifies a file hierarchy for
@@ -60,7 +59,7 @@ option specifies a file hierarchy for
 to traverse.
 File hierarchies may also be specified as the operands immediately
 following the options.
-.Tp Fl s
+.It Fl s
 The
 .Fl s
 option causes the file information and file type (see
@@ -69,7 +68,7 @@ returned for each symbolic link to be those of the file referenced by the
 link, not the link itself.
 If the referenced file does not exist, the file information and type will
 be for the link itself.
-.Tp Fl X
+.It Fl X
 The
 .Fl X
 option is a modification to permit
@@ -82,41 +81,30 @@ a diagnostic message is displayed on standard error, and the file
 is skipped.
 The delimiting characters include single (`` ' '') and double (`` " '')
 quotes, backslash (``\e''), space, tab and newline characters.
-.Tp Fl x
+.It Fl x
 The
 .Fl x
 option prevents
 .Nm find
 from descending into directories that have a device number different
 than that of the file from which the descent began.
-.Tp
+.El
 .Sh PRIMARIES
-.Tw Ds
-.Tp Cx Ic -atime
-.Cx \&\ \&
-.Ar n
-.Cx
+.Bl -tag -width Ds
+.It Ic -atime Ar n 
 True if the difference between the file last access time and the time
 .Nm find
 was started, rounded up to the next full 24\-hour period, is
 .Ar n
 24\-hour periods.
-.Tp Cx Ic -ctime
-.Cx \&\ \&
-.Ar n
-.Cx
+.It Ic -ctime Ar n 
 True if the difference between the time of last change of file status
 information and the time
 .Nm find
 was started, rounded up to the next full 24\-hour period, is
 .Ar n
 24\-hour periods.
-.Tp Cx Ic -exec
-.Cx \&\ \&
-.Ar utility
-.Cx \&\ \&
-.Op argument ... ;
-.Cx
+.It Ic -exec Ar utility Op argument ... ; 
 True if the program named
 .Ar utility
 returns a zero value as its exit status.
@@ -128,10 +116,7 @@ arguments it is replaced by the pathname of the current file.
 will be executed from the directory from which
 .Nm find
 was executed.
-.Tp Cx Ic -fstype
-.Cx \&\ \&
-.Ar type
-.Cx
+.It Ic -fstype Ar type 
 True if the file is contained in a file system of type
 .Ar type .
 Currently supported types are ``local'', ``mfs'', ``nfs'', ``pc'',
@@ -142,10 +127,7 @@ the
 .Nm find
 is being executed and the latter matches any file system which is
 mounted read-only.
-.Tp Cx Ic -group
-.Cx \&\ \&
-.Ar gname
-.Cx
+.It Ic -group Ar gname 
 True if the file belongs to the group
 .Ar gname  .
 If
@@ -153,20 +135,14 @@ If
 is numeric and there is no such group name, then
 .Ar gname
 is treated as a group id.
-.Tp Cx Ic -inum
-.Cx \&\ \&
-.Ar n
-.Cx
+.It Ic -inum Ar n 
 True if the file has inode number
 .Ar n  .
-.Tp Cx Ic -links
-.Cx \&\ \&
-.Ar n
-.Cx
+.It Ic -links Ar n 
 True if the file has
 .Ar n
 links.
-.Tp Ic -ls
+.It Ic -ls
 This primary always evaluates to true.
 The following information for the current file is written to standard output:
 its inode number, size in 512\-byte blocks, file permissions, number of hard
@@ -176,21 +152,14 @@ will be displayed instead of the size in bytes.
 If the file is a symbolic link, the pathname of the linked\-to file will be
 displayed preceded by ``\->''.
 The format is identical to that produced by ``ls \-dgils''.
-.Tp Cx Ic -mtime
-.Cx \&\ \&
-.Ar n
-.Cx
+.It Ic -mtime Ar n 
 True if the difference between the file last modification time and the time
 .Nm find
 was started, rounded up to the next full 24\-hour period, is
 .Ar n
 24\-hour periods.
-.Tp Cx Ic \&-ok
-.Cx \&\ \&
-.Ar utility
-.Ws
-.Op argument ... ;
-.Cx
+.Tp.Ws
+ Ic \&-ok Ar utility Ns Op argument ... ; 
 The
 .Ic \&-ok
 primary is identical to the
@@ -203,10 +172,7 @@ If the response is other than ``y'' the command is not executed and the
 value of the
 .Ar \&ok
 expression is false.
-.Tp Cx Ic -name
-.Cx \&\ \&
-.Ar pattern
-.Cx
+.It Ic -name Ar pattern 
 True if the last component of the pathname being examined matches
 .Ar pattern  .
 Special shell pattern matching characters (``['', ``]'', ``*'', and ``?'')
@@ -214,20 +180,14 @@ may be used as part of
 .Ar pattern  .
 These characters may be matched explicitly by escaping them with a
 backslash (``\e'').
-.Tp Cx Ic -newer
-.Cx \&\ \&
-.Ar file
-.Cx
+.It Ic -newer Ar file 
 True if the current file has a more recent last modification time than
 .Ar file  .
-.Tp Ic -nouser
+.It Ic -nouser
 True if the file belongs to an unknown user.
-.Tp Ic -nogroup
+.It Ic -nogroup
 True if the file belongs to an unknown group.
-.Tp Cx Ic -path
-.Cx \&\ \&
-.Ar pattern
-.Cx
+.It Ic -path Ar pattern 
 True if the pathname being examined matches
 .Ar pattern  .
 Special shell pattern matching characters (``['', ``]'', ``*'', and ``?'')
@@ -237,11 +197,7 @@ These characters may be matched explicitly by escaping them with a
 backslash (``\e'').
 Slashes (``/'') are treated as normal characters and do not have to be
 matched explicitly.
-.Tp Cx Ic -perm
-.Cx \&\ \&
-.Op Fl
-.Ar mode
-.Cx
+.It Ic -perm Op Fl Ns Ar mode 
 The
 .Ar mode
 may be either symbolic (see
@@ -250,15 +206,26 @@ or an octal number.
 If the mode is symbolic, a starting value of zero is assumed and the
 mode sets or clears permissions without regard to the process' file mode
 creation mask.
-If the mode is octal, only bits 07777 (S_ISUID | S_ISGID | S_ISTXT |
-S_IRWXU | S_IRWXG | S_IRWXO) of the file's mode bits participate
+If the mode is octal, only bits 07777
+.Pf ( Dv S_ISUID
+|
+.Dv S_ISGID
+|
+.Dv S_ISTXT
+|
+.Dv S_IRWXU
+|
+.Dv S_IRWXG
+|
+.Dv S_IRWXO )
+of the file's mode bits participate
 in the comparison.
 If the mode is preceded by a dash (``\-''), this primary evaluates to true
 if at least all of the bits in the mode are set in the file's mode bits.
 If the mode is not preceded by a dash, this primary evaluates to true if
 the bits in the mode exactly match the file's mode bits.
 Note, the first character of a symbolic mode may not be a dash (``\-'').
-.Tp Ic -print
+.It Ic -print
 This primary always evaluates to true.
 It prints the pathname of the current file to standard output.
 The expression is appended to the user specified expression if neither
@@ -267,7 +234,7 @@ The expression is appended to the user specified expression if neither
 or
 .Ic \&-ok
 is specified.
-.Tp Ic -prune
+.It Ic -prune
 This primary always evaluates to true.
 It causes
 .Nm find
@@ -277,11 +244,7 @@ Note, the
 primary has no effect if the
 .Fl d
 option was specified.
-.Tp Cx Ic -size
-.Cx \&\ \&
-.Ar n
-.Op Cm c
-.Cx
+.It Ic -size Ar n Ns Op Cm c 
 True if the file's size, rounded up, in 512\-byte blocks is
 .Ar n  .
 If
@@ -290,36 +253,28 @@ is followed by a ``c'', then the primary is true if the
 file's size is
 .Ar n
 bytes.
-.Tp Cx Ic -type
-.Cx \&\ \&
-.Ar t
-.Cx
+.It Ic -type Ar t 
 True if the file is of the specified type.
 Possible file types are as follows:
 .Pp
-.Df I
-.Tw Ds
-.Tp Cm b
+.Bl -tag -width flag -offset indent -compact
+.It Cm b
 block special
-.Tp Cm c
+.It Cm c
 character special
-.Tp Cm d
+.It Cm d
 directory
-.Tp Cm f
+.It Cm f
 regular file
-.Tp Cm l
+.It Cm l
 symbolic link
-.Tp Cm p
+.It Cm p
 FIFO
-.Tp Cm s
+.It Cm s
 socket
-.Tp
-.De
+.El
 .Pp
-.Tp Cx Ic -user
-.Cx \&\ \&
-.Ar uname
-.Cx
+.It Ic -user Ar uname 
 True if the file belongs to the user
 .Ar uname  .
 If
@@ -327,7 +282,7 @@ If
 is numeric and there is no such user name, then
 .Ar uname
 is treated as a user id.
-.Tp
+.El
 .Pp
 All primaries which take a numeric argument allow the number to be
 preceded by a plus sign (``+'') or a minus sign (``\-'').
@@ -336,50 +291,39 @@ A preceding plus sign means ``more than n'', a preceding minus sign means
 .Sh OPERATORS
 The primaries may be combined using the following operators.
 The operators are listed in order of decreasing precedence.
-.Di L
-.Dp Cx Ic \&(
-.Ar expression
-.Cx \&)
-.Cx
+.Bl -tag -width (expression) 
+.It Cm \&( Ns Ar expression Ns Cm \&) 
 This evaluates to true if the parenthesized expression evaluates to
 true.
 .Pp
-.Dp Cx Ic \&!
-.Cx \&\ \&
-.Ar expression
-.Cx
-This is the unary NOT operator.
+.It Cm \&! Ns Ar expression 
+This is the unary
+.Tn NOT
+operator.
 It evaluates to true if the expression is false.
 .Pp
-.Dp Cx Ar expression
-.Cx \&\ \&
-.Ic -and
-.Cx \&\ \&
-.Ar expression
-.Cx
-.Dp Cx Ar expression expression
-.Cx
+.It Ar expression Cm -and Ar expression 
+.It Ar expression expression 
 The
-.Ic -and
-operator is the logical AND operator.
+.Cm -and
+operator is the logical
+.Tn AND
+operator.
 As it is implied by the juxtaposition of two expressions it does not
 have to be specified.
 The expression evaluates to true if both expressions are true.
 The second expression is not evaluated if the first expression is false.
 .Pp
-.Dp Cx Ar expression
-.Cx \&\ \&
-.Ic -or
-.Cx \&\ \&
-.Ar expression
-.Cx
+.It Ar expression Cm -or Ar expression 
 The
-.Ic -or
-operator is the logical OR operator.
+.Cm -or
+operator is the logical
+.Tn OR
+operator.
 The expression evaluates to true if either the first or the second expression
 is true.
 The second expression is not evaluated if the first expression is true.
-.Dp
+.El
 .Pp
 All operands and primaries must be separate arguments to
 .Nm find  .
@@ -389,19 +333,19 @@ to be a separate argument to
 .Sh EXAMPLES
 .Pp
 The following examples are shown as given to the shell:
-.Tw findx
-.Tp Li find  /  \e!  -name  "*.c"  -print
+.Bl -tag -width findx
+.It Li "find  /  \e!  -name  \*q*.c\*q  -print"
 Print out a list of all the files whose names do not end in ``.c''.
-.Tp Li find  /  -newer  ttt  -user  wnj  -print
+.It Li "find  /  -newer  ttt  -user  wnj  -print"
 Print out a list of all the files owned by user ``wnj'' that are newer
 than the file ``ttt''.
-.Tp Li find  /  \e!  \e(  -newer  ttt  -user  wnj  \e)  -print
+.It Li "find  /  \e!  \e(  -newer  ttt  -user  wnj  \e)  -print"
 Print out a list of all the files which are not both newer than ``ttt''
 and owned by ``wnj''.
-.Tp Li "find  /  \e(  -newer  ttt  -or  -user wnj  \e)  -print"
+.It Li "find  /  \e(  -newer  ttt  -or  -user wnj  \e)  -print"
 Print out a list of all the files that are either owned by ``wnj'' or
 that are newer than ``ttt''.
-.Tp
+.El
 .Sh SEE ALSO
 .Xr chmod 1 ,
 .Xr sh 1 ,
@@ -414,8 +358,9 @@ that are newer than ``ttt''.
 .Sh STANDARDS
 The
 .Nm find
-utility syntax is a superset of the syntax specified by the POSIX
-1003.2 standard.
+utility syntax is a superset of the syntax specified by the
+.St -p1003.2
+standard.
 .Pp
 The
 .Fl s
@@ -425,7 +370,8 @@ options and the
 .Ic -inum
 and
 .Ic -ls
-primaries are extensions to the POSIX standard.
+primaries are extensions to
+.St -p1003.2 .
 .Pp
 Historically, the
 .Fl d ,

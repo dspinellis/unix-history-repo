@@ -3,13 +3,10 @@
 .\"
 .\" This code is derived from software contributed to Berkeley by
 .\" Asa Romberger and Jerry Berkman.
+.\" %sccs.include.redist.roff%
 .\"
-.\" %sccs.include.redist.man%
+.\"	@(#)fsplit.1	6.7 (Berkeley) %G%
 .\"
-.\"     @(#)fsplit.1	6.6 (Berkeley) %G%
-.\"
-.Vx
-.Vx
 .Dd 
 .Dt FSPLIT 1
 .Os BSD 4.2
@@ -44,11 +41,8 @@ where
 .Ar zzzNNN.f
 does not already exist.
 .Pp
-.Tw Ar
-.Tc Fl e
-.Ws
-.Ar efile
-.Cx
+.Bl -tag -width Fl
+.It Fl e Ar efile 
 Normally each subprogram unit is split into a separate file.  When the
 .Fl e
 option is used, only the specified subprogram units are split into separate
@@ -57,15 +51,18 @@ files.  E.g.:
 .Dl fsplit -e readit -e doit prog.f
 .Pp
 will split readit and doit into separate files.
-.Tp
+.El
 .Sh DIAGNOSTICS
 If names specified via the
 .Fl e
 option are not found, a diagnostic is written to
 standard error.
 .Sh HISTORY
-.Nm Fsplit
-appeared in 4.2 BSD.
+The
+.Nm fsplit
+command
+appeared in
+.Bx 4.2 .
 .Sh AUTHORS
 Asa Romberger and Jerry Berkman
 .Sh BUGS
