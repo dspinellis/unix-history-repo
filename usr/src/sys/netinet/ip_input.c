@@ -1,4 +1,4 @@
-/*	ip_input.c	1.36	82/03/29	*/
+/*	ip_input.c	1.37	82/03/30	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -13,9 +13,6 @@
 #include "../net/ip_var.h"
 #include "../net/ip_icmp.h"
 #include "../net/tcp.h"
-#include "../net/route.h"
-
-#define	IPTTLDEC	5		/* doesn't belong here */
 
 u_char	ip_protox[IPPROTO_MAX];
 int	ipqmaxlen = IFQ_MAXLEN;
@@ -145,9 +142,7 @@ next:
 	}
 	ipaddr.sin_addr = ip->ip_dst;
 	if (if_ifwithaddr((struct sockaddr *)&ipaddr) == 0) {
-		register struct rtentry *rt;
-
-printf("forward: dst %x ttl %x\n", ip->ip_dst, ip->ip_ttl);
+printf("forward: src %x dst %x ttl %x\n", ip->ip_src, ip->ip_dst, ip->ip_ttl);
 		if (ipforwarding == 0)
 			goto bad;
 		if (ip->ip_ttl < IPTTLDEC) {

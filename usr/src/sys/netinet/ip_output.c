@@ -1,4 +1,4 @@
-/*	ip_output.c	1.28	82/03/29	*/
+/*	ip_output.c	1.29	82/03/30	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -20,8 +20,7 @@ ip_output(m, opt, ro, allowbroadcast)
 {
 	register struct ip *ip = mtod(m, struct ip *);
 	register struct ifnet *ifp;
-	int len, hlen = sizeof (struct ip), off, direct;
-	struct sockaddr_in tempaddr;	/* temp kludge */
+	int len, hlen = sizeof (struct ip), off;
 	struct route iproute;
 	struct sockaddr *dst;
 
@@ -36,7 +35,6 @@ COUNT(IP_OUTPUT);
 	ip->ip_off &= IP_DF;
 	ip->ip_id = htons(ip_id++);
 
-#ifdef notdef
 	/*
 	 * Find interface for this packet in the routing
 	 * table.  Note each interface has placed itself
@@ -48,23 +46,16 @@ COUNT(IP_OUTPUT);
 		bzero((caddr_t)ro, sizeof (*ro));
 	}
 	if (ro->ro_rt == 0) {
-		ro->ro_dest.sin_addr = ip->ip_dst;
-		ro->ro_dest.sin_family = AF_INET;
-		direct = allocroute(ro);
+		ro->ro_dst.sa_family = AF_INET;
+		((struct sockaddr_in *)&ro->ro_dst)->sin_addr = ip->ip_dst;
+		rtalloc(ro);
 	}
-	if (ro->ro_rt == 0 || (ifp = ro->ro_rt->rt_ifp) == 0)
+	if (ro->ro_rt == 0 || (ifp = ro->ro_rt->rt_ifp) == 0) {
+printf("no route to %x\n", ip->ip_dst.s_addr);
 		goto bad;
-	dst = direct ? (struct sockaddr *)&ro->ro_dest :
-		&ro->ro_rt->rt_gateway;
-#else
-	/* interim kludge before routing fallout */
-	ifp = if_ifonnetof(ip->ip_dst.s_net);
-	if (ifp == 0)
-		goto bad;
-	tempaddr.sin_family = AF_INET;
-	tempaddr.sin_addr = ip->ip_dst;
-#endif
-
+}
+	dst = ro->ro_rt->rt_flags&RTF_DIRECT ?
+	    (struct sockaddr *)&ro->ro_dst : &ro->ro_rt->rt_gateway;
 	if (!allowbroadcast && (ifp->if_flags & IFF_BROADCAST)) {
 		struct sockaddr_in *sin;
 
@@ -83,12 +74,7 @@ COUNT(IP_OUTPUT);
 #endif
 		ip->ip_sum = 0;
 		ip->ip_sum = in_cksum(m, hlen);
-#ifdef notdef
 		return ((*ifp->if_output)(ifp, m, dst));
-#else
-		return ((*ifp->if_output)(ifp, m,
-			(struct sockaddr *)&tempaddr));
-#endif
 	}
 
 	/*
@@ -143,12 +129,7 @@ COUNT(IP_OUTPUT);
 #endif
 		mhip->ip_sum = 0;
 		mhip->ip_sum = in_cksum(mh, hlen);
-#ifdef notdef
 		if ((*ifp->if_output)(ifp, mh, dst) == 0)
-#else
-		if ((*ifp->if_output)(ifp, mh, 
-		    (struct sockaddr *)&tempaddr) == 0)
-#endif
 			goto bad;
 	}
 	m_freem(m);

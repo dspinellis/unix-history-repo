@@ -1,4 +1,4 @@
-/*	route.h	4.4	82/03/29	*/
+/*	route.h	4.5	82/03/30	*/
 
 /*
  * Structure of kernel resident routing
@@ -11,7 +11,7 @@
  *	more statistics -- smooth usage figures
  */
 struct rtentry {
-	u_long	rt_key;			/* lookup key */
+	u_long	rt_hash[2];		/* [0] for net, [1] for host */
 	struct	sockaddr rt_dst;	/* match value */
 	struct	sockaddr rt_gateway;	/* who to forward to */
 	short	rt_flags;		/* see below */
@@ -40,7 +40,5 @@ struct route {
  * reclaimed along with mbufs.
  */
 #define	RTHASHSIZ	16
-struct mbuf *routehash[RTHASHSIZ];
-
-struct	rtentry *reroute();
+struct	mbuf *routehash[RTHASHSIZ];
 #endif

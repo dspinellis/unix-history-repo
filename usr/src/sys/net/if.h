@@ -1,4 +1,4 @@
-/*	if.h	4.11	82/03/28	*/
+/*	if.h	4.12	82/03/30	*/
 
 /*
  * Structures defining a network interface, providing a packet
@@ -63,6 +63,7 @@ struct ifnet {
 #define	IFF_UP		0x1		/* interface is up */
 #define	IFF_BROADCAST	0x2		/* broadcast address valid */
 #define	IFF_DEBUG	0x4		/* turn on debugging */
+#define	IFF_ROUTE	0x8		/* routine entry installed */
 
 /*
  * Output queues (ifp->if_snd) and internetwork datagram level (pup level 1)

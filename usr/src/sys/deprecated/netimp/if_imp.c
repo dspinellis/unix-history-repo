@@ -1,4 +1,4 @@
-/*	if_imp.c	4.20	82/03/28	*/
+/*	if_imp.c	4.21	82/03/30	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -30,6 +30,7 @@
 #include "../net/if_imphost.h"
 #include "../net/ip.h"
 #include "../net/ip_var.h"
+#include "../net/route.h"
 
 /*
  * IMP software status per interface.
@@ -106,6 +107,7 @@ impinit(unit)
 	int unit;
 {
 	register struct imp_softc *sc = &imp_softc[unit];
+	struct ifnet *ifp;
 
 	if ((*sc->imp_cb.ic_init)(unit) == 0) {
 		sc->imp_state = IMPS_DOWN;
@@ -115,6 +117,7 @@ impinit(unit)
 	sc->imp_state = IMPS_INIT;
 	sc->imp_dropcnt = IMP_DROPCNT;
 	impnoops(sc);
+	if_rtinit(&sc->imp_if, RTF_DIRECT|RTF_UP);
 }
 
 struct sockproto impproto = { PF_IMPLINK };

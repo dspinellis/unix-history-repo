@@ -1,4 +1,4 @@
-/*	if_en.c	4.44	82/03/28	*/
+/*	if_en.c	4.45	82/03/30	*/
 
 #include "en.h"
 
@@ -27,6 +27,7 @@
 #include "../net/ip.h"
 #include "../net/ip_var.h"
 #include "../net/pup.h"
+#include "../net/route.h"
 
 #define	ENMTU	(1024+512)
 
@@ -167,6 +168,7 @@ eninit(unit)
 	es->es_if.if_flags |= IFF_UP;
 	enxint(unit);
 	splx(s);
+	if_rtinit(&es->es_if, RTF_DIRECT|RTF_UP);
 }
 
 int	enlastdel = 25;

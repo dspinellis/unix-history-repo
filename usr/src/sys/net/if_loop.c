@@ -1,4 +1,4 @@
-/*	if_loop.c	4.8	82/03/28	*/
+/*	if_loop.c	4.9	82/03/30	*/
 
 /*
  * Loopback interface driver for protocol testing and timing.
@@ -14,6 +14,7 @@
 #include "../net/ip.h"
 #include "../net/ip_var.h"
 #include "../h/mtpr.h"
+#include "../net/route.h"
 
 #define	LONET	127
 #define	LOMTU	(1024+512)
@@ -26,6 +27,7 @@ loattach()
 	register struct ifnet *ifp = &loif;
 	register struct sockaddr_in *sin;
 
+COUNT(LOATTACH);
 	ifp->if_name = "lo";
 	ifp->if_mtu = LOMTU;
 	ifp->if_net = LONET;
@@ -35,6 +37,7 @@ loattach()
 	ifp->if_flags = IFF_UP;
 	ifp->if_output = looutput;
 	if_attach(ifp);
+	if_rtinit(ifp, RTF_DIRECT|RTF_UP);
 }
 
 looutput(ifp, m0, dst)
@@ -45,6 +48,7 @@ looutput(ifp, m0, dst)
 	int s = splimp();
 	register struct ifqueue *ifq;
 
+COUNT(LOOUTPUT);
 	ifp->if_opackets++;
 	switch (dst->sa_family) {
 
