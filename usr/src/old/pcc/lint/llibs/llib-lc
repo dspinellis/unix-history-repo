@@ -1,4 +1,4 @@
-/*	@(#)llib-lc	1.37 (Berkeley) %G%	*/
+/*	@(#)llib-lc	1.38 (Berkeley) %G%	*/
 
 /* LINTLIBRARY */
 
@@ -77,7 +77,7 @@ int	getppid() { return(1); }
 int	getpriority( w, who) { return 1;}
 int	getrlimit( res, rip) struct rlimit *rip; { return 0;}
 int	getrusage( res, rip) struct rusage *rip; { return 0;}
-int	getsockname(s, name, namelen) char *name; int *namelen; { return(0); }
+int	getsockname(s, name, namelen) struct sockaddr *name; int *namelen; { return(0); }
 int	getsockopt( s, level, opt, buf, len ) char *buf; int *len; { return 0;}
 int	gettimeofday( t, z ) struct timeval *t; struct timezone *z; { return 0;}
 uid_t	getuid() { return((uid_t)1); }
