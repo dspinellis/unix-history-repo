@@ -1,4 +1,4 @@
-.. @(#)sail.6	2.4 85/03/19
+.. @(#)sail.6	2.5 85/04/22
 .TH SAIL PUBLIC 
 .UC 4
 .SH NAME
@@ -11,6 +11,8 @@ sail \- multi-user wooden ships and iron men
 .B \-l
 ] ] [
 .B \-x
+] [
+.B \-b
 ] [
 .B num
 ]
@@ -48,6 +50,9 @@ Show the login name.  Only effective with \fB-s\fP.
 .TP
 .B \-x
 Play the first available ship instead of prompting for a choice.
+.TP
+.B \-b
+No bells.
 .SH IMPLEMENTATION
 .I Sail
 is really two programs in one.  Each player starts up a process which
