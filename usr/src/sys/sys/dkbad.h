@@ -1,39 +1,36 @@
-/*	dkbad.h	4.2	81/05/09	*/
+/*	dkbad.h	4.3	81/05/10	*/
 
 /*
- * Definitions needed to perform bad block
+ * Definitions needed to perform bad sector
  * revectoring ala DEC STD 144.
  *
- * The bad block information is located in the
+ * The bad sector information is located in the
  * first 5 even numbered sectors of the last
  * track of the disk pack.  There are five
  * identical copies of the information, described
  * by the dkbad structure.
  *
- * Replacement blocks are allocated starting with
- * the first block before the bad block information
+ * Replacement sectors are allocated starting with
+ * the first sector before the bad sector information
  * and working backwards towards the beginning of
- * the disk.  A maximum of 126 bad blocks are supported.
- * The position of the bad block in the bad block table
- * determines which replacement block it corresponds to.
+ * the disk.  A maximum of 126 bad sectors are supported.
+ * The position of the bad sector in the bad sector table
+ * determines which replacement sector it corresponds to.
  *
- * The bad block information and replacement blocks
- * are conventionally only accessable through the
+ * The bad sector information and replacement sectors
+ * are conventionally only accessible through the
  * 'c' file system partition of the disk.  If that
  * partition is used for a file system, the user is
  * responsible for making sure that it does not overlap
- * the bad block information or any replacement blocks.
+ * the bad sector information or any replacement sector.s
  */
 
 struct dkbad {
 	long	bt_csn;			/* cartridge serial number */
-	u_short	bt_magic;		/* magic number for sanity check */
-#ifdef notdef
-#define	BADMAGIC	0122155
-#endif
+	u_short	bt_mbz;			/* unused; should be 0 */
 	u_short	bt_flag;		/* -1 => alignment cartridge */
 	struct bt_bad {
-		u_short	bt_cyl;		/* cylinder number of bad block */
+		u_short	bt_cyl;		/* cylinder number of bad sector */
 		u_short	bt_trksec;	/* track and sector number */
 	} bt_bad[126];
 };
