@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)printw.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)printw.c	5.11 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -24,7 +24,7 @@ static char sccsid[] = "@(#)printw.c	5.10 (Berkeley) %G%";
  * is not in effect.
  */
 
-static int __sprintw __P((WINDOW *, const char *, ...));
+static int __sprintw __P((WINDOW *, const char *, va_list));
 static int __winwrite __P((void *, const char *, int));
 
 /*
@@ -98,13 +98,13 @@ mvprintw(y, x, fmt, va_alist)
 	va_list ap;
 	int ret;
 
-	if (move(y, x) != OK)
-		return (ERR);
 #if __STDC__
 	va_start(ap, fmt);
 #else
 	va_start(ap);
 #endif
+	if (move(y, x) != OK)
+		return (ERR);
 	ret = __sprintw(stdscr, fmt, ap);
 	va_end(ap);
 	return (ret);
@@ -125,13 +125,14 @@ mvwprintw(win, y, x, fmt, va_alist)
 	va_list ap;
 	int ret;
 
-	if (wmove(win, y, x) != OK)
-		return (ERR);
 #if __STDC__
 	va_start(ap, fmt);
 #else
 	va_start(ap);
 #endif
+	if (wmove(win, y, x) != OK)
+		return (ERR);
+
 	ret = __sprintw(win, fmt, ap);
 	va_end(ap);
 	return (ret);
@@ -162,16 +163,11 @@ __winwrite(cookie, buf, n)
  *	THIS SHOULD BE RENAMED vwprintw AND EXPORTED
  */
 static int
-#if __STDC__
-__sprintw(WINDOW *win, const char *fmt, ...)
-#else
 __sprintw(win, fmt, ap)
 	WINDOW *win;
-	char *fmt;
-	va_dcl;
-#endif
-{
+	const char *fmt;
 	va_list ap;
+{
 	FILE *f;
 
 	if ((f = funopen(win, NULL, __winwrite, NULL, NULL)) == NULL)
