@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)intro.3	8.1 (Berkeley) %G%
+.\"     @(#)intro.3	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt INTRO 3
@@ -16,9 +16,7 @@ This section provides an overview of the C
 library functions, their error returns and other
 common definitions and concepts.
 Most of these functions are available from the C library,
-.Em libc
-(see
-.Xr libc 3 ) .
+.Em libc .
 Other libraries, such as the math library,
 .Em libm ,
 must be indicated at compile time with the
@@ -34,8 +32,8 @@ they are described separately in
 The various libraries (followed by the loader flag):
 .Bl -tag -width "libc (-lc)"
 .It Xr libc Pq Fl l Ns Ar c
-Standard C library functions. (See
-.Xr libc 3 . ) When using the C compiler
+Standard C library functions.
+When using the C compiler
 .Xr cc 1 ,
 it is not necessary
 to supply the loader flag
