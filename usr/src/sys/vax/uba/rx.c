@@ -13,8 +13,11 @@
 #include "../h/buf.h"
 #include "../h/systm.h"
 #include "../h/conf.h"
+#include "../h/errno.h"
+#include "../h/time.h"
 #include "../h/kernel.h"
 #include "../h/uio.h"
+#include "../h/file.h"
 
 #include "../vax/cpu.h"
 #include "../vax/nexus.h"
@@ -208,7 +211,7 @@ rxmap(bp, psector, ptrack)
 	register int lt, ls, ptoff;
 	struct rx_softc *sc = &rx_softc[RXUNIT(bp->b_dev)];
 
-	ls = bp->b_blkno * (NBPS / DEV_BLKSIZE);
+	ls = bp->b_blkno * (NBPS / DEV_BSIZE);
 	lt = ls / 26;
 	ls %= 26;
 	/*
@@ -368,7 +371,7 @@ rxintr(dev)
 	case RXS_RDERR:
 		rxmap(bp, &sector, &track);
 		printf("rx%d: hard error, lsn%d (trk %d psec %d) ",
-			unit, bp->b_blkno * (NBPS / DEV_BLKSIZE),
+			unit, bp->b_blkno * (NBPS / DEV_BSIZE),
 			track, sector);
 		printf("cs=%b, db=%b, err=%x\n", er->rxcs, 
 			RXCS_BITS, er->rxdb, RXES_BITS, er->rxxt[0]);
@@ -444,7 +447,7 @@ rderr:
 	ubadone(um);
 	er->rxcs = rxaddr->rxcs;
 	er->rxdb = rxaddr->rxdb;
-	bp = &erxbuf[ctlr];
+	bp = &erxbuf[unit];
 	bp->b_un.b_addr = (caddr_t)er->rxxt;
 	bp->b_bcount = sizeof (er->rxxt);
 	bp->b_flags &= ~(B_DIRTY|B_UAREA|B_PHYS|B_PAGET);
@@ -467,14 +470,15 @@ done:
 	 * If this unit has more work to do,
 	 * start it up right away
 	 */
-	if (um->um_tab->b_actf->b_actf)
-		rxstart(ui);
+	if (um->um_tab.b_actf->b_actf)
+		rxstart(um);
 }
 
 /*ARGSUSED*/
 minrxphys(bp)
 	struct buf *bp;
 {
+	struct rx_softc *sc = &rx_softc[RXUNIT(bp->b_dev)];
 
 	if (bp->b_bcount > NBPS)
 		bp->b_bcount = NBPS;
@@ -522,6 +526,7 @@ rxread(dev, uio)
 	struct uio *uio;
 {
 	int unit = RXUNIT(dev), ctlr = rxdinfo[unit]->ui_ctlr;
+	struct rx_softc *sc = &rx_softc[RXUNIT(dev)];
 
 	if (uio->uio_offset + uio->uio_resid > RXSIZE)
 		return (ENXIO);
@@ -535,6 +540,7 @@ rxwrite(dev, uio)
 	struct uio *uio;
 {
 	int unit = RXUNIT(dev), ctlr = rxdinfo[unit]->ui_ctlr;
+	struct rx_softc *sc = &rx_softc[RXUNIT(dev)];
 
 	if (uio->uio_offset + uio->uio_resid > RXSIZE)
 		return (ENXIO);
@@ -572,7 +578,7 @@ rxioctl(dev, cmd, data, flag)
 	case RXIOC_FORMAT:
 		if ((flag&FWRITE) == 0)
 			return (EBADF);
-		return (rxformat(unit));
+		return (rxformat(dev));
 
 	case RXIOC_WDDS:
 		sc->sc_flags |= RXF_USEWDDS;
@@ -588,12 +594,12 @@ rxioctl(dev, cmd, data, flag)
 /*
  * Initiate a format command.
  */
-rxformat(unit)
-	int unit;
+rxformat(dev)
+	dev_t dev;
 {
-	int ctlr = rxdinfo[unit]->ui_mi->um_ctlr;
+	int ctlr = rxdinfo[RXUNIT(dev)]->ui_mi->um_ctlr;
 	struct buf *bp;
-	struct rx_softc *sc = &rx_softc[unit];
+	struct rx_softc *sc = &rx_softc[RXUNIT(dev)];
 	int s, error = 0;
 
 	bp = &rrxbuf[ctlr];
