@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)chmod.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)chmod.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -51,13 +51,10 @@ usage:
 
 	argv++, --argc;
 	if (*argv[0] == '-') {
-		for (flags = argv[0]; *flags; ++flags)
-			switch (*flags) {
-			  case '-':			break;
-			  case 'R':	rflag++;	break;
-			  default: 	argc = 0;	goto usage;
-			}
-		argv++, argc--;
+		if (strcmp(argv[0], "-R") == 0) {
+			rflag++;
+			argv++, argc--;
+		}
 	}
 
 	modestring = argv[0];
