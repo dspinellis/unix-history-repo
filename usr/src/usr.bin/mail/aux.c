@@ -2,7 +2,6 @@
 
 #include "rcv.h"
 #include <sys/stat.h>
-#include <sgtty.h>
 #include <ctype.h>
 
 /*
@@ -11,7 +10,7 @@
  * Auxiliary functions.
  */
 
-static char *SccsId = "@(#)aux.c	2.2 %G%";
+static char *SccsId = "@(#)aux.c	2.3 %G%";
 
 /*
  * Return a pointer to a dynamic copy of the argument.
@@ -513,8 +512,18 @@ char *
 nameof(mp, reptype)
 	register struct message *mp;
 {
+	register char *cp, *cp2;
 
-	return(skin(name1(mp, reptype)));
+	cp = skin(name1(mp, reptype));
+	if (reptype != 0 || charcount(cp, '!') < 2)
+		return(cp);
+	cp2 = rindex(cp, '!');
+	cp2--;
+	while (cp2 > cp && *cp2 != '!')
+		cp2--;
+	if (*cp2 == '!')
+		return(cp2 + 1);
+	return(cp);
 }
 
 /*
@@ -642,10 +651,24 @@ newname:
 }
 
 /*
+ * Count the occurances of c in str
+ */
+charcount(str, c)
+	char *str;
+{
+	register char *cp;
+	register int i;
+
+	for (i = 0, cp = str; *cp; cp++)
+		if (*cp == c)
+			i++;
+	return(i);
+}
+
+/*
  * Find the rightmost pointer to an instance of the
  * character in the string and return it.
  */
-
 char *
 rindex(str, c)
 	char str[];
