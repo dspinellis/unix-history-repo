@@ -1,7 +1,7 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)var.c 1.17 %G%";
+static char sccsid[] = "@(#)var.c 1.18 %G%";
 #endif
 
 #include "whoami.h"
@@ -186,7 +186,6 @@ varend()
 /*
  * Evening
  */
-#ifndef PC
 long
 leven(w)
 	register long w;
@@ -195,7 +194,6 @@ leven(w)
 		return (w & 0xfffffffe);
 	return ((w+1) & 0xfffffffe);
 }
-#endif
 
 #ifndef PC
 int

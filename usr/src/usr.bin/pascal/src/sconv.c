@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static	char sccsid[] = "@(#)sconv.c 1.3 %G%";
+static	char sccsid[] = "@(#)sconv.c 1.4 %G%";
 #endif
 
     /*
