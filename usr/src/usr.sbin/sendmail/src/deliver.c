@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.152 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.153 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1262,6 +1262,7 @@ tryhost:
 		{
 			int i;
 			int saveerrno;
+			struct stat stb;
 			extern int DtableSize;
 
 			if (e->e_lockfp != NULL)
@@ -1272,23 +1273,24 @@ tryhost:
 			(void) setsignal(SIGHUP, SIG_IGN);
 			(void) setsignal(SIGTERM, SIG_DFL);
 
+			if (m != FileMailer || stat(to->q_user, &stb) < 0)
+				stb.st_mode = 0;
+
 			/* tweak niceness */
 			if (m->m_nice != 0)
 				nice(m->m_nice);
 
-			/* reset user and group */
+			/* reset group id */
 			if (bitnset(M_SPECIFIC_UID, m->m_flags))
-			{
 				(void) setgid(m->m_gid);
-				(void) setuid(m->m_uid);
-			}
-			else if (ctladdr != NULL && ctladdr->q_uid != 0)
+			else if (bitset(S_ISGID, stb.st_mode))
+				(void) setgid(stb.st_gid);
+			else if (ctladdr != NULL && ctladdr->q_gid != 0)
 			{
 				(void) initgroups(ctladdr->q_ruser?
 					ctladdr->q_ruser: ctladdr->q_user,
 					ctladdr->q_gid);
 				(void) setgid(ctladdr->q_gid);
-				(void) setuid(ctladdr->q_uid);
 			}
 			else
 			{
@@ -1297,6 +1299,17 @@ tryhost:
 					(void) setgid(DefGid);
 				else
 					(void) setgid(m->m_gid);
+			}
+
+			/* reset user id */
+			if (bitnset(M_SPECIFIC_UID, m->m_flags))
+				(void) setuid(m->m_uid);
+			else if (bitset(S_ISUID, stb.st_mode))
+				(void) setuid(stb.st_uid);
+			else if (ctladdr != NULL && ctladdr->q_uid != 0)
+				(void) setuid(ctladdr->q_uid);
+			else
+			{
 				if (m->m_uid == 0)
 					(void) setuid(DefUid);
 				else
