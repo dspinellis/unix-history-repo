@@ -8,7 +8,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)tutorial.ms	5.4 (Berkeley) %G%
+.\"	@(#)tutorial.ms	8.1 (Berkeley) %G%
 .\"
 .EH 'PSD:12-%''PMake \*- A Tutorial'
 .OH 'PMake \*- A Tutorial''PSD:9-%'
