@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnetd.c	5.13 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -538,6 +538,7 @@ telrcv()
 					if (tmpltc.t_flushc != '\377') {
 						*pfrontp++ = tmpltc.t_flushc;
 					}
+					netclear();	/* clear buffer back */
 					*nfrontp++ = IAC;
 					*nfrontp++ = DM;
 					neturg = nfrontp-1; /* off by one XXX */
@@ -805,27 +806,105 @@ ptyflush()
 	if (pbackp == pfrontp)
 		pbackp = pfrontp = ptyobuf;
 }
+
+/*
+ * nextitem()
+ *
+ *	Return the address of the next "item" in the TELNET data
+ * stream.  This will be the address of the next character if
+ * the current address is a user data character, or it will
+ * be the address of the character following the TELNET command
+ * if the current address is a TELNET IAC ("I Am a Command")
+ * character.
+ */
 
-#if	0
-netflush()
+char *
+nextitem(current)
+char	*current;
 {
-	int n;
+    if ((*current&0xff) != IAC) {
+	return current+1;
+    }
+    switch (*(current+1)&0xff) {
+    case DO:
+    case DONT:
+    case WILL:
+    case WONT:
+	return current+3;
+    case SB:		/* loop forever looking for the SE */
+	{
+	    register char *look = current+2;
 
-	if ((n = nfrontp - nbackp) > 0)
-		n = write(net, nbackp, n);
-	if (n < 0) {
-		if (errno == EWOULDBLOCK)
-			return;
-		/* should blow this guy away... */
-		return;
+	    for (;;) {
+		if ((*look++&0xff) == IAC) {
+		    if ((*look++&0xff) == SE) {
+			return look;
+		    }
+		}
+	    }
 	}
-	nbackp += n;
-	if (nbackp == nfrontp)
-		nbackp = nfrontp = netobuf;
+    default:
+	return current+2;
+    }
 }
-#else	/* 0 */
 
 
+/*
+ * netclear()
+ *
+ *	We are about to do a TELNET SYNCH operation.  Clear
+ * the path to the network.
+ *
+ *	Things are a bit tricky since we may have sent the first
+ * byte or so of a previous TELNET command into the network.
+ * So, we have to scan the network buffer from the beginning
+ * until we are up to where we want to be.
+ *
+ *	A side effect of what we do, just to keep things
+ * simple, is to clear the urgent data pointer.  The principal
+ * caller should be setting the urgent data pointer AFTER calling
+ * us in any case.
+ */
+
+netclear()
+{
+    register char *thisitem, *next;
+    char *good;
+#define	wewant(p)	((nfrontp > p) && ((*p&0xff) == IAC) && \
+				((*(p+1)&0xff) != EC) && ((*(p+1)&0xff) != EL))
+
+    thisitem = netobuf;
+
+    while ((next = nextitem(thisitem)) <= nbackp) {
+	thisitem = next;
+    }
+
+    /* Now, thisitem is first before/at boundary. */
+
+    good = netobuf;	/* where the good bytes go */
+
+    while (nfrontp > thisitem) {
+	if (wewant(thisitem)) {
+	    int length;
+
+	    next = thisitem;
+	    do {
+		next = nextitem(next);
+	    } while (wewant(next) && (nfrontp > next));
+	    length = next-thisitem;
+	    bcopy(thisitem, good, length);
+	    good += length;
+	    thisitem = next;
+	} else {
+	    thisitem = nextitem(thisitem);
+	}
+    }
+
+    nbackp = netobuf;
+    nfrontp = good;		/* next byte to be sent */
+    neturg = 0;
+}
+
 /*
  *  netflush
  *		Send as much data as possible to the network,
@@ -871,7 +950,6 @@ netflush()
 	nbackp = nfrontp = netobuf;
     }
 }
-#endif	/* 0 */
 
 cleanup()
 {
