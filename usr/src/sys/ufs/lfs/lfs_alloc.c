@@ -1,4 +1,4 @@
-/*	lfs_alloc.c	6.10	85/01/10	*/
+/*	lfs_alloc.c	6.11	85/01/14	*/
 
 #include "param.h"
 #include "systm.h"
@@ -145,7 +145,7 @@ realloccg(ip, bprev, bpref, osize, nsize)
 	}
 	if (bpref >= fs->fs_size)
 		bpref = 0;
-	bno = (daddr_t)hashalloc(ip, cg, (long)bpref, nsize,
+	bno = (daddr_t)hashalloc(ip, cg, (long)bpref, fs->fs_bsize,
 		(u_long (*)())alloccg);
 	if (bno > 0) {
 		obp = bread(ip->i_dev, fsbtodb(fs, bprev), osize);
@@ -162,6 +162,9 @@ realloccg(ip, bprev, bpref, osize, nsize)
 		}
 		brelse(obp);
 		free(ip, bprev, (off_t)osize);
+		if (nsize < fs->fs_bsize)
+			free(ip, bno + numfrags(fs, nsize),
+				(off_t)(fs->fs_bsize - nsize));
 		ip->i_blocks += btodb(nsize - osize);
 		ip->i_flag |= IUPD|ICHG;
 		return (bp);
