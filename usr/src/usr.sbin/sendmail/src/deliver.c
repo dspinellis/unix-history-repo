@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.103		%G%);
+SCCSID(@(#)deliver.c	3.104		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -386,7 +386,9 @@ deliver(firstto, editfcn)
 	if (clever)
 	{
 		i = smtpfinish(m, editfcn);
-		smtpquit(pv[0], TRUE);
+		if (i != EX_OK)
+			giveresponse(i, TRUE, m);
+		smtpquit(pv[0], i == EX_OK);
 	}
 	else
 # endif SMTP
