@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mtio.h	7.1 (Berkeley) %G%
+ *	@(#)mtio.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -55,6 +55,7 @@ struct	mtget	{
 #define	MT_ISCPC	0x06		/* SUN */
 #define	MT_ISAR		0x07		/* SUN */
 #define	MT_ISTMSCP	0x08		/* DEC TMSCP protocol (TU81, TK50) */
+#define	MT_ISCY		0x09		/* CCI Cipher */
 
 /* mag tape io control commands */
 #define	MTIOCTOP	_IOW(m, 1, struct mtop)		/* do a mag tape op */

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)proc.h	7.1 (Berkeley) %G%
+ *	@(#)proc.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -62,6 +62,10 @@ struct	proc {
 	struct	proc *p_ysptr;	/* pointer to younger siblings */
 	struct	itimerval p_realtimer;
 	struct	quota *p_quota;	/* quotas for this process */
+#if defined(tahoe)
+	int	p_ckey;		/* code cache key */
+	int	p_dkey;		/* data cache key */
+#endif
 };
 
 #define	PIDHSZ		64
