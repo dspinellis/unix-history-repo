@@ -5,11 +5,11 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)makewhatis.sed	8.1 (Berkeley) %G%
+#	@(#)makewhatis.sed	8.2 (Berkeley) %G%
 #
 
-/(\([a-zA-Z0-9]*\).*UNIX Programmer's Manual/ {
-	s;.*(\([a-zA-Z0-9]*\).*UNIX.*;\1;
+/^[a-zA-Z][a-zA-Z0-9]*(\([a-zA-Z0-9]*\).*/ {
+	s;^[a-zA-Z0-9]*(\([a-zA-Z0-9]*\).*;\1;
 	h
 	d
 }
