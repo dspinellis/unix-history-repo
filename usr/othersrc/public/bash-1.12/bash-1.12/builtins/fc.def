@@ -1,0 +1,689 @@
+This file is fc.def, from which is created fc.c.
+It implements the builtin "fc" in Bash.
+
+Copyright (C) 1987, 1989, 1991 Free Software Foundation, Inc.
+
+This file is part of GNU Bash, the Bourne Again SHell.
+
+Bash is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free
+Software Foundation; either version 1, or (at your option) any later
+version.
+
+Bash is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+for more details.
+
+You should have received a copy of the GNU General Public License along
+with Bash; see the file COPYING.  If not, write to the Free Software
+Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+
+$PRODUCES fc.c
+
+$BUILTIN fc
+$FUNCTION fc_builtin
+$SHORT_DOC fc [-e ename] [-nlr] [first] [last] or fc -s [pat=rep] [cmd]
+
+FIRST and LAST can be numbers specifying the range, or FIRST can be a
+string, which means the most recent command beginning with that
+string.
+
+   -e ENAME selects which editor to use.  Default is FCEDIT, then EDITOR,
+      then the editor which corresponds to the current readline editing
+      mode, then vi.
+
+   -l means list lines instead of editing.
+   -n means no line numbers listed.
+   -r means reverse the order of the lines (making it newest listed first).
+
+With the `fc -s [pat=rep ...] [command]' format, the command is
+re-executed after the substitution OLD=NEW is performed.
+
+A useful alias to use with this is r='fc -s', so that typing `r cc'
+runs the last command beginning with `cc' and typing `r' re-executes
+the last command.
+$END
+
+#include <stdio.h>
+#include <sys/param.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/file.h>
+#include <errno.h>
+#include "../shell.h"
+#include "../builtins.h"
+#include "../flags.h"
+#include "../maxpath.h"
+#include <readline/history.h>
+
+#if defined (NULL)
+#undef NULL
+#endif
+#define NULL 0
+
+extern int errno;
+
+/* **************************************************************** */
+/*								    */
+/*	The K*rn shell style fc command (Fix Command)		    */
+/*								    */
+/* **************************************************************** */
+
+/* fc builtin command (fix command) for Bash for those who
+   like K*rn-style history better than csh-style.
+
+     fc [-e ename] [-nlr] [first] [last]
+
+   FIRST and LAST can be numbers specifying the range, or FIRST can be
+   a string, which means the most recent command beginning with that
+   string.
+
+   -e ENAME selects which editor to use.  Default is FCEDIT, then EDITOR,
+      then the editor which corresponds to the current readline editing
+      mode, then vi.
+
+   -l means list lines instead of editing.
+   -n means no line numbers listed.
+   -r means reverse the order of the lines (making it newest listed first).
+
+     fc -e - [pat=rep ...] [command]
+     fc -s [pat=rep ...] [command]
+
+   Equivalent to !command:sg/pat/rep execpt there can be multiple PAT=REP's.
+*/
+
+static char *fc_dosubs (), *fc_replace (), *fc_gethist (), *fc_readline ();
+static int fc_gethnum ();
+static void fc_replhist (), fc_addhist ();
+
+/* Data structure describing a list of global replacements to perform. */
+typedef struct repl {
+  struct repl *next;
+  char *pat;
+  char *rep;
+} REPL;
+
+#define USAGE	"usage: fc [-e ename] [-nlr] [first] [last] or fc -s [pat=rep] [command]"
+
+/* True if A is the first substring in B. */
+#define prefix(a, b) (strncmp ((a), (b), strlen ((a))) == 0)
+
+/* Accessors for HIST_ENTRY lists that are called HLIST. */
+#define histline(i) (hlist[(i)]->line)
+#define histdata(i) (hlist[(i)]->data)
+
+#define FREE_RLIST() \
+	do { \
+		for (rl = rlist; rl; ) { \
+			REPL *r;	\
+\
+			r = rl->next; \
+			if (rl->pat) \
+				free (rl->pat); \
+			if (rl->rep) \
+				free (rl->rep); \
+			free (rl); \
+			rl = r; \
+		} \
+	} while (0)
+
+/* String to execute on a file that we want to edit. */
+#define FC_EDIT_COMMAND "${FCEDIT:-${EDITOR:-vi}}"
+
+int
+fc_builtin (list)
+     WORD_LIST *list;
+{
+  register int i;
+  register char *sep;
+  int numbering, reverse, listing, execute;
+  int histbeg, histend, last_hist, retval, first;
+  FILE *stream;
+  REPL *rlist = (REPL *) NULL, *rl;
+  char *ename = NULL, *command, *newcom, *line;
+  HIST_ENTRY **hlist;
+  char fn[MAXPATHLEN];
+
+  numbering = 1;
+  reverse = listing = execute = 0;
+
+  /* Parse out the options and set which of the two forms we're in. */
+  while (list && *list->word->word == '-')
+    {
+      register char *s = &((list->word->word)[1]);
+      register int c;
+
+      if (!isletter (*s))	/* for stuff like fc -e - -2 */
+	break;
+
+      while (c = *s++)
+	{
+	  switch (c)
+	    {
+	    case 'n':
+	      numbering = 0;
+	      break;
+
+	    case 'l':
+	      listing = 1;
+	      break;
+
+	    case 'r':
+	      reverse = 1;
+	      break;
+
+	    case 's':
+	      execute = 1;
+	      break;
+
+	    case 'e':
+	      list = list->next;
+
+	      if (list == NULL)
+		{
+		  builtin_error (USAGE);
+		  return (EXECUTION_FAILURE);
+		}
+
+	      ename = list->word->word;
+	      break;
+
+	    default:
+	      builtin_error (USAGE);
+	      return (EXECUTION_FAILURE);
+	    }
+	}
+      list = list->next;
+    }
+
+  if (ename && (*ename == '-') && (ename[1] == '\0'))
+    execute = 1;
+
+  /* The "execute" form of the command (re-run, with possible string
+     substitutions). */
+  if (execute)
+    {
+      while (list && ((sep = (char *)index (list->word->word, '=')) != NULL))
+	{
+	  *sep++ = '\0';
+	  rl = (REPL *)xmalloc (sizeof (REPL));
+	  rl->next = (REPL *)NULL;
+	  rl->pat = savestring (list->word->word);
+	  rl->rep = savestring (sep);
+
+	  if (rlist == NULL)
+	    rlist = rl;
+	  else
+	    {
+	      rl->next = rlist;
+	      rlist = rl;
+	    }
+	  list = list->next;
+	}
+
+      /* If we have a list of substitutions to do, then reverse it
+	 to get the replacements in the proper order. */
+
+      if (rlist && rlist->next)
+	rlist = (REPL *) reverse_list ((GENERIC_LIST *) rlist);
+
+      hlist = history_list ();
+
+      /* If we still have something in list, it is a command spec.
+	 Otherwise, we use the most recent command in time. */
+      if (list)
+	command = fc_gethist (list->word->word, hlist);
+      else
+	command = fc_gethist ((char *) NULL, hlist);
+
+      if (command == NULL)
+	{
+	  builtin_error ("no command found");
+	  if (rlist)
+	    FREE_RLIST ();
+
+	  return (EXECUTION_FAILURE);
+	}
+
+      if (rlist)
+	{
+	  newcom = fc_dosubs (command, rlist);
+	  free (command);
+	  FREE_RLIST ();
+	  command = newcom;
+	}
+
+      printf ("%s\n", command);
+      fc_replhist (command);	/* replace `fc -e -' with command */
+      return (parse_and_execute (command, "fc"));
+    }
+
+  /* This is the second form of the command (the list-or-edit-and-rerun
+     form). */
+  hlist = history_list ();
+  for (i = 0; hlist[i]; i++);
+
+  /* With the Bash implementation of history, the current command line
+     ("fc blah..." and so on) is already part of the history list by
+     the time we get to this point.  This just skips over that command
+     and makes the last command that this deals with be the last command
+     the user entered before the fc. */
+
+  last_hist = i - 2;
+
+  if (list)
+    {
+      histbeg = fc_gethnum (list->word->word, hlist);
+      list = list->next;
+
+      if (list)
+	histend = fc_gethnum (list->word->word, hlist);
+      else
+	{
+	  if (listing)
+	    histend = last_hist;
+	  else
+	    histend = histbeg;
+	}
+    }
+  else
+    {
+      /* The default for listing is the last 16 history items. */
+      if (listing)
+	{
+	  histend = last_hist;
+	  histbeg = histend - 16;
+	}
+      else
+	{
+	  /* For editing, it is the last history command. */
+	  histbeg = histend = last_hist;
+      }
+    }
+
+  /* We print error messages for line specifications out of range. */
+  if ((histbeg < 0) || (histend < 0) ||
+      (histbeg > last_hist) || (histend > last_hist))
+    {
+      builtin_error ("history specification out of range");
+      return (EXECUTION_FAILURE);
+    }
+
+  if (histend < histbeg)
+    {
+      int t = histend;
+
+      histend = histbeg;
+      histbeg = t;
+      reverse = 1;
+    }
+
+  if (listing)
+    stream = stdout;
+  else
+    {
+      numbering = 0;
+      sprintf (fn, "/tmp/bash%d", (int)time ((long *) 0) + (int)getpid ());
+
+      stream = fopen (fn, "w");
+
+      if (!stream)
+	{
+	  builtin_error ("cannot open temp file %s", fn);
+	  return (EXECUTION_FAILURE);
+	}
+    }
+
+  if (!reverse)
+    {
+      for (i = histbeg; i <= histend; i++)
+	{
+	  QUIT;
+	  if (numbering)
+	    fprintf (stream, "%d\t%c", i + history_base,
+		     histdata (i) ? '*' : ' ');
+
+	  fprintf (stream, "%s\n", histline (i));
+	}
+    }
+  else
+    {
+      for (i = histend; i >= histbeg; i--)
+	{
+	  QUIT;
+	  if (numbering)
+	    fprintf (stream, "%d\t%c", i + history_base,
+		     histdata (i) ? '*' : ' ');
+	  fprintf (stream, "%s\n", histline (i));
+	}
+    }
+
+  if (listing)
+    return (EXECUTION_SUCCESS);
+
+  fclose (stream);
+
+  /* Now edit the file of commands. */
+  if (ename)
+    {
+      command = (char *)xmalloc (strlen (ename) + strlen (fn) + 2);
+      sprintf (command, "%s %s", ename, fn);
+    }
+  else
+    {
+      command = (char *)xmalloc (3 + strlen (FC_EDIT_COMMAND) + strlen (fn));
+      sprintf (command, "%s %s", FC_EDIT_COMMAND, fn);
+    }
+  parse_and_execute (command, "fc");
+
+  /* Now reopen the file and execute the edited commands. */
+
+  stream = fopen (fn, "r");
+
+  if (stream == NULL)
+    {
+      builtin_error ("cannot reopen temp file %s", fn);
+      unlink (fn);
+      return (EXECUTION_FAILURE);
+    }
+
+  retval = EXECUTION_SUCCESS;
+  first = 1;
+
+  /* First, write the commands to the history file.  This will not happen
+     when we call parse_and_execute, since parse_and_execute disables
+     the command line history while it executes. */
+     
+  while ((line = fc_readline (stream)) != NULL)
+    {
+      if (line[0] == '\n')
+	{
+	  free (line);
+	  continue;		/* Skip blank lines. */
+	}
+
+      if (first)
+	{
+	  first = 0;
+	  fc_replhist (line);
+	}
+      else
+	fc_addhist (line);
+    }
+  fclose (stream);
+
+  {
+    extern int echo_input_at_read;
+    extern int unlink ();
+
+    /* Turn on the `v' flag while maybe_execute_file runs so the commands
+       will be echoed as they are read by the parser. */
+    begin_unwind_frame ("fc builtin");
+    add_unwind_protect (unlink, fn);
+    unwind_protect_int (echo_input_at_read);
+    echo_input_at_read = 1;
+    
+    retval = maybe_execute_file (fn);
+
+    run_unwind_frame ("fc builtin");
+  }
+
+  return (retval);
+}
+
+/* Return an absolute index into HLIST which corresponds to COMMAND.  If
+   COMMAND is a number, then it was specified in relative terms.  If it
+   is a string, then it is the start of a command line present in HLIST. */
+static int
+fc_gethnum (command, hlist)
+     char *command;
+     HIST_ENTRY **hlist;
+{
+  int sign = 1, n;
+  register int i, j;
+  register char *s;
+
+  /* Count history elements. */
+  for (i = 0; hlist[i]; i++);
+
+  /* With the Bash implementation of history, the current command line
+     ("fc blah..." and so on) is already part of the history list by
+     the time we get to this point.  This just skips over that command
+     and makes the last command that this deals with be the last command
+     the user entered before the fc. */
+  i -= 2;
+
+  /* No specification defaults to most recent command. */
+  if (command == NULL)
+    return (i);
+
+  /* Otherwise, there is a specification.  It can be a number relative to
+     the current position, or an absolute history number. */
+  s = command;
+
+  /* Handle possible leading minus sign. */
+  if (s && (*s == '-'))
+    {
+      sign = -1;
+      s++;
+    }
+
+  if (s && digit(*s))
+    {
+      n = atoi (s);
+      n *= sign;
+
+      /* Anything specified greater than the last history element that we
+	 deal with is an error. */
+      if (n > i + history_base)
+	return (-1);
+
+      /* If the value is negative or zero, then it is an offset from
+	 the current history item. */
+      if (n <= 0)
+	return (i + n);
+
+      return (n - history_base);
+    }
+
+  for (j = i; j >= 0; j--)
+    {
+      if (prefix (command, histline (j)))
+	return (j);
+    }
+  return (-1);
+}
+
+/* Locate the most recent history line which begins with
+   COMMAND in HLIST, and return a malloc()'ed copy of it. */
+static char *
+fc_gethist (command, hlist)
+     char *command;
+     HIST_ENTRY **hlist;
+{
+  int i;
+
+  if (!hlist)
+    return ((char *)NULL);
+
+  i = fc_gethnum (command, hlist);
+
+  if (i >= 0)
+    return (savestring (histline (i)));
+  else
+    return ((char *)NULL);
+}
+
+/* Read the edited history lines from STREAM and return them
+   one at a time.  This can read unlimited length lines.  The
+   caller should free the storage. */
+static char *
+fc_readline (stream)
+     FILE *stream;
+{
+  register int c;
+  int line_len = 0, lindex = 0;
+  char *line = (char *)NULL;
+
+  while ((c = getc (stream)) != EOF)
+    {
+      if ((lindex + 2) >= line_len)
+	line = (char *) xrealloc (line, (line_len += 128));
+
+      if (c == '\n')
+	{
+	  line[lindex++] = '\n';
+	  line[lindex++] = '\0';
+	  return (line);
+	}
+      else
+	line[lindex++] = c;
+    }
+
+  if (!lindex)
+    {
+      if (line)
+	free (line);
+
+      return ((char *)NULL);
+    }
+
+  if (lindex + 2 >= line_len)
+    line = (char *)xrealloc (line, lindex + 3);
+
+  line[lindex++] = '\n';	    /* Finish with newline if none in file */
+  line[lindex++] = '\0';
+  return (line);
+}
+
+/* Perform the SUBS on COMMAND.
+   SUBS is a list of substitutions, and COMMAND is a simple string.
+   Return a pointer to a malloc'ed string which contains the substituted
+   command. */
+static char *
+fc_dosubs (command, subs)
+     char *command;
+     REPL *subs;
+{
+  register char *new = savestring (command);
+  register REPL *r;
+
+  for (r = subs; r; r = r->next)
+    {
+      register char *t;
+
+      t = fc_replace (r->pat, r->rep, new);
+      free (new);
+      new = t;
+    }
+  return (new);
+}
+
+/* Replace the occurrences of PAT with REP in COMMAND.
+   This returns a new string; the caller should free it. */
+static char *
+fc_replace (pat, rep, command)
+     char *pat, *rep, *command;
+{
+  register int i;
+  int patlen, replen, templen;
+  char *new, *temp;
+
+  patlen = strlen (pat);
+  replen = strlen (rep);
+
+  temp = savestring (command);
+  templen = strlen (temp);
+  i = 0;
+
+  for (; (i + patlen) <= templen; i++)
+    {
+      if (strncmp (temp + i, pat, patlen) == 0)
+	{
+	  new = (char *) xmalloc (1 + (replen - patlen) + templen);
+
+	  strncpy (new, temp, i);
+	  strncpy (new + i, rep, replen);
+	  strncpy (new + i + replen,
+		   temp + i + patlen, templen - (i + patlen));
+	  new[templen + (replen - patlen)] = '\0'; /* just in case */
+
+	  free (temp);
+	  temp = new;
+	  i += replen;
+	  templen = strlen (temp);
+	}
+    }
+  return (temp);
+}
+
+/* Use `command' to replace the last entry in the history list, which,
+   by this time, is `fc blah...'.  The intent is that the new command
+   become the history entry, and that `fc' should never appear in the
+   history list.  This way you can do `r' to your heart's content.
+
+   Should this do anything with the history_control variable? */
+static void
+fc_replhist (command)
+     char *command;
+{
+  register int i;
+  HIST_ENTRY **hlist, *histent, *discard, *history_get ();
+  char *data;
+  int n;
+
+  if (command == NULL || *command == NULL)
+    return;
+
+  hlist = history_list ();
+
+  if (hlist == NULL)
+    return;
+
+  for (i = 0; hlist[i]; i++);
+  i--;
+
+  /* History_get () takes a parameter that should be
+     offset by history_base. */
+
+  histent = history_get (history_base + i);	/* Don't free this */
+  if (histent == NULL)
+    return;
+
+  if (histent->data)
+    data = savestring (histent->data);
+  else
+    data = (char *) NULL;
+
+  n = strlen (command);
+
+  if (command[n - 1] == '\n')
+    command[n - 1] = '\0';
+
+  if (command && *command)
+    {
+      discard = replace_history_entry (i, command, data);
+      if (discard)
+	{
+	  if (discard->line)
+	    free (discard->line);
+
+	  free ((char *) discard);
+	}
+    }
+}
+
+/* Add LINE to the history, after removing a single trailing newline. */
+static void
+fc_addhist (line)
+     char *line;
+{
+  register int n = strlen (line);
+
+  if (line[n - 1] == '\n')
+    line[n - 1] = '\0';
+
+  if (line && *line)
+    add_history (line);
+}
