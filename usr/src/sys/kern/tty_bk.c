@@ -1,4 +1,4 @@
-/*	tty_bk.c	4.1	82/07/13	*/
+/*	tty_bk.c	4.2	82/08/01	*/
 
 #include "bk.h"
 
@@ -34,8 +34,8 @@
  */
 /*ARGSUSED*/
 bkopen(dev, tp)
-dev_t dev;
-register struct tty *tp;
+	dev_t dev;
+	register struct tty *tp;
 {
 	register struct buf *bp;
 
@@ -145,9 +145,9 @@ register struct tty *tp;
  * those which get parameters (gtty and get special characters).
  */
 /*ARGSUSED*/
-bkioctl(tp, cmd, addr)
-struct tty *tp;
-caddr_t addr;
+bkioctl(tp, cmd, data, flag)
+	struct tty *tp;
+	caddr_t data;
 {
 
 	if ((cmd>>8) != 't')

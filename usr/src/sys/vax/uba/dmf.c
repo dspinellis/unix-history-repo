@@ -1,4 +1,4 @@
-/*	dmf.c	4.4	82/07/15	*/
+/*	dmf.c	4.5	82/08/01	*/
 
 #include "dmf.h"
 #if NDMF > 0
@@ -396,60 +396,56 @@ dmfrint(dmf)
  * Ioctl for DMF32.
  */
 /*ARGSUSED*/
-dmfioctl(dev, cmd, addr, flag)
+dmfioctl(dev, cmd, data, flag)
 	dev_t dev;
-	caddr_t addr;
+	caddr_t data;
 {
 	register struct tty *tp;
 	register int unit = minor(dev);
 	register int dmf = unit >> 3;
 	register struct device *dmfaddr;
-	int temp;
  
 	tp = &dmf_tty[unit];
-	cmd = (*linesw[tp->t_line].l_ioctl)(tp, cmd, addr);
+	cmd = (*linesw[tp->t_line].l_ioctl)(tp, cmd, data, flag);
 	if (cmd == 0)
 		return;
-	if (ttioctl(tp, cmd, addr, flag)) {
-		if (cmd==TIOCSETP || cmd==TIOCSETN)
+	if (ttioctl(tp, cmd, data, flag)) {
+		if (cmd == TIOCSETP || cmd == TIOCSETN)
 			dmfparam(unit);
 	} else switch(cmd) {
 
 	case TIOCSBRK:
 		dmfmctl(dev, DMF_BRK, DMBIS);
 		break;
+
 	case TIOCCBRK:
 		dmfmctl(dev, DMF_BRK, DMBIC);
 		break;
+
 	case TIOCSDTR:
 		dmfmctl(dev, DMF_DTR|DMF_RTS, DMBIS);
 		break;
+
 	case TIOCCDTR:
 		dmfmctl(dev, DMF_DTR|DMF_RTS, DMBIC);
 		break;
+
 	case TIOCMSET:
-		if (copyin(addr, (caddr_t) &temp, sizeof(temp)))
-			u.u_error = EFAULT;
-		else
-			dmfmctl(dev, dmtodmf(temp), DMSET);
+		dmfmctl(dev, dmtodmf(*(int *)data), DMSET);
 		break;
+
 	case TIOCMBIS:
-		if (copyin(addr, (caddr_t) &temp, sizeof(temp)))
-			u.u_error = EFAULT;
-		else
-			dmfmctl(dev, dmtodmf(temp), DMBIS);
+		dmfmctl(dev, dmtodmf(*(int *)data), DMBIS);
 		break;
+
 	case TIOCMBIC:
-		if (copyin(addr, (caddr_t) &temp, sizeof(temp)))
-			u.u_error = EFAULT;
-		else
-			dmfmctl(dev, dmtodmf(temp), DMBIC);
+		dmfmctl(dev, dmtodmf(*(int *)data), DMBIC);
 		break;
+
 	case TIOCMGET:
-		temp = dmftodm(dmfmctl(dev, 0, DMGET));
-		if (copyout((caddr_t) &temp, addr, sizeof(temp)))
-			u.u_error = EFAULT;
+		*(int *)data = dmftodm(dmfmctl(dev, 0, DMGET));
 		break;
+
 	default:
 		u.u_error = ENOTTY;
 	}

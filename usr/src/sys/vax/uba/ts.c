@@ -1,4 +1,4 @@
-/*	ts.c	4.25	82/07/15	*/
+/*	ts.c	4.26	82/08/01	*/
 
 #include "ts.h"
 #if NTS > 0
@@ -20,8 +20,8 @@
 #include "../h/vm.h"
 #include "../h/ubareg.h"
 #include "../h/ubavar.h"
-#include "../h/mtio.h"
 #include "../h/ioctl.h"
+#include "../h/mtio.h"
 #include "../h/cmap.h"
 #include "../h/cpu.h"
 
@@ -769,8 +769,8 @@ tsreset(uban)
 }
 
 /*ARGSUSED*/
-tsioctl(dev, cmd, addr, flag)
-	caddr_t addr;
+tsioctl(dev, cmd, data, flag)
+	caddr_t data;
 	dev_t dev;
 {
 	int tsunit = TSUNIT(dev);
@@ -778,32 +778,34 @@ tsioctl(dev, cmd, addr, flag)
 	register struct buf *bp = &ctsbuf[TSUNIT(dev)];
 	register callcount;
 	int fcount;
-	struct mtop mtop;
-	struct mtget mtget;
+	struct mtop *mtop;
+	struct mtget *mtget;
 	/* we depend of the values and order of the MT codes here */
 	static tsops[] =
 	 {TS_WEOF,TS_SFORWF,TS_SREVF,TS_SFORW,TS_SREV,TS_REW,TS_OFFL,TS_SENSE};
 
 	switch (cmd) {
+
 	case MTIOCTOP:	/* tape operation */
-		if (copyin((caddr_t)addr, (caddr_t)&mtop, sizeof(mtop))) {
-			u.u_error = EFAULT;
-			return;
-		}
-		switch(mtop.mt_op) {
+		mtop = (struct mtop *)data;
+		switch(mtop->mt_op) {
+
 		case MTWEOF:
-			callcount = mtop.mt_count;
+			callcount = mtop->mt_count;
 			fcount = 1;
 			break;
+
 		case MTFSF: case MTBSF:
 		case MTFSR: case MTBSR:
 			callcount = 1;
-			fcount = mtop.mt_count;
+			fcount = mtop->mt_count;
 			break;
+
 		case MTREW: case MTOFFL: case MTNOP:
 			callcount = 1;
 			fcount = 1;
 			break;
+
 		default:
 			u.u_error = ENXIO;
 			return;
@@ -813,8 +815,8 @@ tsioctl(dev, cmd, addr, flag)
 			return;
 		}
 		while (--callcount >= 0) {
-			tscommand(dev, tsops[mtop.mt_op], fcount);
-			if ((mtop.mt_op == MTFSR || mtop.mt_op == MTBSR) &&
+			tscommand(dev, tsops[mtop->mt_op], fcount);
+			if ((mtop->mt_op == MTFSR || mtop->mt_op == MTBSR) &&
 			    bp->b_resid) {
 				u.u_error = EIO;
 				break;
@@ -824,14 +826,15 @@ tsioctl(dev, cmd, addr, flag)
 		}
 		geterror(bp);
 		return;
+
 	case MTIOCGET:
-		mtget.mt_dsreg = 0;
-		mtget.mt_erreg = sc->sc_sts.s_xs0;
-		mtget.mt_resid = sc->sc_resid;
-		mtget.mt_type = MT_ISTS;
-		if (copyout((caddr_t)&mtget, addr, sizeof(mtget)))
-			u.u_error = EFAULT;
+		mtget = (struct mtget *)data;
+		mtget->mt_dsreg = 0;
+		mtget->mt_erreg = sc->sc_sts.s_xs0;
+		mtget->mt_resid = sc->sc_resid;
+		mtget->mt_type = MT_ISTS;
 		return;
+
 	default:
 		u.u_error = ENXIO;
 	}

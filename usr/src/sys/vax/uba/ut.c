@@ -1,4 +1,4 @@
-/*	ut.c	4.14	82/07/15	*/
+/*	ut.c	4.15	82/08/01	*/
 
 #include "tj.h"
 #if NUT > 0
@@ -21,8 +21,8 @@
 #include "../h/pte.h"
 #include "../h/ubareg.h"
 #include "../h/ubavar.h"
-#include "../h/mtio.h"
 #include "../h/ioctl.h"
+#include "../h/mtio.h"
 #include "../h/cmap.h"
 #include "../h/cpu.h"
 
@@ -687,16 +687,16 @@ utphys(dev)
 }
 
 /*ARGSUSED*/
-utioctl(dev, cmd, addr, flag)
+utioctl(dev, cmd, data, flag)
 	dev_t dev;
-	caddr_t addr;
+	caddr_t data;
 {
 	register struct tj_softc *sc = &tj_softc[TJUNIT(dev)];
 	register struct buf *bp = &cutbuf[UTUNIT(dev)];
 	register callcount;
 	int fcount;
-	struct mtop mtop;
-	struct mtget mtget;
+	struct mtop *mtop;
+	struct mtget *mtget;
 	/* we depend of the values and order of the MT codes here */
 	static utops[] =
       {UT_WEOF,UT_SFORWF,UT_SREVF,UT_SFORW,UT_SREV,UT_REW,UT_REWOFFL,UT_SENSE};
@@ -704,21 +704,18 @@ utioctl(dev, cmd, addr, flag)
 	switch (cmd) {
 
 	case MTIOCTOP:
-		if (copyin((caddr_t)addr, (caddr_t)&mtop, sizeof(mtop))) {
-			u.u_error = EFAULT;
-			return;
-		}
-		switch(mtop.mt_op) {
+		mtop = (struct mtop *)data;
+		switch(mtop->mt_op) {
 
 		case MTWEOF:
-			callcount = mtop.mt_count;
+			callcount = mtop->mt_count;
 			fcount = 1;
 			break;
 
 		case MTFSF: case MTBSF:
 		case MTFSR: case MTBSR:
 			callcount = 1;
-			fcount = mtop.mt_count;
+			fcount = mtop->mt_count;
 			break;
 
 		case MTREW: case MTOFFL: case MTNOP:
@@ -735,9 +732,9 @@ utioctl(dev, cmd, addr, flag)
 			return;
 		}
 		while (--callcount >= 0) {
-			utcommand(dev, utops[mtop.mt_op], fcount);
+			utcommand(dev, utops[mtop->mt_op], fcount);
 			/* note this depends on the mtop values */
-			if ((mtop.mt_op >= MTFSF || mtop.mt_op <= MTBSR) &&
+			if ((mtop->mt_op >= MTFSF || mtop->mt_op <= MTBSR) &&
 			    bp->b_resid) {
 				u.u_error = EIO;
 				break;
@@ -749,12 +746,11 @@ utioctl(dev, cmd, addr, flag)
 		return;
 
 	case MTIOCGET:
-		mtget.mt_dsreg = sc->sc_dsreg;
-		mtget.mt_erreg = sc->sc_erreg;
-		mtget.mt_resid = sc->sc_resid;
-		mtget.mt_type = MT_ISUT;
-		if (copyout((caddr_t)&mtget, addr, sizeof(mtget)))
-			u.u_error = EFAULT;
+		mtget = (struct mtget *)data;
+		mtget->mt_dsreg = sc->sc_dsreg;
+		mtget->mt_erreg = sc->sc_erreg;
+		mtget->mt_resid = sc->sc_resid;
+		mtget->mt_type = MT_ISUT;
 		return;
 
 	default:

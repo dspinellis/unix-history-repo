@@ -1,4 +1,4 @@
-/*	ps.c	4.2	82/07/15	*/
+/*	ps.c	4.3	82/08/01	*/
 
 /*
  * Evans and Sutherland Picture System 2 driver
@@ -173,19 +173,21 @@ pswrite(dev)
 }
 
 /*ARGSUSED*/
-psioctl(dev, cmd, addr, flag)
-	register caddr_t addr;
+psioctl(dev, cmd, data, flag)
+	register caddr_t data;
 {
 	register struct uba_device *ui = psdinfo[PSUNIT(dev)];
 	register struct ps *psp = &ps[PSUNIT(dev)];
-	int *waddr = (int *) addr;
+	int *waddr = *(int **)data;
 	int n, arg, i;
 
 	switch (cmd) {
-	case PSGETADDR:
-		(void) suword(addr, ui->ui_addr);
+
+	case PSIOGETADDR:
+		*(caddr_t *)data = ui->ui_addr;
 		break;
-	case PSAUTOREFRESH:
+
+	case PSIOAUTOREFRESH:
 		n = fuword(waddr++);
 		if(n == -1)
 			u.u_error = EFAULT;
@@ -207,7 +209,8 @@ psioctl(dev, cmd, addr, flag)
 			}
 		}
 		break;
-	case PSAUTOMAP:
+
+	case PSIOAUTOMAP:
 		n = fuword(waddr++);
 		if(n == -1)
 			u.u_error = EFAULT;
@@ -234,13 +237,16 @@ psioctl(dev, cmd, addr, flag)
 			}
 		}
 		break;
-	case PSSINGLEREFRESH:
+
+	case PSIOSINGLEREFRESH:
 		psp->ps_refresh.state = SINGLE_STEP_RF;
 		break;
-	case PSSINGLEMAP:
+
+	case PSIOSINGLEMAP:
 		psp->ps_map.state = SINGLE_STEP_MAP;
 		break;
-	case PSDOUBLEBUFFER:
+
+	case PSIODOUBLEBUFFER:
 		if((arg = fuword(waddr++)) == -1)
 			u.u_error = EFAULT;
 		else {
@@ -258,13 +264,16 @@ psioctl(dev, cmd, addr, flag)
 			}
 		}
 		break;
-	case PSSINGLEBUFFER:
+
+	case PSIOSINGLEBUFFER:
 		psp->ps_dbuffer.state = OFF_DB;
 		break;
-	case PSWAITREFRESH:
+
+	case PSIOWAITREFRESH:
 		if(psp->ps_refresh.mode != RUNNING_RF)	/* not running */
 			return;				/* dont wait */
-	case PSSTOPREFRESH:
+
+	case PSSIOTOPREFRESH:
 		if(cmd == PSSTOPREFRESH)
 			psp->ps_refresh.stop = 1;
 		spl5();
@@ -273,10 +282,12 @@ psioctl(dev, cmd, addr, flag)
 			sleep(&psp->ps_refresh.waiting, PSPRI);
 		spl0();
 		break;
-	case PSWAITMAP:
+
+	case PSIOWAITMAP:
 		if(psp->ps_map.mode != RUNNING_MAP)	/* not running */
 			return;				/* dont wait */
-	case PSSTOPMAP:
+
+	case PSIOSTOPMAP:
 		if(cmd == PSSTOPMAP)
 			psp->ps_map.stop = 1;
 		spl5();
@@ -285,6 +296,7 @@ psioctl(dev, cmd, addr, flag)
 			sleep(&psp->ps_map.waiting, PSPRI);
 		spl0();
 		break;
+
 	default:
 		u.u_error = ENOTTY;	/* Not a legal ioctl cmd. */
 		break;
