@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)comsat.c	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)comsat.c	5.25 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -23,13 +23,15 @@ static char sccsid[] = "@(#)comsat.c	5.24 (Berkeley) %G%";
 
 #include <netinet/in.h>
 
-#include <stdio.h>
+#include <signal.h>
 #include <sgtty.h>
 #include <utmp.h>
-#include <signal.h>
 #include <errno.h>
 #include <netdb.h>
 #include <syslog.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
 #include <paths.h>
@@ -41,20 +43,24 @@ int	debug = 0;
 
 char	hostname[MAXHOSTNAMELEN];
 struct	utmp *utmp = NULL;
-time_t	lastmsgtime, time();
+time_t	lastmsgtime;
 int	nutmp, uf;
 
-/* ARGSUSED */
+void jkfprintf __P((FILE *, char[], off_t));
+void mailfor __P((char *));
+void notify __P((struct utmp *, off_t));
+void onalrm __P((int));
+void reapchildren __P((int));
+
+int
 main(argc, argv)
 	int argc;
-	char **argv;
+	char *argv[];
 {
-	extern int errno;
-	register int cc;
-	char msgbuf[100];
 	struct sockaddr_in from;
+	register int cc;
 	int fromlen;
-	void onalrm(), reapchildren();
+	char msgbuf[100];
 
 	/* verify proper invocation */
 	fromlen = sizeof(from);
@@ -75,7 +81,7 @@ main(argc, argv)
 	}
 	(void)time(&lastmsgtime);
 	(void)gethostname(hostname, sizeof(hostname));
-	onalrm();
+	onalrm(0);
 	(void)signal(SIGALRM, onalrm);
 	(void)signal(SIGTTOU, SIG_IGN);
 	(void)signal(SIGCHLD, reapchildren);
@@ -98,21 +104,21 @@ main(argc, argv)
 }
 
 void
-reapchildren()
+reapchildren(signo)
+	int signo;
 {
-	while (wait3((int *)NULL, WNOHANG, (struct rusage *)NULL) > 0);
+	while (wait3(NULL, WNOHANG, NULL) > 0);
 }
 
 void
-onalrm()
+onalrm(signo)
+	int signo;
 {
 	static u_int utmpsize;		/* last malloced size for utmp */
 	static u_int utmpmtime;		/* last modification time for utmp */
 	struct stat statbf;
-	off_t lseek();
-	char *malloc(), *realloc();
 
-	if (time((time_t *)NULL) - lastmsgtime >= MAXIDLE)
+	if (time(NULL) - lastmsgtime >= MAXIDLE)
 		exit(0);
 	(void)alarm((u_int)15);
 	(void)fstat(uf, &statbf);
@@ -120,20 +126,17 @@ onalrm()
 		utmpmtime = statbf.st_mtime;
 		if (statbf.st_size > utmpsize) {
 			utmpsize = statbf.st_size + 10 * sizeof(struct utmp);
-			if (utmp)
-				utmp = (struct utmp *)realloc((char *)utmp, utmpsize);
-			else
-				utmp = (struct utmp *)malloc(utmpsize);
-			if (!utmp) {
-				syslog(LOG_ERR, "malloc failed");
+			if ((utmp = realloc(utmp, utmpsize)) == NULL) {
+				syslog(LOG_ERR, "%s", strerror(errno));
 				exit(1);
 			}
 		}
-		(void)lseek(uf, 0L, L_SET);
+		(void)lseek(uf, (off_t)0, L_SET);
 		nutmp = read(uf, utmp, (int)statbf.st_size)/sizeof(struct utmp);
 	}
 }
 
+void
 mailfor(name)
 	char *name;
 {
@@ -152,6 +155,7 @@ mailfor(name)
 
 static char *cr;
 
+void
 notify(utp, offset)
 	register struct utmp *utp;
 	off_t offset;
@@ -174,7 +178,7 @@ notify(utp, offset)
 	(void)signal(SIGALRM, SIG_DFL);
 	(void)alarm((u_int)30);
 	if ((tp = fopen(tty, "w")) == NULL) {
-		dsyslog(LOG_ERR, "fopen of tty %s failed", tty);
+		dsyslog(LOG_ERR, "%s: %s", tty, strerror(errno));
 		_exit(-1);
 	}
 	(void)ioctl(fileno(tp), TIOCGETP, &gttybuf);
@@ -189,6 +193,7 @@ notify(utp, offset)
 	_exit(0);
 }
 
+void
 jkfprintf(tp, name, offset)
 	register FILE *tp;
 	char name[];
