@@ -17,6 +17,16 @@ static char sccsid[] = "@(#)jot.c	4.2	(Berkeley)	%G%";
 #define	ENDER_DEF	100
 #define	STEP_DEF	1
 
+#define BSD4_2		1
+#if BSD4_2
+#define RAND		random
+#define SRAND		srandom
+long RAND();
+#else
+#define RAND		rand
+#define SRAND		srand
+#endif
+
 #define	isdefault(s)	(strcmp((s), "-") == 0)
 #define	LARGESTINT	(~ (unsigned) 0 >> 1)
 #define	CASE		break; case
@@ -30,6 +40,7 @@ int	boring;
 int	prec;
 int	dox;
 int	chardata;
+int	nofinalnl;
 
 long	reps;
 double	begin;
@@ -50,16 +61,17 @@ char	**argv;
 	getargs(argc, argv);
 	if (randomize) {
 		*x = (ender - begin) * (ender > begin ? 1 : -1);
-		srand((int) s);
+		SRAND((int) s);
 		for (*i = 1; *i <= reps || infinity; (*i)++) {
-			*y = (double) rand() / LARGESTINT;
+			*y = (double) RAND() / LARGESTINT;
 			putdata(*y * *x + begin, reps - *i);
 		}
 	}
 	else
 		for (*i = 1, *x = begin; *i <= reps || infinity; (*i)++, *x += s)
 			putdata(*x, reps - *i);
-	putchar('\n');
+	if (!nofinalnl)
+		putchar('\n');
 }
 
 getargs(ac, av)
@@ -76,6 +88,9 @@ char	**av;
 			break;
 		case 'c':
 			chardata = 1;
+			break;
+		case 'n':
+			nofinalnl = 1;
 			break;
 		case 'b':
 			boring = 1;
@@ -263,9 +278,10 @@ char	*s;
 	fprintf(stderr, msg, s);
 	fprintf(stderr, "\nUsage:  jot [ options ] [ reps [ begin [ end [ s ] ] ] ]\n");
 	if (strncmp("jot - ", msg, 6) == 0)
-		fprintf(stderr, "Options:\n\t%s\t%s\t%s\t%s\t%s",
+		fprintf(stderr, "Options:\n\t%s\t%s\t%s\t%s\t%s\t%s",
 			"-r		random data\n",
 			"-c		character data\n",
+			"-n		no final newline\n",
 			"-b word		repeated word\n",
 			"-w word		context word\n",
 			"-s string	data separator\n",
