@@ -51,8 +51,8 @@ ENTRY(brk)
 #ifdef PIC
         movl    4(%esp),%eax
         PIC_PROLOGUE
-        movl    %edx,PIC_GOT(curbrk)    # set up GOT addressing
-        movl    %ecx,PIC_GOT(minbrk)    #
+	movl	PIC_GOT(curbrk),%edx	# set up GOT addressing
+	movl	PIC_GOT(minbrk),%ecx	#
         cmpl    %eax,(%ecx)
         PIC_EPILOGUE
         jl      ok
