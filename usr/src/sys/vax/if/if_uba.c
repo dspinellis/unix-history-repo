@@ -1,25 +1,15 @@
 /*
- * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1982, 1986 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
  *
- * Redistribution and use in source and binary forms are permitted
- * provided that the above copyright notice and this paragraph are
- * duplicated in all such forms and that any documentation,
- * advertising materials, and other materials related to such
- * distribution and use acknowledge that the software was developed
- * by the University of California, Berkeley.  The name of the
- * University may not be used to endorse or promote products derived
- * from this software without specific prior written permission.
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
- *
- *	@(#)if_uba.c	7.11 (Berkeley) %G%
+ *	@(#)if_uba.c	7.5.1.2 (Berkeley) %G%
  */
+
+#include "../machine/pte.h"
 
 #include "param.h"
 #include "systm.h"
-#include "malloc.h"
 #include "mbuf.h"
 #include "map.h"
 #include "buf.h"
@@ -30,7 +20,6 @@
 
 #include "../net/if.h"
 
-#include "../vax/pte.h"
 #include "../vax/mtpr.h"
 #include "if_uba.h"
 #include "../vaxuba/ubareg.h"
@@ -58,36 +47,34 @@ if_ubaminit(ifu, uban, hlen, nmr, ifr, nr, ifw, nw)
 {
 	register caddr_t p;
 	caddr_t cp;
-	int i, nclbytes, off;
+	int i, ncl, off;
 
 	if (hlen)
-		off = MCLBYTES - hlen;
+		off = CLBYTES - hlen;
 	else
 		off = 0;
-	nclbytes = roundup(nmr * NBPG, MCLBYTES);
+	ncl = clrnd(nmr) / CLSIZE;
 	if (hlen)
-		nclbytes += MCLBYTES;
+		ncl++;
 	if (ifr[0].ifrw_addr)
 		cp = ifr[0].ifrw_addr - off;
 	else {
-		cp = (caddr_t)malloc((u_long)((nr + nw) * nclbytes), M_DEVBUF,
-		    M_NOWAIT);
+		cp = m_clalloc((nr + nw) * ncl, MPG_SPACE, M_DONTWAIT);
 		if (cp == 0)
 			return (0);
 		p = cp;
 		for (i = 0; i < nr; i++) {
 			ifr[i].ifrw_addr = p + off;
-			p += nclbytes;
+			p += ncl * CLBYTES;
 		}
 		for (i = 0; i < nw; i++) {
 			ifw[i].ifw_base = p;
 			ifw[i].ifw_addr = p + off;
-			p += nclbytes;
+			p += ncl * CLBYTES;
 		}
 		ifu->iff_hlen = hlen;
 		ifu->iff_uban = uban;
 		ifu->iff_uba = uba_hd[uban].uh_uba;
-		ifu->iff_ubamr = uba_hd[uban].uh_mr;
 	}
 	for (i = 0; i < nr; i++)
 		if (if_ubaalloc(ifu, &ifr[i], nmr) == 0) {
@@ -113,7 +100,7 @@ bad:
 		ubarelse(ifu->iff_uban, &ifw[nw].ifw_info);
 	while (--nr >= 0)
 		ubarelse(ifu->iff_uban, &ifr[nr].ifrw_info);
-	free(cp, M_DEVBUF);
+	m_pgfree(cp, (nr + nw) * ncl);
 	ifr[0].ifrw_addr = 0;
 	return (0);
 }
@@ -139,7 +126,8 @@ if_ubaalloc(ifu, ifrw, nmr)
 	ifrw->ifrw_info = info;
 	ifrw->ifrw_bdp = UBAI_BDP(info);
 	ifrw->ifrw_proto = UBAMR_MRV | (UBAI_BDP(info) << UBAMR_DPSHIFT);
-	ifrw->ifrw_mr = &ifu->iff_ubamr[UBAI_MR(info) + (ifu->iff_hlen? 1 : 0)];
+	ifrw->ifrw_mr = &ifu->iff_uba->uba_map[UBAI_MR(info) + (ifu->iff_hlen?
+		1 : 0)];
 	return (1);
 }
 
@@ -168,19 +156,15 @@ if_ubaget(ifu, ifr, totlen, off0, ifp)
 {
 	struct mbuf *top, **mp;
 	register struct mbuf *m;
+	int off = off0, len;
 	register caddr_t cp = ifr->ifrw_addr + ifu->iff_hlen, pp;
-	register int len, off = off0;
 
 	top = 0;
 	mp = &top;
 	if (ifr->ifrw_flags & IFRW_W)
 		rcv_xmtbuf((struct ifxmt *)ifr);
 	while (totlen > 0) {
-		if (top == 0) {
-			MGETHDR(m, M_DONTWAIT, MT_DATA);
-		} else {
-			MGET(m, M_DONTWAIT, MT_DATA);
-		}
+		MGET(m, M_DONTWAIT, MT_DATA);
 		if (m == 0) {
 			m_freem(top);
 			top = 0;
@@ -191,21 +175,23 @@ if_ubaget(ifu, ifr, totlen, off0, ifp)
 			cp = ifr->ifrw_addr + ifu->iff_hlen + off;
 		} else
 			len = totlen;
-		if (top == 0) {
-			m->m_pkthdr.rcvif = ifp;
-			m->m_pkthdr.len = totlen; /* should subtract trailer */
-			m->m_len = MHLEN;
-		} else
-			m->m_len = MLEN;
-		if (len >= MINCLSIZE) {
+		if (len >= CLBYTES/2) {
 			struct pte *cpte, *ppte;
 			int x, *ip, i;
 
-			MCLGET(m, M_DONTWAIT);
-			if ((m->m_flags & M_EXT) == 0)
+			/*
+			 * If doing the first mbuf and
+			 * the interface pointer hasn't been put in,
+			 * put it in a separate mbuf to preserve alignment.
+			 */
+			if (ifp) {
+				len = 0;
 				goto nopage;
-			len = MIN(len, MCLBYTES);
-			m->m_len = len;
+			}
+			MCLGET(m);
+			if (m->m_len != CLBYTES)
+				goto nopage;
+			m->m_len = MIN(len, CLBYTES);
 			if (!claligned(cp))
 				goto copy;
 
@@ -214,15 +200,16 @@ if_ubaget(ifu, ifr, totlen, off0, ifp)
 			 * as quick form of copy.  Remap UNIBUS and invalidate.
 			 */
 			pp = mtod(m, char *);
-			cpte = kvtopte(cp);
-			ppte = kvtopte(pp);
+			cpte = &Mbmap[mtocl(cp)*CLSIZE];
+			ppte = &Mbmap[mtocl(pp)*CLSIZE];
 			x = btop(cp - ifr->ifrw_addr);
 			ip = (int *)&ifr->ifrw_mr[x];
-			for (i = 0; i < MCLBYTES/NBPG; i++) {
+			for (i = 0; i < CLSIZE; i++) {
 				struct pte t;
 				t = *ppte; *ppte++ = *cpte; *cpte = t;
-				*ip++ = cpte++->pg_pfnum|ifr->ifrw_proto;
-			/*	mtpr(TBIS, cp); */
+				*ip++ =
+				    cpte++->pg_pfnum|ifr->ifrw_proto;
+				mtpr(TBIS, cp);
 				cp += NBPG;
 				mtpr(TBIS, (caddr_t)pp);
 				pp += NBPG;
@@ -230,31 +217,40 @@ if_ubaget(ifu, ifr, totlen, off0, ifp)
 			goto nocopy;
 		}
 nopage:
-		if (len < m->m_len) {
+		m->m_off = MMINOFF;
+		if (ifp) {
 			/*
-			 * Place initial small packet/header at end of mbuf.
+			 * Leave room for ifp.
 			 */
-			if (top == 0 && len + max_linkhdr <= m->m_len)
-				m->m_data += max_linkhdr;
-			m->m_len = len;
-		} else
-			len = m->m_len;
+			m->m_len = MIN(MLEN - sizeof(ifp), len);
+			m->m_off += sizeof(ifp);
+		} else 
+			m->m_len = MIN(MLEN, len);
 copy:
-		bcopy(cp, mtod(m, caddr_t), (unsigned)len);
-		cp += len;
+		bcopy(cp, mtod(m, caddr_t), (unsigned)m->m_len);
+		cp += m->m_len;
 nocopy:
 		*mp = m;
 		mp = &m->m_next;
 		if (off) {
 			/* sort of an ALGOL-W style for statement... */
-			off += len;
+			off += m->m_len;
 			if (off == totlen) {
 				cp = ifr->ifrw_addr + ifu->iff_hlen;
 				off = 0;
 				totlen = off0;
 			}
 		} else
-			totlen -= len;
+			totlen -= m->m_len;
+		if (ifp) {
+			/*
+			 * Prepend interface pointer to first mbuf.
+			 */
+			m->m_len += sizeof(ifp);
+			m->m_off -= sizeof(ifp);
+			*(mtod(m, struct ifnet **)) = ifp;
+			ifp = (struct ifnet *)0;
+		}
 	}
 out:
 	if (ifr->ifrw_flags & IFRW_W)
@@ -280,7 +276,7 @@ rcv_xmtbuf(ifw)
 	char *cp;
 
 	while (i = ffs((long)ifw->ifw_xswapd)) {
-		cp = ifw->ifw_base + i * MCLBYTES;
+		cp = ifw->ifw_base + i * CLBYTES;
 		i--;
 		ifw->ifw_xswapd &= ~(1<<i);
 		mprev = &ifw->ifw_xtofree;
@@ -288,7 +284,7 @@ rcv_xmtbuf(ifw)
 			mprev = &m->m_next;
 		if (m == NULL)
 			break;
-		bcopy(mtod(m, caddr_t), cp, MCLBYTES);
+		bcopy(mtod(m, caddr_t), cp, CLBYTES);
 		(void) m_free(m);
 		*mprev = NULL;
 	}
@@ -333,16 +329,15 @@ if_ubaput(ifu, ifw, m)
 	while (m) {
 		dp = mtod(m, char *);
 		if (claligned(cp) && claligned(dp) &&
-		    (m->m_len == MCLBYTES || m->m_next == (struct mbuf *)0)) {
-			struct pte *pte;
-			int *ip;
-
-			pte = kvtopte(dp);
+		    (m->m_len == CLBYTES || m->m_next == (struct mbuf *)0)) {
+			struct pte *pte; int *ip;
+			pte = &Mbmap[mtocl(dp)*CLSIZE];
 			x = btop(cp - ifw->ifw_addr);
 			ip = (int *)&ifw->ifw_mr[x];
-			for (i = 0; i < MCLBYTES/NBPG; i++)
-				*ip++ = ifw->ifw_proto | pte++->pg_pfnum;
-			xswapd |= 1 << (x>>(MCLSHIFT-PGSHIFT));
+			for (i = 0; i < CLSIZE; i++)
+				*ip++ =
+				    ifw->ifw_proto | pte++->pg_pfnum;
+			xswapd |= 1 << (x>>(CLSHIFT-PGSHIFT));
 			mp = m->m_next;
 			m->m_next = ifw->ifw_xtofree;
 			ifw->ifw_xtofree = m;
@@ -363,15 +358,15 @@ if_ubaput(ifu, ifw, m)
 	 * should be unmapped so original pages will be accessed by the device.
 	 */
 	cc = cp - ifw->ifw_addr;
-	x = ((cc - ifu->iff_hlen) + MCLBYTES - 1) >> MCLSHIFT;
+	x = ((cc - ifu->iff_hlen) + CLBYTES - 1) >> CLSHIFT;
 	ifw->ifw_xswapd &= ~xswapd;
 	while (i = ffs((long)ifw->ifw_xswapd)) {
 		i--;
 		if (i >= x)
 			break;
 		ifw->ifw_xswapd &= ~(1<<i);
-		i *= MCLBYTES/NBPG;
-		for (t = 0; t < MCLBYTES/NBPG; t++) {
+		i *= CLSIZE;
+		for (t = 0; t < CLSIZE; t++) {
 			ifw->ifw_mr[i] = ifw->ifw_wmap[i];
 			i++;
 		}
