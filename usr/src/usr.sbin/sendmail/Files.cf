@@ -1,4 +1,4 @@
-#	@(#)Files.cf	8.8 (Berkeley) %G%
+#	@(#)Files.cf	8.9 (Berkeley) %G%
 cf/README
 cf/cf/Makefile
 cf/cf/Makefile.dist
@@ -50,6 +50,7 @@ cf/feature/notsticky.m4
 cf/feature/nouucp.m4
 cf/feature/nullclient.m4
 cf/feature/redirect.m4
+cf/feature/smrsh.m4
 cf/feature/stickyhost.m4
 cf/feature/use_cw_file.m4
 cf/feature/uucpdomain.m4

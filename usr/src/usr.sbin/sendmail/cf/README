@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.45 (Berkeley) %G%
+		@(#)README	8.46 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -462,6 +462,14 @@ bestmx_is_local	Accept mail as though locally addressed for any host that
 		lists us as the best possible MX record.  This generates
 		additional DNS traffic, but should be OK for low to
 		medium traffic hosts.
+
+smrsh		Use the SendMail Restricted SHell (smrsh) provided
+		with the distribution instead of /bin/sh for mailing
+		to programs.  This improves the ability of the local
+		system administrator to control what gets run via
+		e-mail.  If an argument is provided it is used as the
+		pathname to smrsh; otherwise, /usr/local/etc/smrsh is
+		assumed.
 
 
 +-------+
