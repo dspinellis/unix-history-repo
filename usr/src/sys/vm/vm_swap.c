@@ -1,4 +1,4 @@
-/*	vm_swap.c	6.1	83/07/29	*/
+/*	vm_swap.c	6.2	84/07/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -10,7 +10,6 @@
 #include "../h/map.h"
 #include "../h/uio.h"
 #include "../h/file.h"
-#include "../h/nami.h"
 
 struct	buf rswbuf;
 /*
@@ -83,12 +82,16 @@ swapon()
 {
 	struct a {
 		char	*name;
-	};
+	} *uap = (struct a *)u.u_ap;
 	register struct inode *ip;
 	dev_t dev;
 	register struct swdevt *sp;
+	register struct nameidata *ndp = &u.u_nd;
 
-	ip = namei(uchar, LOOKUP, 1);
+	ndp->ni_nameiop = LOOKUP | FOLLOW;
+	ndp->ni_segflg = UIO_USERSPACE;
+	ndp->ni_dirp = uap->name;
+	ip = namei(ndp);
 	if (ip == NULL)
 		return;
 	if ((ip->i_mode&IFMT) != IFBLK) {

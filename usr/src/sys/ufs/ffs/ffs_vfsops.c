@@ -1,4 +1,4 @@
-/*	ffs_vfsops.c	6.4	84/06/26	*/
+/*	ffs_vfsops.c	6.5	84/07/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -10,7 +10,6 @@
 #include "../h/buf.h"
 #include "../h/mount.h"
 #include "../h/file.h"
-#include "../h/nami.h"
 #include "../h/conf.h"
 
 smount()
@@ -19,18 +18,20 @@ smount()
 		char	*fspec;
 		char	*freg;
 		int	ronly;
-	} *uap;
+	} *uap = (struct a *)u.u_ap;
 	dev_t dev;
 	register struct inode *ip;
 	register struct fs *fs;
 	register char *cp;
+	register struct nameidata *ndp = &u.u_nd;
 
-	uap = (struct a *)u.u_ap;
-	u.u_error = getmdev(&dev);
+	u.u_error = getmdev(&dev, uap->fspec);
 	if (u.u_error)
 		return;
-	u.u_dirp = (caddr_t)uap->freg;
-	ip = namei(uchar, LOOKUP | NOCACHE, 1);
+	ndp->ni_nameiop = LOOKUP | NOCACHE | FOLLOW;
+	ndp->ni_segflg = UIO_USERSPACE;
+	ndp->ni_dirp = (caddr_t)uap->freg;
+	ip = namei(ndp);
 	if (ip == NULL)
 		return;
 	if (ip->i_count!=1 || (ip->i_mode&IFMT) != IFDIR) {
@@ -41,11 +42,8 @@ smount()
 	fs = mountfs(dev, uap->ronly, ip);
 	if (fs == 0)
 		return;
-	u.u_dirp = uap->freg;
-	for (cp = fs->fs_fsmnt; cp < &fs->fs_fsmnt[sizeof(fs->fs_fsmnt) - 2]; )
-		if ((*cp++ = uchar()) == 0)
-			u.u_dirp--;		/* get 0 again */
-	*cp = 0;
+	bzero(fs->fs_fsmnt, sizeof(fs->fs_fsmnt));
+	copyinstr(uap->freg, fs->fs_fsmnt, sizeof(fs->fs_fsmnt));
 }
 
 /* this routine has races if running twice */
@@ -149,12 +147,13 @@ umount()
 {
 	struct a {
 		char	*fspec;
-	};
+	} *uap = (struct a *)u.u_ap;
 
-	u.u_error = unmount1(0);
+	u.u_error = unmount1(uap->fspec, 0);
 }
 
-unmount1(forcibly)
+unmount1(fname, forcibly)
+	caddr_t fname;
 	int forcibly;
 {
 	dev_t dev;
@@ -163,7 +162,7 @@ unmount1(forcibly)
 	register struct inode *ip;
 	register struct fs *fs;
 
-	error = getmdev(&dev);
+	error = getmdev(&dev, fname);
 	if (error)
 		return (error);
 	for (mp = &mount[0]; mp < &mount[NMOUNT]; mp++)
@@ -237,15 +236,20 @@ sbupdate(mp)
  * Check that the user's argument is a reasonable
  * thing on which to mount, and return the device number if so.
  */
-getmdev(pdev)
+getmdev(pdev, fname)
+	caddr_t fname;
 	dev_t *pdev;
 {
 	dev_t dev;
 	register struct inode *ip;
+	register struct nameidata *ndp = &u.u_nd;
 
 	if (!suser())
 		return (u.u_error);
-	ip = namei(uchar, LOOKUP, 1);
+	ndp->ni_nameiop = LOOKUP | FOLLOW;
+	ndp->ni_segflg = UIO_USERSPACE;
+	ndp->ni_dirp = fname;
+	ip = namei(ndp);
 	if (ip == NULL)
 		return (u.u_error);
 	if ((ip->i_mode&IFMT) != IFBLK) {

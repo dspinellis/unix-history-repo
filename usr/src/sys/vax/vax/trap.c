@@ -1,4 +1,4 @@
-/*	trap.c	6.2	84/06/10	*/
+/*	trap.c	6.3	84/07/08	*/
 
 #include "../machine/psl.h"
 #include "../machine/reg.h"
@@ -218,7 +218,6 @@ asm("ok:");						/* GROT */
 #endif
 	}
 	u.u_ap = u.u_arg;
-	u.u_dirp = (caddr_t)u.u_arg[0];
 	u.u_r.r_val1 = 0;
 	u.u_r.r_val2 = locr0[R1];
 	if (setjmp(&u.u_qsave)) {

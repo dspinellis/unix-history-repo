@@ -1,4 +1,4 @@
-/*	kern_proc.c	6.2	84/05/22	*/
+/*	kern_proc.c	6.3	84/07/08	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -22,7 +22,6 @@
 #include "../h/quota.h"
 #include "../h/uio.h"
 #include "../h/mbuf.h"
-#include "../h/nami.h"
 
 spgrp(top, npgrp)
 	register struct proc *top;

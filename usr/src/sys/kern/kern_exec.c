@@ -1,4 +1,4 @@
-/*	kern_exec.c	6.2	83/08/23	*/
+/*	kern_exec.c	6.3	84/07/08	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -18,7 +18,6 @@
 #include "../h/text.h"
 #include "../h/file.h"
 #include "../h/uio.h"
-#include "../h/nami.h"
 #include "../h/acct.h"
 
 #ifdef vax
@@ -53,9 +52,13 @@ execve()
 	swblk_t bno;
 	char cfname[MAXCOMLEN + 1];
 	char cfarg[SHSIZE];
+	register struct nameidata *ndp = &u.u_nd;
 	int resid;
 
-	if ((ip = namei(uchar, LOOKUP, 1)) == NULL)
+	ndp->ni_nameiop = LOOKUP | FOLLOW;
+	ndp->ni_segflg = UIO_USERSPACE;
+	ndp->ni_dirp = ((struct execa *)u.u_ap)->fname;
+	if ((ip = namei(ndp)) == NULL)
 		return;
 	bno = 0;
 	bp = 0;
@@ -97,9 +100,8 @@ execve()
 	    0, 1, &resid);
 	if (u.u_error)
 		goto bad;
-	u.u_count = resid;
 #ifndef lint
-	if (u.u_count > sizeof(u.u_exdata) - sizeof(u.u_exdata.Ux_A) &&
+	if (resid > sizeof(u.u_exdata) - sizeof(u.u_exdata.Ux_A) &&
 	    u.u_exdata.ux_shell[0] != '#') {
 		u.u_error = ENOEXEC;
 		goto bad;
@@ -144,7 +146,7 @@ execve()
 		cp = &u.u_exdata.ux_shell[2];
 		while (*cp == ' ')
 			cp++;
-		u.u_dirp = cp;
+		ndp->ni_dirp = cp;
 		while (*cp && *cp != ' ')
 			cp++;
 		sharg = NULL;
@@ -157,14 +159,16 @@ execve()
 				sharg = cfarg;
 			}
 		}
-		if (u.u_dent.d_namlen > MAXCOMLEN)
-			u.u_dent.d_namlen = MAXCOMLEN;
-		bcopy((caddr_t)u.u_dent.d_name, (caddr_t)cfname,
-		    (unsigned)(u.u_dent.d_namlen + 1));
+		if (ndp->ni_dent.d_namlen > MAXCOMLEN)
+			ndp->ni_dent.d_namlen = MAXCOMLEN;
+		bcopy((caddr_t)ndp->ni_dent.d_name, (caddr_t)cfname,
+		    (unsigned)(ndp->ni_dent.d_namlen + 1));
 		cfname[MAXCOMLEN] = 0;
 		indir = 1;
 		iput(ip);
-		ip = namei(schar, LOOKUP, 1);
+		ndp->ni_nameiop = LOOKUP | FOLLOW;
+		ndp->ni_segflg = UIO_SYSSPACE;
+		ip = namei(ndp);
 		if (ip == NULL)
 			return;
 		goto again;
@@ -232,9 +236,9 @@ execve()
 	bp = 0;
 	nc = (nc + NBPW-1) & ~(NBPW-1);
 	if (indir) {
-		u.u_dent.d_namlen = strlen(cfname);
-		bcopy((caddr_t)cfname, (caddr_t)u.u_dent.d_name,
-		    (unsigned)(u.u_dent.d_namlen + 1));
+		ndp->ni_dent.d_namlen = strlen(cfname);
+		bcopy((caddr_t)cfname, (caddr_t)ndp->ni_dent.d_name,
+		    (unsigned)(ndp->ni_dent.d_namlen + 1));
 	}
 	getxfile(ip, nc + (na+4)*NBPW, uid, gid);
 	if (u.u_error) {
@@ -284,6 +288,12 @@ badarg:
 	}
 	(void) suword((caddr_t)ap, 0);
 	setregs();
+	/*
+	 * Remember file name for accounting.
+	 */
+	u.u_acflag &= ~AFORK;
+	bcopy((caddr_t)ndp->ni_dent.d_name, (caddr_t)u.u_comm,
+	    (unsigned)(ndp->ni_dent.d_namlen + 1));
 bad:
 	if (bp)
 		brelse(bp);
@@ -432,11 +442,4 @@ setregs()
 		}
 		u.u_pofile[i] &= ~UF_MAPPED;
 	}
-
-	/*
-	 * Remember file name for accounting.
-	 */
-	u.u_acflag &= ~AFORK;
-	bcopy((caddr_t)u.u_dent.d_name, (caddr_t)u.u_comm,
-	    (unsigned)(u.u_dent.d_namlen + 1));
 }
