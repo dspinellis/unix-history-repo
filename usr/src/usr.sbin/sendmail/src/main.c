@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.10	%G%";
+static char	SccsId[] = "@(#)main.c	3.11	%G%";
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -404,54 +404,8 @@ main(argc, argv)
 	if (from == NULL)
 		from = p;
 
-	/*
-	**  Figure out who to claim it's coming from.
-	**	Under certain circumstances allow the user to say who
-	**	s/he is (using -f or -r).  These are:
-	**	1.  The user's uid is zero (root).
-	**	2.  The user's login name is "network" (mail from
-	**	    a network server).
-	**	3.  The user's login name is "uucp" (mail from the
-	**	    uucp network).
-	**	4.  The address the user is trying to claim has a
-	**	    "!" character in it (since #3 doesn't do it for
-	**	    us if we are dialing out).
-	**	A better check to replace #3 & #4 would be if the
-	**	effective uid is "UUCP" -- this would require me
-	**	to rewrite getpwent to "grab" uucp as it went by,
-	**	make getname more nasty, do another passwd file
-	**	scan, or compile the UID of "UUCP" into the code,
-	**	all of which are reprehensible.
-	**
-	**	Assuming all of these fail, we figure out something
-	**	ourselves.
-	*/
+	setfrom(from, realname);
 
-
-	canrename = TRUE;
-	if (strcmp(locname, "network") != 0 && strcmp(locname, "uucp") != 0 &&
-	    getuid() != 0 && from != NULL && index(from, '!') == NULL)
-	{
-		canrename = FALSE;
-		from = NULL;
-	}
-
-	if (from == NULL)
-		from = newstr(realname);
-
-	SuprErrs = TRUE;
-	if (parse(from, &From, 0) == NULL)
-	{
-		/* too many arpanet hosts generate garbage From addresses ....
-		syserr("Bad from address `%s'", from);
-		.... so we will just ignore this address */
-		from = p;
-		parse(from, &From, 0);
-		FromFlag = FALSE;
-	}
-	SuprErrs = FALSE;
-
-	define('f', From.q_paddr);
 	expand("$l", FromLine, &FromLine[sizeof FromLine - 1]);
 # ifdef DEBUG
 	if (Debug)
@@ -540,6 +494,88 @@ main(argc, argv)
 	*/
 
 	finis();
+}
+/*
+**  SETFROM -- set the person who this message is from
+**
+**	Under certain circumstances allow the user to say who
+**	s/he is (using -f or -r).  These are:
+**	1.  The user's uid is zero (root).
+**	2.  The user's login name is "network" (mail from
+**	    a network server).
+**	3.  The user's login name is "uucp" (mail from the
+**	    uucp network).
+**	4.  The address the user is trying to claim has a
+**	    "!" character in it (since #3 doesn't do it for
+**	    us if we are dialing out).
+**	A better check to replace #3 & #4 would be if the
+**	effective uid is "UUCP" -- this would require me
+**	to rewrite getpwent to "grab" uucp as it went by,
+**	make getname more nasty, do another passwd file
+**	scan, or compile the UID of "UUCP" into the code,
+**	all of which are reprehensible.
+**
+**	Assuming all of these fail, we figure out something
+**	ourselves.
+**
+**	Parameters:
+**		from -- the person it is from.
+**		realname -- the actual person executing sendmail.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		sets sendmail's notion of who the from person is.
+*/
+
+setfrom(from, realname)
+	char *from;
+	char *realname;
+{
+	register char **pvp;
+	char frombuf[MAXNAME];
+	extern char **prescan();
+	extern char *index();
+
+	if (from != NULL)
+	{
+		if (strcmp(realname, "network") != 0 && strcmp(realname, "uucp") != 0 &&
+		    index(from, '!') == NULL && getuid() != 0)
+		{
+			/* network sends -r regardless (why why why?) */
+			/* syserr("%s, you cannot use the -f flag", realname); */
+			from = NULL;
+		}
+	}
+
+	SuprErrs = TRUE;
+	if (from == NULL || parse(from, &From, 0) == NULL)
+	{
+		from = newstr(realname);
+		parse(from, &From, 0);
+	}
+	else
+		FromFlag = TRUE;
+	SuprErrs = FALSE;
+
+	/*
+	**  Rewrite the from person to dispose of possible implicit
+	**	links in the net.
+	*/
+
+	pvp = prescan(from, '\0');
+	if (pvp == NULL)
+	{
+		syserr("cannot prescan from (%s)", from);
+		finis();
+	}
+	rewrite(pvp, 1);
+	frombuf[0] = '\0';
+	while (*pvp != NULL)
+		strcat(frombuf, *pvp++);
+
+	define('f', newstr(frombuf));
 }
 /*
 **  FINIS -- Clean up and exit.

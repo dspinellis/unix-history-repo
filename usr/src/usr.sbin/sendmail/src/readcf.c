@@ -2,7 +2,7 @@
 # include "sendmail.h"
 # include <ctype.h>
 
-static char SccsId[] = "@(#)readcf.c	3.4	%G%";
+static char SccsId[] = "@(#)readcf.c	3.5	%G%";
 
 /*
 **  READCF -- read control file.
@@ -20,7 +20,7 @@ static char SccsId[] = "@(#)readcf.c	3.4	%G%";
 **		Builds several internal tables.
 */
 
-struct rewrite	*RewriteRules;
+struct rewrite	*RewriteRules[10];
 
 
 readcf(cfname)
@@ -36,6 +36,7 @@ readcf(cfname)
 	extern char *rindex();
 	extern char *newstr();
 	int class;
+	int ruleset = 0;
 
 	cf = fopen(cfname, "r");
 	if (cf == NULL)
@@ -68,7 +69,10 @@ readcf(cfname)
 			else
 			{
 				if (rwp == NULL)
-					RewriteRules = rwp = (struct rewrite *) xalloc(sizeof *rwp);
+				{
+					RewriteRules[ruleset] = rwp =
+						(struct rewrite *) xalloc(sizeof *rwp);
+				}
 				else
 				{
 					rwp->r_next = (struct rewrite *) xalloc(sizeof *rwp);
@@ -85,6 +89,11 @@ readcf(cfname)
 				if (rwp->r_rhs != NULL)
 					rwp->r_rhs = copyplist(rwp->r_rhs, TRUE);
 			}
+			break;
+
+		  case 'S':		/* select rewriting set */
+			ruleset = atoi(&buf[1]);
+			rwp = NULL;
 			break;
 
 		  case 'D':		/* macro definition */
@@ -249,23 +258,31 @@ rwcrack(l)
 printrules()
 {
 	register struct rewrite *rwp;
+	register int ruleset;
 
-	for (rwp = RewriteRules; rwp != NULL; rwp = rwp->r_next)
+	for (ruleset = 0; ruleset < 10; ruleset++)
 	{
-		register char **av;
+		if (RewriteRules[ruleset] == NULL)
+			continue;
+		printf("\n----Rule Set %d:\n", ruleset);
 
-		printf("\n");
-		for (av = rwp->r_lhs; *av != NULL; av++)
+		for (rwp = RewriteRules[ruleset]; rwp != NULL; rwp = rwp->r_next)
 		{
-			xputs(*av);
-			putchar('_');
+			register char **av;
+
+			printf("\n");
+			for (av = rwp->r_lhs; *av != NULL; av++)
+			{
+				xputs(*av);
+				putchar('_');
+			}
+			printf("\n\t");
+			for (av = rwp->r_rhs; *av != NULL; av++)
+			{
+				xputs(*av);
+				putchar('_');
+			}
+			printf("\n");
 		}
-		printf("\n\t");
-		for (av = rwp->r_rhs; *av != NULL; av++)
-		{
-			xputs(*av);
-			putchar('_');
-		}
-		printf("\n");
 	}
 }
