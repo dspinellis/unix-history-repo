@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)yylex.c 1.1 %G%";
+static char sccsid[] = "@(#)yylex.c	1.2 %G%";
 #endif lint
 
 #define isid(a)  ((fastab+COFF)[a]&IB)
@@ -26,7 +26,11 @@ yylex() {
 	} *sp, *lookup();
 
 for (;;) {
+	extern int passcom;		/* this crap makes #if's work */
+	int opt_passcom = passcom;	/* even with -C option */
+	passcom = 0;			/* (else comments make syntax errs) */
 	newp=skipbl(newp);
+	passcom = opt_passcom;		/* nb: lint uses -C so its useful! */
 	if (*inp=='\n') return(stop);	/* end of #if */
 	savc= *newp; *newp='\0';
 	for (p2=op2+8; --p2>=op2; )	/* check 2-char ops */
@@ -75,9 +79,9 @@ tobinary(st, b) char *st; {
 		case '5': case '6': case '7': case '8': case '9': 
 			t = c-'0'; break;
 		case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': 
-			t = c-'a'; if (b>10) break;
+			t = c-'a'+10; if (b>10) break;
 		case 'A': case 'B': case 'C': case 'D': case 'E': case 'F': 
-			t = c - 'A'; if (b>10) break;
+			t = c - 'A'+10; if (b>10) break;
 		default:
 			t = -1;
 			if ( c=='l' || c=='L') if (*s=='\0') break;
