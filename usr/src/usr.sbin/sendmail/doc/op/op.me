@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	6.9 (Berkeley) %G%
+.\"	@(#)op.me	6.10 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,7 +40,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 6.9
+Version 6.10
 .sp
 For Sendmail Version 6.11
 .)l
@@ -382,11 +382,7 @@ These are referenced using the
 .sm FEATURE
 .b m4
 macro.
-Example features are
-no_wildcard_MX
-(which improves performance if you don't have a wildcard MX record
-matching your domain)
-and
+An example feature is
 use_cw_file
 (which tells sendmail to read an /etc/sendmail.cw file on startup
 to find the set of local names).
@@ -1573,39 +1569,6 @@ Several messages that are basically only of interest
 when debugging.
 .ip 16
 Verbose information regarding the queue.
-.sh 2 "Wildcard MX Records"
-.pp
-Normally, when
-.i sendmail
-is looking up host names from the name server,
-it uses the querytype of
-.q CNAME .
-The
-.b w
-option will ask the name server to use a querytype of
-.q ANY .
-This finds CNAME, A, and MX records,
-and causes the local name server to cache all records it finds,
-thus improving performance.
-.pp
-However, if your site has wildcard MX records, this can cause problems.
-For example, suppose your site has a record directing
-.q "*.HiTech.COM"
-to
-.q "gateway.HiTech.COM" .
-When the resolver looks for (e.g.)
-.q "mammoth.Berkeley.EDU" ,
-it starts by appending the local domain name (in this case,
-.q "HiTech.COM" ),
-thus looking for
-.q "mammoth.Berkeley.EDU.HiTech.COM"
-\*- which of course matches
-.q "*.HiTech.COM" .
-.pp
-If you do not have wildcard MX records in your domain,
-you can set the
-.b w
-option to get better performance.
 .sh 2 "File Modes"
 .pp
 There are a number of files
@@ -3149,16 +3112,6 @@ Defaults to 1.
 The user database specification.
 .ip v
 Run in verbose mode.
-.ip w
-Asserts that this domain does not have wildcard MX records
-in the name server database.
-These wildcards can
-.q capture
-names that are directed outward
-and forward them back to your own site.
-If there are no wildcards matching your domain,
-this option will reduce name server load
-and improve performance.
 .ip x\fILA\fP
 When the system load average exceeds
 .i LA ,
@@ -3564,6 +3517,8 @@ of the mailer.
 The particular philosophy you choose will depend heavily
 on the size and structure of your organization.
 I will present a few possible philosophies here.
+There are as many philosophies as there are config designers;
+feel free to develop your own.
 .pp
 One general point applies to all of these philosophies:
 it is almost always a mistake
@@ -3692,6 +3647,45 @@ you might find it useful to know about the names of hosts
 connected directly to you,
 but this is really not necessary
 since this may be determined from the syntax.
+.sh 4 "A completely different philosophy"
+.pp
+This is adapted from Bruce Lilly.
+Any errors in interpretation are mine.
+.pp
+Do minimal changes in ruleset 3:
+fix some common but unambiguous errors (e.g. trailing dot on domains) and
+hide bang paths foo!bar into bar@foo.UUCP.
+The resulting "canonical" form is any valid RFC822/RFC1123/RFC976 address.
+.pp
+Ruleset 0 does the bulk of the work.
+It removes the trailing "@.UUCP" that hides bang paths,
+strips anything not needed to resolve,
+e.g. the phrase from phrase <route-addr> and from named groups,
+rejects unparseable addresses using $#error,
+and finally
+resolves to a mailer/host/user triple.
+Ruleset 0 is rather lengthy
+as it has to handle 3 basic address forms:
+RFC976 bang paths,
+RFC1123 %-hacks
+(including vanilla RFC822 local-part@domain),
+and RFC822 source routes.
+It's also complicated by having to handle named lists.
+.pp
+The header rewriting rulesets 1 and 2
+remove the trailing "@.UUCP" that hides bang paths.
+Ruleset 2 also strips the $# mailer $@ host (for test mode).
+.pp
+Ruleset 4 does absolutely nothing.
+.pp
+The per-mailer rewriting rulesets conform the envelope and
+header addresses to the requirements of the specific
+mailer.
+.pp
+Lots of rulesets-as-subroutines are used.
+.pp
+As a result, header addresses are subject to minimal munging
+(per RFC1123), and the general plan is per RFC822 sect. 3.4.10.
 .sh 3 "Relevant issues"
 .pp
 The canonical form you use
@@ -3816,11 +3810,10 @@ Test mode shows you the steps it takes
 as it proceeds,
 finally showing you the address it ends up with.
 You may use a comma separated list of rwsets
-for sequential application of rules to an input;
-ruleset three is always applied first.
+for sequential application of rules to an input.
 For example:
 .(b
-1,21,4 monet:bollard
+3,1,21,4 monet:bollard
 .)b
 first applies ruleset three to the input
 .q monet:bollard.
@@ -3838,6 +3831,19 @@ sendmail \-bt \-d21.99
 turns on an incredible amount of information;
 a single word address
 is probably going to print out several pages worth of information.
+.pp
+You should be warned that internally,
+.b sendmail
+applies ruleset 3 to all addresses.
+In this version of sendmail, you will have to do that manually.
+For example, older versions allowed you to use
+.(b
+0 bruce@broadcast.sony.com
+.)b
+This version requires that you use:
+.(b
+3,0 bruce@broadcast.sony.com
+.)b
 .sh 3 "Building mailer descriptions"
 .pp
 To add an outgoing mailer to your mail system,
@@ -4941,8 +4947,6 @@ Connection cache size
 Connection cache lifetime.
 .ip U
 User database spec.
-.ip w
-Domain has no wildcard MX.
 .ip 8
 Run eight bit clean.
 .sh 2 "Bigger Defaults"
@@ -5337,7 +5341,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 6.9
+.\"Version 6.10
 .\".ce 0
 .pn 2
 .bp
