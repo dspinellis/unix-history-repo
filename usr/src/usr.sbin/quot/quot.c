@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)quot.c	4.4 (Berkeley) 83/07/01";
+static char *sccsid = "@(#)quot.c	4.5 (Berkeley) 83/08/14";
 #endif
 
 /*
@@ -134,21 +134,20 @@ acct(ip)
 
 	if ((ip->di_mode&IFMT) == 0)
 		return;
-	if (!hflg) {
+	if (hflg) {
 		/*
-		 * Assume that there are no holes in files.
+		 * Blocks based on number of 512 byte blocks claimed by inode.
+		 */
+		size = ip->di_blocks / 2;
+	} else {
+		/*
+		 * Estimate based on size of file.
 		 */
 		blks = lblkno(&sblock, ip->di_size);
 		frags = blks * sblock.fs_frag +
 			numfrags(&sblock, dblksize(&sblock, ip, blks));
-	} else {
-		/*
-		 * Actually go out and count the number of allocated blocks.
-		 */
-		printf("Sorry, hard way not implemented yet...\n");
-		exit(1);
+		size = frags * sblock.fs_fsize / 1024;
 	}
-	size = frags * sblock.fs_fsize / 1024;
 	if (cflg) {
 		if ((ip->di_mode&IFMT)!=IFDIR && (ip->di_mode&IFMT)!=IFREG)
 			return;
