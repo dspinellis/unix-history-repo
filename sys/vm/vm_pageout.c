@@ -65,7 +65,7 @@
  * any improvements or extensions that they make and grant Carnegie the
  * rights to redistribute these changes.
  *
- * $Id: vm_pageout.c,v 1.14 1994/03/07 11:39:15 davidg Exp $
+ * $Id: vm_pageout.c,v 1.15 1994/03/14 21:54:30 davidg Exp $
  */
 
 /*
@@ -104,7 +104,7 @@ extern int swap_pager_full;
 
 #define LOWATER ((1024*1024)/NBPG)
 
-#define VM_PAGEOUT_PAGE_COUNT 4
+#define VM_PAGEOUT_PAGE_COUNT 6
 static int minscan;
 void vm_pageout_deact_bump(vm_page_t m) ;
 static vm_offset_t vm_space_needed;
