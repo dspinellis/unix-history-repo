@@ -88,7 +88,7 @@
 **		Copyright 1980 Regents of the University of California
 */
 
-static char SccsId[] = "@(#)sccs.c	1.36 %G%";
+static char SccsId[] = "@(#)sccs.c	1.37 %G%";
 
 /*******************  Configuration Information  ********************/
 
@@ -303,6 +303,7 @@ command(argv, forkflag, editflag, arg0)
 	int rval = 0;
 	extern char *index();
 	extern char *makefile();
+	extern char *tail();
 
 # ifdef DEBUG
 	if (Debug)
@@ -436,7 +437,7 @@ command(argv, forkflag, editflag, arg0)
 			*argv = *np++;
 			p = *np;
 			*np = NULL;
-			i = dodiff(ap, *argv);
+			i = dodiff(ap, tail(*argv));
 			if (rval == 0)
 				rval = i;
 			*np = p;
@@ -937,8 +938,8 @@ unedit(fn)
 
 	if (delete)
 	{
-		unlink(fn);
-		printf("%12s: removed\n", fn);
+		unlink(tail(fn));
+		printf("%12s: removed\n", tail(fn));
 		return (TRUE);
 	}
 	else
@@ -1014,6 +1015,32 @@ dodiff(getv, gfile)
 		exit(EX_OSERR);
 	}
 	return (rval);
+}
+
+/*
+**  TAIL -- return tail of filename.
+**
+**	Parameters:
+**		fn -- the filename.
+**
+**	Returns:
+**		a pointer to the tail of the filename; e.g., given
+**		"cmd/ls.c", "ls.c" is returned.
+**
+**	Side Effects:
+**		none.
+*/
+
+char *
+tail(fn)
+	register char *fn;
+{
+	register char *p;
+
+	for (p = fn; *p != 0; p++)
+		if (*p == '/' && p[1] != '\0' && p[1] != '/')
+			fn = &p[1];
+	return (fn);
 }
 
 /*
