@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uipc_socket.c	6.23 (Berkeley) %G%
+ *	@(#)uipc_socket.c	6.24 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -495,8 +495,8 @@ restart:
 				m = m->m_next;
 				(*aname)->m_next = 0;
 			} else {
-				MFREE(m, n);
 				nextrecord = m->m_act;
+				MFREE(m, n);
 				m = n;
 			}
 		}
@@ -573,10 +573,13 @@ restart:
 		}
 	}
 	if ((flags & MSG_PEEK) == 0) {
-		if (so->so_rcv.sb_mb == 0)
+		if (m == 0)
 			so->so_rcv.sb_mb = nextrecord;
-		else if (pr->pr_flags & PR_ATOMIC)
-			(void) sbdroprecord(&so->so_rcv);
+		else {
+			m->m_act = nextrecord;
+			if (pr->pr_flags & PR_ATOMIC)
+				(void) sbdroprecord(&so->so_rcv);
+		}
 		if (pr->pr_flags & PR_WANTRCVD && so->so_pcb)
 			(*pr->pr_usrreq)(so, PRU_RCVD, (struct mbuf *)0,
 			    (struct mbuf *)0, (struct mbuf *)0);
