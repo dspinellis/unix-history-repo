@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)config.h	5.3 (Berkeley) %G%
+ *	@(#)config.h	5.4 (Berkeley) %G%
  */
 
 /*
@@ -83,7 +83,7 @@
  * must be a multiple of the block size.  We also set minimum block and segment
  * sizes.
  */
-#define	LFS_MINSEGSIZE		(128*1024)
+#define	LFS_MINSEGSIZE		(64*1024)
 #define	DFL_LFSSEG		(1024 * 1024)
 #define	DFL_LFSSEG_SHIFT	20
 #define	DFL_LFSSEG_MASK		0xFFFFF
