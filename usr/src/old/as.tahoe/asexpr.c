@@ -311,7 +311,7 @@ struct exp *yukkyexpr(val, np)
 		lastnam = (struct symtab *)np;
 		/* FALLTHROUGH */
 	case NAME:
-		exprisname++;
+		exprisname = (int)np;
 		locxp->e_xtype = ((struct symtab *)np)->s_type;
 		if (( ((struct symtab *)np)->s_type&XTYPE)==XUNDEF) { /*forward*/
 			locxp->e_xname = (struct symtab *)np;

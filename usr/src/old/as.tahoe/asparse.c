@@ -704,6 +704,9 @@ restlab:
 		stpt->s_index = dotp - usedot;
 		if (exprisname){
 			switch(stpt->s_ptype){
+				case N_LCSYM:
+					stpt->s_dest = (struct symtab *)exprisname;
+					stpt->s_type |= STABFLAG;
 				case N_GSYM:
 				case N_FNAME:
 				case N_RSYM:
