@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.106 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.107 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -236,14 +236,11 @@ main(argc, argv, envp)
 	**  the top of memory.
 	*/
 
-	for (i = j = 0; j < MAXUSERENVIRON && (p = envp[i]) != NULL; i++)
-	{
-		if (strncmp(p, "IFS=", 4) == 0 || strncmp(p, "LD_", 3) == 0)
-			continue;
-		UserEnviron[j++] = newstr(p);
-	}
-	UserEnviron[j] = NULL;
-	environ = UserEnviron;
+	for (i = 0; envp[i] != NULL; i++)
+		continue;
+	environ = (char **) xalloc(sizeof (char *) * i);
+	for (i = 0; envp[i] != NULL; i++)
+		environ[i] = newstr(envp[i]);
 
 	/*
 	**  Save start and extent of argv for setproctitle.
@@ -630,23 +627,7 @@ main(argc, argv, envp)
 	if (TimeZoneSpec == NULL)
 		unsetenv("TZ");
 	else if (TimeZoneSpec[0] != '\0')
-	{
-		char **evp = UserEnviron;
-		char tzbuf[100];
-
-		strcpy(tzbuf, "TZ=");
-		strcpy(&tzbuf[3], TimeZoneSpec);
-
-		while (*evp != NULL && strncmp(*evp, "TZ=", 3) != 0)
-			evp++;
-		if (*evp == NULL)
-		{
-			*evp++ = newstr(tzbuf);
-			*evp = NULL;
-		}
-		else
-			*evp++ = newstr(tzbuf);
-	}
+		setenv("TZ", TimeZoneSpec, TRUE);
 	tzset();
 
 	if (ConfigLevel > MAXCONFIGLEVEL)
@@ -749,7 +730,16 @@ main(argc, argv, envp)
 			setbitn(M_RUNASRCPT, ProgMailer->m_flags);
 		if (FileMailer != NULL)
 			setbitn(M_RUNASRCPT, FileMailer->m_flags);
+
+		/* propogate some envariables into children */
+		setuserenv("AGENT", "sendmail");
+		setuserenv("ISP", NULL);
+		setuserenv("SYSTYPE", NULL);
 	}
+
+	/* guarantee non-empty environment to children */
+	if (UserEnviron[0] == NULL)
+		setuserenv("AGENT", "sendmail");
 
 	/* MIME Content-Types that cannot be transfer encoded */
 	setclass('n', "multipart/signed");

@@ -1,8 +1,7 @@
-(Version 8.38 of %G%)
+(Version 8.39 of %G%)
 
 ==============================================================================
 For Release 8.7:
-  - getcanonname needs to be in service switch?
   - another pass through Sun changes
   - another pass through documentation
   - change dotted users to plussed users
@@ -149,8 +148,6 @@ E **	Make "local configuration error" a temporary failure?
 	(add EX_CONFIG to the markfailure list)
 
 X **	(sigh) BSMTP.
-
-X **	"E" configuration line that sets environment variables.
 
 E **	Change listen() high-load backoff to accept and issue a 4xx
 	message so that it responds more quickly.
