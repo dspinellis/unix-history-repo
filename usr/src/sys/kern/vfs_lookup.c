@@ -1,4 +1,4 @@
-/*	vfs_lookup.c	6.10	84/07/04	*/
+/*	vfs_lookup.c	6.11	84/07/07	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -14,6 +14,7 @@
 #include "../h/kernel.h"
 
 struct	buf *blkatoff();
+struct	buf *freenamebuf;
 int	dirchk = 0;
 
 /*
@@ -150,7 +151,11 @@ namei(func, flag, follow)
 	 * Get a buffer for the name to be translated, and copy the
 	 * name into the buffer.
 	 */
-	nbp = geteblk(MAXPATHLEN);
+	nbp = freenamebuf;
+	if (nbp == NULL)
+		nbp = geteblk(MAXPATHLEN);
+	else
+		freenamebuf = nbp->av_forw;
 	for (cp = nbp->b_un.b_addr; *cp = (*func)(); ) {
 		if ((*cp&0377) == ('/'|0200) || (*cp&0200) && flag != DELETE) {
 			u.u_error = EPERM;
@@ -225,7 +230,8 @@ dirloop2:
 			u.u_error = EISDIR;
 			goto bad;
 		}
-		brelse(nbp);
+		nbp->av_forw = freenamebuf;
+		freenamebuf = nbp;
 		return (dp);
 	}
 
@@ -517,7 +523,8 @@ searchloop:
 		dp->i_flag |= IUPD|ICHG;
 		if (bp)
 			brelse(bp);
-		brelse(nbp);
+		nbp->av_forw = freenamebuf;
+		freenamebuf = nbp;
 		/*
 		 * We return with the directory locked, so that
 		 * the parameters we set up above will still be
@@ -612,7 +619,8 @@ found:
 				}
 			}
 		}
-		brelse(nbp);
+		nbp->av_forw = freenamebuf;
+		freenamebuf = nbp;
 		return (dp);
 	}
 
@@ -663,7 +671,8 @@ found:
 			iput(u.u_pdir);
 			goto bad;
 		}
-		brelse(nbp);
+		nbp->av_forw = freenamebuf;
+		freenamebuf = nbp;
 		return (dp);
 	}
 
@@ -796,7 +805,8 @@ haveino:
 		irele(pdp);
 		goto dirloop;
 	}
-	brelse(nbp);
+	nbp->av_forw = freenamebuf;
+	freenamebuf = nbp;
 	if (lockparent)
 		u.u_pdir = pdp;
 	else
@@ -809,7 +819,8 @@ bad:
 		brelse(bp);
 	if (dp)
 		iput(dp);
-	brelse(nbp);
+	nbp->av_forw = freenamebuf;
+	freenamebuf = nbp;
 	return (NULL);
 }
 
