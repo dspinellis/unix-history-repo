@@ -1,4 +1,4 @@
-#	disktab	4.1	83/05/12
+#	disktab	4.2	83/07/07
 # Disk geometry and partition layout tables. 
 # Key:
 #	ty	type of disk
@@ -164,33 +164,31 @@ rk07|RK07|DEC RK07:\
 # Disk on a UDA50
 # NOTE: the space normally reserved for the bad sector
 # table is used in the f and g partitions because the UDA50
-# does it's own bad sector forwarding.
+# does it's own bad sector forwarding.  The partitions are
+# not rounded to cylinder boundaries since we use the same
+# partition tables in the driver for all drives.
 #
 ra60|RA60|DEC RA60 Removable:\
 	:ty=removable:ns#42:nt#4:nc#2382:\
 	:pa#15884:ba#8192:fa#1024:\
 	:pb#33440:pc#400176:\
-	:pd#15884:bd#8192:fd#1024:\
-	:pe#55936:be#4096:fe#512:\
-	:pf#278712:bf#4096:ff#1024:\
-	:pg#350616:bg#4096:fg#512:
+	:pg#82080:bg#4096:fg#512:\
+	:ph#268772:bg#4096:fg#1024:
 ra80|RA80|DEC RA80 Winchester:\
 	:ty=winchester:ns#31:nt#14:nc#559:\
 	:pa#15884:ba#8192:fa#1024:\
 	:pb#33440:pc#242606:\
-	:pd#15884:bd#8192:fd#1024:\
-	:pe#55936:be#4096:fe#512:\
-	:pf#120652:bf#4096:ff#1024:\
-	:pg#192696:bg#4096:fg#512:
+	:pg#82080:bg#4096:fg#512:\
+	:ph#111202:bg#4096:fg#1024:
 ra81|RA81|DEC RA81 Winchester:\
 	:ty=winchester:ns#51:nt#14:nc#1248:\
 	:pa#15884:ba#8192:fa#1024:\
-	:pb#66880:pc#891072:\
+	:pb#33440:pc#891072:\
 	:pd#15884:bd#8192:fd#1024:\
-	:pe#307200:be#4096:fe#512:\
-	:pf#191352:bf#4096:ff#1024:\
-	:pg#515508:bg#4096:fg#1024:\
-	:ph#291346:bh#4096:fh#512:
+	:pe#55936:be#4096:fe#512:\
+	:pf#478582:bf#4096:ff#1024:\
+	:pg#82080:bg#4096:fg#512:\
+	:ph#759668:bh#4096:fh#1024:
 #
 # RX02 floppy disk drives
 #
