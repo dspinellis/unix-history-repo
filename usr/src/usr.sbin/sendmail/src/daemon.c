@@ -14,7 +14,7 @@
 
 # ifndef DAEMON
 # ifndef lint
-static char	SccsId[] = "@(#)daemon.c	5.15 (Berkeley) %G%	(w/o daemon mode)";
+static char	SccsId[] = "@(#)daemon.c	5.16 (Berkeley) %G%	(w/o daemon mode)";
 # endif not lint
 # else
 
@@ -27,7 +27,7 @@ static char	SccsId[] = "@(#)daemon.c	5.15 (Berkeley) %G%	(w/o daemon mode)";
 # include <sys/resource.h>
 
 # ifndef lint
-static char	SccsId[] = "@(#)daemon.c	5.15 (Berkeley) %G% (with daemon mode)";
+static char	SccsId[] = "@(#)daemon.c	5.16 (Berkeley) %G% (with daemon mode)";
 # endif not lint
 
 /*
@@ -360,10 +360,12 @@ makeconnection(host, port, outfile, infile)
 				CurEnv->e_flags &= ~EF_FATALERRS;
 				return (EX_TEMPFAIL);
 			}
-#ifdef notdef
-			if (h_errno == NO_ADDRESS)
-				;		/*look for mail forwarder records*/
-#endif notdef
+
+			/*
+			**  XXX Should look for mail forwarder record here
+			**  XXX if (h_errno == NO_ADDRESS).
+			*/
+
 			return (EX_NOHOST);
 		}
 		bcopy(hp->h_addr, (char *) &SendmailAddress.sin_addr, hp->h_length);
