@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	6.7 (Berkeley) %G%
+		@(#)README	6.8 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -35,6 +35,15 @@ SunOS's /usr/5bin/m4 or BSD-Net/2's m4 both work.  GNU m4 (which is a
 language unto itself) also works, but I don't intend to work so hard
 to keep this up in the future.  [Note to GNU folks:  the construct
 "define(`FOO')" should work without my having to add a null value.]
+
+IF YOU DON'T HAVE A BERKELEY MAKE, don't despair!  Just run
+"m4 foo.mc > foo.cf" -- that should be all you need.
+
+To get started, you may want to look at tcpproto.mc (for TCP-only
+sites) and uucpproto.m4 (for UUCP-only sites).  Others are versions
+that we use at Berkeley, although not all are in current use.  For
+example, ucbarpa has gone away, but I've left ucbarpa.mc in because
+it demonstrates some interesting techniques.
 
 I'm not pretending that this README describes everything that these
 configuration files can do; clever people can probably tweak them
@@ -245,6 +254,7 @@ redirect	Reject all mail addressed to "address.REDIRECT" with
 		a ``551 User not local; please try <address>'' message.
 		If this is set, you can alias people who have left
 		to their new address with ".REDIRECT" appended.
+nouucp		Don't do anything special with UUCP addresses at all.
 
 Other FEATUREs should be defined, but I was trying to keep these
 config files fairly lean and mean.
