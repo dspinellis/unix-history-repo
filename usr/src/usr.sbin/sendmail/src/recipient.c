@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/types.h>
@@ -326,7 +326,7 @@ recipient(a, sendq)
 
 # ifdef USERDB
 			/* if not  aliased, look it up in the user database */
-			if (!bitset(QDONTSEND, a->q_flags))
+			if (!bitset(QDONTSEND|QNOTREMOTE, a->q_flags))
 				udbexpand(a, sendq);
 # endif
 		}
