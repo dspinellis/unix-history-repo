@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)types.h	7.25 (Berkeley) %G%
+ *	@(#)types.h	7.26 (Berkeley) %G%
  */
 
 #ifndef _TYPES_H_
@@ -19,6 +19,7 @@ typedef	unsigned short	u_short;
 typedef	unsigned int	u_int;
 typedef	unsigned long	u_long;
 typedef	unsigned short	ushort;		/* Sys V compatibility */
+typedef	unsigned int	uint;		/* Sys V compatibility */
 #endif
 
 typedef	unsigned long long u_quad_t;	/* quads */
@@ -46,9 +47,7 @@ typedef	unsigned long	uid_t;		/* user id */
 #endif
 
 #include <machine/ansi.h>
-#if !defined(_ANSI_SOURCE) && !defined(_POSIX_SOURCE)
 #include <machine/types.h>
-#endif
 
 #ifdef	_BSD_CLOCK_T_
 typedef	_BSD_CLOCK_T_	clock_t;
@@ -102,9 +101,9 @@ typedef	struct fd_set {
 
 #if defined(__STDC__) && defined(KERNEL)
 /*
- * Forward structure declarations for function prototypes.
- * We include the common structures that cross subsystem boundaries here;
- * others are mostly used in the same place that the structure is defined.
+ * Forward structure declarations for function prototypes.  We include the
+ * common structures that cross subsystem boundaries here; others are mostly
+ * used in the same place that the structure is defined.
  */
 struct	proc;
 struct	pgrp;
