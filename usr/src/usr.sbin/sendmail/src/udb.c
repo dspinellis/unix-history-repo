@@ -10,9 +10,9 @@
 
 #ifndef lint
 #if !USERDB
-static char sccsid [] = "@(#)udb.c	8.22 (Berkeley) %G% (with USERDB)";
+static char sccsid [] = "@(#)udb.c	8.23 (Berkeley) %G% (with USERDB)";
 #else
-static char sccsid [] = "@(#)udb.c	8.22 (Berkeley) %G% (without USERDB)";
+static char sccsid [] = "@(#)udb.c	8.23 (Berkeley) %G% (without USERDB)";
 #endif
 #endif
 
@@ -126,7 +126,6 @@ udbexpand(a, sendq, aliaslevel, e)
 	register ENVELOPE *e;
 {
 	int i;
-	register char *p;
 	DBT key;
 	DBT info;
 	bool breakout;
@@ -703,9 +702,7 @@ int
 _udbx_init()
 {
 	register char *p;
-	int i;
 	register struct udbent *up;
-	char buf[BUFSIZ];
 
 	if (UdbInitialized)
 		return EX_OK;
@@ -720,11 +717,14 @@ _udbx_init()
 	while (p != NULL)
 	{
 		char *spec;
-		auto int rcode;
 		int nopts;
+# if 0
+		auto int rcode;
 		int nmx;
+		int i;
 		register struct hostent *h;
 		char *mxhosts[MAXMXHOSTS + 1];
+# endif
 		struct option opts[MAXUDBOPTS + 1];
 
 		while (*p == ' ' || *p == '\t' || *p == ',')

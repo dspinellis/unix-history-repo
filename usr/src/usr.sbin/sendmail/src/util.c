@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.71 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.72 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -31,6 +31,7 @@ static char sccsid[] = "@(#)util.c	8.71 (Berkeley) %G%";
 **		deliver
 */
 
+void
 stripquotes(s)
 	char *s;
 {
@@ -182,6 +183,7 @@ copyqueue(addr)
 **		prints av.
 */
 
+void
 printav(av)
 	register char **av;
 {
@@ -227,8 +229,9 @@ lower(c)
 **		output to stdout
 */
 
+void
 xputs(s)
-	register char *s;
+	register const char *s;
 {
 	register int c;
 	register struct metamac *mp;
@@ -346,6 +349,7 @@ makelower(p)
 **		none.
 */
 
+void
 buildfname(gecos, login, buf)
 	register char *gecos;
 	char *login;
@@ -713,6 +717,7 @@ safefopen(fn, omode, cmode, sff)
 **		line is changed in place.
 */
 
+void
 fixcrlf(line, stripnl)
 	char *line;
 	bool stripnl;
@@ -819,12 +824,11 @@ dfopen(filename, omode, cmode)
 **		output of l to fp.
 */
 
+void
 putline(l, mci)
 	register char *l;
 	register MCI *mci;
 {
-	extern void putxline();
-
 	putxline(l, mci, PXLF_MAPFROM);
 }
 /*
@@ -942,6 +946,7 @@ putxline(l, mci, pxflags)
 **		f is unlinked.
 */
 
+void
 xunlink(f)
 	char *f;
 {
@@ -972,6 +977,7 @@ xunlink(f)
 **		fp is closed.
 */
 
+void
 xfclose(fp, a, b)
 	FILE *fp;
 	char *a, *b;
@@ -1234,6 +1240,7 @@ atobool(s)
 **		none.
 */
 
+int
 atooct(s)
 	register char *s;
 {
@@ -1380,6 +1387,7 @@ strcontainedin(a, b)
 **		none
 */
 
+void
 checkfd012(where)
 	char *where;
 {
@@ -1418,6 +1426,7 @@ checkfd012(where)
 
 #include <arpa/inet.h>
 
+void
 printopenfds(logit)
 	bool logit;
 {
@@ -1437,6 +1446,7 @@ printopenfds(logit)
 **		logit -- if set, send output to syslog instead of stdout.
 */
 
+void
 dumpfd(fd, printclosed, logit)
 	int fd;
 	bool printclosed;
@@ -1579,7 +1589,7 @@ printit:
 
 char *
 shortenstring(s, m)
-	register char *s;
+	register const char *s;
 	int m;
 {
 	int l;
@@ -1587,7 +1597,7 @@ shortenstring(s, m)
 
 	l = strlen(s);
 	if (l < m)
-		return s;
+		return (char *) s;
 	if (m > MAXSHORTSTR)
 		m = MAXSHORTSTR;
 	else if (m < 10)

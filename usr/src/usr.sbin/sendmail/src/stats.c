@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)stats.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)stats.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -19,6 +19,7 @@ extern long		kbytes();	/* for _bf, _bt */
 **  MARKSTATS -- mark statistics
 */
 
+void
 markstats(e, to)
 	register ENVELOPE *e;
 	register ADDRESS *to;
@@ -52,6 +53,7 @@ markstats(e, to)
 **		merges the Stat structure with the sfile file.
 */
 
+void
 poststats(sfile)
 	char *sfile;
 {

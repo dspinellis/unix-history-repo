@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.153 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.154 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -596,6 +596,7 @@ sendenvelope(e, mode)
 **		returns twice, once in parent and once in child.
 */
 
+int
 dofork()
 {
 	register int pid = -1;
@@ -656,6 +657,7 @@ deliver(firstto, editfcn)
 	char buf[MAXNAME + 1];
 	char rpathbuf[MAXNAME + 1];	/* translated return path */
 	extern int checkcompat();
+	extern void markfailure __P((ENVELOPE *, ADDRESS *, MCI *, int));
 
 	errno = 0;
 	if (bitset(QDONTSEND|QBADADDR|QQUEUEUP, to->q_flags))
@@ -821,7 +823,7 @@ deliver(firstto, editfcn)
 		if (m->m_maxsize != 0 && e->e_msgsize > m->m_maxsize)
 		{
 			e->e_flags |= EF_NO_BODY_RETN;
-			mci->mci_status = "5.2.3";
+			to->q_status = "5.2.3";
 			usrerr("552 Message is too large; %ld bytes max", m->m_maxsize);
 			giveresponse(EX_UNAVAILABLE, m, NULL, ctladdr, xstart, e);
 			continue;
@@ -1385,6 +1387,7 @@ tryhost:
 **			the message will be queued, as appropriate.
 */
 
+void
 markfailure(e, q, mci, rcode)
 	register ENVELOPE *e;
 	register ADDRESS *q;
@@ -1493,6 +1496,7 @@ markfailure(e, q, mci, rcode)
 **		none.
 */
 
+int
 endmailer(mci, e, pv)
 	register MCI *mci;
 	register ENVELOPE *e;
@@ -1568,6 +1572,7 @@ endmailer(mci, e, pv)
 **		ExitStat may be set.
 */
 
+void
 giveresponse(stat, m, mci, ctladdr, xstart, e)
 	int stat;
 	register MAILER *m;
@@ -1719,10 +1724,11 @@ giveresponse(stat, m, mci, ctladdr, xstart, e)
 **		none
 */
 
+void
 logdelivery(m, mci, stat, ctladdr, xstart, e)
 	MAILER *m;
 	register MCI *mci;
-	char *stat;
+	const char *stat;
 	ADDRESS *ctladdr;
 	time_t xstart;
 	register ENVELOPE *e;
@@ -1922,6 +1928,7 @@ logdelivery(m, mci, stat, ctladdr, xstart, e)
 **		The message is written onto fp.
 */
 
+void
 putmessage(fp, m, xdot)
 	FILE *fp;
 	struct mailer *m;
@@ -2024,6 +2031,7 @@ putmessage(fp, m, xdot)
 **		none.
 */
 
+int
 mailfile(filename, ctladdr, e)
 	char *filename;
 	ADDRESS *ctladdr;

@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	8.74 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.75 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	8.74 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.75 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -97,6 +97,7 @@ extern char	RealUserName[];
 
 #define MAXBADCOMMANDS	25		/* maximum number of bad commands */
 
+void
 smtp(e)
 	register ENVELOPE *e;
 {
@@ -371,6 +372,7 @@ smtp(e)
 			{
 				char *kp;
 				char *vp = NULL;
+				extern void mail_esmtp_args __P((char *, char *, ENVELOPE *));
 
 				/* locate the beginning of the keyword */
 				while (isascii(*p) && isspace(*p))
@@ -452,6 +454,7 @@ smtp(e)
 			{
 				char *kp;
 				char *vp = NULL;
+				extern void rcpt_esmtp_args __P((ADDRESS *, char *, char *, ENVELOPE *));
 
 				/* locate the beginning of the keyword */
 				while (isascii(*p) && isspace(*p))
@@ -483,7 +486,6 @@ smtp(e)
 						vp == NULL ? "<null>" : vp);
 
 				rcpt_esmtp_args(a, kp, vp, e);
-
 			}
 
 			/* save in recipient list after ESMTP mods */
@@ -678,6 +680,8 @@ smtp(e)
 			}
 			while (vrfyqueue != NULL)
 			{
+				extern void printvrfyaddr __P((ADDRESS *, bool));
+
 				a = vrfyqueue;
 				while ((a = a->q_next) != NULL &&
 				       bitset(QDONTSEND|QBADADDR, a->q_flags))
@@ -839,6 +843,7 @@ skipword(p, w)
 **		none.
 */
 
+void
 mail_esmtp_args(kp, vp, e)
 	char *kp;
 	char *vp;
@@ -940,6 +945,7 @@ mail_esmtp_args(kp, vp, e)
 **		none.
 */
 
+void
 rcpt_esmtp_args(a, kp, vp, e)
 	ADDRESS *a;
 	char *kp;
@@ -1017,6 +1023,7 @@ rcpt_esmtp_args(a, kp, vp, e)
 **		Prints the appropriate 250 codes.
 */
 
+void
 printvrfyaddr(a, last)
 	register ADDRESS *a;
 	bool last;
@@ -1056,6 +1063,7 @@ printvrfyaddr(a, last)
 **		outputs the help file to message output.
 */
 
+void
 help(topic)
 	char *topic;
 {
@@ -1125,6 +1133,7 @@ help(topic)
 **		none.
 */
 
+int
 runinchild(label, e)
 	char *label;
 	register ENVELOPE *e;

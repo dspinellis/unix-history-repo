@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.70 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.71 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -49,6 +49,7 @@ static char sccsid[] = "@(#)savemail.c	8.70 (Berkeley) %G%";
 # endif
 
 
+void
 savemail(e, sendbody)
 	register ENVELOPE *e;
 	bool sendbody;
@@ -420,13 +421,12 @@ savemail(e, sendbody)
 #define MAXRETURNS	6	/* max depth of returning messages */
 #define ERRORFUDGE	100	/* nominal size of error message text */
 
+int
 returntosender(msg, sendbody)
 	char *msg;
 	bool sendbody;
 	register ENVELOPE *e;
 {
-	char buf[MAXNAME + 1];
-	extern errhdr();
 
 	if (tTd(6, 1))
 	{
@@ -488,6 +488,7 @@ returntosender(msg, sendbody)
 **		error header.
 */
 
+void
 errhdr(fp, m, xdot)
 errbody(mci, e, separator)
 	register MCI *mci;
