@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)regex.h	8.1 (Berkeley) %G%
+ *	@(#)regex.h	8.2 (Berkeley) %G%
  */
 
 #ifndef _REGEX_H_
@@ -22,7 +22,7 @@ typedef off_t regoff_t;
 typedef struct {
 	int re_magic;
 	size_t re_nsub;		/* number of parenthesized subexpressions */
-	const char *re_endp;	/* end pointer for REG_PEND */
+	__const char *re_endp;	/* end pointer for REG_PEND */
 	struct re_guts *re_g;	/* none of your business :-) */
 } regex_t;
 
