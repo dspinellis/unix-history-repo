@@ -5,7 +5,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.28	%G%";
+static char SccsId[] = "@(#)deliver.c	3.29	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a particular address.
@@ -248,6 +248,47 @@ deliver(to, editfcn)
 	return (i);
 }
 /*
+**  DOFORK -- do a fork, retrying a couple of times on failure.
+**
+**	This MUST be a macro, since after a vfork we are running
+**	two processes on the same stack!!!
+**
+**	Parameters:
+**		none.
+**
+**	Returns:
+**		From a macro???  You've got to be kidding!
+**
+**	Side Effects:
+**		Modifies the ==> LOCAL <== variable 'pid', leaving:
+**			pid of child in parent, zero in child.
+**			-1 on unrecoverable error.
+**
+**	Notes:
+**		I'm awfully sorry this looks so awful.  That's
+**		vfork for you.....
+*/
+
+# define NFORKTRIES	5
+# ifdef VFORK
+# define XFORK	vfork
+# else VFORK
+# define XFORK	fork
+# endif VFORK
+
+# define DOFORK(fORKfN) \
+{\
+	register int i;\
+\
+	for (i = NFORKTRIES; i-- > 0; )\
+	{\
+		pid = fORKfN();\
+		if (pid >= 0)\
+			break;\
+		sleep((unsigned) NFORKTRIES - i);\
+	}\
+}
+/*
 **  SENDOFF -- send off call to mailer & collect response.
 **
 **	Parameters:
@@ -261,8 +302,6 @@ deliver(to, editfcn)
 **	Side Effects:
 **		none.
 */
-
-#define NFORKTRIES	5
 
 sendoff(m, pvp, editfcn)
 	struct mailer *m;
@@ -291,17 +330,7 @@ sendoff(m, pvp, editfcn)
 		syserr("pipe");
 		return (-1);
 	}
-	for (i = NFORKTRIES; i-- > 0; )
-	{
-# ifdef VFORK
-		pid = vfork();
-# else
-		pid = fork();
-# endif
-		if (pid >= 0)
-			break;
-		sleep((unsigned) NFORKTRIES - i);
-	}
+	DOFORK(XFORK);
 	if (pid < 0)
 	{
 		syserr("Cannot fork");
@@ -352,7 +381,7 @@ sendoff(m, pvp, editfcn)
 		execv(m->m_mailer, pvp);
 		/* syserr fails because log is closed */
 		/* syserr("Cannot exec %s", m->m_mailer); */
-		printf("Cannot exec %s\n", m->m_mailer);
+		printf("Cannot exec '%s' errno=%d\n", m->m_mailer, errno);
 		(void) fflush(stdout);
 		_exit(EX_UNAVAILABLE);
 	}
@@ -577,22 +606,54 @@ putmessage(fp, m)
 **
 **	Side Effects:
 **		none.
-**
-**	Called By:
-**		deliver
 */
 
 mailfile(filename)
 	char *filename;
 {
 	register FILE *f;
+	register int pid;
+	register int i;
 
-	f = fopen(filename, "a");
-	if (f == NULL)
-		return (EX_CANTCREAT);
+	/*
+	**  Fork so we can change permissions here.
+	**	Note that we MUST use fork, not vfork, because of
+	**	the complications of calling subroutines, etc.
+	*/
 
-	putmessage(f, Mailer[1]);
-	fputs("\n", f);
-	(void) fclose(f);
-	return (EX_OK);
+	DOFORK(fork);
+
+	if (pid < 0)
+		return (EX_OSERR);
+	else if (pid == 0)
+	{
+		/* child -- actually write to file */
+		(void) setuid(getuid());
+		(void) setgid(getgid());
+		f = fopen(filename, "a");
+		if (f == NULL)
+			exit(EX_CANTCREAT);
+
+		putmessage(f, Mailer[1]);
+		fputs("\n", f);
+		(void) fclose(f);
+		(void) fflush(stdout);
+		exit(EX_OK);
+	}
+	else
+	{
+		/* parent -- wait for exit status */
+		register int i;
+		auto int stat;
+
+		while ((i = wait(&stat)) != pid)
+		{
+			if (i < 0)
+			{
+				stat = EX_OSERR << 8;
+				break;
+			}
+		}
+		return ((stat >> 8) & 0377);
+	}
 }
