@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -135,6 +135,7 @@ edit(filename)
 		free(previous_file);
 	previous_file = current_file;
 	current_file = filename;
+	pos_clear();
 	prev_pos = position(TOP);
 	ispipe = (f == 0);
 	if (ispipe) {
@@ -165,7 +166,6 @@ edit(filename)
 		/*
 		 * Indicate there is nothing displayed yet.
 		 */
-		pos_clear();
 		if (initial_pos != NULL_POSITION)
 			jump_loc(initial_pos);
 		clr_linenum();
