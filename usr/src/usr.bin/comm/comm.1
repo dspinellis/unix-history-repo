@@ -1,43 +1,62 @@
-.\"	@(#)comm.1	6.1 (Berkeley) %G%
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)comm.1	6.2 (Berkeley) %G%
 .\"
 .TH COMM 1 ""
-.AT 3
 .SH NAME
-comm \- select or reject lines common to two sorted files
+comm - select or reject lines common to two files
 .SH SYNOPSIS
-.B comm
-[
-.B \-
-[
-.B 123
-]
-] file1 file2
+\fBcomm [ \fI-123\fP ] [ \fI-\fP ] file1 file2
 .SH DESCRIPTION
-.I Comm
-reads
+The
+.I comm
+utility reads
 .I file1
 and
-.I file2,
-which should be ordered in ASCII collating sequence,
-and produces a three column output: lines only in
-.I file1;
+.I file2
+and produces a three-column output: lines only in
+.IR file1 ,
 lines only in
-.I file2;
+.IR file2 ,
 and lines in both files.
-The filename `\-' means the standard input.
 .PP
-Flags 1, 2, or 3 suppress printing of the corresponding
-column.
-Thus
-.B comm
-.B \-12
-prints only the lines common to the two files;
-.B comm
-.B \-23
-prints only lines in the first file but not in the second;
-.B comm
-.B \-123
-is a no-op.
+The filename ``-'' means the standard input.
 .PP
+The following options are available:
+.TP
+-1
+Suppress printing of column 1.
+.TP
+-2
+Suppress printing of column 2.
+.TP
+-3
+Suppress printing of column 3.
+.PP
+Each column will have a number of tab characters prepended to it
+equal to the number of lower numbered columns that are being printed.
+For example, if column number two is being suppressed, lines printed
+in column number one will not have any tabs preceding them, and lines
+printed in column number three will have one.
+.PP
+.I Comm
+assumes that the files are lexically sorted; all characters
+participate in line comparisons.
+.PP
+.I Comm
+exits 0 on success, >0 if an error occurred.
 .SH "SEE ALSO"
-cmp(1), diff(1), uniq(1)
+cmp(1), diff(1), sort(1), uniq(1)
