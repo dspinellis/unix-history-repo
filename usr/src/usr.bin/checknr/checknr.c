@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)checknr.c	4.3 (Berkeley) %G%";
+static char *sccsid = "@(#)checknr.c	4.4 (Berkeley) %G%";
 /*
  * checknr: check an nroff/troff input file for matching macro calls.
  * we also attempt to match size and font changes, but only the embedded
@@ -90,7 +90,7 @@ char *knowncmds[MAXCMDS] = {
 "@c", "@e", "@f", "@h", "@m", "@n", "@o", "@p", "@r", "@t", "@z", "AB",
 "AE", "AF", "AI", "AL", "AS", "AT", "AU", "AX", "B",  "B1", "B2", "BD",
 "BE", "BG", "BL", "BS", "BT", "BX", "C1", "C2", "CD", "CM", "CT", "D", 
-"DA", "DE", "DF", "DL", "DS", "EC", "EF", "EG", "EH", "EM", "EN", "EQ",
+"DA", "DE", "DF", "DL", "DS", "DT", "EC", "EF", "EG", "EH", "EM", "EN", "EQ",
 "EX", "FA", "FD", "FE", "FG", "FJ", "FK", "FL", "FN", "FO", "FQ", "FS",
 "FV", "FX", "H",  "HC", "HM", "HO", "HU", "I",  "ID", "IE", "IH", "IM",
 "IP", "IZ", "KD", "KE", "KF", "KQ", "KS", "LB", "LC", "LD", "LE", "LG",
