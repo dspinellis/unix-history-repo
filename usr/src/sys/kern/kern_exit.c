@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_exit.c	7.15 (Berkeley) %G%
+ *	@(#)kern_exit.c	7.16 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -368,13 +368,7 @@ loop:
 		u.u_r.r_val1 = 0;
 		return (0);
 	}
-	if (setjmp(&u.u_qsave)) {
-		p = u.u_procp;
-		if ((u.u_sigintr & sigmask(p->p_cursig)) != 0)
-			return (EINTR);
-		u.u_eosys = RESTARTSYS;
-		return (0);
-	}
-	tsleep((caddr_t)u.u_procp, PWAIT, SLP_WAIT, 0);
+	if (error = tsleep((caddr_t)u.u_procp, PWAIT | PCATCH, "wait", 0))
+		return (error);
 	goto loop;
 }
