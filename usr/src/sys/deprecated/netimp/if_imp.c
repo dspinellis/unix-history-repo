@@ -1,4 +1,4 @@
-/*	if_imp.c	4.48	83/02/10	*/
+/*	if_imp.c	4.49	83/02/23	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -269,29 +269,21 @@ impinput(unit, m)
 	 * awaiting transmission and release the host structure.
 	 */
 	case IMPTYPE_HOSTDEAD:
-	case IMPTYPE_HOSTUNREACH: {
-		int s = splnet();
+	case IMPTYPE_HOSTUNREACH:
 		impnotify((int)ip->il_mtype, (struct control_leader *)ip,
 		    hostlookup(addr));
-		splx(s);
 		goto rawlinkin;
-	}
 
 	/*
 	 * Error in data.  Clear RFNM status for this host and send
 	 * noops to the IMP to clear the interface.
 	 */
-	case IMPTYPE_BADDATA: {
-		int s;
-
+	case IMPTYPE_BADDATA:
 		impmsg(sc, "data error");
-		s = splnet();
 		if (hp = hostlookup(addr))
 			hp->h_rfnm = 0;
-		splx(s);
 		impnoops(sc);
 		goto drop;
-	}
 
 	/*
 	 * Interface reset.
@@ -352,11 +344,13 @@ drop:
 impdown(sc)
 	struct imp_softc *sc;
 {
+	int s = splimp();
 
 	sc->imp_state = IMPS_DOWN;
 	impmsg(sc, "marked down");
 	hostreset(sc->imp_if.if_net);
 	if_down(&sc->imp_if);
+	splx(s);
 }
 
 /*VARARGS*/
