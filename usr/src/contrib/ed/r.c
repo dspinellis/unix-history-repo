@@ -9,20 +9,23 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)r.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)r.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/stat.h>
 
 #include <a.out.h>
-#include <db.h>
 #include <errno.h>
 #include <regex.h>
 #include <setjmp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef DBI
+#include <db.h>
+#endif
 
 #include "ed.h"
 #include "extern.h"
@@ -40,12 +43,16 @@ r(inputt, errnum)
 	struct stat l_s_buf;
 	FILE *l_fp;
 	long l_num;
-	char *l_filename_read, *l_temp;
+	char *l_filename_read=NULL, *l_temp;
 	int l_srv;
 
 	if (filename_flag == 1) {
+		sigspecial++;
 		l_filename_read = filename_current;
 		filename_flag = 0;
+		sigspecial--;
+		if (sigint_flag && (!sigspecial))
+			SIGINT_ACTION;
 	} else {
 		l_temp = filename(inputt, errnum);
 		if (*errnum == 1)
@@ -71,8 +78,6 @@ r(inputt, errnum)
 		} else
 			filename_current = l_filename_read;
 	}
-	if (sigint_flag)
-		SIGINT_ACTION;
 
 	/*
 	 * Determine if the file can be read.  If not set the help message to
@@ -112,8 +117,6 @@ r(inputt, errnum)
 	if (g_flag == 0)
 		u_clr_stk();
 	l_num = input_lines(l_fp, errnum);
-	if (sigint_flag == 1)
-		goto point;
 	if (*errnum < 0)
 		return;
 	*errnum = 0;

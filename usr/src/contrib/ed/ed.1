@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)ed.1	5.1 (Berkeley) %G%
+.\"	@(#)ed.1	5.2 (Berkeley) %G%
 .\"
 .TH ED 1 ""
 .SH NAME
@@ -25,15 +25,15 @@ ed \- line oriented text editor
 ]
 .SH DESCRIPTION
 .I Ed
-is the standard text editor.
+is a standard text editor.
 .PP
 \fIEd\fR is a powerful line oriented editor. Although ex(1)/vi(1) have gained
 popularity, \fIed\fR still maintains advantages over them. Most notable points
 are the
 .I W
 command (see below) (which is not part of ex(1)/vi(1)\|), the
-smaller executable size (you can often be editting before the others finish
-loading), and the better response when editting from slow terminals or across
+smaller executable size (you can often be editing before the others finish
+loading), and the better response when editing from slow terminals or across
 low baud data lines. \fIEd\fR continues to be used by many system utilities.
 .SH OPTIONS
 .PP
@@ -346,9 +346,9 @@ have multiple commands in the command list it is necessary to escape the
 interpret it as an indication that the command list entry has ended.
 The <newline> is escaped by proceeding it with a backslash (\e).
 Similarly with the commands that set \fIed\fR into input mode the <newlines>
-of the entered text
-need to be escaped. If the `.' used to end input mode is the last line
-of the command list the <newline> following it need not be escaped.
+of the entered text need to be escaped. If the `.' used to end input mode
+is the last line of the command list the <newline> following the `.' need
+not be escaped, or the `.' may be omitted entirely.
 Commands in the command list can affect any line in the buffer.
 For the behaviour of each \fIed\fR command within a command list refer to the
 information on the individual command.

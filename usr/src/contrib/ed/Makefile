@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 
 PROG=	ed
 SRCS=	a.c add_line.c address.c bang.c c.c d.c e.c edhup.c equal.c f.c \
@@ -8,7 +8,7 @@ SRCS=	a.c add_line.c address.c bang.c c.c d.c e.c edhup.c equal.c f.c \
 
 # -DNOTERMCAP and be added or substracted without harm
 # see README for details and more flags.
-CFLAGS+=-DBSD
+CFLAGS+=-DBSD -DDBI
 LDADD=	-ltermcap
 DPADD=	${TERMLIB}
 

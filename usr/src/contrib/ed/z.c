@@ -9,16 +9,19 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)z.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)z.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 
-#include <db.h>
 #include <regex.h>
 #include <setjmp.h>
 #include <stdio.h>
 #include <string.h>
+
+#ifdef DBI
+#include <db.h>
+#endif
 
 #include "ed.h"
 #include "extern.h"
@@ -38,7 +41,7 @@ z(inputt, errnum)
 
 	if (current == NULL) {
 		*errnum = -1;
-		strcpy(help_msg, "no lines in buffer");
+		strcpy(help_msg, "buffer empty");
 		return;
 	}
 	/* Set zsnum if need be here. */
@@ -52,8 +55,12 @@ z(inputt, errnum)
 			if (rol(inputt, errnum))
 				return;
 		}
-	if (sigint_flag)
-		SIGINT_ACTION;
+	if (start == NULL) {
+		strcpy(help_msg, "buffer empty");
+		*errnum = -1;
+		ungetc('\n', inputt);
+		return;
+	}
 	if (End_default) {
 		if ((current->below) != NULL)
 			start = current->below;
@@ -65,22 +72,16 @@ z(inputt, errnum)
 		}
 	} else
 		start = End;
-	if (start == NULL) {
-		strcpy(help_msg, "bad address");
-		*errnum = -1;
-		ungetc('\n', inputt);
-		return;
-	}
 	start_default = End_default = 0;
 
 	current = start;
 	l_cnt = 1;		/* Yes, set to = 1. */
 	while (1) {
 		/* Scroll-out the next 'zsnum' of lines or until bottom. */
-		if (sigint_flag)
-			SIGINT_ACTION;
 		if (current == NULL)
 			break;
+		if (sigint_flag && (!sigspecial))
+			SIGINT_ACTION;
 		get_line(current->handle, current->len);
 		printf("%s\n", text);
 		if (current == bottom)

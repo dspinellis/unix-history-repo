@@ -9,17 +9,20 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)get_pattern.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)get_pattern.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 
-#include <db.h>
 #include <regex.h>
 #include <setjmp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef DBI
+#include <db.h>
+#endif
 
 #include "ed.h"
 #include "extern.h"
@@ -61,7 +64,6 @@ get_pattern(delim, inputt, errnum, flag)
 				l_pat[l_cnt] = ss;
 			else {
 				l_pat[l_cnt] = '\\';
-				/* ungetc(ss, inputt); */
 				l_pat[++l_cnt] = ss;
 			}
 			goto leap;

@@ -9,17 +9,20 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)t.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)t.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 
-#include <db.h>
 #include <regex.h>
 #include <setjmp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef DBI
+#include <db.h>
+#endif
 
 #include "ed.h"
 #include "extern.h"
@@ -35,7 +38,7 @@ t(inputt, errnum)
 	FILE *inputt;
 	int *errnum;
 {
-	LINE *l_ptr, *l_tb, *l_te, *l_temp1, *l_temp2, *l_dest;
+	LINE *l_ptr, *l_tb, *l_te, *l_temp1, *l_temp2, *l_dest=NULL;
 
 	l_tb = NULL;
 	l_te = NULL;
@@ -52,8 +55,6 @@ t(inputt, errnum)
 	} else
 		(ungetc(ss, inputt), *errnum = -1);
 
-	if (sigint_flag)
-		SIGINT_ACTION;
 	if (*errnum < 0) {
 		strcpy(help_msg, "bad destination address");
 		return;
@@ -68,20 +69,21 @@ t(inputt, errnum)
 		if (start_default)
 			start = End;
 	if (start == NULL) {
-		strcpy(help_msg, "bad address");
+		strcpy(help_msg, "empty buffer");
 		*errnum = -1;
 		return;
 	}
 	start_default = End_default = 0;
 
-	if (sigint_flag)
-		SIGINT_ACTION;
-
 	if (g_flag == 0)
 		u_clr_stk();
 
+	sigspecial++;
+
 	for (l_ptr = start; l_ptr != (End->below); l_ptr = (l_ptr->below)) {
 		get_line(l_ptr->handle, l_ptr->len);
+		if (sigint_flag && (!sigspecial))
+			break;
 		l_temp1 = (LINE *) malloc(sizeof(LINE));
 		if (l_temp1 == NULL) {
 			*errnum = -1;
@@ -101,7 +103,7 @@ t(inputt, errnum)
 		(l_temp1->len) = l_ptr->len;
 		/* add it into the buffer at the spec'd location */
 		(l_temp1->handle) = add_line(text, l_ptr->len);
-		if (sigint_flag)
+		if (sigint_flag && (!sigspecial))
 			break;
 	}
 
@@ -133,6 +135,7 @@ t(inputt, errnum)
 
 	current = l_te;
 	change_flag = 1;
+	sigspecial--;
 	*errnum = 1;
 	return;
 }

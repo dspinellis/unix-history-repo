@@ -9,16 +9,19 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)k.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)k.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 
-#include <db.h>
 #include <regex.h>
 #include <setjmp.h>
 #include <stdio.h>
 #include <string.h>
+
+#ifdef DBI
+#include <db.h>
+#endif
 
 #include "ed.h" 
 #include "extern.h"
@@ -68,12 +71,13 @@ set_mark(inputt, errnum)
  * This gets the address of a marked line.
  */
 LINE *
-get_mark(errnum)
+get_mark(inputt, errnum)
+	FILE *inputt;
 	int *errnum;
 {
 	int l_mark;
 
-	l_mark = getchar();
+	l_mark = getc(inputt);
 	/* Ditto above comment. */
 	if ((l_mark < 97) || (l_mark > 122)) {
 		strcpy(help_msg, "illegal mark character");

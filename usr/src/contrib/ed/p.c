@@ -9,16 +9,19 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)p.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)p.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 
-#include <db.h>
 #include <regex.h>
 #include <setjmp.h>
 #include <stdio.h>
 #include <string.h>
+
+#ifdef DBI
+#include <db.h>
+#endif
 
 #include "ed.h"
 #include "extern.h"
@@ -33,7 +36,7 @@ p(inputt, errnum, flag)
 	FILE *inputt;
 	int *errnum, flag;
 {
-	int l_ln;
+	int l_ln=0;
 
 	if (start_default && End_default)
 		start = End = current;
@@ -43,7 +46,7 @@ p(inputt, errnum, flag)
 	start_default = End_default = 0;
 
 	if (start == NULL) {
-		strcpy(help_msg, "bad address");
+		strcpy(help_msg, "buffer empty");
 		*errnum = -1;
 		return;
 	}
@@ -52,16 +55,14 @@ p(inputt, errnum, flag)
 
 	if (flag == 1)
 		l_ln = line_number(start);
-	if (sigint_flag)
-		SIGINT_ACTION;
 	current = start;
 	for (;;) {
 		/* Print out the lines. */
-		if (sigint_flag)
-			SIGINT_ACTION;
 		if (current == NULL)
 			break;
 		get_line(current->handle, current->len);
+		if (sigint_flag && (!sigspecial))
+			SIGINT_ACTION;
 		if (flag == 1)		/* When 'n'. */
 			printf("%d\t", l_ln++);
 		fwrite(text, sizeof(char), current->len, stdout);

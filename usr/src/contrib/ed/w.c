@@ -9,17 +9,20 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)w.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)w.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 
-#include <db.h>
 #include <regex.h>
 #include <setjmp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef DBI
+#include <db.h>
+#endif
 
 #include "ed.h"
 #include "extern.h"
@@ -39,7 +42,7 @@ w(inputt, errnum)
 {
 	FILE *fp;
 	int l_ttl = 0, l_q_flag = 0, l_sl;
-	char *filename_read, *temp;
+	char *filename_read=NULL, *temp;
 
 	if (start_default && End_default) {
 		start = top;
@@ -48,7 +51,7 @@ w(inputt, errnum)
 		if (start_default)
 			start = End;
 	if (start == NULL) {
-		strcpy(help_msg, "bad address");
+		strcpy(help_msg, "buffer empty");
 		*errnum = -1;
 		return;
 	}
@@ -63,8 +66,6 @@ w(inputt, errnum)
 		ungetc(ss, inputt);
 
 	temp = filename(inputt, errnum);
-	if (sigint_flag)
-		SIGINT_ACTION;
 	if (*errnum == 1)
 		filename_read = temp;
 	else
@@ -85,6 +86,7 @@ w(inputt, errnum)
 		} else
 			filename_current = filename_read;
 	}
+	sigspecial++;
 	if (l_sl == 'W')
 		fp = fopen(filename_read, "a");
 	else
@@ -96,7 +98,8 @@ w(inputt, errnum)
 		ungetc('\n', inputt);
 		return;
 	}
-	if (sigint_flag)
+	sigspecial--;
+	if (sigint_flag && (!sigspecial))
 		goto point;
 
 	/* Write it out and get a report on the number of bytes written. */
@@ -105,13 +108,11 @@ w(inputt, errnum)
 		printf("%d\n", l_ttl);
 
 point:	fclose(fp);
-	if (sigint_flag)
-		SIGINT_ACTION;
 	if (filename_read != filename_current)
 		free(filename_read);
 	change_flag = 0L;
 	*errnum = 1;
-	if (l_q_flag) {			/* For "wq". */
+	if (l_q_flag) {			/* For "wq" and "Wq". */
 		ungetc('\n', inputt);
 		ss = (int) 'q';
 		q(inputt, errnum);
@@ -131,7 +132,10 @@ edwrite(fp, begi, fini)
 
 	for (;;) {
 		get_line(begi->handle, begi->len);
+		if (sigint_flag && (!sigspecial))
+			break;
 
+		sigspecial++;
 		/* Fwrite is about 20+% faster than fprintf -- no surprise. */
 		fwrite(text, sizeof(char), begi->len, fp);
 		fputc('\n', fp);
@@ -140,8 +144,9 @@ edwrite(fp, begi, fini)
 			break;
 		else
 			begi = begi->below;
-		if (sigint_flag)
-			return (l_ttl);
+		sigspecial--;
+		if (sigint_flag && (!sigspecial))
+			break;
 	}
 	return (l_ttl);
 }

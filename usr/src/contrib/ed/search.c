@@ -9,17 +9,20 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)search.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)search.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 
-#include <db.h>
 #include <regex.h>
 #include <setjmp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef DBI
+#include <db.h>
+#endif
 
 #include "ed.h"
 #include "extern.h"
@@ -38,11 +41,16 @@ search(inputt, errnum)
 	int l_err;
 	char *l_patt;
 
-	l_temp = current->below;
+	if (current)
+		l_temp = current->below;
+	else {
+		*errnum = -1;
+		ungetc(ss, inputt);
+		strcpy(help_msg, "buffer empty");
+		return(NULL);
+	}
 	/* Get the RE. */
 	l_patt = get_pattern(ss, inputt, errnum, 0);
-	if (sigint_flag)
-		SIGINT_ACTION;
 	if (*errnum < -1)
 		return (NULL);
 	*errnum = 0;
@@ -52,8 +60,12 @@ search(inputt, errnum)
 		return (NULL);
 	} else
 		if (l_patt[1] || (RE_patt == NULL)) {
+			sigspecial++;
 			free(RE_patt);
 			RE_patt = l_patt;
+			sigspecial--;
+			if (sigint_flag && (!sigspecial))
+				SIGINT_ACTION;
 		}
 	RE_sol = (RE_patt[1] == '^') ? 1 : 0;
 
@@ -67,8 +79,6 @@ search(inputt, errnum)
 		return (NULL);
 	}
 	RE_flag = 1;
-	if (sigint_flag)
-		SIGINT_ACTION;
 
 	/* Find a line that has the RE in it. */
 	for (;;) {		/* (l_temp != current) */
@@ -79,6 +89,8 @@ search(inputt, errnum)
 				break;
 		}
 		get_line(l_temp->handle, l_temp->len);
+		if (sigint_flag && (!sigspecial))
+			SIGINT_ACTION;
 		if (regexec(&RE_comp, text, (size_t) RE_SEC, RE_match, 0)) {
 			l_temp = l_temp->below;
 			if (l_temp == (current->below))
@@ -87,8 +99,6 @@ search(inputt, errnum)
 			*errnum = 0;
 			return (l_temp);
 		}
-		if (sigint_flag)
-			SIGINT_ACTION;
 	}
 	strcpy(help_msg, "RE not found");
 	*errnum = -1;
@@ -108,12 +118,17 @@ search_r(inputt, errnum)
 	int l_err;
 	char *l_patt;
 
-	l_temp = current->above;
+	if (current)
+		l_temp = current->above;
+	else {
+		*errnum = -1;
+		ungetc(ss, inputt);
+		strcpy(help_msg, "buffer empty");
+		return(NULL);
+	}
 
 	/* Get the RE. */
 	l_patt = get_pattern(ss, inputt, errnum, 0);
-	if (sigint_flag)
-		SIGINT_ACTION;
 	if (*errnum < -1)
 		return (NULL);
 	*errnum = 0;
@@ -123,8 +138,12 @@ search_r(inputt, errnum)
 		return (NULL);
 	} else
 		if (l_patt[1] || (RE_patt == NULL)) {
+			sigspecial++;
 			free(RE_patt);
 			RE_patt = l_patt;
+			sigspecial--;
+			if (sigint_flag && (!sigspecial))
+				SIGINT_ACTION;
 		}
 	RE_sol = (RE_patt[1] == '^') ? 1 : 0;
 
@@ -138,8 +157,6 @@ search_r(inputt, errnum)
 		return (NULL);
 	}
 	RE_flag = 1;
-	if (sigint_flag)
-		SIGINT_ACTION;
 
 	/* Search for a line that has the RE in it. */
 	for (;;) {		/* (l_temp != (current->above)) */
@@ -150,6 +167,8 @@ search_r(inputt, errnum)
 				break;
 		}
 		get_line(l_temp->handle, l_temp->len);
+		if (sigint_flag && (!sigspecial))
+			SIGINT_ACTION;
 		if (regexec(&RE_comp, text, (size_t) RE_SEC, RE_match, 0)) {
 			l_temp = l_temp->above;
 			if (l_temp == (current->above))
@@ -158,8 +177,6 @@ search_r(inputt, errnum)
 			*errnum = 0;
 			return (l_temp);
 		}
-		if (sigint_flag)
-			SIGINT_ACTION;
 	}
 	strcpy(help_msg, "RE not found");
 	*errnum = -1;

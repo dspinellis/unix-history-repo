@@ -9,18 +9,22 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)edhup.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)edhup.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 
-#include <db.h>
+#include <limits.h>
 #include <regex.h>
 #include <setjmp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
+#ifdef DBI
+#include <db.h>
+#endif
 
 #include "ed.h"
 #include "extern.h"
@@ -39,6 +43,7 @@ do_hup()
 	char l_filename[FILENAME_LEN], *l_temp;
 	FILE *l_fp;
 
+	sigspecial++;
 	if (change_flag == 0)
 		exit(1);		/* No need to save buffer contents. */
 	if ((l_fp = fopen("ed.hup", "w")) == NULL) {
@@ -53,7 +58,13 @@ do_hup()
 	}
 	edwrite(l_fp, top, bottom);
 	fclose(l_fp);
+#ifdef STDIO
+	fclose(fhtmp);
+	unlink(template);
+#endif
+#ifdef DBI
 	(dbhtmp->close) (dbhtmp);
 	unlink(template);
+#endif
 	exit(1);				/* Hangup */
 }
