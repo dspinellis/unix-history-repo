@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwchild.c	3.1 83/08/11";
+static	char *sccsid = "@(#)wwchild.c	3.2 83/09/01";
 #endif
 
 #include "ww.h"
@@ -15,16 +15,8 @@ wwchild()
 		for (wp = wwhead; wp; wp = wp->ww_next) {
 			if (wp->ww_pid == pid) {
 				wp->ww_state = WW_DEAD;
-				/*
-				wwprintf(curwin,
-					"\r\n%d: Died\r\n", pid);
-				*/
 				break;
 			}
 		}
-		/*
-		if (wp == 0)
-			wwprintf(curwin, "\r\n%d: No such child\r\n", pid);
-		*/
 	}
 }

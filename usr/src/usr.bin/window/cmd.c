@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd.c	3.9 83/08/31";
+static	char *sccsid = "@(#)cmd.c	3.10 83/09/01";
 #endif
 
 #include "defs.h"
@@ -12,170 +12,176 @@ docmd()
 	if (!terse)
 		Wunhide(cmdwin->ww_win);
 	if (selwin != 0)
-top:
-	while ((c = bgetc()) >= 0) {
-		if (!terse)
-			wwputs("\r\n", cmdwin);
-		switch (c) {
-		default:
-			if (c == escapec)
-				goto foo;
-			break;
-		case 'h': case 'j': case 'k': case 'l':
-		case CTRL(y):
-		case CTRL(e):
-		case CTRL(u):
-		case CTRL(d):
-		case CTRL(b):
-		case CTRL(f):
-		case CTRL(s):
-		case CTRL(q):
-		case CTRL([):
-		foo:
-			if (selwin == 0) {
-				if (terse)
-					Ding();
-				else
-					wwputs("No window.  ", cmdwin);
-				continue;
-			}
-		}
-		switch (c) {
-		case '1': case '2': case '3': case '4': case '5':
-		case '6': case '7': case '8': case '9':
-			if ((w = wwfind(c - '0')) == 0) {
-				Ding();
 				break;
+			case 'h': case 'j': case 'k': case 'l':
+			case CTRL(y):
+			case CTRL(e):
+			case CTRL(u):
+			case CTRL(d):
+			case CTRL(b):
+			case CTRL(f):
+			case CTRL(s):
+			case CTRL(q):
+			case CTRL([):
+			foo:
+				if (selwin == 0) {
+					error("No window.");
+					continue;
+				}
 			}
-			setselwin(w);
-			goto out;
-		case '%':
-			if ((w = getwin()) != 0)
+			switch (c) {
+			case '1': case '2': case '3': case '4': case '5':
+			case '6': case '7': case '8': case '9':
+				if ((w = window[c - '1']) == 0) {
+					wwbell();
+					break;
+				}
 				setselwin(w);
-			break;
-		case 'c':
-			if ((w = getwin()) != 0)
-				doclose(w);
-			break;
-		case 'C':
-			doclose((struct ww *)0);
-			break;
-		case 'w':
-			dowindow();
-			break;
-		case 'm':
-			if ((w = getwin()) != 0)
-				c_move(w);
-			break;
-		case 'S':
-			doshow();
-			break;
-		case 'L':
-			dolist();
-			break;
-		/*
-		case 'e':
-			doescape();
-		case ':':
-			docolon();
-			break;
-		case 'h':
-			Wcurleft(selwin->ww_win, 1);
-			break;
-		case 'j':
-			Wcurdown(selwin->ww_win, 1);
-			break;
-		case 'k':
-			Wcurup(selwin->ww_win, 1);
-			break;
-		case 'l':
-			Wcurright(selwin->ww_win, 1);
-			break;
-		case CTRL(d):
-			doscroll(1);
-			break;
-		case CTRL(u):
-			doscroll(-1);
-			break;
-		case CTRL(f):
-			doscroll(2);
-			break;
-		case CTRL(b):
-			doscroll(-2);
-			break;
-		case CTRL(l):
-			ScreenGarbaged = 1;
-			break;
-		case '?':
-			dohelp();
-			break;
-		case CTRL([):
-			goto out;
-		case CTRL(z):
-			wwsuspend();
-			break;
-		case 'q':
-			doquit();
-			if (quit)
-				goto out;
-			break;
-			break;
-		case 't':
-			c_time(RUSAGE_SELF);
-			break;
-		case 'T':
-			c_time(RUSAGE_CHILDREN);
-			break;
-		/* debugging commands */
-		case 'M':
-			if (!debug)
-				goto badcmd;
-			wwdumpsmap();
-			break;
-		case 'V':
-			if (!debug)
-				goto badcmd;
-			if ((w = getwin()) != 0)
-				wwdumpnvis(w);
-			break;
-		case 'D':
-			if (!debug)
-				goto badcmd;
-			if ((w = getwin()) != 0)
-				wwdumpcov(w);
-			break;
-		case 'W':
-			if (!debug)
-				goto badcmd;
-			if ((w = getwin()) != 0)
-				wwdumpwin(w);
-			break;
-		default:
-		badcmd:
-			if (c == escapec) {
-				write(selwin->ww_pty, &escapec, 1);
-				goto out;
+				if (checkproc(selwin) >= 0)
+					incmd = 0;
+				break;
+			case '%':
+				if ((w = getwin()) != 0)
+					setselwin(w);
+				break;
+			case 'c':
+				if ((w = getwin()) != 0)
+					c_close(w);
+				break;
+			case 'C':
+				c_close((struct ww *)0);
+				break;
+			case 'w':
+				c_window();
+				break;
+			case 'm':
+				if ((w = getwin()) != 0)
+					c_move(w);
+				break;
+			case 'S':
+				c_show();
+				break;
+			case 'L':
+				c_list();
+				break;
+			case ':':
+				c_colon();
+				break;
+			case 'h':
+				(void) wwwrite(selwin, "\b", 1);
+				break;
+			case 'j':
+				(void) wwwrite(selwin, "\n", 1);
+				break;
+			case 'k':
+				(void) wwwrite(selwin, "\033A", 2);
+				break;
+			case 'l':
+				(void) wwwrite(selwin, "\033C", 2);
+				break;
+			case CTRL(e):
+				wwscroll(selwin, 1);
+				break;
+			case CTRL(y):
+				wwscroll(selwin, -1);
+				break;
+			case CTRL(d):
+				wwscroll(selwin, selwin->ww_w.nr / 2);
+				break;
+			case CTRL(u):
+				wwscroll(selwin, - selwin->ww_w.nr / 2);
+				break;
+			case CTRL(f):
+				wwscroll(selwin, selwin->ww_w.nr);
+				break;
+			case CTRL(b):
+				wwscroll(selwin, - selwin->ww_w.nr);
+				break;
+			case CTRL(s):
+				(void) write(selwin->ww_pty,
+					&wwwintty.ww_tchars.t_stopc, 1);
+				break;
+			case CTRL(q):
+				(void) write(selwin->ww_pty,
+					&wwwintty.ww_tchars.t_startc, 1);
+				break;
+			case CTRL(l):
+				wwredraw();
+				break;
+			case '?':
+				c_help();
+				break;
+			case CTRL([):
+				if (checkproc(selwin) >= 0)
+					incmd = 0;
+				break;
+			case CTRL(z):
+				wwsuspend();
+				break;
+			case 'q':
+				c_quit();
+				break;
+			/* undocumented commands */
+			case 's':
+				c_stat();
+				break;
+			case 't':
+				c_time(RUSAGE_SELF);
+				break;
+			case 'T':
+				c_time(RUSAGE_CHILDREN);
+				break;
+			/* debugging commands */
+			case 'M':
+				if (!debug)
+					goto badcmd;
+				wwdumpsmap();
+				break;
+			case 'V':
+				if (!debug)
+					goto badcmd;
+				if ((w = getwin()) != 0)
+					wwdumpnvis(w);
+				break;
+			case 'D':
+				if (!debug)
+					goto badcmd;
+				if ((w = getwin()) != 0)
+					wwdumpcov(w);
+				break;
+			case 'W':
+				if (!debug)
+					goto badcmd;
+				if ((w = getwin()) != 0)
+					wwdumpwin(w);
+				break;
+			default:
+			badcmd:
+				if (c == escapec) {
+					if (checkproc(selwin) >= 0) {
+						(void) write(selwin->ww_pty,
+							&escapec, 1);
+						incmd = 0;
+					}
+				} else {
+					if (!terse)
+						wwbell();
+					error("Type ? for help.");
+				}
 			}
 			Ding();
-			if (!terse)
-				wwprintf(cmdwin, "Type ? for help.  ");
 			break;
+		if (terse)
+			wwsetcursor(0, 0);
+		else {
+			(void) wwputs("Command: ", cmdwin);
+			wwcurtowin(cmdwin);
 		}
+		while (bpeekc() < 0)
+			bread();
 	}
-	if (terse)
-		wwsetcursor(0, 0);
-	else {
-		if (!terse)
-			wwputs("Command: ", cmdwin);
-		wwsetcursor(WCurRow(cmdwin->ww_win), WCurCol(cmdwin->ww_win));
-	}
-	while (bpeekc() < 0)
-		bread();
-	goto top;
-out:
 	if (!quit)
 		wwsetcurwin(selwin);
-	if (selwin != 0)
 }
 
 struct ww *
@@ -194,6 +200,16 @@ getwin()
 	if (!terse)
 		wwputs("\r\n", cmdwin);
 	return w;
+}
+
+checkproc(w)
+struct ww *w;
+{
+	if (w->ww_state != WWS_HASPROC) {
+		error("No process in window.");
+		return -1;
+	}
+	return 0;
 }
 
 setselwin(w)

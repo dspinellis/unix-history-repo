@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	3.8 83/08/26";
+static	char *sccsid = "@(#)main.c	3.9 83/09/01";
 #endif
 
 #include "defs.h"
@@ -93,7 +93,7 @@ char **argv;
 		}
 	}
 	while (!quit) {
-		if (curwin == cmdwin) {
+		if (incmd) {
 			docmd();
 			continue;
 		}

@@ -1,4 +1,4 @@
-/*	@(#)defs.h	3.3 83/08/25		*/
+/*	@(#)defs.h	3.4 83/09/01		*/
 
 #include "ww.h"
 #include <signal.h>
@@ -33,4 +33,5 @@ int nbufline;			/* number of lines in the buffer */
 char quit;
 char terse;
 char debug;
+char incmd;			/* in command mode */
 char escapec;			/* escape character */
