@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dirent.h	7.2 (Berkeley) %G%
+ *	@(#)dirent.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -34,11 +34,17 @@ struct dirent {
 /*
  * File types
  */
-#define		D_UNKNOWN	0
-#define		D_REG		1
-#define		D_DIR		2
-#define		D_BLK		3
-#define		D_CHR		4
-#define		D_LNK		5
-#define		D_SOCK		6
-#define		D_FIFO		7
+#define	DT_UNKNOWN	 0
+#define	DT_FIFO		 1
+#define	DT_CHR		 2
+#define	DT_DIR		 4
+#define	DT_BLK		 6
+#define	DT_REG		 8
+#define	DT_LNK		10
+#define	DT_SOCK		12
+
+/*
+ * Convert between stat structure types and directory types.
+ */
+#define	IFTODT(mode)	(((mode) & 0170000) >> 12)
+#define	DTTOIF(dirtype)	((dirtype) << 12)
