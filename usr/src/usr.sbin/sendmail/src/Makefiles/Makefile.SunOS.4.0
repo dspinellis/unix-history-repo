@@ -3,12 +3,12 @@
 #  not use the obj subdirectory.  It also does not install documentation
 #  automatically -- think of it as a quick start for sites that have the
 #  old make program (I recommend that you get and port the new make if you
-#  are going to be doing any signficant work on sendmail).
+#  are going to be doing any significant work on sendmail).
 #
 #	You may find you need to find versions of some routines
 #	such as strcasecmp in order to link this on SunOS 4.0.3.
 #
-#	@(#)Makefile.SunOS.4.0	8.6 (Berkeley) %G%
+#	@(#)Makefile.SunOS.4.0	8.7 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
