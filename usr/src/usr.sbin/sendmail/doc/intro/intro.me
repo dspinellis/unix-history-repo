@@ -7,12 +7,12 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)intro.me	4.2 (Berkeley) %G%
+.\"	@(#)intro.me	6.1 (Berkeley) %G%
 .\"
-.nr DR 1	\" this is a draft copy
+.\"	pic -Pxx intro.me | ditroff -me -Pxx
 .nr si 3n
 .he 'SENDMAIL''%'
-.fo 'Version 4.2'DRAFT'Last Mod %G%'
+.fo 'Version 6.1''Last Mod %G%'
 .if n .ls 2
 .+c
 .(l C
@@ -260,7 +260,44 @@ These goals motivated the architecture illustrated in figure 1.
 .(z
 .hl
 .ie t \
+\{\
+.ie !"\*(.T"" \
+\{\
+.PS
+boxht = 0.5i
+boxwid = 1.0i
+
+	down
+S:	[
+		right
+	S1:	box "sender1"
+		move
+		box "sender2"
+		move
+	S3:	box "sender3"
+	]
+	arrow
+SM:	box "sendmail" wid 2i ht boxht
+	arrow
+M:	[
+		right
+	M1:	box "mailer1"
+		move
+		box "mailer2"
+		move
+	M3:	box "mailer3"
+	]
+
+	arrow from S.S1.s to 1/2 between SM.nw and SM.n
+	arrow from S.S3.s to 1/2 between SM.n and SM.ne
+
+	arrow from 1/2 between SM.sw and SM.s to M.M1.n
+	arrow from 1/2 between SM.s and SM.se to M.M3.n
+.PE
+.\}
+.el \
 .	sp 18
+.\}
 .el \{\
 .(c
 +---------+   +---------+   +---------+
