@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)worms.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)worms.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -166,7 +166,7 @@ main(argc, argv)
 	register short *ip;
 	register char *term;
 	int CO, IN, LI, last, bottom, ch, length, number, trail, Wrap;
-	int onsig();
+	void onsig();
 	short **ref;
 	char *AL, *BC, *CM, *EI, *HO, *IC, *IM, *IP, *SR;
 	char *field, tcb[100], *mp, *malloc(), *getenv(), *tgetstr(), *tgoto();
@@ -397,6 +397,7 @@ main(argc, argv)
 	}
 }
 
+void
 onsig()
 {
 	tputs(tgetstr("cl", &tcp), 1, fputchar);
