@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ttzapple.c	3.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)ttzapple.c	3.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -39,39 +39,36 @@ zz|zapple|perfect apple:\
 #define NROW		24
 #define TOKEN_MAX	32
 
-#define pc(c)	ttputc(c)
-#define esc(c)	(pc(ctrl('[')), pc(c))
-
 extern short gen_frame[];
 
 zz_setmodes(new)
 {
 	if (new & WWM_REV) {
 		if ((tt.tt_modes & WWM_REV) == 0)
-			esc('+');
+			ttesc('+');
 	} else
 		if (tt.tt_modes & WWM_REV)
-			esc('-');
+			ttesc('-');
 	tt.tt_modes = new;
 }
 
 zz_insline(n)
 {
 	if (n == 1)
-		esc('a');
+		ttesc('a');
 	else {
-		esc('A');
-		pc(n + ' ');
+		ttesc('A');
+		ttputc(n + ' ');
 	}
 }
 
 zz_delline(n)
 {
 	if (n == 1)
-		esc('d');
+		ttesc('d');
 	else {
-		esc('D');
-		pc(n + ' ');
+		ttesc('D');
+		ttputc(n + ' ');
 	}
 }
 
@@ -106,42 +103,42 @@ zz_move(row, col)
 		if ((x = col - tt.tt_col) == 0)
 			return;
 		if (col == 0) {
-			pc('\r');
+			ttctrl('m');
 			goto out;
 		}
 		switch (x) {
 		case 2:
-			pc(ctrl('f'));
+			ttctrl('f');
 		case 1:
-			pc(ctrl('f'));
+			ttctrl('f');
 			goto out;
 		case -2:
-			pc('\b');
+			ttctrl('h');
 		case -1:
-			pc('\b');
+			ttctrl('h');
 			goto out;
 		}
 		if (col & 7 == 0 && x > 0 && x <= 16) {
-			pc('\t');
+			ttctrl('i');
 			if (x > 8)
-				pc('\t');
+				ttctrl('i');
 			goto out;
 		}
-		esc('<');
-		pc(col + ' ');
+		ttesc('<');
+		ttputc(col + ' ');
 		goto out;
 	}
 	if (tt.tt_col == col) {
 		switch (row - tt.tt_row) {
 		case 2:
-			pc('\n');
+			ttctrl('j');
 		case 1:
-			pc('\n');
+			ttctrl('j');
 			goto out;
 		case -2:
-			pc(ctrl('k'));
+			ttctrl('k');
 		case -1:
-			pc(ctrl('k'));
+			ttctrl('k');
 			goto out;
 		}
 		if (col == 0) {
@@ -150,30 +147,30 @@ zz_move(row, col)
 			if (row == NROW - 1)
 				goto ll;
 		}
-		esc('>');
-		pc(row + ' ');
+		ttesc('>');
+		ttputc(row + ' ');
 		goto out;
 	}
 	if (col == 0) {
 		if (row == 0) {
 home:
-			esc('0');
+			ttesc('0');
 			goto out;
 		}
 		if (row == tt.tt_row + 1) {
-			pc('\r');
-			pc('\n');
+			ttctrl('m');
+			ttctrl('j');
 			goto out;
 		}
 		if (row == NROW - 1) {
 ll:
-			esc('1');
+			ttesc('1');
 			goto out;
 		}
 	}
-	esc('=');
-	pc(' ' + row);
-	pc(' ' + col);
+	ttesc('=');
+	ttputc(' ' + row);
+	ttputc(' ' + col);
 out:
 	tt.tt_col = col;
 	tt.tt_row = row;
@@ -184,49 +181,49 @@ zz_start()
 	zz_setmodes(0);
 	zz_setscroll(0, NROW - 1);
 	zz_clear();
-	esc('T');
-	pc(TOKEN_MAX + ' ');
+	ttesc('T');
+	ttputc(TOKEN_MAX + ' ');
 }
 
 zz_end()
 {
-	esc('T');
-	pc(' ');
+	ttesc('T');
+	ttputc(' ');
 }
 
 zz_clreol()
 {
-	esc('2');
+	ttesc('2');
 }
 
 zz_clreos()
 {
-	esc('3');
+	ttesc('3');
 }
 
 zz_clear()
 {
-	esc('4');
+	ttesc('4');
 	tt.tt_col = tt.tt_row = 0;
 }
 
 zz_insspace(n)
 {
 	if (n == 1)
-		esc('i');
+		ttesc('i');
 	else {
-		esc('I');
-		pc(n + ' ');
+		ttesc('I');
+		ttputc(n + ' ');
 	}
 }
 
 zz_delchar(n)
 {
 	if (n == 1)
-		esc('c');
+		ttesc('c');
 	else {
-		esc('C');
-		pc(n + ' ');
+		ttesc('C');
+		ttputc(n + ' ');
 	}
 }
 
@@ -234,30 +231,30 @@ zz_scroll_down(n)
 {
 	if (n == 1)
 		if (tt.tt_row == NROW - 1)
-			pc('\n');
+			ttctrl('j');
 		else
-			esc('f');
+			ttesc('f');
 	else {
-		esc('F');
-		pc(n + ' ');
+		ttesc('F');
+		ttputc(n + ' ');
 	}
 }
 
 zz_scroll_up(n)
 {
 	if (n == 1)
-		esc('r');
+		ttesc('r');
 	else {
-		esc('R');
-		pc(n + ' ');
+		ttesc('R');
+		ttputc(n + ' ');
 	}
 }
 
 zz_setscroll(top, bot)
 {
-	esc('?');
-	pc(top + ' ');
-	pc(bot + ' ');
+	ttesc('?');
+	ttputc(top + ' ');
+	ttputc(bot + ' ');
 	tt.tt_scroll_top = top;
 	tt.tt_scroll_bot = bot;
 }
@@ -276,8 +273,8 @@ zz_set_token(t, s, n)
 		ttputs(buf);
 		tt.tt_col += 3;
 	}
-	pc(0x80);
-	pc(t + 1);
+	ttputc(0x80);
+	ttputc(t + 1);
 	s[n - 1] |= 0x80;
 	ttwrite(s, n);
 	s[n - 1] &= ~0x80;
@@ -299,7 +296,7 @@ zz_put_token(t, s, n)
 		ttputs(buf);
 		tt.tt_col += 3;
 	}
-	pc(t + 0x81);
+	ttputc(t + 0x81);
 	tt.tt_col += n;
 	if (tt.tt_col == NCOL)
 		tt.tt_col = 0, tt.tt_row++;
