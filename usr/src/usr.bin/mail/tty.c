@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tty.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)tty.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -29,8 +29,8 @@ static char sccsid[] = "@(#)tty.c	5.7 (Berkeley) %G%";
 
 static	int	c_erase;		/* Current erase char */
 static	int	c_kill;			/* Current kill char */
-static	int	hadcont;		/* Saw continue signal */
 static	jmp_buf	rewrite;		/* Place to go when continued */
+static	jmp_buf	intjmp;			/* Place to go when interrupted */
 #ifndef TIOCSTI
 static	int	ttyset;			/* We must now do erase/kill */
 #endif
@@ -43,13 +43,19 @@ grabh(hp, gflags)
 	struct header *hp;
 {
 	struct sgttyb ttybuf;
+	int (*saveint)();
 #ifndef TIOCSTI
-	int (*saveint)(), (*savequit)();
+	int (*savequit)();
 #endif
-	int (*savecont)();
+	int (*savetstp)();
+	int (*savettou)();
+	int (*savettin)();
 	int errs;
+	int ttyint();
 
-	savecont = signal(SIGCONT, SIG_DFL);
+	savetstp = signal(SIGTSTP, SIG_DFL);
+	savettou = signal(SIGTTOU, SIG_DFL);
+	savettin = signal(SIGTTIN, SIG_DFL);
 	errs = 0;
 #ifndef TIOCSTI
 	ttyset = 0;
@@ -67,6 +73,10 @@ grabh(hp, gflags)
 		signal(SIGINT, SIG_DFL);
 	if ((savequit = signal(SIGQUIT, SIG_IGN)) == SIG_DFL)
 		signal(SIGQUIT, SIG_DFL);
+#else
+	if (setjmp(intjmp))
+		goto out;
+	saveint = signal(SIGINT, ttyint);
 #endif
 	if (gflags & GTO) {
 #ifndef TIOCSTI
@@ -99,15 +109,18 @@ grabh(hp, gflags)
 		hp->h_bcc =
 			extract(readtty("Bcc: ", detract(hp->h_bcc, 0)), GBCC);
 	}
-	signal(SIGCONT, savecont);
+out:
+	signal(SIGTSTP, savetstp);
+	signal(SIGTTOU, savettou);
+	signal(SIGTTIN, savettin);
 #ifndef TIOCSTI
 	ttybuf.sg_erase = c_erase;
 	ttybuf.sg_kill = c_kill;
 	if (ttyset)
 		stty(fileno(stdin), &ttybuf);
-	signal(SIGINT, saveint);
 	signal(SIGQUIT, savequit);
 #endif
+	signal(SIGINT, saveint);
 	return(errs);
 }
 
@@ -125,7 +138,7 @@ readtty(pr, src)
 	char ch, canonb[BUFSIZ];
 	int c;
 	register char *cp, *cp2;
-	int ttycont();
+	int ttystop();
 
 	fputs(pr, stdout);
 	fflush(stdout);
@@ -159,7 +172,9 @@ readtty(pr, src)
 	cp2 = cp;
 	if (setjmp(rewrite))
 		goto redo;
-	signal(SIGCONT, ttycont);
+	signal(SIGTSTP, ttystop);
+	signal(SIGTTOU, ttystop);
+	signal(SIGTTIN, ttystop);
 	clearerr(stdin);
 	while (cp2 < canonb + BUFSIZ) {
 		c = getc(stdin);
@@ -168,10 +183,11 @@ readtty(pr, src)
 		*cp2++ = c;
 	}
 	*cp2 = 0;
-	signal(SIGCONT, SIG_DFL);
-	if (c == EOF && ferror(stdin) && hadcont) {
+	signal(SIGTSTP, SIG_DFL);
+	signal(SIGTTOU, SIG_DFL);
+	signal(SIGTTIN, SIG_DFL);
+	if (c == EOF && ferror(stdin)) {
 redo:
-		hadcont = 0;
 		cp = strlen(canonb) > 0 ? canonb : NOSTR;
 		clearerr(stdin);
 		return(readtty(pr, cp));
@@ -216,9 +232,20 @@ redo:
 /*
  * Receipt continuation.
  */
-/*ARGSUSED*/
-ttycont(s)
+ttystop(s)
 {
-	hadcont++;
+	int (*old_action)() = signal(s, SIG_DFL);
+
+	sigsetmask(sigblock(0) & ~sigmask(s));
+	kill(0, s);
+	sigblock(sigmask(s));
+	signal(s, old_action);
 	longjmp(rewrite, 1);
+}
+
+/*ARGSUSED*/
+ttyint(s)
+{
+
+	longjmp(intjmp, 1);
 }

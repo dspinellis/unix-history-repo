@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)edit.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)edit.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -59,7 +59,6 @@ edit1(msgvec, type)
 	int *msgvec;
 	char type;
 {
-	int (*sigcont)() = signal(SIGCONT, SIG_DFL);
 	register int c;
 	int i;
 	FILE *fp;
@@ -111,7 +110,6 @@ edit1(msgvec, type)
 		}
 		(void) signal(SIGINT, sigint);
 	}
-	(void) signal(SIGCONT, sigcont);
 	return 0;
 }
 
