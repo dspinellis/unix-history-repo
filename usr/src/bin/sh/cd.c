@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cd.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)cd.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -44,6 +44,7 @@ STATIC char *getcomponent();
 
 
 char *curdir;			/* current working directory */
+char *prevdir;			/* previous working directory */
 STATIC char *cdcomppath;
 
 int
@@ -53,17 +54,32 @@ cdcmd(argc, argv)  char **argv; {
 	char *p;
 	struct stat statb;
 	char *padvance();
+	int print = 0;
 
 	nextopt(nullstr);
 	if ((dest = *argptr) == NULL && (dest = bltinlookup("HOME", 1)) == NULL)
 		error("HOME not set");
+	if (dest[0] == '-' && dest[1] == '\0') {
+		dest = prevdir ? prevdir : curdir;
+		print = 1;
+	}
 	if (*dest == '/' || (path = bltinlookup("CDPATH", 1)) == NULL)
 		path = nullstr;
 	while ((p = padvance(&path, dest)) != NULL) {
 		if (stat(p, &statb) >= 0
-		 && (statb.st_mode & S_IFMT) == S_IFDIR
-		 && docd(p, strcmp(p, dest)) >= 0)
-			return 0;
+		 && (statb.st_mode & S_IFMT) == S_IFDIR) {
+			if (!print) {
+				/*
+				 * XXX - rethink
+				 */
+				if (p[0] == '.' && p[1] == '/')
+					p += 2;
+				print = strcmp(p, dest);
+			}
+			if (docd(p, print) >= 0)
+				return 0;
+
+		}
 	}
 	error("can't cd to %s", dest);
 }
@@ -255,9 +271,12 @@ updatepwd(dir)
 	if (new == stackblock())
 		STPUTC('/', new);
 	STACKSTRNUL(new);
-	if (curdir)
-		ckfree(curdir);
+	INTOFF;
+	if (prevdir)
+		ckfree(prevdir);
+	prevdir = curdir;
 	curdir = savestr(stackblock());
+	INTON;
 }
 
 
