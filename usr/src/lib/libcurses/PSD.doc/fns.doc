@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)fns.doc	1.3 (Berkeley) %G%
+.\"     @(#)fns.doc	1.4 (Berkeley) %G%
 .\"
 .Ds
 .Fn addch "char ch" \(dg
@@ -84,12 +84,12 @@ Sets the clear flag for the screen
 .Vn scr .
 If
 .Vn boolf
-is TRUE,
+is non-zero,
 this will force a clear-screen to be printed on the next
 .Fn refresh ,
 or stop it from doing so if
 .Vn boolf
-is FALSE.
+is 0.
 This only works on screens,
 and,
 unlike
@@ -206,14 +206,13 @@ when it is finished.
 allows you to control this.
 if
 .Vn boolf
-is TRUE
+is non-zero
 (\c
 .i i.e. ,
 non-zero)
 it will do the
-.Fn fflush ;
-if it is FALSE.
-it will not.
+.Fn fflush ,
+otherwise it will not.
 .Ds
 .Fn getch "" \(dg
 .De
@@ -298,15 +297,15 @@ If standard input is not a tty,
 it sets the specifications to the terminal
 whose name is pointed to by
 .Vn Def\*_term
-(initialy "dumb").
+(initially "dumb").
 If the boolean
 .Vn My\*_term
-is true,
+is non-zero,
 .Vn Def\*_term
 is always used.
 If the system supports the
 .b TIOCGWINSZ
-.Fn ioctl "" "" 2
+.i ioctl(2)
 call,
 it is used to get the number of lines and columns for the terminal,
 otherwise it is taken from the
@@ -343,15 +342,16 @@ the character used by the user to erase an entire line from the input.
 Sets the boolean flag for leaving the cursor after the last change.
 If
 .Vn boolf
-is TRUE,
+is non-zero,
 the cursor will be left after the last update on the terminal,
 and the current \*y for
 .Vn win
 will be changed accordingly.
-If it is FALSE,
-it will be moved to the current \*y.
+If 
+.Vn boolf
+ is 0 the cursor will be moved to the current \*y.
 This flag
-(initialy FALSE)
+(initially 0)
 retains its value until changed by the user.
 .Ds
 .Fn move "int y" "int x"
@@ -511,7 +511,8 @@ i.e., blanks on
 .Vn win1
 leave the contents of the space on
 .Vn win2
-untouched.
+untouched.  Note that all non-blank characters are overwritten 
+destructively in the overlay.
 .Ds
 .Fn overwrite "WINDOW *win1" "WINDOW *win2"
 .De
@@ -619,7 +620,7 @@ This is normally not used by the user.
 Set the scroll flag for the given window.
 If
 .Vn boolf
-is FALSE, scrolling is not allowed.
+is 0, scrolling is not allowed.
 This is its default setting.
 .Ds
 .Fn standend "" \(dg
@@ -702,7 +703,7 @@ it restores the saved tty state
 and then calls
 .Fn wrefresh "curscr"
 to redraw the screen.
-.Fn initscr
+.Fn Initscr
 sets the signal
 SIGTSTP
 to trap to this routine.
