@@ -1,0 +1,9 @@
+./"hc"nX
++/"dq"n
+.$<<devqueue
++/"sq"n
+.$<<devqueue
++/"flags/sync"8t"addr"nx8tb
++/"stat"n2b
++/"msg"n7b
++,<9-1$<scsi

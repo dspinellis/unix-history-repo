@@ -1,0 +1,6 @@
+.>1
+.+4>8
+<1/"next"16t"nextpkt"16t"len"16t"data"na2XDX"type"8t"flags"ndxn
+*<1,*<1$<mbuf.nxt
+.=n
+*<8,*<8$<mbufchain

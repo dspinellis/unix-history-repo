@@ -1,0 +1,82 @@
+TUNEFS(8)                 BSD System Manager's Manual                TUNEFS(8)
+
+NNAAMMEE
+     ttuunneeffss - tune up an existing file system
+
+SSYYNNOOPPSSIISS
+     ttuunneeffss [--aa _m_a_x_c_o_n_t_i_g] [--dd _r_o_t_d_e_l_a_y] [--ee _m_a_x_b_p_g] [--mm _m_i_n_f_r_e_e]
+            [--oo _o_p_t_i_m_i_z_e___p_r_e_f_e_r_e_n_c_e] [_s_p_e_c_i_a_l | _f_i_l_e_s_y_s]
+
+DDEESSCCRRIIPPTTIIOONN
+     TTuunneeffss is designed to change the dynamic parameters of a file system
+     which affect the layout policies.  The parameters which are to be changed
+     are indicated by the flags given below:
+
+     --aa _m_a_x_c_o_n_t_i_g
+             This specifies the maximum number of contiguous blocks that will
+             be laid out before forcing a rotational delay (see --dd below).
+             The default value is one, since most device drivers require an
+             interrupt per disk transfer.  Device drivers that can chain sev-
+             eral buffers together in a single transfer should set this to the
+             maximum chain length.
+
+     --dd _r_o_t_d_e_l_a_y
+             This specifies the expected time (in milliseconds) to service a
+             transfer completion interrupt and initiate a new transfer on the
+             same disk.  It is used to decide how much rotational spacing to
+             place between successive blocks in a file.
+
+     --ee _m_a_x_b_p_g
+             This indicates the maximum number of blocks any single file can
+             allocate out of a cylinder group before it is forced to begin al-
+             locating blocks from another cylinder group.  Typically this val-
+             ue is set to about one quarter of the total blocks in a cylinder
+             group.  The intent is to prevent any single file from using up
+             all the blocks in a single cylinder group, thus degrading access
+             times for all files subsequently allocated in that cylinder
+             group.  The effect of this limit is to cause big files to do long
+             seeks more frequently than if they were allowed to allocate all
+             the blocks in a cylinder group before seeking elsewhere.  For
+             file systems with exclusively large files, this parameter should
+             be set higher.
+
+     --mm _m_i_n_f_r_e_e
+             This value specifies the percentage of space held back from nor-
+             mal users; the minimum free space threshold.  The default value
+             used is 10%.  This value can be set to zero, however up to a fac-
+             tor of three in throughput will be lost over the performance ob-
+             tained at a 10% threshold.  Note that if the value is raised
+             above the current usage level, users will be unable to allocate
+             files until enough files have been deleted to get under the high-
+             er threshold.
+
+     --oo _o_p_t_i_m_i_z_e___p_r_e_f_e_r_e_n_c_e
+             The file system can either try to minimize the time spent allo-
+             cating blocks, or it can attempt minimize the space fragmentation
+             on the disk.  If the value of minfree (see above) is less than
+             10%, then the file system should optimize for space to avoid run-
+             ning out of full sized blocks.  For values of minfree greater
+             than or equal to 10%, fragmentation is unlikely to be problemati-
+             cal, and the file system can be optimized for time.
+
+SSEEEE AALLSSOO
+     fs(5),  dumpfs(8),  newfs(8),  mkfs(8)
+
+
+     M. McKusick, W. Joy, S. Leffler, and R. Fabry, "A Fast File System for
+     UNIX", _A_C_M _T_r_a_n_s_a_c_t_i_o_n_s _o_n _C_o_m_p_u_t_e_r _S_y_s_t_e_m_s _2, 3, pp 181-197, August
+     1984, (reprinted in the BSD System Manager's Manual, SMM:5).
+
+BBUUGGSS
+     This program should work on mounted and active file systems.  Because the
+     super-block is not kept in the buffer cache, the changes will only take
+     effect if the program is run on dismounted file systems.  To change the
+     root file system, the system must be rebooted after the file system is
+     tuned.
+
+     You can tune a file system, but you can't tune a fish.
+
+HHIISSTTOORRYY
+     The ttuunneeffss command appeared in 4.2BSD.
+
+4.2 Berkeley Distribution        June 5, 1993                                2

@@ -1,0 +1,254 @@
+SED(1)                       BSD Reference Manual                       SED(1)
+
+NNAAMMEE
+     sseedd - stream editor.
+
+SSYYNNOOPPSSIISS
+     sseedd [--nn] _s_c_r_i_p_t _f_i_l_e _._._.
+     sseedd [--nn] [--ee _s_c_r_i_p_t] [--ff _s_c_r_i_p_t___f_i_l_e] _f_i_l_e _._._.
+
+DDEESSCCRRIIPPTTIIOONN
+     The sseedd utility is a stream editor which reads one or more text files,
+     applies given editing command scripts, and writes the results to standard
+     output.  The script of editing commands can be given in the command line,
+     or can be contained in the file _s_c_r_i_p_t___f_i_l_e.
+
+     Options:
+
+     --ee _s_c_r_i_p_t
+             The command line _s_c_r_i_p_t is used to edit the input.  If multiple
+             --ee options are given, the scripts are applied in the order given
+             to each line of the input files.  If a --ff option is given in ad-
+             dition to --ee, lines are acted upon by scripts first.
+
+     --ff _s_c_r_i_p_t___f_i_l_e
+             The file _s_c_r_i_p_t___f_i_l_e is expected to contain editing commands, one
+             per line, and these commands are applied to the input.  If multi-
+             ple --ff options are given, the commands in the _s_c_r_i_p_t___f_i_l_es are
+             applied in the order given to each line of the input files.  If a
+             --ee option is given in addition to --ff, lines are acted upon by the
+             commands in the first.
+
+     --nn      The --nn option suppresses the default output, which normally pass-
+             es each line, after it is examined for editing, to standard out-
+             put.  Therefore, only lines explicitly selected for output are
+             written.
+
+     The following operands are available:
+
+     _f_i_l_e  A pathname of a file whose contents are read and edited.  If multi-
+           ple file operands are given, the named files are read in the order
+           given and the concatenation is edited.  If no file operands are
+           given, the standard input is used.
+
+     _s_c_r_i_p_t
+           The script consists of one or more editing instructions that are
+           entered on the command line.
+
+           [address [,address]] function [arguments]
+
+     In default operation, sseedd cyclically copies a line of input into a pat-
+     tern space (unless there is something left after a DD command), applies in
+     sequence all commands whose addresses select that pattern space, and at
+     the end of the script copies the pattern space to the standard output
+     (except under --nn) and deletes the pattern space.
+
+     Some of the commands use a hold space to save all or part of the pattern
+     space for subsequent retrieval.
+
+     An address is either no address; a decimal number that counts input lines
+     cumulatively across files; a `$' that addresses the last line of input; a
+     context address; or regular expression.
+
+     A command line with no addresses selects every pattern space.
+
+
+     A command line with one address selects each pattern space that matches
+     the address.
+
+     A command line with two addresses selects the inclusive range from the
+     first pattern space that matches the first address through the next pat-
+     tern space which matches the second.  (If the second address is a number
+     less than or equal to the line number first selected, only one line is
+     selected.)  Starting at the first line following the selected range, sseedd
+     looks again for the first address.  Thereafter the process is repeated.
+
+     Editing commands can be applied only to non-selected pattern spaces by
+     use of the negation function !! (See below.)
+
+     The sseedd utility uses basic regular expressions, as are found in the edi-
+     tor ed(1),  with the following additions:
+
+           1.   In a context address, the construction \?RE?, where ?  is any
+                character, is identical to /RE/. Note that in the context ad-
+                dress \xabc\xdefx, the second `x' stands for itself, so that
+                the regular expression is abcxdef.
+
+           2.   The escape sequence `\n' matches a <newline> embedded in the
+                pattern space.
+
+           3.   A period `.' matches any character except the terminal <new-
+                line> of the pattern space.
+
+     In the following list of functions the maximum number of permissible ad-
+     dresses for each function is indicated by [0addr], [1addr], or [2addr];
+     representing zero, one, or two addresses.
+
+     The argument text consists of one or more lines.  Each embedded <newline>
+     in the text shall be preceded by a backslash.  Other backslashes in text
+     are treated like backslashes in the replacement string of an s command,
+     and can be used to protect initial <blank>s against the stripping that is
+     done on every script line.
+
+     The rr and ww commands take an optional _r_f_i_l_e (or _w_f_i_l_e) parameter, sepa-
+     rated from the command letter by zero or more <blank>s.
+
+     The argument _r_f_i_l_e or the argument _w_f_i_l_e shall terminate the command
+     line.  Each _w_f_i_l_e is created before processing begins.  There can be at
+     most ten distinct _w_f_i_l_e arguments in the script.
+
+     The bb, rr, ss, tt, ww, yy, !!, and :: commands take additional arguments.  The
+     following synopses indicate which arguments are separated from the com-
+     mands by <blank>s.
+
+     [_2_a_d_d_r] { command_list }
+                    Executes command_list only when the pattern space is se-
+                    lected.  The {} braces can be preceded and followed by
+                    white space.
+
+     [_1_a_d_d_r]aa _t_e_x_t  Writes text to the standard output after the pattern space
+                    is written.
+
+     [_2_a_d_d_r]bb _l_a_b_e_l
+                    Branches to the :: command bearing the label.  If label is
+                    empty, branch to the end of the script.
+
+     [_2_a_d_d_r]cc _t_e_x_t  Deletes the pattern space.  With 0 or 1 address or at the
+                    end of a 2-address range, places text on the output.
+
+     [_2_a_d_d_r]dd       Deletes the pattern space and starts the next cycle.
+
+     [_2_a_d_d_r]DD       Deletes the initial segment of the pattern space through
+
+                    the first <newline> and starts the next cycle.
+
+     [_2_a_d_d_r]gg       Replaces the contents of the pattern space by the contents
+                    of the hold space.
+
+     [_2_a_d_d_r]GG       Appends the contents of the hold space to the pattern
+                    space.
+
+     [_2_a_d_d_r]hh       Replaces the contents of the hold space by the contents of
+                    the pattern space.
+
+     [_2_a_d_d_r]HH       Appends the contents of the pattern space to the hold
+                    space.
+
+     [_1_a_d_d_r]ii _t_e_x_t  Writes text to the standard output before the pattern
+                    space is written.
+
+     [_2_a_d_d_r]ll       Lists the pattern space on the standard out- put in an un-
+                    ambiguous form.  Nonprinting characters are listed as hex-
+                    adecimal digit pairs, with a preceding backslash, with the
+                    following exceptions:
+
+                          <alert>              \a
+                          <backslash>          \\
+                          <backspace>          \b
+                          <carriage return>    \r
+                          <form-feed>          \f
+                          <newline>            \n
+                          <tab>                \t
+                          <vertical tab>       \v
+
+                    Long lines are folded; the length at which folding occurs
+                    is ungiven, but should be appropriate for the output de-
+                    vice.
+
+     [_2_a_d_d_r]nn       Copies the pattern space to the standard output and re-
+                    places the pattern space with the next line of input.
+
+     [_2_a_d_d_r]NN       Appends the next line of input to the pattern space, using
+                    an embedded <newline> to separate the appended material
+                    from the original material.  Note that the current line
+                    number changes.
+
+     [_2_a_d_d_r]pp       Copies [prints] the pattern space to the standard output.
+
+     [_2_a_d_d_r]PP       Copies [prints] the pattern space, up to the first <new-
+                    line>, to the standard output.
+
+     [_1_a_d_d_r]qq       Branches to the end of the script and quits without start-
+                    ing a new cycle.
+
+     [_1_a_d_d_r]rr _r_f_i_l_e
+                    Read the contents of rfile.  Place them on the output be-
+                    fore reading the next input line.
+
+     [_2_a_d_d_r]ss/_r_e_g_u_l_a_r _e_x_p_r_e_s_s_i_o_n/_r_e_p_l_a_c_e_m_e_n_t _s_t_r_i_n_g/flags
+                    Substitutes the replacement string for instances of the
+                    regular expression in the pattern space.  Any character
+                    can be used instead of `/'. The value of flags is zero or
+                    more of:
+
+                    _n       n=1-512.  Substitutes for the _nth occurrence only
+                            of the regular expression found within the pattern
+
+
+                            space.
+
+                    gg       Globally substitutes for all non-overlapping in-
+                            stances of the regular expression rather than just
+                            the first one.  If both gg and nn are given, gg takes
+                            precedence.
+
+                    pp       Prints the pattern space if a replacement was
+                            made.
+
+                    ww _w_f_i_l_e
+                            Write.  Appends the pattern space to _w_f_i_l_e if a
+                            replacement was made.
+
+     [_2_a_d_d_r]tt _l_a_b_e_l
+                    Test.  Branches to the :: command bearing the label if any
+                    substitutions have been made since the most recent reading
+                    of an input line or execution of a tt. If label is empty,
+                    branches to the end of the script.
+
+     [_2_a_d_d_r]ww _w_f_i_l_e
+                    Appends [writes] the pattern space to _w_f_i_l_e.
+
+     [_2_a_d_d_r]xx       Exchanges the contents of the pattern and hold spaces.
+
+     [_2_a_d_d_r]yy/_s_t_r_i_n_g_1/_s_t_r_i_n_g_2/
+                    Replaces all occurrences of collating elements in _s_t_r_i_n_g_1
+                    with the corresponding collating element in _s_t_r_i_n_g_2. The
+                    lengths of _s_t_r_i_n_g_1 and _s_t_r_i_n_g_2 shall be equal.
+
+     [_2_a_d_d_r]!!function
+                    Applies the function (or group, if function is {) only to
+                    the lines that are not selected by the address(es).
+
+     [_0_a_d_d_r]::label  This command does nothing; it bears a label for the b and
+                    t commands to branch to.
+
+     [_1_a_d_d_r]==       Places the current line number on the standard output as a
+                    line with its own line number.
+
+     [_0_a_d_d_r]        An empty command is ignored.
+
+     [_0_a_d_d_r]##       If a ## appears as the first character on any line of a
+                    script file, that entire line is ignored (treated as a
+                    comment), with the single exception that if the first line
+                    of the script file begins with #n, the default output is
+                    suppressed.
+
+     The sseedd utility exits 0 on success, and >0 if an error occurs.
+
+     If one or more of the input (not script) files cannot be opened for read-
+     ing, sseedd continues to process the remaining files.
+
+SSTTAANNDDAARRDDSS
+     The sseedd utility is expected to be IEEE Std1003.2 (``POSIX'') compatible.
+
+4.4BSD                           July 25, 1992                               4

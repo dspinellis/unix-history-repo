@@ -1,0 +1,20 @@
+NOLOGIN(8)                BSD System Manager's Manual               NOLOGIN(8)
+
+NNAAMMEE
+     nnoollooggiinn - politely refuse a login
+
+SSYYNNOOPPSSIISS
+     nnoollooggiinn
+
+DDEESSCCRRIIPPTTIIOONN
+     NNoollooggiinn displays a message that an account is not available and exits
+     non-zero.  It is intended as a replacement shell field for accounts that
+     have been disabled.
+
+SSEEEE AALLSSOO
+     login(1)
+
+HHIISSTTOORRYY
+     The nnoollooggiinn command appeared in 4.4BSD.
+
+4.4BSD                           June 19, 1993                               1

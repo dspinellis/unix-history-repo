@@ -1,0 +1,7 @@
+./"lock"n
+.,1$<<lock
+./n"header"n
+.$<<map_entry
+./n"nentries"16t"pmap"16t"size"16t"is_main_map"nDXXD
++/"ref_count"16t"ref_lock"16t"hint"16t"hint_lock"nD3X
++/"first_free"16t"ent_pageable"16t"timestamp"nXDX

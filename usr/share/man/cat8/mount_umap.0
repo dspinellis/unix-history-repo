@@ -1,0 +1,53 @@
+MOUNT_UMAP(8)             BSD System Manager's Manual            MOUNT_UMAP(8)
+
+NNAAMMEE
+     mmoouunntt__uummaapp - sample file system layer
+
+SSYYNNOOPPSSIISS
+     mmoouunntt__uummaapp [--FF _f_s_o_p_t_i_o_n_s] _t_a_r_g_e_t _m_o_u_n_t_-_p_o_i_n_t _u_i_d_-_m_a_p_f_i_l_e _g_i_d_-_m_a_p_f_i_l_e
+
+DDEESSCCRRIIPPTTIIOONN
+     The mmoouunntt__uummaapp command is used to mount a sub-tree of an existing file
+     system that uses a different set of uids and gids than the local system.
+     Such a file system could be mounted from a remote site via NFS or it
+     could be a file system on removable media brought from some foreign loca-
+     tion that uses a different password file.  The mmoouunntt__uummaapp command uses a
+     set of files provided by the user to make correspondences between uids
+     and gids in the sub-tree's original environment and some other set of ids
+     in the local environment.  For instance, user smith might have uid 1000
+     in the original environment, while having uid 2000 in the local environ-
+     ment.  The mmoouunntt__uummaapp command allows the subtree from smith's original
+     environment to be mapped in such a way that all files with owning uid
+     1000 look like they are actually owned by uid 2000.
+
+     _t_a_r_g_e_t should be the current location of the sub-tree in the local sys-
+     tem's name space.  _m_o_u_n_t_-_p_o_i_n_t should be a directory where the mapped
+     subtree is to be placed.  _u_i_d_-_m_a_p_f_i_l_e and _g_i_d_-_m_a_p_f_i_l_e describe the map-
+     pings to be made between identifiers.  Briefly, the format of these files
+     is a count of the number of mappings on the first line, with each subse-
+     quent line containing a single mapping.  Each of these mappings consists
+     of an id from the original environment and the corresponding id in the
+     local environment, separated by white space.  _u_i_d_-_m_a_p_f_i_l_e should contain
+     all uid mappings, and _g_i_d_-_m_a_p_f_i_l_e should contain all gid mappings.  Any
+     uids not mapped in _u_i_d_-_m_a_p_f_i_l_e will be treated as user NOBODY, and any
+     gids not mapped in _g_i_d_-_m_a_p_f_i_l_e will be treated as group NULLGROUP.  At
+     most 64 uids can be mapped for a given subtree, and at most 16 groups can
+     be mapped by a given subtree.
+
+     The mapfiles can be located anywhere in the file hierarchy, but they must
+     be owned by root, and they must be writable only by root.  mmoouunntt__uummaapp
+     will refuse to map the sub-tree if the ownership or permissions on these
+     files are improper.  It will also balk if the count of mappings in the
+     first line of the map files is not correct.
+
+     The layer created by the mmoouunntt__uummaapp command is meant to serve as a simple
+     example of file system layering.  It is not meant for production use.
+     The implementation is not very sophisticated.
+
+SSEEEE AALLSSOO
+     mount_null(8),  mount_lofs(8)
+
+HHIISSTTOORRYY
+     The mmoouunntt__uummaapp utility first appeared in 4.4BSD.
+
+4.4BSD                           June 9, 1993                                1

@@ -1,0 +1,45 @@
+MKNOD(8)                  BSD System Manager's Manual                 MKNOD(8)
+
+NNAAMMEE
+     mmkknnoodd - build special file
+
+SSYYNNOOPPSSIISS
+     mmkknnoodd _n_a_m_e [cc | bb] _m_a_j_o_r _m_i_n_o_r
+
+DDEESSCCRRIIPPTTIIOONN
+     The mmkknnoodd command creates device special files.  Normally the shell
+     script _/_d_e_v_/_M_A_K_E_D_E_V is used to create special files for commonly known
+     devices; it executes mmkknnoodd with the appropriate arguments and can make
+     all the files required for the device.
+
+     To make nodes manually, the four required arguments are:
+
+     _n_a_m_e    Device name, for example ``sd'' for a SCSI disk on an HP300 or a
+             ``pty'' for pseudo-devices.
+
+     bb | cc   Type of device. If the device is a block type device such as a
+             tape or disk drive which needs both cooked and raw special files,
+             the type is bb. All other devices are character type devices, such
+             as terminal and psuedo devices, and are type cc.
+
+     _m_a_j_o_r   The major device number is an integer number which tells the ker-
+             nel which device driver entry point to use.  To learn what major
+             device number to use for a particular device, check the file
+             _/_d_e_v_/_M_A_K_E_D_E_V to see if the device is known, or check the system
+             dependent device configuration file:
+
+                   ``_/_u_s_r_/_s_r_c_/_s_y_s_/_c_o_n_f_/_d_e_v_i_c_e_._a_r_c_h_i_t_e_c_t_u_r_e''
+
+             (for example _d_e_v_i_c_e_._h_p_3_0_0).
+
+     _m_i_n_o_r   The minor device number tells the kernel which subunit the node
+             corresponds to on the device; for example, a subunit may be a
+             filesystem partition or a tty line.
+
+SSEEEE AALLSSOO
+     mknod(2),  makedev(8)
+
+HHIISSTTOORRYY
+     A mmkknnoodd command appeared in Version 6 AT&T UNIX.
+
+4th Berkeley Distribution        June 5, 1993                                1

@@ -1,0 +1,45 @@
+STARTSLIP(1)                 BSD Reference Manual                 STARTSLIP(1)
+
+NNAAMMEE
+     ssttaarrttsslliipp - dial up and login to a slip server
+
+SSYYNNOOPPSSIISS
+     ssttaarrttsslliipp [--dd] [--ss _s_t_r_i_n_g] [--AA _a_n_n_e_x_n_a_m_e] [--FF _f_l_o_w_c_o_n_t_r_o_l] _d_e_v_i_c_e _u_s_e_r
+               _p_a_s_s_w_d
+
+DDEESSCCRRIIPPTTIIOONN
+     SSttaarrttsslliipp opens the specified _d_e_v_i_c_e.
+
+     Once carrier is asserted ssttaarrttsslliipp attempts to login as the specified
+     _u_s_e_r with the given _p_a_s_s_w_o_r_d. If successful, it puts the device into the
+     slip line discipline.  If carrier drops and a SIGHUP is sent to
+     ssttaarrttsslliipp, it closes the device and attempts to repeat the dialup and lo-
+     gin sequence.
+
+     Available options:
+
+     --dd            SSttaarrttsslliipp prints out debugging information about what it is
+                   trying to do.
+
+     --ss _s_t_r_i_n_g     The optional _s_t_r_i_n_g is written to _d_e_v_i_c_e. For a dialup mo-
+                   dem, the string is used to specify a dial sequence.
+
+     --AA _a_n_n_e_x_n_a_m_e  SSttaarrttsslliipp assumes it is connecting to a Xylogics Annex box
+                   and engages in an appropriate dialog using the _u_s_e_r and
+                   _p_a_s_s_w_d arguments.  The _a_n_n_e_x_n_a_m_e argument is a string that
+                   is used to match against the Annex prompt to determine when
+                   a connection has been established.
+
+     --FF _f_l_o_w_c_o_n_t_r_o_l
+                   Determines the type of flow control used on _d_e_v_i_c_e. Choices
+                   for _f_l_o_w_c_o_n_t_r_o_l are ``none'' for no flow control (the de-
+                   fault), ``hw'' for hardware RTS/CTS flow control and ``sw''
+                   for software XON/XOFF flow control.
+
+SSEEEE AALLSSOO
+     sliplogin(8)
+
+HHIISSTTOORRYY
+     The ssttaarrttsslliipp appeared in 4.4BSD.
+
+4.4BSD                           June 5, 1993                                1

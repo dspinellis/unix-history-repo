@@ -1,0 +1,35 @@
+REBOOT(8)                 BSD System Manager's Manual                REBOOT(8)
+
+NNAAMMEE
+     rreebboooott, hhaalltt - stopping and restarting the system
+
+SSYYNNOOPPSSIISS
+     hhaalltt [--nnqq]
+     rreebboooott [--nnqq]
+
+DDEESSCCRRIIPPTTIIOONN
+     The hhaalltt and rreebboooott utilities flush the file system cache to disk, send
+     all running processes a SIGTERM (and subsequently a SIGKILL) and, respec-
+     tively, halt or restart the system.  The action is logged, including en-
+     tering a shutdown record into the login accounting file.
+
+     The options are as follows:
+
+     --nn      If the --nn option is specified, the file system cache is not
+             flushed.  This option should probably not be used.
+
+     --qq      If the --qq option is specified, the system is halted or restarted
+             quickly and ungracefully, and only the flushing of the file sys-
+             tem cache is performed.  This option should probably not be used.
+
+     Normally, the shutdown(8) utility is used when the system needs to be
+     halted or restarted, giving users advance warning of their impending
+     doom.
+
+SSEEEE AALLSSOO
+     sync(1),  utmp(5),  boot(8),  shutdown(8)
+
+HHIISSTTOORRYY
+     A rreebboooott command appeared in Version 6 AT&T UNIX.
+
+4.4BSD                           June 9, 1993                                1

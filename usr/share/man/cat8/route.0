@@ -1,0 +1,141 @@
+ROUTE(8)                  BSD System Manager's Manual                 ROUTE(8)
+
+NNAAMMEE
+     rroouuttee - manually manipulate the routing tables (Interim)
+
+SSYYNNOOPPSSIISS
+     rroouuttee [--nn] [--qq] [--vv] _c_o_m_m_a_n_d [[_m_o_d_i_f_i_e_r_s] _a_r_g_s]
+
+DDEESSCCRRIIPPTTIIOONN
+     RRoouuttee is a program used to manually manipulate the network routing ta-
+     bles.  It normally is not needed, as the system routing table management
+     daemon, routed(8),  should tend to this task.
+
+     Options supported by rroouuttee:
+
+     --nn      Prevent attempts to print host and network names symbolically
+             when reporting actions.
+
+     --vv      (verbose) Print additional details.
+
+     --qq      Suppress all output.
+
+     Commands accepted by rroouuttee:
+
+     aadddd         Add a route.
+     fflluusshh       Remove all routes.
+     ddeelleettee      Delete a specific route.
+     cchhaannggee      Change aspects of a route (such as its gateway).
+     ggeett         Lookup and display the route for a destination.
+     mmoonniittoorr     Continuously report any changes to the routing information
+                 base, routing lookup misses, or suspected network partion-
+                 ings.
+
+     The monitor command has the syntax
+
+           rroouuttee [--nn] mmoonniittoorr
+
+     The flush command has the syntax
+
+           rroouuttee [--nn] fflluusshh [_f_a_m_i_l_y]
+
+     Where the address family may be specified by any of the --oossii, --xxnnss, or
+     --iinneett keywords.
+
+     The other commands have the following syntax:
+
+           rroouuttee [--nn] _c_o_m_m_a_n_d [--nneett | --hhoosstt] _d_e_s_t_i_n_a_t_i_o_n _g_a_t_e_w_a_y
+
+     where _d_e_s_t_i_n_a_t_i_o_n is the destination host or network, _g_a_t_e_w_a_y is the
+     next-hop gateway to which packets should be addressed.  Routes to a par-
+     ticular host are distinguished from those to a network by interpreting
+     the Internet address associated with _d_e_s_t_i_n_a_t_i_o_n. The optional keywords
+     --nneett and --hhoosstt force the destination to be interpreted as a network or a
+     host, respectively.  Otherwise, if the _d_e_s_t_i_n_a_t_i_o_n has a ``local address
+     part'' of INADDR_ANY , or if the _d_e_s_t_i_n_a_t_i_o_n is the symbolic name of a
+     network, then the route is assumed to be to a network; otherwise, it is
+     presumed to be a route to a host.
+
+     For example, 128.32 is interpreted as --hhoosstt 128.0.0.32; 128.32.130 is in-
+     terpreted as --hhoosstt 128.32.0.130; --nneett 128.32 is interpreted as
+     128.32.0.0; and --nneett 128.32.130 is interpreted as 128.32.130.0.
+
+     If the route is via an interface rather than via a gateway, the
+     --iinntteerrffaaccee modifier should be specified; the gateway given is the address
+     of this host on the common network, indicating the interface to be used
+     for transmission.
+
+     The optional modifiers --xxnnss, and --oossii specify that all subsequent ad-
+     dresses are in the XNS or OSI address families, and the names must be nu-
+     meric specifications rather than symbolic names.
+
+     The optional --nneettmmaasskk qualifier is intended to achieve the effect of an
+     OSI ESIS redirect with the netmask option.  One specifies an additional
+     ensuing address parameter (to be interpreted as a network mask).  The im-
+     plicit network mask generated in the inet case can be overridden by mak-
+     ing sure this option follows the destination parameter.
+
+     The optional modifiers --rrtttt, --rrttttvvaarr, --sseennddppiippee, --rreeccvvppiippee, --mmttuu,
+     --hhooppccoouunntt, --eexxppiirree, and --sssstthhrreesshh provide initial values to metrics main-
+     tained in the routing entry.  These may be individually locked by preced-
+     ing each such modifier to be locked by the --lloocckk meta-modifier, or one
+     can specify that all ensuing metrics may be locked by the --lloocckkrreesstt meta-
+     modifier.
+
+     In a cchhaannggee or aadddd command where the destination and gateway are not suf-
+     ficient to specify the route (as in the ISO case where several interfaces
+     may have the same address), the --iiffpp or --iiffaa modifiers may be used to de-
+     termine the interface or interface address.
+
+     All symbolic names specified for a _d_e_s_t_i_n_a_t_i_o_n or _g_a_t_e_w_a_y are looked up
+     first as a host name using gethostbyname(3).  If this lookup fails, get-
+     netbyname(3) is then used to interpret the name as that of a network.
+
+     RRoouuttee uses a routing socket and the new message types RTM_ADD,
+     RTM_DELETE, RTM_GET, and RTM_CHANGE.  As such, only the super-user may
+     modify the routing tables.
+
+     If the fflluusshh command is specified, rroouuttee will ``flush'' the routing ta-
+     bles of all gateway entries.  One can choose to flush only those routes
+     whose destinations are of a given address family, by specifying an op-
+     tional keyword describing which address family.
+
+DDIIAAGGNNOOSSTTIICCSS
+     aadddd [[hhoosstt || nneettwwoorrkk ]] %%ss:: ggaatteewwaayy %%ss ffllaaggss %%xx
+             The specified route is being added to the tables.  The values
+             printed are from the routing table entry supplied in the ioctl(2)
+             call.  If the gateway address used was not the primary address of
+             the gateway (the first one returned by gethostbyname(3)),  the
+             gateway address is printed numerically as well as symbolically.
+
+     ddeelleettee [[ hhoosstt &&|| nneettwwoorrkk ]] %%ss:: ggaatteewwaayy %%ss ffllaaggss %%xx
+             As above, but when deleting an entry.
+
+     %%ss %%ss ddoonnee
+             When the fflluusshh command is specified, each routing table entry
+             deleted is indicated with a message of this form.
+
+     NNeettwwoorrkk iiss uunnrreeaacchhaabbllee
+             An attempt to add a route failed because the gateway listed was
+             not on a directly-connected network.  The next-hop gateway must
+             be given.
+
+     nnoott iinn ttaabbllee
+             A delete operation was attempted for an entry which wasn't pre-
+             sent in the tables.
+
+     rroouuttiinngg ttaabbllee oovveerrffllooww
+             An add operation was attempted, but the system was low on re-
+             sources and was unable to allocate memory to create the new en-
+             try.
+
+SSEEEE AALLSSOO
+     netintro(4),  route(4),  esis(4),  routed(8),  XNSrouted(8)
+
+HHIISSTTOORRYY
+     The rroouuttee command appeared in 4.2BSD.
+
+BBUUGGSS
+     The first paragraph may have slightly exaggerated routed's  abilities.
+
+4.2 Berkeley Distribution        June 5, 1993                                3

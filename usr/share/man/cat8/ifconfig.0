@@ -1,0 +1,173 @@
+IFCONFIG(8)               BSD System Manager's Manual              IFCONFIG(8)
+
+NNAAMMEE
+     iiffccoonnffiigg - configure network interface parameters
+
+SSYYNNOOPPSSIISS
+     iiffccoonnffiigg _i_n_t_e_r_f_a_c_e _a_d_d_r_e_s_s___f_a_m_i_l_y [_a_d_d_r_e_s_s [_d_e_s_t___a_d_d_r_e_s_s]] [_p_a_r_a_m_e_t_e_r_s]
+     iiffccoonnffiigg _i_n_t_e_r_f_a_c_e [_p_r_o_t_o_c_o_l___f_a_m_i_l_y]
+
+DDEESSCCRRIIPPTTIIOONN
+     IIffccoonnffiigg is used to assign an address to a network interface and/or con-
+     figure network interface parameters.  IIffccoonnffiigg must be used at boot time
+     to define the network address of each interface present on a machine; it
+     may also be used at a later time to redefine an interface's address or
+     other operating parameters.
+
+     Available operands for iiffccoonnffiigg::
+
+     _A_d_d_r_e_s_s
+             For the DARPA-Internet family, the address is either a host name
+             present in the host name data base, hosts(5),  or a DARPA Inter-
+             net address expressed in the Internet standard ``dot notation''.
+             For the Xerox Network Systems(tm) family, addresses are
+             _n_e_t_:_a_._b_._c_._d_._e_._f, where _n_e_t is the assigned network number (in
+             decimal), and each of the six bytes of the host number, _a through
+             _f, are specified in hexadecimal.  The host number may be omitted
+             on 10Mb/s Ethernet interfaces, which use the hardware physical
+             address, and on interfaces other than the first.  For the ISO
+             family, addresses are specified as a long hexadecimal string, as
+             in the Xerox family.  However, two consecutive dots imply a zero
+             byte, and the dots are optional, if the user wishes to (careful-
+             ly) count out long strings of digits in network byte order.
+
+     _a_d_d_r_e_s_s___f_a_m_i_l_y
+             Specifies the _a_d_d_r_e_s_s _f_a_m_i_l_y which affects interpretation of the
+             remaining parameters.  Since an interface can receive transmis-
+             sions in differing protocols with different naming schemes, spec-
+             ifying the address family is recommeded.  The address or protocol
+             families currently supported are ``inet'', ``iso'', and ``ns''.
+
+     _I_n_t_e_r_f_a_c_e
+             The _i_n_t_e_r_f_a_c_e parameter is a string of the form ``name unit'',
+             for example, ``en0''
+
+     The following parameters may be set with iiffccoonnffiigg:
+
+     aalliiaass           Establish an additional network address for this inter-
+                     face.  This is sometimes useful when changing network
+                     numbers, and one wishes to accept packets addressed to
+                     the old interface.
+
+     aarrpp             Enable the use of the Address Resolution Protocol in map-
+                     ping between network level addresses and link level ad-
+                     dresses (default).  This is currently implemented for
+                     mapping between DARPA Internet addresses and 10Mb/s Eth-
+                     ernet addresses.
+
+     --aarrpp            Disable the use of the Address Resolution Protocol.
+
+     bbrrooaaddccaasstt       (Inet only) Specify the address to use to represent
+                     broadcasts to the network.  The default broadcast address
+                     is the address with a host part of all 1's.
+
+     ddeebbuugg           Enable driver dependent debugging code; usually, this
+
+                     turns on extra console error logging.
+
+     --ddeebbuugg          Disable driver dependent debugging code.
+
+     ddeelleettee          Remove the network address specified.  This would be used
+                     if you incorrectly specified an alias, or it was no
+                     longer needed.  If you have incorrectly set an NS address
+                     having the side effect of specifying the host portion,
+                     removing all NS addresses will allow you to respecify the
+                     host portion.
+
+     ddeesstt__aaddddrreessss    Specify the address of the correspondent on the other end
+                     of a point to point link.
+
+     ddoowwnn            Mark an interface ``down''.  When an interface is marked
+                     ``down'', the system will not attempt to transmit mes-
+                     sages through that interface.  If possible, the interface
+                     will be reset to disable reception as well.  This action
+                     does not automatically disable routes using the inter-
+                     face.
+
+     iippddsstt           This is used to specify an Internet host who is willing
+                     to receive ip packets encapsulating NS packets bound for
+                     a remote network.  An apparent point to point link is
+                     constructed, and the address specified will be taken as
+                     the NS address and network of the destination.  IP encap-
+                     sulation of CLNP packets is done differently.
+
+     mmeettrriicc _n        Set the routing metric of the interface to _n, default 0.
+                     The routing metric is used by the routing protocol
+                     (routed(8)).  Higher metrics have the effect of making a
+                     route less favorable; metrics are counted as addition
+                     hops to the destination network or host.
+
+     nneettmmaasskk _m_a_s_k    (Inet and Iso) Specify how much of the address to reserve
+                     for subdividing networks into sub-networks.  The mask in-
+                     cludes the network part of the local address and the sub-
+                     net part, which is taken from the host field of the ad-
+                     dress.  The mask can be specified as a single hexadecimal
+                     number with a leading 0x, with a dot-notation Internet
+                     address, or with a pseudo-network name listed in the net-
+                     work table networks(5).  The mask contains 1's for the
+                     bit positions in the 32-bit address which are to be used
+                     for the network and subnet parts, and 0's for the host
+                     part.  The mask should contain at least the standard net-
+                     work portion, and the subnet field should be contiguous
+                     with the network portion.
+
+     nnsseelllleennggtthh _n    (ISO only) This specifies a trailing number of bytes for
+                     a received NSAP used for local identification, the re-
+                     maining leading part of which is taken to be the NET
+                     (Network Entity Title).  The default value is 1, which is
+                     conformant to US GOSIP. When an iso address is set in an
+                     ifconfig command, it is really the NSAP which is being
+                     specified.  For example, in US GOSIP, 20 hex digits
+                     should be specified in the ISO NSAP to be assigned to the
+                     interface.  There is some evidence that a number differ-
+                     ent 1 may be useful for AFI 37 type addresses.
+
+     ttrraaiilleerrss        Request the use of a ``trailer'' link level encapsulation
+                     when sending (default).  If a network interface supports
+                     ttrraaiilleerrss, the system will, when possible, encapsulate
+                     outgoing messages in a manner which minimizes the number
+                     of memory to memory copy operations performed by the re-
+                     ceiver.  On networks that support the Address Resolution
+                     Protocol (see arp(4);  currently, only 10 Mb/s Ethernet),
+                     this flag indicates that the system should request that
+                     other systems use trailers when sending to this host.
+                     Similarly, trailer encapsulations will be sent to other
+                     hosts that have made such requests.  Currently used by
+                     Internet protocols only.
+
+     --ttrraaiilleerrss       Disable the use of a ``trailer'' link level encapsula-
+                     tion.
+
+     lliinnkk[[00--22]]       Enable special processing of the link level of the inter-
+                     face.  These three options are interface specific in ac-
+                     tual effect, however, they are in general used to select
+                     special modes of operation. An example of this is to en-
+                     able SLIP compression. Currently, only used by SLIP.
+
+     --lliinnkk[[00--22]]      Disables special processing at the link level with the
+                     specified interface.
+
+     uupp              Mark an interface ``up''.  This may be used to enable an
+                     interface after an ``ifconfig down.''  It happens auto-
+                     matically when setting the first address on an interface.
+                     If the interface was reset when previously marked down,
+                     the hardware will be re-initialized.
+
+     IIffccoonnffiigg displays the current configuration for a network interface when
+     no optional parameters are supplied.  If a protocol family is specified,
+     Ifconfig will report only the details specific to that protocol family.
+
+     Only the super-user may modify the configuration of a network interface.
+
+DDIIAAGGNNOOSSTTIICCSS
+     Messages indicating the specified interface does not exit, the requested
+     address is unknown, or the user is not privileged and tried to alter an
+     interface's configuration.
+
+SSEEEE AALLSSOO
+     netstat(1),  netintro(4),  rc(8),  routed(8),
+
+HHIISSTTOORRYY
+     The iiffccoonnffiigg command appeared in 4.2BSD.
+
+4.2 Berkeley Distribution        June 5, 1993                                3

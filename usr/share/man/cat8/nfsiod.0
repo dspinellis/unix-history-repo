@@ -1,0 +1,28 @@
+NFSIOD(8)                 BSD System Manager's Manual                NFSIOD(8)
+
+NNAAMMEE
+     nnffssiioodd - local NFS asynchronous I/O server
+
+SSYYNNOOPPSSIISS
+     nnffssiioodd [_n_u_m_d_a_e_m_o_n_s]
+
+DDEESSCCRRIIPPTTIIOONN
+     NNffssiioodd runs on an NFS client machine to service asynchronous I/O requests
+     to its server.  It improves performance but is not required for correct
+     operation.
+
+     Available options:
+
+     _n_u_m_d_a_e_m_o_n_s
+             The option _n_u_m_d_a_e_m_o_n_s defines how many nnffssiioodd daemons to start;
+             if unspecified, only a single daemon will be started.  A client
+             should typically run enough daemons to handle their maximum level
+             of concurrency, typically four to six.
+
+SSEEEE AALLSSOO
+     nfsstat(1),  nfssvc(2),  mountd(8),  portmap(8)
+
+HHIISSTTOORRYY
+     The nnffssiioodd utility first appeared in 4.4BSD.
+
+4.4BSD                           June 9, 1993                                1

@@ -1,0 +1,37 @@
+REBOOT(8)                 BSD System Manager's Manual                REBOOT(8)
+
+NNAAMMEE
+     rreebboooott - UNIX bootstrapping procedures
+
+SSYYNNOOPPSSIISS
+     rreebboooott [--nn] [--qq]
+
+DDEESSCCRRIIPPTTIIOONN
+     PPoowweerr ffaaiill aanndd ccrraasshh rreeccoovveerryy.. Normally, the system will reboot itself at
+     power-up or after crashes.  An automatic consistency check of the file
+     systems will be performed as described in fsck(8).  and unless this
+     fails, the system will resume multi-user operations.
+
+     CCoolldd ssttaarrttss The SPARC system currently uses the SunOS bootstrap loaders.
+     This will be changed in a future version of the system.  The SunOS boot
+     will attempt to load _v_m_u_n_i_x from partition A of the boot device, which
+     must currently be an ``sd'' disk.
+
+     The [--ss] flag to the SunOS boot loader will being the system up in sin-
+     gle-user mode.  The [--dd] flag to the SunOS boot loader will bring the
+     system up in debug mode.  Here it waits for a kernel debugger connect;
+     see kgdb(8).  Other flags are currently ignored.
+
+FFIILLEESS
+     /vmunix    system code
+     /boot      system bootstrap
+
+SSEEEE AALLSSOO
+     crash(8),  disklabel(8),  fsck(8),  halt(8),  init(8),  rc(8),
+     shutdown(8),  syslogd(8)
+
+BBUUGGSS
+     The use of Sun disk labels, without the ability to write them, is prob-
+     lematic.
+
+4.4BSD                           June 5, 1993                                1

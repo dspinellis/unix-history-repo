@@ -1,0 +1,96 @@
+XNSROUTED(8)              BSD System Manager's Manual             XNSROUTED(8)
+
+NNAAMMEE
+     XXNNSSrroouutteedd - NS Routing Information Protocol daemon
+
+SSYYNNOOPPSSIISS
+     XXNNSSrroouutteedd [--qq] [--ss] [--tt] [_l_o_g_f_i_l_e]
+
+DDEESSCCRRIIPPTTIIOONN
+     XXNNSSrroouutteedd is invoked at boot time to manage the Xerox NS routing tables.
+     The NS routing daemon uses the Xerox NS Routing Information Protocol in
+     maintaining up to date kernel routing table entries.
+
+     Available options:
+
+     --qq       Do not supply routing information (opposite of --ss option below).
+
+     --ss       Forces XXNNSSrroouutteedd to supply routing information whether it is
+              acting as an internetwork router or not.
+
+     --tt       All packets sent or received are printed on the standard output.
+              In addition, XXNNSSrroouutteedd will not divorce itself from the control-
+              ling terminal so that interrupts from the keyboard will kill the
+              process.
+
+     _l_o_g_f_i_l_e  Name of file in which XXNNSSrroouutteedd's actions should be logged.
+              This log contains information about any changes to the routing
+              tables and a history of recent messages sent and received which
+              are related to the changed route.
+
+     In normal operation XXNNSSrroouutteedd listens for routing information packets.
+     If the host is connected to multiple NS networks, it periodically sup-
+     plies copies of its routing tables to any directly connected hosts and
+     networks.
+
+     When XXNNSSrroouutteedd is started, it uses the SIOCGIFCONF ioctl(2) to find those
+     directly connected interfaces configured into the system and marked
+     ``up'' (the software loopback interface is ignored).  If multiple inter-
+     faces are present, it is assumed the host will forward packets between
+     networks.  XXNNSSrroouutteedd then transmits a _r_e_q_u_e_s_t packet on each interface
+     (using a broadcast packet if the interface supports it) and enters a
+     loop, listening for _r_e_q_u_e_s_t and _r_e_s_p_o_n_s_e packets from other hosts.
+
+     When a _r_e_q_u_e_s_t packet is received, XXNNSSrroouutteedd formulates a reply based on
+     the information maintained in its internal tables.  The _r_e_s_p_o_n_s_e packet
+     generated contains a list of known routes, each marked with a ``hop
+     count'' metric (a count of 16, or greater, is considered ``infinite'').
+     The metric associated with each route returned provides a metric _r_e_l_a_t_i_v_e
+     _t_o _t_h_e _s_e_n_d_e_r.
+
+     _R_e_s_p_o_n_s_e packets received by XXNNSSrroouutteedd are used to update the routing ta-
+     bles if one of the following conditions is satisfied:
+
+     ++oo   No routing table entry exists for the destination network or host,
+         and the metric indicates the destination is ``reachable'' (i.e. the
+         hop count is not infinite).
+
+     ++oo   The source host of the packet is the same as the router in the exist-
+         ing routing table entry.  That is, updated information is being re-
+         ceived from the very internetwork router through which packets for
+         the destination are being routed.
+
+     ++oo   The existing entry in the routing table has not been updated for some
+         time (defined to be 90 seconds) and the route is at least as cost ef-
+
+         fective as the current route.
+
+     ++oo   The new route describes a shorter route to the destination than the
+         one currently stored in the routing tables; the metric of the new
+         route is compared against the one stored in the table to decide this.
+
+     When an update is applied, XXNNSSrroouutteedd records the change in its internal
+     tables and generates a _r_e_s_p_o_n_s_e packet to all directly connected hosts
+     and networks.  Routed(8) waits a short period of time (no more than 30
+     seconds) before modifying the kernel's routing tables to allow possible
+     unstable situations to settle.
+
+     In addition to processing incoming packets, XXNNSSrroouutteedd also periodically
+     checks the routing table entries.  If an entry has not been updated for 3
+     minutes, the entry's metric is set to infinity and marked for deletion.
+     Deletions are delayed an additional 60 seconds to insure the invalidation
+     is propagated to other routers.
+
+     Hosts acting as internetwork routers gratuitously supply their routing
+     tables every 30 seconds to all directly connected hosts and networks.
+
+SSEEEE AALLSSOO
+     idp(4)
+
+     _I_n_t_e_r_n_e_t _T_r_a_n_s_p_o_r_t _P_r_o_t_o_c_o_l_s, XSIS 028112, Xerox System Integration
+     Standard.
+
+HHIISSTTOORRYY
+     The XXNNSSrroouutteedd command appeared in 4.3BSD.
+
+4.3 Berkeley Distribution        June 5, 1993                                2

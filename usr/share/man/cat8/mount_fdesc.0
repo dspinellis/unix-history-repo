@@ -1,0 +1,69 @@
+MOUNT_FDESC(8)            BSD System Manager's Manual           MOUNT_FDESC(8)
+
+NNAAMMEE
+     mmoouunntt__ffddeesscc - mount the file-descriptor file system
+
+SSYYNNOOPPSSIISS
+     mmoouunntt__ffddeesscc [--FF _f_s_o_p_t_i_o_n_s] _f_d_e_s_c _m_o_u_n_t___p_o_i_n_t
+
+DDEESSCCRRIIPPTTIIOONN
+     The mmoouunntt__ffddeesscc command attaches an instance of the per-process file de-
+     scriptor namespace to the global filesystem namespace.  The conventional
+     mount point is _/_d_e_v and the filesystem should be union mounted in order
+     to augment, rather than replace, the existing entries in _/_d_e_v. This com-
+     mand is normally executed by mount(8) at boot time.
+
+     The contents of the mount point are _f_d, _s_t_d_e_r_r, _s_t_d_i_n, _s_t_d_o_u_t and _t_t_y.
+
+     _f_d is a directory whose contents appear as a list of numbered files which
+     correspond to the open files of the process reading the directory.  The
+     files _/_d_e_v_/_f_d_/_0 through _/_d_e_v_/_f_d_/_# refer to file descriptors which can be
+     accessed through the file system.  If the file descriptor is open and the
+     mode the file is being opened with is a subset of the mode of the exist-
+     ing descriptor, the call:
+
+           fd = open("/dev/fd/0", mode);
+
+     and the call:
+
+           fd = fcntl(0, F_DUPFD, 0);
+
+     are equivalent.
+
+     The files _/_d_e_v_/_s_t_d_i_n, _/_d_e_v_/_s_t_d_o_u_t and _/_d_e_v_/_s_t_d_e_r_r appear as symlinks to
+     the relevant entry in the _/_d_e_v_/_f_d sub-directory.  Opening them is equiva-
+     lent to the following calls:
+
+           fd = fcntl(STDIN_FILENO,  F_DUPFD, 0);
+           fd = fcntl(STDOUT_FILENO, F_DUPFD, 0);
+           fd = fcntl(STDERR_FILENO, F_DUPFD, 0);
+
+     Flags to the open(2) call other than O_RDONLY, O_WRONLY and O_RDWR are
+     ignored.
+
+     The _/_d_e_v_/_t_t_y entry is an indirect reference to the current process's con-
+     trolling terminal.  It appears as a named pipe (FIFO) but behaves in ex-
+     actly the same way as the real controlling terminal device.
+
+FFIILLEESS
+     /dev/fd/#
+     /dev/stdin
+     /dev/stdout
+     /dev/stderr
+     /dev/tty
+
+SSEEEE AALLSSOO
+     mount(2),  unmount(2),  tty(4),  fstab(5)
+
+CCAAVVEEAATTSS
+     No . and _._. entries appear when listing the contents of the _/_d_e_v_/_f_d di-
+     rectory.  This makes sense in the context of this filesystem, but is in-
+     consistent with usual filesystem conventions.  However, it is still pos-
+     sible to refer to both . and _._. in a pathname.
+
+     This filesystem may not be NFS-exported.
+
+HHIISSTTOORRYY
+     The mmoouunntt__ffddeesscc utility first appeared in 4.4BSD.
+
+4.4BSD                           June 9, 1993                                2

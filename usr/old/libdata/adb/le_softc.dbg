@@ -1,0 +1,9 @@
+./"sunfoo"nDn
++/"runt"16t"jab"16t"merr"16t"babl"nDDDDn
++/"cerr"16t"miss"16t"xint"16t"xown"nDDDDn
++/"uflo"16t"rxlen"16t"rxoff"16t"txoff"nDDDDn
++/"busy"16t"recv"16t"oactive"nDDDnn
++/"reg0"16t"reg1"16t"reg2"nXXXnn
++/"Network Interface Queue"nn
+$<<ifnet
++/n"enet"48t"ipaddr"nxxx16tXn
