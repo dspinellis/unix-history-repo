@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.7 (Berkeley) 86/08/11";
+static char sccsid[] = "@(#)route.c	5.8 (Berkeley) 86/12/15";
 #endif
 
 #include <stdio.h>
@@ -269,15 +269,15 @@ rt_stats(off)
 	klseek(kmem, off, 0);
 	read(kmem, (char *)&rtstat, sizeof (rtstat));
 	printf("routing:\n");
-	printf("\t%d bad routing redirect%s\n",
+	printf("\t%u bad routing redirect%s\n",
 		rtstat.rts_badredirect, plural(rtstat.rts_badredirect));
-	printf("\t%d dynamically created route%s\n",
+	printf("\t%u dynamically created route%s\n",
 		rtstat.rts_dynamic, plural(rtstat.rts_dynamic));
-	printf("\t%d new gateway%s due to redirects\n",
+	printf("\t%u new gateway%s due to redirects\n",
 		rtstat.rts_newgateway, plural(rtstat.rts_newgateway));
-	printf("\t%d destination%s found unreachable\n",
+	printf("\t%u destination%s found unreachable\n",
 		rtstat.rts_unreach, plural(rtstat.rts_unreach));
-	printf("\t%d use%s of a wildcard route\n",
+	printf("\t%u use%s of a wildcard route\n",
 		rtstat.rts_wildcard, plural(rtstat.rts_wildcard));
 }
 short ns_nullh[] = {0,0,0};

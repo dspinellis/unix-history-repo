@@ -6,7 +6,7 @@
 
 
 #ifndef lint
-static char sccsid[] = "@(#)ns.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)ns.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -127,7 +127,7 @@ nsprotopr(off, name)
 		prev = next;
 	}
 }
-#define ANY(x,y,z)  ((x) ? printf("\t%d %s%s%s\n",x,y,plural(x),z) : 0)
+#define ANY(x,y,z)  ((x) ? printf("\t%u %s%s%s\n",x,y,plural(x),z) : 0)
 
 /*
  * Dump SPP statistics structure.
