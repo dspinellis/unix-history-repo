@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)glob.h	5.4 (Berkeley) %G%
+ *	@(#)glob.h	5.5 (Berkeley) %G%
  */
 
 /*
@@ -25,7 +25,6 @@ int	hflag;				/* Sequence number for network -h */
 char	*rflag;				/* -r address for network */
 char	*Tflag;				/* -T temp file for netnews */
 char	nosrc;				/* Don't source /usr/lib/Mail.rc */
-char	noheader;			/* Suprress initial header listing */
 int	selfsent;			/* User sent self something */
 int	senderr;			/* An error while checking */
 int	edit;				/* Indicates editing a file */
