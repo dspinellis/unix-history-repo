@@ -1,4 +1,4 @@
-#	@(#)Files.base	8.13 (Berkeley) %G%
+#	@(#)Files.base	8.14 (Berkeley) %G%
 FAQ
 KNOWNBUGS
 Makefile
@@ -71,6 +71,7 @@ src/Makefiles/Makefile.dist
 src/Makefiles/Makefile.386BSD
 src/Makefiles/Makefile.AIX
 src/Makefiles/Makefile.AUX
+src/Makefiles/Makefile.Altos
 src/Makefiles/Makefile.BSD43
 src/Makefiles/Makefile.BSDI
 src/Makefiles/Makefile.CLIX
