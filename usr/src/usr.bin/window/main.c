@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	3.9 83/09/01";
+static	char *sccsid = "@(#)main.c	3.10 83/09/02";
 #endif
 
 #include "defs.h"
@@ -19,7 +19,6 @@ char **argv;
 	char dflag = 0;
 	char xflag = 0;
 	int wwchild();
-	int imask;
 	char *rindex();
 	char *getenv();
 
@@ -85,63 +84,18 @@ char **argv;
 		Waputc(0, WINVERSE|WBUF, cmdwin->ww_win);
 	wwflush();
 	(void) signal(SIGCHLD, wwchild);
-	if (!fflag) {
+	if (fflag)
+		incmd = 1;
+	else {
 		if (dflag || doconfig() < 0)
 			dodefault();
 		if (selwin != 0) {
 			wwsetcurwin(selwin);
 		}
 	}
-	while (!quit) {
-		if (incmd) {
-			docmd();
-			continue;
-		}
-		/*
-		 * Loop until we get some keyboard input.
-		 */
-		while (ibufc == 0) {
-			wwsetcursor(WCurRow(curwin->ww_win),
-				WCurCol(curwin->ww_win));
-			wwflush();
-			while (imask = 1, wwforce(&imask) < 0)
-				;
-			if ((imask & 1) == 0)
-				continue;
-			/* NOTE: ibufc == 0 */
-			ibufp = ibuf;
-			if ((ibufc = read(0, ibuf, sizeof ibuf)) < 0) {
-				ibufc = 0;
-				nreade++;
-			} else if (ibufc == 0)
-				nreadz++;
-			else
-				nreadc += ibufc;
-			nread++;
-		}
-		/*
-		 * Weird loop.  Copy the buffer to the pty stopping
-		 * on the escape character in a hopefully efficient
-		 * way.
-		 * Probably a good thing to make ibufc == 1 a special
-		 * case.
-		 */
-		for (p = ibufp, n = ibufc;;) {
-			if (--n < 0) {
-				write(curwin->ww_pty, ibufp, ibufc);
-				ibufp = ibuf;
-				ibufc = 0;
-				break;
-			} else if (*p++ == escapec) {
-				if ((n = p - ibufp) > 1)
-					write(curwin->ww_pty, ibufp, n - 1);
-				ibufp = p;
-				ibufc -= n;
-				wwsetcurwin(cmdwin);
-				break;
-			}
-		}
-	}
+
+	mloop();
+
 bad:
 	wwend();
 	return 0;
