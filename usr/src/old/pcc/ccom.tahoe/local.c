@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)local.c	1.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)local.c	1.4 (Berkeley) %G%";
 #endif
 
 # include "pass1.h"
@@ -96,7 +96,7 @@ clocal(p) register NODE *p; {
 		ml = p->in.left->in.type;
 		if(m == FLOAT || m == DOUBLE) {
 			if(p->in.left->in.op==SCONV &&
-			 (ml == FLOAT || ml == DOUBLE) &&
+			 ml == DOUBLE &&
 			 p->in.left->in.left->in.type==m) {
 				p->in.op = p->in.left->in.op = FREE;
 				return(p->in.left->in.left);
@@ -244,7 +244,7 @@ cisreg( t ) TWORD t; { /* is an automatic variable of type t OK for a register v
 #ifdef REG_CHAR
 		|| t==CHAR || t==UCHAR || t==SHORT || t==USHORT		/* tbl */
 #endif
-		|| ISPTR(t)) return (1);			/* wnj */
+		|| ISPTR(t) || t == FLOAT) return (1);		/* wnj */
 	return(0);
 	}
 
