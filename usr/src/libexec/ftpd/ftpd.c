@@ -1,11 +1,11 @@
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	4.1 (Berkeley) 83/01/13";
+static char sccsid[] = "@(#)ftpd.c	4.2 (Berkeley) 83/01/15";
 #endif
 
 /*
  * FTP server.
  */
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
@@ -102,7 +102,7 @@ main(argc, argv)
 	  }
 	}
 #endif
-	while ((s = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+	while ((s = socket(AF_INET, SOCK_STREAM, 0, 0)) < 0) {
 		perror("ftpd: socket");
 		sleep(5);
 	}
@@ -110,6 +110,7 @@ main(argc, argv)
 		perror("ftpd: bind");
 		sleep(5);
 	}
+	listen(s, 10);
 	for (;;) {
 		int hisaddrlen = sizeof (his_addr);
 
@@ -126,8 +127,15 @@ main(argc, argv)
 			close(s);
 			dup2(ctrl, 0), close(ctrl), dup2(0, 1);
 			/* do telnet option negotiation here */
+			/*
+			 * Set up default state
+			 */
 			logged_in = 0;
 			data = -1;
+			type = TYPE_A;
+			form = FORM_N;
+			stru = STRU_F;
+			mode = MODE_S;
 			gethostname(hostname, sizeof (hostname));
 			reply(220, "%s FTP server (%s) ready.",
 				hostname, version);
@@ -151,7 +159,8 @@ lostconn()
 pass(passwd)
 	char *passwd;
 {
-	char *xpasswd;
+	char *xpasswd, *savestr();
+	static struct passwd save;
 
 	if (logged_in || pw == NULL) {
 		reply(503, "Login with USER first.");
@@ -165,26 +174,52 @@ pass(passwd)
 			return;
 		}
 	}
-	home = pw->pw_dir;		/* home dir for globbing */
-	setreuid(-1, pw->pw_uid);
-	setregid(-1, pw->pw_gid);
+	setegid(pw->pw_gid);
 	initgroups(pw->pw_name, pw->pw_gid);
 	if (chdir(pw->pw_dir)) {
 		reply(550, "User %s: can't change directory to $s.",
 			pw->pw_name, pw->pw_dir);
-		pw = NULL;
-		return;
+		goto bad;
 	}
-	if (guest && chroot(pw->pw_dir) < 0){
+	if (guest && chroot(pw->pw_dir) < 0) {
 		reply(550, "Can't set guest privileges.");
-		pw = NULL;
-		return;
+		goto bad;
 	}
 	if (!guest)
 		reply(230, "User %s logged in.", pw->pw_name);
 	else
 		reply(230, "Guest login ok, access restrictions apply.");
 	logged_in = 1;
+	seteuid(pw->pw_uid);
+	/*
+	 * Save everything so globbing doesn't
+	 * clobber the fields.
+	 */
+	save = *pw;
+	save.pw_name = savestr(pw->pw_name);
+	save.pw_passwd = savestr(pw->pw_passwd);
+	save.pw_comment = savestr(pw->pw_comment);
+	save.pw_gecos = savestr(pw->pw_gecos, &save.pw_gecos);
+	save.pw_dir = savestr(pw->pw_dir);
+	save.pw_shell = savestr(pw->pw_shell);
+	pw = &save;
+	home = pw->pw_dir;		/* home dir for globbing */
+	return;
+bad:
+	seteuid(0);
+	pw = NULL;
+}
+
+char *
+savestr(s)
+	char *s;
+{
+	char *malloc();
+	char *new = malloc(strlen(s) + 1);
+	
+	if (new != NULL)
+		strcpy(new, s);
+	return(new);
 }
 
 retrieve(cmd, name)
@@ -218,13 +253,11 @@ retrieve(cmd, name)
 	dout = dataconn(name, st.st_size, "w");
 	if (dout == NULL)
 		goto done;
-	if (!send_data(fin, dout) || ferror(dout))
+	if (send_data(fin, dout) || ferror(dout))
 		reply(550, "%s: %s.", name, sys_errlist[errno]);
 	else
 		reply(226, "Transfer complete.");
-	if (mode == MODE_S)
-		/* indicate EOF by closing connection */
-		fclose(dout), data = -1;
+	fclose(dout), data = -1;
 done:
 	(*closefunc)(fin);
 }
@@ -233,12 +266,17 @@ store(name, mode)
 	char *name, *mode;
 {
 	FILE *fout, *din;
-	int (*closefunc)();
+	int (*closefunc)(), dochown = 0;
 
 	if (name[0] == '!')
 		fout = popen(&name[1], "w"), closefunc = pclose;
-	else
+	else {
+		struct stat st;
+
+		if (stat(name, &st) < 0)
+			dochown++;
 		fout = fopen(name, mode), closefunc = fclose;
+	}
 	if (fout == NULL) {
 		reply(550, "%s: %s.", name, sys_errlist[errno]);
 		return;
@@ -246,12 +284,14 @@ store(name, mode)
 	din = dataconn(name, -1, "r");
 	if (din == NULL)
 		goto done;
-	if (!receive_data(din, fout) || ferror(fout))
+	if (receive_data(din, fout) || ferror(fout))
 		reply(550, "%s: %s.", name, sys_errlist[errno]);
 	else
 		reply(226, "Transfer complete.");
 	fclose(din), data = -1;
 done:
+	if (dochown)
+		(void) chown(name, pw->pw_uid, -1);
 	(*closefunc)(fout);
 }
 
@@ -359,7 +399,7 @@ send_data(instr, outstr)
 		netfd = fileno(outstr);
 		filefd = fileno(instr);
 
-		while ((cnt = read(filefd, buf, sizeof buf)) > 0)
+		while ((cnt = read(filefd, buf, sizeof (buf))) > 0)
 			if (write(netfd, buf, cnt) < 0)
 				return (1);
 		return (cnt < 0);
@@ -525,18 +565,22 @@ cwd(path)
 	ack("CWD");
 }
 
-do_mkdir(name)
+makedir(name)
 	char *name;
 {
+	struct stat st;
+	int dochown = stat(name, &st) < 0;
 	
 	if (mkdir(name, 0777) < 0) {
 		reply(550, "%s: %s.", name, sys_errlist[errno]);
 		return;
 	}
+	if (dochown)
+		(void) chown(name, pw->pw_uid, -1);
 	ack("MKDIR");
 }
 
-do_rmdir(name)
+removedir(name)
 	char *name;
 {
 
@@ -547,9 +591,9 @@ do_rmdir(name)
 	ack("RMDIR");
 }
 
-do_pwd()
+pwd()
 {
-	char path[1024];
+	char path[MAXPATHLEN + 1];
 	char *p;
 
 	if (getwd(path) == NULL) {
@@ -569,7 +613,7 @@ renamefrom(name)
 		reply(550, "%s: %s.", name, sys_errlist[errno]);
 		return ((char *)0);
 	}
-	ack("RNFR");
+	reply(350, "File exists, ready for destination name");
 	return (name);
 }
 
@@ -650,7 +694,6 @@ dolog(sin)
 	else
 		remotehost = "UNKNOWNHOST";
 	t = time(0);
-	fprintf(stderr,"FTP %d: connection from %s at %s",
-		getpid(), remotehost, ctime(&t));
+	fprintf(stderr,"FTP: connection from %s at %s", remotehost, ctime(&t));
 	fflush(stderr);
 }
