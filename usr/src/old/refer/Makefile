@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	4.9	(Berkeley)	%G%
+#	@(#)Makefile	4.10	(Berkeley)	%G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -27,8 +27,8 @@ WHSRCS=	what1.c what2.c what3.c what4.c shell.c mkey3.c
 WHOBJS=	what1.o what2.o what3.o what4.o shell.o mkey3.o
 SRCS=	addbib.c lookbib.c ${DLSRCS} ${HTSRCS} ${INSRCS} ${MKSRCS} ${RFSRCS} \
 	${WHSRCS}
-OBJS=	addbib.o lookbib.o ${DLOBJS} ${HTOBJS} ${INOBJS} ${MKOBJS} ${RFOBJS} \
-	${WHOBJS}
+OBJS=	addbib.o lookbib.o sortbib.o ${DLOBJS} ${HTOBJS} ${INOBJS} ${MKOBJS} \
+	${RFOBJS} ${WHOBJS}
 
 all:	addbib deliv hunt inv lookbib mkey refer sortbib whatabout
 
@@ -114,7 +114,7 @@ FRC:
 # DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
 
 addbib.o: addbib.c /usr/include/stdio.h /usr/include/ctype.h
-addbib.o: /usr/include/signal.h
+addbib.o: /usr/include/signal.h /usr/include/machine/trap.h
 lookbib.o: lookbib.c /usr/include/stdio.h /usr/include/ctype.h
 deliv1.o: deliv1.c /usr/include/stdio.h
 deliv2.o: deliv2.c /usr/include/stdio.h deliv2.c /usr/include/stdio.h
@@ -165,8 +165,8 @@ hunt9.o: hunt9.c
 mkey3.o: mkey3.c /usr/include/stdio.h
 refer0.o: refer0.c refer..c /usr/include/stdio.h /usr/include/ctype.h
 refer0.o: /usr/include/assert.h
-refer1.o: refer1.c /usr/include/signal.h refer..c /usr/include/stdio.h
-refer1.o: /usr/include/ctype.h /usr/include/assert.h
+refer1.o: refer1.c /usr/include/signal.h /usr/include/machine/trap.h refer..c
+refer1.o: /usr/include/stdio.h /usr/include/ctype.h /usr/include/assert.h
 refer2.o: refer2.c refer..c /usr/include/stdio.h /usr/include/ctype.h
 refer2.o: /usr/include/assert.h
 refer4.o: refer4.c refer..c /usr/include/stdio.h /usr/include/ctype.h
