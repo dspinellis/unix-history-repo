@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)udgramread.c	6.2 (Berkeley) %G%
+.\"	@(#)udgramread.c	6.3 (Berkeley) %G%
 .\"
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -12,7 +12,7 @@
  * In the included file <sys/un.h> a sockaddr_un is defined as follows
  * struct sockaddr_un {
  *	short	sun_family;
- *	char	sun_path[109];
+ *	char	sun_path[108];
  * }; 
  */
 
