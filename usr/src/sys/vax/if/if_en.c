@@ -1,4 +1,4 @@
-/*	if_en.c	4.78	83/05/30	*/
+/*	if_en.c	4.79	83/06/12	*/
 
 #include "en.h"
 
@@ -14,7 +14,8 @@
 #include "../h/protosw.h"
 #include "../h/socket.h"
 #include "../h/vmmac.h"
-#include <errno.h>
+#include "../h/errno.h"
+#include "../h/ioctl.h"
 
 #include "../net/if.h"
 #include "../net/netisr.h"
@@ -43,7 +44,7 @@ struct	uba_driver endriver =
 	{ enprobe, 0, enattach, 0, enstd, "en", eninfo };
 #define	ENUNIT(x)	minor(x)
 
-int	eninit(),enoutput(),enreset();
+int	eninit(),enoutput(),enreset(),enioctl();
 
 /*
  * Ethernet software status per interface.
@@ -106,10 +107,9 @@ enattach(ui)
 	es->es_if.if_unit = ui->ui_unit;
 	es->es_if.if_name = "en";
 	es->es_if.if_mtu = ENMTU;
-	if (ui->ui_flags)
-		ensetaddr(es, ui->ui_flags);
 	es->es_if.if_init = eninit;
 	es->es_if.if_output = enoutput;
+	es->es_if.if_ioctl = enioctl;
 	es->es_if.if_reset = enreset;
 	es->es_ifuba.ifu_flags = UBA_NEEDBDP | UBA_NEED16 | UBA_CANTWAIT;
 #if defined(VAX750)
@@ -118,31 +118,6 @@ enattach(ui)
 		es->es_ifuba.ifu_flags &= ~UBA_NEEDBDP;
 #endif
 	if_attach(&es->es_if);
-}
-
-/*
- * Set interface's Internet address
- * given the network number.  The station
- * number, taken from the on-board register,
- * is used as the local part.
- */
-ensetaddr(es, net)
-	register struct en_softc *es;
-	int net;
-{
-	struct endevice *enaddr;
-	register struct sockaddr_in *sin;
-
-	es->es_if.if_net = net;
-	enaddr = (struct endevice *)eninfo[es->es_if.if_unit]->ui_addr;
-	es->es_if.if_host[0] = (~enaddr->en_addr) & 0xff;
-	sin = (struct sockaddr_in *)&es->es_if.if_addr;
-	sin->sin_family = AF_INET;
-	sin->sin_addr = if_makeaddr(net, es->es_if.if_host[0]);
-	sin = (struct sockaddr_in *)&es->es_if.if_broadaddr;
-	sin->sin_family = AF_INET;
-	sin->sin_addr = if_makeaddr(net, INADDR_ANY);
-	es->es_if.if_flags |= IFF_BROADCAST;
 }
 
 /*
@@ -172,16 +147,10 @@ eninit(unit)
 	register struct uba_device *ui = eninfo[unit];
 	register struct endevice *addr;
 	struct sockaddr_in *sin = (struct sockaddr_in *)&es->es_if.if_addr;
-	int net, s;
+	int s;
 
-	net = in_netof(sin->sin_addr);
-	if (net == 0)
+	if (in_netof(sin->sin_addr) == 0)
 		return;
-	ensetaddr(es, net);
-#ifdef notdef
-	if (es->es_if.if_flags & IFF_UP)
-		return;
-#endif
 	if (if_ubainit(&es->es_ifuba, ui->ui_ubanum,
 	    sizeof (struct en_header), (int)btoc(ENMRU)) == 0) { 
 		printf("en%d: can't initialize\n", unit);
@@ -200,7 +169,7 @@ eninit(unit)
 	addr->en_iwc = -(sizeof (struct en_header) + ENMRU) >> 1;
 	addr->en_istat = EN_IEN|EN_GO;
 	es->es_oactive = 1;
-	es->es_if.if_flags |= IFF_UP;
+	es->es_if.if_flags |= IFF_UP|IFF_RUNNING;
 	enxint(unit);
 	splx(s);
 	if_rtinit(&es->es_if, RTF_UP);
@@ -494,6 +463,8 @@ enoutput(ifp, m0, dst)
 		}
 		dest = (dest >> 24) & 0xff;
 		off = ntohs((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
+		/* need per host negotiation */
+		if ((ifp->if_flags & IFF_NOTRAILERS) == 0)
 		if (off > 0 && (off & 0x1ff) == 0 &&
 		    m->m_off >= MMINOFF + 2 * sizeof (u_short)) {
 			type = ENTYPE_TRAIL + (off>>9);
@@ -579,4 +550,52 @@ qfull:
 bad:
 	m_freem(m0);
 	return (error);
+}
+
+/*
+ * Process an ioctl request.
+ */
+enioctl(ifp, cmd, data)
+	register struct ifnet *ifp;
+	int cmd;
+	caddr_t data;
+{
+	struct ifreq *ifr = (struct ifreq *)data;
+	int s = splimp(), error = 0;
+
+	switch (cmd) {
+
+	case SIOCSIFADDR:
+		if (ifp->if_flags & IFF_RUNNING)
+			if_rtinit(ifp, -1);	/* delete previous route */
+		ensetaddr(ifp, (struct sockaddr_in *)&ifr->ifr_addr);
+		if (ifp->if_flags & IFF_RUNNING)
+			if_rtinit(ifp, RTF_UP);
+		else
+			eninit(ifp->if_unit);
+		break;
+
+	default:
+		error = EINVAL;
+	}
+	splx(s);
+	return (error);
+}
+
+ensetaddr(ifp, sin)
+	register struct ifnet *ifp;
+	register struct sockaddr_in *sin;
+{
+	struct endevice *enaddr;
+
+	ifp->if_net = in_netof(sin->sin_addr);
+	enaddr = (struct endevice *)eninfo[ifp->if_unit]->ui_addr;
+	ifp->if_host[0] = (~enaddr->en_addr) & 0xff;
+	sin = (struct sockaddr_in *)&ifp->if_addr;
+	sin->sin_family = AF_INET;
+	sin->sin_addr = if_makeaddr(ifp->if_net, ifp->if_host[0]);
+	sin = (struct sockaddr_in *)&ifp->if_broadaddr;
+	sin->sin_family = AF_INET;
+	sin->sin_addr = if_makeaddr(ifp->if_net, INADDR_ANY);
+	ifp->if_flags |= IFF_BROADCAST;
 }
