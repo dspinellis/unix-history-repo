@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)termcap.src	5.70 (Berkeley) %G%
+#	@(#)termcap.src	5.71 (Berkeley) %G%
 #
 #	Termcap source file
 #	John Kunze, Berkeley
@@ -3047,14 +3047,16 @@ zh|appleII|apple ii plus:vs=\024\103\066:ve=\024\103\062:\
 zi|apple-80|apple II with smarterm 80 col:\
 	:am:bs:bt=^R:bw:cd=10*^K:ce=10^]:cl=10*^L:cm=^^%r%+ %+ :\
 	:co#80:cr=10*^M:do=^J:ho=^Y:le=^H:li#24:nd=^\\:up=^_:
-#
-zj|lisa|apple lisa xenix console display (white on black):\
+zj|lisa|apple lisa console display, black on white:\
 	:al=\E[L:am:bs:cd=\E[J:ce=\E[K:cl=^L:cm=\E[%i%d;%dH:co#88:\
 	:dc=\E[P:dl=\E[M:do=\E[B:ei=:ho=\E[H:ic=\E[@:im=:li#32:\
-	:nd=\E[C:ms:pt:so=\E[m:se=\E[7m:us=\E[4m:ue=\E[7m:up=\E[A:\
-	:kb=^h:ku=\E[A:kd=\E[B:kl=\E[D:kr=\E[C:eo:\
-	:is=\E[7m^L:GS=\E[11m:GE=\E[10m:GV=\140:GH=a:G1=c:\
-	:G2=f:G3=e:G4=d:GU=u:GD=s:GC=b:GL=v:GR=t:
+	:nd=\E[C:ms:pt:so=\E[7m:se=\E[m:us=\E[4m:ue=\E[m:up=\E[A:\
+	:kb=^h:ku=\E[A:kd=\E[B:kl=\E[D:kr=\E[C:eo:is=\E>\E[0m^L:\
+	:GS=\E[11m:GE=\E[10m:GV=\140:GH=a:G1=c:G2=f:G3=e:G4=d:GU=u:\
+	:GD=s:GC=b:GL=v:GR=t:CO=\E[5l:CF=\E[5h:
+zq|liswb|apple lisa console display, white on black:\
+	:so=\E[0m:se=\E[0;7m:us=\E[4m:ue=\E[0;7m:is=\E>\E[0;7m^L:\
+	:tc=lisa:
 # The following is a version of the ibm-pc entry distributed with PC/IX,
 # (Interactive Systems' System 3 for the Big Blue), modified by Richard
 # McIntosh at UCB/CSM.  The :pt: and :uc: have been removed from the original,
