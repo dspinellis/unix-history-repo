@@ -66,7 +66,7 @@
  *
  * 08 Apr 93	Bruce Evans		Several VM system fixes
  */
-static char rcsid[] = "$Header: /tmp/vm_glue.c,v 1.1 1993/06/12 14:57:39 rgrimes Exp $";
+static char rcsid[] = "$Header: /home/cvs/386BSD/src/sys.386bsd/vm/vm_glue.c,v 1.3 1993/06/30 22:30:55 nate Exp $";
 
 #include "param.h"
 #include "systm.h"
@@ -92,7 +92,7 @@ kernacc(addr, len, rw)
 	vm_prot_t prot = rw == B_READ ? VM_PROT_READ : VM_PROT_WRITE;
 
 	saddr = trunc_page(addr);
-	eaddr = round_page(addr+len-1);
+	eaddr = round_page(addr+len);
 	rv = vm_map_check_protection(kernel_map, saddr, eaddr, prot);
 	/*
 	 * XXX there are still some things (e.g. the buffer cache) that
@@ -127,13 +127,13 @@ useracc(addr, len, rw)
 	 * only used (as an end address) in trap.c.  Use it as an end
 	 * address here too.
 	 */
-	if ((vm_offset_t) addr >= VM_MAXUSER_ADDRESS + UPAGES * NBPG
-	    || (vm_offset_t) addr + len > VM_MAXUSER_ADDRESS + UPAGES * NBPG
+	if ((vm_offset_t) addr >= VM_MAXUSER_ADDRESS
+	    || (vm_offset_t) addr + len > VM_MAXUSER_ADDRESS
 	    || (vm_offset_t) addr + len <= (vm_offset_t) addr)
 		return (FALSE);
 
 	rv = vm_map_check_protection(&curproc->p_vmspace->vm_map,
-	    trunc_page(addr), round_page(addr+len-1), prot);
+	    trunc_page(addr), round_page(addr+len), prot);
 	return(rv == TRUE);
 }
 
@@ -150,7 +150,7 @@ chgkprot(addr, len, rw)
 	vm_prot_t prot = rw == B_READ ? VM_PROT_READ : VM_PROT_WRITE;
 
 	vm_map_protect(kernel_map, trunc_page(addr),
-		       round_page(addr+len-1), prot, FALSE);
+		       round_page(addr+len), prot, FALSE);
 }
 #endif
 
@@ -159,7 +159,7 @@ vslock(addr, len)
 	u_int	len;
 {
 	vm_map_pageable(&curproc->p_vmspace->vm_map, trunc_page(addr),
-			round_page(addr+len-1), FALSE);
+			round_page(addr+len), FALSE);
 }
 
 vsunlock(addr, len, dirtied)
@@ -171,7 +171,7 @@ vsunlock(addr, len, dirtied)
 	dirtied++;
 #endif	lint
 	vm_map_pageable(&curproc->p_vmspace->vm_map, trunc_page(addr),
-			round_page(addr+len-1), TRUE);
+			round_page(addr+len), TRUE);
 }
 
 /*
