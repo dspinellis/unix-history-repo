@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)rsfe.c	5.1	%G%
+ *	@(#)rsfe.c	5.2	%G%
  */
 
 /*
@@ -20,7 +20,7 @@ LOCAL char rsfe[] = "read sfe";
 s_rsfe(a) cilist *a; /* start */
 {	int n;
 	reading = YES;
-	sequential=FORMATTED;
+	sequential = YES;
 	if(n=c_sfe(a,READ,SEQ,rsfe)) return (n);
 	if(curunit->url) err(errflag,F_ERNOSIO,rsfe)
 	if(curunit->uwrt && ! nowreading(curunit)) err(errflag, errno, rsfe)

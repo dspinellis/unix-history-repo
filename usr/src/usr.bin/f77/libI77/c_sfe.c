@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)c_sfe.c	5.1	%G%
+ *	@(#)c_sfe.c	5.2	%G%
  */
 
 /*
@@ -16,7 +16,8 @@ c_sfe(a,flag,mode,str) cilist *a; char *str; /* check */
 {	unit *p;
 	int n;
 
-	external=formatted=FORMATTED;
+	external=YES;
+	formatted=FORMATTED;
 	fmtbuf=a->cifmt;
 	lfname = NULL;
 	elist = NO;
