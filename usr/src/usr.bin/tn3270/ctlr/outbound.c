@@ -24,6 +24,10 @@ static	char	sccsid[] = "@(#)outbound.c	3.1  10/29/86";
 #endif	/* lint */
 
 
+#include <stdio.h>
+
+#include "../general.h"
+
 #include "hostctlr.h"
 #include "screen.h"
 #include "ebc_disp.h"
@@ -53,7 +57,6 @@ static int	LastWasTerminated = 1;	/* was "control" = 1 last time? */
 int	OutputClock;		/* what time it is */
 int	TransparentClock;		/* time we were last in transparent */
 #endif	/* !defined(PURE3274) */
-
 
 char CIABuffer[64] = {
     0x40, 0xc1, 0xc2, 0xc3, 0xc4, 0xc5, 0xc6, 0xc7,
@@ -65,6 +68,8 @@ char CIABuffer[64] = {
     0xf0, 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7,
     0xf8, 0xf9, 0x7a, 0x7b, 0x7c, 0x7d, 0x7e, 0x7f
 };
+
+static struct orders_def orders_def[] = ORDERS_DEF;
 
 /*
  * init_ctlr()
@@ -198,7 +203,7 @@ int	control;				/* this buffer ended block? */
 
 	if (count < 2) {
 	    if (count == 0) {
-		ExitString("Short count received from host!\n", 1);
+		ExitString(stderr, "Short count received from host!\n", 1);
 		return(count);
 	    }
 	    Command = buffer[0];
@@ -297,7 +302,7 @@ int	control;				/* this buffer ended block? */
 
 		sprintf(buffer, "Unexpected command code 0x%x received.\n",
 								Command);
-		ExitString(buffer, 1);
+		ExitString(stderr, buffer, 1);
 		break;
 	    }
 	}
@@ -380,12 +385,19 @@ int	control;				/* this buffer ended block? */
 		Ensure(3);
 		i = Addr3270(buffer[0], buffer[1]);
 		c = buffer[2];
+		if (c == ORDER_GE) {
+		    Ensure(4);
+		    c = buffer[3];
+		    buffer += 4;
+		    count -= 4;
+		} else {
+		    buffer += 3;
+		    count -= 3;
+		}
 		do {
 		    AddHost(BufferAddress, ebc_disp[c]);
 		    BufferAddress = ScreenInc(BufferAddress);
 		} while (BufferAddress != i);
-		buffer += 3;
-		count -= 3;
 		break;
 	    case ORDER_EUA:    /* (from [here,there), ie: half open interval] */
 		Ensure(2);
@@ -406,6 +418,12 @@ int	control;				/* this buffer ended block? */
 		buffer += 2;
 		count -= 2;
 		break;
+	    case ORDER_GE:
+		Ensure(2);
+		/* XXX Should do SOMETHING! */
+		buffer += 0;
+		count -= 0;		/* For now, just use this character */
+		break;
 	    case ORDER_YALE:		/* special YALE defined order */
 		Ensure(2);	/* need at least two characters */
 		if (*buffer == 0x5b) {
@@ -419,7 +437,25 @@ int	control;				/* this buffer ended block? */
 		}
 		break;
 	    default:
-		break;				/* XXX ? */
+		{
+		    char buffer[100];
+		    static struct orders_def unk_order
+						= { 0, "??", "(unknown)" };
+		    struct orders_def *porder = &unk_order;
+		    int i;
+
+		    for (i = 0; i <= highestof(orders_def); i++) {
+			if (orders_def[i].code == c) {
+			    porder = &orders_def[i];
+			    break;
+			}
+		    }
+		    sprintf(buffer,
+			"Unsupported order '%s' (%s, 0x%x) received.\n",
+			porder->long_name, porder->short_name, c);
+		    ExitString(stderr, buffer, 1);
+		    /*NOTREACHED*/
+		}
 	    }
 	    if (count < 0) {
 		count = 0;
@@ -493,14 +529,16 @@ int	control;				/* this buffer ended block? */
 void
 Init3270()
 {
+    int i;
+
     OptInit();		/* initialize mappings */
 
     bzero((char *)Host, sizeof Host);	/* Clear host */
 
     bzero(Orders, sizeof Orders);
-    Orders[ORDER_SF] = Orders[ORDER_SBA] = Orders[ORDER_IC]
-	    = Orders[ORDER_PT] = Orders[ORDER_RA] = Orders[ORDER_EUA]
-	    = Orders[ORDER_YALE] = 1;	/* What is an order */
+    for (i = 0; i <= highestof(orders_def); i++) {
+	Orders[orders_def[i].code] = 1;
+    }
 
     DeleteAllFields();		/* Clear screen */
     Lowest = HighestScreen()+1;

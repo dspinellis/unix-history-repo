@@ -7,20 +7,45 @@
 /* define orders given to 3270's */
 
 #define	ORDER_SF	0x1d		/* Start Field */
+#define	ORDER_SFE	0x29		/* Start Field Extended */
 #define	ORDER_SBA	0x11		/* Set Buffer Address (for output) */
+#define	ORDER_SA	0x28		/* Set Attribute */
+#define	ORDER_MF	0x2c		/* Modify field */
 #define	ORDER_IC	0x13		/* Insert Cursor (at buffer address) */
 #define	ORDER_PT	0x05		/* Program Tab (absurdly complicated) */
 #define	ORDER_RA	0x3c		/* Repeat next character to some addr */
-#define	ORDER_SFE	0x29		/* Start Field Extended */
 #define	ORDER_EUA	0x12		/* Null out every unprotected field
 					 * to some address.
 					 */
-#define	ORDER_MF	0x2c		/* Modify field */
-#define	ORDER_SA	0x28		/* Set Attribute */
+#define	ORDER_GE	0x08		/* Graphics Escape */
 #define	ORDER_YALE	0x2b		/* This is a special YALE order, which
 					 * introduces YALE extended orders
 					 * (like setting tabs, etc.).
 					 */
+
+/* The following is defined for initialization and error messages. */
+
+struct orders_def {
+    int
+	code;			/* As in 3270 data stream */
+    char
+	*short_name,		/* Short name */
+	*long_name;		/* Long name */
+};
+
+#define	ORDERS_DEF { \
+			    ORDER_SF, "SF", "Start Field", \
+			    ORDER_SFE, "SFE", "Start Field Extended", \
+			    ORDER_SBA, "SBA", "Set Buffer Address", \
+			    ORDER_SA, "SA", "Set Attribute", \
+			    ORDER_MF, "MF", "Modify Field", \
+			    ORDER_IC, "IC", "Insert Cursor", \
+			    ORDER_PT, "PT", "Program Tab", \
+			    ORDER_RA, "RA", "Repeat to Address", \
+			    ORDER_EUA, "EUA", "Erase Unprotected to Address", \
+			    ORDER_GE, "GE", "Graphics Escape", \
+			    ORDER_YALE, "YALE", "Yale Order" \
+			}
 
 
 #define	ATTR_RESET		0x00		/* SA only - reset to default */
