@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)encrypt.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)encrypt.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -29,7 +29,7 @@ static char sccsid[] = "@(#)encrypt.c	5.3 (Berkeley) %G%";
  * or implied warranty.
  */
 
-#if	defined(ENCRYPTION)
+#ifdef	ENCRYPTION
 
 #define	ENCRYPT_NAMES
 #include <arpa/telnet.h>
@@ -78,7 +78,7 @@ static long remote_supports_encrypt = 0;
 static long remote_supports_decrypt = 0;
 
 static Encryptions encryptions[] = {
-#if	defined(DES_ENCRYPTION)
+#ifdef	DES_ENCRYPTION
     { "DES_CFB64",	ENCTYPE_DES_CFB64,
 			cfb64_encrypt,	
 			cfb64_decrypt,
@@ -99,7 +99,7 @@ static Encryptions encryptions[] = {
 			ofb64_session,
 			ofb64_keyid,
 			ofb64_printsub },
-#endif
+#endif	/* DES_ENCRYPTION */
     { 0, },
 };
 
@@ -970,4 +970,4 @@ encrypt_printsub(data, cnt, buf, buflen)
 	else
 		encrypt_gen_printsub(data, cnt, buf, buflen);
 }
-#endif
+#endif	/* ENCRYPTION */

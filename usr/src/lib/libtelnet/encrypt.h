@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)encrypt.h	5.3 (Berkeley) %G%
+ *	@(#)encrypt.h	5.4 (Berkeley) %G%
  */
 
 /*
@@ -27,8 +27,9 @@
  * or implied warranty.
  */
 
-#ifndef	__ENCRYPTION__
-#define	__ENCRYPTION__
+#ifdef	ENCRYPTION
+# ifndef __ENCRYPTION__
+# define __ENCRYPTION__
 
 #define	DIR_DECRYPT		1
 #define	DIR_ENCRYPT		2
@@ -48,13 +49,13 @@ typedef	struct {
 	unsigned char	*data;
 } Session_Key;
 
-#if	!defined(P)
-#ifdef	__STDC__
-#define P(x)	x
-#else
-#define P(x)	()
-#endif
-#endif
+# if !defined(P)
+#  ifdef __STDC__
+#   define P(x)	x
+#  else
+#   define P(x)	()
+#  endif
+# endif
 
 typedef struct {
 	char	*name;
@@ -77,4 +78,5 @@ typedef struct {
 extern int encrypt_debug_mode;
 extern int (*decrypt_input) P((int));
 extern void (*encrypt_output) P((unsigned char *, int));
-#endif
+# endif /* __ENCRYPTION__ */
+#endif /* ENCRYPTION */

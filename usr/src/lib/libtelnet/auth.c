@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)auth.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)auth.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -110,7 +110,7 @@ Authenticator authenticators[] = {
 				kerberos5_reply,
 				kerberos5_status,
 				kerberos5_printsub },
-# endif
+# endif	/* ENCRYPTION */
 	{ AUTHTYPE_KERBEROS_V5, AUTH_WHO_CLIENT|AUTH_HOW_ONE_WAY,
 				kerberos5_init,
 				kerberos5_send,
@@ -128,7 +128,7 @@ Authenticator authenticators[] = {
 				kerberos4_reply,
 				kerberos4_status,
 				kerberos4_printsub },
-# endif
+# endif	/* ENCRYPTION */
 	{ AUTHTYPE_KERBEROS_V4, AUTH_WHO_CLIENT|AUTH_HOW_ONE_WAY,
 				kerberos4_init,
 				kerberos4_send,

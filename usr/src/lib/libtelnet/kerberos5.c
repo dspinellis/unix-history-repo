@@ -20,7 +20,7 @@ char rcsid_kerberos5_c[] = "$Id: kerberos5.c,v 1.3 91/07/19 16:37:57 jtkohl Exp 
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)kerberos5.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)kerberos5.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -87,9 +87,9 @@ static	krb5_authenticator authenticator;
 
 #define Voidptr krb5_pointer
 
-#if	defined(ENCRYPTION)
+#ifdef	ENCRYPTION
 Block	session_key;
-#endif
+#endif	/* ENCRYPTION */
 	static int
 Data(ap, type, d, c)
 	Authenticator *ap;
@@ -154,9 +154,9 @@ kerberos5_send(ap)
 	extern krb5_flags krb5_kdc_default_options;
 	int ap_opts;
 
-#if     defined(ENCRYPTION)
+#ifdef	ENCRYPTION
 	krb5_keyblock *newkey = 0;
-#endif
+#endif	/* ENCRYPTION */
 
 	ksum.checksum_type = CKSUMTYPE_CRC32;
 	ksum.contents = sum;
@@ -244,11 +244,11 @@ kerberos5_send(ap)
 	    ap_opts = 0;
 	    
 	r = krb5_mk_req_extended(ap_opts, &ksum, krb5_kdc_default_options, 0,
-#if	defined(ENCRYPTION)
+#ifdef	ENCRYPTION
 				 &newkey,
-#else
+#else	/* ENCRYPTION */
 				 0,
-#endif
+#endif	/* ENCRYPTION */
 				 ccache, &creds, &authenticator, &auth);
 	/* don't let the key get freed if we clean up the authenticator */
 	authenticator.subkey = 0;
@@ -256,7 +256,7 @@ kerberos5_send(ap)
 	free(name);
 	krb5_free_host_realm(realms);
 	krb5_free_principal(server);
-#if	defined(ENCRYPTION)
+#ifdef	ENCRYPTION
 	if (newkey) {
 	    /* keep the key in our private storage, but don't use it
 	       yet---see kerberos5_reply() below */
@@ -273,7 +273,7 @@ kerberos5_send(ap)
 	    }
 	    krb5_free_keyblock(newkey);
 	}
-#endif
+#endif	/* ENCRYPTION */
 	if (r) {
 		if (auth_debug_mode) {
 			printf("Kerberos V5: mk_req failed (%s)\r\n",
@@ -493,12 +493,12 @@ kerberos5_reply(ap, data, cnt)
 			return;
 		    }
 		    krb5_free_ap_rep_enc_part(reply);
-#if	defined(ENCRYPTION)
+#ifdef	ENCRYPTION
 			skey.type = SK_DES;
 			skey.length = 8;
 			skey.data = session_key;
 			encrypt_session_key(&skey, 0);
-#endif
+#endif	/* ENCRYPTION */
 		    mutual_complete = 1;
 		}
 		return;
