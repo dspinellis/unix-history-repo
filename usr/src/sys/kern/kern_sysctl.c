@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sysctl.c	7.38 (Berkeley) %G%
+ *	@(#)kern_sysctl.c	7.39 (Berkeley) %G%
  */
 
 /*
@@ -244,7 +244,7 @@ kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 	case KERN_CHOWN_RESTRICTED:
 		return (sysctl_rdint(oldp, oldlenp, newp, 1));
 	case KERN_NO_TRUNC:
-		return (sysctl_rdint(oldp, oldlenp, newp, 0));
+		return (sysctl_rdint(oldp, oldlenp, newp, 1));
 	case KERN_VDISABLE:
 		return (sysctl_rdint(oldp, oldlenp, newp, _POSIX_VDISABLE));
 	default:
