@@ -1,4 +1,4 @@
-/*	conf.c	4.8	81/11/12	*/
+/*	conf.c	4.9	81/12/01	*/
 
 #include "../h/param.h"
 #include "../h/inode.h"
@@ -49,6 +49,7 @@ int	tsstrategy(), tsopen(), tsclose();
 int	mtstrategy(), mtopen(), mtclose();
 int	rkstrategy(), rkopen();
 int	udstrategy(), udopen();
+int	utstrategy(), utopen(), utclose();
 
 struct devsw devsw[] = {
 	"hp",	hpstrategy,	hpopen,		nullsys,
@@ -59,5 +60,6 @@ struct devsw devsw[] = {
 	"ts",	tsstrategy,	tsopen,		tsclose,
 	"mt",	mtstrategy,	mtopen,		mtclose,
 	"ra",	udstrategy,	udopen,		nullsys,
+	"ut",	utstrategy,	utopen,		utclose,
 	0,0,0,0
 };
