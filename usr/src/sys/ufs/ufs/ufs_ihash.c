@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_ihash.c	8.3 (Berkeley) %G%
+ *	@(#)ufs_ihash.c	8.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -77,7 +77,7 @@ ufs_ihashget(device, inum)
 					break;
 				}
 				vp = ITOV(ip);
-				if (!vget(vp))
+				if (!vget(vp, 1))
 					return (vp);
 				break;
 			}
