@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)headers.c	3.17		%G%);
+SCCSID(@(#)headers.c	3.18		%G%);
 
 /*
 **  CHOMPHEADER -- process and save a header line.
@@ -73,12 +73,12 @@ chompheader(line, def)
 	/* hack, hack -- save From: line specially */
 	if (!def && !QueueRun && strcmp(fname, "from") == 0)
 	{
-		OrigFrom = newstr(fvalue);
+		CurEnv->e_origfrom = newstr(fvalue);
 		return (0);
 	}
 
 	/* search header list for this header */
-	for (hp = &Header, h = Header; h != NULL; hp = &h->h_link, h = h->h_link)
+	for (hp = &CurEnv->e_header, h = CurEnv->e_header; h != NULL; hp = &h->h_link, h = h->h_link)
 	{
 		if (strcmp(fname, h->h_field) == 0 && bitset(H_DEFAULT, h->h_flags))
 			break;
@@ -119,13 +119,13 @@ chompheader(line, def)
 		free(h->h_value);
 	h->h_value = newstr(fvalue);
 	if (!def && GrabTo && bitset(H_RCPT, h->h_flags))
-		sendto(h->h_value, 0, (ADDRESS *) NULL, &SendQueue);
+		sendto(h->h_value, 0, (ADDRESS *) NULL, &CurEnv->e_sendqueue);
 
 	/* hack to see if this is a new format message */
 	if (bitset(H_RCPT, h->h_flags) &&
 	    (index(fvalue, ',') != NULL || index(fvalue, '(') != NULL ||
 	     index(fvalue, '<') != NULL))
-		OldStyle = FALSE;
+		CurEnv->e_oldstyle = FALSE;
 
 	return (h->h_flags);
 }
@@ -152,7 +152,7 @@ hvalue(field)
 {
 	register HDR *h;
 
-	for (h = Header; h != NULL; h = h->h_link)
+	for (h = CurEnv->e_header; h != NULL; h = h->h_link)
 	{
 		if (!bitset(H_DEFAULT, h->h_flags) && strcmp(h->h_field, field) == 0)
 		{

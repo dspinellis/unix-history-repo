@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)collect.c	3.36		%G%);
+SCCSID(@(#)collect.c	3.37		%G%);
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -29,8 +29,6 @@ SCCSID(@(#)collect.c	3.36		%G%);
 **		Temp file is created and filled.
 **		The from person may be set.
 */
-
-long	MsgSize;		/* size of message in bytes */
 
 collect(sayok)
 	bool sayok;
@@ -128,7 +126,7 @@ collect(sayok)
 		if (!feof(InChannel))
 			(void) ungetc(c, InChannel);
 
-		MsgSize += strlen(buf);
+		CurEnv->e_msgsize += strlen(buf);
 
 		/*
 		**  Snarf header away.
@@ -174,7 +172,7 @@ collect(sayok)
 		if (strncmp(bp, "From ", 5) == 0)
 		{
 			fputs(">", tf);
-			MsgSize++;
+			CurEnv->e_msgsize++;
 		}
 # endif NOTUNIX
 
@@ -184,7 +182,7 @@ collect(sayok)
 		*/
 
 		i = strlen(bp);
-		MsgSize += i;
+		CurEnv->e_msgsize += i;
 		fputs(bp, tf);
 		if (bp[i - 1] != '\n')
 			fputs("\n", tf);
@@ -212,10 +210,10 @@ collect(sayok)
 	if (!QueueRun)
 	{
 		/* adjust total priority by message priority */
-		MsgPriority = MsgSize;
+		CurEnv->e_msgpriority = CurEnv->e_msgsize;
 		p = hvalue("priority");
 		if (p != NULL)
-			MsgPriority -= priencode(p) * WKPRIFACT;
+			CurEnv->e_msgpriority -= priencode(p) * WKPRIFACT;
 	}
 
 	/* special handling */
@@ -226,7 +224,7 @@ collect(sayok)
 	/* from person */
 	xfrom = hvalue("sender");
 	if (xfrom == NULL)
-		xfrom = OrigFrom;
+		xfrom = CurEnv->e_origfrom;
 	if (ArpaMode)
 		setfrom(xfrom, (char *) NULL);
 
@@ -250,7 +248,7 @@ collect(sayok)
 
 		p = hvalue("original-from");
 		if (p == NULL)
-			p = OrigFrom;
+			p = CurEnv->e_origfrom;
 		p = getxpart(p);
 		if (p != NULL)
 			define('x', newstr(p));
@@ -278,7 +276,7 @@ collect(sayok)
 		extern char *capitalize();
 
 		printf("----- collected header -----\n");
-		for (h = Header; h != NULL; h = h->h_link)
+		for (h = CurEnv->e_header; h != NULL; h = h->h_link)
 			printf("%s: %s\n", capitalize(h->h_field), h->h_value);
 		printf("----------------------------\n");
 	}
@@ -473,7 +471,7 @@ spechandling(p)
 			break;
 
 		  case HAN_RRECEIPT:	/* give return receipt */
-			RetReceipt = TRUE;
+			CurEnv->e_retreceipt = TRUE;
 # ifdef DEBUG
 			if (Debug > 2)
 				printf(">>> Return receipt requested\n");

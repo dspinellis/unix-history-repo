@@ -3,7 +3,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)err.c	3.19		%G%);
+SCCSID(@(#)err.c	3.20		%G%);
 
 /*
 **  SYSERR -- Print error message.
@@ -64,7 +64,7 @@ syserr(fmt, a, b, c, d, e)
 	}
 
 # ifdef LOG
-	syslog(LOG_ERR, "%s->%s: %s", From.q_paddr, To, &errbuf[4]);
+	syslog(LOG_ERR, "%s->%s: %s", CurEnv->e_from.q_paddr, CurEnv->e_to, &errbuf[4]);
 # endif LOG
 	errno = 0;
 }
@@ -121,7 +121,7 @@ message(num, msg, a, b, c, d, e)
 	char errbuf[2*BUFSIZ];
 
 	errno = 0;
-	fmtmsg(errbuf, To, num, msg, a, b, c, d, e);
+	fmtmsg(errbuf, CurEnv->e_to, num, msg, a, b, c, d, e);
 
 	/* output to transcript */
 	fprintf(Xscript, "%s\n", errbuf);

@@ -2,7 +2,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)recipient.c	3.34		%G%);
+SCCSID(@(#)recipient.c	3.35		%G%);
 
 /*
 **  SENDTO -- Designate a send list.
@@ -137,7 +137,7 @@ sendto(list, copyf, ctladdr, sendq)
 			a->q_fullname = ctladdr->q_fullname;
 	}
 
-	To = NULL;
+	CurEnv->e_to = NULL;
 }
 /*
 **  RECIPIENT -- Designate a message recipient
@@ -167,7 +167,7 @@ recipient(a, sendq)
 	extern ADDRESS *getctladdr();
 	extern bool safefile();
 
-	To = a->q_paddr;
+	CurEnv->e_to = a->q_paddr;
 	m = a->q_mailer;
 	errno = 0;
 # ifdef DEBUG
@@ -471,7 +471,7 @@ include(fname, msg, ctladdr, sendq)
 {
 	char buf[MAXLINE];
 	register FILE *fp;
-	char *oldto = To;
+	char *oldto = CurEnv->e_to;
 
 	fp = fopen(fname, "r");
 	if (fp == NULL)
@@ -499,7 +499,7 @@ include(fname, msg, ctladdr, sendq)
 			*p = '\0';
 		if (buf[0] == '\0')
 			continue;
-		To = oldto;
+		CurEnv->e_to = oldto;
 		if (Verbose)
 			message(Arpa_Info, "%s to %s", msg, buf);
 		AliasLevel++;
@@ -546,7 +546,7 @@ sendtoargv(argv)
 				argv += 2;
 			}
 		}
-		sendto(p, 0, (ADDRESS *) NULL, &SendQueue);
+		sendto(p, 0, (ADDRESS *) NULL, &CurEnv->e_sendqueue);
 	}
 }
 /*

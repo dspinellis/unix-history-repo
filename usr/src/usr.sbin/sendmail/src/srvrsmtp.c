@@ -1,10 +1,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)srvrsmtp.c	3.14		%G%	(no SMTP));
+SCCSID(@(#)srvrsmtp.c	3.15		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)srvrsmtp.c	3.14		%G%);
+SCCSID(@(#)srvrsmtp.c	3.15		%G%);
 
 /*
 **  SMTP -- run the SMTP protocol.
@@ -76,7 +76,7 @@ smtp()
 	message("220", "%s Sendmail at your service", HostName);
 	for (;;)
 	{
-		To = NULL;
+		CurEnv->e_to = NULL;
 		Errors = 0;
 		if (fgets(inp, sizeof inp, InChannel) == NULL)
 		{
@@ -149,7 +149,7 @@ smtp()
 				Errors++;
 				break;
 			}
-			sendto(p, 1, (ADDRESS *) NULL, &SendQueue);
+			sendto(p, 1, (ADDRESS *) NULL, &CurEnv->e_sendqueue);
 			if (Errors == 0)
 			{
 				message("250", "%s... Recipient ok", p);
@@ -183,7 +183,7 @@ smtp()
 
 			/* reset strange modes */
 			HoldErrs = FALSE;
-			To = NULL;
+			CurEnv->e_to = NULL;
 
 			/* issue success if appropriate */
 			if (Errors == 0 || rcps != 1)
@@ -262,8 +262,8 @@ smtp()
 
 # ifdef DEBUG
 		  case CMDDBGSHOWQ:	/* show queues */
-			printf("SendQueue=");
-			printaddr(SendQueue, TRUE);
+			printf("Send Queue=");
+			printaddr(CurEnv->e_sendqueue, TRUE);
 			break;
 # endif DEBUG
 
