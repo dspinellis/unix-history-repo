@@ -32,7 +32,7 @@
 
 
 
-SCCSID(@(#)conf.c	3.65		%G%);
+SCCSID(@(#)conf.c	3.66		%G%);
 /*
 **  Header info table
 **	Final (null) entry contains the flags used for any other field.
@@ -445,4 +445,40 @@ holdsigs()
 
 rlsesigs()
 {
+}
+/*
+**  MYHOSTNAME -- return the name of this host.
+**
+**	Parameters:
+**		none.
+**
+**	Returns:
+**		The name of this host, as best as it can be determined.
+**
+**	Side Effects:
+**		none.
+*/
+
+char *
+myhostname()
+{
+	static char hostbuf[40];
+	register FILE *f;
+
+	hostbuf[0] = '\0';
+#ifdef VMUNIX
+	gethostname(hostbuf, sizeof hostbuf);
+# else VMUNIX
+	f = fopen("/usr/include/whoami", "r");
+	if (f != NULL)
+	{
+		(void) fgets(hostbuf, sizeof hostbuf, f);
+		fixcrlf(hostbuf, TRUE);
+		(void) fclose(f);
+	}
+#endif VMUNIX
+	if (strncmp(hostbuf, "ucb", 3) == 0)
+		return (&hostbuf[3]);
+	else
+		return (hostbuf);
 }
