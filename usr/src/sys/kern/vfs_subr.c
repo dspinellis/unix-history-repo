@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_subr.c	7.42 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.43 (Berkeley) %G%
  */
 
 /*
@@ -90,12 +90,12 @@ vfs_busy(mp)
 	register struct mount *mp;
 {
 
-	if (mp->mnt_flag & MNT_UNMOUNT)
-		return (1);
 	while(mp->mnt_flag & MNT_MPBUSY) {
 		mp->mnt_flag |= MNT_MPWANT;
 		sleep((caddr_t)&mp->mnt_flag, PVFS);
 	}
+	if (mp->mnt_flag & MNT_UNMOUNT)
+		return (1);
 	mp->mnt_flag |= MNT_MPBUSY;
 	return (0);
 }
