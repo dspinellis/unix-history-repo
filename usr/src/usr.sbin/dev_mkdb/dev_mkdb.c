@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dev_mkdb.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)dev_mkdb.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -71,7 +71,7 @@ main(argc, argv)
 
 	(void)snprintf(dbtmp, sizeof(dbtmp), "%sdev.tmp", _PATH_VARRUN);
 	(void)snprintf(dbname, sizeof(dbtmp), "%sdev.db", _PATH_VARRUN);
-	db = dbopen(dbtmp, O_CREAT|O_EXLOCK|O_TRUNC|O_WRONLY,
+	db = dbopen(dbtmp, O_CREAT|O_EXLOCK|O_RDWR|O_TRUNC,
 	    S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH, DB_HASH, NULL);
 	if (db == NULL)
 		err("%s: %s", dbtmp, strerror(errno));
