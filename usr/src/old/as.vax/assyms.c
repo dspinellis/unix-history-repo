@@ -2,7 +2,7 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)assyms.c 4.7 %G%";
+static char sccsid[] = "@(#)assyms.c 4.8 %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -158,16 +158,27 @@ freezesymtab()
  *	when we constsructed the sorted symbol table.
  *	Iteration order doesn't matter.
  */
-stabfix() {
+
+stabfix()
+{
 	register struct symtab *sp, **cosp;
 	register struct symtab *p;
 	
 	SYMITERATE(cosp, sp){
 		if(sp->s_ptype && (sp->s_type & STABFLAG)) {	
 			p = sp->s_dest;	
-			sp->s_value = p->s_value;	
+/* 
+ * STABFLOATING indicates that the offset has been saved in s_desc, s_other
+ */
+			if(sp->s_tag == STABFLOATING) {
+			  sp->s_value = ( ( ((unsigned char) sp->s_other) << 16)  					| ( (unsigned short) sp->s_desc )  );
+			  sp->s_value = sp->s_value + p->s_value;
+			}
+			else sp->s_value = p->s_value;
 			sp->s_index = p->s_index;
 			sp->s_type = p->s_type;
+
+              
 		}
 	}
 }
