@@ -1,7 +1,7 @@
 /*
  * Machine Language Assist for UC Berkeley Virtual Vax/Unix
  *
- *	locore.s		4.7	%G%
+ *	locore.s		4.8	%G%
  */
 
 	.set	HIGH,31		# mask for total disable
@@ -117,7 +117,6 @@ ___:
 	rei
 
 	.align	2
-	.globl	Xwtime
 Xwtime:
 	pushr	$0x3f
 	pushl	6*4(sp)			# push pc
