@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.8 (Berkeley) %G%
+#	@(#)Makefile	5.9 (Berkeley) %G%
 
 LIST=	buf callout callout.next clist clist.nxt dino dir dir.nxt \
 	dmap file filsys findinode findinode.nxt findproc host.nxt \
@@ -14,6 +14,7 @@ NOOBJ=	noobj
 all clean cleandir depend lint tags:
 
 install:
+	rm -f ${DESTDIR}/usr/old/libdata/adb/*
 	install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${LIST} \
 	    ${DESTDIR}/usr/old/libdata/adb
 
