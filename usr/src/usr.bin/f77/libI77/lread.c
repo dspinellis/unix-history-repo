@@ -1,5 +1,5 @@
 /*
-char id_lread[] = "@(#)lread.c	1.5";
+char id_lread[] = "@(#)lread.c	1.6";
  *
  * list directed read
  */
@@ -52,6 +52,7 @@ s_rsle(a) cilist *a;	/* start read sequential list external */
 	ungetn = ungetc;
 	leof = curunit->uend;
 	lcount = 0;
+	ltype = NULL;
 	if(curunit->uwrt && ! nowreading(curunit)) err(errflag, errno, lrd)
 	return(OK);
 }
@@ -144,7 +145,7 @@ l_read(number,ptr,len,type) ftnint *number,type; flex *ptr; ftnlen len;
 			break;
 		}
 		if(lcount>0) lcount--;
-		ptr = (char *)ptr + len;
+		ptr = (flex *)((char *)ptr + len);
 	}
 	return(OK);
 }
@@ -197,6 +198,7 @@ l_R(flg) int flg;
 	{
 		if (a <= 0.) return(F_ERNREP);
 		lcount=(int)a;
+		if (nullfld()) return(OK);	/* could be R* */
 		db=rd_int(&b);	/* whole part of number */
 	}
 	else
@@ -259,6 +261,7 @@ l_C()
 {	int ch,n;
 	if(lr_comm()) return(OK);
 	if(n=get_repet()) return(n);		/* get repeat count */
+	if (nullfld()) return(OK);		/* could be R* */
 	if(GETC(ch)!='(') err(errflag,F_ERLIO,"no (")
 	while(isblnk(GETC(ch)));
 	(*ungetn)(ch,cf);
@@ -277,6 +280,7 @@ l_L()
 	int ch,n;
 	if(lr_comm()) return(OK);
 	if(n=get_repet()) return(n);		/* get repeat count */
+	if (nullfld()) return(OK);		/* could be R* */
 	if(GETC(ch)=='.') GETC(ch);
 	switch(ch)
 	{
@@ -309,6 +313,7 @@ l_CHAR()
 	char quote,*p;
 	if(lr_comm()) return(OK);
 	if(n=get_repet()) return(n);		/* get repeat count */
+	if (nullfld()) return(OK);		/* could be R* */
 	if(isapos(GETC(ch))) quote=ch;
 	else if(isblnk(ch) || issep(ch) || ch==EOF || ch=='\n')
 	{	if(ch==EOF) return(EOF);
@@ -373,4 +378,15 @@ t_sep()
 	if(leof) return(EOF);
 	(*ungetn)(ch,cf);
 	return(OK);
+}
+
+nullfld()	/* look for null field following a repeat count */
+{
+	int	ch;
+
+	while(isblnk(GETC(ch)));
+	(*ungetn)(ch,cf);
+	if (issep(ch) || endlinp(ch))
+		return(YES);
+	return(NO);
 }
