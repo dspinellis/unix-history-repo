@@ -1,14 +1,16 @@
-/*
- * Copyright (c) 1980, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1980, 1986 The Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)grnplot.h	6.1 (Berkeley) %G%
- *	modified to grnplot by Brad Rubenstein 8/29/86
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)grnplot.h	6.2 (Berkeley) %G%
  */
 
 /*
- * Given a plot file, produces a grn file
+ * Given a plot file, produces a grn file.
+ *
+ * Modified to grnplot by Brad Rubenstein 8/29/86.
  */
 
 #include <stdio.h>

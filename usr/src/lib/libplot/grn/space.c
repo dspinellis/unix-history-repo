@@ -1,13 +1,13 @@
-/*
- * Copyright (c) 1980, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1980, 1986 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)space.c	6.1 (Berkeley) %G%";
-#endif not lint
-
+static char sccsid[] = "@(#)space.c	6.2 (Berkeley) %G%";
+#endif /* not lint */
 
 #include "grnplot.h"
 
