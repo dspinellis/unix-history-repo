@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.150		%G%);
+SCCSID(@(#)deliver.c	3.151		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -867,7 +867,6 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 **		ExitStat may be set.
 */
 
-/*ARGSUSED*/
 giveresponse(stat, m, e)
 	int stat;
 	register MAILER *m;
@@ -878,6 +877,11 @@ giveresponse(stat, m, e)
 	register int i;
 	extern int N_SysEx;
 	char buf[MAXLINE];
+
+#ifdef lint
+	if (m == NULL)
+		return;
+#endif lint
 
 	/*
 	**  Compute status message from code.
