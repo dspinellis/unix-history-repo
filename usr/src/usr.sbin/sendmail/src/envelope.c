@@ -3,7 +3,7 @@
 #include "sendmail.h"
 #include <sys/stat.h>
 
-SCCSID(@(#)envelope.c	4.9		%G%);
+SCCSID(@(#)envelope.c	4.10		%G%);
 
 /*
 **  NEWENVELOPE -- allocate a new envelope
@@ -130,8 +130,6 @@ dropenvelope(e)
 	{
 		if (e->e_dfp != NULL)
 			(void) fclose(e->e_dfp);
-		if (e->e_df != NULL)
-			xunlink(e->e_df);
 		xunlink(queuename(e, 'q'));
 	}
 	else if (queueit || !bitset(EF_INQUEUE, e->e_flags))
@@ -148,6 +146,8 @@ dropenvelope(e)
 	unlockqueue(e);
 
 	/* make sure that this envelope is marked unused */
+	if (e->e_df != NULL)
+		xunlink(e->e_df);
 	e->e_id = e->e_df = NULL;
 	e->e_dfp = NULL;
 }
@@ -440,6 +440,12 @@ setsender(from)
 	SuprErrs = TRUE;
 	if (from == NULL || parseaddr(from, &CurEnv->e_from, 1, '\0') == NULL)
 	{
+		/* log garbage addresses for traceback */
+		if (from != NULL)
+		{
+			syslog(LOG_ERR, "Unparseable user %s wants to be %s",
+					realname, from);
+		}
 		from = newstr(realname);
 		(void) parseaddr(from, &CurEnv->e_from, 1, '\0');
 	}
