@@ -2,12 +2,12 @@
 # include <pwd.h>
 # include <signal.h>
 # include <ctype.h>
-# include "postbox.h"
+# include "sendmail.h"
 # ifdef LOG
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.7	%G%";
+static char SccsId[] = "@(#)deliver.c	3.8	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a particular address.
@@ -201,7 +201,7 @@ deliver(to, editfcn)
 		**
 		**	>>>>>>>>>> This clause assumes that the local mailer
 		**	>> NOTE >> cannot do any further aliasing; that
-		**	>>>>>>>>>> function is subsumed by postbox.
+		**	>>>>>>>>>> function is subsumed by sendmail.
 		*/
 
 		if (m == Mailer[0])

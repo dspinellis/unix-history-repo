@@ -1,7 +1,7 @@
 /*
-**  POSTBOX.H -- Global definitions for postbox.
+**  SENDMAIL.H -- Global definitions for sendmail.
 **
-**	@(#)sendmail.h	3.8	%G%
+**	@(#)sendmail.h	3.9	%G%
 */
 
 
