@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	8.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	8.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -242,6 +242,9 @@ dropenvelope(e)
 	/* make sure that this envelope is marked unused */
 	e->e_dfp = NULL;
 	e->e_id = e->e_df = NULL;
+#ifdef XDEBUG
+	checkfd012("dropenvelope");
+#endif
 }
 /*
 **  CLEARENVELOPE -- clear an envelope without unlocking
