@@ -1,6 +1,7 @@
-static	char *sccsid = "@(#)login.c.1	4.11 (Berkeley) 81/07/05";
+static	char *sccsid = "@(#)login.c.1	4.12 (Berkeley) 4.12";
 /*
  * login [ name ]
+ * login -r
  */
 
 #include <sys/types.h>
@@ -33,15 +34,22 @@ struct	passwd nouser = {"", "nope"};
 struct	sgttyb ttyb;
 struct	utmp utmp;
 char	minusnam[16] = "-";
+
 char	homedir[64] = "HOME=";
 char	shell[64] = "SHELL=";
 char	term[64] = "TERM=";
 char	user[20] = "USER=";
-char	*envinit[] = {homedir, shell, "PATH=:/usr/ucb:/bin:/usr/bin", term, user, 0};
-struct	passwd *pwd;
+char	*speeds[] =
+    { "0", "50", "75", "110", "134", "150", "200", "300",
+      "600", "1200", "1800", "2400", "4800", "9600", "19200", "38400" };
+#define	NSPEEDS	(sizeof (speeds) / sizeof (speeds[0]))
 
+char	*envinit[] =
+    {homedir, shell, "PATH=:/usr/ucb:/bin:/usr/bin", term, user, 0};
+
+struct	passwd *pwd;
 struct	passwd *getpwnam();
-char	*strcat();
+char	*strcat(), *rindex(), *index();
 int	setpwent();
 char	*ttyname();
 char	*crypt();
@@ -68,6 +76,10 @@ struct	ltchars ltc = {
 };
 #endif
 
+int	rflag;
+char	rusername[NMAX+1];
+char	rpassword[NMAX+1];
+
 main(argc, argv)
 char **argv;
 {
@@ -78,7 +90,8 @@ char **argv;
 	int i;
 	FILE *nlfd;
 	char *ttyn;
-	int	ldisc = 0;
+	int ldisc = 0;
+	int zero = 0;
 #ifdef	UNAME
 	struct utsname uts;
 #endif
@@ -89,11 +102,30 @@ char **argv;
 	nice(-100);
 	nice(20);
 	nice(0);
+	if (argc > 0 && !strcmp(argv[1], "-r")) {
+		rflag++;
+		getstr(rusername, sizeof (rusername), "Username");
+		getstr(rpassword, sizeof (rpassword), "Password");
+		getstr(term+5, sizeof(term)-5, "Terminal type");
+	}
 #ifdef	TIOCLSET
-	ioctl(0, TIOCLSET, 0);
+	ioctl(0, TIOCLSET, &zero);
 #endif
 	ioctl(0, TIOCNXCL, 0);
 	gtty(0, &ttyb);
+	if (rflag) {
+		char *cp = index(term, '/');
+		if (cp) {
+			int i;
+			*cp++ = 0;
+			for (i = 0; i < NSPEEDS; i++)
+				if (!strcmp(speeds[i], cp)) {
+					ttyb.sg_ispeed = ttyb.sg_ospeed = i;
+					break;
+				}
+		}
+		ttyb.sg_flags = ECHO|CRMOD|ANYP|XTABS;
+	}
 	ttyb.sg_erase = CERASE;
 	ttyb.sg_kill = CKILL;
 	stty(0, &ttyb);
@@ -106,7 +138,6 @@ char **argv;
 	ttyn = ttyname(0);
 	if (ttyn==(char *)0)
 		ttyn = "/dev/tty??";
-
 	do {
 		ldisc = 0;
 		ioctl(0, TIOCSETD, &ldisc);
@@ -116,14 +147,12 @@ char **argv;
 			SCPYN(utmp.ut_name, argv[1]);
 			argc = 0;
 		}
+		if (rflag)
+			strcpy(utmp.ut_name, rusername);
+		else
 		while (utmp.ut_name[0] == '\0') {
 			namep = utmp.ut_name;
-#ifdef	UNAME
-			if (uname(&uts) != -1)
-				printf("%s login: ", uts.nodename);
-			else
-#endif
-				printf("login: ");
+			printf("%s login: ", sysname);
 			while ((c = getchar()) != '\n') {
 				if (c == ' ')
 					c = '_';
@@ -142,8 +171,13 @@ char **argv;
 			ioctl(0, TIOCSETD, &ldisc);
 		}
 		if (*pwd->pw_passwd != '\0') {
+			char *pp;
 			nice(-4);
-			namep = crypt(getpass("Password:"),pwd->pw_passwd);
+			if (rflag == 0)
+				pp = getpass("Password:");
+			else
+				pp = rpassword;
+			namep = crypt(pp,pwd->pw_passwd);
 			nice(4);
 			if (strcmp(namep, pwd->pw_passwd))
 				invalid = TRUE;
@@ -191,7 +225,10 @@ char **argv;
 				pwd->pw_dir = "/";
 			}
 		}
+		if (rflag && invalid)
+			exit(1);
 	} while (invalid);
+
 
 	time(&utmp.ut_time);
 	t = ttyslot();
@@ -234,7 +271,8 @@ char **argv;
 	environ = envinit;
 	strncat(homedir, pwd->pw_dir, sizeof(homedir)-6);
 	strncat(shell, pwd->pw_shell, sizeof(shell)-7);
-	strncat(term, stypeof(ttyn), sizeof(term)-6);
+	if (rflag == 0)
+		strncat(term, stypeof(ttyn), sizeof(term)-6);
 	strncat(user, pwd->pw_name, sizeof(user)-6);
 	if ((namep = rindex(pwd->pw_shell, '/')) == NULL)
 		namep = pwd->pw_shell;
@@ -362,4 +400,22 @@ char	*ttyid;
 	}
 	fclose (f);
 	return (UNKNOWN);
+}
+
+getstr(buf, cnt, err)
+	char *buf;
+	int cnt;
+	char *err;
+{
+	char c;
+
+	do {
+		if (read(0, &c, 1) != 1)
+			exit(1);
+		if (--cnt < 0) {
+			printf("%s too long\r\n", err);
+			exit(1);
+		}
+		*buf++ = c;
+	} while (c != 0);
 }
