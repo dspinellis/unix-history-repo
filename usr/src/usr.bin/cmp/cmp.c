@@ -12,15 +12,18 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmp.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmp.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
-#include <sys/file.h>
 #include <sys/stat.h>
-#include <stdio.h>
-#include <ctype.h>
+#include <fcntl.h>
 #include <errno.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
 
 #define	EXITNODIFF	0
 #define	EXITDIFF	1
@@ -30,14 +33,18 @@ int	all, fd1, fd2, silent;
 u_char	buf1[MAXBSIZE], buf2[MAXBSIZE];
 char	*file1, *file2;
 
+void cmp __P((void));
+void endoffile __P((char *));
+void err __P((const char *fmt, ...));
+void ferr __P((char *));
+void skip __P((u_long, int, char *));
+void usage __P((void));
+
 main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	extern char *optarg;
-	extern int optind;
 	int ch;
-	u_long otoi();
 
 	while ((ch = getopt(argc, argv, "-ls")) != EOF)
 		switch (ch) {
@@ -61,39 +68,34 @@ endargs:
 	if (argc < 2 || argc > 4)
 		usage();
 
-	if (all && silent) {
-		fprintf(stderr,
-		    "cmp: only one of -l and -s may be specified.\n");
-		exit(EXITERR);
-	}
+	if (all && silent)
+		err("only one of -l and -s may be specified");
 	if (strcmp(file1 = argv[0], "-") == 0)
 		fd1 = 0;
 	else if ((fd1 = open(file1, O_RDONLY, 0)) < 0)
-		error(file1);
+		ferr(file1);
 	if (strcmp(file2 = argv[1], "-") == 0)
 		fd2 = 0;
 	else if ((fd2 = open(file2, O_RDONLY, 0)) < 0)
-		error(file2);
-	if (fd1 == fd2) {
-		fprintf(stderr,
-		    "cmp: standard input may only be specified once.\n");
-		exit(EXITERR);
-	}
+		ferr(file2);
+	if (fd1 == fd2)
+		err("standard input may only be specified once");
 
 	/* handle skip arguments */
 	if (argc > 2) {
-		skip(otoi(argv[2]), fd1, file1);
+		skip(strtol(argv[2], NULL, 10), fd1, file1);
 		if (argc == 4)
-			skip(otoi(argv[3]), fd2, file2);
+			skip(strtol(argv[3], NULL, 10), fd2, file2);
 	}
 	cmp();
-	/*NOTREACHED*/
+	/* NOTREACHED */
 }
 
 /*
  * skip --
  *	skip first part of file
  */
+void
 skip(dist, fd, fname)
 	register u_long dist;
 	register int fd;
@@ -105,13 +107,14 @@ skip(dist, fd, fname)
 		rlen = MIN(dist, sizeof(buf1));
 		if ((nread = read(fd, buf1, rlen)) != rlen) {
 			if (nread < 0)
-				error(fname);
+				ferr(fname);
 			else
 				endoffile(fname);
 		}
 	}
 }
 
+void
 cmp()
 {
 	register u_char	*p1, *p2;
@@ -122,7 +125,7 @@ cmp()
 	for (byte = 0, line = 1; ; ) {
 		switch (len1 = read(fd1, buf1, MAXBSIZE)) {
 		case -1:
-			error(file1);
+			ferr(file1);
 		case 0:
 			/*
 			 * read of file 1 just failed, find out
@@ -130,7 +133,7 @@ cmp()
 			 */
 			switch (read(fd2, buf2, 1)) {
 				case -1:
-					error(file2);
+					ferr(file2);
 					/* NOTREACHED */
 				case 0:
 					exit(dfound ? EXITDIFF : EXITNODIFF);
@@ -146,7 +149,7 @@ cmp()
 		 * from file1 from file2.
 		 */
 		if ((len2 = read(fd2, buf2, len1)) == -1)
-			error(file2);
+			ferr(file2);
 		if (bcmp(buf1, buf2, len2)) {
 			if (silent)
 				exit(EXITDIFF);
@@ -162,7 +165,8 @@ cmp()
 			} else for (p1 = buf1, p2 = buf2; ; ++p1, ++p2) {
 				++byte;
 				if (*p1 != *p2) {
-					printf("%s %s differ: char %ld, line %ld\n", file1, file2, byte, line);
+					printf("%s %s differ: byte %ld, line %ld\n",
+					    file1, file2, byte, line);
 					exit(EXITDIFF);
 				}
 				if (*p1 == '\n')
@@ -192,35 +196,15 @@ cmp()
 }
 
 /*
- * otoi --
- *	octal/decimal string to u_long
+ * ferr --
+ *	print file error message and die
  */
-u_long
-otoi(s)
-	register char *s;
+void
+ferr(name)
+	char *name;
 {
-	register u_long val;
-	register int base;
-
-	base = (*s == '0') ? 8 : 10;
-	for (val = 0; isdigit(*s); ++s)
-		val = val * base + *s - '0';
-	return (val);
-}
-
-/*
- * error --
- *	print I/O error message and die
- */
-error(filename)
-	char *filename;
-{
-	extern int errno;
-	char *strerror();
-
 	if (!silent)
-		(void) fprintf(stderr, "cmp: %s: %s\n",
-		    filename, strerror(errno));
+		err("%s: %s", name, strerror(errno));
 	exit(EXITERR);
 }
 
@@ -228,11 +212,14 @@ error(filename)
  * endoffile --
  *	print end-of-file message and exit indicating the files were different
  */
+void
 endoffile(filename)
 	char *filename;
 {
-	/* 32V put this message on stdout, S5 does it on stderr. */
-	/* POSIX.2 currently does it on stdout-- Hooray! */
+	/*
+	 * 32V put this message on stdout, S5 does it on stderr.
+	 * POSIX.2 currently does it on stdout -- Hooray!
+	 */
 	if (!silent)
 		(void) printf("cmp: EOF on %s\n", filename);
 	exit(EXITDIFF);
@@ -242,8 +229,39 @@ endoffile(filename)
  * usage --
  *	print usage and die
  */
+void
 usage()
 {
-	fputs("usage: cmp [-ls] file1 file2 [skip1] [skip2]\n", stderr);
+	(void)fprintf(stderr,
+	    "usage: cmp [-ls] file1 file2 [skip1 [skip2]]\n");
 	exit(EXITERR);
+}
+
+#if __STDC__
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
+
+void
+#if __STDC__
+err(const char *fmt, ...)
+#else
+err(fmt, va_alist)
+	char *fmt;
+	va_dcl
+#endif
+{
+	va_list ap;
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
+	(void)fprintf(stderr, "cmp: ");
+	(void)vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	(void)fprintf(stderr, "\n");
+	exit(EXITERR);
+	/* NOTREACHED */
 }
