@@ -4,7 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
-/* "@(#)tuboot.c	7.1 (Berkeley) %G%" */
+/* "@(#)tuboot.c	7.2 (Berkeley) %G%" */
 
 /*
  * VAX tu58 console cassette boot block
@@ -172,8 +172,8 @@ dirred:
 1:
 	addw2	FILSIZ(r5),r10		/* add file length to block pointer */
 	addl2	$ENTSIZ,r5		/* move to next entry */
-#	cpmb	STATUS(r5),$RT_NULL	/* check if deleted file */
-#	beql	1b /* not really necessary since deleted entries will fail */
+/*	cpmb	STATUS(r5),$RT_NULL	/* check if deleted file */
+/*	beql	1b /* not really necessary since deleted entries will fail */
 		   /* to compare anyway */
 	cmpb	STATUS(r5),$RT_ESEG	/* check if end of segment */
 	bneq	2b
@@ -325,8 +325,8 @@ getc:
 	cmpb	r0,$015
 	bneq	putc			/* echo and return */
 	bsbb	putc			/* carriage return */
-#	movb	$0,r0
-#	bsbb	putc			/* delay */
+/*	movb	$0,r0	*/
+/*	bsbb	putc	*/		/* delay */
 	movb	$012,r0			/* send line feed and return */
 putc:
 	mfpr	$TXCS,r2

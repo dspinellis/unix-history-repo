@@ -4,10 +4,9 @@
  * specifies the terms and conditions for redistribution.
  */
 
-/* "@(#)hpboot.c	7.1 (Berkeley) %G%" */
+/* "@(#)hpboot.c	7.2 (Berkeley) %G%" */
+#include <sys/disklabel.h>
 
-
-#define PARTITION		/* Partition is in bits 12 to 15 of R5
 
 /*
  * RP??/RM?? 1st level boot program: loads next 7.5Kbytes from
@@ -63,14 +62,23 @@ start:
 	extzv	$13,$2,r1,r4		/* get MBA number from R1 */
 	insv	r4,$24,$8,r10		/* set MBA number */
 	insv	r3,$16,$8,r10		/* drive number */
-#ifdef PARTITION
 	extzv	$12,$4,r5,r4		/* get partition from r5 */
 	bicw2	$0xf000,r5		/* remove from r5 */
 	insv	r4,$8,$4,r10		/* set partition */
-#endif
 	movl	r5,r11
 	movl	r1,r9			/* save adaptor address */
 	movl	r3,r8			/* and unit number */
+	brw	start0
+
+/*
+ * Leave space for pack label.
+ */
+pad:
+	.space	LABELOFFSET - (pad - init)
+packlabel:
+	.space	d_end_
+
+start0:
 	movl	$RELOC,sp
 	moval	init,r6
 	movc3	$end,(r6),(sp)
