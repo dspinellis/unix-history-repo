@@ -1,5 +1,5 @@
 /*
- * $Id: sfs_ops.c,v 5.2 90/06/23 22:19:59 jsp Rel $
+ * $Id: sfs_ops.c,v 5.2.1.2 90/12/21 16:41:47 jsp Alpha $
  *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
@@ -11,7 +11,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sfs_ops.c	5.1 (Berkeley) %G%
+ *	@(#)sfs_ops.c	5.2 (Berkeley) %G%
  */
 
 #include "am.h"
@@ -25,7 +25,7 @@
 /*
  * SFS needs a link.
  */
-static int sfs_match(fo)
+static char *sfs_match(fo)
 am_opts *fo;
 {
 	if (!fo->opt_fs) {
@@ -63,18 +63,15 @@ am_opts *fo;
 		if (fo->opt_sublink)
 			free(fo->opt_sublink);
 		fo->opt_sublink = fullpath;
-		free(fo->opt_fs);
-		fo->opt_fs = strdup(".");
+		fo->opt_fs = str3cat(fo->opt_fs, ".", fullpath, "");
 	}
 
-	fo->fs_mtab = strealloc(fo->fs_mtab, fo->opt_fs);
-
-	return 1;
+	return strdup(fo->opt_fs);
 }
 
 /*ARGUSED*/
-static int sfs_mount(mp)
-am_node *mp;
+static int sfs_fmount(mf)
+mntfs *mf;
 {
 	/*
 	 * Wow - this is hard to implement!
@@ -84,8 +81,8 @@ am_node *mp;
 }
 
 /*ARGUSED*/
-static int sfs_umount(mp)
-am_node *mp;
+static int sfs_fumount(mf)
+mntfs *mf;
 {
 	return 0;
 }
@@ -97,8 +94,10 @@ am_ops sfs_ops = {
 	"link",
 	sfs_match,
 	0, /* sfs_init */
-	sfs_mount,
-	sfs_umount,
+	auto_fmount,
+	sfs_fmount,
+	auto_fumount,
+	sfs_fumount,
 	efs_lookuppn,
 	efs_readdir,
 	0, /* sfs_readlink */

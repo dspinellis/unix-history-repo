@@ -1,5 +1,5 @@
 /*
- * $Id: efs_ops.c,v 5.2 90/06/23 22:19:23 jsp Rel $
+ * $Id: efs_ops.c,v 5.2.1.2 90/11/04 23:17:14 jsp Exp $
  *
  * Copyright (c) 1989 Jan-Simon Pendry
  * Copyright (c) 1989 Imperial College of Science, Technology & Medicine
@@ -11,7 +11,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)efs_ops.c	5.1 (Berkeley) %G%
+ *	@(#)efs_ops.c	5.2 (Berkeley) %G%
  */
 
 #include "am.h"
@@ -29,23 +29,22 @@
 /*
  * EFS file system always matches
  */
-static int efs_match(fo)
+static char *efs_match(fo)
 am_opts *fo;
 {
-	fo->fs_mtab = strealloc(fo->fs_mtab, "(error-hook)");
-	return 1;
+	return strdup("(error-hook)");
 }
 
 /*ARGSUSED*/
-static int efs_mount(mp)
-am_node *mp;
+static int efs_fmount(mf)
+mntfs *mf;
 {
 	return ENOENT;
 }
 
 /*ARGSUSED*/
-static int efs_umount(mp)
-am_node *mp;
+static int efs_fumount(mf)
+mntfs *mf;
 {
 	/*
 	 * Always succeed
@@ -76,11 +75,12 @@ int op;
  * If we do then just give an error.
  */
 /*ARGSUSED*/
-int efs_readdir(mp, cookie, dp, ep)
+int efs_readdir(mp, cookie, dp, ep, count)
 am_node *mp;
 nfscookie cookie;
 dirlist *dp;
 entry *ep;
+int count;
 {
 	return ESTALE;
 }
@@ -92,8 +92,10 @@ am_ops efs_ops = {
 	"error",
 	efs_match,
 	0, /* efs_init */
-	efs_mount,
-	efs_umount,
+	auto_fmount,
+	efs_fmount,
+	auto_fumount,
+	efs_fumount,
 	efs_lookuppn,
 	efs_readdir,
 	0, /* efs_readlink */

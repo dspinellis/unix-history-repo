@@ -1,5 +1,5 @@
 /*
- * $Id: ufs_ops.c,v 5.2 90/06/23 22:20:03 jsp Rel $
+ * $Id: ufs_ops.c,v 5.2.1.1 90/10/21 22:29:47 jsp Exp $
  *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
@@ -11,7 +11,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_ops.c	5.1 (Berkeley) %G%
+ *	@(#)ufs_ops.c	5.2 (Berkeley) %G%
  */
 
 #include "am.h"
@@ -22,11 +22,12 @@
 #ifdef NFS_3
 typedef nfs_fh fhandle_t;
 #endif /* NFS_3 */
-#include <sys/mount.h>
 
 #ifdef UFS_HDR
 #include UFS_HDR
 #endif /* UFS_HDR */
+
+#include <sys/mount.h>
 
 /*
  * UN*X file system
@@ -35,23 +36,24 @@ typedef nfs_fh fhandle_t;
 /*
  * UFS needs local filesystem and device.
  */
-static int ufs_match(fo)
+static char *ufs_match P((am_opts *fo));
+static char *ufs_match(fo)
 am_opts *fo;
 {
 	if (!fo->opt_dev) {
 		plog(XLOG_USER, "ufs: no device specified");
 		return 0;
 	}
-	/*
-	 * Determine magic cookie to put in mtab
-	 */
-	fo->fs_mtab = strealloc(fo->fs_mtab, fo->opt_dev);
+
 #ifdef DEBUG
 	dlog("UFS: mounting device \"%s\" on \"%s\"",
 		fo->opt_dev, fo->opt_fs);
 #endif /* DEBUG */
 
-	return 1;
+	/*
+	 * Determine magic cookie to put in mtab
+	 */
+	return strdup(fo->opt_dev);
 }
 
 static mount_ufs(dir, fs_name, opts)
@@ -101,14 +103,12 @@ char *opts;
 }
 
 /*ARGSUSED*/
-static int ufs_mount(mp)
-am_node *mp;
+static int ufs_fmount(mf)
+mntfs *mf;
 {
-	mntfs *mf = mp->am_mnt;
-
 	int error;
 
-	error = mount_ufs(mf->mf_mount, mf->mf_info, mf->mf_fo->opt_opts);
+	error = mount_ufs(mf->mf_mount, mf->mf_info, mf->mf_mopts);
 	if (error) {
 		errno = error;
 		plog(XLOG_ERROR, "mount_ufs: %m");
@@ -118,11 +118,9 @@ am_node *mp;
 	return 0;
 }
 
-static int ufs_umount(mp)
-am_node *mp;
+static int ufs_fumount(mf)
+mntfs *mf;
 {
-	mntfs *mf = mp->am_mnt;
-
 	return UMOUNT_FS(mf->mf_mount);
 }
 
@@ -133,8 +131,10 @@ am_ops ufs_ops = {
 	"ufs",
 	ufs_match,
 	0, /* ufs_init */
-	ufs_mount,
-	ufs_umount,
+	auto_fmount,
+	ufs_fmount,
+	auto_fumount,
+	ufs_fumount,
 	efs_lookuppn,
 	efs_readdir,
 	0, /* ufs_readlink */

@@ -1,5 +1,5 @@
 /*
- * $Id: mount_fs.c,v 5.2 90/06/23 22:19:42 jsp Rel $
+ * $Id: mount_fs.c,v 5.2.1.3 91/03/03 20:43:32 jsp Alpha $
  *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
@@ -11,7 +11,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount_fs.c	5.1 (Berkeley) %G%
+ *	@(#)mount_fs.c	5.2 (Berkeley) %G%
  */
 
 #include "am.h"
@@ -20,13 +20,6 @@ typedef nfs_fh fhandle_t;
 #endif /* NFS_3 */
 #include <sys/mount.h>
 
-/*
- * System Vr4 / SunOS 4.1 compatibility
- * - put dev= in the options list
- *
- * From: Brent Callaghan <brent@eng.sun.com>
- */
-#define	MNTINFO_DEV	"dev"
 #include <sys/stat.h>
 
 /*
@@ -89,6 +82,7 @@ struct mntent *mnt;
 	return flags;
 }
 
+int mount_fs P((struct mntent *mnt, int flags, caddr_t mnt_data, int retry, MTYPE_TYPE type));
 int mount_fs(mnt, flags, mnt_data, retry, type)
 struct mntent *mnt;
 int flags;
@@ -97,7 +91,6 @@ int retry;
 MTYPE_TYPE type;
 {
 	int error = 0;
-	int automount = 0;
 #ifdef MNTINFO_DEV
 	struct stat stb;
 	char *xopts = 0;
@@ -116,31 +109,18 @@ MTYPE_TYPE type;
 	/*
 	 * Fake some mount table entries for the automounter
 	 */
+#ifdef FASCIST_DF_COMMAND
+	/*
+	 * Some systems have a df command which blows up when
+	 * presented with an unknown mount type.
+	 */
 	if (STREQ(mnt->mnt_type, MNTTYPE_AUTO)) {
-		automount = 1;
-		mnt->mnt_fsname = pid_fsname;
 		/*
 		 * Try it with the normal name
 		 */
-#ifdef notdef
-		/*
-		 * This is notdef'ed because some systems use
-		 * the mount table in getwd() (esp. SunOS4) and
-		 * if all the mount points are not marked it can
-		 * cause major confusion.  This can probably
-		 * be changed when no-one is running SunOS 4.0
-		 * any more.
-		 */
-		mnt->mnt_type = MNTTYPE_IGNORE;
-#endif /* notdef */
 		mnt->mnt_type = MNTTYPE_NFS;
-		/*
-		 * Background the mount, so that the stat of the
-		 * mountpoint is done in a background process.
-		 */
-		if (background())
-			return 0;
 	}
+#endif /* FASCIST_DF_COMMAND */
 
 again:
 	clock_valid = 0;
@@ -152,8 +132,10 @@ again:
 		goto again;
 	}
 	if (error < 0) {
+#ifdef notdef
 		if (automount)
 			going_down(errno);
+#endif
 		return errno;
 	}
 
@@ -166,24 +148,26 @@ again:
 		char *zopts = (char *) xmalloc(strlen(mnt->mnt_opts) + 32);
 		xopts = mnt->mnt_opts;
 		if (sizeof(stb.st_dev) == 2) {
-			/* SunOS 4.1 */
-			sprintf(zopts, "%s,%s=%04lx", xopts, MNTINFO_DEV,
-					(u_long) stb.st_dev & 0xffff);
+			/* e.g. SunOS 4.1 */
+			sprintf(zopts, "%s,%s=%s%04lx", xopts, MNTINFO_DEV,
+					MNTINFO_PREF, (u_long) stb.st_dev & 0xffff);
 		} else {
-			/* System Vr4 */
-			sprintf(zopts, "%s,%s=%08lx", xopts, MNTINFO_DEV,
-					(u_long) stb.st_dev);
+			/* e.g. System Vr4 */
+			sprintf(zopts, "%s,%s=%s%08lx", xopts, MNTINFO_DEV,
+					MNTINFO_PREF, (u_long) stb.st_dev);
 		}
 		mnt->mnt_opts = zopts;
 	}
 #endif /* MNTINFO_DEV */
 
-#ifdef hpux
+#ifdef FIXUP_MNTENT
 	/*
-	 * Yet another gratuitously incompatible change in HP-UX
+	 * Additional fields in struct mntent
+	 * are fixed up here
 	 */
-	mnt->mnt_time = clocktime();
-#endif /* hpux */
+	FIXUP_MNTENT(mnt);
+#endif
+
 	write_mntent(mnt);
 #ifdef MNTINFO_DEV
 	if (xopts) {
@@ -193,12 +177,6 @@ again:
 #endif /* MNTINFO_DEV */
 #endif /* UPDATE_MTAB */
 
-	/*
-	 * Needed this way since mnt may contain a pointer
-	 * to a local variable in this stack frame.
-	 */
-	if (automount)
-		going_down(0);
 	return 0;
 }
 
@@ -263,102 +241,6 @@ char *opt;
 }
 #endif /* NEED_MNTOPT_PARSER */
 
-#ifdef MOUNT_AIX3
-
-#include "aix3-nfs.h"
-
-static int aix3_mkvp(p, gfstype, flags, object, stub, host, info, info_size, args)
-char *p;
-int gfstype;
-int flags;
-char *object;
-char *stub;
-char *host;
-char *info;
-int info_size;
-char *args;
-{
-	struct vmount *vp = (struct vmount *) p;
-	bzero((voidp) vp, sizeof(*vp));
-	/*
-	 * Fill in standard fields
-	 */
-	vp->vmt_revision = VMT_REVISION;
-	vp->vmt_flags = flags;
-	vp->vmt_gfstype = gfstype;
-
-#define	VMT_ROUNDUP(len) (4 * ((len + 3) / 4))
-#define VMT_ASSIGN(vp, idx, data, size) \
-	vp->vmt_data[idx].vmt_off = p - (char *) vp; \
-	vp->vmt_data[idx].vmt_size = size; \
-	bcopy(data, p, size); \
-	p += VMT_ROUNDUP(size);
-
-	/*
-	 * Fill in all variable length data
-	 */
-	p += sizeof(*vp);
-
-	VMT_ASSIGN(vp, VMT_OBJECT, object, strlen(object) + 1);
-	VMT_ASSIGN(vp, VMT_STUB, stub, strlen(stub) + 1);
-	VMT_ASSIGN(vp, VMT_HOST, host, strlen(host) + 1);
-	VMT_ASSIGN(vp, VMT_HOSTNAME, host, strlen(host) + 1);
-	VMT_ASSIGN(vp, VMT_INFO, info, info_size);
-	VMT_ASSIGN(vp, VMT_ARGS, args, strlen(args) + 1);
-
-#undef VMT_ASSIGN
-#undef VMT_ROUNDUP
-
-	/*
-	 * Return length
-	 */
-	return vp->vmt_length = p - (char *) vp;
-}
-
-/*
- * Map from conventional mount arguments
- * to AIX 3-style arguments.
- */
-aix3_mount(fsname, dir, flags, type, data, args)
-char *fsname;
-char *dir;
-int flags;
-int type;
-void *data;
-char *args;
-{
-	char buf[4096];
-	int size;
-
-#ifdef DEBUG
-	dlog("aix3_mount: fsname %s, dir %s, type %d", fsname, dir, type);
-#endif /* DEBUG */
-
-/* aix3_mkvp(p, gfstype, flags, object, stub, host, info, info_size, args) */
-
-	switch (type) {
-
-	case MOUNT_TYPE_NFS: {
-		char *host = strdup(fsname);
-		char *rfs = strchr(host, ':');
-		*rfs++ = '\0';
-
-		size = aix3_mkvp(buf, type, flags, rfs, dir, host, data, sizeof(struct nfs_args), args);
-		free(host);
-
-		} break;
-
-	case MOUNT_TYPE_UFS:
-		/* Need to open block device and extract log device info from sblk. */
-		return EINVAL;
-
-	default:
-		return EINVAL;
-	}
-#ifdef DEBUG
-	/*dlog("aix3_mkvp: flags %#x, size %d, args %s", flags, size, args);*/
-#endif /* DEBUG */
-
-	return vmount(buf, size);
-}
-#endif /* MOUNT_AIX3 */
+#ifdef MOUNT_HELPER_SOURCE
+#include MOUNT_HELPER_SOURCE
+#endif /* MOUNT_HELPER_SOURCE */

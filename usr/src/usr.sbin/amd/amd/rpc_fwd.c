@@ -1,5 +1,5 @@
 /*
- * $Id: rpc_fwd.c,v 5.2 90/06/23 22:19:57 jsp Rel $
+ * $Id: rpc_fwd.c,v 5.2.1.2 91/03/03 20:46:57 jsp Alpha $
  *
  * Copyright (c) 1989 Jan-Simon Pendry
  * Copyright (c) 1989 Imperial College of Science, Technology & Medicine
@@ -11,7 +11,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rpc_fwd.c	5.1 (Berkeley) %G%
+ *	@(#)rpc_fwd.c	5.2 (Berkeley) %G%
  */
 
 /*
@@ -134,7 +134,7 @@ rpc_forward *p;
 #ifdef DEBUG
 	/*dlog("fwd_free: rpc_head = %#x", rpc_head.q_forw);*/
 #endif /* DEBUG */
-	free(p);
+	free((voidp) p);
 }
 
 /*
@@ -266,7 +266,9 @@ fwd_fun cb;
 	 * rest of "p" otherwise nasty things happen later...
 	 */
 #ifdef DEBUG
-	dlog("Sending packet id %#x to %#08x.%04x", p->rf_xid, ntohl(fwdto->sin_addr.s_addr), ntohs(fwdto->sin_port));
+	{ char dq[20]; 
+	dlog("Sending packet id %#x to %s.%d", p->rf_xid, inet_dquad(dq, fwdto->sin_addr.s_addr), ntohs(fwdto->sin_port));
+	}
 #endif /* DEBUG */
 	if (sendto(fwd_sock, (char *) pkt, len, 0,
 			(struct sockaddr *) fwdto, sizeof(*fwdto)) < 0)
@@ -383,7 +385,7 @@ again:
 		/*
 		 * Call forwarding function
 		 */
-		(*p->rf_fwd)(pkt, rc, &src_addr, &p->rf_sin, p->rf_ptr, TRUE);
+		(*p->rf_fwd)((voidp) pkt, rc, &src_addr, &p->rf_sin, p->rf_ptr, TRUE);
 	}
 
 	/*
@@ -396,6 +398,6 @@ out:;
 	/*
 	 * Free the packet
 	 */
-	free(pkt);
+	free((voidp) pkt);
 #endif /* DYNAMIC_BUFFERS */
 }

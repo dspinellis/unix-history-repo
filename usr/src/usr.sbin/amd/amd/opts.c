@@ -1,5 +1,5 @@
 /*
- * $Id: opts.c,v 5.2 90/06/23 22:19:51 jsp Rel $
+ * $Id: opts.c,v 5.2.1.5 91/03/17 17:45:34 jsp Alpha $
  *
  * Copyright (c) 1989 Jan-Simon Pendry
  * Copyright (c) 1989 Imperial College of Science, Technology & Medicine
@@ -11,7 +11,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)opts.c	5.1 (Berkeley) %G%
+ *	@(#)opts.c	5.2 (Berkeley) %G%
  */
 
 #include "am.h"
@@ -36,7 +36,7 @@ static char *vars[8];
 /*
  * Length of longest option name
  */
-#define	NLEN	16
+#define	NLEN	16	/* conservative */
 #define S(x) (x) , (sizeof(x)-1)
 static struct opt {
 	char *name;		/* Name of the option */
@@ -64,6 +64,7 @@ static struct opt {
 	{ S("domain"), 0, &hostdomain },
 	{ S("karch"), 0, &karch },
 	{ S("cluster"), 0, &cluster },
+	{ S("wire"), 0, &wire },
 	{ S("byte"), 0, &endian },
 	{ S("os"), 0, &op_sys },
 	{ S("mount"), &fs_static.opt_mount, 0 },
@@ -184,9 +185,10 @@ top:
 	return s;
 }
 
-static int eval_opts P((char*));
-static int eval_opts(opts)
+static int eval_opts P((char*, char*));
+static int eval_opts(opts, mapkey)
 char *opts;
+char *mapkey;
 {
 	/*
 	 * Fill in the global structure fs_static by
@@ -208,7 +210,7 @@ char *opts;
 			/*
 			 * No value, just continue
 			 */
-			plog(XLOG_USER, "No value component in \"%s\"", f);
+			plog(XLOG_USER, "key %s: No value component in \"%s\"", mapkey, f);
 			continue;
 		}
 
@@ -252,6 +254,7 @@ char *opts;
 				switch (vs_opt) {
 #if AMD_COMPAT <= 5000108
 				case OldSyn:
+					plog(XLOG_WARNING, "key %s: Old syntax selector found: %s=%s", mapkey, f, opt);
 					if (!op->sel_p) {
 						*op->optp = opt;
 						break;
@@ -261,7 +264,8 @@ char *opts;
 				case SelEQ:
 				case SelNE:
 					if (op->sel_p && (STREQ(*op->sel_p, opt) == (vs_opt == SelNE))) {
-						plog(XLOG_MAP, "map selector %s (=%s) did not %smatch %s",
+						plog(XLOG_MAP, "key %s: map selector %s (=%s) did not %smatch %s",
+							mapkey,
 							op->name,
 							*op->sel_p,
 							vs_opt == SelNE ? "not " : "",
@@ -272,7 +276,7 @@ char *opts;
 
 				case VarAss:
 					if (op->sel_p) {
-						plog(XLOG_USER, "Can't assign to a selector (%s)", op->name);
+						plog(XLOG_USER, "key %s: Can't assign to a selector (%s)", mapkey, op->name);
 						return 0;
 					}
 					*op->optp = opt;
@@ -283,7 +287,7 @@ char *opts;
 		}
 
 		if (!op->name)
-			plog(XLOG_USER, "Unrecognised key \"%s\"", f);
+			plog(XLOG_USER, "key %s: Unrecognised key/option \"%s\"", mapkey, f);
 	}
 
 	return 1;
@@ -301,6 +305,39 @@ int b;
 	if (*p->opt) {
 		free(*p->opt);
 		*p->opt = 0;
+	}
+}
+
+/*
+ * Normalize slashes in the string.
+ */
+void normalize_slash P((char *p));
+void normalize_slash(p)
+char *p;
+{
+	char *f = strchr(p, '/');
+	if (f) {
+		char *t = f;
+		do {
+			/* assert(*f == '/'); */
+			/* copy a single / across */
+			*t++ = *f++;
+
+			/* assert(f[-1] == '/'); */
+			/* skip past more /'s */
+			while (*f == '/')
+				f++;
+
+			/* assert(*f != '/'); */
+			/* keep copying up to next / */
+			do {
+				*t++ = *f++;
+			} while (*f && *f != '/');
+
+			/* assert(*f == 0 || *f == '/'); */
+
+		} while (*f);
+		*t = 0;			/* derived from fix by Steven Glassman */
 	}
 }
 
@@ -359,7 +396,7 @@ static char expand_error[] = "No space to expand \"%s\"";
 			}
 		} else if (ch == '{') {
 			/* Expansion... */
-			enum { E_All, E_Dir, E_File } todo;
+			enum { E_All, E_Dir, E_File, E_Domain, E_Host } todo;
 			/*
 			 * Find closing brace
 			 */
@@ -391,6 +428,19 @@ static char expand_error[] = "No space to expand \"%s\"";
 				 * Take all but the last component
 				 */
 				todo = E_Dir;
+				--len;
+			} else if (*cp == '.') {
+				/*
+				 * Take domain name
+				 */
+				todo = E_Domain;
+				cp++;
+				--len;
+			} else if (br_p[-1] == '.') {
+				/*
+				 * Take host name
+				 */
+				todo = E_Host;
 				--len;
 			} else {
 				/*
@@ -434,9 +484,11 @@ static char expand_error[] = "No space to expand \"%s\"";
 						 * Copy the string across unexpanded
 						 */
 						sprintf(xbuf, "${%s%s%s}",
-							todo == E_File ? "/" : "",
+							todo == E_File ? "/" :
+								todo == E_Domain ? "." : "",
 							nbuf,
-							todo == E_Dir ? "/" : "");
+							todo == E_Dir ? "/" :
+								todo == E_Host ? "." : "");
 						val = xbuf;
 						/*
 						 * Make sure expansion doesn't
@@ -453,6 +505,8 @@ static char expand_error[] = "No space to expand \"%s\"";
 						 * Do expansion:
 						 * ${/var} means take just the last part
 						 * ${var/} means take all but the last part
+						 * ${.var} means take all but first part
+						 * ${var.} means take just the first part
 						 * ${var} means take the whole lot
 						 */
 						int vlen = strlen(val);
@@ -471,6 +525,24 @@ static char expand_error[] = "No space to expand \"%s\"";
 								vlen = strlen(vptr);
 							} else
 								vptr = val;
+							break;
+						case E_Domain:
+							vptr = strchr(val, '.');
+							if (vptr) {
+								vptr++;
+								vlen = strlen(vptr);
+							} else {
+								vptr = "";
+								vlen = 0;
+							}
+							break;
+						case E_Host:
+							vptr = strchr(val, '.');
+							if (vptr)
+								vlen = vptr - val;
+							vptr = val;
+							break;
+						case E_All:
 							break;
 						}
 #ifdef DEBUG
@@ -549,33 +621,7 @@ out:
 		*p->opt = strdup(expbuf);
 	}
 
-	/*
-	 * Normalize slashes in the string.
-	 */
-	{ char *f = strchr(*p->opt, '/');
-	  if (f) {
-		char *t = f;
-		do {
-			/* assert(*f == '/'); */
-			/* copy a single / across */
-			*t++ = *f++;
-
-			/* assert(f[-1] == '/'); */
-			/* skip past more /'s */
-			while (*f == '/')
-				f++;
-
-			/* assert(*f != '/'); */
-			/* keep copying up to next / */
-			do {
-				*t++ = *f++;
-			} while (*f && *f != '/');
-
-			/* assert(*f == 0 || *f == '/'); */
-
-		} while (*f);
-	  }
-	}
+	normalize_slash(*p->opt);
 
 #ifdef DEBUG
 	Debug(D_STR) {
@@ -652,14 +698,16 @@ char *key;
 }
 
 /*
- * Remove trailing / from a string
+ * Remove trailing /'s from a string
+ * unless the string is a single / (Steven Glassman)
  */
-static void deslashify(s)
+void deslashify P((char *s));
+void deslashify(s)
 char *s;
 {
-	if (s) {
-		char *sl = strrchr(s, '/');
-		if (sl && sl[1] == '\0')
+	if (s && *s) {
+		char *sl = s + strlen(s);
+		while (*--sl == '/' && sl > s)
 			*sl = '\0';
 	}
 }
@@ -699,13 +747,13 @@ char *opts, *g_opts, *path, *key, *map;
 	/*
 	 * Expand default (global) options
 	 */
-	if (!eval_opts(fs_static.fs_glob))
+	if (!eval_opts(fs_static.fs_glob, key))
 		ok = FALSE;
 
 	/*
 	 * Expand local options
 	 */
-	if (ok && !eval_opts(fs_static.fs_local))
+	if (ok && !eval_opts(fs_static.fs_local, key))
 		ok = FALSE;
 
 	/*

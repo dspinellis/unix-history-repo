@@ -1,5 +1,5 @@
 /*
- * $Id: srvr_nfs.c,v 5.2 90/06/23 22:20:02 jsp Rel $
+ * $Id: srvr_nfs.c,v 5.2.1.3 91/03/17 17:44:37 jsp Alpha $
  *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
@@ -11,7 +11,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)srvr_nfs.c	5.1 (Berkeley) %G%
+ *	@(#)srvr_nfs.c	5.2 (Berkeley) %G%
  */
 
 /*
@@ -28,7 +28,7 @@ qelem nfs_srvr_list = { &nfs_srvr_list, &nfs_srvr_list };
 
 typedef struct nfs_private {
 	u_short np_mountd;	/* Mount daemon port number */
-	char np_mountd_inval;	/* Port may be invalid */
+	char np_mountd_inval;	/* Port *may* be invalid */
 	int np_ping;		/* Number of failed ping attempts */
 	time_t np_ttl;		/* Time when server is thought dead */
 	int np_xid;		/* RPC transaction id for pings */
@@ -64,8 +64,26 @@ static int ping_len;
 static char ping_buf[sizeof(struct rpc_msg) + 32];
 
 /*
+ * Flush any cached data
+ */
+void flush_srvr_nfs_cache P((void));
+void flush_srvr_nfs_cache()
+{
+	fserver *fs = 0;
+
+	ITER(fs, fserver, &nfs_srvr_list) {
+		nfs_private *np = (nfs_private *) fs->fs_private;
+		if (np) {
+			np->np_mountd_inval = TRUE;
+			np->np_error = -1;
+		}
+	}
+}
+
+/*
  * Startup the NFS ping
  */
+static void start_ping(P_void);
 static void start_ping()
 {
 	XDR ping_xdr;
@@ -101,15 +119,22 @@ static void start_ping()
 /*
  * Called when a portmap reply arrives
  */
+/*ARGSUSED*/
+static void got_portmap P((voidp pkt, int len, struct sockaddr_in *sa, struct sockaddr_in *ia, voidp idv, int done));
 static void got_portmap(pkt, len, sa, ia, idv, done)
 voidp pkt;
 int len;
-struct sockaddr_in *sa, *ia;
+struct sockaddr_in *sa;
+struct sockaddr_in *ia;
 voidp idv;
 int done;
 {
 	fserver *fs2 = (fserver *) idv;
 	fserver *fs = 0;
+
+	/*
+	 * Find which fileserver we are talking about
+	 */
 	ITER(fs, fserver, &nfs_srvr_list)
 		if (fs == fs2)
 			break;
@@ -156,6 +181,7 @@ int done;
 /*
  * Obtain portmap information
  */
+static int call_portmap P((fserver *fs, AUTH *auth, unsigned long prog, unsigned long vers, unsigned long prot));
 static int call_portmap(fs, auth, prog, vers, prot)
 fserver *fs;
 AUTH *auth;
@@ -210,16 +236,20 @@ fserver *fs;
  * structure when the ping was transmitted.
  */
 /*ARGSUSED*/
+static void nfs_pinged P((voidp pkt, int len, struct sockaddr_in *sp, struct sockaddr_in *tsp, voidp idv, int done));
 static void nfs_pinged(pkt, len, sp, tsp, idv, done)
 voidp pkt;
 int len;
-struct sockaddr_in *sp, *tsp;
+struct sockaddr_in *sp;
+struct sockaddr_in *tsp;
 voidp idv;
 int done;
 {
 	int xid = (int) idv;
 	fserver *fs;
+#ifdef DEBUG
 	int found_map = 0;
+#endif /* DEBUG */
 
 	if (!done)
 		return;
@@ -240,7 +270,12 @@ int done;
 				if (fs->fs_flags & FSF_VALID) {
 					srvrlog(fs, "is up");
 				} else {
-					srvrlog(fs, "ok");
+					if (np->np_ping > 1)
+						srvrlog(fs, "ok");
+#ifdef DEBUG
+					else
+						srvrlog(fs, "starts up");
+#endif
 					fs->fs_flags |= FSF_VALID;
 				}
 
@@ -255,7 +290,8 @@ int done;
 					dlog("file server %s type nfs is still up", fs->fs_host);
 #endif /* DEBUG */
 				} else {
-					srvrlog(fs, "ok");
+					if (np->np_ping > 1)
+						srvrlog(fs, "ok");
 					fs->fs_flags |= FSF_VALID;
 				}
 			}
@@ -288,7 +324,9 @@ int done;
 			if (np->np_mountd_inval)
 				recompute_portmap(fs);
 
+#ifdef DEBUG	
 			found_map++;
+#endif /* DEBUG */
 			break;
 		}
 	}
@@ -309,17 +347,18 @@ fserver *fs;
 	nfs_private *np = (nfs_private *) fs->fs_private;
 
 	/*
+	 * Another ping has failed
+	 */
+	np->np_ping++;
+
+	/*
 	 * Not known to be up any longer
 	 */
 	if (FSRV_ISUP(fs)) {
 		fs->fs_flags &= ~FSF_VALID;
-		srvrlog(fs, "not responding");
+		if (np->np_ping > 1)
+			srvrlog(fs, "not responding");
 	}
-
-	/*
-	 * Another ping has failed
-	 */
-	np->np_ping++;
 
 	/*
 	 * If ttl has expired then guess that it is dead
@@ -331,8 +370,6 @@ fserver *fs;
 			 */
 			srvrlog(fs, "is down");
 			fs->fs_flags |= FSF_DOWN|FSF_VALID;
-			if (fs->fs_flags & FSF_WANT)
-				wakeup_srvr(fs);
 			/*
 			 * Since the server is down, the portmap
 			 * information may now be wrong, so it
@@ -340,16 +377,23 @@ fserver *fs;
 			 */
 			flush_nfs_fhandle_cache(fs);
 			np->np_error = -1;
+#ifdef notdef
 			/*
 			 * Pretend just one ping has failed now
 			 */
 			np->np_ping = 1;
+#endif
 		} else {
 			/*
 			 * Known to be down
 			 */
 			fs->fs_flags |= FSF_VALID;
+#ifdef DEBUG
+			srvrlog(fs, "starts down");
+#endif
 		}
+		if (fs->fs_flags & FSF_WANT)
+			wakeup_srvr(fs);
 	} else {
 #ifdef DEBUG
 		if (np->np_ping > 1)
@@ -442,6 +486,7 @@ fserver *fs;
 	fs->fs_cid = timeout(fstimeo, nfs_timed_out, (voidp) fs);
 }
 
+int nfs_srvr_port P((fserver *fs, u_short *port, voidp wchan));
 int nfs_srvr_port(fs, port, wchan)
 fserver *fs;
 u_short *port;
@@ -453,16 +498,21 @@ voidp wchan;
 			nfs_private *np = (nfs_private *) fs->fs_private;
 			if (np->np_error == 0) {
 				*port = np->np_mountd;
-				/*
-				 * Now go get it again in case it changed
-				 */
-				np->np_mountd_inval = TRUE;
 				error = 0;
 			} else {
-				if (np->np_error < 0)
-					recompute_portmap(fs);
 				error = np->np_error;
 			}
+			/*
+			 * Now go get the port mapping again in case it changed.
+			 * Note that it is used even if (np_mountd_inval)
+			 * is True.  The flag is used simply as an
+			 * indication that the mountd may be invalid, not
+			 * that it is known to be invalid.
+			 */
+			if (np->np_mountd_inval)
+				recompute_portmap(fs);
+			else
+				np->np_mountd_inval = TRUE;
 		} else {
 			error = EWOULDBLOCK;
 		}
@@ -526,7 +576,7 @@ mntfs *mf;
 	 * are required or not.  < 0 = no pings.
 	 */
 	{ struct mntent mnt;
-	  mnt.mnt_opts = mf->mf_fo->opt_opts;
+	  mnt.mnt_opts = mf->mf_mopts;
 	  pingval = hasmntval(&mnt, "ping");
 #ifdef HAS_TCP_NFS
 	  /*
@@ -540,11 +590,20 @@ mntfs *mf;
 	}
 
 
-top:
 	/*
-	 * Scan the list of known servers looking
-	 * for one with the same name
+	 * lookup host address and canonical name
 	 */
+	hp = gethostbyname(host);
+
+	/*
+	 * New code from Bob Harris <harris@basil-rathbone.mit.edu>
+	 * Use canonical name to keep track of file server
+	 * information.  This way aliases do not generate
+	 * multiple NFS pingers.  (Except when we're normalizing
+	 * hosts.)
+	 */
+	if (hp && !normalize_hosts) host = hp->h_name;
+
 	ITER(fs, fserver, &nfs_srvr_list) {
 		if (STREQ(host, fs->fs_host)) {
 			start_nfs_pings(fs, pingval);
@@ -553,22 +612,7 @@ top:
 		}
 	}
 
-	/*
-	 * If the name is not known, it may be
-	 * because it was an alternate name for
-	 * the same machine.  So do a lookup and
-	 * try again with the primary name if that
-	 * is different.
-	 * All that assuming it wasn't normalized
-	 * earlier of course...
-	 */
-	if (hp == 0) {
-		hp = gethostbyname(host);
-		if (hp && !STREQ(host, hp->h_name) && !normalize_hosts) {
-			host = hp->h_name;
-			goto top;
-		}
-	}
+
 
 	/*
 	 * Get here if we can't find an entry
@@ -579,7 +623,8 @@ top:
 			ip = ALLOC(sockaddr_in);
 			bzero((voidp) ip, sizeof(*ip));
 			ip->sin_family = AF_INET;
-			ip->sin_addr = *(struct in_addr *) hp->h_addr;
+			bcopy((voidp) hp->h_addr, (voidp) &ip->sin_addr, sizeof(ip->sin_addr));
+
 			ip->sin_port = htons(NFS_PORT);
 			break;
 
@@ -588,6 +633,7 @@ top:
 			break;
 		}
 	} else {
+		plog(XLOG_USER, "Unknown host: %s", host);
 		ip = 0;
 	}
 
@@ -597,7 +643,7 @@ top:
 	fs = ALLOC(fserver);
 	fs->fs_refc = 1;
 	fs->fs_host = strdup(hp ? hp->h_name : "unknown_hostname");
-	host_normalize(&fs->fs_host);
+	if (normalize_hosts) host_normalize(&fs->fs_host);
 	fs->fs_ip = ip;
 	fs->fs_cid = 0;
 	if (ip) {

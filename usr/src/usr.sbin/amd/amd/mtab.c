@@ -1,5 +1,5 @@
 /*
- * $Id: mtab.c,v 5.2 90/06/23 22:19:44 jsp Rel $
+ * $Id: mtab.c,v 5.2.1.1 90/10/21 22:29:27 jsp Exp $
  *
  * Copyright (c) 1989 Jan-Simon Pendry
  * Copyright (c) 1989 Imperial College of Science, Technology & Medicine
@@ -11,7 +11,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mtab.c	5.1 (Berkeley) %G%
+ *	@(#)mtab.c	5.2 (Berkeley) %G%
  */
 
 #include "am.h"
@@ -19,6 +19,7 @@
 /*
  * Firewall /etc/mtab entries
  */
+void mnt_free P((struct mntent *mp));
 void mnt_free(mp)
 struct mntent *mp;
 {
@@ -32,6 +33,7 @@ struct mntent *mp;
 /*
  * Discard memory allocated for mount list
  */
+void discard_mntlist P((mntlist *mp));
 void discard_mntlist(mp)
 mntlist *mp;
 {
@@ -41,13 +43,14 @@ mntlist *mp;
 		mp = mp->mnext;
 		if (mp2->mnt)
 			mnt_free(mp2->mnt);
-		free(mp2);
+		free((voidp) mp2);
 	}
 }
 
 /*
  * Throw away a mount list
  */
+void free_mntlist P((mntlist *mp));
 void free_mntlist(mp)
 mntlist *mp;
 {
@@ -60,6 +63,7 @@ mntlist *mp;
  * numeric option in the mount options (such as port=%d).
  * Returns 0 if the option is not specified.
  */
+int hasmntval P((struct mntent *mnt, char *opt));
 int hasmntval(mnt, opt)
 struct mntent *mnt;
 char *opt;

@@ -1,5 +1,5 @@
 /*
- * $Id: nfs_start.c,v 5.2 90/06/23 22:19:48 jsp Rel $
+ * $Id: nfs_start.c,v 5.2.1.2 90/12/21 16:41:40 jsp Alpha $
  *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
@@ -11,7 +11,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_start.c	5.1 (Berkeley) %G%
+ *	@(#)nfs_start.c	5.2 (Berkeley) %G%
  */
 
 #include "am.h"
@@ -128,6 +128,37 @@ struct timeval *tvp;
 	return nsel;
 }
 
+/*
+ * Determine whether anything is left in
+ * the RPC input queue.
+ */
+static int rpc_pending_now()
+{
+	struct timeval tvv;
+	int nsel;
+#ifdef FD_SET
+	fd_set readfds;
+
+	FD_ZERO(&readfds);
+	FD_SET(fwd_sock, &readfds);
+#else
+	int readfds = (1 << fwd_sock);
+#endif /* FD_SET */
+
+	tvv.tv_sec = tvv.tv_usec = 0;
+	nsel = select(max_fds+1, &readfds, (int *) 0, (int *) 0, &tvv);
+	if (nsel < 1)
+		return(0);
+#ifdef FD_SET
+	if (FD_ISSET(fwd_sock, &readfds))
+		return(1);
+#else
+	if (readfds & (1 << fwd_sock))
+		return(1);
+#endif
+	return(0);
+}
+
 static serv_state run_rpc(P_void)
 {
 	int dtbsz = max_fds + 1;
@@ -214,19 +245,21 @@ static serv_state run_rpc(P_void)
 			break;
 
 		default:
+			/* Read all pending NFS responses at once to avoid
+			   having responses queue up as a consequence of
+			   retransmissions. */
 #ifdef FD_SET
 			if (FD_ISSET(fwd_sock, &readfds)) {
 				FD_CLR(fwd_sock, &readfds);
-				fwd_reply();
-				--nsel;
-			}
 #else
 			if (readfds & (1 << fwd_sock)) {
 				readfds &= ~(1 << fwd_sock);
-				fwd_reply();
-				--nsel;
+#endif
+				--nsel;	
+				do {
+					fwd_reply();
+				} while (rpc_pending_now() > 0);
 			}
-#endif /* FD_SET */
 
 			if (nsel) {
 				/*
@@ -280,8 +313,6 @@ int ppid;
 	SVCXPRT *amqp;
 	int nmount;
 
-	unregister_amq();
-
 	if (so < 0 || bindnfs_port(so) < 0) {
 		perror("Can't create privileged nfs port");
 		return 1;
@@ -295,14 +326,6 @@ int ppid;
 
 	if (!svc_register(nfsxprt, NFS_PROGRAM, NFS_VERSION, nfs_program_2, 0)) {
 		plog(XLOG_FATAL, "unable to register (NFS_PROGRAM, NFS_VERSION, 0)");
-		return 3;
-	}
-
-#ifdef DEBUG
-	Debug(D_AMQ)
-#endif /* DEBUG */
-	if (!svc_register(amqp, AMQ_PROGRAM, AMQ_VERSION, amq_program_1, IPPROTO_UDP)) {
-		plog(XLOG_FATAL, "unable to register (AMQ_PROGRAM, AMQ_VERSION, udp)");
 		return 3;
 	}
 
@@ -351,6 +374,22 @@ int ppid;
 		amd_state = Done;
 		return 0;
 	}
+
+#ifdef DEBUG
+	Debug(D_AMQ) {
+#endif /* DEBUG */
+	/*
+	 * Register with amq
+	 */
+	unregister_amq();
+
+	if (!svc_register(amqp, AMQ_PROGRAM, AMQ_VERSION, amq_program_1, IPPROTO_UDP)) {
+		plog(XLOG_FATAL, "unable to register (AMQ_PROGRAM, AMQ_VERSION, udp)");
+		return 3;
+	}
+#ifdef DEBUG
+	}
+#endif /* DEBUG */
 
 	/*
 	 * Start timeout_mp rolling

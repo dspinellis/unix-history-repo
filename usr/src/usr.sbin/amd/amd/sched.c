@@ -1,5 +1,5 @@
 /*
- * $Id: sched.c,v 5.2 90/06/23 22:19:58 jsp Rel $
+ * $Id: sched.c,v 5.2.1.3 91/03/17 17:42:03 jsp Alpha $
  *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
@@ -11,7 +11,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sched.c	5.1 (Berkeley) %G%
+ *	@(#)sched.c	5.2 (Berkeley) %G%
  */
 
 /*
@@ -171,7 +171,7 @@ int sig;
 #ifdef SYS5_SIGNALS
 	if ((pid = wait(&w)) > 0) {
 #else
-	while ((pid = wait3(&w, WNOHANG, (union wait *) 0)) > 0) {
+	while ((pid = wait3((int *) &w, WNOHANG, (struct rusage *) 0)) > 0) {
 #endif /* SYS5_SIGNALS */
 		pjob *p, *p2;
 
@@ -203,14 +203,14 @@ int sig;
 	signal(sig, sigchld);
 #endif /* SYS5_SIGNALS */
 	if (select_intr_valid)
-		longjmp(select_intr, sigchld);
+		longjmp(select_intr, sig);
 }
 
 /*
  * Run any pending tasks.
  * This must be called with SIGCHLD disabled
  */
-void task_notify(P_void)
+void do_task_notify(P_void)
 {
 	/*
 	 * Keep taking the first item off the list and processing it.
@@ -234,6 +234,6 @@ void task_notify(P_void)
 			(*p->cb_fun)(p->w.w_retcode,
 				p->w.w_termsig, p->cb_closure);
 
-		free(p);
+		free((voidp) p);
 	}
 }
