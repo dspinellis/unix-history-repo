@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)process.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)process.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -167,8 +167,8 @@ find_user(name, tty)
 	struct stat statb;
 	char ftty[20];
 
-	if ((fd = fopen("/etc/utmp", "r")) == NULL) {
-		perror("Can't open /etc/utmp");
+	if ((fd = fopen(_PATH_UTMP, "r")) == NULL) {
+		fprintf(stderr, "talkd: can't read %s.\n", _PATH_UTMP);
 		return (FAILED);
 	}
 #define SCMPN(a, b)	strncmp(a, b, sizeof (a))
