@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)qd.c	1.14 (Berkeley) %G%
+ *	@(#)qd.c	1.15 (Berkeley) %G%
  */
 
 /************************************************************************
@@ -303,9 +303,16 @@ extern	char *q_special[];
  * virtual console support.
  */
 extern (*v_putc)();
+#ifdef KADB
+extern (*v_getc)();
+extern (*v_poll)();
+#endif
 extern struct cdevsw *consops;
 int qdputc();
+int qdgetc();
+int qdpoll();
 int qdstart();
+int qdpolling = 0;
 
 /*
  * LK-201 state storage for input console keyboard conversion to ASCII 
@@ -323,13 +330,10 @@ struct q_keyboard {
 /*
  * tty settings on first open
  */
-#define IFLAGS	(EVENP|ECHO|XTABS|CRMOD)
-#ifdef POSIXTTY
-#define IFLAG (BRKINT|ISTRIP|IXON|IXANY|ICRNL|IEXTEN|IMAXBEL)
+#define IFLAG (BRKINT|ISTRIP|IXON|IXANY|ICRNL|IMAXBEL)
 #define OFLAG (OPOST|OXTABS|ONLCR)
-#define LFLAG (ISIG|ICANON|ECHO)
+#define LFLAG (ISIG|ICANON|ECHO|IEXTEN)
 #define CFLAG (PARENB|CREAD|CS7|CLOCAL)
-#endif
 
 /*
  * Init QDSS as console (before probe routine)
@@ -422,6 +426,10 @@ qdcons_init()
 	ldcursor(unit, cons_cursor);	/* load default cursor map */
 	setup_input(unit);		/* init the DUART */
 	v_putc = qdputc;		/* kernel console output to qdss */
+#ifdef KADB
+	v_getc = qdgetc;		/* kernel console input from qdss */
+	v_poll = qdpoll;		/* kdb hook to disable char intr */
+#endif
 	consops = &cdevsw[QDSSMAJOR];	/* virtual console is qdss */
 	return 1;
 
@@ -441,7 +449,7 @@ qdcons_init()
 qdprobe(reg)
 	caddr_t reg;	/* character pointer to the QDSS I/O page register */
 {
-	register int br, cvec;  	/* value-result */
+	register int br, cvec;
 	register int unit;
 	struct dga *dga;		/* pointer to gate array structure */
 	int vector;
@@ -694,16 +702,13 @@ qdopen(dev, flag)
 		tp->t_oproc = qdstart;
 		if ((tp->t_state & TS_ISOPEN) == 0) {
 			ttychars(tp);
-			tp->t_flags = IFLAGS;
 			tp->t_ispeed = B9600;
 			tp->t_ospeed = B9600;
 			tp->t_state = TS_ISOPEN | TS_CARR_ON;
-#ifdef POSIXTTY
 			tp->t_iflag = TTYDEF_IFLAG;
 			tp->t_oflag = TTYDEF_OFLAG;
 			tp->t_lflag = TTYDEF_LFLAG;
 			tp->t_cflag = TTYDEF_CFLAG;
-#endif
 		}
 		/*
 		* enable intrpts, open line discipline 
@@ -2531,6 +2536,8 @@ GET_TBUTTON:
 		/*
 		 * if the graphic device is not turned on, this is console input
 		 */
+		if (qdpolling)
+			return;
 		ui = qdinfo[qd];
 		if (ui == 0 || ui->ui_alive == 0)
 			return;
@@ -2619,6 +2626,9 @@ GET_TBUTTON:
 				    (*linesw[tp->t_line].l_rint)(*string++, tp);
 			}
 			else {
+#ifdef KADB
+				if (!kdbrintr(chr&0177, tp))
+#endif
 				(*linesw[tp->t_line].l_rint)(chr&0177, tp);
 			}
 		}
@@ -2850,6 +2860,11 @@ ldfont(unit)
 	}
 
 }  /* ldfont */
+
+qdpoll(onoff)
+{
+	qdpolling = onoff;
+}
 
 /*
  *  Get a character from the LK201 (polled)
