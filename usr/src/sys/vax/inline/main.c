@@ -1,12 +1,22 @@
 /* Copyright (c) 1984 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	1.2	(Berkeley)	%G%";
+static char sccsid[] = "@(#)main.c	1.3	(Berkeley)	%G%";
 #endif not lint
 
 #include <stdio.h>
 #include <ctype.h>
 #include "inline.h"
+
+/*
+ * These are the pattern tables to be loaded
+ */
+struct pats *inittables[] = {
+	language_ptab,
+	libc_ptab,
+	machine_ptab,
+	0
+};
 
 main(argc, argv)
 	int argc;
@@ -15,6 +25,7 @@ main(argc, argv)
 	register struct pats *pp, **hp;
 	register char *cp, *lp;
 	register char *bufp;
+	register struct pats **tablep;
 	int size;
 	extern char *index();
 
@@ -25,23 +36,13 @@ main(argc, argv)
 	/*
 	 * set up the hash table
 	 */
-	for (pp = language_ptab; pp->name[0] != '\0'; pp++) {
-		hp = hash(pp->name, &size);
-		pp->size = size;
-		pp->next = *hp;
-		*hp = pp;
-	}
-	for (pp = libc_ptab; pp->name[0] != '\0'; pp++) {
-		hp = hash(pp->name, &size);
-		pp->size = size;
-		pp->next = *hp;
-		*hp = pp;
-	}
-	for (pp = machine_ptab; pp->name[0] != '\0'; pp++) {
-		hp = hash(pp->name, &size);
-		pp->size = size;
-		pp->next = *hp;
-		*hp = pp;
+	for (tablep = inittables; *tablep; tablep++) {
+		for (pp = *tablep; pp->name[0] != '\0'; pp++) {
+			hp = hash(pp->name, &size);
+			pp->size = size;
+			pp->next = *hp;
+			*hp = pp;
+		}
 	}
 	/*
 	 * check each line and replace as appropriate
