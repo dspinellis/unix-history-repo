@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)table.h	5.8 (Berkeley) %G%
+ *	@(#)table.h	5.9 (Berkeley) %G%
  */
 
 /*
@@ -30,12 +30,14 @@ struct rt_entry {
 	struct	rt_entry *rt_back;
 	union {
 		struct	rtentry rtu_rt;
-		struct {
+		struct rtuentry {
 			u_long	rtu_hash;
 			struct	sockaddr rtu_dst;
 			struct	sockaddr rtu_router;
-			short	rtu_flags;
-			short	rtu_state;
+			short	rtu_rtflags; /* used by rtioctl */
+			short	rtu_wasted[5];
+			int	rtu_flags;
+			int	rtu_state;
 			int	rtu_timer;
 			int	rtu_metric;
 			int	rtu_ifmetric;
@@ -44,7 +46,7 @@ struct rt_entry {
 	} rt_rtu;
 };
 
-#define	rt_rt		rt_rtu.rtu_rt			/* pass to ioctl */
+#define	rt_rt		rt_rtu.rtu_entry		/* pass to ioctl */
 #define	rt_hash		rt_rtu.rtu_entry.rtu_hash	/* for net or host */
 #define	rt_dst		rt_rtu.rtu_entry.rtu_dst	/* match value */
 #define	rt_router	rt_rtu.rtu_entry.rtu_router	/* who to forward to */
@@ -72,7 +74,7 @@ struct rt_entry {
 /*
  * Flags are same as kernel, with this addition for af_rtflags:
  */
-#define	RTF_SUBNET	0x8000		/* pseudo: route to subnet */
+#define	RTF_SUBNET	0x80000		/* pseudo: route to subnet */
 
 struct	rthash nethash[ROUTEHASHSIZ];
 struct	rthash hosthash[ROUTEHASHSIZ];
