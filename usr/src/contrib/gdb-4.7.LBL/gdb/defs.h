@@ -20,6 +20,7 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #if !defined (DEFS_H)
 #define DEFS_H 1
 
+#include <limits.h>
 #include <stdio.h>
 
 /* First include ansidecl.h so we can use the various macro definitions
@@ -639,7 +640,7 @@ strsignal PARAMS ((int));
 
 #ifndef PSIGNAL_IN_SIGNAL_H
 extern void
-psignal PARAMS ((unsigned, char *));
+psignal PARAMS ((unsigned, const char *));
 #endif
 
 /* For now, we can't include <stdlib.h> because it conflicts with
@@ -719,7 +720,7 @@ strerror PARAMS ((int));				/* 4.11.6.2 */
 # ifdef notdef /*XXX*/
 #  define alloca __builtin_alloca
 # else
-#  ifdef sparc
+#  if defined(sparc) && !defined(__GNUC__)
 #   include <alloca.h>		/* NOTE:  Doesn't declare alloca() */
 #  endif
 #  ifdef __STDC__
