@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_subr.c	7.4 (Berkeley) %G%
+ *	@(#)tcp_subr.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -30,6 +30,10 @@
 #include "tcp_var.h"
 #include "tcpip.h"
 
+int	tcp_ttl = TCP_TTL;
+float	tcp_alpha = TCP_ALPHA;
+float	tcp_beta = TCP_BETA;
+
 /*
  * Tcp initialization
  */
@@ -38,8 +42,6 @@ tcp_init()
 
 	tcp_iss = 1;		/* wrong */
 	tcb.inp_next = tcb.inp_prev = &tcb;
-	tcp_alpha = TCP_ALPHA;
-	tcp_beta = TCP_BETA;
 }
 
 /*
@@ -144,7 +146,7 @@ tcp_respond(tp, ti, ack, seq, flags)
 	ti->ti_urp = 0;
 	ti->ti_sum = in_cksum(m, sizeof (struct tcpiphdr) + tlen);
 	((struct ip *)ti)->ip_len = sizeof (struct tcpiphdr) + tlen;
-	((struct ip *)ti)->ip_ttl = TCP_TTL;
+	((struct ip *)ti)->ip_ttl = tcp_ttl;
 	(void) ip_output(m, (struct mbuf *)0, ro, 0);
 }
 
