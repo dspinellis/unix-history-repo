@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dir.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)dir.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -15,6 +15,8 @@ static char sccsid[] = "@(#)dir.c	5.17 (Berkeley) %G%";
 #define KERNEL
 #include <ufs/dir.h>
 #undef KERNEL
+#include <stdlib.h>
+#include <string.h>
 #include "fsck.h"
 
 char	*lfname = "lost+found";
@@ -75,12 +77,12 @@ dirscan(idesc)
 	idesc->id_loc = 0;
 	for (dp = fsck_readdir(idesc); dp != NULL; dp = fsck_readdir(idesc)) {
 		dsize = dp->d_reclen;
-		bcopy((char *)dp, dbuf, dsize);
+		bcopy((char *)dp, dbuf, (size_t)dsize);
 		idesc->id_dirp = (struct direct *)dbuf;
 		if ((n = (*idesc->id_func)(idesc)) & ALTERED) {
 			bp = getdirblk(idesc->id_blkno, blksiz);
 			bcopy(dbuf, bp->b_un.b_buf + idesc->id_loc - dsize,
-			    dsize);
+			    (size_t)dsize);
 			dirty(bp);
 			sbdirty();
 		}
@@ -259,7 +261,7 @@ mkentry(idesc)
 	dirp->d_ino = idesc->id_parent;	/* ino to be entered is in id_parent */
 	dirp->d_reclen = newent.d_reclen;
 	dirp->d_namlen = newent.d_namlen;
-	bcopy(idesc->id_name, dirp->d_name, (int)dirp->d_namlen + 1);
+	bcopy(idesc->id_name, dirp->d_name, (size_t)dirp->d_namlen + 1);
 	return (ALTERED|STOP);
 }
 
@@ -364,14 +366,14 @@ linkup(orphan, parentdir)
 	if (lostdir) {
 		if ((changeino(orphan, "..", lfdir) & ALTERED) == 0 &&
 		    parentdir != (ino_t)-1)
-			makeentry(orphan, lfdir, "..");
+			(void)makeentry(orphan, lfdir, "..");
 		dp = ginode(lfdir);
 		dp->di_nlink++;
 		inodirty();
 		lncntp[lfdir]++;
-		pwarn("DIR I=%u CONNECTED. ", orphan);
+		pwarn("DIR I=%lu CONNECTED. ", orphan);
 		if (parentdir != (ino_t)-1)
-			printf("PARENT WAS I=%u\n", parentdir);
+			printf("PARENT WAS I=%lu\n", parentdir);
 		if (preen == 0)
 			printf("\n");
 	}
@@ -454,7 +456,7 @@ expanddir(dp, name)
 	dp->di_size += sblock.fs_bsize;
 	dp->di_blocks += btodb(sblock.fs_bsize);
 	bp = getdirblk(dp->di_db[lastbn + 1],
-		dblksize(&sblock, dp, lastbn + 1));
+		(long)dblksize(&sblock, dp, lastbn + 1));
 	if (bp->b_errs)
 		goto bad;
 	bcopy(bp->b_un.b_buf, firstblk, DIRBLKSIZ);
@@ -468,7 +470,7 @@ expanddir(dp, name)
 		bcopy((char *)&emptydir, cp, sizeof emptydir);
 	dirty(bp);
 	bp = getdirblk(dp->di_db[lastbn + 1],
-		dblksize(&sblock, dp, lastbn + 1));
+		(long)dblksize(&sblock, dp, lastbn + 1));
 	if (bp->b_errs)
 		goto bad;
 	bcopy((char *)&emptydir, bp->b_un.b_buf, sizeof emptydir);

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass2.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass2.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -15,6 +15,7 @@ static char sccsid[] = "@(#)pass2.c	5.13 (Berkeley) %G%";
 #define KERNEL
 #include <ufs/dir.h>
 #undef KERNEL
+#include <stdlib.h>
 #include <string.h>
 #include "fsck.h"
 
@@ -80,7 +81,7 @@ pass2()
 	/*
 	 * Sort the directory list into disk block order.
 	 */
-	qsort((char *)inpsort, (int)inplast, sizeof *inpsort, blksort);
+	qsort((char *)inpsort, (size_t)inplast, sizeof *inpsort, blksort);
 	/*
 	 * Check the integrity of each directory.
 	 */
@@ -119,7 +120,7 @@ pass2()
 		}
 		dp->di_size = inp->i_isize;
 		bcopy((char *)&inp->i_blks[0], (char *)&dp->di_db[0],
-			(int)inp->i_numblks);
+			(size_t)inp->i_numblks);
 		curino.id_number = inp->i_number;
 		curino.id_parent = inp->i_parent;
 		(void)ckinode(dp, &curino);
@@ -143,7 +144,7 @@ pass2()
 			fileerror(inp->i_parent, inp->i_number, "MISSING '..'");
 			if (reply("FIX") == 0)
 				continue;
-			makeentry(inp->i_number, inp->i_parent, "..");
+			(void)makeentry(inp->i_number, inp->i_parent, "..");
 			lncntp[inp->i_parent]--;
 			continue;
 		}
@@ -200,17 +201,17 @@ pass2check(idesc)
 		pfatal("CANNOT FIX, INSUFFICIENT SPACE TO ADD '.'\n");
 	} else if (dirp->d_reclen < 2 * entrysize) {
 		proto.d_reclen = dirp->d_reclen;
-		bcopy((char *)&proto, (char *)dirp, entrysize);
+		bcopy((char *)&proto, (char *)dirp, (size_t)entrysize);
 		if (reply("FIX") == 1)
 			ret |= ALTERED;
 	} else {
 		n = dirp->d_reclen - entrysize;
 		proto.d_reclen = entrysize;
-		bcopy((char *)&proto, (char *)dirp, entrysize);
+		bcopy((char *)&proto, (char *)dirp, (size_t)entrysize);
 		idesc->id_entryno++;
 		lncntp[dirp->d_ino]--;
 		dirp = (struct direct *)((char *)(dirp) + entrysize);
-		bzero((char *)dirp, n);
+		bzero((char *)dirp, (size_t)n);
 		dirp->d_reclen = n;
 		if (reply("FIX") == 1)
 			ret |= ALTERED;
@@ -232,7 +233,7 @@ chk1:
 		idesc->id_entryno++;
 		lncntp[dirp->d_ino]--;
 		dirp = (struct direct *)((char *)(dirp) + n);
-		bzero((char *)dirp, (int)proto.d_reclen);
+		bzero((char *)dirp, (size_t)proto.d_reclen);
 		dirp->d_reclen = proto.d_reclen;
 	}
 	if (dirp->d_ino != 0 && strcmp(dirp->d_name, "..") == 0) {
@@ -255,7 +256,7 @@ chk1:
 		inp->i_dotdot = inp->i_parent;
 		fileerror(inp->i_parent, idesc->id_number, "MISSING '..'");
 		proto.d_reclen = dirp->d_reclen;
-		bcopy((char *)&proto, (char *)dirp, entrysize);
+		bcopy((char *)&proto, (char *)dirp, (size_t)entrysize);
 		if (reply("FIX") == 1)
 			ret |= ALTERED;
 	}

@@ -6,12 +6,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass1.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass1.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <ufs/dinode.h>
 #include <ufs/fs.h>
+#include <stdlib.h>
+#include <string.h>
 #include "fsck.h"
 
 static daddr_t badblk;
@@ -61,7 +63,7 @@ pass1()
 				    bcmp((char *)dp->di_ib, (char *)zino.di_ib,
 					NIADDR * sizeof(daddr_t)) ||
 				    dp->di_mode || dp->di_size) {
-					pfatal("PARTIALLY ALLOCATED INODE I=%u",
+					pfatal("PARTIALLY ALLOCATED INODE I=%lu",
 						inumber);
 					if (reply("CLEAR") == 1) {
 						dp = ginode(inumber);
@@ -73,10 +75,10 @@ pass1()
 				continue;
 			}
 			lastino = inumber;
-			if (dp->di_size < 0 ||
-			    dp->di_size + sblock.fs_bsize - 1 < 0) {
+			if (/* dp->di_size < 0 || */
+			    dp->di_size + sblock.fs_bsize - 1 < dp->di_size) {
 				if (debug)
-					printf("bad size %d:", dp->di_size);
+					printf("bad size %lu:", dp->di_size);
 				goto unknown;
 			}
 			if (!preen && (dp->di_mode & IFMT) == IFMT &&
@@ -89,7 +91,7 @@ pass1()
 			ndb = howmany(dp->di_size, sblock.fs_bsize);
 			if (ndb < 0) {
 				if (debug)
-					printf("bad size %d ndb %d:",
+					printf("bad size %lu ndb %d:",
 						dp->di_size, ndb);
 				goto unknown;
 			}
@@ -99,7 +101,7 @@ pass1()
 			for (j = ndb; j < NDADDR; j++)
 				if (dp->di_db[j] != 0) {
 					if (debug)
-						printf("bad direct addr: %d\n",
+						printf("bad direct addr: %ld\n",
 							dp->di_db[j]);
 					goto unknown;
 				}
@@ -108,7 +110,7 @@ pass1()
 			for (; j < NIADDR; j++)
 				if (dp->di_ib[j] != 0) {
 					if (debug)
-						printf("bad indirect addr: %d\n",
+						printf("bad indirect addr: %ld\n",
 							dp->di_ib[j]);
 					goto unknown;
 				}
@@ -141,7 +143,7 @@ pass1()
 			(void)ckinode(dp, &idesc);
 			idesc.id_entryno *= btodb(sblock.fs_fsize);
 			if (dp->di_blocks != idesc.id_entryno) {
-				pwarn("INCORRECT BLOCK COUNT I=%u (%ld should be %ld)",
+				pwarn("INCORRECT BLOCK COUNT I=%lu (%ld should be %ld)",
 				    inumber, dp->di_blocks, idesc.id_entryno);
 				if (preen)
 					printf(" (CORRECTED)\n");
@@ -153,7 +155,7 @@ pass1()
 			}
 			continue;
 	unknown:
-			pfatal("UNKNOWN FILE TYPE I=%u", inumber);
+			pfatal("UNKNOWN FILE TYPE I=%lu", inumber);
 			statemap[inumber] = FCLEAR;
 			if (reply("CLEAR") == 1) {
 				statemap[inumber] = USTATE;
@@ -178,7 +180,7 @@ pass1check(idesc)
 	if ((anyout = chkrange(blkno, idesc->id_numfrags)) != 0) {
 		blkerror(idesc->id_number, "BAD", blkno);
 		if (++badblk >= MAXBAD) {
-			pwarn("EXCESSIVE BAD BLKS I=%u",
+			pwarn("EXCESSIVE BAD BLKS I=%lu",
 				idesc->id_number);
 			if (preen)
 				printf(" (SKIPPING)\n");
@@ -196,7 +198,7 @@ pass1check(idesc)
 		} else {
 			blkerror(idesc->id_number, "DUP", blkno);
 			if (++dupblk >= MAXDUP) {
-				pwarn("EXCESSIVE DUP BLKS I=%u",
+				pwarn("EXCESSIVE DUP BLKS I=%lu",
 					idesc->id_number);
 				if (preen)
 					printf(" (SKIPPING)\n");

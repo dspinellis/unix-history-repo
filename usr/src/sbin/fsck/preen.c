@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)preen.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)preen.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -15,9 +15,10 @@ static char sccsid[] = "@(#)preen.c	5.4 (Berkeley) %G%";
 #include <fstab.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <ctype.h>
 
-char	*rawname(), *unrawname(), *blockcheck(), *malloc();
+char	*rawname(), *unrawname(), *blockcheck();
 
 struct part {
 	struct	part *next;		/* forward link of partitions on disk */
@@ -165,7 +166,7 @@ finddisk(name)
 {
 	register struct disk *dk, **dkp;
 	register char *p;
-	int len;
+	size_t len;
 
 	for (p = name + strlen(name) - 1; p >= name; --p)
 		if (isdigit(*p)) {
@@ -185,11 +186,11 @@ finddisk(name)
 		exit (8);
 	}
 	dk = *dkp;
-	if ((dk->name = malloc((unsigned int)len + 1)) == NULL) {
+	if ((dk->name = malloc(len + 1)) == NULL) {
 		fprintf(stderr, "out of memory");
 		exit (8);
 	}
-	strncpy(dk->name, name, len);
+	(void)strncpy(dk->name, name, len);
 	dk->name[len] = '\0';
 	dk->part = NULL;
 	dk->next = NULL;
@@ -215,16 +216,16 @@ addpart(name, fsname, auxdata)
 		exit (8);
 	}
 	pt = *ppt;
-	if ((pt->name = malloc((unsigned int)strlen(name) + 1)) == NULL) {
+	if ((pt->name = malloc(strlen(name) + 1)) == NULL) {
 		fprintf(stderr, "out of memory");
 		exit (8);
 	}
-	strcpy(pt->name, name);
-	if ((pt->fsname = malloc((unsigned int)strlen(fsname) + 1)) == NULL) {
+	(void)strcpy(pt->name, name);
+	if ((pt->fsname = malloc(strlen(fsname) + 1)) == NULL) {
 		fprintf(stderr, "out of memory");
 		exit (8);
 	}
-	strcpy(pt->fsname, fsname);
+	(void)strcpy(pt->fsname, fsname);
 	pt->next = NULL;
 	pt->auxdata = auxdata;
 }
