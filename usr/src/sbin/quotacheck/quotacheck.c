@@ -15,7 +15,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)quotacheck.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)quotacheck.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -104,10 +104,11 @@ main(argc, argv)
 	register struct passwd *pw;
 	register struct group *gr;
 	struct quotaname *auxdata;
-	int i, argnum, maxrun, errs = 0;
+	int i, argnum, maxrun, errs;
 	long done = 0;
 	char ch, *name;
 
+	errs = maxrun = 0;
 	while ((ch = getopt(argc, argv, "aguvl:")) != EOF) {
 		switch(ch) {
 		case 'a':
