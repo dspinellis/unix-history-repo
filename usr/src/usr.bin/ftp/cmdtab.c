@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmdtab.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmdtab.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ftp_var.h"
@@ -149,8 +149,8 @@ struct cmd cmdtab[] = {
 	{ "quote",	quotehelp,	1,	1,	1,	quote },
 	{ "recv",	receivehelp,	1,	1,	1,	get },
 	{ "reget",	regethelp,	1,	1,	1,	reget },
-	{ "remotestatus",rmtstatushelp,	0,	1,	1,	rmtstatus },
-	{ "remotehelp",	remotehelp,	0,	1,	1,	rmthelp },
+	{ "rstatus",	rmtstatushelp,	0,	1,	1,	rmtstatus },
+	{ "rhelp",	remotehelp,	0,	1,	1,	rmthelp },
 	{ "rename",	renamehelp,	0,	1,	1,	renamefile },
 	{ "reset",	resethelp,	0,	1,	1,	reset },
 	{ "restart",	restarthelp,	1,	1,	1,	restart },

@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)ftp.1	6.11 (Berkeley) %G%
+.\"	@(#)ftp.1	6.12 (Berkeley) %G%
 .\"
 .TH FTP 1 "February 23, 1989"
 .UC 5
@@ -244,7 +244,12 @@ is specified, the user's home directory is used.
 .TP
 \fBls\fP [ \fIremote-directory\fP ] [ \fIlocal-file\fP ]
 Print a listing of the contents of a
-directory on the remote machine.  If
+directory on the remote machine.
+The listing includes any system-dependent information that the server
+chooses to include; for example, most UNIX systems will produce
+output from the command \*(lqls -l\*(rq.
+(See also \fBnlist\fP.)
+If
 .I remote-directory
 is left unspecified, the current working directory is used.
 If interactive prompting is on,
@@ -307,7 +312,8 @@ new local directories can be created with `\fB!\fP\ mkdir\ directory'.
 Make a directory on the remote machine.
 .TP
 \fBmls\fP \fIremote-files\fP \fIlocal-file\fP
-Like \fBls\fP, except multiple remote files may be specified.
+Like \fBnlist\fP, except multiple remote files may be specified,
+and the \fIlocal-file\fP must be specified.
 If interactive prompting is on,
 .I ftp
 will prompt the user to verify that the last argument is indeed the
@@ -338,11 +344,11 @@ settings.
 \fBnewer\fP \fIfile-name\fP
 Get the file only if the modification time of the remote file is more
 recent that the file on the current system. If the file does not
-exist on the current syste, the remote file is considered \fInewer\fP.
+exist on the current system, the remote file is considered \fInewer\fP.
 Otherwise, this command is identical to \fBget\fP.
 .TP
 \fBnlist\fP [ \fIremote-directory\fP ] [ \fIlocal-file\fP ]
-Print an abbreviated listing of the contents of a
+Print a  list of the files of a
 directory on the remote machine.  If
 .I remote-directory
 is left unspecified, the current working directory is used.
@@ -836,11 +842,16 @@ command argument.
 Once a match is made, the subsequent .netrc tokens are processed,
 stopping when the end of file is reached or another
 .B machine
+or a
+.B default
 token is encountered.
 .TP
-\fBdefault\fP \fIname\fP
-This is the same as \fBmachine\fP except that \fBdefault\fP always
-matches the machine \fIname\fP. This is normally used as:
+\fBdefault\fP
+This is the same as \fBmachine\fP \fIname\fP except that \fBdefault\fP
+matches any name.
+There can be only one \fBdefault\fP token, and it must be after all
+\fBmachine\fP tokens.
+This is normally used as:
 .ce
 default login anonymous password user@site
 thereby giving the user \fIautomatic\fP anonymous ftp login to
@@ -857,7 +868,8 @@ Supply a password.
 If this token is present, the auto-login process will supply the
 specified string if the remote server requires a password as part
 of the login process.
-Note that if this token is present in the .netrc file,
+Note that if this token is present in the .netrc file for any user other
+than \fIanonymous\fP,
 .I ftp
 will abort the auto-login process if the .netrc is readable by
 anyone besides the user.

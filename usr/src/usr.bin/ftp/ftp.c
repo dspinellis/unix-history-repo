@@ -16,16 +16,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftp.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftp.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
-#include "ftp_var.h"
-
+#include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/time.h>
-#include <sys/param.h>
 #include <sys/file.h>
 
 #include <netinet/in.h>
@@ -38,6 +36,8 @@ static char sccsid[] = "@(#)ftp.c	5.23 (Berkeley) %G%";
 #include <netdb.h>
 #include <fcntl.h>
 #include <pwd.h>
+
+#include "ftp_var.h"
 
 struct	sockaddr_in hisctladdr;
 struct	sockaddr_in data_addr;
@@ -65,9 +65,8 @@ hookup(host, port)
 	hisctladdr.sin_addr.s_addr = inet_addr(host);
 	if (hisctladdr.sin_addr.s_addr != -1) {
 		hisctladdr.sin_family = AF_INET;
-		(void) strcpy(hostnamebuf, host);
-	}
-	else {
+		(void) strncpy(hostnamebuf, host, sizeof(hostnamebuf));
+	} else {
 		hp = gethostbyname(host);
 		if (hp == NULL) {
 			fprintf(stderr, "ftp: %s: ", host);
@@ -78,7 +77,7 @@ hookup(host, port)
 		hisctladdr.sin_family = hp->h_addrtype;
 		bcopy(hp->h_addr_list[0],
 		    (caddr_t)&hisctladdr.sin_addr, hp->h_length);
-		(void) strcpy(hostnamebuf, hp->h_name);
+		(void) strncpy(hostnamebuf, hp->h_name, sizeof(hostnamebuf));
 	}
 	hostname = hostnamebuf;
 	s = socket(hisctladdr.sin_family, SOCK_STREAM, 0);
@@ -167,7 +166,6 @@ login(host)
 
 	user = pass = acct = 0;
 	if (ruserpass(host, &user, &pass, &acct) < 0) {
-		disconnect();
 		code = -1;
 		return(0);
 	}
@@ -283,13 +281,13 @@ getreply(expecteof)
 				case WILL:
 				case WONT:
 					c = getc(cin);
-					fprintf(cout, "%c%c%c",IAC,WONT,c);
+					fprintf(cout, "%c%c%c",IAC,DONT,c);
 					(void) fflush(cout);
 					break;
 				case DO:
 				case DONT:
 					c = getc(cin);
-					fprintf(cout, "%c%c%c",IAC,DONT,c);
+					fprintf(cout, "%c%c%c",IAC,WONT,c);
 					(void) fflush(cout);
 					break;
 				default:
@@ -386,6 +384,8 @@ abortsend()
 	longjmp(sendabort, 1);
 }
 
+#define HASHBYTES 1024
+
 sendrequest(cmd, local, remote)
 	char *cmd, *local, *remote;
 {
@@ -393,7 +393,7 @@ sendrequest(cmd, local, remote)
 	int (*closefunc)(), pclose(), fclose(), (*oldintr)(), (*oldintp)();
 	int abortsend();
 	char buf[BUFSIZ];
-	long bytes = 0, hashbytes = sizeof (buf);
+	long bytes = 0, hashbytes = HASHBYTES;
 	register int c, d;
 	struct stat st;
 	struct timeval start, stop;
@@ -519,11 +519,16 @@ sendrequest(cmd, local, remote)
 				break;
 			bytes += c;
 			if (hash) {
-				(void) putchar('#');
+				while (bytes >= hashbytes) {
+					(void) putchar('#');
+					hashbytes += HASHBYTES;
+				}
 				(void) fflush(stdout);
 			}
 		}
 		if (hash && bytes > 0) {
+			if (bytes < HASHBYTES)
+				(void) putchar('#');
 			(void) putchar('\n');
 			(void) fflush(stdout);
 		}
@@ -542,7 +547,7 @@ sendrequest(cmd, local, remote)
 				while (hash && (bytes >= hashbytes)) {
 					(void) putchar('#');
 					(void) fflush(stdout);
-					hashbytes += sizeof (buf);
+					hashbytes += HASHBYTES;
 				}
 				if (ferror(dout))
 					break;
@@ -623,11 +628,14 @@ recvrequest(cmd, local, remote, mode)
 	FILE *fout, *din = 0, *popen();
 	int (*closefunc)(), pclose(), fclose(), (*oldintr)(), (*oldintp)(); 
 	int abortrecv(), oldverbose, oldtype = 0, is_retr, tcrflag, nfnd;
-	char buf[BUFSIZ], *gunique(), msg;
-	long bytes = 0, hashbytes = sizeof (buf);
+	char *buf, *gunique(), msg;
+	static int bufsize;
+	long bytes = 0, hashbytes = HASHBYTES;
 	struct fd_set mask;
 	register int c, d;
 	struct timeval start, stop;
+	struct stat st;
+	extern char *malloc();
 
 	is_retr = strcmp(cmd, "RETR") == 0;
 	if (proxy && is_retr) {
@@ -769,14 +777,25 @@ recvrequest(cmd, local, remote, mode)
 			goto abort;
 		}
 		closefunc = pclose;
-	}
-	else {
+	} else {
 		fout = fopen(local, mode);
 		if (fout == NULL) {
 			perror(local);
 			goto abort;
 		}
 		closefunc = fclose;
+	}
+	if (fstat(fileno(fout), &st) < 0 || st.st_blksize == 0)
+		st.st_blksize = BUFSIZ;
+	if (st.st_blksize > bufsize) {
+		if (buf)
+			(void) free(buf);
+		buf = malloc(st.st_blksize);
+		if (buf == NULL) {
+			perror("malloc");
+			goto abort;
+		}
+		bufsize = st.st_blksize;
 	}
 	(void) gettimeofday(&start, (struct timezone *)0);
 	switch (type) {
@@ -791,16 +810,21 @@ recvrequest(cmd, local, remote, mode)
 			return;
 		}
 		errno = d = 0;
-		while ((c = read(fileno(din), buf, sizeof (buf))) > 0) {
+		while ((c = read(fileno(din), buf, bufsize)) > 0) {
 			if ((d = write(fileno(fout), buf, c)) != c)
 				break;
 			bytes += c;
 			if (hash) {
-				(void) putchar('#');
+				while (bytes >= hashbytes) {
+					(void) putchar('#');
+					hashbytes += HASHBYTES;
+				}
 				(void) fflush(stdout);
 			}
 		}
 		if (hash && bytes > 0) {
+			if (bytes < HASHBYTES)
+				(void) putchar('#');
 			(void) putchar('\n');
 			(void) fflush(stdout);
 		}
@@ -816,11 +840,12 @@ recvrequest(cmd, local, remote, mode)
 	case TYPE_A:
 		if (restart_point) {
 			register int i, n, c;
+
 			if (fseek(fout, 0L, L_SET) < 0)
 				goto done;
 			n = restart_point;
 			i = 0;
-			while(i++ < n) {
+			while (i++ < n) {
 				if ((c=getc(fout)) == EOF)
 					goto done;
 				if (c == '\n')
@@ -839,30 +864,34 @@ done:
 				while (hash && (bytes >= hashbytes)) {
 					(void) putchar('#');
 					(void) fflush(stdout);
-					hashbytes += sizeof (buf);
+					hashbytes += HASHBYTES;
 				}
 				bytes++;
 				if ((c = getc(din)) != '\n' || tcrflag) {
-					if (ferror (fout))
-						break;
-					(void) putc ('\r', fout);
+					if (ferror(fout))
+						goto break2;
+					(void) putc('\r', fout);
+					if (c == '\0' || c == EOF)
+						goto contin2;
 				}
 			}
-			(void) putc (c, fout);
+			(void) putc(c, fout);
 			bytes++;
+	contin2:	;
 		}
+break2:
 		if (hash) {
 			if (bytes < hashbytes)
 				(void) putchar('#');
 			(void) putchar('\n');
 			(void) fflush(stdout);
 		}
-		if (ferror (din)){
+		if (ferror(din)){
 			if (errno != EPIPE)
 				perror ("netin");
 			bytes = -1;
 		}
-		if (ferror (fout))
+		if (ferror(fout))
 			perror (local);
 		break;
 	}
@@ -946,7 +975,7 @@ abort:
 		lostpeer();
 	}
 	if (din && FD_ISSET(fileno(din), &mask)) {
-		while ((c = read(fileno(din), buf, sizeof (buf))) > 0)
+		while ((c = read(fileno(din), buf, bufsize)) > 0)
 			;
 	}
 	if ((c = getreply(0)) == ERROR && code == 552) { /* needed for nic style abort */
