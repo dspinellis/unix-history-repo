@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_sig.c	7.18 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.19 (Berkeley) %G%
  */
 
 #include "param.h"

@@ -14,13 +14,13 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_exec.c	7.24 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.25 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
 #include "map.h"
-#include "user.h"
+#include "syscontext.h"
 #include "kernel.h"
 #include "proc.h"
 #include "mount.h"
@@ -48,25 +48,34 @@
 /*
  * exec system call, with and without environments.
  */
-struct execa {
-	char	*fname;
-	char	**argp;
-	char	**envp;
-};
-
-execv()
+execv(p, uap, retval)
+	struct proc *p;
+	struct args {
+		char	*fname;
+		char	**argp;
+		char	**envp;
+	} *uap;
+	int *retval;
 {
-	((struct execa *)u.u_ap)->envp = NULL;
-	execve();
+
+	uap->envp = NULL;
+	RETURN (execve(p, uap, retval));
 }
 
-execve()
+/* ARGSUSED */
+execve(p, uap, retval)
+	register struct proc *p;
+	register struct args {
+		char	*fname;
+		char	**argp;
+		char	**envp;
+	} *uap;
+	int *retval;
 {
 	register nc;
 	register char *cp;
 	register struct buf *bp;
 	struct buf *tbp;
-	register struct execa *uap;
 	int na, ne, ucp, ap, cc;
 	unsigned len;
 	int indir, uid, gid;
@@ -86,6 +95,7 @@ execve()
 #ifdef HPUXCOMPAT
 	struct hpux_exec hhead;
 #endif
+	register struct ucred *cred = u.u_cred;
 	register struct nameidata *ndp = &u.u_nd;
 	int resid, error, flags = 0;
 #ifdef SECSIZE
@@ -95,20 +105,19 @@ execve()
   start:
 	ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
 	ndp->ni_segflg = UIO_USERSPACE;
-	ndp->ni_dirp = ((struct execa *)u.u_ap)->fname;
-	if (u.u_error = namei(ndp)) {
-		return;
-	}
+	ndp->ni_dirp = uap->fname;
+	if (error = namei(ndp))
+		RETURN (error);
 	vp = ndp->ni_vp;
 	bno = 0;
 	bp = 0;
 	indir = 0;
-	uid = u.u_cred->cr_uid;
-	gid = u.u_cred->cr_gid;
-	if (u.u_error = VOP_GETATTR(vp, &vattr, u.u_cred))
+	uid = cred->cr_uid;
+	gid = cred->cr_gid;
+	if (error = VOP_GETATTR(vp, &vattr, cred))
 		goto bad;
 	if (vp->v_mount->mnt_flag & MNT_NOEXEC) {
-		u.u_error = EACCES;
+		error = EACCES;
 		goto bad;
 	}
 	if ((vp->v_mount->mnt_flag & MNT_NOSUID) == 0) {
@@ -119,14 +128,13 @@ execve()
 	}
 
   again:
-	if (u.u_error = VOP_ACCESS(vp, VEXEC, u.u_cred))
+	if (error = VOP_ACCESS(vp, VEXEC, cred))
 		goto bad;
-	if ((u.u_procp->p_flag & STRC) &&
-	    (u.u_error = VOP_ACCESS(vp, VREAD, u.u_cred)))
+	if ((p->p_flag & STRC) && (error = VOP_ACCESS(vp, VREAD, cred)))
 		goto bad;
 	if (vp->v_type != VREG ||
 	    (vattr.va_mode & (VEXEC|(VEXEC>>3)|(VEXEC>>6))) == 0) {
-		u.u_error = EACCES;
+		error = EACCES;
 		goto bad;
 	}
 
@@ -145,14 +153,14 @@ execve()
 	 * THE ASCII LINE.
 	 */
 	exdata.ex_shell[0] = '\0';	/* for zero length files */
-	u.u_error = vn_rdwr(UIO_READ, vp, (caddr_t)&exdata, sizeof (exdata),
-	    (off_t)0, UIO_SYSSPACE, (IO_UNIT|IO_NODELOCKED), u.u_cred, &resid);
-	if (u.u_error)
+	error = vn_rdwr(UIO_READ, vp, (caddr_t)&exdata, sizeof (exdata),
+	    (off_t)0, UIO_SYSSPACE, (IO_UNIT|IO_NODELOCKED), cred, &resid);
+	if (error)
 		goto bad;
 #ifndef lint
 	if (resid > sizeof(exdata) - sizeof(exdata.ex_exec) &&
 	    exdata.ex_shell[0] != '#') {
-		u.u_error = ENOEXEC;
+		error = ENOEXEC;
 		goto bad;
 	}
 #endif
@@ -231,7 +239,7 @@ execve()
 		flags |= SPAGV;
 	case NMAGIC:
 		if (exdata.ex_exec.a_text == 0) {
-			u.u_error = ENOEXEC;
+			error = ENOEXEC;
 			goto bad;
 		}
 		break;
@@ -240,12 +248,12 @@ execve()
 		if (exdata.ex_shell[0] != '#' ||
 		    exdata.ex_shell[1] != '!' ||
 		    indir) {
-			u.u_error = ENOEXEC;
+			error = ENOEXEC;
 			goto bad;
 		}
 		for (cp = &exdata.ex_shell[2];; ++cp) {
 			if (cp >= &exdata.ex_shell[MAXINTERP]) {
-				u.u_error = ENOEXEC;
+				error = ENOEXEC;
 				goto bad;
 			}
 			if (*cp == '\n') {
@@ -273,16 +281,16 @@ execve()
 		vput(vp);
 		ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
 		ndp->ni_segflg = UIO_SYSSPACE;
-		if (u.u_error = namei(ndp))
-			return;
+		if (error = namei(ndp))
+			RETURN (error);
 		vp = ndp->ni_vp;
-		if (u.u_error = VOP_GETATTR(vp, &vattr, u.u_cred))
+		if (error = VOP_GETATTR(vp, &vattr, cred))
 			goto bad;
 		bcopy((caddr_t)ndp->ni_dent.d_name, (caddr_t)cfname,
 		    MAXCOMLEN);
 		cfname[MAXCOMLEN] = '\0';
-		uid = u.u_cred->cr_uid;	/* shell scripts can't be setuid */
-		gid = u.u_cred->cr_gid;
+		uid = cred->cr_uid;	/* shell scripts can't be setuid */
+		gid = cred->cr_gid;
 		goto again;
 	}
 	/*
@@ -309,14 +317,13 @@ execve()
 	ne = 0;
 	nc = 0;
 	cc = 0;
-	uap = (struct execa *)u.u_ap;
 #ifdef SECSIZE
 	bno = rmalloc(argmap, (clrnd((int)btoc(NCARGS))) * CLBYTES / argdbsize);
 #else SECSIZE
 	bno = rmalloc(argmap, (long)ctod(clrnd((int)btoc(NCARGS))));
 #endif SECSIZE
 	if (bno == 0) {
-		swkill(u.u_procp, "exec: no swap space");
+		swkill(p, "exec: no swap space");
 		goto bad;
 	}
 	if (bno % CLSIZE)
@@ -353,7 +360,7 @@ execve()
 			break;
 		na++;
 		if (ap == -1) {
-			u.u_error = EFAULT;
+			error = EFAULT;
 			if (bp) {
 				brelse(bp);
 				bp = 0;
@@ -395,7 +402,6 @@ execve()
 			cc -= len;
 		} while (error == ENOENT);
 		if (error) {
-			u.u_error = error;
 			if (bp)
 				brelse(bp);
 			bp = 0;
@@ -406,9 +412,9 @@ execve()
 		bdwrite(bp);
 	bp = 0;
 	nc = (nc + NBPW-1) & ~(NBPW-1);
-	getxfile(vp, &exdata.ex_exec, flags, nc + (na+4)*NBPW,
-	    uid, gid, u.u_cred);
-	if (u.u_error) {
+	error = getxfile(p, vp, &exdata.ex_exec, flags, nc + (na+4)*NBPW,
+	    uid, gid);
+	if (error) {
 badarg:
 		for (cc = 0; cc < nc; cc += CLBYTES) {
 			(void) baddr(argdev_vp, bno + ctod(cc/NBPG),
@@ -484,7 +490,7 @@ badarg:
 	}
 	(void) suword((caddr_t)ap, 0);
 
-	execsigs(u.u_procp);
+	execsigs(p);
 
 	for (nc = u.u_lastfile; nc >= 0; --nc) {
 		if (u.u_pofile[nc] & UF_EXCLOSE) {
@@ -502,11 +508,11 @@ badarg:
 	 */
 	u.u_acflag &= ~AFORK;
 	if (indir)
-		bcopy((caddr_t)cfname, (caddr_t)u.u_procp->p_comm, MAXCOMLEN);
+		bcopy((caddr_t)cfname, (caddr_t)p->p_comm, MAXCOMLEN);
 	else {
 		if (ndp->ni_dent.d_namlen > MAXCOMLEN)
 			ndp->ni_dent.d_namlen = MAXCOMLEN;
-		bcopy((caddr_t)ndp->ni_dent.d_name, (caddr_t)u.u_procp->p_comm,
+		bcopy((caddr_t)ndp->ni_dent.d_name, (caddr_t)p->p_comm,
 		    (unsigned)(ndp->ni_dent.d_namlen + 1));
 	}
 bad:
@@ -521,20 +527,22 @@ bad:
 #endif SECSIZE
 	if (vp)
 		vput(vp);
+	RETURN (error);
 }
 
 /*
  * Read in and set up memory for executed file.
  */
-getxfile(vp, ep, flags, nargc, uid, gid, cred)
+getxfile(p, vp, ep, flags, nargc, uid, gid)
+	register struct proc *p;
 	register struct vnode *vp;
 	register struct exec *ep;
 	int flags, nargc, uid, gid;
-	struct ucred *cred;
 {
-	register struct proc *p = u.u_procp;
 	segsz_t ts, ds, ids, uds, ss;
+	register struct ucred *cred = u.u_cred;
 	off_t toff;
+	int error;
 
 #ifdef HPUXCOMPAT
 	if (ep->a_mid == MID_HPUX)
@@ -542,10 +550,8 @@ getxfile(vp, ep, flags, nargc, uid, gid, cred)
 	else
 #endif
 	toff = sizeof (struct exec);
-	if (vp->v_text && (vp->v_text->x_flag & XTRC)) {
-		u.u_error = ETXTBSY;
-		goto bad;
-	}
+	if (vp->v_text && (vp->v_text->x_flag & XTRC))
+		return (ETXTBSY);
 	if (ep->a_text != 0 && (vp->v_flag & VTEXT) == 0 &&
 	    vp->v_usecount != 1) {
 		register struct file *fp;
@@ -555,8 +561,7 @@ getxfile(vp, ep, flags, nargc, uid, gid, cred)
 			    fp->f_count > 0 &&
 			    (struct vnode *)fp->f_data == vp &&
 			    (fp->f_flag & FWRITE)) {
-				u.u_error = ETXTBSY;
-				goto bad;
+				return (ETXTBSY);
 			}
 		}
 	}
@@ -571,16 +576,17 @@ getxfile(vp, ep, flags, nargc, uid, gid, cred)
 	uds = clrnd(btoc(ep->a_bss));
 	ds = clrnd(btoc(ep->a_data + ep->a_bss));
 	ss = clrnd(SSIZE + btoc(nargc));
-	if (chksize((unsigned)ts, (unsigned)ids, (unsigned)uds, (unsigned)ss))
-		goto bad;
+	if (error =
+	    chksize((unsigned)ts, (unsigned)ids, (unsigned)uds, (unsigned)ss))
+		return (error);
 
 	/*
 	 * Make sure enough space to start process.
 	 */
 	u.u_cdmap = zdmap;
 	u.u_csmap = zdmap;
-	if (swpexpand(ds, ss, &u.u_cdmap, &u.u_csmap) == NULL)
-		goto bad;
+	if (error = swpexpand(ds, ss, &u.u_cdmap, &u.u_csmap))
+		return (error);
 
 	/*
 	 * At this point, we are committed to the new image!
@@ -592,8 +598,8 @@ getxfile(vp, ep, flags, nargc, uid, gid, cred)
 	 */
 	if ((p->p_flag & SVFORK) == 0) {
 #ifdef MAPMEM
-		if (u.u_mmap)
-			mmexec();
+		if (u.u_mmap && (error = mmexec(p)))
+			return (error);
 #endif
 		vrelvm();
 	} else {
@@ -619,7 +625,7 @@ getxfile(vp, ep, flags, nargc, uid, gid, cred)
 	vgetvm(ts, ds, ss);
 
 	if ((flags & SPAGV) == 0)
-		u.u_error = vn_rdwr(UIO_READ, vp,
+		(void) vn_rdwr(UIO_READ, vp,
 			(char *)ctob(dptov(p, 0)),
 			(int)ep->a_data,
 			(off_t)(toff + ep->a_text),
@@ -655,15 +661,15 @@ getxfile(vp, ep, flags, nargc, uid, gid, cred)
 	 * set SUID/SGID protections, if no tracing
 	 */
 	if ((p->p_flag&STRC)==0) {
-		if (uid != u.u_cred->cr_uid || gid != u.u_cred->cr_gid)
-			u.u_cred = crcopy(u.u_cred);
-		u.u_cred->cr_uid = uid;
-		u.u_cred->cr_gid = gid;
+		if (uid != cred->cr_uid || gid != cred->cr_gid)
+			u.u_cred = cred = crcopy(cred);
+		cred->cr_uid = uid;
+		cred->cr_gid = gid;
 		p->p_uid = uid;
 	} else
 		psignal(p, SIGTRAP);
 	p->p_svuid = p->p_uid;
-	p->p_svgid = u.u_cred->cr_gid;
+	p->p_svgid = cred->cr_gid;
 	u.u_tsize = ts;
 	u.u_dsize = ds;
 	u.u_ssize = ss;
@@ -671,6 +677,5 @@ getxfile(vp, ep, flags, nargc, uid, gid, cred)
 #if defined(tahoe)
 	u.u_pcb.pcb_savacc.faddr = (float *)NULL;
 #endif
-bad:
-	return;
+	return (0);
 }

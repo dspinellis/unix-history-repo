@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)sys_generic.c	7.16 (Berkeley) %G%
+ *	@(#)sys_generic.c	7.17 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -34,13 +34,15 @@
 /*
  * Read system call.
  */
-read()
-{
-	register struct a {
+read(p, uap, retval)
+	struct proc *p;
+	register struct args {
 		int	fdes;
 		char	*cbuf;
 		unsigned count;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
 	register struct file *fp;
 	struct uio auio;
 	struct iovec aiov;
@@ -64,7 +66,7 @@ read()
 	/*
 	 * if tracing, save a copy of iovec
 	 */
-	if (KTRPOINT(u.u_procp, KTR_GENIO))
+	if (KTRPOINT(p, KTR_GENIO))
 		ktriov = aiov;
 #endif
 	cnt = uap->count;
@@ -74,20 +76,25 @@ read()
 			error = 0;
 	cnt -= auio.uio_resid;
 #ifdef KTRACE
-	if (KTRPOINT(u.u_procp, KTR_GENIO) && error == 0)
-		ktrgenio(u.u_procp->p_tracep, uap->fdes, UIO_READ, &ktriov, cnt);
+	if (KTRPOINT(p, KTR_GENIO) && error == 0)
+		ktrgenio(p->p_tracep, uap->fdes, UIO_READ, &ktriov, cnt);
 #endif
-	u.u_r.r_val1 = cnt;
+	*retval = cnt;
 	RETURN (error);
 }
 
-readv()
-{
-	register struct a {
+/*
+ * Scatter read system call.
+ */
+readv(p, uap, retval)
+	struct proc *p;
+	register struct args {
 		int	fdes;
 		struct	iovec *iovp;
 		unsigned iovcnt;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
 	register struct file *fp;
 	struct uio auio;
 	register struct iovec *iov;
@@ -132,7 +139,7 @@ readv()
 	/*
 	 * if tracing, save a copy of iovec
 	 */
-	if (KTRPOINT(u.u_procp, KTR_GENIO))  {
+	if (KTRPOINT(p, KTR_GENIO))  {
 		unsigned iovlen = auio.uio_iovcnt * sizeof (struct iovec);
 
 		MALLOC(ktriov, struct iovec *, iovlen, M_TEMP, M_WAITOK);
@@ -148,12 +155,11 @@ readv()
 #ifdef KTRACE
 	if (ktriov != NULL) {
 		if (error == 0)
-			ktrgenio(u.u_procp->p_tracep, uap->fdes, UIO_READ, 
-				ktriov, cnt);
+			ktrgenio(p->p_tracep, uap->fdes, UIO_READ, ktriov, cnt);
 		FREE(ktriov, M_TEMP);
 	}
 #endif
-	u.u_r.r_val1 = cnt;
+	*retval = cnt;
 done:
 	if (uap->iovcnt > UIO_SMALLIOV)
 		FREE(iov, M_IOV);
@@ -163,13 +169,15 @@ done:
 /*
  * Write system call
  */
-write()
-{
-	register struct a {
+write(p, uap, retval)
+	struct proc *p;
+	register struct args {
 		int	fdes;
 		char	*cbuf;
 		unsigned count;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
 	register struct file *fp;
 	struct uio auio;
 	struct iovec aiov;
@@ -193,7 +201,7 @@ write()
 	/*
 	 * if tracing, save a copy of iovec
 	 */
-	if (KTRPOINT(u.u_procp, KTR_GENIO))
+	if (KTRPOINT(p, KTR_GENIO))
 		ktriov = aiov;
 #endif
 	cnt = uap->count;
@@ -202,25 +210,30 @@ write()
 		    error == EINTR || error == EWOULDBLOCK))
 			error = 0;
 		if (error == EPIPE)
-			psignal(u.u_procp, SIGPIPE);
+			psignal(p, SIGPIPE);
 	}
 	cnt -= auio.uio_resid;
 #ifdef KTRACE
-	if (KTRPOINT(u.u_procp, KTR_GENIO) && error == 0)
-		ktrgenio(u.u_procp->p_tracep, uap->fdes, UIO_WRITE,
+	if (KTRPOINT(p, KTR_GENIO) && error == 0)
+		ktrgenio(p->p_tracep, uap->fdes, UIO_WRITE,
 		    &ktriov, cnt);
 #endif
-	u.u_r.r_val1 = cnt;
+	*retval = cnt;
 	RETURN (error);
 }
 
-writev()
-{
-	register struct a {
+/*
+ * Gather write system call
+ */
+writev(p, uap, retval)
+	struct proc *p;
+	register struct args {
 		int	fdes;
 		struct	iovec *iovp;
 		unsigned iovcnt;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
 	register struct file *fp;
 	struct uio auio;
 	register struct iovec *iov;
@@ -265,7 +278,7 @@ writev()
 	/*
 	 * if tracing, save a copy of iovec
 	 */
-	if (KTRPOINT(u.u_procp, KTR_GENIO))  {
+	if (KTRPOINT(p, KTR_GENIO))  {
 		unsigned iovlen = auio.uio_iovcnt * sizeof (struct iovec);
 
 		MALLOC(ktriov, struct iovec *, iovlen, M_TEMP, M_WAITOK);
@@ -278,18 +291,18 @@ writev()
 		    error == EINTR || error == EWOULDBLOCK))
 			error = 0;
 		if (error == EPIPE)
-			psignal(u.u_procp, SIGPIPE);
+			psignal(p, SIGPIPE);
 	}
 	cnt -= auio.uio_resid;
 #ifdef KTRACE
 	if (ktriov != NULL) {
 		if (error == 0)
-			ktrgenio(u.u_procp->p_tracep, uap->fdes, UIO_WRITE,
+			ktrgenio(p->p_tracep, uap->fdes, UIO_WRITE,
 				ktriov, cnt);
 		FREE(ktriov, M_TEMP);
 	}
 #endif
-	u.u_r.r_val1 = cnt;
+	*retval = cnt;
 done:
 	if (uap->iovcnt > UIO_SMALLIOV)
 		FREE(iov, M_IOV);
@@ -299,14 +312,17 @@ done:
 /*
  * Ioctl system call
  */
-ioctl()
-{
-	register struct file *fp;
-	struct a {
+/* ARGSUSED */
+ioctl(p, uap, retval)
+	struct proc *p;
+	register struct args {
 		int	fdes;
 		int	cmd;
 		caddr_t	cmarg;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
+	register struct file *fp;
 	register int com, error;
 	register u_int size;
 	caddr_t memp = 0;
@@ -399,13 +415,15 @@ int	nselcoll;
 /*
  * Select system call.
  */
-select()
-{
-	register struct uap  {
+select(p, uap, retval)
+	register struct proc *p;
+	register struct args {
 		int	nd;
 		fd_set	*in, *ou, *ex;
 		struct	timeval *tv;
-	} *uap = (struct uap *)u.u_ap;
+	} *uap;
+	int *retval;
+{
 	fd_set ibits[3], obits[3];
 	struct timeval atv;
 	int s, ncoll, ni, error = 0, timo;
@@ -443,11 +461,11 @@ select()
 		timo = 0;
 retry:
 	ncoll = nselcoll;
-	u.u_procp->p_flag |= SSEL;
-	u.u_r.r_val1 = selscan(ibits, obits, uap->nd, &error);
+	p->p_flag |= SSEL;
+	error = selscan(ibits, obits, uap->nd, retval);
 	if (error == 0)
 		error = u.u_error;		/* XXX */
-	if (error || u.u_r.r_val1)
+	if (error || *retval)
 		goto done;
 	s = splhigh();
 	/* this should be timercmp(&time, &atv, >=) */
@@ -456,17 +474,17 @@ retry:
 		splx(s);
 		goto done;
 	}
-	if ((u.u_procp->p_flag & SSEL) == 0 || nselcoll != ncoll) {
+	if ((p->p_flag & SSEL) == 0 || nselcoll != ncoll) {
 		splx(s);
 		goto retry;
 	}
-	u.u_procp->p_flag &= ~SSEL;
+	p->p_flag &= ~SSEL;
 	error = tsleep((caddr_t)&selwait, PSOCK | PCATCH, "select", timo);
 	splx(s);
 	if (error == 0)
 		goto retry;
 done:
-	u.u_procp->p_flag &= ~SSEL;
+	p->p_flag &= ~SSEL;
 	/* select is not restarted after signals... */
 	if (error == ERESTART)
 		error = EINTR;
@@ -488,15 +506,15 @@ done:
 	RETURN (error);
 }
 
-selscan(ibits, obits, nfd, errp)
+selscan(ibits, obits, nfd, retval)
 	fd_set *ibits, *obits;
-	int nfd, *errp;
+	int nfd, *retval;
 {
 	register int which, i, j;
 	register fd_mask bits;
 	int flag;
 	struct file *fp;
-	int n = 0;
+	int error = 0, n = 0;
 
 	for (which = 0; which < 3; which++) {
 		switch (which) {
@@ -516,7 +534,7 @@ selscan(ibits, obits, nfd, errp)
 				bits &= ~(1 << j);
 				fp = u.u_ofile[i + j];
 				if (fp == NULL) {
-					*errp = EBADF;
+					error = EBADF;
 					break;
 				}
 				if ((*fp->f_ops->fo_select)(fp, flag)) {
@@ -526,7 +544,8 @@ selscan(ibits, obits, nfd, errp)
 			}
 		}
 	}
-	return (n);
+	*retval = n;
+	return (error);
 }
 
 /*ARGSUSED*/
