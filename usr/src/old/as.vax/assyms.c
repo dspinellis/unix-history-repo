@@ -2,7 +2,7 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)assyms.c 4.12 %G%";
+static char sccsid[] = "@(#)assyms.c 4.13 %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -393,7 +393,6 @@ struct symtab **lookup(instflg)
 	static	struct	symtab	**emptyslot;
 	static 	struct	hashdallop *emptyhd;
 	static	struct	symtab	**hp_ub;
-	static	struct	strdesc	strdp;
 
 	emptyslot = 0;
 	for (nprobes = 0, from = yytext;
@@ -443,44 +442,57 @@ struct symtab **lookup(instflg)
 		hdallop->h_nused++;
 		for (from = yytext, len = 0; *from++; len++)
 			continue;
-		/*
-		 *	save string and trailing null, both
-		 *	internally, and in the string temporary file
-		 */
-		strdp.sd_stroff = strfilepos;
-		strdp.sd_place = STR_BOTH;
-		strdp.sd_strlen = len + 1;	/* length and null */
-		fputs(yytext, strfile);		/* string */
-		putc(0, strfile);		/* null */
-		strfilepos += strdp.sd_strlen;
-		(*hp)->s_name = (char *)savestr(yytext, &strdp);
+		(*hp)->s_name = (char *)savestr(yytext, len + 1, STR_BOTH);
 	}
 	return(hp);
 }	/*end of lookup*/
 /*
- *	save a string str, descriptor strdp, in the string pool
+ *	save a string str with len in the places indicated by place
  */
-struct strdesc *savestr(str, strdp)
+struct strdesc *savestr(str, len, place)
 	char	*str;
-	struct	strdesc	*strdp;
+	int	len;
+	int	place;
 {
 	reg	struct	strdesc	*res;
 		int	tlen;
-
+	/*
+	 *	Compute the total length of the record to live in core
+	 */
 	tlen = sizeof(struct strdesc) - sizeof(res->sd_string);
-	if (strdp->sd_place & STR_FILE)
-		tlen += strdp->sd_strlen;
-
+	if (place & STR_CORE)
+		tlen += len;
+	/*
+	 *	See if there is enough space for the record,
+	 *	and allocate the record.
+	 */
 	if (tlen >= (STRPOOLDALLOP - strplhead->str_nalloc))
 		strpoolalloc();
 	res = (struct strdesc *)(strplhead->str_names + strplhead->str_nalloc);
-	res[0] = *strdp;
-	if (strdp->sd_place & STR_FILE)
-		movestr(res[0].sd_string, str, strdp->sd_strlen);
+	/*
+	 *	Save the string information that is always present
+	 */
+	res->sd_stroff = strfilepos;
+	res->sd_strlen = len;
+	res->sd_place = place;
+	/*
+	 *	Now, save the string itself.  If str is null, then
+	 *	the characters have already been dumped to the file
+	 */
+	if ((place & STR_CORE) && str)
+		movestr(res[0].sd_string, str, len);
+	if (place & STR_FILE){
+		if (str){
+			fwrite(str, 1, len, strfile);
+		}
+		strfilepos += len;
+	}
+	/*
+	 *	Adjust the in core string pool size
+	 */
 	strplhead->str_nalloc += tlen;
 	return(res);
 }
-
 /*
  *	The relocation information is saved internally in an array of
  *	lists of relocation buffers.  The relocation buffers are

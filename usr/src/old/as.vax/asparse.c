@@ -2,7 +2,7 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)asparse.c 4.16 %G%";
+static char sccsid[] = "@(#)asparse.c 4.17 %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -666,12 +666,7 @@ restlab:
 		stringp->sd_strlen += 1;
 		shiftover(CM);
 	} else {
-		static char nullstr[1];
-		static	struct	strdesc strdp;
-		strdp.sd_stroff = strfilepos;
-		strdp.sd_strlen = 0;
-		strdp.sd_place = STR_BOTH;
-		stpt->s_name = (char *)savestr(nullstr, &strdp);
+		stpt->s_name = (char *)savestr("\0", 0, STR_BOTH);
 	}
 	goto tailstab;
 	break;
