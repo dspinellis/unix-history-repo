@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)inline.h	1.5 (Berkeley) %G%
+ *	@(#)inline.h	1.6 (Berkeley) %G%
  */
 
 /*
@@ -60,6 +60,8 @@ struct pats {
 };
 struct pats *patshdr[HSHSIZ];
 extern struct pats language_ptab[], libc_ptab[], machine_ptab[];
+extern struct pats vax_libc_ptab[], vaxsubset_libc_ptab[];
+extern struct pats vax_ptab[], vaxsubset_ptab[];
 
 /*
  * This table defines the set of instructions that demark the
