@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)docmd.c	4.2 (Berkeley) 83/09/27";
+static	char *sccsid = "@(#)docmd.c	4.3 (Berkeley) 83/10/10";
 #endif
 
 #include "defs.h"
@@ -13,7 +13,7 @@ dohcmds(files, hosts, cmds)
 	struct block *files, *hosts, *cmds;
 {
 	register struct block *h, *f, *c;
-	register char *cp, **cpp;
+	register char **cpp;
 	int n, ddir;
 
 	if (debug)
@@ -53,10 +53,7 @@ dohcmds(files, hosts, cmds)
 			n = 0;
 			for (c = cmds; c != NULL; c = c->b_next)
 				if (c->b_type == INSTALL) {
-					install(f->b_name, c->b_name, ddir, 0);
-					n++;
-				} else if (c->b_type == VERIFY) {
-					install(f->b_name, c->b_name, ddir, 1);
+					install(f->b_name, c->b_name, ddir, c->b_options);
 					n++;
 				}
 			if (n == 0)
@@ -112,23 +109,25 @@ makeconn(rhost)
 	return(1);
 }
 
-extern char target[], *tp;
-
 /*
  * Update the file(s) if they are different.
  * destdir = 1 if destination should be a directory
  * (i.e., more than one source is being copied to the same destination).
  */
-install(src, dest, destdir, verify)
+install(src, dest, destdir, options)
 	char *src, *dest;
-	int destdir, verify;
+	int destdir, options;
 {
+	register char *cp;
+
 	if (exclude(src))
 		return;
 
-	if (nflag) {
-		printf("%s %s %s\n", verify ? "verify" : "install", src, dest);
-		return;
+	if (nflag || debug) {
+		printf("%s%s %s %s\n", options & VERIFY ? "verify" : "install",
+			options & WHOLE ? " -w" : "", src, dest);
+		if (nflag)
+			return;
 	}
 	/*
 	 * Pass the destination file/directory name to remote.
@@ -137,8 +136,10 @@ install(src, dest, destdir, verify)
 	if (debug)
 		printf("buf = %s", buf);
 	(void) write(rem, buf, strlen(buf));
-	tp = NULL;
-	sendf(src, verify);
+
+	if (!destdir && (options & WHOLE))
+		options |= STRIP;
+	sendf(src, NULL, options);
 }
 
 struct tstamp {
@@ -147,6 +148,8 @@ struct tstamp {
 } ts[NSTAMPS];
 
 int	nstamps;
+
+extern char target[], *tp;
 
 /*
  * Process commands for comparing files to time stamp files.
@@ -159,7 +162,6 @@ dofcmds(files, stamps, cmds)
 	register char **cpp;
 	struct stat stb;
 	extern char *tmpinc;
-	int n;
 
 	if (debug)
 		printf("dofcmds()\n");
@@ -204,11 +206,11 @@ dofcmds(files, stamps, cmds)
 		cmptime(b->b_name);
 	}
 	if (!nflag && !vflag)
-		for (t = ts; t < &ts[n]; t++)
+		for (t = ts; t < &ts[nstamps]; t++)
 			if (t->tfp != NULL)
 				(void) fclose(t->tfp);
 	*tmpinc = 'A';
-	while (n--) {
+	while (nstamps--) {
 		for (b = cmds; b != NULL; b = b->b_next)
 			if (b->b_type == NOTIFY)
 				notify(tmpfile, NULL, b->b_args);
@@ -308,8 +310,8 @@ rcmptime(st)
 /*
  * Notify the list of people the changes that were made.
  */
-notify(file, host, to)
-	char *file, *host;
+notify(file, rhost, to)
+	char *file, *rhost;
 	register struct block *to;
 {
 	register int fd, len;
@@ -320,8 +322,8 @@ notify(file, host, to)
 		return;
 	if (!qflag) {
 		printf("notify ");
-		if (host)
-			printf("@%s ", host);
+		if (rhost)
+			printf("@%s ", rhost);
 		prnames(to);
 	}
 	if (nflag)
@@ -344,22 +346,26 @@ notify(file, host, to)
 	 * Create a pipe to mailling program.
 	 */
 	pf = popen(MAILCMD, "w");
-	if (pf == NULL)
-		fatal("notify: \"%s\" failed\n", MAILCMD);
+	if (pf == NULL) {
+		error("notify: \"%s\" failed\n", MAILCMD);
+		(void) close(fd);
+		return;
+	}
 	/*
 	 * Output the proper header information.
 	 */
 	fprintf(pf, "From: rdist (Remote distribution program)\n");
 	fprintf(pf, "To:");
 	while (to != NULL) {
-		if (!any('@', to->b_name))
-			fprintf(pf, " %s@%s", to->b_name, host);
+		if (!any('@', to->b_name) && host != NULL)
+			fprintf(pf, " %s@%s", to->b_name, rhost);
 		else
 			fprintf(pf, " %s", to->b_name);
 		to = to->b_next;
 	}
 	putc('\n', pf);
-	fprintf(pf, "Subject: files updated by rdist\n");
+	fprintf(pf, "Subject: files updated by rdist from %s to %s\n",
+		host, rhost);
 	putc('\n', pf);
 
 	while ((len = read(fd, buf, BUFSIZ)) > 0)

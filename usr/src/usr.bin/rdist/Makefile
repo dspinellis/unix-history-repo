@@ -1,4 +1,4 @@
-#	Makefile	4.1	83/09/07
+#	Makefile	4.3	83/10/10
 
 DESTDIR=
 SRCS =	docmd.c expand.c gram.y lookup.c main.c server.c

@@ -1,4 +1,4 @@
-/*	defs.h	4.2	83/09/27	*/
+/*	defs.h	4.3	83/10/10	*/
 
 #include <stdio.h>
 #include <ctype.h>
@@ -12,7 +12,7 @@
 #include <sys/time.h>
 #include <netinet/in.h>
 
-#define	MAILCMD		"/usr/lib/sendmail -i -t"
+#define	MAILCMD		"/usr/lib/sendmail -oi -t"
 
 	/* defines for yacc */
 #define EQUAL 1
@@ -22,10 +22,9 @@
 #define DCOLON 5
 #define NAME 6
 #define INSTALL 7
-#define VERIFY 8
-#define NOTIFY 9
-#define EXCEPT 10
-
+#define NOTIFY 8
+#define EXCEPT 9
+#define OPTION 10
 #define VAR 11
 
 	/* lexical definitions */
@@ -39,11 +38,17 @@
 #define GAVSIZ NCARGS / 6
 #define NSTAMPS 15
 
+	/* option flags */
+#define VERIFY 1
+#define WHOLE 2
+#define YOUNGER 4
+#define STRIP 8
 
 #define ALLOC(x) (struct x *) malloc(sizeof(struct x))
 
 struct block {
-	int	b_type;
+	short	b_type;
+	short	b_options;
 	char	*b_name;
 	struct	block *b_next;
 	struct	block *b_args;
@@ -71,5 +76,6 @@ extern char *sys_errlist[];
 struct block *lookup();
 struct block *makeblock();
 struct block *expand();
+char *malloc();
 char *rindex();
 char *index();
