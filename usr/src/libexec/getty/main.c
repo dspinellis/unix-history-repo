@@ -12,20 +12,23 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #define USE_OLD_TTY
 
 #include <sys/param.h>
-#include <sys/signal.h>
-#include <sys/file.h>
+#include <sys/stat.h>
+#include <signal.h>
+#include <fcntl.h>
 #include <sgtty.h>
+#include <time.h>
 #include <ctype.h>
 #include <setjmp.h>
 #include <syslog.h>
 #include <unistd.h>
 #include <ctype.h>
+#include <stdlib.h>
 #include <string.h>
 #include "gettytab.h"
 #include "pathnames.h"
@@ -86,6 +89,7 @@ char partab[] = {
 
 jmp_buf timeout;
 
+static void
 dingdong()
 {
 
@@ -96,6 +100,7 @@ dingdong()
 
 jmp_buf	intrupt;
 
+static void
 interrupt()
 {
 
@@ -426,7 +431,7 @@ putf(cp)
 {
 	extern char editedhost[];
 	time_t t;
-	char *fmt, *slash, db[100];
+	char *slash, db[100];
 
 	while (*cp) {
 		if (*cp != '%') {
@@ -447,14 +452,15 @@ putf(cp)
 			puts(editedhost);
 			break;
 
-		case 'd':
+		case 'd': {
+			char fmt[] = "%l:% %P on %A, %d %B %Y";
+
+			fmt[4] = 'M';		/* I *hate* SCCS... */
 			(void)time(&t);
-						/* SCCS *likes* main.c... */
-			fmt = "%l:% %P on %A, %d %B %Y";
-			fmt[4] = 'M';
-			(void)strftime(db, sizeof(db), fmt, &t);
+			(void)strftime(db, sizeof(db), fmt, localtime(&t));
 			puts(db);
 			break;
+		}
 
 		case '%':
 			putchr('%');
