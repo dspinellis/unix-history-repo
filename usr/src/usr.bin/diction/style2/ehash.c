@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ehash.c	4.1	(Berkeley)	82/11/06";
+static char sccsid[] = "@(#)ehash.c	4.2	(Berkeley)	82/11/06";
 #endif not lint
 
 #
