@@ -6,14 +6,20 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lib.c	4.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)lib.c	4.10 (Berkeley) %G%";
 #endif /* not lint */
 
+#ifdef __STDC__
 #include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
 #include "stdio.h"
 #include "awk.def"
 #include "awk.h"
 #include "ctype.h"
+
+int	error __P((int, const char *, ...));
 
 extern FILE	*yyin;	/* lex input file */
 extern char	*lexprog;	/* points to program argument if it exists */
@@ -223,13 +229,23 @@ yyerror(s) char *s; {
 	errorflag = 2;
 }
 
-error(isfatal, fmt)
+int
+#ifdef __STDC__
+error(int isfatal, const char *fmt, ...)
+#else
+error(isfatal, fmt, va_alist)
 	int isfatal;
 	char *fmt;
+	va_dcl
+#endif
 {
 	va_list ap;
 
+#ifdef __STDC__
 	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
 	(void)fprintf(stderr, "awk: ");
 	(void)vfprintf(stderr, fmt, ap);
 	va_end(ap);
