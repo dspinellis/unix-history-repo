@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: st.c 1.8 90/10/14$
  *
- *      @(#)st.c	7.5 (Berkeley) %G%
+ *      @(#)st.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -64,9 +64,8 @@
 #include "device.h"
 #include "stvar.h"
 
-/*
 #define ADD_DELAY
-*/
+
 extern int scsi_test_unit_rdy();
 extern int scsi_request_sense();
 extern int scsiustart();
@@ -169,7 +168,7 @@ int st_dmaoddretry = 0;
  * Use 0x400 for 1k (best capacity) fixed length records.
  * In st_open, if minor bit 4 set then 1k records are used.
  * If st_exblken is set to anything other then 0 we are in fixed length mode.
- * Minor bit 4 overrides any setting of st_exblklen.
+ * Minor bit 5 requests 1K fixed-length, overriding any setting of st_exblklen.
  * 
  */
 int st_exblklen = 0;
@@ -474,8 +473,6 @@ stopen(dev, flag, type, p)
 	 */
 
 	switch (sc->sc_tapeid) {
-	case MT_ISMFOUR:
-		break;
 	case MT_ISAR:
 		if (minor(dev) & STDEV_HIDENSITY)
 			msd.density = 0x5;
@@ -503,6 +500,8 @@ stopen(dev, flag, type, p)
 		if (minor(dev) & STDEV_HIDENSITY)
 			uprintf("Only one density supported\n");
 		break;
+	case MT_ISMFOUR:
+		break;		/* XXX could do density select? */
 	default:
 		uprintf("Unsupported drive\n");
 		return(EIO);
@@ -672,10 +671,14 @@ stclose(dev, flag)
 
 	if ((sc->sc_flags & (STF_WMODE|STF_WRTTN)) == (STF_WMODE|STF_WRTTN)) {
 		/*
-		 * XXX driver only supports cartridge tapes.
 		 * Cartridge tapes don't do double EOFs on EOT.
+		 * We assume that variable-block devices use double EOF.
 		 */
 		stcommand(dev, MTWEOF, 1); 
+		if (sc->sc_blklen == 0) {
+			stcommand(dev, MTWEOF, 1); 
+			stcommand(dev, MTBSR, 1); 
+		}
 		hit++;
 	}
 	if ((minor(dev) & STDEV_NOREWIND) == 0) {
@@ -1001,7 +1004,7 @@ stintr(unit, stat)
 			}
 			/*
 			 * Variable length but read more than requested,
-			 * an error.
+			 * an error.  (XXX ??? wrong for 9 track?)
 			 */
 			if (bp->b_resid < 0) {
 				bp->b_resid = 0;
@@ -1013,9 +1016,7 @@ stintr(unit, stat)
 			 * Variable length and odd, may require special
 			 * handling.
 			 */
-			if (bp->b_resid & 1
-			   && (sc->sc_tapeid != MT_ISAR 
-			      || sc->sc_tapeid != MT_ISMFOUR)) {
+			if (bp->b_resid & 1 && (sc->sc_tapeid != MT_ISAR)) {
 				/*
 				 * Normal behavior, treat as an error.
 				 */
