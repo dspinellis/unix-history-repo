@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)route.c	4.8 (Berkeley) 83/08/21";
+static char sccsid[] = "@(#)route.c	4.9 (Berkeley) 84/05/11";
 #endif
 
 #include <sys/types.h>
@@ -130,20 +130,28 @@ routename(in)
 {
 	char *cp = 0;
 	static char line[50];
-	int lna, net;
+	struct hostent *hp;
+	struct netent *np;
+	int lna, net, subnet;
 
 	net = inet_netof(in);
+	subnet = inet_subnetof(in);
 	lna = inet_lnaof(in);
 	if (lna == INADDR_ANY) {
-		struct netent *np = getnetbyaddr(net, AF_INET);
-
+		np = getnetbyaddr(net, AF_INET);
 		if (np)
 			cp = np->n_name;
-	} else {
-		struct hostent *hp;
+		else if (net == 0)
+			cp = "default";
+	} else if ((subnet != net) && ((lna & 0xff) == 0) &&
+	    (np = getnetbyaddr(subnet, AF_INET))) {
+		struct in_addr subnaddr, inet_makeaddr();
 
-		hp = gethostbyaddr(&in, sizeof (struct in_addr),
-			AF_INET);
+		subnaddr = inet_makeaddr(subnet, INADDR_ANY);
+		if (bcmp(&in, &subnaddr, sizeof(in)) == 0)
+			cp = np->n_name;
+	} else {
+		hp = gethostbyaddr(&in, sizeof (struct in_addr), AF_INET);
 		if (hp)
 			cp = hp->h_name;
 	}
@@ -166,19 +174,28 @@ newroute(argc, argv)
 {
 	struct sockaddr_in *sin;
 	char *cmd;
+	int ishost;
 
-	if (argc < 3 || argc > 4) {
-		printf("usage: %s destination gateway [ metric ]\n", argv[0]);
-		return;
-	}
 	cmd = argv[0];
-	getaddr(argv[1], &route.rt_dst);
-	getaddr(argv[2], &route.rt_gateway);
+	if (*cmd == 'a') {
+		if (argc != 4) {
+			printf("usage: %s destination gateway metric\n", cmd);
+			printf("(metric of 0 if gateway is this host)\n");
+			return;
+		}
+	} else {
+		if (argc != 3) {
+			printf("usage: %s destination gateway\n", cmd);
+			return;
+		}
+	}
+	ishost = getaddr(argv[1], &route.rt_dst);
+	(void) getaddr(argv[2], &route.rt_gateway);
 	sin = (struct sockaddr_in *)&route.rt_dst;
 	route.rt_flags = RTF_UP;
-	if (inet_lnaof(sin->sin_addr) != 0)
+	if (ishost)
 		route.rt_flags |= RTF_HOST;
-	if (argc > 3 && atoi(argv[3]) > 0)
+	if (atoi(argv[3]) > 0)
 		route.rt_flags |= RTF_GATEWAY;
 	printf("%s %s: gateway ", cmd, routename(sin->sin_addr));
 	sin = (struct sockaddr_in *)&route.rt_gateway;
@@ -209,6 +226,10 @@ error(cmd)
 		perror(cmd);
 }
 
+/*
+ * Interpret an argument as a network address of some kind,
+ * returning 1 if a host address, 0 if a network address.
+ */
 getaddr(s, sin)
 	char *s;
 	struct sockaddr_in *sin;
@@ -220,31 +241,59 @@ getaddr(s, sin)
 	if (strcmp(s, "default") == 0) {
 		sin->sin_family = AF_INET;
 		sin->sin_addr = inet_makeaddr(0, INADDR_ANY);
-		return;
+		return(0);
 	}
 	hp = gethostbyname(s);
 	if (hp) {
 		sin->sin_family = hp->h_addrtype;
 		bcopy(hp->h_addr, &sin->sin_addr, hp->h_length);
-		return;
+		return(1);
 	}
 	np = getnetbyname(s);
 	if (np) {
 		sin->sin_family = np->n_addrtype;
 		sin->sin_addr = inet_makeaddr(np->n_net, INADDR_ANY);
-		return;
+		return(0);
 	}
 	sin->sin_family = AF_INET;
 	val = inet_addr(s);
 	if (val != -1) {
 		sin->sin_addr.s_addr = val;
-		return;
+		return(inet_lnaof(sin->sin_addr) != INADDR_ANY);
 	}
 	val = inet_network(s);
 	if (val != -1) {
 		sin->sin_addr = inet_makeaddr(val, INADDR_ANY);
-		return;
+		return(0);
 	}
 	fprintf(stderr, "%s: bad value\n", s);
 	exit(1);
+}
+
+/*
+ * Return the possible subnetwork number from an internet address.
+ * If the address is of the form of a subnet address (most significant
+ * bit of the host part is set), believe the subnet exists.
+ * Otherwise, return the network number.
+ * SHOULD FIND OUT WHETHER THIS IS A LOCAL NETWORK BEFORE LOOKING
+ * INSIDE OF THE HOST PART.  We can only believe this if we have other
+ * information (e.g., we can find a name for this number).
+ */
+inet_subnetof(in)
+	struct in_addr in;
+{
+	register u_long i = ntohl(in.s_addr);
+
+	if (IN_CLASSA(i)) {
+		if (IN_SUBNETA(i))
+			return ((i & IN_CLASSA_SUBNET) >> IN_CLASSA_SUBNSHIFT);
+		else
+			return ((i & IN_CLASSA_NET) >> IN_CLASSA_NSHIFT);
+	} else if (IN_CLASSB(i)) {
+		if (IN_SUBNETB(i))
+			return ((i & IN_CLASSB_SUBNET) >> IN_CLASSB_SUBNSHIFT);
+		else
+			return ((i & IN_CLASSB_NET) >> IN_CLASSB_NSHIFT);
+	} else
+		return ((i & IN_CLASSC_NET) >> IN_CLASSC_NSHIFT);
 }
