@@ -6,35 +6,40 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)daemon.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)daemon.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
-#include <sys/fcntl.h>
-#include <unistd.h>
+#include <fcntl.h>
 #include <paths.h>
+#include <unistd.h>
 
+int
 daemon(nochdir, noclose)
 	int nochdir, noclose;
 {
-	int cpid;
+	int fd;
 
-	if ((cpid = fork()) == -1)
+	switch (fork()) {
+	case -1:
 		return (-1);
-	if (cpid)
-		exit(0);
-	(void) setsid();
-	if (!nochdir)
-		(void) chdir("/");
-	if (!noclose) {
-		int devnull = open(_PATH_DEVNULL, O_RDWR, 0);
+	case 0:
+		break;
+	default:
+		_exit(0);
+	}
 
-		if (devnull != -1) {
-			(void) dup2(devnull, STDIN_FILENO);
-			(void) dup2(devnull, STDOUT_FILENO);
-			(void) dup2(devnull, STDERR_FILENO);
-			if (devnull > 2)
-				(void) close(devnull);
-		}
+	if (setsid() == -1)
+		return (-1);
+
+	if (!nochdir)
+		(void)chdir("/");
+
+	if (!noclose && (fd = open(_PATH_DEVNULL, O_RDWR, 0)) != -1) {
+		(void)dup2(fd, STDIN_FILENO);
+		(void)dup2(fd, STDOUT_FILENO);
+		(void)dup2(fd, STDERR_FILENO);
+		if (fd > 2)
+			(void)close (fd);
 	}
 	return (0);
 }
