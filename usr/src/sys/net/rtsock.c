@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rtsock.c	7.22 (Berkeley) %G%
+ *	@(#)rtsock.c	7.23 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -19,8 +19,6 @@
 #include "if.h"
 #include "route.h"
 #include "raw_cb.h"
-
-#include "machine/mtpr.h"
 
 struct sockaddr route_dst = { 2, PF_ROUTE, };
 struct sockaddr route_src = { 2, PF_ROUTE, };

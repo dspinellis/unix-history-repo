@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_sl.c	7.25 (Berkeley) %G%
+ *	@(#)if_sl.c	7.26 (Berkeley) %G%
  */
 
 /*
@@ -52,11 +52,13 @@
 #include "tty.h"
 #include "kernel.h"
 #include "conf.h"
+#include "machine/cpu.h"
 
 #include "if.h"
 #include "if_types.h"
 #include "netisr.h"
 #include "route.h"
+
 #if INET
 #include "netinet/in.h"
 #include "netinet/in_systm.h"
@@ -65,8 +67,6 @@
 #else
 Huh? Slip without inet?
 #endif
-
-#include "machine/mtpr.h"
 
 #include "slcompress.h"
 #include "if_slvar.h"
