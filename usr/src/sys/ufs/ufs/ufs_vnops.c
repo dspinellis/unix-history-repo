@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	7.91 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.92 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -526,8 +526,19 @@ ufs_link (ap)
 	struct vop_link_args *ap;
 {
 	USES_VOP_UPDATE;
+	USES_VOP_ABORTOP;
 	register struct inode *ip;
 	int error;
+
+	if (ap->a_vp->v_mount != ap->a_tdvp->v_mount) {
+		VOP_ABORTOP(ap->a_vp, ap->a_cnp);
+		if (ap->a_tdvp == ap->a_vp)
+			vrele(ap->a_vp);
+		else
+			vput(ap->a_vp);
+		vrele(ap->a_tdvp);
+		return (EXDEV);
+	}
 
 #ifdef DIAGNOSTIC
 	if ((ap->a_cnp->cn_flags & HASBUF) == 0)
@@ -754,6 +765,22 @@ ufs_rename (ap)
 	int doingdirectory = 0, oldparent = 0, newparent = 0;
 	int error = 0;
 	int fdvpneedsrele = 1, tdvpneedsrele = 1;
+
+	/* Check for cross-device rename */
+	if ((ap->a_fvp->v_mount != ap->a_tdvp->v_mount) ||
+	    (ap->a_tvp && (ap->a_fvp->v_mount != ap->a_tvp->v_mount))) {
+		VOP_ABORTOP(ap->a_tdvp, ap->a_tcnp); /* XXX, why not in NFS? */
+		if (ap->a_tdvp == ap->a_tvp)
+			vrele(ap->a_tdvp);
+		else
+			vput(ap->a_tdvp);
+		if (ap->a_tvp)
+			vput(ap->a_tvp);
+		VOP_ABORTOP(ap->a_fdvp, ap->a_fcnp); /* XXX, why not in NFS? */
+		vrele(ap->a_fdvp);
+		vrele(ap->a_fvp);
+		return (EXDEV);
+	}
 
 #ifdef DIAGNOSTIC
 	if ((ap->a_tcnp->cn_flags & HASBUF) == 0 ||
