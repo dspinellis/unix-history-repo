@@ -1,5 +1,5 @@
 /*
-char id_format[] = "@(#)format.h	1.5";
+char id_format[] = "@(#)format.h	1.6";
  *
  * format parser definitions
  */
@@ -10,8 +10,10 @@ struct syl
 };
 
 /*	do NOT change this defines or add new ones without
- *	changing the value of the follow define for OP_TYPE_TAB
+ *	changing the value of the following define for OP_TYPE_TAB.
+ *	change format.h both in the compiler and libI77 simultaneously.
  */
+
 
 #define RET	1
 #define REVERT 	2
