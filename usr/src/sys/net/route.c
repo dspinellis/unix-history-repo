@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)route.c	7.14 (Berkeley) %G%
+ *	@(#)route.c	7.15 (Berkeley) %G%
  */
 #include "machine/reg.h"
  
@@ -40,6 +40,7 @@
 #include "../netns/ns.h"
 #include "machine/mtpr.h"
 #include "netisr.h"
+#define	SA(p) ((struct sockaddr *)(p))
 
 int	rttrash;		/* routes not in table but not freed */
 struct	sockaddr wildcard;	/* zero valued cookie for wildcard searches */
@@ -69,41 +70,34 @@ rtalloc(ro)
 
 struct rtentry *
 rtalloc1(dst, report)
-	struct sockaddr *dst;
+	register struct sockaddr *dst;
 	int  report;
 {
 	register struct radix_node_head *rnh;
+	register struct rtentry *rt;
 	register struct radix_node *rn;
-	register struct rtentry *rt = 0;
-	u_char af = dst->sa_family;
-	int  s = splnet();
+	struct rtentry *newrt = 0;
+	int  s = splnet(), err = 0;
 
-	for (rnh = radix_node_head; rnh && (af != rnh->rnh_af); )
+	for (rnh = radix_node_head; rnh && (dst->sa_family != rnh->rnh_af); )
 		rnh = rnh->rnh_next;
 	if (rnh && rnh->rnh_treetop &&
 	    (rn = rn_match((caddr_t)dst, rnh->rnh_treetop)) &&
 	    ((rn->rn_flags & RNF_ROOT) == 0)) {
-		rt = (struct rtentry *)rn;
+		newrt = rt = (struct rtentry *)rn;
 		if (report && (rt->rt_flags & RTF_CLONING)) {
-			struct rtentry *newrt = 0;
-			int flags = rt->rt_flags & ~RTF_CLONING;
-
-			if (rt->rt_genmask == 0) flags |= RTF_HOST;
-			(void) rtrequest(RTM_ADD, dst, rt->rt_gateway,
-			      rt->rt_genmask, flags, &newrt);
-			rt = newrt;
+			if (err = rtrequest(RTM_RESOLVE, dst, SA(0),
+					      SA(0), 0, &newrt))
+				goto miss;
 		} else
 			rt->rt_refcnt++;
-		if (rt == 0)
-			goto miss;
 	} else {
 		rtstat.rts_unreach++;
 	miss:	if (report)
-			rt_missmsg(RTM_MISS, dst, (struct sockaddr *)0,
-			   (struct sockaddr *)0, (struct sockaddr *)0, 0, 0);
+			rt_missmsg(RTM_MISS, dst, SA(0), SA(0), SA(0), 0, err);
 	}
 	splx(s);
-	return (rt);
+	return (newrt);
 }
 
 rtfree(rt)
@@ -179,7 +173,7 @@ rtredirect(dst, gateway, netmask, flags, src, rtp)
 		create:
 			flags |=  RTF_GATEWAY | RTF_DYNAMIC;
 			error = rtrequest((int)RTM_ADD, dst, gateway,
-				    (struct sockaddr *)0, flags,
+				    SA(0), flags,
 				    (struct rtentry **)0);
 			stat = &rtstat.rts_dynamic;
 		} else {
@@ -275,7 +269,7 @@ rtioctl(req, data)
 				entry->rt_flags, (struct rtentry **)0);
 	rt_missmsg((req == RTM_ADD ? RTM_OLDADD : RTM_OLDDEL),
 		   &(entry->rt_dst), &(entry->rt_gateway),
-		   netmask, (struct sockaddr *)0, entry->rt_flags, error);
+		   netmask, SA(0), entry->rt_flags, error);
 	return (error);
 #endif
 }
@@ -317,11 +311,21 @@ rtrequest(req, dst, gateway, netmask, flags, ret_nrt)
 		rt = (struct rtentry *)rn;
 		rt->rt_flags &= ~RTF_UP;
 		if ((ifa = rt->rt_ifa) && ifa->ifa_rtrequest)
-			ifa->ifa_rtrequest(RTM_DELETE, rt, (struct sockaddr *)0);
+			ifa->ifa_rtrequest(RTM_DELETE, rt, SA(0));
 		rttrash++;
 		if (rt->rt_refcnt <= 0)
 			rtfree(rt);
 		break;
+
+	case RTM_RESOLVE:
+		if (ret_nrt== 0 || (rt = *ret_nrt) == 0)
+			senderr(EINVAL);
+		ifa = rt->rt_ifa;
+		flags = rt->rt_flags & ~RTF_CLONING;
+		gateway = rt->rt_gateway;
+		if ((netmask = rt->rt_genmask) == 0)
+			flags |= RTF_HOST;
+		goto makeroute;
 
 	case RTM_ADD:
 		if ((flags & RTF_GATEWAY) == 0) {
@@ -350,7 +354,7 @@ rtrequest(req, dst, gateway, netmask, flags, ret_nrt)
 			if (ifa == 0 && req == RTM_ADD)
 				senderr(ENETUNREACH);
 		}
-		len = sizeof (*rt) + ROUNDUP(gateway->sa_len)
+    makeroute: len = sizeof (*rt) + ROUNDUP(gateway->sa_len)
 		    + ROUNDUP(dst->sa_len) + ROUNDUP(ifa->ifa_llinfolen);
 		R_Malloc(rt, struct rtentry *, len);
 		if (rt == 0)
@@ -367,12 +371,8 @@ rtrequest(req, dst, gateway, netmask, flags, ret_nrt)
 			free((caddr_t)rt, M_RTABLE);
 			senderr(EEXIST);
 		}
-		rt->rt_ifp = ifa->ifa_ifp;
 		rt->rt_ifa = ifa;
-		if (ret_nrt) {
-			*ret_nrt = rt;
-			rt->rt_refcnt++;
-		}
+		rt->rt_ifp = ifa->ifa_ifp;
 		rt->rt_flags = RTF_UP | flags;
 		rn->rn_key = (caddr_t) ndst; /* == rt_dst */
 		rt->rt_gateway = (struct sockaddr *)
@@ -380,8 +380,14 @@ rtrequest(req, dst, gateway, netmask, flags, ret_nrt)
 		Bcopy(gateway, rt->rt_gateway, gateway->sa_len);
 		rt->rt_llinfo = ROUNDUP(gateway->sa_len)
 					+ (caddr_t)rt->rt_gateway;
+		if (req == RTM_RESOLVE)
+			rt->rt_rmx = (*ret_nrt)->rt_rmx; /* copy metrics */
 		if (ifa->ifa_rtrequest)
-			ifa->ifa_rtrequest(RTM_ADD, rt, (struct sockaddr *)0);
+			ifa->ifa_rtrequest(req, rt, SA(ret_nrt ? *ret_nrt : 0));
+		if (ret_nrt) {
+			*ret_nrt = rt;
+			rt->rt_refcnt++;
+		}
 		break;
 	}
 bad:

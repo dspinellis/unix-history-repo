@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_ethersubr.c	7.7 (Berkeley) %G%
+ *	@(#)if_ethersubr.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -50,6 +50,7 @@
 #include "../netiso/argo_debug.h"
 #include "../netiso/iso.h"
 #include "../netiso/iso_var.h"
+#include "../netiso/iso_snpac.h"
 #endif
 
 u_char	etherbroadcastaddr[6] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
@@ -114,38 +115,43 @@ ether_output(ifp, m0, dst, rt)
  		bcopy((caddr_t)&(((struct sockaddr_ns *)dst)->sns_addr.x_host),
 		    (caddr_t)edst, sizeof (edst));
 		if (!bcmp((caddr_t)edst, (caddr_t)&ns_thishost, sizeof(edst)))
-			return(looutput(&loif, m, dst));
+			return (looutput(&loif, m, dst));
 		if ((ifp->if_flags & IFF_SIMPLEX) && (*edst & 1))
 			mcopy = m_copy(m, 0, (int)M_COPYALL);
 		goto gottype;
 #endif
 #ifdef	ISO
 	case AF_ISO: {
-		int	len;
-		int	ret;
+		int	snpalen;
 		struct	llc *l;
 
-		if (rt && rt->rt_gateway &&
-		    rt->rt_gateway->sa_family == AF_LINK) {
-			register struct sockaddr_dl *sdl;
-			sdl = (struct sockaddr_dl *)rt->rt_gateway;
-			if (len = sdl->sdl_nlen) {
-				bcopy(LLADDR(sdl), (char *)edst, len);
-				goto iso_resolved;
+	iso_again:
+		if (rt && rt->rt_gateway && (rt->rt_flags & RTF_UP)) {
+			if (rt->rt_flags & RTF_GATEWAY) {
+				register struct llinfo_llc *lc =
+					(struct llinfo_llc *)rt->rt_llinfo;
+				if (lc && lc->lc_rtgate) {
+					rt = lc->lc_rtgate;
+					goto iso_again;
+				}
+			} else {
+				register struct sockaddr_dl *sdl = 
+					(struct sockaddr_dl *)rt->rt_gateway;
+				if (sdl && sdl->sdl_family == AF_LINK
+				    && sdl->sdl_alen > 0) {
+					bcopy(LLADDR(sdl), (char *)edst,
+								sizeof(edst));
+					goto iso_resolved;
+				}
 			}
 		}
-		if ((ret = iso_tryloopback(m, (struct sockaddr_iso *)dst)) >= 0)
-			return (ret);
-		ret = iso_snparesolve(ifp, (struct sockaddr_iso *)dst,
-					(char *)edst, &len);
-		if (ret > 0) {
-			m_freem(m); /* Not Resolved */
-			return(ret);
-		}
+		if ((error = iso_snparesolve(ifp, (struct sockaddr_iso *)dst,
+					(char *)edst, &snpalen)) > 0)
+			goto bad; /* Not Resolved */
 	iso_resolved:
 		M_PREPEND(m, 3, M_DONTWAIT);
 		if (m == NULL)
-			return(0);
+			return (0);
 		type = m->m_pkthdr.len;
 		l = mtod(m, struct llc *);
 		l->llc_dsap = l->llc_ssap = LLC_ISO_LSAP;
