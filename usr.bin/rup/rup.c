@@ -32,10 +32,11 @@
  */
 
 #ifndef lint
-static char rcsid[] = "$Id: rup.c,v 1.5 1993/08/02 17:55:42 mycroft Exp $";
+static char rcsid[] = "$Id: rup.c,v 1.6 1993/09/23 18:37:28 jtc Exp $";
 #endif /* not lint */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <sys/param.h>
@@ -43,6 +44,9 @@ static char rcsid[] = "$Id: rup.c,v 1.5 1993/08/02 17:55:42 mycroft Exp $";
 #include <netdb.h>
 #include <rpc/rpc.h>
 #include <arpa/inet.h>
+
+#undef FSHIFT			/* Use protocol's shift and scale values */
+#undef FSCALE
 #include <rpcsvc/rstat.h>
 
 #define HOST_WIDTH 15
@@ -128,16 +132,14 @@ rstat_reply(char *replyp, struct sockaddr_in *raddrp)
 			hours_buf[0] = '\0';
 
 	printf(" %2d:%02d%cm  up %9.9s%9.9s load average: %.2f %.2f %.2f\n",
-	       (host_time.tm_hour > 12)	 ? host_time.tm_hour - 12
-					 : host_time.tm_hour,
-	       host_time.tm_min,
-	       (host_time.tm_hour >= 12) ? 'p'
-					 : 'a',
-	       days_buf,
-	       hours_buf,
-	       (double)host_stat->avenrun[0]/FSCALE,
-	       (double)host_stat->avenrun[1]/FSCALE,
-	       (double)host_stat->avenrun[2]/FSCALE);
+		host_time.tm_hour % 12,
+		host_time.tm_min,
+		(host_time.tm_hour >= 12) ? 'p' : 'a',
+		days_buf,
+		hours_buf,
+		(double)host_stat->avenrun[0]/FSCALE,
+		(double)host_stat->avenrun[1]/FSCALE,
+		(double)host_stat->avenrun[2]/FSCALE);
 
 	remember_host(raddrp->sin_addr);
 	return(0);
@@ -165,7 +167,7 @@ onehost(char *host)
 
 	bzero((char *)&host_stat, sizeof(host_stat));
 	if (clnt_call(rstat_clnt, RSTATPROC_STATS, xdr_void, NULL, xdr_statstime, &host_stat, NULL) != RPC_SUCCESS) {
-		fprintf(stderr, "%s: %s\n", argv0, host, clnt_sperror(rstat_clnt, host));
+		fprintf(stderr, "%s: %s: %s\n", argv0, host, clnt_sperror(rstat_clnt, host));
 		return(-1);
 	}
 
