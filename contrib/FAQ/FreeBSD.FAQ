@@ -1,15 +1,15 @@
 
                                FreeBSD
                       Frequently Asked Questions
-                      For Version 1.1 and above
+                      For Versions 1.1 and above
 
 Please mail all suggestions and additions to <FreeBSD-FAQ@freefall.cdrom.com>
 
 
-Revision: $Id: FreeBSD.FAQ,v 1.34 1994/06/13 05:38:52 gclarkii Exp $
+Revision: $Id: FreeBSD.FAQ,v 1.35 1994/06/17 17:43:27 jkh Exp $
 
-All entries marked <CURRENT> are for FreeBSD-current.  All other entries
-are for both version 1.1 and current.
+All entries are assumed to be relevant to both FreeBSD 1.1 and FreeBSD 1.1.5,
+unless otherwise noted.
 
 
 Table of Contents
@@ -186,7 +186,7 @@ if you have documentation for your drive, you may want to see if this
 feature has been disabled on your drive.  However, ESDI, RLL, and
 ST-506 drives normally do not do this.
 
-<CURRENT>
+<1.1.5>
 FreeBSD-current has better bad block handling due to improvments made
 to the wd driver.
 
@@ -202,12 +202,11 @@ exhibit).  If you have a local bus disk controller, then you should be
 OK, UNLESS it's a Buslogic Bt445S with a revision less than `D' (BIOS
 3.36 or earlier).
 
-<CURRENT>
-FreeBSD-current (and the upcoming FreeBSD 1.1.5) have bounce-buffer
-support that make all of the above scenarios work with a full 32MB of
-memory or more.  You are therefore advised to simply pull 16MB of
-memory out, install, and then see about upgrading to FreeBSD-current
-or FreeBSD 1.1.5 (when it comes out) so that you can put it back.
+<1.1.5>
+1.1.5 has bounce-buffer support that make all of the above scenarios work
+with a full 32MB of memory or more.  You are therefore advised to simply pull
+16MB of memory out, install, and then see about upgrading to FreeBSD 1.1.5
+so that you can put it back.
 
 
 1.6:  Do I need to install the complete sources?
@@ -304,8 +303,8 @@ Buslogic             BT-445 Series <VLB> (but see section 1.5)
                      BT-545 Series <ISA>
                      BT-742 Series <EISA>
                      BT-747 Series <EISA>
-Future Domain        TMC-8XX/950 Series <ISA> (CURRENT ONLY)
-Seagate              ST-01/02 Series <ISA> (CURRENT ONLY)
+Future Domain        TMC-8XX/950 Series <ISA> (1.1.5 ONLY)
+Seagate              ST-01/02 Series <ISA> (1.1.5 ONLY)
 UltraStor            UH-14f Series <ISA>
                      UH-34f Series <EISA/VLB>
 
@@ -356,12 +355,15 @@ Logitech and ATI mice:
 2.7:  I have a PS/2 mouse (`keyboard' mouse) [Alternatively:  I have a
       laptop with a track-ball mouse].  How do I use it?
 
-For the PS/2 mouse you need to look in
+<1.1>:  For the PS/2 mouse you need to look in
 /usr/src/contrib/FAQ/programs/psm, which is John Solhed's port of the
 Linux PS/2 mouse driver.
 
 Follow the directions in the package.  You will also need to change
 your Xconfig file to point to the mouse.
+
+<1.1.5>:  The PS/2 mouse is part of the system.  See the psm0 driver 
+description in /sys/doc/options.doc.
 
 
 2.8:  What types of tape drives are supported under FreeBSD?
@@ -474,7 +476,7 @@ configuring XFree86 for your particular graphics card/mouse/etc.
 4.1:  I've been trying to run ghostscript on a 386 (or 486sx) with no
       math co-processor and I keep getting errors.  What's up?
 
-The problem here is due to the current FreeBSD math-emulator.  You
+<1.1>:  The problem here is due to the current FreeBSD math-emulator.  You
 need to pick up the sources to an alternate emulation package, which
 you may find in:
 
@@ -486,11 +488,12 @@ This is a port of an older Linux math-emulator.  At some point,
 FreeBSD's default math emulator will be good enough that you can
 forget about having to do this.
 
-<CURRENT>  
-For current you may add the following to your kernel config file and
+<1.1.5>:  For 1.1.5 you may add the following to your kernel config file and
 it  will be compiled in.
 options                         GPL_MATH_EMULATE
+
 NOTE:  You will need to remove the MATH_EMULATE option when you do this.
+
 
 4.2:  If I want something like seyon, term, Kermit, emacs or any one of
       hundreds of popular freeware utilities, is there a good place to
@@ -785,7 +788,7 @@ requires ghostscript and dvips.
 If you are looking for a simple printcap just for PS and text files,
 try picking up the printcap01 sources in:
 
-      /usr/src/contrib/FAQ/programs/printcap01 
+      /usr/src/contrib/FAQ/code/printcap01 
 
 NOTE: We're looking for printcap entries for all printers.  If you
 have one, or a filter for one, please send it or mail us a pointer to
