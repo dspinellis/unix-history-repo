@@ -429,6 +429,7 @@ YELL:		mvprintw(oldy + 1, 0, "Please choose one of : [%s]\n", choices);
 /
 /************************************************************************/
 
+void
 catchalarm()
 {
     longjmp(Timeoenv, 1);
