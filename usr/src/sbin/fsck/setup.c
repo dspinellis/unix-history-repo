@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)setup.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)setup.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 #define DKTYPENAMES
@@ -224,6 +224,8 @@ readsb(listerr)
 	altsblock.fs_optim = sblock.fs_optim;
 	altsblock.fs_rotdelay = sblock.fs_rotdelay;
 	altsblock.fs_maxbpg = sblock.fs_maxbpg;
+	altsblock.fs_npsect = sblock.fs_npsect;
+	altsblock.fs_interleave = sblock.fs_interleave;
 	bcopy((char *)sblock.fs_csp, (char *)altsblock.fs_csp,
 		sizeof sblock.fs_csp);
 	bcopy((char *)sblock.fs_fsmnt, (char *)altsblock.fs_fsmnt,
