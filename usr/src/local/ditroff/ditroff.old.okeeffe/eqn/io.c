@@ -166,6 +166,7 @@ setfile(argc, argv) int argc; char *argv[]; {
 		case 'm': minsize = atoi(&svargv[1][2]); break;
 		case 'f': gfont = svargv[1][2]; break;
 		case 'e': noeqn++; break;
+		case 'P':
 		case 'T': device = &(svargv[1][2]); break;
 		case 'F': devdir = &(svargv[1][2]); break;
 		default: dbg = 1;
