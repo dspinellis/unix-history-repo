@@ -7,7 +7,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)param.h	7.9 (Berkeley) %G%
+ *	@(#)param.h	7.10 (Berkeley) %G%
  */
 
 /*
@@ -16,11 +16,11 @@
 #define	MACHINE	"tahoe"
 
 /*
- * Round p (pointer or byte index) up to a correctly-aligned value
- * for all data types (int, long, ...).   The result is u_int and
- * must be cast to any desired pointer type.
+ * Round p (pointer or byte index) up to a correctly-aligned value for all
+ * data types (int, long, ...).   The result is u_int and must be cast to
+ * any desired pointer type.
  */
-#define	ALIGN(p)	(((u_int)(p) + (sizeof(int) - 1)) &~ (sizeof(int) - 1))
+#define	ALIGN(p)	(((u_int)(p) + 3) &~ 3)
 
 #define	NBPG		1024		/* bytes/page */
 #define	PGOFSET		(NBPG-1)	/* byte offset into page */
