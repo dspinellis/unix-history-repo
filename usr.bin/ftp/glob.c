@@ -216,7 +216,8 @@ matchdir(pattern)
 	register struct dirent *dp;
 	DIR *dirp;
 
-	dirp = opendir(gpath);
+	/* Note: "" is not equivalent to "." for opendir(2) now! */
+	dirp = opendir((strlen(gpath))?gpath:".");
 	if (dirp == NULL) {
 		if (globbed)
 			return;
