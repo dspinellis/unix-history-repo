@@ -1,4 +1,4 @@
-/*	locore.s	6.15	84/08/21	*/
+/*	locore.s	6.16	84/08/22	*/
 
 #include "../machine/psl.h"
 #include "../machine/pte.h"
@@ -167,12 +167,12 @@ SCBVEC(cnxint):
 SCBVEC(hardclock):
 	PUSHR
 	mtpr $ICCS_RUN|ICCS_IE|ICCS_INT|ICCS_ERR,$ICCS
-	pushl 4+6*4(sp); pushl 4+6*4(sp);
-	calls $2,_hardclock			# hardclock(pc,psl)
 #if NPS > 0
 	pushl	4+6*4(sp); pushl 4+6*4(sp);
 	calls	$2,_psextsync
 #endif
+	pushl 4+6*4(sp); pushl 4+6*4(sp);
+	calls $2,_hardclock			# hardclock(pc,psl)
 	POPR;
 	incl	_cnt+V_INTR
 	incl	_intrcnt+I_CLOCK
