@@ -1,0 +1,4 @@
+Sample .cshrc, .exrc and .login files are given here.
+The other files are (systemwide) samples of files for /etc
+(group, passwd, rc, ttys, ttytype, ttywhere) and /usr/lib (Mail.rc)
+&c.
