@@ -154,7 +154,7 @@ probenexus(pcpu)
 #endif
 			i = nexcsr.nex_type - NEX_UBA0;
 			unifind((struct uba_regs *)nxv, (struct uba_regs *)nxp,
-			    umem[i], pcpu->pc_umaddr[i]);
+			    umem[i], pcpu->pc_umaddr[i], UMEMmap[i]);
 #if VAX780
 			if (cpu == VAX_780)
 				((struct uba_regs *)nxv)->uba_cr =
@@ -338,9 +338,10 @@ fixctlrmask()
  * and then fills in the tables, with help from a per-driver
  * slave initialization routine.
  */
-unifind(vubp, pubp, vumem, pumem)
+unifind(vubp, pubp, vumem, pumem, memmap)
 	struct uba_regs *vubp, *pubp;
 	caddr_t vumem, pumem;
+	struct pte *memmap;
 {
 #ifndef lint
 	register int br, cvec;			/* MUST BE r11, r10 */
@@ -400,7 +401,7 @@ unifind(vubp, pubp, vumem, pumem)
 		uhp->uh_vec[i] =
 		    scbentry(&catcher[i*2], SCB_ISTACK);
 	/* THIS IS A CHEAT: USING THE FACT THAT UMEM and NEXI ARE SAME SIZE */
-	nxaccess((struct nexus *)pumem, UMEMmap[numuba]);
+	nxaccess((struct nexus *)pumem, memmap);
 #if VAX780
 	if (haveubasr) {
 		vubp->uba_sr = vubp->uba_sr;
