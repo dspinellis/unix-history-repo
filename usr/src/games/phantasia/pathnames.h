@@ -14,18 +14,15 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)pathnames.h	5.1 (Berkeley) %G%
+ *	@(#)pathnames.h	5.2 (Berkeley) %G%
  */
 
-#define	_PATH_ENEMY	"/usr/games/lib/phantasia/enemy"
-#define	_PATH_GAMEPROG	"/usr/games/phantasia/phantasia"
-#define	_PATH_GOLD	"/usr/games/lib/phantasia/gold"
-#define	_PATH_HELP	"/usr/games/lib/phantasia/phant.help"
-#define	_PATH_LASTDEAD	"/usr/games/lib/phantasia/lastdead"
-#define	_PATH_MESS	"/usr/games/lib/phantasia/mess"
-#define	_PATH_MONST	"/usr/games/lib/phantasia/monsters"
-#define	_PATH_MOTD	"/usr/games/lib/phantasia/motd"
-#define	_PATH_PEOPLE	"/usr/games/lib/phantasia/characs"
-#define	_PATH_PHANTDIR	"/usr/games/lib/phantasia"
-#define	_PATH_SCORE	"/usr/games/lib/phantasia/scoreboard"
-#define	_PATH_VOID	"/usr/games/lib/phantasia/void"
+#define	_PATH_GAMEPROG	"/usr/games/phantasia"
+#define	_PATH_GOLD	"/var/games/phantasia/gold"
+#define	_PATH_LASTDEAD	"/var/games/phantasia/lastdead"
+#define	_PATH_MESS	"/var/games/phantasia/mess"
+#define	_PATH_MONST	"/var/games/phantasia/monsters"
+#define	_PATH_MOTD	"/var/games/phantasia/motd"
+#define	_PATH_PEOPLE	"/var/games/phantasia/characs"
+#define	_PATH_SCORE	"/var/games/phantasia/scoreboard"
+#define	_PATH_VOID	"/var/games/phantasia/void"
