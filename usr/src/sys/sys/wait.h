@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)wait.h	7.7 (Berkeley) %G%
+ *	@(#)wait.h	7.8 (Berkeley) %G%
  */
 
 /*
@@ -27,27 +27,26 @@
  * and extract the relevant values.
  */
 #ifdef _POSIX_SOURCE
-#define	_WSTATUS(x)	((x) & 0377)	/* 0, _WSTOPPED, or signal */
+#define	_W_INT(i)	(i)
 #else
-#define	_W_INT(x)	(*(int *)(x))	/* convert union wait to int */
-#define	_WSTATUS(x)	(_W_INT(x) & 0177)
+#define	_W_INT(w)	(*(int *)&(w))	/* convert union wait to int */
+#define	WCOREFLAG	0200
 #endif
 
+#define	_WSTATUS(x)	(_W_INT(x) & 0177)
 #define	_WSTOPPED	0177		/* _WSTATUS if process is stopped */
 #define WIFSTOPPED(x)	(_WSTATUS(x) == _WSTOPPED)
+#define WSTOPSIG(x)	(_W_INT(x) >> 8)
 #define WIFSIGNALED(x)	(_WSTATUS(x) != _WSTOPPED && _WSTATUS(x) != 0)
 #define WTERMSIG(x)	(_WSTATUS(x))
 #define WIFEXITED(x)	(_WSTATUS(x) == 0)
-
-#ifdef _POSIX_SOURCE
-#define WSTOPSIG(x)	((x) >> 8)
-#define WEXITSTATUS(x)	((x) >> 8)
-
-#else /* _POSIX_SOURCE */
-#define WSTOPSIG(x)	(_W_INT(x) >> 8)
-#define WCOREDUMP(x)	(_W_INT(x) & 0200)
 #define WEXITSTATUS(x)	(_W_INT(x) >> 8)
-#endif /* _POSIX_SOURCE */
+#ifndef _POSIX_SOURCE
+#define WCOREDUMP(x)	(_W_INT(x) & WCOREFLAG)
+
+#define	W_EXITCODE(ret, sig)	((ret) << 8 | (sig))
+#define	W_STOPCODE(sig)		((sig) << 8 | _WSTOPPED)
+#endif
 
 /*
  * Option bits for the second argument of wait4.  WNOHANG causes the
@@ -56,16 +55,13 @@
  * indicates that the caller should receive status about untraced children
  * which stop due to signals.  If children are stopped and a wait without
  * this option is done, it is as though they were still running... nothing
- * about them is returned.   By default, a blocking wait call will be
- * aborted by receipt of a signal that is caught (POSIX); the option
- * WSIGRESTART causes the call to restart instead of failing with error EINTR.
+ * about them is returned.
  */
 #define WNOHANG		1	/* dont hang in wait */
 #define WUNTRACED	2	/* tell about stopped, untraced children */
 
-#ifndef _POSIX_SOURCE		/* extensions/compat follow: */
-/* additional option bit for wait4: */
-#define WSIGRESTART	4	/* restart wait if signal is received */
+#ifndef _POSIX_SOURCE
+/* POSIX extensions and 4.2/4.3 compatability: */
 
 /*
  * Tokens for special values of the "pid" parameter to wait4.
