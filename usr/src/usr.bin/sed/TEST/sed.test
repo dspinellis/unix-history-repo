@@ -6,7 +6,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)sed.test	5.6 (Berkeley) %G%
+#	@(#)sed.test	5.7 (Berkeley) %G%
 #
 
 # sed Regression Tests
@@ -352,6 +352,13 @@ s/^/ERROR/p
 5i\
 hello
 5q' lines1
+# Branch across block boundary
+	mark '5.8' ; $SED -e '
+{
+:b
+}
+s/l/m/
+tb' lines1
 }
 
 test_pattern()
