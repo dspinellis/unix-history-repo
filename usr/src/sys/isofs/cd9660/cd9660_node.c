@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cd9660_node.c	8.7 (Berkeley) %G%
+ *	@(#)cd9660_node.c	8.8 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -197,6 +197,7 @@ cd9660_inactive(ap)
 	} */ *ap;
 {
 	struct vnode *vp = ap->a_vp;
+	struct proc *p = ap->a_p;
 	register struct iso_node *ip = VTOI(vp);
 	int mode, error = 0;
 	
@@ -204,12 +205,13 @@ cd9660_inactive(ap)
 		vprint("cd9660_inactive: pushing active", vp);
 	
 	ip->i_flag = 0;
+	VOP_UNLOCK(vp, 0, p);
 	/*
 	 * If we are done with the inode, reclaim it
 	 * so that it can be reused immediately.
 	 */
-	if (vp->v_usecount == 0 && ip->inode.iso_mode == 0)
-		vgone(vp);
+	if (ip->inode.iso_mode == 0)
+		vrecycle(vp, (struct simplelock *)0, p);
 	return error;
 }
 
