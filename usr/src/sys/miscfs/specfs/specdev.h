@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)specdev.h	7.6 (Berkeley) %G%
+ *	@(#)specdev.h	7.7 (Berkeley) %G%
  */
 
 /*
@@ -222,7 +222,7 @@ int	spec_advlock __P((
 		int mode))) spec_badop)
 #define spec_truncate ((int (*) __P(( \
 		struct vnode *vp, \
-		u_long length, \
+		off_t length, \
 		int flags))) nullop)
 #define spec_update ((int (*) __P(( \
 		struct vnode *vp, \
