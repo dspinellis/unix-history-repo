@@ -1,4 +1,4 @@
-/*	vd.c	7.8	87/11/12	*/
+/*	vd.c	7.9	88/05/24	*/
 
 /*
  * Stand alone driver for the VDDC/SMDE controller 
@@ -17,20 +17,18 @@
 
 #define	COMPAT_42	1
 
-#define NVD		4
+#define NVD		4		/* controllers */
 #define	NDRIVE		8		/* drives per controller */
-#define VDSLAVE(x)	((x) % NDRIVE)
-#define VDCTLR(x)	((x) / NDRIVE)
 
 #define	VDADDR(ctlr)	((struct vddevice *)vdaddrs[ctlr])
 long	vdaddrs[NVD] = { 0xffff2000, 0xffff2100, 0xffff2200, 0xffff2300 };
 
 u_char	vdinit[NVD];			/* controller initialized */
 u_char	vdtype[NVD];			/* controller type */
-u_char	dkconfigured[NVD*NDRIVE];	/* unit configured */
+u_char	dkconfigured[NVD][NDRIVE];	/* unit configured */
 u_char	dkflags[NVD][NDRIVE];		/* unit flags */
 
-static	struct disklabel dklabel[NVD*NDRIVE];	/* pack label */
+static	struct disklabel dklabel[NVD][NDRIVE];	/* pack label */
 static	struct mdcb mdcb;
 static	struct dcb dcb;
 static	char lbuf[DEV_BSIZE];
@@ -38,19 +36,19 @@ static	char lbuf[DEV_BSIZE];
 vdopen(io)
 	register struct iob *io;
 {
-	register int ctlr = VDCTLR(io->i_unit);
+	register int ctlr = io->i_ctlr;
 	register struct dkinfo *dk;
 	register struct disklabel *lp, *dlp;
 	int error;
 
-	if (ctlr >= NVD) {
-		printf("invalid controller number\n");
-		return (ENXIO);
-	}
+	if ((u_int)io->i_adapt)
+		return (EADAPT);
+	if ((u_int)ctlr >= NVD)
+		return (ECTLR);
 	if (!vdinit[ctlr] && (error = vdreset_ctlr(ctlr, io->i_unit)))
 		return (error);
-	lp = &dklabel[io->i_unit];
-	if (!dkconfigured[io->i_unit]) {
+	lp = &dklabel[io->i_ctlr][io->i_unit];
+	if (!dkconfigured[io->i_ctlr][io->i_unit]) {
 		struct iob tio;
 
 		/*
@@ -68,33 +66,31 @@ vdopen(io)
 		tio.i_ma = lbuf;
 		tio.i_cc = DEV_BSIZE;
 		tio.i_flgs |= F_RDDATA;
-		if (vdstrategy(&tio, READ) != DEV_BSIZE) {
-			printf("dk%d: can't read disk label\n", io->i_unit);
-			return (EIO);
-		}
+		if (vdstrategy(&tio, READ) != DEV_BSIZE)
+			return (ERDLAB);
 		dlp = (struct disklabel *)(lbuf + LABELOFFSET);
-		if (dlp->d_magic != DISKMAGIC || dlp->d_magic2 != DISKMAGIC) {
+		if (dlp->d_magic != DISKMAGIC || dlp->d_magic2 != DISKMAGIC)
 #ifdef COMPAT_42
+		{
+			printf("dk%d: unlabeled\n", io->i_unit);
 			if (error = vdmaptype(io))
 				return (error);
+		}
 #else
-			printf("dk%d: unlabeled\n", io->i_unit);
-			return (ENXIO);
+			return (EUNLAB);
 #endif
-		} else {
+		else {
 			*lp = *dlp;
 			if (!vdreset_drive(io))
 				return (ENXIO);
 		}
-		dkconfigured[io->i_unit] = 1;
+		dkconfigured[io->i_ctlr][io->i_unit] = 1;
 	}
-	if (io->i_boff < 0 || io->i_boff >= lp->d_npartitions ||
-	    lp->d_partitions[io->i_boff].p_size == 0) {
-		printf("dk%d: bad minor\n", io->i_unit);
-		return (EUNIT);
-	}
+	if (io->i_part < 0 || io->i_part >= lp->d_npartitions ||
+	    lp->d_partitions[io->i_part].p_size == 0)
+		return (EPART);
 	io->i_boff =
-	    (lp->d_partitions[io->i_boff].p_offset * lp->d_secsize) / DEV_BSIZE;
+	    (lp->d_partitions[io->i_part].p_offset * lp->d_secsize) / DEV_BSIZE;
 	return (0);
 }
 
@@ -136,8 +132,8 @@ vdreset_ctlr(ctlr, unit)
 		return (EIO);
 	}
 	vdinit[ctlr] = 1;
-	for (i = unit = ctlr * NDRIVE; i < unit + NDRIVE; i++)
-		dkconfigured[i] = 0;
+	for (i = NDRIVE - 1; i >= 0; i--)
+		dkconfigured[ctlr][i] = 0;
 	return (0);
 }
 
@@ -147,8 +143,8 @@ vdreset_ctlr(ctlr, unit)
 vdreset_drive(io)
 	register struct iob *io;
 {
-	register int ctlr = VDCTLR(io->i_unit), slave = VDSLAVE(io->i_unit);
-	register struct disklabel *lp = &dklabel[io->i_unit];
+	register int ctlr = io->i_ctlr, slave = io->i_unit;
+	register struct disklabel *lp = &dklabel[io->i_ctlr][io->i_unit];
 	register struct vddevice *vdaddr = VDADDR(ctlr);
 	int pass = 0, type = vdtype[ctlr], error;
 	int devflags = dkflags[ctlr][slave];		/* starts with 0 */
@@ -246,7 +242,7 @@ vdstrategy(io, cmd)
 		io->i_error = EIO;
 		return (-1);
 	}
-	lp = &dklabel[io->i_unit];
+	lp = &dklabel[io->i_ctlr][io->i_unit];
 	bn = io->i_bn * (DEV_BSIZE / lp->d_secsize);
 	cn = bn / lp->d_secpercyl;
 	sn = bn % lp->d_secpercyl;
@@ -258,8 +254,8 @@ top:
 	dcb.intflg = DCBINT_NONE;
 	dcb.nxtdcb = (struct dcb *)0;	/* end of chain */
 	dcb.operrsta  = 0;
-	ctlr = VDCTLR(io->i_unit);
-	slave = VDSLAVE(io->i_unit);
+	ctlr = io->i_ctlr;
+	slave = io->i_unit;
 	dcb.devselect = slave | dkflags[ctlr][slave];
 	dcb.trailcnt = sizeof (struct trrw) / sizeof (int);
 	dcb.trail.rwtrail.memadr = (u_long)io->i_ma; 
@@ -364,13 +360,13 @@ struct	dkcompat {
 vdmaptype(io)
 	struct iob *io;
 {
-	register struct disklabel *lp = &dklabel[io->i_unit];
+	register struct disklabel *lp = &dklabel[io->i_ctlr][io->i_unit];
 	register struct dkcompat *dp;
 	int i, ctlr, slave, type;
 	struct vddevice *vdaddr;
 
-	ctlr = VDCTLR(io->i_unit);
-	slave = VDSLAVE(io->i_unit);
+	ctlr = io->i_ctlr;
+	slave = io->i_unit;
 	vdaddr = VDADDR(ctlr);
 	type = vdtype[ctlr];
 	for (dp = dkcompat; dp < &dkcompat[NDKCOMPAT]; dp++) {

@@ -1,4 +1,4 @@
-/*	cy.c	7.6	87/04/07	*/
+/*	cy.c	7.7	88/05/24	*/
 
 /*
  * Cypher tape driver. Stand alone version.
@@ -43,11 +43,12 @@ cyopen(io)
 	register struct iob *io;
 {
 	register ctlradr = CYADDR(0);
+	register int skip;
 
-	if (io->i_unit != 0) {
-		printf("Only 1 cypher supported\n");
-		return (ENXIO);
-	}
+	if ((u_int)io->i_adapt)
+		return (EADAPT);
+	if ((u_int)io->i_ctlr)
+		return (ECTLR);
 	SCP = CYSCP(0);				/* absolute - for setup */
 	CY_RESET(ctlradr);			/* reset the controller */
 	/*
@@ -102,13 +103,11 @@ cyopen(io)
 		printf("cy%d: Rewind failed!\n", io->i_unit);
 		return (ENXIO);
 	}
-	while (io->i_boff > 0) {
+	for (skip = io->i_part; skip--;)
 		if (cycmd(io, CY_FSF) == -1) {
 			printf("cy%d: seek failure!\n", io->i_unit);
 			return (ENXIO);
 		}
-		io->i_boff--;
-	}
 #ifdef notdef
 #ifdef NOBLOCK
 	if (io->i_flgs & F_READ) {
@@ -179,7 +178,8 @@ cycmd(io, func)
 	short j;
 
 	cywait(9000); 			/* shouldn't be needed */
-	tpb.tpcontrol = CYCW_LOCK | CYCW_16BITS;
+#define	PACKUNIT(unit)	(((unit&1)<<11)|((unit&2)<<9)|((unit&4)>>2))
+	tpb.tpcontrol = CYCW_LOCK | CYCW_16BITS | PACKUNIT(io->i_unit);
 	tpb.tpstatus = 0;
 	tpb.tpcount = 0;
 	cyldmba(ccb.cbtpb, (caddr_t)&tpb);
@@ -244,7 +244,7 @@ cycmd(io, func)
 	uncache(&tpb.tpcount);
 	return ((int)htoms(tpb.tpcount));
 }
-	
+
 cy_print_error(op, status)
 	int op, status;
 {
@@ -260,7 +260,6 @@ cy_print_error(op, status)
 cywait(timeout)
 	register timeout;
 {
-
 	do {
 		DELAY(1000);
 		uncache(&ccb.cbgate);
