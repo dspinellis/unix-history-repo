@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	8.20 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	8.21 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -1552,8 +1552,8 @@ ufs_readdir(ap)
 		struct uio *a_uio;
 		struct ucred *a_cred;
 		int *a_eofflag;
-		u_long *a_cookies;
-		int ncookies;
+		int *ncookies;
+		u_long **a_cookies;
 	} */ *ap;
 {
 	register struct uio *uio = ap->a_uio;
@@ -1612,9 +1612,10 @@ ufs_readdir(ap)
 		error = VOP_READ(ap->a_vp, uio, 0, ap->a_cred);
 #	endif
 	if (!error && ap->a_ncookies) {
-		register struct dirent *dp;
-		register u_long *cookies = ap->a_cookies;
-		register int ncookies = ap->a_ncookies;
+		struct dirent *dp, *dpstart;
+		off_t off, offstart;
+		u_long *cookies;
+		int ncookies;
 
 		/*
 		 * Only the NFS server uses cookies, and it loads the
@@ -1623,17 +1624,27 @@ ufs_readdir(ap)
 		 */
 		if (uio->uio_segflg != UIO_SYSSPACE || uio->uio_iovcnt != 1)
 			panic("ufs_readdir: lost in space");
-		dp = (struct dirent *)
+		dpstart = (struct dirent *)
 		     (uio->uio_iov->iov_base - (uio->uio_offset - off));
-		while (ncookies-- && off < uio->uio_offset) {
+		offstart = off;
+		for (dp = dpstart, ncookies = 0; off < uio->uio_offset; ) {
 			if (dp->d_reclen == 0)
 				break;
 			off += dp->d_reclen;
-			*(cookies++) = off;
+			ncookies++;
 			dp = (struct dirent *)((caddr_t)dp + dp->d_reclen);
 		}
 		lost += uio->uio_offset - off;
 		uio->uio_offset = off;
+		MALLOC(cookies, u_long *, ncookies * sizeof(u_long), M_TEMP,
+		    M_WAITOK);
+		*ap->a_ncookies = ncookies;
+		*ap->a_cookies = cookies;
+		for (off = offstart, dp = dpstart; off < uio->uio_offset; ) {
+			*(cookies++) = off;
+			off += dp->d_reclen;
+			dp = (struct dirent *)((caddr_t)dp + dp->d_reclen);
+		}
 	}
 	uio->uio_resid += lost;
 	*ap->a_eofflag = VTOI(ap->a_vp)->i_size <= uio->uio_offset;
