@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)spec_vnops.c	8.3 (Berkeley) %G%
+ *	@(#)spec_vnops.c	8.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -192,8 +192,9 @@ spec_read(ap)
 	daddr_t bn, nextbn;
 	long bsize, bscale;
 	struct partinfo dpart;
-	register int n, on;
+	int n, on, majordev, (*ioctl)();
 	int error = 0;
+	dev_t dev;
 
 #ifdef DIAGNOSTIC
 	if (uio->uio_rw != UIO_READ)
@@ -217,13 +218,13 @@ spec_read(ap)
 		if (uio->uio_offset < 0)
 			return (EINVAL);
 		bsize = BLKDEV_IOSIZE;
-		if ((*bdevsw[major(vp->v_rdev)].d_ioctl)(vp->v_rdev, DIOCGPART,
-		    (caddr_t)&dpart, FREAD, p) == 0) {
-			if (dpart.part->p_fstype == FS_BSDFFS &&
-			    dpart.part->p_frag != 0 && dpart.part->p_fsize != 0)
-				bsize = dpart.part->p_frag *
-				    dpart.part->p_fsize;
-		}
+		dev = vp->v_rdev;
+		if ((majordev = major(dev)) < nblkdev &&
+		    (ioctl = bdevsw[majordev].d_ioctl) != NULL &&
+		    (*ioctl)(dev, DIOCGPART, (caddr_t)&dpart, FREAD, p) == 0 &&
+		    dpart.part->p_fstype == FS_BSDFFS &&
+		    dpart.part->p_frag != 0 && dpart.part->p_fsize != 0)
+			bsize = dpart.part->p_frag * dpart.part->p_fsize;
 		bscale = bsize / DEV_BSIZE;
 		do {
 			bn = (uio->uio_offset / DEV_BSIZE) &~ (bscale - 1);
