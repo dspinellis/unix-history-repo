@@ -6,9 +6,9 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)zic.8	8.1 (Berkeley) %G%
+.\"	@(#)zic.8	8.2 (Berkeley) %G%
 .\"
-.TH ZIC 8
+.TH ZIC 8 ""
 .SH NAME
 zic \- time zone compiler
 .SH SYNOPSIS
@@ -273,6 +273,7 @@ The fields that make up a zone line are:
 The name of the time zone.
 This is the name used in creating the time conversion information file for the
 zone.
+.ne 1i
 .TP
 .B GMTOFF
 The amount of time to add to GMT to get standard time in this zone.

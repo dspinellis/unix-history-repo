@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)acucntrl.8	8.2 (Berkeley) %G%
+.\"	@(#)acucntrl.8	8.3 (Berkeley) %G%
 .\"
 .TH ACUCNTRL 8 ""
 .UC 6
@@ -97,6 +97,7 @@ condition line: clear exclusive use and set hangup on close modes
 turn on modem control
 .IP 7)
 edit /etc/ttys,  changing the first character of the appropriate line to 1
+.ne 1i
 .IP 8)
 send a hangup to process 1 to poke init to enable getty
 .IP 9)

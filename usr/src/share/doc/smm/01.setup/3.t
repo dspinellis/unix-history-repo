@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)3.t	8.1 (Berkeley) %G%
+.\"	@(#)3.t	8.2 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -579,8 +579,9 @@ _	_	_
 /usr/lib/sendmail.cf	/etc/sendmail.cf	changed pathnames
 /usr/lib/aliases	/etc/aliases	may contain changed pathnames
 /etc/*.pid	/var/run/*.pid	
-	
-.T&
+.TE
+.ne 1i
+.TS
 l l l
 lfC lfC l.
 New in \*(Ps-Tahoe	\*(4B	Comments
@@ -637,6 +638,7 @@ nobody	39	the least privileged group
 utmp	45	access to utmp files
 dialer	117	access to remote ports and dialers
 .TE
+.sp
 Only users in the ``wheel'' group are permitted to
 .Xr su
 to ``root''.
@@ -663,6 +665,7 @@ and
 now run set-group-id to ``tty''.
 The ``operator'' group controls access to disks.
 By default, disks are readable by group ``operator'',
+.sp
 so that programs such as
 .Xr dump
 can access the filesystem information without being set-user-id to ``root''.
@@ -870,7 +873,7 @@ and
 .DS
 .ft CW
 SRC=/oldroot/usr
-
+.sp
 cd $SRC; tar cf - msgs preserve | (cd /var && tar xpf -)
 .DE
 .DS
@@ -1183,6 +1186,7 @@ field when iterating through the array of addresses returned,
 as not all the structures returned have the same length
 (this variance in length is nearly guaranteed by the presence of link-layer
 address structures).
+.sp
 .Sh 4 "Additions and changes to filesystems"
 .PP
 The \*(4B distribution contains most of the interfaces
@@ -1439,6 +1443,7 @@ with the new system.
 Most of the other kernel interfaces have been changed to correspond
 with the POSIX.1 interface, although that work is not complete.
 See the relevant manual pages and the IEEE POSIX standard.
+.sp
 .Sh 4 "Native operating system compatibility"
 .PP
 Both the HP300 and SPARC ports feature the ability to run binaries

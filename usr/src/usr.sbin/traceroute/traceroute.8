@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)traceroute.8	8.1 (Berkeley) %G%
+.\"     @(#)traceroute.8	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt TRACEROUTE 8
@@ -96,6 +96,7 @@ force the source address to be something other than the IP address
 of the interface the probe packet is sent on.  If the IP address
 is not one of this machine's interface addresses, an error is
 returned and nothing is sent.
+.ne 1i
 .It Fl t Ar tos
 Set the
 .Em type-of-service

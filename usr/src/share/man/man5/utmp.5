@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)utmp.5	8.2 (Berkeley) %G%
+.\"     @(#)utmp.5	8.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt UTMP 5
@@ -125,6 +125,7 @@ In the event of a date change, a shutdown or reboot, the
 following items are logged in the
 .Nm wtmp
 file.
+.ne 1i
 .Pp
 .Bl -tag -width shutdownxx -compact
 .It Li reboot

@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.t	8.1 (Berkeley) %G%
+.\"	@(#)2.t	8.2 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -575,6 +575,7 @@ Also, if you are loading on a single disk with the default disklabel,
 should be restored to the ``f'' partition and
 .Pn /usr
 to the ``e'' partition.
+.ne 1i
 .Sh 2 "Booting the SPARC"
 .Sh 3 "Supported hardware"
 .LP
@@ -768,6 +769,7 @@ SunOS system:
 The SunOS compiler and linker should be able to produce SunOS binaries
 under \*(4B, but this has not been tested.  If you plan to try it you
 will need the appropriate .sa files as well.
+.ne 1i
 .Sh 2 "Booting the DECstation"
 .Sh 3 "Supported hardware"
 .LP
@@ -941,6 +943,7 @@ Label the disk.
 .DE
 Supported disk types are listed in
 .Pn /etc/disktab .
+.ne 1i
 .IP 2)
 Restore the root filesystem.
 .DS

@@ -1,6 +1,6 @@
 .\" This document is trivally reformatted from perl.man
 .\"
-.\"	@(#)perl.ms	8.1 (Berkeley) %G%
+.\"	@(#)perl.ms	8.2 (Berkeley) %G%
 .\"
 .\" $RCSfile: perl.man,v $$Revision: 4.0.1.6 $$Date: 92/06/08 15:07:29 $
 .\" 
@@ -169,6 +169,7 @@ to an uninitialized variable or element of an array.
 An undefined null string may become defined the first time you access it, but
 prior to that you can use the defined() operator to determine whether the
 value is defined or not.
+.ne 1i
 .PP
 References to scalar variables always begin with \*(L'$\*(R', even when referring
 to a scalar that is part of an array.
@@ -223,6 +224,7 @@ The following are exactly equivalent
 	$#whatever = $[ \- 1;
 
 .fi
+.sp .5
 .PP
 If you evaluate an array in a scalar context, it returns the length of
 the array.
@@ -232,6 +234,7 @@ The following is always true:
 	scalar(@whatever) == $#whatever \- $[ + 1;
 
 .fi
+.sp .5
 If you evaluate an associative array in a scalar context, it returns
 a value which is true if and only if the array contains any elements.
 (If there are any elements, the value returned is a string consisting
@@ -1420,6 +1423,7 @@ You can actually chop anything that's an lvalue, including an assignment:
 .fi
 If you chop a list, each element is chopped.
 Only the value of the last chop is returned.
+.ne 1i
 .Ip "chown(LIST)" 8 2
 .Ip "chown LIST" 8 2
 Changes the owner (and group) of a list of files.
@@ -1949,7 +1953,6 @@ flock(2).
 Here's a mailbox appender for BSD systems.
 .nf
 
-.ne 20
 	$LOCK_SH = 1;
 	$LOCK_EX = 2;
 	$LOCK_NB = 4;
@@ -1962,6 +1965,7 @@ Here's a mailbox appender for BSD systems.
 	    seek(MBOX, 0, 2);
 	}
 
+.ne 1i
 	sub unlock {
 	    flock(MBOX,$LOCK_UN);
 	}
@@ -2639,6 +2643,7 @@ Examples:
 				do process($1, $input);
 				next;
 			}
+.ne 1i
 			.\|.\|.		# whatever
 		}
 	}
@@ -2716,6 +2721,7 @@ unflushed buffers remain unflushed in both
 processes, which means you may need to set $| to
 avoid duplicate output.
 .Sp
+.ne 1i
 The filename that is passed to open will have leading and trailing
 whitespace deleted.
 In order to open a file with arbitrary weird characters in it, it's necessary
@@ -3122,7 +3128,7 @@ Examples:
     s/\ed+/$&*2/e;		# yields \*(L'abc246xyz\*(R'
     s/\ed+/sprintf("%5d",$&)/e;	# yields \*(L'abc  246xyz\*(R'
     s/\ew/$& x 2/eg;		# yields \*(L'aabbcc  224466xxyyzz\*(R'
-
+.ne 1i
     s/\|([^ \|]*\|) *\|([^ \|]*\|)\|/\|$2 $1/;	# reverse 1st two fields
 
 .fi
@@ -3195,6 +3201,7 @@ If you want to select on many filehandles you might wish to write a subroutine:
 	$rin = &fhbits('STDIN TTY SOCK');
 
 .fi
+.ne 1i
 The usual idiom is:
 .nf
 
@@ -3343,6 +3350,7 @@ subroutine, and the two elements to be compared are passed into the subroutine
 not via @_ but as $a and $b (see example below).
 They are passed by reference so don't modify $a and $b.
 .Sp
+.ne 1i
 Examples:
 .nf
 
@@ -3478,6 +3486,7 @@ default behavior, whereas
 split(/\ /) will give you as many null initial fields as there are
 leading spaces.
 .Sp
+.ne 1i
 Example:
 .nf
 
@@ -4019,8 +4028,9 @@ but, because * is higher precedence than ||:
 
 	rand 10 * 20;\h'|3i'# rand (10 * 20)
 	rand(10) * 20;\h'|3i'# (rand 10) * 20
-	rand (10) * 20;\h'|3i'# (rand 10) * 20
-	rand +(10) * 20;\h'|3i'# rand (10 * 20)
+.ne 1i
+       	rand (10) * 20;\h'|3i'# (rand 10) * 20
+       	rand +(10) * 20;\h'|3i'# rand (10 * 20)
 
 .fi
 In the absence of parentheses,
@@ -4241,6 +4251,7 @@ Examples:
 		$seconds = $3;
 	}
 
+.sp
 .fi
 By default, the ^ character is only guaranteed to match at the beginning
 of the string,
@@ -4389,7 +4400,6 @@ format STDOUT =
 $name,              $login,  $office,$uid,$gid, $home
 \&.
 
-.ne 29
 # a report from a bug report form
 format STDOUT_TOP =
 \&                        Bug Reports
@@ -4406,6 +4416,15 @@ Priority: @<<<<<<<<<< Date: @<<<<<<< ^<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 \&          $priority,        $date,   $description
 From: @<<<<<<<<<<<<<<<<<<<<<<<<<<<<< ^<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 \&      $from,                         $description
+.ft R
+.cs R
+.lg
+.fi
+.ne 1i
+.nf
+.lg 0
+.cs R25
+.ft C
 Assigned to: @<<<<<<<<<<<<<<<<<<<<<< ^<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 \&             $programmer,            $description
 \&~                                    ^<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -4741,6 +4760,7 @@ behave more like
 (or Fortran)
 when subscripting and when evaluating the index() and substr() functions.
 (Mnemonic: [ begins subscripts.)
+.ne 1i
 .Ip $] 8 2
 The string printed out when you say \*(L"perl -v\*(R".
 It can be used to determine at the beginning of a script whether the perl
@@ -4910,6 +4930,7 @@ a given file has already been included.
 .Ip $ENV{expr} 8 2
 The associative array ENV contains your current environment.
 Setting a value in ENV changes the environment for child processes.
+.ne 1i
 .Ip $SIG{expr} 8 2
 The associative array SIG is used to set signal handlers for various signals.
 Example:
@@ -5499,6 +5520,7 @@ On page 5, the examples which read
 
 	eval "/usr/bin/perl
 
+.ne 1i
 should read
 
 	eval "exec /usr/bin/perl

@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)a.out.5	8.1 (Berkeley) %G%
+.\"	@(#)a.out.5	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt A.OUT 5
@@ -96,6 +96,7 @@ that uniquely identifies binary files
 and distinguishes different loading conventions.
 The field must contain one of the following values:
 .Bl -tag -width ZMAGIC
+.ne 1i
 .It Dv OMAGIC
 The text and data segments immediately follow the header
 and are contiguous.
@@ -182,6 +183,7 @@ Text relocation offsets are reckoned from the start of the text segment,
 and data relocation offsets from the start of the data segment.
 The link editor adds the value that is already stored at this offset
 into the new value that it computes using this relocation record.
+.ne 1i
 .It Fa r_symbolnum
 Contains the ordinal number of a symbol structure
 in the symbol table (it is

@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)newfs.8	8.3 (Berkeley) %G%
+.\"     @(#)newfs.8	8.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt NEWFS 8
@@ -118,6 +118,7 @@ The default is 4 milliseconds.
 See
 .Xr tunefs 8
 for more details on how to set this option.
+.ne 1i
 .It Fl e Ar maxbpg
 This indicates the maximum number of blocks any single file can
 allocate out of a cylinder group before it is forced to begin
@@ -190,6 +191,7 @@ They are not counted as part of the sectors/track
 since they are not available to the file system for data allocation.
 .It Fl r Ar revolutions/minute
 The speed of the disk in revolutions per minute.
+.ne 1i
 .It Fl t Ar #tracks/cylinder
 The number of tracks/cylinder available for data allocation by the file
 system.

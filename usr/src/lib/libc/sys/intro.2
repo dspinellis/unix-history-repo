@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)intro.2	8.3 (Berkeley) %G%
+.\"     @(#)intro.2	8.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt INTRO 2
@@ -95,6 +95,7 @@ executable file.
 A file descriptor argument was out of range, referred to no open file,
 or a read (write) request was made to a file that was only open for
 writing (reading).
+.sp
 .It Er 10 ECHILD Em "\&No child processes" .
 A
 .Xr wait
@@ -262,6 +263,7 @@ addresses with
 Internet protocols.
 .It Er 48 EADDRINUSE Em "Address already in use" .
 Only one usage of each address is normally permitted.
+.sp
 .It Er 49 EADDRNOTAVAIL Em "Cannot assign requested address" .
 Normally results from an attempt to create a socket with an
 address not on this machine.
@@ -342,6 +344,7 @@ entry failed because the user's quota of disk blocks was
 exhausted, or the allocation of an inode for a newly
 created file failed because the user's quota of inodes
 was exhausted.
+.ne 1i
 .It Er 70 ESTALE Em "Stale NFS file handle" .
 An attempt was made to access an open file (on an
 .Tn NFS
@@ -414,6 +417,7 @@ A session leader with a controlling terminal is a controlling process.
 .It Controlling terminal
 A terminal that is associated with a session is known as the controlling
 terminal for that session and its members.
+.ne 1i
 .It  "Terminal Process Group ID"
 A terminal may be acquired by a session leader as its controlling terminal.
 Once a terminal is associated with a session, any of the process groups
@@ -491,6 +495,7 @@ for the super-user.)
 A process is recognized as a
 .Em super-user
 process and is granted special privileges if its effective user ID is 0.
+.ne 1i
 .It  Special Processes
 The processes with process IDs of 0, 1, and 2 are special.
 Process 0 is the scheduler.  Process 1 is the initialization process
