@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)syslog.h	4.7 (Berkeley) %G%
+ *	@(#)syslog.h	4.8 (Berkeley) %G%
  */
 
 /*
@@ -46,7 +46,11 @@
 
 /*
  *  Option flags for openlog.
+ *
+ *	LOG_ODELAY no longer does anything; LOG_NDELAY is the
+ *	inverse of what it used to be.
  */
 #define	LOG_PID		01	/* log the pid with each message */
 #define	LOG_CONS	02	/* log on the console if errors in sending */
 #define	LOG_ODELAY	04	/* delay open until syslog() is called */
+#define LOG_NDELAY	010	/* don't delay open */
