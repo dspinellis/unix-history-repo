@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)lcmd2.c	3.9 %G%";
+static char sccsid[] = "@(#)lcmd2.c	3.10 %G%";
 #endif
 
 #include "defs.h"
@@ -298,7 +298,7 @@ register struct alias *a;
 }
 
 struct lcmd_arg arg_unalias[] = {
-	{ "name",	1,	ARG_STR },
+	{ "alias",	1,	ARG_STR },
 	0
 };
 
@@ -324,7 +324,7 @@ register struct value *a;
 	char buf[20];
 	struct ww *w;
 
-	if ((w = vtowin(a++)) == 0)
+	if ((w = vtowin(a++, selwin)) == 0)
 		return;
 	while (a->v_type != V_ERR) {
 		if (a->v_type == V_NUM) {
