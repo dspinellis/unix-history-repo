@@ -1,0 +1,72 @@
+# make file for "flex" tool, emx+gcc
+
+release:
+	$(MAKE) -f Makefile.os2 flex.exe \
+	CC="gcc -Zomf -O" O=".obj" A=".lib" AR="emxomfar" \
+	LDFLAGS="-s -Zcrtdll -Zstack 512"
+debug:
+	$(MAKE) -f Makefile.os2 flex.exe \
+	CC="gcc -g" O=".o" A=".a" AR="ar"
+
+CFLAGS = -DOS2 -DSHORT_FILE_NAMES
+
+YACC = bison 
+FLEX = flex
+FLEX_FLAGS = -ist
+
+.SUFFIXES: .c $O
+
+.c$O:
+	$(CC) $(CFLAGS) -c $<
+
+FLEXLIB = fl$A
+FLEXOBJS = ccl$O dfa$O ecs$O gen$O main$O misc$O nfa$O parse$O \
+	scan$O skel$O sym$O tblcmp$O yylex$O
+LIBOBJS = libmain$O libyywrap$O
+
+flex.exe : $(FLEXOBJS) $(FLEXLIB)
+	$(CC) $(LDFLAGS) -o $@ $(FLEXOBJS) $(FLEXLIB)
+
+first_flex:
+	cp initscan.c scan.c
+	$(MAKE) $(MFLAGS) flex
+
+$(FLEXLIB): $(LIBOBJS)
+	$(AR) cru $(FLEXLIB) $(LIBOBJS)
+	$(AR) s $(FLEXLIB)
+
+parse.h parse.c: parse.y
+	$(YACC) -d -o parse.c parse.y
+
+scan.c : scan.l
+	$(FLEX) $(FLEX_FLAGS) $(COMPRESSION) scan.l >scan.c
+
+scan$O : scan.c parse.h flexdef.h
+
+main$O : main.c flexdef.h
+ccl$O : ccl.c flexdef.h
+dfa$O : dfa.c flexdef.h
+ecs$O : ecs.c flexdef.h
+gen$O : gen.c flexdef.h
+misc$O : misc.c flexdef.h
+nfa$O : nfa.c flexdef.h
+parse$O : parse.c flexdef.h
+sym$O : sym.c flexdef.h
+tblcmp$O : tblcmp.c flexdef.h
+yylex$O : yylex.c flexdef.h
+
+skel.c: flex.skl mkskel.sh
+	$(SHELL) mkskel.sh flex.skl >skel.c
+
+test : flex
+	flex $(FLEX_FLAGS) $(COMPRESSION) scan.l | diff scan.c -
+
+bigtest :
+	rm -f scan.c ; $(MAKE) COMPRESSION="-C" test
+	rm -f scan.c ; $(MAKE) COMPRESSION="-Ce" test
+	rm -f scan.c ; $(MAKE) COMPRESSION="-Cm" test
+	rm -f scan.c ; $(MAKE) COMPRESSION="-Cfe" test
+	rm -f scan.c ; $(MAKE) COMPRESSION="-CFe" test
+	rm -f scan.c ; $(MAKE) COMPRESSION="-Cf" test
+	rm -f scan.c ; $(MAKE) COMPRESSION="-CF" test
+	rm -f scan.c ; $(MAKE)
