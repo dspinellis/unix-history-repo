@@ -1,4 +1,4 @@
-/*	in_proto.c	5.3	82/11/03	*/
+/*	in_proto.c	5.4	83/01/17	*/
 
 #include "../h/param.h"
 #include "../h/socket.h"
@@ -32,6 +32,13 @@ extern	int raw_usrreq();
 #if NIMP > 0
 int	rimp_output(), hostslowtimo();
 #endif
+/*
+ * Network disk protocol: runs on top of IP
+ */
+#include "nd.h"
+#if NND > 0
+int	nd_input(), nd_slowtimo(), nd_init();
+#endif
 
 struct protosw inetsw[] = {
 { 0,		PF_INET,	0,		0,
@@ -59,6 +66,13 @@ struct protosw inetsw[] = {
   raw_usrreq,
   0,		0,		0,		0,
 },
+#if NND > 0
+{ 0,		PF_INET,	IPPROTO_ND,	0,
+  nd_input,	0,		0,		0,
+  0,
+  nd_init,	0,		nd_slowtimo,	0,
+},
+#endif
 };
 
 struct domain inetdomain =
