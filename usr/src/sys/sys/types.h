@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)types.h	7.15 (Berkeley) %G%
+ *	@(#)types.h	7.16 (Berkeley) %G%
  */
 
 #ifndef _TYPES_H_
@@ -105,6 +105,7 @@ struct	ucred;
 struct	rusage;
 struct	file;
 struct	buf;
+struct	tty;
 struct	uio;
 #endif
 
