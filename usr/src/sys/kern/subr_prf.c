@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)subr_prf.c	7.29 (Berkeley) %G%
+ *	@(#)subr_prf.c	7.30 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -84,7 +84,9 @@ panic(msg)
 #endif
 #ifdef KADB
 	if (boothowto & RB_KDB) {
-		int s = splnet();	/* below kdb pri */
+		int s;
+
+		s = splnet();	/* below kdb pri */
 		setsoftkdb();
 		splx(s);
 	}
@@ -213,9 +215,10 @@ log(level, fmt /*, va_alist */)
 	char *fmt;
 #endif
 {
-	register int s = splhigh();
+	register int s;
 	va_list ap;
 
+	s = splhigh();
 	logpri(level);
 	va_start(ap, fmt);
 	kprintf(fmt, TOLOG, NULL, ap);
@@ -250,9 +253,10 @@ addlog(fmt /*, va_alist */)
 	char *fmt;
 #endif
 {
-	register int s = splhigh();
+	register int s;
 	va_list ap;
 
+	s = splhigh();
 	va_start(ap, fmt);
 	kprintf(fmt, TOLOG, NULL, ap);
 	splx(s);
@@ -265,9 +269,7 @@ addlog(fmt /*, va_alist */)
 	logwakeup();
 }
 
-#if defined(tahoe)
 int	consintr = 1;			/* ok to handle console interrupts? */
-#endif
 
 void
 #ifdef __STDC__
@@ -278,20 +280,16 @@ printf(fmt /*, va_alist */)
 #endif
 {
 	va_list ap;
-#ifdef tahoe
 	register int savintr;
 
 	savintr = consintr;		/* disable interrupts */
 	consintr = 0;
-#endif
 	va_start(ap, fmt);
 	kprintf(fmt, TOCONS | TOLOG, NULL, ap);
 	va_end(ap);
 	if (!panicstr)
 		logwakeup();
-#ifdef tahoe
 	consintr = savintr;		/* reenable interrupts */
-#endif
 }
 
 /*
@@ -450,7 +448,7 @@ putchar(c, flags, tp)
 	struct tty *tp;
 {
 	extern int msgbufmapped;
-	register struct msgbuf *mbp = msgbufp;
+	register struct msgbuf *mbp;
 
 	if (panicstr)
 		constty = NULL;
@@ -467,6 +465,7 @@ putchar(c, flags, tp)
 		constty = NULL;
 	if ((flags & TOLOG) &&
 	    c != '\0' && c != '\r' && c != 0177 && msgbufmapped) {
+		mbp = msgbufp;
 		if (mbp->msg_magic != MSG_MAGIC) {
 			bzero((caddr_t)mbp, sizeof(*mbp));
 			mbp->msg_magic = MSG_MAGIC;
