@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)syslog.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslog.c	5.20 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -116,6 +116,7 @@ vsyslog(pri, fmt, ap)
 			}
 			else
 				*t1++ = ch;
+		*t1 = '\0';
 	}
 
 	(void)vsprintf(p, fmt_cpy, ap);
