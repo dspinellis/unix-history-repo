@@ -8,13 +8,13 @@
 
 #endif	/* !defined(TN3270) */
 
-#define	NETADD(c)	{ *netoring.send = c; ring_added(&netoring, 1); }
+#define	NETADD(c)	{ *netoring.add = c; ring_added(&netoring, 1); }
 #define	NET2ADD(c1,c2)	{ NETADD(c1); NETADD(c2); }
 #define	NETBYTES()	(ring_unsent_count(&netoring))
 #define	NETROOM()	(ring_empty_count(&netoring))
 
 #define	TTYADD(c)	if (!(SYNCHing||flushout)) { \
-				*ttyoring.send = c; \
+				*ttyoring.add = c; \
 				ring_added(&ttyoring, 1); \
 			}
 #define	TTYBYTES()	(ring_unsent_count(&ttyoring))
