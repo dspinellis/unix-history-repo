@@ -1,0 +1,2 @@
+cc expreserve.c -o expreserve
+echo \"install\" when you have a \"preserve\" and a \"recover\"
