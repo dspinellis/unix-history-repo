@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)buf.h	7.11 (Berkeley) %G%
+ *	@(#)buf.h	7.12 (Berkeley) %G%
  */
 
 /*
@@ -53,7 +53,8 @@ struct buf
 	union {
 	    caddr_t b_addr;		/* low order core address */
 	    int	*b_words;		/* words for clearing */
-	    struct fs *b_fs;		/* superblocks */
+	    struct fs *b_fs;		/* UFS superblocks */
+	    struct lfs *b_lfs;		/* LFS superblocks */
 	    struct csum *b_cs;		/* superblock summary information */
 	    struct cg *b_cg;		/* cylinder group block */
 	    struct dinode *b_dino;	/* ilist */
@@ -112,11 +113,25 @@ struct	buf bfreelist[BQUEUES];	/* heads of available lists */
 struct	buf bswlist;		/* head of free swap header list */
 struct	buf *bclnlist;		/* head of cleaned page list */
 
-struct	buf *getblk();
-struct	buf *geteblk();
-struct	buf *getnewbuf();
-
-unsigned minphys();
+__BEGIN_DECLS
+int	allocbuf __P((struct buf *, int));
+int	bawrite __P((struct buf *));
+int	bdwrite __P((struct buf *));
+void	biodone __P((struct buf *));
+int	biowait __P((struct buf *));
+int	bread __P((struct vnode *, daddr_t, int,
+	    struct ucred *, struct buf **));
+int	breada __P((struct vnode *, daddr_t, int, daddr_t, int,
+	    struct ucred *, struct buf **));
+int	brelse __P((struct buf *));
+void	bufinit __P((void));
+int	bwrite __P((struct buf *));
+struct buf *getblk __P((struct vnode *, daddr_t, int));
+struct buf *geteblk __P((int));
+struct buf *getnewbuf __P((void));
+int	incore __P((struct vnode *, daddr_t));
+u_int	minphys __P((struct buf *bp));
+__END_DECLS
 #endif
 
 /*
