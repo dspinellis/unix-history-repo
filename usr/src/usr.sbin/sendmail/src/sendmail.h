@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.46 (Berkeley) %G%
+ *	@(#)sendmail.h	8.47 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.46		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.47		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -381,6 +381,8 @@ ENVELOPE
 #define EF_LOGSENDER	0x0008000	/* need to log the sender */
 #define EF_NORECEIPT	0x0010000	/* suppress all return-receipts */
 #define EF_HAS8BIT	0x0020000	/* at least one 8-bit char in body */
+#define EF_NL_NOT_EOL	0x0040000	/* don't accept raw NL as EOLine */
+#define EF_CRLF_NOT_EOL	0x0080000	/* don't accept CR-LF as EOLine */
 
 EXTERN ENVELOPE	*CurEnv;	/* envelope currently being processed */
 /*
