@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)login.c.1	4.16 82/04/03";
+static	char *sccsid = "@(#)login.c.1	4.17 82/05/19";
 /*
  * login [ name ]
  * login -r
@@ -73,6 +73,7 @@ struct	ltchars ltc = {
 int	rflag;
 char	rusername[NMAX+1], lusername[NMAX+1];
 char	rpassword[NMAX+1];
+char	name[NMAX+1];
 char	*rhost;
 
 main(argc, argv)
@@ -297,7 +298,9 @@ normal:
 	}
 	chown(ttyn, pwd->pw_uid, pwd->pw_gid);
 	setgid(pwd->pw_gid);
-	inigrp(utmp.ut_name, pwd->pw_gid);
+	strncpy(name, utmp.ut_name, NMAX);
+	name[NMAX] = '\0';
+	inigrp(name, pwd->pw_gid);
 	setuid(pwd->pw_uid);
 	environ = envinit;
 	strncat(homedir, pwd->pw_dir, sizeof(homedir)-6);
