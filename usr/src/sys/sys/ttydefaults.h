@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ttydefaults.h	7.6 (Berkeley) %G%
+ *	@(#)ttydefaults.h	7.7 (Berkeley) %G%
  */
 
 /*
@@ -15,9 +15,9 @@
 /*
  * Defaults on "first" open.
  */
-#define	TTYDEF_IFLAG	(BRKINT | ISTRIP | ICRNL | IMAXBEL | IXON)
+#define	TTYDEF_IFLAG	(BRKINT | ISTRIP | ICRNL | IMAXBEL | IXON | IXANY)
 #define TTYDEF_OFLAG	(OPOST | ONLCR | OXTABS)
-#define TTYDEF_LFLAG	(ECHO | ICANON | ISIG | IEXTEN)
+#define TTYDEF_LFLAG	(ECHO | ICANON | ISIG | IEXTEN | ECHOE|ECHOKE|ECHOCTL)
 #define TTYDEF_CFLAG	(CREAD | CS7 | PARENB | HUPCL)
 #define TTYDEF_SPEED	(B9600)
 
