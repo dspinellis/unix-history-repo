@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ufs_lockf.c	7.7 (Berkeley) 7/2/91
- *	$Id: ufs_lockf.c,v 1.3 1993/10/16 18:17:53 rgrimes Exp $
+ *	$Id: ufs_lockf.c,v 1.4 1993/10/20 07:31:39 davidg Exp $
  */
 
 #include "param.h"
@@ -247,6 +247,7 @@ lf_setlock(lock)
 #endif /* LOCKF_DEBUG */
 		if (error = tsleep((caddr_t)lock, priority, lockstr, 0)) {
 
+#ifdef PK_LOCKF_FIX /* Paul Kranenburg's lockf fix (buggy!) */
 			/* Don't leave a dangling pointer in block list */
 			if (lf_getblock(lock) == block) {
 				struct lockf	**prev;
@@ -262,6 +263,13 @@ lf_setlock(lock)
 				}
 			}
 			free(lock, M_LOCKF);
+#else /* Mark Tinguely's fix instead */
+			(void) lf_clearlock(lock);
+			return (error);
+#endif
+#if 0 /* ...and this is the original code -DLG */
+			free(lock, M_LOCKF);
+#endif
 			return (error);
 		}
 	}
