@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ikreg.h	7.1 (Berkeley) %G%
+ *	@(#)ikreg.h	7.2 (Berkeley) %G%
  */
 
 struct ikdevice {
@@ -19,8 +19,8 @@ struct ikdevice {
 
 #define IK_GETADDR 	IKIOGETADDR
 #define IK_WAITINT 	IKIOWAITINT
-#define	IKIOGETADDR	_IOR(i, 0, caddr_t)	/* get Unibus device address */
-#define	IKIOWAITINT	_IO(i, 1)		/* await device interrupt */
+#define	IKIOGETADDR	_IOR('i', 0, caddr_t)	/* get Unibus device address */
+#define	IKIOWAITINT	_IO('i', 1)		/* await device interrupt */
 
 /*
  * Unibus status/command register bits
