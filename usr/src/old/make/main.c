@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	4.5 (Berkeley) 83/03/03";
+static	char *sccsid = "@(#)main.c	4.6 (Berkeley) 84/11/26";
 # include "defs"
 /*
 command make to update programs.
@@ -61,11 +61,9 @@ char c, *s;
 static char onechar[2] = "X";
 #ifdef unix
 int intrupt();
+#endif
 char *op = options + 1;
 
-
-
-#endif
 
 #ifdef METERFILE
 meter(METERFILE);
