@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)hexdump.1	8.1 (Berkeley) %G%
+.\"	@(#)hexdump.1	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt HEXDUMP 1
@@ -237,7 +237,7 @@ The input is manipulated in ``blocks'', where a block is defined as the
 largest amount of data specified by any format string.
 Format strings interpreting less than an input block's worth of data,
 whose last format unit both interprets some number of bytes and does
-not have a specified iteration count, have the the interation count
+not have a specified iteration count, have the iteration count
 incremented until the entire input block has been processed or there
 is not enough data remaining in the block to satisfy the format string.
 .Pp
