@@ -1,6 +1,6 @@
 # Makefile for f77 math & startup lib, libF77.a
 #
-# @(#)Makefile	1.1 (Berkeley) %G%
+# @(#)Makefile	1.2 (Berkeley) %G%
 
 CFLAGS	      = -O
 
@@ -130,6 +130,7 @@ OBJS	      = abort_.o \
 		r_tan.o \
 		r_tanh.o \
 		rand_.o \
+		random_.o \
 		range.o \
 		rindex_.o \
 		s_cat.o \
@@ -269,6 +270,7 @@ SRCS	      = abort_.c \
 		r_tan.c \
 		r_tanh.c \
 		rand_.c \
+		random_.c \
 		range.c \
 		rindex_.c \
 		s_cat.c \
