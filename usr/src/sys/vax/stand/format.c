@@ -11,13 +11,18 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)format.c	6.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)format.c	6.6 (Berkeley) %G%";
 #endif not lint
+
 
 /* 
  * Standalone program to do media checking
  * and record bad block information on any 
  * disk with the appropriate driver and RM03-style headers.
+ * TODO:
+ *	add new bad sectors to bad-sector table when formatting by track
+ *		(rearranging replacements ala bad144 -a)
+ *	multi-pass format for disks with skip-sector capability
  */
 #include "../h/param.h"
 #include "../h/fs.h"
@@ -84,12 +89,14 @@ unsigned short ppat[] = {
 #define	NPT	(sizeof (ppat) / sizeof (short))
 int	maxpass, npat;	/* subscript to ppat[] */
 int	severe;		/* nz if running "severe" burnin */
+int	startcyl, endcyl, starttrack, endtrack;
 int	nbads;		/* subscript for bads */
 long	bads[MAXBADDESC]; /* Bad blocks accumulated */
 
 char	*malloc();
 int	qcompar();
 char	*prompt();
+daddr_t	badsn();
 extern	int end;
 
 main()
@@ -117,6 +124,7 @@ again:
 	ioctl(fd, SAIODEVDATA, &st);
 	printf("Device data: #cylinders=%d, #tracks=%d, #sectors=%d\n",
 	  st.ncyl, st.ntrak, st.nsect);
+	getrange(&st);
 	if (getpattern())
 		goto again;
 	printf("Start formatting...make sure the drive is online\n");
@@ -154,8 +162,10 @@ more:
 		 * 2) Read data.  Hardware checks header and data ECC.
 		 *    Read data (esp on Eagles) is much faster than write check.
 		 */
-		lastsector = st.nspc * st.ncyl;
-		for (sector = 0; sector < lastsector; sector += st.nsect) {
+		sector = ((startcyl * st.ntrak) + starttrack) * st.nsect;
+		lastsector = ((endcyl * st.ntrak) + endtrack) * st.nsect
+			+ st.nsect;
+		for ( ; sector < lastsector; sector += st.nsect) {
 			cyl = sector / st.nspc;
 			trk = (sector % st.nspc) / st.nsect;
 			for (i = 0; i < st.nsect; i++) {
@@ -227,7 +237,7 @@ out:
 		printf("Errors:\n");
 		for (i = 0; i < NERRORS; i++)
 			printf("%s: %d\n", errornames[i], errors[i]);
-		printf("Total of %d hard errors found\n",
+		printf("Total of %d hard errors revectored\n",
 			errors[FE_TOTAL] + errors[FE_SSE]);
 	}
 	if (severe && maxpass < NPT) {
@@ -254,18 +264,31 @@ out:
 		writebb(fd, errors[FE_SSE], &sstab, &st, SSERR);
 		writebb(fd, errors[FE_TOTAL], &dkbad, &st, BSERR);
 	}
-	while (errors[FE_TOTAL] < MAXBADDESC) {
-		int i = errors[FE_TOTAL]++;
+	if (endcyl == st.ncyl - 1 &&
+	    (startcyl < st.ncyl - 1 || starttrack == 0)) {
+		while (errors[FE_TOTAL] < MAXBADDESC) {
+			int i = errors[FE_TOTAL]++;
 
-		dkbad.bt_bad[i].bt_cyl = -1;
-		dkbad.bt_bad[i].bt_trksec = -1;
-	}
-	printf("\nWriting bad sector table at sector #%d\n",
-		st.ncyl * st.nspc - st.nsect);
-	/* place on disk */
-	for (i = 0; i < 10; i += 2) {
-		lseek(fd, SECTSIZ * (st.ncyl * st.nspc - st.nsect + i), 0);
-		write(fd, &dkbad, sizeof (dkbad));
+			dkbad.bt_bad[i].bt_cyl = -1;
+			dkbad.bt_bad[i].bt_trksec = -1;
+		}
+		printf("\nWriting bad sector table at sector #%d\n",
+			st.ncyl * st.nspc - st.nsect);
+		/* place on disk */
+		for (i = 0; i < 10 && i < st.nsect; i += 2) {
+			lseek(fd, SECTSIZ * (st.ncyl * st.nspc - st.nsect + i), 0);
+			write(fd, &dkbad, sizeof (dkbad));
+		}
+	} else if (errors[FE_TOTAL]) {
+		struct bt_bad *bt;
+
+		printf("New bad sectors (not added to table):\n");
+		bt = dkbad.bt_bad;
+		for (i = 0; i < errors[FE_TOTAL]; i++) {
+			printf("sn %d (cn=%d, tn=%d, sn=%d)\n", badsn(bt, st),
+			    bt->bt_cyl, bt->bt_trksec>>8, bt->bt_trksec&0xff);
+			bt++;
+		}
 	}
 	printf("Done\n");
 	ioctl(fd,SAIONOSSI,(char *)0);
@@ -285,8 +308,18 @@ register long *l1, *l2;
 	return(1);
 }
 
+daddr_t
+badsn(bt, st)
+	register struct bt_bad *bt;
+	register struct st *st;
+{
+	return ((bt->bt_cyl*st->ntrak + (bt->bt_trksec>>8)) * st->nsect
+		+ (bt->bt_trksec&0xff));
+}
+
 /*
- * Write out the bad blocks.
+ * Mark the bad/skipped sectors.
+ * Bad sectors on skip-sector devices are assumed to be skipped also.
  */
 writebb(fd, nsects, dbad, st, sw)
 	int nsects, fd;
@@ -320,8 +353,10 @@ writebb(fd, nsects, dbad, st, sw)
 		 * If skip sector, mark all remaining
 		 * sectors on the track.
 		 */
-		for (j = (btp->bt_trksec & 0xff) + 1; j < st->nsect; j++) {
-			bb_buf.header1 = j | HDR1_FMT22 | HDR1_SSF;
+		for (j = (btp->bt_trksec & 0xff) + 1, bn++;
+		    j <= st->nsect; j++, bn++) {
+			bb_buf.header2 = j | (btp->bt_trksec & 0xff00);
+			lseek(fd, bn * SECTSIZ, 0);
 			ioctl(fd, SAIOHDR, (char *)0);
 			write(fd, &bb_buf, sizeof (bb_buf));
 		}
@@ -339,7 +374,7 @@ recorderror(fd, bn, st)
 	int fd, bn;
 	register struct st *st;
 {
-	int cn, tn, sn, strk;
+	int cn, tn, sn;
 	register i;
 
 	
@@ -348,7 +383,7 @@ recorderror(fd, bn, st)
 			if (bads[i] == bn)
 				return(0);	/* bn already flagged */
 		if (nbads >= MAXBADDESC) {
-			printf("Bad sector table full, burnin terminating\n");
+			printf("Bad sector table full, format terminating\n");
 			return(-1);
 		}
 		bads[nbads++] = bn;
@@ -359,14 +394,6 @@ recorderror(fd, bn, st)
 		return(0);
 	}
 	if (errno >= EBSE && errno <= EHER) {
-		if (errors[FE_TOTAL] >= MAXBADDESC) {
-			printf("Too many bad sectors\n");
-			return(-1);
-		}
-		if (errors[FE_SSE] >= MAXBADDESC) {
-			printf("Too many skip sector errors\n");
-			return(-1);
-		}
 		errno -= EBSE;
 		errors[errno]++;
 	}
@@ -375,18 +402,26 @@ recorderror(fd, bn, st)
 	tn = sn / st->nsect;
 	sn %= st->nsect;
 	if (SSDEV) {		/* if drive has skip sector capability */
-		int ss = errors[FE_SSE]++;
+		int ss = errors[FE_SSE];
 
-		if (ss)
-			strk = sstab.bt_bad[ss - 1].bt_trksec >> 8;
-		else
-			strk = -1;
-		if (tn != strk) {	  /* only one skip sector/track */
+		if (errors[FE_SSE] >= MAXBADDESC) {
+			/* this is bogus, we don't maintain skip sector table */
+			printf("Too many skip sector errors\n");
+			return(-1);
+		}
+		  /* only one skip sector/track */
+		if (ss == 0 ||
+		    tn != (sstab.bt_bad[ss - 1].bt_trksec >> 8) ||
+		    cn != sstab.bt_bad[ss - 1].bt_cyl) {
 			sstab.bt_bad[ss].bt_cyl = cn;
 			sstab.bt_bad[ss].bt_trksec = (tn<<8) + sn;
-			return;
+			errors[FE_SSE]++;
+			return(0);
 		}
-		cn = -cn;
+	}
+	if (errors[FE_TOTAL] >= MAXBADDESC) {
+		printf("Too many bad sectors\n");
+		return(-1);
 	}
 	/* record the bad sector address and continue */
 	dkbad.bt_bad[errors[FE_TOTAL]].bt_cyl = cn;
@@ -440,6 +475,35 @@ top:
 	if (*cp == 'y')
 		return (fd);
 	goto top;
+}
+
+/*
+ * Find range of tracks to format.
+ */
+getrange(st)
+	struct st *st;
+{
+	startcyl = getnum("Starting cylinder", 0, st->ncyl - 1, 0);
+	endcyl = getnum("Ending cylinder", 0, st->ncyl - 1, st->ncyl - 1);
+	starttrack = getnum("Starting track", 0, st->ntrak - 1, 0);
+	endtrack = getnum("Ending track", 0, st->ntrak - 1, st->ntrak - 1);
+}
+
+getnum(s, low, high, dflt)
+{
+	char buf[132];
+	unsigned val;
+
+	while (1) {
+		printf("%s (%d): ", s, dflt);
+		gets(buf);
+		if (buf[0] == 0)
+			return (dflt);
+		val = atoi(buf);
+		if (val >= low && val <= high)
+			return ((int)val);
+		printf("Value must be in range [%d,%d]\n", low, high);
+	}
 }
 
 static struct pattern {
