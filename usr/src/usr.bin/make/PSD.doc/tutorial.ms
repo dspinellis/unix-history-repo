@@ -8,11 +8,10 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)tutorial.ms	5.3 (Berkeley) %G%
+.\"	@(#)tutorial.ms	5.4 (Berkeley) %G%
 .\"
 .EH 'PSD:12-%''PMake \*- A Tutorial'
 .OH 'PMake \*- A Tutorial''PSD:9-%'
-.PD
 .\" xH is a macro to provide numbered headers that are automatically stuffed
 .\" into a table-of-contents, properly indented, etc. If the first argument
 .\" is numeric, it is taken as the depth for numbering (as for .NH), else
@@ -31,7 +30,7 @@
 .nr PD .1v
 .XS \\n%
 .ta 0.6i
-\\*(SN	\\$2
+\\*(SN	\\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
 .XE
 .nr PD .3v
 ..
@@ -1838,7 +1837,7 @@ Examining jive.l...modified 17:16:01 Oct 4, 1987...up-to-date
 Examining jive.c...non-existent...out-of-date
 --- jive.c ---
 lex jive.l
-.\|.\|. meaningless lex output deleted .\|.\|.
+\&.\|.\|. meaningless lex output deleted .\|.\|.
 mv lex.yy.c jive.c
 Examining jive.o...non-existent...out-of-date
 --- jive.o ---
@@ -3694,12 +3693,14 @@ it. Expansion may be altered by means of modifiers.
 A place in which to store text that may be retrieved later. Also used
 to define the local environment. Conditionals exist that test whether
 a variable is defined or not.
+.bp
 .\" Output table of contents last, with an entry for the index, making
 .\" sure to save and restore the last real page number for the index...
 .nr @n \n(PN+1
-.XS \n(@n
-Index
-.XE
+.\" We are not generating an index
+.\" .XS \n(@n
+.\" Index
+.\" .XE
 .nr %% \n%
 .PX
 .nr % \n(%%
