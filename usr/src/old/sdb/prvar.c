@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)prvar.c 4.1 %G%";
+static	char sccsid[] = "@(#)prvar.c 4.2 %G%";
 #include "head.h"
 #include <a.out.h>
 #include <stab.h>
@@ -26,7 +26,7 @@ STRING	errflg;
  */
 outvar(proc, var, fmt, metaflag, addr, class, subflag, prnamep,
 		comblk, prvar)
-ADDR addr; char *proc, *var, *fmt, class, *prnamep, *comblk; {
+ADDR addr; char *proc, *var, *fmt, *prnamep, *comblk; int class; {
 	char *p, *q, *r, *oldpr;
 	register int match;
 	long soffset, goffset;
