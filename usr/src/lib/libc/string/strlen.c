@@ -1,29 +1,24 @@
-/*
- * Copyright (c) 1988 Regents of the University of California.
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms are permitted
- * provided that the above copyright notice and this paragraph are
- * duplicated in all such forms and that any documentation,
- * advertising materials, and other materials related to such
- * distribution and use acknowledge that the software was developed
- * by the University of California, Berkeley.  The name of the
- * University may not be used to endorse or promote products derived
- * from this software without specific prior written permission.
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * %sccs.include.redist.c%
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)strlen.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)strlen.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
-strlen(str)
-	register char *str;
-{
-	register int cnt;
+#include <sys/stdc.h>
+#include <string.h>
 
-	for (cnt = 0; *str; ++cnt, ++str);
-	return(cnt);
+size_t
+strlen(str)
+	const char *str;
+{
+	register const char *s;
+
+	for (s = str; *s; ++s);
+	return(s - str);
 }
+
