@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)dump.5	6.1 (Berkeley) %G%
+.\"	@(#)dump.5	6.2 (Berkeley) %G%
 .\"
 .TH DUMP 5  ""
 .UC 4
@@ -13,7 +13,7 @@ dump, dumpdates \- incremental dump format
 .br
 .B #include <sys/inode.h>
 .br
-.B #include <dumprestor.h>
+.B #include <protocols/dumprestore.h>
 .SH DESCRIPTION
 Tapes used by
 .I dump
@@ -31,7 +31,7 @@ a group of records describing files
 The format of the header record and of the first
 record of each description as given in the
 include file
-.I <dumprestor.h>
+.I <protocols/dumprestore.h>
 is:
 .PP
 .nf
