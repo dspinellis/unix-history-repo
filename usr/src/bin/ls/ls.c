@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	5.55 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	5.56 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>	
@@ -179,9 +179,16 @@ main(argc, argv)
 	if (f_listdir)
 		f_recursive = 0;
 
-	/* If options require that the files be stat'ed. */
+	/* If not -F, -l -s or -t options, don't require stat information. */
 	if (!f_longform && !f_size && !f_timesort && !f_type)
 		fts_options |= FTS_NOSTAT;
+
+	/*
+	 * If not -F, -d or -l options, follow any symbolic links listed on
+	 * the command line.
+	 */
+	if (!f_longform && !f_listdir && !f_type)
+		fts_options |= FTS_COMFOLLOW;
 
 	/* Select a sort function. */
 	if (f_reversesort) {
@@ -239,6 +246,7 @@ traverse(argc, argv, options)
 	if ((ftsp =
 	    fts_open(argv, options, f_nosort ? NULL : mastercmp)) == NULL)
 		err(1, "fts_open: %s", strerror(errno));
+
 	display(argc, NULL, fts_children(ftsp));
 	if (f_listdir)
 		return;
@@ -283,7 +291,7 @@ display(argc, p, list)
 	/*
 	 * If list is NULL there are two possibilities: that the parent
 	 * directory p has no children, or that fts_children() returned an
-	 * error.  We ignore the error case since, it will be replicated
+	 * error.  We ignore the error case since it will be replicated
 	 * on the next call to fts_read() on the post-order visit to the
 	 * directory p, and will be signalled in traverse().
 	 */
