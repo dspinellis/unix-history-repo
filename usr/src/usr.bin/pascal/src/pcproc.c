@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pcproc.c 1.12 %G%";
+static	char sccsid[] = "@(#)pcproc.c 1.13 %G%";
 
 #include "whoami.h"
 #ifdef PC
@@ -1178,8 +1178,9 @@ pcproc(r)
 			error("%s expects at least one argument", p->symbol);
 			return;
 		}
+		alv = argv[1];
 		codeoff();
-		ap = stklval(argv[1], op == O_NEW ? ( MOD | NOUSE ) : MOD );
+		ap = stklval(alv, op == O_NEW ? ( MOD | NOUSE ) : MOD );
 		codeon();
 		if (ap == NIL)
 			return;
@@ -1190,17 +1191,15 @@ pcproc(r)
 		ap = ap->type;
 		if (ap == NIL)
 			return;
-		if (op == O_DISPOSE)
+		if (op == O_NEW)
+			cmd = "_NEW";
+		else /* op == O_DISPOSE */
 			if ((ap->nl_flags & NFILES) != 0)
 				cmd = "_DFDISPOSE";
 			else
 				cmd = "_DISPOSE";
-		else if (opt('t'))
-			cmd = "_NEWZ";
-		else
-			cmd = "_NEW";
 		putleaf( P2ICON, 0, 0, ADDTYPE( P2FTN | P2INT , P2PTR ), cmd);
-		stklval(argv[1], op == O_NEW ? ( MOD | NOUSE ) : MOD );
+		stklval(alv, op == O_NEW ? ( MOD | NOUSE ) : MOD );
 		argv = argv[2];
 		if (argv != NIL) {
 			if (ap->class != RECORD) {
@@ -1237,6 +1236,15 @@ pcproc(r)
 		putop( P2LISTOP , P2INT );
 		putop( P2CALL , P2INT );
 		putdot( filename , line );
+		if (opt('t') && op == O_NEW) {
+		    putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
+			    , "_blkclr" );
+		    stklval(alv, op == O_NEW ? ( MOD | NOUSE ) : MOD );
+		    putleaf( P2ICON , width( ap ) , 0 , P2INT , 0 );
+		    putop( P2LISTOP , P2INT );
+		    putop( P2CALL , P2INT );
+		    putdot( filename , line );
+		}
 		return;
 
 	case O_DATE:
@@ -1410,8 +1418,12 @@ pcproc(r)
 			error("Assert expects one or two arguments");
 			return;
 		}
+		if (argc == 2)
+			cmd = "_ASRTS";
+		else
+			cmd = "_ASRT";
 		putleaf( P2ICON , 0 , 0
-		    , ADDTYPE( P2FTN | P2INT , P2PTR ) , "_ASRT" );
+		    , ADDTYPE( P2FTN | P2INT , P2PTR ) , cmd );
 		ap = stkrval(argv[1], NIL , RREQ );
 		if (ap == NIL)
 			return;
@@ -1430,10 +1442,8 @@ pcproc(r)
 				error("Second argument to assert must be a string, not %s", nameof(al));
 				return;
 			}
-		} else {
-			putleaf( P2ICON , 0 , 0 , P2INT , 0 );
+			putop( P2LISTOP , P2INT );
 		}
-		putop( P2LISTOP , P2INT );
 		putop( P2CALL , P2INT );
 		putdot( filename , line );
 		return;
