@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_usrreq.c,v 5.4 88/11/18 17:29:18 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_usrreq.c,v $
- *	@(#)tp_usrreq.c	7.8 (Berkeley) %G%
+ *	@(#)tp_usrreq.c	7.9 (Berkeley) %G%
  *
  * tp_usrreq(), the fellow that gets called from most of the socket code.
  * Pretty straighforward.
@@ -557,8 +557,12 @@ tp_usrreq(so, req, m, nam, controlp)
 
 	case PRU_SEND:
 	case PRU_SENDOOB:
-		if (controlp && (error = tp_snd_control(controlp, so, &m)))
-			break;
+		if (controlp) {
+			error = tp_snd_control(controlp, so, &m);
+			controlp = NULL;
+			if (error)
+				break;
+		}
 		if (so->so_state & SS_ISCONFIRMING) {
 			if (tpcb->tp_state == TP_CONFIRMING)
 				error = tp_confirm(tpcb);
@@ -728,6 +732,10 @@ tp_usrreq(so, req, m, nam, controlp)
 		tptraceTPCB(TPPTusrreq, "END req so m state [", req, so, m, 
 			tpcb?0:tpcb->tp_state);
 	ENDTRACE
+	if (controlp) {
+		m_freem(controlp);
+		printf("control data unexpectedly retained in tp_usrreq()");
+	}
 	splx(s);
 	return error;
 }
@@ -758,32 +766,30 @@ register struct tp_pcb *tpcb;
 /*
  * Process control data sent with sendmsg()
  */
-tp_snd_control(m0, so, data)
-	register struct mbuf *m0;
+tp_snd_control(m, so, data)
+	struct mbuf *m;
 	struct socket *so;
 	register struct mbuf **data;
 {
 	register struct tp_control_hdr *ch;
-	struct mbuf *m;
 	int error = 0;
 
-	if (m0 && m0->m_len) {
-		ch = mtod(m0, struct tp_control_hdr *);
-		m0->m_len -= sizeof (*ch);
-		m0->m_data += sizeof (*ch);
-		m = m_copym(m0, 0, M_COPYALL, M_WAIT);
+	if (m && m->m_len) {
+		ch = mtod(m, struct tp_control_hdr *);
+		m->m_len -= sizeof (*ch);
+		m->m_data += sizeof (*ch);
 		error = tp_ctloutput(PRCO_SETOPT,
 							 so, ch->cmsg_level, ch->cmsg_type, &m);
-		if (m)
-			m_freem(m);
 		if (ch->cmsg_type == TPOPT_DISC_DATA) {
 			if (data && *data) {
 				m_freem(*data);
 				*data = 0;
 			}
-			m0 = 0;
-			error = tp_usrreq(so, PRU_DISCONNECT, m0, (caddr_t)0, m0);
+			error = tp_usrreq(so, PRU_DISCONNECT, (struct mbuf *)0,
+								(caddr_t)0, (struct mbuf *)0);
 		}
 	}
+	if (m)
+		m_freem(m);
 	return error;
 }
