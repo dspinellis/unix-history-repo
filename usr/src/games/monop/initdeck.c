@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)initdeck.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)initdeck.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	<stdio.h>
@@ -95,12 +95,12 @@ getargs(ac, av)
 int	ac;
 char	*av[]; {
 
-	if (ac > 2) {
-		infile = av[2] ? av[2] : infile;
-		if (ac > 3)
-			outfile = av[3];
-	}
+	if (ac > 1)
+		infile = av[1];
+	if (ac > 2)
+		outfile = av[2];
 }
+
 /*
  * count the cards
  */
