@@ -1,4 +1,4 @@
-/*	subr_rmap.c.sav	3.2	%G%	*/
+/*	subr_rmap.c.sav	3.3	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -23,11 +23,23 @@ struct map *mp;
 {
 	register int a;
 	register struct map *bp;
+	swblk_t first, rest;
 
-	if (size <= 0)
+	if (size <= 0 || mp == swapmap && size > DMMAX)
 		panic("malloc");
 	for (bp=mp; bp->m_size; bp++) {
 		if (bp->m_size >= size) {
+			if (mp == swapmap &&
+			    (first = DMMAX - bp->m_addr%DMMAX) < bp->m_size) {
+				if (bp->m_size - first < size)
+					continue;
+				a = bp->m_addr + first;
+				rest = bp->m_size - first - size;
+				bp->m_size = first;
+				if (rest)
+					mfree(swapmap, rest, a+size);
+				return (a);
+			}
 			a = bp->m_addr;
 			bp->m_addr += size;
 			if ((bp->m_size -= size) == 0) {

@@ -1,4 +1,4 @@
-/*	hp.c	3.4	%G%	*/
+/*	hp.c	3.5	%G%	*/
 
 /*
  * RP04/RP06/RM03 disk driver
@@ -6,6 +6,7 @@
 
 #include "../h/param.h"
 #include "../h/systm.h"
+#include "../h/dk.h"
 #include "../h/buf.h"
 #include "../h/conf.h"
 #include "../h/dir.h"
@@ -45,8 +46,13 @@ struct	device
 #define	NTRAC	19
 #define	NRMSECT	32
 #define	NRMTRAC	5
-#define	SDIST	2
-#define	RDIST	6
+
+#define	_hpSDIST	3
+#define	_hpRDIST	6
+
+int	hpSDIST = _hpSDIST;
+int	hpRDIST = _hpRDIST;
+int	hpseek;
 
 struct	size
 {
@@ -104,6 +110,7 @@ char	hp_type[NHP];	/* drive type */
 #define	PRESET	020
 #define	RTC	016
 #define	OFFSET	014
+#define	SEEK	04
 #define	SEARCH	030
 #define	RECAL	06
 #define	DCLR	010
@@ -208,24 +215,30 @@ register unit;
 	cn = bp->b_cylin;
 	if(hp_type[unit] == RM) {
 		sn = bn%(NRMSECT*NRMTRAC);
-		sn = (sn+NRMSECT-SDIST)%NRMSECT;
+		sn = (sn+NRMSECT-hpSDIST)%NRMSECT;
 	} else {
 		sn = bn%(NSECT*NTRAC);
-		sn = (sn+NSECT-SDIST)%NSECT;
+		sn = (sn+NSECT-hpSDIST)%NSECT;
 	}
 
 	if(cn - (hpaddr->hpdc & 0xffff))
 		goto search;
-	csn = ((hpaddr->hpla & 0xffff)>>6) - sn + SDIST - 1;
+	else if (hpseek)
+		goto done;
+	csn = ((hpaddr->hpla & 0xffff)>>6) - sn + 1;
 	if(csn < 0)
 		csn += NSECT;
-	if(csn > NSECT-RDIST)
+	if(csn > NSECT-hpRDIST)
 		goto done;
 
 search:
 	hpaddr->hpdc = cn;
-	hpaddr->hpda = sn;
-	hpaddr->hpcs1 = SEARCH|GO;
+	if (hpseek)
+		hpaddr->hpcs1 = SEEK|GO;
+	else {
+		hpaddr->hpda = sn;
+		hpaddr->hpcs1 = SEARCH|GO;
+	}
 /*
 	unit += DK_N;
 	dk_busy |= 1<<unit;

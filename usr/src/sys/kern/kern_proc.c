@@ -1,4 +1,4 @@
-/*	kern_proc.c	3.11	%G%	*/
+/*	kern_proc.c	3.12	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -61,7 +61,7 @@ exece()
 	ne = 0;
 	nc = 0;
 	uap = (struct execa *)u.u_ap;
-	if ((bno = malloc(swapmap, ctod(clrnd((int) btoc(NCARGS))))) == 0) {
+	if ((bno = malloc(argmap, ctod(clrnd((int) btoc(NCARGS))))) == 0) {
 		swkill(u.u_procp, "exece");
 		goto bad;
 	}
@@ -99,8 +99,8 @@ exece()
 			if ((nc&BMASK) == 0) {
 				if (bp)
 					bdwrite(bp);
-				bp = getblk(swapdev,
-				    (daddr_t)(dbtofsb(swplo+bno)+(nc>>BSHIFT)));
+				bp = getblk(argdev,
+				    (daddr_t)(dbtofsb(bno)+(nc>>BSHIFT)));
 				cp = bp->b_un.b_addr;
 			}
 			nc++;
@@ -114,7 +114,7 @@ exece()
 	if (getxfile(ip, nc) || u.u_error) {
 badarg:
 		for (c = 0; c < nc; c += BSIZE)
-			if (bp = baddr(swapdev, dbtofsb(swplo+bno)+(c>>BSHIFT))) {
+			if (bp = baddr(argdev, dbtofsb(bno)+(c>>BSHIFT))) {
 				bp->b_flags |= B_AGE;		/* throw away */
 				bp->b_flags &= ~B_DELWRI;	/* cancel io */
 				brelse(bp);
@@ -145,8 +145,8 @@ badarg:
 			if ((nc&BMASK) == 0) {
 				if (bp)
 					brelse(bp);
-				bp = bread(swapdev,
-				    (daddr_t)(dbtofsb(swplo+bno)+(nc>>BSHIFT)));
+				bp = bread(argdev,
+				    (daddr_t)(dbtofsb(bno)+(nc>>BSHIFT)));
 				bp->b_flags |= B_AGE;		/* throw away */
 				bp->b_flags &= ~B_DELWRI;	/* cancel io */
 				cp = bp->b_un.b_addr;
@@ -162,7 +162,7 @@ bad:
 	if (bp)
 		brelse(bp);
 	if (bno)
-		mfree(swapmap, ctod(clrnd((int) btoc(NCARGS))), bno);
+		mfree(argmap, ctod(clrnd((int) btoc(NCARGS))), bno);
 	iput(ip);
 }
 
@@ -439,7 +439,6 @@ exit(rv)
 	else
 		p->p_siga1 = 0;
 	(void) spl0();
-	rate.v_pgin -= p->p_aveflt;
 	p->p_aveflt = 0;
 	for(i=0; i<NSIG; i++)
 		u.u_signal[i] = SIG_IGN;
@@ -472,7 +471,8 @@ exit(rv)
 	vrelpt(u.u_procp);
 	vrelu(u.u_procp, 0);
 	multprog--;
-	spl7();			/* clock will get mad because of overlaying */
+/*	spl7();			/* clock will get mad because of overlaying */
+	noproc = 1;
 	p->p_stat = SZOMB;
 	i = PIDHASH(p->p_pid);
 	x = p - proc;
@@ -514,9 +514,7 @@ done:
 			 * Protect this process from future
 			 * tty signals, and clear TSTP/TTIN/TTOU if pending.
 			 */
-			q->p_pgrp = q->p_pid;
-#define	bit(a)	(1<<(a-1))
-			q->p_sig &= ~(bit(SIGTSTP)|bit(SIGTTIN)|bit(SIGTTOU));
+			spgrp(q, -1);
 		}
 	wakeup((caddr_t)p->p_pptr);
 	psignal(p->p_pptr, SIGCHLD);
