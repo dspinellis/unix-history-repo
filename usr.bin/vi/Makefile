@@ -1,15 +1,16 @@
 #	@(#)Makefile	8.30 (Berkeley) 3/22/94
-#	$Id: Makefile,v 1.13 1994/04/08 07:36:06 csgr Exp $
+#	$Id: Makefile,v 1.14 1994/04/30 06:32:38 alm Exp $
 
 PROG=	nvi
 #CFLAGS=-g -DDEBUG
 #CFLAGS+=-pg
 CFLAGS+=-I. -I${.CURDIR} -I${.CURDIR}/ex -I${.CURDIR}/vi
 #STRIP=
-.PATH:	${.CURDIR}/docs ${.CURDIR}/ex ${.CURDIR}/sex ${.CURDIR}/vi \
+.PATH:	${.CURDIR}/ex ${.CURDIR}/sex ${.CURDIR}/vi \
 	${.CURDIR}/svi ${.CURDIR}/xaw
 #CLEANFILES+=ex
-MAN1+=	vi.1
+MAN1+=	vi.1 vi-ref.1
+
 MLINKS+=vi.1 nvi.1
 
 # General sources.
@@ -55,7 +56,7 @@ CLEANFILES+=${SPECHDR}
 LINKS=	${BINDIR}/nvi ${BINDIR}/vi ${BINDIR}/nvi ${BINDIR}/ex \
 	${BINDIR}/nvi ${BINDIR}/view
 
-all: excmd.h options.h nvi
+all: excmd.h options.h nvi vi.1 vi-ref.1
 	- rm -f vi
 	- rm -f ex
 	- if [ ! -d vi ]; then ln nvi vi; fi
@@ -112,6 +113,11 @@ vi.ref.ps: vi.ref set.opt.roff
 	cpp -DREFERENCE -I${.CURDIR}/docs ${.CURDIR}/docs/vi.ref | \
 	    sed -e '/^#/d' -e '/^$$/d' | groff -man > $@
 
+vi.1:	$(.CURDIR)/docs/vi.1 $(.CURDIR)/docs/set.opt.roff
+	cpp -DMANUAL -P -I$(.CURDIR)/docs $(.CURDIR)/docs/vi.1 > vi.1
+
+vi-ref.1:	$(.CURDIR)/docs/vi.ref $(.CURDIR)/docs/set.opt.roff
+	cpp -DREFERENCE -P -I$(.CURDIR)/docs $(.CURDIR)/docs/vi.ref > vi-ref.1
 .include <bsd.prog.mk>
 
 .depend: compat.h ${SPECHDR}
