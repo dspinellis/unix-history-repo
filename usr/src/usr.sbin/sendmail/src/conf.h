@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.148 (Berkeley) %G%
+ *	@(#)conf.h	8.149 (Berkeley) %G%
  */
 
 /*
@@ -752,6 +752,7 @@ extern void		*malloc();
 #ifdef _AUX_SOURCE
 # include <sys/sysmacros.h>
 # define BSD			/* has BSD routines */
+# define BROKEN_RES_SEARCH 1	/* res_search(unknown) returns h_errno=0 */
 # define HASUNAME	1	/* use System V uname(2) system call */
 # define HASSETVBUF	1	/* we have setvbuf(3) in libc */
 # define SIGFUNC_DEFINED	/* sigfunc_t already defined */
