@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)local2.c	1.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)local2.c	1.21 (Berkeley) %G%";
 #endif
 
 # include "pass2.h"
@@ -1335,6 +1335,8 @@ optim2( p ) register NODE *p; {
 		if (r->in.op == SCONV) {
 			int wdest, wconv, wsrc;
 
+			if (p->in.left->in.op == FLD)
+				return;
 			if (anyfloat(r, r->in.left)) {
 				/* let the code table handle two cases */
 				if (p->in.left->in.type == UNSIGNED && 
