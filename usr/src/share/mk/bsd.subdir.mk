@@ -1,7 +1,7 @@
 # A Makefile for handling subdirectories.
 # Machine dependent subdirectories take precedence.
 #
-#	@(#)bsd.subdir.mk	5.2 (Berkeley) %G%
+#	@(#)bsd.subdir.mk	5.3 (Berkeley) %G%
 #
 
 # user defines:
@@ -15,10 +15,10 @@
 STDALL STDDEPEND STDCLEAN STDCLEANDIR STDLINT STDINSTALL STDTAGS: .USE
 	@for entry in ${SUBDIR}; do \
 		(echo "===> $$entry"; \
-		if test -d $${entry}.${MACHINE}; then \
-			cd $${entry}.${MACHINE}; \
+		if test -d ${.CURDIR}/$${entry}.${MACHINE}; then \
+			cd ${.CURDIR}/$${entry}.${MACHINE}; \
 		else \
-			cd $${entry}; \
+			cd ${.CURDIR}/$${entry}; \
 		fi; \
 		${MAKE} ${.TARGET}) \
 	done
@@ -36,8 +36,8 @@ tags: STDTAGS
 # the default target.
 ${SUBDIR}:
 	@if test -d ${.TARGET}.${MACHINE}; then \
-		cd ${.TARGET}.${MACHINE}; \
+		cd ${.CURDIR}/${.TARGET}.${MACHINE}; \
 	else \
-		cd ${.TARGET}; \
+		cd ${.CURDIR}/${.TARGET}; \
 	fi; \
 	${MAKE}
