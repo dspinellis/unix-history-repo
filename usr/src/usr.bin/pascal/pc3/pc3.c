@@ -1,6 +1,7 @@
+#ifndef lint
+static	char sccsid[] = "@(#)pc3.c	1.12 (Berkeley) %G%";
+#endif
     /* Copyright (c) 1980 Regents of the University of California */
-
-static	char sccsid[] = "@(#)pc3.c 1.11 %G%";
 
     /*
      *	     Pc3 is a pass in the Berkeley Pascal compilation
@@ -64,12 +65,12 @@ static	char sccsid[] = "@(#)pc3.c 1.11 %G%";
 char	program[] = "pc";
 
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <ar.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <a.out.h>
 #include <stab.h>
-#include <stat.h>
 #include "pstab.h"
 #include "pc3.h"
 

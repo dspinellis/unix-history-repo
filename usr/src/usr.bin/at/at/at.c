@@ -1,4 +1,6 @@
-static char *sccsid = "@(#)at.c	4.5 (Berkeley) %G%";
+#ifndef lint
+static char *sccsid = "@(#)at.c	4.6 (Berkeley) %G%";
+#endif
 /*
  * at time mon day
  * at time wday
@@ -7,8 +9,8 @@ static char *sccsid = "@(#)at.c	4.5 (Berkeley) %G%";
  */
 #include <stdio.h>
 #include <ctype.h>
-#include <time.h>
 #include <signal.h>
+#include <sys/time.h>
 
 #define HOUR 100
 #define HALFDAY	(12*HOUR)

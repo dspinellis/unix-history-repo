@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rlogin.c	4.14 83/06/13";
+static char sccsid[] = "@(#)rlogin.c	4.15 (Berkeley) 83/07/02";
 #endif
 
 /*
@@ -7,6 +7,7 @@ static char sccsid[] = "@(#)rlogin.c	4.14 83/06/13";
  */
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/wait.h>
 
 #include <netinet/in.h>
 
@@ -16,7 +17,6 @@ static char sccsid[] = "@(#)rlogin.c	4.14 83/06/13";
 #include <pwd.h>
 #include <signal.h>
 #include <netdb.h>
-#include <wait.h>
 
 char	*index(), *rindex(), *malloc(), *getenv();
 struct	passwd *getpwuid();

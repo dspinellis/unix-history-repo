@@ -1,4 +1,6 @@
-static char *sccsid = "@(#)finger.c	4.3 (Berkeley) %G%";
+#ifndef lint
+static char *sccsid = "@(#)finger.c	4.4 (Berkeley) %G%";
+#endif
 
 /*  This is a finger program.  It prints out useful information about users
  *  by digging it up from various system files.  It is not very portable
@@ -44,9 +46,8 @@ static char *sccsid = "@(#)finger.c	4.3 (Berkeley) %G%";
 #include	<signal.h>
 #include	<pwd.h>
 #include	<stdio.h>
-#include	<sccs.h>
 #include	<lastlog.h>
-#include	<time.h>
+#include	<sys/time.h>
 
 struct	utmp	utmp;	/* for sizeof */
 #define NMAX sizeof(utmp.ut_name)

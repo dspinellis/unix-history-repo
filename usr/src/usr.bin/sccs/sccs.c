@@ -1,3 +1,7 @@
+#ifndef lint
+static char sccsid[] = "@(#)sccs.c	1.71 (Berkeley) %G%";
+#endif
+
 # include <stdio.h>
 # include <sys/types.h>
 # include <sys/stat.h>
@@ -93,7 +97,6 @@
 **		Copyright 1980 Regents of the University of California
 */
 
-static char SccsId[] = "@(#)sccs.c	1.70 %G%";
 
 /*******************  Configuration Information  ********************/
 
