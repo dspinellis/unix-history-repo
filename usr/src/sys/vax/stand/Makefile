@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	7.21 (Berkeley) %G%
+#	@(#)Makefile	7.22 (Berkeley) %G%
 #
 
 DESTDIR=
@@ -273,7 +273,7 @@ confrl.c: confxx.c dev.c
 
 clean:
 	rm -f *.o *.exe *.i sm_*.c libsa.a
-	rm -f boot[a-wyz][a-z].c conf[a-wyz][a-z].c
+	rm -f boot[a-wyz][a-z].c conf[a-wyz][a-z].c confkra.c
 	rm -f ${ALL} a.out core errs sboot bootconf.c
 
 cleandir: clean
