@@ -2,7 +2,7 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)asmain.c 4.12 %G%";
+static char sccsid[] = "@(#)asmain.c 4.13 %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -14,7 +14,7 @@ static char sccsid[] = "@(#)asmain.c 4.12 %G%";
 #include "asscan.h"
 #include "asexpr.h"
 
-#define	unix_lang_name "VAX/UNIX Assembler V%G% 4.12"
+#define	unix_lang_name "VAX/UNIX Assembler V%G% 4.13"
 /*
  *	variables to manage reading the assembly source files
  */
@@ -631,8 +631,7 @@ reloc_syms()
 		hdr.a_drsize = 0;
 	}
 	/*
-	 *	Output the symbol table
-	 *	and if FLEXNAMES is set, the string pool
+	 *	Output the symbol table and the string pool
 	 *
 	 *	We must first rewind the string pool file to its beginning,
 	 *	in case it was seek'ed into for fetching ascii and asciz

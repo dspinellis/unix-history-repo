@@ -2,7 +2,7 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)asscan2.c 4.10 %G%";
+static char sccsid[] = "@(#)asscan2.c 4.11 %G%";
 #endif not lint
 
 #include "asscanl.h"
@@ -47,15 +47,11 @@ fillinbuffer()
 	Ginbufptr = inbuffer + 1;
 }
 
-#ifndef FLEXNAMES
+#if NCPName < NCPString
 char	strtext[NCPString + 1];
-#else FLEXNAMES
-# if NCPName < NCPString
-char	strtext[NCPString + 1];
-# else
-#define	strtext yytext
-# endif
-#endif FLEXNAMES
+#else
+#	define	strtext yytext
+#endif
 
 scan_dot_s(bufferbox)
 	struct tokbufdesc *bufferbox;

@@ -2,7 +2,7 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)assyms.c 4.11 %G%";
+static char sccsid[] = "@(#)assyms.c 4.12 %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -318,17 +318,10 @@ dumpsymtab()
 	for (segno = 0; segno < NLOC + NLOC; segno++){
 		printf("Segment number: %d\n", segno);
 		SEGITERATE(segno, 0, 0, cosp, sp, ub, ++){
-#ifdef FLEXNAMES
 			printf("\tSeg: %d \"%s\" value: %d index: %d tag %s\n",
 				segno, FETCHNAME(sp),
 				sp->s_value, sp->s_index,
 				tagstring(sp->s_tag));
-#else not FLEXNAMES
-			printf("\tSeg: %d \"%*.*s\" value: %d index: %d tag %s\n",
-				segno, NCPName, NCPName, FETCHNAME(sp),
-				sp->s_value, sp->s_index,
-				tagstring(sp->s_tag));
-#endif not FLEXNAMES
 			printf("\t\ttype: %d jxbump %d jxfear: %d\n",
 				sp->s_type, sp->s_jxbump, sp->s_jxfear);
 		}
@@ -424,23 +417,12 @@ struct symtab **lookup(instflg)
 		{
 			from = yytext;
 			to = FETCHNAME(*hp);
-#ifndef FLEXNAMES
-			for (len = 0; (len<NCPName) && *from; len++)
-				if (*from++ != *to++)
-					goto nextprobe;
-			if (len >= NCPName)	/*both are maximal length*/
-				return(hp);
-			if (*to == 0)		/*assert *from == 0*/
-				return(hp);
-#else FLEXNAMES
 			while (*from && *to)
 				if (*from++ != *to++)
 					goto nextprobe;
 			if (*to == *from)	/*assert both are == 0*/
 				return(hp);
-#endif FLEXNAMES
-
-	nextprobe: ;
+		nextprobe: ;
 		}
 		if (*hp == 0 && emptyslot == 0 &&
 		    hdallop->h_nused < HASHCLOGGED) {
@@ -459,9 +441,6 @@ struct symtab **lookup(instflg)
 	if (instflg) {
 		*hp = symalloc();
 		hdallop->h_nused++;
-#ifndef FLEXNAMES
-		strncpy(FETCHNAME(*hp), yytext, NCPName);
-#else FLEXNAMES
 		for (from = yytext, len = 0; *from++; len++)
 			continue;
 		/*
@@ -475,7 +454,6 @@ struct symtab **lookup(instflg)
 		putc(0, strfile);		/* null */
 		strfilepos += strdp.sd_strlen;
 		(*hp)->s_name = (char *)savestr(yytext, &strdp);
-#endif FLEXNAMES
 	}
 	return(hp);
 }	/*end of lookup*/
@@ -650,35 +628,17 @@ int sizesymtab()
 {
 	return (sizeof (struct nlist) * NOUTSYMS);
 }
-
-#ifdef FLEXNAMES
-/*
- *	We write out the flexible length character strings for  names
- *	in two stages.
- *	1)	We always! maintain a fixed sized name list entry;
- *	the string is indexed by a four byte quantity from the beginning
- *	of the string pool area.  Index 0 is reserved, and indicates
- *	that there is no associated string. The first valid index is 4.
- *	2)	 We concatenate together and write all of the strings
- *	in the string pool at the end of the name list. The first 
- *	four bytes in the string pool are indexed only by 0 (see above);
- *	they contain the total number of bytes in the string pool.
- */
-#endif FLEXNAMES
-
 /*
  *	Write out n symbols to file f, beginning at p
  *	ignoring symbols that are obsolete, jxxx instructions, and
  *	possibly, labels
  */
-
 int symwrite(symfile)
 	BFILE *symfile;
 {
 		int	symsout;		/*those actually written*/
 		int	symsdesired = NOUTSYMS;
 	reg	struct	symtab *sp, *ub;
-#ifdef FLEXNAMES
 		char	*name;			/* temp to save the name */
 		int	nread;
 		char	rbuf[2048];
@@ -687,8 +647,6 @@ int symwrite(symfile)
 	 *	We use sp->s_index to hold the length of the
 	 *	name; it isn't used for anything else
 	 */
-#endif FLEXNAMES
-
 	register	struct	allocbox	*allocwalk;
 
 	symsout = 0;
@@ -700,7 +658,6 @@ int symwrite(symfile)
 			continue;
 		symsout++;
 
-#ifdef FLEXNAMES
 		name = sp->s_name;		/* save pointer */
 		/*
 		 *	the length of the symbol table string
@@ -711,22 +668,15 @@ int symwrite(symfile)
 		} else {
 			sp->s_nmx = 0;
 		}
-#ifdef DEBUG
-		printf("symbol %d: nmx == %d\n", symsout, sp->s_nmx);
-#endif DEBUG
-#endif FLEXNAMES
 		sp->s_type = (sp->s_ptype != 0) ? sp->s_ptype : (sp->s_type & (~XFORW));
 		if (readonlydata && (sp->s_type&~N_EXT) == N_DATA)
 			sp->s_type = N_TEXT | (sp->s_type & N_EXT);
 		bwrite((char *)&sp->s_nm, sizeof (struct nlist), symfile);
-#ifdef FLEXNAMES
 		sp->s_name = name;		/* restore pointer */
-#endif FLEXNAMES
 	}
 	if (symsout != symsdesired)
 		yyerror("INTERNAL ERROR: Wrote %d symbols, wanted to write %d symbols\n",
 			symsout, symsdesired);
-#ifdef FLEXNAMES
 	/*
 	 *	Copy the string temporary file to the symbol file,
 	 *	copying all the strings and symbols we ever saw,
@@ -736,13 +686,9 @@ int symwrite(symfile)
 	i = 0;
 	while((nread = read(strfile->_file, rbuf, sizeof(rbuf))) > 0){
 		if (i == 0){
-#ifdef DEBUG
-			printf("%d bytes of strings\n", strfilepos);
-#endif DEBUG
 			((int *)rbuf)[0] = strfilepos;
 		}
 		bwrite(rbuf, nread, symfile);
 		i++;
 	}
-#endif FLEXNAMES
 }

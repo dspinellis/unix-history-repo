@@ -2,7 +2,7 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)asparse.c 4.15 %G%";
+static char sccsid[] = "@(#)asparse.c 4.16 %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -131,12 +131,7 @@ yyparse()
 			np = (struct symtab *)yylval;
 			shiftover(NAME);
 			if (val != COLON) {
-#ifdef FLEXNAMES
 				yyerror("\"%s\" is not followed by a ':' for a label definition",
-#else not FLEXNAMES
-				yyerror("\"%.*s\" is not followed by a ':' for a label definition",
-					NCPName,
-#endif not FLEXNAMES
 					FETCHNAME(np));
 				goto  errorfix;
 			}
@@ -155,20 +150,10 @@ restlab:
 #endif not DEBUG
 					{
 						if (passno == 1)
-#ifdef FLEXNAMES
 						  yyerror("%s redefined",
-#else not FLEXNAMES
-						  yyerror("%.*s redefined",
-							NCPName,
-#endif not FLEXNAMES 
 							FETCHNAME(np));
 						else
-#ifdef FLEXNAMES
 						  yyerror("%s redefined: PHASE ERROR, 1st: %d, 2nd: %d",
-#else not FLEXNAMES
-						  yyerror("%.*s redefined: PHASE ERROR, 1st: %d, 2nd: %d",
-							NCPName,
-#endif not FLEXNAMES
 							FETCHNAME(np),
 							np->s_value,
 							dotp->e_xvalue);
@@ -257,11 +242,7 @@ restlab:
 	 */
 	if (passno == 1){
 		stpt = (struct symtab *)symalloc();
-#ifdef FLEXNAMES
 		stpt->s_name = np->s_name;
-#else
-		movestr(FETCHNAME(stpt), FETCHNAME(np), NCPName);
-#endif
 		np->s_tag = OBSOLETE;	/*invalidate original */
 		nforgotten++;
 		np = stpt;
@@ -538,30 +519,8 @@ restlab:
  *	.stabd		 <expr>, <expr>, <expr> # . 
  */
    case ISTAB: 
-#ifndef FLEXNAMES
-	stabname = ".stab";
-	if (passno == 2)	goto errorfix;
-	stpt = (struct symtab *)yylval;
-	/*
-	 *	Make a pointer to the .stab slot.
-	 *	There is a pointer in the way (stpt), and
-	 *	tokptr points to the next token.
-	 */
-	stabstart = tokptr;
-	(char *)stabstart -= sizeof(struct symtab *);
-	(char *)stabstart -= sizeof(bytetoktype);
-	shift;
-	for (argcnt = 0; argcnt < NCPName; argcnt++){
-		expr(locxp, val);
-		FETCHNAME(stpt)[argcnt] = locxp->e_xvalue;
-		xp = explist;
-		shiftover(CM);
-	}
-	goto tailstab;
-#else	FLEXNAMES
-	yyerror(".stab directive not supported in; report this compiler bug to system administrator");
+	yyerror(".stab directive no longer supported");
 	goto errorfix;
-#endif FLEXNAMES
 
   tailstab:
 	expr(locxp, val);
@@ -698,10 +657,6 @@ restlab:
 	if (auxval == ISTABSTR){
 		stringp = (struct strdesc *)yylval;
 		shiftover(STRING);
-#ifndef FLEXNAMES
-		movestr(FETCHNAME(stpt), stringp,
-			min(stringp->sd_strlen, NCPName));
-#else
 		stpt->s_name = (char *)stringp;
 		/*
 		 *	We want the trailing null included in this string.
@@ -709,20 +664,14 @@ restlab:
 		 *	and merely increment the string length
 		 */
 		stringp->sd_strlen += 1;
-#endif
 		shiftover(CM);
 	} else {
-#ifndef FLEXNAMES
-		static char nullstr[NCPName];
-		movestr(FETCHNAME(stpt), nullstr, NCPName);
-#else
 		static char nullstr[1];
 		static	struct	strdesc strdp;
 		strdp.sd_stroff = strfilepos;
 		strdp.sd_strlen = 0;
 		strdp.sd_place = STR_BOTH;
 		stpt->s_name = (char *)savestr(nullstr, &strdp);
-#endif
 	}
 	goto tailstab;
 	break;
@@ -739,13 +688,7 @@ restlab:
 	if ( (locxp->e_xtype & XTYPE) != XABS)	/* tekmdp */
 		yyerror("comm size not absolute");
 	if (passno == 1 && (np->s_type&XTYPE) != XUNDEF)
-#ifdef FLEXNAMES
-		yyerror("Redefinition of %s",
-#else not FLEXNAMES
-		yyerror("Redefinition of %.*s",
-			NCPName,
-#endif not FLEXNAMES
-			FETCHNAME(np));
+		yyerror("Redefinition of %s", FETCHNAME(np));
 	if (passno==1) {
 		np->s_value = locxp->e_xvalue;
 		if (auxval == ICOMM)
