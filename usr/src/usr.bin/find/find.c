@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)find.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)find.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -64,15 +64,21 @@ find_formplan(argv)
     
 	/*
 	 * if the user didn't specify one of -print, -ok or -exec, then -print
-	 * is assumed so we add a -print node on the end.  It is possible that
-	 * the user might want the -print someplace else on the command line,
-	 * but there's no way to know that.
+	 * is assumed so we bracket the current expression with parens, if
+	 * necessary, and add a -print node on the end.
 	 */
 	if (!isoutput) {
-		new = c_print();
-		if (plan == NULL)
+		if (plan == NULL) {
+			new = c_print();
 			tail = plan = new;
-		else {
+		} else {
+			new = c_openparen();
+			new->next = plan;
+			plan = new;
+			new = c_closeparen();
+			tail->next = new;
+			tail = new;
+			new = c_print();
 			tail->next = new;
 			tail = new;
 		}
@@ -144,8 +150,10 @@ find_execute(plan, paths)
 			    entry->fts_path, strerror(entry->fts_errno));
 			rval = 1;
 			continue;
+#ifdef FTS_W
 		case FTS_W:
 			continue;
+#endif /* FTS_W */
 		}
 #define	BADCH	" \t\n\\'\""
 		if (isxargs && strpbrk(entry->fts_path, BADCH)) {
