@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	6.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	6.15 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -867,7 +867,7 @@ commaize(h, p, fp, oldstyle, m, e)
 
 		/* translate the name to be relative */
 		name = remotename(name, m, bitset(H_FROM, h->h_flags),
-				  TRUE, FALSE, e);
+				  TRUE, FALSE, TRUE, e);
 		if (*name == '\0')
 		{
 			*p = savechar;

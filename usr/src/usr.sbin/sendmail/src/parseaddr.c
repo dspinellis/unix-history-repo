@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	6.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	6.24 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1562,11 +1562,6 @@ buildaddr(tv, a)
 	/* figure out what host (if any) */
 	if (**++tv != CANONHOST)
 	{
-		if (!bitnset(M_LOCAL, m->m_flags))
-		{
-			syserr("554 buildaddr: no host");
-			return (NULL);
-		}
 		a->q_host = NULL;
 	}
 	else
@@ -1719,13 +1714,17 @@ sameaddr(a, b)
 	if (bitset(QGOODUID, a->q_flags & b->q_flags) && a->q_uid != b->q_uid)
 		return (FALSE);
 
-	/* if the mailer ignores hosts, we have succeeded! */
-	if (bitnset(M_LOCALMAILER, a->q_mailer->m_flags))
-		return (TRUE);
-
 	/* otherwise compare hosts (but be careful for NULL ptrs) */
+	if (a->q_host == b->q_host)
+	{
+		/* probably both null pointers */
+		return (TRUE);
+	}
 	if (a->q_host == NULL || b->q_host == NULL)
+	{
+		/* only one is a null pointer */
 		return (FALSE);
+	}
 	if (strcasecmp(a->q_host, b->q_host))
 		return (FALSE);
 
@@ -1806,6 +1805,7 @@ printaddr(a, follow)
 **			than an envelope header.
 **		canonical -- if set, strip out any comment information,
 **			etc.
+**		adddomain -- if set, OK to do domain extension.
 **		e -- the current envelope.
 **
 **	Returns:
@@ -1821,12 +1821,13 @@ printaddr(a, follow)
 */
 
 char *
-remotename(name, m, senderaddress, header, canonical, e)
+remotename(name, m, senderaddress, header, canonical, adddomain, e)
 	char *name;
 	MAILER *m;
 	bool senderaddress;
 	bool header;
 	bool canonical;
+	bool adddomain;
 	register ENVELOPE *e;
 {
 	register char **pvp;
@@ -1866,7 +1867,7 @@ remotename(name, m, senderaddress, header, canonical, e)
 	if (pvp == NULL)
 		return (name);
 	rewrite(pvp, 3);
-	if (e->e_fromdomain != NULL)
+	if (adddomain && e->e_fromdomain != NULL)
 	{
 		/* append from domain to this address */
 		register char **pxp = pvp;
