@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)setup.c	5.39 (Berkeley) %G%";
+static char sccsid[] = "@(#)setup.c	5.40 (Berkeley) %G%";
 #endif /* not lint */
 
 #define DKTYPENAMES
@@ -90,14 +90,6 @@ setup(dev)
 		dev_bsize = secsize = lp->d_secsize;
 	else
 		dev_bsize = secsize = DEV_BSIZE;
-#ifdef tahoe
-	/*
-	 * On the tahoe, the disk label and the disk driver disagree.
-	 * The label knows that sectors are 512 bytes, but the disk
-	 * drivers will only transfer in 1024 sized pieces.
-	 */
-	secsize = 1024;
-#endif
 	/*
 	 * Read in the superblock, looking for alternates if necessary
 	 */
@@ -159,73 +151,54 @@ setup(dev)
 			dirty(&asblk);
 		}
 	}
-	if (sblock.fs_inodefmt < FS_44INODEFMT) {	
+	if (sblock.fs_inodefmt >= FS_44INODEFMT) {
+		newinofmt++;
+	} else {
+		sblock.fs_qbmask = ~sblock.fs_bmask;
+		sblock.fs_qfmask = ~sblock.fs_fmask;
+	}
+	/*
+	 * Convert to new inode format.
+	 */
+	if (cvtlevel >= 2 && sblock.fs_inodefmt < FS_44INODEFMT) {
+		if (preen)
+			pwarn("CONVERTING TO NEW INODE FORMAT\n");
+		else if (!reply("CONVERT TO NEW INODE FORMAT"))
+			return(0);
+		doinglevel2++;
+		sblock.fs_inodefmt = FS_44INODEFMT;
 		sizepb = sblock.fs_bsize;
 		sblock.fs_maxfilesize = sblock.fs_bsize * NDADDR - 1;
 		for (i = 0; i < NIADDR; i++) {
 			sizepb *= NINDIR(&sblock);
 			sblock.fs_maxfilesize += sizepb;
 		}
+		sblock.fs_maxsymlinklen = MAXSYMLINKLEN;
 		sblock.fs_qbmask = ~sblock.fs_bmask;
 		sblock.fs_qfmask = ~sblock.fs_fmask;
+		sbdirty();
+		dirty(&asblk);
 	}
-	if (cvtflag) {
-		if (sblock.fs_postblformat == FS_42POSTBLFMT) {
-			/*
-			 * Requested to convert from old format to new format
-			 */
-			if (preen)
-				pwarn("CONVERTING TO NEW FILE SYSTEM FORMAT\n");
-			else if (!reply("CONVERT TO NEW FILE SYSTEM FORMAT"))
-				return(0);
-			sblock.fs_postblformat = FS_DYNAMICPOSTBLFMT;
-			sblock.fs_nrpos = 8;
-			sblock.fs_postbloff =
-			    (char *)(&sblock.fs_opostbl[0][0]) -
-			    (char *)(&sblock.fs_link);
-			sblock.fs_rotbloff = &sblock.fs_space[0] -
-			    (u_char *)(&sblock.fs_link);
-			sblock.fs_cgsize =
-				fragroundup(&sblock, CGSIZE(&sblock));
-			/*
-			 * Planning now for future expansion.
-			 */
-#			ifdef _NOQUAD
-				sblock.fs_qbmask.val[_QUAD_HIGHWORD] = 0;
-				sblock.fs_qbmask.val[_QUAD_LOWWORD] =
-				    ~sblock.fs_bmask;
-				sblock.fs_qfmask.val[_QUAD_HIGHWORD] = 0;
-				sblock.fs_qfmask.val[_QUAD_LOWWORD] =
-				    ~sblock.fs_fmask;
-#			else /* QUAD */
-				sblock.fs_qbmask = ~sblock.fs_bmask;
-				sblock.fs_qfmask = ~sblock.fs_fmask;
-#			endif /* QUAD */
-			sbdirty();
-			dirty(&asblk);
-		} else if (sblock.fs_postblformat == FS_DYNAMICPOSTBLFMT) {
-			/*
-			 * Requested to convert from new format to old format
-			 */
-			if (sblock.fs_nrpos != 8 || sblock.fs_ipg > 2048 ||
-			    sblock.fs_cpg > 32 || sblock.fs_cpc > 16) {
-				printf(
-				"PARAMETERS OF CURRENT FILE SYSTEM DO NOT\n\t");
-				errexit(
-				"ALLOW CONVERSION TO OLD FILE SYSTEM FORMAT\n");
-			}
-			if (preen)
-				pwarn("CONVERTING TO OLD FILE SYSTEM FORMAT\n");
-			else if (!reply("CONVERT TO OLD FILE SYSTEM FORMAT"))
-				return(0);
-			sblock.fs_postblformat = FS_42POSTBLFMT;
-			sblock.fs_cgsize = fragroundup(&sblock,
-			    sizeof(struct ocg) + howmany(sblock.fs_fpg, NBBY));
-			sbdirty();
-			dirty(&asblk);
-		} else {
-			errexit("UNKNOWN FILE SYSTEM FORMAT\n");
-		}
+	/*
+	 * Convert to new cylinder group format.
+	 */
+	if (cvtlevel >= 1 && sblock.fs_postblformat == FS_42POSTBLFMT) {
+		if (preen)
+			pwarn("CONVERTING TO NEW CYLINDER GROUP FORMAT\n");
+		else if (!reply("CONVERT TO NEW CYLINDER GROUP FORMAT"))
+			return(0);
+		doinglevel1++;
+		sblock.fs_postblformat = FS_DYNAMICPOSTBLFMT;
+		sblock.fs_nrpos = 8;
+		sblock.fs_postbloff =
+		    (char *)(&sblock.fs_opostbl[0][0]) -
+		    (char *)(&sblock.fs_link);
+		sblock.fs_rotbloff = &sblock.fs_space[0] -
+		    (u_char *)(&sblock.fs_link);
+		sblock.fs_cgsize =
+			fragroundup(&sblock, CGSIZE(&sblock));
+		sbdirty();
+		dirty(&asblk);
 	}
 	if (asblk.b_dirty) {
 		bcopy((char *)&sblock, (char *)&altsblock,
@@ -262,6 +235,12 @@ setup(dev)
 	statemap = calloc((unsigned)(maxino + 1), sizeof(char));
 	if (statemap == NULL) {
 		printf("cannot alloc %u bytes for statemap\n",
+		    (unsigned)(maxino + 1));
+		goto badsb;
+	}
+	typemap = calloc((unsigned)(maxino + 1), sizeof(char));
+	if (typemap == NULL) {
+		printf("cannot alloc %u bytes for typemap\n",
 		    (unsigned)(maxino + 1));
 		goto badsb;
 	}
