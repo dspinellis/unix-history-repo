@@ -10,9 +10,9 @@
 
 #ifndef lint
 # ifdef DBM
-static char	SccsId[] = "@(#)alias.c	5.5 (Berkeley) %G%	(with DBM)";
+static char	SccsId[] = "@(#)alias.c	5.6 (Berkeley) %G%	(with DBM)";
 # else DBM
-static char	SccsId[] = "@(#)alias.c	5.5 (Berkeley) %G%	(without DBM)";
+static char	SccsId[] = "@(#)alias.c	5.6 (Berkeley) %G%	(without DBM)";
 # endif DBM
 #endif not lint
 
@@ -347,10 +347,12 @@ readaliases(aliasfile, init)
 		int lhssize, rhssize;
 
 		LineNumber++;
+		p = index(line, '\n');
+		if (p != NULL)
+			*p = '\0';
 		switch (line[0])
 		{
 		  case '#':
-		  case '\n':
 		  case '\0':
 			skipping = FALSE;
 			continue;
@@ -401,22 +403,17 @@ readaliases(aliasfile, init)
 			if (init)
 			{
 				/* do parsing & compression of addresses */
-				c = *p;
-				while (c != '\0')
+				while (*p != '\0')
 				{
-					p2 = p;
-					while (*p != '\n' && *p != ',' && *p != '\0')
+					extern char *DelimChar;
+
+					while (isspace(*p) || *p == ',')
 						p++;
-					c = *p;
-					if (c == '\n')
-						c = '\0';
-					*p = '\0';
-					if (*p2 != '\0')
-						(void) parseaddr(p2, &bl, -1, ',');
-					if (c != '\0')
-						*p++ = c;
-					while (isspace(*p))
-						p++;
+					if (*p == '\0')
+						break;
+					if (parseaddr(p, &bl, -1, ',') == NULL)
+						usrerr("%s... bad address", p);
+					p = DelimChar;
 				}
 			}
 			else
