@@ -7,7 +7,7 @@
 #
 #  This has been tested on Ultrix.
 #
-#	@(#)Makefile.dist	5.2 (Berkeley) %G%
+#	@(#)Makefile.dist	5.3 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -15,10 +15,10 @@ O=	-O
 
 # define the database mechanism used for alias lookups:
 #	-DDBM -- use old DBM
-#	-DDBM -DNDBM -- use new DBM
+#	-DNDBM -- use new DBM
 #	-DNEWDB -- use new Berkeley DB
-#	-DDBM -DNDBM -DNEWDB -- use both new DBM and new Berkeley DB
-DBMDEF=	-DDBM -DNDBM -DNEWDB
+#	-DNDBM -DNEWDB -- use both new DBM and new Berkeley DB
+DBMDEF=	-DNDBM -DNEWDB
 
 # define the load average calculation on your system: -DLA_TYPE=LA_INT,
 #   -DLA_TYPE=LA_FLOAT, -DLA_TYPE=LA_SUBR, or -DLA_TYPE=LA_ZERO
