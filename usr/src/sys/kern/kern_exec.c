@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)kern_exec.c	7.61 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.62 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -701,7 +701,8 @@ badmap:
 	/*
 	 * set SUID/SGID protections, if no tracing
 	 */
-	if ((p->p_flag&STRC)==0) {
+	p->p_flag &= ~SUGID;
+	if ((p->p_flag & STRC) == 0) {
 		if (uid != cred->cr_uid || gid != cred->cr_gid) {
 			p->p_ucred = cred = crcopy(cred);
 			/*
@@ -715,6 +716,7 @@ badmap:
 			}
 			cred->cr_uid = uid;
 			cred->cr_gid = gid;
+			p->p_flag |= SUGID;
 		}
 	} else
 		psignal(p, SIGTRAP);
