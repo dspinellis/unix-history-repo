@@ -1,4 +1,4 @@
-/*	conf.c	6.4	84/12/21	*/
+/*	conf.c	6.5	85/06/06	*/
 
 #include "param.h"
 #include "systm.h"
@@ -387,17 +387,6 @@ int	dnopen(),dnclose(),dnwrite();
 #define	dnwrite		nodev
 #endif
 
-#include "gpib.h"
-#if NGPIB > 0
-int	gpibopen(),gpibclose(),gpibread(),gpibwrite(),gpibioctl();
-#else
-#define	gpibopen	nodev
-#define	gpibclose	nodev
-#define	gpibread	nodev
-#define	gpibwrite	nodev
-#define	gpibioctl	nodev
-#endif
-
 #include "ik.h"
 #if NIK > 0
 int	ikopen(),ikclose(),ikread(),ikwrite(),ikioctl(),ikreset();
@@ -421,17 +410,6 @@ int	psopen(),psclose(),psread(),pswrite(),psioctl(),psreset();
 #define psopen nodev
 #define psioctl nodev
 #define psreset nulldev
-#endif
-
-#include "ib.h"
-#if NIB > 0
-int	ibopen(),ibclose(),ibread(),ibwrite(),ibioctl();
-#else
-#define	ibopen	nodev
-#define	ibclose	nodev
-#define	ibread	nodev
-#define	ibwrite	nodev
-#define	ibioctl	nodev
 #endif
 
 #include "ad.h"
@@ -526,18 +504,18 @@ struct cdevsw	cdevsw[] =
 	nodev,		nodev,		nulldev,	0,
 	seltrue,	nodev,
 /* 25-29 reserved to local sites */
-	gpibopen,	gpibclose,	gpibread,	gpibwrite,	/*25*/
-	gpibioctl,	nulldev,	nulldev,	0,
-	seltrue,	nodev,
+	nodev,		nodev,		nodev,		nodev,		/*25*/
+	nodev,		nulldev,	nulldev,	0,
+	nodev,		nodev,
 	lpaopen,	lpaclose,	lparead,	lpawrite,	/*26*/
 	lpaioctl,	nodev,		nulldev,	0,
 	seltrue,	nodev,
 	psopen,		psclose,	psread,		pswrite,	/*27*/
 	psioctl,	nodev,		psreset,	0,
 	seltrue,	nodev,
-	ibopen,		ibclose,	ibread,		ibwrite,	/*28*/
-	ibioctl,	nodev,		nulldev,	0,
-	seltrue,	nodev,
+	nodev,		nodev,		nodev,		nodev,		/*28*/
+	nodev,		nulldev,	nulldev,	0,
+	nodev,		nodev,
 	adopen,		adclose,	nodev,		nodev,		/*29*/
 	adioctl,	nodev,		adreset,	0,
 	seltrue,	nodev,
