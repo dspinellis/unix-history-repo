@@ -1,5 +1,5 @@
 #
-#	@(#)Makefile	1.3	(Berkeley)	%G%
+#	@(#)Makefile	1.4	(Berkeley)	%G%
 #
 M=/usr/src/lib/mip
 #LOAD1=-s
@@ -35,9 +35,9 @@ llib-port.ln: llib-port lpass1
 llib-lc.ln: llib-lc lpass1
 	-(/lib/cpp -C -Dlint llib-lc | ./lpass1 -v > llib-lc.ln )
 shrink:
-	rm *.o
+	rm -f *.o
 clean: shrink
-	rm lpass1 lpass2 cgram.c llib-lc.ln llib-port.ln
+	rm -f lpass1 lpass2 cgram.c llib-lc.ln llib-port.ln
 lpass2: lpass2.o
 	cc $(LOAD2) lpass2.o
 	mv a.out lpass2
