@@ -1,4 +1,4 @@
-/*	rxreg.h	4.1	83/02/08	*/
+/*	rxreg.h	4.2	83/02/21	*/
 
 /*
  * RX02 registers
@@ -52,6 +52,7 @@ struct rxdevice {
 "\20\14RXES_NXM\13RXES_WCOF\11RXES_DRV1\10RXES_RDY\7RXES_DDMK\6RXES_DDEN\5\
 RXES_DNER\4RXES_ACLO\3RXES_ID\1RXES_CRC"
 
+#ifdef RXDEFERR
 /*
  * Table of values for definitive error code (rxxt[0] & 0xff)
  */
@@ -77,3 +78,4 @@ struct rxdeferr {
 	{ 0250,	"Set-density protocol bad" },
 	{ 0,	"Undefined error code" }
 };
+#endif
