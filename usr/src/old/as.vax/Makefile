@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
 #	as.h		Definitions for data structures
 #	asnumber.h	Definitions for all numbers: byte .. G format float
@@ -125,7 +125,3 @@ install:
 
 print:
 	pr Makefile ${HDRS} ${SRCS}
-
-sources: ${SRCS} ${HDRS}
-${SRCS} ${HDRS}:
-	sccs get $@
