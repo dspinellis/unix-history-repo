@@ -1,4 +1,4 @@
-/*	kgclock.c	4.3	83/03/03	*/
+/*	kgclock.c	4.4	83/05/30	*/
 
 #ifdef KGCLOCK		/* kl-11 as profiling clock */
 

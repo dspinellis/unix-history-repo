@@ -1,4 +1,4 @@
-/*	kern_clock.c	4.54	83/05/27	*/
+/*	kern_clock.c	4.55	83/05/30	*/
 
 #include "../machine/reg.h"
 #include "../machine/psl.h"
@@ -20,10 +20,6 @@
 
 #ifdef GPROF
 #include "../h/gprof.h"
-#endif
-
-#ifdef KGCLOCK
-extern int phz;
 #endif
 
 /*
@@ -196,19 +192,11 @@ hardclock(regs)
 	}
 
 	/*
-	 * If this is the only timer then we have to use it to
-	 * gather statistics.
-	 */
-#ifndef KGCLOCK
-	gatherstats(pc, ps);
-#else
-	/*
 	 * If the alternate clock has not made itself known then
 	 * we must gather the statistics.
 	 */
 	if (phz == 0)
 		gatherstats(pc, ps);
-#endif
 
 	/*
 	 * Increment the time-of-day, and schedule

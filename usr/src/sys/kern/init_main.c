@@ -1,4 +1,4 @@
-/*	init_main.c	4.51	83/05/21	*/
+/*	init_main.c	4.52	83/05/30	*/
 
 #include "../machine/pte.h"
 
@@ -98,7 +98,8 @@ main(regs)
 	p->p_quota = u.u_quota = getquota(0, 0, Q_NDQ);
 #endif
 	startrtclock();
-#ifdef KGCLOCK
+#include "kg.h"
+#if NKG > 0
 	startkgclock();
 #endif
 
