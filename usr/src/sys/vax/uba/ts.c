@@ -1,4 +1,4 @@
-/*	ts.c	4.14	81/05/08	*/
+/*	ts.c	4.15	81/05/09	*/
 
 #include "ts.h"
 #include "te.h"
@@ -206,11 +206,13 @@ tsopen(dev, flag)
 #ifdef TSDEBUG
 	printd("sense xs0 %o\n", sc->sc_sts.s_xs0);
 #endif
-	if ((sc->sc_sts.s_xs0&TS_ONL) == 0 || ((flag&(FREAD|FWRITE)) ==
-	    FWRITE && (sc->sc_sts.s_xs0&TS_WLK))) {
-		/*
-		 * Not online or write locked.
-		 */
+	if ((sc->sc_sts.s_xs0&TS_ONL) == 0) {
+		uprintf("ts%d: not online\n", tsunit);
+		u.u_error = EIO;
+		return;
+	}
+	if ((flag&(FREAD|FWRITE)) == FWRITE && (sc->sc_sts.s_xs0&TS_WLK))) {
+		uprintf("ts%d: no write ring\n", tsunit);
 		u.u_error = EIO;
 		return;
 	}
