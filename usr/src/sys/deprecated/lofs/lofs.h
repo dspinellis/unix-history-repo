@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lofs.h	8.2 (Berkeley) %G%
+ *	@(#)lofs.h	8.3 (Berkeley) %G%
  *
  * $Id: lofs.h,v 1.8 1992/05/30 10:05:43 jsp Exp jsp $
  */
@@ -23,11 +23,6 @@ struct lofsmount {
 };
 
 #ifdef KERNEL
-
-#ifndef VT_LOFS
-#define VT_LOFS VT_UFS
-#endif
-
 /*
  * A cache of vnode references
  */
