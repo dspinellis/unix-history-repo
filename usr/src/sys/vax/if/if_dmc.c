@@ -1,4 +1,4 @@
-/*	if_dmc.c	4.28	83/06/13	*/
+/*	if_dmc.c	4.29	83/06/13	*/
 
 #include "dmc.h"
 #if NDMC > 0
@@ -18,11 +18,11 @@ int dmcdebug = 0;
 #include "../h/systm.h"
 #include "../h/mbuf.h"
 #include "../h/buf.h"
+#include "../h/ioctl.h"			/* must precede tty.h */
 #include "../h/tty.h"
 #include "../h/protosw.h"
 #include "../h/socket.h"
 #include "../h/vmmac.h"
-#include "../h/ioctl.h"
 #include "../h/errno.h"
 
 #include "../net/if.h"
@@ -106,9 +106,6 @@ dmcprobe(reg)
 	addr->bsel1 = DMC_MCLR;
 	for (i = 100000; i && (addr->bsel1 & DMC_RUN) == 0; i--)
 		;
-#ifdef ECHACK
-	br = 0x16;
-#endif
 	return (1);
 }
 
@@ -193,7 +190,8 @@ dmcinit(unit)
 	}
 	/* set up routing table entry */
 	if ((ifp->if_flags & IFF_ROUTE) == 0) {
-		rtinit(sin, sin, RTF_HOST|RTF_UP);
+		rtinit((struct sockaddr *)sin, (struct sockaddr *)sin,
+		    RTF_HOST|RTF_UP);
 		ifp->if_flags |= IFF_ROUTE;
 	}
 }
@@ -307,13 +305,15 @@ dmcxint(unit)
 	struct dmcdevice *addr;
 	struct mbuf *m;
 	register struct ifqueue *inq;
-	int arg, arg2, cmd, len;
+	int arg, cmd, len;
 
 	addr = (struct dmcdevice *)ui->ui_addr;
 	cmd = addr->bsel2 & 0xff;
 	if ((cmd & DMC_RDYO) == 0)
 		return;
+#ifdef notdef
 	arg2 = addr->sel4;
+#endif
 	arg = addr->sel6;
 	addr->bsel2 &= ~DMC_RDYO;
 	sc = &dmc_softc[unit];
@@ -407,7 +407,6 @@ dmcoutput(ifp, m, dst)
 	register struct mbuf *m;
 	struct sockaddr *dst;
 {
-	struct uba_device *ui = dmcinfo[ifp->if_unit];
 	int s;
 
 	printd("dmcoutput\n");
@@ -449,7 +448,7 @@ dmcioctl(ifp, cmd, data)
 		if (ifp->if_flags & IFF_RUNNING)
 			if_rtinit(ifp, -1);	/* delete previous route */
 		sin = (struct sockaddr_in *)&ifr->ifr_addr;
-		ifp->if_addr = *sin;
+		ifp->if_addr = *(struct sockaddr *)sin;
 		ifp->if_net = in_netof(sin->sin_addr);
 		ifp->if_host[0] = in_lnaof(sin->sin_addr);
 		dmcinit(ifp->if_unit);
@@ -465,3 +464,4 @@ dmcioctl(ifp, cmd, data)
 	splx(s);
 	return (error);
 }
+#endif

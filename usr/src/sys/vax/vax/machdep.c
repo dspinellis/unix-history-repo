@@ -1,4 +1,4 @@
-/*	machdep.c	4.80	83/06/09	*/
+/*	machdep.c	4.81	83/06/13	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -284,7 +284,7 @@ sendsig(p, sig, sigmask)
 		u.u_code = 0;
 	} else
 		*usp++ = 0;
-	*usp++ = (int)(usp + 2);
+	*usp = (int)(usp + 2); usp++;
 	*usp++ = (int)p;
 	/* struct sigcontext used for the inward return */
 	*usp++ = oonstack;

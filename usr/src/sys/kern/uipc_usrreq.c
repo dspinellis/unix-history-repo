@@ -1,4 +1,4 @@
-/*	uipc_usrreq.c	1.11	83/06/12	*/
+/*	uipc_usrreq.c	1.12	83/06/13	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -474,11 +474,11 @@ unp_internalize(rights)
 	register struct file *fp;
 
 	rp = mtod(rights, struct file **);
-	for (i = 0; i < oldfds; i++) {
+	for (i = 0; i < oldfds; i++)
 		if (getf(*(int *)rp++) == 0)
 			return (EBADF);
 	rp = mtod(rights, struct file **);
-	for (i = 0; i < oldfds; i++)
+	for (i = 0; i < oldfds; i++) {
 		fp = getf(*(int *)rp);
 		*rp++ = fp;
 		fp->f_count++;
@@ -586,5 +586,5 @@ unp_discard(fp)
 {
 
 	fp->f_msgcount--;
-	closef(fp, 0);
+	closef(fp);
 }

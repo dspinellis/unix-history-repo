@@ -1,4 +1,4 @@
-/*	if_il.c	4.23	83/06/13	*/
+/*	if_il.c	4.24	83/06/13	*/
 
 #include "il.h"
 
@@ -637,7 +637,7 @@ ilioctl(ifp, cmd, data)
 	return (error);
 }
 
-ilsetaddr(ifp, sin);
+ilsetaddr(ifp, sin)
 	register struct ifnet *ifp;
 	register struct sockaddr_in *sin;
 {

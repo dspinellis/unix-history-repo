@@ -1,4 +1,4 @@
-/*	Locore.c	4.24	83/05/27	*/
+/*	Locore.c	4.25	83/06/13	*/
 
 #include "dz.h"
 #include "mba.h"
@@ -15,6 +15,8 @@
 #include "../h/buf.h"
 #include "../h/msgbuf.h"
 #include "../h/mbuf.h"
+#include "../h/protosw.h"
+#include "../h/domain.h"
 
 #include "../vax/nexus.h"
 #include "../vaxuba/ubavar.h"
@@ -43,7 +45,33 @@ Xmba0int() { }
 lowinit()
 {
 	extern int dumpmag;
+	extern struct domain unixdomain;
+#ifdef PUP
+	extern struct domain pupdomain;
+#endif
+#ifdef INET
+	extern struct domain inetdomain;
+#endif
+#include "imp.h"
+#if NIMP > 0
+	extern struct domain impdomain;
+#endif
 
+	/* cpp messes these up for lint so put them here */
+	unixdomain.dom_next = domains;
+	domains = &unixdomain;
+#ifdef PUP
+	pupdomain.dom_next = domains;
+	domains = &pupdomain;
+#endif
+#ifdef INET
+	inetdomain.dom_next = domains;
+	domains = &inetdomain;
+#endif
+#if NIMP > 0
+	impdomain.dom_next = domains;
+	domains = &impdomain;
+#endif
 	dumpmag = 0;			/* used only by savecore */
 
 	/*

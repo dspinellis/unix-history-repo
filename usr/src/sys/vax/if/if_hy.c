@@ -1,4 +1,4 @@
-/*	if_hy.c	4.7	83/06/13	*/
+/*	if_hy.c	4.8	83/06/13	*/
 
 #include "hy.h"
 #if NHY > 0
@@ -21,6 +21,7 @@
 #include "../h/time.h"
 #include "../h/kernel.h"
 #include "../h/ioctl.h"
+
 #include "../net/if.h"
 #include "../net/netisr.h"
 #include "../net/route.h"
@@ -237,7 +238,7 @@ hyinit(unit)
 	struct sockaddr_in *sin;
 	int s;
 
-	sin = (struct sockaddr_in *)&is->is_if.if_addr;
+	sin = (struct sockaddr_in *)&is->hy_if.if_addr;
 	if (in_netof(sin->sin_addr) == 0)
 		return;
 	if (if_ubainit(&is->hy_ifuba, ui->ui_ubanum,
@@ -250,7 +251,7 @@ hyinit(unit)
 		is->hy_if.if_flags &= ~IFF_UP;
 		return;
 	}
-	is->is_hy.if_flags |= IFF_RUNNING;
+	is->hy_if.if_flags |= IFF_RUNNING;
 	/*
 	 * Issue wait for message and start the state machine
 	 */
@@ -480,8 +481,6 @@ logit:
 
 /*
  * Encapsulate a packet of type family for the local net.
- * Use trailer local net encapsulation if enough data in first
- * packet leaves a multiple of 512 bytes of data in remainder.
  */
 hyoutput(ifp, m0, dst)
 	struct ifnet *ifp;
@@ -695,7 +694,7 @@ actloop:
 			is->hy_flags &= ~RQ_STATUS;
 			is->hy_state = STATSENT;
 			hystart(ui, HYF_STATUS, sizeof (is->hy_status),
-				is->hy_ifuba.ifu_r.ifrw_info);
+			    is->hy_ifuba.ifu_r.ifrw_info);
 		} else if (rq & RQ_ENDOP) {
 			is->hy_flags &= ~RQ_ENDOP;
 			is->hy_state = ENDOPSENT;
@@ -704,12 +703,12 @@ actloop:
 			is->hy_flags &= ~RQ_STATISTICS;
 			is->hy_state = RSTATSENT;
 			hystart(ui, HYF_RSTATS, sizeof (is->hy_stat),
-				is->hy_ifuba.ifu_r.ifrw_info);
+			    is->hy_ifuba.ifu_r.ifrw_info);
 		} else if (HYS_RECVDATA(addr)) {
 			is->hy_state = RECVSENT;
 			is->hy_retry = 0;
 			hystart(ui, HYF_INPUTMSG, MPSIZE,
-				is->hy_ifuba.ifu_r.ifrw_info);
+			    is->hy_ifuba.ifu_r.ifrw_info);
 		} else if (rq & RQ_REISSUE) {
 			is->hy_flags &= ~RQ_REISSUE;
 			is->hy_state = is->hy_savedstate;
@@ -720,7 +719,7 @@ actloop:
 			  is->hy_savedaddr, is->hy_retry);
 #endif
 			hystart(ui, is->hy_savedcmd, is->hy_savedcount,
-				is->hy_savedaddr);
+			    is->hy_savedaddr);
 		} else {
 			register struct mbuf *m;
 
@@ -735,11 +734,11 @@ actloop:
 				hym = mtod(m, struct hym_hdr *);
 #ifdef HYLOG
 				hylog(HYL_XMIT, sizeof(struct hym_hdr),
-					(char *)hym);
+				    (char *)hym);
 #endif
 				mplen = hym->hym_mplen;
 				if (hym->hym_hdr.hyh_to_adapter ==
-				  hym->hym_hdr.hyh_from_adapter)
+				    hym->hym_hdr.hyh_from_adapter)
 					cmd = HYF_XMITLOCMSG;
 				else
 					cmd = HYF_XMITMSG;
@@ -747,7 +746,7 @@ actloop:
 				printD("hy%d: hym_hdr = ", ui->ui_unit);
 				if (hy_debug_flag)
 					hyprintdata((char *)hym,
-					  sizeof (struct hym_hdr));
+					    sizeof (struct hym_hdr));
 #endif
 				/*
 				 * Strip off the software part of
@@ -765,12 +764,12 @@ actloop:
 					ui->ui_unit, mplen, is->hy_olen);
 				if (hy_debug_flag)
 					hyprintdata(
-					  is->hy_ifuba.ifu_w.ifrw_addr,
-					  is->hy_olen);
+					    is->hy_ifuba.ifu_w.ifrw_addr,
+					    is->hy_olen);
 #endif
 				hystart(ui, cmd,
-				   (mplen == 0) ? is->hy_olen : mplen,
-				   is->hy_ifuba.ifu_w.ifrw_info);
+				    (mplen == 0) ? is->hy_olen : mplen,
+				    is->hy_ifuba.ifu_w.ifrw_info);
 				if (mplen != 0)
 					is->hy_flags |= RQ_XASSOC;
 			} else if (rq & RQ_MARKDOWN) {
@@ -910,12 +909,12 @@ actloop:
 
 		if (is->hy_ifuba.ifu_flags & UBA_NEEDBDP)
 			UBAPURGE(is->hy_ifuba.ifu_uba,
-				is->hy_ifuba.ifu_r.ifrw_bdp);
+			    is->hy_ifuba.ifu_r.ifrw_bdp);
 		hyh = (struct hy_hdr *) (is->hy_ifuba.ifu_r.ifrw_addr);
 		len = (0xffff & (addr->hyd_wcr - is->hy_lastwcr)) << 1;
 		if (len > MPSIZE) {
 			printf("hy%d: RECVD MP > MPSIZE (%d)\n",
-				ui->ui_unit, len);
+			    ui->ui_unit, len);
 #ifdef DEBUG
 			hy_debug_flag = 1;
 			printD("hy%d: csr = 0x%b, bar = 0x%x, wcr = 0x%x\n",
@@ -933,8 +932,8 @@ actloop:
 			is->hy_ilen = len;
 			is->hy_retry = 0;
 			hystart(ui, HYF_INPUTDATA,
-			  (int)(HYMTU-len+sizeof (struct hy_hdr)),
-			  (int)(is->hy_ifuba.ifu_r.ifrw_info + len));
+			    (int)(HYMTU-len+sizeof (struct hy_hdr)),
+			    (int)(is->hy_ifuba.ifu_r.ifrw_info + len));
 		} else {
 			hyrecvdata(ui, hyh, (int)len);
 			is->hy_state = IDLE;
@@ -948,7 +947,7 @@ actloop:
 
 		if (is->hy_ifuba.ifu_flags & UBA_NEEDBDP)
 			UBAPURGE(is->hy_ifuba.ifu_uba,
-				is->hy_ifuba.ifu_r.ifrw_bdp);
+			    is->hy_ifuba.ifu_r.ifrw_bdp);
 		hyh = (struct hy_hdr *) (is->hy_ifuba.ifu_r.ifrw_addr);
 		len = (0xffff & (addr->hyd_wcr - is->hy_lastwcr)) << 1;
 #ifdef DEBUG
@@ -979,7 +978,7 @@ actloop:
 #endif
 			}
 			hystart(ui, HYF_XMITLSTDATA, is->hy_olen - len,
-				is->hy_ifuba.ifu_w.ifrw_info + len);
+			    is->hy_ifuba.ifu_w.ifrw_info + len);
 			break;
 		}
 		/* fall through to ... */
@@ -1013,6 +1012,7 @@ actloop:
 	if (is->hy_state == IDLE)
 		goto actloop;
 endintr:
+	;
 #ifdef DEBUG
 	printD("hy%d: hyact, exit at \"%s\"\n", ui->ui_unit,
 		hy_state_names[is->hy_state]);
@@ -1020,18 +1020,17 @@ endintr:
 }
 
 /*
- * Called from device interrupt when recieving data.
+ * Called from device interrupt when receiving data.
  * Examine packet to determine type.  Decapsulate packet
  * based on type and pass to type specific higher-level
  * input routine.
  */
-hyrecvdata(ui, hyh0, len)
+hyrecvdata(ui, hyh, len)
 	struct uba_device *ui;
-	struct hy_hdr *hyh0;
+	register struct hy_hdr *hyh;
 	int len;
 {
 	register struct hy_softc *is = &hy_softc[ui->ui_unit];
-	register struct hy_hdr *hyh = hyh0;
     	struct mbuf *m;
 	register struct ifqueue *inq;
 
@@ -1152,7 +1151,7 @@ hyprintdata(cp, len)
 #endif
 
 hywatch(unit)
-int unit;
+	int unit;
 {
 	register struct hy_softc *is = &hy_softc[unit];
 	register struct uba_device *ui = hyinfo[unit];
@@ -1184,8 +1183,7 @@ int unit;
 
 #ifdef HYLOG
 hylog(code, len, ptr)
-	int code;
-	int len;
+	int code, len;
 	char *ptr;
 {
 	register unsigned char *p;
@@ -1219,7 +1217,7 @@ hylog(code, len, ptr)
 	}
 	*p++ = code;
 	*p++ = len;
-	bcopy(ptr, (caddr_t)p, (unsigned)len);
+	bcopy((caddr_t)ptr, (caddr_t)p, (unsigned)len);
 	hy_log.hyl_ptr = p + len;
 out:
 	splx(s);
@@ -1233,6 +1231,7 @@ hyioctl(ifp, cmd, data)
 	caddr_t	data;
 {
 	struct sockaddr_in *sin;
+	struct ifreq *ifr = (struct ifreq *)data;
 	int s = splimp(), error = 0;
 
 	switch(cmd) {

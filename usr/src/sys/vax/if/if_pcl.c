@@ -1,4 +1,4 @@
-/*	if_pcl.c	4.2	83/06/13	*/
+/*	if_pcl.c	4.3	83/06/13	*/
 
 #include "pcl.h"
 #if NPCL > 0
@@ -112,7 +112,6 @@ pclattach(ui)
 	struct uba_device *ui;
 {
 	register struct pcl_softc *sc = &pcl_softc[ui->ui_unit];
-	register struct sockaddr_in *sin;
 
 	sc->sc_if.if_unit = ui->ui_unit;
 	sc->sc_if.if_name = "pcl";
@@ -154,7 +153,7 @@ pclinit(unit)
 	struct sockaddr_in *sin;
 	int s;
 
-	sin = &sc->sc_if.if_addr;
+	sin = (struct sockaddr_in *)&sc->sc_if.if_addr;
 	if (sin->sin_addr.s_addr == 0)
 		return;
 	if (if_ubainit(&sc->sc_ifuba, ui->ui_ubanum, 0,
@@ -192,7 +191,7 @@ pcloutput(ifp, m, dst)
 	struct mbuf *m;
 	struct sockaddr *dst;
 {
-	int type, dest, s, error;
+	int dest, s, error;
 	struct pcl_header *pclp;
 	struct mbuf *m2;
 
@@ -201,7 +200,7 @@ pcloutput(ifp, m, dst)
 #ifdef INET
 	case AF_INET:
 		dest = ((struct sockaddr_in *)dst)->sin_addr.s_addr;
-		dest = ntohl(dest);	/* ??? */
+		dest = ntohl((u_long)dest);	/* ??? */
 		dest = dest & 0xff;
 		break;
 #endif
@@ -381,9 +380,8 @@ pclrint(unit)
 	register struct pcl_softc *sc = &pcl_softc[unit];
 	struct pcldevice *addr = (struct pcldevice *)pclinfo[unit]->ui_addr;
     	struct mbuf *m;
-	int len, plen; short resid;
+	int len;
 	register struct ifqueue *inq;
-	int off;
 
 	sc->sc_if.if_ipackets++;
 	/*
@@ -455,7 +453,7 @@ pclioctl(ifp, cmd, data)
 		if (ifp->if_flags & IFF_RUNNING)
 			if_rtinit(ifp, -1);	/* delete previous route */
 		sin = (struct sockaddr_in *)&ifr->ifr_addr;
-		ifp->if_addr = *sin;
+		ifp->if_addr = *(struct sockaddr *)sin;
 		ifp->if_net = in_netof(sin->sin_addr);
 		ifp->if_host[0] = in_lnaof(sin->sin_addr);
 		if (ifp->if_flags & IFF_RUNNING)

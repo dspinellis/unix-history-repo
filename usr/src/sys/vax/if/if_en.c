@@ -1,4 +1,4 @@
-/*	if_en.c	4.79	83/06/12	*/
+/*	if_en.c	4.80	83/06/13	*/
 
 #include "en.h"
 
@@ -88,9 +88,6 @@ enprobe(reg)
 	addr->en_ostat = EN_IEN|EN_GO;
 	DELAY(100000);
 	addr->en_ostat = 0;
-#ifdef ECHACK
-	br = 0x16;
-#endif
 	return (1);
 }
 

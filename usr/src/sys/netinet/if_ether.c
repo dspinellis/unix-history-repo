@@ -1,4 +1,4 @@
-/*	if_ether.c	4.2	83/05/27	*/
+/*	if_ether.c	4.3	83/06/13	*/
 
 /*
  * Ethernet address resolution protocol.
@@ -132,7 +132,7 @@ arpwhohas(ac, addr)
 	struct sockaddr sa;
 
 	if ((m = m_get(M_DONTWAIT, MT_DATA)) == NULL)
-		return (ENOBUFS);
+		return;
 	m->m_len = sizeof *ea + sizeof *eh;
 	m->m_off = MMAXOFF - m->m_len;
 	ea = mtod(m, struct ether_arp *);
@@ -152,7 +152,7 @@ arpwhohas(ac, addr)
 	   (caddr_t)ea->arp_spa, sizeof (ea->arp_spa));
 	bcopy((caddr_t)addr, (caddr_t)ea->arp_tpa, sizeof (ea->arp_tpa));
 	sa.sa_family = AF_UNSPEC;
-	return ((*ac->ac_if.if_output)(&ac->ac_if, m, &sa));
+	(void) (*ac->ac_if.if_output)(&ac->ac_if, m, &sa);
 }
 
 /*
@@ -240,6 +240,9 @@ arpmyaddr(ac)
 {
 	static struct in_addr addr;
 
+#ifdef lint
+	ac = ac;
+#endif
 	addr.s_addr = 0;
 	return (addr);
 }
