@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ip_icmp.c	7.22 (Berkeley) %G%
+ *	@(#)ip_icmp.c	7.23 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -43,11 +43,11 @@ extern	struct protosw inetsw[];
  * Generate an error packet of type error
  * in response to bad packet ip.
  */
-/*VARARGS3*/
+void
 icmp_error(n, type, code, dest, destifp)
 	struct mbuf *n;
 	int type, code;
-	struct in_addr dest;
+	n_long dest;
 	struct ifnet *destifp;
 {
 	register struct ip *oip = mtod(n, struct ip *), *nip;
@@ -94,7 +94,7 @@ icmp_error(n, type, code, dest, destifp)
 	icmpstat.icps_outhist[type]++;
 	icp->icmp_type = type;
 	if (type == ICMP_REDIRECT)
-		icp->icmp_gwaddr = dest;
+		icp->icmp_gwaddr.s_addr = dest;
 	else {
 		icp->icmp_void = 0;
 		/* 
