@@ -586,6 +586,6 @@ diskerr(bp, dname, what, pri, blkdone, lp)
 		(*pr)(" (%s%d bn %d; cn %d", dname, unit, sn,
 		    sn / lp->d_secpercyl);
 		sn %= lp->d_secpercyl;
-		(*pr)(" tn %d sn %d)", sn / lp->d_nsectors, sn % lp->d_nsectors);
+		(*pr)(" tn %d sn %d)\n", sn / lp->d_nsectors, sn % lp->d_nsectors);
 	}
 }
