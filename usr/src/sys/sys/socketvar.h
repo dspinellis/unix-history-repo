@@ -16,7 +16,7 @@
  * WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)socketvar.h	7.15 (Berkeley) %G%
+ *	@(#)socketvar.h	7.16 (Berkeley) %G%
  */
 
 /*
@@ -169,35 +169,17 @@ struct socket {
 u_long	sb_max;
 /* to catch callers missing new second argument to sonewconn: */
 #define	sonewconn(head, connstatus)	sonewconn1((head), (connstatus))
-struct	socket *sonewconn1();
+struct	socket *sonewconn1 __P((struct socket *head, int connstatus));
 
 /* strings for sleep message: */
 extern	char netio[], netcon[], netcls[];
-#endif
 
 /*
- * Operations on sockets.
+ * File operations on sockets.
  */
-struct	file;
-struct	ucred;
-struct	uio;
-int	soo_read __P((			/* read a socket into a uio structure */
-		struct file *fp,
-		struct uio *uio,
-		struct ucred *cred));
-int	soo_write __P((			/* write socket from a uio structure */
-		struct file *fp,
-		struct uio *uio,
-		struct ucred *cred));
-int	soo_ioctl __P((			/* do an ioctl operation on a socket */
-		struct file *fp,
-		int com,
-		caddr_t data,
-		struct proc *p));
-int	soo_select __P((		/* do a select operation on a socket */
-		struct file *fp,
-		int which,
-		struct proc *p));
-int 	soo_close __P((			/* close socket */
-		struct file *fp,
-		struct proc *p));
+int	soo_read __P((struct file *fp, struct uio *uio, struct ucred *cred));
+int	soo_write __P((struct file *fp, struct uio *uio, struct ucred *cred));
+int	soo_ioctl __P((struct file *fp, int com, caddr_t data, struct proc *p));
+int	soo_select __P((struct file *fp, int which, struct proc *p));
+int 	soo_close __P((struct file *fp, struct proc *p));
+#endif
