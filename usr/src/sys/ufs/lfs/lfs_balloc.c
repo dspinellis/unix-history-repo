@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)lfs_balloc.c	7.3 (Berkeley) %G%
+ *	@(#)lfs_balloc.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -116,6 +116,8 @@ bmap(ip, bn, bnp, rablockp, rasizep)
 			brelse(bp);
 			return (0);
 		}
+		if (j < NIADDR)
+			brelse(bp);
 	}
 
 	/*
