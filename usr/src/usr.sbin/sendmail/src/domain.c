@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef NAMED_BIND
-static char sccsid[] = "@(#)domain.c	5.23 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	5.24 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	5.23 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	5.24 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -182,11 +182,8 @@ loop:
 	 * searched, we can't use ANY; it would cause fully-qualified names
 	 * to match as names in a local domain.
 	 */
-# ifdef NO_WILDCARD_MX
-	n = res_search(host, C_IN, T_ANY, (char *)&answer, sizeof(answer));
-# else
-	n = res_search(host, C_IN, T_CNAME, (char *)&answer, sizeof(answer));
-# endif
+	n = res_search(host, C_IN, WildcardMX ? T_CNAME : T_ANY,
+			(char *)&answer, sizeof(answer));
 	if (n < 0) {
 		if (tTd(8, 1))
 			printf("getcanonname:  res_search failed (errno=%d, h_errno=%d)\n",
@@ -245,6 +242,38 @@ loop:
 		}
 	}
 }
+
+#ifndef BSD
+
+/*
+ * Skip over a compressed domain name. Return the size or -1.
+ */
+__dn_skipname(comp_dn, eom)
+	const u_char *comp_dn, *eom;
+{
+	register u_char *cp;
+	register int n;
+
+	cp = (u_char *)comp_dn;
+	while (cp < eom && (n = *cp++)) {
+		/*
+		 * check for indirection
+		 */
+		switch (n & INDIR_MASK) {
+		case 0:		/* normal case, n == len */
+			cp += n;
+			continue;
+		default:	/* illegal type */
+			return (-1);
+		case INDIR_MASK:	/* indirection */
+			cp++;
+		}
+		break;
+	}
+	return (cp - comp_dn);
+}
+
+#endif /* not BSD */
 
 #else /* not NAMED_BIND */
 

@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)sendmail.8	6.7 (Berkeley) %G%
+.\"     @(#)sendmail.8	6.8 (Berkeley) %G%
 .\"
 .Dd 
 .Dt SENDMAIL 8
@@ -135,13 +135,6 @@ the mail is returned with an error message,
 the victim of an aliasing loop.
 If not specified,
 ``Received:'' lines in the message are counted.
-.It Fl k Ar N
-Checkpoint the queue file after every
-.Ar N
-successful deliveries (default 10).
-This avoids excessive duplicate deliveries
-when sending to long mailing lists
-interrupted by system crashes.
 .It Fl n
 Don't do aliasing.
 .It Fl o Ns Ar x Em value
@@ -275,6 +268,13 @@ help file.
 .It Li i
 Do not take dots on a line by themselves
 as a message terminator.
+.It Li k Ar N
+Checkpoint the queue file after every
+.Ar N
+successful deliveries (default 10).
+This avoids excessive duplicate deliveries
+when sending to long mailing lists
+interrupted by system crashes.
 .It Li L Ns Ar n
 The log level.
 .It Li m
@@ -315,6 +315,18 @@ The default is three days.
 Set the name of the time zone.
 .It Li u Ns Ar N
 Set the default user id for mailers.
+.It Li w
+If not set, name server lookups will us a querytype of ANY
+to find types
+CNAME, A, and MX,
+and will cause all existing records to be cached by our local server.
+If there is (might be) a wildcard MX in the local domain
+or its parents that are searched, you
+.ul
+must
+set this option, which will use a querytype of CNAME only;
+otherwise, it would cause all fully-qualified names
+to match as names in the local domain.
 .El
 .Pp
 In aliases,
