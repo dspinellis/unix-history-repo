@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.75 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.76 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1581,7 +1581,6 @@ giveresponse(stat, m, mci, e)
 	extern int h_errno;
 #endif
 	char buf[MAXLINE];
-	extern char *errstring();
 
 	/*
 	**  Compute status message from code.

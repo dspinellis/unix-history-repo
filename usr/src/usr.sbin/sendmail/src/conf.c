@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	6.56 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	6.57 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -571,7 +571,6 @@ getla()
 	double avenrun[3];
 #endif
 	extern off_t lseek();
-	extern char *errstring();
 	extern int errno;
 
 	if (kmem < 0)
@@ -1069,7 +1068,6 @@ enoughspace(msize)
 # endif
 	long blocksneeded;
 	extern int errno;
-	extern char *errstring();
 
 	if (MinBlocksFree <= 0 && msize <= 0)
 	{
