@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)config.h	5.10 (Berkeley) %G%
+ *	@(#)config.h	5.11 (Berkeley) %G%
  */
 
 /*
@@ -78,6 +78,13 @@ struct device {
 #define	UNKNOWN -2	/* -2 means not set yet */
 	int	d_dk;			/* if init 1 set to number for iostat */
 	int	d_flags;		/* flags for device init */
+	char	*d_port;		/* io port base manifest constant */
+	int	d_portn;	/* io port base (if number not manifest) */
+	char	*d_mask;		/* interrupt mask */
+	int	d_maddr;		/* io memory base */
+	int	d_msize;		/* io memory size */
+	int	d_drq;			/* DMA request  */
+	int	d_irq;			/* interrupt request  */
 	struct	device *d_next;		/* Next one in list */
 };
 #define TO_NEXUS	(struct device *)-1
@@ -100,6 +107,7 @@ char	*machinename;
 #define	MACHINE_VAX	1
 #define	MACHINE_TAHOE	2
 #define MACHINE_HP300	3
+#define	MACHINE_I386	4
 
 /*
  * For each machine, a set of CPU's may be specified as supported.
@@ -142,6 +150,9 @@ int	seen_mba, seen_uba;
 #endif
 #if MACHINE_TAHOE
 int	seen_vba;
+#endif
+#if MACHINE_I386
+int	seen_isa;
 #endif
 
 struct	device *connect();

@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -94,6 +94,11 @@ usage:		fputs("usage: config [-gp] sysname\n", stderr);
 	case MACHINE_HP300:
 		hp300_ioconf();
 		hpglue();
+		break;
+
+	case MACHINE_I386:
+		i386_ioconf();		/* Print ioconf.c */
+		vector();		/* Create vector.s */
 		break;
 
 	default:

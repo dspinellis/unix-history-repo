@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkmakefile.c	5.30 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkmakefile.c	5.31 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -94,6 +94,7 @@ static	struct users {
 	{ 24, 8, 1024 },		/* MACHINE_VAX */
 	{ 4, 2, 128 },			/* MACHINE_TAHOE */
 	{ 8, 2, 64 },			/* MACHINE_HP300 */
+	{ 8, 2, 64 },			/* MACHINE_I386 */
 };
 #define	NUSERS	(sizeof (users) / sizeof (users[0]))
 
@@ -522,6 +523,7 @@ for (ftp = ftab; ftp != 0; ftp = ftp->f_next) {
 			break;
 
 		case MACHINE_HP300:
+		case MACHINE_I386:
 			fprintf(f, "\t${CC} -c ${CFLAGS} %s$S/%sc\n\n",
 				extras, np);
 			break;
@@ -541,6 +543,7 @@ for (ftp = ftab; ftp != 0; ftp = ftp->f_next) {
 			break;
 
 		case MACHINE_HP300:
+		case MACHINE_I386:
 			fprintf(f, "\t${CC} -c ${CFLAGS} %s$S/%sc\n\n",
 				extras, np);
 			break;
@@ -575,6 +578,7 @@ for (ftp = ftab; ftp != 0; ftp = ftp->f_next) {
 			break;
 
 		case MACHINE_HP300:
+		case MACHINE_I386:
 			fprintf(f, "\t${CC} -c -S %s %s$S/%sc\n",
 				COPTS, extras, np);
 			fprintf(f, "\tex - %ss < ${GPROF.EX}\n", tp);
@@ -653,6 +657,11 @@ do_systemspec(f, fl, first)
 			fl->f_needs, debugging ? 'X' : 'x');
 		fprintf(f, "locore.o ${OBJS} vers.o ioconf.o param.o ");
 		break;
+
+	case MACHINE_I386:
+		fprintf(f, "\t@${LD} -n -T FE000000 -o %s -%c ",
+			fl->f_needs, debugging ? 'X' : 'x');
+		fprintf(f, "locore.o ${OBJS} vers.o ioconf.o param.o ");
 	}
 	fprintf(f, "swap%s.o\n", fl->f_fn);
 	fprintf(f, "\t@echo rearranging symbols\n");
@@ -690,6 +699,7 @@ do_swapspec(f, name)
 		break;
 
 	case MACHINE_HP300:
+	case MACHINE_I386:
 		fprintf(f, "\t${CC} -c ${CFLAGS} ");
 		fprintf(f, "$S/%s/%s/swapgeneric.c\n\n",
 		    machinename, machinename);
