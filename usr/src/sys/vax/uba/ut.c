@@ -1,4 +1,4 @@
-/*	ut.c	4.1	81/11/04	*/
+/*	ut.c	4.2	81/11/06	*/
 
 #include "ut.h"
 #if NUT > 0
@@ -60,7 +60,7 @@ struct	tj_softc {
 	daddr_t	sc_nxrec;	/* next record on tape */
 	u_short	sc_erreg;	/* image of uter */
 	u_short	sc_dsreg;	/* image of utds */
-	short	sc_resid;	/* residual from transfer */
+	u_short	sc_resid;	/* residual from transfer */
 	u_short	sc_dens;	/* sticky selected density */
 } tj_softc[NTJ];
 
@@ -71,6 +71,8 @@ struct	tj_softc {
 #define	SIO		2	/* doing sequential I/O */
 #define	SCOM		3	/* sending a control command */
 #define	SREW		4	/* doing a rewind op */
+#define	SERASE		5	/* erase inter-record gap */
+#define	SERASED		6	/* erased inter-record gap */
 
 #if UTDEBUG
 int	utdebug;
@@ -90,10 +92,19 @@ utprobe(reg)
 #ifdef lint
 	br=0; cvec=br; br=cvec;
 #endif
+	/*
+	 * It appears the controller won't interrupt unless the
+	 * slave is off-line...this is as bad as the TS-11.
+	 */
+#ifdef notdef
 	((struct utdevice *) reg)->utcs1 = UT_IE|UT_NOP|UT_GO;
 	DELAY(10000);
 	((struct utdevice *) reg)->utcs1 = UT_CLEAR|UT_GO;
+#else
+	br = 0x15;
+	cvec = 0164;
 	return(1);
+#endif
 }
 
 /*ARGSUSED*/
@@ -163,6 +174,10 @@ get:
 	sc->sc_nxrec = INF;
 	sc->sc_lastiow = 0;
 	sc->sc_dens = dens;
+	/*
+	 * For 6250 bpi take exclusive use of the UNIBUS.
+	 */
+	ui->ui_driver->ud_xclu = (dens&(T_1600BPI|T_6250BPI)) == T_6250BPI;
 }
 
 utclose(dev, flag)
@@ -245,7 +260,7 @@ utstrategy(bp)
 	/*
 	 * If the controller is not busy, set it going.
 	 */
-	if (um->um_tab.b_active == 0)
+	if (um->um_tab.b_state == 0)
 		utstart(um);
 	(void) spl0();
 }
@@ -253,7 +268,7 @@ utstrategy(bp)
 utstart(um)
 	register struct uba_ctlr *um;
 {
-	register struct utdevice *utaddr;
+	register struct utdevice *addr;
 	register struct buf *bp, *dp;
 	register struct tj_softc *sc;
 	struct uba_device *ui;
@@ -271,23 +286,25 @@ loop:
 		um->um_tab.b_actf = dp->b_forw;
 		goto loop;
 	}
-	utaddr = (struct utdevice *)um->um_addr;
+	addr = (struct utdevice *)um->um_addr;
 	tjunit = TJUNIT(bp->b_dev);
 	ui = tjdinfo[tjunit];
 	sc = &tj_softc[tjunit];
 	/* note slave select, density, and format were merged on open */
-	utaddr->uttc = sc->sc_dens;
-	sc->sc_dsreg = utaddr->utds;
-	sc->sc_erreg = utaddr->uter;
-	sc->sc_resid = utaddr->utwc;
+	addr->uttc = sc->sc_dens;
+	sc->sc_dsreg = addr->utds;
+	sc->sc_erreg = addr->uter;
+	/* watch this, sports fans */
+	sc->sc_resid = bp->b_flags&B_READ ?
+		bp->b_bcount - ((-addr->utfc)&0xffff) : -addr->utwc<<1;
 	/*
 	 * Default is that last command was NOT a write command;
 	 * if we do a write command we will notice this in utintr().
 	 */
 	sc->sc_lastiow = 0;
-	printd("utstart: openf=%d ds=%b\n", sc->sc_openf, utaddr->utds,
-		UTDS_BITS);
-	if (sc->sc_openf < 0 || (utaddr->utds&UTDS_MOL) == 0) {
+	printd("utstart: cmd=%o openf=%d ds=%b\n", bp->b_command>>1,
+		sc->sc_openf, addr->utds, UTDS_BITS);
+	if (sc->sc_openf < 0 || (addr->utds&UTDS_MOL) == 0) {
 		/*
 		 * Have had a hard error on a non-raw tape
 		 * or the tape unit is now unavailable
@@ -307,12 +324,12 @@ loop:
 		 * Set next state; handle timeouts
 		 */
 		if (bp->b_command == UT_REW)
-			um->um_tab.b_active = SREW;
+			um->um_tab.b_state = SREW;
 		else
-			um->um_tab.b_active = SCOM;
+			um->um_tab.b_state = SCOM;
 		/* NOTE: this depends on the ut command values */
 		if (bp->b_command >= UT_SFORW && bp->b_command <= UT_SREVF)
-			utaddr->utfc = bp->b_repcnt;
+			addr->utfc = -bp->b_repcnt;
 		goto dobpcmd;
 	}
 	/*
@@ -342,19 +359,26 @@ loop:
 	 * start I/O.
 	 */
 	if ((blkno = sc->sc_blkno) == dbtofsb(bp->b_blkno)) {
-		utaddr->utwc = -(((bp->b_bcount)+1)>>1);
+		addr->utwc = -(((bp->b_bcount)+1)>>1);
+		addr->utfc = -bp->b_bcount;
 		if ((bp->b_flags&B_READ) == 0) {
 			/*
 			 * On write error retries erase the
-			 * inter-record gap
+			 * inter-record gap before rewriting.
 			 */
-			if (um->um_tab.b_errcnt)
-				um->um_cmd = UT_ERASE;
-			else
-				um->um_cmd = UT_WCOM;
+			if (um->um_tab.b_errcnt) {
+				printd("utstart: erase\n");
+				if (um->um_tab.b_state != SERASED) {
+					um->um_tab.b_state = SERASED;
+					addr->utcs1 = UT_ERASE|UT_IE|UT_GO;
+					return;
+				}
+				printd("utstart: erased\n");
+			}
+			um->um_cmd = UT_WCOM;
 		} else
 			um->um_cmd = UT_RCOM;
-		um->um_tab.b_active = SIO;
+		um->um_tab.b_state = SIO;
 		(void) ubago(ui);
 		return;
 	}
@@ -365,12 +389,12 @@ loop:
 	 */
 	printd("utstart: seek, blkno=%d dbtofsb=%d\n", blkno,
 		dbtofsb(bp->b_blkno));
-	um->um_tab.b_active = SSEEK;
+	um->um_tab.b_state = SSEEK;
 	if (blkno < dbtofsb(bp->b_blkno)) {
-		utaddr->utfc = blkno - dbtofsb(bp->b_blkno);
+		addr->utfc = blkno - dbtofsb(bp->b_blkno);
 		bp->b_command = UT_SFORW;
 	} else {
-		utaddr->utfc = dbtofsb(bp->b_blkno) - blkno;
+		addr->utfc = dbtofsb(bp->b_blkno) - blkno;
 		bp->b_command = UT_SREV;
 	}
 
@@ -379,7 +403,7 @@ dobpcmd:
 	 * Perform the command setup in bp.
 	 */
 	printd("utstart: dobpcmd\n");
-	utaddr->utcs1 = bp->b_command|UT_IE|UT_GO;
+	addr->utcs1 = bp->b_command|UT_IE|UT_GO;
 	return;
 next:
 	/*
@@ -406,7 +430,8 @@ utdgo(um)
 
 	addr->utba = (u_short) um->um_ubinfo;
 	addr->utcs1 = um->um_cmd|((um->um_ubinfo>>8)&0x30)|UT_IE|UT_GO;
-	printd("utdgo: cs1=%b\n", addr->utcs1, UT_BITS);
+	printd("utdgo: cs1=%b fc=%x wc=%x\n", addr->utcs1, UT_BITS,
+		addr->utfc, addr->utwc);
 }
 
 /*
@@ -421,7 +446,7 @@ utintr(ut11)
 	register struct uba_ctlr *um = utminfo[ut11];
 	register struct utdevice *addr;
 	register struct tj_softc *sc;
-	int tjunit;
+	u_short tjunit, cs2, cs1;
 	register state;
 
 	if ((dp = um->um_tab.b_actf) == NULL)
@@ -435,81 +460,60 @@ utintr(ut11)
 	 */
 	sc->sc_dsreg = addr->utds;
 	sc->sc_erreg = addr->uter;
-	sc->sc_resid = addr->utwc;
+	sc->sc_resid = bp->b_flags&B_READ ?
+		bp->b_bcount - (-addr->utfc)&0xffff : -addr->utwc<<1;
 	printd("utintr: state=%d cs1=%b cs2=%b ds=%b er=%b\n",
-		um->um_tab.b_active,
+		um->um_tab.b_state,
 		((struct utdevice *) addr)->utcs1, UT_BITS,
 		((struct utdevice *) addr)->utcs2, UTCS2_BITS,
 		((struct utdevice *) addr)->utds, UTDS_BITS,
 		((struct utdevice *) addr)->uter, UTER_BITS);
-	/*
-	 * Check for stray attentions from slaves going online, offline,
-	 * or a completing rewind.  (The rewind started interrupt
-	 * satisfied the requestor of the rewind.)
-	 */
-	if (((addr->utcs1&(UT_SC|UT_TRE)) == UT_SC) &&
-	    (addr->utds&UTDS_ERR) == 0) {
-		addr->utas = 0xff;	/* writing a 1 clears attention */
-		/*
-		 * If we're doing a rewind and we're at the beginning
-		 * of tape, then the attention and the rewind 
-		 * command may complete at the same time -- resulting in only
-		 * one interrupt.  In this case, simulate things to look like
-		 * the attention was the command complete.
-		 */
-		if (bp->b_command != UT_REW && bp->b_command != UT_REWOFFL)
-			return;
-		if ((addr->utds&UTDS_BOT) == 0)
-			return;
-		um->um_tab.b_active = SCOM;
-	}
-	if((bp->b_flags&B_READ) == 0)
+	if ((bp->b_flags&B_READ) == 0)
 		sc->sc_lastiow = 1;
-	state = um->um_tab.b_active;
-	um->um_tab.b_active = 0;
+	state = um->um_tab.b_state;
+	um->um_tab.b_state = 0;
 	/*
 	 * Check for errors...
 	 */
 	if ((addr->utds&UTDS_ERR) || (addr->utcs1&UT_TRE)) {
-#ifdef notdef
 		/*
-		 * if this bit were emulated, it would allow us to wait
-		 * for the transport to settle
+		 * If we hit a tape mark or EOT update our position.
 		 */
-		while (addr->utds&UTDS_SDWN)
-			;
-#endif
-		/*
-		 * If we hit the end of tape, update our position
-		 */
-		if (addr->utds&UTDS_EOT) {
+		if (addr->utds&(UTDS_TM|UTDS_EOT)) {
 			/*
-			 * Set blkno and nxrec on sensing end of tape.
+			 * Set blkno and nxrec 
 			 */
 			if (bp == &cutbuf[UTUNIT(bp->b_dev)]) {
 				if (sc->sc_blkno > dbtofsb(bp->b_blkno)) {
-					/* reversing */
 					sc->sc_nxrec =
 					      dbtofsb(bp->b_blkno) - addr->utfc;
 					sc->sc_blkno = sc->sc_nxrec;
 				} else {
-					/* spacing forward */
 					sc->sc_blkno =
 					      dbtofsb(bp->b_blkno) + addr->utfc;
 					sc->sc_nxrec = sc->sc_blkno-1;
 				}
-			} else		/* eof on read */
+			} else
 				sc->sc_nxrec = dbtofsb(bp->b_blkno);
 			state = SCOM;		/* force completion */
 			addr->utcs1 = UT_CLEAR|UT_GO;
 			/*
-			 * Stuff fc so that it will be unstuffed correctly
-			 * later to get the residual.
+			 * Stuff so we can unstuff later
+			 * to get the residual.
 			 */
+			addr->utwc = (-bp->b_bcount)>>1;
 			addr->utfc = -bp->b_bcount;
+			if (sc->sc_dsreg&UTDS_EOT)
+				goto harderror;
 			goto opdone;
 		}
+		cs2 = addr->utcs2;		/* save it for printf below */
+		if ((cs1 = addr->utcs1)&UT_TRE)
+			addr->utcs2 |= UTCS2_CLR;
 		addr->utcs1 = UT_CLEAR|UT_GO;	/* must clear ERR bit */
+		printd("after clear: cs1=%b er=%b cs2=%b ds=%b\n",
+			addr->utcs1, UT_BITS, addr->uter, UTER_BITS,
+			addr->utcs2, UTCS2_BITS, addr->utds, UTDS_BITS);
 		/*
 		 * If we were reading from a raw tape and the only error
 		 * was that the record was too long, then we don't consider
@@ -518,6 +522,14 @@ utintr(ut11)
 		if (bp == &rutbuf[UTUNIT(bp->b_dev)] && (bp->b_flags&B_READ) &&
 		    (sc->sc_erreg&UTER_FCE))
 			goto ignoreerr;
+		/*
+		 * Fix up errors which occur due to backspacing "over" the
+		 * front of the tape.
+		 */
+		if ((sc->sc_dsreg&UTDS_BOT) &&
+		    (bp->b_command == UT_SREV || bp->b_command == UT_SREV) &&
+		    ((sc->sc_erreg &= ~(UTER_NEF|UTER_FCE)) == 0))
+			goto opdone;
 		/*
 		 * Retry soft errors up to 8 times
 		 */
@@ -528,18 +540,22 @@ utintr(ut11)
 				goto opcont;
 			}
 		} else
+harderror:
 			/*
 			 * Hard or non-I/O errors on non-raw tape
-			 * cause it to close.
+			 * cause it to close; also, reading off the
+			 * end of the tape.
 			 */
-			if (sc->sc_openf > 0 && bp != &rutbuf[UTUNIT(bp->b_dev)])
+			if (sc->sc_openf > 0 &&
+			    bp != &rutbuf[UTUNIT(bp->b_dev)] ||
+			    sc->sc_dsreg&UTDS_EOT)
 				sc->sc_openf = -1;
 		/*
 		 * Couldn't recover error.
 		 */
-		printf("ut%d: hard error bn%d er=%b cs2=%b\n", tjunit,
-			bp->b_blkno, sc->sc_erreg, UTER_BITS,
-			addr->utcs2, UTCS2_BITS);
+		printf("ut%d: hard error bn%d cs1=%b er=%b cs2=%b ds=%b\n",
+			tjunit, bp->b_blkno, cs1, UT_BITS, sc->sc_erreg,
+			UTER_BITS, cs2, UTCS2_BITS, sc->sc_dsreg, UTDS_BITS);
 		bp->b_flags |= B_ERROR;
 		goto opdone;
 	}
@@ -551,7 +567,7 @@ ignoreerr:
 
 	case SIO:		/* read/write increments tape block # */
 		sc->sc_blkno++;
-		goto opdone;
+		break;
 
 	case SCOM:		/* forw/rev space updates current position */
 		if (bp == &cutbuf[UTUNIT(bp->b_dev)])
@@ -565,13 +581,26 @@ ignoreerr:
 			sc->sc_blkno += bp->b_repcnt;
 			break;
 		}
-		goto opdone;
+		break;
 
 	case SSEEK:
 		sc->sc_blkno = dbtofsb(bp->b_blkno);
 		goto opcont;
 
+	case SERASE:
+		/*
+		 * Completed erase of the inter-record gap due to a
+		 * write error; now retry the write operation.
+		 */
+		um->um_tab.b_state = SERASED;
+		goto opcont;
+
+	case SREW:			/* clear attention bit */
+		addr->utcs1 = UT_CLEAR|UT_GO;
+		break;
+
 	default:
+		printf("bad state %d\n", state);
 		panic("utintr");
 	}
 
@@ -581,7 +610,9 @@ opdone:
 	 * from device queue
 	 */
 	um->um_tab.b_errcnt = 0;
-	dp->b_actf = bp->b_forw;
+	dp->b_actf = bp->av_forw;
+	bp->b_resid = bp->b_command&B_READ ?
+		bp->b_bcount - ((-addr->utfc)&0xffff) : -addr->utwc<<1;
 	ubadone(um);
 	iodone(bp);
 	/*
@@ -636,16 +667,14 @@ utphys(dev)
 	register int tjunit = TJUNIT(dev);
 	register struct tj_softc *sc;
 	register struct uba_device *ui;
-	register daddr_t a;
 
 	if (tjunit >= NTJ || (ui=tjdinfo[tjunit]) == 0 || ui->ui_alive == 0) {
 		u.u_error = ENXIO;
 		return;
 	}
-	a = u.u_offset >> 9;
 	sc = &tj_softc[tjunit];
-	sc->sc_blkno = dbtofsb(a);
-	sc->sc_nxrec = dbtofsb(a)+1;
+	sc->sc_blkno = dbtofsb(u.u_offset>>9);
+	sc->sc_nxrec = sc->sc_blkno+1;
 }
 
 /*ARGSUSED*/
@@ -698,7 +727,8 @@ utioctl(dev, cmd, addr, flag)
 		}
 		while (--callcount >= 0) {
 			utcommand(dev, utops[mtop.mt_op], fcount);
-			if ((mtop.mt_op == MTFSR || mtop.mt_op == MTBSR) &&
+			/* note this depends on the mtop values */
+			if ((mtop.mt_op >= MTFSF || mtop.mt_op <= MTBSR) &&
 			    bp->b_resid) {
 				u.u_error = EIO;
 				break;
@@ -736,19 +766,20 @@ utreset(uban)
 		   um->um_ubanum != uban)
 			continue;
 		printf(" ut%d", ut11);
-		um->um_tab.b_active = 0;
+		um->um_tab.b_state = 0;
 		um->um_tab.b_actf = um->um_tab.b_actl = 0;
 		if (um->um_ubinfo) {
 			printf("<%d>", (um->um_ubinfo>>28)&0xf);
 			ubadone(um);
 		}
 		((struct utdevice *)(um->um_addr))->utcs1 = UT_CLEAR|UT_GO;
+		((struct utdevice *)(um->um_addr))->utcs2 |= UTCS2_CLR;
 		for (tjunit = 0; tjunit < NTJ; tjunit++) {
 			if ((ui = tjdinfo[tjunit]) == 0 || ui->ui_mi != um ||
 			    ui->ui_alive == 0)
 				continue;
 			dp = &tjutab[tjunit];
-			dp->b_active = 0;
+			dp->b_state = 0;
 			dp->b_forw = 0;
 			if (um->um_tab.b_actf == NULL)
 				um->um_tab.b_actf = dp;
@@ -772,7 +803,7 @@ utdump()
 {
 	register struct uba_device *ui;
 	register struct uba_regs *up;
-	register struct utdevice *utaddr;
+	register struct utdevice *addr;
 	int blk, num = maxfree;
 	int start = 0;
 
@@ -783,60 +814,67 @@ utdump()
 	up = phys(ui->ui_hd, struct uba_hd *)->uh_physuba;
 	ubainit();
 	DELAY(1000000);
-	utwait(utaddr);
-	utaddr = (struct utdevice *)ui->ui_physaddr;
-	/* do it at 1600 bpi so tape can be read on other machines */
-	utaddr->uttc = UT_PE|PDP11FMT;	/* implicit slave 0 or-ed in */
-	utaddr->utcs1 = UT_CLEAR|UT_GO;
+	utwait(addr);
+	addr = (struct utdevice *)ui->ui_physaddr;
+	/*
+	 * Be sure to set the appropriate density here.  We use
+	 * 6250, but maybe it should be done at 1600 to insure the
+	 * tape can be read by most any other tape drive available.
+	 */
+	addr->uttc = UT_GCR|PDP11FMT;	/* implicit slave 0 or-ed in */
+	addr->utcs1 = UT_CLEAR|UT_GO;
 	while (num > 0) {
 		blk = num > DBSIZE ? DBSIZE : num;
-		utdwrite(start, blk, utaddr, up);
+		utdwrite(start, blk, addr, up);
+		if ((addr->utds&UTDS_ERR) || (addr->utcs1&UT_TRE))
+			return(EIO);
 		start += blk;
 		num -= blk;
 	}
-	uteof(utaddr);
-	uteof(utaddr);
-	utwait(utaddr);
-	if (utaddr->utds&UTDS_ERR)
+	uteof(addr);
+	uteof(addr);
+	utwait(addr);
+	if ((addr->utds&UTDS_ERR) || (addr->utcs1&UT_TRE))
 		return(EIO);
-	utaddr->utcs1 = UT_REW|UT_GO;
+	addr->utcs1 = UT_REW|UT_GO;
 	return (0);
 }
 
-utdwrite(dbuf, num, utaddr, up)
+utdwrite(dbuf, num, addr, up)
 	register dbuf, num;
-	register struct utdevice *utaddr;
+	register struct utdevice *addr;
 	struct uba_regs *up;
 {
 	register struct pte *io;
 	register int npf;
 
-	utwait(utaddr);
+	utwait(addr);
 	io = up->uba_map;
 	npf = num + 1;
 	while (--npf != 0)
 		*(int *)io++ = (dbuf++ | (1<<UBAMR_DPSHIFT) | UBAMR_MRV);
 	*(int *)io = 0;
-	utaddr->utwc = -((num*NBPG)<<1);
-	utaddr->utba = 0;
-	utaddr->utcs1 = UT_WCOM|UT_GO;
+	addr->utwc = -((num*NBPG)>>1);
+	addr->utfc = -(num*NBPG);
+	addr->utba = 0;
+	addr->utcs1 = UT_WCOM|UT_GO;
 }
 
-utwait(utaddr)
-	struct utdevice *utaddr;
+utwait(addr)
+	struct utdevice *addr;
 {
 	register s;
 
 	do
-		s = utaddr->utds;
+		s = addr->utds;
 	while ((s&UTDS_DRY) == 0);
 }
 
-uteof(utaddr)
-	struct utdevice *utaddr;
+uteof(addr)
+	struct utdevice *addr;
 {
 
-	utwait(utaddr);
-	utaddr->utcs1 = UT_WEOF|UT_GO;
+	utwait(addr);
+	addr->utcs1 = UT_WEOF|UT_GO;
 }
 #endif
