@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)mv.c	4.9 (Berkeley) 83/01/05";
+static	char *sccsid = "@(#)mv.c	4.10 (Berkeley) 83/01/31";
 #endif
 
 /*
@@ -34,6 +34,7 @@ main(argc, argv)
 {
 	register i, r;
 	register char *arg;
+	char *dest;
 
 	if (argc < 2)
 		goto usage;
@@ -63,26 +64,18 @@ main(argc, argv)
 	}
 	if (argc < 3)
 		goto usage;
-	if (argc > 3) {
-		register char *dest;
-
-		dest = argv[argc-1];
-		if (stat(dest, &s2) < 0 || !ISDIR(s2))
-			goto usage;
+	dest = argv[argc-1];
+	if (stat(dest, &s2) < 0)
+		goto usage;
+	if (ISDIR(s2)) {
 		r = 0;
 		for (i = 1; i < argc-1; i++)
 			r |= movewithshortname(argv[i], dest);
 		exit(r);
 	}
-	if (lstat(argv[2], &s2) >= 0 && ISDIR(s2)) {
-		struct stat s1;
-
-		if (lstat(argv[1], &s1) >= 0 && ISDIR(s1))
-			r = move(argv[1], argv[2]);
-		else
-			r = movewithshortname(argv[1], argv[2]);
-	} else
-		r = move(argv[1], argv[2]);
+	if (argc > 3)
+		goto usage;
+	r = move(argv[1], argv[2]);
 	exit(r);
 	/*NOTREACHED*/
 usage:
