@@ -1,7 +1,9 @@
 /*
-char id_close[] = "@(#)close.c	1.6";
+char id_close[] = "@(#)close.c	1.7";
  *
- * close.c  -  f77 file close, flush, exit routines
+ * f_clos(): f77 file close
+ * t_runc(): truncation
+ * f_exit(): I/O library exit routines
  */
 
 #include "fio.h"
@@ -60,16 +62,21 @@ f_exit()
 	}
 }
 
-ftnint
-flush_(u) ftnint *u;
+t_runc (b, flag, str)
+unit	*b;
+ioflag	flag;
+char	*str;
 {
-	FILE *F;
+	long	loc;
 
-	if(not_legal(*u))
-		return(F_ERUNIT);
-	F = units[*u].ufd;
-	if(F)
-		return(fflush(F));
-	else
-		return(F_ERNOPEN);
+	if (b->uwrt)
+		fflush (b->ufd);
+	if (b->url || !b->useek || !b->ufnm)
+		return (OK);	/* don't truncate direct access files, etc. */
+	loc = ftell (b->ufd);
+	if (truncate (b->ufnm, loc) != 0)
+		err (flag, errno, str)
+	if (b->uwrt && ! nowreading(b))
+		err (flag, errno, str)
+	return (OK);
 }

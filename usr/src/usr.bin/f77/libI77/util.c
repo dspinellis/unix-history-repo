@@ -1,35 +1,12 @@
 /*
-char id_util[] = "@(#)util.c	1.7";
+char id_util[] = "@(#)util.c	1.8";
  *
  * utility routines
  */
 
-#include <sys/types.h>
-#include <sys/stat.h>
 #include "fio.h"
 
 extern short	ccntrl_, blzero_;
-
-ini_std(u,F,w) FILE *F;
-{	unit *p;
-	p = &units[u];
-	p->ufd = F;
-	p->ufnm = NULL;
-	p->useek = canseek(F);
-	p->ufmt = YES;
-	p->uwrt = (w==WRITE)? YES : NO;
-	p->uscrtch = p->uend = NO;
-	p->ublnk = blzero;
-	p->uprnt = ccntrl;
-	p->url = 0;
-	p->uinode = finode(F);
-}
-
-canseek(f) FILE *f; /*SYSDEP*/
-{	struct stat x;
-	return( (fstat(fileno(f),&x)==0) &&
-	(x.st_nlink > 0 /*!pipe*/) && !isatty(fileno(f)) );
-}
 
 nowreading(x) unit *x;
 {
@@ -41,7 +18,7 @@ nowwriting(x) unit *x;
 	return(now_acc(x,"a"));
 }
 
-now_acc(x,mode)
+LOCAL now_acc(x,mode)
 unit *x; char *mode;
 {
 	long loc;
@@ -81,18 +58,6 @@ b_char(from, to, tolen) char *from, *to; ftnlen tolen;
 	}
 	while (i++ < tolen)
 		*to++ = ' ';
-}
-
-inode(a) char *a;
-{	struct stat x;
-	if(stat(a,&x)==0) return(x.st_ino);
-	else return(-1);
-}
-
-finode(f) FILE *f;
-{	struct stat x;
-	if(fstat(fileno(f),&x)==0) return(x.st_ino);
-	else return(-1);
 }
 
 char

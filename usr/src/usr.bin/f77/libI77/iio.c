@@ -1,5 +1,5 @@
 /*
-char id_iio[] = "@(#)iio.c	1.6";
+char id_iio[] = "@(#)iio.c	1.7";
  *
  * internal (character array) i/o
  */
@@ -7,21 +7,25 @@ char id_iio[] = "@(#)iio.c	1.6";
 #include "fio.h"
 #include "lio.h"
 
+LOCAL icilist *svic;		/* active internal io list */
+
 extern int rd_ed(),rd_ned(),w_ed(),w_ned();
 extern int l_read(),l_write();
 int z_wnew(),z_rnew(),z_tab();
 
+LOCAL
 z_getc()
 {
 	if(icptr >= icend && !recpos)	/* new rec beyond eof */
 	{	leof = EOF;
 		return(EOF);
 	}
-	if(recpos++ < svic->icirlen) return(*icptr++);
 	if(formatted == LISTDIRECTED) return(EOF);
+	if(recpos++ < svic->icirlen) return(*icptr++);
 	return(' ');
 }
 
+LOCAL
 z_putc(c) char c;
 {
 	if(icptr < icend)
@@ -41,6 +45,7 @@ z_putc(c) char c;
 #endif
 }
 
+LOCAL
 z_ungetc(ch,cf) char ch;
 {	if(ch==EOF || --recpos >= svic->icirlen) return(OK);
 	if(--icptr < svic->iciunit || recpos < 0) err(errflag,F_ERBREC,"ilio")
@@ -96,6 +101,7 @@ s_wdfi(a) icilist *a;
 	return(c_di(a));
 }
 
+LOCAL
 c_fi(a) icilist *a;
 {
 	fmtbuf=a->icifmt;
@@ -116,6 +122,7 @@ c_fi(a) icilist *a;
 	return(OK);
 }
 
+LOCAL
 c_si(a) icilist *a;
 {
 	sequential = YES;
@@ -124,6 +131,7 @@ c_si(a) icilist *a;
 	return(c_fi(a));
 }
 
+LOCAL
 c_di(a) icilist *a;
 {
 	sequential = NO;
@@ -132,6 +140,7 @@ c_di(a) icilist *a;
 	return(c_fi(a));
 }
 
+LOCAL
 z_rnew()
 {
 	icptr = svic->iciunit + (++recnum)*svic->icirlen;
@@ -139,6 +148,7 @@ z_rnew()
 	return(OK);
 }
 
+LOCAL
 z_wnew()
 {
 	if(reclen > recpos)
@@ -151,6 +161,7 @@ z_wnew()
 	return(OK);
 }
 
+LOCAL
 z_tab()
 {	int n;
 	if(reclen < recpos) reclen = recpos;
@@ -191,6 +202,7 @@ e_wdfi()
 	return(e_wsfi());
 }
 
+LOCAL
 c_li(a) icilist *a;
 {
 	fmtbuf="int list io";

@@ -1,5 +1,5 @@
 /*
-char id_sue[] = "@(#)sue.c	1.3";
+char id_sue[] = "@(#)sue.c	1.4";
  *
  * sequential unformatted external read/write routines
  */
@@ -7,9 +7,9 @@ char id_sue[] = "@(#)sue.c	1.3";
 #include "fio.h"
 
 extern int reclen;
-long recloc;
-char rsue[] = "read sue";
-char wsue[] = "write sue";
+LOCAL long recloc;
+LOCAL char rsue[] = "read sue";
+LOCAL char wsue[] = "write sue";
 
 s_rsue(a) cilist *a;
 {
@@ -40,6 +40,7 @@ s_wsue(a) cilist *a;
 	return(OK);
 }
 
+LOCAL
 c_sue(a,flag) cilist *a;
 {	int n;
 	external = sequential = YES;

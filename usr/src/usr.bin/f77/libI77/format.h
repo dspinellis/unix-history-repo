@@ -1,5 +1,5 @@
 /*
-char id_format[] = "@(#)format.h	1.6";
+char id_format[] = "@(#)format.h	1.7";
  *
  * format parser definitions
  */
@@ -78,5 +78,4 @@ struct syl
 #define FMT_COMP 0x101		/* indicates pre-compiled formats */
 
 extern struct syl *syl_ptr;
-extern int parenlvl,revloc;
 extern short pc;

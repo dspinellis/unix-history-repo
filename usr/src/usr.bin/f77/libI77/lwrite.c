@@ -1,5 +1,5 @@
 /*
-char id_lwrite[] = "@(#)lwrite.c	1.4";
+char id_lwrite[] = "@(#)lwrite.c	1.5";
  *
  * list directed write
  */
@@ -8,7 +8,7 @@ char id_lwrite[] = "@(#)lwrite.c	1.4";
 #include "lio.h"
 
 int l_write(), t_putc();
-char lwrt[] = "list write";
+LOCAL char lwrt[] = "list write";
 
 s_wsle(a) cilist *a;
 {
@@ -24,6 +24,7 @@ s_wsle(a) cilist *a;
 	return(OK);
 }
 
+LOCAL
 t_putc(c) char c;
 {
 	if(c=='\n') recpos=0;
@@ -89,6 +90,7 @@ l_write(number,ptr,len,type) ftnint *number,type; flex *ptr; ftnlen len;
 	return(OK);
 }
 
+LOCAL
 lwrt_I(in) ftnint in;
 {	int n;
 	char buf[16],*p;
@@ -98,12 +100,14 @@ lwrt_I(in) ftnint in;
 	return(OK);
 }
 
+LOCAL
 lwrt_L(ln) ftnint ln;
 {	int n;
 	if(n=chk_len(LLOGW)) return(n);
 	return(wrt_L(&ln,LLOGW));
 }
 
+LOCAL
 lwrt_A(p,len) char *p; ftnlen len;
 {	int i,n;
 	if(n=chk_len(LSTRW)) return(n);
@@ -113,6 +117,7 @@ lwrt_A(p,len) char *p; ftnlen len;
 	return(OK);
 }
 
+LOCAL
 lwrt_F(fn) float fn;
 {	int d,n; float x; ufloat f;
 	if(fn==0.0) return(lwrt_0());
@@ -132,6 +137,7 @@ lwrt_F(fn) float fn;
 	}
 }
 
+LOCAL
 lwrt_D(dn) double dn;
 {	int d,n; double x; ufloat f;
 	if(dn==0.0) return(lwrt_0());
@@ -151,6 +157,7 @@ lwrt_D(dn) double dn;
 	}
 }
 
+LOCAL
 lwrt_C(a,b) float a,b;
 {	int n;
 	if(n=chk_len(LCW)) return(n);
@@ -164,6 +171,7 @@ lwrt_C(a,b) float a,b;
 	return(OK);
 }
 
+LOCAL
 lwrt_DC(a,b) double a,b;
 {	int n;
 	if(n=chk_len(LDCW)) return(n);
@@ -177,6 +185,7 @@ lwrt_DC(a,b) double a,b;
 	return(OK);
 }
 
+LOCAL
 lwrt_0()
 {	int n; char *z = "  0.";
 	if(n=chk_len(4)) return(n);
@@ -184,6 +193,7 @@ lwrt_0()
 	return(OK);
 }
 
+LOCAL
 chk_len(w)
 {	int n;
 	if(recpos+w > line_len) PUT('\n')

@@ -1,5 +1,5 @@
 /*
-char id_wrtfmt[] = "@(#)wrtfmt.c	1.10";
+char id_wrtfmt[] = "@(#)wrtfmt.c	1.11";
  *
  * formatted write routines
  */
@@ -78,6 +78,7 @@ w_ned(p,ptr) char *ptr; struct syl *p;
 	}
 }
 
+LOCAL
 wr_mvcur()
 {	int n;
 	if(tab) return((*dotab)());
@@ -86,6 +87,7 @@ wr_mvcur()
 	return(cursor=0);
 }
 
+LOCAL
 wrt_IM(ui,w,m,len) uint *ui; ftnlen len;
 {	int ndigit,sign,spare,i,xsign,n;
 	long x;
@@ -116,6 +118,7 @@ wrt_IM(ui,w,m,len) uint *ui; ftnlen len;
 	return(OK);
 }
 
+LOCAL
 wrt_AP(p)
 {	char *s,quote;
 	int n;
@@ -130,6 +133,7 @@ wrt_AP(p)
 	return(OK);
 }
 
+LOCAL
 wrt_H(a,b)
 {	char *s=(char *)b;
 	int n;
@@ -150,6 +154,7 @@ wrt_L(l,width,len) uint *l; ftnlen len;
 	return(OK);
 }
 
+LOCAL
 wrt_AW(p,w,len) char * p; ftnlen len;
 {	int n;
 	while(w>len)
@@ -233,6 +238,7 @@ E_badfield:
 	return(OK);
 }
 
+LOCAL
 wrt_G(p,w,d,e,len) ufloat *p; ftnlen len;
 {	double uplim = 1.0, x;
 	int i,oldscale,n,j,ne;

@@ -1,5 +1,5 @@
 /*
-char id_dofio[] = "@(#)dofio.c	1.8";
+char id_dofio[] = "@(#)dofio.c	1.9";
  *
  * fortran format executer
  */
@@ -11,8 +11,8 @@ char id_dofio[] = "@(#)dofio.c	1.8";
 #define DO_F(x)	if(n=x) err_f(n>0?errflag:endflag,n,dfio)
 #define err_f(f,n,s)	{if(f) return(dof_err(n)); else fatal(n,s);}
 #define STKSZ 10
-int cnt[STKSZ],ret[STKSZ],cp,rp;
-char *dfio = "dofio";
+LOCAL int cnt[STKSZ],ret[STKSZ],cp,rp;
+LOCAL char *dfio = "dofio";
 int used_data;
 
 en_fio()
@@ -25,8 +25,8 @@ en_fio()
 		  ED  for I,IM,F,E,EE,D,DE,G,GE,L,A,AW
 		  and returns op for other values 
  */
-static int optypes[] = { OP_TYPE_TAB };
-static int rep_count, in_mid;
+LOCAL int optypes[] = { OP_TYPE_TAB };
+LOCAL int rep_count, in_mid;
 
 do_fio(number,ptr,len) ftnint *number; ftnlen len; char *ptr;
 {	struct syl *p;
@@ -146,7 +146,7 @@ fmt_bg()
 	used_data = NO;
 }
 
-static
+LOCAL
 dof_err(n)
 {
 	if( reading==YES && external==YES && sequential==YES) donewrec();
