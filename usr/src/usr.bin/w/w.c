@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)w.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)w.c	5.11 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -90,7 +90,8 @@ char	doing[520];		/* process attached to terminal */
 time_t	proctime;		/* cpu time of process in doing */
 double	avenrun[3];
 struct	proc *aproc;
-struct  tty ttyent;
+pid_t	pgid;
+pid_t	tpgid;
 
 #define	DIV60(t)	((t+30)/60)    /* x/60 rounded */ 
 #define	TTYEQ		(tty == pr[i].w_tty)
@@ -568,10 +569,13 @@ cont:
 			continue;
 
 		/* only include a process whose tty has a pgrp which matchs its own */
-		lseek(kmem, (long)up.u_ttyp, 0);
-		if (read(kmem, &ttyent, sizeof(ttyent)) != sizeof(ttyent))
+		lseek(kmem, (off_t)(&up.u_ttyp->t_pgid), 0);
+		if (read(kmem, &tpgid, sizeof(tpgid)) != sizeof(tpgid))
 			continue;
-		if (ttyent.t_pgrp != mproc.p_pgrp)
+		lseek(kmem, (off_t)(&mproc.p_pgrp->pg_id), 0);
+		if (read(kmem, &pgid, sizeof(pgid)) != sizeof(pgid))
+			continue;
+		if (pgid != tpgid)
 			continue;
 
 		/* save the interesting parts */
