@@ -403,7 +403,7 @@ suboption()
 		    /*NOTREACHED*/
 		}
 		printsub(">", sb_terminal+2, sizeof sb_terminal-2);
-		ring_add_data(&netoring, sb_terminal, sizeof sb_terminal);
+		ring_supply_data(&netoring, sb_terminal, sizeof sb_terminal);
 		return;
 	    }
 #endif	/* defined(TN3270) */
@@ -470,12 +470,12 @@ telrcv()
     while (TTYROOM() > 2) {
 	if (scc == 0) {
 	    if (count) {
-		ring_sent_acked(&netiring, count);
+		ring_consumed(&netiring, count);
 		returnValue = 1;
 		count = 0;
 	    }
-	    sbp = netiring.send;
-	    scc = ring_unsent_consecutive(&netiring);
+	    sbp = netiring.consume;
+	    scc = ring_full_consecutive(&netiring);
 	    if (scc == 0) {
 		/* No more data coming in */
 		break;
@@ -694,7 +694,7 @@ telrcv()
 	    }
 	}
     }
-    ring_sent_acked(&netiring, count);
+    ring_consumed(&netiring, count);
     return returnValue||count;
 }
 
@@ -715,12 +715,12 @@ Ring	*ring;			/* Input ring */
 
 	if (tcc == 0) {
 	    if (count) {
-		ring_sent_acked(&ttyiring, count);
+		ring_consumed(&ttyiring, count);
 		returnValue = 1;
 		count = 0;
 	    }
-	    tbp = ttyiring.send;
-	    tcc = ring_unsent_consecutive(&ttyiring);
+	    tbp = ttyiring.consume;
+	    tcc = ring_full_consecutive(&ttyiring);
 	    if (tcc == 0) {
 		break;
 	    }
@@ -782,7 +782,7 @@ Ring	*ring;			/* Input ring */
 	    NETADD(c);
 	}
     }
-    ring_sent_acked(&ttyiring, count);
+    ring_consumed(&ttyiring, count);
     return returnValue||count;		/* Non-zero if we did anything */
 }
 
@@ -1001,7 +1001,7 @@ int	block;			/* should we block in the select ? */
 	}
 	settimer(didnetreceive);
 #else	/* !defined(SO_OOBINLINE) */
-	c = recv(net, netiring.add, canread, 0);
+	c = recv(net, netiring.supply, canread, 0);
 #endif	/* !defined(SO_OOBINLINE) */
 	if (c < 0 && errno == EWOULDBLOCK) {
 	    c = 0;
@@ -1009,9 +1009,9 @@ int	block;			/* should we block in the select ? */
 	    return -1;
 	}
 	if (netdata) {
-	    Dump('<', netiring.add, c);
+	    Dump('<', netiring.supply, c);
 	}
-	ring_added(&netiring, c);
+	ring_supplied(&netiring, c);
 	returnValue = 1;
     }
 
@@ -1025,7 +1025,8 @@ int	block;			/* should we block in the select ? */
 #endif	/* defined(MSDOS) */
 				    {
 	FD_CLR(tin, &ibits);
-	c = TerminalRead(tin, ttyiring.add, ring_empty_consecutive(&ttyiring));
+	c = TerminalRead(tin, ttyiring.supply,
+			ring_empty_consecutive(&ttyiring));
 	if (c < 0 && errno == EWOULDBLOCK) {
 	    c = 0;
 	} else {
@@ -1033,7 +1034,7 @@ int	block;			/* should we block in the select ? */
 	    /* EOF detection for line mode!!!! */
 	    if (c == 0 && MODE_LOCAL_CHARS(globalmode)) {
 			/* must be an EOF... */
-		*ttyiring.add = termEofChar;
+		*ttyiring.supply = termEofChar;
 		c = 1;
 	    }
 #endif	/* defined(unix) */
@@ -1041,19 +1042,19 @@ int	block;			/* should we block in the select ? */
 		return -1;
 	    }
 	}
-	ring_added(&ttyiring, c);
+	ring_supplied(&ttyiring, c);
 	returnValue = 1;		/* did something useful */
     }
 
 #   if defined(TN3270)
-    if (ring_unsent_count(&ttyiring)) {
+    if (ring_full_count(&ttyiring)) {
 	if (In3270) {
 	    c = DataFromTerminal(ttyiring.send,
-					ring_unsent_consecutive(&ttyiring));
+					ring_full_consecutive(&ttyiring));
 	    if (c) {
 		returnValue = 1;
 	    }
-	    ring_sent_acked(&ttyiring, c);
+	    ring_consumed(&ttyiring, c);
 	} else {
 #   endif /* defined(TN3270) */
 	    returnValue |= telsnd(&ttyiring);
@@ -1067,7 +1068,7 @@ int	block;			/* should we block in the select ? */
 	FD_CLR(net, &obits);
 	returnValue = netflush();
     }
-    if (ring_unsent_count(&netiring)) {
+    if (ring_full_count(&netiring)) {
 #	if !defined(TN3270)
 	returnValue |= telrcv();
 #	else /* !defined(TN3270) */
