@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ps.1	6.2 (Berkeley) %G%
+.\"	@(#)ps.1	6.3 (Berkeley) %G%
 .\"
 .TH PS 1 ""
 .UC 4
@@ -20,7 +20,7 @@ Normally, only your processes are candidates to be printed by
 .I ps;
 specifying
 .B a
-causes other users processes to be candidates to be printed;
+causes other users' processes to be candidates to be printed;
 specifying
 .B x
 includes processes without control terminals in the candidate pool.
@@ -247,8 +247,8 @@ flags associated with process as in
 .fi
 .PD
 .PP
-A process that has exited and has a parent, but has not
-yet been waited for by the parent is marked <defunct>; a process
+A process that has exited and has a parent that has not
+yet waited for the process is marked <defunct>; a process
 which is blocked trying to exit is marked <exiting>;
 .I Ps
 makes an educated guess as to the file name
