@@ -1,5 +1,5 @@
 /*
- * 	unix7sys.h	4.1	82/05/12
+ * 	unix7sys.h	4.2	83/07/31
  */
 #define	NSYSTRAPS	64
 #define	NSIGS	13
@@ -15,18 +15,27 @@
 #define	UNLNK	10
 #define EXEC	11
 #define	CHDIR	12
+#define	TIME	13
 #define	MKNOD	14
 #define	BRK	17
 #define	STAT	18
 #define	SEEK	19
 #define	SETUID	23
 #define	GETUID	24
+#define	STIME	25
+#define	ALARM	27
 #define	FSTAT	28
+#define	PAUSE	29
+#define	UTIME	30
+#define	NICE	34
+#define	FTIME	35
+#define	SETPGRP	39
 #define	PIPE	42
 #define	TIMES	43
 #define	SETGID	46
 #define	GETGID	47
 #define	SIG	48
+#define	IOCTL	54
 #define	EXECE	59
 /*
  *	The numerical entries in the following table are
