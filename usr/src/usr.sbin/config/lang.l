@@ -1,5 +1,5 @@
 %{
-/*	lang.l	1.8	81/05/18	*/
+/*	lang.l	1.9	82/07/21	*/
 
 #include <ctype.h>
 #include "y.tab.h"
@@ -83,10 +83,14 @@ WORD	[A-Za-z_][-A-Za-z_]*
 			tprintf("\n");
 			return SEMICOLON;
 		}
-^#.*		{	/* Ignored (comment) */;	}
+#.*		{	/* Ignored (comment) */;	}
 [ \t]*		{	/* Ignored (white space) */;	}
 ";"		{	return SEMICOLON;		}
 ","		{	return COMMA;			}
+"="		{	return EQUALS;			}
+"@"		{	return AT;			}
+.		{	return yytext[0];		}
+
 %%
 /*
  * kw_lookup
