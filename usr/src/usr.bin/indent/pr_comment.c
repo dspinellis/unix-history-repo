@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pr_comment.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)pr_comment.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -62,10 +62,8 @@ pr_comment()
     int         now_col;	/* column we are in now */
     int         adj_max_col;	/* Adjusted max_col for when we decide to
 				 * spill comments over the right margin */
-    int         col_1_com;	/* this comment should not be touched */
     char       *last_bl;	/* points to the last blank in the output
 				 * buffer */
-    char        achar;
     char       *t_ptr;		/* used for moving string */
     int         unix_comment;	/* tri-state variable used to decide if it is
 				 * a unix-style comment. 0 means only blanks
@@ -81,7 +79,7 @@ pr_comment()
     adj_max_col = max_col;
     ps.just_saw_decl = 0;
     last_bl = 0;		/* no blanks found so far */
-    ps.box_com = col_1_com = false;	/* at first, assume that we are not in
+    ps.box_com = false;		/* at first, assume that we are not in
 					 * a boxed comment or some other
 					 * comment that should not be touched */
     ++ps.out_coms;		/* keep track of number of comments */
@@ -93,7 +91,7 @@ pr_comment()
 
     if (ps.col_1 && !format_col1_comments) {	/* if comment starts in column
 						 * 1 it should not be touched */
-	col_1_com = ps.box_com = true;
+	ps.box_com = true;
 	ps.com_col = 1;
     }
     else {
@@ -101,7 +99,6 @@ pr_comment()
 	    ps.box_com = true;	/* a comment with a '-' or '*' immediately
 				 * after the /* is assumed to be a boxed
 				 * comment */
-	    col_1_com = true;
 	    break_delim = 0;
 	}
 	if ( /* ps.bl_line && */ (s_lab == e_lab) && (s_code == e_code)) {
