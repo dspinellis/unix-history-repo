@@ -1,14 +1,14 @@
 #ifndef lint
-static char sccsid[] = "@(#)routed.c	4.5 %G%";
+static char sccsid[] = "@(#)routed.c	4.6 %G%";
 #endif
 
-#include <sys/param.h>
-#include <sys/protosw.h>
+/*
+ * Routing Table Management Daemon
+ */
+#include <sys/types.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <net/in.h>
-#define	KERNEL
-#include <net/route.h>
 #include <net/if.h>
 #include <errno.h>
 #include <stdio.h>
@@ -47,6 +47,8 @@ int	trace = 0;
 
 char	packet[MAXPACKETSIZE];
 
+struct in_addr if_makeaddr();
+struct ifnet *if_ifwithaddr(), *if_ifwithnet();
 extern char *malloc();
 extern int errno, exit();
 
@@ -156,9 +158,9 @@ getothers()
  */
 timer()
 {
-	register struct rt_hash *rh;
+	register struct rthash *rh;
 	register struct rt_entry *rt;
-	struct rt_hash *base = hosthash;
+	struct rthash *base = hosthash;
 	int doinghost = 1;
 
 	if (trace)
@@ -198,7 +200,7 @@ again:
 			if (rt->rt_timer >= EXPIRE_TIME)
 				rt->rt_metric = HOPCNT_INFINITY;
 			if (rt->rt_flags & RTF_CHGRT)
-				if (!ioctl(s, SIOCCHGRT,(char *)&rt->rt_hash) ||
+				if (!ioctl(s, SIOCCHGRT,(char *)&rt->rt_rt) ||
 				  --rt->rt_retry == 0)
 					rt->rt_flags &= ~RTF_CHGRT;
 
@@ -211,7 +213,7 @@ again:
 			 * in use), retry the operation a few more times.
 			 */
 			if (rt->rt_flags & RTF_ADDRT) {
-				if (!ioctl(s, SIOCADDRT,(char *)&rt->rt_hash)) {
+				if (!ioctl(s, SIOCADDRT,(char *)&rt->rt_rt)) {
 					if (errno == EEXIST) {
 						rt->rt_flags &= ~RTF_ADDRT;
 						rt->rt_flags |= RTF_CHGRT;
@@ -241,6 +243,7 @@ again:
 	alarm(TIMER_RATE);
 }
 
+struct	ifnet *ifnet;
 /*
  * Find the network interfaces attached to this machine.
  * The info is used to:
@@ -251,6 +254,13 @@ again:
  * (4) figure out if we're an internetwork gateway.
  *
  * We don't handle anything but Internet addresses.
+ *
+ * Note: this routine may be called periodically to
+ * scan for new interfaces.  In fact, the timer routine
+ * does so based on the flag lookforinterfaces.  The
+ * flag performnlist is set whenever something odd occurs
+ * while scanning the kernel; this is likely to occur
+ * if /vmunix isn't up to date (e.g. someone booted /ovmunix).
  */
 getinterfaces()
 {
@@ -372,12 +382,15 @@ broadcast(entry)
 	sendall();
 }
 
+/*
+ * Send "packet" to all neighbors.
+ */
 sendall()
 {
-	register struct rt_hash *rh;
+	register struct rthash *rh;
 	register struct rt_entry *rt;
 	register struct sockaddr *dst;
-	struct rt_hash *base = hosthash;
+	struct rthash *base = hosthash;
 	int doinghost = 1;
 
 again:
@@ -405,9 +418,9 @@ again:
 supplyall()
 {
 	register struct rt_entry *rt;
-	register struct rt_hash *rh;
+	register struct rthash *rh;
 	register struct sockaddr *dst;
-	struct rt_hash *base = hosthash;
+	struct rthash *base = hosthash;
 	int doinghost = 1;
 
 again:
@@ -437,9 +450,9 @@ supply(sa)
 {
 	struct rip *msg = (struct rip *)packet;
 	struct netinfo *n = msg->rip_nets;
-	register struct rt_hash *rh;
+	register struct rthash *rh;
 	register struct rt_entry *rt;
-	struct rt_hash *base = hosthash;
+	struct rthash *base = hosthash;
 	int doinghost = 1, size;
 	int (*output)() = afswitch[sa->sa_family].af_output;
 
@@ -535,7 +548,8 @@ rip_input(from, size)
 	 */
 	(*afswitch[from->sa_family].af_canon)(from);
 	if (trace)
-		printf("input from %x\n", from->sin_addr);
+		printf("input from %x\n",
+			((struct sockaddr_in *)from)->sin_addr);
 	/*
 	 * If response packet is from ourselves, use it only
 	 * to reset timer on entry.  Otherwise, we'd believe
@@ -557,7 +571,8 @@ rip_input(from, size)
 		if (size < sizeof (struct netinfo))
 			break;
 		if (trace)
-			printf("dst %x hc %d...", n->rip_dst.sin_addr,
+			printf("dst %x hc %d...",
+				((struct sockaddr_in *)&n->rip_dst)->sin_addr,
 				n->rip_metric);
 		rt = rtlookup(&n->rip_dst);
 
@@ -575,8 +590,8 @@ rip_input(from, size)
 
 		if (trace)
 			printf("ours: gate %x hc %d timer %d\n",
-			rt->rt_gateway.sin_addr,
-			rt->rt_metric, rt->rt_timer);
+			  ((struct sockaddr_in *)&rt->rt_gateway)->sin_addr,
+			  rt->rt_metric, rt->rt_timer);
 		/*
 		 * Update the entry if one of the following is true:
 		 *
@@ -597,6 +612,16 @@ rip_input(from, size)
 	}
 }
 
+rtinit()
+{
+	register struct rthash *rh;
+
+	for (rh = nethash; rh < &nethash[ROUTEHASHSIZ]; rh++)
+		rh->rt_forw = rh->rt_back = (struct rt_entry *)rh;
+	for (rh = hosthash; rh < &hosthash[ROUTEHASHSIZ]; rh++)
+		rh->rt_forw = rh->rt_back = (struct rt_entry *)rh;
+}
+
 /*
  * Lookup an entry to the appropriate dstination.
  */
@@ -605,7 +630,7 @@ rtlookup(dst)
 	struct sockaddr *dst;
 {
 	register struct rt_entry *rt;
-	register struct rt_hash *rh;
+	register struct rthash *rh;
 	register int hash, (*match)();
 	struct afhash h;
 	int af = dst->sa_family, doinghost = 1;
@@ -639,16 +664,6 @@ again:
 	return (0);
 }
 
-rtinit()
-{
-	register struct rt_hash *rh;
-
-	for (rh = nethash; rh < &nethash[ROUTEHASHSIZ]; rh++)
-		rh->rt_forw = rh->rt_back = (struct rt_entry *)rh;
-	for (rh = hosthash; rh < &hosthash[ROUTEHASHSIZ]; rh++)
-		rh->rt_forw = rh->rt_back = (struct rt_entry *)rh;
-}
-
 /*
  * Add a new entry.
  */
@@ -658,7 +673,7 @@ rtadd(dst, gate, metric)
 {
 	struct afhash h;
 	register struct rt_entry *rt;
-	struct rt_hash *rh;
+	struct rthash *rh;
 	int af = dst->sa_family, flags, hash;
 
 	if (af >= AF_MAX)
@@ -746,7 +761,7 @@ rtdelete(rt)
 {
 	log("delete", rt);
 	if (install)
-		if (ioctl(s, SIOCDELRT, (char *)&rt->rt_hash) &&
+		if (ioctl(s, SIOCDELRT, (char *)&rt->rt_rt) &&
 		  errno == EBUSY)
 			rt->rt_flags |= RTF_DELRT;
 	remque(rt);
@@ -795,6 +810,9 @@ log(operation, rt)
 	putchar('\n');
 }
 
+/*
+ * Find the interface with address "addr".
+ */
 struct ifnet *
 if_ifwithaddr(addr)
 	struct sockaddr *addr;
@@ -816,6 +834,11 @@ if_ifwithaddr(addr)
 #undef same
 }
 
+/*
+ * Find the interface with network imbedded in
+ * the sockaddr "addr".  Must use per-af routine
+ * look for match.
+ */
 struct ifnet *
 if_ifwithnet(addr)
 	register struct sockaddr *addr;
@@ -836,6 +859,9 @@ if_ifwithnet(addr)
 	return (ifp);
 }
 
+/*
+ * Formulate an Internet address.
+ */
 struct in_addr
 if_makeaddr(net, host)
 	int net, host;
