@@ -1,22 +1,43 @@
-#include <stdio.h>
-#include <fts.h>
-#include <stdlib.h>
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ */
 
+#ifndef lint
+static char sccsid[] = "@(#)utils.c	5.2 (Berkeley) %G%";
+#endif /* not lint */
+
+#include <sys/param.h>
+#include <sys/stat.h>
+#include <sys/mman.h>
+#include <sys/time.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <fts.h>
+#include "extern.h"
 
 void
-copy_file(fs, dne)
-	struct stat *fs;
+copy_file(entp, dne)
+	FTSENT *entp;
 	int dne;
 {
 	static char buf[MAXBSIZE];
 	register int from_fd, to_fd, rcount, wcount;
-	struct stat to_stat;
+	struct stat to_stat, *fs;
 	char *p;
+	
 
-	if ((from_fd = open(from.p_path, O_RDONLY, 0)) == -1) {
-		err("%s: %s", from.p_path, strerror(errno));
+	if ((from_fd = open(entp->fts_path, O_RDONLY, 0)) == -1) {
+		err("%s: %s", entp->fts_path, strerror(errno));
 		return;
 	}
+
+	fs = entp->fts_statp;
 
 	/*
 	 * If the file exists and we're interactive, verify with the user.
@@ -58,7 +79,7 @@ copy_file(fs, dne)
 	if (fs->st_size <= 8 * 1048576) {
 		if ((p = mmap(NULL, fs->st_size, PROT_READ,
 		    MAP_FILE, from_fd, (off_t)0)) == (char *)-1)
-			err("%s: %s", from.p_path, strerror(errno));
+			err("%s: %s", entp->fts_path, strerror(errno));
 		if (write(to_fd, p, fs->st_size) != fs->st_size)
 			err("%s: %s", to.p_path, strerror(errno));
 	} else {
@@ -70,7 +91,7 @@ copy_file(fs, dne)
 			}
 		}
 		if (rcount < 0)
-			err("%s: %s", from.p_path, strerror(errno));
+			err("%s: %s", entp->fts_path, strerror(errno));
 	}
 	if (pflag)
 		setfile(fs, to_fd);
@@ -91,94 +112,15 @@ copy_file(fs, dne)
 }
 
 void
-copy_dir()
-{
-	struct stat from_stat;
-	struct dirent *dp, **dir_list;
-	register int dir_cnt, i;
-	char *old_from, *old_to;
-
-	register FTS *ftsp;
-	register FTSENT *p;
-
-	dir_cnt = scandir(from.p_path, &dir_list, NULL, NULL);
-	if (dir_cnt == -1) {
-		(void)fprintf(stderr, "%s: can't read directory %s.\n",
-		    progname, from.p_path);
-		exit_val = 1;
-	}
-
-	/*
-	 * Instead of handling directory entries in the order they appear
-	 * on disk, do non-directory files before directory files.
-	 * There are two reasons to do directories last.  The first is
-	 * efficiency.  Files tend to be in the same cylinder group as
-	 * their parent, whereas directories tend not to be.  Copying files
-	 * all at once reduces seeking.  Second, deeply nested tree's
-	 * could use up all the file descriptors if we didn't close one
-	 * directory before recursivly starting on the next.
-	 */
-	/* copy files */
-	for (i = 0; i < dir_cnt; ++i) {
-		dp = dir_list[i];
-		if (dp->d_namlen <= 2 && dp->d_name[0] == '.'
-		    && (dp->d_name[1] == NULL || dp->d_name[1] == '.'))
-			goto done;
-		if (!(old_from =
-		    path_append(&from, dp->d_name, (int)dp->d_namlen)))
-			goto done;
-
-		if (statfcn(from.p_path, &from_stat) < 0) {
-			err("%s: %s", dp->d_name, strerror(errno));
-			path_restore(&from, old_from);
-			goto done;
-		}
-		if (S_ISDIR(from_stat.st_mode)) {
-			path_restore(&from, old_from);
-			continue;
-		}
-		if (old_to = path_append(&to, dp->d_name, (int)dp->d_namlen)) {
-			copy();
-			path_restore(&to, old_to);
-		}
-		path_restore(&from, old_from);
-done:		dir_list[i] = NULL;
-		free(dp);
-	}
-
-	/* copy directories */
-	for (i = 0; i < dir_cnt; ++i) {
-		dp = dir_list[i];
-		if (!dp)
-			continue;
-		if (!(old_from =
-		    path_append(&from, dp->d_name, (int)dp->d_namlen))) {
-			free(dp);
-			continue;
-		}
-		if (!(old_to =
-		    path_append(&to, dp->d_name, (int)dp->d_namlen))) {
-			free(dp);
-			path_restore(&from, old_from);
-			continue;
-		}
-		copy();
-		free(dp);
-		path_restore(&from, old_from);
-		path_restore(&to, old_to);
-	}
-	free(dir_list);
-}
-
-void
-copy_link(exists)
+copy_link(p, exists)
+	FTSENT *p;
 	int exists;
 {
 	int len;
 	char link[MAXPATHLEN];
 
-	if ((len = readlink(from.p_path, link, sizeof(link))) == -1) {
-		err("readlink: %s: %s", from.p_path, strerror(errno));
+	if ((len = readlink(p->fts_path, link, sizeof(link))) == -1) {
+		err("readlink: %s: %s", p->fts_path, strerror(errno));
 		return;
 	}
 	link[len] = '\0';
@@ -260,7 +202,7 @@ void
 usage()
 {
 	(void)fprintf(stderr,
-"usage: cp [-Rfhip] src target;\n       cp [-Rfhip] src1 ... srcN directory\n");
+"usage: cp [-HRfhip] src target;\n       cp [-HRfhip] src1 ... srcN directory\n");
 	exit(1);
 }
 
