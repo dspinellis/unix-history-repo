@@ -1,4 +1,4 @@
-.\"	@(#)HP.09.90	1.1	90/08/02
+.\"	@(#)HP.09.90	1.2	90/08/03
 .if n \{\
 .ND
 .rm CH
@@ -101,8 +101,10 @@ from \s-1CMU\s0 and incorporated into \s-14.3BSD\s0 by the University of Utah.
 We expect that the products of this work will become the interfaces and
 implementations of choice for other operating systems and networking
 researchers in the near future.
-Finally we hope to broaden our base of hardware support to the HP 800
+Finally we plan to broaden our base of hardware support to the HP 800
 line of machines.
+For this purpose we are requesting the donation of two HP 800's;
+one 832 server and one 834 workstation.
 .sp 2
 .in +1.5i
 Sincerely,
