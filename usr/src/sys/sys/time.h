@@ -1,4 +1,4 @@
-/*	time.h	4.1	83/02/10	*/
+/*	time.h	4.2	83/05/21	*/
 
 /*
  * Structure returned by gettimeofday(2) system call,
@@ -15,6 +15,7 @@ struct timezone {
 };
 #define	DST_NONE	0	/* not on dst */
 #define	DST_USA		1	/* usa style dst */
+#define	DST_AUST	2	/* Australian style dst */
 
 /*
  * Operations on timevals.
