@@ -1,4 +1,4 @@
-/* %G% (Berkely) @(#)llib-lcurses	1.2 */
+/* %G% (Berkely) @(#)llib-lcurses	1.3 */
 
 /* LINTLIBRARY */
 
@@ -43,6 +43,7 @@ int	scroll(win) WINDOW *win; { return 0; }
 int	setterm(type) char *type; { return 0; }
 WINDOW *subwin(orig, num_lines, num_cols, begy, begx) WINDOW *orig; int num_lines, num_cols, begy, begx; { return wp; }
 	touchwin(win) WINDOW *win; {}
+	tstp() {}
 int	waddch(win, c) WINDOW *win; char c; { return 0; }
 int	waddstr(win, str) WINDOW *win; char *str; { return 0; }
 int	wclear(win) WINDOW *win; { return 0; }
