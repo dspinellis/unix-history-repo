@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	6.10 (Berkeley) %G%
+ *	@(#)sendmail.h	6.11 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	6.10		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	6.11		%G%";
 # endif lint
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -151,23 +151,31 @@ struct mailer
 typedef struct mailer	MAILER;
 
 /* bits for m_flags */
+# define M_NOCOMMENT	'c'	/* don't include comment part of address */
 # define M_CANONICAL	'C'	/* make addresses canonical "u@dom" */
+		/*	'D'	/* CF: include Date: */
 # define M_EXPENSIVE	'e'	/* it costs to use this mailer.... */
 # define M_ESCFROM	'E'	/* escape From lines to >From */
 # define M_FOPT		'f'	/* mailer takes picky -f flag */
+		/*	'F'	/* CF: include From: or Resent-From: */
 # define M_HST_UPPER	'h'	/* preserve host case distinction */
+		/*	'H'	/* UIUC: MAIL11V3: preview headers */
 # define M_INTERNAL	'I'	/* SMTP to another sendmail site */
 # define M_LOCAL	'l'	/* delivery is to this host */
 # define M_LIMITS	'L'	/* must enforce SMTP line limits */
 # define M_MUSER	'm'	/* can handle multiple users at once */
+		/*	'M'	/* CF: include Message-Id: */
 # define M_NHDR		'n'	/* don't insert From line */
+		/*	'N'	/* UIUC: MAIL11V3: DATA returns multi-status */
 # define M_FROMPATH	'p'	/* use reverse-path in MAIL FROM: */
+		/*	'P'	/* CF: include Return-Path: */
 # define M_ROPT		'r'	/* mailer takes picky -r flag */
 # define M_SECURE_PORT	'R'	/* try to send on a reserved TCP port */
 # define M_STRIPQ	's'	/* strip quote chars from user/host */
 # define M_RESTR	'S'	/* must be daemon to execute */
 # define M_USR_UPPER	'u'	/* preserve user case distinction */
 # define M_UGLYUUCP	'U'	/* this wants an ugly UUCP from line */
+		/*	'V'	/* UIUC: !-relativize all addresses */
 # define M_XDOT		'X'	/* use hidden-dot algorithm */
 # define M_7BITS	'7'	/* use 7-bit path */
 
