@@ -1,6 +1,11 @@
-/*	rxreg.h	6.1	83/07/29	*/
+/*	rxreg.h	6.2	84/08/29	*/
 
+#ifdef KERNEL
+#include "ioctl.h"
+#else
 #include <sys/ioctl.h>
+#endif
+
 /*
  * RX02 registers
  */
