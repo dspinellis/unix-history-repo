@@ -1,4 +1,4 @@
-/*	if.h	4.16	82/10/31	*/
+/*	if.h	4.17	83/03/15	*/
 
 /*
  * Structures defining a network interface, providing a packet
@@ -111,6 +111,39 @@ struct ifnet {
 
 #define	IFQ_MAXLEN	50
 #define	IFNET_SLOWHZ	1		/* granularity is 1 second */
+
+/*
+ * Interface request structure used by socket
+ * ioctl's SIOCSIFxxxx (set interface parameter)
+ * and SIOCGIFxxxx (get parameter).
+ */
+struct	ifreq {
+	char	ifr_name[16];		/* name of interface (e.g. "ec0") */
+	union {
+		struct	sockaddr ifru_addr;
+		struct	sockaddr ifru_dstaddr;
+		short	ifru_flags;
+	} ifr_ifru;
+#define	ifr_addr	ifr_ifru.ifru_addr	/* address */
+#define	ifr_dstaddr	ifr_ifru.ifru_dstaddr	/* other end of p-to-p link */
+#define	ifr_flags	ifr_ifru.ifru_flags	/* flags */
+};
+
+/*
+ * Structure used in SIOCGIFCONF request.
+ * Used to retrieve interface configuration
+ * for machine (useful for programs which
+ * must know all networks accessible).
+ */
+struct	ifconf {
+	int	ifc_len;		/* size of associated buffer */
+	union {
+		caddr_t	ifcu_buf;
+		struct	ifreq *ifcu_req;
+	} ifc_ifcu;
+#define	ifc_buf	ifc_ifcu.ifcu_buf	/* buffer address */
+#define	ifc_req	ifc_ifcu.ifcu_req	/* array of structures returned */
+};
 
 #ifdef KERNEL
 #ifdef INET

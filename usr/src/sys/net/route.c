@@ -1,4 +1,4 @@
-/*	route.c	4.17	83/03/12	*/
+/*	route.c	4.18	83/03/15	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -228,10 +228,17 @@ rtinit(dst, gateway, flags)
 	int flags;
 {
 	struct rtentry route;
+	int cmd;
 
+	if (flags == -1) {
+		cmd = (int)SIOCDELRT;
+		flags = 0;
+	} else {
+		cmd = (int)SIOCADDRT;
+	}
 	bzero((caddr_t)&route, sizeof (route));
 	route.rt_dst = *dst;
 	route.rt_gateway = *gateway;
 	route.rt_flags = flags;
-	(void) rtrequest((int)SIOCADDRT, &route);
+	(void) rtrequest(cmd, &route);
 }
