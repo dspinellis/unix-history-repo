@@ -1,0 +1,34 @@
+.pa 1
+.he 'MSH (VII)'6/15/72'MSH (VII)'
+.ti 0
+NAME		msh  --  mini-shell
+.sp
+.ti 0
+SYNOPSIS	/etc/msh
+.sp
+.ti 0
+DESCRIPTION	msh___
+is a heavily simplified version of the Shell.
+It reads one line from the standard
+input file, interprets it as a command, and calls the command.
+
+The mini-shell supports few of the advanced features
+of the Shell; none of the following characters is special:
+
+   > < $ \\ ; &
+
+However, "*", "[", and "?" are recognized and glob____ is called.
+The main use of msh___ is to provide a command-executing
+facility for various interactive sub-systems.
+.sp
+.ti 0
+FILES		--
+.sp
+.ti 0
+SEE ALSO	sh(I), glob(VII)
+.sp
+.ti 0
+DIAGNOSTICS	"?"
+.sp
+.ti 0
+BUGS		--
