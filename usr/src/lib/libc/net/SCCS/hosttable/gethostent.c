@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)gethostent.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)gethostent.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -26,6 +26,10 @@ static char line[BUFSIZ+1];
 static char hostaddr[MAXADDRSIZE];
 static struct hostent host;
 static char *host_aliases[MAXALIASES];
+static char *host_addrs[] = {
+	hostaddr,
+	NULL
+};
 
 /*
  * The following is shared with gethostnamadr.c
@@ -79,7 +83,7 @@ again:
 		goto again;
 	*cp++ = '\0';
 	/* THIS STUFF IS INTERNET SPECIFIC */
-	host.h_addr = hostaddr;
+	host.h_addr_list = host_addrs;
 	*((u_long *)host.h_addr) = inet_addr(p);
 	host.h_length = sizeof (u_long);
 	host.h_addrtype = AF_INET;
