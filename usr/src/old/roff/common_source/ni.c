@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ni.c	4.1 %G%";
+static char sccsid[] = "@(#)ni.c	4.2 %G%";
 #endif lint
 
 #include "tdef.h"
@@ -26,7 +26,7 @@ int print = 1;
 char nextf[NS] = "/usr/lib/tmac/tmac.xxxxx";
 int nfi = 19;
 #ifdef NROFF
-char termtab[NS] = "/usr/lib/term/tab37";
+char termtab[NS] = "/usr/lib/term/tablpr";
 int tti = 17;
 #endif
 #ifndef NROFF
