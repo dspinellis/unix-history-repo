@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	4.28 (Berkeley) %G%
+#	@(#)Makefile	4.29 (Berkeley) %G%
 #
 #
 # The system has two monitoring schemes, utilizing either ``prof''
@@ -42,7 +42,7 @@ HOSTLOOKUP=	named
 DESTDIR=
 DFLMON=	mon.o
 DEFS=
-COMPAT=	compat-4.1 compat-sys5
+COMPAT=	compat-4.1 compat-4.3 compat-sys5
 ALL=	gen inet net ns stdio ${MACHINE} ${COMPAT}
 TAGSFILE=tags
 
