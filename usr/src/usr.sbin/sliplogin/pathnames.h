@@ -4,8 +4,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pathnames.h	5.1 (Berkeley) %G%
+ *	@(#)pathnames.h	5.2 (Berkeley) %G%
  */
+
+#include <paths.h>
 
 #define	_PATH_ACCESS	"/etc/slip.hosts"
 #define	_PATH_LOGIN	"/etc/slip.login"
