@@ -15,12 +15,12 @@
 
 # ifndef SMTP
 # ifndef lint
-static char	SccsId[] = "@(#)srvrsmtp.c	5.8 (Berkeley) %G%	(no SMTP)";
+static char	SccsId[] = "@(#)srvrsmtp.c	5.9 (Berkeley) %G%	(no SMTP)";
 # endif not lint
 # else SMTP
 
 # ifndef lint
-static char	SccsId[] = "@(#)srvrsmtp.c	5.8 (Berkeley) %G%";
+static char	SccsId[] = "@(#)srvrsmtp.c	5.9 (Berkeley) %G%";
 # endif not lint
 
 /*
@@ -86,7 +86,9 @@ static struct cmd	CmdTab[] =
 	NULL,		CMDERROR,
 };
 
+# ifdef WIZ
 bool	IsWiz = FALSE;			/* set if we are a wizard */
+# endif WIZ
 char	*WizWord;			/* the wizard word to compare against */
 bool	InChild = FALSE;		/* true if running in a subprocess */
 bool	OneXact = FALSE;		/* one xaction only this run */
@@ -102,7 +104,6 @@ smtp()
 	extern char *skipword();
 	extern bool sameword();
 	bool hasmail;			/* mail command received */
-	int rcps;			/* number of recipients */
 	auto ADDRESS *vrfyqueue;
 	ADDRESS *a;
 	char inp[MAXLINE];
@@ -114,7 +115,6 @@ smtp()
 	extern ADDRESS *recipient();
 
 	hasmail = FALSE;
-	rcps = 0;
 	if (OutChannel != stdout)
 	{
 		/* arrange for debugging output to go to remote host */
@@ -259,7 +259,6 @@ smtp()
 				message("550", "Addressee unknown");
 			}
 			CurEnv->e_to = NULL;
-			rcps++;
 			break;
 
 		  case CMDDATA:		/* data -- text of mail */

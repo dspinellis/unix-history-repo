@@ -14,7 +14,7 @@
 
 # ifndef DAEMON
 # ifndef lint
-static char	SccsId[] = "@(#)daemon.c	5.10 (Berkeley) %G%	(w/o daemon mode)";
+static char	SccsId[] = "@(#)daemon.c	5.11 (Berkeley) %G%	(w/o daemon mode)";
 # endif not lint
 # else
 
@@ -27,7 +27,7 @@ static char	SccsId[] = "@(#)daemon.c	5.10 (Berkeley) %G%	(w/o daemon mode)";
 # include <sys/resource.h>
 
 # ifndef lint
-static char	SccsId[] = "@(#)daemon.c	5.10 (Berkeley) %G% (with daemon mode)";
+static char	SccsId[] = "@(#)daemon.c	5.11 (Berkeley) %G% (with daemon mode)";
 # endif not lint
 
 /*
@@ -146,7 +146,7 @@ getrequests()
 		goto severe;
 	}
 
-	signal(SIGCHLD, reapchild);
+	(void) signal(SIGCHLD, reapchild);
 
 # ifdef DEBUG
 	if (tTd(15, 1))
@@ -209,7 +209,7 @@ getrequests()
 			**	Verify calling user id if possible here.
 			*/
 
-			signal(SIGCHLD, SIG_DFL);
+			(void) signal(SIGCHLD, SIG_DFL);
 
 			/* determine host name */
 			hp = gethostbyaddr(&otherend.sin_addr, sizeof otherend.sin_addr, AF_INET);
