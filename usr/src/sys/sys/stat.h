@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stat.h	7.15 (Berkeley) %G%
+ *	@(#)stat.h	7.16 (Berkeley) %G%
  */
 
 #include <sys/time.h>
@@ -100,11 +100,19 @@ struct stat {
  * Low 16-bits owner setable.
  */
 #define	NODUMP		0x00000001	/* do not dump file */
-#define	IMMUTABLE	0x00000002	/* file may not be changed */
+#define	USR_IMMUTABLE	0x00000002	/* file may not be changed */
+#define	USR_APPEND	0x00000004	/* writes to file may only append */
 /*
  * High 16-bits only super-user setable.
  */
 #define	ARCHIVED	0x00010000	/* file is archived */
+#define	SYS_IMMUTABLE	0x00020000	/* file may not be changed */
+#define	SYS_APPEND	0x00040000	/* writes to file may only append */
+/*
+ * Shorthand abbreviations of above.
+ */
+#define	IMMUTABLE	(USR_IMMUTABLE | SYS_IMMUTABLE)
+#define	APPEND		(USR_APPEND | SYS_APPEND)
 #endif
 
 #define	S_ISDIR(m)	((m & 0170000) == 0040000)	/* directory */
