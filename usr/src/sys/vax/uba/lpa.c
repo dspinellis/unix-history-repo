@@ -1,4 +1,5 @@
-/*	lpa.c	4.5	82/08/22	*/
+/*	lpa.c	4.6	82/10/10	*/
+
 #include "lpa.h"
 #if NLPA > 0
 
@@ -6,10 +7,11 @@
 #include "../h/dir.h"
 #include "../h/user.h"
 #include "../h/buf.h"
-#include "../h/ubavar.h"
 #include "../h/proc.h"
 #include "../h/ioctl.h"
 #include "../h/uio.h"
+
+#include "../vaxuba/ubavar.h"
 
 /*
  *	LPA driver for 4.1BSD

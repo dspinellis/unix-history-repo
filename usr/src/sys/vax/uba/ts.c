@@ -1,4 +1,4 @@
-/*	ts.c	4.29	82/09/12	*/
+/*	ts.c	4.30	82/10/10	*/
 
 #include "ts.h"
 #if NTS > 0
@@ -18,15 +18,15 @@
 #include "../h/map.h"
 #include "../h/pte.h"
 #include "../h/vm.h"
-#include "../h/ubareg.h"
-#include "../h/ubavar.h"
 #include "../h/ioctl.h"
 #include "../h/mtio.h"
 #include "../h/cmap.h"
-#include "../h/cpu.h"
 #include "../h/uio.h"
 
-#include "../h/tsreg.h"
+#include "../vax/cpu.h"
+#include "../vaxuba/ubareg.h"
+#include "../vaxuba/ubavar.h"
+#include "../vaxuba/tsreg.h"
 
 /*
  * There is a ctsbuf per tape controller.

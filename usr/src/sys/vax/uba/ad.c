@@ -1,4 +1,4 @@
-/*	ad.c	4.4	82/08/22	*/
+/*	ad.c	4.5	82/10/10	*/
 
 #include "ad.h"
 #if NAD > 0
@@ -12,9 +12,10 @@
 #include "../h/systm.h"
 #include "../h/map.h"
 #include "../h/pte.h"
-#include "../h/ubareg.h"
-#include "../h/ubavar.h"
-#include "../h/adreg.h"
+
+#include "../vaxuba/ubareg.h"
+#include "../vaxuba/ubavar.h"
+#include "../vaxuba/adreg.h"
 
 #define ADBUSY 01
 #define ADWAITPRI (PZERO+1)

@@ -1,4 +1,4 @@
-/*	dn.c	4.6	82/08/22	*/
+/*	dn.c	4.7	82/10/10	*/
 
 #include "dn.h"
 #if NDN > 0
@@ -13,9 +13,10 @@
 #include "../h/buf.h"
 #include "../h/map.h"
 #include "../h/pte.h"
-#include "../h/ubavar.h"
 #include "../h/conf.h"
 #include "../h/ioctl.h"
+
+#include "../vaxuba/ubavar.h"
 
 struct dndevice {
 	u_short	dn_reg[4];

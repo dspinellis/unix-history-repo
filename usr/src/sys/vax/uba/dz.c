@@ -1,4 +1,4 @@
-/*	dz.c	4.43	82/09/12	*/
+/*	dz.c	4.44	82/10/10	*/
 
 #include "dz.h"
 #if NDZ > 0
@@ -18,12 +18,13 @@
 #include "../h/pte.h"
 #include "../h/buf.h"
 #include "../h/vm.h"
-#include "../h/ubavar.h"
 #include "../h/conf.h"
-#include "../h/pdma.h"
 #include "../h/bk.h"
 #include "../h/file.h"
 #include "../h/uio.h"
+
+#include "../vaxuba/pdma.h"
+#include "../vaxuba/ubavar.h"
 
 /*
  * Driver information for auto-configuration stuff.

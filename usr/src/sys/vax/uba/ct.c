@@ -1,4 +1,4 @@
-/*	ct.c	4.9	82/08/22	*/
+/*	ct.c	4.10	82/10/10	*/
 
 #include "ct.h"
 #if NCT > 0
@@ -15,11 +15,12 @@
 #include "../h/pte.h"
 #include "../h/map.h"
 #include "../h/buf.h"
-#include "../h/ubareg.h"
-#include "../h/ubavar.h"
 #include "../h/conf.h"
 #include "../h/dir.h"
 #include "../h/user.h"
+
+#include "../vaxuba/ubareg.h"
+#include "../vaxuba/ubavar.h"
 
 #define	PCAT	(PZERO+9)
 #define	CATHIWAT	100

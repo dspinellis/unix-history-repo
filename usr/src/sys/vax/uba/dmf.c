@@ -1,4 +1,4 @@
-/*	dmf.c	4.7	82/08/22	*/
+/*	dmf.c	4.8	82/10/10	*/
 
 #include "dmf.h"
 #if NDMF > 0
@@ -25,12 +25,13 @@
 #include "../h/pte.h"
 #include "../h/buf.h"
 #include "../h/vm.h"
-#include "../h/ubareg.h"
-#include "../h/ubavar.h"
 #include "../h/bk.h"
 #include "../h/clist.h"
 #include "../h/file.h"
 #include "../h/uio.h"
+
+#include "../vaxuba/ubareg.h"
+#include "../vaxuba/ubavar.h"
 
 /*
  * Definition of the driver for the auto-configuration program.
