@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	8.51 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	8.52 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -65,7 +65,7 @@ chompheader(line, def, e)
 			p = q;
 		}
 		else
-			usrerr("553 header syntax error, line \"%s\"", line);
+			syserr("553 header syntax error, line \"%s\"", line);
 		cond = TRUE;
 	}
 
@@ -249,10 +249,10 @@ hvalue(field, header)
 **	optional white space followed by a colon.
 **
 **	Parameters:
-**		s -- string to check for possible headerness.
+**		h -- string to check for possible headerness.
 **
 **	Returns:
-**		TRUE if s is a header.
+**		TRUE if h is a header.
 **		FALSE otherwise.
 **
 **	Side Effects:
@@ -260,11 +260,16 @@ hvalue(field, header)
 */
 
 bool
-isheader(s)
-	register char *s;
+isheader(h)
+	char *h;
 {
+	register char *s = h;
+
 	while (*s > ' ' && *s != ':' && *s != '\0')
 		s++;
+
+	if (h == s)
+		return FALSE;
 
 	/* following technically violates RFC822 */
 	while (isascii(*s) && isspace(*s))
