@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	8.1 (Berkeley) %G%
+ *	@(#)vfs_subr.c	8.2 (Berkeley) %G%
  */
 
 /*
@@ -41,24 +41,24 @@ int	vttoif_tab[9] = {
 /*
  * Insq/Remq for the vnode usage lists.
  */
-#define	bufinsvn(bp, dp)	list_enter_head(dp, bp, struct buf *, b_vnbufs)
-#define	bufremvn(bp)		list_remove(bp, struct buf *, b_vnbufs)
+#define NOLIST ((struct buf *)0x87654321)
+#define	bufinsvn(bp, dp)	LIST_INSERT_HEAD(dp, bp, b_vnbufs)
+#define	bufremvn(bp) {  \
+	LIST_REMOVE(bp, b_vnbufs); \
+	(bp)->b_vnbufs.le_next = NOLIST; \
+}
+
+TAILQ_HEAD(freelst, vnode) vnode_free_list;	/* vnode free list */
+struct mntlist mountlist;			/* mounted filesystem list */
 
 /*
- * Remove a mount point from the list of mounted filesystems.
- * Unmount of the root is illegal.
+ * Initialize the vnode management data structures.
  */
-void
-vfs_remove(mp)
-	register struct mount *mp;
+vntblinit()
 {
 
-	if (mp == rootfs)
-		panic("vfs_remove: unmounting root");
-	mp->mnt_prev->mnt_next = mp->mnt_next;
-	mp->mnt_next->mnt_prev = mp->mnt_prev;
-	mp->mnt_vnodecovered->v_mountedhere = (struct mount *)0;
-	vfs_unlock(mp);
+	TAILQ_INIT(&vnode_free_list);
+	TAILQ_INIT(&mountlist);
 }
 
 /*
@@ -139,14 +139,11 @@ getvfs(fsid)
 {
 	register struct mount *mp;
 
-	mp = rootfs;
-	do {
+	for (mp = mountlist.tqh_first; mp != NULL; mp = mp->mnt_list.tqe_next) {
 		if (mp->mnt_stat.f_fsid.val[0] == fsid->val[0] &&
-		    mp->mnt_stat.f_fsid.val[1] == fsid->val[1]) {
+		    mp->mnt_stat.f_fsid.val[1] == fsid->val[1])
 			return (mp);
-		}
-		mp = mp->mnt_next;
-	} while (mp != rootfs);
+	}
 	return ((struct mount *)0);
 }
 
@@ -168,7 +165,7 @@ static u_short xxxfs_mntid;
 		++xxxfs_mntid;
 	tfsid.val[0] = makedev(nblkdev, xxxfs_mntid);
 	tfsid.val[1] = mtype;
-	if (rootfs) {
+	if (mountlist.tqh_first != NULL) {
 		while (getvfs(&tfsid)) {
 			tfsid.val[0]++;
 			xxxfs_mntid++;
@@ -199,12 +196,10 @@ void vattr_null(vap)
 /*
  * Routines having to do with the management of the vnode table.
  */
-struct vnode *vfreeh, **vfreet = &vfreeh;
 extern int (**dead_vnodeop_p)();
 extern void vclean();
 long numvnodes;
 extern struct vattr va_null;
-
 
 /*
  * Return the next vnode from the free list.
@@ -218,27 +213,24 @@ getnewvnode(tag, mp, vops, vpp)
 	register struct vnode *vp, *vq;
 	int s;
 
-	if ((vfreeh == NULL && numvnodes < 2 * desiredvnodes) ||
+	if ((vnode_free_list.tqh_first == NULL &&
+	     numvnodes < 2 * desiredvnodes) ||
 	    numvnodes < desiredvnodes) {
 		vp = (struct vnode *)malloc((u_long)sizeof *vp,
 		    M_VNODE, M_WAITOK);
 		bzero((char *)vp, sizeof *vp);
+		vp->v_usecount = 1;
 		numvnodes++;
 	} else {
-		if ((vp = vfreeh) == NULL) {
+		if ((vp = vnode_free_list.tqh_first) == NULL) {
 			tablefull("vnode");
 			*vpp = 0;
 			return (ENFILE);
 		}
 		if (vp->v_usecount)
 			panic("free vnode isn't");
-		if (vq = vp->v_freef)
-			vq->v_freeb = &vfreeh;
-		else
-			vfreet = &vfreeh;
-		vfreeh = vq;
-		vp->v_freef = NULL;
-		vp->v_freeb = NULL;
+		TAILQ_REMOVE(&vnode_free_list, vp, v_freelist);
+		vp->v_usecount = 1;
 		vp->v_lease = NULL;
 		if (vp->v_type != VBAD)
 			vgone(vp);
@@ -264,8 +256,8 @@ getnewvnode(tag, mp, vops, vpp)
 	vp->v_tag = tag;
 	vp->v_op = vops;
 	insmntque(vp, mp);
-	vp->v_usecount++;
 	*vpp = vp;
+	vp->v_data = 0;
 	return (0);
 }
 /*
@@ -280,25 +272,14 @@ insmntque(vp, mp)
 	/*
 	 * Delete from old mount point vnode list, if on one.
 	 */
-	if (vp->v_mountb) {
-		if (vq = vp->v_mountf)
-			vq->v_mountb = vp->v_mountb;
-		*vp->v_mountb = vq;
-	}
+	if (vp->v_mount != NULL)
+		LIST_REMOVE(vp, v_mntvnodes);
 	/*
 	 * Insert into list of vnodes for the new mount point, if available.
 	 */
-	vp->v_mount = mp;
-	if (mp == NULL) {
-		vp->v_mountf = NULL;
-		vp->v_mountb = NULL;
+	if ((vp->v_mount = mp) == NULL)
 		return;
-	}
-	if (vq = mp->mnt_mounth)
-		vq->v_mountb = &vp->v_mountf;
-	vp->v_mountf = vq;
-	vp->v_mountb = &mp->mnt_mounth;
-	mp->mnt_mounth = vp;
+	LIST_INSERT_HEAD(&mp->mnt_vnodelist, vp, v_mntvnodes);
 }
 
 /*
@@ -342,22 +323,22 @@ vinvalbuf(vp, flags, cred, p, slpflag, slptimeo)
 	if (flags & V_SAVE) {
 		if (error = VOP_FSYNC(vp, cred, MNT_WAIT, p))
 			return (error);
-		if (vp->v_dirtyblkhd.le_next != NULL)
+		if (vp->v_dirtyblkhd.lh_first != NULL)
 			panic("vinvalbuf: dirty bufs");
 	}
 	for (;;) {
-		if ((blist = vp->v_cleanblkhd.le_next) && flags & V_SAVEMETA)
+		if ((blist = vp->v_cleanblkhd.lh_first) && flags & V_SAVEMETA)
 			while (blist && blist->b_lblkno < 0)
-				blist = blist->b_vnbufs.qe_next;
-		if (!blist && (blist = vp->v_dirtyblkhd.le_next) && 
+				blist = blist->b_vnbufs.le_next;
+		if (!blist && (blist = vp->v_dirtyblkhd.lh_first) && 
 		    (flags & V_SAVEMETA))
 			while (blist && blist->b_lblkno < 0)
-				blist = blist->b_vnbufs.qe_next;
+				blist = blist->b_vnbufs.le_next;
 		if (!blist)
 			break;
 
 		for (bp = blist; bp; bp = nbp) {
-			nbp = bp->b_vnbufs.qe_next;
+			nbp = bp->b_vnbufs.le_next;
 			if (flags & V_SAVEMETA && bp->b_lblkno < 0)
 				continue;
 			s = splbio();
@@ -388,7 +369,7 @@ vinvalbuf(vp, flags, cred, p, slpflag, slptimeo)
 		}
 	}
 	if (!(flags & V_SAVEMETA) &&
-	    (vp->v_dirtyblkhd.le_next || vp->v_cleanblkhd.le_next))
+	    (vp->v_dirtyblkhd.lh_first || vp->v_cleanblkhd.lh_first))
 		panic("vinvalbuf: flush failed");
 	return (0);
 }
@@ -429,7 +410,7 @@ brelvp(bp)
 	/*
 	 * Delete from old vnode list, if on one.
 	 */
-	if (bp->b_vnbufs.qe_next != NOLIST)
+	if (bp->b_vnbufs.le_next != NOLIST)
 		bufremvn(bp);
 	vp = bp->b_vp;
 	bp->b_vp = (struct vnode *) 0;
@@ -445,7 +426,7 @@ reassignbuf(bp, newvp)
 	register struct buf *bp;
 	register struct vnode *newvp;
 {
-	register struct list_entry *listheadp;
+	register struct buflists *listheadp;
 
 	if (newvp == NULL) {
 		printf("reassignbuf: NULL");
@@ -454,7 +435,7 @@ reassignbuf(bp, newvp)
 	/*
 	 * Delete from old vnode list, if on one.
 	 */
-	if (bp->b_vnbufs.qe_next != NOLIST)
+	if (bp->b_vnbufs.le_next != NOLIST)
 		bufremvn(bp);
 	/*
 	 * If dirty, put on list of dirty buffers;
@@ -529,7 +510,7 @@ loop:
 			vgone(vp);
 			goto loop;
 		}
-		if (vget(vp))
+		if (vget(vp, 1))
 			goto loop;
 		break;
 	}
@@ -565,8 +546,9 @@ loop:
  * indicate that the vnode is no longer usable (possibly having
  * been changed to a new file system type).
  */
-vget(vp)
+vget(vp, lockflag)
 	register struct vnode *vp;
+	int lockflag;
 {
 	register struct vnode *vq;
 
@@ -575,17 +557,11 @@ vget(vp)
 		sleep((caddr_t)vp, PINOD);
 		return (1);
 	}
-	if (vp->v_usecount == 0) {
-		if (vq = vp->v_freef)
-			vq->v_freeb = vp->v_freeb;
-		else
-			vfreet = vp->v_freeb;
-		*vp->v_freeb = vq;
-		vp->v_freef = NULL;
-		vp->v_freeb = NULL;
-	}
+	if (vp->v_usecount == 0)
+		TAILQ_REMOVE(&vnode_free_list, vp, v_freelist);
 	vp->v_usecount++;
-	VOP_LOCK(vp);
+	if (lockflag)
+		VOP_LOCK(vp);
 	return (0);
 }
 
@@ -646,10 +622,7 @@ void vrele(vp)
 	/*
 	 * insert at tail of LRU list
 	 */
-	*vfreet = vp;
-	vp->v_freeb = vfreet;
-	vp->v_freef = NULL;
-	vfreet = &vp->v_freef;
+	TAILQ_INSERT_TAIL(&vnode_free_list, vp, v_freelist);
 	VOP_INACTIVE(vp);
 }
 
@@ -697,10 +670,10 @@ vflush(mp, skipvp, flags)
 	if ((mp->mnt_flag & MNT_MPBUSY) == 0)
 		panic("vflush: not busy");
 loop:
-	for (vp = mp->mnt_mounth; vp; vp = nvp) {
+	for (vp = mp->mnt_vnodelist.lh_first; vp; vp = nvp) {
 		if (vp->v_mount != mp)
 			goto loop;
-		nvp = vp->v_mountf;
+		nvp = vp->v_mntvnodes.le_next;
 		/*
 		 * Skip over a selected vnode.
 		 */
@@ -891,12 +864,8 @@ void vgone(vp)
 	/*
 	 * Delete from old mount point vnode list, if on one.
 	 */
-	if (vp->v_mountb) {
-		if (vq = vp->v_mountf)
-			vq->v_mountb = vp->v_mountb;
-		*vp->v_mountb = vq;
-		vp->v_mountf = NULL;
-		vp->v_mountb = NULL;
+	if (vp->v_mount != NULL) {
+		LIST_REMOVE(vp, v_mntvnodes);
 		vp->v_mount = NULL;
 	}
 	/*
@@ -938,16 +907,9 @@ void vgone(vp)
 	 * If it is on the freelist and not already at the head,
 	 * move it to the head of the list.
 	 */
-	if (vp->v_freeb && vfreeh != vp) {
-		if (vq = vp->v_freef)
-			vq->v_freeb = vp->v_freeb;
-		else
-			vfreet = vp->v_freeb;
-		*vp->v_freeb = vq;
-		vp->v_freef = vfreeh;
-		vp->v_freeb = &vfreeh;
-		vfreeh->v_freeb = &vp->v_freef;
-		vfreeh = vp;
+	if (vp->v_usecount == 0 && vnode_free_list.tqh_first != vp) {
+		TAILQ_REMOVE(&vnode_free_list, vp, v_freelist);
+		TAILQ_INSERT_HEAD(&vnode_free_list, vp, v_freelist);
 	}
 	vp->v_type = VBAD;
 }
@@ -1032,8 +994,12 @@ vprint(label, vp)
 		strcat(buf, "|VALIASED");
 	if (buf[0] != '\0')
 		printf(" flags (%s)", &buf[1]);
-	printf("\n\t");
-	VOP_PRINT(vp);
+	if (vp->v_data == NULL) {
+		printf("\n");
+	} else {
+		printf("\n\t");
+		VOP_PRINT(vp);
+	}
 }
 
 #ifdef DEBUG
@@ -1047,13 +1013,13 @@ printlockedvnodes()
 	register struct vnode *vp;
 
 	printf("Locked vnodes\n");
-	mp = rootfs;
-	do {
-		for (vp = mp->mnt_mounth; vp; vp = vp->v_mountf)
+	for (mp = mountlist.tqh_first; mp != NULL; mp = mp->mnt_list.tqe_next) {
+		for (vp = mp->mnt_vnodelist.lh_first;
+		     vp != NULL;
+		     vp = vp->v_mntvnodes.le_next)
 			if (VOP_ISLOCKED(vp))
 				vprint((char *)0, vp);
-		mp = mp->mnt_next;
-	} while (mp != rootfs);
+	}
 }
 #endif
 
@@ -1069,8 +1035,7 @@ sysctl_vnode(where, sizep)
 	char *where;
 	size_t *sizep;
 {
-	register struct mount *mp = rootfs;
-	struct mount *omp;
+	register struct mount *mp, *nmp;
 	struct vnode *vp;
 	register char *bp = where, *savebp;
 	char *ewhere;
@@ -1084,14 +1049,15 @@ sysctl_vnode(where, sizep)
 	}
 	ewhere = where + *sizep;
 		
-	do {
-		if (vfs_busy(mp)) {
-			mp = mp->mnt_next;
+	for (mp = mountlist.tqh_first; mp != NULL; mp = nmp) {
+		nmp = mp->mnt_list.tqe_next;
+		if (vfs_busy(mp))
 			continue;
-		}
 		savebp = bp;
 again:
-		for (vp = mp->mnt_mounth; vp; vp = vp->v_mountf) {
+		for (vp = mp->mnt_vnodelist.lh_first;
+		     vp != NULL;
+		     vp = vp->v_mntvnodes.le_next) {
 			/*
 			 * Check that the vp is still associated with
 			 * this filesystem.  RACE: could have been
@@ -1112,10 +1078,8 @@ again:
 				return (error);
 			bp += VPTRSZ + VNODESZ;
 		}
-		omp = mp;
-		mp = mp->mnt_next;
-		vfs_unbusy(omp);
-	} while (mp != rootfs);
+		vfs_unbusy(mp);
+	}
 
 	*sizep = bp - where;
 	return (0);
