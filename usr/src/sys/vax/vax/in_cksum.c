@@ -1,12 +1,13 @@
-/*	in_cksum.c	1.16	82/10/31	*/
+/*	in_cksum.c	1.17	83/01/17	*/
 
-#include <sys/types.h>
+#include "../h/types.h"
 #include "../h/mbuf.h"
 #include "../netinet/in.h"
 #include "../netinet/in_systm.h"
 
 /*
- * Checksum routine for Internet Protocol family headers.
+ * Checksum routine for Internet Protocol family headers (VAX Version).
+ *
  * This routine is very heavily used in the network
  * code and should be modified for each CPU to be as fast as possible.
  */
@@ -32,12 +33,7 @@ in_cksum(m, len)
 			 * about a carry-out here because we make sure
 			 * that high part of (32 bit) sum is small below.
 			 */
-#ifdef sun
-			sum += *(u_char *)w;
-#endif
-#ifdef vax
 			sum += *(u_char *)w << 8;
-#endif
 			w = (u_short *)((char *)w + 1);
 			mlen = m->m_len - 1;
 			len--;
@@ -47,11 +43,6 @@ in_cksum(m, len)
 		if (len < mlen)
 			mlen = len;
 		len -= mlen;
-#ifdef sun
-		sum += ocsum(w, mlen>>1);
-		w += mlen>>1;
-#endif
-#ifdef vax
 		/*
 		 * Force to long boundary so we do longword aligned
 		 * memory operations.  It is too hard to do byte
@@ -105,13 +96,6 @@ in_cksum(m, len)
 		if (mlen == -1) {
 			sum += *(u_char *)w;
 		}
-#endif vax
-#ifdef sun
-		if (mlen & 1) {
-			sum += *(u_char *)w << 8;
-			mlen = -1;
-		}
-#endif
 		if (len == 0)
 			break;
 		/*
@@ -137,14 +121,7 @@ done:
 	 * Have to be careful to not drop the last
 	 * carry here.
 	 */
-#ifdef sun
-	sum = (sum & 0xFFFF) + (sum >> 16);
-	sum = (sum & 0xFFFF) + (sum >> 16);
-	sum = (~sum) & 0xFFFF;
-#endif
-#ifdef vax
 	{ asm("ashl $-16,r8,r0; addw2 r0,r8; adwc $0,r8");
 	  asm("mcoml r8,r8; movzwl r8,r8"); }
-#endif
 	return (sum);
 }
