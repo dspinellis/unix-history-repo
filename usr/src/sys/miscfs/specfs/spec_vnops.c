@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)spec_vnops.c	8.11 (Berkeley) %G%
+ *	@(#)spec_vnops.c	8.12 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -48,6 +48,7 @@ struct vnodeopv_entry_desc spec_vnodeop_entries[] = {
 	{ &vop_lease_desc, spec_lease_check },		/* lease */
 	{ &vop_ioctl_desc, spec_ioctl },		/* ioctl */
 	{ &vop_select_desc, spec_select },		/* select */
+	{ &vop_revoke_desc, spec_revoke },		/* revoke */
 	{ &vop_mmap_desc, spec_mmap },			/* mmap */
 	{ &vop_fsync_desc, spec_fsync },		/* fsync */
 	{ &vop_seek_desc, spec_seek },			/* seek */
