@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.128 (Berkeley) %G%
+ *	@(#)conf.h	8.129 (Berkeley) %G%
  */
 
 /*
@@ -147,6 +147,7 @@ extern int	syslog(int, char *, ...);
 # define FORK		fork	/* no vfork primitive available */
 # define SFS_TYPE	SFS_STATFS	/* use <sys/statfs.h> statfs() impl */
 # define SPT_PADCHAR	'\0'	/* pad process title with nulls */
+# define LA_TYPE	LA_INT
 #endif
 
 
