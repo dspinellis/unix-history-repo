@@ -1,20 +1,20 @@
-# @(#)Makefile	1.3	%G%
+# @(#)Makefile	1.4	%G%
 #
 # reorder gives an editor command for most common terminals
 # (in reverse order from n'th to 1'st most commonly used)
 # to move them to the front of termcap
 #
-DESTDIR = /etc
+DESTDIR =
 termcap.obj: reorder termcap.src
 	ex - termcap.src < reorder
 
 install: termcap.obj
-	cp termcap.obj ${DESTDIR}/termcap
+	install termcap.obj ${DESTDIR}/etc/termcap
 
 clean:
 	rm -f termcap.obj
 
-tabset:	/tmp
+tabset:
 	-mkdir /usr/lib/tabset
 	cp tabset/* /usr/lib/tabset
 
