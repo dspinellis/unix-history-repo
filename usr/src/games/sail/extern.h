@@ -1,6 +1,13 @@
 /*
- * @(#)extern.h	2.6 85/04/22
+ * Copyright (c) 1983 Regents of the University of California,
+ * All rights reserved.  Redistribution permitted subject to
+ * the terms of the Berkeley Software License Agreement.
  */
+
+/*
+ * @(#)extern.h	2.7 85/04/23
+ */
+
 #include <stdio.h>
 #include <signal.h>
 #include <ctype.h>

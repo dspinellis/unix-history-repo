@@ -1,6 +1,13 @@
+/*
+ * Copyright (c) 1983 Regents of the University of California,
+ * All rights reserved.  Redistribution permitted subject to
+ * the terms of the Berkeley Software License Agreement.
+ */
+
 #ifndef lint
-static	char *sccsid = "@(#)dr_5.c	2.1 83/10/31";
+static	char *sccsid = "@(#)dr_5.c	2.2 85/04/23";
 #endif
+
 #include "externs.h"
 
 subtract(from, totalfrom, crewfrom, fromcap, pcfrom)

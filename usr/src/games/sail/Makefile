@@ -1,8 +1,13 @@
 #
-# Sail - Wooden Ships And Iron Men
+# Copyright (c) 1983 Regents of the University of California,
+# All rights reserved.  Redistribution permitted subject to
+# the terms of the Berkeley Software License Agreement.
 #
-# Makefile	@(#)Makefile	2.8 85/03/04
+
 #
+# @(#)Makefile	2.9 85/04/23
+#
+
 CTAGS = ctags -w
 CFLAGS = -O
 

@@ -1,5 +1,11 @@
 /*
- * sccsid = "@(#)machdep.h	2.6 %G%";
+ * Copyright (c) 1983 Regents of the University of California,
+ * All rights reserved.  Redistribution permitted subject to
+ * the terms of the Berkeley Software License Agreement.
+ */
+
+/*
+ * @(#)machdep.h	2.7 %G%
  */
 
 #define LOGFILE "/usr/games/lib/saillog"	/* has to match the makefile */
