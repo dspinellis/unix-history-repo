@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file @(#)termcap.src	1.9	(Berkeley) %G%
+#	Termcap source file @(#)termcap.src	1.10	(Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -155,11 +155,11 @@ D2|dm2500|datamedia2500|2500|datamedia 2500:\
 	:dc=10*^P\b^X^]:dl=10*^P^Z^X^]:dm=^P:ed=^X^]:ei=10\377\377^X^]:ho=^B:\
 	:ic=10*^P^\^X^]:im=^P:li#24:nc:nd=^\:pc=\377:so@=^N:se=^X^]:up=^Z:
 D3|dm3025|datamedia 3025a:\
-	:is=\EQ\EU\EV:\
+	:MT:is=\EQ\EU\EV:\
 	:cr=^M:do=^J:nl=^J:bl=^G:\
 	:al=130\EP\n\EQ:le=^H:bs:cd=2\EJ:ce=\EK:cl=2\EM:cm=\EY%r%+ %+ :\
 	:co#80:dc=6\b:dl=130\EP\EA\EQ:dm=\EP:ed=\EQ:ei=\EQ:ho=\EH:\
-	:im=\EP:ip=6:li#24:nd=\EC:ta=^I:pt:so=\EOA:se=\EO@:up=\EA:
+	:im=\EP:ip=6:li#24:nd=\EC:ta=^I:pt:so=\EO1:se=\EO0:up=\EA:
 D4|3045|dm3045|datamedia 3045a:\
 	:is=\EU\EV:\
 	:cr=^M:do=^J:nl=^J:bl=^G:\
@@ -270,6 +270,11 @@ I9|ibm|ibm3101|3101|i3101|IBM 3101-10:\
 # ks/ke have nothing to do with arrow keys.
 # is sets 80 col mode, normal video, autowrap on (for am).
 # Seems to be no way to get rid of status line.
+M0|abm80|amtek business machines 80:\
+	:cr=^M:do=^J:nl=^J:bl=^G:\
+	:al=\E^Z:am:le=^H:bs:cd=\E^X:ce=\E^O:cl=\E^\:cm=\E^Q%r%+ %+ :co#80:\
+	:dl=\E^S:do=\E^K:li#24:nd=^P:.so=\E^_:.se=\E^Y:up=\E^L:\
+	:bw:bt=^T:ho=\E^R:
 M1|tab132|tab|tab132/15|tab 132/15:\
 	:is=\E[?7h\E[?3l\E[?5l:dN@:ks@:ke@:\
 	:cr=^M:do=^J:nl=^J:bl=^G:\
@@ -1266,10 +1271,7 @@ cw|c108-w|c108-w-8p|concept108-w-8p|concept 108 w/8 pages in wide mode:\
 # This padding is only needed at 9600 baud.
 # 2 nulls padding on te isn't always enough.  6 works fine.  Maybe less
 # than 6 but more than 2 will work.
-cO|oc100|oconcept|c100-1p:\
-	:is=\EU\Ef\E7\E5\E8\El\ENH\EK\E\200\Eo&\200\Eo\47\E:\
-	:in:dc=16\E^A:tc=c100:
-co|c100|concept|c104|c100-4p|concept100|concept 100:\
+co|c100|concept|c1004p|c100-4p|concept100|concept 100:\
 	:cr=^M:do=^J:nl=^J:bl=^G:\
 	:is=\EU\Ef\E7\E5\E8\El\ENH\EK\E\200\Eo&\200\Eo\47\E\E^G\041\E^HA@ :\
 	:ti=\EU\Ev  8p\Ep\r:te=\Ev    \200\200\200\200\200\200\Ep\r\n:\
@@ -1280,19 +1282,19 @@ co|c100|concept|c104|c100-4p|concept100|concept 100:\
 	:.dN#9:dC#9:pb#9600:vt#8:us=\EG:ue=\Eg:so=\EE\ED:se=\Ed\Ee:\
 	:mh=\EE:mr=\ED:mb=\EC:mp=\EI:mk=\EH:me=\EN\200:\
 	:ks=\EX:ke=\Ex:ku=\E;:kd=\E<:kl=\E>:kr=\E=:kh=\E?:k1=\E5:k2=\E6:k3=\E7:
-cp|c100-rv-pp|c100-rv-4p-pp|concept100-rv-pp|c100 with printer port:\
+cp|c100-rv-pp|c100-rv-4p-pp|concept100-rv-pp|c100rv4ppp|w/ printer port:\
 	:is=\EU\Ef\E7\E5\E8\El\ENH\Ek\E\200\Eo&\200\Eo\041\200\EQ"\EY(^W\Eo\47\E\E^G\041\E^HA@ :\
 	:tc=c100-rv:
-cn|c100-rv-na|c100-rv-4p-na|concept100-rv-na|c100 with no arrows:\
+cn|c100-rv-na|c100-rv-4p-na|concept100-rv-na|c100rv4pna|c100 with no arrows:\
 	:ks@:ke@:tc=c100-rv:
-cr|c100-rv|c100-rv-4p|concept100-rv|c100 rev video:\
+cr|c100-rv|c100-rv-4p|concept100-rv|c100rv4p|c100rv|c100 rev video:\
 	:is=\EU\Ef\E7\E5\E8\El\ENH\Ek\E\200\Eo&\200\Eo\47\E\E^G\041\E^HA@ :\
 	:vb=\EK\200\200\200\200\200\200\200\200\200\200\200\200\200\200\Ek:\
 	:so=\EE:se=\Ee:tc=c100:
 # This is useful at 1200 baud.
 cs|c100-s|concept-s|concept100-s|slow concept 100:\
 	:vb=\Ek\200\EK:ta=^I:pt:dC@:dN@:tc=c100:
-cd|c100-rv-s|concept-rv-s|concept100-rv-s|slow reverse concept 100:\
+cd|c100-rv-s|concept-rv-s|concept100-rv-s|c100rvs|slow reverse concept 100:\
 	:vb=\EK\200\Ek:ta=^I:pt:dC@:dN@:tc=c100-rv:
 # # --------------------------------
 #
@@ -1464,13 +1466,13 @@ hb|2640b|hp2640b|2644a|hp2644a|hp 264x series:\
 hl|2621-48|48 line 2621:\
 	:li#48:ho=\EH:cm=\E&a%r%dc%dR:tc=2621:
 # 2621 with no labels ever.  Also prevents vi delays on escape.
-hn|2621-nl|hp2621-nl|hp 2621 with no labels:\
+hn|2621-nl|hp2621nl|2621nl|hp2621-nl|hp 2621 with no labels:\
 	:ks@:ke@:kh@:ku@:kl@:kr@:kd@:tc=hp2621-fl:
 # Needed for UCB ARPAVAX console, since lsi-11 expands tabs (wrong).
-ht|2621-nt|hp 2621 w/no tabs:\
+ht|hp2621-nt|2621nt|2621-nt|hp2621nt|hp 2621 w/no tabs:\
 	:pt@:tc=hp2621:
 # 2621 with labels on all the time - normal outside vi, function inside vi.
-hw|2621-wl|hp2621-wl|hp 2621 w/labels:\
+hw|hp2621wl|2621wl|2621-wl|hp2621-wl|hp 2621 w/labels:\
 	:is=\E&jA\r:ke=\E&jA:tc=hp2621-fl:
 # # --------------------------------
 #
@@ -1499,7 +1501,7 @@ ik|infotonKAS:\
 #
 # k: HEATHKIT (ZENITH)
 #
-kA|h19-a|heath-ansi|heathkit-a|heathkit h19 ansi mode:\
+kA|h19-a|h19a|heath-ansi|heathkit-a|heathkit h19 ansi mode:\
 	:cr=^M:nl=^J:bl=^G:\
 	:al=1*\E[1L:am:le=^H:bs:cd=\E[J:ce=\E[K:cl=\E[2J:cm=\E[%i%2;%2H:co#80:\
 	:dc=\E[1P:dl=1*\E[1M:do=\E[1B:ei=\E[4l:ho=\E[H:im=\E[4h:li#24:mi:\
@@ -1508,11 +1510,11 @@ kA|h19-a|heath-ansi|heathkit-a|heathkit h19 ansi mode:\
 	:kh=\E[H:kn#8:k1=\EOS:k2=\EOT:k3=\EOU:k4=\EOV:k5=\EOW:l6=blue:\
 	:l7=red:l8=white:k6=\EOP:k7=\EOQ:k8=\EOR:\
 	:sr=\EM:is=\E<\E[>1;2;3;4;5;6;7;8;9l\E[0m\E[11m\E[?7h:
-kB|h19-bs|heathkit w/keypad shifted:\
+kB|h19-bs|h19bs|heathkit w/keypad shifted:\
 	:ks=\Et:ke=\Eu:tc=h19-b:
-kU|h19-us|heathkit w/keypad shifted/underscore cursor:\
+kU|h19-us|h19us|heathkit w/keypad shifted/underscore cursor:\
 	:ks=\Et:ke=\Eu:tc=h19-u:
-kb|h19|heath|h19-b|heathkit|heath-19|z19|zenith|heathkit h19:\
+kb|h19|heath|h19-b|h19b|heathkit|heath-19|z19|zenith|heathkit h19:\
 	:cr=^M:nl=^J:bl=^G:\
 	:al=1*\EL:am:le=^H:bs:cd=\EJ:ce=\EK:cl=\EE:cm=\EY%+ %+ :co#80:dc=\EN:\
 	:dl=1*\EM:do=\EB:ei=\EO:ho=\EH:im=\E@:li#24:mi:nd=\EC:as=\EF:ae=\EG:\
@@ -1522,9 +1524,9 @@ kb|h19|heath|h19-b|heathkit|heath-19|z19|zenith|heathkit h19:\
 	:l6=blue:l7=red:l8=white:k6=\EP:k7=\EQ:k8=\ER:\
 	:es:hs:ts=\Ej\Ex5\Ex1\EY8%+ \Eo:fs=\Ek\Ey5:ds=\Ey1:
 ke|h19-e|h19e|h19 for emacs:ip=1.5:tc=h19-us:
-ku|h19-u|heathkit with underscore cursor:\
+ku|h19-u|h19u|heathkit with underscore cursor:\
 	:vs@:ve@:tc=h19-b:
-kg|h19-g|heathkit w/block cursor:\
+kg|h19-g|h19g|heathkit w/block cursor:\
 	:ve=\Ex4:tc=h19-b:
 kp|p19:\
 	:al=2*\EL:dl=2*\EM:tc=h19-b:
@@ -1561,13 +1563,15 @@ l5|adm5|5|lsi adm5:\
 	:cr=^M:do=^J:nl=^J:bl=^G:\
 	:cd=\EY:ce=\ET:do=^J:kb=^H:kh=^^:\
 	:ma=^Hh^Jj^Kk^Ll^^H:se=\EG:sg#1:so=\EG:tc=adm3aplus:
+l7|adm20|lear siegler adm20:\
+	:li#24:co#80:bs:cl=^Z:cm=\E=%i%r%+^_%+^_:nd=^L:up=^K:ho=^\^:ce=\ET:\
+	:cd=\EY:al=\EE:dl=\ER:im=:ei=:ic=\EQ:dm=:ed=:dc=\EW:so=\E):se=\E(:\
+	:am:bt=\EI:pt:kn#7:k1=^A:k2=^B:k3=^W:k4=^D:k5=^E:k6:^X:k7=^Z:
 la|adm3a|3a|lsi adm3a:\
-	:cr=^M:do=^J:nl=^J:bl=^G:\
-	:am:le=^H:bs:cm=\E=%+ %+ :cl=1^Z:co#80:ho=^^:li#24:ma=^K^P:nd=^L:up=^K:
+	:am:cr=^M:do=^J:nl=^J:bl=^G:\
+	:le=^H:bs:cm=\E=%+ %+ :cl=1^Z:co#80:ho=^^:li#24:ma=^K^P:nd=^L:up=^K:
 lb|adm3a+|3a+|adm3aplus:\
 	:kl=^H:kd=^J:ku=^K:kr=^L:tc=adm3a:
-lo|oadm31|o31|old adm31:\
- 	:se@:so@:us@:ue@:tc=adm31:
 # # --------------------------------
 #
 # m: MICROTERM
@@ -1577,8 +1581,8 @@ lo|oadm31|o31|old adm31:\
 m3|mime3a|mime1 emulating 3a:\
 	:am@:ma=^X ^K^J^Z^P:ku=^Z:kd=^K:kl=^H:kr=^X:tc=adm3a:
 m4|microterm|act4|microterm act iv:\
-	:cr=^M:do=^J:nl=^J:bl=^G:\
-	:am:le=^H:bs:cd=^_:ce=^^:cl=^L:cm=^T%.%.:co#80:li#24:nd=^X:up=^Z:ho=^]:
+	:am:cr=^M:do=^J:nl=^J:bl=^G:\
+	:le=^H:bs:cd=^_:ce=^^:cl=^L:cm=^T%.%.:co#80:li#24:nd=^X:up=^Z:ho=^]:
 # The padding on sr and ta for act5 and mime is a guess and not final.
 # The act 5 has hardware tabs, but they are in columns 8, 16, 24, 32, 41 (!)...
 m5|microterm5|act5|microterm act v:\
@@ -1588,7 +1592,7 @@ mS|act5s|skinny act5:\
 	:ti=\EP:te=\EQ:li#48:co#39:tc=act5:
 # Mimes using brightness for standout.  Half bright is really dim unless
 # you turn up the brightness so far that lines show up on the screen.
-# uc is disabled to get around a curses bug, and should be put back in someday.
+# uc is disabled to get around a curses bug, should be put back in someday.
 mf|mime-fb|full bright mime1:\
 	:so=^Y:se=^S:is=^S\E:tc=mime:
 mh|mime-hb|half bright mime1:\
@@ -1728,9 +1732,9 @@ t8|ti800|ti omni 800:\
 # and 912b, 912c, 920b, 920c are the new ones that don't need padding.
 v1|tvi912|912|920|tvi920|old televideo:\
 	:ct=\E3:st=\E1:cr=^M:do=^J:nl=^J:bl=^G:\
-	:al=33*\EE:am:le=^H:bs:ce=\ET:cm=\E=%+ %+ :cl=^Z:co#80:dc=\EW:dl=33*\ER:ei=:\
+	:al=33*\EE:le=^H:ce=\ET:cm=\E=%+ %+ :cl=^Z:co#80:dc=\EW:dl=33*\ER:ei=:\
 	:kb=^h:ku=^K:kd=^J:kl=^H:kr=^L:k0=^A@\r:k1=^AA\r:k2=^AB\r:k3=^AC\r:\
-	:k4=^AD\r:k5=^AE\r:k6=^AF\r:k7=^AG\r:k8=^AH\r:k9=^AI\r:\
+	:bs:am:k4=^AD\r:k5=^AE\r:k6=^AF\r:k7=^AG\r:k8=^AH\r:k9=^AI\r:\
 	:ho=^^:im=:ic=\EQ:li#24:nd=^L:ta=^I:pt:se=\Ek:so=\Ej:up=^K:us=\El:ue=\Em:\
 	:ma=^K^P^L :sg#1:ug#1:
 # the 912 has a <funct> key that's like shift: <funct>8 xmits "^A8\r".
@@ -1905,6 +1909,48 @@ y7|t10|teleray 10 special:\
 	:xs:xt:
 yf|t1061f|teleray 1061 with fast PROMs:\
 	:al=\EL:ip@:dl=\EM:tc=t1061:
+# # --------------------------------
+#
+# z: CADLINK (nad other misc stuff, since M* is full)
+#
+z0|wind:\
+	:bs:cm=\Ep%r%.%.:cl=\En\120\030\Eo:co#80:\
+	:ho=\Ep\200\200:li#24:nd=^L:up=^K:nl=\035:\
+	:kl=\E3:kr=\E4:ku=\E1:kd=\E2:k1=\E5:k2=\E6:k3=\E7:k4=\E8:\
+	:so=\Em\014:se=\Em\003:
+z1|wind16:\
+	:bs:cm=\Ep%r%.%.:cl=\En\120\020\Eo:co#80:\
+	:ho=\Ep\200\200:li#16:nd=^L:up=^K:nl=\035:\
+	:so=\Em\014:se=\Em\003:
+z2|wind40:\
+	:bs:cm=\Ep%r%.%.:cl=\En\120\050\Eo:co#80:\
+	:ho=\Ep\200\200:li#40:nd=^L:up=^K:nl=\035:\
+	:so=\Em\014:se=\Em\003:
+z3|wind50:\
+	:bs:cm=\Ep%r%.%.:cl=\En\128\062\Eo:co#88:\
+	:ho=\Ep\200\200:li#50:nd=^L:up=^K:nl=\035:\
+	:kl=\E3:kr=\E4:ku=\E1:kd=\E2:k1=\E5:k2=\E6:k3=\E7:k4=\E8:\
+	:so=\Em\014:se=\Em\003:
+z3|cad68-3|cgc3|cad68 basic monitor transparent mode size 3 chars:\
+	:am:bs:cl=^Z:co#73:ho=\036:li#36:nd=^L:up=^K:
+z4|cad68-2|cgc2|cad68 basic monitor transparent mode size 2 chars:\
+	:am:bs:cl=^Z:co#85:ho=\036:li#39:nd=^L:up=^K:
+	:kl=\E3:kr=\E4:ku=\E1:kd=\E2:k1=\E5:k2=\E6:k3=\E7:k4=\E8:\
+	:so=\Em\014:se=\Em\003:
+z5|wind16:\
+	:bs:cm=\Ep%r%.%.:cl=\En\120\020\Eo:co#80:\
+	:ho=\Ep\200\200:li#16:nd=^L:up=^K:nl=\035:\
+	:so=\Em\014:se=\Em\003:
+z6|wind40:\
+	:bs:cm=\Ep%r%.%.:cl=\En\120\050\Eo:co#80:\
+	:ho=\Ep\200\200:li#40:nd=^L:up=^K:nl=\035:\
+	:so=\Em\014:se=\Em\003:
+z7|wind50:\
+	:bs:cm=\Ep%r%.%.:cl=\En\128\062\Eo:co#88:\
+	:ho=\Ep\200\200:li#50:nd=^L:up=^K:nl=\035:\
+	:kl=\E3:kr=\E4:ku=\E1:kd=\E2:k1=\E5:k2=\E6:k3=\E7:k4=\E8:\
+	:so=\Em\014:se=\Em\003:
+
 #
 # END OF TERMCAP
 #  ------------------------
