@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)tutor.me	6.4 (Berkeley) %G%
+.\"	@(#)tutor.me	6.5 (Berkeley) %G%
 .\"
 .oh 'Introductory 4.3BSD IPC''PS1:7-%'
 .eh 'PS1:7-%''Introductory 4.3BSD IPC'
@@ -48,26 +48,15 @@ networking system in full.
 .sh 1 "Goals"
 .r
 .pp
-UNIX is an operating system that supports processes.  Processes
-sit in their own little worlds off on their own machines and generally
-just compute. 
-Occasionally it has been reasonable to 
-write programs as small modular pieces that
-talk to each other, since the resulting facilities can be flexible and
-easy to modify.
-More recently, with more computers sitting around in the same buildings
-people have had the idea that
-it would be nice if a process on one machine could talk to a process
-on another machine.  For example these processes might relay commands
-typed by the user across machine boundaries, allowing the user to
-log into a different computer without walking to a new terminal,
-rewiring the old terminal, or taking other time consuming actions.  
-These ideas have been integrated and abstracted yielding an interface
-for interprocess communication, or IPC.
-.pp
+Facilities for interprocess communication (IPC) and networking
+were a major addition to UNIX in the Berkeley UNIX 4.2BSD release.
+These facilities required major additions and some changes
+to the system interface.
 The basic idea of this interface is to make IPC similar to file I/O.
 In UNIX a process has a set of I/O descriptors, from which one reads
 and to which one writes.
+Descriptors may refer to normal files, to devices (including terminals),
+or to communication channels.
 The use of a descriptor has three phases: its creation,
 its use for reading and writing, and its destruction.  By using descriptors
 to write files, rather than simply naming the target file in the write
@@ -76,13 +65,21 @@ creates a descriptor will be different from the program that uses the
 descriptor.  For example the shell can create a descriptor for the output 
 of the `ls'
 command that will cause the listing to appear in a file rather than
-on a terminal.  The use of descriptors is not the only communication mechanism
+on a terminal.
+Pipes are another form of descriptor that have been used in UNIX
+for some time.
+Pipes allow one-way data transmission from one process
+to another; the two processes and the pipe must be set up by a common
+ancestor.
+.pp
+The use of descriptors is not the only communication interface
 provided by UNIX.
-There is another mechanism which flashes a tiny amount of information from one 
-process to another, telling it, for example, that someone wants it to stop.  
-This is called sending a signal.  To signal
-another process, one states explicitly the identity of the recipient.
-This requirement limits the flexibility of the signaling mechanism
+The signal mechanism sends a tiny amount of information from one 
+process to another.
+The signaled process receives only the signal type,
+not the identity of the sender,
+and the number of possible signals is small.
+The signal semantics limit the flexibility of the signaling mechanism
 as a means of interprocess communication.
 .pp
 The identification of IPC with I/O is quite longstanding in UNIX and
