@@ -1,9 +1,10 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1982, 1986, 1990 Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)kern_physio.c	7.15 (Berkeley) %G%
+ * %sccs.include.redist.c%
+ *
+ *	@(#)kern_physio.c	7.16 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -13,177 +14,10 @@
 #include "conf.h"
 #include "proc.h"
 #include "seg.h"
-#include "vm.h"
 #include "trace.h"
 #include "map.h"
 #include "vnode.h"
 #include "specdev.h"
-
-#include "machine/pte.h"
-#ifdef SECSIZE
-#include "file.h"
-#include "ioctl.h"
-#include "disklabel.h"
-#endif SECSIZE
-
-/*
- * Swap IO headers -
- * They contain the necessary information for the swap I/O.
- * At any given time, a swap header can be in three
- * different lists. When free it is in the free list, 
- * when allocated and the I/O queued, it is on the swap 
- * device list, and finally, if the operation was a dirty 
- * page push, when the I/O completes, it is inserted 
- * in a list of cleaned pages to be processed by the pageout daemon.
- */
-struct	buf *swbuf;
-
-/*
- * swap I/O -
- *
- * If the flag indicates a dirty page push initiated
- * by the pageout daemon, we map the page into the i th
- * virtual page of process 2 (the daemon itself) where i is
- * the index of the swap header that has been allocated.
- * We simply initialize the header and queue the I/O but
- * do not wait for completion. When the I/O completes,
- * biodone() will link the header to a list of cleaned
- * pages to be processed by the pageout daemon.
- */
-swap(p, dblkno, addr, nbytes, rdflg, flag, vp, pfcent)
-	struct proc *p;
-	swblk_t dblkno;
-	caddr_t addr;
-	int nbytes, rdflg, flag;
-	struct vnode *vp;
-	u_int pfcent;
-{
-	register struct buf *bp;
-	register struct pte *dpte, *vpte;
-	register u_int c;
-	int p2dp, s, error = 0;
-	struct buf *getswbuf();
-	int swdone();
-
-	bp = getswbuf(PSWP+1);
-	bp->b_flags = B_BUSY | B_PHYS | rdflg | flag;
-#ifdef SECSIZE
-	bp->b_blksize = DEV_BSIZE;
-#endif SECSIZE
-	if ((bp->b_flags & (B_DIRTY|B_PGIN)) == 0)
-		if (rdflg == B_READ)
-			sum.v_pswpin += btoc(nbytes);
-		else
-			sum.v_pswpout += btoc(nbytes);
-	bp->b_proc = p;
-	if (flag & B_DIRTY) {
-		p2dp = ((bp - swbuf) * CLSIZE) * KLMAX;
-		dpte = dptopte(&proc[2], p2dp);
-		vpte = vtopte(p, btop(addr));
-		for (c = 0; c < nbytes; c += NBPG) {
-			if (vpte->pg_pfnum == 0 || vpte->pg_fod)
-				panic("swap bad pte");
-			*dpte++ = *vpte++;
-		}
-		bp->b_un.b_addr = (caddr_t)ctob(dptov(&proc[2], p2dp));
-		bp->b_flags |= B_CALL;
-		bp->b_iodone = swdone;
-		bp->b_pfcent = pfcent;
-	} else
-		bp->b_un.b_addr = addr;
-	while (nbytes > 0) {
-		bp->b_blkno = dblkno;
-		if (bp->b_vp)
-			brelvp(bp);
-		VHOLD(vp);
-		bp->b_vp = vp;
-		bp->b_dev = vp->v_rdev;
-		bp->b_bcount = nbytes;
-		if ((bp->b_flags & B_READ) == 0)
-			vp->v_numoutput++;
-		minphys(bp);
-		c = bp->b_bcount;
-#ifdef TRACE
-		trace(TR_SWAPIO, vp, bp->b_blkno);
-#endif
-#if defined(hp300) || defined(i386)
-		vmapbuf(bp);
-#endif
-		VOP_STRATEGY(bp);
-		/* pageout daemon doesn't wait for pushed pages */
-		if (flag & B_DIRTY) {
-			if (c < nbytes)
-				panic("big push");
-			return (0);
-		}
-#if defined(hp300) || defined(i386)
-		vunmapbuf(bp);
-#endif
-		bp->b_un.b_addr += c;
-		bp->b_flags &= ~B_DONE;
-		if (bp->b_flags & B_ERROR) {
-			if ((flag & (B_UAREA|B_PAGET)) || rdflg == B_WRITE)
-				panic("hard IO err in swap");
-			swkill(p, "swap: read error from swap device");
-			error = EIO;
-		}
-		nbytes -= c;
-#ifdef SECSIZE
-		if (flag & B_PGIN && nbytes > 0)
-			panic("big pgin");
-#endif SECSIZE
-		dblkno += btodb(c);
-	}
-	bp->b_flags &= ~(B_BUSY|B_WANTED|B_PHYS|B_PAGET|B_UAREA|B_DIRTY);
-	freeswbuf(bp);
-	return (error);
-}
-
-/*
- * Put a buffer on the clean list after I/O is done.
- * Called from biodone.
- */
-swdone(bp)
-	register struct buf *bp;
-{
-	register int s;
-
-	if (bp->b_flags & B_ERROR)
-		panic("IO err in push");
-	s = splbio();
-	bp->av_forw = bclnlist;
-	cnt.v_pgout++;
-	cnt.v_pgpgout += bp->b_bcount / NBPG;
-	bclnlist = bp;
-	if (bswlist.b_flags & B_WANTED)
-		wakeup((caddr_t)&proc[2]);
-#if defined(hp300) || defined(i386)
-	vunmapbuf(bp);
-#endif
-	splx(s);
-}
-
-/*
- * If rout == 0 then killed on swap error, else
- * rout is the name of the routine where we ran out of
- * swap space.
- */
-swkill(p, rout)
-	struct proc *p;
-	char *rout;
-{
-
-	printf("pid %d: %s\n", p->p_pid, rout);
-	uprintf("sorry, pid %d was killed in %s\n", p->p_pid, rout);
-	/*
-	 * To be sure no looping (e.g. in vmsched trying to
-	 * swap out) mark process locked in core (as though
-	 * done by user) after killing it so noone will try
-	 * to swap it out.
-	 */
-	psignal(p, SIGKILL);
-	p->p_flag |= SULOCK;
-}
 
 /*
  * Raw I/O. The arguments are
