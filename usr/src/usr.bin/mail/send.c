@@ -5,6 +5,7 @@
 #include <wait.h>
 #endif
 #include <ctype.h>
+#include <sys/stat.h>
 
 /*
  * Mail -- a mail program
@@ -239,6 +240,7 @@ mail1(hp)
 	int pid, i, s, p, gotcha;
 	char **namelist, *deliver;
 	struct name *to, *np;
+	struct stat sbuf;
 	FILE *mtf, *postage;
 	int remote = rflag != NOSTR || rmail;
 	char **t;
@@ -366,11 +368,12 @@ topdog:
 #endif
 		for (i = SIGHUP; i <= SIGQUIT; i++)
 			sigset(i, SIG_IGN);
-		if ((postage = fopen(POSTAGE, "a")) != NULL) {
-			fprintf(postage, "%s %d %d\n", myname,
-			    count(to), fsize(mtf));
-			fclose(postage);
-		}
+		if (!stat(POSTAGE, &sbuf))
+			if ((postage = fopen(POSTAGE, "a")) != NULL) {
+				fprintf(postage, "%s %d %d\n", myname,
+				    count(to), fsize(mtf));
+				fclose(postage);
+			}
 		s = fileno(mtf);
 		for (i = 3; i < 15; i++)
 			if (i != s)
@@ -392,7 +395,7 @@ topdog:
 	}
 
 out:
-	if (remote) {
+	if (remote || (value("verbose") != NOSTR)) {
 		while ((p = wait(&s)) != pid && p != -1)
 			;
 		if (s != 0)
@@ -491,13 +494,13 @@ puthead(hp, fo, w)
 
 	gotcha = 0;
 	if (hp->h_to != NOSTR && w & GTO)
-		fprintf(fo, "To: "), fmt(hp->h_to, fo), gotcha++;
+		fmt("To: ", hp->h_to, fo), gotcha++;
 	if (hp->h_subject != NOSTR && w & GSUBJECT)
 		fprintf(fo, "Subject: %s\n", hp->h_subject), gotcha++;
 	if (hp->h_cc != NOSTR && w & GCC)
-		fprintf(fo, "Cc: "), fmt(hp->h_cc, fo), gotcha++;
+		fmt("Cc: ", hp->h_cc, fo), gotcha++;
 	if (hp->h_bcc != NOSTR && w & GBCC)
-		fprintf(fo, "Bcc: "), fmt(hp->h_bcc, fo), gotcha++;
+		fmt("Bcc: ", hp->h_bcc, fo), gotcha++;
 	if (gotcha && w & GNL)
 		putc('\n', fo);
 	return(0);
@@ -507,26 +510,44 @@ puthead(hp, fo, w)
  * Format the given text to not exceed 72 characters.
  */
 
-fmt(str, fo)
-	register char *str;
+fmt(str, txt, fo)
+	register char *str, *txt;
 	register FILE *fo;
 {
 	register int col;
-	register char *cp;
+	register char *bg, *bl, *pt, ch;
 
-	cp = str;
-	col = 0;
-	while (*cp) {
-		if (*cp == ' ' && col > 65) {
-			fprintf(fo, "\n    ");
+	col = strlen(str);
+	if (col)
+		fprintf(fo, "%s", str);
+	pt = bg = txt;
+	bl = 0;
+	while (*bg) {
+		pt++;
+		if (++col >72) {
+			if (!bl) {
+				bl = bg;
+				while (*bl && !isspace(*bl))
+					bl++;
+			}
+			if (!*bl)
+				goto finish;
+			ch = *bl;
+			*bl = '\0';
+			fprintf(fo, "%s\n    ", bg);
 			col = 4;
-			cp++;
-			continue;
+			*bl = ch;
+			pt = bg = ++bl;
+			bl = 0;
 		}
-		putc(*cp++, fo);
-		col++;
+		if (!*pt) {
+finish:
+			fprintf(fo, "%s\n", bg);
+			return;
+		}
+		if (isspace(*pt))
+			bl = pt;
 	}
-	putc('\n', fo);
 }
 
 /*
