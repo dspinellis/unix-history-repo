@@ -1,4 +1,4 @@
-# @(#)Makefile	1.1 %G%
+# @(#)Makefile	1.2 %G%
 
 CFLAGS=		-O
 OBJS=		battlestar.o com1.o com2.o com3.o com4.o com5.o com6.o com7.o \
@@ -23,11 +23,15 @@ battlestar: ${OBJS}
 mkfile: mkfile.c
 	$(CC) $(CFLAGS) -o mkfile mkfile.c
 
-dayfile.c: dayfile mkfile
+dayfile.o: dayfile mkfile
 	mkfile dayfile
+	$(CC) $(CFLAGS) -c dayfile.c
+	rm dayfile.c
 
-nightfile.c: nightfile mkfile
+nightfile.o: nightfile mkfile
 	mkfile nightfile
+	$(CC) $(CFLAGS) -c nightfile.c
+	rm nightfile.c
 
 mkwlist: mkwlist.c
 	$(CC) $(CFLAGS) -o mkwlist mkwlist.c
