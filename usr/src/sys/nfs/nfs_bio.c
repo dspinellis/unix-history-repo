@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_bio.c	7.19 (Berkeley) %G%
+ *	@(#)nfs_bio.c	7.20 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -20,9 +20,9 @@
 #include "mount.h"
 #include "resourcevar.h"
 
-#include "nfsnode.h"
 #include "nfsv2.h"
 #include "nfs.h"
+#include "nfsnode.h"
 #include "nfsiom.h"
 #include "nfsmount.h"
 
