@@ -1,4 +1,4 @@
-/*	ch2rst.c	1.6	85/02/15
+/*	ch2rst.c	1.6	85/02/19
  *
  * Font translation to Imagen-style fonts (RST format) from character format.
  *
@@ -20,7 +20,7 @@
 #define PREAMBLE	44			/* size of preamble */
 #define STRINGS		2			/* length of strings at pre. */
 #define STARTGLYPH	PREAMBLE + STRINGS
-#define MAXLINE		250
+#define MAXLINE		300
 #define GLYPHSPACE	(MAXLINE * MAXLINE)
 #define wr1(x)		putchar(x)
 
@@ -31,12 +31,14 @@ glyph_dir g[DIRSIZ];		/* directory of glyph definitions */
 preamble p;			/* set of variables for preamble */
 double widthtofix;		/* fix conversion factor */
 
-int	code;
-int	width, length, maxv, minv, maxh, minh, refv, refh;
+int	code;			/* read in code for a glyph */
+int	width, length;		/* width and length of read-in matrix */
+int	maxv, minv, maxh, minh;	/* extent of "blackness" in glyph */
+int	refv, refh;		/* reference point in matrix */
 int	bitwidth;
 
-int	ignorecode = 0;
-int	stipple = 0;
+int	ignorecode = 0;		/* flag: ignore the code number; successive */
+int	stipple = 0;		/* flag: don't eliminate white-space */
 FILE *	filep;
 char	ibuff[MAXLINE];
 char	ebuff[MAXLINE];
@@ -70,6 +72,8 @@ char **argv;
 	argc--; argv++;
     }
 
+    if (argc > 2)
+	error("too many arguments");
     if (argc == 2) {
 	if ((filep = fopen (argv[1], "r")) == NULL)
 	    error("can't open file \"%s\"", argv[1]);
@@ -107,7 +111,7 @@ char **argv;
 	    else if (strcmp(ebuff, "id") == 0) p.p_id = par + 0.5;
 	    else if (strcmp(ebuff, "res") == 0) {
 		if ((p.p_res = par + 0.5) != RES)
-		    fprintf(stderr, "ch2rst: Warning, wrong resolution (%d).\n",
+		    fprintf(stderr, "ch2rst: warning, wrong resolution (%d).\n",
 				p.p_res);
 	    } /* ignore unrecognized fields */
 	} else {
@@ -132,11 +136,15 @@ char **argv;
 			case '.':
 				break;
 			case 'x':
+				if (refv != -1)
+				 error("two reference points in glyph %d",code);
 				refh = i;
 				refv = length;
 				*chp = '.';
 				break;
 			case 'X':
+				if (refv != -1)
+				 error("two reference points in glyph %d",code);
 				refh = i;
 				refv = length;
 			case '@':
@@ -150,6 +158,8 @@ char **argv;
 				error("illegal character '%c' in map.", *chp);
 		    } /* switch */
 		} /* for i */
+		if (*chp != '\n')
+		    error("not all lines equal length in glyph %d", code);
 		if (fgets(chp, MAXLINE, filep) == NULL)
 			error("unexpected end of input");
 	    } /* for length */
@@ -174,6 +184,8 @@ char **argv;
 		g[codeindex].g_height * ((g[codeindex].g_width + 7) / 8);
 
 	    bitp = (glyphs[codeindex] = malloc(g[codeindex].g_bitp)) - 1;
+	    if (!glyphs[codeindex])
+		error("out of memory");
 	    for (i = minv; i <= maxv; i++) {
 		chp = &charbits[0] + width * i + minh;
 		bitwidth = 0;
