@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_descrip.c	6.12 (Berkeley) %G%
+ *	@(#)kern_descrip.c	6.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -213,7 +213,7 @@ fsetown(fp, value)
 	if (value > 0) {
 		struct proc *p = pfind(value);
 		if (p == 0)
-			return (EINVAL);
+			return (ESRCH);
 		value = p->p_pgrp;
 	} else
 		value = -value;
