@@ -1,4 +1,4 @@
-/*	tty.h	3.1	%H%	*/
+/*	tty.h	3.2	%H%	*/
 /*
  * A clist structure is the head
  * of a linked list queue of characters.
@@ -36,8 +36,24 @@ struct tc {
 
 struct tty
 {
-	struct	clist t_rawq;	/* input chars right off device */
-	struct	clist t_canq;	/* input chars after erase and kill */
+	union {
+		struct {
+			struct	clist T_rawq;
+			struct	clist T_canq;
+		} t_t;
+#define	t_rawq	t_nu.t_t.T_rawq	/* input chars right off device */
+#define	t_canq	t_nu.t_t.T_canq	/* input chars after erase and kill */
+#ifdef BERKNET
+		struct {
+			struct	buf *T_bufp;
+			char	*T_cp;
+			int	T_inbuf;
+		} t_n;
+#define	t_bufp	t_nu.t_n.T_bufp	/* buffer we ripped off for network */
+#define	t_cp	t_nu.t_n.T_cp	/* pointer into the ripped off buffer */
+#define	t_inbuf	t_nu.t_n.T_inbuf/* number chars in the magic buffer */
+#endif
+	} t_nu;
 	struct	clist t_outq;	/* output list to device */
 	int	(*t_oproc)();	/* routine to start output */
 	int	(*t_iproc)();	/* routine to start input */
@@ -171,3 +187,14 @@ struct	ttiocb {
 #define	FIONCLEX	(('f'<<8)|2)
 #define	MXLSTN		(('x'<<8)|1)
 #define	MXNBLK		(('x'<<8)|2)
+
+/* ##bsb 1/12/80 (from stt) ioctl code for "capacity" call */
+/* returns no. of bytes left before EOF or hang in cp_nbytes */
+/* returns flag indicating EOF versus hang in cp_eof */
+
+#define	FIOCAPACITY	(('f'<<8)|99)
+
+struct	capacity {
+	off_t	cp_nbytes;
+	int	cp_eof;
+};
