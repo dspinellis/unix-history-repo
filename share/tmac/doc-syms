@@ -132,7 +132,7 @@
 .	if "\\$1"1.0e"  \&\\*(tNFreeBSD\\*(aa version 1.0 EPSILON\\$2
 .	if "\\$1"1.0"  \&\\*(tNFreeBSD\\*(aa version 1.0\\$2
 .	if "\\$1"1.0.2"  \&\\*(tNFreeBSD\\*(aa version 1.0.2\\$2
-.	if "\\$1"1.1"  \&\\*(FreeBSD\\*(aa version 1.1\\$2
+.	if "\\$1"1.1"  \&\\*(tNFreeBSD\\*(aa version 1.1\\$2
 .\}
 .if \\n(.$==1 \{\
 .\}
@@ -143,7 +143,7 @@
 .	if "\\$1"1.0e"  \&\\*(tNFreeBSD\\*(aa version 1.0 EPSILON
 .	if "\\$1"1.0"  \&\\*(tNFreeBSD\\*(aa version 1.0
 .	if "\\$1"1.0.2"  \&\\*(tNFreeBSD\\*(aa version 1.0.2
-.	if "\\$1"1.1"  \&\\*(FreeBSD\\*(aa version 1.1
+.	if "\\$1"1.1"  \&\\*(tNFreeBSD\\*(aa version 1.1
 ..
 .\" Ns At macro - AT&T UNIX
 .de At
