@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.125 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.126 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -915,6 +915,10 @@ struct	nlist Nl[] =
 # if defined(__alpha) || defined(IRIX)
 #  define FSHIFT	10
 # endif
+
+# if defined(_AIX3)
+#  define FSHIFT	16
+# endif
 #endif
 
 #ifndef FSHIFT
@@ -941,7 +945,11 @@ getla()
 			return (-1);
 		}
 		(void) fcntl(kmem, F_SETFD, 1);
+#ifdef _AIX3
+		if (knlist(Nl, 1, sizeof Nl[0]) < 0)
+#else
 		if (nlist(_PATH_UNIX, Nl) < 0)
+#endif
 		{
 			if (tTd(3, 1))
 				printf("getla: nlist(%s): %s\n", _PATH_UNIX,
@@ -961,7 +969,7 @@ getla()
 	}
 	if (tTd(3, 20))
 		printf("getla: symbol address = %#x\n", Nl[X_AVENRUN].n_value);
-	if (lseek(kmem, (off_t) Nl[X_AVENRUN].n_value, 0) == -1 ||
+	if (lseek(kmem, (off_t) Nl[X_AVENRUN].n_value, SEEK_SET) == -1 ||
 	    read(kmem, (char *) avenrun, sizeof(avenrun)) < sizeof(avenrun))
 	{
 		/* thank you Ian */
