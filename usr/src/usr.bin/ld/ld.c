@@ -1,21 +1,12 @@
 /*-
- * Copyright (c) 1991 The Regents of the University of California.
- * All rights reserved.
+ * This code is derived from software copyrighted by the Free Software
+ * Foundation.
  *
- * This code is derived from software contributed to Berkeley by
- * Donn Seeley at UUNET Technologies, Inc.
- *
- * %sccs.include.redist.c%
+ * Modified 1991 by Donn Seeley at UUNET Technologies, Inc.
  */
 
 #ifndef lint
-char copyright[] =
-"@(#) Copyright (c) 1991 The Regents of the University of California.\n\
- All rights reserved.\n";
-#endif /* not lint */
-
-#ifndef lint
-static char sccsid[] = "@(#)ld.c	6.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)ld.c	6.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /* Linker `ld' for GNU

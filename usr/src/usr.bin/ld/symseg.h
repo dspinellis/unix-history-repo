@@ -1,5 +1,11 @@
 /*-
- *	@(#)symseg.h	5.2 (Berkeley) %G%
+ *
+ * This code is derived from software copyrighted by the Free Software
+ * Foundation.
+ *
+ * Modified 1991 by Donn Seeley at UUNET Technologies, Inc.
+ *
+ *	@(#)symseg.h	5.3 (Berkeley) %G%
  */
 
 /* GDB symbol table format definitions.
