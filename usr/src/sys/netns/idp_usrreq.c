@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *      @(#)idp_usrreq.c	6.5 (Berkeley) %G%
+ *      @(#)idp_usrreq.c	6.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -41,12 +41,7 @@ idp_input(m, nsp)
 	register struct idp *idp = mtod(m, struct idp *);
 
 	if (nsp==0) {
-		nsp = ns_pcblookup(&idp->idp_sna,
-					idp->idp_dna.x_port, NS_WILDCARD);
-		if (nsp==0) {
-			ns_error(m, NS_ERR_NOSOCK, 0);
-			return;
-		}
+		panic("No nspcb");
 	}
 
 	/*
@@ -224,6 +219,10 @@ idp_ctloutput(req, so, level, name, value)
 			return (ENOBUFS);
 		switch (name) {
 
+		case SO_ALL_PACKETS:
+			mask = NSP_ALL_PACKETS;
+			goto get_flags;
+
 		case SO_HEADERS_ON_INPUT:
 			mask = NSP_RAWIN;
 			goto get_flags;
@@ -261,6 +260,10 @@ idp_ctloutput(req, so, level, name, value)
 	case PRCO_SETOPT:
 		switch (name) {
 			int mask, *ok;
+
+		case SO_ALL_PACKETS:
+			mask = NSP_ALL_PACKETS;
+			goto set_head;
 
 		case SO_HEADERS_ON_INPUT:
 			mask = NSP_RAWIN;
