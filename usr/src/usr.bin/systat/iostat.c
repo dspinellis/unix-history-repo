@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)iostat.c	1.2 (Lucasfilm) %G%";
+static char sccsid[] = "@(#)iostat.c	1.3 (Lucasfilm) %G%";
 #endif
 
 /*
@@ -236,7 +236,7 @@ histogram(val, colwidth, scale, c)
 
 	k = MIN(v, colwidth);
 	if (v > colwidth) {
-		sprintf(buf, "%4.1f", v);
+		sprintf(buf, "%4.1f", val);
 		k -= strlen(buf);
 		while (k--)
 			waddch(wnd, c);
