@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)socket.2	5.1 (Berkeley) %G%
+.\"	@(#)socket.2	6.1 (Berkeley) %G%
 .\"
-.TH SOCKET 2 "18 July 1983"
+.TH SOCKET 2 ""
 .UC 5
 .SH NAME
 socket \- create an endpoint for communication
@@ -144,6 +144,16 @@ and explained below.
 and
 .IR getsockopt (2)
 are used to set and get options, respectively.
+Options other than SO_LINGER take an 
+.I int
+parameter which should non-zero if the option is to be
+enabled, or zero if it is to be disabled; SO_LINGER
+uses a
+.I struct linger
+parameter, defined in
+.RI < sys/socket.h >,
+which specifies the desired state of the option and the
+linger interval (see below).
 .PP
 .RS
 .DT
@@ -151,9 +161,9 @@ are used to set and get options, respectively.
 SO_DEBUG 		turn on recording of debugging information
 SO_REUSEADDR	allow local address reuse
 SO_KEEPALIVE	keep connections alive
-SO_DONTROUTE	do no apply routing on outgoing messages
-SO_LINGER 		linger on close if data present
-SO_DONTLINGER	do not linger on close
+SO_DONTROUTE	do not route outgoing messages
+SO_LINGER 	linger on close if data present
+SO_BROADCAST	permit transmission of broadcast messages
 .fi
 .RE
 .PP
@@ -169,7 +179,7 @@ SIGPIPE signal.  SO_DONTROUTE indicates that outgoing messages should
 bypass the standard routing facilities.  Instead, messages are directed
 to the appropriate network interface according to the network portion
 of the destination address.  SO_LINGER
-and SO_DONTLINGER control the actions taken when unsent messags
+controls the action taken when unsent messags
 are queued on socket and a 
 .IR close (2)
 is performed.
@@ -181,7 +191,7 @@ is unable to deliver the information (a timeout period, termed the
 linger interval, is specified in the
 .IR setsockopt 
 call when SO_LINGER is requested). 
-If SO_DONTLINGER is specified and a 
+If SO_LINGER is disabled and a 
 .I close
 is issued, the system will process the close in a manner which allows
 the process to continue as quickly as possible.
