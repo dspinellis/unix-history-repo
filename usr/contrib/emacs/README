@@ -1,0 +1,23 @@
+This directory holds the latest distribution version of GNU Emacs.
+ The subdirectory `src' holds the C code,
+ `lisp' holds the Lisp code for the editing commands,
+ `etc' holds various associated documentation files
+    and programs that Emacs runs,
+   See etc/DEBUG for info on how to debug.
+ `info' holds the Info documentation tree.
+ `man' holds the source of the Emacs manual.
+ `shortnames' holds programs and data files for creating files of #define's
+   used to convert long symbol names to distinct short ones
+   for C compiles that cannot distinguish more than 8 characters.
+
+The file INSTALL in this directory says how to bring up
+ GNU Emacs, once you have loaded the entire subtree of this
+ directory.  It also contains information on many common
+ problems that occur in building, installing and running Emacs.
+
+The `etc' subdirectory contains several other files,
+ named in capital letters, which you should look at
+ when installing GNU Emacs.
+
+For a list of the changes made at Berkeley to the FSF distribution,
+ see the file ChangeLog, in this directory.
