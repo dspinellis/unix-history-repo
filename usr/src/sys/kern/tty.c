@@ -1,4 +1,4 @@
-/*	tty.c	3.14	%G%	*/
+/*	tty.c	3.15	%G%	*/
 
 /*
  * general TTY subroutines
@@ -224,6 +224,7 @@ caddr_t addr;
 	struct sgttyb iocb;
 	struct clist tq;
 	extern int nldisp;
+	register c;
 	int temp;
 
 	switch(com) {
@@ -445,7 +446,15 @@ caddr_t addr;
 			u.u_error = EFAULT;
 		break;
 
+	case TIOCSTI:
+		c = fubyte(addr);
+		if (u.u_uid && u.u_ttyp != tp || c < 0)
+			u.u_error = EFAULT;
+		else
+			(*linesw[tp->t_line].l_rint)(c, tp);
+		break;
 /* end of locals */
+
 	default:
 		return(0);
 	}
