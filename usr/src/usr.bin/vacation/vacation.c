@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)vacation.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)vacation.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -43,8 +43,7 @@ static char sccsid[] = "@(#)vacation.c	5.17 (Berkeley) %G%";
 #define	MAXLINE	500			/* max line from mail header */
 #define	VMSG	".vacation.msg"		/* vacation message */
 #define	VACAT	".vacation"		/* dbm's database prefix */
-#define	VDIR	".vacation.dir"		/* dbm's DB prefix, part 1 */
-#define	VPAG	".vacation.pag"		/* dbm's DB prefix, part 2 */
+#define	VDB	".vacation.db"		/* dbm's database */
 
 typedef struct alias {
 	struct alias *next;
@@ -119,15 +118,16 @@ usage:			syslog(LOG_NOTICE, "uid %u: usage: vacation [-i] [-a alias] login\n", g
 		myexit(1);
 	}
 	if (chdir(pw->pw_dir)) {
-		syslog(LOG_NOTICE, "vacation: no such directory %s.\n", pw->pw_dir);
+		syslog(LOG_NOTICE,
+		    "vacation: no such directory %s.\n", pw->pw_dir);
 		myexit(1);
 	}
 
-	if (iflag || access(VDIR, F_OK))
+	if (iflag || access(VDB, F_OK))
 		initialize();
 	if (!(db = dbm_open(VACAT, O_RDWR, 0))) {
-		syslog(LOG_NOTICE, "vacation: %s: %s\n", VACAT,
-		    strerror(errno));
+		syslog(LOG_NOTICE,
+		    "vacation: %s: %s\n", VACAT, strerror(errno));
 		myexit(1);
 	}
 
@@ -342,18 +342,13 @@ sendmessage(myname)
  */
 initialize()
 {
-	int fd;
+	DBM *db;
 
-	if ((fd = open(VDIR, O_WRONLY|O_CREAT|O_TRUNC, 0644)) < 0) {
-		syslog(LOG_NOTICE, "vacation: %s: %s\n", VDIR, strerror(errno));
+	if (!(db = dbm_open(VACAT, O_WRONLY|O_CREAT|O_TRUNC, 0644))) {
+		syslog(LOG_NOTICE, "vacation: %s: %s\n", VDB, strerror(errno));
 		exit(1);
 	}
-	(void)close(fd);
-	if ((fd = open(VPAG, O_WRONLY|O_CREAT|O_TRUNC, 0644)) < 0) {
-		syslog(LOG_NOTICE, "vacation: %s: %s\n", VPAG, strerror(errno));
-		exit(1);
-	}
-	(void)close(fd);
+	dbm_close(db);
 }
 
 /*
