@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)ld.c 4.8 %G%";
+static	char sccsid[] = "@(#)ld.c 4.9 %G%";
 #endif
 
 /*
@@ -13,7 +13,7 @@ static	char sccsid[] = "@(#)ld.c 4.8 %G%";
 #include <ar.h>
 #include <a.out.h>
 #include <ranlib.h>
-#include <stat.h>
+#include <sys/stat.h>
 
 /*
  * Basic strategy:
