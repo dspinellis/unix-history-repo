@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)csh.c	5.31 (Berkeley) %G%";
+static char sccsid[] = "@(#)csh.c	5.32 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -476,9 +476,11 @@ notty:
 	/* Will have value(STRhome) here because set fast if don't */
 	{
 	    int     osetintr = setintr;
+	    sig_t   oparintr = parintr;
 	    sigset_t omask = sigblock(sigmask(SIGINT));
 
 	    setintr = 0;
+	    parintr = SIG_IGN;	/* Disable onintr */
 #ifdef _PATH_DOTCSHRC
 	    (void) srcfile(_PATH_DOTCSHRC, 0, 0);
 #endif
@@ -490,6 +492,7 @@ notty:
 #endif
 	    (void) sigsetmask(omask);
 	    setintr = osetintr;
+	    parintr = oparintr;
 	}
 	(void) srccat(value(STRhome), STRsldotcshrc);
 
