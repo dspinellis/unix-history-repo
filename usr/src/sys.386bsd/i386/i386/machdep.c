@@ -1,5 +1,6 @@
 /*-
  * Copyright (c) 1982, 1987, 1990 The Regents of the University of California.
+ * Copyright (c) 1992 Terrence R. Lambert.
  * All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -35,12 +36,13 @@
  *
  *	@(#)machdep.c	7.4 (Berkeley) 6/3/91
  *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00002
- * --------------------         -----   ----------------------
+ * PATCHES MAGIC		LEVEL	PATCH THAT GOT US HERE
+ * --------------------		-----	----------------------
+ * CURRENT PATCH LEVEL:		2	00003
+ * --------------------		-----	----------------------
  *
- * 15 Aug 92    William Jolitz		Large memory bug
+ * 15 Aug 92    William Jolitz          Large memory bug
+ * 15 Aug 92	Terry Lambert		Fixed CMOS RAM size bug
  */
 static char rcsid[] = "$Header: /usr/src/sys.386bsd/i386/i386/RCS/machdep.c,v 1.2 92/01/21 14:22:09 william Exp Locker: root $";
 
@@ -72,6 +74,10 @@ extern vm_offset_t avail_end;
 #include "machine/psl.h"
 #include "machine/specialreg.h"
 #include "i386/isa/rtc.h"
+
+
+#define	EXPECT_BASEMEM	640	/* The expected base memory*/
+#define	INFORM_WAIT	1	/* Set to pause berfore crash in weird cases*/
 
 /*
  * Declare these as initialized data so we can patch them.
@@ -174,10 +180,10 @@ again:
 			bufpages = physmem / 10 / CLSIZE;
 		else
 			bufpages = ((2 * 1024 * 1024 + physmem) / 20) / CLSIZE;
-        /*
-         * 15 Aug 92    William Jolitz          bufpages fix for too large
-         */
-        bufpages = min( NKMEMCLUSTERS/2, bufpages);
+	/*
+	 * 15 Aug 92	William Jolitz		bufpages fix for too large
+	 */
+	bufpages = min( NKMEMCLUSTERS/2, bufpages);
 
 	if (nbuf == 0) {
 		nbuf = bufpages / 2;
@@ -797,13 +803,16 @@ extern	IDTVEC(div), IDTVEC(dbg), IDTVEC(nmi), IDTVEC(bpt), IDTVEC(ofl),
 int lcr0(), lcr3(), rcr0(), rcr2();
 int _udatasel, _ucodesel, _gsel_tss;
 
-init386(first) { extern ssdtosd(), lgdt(), lidt(), lldt(), etext; 
+init386(first)
+{
+	extern ssdtosd(), lgdt(), lidt(), lldt(), etext; 
 	int x, *pi;
 	unsigned biosbasemem, biosextmem;
 	struct gate_descriptor *gdp;
 	extern int sigcode,szsigcode;
 	/* table descriptors - used to load tables by microp */
 	struct region_descriptor r_gdt, r_idt;
+	int	pagesinbase, pagesinext;
 
 
 	proc0.p_addr = proc0paddr;
@@ -884,30 +893,56 @@ init386(first) { extern ssdtosd(), lgdt(), lidt(), lldt(), etext;
 	biosextmem = rtcin(RTC_EXTLO)+ (rtcin(RTC_EXTHI)<<8);
 /*printf("bios base %d ext %d ", biosbasemem, biosextmem);*/
 
-	/* if either bad, just assume base memory */
-	if (biosbasemem == 0xffff || biosextmem == 0xffff) {
-		maxmem = min (maxmem, 640/4);
-	} else if (biosextmem > 0 && biosbasemem == 640) {
-		int pagesinbase, pagesinext;
-
-		pagesinbase = 640/4 - first/NBPG;
-		pagesinext = biosextmem/4;
-		/* use greater of either base or extended memory. do this
-		 * until I reinstitue discontiguous allocation of vm_page
-		 * array.
-		 */
-		if (pagesinbase > pagesinext)
-			Maxmem = 640/4;
-		else {
-			Maxmem = pagesinext + 0x100000/NBPG;
-			first = 0x100000; /* skip hole */
-		}
+	/*
+	 * 15 Aug 92	Terry Lambert		The real fix for the CMOS bug
+	 */
+	if( biosbasemem != EXPECT_BASEMEM) {
+		printf( "Warning: Base memory %dK, assuming %dK\n", biosbasemem, EXPECT_BASEMEM);
+		biosbasemem = EXPECT_BASEMEM;		/* assume base*/
 	}
+
+	if( biosextmem > 65536) {
+		printf( "Warning: Extended memory %dK(>64M), assuming 0K\n", biosextmem);
+		biosextmem = 0;				/* assume none*/
+	}
+
+	/*
+	 * Go into normal calculation; Note that we try to run in 640K, and
+	 * that invalid CMOS values of non 0xffff are no longer a cause of
+	 * ptdi problems.  I have found a gutted kernel can run in 640K.
+	 */
+	pagesinbase = 640/4 - first/NBPG;
+	pagesinext = biosextmem/4;
+	/* use greater of either base or extended memory. do this
+	 * until I reinstitue discontiguous allocation of vm_page
+	 * array.
+	 */
+	if (pagesinbase > pagesinext)
+		Maxmem = 640/4;
+	else {
+		Maxmem = pagesinext + 0x100000/NBPG;
+		first = 0x100000; /* skip hole */
+	}
+
+	/* This used to explode, since Maxmem used to be 0 for bas CMOS*/
 	maxmem = Maxmem - 1;	/* highest page of usable memory */
 	physmem = maxmem;	/* number of pages of physmem addr space */
 /*printf("using first 0x%x to 0x%x\n ", first, maxmem*NBPG);*/
-	if (maxmem < 2048/4)
+	if (maxmem < 2048/4) {
 		printf("Too little RAM memory. Warning, running in degraded mode.\n");
+#ifdef INFORM_WAIT
+		/*
+		 * People with less than 2 Meg have to hit return; this way
+		 * we see the messages and can tell them why they blow up later.
+		 * If they get working well enough to recompile, they can unset
+		 * the flag; otherwise, it's a toy and they have to lump it.
+		 */
+		getchar();	/* kernel getchar in /sys/i386/isa/pccons.c*/
+#endif	/* !INFORM_WAIT*/
+	}
+	/*
+	 * End of CMOS bux fix
+	 */
 
 	/* call pmap initialization to make new kernel address space */
 	pmap_bootstrap (first, 0);
