@@ -1,4 +1,4 @@
-/*	@(#)ww.h	3.61 90/08/12		*/
+/*	@(#)ww.h	3.62 90/08/12		*/
  * Copyright (c) 1983 Regents of the University of California.
  * All rights reserved.
  *
@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ww.h	3.61 (Berkeley) %G%
+ *	@(#)ww.h	3.62 (Berkeley) %G%
  */
 
 #ifdef OLD_TTY
@@ -164,4 +164,3 @@ extern int wwnrow, wwncol;		/* the screen size */
 
 	/* quicky macros */
 struct ww *wwopen();
-int wwchild();
