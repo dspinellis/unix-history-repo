@@ -1,0 +1,1 @@
+#define NIL 1
