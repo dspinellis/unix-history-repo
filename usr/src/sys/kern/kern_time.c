@@ -1,4 +1,4 @@
-/*	kern_time.c	6.1	83/07/29	*/
+/*	kern_time.c	6.2	84/06/06	*/
 
 #include "../machine/reg.h"
 
@@ -55,8 +55,8 @@ settimeofday()
 	if (uap->tzp && suser()) {
 		u.u_error = copyin((caddr_t)uap->tzp, (caddr_t)&atz,
 			sizeof (atz));
-		if (u.u_error)
-			return;
+		if (u.u_error == 0)
+			tz = atz;
 	}
 }
 
