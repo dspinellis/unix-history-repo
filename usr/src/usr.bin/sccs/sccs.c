@@ -93,7 +93,7 @@
 **		Copyright 1980 Regents of the University of California
 */
 
-static char SccsId[] = "@(#)sccs.c	1.58 %G%";
+static char SccsId[] = "@(#)sccs.c	1.59 %G%";
 
 /*******************  Configuration Information  ********************/
 
@@ -209,6 +209,7 @@ struct pfile
 	char	*p_user;	/* user who did edit */
 	char	*p_date;	/* date of get */
 	char	*p_time;	/* time of get */
+	char	*p_aux;		/* extra info at end */
 };
 
 char	*SccsPath = SCCSPATH;	/* pathname of SCCS files */
@@ -970,9 +971,8 @@ clean(mode, argv)
 					printf("%s\n", basefile);
 					break;
 				}
-				printf("%12s: being edited: %s %s %s %s %s\n",
-				       basefile, pf->p_osid, pf->p_nsid,
-				       pf->p_user, pf->p_date, pf->p_time);
+				printf("%12s: being edited: ", basefile);
+				putpfent(pf, stdout);
 			}
 			fclose(pfp);
 		}
@@ -1120,9 +1120,7 @@ unedit(fn)
 		else
 		{
 			/* output it again */
-			fprintf(tfp, "%s %s %s %s %s\n", pent->p_osid,
-			    pent->p_nsid, pent->p_user, pent->p_date,
-			    pent->p_time);
+			putpfent(pent, tfp);
 			others++;
 		}
 	}
@@ -1323,8 +1321,7 @@ getpfent(pfp)
 	ent.p_user = p = nextfield(p);
 	ent.p_date = p = nextfield(p);
 	ent.p_time = p = nextfield(p);
-	if (p == NULL || nextfield(p) != NULL)
-		return (NULL);
+	ent.p_aux = p = nextfield(p);
 
 	return (&ent);
 }
@@ -1345,6 +1342,31 @@ nextfield(p)
 	}
 	*p++ = '\0';
 	return (p);
+}
+/*
+**  PUTPFENT -- output a p-file entry to a file
+**
+**	Parameters:
+**		pf -- the p-file entry
+**		f -- the file to put it on.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		pf is written onto file f.
+*/
+
+putpfent(pf, f)
+	register struct pfile *pf;
+	register FILE *f;
+{
+	fprintf(f, "%s %s %s %s %s", pf->p_osid, pf->p_nsid,
+		pf->p_user, pf->p_date, pf->p_time);
+	if (pf->p_aux != NULL)
+		fprintf(f, " %s", pf->p_aux);
+	else
+		fprintf(f, "\n");
 }
 
 /*
