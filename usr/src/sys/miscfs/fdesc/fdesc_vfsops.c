@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fdesc_vfsops.c	1.2 (Berkeley) %G%
+ *	@(#)fdesc_vfsops.c	1.3 (Berkeley) %G%
  *
  * $Id: fdesc_vfsops.c,v 1.6 1992/05/30 10:25:59 jsp Exp jsp $
  */
@@ -124,6 +124,7 @@ fdesc_unmount(mp, mntflags, p)
 	 * ever get anything cached at this level at the
 	 * moment, but who knows...
 	 */
+#if 0
 #ifdef FDESC_DIAGNOSTIC
 	printf("fdesc_unmount: calling mntflushbuf\n");
 #endif
@@ -133,6 +134,7 @@ fdesc_unmount(mp, mntflags, p)
 #endif
 	if (mntinvalbuf(mp, 1))
 		return (EBUSY);
+#endif
 	if (rootvp->v_usecount > 1)
 		return (EBUSY);
 #ifdef FDESC_DIAGNOSTIC
@@ -164,7 +166,6 @@ fdesc_root(mp, vpp)
 	struct mount *mp;
 	struct vnode **vpp;
 {
-	USES_VOP_LOCK;
 	struct vnode *vp;
 	int error;
 
@@ -252,6 +253,20 @@ fdesc_sync(mp, waitfor)
 	return (0);
 }
 
+/*
+ * Fdesc flat namespace lookup.
+ * Currently unsupported.
+ */
+fdesc_vget(mp, ino, vpp)
+	struct mount *mp;
+	ino_t ino;
+	struct vnode **vpp;
+{
+
+	return (EOPNOTSUPP);
+}
+
+
 fdesc_fhtovp(mp, fhp, setgen, vpp)
 	struct mount *mp;
 	struct fid *fhp;
@@ -276,6 +291,7 @@ struct vfsops fdesc_vfsops = {
 	fdesc_quotactl,
 	fdesc_statfs,
 	fdesc_sync,
+	fdesc_vget,
 	fdesc_fhtovp,
 	fdesc_vptofh,
 	fdesc_init,
