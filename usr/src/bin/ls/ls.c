@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	5.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	5.35 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -403,8 +403,8 @@ tabdir(lp, s_stats, s_names)
 	 */
 #define	DEFNUM	256
 	maxentry = DEFNUM;
-	stats = (LS *)emalloc((u_int)DEFNUM * sizeof(LS));
-	names = emalloc((u_int)lp->lstat.st_size);
+	*s_stats = stats = (LS *)emalloc((u_int)DEFNUM * sizeof(LS));
+	*s_names = names = emalloc((u_int)lp->lstat.st_size);
 
 	if (!(dirp = opendir("."))) {
 		(void)fprintf(stderr, "ls: %s: %s\n", lp->name,
@@ -462,8 +462,6 @@ tabdir(lp, s_stats, s_names)
 			maxlen = dp->d_namlen;
 		++cnt;
 	}
-	*s_stats = stats;
-	*s_names = names;
 	stats[0].lstat.st_btotal = blocks;
 	stats[0].lstat.st_maxlen = maxlen;
 	closedir(dirp);
