@@ -16,7 +16,7 @@ we must notify you of this accidental omission
 so that copyright notices may be added to the copies without them.
 All sites that wish to retain the 4.2BSD materials must
 mark them as described below.
-If you have provided copies of 4.2BSD to sublicensees, this notice
+If you have provided copies of 4.2BSD to sublicensees, source or binary, this notice
 must be forwarded to them as well,
 or they may be provided with new copies, including copyright notices
 and instructions to replace the old copies.
@@ -50,7 +50,7 @@ char copyright[] =
 .pp
 Note that the 4.3BSD release of the Fourth Berkeley Software Distribution
 already contains the appropriate notices.
-Updating your sources to the new version
+Updating your sources to 4.3BSD
 will accomplish the additions described above.
 We urge all 4.2BSD sites to upgrade to 4.3BSD as soon as possible.
 .sp 3
