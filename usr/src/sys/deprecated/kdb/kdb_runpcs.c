@@ -1,4 +1,4 @@
-/*	kdb_runpcs.c	7.1	86/11/20	*/
+/*	kdb_runpcs.c	7.2	86/11/23	*/
 
 #include "../kdb/defs.h"
 
@@ -65,7 +65,7 @@ nextpcs(tracetrap, execsig)
 	register BKPTR bkpt;
 	short rc;
 
-	pcb.pcb_psl &= ~TBIT;
+	clrsstep();			/* clear hardware single step */
 	delbp();
 	if (execbkptf) {
 		execbkptf = 0;
@@ -106,7 +106,7 @@ execbkpt(bkptr,execsig)
 {
 
 	delbp();
-	bkptr->flag=BKPTSET;
+	bkptr->flag = BKPTSET;
 	execbkptf++;
 	reset(SINGLE);
 }
@@ -117,8 +117,8 @@ scanbkpt(addr)
 {
 	register BKPTR	bkptr;
 
-	for (bkptr=bkpthead; bkptr; bkptr=bkptr->nxtbkpt)
-		if (bkptr->flag && bkptr->loc==addr)
+	for (bkptr = bkpthead; bkptr; bkptr = bkptr->nxtbkpt)
+		if (bkptr->flag && bkptr->loc == addr)
 			break;
 	return (bkptr);
 }
@@ -128,14 +128,14 @@ delbp()
 	register ADDR a;
 	register BKPTR bkptr;
 
-	if (bpstate==BPOUT)
+	if (bpstate == BPOUT)
 		return;
-	for (bkptr=bkpthead; bkptr; bkptr=bkptr->nxtbkpt)
+	for (bkptr = bkpthead; bkptr; bkptr = bkptr->nxtbkpt)
 		if (bkptr->flag) {
-			a=bkptr->loc;
+			a = bkptr->loc;
 			put(a, ISP, bkptr->ins);
 		}
-	bpstate=BPOUT;
+	bpstate = BPOUT;
 }
 
 setbp()
@@ -143,13 +143,13 @@ setbp()
 	register ADDR a;
 	register BKPTR bkptr;
 
-	if (bpstate==BPIN)
+	if (bpstate == BPIN)
 		return;
-	for (bkptr=bkpthead; bkptr; bkptr=bkptr->nxtbkpt)
+	for (bkptr = bkpthead; bkptr; bkptr = bkptr->nxtbkpt)
 		if (bkptr->flag) {
 			a = bkptr->loc;
 			bkptr->ins = get(a, ISP);
 			put(a, ISP, SETBP(bkptr->ins));
 		}
-	bpstate=BPIN;
+	bpstate = BPIN;
 }

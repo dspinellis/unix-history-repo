@@ -1,4 +1,4 @@
-/*	kdb_expr.c	7.2	86/11/20	*/
+/*	kdb_expr.c	7.3	86/11/23	*/
 
 #include "../kdb/defs.h"
 
@@ -107,19 +107,19 @@ item(a)
 		readsym();
 		if (lastc=='.') {
 			frame = pcb.pcb_fp; lastframe = 0;
-			callpc= pcb.pcb_pc;
-			while (errflg==0) {
-			    savpc=callpc;
-			    findsym(callpc,ISYM);
-			    if (eqsym(cursym->n_un.n_name,isymbol,'~'))
-				    break;
-			    callpc=get(frame-8, DSP);
-			    lastframe=frame;
-			    frame=get(frame, DSP)&ALIGN;
-			    if (frame==0)
-				    error(NOCFN);
+			callpc = pcb.pcb_pc;
+			while (!errflg) {
+				savpc = callpc;
+				findsym(callpc,ISYM);
+				if (eqsym(cursym->n_un.n_name,isymbol,'~'))
+					break;
+				callpc = getprevpc(frame);
+				lastframe = frame;
+				frame = getprevframe(frame);
+				if (frame == NOFRAME)
+					error(NOCFN);
 			}
-			savlastf=lastframe; savframe=frame;
+			savlastf = lastframe; savframe = frame;
 			readchar();
 			if (symchar(0))
 				chkloc(expv=frame);
@@ -128,9 +128,12 @@ item(a)
 		else
 			expv = symp->n_value;
 		lp--;
-	} else if (getnum())
-		;
-	else if (lastc=='.') {
+		return (1);
+	}
+	if (getnum())
+		return (1);
+	switch (lastc) {
+	case '.':
 		readchar();
 		if (symchar(0)) {
 			lastframe=savlastf; callpc=savpc;
@@ -138,13 +141,17 @@ item(a)
 		} else
 			expv=dot;
 		lp--;
-	} else if (lastc=='"')
+		break;
+	case '"':
 		expv=ditto;
-	else if (lastc=='+')
+		break;
+	case '+':
 		expv=inkdot(dotinc);
-	else if (lastc=='^')
+		break;
+	case '^':
 		expv=inkdot(-dotinc);
-	else if (lastc=='<') {
+		break;
+	case '<':
 		savc=rdc();
 		if ((regptr=getreg(savc)) != -1)
 			expv = *(int *)regptr;
@@ -152,7 +159,8 @@ item(a)
 			expv=var[base];
 		else
 			error(BADVAR);
-	} else if (lastc=='\'') {
+		break;
+	case '\'':
 		d=4; expv=0;
 		while (quotchar()) {
 		    if (d--) {
@@ -161,9 +169,10 @@ item(a)
 		    } else
 			error(BADSYN);
 		}
-	} else if (a)
-		error(NOADR);
-	else {
+		break;
+	default:
+		if (a)
+			error(NOADR);
 		lp--;
 		return(0);
 	}

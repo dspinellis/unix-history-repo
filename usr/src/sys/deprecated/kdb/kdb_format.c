@@ -1,4 +1,4 @@
-/*	kdb_format.c	7.2	86/11/20	*/
+/*	kdb_format.c	7.3	86/11/23	*/
 
 #include "../kdb/defs.h"
 
@@ -37,6 +37,7 @@ scanform(icount,ifp,itype,ptype)
 				fcount = 1;
 			if (*fp==0)
 				break;
+#ifdef	ENTRYMASK
 			/* check for entry mask */
 			if (exact && dot==savdot && 
 			   (cursym->n_type&N_TYPE)==N_TEXT &&
@@ -45,6 +46,7 @@ scanform(icount,ifp,itype,ptype)
 				fp++;
 				printc(EOR);
 			} else
+#endif
 				fp=exform(fcount,fp,itype,ptype);
 		}
 		dotinc=dot-savdot;
@@ -240,7 +242,7 @@ inkdot(incr)
 	register long newdot;
 
 	newdot=dot+incr;
-	if ((dot ^ newdot) >> 24)
+	if (addrwrap(dot, newdot))
 		error(ADWRAP);
 	return (newdot);
 }

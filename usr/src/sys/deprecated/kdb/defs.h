@@ -1,4 +1,4 @@
-/*	defs.h	7.2	86/11/20	*/
+/*	defs.h	7.3	86/11/23	*/
 
 /*
  * adb - string table version; common definitions
@@ -17,7 +17,7 @@
 struct	pcb kdbpcb;		/* must go before redef.h */
 
 #include "redef.h"
-#include "machine.h"
+#include "../machine/kdbparam.h"
 
 /* access modes */
 #define RD	0
