@@ -1,10 +1,14 @@
-.\" @(#)Cover.alpha	1.1 (Berkeley) %G%
+.\"	@(#)Cover.alpha	1.2 (Berkeley) %G%
+.\" use -ms
+.\"
+.OF '7 July 1992'''
+.EF '7 July 1992'''
 .LP
 Dear Colleague:
 .sp
 .PP
-We are happy to send you information about our June,
-1992 alpha release of 4.4BSD.
+We are happy to send you information about our June 1992 release of
+4.4BSD-alpha.
 This release represents our expectations for the final interfaces
 that will be present in 4.4BSD.
 Our goal in making this release available is to get feedback on any
@@ -18,14 +22,14 @@ to find and fix any problems that are encountered.
 It is intended to be used to provide an advance look at some of the
 facilities and interfaces that we will be distributing in 4.4BSD.
 We are interested in getting feedback on the problems that you find 
-and also any compatibility problems that you expect in trying
-to convert your applications to run on this release.
+and also any compatibility problems that you encounter in
+converting your applications to run on this release.
 While we hope that the interfaces in this release will not change
 before the final release of 4.4BSD,
 we will make changes that we feel are necessary to fix problems
 that arise during the alpha release period
 (at least in part based on feedback from this test group).
-Where ever possible, we will minimize changes that will break
+Where possible, we will minimize changes that will break
 applications ported to this release.
 The code in this distribution may be redistributed and used
 in released products.
@@ -33,12 +37,11 @@ However, you are strongly encouraged to upgrade any code
 that you use from this distribution to the similarly-licensed
 distribution of the 4.4BSD code within one year of its release.
 .PP
-Only limited support will be provided by our group.
+Only limited support can be provided by our group.
 Specifically,
 we cannot provide help with installation
-of this software on other systems.
-We are, of course, interested in getting feedback on problems that you
-encounter in this release.
+of this software on other systems, although we are, of course, interested
+in hearing of problems that you encounter.
 .PP
 We are releasing two versions of the software, 4.4BSD and 4.4BSD-Lite.
 The 4.4BSD distribution is available only to sites
@@ -48,17 +51,20 @@ with UNIX/32V\(dg, System III, or System V
 are registered trademarks of USL/AT&T in the USA and other countries.
 .FE
 source licenses with USL/AT&T.
+The 4.4BSD distribution is a complete distribution in the style of
+4.3BSD and contains the complete source for the Berkeley Distribution.
+.PP
 The 4.4BSD-Lite distribution is a subset of 4.4BSD that
 is copyrighted by the University of California
 and others, but may be freely redistributed.
 It is available to anyone and requires no previous license, either from
 USL/AT&T or The Regents of the University of California.
-The license agreement is similar to that of the two BSD
+Its license agreement is similar to that of the two BSD
 Networking Releases.
 The 4.4BSD-Lite distribution contains only a few additional programs
 and no additional kernel files from the Second Networking
 release done in June 1991.
-However, it does contain support for several additional architectures
+However, it does contain support for additional architectures
 and has many bug fixes and performance enhancements.
 The distribution includes both software developed at Berkeley
 and also a large amount of software contributed by authors outside
@@ -66,7 +72,7 @@ Berkeley.
 .\" For details, see the attached contributors list.
 .PP
 Because the 4.4BSD-Lite distribution is a partial-source
-distribution only, it is not possible to compile or run this software
+distribution, it is not possible to compile or run it
 without a pre-existing system that is already installed and running.
 It includes source code and manual pages for the C library
 and about three-fourths of the utilities contained in
@@ -90,16 +96,16 @@ What is 4.4BSD?
 .PP
 This software distribution is provided on one 6250bpi 1/2'' 9-track tape
 or one 8mm Exabyte cassette only.
-The 4.4BSD distribution contains complete source;
-it also contains binaries for the HP9000/300 series of workstations.
+The 4.4BSD distribution contains complete source as well as binaries for
+the HP9000/300 series of workstations.
 The 4.4BSD-Lite distribution contains only the subset of the 4.4BSD
-sources that are unencumbered.
+sources that are freely redistributable.
 .PP
 The architectures that are supported include:
 .IP \(bu
 HP 9000/300 68000-based workstations
 .IP \(bu
-Intel 386/486-based machines with ISA/AT or EISA bus only.
+Intel 386/486-based machines (ISA/AT or EISA bus only)
 .IP \(bu
 Sony News MIPS-based workstations
 .IP \(bu
@@ -120,14 +126,17 @@ Consequently, we are not able to directly test or maintain these
 other architectures, so cannot comment on their robustness,
 reliability, or completeness.
 .PP
-The six major new facilities available in the 4.4BSD release are
+The major new facilities available in the 4.4BSD release are
 a new virtual memory system, 
 a log-structured filesystem,
-expansion of the fast filesystem to support
+enhancement of the local filesystems to support
 files and filesystems that are up to 2^63 bytes in size,
 the addition of ISO/OSI networking support,
 a freely redistributable implementation of NFS, and
-the conversion to and addition of the POSIX.1 facilities.
+the conversion to and addition of the IEEE Std1003.1 (``POSIX'')
+facilities and many of the IEEE Std1003.2 facilities.
+In addition, many new utilities and additions to the C
+library are present as well.
 The kernel sources have been reorganized to collect all machine-dependent
 files for each architecture under one directory,
 and most of the machine-independent code is now free of code
@@ -135,8 +144,9 @@ conditional on specific machines.
 The user structure and process structure have been reorganized
 to eliminate the statically-mapped user structure and to make most
 of the process resources shareable by multiple processes.
-The kernel has been converted to be compatible with ANSI C,
-including function prototypes for most of the exported functions.
+The system and include files have been converted to be compatible
+with ANSI C, including function prototypes for most of the exported
+functions.
 There are numerous other changes throughout the system.
 .PP
 The new virtual memory implementation is derived from the MACH
@@ -191,9 +201,9 @@ By default it runs over UDP to be compatible with Sun's implementation.
 However, it can be configured on a per-mount basis to run over TCP.
 Using TCP allows it to be used quickly and efficiently through
 gateways and over long-haul networks.
-Using an extended protocol, it supports leases to allow a limited
-callback mechanism that greatly reduces the network traffic to
-maintain cache consistency between the server and its clients.
+Using an extended protocol, it supports Leases to allow a limited
+callback mechanism that greatly reduces the network traffic necessary
+to maintain cache consistency between the server and its clients.
 .PP
 A new log-structured filesystem has been added that provides
 near disk-speed output and fast crash recovery.
@@ -201,7 +211,7 @@ It is still experimental in the alpha release,
 though we hope to have enough experience with it to recommend
 it for production use by the time of the final 4.4BSD release.
 We have also added a memory-based filesystem that runs in
-pageable memory, that allows large temporary filesystems without
+pageable memory, allowing large temporary filesystems without
 requiring dedicated physical memory.
 .PP
 The quota system has been rewritten to support both
@@ -212,17 +222,17 @@ This change makes quotas more useful on fileservers
 onto which users seldom login.
 .PP
 The 4.4BSD distribution contains most of the interfaces
-specified in the POSIX.1 system interface standard.
+specified in the IEEE Std1003.1 system interface standard.
 The biggest area of change is a new terminal driver.
 The terminal driver is similar to the System V terminal driver
 with the addition of the necessary extensions to get the
 functionality previously available in the 4.3BSD terminal driver.
-4.4BSD also adds the POSIX job control interface,
+4.4BSD also adds the IEEE Std1003.1 job control interface,
 which is similar to the 4.3BSD job control interface,
 but adds a security model that was missing in the
 4.3BSD job control implementation.
-Other additions include POSIX signals, FIFOs, byte-range file locking,
-and saved user and group identifiers.
+Other additions include IEEE Std1003.1 signals, FIFOs,
+byte-range file locking, and saved user and group identifiers.
 .PP
 There are several new tools and utilities included in this release.
 A new version of make allows much-simplified makefiles for the system software
@@ -235,7 +245,7 @@ The additions to the utility suite include greatly enhanced versions of
 programs that display system status information, implementations of
 various tools traditionally found in System V releases and many others.
 .PP
-We have been tracking the POSIX 1003.2 shell and utility work
+We have been tracking the IEEE Std1003.2 shell and utility work
 and have included prototypes of many of the proposed utilities.
 Because most of the traditional utilities have been replaced to eliminate
 code proprietary to USL/AT&T, you should realize that the utility software
@@ -248,7 +258,7 @@ It is also worth noting that, in rewriting this software, we have generally
 been rewarded with significant performance improvements.
 Most of the libraries and header files have been converted
 to be compliant with ANSI C.
-The default compiler (gcc) is compatible with ANSI C,
+The default compiler (gcc) is a superset of ANSI C,
 but supports traditional C as a command-line option.
 The system libraries and utilities all compile
 with either ANSI or traditional C.
@@ -268,7 +278,7 @@ The Kerberos (version 4) authentication software has been
 integrated into much of the system (including NFS) to provide
 the first real network authentication on BSD.
 .PP
-This release does include several important structural kernel changes.
+This release includes several important structural kernel changes.
 The kernel uses a new internal system call convention;
 the use of global (``u-dot'') variables for parameters and error returns
 has been eliminated,
@@ -317,7 +327,7 @@ In particular, losing Mike Karels has made it obvious to us that
 the group is below critical mass for developing and distributing a
 complete UNIX system.
 .PP
-So, we intend are making the 4.4BSD-alpha distribution available now.
+We are making the 4.4BSD-alpha distribution available now.
 We will spend the summer and some part of the fall cleaning up
 the release and make the final 4.4BSD release available in the fall.
 When the final release happens is mostly dependent on when our
