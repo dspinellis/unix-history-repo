@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 # -DSLOWSYS	invoke xread() for system time quirk on PDP, others?
 # -DNOKANJI	default is for Japanese Unix.  undef only for raw
