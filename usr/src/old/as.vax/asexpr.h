@@ -1,7 +1,11 @@
 /*
- *	Copyright (c) 1982 Regents of the University of California
- *	@(#)asexpr.h 4.4 %G%
+ * Copyright (c) 1982 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)asexpr.h	5.1 (Berkeley) %G%
  */
+
 /*
  *	Definitions to parse tokens
  */
