@@ -1,4 +1,4 @@
-#	@(#)README_TOO	8.1 (Berkeley) %G%
+#	@(#)README_TOO	7.2 (Berkeley) %G%
 
 Sun Mar 29 22:19:51 PST 1992
 
@@ -19,7 +19,7 @@ steps to bootstap a system.
 
 3) Label disks and create file systems.
 	# disklabel -W /dev/rrz?c		# This enables writing the label
-	# disklabel -w -r /dev/rrz?c $DISKTYPE
+	# disklabel -w -r -B /dev/rrz?c $DISKTYPE
 	# newfs /dev/rrz?a
 	# newfs /dev/rrz?g
 	...
@@ -36,10 +36,10 @@ steps to bootstap a system.
 	# mount /dev/rz?g /b
 	# cd /a
 	# mt -f /dev/nrmt0 rew
-	# mt -f /dev/nrmt0 fsf 1
-	# restore -rf /dev/nrmt0
+	# restore -rsf 2 /dev/rmt0
 	# cd /b
-	# restore -rf /dev/nrmt0
+	# {change tapes or tape drive}
+	# restore -rf /dev/rmt0
 	# cd /
 	# sync
 	# umount /a /b
@@ -50,3 +50,11 @@ steps to bootstap a system.
 
 	DEC 3100:	setenv bootpath boot -f rz(0,?,0)vmunix
 	DEC 5000:	setenv bootpath 5/rz?/vmunix -a
+
+6) After booting UNIX, you will need to create /dev/mouse in order to
+   run X windows. type `link /dev/xx /dev/mouse' where xx is one of the
+   following:
+	pm0	raw interface to PMAX graphics devices
+	cfb0	raw interface to turbochannel PMAG-BA color frame buffer
+	xcfb0	raw interface to maxine graphics devices
+	mfb0	raw interface to mono graphics devices
