@@ -1,0 +1,73 @@
+.fp 3 CW
+.fz 3 -1
+.fz S 3 -0
+.bd S 3 3	\" embolden special font in context of 3
+.if t .nr PI .25i	\" paragraph indent
+.nr PS 10	\" text point size
+.nr VS 12	\" text vertical (inter-line) spacing
+.nr dP 1	\" delta point size for program
+.ps \n(PS
+.vs \n(VS
+.if n .nr NH 1	\" space after NH or SH heading
+.if t .nr NH .5v
+.if n .ls 2
+.de UC
+\&\\$3\s-1\\$1\\s0\&\\$2
+..
+.de IT
+.if n .ul
+\&\\$3\f2\\$1\fR\^\&\\$2
+..
+.de UL
+.lg 0
+.if n .ul
+\%\&\\$3\f3\\$1\fR\&\\$2
+.lg
+..
+.cs 3 25 \\n(PS-1	\" constant space
+.nr P \\n(PS	\" current point size
+.nr S \\n(PS+1	\" 1 points bigger
+.nr s \\n(PS-1	\" 1 points smaller
+.de P1
+.DS I .5i
+.nf
+.lg 0
+.if n .ls 1
+.if n .ta 5 10 15 20 25 30 35 40 45 50 55 60
+.if t .ps -\\n(dP
+.if t .vs -\\n(dP
+.nr P \\n(.s
+.nr S \\n(.s+1
+.nr s \\n(.s-1
+.nr t 5*33u	\" width in 9 point CW
+.if t .ta 1u*\\ntu 2u*\\ntu 3u*\\ntu 4u*\\ntu 5u*\\ntu 6u*\\ntu 7u*\\ntu 8u*\\ntu 9u*\\ntu 10u*\\ntu 11u*\\ntu 12u*\\ntu 13u*\\ntu 14u*\\ntu
+.ft 3
+.cs 3 25 \\nP-1
+.lg 0
+..
+.de P2
+.ps \\n(PS
+.vs \\n(VSp
+.nr P \\n(PS
+.nr S \\n(PS+1
+.nr s \\n(PS-1
+.ft R
+.if n .ls 2
+.fi
+.DE
+.lg
+.cs 3 25 \\n(PS-1
+..
+.hy 14	\"2=not last lines; 4= no -xx; 8=no xx-
+.am SH
+.ft 1
+.bd 1 3
+..
+.am NH
+.ft 1
+.bd 1 3
+..
+.am TL
+.ft 1
+.bd 1 3
+..
