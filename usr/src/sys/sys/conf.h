@@ -1,4 +1,4 @@
-/*	conf.h	4.6	81/03/09	*/
+/*	conf.h	4.7	81/04/03	*/
 
 /*
  * Declaration of block device
@@ -66,7 +66,7 @@ struct swdevt
 {
 	dev_t	sw_dev;
 	int	sw_freed;
-} swdevt[];
+};
 #ifdef KERNEL
 struct	swdevt swdevt[];
 #endif
