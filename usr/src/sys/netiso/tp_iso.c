@@ -28,7 +28,7 @@ SOFTWARE.
  * ARGO TP
  * $Header: /var/src/sys/netiso/RCS/tp_iso.c,v 5.1 89/02/09 16:20:51 hagens Exp $
  * $Source: /var/src/sys/netiso/RCS/tp_iso.c,v $
- *	@(#)tp_iso.c	7.5 (Berkeley) %G%
+ *	@(#)tp_iso.c	7.6 (Berkeley) %G%
  *
  * Here is where you find the iso-dependent code.  We've tried
  * keep all net-level and (primarily) address-family-dependent stuff
@@ -447,10 +447,10 @@ tpclnp_output_dg(laddr, faddr, m0, datalen, ro, nochksum)
  * No return value.  
  */
 ProtoHook
-tpclnp_input(m, src, dst, clnp_len)
+tpclnp_input(m, src, dst, clnp_len, ce_bit)
 	register struct mbuf *m;
 	struct sockaddr_iso *src, *dst;
-	int clnp_len;
+	int clnp_len, ce_bit;
 {
 	int s = splnet();
 	struct mbuf *tp_inputprep();
@@ -491,7 +491,7 @@ tpclnp_input(m, src, dst, clnp_len)
 	ENDDEBUG
 
 	(void) (*input)(m, (struct sockaddr *)src, (struct sockaddr *)dst,
-				0, tpclnp_output_dg);
+				0, tpclnp_output_dg, ce_bit);
 
 	IFDEBUG(D_QUENCH)
 		{ 
