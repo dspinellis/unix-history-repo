@@ -1,5 +1,7 @@
-.\"	@(#)p1	6.1 (Berkeley) %G%
+.\"	@(#)p1	6.2 (Berkeley) %G%
 .\"
+.OH 'The UNIX Time-Sharing System''PS2:1-%'
+.EH 'PS2:1-%''The UNIX Time-Sharing System'
 .ds n \s+2
 .hw above-mentioned
 .ds s \s-2
@@ -53,9 +55,6 @@ This paper discusses the nature
 and implementation of the file system
 and of the user command interface.
 .AE
-.LP
-.OH 'The UNIX Time-Sharing System''PS2:1-%'
-.EH 'PS2:1-%''The UNIX Time-Sharing System'
 .NH
 INTRODUCTION
 .PP
