@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)gethostnamadr.c	6.47 (Berkeley) %G%";
+static char sccsid[] = "@(#)gethostnamadr.c	6.48 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -136,10 +136,8 @@ getanswer(answer, anslen, iquery)
 		if (iquery && type == T_PTR) {
 			if ((n = dn_expand((u_char *)answer->buf,
 			    (u_char *)eom, (u_char *)cp, (u_char *)bp,
-			    buflen)) < 0) {
-				cp += n;
-				continue;
-			}
+			    buflen)) < 0)
+				break;
 			cp += n;
 			host.h_name = bp;
 			return(&host);
