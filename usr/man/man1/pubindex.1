@@ -1,0 +1,65 @@
+.TH PUBINDEX 1 local
+.SH NAME
+pubindex \- make inverted bibliographic index
+.SH SYNOPSIS
+.B pubindex
+[ file ] ...
+.SH DESCRIPTION
+.I Pubindex
+makes a hashed inverted index to
+the named
+.I files
+for use by
+.IR refer (1).
+The
+.I files
+contain bibliographic references separated by blank lines.
+A bibliographic reference is a set of lines
+that contain bibliographic information fields.
+Each field starts on a line beginning with a `%', followed
+by a key-letter, followed by a blank, and followed by the
+contents of the field, which continues until the next line
+starting with `%'.
+The most common key-letters and the corresponding fields are:
+.IP
+.nf
+A	Author name
+B	Title of book containing article referenced
+C	City
+D	Date
+d	Alternate date
+E	Editor of book containing article referenced
+G	Government (CFSTI) order number
+I	Issuer (publisher)
+J	Journal
+K	Other keywords to use in locating reference
+M	Technical memorandum number
+N	Issue number within volume
+O	Other commentary to be printed at end of reference
+P	Page numbers
+R	Report number
+r	Alternate report number
+T	Title of article, book, etc.
+V	Volume number
+X	Commentary unused by \fIpubindex\fR
+.fi
+.PP
+Except for `A', each field should only be given once.
+Only relevant fields should be supplied.
+An example is:
+.IP
+.nf
+%T 5-by-5 Palindromic Word Squares
+%A M. D. McIlroy
+%J Word Ways
+%V 9
+%P 199-202
+%D 1976
+.fi
+.SH FILES
+.I "x.ia, x.ib, x.ic"
+where 
+.I x
+is the first argument.
+.SH SEE ALSO
+refer(1)
