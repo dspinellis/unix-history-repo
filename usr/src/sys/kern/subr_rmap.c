@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)subr_rmap.c	7.9 (Berkeley) %G%
+ *	@(#)subr_rmap.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -46,6 +46,7 @@
  * The map itself is initialized with size elements free
  * starting at addr.
  */
+void
 rminit(mp, size, addr, name, mapsize)
 	register struct map *mp;
 	long size, addr;
@@ -144,6 +145,7 @@ rmalloc(mp, size)
  * the frred space into the correct location in the map, and coalescing
  * it with free space on either side if they adjoin.
  */
+void
 rmfree(mp, size, addr)
 	struct map *mp;
 	long size, addr;
