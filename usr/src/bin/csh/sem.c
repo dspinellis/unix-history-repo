@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)sem.c	4.5 (Berkeley) %G%";
+static	char *sccsid = "@(#)sem.c	4.6 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -332,7 +332,7 @@ doio(t, pipein, pipeout)
 			(void) close(0);
 			(void) open("/dev/null", 0);
 		} else
-			(void) ioctl(dup(OLDSTD), FIONCLEX, (char *)0);
+			(void) dup(OLDSTD);
 	}
 	(void) close(1);
 	if (cp = t->t_drit) {
@@ -352,13 +352,13 @@ doio(t, pipein, pipeout)
 	} else if (flags & FPOU)
 		(void) dup(pipeout[1]);
 	else
-		(void) ioctl(dup(SHOUT), FIONCLEX, (char *)0);
+		(void) dup(SHOUT);
 
 	(void) close(2);
 	if (flags & FDIAG)
 		(void) dup(1);
 	else
-		(void) ioctl(dup(SHDIAG), FIONCLEX, (char *)0);
+		(void) dup(SHDIAG);
 	didfds = 1;
 }
 
