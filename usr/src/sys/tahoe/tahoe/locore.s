@@ -1,4 +1,4 @@
-/*	locore.s	1.14	87/05/27	*/
+/*	locore.s	1.14	87/05/29	*/
 
 #include "../tahoe/mtpr.h"
 #include "../tahoe/trap.h"
@@ -1306,6 +1306,7 @@ sw0:	.asciz	"swtch"
  */
 	.globl  Idle
 Idle: idle:
+	movl	$1,_noproc
 	mtpr	$0,$IPL			# must allow interrupts here
 1:
 	tstl	_whichqs		# look for non-empty queue
@@ -1325,7 +1326,6 @@ ENTRY(swtch, 0)
 	movl	(sp),4(sp)		# saved pc
 	tstl	(sp)+
 	movpsl	4(sp)
-	movl	$1,_noproc
 	incl	_cnt+V_SWTCH
 sw1:	ffs	_whichqs,r0		# look for non-empty queue
 	blss	idle			# if none, idle
@@ -1343,10 +1343,12 @@ sw1:	ffs	_whichqs,r0		# look for non-empty queue
 sw2:
 	clrl	_noproc
 	clrl	_runrun
+#ifdef notdef
 	tstl	P_WCHAN(r2)		## firewalls
 	bneq	badsw			##
 	cmpb	P_STAT(r2),$SRUN	##
 	bneq	badsw			##
+#endif
 	clrl	P_RLINK(r2)		##
 	movl	*P_ADDR(r2),r0
 #ifdef notdef
@@ -1356,11 +1358,7 @@ sw2:
 	movl	r0,_masterpaddr
 	shal	$PGSHIFT,r0,r0		# r0 = pcbb(p)
 	brb	swresume
-	/* fall into... */
 
-	.globl	_prevpcb
-_prevpcb: .long	0
-	.text
 /*
  * resume(pf)
  */
