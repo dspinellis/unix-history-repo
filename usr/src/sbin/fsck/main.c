@@ -11,12 +11,14 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.12 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
-#include <sys/inode.h>
-#include <sys/fs.h>
+#include <sys/time.h>
+#include <sys/vnode.h>
+#include <ufs/inode.h>
+#include <ufs/fs.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <fstab.h>
@@ -127,7 +129,7 @@ main(argc, argv)
 	sumstatus = 0;
 	for (passno = 1; passno <= 2; passno++) {
 		if (setfsent() == 0)
-			errexit("Can't open checklist file: %s\n", FSTAB);
+			errexit("Can't open checklist file: %s\n", _PATH_FSTAB);
 		while ((fsp = getfsent()) != 0) {
 			if (strcmp(fsp->fs_type, FSTAB_RW) &&
 			    strcmp(fsp->fs_type, FSTAB_RO) &&
