@@ -17,7 +17,7 @@
  */
 
 #include <stdio.h>
-#include <string.h>
+#include <strings.h>
 #include <ctype.h>
 
 #define	LETS_SEE_ASCII
@@ -83,7 +83,7 @@ char	*argv[];
 	for (i = 0; i < 4; i++) {
 	    if (ph->hit[i].ctlrfcn == FCN_CHARACTER) {
 		c = Ph->name[i][0];	/* "name" of this one */
-		if (tbl[c].shift[0] == 0) {
+		if ((tbl[c].shift == 0) || (tbl[c].shift[0] == 0)) {
 		    tbl[c].shift = shiftof[i];
 		    tbl[c].scancode = scancode;
 		}

@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <string.h>
+#include <strings.h>
 #include <ctype.h>
 #include "../ascii/ascebc.h"
 #include "../ctlr/ebc_disp.h"
