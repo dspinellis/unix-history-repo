@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	3.3	(Berkeley)	83/02/27";
+static char sccsid[] = "@(#)utilities.c	3.4	(Berkeley)	83/02/28";
 #endif
 
 #include "restore.h"
@@ -269,6 +269,26 @@ badentry(ep, msg)
 	if (ep->e_flags & KEEP)
 		strcat(flagbuf, "|KEEP");
 	panic("flags: %s\n", &flagbuf[1]);
+}
+
+/*
+ * canonicalize file names to always start with ``./''
+ */
+canon(rawname, canonname)
+	char *rawname, *canonname;
+{
+	int len;
+
+	if (strcmp(rawname, ".") == 0 || strncmp(rawname, "./", 2) == 0)
+		strcpy(canonname, "");
+	else if (rawname[0] == '/')
+		strcpy(canonname, ".");
+	else
+		strcpy(canonname, "./");
+	strcat(canonname, rawname);
+	len = strlen(canonname) - 1;
+	if (canonname[len] == '/')
+		canonname[len] = '\0';
 }
 
 /*
