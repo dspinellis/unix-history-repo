@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)raw_imp.c	7.2 (Berkeley) %G%
+ *	@(#)raw_imp.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -89,7 +89,7 @@ rimp_output(m, so)
 		len += n->m_len;
 	ip->il_length = htons((u_short)(len << 3));
 	sin = (struct sockaddr_in *)&rp->rcb_faddr;
-	imp_addr_to_leader(ip, sin->sin_addr.s_addr);	/* BRL */
+	imp_addr_to_leader((struct control_leader *)ip, sin->sin_addr.s_addr);
 	/* no routing here */
 	ia = in_iaonnetof(in_netof(sin->sin_addr));
 	if (ia)

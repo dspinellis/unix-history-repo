@@ -1,5 +1,5 @@
 /*
- *	@(#)kdb.c	7.2 (Berkeley) %G%
+ *	@(#)kdb.c	7.3 (Berkeley) %G%
  *
  * KDB50/MSCP device driver
  */
@@ -33,8 +33,6 @@
 #define NCMDL2	5		/* log2 number of command packets */
 #define	MAXUNIT	8		/* maximum allowed unit number */
 
-#include "../machine/pte.h"
-
 #include "param.h"
 #include "systm.h"
 #include "malloc.h"
@@ -53,6 +51,7 @@
 #define	NRSP	(1 << NRSPL2)
 #define	NCMD	(1 << NCMDL2)
 
+#include "../vax/pte.h"
 #include "../vax/cpu.h"
 #include "../vax/mscp.h"
 #include "../vax/mscpvar.h"
@@ -60,6 +59,7 @@
 
 #include "bireg.h"
 #include "kdbreg.h"
+
 #include "../vaxuba/ubavar.h"
 
 /*
@@ -287,9 +287,11 @@ kdbconfig(kdbnum, va, pa, vec)
 	ki->ki_kdb = (struct kdb_regs *) va;
 	ki->ki_physkdb = (struct kdb_regs *) pa;
 	ki->ki_vec = vec;
-	ki->ki_map = (struct map *) malloc(KI_MAPSIZ * sizeof (struct map),
+	ki->ki_map =
+	    (struct map *) malloc((u_long)(KI_MAPSIZ * sizeof(struct map)),
 	    M_DEVBUF, M_NOWAIT);
-	ki->ki_pte = (struct pte *) malloc(KI_PTES * sizeof (struct pte),
+	ki->ki_pte =
+	    (struct pte *) malloc((u_long)(KI_PTES * sizeof (struct pte)),
 	    M_DEVBUF, M_NOWAIT);
 	if (ki->ki_map == NULL || ki->ki_pte == NULL)
 		return;
