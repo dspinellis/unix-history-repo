@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)mount.c	4.8 (Berkeley) %G%";
+static char *sccsid = "@(#)mount.c	4.9 (Berkeley) %G%";
 #endif
 
 /*
@@ -72,7 +72,8 @@ top:
 			if (strcmp(fsp->fs_file, "/") == 0)
 				continue;
 			ro = !strcmp(fsp->fs_type, FSTAB_RO);
-			if (ro==0 && strcmp(fsp->fs_type, FSTAB_RW))
+			if (ro==0 && strcmp(fsp->fs_type, FSTAB_RW) &&
+			    strcmp(fsp->fs_type, FSTAB_RQ))
 				continue;
 			mountfs(fsp->fs_spec, fsp->fs_file, ro);
 		}
