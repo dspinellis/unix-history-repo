@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 1988, 1989, 1992, 1993
+ * Copyright (c) 1988, 1989, 1992, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
@@ -7,12 +7,12 @@
 
 #ifndef lint
 static char copyright[] =
-"@(#) Copyright (c) 1988, 1989, 1992, 1993\n\
+"@(#) Copyright (c) 1988, 1989, 1992, 1993, 1994\n\
 	The Regents of the University of California.  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)rshd.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -32,17 +32,16 @@ static char sccsid[] = "@(#)rshd.c	8.1 (Berkeley) %G%";
 #include <arpa/inet.h>
 #include <netdb.h>
 
-#include <fcntl.h>
-#include <signal.h>
-#include <pwd.h>
-#include <syslog.h>
-#include "pathnames.h"
-#include <unistd.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <paths.h>
+#include <pwd.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <paths.h>
+#include <syslog.h>
+#include <unistd.h>
 
 int	keepalive = 1;
 int	check_all = 0;
@@ -84,7 +83,7 @@ main(argc, argv)
 		case '?':
 		default:
 			usage();
-			exit(2);
+			break;
 		}
 
 	argc -= optind;
@@ -421,7 +420,7 @@ doit(fromp)
 	strcat(path, _PATH_DEFPATH);
 	strncat(shell, pwd->pw_shell, sizeof(shell)-7);
 	strncat(username, pwd->pw_name, sizeof(username)-6);
-	cp = rindex(pwd->pw_shell, '/');
+	cp = strrchr(pwd->pw_shell, '/');
 	if (cp)
 		cp++;
 	else
@@ -557,8 +556,7 @@ char *
 topdomain(h)
 	char *h;
 {
-	register char *p;
-	char *maybe = NULL;
+	char *p, *maybe = NULL;
 	int dots = 0;
 
 	for (p = h + strlen(h); p >= h; p--) {
@@ -574,5 +572,7 @@ topdomain(h)
 void
 usage()
 {
+
 	syslog(LOG_ERR, "usage: rshd [-%s]", OPTIONS);
+	exit(2);
 }
