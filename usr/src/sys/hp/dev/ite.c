@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: ite.c 1.24 92/01/21$
  *
- *	@(#)ite.c	7.11 (Berkeley) %G%
+ *	@(#)ite.c	7.12 (Berkeley) %G%
  */
 
 /*
@@ -57,7 +57,7 @@ struct	tty ite_tty[NITE];
 struct  ite_softc ite_softc[NITE];
 
 void	itestart();
-extern	int ttrstrt();
+extern	void ttrstrt __P((void *));
 extern	struct tty *constty;
 
 /*
