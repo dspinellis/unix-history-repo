@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sysctl.c	7.22 (Berkeley) %G%
+ *	@(#)kern_sysctl.c	7.23 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -127,7 +127,7 @@ kinfo_doproc(op, where, acopysize, arg, aneeded)
 	struct eproc eproc;
 	int error = 0;
 
-	p = allproc;
+	p = (struct proc *)allproc;
 	doingzomb = 0;
 again:
 	for (; p != NULL; p = p->p_nxt) {

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_fork.c	7.36 (Berkeley) %G%
+ *	@(#)kern_fork.c	7.37 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -54,7 +54,7 @@ fork1(p1, isvfork, retval)
 
 	count = 0;
 	if ((uid = p1->p_ucred->cr_uid) != 0) {
-		for (p2 = allproc; p2; p2 = p2->p_nxt)
+		for (p2 = (struct proc *)allproc; p2; p2 = p2->p_nxt)
 			if (p2->p_ucred->cr_uid == uid)
 				count++;
 		for (p2 = zombproc; p2; p2 = p2->p_nxt)
@@ -102,7 +102,7 @@ retry:
 		 * is in use.  Remember the lowest pid that's greater
 		 * than nextpid, so we can avoid checking for a while.
 		 */
-		p2 = allproc;
+		p2 = (struct proc *)allproc;
 again:
 		for (; p2 != NULL; p2 = p2->p_nxt) {
 			while (p2->p_pid == nextpid ||
@@ -130,9 +130,9 @@ again:
 	p2 = newproc;
 	p2->p_stat = SIDL;			/* protect against others */
 	p2->p_pid = nextpid;
-	p2->p_nxt = allproc;
+	p2->p_nxt = (struct proc *)allproc;
 	p2->p_nxt->p_prev = &p2->p_nxt;		/* allproc is never NULL */
-	p2->p_prev = &allproc;
+	p2->p_prev = (struct proc **)&allproc;
 	allproc = p2;
 	p2->p_link = NULL;			/* shouldn't be necessary */
 	p2->p_rlink = NULL;			/* shouldn't be necessary */
