@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)inet.3	6.2 (Berkeley) %G%
+.\"	@(#)inet.3	6.3 (Berkeley) %G%
 .\"
 .TH INET 3N ""
 .UC 5
@@ -104,7 +104,7 @@ in the C language (i.e. a leading 0x or 0X implies
 hexadecimal; otherwise, a leading 0 implies octal;
 otherwise, the number is interpreted as decimal).
 .SH "SEE ALSO"
-gethostent(3N), getnetent(3N), hosts(5), networks(5),
+gethostbyname(3N), getnetent(3N), hosts(5), networks(5),
 .SH DIAGNOSTICS
 The value \-1 is returned by
 .I inet_addr
