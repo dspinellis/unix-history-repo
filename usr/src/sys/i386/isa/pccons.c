@@ -9,7 +9,7 @@
  *
  * %sccs.include.386.c%
  *
- *	@(#)pccons.c	5.5 (Berkeley) %G%
+ *	@(#)pccons.c	5.6 (Berkeley) %G%
  */
 
 /*
@@ -110,7 +110,7 @@ struct isa_device *dev;
 		}
 	}
 	/* pick up keyboard reset return code */
-	while((c=inb(0x60))!=0xAA)nulldev();
+	while((c=inb(0x60))!=0xAA)nullop();
 	return 1;
 }
 
@@ -501,7 +501,7 @@ u_char c, ca;
 			}
 			/* Print only printables */
 			else /*if (c >= ' ') */ {
-				while(inb(0x3da)&1)nulldev();
+				while(inb(0x3da)&1)nullop();
 				if (so) {
 					*crtat++ = (so_at<<8)| c; row++ ;
 				} else {
