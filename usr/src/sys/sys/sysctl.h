@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sysctl.h	7.27 (Berkeley) %G%
+ *	@(#)sysctl.h	7.28 (Berkeley) %G%
  */
 
 #ifndef _SYS_SYSCTL_H_
@@ -100,17 +100,8 @@ struct ctlname {
 #define	KERN_NGROUPS		18	/* int: # of supplemental group ids */
 #define	KERN_JOB_CONTROL	19	/* int: is job control available */
 #define	KERN_SAVED_IDS		20	/* int: saved set-user/group-ID */
-#define	KERN_LINK_MAX		21	/* int: max file link count */
-#define	KERN_MAX_CANON		22	/* int: max bytes in term canon input */
-#define	KERN_MAX_INPUT		23	/* int: max bytes in term input */
-#define	KERN_NAME_MAX		24	/* int: max bytes in file name */
-#define	KERN_PATH_MAX		25	/* int: max bytes in pathname */
-#define	KERN_PIPE_BUF		26	/* int: max bytes for atomic pipe  */
-#define	KERN_CHOWN_RESTRICTED	27	/* int: chown requires privilege */
-#define	KERN_NO_TRUNC		28	/* int: no path truncation */
-#define	KERN_VDISABLE		29	/* int: terminal character disable */
-#define	KERN_BOOTTIME		30	/* struct: time kernel was booted */
-#define	KERN_MAXID		31	/* number of valid kern ids */
+#define	KERN_BOOTTIME		21	/* struct: time kernel was booted */
+#define	KERN_MAXID		22	/* number of valid kern ids */
 
 #define CTL_KERN_NAMES { \
 	{ 0, 0 }, \
@@ -134,15 +125,6 @@ struct ctlname {
 	{ "ngroups", CTLTYPE_INT }, \
 	{ "job_control", CTLTYPE_INT }, \
 	{ "saved_ids", CTLTYPE_INT }, \
-	{ "link_max", CTLTYPE_INT }, \
-	{ "max_canon", CTLTYPE_INT }, \
-	{ "max_input", CTLTYPE_INT }, \
-	{ "name_max", CTLTYPE_INT }, \
-	{ "path_max", CTLTYPE_INT }, \
-	{ "pipe_buf", CTLTYPE_INT }, \
-	{ "chown_restricted", CTLTYPE_INT }, \
-	{ "no_trunc", CTLTYPE_INT }, \
-	{ "vdisable", CTLTYPE_INT }, \
 	{ "boottime", CTLTYPE_STRUCT }, \
 }
 
