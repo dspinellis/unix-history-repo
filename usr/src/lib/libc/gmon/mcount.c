@@ -6,7 +6,7 @@
  */
 
 #if !defined(lint) && !defined(KERNEL) && defined(LIBC_SCCS)
-static char sccsid[] = "@(#)mcount.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)mcount.c	5.2 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -17,7 +17,7 @@ static char sccsid[] = "@(#)mcount.c	5.1 (Berkeley) %G%";
  * switch set.  _mcount(), which is declared in a machine-dependent way
  * with _MCOUNT_DECL, does the actual work and is either inlined into a
  * C routine or called by an assembly stub.  In any case, this magic is
- * taken care of by the MCOUNT definition in <machine/mcount.h>.
+ * taken care of by the MCOUNT definition in <machine/profile.h>.
  *
  * _mcount updates data structures that represent traversals of the
  * program's call graph edges.  frompc and selfpc are the return
@@ -146,7 +146,7 @@ overflow:
 }
 
 /*
- * Actual definition of mcount function.  Defined in <machine/mcount.h>,
+ * Actual definition of mcount function.  Defined in <machine/profile.h>,
  * which is included by <sys/gmon.h>.
  */
 MCOUNT
