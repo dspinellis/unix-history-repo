@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)init_main.c	7.10 (Berkeley) %G%
+ *	@(#)init_main.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -62,7 +62,6 @@ main(firstaddr)
 	register int i;
 	register struct proc *p;
 	register struct pgrp *pg;
-	struct fs *fs;
 	int s;
 
 	rqinit();
@@ -195,7 +194,7 @@ main(firstaddr)
 		panic("cannot find root vnode");
 	u.u_cdir = rootdir;
 	u.u_cdir->v_count++;
-	vop_unlock(rootdir);
+	VOP_UNLOCK(rootdir);
 	u.u_rdir = NULL;
 	boottime = time;
 
