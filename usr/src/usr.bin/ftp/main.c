@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -208,7 +208,7 @@ cmdscanner(top)
 			(void) fflush(stdout);
 		}
 		if (gets(line) == 0) {
-			if (feof(stdin))
+			if (feof(stdin) || ferror(stdin))
 				quit();
 			break;
 		}
