@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vnops.c	8.11 (Berkeley) %G%
+ *	@(#)union_vnops.c	8.12 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -939,7 +939,6 @@ union_link(ap)
 		 * and do the link there.
 		 */
 		vput(ap->a_vp);
-		vrele(ap->a_tdvp);
 		error = EROFS;
 	}
 
