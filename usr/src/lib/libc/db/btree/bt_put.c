@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_put.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_put.c	5.14 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -91,8 +91,9 @@ storekey:		if (__ovfl_put(t, key, &pg) == RET_ERROR)
 				return (RET_ERROR);
 			tkey.data = kb;
 			tkey.size = NOVFLSIZE;
-			bcopy(&pg, kb, sizeof(pgno_t));
-			bcopy(&key->size, kb + sizeof(pgno_t), sizeof(size_t));
+			memmove(kb, &pg, sizeof(pgno_t));
+			memmove(kb + sizeof(pgno_t),
+			    &key->size, sizeof(size_t));
 			dflags |= P_BIGKEY;
 			key = &tkey;
 		}
@@ -101,8 +102,9 @@ storekey:		if (__ovfl_put(t, key, &pg) == RET_ERROR)
 				return (RET_ERROR);
 			tdata.data = db;
 			tdata.size = NOVFLSIZE;
-			bcopy(&pg, db, sizeof(pgno_t));
-			bcopy(&data->size, db + sizeof(pgno_t), sizeof(size_t));
+			memmove(db, &pg, sizeof(pgno_t));
+			memmove(db + sizeof(pgno_t),
+			    &data->size, sizeof(size_t));
 			dflags |= P_BIGDATA;
 			data = &tdata;
 		}
@@ -178,7 +180,7 @@ delete:		if (__bt_dleaf(t, h, index) == RET_ERROR) {
 	}
 
 	if (index < (nxtindex = NEXTINDEX(h)))
-		bcopy(h->linp + index, h->linp + index + 1,
+		memmove(h->linp + index + 1, h->linp + index,
 		    (nxtindex - index) * sizeof(indx_t));
 	h->lower += sizeof(indx_t);
 

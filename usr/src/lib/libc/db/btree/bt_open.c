@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_open.c	5.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_open.c	5.26 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -332,7 +332,7 @@ nroot(t)
 	root->lower = BTDATAOFF;
 	root->upper = t->bt_psize;
 	root->flags = P_BLEAF;
-	bzero(meta, t->bt_psize);
+	memset(meta, 0, t->bt_psize);
 	mpool_put(t->bt_mp, meta, MPOOL_DIRTY);
 	mpool_put(t->bt_mp, root, MPOOL_DIRTY);
 	return (RET_SUCCESS);

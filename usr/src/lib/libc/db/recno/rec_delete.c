@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_delete.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_delete.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -152,7 +152,7 @@ __rec_dleaf(t, h, index)
 	 * offsets.  Reset the headers.
 	 */
 	from = (char *)h + h->upper;
-	bcopy(from, from + nbytes, (char *)to - from);
+	memmove(from + nbytes, from, (char *)to - from);
 	h->upper += nbytes;
 
 	offset = h->linp[index];

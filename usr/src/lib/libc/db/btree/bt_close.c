@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_close.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_close.c	5.10 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -106,7 +106,7 @@ __bt_sync(dbp)
 			return (RET_ERROR);
 		if ((h = mpool_get(t->bt_mp, t->bt_bcursor.pgno, 0)) == NULL)
 			return (RET_ERROR);
-		bcopy(h, p, t->bt_psize);
+		memmove(p, h, t->bt_psize);
 		if (status =
 		    __bt_dleaf(t, h, t->bt_bcursor.index) == RET_ERROR)
 			goto ecrsr;
@@ -119,7 +119,7 @@ __bt_sync(dbp)
 ecrsr:	if (ISSET(t, BTF_DELCRSR)) {
 		if ((h = mpool_get(t->bt_mp, t->bt_bcursor.pgno, 0)) == NULL)
 			return (RET_ERROR);
-		bcopy(p, h, t->bt_psize);
+		memmove(h, p, t->bt_psize);
 		free(p);
 		mpool_put(t->bt_mp, h, MPOOL_DIRTY);
 	}
@@ -163,7 +163,7 @@ bt_meta(t)
 		BLSWAP(m.m_flags);
 	}
 
-	bcopy(&m, p, sizeof(BTMETA));
+	memmove(p, &m, sizeof(BTMETA));
 	mpool_put(t->bt_mp, p, MPOOL_DIRTY);
 	return (RET_SUCCESS);
 }

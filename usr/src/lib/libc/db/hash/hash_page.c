@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash_page.c	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash_page.c	5.25 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -79,12 +79,12 @@ putpair(p, key, val)
 	n = bp[0];
 
 	off = OFFSET(bp) - key->size;
-	bcopy(key->data, p + off, key->size);
+	memmove(p + off, key->data, key->size);
 	bp[++n] = off;
 
 	/* Now the data. */
 	off -= val->size;
-	bcopy(val->data, p + off, val->size);
+	memmove(p + off, val->data, val->size);
 	bp[++n] = off;
 
 	/* Adjust page info. */
@@ -124,7 +124,7 @@ __delpair(hashp, bufp, ndx)
 		register int i;
 		register char *src = bufp->page + (int)OFFSET(bp);
 		register char *dst = src + (int)pairlen;
-		bcopy(src, dst, bp[ndx + 1] - OFFSET(bp));
+		memmove(dst, src, bp[ndx + 1] - OFFSET(bp));
 
 		/* Now adjust the pointers */
 		for (i = ndx + 2; i <= n; i += 2) {
@@ -198,7 +198,7 @@ __split_page(hashp, obucket, nbucket)
 			diff = copyto - off;
 			if (diff) {
 				copyto = ino[n + 1] + diff;
-				bcopy(op + ino[n + 1], op + copyto,
+				memmove(op + copyto, op + ino[n + 1],
 				    off - ino[n + 1]);
 				ino[ndx] = copyto + ino[n] - ino[n + 1];
 				ino[ndx + 1] = copyto;
@@ -861,10 +861,10 @@ squeeze_key(sp, key, val)
 	pageno = sp[n - 1];
 	off -= key->size;
 	sp[n - 1] = off;
-	bcopy(key->data, p + off, key->size);
+	memmove(p + off, key->data, key->size);
 	off -= val->size;
 	sp[n] = off;
-	bcopy(val->data, p + off, val->size);
+	memmove(p + off, val->data, val->size);
 	sp[0] = n + 2;
 	sp[n + 1] = pageno;
 	sp[n + 2] = OVFLPAGE;
