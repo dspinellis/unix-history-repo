@@ -1,0 +1,21 @@
+#print
+On line 4 of the file "attribute" is either the word
+"color" or the word "Color".  With one command
+add an 's' to the end of the word.  Check that you did it right;
+then rewrite the file and type "ready".
+#create Ref
+size weight mass
+density shade hue
+quality age price
+lifetime Colors durability
+#create attribute
+size weight mass
+density shade hue
+quality age price
+lifetime Color durability
+#user
+#cmp attribute Ref
+#log
+#next
+37.1a 10
+37.2a 6

@@ -1,0 +1,33 @@
+#print
+So far all the special characters in the substitute command
+have been used in the left-hand expression, the one that
+is looked for in the line as it exists before the change.
+None of these characters are meaningful in the right-hand
+expression; for example,
+  s/ab/a./
+turn "ab" into "a." just as if "." were an ordinary letter.
+But there is one character that is special on the right
+side of a substitution, which is '&'.  The ampersand
+is replaced by whatever text is being replaced.  In
+  s/the/&m/
+the string "the" is turned into "them" because the '&' is
+replaced by "the".
+In this directory there is a file 'text'; on the third line,
+change the word 'dog' into 'dogs'; then rewrite the file
+and say "ready".
+#create Ref
+cat
+mouse
+dogs
+rat
+#create text
+cat
+mouse
+dog
+rat
+#user
+#cmp text Ref
+#log
+#next
+37.1a 10
+37.2a 6
