@@ -8,13 +8,13 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	6.7 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	6.8 (Berkeley) %G%')
 
 MAILER(local)dnl
 
 ifdef(`_OLD_SENDMAIL_', `dnl',
-`# level 3 config file format
-V3')
+`# level 4 config file format
+V4')
 
 ##################
 #   local info   #
@@ -198,6 +198,9 @@ ifdef(`confQUEUE_FACTOR',
 CONCAT(OQ, ifdef(`QUEUE_DIR', QUEUE_DIR, /var/spool/mqueue))
 
 # read timeout -- now OK per RFC 1123 section 5.3.2
+ifdef(`confREAD_TIMEOUT',
+	CONCAT(Or, confREAD_TIMEOUT),
+	#Ordatablock=10m)
 CONCAT(Or, confREAD_TIMEOUT)
 
 # queue up everything before forking?
@@ -298,7 +301,7 @@ undivert(6)dnl
 S3
 
 # handle "from:<>" special case
-R$* < > $*		$@ @				turn into magic token
+R$* < > $*		$@ <@>				turn into magic token
 
 # basic textual canonicalization -- note RFC733 heuristic here
 R$*<$*>$*<$*>$*		<$2>$3$4$5			strip multiple <> <>
@@ -384,7 +387,7 @@ R$* < @ $j > $*			$: $1 < @ $j . > $2
 ##################################################
 S4
 
-R@			$@				handle <> error addr
+R<@>			$@				handle <> error addr
 
 # resolve numeric addresses to name if possible
 R$* < @ [ $+ ] > $*	$: $1 < @ $[ [$2] $] > $3	lookup numeric internet addr
