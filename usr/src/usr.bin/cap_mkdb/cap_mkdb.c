@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cap_mkdb.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)cap_mkdb.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -136,18 +136,28 @@ db_build(ifiles)
 				err(1, "");
 		}
 
-		/* First byte of stored record indicates error. */
-		((char *)(data.data))[0] = st == 2 ? TCERR : RECOK;
+		/* Find the end of the name field. */
+		if ((p = strchr(bp, ':')) == NULL) {
+			warnx("no name field: %.*s", MIN(len, 20), bp);
+			continue;
+		}
+
+		/* First byte of stored record indicates status. */
+		switch(st) {
+		case 1:
+			((char *)(data.data))[0] = RECOK;
+			break;
+		case 2:
+			((char *)(data.data))[0] = TCERR;
+			warnx("Record not tc expanded: %.*s", p - bp, bp);
+			break;
+		}
 
 		/* Create the stored record. */
 		memmove(&((u_char *)(data.data))[1], bp, len + 1);
 		data.size = len + 2;
 
-		/* Store record under name field. */
-		if ((p = strchr(bp, ':')) == NULL) {
-			warn("no name field: %.*s", MIN(len, 20), bp);
-			continue;
-		}
+		/* Store the record under the name field. */
 		key.data = bp;
 		key.size = p - bp;
 
