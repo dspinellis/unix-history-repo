@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_sig.c 1.4 92/01/20$
  *
- *	@(#)hpux_sig.c	8.2 (Berkeley) %G%
+ *	@(#)hpux_sig.c	8.3 (Berkeley) %G%
  */
 
 /*
@@ -339,7 +339,7 @@ struct ohpuxssig_args {
 	int	signo;
 	sig_t	fun;
 };
-ohpuxssig(p, uap, retval)
+compat_43_hpuxssig(p, uap, retval)
 	struct proc *p;
 	struct ohpuxssig_args *uap;
 	int *retval;
