@@ -11,25 +11,24 @@
  *
  * from: Utah $Hdr: mem.c 1.13 89/10/08$
  *
- *	@(#)mem.c	7.3 (Berkeley) %G%
+ *	@(#)mem.c	7.4 (Berkeley) %G%
  */
 
 /*
  * Memory special file
  */
 
-#include "sys/param.h"
-#include "sys/user.h"
-#include "sys/conf.h"
-#include "sys/buf.h"
-#include "sys/systm.h"
-#include "sys/cmap.h"
-#include "sys/uio.h"
-#include "sys/malloc.h"
+#include "param.h"
+#include "conf.h"
+#include "buf.h"
+#include "systm.h"
+#include "malloc.h"
 
 #include "../include/cpu.h"
 
 #include "vm/vm_param.h"
+#include "vm/lock.h"
+#include "vm/vm_statistics.h"
 #include "vm/pmap.h"
 #include "vm/vm_prot.h"
 
@@ -87,10 +86,9 @@ mmrw(dev, uio, flags)
 
 /* minor device 2 is EOF/RATHOLE */
 		case 2:
-			if (uio->uio_rw == UIO_READ)
-				return (0);
-			c = iov->iov_len;
-			break;
+			if (uio->uio_rw == UIO_WRITE)
+				uio->uio_resid = 0;
+			return (0);
 
 /* minor device 12 (/dev/zero) is source of nulls on read, rathole on write */
 		case 12:
