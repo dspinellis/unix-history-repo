@@ -11,9 +11,9 @@
  * %sccs.include.redist.c%
  *
  * from: Utah $Hdr: locore.s 1.62 92/01/20$
- * from: hp300/hp300/locore.s	7.22 (Berkeley) 2/18/93
+ * from: hp300/hp300/locore.s	8.5 (Berkeley) 11/14/93
  *
- *	@(#)locore.s	8.3 (Berkeley) %G%
+ *	@(#)locore.s	8.4 (Berkeley) %G%
  */
 
 /*
@@ -558,7 +558,7 @@ _lev5intr:
 	.globl	_panicstr,_badkstack
 	cmpl	#_kstack+NBPG,sp	| are we still in stack page?
 	jcc	Lstackok		| yes, continue normally
-	tstl	_curproc		| if !curproc could have switch_exit'ed,
+	tstl	_curproc		| if !curproc could have switch_exited,
 	jeq	Lstackok		|     might be on tmpstk
 	tstl	_panicstr		| have we paniced?
 	jne	Lstackok		| yes, do not re-panic
@@ -910,11 +910,25 @@ Lnocache0:
 	movw	#PSL_LOWIPL,sr		| lower SPL
 	movl	d7,_boothowto		| save reboot flags
 	movl	d6,_bootdev		|   and boot device
-	jbsr	_main			| call main()
-
-/* proc[1] == init now running here;
- * create a null exception frame and return to user mode in icode
+/*
+ * Create a fake exception frame that returns to user mode,
+ * make space for the rest of a fake saved register set, and
+ * pass the first available RAM and a pointer to the register
+ * set to "main()".  "main()" will call "icode()", which fakes
+ * an "execve()" system call, which is why we need to do that
+ * ("main()" sets "u.u_ar0" to point to the register set).
+ * When "main()" returns, we're running in process 1 and have
+ * successfully faked the "execve()".  We load up the registers from
+ * that set; the "rte" loads the PC and PSR, which jumps to "init".
  */
+  	clrw	sp@-			| vector offset/frame type
+	clrl	sp@-			| PC - filled in by "execve"
+  	movw	#PSL_USER,sp@-		| in user mode
+	clrw	sp@-			| pad SR to longword
+	lea	sp@(-64),sp		| construct space for D0-D7/A0-A7
+	pea	sp@			| addr of space for D0
+	jbsr	_main			| main(firstaddr, r0)
+	addql	#4,sp			| pop args
 #if defined(LUNA2)
 	cmpl	#-2,_mmutype		| 68040?
 	jne	Lnoflush		| no, skip
@@ -922,10 +936,11 @@ Lnocache0:
 	.word	0xf498			| cinva ic
 Lnoflush:
 #endif
-	clrw	sp@-			| vector offset/frame type
-	clrl	sp@-			| return to icode location 0
-	movw	#PSL_USER,sp@-		| in user mode
-	rte
+	movl	sp@(60),a0		| grab and load
+	movl	a0,usp			|   user SP
+	moveml	sp@+,#0x7FFF		| load most registers (all but SSP)
+	addql	#6,sp			| pop SSP and align word
+  	rte
 
 /*
  * Signal "trampoline" code (18 bytes).  Invoked from RTE setup by sendsig().
@@ -956,56 +971,24 @@ _sigcodetrap:
 _esigcode:
 
 /*
- * Icode is copied out to process 1 to exec init.
- * If the exec fails, process 1 exits.
- */
-	.globl	_icode,_szicode
-	.text
-_icode:
-	clrl	sp@-
-	pea	pc@((argv-.)+2)
-	pea	pc@((init-.)+2)
-	clrl	sp@-
-	moveq	#SYS_execve,d0
-	trap	#0
-	moveq	#SYS_exit,d0
-	trap	#0
-init:
-	.asciz	"/sbin/init"
-	.even
-argv:
-	.long	init+6-_icode		| argv[0] = "init" ("/sbin/init" + 6)
-	.long	eicode-_icode		| argv[1] follows icode after copyout
-	.long	0
-eicode:
-
-_szicode:
-	.long	_szicode-_icode
-
-/*
  * Primitives
  */ 
 
 #ifdef __STDC__
-#define EXPORT(name)	.globl _ ## name; _ ## name:
+#define EXPORT(name)		.globl _ ## name; _ ## name:
 #else
-#define EXPORT(name)	.globl _/**/name; _/**/name:
+#define EXPORT(name)		.globl _/**/name; _/**/name:
 #endif
 #ifdef GPROF
 #if __GNUC__ >= 2
-#define	ENTRY(name) \
-	EXPORT(name) link a6,\#0; jbsr mcount; unlk a6
+#define		ENTRY(name)		EXPORT(name) link a6,\#0; jbsr mcount; unlk a6
 #else
-#define	ENTRY(name) \
-	EXPORT(name) link a6,#0; jbsr mcount; unlk a6
+#define		ENTRY(name)		EXPORT(name) link a6,#0; jbsr mcount; unlk a6
 #endif
-#define ALTENTRY(name, rname) \
-	ENTRY(name); jra rname+12
+#define ALTENTRY(name, rname) ENTRY(name); jra rname+12
 #else
-#define	ENTRY(name) \
-	EXPORT(name)
-#define ALTENTRY(name, rname) \
-	ENTRY(name)
+#define		ENTRY(name)		EXPORT(name)
+#define ALTENTRY(name, rname)		ENTRY(name)
 #endif
 
 /*
@@ -1015,11 +998,44 @@ ENTRY(__main)
 	rts
 
 /*
+ * copypage(fromaddr, toaddr)
+ *
+ * Optimized version of bcopy for a single page-aligned NBPG byte copy.
+ */
+ENTRY(copypage)
+	movl	sp@(4),a0		| source address
+	movl	sp@(8),a1		| destination address
+	movl	#NBPG/32,d0		| number of 32 byte chunks
+#if defined(LUNA2)
+	cmpl	#-2,_mmutype		| 68040?
+	jne	Lmlloop			| no, use movl
+Lm16loop:
+	.long	0xf6209000		| move16 a0@+,a1@+
+	.long	0xf6209000		| move16 a0@+,a1@+
+	subql	#1,d0
+	jne	Lm16loop
+	rts
+#endif
+Lmlloop:
+	movl	a0@+,a1@+
+	movl	a0@+,a1@+
+	movl	a0@+,a1@+
+	movl	a0@+,a1@+
+	movl	a0@+,a1@+
+	movl	a0@+,a1@+
+	movl	a0@+,a1@+
+	movl	a0@+,a1@+
+	subql	#1,d0
+	jne	Lmlloop
+	rts
+
+/*
  * copyinstr(fromaddr, toaddr, maxlength, &lencopied)
  *
  * Copy a null terminated string from the user address space into
  * the kernel address space.
- * NOTE: maxlength must be < 64K
+ *
+ * NOTE: maxlength must be < 64K (due to use of DBcc)
  */
 ENTRY(copyinstr)
 	movl	_curpcb,a0		| current pcb
@@ -1101,7 +1117,8 @@ Lcosflt2:
  *
  * Copy a null terminated string from one point to another in
  * the kernel address space.
- * NOTE: maxlength must be < 64K
+ *
+ * NOTE: maxlength must be < 64K (due to use of DBcc)
  */
 ENTRY(copystr)
 	movl	sp@(4),a0		| a0 = fromaddr
@@ -1144,104 +1161,110 @@ Lcsflt2:
  * fixing this code!
  */
 ENTRY(copyin)
+	movl	sp@(12),d0		| get size
+#ifdef MAPPEDCOPY
+	.globl	_mappedcopysize,_mappedcopyin
+	cmpl	_mappedcopysize,d0	| size >= mappedcopysize
+	jcc	_mappedcopyin		| yes, go do it the new way
+#endif
 	movl	d2,sp@-			| scratch register
 	movl	_curpcb,a0		| current pcb
 	movl	#Lciflt,a0@(PCB_ONFAULT) | set up to catch faults
-	movl	sp@(16),d2		| check count
+	tstl	d0			| check count
 	jlt	Lciflt			| negative, error
 	jeq	Lcidone			| zero, done
 	movl	sp@(8),a0		| src address
 	movl	sp@(12),a1		| dest address
-	movl	a0,d0
-	btst	#0,d0			| src address odd?
+	movl	a0,d2
+	btst	#0,d2			| src address odd?
 	jeq	Lcieven			| no, go check dest
 	movsb	a0@+,d1			| yes, get a byte
 	nop
 	movb	d1,a1@+			| put a byte
-	subql	#1,d2			| adjust count
+	subql	#1,d0			| adjust count
 	jeq	Lcidone			| exit if done
 Lcieven:
-	movl	a1,d0
-	btst	#0,d0			| dest address odd?
-	jne	Lcibyte			| yes, must copy by bytes
-	movl	d2,d0			| no, get count
-	lsrl	#2,d0			| convert to longwords
-	jeq	Lcibyte			| no longwords, copy bytes
-	subql	#1,d0			| set up for dbf
+	movl	a1,d2
+	btst	#0,d2			| dest address odd?
+	jne	Lcibloop		| yes, must copy by bytes
+	movl	d0,d2			| no, get count
+	lsrl	#2,d2			| convert to longwords
+	jeq	Lcibloop		| no longwords, copy bytes
 Lcilloop:
 	movsl	a0@+,d1			| get a long
 	nop
 	movl	d1,a1@+			| put a long
-	dbf	d0,Lcilloop		| til done
-	andl	#3,d2			| what remains
+	subql	#1,d2
+	jne	Lcilloop		| til done
+	andl	#3,d0			| what remains
 	jeq	Lcidone			| all done
-Lcibyte:
-	subql	#1,d2			| set up for dbf
 Lcibloop:
 	movsb	a0@+,d1			| get a byte
 	nop
 	movb	d1,a1@+			| put a byte
-	dbf	d2,Lcibloop		| til done
+	subql	#1,d0
+	jne	Lcibloop		| til done
 Lcidone:
-	moveq	#0,d0			| success
-Lciexit:
 	movl	_curpcb,a0		| current pcb
 	clrl	a0@(PCB_ONFAULT) 	| clear fault catcher
 	movl	sp@+,d2			| restore scratch reg
 	rts
 Lciflt:
 	moveq	#EFAULT,d0		| got a fault
-	jra	Lciexit
+	jra	Lcidone
 
 ENTRY(copyout)
+	movl	sp@(12),d0		| get size
+#ifdef MAPPEDCOPY
+	.globl	_mappedcopysize,_mappedcopyout
+	cmpl	_mappedcopysize,d0	| size >= mappedcopysize
+	jcc	_mappedcopyout		| yes, go do it the new way
+#endif
 	movl	d2,sp@-			| scratch register
 	movl	_curpcb,a0		| current pcb
 	movl	#Lcoflt,a0@(PCB_ONFAULT) | catch faults
-	movl	sp@(16),d2		| check count
+	tstl	d0			| check count
 	jlt	Lcoflt			| negative, error
 	jeq	Lcodone			| zero, done
 	movl	sp@(8),a0		| src address
 	movl	sp@(12),a1		| dest address
-	movl	a0,d0
-	btst	#0,d0			| src address odd?
+	movl	a0,d2
+	btst	#0,d2			| src address odd?
 	jeq	Lcoeven			| no, go check dest
 	movb	a0@+,d1			| yes, get a byte
 	movsb	d1,a1@+			| put a byte
 	nop
-	subql	#1,d2			| adjust count
+	subql	#1,d0			| adjust count
 	jeq	Lcodone			| exit if done
 Lcoeven:
-	movl	a1,d0
-	btst	#0,d0			| dest address odd?
-	jne	Lcobyte			| yes, must copy by bytes
-	movl	d2,d0			| no, get count
-	lsrl	#2,d0			| convert to longwords
-	jeq	Lcobyte			| no longwords, copy bytes
-	subql	#1,d0			| set up for dbf
+	movl	a1,d2
+	btst	#0,d2			| dest address odd?
+	jne	Lcobloop		| yes, must copy by bytes
+	movl	d0,d2			| no, get count
+	lsrl	#2,d2			| convert to longwords
+	jeq	Lcobloop		| no longwords, copy bytes
 Lcolloop:
 	movl	a0@+,d1			| get a long
 	movsl	d1,a1@+			| put a long
 	nop
-	dbf	d0,Lcolloop		| til done
-	andl	#3,d2			| what remains
+	subql	#1,d2
+	jne	Lcolloop		| til done
+	andl	#3,d0			| what remains
 	jeq	Lcodone			| all done
-Lcobyte:
-	subql	#1,d2			| set up for dbf
 Lcobloop:
 	movb	a0@+,d1			| get a byte
 	movsb	d1,a1@+			| put a byte
 	nop
-	dbf	d2,Lcobloop		| til done
+	subql	#1,d0
+	jne	Lcobloop		| til done
 Lcodone:
-	moveq	#0,d0			| success
-Lcoexit:
 	movl	_curpcb,a0		| current pcb
 	clrl	a0@(PCB_ONFAULT) 	| clear fault catcher
 	movl	sp@+,d2			| restore scratch reg
 	rts
 Lcoflt:
 	moveq	#EFAULT,d0		| got a fault
-	jra	Lcoexit
+	jra	Lcodone
 
 /*
  * non-local gotos
@@ -1268,6 +1291,7 @@ ENTRY(longjmp)
  * by 4 actually to shrink the 0-127 range of priorities into the 32 available
  * queues.
  */
+
 	.globl	_whichqs,_qs,_cnt,_panic
 	.globl	_curproc,_want_resched
 
@@ -1367,16 +1391,16 @@ ENTRY(switch_exit)
 	jra	_cpu_switch
 
 /*
- * When no processes are on the runq, Swtch branches to idle
+ * When no processes are on the runq, Swtch branches to Idle
  * to wait for something to come ready.
  */
 	.globl	idle
-Lidle:
-	stop	#PSL_LOWIPL
 idle:
+	stop	#PSL_LOWIPL
+Idle:
 	movw	#PSL_HIGHIPL,sr
 	tstl	_whichqs
-	jeq	Lidle
+	jeq	idle
 	movw	#PSL_LOWIPL,sr
 	jra	Lsw1
 
@@ -1419,7 +1443,7 @@ Lswchk:
 	addqb	#1,d0
 	cmpb	#32,d0
 	jne	Lswchk
-	jra	idle
+	jra	Idle
 Lswfnd:
 	movw	#PSL_HIGHIPL,sr		| lock out interrupts
 	movl	a0@,d1			| and check again...
@@ -1782,7 +1806,6 @@ ENTRY(TBIS)
 	rts
 Lmotommu4:
 #endif
-
 	movl	sp@(4),a0		| get addr to flush
 	pflush	#0,#0,a0@		| flush address from both sides
 	movl	#DC_CLEAR,d0
@@ -1940,7 +1963,6 @@ ENTRY(ecacheoff)
 /*
  * Get callers current SP value.
  * Note that simply taking the address of a local variable in a C function
-
  * doesn't work because callee saved registers may be outside the stack frame
  * defined by A6 (e.g. GCC generated code).
  */
