@@ -1,4 +1,4 @@
-# symbols.raw 4.7 83/03/10
+# symbols.raw 4.8 83/05/03
 	_version
 #dmesg
 	_msgbuf
@@ -70,7 +70,6 @@
 	_Sysmap
 	_Syssize
 	_ifnet
-	_hosts
 	_rthost
 	_rtnet
 	_icmpstat
