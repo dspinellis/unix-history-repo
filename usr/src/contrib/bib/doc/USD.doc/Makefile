@@ -1,27 +1,15 @@
-#
-# Copyright (c) 1986 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
-#
-#	@(#)Makefile	6.3 (Berkeley) 5/28/90
-#
-SRCS=	bibdoc.ms
-MACROS=	-i char.macros -ms
-PRINTER=Pps
-BIB=	bib
-TROFF=	ditroff -${PRINTER}
+#	@(#)Makefile	6.5 (Berkeley) %G%
 
-paper:	paper.${PRINTER} INDEX
-	lpr -${PRINTER} -n paper.${PRINTER}
 
-paper.${PRINTER}: ${SRCS} INDEX
-	${BIB} ${SRCS} | tbl | ${TROFF} ${MACROS} -t > paper.${PRINTER}
+DIR=	usd/28.bib
+SRCS=	char.macros bibdoc.ms
+MACROS=	-ms
+CLEANFILES+=INDEX
 
-clean:
-	rm -f paper.[PT]* *.spell errs Errs make.out
-
-spell:	bibdoc.ms
-	spell bibdoc.ms | sort | comm -23 - spell.ok > bibdoc.spell 
+paper.ps: ${SRCS} INDEX
+	/usr/contrib/bin/bib -Tib ${SRCS} | ${TBL} | ${ROFF} > ${.TARGET}
 
 INDEX:	testrefs
-	invert testrefs
+	/usr/contrib/bin/invert testrefs
+
+.include <bsd.doc.mk>
