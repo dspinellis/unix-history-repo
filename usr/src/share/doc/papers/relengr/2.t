@@ -1,4 +1,4 @@
-.\"	@(#)2.t	1.5	(Copyright 1989 M. K. McKusick)	89/02/23
+.\"	@(#)2.t	1.6	(Copyright 1989 M. K. McKusick)	89/02/23
 .NH
 System Development
 .PP
@@ -19,7 +19,9 @@ project as opposed to its difficulty;
 the most important are selected for inclusion in each new release.
 Usually there is a prototype available from a group outside
 .SM CSRG .
-If possible, this prototype is obtained to use as a starting base
+Because of the limited staff at
+.SM CSRG ,
+this prototype is obtained to use as a starting base
 for integration into the
 .SM BSD
 system.
@@ -38,6 +40,16 @@ This staff person is also responsible for related documentation,
 including manual pages.
 Many projects proceed in parallel,
 interacting with other projects as their paths cross.
+.PP
+All source code, documentation, and auxiliary files are kept
+under a source code control system.
+During development,
+this control system is critical for notifying people
+when they are colliding with other ongoing projects.
+Even more important, however,
+is the audit trail maintained by the control system that
+is critical to the release engineering phase of the project
+described in the next section.
 .PP
 Much of the development of
 .SM BSD
@@ -73,16 +85,6 @@ are made only by
 .SM CSRG
 personnel, although the changes are often suggested by the larger community.
 .PP
-All source code, documentation, and auxiliary files are kept
-under a source code control system.
-During development,
-this control system is critical for notifying people
-when they are colliding with other ongoing projects.
-Even more important, however,
-is the audit trail maintained by the control system that
-is critical to the release engineering phase of the project
-described in the next section.
-.PP
 The development phase continues until
 .SM CSRG
 decides that it is appropriate to make a release.
@@ -106,4 +108,4 @@ causing them to ignore the releases.
 Finally,
 the process of release engineering is long and tedious.
 Frequent releases slow the rate of development and
-causes undue tedium to the staff.
+cause undue tedium to the staff.

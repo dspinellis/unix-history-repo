@@ -1,4 +1,4 @@
-.\"	@(#)3.t	1.5	(Copyright 1989 M. K. McKusick)	89/02/23
+.\"	@(#)3.t	1.6	(Copyright 1989 M. K. McKusick)	89/02/23
 .NH
 System Release
 .PP
@@ -8,9 +8,11 @@ all currently unfinished projects are evaluated.
 This evaluation involves computing the time required to complete
 the project as opposed to how important the project is to the
 upcoming release.
-Projects that are not selected for completion are ``snap-shotted''
-and backed-out for completion in a future release; the remaining
-unfinished projects are brought to orderly completion.
+Projects that are not selected for completion are
+removed from the distribution branch of the source code control system
+and saved on branch deltas so they can be retrieved,
+completed, and merged into a future release;
+the remaining unfinished projects are brought to orderly completion.
 .PP
 Developments from
 .SM CSRG
@@ -56,7 +58,7 @@ and the correspondence between the sources and binaries
 is only loosely tracked.
 People outside
 .SM CSRG
-that are helping with the distribution are free to
+who are helping with the distribution are free to
 change their parts of the distribution at will.
 .PP
 During this period the newly forming distribution is
@@ -218,7 +220,7 @@ or
 .PN MH )
 in previous releases to see if they wish to
 make any revisions to their software.
-For those that do,
+For those who do,
 the new software has to be obtained,
 and tested to verify that it compiles and runs
 correctly on the system to be released.
@@ -315,9 +317,11 @@ to find those that are relevant and devising the minimal
 reasonable set of changes to fix them.
 After throughly testing the fix, it is listed in the update log for
 .PN /nbsd .
-One person's responsibility is to do the update of
+One person at
+.SM CSRG
+is responsible for doing the update of
 .PN /nbsd
-and to ensure that everything affected by the change is rebuilt and tested.
+and ensuring that everything affected by the change is rebuilt and tested.
 Thus, a change to a C library routine requires that the entire
 system be rebuilt.
 .PP
