@@ -1,15 +1,15 @@
-\" Copyright (c) 1980, 1986, 1988, 1993
+.\" Copyright (c) 1980, 1986, 1988, 1993
 .\"	 The Regents of the University of California.  All rights reserved.
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)3.t	6.29 (Berkeley) %G%
+.\"	@(#)3.t	6.30 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
 .ds RH "Upgrading a \*(Ps System
 .ds CF \*(Dy
-.Sh 1 "Upgrading a \*(Ps System"
+.Sh 1 "Upgrading a \*(Ps system"
 .PP
 This section describes the procedure for upgrading a \*(Ps
 system to \*(4B.  This procedure may vary according to the version of
@@ -273,7 +273,7 @@ lfC l.
 /bin	(user binaries needed when single-user)
 /sbin	(root binaries needed when single-user)
 /local	(locally added binaries used only by this machine)
-/tmp	(mount point for memory based file system)
+/tmp	(mount point for memory based filesystem)
 /dev	(local devices)
 /home	(mount point for AMD)
 /var	(mount point for per-machine variable directories)
@@ -1277,10 +1277,10 @@ The format of
 has changed from previous \*(Bs releases
 to a blank-separated format to allow colons in pathnames.
 .PP
-A new local file system, the log-structured file system (LFS),
+A new local filesystem, the log-structured filesystem (LFS),
 has been added to the system.
 It provides near disk-speed output and fast crash recovery.
-This work is based, in part, on the LFS file system created
+This work is based, in part, on the LFS filesystem created
 for the Sprite operating system at Berkeley.
 While the kernel implementation is almost complete,
 only some of the utilities to support the
@@ -1293,7 +1293,7 @@ and
 .Xr lfs_cleanerd (8)
 for more information.
 For a in-depth description of the implementation and performance
-characteristics of log-structured file systems in general,
+characteristics of log-structured filesystems in general,
 and this one in particular, see Dr. Margo Seltzer's doctoral thesis,
 available from the University of California Computer Science Department.
 .PP
@@ -1671,7 +1671,7 @@ The
 .Xr fts (3)
 functions will do either physical or logical traversal of
 a file hierarchy as well as handle essentially infinite depth
-file systems and file systems with cycles.
+filesystems and filesystems with cycles.
 All the utilities in \*(4B which traverse file hierarchies
 have been converted to use
 .Xr fts (3).
@@ -1778,7 +1778,7 @@ Normally, this replacement resulted in significant performance
 improvements and the increase of the limits imposed on data by
 the utility as well.
 .PP
-Examples of specific additions and changes are as follows:
+A summary of specific additions and changes are as follows:
 .TS
 lfC l.
 amd	An auto-mounter implementation.
@@ -1797,10 +1797,10 @@ column	A columnar text formatting utility.
 cp	POSIX 1003.2 compatible, able to copy special files.
 csh	Freely redistributable and 8-bit clean.
 date	User specified formats added.
-dd	New EBCDIC conversion tables, major performance improvments.
+dd	New EBCDIC conversion tables, major performance improvements.
 dev_mkdb	Hashed interface to devices.
 dm	Dungeon master.
-find	Several new options and primaries, major performance improvments.
+find	Several new options and primaries, major performance improvements.
 fstat	Utility displaying information on files open on the system.
 ftpd	Connection logging added.
 hexdump	A binary dump utility, superseding od.
@@ -1827,7 +1827,7 @@ printf	The POSIX 1003.2 replacement for echo.
 roff	Replaced by groff; see /usr/src/old/roff for the historic versions.
 rs	New utility for text formatting.
 shar	An archive building utility.
-sysctl	MIB-style interface to kernel state.
+sysctl	MIB-style interface to system state.
 tcopy	Fast tape-to-tape copying and verification.
 touch	Time and file reference specifications.
 tput	The POSIX 1003.2 terminal display utility.
