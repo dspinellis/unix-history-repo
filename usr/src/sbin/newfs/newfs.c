@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	6.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)newfs.c	6.6 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -356,32 +356,32 @@ next:
 	if (rpm == 0) {
 		rpm = lp->d_rpm;
 		if (rpm <= 0)
-			fatal("%s: no default rpm", argv[1]);
+			rpm = 3600;
 	}
 	if (ntracks == 0) {
 		ntracks = lp->d_ntracks;
 		if (ntracks <= 0)
-			fatal("%s: no default #tracks", argv[1]);
+			fatal("%s: no default #tracks", argv[0]);
 	}
 	if (nsectors == 0) {
 		nsectors = lp->d_nsectors;
 		if (nsectors <= 0)
-			fatal("%s: no default #sectors/track", argv[1]);
+			fatal("%s: no default #sectors/track", argv[0]);
 	}
 	if (sectorsize == 0) {
 		sectorsize = lp->d_secsize;
 		if (sectorsize <= 0)
-			fatal("%s: no default sector size", argv[1]);
+			fatal("%s: no default sector size", argv[0]);
 	}
 	if (trackskew == -1) {
 		trackskew = lp->d_trackskew;
 		if (trackskew < 0)
-			fatal("%s: no default track skew", argv[1]);
+			trackskew = 0;
 	}
 	if (interleave == 0) {
 		interleave = lp->d_interleave;
 		if (interleave <= 0)
-			fatal("%s: no default interleave", argv[1]);
+			interleave = 1;
 	}
 	if (fsize == 0) {
 		fsize = pp->p_fsize;
@@ -401,13 +401,13 @@ next:
 	if (trackspares == -1) {
 		trackspares = lp->d_sparespertrack;
 		if (trackspares < 0)
-			fatal("%s: no default spares/track", argv[1]);
+			trackspares = 0;
 	}
 	nphyssectors = nsectors + trackspares;
 	if (cylspares == -1) {
 		cylspares = lp->d_sparespercyl;
 		if (cylspares < 0)
-			fatal("%s: no default spares/cylinder", argv[1]);
+			cylspares = 0;
 	}
 	secpercyl = nsectors * ntracks - cylspares;
 	if (secpercyl != lp->d_secpercyl)
