@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	1.9 83/07/29";
+static	char *sccsid = "@(#)main.c	1.10 83/07/29";
 #endif
 
 #include "defs.h"
@@ -77,8 +77,10 @@ char **argv;
 	if (!fast) {
 		if (doconfig() < 0)
 			dodefault();
-		if (selwin != 0)
+		if (selwin != 0) {
 			wwsetcurwin(selwin);
+			Woncursor(selwin->ww_win, 0);
+		}
 	}
 	while (!quit) {
 		if (curwin == cmdwin) {
