@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	1.2 (Berkeley) %G%
+ *	@(#)locore.s	1.3 (Berkeley) %G%
  */
 
 #include "psl.h"
@@ -23,6 +23,9 @@
 	.set	SYSPDROFF,0x3F8		# Page dir
 
 	.set	IOPHYSmem,0xa0000
+
+/* IBM "compatible" nop */
+#define	NOP	jmp 7f ; nop ; 7:
 
 /*
  * User structure is UPAGES at top of user space.
@@ -499,17 +502,17 @@ ___divsi3:
 	.globl	_inb
 _inb:	movl	4(%esp),%edx
 	subl	%eax,%eax	# clr eax
-	nop
+	NOP
 	inb	%dx,%al
-	nop
+	NOP
 	ret
 
 	.globl	_outb
 _outb:	movl	4(%esp),%edx
 	movl	8(%esp),%eax
-	nop
+	NOP
 	outb	%al,%dx
-	nop
+	NOP
 	ret
 
 	#
@@ -536,23 +539,76 @@ _blkclr:
 	#
 
 	.globl	_bcopy
-	.globl	_copyout
-	.globl	_copyin
 _bcopy:
-_copyout:
-_copyin:
 	pushl	%esi
 	pushl	%edi
 	movl	12(%esp),%esi
 	movl	16(%esp),%edi
 	movl	20(%esp),%ecx
-	cld
+	# shll	$2,%ecx
+	# cld
+	# rep
+	# movsl
+	# movl	20(%esp),%ecx
+	# andl	$3,%ecx
 	rep
 	movsb
 	popl	%edi
 	popl	%esi
-	movl	%ecx,%eax
+	xorl	%eax,%eax
 	ret
+
+	.globl	_copyout
+_copyout:
+	movl	$cpyflt,_nofault	# in case we page/protection violate
+	pushl	%esi
+	pushl	%edi
+	movl	12(%esp),%esi
+	movl	16(%esp),%edi
+	movl	20(%esp),%ecx
+	# shrl	$2,%ecx
+	cld
+	# rep
+	# movsl
+	# movl	20(%esp),%ecx
+	# andl	$3,%ecx
+	rep
+	movsb
+	popl	%edi
+	popl	%esi
+	xorl	%eax,%eax
+	movl	%eax,_nofault
+	ret
+
+	.globl	_copyin
+_copyin:
+	movl	$cpyflt,_nofault	# in case we page/protection violate
+	pushl	%esi
+	pushl	%edi
+	movl	12(%esp),%esi
+	movl	16(%esp),%edi
+	movl	20(%esp),%ecx
+	# shrl	$2,%ecx
+	cld
+	# rep
+	# movsl
+	# movl	20(%esp),%ecx
+	# andl	$3,%ecx
+	rep
+	movsb
+	popl	%edi
+	popl	%esi
+	xorl	%eax,%eax
+	movl	%eax,_nofault
+	ret
+
+cpyflt: popl	%edi
+	popl	%esi
+	xorl	%eax,%eax
+	movl	%eax,_nofault
+	movl	$EFAULT,%eax
+	ret
+
 
 	# insw(port,addr,cnt)
 	.globl	_insw
@@ -562,9 +618,9 @@ _insw:
 	movl	12(%esp),%edi
 	movl	16(%esp),%ecx
 	cld
-	nop
+	NOP
 	.byte 0x66,0xf2,0x6d	# rep insw
-	nop
+	NOP
 	movl	%edi,%eax
 	popl	%edi
 	ret
@@ -577,9 +633,9 @@ _outsw:
 	movl	12(%esp),%esi
 	movl	16(%esp),%ecx
 	cld
-	nop
+	NOP
 	.byte 0x66,0xf2,0x6f	# rep outsw
-	nop
+	NOP
 	movl	%esi,%eax
 	popl	%esi
 	ret
@@ -596,7 +652,7 @@ _lgdt:
 	movw	%ax,xxx
 	lgdt	xxx
 	jmp	1f
-	nop
+	NOP
 1:	movw	$0x10,%ax
 	movw	%ax,%ds
 	movw	%ax,%es
