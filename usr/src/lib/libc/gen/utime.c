@@ -1,25 +1,25 @@
-/*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)utime.c	5.2 (Berkeley) %G%";
-#endif LIBC_SCCS and not lint
+static char sccsid[] = "@(#)utime.c	5.3 (Berkeley) %G%";
+#endif /* LIBC_SCCS and not lint */
 
 #include <sys/time.h>
-/*
- * Backwards compatible utime.
- */
+#include <utime.h>
 
-utime(name, otv)
-	char *name;
-	int otv[];
+utime(path, times)
+	char *path;
+	struct utimbuf *times;
 {
 	struct timeval tv[2];
 
-	tv[0].tv_sec = otv[0]; tv[0].tv_usec = 0;
-	tv[1].tv_sec = otv[1]; tv[1].tv_usec = 0;
-	return (utimes(name, tv));
+	tv[0].tv_sec = times->actime;
+	tv[1].tv_sec = times->modtime;
+	tv[0].tv_usec = tv[1].tv_usec = 0;
+	return(utimes(path, tv));
 }
