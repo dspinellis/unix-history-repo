@@ -4,12 +4,12 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_subr.c	8.4 (Berkeley) %G%
+ *	@(#)ffs_subr.c	8.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
 #ifndef KERNEL
-typedef u_int32_t ufs_daddr_t;
+#include <ufs/ufs/dinode.h>
 #include <ufs/ffs/fs.h>
 #else
 
