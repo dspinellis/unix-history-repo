@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-static char SccsId[] = "@(#)recipient.c	3.7	%G%";
+static char SccsId[] = "@(#)recipient.c	3.8	%G%";
 
 /*
 **  SENDTO -- Designate a send list.
@@ -104,6 +104,13 @@ recipient(a)
 			a->q_mailer = MN_PROG;
 			m = Mailer[MN_PROG];
 			a->q_user++;
+# ifdef PARANOID
+			if (AliasLevel <= 0)
+			{
+				usrerr("Cannot mail directly to programs");
+				a->q_flags |= QDONTSEND;
+			}
+# endif PARANOID
 		}
 	}
 

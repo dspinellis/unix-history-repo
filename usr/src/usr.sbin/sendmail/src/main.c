@@ -5,7 +5,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.25	%G%";
+static char	SccsId[] = "@(#)main.c	3.26	%G%";
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -160,6 +160,7 @@ main(argc, argv)
 	char *aliasname;
 	register int i;
 	bool verifyonly = FALSE;	/* only verify names */
+	bool safecf = TRUE;		/* this conf file is sys default */
 	char pbuf[10];			/* holds pid */
 	char tbuf[10];			/* holds "current" time */
 	char cbuf[5];			/* holds hop count */
@@ -171,6 +172,8 @@ main(argc, argv)
 
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
 		(void) signal(SIGINT, finis);
+	if (signal(SIGHUP, SIG_IGN) != SIG_IGN)
+		(void) signal(SIGHUP, finis);
 	(void) signal(SIGTERM, finis);
 	setbuf(stdout, (char *) NULL);
 # ifdef LOG
@@ -328,6 +331,7 @@ main(argc, argv)
 				cfname = "sendmail.cf";
 			else
 				cfname = &p[2];
+			safecf = FALSE;
 			break;
 
 		  case 'A':	/* select alias file */
@@ -396,7 +400,7 @@ main(argc, argv)
 	**  Read control file.
 	*/
 
-	readcf(cfname);
+	readcf(cfname, safecf);
 
 # ifndef V6
 	p = getenv("HOME");
@@ -407,7 +411,7 @@ main(argc, argv)
 		define('z', p);
 		(void) expand("$z/.mailcf", cfbuf, &cfbuf[sizeof cfbuf - 1]);
 		if (access(cfbuf, 2) == 0)
-			readcf(cfbuf);
+			readcf(cfbuf, FALSE);
 	}
 # endif V6
 

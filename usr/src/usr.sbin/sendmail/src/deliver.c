@@ -5,7 +5,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.29	%G%";
+static char SccsId[] = "@(#)deliver.c	3.30	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a particular address.
@@ -342,9 +342,11 @@ sendoff(m, pvp, editfcn)
 	{
 		/* child -- set up input & exec mailer */
 		/* make diagnostic output be standard output */
+		(void) signal(SIGINT, SIG_DFL);
+		(void) signal(SIGHUP, SIG_DFL);
+		(void) signal(SIGTERM, SIG_DFL);
 		(void) close(2);
 		(void) dup(1);
-		(void) signal(SIGINT, SIG_IGN);
 		(void) close(0);
 		if (dup(pvect[0]) < 0)
 		{
@@ -354,7 +356,10 @@ sendoff(m, pvp, editfcn)
 		(void) close(pvect[0]);
 		(void) close(pvect[1]);
 		if (!bitset(M_RESTR, m->m_flags))
+		{
 			(void) setuid(getuid());
+			(void) setgid(getgid());
+		}
 # ifndef VFORK
 		/*
 		**  We have to be careful with vfork - we can't mung up the
@@ -630,6 +635,9 @@ mailfile(filename)
 		/* child -- actually write to file */
 		(void) setuid(getuid());
 		(void) setgid(getgid());
+		(void) signal(SIGINT, SIG_DFL);
+		(void) signal(SIGHUP, SIG_DFL);
+		(void) signal(SIGTERM, SIG_DFL);
 		f = fopen(filename, "a");
 		if (f == NULL)
 			exit(EX_CANTCREAT);
@@ -654,6 +662,8 @@ mailfile(filename)
 				break;
 			}
 		}
+		if ((stat & 0377) != 0)
+			stat = EX_UNAVAILABLE << 8;
 		return ((stat >> 8) & 0377);
 	}
 }
