@@ -1,4 +1,4 @@
-.\"	@(#)tr.1	6.1 (Berkeley) %G%
+.\"	@(#)tr.1	6.2 (Berkeley) %G%
 .\"
 .TH TR 1 ""
 .AT 3
@@ -29,7 +29,7 @@ may be used:
 complements the set of characters in
 .I string1
 with respect to the universe of characters
-whose ASCII codes are 01 through 0377 octal;
+whose ASCII codes are 0 through 0377 octal;
 .B \-d
 deletes all input characters in
 .I string1;
@@ -53,18 +53,12 @@ A `\e' followed by any other character stands
 for that character.
 .PP
 The following example creates a list of all
-the words in `file1' one per line in `file2',
-where a word is taken to be a maximal string of alphabetics.
+the words in `file1', each on a separate line, in `file2',
+where a word is taken to be a string of alphabetics.
 The second string is quoted
 to protect `\e' from the Shell.
 012 is the ASCII code for newline.
 .IP
 tr \-cs A\-Za\-z \'\e012\' <file1 >file2
 .SH "SEE ALSO"
-ed(1), ascii(7), expand(1)
-.SH BUGS
-Won't handle ASCII NUL in
-.I string1
-or
-.I string2;
-always deletes NUL from input.
+ed(1), expand(1), ascii(7)
