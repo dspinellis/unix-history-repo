@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -54,9 +54,15 @@ sendall(e, mode)
 	struct flock lfd;
 #endif
 
-	if (bitset(EF_FATALERRS, e->e_flags))
+	/*
+	**  If we have had global, fatal errors, don't bother sending
+	**  the message at all if we are in SMTP mode.  Local errors
+	**  (e.g., a single address failing) will still cause the other
+	**  addresses to be sent.
+	*/
+
+	if (bitset(EF_FATALERRS, e->e_flags) && OpMode == MD_SMTP)
 	{
-		/* this will get a return message -- so don't send it */
 		e->e_flags |= EF_CLRQUEUE;
 		return;
 	}
@@ -451,38 +457,6 @@ sendenvelope(e, mode)
 		}
 	}
 	Verbose = oldverbose;
-
-	/*
-	**  Now run through and check for errors.
-	*/
-
-	if (mode == SM_VERIFY)
-	{
-		return;
-	}
-
-	for (q = e->e_sendqueue; q != NULL; q = q->q_next)
-	{
-		if (tTd(13, 3))
-		{
-			printf("Checking ");
-			printaddr(q, FALSE);
-		}
-
-		/* only send errors if the message failed */
-		if (!bitset(QBADADDR, q->q_flags) ||
-		    bitset(QDONTSEND, q->q_flags))
-			continue;
-
-		if (tTd(13, 3))
-			printf("FATAL ERRORS\n");
-
-		e->e_flags |= EF_FATALERRS;
-
-		if (q->q_owner == NULL && strcmp(e->e_from.q_paddr, "<>") != 0)
-			(void) sendtolist(e->e_from.q_paddr, NULL,
-					  &e->e_errorqueue, e);
-	}
 
 	if (mode == SM_FORK)
 		finis();

@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.3 (Berkeley) %G%
+ *	@(#)sendmail.h	8.4 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.3		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.4		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -302,7 +302,6 @@ ENVELOPE
 /* values for e_flags */
 #define EF_OLDSTYLE	000001		/* use spaces (not commas) in hdrs */
 #define EF_INQUEUE	000002		/* this message is fully queued */
-#define EF_TIMEOUT	000004		/* this message is too old */
 #define EF_CLRQUEUE	000010		/* disk copy is no longer needed */
 #define EF_SENDRECEIPT	000020		/* send a return receipt */
 #define EF_FATALERRS	000040		/* fatal errors occured */
@@ -312,6 +311,7 @@ ENVELOPE
 #define EF_VRFYONLY	001000		/* verify only (don't expand aliases) */
 #define EF_WARNING	002000		/* warning message has been sent */
 #define EF_QUEUERUN	004000		/* this envelope is from queue */
+#define EF_GLOBALERRS	010000		/* treat errors as global */
 
 EXTERN ENVELOPE	*CurEnv;	/* envelope currently being processed */
 /*
@@ -723,7 +723,6 @@ union bigsockaddr
 };
 
 #define SOCKADDR	union bigsockaddr
-
 /*
 **  Global variables.
 */
@@ -781,6 +780,7 @@ EXTERN bool	LogUsrErrs;	/* syslog user errors (e.g., SMTP RCPT cmd) */
 EXTERN bool	SendMIMEErrors;	/* send error messages in MIME format */
 EXTERN bool	MatchGecos;	/* look for user names in gecos field */
 EXTERN bool	UseErrorsTo;	/* use Errors-To: header (back compat) */
+EXTERN bool	TryNullMXList;	/* if we are the best MX, try host directly */
 EXTERN char	SpaceSub;	/* substitution for <lwsp> */
 EXTERN int	PrivacyFlags;	/* privacy flags */
 extern char	*ConfFile;	/* location of configuration file [conf.c] */

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)err.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)err.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -38,10 +38,6 @@ static char sccsid[] = "@(#)err.c	8.2 (Berkeley) %G%";
 **		sets ExitStat.
 */
 
-# ifdef lint
-int	sys_nerr;
-char	*sys_errlist[];
-# endif lint
 char	MsgBuf[BUFSIZ*2];	/* text of most recent message */
 
 static void fmtmsg();
@@ -295,7 +291,7 @@ puterrmsg(msg)
 
 	/* signal the error */
 	Errors++;
-	if (msg[0] == '5')
+	if (msg[0] == '5' && bitset(EF_GLOBALERRS, CurEnv->e_flags))
 		CurEnv->e_flags |= EF_FATALERRS;
 }
 /*
@@ -390,9 +386,11 @@ const char *
 errstring(errno)
 	int errno;
 {
-	extern const char *const sys_errlist[];
-	extern int sys_nerr;
 	static char buf[MAXLINE];
+# ifndef ERRLIST_PREDEFINED
+	extern char *sys_errlist[];
+	extern int sys_nerr;
+# endif
 # ifdef SMTP
 	extern char *SmtpPhase;
 # endif /* SMTP */
