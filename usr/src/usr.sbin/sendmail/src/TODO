@@ -1,4 +1,4 @@
-(Version 8.15 of %G%)
+(Version 8.16 of %G%)
 
 Key:
   X -- extension (user visible change)
@@ -64,6 +64,11 @@ X ****	"quote" map (inverse of dequote).  Lets you turn node::user
 
 X ****	Named rulesets.
 
+X ***	Total connection cache lifespan timeout -- a way to give a
+	timeout on connections regardless of whether they are active
+	or not.  For single threaded servers such as Microsoft SMTP
+	gateway.  Douglas Anderson <dlander@afterlife.ncsc.mil>.
+
 X ***	Mailer flag that does a "ping" equivalent -- if it fails, wait
 	30 seconds and try again (for dialup PPP connections).  Could
 	just try the connection and then immediately retry on some
@@ -99,6 +104,9 @@ E ***	Eliminate E qf line and e_errorqueue; use e_errorsto a la
 B ***	Fix syslog buffer overflow problems.
 
 X ***	DECNET_RELAY support in configs.
+
+X ***	-wN command line flag to set the width of mailq output.
+	(Allan Johannesen)
 
 E **	Make "local configuration error" a temporary failure?
 	(add EX_CONFIG to the markfailure list)
@@ -199,6 +207,9 @@ X **	-b? flag to read a header and show you what it will look like
 	after all rewriting for an indicated address.
 
 E **	Log $u in logsender() (for=<someaddress>).
+
+B **	Include SOCKADDR in MCI struct for logging (currently gives
+	a sockaddr of zero when printing from the cache).
 
 X *	Allow $> anywhere in RHS.  John Boeske <jboeske@ualberta.ca>.
 
