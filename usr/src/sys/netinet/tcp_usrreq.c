@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_usrreq.c	7.2 (Berkeley) %G%
+ *	@(#)tcp_usrreq.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -55,9 +55,12 @@ tcp_usrreq(so, req, m, nam, rights)
 	int error = 0;
 	int ostate;
 
-	if (req == PRU_CONTROL)
-		return (in_control(so, (int)m, (caddr_t)nam,
-			(struct ifnet *)rights));
+	if (req == PRU_CONTROL) {
+		error = in_control(so, (int)m, (caddr_t)nam,
+			(struct ifnet *)rights);
+		(void) splx(s);
+		return(error);
+	}
 	if (rights && rights->m_len) {
 		splx(s);
 		return (EINVAL);
@@ -244,6 +247,7 @@ tcp_usrreq(so, req, m, nam, rights)
 
 	case PRU_SENSE:
 		((struct stat *) m)->st_blksize = so->so_snd.sb_hiwat;
+		(void) splx(s);
 		return (0);
 
 	case PRU_RCVOOB:
