@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs.h	7.1 (Berkeley) %G%
+ *	@(#)lfs.h	7.2 (Berkeley) %G%
  */
 
 typedef struct buf	BUF;
@@ -122,11 +122,9 @@ struct lfs {
 };
 
 /*
- * The root inode is the root of the file system.  Inode 0 is the out-of-band
- * inode, and inode 1 is the inode number for the ifile.  Thus the root inode
- * is 2.
+ * Inode 0 is the out-of-band inode, and inode 1 is the inode number for the
+ * ifile.  Thus the root inode is 2, and the lost+found inode is 3.
  */
-#define ROOTINO         ((ino_t)2)
 #define	LOSTFOUNDINO	((ino_t)3)
 
 /* Fixed inode numbers. */
