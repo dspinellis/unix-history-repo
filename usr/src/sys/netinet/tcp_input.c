@@ -1,4 +1,4 @@
-/* tcp_input.c 1.5 81/10/28 */
+/* tcp_input.c 1.6 81/10/29 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -158,7 +158,7 @@ goodseg:
 	 * Defer processing if no buffer space for this connection.
 	 */
 	up = tp->t_ucb;
-	if ((int)up->uc_rcv - (int)up->uc_rsize <= 0
+	if (up->uc_rcc > up->uc_rhiwat && 
 	     && n->t_len != 0 && netcb.n_bufs < netcb.n_lowat) {
 		mp->m_act = (struct mbuf *)0;
 		if ((m = tp->t_rcv_unack) != NULL) {
@@ -167,7 +167,6 @@ goodseg:
 			m->m_act = mp;
 		} else
 			tp->t_rcv_unack = mp;
-
 		return;
 	}
 #endif
@@ -608,9 +607,7 @@ COUNT(RCV_TEXT);
 	 * Stick new segment in its place.
 	 */
 	insque(n, q->t_prev);
-/*
-	tp->rcv_seqcnt += n->t_len;
-*/
+	tp->seqcnt += n->t_len;
 
 #ifdef notdef
 	/*
@@ -657,86 +654,48 @@ dropseg:
 	return;
 }
 
+#define	socket		ucb			/* ### */
+#define	t_socket	t_ucb			/* ### */
+
 present_data(tp)
 	register struct tcb *tp;
 {
 	register struct th *t;
-	register struct ucb *up;
+	register struct socket *up;
 	register struct mbuf *m, **mp;
 	seq_t ready;
 COUNT(PRESENT_DATA);
 
 	/* connection must be synced and data available for user */
-	if (((tp->tc_flags&TC_SYN_ACKED) == 0) ||
-	    (t = tp->t_rcv_next) == (struct th *)tp)
+	if ((tp->tc_flags&TC_SYN_ACKED) == 0)
 		return;
-	up = tp->t_ucb;
-	ready = firstempty(tp);     /* seq # of last complete datum */
+	up = tp->t_socket;
 	mp = &up->uc_rbuf;
 	while (*mp)
 		mp = &(*mp)->m_next;
-	while (up->uc_rsize < up->uc_rcv && t != (struct th *) tp &&
-	    t_end(t) < ready) {
-		tcp_deq(t);
+	t = tp->t_rcv_next;
+	/* SHOULD PACK DATA IN HERE */
+	while (t != (struct th *)tp && t->t_seq < tp->rcv_nxt) {
+		remque(t);
 		m = dtom(t);
+		up->uc_rcc += t->t_len;
+		tp->seqcnt -= t->t_len;
+		if (tp->seqcnt < 0) panic("present_data");
 		t = t->t_next;
 		while (m) {
 			if (m->m_len == 0) {
 				m = m_free(m);
 				continue;
 			}
-			up->uc_rsize++;
-			if (m->m_off > MMAXOFF)
-				up->uc_rsize += NMBPG;
-			if (*mp == 0)
-				*mp = m;
+			*mp = m;
 			mp = &m->m_next;
 			m = *mp;
 		}
 	}
-	if (up->uc_rsize != 0)
+	if (up->uc_rcc != 0)
 		netwakeup(up);
-	/*
-	 * Let user know about foreign tcp close if no more data.
-	 */
-	if ((tp->tc_flags&TC_FIN_RCVD) && (tp->tc_flags&TC_USR_CLOSED) == 0 &&
-	    rcv_empty(tp))
-		to_user(up, UCLOSED);
+	if ((tp->tc_flags&TC_FIN_RCVD) &&			/* ### */
+	    (tp->tc_flags&TC_USR_CLOSED) == 0 &&		/* ### */
+	    rcv_empty(tp))					/* ### */
+		to_user(up, UCLOSED);				/* ### */
 }
-
-#ifdef TCPDEBUG
-tdb_setup(tp, n, input, tdp)
-	struct tcb *tp;
-	register struct th *n;
-	int input;
-	register struct tcp_debug *tdp;
-{
-
-	tdp->td_tod = time;
-	tdp->td_tcb = tp;
-	tdp->td_old = tp->t_state;
-	tdp->td_inp = input;
-	tdp->td_tim = 0;
-	tdp->td_new = -1;
-	if (n) {
-		tdp->td_sno = n->t_seq;
-		tdp->td_ano = n->t_ackno;
-		tdp->td_wno = n->t_win;
-		tdp->td_lno = n->t_len;
-		tdp->td_flg = n->th_flags;
-	} else
-		tdp->td_sno = tdp->td_ano = tdp->td_wno = tdp->td_lno =
-		    tdp->td_flg = 0;
-}
-
-tdb_stuff(tdp, nstate)
-	struct tcp_debug *tdp;
-	int nstate;
-{
-
-	tdp->td_new = nstate;
-	tcp_debug[tdbx++ % TDBSIZE] = *tdp;
-	if (tcpconsdebug & 2)
-		tcp_prt(tdp);
-}
-#endif
