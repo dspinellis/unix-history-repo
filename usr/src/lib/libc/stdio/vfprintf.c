@@ -8,13 +8,10 @@
  * may not be used to endorse or promote products derived from this
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
- *
- * Originally derived from code posted by Steve Summit to USENET,
- * dated 3/25/87
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vfprintf.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)vfprintf.c	5.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -22,73 +19,103 @@ static char sccsid[] = "@(#)vfprintf.c	5.2 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 
-#define	MAXBUF		(sizeof(long) * 8)	 /* enough for binary */
+#define	GETARG(r) \
+	r = argsize&LONGINT ? va_arg(argp, long) : \
+	    argsize&SHORTINT ? va_arg(argp, short) : va_arg(argp, int);
+
+#define	DEFPREC		6			/* default precision */
+#define	MAXBUF		1024
 #define	PUTC(ch, fd)	{ ++cnt; putc(ch, fd); }
 #define	todigit(ch)	((ch) - '0')
+#define	tochar(ch)	((ch) + '0')
 
-doprnt(fmt, argp, fd)
+#define	LONGINT		0x01
+#define	LONGDBL		0x02
+#define	SHORTINT	0x04
+
+x_doprnt(fmt, argp, fp)
 	register char *fmt;
 	va_list argp;
-	register FILE *fd;
+	register FILE *fp;
 {
 	register u_long reg_ulong;
 	register long reg_long;
 	register int base;
-	register char *digs, *p, padc;
-	char printsign, buf[MAXBUF];
-	int alternate, cnt, n, ladjust, length, setlong, prec, size;
+	register char *digs, *bp, *t, padc;
+	double _double;
+	char argsize, printsign, buf[MAXBUF], *fcvt();
+	int alternate, cnt, decpt, n, ladjust, width, prec, sign, size;
 
 	for (cnt = 0; *fmt; ++fmt) {
 		if (*fmt != '%') {
-			PUTC(*fmt, fd);
+			PUTC(*fmt, fp);
 			continue;
 		}
 
-		alternate = ladjust = length = setlong = 0;
+		alternate = ladjust = width = 0;
 		prec = -1;
 		padc = ' ';
-		printsign = '\0';
+		argsize = printsign = '\0';
 
 flags:		switch (*++fmt) {
 		case '#':
 			alternate = 1;
 			goto flags;
 		case '%':			/* "%#%" prints as "%" */
-			PUTC('%', fd);
+			PUTC('%', fp);
 			continue;
 		case '*':
-			if ((length = va_arg(argp, int)) < 0) {
-				ladjust = !ladjust;
-				length = -length;
-			}
+			/*
+			 * ``A negative field width argument is taken as a
+			 * - flag followed by a  positive field width.''
+			 *	-- ANSI X3J11
+			 * They don't exclude field widths read from args.
+			 */
+			if ((width = va_arg(argp, int)) >= 0)
+				goto flags;
+			width = -width;
+			/*FALLTHROUGH*/
+		case '-':
+			ladjust = 1;
 			goto flags;
 		case '+':
 			printsign = '+';
 			goto flags;
-		case '-':
-			ladjust = 1;
-			goto flags;
 		case '.':
-			if (isdigit(*++fmt)) {
+			if (*++fmt == '*')
+				prec = va_arg(argp, int);
+			else if (isdigit(*fmt)) {
+				prec = 0;
 				do {
 					prec = 10 * prec + todigit(*fmt);
 				} while isdigit(*++fmt);
 				--fmt;
 			}
-			else if (*fmt == '*')
-				prec = va_arg(argp, int);
+			else {
+				prec = 0;
+				--fmt;
+				goto flags;
+			}
+			if (prec < 0)
+				prec = -1;
 			goto flags;
 		case '0':
 			padc = '0';
-			goto flags;
+			/*FALLTHROUGH*/
 		case '1': case '2': case '3': case '4':
 		case '5': case '6': case '7': case '8': case '9':
 			do {
-				length = 10 * length + todigit(*fmt);
+				width = 10 * width + todigit(*fmt);
 			} while isdigit(*++fmt);
 			--fmt;
+		case 'L':
+			argsize |= LONGDBL;
+			goto flags;
+		case 'h':
+			argsize |= SHORTINT;
+			goto flags;
 		case 'l':
-			setlong = 1;
+			argsize |= LONGINT;
 			goto flags;
 		}
 
@@ -96,13 +123,43 @@ flags:		switch (*++fmt) {
 
 		switch (*fmt) {
 		case 'c':
-			PUTC(va_arg(argp, int), fd);
+			PUTC(va_arg(argp, int), fp);
+			break;
+		case 'f':
+			if (prec == -1)
+				prec = DEFPREC;
+			_double = va_arg(argp, double);
+			t = fcvt(_double, prec + 1, &decpt, &sign);
+			if (sign)
+				printsign = '-';
+			bp = buf;
+			if (decpt >= 0)
+				for (;;) {
+					*bp++ = *t ? *t++ : '0';
+					if (!--decpt)
+						break;
+				}
+			if (alternate || prec > 0)
+				*bp++ = '.';
+			while (decpt++) {
+				*bp++ = *t ? *t++ : '0';
+				--prec;
+			}
+			while (prec--)
+				*bp++ = *t ? *t++ : '0';
+			size = bp - buf;
+			if (size < width && !ladjust)
+				do {
+					PUTC(padc, fp);
+				} while (--width > size);
+			for (t = buf; t < bp; ++t)
+				PUTC(*t, fp);
+			for (; width > size; --width)
+				PUTC(padc, fp);
 			break;
 		case 'd':
-			if (setlong)
-				reg_long = va_arg(argp, long);
-			else
-				reg_long = va_arg(argp, int);
+		case 'i':
+			GETARG(reg_long);
 			if (reg_long < 0) {
 				reg_ulong = -reg_long;
 				printsign = '-';
@@ -111,94 +168,90 @@ flags:		switch (*++fmt) {
 				reg_ulong = reg_long;
 			}
 			if (printsign)
-				PUTC(printsign, fd);
+				PUTC(printsign, fp);
 			base = 10;
-			goto donum;
+			goto num1;
+		case 'n':
+			*(va_arg(argp, int *)) = cnt;
+			break;
 		case 'o':
-			if (setlong)
-				reg_ulong = va_arg(argp, long);
-			else
-				reg_ulong = va_arg(argp, int);
+			GETARG(reg_ulong);
 			base = 8;
-			goto donum;
+			if (!reg_ulong || !alternate)
+				goto num1;
+			bp = buf + sizeof(buf) - 1;
+			do {
+				*bp-- = digs[reg_ulong % base];
+				reg_ulong /= base;
+			} while(reg_ulong);
+			size = &buf[sizeof(buf) - 1] - bp;
+			if (size < --width && !ladjust)
+				do {
+					PUTC(padc, fp);
+				} while (--width > size);
+			PUTC('0', fp);
+			goto num3;
+			break;
+		case 'p':
 		case 's':
-			if (!(p = va_arg(argp, char *)))
-				p = "(null)";
-			if (length > 0 && !ladjust) {
+			if (!(bp = va_arg(argp, char *)))
+				bp = "(null)";
+			if (width > 0 && !ladjust) {
 				char *savep;
 
-				savep = p;
-				for (n = 0; *p && (prec == -1 || n < prec);
-				    n++, p++);
-				p = savep;
-				while (n++ < length)
-					PUTC(' ', fd);
+				savep = bp;
+				for (n = 0; *bp && (prec < 0 || n < prec);
+				    n++, bp++);
+				bp = savep;
+				while (n++ < width)
+					PUTC(' ', fp);
 			}
-			for (n = 0; *p; ++p) {
-				if (++n > prec && prec != -1)
+			for (n = 0; *bp; ++bp) {
+				if (++n > prec && prec >= 0)
 					break;
-				PUTC(*p, fd);
+				PUTC(*bp, fp);
 			}
-			if (n < length && ladjust)
+			if (n < width && ladjust)
 				do {
-					PUTC(' ', fd);
-				} while (++n < length);
+					PUTC(' ', fp);
+				} while (++n < width);
 			break;
 		case 'u':
-			if (setlong)
-				reg_ulong = va_arg(argp, long);
-			else
-				reg_ulong = va_arg(argp, int);
+			GETARG(reg_ulong);
 			base = 10;
-			goto donum;
+			goto num1;
 		case 'X':
 			digs = "0123456789ABCDEF";
 			/*FALLTHROUGH*/
 		case 'x':
-			if (setlong)
-				reg_ulong = va_arg(argp, long);
-			else
-				reg_ulong = va_arg(argp, int);
+			GETARG(reg_ulong);
 			if (alternate && reg_ulong) {
-				PUTC('0', fd);
-				PUTC(*fmt, fd);
+				PUTC('0', fp);
+				PUTC(*fmt, fp);
 			}
 			base = 16;
-donum:			p = &buf[sizeof(buf) - 1];
+num1:			bp = buf + sizeof(buf) - 1;
 			do {
-				*p-- = digs[reg_ulong % base];
+				*bp-- = digs[reg_ulong % base];
 				reg_ulong /= base;
 			} while(reg_ulong);
-			size = &buf[sizeof(buf) - 1] - p;
-			if (reg_ulong && alternate && *fmt == 'o') {
-				if (size < --length && !ladjust)
-					do {
-						PUTC(padc, fd);
-					} while (--length > size);
-				PUTC('0', fd);
-				while (++p != &buf[MAXBUF])
-					PUTC(*p, fd);
-				if (size < length)	/* must be ladjust */
-					for (; length > size; --length)
-						PUTC(padc, fd);
-			}
-			else {
-				if (size < length && !ladjust)
-					do {
-						PUTC(padc, fd);
-					} while (--length > size);
-				while (++p != &buf[MAXBUF])
-					PUTC(*p, fd);
-				if (size < length)	/* must be ladjust */
-					for (; length > size; --length)
-						PUTC(padc, fd);
-			}
+			size = &buf[sizeof(buf) - 1] - bp;
+			for (; size < prec; *bp-- = '0', ++size);
+			if (size < width && !ladjust)
+				do {
+					PUTC(padc, fp);
+				} while (--width > size);
+num3:			while (++bp != &buf[MAXBUF])
+				PUTC(*bp, fp);
+			for (; width > size; --width)
+				PUTC(padc, fp);
 			break;
 		case '\0':		/* "%?" prints ?, unless ? is NULL */
-			return(cnt);
+			return(ferror(fp) ? -1 : cnt);
 		default:
-			PUTC(*fmt, fd);
+			PUTC(*fmt, fp);
 		}
 	}
-	return(cnt);
+	return(ferror(fp) ? -1 : cnt);
 }
+
