@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)newwin.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)newwin.c	5.16 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -92,8 +92,20 @@ void
 __set_subwin(orig, win)
 	register WINDOW *orig, *win;
 {
+	int i;
+	__LINE *lp, *olp;
+
 	win->ch_off = win->begx - orig->begx;
-	win->lines = &orig->lines[win->begy];
+	/*  Point line pointers to line space. */
+	for (lp = win->lspace, i = 0; i < win->maxy; i++, lp++) {
+		win->lines[i] = lp;
+		olp = orig->lines[i + win->begy];
+		lp->line = &olp->line[win->begx];
+		lp->firstchp = &olp->firstch;
+		lp->lastchp = &olp->lastch;
+		lp->flags = 0;
+		lp->hash = __hash((char *) lp->line, win->maxx * __LDATASIZE);
+	}
 
 #ifdef DEBUG
 	__TRACE("__set_subwin: win->ch_off = %d\n", win->ch_off);
@@ -123,21 +135,21 @@ __makenew(nl, nc, by, bx, sub)
 	__TRACE("makenew: nl = %d\n", nl);
 #endif
 
-	/* Don't allocate space if it's a subwindow */
+	/* 
+	 * Set up line pointer array and line space.
+	 */
+	if ((win->lines = malloc (nl * sizeof(__LINE *))) == NULL) {
+		free(win);
+		return NULL;
+	}
+	if ((win->lspace = malloc (nl * sizeof(__LINE))) == NULL) {
+		free (win);
+		free (win->lines);
+		return NULL;
+	}
+
+	/* Don't allocate window and line space if it's a subwindow */
 	if (!sub) {
-		/* 
-		 * Set up line pointer array and line space.
-		 */
-		if ((win->lines = malloc (nl * sizeof(__LINE *))) == NULL) {
-			free(win);
-			return NULL;
-		}
-		if ((win->lspace = malloc (nl * sizeof(__LINE))) == NULL) {
-			free (win);
-			free (win->lines);
-			return NULL;
-		}
-		
 		/*
 		 * Allocate window space in one chunk.
 		 */
