@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_debug.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_debug.c	5.14 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #if defined(lint) && !defined(DEBUG)
@@ -225,6 +225,8 @@ p_rr(cp, msg, file)
 				cp += dlen;
 			}
 			break;
+		default:
+			cp += dlen;
 		}
 		break;
 	case T_CNAME:
