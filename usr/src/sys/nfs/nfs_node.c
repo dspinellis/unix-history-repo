@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_node.c	7.1 (Berkeley) %G%
+ *	@(#)nfs_node.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -38,12 +38,6 @@
 
 /* The request list head */
 extern struct nfsreq nfsreqh;
-
-/* Someday this should be dynamically sized like the inode table */
-struct nfsnode nfsnd[2000];
-struct nfsnode *nfsnode = &nfsnd[0];
-struct nfsnode *nfsnodeNNFSNODE = &nfsnd[2000];
-int nnfsnode = 2000;
 
 #define	NFSNOHSZ	512
 #if	((NFSNOHSZ&(NFSNOHSZ-1)) == 0)
