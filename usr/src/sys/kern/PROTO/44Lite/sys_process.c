@@ -42,11 +42,6 @@ ptrace(curp, uap, retval)
 	return (ENOSYS);
 }
 
-/*
- * Transmit a tracing request from the parent to the child process
- * being debugged. This code runs in the context of the child process
- * to fulfill the command requested by the parent.
- */
 procxmt(p)
 	register struct proc *p;
 {
