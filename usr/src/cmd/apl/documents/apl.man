@@ -1,0 +1,66 @@
+
+
+APL(I)                       7/10/78                       APL(I)
+
+
+NAME
+     apl  -  The UCSF APL interpreter
+
+SYNOPSIS
+     apl
+
+DESCRIPTION
+     The UCSF APL interpreter contains all the APL 360  operators
+     plus  execute  (epsilon),  scan,  and  relational  character
+     operators.  The  maximum  workspace  size  is  about  50,000
+     bytes.
+
+     Function definition is not what you would expect.  Functions
+     are created and modified with the system editor. Type `)EDIT
+     fname' or `)EX fname' to creat or modify  a  function.  Type
+     `)READ fname' if it exists and doesn't need editing.
+
+     The following I-beams are recognized by APL:
+
+           1iF             Open F for reading.
+
+           2iF             Create F for writing.
+
+           3iF             Append to F.
+
+           1i0, 2i0, 3i0   Close the named channel.
+
+     Only one read channel and one  write  channel  may  be  open
+     simultaneously.  When a file is open for reading, references
+     to the quad or quote-quad variable are  actually  references
+     to the named file. When open for writing, assignments to the
+     quad variable are written to the file.
+
+           10iC    Send command C to the shell.
+     The command will be executed as if it were typed at  a  UNIX
+     terminal.  This is equivalent to the `!' feature of the edi-
+     tor.
+
+     Monadic I-beam functions are: 20 for the time of day, 21  to
+     return  CPU  time used, 22 to return WS free in bytes, 24 to
+     return the starting time, 25 to return the date, 28  to  re-
+     turn  the  starting date, 29 to read the index origin, 30 to
+     read the terminal width, 31 to read the  printing  precision
+     (or `digits'), and 32 to run the shell.
+
+BUGS
+     No trace function or state indicator.
+
+     No `)WSID' command. The existing system commands  take  only
+     one argument.
+
+     A `)WRITE fname' command is needed to get at functions which
+     exist only in workspaces.
+
+
+
+                              - 1 -
+
+
+
+
