@@ -1,6 +1,6 @@
     /* Copyright (c) 1980 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pc3.c 1.7 %G%";
+static	char sccsid[] = "@(#)pc3.c 1.8 %G%";
 
     /*
      *	     Pc3 is a pass in the Berkeley Pascal compilation
@@ -74,7 +74,8 @@ char	program[] = "pc";
 #include "pstab.h"
 #include "pc3.h"
 
-int	errors = 0;
+int	errors = NONE;
+BOOL	wflag = FALSE;	
 
     /*
      *	check each of the argument .o files (or archives of .o files).
@@ -85,7 +86,17 @@ main( argc , argv )
     {
 	struct fileinfo	ofile;
 
-	while ( ++argv , --argc ) {
+	for ( argv++ ; *argv != 0 && **argv == '-' ; argv++ ) {
+	    (*argv)++;
+	    switch ( **argv ) {
+		default:
+		    error( FATAL , "pc3: bad flag -%c\n" , **argv );
+		case 'w':
+		    wflag = TRUE;
+		    break;
+	    }
+	}
+	for ( /* void */ ; *argv != 0 ; argv++ ) {
 #	    ifdef DEBUG
 		fprintf( stderr , "[main] *argv = %s\n" , *argv );
 #	    endif DEBUG
@@ -110,14 +121,14 @@ checkfile( ofilep )
 
 	ofilep -> file = fopen( ofilep -> name , "r" );
 	if ( ofilep -> file == NULL ) {
-	    error( WARNING , "cannot open: %s" , ofilep -> name );
+	    error( ERROR , "cannot open: %s" , ofilep -> name );
 	    return;
 	}
 	fstat( fileno( ofilep -> file ) , &filestat );
 	ofilep -> modtime = filestat.st_mtime;
 	red = fread( (char *) &mag_un , 1 , sizeof mag_un , ofilep -> file );
 	if ( red != sizeof mag_un ) {
-	    error( WARNING , "cannot read header: %s" , ofilep -> name );
+	    error( ERROR , "cannot read header: %s" , ofilep -> name );
 	    return;
 	}
 	if ( mag_un.mag_exec.a_magic == OARMAG ) {
@@ -135,7 +146,7 @@ checkfile( ofilep )
 	    }
 	} else if ( N_BADMAG( mag_un.mag_exec ) ) {
 		/* not a file.o */
-	    error( WARNING , "bad format: %s" , ofilep -> name );
+	    error( ERROR , "bad format: %s" , ofilep -> name );
 	    return;
 	} else {
 		/* a file.o */
@@ -168,7 +179,7 @@ checknl( ofilep )
 
 	red = fread( (char *) &oexec , 1 , sizeof oexec , ofilep -> file );
 	if ( red != sizeof oexec ) {
-	    error( WARNING , "error reading struct exec: %s"
+	    error( ERROR , "error reading struct exec: %s"
 		    , ofilep -> name );
 	    return;
 	}
@@ -389,14 +400,19 @@ checksymbol( nlp , ofilep )
 			}
 			    /*
 			     *	something is wrong
+			     *	if it's not resolved, use the header file
+			     *	otherwise, it's just a regular error
 			     */
-			error( WARNING ,
+			if ( symbolp -> sym_un.sym_str.rfilep == NIL ) {
+			    error( ERROR ,
 			    "%s, line %d: %s already defined (%s, line %d)." ,
-			    ifilep -> name , nlp -> n_value , 
-			    nlp -> n_un.n_name , 
-			    symbolp -> sym_un.sym_str.fromi -> name ,
-			    symbolp -> sym_un.sym_str.iline );
-			return;
+				ifilep -> name , nlp -> n_value , 
+				nlp -> n_un.n_name , 
+				symbolp -> sym_un.sym_str.fromi -> name ,
+				symbolp -> sym_un.sym_str.iline );
+			    return;
+			}
+			break;
 		case N_PGFUNC:
 		case N_PGPROC:
 			    /*
@@ -427,7 +443,7 @@ included:
 		/*
 		 *	this is the breaks
 		 */
-	    error( WARNING , "%s, line %d: %s already defined (%s, line %d)."
+	    error( ERROR , "%s, line %d: %s already defined (%s, line %d)."
 		    , ifilep -> name , nlp -> n_value , nlp -> n_un.n_name
 		    , symbolp -> sym_un.sym_str.rfilep -> name
 		    , symbolp -> sym_un.sym_str.rline );
@@ -698,17 +714,34 @@ nextelement( ofilep )
     /*
      *	variable number of arguments to error, like printf.
      */
-error( fatal , message , arg1 , arg2 , arg3 , arg4 , arg5 , arg6 )
-    int		fatal;
+error( type , message , arg1 , arg2 , arg3 , arg4 , arg5 , arg6 )
+    int		type;
     char	*message;
     {
-	fprintf( stderr , "%s: " , program );
-	fprintf( stderr , message , arg1 , arg2 , arg3 , arg4 , arg5 , arg6 );
-	fprintf( stderr , "\n" );
-	if ( fatal == FATAL ) {
-	    exit( 2 );
+	errors = type > errors ? type : errors;
+	if ( wflag && type == WARNING ) {
+	    return;
 	}
-	errors = 1;
+	fprintf( stderr , "%s: " , program );
+	switch ( type ) {
+	    case WARNING:
+		    fprintf( stderr , "Warning: " );
+		    break;
+	    case ERROR:
+		    fprintf( stderr , "Error: " );
+		    break;
+	    case FATAL:
+		    fprintf( stderr , "Fatal: " );
+		    break;
+	    default:
+		    fprintf( stderr , "Ooops: " );
+		    break;
+	}
+	fprintf( stderr , message , arg1,arg2,arg3,arg4,arg5,arg6 );
+	fprintf( stderr , "\n" );
+	if ( type == FATAL ) {
+	    exit( FATAL );
+	}
     }
 
     /*
@@ -726,7 +759,7 @@ mtime( filename )
 		    , filename );
 #	endif DEBUG
 	if ( stat( filename , &filestat ) != 0 ) {
-	    error( WARNING , "%s: cannot open" , filename );
+	    error( WARNING , "%s: cannot stat" , filename );
 	    return ( (time_t) time( 0 ) );
 	}
 	return filestat.st_mtime;
