@@ -6,17 +6,19 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)fmt.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)fmt.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/time.h>
 #include <sys/resource.h>
+
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <vis.h>
+
 #include "ps.h"
 
 static char *cmdpart __P((char *));
@@ -46,6 +48,8 @@ shquote(argv)
 			dst++;
 		*dst++ = ' ';
 	}
+	if (dst != buf)
+		--dst;
 	*dst = '\0';
 	return (buf);
 }
