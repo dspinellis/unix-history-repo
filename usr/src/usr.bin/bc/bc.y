@@ -1,5 +1,5 @@
 %{
-static	char *sccsid = "@(#)bc.y	4.3 (Berkeley) 85/11/28";
+static	char *sccsid = "@(#)bc.y	4.4 (Berkeley) 87/12/12";
 	int *getout();
 %}
 %right '='
@@ -17,6 +17,7 @@ static	char *sccsid = "@(#)bc.y	4.3 (Berkeley) 85/11/28";
 
 %{
 #include <stdio.h>
+#include <varargs.h>
 int in;
 char cary[1000], *cp = { cary };
 char string[1000], *str = {string};
@@ -475,19 +476,22 @@ int b_space [ b_sp_max ];
 int * b_sp_nxt = { b_space };
 
 int bdebug = 0;
-bundle(a){
-	int i, *p, *q;
+/*VARARGS*/
+bundle(va_alist) va_dcl {
+	va_list ap;
+	int i, *q;
 
-	p = &a;
-	i = *p++;
+	va_start(ap);
+	i = va_arg(ap, int);
 	q = b_sp_nxt;
 	if( bdebug ) printf("bundle %d elements at %o\n",i,  q );
 	while(i-- > 0){
 		if( b_sp_nxt >= & b_space[b_sp_max] ) yyerror( "bundling space exceeded" );
-		* b_sp_nxt++ = *p++;
+		* b_sp_nxt++ = va_arg(ap, int);
 	}
 	* b_sp_nxt++ = 0;
 	yyval = q;
+	va_end(ap);
 	return( q );
 }
 
@@ -560,7 +564,7 @@ yyinit(argc,argv) int argc; char *argv[];{
 int *getout(){
 	printf("q");
 	fflush(stdout);
-	exit();
+	exit(0);
 }
 
 int *
@@ -582,12 +586,12 @@ char **argv;
 		if((argv[1][1] == 'd')||(argv[1][1] == 'c')){
 			yyinit(--argc, ++argv);
 			yyparse();
-			exit();
+			exit(0);
 		}
 		if(argv[1][1] != 'l'){
 			printf("unrecognizable argument\n");
 			fflush(stdout);
-			exit();
+			exit(1);
 		}
 		argv[1] = "/usr/lib/lib.b";
 	}
@@ -599,12 +603,14 @@ char **argv;
 		close(p[1]);
 		yyinit(argc, argv);
 		yyparse();
-		exit();
+		exit(0);
 	}
 	close(0);
 	dup(p[0]);
 	close(p[0]);
 	close(p[1]);
-	execl("/bin/dc", "dc", "-", 0);
-	execl("/usr/bin/dc", "dc", "-", 0);
+	execl("/bin/dc", "dc", "-", (char *)0);
+	execl("/usr/bin/dc", "dc", "-", (char *)0);
+	perror("bc: can't find dc");
+	exit(1);
 }
