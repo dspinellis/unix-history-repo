@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass2.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass2.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -330,10 +330,14 @@ again:
 		case FCLEAR:
 			if (idesc->id_entryno <= 2)
 				break;
-			if (statemap[dirp->d_ino] == DCLEAR)
-				errmsg = "ZERO LENGTH DIRECTORY";
-			else
+			if (statemap[dirp->d_ino] == FCLEAR)
 				errmsg = "DUP/BAD";
+			else if (!preen)
+				errmsg = "ZERO LENGTH DIRECTORY";
+			else {
+				n = 1;
+				break;
+			}
 			fileerror(idesc->id_number, dirp->d_ino, errmsg);
 			if ((n = reply("REMOVE")) == 1)
 				break;
