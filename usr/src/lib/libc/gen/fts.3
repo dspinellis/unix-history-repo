@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)fts.3	5.18 (Berkeley) %G%
+.\"     @(#)fts.3	5.19 (Berkeley) %G%
 .\"
 .Dd 
 .Dt FTS 3
@@ -338,6 +338,11 @@ The options are selected by
 .Em or Ns 'ing
 the following values:
 .Bl -tag -width "FTS_PHYSICAL"
+.It Dv FTS_COMFOLLOW
+This option causes any symbolic link specified as a root path to be
+followed immediately whether or not
+.Dv FTS_LOGICAL
+is also specified.
 .It Dv FTS_LOGICAL
 This option causes the
 .Nm fts
@@ -455,7 +460,7 @@ If the
 field is set to
 .Dv FTS_NS
 or
-.DV FTS_NSOK ,
+.Dv FTS_NSOK ,
 the
 .Fa fts_statp
 field may not either.
@@ -463,9 +468,10 @@ If the
 .Fn compar
 argument is
 .Dv NULL ,
-the directory traversal order is unspecified except
-for the root paths which are traversed in the order listed in
-.Fa path_argv .
+the directory traversal order is in the order listed in
+.Fa path_argv
+for the root paths, and in the order listed in the directory for
+everything else.
 .Sh FTS_READ
 The
 .Fn fts_read
