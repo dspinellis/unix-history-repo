@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwopen.c	3.6 83/08/22";
+static	char *sccsid = "@(#)wwopen.c	3.7 83/08/23";
 #endif
 
 #include "ww.h"
@@ -11,28 +11,15 @@ wwopen(mode, id, nrow, ncol, row, col)
 {
 	register struct ww *w = 0;
 
-	if (nrow <= 0 || ncol <= 0)
-		return 0;
-	if (row < 0 || row + nrow > wwnrow || col < 0 || col + ncol > wwncol)
-		return 0;
 	w = (struct ww *)calloc(sizeof (struct ww), 1);
 	if (w == 0)
+		goto bad;
+
+	w = (struct ww *)calloc(sizeof (struct ww), 1);
 		goto bad;
 	w->ww_pty = w->ww_tty = -1;
 	switch (mode) {
 	case WW_PTY:
-		if (wwgetpty(w) < 0)
-			goto bad;
-		if (wwsettty(w->ww_pty, &wwwintty) < 0)
-			goto bad;
-		break;
-	case WW_SOCKET:
-		break;
-	case WW_NONE:
-		break;
-	default:
-		goto bad;
-	}
 	if ((w->ww_win = Wopen(id, col, row, ncol, nrow, ncol, 48)) == 0)
 		goto bad;
 	Woncursor(w->ww_win, 0);		/* don't show cursor */
@@ -45,7 +32,7 @@ wwopen(mode, id, nrow, ncol, row, col)
 	w->ww_next = wwhead;
 	w->ww_state = WW_INITIAL;
 	wwhead = w;
-	return w;
+	return wwindex[w->ww_index] = w;
 bad:
 	if (w != 0) {
 		close(w->ww_tty);
