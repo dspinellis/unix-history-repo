@@ -3,12 +3,13 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	6.2 (Berkeley) %G%
+#	@(#)Makefile	6.3 (Berkeley) %G%
 #
 # $Header: Makefile 1.4 83/07/21 21:27:16 sklower Exp $
 #	makefile for the franz lisp manual
 #
-# sources: lmacs: macros for the franz documents
+# sources: ${MacroSrc}: macros for the franz documents
+#	   ${TMacSrc}: macros for typesetting franz documents
 #	   ch1.n  intro and description of types
 #	   ch2.n  data structure access
 #	   ch3.n  on arithmetic functions.
@@ -75,6 +76,7 @@ Append = ${LibDir}/append
 #  appropriate suffix.
 
 MacroSrc = lmacs
+TMacSrc = tmacs
 
 RootGenSrc = ch0 ch1 ch2 ch3 ch4 ch5 ch6 ch61 ch7 ch8 \
       ch9 ch10 ch11 ch12 ch13 ch14 ch15 ch16 ch17 chb chc
@@ -96,16 +98,16 @@ doc: paper app
 paper:	paper.${PRINTER}
 	lpr ${PRINTER} -n paper.${PRINTER}
 
-paper.${PRINTER}: ${DocSrc} ${MacroSrc}
-	${TBL} ${PRINTER} ${MacroSrc} ${DocSrc} | \
+paper.${PRINTER}: ${DocSrc} ${TMacSrc}
+	${TBL} ${PRINTER} ${TMacSrc} ${DocSrc} | \
 		${TROFF} -t -me 1> paper.${PRINTER} 2> tindex
 
 app: app.${PRINTER}
 	lpr ${PRINTER} -n app.${PRINTER}
 
-app.${PRINTER}: tindex ${MacroSrc} ${DocApp}
+app.${PRINTER}: tindex ${TMacSrc} ${DocApp}
 	echo ".Ib" | sort +2 tindex - | sed -f indexsed | \
-		${TROFF} -t -me ${MacroSrc} - ${DocApp} > app.${PRINTER}
+		${TROFF} -t -me ${TMacSrc} - ${DocApp} > app.${PRINTER}
 
 all:
 	make rall
@@ -139,25 +141,25 @@ spall: ${Append}
 	lpr ${PRINTER} -n $*.t
 
 .n.t:	
-	${TBL} ${PRINTER} lmacs $*.n | \
+	${TBL} ${PRINTER} ${MacroSrc} $*.n | \
 		${TROFF} -me ${O} ${PRINTER} -t 1> $*.t 2> $*.x
 
 .n.p:
-	${TBL} ${PRINTER} lmacs $*.n | ${TROFF} -me ${O} ${PRINTER} 2> $*.x
+	${TBL} ${PRINTER} ${MacroSrc} $*.n | ${TROFF} -me ${O} ${PRINTER} 2> $*.x
 
 .n.x:
-	${TBL} ${PRINTER} lmacs $*.n | ${TROFF} -me ${O} ${PRINTER} -z 2> $*.x
+	${TBL} ${PRINTER} ${MacroSrc} $*.n | ${TROFF} -me ${O} ${PRINTER} -z 2> $*.x
 
 .n.r:
-	tbl lmacs $*.n | ${NROFF} -rb3 -me ${O} 1> $*.r 2> $*.rx
+	tbl ${MacroSrc} $*.n | ${NROFF} -rb3 -me ${O} 1> $*.r 2> $*.rx
 	rm -f helpindex
 
 .n.rx:
-	tbl lmacs $*.n | ${NROFF} -rb3 -me ${O} 1> $*.r 2> $*.rx
+	tbl ${MacroSrc} $*.n | ${NROFF} -rb3 -me ${O} 1> $*.r 2> $*.rx
 	rm -f helpindex
 
 .n.q:
-	tbl lmacs $*.n | ${NROFF} -me -T37 ${O} 2> $*.qx | col > $*.q
+	tbl ${MacroSrc} $*.n | ${NROFF} -me -T37 ${O} 2> $*.qx | col > $*.q
 
 .n.sp:
 	spell $*.n > $*.sp
@@ -182,21 +184,21 @@ findex:  ${Append}
 	echo ".Ib" > index
 	sort +3 -o index index `${Append} .x ${RootGenSrc}`
 	sed -f indexsed index > indexx 
-	${Rmt} ${TROFF} -me lmacs indexx
+	${Rmt} ${TROFF} -me ${MacroSrc} indexx
 
 index.t: 
 	make `${Append} .x ${RootGenSrc}`
 	echo ".Ib" > index
 	sort +3 -o index index `${Append} .x ${RootGenSrc}`
 	sed -f indexsed index > indexx
-	${TROFF} -me -x -t lmacs indexx > index.t
+	${TROFF} -me -x -t ${MacroSrc} indexx > index.t
 
 pindex: ${Append}
 	make `${Append} .x ${RootGenSrc}`
 	echo ".Ib" > index
 	sort +3 -o index index `${Append} .x ${RootGenSrc}`
 	sed -f indexsed index > indexx
-	${TROFF} -me lmacs indexx
+	${TROFF} -me ${MacroSrc} indexx
 
 helpindex: ${Append}
 	make `${Append} .rx ${RootGenSrc}`
@@ -233,8 +235,8 @@ tofc:
 
 
 copysource:
-	(tar cf - ${MacroSrc} `${Append} .n ${RootGenSrc}` ${UtilSrc} | \
-	 (cd ${CopyTo} ; tar xf -))
+	(tar cf - ${MacroSrc} ${TMacSrc} `${Append} .n ${RootGenSrc}` \
+		${UtilSrc} | (cd ${CopyTo} ; tar xf -))
 
 scriptcatall: ${AllSrc} ${Append}
 	@(cd .. ; scriptcat doc doc ${MacroSrc} `${Append} .n ${RootGenSrc}` ${UtilSrc})
