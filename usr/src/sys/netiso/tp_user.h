@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_user.h,v 5.2 88/11/04 15:44:44 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_user.h,v $
- *	@(#)tp_user.h	7.7 (Berkeley) %G%
+ *	@(#)tp_user.h	7.8 (Berkeley) %G%
  *
  * These are the values a real-live user ;-) needs. 
  */
@@ -96,6 +96,7 @@ struct tp_conn_param {
 #define		TPRX_EACH		0x4 /* retrans each packet of a set */
 #define		TPRX_FASTSTART	0x1 /* don't use slow start */
 
+#define TPOPT_INTERCEPT		0x200
 #define TPOPT_FLAGS			0x300
 #define TPOPT_CONN_DATA		0x400 
 #define TPOPT_DISC_DATA		0x500 

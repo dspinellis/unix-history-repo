@@ -28,7 +28,7 @@ SOFTWARE.
  * ARGO TP
  * $Header: tp_inet.c,v 5.3 88/11/18 17:27:29 nhall Exp $ 
  * $Source: /usr/argo/sys/netiso/RCS/tp_inet.c,v $
- *	@(#)tp_inet.c	7.5 (Berkeley) %G% *
+ *	@(#)tp_inet.c	7.6 (Berkeley) %G% *
  *
  * Here is where you find the inet-dependent code.  We've tried
  * keep all net-level and (primarily) address-family-dependent stuff
@@ -40,6 +40,7 @@ SOFTWARE.
  * 		in_putsufx: put transport suffix into an inpcb structure.
  *		in_putnetaddr: put a whole net addr into an inpcb.
  *		in_getnetaddr: get a whole net addr from an inpcb.
+ *		in_cmpnetaddr: compare a whole net addr from an isopcb.
  *		in_recycle_suffix: clear suffix for reuse in inpcb
  *		tpip_mtu: figure out what size tpdu to use
  *		tpip_input: take a pkt from ip, strip off its ip header, give to tp
@@ -199,6 +200,39 @@ in_putnetaddr(inp, name, which)
 				(caddr_t)&inp->inp_faddr, sizeof(struct in_addr));
 		}
 	}
+}
+
+/*
+ * NAME:	in_putnetaddr()
+ *
+ * CALLED FROM:
+ * 	tp_input() when a connection is being established by an
+ * 	incoming CR_TPDU, and considered for interception.
+ *
+ * FUNCTION and ARGUMENTS:
+ * 	Compare a whole net addr from a struct sockaddr (name),
+ * 	with that implicitly stored in an inpcb (inp).
+ * 	The argument (which) takes values TP_LOCAL or TP_FOREIGN
+ *
+ * RETURNS:		Nada
+ *
+ * SIDE EFFECTS:	
+ *
+ * NOTES:			
+ */ 
+in_cmpnetaddr(inp, name, which)
+	register struct inpcb	*inp;
+	register struct sockaddr_in	*name;
+	int which;
+{
+	if (which == TP_LOCAL) {
+		if (name->sin_port && name->sin_port != inp->inp_lport)
+			return 0;
+		return (name->sin_addr.s_addr == inp->inp_laddr.s_addr);
+	}
+	if (name->sin_port && name->sin_port != inp->inp_fport)
+		return 0;
+	return (name->sin_addr.s_addr == inp->inp_faddr.s_addr);
 }
 
 /*

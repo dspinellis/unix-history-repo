@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_output.c,v 5.4 88/11/18 17:28:08 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_output.c,v $
- *	@(#)tp_output.c	7.5 (Berkeley) %G% *
+ *	@(#)tp_output.c	7.6 (Berkeley) %G% *
  *
  * In here is tp_ctloutput(), the guy called by [sg]etsockopt(),
  */
@@ -39,18 +39,20 @@ static char *rcsid = "$Header: tp_output.c,v 5.4 88/11/18 17:28:08 nhall Exp $";
 #endif lint
 
 #include "param.h"
-#include "systm.h"
 #include "mbuf.h"
-#include "protosw.h"
+#include "systm.h"
 #include "socket.h"
 #include "socketvar.h"
+#include "protosw.h"
+#include "user.h"
+#include "kernel.h"
 #include "errno.h"
-#include "types.h"
 #include "time.h"
 #include "tp_param.h"
 #include "tp_user.h"
 #include "tp_stat.h"
 #include "tp_ip.h"
+#include "tp_clnp.h"
 #include "tp_timer.h"
 #include "argo_debug.h"
 #include "tp_pcb.h"
@@ -419,6 +421,50 @@ tp_ctloutput(cmd, so, level, optname, mp)
 	val_len = (*mp)->m_len;
 
 	switch (optname) {
+
+	case TPOPT_INTERCEPT:
+		if (error = suser(u.u_cred, &u.u_acflag))
+			break;
+		else if (cmd != PRCO_SETOPT || tpcb->tp_state != TP_LISTENING)
+			error = EINVAL;
+		else {
+			register struct tp_pcb *t = 0;
+			struct mbuf *m = m_getclr(M_WAIT, MT_SONAME);
+			struct sockaddr *sa = mtod(m, struct sockaddr *);
+			(*tpcb->tp_nlproto->nlp_getnetaddr)(tpcb->tp_npcb, m, TP_LOCAL);
+			switch (sa->sa_family) {
+			case AF_ISO:
+				if (((struct sockaddr_iso *)sa)->siso_nlen == 0)
+					default: error = EINVAL;
+				break;
+			case AF_INET:
+				if (((struct sockaddr_in *)sa)->sin_addr.s_addr == 0)
+					error = EINVAL;
+				break;
+			}
+			for (t = tp_intercepts; t; t = t->tp_nextlisten) {
+				if (t->tp_nlproto->nlp_afamily != tpcb->tp_nlproto->nlp_afamily)
+					continue;
+				if ((*t->tp_nlproto->nlp_cmpnetaddr)(t->tp_npcb, sa, TP_LOCAL))
+					error = EADDRINUSE;
+			}
+			m_freem(m);
+			if (error)
+				break;
+		}
+		{
+			register struct tp_pcb **tt;
+			for (tt = &tp_listeners; *tt; tt = &((*tt)->tp_nextlisten))
+				if (*tt == tpcb)
+					break;
+			if (*tt)
+				*tt = tpcb->tp_nextlisten;
+			else
+				{error = EHOSTUNREACH; goto done; }
+		}
+		tp_intercepts = tpcb;
+		tpcb->tp_nextlisten = tp_intercepts;
+		break;
 
 	case TPOPT_MY_TSEL:
 		if ( cmd == PRCO_GETOPT ) {

@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_pcb.h,v 5.2 88/11/18 17:09:32 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_pcb.h,v $
- *	@(#)tp_pcb.h	7.6 (Berkeley) %G% *
+ *	@(#)tp_pcb.h	7.7 (Berkeley) %G% *
  *
  * 
  * This file defines the transport protocol control block (tpcb).
@@ -102,11 +102,11 @@ struct tp_rtc {
 	struct mbuf		*tprt_data; /* ptr to the octets of data */
 };
 
-extern
 struct nl_protosw {
 	int		nlp_afamily;			/* address family */
 	int		(*nlp_putnetaddr)();	/* puts addresses in nl pcb */
 	int		(*nlp_getnetaddr)();	/* gets addresses from nl pcb */
+	int		(*nlp_cmpnetaddr)();	/* compares address in pcb with sockaddr */
 	int		(*nlp_putsufx)();		/* puts transport suffixes in nl pcb */
 	int		(*nlp_getsufx)();		/* gets transport suffixes from nl pcb */
 	int		(*nlp_recycle_suffix)();/* clears suffix from nl pcb */
@@ -120,10 +120,13 @@ struct nl_protosw {
 	int		(*nlp_dgoutput)();		/* prepare a packet to give to nl */
 	int		(*nlp_ctloutput)();		/* hook for network set/get options */
 	caddr_t	nlp_pcblist;			/* list of xx_pcb's for connections */
-} nl_protosw[];
+};
 
 
 struct tp_pcb {
+	struct tp_pcb		*tp_next;
+	struct tp_pcb		*tp_prev;
+	struct tp_pcb		*tp_nextlisten; /* chain all listeners */
 	u_short 			tp_state;		/* state of fsm */
 	short 				tp_retrans;		/* # times can still retrans */
 	struct tp_ref 		*tp_refp;		/* rest of pcb	*/
@@ -320,9 +323,14 @@ u_int	tp_start_win;
 	} \
 }
 
+#ifdef KERNEL
 extern struct timeval 	time;
 extern struct tp_ref 	tp_ref[];
 extern struct tp_param	tp_param;
+extern struct nl_protosw  nl_protosw[];
+extern struct tp_pcb	*tp_listeners;
+extern struct tp_pcb	*tp_intercepts;
+#endif
 
 #define	sototpcb(so) 	((struct tp_pcb *)(so->so_tpcb))
 #define	sototpref(so)	((struct tp_ref *)((so)->so_tpcb->tp_ref))

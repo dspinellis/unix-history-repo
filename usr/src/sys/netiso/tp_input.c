@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_input.c,v 5.6 88/11/18 17:27:38 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_input.c,v $
- *	@(#)tp_input.c	7.11 (Berkeley) %G% *
+ *	@(#)tp_input.c	7.12 (Berkeley) %G% *
  *
  * tp_input() gets an mbuf chain from ip.  Actually, not directly
  * from ip, because ip calls a net-level routine that strips off
@@ -58,6 +58,7 @@ static char *rcsid = "$Header: tp_input.c,v 5.6 88/11/18 17:27:38 nhall Exp $";
 
 #include "argoxtwentyfive.h"
 #include "param.h"
+#include "systm.h"
 #include "mbuf.h"
 #include "socket.h"
 #include "socketvar.h"
@@ -386,8 +387,7 @@ tp_input(m, faddr, laddr, cons_channel, dgout_routine, ce_bit)
 #ifdef TP_PERF_MEAS
 	u_char					perf_meas;
 #endif TP_PERF_MEAS
-	u_char					fsufxlen = 0;
-	u_char					lsufxlen = 0;
+	u_char					fsufxlen = 0, lsufxlen = 0, intercepted = 0;
 	caddr_t					fsufxloc = 0, lsufxloc = 0;
 	int						tpdu_len = 0;
 	u_int 					takes_data = FALSE;
@@ -619,46 +619,51 @@ again:
 
 		/* } */ END_WHILE_OPTIONS(P)
 
-		if( lsufxlen == 0) {
+		if (lsufxlen == 0) {
 			/* can't look for a tpcb w/o any called sufx */
 			error =  E_TP_LENGTH_INVAL;
 			IncStat(ts_inv_sufx);
 			goto respond;
 		} else {
-			register	struct tp_ref 	*rp;
-			register	int			r;
-			extern		int			tp_maxrefopen;
+			register struct tp_pcb *t;
 
-			rp = &tp_ref[1]; /* zero-th one is never open */
-			for(  r=1 ; (r <= tp_maxrefopen) ; r++,rp++ ) {
-				if (rp->tpr_state!=REF_OPENING) 
+			for (t = tp_intercepts; t ; t->tp_nextlisten) {
+				if (laddr->sa_family != t->tp_nlproto->nlp_afamily)
 					continue;
-				if ( bcmp(lsufxloc, rp->tpr_pcb->tp_lsuffix, lsufxlen)==0 ) {
-					tpcb =  rp->tpr_pcb;
-					if( laddr->sa_family !=
-							tpcb->tp_sock->so_proto->pr_domain->dom_family ) {
-						IFDEBUG(D_CONN)
-						 	printf(
-					"MISMATCHED AF on CR! laddr.family 0x%x expected 0x%x\n",
-							laddr->sa_family, 
-							tpcb->tp_sock->so_proto->pr_domain->dom_family );
-						ENDDEBUG
-						continue;
-					}
-					IFTRACE(D_TPINPUT)
-						tptrace(TPPTmisc, "tp_input: ref *lsufxloc refstate", 
-							r, *lsufxloc, rp->tpr_state, 0);
-					ENDTRACE
-					/* found it */
-					break;
+				if ((*tpcb->tp_nlproto->nlp_cmpnetaddr)(
+						t->tp_npcb, laddr, TP_LOCAL)) {
+							intercepted = 1;
+							goto check_duplicate_cr;
 				}
 			}
-
-			CHECK( (r > tp_maxrefopen), E_TP_NO_SESSION, ts_inv_sufx, respond,
+			for (t = tp_listeners; t ; t->tp_nextlisten) {
+				if (bcmp(lsufxloc, t->tp_lsuffix, lsufxlen) != 0)
+					continue;
+				if (laddr->sa_family != t->tp_nlproto->nlp_afamily)
+					continue;
+			}
+			CHECK(t == 0, E_TP_NO_SESSION, ts_inv_sufx, respond,
 				(1 + 2 + (caddr_t)&hdr->_tpduf - (caddr_t)hdr))
 				/* _tpduf is the fixed part; add 2 to get the dref bits of 
 				 * the fixed part (can't take the address of a bit field) 
 				 */
+		check_duplicate_cr:
+			tpcb = t;
+			for (t = tpcb->tp_next; t != tpcb; t = t->tp_next) {
+				if (sref != t->tp_fref)
+					continue;
+				if ((*tpcb->tp_nlproto->nlp_cmpnetaddr)(
+						t->tp_npcb, faddr, TP_FOREIGN)) {
+					IFDEBUG(D_TPINPUT)
+						printf("duplicate CR discarded\n");
+					ENDDEBUG
+					goto discard;
+				}
+			}
+			IFTRACE(D_TPINPUT)
+				tptrace(TPPTmisc, "tp_input: tpcb *lsufxloc tpstate", 
+					tpcb, *lsufxloc, tpcb->tp_state, 0);
+			ENDTRACE
 		}
 
 		/* 
@@ -728,6 +733,7 @@ again:
 
 		so = tpcb->tp_sock;
 		if (so->so_options & SO_ACCEPTCONN) {
+			struct tp_pcb *parent_tpcb = tpcb;
 			/* 
 			 * Create a socket, tpcb, ll pcb, etc. 
 			 * for this newborn connection, and fill in all the values. 
@@ -752,6 +758,7 @@ again:
 				goto discard;
 			}
 			tpcb = sototpcb(so);
+			insque(parent_tpcb, tpcb);
 
 			/*
 			 * Stash the addresses in the net level pcb 
@@ -762,14 +769,14 @@ again:
 			(tpcb->tp_nlproto->nlp_putnetaddr)(so->so_pcb, laddr, TP_LOCAL);
 
 			/* stash the f suffix in the new tpcb */
-			/* l suffix is already there */
 			bcopy(fsufxloc, tpcb->tp_fsuffix, fsufxlen);
-
+			/* l suffix is already there, unless this is an intercept case */
+			if (intercepted)
+				bcopy(lsufxloc, tpcb->tp_lsuffix, lsufxlen);
 			(tpcb->tp_nlproto->nlp_putsufx)
 					(so->so_pcb, fsufxloc, fsufxlen, TP_FOREIGN);
 			(tpcb->tp_nlproto->nlp_putsufx)
 					(so->so_pcb, lsufxloc, lsufxlen, TP_LOCAL);
-
 #ifdef TP_PERF_MEAS
 			if( tpcb->tp_perf_on = perf_meas ) { /* assignment */
 				/* ok, let's create an mbuf for stashing the
