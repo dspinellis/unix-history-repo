@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uipc_socket2.c	6.12 (Berkeley) %G%
+ *	@(#)uipc_socket2.c	6.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -456,7 +456,6 @@ sbappendaddr(sb, asa, m0, rights0)
 		return (0);
 	*mtod(m, struct sockaddr *) = *asa;
 	m->m_len = sizeof (*asa);
-	sballoc(sb, m);
 	if (rights0 && rights0->m_len) {
 		m->m_next = m_copy(rights0, 0, rights0->m_len);
 		if (m->m_next == 0) {
@@ -465,6 +464,7 @@ sbappendaddr(sb, asa, m0, rights0)
 		}
 		sballoc(sb, m->m_next);
 	}
+	sballoc(sb, m);
 	if (n = sb->sb_mb) {
 		while (n->m_act)
 			n = n->m_act;
