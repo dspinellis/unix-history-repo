@@ -1,4 +1,4 @@
-/*	conf.c	4.61	82/10/22	*/
+/*	conf.c	4.62	82/10/31	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -393,107 +393,107 @@ struct cdevsw	cdevsw[] =
 {
 	cnopen,		cnclose,	cnread,		cnwrite,	/*0*/
 	cnioctl,	nulldev,	nulldev,	&cons,
-	ttselect,
+	ttselect,	nodev,
 	dzopen,		dzclose,	dzread,		dzwrite,	/*1*/
 	dzioctl,	dzstop,		dzreset,	dz_tty,
-	ttselect,
+	ttselect,	nodev,
 	syopen,		nulldev,	syread,		sywrite,	/*2*/
 	syioctl,	nulldev,	nulldev,	0,
-	syselect,
+	syselect,	nodev,
 	nulldev,	nulldev,	mmread,		mmwrite,	/*3*/
 	nodev,		nulldev,	nulldev,	0,
-	mmselect,
+	mmselect,	nodev,
 	hpopen,		nulldev,	hpread,		hpwrite,	/*4*/
 	hpioctl,	nodev,		nulldev,	0,
-	seltrue,
+	seltrue,	nodev,
 	htopen,		htclose,	htread,		htwrite,	/*5*/
 	htioctl,	nodev,		nulldev,	0,
-	seltrue,
+	seltrue,	nodev,
 	vpopen,		vpclose,	nodev,		vpwrite,	/*6*/
 	vpioctl,	nulldev,	vpreset,	0,
-	vpselect,
+	vpselect,	nodev,
 	nulldev,	nulldev,	swread,		swwrite,	/*7*/
 	nodev,		nodev,		nulldev,	0,
-	nodev,
+	nodev,		nodev,
 #if VAX780
 	flopen,		flclose,	flread,		flwrite,	/*8*/
 	nodev,		nodev,		nulldev,	0,
-	seltrue,
+	seltrue,	nodev,
 #else
 	nodev,		nodev,		nodev,		nodev,		/*8*/
 	nodev,		nodev,		nodev,		0,
-	nodev,
+	nodev,		nodev,
 #endif
 	udopen,		nulldev,	udread,		udwrite,	/*9*/
 	nodev,		nodev,		udreset,		0,
-	seltrue,
+	seltrue,	nodev,
 	vaopen,		vaclose,	nodev,		vawrite,	/*10*/
 	vaioctl,	nulldev,	vareset,	0,
-	vaselect,
+	vaselect,	nodev,
 	rkopen,		nulldev,	rkread,		rkwrite,	/*11*/
 	nodev,		nodev,		rkreset,	0,
-	seltrue,
+	seltrue,	nodev,
 	dhopen,		dhclose,	dhread,		dhwrite,	/*12*/
 	dhioctl,	dhstop,		dhreset,	dh11,
-	ttselect,
+	ttselect,	nodev,
 	upopen,		nulldev,	upread,		upwrite,	/*13*/
 	nodev,		nodev,		upreset,	0,
-	seltrue,
+	seltrue,	nodev,
 	tmopen,		tmclose,	tmread,		tmwrite,	/*14*/
 	tmioctl,	nodev,		tmreset,	0,
-	seltrue,
+	seltrue,	nodev,
 	lpopen,		lpclose,	nodev,		lpwrite,	/*15*/
 	nodev,		nodev,		lpreset,	0,
-	seltrue,
+	seltrue,	nodev,
 	tsopen,		tsclose,	tsread,		tswrite,	/*16*/
 	tsioctl,	nodev,		tsreset,	0,
-	seltrue,
+	seltrue,	nodev,
 	utopen,		utclose,	utread,		utwrite,	/*17*/
 	utioctl,	nodev,		utreset,	0,
-	seltrue,
+	seltrue,	nodev,
 	ctopen,		ctclose,	nodev,		ctwrite,	/*18*/
 	nodev,		nodev,		nulldev,	0,
-	seltrue,
+	seltrue,	nodev,
 	mtopen,		mtclose,	mtread,		mtwrite,	/*19*/
 	mtioctl,	nodev,		nodev,		0,
-	seltrue,
+	seltrue,	nodev,
 	ptsopen,	ptsclose,	ptsread,	ptswrite,	/*20*/
 	ptyioctl,	ptsstop,	nodev,		pt_tty,
-	ttselect,
+	ttselect,	nodev,
 	ptcopen,	ptcclose,	ptcread,	ptcwrite,	/*21*/
 	ptyioctl,	nulldev,	nodev,		pt_tty,
-	ptcselect,
+	ptcselect,	nodev,
 	dmfopen,	dmfclose,	dmfread,	dmfwrite,	/*22*/
 	dmfioctl,	dmfstop,	dmfreset,	0,
-	ttselect,
+	ttselect,	nodev,
 	idcopen,	nulldev,	idcread,	idcwrite,	/*23*/
 	nodev,		nodev,		idcreset,	0,
-	seltrue,
+	seltrue,	nodev,
 	dnopen,		dnclose,	nodev,		dnwrite,	/*24*/
 	nodev,		nodev,		nodev,		0,
-	seltrue,
+	seltrue,	nodev,
 /* 25-29 reserved to local sites */
 	gpibopen,	gpibclose,	gpibread,	gpibwrite,	/*25*/
 	gpibioctl,	nulldev,	nodev,		0,
-	seltrue,
+	seltrue,	nodev,
 	lpaopen,	lpaclose,	lparead,	lpawrite,	/*26*/
 	lpaioctl,	nodev,		nulldev,	0,
-	seltrue,
+	seltrue,	nodev,
 	psopen,		psclose,	psread,		pswrite,	/*27*/
 	psioctl,	nodev,		psreset,	0,
-	seltrue,
+	seltrue,	nodev,
 	ibopen,		ibclose,	ibread,		ibwrite,	/*28*/
 	ibioctl,	nodev,		nodev,		0,
-	seltrue,
+	seltrue,	nodev,
 	adopen,		adclose,	nodev,		nodev,		/*29*/
 	adioctl,	nodev,		adreset,	0,
-	seltrue,
+	seltrue,	nodev,
 	efsopen,	efsclose,	efsread,	efswrite,	/*30*/
 	efsioctl,	nodev,		efsreset,	0,
-	seltrue,
+	seltrue,	nodev,
 	ikopen,		ikclose,	ikread,		ikwrite,	/*31*/
 	ikioctl,	nodev,		ikreset,	0,
-	seltrue,
+	seltrue,	nodev,
 };
 int	nchrdev = sizeof (cdevsw) / sizeof (cdevsw[0]);
 
