@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)raw_cb.c	7.6 (Berkeley) %G%
+ *	@(#)raw_cb.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -42,6 +42,9 @@
  *	redo address binding to allow wildcards
  */
 
+u_long	raw_sendspace = RAWSNDQ;
+u_long	raw_recvspace = RAWRCVQ;
+
 /*
  * Allocate a control block and a nominal amount
  * of buffer space for the socket.
@@ -56,9 +59,9 @@ raw_attach(so, proto)
 	m = m_getclr(M_DONTWAIT, MT_PCB);
 	if (m == 0)
 		return (ENOBUFS);
-	if (sbreserve(&so->so_snd, (u_long) RAWSNDQ) == 0)
+	if (sbreserve(&so->so_snd, raw_sendspace) == 0)
 		goto bad;
-	if (sbreserve(&so->so_rcv, (u_long) RAWRCVQ) == 0)
+	if (sbreserve(&so->so_rcv, raw_recvspace) == 0)
 		goto bad2;
 	rp = mtod(m, struct rawcb *);
 	rp->rcb_socket = so;
