@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rlogin.c	4.17 (Berkeley) 85/03/17";
+static char sccsid[] = "@(#)rlogin.c	4.18 (Berkeley) 85/05/31";
 #endif
 
 /*
@@ -25,6 +25,7 @@ char	*name;
 int	rem;
 char	cmdchar = '~';
 int	eight;
+int	litout;
 char	*speeds[] =
     { "0", "50", "75", "110", "134", "150", "200", "300",
       "600", "1200", "1800", "2400", "4800", "9600", "19200", "38400" };
@@ -78,6 +79,11 @@ another:
 		argv++, argc--;
 		goto another;
 	}
+	if (argc > 0 && !strcmp(*argv, "-L")) {
+		litout = 1;
+		argv++, argc--;
+		goto another;
+	}
 	if (argc > 0 && !strcmp(*argv, "-w")) {
 		nosigwin++;
 		argv++, argc--;
@@ -126,7 +132,7 @@ another:
 	/*NOTREACHED*/
 usage:
 	fprintf(stderr,
-	    "usage: rlogin host [ -ex ] [ -l username ] [ -8 ]\n");
+	    "usage: rlogin host [ -ex ] [ -l username ] [ -8 ] [ -L ] [ -w ]\n");
 	exit(1);
 }
 
@@ -136,6 +142,7 @@ int	child;
 int	catchild();
 
 int	defflags, tabflag;
+int	deflflags;
 char	deferase, defkill;
 struct	tchars deftc;
 struct	ltchars defltc;
@@ -153,6 +160,7 @@ doit()
 	defflags &= ECHO | CRMOD;
 	deferase = sb.sg_erase;
 	defkill = sb.sg_kill;
+	ioctl(0, TIOCLGET, (char *)&deflflags);
 	ioctl(0, TIOCGETC, (char *)&deftc);
 	notc.t_startc = deftc.t_startc;
 	notc.t_stopc = deftc.t_stopc;
@@ -391,8 +399,10 @@ mode(f)
 	struct tchars *tc;
 	struct ltchars *ltc;
 	struct sgttyb sb;
+	int	lflags;
 
 	ioctl(0, TIOCGETP, (char *)&sb);
+	ioctl(0, TIOCLGET, (char *)&lflags);
 	switch (f) {
 
 	case 0:
@@ -402,6 +412,7 @@ mode(f)
 		ltc = &defltc;
 		sb.sg_kill = defkill;
 		sb.sg_erase = deferase;
+		lflags = deflflags;
 		break;
 
 	case 1:
@@ -413,6 +424,8 @@ mode(f)
 		tc = &notc;
 		ltc = &noltc;
 		sb.sg_kill = sb.sg_erase = -1;
+		if (litout)
+			lflags |= LLITOUT;
 		break;
 
 	default:
@@ -421,6 +434,7 @@ mode(f)
 	ioctl(0, TIOCSLTC, (char *)ltc);
 	ioctl(0, TIOCSETC, (char *)tc);
 	ioctl(0, TIOCSETN, (char *)&sb);
+	ioctl(0, TIOCLSET, (char *)&lflags);
 }
 
 /*VARARGS*/
