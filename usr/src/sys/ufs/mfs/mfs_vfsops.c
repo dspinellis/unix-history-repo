@@ -14,13 +14,15 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mfs_vfsops.c	7.3 (Berkeley) %G%
+ *	@(#)mfs_vfsops.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
+#include "time.h"
+#include "user.h"
+#include "proc.h"
 #include "buf.h"
 #include "mount.h"
-#include "time.h"
 #include "vnode.h"
 #include "../ufs/ufsmount.h"
 #include "../ufs/inode.h"
@@ -117,12 +119,22 @@ mfs_start(mp, flags)
 	register struct buf *bp;
 	register caddr_t base;
 
-	sleep((caddr_t)vp, PRIBIO);
 	base = (caddr_t)ip->i_diroff;
-	while (bp = (struct buf *)ip->i_spare[0]) {
-		mfs_doio(bp, base);
-		wakeup((caddr_t)bp);
-		sleep((caddr_t)vp, PRIBIO);
+	if (setjmp(&u.u_qsave)) {
+		/*
+		 * We have received a signal, so try to unmount.
+		 */
+		(void) dounmount(mp, MNT_NOFORCE);
+	} else {
+		sleep((caddr_t)vp, PWAIT);
+	}
+	while (ip->i_spare[0] != -1) {
+		while (bp = (struct buf *)ip->i_spare[0]) {
+			ip->i_spare[0] = (long)bp->av_forw;
+			mfs_doio(bp, base);
+			wakeup((caddr_t)bp);
+		}
+		sleep((caddr_t)vp, PWAIT);
 	}
 	return (0);
 }
