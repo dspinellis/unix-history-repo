@@ -1,33 +1,38 @@
 #ifndef lint
-static char sccsid[] = "@(#)mbufs.c	1.1 (Lucasfilm) %G%";
+static char sccsid[] = "@(#)mbufs.c	1.2 (Lucasfilm) %G%";
 #endif
 
 #include "systat.h"
 #include <sys/mbuf.h>
 
-#define	X_MBSTAT	16
+WINDOW *
+openmbufs()
+{
+	static WINDOW *w = NULL;
+
+	if (w == NULL)
+        	w = newwin(20, 70, 3, 5);
+	return (w);
+}
+
+closembufs(w)
+	WINDOW *w;
+{
+
+	if (w == NULL)
+		return;
+	move(5, 0);
+	clrtobot();
+	wclear(w);
+	wrefresh(w);
+}
 
 struct	mbstat *mb;
-
-initmbufs()
-{
-
-	if (mb == 0)
-		mb = (struct mbstat *)calloc(1, sizeof (*mb));
-}
-
-fetchmbufs()
-{
-
-	lseek(kmem, nlst[X_MBSTAT].n_value, L_SET);
-	read(kmem, mb, sizeof (*mb));
-}
 
 labelmbufs()
 {
 
-        move(5, 0);
-        clrtoeol();
+        move(5, 0); clrtoeol();
         mvaddstr(5, 20,
                 "/0   /5   /10  /15  /20  /25  /30  /35  /40  /45  /50");
 }
@@ -83,4 +88,33 @@ showmbufs()
 		wmove(wnd, 3 + j, 0);
 		wclrtoeol(wnd);
 	}
+}
+
+static struct nlist nlst[] = {
+#define	X_MBSTAT	0
+	{ "_mbstat" },
+        { "" }
+};
+
+initmbufs()
+{
+
+	if (nlst[X_MBSTAT].n_type == 0) {
+		nlist("/vmunix", nlst);
+		if (nlst[X_MBSTAT].n_type == 0) {
+			error("namelist on /vmunix failed");
+			return;
+		}
+	}
+	if (mb == 0)
+		mb = (struct mbstat *)calloc(1, sizeof (*mb));
+}
+
+fetchmbufs()
+{
+
+	if (nlst[X_MBSTAT].n_type == 0)
+		return;
+	lseek(kmem, nlst[X_MBSTAT].n_value, L_SET);
+	read(kmem, mb, sizeof (*mb));
 }

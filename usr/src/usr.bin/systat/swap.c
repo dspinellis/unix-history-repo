@@ -1,26 +1,30 @@
 #ifndef lint
-static char *sccsid = "@(#)swap.c	1.4 (Lucasfilm) %G%";
+static char *sccsid = "@(#)swap.c	1.5 (Lucasfilm) %G%";
 #endif
 
 #include "systat.h"
 
-#include <sys/map.h>
-#include <sys/conf.h>
-#include <sys/text.h>
+WINDOW *
+openswap()
+{
+	static WINDOW *w = NULL;
 
-/* these don't belong here */
-#define X_PROC          0
-#define X_NPROC         1
-#define X_USRPTMAP      4
-#define X_USRPT         5
-#define X_NSWAP         6
-#define X_DMMIN         9
-#define X_DMMAX         10
-#define X_NSWDEV        11
-#define	X_SWDEVT	12
-#define	X_NTEXT		13
-#define	X_TEXT		14
-#define	X_DMTEXT	15
+        if (w == NULL)
+		w = newwin(20, 70, 3, 5);
+	return (w);
+}
+
+closeswap(w)
+	WINDOW *w;
+{
+
+	if (w == NULL)
+		return;
+	move(5, 0);
+	clrtobot();
+	wclear(w);
+	wrefresh(w);
+}
 
 int	dmmin;
 int	dmmax;
@@ -29,117 +33,7 @@ int	nswdev;
 #define	MAXSWAPDEV	4
 short	buckets[MAXSWAPDEV][NDMAP];
 struct	swdevt *swdevt;
-struct	proc *kprocp;
-int	ntext;
-int	textaddr;
-struct	text *xtext;
-
-initswap()
-{
-
-        if (nswdev == 0) {
-                dmmin = getw(nlst[X_DMMIN].n_value);
-                dmmax = getw(nlst[X_DMMAX].n_value);
-                dmtext = getw(nlst[X_DMTEXT].n_value);
-                nswdev = getw(nlst[X_NSWDEV].n_value);
-		swdevt = (struct swdevt *)calloc(nswdev, sizeof (*swdevt));
-		klseek(kmem, nlst[X_SWDEVT].n_value, L_SET);
-		read(kmem, swdevt, nswdev * sizeof (struct swdevt));
-		ntext = getw(nlst[X_NTEXT].n_value);
-		textaddr = getw(nlst[X_TEXT].n_value);
-        }
-        if (procp == NULL) {
-                procp = getw(nlst[X_PROC].n_value);
-                nproc = getw(nlst[X_NPROC].n_value);
-        }
-	if (xtext == NULL)
-		xtext = (struct text *)calloc(ntext, sizeof (struct text));
-	if (kprocp == NULL)
-                kprocp = (struct proc *)calloc(nproc, sizeof (struct proc));
-        if (usrpt != NULL)
-                return;
-	usrpt = (struct pte *)nlst[X_USRPT].n_value;
-	Usrptma = (struct pte *)nlst[X_USRPTMAP].n_value;
-	if (pt == NULL)
-		pt = (struct p_times *)malloc(nproc * sizeof (struct p_times));
-}
-
-fetchswap()
-{
-
-	if (kprocp == NULL) {
-                kprocp = (struct proc *)malloc(sizeof (*kprocp) * nproc);
-		if (kprocp == NULL)
-			return;
-	}
-        lseek(kmem, procp, L_SET);
-        if (read(kmem, kprocp, sizeof (struct proc) * nproc) !=
-	    sizeof (struct proc) * nproc) {
-		error("couldn't read proc table");
-		return;
-	}
-	if (xtext == NULL) {
-		xtext = (struct text *)calloc(ntext, sizeof (struct text));
-		if (xtext == NULL)
-			return;
-	}
-	lseek(kmem, textaddr, L_SET);
-	if (read(kmem, xtext, ntext * sizeof (struct text)) !=
-	    sizeof (struct text) * ntext)
-		error("couldn't read text table");
-}
-
-#ifdef vax
-char	*devnames[] =
-     { "hp", "ht", "up", "rk", "sw", "tm", "ts", "mt", "tu", "ra", "ut",
-       "rb", "rx", "rl" };
-#endif
 int	colwidth;
-
-labelswap()
-{
-	register int i, j;
-	register int row;
-
-	if (nswdev == 0)
-		initswap();
-	if (nswdev == 0) {
-		mvaddstr(22, 0, "Can't find number of swap devices.\n");
-		return;
-	}
-        move(5, 0);
-	colwidth = (70 - (nswdev - 1)) / nswdev;
-	row = swaplabel(5, dmtext, 1);
-	(void) swaplabel(row, dmmax, 0);
-}
-
-swaplabel(row, dmbound, donames)
-	register int row;
-	int dmbound, donames;
-{
-	register int i, j;
-
-	for (i = 0; i < nswdev; i++) {
-		if (donames) {
-			move(row, 5 + i * (1 + colwidth) + (colwidth - 3) / 2);
-			printw("%s%d", devnames[major(swdevt[i].sw_dev)],
-			    minor(swdevt[i].sw_dev) >> 3);
-		}
-		for (j = 0; j + 5 < colwidth; j += 5) {
-			move(row + donames, 5 + i * (1 + colwidth) + j);
-			printw("/%-2d  ", j);
-		}
-	}
-	row += 1 + donames;
-	for (j = 0, i = dmmin; i <= dmbound; i *= 2, j++, row++) {
-		int k;
-
-		mvprintw(row, 0, "%4d|", i);
-		for (k = 1; k < nswdev; k++)
-			mvwaddch(wnd, row - 3, k * (1 + colwidth) - 1, '|');
-	}
-	return (row);
-}
 
 extern union {
         struct  user user;
@@ -259,4 +153,145 @@ dmtoindex(dm)
 			return (j);
 	error("dmtoindex(%d)", dm);
 	return (NDMAP - 1);
+}
+
+static struct nlist nlst[] = {
+#define X_PROC          0
+        { "_proc" },
+#define X_NPROC         1
+        { "_nproc" },
+#define X_USRPTMAP      2
+        { "_Usrptmap" },
+#define X_USRPT         3
+        { "_usrpt" },
+#define X_NSWAP         4
+        { "_nswap" },
+#define X_DMMIN         5
+        { "_dmmin" },
+#define X_DMMAX         6
+        { "_dmmax" },
+#define	X_DMTEXT	7
+	{ "_dmtext" },
+#define X_NSWDEV        8
+        { "_nswdev" },
+#define	X_SWDEVT	9
+	{ "_swdevt" },
+#define	X_NTEXT		10
+	{ "_ntext" },
+#define	X_TEXT		11
+	{ "_text" },
+        { "" }
+};
+
+initswap()
+{
+
+	if (nlst[X_PROC].n_type == 0) {
+		nlist("/vmunix", nlst);
+		if (nlst[X_PROC].n_type == 0) {
+			error("namelist on /vmunix failed");
+			return;
+		}
+	}
+        if (nswdev == 0) {
+                dmmin = getw(nlst[X_DMMIN].n_value);
+                dmmax = getw(nlst[X_DMMAX].n_value);
+                dmtext = getw(nlst[X_DMTEXT].n_value);
+                nswdev = getw(nlst[X_NSWDEV].n_value);
+		swdevt = (struct swdevt *)calloc(nswdev, sizeof (*swdevt));
+		klseek(kmem, nlst[X_SWDEVT].n_value, L_SET);
+		read(kmem, swdevt, nswdev * sizeof (struct swdevt));
+		ntext = getw(nlst[X_NTEXT].n_value);
+		textp = getw(nlst[X_TEXT].n_value);
+        }
+        if (procp == NULL) {
+                procp = getw(nlst[X_PROC].n_value);
+                nproc = getw(nlst[X_NPROC].n_value);
+        }
+	if (xtext == NULL)
+		xtext = (struct text *)calloc(ntext, sizeof (struct text));
+	if (kprocp == NULL)
+                kprocp = (struct proc *)calloc(nproc, sizeof (struct proc));
+        if (usrpt != NULL)
+                return;
+	usrpt = (struct pte *)nlst[X_USRPT].n_value;
+	Usrptma = (struct pte *)nlst[X_USRPTMAP].n_value;
+	if (pt == NULL)
+		pt = (struct p_times *)malloc(nproc * sizeof (struct p_times));
+}
+
+fetchswap()
+{
+
+	if (nlst[X_PROC].n_type == 0)
+		return;
+	if (kprocp == NULL) {
+                kprocp = (struct proc *)malloc(sizeof (*kprocp) * nproc);
+		if (kprocp == NULL)
+			return;
+	}
+        lseek(kmem, procp, L_SET);
+        if (read(kmem, kprocp, sizeof (struct proc) * nproc) !=
+	    sizeof (struct proc) * nproc) {
+		error("couldn't read proc table");
+		return;
+	}
+	if (xtext == NULL) {
+		xtext = (struct text *)calloc(ntext, sizeof (struct text));
+		if (xtext == NULL)
+			return;
+	}
+	lseek(kmem, textp, L_SET);
+	if (read(kmem, xtext, ntext * sizeof (struct text)) !=
+	    sizeof (struct text) * ntext)
+		error("couldn't read text table");
+}
+
+#ifdef vax
+char	*devnames[] =
+     { "hp", "ht", "up", "rk", "sw", "tm", "ts", "mt", "tu", "ra", "ut",
+       "rb", "rx", "rl" };
+#endif
+
+labelswap()
+{
+	register int i, j;
+	register int row;
+
+	if (nswdev == 0) {
+		error("Don't know how many swap devices.\n");
+		return;
+	}
+        move(5, 0);
+	colwidth = (70 - (nswdev - 1)) / nswdev;
+	row = swaplabel(5, dmtext, 1);
+	(void) swaplabel(row, dmmax, 0);
+}
+
+swaplabel(row, dmbound, donames)
+	register int row;
+	int dmbound, donames;
+{
+	register int i, j;
+
+	for (i = 0; i < nswdev; i++) {
+		if (donames) {
+			move(row, 5 + i * (1 + colwidth) + (colwidth - 3) / 2);
+			printw("%s%d", devnames[major(swdevt[i].sw_dev)],
+			    minor(swdevt[i].sw_dev) >> 3);
+		}
+		for (j = 0; j + 5 < colwidth; j += 5) {
+			move(row + donames, 5 + i * (1 + colwidth) + j);
+			printw("/%-2d  ", j);
+		}
+	}
+	row += 1 + donames;
+	for (j = 0, i = dmmin; i <= dmbound; i *= 2, j++, row++) {
+		int k;
+
+		mvprintw(row, 0, "%4d|", i);
+		for (k = 1; k < nswdev; k++)
+			mvwaddch(wnd, row - 3, k * (1 + colwidth) - 1, '|');
+	}
+	return (row);
 }

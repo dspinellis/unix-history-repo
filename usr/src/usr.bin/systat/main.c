@@ -1,44 +1,14 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	1.3 (Lucasfilm) %G%";
+static char sccsid[] = "@(#)main.c	1.4 (Lucasfilm) %G%";
 #endif
 
 #include "systat.h"
 
-struct nlist nlst[] = {
-#define X_PROC          0
-        { "_proc" },
-#define X_NPROC         1
-        { "_nproc" },
-#define X_CCPU          2
+static struct nlist nlst[] = {
+#define X_CCPU          0
         { "_ccpu" },
-#define X_AVENRUN       3
+#define X_AVENRUN       1
         { "_avenrun" },
-#define X_USRPTMAP      4
-        { "_Usrptmap" },
-#define X_USRPT         5
-        { "_usrpt" },
-#define X_NSWAP         6
-        { "_nswap" },
-#define X_SWAPMAP       7
-        { "_swapmap" },
-#define X_NSWAPMAP      8
-        { "_nswapmap" },
-#define X_DMMIN         9
-        { "_dmmin" },
-#define X_DMMAX         10
-        { "_dmmax" },
-#define X_NSWDEV        11
-        { "_nswdev" },
-#define	X_SWDEVT	12
-	{ "_swdevt" },
-#define	X_NTEXT		13
-	{ "_ntext" },
-#define	X_TEXT		14
-	{ "_text" },
-#define	X_DMTEXT	15
-	{ "_dmtext" },
-#define	X_MBSTAT	16
-	{ "_mbstat" },
         { "" }
 };
 
@@ -51,44 +21,10 @@ int     die();
 int     display();
 int     suspend();
 
-int     showpigs(), openpigs(), fetchpigs(), labelpigs(), initpigs();
-int     showswap(), fetchswap(), labelswap(), initswap();
-int	showmbufs(), fetchmbufs(), labelmbufs(), initmbufs();
-#ifdef notdef
-int     showuser(), openuser(), fetchuser(), labeluser(), inituser();
-int     shownet(), opennet(), fetchnet(), labelnet(), initnet();
-#endif
-
-struct  cmdtab {
-        char    *c_name;
-        int     (*c_refresh)();
-        int     (*c_open)();
-        int     (*c_fetch)();
-        int     (*c_label)();
-	int	(*c_init)();
-	char	c_flags;
-} cmdtab[] = {
-        { "pigs",       showpigs,       openpigs,       fetchpigs,
-          labelpigs,	initpigs },
-        { "swap",       showswap,       openpigs,       fetchswap,
-          labelswap,	initswap },
-        { "mbufs",	showmbufs,	openpigs,       fetchmbufs,
-          labelmbufs,	initmbufs },
-#ifdef notdef
-        { "user",       showuser,       openuser,       fetchuser,
-          labeluser,	inituser },
-        { "net",        shownet,        opennet,        fetchnet,
-          labelnet,	initnet },
-#endif
-        { "" }
-};
-struct  cmdtab *curcmd = &cmdtab[0];
-
 main(argc, argv)
         int argc;
         char **argv;
 {
-        char ch, line[80];
 
 	argc--, argv++;
 	while (argc > 0) {
@@ -112,14 +48,44 @@ main(argc, argv)
 		argc--, argv++;
 	}
         nlist("/vmunix", nlst);
-        (*curcmd->c_open)();
+	if (nlst[X_CCPU].n_type == 0) {
+		fprintf(stderr, "Couldn't namelist /vmunix.\n");
+		exit(1);
+	}
+	kmemf = "/dev/kmem";
+	kmem = open(kmemf, O_RDONLY);
+	if (kmem < 0) {
+		perror(kmemf);
+		exit(1);
+	}
+	memf = "/dev/mem";
+	mem = open(memf, O_RDONLY);
+	if (mem < 0) {
+		perror(memf);
+		exit(1);
+	}
+	swapf = "/dev/drum";
+	swap = open(swapf, O_RDONLY);
+	if (swap < 0) {
+		perror(swapf);
+		exit(1);
+	}
         signal(SIGINT, die);
         signal(SIGQUIT, die);
         signal(SIGTERM, die);
 
-        /* Initialize curses. */
+        /*
+	 * Initialize display.  Load average appears in standard
+	 * window with current display's overlapping sub-window
+	 * maintained by the display routines to minimize update
+	 * work by curses.
+	 */
         initscr();
-        wnd = newwin(20, 70, 3, 5);
+	wnd = (*curcmd->c_open)();
+	if (wnd == NULL) {
+		fprintf(stderr, "Couldn't initialize display.\n");
+		die();
+	}
 
 #ifdef notdef
         gethostname(hostname, sizeof (hostname));
@@ -127,6 +93,8 @@ main(argc, argv)
         lseek(kmem, nlst[X_CCPU].n_value, 0);
         read(kmem, &ccpu, sizeof (ccpu));
         lccpu = log(ccpu);
+	(*curcmd->c_init)();
+	curcmd->c_flags = 1;
         labels();
 
         known[0].k_uid = -1;
@@ -139,166 +107,8 @@ main(argc, argv)
         display();
         noecho();
         crmode();
-        for (;;) {
-                col = 0;
-                move(22, 0);
-                do {
-                        refresh();
-                        ch = getch() & 0177;
-                        if (ch == 0177 && ferror(stdin)) {
-                                clearerr(stdin);
-                                continue;
-                        }
-                        if (ch >= 'A' && ch <= 'Z')
-                                ch += 'a' - 'A';
-                        if (col == 0) {
-#define	mask(s)	(1 << ((s) - 1))
-                                if (ch == CTRL(l)) {
-					int oldmask = sigblock(mask(SIGALRM));
-
-					wrefresh(curscr);
-					sigsetmask(oldmask);
-                                        continue;
-                                }
-                                if (ch != ':')
-                                        continue;
-                                move(22, 0);
-                                clrtoeol();
-                        }
-                        if (ch == _tty.sg_erase && col > 0) {
-                                if (col == 1 && line[0] == ':')
-                                        continue;
-                                col--;
-                                goto doerase;
-                        }
-                        if (ch == CTRL(w) && col > 0) {
-                                while (--col >= 0 && isspace(line[col]))
-                                        ;
-                                col++;
-                                while (--col >= 0 && !isspace(line[col]))
-                                        if (col == 0 && line[0] == ':')
-                                                break;
-                                col++;
-                                goto doerase;
-                        }
-                        if (ch == _tty.sg_kill && col > 0) {
-                                col = 0;
-                                if (line[0] == ':')
-                                        col++;
-                doerase:
-                                move(22, col);
-                                clrtoeol();
-                                continue;
-                        }
-                        if (isprint(ch)) {
-                                line[col] = ch;
-                                mvaddch(22, col, ch);
-                                col++;
-                        }
-                } while (col == 0 || (ch != '\r' && ch != '\n'));
-                line[col] = '\0';
-                command(line + 1);
-        }
-}
-
-command(cmd)
-        char *cmd;
-{
-        register char *cp;
-        register struct cmdtab *p;
-        char *arg;
-
-        for (cp = cmd; *cp && !isspace(*cp); cp++)
-                ;
-        if (*cp)
-                *cp++ = '\0';
-        if (strcmp(cmd, "quit") == 0)
-                die();
-        if (strcmp(cmd, "status") == 0 || strcmp(cmd, "help") == 0) {
-                status();
-                return;
-        }
-	if (strcmp(cmd, "load") == 0) {
-		lseek(kmem, nlst[X_AVENRUN].n_value, L_SET);
-		read(kmem, &lave, sizeof (lave));
-		mvprintw(22, 0, "%4.1f", lave);
-		clrtoeol();
-		return;
-	}
-        for (p = cmdtab; *p->c_name; p++)
-                if (strcmp(cmd, p->c_name) == 0)
-                        break;
-        if (*p->c_name) {
-                if (curcmd == p)
-                        return;
-                alarm(0);
-                curcmd = p;
-		clear(); wclear(wnd);
-		labels();
-                display();
-                status();
-                return;
-        }
-        if (strcmp(cmd, "stop") == 0) {
-                alarm(0);
-                mvaddstr(22, 0, "Refresh disabled.");
-                clrtoeol();
-                return;
-        }
-        /* commands with arguments */
-        for (; *cp && isspace(*cp); cp++)
-                ;
-        if (strcmp(cmd, "start") == 0) {
-                int x;
-
-                if (*cp == '\0')
-                        x = naptime;
-                else
-                        x = atoi(cp);
-                if (x <= 0) {
-                        mvprintw(22, 0, "%d: bad interval.", x);
-                        clrtoeol();
-                        return;
-                }
-                alarm(0);
-                naptime = x;
-                display();
-                status();
-                return;
-        }
-	if (*cmd) {
-		mvprintw(22, 0, "%s: Unknown command.", cmd);
-		clrtoeol();
-	}
-}
-
-status()
-{
-
-        mvprintw(22, 0, "Showing %s, refresh every %d seconds.",
-          curcmd->c_name, naptime);
-        clrtoeol();
-}
-
-suspend()
-{
-        int oldmask;
-
-	alarm(0);
-        move(22, 0);
-        refresh();
-        echo();
-        nocrmode();
-        signal(SIGTSTP, SIG_DFL);
-        oldmask = sigsetmask(0);
-        kill(getpid(), SIGTSTP);
-        sigsetmask(oldmask);
-        signal(SIGTSTP, suspend);
-        crmode();
-        noecho();
-        move(22, col);
-        wrefresh(curscr);
-	alarm(naptime);
+	keyboard();
+	/*NOTREACHED*/
 }
 
 labels()
@@ -321,10 +131,6 @@ display()
         /* Get the load average over the last minute. */
         lseek(kmem, nlst[X_AVENRUN].n_value, L_SET);
         read(kmem, &lave, sizeof (lave));
-	if (curcmd->c_flags == 0) {
-		(*curcmd->c_init)();
-		curcmd->c_flags = 1;
-	}
         (*curcmd->c_fetch)();
         j = 5.0*lave + 0.5;
         dellave -= lave;
@@ -348,6 +154,15 @@ display()
         move(22, col);
         refresh();
         alarm(naptime);
+}
+
+load()
+{
+
+	lseek(kmem, nlst[X_AVENRUN].n_value, L_SET);
+	read(kmem, &lave, sizeof (lave));
+	mvprintw(22, 0, "%4.1f", lave);
+	clrtoeol();
 }
 
 die()

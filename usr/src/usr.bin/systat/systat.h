@@ -1,4 +1,4 @@
-/*      systat.h     1.1     83/10/01     */
+/*      systat.h     1.2     83/10/02     */
 
 #include <sys/param.h>
 #include <sys/dir.h>
@@ -7,6 +7,9 @@
 #include <sys/timeb.h>
 #include <sys/vm.h>
 #include <sys/file.h>
+#include <sys/map.h>
+#include <sys/conf.h>
+#include <sys/text.h>
 
 #include <machine/pte.h>
 
@@ -16,8 +19,6 @@
 #include <curses.h>
 #include <signal.h>
 #include <ctype.h>
-
-struct  nlist nlst[];
 
 struct p_times {
         short   pt_pid;
@@ -38,20 +39,37 @@ struct users {
         char    k_name[16];
 } known[30];
 
+struct  cmdtab {
+        char    *c_name;		/* command name */
+        int     (*c_refresh)();		/* display refresh */
+        int     (*c_fetch)();		/* sets up data structures */
+        int     (*c_label)();		/* label display */
+	int	(*c_init)();		/* initialize namelist, etc. */
+	WINDOW	*(*c_open)();		/* open display */
+	int	(*c_close)();		/* close display */
+	char	c_flags;		/* been initialized (right now) */
+};
+
+struct	cmdtab *curcmd;
+struct	cmdtab cmdtab[];
+
 char    *kmemf;
 char    *memf;
 char    *swapf;
 int     kmem;
 int     mem;
 int     swap;
-int     pcbpf;
-int     argaddr;
 int     col;
 long    nproc;
 long    procp;
+struct	proc *kprocp;
+long	ntext;
+long	textp;
+struct	text *xtext;
 double  ccpu;
 double  lccpu;
 char    *malloc();
+char    *calloc();
 char    *namp;
 char    *strncpy();
 char    c;
