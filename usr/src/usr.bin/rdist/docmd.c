@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)docmd.c	4.5 (Berkeley) 83/10/20";
+static	char *sccsid = "@(#)docmd.c	4.6 (Berkeley) 83/10/26";
 #endif
 
 #include "defs.h"
@@ -14,19 +14,45 @@ dohcmds(files, hosts, cmds)
 {
 	register struct block *h, *f, *c;
 	register char **cpp;
+	static struct block excpt = { EXCEPT };
+	char *cp;
 	int n, ddir;
 
 	if (debug)
 		printf("dohcmds(%x, %x, %x)\n", files, hosts, cmds);
 
 	files = expand(files, 0);
+	if (files == NULL) {
+		error("no files to be updated\n");
+		return;
+	}
 	hosts = expand(hosts, 1);
-	if (files == NULL)
-		fatal("no files to be updated\n");
-	if (hosts == NULL)
-		fatal("empty list of hosts to be updated\n");
-	except = cmds;
+	if (hosts == NULL) {
+		error("empty list of hosts to be updated\n");
+		return;
+	}
 	ddir = files->b_next != NULL;
+	f = NULL;
+	except = NULL;
+	for (c = cmds; c != NULL; c = c->b_next) {
+		if (c->b_type != EXCEPT)
+			continue;
+		if (except == NULL)
+			except = &excpt;
+		for (h = c->b_args; h != NULL; h = h->b_next) {
+			cp = h->b_name;
+			if (*cp == '~') {
+				(void) exptilde(buf, cp);
+				cp = buf;
+			}
+			if (f == NULL)
+				except->b_args = f = expand(makeblock(NAME, cp), 0);
+			else {
+				f->b_next = expand(makeblock(NAME, cp), 0);
+				f = f->b_next;
+			}
+		}
+	}
 
 	for (h = hosts; h != NULL; h = h->b_next) {
 		if (!qflag)
@@ -44,9 +70,8 @@ dohcmds(files, hosts, cmds)
 				for (cpp = filev; *cpp; cpp++)
 					if (!strcmp(f->b_name, *cpp))
 						goto found;
-				if (!nflag) {
+				if (!nflag)
 					(void) fclose(lfp);
-				}
 				continue;
 			}
 		found:
@@ -83,6 +108,7 @@ dohcmds(files, hosts, cmds)
 makeconn(rhost)
 	char *rhost;
 {
+	register struct block *c;
 	register char *ruser;
 	extern char user[];
 
@@ -127,9 +153,10 @@ install(src, dest, destdir, opts)
 		return;
 
 	if (nflag || debug) {
-		printf("%s%s%s%s %s %s\n", opts & VERIFY ? "verify":"install",
+		printf("%s%s%s%s%s %s %s\n", opts & VERIFY ? "verify":"install",
 			opts & WHOLE ? " -w" : "",
 			opts & YOUNGER ? " -y" : "",
+			opts & COMPARE ? " -b" : "",
 			opts & REMOVE ? " -r" : "", src, dest);
 		if (nflag)
 			return;
@@ -178,11 +205,15 @@ dofcmds(files, stamps, cmds)
 		printf("dofcmds()\n");
 
 	files = expand(files, 0);
+	if (files == NULL){
+		error("no files to be updated\n");
+		return;
+	}
 	stamps = expand(stamps, 0);
-	if (files == NULL)
-		fatal("no files to be updated\n");
-	if (stamps == NULL)
-		fatal("empty time stamp file list\n");
+	if (stamps == NULL) {
+		error("empty time stamp file list\n");
+		return;
+	}
 	except = cmds;
 
 	t = ts;

@@ -1,10 +1,10 @@
 #ifndef lint
-static	char *sccsid = "@(#)server.c	4.5 (Berkeley) 83/10/20";
+static	char *sccsid = "@(#)server.c	4.6 (Berkeley) 83/10/26";
 #endif
 
 #include "defs.h"
 
-#define	ga() 	(void) write(rem, "", 1)
+#define	ga() 	(void) write(rem, "\0\n", 2)
 
 char	buf[BUFSIZ];		/* general purpose buffer */
 char	target[BUFSIZ];		/* target/source directory name */
@@ -32,7 +32,6 @@ server()
 	char cmdbuf[BUFSIZ];
 	register char *cp;
 	register struct block *bp, *last = NULL;
-	static struct block cmdblk = { EXCEPT };
 	int opts;
 
 	sumask = umask(0);
@@ -56,19 +55,15 @@ server()
 		case 'X':  /* add name to list of files to exclude */
 			if (*cp == '\0')
 				continue;
-			bp = ALLOC(block);
-			if (bp == NULL)
-				fatal("ran out of memory\n");
-			bp->b_type = NAME;
-			bp->b_next = bp->b_args = NULL;
-			bp->b_name = cp = malloc(strlen(cp) + 1);
-			if (cp == NULL)
-				fatal("ran out of memory\n");
-			strcpy(cp, &cmdbuf[1]);
-			if (last == NULL) {
-				except = &cmdblk;
-				cmdblk.b_args = last = bp;
-			} else {
+			if (*cp == '~') {
+				exptilde(buf, cp);
+				cp = buf;
+			}
+			bp = makeblock(EXCEPT);
+			bp->b_args = expand(makeblock(NAME, cp), 0);
+			if (last == NULL)
+				except = last = bp;
+			else {
 				last->b_next = bp;
 				last = bp;
 			}
@@ -170,9 +165,6 @@ sendf(lname, rname, opts)
 		printf("sendf(%s, %s, %x)\n", lname,
 			rname != NULL ? rname : "NULL", opts);
 
-	if (exclude(lname))
-		return;
-
 	/*
 	 * First time sendf() is called?
 	 */
@@ -203,6 +195,8 @@ sendf(lname, rname, opts)
 				rname++;
 		}
 	}
+	if (exclude(lname))
+		return;
 	if (access(lname, 4) < 0 || stat(lname, &stb) < 0) {
 		error("%s: %s\n", lname, sys_errlist[errno]);
 		return;
@@ -212,14 +206,22 @@ sendf(lname, rname, opts)
 
 	if (p == NULL || p->pw_uid != stb.st_uid)
 		if ((p = getpwuid(stb.st_uid)) == NULL) {
-			error("no password entry for uid %d\n", stb.st_uid);
+			error("%s: no password entry for uid %d\n",
+				lname, stb.st_uid);
 			return;
 		}
 	if (g == NULL || g->gr_gid != stb.st_gid)
 		if ((g = getgrgid(stb.st_gid)) == NULL) {
-			error("no name for group %d\n", stb.st_gid);
+			error("%s: no name for group %d\n",
+				lname, stb.st_gid);
 			return;
 		}
+	if (u == 1) {
+		log(lfp, "installing: %s\n", lname);
+		if (opts & VERIFY)
+			return;
+		opts &= ~COMPARE;
+	}
 
 	switch (stb.st_mode & S_IFMT) {
 	case S_IFREG:
@@ -234,16 +236,17 @@ sendf(lname, rname, opts)
 		return;
 	}
 
-	log(lfp, "%s: %s\n", u == 2 ? "updating" : "installing", lname);
-
-	if (opts & VERIFY)
-		return;
+	if (u == 2) {
+		log(lfp, "updating: %s\n", lname);
+		if (opts & VERIFY)
+			return;
+	}
 
 	if ((f = open(lname, 0)) < 0) {
 		error("%s: %s\n", lname, sys_errlist[errno]);
 		return;
 	}
-	(void) sprintf(buf, "R%1o %04o %D %D %s %s %s\n", opts,
+	(void) sprintf(buf, "R%o %04o %D %D %s %s %s\n", opts,
 		stb.st_mode & 07777, stb.st_size, stb.st_mtime,
 		p->pw_name, g->gr_name, rname);
 	if (debug)
@@ -289,7 +292,7 @@ rsendf(lname, rname, opts, st, owner, group)
 		error("%s: %s\n", lname, sys_errlist[errno]);
 		return;
 	}
-	(void) sprintf(buf, "D%1o %04o 0 0 %s %s %s\n", opts,
+	(void) sprintf(buf, "D%o %04o 0 0 %s %s %s\n", opts,
 		st->st_mode & 07777, owner, group, rname);
 	if (debug)
 		printf("buf = %s", buf);
@@ -379,6 +382,9 @@ update(lname, rname, opts, st)
 	if (*cp == '\n')
 		return(2);
 
+	if (opts & COMPARE)
+		return(3);
+
 	size = 0;
 	while (isdigit(*cp))
 		size = size * 10 + (*cp++ - '0');
@@ -417,6 +423,7 @@ update(lname, rname, opts, st)
  */
 query(name, isdir)
 	char *name;
+	int isdir;
 {
 	struct stat stb;
 
@@ -460,7 +467,7 @@ recvf(cmd, isdir)
 	int isdir;
 {
 	register char *cp;
-	int f, mode, opts, wrerr, olderrno;
+	int f, mode, opts, wrerr, olderrno, u;
 	off_t i, size;
 	time_t mtime;
 	struct stat stb;
@@ -469,25 +476,17 @@ recvf(cmd, isdir)
 	char new[BUFSIZ];
 	extern char *tmpname;
 
-	
 	cp = cmd;
-	if (*cp < '0' || *cp > '7') {
-		error("bad options\n");
-		return;
-	}
-	opts = *cp++ - '0';
+	opts = 0;
+	while (*cp >= '0' && *cp <= '7')
+		opts = (opts << 3) | (*cp++ - '0');
 	if (*cp++ != ' ') {
 		error("options not delimited\n");
 		return;
 	}
 	mode = 0;
-	while (cp < cmd+6) {
-		if (*cp < '0' || *cp > '7') {
-			error("bad mode\n");
-			return;
-		}
+	while (*cp >= '0' && *cp <= '7')
 		mode = (mode << 3) | (*cp++ - '0');
-	}
 	if (*cp++ != ' ') {
 		error("mode not delimited\n");
 		return;
@@ -574,7 +573,9 @@ recvf(cmd, isdir)
 			error("%s: not a regular file\n", target);
 			return;
 		}
-	}
+		u = 2;
+	} else
+		u = 1;
 	if (chkparent(target) < 0)
 		goto bad;
 	cp = rindex(target, '/');
@@ -625,20 +626,44 @@ recvf(cmd, isdir)
 			wrerr++;
 		}
 	}
+	(void) close(f);
 	(void) response();
 	if (wrerr) {
 		error("%s: %s\n", cp, sys_errlist[olderrno]);
-		(void) close(f);
 		(void) unlink(new);
 		return;
+	}
+	if (opts & COMPARE) {
+		FILE *f1, *f2;
+		int c;
+
+		if ((f1 = fopen(target, "r")) == NULL)
+			goto bad;
+		if ((f2 = fopen(new, "r")) == NULL)
+			goto bad1;
+		while ((c = getc(f1)) == getc(f2))
+			if (c == EOF) {
+				(void) fclose(f1);
+				(void) fclose(f2);
+				(void) unlink(new);
+				ga();
+				return;
+			}
+		(void) fclose(f1);
+		(void) fclose(f2);
+		if (opts & VERIFY) {
+			(void) unlink(new);
+			buf[0] = '\0';
+			sprintf(buf + 1, "updating %s:%s\n", host, target);
+			(void) write(rem, buf, strlen(buf + 1) + 1);
+			return;
+		}
 	}
 
 	/*
 	 * Set last modified time
 	 */
-	(void) fstat(f, &stb);
-	(void) close(f);
-	tvp[0].tv_sec = stb.st_atime;
+	tvp[0].tv_sec = stb.st_atime;	/* old accessed time from target */
 	tvp[0].tv_usec = 0;
 	tvp[1].tv_sec = mtime;
 	tvp[1].tv_usec = 0;
@@ -657,7 +682,12 @@ bad:
 			(void) unlink(new);
 		return;
 	}
-	ga();
+	if (opts & COMPARE) {
+		buf[0] = '\0';
+		sprintf(buf + 1, "updated %s:%s\n", host, target);
+		(void) write(rem, buf, strlen(buf + 1) + 1);
+	} else
+		ga();
 }
 
 /*
@@ -772,9 +802,6 @@ rmchk(lname, rname, opts)
 		printf("rmchk(%s, %s, %x)\n", lname,
 			rname != NULL ? rname : "NULL", opts);
 
-	if (exclude(lname))
-		return;
-
 	/*
 	 * First time rmchk() is called?
 	 */
@@ -805,14 +832,15 @@ rmchk(lname, rname, opts)
 				rname++;
 		}
 	}
-	if (debug)
-		printf("lname = %s, rname = %s\n", lname, rname);
+	if (exclude(lname))
+		return;
 	if (access(lname, 4) < 0 || stat(lname, &stb) < 0) {
 		error("%s: %s\n", lname, sys_errlist[errno]);
 		return;
 	}
 	if (!ISDIR(stb.st_mode))
 		return;
+
 	/*
 	 * Tell the remote to clean the files from the last directory sent.
 	 */
@@ -830,17 +858,23 @@ rmchk(lname, rname, opts)
 				lostconn();
 		} while (*cp++ != '\n' && cp < &buf[BUFSIZ]);
 
-		if (debug) {
-			printf("readbuf = ");
-			fwrite(buf, 1, cp - buf, stdout);
-		}
 		switch (buf[0]) {
 		case 'Q': /* its a directory on the remote end */
 		case 'q': /* its a regular file on the remote end */
+			/*
+			 * Return the following codes to remove query.
+			 * N\n -- file does not exisit, remove.
+			 * Y\n -- file exists and is a directory.
+			 * y\n -- file exists and is a regular file.
+			 */
 			*--cp = '\0';
 			(void) sprintf(tp, "/%s", buf + 1);
 			if (debug)
 				printf("check %s\n", target);
+			if (exclude(target)) {
+				(void) write(rem, "y\n", 2);
+				break;
+			}
 			if (stat(target, &stb) < 0)
 				(void) write(rem, "N\n", 2);
 			else if (buf[0] == 'Q' && ISDIR(stb.st_mode)) {
@@ -870,7 +904,7 @@ rmchk(lname, rname, opts)
 
 		case '\0':
 			*--cp = '\0';
-			if (buf[1])
+			if (buf[1] != '\0')
 				log(lfp, "%s\n", buf + 1);
 			break;
 
@@ -896,7 +930,8 @@ rmchk(lname, rname, opts)
 }
 
 /*
- * Check the directory for extraneous files and remove them.
+ * Check the directory initialized by the 'T' command to server()
+ * for extraneous files and remove them.
  */
 clean(lname, opts, first)
 	char *lname;
@@ -938,6 +973,7 @@ clean(lname, opts, first)
 			goto done;
 		}
 	}
+
 	if (access(target, 6) < 0 || (d = opendir(target)) == NULL)
 		goto bad;
 	ga();
@@ -1102,37 +1138,39 @@ fatal(fmt, a1, a2,a3)
 
 response()
 {
-	char resp, *cp = buf;
+	char *cp, *s;
 
 	if (debug)
 		printf("response()\n");
 
-	if (read(rem, &resp, 1) != 1)
-		lostconn();
+	cp = s = buf;
+	do {
+		if (read(rem, cp, 1) != 1)
+			lostconn();
+	} while (*cp++ != '\n' && cp < &buf[BUFSIZ]);
 
-	switch (resp) {
+	switch (*s++) {
 	case '\0':
+		*--cp = '\0';
+		if (*s != '\0')
+			log(lfp, "%s\n", s);
 		return(0);
 
 	default:
-		*cp++ = resp;
+		s--;
 		/* fall into... */
 	case '\1':
 	case '\2':
 		errs++;
-		do {
-			if (read(rem, cp, 1) != 1)
-				lostconn();
-		} while (*cp++ != '\n' && cp < &buf[BUFSIZ]);
-		if (buf[0] != '\n') {
+		if (*s != '\n') {
 			if (!iamremote) {
 				fflush(stdout);
-				(void) write(2, buf, cp - buf);
+				(void) write(2, s, cp - s);
 			}
 			if (lfp != NULL)
-				(void) fwrite(buf, 1, cp - buf, lfp);
+				(void) fwrite(s, 1, cp - s, lfp);
 		}
-		if (resp == '\1')
+		if (buf[0] == '\1')
 			return(-1);
 		cleanup();
 	}
@@ -1141,7 +1179,9 @@ response()
 
 lostconn()
 {
-	if (!iamremote)
+	if (!iamremote) {
+		fflush(stdout);
 		fprintf(stderr, "rdist: lost connection\n");
+	}
 	cleanup();
 }
