@@ -11,7 +11,7 @@
  *
  *	from: @(#)ufs_lookup.c	7.33 (Berkeley) 5/19/91
  *
- *	@(#)cd9660_lookup.c	8.6 (Berkeley) %G%
+ *	@(#)cd9660_lookup.c	8.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -114,6 +114,9 @@ cd9660_lookup(ap)
 		return (ENOTDIR);
 	if (error = VOP_ACCESS(vdp, VEXEC, cred, cnp->cn_proc))
 		return (error);
+	if ((flags & ISLASTCN) && (vdp->v_mount->mnt_flag & MNT_RDONLY) &&
+	    (cnp->cn_nameiop == DELETE || cnp->cn_nameiop == RENAME))
+		return (EROFS);
 	
 	/*
 	 * We now have a segment name to search for, and a directory to search.
@@ -345,7 +348,7 @@ notfound:
 	if (cnp->cn_flags & MAKEENTRY)
 		cache_enter(vdp, *vpp, cnp);
 	if (nameiop == CREATE || nameiop == RENAME)
-		return (EJUSTRETURN);
+		return (EROFS);
 	return (ENOENT);
 	
 found:

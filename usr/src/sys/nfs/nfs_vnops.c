@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vnops.c	8.15 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	8.16 (Berkeley) %G%
  */
 
 
@@ -270,6 +270,17 @@ nfs_access(ap)
 	int v3 = NFS_ISV3(vp);
 
 	/*
+	 * Disallow write attempts on filesystems mounted read-only;
+	 * unless the file is a socket, fifo, or a block or character
+	 * device resident on the filesystem.
+	 */
+	if ((ap->a_mode & VWRITE) && (vp->v_mount->mnt_flag & MNT_RDONLY)) {
+		switch (vp->v_type) {
+		case VREG: case VDIR: case VLNK:
+			return (EROFS);
+		}
+	}
+	/*
 	 * For nfs v3, do an access rpc, otherwise you are stuck emulating
 	 * ufs_access() locally using the vattr. This may not be correct,
 	 * since the server may apply other access criteria such as
@@ -524,12 +535,22 @@ nfs_setattr(ap)
 #ifndef nolint
 	tsize = (u_quad_t)0;
 #endif
+	/*
+	 * Disallow write attempts if the filesystem is mounted read-only.
+	 */
+  	if ((vap->va_flags != VNOVAL || vap->va_uid != (uid_t)VNOVAL ||
+	    vap->va_gid != (gid_t)VNOVAL || vap->va_atime.ts_sec != VNOVAL ||
+	    vap->va_mtime.ts_sec != VNOVAL || vap->va_mode != (mode_t)VNOVAL) &&
+	    (vp->v_mount->mnt_flag & MNT_RDONLY))
+		return (EROFS);
 	if (vap->va_size != VNOVAL) {
  		switch (vp->v_type) {
  		case VDIR:
  			return (EISDIR);
  		case VCHR:
  		case VBLK:
+ 		case VSOCK:
+ 		case VFIFO:
 			if (vap->va_mtime.ts_sec == VNOVAL &&
 			    vap->va_atime.ts_sec == VNOVAL &&
 			    vap->va_mode == (u_short)VNOVAL &&
@@ -539,6 +560,12 @@ nfs_setattr(ap)
  			vap->va_size = VNOVAL;
  			break;
  		default:
+			/*
+			 * Disallow write attempts if the filesystem is
+			 * mounted read-only.
+			 */
+			if (vp->v_mount->mnt_flag & MNT_RDONLY)
+				return (EROFS);
  			if (np->n_flag & NMODIFIED) {
  			    if (vap->va_size == 0)
  				error = nfs_vinvalbuf(vp, 0,
@@ -710,6 +737,9 @@ nfs_lookup(ap)
 	int lockparent, wantparent, error = 0, attrflag, fhsize;
 	int v3 = NFS_ISV3(dvp);
 
+	if ((flags & ISLASTCN) && (dvp->v_mount->mnt_flag & MNT_RDONLY) &&
+	    (cnp->cn_nameiop == DELETE || cnp->cn_nameiop == RENAME))
+		return (EROFS);
 	*vpp = NULLVP;
 	if (dvp->v_type != VDIR)
 		return (ENOTDIR);
@@ -817,8 +847,12 @@ nfs_lookup(ap)
 		if (newvp != NULLVP)
 			vrele(newvp);
 		if ((cnp->cn_nameiop == CREATE || cnp->cn_nameiop == RENAME) &&
-		    (flags & ISLASTCN) && error == ENOENT)
-			error = EJUSTRETURN;
+		    (flags & ISLASTCN) && error == ENOENT) {
+			if (dvp->v_mount->mnt_flag & MNT_RDONLY)
+				error = EROFS;
+			else
+				error = EJUSTRETURN;
+		}
 		if (cnp->cn_nameiop != LOOKUP && (flags & ISLASTCN))
 			cnp->cn_flags |= SAVENAME;
 	}
@@ -2974,11 +3008,23 @@ nfsspec_access(ap)
 	register struct vattr *vap;
 	register gid_t *gp;
 	register struct ucred *cred = ap->a_cred;
+	struct vnode *vp = ap->a_vp;
 	mode_t mode = ap->a_mode;
 	struct vattr vattr;
 	register int i;
 	int error;
 
+	/*
+	 * Disallow write attempts on filesystems mounted read-only;
+	 * unless the file is a socket, fifo, or a block or character
+	 * device resident on the filesystem.
+	 */
+	if ((mode & VWRITE) && (vp->v_mount->mnt_flag & MNT_RDONLY)) {
+		switch (vp->v_type) {
+		case VREG: case VDIR: case VLNK:
+			return (EROFS);
+		}
+	}
 	/*
 	 * If you're the super-user,
 	 * you always get access.
@@ -2986,7 +3032,7 @@ nfsspec_access(ap)
 	if (cred->cr_uid == 0)
 		return (0);
 	vap = &vattr;
-	error = VOP_GETATTR(ap->a_vp, vap, cred, ap->a_p);
+	error = VOP_GETATTR(vp, vap, cred, ap->a_p);
 	if (error)
 		return (error);
 	/*

@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cd9660_vnops.c	8.18 (Berkeley) %G%
+ *	@(#)cd9660_vnops.c	8.19 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -90,6 +90,42 @@ cd9660_mknod(ndp, vap, cred, p)
 #endif
 
 /*
+ * Setattr call. Only allowed for block and character special devices.
+ */
+int
+cd9660_setattr(ap)
+	struct vop_setattr_args /* {
+		struct vnodeop_desc *a_desc;
+		struct vnode *a_vp;
+		struct vattr *a_vap;
+		struct ucred *a_cred;
+		struct proc *a_p;
+	} */ *ap;
+{
+	struct vnode *vp = ap->a_vp;
+	struct vattr *vap = ap->a_vap;
+
+  	if (vap->va_flags != VNOVAL || vap->va_uid != (uid_t)VNOVAL ||
+	    vap->va_gid != (gid_t)VNOVAL || vap->va_atime.ts_sec != VNOVAL ||
+	    vap->va_mtime.ts_sec != VNOVAL || vap->va_mode != (mode_t)VNOVAL)
+		return (EROFS);
+	if (vap->va_size != VNOVAL) {
+ 		switch (vp->v_type) {
+ 		case VDIR:
+ 			return (EISDIR);
+		case VLNK:
+		case VREG:
+			return (EROFS);
+ 		case VCHR:
+ 		case VBLK:
+ 		case VSOCK:
+ 		case VFIFO:
+			return (0);
+		}
+	}
+}
+
+/*
  * Open called.
  *
  * Nothing to do.
@@ -139,11 +175,26 @@ cd9660_access(ap)
 		struct proc *a_p;
 	} */ *ap;
 {
-	struct iso_node *ip = VTOI(ap->a_vp);
+	struct vnode *vp = ap->a_vp;
+	struct iso_node *ip = VTOI(vp);
 	struct ucred *cred = ap->a_cred;
 	mode_t mask, mode = ap->a_mode;
 	gid_t *gp;
 	int i;
+
+	/*
+	 * Disallow write attempts unless the file is a socket,
+	 * fifo, or a block or character device resident on the
+	 * file system.
+	 */
+	if (mode & VWRITE) {
+		switch (vp->v_type) {
+		case VDIR:
+		case VLNK:
+		case VREG:
+			return (EROFS);
+		}
+	}
 
 	/* User id 0 always gets access. */
 	if (cred->cr_uid == 0)
@@ -943,8 +994,6 @@ cd9660_pathconf(ap)
 #define cd9660_create \
 	((int (*) __P((struct  vop_create_args *)))eopnotsupp)
 #define cd9660_mknod ((int (*) __P((struct  vop_mknod_args *)))eopnotsupp)
-#define cd9660_setattr \
-	((int (*) __P((struct  vop_setattr_args *)))eopnotsupp)
 #define cd9660_write ((int (*) __P((struct  vop_write_args *)))eopnotsupp)
 #ifdef NFS
 int	 lease_check __P((struct vop_lease_args *));

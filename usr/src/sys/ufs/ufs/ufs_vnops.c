@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	8.26 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	8.27 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -189,17 +189,25 @@ ufs_access(ap)
 	register gid_t *gp;
 	int i, error;
 
-#ifdef QUOTA
-	if (mode & VWRITE)
+	/*
+	 * Disallow write attempts on read-only file systems;
+	 * unless the file is a socket, fifo, or a block or
+	 * character device resident on the file system.
+	 */
+	if (mode & VWRITE) {
 		switch (vp->v_type) {
 		case VDIR:
 		case VLNK:
 		case VREG:
+			if (vp->v_mount->mnt_flag & MNT_RDONLY)
+				return (EROFS);
+#ifdef QUOTA
 			if (error = getinoquota(ip))
 				return (error);
+#endif
 			break;
 		}
-#endif
+	}
 
 	/* If immutable bit set, nobody gets to write it. */
 	if ((mode & VWRITE) && (ip->i_flags & IMMUTABLE))
@@ -321,6 +329,8 @@ ufs_setattr(ap)
 		return (EINVAL);
 	}
 	if (vap->va_flags != VNOVAL) {
+		if (vp->v_mount->mnt_flag & MNT_RDONLY)
+			return (EROFS);
 		if (cred->cr_uid != ip->i_uid &&
 		    (error = suser(cred, &p->p_acflag)))
 			return (error);
@@ -345,17 +355,34 @@ ufs_setattr(ap)
 	/*
 	 * Go through the fields and update iff not VNOVAL.
 	 */
-	if (vap->va_uid != (uid_t)VNOVAL || vap->va_gid != (gid_t)VNOVAL)
+	if (vap->va_uid != (uid_t)VNOVAL || vap->va_gid != (gid_t)VNOVAL) {
+		if (vp->v_mount->mnt_flag & MNT_RDONLY)
+			return (EROFS);
 		if (error = ufs_chown(vp, vap->va_uid, vap->va_gid, cred, p))
 			return (error);
+	}
 	if (vap->va_size != VNOVAL) {
-		if (vp->v_type == VDIR)
+		/*
+		 * Disallow write attempts on read-only file systems;
+		 * unless the file is a socket, fifo, or a block or
+		 * character device resident on the file system.
+		 */
+		switch (vp->v_type) {
+		case VDIR:
 			return (EISDIR);
+		case VLNK:
+		case VREG:
+			if (vp->v_mount->mnt_flag & MNT_RDONLY)
+				return (EROFS);
+			break;
+		}
 		if (error = VOP_TRUNCATE(vp, vap->va_size, 0, cred, p))
 			return (error);
 	}
 	ip = VTOI(vp);
 	if (vap->va_atime.ts_sec != VNOVAL || vap->va_mtime.ts_sec != VNOVAL) {
+		if (vp->v_mount->mnt_flag & MNT_RDONLY)
+			return (EROFS);
 		if (cred->cr_uid != ip->i_uid &&
 		    (error = suser(cred, &p->p_acflag)) &&
 		    ((vap->va_vaflags & VA_UTIMES_NULL) == 0 || 
@@ -373,8 +400,11 @@ ufs_setattr(ap)
 			return (error);
 	}
 	error = 0;
-	if (vap->va_mode != (mode_t)VNOVAL)
+	if (vap->va_mode != (mode_t)VNOVAL) {
+		if (vp->v_mount->mnt_flag & MNT_RDONLY)
+			return (EROFS);
 		error = ufs_chmod(vp, (int)vap->va_mode, cred, p);
+	}
 	return (error);
 }
 
