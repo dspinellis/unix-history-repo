@@ -1,7 +1,7 @@
 #
 # Machine Language Assist for UC Berkeley Virtual Vax/Unix
 #
-#	locore.s		3.11	%G%
+#	locore.s		3.12	%G%
 #
 
 	.set	HIGH,31		# mask for total disable
@@ -218,8 +218,6 @@ _coresw:
 #
 	.set	PHYSMCR,0x20002000	# memory controller register
 	.set	PHYSUBA,0x20006000	# uba 0
-	.set	PHYSMBA0,0x20010000	# mba 0
-	.set	PHYSMBA1,0x20012000	# mba 1
 	.set	PHYSUMEM,0x2013e000	# unibus memory
 
 #
@@ -473,9 +471,11 @@ UBA0map:
 	.set	_umbabeg,((UBA0map-_Sysmap)/4)*512+0x80000000
 UMEMmap:
 	.space	16*4
-MBA0map:
+	.globl	_MBA0map
+_MBA0map:
 	.space	16*4
-MBA1map:
+	.globl	_MBA1map
+_MBA1map:
 	.space	16*4
 umend:
 	.globl	_umbaend
@@ -737,10 +737,6 @@ start:
 #
 # Initialize I/O adapters.
 #
-	movl	$1,PHYSMBA0+4		# init & interrupt enable
-	movl	$4,PHYSMBA0+4		# init & interrupt enable
-	movl	$1,PHYSMBA1+4		# init & interrupt enable
-	movl	$4,PHYSMBA1+4		# init & interrupt enable
 	movl	$1,PHYSUBA+4		# init & interrupt enable
 	movl	$0x78,PHYSUBA+4		# init & interrupt enable
 
@@ -831,19 +827,6 @@ start:
 1:
 	bisl3	$PG_V|PG_KW,r1,(r2)+
 	aobleq	r3,r1,1b
-	movl	$PHYSMBA0/NBPG,r1
-	movab	MBA0map,r2
-	movab	15(r1),r3
-1:
-	bisl3	$PG_V|PG_KW,r1,(r2)+
-	aobleq	r3,r1,1b
-	movl	$PHYSMBA1/NBPG,r1
-	movab	MBA1map,r2
-	movab	15(r1),r3
-1:
-	bisl3	$PG_V|PG_KW,r1,(r2)+
-	aobleq	r3,r1,1b
-
 	mtpr	$1,$TBIA		# invalidate all trans buffer entries
 	mtpr	$1,$MAPEN		# turn on memory mapping
 	jmp 	*$0f			# put system virtual address in pc

@@ -1,4 +1,4 @@
-/*	conf.c	3.11	%G%	*/
+/*	conf.c	3.12	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -12,6 +12,7 @@
 #include "../h/file.h"
 #include "../h/inode.h"
 #include "../h/acct.h"
+#include "../h/pte.h"
 #include "../h/mba.h"
 
 int	nulldev();
@@ -143,7 +144,7 @@ dev_t	swapdev = makedev(4, 0);
 
 extern struct user u;
 
-int mbanum[] = {	/* mba number of major device */
+int	mbanum[] = {	/* mba number of major device */
 	0,		/* disk */
 	1,		/* tape */
 	9999999,	/* unused */
@@ -152,7 +153,9 @@ int mbanum[] = {	/* mba number of major device */
 	1,		/* tape, raw */
 };
 
-int *mbaloc[] = { 	/* virtual location of mba */
-	(int *)MBA0,
-	(int *)MBA1,
+extern	struct pte MBA0map[], MBA1map[];
+
+struct	mba_info mbainfo[] = {
+	MBA0,	PHYSMBA0,	MBA0map,
+	MBA1,	PHYSMBA1,	MBA1map
 };
