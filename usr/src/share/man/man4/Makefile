@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.6 (Berkeley) %G%
+#	@(#)Makefile	5.7 (Berkeley) %G%
 
 MAN4=	bk.0 clnp.0 cltp.0 drum.0 fd.0 icmp.0 idp.0 imp.0 inet.0 ip.0 \
 	iso.0 kadb.0 lo.0 netintro.0 ns.0 nsip.0 null.0 pty.0 route.0 \
@@ -12,7 +12,5 @@ clean depend lint tags:
 
 cleandir:
 	rm -f ${MAN4}
-
-install: maninstall
 
 .include <bsd.prog.mk>
