@@ -1,0 +1,2 @@
+./gsaddres -obj gdevepsn.o gdevprn.o
+./gsaddres -dev epson
