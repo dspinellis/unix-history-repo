@@ -1,8 +1,0 @@
-procedure main()
-   while line := read() do {
-      marker := ""
-      every i := bal('+-/*',,,line) do
-         marker := left(marker,i - 1) || line[i]
-      write(line,"\n",marker)	# write line and marker
-      }
-end

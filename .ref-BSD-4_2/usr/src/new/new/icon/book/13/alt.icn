@@ -1,5 +1,0 @@
-procedure Alt(e1,e2)
-   local x
-   while x := @e1 do suspend x
-   while x := @e2 do suspend x
-end

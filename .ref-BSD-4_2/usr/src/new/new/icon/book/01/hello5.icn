@@ -1,4 +1,0 @@
-procedure main()
-   line := "Hello world"
-   write(line)
-end

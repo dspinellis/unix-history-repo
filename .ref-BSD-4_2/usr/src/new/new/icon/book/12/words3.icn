@@ -1,9 +1,0 @@
-procedure words()
-   local wchar, line, word
-   wchar := &lcase ++ &ucase ++ '\'-'
-   while line := read() do
-      line ? while tab(upto(wchar)) do {
-         word := tab(many(wchar))
-         suspend word
-         }
-end

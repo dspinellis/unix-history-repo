@@ -1,7 +1,0 @@
-procedure main()
-   vowel := 'aeiouAEOIU'
-   count := 0
-   while line := read() do
-      every upto(vowel,line) do count +:= 1
-   write(count)
-end

@@ -1,0 +1,516 @@
+#
+#  Sendmail
+#  Copyright (c) 1983  Eric P. Allman
+#  Berkeley, California
+#
+#  Copyright (c) 1983 Regents of the University of California.
+#  All rights reserved.  The Berkeley software License Agreement
+#  specifies the terms and conditions for redistribution.
+#
+#	@(#)monet.mc	5.1 (Berkeley) 6/10/85
+#
+############################################################
+############################################################
+#####
+#####		SENDMAIL CONFIGURATION FILE
+#####
+############################################################
+############################################################
+
+
+
+############################################################
+###	local info
+############################################################
+
+# internet hostname
+Cwucbmonet monet
+
+
+#################################################
+#
+#	General configuration information
+#
+#################################################
+
+######################
+#   General Macros   #
+######################
+
+# our arpanet gateway
+DABerkeley.EDU
+CABerkeley UCB ucbc70 c70 UCB-C70 u UCB-VAX ucbvax
+
+# local domain names
+DDBERKELEY.EDU
+CDBERKELEY UCB ucbc70 c70 ucb-c70 u UCB-VAX ucbvax
+
+# major relay host
+DRUCBVAX
+CRucbvax vax k
+
+# my official hostname
+Dj$w
+
+# known SMTP/ethernet hosts (this domain only) -- only $R need be complete
+
+CSucbarmstrong armstrong
+CSucbarpa arpa
+CSucbbach bach ucbstatvax statvax
+CSucbbass bass
+CSucbbell bell
+CSucbbizet bizet
+CSucbbob bob
+CSucbbrahms brahms mathstat
+CSucbbud bud
+CSucbbuddy buddy
+CSucbcad cad cad-a
+CSucbcalder calder
+CSucbcartan cartan
+CSucbchip chip
+CSucbcogsci cogsci
+CSucbcorona corona
+CSucbcory cory
+CSucbdab dab
+CSucbdali dali
+CSucbdavinci davinci
+CSucbdavis davis
+CSucbdean dean
+CSucbdeforest deforest
+CSucbdegas degas
+CSucbdim dim
+CSucbdorothy dorothy
+CSucbear ear
+CSucbeast east beast
+CSucbedison edison
+CSucbernie ernie
+CSucbesvax esvax
+CSucbeuler euler
+CSucbfranklin franklin
+CSucbfranny franny
+CSucbheine heine
+CSucbholden holden
+CSucbhuffman huffman
+CSucbic ic ucbic-ec ic-ec cad-b cad-ic
+CSucbicw icw ucbicw-ec icw-ec cad-c cad-icw
+CSucbimage 
+CSucbingres ingres
+CSucbjan jan
+CSucbjason jason
+CSucbji ji
+CSucbjoule joule
+CSucbkepler kepler
+CSucbkim kim
+CSucbmarconi marconi
+CSucbmatisse matisse
+CSucbmaxwell maxwell
+CSucbmedea medea
+CSucbmerlin merlin
+CSucbmike mike
+CSucbmiro miro
+CSucbmolson molson
+CSucbmonet monet
+CSucbmote mote
+CSucbnewton newton
+CSucbnyquist nyquist
+CSucbokeeffe okeeffe
+CSucboz oz
+CSucbrenoir renoir
+CSucbrob rob
+CSucbrobert robert
+CSucbseymour seymour
+CSucbshadow shadow
+CSucbshannon shannon
+CSucbsilvia silvia
+CSucbtuborg tuborg
+CSucbugs bugs ucbbugs ugs
+CSucbvangogh vangogh
+CSucbvax
+CSucbweyl weyl
+CSucbzeus zeus
+CSucbzooey zooey
+CSucbzworykin zworykin
+
+# known top-level domains
+CTLOCAL ARPA EDU GOV COM MIL
+CTUUCP BITNET CSNET DEC
+
+
+############################################################
+#
+#	General configuration information
+#
+#	This information is basically just "boiler-plate"; it must be
+#	there, but is essentially constant.
+#
+#	Information in this file should be independent of location --
+#	i.e., although there are some policy decisions made, they are
+#	not specific to Berkeley per se.
+#
+############################################################
+
+
+######################
+#   Version Number   #
+######################
+
+DZ5.17
+
+
+##########################
+###   Special macros   ###
+##########################
+
+# my name
+DnMAILER-DAEMON
+# UNIX header format
+DlFrom $g  $d
+# delimiter (operator) characters
+Do.:%@!^=/[]
+# format of a total name
+Dq$g$?x ($x)$.
+# SMTP login message
+De$j Sendmail $v/$Z ready at $b
+
+# forwarding host -- redefine this if you can't talk to the relay directly
+DF$R
+
+###################
+###   Options   ###
+###################
+
+# location of alias file
+OA/usr/lib/aliases
+# wait up to ten minutes for alias file rebuild
+Oa10
+# substitution for space (blank) characters
+OB.
+# (don't) connect to "expensive" mailers
+#Oc
+# default delivery mode (deliver in background)
+Odbackground
+# temporary file mode
+OF0600
+# default GID
+Og1
+# location of help file
+OH/usr/lib/sendmail.hf
+# log level
+OL9
+# default network name
+ONARPA
+# default messages to old style
+Oo
+# queue directory
+OQ/usr/spool/mqueue
+# read timeout -- violates protocols
+Or2h
+# status file
+OS/usr/lib/sendmail.st
+# queue up everything before starting transmission
+Os
+# default timeout interval
+OT3d
+# time zone names (V6 only)
+OtPST,PDT
+# default UID
+Ou1
+# wizard's password
+OW*
+# load average at which we just queue messages
+Ox8
+# load average at which we refuse connections
+OX12
+
+###############################
+###   Message precedences   ###
+###############################
+
+Pfirst-class=0
+Pspecial-delivery=100
+Pbulk=-60
+Pjunk=-100
+
+#########################
+###   Trusted users   ###
+#########################
+
+Troot
+Tdaemon
+Tuucp
+Teric
+Tnetwork
+
+#############################
+###   Format of headers   ###
+#############################
+
+H?P?Return-Path: <$g>
+HReceived: $?sfrom $s $.by $j ($v/$Z)
+	id $i; $b
+H?D?Resent-Date: $a
+H?D?Date: $a
+H?F?Resent-From: $q
+H?F?From: $q
+H?x?Full-Name: $x
+HSubject:
+# HPosted-Date: $a
+# H?l?Received-Date: $b
+H?M?Resent-Message-Id: <$t.$i@$j>
+H?M?Message-Id: <$t.$i@$j>
+
+###########################
+###   Rewriting rules   ###
+###########################
+
+
+################################
+#  Sender Field Pre-rewriting  #
+################################
+S1
+#R$*<$*>$*		$1$2$3				defocus
+
+###################################
+#  Recipient Field Pre-rewriting  #
+###################################
+S2
+#R$*<$*>$*		$1$2$3				defocus
+
+#################################
+#  Final Output Post-rewriting  #
+#################################
+S4
+
+R@			$@				handle <> error addr
+
+# externalize local domain info
+R$*<$*LOCAL>$*		$1<$2$D>$3			change local info
+R$*<$*LOCAL.ARPA>$*	$1<$2$D>$3			change local info
+R$*<$*.CC>$*		$1$2$3				strip .CC
+R$*<$+>$*		$1$2$3				defocus
+R@$+:@$+:$+		@$1,@$2:$3			<route-addr> canonical
+
+# UUCP must always be presented in old form
+R$+@$-.UUCP		$2!$1				u@h.UUCP => h!u
+
+# delete duplicate local names -- mostly for arpaproto.mc
+R$+%$=w@$=w		$1@$3				u%UCB@UCB => u@UCB
+R$+%$=w@$=w.ARPA	$1@$3.ARPA			u%UCB@UCB => u@UCB
+
+###########################
+#  Name Canonicalization  #
+###########################
+S3
+
+# handle "from:<>" special case
+R<>			$@@				turn into magic token
+
+# basic textual canonicalization -- note RFC733 heuristic here
+R$*<$*<$*<$+>$*>$*>$*	$4				3-level <> nesting
+R$*<$*<$+>$*>$*		$3				2-level <> nesting
+R$*<$+>$*		$2				basic RFC821/822 parsing
+R$+ at $+		$1@$2				"at" -> "@" for RFC 822
+
+# make sure <@a,@b,@c:user@d> syntax is easy to parse -- undone later
+R@$+,$+			@$1:$2				change all "," to ":"
+
+# localize and dispose of route-based addresses
+R@$+:$+			$@$>6<@$1>:$2			handle <route-addr>
+
+# more miscellaneous cleanup
+R$+			$:$>8$1				host dependent cleanup
+R$+:$*;@$+		$@$1:$2;@$3			list syntax
+R$+:$*;			$@$1:$2;			list syntax
+R$+@$+			$:$1<@$2>			focus on domain
+R$+<$+@$+>		$1$2<@$3>			move gaze right
+R$+<@$+>		$@$>6$1<@$2>			already canonical
+
+# convert old-style addresses to a domain-based address
+R$-:$+			$@$>6$2<@$1>			host:user
+R$+^$+			$1!$2				convert ^ to !
+R$-.$+!$+		$@$>6$3<@$1.$2>			host.domain!user
+R$-!$+			$@$>6$2<@$1.UUCP>		host!user (uucp)
+R$+%$+			$@$>6$1<@$2>			user%host
+R$-=$+			$@$>6$2<@$1.BITNET>		host=user (bitnet)
+R$-.$+			$@$>6$2<@$1>			host.user
+
+# always include local and tcp mailers (tcp for [w.x.y.z]-style addrs)
+
+############################################################
+############################################################
+#####
+#####		Local and Program Mailer specification
+#####
+############################################################
+############################################################
+
+Mlocal,	P=/bin/mail, F=rlsDFMmn, S=10, R=20, A=mail -d $u
+Mprog,	P=/bin/sh,   F=lsDFMe,   S=10, R=20, A=sh -c $u
+
+S10
+R@			$n			errors to mailer-daemon
+
+
+############################################################
+############################################################
+#####
+#####		Arpanet TCP Mailer specification
+#####
+#####	Messages processed by this specification are assumed to leave
+#####	the local domain -- hence, they must be canonical according to
+#####	RFC822 etc.
+#####
+############################################################
+############################################################
+
+Mtcp,	P=[IPC], F=mDFMueXL, S=14, R=14, A=IPC $h, E=\r\n
+
+S14
+
+# pass <route-addr>'s through
+R<@$+>$*		$@<@$[$1$]>$2			resolve <route-addr>
+
+# map colons to dots everywhere.....
+R$*:$*			$1.$2				map colons to dots
+
+# handle the simple case....
+R$+<@$-.ARPA>		$@$1<@$[$2.ARPA$]>		user@host.ARPA
+
+# output local hosts in user@host.Berkeley.EDU syntax
+R$+<@LOCAL>		$@$1<@$w.$A>			local names
+R$+<@$+.LOCAL>		$@$1<@$2.$A>			local hosts
+R$+<@$*$=S>		$@$1<@$2$3.$A>
+R$+<@$*$=Z>		$@$1<@$2$3.$A>
+R$+<@$+.BITNET>		$@$1%$2.BITNET<@$w.$A>		user@host.BITNET
+R$+<@$+.CSNET>		$@$1%$2.CSNET<@CSNET-RELAY.ARPA>	user@host.CSNET
+R$+<@$+.DEC>		$@$1%$2.DEC<@decwrl.ARPA>	user@host.DEC
+R$+<@$+.UUCP>		$@$2!$1<@$w.$A>			user@host.UUCP
+
+# handle other external cases
+R$+<@$->		$@$1<@$[$2$]>			no .ARPA on simple names
+#R$+<@$+.$-.ARPA>	$@$1%$2<@$[$3.ARPA$]>		approximate something
+R$+<@[$+]>		$@$1<@[$2]>			already ok
+R$+<@$+>		$@$1<@$[$2$]>			set for named
+
+# convert remaining addresses to old format and externalize appropriately
+R$+			$:$>5$1				=> old format
+R$-:$+			$@$2<@$1.$A>			convert berk hosts
+#R$+<@$+>		$@$1<@$2@$A>			pessmize
+R$+			$:$1<@$w.$A>			tack on our hostname
+R$+%$=R<@$=A>		$1<@$[$3$]>			strip unneeded relay
+
+
+
+#######################
+#   Rewriting rules   #
+#######################
+
+##### special local conversions
+S6
+R$*<@$*$=D>$*		$1<@$2LOCAL>$4			convert local domain
+R$*<@$*$=D.ARPA>$*	$1<@$2LOCAL>$4
+R$*<@$*$=D.EDU>$*	$1<@$2LOCAL>$4
+R$+%$+<@LOCAL>		$>9$1%$2			Hack for % syntax.
+R$*<@$+.$=T.$=T>$*	$1<@$2.$3>$5			make UUCP top level
+R$*<@$*$=C.$=T>$*	$1<@$2$3>$5			adjust CC hosts (ucbvax)
+R$*<@$*$=C>$*		$1<@$2$3.CC>$4			tack on .CC temporarily
+R$*<@$*$=S.UUCP>$*	$1<@$2$3.LOCAL>$4		trap u@etherhost.UUCP
+R$*<@ucsfcgl.UUCP>$*	$1<@ucsf-cgl.ARPA>$2		ucsfcgl now on Internet
+
+################################
+#   Change rightmost % to @.   
+S9
+R$*%$*			$1@$2				First make them all @'s
+R$*@$*@$*		$1%$2@$3			Undo all but the last.
+R$*@$*			$@$1<@$2>			Put back the brackets.
+#
+###############################
+
+
+############################################################
+############################################################
+#####
+#####		Ethernet Mailer specification
+#####
+#####	Messages processed by this configuration are assumed to remain
+#####	in the same domain.  Hence, they may not necessarily correspond
+#####	to RFC822 in all details.
+#####
+############################################################
+############################################################
+
+Mether,	P=[IPC], F=mDFMueCX, S=11, R=21, A=IPC $h
+
+S11
+R$*<@$+>$*		$@$1<@$2>$3			already ok
+R$+			$@$1<@$w>			tack on our hostname
+
+S21
+
+
+
+############################################################
+############################################################
+#####
+#####		BASIC ETHERNET RULES
+#####
+############################################################
+############################################################
+
+
+
+
+############################################################
+############################################################
+#####
+#####		RULESET ZERO PREAMBLE
+#####
+#####	The beginning of ruleset zero is constant through all
+#####	configurations.
+#####
+############################################################
+############################################################
+
+S0
+
+# first make canonical
+R$*<$*>$*		$1$2$3				defocus
+R$+			$:$>3$1				make canonical
+
+# handle special cases.....
+R@			$#local$:$n			handle <> form
+R$*<@[$+]>$*		$#tcp$@[$2]$:$1@[$2]$3		numeric internet spec
+
+# arrange for local names to be fully qualified
+R$*<$*$=S>$*		$1<$2$3.LOCAL>$4		user@etherhost
+R$*<$*$=Z>$*		$1<$2$3.LOCAL>$4		user@berkhost
+R$*<$+.ARPA.LOCAL>$*	$1<$2.ARPA>$3			because ARPA is a host
+
+# now delete the local info
+R$*<$*$=w.$=T>$*	$1<$2>$5			thishost.LOCAL
+R$*<$*$=w>$*		$1<$2>$4			thishost
+R$*<$*.>$*		$1<$2>$3			drop trailing dot
+R<@>:$*			$@$>0$1				retry after route strip
+R$*<@>			$@$>0$1				strip null trash & retry
+
+# forward around hosts with communication problems
+R$*<@$=F.LOCAL>$*	$#ether$@$F$:$1<@$2.LOCAL>$3	reroute message
+
+##################################
+#  End of ruleset zero preamble  #
+##################################
+
+
+################################################
+###  Machine dependent part of ruleset zero  ###
+################################################
+
+# resolve names that can go via the ethernet
+R$*<@$*$=S.LOCAL>$*	$#ether$@$3$:$1<@$2$3>$4	user@etherhost
+
+# other non-local names will be kicked upstairs
+R$*<@$+>$*		$#ether$@$F$:$1<@$2>$3		user@some.where
+
+# remaining names must be local
+R$+			$#local$:$1			everything else
+

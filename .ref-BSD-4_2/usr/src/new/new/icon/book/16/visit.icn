@@ -1,3 +1,0 @@
-procedure visit(ltree)
-   suspend ltree | visit(ltree[2 to *ltree])
-end

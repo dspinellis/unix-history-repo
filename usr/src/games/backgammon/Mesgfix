@@ -1,0 +1,36 @@
+1,5c
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+.
+/Msccsid/c
+static char Msccsid[] = "@(#)Mesgfix	5.2 (Berkeley) 1/8/86";
+.
+/Last update/!date
+mark a
+g/Sun /s//Sunday, /
+g/Mon /s//Monday, /
+g/Tue /s//Tuesday, /
+g/Wed /s//Wednesday, /
+g/Thu /s//Thursday, /
+g/Fri /s//Friday, /
+g/Sat /s//Saturday, /
+g/Jan /s//January /
+g/Feb /s//February /
+g/Mar /s//March /
+g/Apr /s//April /
+g/Jun /s//June /
+g/Jul /s//July /
+g/Aug /s//August /
+g/Sep /s//September /
+g/Oct /s//October /
+g/Nov /s//November /
+g/Dec /s//December /
+g/  /s// /
+'as/ ..:..:.. .../,/
+'as/^/	"Last update on /
+'as/$/.",/
+w!
+q

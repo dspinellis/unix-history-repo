@@ -1,5 +1,0 @@
-procedure main()
-   wlist := words()
-   while word := get(wlist) do
-      if any(&ucase,word) then write(word)
-end

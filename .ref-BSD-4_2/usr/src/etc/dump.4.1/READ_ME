@@ -1,3 +1,0 @@
-This directory contains a dump program that runs on 4.2, but is used
-to dump old 4.1 file systems. Tapes produced by this program can be
-restored to a 4.2 file system by using the standard "restore" program.

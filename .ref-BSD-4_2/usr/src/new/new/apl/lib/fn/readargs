@@ -1,9 +1,0 @@
-readargs;i;p;st
-i{1
-L { st { L'
-next: }(0=Rst)/0
-p { (1Ust)I' '
-BJ'arg',(1UNJi), '{ ''',1Ust[Ip],''''
-st {pUst
-i { i+1
-}next

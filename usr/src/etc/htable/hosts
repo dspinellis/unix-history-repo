@@ -1,0 +1,545 @@
+#
+# Berkeley Host Database
+# @(#)localhosts	1.31 5/13/86
+#
+127.1		localhost loghost localhost.berkeley.edu
+# These are needed for arpa and ucbvax to ifconfig imp's.
+10.2.0.78	ucb-vax
+10.0.0.78	ucb-arpa
+#
+# Berkeley Subnet 128.32.0 -- 3Mb/s Ethernet
+#
+128.32.4		ucbarpa arpa ucbarpa.berkeley.edu
+128.32.7		monet ucbmonet monet.berkeley.edu
+128.32.10		ucbvax vax ucbvax.berkeley.edu
+128.32.11		kim ucbkim kim.berkeley.edu
+128.32.12		calder ucbcalder calder.berkeley.edu
+128.32.13		dali ucbdali dali.berkeley.edu
+128.32.14		matisse ucbmatisse matisse.berkeley.edu
+128.32.19		ingres ucbingres ingres.berkeley.edu
+128.32.22		degas ucbdegas degas.berkeley.edu
+128.32.24		miro ucbmiro miro.berkeley.edu
+128.32.25		lapis-en ucblapis-en lapis-en.berkeley.edu
+128.32.31		renoir ucbrenoir renoir.berkeley.edu
+#
+# Berkeley Subnet 129 -- Experimental 10Mb/s Ethernet
+#
+128.32.129.1		matisse-10 ucbmatisse-10 matisse-10.berkeley.edu
+128.32.129.2		monet-10 ucbmonet-10 monet-10.berkeley.edu
+128.32.129.3		calder-10 ucbcalder-10 calder-10.berkeley.edu
+#
+# Berkeley Subnet 130 -- CS Division 10 Mb/s Ethernet
+#
+128.32.130.1		calder-cs calder-cs.berkeley.edu
+128.32.130.2		vangogh ucbvangogh vangogh.berkeley.edu
+128.32.130.3		okeeffe ucbokeeffe okeeffe.berkeley.edu
+128.32.130.4		matisse-cs matisse-cs.berkeley.edu
+128.32.130.5		cogsci ucbcogsci cogsci.berkeley.edu
+128.32.130.6		monet-cs monet-cs.berkeley.edu
+128.32.130.7		kim-cs kim-cg kim-cs.berkeley.edu
+128.32.130.8		gardenia ucbgardenia gardenia.berkeley.edu
+128.32.130.9		magnolia ucbmagnolia magnolia.berkeley.edu
+128.32.130.10		azalea ucbazalea azalea.berkeley.edu
+128.32.130.11		ucbarpa-cs arpa-cs ucbarpa-cs.berkeley.edu
+128.32.130.12		ucbvax-cs vax-cs ucbvax-cs.berkeley.edu
+#
+# Berkeley Subnet 131 -- Evans Sun + Dandelion net
+#
+128.32.131.1		xcssun ucbxcssun xcssun.berkeley.edu
+128.32.131.2		xearth ucbxearth xearth.berkeley.edu
+128.32.131.3		pluto ucbpluto pluto.berkeley.edu
+128.32.131.4		uranus ucburanus uranus.berkeley.edu
+128.32.131.5		neptune ucbneptune neptune.berkeley.edu
+128.32.131.6		saturn ucbsaturn saturn.berkeley.edu
+128.32.131.7		jupiter ucbjupiter jupiter.berkeley.edu
+128.32.131.8		mars ucbmars mars.berkeley.edu
+128.32.131.9		venus ucbvenus venus.berkeley.edu
+128.32.131.10		mercury ucbmercury mercury.berkeley.edu
+128.32.131.11		dali-xcs net124 ucbnet124 dali-xcs.berkeley.edu
+128.32.131.12		disney ucbdisney disney.berkeley.edu
+128.32.131.13		snow ucbsnow snow.berkeley.edu
+128.32.131.14		bashful ucbbashful bashful.berkeley.edu
+128.32.131.15		grumpy ucbgrumpy grumpy.berkeley.edu
+128.32.131.16		sleepy ucbsleepy sleepy.berkeley.edu
+128.32.131.17		doc ucbdoc doc.berkeley.edu
+128.32.131.18		dopey ucbdopey dopey.berkeley.edu
+128.32.131.19		happy ucbhappy happy.berkeley.edu
+128.32.131.20		sneezy ucbsneezy sneezy.berkeley.edu
+128.32.131.21		charming ucbcharming ucbprince prince charming.berkeley.edu
+128.32.131.22		rip ucbrip rip.berkeley.edu
+128.32.131.23		phoenix ucbphoenix phoenix.berkeley.edu
+128.32.131.24		spur-gw ucbspur-gw spur-gw.berkeley.edu
+128.32.131.25		birch ucbbirch birch.berkeley.edu
+128.32.131.26		ash ucbash ash.berkeley.edu
+128.32.131.27		teak ucbteak teak.berkeley.edu
+128.32.131.28		palm ucbpalm palm.berkeley.edu
+128.32.131.29		fir ucbfir fir.berkeley.edu
+128.32.131.30		yew ucbyew yew.berkeley.edu
+128.32.131.31		geppetto ucbgeppetto geppetto.berkeley.edu
+128.32.131.32		pinocchio ucbpinocchio pinocchio.berkeley.edu
+128.32.131.33		mike ucbmike mike.berkeley.edu
+128.32.131.34		rob ucbrob rob.berkeley.edu
+128.32.131.35		chip ucbchip chip.berkeley.edu
+128.32.131.36		dim ucbdim dim.berkeley.edu
+128.32.131.37		stun ucbstun stun.berkeley.edu
+128.32.131.38		monet-xcs ucbmonet-xcs monet-xcs.berkeley.edu
+128.32.131.39		harry ucbharry harry.berkeley.edu
+128.32.131.40		craig ucbcraig craig.berkeley.edu
+128.32.131.41		tigger ucbtigger tigger.berkeley.edu
+128.32.131.42		fritz ucbfritz fritz.berkeley.edu
+128.32.131.43		gerry ucbgerry gerry.berkeley.edu
+128.32.131.44		pine ucbpine pine.berkeley.edu
+128.32.131.45		fleur-de-lis ucbfleur-de-lis fleur-de-lis.berkeley.edu
+128.32.131.46		piglet ucbpiglet piglet.berkeley.edu
+128.32.131.47		achilles ucbachilles achilles.berkeley.edu
+128.32.131.48		hector ucbhector hector.berkeley.edu
+128.32.131.49		ji ucbji ji.berkeley.edu
+128.32.131.50		madrone ucbmadrone madrone.berkeley.edu
+128.32.131.51		tanoak ucbtanoak tanoak.berkeley.edu
+128.32.131.52		cypress ucbcypress cypress.berkeley.edu
+128.32.131.53		manzanita ucbmanzanita manzanita.berkeley.edu
+128.32.131.54		dougfir ucbdougfir dougfir.berkeley.edu
+128.32.131.55		bansai ucbbansai bansai.berkeley.edu
+128.32.131.56		euca eucalyptus ucbeucalyptus eucalyptus.berkeley.edu
+128.32.131.64		viking ucbviking viking.berkeley.edu
+128.32.131.65		apollo ucbapollo apollo.berkeley.edu
+128.32.131.66		mariner ucbmariner mariner.berkeley.edu
+128.32.131.67		voyager ucbvoyager voyager.berkeley.edu
+128.32.131.68		pioneer ucbpioneer pioneer.berkeley.edu
+128.32.131.69		calder-xcs ucbcalder-xcs calder-xcs.berkeley.edu
+128.32.131.70		challenger ucbchallenger challenger.berkeley.edu
+128.32.131.71		discovery ucbdiscovery discovery.berkeley.edu
+128.32.131.72		columbia ucbcolumbia columbia.berkeley.edu
+128.32.131.73		enterprise ucbenterprise enterprise.berkeley.edu
+128.32.131.74		atlantis ucbatlantis atlantis.berkeley.edu
+128.32.131.75		explorer ucbexplorer explorer.berkeley.edu
+128.32.131.76		ranger ucbranger ranger.berkeley.edu
+128.32.131.78		mahogany ucbmahogany mahogany.berkeley.edu
+128.32.131.79		elm ucbelm elm.berkeley.edu
+128.32.131.80		oak ucboak oak.berkeley.edu
+128.32.131.81		walnut ucbwalnut walnut.berkeley.edu
+128.32.131.82		redwood ucbredwood redwood.berkeley.edu
+128.32.131.83		liveoak ucbliveoak liveoak.berkeley.edu
+128.32.131.84		larch ucblarch larch.berkeley.edu
+128.32.131.85		maple ucbmaple maple.berkeley.edu
+128.32.131.86		baobab ucbbaobab baobab.berkeley.edu
+128.32.131.87		primrose ucbprimrose primrose.berkeley.edu
+128.32.131.88		poppy ucbpoppy poppy.berkeley.edu
+128.32.131.89		lupine ucblupine lupine.berkeley.edu
+128.32.131.90		fuchsia ucbfuchsia fuchsia.berkeley.edu
+128.32.131.91		freesia ucbfreesia freesia.berkeley.edu
+128.32.131.92		lilly ucblilly lilly.berkeley.edu
+128.32.131.93		orchid ucborchid orchid.berkeley.edu
+128.32.131.94		bromeliad ucbbromeliad bromeliad.berkeley.edu
+128.32.131.95		snapdragon ucbsnapdragon snapdragon.berkeley.edu
+128.32.131.99		wisteria ucbwisteria wisteria.berkeley.edu
+128.32.131.100		fezzik ucbfezzik fezzik.berkeley.edu
+128.32.131.101		marigold ucbmarigold marigold.berkeley.edu
+128.32.131.102		sunflower ucbsunflower sunflower.berkeley.edu
+128.32.131.103		columbine ucbcolumbine columbine.berkeley.edu
+128.32.131.104		ginko ucbginko ginko.berkeley.edu
+128.32.131.105		geranium ucbgeranium geranium.berkeley.edu
+128.32.131.106		copihue ucbcopihue copihue.berkeley.edu
+128.32.131.107		daisy ucbdaisy daisy.berkeley.edu
+128.32.131.108		dandelion ucbdandelion dandelion.berkeley.edu
+128.32.131.109		lotus ucblotus lotus.berkeley.edu
+128.32.131.110		mimosa ucbmimosa mimosa.berkeley.edu
+128.32.131.111		genziana ucbgenziana genziana.berkeley.edu
+128.32.131.114		mum ucbmum ucbchrysanthemum chrysanthemum mum.berkeley.edu
+128.32.131.115		pawlonia ucbpawlonia pawlonia.berkeley.edu
+128.32.131.116		sequoia ucbsequoia sequoia.berkeley.edu
+128.32.131.117		lassen ucblassen lassen.berkeley.edu
+128.32.131.118		ibmpc ibmpc.berkeley.edu
+128.32.131.119		leeb leeb.berkeley.edu
+128.32.131.120		shangri-la ucbshangri-la shangri-la.berkeley.edu
+128.32.131.121		lewis ucblewis lewis.berkeley.edu
+128.32.131.122		clark ucbclark clark.berkeley.edu
+128.32.131.123		yaakov ucbyaakov yaakov.berkeley.edu
+128.32.131.124		julia ucbjulia julia.berkeley.edu
+128.32.131.125		plato ucbplato plato.berkeley.edu
+128.32.131.126		mustapha ucbmustapha mustapha.berkeley.edu
+128.32.131.127		warthog ucbwarthog warthog.berkeley.edu
+128.32.131.128		bison ucbbison bison.berkeley.edu
+128.32.131.129		dikdik ucbdikdik dikdik.berkeley.edu
+128.32.131.130		aristotle ucbaristotle aristotle.berkeley.edu
+#
+# Berkeley Subnet 132 -- CAD 10Mb/s Ethernet
+#
+128.32.132.1		ic ucbic ic.berkeley.edu	
+128.32.132.2		icw ucbicw icw.berkeley.edu
+128.32.132.3		cad-ec ucbcad-ec cad-ec.berkeley.edu
+128.32.132.4		sim ucbsim sim.berkeley.edu	
+128.32.132.5		eros ucberos eros.berkeley.edu	
+128.32.132.6		hyper ucbhyper hyper.berkeley.edu	
+128.32.132.8		dent ucbdent arthur dent.berkeley.edu
+128.32.132.9		prefect ucbprefect ford	prefect.berkeley.edu
+128.32.132.10		decadence ucbdecadence decadence.berkeley.edu	
+128.32.132.11		samantha ucbsamantha fox samantha.berkeley.edu
+128.32.132.12		veronica ucbveronica hart veronica.berkeley.edu
+128.32.132.13		kelly ucbkelly nichols kelly.berkeley.edu	
+128.32.132.14		beeblebrox ucbbeeblebrox zaphod zap beeblebrox.berkeley.edu
+128.32.132.15		bfly ucbfly bfly.berkeley.edu
+128.32.132.16		squish ucbsquish squish.berkeley.edu
+128.32.132.17		twolf ucbtwolf twolf.berkeley.edu	
+128.32.132.18		washoe ucbwashoe washoe.berkeley.edu
+128.32.132.19		rich ucbrich rich.berkeley.edu
+128.32.132.20		scruff scruff.berkeley.edu scruffy	
+128.32.132.21		alberto ucbalberto alberto.berkeley.edu
+128.32.132.22		trillian ucbtrillian trillian.berkeley.edu
+128.32.132.23		genie ucbgenie genie.berkeley.edu
+128.32.132.24		zero ucbzero zero.berkeley.edu
+128.32.132.25		bunny ucbunny bunny.berkeley.edu
+128.32.132.26		athos ucbathos athos.berkeley.edu
+128.32.132.27		porthos ucbporthos porthos.berkeley.edu
+128.32.132.28		aramis ucbaramis aramis.berkeley.edu
+128.32.132.29		dartagnan ucbdartagnan dart ucbdart dartagnan.berkeley.edu
+128.32.132.30		nat ucbnat nat.berkeley.edu
+128.32.132.31		dont_panic panic dont dont_panic.berkeley.edu
+128.32.132.32		hopper hopper.berkeley.edu		
+128.32.132.33		fourier ucbfourier fourier.berkeley.edu
+128.32.132.34  		marilyn chambers marilyn.berkeley.edu
+128.32.132.35   	deep thought the-ultimate-machine deep.berkeley.edu
+128.32.132.36		canova canova.berkeley.edu
+128.32.132.37		fjord ucbfjord slarti slartibartfast fjord.berkeley.edu	
+128.32.132.38		baloss baloss.berkeley.edu
+128.32.132.39		logos logos.berkeley.edu
+128.32.132.40		hogan hogan.berkeley.edu
+128.32.132.41		pavepaws pavepaws.berkeley.edu		
+128.32.132.42		sequent sequent.berkeley.edu
+128.32.132.43		woozle wooz woozle.berkeley.edu		
+128.32.132.44		moose moose.berkeley.edu
+128.32.132.45		elk elk.berkeley.edu
+128.32.132.46		vectra vectra.berkeley.edu
+128.32.132.47		squirrel squirrel.berkeley.edu
+128.32.132.49		caliban	caliban.berkeley.edu
+128.32.132.54		shambhala shambhala.berkeley.edu
+128.32.132.55		susie susie.berkeley.edu
+128.32.132.56		pacific pacific.berkeley.edu
+128.32.132.57		curry curry.berkeley.edu
+128.32.132.58		dankoon dankoon.berkeley.edu
+128.32.132.59		peking peking.berkeley.edu
+128.32.132.60		surf surf.berkeley.edu
+128.32.132.61		v572 v572.berkeley.edu
+128.32.132.122		sonja ucbsonja sonja.berkeley.edu
+128.32.132.123		vogon ucbvogon vogon.berkeley.edu
+128.32.132.131		mv1 ucbmv1 mv1.berkeley.edu
+128.32.132.132		mv2 ucbmv2 mv2.berkeley.edu
+#
+# Berkeley Subnet 133 -- 484 Cory
+#
+128.32.133.2		esvax-133 ucbesvax-133 esvax-133.berkeley.edu
+128.32.133.3		medea-ec ucbmedea-ec medea-ec.berkeley.edu
+128.32.133.4		merlin ucbmerlin merlin.berkeley.edu
+128.32.133.5		oz ucboz oz.berkeley.edu
+128.32.133.6		davinci ucbdavinci davinci.berkeley.edu
+128.32.133.7		zeus ucbzeus ucbzeus-133 zeus-133 zeus.berkeley.edu
+128.32.133.8		jason ucbjason jason.berkeley.edu
+128.32.133.9		zworykin ucbzworykin zworykin.berkeley.edu
+128.32.133.25		ingres-ec ucbingres-ec ingres-ec.berkeley.edu
+128.32.133.26		iiris ucbiiris iiris.berkeley.edu
+#
+# Berkeley Subnet 134 -- EECS Administration
+#
+128.32.134.1		shadow ucbshadow shadowvax shadow.berkeley.edu
+128.32.134.2		ear ucbear ear.berkeley.edu
+128.32.134.3		east ucbeast east.berkeley.edu
+128.32.134.4		silvia ucbsilvia sylvia silvia.berkeley.edu
+128.32.134.5		dean ucbdean dean.berkeley.edu
+128.32.134.6		cory-il ucbcory-il cory-il.berkeley.edu
+128.32.134.7		zooey ucbzooey zooey.berkeley.edu
+128.32.134.8		seymour ucbseymour seymour.berkeley.edu
+128.32.134.9		holden ucbholden holden.berkeley.edu
+128.32.134.10		buddy ucbbuddy buddy.berkeley.edu
+128.32.134.11		franny ucbfranny franny.berkeley.edu
+128.32.134.12		morgan ucbmorgan morgan.berkeley.edu
+128.32.134.13		fern ucbfern fern.berkeley.edu
+128.32.134.14		carol ucbcarol carol.berkeley.edu
+128.32.134.15		dorothy ucbdorothy dorothy.berkeley.edu
+128.32.134.16		ernie-il1 ucbernie-il1 ernie-il1.berkeley.edu
+128.32.134.17		caliban caliban.berkeley.edu
+#
+# Berkeley Subnet 135 -- Math/Stat
+#
+128.32.135.1		bach ucbbach ucbstatvax statvax bach.berkeley.edu
+128.32.135.3		bizet ucbbizet bizet.berkeley.edu
+128.32.135.4		brahms ucbbrahms ucbmathstat mathstat brahms.berkeley.edu
+128.32.135.5		cartan-ec ucbcartan-ec cartan-ec.berkeley.edu
+128.32.135.6		weyl ucbweyl weyl.berkeley.edu
+128.32.135.7		setosa ucbsetosa setosa.berkeley.edu
+128.32.135.9		dvorak ucbdvorak dv dvorak.berkeley.edu
+128.32.135.10		crow ucbcrow crow.berkeley.edu
+128.32.135.11		glinda ucbglinda glinda.berkeley.edu
+128.32.135.12		lion ucblion lion.berkeley.edu
+128.32.135.13		tinman ucbtinman tinman.berkeley.edu
+128.32.135.14		toto ucbtoto toto.berkeley.edu
+128.32.135.15		witch ucbwitch witch.berkeley.edu
+128.32.135.16		wizard ucbwizard wizard.berkeley.edu
+128.32.135.17		badger ucbbadger badger.berkeley.edu
+128.32.135.18		mole ucbmole mole.berkeley.edu
+128.32.135.19		toad ucbtoad toad.berkeley.edu
+
+#
+# Berkeley Subnet 136 -- Computer Center 10Mb/s Ethernet
+#
+128.32.136.01		agate ucbagate Agate agate.berkeley.edu
+128.32.136.02		amber ucbamber Amber amber.berkeley.edu
+128.32.136.03		beryl ucbberyl Beryl beryl.berkeley.edu
+128.32.136.04		cmsa ucbcmsa Cmsa cmsa.berkeley.edu
+128.32.136.05		coral ucbcoral Coral coral.berkeley.edu
+128.32.136.06		garnet ucbgarnet Garnet garnet.berkeley.edu
+128.32.136.07		iris ucbiris Iris iris.berkeley.edu
+128.32.136.08		ivory ucbivory Ivory ivory.berkeley.edu
+128.32.136.09		jade ucbjade Jade jade.berkeley.edu
+128.32.136.10		jasper ucbjasper Jasper jasper.berkeley.edu
+128.32.136.11		lapis ucblapis Lapis lapis.berkeley.edu
+128.32.136.12		lilac ucblilac Lilac lilac.berkeley.edu
+128.32.136.13		opal ucbopal Opal opal.berkeley.edu
+128.32.136.14		pearl ucbpearl Pearl pearl.berkeley.edu
+128.32.136.15		populi ucbpopuli Populi populi.berkeley.edu
+128.32.136.16		rose ucbrose Rose rose.berkeley.edu
+128.32.136.17		ruby ucbruby Ruby ruby.berkeley.edu
+128.32.136.18		topaz ucbtopaz Topaz topaz.berkeley.edu
+128.32.136.19		tulip ucbtulip Tulip tulip.berkeley.edu
+128.32.136.20		zircon ucbzircon Zircon zircon.berkeley.edu
+128.32.136.22		violet ucbviolet Violet violet.berkeley.edu
+#
+# Berkeley Subnet 137 -- 10MB ucb-spine
+#
+128.32.137.1		cory ucbcory cory.berkeley.edu
+128.32.137.2		esvax ucbesvax esvax.berkeley.edu
+128.32.137.3		ucbvax-spine ucbvax-il ucbvax-spine.berkeley.edu
+128.32.137.4		cartan ucbcartan cartan.berkeley.edu
+128.32.137.5		eros-de1 ucberos-de1 eros-de1.berkeley.edu
+128.32.137.6		medea ucbmedea medea.berkeley.edu
+128.32.137.7		cad ucbcad cad.berkeley.edu
+128.32.137.8		ucbarpa-spine arpa-spine ucbarpa-spine.berkeley.edu
+128.32.137.11		jade-il1 ucbjade-il1 jade-il1.berkeley.edu
+128.32.137.13		ernie ucbernie ernie.berkeley.edu
+#
+# Berkeley Subnet 138 -- Ucf-net
+#
+128.32.138.1		bugs ucbugs ucbbugs ugs bugs.berkeley.edu
+128.32.138.2		miro-itt ucbmiro-itt miro-itt.berkeley.edu
+#
+# Berkeley Subnet 139 -- Suns on 3rd/4th floors Cory
+#
+128.32.139.2		zeus ucbzeus ucbzeus-139 zeus-139 zeus.berkeley.edu
+128.32.139.3		image ucbimage image.berkeley.edu
+128.32.139.4		robert ucbrobert robert.berkeley.edu
+128.32.139.5		bass ucbbass bass.berkeley.edu
+128.32.139.6		bob ucbbob bob.berkeley.edu
+128.32.139.7		jan ucbjan jan.berkeley.edu
+128.32.139.8		bud ucbbud bud.berkeley.edu
+128.32.139.9		heine ucbheine heine.berkeley.edu
+128.32.139.10		corona ucbcorona corona.berkeley.edu
+128.32.139.11		molson ucbmolson molson.berkeley.edu
+128.32.139.12		dab ucbdab dab.berkeley.edu
+128.32.139.13		tuborg ucbtuborg tuborg.berkeley.edu
+128.32.139.14		asahi ucbasahi asahi.berkeley.edu 
+128.32.139.15		suntory ucbsuntory suntory.berkeley.edu 
+128.32.139.50		coors ucbcoors coors.berkeley.edu 
+#
+# Point-Point links - Subnet 140
+#
+128.32.140.1		cgl-dmc ucsf-dmc cgl-dmc.berkeley.edu
+128.32.140.2		ucbarpa-dmc arpa-dmc ucb-dmc ucbarpa-dmc.berkeley.edu
+128.32.140.3		ucbvax-dmc ucbvax-dmc.berkeley.edu
+128.32.140.4		cartan-dmc ucbcartan-dmc cartan-dmc.berkeley.edu
+#
+# Berkeley Subnet 141 -- Engineering building interconnect 10Mb/s Ethernet
+#
+128.32.141.1		jade-eng ucbjade-eng jade-eng.berkeley.edu
+# cevax is not yet on its own net (manager dls@cevax David L. Steere)
+128.32.141.2		cevax ucbcevax cevax.berkeley.edu
+128.32.141.3		etch-gw ucbetch-gw etch-gw.berkeley.edu
+128.32.141.4		etch-gw2 ucbetch-gw2 etch-gw2.berkeley.edu
+#
+# Berkeley Subnet 142 -- Etcheverry Hall 10Mb/s Ethernet
+#
+128.32.142.1		euler ucbeuler euler.berkeley.edu
+128.32.142.2		newton ucbnewton newton.berkeley.edu
+128.32.142.3		kepler ucbkepler kepler.berkeley.edu
+128.32.142.5		maxwell ucbmaxwell maxwell.berkeley.edu
+128.32.142.6		joule ucbjoule joule.berkeley.edu
+128.32.142.7		mistletoe ucbmistletoe mistletoe.berkeley.edu
+128.32.142.25		mote ucbmote mote.berkeley.edu
+#
+#
+# Berkeley Subnet 143 -- Davis Hall 10Mb/s Ethernet
+#
+#128.32.143.1		cevax ucbcevax (not yet)
+#
+# Berkeley Subnet 144 (128.32.144.0) -- Latimer Hall Ethernet
+# Berkeley Subnet 145 (128.32.145.0) -- Richmond Field Station Ethernet
+# Berkeley Subnet 146 (128.32.146.0) -- Earth Sciences Bldg. Ethernet
+# Berkeley Subnet 147 (128.32.147.0) -- Internal Development, IBM VM subnet
+#
+# Berkeley Subnet 148 (128.32.148.0) -- Etcheverry Hall Subnet Ethernet
+128.32.148.1		element-gw ucbelement-gw element-gw.berkeley.edu
+128.32.148.2		hydrogen ucbhydrogen hydrogen.berkeley.edu
+128.32.148.3		helium ucbhelium helium.berkeley.edu
+128.32.148.4		lithium ucblithium lithium.berkeley.edu
+128.32.148.5		beryllium ucbberyllium beryllium.berkeley.edu
+128.32.148.6		boron ucbboron boron.berkeley.edu
+128.32.148.7		carbon ucbcarbon carbon.berkeley.edu
+128.32.148.8		nitrogen ucbnitrogen nitrogen.berkeley.edu
+128.32.148.9		oxygen ucboxygen oxygen.berkeley.edu
+128.32.148.10		fluorine ucbfluorine fluorine.berkeley.edu
+128.32.148.11		neon ucbneon neon.berkeley.edu
+128.32.148.12		sodium ucbsodium sodium.berkeley.edu
+128.32.148.13		magnesium ucbmagnesium magnesium.berkeley.edu
+128.32.148.14		aluminum ucbaluminum aluminum.berkeley.edu
+128.32.148.15		silicon ucbsilicon silicon.berkeley.edu
+128.32.148.16		phosphorus ucbphosphorus phosphorus.berkeley.edu
+128.32.148.17		sulfur ucbsulfur sulfur.berkeley.edu
+#
+# Berkeley Subnet 150 -- 10MB/s spur's sun-network
+#
+128.32.150.1		envy-150 envy ucbenvy-150 envy.berkeley.edu envy-150.berkeley.edu
+128.32.150.2		clove ucbclove clove.berkeley.edu
+128.32.150.3		salt ucbsalt salt.berkeley.edu
+128.32.150.4		saffron ucbsaffron saffron.berkeley.edu
+128.32.150.5		garlic ucbgarlic garlic.berkeley.edu
+128.32.150.6		sage ucbsage sage.berkeley.edu
+128.32.150.7		nutmeg ucbnutmeg nutmeg.berkeley.edu
+128.32.150.8		paprika ucbpaprika paprika.berkeley.edu
+128.32.150.9		murder ucbmurder murder.berkeley.edu
+128.32.150.10		earth ucbearth earth.berkeley.edu
+128.32.150.11		lust ucblust lust.berkeley.edu
+128.32.150.12		lust20 ucblust20 lust20.berkeley.edu
+128.32.150.13		pride ucbpride pride.berkeley.edu
+128.32.150.14		sloth ucbsloth sloth.berkeley.edu
+128.32.150.15		dill ucbdill dill.berkeley.edu
+128.32.150.16		basil ucbbasil basil.berkeley.edu
+128.32.150.17		thyme ucbthyme thyme.berkeley.edu
+128.32.150.18		bay ucbbay bay.berkeley.edu
+128.32.150.19		parsley ucbparsley parsley.berkeley.edu
+128.32.150.20		pepper ucbpepper pepper.berkeley.edu
+128.32.150.21		anger ucbanger anger.berkeley.edu
+128.32.150.22		greed ucbgreed greed.berkeley.edu
+128.32.150.25		cayenne ucbcayenne cayenne.berkeley.edu
+128.32.150.26		chilli ucbchilli chilli.berkeley.edu
+128.32.150.27		allspice ucballspice allspice.berkeley.edu
+128.32.150.28		ginger ucbginger ginger.berkeley.edu
+128.32.150.29		oregano ucboregano oregano.berkeley.edu
+128.32.150.30		rosemary ucbrosemary rosemary.berkeley.edu
+128.32.150.31		fennel ucbfennel fennel.berkeley.edu
+128.32.150.32		cinnamon ucbcinnamon cinnamon.berkeley.edu
+128.32.150.33		tarragon ucbtarragon tarragon.berkeley.edu
+128.32.150.34		anise ucbanise anise.berkeley.edu
+128.32.150.35		coriander ucbcoriander coriander.berkeley.edu
+128.32.150.37		tumeric ucbtumeric tumeric.berkeley.edu
+128.32.150.38		mustard ucbmustard mustard.berkeley.edu
+128.32.150.39		cardamom ucbcardamom cardamom.berkeley.edu
+128.32.150.40		sarsaparilla ucbsarsaparilla sarsaparilla.berkeley.edu
+128.32.150.41		sassafrass ucbsassafrass sassafrass.berkeley.edu
+128.32.150.42		hecuba ucbhecuba hecuba.berkeley.edu
+128.32.150.43		priam ucbpriam priam.berkeley.edu
+128.32.150.44		tully ucbtully tully.berkeley.edu
+128.32.150.45		helen ucbhelen helen.berkeley.edu
+128.32.150.46		paris ucbparis paris.berkeley.edu
+128.32.150.47		menelaus ucbmenelaus menelaus.berkeley.edu
+128.32.150.48		odysseus ucbodysseus odysseus.berkeley.edu
+128.32.150.49		agamemnon ucbagamemnon agamemnon.berkeley.edu
+128.32.150.50		homer ucbhomer homer.berkeley.edu
+128.32.150.51		cumin ucbcumin cumin.berkeley.edu
+128.32.150.52		mint ucbmint mint.berkeley.edu
+128.32.150.53		marjoram ucbmarjoram marjoram.berkeley.edu
+128.32.150.54		mace ucbmace mace.berkeley.edu
+128.32.150.55		fenugreek ucbfenugreek fenugreek.berkeley.edu
+128.32.150.56		savory ucbsavory savory.berkeley.edu
+128.32.150.57		caraway ucbcaraway caraway.berkeley.edu
+128.32.150.58		shallot ucbshallot shallot.berkeley.edu
+128.32.150.59		borage ucbborage borage.berkeley.edu
+#
+# Subnet 151 Evans Hall public workstations
+#
+# Subnet 152 Computer center staff workstations
+128.32.152.10	jade-il3 ucbjade-il3 
+128.32.152.01	heart ucbheart heart.berkeley.edu	# Jane Wolff
+128.32.152.02	biko ucbiko biko.berkeley.edu		# Steve Jacobson
+128.32.152.03	quark ucbquark quark.berkeley.edu	# Ed Moy
+128.32.152.04	rkneff1 ucbrkneff1 rkneff1.berkeley.edu	# Ray Neff
+128.32.152.05	rkneff2 ucbrkneff2 rkneff2.berkeley.edu	# Ray Neff
+128.32.152.06	misc ucbmisc misc.berkeley.edu		# Greg Minshall
+128.32.152.07	grendel ucbgrendel grendel.berkeley.edu	# Ken Lindahl
+128.32.152.08	temp ucbtemp temp.berkeley.edu		# place holder for test
+128.32.152.09	tern ucbtern tern.berkeley.edu		# Bob Campbell
+128.32.152.11	eris ucberis eris.berkeley.edu		# Mike Meyer
+128.32.152.42	io ucbio io.berkeley.edu		# David Wasley
+128.32.152.58	ripple ucbripple ripple.berkeley.edu	# Jordan Hubbard
+#
+# Subnet 153 DLA interconnect link
+#
+# Subnet 154 DLA network
+#
+# Subnet 155 Suns in Bechtel library
+#
+# Berkeley Subnet 156 -- Cory "others" catchall net
+#
+128.32.156.02		zworykin-156 ucbzworykin-156 zworykin-156.berkeley.edu
+128.32.156.03		nyquist ucbnyquist nyquist.berkeley.edu
+128.32.156.04		marconi ucbmarconi marconi.berkeley.edu
+128.32.156.05		edison ucbedison edison.berkeley.edu
+128.32.156.06		deforest ucbdeforest deforest.berkeley.edu
+128.32.156.07		armstrong ucbarmstrong armstrong.berkeley.edu
+128.32.156.08		bell ucbbell bell.berkeley.edu
+128.32.156.09		shannon ucbshannon shannon.berkeley.edu
+128.32.156.10		franklin ucbfranklin franklin.berkeley.edu
+128.32.156.12		tesla ucbtesla tesla.berkeley.edu 
+128.32.156.13		hodges ucbhodges hodges.berkeley.edu
+128.32.156.14		light ucblight light.berkeley.edu
+128.32.156.23		kuhimagen ucbkuhimagen kuhimagen.berkeley.edu
+128.32.156.40		kuhn ucbkuhn kuhn.berkeley.edu
+128.32.156.41		tucker ucbtucker tucker.berkeley.edu
+128.32.156.50		huffman ucbhuffman huffman.berkeley.edu
+128.32.156.51		sesame ucbsesame sesame.berkeley.edu
+128.32.156.52		booze ucbbooze booze.berkeley.edu
+128.32.156.53		gin ucbgin gin.berkeley.edu
+128.32.156.54		tequila ucbtequila tequila.berkeley.edu	
+128.32.156.55		layout ucblayout layout.berkeley.edu
+128.32.156.56		lagrange ucblagrange lagrange.berkeley.edu
+128.32.156.57		mouton ucbmouton mouton.berkeley.edu
+128.32.156.58		latour ucblatour latour.berkeley.edu
+128.32.156.59		lambert ucblambert lambert.berkeley.edu
+128.32.156.60		em em.berkeley.edu
+#
+# Subnet 157 Cory Others-Net?
+#
+# Berkeley Class A Private Net -- 3Mb/s Ethernet
+#
+126.1		matisse-a ucbmatisse-a
+126.2		calder-a ucbcalder-a
+126.3		monet-a ucbmonet-a
+#
+# Berkeley Class C Private Net -- 3Mb/s Ethernet
+#
+192.0.46.1		matisse-c ucbmatisse-c
+192.0.46.2		calder-c ucbcalder-c
+192.0.46.3		monet-c ucbmonet-c
+192.0.46.4		okeeffe-c ucbokeeffe-c
+192.0.46.5		vangogh-c ucbvangogh-c
+#
+# UCSF Class C net
+#
+192.5.49.1		ucsfcgl cgl ucsf-cgl
+192.5.49.2		ucsfigv  igv
+192.5.49.3		ucsfmeta meta ucsf-meta fuzzy
+192.5.49.4		cgliris
+192.5.49.10		ucsfmis mis
+192.5.49.11		ucsfbcl bcl
+192.5.49.12		ucsfcca cca ucsfvaxa vaxa
+192.5.49.13		ucsfccb ccb
+192.5.49.14		ucsfmsg msg
+192.5.49.15		bcliris
+192.5.49.16		ucsfnmr nmr
+192.5.49.17		ucsfvivo vivo nmrvivo
+#
+# DECWRL
+#
+128.45.0.241		decwrl-dmc 
+# Off Campus Hosts and Networks (from SRI-NIC hostname server)
+#
+36.10.0.171		su-playfair.arpa su-playfair playfair
+128.39.1.2		tor nta-vax
+#

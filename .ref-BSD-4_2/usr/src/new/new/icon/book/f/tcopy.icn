@@ -1,6 +1,0 @@
-procedure tcopy(ltree)
-   local a
-   a := [ltree[1]]
-   every put(a,tcopy(ltree[2 to *ltree]))
-   return a
-end

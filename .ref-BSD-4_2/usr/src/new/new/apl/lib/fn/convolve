@@ -1,2 +1,0 @@
-r { a convolve b
-r { b +.X ((I1)-IRb)O|((Rb),`1+Ra,b)Ra,(`1+Rb)R0

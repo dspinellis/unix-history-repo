@@ -1,8 +1,0 @@
-procedure qseq()
-   local i, qmem
-   qmem := table()
-   suspend qmem[1 | 2] := 1
-   i := 2
-   repeat suspend qmem[i +:= 1] :=
-      qmem[i - qmem[i - 1]] + qmem[i - qmem[i - 2]]
-end

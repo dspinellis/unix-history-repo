@@ -1,0 +1,266 @@
+.\" Hunt
+.\" Copyright (c) 1985 Conrad C. Huang, Gregory S. Couch, Kenneth C.R.C. Arnold
+.\" San Francisco, California
+.\"
+.\" Copyright (c) 1985 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)hunt.6	6.3 (Berkeley) 1/9/86
+.\"
+.TH HUNT 6 "January 9, 1986"
+.UC 6
+.SH NAME
+hunt \- a multi-player multi-terminal game
+.SH SYNOPSIS
+\fB/usr/games/hunt\fP [-q] [\fB-m\fP] [hostname] [\fB-l\fP name]
+.SH DESCRIPTION
+The object of the game
+.I hunt
+is to kill off the other players.
+There are no rooms, no treasures, and no monsters.
+Instead, you wander around a maze, find grenades, trip mines, and shoot down
+walls and players.
+The more players you kill before you die, the better your score is.
+If the
+.B \-m
+flag is given,
+you enter the game as a monitor
+(you can see the action but you cannot play).
+.PP
+.I Hunt
+normally looks for an active game on the local network; if none is found,
+it starts one up on the local host.  One may specify the location of the
+game by giving the \fIhostname\fP argument.  The player name may be specified
+on the command line by using the \fB-l\fP option.  This command syntax was
+chosen for \fIrlogin/rsh\fP compatibility.
+If the
+.B \-q
+flag is given,
+.I hunt
+queries the network and reports if an active game were found.
+This is useful for .login scripts.
+.PP
+.I Hunt
+only works on crt (vdt) terminals with at least 24 lines, 80 columns, and
+cursor addressing.
+The screen is divided in to 3 areas.
+On the right hand side is the status area.
+It shows you how much damage you've sustained,
+how many charges you have left,
+who's in the game,
+who's scanning (the asterisk in front of the name),
+who's cloaked (the plus sign in front of the name),
+and other players' scores.
+Most of the rest of the screen is taken up by your map of the maze,
+except for the 24th line,
+which is used for longer messages that don't fit in the status area.
+.PP
+.I Hunt
+uses the same keys to move as
+.I vi
+does,
+.IR i.e. ,
+.BR h , j , k ,
+and
+.B l
+for left, down, up, right respectively.
+To change which direction you're facing in the maze,
+use the upper case version of the movement key (\c
+.IR i.e. ,
+HJKL).
+.TP
+Other commands are:
+.sp
+.nf
+.ta
+.ta \w'>\|<\|^\|v\ \ 'u
+f	\- Fire (in the direction you're facing) (Takes 1 charge)
+g	\- Throw grenade (in the direction you're facing) (Takes 9 charges)
+F	\- Throw satchel charge (Takes 25 charges)
+G	\- Throw bomb (Takes 49 charges)
+o	\- Throw small slime bomb (Takes 15 charges)
+O	\- Throw big slime bomb (Takes 30 charges)
+s	\- Scan (show where other players are) (Takes 1 charge)
+c	\- Cloak (hide from scanners) (Takes 1 charge)
+
+^L	\- Redraw screen
+q	\- Quit
+.fi
+.TP
+Knowing what the symbols on the screen often helps:
+.sp
+.nf
+.ta
+.ta \w'>\|<\|^\|v\ \ 'u
+\-\||\|+	\- walls
+/\|\\	\- diagonal (deflecting) walls
+#	\- doors (dispersion walls)
+;	\- small mine
+g	\- large mine
+:	\- shot
+o	\- grenade
+O	\- satchel charge
+@	\- bomb
+s	\- small slime bomb
+$	\- big slime bomb
+>\|<\|^\|v	\- you facing right, left, up, or down
+}\|{\|i\|!	\- other players facing right, left, up, or down
+\(**	\- explosion
+.ne 3
+.cs R 24
+.cs I 24
+\fR\\|/\fP
+.cs R
+\fI\-\(**\-\fP	\- grenade and large mine explosion
+.fl
+.cs R 24
+\fR/|\\\fP
+.cs R
+.cs I
+.fi
+.TP
+Satchel and bomb explosions are larger than grenades (5x5, 7x7,
+and 3x3 respectively).
+.LP
+Other helpful hints:
+.sp
+.ie n .ds b []
+.el .ds b \(bu
+.ta
+.ta \w'\*b\ \|'u
+.nr In \n(.i
+.de MP
+.br
+.in \n(Inu+\w'\*b\ \|'u
+.ti \n(Inu
+\*b	\c
+..
+.MP
+You can only fire in the direction you are facing.
+.MP
+You can only fire three shots in a row, then the gun must cool.
+.MP
+A shot only affects the square it hits.
+.MP
+Shots and grenades move 5 times faster than you do.
+.MP
+To stab someone,
+you must face that player and move at them.
+.MP
+Stabbing does 2 points worth of damage and shooting does 5 points.
+.MP
+Slime does 5 points of damage each time it hits.
+.MP
+You start with 15 charges and get 5 more for every new player.
+.MP
+A grenade affects the nine squares centered about the square it hits.
+.MP
+A satchel affects the twenty-five squares centered about the square it hits.
+.MP
+A bomb affects the forty-nine squares centered about the square it hits.
+.MP
+Slime affects all squares it oozes over (15 or 30 respectively).
+.MP
+One small mine and one large mine is placed in the maze for every new player.
+A mine has a 5% probability of tripping when you walk directly at it;
+50% when going sideways on to it;
+95% when backing up on to it.
+Tripping a mine costs you 5 points or 10 points respectively.
+Defusing a mine is worth 1 charge or 9 charges respectively.
+.MP
+You cannot see behind you.
+.MP
+Scanning lasts for (20 times the number of players) turns.
+Scanning takes 1 ammo charge,
+so don't waste all your charges scanning.
+.MP
+Cloaking lasts for 20 turns.
+.MP
+Whenever you kill someone,
+you get 2 more damage capacity points and 2 damage points taken away.
+.MP
+Maximum typeahead is 5 characters.
+.MP
+A shot destroys normal (\c
+.IR i.e., 
+non-diagonal, non-door) walls.
+.MP
+Diagonal walls deflect shots and change orientation.
+.MP
+Doors disperse shots in random directions (up, down, left, right).
+.MP
+Diagonal walls and doors cannot be destroyed by direct shots but may
+be destroyed by an adjacent grenade explosion.
+.MP
+Slime goes around walls, not through them.
+.MP
+Walls regenerate, reappearing in the order they were destroyed.
+One percent of the regenerated walls will be diagonal walls or doors.
+When a wall is generated directly beneath a player, he is thrown in
+a random direction for a random period of time.  When he lands, he
+sustains damage (up to 20 percent of the amount of damage he had before
+impact); that is, the less damage he had, the more nimble he is and
+therefore less likely to hurt himself on landing.
+\".MP
+\"There is a volcano close to the center of the maze which goes off
+\"close to every 100 deaths.
+.MP
+The environment variable
+.B HUNT
+is checked to get the player name.
+If you don't have this variable set,
+.I hunt
+will ask you what name you want to play under.
+If it is set,
+you may also set up a single character keyboard map, but then you have to
+enumerate the options:
+.br
+.ti +1i
+\fIe.g.\fP setenv HUNT ``name=Sneaky,mapkey=zoFfGg1f2g3F4G''
+.br
+sets the player name to Sneaky,
+and the maps \fBz\fP to \fBo\fP, \fBF\fP to \fBf\fP, \fBG\fP to \fBg\fP,
+\fB1\fP to \fBf\fP,
+\fB2\fP to \fBg\fP, \fB3\fP to \fBF\fP, and \fB4\fP to \fBG\fP.
+The \fImapkey\fP option must be last.
+.MP
+It's a boring game if you're the only one playing.
+.PP
+Your score is the ratio of number of kills to number
+of times you entered the game and is only kept for the duration
+of a single session of \fIhunt\fP.
+.PP
+.I Hunt
+normally drives up the load average to be about
+(number_of_players + 0.5) greater than it would be without a
+.I hunt 
+game executing.  A limit of three players per host and nine players
+total is enforced by \fIhunt\fP.
+.SH FILES
+.nf
+.ta
+.ta \w'/usr/games/lib/hunt.driver\ \ \ 'u
+/usr/games/lib/hunt.driver	game coordinator
+.DT
+.fi
+.SH AUTHORS
+Conrad Huang,
+Ken Arnold,
+and Greg Couch;
+University of California, San Francisco, Computer Graphics Lab
+.SH ACKNOWLEDGEMENTS
+We thank Don Kneller,
+John Thomason, Eric Pettersen,
+and Scott Weiner for providing
+endless hours of play-testing to improve the character of the game.
+We hope their significant others will forgive them;
+we certainly don't.
+.SH BUGS
+To keep up the pace, not everything is as realistic as possible.
+.PP
+There were some bugs in early releases of 4.2 BSD that
+.I hunt
+helped discover;
+.I hunt
+will crash your system if those bugs haven't been fixed.

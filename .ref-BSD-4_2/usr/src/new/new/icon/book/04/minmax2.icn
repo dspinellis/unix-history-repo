@@ -1,8 +1,0 @@
-procedure main()
-   min := max := read()	# initial min and max
-   while line := read() do
-      if max <<:= line then next
-      else min >>:= line
-   write("lexically largest line is: ",max)
-   write("lexically smallest line is: ",min)
-end

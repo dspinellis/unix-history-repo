@@ -1,8 +1,0 @@
-procedure main()
-   wchar := &lcase ++ &ucase
-   pchar := '.,:;?! '
-   while line := read() do
-				# get to first letter
-      if line := line[upto(wchar,line):0]
-      then write(line[1:upto(pchar,line)])
-end

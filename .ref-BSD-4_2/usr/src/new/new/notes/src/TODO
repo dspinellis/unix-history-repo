@@ -1,4 +1,0 @@
-clear_eol is a real kludge - use curses instead!
-tabs not handled correctly in input routines
-B News interface and fix parsing of mail headers
-flag new articles on index page

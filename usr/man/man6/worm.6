@@ -1,0 +1,39 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)worm.6	6.1 (Berkeley) 5/20/85
+.\"
+.TH WORM 6 "May 20, 1985"
+.UC 4
+.SH NAME
+worm \- Play the growing worm game
+.SH SYNOPSIS
+.B /usr/games/worm
+[
+.I size
+]
+.SH DESCRIPTION
+.PP
+In
+.I worm,
+you are a little worm, your body is the "o"'s on the screen
+and your head is the "@".  You move with the hjkl keys (as in the game
+snake).  If you don't press any keys, you continue in the direction you
+last moved.  The upper case HJKL keys move you as if you had pressed
+several (9 for HL and 5 for JK) of the corresponding lower case key
+(unless you run into a digit, then it stops).
+.PP
+On the screen you will see a digit, if your worm eats the digit is will
+grow longer, the actual amount longer depends on which digit it was
+that you ate.  The object of the game is to see how long you can make
+the worm grow.
+.PP
+The game ends when the worm runs into either the sides of the screen,
+or itself.  The current score (how much the worm has grown) is kept in
+the upper left corner of the screen.
+.PP
+The optional argument, if present, is the initial length of the worm.
+.SH BUGS
+If the initial length of the worm is set to less than one or more
+than 75, various strange things happen.

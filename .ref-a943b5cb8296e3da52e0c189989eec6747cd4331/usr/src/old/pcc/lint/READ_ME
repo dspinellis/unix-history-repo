@@ -1,8 +1,0 @@
-
-/*
- *	@(#)READ_ME	1.2	(Berkeley)	%G%
- */
-Most of lint's source files are shared with the portable
-compiler: they are found in /usr/src/lib/mip.
-The files here are only those which are unique to lint.
-

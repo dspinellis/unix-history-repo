@@ -1,0 +1,91 @@
+.\" Copyright (c) 1985 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)vacation.1	6.2 (Berkeley) 6/16/85
+.\"
+.TH VACATION 1 "June 16, 1985"
+.UC 6
+.SH NAME
+vacation \- return ``I am on vacation'' indication
+.SH SYNOPSIS
+.B vacation
+.B \-I
+.br
+.B vacation
+user
+.SH DESCRIPTION
+.I Vacation
+returns a message to the sender of a message
+telling that you are on vacation.
+The intended use is in a
+.I \&.forward
+file.
+For example,
+your
+.I \&.forward
+file might have:
+.PP
+.ti +5
+\eeric, "|vacation eric"
+.PP
+which would send messages to you
+(assuming your login name was eric)
+and send a message back to the sender.
+.PP
+.I Vacation
+expects a file
+.I \&.vacation.msg
+in your home directory containing a message to be sent back
+to each sender.
+It should be an entire message
+(including headers).
+For example, it might say:
+.PP
+.in +5
+.nf
+From: eric@ucbmonet.Berkeley.EDU (Eric Allman)
+Subject: I am on vacation
+Delivered-By-The-Graces-Of: the Vacation program
+
+I am on vacation until July 22.  If you have something urgent,
+please contact Joe Kalash <kalash@ucbingres.Berkeley.EDU>.
+	--eric
+.fi
+.in -5
+.PP
+This message will only be sent once a week to each unique
+sender.
+The people who have sent you messages are kept in the files
+.I \&.vacation.pag
+and
+.I \&.vacation.dir
+in your home directory.
+The
+.B \-I
+option initializes these files,
+and should be executed before you modify your
+.I \&.forward
+file.
+.PP
+If the
+.B \-I
+flag is not specified,
+.I vacation
+reads the first line from the standard input
+for a \s-1UNIX\s0-style
+``From'' line
+to determine the sender.
+If this is not present,
+a nasty diagnostic is produced.
+.IR Sendmail (8)
+includes the ``From'' line automatically.
+.PP
+No message is sent
+if the initial
+``From'' line includes the string
+``-REQUEST@''
+or if a ``Precedence: bulk'' or ``Precedence: junk'' line
+is included in the header.
+.SH SEE\ ALSO
+sendmail(8)

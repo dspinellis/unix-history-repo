@@ -1,0 +1,26 @@
+.\"	@(#)getenv.3	6.1 (Berkeley) 5/15/85
+.\"
+.TH GETENV 3 "May 15, 1985"
+.AT 3
+.SH NAME
+getenv \- value for environment name
+.SH SYNOPSIS
+.nf
+.B char *getenv(name)
+.B char *name;
+.fi
+.SH DESCRIPTION
+.I Getenv
+.a
+searches the environment list
+(see
+.IR environ (7))
+for a string of the form
+.IB name = value
+and returns a pointer to the string
+.I value
+if such a string is present, otherwise 
+.I getenv
+returns the value 0 (NULL).
+.SH SEE ALSO
+environ(7), execve(2)

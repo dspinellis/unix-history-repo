@@ -1,9 +1,0 @@
-procedure shuffle(s)
-   local i
-   i := *s
-   while i >= 2 do {
-      s[?i] :=: s[i]
-      i -:= 1
-      }
-   return s
-end

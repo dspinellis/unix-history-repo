@@ -1,4 +1,0 @@
-procedure shuffle(deck)
-   every !deck :=: ?deck
-   return deck
-end

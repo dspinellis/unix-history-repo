@@ -1,1 +1,0 @@
-char    *pfolder =      "current-folder";

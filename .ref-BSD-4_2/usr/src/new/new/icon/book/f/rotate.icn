@@ -1,4 +1,0 @@
-procedure rotate(s,i)
-   if i <= 0 then i +:= *s
-   return s[i + 1:0] || s[1:i + 1]
-end

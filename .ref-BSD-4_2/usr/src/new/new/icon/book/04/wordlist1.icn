@@ -1,6 +1,0 @@
-procedure wordlist()
-   wlist := ""	# initialize wlist
-   while word := read() do
-      wlist := wlist || word || ","
-   return wlist
-end

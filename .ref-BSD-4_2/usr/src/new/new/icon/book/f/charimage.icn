@@ -1,9 +1,0 @@
-procedure main()
-   local chars, charlist, i, pair
-   chars := table(0)
-   while chars[reads()] +:= 1
-   charlist := sort(chars)
-   i := 0
-   while pair := charlist[i +:= 1] do
-      write(left(image(pair[1]),6),right(pair[2],6))
-end

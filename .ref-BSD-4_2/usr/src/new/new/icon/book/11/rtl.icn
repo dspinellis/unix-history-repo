@@ -1,3 +1,0 @@
-procedure rtl(s)
-   suspend s[*s to 1 by -1]
-end

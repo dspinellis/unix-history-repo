@@ -1,6 +1,0 @@
-procedure allbal(c,s)
-   s ? repeat {
-      suspend "" ~== tab(bal(c))
-      move(1) | break
-      }
-end

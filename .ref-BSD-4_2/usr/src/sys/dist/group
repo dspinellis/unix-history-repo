@@ -1,5 +1,0 @@
-wheel:*:0:root
-daemon:*:1:daemon
-staff:*:10:root
-guest:*:31:root
-operator:*:28:root

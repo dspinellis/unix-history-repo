@@ -1,4 +1,0 @@
-cd /usr/lib/news
-mv log olog
-cp /dev/null log
-chmod 666 log history

@@ -1,3 +1,0 @@
-procedure main()
-   while writes(reads(,1000))
-end

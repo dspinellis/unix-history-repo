@@ -1,5 +1,0 @@
-procedure main()
-   lines := []
-   while push(lines,read())
-   while write(get(lines))
-end

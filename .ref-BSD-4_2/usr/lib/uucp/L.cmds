@@ -1,8 +1,0 @@
-PATH=/bin:/usr/bin:/usr/ucb
-rmail
-rnews
-ruusend
-# These next programs are security holes, but people like them
-lpr
-who
-uusend

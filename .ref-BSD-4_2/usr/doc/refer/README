@@ -1,7 +1,0 @@
-This is the documentation for the 4.2 bsd version of the
-refer bibliography system.  Refer is highly dependent on
-the nroff/troff macros.  Currently, -me doesn't work in
-conjuction with refer, only the new -ms macros work decently.
-
-Bill Tuthill
-ucbvax!g:tut

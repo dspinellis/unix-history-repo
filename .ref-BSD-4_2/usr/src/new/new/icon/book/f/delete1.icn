@@ -1,4 +1,0 @@
-procedure delete(s,c)
-   while s[upto(c,s)] := ""
-   return s
-end

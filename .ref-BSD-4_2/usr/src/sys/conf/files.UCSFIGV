@@ -1,5 +1,0 @@
-UCSFIGV/local/ps2.c		optional ps device-driver
-UCSFIGV/local/mx.c		optional mx
-UCSFIGV/local/mxi.c		optional mxi
-UCSFIGV/local/mxi_dm.c		optional mi device-driver
-UCSFIGV/local/pty.c		optional mxpty

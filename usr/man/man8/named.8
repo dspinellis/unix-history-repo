@@ -1,0 +1,161 @@
+.\" Copyright (c) 1985 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)named.8	6.2 (Berkeley) 6/3/86
+.\"
+.TH NAMED 8 "15 November 1985"
+.UC 4
+.SH NAME
+named \- Internet domain name server
+.SH SYNOPSIS
+.B named
+[
+.B \-d
+.I debuglevel
+] [
+.B \-p
+.I port#
+] [
+.I bootfile
+]
+.SH DESCRIPTION
+.I Named
+is the Internet domain name server (see RFC883 for more details).
+Without any arguments,
+.I named
+will read the default boot file
+.IR /etc/named.boot ,
+read any initial data and listen for queries.
+.PP
+Options are:
+.TP
+.B \-d
+Print debugging information.
+A number after the ``d'' determines the level of
+messages printed.
+.TP
+.B \-p
+Use a different port number.  The default is the standard port number
+as listed in /etc/services.
+.PP
+Any additional argument is taken as the name of the boot file.
+The boot file contains information about where the name server is to get
+its initial data.
+The following is a small example:
+.RS
+.nf
+
+;
+;	boot file for name server
+;
+; type		domain		source file or host
+;
+domain		berkeley.edu
+primary		berkeley.edu    named.db
+secondary 	cc.berkeley.edu 10.2.0.78 128.32.0.10
+cache		.               named.ca	
+
+.fi
+.RE
+The first line specifies that ``berkeley.edu'' is the domain for which
+the server is authoritative.
+The second line states that the file ``named.db'' contains
+authoritative data for the domain ``berkeley.edu''. The file ``named.db''
+contains data in the master file format described in RFC883 except that
+all domain names are relative to the origin; in this
+case, ``berkeley.edu'' (see below for a more detailed description).
+The second line specifies that all authoritative data
+under ``cc.berkeley.edu'' is to be transferred from the name server
+at 10.2.0.78.  If the transfer fails it will try 128.32.0.10 and
+continue trying the address, up to 10, listed on this line.
+The secondary copy is also authoritative for the specified domain.
+The fourth line specifies data in ``named.ca'' is to be placed in the cache
+(i.e., well known data such as locations of root domain servers).
+The file ``named.ca'' is in the same format as ``named.db''.
+.PP
+The master file consists of entries of the form:
+.RS
+.nf
+
+$INCLUDE <filename>
+$ORIGIN <domain>
+<domain> <opt_ttl> <opt_class> <type> <resource_record_data>
+
+.fi
+.RE
+where
+.I domain
+is "." for root, "@" for the current origin, or a standard domain
+name. If
+.I domain
+is a standard domain name that does not end with ``.'', the current origin
+is appended to the domain. Domain names ending with ``.'' are
+unmodified.
+The
+.I opt_ttl
+field is an optional integer number for the time-to-live field.
+It defaults to zero.
+The
+.I opt_class
+field is the object address type; currently only one type is supported,
+.BR IN ,
+for objects connected to the DARPA Internet. 
+The
+.I type
+field is one of the following tokens; the data expected in the
+.I resource_record_data
+field is in parentheses.
+.TP "\w'MINFO    'u"
+A
+a host address (dotted quad)
+.IP NS
+an authoritative name server (domain)
+.IP MX
+a mail exchanger (domain)
+.IP CNAME
+the canonical name for an alias (domain)
+.IP SOA
+marks the start of a zone of authority (5 numbers (see RFC883))
+.IP MB
+a mailbox domain name (domain)
+.IP MG
+a mail group member (domain)
+.IP MR
+a mail rename domain name (domain)
+.IP NULL
+a null resource record (no format or data)
+.IP WKS
+a well know service description (not implemented yet)
+.IP PTR
+a domain name pointer (domain)
+.IP HINFO
+host information (cpu_type OS_type)
+.IP MINFO
+mailbox or mail list information (request_domain error_domain)
+.SH NOTES
+The following signals have the specified effect when sent to the
+server process using the
+.IR kill (1)
+command.
+.TP "\w'SIGUSR2   'u"
+SIGHUP
+Causes server to read named.boot and reload database.
+.IP SIGINT
+Dumps current data base and cache to /usr/tmp/named_dump.db
+.IP SIGUSR1
+Turns on debugging; each SIGUSR1 increments debug level.
+.IP SIGUSR2
+Turns off debugging completely.
+.SH FILES
+.nf
+.ta \w'/usr/tmp/named_dump.db   'u
+/etc/named.boot	name server configuration boot file
+/etc/named.pid	the process id
+/usr/tmp/named.run	debug output
+/usr/tmp/named_dump.db	dump of the name servers database
+.fi
+.SH "SEE ALSO"
+kill(1), gethostbyname(3N), signal(3c), resolver(3), resolver(5),
+RFC882, RFC883, RFC973, RFC974,
+\fIName Server Operations Guide for BIND\fR

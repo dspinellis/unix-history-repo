@@ -1,0 +1,37 @@
+.\"	@(#)mktemp.3	6.2 (Berkeley) 5/14/86
+.\"
+.TH MKTEMP 3  "May 14, 1986"
+.AT 3
+.SH NAME
+mktemp \- make a unique file name
+.SH SYNOPSIS
+.nf
+.B char *mktemp(template)
+.B char *template;
+.sp
+.B mkstemp(template)
+.B char *template;
+.fi
+.SH DESCRIPTION
+.I Mktemp
+creates a unique file name, typically in a temporary filesystem,
+by replacing
+.I template
+with a unique file name, and returns the
+address of the template.
+The template should contain a file name with six trailing
+X's, which are replaced with the
+current process id and a unique letter.
+.I Mkstemp
+makes the same replacement to the template
+but returns a file descriptor
+for the template file open for reading and writing.
+.I Mkstemp
+avoids the race between testing whether the
+file exists and opening it for use.
+.SH "SEE ALSO"
+getpid(2), open(2)
+.SH DIAGNOSTICS
+.I Mkstemp
+returns an open file descriptor upon success.
+It returns -1 if no suitable file could be created.

@@ -1,4 +1,0 @@
-procedure large(s)
-   if many('0123456789',s) = *s + 1 then return s
-   else fail
-end

@@ -1,0 +1,104 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)bugfiler.8	6.2 (Berkeley) 5/20/86
+.\"
+.TH BUGFILER 8 "May 20, 1986"
+.UC 5
+.SH NAME
+bugfiler \- file bug reports in folders automatically
+.SH SYNOPSIS
+.B bugfiler
+[ mail directory ]
+.SH DESCRIPTION
+.I Bugfiler
+is a program to automatically intercept bug reports, summarize them and
+store them in the appropriate sub directories of the mail directory
+specified on the command line or the (system dependent) default.
+It is designed to be compatible with the Rand MH mail system.
+.I Bugfiler
+is normally invoked by the mail delivery program through
+.IR aliases (5)
+with a line such as the following in /usr/lib/aliases.
+.PP
+.DT
+	bugs:"|bugfiler /usr/bugs/mail"
+.PP
+It reads the message from the standard input or the named file, checks
+the format and returns mail acknowledging receipt or a message 
+indicating the proper format.  Valid reports are then summarized and
+filed in the appropriate folder; improperly formatted messages
+are filed in a folder named ``errors.''
+Program maintainers can then log onto the system and
+check the summary file for bugs that pertain to them.
+Bug reports should be submitted in RFC822 format and
+aremust contain the following header lines to be properly indexed:
+.PP
+.DT
+	Date: <date the report is received>
+.br
+	From: <valid return address>
+.br
+	Subject: <short summary of the problem>
+.br
+	Index: <source directory>/<source file> <version> [Fix]
+.PP
+In addition, the body of the message must contain a line which
+begins with ``Description:'' followed by zero or more lines describing the
+problem in detail and a line beginning with ``Repeat-By:'' followed by zero or
+more lines describing how to repeat the problem.
+If the keyword `Fix' is specified in the `Index' line, then there must
+also be a line beginning with ``Fix:'' followed by a diff of the old and new
+source files or a description of what was done to fix the problem.
+.PP
+The `Index' line is the key to the filing mechanism. The source directory
+name must match one of the folder names in the mail directory.
+The message is then filed in this folder
+and a line appended to the summary file in the following format:
+.PP
+.DT
+	<folder name>/<message number>	<Index info>
+.br
+						<Subject info>
+.PP
+The bug report may also be redistributed according to the index.
+If the file
+.IR maildir /.redist
+exists, it is examined for a line beginning with the index name
+followed with a tab.
+The remainder of this line contains a comma-separated list of mail addresses
+which should receive copies of bugs with this index.
+The list may be continued onto multiple lines by ending each but the last
+with a backslash (`\e').
+.SH FILES
+.ta 2.5i
+/usr/lib/sendmail	mail delivery program
+.br
+/usr/lib/unixtomh	converts unix mail format to mh format
+.br
+maildir/.ack	the message sent in acknowledgement
+.br
+maildir/.format	the message sent when format errors are detected
+.br
+maildir/.redist	the redistribution list
+.br
+maildir/summary	the summary file
+.br
+maildir/Bf??????	temporary copy of the input message
+.br
+maildir/Rp??????	temporary file for the reply message.
+.SH "SEE ALSO"
+mh(1),
+newaliases(1),
+aliases(5)
+.SH BUGS
+.PP
+Since mail can be forwarded in a number of different ways,
+.I bugfiler
+does not recognize forwarded mail and will reply/complain to the
+forwarder instead of the original sender unless there is a `Reply-To'
+field in the header.
+.PP
+Duplicate messages should be discarded or recognized and put somewhere
+else.

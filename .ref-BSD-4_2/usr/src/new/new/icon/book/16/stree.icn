@@ -1,8 +1,0 @@
-procedure stree(ltree)
-   local s
-   if *ltree = 1 then return ltree[1]	  # start with leaf
-   s := ltree[1] || "("			  # append value
-					  # append stree
-   every s ||:= stree(ltree[2 to *ltree]) || ","
-   return s[1:-1] || ")"
-end
