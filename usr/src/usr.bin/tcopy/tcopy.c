@@ -12,16 +12,22 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tcopy.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)tcopy.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <sys/mtio.h>
-#include <signal.h>
-#include <fcntl.h>
+
 #include <errno.h>
+#include <fcntl.h>
+#include <signal.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
 #include "pathnames.h"
 
 #define	MAXREC	(64 * 1024)
@@ -30,18 +36,22 @@ static char sccsid[] = "@(#)tcopy.c	5.16 (Berkeley) %G%";
 int	filen, guesslen, maxblk = MAXREC;
 long	lastrec, record, size, tsize;
 
+void	*getspace __P((int));
+void	 intr __P((int));
+void	 usage __P((void));
+void	 verify __P((int, int, char *));
+void	 writeop __P((int, int));
+
+int
 main(argc, argv)
 	int argc;
-	char **argv;
+	char *argv[];
 {
-	extern char *optarg;
-	extern int optind, errno;
 	register int lastnread, nread, nw, inp, outp;
 	enum {READ, VERIFY, COPY, COPYVERIFY} op = READ;
 	sig_t oldsig;
 	int ch, needeof;
-	char *buff, *inf, *getspace();
-	void intr();
+	char *buff, *inf;
 
 	guesslen = 1;
 	while ((ch = getopt(argc, argv, "cs:v")) != EOF)
@@ -83,7 +93,7 @@ main(argc, argv)
 			op = COPY;
 		inf = argv[0];
 		if ((outp = open(argv[1], op == VERIFY ? O_RDONLY : O_RDWR,
-		    0666)) < 0) {
+		    DEFFILEMODE)) < 0) {
 			perror(argv[1]);
 			exit(3);
 		}
@@ -188,14 +198,13 @@ r1:		guesslen = 0;
 	exit(0);
 }
 
+void
 verify(inp, outp, outb)
 	register int inp, outp;
 	register char *outb;
 {
-	extern int errno;
 	register int eot, inmaxblk, inn, outmaxblk, outn;
 	register char *inb;
-	char *getspace();
 
 	inb = getspace(maxblk);
 	inmaxblk = outmaxblk = maxblk;
@@ -241,7 +250,8 @@ r2:		if (inn != outn) {
 }
 
 void
-intr()
+intr(signo)
+	int signo;
 {
 	if (record)
 		if (record - lastrec > 1)
@@ -253,19 +263,20 @@ intr()
 	exit(1);
 }
 
-char *
+void *
 getspace(blk)
 	int blk;
 {
-	char *bp, *malloc();
+	void *bp;
 
-	if ((bp = malloc((u_int)blk)) == NULL) {
+	if ((bp = malloc((size_t)blk)) == NULL) {
 		fprintf(stderr, "tcopy: no memory\n");
 		exit(11);
 	}
-	return(bp);
+	return (bp);
 }
 
+void
 writeop(fd, type)
 	int fd, type;
 {
@@ -279,6 +290,7 @@ writeop(fd, type)
 	}
 }
 
+void
 usage()
 {
 	fprintf(stderr, "usage: tcopy [-cv] [-s maxblk] src [dest]\n");
