@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)lio.h	5.2 (Berkeley) %G%
+ *	@(#)lio.h	5.3 (Berkeley) %G%
  */
 
 /*
@@ -33,8 +33,8 @@
 #define	LLOGW	3
 #define LSTRW	(len+2)
 #define	LLOW	1.0e-1
-#define	LHIGH	1.0e+LFD
-#define LDHIGH	1.0e+LDFD
+#define	LHIGH	1.0e+6			/* 1.0e+LFD */
+#define LDHIGH	1.0e+14			/* 1.0e+LDFD */
 #define	LFD	6
 #define	LFW	(LFD+4)
 #define LDFD	14
