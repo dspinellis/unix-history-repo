@@ -1,4 +1,4 @@
-#	Makefile	4.22	83/01/23
+#	Makefile	4.23	83/02/04
 
 DESTDIR=/
 CFLAGS=	-O -DSTANDALONE ${COPTS} 
@@ -7,14 +7,14 @@ RELOC=	70000
 SRCS=	sys.c conf.c prf.c machdep.c \
 	autoconf.c hp.c ht.c idc.c mba.c mt.c rk.c tm.c ts.c \
 	up.c uba.c uda.c ut.c \
-	drtest.c upchk.c up.new.c
+	drtest.c format.c up.new.c
 DRIVERS=autoconf.o hp.o ht.o idc.o mba.o mt.o rk.o tm.o ts.o \
 	up.o uba.o uda.o ut.o
 NEWDRIVERS=hp.new.o up.new.o
 
 ALL=	/usr/lib/libsa.a srt0.o boot tpboot copy tpcopy \
 	boothp boothk bootup \
-	updrtest hpdrtest upchk hpchk
+	format drtest
 
 all: ${ALL}
 
@@ -57,6 +57,13 @@ tpcopy:	copy.c tpsrt0.o /usr/lib/libsa.a
 	ld -N tpsrt0.o tpcopy.o -lsa -lc
 	cp a.out b.out; strip b.out; dd if=b.out of=tpcopy ibs=32 skip=1; rm b.out
 
+tpformat: format.c tpsrt0.o /usr/lib/libsa.a
+	cp format.c tpformat.c; chmod +w tpformat.c
+	cc -c -O tpformat.c
+	rm tpformat.c
+	ld -N tpsrt0.o tpformat.o -lsa -lc
+	cp a.out b.out; strip b.out; dd if=b.out of=tpformat ibs=32 skip=1; rm b.out
+
 # bootable from floppy or real disks
 
 boot:	boot.o relsrt0.o bootconf.o /usr/lib/libsa.a
@@ -71,25 +78,15 @@ bootconf.o: ../h/fs.h saio.h ../vaxmba/mbareg.h
 copy:	copy.o srt0.o conf.o /usr/lib/libsa.a
 	ld -N -o copy srt0.o copy.o conf.o -lsa -lc
 
-# eventually we'll merge hpchk and upchk into one program
-#chk:	chk.o srt0.o conf.o hp.new.o up.new.o /usr/lib/libsa.a
-#	ld -N -o chk srt0.o chk.o conf.o hp.new.o up.new.o -lsa -lc
-#
-hpchk:	chk.o srt0.o confhp.o hp.new.o dkbad.o /usr/lib/libsa.a
-	ld -N -o hpchk srt0.o chk.o confhp.o hp.new.o dkbad.o -lsa -lc
+format:	format.o srt0.o dkbad.o
+format:	confhpup.o hp.new.o up.new.o /usr/lib/libsa.a
+	ld -N -o format srt0.o format.o dkbad.o confhpup.o \
+		hp.new.o up.new.o -lsa -lc
 
-upchk:	chk.o srt0.o confup.o up.new.o dkbad.o /usr/lib/libsa.a
-	ld -N -o upchk srt0.o chk.o confup.o up.new.o dkbad.o -lsa -lc
-
-# eventually we'll merge hpdrtest and updrtest into one program
-#drtest:drtest.o srt0.o conf.o hp.new.o up.new.o /usr/lib/libsa.a
-#	ld -N -o drtest srt0.o drtest.o conf.o hp.new.o up.new.o -lsa -lc
-#
-updrtest: drtest.o srt0.o confup.o up.new.o dkbad.o /usr/lib/libsa.a
-	ld -N -o updrtest srt0.o drtest.o confup.o up.new.o dkbad.o -lsa -lc
-
-hpdrtest: drtest.o srt0.o confhp.o hp.new.o dkbad.o /usr/lib/libsa.a
-	ld -N -o hpdrtest srt0.o drtest.o confhp.o hp.new.o dkbad.o -lsa -lc
+drtest:	drtest.o srt0.o dkbad.o
+drtest:	confhpup.o hp.new.o up.new.o /usr/lib/libsa.a
+	ld -N -o drtest srt0.o drtest.o dkbad.o confhpup.o \
+		hp.new.o up.new.o -lsa -lc
 
 dkbad.o: ../vax/dkbad.c
 	${CC} -c ${CFLAGS} ../vax/dkbad.c
@@ -156,9 +153,9 @@ print:
 
 clean:
 	rm -f *.o *.exe *.i errs
-	rm -f a.out b.out boot cat tpboot tpcopy copy
+	rm -f a.out b.out boot cat tpboot tpcopy copy tpformat
 	rm -f boot[a-z]? conf[a-wyz][a-z].c
-	rm -f *chk *drtest core sboot bootconf.c
+	rm -f format drtest core sboot bootconf.c
 
 lint:
 	lint ${COPTS} -hxbn boot.c ${SRCS} | \
@@ -170,12 +167,10 @@ install: ${ALL}
 	cp tpboot ${DESTDIR}/tp/boot
 	cp copy a.out; strip a.out; dd if=a.out of=../floppy/copy bs=32 skip=1
 	cp boot a.out; strip a.out; dd if=a.out of=../floppy/boot bs=32 skip=1
-	cp upchk a.out; strip a.out; dd if=a.out of=../floppy/upchk bs=32 skip=1
-	cp hpchk a.out; strip a.out; dd if=a.out of=../floppy/hpchk bs=32 skip=1
-	cp hpdrtest a.out; strip a.out; \
-		dd if=a.out of=../floppy/hpdrtest bs=32 skip=1
-	cp updrtest a.out; strip a.out; \
-		dd if=a.out of=../floppy/updrtest bs=32 skip=1
+	cp format a.out; strip a.out; \
+		dd if=a.out of=../floppy/format bs=32 skip=1
+	cp drtest a.out; strip a.out; \
+		dd if=a.out of=../floppy/drtest bs=32 skip=1
 	cp bootup boothk boothp ${DESTDIR}/usr/mdec
 
 # beware...
