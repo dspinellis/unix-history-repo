@@ -7,7 +7,7 @@
  *
  * %sccs.include.noredist.c%
  *
- *	@(#)if_we.c	5.4 (Berkeley) %G%
+ *	@(#)if_we.c	5.5 (Berkeley) %G%
  */
 
 /*

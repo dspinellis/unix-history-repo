@@ -7,7 +7,7 @@
  *
  * %sccs.include.386.c%
  *
- *	@(#)icu.h	5.4 (Berkeley) %G%
+ *	@(#)icu.h	5.5 (Berkeley) %G%
  */
 
 /*
