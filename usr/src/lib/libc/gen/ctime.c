@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ctime.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)ctime.c	5.10 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include "sys/param.h"
@@ -39,7 +39,7 @@ register struct tm *	timeptr;
 	};
 	static char	result[26];
 
-	(void) sprintf(result, "%.3s %.3s%3d %.2d:%.2d:%.2d %d\n",
+	(void) sprintf(result, "%.3s %.3s%3d %02d:%02d:%02d %d\n",
 		wday_name[timeptr->tm_wday],
 		mon_name[timeptr->tm_mon],
 		timeptr->tm_mday, timeptr->tm_hour,
