@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	8.39 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	8.40 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -132,10 +132,10 @@ dropenvelope(e)
 
 	if (!queueit)
 		/* nothing to do */ ;
-	else if (curtime() > e->e_ctime + TimeOuts.to_q_return)
+	else if (curtime() > e->e_ctime + TimeOuts.to_q_return[e->e_timeoutclass])
 	{
 		(void) sprintf(buf, "Cannot send message for %s",
-			pintvl(TimeOuts.to_q_return, FALSE));
+			pintvl(TimeOuts.to_q_return[e->e_timeoutclass], FALSE));
 		if (e->e_message != NULL)
 			free(e->e_message);
 		e->e_message = newstr(buf);
@@ -143,7 +143,7 @@ dropenvelope(e)
 		e->e_flags |= EF_CLRQUEUE;
 		saveit = TRUE;
 		fprintf(e->e_xfp, "Message could not be delivered for %s\n",
-			pintvl(TimeOuts.to_q_return, FALSE));
+			pintvl(TimeOuts.to_q_return[e->e_timeoutclass], FALSE));
 		fprintf(e->e_xfp, "Message will be deleted from queue\n");
 		for (q = e->e_sendqueue; q != NULL; q = q->q_next)
 		{
@@ -151,8 +151,8 @@ dropenvelope(e)
 				q->q_flags |= QBADADDR;
 		}
 	}
-	else if (TimeOuts.to_q_warning > 0 &&
-	    curtime() > e->e_ctime + TimeOuts.to_q_warning)
+	else if (TimeOuts.to_q_warning[e->e_timeoutclass] > 0 &&
+	    curtime() > e->e_ctime + TimeOuts.to_q_warning[e->e_timeoutclass])
 	{
 		if (!bitset(EF_WARNING|EF_RESPONSE, e->e_flags) &&
 		    e->e_class >= 0 &&
@@ -163,7 +163,7 @@ dropenvelope(e)
 		{
 			(void) sprintf(buf,
 				"Warning: cannot send message for %s",
-				pintvl(TimeOuts.to_q_warning, FALSE));
+				pintvl(TimeOuts.to_q_warning[e->e_timeoutclass], FALSE));
 			if (e->e_message != NULL)
 				free(e->e_message);
 			e->e_message = newstr(buf);
@@ -173,9 +173,9 @@ dropenvelope(e)
 		}
 		fprintf(e->e_xfp,
 			"Warning: message still undelivered after %s\n",
-			pintvl(TimeOuts.to_q_warning, FALSE));
+			pintvl(TimeOuts.to_q_warning[e->e_timeoutclass], FALSE));
 		fprintf(e->e_xfp, "Will keep trying until message is %s old\n",
-			pintvl(TimeOuts.to_q_return, FALSE));
+			pintvl(TimeOuts.to_q_return[e->e_timeoutclass], FALSE));
 		for (q = e->e_sendqueue; q != NULL; q = q->q_next)
 		{
 			if (bitset(QQUEUEUP, q->q_flags))

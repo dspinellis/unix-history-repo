@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.47 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.48 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -249,9 +249,6 @@ recipient(a, sendq, e)
 	/*
 	**  Finish setting up address structure.
 	*/
-
-	/* set the queue timeout */
-	a->q_timeout = TimeOuts.to_q_return;
 
 	/* get unquoted user for file, program or user.name check */
 	i = strlen(a->q_user);
