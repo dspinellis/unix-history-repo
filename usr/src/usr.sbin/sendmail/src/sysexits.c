@@ -15,18 +15,15 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sysexits.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)sysexits.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
-# include <sysexits.h>
-# include "useful.h"
+#include <sysexits.h>
 
 /*
-**  SYSEXITS.C -- error messages corresponding to sysexits.h
-*/
-
-char	*SysExMsg[] =
-{
+ *  SYSEXITS.C -- error messages corresponding to sysexits.h
+ */
+char *SysExMsg[] = {
 	/* 64 USAGE */		"500 Bad usage",
 	/* 65 DATAERR */	"501 Data format error",
 	/* 66 NOINPUT */	"550 Cannot open input",
@@ -41,34 +38,33 @@ char	*SysExMsg[] =
 	/* 75 TEMPFAIL */	"250 Deferred",
 	/* 76 PROTOCOL */	"554 Remote protocol error",
 	/* 77 NOPERM */		"550 Insufficient permission",
+	/* 78 CONFIG */		"554 Local configuration error",
 };
 
-int	N_SysEx = sizeof SysExMsg / sizeof SysExMsg[0];
-/*
-**  STATSTRING -- return string corresponding to an error status
-**
-**	Parameters:
-**		stat -- the status to decode.
-**
-**	Returns:
-**		The string corresponding to that status
-**
-**	Side Effects:
-**		none.
-*/
+int N_SysEx = sizeof(SysExMsg) / sizeof(SysExMsg[0]);
 
+/*
+ *  STATSTRING -- return string corresponding to an error status
+ *
+ *	Parameters:
+ *		stat -- the status to decode.
+ *
+ *	Returns:
+ *		The string corresponding to that status
+ *
+ *	Side Effects:
+ *		none.
+ */
 char *
 statstring(stat)
 	int stat;
 {
-	static char ebuf[100];
+	static char ebuf[50];
 
 	stat -= EX__BASE;
-	if (stat < 0 || stat >= N_SysEx)
-	{
-		(void) sprintf(ebuf, "554 Unknown status %d", stat + EX__BASE);
-		return (ebuf);
+	if (stat < 0 || stat >= N_SysEx) {
+		(void)sprintf(ebuf, "554 Unknown status %d", stat + EX__BASE);
+		return(ebuf);
 	}
-
-	return (SysExMsg[stat]);
+	return(SysExMsg[stat]);
 }
