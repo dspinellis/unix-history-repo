@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_subr.c	7.10 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.11 (Berkeley) %G%
  */
 
 /*
@@ -353,7 +353,8 @@ loop:
 		speclisth = slp;
 		return ((struct vnode *)0);
 	}
-	vclean(vp);
+	VOP_UNLOCK(vp);
+	vclean(vp, 0);
 	vp->v_op = nvp->v_op;
 	vp->v_tag = nvp->v_tag;
 	nvp->v_type = VNON;
@@ -449,14 +450,26 @@ void vrele(vp)
 
 /*
  * Disassociate the underlying file system from a vnode.
- * If this operation is done on an active vnode (i.e. v_count > 0)
- * then the vnode must be delivered locked.
  */
-void vclean(vp)
+void vclean(vp, doclose)
 	register struct vnode *vp;
+	long doclose;
 {
 	struct vnodeops *origops;
+	int active;
 
+	/*
+	 * Check to see if the vnode is in use.
+	 * If so we have to lock it before we clean it out.
+	 */
+	if (active = vp->v_count) {
+		VREF(vp);
+		VOP_LOCK(vp);
+	}
+	/*
+	 * Prevent the vnode from being recycled or
+	 * brought into use while we clean it out.
+	 */
 	while (vp->v_flag & VXLOCK) {
 		vp->v_flag |= VXWANT;
 		sleep((caddr_t)vp, PINOD);
@@ -470,11 +483,13 @@ void vclean(vp)
 	vp->v_op = &dead_vnodeops;
 	vp->v_tag = VT_NON;
 	/*
-	 * If purging an active vnode, it must be unlocked and
-	 * deactivated before being reclaimed.
+	 * If purging an active vnode, it must be unlocked, closed,
+	 * and deactivated before being reclaimed.
 	 */
-	if (vp->v_count > 0) {
+	if (active) {
 		(*(origops->vn_unlock))(vp);
+		if (doclose)
+			(*(origops->vn_close))(vp, 0, NOCRED);
 		(*(origops->vn_inactive))(vp);
 	}
 	/*
@@ -482,6 +497,8 @@ void vclean(vp)
 	 */
 	if ((*(origops->vn_reclaim))(vp))
 		panic("vclean: cannot reclaim");
+	if (active)
+		vrele(vp);
 	/*
 	 * Done with purge, notify sleepers in vget of the grim news.
 	 */
@@ -503,12 +520,10 @@ void vgone(vp)
 	struct speclist *pslp;
 	register struct vnode *vq;
 
-	if (vp->v_count > 0)
-		panic("vgone: cannot reclaim");
 	/*
 	 * Clean out the filesystem specific data.
 	 */
-	vclean(vp);
+	vclean(vp, 1);
 	/*
 	 * Delete from old mount point vnode list, if on one.
 	 */
@@ -553,5 +568,5 @@ void vgone(vp)
 		vfreeh->v_freeb = &vp->v_freef;
 		vfreeh = vp;
 	}
-	vp->v_type = VNON;
+	vp->v_type = VBAD;
 }
