@@ -194,7 +194,6 @@
 /usr/src/lib/librpc/man/man1/rstat.1
 /usr/src/usr.bin/ruptime/ruptime.1
 /usr/src/usr.bin/rwho/rwho.1
-/usr/src/contrib/sc/sc.1
 /usr/src/usr.bin/sccs/sccs.1
 /usr/src/usr.bin/script/script.1
 /usr/src/usr.bin/sed/sed.1
@@ -258,7 +257,6 @@
 /usr/src/usr.bin/vgrind/vgrind.1
 /usr/src/contrib/nvi.1.14/docs/vi.1
 /usr/src/usr.bin/vis/vis.1
-/usr/src/contrib/vmsprep/vmsprep.1
 /usr/src/usr.bin/w/w.1
 /usr/src/share/man/man1/wait.1
 /usr/src/usr.bin/wall/wall.1
