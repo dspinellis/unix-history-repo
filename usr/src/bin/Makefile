@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.12 (Berkeley) %G%
+#	@(#)Makefile	5.13 (Berkeley) %G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -53,7 +53,7 @@ install:
 	install -s strip ${DESTDIR}/bin/newstrip; \
 		mv ${DESTDIR}/bin/newstrip ${DESTDIR}/bin/strip;
 	rm -f ${DESTDIR}/bin/mv; cp mv ${DESTDIR}/bin/mv; rm -f mv; \
-		strip ${DESTDIR}/bin/mv
+		strip ${DESTDIR}/bin/mv; chmod 755 ${DESTDIR}/bin/mv
 	-for i in ${SUBDIR}; do \
 		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} install); done
 	-for i in ${SCRIPT}; do (install -c $$i.sh ${DESTDIR}/bin/$$i); done
