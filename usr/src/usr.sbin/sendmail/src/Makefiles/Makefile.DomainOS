@@ -7,7 +7,7 @@
 #
 #  This has been tested on DomainOS 10.3.5
 #
-#	@(#)Makefile.DomainOS	8.4 (Berkeley) %G%
+#	@(#)Makefile.DomainOS	8.5 (Berkeley) %G%
 #
 #
 
@@ -49,7 +49,7 @@ LIBS=	-ldbm -lresolv
 BINDIR=	${DESTDIR}/usr/lib
 
 # location of sendmail.st file (usually /var/log or /usr/lib)
-STDIR=	${DESTDIR}/usr/adm
+STDIR=	${DESTDIR}/usr/lib
 
 # location of sendmail.hf file (usually /usr/share/misc or /usr/lib)
 HFDIR=	${DESTDIR}/usr/lib
