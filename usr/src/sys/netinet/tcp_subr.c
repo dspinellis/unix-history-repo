@@ -1,4 +1,4 @@
-/*	tcp_subr.c	6.4	84/11/14	*/
+/*	tcp_subr.c	6.5	85/05/27	*/
 
 #include "param.h"
 #include "systm.h"
@@ -235,9 +235,9 @@ tcp_ctlinput(cmd, arg)
 	int cmd;
 	caddr_t arg;
 {
-	struct in_addr *sin;
+	struct in_addr *in;
 	extern u_char inetctlerrmap[];
-	int tcp_quench();
+	int tcp_quench(), in_rtchange();
 
 	if (cmd < 0 || cmd > PRC_NCMDS)
 		return;
@@ -247,19 +247,31 @@ tcp_ctlinput(cmd, arg)
 		break;
 
 	case PRC_QUENCH:
-		sin = &((struct icmp *)arg)->icmp_ip.ip_dst;
-		in_pcbnotify(&tcb, sin, 0, tcp_quench);
+		in = &((struct icmp *)arg)->icmp_ip.ip_dst;
+		in_pcbnotify(&tcb, in, 0, tcp_quench);
 		break;
 
-	/* these are handled by ip */
+	case PRC_REDIRECT_NET:
+	case PRC_REDIRECT_HOST:
+		in = &((struct icmp *)arg)->icmp_ip.ip_dst;
+		in_pcbnotify(&tcb, in, 0, in_rtchange);
+		break;
+
 	case PRC_IFDOWN:
+		in = &((struct sockaddr_in *)arg)->sin_addr;
+		goto notify;
+
 	case PRC_HOSTDEAD:
 	case PRC_HOSTUNREACH:
-		break;
+		in = (struct in_addr *)arg;
+		goto notify;
 
 	default:
-		sin = &((struct icmp *)arg)->icmp_ip.ip_dst;
-		in_pcbnotify(&tcb, sin, (int)inetctlerrmap[cmd], tcp_abort);
+		if (inetctlerrmap[cmd] == 0)
+			return;		/* XXX */
+		in = &((struct icmp *)arg)->icmp_ip.ip_dst;
+notify:
+		in_pcbnotify(&tcb, in, (int)inetctlerrmap[cmd], tcp_abort);
 	}
 }
 
