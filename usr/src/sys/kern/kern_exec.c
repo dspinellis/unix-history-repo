@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)kern_exec.c	7.73 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.74 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -89,11 +89,13 @@ execve(p, uap, retval)
 	extern long argdbsize;			/* XXX */
 #endif SECSIZE
 
-	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF | SAVENAME, UIO_USERSPACE,
+	NDINIT(&nd, LOOKUP, FOLLOW | SAVENAME, UIO_USERSPACE,
 		uap->fname, p);
 	if (error = namei(&nd))
 		return (error);
 	vp = nd.ni_vp;
+	LEASE_CHECK(vp, p, cred, LEASE_READ);
+	VOP_LOCK(vp);
 	indir = 0;
 	uid = cred->cr_uid;
 	gid = cred->cr_gid;
