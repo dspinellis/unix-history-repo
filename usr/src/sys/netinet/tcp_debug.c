@@ -1,4 +1,4 @@
-/*	tcp_debug.c	4.9	83/02/10	*/
+/*	tcp_debug.c	4.10	83/05/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -68,6 +68,9 @@ tcp_trace(act, ostate, tp, ti, req)
 
 	case TA_INPUT:
 	case TA_OUTPUT:
+	case TA_DROP:
+		if (ti == 0)
+			break;
 		seq = ti->ti_seq;
 		ack = ti->ti_ack;
 		len = ti->ti_len;
@@ -82,13 +85,13 @@ tcp_trace(act, ostate, tp, ti, req)
 			printf("[%x..%x)", seq, seq+len);
 		else
 			printf("%x", seq);
-		printf("@%x", ack);
+		printf("@%x, urp=%x", ack, ti->ti_urp);
 		flags = ti->ti_flags;
 		if (flags) {
 #ifndef lint
 			char *cp = "<";
 #define pf(f) { if (ti->ti_flags&TH_/**/f) { printf("%s%s", cp, "f"); cp = ","; } }
-			pf(SYN); pf(ACK); pf(FIN); pf(RST);
+			pf(SYN); pf(ACK); pf(FIN); pf(RST); pf(PUSH); pf(URG);
 #endif
 			printf(">");
 		}
@@ -106,8 +109,9 @@ tcp_trace(act, ostate, tp, ti, req)
 	printf("\n");
 	if (tp == 0)
 		return;
-	printf("\trcv_(nxt,wnd) (%x,%x) snd_(una,nxt,max) (%x,%x,%x)\n",
-	    tp->rcv_nxt, tp->rcv_wnd, tp->snd_una, tp->snd_nxt, tp->snd_max);
+	printf("\trcv_(nxt,wnd,up) (%x,%x,%x) snd_(una,nxt,max) (%x,%x,%x)\n",
+	    tp->rcv_nxt, tp->rcv_wnd, tp->rcv_up, tp->snd_una, tp->snd_nxt,
+	    tp->snd_max);
 	printf("\tsnd_(wl1,wl2,wnd) (%x,%x,%x)\n",
 	    tp->snd_wl1, tp->snd_wl2, tp->snd_wnd);
 }
