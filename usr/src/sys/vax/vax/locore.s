@@ -1,4 +1,4 @@
-/*	locore.s	4.81	83/06/16	*/
+/*	locore.s	4.82	83/06/17	*/
 
 #include "../machine/psl.h"
 #include "../machine/pte.h"
@@ -419,16 +419,20 @@ tudma:
  * the tu58, make sure we don't loop forever
  */
 5:
-	movl	$10000,r5		# loop max 10000 times
+	mfpr	$IPL,-(sp)		# can't loop at ipl7, better
+	mtpr	$0x15,$IPL		# move down to 5
+	movl	$5000,r5		# loop max 5000 times
 1:
 	mfpr	$CSRS,r2
 	bbs	$7,r2,1f
 	sobgtr	r5,1b
 	movab	_tu,r5
 	movl	$13,16(r5)		# return TUS_RCVERR
+	mtpr	(sp)+,$IPL
 	tstl	(sp)+			# and let turintr handle it
-	mtpr	$0x40,$CSRS		# enable receiver interrupts
+	rsb				# before we go back to turintr
 1:
+	mtpr	(sp)+,$IPL
 	rsb
 #endif
 
