@@ -1,4 +1,4 @@
-/*	ns_error.c	6.1	85/05/30	*/
+/*	ns_error.c	6.2	85/06/01	*/
 
 #include "param.h"
 #include "systm.h"
@@ -15,12 +15,10 @@
 #include "idp.h"
 #include "ns_error.h"
 
-#define NS_ERRPRINTFS
 #ifdef NS_ERRPRINTFS
 /*
  * NS_ERR routines: error generation, receive packet processing, and
- * routines to turnaround packets back to the originator, and
- * host table maintenance routines.
+ * routines to turnaround packets back to the originator.
  */
 int	ns_errprintfs = 0;
 #endif
@@ -39,6 +37,16 @@ ns_error(om, type, param)
 	struct idp *nip;
 	register struct idp *oip = mtod(om, struct idp *);
 	extern int idpcksum;
+
+	/*
+	 * If this packet was sent to the echo port,
+	 * and nobody was there, just echo it.
+	 * (Yes, this is a wart!)
+	 */
+	if (type==NS_ERR_NOSOCK &&
+	    oip->idp_dna.x_port==htons(2) &&
+	    (type = ns_echo(oip)==0))
+		return;
 
 #ifdef NS_ERRPRINTFS
 	if (ns_errprintfs)
@@ -212,6 +220,7 @@ ns_err_input(m)
 free:
 	m_freem(m);
 }
+
 u_long
 nstime()
 {
@@ -221,4 +230,31 @@ nstime()
 	t = (time.tv_sec % (24*60*60)) * 1000 + time.tv_usec / 1000;
 	splx(s);
 	return (htonl(t));
+}
+
+ns_echo(idp)
+register struct idp *idp;
+{
+	struct mbuf *m = dtom(idp);
+	register struct echo {
+	    struct idp	ec_idp;
+	    u_short		ec_op; /* Operation, 1 = request, 2 = reply */
+	} *ec = (struct echo *)idp;
+	struct ns_addr temp;
+
+	if (idp->idp_pt!=NSPROTO_ECHO) return(NS_ERR_NOSOCK);
+	if (ec->ec_op!=htons(1)) return(NS_ERR_UNSPEC);
+
+	ec->ec_op = htons(2);
+
+	temp = idp->idp_dna;
+	idp->idp_dna = idp->idp_sna;
+	idp->idp_sna = temp;
+
+	if (idp->idp_sum != 0xffff) {
+		idp->idp_sum = 0;
+		idp->idp_sum = ns_cksum(m, (((ntohs(idp->idp_len) - 1)|1)+1));
+	}
+	(void) ns_output(m, 0, NS_FORWARDING);
+	return(0);
 }
