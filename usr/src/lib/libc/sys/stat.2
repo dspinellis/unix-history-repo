@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)stat.2	6.2 (Berkeley) %G%
+.\"	@(#)stat.2	6.3 (Berkeley) %G%
 .\"
 .TH STAT 2 ""
 .UC 4
@@ -192,7 +192,7 @@ The fields in the stat structure currently marked
 and
 .I st_spare3
 are present in preparation for inode time stamps expanding
-to 64 bits.  This, however, can break certain programs which
+to 64 bits.  This, however, can break certain programs that
 depend on the time stamps being contiguous (in calls to
 .IR utimes (2)).
 .SH "SEE ALSO"
@@ -203,5 +203,5 @@ Applying
 to a socket (and thus to a pipe)
 returns a zero'd buffer, except for the blocksize field.
 .PP
-The list of calls which modify the various fields should be carefully
+The list of calls that modify the various fields should be carefully
 checked with reality.

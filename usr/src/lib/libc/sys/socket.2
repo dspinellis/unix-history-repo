@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)socket.2	6.1 (Berkeley) %G%
+.\"	@(#)socket.2	6.2 (Berkeley) %G%
 .\"
 .TH SOCKET 2 ""
 .UC 5
@@ -41,7 +41,7 @@ AF_IMPLINK	(IMP \*(lqhost at IMP\*(rq addresses).
 .RE
 .PP
 The socket has the indicated
-.I type
+.I type,
 which specifies the semantics of communication.  Currently
 defined types are:
 .PP
@@ -146,7 +146,7 @@ and
 are used to set and get options, respectively.
 Options other than SO_LINGER take an 
 .I int
-parameter which should non-zero if the option is to be
+parameter, which should non-zero if the option is to be
 enabled, or zero if it is to be disabled; SO_LINGER
 uses a
 .I struct linger
@@ -193,7 +193,7 @@ linger interval, is specified in the
 call when SO_LINGER is requested). 
 If SO_LINGER is disabled and a 
 .I close
-is issued, the system will process the close in a manner which allows
+is issued, the system will process the close in a manner that allows
 the process to continue as quickly as possible.
 .SH "RETURN VALUE
 A \-1 is returned if an error occurs, otherwise the return
