@@ -1,4 +1,4 @@
-SCCSID = "@(#)Makefile 1.9 %G%"
+SCCSID = "@(#)Makefile 1.10 %G%"
 
 MKSTR = /usr/ucb/mkstr
 EYACC = /usr/ucb/eyacc
@@ -173,6 +173,13 @@ fdec.o: objfmt.h
 fdec.o: align.h
 fdec.o: pc.h
 fdec.o: pcops.h
+flvalue.o: whoami.h
+flvalue.o: 0.h
+flvalue.o: tree.h
+flvalue.o: opcode.h
+flvalue.o: objfmt.h
+flvalue.o: pc.h
+flvalue.o: pcops.h
 flvalue.o: whoami.h
 flvalue.o: 0.h
 flvalue.o: tree.h
