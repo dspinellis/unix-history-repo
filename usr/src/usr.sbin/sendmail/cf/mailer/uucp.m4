@@ -16,7 +16,7 @@ POPDIVERT
 ###   UUCP Mailer specification   ###
 #####################################
 
-VERSIONID(`@(#)uucp.m4	8.19 (Berkeley) %G%')
+VERSIONID(`@(#)uucp.m4	8.20 (Berkeley) %G%')
 
 #
 #  There are innumerable variations on the UUCP mailer.  It really
@@ -53,8 +53,8 @@ S12
 # handle error address as a special case
 R<@>				$n			errors to mailer-daemon
 
-# do not qualify list:; syntax
-R$* :; <@>			$@ $1 :;
+# list:; syntax should disappear
+R:; <@>				$@
 
 R$* < @ $* . >			$1 < @ $2 >		strip trailing dots
 R$* < @ $=w >			$1			strip local name
@@ -72,8 +72,8 @@ R! $+				$: $k ! $1		in case $U undefined
 #
 S22
 
-# don't touch list:; syntax
-R$* :; <@>			$@ $1 :;
+# list:; should disappear
+R:; <@>				$@
 
 R$* < @ $* . >			$1 < @ $2 >		strip trailing dots
 R$* < @ $j >			$1			strip local name
@@ -87,8 +87,8 @@ R$* < @ $+ >			$2 ! $1			convert to UUCP format
 #
 S42
 
-# don't touch list:; syntax
-R$* :; <@>			$@ $1 :;
+# list:; syntax should disappear
+R:; <@>				$@
 
 R$* < @ $* . >			$1 < @ $2 >		strip trailing dots
 R$* < @ $j >			$1			strip local name
@@ -122,8 +122,8 @@ S72
 # handle error address as a special case
 R<@>				$n			errors to mailer-daemon
 
-# do not qualify list:; syntax
-R$* :; <@>			$@ $1 :;
+# list:; syntax should disappear
+R:; <@>				$@
 
 R$* < @ $* . >			$1 < @ $2 >		strip trailing dots
 R$* < @ $=w >			$1			strip local name
