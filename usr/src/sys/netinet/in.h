@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1990 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)in.h	7.8 (Berkeley) %G%
+ *	@(#)in.h	7.9 (Berkeley) %G%
  */
 
 /*
@@ -41,6 +41,7 @@
 
 
 /*
+ * Local port number conventions:
  * Ports < IPPORT_RESERVED are reserved for
  * privileged processes (e.g. root).
  * Ports > IPPORT_USERRESERVED are reserved
@@ -48,13 +49,6 @@
  */
 #define	IPPORT_RESERVED		1024
 #define	IPPORT_USERRESERVED	5000
-
-/*
- * Link numbers
- */
-#define	IMPLINK_IP		155
-#define	IMPLINK_LOWEXPER	156
-#define	IMPLINK_HIGHEXPER	158
 
 /*
  * Internet address (a structure for historical reasons)
@@ -111,12 +105,29 @@ struct sockaddr_in {
 };
 
 /*
- * Options for use with [gs]etsockopt at the IP level.
+ * Structure used to describe IP options.
+ * Used to store options internally, to pass them to a process,
+ * or to restore options retrieved earlier.
+ * The ip_dst is used for the first-hop gateway when using a source route
+ * (this gets put into the header proper).
  */
-#define	IP_OPTIONS	1		/* set/get IP per-packet options */
-#define	IP_HDRINCL	2		/* header is included with data */
-#define	IP_TOS		3		/* IP type of service and precedence */
-#define	IP_TTL		4		/* IP time to live */
+struct ip_opts {
+	struct	in_addr ip_dst;		/* first hop, 0 w/o src rt */
+	char	ip_opts[40];		/* actually variable in size */
+};
+
+/*
+ * Options for use with [gs]etsockopt at the IP level.
+ * First word of comment is data type; bool is stored in int.
+ */
+#define	IP_OPTIONS	1	/* buf/ip_opts; set/get IP per-packet options */
+#define	IP_HDRINCL	2	/* int; header is included with data (raw) */
+#define	IP_TOS		3	/* int; IP type of service and precedence */
+#define	IP_TTL		4	/* int; IP time to live */
+#define	IP_RECVOPTS	5	/* bool; receive all IP options w/datagram */
+#define	IP_RECVRETOPTS	6	/* bool; receive IP options for response */
+#define	IP_RECVDSTADDR	7	/* bool; receive IP dst addr w/datagram */
+#define	IP_RETOPTS	8	/* ip_opts; set/get IP per-packet options */
 
 #ifdef KERNEL
 extern	struct domain inetdomain;
