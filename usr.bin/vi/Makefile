@@ -1,5 +1,5 @@
 #	@(#)Makefile	8.30 (Berkeley) 3/22/94
-#	$Id$
+#	$Id: Makefile,v 1.12 1994/04/08 07:16:32 csgr Exp $
 
 PROG=	nvi
 #CFLAGS=-g -DDEBUG
@@ -52,7 +52,8 @@ DPADD+= ${LIBCURSES} ${LIBTERM} ${LIBUTIL}
 LDADD+=	-lcurses -ltermlib -lutil
 SPECHDR=excmd.h options.h
 CLEANFILES+=${SPECHDR}
-LINKS=	${BINDIR}/nvi ${BINDIR}/vi ${BINDIR}/nvi ${BINDIR}/ex
+LINKS=	${BINDIR}/nvi ${BINDIR}/vi ${BINDIR}/nvi ${BINDIR}/ex \
+	${BINDIR}/nvi ${BINDIR}/view
 
 all: excmd.h options.h nvi
 	- rm -f vi
