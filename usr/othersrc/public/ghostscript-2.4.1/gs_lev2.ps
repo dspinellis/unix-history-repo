@@ -1,0 +1,236 @@
+%    Copyright (C) 1990, 1991 Aladdin Enterprises.  All rights reserved.
+%    Distributed by Free Software Foundation, Inc.
+%
+% This file is part of Ghostscript.
+%
+% Ghostscript is distributed in the hope that it will be useful, but
+% WITHOUT ANY WARRANTY.  No author or distributor accepts responsibility
+% to anyone for the consequences of using it or for whether it serves any
+% particular purpose or works at all, unless he says so in writing.  Refer
+% to the Ghostscript General Public License for full details.
+%
+% Everyone is granted permission to copy, modify and redistribute
+% Ghostscript, but only under the conditions described in the Ghostscript
+% General Public License.  A copy of this license is supposed to have been
+% given to you along with Ghostscript so you can know your rights and
+% responsibilities.  It should be in a file named COPYING.  Among other
+% things, the copyright notice and this notice must be preserved on all
+% copies.
+
+% Initialization file for Ghostscript Level 2 functions.
+% When this is run, systemdict is still writable.
+
+% ------ Painting ------ %
+
+% A straightforward definition of execform that doesn't actually
+% do any caching.
+/execform
+	{ dup /Implementation known not
+	   { dup /FormType get 1 ne { /rangecheck signalerror } if
+	     dup /Implementation null put readonly } if
+	  gsave dup /Matrix get concat
+	  dup /BBox get aload pop
+	  exch 3 index sub exch 2 index sub rectclip
+	  dup /PaintProc get exec
+	  grestore
+	} bind def
+
+% ------ Resources ------ %
+
+% Currently, we don't implement resource unloading or global/local
+% instance sets, and resourceforall only enumerates loaded instances.
+% The standard implementation of resource categories is
+% simply to have another entry in the resource dictionary, called Instances,
+% that keeps track of all the instances.
+
+% Note that the dictionary that defines a resource category is stored
+% in global memory.  The PostScript manual says that each category must
+% manage global and local instances separately.  However, objects in
+% global memory can't reference objects in local memory.  This means
+% that the resource category dictionary, which would otherwise be the
+% obvious place to keep track of the instances, can't be used to keep
+% track of local instances.  Instead, there must be a parallel
+% structure in local memory for each resource category.  Needless to
+% say, we haven't implemented this yet.
+
+% Define the Category category, except for most of the procedures.
+% The dictionary we're about to create will become the Category
+% category definition dictionary.
+
+10 dict begin
+/Category /Category def
+/CheckResource
+	{ true
+	   { /DefineResource /FindResource /ResourceForAll /ResourceStatus
+	     /UndefineResource }
+	   { 2 index exch known and }
+	  forall exch pop } bind def
+/DefineResource
+	{ dup CheckResource
+	   { dup /Category 3 index put   Instances 3 1 roll put }
+	   { /typecheck signalerror }
+	  ifelse } bind def
+/FindResource		% temporary
+	{ Instances exch get } bind def
+/Instances 25 dict def
+/InstanceType /dicttype def
+
+Instances /Category currentdict put
+Instances end begin	% so we can name the Category definition
+
+% Define the resource operators.
+
+mark
+/defineresource
+	{ /Category findresource dup begin
+	  /InstanceType known
+	   { dup type InstanceType ne
+	     { dup type /packedarraytype eq InstanceType /arraytype eq and
+	        not { /typecheck signalerror } if } if } if
+	  DefineResource end
+	}
+/findresource
+	{ dup /Category eq
+	   { pop //Category } { /Category findresource } ifelse
+	  begin FindResource end }
+/resourceforall
+	{ /Category findresource begin ResourceForAll end }
+/resourcestatus
+	{ /Category findresource begin ResourceStatus end }
+/undefineresource
+	{ /Category findresource begin UndefineResource end }
+end		% Instances
+counttomark 2 idiv { bind def } repeat pop
+
+% Define the Generic category.
+
+12 dict dup begin
+/Instances 0 dict def
+/CheckResource		% not a standard entry
+	{ pop true } def
+/DefineResource
+	{ dup CheckResource
+	   { Instances 3 1 roll put }
+	   { /typecheck signalerror }
+	  ifelse
+	} bind def
+/FindResource
+	{ dup ResourceStatus
+	   { pop 1 gt { dup ResourceFile run } if
+	     Instances exch get }
+	   { /undefinedresource signalerror }
+	  ifelse } bind def
+/ResourceFile		% not a standard entry
+	{ currentdict /ResourceFileName get 100 string exch exec
+	  (r) file } bind def
+/ResourceForAll
+	{ % We construct a new procedure so we don't have to use
+	  % static resources to hold the iteration state.
+	  3 1 roll   cvlit 3 1 roll   cvlit 3 1 roll
+	  { % Stack contains: key, instance, template, proc, scratch
+	    4 index 3 index stringmatch
+	     { 4 index type dup /stringtype eq exch /nametype eq or
+	        { 4 index exch cvs exch 5 2 roll pop pop pop }
+		{ pop exch pop exch pop }
+	       ifelse exec }
+	     { 5 { pop } repeat }
+	    ifelse
+	  } /exec cvx 5 packedarray cvx
+	  Instances exch forall } bind def
+/ResourceStatus
+	{ dup Instances exch known
+	   { pop 1 0 true }
+	   { mark exch { ResourceFile } stopped
+	      { cleartomark false } { closefile cleartomark 0 true }
+	     ifelse
+	   } ifelse
+	} bind def
+/UndefineResource
+	{ Instances exch undef } bind def
+end
+/Generic exch /Category defineresource
+
+% Fill in the rest of the Category category.
+/Category /Category findresource dup
+/Generic /Category findresource begin
+ { /FindResource /ResourceStatus /ResourceForAll }
+ { dup load put dup } forall
+pop pop end
+
+% Define the fixed categories.
+
+7 dict begin		% 5 procedures, Category, Instances
+/DefineResource
+	{ /invalidaccess signalerror } bind def
+/FindResource
+	{ Instances exch get } bind def
+/ResourceForAll
+	/Generic /Category findresource /ResourceForAll get def
+/ResourceStatus
+	{ Instances exch known { 0 0 true } { false } ifelse } bind def
+/UndefineResource
+	{ /invalidaccess signalerror } bind def
+
+mark
+	% Things other than types
+ /ColorSpaceFamily {/DeviceRGB /DeviceGray}
+ /Emulator {}
+ /Filter
+   [ .filterdict { pop } forall ]
+ /IODevice {(%os%)}
+	% Types
+ /ColorRenderingType {}
+ /FMapType {2 3 4 5 6 7 8}
+ /FontType {1 3}
+ /FormType {1}
+ /HalftoneType {}
+ /ImageType {}
+ /PatternType {}
+counttomark 2 idiv
+ { currentdict dup maxlength dict copy begin
+   dup length dict dup begin exch { dup def } forall end readonly
+   /Instances exch def
+   currentdict /Category defineresource
+   currentdict end readonly pop
+ } repeat pop end
+
+% Define the other built-in categories.
+
+mark
+  /ColorRendering /dicttype /ColorSpace /arraytype /Encoding /arraytype
+  /Font /dicttype /Form /dicttype /Halftone /dicttype /Pattern /dicttype
+  /ProcSet /dicttype
+counttomark 2 idiv
+ { /Generic /Category findresource dup maxlength dict copy begin
+   /InstanceType exch def
+   /Instances 10 dict def
+   currentdict end /Category defineresource
+ } repeat pop
+
+% Complete the Encoding category.
+
+/findencoding
+	{ /Encoding findresource } bind def
+/ISOLatin1Encoding ISOLatin1Encoding /Encoding defineresource
+/StandardEncoding StandardEncoding /Encoding defineresource
+/SymbolEncoding SymbolEncoding /Encoding defineresource
+
+% Complete the Font category.
+% THIS IMPLEMENTATION IS VERY TENTATIVE.
+
+/Font /Category findresource begin
+/olddefinefont /definefont load def
+/oldfindfont /findfont load def
+/DefineResource
+	{ 2 copy olddefinefont exch 2 copy
+	  Instances 3 1 roll put exch pop } bind def
+/FindResource
+	{ oldfindfont } bind def
+end
+
+/definefont
+	{ /Font defineresource } bind def
+/findfont
+	{ /Font findresource } bind def
+/undefinefont
+	{ /Font undefineresource } bind def
