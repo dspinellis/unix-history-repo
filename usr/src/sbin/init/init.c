@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)init.c	6.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)init.c	6.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -888,8 +888,7 @@ new_session(sprev, session_index, typ)
 	sp->se_device = malloc(sizeof(_PATH_DEV) + strlen(typ->ty_name));
 	(void) sprintf(sp->se_device, "%s%s", _PATH_DEV, typ->ty_name);
 
-	sp->se_getty = malloc(strlen(typ->ty_getty) + strlen(typ->ty_name) + 2);
-	(void) sprintf(sp->se_getty, "%s %s", typ->ty_getty, typ->ty_name);
+	sp->se_getty = strdup(typ->ty_getty);
 	sp->se_getty_argv = construct_argv(sp->se_getty);
 	if (sp->se_getty_argv == 0) {
 		warning("can't parse getty for port %s",
