@@ -16,7 +16,9 @@ rcp \- remote file copy
 .br
 .B rcp
 [
-.B \-rp
+.B \-p
+] [
+.B \-r
 ] file ... directory
 .SH DESCRIPTION
 .I Rcp
@@ -70,9 +72,13 @@ and allow remote command execution via
 .I Rcp
 handles third party copies, where neither source nor target files
 are on the current machine.
-Hostnames may also take the form ``rhost.rname'' to use
+Hostnames may also take the form ``rname@rhost'' to use
 .I rname
 rather than the current user name on the remote host.
+The destination hostname may also take the form ``rhost.rname'' to
+support destination machines that are running 4.2BSD
+versions of
+.I rcp.
 .SH SEE ALSO
 cp(1), ftp(1C), rsh(1C), rlogin(1C)
 .SH BUGS
