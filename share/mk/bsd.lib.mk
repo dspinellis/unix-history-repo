@@ -1,6 +1,16 @@
 #	@(#)bsd.lib.mk	5.26 (Berkeley) 5/2/91
 #
 # $Log: bsd.lib.mk,v $
+# Revision 1.27  1993/12/24  01:55:15  jkh
+# 1.  Reinstated -x -r / -X -r stripping of local symbols.  This works now.
+#
+# 2.  Added back rules for selective building of _pic.a files
+#     (if INSTALL_PIC_ARCHIVE set) so that ld.so builds work again.
+#
+# 3.  Strip shared libs during install by default since symbols not used
+#     and only waste space.  If gdb someday starts using them, we'll take the -s
+#     back off or make it an option.
+#
 # Revision 1.26  1993/12/13  18:30:43  ats
 # Deleted a line with a superfluous "rm" in the clean target. The same
 # targets are already handled in the other "rm"s. Jordan was faster
@@ -174,14 +184,17 @@ BINMODE?=	555
 	${CXX} ${PICFLAG} -DPIC ${CXXFLAGS} -c ${.IMPSRC} -o ${.TARGET}
 
 .f.o:
-	${FC} ${RFLAGS} -o ${.TARGET} -c ${.IMPSRC} 
+	${FC} ${FFLAGS} -o ${.TARGET} -c ${.IMPSRC} 
 	@${LD} -x -r ${.TARGET}
 	@mv a.out ${.TARGET}
 
 .f.po:
-	${FC} -p ${RFLAGS} -o ${.TARGET} -c ${.IMPSRC} 
+	${FC} -p ${FFLAGS} -o ${.TARGET} -c ${.IMPSRC} 
 	@${LD} -X -r ${.TARGET}
 	@mv a.out ${.TARGET}
+
+.f.so:
+	${FC} ${PICFLAG} -DPIC ${FFLAGS} -o ${.TARGET} -c ${.IMPSRC}
 
 .s.o:
 	${CPP} -E ${CFLAGS:M-[ID]*} ${AINC} ${.IMPSRC} | \
