@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile.vax	7.11 (Berkeley) %G%
+#	@(#)Makefile.vax	7.12 (Berkeley) %G%
 #
 # Makefile for 4.3 BSD
 #
@@ -25,7 +25,7 @@
 # -DUUDMA	compile in unibus tu58 pseudo-dma code
 #
 C2=	/usr/libexec/c2
-LD=	/usr/pgrm/ld
+LD=	/usr/bin/ld
 INLINECMD= ../vax/inline/inline
 INLINE=	${INLINECMD} ${INLINEOPTS}
 TOUCH=	touch -f -c
