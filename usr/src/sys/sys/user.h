@@ -1,4 +1,4 @@
-/*	user.h	4.18	82/09/06	*/
+/*	user.h	4.19	82/09/08	*/
 
 #include <sys/pcb.h>
 #include <sys/dmap.h>
@@ -20,7 +20,7 @@ struct	user {
 /* syscall parameters, results and catches */
 	int	u_arg[5];		/* arguments to current system call */
 	int	*u_ap;			/* pointer to arglist */
-	label_t	u_qsav;			/* for non-local gotos on interrupts */
+	label_t	u_qsave;		/* for non-local gotos on interrupts */
 	char	u_error;		/* return error code */
 	union {				/* syscall return values */
 		struct	{
@@ -49,7 +49,7 @@ struct	user {
 	struct	dmap u_smap;		/* disk map for stack segment */
 	struct	dmap u_cdmap, u_csmap;	/* shadows of u_dmap, u_smap, for
 					   use of parent during fork */
-	label_t u_ssav;			/* label variable for swapping */
+	label_t u_ssave;		/* label variable for swapping */
 	size_t	u_odsize, u_ossize;	/* for (clumsy) expansion swaps */
 	time_t	u_outime;		/* user time at last sample */
 
