@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)sort.c	4.7 (Berkeley) %G%";
+static	char *sccsid = "@(#)sort.c	4.8 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include <signal.h>
@@ -342,12 +342,17 @@ sort()
 			newfile();
 		else
 			oldfile();
+		clearerr(os);
 		while(lp > (char **)lspace) {
 			cp = *--lp;
 			if(*cp)
 				do
 				putc(*cp, os);
 				while(*cp++ != '\n');
+			if (ferror(os)) {
+				error = 1;
+				term();
+			}
 		}
 		fclose(os);
 	} while(done == 0);
@@ -401,15 +406,21 @@ merge(a,b)
 		}
 	} while(l);
 
+	clearerr(os);
 	muflg = mflg & uflg | cflg;
 	i = j;
 	while(i > 0) {
 		cp = ibuf[i-1]->l;
 		if (!cflg && (uflg == 0 || muflg || i == 1 ||
-			(*compare)(ibuf[i-1]->l,ibuf[i-2]->l)))
+			(*compare)(ibuf[i-1]->l,ibuf[i-2]->l))) {
 			do
 				putc(*cp, os);
 			while(*cp++ != '\n');
+			if (ferror(os)) {
+				error = 1;
+				term();
+			}
+		}
 		if(muflg){
 			cp = ibuf[i-1]->l;
 			dp = p->l;
