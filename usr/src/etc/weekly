@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)weekly	5.6 (Berkeley) %G%
+#	@(#)weekly	5.7 (Berkeley) %G%
 #
 
 PATH=/bin:/sbin:/usr/sbin:/usr/bin
