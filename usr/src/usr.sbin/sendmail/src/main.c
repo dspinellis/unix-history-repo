@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.35 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -246,10 +246,20 @@ main(argc, argv, envp)
 		av = myhostname(jbuf, sizeof jbuf);
 		if (jbuf[0] != '\0')
 		{
+			register char *q;
+			extern char *strchr();
+
 			if (tTd(0, 4))
 				printf("canonical name: %s\n", jbuf);
 			p = newstr(jbuf);
 			define('w', p, CurEnv);
+
+			q = strchr(jbuf, '.');
+			if (q != NULL)
+			{
+				*q = '\0';
+				p = newstr(jbuf);
+			}
 			setclass('w', p);
 		}
 		while (av != NULL && *av != NULL)
