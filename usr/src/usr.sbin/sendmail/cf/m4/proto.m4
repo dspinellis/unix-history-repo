@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.35.1.1 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.36 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -525,11 +525,6 @@ R$* $=O $* < @ $=w . >	$@ $>_SET_97_ $1 $2 $3		...@here -> ...
 
 # handle local hacks
 R$*			$: $>_SET_98_ $1
-ifdef(`MAILER_TABLE',
-`
-# try mailer table lookup
-R$* < @ $-:$+ > $*	$# $2 $@ $3 $: $1 @ $3 $4	found a match',
-`dnl')
 
 # short circuit local delivery so forwarded email works
 R$* < @ $=w . >		$: < $R @ $H > $1 < @ $2 . >	if both relay & hub ...
@@ -625,10 +620,15 @@ ifdef(`MAILER_TABLE',
 ###################################################################
 
 S90
-R<$- . $+ > $*		$: < $(mailertable .$2 $@ $1 $) > $3	lookup
-R<$- : $+ > $*		$# $1 $@ $2 $: $3		check -- resolved?
-R< . $+ > $*		$@ $>90 <$1> $2			no -- strip & try again
-R<$*> $*		$@ $2				no match',
+R<$*> <$- $+ > $*	$: < $1 . $2 > < $3 > $4
+R<. $+ > $+		$: < $1 > $2
+R< $+ > < > $+		$: < $1 > < . > $2
+R<$*> < $+ > $*		$: <$1> < $(mailertable $2 $@ $1 $) > $3	lookup
+R<$+> <$- : $+ > $*	$# $2 $@ $3 $: $4		check -- resolved?
+R$*			$: $>87 $1
+R<$+> < . $+ > $*<$*>	$@ $>90 <$1> <$2> $3<$4>	no -- strip & try again
+R$*			$: $>88 $1
+R<$+> <$*> $*		$@ $3				no match',
 `dnl')
 
 ###################################################################
