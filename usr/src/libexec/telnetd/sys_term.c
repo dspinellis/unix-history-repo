@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sys_term.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)sys_term.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -119,7 +119,7 @@ init_termbuf()
 	(void) ioctl(pty, TIOCGSTATE, (char *)&termbuf.state);
 # endif
 #else
-	(void) tcgetattr(pty, (char *)&termbuf);
+	(void) tcgetattr(pty, &termbuf);
 #endif
 	termbuf2 = termbuf;
 }
@@ -153,7 +153,7 @@ set_termbuf()
 		(void) ioctl(pty, TIOCLSET, (char *)&termbuf.lflags);
 #else	/* USE_TERMIO */
 	if (bcmp((char *)&termbuf, (char *)&termbuf2, sizeof(termbuf)))
-		(void) tcsetattr(pty, TCSADRAIN, (char *)&termbuf);
+		(void) tcsetattr(pty, TCSADRAIN, &termbuf);
 # if	defined(CRAY2) && defined(UNCIOS5)
 	needtermstat = 1;
 # endif
