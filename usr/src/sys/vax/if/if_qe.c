@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_qe.c	7.9 (Berkeley) %G%
+ *	@(#)if_qe.c	7.10 (Berkeley) %G%
  */
 
 /* from  @(#)if_qe.c	1.15	(ULTRIX)	4/16/86 */
@@ -194,6 +194,7 @@ struct	qe_softc {
 #define	QEF_RUNNING	0x01
 #define	QEF_SETADDR	0x02
 	int	setupaddr;		/* mapping info for setup pkts  */
+	int	ipl;			/* interrupt priority		*/
 	struct	qe_ring *rringaddr;	/* mapping info for rings	*/
 	struct	qe_ring *tringaddr;	/*       ""			*/
 	struct	qe_ring rring[NRCV+1];	/* Receive ring descriptors 	*/
@@ -222,7 +223,6 @@ struct	uba_driver qedriver =
  
 #define QE_TIMEO	(15)
 #define	QEUNIT(x)	minor(x)
-static int mask = 0x3ffff;		/* address mask		*/
 /*
  * The deqna shouldn't receive more than ETHERMTU + sizeof(struct ether_header)
  * but will actually take in up to 2048 bytes. To guard against the receiver
@@ -233,25 +233,21 @@ static int mask = 0x3ffff;		/* address mask		*/
 /*
  * Probe the QNA to see if it's there
  */
-qeprobe(reg)
+qeprobe(reg, ui)
 	caddr_t reg;
+	struct uba_device *ui;
 {
 	register int br, cvec;		/* r11, r10 value-result */
 	register struct qedevice *addr = (struct qedevice *)reg;
 	register struct qe_ring *rp; 
 	register struct qe_ring *prp; 	/* physical rp 		*/
-	register int i, j;
-	static int next=0;		/* softc index		*/
-	register struct qe_softc *sc = &qe_softc[next++];
+	register int i;
+	register struct qe_softc *sc = &qe_softc[ui->ui_unit];
  
 #ifdef lint
 	br = 0; cvec = br; br = cvec;
 	qeintr(0);
 #endif
-	/*
-	 * Set the address mask for the particular cpu
-	 */
-	mask = 0x3ffff;
  
 	/*
 	 * The QNA interrupts on i/o operations. To do an I/O operation 
@@ -268,7 +264,7 @@ qeprobe(reg)
 		uballoc(0, (caddr_t)sc->setup_pkt, sizeof(sc->setup_pkt), 0);
 	sc->rringaddr = (struct qe_ring *) uballoc(0, (caddr_t)sc->rring,
 		sizeof(struct qe_ring) * (NTOT+2), 0);
-	prp = (struct qe_ring *)((int)sc->rringaddr & mask);
+	prp = (struct qe_ring *)UBAI_ADDR((int)sc->rringaddr);
  
 	/*
 	 * The QNA will loop the setup packet back to the receive ring
@@ -276,9 +272,9 @@ qeprobe(reg)
 	 * receive & transmit ring descriptors and link the setup packet
 	 * to them.
 	 */
-	qeinitdesc(sc->tring, (caddr_t)(sc->setupaddr & mask),
+	qeinitdesc(sc->tring, (caddr_t)UBAI_ADDR(sc->setupaddr),
 	    sizeof(sc->setup_pkt));
-	qeinitdesc(sc->rring, (caddr_t)(sc->setupaddr & mask),
+	qeinitdesc(sc->rring, (caddr_t)UBAI_ADDR(sc->setupaddr),
 	    sizeof(sc->setup_pkt));
  
 	rp = (struct qe_ring *)sc->tring;
@@ -303,7 +299,7 @@ qeprobe(reg)
 	/*
 	 * Start the interface and wait for the packet.
 	 */
-	j = cvec;
+	(void) spl6();
 	addr->qe_csr = QE_INT_ENABLE | QE_XMIT_INT | QE_RCV_INT;
 	addr->qe_rcvlist_lo = (short)prp;
 	addr->qe_rcvlist_hi = (short)((int)prp >> 16);
@@ -316,10 +312,7 @@ qeprobe(reg)
 	 */
 	ubarelse(0, &sc->setupaddr);
 	ubarelse(0, (int *)&sc->rringaddr);
-	if( cvec == j ) 
-		return 0;		/* didn't interrupt	*/
-
-	br = 0x15;			/* q-bus doesn't get level */
+	sc->ipl = br = qbgetpri();
 	return( sizeof(struct qedevice) );
 }
  
@@ -406,18 +399,24 @@ qeinit(unit)
 		/*
 		 * map the communications area onto the device 
 		 */
-		sc->rringaddr = (struct qe_ring *)
-		    ((int) uballoc(0, (caddr_t)sc->rring,
-		    sizeof(struct qe_ring) * (NTOT+2), 0) & mask);
+		i = uballoc(0, (caddr_t)sc->rring,
+		    sizeof(struct qe_ring) * (NTOT+2), 0);
+		if (i == 0)
+			goto fail;
+		sc->rringaddr = (struct qe_ring *)UBAI_ADDR(i);
 		sc->tringaddr = sc->rringaddr + NRCV + 1;
-		sc->setupaddr =	uballoc(0, (caddr_t)sc->setup_pkt,
-		    sizeof(sc->setup_pkt), 0) & mask;
+		i = uballoc(0, (caddr_t)sc->setup_pkt,
+		    sizeof(sc->setup_pkt), 0);
+		if (i == 0)
+			goto fail;
+		sc->setupaddr =	UBAI_ADDR(i);
 		/*
 		 * init buffers and maps
 		 */
 		if (if_ubaminit(&sc->qe_uba, ui->ui_ubanum,
 		    sizeof (struct ether_header), (int)btoc(MAXPACKETSIZE),
 		    sc->qe_ifr, NRCV, sc->qe_ifw, NXMT) == 0) {
+	fail:
 			printf("qe%d: can't initialize\n", unit);
 			sc->qe_if.if_flags &= ~IFF_UP;
 			return;
@@ -429,7 +428,7 @@ qeinit(unit)
 	 */
 	for (i = 0; i < NRCV; i++) {
 		qeinitdesc( &sc->rring[i],
-		    (caddr_t)(sc->qe_ifr[i].ifrw_info & mask), MAXPACKETSIZE);
+		    (caddr_t)UBAI_ADDR(sc->qe_ifr[i].ifrw_info), MAXPACKETSIZE);
 		sc->rring[i].qe_flag = sc->rring[i].qe_status1 = QE_NOTYET;
 		sc->rring[i].qe_valid = 1;
 	}
@@ -529,7 +528,7 @@ qestart(unit)
 		if( len < MINDATA )
 			len = MINDATA;
 		rp->qe_buf_len = -(len/2);
-		buf_addr &= mask;
+		buf_addr = UBAI_ADDR(buf_addr);
 		rp->qe_flag = rp->qe_status1 = QE_NOTYET;
 		rp->qe_addr_lo = (short)buf_addr;
 		rp->qe_addr_hi = (short)(buf_addr >> 16);
@@ -559,9 +558,9 @@ qeintr(unit)
 {
 	register struct qe_softc *sc = &qe_softc[unit];
 	struct qedevice *addr = (struct qedevice *)qeinfo[unit]->ui_addr;
-	int s, buf_addr, csr;
+	int buf_addr, csr;
  
-	s = splimp();
+	splx(sc->ipl);
 	csr = addr->qe_csr;
 	addr->qe_csr = QE_RCV_ENABLE | QE_INT_ENABLE | QE_XMIT_INT | QE_RCV_INT | QE_ILOOP;
 	if( csr & QE_RCV_INT ) 
@@ -576,7 +575,6 @@ qeintr(unit)
 		addr->qe_rcvlist_lo = (short)buf_addr;
 		addr->qe_rcvlist_hi = (short)(buf_addr >> 16);
 	}
-	splx( s );
 }
  
 /*
@@ -690,7 +688,7 @@ qerint(unit)
 		/*
 		 * Return the buffer to the ring
 		 */
-		bufaddr = (int)sc->qe_ifr[sc->rindex].ifrw_info & mask;
+		bufaddr = (int)UBAI_ADDR(sc->qe_ifr[sc->rindex].ifrw_info);
 		rp->qe_buf_len = -((MAXPACKETSIZE)/2);
 		rp->qe_addr_lo = (short)bufaddr;
 		rp->qe_addr_hi = (short)((int)bufaddr >> 16);
@@ -960,7 +958,7 @@ qeread(sc, ifrw, len)
 {
 	struct ether_header *eh;
     	struct mbuf *m;
-	int off, resid;
+	int off, resid, s;
 	struct ifqueue *inq;
  
 	/*
@@ -1031,12 +1029,13 @@ qeread(sc, ifrw, len)
 		return;
 	}
  
+	s = splimp();
 	if (IF_QFULL(inq)) {
 		IF_DROP(inq);
 		m_freem(m);
-		return;
-	}
-	IF_ENQUEUE(inq, m);
+	} else
+		IF_ENQUEUE(inq, m);
+	splx(s);
 }
 
 /*

@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_dmv.c	7.6 (Berkeley) %G%
+ *	@(#)if_dmv.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -149,6 +149,7 @@ struct dmv_softc {
 	short	sc_oused;		/* output buffers currently in use */
 	short	sc_iused;		/* input buffers given to DMV */
 	short	sc_flag;		/* flags */
+	short	sc_ipl;			/* interrupt priority */
 	int	sc_ubinfo;		/* UBA mapping info for base table */
 	int	sc_errors[8];		/* error counters */
 #define	sc_rte	sc_errors[0]		/* receive threshhold error */
@@ -200,8 +201,9 @@ struct dmv_softc {
 	if ((head) == (struct dmv_command *) 0)\
 		(tail) = (head)
 
-dmvprobe(reg)
+dmvprobe(reg, ui)
 	caddr_t reg;
+	struct uba_device *ui;
 {
 	register int br, cvec;
 	register struct dmvdevice *addr = (struct dmvdevice *)reg;
@@ -224,13 +226,14 @@ dmvprobe(reg)
 			addr->bsel4, addr->bsel6);
 		return (0);
 	}
+	(void) spl6();
 	addr->bsel0 = DMV_RQI|DMV_IEI|DMV_IEO;
 	DELAY(1000000);
 	addr->bsel1 = DMV_MCLR;
 	for (i = 100000; i && (addr->bsel1 & DMV_RUN) == 0; i--)
 		;
-	br = 0x15;		/* screwy interrupt structure */
-	return (1);
+	dmv_softc[ui->ui_unit].sc_ipl = br = qbgetpri();
+	return (sizeof(struct dmvdevice));
 }
 
 /*
@@ -341,7 +344,7 @@ dmvinit(unit)
 	/* receives */
 	ifrw = &sc->sc_ifr[0];
 	for (rp = &sc->sc_rbufs[0]; rp < &sc->sc_rbufs[NRCV]; rp++) {
-		rp->ubinfo = ifrw->ifrw_info & 0x3ffff;
+		rp->ubinfo = UBAI_ADDR(ifrw->ifrw_info);
 		rp->cc = DMVMTU + sizeof (struct dmv_header);
 		rp->flags = DBUF_OURS|DBUF_RCV;
 		ifrw++; 
@@ -349,7 +352,7 @@ dmvinit(unit)
 	/* transmits */
 	ifxp = &sc->sc_ifw[0];
 	for (rp = &sc->sc_xbufs[0]; rp < &sc->sc_xbufs[NXMT]; rp++) {
-		rp->ubinfo = ifxp->ifw_info & 0x3ffff;
+		rp->ubinfo = UBAI_ADDR(ifxp->ifw_info);
 		rp->cc = 0;
 		rp->flags = DBUF_OURS|DBUF_XMIT;
 		ifxp++; 
@@ -488,6 +491,7 @@ dmvrint(unit)
 
 	addr = (struct dmvdevice *)dmvinfo[unit]->ui_addr;
 	sc = &dmv_softc[unit];
+	splx(sc->sc_ipl);
 	printd(("dmvrint\n"));
 	if ((qp = sc->sc_qactive) == (struct dmv_command *) 0) {
 		log(LOG_WARNING, "dmvrint: dmv%d no command\n", unit);
@@ -552,6 +556,7 @@ dmvxint(unit)
 
 	addr = (struct dmvdevice *)ui->ui_addr;
 	sc = &dmv_softc[unit];
+	splx(sc->sc_ipl);
 	ifp = &sc->sc_if;
 
 	while (addr->bsel2 & DMV_RDO) {
@@ -635,6 +640,12 @@ dmvxint(unit)
 			m = if_ubaget(&sc->sc_ifuba, ifrw, len, off, ifp);
 			if (m == 0)
 				goto setup;
+			if (off) {
+				ifp = *(mtod(m, struct ifnet **));
+				m->m_off += 2 * sizeof (u_short);
+				m->m_len -= 2 * sizeof (u_short);
+				*(mtod(m, struct ifnet **)) = ifp;
+			}
 			switch (dh->dmv_type) {
 #ifdef INET
 			case DMV_IPTYPE:
@@ -656,13 +667,13 @@ dmvxint(unit)
 			splx(s);
 	setup:
 			/* is this needed? */
-			rp->ubinfo = ifrw->ifrw_info & 0x3ffff;
+			rp->ubinfo = UBAI_ADDR(ifrw->ifrw_info);
 			dmvload(
 				sc,
 				DMV_BACCR,
 				QP_SEL4|QP_SEL6|QP_SEL10,
 				0,
-				rp->ubinfo,
+				(u_short) rp->ubinfo,
 				(rp->ubinfo>>16)&0x3f,
 				rp->cc
 			);
@@ -862,13 +873,12 @@ dmvoutput(ifp, m0, dst)
 	switch (dst->sa_family) {
 #ifdef	INET
 	case AF_INET:
-		off = m->m_pkthdr.len - m->m_len;
+		off = ntohs((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
 		if ((ifp->if_flags & IFF_NOTRAILERS) == 0)
 		if (off > 0 && (off & 0x1ff) == 0 &&
-		    (m->m_flags & M_EXT) == 0 &&
-		    m->m_data >= m->m_pktdat + 2 * sizeof (u_short)) {
+		    m->m_off >= MMINOFF + 2 * sizeof (u_short)) {
 			type = DMV_TRAILER + (off>>9);
-			m->m_data -= 2 * sizeof (u_short);
+			m->m_off -= 2 * sizeof (u_short);
 			m->m_len += 2 * sizeof (u_short);
 			*mtod(m, u_short *) = htons((u_short)DMV_IPTYPE);
 			*(mtod(m, u_short *) + 1) = htons((u_short)m->m_len);
@@ -908,10 +918,19 @@ gottype:
 	 * Add local network header
 	 * (there is space for a uba on a vax to step on)
 	 */
-	M_PREPEND(m, sizeof(struct dmv_header), M_DONTWAIT);
-	if (m == 0) {
-		error = ENOBUFS;
-		goto bad;
+	if (m->m_off > MMAXOFF ||
+	    MMINOFF + sizeof(struct dmv_header) > m->m_off) {
+		m = m_get(M_DONTWAIT, MT_HEADER);
+		if (m == 0) {
+			error = ENOBUFS;
+			goto bad;
+		}
+		m->m_next = m0;
+		m->m_off = MMINOFF;
+		m->m_len = sizeof (struct dmv_header);
+	} else {
+		m->m_off -= sizeof (struct dmv_header);
+		m->m_len += sizeof (struct dmv_header);
 	}
 	dh = mtod(m, struct dmv_header *);
 	dh->dmv_type = htons((u_short)type);
