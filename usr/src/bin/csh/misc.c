@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)misc.c	5.4 (Berkeley) %G%";
+static char *sccsid = "@(#)misc.c	5.5 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -13,17 +13,6 @@ static char *sccsid = "@(#)misc.c	5.4 (Berkeley) %G%";
 /*
  * C Shell
  */
-
-any(c, s)
-	register int c;
-	register char *s;
-{
-
-	while (*s)
-		if (*s++ == c)
-			return(1);
-	return(0);
-}
 
 onlyread(cp)
 	char *cp;
@@ -285,19 +274,6 @@ renum(i, j)
 	}
 	return (k);
 }
-
-#ifndef copy
-copy(to, from, size)
-	register char *to, *from;
-	register int size;
-{
-
-	if (size)
-		do
-			*to++ = *from++;
-		while (--size != 0);
-}
-#endif
 
 /*
  * Left shift a command argument list, discarding
