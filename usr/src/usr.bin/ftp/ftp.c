@@ -89,6 +89,13 @@ hookup(host, port)
 			     (caddr_t)&hisctladdr.sin_addr, hp->h_length);
 			fprintf(stdout, "Trying %s...\n",
 				inet_ntoa(hisctladdr.sin_addr));
+			(void) close(s);
+			s = socket(hisctladdr.sin_family, SOCK_STREAM, 0);
+			if (s < 0) {
+				perror("ftp: socket");
+				code = -1;
+				return (0);
+			}
 			continue;
 		}
 		perror("ftp: connect");

@@ -234,6 +234,12 @@ tn(argc, argv)
 				host->h_length);
 			fprintf(stderr, "Trying %s...\n",
 				inet_ntoa(sin.sin_addr));
+			(void) close(net);
+			net = socket(AF_INET, SOCK_STREAM, 0);
+			if (net < 0) {
+				perror("telnet: socket");
+				return;
+			}
 			continue;
 		}
 		perror("telnet: connect");
