@@ -2,15 +2,19 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)pause.3	6.1 (Berkeley) %G%
+.\"	@(#)pause.3	6.2 (Berkeley) %G%
 .\"
-.TH PAUSE 3C ""
+.TH PAUSE 3 ""
 .UC 4
 .SH NAME
 pause \- stop until signal
 .SH SYNOPSIS
 .B pause()
 .SH DESCRIPTION
+.ft B
+Pause is made obsolete by sigpause(3).
+.ft R
+.PP
 .I Pause
 never returns normally.
 It is used to give up control while waiting for
