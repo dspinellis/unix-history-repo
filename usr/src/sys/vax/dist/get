@@ -1,16 +1,16 @@
 #!/bin/sh
 #
-# Copyright (c) 1980 Regents of the University of California.
+# Copyright (c) 1983 Regents of the University of California.
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)get	4.24 (Berkeley) %G%
+#	@(#)get	4.25 (Berkeley) %G%
 #
 # Shell script to build a mini-root file system
 # in preparation for building a distribution tape.
 # The file system created here is image copied onto
 # tape, then image copied onto disk as the "first"
-# step in a cold boot of 4.2 systems.
+# step in a cold boot of 4.3 systems.
 #
 DISTROOT=/nbsd
 #
@@ -27,31 +27,31 @@ rm -rf tmp; mkdir tmp
 rm -rf usr; mkdir usr usr/mdec
 rm -rf sys; mkdir sys sys/floppy sys/cassette sys/consolerl
 cp $DISTROOT/etc/disktab etc
-cp $DISTROOT/etc/newfs etc; strip etc/newfs
-cp $DISTROOT/etc/mkfs etc; strip etc/mkfs
-cp $DISTROOT/etc/restore etc; strip etc/restore
-cp $DISTROOT/etc/init etc; strip etc/init
-cp $DISTROOT/etc/mount etc; strip etc/mount
-cp $DISTROOT/etc/mknod etc; strip etc/mknod
-cp $DISTROOT/etc/fsck etc; strip etc/fsck
-cp $DISTROOT/etc/umount etc; strip etc/umount
-cp $DISTROOT/etc/arff etc; strip etc/arff
-cp $DISTROOT/etc/flcopy etc; strip etc/flcopy
-cp $DISTROOT/bin/mt bin; strip bin/mt
-cp $DISTROOT/bin/ls bin; strip bin/ls
-cp $DISTROOT/bin/sh bin; strip bin/sh
-cp $DISTROOT/bin/mv bin; strip bin/mv
-cp $DISTROOT/bin/sync bin; strip bin/sync
-cp $DISTROOT/bin/cat bin; strip bin/cat
-cp $DISTROOT/bin/mkdir bin; strip bin/mkdir
-cp $DISTROOT/bin/stty bin; strip bin/stty; ln bin/stty bin/STTY
-cp $DISTROOT/bin/echo bin; strip bin/echo
-cp $DISTROOT/bin/rm bin; strip bin/rm
-cp $DISTROOT/bin/cp bin; strip bin/cp
-cp $DISTROOT/bin/expr bin; strip bin/expr
-cp $DISTROOT/bin/[ bin; strip bin/[
-cp $DISTROOT/bin/awk bin; strip bin/awk
-cp $DISTROOT/bin/make bin; strip bin/make
+cp $DISTROOT/etc/newfs etc
+cp $DISTROOT/etc/mkfs etc
+cp $DISTROOT/etc/restore etc
+cp $DISTROOT/etc/init etc
+cp $DISTROOT/etc/mount etc
+cp $DISTROOT/etc/mknod etc
+cp $DISTROOT/etc/fsck etc
+cp $DISTROOT/etc/umount etc
+cp $DISTROOT/etc/arff etc
+cp $DISTROOT/etc/flcopy etc
+cp $DISTROOT/bin/mt bin
+cp $DISTROOT/bin/ls bin
+cp $DISTROOT/bin/sh bin
+cp $DISTROOT/bin/mv bin
+cp $DISTROOT/bin/sync bin
+cp $DISTROOT/bin/cat bin
+cp $DISTROOT/bin/mkdir bin
+cp $DISTROOT/bin/stty bin; ln bin/stty bin/STTY
+cp $DISTROOT/bin/echo bin
+cp $DISTROOT/bin/rm bin
+cp $DISTROOT/bin/cp bin
+cp $DISTROOT/bin/expr bin
+cp $DISTROOT/bin/[ bin
+cp $DISTROOT/bin/awk bin
+cp $DISTROOT/bin/make bin
 cp $DISTROOT/usr/mdec/* usr/mdec
 cp $DISTROOT/sys/floppy/[Ma-z0-9]* sys/floppy
 cp $DISTROOT/sys/consolerl/[Ma-z0-9]* sys/consolerl
