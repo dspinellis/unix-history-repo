@@ -300,7 +300,6 @@ void cmd_shell(frommark, tomark, cmd, bang, extra)
 		    strlen(prevextra) + strlen(extra))) != NULL) {
 			strcat(prevextra, extra + 1);
 			extra = prevextra;
-			msg(extra);
 		}
 #else
 		extra = prevextra;
