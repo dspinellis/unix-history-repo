@@ -4,7 +4,7 @@
      *
      */
 
-    /*	sccsid: @(#)config.h	1.2 (Berkeley) 83/09/19 */
+    /*	sccsid: @(#)config.h	2.1 (Berkeley) 84/02/08 */
 
     /*
      *	the version of translator

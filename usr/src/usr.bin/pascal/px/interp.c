@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)interp.c 1.31 %G%";
+static char sccsid[] = "@(#)interp.c 2.1 %G%";
 
 #include <math.h>
 #include <signal.h>

@@ -2,7 +2,7 @@
 #	the sccs related things for the
 #	berkeley pascal system.
 
-SCCSID = "sccsmakefile 1.4 %G% 15:12:50"
+SCCSID = "sccsmakefile 2.1 %G% 20:40:31"
 
 PSCCSDIR = /usr/src/ucb/pascal/src
 PIDIR = ../pi

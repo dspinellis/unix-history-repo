@@ -1,7 +1,7 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
 #ifndef lint
-static	char sccsid[] = "@(#)p2put.c 1.16 %G%";
+static	char sccsid[] = "@(#)p2put.c 2.1 %G%";
 #endif
 
     /*

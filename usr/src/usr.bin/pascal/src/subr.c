@@ -1,7 +1,7 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
 #ifndef lint
-static	char sccsid[] = "@(#)subr.c 1.7 %G%";
+static	char sccsid[] = "@(#)subr.c 2.1 %G%";
 #endif
 
 #include "whoami.h"

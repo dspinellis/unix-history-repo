@@ -1,6 +1,6 @@
 # !/bin/csh
 #
-#	@(#)newversion.csh	2.3 (Berkeley) 83/04/07
+#	@(#)newversion.csh	2.4 (Berkeley) 84/02/08
 #	update the version number of your argument makefile, etc.
 #
 if ( $#argv != 2 ) then

@@ -1,6 +1,6 @@
 Copyright (c) 1979 Regents of the University of California
 
-sccsid = "@(#)READ_ME 1.1 %G%"
+sccsid = "@(#)READ_ME 2.1 %G%"
 
    This directory contains the source code for the Version 7 VAX
 interpreter for Pascal. Following standard convensions, the makefile

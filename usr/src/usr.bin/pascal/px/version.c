@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)version.c 1.2 %G%";
+static char sccsid[] = "@(#)version.c 2.1 %G%";
 
     /*
      *	this writes the declaration of the current time stamp
