@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tty.h	7.10 (Berkeley) 6/26/91
- *	$Id: tty.h,v 1.9 1994/03/02 20:29:03 guido Exp $
+ *	$Id: tty.h,v 1.10 1994/03/23 01:58:30 ache Exp $
  */
 
 #ifndef _SYS_TTY_H_
@@ -137,23 +137,22 @@ struct tty {
 #define TTMINHIWAT	128
 #define TTMAXLOWAT	256
 #define TTMINLOWAT	32
-extern	struct ttychars ttydefaults;
 #endif /* KERNEL */
 
 /* internal state bits */
 #define	TS_TIMEOUT	0x000001UL	/* delay timeout in progress */
-#define	TS_WOPEN	0x000002UL	/* waiting for open to complete */
 #define	TS_ISOPEN	0x000004UL	/* device is open */
 #define	TS_FLUSH	0x000008UL	/* outq has been flushed during DMA */
 #define	TS_CARR_ON	0x000010UL	/* software copy of carrier-present */
 #define	TS_BUSY		0x000020UL	/* output in progress */
-#define	TS_ASLEEP	0x000040UL	/* wakeup when output done */
+#define	TS_SO_OLOWAT	0x000040UL	/* wake up when output <= low water */
 #define	TS_XCLUDE	0x000080UL	/* exclusive-use flag against open */
 #define	TS_TTSTOP	0x000100UL	/* output stopped by ctl-s */
 #define	TS_ZOMBIE	0x000200UL	/* carrier dropped */
 #define	TS_TBLOCK	0x000400UL	/* tandem queue blocked */
 #define	TS_RCOLL	0x000800UL	/* collision in read select */
 #define	TS_WCOLL	0x001000UL	/* collision in write select */
+#define	TS_SO_OCOMPLETE	0x002000UL	/* wake up when output complete */
 #define	TS_ASYNC	0x004000UL	/* tty in async i/o mode */
 /* state for intra-line fancy editing work */
 #define	TS_BKSL		0x010000UL	/* state for lowercase \ work */
@@ -173,7 +172,7 @@ extern	struct ttychars ttydefaults;
  * XXX maintain a single flag to keep track of this combination and fix all
  * the places that check TS_CARR_ON without checking CLOCAL or TS_ZOMBIE.
  */
-#define CAN_DO_IO(tp) (((tp)->t_state & (TS_CARR_ON | TS_ZOMBIE)) \
+#define CAN_DO_IO(tp)	(((tp)->t_state & (TS_CARR_ON | TS_ZOMBIE)) \
 			 == TS_CARR_ON || (tp)->t_cflag & CLOCAL)
 
 /* define partab character types */
@@ -216,15 +215,24 @@ struct speedtab {
 #define	DMBIC		2
 #define	DMGET		3
 
-#ifdef KERNEL
-/* symbolic sleep message strings */
-extern const char ttyin[], ttyout[], ttopen[], ttclos[], ttybg[], ttybuf[];
+/*
+ * Sleep addresses.
+ */
+#define	TSA_CARR_ON(tp)		((caddr_t)(tp) + 0)
+#define	TSA_HUP_OR_INPUT(tp)	((caddr_t)(tp) + 1)
+#define	TSA_OCOMPLETE(tp)	((caddr_t)(tp) + 2)
+#define	TSA_OLOWAT(tp)		((caddr_t)(tp) + 3)
+#define	TSA_PTC_READ(tp)	((caddr_t)(tp) + 4)
+#define	TSA_PTC_WRITE(tp)	((caddr_t)(tp) + 5)
 
+#ifdef KERNEL
+struct proc;
 struct uio;
 
 /* From tty.c: */
+extern void termioschars(struct termios *);
 extern void ttychars(struct tty *);
-extern int ttwflush(struct tty *);
+extern int ttywflush(struct tty *);
 extern int ttywait(struct tty *);
 extern void ttyflush(struct tty *, int);
 extern void ttstart(struct tty *);
@@ -244,6 +252,7 @@ extern int ttread(struct tty *, struct uio *, int);
 extern int ttycheckoutq(struct tty *, int);
 extern int ttwrite(struct tty *, struct uio *, int);
 extern void ttwakeup(struct tty *);
+extern void ttwwakeup(struct tty *);
 extern int ttspeedtab(int, struct speedtab *);
 extern void ttsetwater(struct tty *);
 extern void ttyinfo(struct tty *);
@@ -268,4 +277,5 @@ extern size_t rb_write(struct ringb *, char *, size_t);
 extern int ttcompat(struct tty *, int, caddr_t, int);
 
 #endif /* KERNEL */
+
 #endif	/* _SYS_TTY_H_ */
