@@ -27,7 +27,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *	$Id: procfs_vnops.c,v 1.2 1993/12/19 00:54:37 wollman Exp $
+ *	$Id: procfs_vnops.c,v 1.3 1993/12/31 17:42:57 davidg Exp $
  */
 
 /*
@@ -266,11 +266,8 @@ pfs_inactive(vp, p)
 {
 	struct pfsnode	*pfsp = VTOPFS(vp);
 
-/*
 	if ((pfsp->pfs_pid?pfind(pfsp->pfs_pid):&proc0) == NULL
-			&& vp->v_usecount == 0)
-*/
-	if( vp->v_usecount == 0)
+	    && vp->v_usecount == 0)
 		vgone(vp);
 
 	return 0;
@@ -550,6 +547,7 @@ pfs_lookup(vp, ndp, p)
 	if ((procp = pid?pfind(pid):&proc0) == NULL)
 		return ENOENT;
 
+loop:
 	/* Search pfs node list first */
 	for (pfsp = pfshead; pfsp != NULL; pfsp = pfsp->pfs_next) {
 		if (pfsp->pfs_pid == pid)
@@ -577,6 +575,10 @@ pfs_lookup(vp, ndp, p)
 		pfsp->pfs_next = pfshead;
 		pfshead = pfsp;
 
+	} else {
+		if (vget(pfsp->pfs_vnode))
+			goto loop;
+		VOP_UNLOCK(pfsp->pfs_vnode);
 	}
 	ndp->ni_vp = pfsp->pfs_vnode;
 
