@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lock.h	8.3 (Berkeley) %G%
+ *	@(#)lock.h	8.4 (Berkeley) %G%
  */
 
 #ifndef	_LOCK_H_
@@ -128,6 +128,7 @@ struct lock {
 void	lock_init __P((struct lock *, int prio, char *wmesg, int timo,
 			int flags));
 int	lockmgr __P((volatile struct lock *, struct proc *, u_int flags));
+int	lockstatus __P((struct lock *));
 
 #if NCPUS > 1
 /*

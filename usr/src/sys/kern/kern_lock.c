@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_lock.c	8.3 (Berkeley) %G%
+ *	@(#)kern_lock.c	8.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -88,6 +88,24 @@ void lock_init(lkp, prio, wmesg, timo, flags)
 	lkp->lk_timo = timo;
 	lkp->lk_wmesg = wmesg;
 	lkp->lk_lockholder = LK_NOPROC;
+}
+
+/*
+ * Determine the status of a lock.
+ */
+int
+lockstatus(lkp)
+	struct lock *lkp;
+{
+	int lock_type = 0;
+
+	atomic_lock(&lkp->lk_interlock);
+	if (lkp->lk_exclusivecount != 0)
+		lock_type = LK_EXCLUSIVE;
+	else if (lkp->lk_sharecount != 0)
+		lock_type = LK_SHARED;
+	atomic_unlock(&lkp->lk_interlock);
+	return (lock_type);
 }
 
 /*
