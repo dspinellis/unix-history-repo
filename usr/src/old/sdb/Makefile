@@ -1,7 +1,8 @@
 #
-#	sdb	Makefile	4.2	%G%
+#	sdb	Makefile	4.3	%G%
 #
 # Conditional compilation flags:
+#	SDB	this is sdb
 #	STD - Distribution systems UNIX/32V, VM/UNIX 2.n
 #	VMUNIX - virtual memory system - keep namelist in VM.
 #	VFORK - Use vfork call of VM/UNIX Berkeley version
@@ -10,10 +11,10 @@
 # The files old.c and old.h contain routines and definitions peculiar
 # to old versions of the system.
 #
-CFLAGS=	-R -DVMUNIX -DVFORK -DFLEXNAMES
+CFLAGS=	-R -DSDB -DVMUNIX -DVFORK -DFLEXNAMES
 
 SRCS=	access.c decode.c display.c docomm.c fio.c main.c message.c \
-	old.c opset.c optab.c pcs.c prvar.c re.c runpcs.c \
+	old.c ../adb/opset.c ../adb/optab.c pcs.c prvar.c re.c runpcs.c \
 	setup.c sub.c symt.c udef.c version.c xeq.c
 OBJS=	access.o decode.o display.o docomm.o fio.o main.o message.o \
 	old.o opset.o optab.o pcs.o prvar.o re.o runpcs.o \
@@ -23,6 +24,12 @@ HDRS=	cdefs.h defs.h head.h mac.h machine.h mode.h old.h
 sdb: sources ${OBJS}
 	cc -o sdb *.o
 
+opset.o: ../adb/opset.c
+	$(CC) $(CFLAGS) -c ../adb/opset.c
+optab.o: ../adb/optab.c ../adb/instrs.adb
+	$(CC) $(CFLAGS) -c ../adb/optab.c
+../adb/instrs.adb: ../as/instrs
+	(cd ../adb; make instrs.adb)
 install:
 	cp sdb sdb.temp
 	install -s sdb $(DESTDIR)/usr/bin
