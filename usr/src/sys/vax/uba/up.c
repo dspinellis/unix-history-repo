@@ -1,8 +1,4 @@
-int	csdel0 = 30;
-int	csdel2 = 0;
-int	asdel = 500;
-int	softas;
-/*	%H%	3.10	%G%	*/
+/*	%H%	3.11	%G%	*/
 
 /*
  * Emulex UNIBUS disk driver with overlapped seeks and ECC recovery.
@@ -86,6 +82,19 @@ struct	device
 	ushort	upec2;		/* burst error bit pattern */
 };
 
+/*
+ * Software extension to the upas register, so we can
+ * postpone starting SEARCH commands until the controller
+ * is not transferring.
+ */
+int	softas;
+
+/*
+ * If upseek then we don't issue SEARCH commands but rather just
+ * settle for a SEEK to the correct cylinder.
+ */
+int	upseek;
+
 #define	UPADDR	((struct device *)(UBA0_DEV + 0176700))
 
 #define	NUP	2		/* Number of drives this installation */
@@ -96,14 +105,21 @@ struct	device
 /*
  * Constants controlling on-cylinder SEARCH usage.
  *
- * We assume that it takes SDIST sectors of time to set up a transfer.
- * If a drive is on-cylinder, and between SDIST and SDIST+RDIST sectors
- * from the first sector to be transferred, then we just perform the
- * transfer.  SDIST represents interrupt latency, RDIST the amount
- * of rotation which is tolerable to avoid another interrupt.
+ * 	SDIST/2 msec		time needed to start transfer
+ * 	IDIST/2 msec		slop for interrupt latency
+ * 	RDIST/2 msec		tolerable rotational latency when on-cylinder
+ *
+ * If we are no closer than SDIST sectors and no further than SDIST+RDIST
+ * and in the driver then we take it as it is.  Otherwise we do a SEARCH
+ * requesting an interrupt SDIST+IDIST sectors in advance.
  */
-#define	SDIST	3		/* 2-3 sectors 1-1.5 msec */
-#define	RDIST	6		/* 5-6 sectors 2.5-3 msec */
+#define	_SDIST	6		/* 3.0 msec */
+#define	_RDIST	6		/* 2.5 msec */
+#define	_IDIST	1		/* 0.5 msec */
+
+int	SDIST = _SDIST;
+int	RDIST = _RDIST;
+int	IDIST = _IDIST;
 
 /*
  * To fill a 300M drive:
@@ -176,6 +192,7 @@ struct	buf	rupbuf;			/* Buffer for raw i/o */
 #define	OFFSET	014		/* Offset heads to try to recover error */
 #define	RTC	016		/* Return to center-line after OFFSET */
 #define	SEARCH	030		/* Search for cylinder+sector */
+#define	SEEK	04		/* Seek to cylinder */
 #define	RECAL	06		/* Recalibrate, needed after seek error */
 #define	DCLR	010		/* Drive clear, after error */
 #define	WCOM	060		/* Write */
@@ -215,6 +232,10 @@ int	up_ubinfo;		/* Information about UBA usage saved here */
  */
 int	idelay = 500;		/* Delay after PRESET or DCLR */
 int	sdelay = 150;		/* Delay after selecting drive in upcs2 */
+int	rdelay = 100;		/* Delay after SEARCH */
+int	asdel = 100;		/* Delay after clearing bit in upas */
+
+int	csdel2 = 0;		/* ??? Delay in upstart ??? */
 
 #define	DELAY(N)		{ register int d; d = N; while (--d > 0); }
  
@@ -277,22 +298,41 @@ register unit;
 	int sn, cn, csn;
 	int didie = 0;
 
+	/*
+	 * Other drivers tend to say something like
+	 *	upaddr->upcs1 = IE;
+	 *	upaddr->upas = 1<<unit;
+	 * here, but the SC-11B will cancel a command which
+	 * happens to be sitting in the cs1 if you clear the go
+	 * bit by storing there (so the first is not safe),
+	 * and it also does not like being bothered with operations
+	 * such as clearing upas when a transfer is active (as
+	 * it may well be.)
+	 *
+	 * Thus we keep careful track of when we re-enable IE
+	 * after an interrupt and do it only if we didn't issue
+	 * a command which re-enabled it as a matter of course.
+	 * We clear bits in upas in the interrupt routine, when
+	 * no transfers are active.
+	 */
 	if (unit >= NUP)
 		goto out;
-	if (uptab.b_active) {
-		softas |= 1<<unit;
-		return;
-	}
-	/*
-	 * Whether or not it was before, this unit is no longer busy.
-	 * Check to see if there is (still or now) a request in this
-	 * drives queue, and if there is, select this unit.
-	 */
 	if (unit+DK_N <= DK_NMAX)
 		dk_busy &= ~(1<<(unit+DK_N));
 	dp = &uputab[unit];
 	if ((bp = dp->b_actf) == NULL)
 		goto out;
+	/*
+	 * The SC-11B doesn't start SEARCH commands when transfers are
+	 * in progress.  In fact, it tends to get confused when given
+	 * SEARCH'es during transfers, generating interrupts with neither
+	 * RDY nor a bit in the upas register.  Thus we defer
+	 * until an interrupt when a transfer is pending.
+	 */
+	if (uptab.b_active) {
+		softas |= 1<<unit;
+		return (0);
+	}
 	if ((upaddr->upcs2 & 07) != unit) {
 		upaddr->upcs2 = unit;
 		DELAY(sdelay);
@@ -301,7 +341,7 @@ register unit;
 		neasycs2++;
 	/*
 	 * If we have changed packs or just initialized,
-	 * the the volume will not be valid; if so, clear
+	 * then the volume will not be valid; if so, clear
 	 * the drive, preset it and put in 16bit/word mode.
 	 */
 	if ((upaddr->upds & VV) == 0) {
@@ -310,45 +350,21 @@ register unit;
 		upaddr->upcs1 = IE|PRESET|GO;
 		DELAY(idelay);
 		upaddr->upof = FMT22;
+		printf("VV done ds %o, er? %o %o %o\n", upaddr->upds, upaddr->uper1, upaddr->uper2, upaddr->uper3);
 		didie = 1;
 	}
-	/*
-	 * We are called from upstrategy when a new request arrives
-	 * if we are not already active (with dp->b_active == 0),
-	 * and we then set dp->b_active to 1 if we are to SEARCH
-	 * for the desired cylinder, or 2 if we are on-cylinder.
-	 * If we SEARCH then we will later be called from upintr()
-	 * when the search is complete, and will link this disk onto
-	 * the uptab.  We then set dp->b_active to 2 so that upintr()
-	 * will not call us again.
-	 *
-	 * NB: Other drives clear the bit in the attention status
-	 * (i.e. upas) register corresponding to the drive when they
-	 * place the drive on the ready (i.e. uptab) queue.  This does
-	 * not work with the Emulex, as the controller hangs the UBA
-	 * of the VAX shortly after the upas register is set, for
-	 * reasons unknown.  This only occurs in multi-spindle configurations,
-	 * but to avoid the problem we use the fact that dp->b_active is
-	 * 2 to replace the clearing of the upas bit.
-	 */
 	if (dp->b_active)
 		goto done;
 	dp->b_active = 1;
 	if ((upaddr->upds & (DPR|MOL)) != (DPR|MOL))
-		goto done;	/* Will redetect error in upstart() soon */
-
+		goto done;
 	/*
 	 * Do enough of the disk address decoding to determine
 	 * which cylinder and sector the request is on.
-	 * Then compute the number of the sector SDIST sectors before
-	 * the one where the transfer is to start, this being the
-	 * point where we wish to attempt to begin the transfer,
-	 * allowing approximately SDIST/2 msec for interrupt latency
-	 * and preparation of the request.
-	 *
 	 * If we are on the correct cylinder and the desired sector
 	 * lies between SDIST and SDIST+RDIST sectors ahead of us, then
 	 * we don't bother to SEARCH but just begin the transfer asap.
+	 * Otherwise ask for a interrupt SDIST+IDIST sectors ahead.
 	 */
 	bn = dkblock(bp);
 	cn = bp->b_cylin;
@@ -357,6 +373,8 @@ register unit;
 
 	if (cn - upaddr->updc)
 		goto search;		/* Not on-cylinder */
+	else if (upseek)
+		goto done;		/* Ok just to be on-cylinder */
 	csn = (upaddr->upla>>6) - sn - 1;
 	if (csn < 0)
 		csn += NSECT;
@@ -365,8 +383,12 @@ register unit;
 
 search:
 	upaddr->updc = cn;
-	upaddr->upda = sn;
-	upaddr->upcs1 = IE|SEARCH|GO;
+	if (upseek)
+		upaddr->upcs1 = IE|SEEK|GO;
+	else {
+		upaddr->upda = sn;
+		upaddr->upcs1 = IE|SEARCH|GO;
+	}
 	didie = 1;
 	/*
 	 * Mark this unit busy.
@@ -376,16 +398,14 @@ search:
 		dk_busy |= 1<<unit;
 		dk_numb[unit]++;
 	}
-	if (csdel0) DELAY(csdel0);
+	DELAY(rdelay);
 	goto out;
 
 done:
 	/*
-	 * This unit is ready to go.  Make active == 2 so
-	 * we won't get called again (by upintr() because upas&(1<<unit))
-	 * and link us onto the chain of ready disks.
+	 * This unit is ready to go so
+	 * link it onto the chain of ready disks.
 	 */
-	dp->b_active = 2;
 	dp->b_forw = NULL;
 	if (uptab.b_actf == NULL)
 		uptab.b_actf = dp;
@@ -440,11 +460,11 @@ loop:
 	upaddr = UPADDR;
 	if ((upaddr->upcs2 & 07) != dn) {
 		upaddr->upcs2 = dn;
-		DELAY(sdelay);
+		/* DELAY(sdelay);		Provided by ubasetup() */
 		nwaitcs2++;
 	} else
 		neasycs2++;
-	up_ubinfo = ubasetup(bp, 1);	/* In a funny place for delay... */
+	up_ubinfo = ubasetup(bp, 1);	/* Providing delay */
 	/*
 	 * If drive is not present and on-line, then
 	 * get rid of this with an error and loop to get
@@ -452,6 +472,7 @@ loop:
 	 * (Then on to any other ready drives.)
 	 */
 	if ((upaddr->upds & (DPR|MOL)) != (DPR|MOL)) {
+		printf("!DPR || !MOL, unit %d, ds %o\n", dn, upaddr->upds);
 		uptab.b_active = 0;
 		uptab.b_errcnt = 0;
 		dp->b_actf = bp->av_forw;
@@ -545,22 +566,20 @@ printf("as=%d act %d %d %d\n", as, uptab.b_active, uputab[0].b_active, uputab[1]
 			dk_busy &= ~(1<<(DK_N+NUP));
 		else if (DK_N+unit <= DK_NMAX)
 			dk_busy &= ~(1<<(DK_N+unit));
-		if (upaddr->upcs1 & TRE) {
+		if ((upaddr->upcs2 & 07) != unit) {
+			upaddr->upcs2 = unit;
+			DELAY(sdelay);
+			nwaitcs2++;
+		} else
+			neasycs2++;
+		if (upaddr->upds & ERR) {
 			/*
 			 * An error occurred, indeed.  Select this unit
 			 * to get at the drive status (a SEARCH may have
 			 * intervened to change the selected unit), and
 			 * wait for the command which caused the interrupt
 			 * to complete (DRY).
-			 *
-			 * WHY IS THE WAIT NECESSARY?
 			 */
-			if ((upaddr->upcs2 & 07) != unit) {
-				upaddr->upcs2 = unit;
-				DELAY(sdelay);
-				nwaitcs2++;
-			} else
-				neasycs2++;
 			while ((upaddr->upds & DRY) == 0)
 				DELAY(25);
 			/*
@@ -630,6 +649,9 @@ printf("as=%d act %d %d %d\n", as, uptab.b_active, uputab[0].b_active, uputab[1]
 			dp->b_errcnt = 0;
 			dp->b_actf = bp->av_forw;
 			bp->b_resid = (-upaddr->upwc * sizeof(short));
+			if (bp->b_resid)
+				printf("resid %d ds %o er? %o %o %o\n", bp->b_resid, upaddr->upds,
+				    upaddr->uper1, upaddr->uper2, upaddr->uper3);
 			iodone(bp);
 			if(dp->b_actf)
 				if (upustart(unit))
@@ -667,9 +689,8 @@ printf("as=%d act %d %d %d\n", as, uptab.b_active, uputab[0].b_active, uputab[1]
 		if (upstart())
 			needie = 0;
 out:
-	if (needie) {
+	if (needie)
 		upaddr->upcs1 = IE;
-	}
 }
 
 upread(dev)
