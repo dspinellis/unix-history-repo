@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)restore.8	6.9 (Berkeley) %G%
+.\"     @(#)restore.8	6.10 (Berkeley) %G%
 .\"
 .Dd 
 .Dt RESTORE 8
@@ -141,17 +141,6 @@ The available commands are given below;
 for those commands that require an argument,
 the default is the current directory.
 .Bl -tag -width Fl
-.It Ic help
-List a summary of the available commands.
-.It Ic \&ls Op Ar arg
-List the current or specified directory.
-Entries that are directories are appended with a ``/''.
-Entries that have been marked for extraction are prepended with a ``*''.
-If the verbose key is set the inode number of each entry is also listed.
-.It Ic \&cd Ar arg
-Change the current working directory to the specified argument.
-.It Ic pwd
-Print the full pathname of the current working directory.
 .It Ic add Op Ar arg
 The current directory or specified argument is added to the list of
 files to be extracted.
@@ -163,6 +152,8 @@ key is specified on the command line).
 Files that are on the extraction list are prepended with a ``*''
 when they are listed by 
 .Ic ls .
+.It Ic \&cd Ar arg
+Change the current working directory to the specified argument.
 .It Ic delete Op Ar arg
 The current directory or specified argument is deleted from the list of
 files to be extracted.
@@ -181,6 +172,18 @@ from the dump.
 will ask which volume the user wishes to mount.
 The fastest way to extract a few files is to
 start with the last volume, and work towards the first volume.
+.It Ic help
+List a summary of the available commands.
+.It Ic \&ls Op Ar arg
+List the current or specified directory.
+Entries that are directories are appended with a ``/''.
+Entries that have been marked for extraction are prepended with a ``*''.
+If the verbose key is set the inode number of each entry is also listed.
+.It Ic pwd
+Print the full pathname of the current working directory.
+.It Ic quit
+Restore immediately exits,
+even if the extraction list is not empty.
 .It Ic setmodes
 All the directories that have been added to the extraction list
 have their owner, modes, and times set;
@@ -196,10 +199,7 @@ command to list the inode numbers of all entries.
 It also causes
 .Nm restore
 to print out information about each file as it is extracted.
-.It Ic quit
-Restore immediately exits,
-even if the extraction list is not empty.
-.Tp
+.El
 .El
 .Pp
 The following characters may be used in addition to the letter
@@ -234,6 +234,24 @@ with the command
 dump 0f - /usr | (cd /mnt; restore xf -)
 .Ed
 .Pp
+.It Cm h
+.Nm Restore
+extracts the actual directory, 
+rather than the files that it references.
+This prevents hierarchical restoration of complete subtrees
+from the dump.
+.It Cm m
+.Nm Restore
+will extract by inode numbers rather than by file name.
+This is useful if only a few files are being extracted,
+and one wants to avoid regenerating the complete pathname
+to the file.
+.It Cm s
+The next argument to
+.Nm restore
+is a number which
+selects the file on a multi-file dump tape.  File numbering
+starts at 1.
 .It Cm v
 Normally
 .Nm restore
@@ -248,24 +266,6 @@ preceded by its file type.
 will not ask whether it should abort the restore if gets an error.
 It will always try to skip over the bad block(s) and continue as
 best it can.
-.It Cm m
-.Nm Restore
-will extract by inode numbers rather than by file name.
-This is useful if only a few files are being extracted,
-and one wants to avoid regenerating the complete pathname
-to the file.
-.It Cm h
-.Nm Restore
-extracts the actual directory, 
-rather than the files that it references.
-This prevents hierarchical restoration of complete subtrees
-from the dump.
-.It Cm s
-The next argument to
-.Nm restore
-is a number which
-selects the file on a multi-file dump tape.  File numbering
-starts at 1.
 .El
 .Sh DIAGNOSTICS
 Complaints about bad key characters.
@@ -368,6 +368,6 @@ reflecting the new inode numbering,
 even though the contents of the files is unchanged.
 .Sh HISTORY
 The
-.Nm
+.Nm restore
 command appeared in
 .Bx 4.2 .
