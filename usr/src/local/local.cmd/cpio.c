@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)cpio.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)cpio.c	4.2	(Berkeley)	%G%";
 #endif not lint
 
 /*	cpio	COMPILE:	cc -O cpio.c -s -i -o cpio 
@@ -478,7 +478,7 @@ gethdr()
 		bread(&Hdr, HDRSIZE);
 
 	if(Hdr.h_magic != MAGIC) {
-		err("Out of phase--get help");
+		err("Out of phase--get help\n");
 		exit(2);
 	}
 	if(!Cflag)
@@ -501,7 +501,7 @@ gethdr()
 		Actual_size[1] = Hdr.h_filesize[1];
 		bread(&Hdr, HDRSIZE);
 		if(Hdr.h_magic != MAGIC) {
-			err("Out of phase--get MERT help");
+			err("Out of phase--get MERT help\n");
 			exit(2);
 		}
 		bread(Hdr.h_name, Hdr.h_namesize);
