@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)ex_vmain.c	7.9 (Berkeley) %G%";
+static char *sccsid = "@(#)ex_vmain.c	7.10 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -540,7 +540,7 @@ reread:
 				setLAST();
 				mbuf[0] = 'r';
 				mbuf[1] = *cursor;
-				mbuf[2] = cursor[1]==0 ? 0 : ' ';
+				mbuf[2] = cursor[1]==0 ? 0 : 'l';
 				mbuf[3] = 0;
 				if (isalpha(mbuf[1]))
 					mbuf[1] ^= ' ';	/* toggle the case */
