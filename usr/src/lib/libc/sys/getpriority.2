@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)getpriority.2	6.4 (Berkeley) %G%
+.\"	@(#)getpriority.2	6.5 (Berkeley) %G%
 .\"
 .TH GETPRIORITY 2 ""
 .UC 4
@@ -12,11 +12,6 @@ getpriority, setpriority \- get/set program scheduling priority
 .nf
 .ft B
 #include <sys/resource.h>
-.PP
-.ft B
-#define PRIO_PROCESS	0	/* process */
-#define PRIO_PGRP		1	/* process group */
-#define PRIO_USER		2	/* user id */
 .PP
 .ft B
 prio = getpriority(which, who)
