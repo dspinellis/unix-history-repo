@@ -10,9 +10,9 @@
 
 #ifndef lint
 # ifdef DBM
-static char	SccsId[] = "@(#)alias.c	5.9 (Berkeley) %G%	(with DBM)";
+static char	SccsId[] = "@(#)alias.c	5.10 (Berkeley) %G%	(with DBM)";
 # else DBM
-static char	SccsId[] = "@(#)alias.c	5.9 (Berkeley) %G%	(without DBM)";
+static char	SccsId[] = "@(#)alias.c	5.10 (Berkeley) %G%	(without DBM)";
 # endif DBM
 #endif not lint
 
@@ -483,7 +483,7 @@ readaliases(aliasfile, init)
 		{
 			register char c;
 
-			if (init)
+			if (init && CheckAliases)
 			{
 				/* do parsing & compression of addresses */
 				while (*p != '\0')

@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)readcf.c	5.9 (Berkeley) %G%";
+static char	SccsId[] = "@(#)readcf.c	5.10 (Berkeley) %G%";
 #endif not lint
 
 # include "sendmail.h"
@@ -786,6 +786,10 @@ setoption(opt, val, sticky)
 
 	  case 'm':		/* send to me too */
 		MeToo = atobool(val);
+		break;
+
+	  case 'n':		/* validate RHS in newaliases */
+		CheckAliases = atobool(val);
 		break;
 
 # ifdef DAEMON
