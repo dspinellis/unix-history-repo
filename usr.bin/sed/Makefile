@@ -1,10 +1,7 @@
+#	@(#)Makefile	5.1 (Berkeley) 8/24/92
 
 PROG=	sed
-SRCS=	sed.c utils.c regex.c getopt.c getopt1.c
-CFLAGS+=-I${.CURDIR} # -DSTDC_HEADERS
-NOMAN=noman
-
-sed.o regex.o: regex.h
-sed.o getopt1.o: getopt.h
+CFLAGS=-I${.CURDIR} -DGNU_REGEX -DHAVE_STRING_H=1
+SRCS=	compile.c main.c misc.c process.c regex.c
 
 .include <bsd.prog.mk>
