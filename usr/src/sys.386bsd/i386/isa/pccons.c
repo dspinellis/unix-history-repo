@@ -37,11 +37,12 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         2       00031
+ * CURRENT PATCH LEVEL:         3       00055
  * --------------------         -----   ----------------------
  *
  * 15 Aug 92	Pace Willisson		Patches for X server
  * 21 Aug 92    Frank Maclachlan        Fixed back-scroll system crash
+ * 28 Nov 1992	Terry Lee		Fixed LED's in X mode
  */
 static char rcsid[] = "$Header: /usr/bill/working/sys/i386/isa/RCS/pccons.c,v 1.2 92/01/21 14:35:28 william Exp $";
 
@@ -1307,6 +1308,28 @@ loop:
 		dt = inb(KBDATAP);
 		if (pc_xmode) {
 			capchar[0] = dt;
+			/*
+			 *   Check for locking keys
+			 */
+			if (!(dt & 0x80))
+			{
+				dt = dt & 0x7f;
+				switch (scan_codes[dt].type)
+				{
+					case NUM:
+						num ^= 1;
+						update_led();
+						break;
+					case CAPS:
+						caps ^= 1;
+						update_led();
+						break;
+					case SCROLL:
+						scroll ^= 1;
+						update_led();
+						break;
+				}
+			}
 			return (&capchar[0]);
 		}
 	}
