@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <signal.h>
@@ -23,10 +23,11 @@ static char sccsid[] = "@(#)main.c	5.2 (Berkeley) %G%";
 
 char dflag;
 char lflag;
+char rflag;
 char tflag;
 char vflag;
 
-char *prefix = "y";
+char *file_prefix = "y";
 char *myname = "yacc";
 char *temp_form = "yacc.XXXXXXX";
 
@@ -34,6 +35,7 @@ int lineno;
 int outline;
 
 char *action_file_name;
+char *code_file_name;
 char *defines_file_name;
 char *input_file_name = "";
 char *output_file_name;
@@ -43,6 +45,7 @@ char *verbose_file_name;
 
 FILE *action_file;	/*  a temp file, used to save actions associated    */
 			/*  with rules until the parser is written	    */
+FILE *code_file;	/*  y.code.c (used when the -r option is specified) */
 FILE *defines_file;	/*  y.tab.h					    */
 FILE *input_file;	/*  the input file				    */
 FILE *output_file;	/*  y.tab.c					    */
@@ -112,7 +115,7 @@ set_signals()
 
 usage()
 {
-    fprintf(stderr, "usage: %s [-dltv] [-b prefix] filename\n", myname);
+    fprintf(stderr, "usage: %s [-dlrtv] [-b file_prefix] filename\n", myname);
     exit(1);
 }
 
@@ -136,13 +139,17 @@ char *argv[];
 	    if (i + 1 < argc) usage();
 	    return;
 
-	case '_':
+	case '-':
 	    ++i;
 	    goto no_more_options;
 
 	case 'b':
-	    if (*++s || ++i >= argc) usage();
-	    prefix = argv[i];
+	    if (*++s)
+		 file_prefix = s;
+	    else if (++i < argc)
+		file_prefix = argv[i];
+	    else
+		usage();
 	    continue;
 
 	case 'd':
@@ -151,6 +158,10 @@ char *argv[];
 
 	case 'l':
 	    lflag = 1;
+	    break;
+
+	case 'r':
+	    rflag = 1;
 	    break;
 
 	case 't':
@@ -180,6 +191,10 @@ char *argv[];
 		lflag = 1;
 		break;
 
+	    case 'r':
+		rflag = 1;
+		break;
+
 	    case 't':
 		tflag = 1;
 		break;
@@ -207,8 +222,12 @@ unsigned n;
 {
     register char *p;
 
-    p = calloc((unsigned) 1, n);
-    if (!p) no_space();
+    p = NULL;
+    if (n)
+    {
+	p = CALLOC(1, n);
+	if (!p) no_space();
+    }
     return (p);
 }
 
@@ -257,27 +276,40 @@ create_file_names()
     mktemp(text_file_name);
     mktemp(union_file_name);
 
-    len = strlen(prefix);
-    if (dflag)
-    {
-	/*  the number 7 below is the size of ".tab.h"; sizeof is not used  */
-	/*  because of a C compiler that thinks sizeof(".tab.h") == 6	    */
-	defines_file_name = MALLOC(len + 7);
-	if (defines_file_name == 0) no_space();
-	strcpy(defines_file_name, prefix);
-	strcpy(defines_file_name + len, DEFINES_SUFFIX);
-    }
+    len = strlen(file_prefix);
 
     output_file_name = MALLOC(len + 7);
-    if (output_file_name == 0) no_space();
-    strcpy(output_file_name, prefix);
+    if (output_file_name == 0)
+	no_space();
+    strcpy(output_file_name, file_prefix);
     strcpy(output_file_name + len, OUTPUT_SUFFIX);
+
+    if (rflag)
+    {
+	code_file_name = MALLOC(len + 8);
+	if (code_file_name == 0)
+	    no_space();
+	strcpy(code_file_name, file_prefix);
+	strcpy(code_file_name + len, CODE_SUFFIX);
+    }
+    else
+	code_file_name = output_file_name;
+
+    if (dflag)
+    {
+	defines_file_name = MALLOC(len + 7);
+	if (defines_file_name == 0)
+	    no_space();
+	strcpy(defines_file_name, file_prefix);
+	strcpy(defines_file_name + len, DEFINES_SUFFIX);
+    }
 
     if (vflag)
     {
 	verbose_file_name = MALLOC(len + 8);
-	if (verbose_file_name == 0) no_space();
-	strcpy(verbose_file_name, prefix);
+	if (verbose_file_name == 0)
+	    no_space();
+	strcpy(verbose_file_name, file_prefix);
 	strcpy(verbose_file_name + len, VERBOSE_SUFFIX);
     }
 }
@@ -290,31 +322,47 @@ open_files()
     if (input_file == 0)
     {
 	input_file = fopen(input_file_name, "r");
-	if (input_file == 0) open_error(input_file_name);
+	if (input_file == 0)
+	    open_error(input_file_name);
     }
 
     action_file = fopen(action_file_name, "w");
-    if (action_file == 0) open_error(action_file_name);
+    if (action_file == 0)
+	open_error(action_file_name);
 
     text_file = fopen(text_file_name, "w");
-    if (text_file == 0) open_error(text_file_name);
+    if (text_file == 0)
+	open_error(text_file_name);
 
     if (vflag)
     {
 	verbose_file = fopen(verbose_file_name, "w");
-	if (verbose_file == 0) open_error(verbose_file_name);
+	if (verbose_file == 0)
+	    open_error(verbose_file_name);
     }
 
     if (dflag)
     {
 	defines_file = fopen(defines_file_name, "w");
-	if (defines_file == 0) open_error(defines_file_name);
+	if (defines_file == 0)
+	    open_error(defines_file_name);
 	union_file = fopen(union_file_name, "w");
-	if (union_file ==  0) open_error(union_file_name);
+	if (union_file ==  0)
+	    open_error(union_file_name);
     }
 
     output_file = fopen(output_file_name, "w");
-    if (output_file == 0) open_error(output_file_name);
+    if (output_file == 0)
+	open_error(output_file_name);
+
+    if (rflag)
+    {
+	code_file = fopen(code_file_name, "w");
+	if (code_file == 0)
+	    open_error(code_file_name);
+    }
+    else
+	code_file = output_file;
 }
 
 
