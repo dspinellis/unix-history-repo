@@ -8,7 +8,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.20	%G%";
+static char SccsId[] = "@(#)deliver.c	3.21	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a particular address.
@@ -587,6 +587,8 @@ sendto(list, copyf)
 	for (p = list; more; )
 	{
 		/* find the end of this address */
+		while (*p == ' ' || *p == '\t')
+			p++;
 		q = p;
 		while ((c = *p++) != '\0' && c != ',' && c != '\n')
 			continue;
@@ -690,11 +692,19 @@ recipient(a)
 	a->q_next = NULL;
 
 	/*
-	**  Alias the name.
+	**  Alias the name and handle :include: specs.
 	*/
 
 	if (a->q_mailer == M_LOCAL)
-		alias(a);
+	{
+		if (strncmp(a->q_user, ":include:", 9) == 0)
+		{
+			a->q_flags |= QDONTSEND;
+			include(&a->q_user[9]);
+		}
+		else
+			alias(a);
+	}
 
 	/*
 	**  If the user is local and still being sent, verify that
@@ -723,8 +733,52 @@ recipient(a)
 				forward(a);
 		}
 	}
+}
+/*
+**  INCLUDE -- handle :include: specification.
+**
+**	Parameters:
+**		fname -- filename to include.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		reads the :include: file and sends to everyone
+**		listed in that file.
+*/
 
-	return;
+include(fname)
+	char *fname;
+{
+	char buf[MAXLINE];
+	register FILE *fp;
+
+	if (Verbose)
+		message("050", "Including file %s", fname);
+	fp = fopen(fname, "r");
+	if (fp == NULL)
+	{
+		usrerr("Cannot open %s", fname);
+		return;
+	}
+
+	/* read the file -- each line is a comma-separated list. */
+	while (fgets(buf, sizeof buf, fp) != NULL)
+	{
+		register char *p = index(buf, '\n');
+
+		if (p != NULL)
+			*p = '\0';
+		if (buf[0] == '\0')
+			continue;
+		To = fname;
+		if (Verbose)
+			message("050", " >> %s", buf);
+		sendto(buf, 1);
+	}
+
+	fclose(fp);
 }
 /*
 **  MAILFILE -- Send a message to a file.
