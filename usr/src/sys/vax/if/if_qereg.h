@@ -1,5 +1,4 @@
-
-/*	@(#)if_qereg.h	1.1 (Berkeley) %G% */
+/*	@(#)if_qereg.h	6.1 (Berkeley) %G% */
 
 /* @(#)if_qereg.h	1.2 (ULTRIX) 1/3/85 */
  
@@ -41,8 +40,8 @@
  */
 struct qedevice {
 	u_short	qe_sta_addr[2]; 	/* Station address (actually 6 	*/
-	u_short	qe_rcvlist_lo; 		/* Recieve list lo address 	*/
-	u_short	qe_rcvlist_hi; 		/* Recieve list hi address 	*/
+	u_short	qe_rcvlist_lo; 		/* Receive list lo address 	*/
+	u_short	qe_rcvlist_hi; 		/* Receive list hi address 	*/
 	u_short	qe_xmtlist_lo;		/* Transmit list lo address 	*/
 	u_short	qe_xmtlist_hi;		/* Transmit list hi address 	*/
 	u_short	qe_vector;		/* Interrupt vector 		*/
