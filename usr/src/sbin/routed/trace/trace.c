@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)trace.c	4.1 %G%";
+static char sccsid[] = "@(#)trace.c	4.2 %G%";
 #endif
 
 #include <sys/param.h>
@@ -8,6 +8,7 @@ static char sccsid[] = "@(#)trace.c	4.1 %G%";
 #include <net/in.h>
 #include <errno.h>
 #include <stdio.h>
+#include <netdb.h>
 #include "rip.h"
 
 struct	sockaddr_in myaddr = { AF_INET, IPPORT_RESERVED-1 };
@@ -21,6 +22,8 @@ main(argc, argv)
 	struct sockaddr_in router;
 	char packet[MAXPACKETSIZE];
 	register struct rip *msg = (struct rip *)packet;
+	struct hostent *hp;
+	struct servent *sp;
 	
 	if (argc < 3) {
 usage:
@@ -50,13 +53,19 @@ usage:
 		goto usage;
 	bzero((char *)&router, sizeof (router));
 	router.sin_family = AF_INET;
-	router.sin_port = htons(IPPORT_ROUTESERVER);
+	sp = getservbyname("router", "udp");
+	if (sp == 0) {
+		printf("udp/router: service unknown\n");
+		exit(1);
+	}
+	router.sin_port = htons(sp->s_port);
 	while (argc > 0) {
-		router.sin_addr.s_addr = rhost(argv);
-		if (router.sin_addr.s_addr == -1) {
+		hp = gethostbyname(*argv);
+		if (hp == 0) {
 			printf("%s: unknown\n", *argv);
 			continue;
 		}
+		bcopy(hp->h_addr, &router.sin_addr, hp->h_length);
 		if (send(s, &router, packet, size) < 0)
 			perror(*argv);
 		argv++, argc--;

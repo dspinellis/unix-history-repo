@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)query.c	4.2 %G%";
+static char sccsid[] = "@(#)query.c	4.3 %G%";
 #endif
 
 #include <sys/param.h>
@@ -8,13 +8,11 @@ static char sccsid[] = "@(#)query.c	4.2 %G%";
 #include <net/in.h>
 #include <errno.h>
 #include <stdio.h>
+#include <netdb.h>
 #include "rip.h"
-
-struct	sockaddr_in myaddr = { AF_INET };
 
 int	s;
 char	packet[MAXPACKETSIZE];
-char	*raddr();
 
 main(argc, argv)
 	int argc;
@@ -27,7 +25,7 @@ main(argc, argv)
 		printf("usage: query hosts...\n");
 		exit(1);
 	}
-	s = socket(SOCK_DGRAM, 0, &myaddr, 0);
+	s = socket(SOCK_DGRAM, 0, 0, 0);
 	if (s < 0) {
 		perror("socket");
 		exit(2);
@@ -62,15 +60,23 @@ query(host)
 {
 	struct sockaddr_in router;
 	register struct rip *msg = (struct rip *)packet;
+	struct hostent *hp;
+	struct servent *sp;
 
 	bzero((char *)&router, sizeof (router));
-	router.sin_addr.s_addr = rhost(&host);
-	if (router.sin_addr.s_addr == -1) {
+	hp = gethostbyname(host);
+	if (hp == 0) {
 		printf("%s: unknown\n", host);
 		exit(1);
 	}
+	bcopy(hp->h_addr, &router.sin_addr, hp->h_length);
 	router.sin_family = AF_INET;
-	router.sin_port = htons(IPPORT_ROUTESERVER);
+	sp = getservbyname("router", "udp");
+	if (sp == 0) {
+		printf("udp/router: service unknown\n");
+		exit(1);
+	}
+	router.sin_port = htons(sp->s_port);
 	msg->rip_cmd = RIPCMD_REQUEST;
 	msg->rip_nets[0].rip_dst.sa_family = AF_UNSPEC;
 	msg->rip_nets[0].rip_metric = HOPCNT_INFINITY;
@@ -88,12 +94,13 @@ rip_input(from, size)
 	register struct rip *msg = (struct rip *)packet;
 	struct netinfo *n;
 	char *name;
+	struct hostent *hp;
+	struct netent *np;
 
 	if (msg->rip_cmd != RIPCMD_RESPONSE)
 		return;
-	name = raddr(from->sin_addr);
-	if (name == 0)
-		name = "???";
+	hp = gethostbyaddr(&from->sin_addr, sizeof (struct in_addr));
+	name = hp == 0 ? "???" : hp->h_name;
 	printf("from %s(%x):\n", name, from->sin_addr);
 	size -= sizeof (int);
 	n = msg->rip_nets;
@@ -103,11 +110,57 @@ rip_input(from, size)
 		if (size < sizeof (struct netinfo))
 			break;
 		sin = (struct sockaddr_in *)&n->rip_dst;
-		name = raddr(sin->sin_addr);
-		if (name == 0)
-			name = "???";
+		if (in_lnaof(sin->sin_addr) == INADDR_ANY) {
+			np = getnetbyaddr(in_netof(sin->sin_addr));
+			name = np ? np->n_name : "???";
+		} else {
+			hp = gethostbyaddr(&sin->sin_addr,
+				sizeof (struct in_addr));
+			name = hp ? hp->h_name : "???";
+		}
 		printf("\t%s(%x), metric %d\n", name,
 			sin->sin_addr, n->rip_metric);
 		size -= sizeof (struct netinfo), n++;
 	}
+}
+
+/*
+ * Return the network number from an internet
+ * address; handles class a/b/c network #'s.
+ */
+in_netof(in)
+	struct in_addr in;
+{
+#if vax || pdp11
+	register u_long net;
+
+	if ((in.s_addr&IN_CLASSA) == 0)
+		return (in.s_addr & IN_CLASSA_NET);
+	if ((in.s_addr&IN_CLASSB) == 0)
+		return ((int)htons((u_short)(in.s_addr & IN_CLASSB_NET)));
+	net = htonl((u_long)(in.s_addr & IN_CLASSC_NET));
+	net >>= 8;
+	return ((int)net);
+#else
+	return (IN_NETOF(in));
+#endif
+}
+
+/*
+ * Return the local network address portion of an
+ * internet address; handles class a/b/c network
+ * number formats.
+ */
+in_lnaof(in)
+	struct in_addr in;
+{
+#if vax || pdp11
+#define	IN_LNAOF(in) \
+	(((in).s_addr&IN_CLASSA) == 0 ? (in).s_addr&IN_CLASSA_LNA : \
+		((in).s_addr&IN_CLASSB) == 0 ? (in).s_addr&IN_CLASSB_LNA : \
+			(in).s_addr&IN_CLASSC_LNA)
+	return ((int)htonl((u_long)IN_LNAOF(in)));
+#else
+	return (IN_LNAOF(in));
+#endif
 }

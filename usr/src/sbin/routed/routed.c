@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)routed.c	4.22 %G%";
+static char sccsid[] = "@(#)routed.c	4.23 %G%";
 #endif
 
 /*
@@ -15,6 +15,7 @@ static char sccsid[] = "@(#)routed.c	4.22 %G%";
 #include <nlist.h>
 #include <signal.h>
 #include <time.h>
+#include <netdb.h>
 #define	RIPCMDS
 #include "rip.h"
 #include "router.h"
@@ -327,14 +328,18 @@ gwkludge()
 	fscanf((fp), "dst %s gateway %s metric %d %s\n", \
 		dname, gname, &metric, qual)
 	for (;;) {
+		struct hostent *host;
+
 		if (readentry(fp) == EOF)
 			break;
-		dst.sin_addr.s_addr = rhost(&dname);
-		if (dst.sin_addr.s_addr == -1)
+		host = gethostbyname(dname);
+		if (host == 0)
 			continue;
-		gate.sin_addr.s_addr = rhost(&gname);
-		if (gate.sin_addr.s_addr == -1)
+		bcopy(host->h_addr, &dst.sin_addr, host->h_length);
+		host = gethostbyname(gname);
+		if (host == 0)
 			continue;
+		bcopy(host->h_addr, &gate.sin_addr, host->h_length);
 		ifp = (struct interface *)malloc(sizeof (*ifp));
 		bzero((char *)ifp, sizeof (*ifp));
 		ifp->int_flags = IFF_REMOTE;
