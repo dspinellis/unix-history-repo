@@ -1,8 +1,9 @@
-#	@(#)Makefile	8.1 (Berkeley) %G%
+#	@(#)Makefile	8.2 (Berkeley) %G%
 
 PROG=	pxp
 SRCDIR=	${.CURDIR}/../src
 .PATH:	${SRCDIR}
+EYACC=	${.CURDIR}/../eyacc/obj/eyacc
 
 CFLAGS+=-DRMOTHERS -w -I. -I${.CURDIR} -I${SRCDIR}
 SRCS=	TRdata.c Version.c call.c case.c const.c cset.c error.c fdec.c \
@@ -13,8 +14,15 @@ SRCS=	TRdata.c Version.c call.c case.c const.c cset.c error.c fdec.c \
 	yyseman.c yytree.c
 CLEANFILES=opc y.tab.c y.tab.h opcode.h version
 
-y.tab.h y.tab.c: ${SRCDIR}/pas.y
-	/usr/libexec/pascal/eyacc ${SRCDIR}/pas.y > /dev/null
+y.tab.h: ${SRCDIR}/pas.y ${SRCDIR}/gram
+	if [ -f ${EYACC} ]; then \
+		echo make y.tab.h and y.tab.c; \
+		rm -f y.tab.h y.tab.c; \
+		${EYACC} ${SRCDIR}/pas.y > /dev/null; \
+	else \
+		echo copy y.tab.h and y.tab.c; \
+		cp ${SRCDIR}/y.tab.c ${SRCDIR}/y.tab.h .; \
+	fi
 	ex - y.tab.c < ${SRCDIR}/gram
 
 newversion: version
