@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tcp_output.c	8.2 (Berkeley) %G%
+ *	@(#)tcp_output.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -74,6 +74,7 @@ again:
 	off = tp->snd_nxt - tp->snd_una;
 	win = min(tp->snd_wnd, tp->snd_cwnd);
 
+	flags = tcp_outflags[tp->t_state];
 	/*
 	 * If in persist timeout with window of 0, send 1 byte.
 	 * Otherwise, if window is small but nonzero
@@ -81,15 +82,32 @@ again:
 	 * and go to transmit state.
 	 */
 	if (tp->t_force) {
-		if (win == 0)
+		if (win == 0) {
+			/*
+			 * If we still have some data to send, then
+			 * clear the FIN bit.  Usually this would
+			 * happen below when it realizes that we
+			 * aren't sending all the data.  However,
+			 * if we have exactly 1 byte of unset data,
+			 * then it won't clear the FIN bit below,
+			 * and if we are in persist state, we wind
+			 * up sending the packet without recording
+			 * that we sent the FIN bit.
+			 *
+			 * We can't just blindly clear the FIN bit,
+			 * because if we don't have any more data
+			 * to send then the probe will be the FIN
+			 * itself.
+			 */
+			if (off < so->so_snd.sb_cc)
+				flags &= ~TH_FIN;
 			win = 1;
-		else {
+		} else {
 			tp->t_timer[TCPT_PERSIST] = 0;
 			tp->t_rxtshift = 0;
 		}
 	}
 
-	flags = tcp_outflags[tp->t_state];
 	len = min(so->so_snd.sb_cc, win) - off;
 
 	if (len < 0) {
