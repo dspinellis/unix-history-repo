@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mfs_vfsops.c	7.29 (Berkeley) %G%
+ *	@(#)mfs_vfsops.c	7.30 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -161,12 +161,27 @@ mfs_mount(mp, path, data, ndp, p)
 	register struct fs *fs;
 	register struct mfsnode *mfsp;
 	u_int size;
-	int error;
+	int flags, error;
 
+	/*
+	 * If updating, check whether changing from read-only to
+	 * read/write; if there is no device name, that's all we do.
+	 */
 	if (mp->mnt_flag & MNT_UPDATE) {
 		ump = VFSTOUFS(mp);
 		fs = ump->um_fs;
-		if (fs->fs_ronly && (mp->mnt_flag & MNT_RDONLY) == 0)
+		if (fs->fs_ronly == 0 && (mp->mnt_flag & MNT_RDONLY)) {
+			flags = WRITECLOSE;
+			if (mp->mnt_flag & MNT_FORCE)
+				flags |= FORCECLOSE;
+			if (vfs_busy(mp))
+				return (EBUSY);
+			error = ffs_flushfiles(mp, flags, p);
+			vfs_unbusy(mp);
+			if (error)
+				return (error);
+		}
+		if (fs->fs_ronly && (mp->mnt_flag & MNT_WANTRDWR))
 			fs->fs_ronly = 0;
 		return (0);
 	}
