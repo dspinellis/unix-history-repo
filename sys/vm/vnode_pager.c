@@ -37,7 +37,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vnode_pager.c	7.5 (Berkeley) 4/20/91
- *	$Id: vnode_pager.c,v 1.14 1994/03/19 22:24:40 davidg Exp $
+ *	$Id: vnode_pager.c,v 1.15 1994/03/22 06:15:10 davidg Exp $
  */
 
 /*
@@ -500,7 +500,10 @@ vnode_pager_addr(vp, address)
 
 	err = VOP_BMAP(vp,vblock,&rtvp,&block);
 
-	rtaddress = block * DEV_BSIZE + voffset;
+	if( err)
+		rtaddress = -1;
+	else
+		rtaddress = block * DEV_BSIZE + voffset;
 
 	return rtaddress;
 }
@@ -593,11 +596,9 @@ vnode_pager_io(vnp, m, count, reqpage, rw)
 		(vp->v_mount->mnt_stat.f_type == MOUNT_UFS)) ||
 		 (vp->v_mount->mnt_stat.f_type == MOUNT_NFS)) {
 		/*
-		 * we do not block for a kva, notice we default to a kva
-		 * conservative behavior
+		 * we do not block for a kva, notice we default to a kva conservative behavior
 		 */
-		kva = kmem_alloc_pageable(pager_map,
-			(mapsize = count*NBPG));
+		kva = kmem_alloc_pageable(pager_map, (mapsize = count*NBPG));
 		if( !kva) {
 			for (i = 0; i < count; i++) {
 				if (i != reqpage) {
@@ -729,6 +730,7 @@ vnode_pager_io(vnp, m, count, reqpage, rw)
 				pmap_enter(vm_map_pmap(pager_map),
 					kva, VM_PAGE_TO_PHYS(m[reqpage]),
 					VM_PROT_DEFAULT, TRUE);
+
 				/*
 				 * copy the data from the buffer
 				 */
@@ -844,9 +846,8 @@ vnode_pager_io(vnp, m, count, reqpage, rw)
 		 * and map the pages to be read into the kva
 		 */
 		for (i = 0; i < count; i++)
-			pmap_enter(vm_map_pmap(pager_map),
-				kva + NBPG * i, VM_PAGE_TO_PHYS(m[i]),
-				VM_PROT_DEFAULT, TRUE);
+			pmap_kenter( kva + NBPG * i, VM_PAGE_TO_PHYS(m[i]));
+		pmap_update();
 		VHOLD(vp);
 		bp = getpbuf();
 

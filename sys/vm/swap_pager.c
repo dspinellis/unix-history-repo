@@ -39,7 +39,7 @@
  * from: Utah $Hdr: swap_pager.c 1.4 91/04/30$
  * from: @(#)swap_pager.c	7.4 (Berkeley) 5/7/91
  *
- * $Id: swap_pager.c,v 1.22 1994/03/21 09:46:09 davidg Exp $
+ * $Id: swap_pager.c,v 1.23 1994/03/22 06:07:12 davidg Exp $
  */
 
 /*
@@ -1050,15 +1050,10 @@ swap_pager_input(swp, m, count, reqpage)
 	 * map our page(s) into kva for input
 	 */
 	for (i = 0; i < count; i++) {
-		pmap_enter(vm_map_pmap(pager_map), kva + NBPG * i,
-			VM_PAGE_TO_PHYS(m[i]), VM_PROT_ALL, TRUE);
+		pmap_kenter( kva + NBPG * i, VM_PAGE_TO_PHYS(m[i]));
 	}
+	pmap_update();
 				
-
-/*
-	printf("obj: 0x%x off: 0x%x poff: 0x%x, sz: %d, blk: %d read\n",
-		object, m[0]->offset, paging_offset, count, reqaddr[0]);
-*/
 
 	/*
 	 * Get a swap buffer header and perform the IO
@@ -1389,9 +1384,9 @@ retrygetspace:
 	 * map our page(s) into kva for I/O
 	 */
 	for (i = 0; i < count; i++) {
-		pmap_enter(vm_map_pmap(pager_map), kva + NBPG * i,
-			VM_PAGE_TO_PHYS(m[i]), VM_PROT_ALL, TRUE);
+		pmap_kenter( kva + NBPG * i, VM_PAGE_TO_PHYS(m[i]));
 	}
+	pmap_update();
 
 	/*
 	 * get the base I/O offset into the swap file
