@@ -6,12 +6,13 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)strtoul.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)strtoul.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <limits.h>
 #include <ctype.h>
 #include <errno.h>
+#include <stdlib.h>
 
 /*
  * Convert a string to an unsigned long integer.
