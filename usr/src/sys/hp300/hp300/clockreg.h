@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: clockreg.h 1.13 89/11/30$
+ * from: Utah $Hdr: clockreg.h 1.14 91/01/18$
  *
- *	@(#)clockreg.h	7.2 (Berkeley) %G%
+ *	@(#)clockreg.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -40,7 +40,7 @@ struct clkreg {
 };
 
 /* base/offsets for register access (for locore.s) */
-#define	CLKBASE		IOP(0x5F8000)
+#define	CLKBASE		IIOPOFF(0x5F8000)
 #define	CLKCR1		0x1
 #define	CLKCR2		0x3
 #define	CLKCR3		CLKCR1
