@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwinit.c	3.12 83/12/02";
+static	char *sccsid = "@(#)wwinit.c	3.13 83/12/17";
 #endif
 
 #include "ww.h"
@@ -28,7 +28,6 @@ wwinit()
 	wwnewtty.ww_sgttyb.sg_ispeed = wwoldtty.ww_sgttyb.sg_ispeed;
 	wwnewtty.ww_sgttyb.sg_ospeed = wwoldtty.ww_sgttyb.sg_ospeed;
 	wwnewtty.ww_lmode = wwoldtty.ww_lmode;
-	wwnewtty.ww_pgrp = wwoldtty.ww_pgrp;
 	wwnewtty.ww_ldisc = wwoldtty.ww_ldisc;
 	wwnewtty.ww_sgttyb.sg_flags |= CBREAK;
 	wwnewtty.ww_sgttyb.sg_flags &= ~(ECHO|CRMOD);
