@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_fork.c	7.33 (Berkeley) %G%
+ *	@(#)kern_fork.c	7.34 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -48,6 +48,7 @@ fork1(p1, isvfork, retval)
 {
 	register struct proc *p2;
 	register int count, uid;
+	struct proc *newproc;
 	struct proc **hash;
 	static int nextpid, pidchecked = 0;
 
@@ -75,7 +76,7 @@ fork1(p1, isvfork, retval)
 		return (EAGAIN);
 
 	/* Allocate new proc. */
-	MALLOC(p2, struct proc *, sizeof(struct proc), M_PROC, M_WAITOK);
+	MALLOC(newproc, struct proc *, sizeof(struct proc), M_PROC, M_WAITOK);
 
 	/*
 	 * Find an unused process ID.  We remember a range of unused IDs
@@ -126,6 +127,7 @@ again:
 
 	/* Link onto allproc (this should probably be delayed). */
 	nprocs++;
+	p2 = newproc;
 	p2->p_stat = SIDL;			/* protect against others */
 	p2->p_pid = nextpid;
 	p2->p_nxt = allproc;
