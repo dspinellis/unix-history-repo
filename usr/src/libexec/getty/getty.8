@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)getty.8	6.3 (Berkeley) %G%
+.\"	@(#)getty.8	6.4 (Berkeley) %G%
 .\"
 .TH GETTY 8  ""
 .UC 4
@@ -23,9 +23,9 @@ being used.
 .PP
 The argument
 .I tty
-is the special device file in /dev to open for the terminal (e.g., 'ttyh0').
+is the special device file in /dev to open for the terminal (e.g., ``ttyh0'').
 If there is no argument or the argument is
-"\-", the tty line is assumed to be open as file descriptor 0.
+``\-'', the tty line is assumed to be open as file descriptor 0.
 .PP
 The
 .I type
@@ -84,6 +84,14 @@ table.
 can be set to timeout after some interval,
 which will cause dial up lines to hang up
 if the login name is not entered reasonably quickly.
+.SH DIAGNOSTICS
+\fIttyxx\fR\|\fB: No such device or address\fR.
+\fIttyxx\fR\|\fB: No such file or address\fR.
+A terminal which is turned
+on in the \fIttys\fR file cannot be opened, likely because the requisite
+lines are either not configured into the system, the associated device
+was not attached during boot-time system configuration,
+or the special file in /dev does not exist.
 .SH FILES
 /etc/gettytab
 .SH "SEE ALSO"
