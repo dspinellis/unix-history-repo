@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)fio.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)fio.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -432,7 +432,7 @@ expand(name)
 		}
 		return savestr(prevfile);
 	case '&':
-		if (name[1] == 0 && (name = value("mbox")) == NOSTR)
+		if (name[1] == 0 && (name = value("MBOX")) == NOSTR)
 			name = "~/mbox";
 		/* fall through */
 	}
@@ -442,7 +442,7 @@ expand(name)
 	}
 	/* catch the most common shell meta character */
 	if (name[0] == '~' && (name[1] == '/' || name[1] == '\0')) {
-		sprintf(xname, "%s/%s", homedir, name + 1);
+		sprintf(xname, "%s%s", homedir, name + 1);
 		name = savestr(xname);
 	}
 	if (!anyof(name, "~{[*?$`'\"\\"))
@@ -505,6 +505,25 @@ getfold(name)
 	else
 		sprintf(name, "%s/%s", homedir, folder);
 	return (0);
+}
+
+/*
+ * Return the name of the dead.letter file.
+ */
+char *
+getdeadletter()
+{
+	register char *cp;
+
+	if ((cp = value("DEAD")) == NOSTR || (cp = expand(cp)) == NOSTR)
+		cp = expand("~/dead.letter");
+	else if (*cp != '/') {
+		char buf[PATHSIZE];
+
+		(void) sprintf(buf, "~/%s", cp);
+		cp = expand(buf);
+	}
+	return cp;
 }
 
 /*

@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)def.h	5.16 (Berkeley) %G%
+ *	@(#)def.h	5.17 (Berkeley) %G%
  */
 
 #include <sys/param.h>		/* includes <sys/types.h> */
@@ -266,6 +266,7 @@ char	*copy();
 char	*copyin();
 char	*detract();
 char	*expand();
+char	*getdeadletter();
 char	*gets();
 char	*hfield();
 char	*name1();

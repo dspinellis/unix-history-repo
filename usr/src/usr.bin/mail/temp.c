@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)temp.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)temp.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -71,9 +71,6 @@ tinit()
 	homedir = savestr(cp);
 	sprintf(buf, "%s/.mailrc", homedir);
 	mailrc = savestr(buf);
-	sprintf(buf, "%s/dead.letter", homedir);
-	deadletter = savestr(buf);
 	if (debug)
-		printf("user = %s, deadletter = %s, mailrc = %s\n",
-			myname, deadletter, mailrc);
+		printf("user = %s, mailrc = %s\n", myname, mailrc);
 }
