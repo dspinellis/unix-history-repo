@@ -248,6 +248,7 @@ tcp_usrreq(so, req, m, nam, rights)
 	case PRU_RCVOOB:
 		if ((so->so_oobmark == 0 &&
 		    (so->so_state & SS_RCVATMARK) == 0) ||
+		    so->so_options & SO_OOBINLINE ||
 		    tp->t_oobflags & TCPOOB_HADDATA) {
 			error = EINVAL;
 			break;
@@ -268,8 +269,16 @@ tcp_usrreq(so, req, m, nam, rights)
 			error = ENOBUFS;
 			break;
 		}
-		tp->snd_up = tp->snd_una + so->so_snd.sb_cc + 1;
+		/*
+		 * According to RFC961 (Assigned Protocols),
+		 * the urgent pointer points to the last octet
+		 * of urgent data.  We continue, however,
+		 * to consider it to indicate the first octet
+		 * of data past the urgent section.
+		 * Otherwise, snd_up should be one lower.
+		 */
 		sbappend(&so->so_snd, m);
+		tp->snd_up = tp->snd_una + so->so_snd.sb_cc;
 		tp->t_force = 1;
 		error = tcp_output(tp);
 		tp->t_force = 0;
