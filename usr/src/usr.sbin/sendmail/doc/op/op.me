@@ -1,11 +1,17 @@
 .ls 2
 .he 'Sendmail Installation and Operation Guide''%'
-.fo 'Version 3.1'DRAFT'Last Mod %G%'
+.fo 'Version 3.2'DRAFT'Last Mod %G%'
 .nr si 3n
 .de $0
 .(x
-.ti (\\$3u-1u)*3n
+.in (\\$3u-1u)*3n
 \\$2.  \\$1
+.)x
+..
+.de $C
+.(x
+.in 0
+\\$1 \\$2.  \\$3
 .)x
 ..
 .+c
@@ -18,11 +24,18 @@ INSTALLATION AND OPERATION GUIDE
 .sz
 Eric Allman
 Britton-Lee, Inc.
+.sp
+Version 3.2
 .)l
 .sp 3
 .pp
 .i Sendmail
-implements a general purpose internetwork mail routing facility.
+implements a general purpose internetwork mail routing facility
+under the UNIX*
+.(f
+*UNIX is a trademark of Bell Laboratories.
+.)f
+operating system.
 It is not tied to any one transport protocol \*-
 its function may be likened to a crossbar switch,
 relaying messages from one domain into another.
@@ -56,7 +69,7 @@ Section one describes how to do a basic
 .i sendmail
 installation.
 Section two
-describes the day-to-day information you should know
+explains the day-to-day information you should know
 to maintain your mail system.
 If you have a relatively normal site,
 these two sections should contain sufficient information
@@ -69,7 +82,7 @@ file.
 This section is for masochists
 and people who must write their own configuration file.
 Section four
-gives you some parameters that may be safely tweaked.
+describes some parameters that may be safely tweaked.
 Section five
 has information regarding the command line arguments.
 The appendixes give a brief
@@ -129,13 +142,14 @@ There are two parameters you will have to adjust
 in each of these files.
 The line beginning
 .q DH
-defines the standard name of your host.
+defines the canonical name of your host.
 The line beginning
 .q CH
 defines the names that your host might be known by;
 it should include the name listed in the
 .q DH
-line.
+line
+and any aliases that your host goes by.
 For example, a configuration might include the lines:
 .(b
 DHucsfcgl
@@ -145,9 +159,9 @@ This would indicate that the
 .q standard
 name for the host is
 .q ucsfcgl
-and that it might be known by the names
+and that it is known by the names
 .q ucsfcgl
-or
+and
 .q cgl.
 .pp
 The changed file should be renamed;
@@ -163,11 +177,33 @@ using whatever name is appropriate for your site.
 The file
 .q ucsfcgl.cf
 is now ready for installation as
-.i /usr/lib/sendmail.cf.
+.i /usr/lib/sendmail.cf :
+.(b
+cp ucsfcgl.cf /usr/lib/sendmail.cf
+.)b
 .sh 2 "System Changes"
 .pp
 Along with building a configuration file,
-you will have to install the sendmail startup into your system.
+you will have to install the sendmail startup into your UNIX system.
+If youa re doing this installation
+in conjunction with a regular Berkeley UNIX install,
+these steps will already be complete.
+.sh 3 "/usr/lib/sendmail"
+.pp
+The binary for sendmail is located in /usr/lib.
+There is a version available in the source directory
+that is probably inadequate for your system.
+You should plan on recompiling and installing the entire system:
+.(b
+cd src
+rm -f *.o
+make
+cp sendmail /usr/lib
+.)b
+.sh 3 "/usr/lib/sendmail.cf"
+.pp
+The configuration file must be installed in /usr/lib.
+This is described above.
 .sh 3 "/usr/spool/mqueue"
 .pp
 The directory
@@ -181,6 +217,51 @@ when
 .i mqueue
 should be owned by the sendmail owner
 and mode 755.
+.sh 3 "/usr/lib/aliases*"
+.pp
+The system aliases are held in three files.
+The file
+.q /usr/lib/aliases
+is the master copy.
+A sample is given in
+.q lib/aliases
+which includes some aliases which
+.i must
+be defined:
+.(b
+cp lib/aliases /usr/lib/aliases
+.)b
+You should extend this file with any aliases that are apropos to your system.
+.pp
+Normally
+.i sendmail
+looks at a version of these files maintained by the
+.i dbm (3)
+routines.
+These are stored in
+.q /usr/lib/aliases.dir
+and
+.q /usr/lib/aliases.pag.
+These can initially be created as empty files,
+but they will have to be initialized promptly.
+These should be mode 666 if you are running a reasonably relaxed system:
+.(b
+cp /dev/null /usr/lib/aliases.dir
+cp /dev/null /usr/lib/aliases.pag
+chmod 666 /usr/lib/aliases.*
+/usr/lib/sendmail -bi
+.)b
+.sh 3 "/usr/lib/sendmail.fc"
+.pp
+If you intend to install the frozen version of the configuration file
+(for quick startup)
+you should create the file /usr/lib/sendmail.fc
+and initialize it.
+This step may be safely skipped.
+.(b
+cp /dev/null /usr/lib/sendmail.fc
+/usr/lib/sendmail -bz
+.)b
 .sh 3 "/etc/rc"
 .pp
 It will be necessary to start up the sendmail daemon when your system reboots.
@@ -191,9 +272,9 @@ and it processes the queue periodically
 to insure that mail gets delivered when hosts come up.
 .pp
 Add the following lines to
-.i /etc/rc
+.q /etc/rc
 (or
-.i /etc/rc.local
+.q /etc/rc.local
 as appropriate)
 in the area where it is starting up the daemons:
 .(b
@@ -218,7 +299,32 @@ causes it to listen on the SMTP port,
 and
 .q \-q10m
 causes it to run the queue every ten minutes.
-.sh 3 "Installing syslog"
+.pp
+If you are not running a version of UNIX
+that supports Berkeley TCP/IP,
+do not include the
+.b \-bd
+flag.
+.sh 3 "/usr/lib/sendmail.hf"
+.pp
+This is the help file used by the SMTP
+.b HELP
+command.
+It should be copied from
+.q lib/sendmail.hf :
+.(b
+cp lib/sendmail.hf /usr/lib
+.)b
+.sh 3 "/usr/lib/sendmail.st"
+.pp
+If you wish to collect statistics
+about your mail traffic,
+you should create the file
+.q /usr/lib/sendmail.st.
+This file does not grow.
+It is printed with the program
+.q aux/mailstats.
+.sh 3 "/etc/syslog"
 .pp
 You may want to run the
 .i syslog
@@ -257,18 +363,19 @@ flag:
 This creates the file
 .i /usr/lib/sendmail.fc
 (\c
-.q "frozen configuration."
+.q "frozen configuration" ).
 This file is an image of
 .i sendmail 's
 data space after reading in the configuration file.
 If this file exists,
 it is used instead of
 .i /usr/lib/sendmail.cf
-and must be rebuilt every time
+.i sendmail.fc
+must be rebuilt manually every time
 .i sendmail.cf
 is changed.
 .pp
-This file will be ignored
+The frozen configuration file will be ignored
 if a
 .b \-C
 flag is specified
@@ -292,31 +399,26 @@ the word
 and a message.
 .sh 3 "Levels"
 .pp
-The level of logging can be set for sendmail.
-The default using a standard configuration table is level 9.
-The levels are as follows:
-.ip 0
-No logging.
-.ip 1
-Major problems only.
-.ip 2
-Message collections and failed deliveries.
-.ip 3
-Successful deliveries.
-.ip 4
-Messages being defered
-(due to a host being down, etc.).
-.ip 5
-Normal message queueups.
-.ip 6
-Unusual but benign incidents,
-e.g.,
-trying to process a locked queue file.
-.ip 12
-Several messages that are basically only of interest
-when debugging.
-.ip 16
-Verbose information regarding the queue.
+If you have
+.i syslog (8)
+or an equivalent installed,
+you will be able to do logging.
+There is a large amount of information that can be logged.
+The log is arranged as a succession of levels.
+At the lowest level
+only extremely strange situations are logged.
+At the highest level,
+even the most mundane and uninteresting events
+are recorded for posterity.
+As a convention,
+log levels under ten
+are considered
+.q useful;
+log levels above ten
+are usually for debugging purposes.
+.pp
+A complete description of the log levels
+is given in section 4.3.
 .sh 2 "The Mail Queue"
 .pp
 The mail queue should be processed transparently.
@@ -570,9 +672,13 @@ may be rebuilt explicitly by executing the command
 /usr/lib/sendmail \-bi
 .)b
 .pp
-The alias database will be rebuilt automatically by
+If the
+.q D
+option is specified in the configuration,
 .i sendmail
-if possible.
+will rebuild the alias database automatically
+if possible
+when it is out of date.
 The conditions under which it will do this are:
 .np
 The DBM version of the database is mode 666.   -or-
@@ -580,18 +686,14 @@ The DBM version of the database is mode 666.   -or-
 .i Sendmail
 is running setuid to root.
 .lp
-In either case
-the
-.b D
-option must be specified.
-This option can be dangerous
-on extremely heavily loaded machines
+Auto-rebuild can be dangerous
+on heavily loaded machines
 with large alias files;
 if it might take more than five minutes
 to rebuild the database,
 there is a chance that several processes will start the rebuild process
 simultaneously.
-.sh 3 "Potential problems with the alias database"
+.sh 3 "Potential problems"
 .pp
 There are a number of problems that can occur
 with the alias database.
@@ -618,17 +720,26 @@ it adds an alias of the form
 .)b
 (which is not normally legal).
 Before sendmail will access the database,
-it checks to insure that this entry exists.
+it checks to insure that this entry exists\**.
+.(f
+\**The
+.q a
+option is required in the configuration
+for this action to occur.
+This should normally be specified
+unless you are running
+.i delivermail
+in parallel with
+.i sendmail.
+.)f
 It will wait up to five minutes
 for this entry to appear,
 at which point it will force a rebuild itself\**.
 .(f
 \**Note:
 the
-.q a
-and
 .q D
-options must be specified in the configuration file
+option must be specified in the configuration file
 for this operation to occur.
 .)f
 .sh 3 "List owners"
@@ -648,7 +759,8 @@ has no control over the maintanence of the list itself;
 in this case the list maintainer would be the owner of the list.
 For example:
 .(b
-unix-wizards: eric@ucbarpa, wnj@monet, sam@matisse, nosuchuser
+unix-wizards: eric@ucbarpa, wnj@monet, nosuchuser,
+	sam@matisse
 owner-unix-wizards: eric@ucbarpa
 .)b
 would cause
@@ -828,7 +940,7 @@ The format is:
 .i pathname
 .i flags
 .i sender-rws
-.i recipient-rws
+.i rcpt-rws
 .i argv
 .)b
 where
@@ -843,7 +955,7 @@ of the mailer,
 .i sender-rws
 is the rewriting set
 to apply to sender addresses,
-.i recipient-rws
+.i rcpt-rws
 is the rewriting set
 to apply to recipient addresses,
 and
@@ -872,6 +984,7 @@ The
 is macro expanded before insertion into the message.
 If the
 .i mflags
+(surrounded by question marks)
 are specified,
 at least one of the specified flags
 must be stated in the mailer definition
@@ -936,7 +1049,7 @@ The syntax of this line is:
 .i user1
 .i user2 ...
 .)b
-There may be any number of these lines.
+There may be more than one of these lines.
 .sh 3 "P \*- precedence definitions"
 .pp
 Values for the
@@ -958,7 +1071,7 @@ the message class is set to
 Higher numbers mean higher precedence.
 Numbers less than zero
 have the special property
-that error messages will not be returned;
+that error messages will not be returned.
 The default precedence is zero.
 For example,
 our list of precedences is:
@@ -1321,7 +1434,7 @@ but the
 .i user
 may be multi-part.
 .pp
-A RHS may also be proceeded by a
+A RHS may also be preceeded by a
 .b $@
 or a
 .b $:
@@ -1341,7 +1454,7 @@ The
 .b $@
 and
 .b $:
-prefixes may proceed a
+prefixes may preceed a
 .b $>
 spec;
 for example:
@@ -1831,6 +1944,10 @@ These flags are only passed if they were passed to
 .i sendmail,
 so that mailers that give errors under some circumstances
 can be placated.
+If the mailer is not picky
+you can just specify
+.q "\-f $g"
+in the argv template.
 If the mailer must be called as
 .b root
 the
@@ -1974,7 +2091,8 @@ the specifications:
 Mlocal	/bin/mail	rlsm	10	20	mail \-d $u
 Mether	[IPC]	meC	11	21	IPC $h
 .)b
-specifies two mailers.
+specifies a mailer to do local delivery
+and a mailer for ethernet delivery.
 The first is called
 .q local,
 is located in the file
@@ -1993,8 +2111,8 @@ the argv to send to a message will be the word
 .q mail,
 the word
 .q \-d,
-and words containing the name of the receiving user;
-if a
+and words containing the name of the receiving user.
+If a
 .b \-r
 flag is inserted
 it will be between the words
@@ -2006,7 +2124,7 @@ The second mailer is called
 it should be connected to via an IPC connection,
 it can handle multiple users at once,
 connections should be deferred,
-and any domain from the sender
+and any domain from the sender address
 should be appended to any receiver name
 without a domain;
 sender addresses should be processed by ruleset eleven
@@ -2074,6 +2192,12 @@ As a result, you can flush messages that have been hanging
 for a short period
 by running the queue
 with a short message timeout.
+For example,
+.(b
+/usr/lib/sendmail -oT1d -q
+.)b
+will run the queue
+and flush anything that is one day old.
 .sh 2 "Default Operation Mode"
 .pp
 There are a number of default modes that
@@ -2098,35 +2222,43 @@ q	read, verify, and queue (don't deliver)
 .)b
 There are tradeoffs.
 Mode
-.b a
+.q a
 passes the maximum amount of information to the sender,
 but is hardly ever necessary.
 Mode
-.b q
+.q q
 puts the minimum load on your machine,
 but means that delivery may be delayed for up to the queue interval.
 Mode
-.b f
+.q f
 is probably a good compromise.
 .sh 2 "Log Level"
 .pp
-If you have
-.i syslog (8)
-or an equivalent installed,
-you will be able to do logging.
-There is a large amount of information that can be logged.
-The log is arranged as a succession of levels.
-At the lowest level
-only extremely strange situations are logged.
-At the highest level,
-even the most mundane and uninteresting events
-are recorded for posterity.
-As a convention,
-log levels under ten
-are considered
-.q useful;
-log levels above ten
-are usually for debugging purposes.
+The level of logging can be set for sendmail.
+The default using a standard configuration table is level 9.
+The levels are as follows:
+.ip 0
+No logging.
+.ip 1
+Major problems only.
+.ip 2
+Message collections and failed deliveries.
+.ip 3
+Successful deliveries.
+.ip 4
+Messages being defered
+(due to a host being down, etc.).
+.ip 5
+Normal message queueups.
+.ip 6
+Unusual but benign incidents,
+e.g.,
+trying to process a locked queue file.
+.ip 12
+Several messages that are basically only of interest
+when debugging.
+.ip 16
+Verbose information regarding the queue.
 .sh 2 "File Modes"
 .pp
 There are a number of files
@@ -2151,7 +2283,7 @@ and
 options).
 (This can be overridden
 by setting the
-.b r
+.b S
 flag to the mailer
 for mailers that are trusted
 and must be called as root.)
@@ -2350,10 +2482,10 @@ for this run only.
 .++ A
 .+c "COMMAND LINE FLAGS"
 .ba 0
+.nr ii 1i
 .pp
 Arguments must be presented with flags before addresses.
 The flags are:
-.nr ii 4n
 .ip "\-f\ \fIaddr\fP"
 The sender's machine address is
 .i addr .
@@ -2417,7 +2549,7 @@ and ending lines of error messages with <CRLF>.
 Take input over an SMTP connection on standard input and output.
 This does everything the \-a flag does also.
 .ip \-q\fItime\fP
-Try to execute the queued up mail.
+Try to process the queued up mail.
 If the time is given,
 a sendmail will run through the queue at the specified interval
 to deliver queued mail;
@@ -2484,10 +2616,10 @@ p	Print the mail queue
 z	Freeze the configuration file
 .)b
 .ip c
-If this mailer is marked as being expensive,
+If an outgoing mailer is marked as being expensive,
 don't connect immediately.
 This requires that queueing be compiled in,
-since it will depend on a sender process to
+since it will depend on a queue run process to
 actually send the mail.
 .ip D
 If set,
@@ -2540,19 +2672,21 @@ Set the macro
 .i x
 to
 .i value .
+This is intended only for use from the command line.
 .ip m
 Send to me too,
 even if I am in an alias expansion.
 .ip o
-Assume that the headers are already in new format,
+Assume that the headers may be in old format,
 i.e.,
-there are commas between names and spaces are to be preserved.
-If this flag is not given,
-an adaptive algorithm is used:
+spaces delimit names.
+This actually turns on
+an adaptive algorithm:
 if any recipient address contains a comma, parenthesis,
 or angle bracket,
 it will be assumed that commas already exist.
-This flag is required in certain rare cases.
+If this flag is not on,
+only commas delimit names.
 Headers are always output with commas between the names.
 .ip Q\fIdir\fP
 Use the named
@@ -2714,6 +2848,7 @@ To: userb@hostb, userc@hosta
 .)b
 automatically.
 .+c "OTHER CONFIGURATION"
+.rm $0
 .nr ii 1i
 .pp
 There are some configuration changes that can be made by
@@ -2796,7 +2931,7 @@ on the assumption that there has been an aliasing loop.
 This can be determined from the
 .b \-h
 flag
-or by counting the number of trace lines
+or by counting the number of trace fields
 (i.e,
 .q Received:
 lines)
@@ -2923,8 +3058,6 @@ If this flag is set,
 .i sendmail
 will delete
 even existing header lines.
-except that it even applies to headers that were in the
-original message.
 That is,
 if this bit is set and the mailer does not have flag bits set
 that intersect with the required mailer flags
@@ -2983,20 +3116,20 @@ specification:
 .ta 4n +\w'"return-receipt-to",  'u
 struct hdrinfo	HdrInfo[] =
 {
-		/* originator fields, most to least significant  */
+	     /* originator fields, most to least significant  */
 	"resent-sender",	H_FROM,
 	"resent-from",	H_FROM,
 	"sender",	H_FROM,
 	"from",	H_FROM,
 	"full-name",	H_ACHECK,
-		/* destination fields */
+	     /* destination fields */
 	"to",	H_RCPT,
 	"resent-to",	H_RCPT,
 	"cc",	H_RCPT,
-		/* message identification and control */
+	     /* message identification and control */
 	"message",	H_EOH,
 	"text",	H_EOH,
-		/* trace fields */
+	     /* trace fields */
 	"received",	H_TRACE|H_FORCE,
 
 	NULL,	0,
@@ -3071,7 +3204,7 @@ and used in a number of ways.
 The file
 .i conf.c
 also contains the specification of ARPANET reply codes.
-There are six classifications these fall into:
+There are four classifications these fall into:
 .(b
 .sz -2
 .ta \w'char  'u +\w'Arpa_TUsrerr[] =  'u +\w'"888";  'u
@@ -3108,7 +3241,7 @@ and hence the error is permanent,
 i.e.,
 it will not work simply by resubmitting the request.
 .pp
-If it is necessary to restrict mail through a gateway,
+If it is necessary to restrict mail through a relay,
 the
 .i checkcompat
 routine can be modified.
@@ -3133,11 +3266,12 @@ could read:
 .(b
 .re
 .sz -2
+.ta 4n +4n +4n +4n +4n +4n +4n
 bool
 checkcompat(to)
 	register ADDRESS *to;
 {
-	if (MsgSize > 50000 && to->q_mailer != MN_LOCAL)
+	if (MsgSize > 50000 && to->q_mailer != LocalMailer)
 	{
 		usrerr("Message too large for non-local delivery");
 		return (FALSE);
@@ -3151,10 +3285,62 @@ unless they were local.
 The actual use of this routine is highly dependent on the
 implementation,
 and use should be limited.
+.+c "SUMMARY OF SUPPORT FILES"
+.pp
+This is a summary of the support files
+that
+.i sendmail
+creates or generates.
+.nr ii 1i
+.ip "/usr/lib/sendmail"
+The binary of
+.i sendmail .
+.ip /usr/bin/newaliases
+A link to /usr/lib/sendmail;
+causes the alias database to be rebuilt.
+.ip /usr/bin/mailq
+Prints a listing of the mail queue.
+.ip /usr/lib/sendmail.cf
+The configuration file,
+in textual form.
+.ip /usr/lib/sendmail.fc
+The configuration file
+represented as a memory image.
+.ip /usr/lib/sendmail.hf
+The SMTP help file.
+.ip /usr/lib/sendmail.st
+A statistics file; need not be present.
+.ip /usr/lib/aliases
+The textual version of the alias file.
+.ip /usr/lib/aliases.{pag,dir}
+The alias file in
+.i dbm (3)
+format.
+.ip /etc/syslog
+The program to do logging.
+.ip /etc/syslog.conf
+The configuration file for syslog.
+.ip /etc/syslog.pid
+Contains the process id of the currently running syslog.
+.ip /usr/spool/mqueue
+The directory in which the mail queue
+and temporary files reside.
+.ip /usr/spool/mqueue/qf*
+Control (queue) files for messages.
+.ip /usr/spool/mqueue/df*
+Data files.
+.ip /usr/spool/mqueue/lf*
+Lock files
+.ip /usr/spool/mqueue/tf*
+Temporary versions of the qf files,
+used during queue file rebuild.
+.ip /usr/spool/mqueue/nf*
+A file used when creating a unique id.
+.ip /usr/spool/mqueue/xf*
+A transcript of the current session.
 .ro
 .ls 1
 .tp
-.bp 1
 .sp 2i
 .ce 100
 .sz 16
@@ -3166,8 +3352,10 @@ INSTALLATION AND OPERATION GUIDE
 .sz
 Eric Allman
 Britton-Lee, Inc.
+.sp
+Version 3.2
 .ce 0
-.bp
+.bp 1
 .ce
 TABLE OF CONTENTS
 .xp
