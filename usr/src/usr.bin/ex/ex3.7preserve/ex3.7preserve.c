@@ -11,7 +11,7 @@ char *copyright =
 #endif not lint
 
 #ifndef lint
-static char *sccsid = "@(#)ex3.7preserve.c	7.15 (Berkeley) %G%";
+static char *sccsid = "@(#)ex3.7preserve.c	7.16 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -86,6 +86,13 @@ main(argc)
 	register DIR *tf;
 	struct direct *dirent;
 	struct stat stbuf;
+	int err = 0;
+	char path[MAXPATHLEN];
+
+	if (chdir(_PATH_PRESERVE) < 0) {
+		perror(_PATH_PRESERVE);
+		exit(1);
+	}
 
 	/*
 	 * If only one argument, then preserve the standard input.
@@ -105,15 +112,11 @@ main(argc)
 	}
 
 	/*
-	 * ... else preserve all the stuff in /tmp, removing
+	 * ... else preserve all the stuff in /var/tmp, removing
 	 * it as we go.
 	 */
-	if (chdir(_PATH_VARTMP) < 0) {
-		perror(_PATH_VARTMP);
-		exit(1);
-	}
 
-	tf = opendir(".");
+	tf = opendir(_PATH_VARTMP);
 	if (tf == NULL) {
 		perror(_PATH_VARTMP);
 		exit(1);
@@ -122,20 +125,21 @@ main(argc)
 		/* Ex temporaries must begin with Ex. */
 		if (dirent->d_name[0] != 'E' || dirent->d_name[1] != 'x')
 			continue;
-		if (stat(dirent->d_name, &stbuf))
+		sprintf(path, "%s/%s", _PATH_VARTMP, dirent->d_name);
+		if (stat(path, &stbuf))
 			continue;
 		if ((stbuf.st_mode & S_IFMT) != S_IFREG)
 			continue;
 		/*
 		 * Save the bastard.
 		 */
-		ignore(copyout(dirent->d_name));
+		err |= copyout(path);
 	}
 	closedir(tf);
-	exit(0);
+	exit(err);
 }
 
-char	pattern[MAXPATHLEN];
+char	pattern[] = "Exaa`XXXXX";
 
 /*
  * Copy file name into pattern[].
@@ -152,7 +156,6 @@ copyout(name)
 	static int reenter;
 	char buf[BUFSIZ];
 
-	(void)sprintf(pattern, "%s/Exaa`XXXXX", _PATH_PRESERVE);
 	/*
 	 * The first time we put in the digits of our
 	 * process number at the end of the pattern.
@@ -173,7 +176,7 @@ copyout(name)
 		 * (see below).
 		 */
 		if (open(name, 2) < 0)
-			return (-1);
+			return (1);
 	}
 
 	/*
@@ -184,11 +187,11 @@ copyout(name)
 format:
 		if (name == 0)
 			fprintf(stderr, "Buffer format error\t");
-		return (-1);
+		return (1);
 	}
 
 	/*
-	 * Consistency checsks so we don't copy out garbage.
+	 * Consistency checks so we don't copy out garbage.
 	 */
 	if (H.Flines < 0) {
 #ifdef DEBUG
@@ -251,7 +254,7 @@ format:
 			if (name)
 				perror("Buffer read error");
 			ignore(unlink(pattern));
-			return (-1);
+			return (1);
 		}
 		if (i == 0) {
 			if (name)
@@ -263,7 +266,7 @@ format:
 			if (name == 0)
 				perror(pattern);
 			unlink(pattern);
-			return (-1);
+			return (1);
 		}
 	}
 }
