@@ -1,4 +1,4 @@
-/* tcp_input.c 1.19 81/11/04 */
+/* tcp_input.c 1.20 81/11/07 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -180,7 +180,9 @@ goodseg:
 	mp->m_len -= hlen;
 	nstate = tp->t_state;
 	tp->tc_flags &= ~TC_NET_KEEP;
+#ifdef KPROF
 	acounts[tp->t_state][INRECV]++;
+#endif
 #ifdef TCPDEBUG
 	if ((tp->t_ucb->uc_flags & UDEBUG) || tcpconsdebug) {
 		tdb_setup(tp, n, INRECV, &tdb);
