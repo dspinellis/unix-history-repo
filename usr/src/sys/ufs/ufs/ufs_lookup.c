@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_lookup.c	7.20 (Berkeley) %G%
+ *	@(#)ufs_lookup.c	7.21 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -22,6 +22,7 @@
 #include "buf.h"
 #include "file.h"
 #include "vnode.h"
+#include "../ufs/quota.h"
 #include "../ufs/inode.h"
 #include "../ufs/fs.h"
 
@@ -63,11 +64,10 @@ int	dirchk = 1;
  *
  * NOTE: (LOOKUP | LOCKPARENT) currently returns the parent inode unlocked.
  */
-ufs_lookup(vp, ndp)
-	struct vnode *vp;
+ufs_lookup(vdp, ndp)
+	register struct vnode *vdp;
 	register struct nameidata *ndp;
 {
-	register struct vnode *vdp;	/* vnode copy of dp */
 	register struct inode *dp;	/* the directory we are searching */
 	register struct fs *fs;		/* file system that directory is in */
 	struct buf *bp = 0;		/* a buffer of directory entries */
@@ -89,9 +89,9 @@ ufs_lookup(vp, ndp)
 	int wantparent;			/* 1 => wantparent or lockparent flag */
 	int error;
 
-	ndp->ni_dvp = vp;
+	ndp->ni_dvp = vdp;
 	ndp->ni_vp = NULL;
-	dp = VTOI(vp);
+	dp = VTOI(vdp);
 	fs = dp->i_fs;
 	lockparent = ndp->ni_nameiop & LOCKPARENT;
 	flag = ndp->ni_nameiop & OPFLAG;
@@ -102,7 +102,7 @@ ufs_lookup(vp, ndp)
 	 */
 	if ((dp->i_mode&IFMT) != IFDIR)
 		return (ENOTDIR);
-	if (error = iaccess(dp, IEXEC, ndp->ni_cred))
+	if (error = ufs_access(vdp, VEXEC, ndp->ni_cred))
 		return (error);
 
 	/*
@@ -117,7 +117,7 @@ ufs_lookup(vp, ndp)
 
 		if (error == ENOENT)
 			return (error);
-		if (vp == ndp->ni_rdir && ndp->ni_isdotdot)
+		if (vdp == ndp->ni_rdir && ndp->ni_isdotdot)
 			panic("ufs_lookup: .. through root");
 		/*
 		 * Get the next vnode in the path.
@@ -150,6 +150,7 @@ ufs_lookup(vp, ndp)
 		}
 		ILOCK(pdp);
 		dp = pdp;
+		vdp = ITOV(dp);
 		ndp->ni_vp = NULL;
 	}
 
@@ -314,7 +315,7 @@ searchloop:
 		 * Access for write is interpreted as allowing
 		 * creation of files in the directory.
 		 */
-		if (error = iaccess(dp, IWRITE, ndp->ni_cred))
+		if (error = ufs_access(vdp, VWRITE, ndp->ni_cred))
 			return (error);
 		/*
 		 * Return an indication of where the new directory
@@ -389,7 +390,7 @@ found:
 		/*
 		 * Write access to directory required to delete files.
 		 */
-		if (error = iaccess(dp, IWRITE, ndp->ni_cred))
+		if (error = ufs_access(vdp, VWRITE, ndp->ni_cred))
 			return (error);
 		/*
 		 * Return pointer to current entry in ndp->ni_offset,
@@ -401,30 +402,29 @@ found:
 			ndp->ni_count = 0;
 		else
 			ndp->ni_count = ndp->ni_offset - prevoff;
-		vdp = ITOV(dp);
 		if (dp->i_number == ndp->ni_dent.d_ino) {
 			VREF(vdp);
-		} else {
-			if (error = iget(dp, ndp->ni_dent.d_ino, &tdp))
-				return (error);
-			vdp = ITOV(tdp);
-			/*
-			 * If directory is "sticky", then user must own
-			 * the directory, or the file in it, else he
-			 * may not delete it (unless he's root). This
-			 * implements append-only directories.
-			 */
-			if ((dp->i_mode & ISVTX) &&
-			    ndp->ni_cred->cr_uid != 0 &&
-			    ndp->ni_cred->cr_uid != dp->i_uid &&
-			    tdp->i_uid != ndp->ni_cred->cr_uid) {
-				iput(tdp);
-				return (EPERM);
-			}
-			if (!lockparent)
-				IUNLOCK(dp);
+			ndp->ni_vp = vdp;
+			return (0);
 		}
-		ndp->ni_vp = vdp;
+		if (error = iget(dp, ndp->ni_dent.d_ino, &tdp))
+			return (error);
+		/*
+		 * If directory is "sticky", then user must own
+		 * the directory, or the file in it, else she
+		 * may not delete it (unless she's root). This
+		 * implements append-only directories.
+		 */
+		if ((dp->i_mode & ISVTX) &&
+		    ndp->ni_cred->cr_uid != 0 &&
+		    ndp->ni_cred->cr_uid != dp->i_uid &&
+		    tdp->i_uid != ndp->ni_cred->cr_uid) {
+			iput(tdp);
+			return (EPERM);
+		}
+		ndp->ni_vp = ITOV(tdp);
+		if (!lockparent)
+			IUNLOCK(dp);
 		return (0);
 	}
 
@@ -435,7 +435,7 @@ found:
 	 * regular file, or empty directory.
 	 */
 	if (flag == RENAME && wantparent && *ndp->ni_next == 0) {
-		if (error = iaccess(dp, IWRITE, ndp->ni_cred))
+		if (error = ufs_access(vdp, VWRITE, ndp->ni_cred))
 			return (error);
 		/*
 		 * Careful about locking second inode.
@@ -481,7 +481,6 @@ found:
 			ILOCK(pdp);
 		ndp->ni_vp = ITOV(tdp);
 	} else if (dp->i_number == ndp->ni_dent.d_ino) {
-		vdp = ITOV(dp);
 		VREF(vdp);	/* we want ourself, ie "." */
 		ndp->ni_vp = vdp;
 	} else {
@@ -649,7 +648,7 @@ direnter(ip, ndp)
 	bcopy((caddr_t)&ndp->ni_dent, (caddr_t)ep, (u_int)newentrysize);
 	error = bwrite(bp);
 	dp->i_flag |= IUPD|ICHG;
-	if (ndp->ni_endoff && ndp->ni_endoff < dp->i_size)
+	if (!error && ndp->ni_endoff && ndp->ni_endoff < dp->i_size)
 		error = itrunc(dp, (u_long)ndp->ni_endoff, IO_SYNC);
 	iput(dp);
 	return (error);
