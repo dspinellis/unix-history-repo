@@ -37,7 +37,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vnode_pager.c	7.5 (Berkeley) 4/20/91
- *	$Id: vnode_pager.c,v 1.7 1993/12/21 05:51:07 davidg Exp $
+ *	$Id: vnode_pager.c,v 1.8 1994/01/14 16:27:32 davidg Exp $
  */
 
 /*
@@ -130,10 +130,11 @@ vnode_pager_init()
  * Handle is a vnode pointer.
  */
 vm_pager_t
-vnode_pager_alloc(handle, size, prot)
+vnode_pager_alloc(handle, size, prot, offset)
 	caddr_t handle;
 	vm_size_t size;
 	vm_prot_t prot;
+	vm_offset_t offset;
 {
 	register vm_pager_t pager;
 	register vn_pager_t vnp;
@@ -539,6 +540,11 @@ vnode_pager_iodone(bp)
  *            implemented.  They are not really,  several things need
  *            to be done to make it work (subtile things.)  Hack at
  *            your own risk (direct writes are scarey).
+ *
+ * ANOTHER NOTICE!!!!
+ *	      we currently only support direct I/O to filesystems whose
+ *	      contiguously allocated blocksize is at least a vm page.
+ *	      changes will be made in the future to support more flexibility.
  */
 
 int

@@ -36,7 +36,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_pager.h	7.2 (Berkeley) 4/20/91
- *	$Id: vm_pager.h,v 1.3 1993/12/19 00:56:14 wollman Exp $
+ *	$Id: vm_pager.h,v 1.4 1994/01/14 16:27:31 davidg Exp $
  */
 
 /*
@@ -64,7 +64,7 @@ typedef	struct pager_struct *vm_pager_t;
 
 struct	pagerops {
 	void		(*pgo_init)();		/* initialize pager */
-	vm_pager_t	(*pgo_alloc)();		/* allocate pager */
+	vm_pager_t	(*pgo_alloc)(caddr_t, vm_size_t, vm_prot_t, vm_offset_t);		/* allocate pager */
 	void		(*pgo_dealloc)();	/* disassociate */
 	int		(*pgo_getpage)();	/* get (read) page */
 	int		(*pgo_getmulti)();	/* get (read) multiple pages */

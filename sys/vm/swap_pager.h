@@ -36,7 +36,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)swap_pager.h	7.1 (Berkeley) 12/5/90
- *	$Id: swap_pager.h,v 1.5 1993/12/22 12:51:57 davidg Exp $
+ *	$Id: swap_pager.h,v 1.6 1994/01/14 16:27:14 davidg Exp $
  */
 
 /*
@@ -81,7 +81,7 @@ typedef struct swpager	*sw_pager_t;
 #ifdef KERNEL
 
 void		swap_pager_init(void);
-vm_pager_t	swap_pager_alloc(caddr_t, vm_size_t, vm_prot_t);
+vm_pager_t	swap_pager_alloc(caddr_t, vm_size_t, vm_prot_t, vm_offset_t);
 void		swap_pager_dealloc(vm_pager_t);
 boolean_t	swap_pager_getpage(vm_pager_t, vm_page_t, boolean_t);
 boolean_t	swap_pager_putpage(vm_pager_t, vm_page_t, boolean_t);

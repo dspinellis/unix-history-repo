@@ -77,6 +77,7 @@
 #include "machine/stdarg.h"
 
 extern char kstack[];
+extern int vm_pageout_free_min;
 int	avefree = 0;		/* XXX */
 int	readbuffers = 0;	/* XXX allow kgdb to read kernel buffer pool */
 /* vm_map_t upages_map; */
@@ -454,7 +455,6 @@ noswap:
 #define	swappable(p) \
 	(((p)->p_flag & (STRC|SSYS|SLOAD|SLOCK|SKEEP|SWEXIT|SPHYSIO)) == SLOAD)
 
-extern int vm_pageout_free_min;
 /*
  * Swapout is driven by the pageout daemon.  Very simple, we find eligible
  * procs and unwire their u-areas.  We try to always "swap" at least one
@@ -515,9 +515,9 @@ swapout_threads()
 	 * it (UPAGES pages).
 	 */
 	if (didswap == 0 && (swapinreq && 
-			vm_page_free_count < vm_page_free_min)) {
+			vm_page_free_count <= (vm_page_free_reserved + UPAGES))) {
 		if ((p = outp) == 0 &&
-			(vm_page_free_count < vm_page_free_reserved ))
+			(vm_page_free_count < vm_page_free_reserved))
 			p = outp2;
 #ifdef DEBUG
 		if (swapdebug & SDB_SWAPOUT)

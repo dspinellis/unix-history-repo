@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_map.h	7.3 (Berkeley) 4/21/91
- *	$Id: vm_map.h,v 1.3 1993/12/19 00:56:05 wollman Exp $
+ *	$Id: vm_map.h,v 1.4 1994/01/14 16:27:21 davidg Exp $
  */
 
 /*
@@ -100,6 +100,7 @@ typedef union vm_map_object	vm_map_object_t;
  *	and user-exported inheritance and protection information.
  *	Also included is control information for virtual copy operations.
  */
+
 struct vm_map_entry {
 	struct vm_map_entry	*prev;		/* previous entry */
 	struct vm_map_entry	*next;		/* next entry */
@@ -107,11 +108,11 @@ struct vm_map_entry {
 	vm_offset_t		end;		/* end address */
 	union vm_map_object	object;		/* object I point to */
 	vm_offset_t		offset;		/* offset into object */
-	boolean_t		is_a_map;	/* Is "object" a map? */
-	boolean_t		is_sub_map;	/* Is "object" a submap? */
+	unsigned char		is_a_map:1,	/* Is "object" a map? */
+				is_sub_map:1,	/* Is "object" a submap? */
 		/* Only in sharing maps: */
-	boolean_t		copy_on_write;	/* is data copy-on-write */
-	boolean_t		needs_copy;	/* does object need to be copied */
+				copy_on_write:1,/* is data copy-on-write */
+				needs_copy:1;/* does object need to be copied */
 		/* Only in task maps: */
 	vm_prot_t		protection;	/* protection code */
 	vm_prot_t		max_protection;	/* maximum protection */

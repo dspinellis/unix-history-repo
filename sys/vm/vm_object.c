@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_object.c	7.4 (Berkeley) 5/7/91
- *	$Id: vm_object.c,v 1.13 1993/12/22 12:51:59 davidg Exp $
+ *	$Id: vm_object.c,v 1.15 1994/01/14 16:27:23 davidg Exp $
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -488,8 +488,7 @@ again:
 	p = (vm_page_t) queue_first(&object->memq);
 	while (!queue_end(&object->memq, (queue_entry_t) p) && ((start == end) || (size != 0) ) ) {
 		if (start == end || (p->offset >= start && p->offset < end)) {
-			if (pmap_is_wired(VM_PAGE_TO_PHYS(p)) ||
-				p->flags & PG_BUSY)
+			if (p->flags & PG_BUSY)
 				goto next;
 
 			size -= PAGE_SIZE;
@@ -542,8 +541,7 @@ vm_object_deactivate_pages(object)
 		next = (vm_page_t) queue_next(&p->listq);
 		vm_page_lock_queues();
 		if ((p->flags & (PG_INACTIVE|PG_BUSY)) == 0 &&
-			p->wire_count == 0 &&
-			(object->can_persist || !pmap_is_wired(VM_PAGE_TO_PHYS(p))))
+			p->wire_count == 0)
 			vm_page_deactivate(p);	/* optimisation from mach 3.0 -
 						 * andrew@werple.apana.org.au,
 						 * Feb '93

@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_inherit.h	7.2 (Berkeley) 4/21/91
- *	$Id$
+ *	$Id: vm_inherit.h,v 1.2 1993/10/16 16:20:27 rgrimes Exp $
  */
 
 /*
@@ -77,7 +77,7 @@
  *	vm_inherit_t	inheritance codes.
  */
 
-typedef int		vm_inherit_t;	/* might want to change this */
+typedef char		vm_inherit_t;	/* might want to change this */
 
 /*
  *	Enumeration of valid values for vm_inherit_t.

@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_page.c	7.4 (Berkeley) 5/7/91
- *	$Id: vm_page.c,v 1.7 1994/01/03 07:58:07 davidg Exp $
+ *	$Id: vm_page.c,v 1.8 1994/01/14 16:27:26 davidg Exp $
  */
 
 /*
@@ -753,8 +753,7 @@ vm_page_queue_deactivate(m)
 {
 	int spl;
 	spl = vm_disable_intr();
-	if (!(m->flags & PG_INACTIVE) && m->wire_count == 0 &&
-		!pmap_is_wired(VM_PAGE_TO_PHYS(m))) {
+	if (!(m->flags & PG_INACTIVE) && m->wire_count == 0) {
 		if (m->flags & PG_ACTIVE) {
 			queue_remove(&vm_page_queue_active, m, vm_page_t, pageq);
 			m->flags &= ~PG_ACTIVE;
@@ -794,8 +793,7 @@ vm_page_deactivate(m)
 	 */
 
 	spl = vm_disable_intr();
-	if (!(m->flags & PG_INACTIVE) && m->wire_count == 0 &&
-		!pmap_is_wired(VM_PAGE_TO_PHYS(m))) {
+	if (!(m->flags & PG_INACTIVE) && m->wire_count == 0) {
 		pmap_clear_reference(VM_PAGE_TO_PHYS(m));
 		if (m->flags & PG_ACTIVE) {
 			queue_remove(&vm_page_queue_active, m, vm_page_t, pageq);
@@ -815,10 +813,6 @@ vm_page_deactivate(m)
 	 * let page fault back onto active queue if needed
 	 */
 		pmap_page_protect(VM_PAGE_TO_PHYS(m), VM_PROT_NONE);
-	} else if (pmap_is_wired(VM_PAGE_TO_PHYS(m)))  {
-		vm_set_intr(spl);
-		if (!(m->flags & PG_ACTIVE))
-			vm_page_activate(m);
 	} else {
 		vm_set_intr(spl);
 	} 

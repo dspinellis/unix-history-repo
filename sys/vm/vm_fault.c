@@ -66,7 +66,7 @@
  * rights to redistribute these changes.
  */
 /*
- * $Id$
+ * $Id: vm_fault.c,v 1.12 1994/01/14 16:27:15 davidg Exp $
  */
 
 /*
@@ -1187,18 +1187,28 @@ vm_fault_additional_pages(first_object, first_offset, m, rbehind, raheada, marra
 	if (!vm_pager_has_page(object->pager, object->paging_offset+offset))
 		return 0;
 
+	/*
+	 * if there is no getmulti routine for this pager, then just allow
+	 * one page to be read.
+	 */
 	if (!object->pager->pg_ops->pgo_getmulti) {
 		*reqpage = 0;
 		marray[0] = m;
 		return 1;
 	}
 
+	/*
+	 * try to do any readahead that we might have free pages for.
+	 */
 	rahead = raheada;
 	if (rahead > (vm_page_free_count - vm_page_free_reserved)) {
 		rahead = vm_page_free_count - vm_page_free_reserved;
 		rbehind = 0;
 	}
 
+	/*
+	 * if we don't have any free pages, then just read one page.
+	 */
 	if (rahead <= 0) {
 		*reqpage = 0;
 		marray[0] = m;
@@ -1241,11 +1251,11 @@ vm_fault_additional_pages(first_object, first_offset, m, rbehind, raheada, marra
 	/* calculate the page offset of the required page */
 	treqpage = (offset - startoffset) / NBPG;
 		
-	/* see if we have space */
+	/* see if we have space (again) */
 	if (vm_page_free_count >= vm_page_free_reserved + size) {
 		bzero(marray, (rahead + rbehind + 1) * sizeof(vm_page_t));
 		/*
-		 * get our pages and block for them
+		 * get our pages and don't block for them
 		 */
 		for (i = 0; i < size; i++) {
 			if (i != treqpage)
@@ -1260,6 +1270,10 @@ vm_fault_additional_pages(first_object, first_offset, m, rbehind, raheada, marra
 				break;
 		}
 
+		/*
+		 * if we could not get our block of pages, then
+		 * free the readahead/readbehind pages.
+		 */
 		if (i < size) {
 			for (i = 0; i < size; i++) {
 				if (i != treqpage && marray[i])

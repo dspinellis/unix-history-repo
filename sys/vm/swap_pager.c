@@ -38,7 +38,7 @@
  * from: Utah $Hdr: swap_pager.c 1.4 91/04/30$
  * from: @(#)swap_pager.c	7.4 (Berkeley) 5/7/91
  *
- * $Id: swap_pager.c,v 1.12 1994/01/14 16:27:12 davidg Exp $
+ * $Id: swap_pager.c,v 1.13 1994/01/14 16:45:06 davidg Exp $
  */
 
 /*
@@ -167,10 +167,11 @@ swap_pager_init()
  * we should not wait for memory as it could resulting in deadlock.
  */
 vm_pager_t
-swap_pager_alloc(handle, size, prot)
+swap_pager_alloc(handle, size, prot, offset)
 	caddr_t handle;
 	register vm_size_t size;
 	vm_prot_t prot;
+	vm_offset_t offset;
 {
 	register vm_pager_t pager;
 	register sw_pager_t swp;
@@ -380,6 +381,9 @@ swap_pager_reclaim()
 	static int reclaims[MAXRECLAIM];
 	static int in_reclaim;
 
+/*
+ * allow only one process to be in the swap_pager_reclaim subroutine
+ */
 	s = splbio();
 	if (in_reclaim) {
 		tsleep((caddr_t) &in_reclaim, PSWP, "swrclm", 0);
@@ -454,6 +458,9 @@ swap_pager_copy(srcpager, srcoffset, dstpager, dstoffset, offset)
 	srcswp = (sw_pager_t) srcpager->pg_data;
 	dstswp = (sw_pager_t) dstpager->pg_data;
 
+/*
+ * remove the source pager from the swap_pager internal queue
+ */
 	s = splbio();
 	if (srcswp->sw_flags & SW_NAMED) {
 		queue_remove(&swap_pager_list, srcpager, vm_pager_t, pg_list);
@@ -467,11 +474,15 @@ swap_pager_copy(srcpager, srcoffset, dstpager, dstoffset, offset)
 	}
 	splx(s);
 
+/*
+ * clean all of the pages that are currently active and finished
+ */
 	(void) swap_pager_clean(NULL, B_WRITE);
 	
 	s = splbio();
 /*
  * clear source block before destination object
+ * (release allocated space)
  */
 	for (i = 0; i < offset + srcoffset; i += NBPG) {
 		int *addr = swap_pager_diskaddr(srcswp, i, 0);
@@ -489,9 +500,20 @@ swap_pager_copy(srcpager, srcoffset, dstpager, dstoffset, offset)
 		int *srcaddrp = swap_pager_diskaddr(srcswp, i + offset + srcoffset,
 			&srcvalid);
 		int *dstaddrp;
+	/*
+	 * see if the source has space allocated
+	 */
 		if (srcaddrp && *srcaddrp != SWB_EMPTY) {
+		/*
+		 * if the source is valid and the dest has no space, then
+		 * copy the allocation from the srouce to the dest.
+		 */
 			if (srcvalid) {
 				dstaddrp = swap_pager_diskaddr(dstswp, i + dstoffset, &dstvalid);
+				/*
+				 * if the dest already has a valid block, deallocate the
+				 * source block without copying.
+				 */
 				if (!dstvalid && dstaddrp && *dstaddrp != SWB_EMPTY) {
 					rlist_free(&swapmap, *dstaddrp, *dstaddrp + btodb(NBPG) - 1);
 					*dstaddrp = SWB_EMPTY;
@@ -503,6 +525,9 @@ swap_pager_copy(srcpager, srcoffset, dstpager, dstoffset, offset)
 					swap_pager_setvalid(dstswp, i + dstoffset, 1);
 				}
 			}
+		/*
+		 * if the source is not empty at this point, then deallocate the space.
+		 */
 			if (*srcaddrp != SWB_EMPTY) {
 				rlist_free(&swapmap, *srcaddrp, *srcaddrp + btodb(NBPG) - 1);
 				*srcaddrp = SWB_EMPTY;
@@ -594,6 +619,9 @@ swap_pager_dealloc(pager)
 	free((caddr_t)pager, M_VMPAGER);
 }
 
+/*
+ * swap_pager_getmulti can get multiple pages.
+ */
 int
 swap_pager_getmulti(pager, m, count, reqpage, sync)
 	vm_pager_t pager;
@@ -605,6 +633,9 @@ swap_pager_getmulti(pager, m, count, reqpage, sync)
 	return swap_pager_io((sw_pager_t) pager->pg_data, m, count, reqpage, B_READ);
 }
 
+/*
+ * swap_pager_getpage gets individual pages
+ */
 int
 swap_pager_getpage(pager, m, sync)
 	vm_pager_t pager;
@@ -617,6 +648,9 @@ swap_pager_getpage(pager, m, sync)
 	return swap_pager_io((sw_pager_t)pager->pg_data, marray, 1, 0, B_READ);
 }
 
+/*
+ * swap_pager_putpage writes individual pages
+ */
 int
 swap_pager_putpage(pager, m, sync)
 	vm_pager_t pager;
@@ -655,6 +689,10 @@ swap_pager_block_offset(swp, offset)
 	return (offset % (SWB_NPAGES*NBPG));
 }
 
+/*
+ * _swap_pager_haspage returns TRUE if the pager has data that has
+ * been written out.  
+ */
 static boolean_t
 _swap_pager_haspage(swp, offset)
 	sw_pager_t swp;
@@ -677,6 +715,11 @@ _swap_pager_haspage(swp, offset)
 	return(FALSE);
 }
 
+/*
+ * swap_pager_haspage is the externally accessible version of
+ * _swap_pager_haspage above.  this routine takes a vm_pager_t
+ * for an argument instead of sw_pager_t.
+ */
 boolean_t
 swap_pager_haspage(pager, offset)
 	vm_pager_t pager;
@@ -685,6 +728,10 @@ swap_pager_haspage(pager, offset)
 	return _swap_pager_haspage((sw_pager_t) pager->pg_data, offset);
 }
 
+/*
+ * swap_pager_freepage is a convienience routine that clears the busy
+ * bit and deallocates a page.
+ */
 static void
 swap_pager_freepage(m)
 	vm_page_t m;
@@ -693,6 +740,11 @@ swap_pager_freepage(m)
 	vm_page_free(m);
 }
 
+/*
+ * swap_pager_ridpages is a convienience routine that deallocates all
+ * but the required page.  this is usually used in error returns that
+ * need to invalidate the "extra" readahead pages.
+ */
 static void
 swap_pager_ridpages(m, count, reqpage)
 	vm_page_t *m;
@@ -711,6 +763,9 @@ swap_pager_ridpages(m, count, reqpage)
 
 int swapwritecount=0;
 
+/*
+ * swap_pager_iodone1 is the completion routine for both reads and async writes
+ */
 void
 swap_pager_iodone1(bp)
 	struct buf *bp;
@@ -838,6 +893,14 @@ swap_pager_io(swp, m, count, reqpage, flags)
 			reqpage -= first;
 		}
 	}
+
+	/*
+	 * at this point:
+	 * "m" is a pointer to the array of vm_page_t for paging I/O
+	 * "count" is the number of vm_page_t entries represented by "m"
+	 * "object" is the vm_object_t for I/O
+	 * "reqpage" is the index into "m" for the page actually faulted
+	 */
 	
 	/*
 	 * For reads (pageins) and synchronous writes, we clean up
@@ -863,13 +926,18 @@ swap_pager_io(swp, m, count, reqpage, flags)
 	/*
 	 * we allocate a new kva for transfers > 1 page
 	 * but for transfers == 1 page, the swap_pager_free list contains
-	 * entries that have pre-allocated kva's
+	 * entries that have pre-allocated kva's (for efficiency).
 	 */
 	if ((flags & B_READ) && count > 1) {
 		kva = kmem_alloc_pageable(pager_map, count*NBPG);
 	}
 		
+
 	if (!kva) {
+		/*
+		 * if a kva has not been allocated, we can only do a one page transfer,
+		 * so we free the other pages that might have been allocated by vm_fault.
+		 */
 		for (i = 0; i < count; i++) {
 			if (i != reqpage) {
 				swap_pager_freepage(m[i]);
@@ -912,6 +980,10 @@ swap_pager_io(swp, m, count, reqpage, flags)
 
 		tries = 0;
 		s = splbio();
+		/*
+		 * if any other pages have been allocated in this block, we
+		 * only try to get one page.
+		 */
 		for (i = 0; i < SWB_NPAGES; i++) {
 			if (swb->swb_block[i] != SWB_EMPTY)
 				break;
@@ -924,10 +996,17 @@ retrygetspace:
 			for (i = 0; i < ntoget; i++)
 				swb->swb_block[i] = blk + btodb(NBPG) * i;
 		} else if (!rlist_alloc(&swapmap, btodb(NBPG), &swb->swb_block[off])) {
+				/*
+				 * if the allocation has failed, we try to reclaim space and
+				 * retry.
+				 */
 				if (++tries == 1) {
 					swap_pager_reclaim();
 					goto retrygetspace;
 				}
+				/*
+				 * here on swap space full.
+				 */
 				if (spc)
 					queue_enter(&swap_pager_free, spc, swp_clean_t, spc_list);
 				if (swap_pager_full == 0) 
@@ -941,11 +1020,18 @@ retrygetspace:
 		swap_pager_full = 0;
 	}
 
+	/*
+	 * map our page(s) into kva for I/O
+	 */
 	for (i = 0; i < count; i++) {
 		pmap_enter(vm_map_pmap(pager_map), kva + NBPG * i,
 			VM_PAGE_TO_PHYS(m[i]), VM_PROT_ALL, TRUE);
 	}
 				
+
+	/*
+	 * get the base I/O offset into the swap file
+	 */
 	off = swap_pager_block_offset(swp, m[0]->offset + paging_offset) / NBPG;
 
 #ifdef DEBUG
@@ -981,24 +1067,46 @@ retrygetspace:
 		spc->spc_bp = bp;
 		spc->spc_swp = swp;
 		spc->spc_m = m[reqpage];
+		/*
+		 * the completion routine for async writes
+		 */
 		bp->b_flags |= B_CALL;
 		bp->b_iodone = swap_pager_iodone;
 		bp->b_dirtyoff = 0;
 		bp->b_dirtyend = bp->b_bcount;
+		/*
+		 * allow the struct buf to refer back to the spc
+		 */
 		bp->b_spc = (void *) spc;
 		swp->sw_poip++;
 		queue_enter(&swap_pager_inuse, spc, swp_clean_t, spc_list);
+		/*
+		 * we remember that we have used a block for paging.
+		 */
 		swb->swb_valid |= (1 << off);
 	} else {
+		/*
+		 * here for sync write or any read
+		 */
 		if ((flags & B_READ) == 0) {
+			/*
+			 * if we are writing, we remember that we have
+			 * actually used a block for paging.
+			 */
 			swb->swb_valid |= (1 << off);
 			swp->sw_poip++;
 		} else {
 			swp->sw_piip++;
 		}
+		/*
+		 * the completion routine for reads and sync writes
+		 */
 		bp->b_flags |= B_CALL;
 		bp->b_iodone = swap_pager_iodone1;
 	}
+	/*
+	 * perform the I/O
+	 */
 	VOP_STRATEGY(bp);
 	if ((flags & (B_READ|B_ASYNC)) == B_ASYNC ) {
 		if ((bp->b_flags & B_DONE) == B_DONE) {
@@ -1007,6 +1115,10 @@ retrygetspace:
 		splx(s);
 		return(VM_PAGER_PEND);
 	}
+
+	/*
+	 * wait for the sync I/O to complete
+	 */
 	while ((bp->b_flags & B_DONE) == 0) {
 		tsleep((caddr_t)bp, PVM, (flags & B_READ)?"swread":"swwrt", 0);
 	}
@@ -1026,21 +1138,37 @@ retrygetspace:
 	if (bp->b_vp)
 		brelvp(bp);
 
+	/*
+	 * release the physical I/O buffer
+	 */
 	relpbuf(bp);
 
 	splx(s);
 
+	/*
+	 * remove the mapping for kernel virtual
+	 */
 	pmap_remove(vm_map_pmap(pager_map), kva, kva + count * NBPG);
 
+	/*
+	 * if we have written the page, then indicate that the page
+	 * is clean.
+	 */
 	if ((flags & B_READ) == 0 && rv == VM_PAGER_OK) {
 		m[reqpage]->flags |= PG_CLEAN;
 		pmap_clear_modify(VM_PAGE_TO_PHYS(m[reqpage]));
+		/*
+		 * optimization, if a page has been read during the
+		 * pageout process, we activate it.
+		 */
 		if (pmap_is_referenced(VM_PAGE_TO_PHYS(m[reqpage])))
 			vm_page_activate(m[reqpage]);
-		pmap_clear_reference(VM_PAGE_TO_PHYS(m[reqpage]));
 	}
 
 	if (spc) {
+		/*
+		 * if we have used an spc, we need to free it.
+		 */
 		queue_enter(&swap_pager_free, spc, swp_clean_t, spc_list);
 	} else {
 		for (i = 0; i < count; i++) {
@@ -1149,17 +1277,23 @@ swap_pager_finish(spc)
 		m->flags |= PG_CLEAN;
 	}
 
+	/*
+	 * if a page has been read during pageout, then
+	 * we activate the page.
+	 */
 	if (pmap_is_referenced(VM_PAGE_TO_PHYS(m))) 
 		vm_page_activate(m);
 
-	pmap_clear_reference(VM_PAGE_TO_PHYS(m));
+	/*
+	 * we wakeup any processes that are waiting on
+	 * this page.
+	 */
 	PAGE_WAKEUP(m);
 	/*
 	 * if we need memory desperately, then free it now
 	 */
 	if (vm_page_free_count < vm_page_free_reserved &&
-		(m->flags & PG_CLEAN) && m->wire_count == 0 &&
-		!pmap_is_wired(VM_PAGE_TO_PHYS(m))) {
+		(m->flags & PG_CLEAN) && m->wire_count == 0) {
 		pmap_page_protect(VM_PAGE_TO_PHYS(m), VM_PROT_NONE);
 		vm_page_free(m);
 	}
