@@ -3,29 +3,30 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)param.h	7.12 (Berkeley) %G%
+ *	@(#)param.h	7.13 (Berkeley) %G%
  */
 
-#define	BSD	199002		/* system version (year & month) */
+#define	BSD	199003		/* system version (year & month) */
 #define BSD4_3	1
+#define BSD4_4	0.5
 
 #include <sys/syslimits.h>
 
 /*
  * Machine-independent constants
  */
-#define	NMOUNT	30		/* number of mountable file systems */
+#define	NMOUNT		30		/* number of mountable file systems */
 /* NMOUNT must be <= 255 unless c_mdev (cmap.h) is expanded */
-#define	MSWAPX	NMOUNT		/* pseudo mount table index for swapdev */
-#define	MAXUPRC	CHILD_MAX	/* max processes per user */
-#define	NOFILE	OPEN_MAX	/* max open files per process */
-#define	CANBSIZ	256		/* max size of tty input line */
-#define	NCARGS	ARG_MAX		/* # characters in exec arglist */
-#define	MAXINTERP	32	/* maximum interpreter file name length */
-#define	NGROUPS	NGROUPS_MAX	/* max number groups */
-#define MAXHOSTNAMELEN	64	/* maximum hostname size */
+#define	MSWAPX		NMOUNT		/* pseudo mount index for swapdev */
+#define	MAXUPRC		CHILD_MAX	/* max processes per user */
+#define	NOFILE		OPEN_MAX	/* max open files per process */
+#define	CANBSIZ		256		/* max size of tty input line */
+#define	NCARGS		ARG_MAX		/* # characters in exec arglist */
+#define	MAXINTERP	32		/* max interpreter file name length */
+#define	NGROUPS		NGROUPS_MAX	/* max number groups */
+#define MAXHOSTNAMELEN	64		/* maximum hostname size */
 
-#define	NOGROUP	65535		/* marker for empty group set member */
+#define	NOGROUP		65535		/* marker for empty group set member */
 
 /*
  * Priorities
@@ -34,13 +35,15 @@
 #define	PINOD	10
 #define	PRIBIO	20
 #define	PVFS	22
-#define	PRIUBA	24
 #define	PZERO	25
-#define	PPIPE	26
+#define	PSOCK	26
 #define	PWAIT	30
 #define	PLOCK	35
-#define	PSLEP	40
+#define	PPAUSE	40
 #define	PUSER	50
+#define	PRIMASK	0x0ff
+#define	PCATCH	0x100		/* or'd with pri for tsleep to check signals */
+#define	PABORT	0x200		/* or'd with pri for tsleep to longjmp XXX */
 
 #define	NZERO	0
 
