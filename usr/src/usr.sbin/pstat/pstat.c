@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)pstat.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)pstat.c	4.2 (Berkeley) %G%";
 /*
  * Print system stuff
  */
@@ -233,7 +233,7 @@ dotext()
 		printf("%3d/%3d texts\n", ntx, NTEXT);
 		return;
 	}
-	printf("   LOC   FLAGS  PTDADDR DADDR  CADDR  RSS   SIZE   IPTR    CNT CCNT\n");
+	printf("   LOC   FLAGS DADDR      CADDR  RSS SIZE      IPTR  CNT CCNT\n");
 	loc = nl[STEXT].n_value;
 	for (xp = xtext; xp < &xtext[NTEXT]; xp++, loc+=sizeof(xtext[0])) {
 		if (xp->x_iptr == NULL)
@@ -246,14 +246,13 @@ dotext()
 		putf(xp->x_flag&XLOAD, 'L');
 		putf(xp->x_flag&XLOCK, 'K');
 		putf(xp->x_flag&XWANT, 'w');
-		printf("%8x", xp->x_ptdaddr);
 		printf("%5x", xp->x_daddr[0]);
 		printf("%11x", xp->x_caddr);
 		printf("%5d", xp->x_rssize);
 		printf("%5d", xp->x_size);
 		printf("%10.1x", xp->x_iptr);
 		printf("%5d", xp->x_count&0377);
-		printf("%4d", xp->x_ccount);
+		printf("%5d", xp->x_ccount);
 		printf("\n");
 	}
 }
@@ -276,7 +275,7 @@ doproc()
 		return;
 	}
 	printf("%d/%d processes\n", np, NPROC);
-	printf("   LOC    S    F POIP PRI SIG  UID  SLP TIM  CPU  NI    PGRP   PID   PPID    ADDR   RSS  SRSS SIZE   WCHAN    LINK   TEXTP CLKT\n");
+	printf("   LOC    S    F POIP PRI      SIG  UID SLP TIM  CPU  NI   PGRP    PID   PPID    ADDR   RSS SRSS SIZE    WCHAN    LINK   TEXTP CLKT\n");
 	for (loc=nl[SPROC].n_value,pp=xproc; pp<&xproc[NPROC]; pp++,loc+=sizeof(xproc[0])) {
 		if (pp->p_stat==0 && allflg==0)
 			continue;
@@ -285,7 +284,7 @@ doproc()
 		printf(" %4x", pp->p_flag & 0xffff);
 		printf(" %4d", pp->p_poip);
 		printf(" %3d", pp->p_pri);
-		printf(" %4x", pp->p_sig);
+		printf(" %8x", pp->p_sig);
 		printf(" %4d", pp->p_uid);
 		printf(" %3d", pp->p_slptime);
 		printf(" %3d", pp->p_time);
