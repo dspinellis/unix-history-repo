@@ -1,0 +1,5 @@
+cp csh /bin
+ln /bin/csh /bin/makesh
+chdir etc; sh install ; chdir ..
+chdir lib; sh install ; chdir ..
+chdir ucb; sh install ; chdir ..
