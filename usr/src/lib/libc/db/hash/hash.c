@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash.c	5.16 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -33,7 +33,7 @@ static int   flush_meta __P((void));
 static int   hash_access __P((ACTION, DBT *, DBT *));
 static int   hash_close __P((DB *));
 static int   hash_delete __P((const DB *, const DBT *, u_int));
-static int   hash_get __P((const DB *, DBT *, DBT *, u_int));
+static int   hash_get __P((const DB *, const DBT *, DBT *, u_int));
 static int   hash_put __P((const DB *, const DBT *, const DBT *, u_int));
 static void *hash_realloc __P((SEGMENT **, int, int));
 static int   hash_seq __P((const DB *, DBT *, DBT *, u_int));
@@ -127,12 +127,12 @@ hash_open(file, flags, mode, info)
 			RETURN_ERROR(EFTYPE, error1);
 		if (hashp->hash(CHARKEY, sizeof(CHARKEY)) != hashp->H_CHARKEY)
 			RETURN_ERROR(EFTYPE, error1);
-		/* 
-			Figure out how many segments we need. 
-			Max_Bucket it the maximum bucket number, so the
-			number of buckets is max_bucket+1.
-		*/
-		nsegs = (hashp->MAX_BUCKET + 1 + hashp->SGSIZE - 1) / 
+		/*
+		 * Figure out how many segments we need.  Max_Bucket is the
+		 * maximum bucket number, so the number of buckets is
+		 * max_bucket + 1.
+		 */
+		nsegs = (hashp->MAX_BUCKET + 1 + hashp->SGSIZE - 1) /
 			 hashp->SGSIZE;
 		hashp->nsegs = 0;
 		if (alloc_segs(nsegs))
@@ -147,7 +147,7 @@ hash_open(file, flags, mode, info)
 		    (hashp->BSHIFT + BYTE_SHIFT);
 
 		hashp->nmaps = bpages;
-		memset(&hashp->mapp[0], 0, bpages * sizeof(u_long *));
+		(void)memset(&hashp->mapp[0], 0, bpages * sizeof(u_long *));
 	}
 
 	/* Initialize Buffer Manager */
@@ -295,7 +295,8 @@ init_htab(nelem)
 	hashp->SPARES[l2] = l2 + 1;
 	hashp->SPARES[l2 + 1] = l2 + 1;
 	/* First bitmap page is at: splitpoint l2 page offset 1 */
-	__init_bitmap(OADDR_OF(l2, 1), l2 + 1, 0);
+	if (__init_bitmap(OADDR_OF(l2, 1), l2 + 1, 0))
+		return (-1);
 
 	hashp->MAX_BUCKET = hashp->LOW_MASK = nbuckets - 1;
 	hashp->HIGH_MASK = (nbuckets << 1) - 1;
@@ -444,7 +445,8 @@ flush_meta()
 static int
 hash_get(dbp, key, data, flag)
 	const DB *dbp;
-	DBT *key, *data;
+	const DBT *key;
+	DBT *data;
 	u_int flag;
 {
 	if (flag) {
@@ -456,7 +458,7 @@ hash_get(dbp, key, data, flag)
 		hashp->errno = errno = EPERM;
 		return (ERROR);
 	}
-	return (hash_access(HASH_GET, key, data));
+	return (hash_access(HASH_GET, (DBT *)key, data));
 }
 
 static int
@@ -474,7 +476,7 @@ hash_put(dbp, key, data, flag)
 		hashp->errno = errno = EPERM;
 		return (ERROR);
 	}
-	return (hash_access(flag == R_NOOVERWRITE ? 
+	return (hash_access(flag == R_NOOVERWRITE ?
 	    HASH_PUTNEW : HASH_PUT, (DBT *)key, (DBT *)data));
 }
 
@@ -600,7 +602,8 @@ found:
 	case HASH_GET:
 		bp = (u_short *)rbufp->page;
 		if (bp[ndx + 1] < REAL_KEY)
-			__big_return(rbufp, ndx, val, 0);
+			if (__big_return(rbufp, ndx, val, 0))
+				return (ERROR);
 		else {
 			val->data = (u_char *)rbufp->page + (int)bp[ndx + 1];
 			val->size = bp[ndx] - bp[ndx + 1];
@@ -681,7 +684,7 @@ hash_seq(dbp, key, data, flag)
 	}
 	ndx = hashp->cndx;
 	if (bp[ndx + 1] < REAL_KEY) {
-		if (__big_keydata(bufp, ndx, key, data, 1))
+		if (__big_keydata(bufp, key, data, 1))
 			return (ERROR);
 	} else {
 		key->data = (u_char *)hashp->cpage->page + bp[ndx];
