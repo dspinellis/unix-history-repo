@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)cp.c	4.2 82/03/31";
+static char *sccsid = "@(#)cp.c	4.3 82/03/31";
 #endif
 
 /*
@@ -42,7 +42,7 @@ main(argc, argv)
 	if (argc < 2) 
 		goto usage;
 	if (argc > 2 || rflag) {
-		if (lstat(argv[argc-1], &stb) < 0)
+		if (stat(argv[argc-1], &stb) < 0)
 			goto usage;
 		if ((stb.st_mode&S_IFMT) != S_IFDIR) 
 			goto usage;
@@ -73,7 +73,7 @@ copy(from, to)
 		fprintf(stderr, "cp: "); perror(from);
 		return (1);
 	}
-	if (lstat(to, &stto) >= 0 &&
+	if (stat(to, &stto) >= 0 &&
 	   (stto.st_mode&S_IFMT) == S_IFDIR) {
 		last = rindex(from, '/');
 		if (last) last++; else last = from;
@@ -86,7 +86,7 @@ copy(from, to)
 	}
 	if (rflag && (stfrom.st_mode&S_IFMT) == S_IFDIR) {
 		(void) close(fold);
-		if (lstat(to, &stto) < 0) {
+		if (stat(to, &stto) < 0) {
 			if (mkdir(to, (int)stfrom.st_mode) < 0)
 				return (1);
 		} else if ((stto.st_mode&S_IFMT) != S_IFDIR) {
@@ -95,7 +95,7 @@ copy(from, to)
 		}
 		return (rcopy(from, to));
 	}
-	if (lstat(to, &stto) >= 0) {
+	if (stat(to, &stto) >= 0) {
 		if (stfrom.st_dev == stto.st_dev &&
 		   stfrom.st_ino == stto.st_ino) {
 			fprintf(stderr, "cp: Cannot copy file to itself.\n");
