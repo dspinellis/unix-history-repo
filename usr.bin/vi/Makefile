@@ -1,5 +1,5 @@
 #	@(#)Makefile	8.30 (Berkeley) 3/22/94
-#	$Id: Makefile,v 1.12 1994/04/08 07:16:32 csgr Exp $
+#	$Id: Makefile,v 1.13 1994/04/08 07:36:06 csgr Exp $
 
 PROG=	nvi
 #CFLAGS=-g -DDEBUG
@@ -58,7 +58,7 @@ LINKS=	${BINDIR}/nvi ${BINDIR}/vi ${BINDIR}/nvi ${BINDIR}/ex \
 all: excmd.h options.h nvi
 	- rm -f vi
 	- rm -f ex
-	- if [ ! -d vi]; then ln nvi vi; fi
+	- if [ ! -d vi ]; then ln nvi vi; fi
 	- if [ ! -d ex ]; then ln nvi ex; fi
 
 warn:: ${SRCS}
