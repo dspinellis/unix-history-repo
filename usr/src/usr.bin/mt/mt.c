@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mt.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)mt.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -116,6 +116,10 @@ main(argc, argv)
 #include <sundev/arreg.h>
 #endif
 
+#ifdef tahoe
+#include <tahoevba/cyreg.h>
+#endif
+
 struct tape_desc {
 	short	t_type;		/* type of magtape device */
 	char	*t_name;	/* printing name */
@@ -132,6 +136,9 @@ struct tape_desc {
 #ifdef sun
 	{ MT_ISCPC,	"TapeMaster",	TMS_BITS,	0 },
 	{ MT_ISAR,	"Archive",	ARCH_CTRL_BITS,	ARCH_BITS },
+#endif
+#ifdef tahoe
+	{ MT_ISCY,	"cipher",	CYS_BITS,	CYCW_BITS },
 #endif
 	{ 0 }
 };
