@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)chmod.1	8.2 (Berkeley) %G%
+.\"	@(#)chmod.1	8.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CHMOD 1
@@ -16,7 +16,10 @@
 .Nd change file modes
 .Sh SYNOPSIS
 .Nm chmod
-.Op Fl HRh
+.Oo
+.Fl R
+.Op Fl H | Fl L | Fl P
+.Oc
 .Ar mode
 .Ar file ...
 .Sh DESCRIPTION
@@ -30,25 +33,40 @@ operand.
 The options are as follows:
 .Bl -tag -width Ds
 .It Fl H
-When encountering a symbolic link on the command line, follow it.  All other
-symbolic links encountered in the traversal are not followed.
+If the
+.Fl R
+option is specified, symbolic links on the command line are followed.
+(Symbolic links encountered in the tree traversal are not followed.)
+.It Fl L
+If the
+.Fl R
+option is specified, all symbolic links are followed.
+.It Fl P
+If the
+.Fl R
+option is specified, no symbolic links are followed.
 .It Fl R
-Traverse a file hierarchy.
-For each file that is of type directory,
-.Nm chmod
-changes the mode of all files in the file hierarchy below it followed
-by the mode of the directory itself.
-.It Fl h
-When encountering a symbolic link anywhere in the traversal, follow it.
+Change the modes of the file hierarchies rooted in the files
+instead of just the files themselves.
 .El
 .Pp
-The mode of a symbolic link is immutable, so unless the
-.Fl h
-or
+Symbolic links do not have modes, so unless the
 .Fl H
-flag is set,
+or
+.Fl L
+option is set,
 .Nm chmod
 on a symbolic link is a no-op.
+The
+.Fl H ,
+.Fl L
+and
+.Fl P
+options are ignored unless the
+.Fl R
+option is specified.
+In addition, these options override each other and the
+command's actions are determined by the last one specified.
 .Pp
 Only the owner of a file or the super-user is permitted to change
 the mode of a file.
@@ -216,7 +234,7 @@ already searchable/executable by anyone.
 .It Li 755
 .It Li u=rwx,go=rx
 .It Li u=rwx,go=u-w
-make a file readable/executable by everyone and writeable by the owner only.
+make a file readable/executable by everyone and writable by the owner only.
 .Pp
 .It Li go=
 clear all mode bits for group and others.
