@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)create.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)create.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -123,7 +123,7 @@ statf(p)
 	if (keys & F_NLINK && p->fts_statp->st_nlink != 1)
 		output(&indent, "nlink=%u", p->fts_statp->st_nlink);
 	if (keys & F_SIZE)
-		output(&indent, "size=%ld", p->fts_statp->st_size);
+		output(&indent, "size=%qd", p->fts_statp->st_size);
 	if (keys & F_TIME)
 		output(&indent, "time=%ld.%ld",
 		    p->fts_statp->st_mtimespec.ts_sec,
