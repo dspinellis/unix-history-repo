@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)init.8	6.2 (Berkeley) %G%
+.\"	@(#)init.8	6.3 (Berkeley) %G%
 .\"
 .TH INIT 8 ""
 .UC 4
@@ -42,7 +42,7 @@ To begin such operations, it reads the file
 and
 executes a command for each terminal specified in the file.
 This command will usually be
-.IR /etc/getty .
+.IR /usr/libexec/getty .
 .I Getty
 opens and initializes the terminal line,
 reads the user's name and invokes
@@ -61,7 +61,7 @@ file
 .IR utmp ,
 which records current users, and
 makes an entry in
-.IR /usr/adm/wtmp ,
+.IR /var/log/wtmp ,
 which maintains a history
 of logins and logouts.
 The
@@ -122,7 +122,7 @@ If, at bootstrap time, the
 process cannot be located, the system will loop in user mode at location
 0x13.
 .SH DIAGNOSTICS
-\fB/etc/getty\fP \fIgettyargs\fP\fB failing, sleeping\fP.
+\fB/usr/libexec/getty\fP \fIgettyargs\fP\fB failing, sleeping\fP.
 A process being started to service a line is exiting quickly
 each time it is started.
 This is often caused by a ringing or noisy terminal line.
@@ -135,8 +135,8 @@ which is stuck in a device driver due to a persistent device error condition.
 .SH FILES
 /dev/console,
 /dev/tty*,
-/etc/utmp,
-/usr/adm/wtmp,
+/var/run/utmp,
+/var/log/wtmp,
 /etc/ttys,
 /etc/rc
 .SH "SEE ALSO"
