@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ifconfig.c	4.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)ifconfig.c	4.15 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -38,6 +38,7 @@ struct	sockaddr_in netmask = { AF_INET };
 struct	sockaddr_in ipdst = { AF_INET };
 char	name[30];
 int	flags;
+int	metric;
 int	setaddr;
 int	setmask;
 int	setbroadaddr;
@@ -46,7 +47,7 @@ int	s;
 extern	int errno;
 
 int	setifflags(), setifaddr(), setifdstaddr(), setifnetmask();
-int	setifbroadaddr(), setifipdst();
+int	setifmetric(), setifbroadaddr(), setifipdst();
 
 #define	NEXTARG		0xffffff
 
@@ -61,10 +62,6 @@ struct	cmd {
 	{ "-trailers",	IFF_NOTRAILERS,	setifflags },
 	{ "arp",	-IFF_NOARP,	setifflags },
 	{ "-arp",	IFF_NOARP,	setifflags },
-#ifdef IFF_LOCAL
-	{ "local",	IFF_LOCAL,	setifflags },
-	{ "-local",	-IFF_LOCAL,	setifflags },
-#endif
 	{ "debug",	IFF_DEBUG,	setifflags },
 	{ "-debug",	-IFF_DEBUG,	setifflags },
 #ifdef notdef
@@ -73,6 +70,7 @@ struct	cmd {
 	{ "-swabips",	-EN_SWABIPS,	setifflags },
 #endif
 	{ "netmask",	NEXTARG,	setifnetmask },
+	{ "metric",	NEXTARG,	setifmetric },
 	{ "broadcast",	NEXTARG,	setifbroadaddr },
 	{ "ipdst",	NEXTARG,	setifipdst },
 	{ 0,		0,		setifaddr },
@@ -108,11 +106,12 @@ main(argc, argv)
 {
 	int af = AF_INET;
 	if (argc < 2) {
-		fprintf(stderr, "usage: ifconfig interface [ af %s %s %s %s\n",
-		    "[ address [ dest_addr ] ] [ up ] [ down ]",
-		    "[ netmask mask ] ]",
-		    "[ trailers | -trailers ]",
-		    "[ arp | -arp ] ]");
+		fprintf(stderr, "usage: ifconfig interface\n%s%s%s%s",
+		    "\t[ af [ address [ dest_addr ] ] [ up ] [ down ]",
+			    "[ netmask mask ] ]\n",
+		    "\t[ metric n ]\n",
+		    "\t[ trailers | -trailers ]\n",
+		    "\t[ arp | -arp ]\n");
 		exit(1);
 	}
 	argc--, argv++;
@@ -140,6 +139,10 @@ main(argc, argv)
 	}
 	strncpy(ifr.ifr_name, name, sizeof ifr.ifr_name);
 	flags = ifr.ifr_flags;
+	if (ioctl(s, SIOCGIFMETRIC, (caddr_t)&ifr) < 0)
+		perror("ioctl (SIOCGIFMETRIC)");
+	else
+		metric = ifr.ifr_metric;
 	if (af == AF_INET) {
 		if (ioctl(s, SIOCGIFNETMASK, (caddr_t)&ifr) < 0) {
 			if (errno != EADDRNOTAVAIL)
@@ -273,6 +276,19 @@ setifflags(vname, value)
 		Perror(vname);
 }
 
+setifmetric(val)
+	char *val;
+{
+	strncpy(ifr.ifr_name, name, sizeof (ifr.ifr_name));
+	ifr.ifr_metric = atoi(val);
+	if (ioctl(s, SIOCSIFMETRIC, (caddr_t)&ifr) < 0)
+		perror("ioctl (set metric)");
+}
+
+#define	IFFBITS \
+"\020\1UP\2BROADCAST\3DEBUG\4LOOPBACK\5POINTOPOINT\6NOTRAILERS\7RUNNING\10NOARP\
+"
+
 /*
  * Print the status of the interface.  If an address family was
  * specified, show it and it only; otherwise, show them all.
@@ -282,6 +298,11 @@ status()
 	register struct afswtch *p = afp;
 	short af = ifr.ifr_addr.sa_family;
 
+	printf("%s: ", name);
+	printb("flags", flags, IFFBITS);
+	if (metric)
+		printf(" metric %d", metric);
+	putchar('\n');
 	if ((p = afp) != NULL) {
 		(*p->af_status)();
 		return;
@@ -291,10 +312,6 @@ status()
 		(*p->af_status)();
 	}
 }
-
-#define	IFFBITS \
-"\020\1UP\2BROADCAST\3DEBUG\4ROUTE\5POINTOPOINT\6NOTRAILERS\7RUNNING\10NOARP\
-\11LOCAL"
 
 in_status()
 {
@@ -309,7 +326,7 @@ in_status()
 	}
 	strncpy(ifr.ifr_name, name, sizeof (ifr.ifr_name));
 	sin = (struct sockaddr_in *)&ifr.ifr_addr;
-	printf("%s: %s ", name, inet_ntoa(sin->sin_addr));
+	printf("\tinet %s ", name, inet_ntoa(sin->sin_addr));
 	if (flags & IFF_POINTOPOINT) {
 		if (ioctl(s, SIOCGIFDSTADDR, (caddr_t)&ifr) < 0) {
 			if (errno == EADDRNOTAVAIL)
@@ -322,7 +339,6 @@ in_status()
 		printf("--> %s ", inet_ntoa(sin->sin_addr));
 	}
 	printf("netmask %x ", ntohl(netmask.sin_addr.s_addr));
-	printb("flags", flags, IFFBITS); putchar('\n');
 	if (flags & IFF_BROADCAST) {
 		if (ioctl(s, SIOCGIFBRDADDR, (caddr_t)&ifr) < 0) {
 			if (errno == EADDRNOTAVAIL)
@@ -331,8 +347,9 @@ in_status()
 		}
 		strncpy(ifr.ifr_name, name, sizeof (ifr.ifr_name));
 		sin = (struct sockaddr_in *)&ifr.ifr_addr;
-		printf("broadcast: %s\n", inet_ntoa(sin->sin_addr));
+		printf("broadcast %s", inet_ntoa(sin->sin_addr));
 	}
+	putchar('\n');
 }
 
 
@@ -355,7 +372,7 @@ xns_status()
 	}
 	strncpy(ifr.ifr_name, name, sizeof ifr.ifr_name);
 	sns = (struct sockaddr_ns *)&ifr.ifr_addr;
-	printf("%s: ns:%s ", name, ns_ntoa(sns->sns_addr));
+	printf("\tns %s ", ns_ntoa(sns->sns_addr));
 	if (flags & IFF_POINTOPOINT) { /* by W. Nesheim@Cornell */
 		if (ioctl(s, SIOCGIFDSTADDR, (caddr_t)&ifr) < 0) {
 			if (errno == EADDRNOTAVAIL)
@@ -367,7 +384,6 @@ xns_status()
 		sns = (struct sockaddr_ns *)&ifr.ifr_dstaddr;
 		printf("--> %s ", ns_ntoa(sns->sns_addr));
 	}
-	printb("flags", flags, IFFBITS);
 	putchar('\n');
 }
 
