@@ -1,0 +1,660 @@
+
+
+
+G++(1)                      GNU Tools                      G++(1)
+
+
+NNAAMMEE
+       g++ - GNU project C++ Compiler (v2 preliminary)
+
+SSYYNNOOPPSSIISS
+       g++ [[_o_p_t_i_o_n | _f_i_l_e_n_a_m_e ]...
+
+DDEESSCCRRIIPPTTIIOONN
+       The C and C++ compilers are integrated; gg++++ is a script to
+       call ggcccc wwiitthh ooppttiioonnss ttoo  rreeccooggnniizzee  CC++++..   ggcccc  processes
+       input  files  through  one or more of four stages: prepro-
+       cessing, compilation, assembly,  and  linking.   This  man
+       page  contains  full  descriptions  for  _o_n_l_y C++ specific
+       aspects of the compiler, though it also contains summaries
+       of some general-purpose options.  For a fuller explanation
+       of the compiler, see ggcccc(11).
+
+       C++ source files use one of the suffixes `..CC',  `..cccc',  or
+       `..ccxxxx'; preprocessed C++ files use the suffix `..iiii'.
+
+OOPPTTIIOONNSS
+       There  are many command-line options, including options to
+       control details of optimization, warnings, and code gener-
+       ation,  which  are  common  to both ggcccc and gg++++.  For full
+       information on all options, see ggcccc(11).
+
+       Options must be separate: `--ddrr' is  quite  different  from
+       `--dd --rr '.
+
+       Most `--ff' and `--WW' options have two contrary forms: --ff_n_a_m_e
+       and --ffnnoo--_n_a_m_e (or --WW_n_a_m_e and  --WWnnoo--_n_a_m_e).  Only  the  non-
+       default forms are shown here.
+
+
+       --cc     Compile  or  assemble  the source files, but do not
+              link.  The compiler output is an object file corre-
+              sponding to each source file.
+
+       --DD_m_a_c_r_o
+              Define macro _m_a_c_r_o with the string `11' as its defi-
+              nition.
+
+       --DD_m_a_c_r_o==_d_e_f_n
+              Define macro _m_a_c_r_o as _d_e_f_n.
+
+       --EE     Stop after the preprocessing stage; do not run  the
+              compiler proper.  The output is preprocessed source
+              code, which is sent to the standard output.
+
+       ++ee_N    control whether  virtual  function  definitions  in
+              classes  are  used  to  generate  code,  or only to
+              define interfaces for their callers.  These options
+
+
+
+GNU Tools                   27dec1991                           1
+
+
+
+
+
+
+
+
+G++(1)                      GNU Tools                      G++(1)
+
+
+              are  provided  for  compatibility  with  cfront 1.x
+              usage; the recommended GNU  C++  usage  is  to  use
+              ##pprraaggmmaa   iinntteerrffaaccee   and  ##pprraaggmmaa  iimmpplleemmeennttaattiioonn,
+              instead.
+
+              With `++ee00', virtual function definitions in classes
+              are  declared  extern; the declaration is used only
+              as an interface specification, not to generate code
+              for the virtual functions (in this compilation).
+
+              With  `++ee11', gg++++ actually generates the code imple-
+              menting virtual functions defined in the code,  and
+              makes them publicly visible.
+
+       --ffaallll--vviirrttuuaall
+              When  you use the `--ffaallll--vviirrttuuaall', all member func-
+              tions  (except  for   constructor   functions   and
+              new/delete  member  operators) declared in the same
+              class with a ``method-call''  operator  method  are
+              treated  as  virtual  functions of the given class.
+              In effect, all of these methods become ``implicitly
+              virtual.''
+
+              This  does _n_o_t mean that all calls to these methods
+              will be made through the internal table of  virtual
+              functions.   There  are  some  circumstances  under
+              which it is obvious that a call to a given  virtual
+              function  can  be made directly, and in these cases
+              the calls still go direct.
+
+              The effect of making all methods of a class with  a
+              declared  `ooppeerraattoorr-->>(())(())' implicitly virtual using
+              `--ffaallll--vviirrttuuaall' extends also to all non-constructor
+              methods of any class derived from such a class.
+
+       --ffddoollllaarrss--iinn--iiddeennttiiffiieerrss
+              Permit  the use of `$$' in identifiers.  Traditional
+              C allowed the character `$$' to form part of identi-
+              fiers;  by  default,  GNU C also allows this.  How-
+              ever, ANSI C forbids `$$' in  identifiers,  and  GNU
+              C++  also  forbids  it by default on most platforms
+              (though on some platforms it's enabled  by  default
+              for GNU C++ as well).
+
+       --ffeelliiddee--ccoonnssttrruuccttoorrss
+              Use  this  option  to  instruct  the compiler to be
+              smarter  about  when  it  can  elide  constructors.
+              Without this flag, GNU C++ and cfront both generate
+              effectively the same code for:
+
+              A foo ();
+
+
+
+GNU Tools                   27dec1991                           2
+
+
+
+
+
+
+
+
+G++(1)                      GNU Tools                      G++(1)
+
+
+              A x (foo ());   // x initialized by `foo ()', no ctor called
+              A y = foo ();   // call to `foo ()' heads to tempo-
+              rary,
+                              // y is initialized from the tempo-
+              rary.
+
+              Note  the difference!  With this flag, GNU C++ ini-
+              tializes `yy' directly from the call to ffoooo (()) with-
+              out going through a temporary.
+
+       --ffeennuumm--iinntt--eeqquuiivv
+              Normally  GNU C++ allows conversion of eennuumm to iinntt,
+              but not the other way around.  Use this  option  if
+              you want GNU C++ to allow conversion of iinntt to eennuumm
+              as well.
+
+       --ffggnnuu--bbiinnuuttiillss
+
+       --ffnnoo--ggnnuu--bbiinnuuttiillss
+              `--ffggnnuu--bbiinnuuttiillss ' (the default for  most,  but  not
+              all,  platforms)  makes GNU C++ emit extra informa-
+              tion for static  initialization  and  finalization.
+              This  information  has to be passed from the assem-
+              bler to the GNU linker.  Some assemblers won't pass
+              this  information;  you  must  either use GNU aass or
+              specify the option `--ffnnoo--ggnnuu--bbiinnuuttiillss'.
+
+              With `--ffnnoo--ggnnuu--bbiinnuuttiillss', you must use the  program
+              ccoolllleecctt (part of the GCC distribution) for linking.
+
+       --ffmmeemmooiizzee--llooookkuuppss
+
+       --ffssaavvee--mmeemmooiizzeedd
+              These flags are used to get the compiler to compile
+              programs  faster using heuristics.  They are not on
+              by default since they are only effective about half
+              the time.  The other half of the time programs com-
+              pile more slowly (and take more memory).
+
+              The first time the compiler must build a call to  a
+              member function (or reference to a data member), it
+              must (1) determine  whether  the  class  implements
+              member  functions  of  that name; (2) resolve which
+              member function to call  (which  involves  figuring
+              out  what  sorts  of  type  conversions  need to be
+              made); and (3) check the visibility of  the  member
+              function  to  the  caller.   All of this adds up to
+              slower compilation.  Normally, the  second  time  a
+              call  is made to that member function (or reference
+              to that data member), it must go through  the  same
+              lengthy  process  again.  This means that code like
+
+
+
+GNU Tools                   27dec1991                           3
+
+
+
+
+
+
+
+
+G++(1)                      GNU Tools                      G++(1)
+
+
+              this
+
+                cout << "This " << p << " has " << n << " legs.\n";
+
+              makes six passes through all three steps.  By using
+              a software cache, a ``hit''  significantly  reduces
+              this  cost.   Unfortunately, using the cache intro-
+              duces another layer of  mechanisms  which  must  be
+              implemented,   and  so  incurs  its  own  overhead.
+              `--ffmmeemmooiizzee--llooookkuuppss' enables the software cache.
+
+              Because access privileges (visibility)  to  members
+              and  member  functions may differ from one function
+              context to the next, gg++++  may  need  to  flush  the
+              cache. With the `--ffmmeemmooiizzee--llooookkuuppss' flag, the cache
+              is flushed after every function that  is  compiled.
+              The  `-fsave-memoized'  flag enables the same soft-
+              ware cache, but when the compiler  determines  that
+              the  context  of  the  last function compiled would
+              yield the same access privileges of the next  func-
+              tion  to  compile, it preserves the cache.  This is
+              most helpful when defining  many  member  functions
+              for  the  same  class: with the exception of member
+              functions which are friends of other classes,  each
+              member  function has exactly the same access privi-
+              leges as every other, and the  cache  need  not  be
+              flushed.
+
+       --ffnnoo--ddeeffaauulltt--iinnlliinnee
+              If  `--ffddeeffaauulltt--iinnlliinnee' is enabled then member func-
+              tions  defined  inside  class  scope  are  compiled
+              inline  by  default;  i.e.,  you  don't need to add
+              `iinnlliinnee' in front of the member function name.   By
+              popular demand, this option is now the default.  To
+              keep GNU C++ from inlining these member  functions,
+              specify `--ffnnoo--ddeeffaauulltt--iinnlliinnee'.
+
+       --ffnnoo--ssttrriicctt--pprroottoottyyppee
+              Consider the declaration iinntt ffoooo (());;.  In C++, this
+              means that the function ffoooo takes no arguments.  In
+              ANSI  C, this is declared iinntt ffoooo((vvooiidd));;.  With the
+              flag `--ffnnoo--ssttrriicctt--pprroottoottyyppee',  declaring  functions
+              with  no  arguments  is equivalent to declaring its
+              argument list to be untyped, i.e., iinntt ffoooo  (());;  is
+              equivalent to saying iinntt ffoooo ((......));;.
+
+       --ffnnoonnnnuullll--oobbjjeeccttss
+              Normally,  GNU  C++  makes conservative assumptions
+              about  objects  reached  through  references.   For
+              example,  the  compiler  must check that `aa' is not
+              null in code like the following:
+
+
+
+GNU Tools                   27dec1991                           4
+
+
+
+
+
+
+
+
+G++(1)                      GNU Tools                      G++(1)
+
+
+                  obj &a = g ();
+                  a.f (2);
+              Checking that references of this sort have non-null
+              values  requires  extra  code,  however,  and it is
+              unnecessary  for  many  programs.   You   can   use
+              `--ffnnoonnnnuullll--oobbjjeeccttss' to omit the checks for null, if
+              your program doesn't require the default  checking.
+
+       --fftthhiiss--iiss--vvaarriiaabbllee
+              The  incorporation  of user-defined free store man-
+              agement into C++ has made  assignment  to  tthhiiss  an
+              anachronism.   Therefore, by default GNU C++ treats
+              the type of tthhiiss in a member function of ccllaassss XX to
+              be  XX  **ccoonnsstt.   In  other  words, it is illegal to
+              assign to tthhiiss  within  a  class  member  function.
+              However,   for  backwards  compatibility,  you  can
+              invoke    the     old     behavior     by     using
+              `--fftthhiiss--iiss--vvaarriiaabbllee'.
+
+       --gg     Produce debugging information in the operating sys-
+              tem's native format (for DBX or SDB or DWARF).  GDB
+              also  can work with this debugging information.  On
+              most systems that use DBX format, `--gg' enables  use
+              of  extra  debugging  information that only GDB can
+              use.
+
+              Unlike most other C compilers, GNU CC allows you to
+              use  `--gg'  with `--OO'.  The shortcuts taken by opti-
+              mized  code  may  occasionally  produce  surprising
+              results:  some variables you declared may not exist
+              at all; flow of control may briefly move where  you
+              did  not expect it; some statements may not be exe-
+              cuted because  they  compute  constant  results  or
+              their  values were already at hand; some statements
+              may execute in different places because  they  were
+              moved out of loops.
+
+              Nevertheless  it proves possible to debug optimized
+              output.  This makes it reasonable to use the  opti-
+              mizer for programs that might have bugs.
+
+       --II_d_i_r    Append  directory  _d_i_r to the list of directories
+              searched for include files.
+
+       --LL_d_i_r   Add directory _d_i_r to the list of directories to be
+              searched for `--ll'.
+
+       --ll_l_i_b_r_a_r_y
+                Use the library named _l_i_b_r_a_r_y when linking.  (C++
+              programs often require `-lg++' for successful link-
+              ing.)
+
+
+
+GNU Tools                   27dec1991                           5
+
+
+
+
+
+
+
+
+G++(1)                      GNU Tools                      G++(1)
+
+
+       --OO     Optimize.   Optimizing  compilation  takes somewhat
+              more time, and a lot more memory for a large  func-
+              tion.
+
+              Without  `--OO', the compiler's goal is to reduce the
+              cost of compilation and to make  debugging  produce
+              the  expected results.  Statements are independent:
+              if you stop the program with a  breakpoint  between
+              statements,  you can then assign a new value to any
+              variable or change the program counter to any other
+              statement  in  the  function  and  get  exactly the
+              results you would expect from the source code.
+
+              Without `--OO', only variables declared rreeggiisstteerr  are
+              allocated  in  registers.   The  resulting compiled
+              code is a little worse than produced by PCC without
+              `--OO'.
+
+              With  `--OO',  the compiler tries to reduce code size
+              and execution time.
+
+       --oo _f_i_l_e
+               Place output in file _f_i_l_e.
+
+       --SS     Stop after the stage of compilation proper; do  not
+              assemble.  The output is an assembler code file for
+              each non-assembler input file specified.
+
+       --ssttaattiicc
+              On systems that support dynamic linking, this  pre-
+              vents  linking with the shared libraries.  On other
+              systems, this option has no effect.
+
+       --ttrraaddiittiioonnaall
+              Attempt to support some aspects  of  traditional  C
+              compilers.
+
+              Specifically, for both C and C++ programs:
+
+          +o   In the preprocessor, comments convert to nothing at
+              all, rather than to a space.   This  allows  tradi-
+              tional token concatenation.
+
+          +o   In the preprocessor, macro arguments are recognized
+              within string constants in a macro definition  (and
+              their  values are stringified, though without addi-
+              tional quote marks, when they appear in such a con-
+              text).   The preprocessor always considers a string
+              constant to end at a newline.
+
+          +o   The  preprocessor  does  not  predefine  the  macro
+
+
+
+GNU Tools                   27dec1991                           6
+
+
+
+
+
+
+
+
+G++(1)                      GNU Tools                      G++(1)
+
+
+              ____SSTTDDCC____  when  you  use  `--ttrraaddiittiioonnaall', but still
+              predefines____GGNNUUCC____ (since the GNU extensions  indi-
+              cated    by    ____GGNNUUCC____   are   not   affected   by
+              `--ttrraaddiittiioonnaall').  If you need to write header files
+              that   work   differently   depending   on  whether
+              `--ttrraaddiittiioonnaall' is in use, by testing both of  these
+              predefined  macros  you can distinguish four situa-
+              tions: GNU C, traditional GNU C, other ANSI C  com-
+              pilers, and other old C compilers.
+
+          +o   In the preprocessor, comments convert to nothing at
+              all, rather than to a space.   This  allows  tradi-
+              tional token concatenation.
+
+          +o   In the preprocessor, macro arguments are recognized
+              within string constants in a macro definition  (and
+              their  values are stringified, though without addi-
+              tional quote marks, when they appear in such a con-
+              text).   The preprocessor always considers a string
+              constant to end at a newline.
+
+          +o   The  preprocessor  does  not  predefine  the  macro
+              ____SSTTDDCC____  when  you  use  `--ttrraaddiittiioonnaall', but still
+              predefines____GGNNUUCC____ (since the GNU extensions  indi-
+              cated    by    ____GGNNUUCC____   are   not   affected   by
+              `--ttrraaddiittiioonnaall').  If you need to write header files
+              that   work   differently   depending   on  whether
+              `--ttrraaddiittiioonnaall' is in use, by testing both of  these
+              predefined  macros  you can distinguish four situa-
+              tions: GNU C, traditional GNU C, other ANSI C  com-
+              pilers, and other old C compilers.
+
+
+          +o   String  ``constants'' are not necessarily constant;
+              they are stored in writable  space,  and  identical
+              looking  constants are allocated separately.  (This
+              is the same as the effect of `--ffwwrriittaabbllee--ssttrriinnggss'.)
+
+              For  C++  programs only (not C), `--ttrraaddiittiioonnaall' has
+              one additional effect: assignment to tthhiiss  is  per-
+              mitted.    This  is  the  same  as  the  effect  of
+              `--fftthhiiss--iiss--vvaarriiaabbllee'.
+
+       --UU_m_a_c_r_o
+              Undefine macro _m_a_c_r_o.
+
+       --WWaallll  Issue warnings  for  conditions  which  pertain  to
+              usage  that  we  recommend  avoiding  and  that  we
+              believe is easy to avoid, even in conjunction  with
+              macros.
+
+
+
+
+GNU Tools                   27dec1991                           7
+
+
+
+
+
+
+
+
+G++(1)                      GNU Tools                      G++(1)
+
+
+       --WWeennuumm--ccllaasshh
+              Warn  when converting between different enumeration
+              types.
+
+       --WWoovveerrllooaaddeedd--vviirrttuuaall
+              In a derived  class,  the  definitions  of  virtual
+              functions  must  match the type signature of a vir-
+              tual function declared in the base class.  Use this
+              option  to  request  warnings  when a derived class
+              declares  a  function  that  may  be  an  erroneous
+              attempt to define a virtual function: that is, warn
+              when a function with the same  name  as  a  virtual
+              function  in the base class, but with a type signa-
+              ture that doesn't match any virtual functions  from
+              the base class.
+
+       --ww     Inhibit all warning messages.
+
+
+
+PPRRAAGGMMAASS
+       Two  `##pprraaggmmaa'  directives  are  supported for GNU C++, to
+       permit using the same header file for two purposes:  as  a
+       definition  of  interfaces to a given object class, and as
+       the full definition of the contents of that object  class.
+
+       ##pprraaggmmaa iinntteerrffaaccee
+              Use  this  directive  in  header  files that define
+              object classes, to save space in most of the object
+              files  that  use  those  classes.   Normally, local
+              copies of certain  information  (backup  copies  of
+              inline member functions, debugging information, and
+              the internal tables that  implement  virtual  func-
+              tions)  must  be  kept  in  each  object  file that
+              includes  class  definitions.   You  can  use  this
+              pragma  to  avoid  such duplication.  When a header
+              file containing `##pprraaggmmaa iinntteerrffaaccee' is included  in
+              a  compilation, this auxiliary information will not
+              be generated (unless the  main  input  source  file
+              itself  uses  `##pprraaggmmaa  iimmpplleemmeennttaattiioonn').  Instead,
+              the object files  will  contain  references  to  be
+              resolved at link time.
+
+       ##pprraaggmmaa iimmpplleemmeennttaattiioonn
+
+       ##pprraaggmmaa iimmpplleemmeennttaattiioonn ""_o_b_j_e_c_t_s..hh""
+              Use this pragma in a main input file, when you want
+              full output from included header files to be gener-
+              ated  (and  made  globally  visible).  The included
+              header  file,  in   turn,   should   use   `##pprraaggmmaa
+              iinntteerrffaaccee'.    Backup   copies   of  inline  member
+
+
+
+GNU Tools                   27dec1991                           8
+
+
+
+
+
+
+
+
+G++(1)                      GNU Tools                      G++(1)
+
+
+              functions, debugging information, and the  internal
+              tables  used to implement virtual functions are all
+              generated in implementation files.
+
+              If you use `##pprraaggmmaa iimmpplleemmeennttaattiioonn' with  no  argu-
+              ment,  it  applies to an include file with the same
+              basename as  your  source  file;  for  example,  in
+              `aallllccllaassss..cccc',  `##pprraaggmmaa  iimmpplleemmeennttaattiioonn' by itself
+              is   equivalent    to    `##pprraaggmmaa    iimmpplleemmeennttaattiioonn
+              ""aallllccllaassss..hh""'.  Use the string argument if you want
+              a single implementation file to include  code  from
+              multiple header files.
+
+              There  is no way to split up the contents of a sin-
+              gle header file into multiple implementation files.
+
+FFIILLEESS
+       file.h             C header (preprocessor) file
+       file.i             preprocessed C source file
+       file.C             C++ source file
+       file.cc            C++ source file
+       file.cxx           C++ source file
+       file.s             assembly language file
+       file.o             object file
+       a.out              link edited output
+       _T_M_P_D_I_R/cc*         temporary files
+       _L_I_B_D_I_R/cpp         preprocessor
+       _L_I_B_D_I_R/cc1plus     compiler
+       _L_I_B_D_I_R/collect     linker   front   end   needed  on  some
+       machines
+       _L_I_B_D_I_R/libgcc.a    GCC subroutine library
+       /lib/crt[01n].o    start-up routine
+       _L_I_B_D_I_R/ccrt0       additional start-up routine for C++
+       /lib/libc.a        standard C library, see _i_n_t_r_o(3)
+       /usr/include       standard directory for ##iinncclluuddee files
+       _L_I_B_D_I_R/include     standard  gcc  directory  for  ##iinncclluuddee
+       files
+       _L_I_B_D_I_R/g++-include additional g++ directory for ##iinncclluuddee
+
+       _L_I_B_D_I_R is usually //uussrr//llooccaall//lliibb//_m_a_c_h_i_n_e/_v_e_r_s_i_o_n.
+       _T_M_P_D_I_R comes from the environment variable TTMMPPDDIIRR (default
+       //uussrr//ttmmpp if available, else //ttmmpp).
+
+SSEEEE AALLSSOO
+       gcc(1), cpp(1),  as(1),  ld(1),  gdb(1),  adb(1),  dbx(1),
+       sdb(1).
+       `ggcccc', `ccpppp', `aass',``ld'',, and `ggddbb' entries in iinnffoo.
+       _U_s_i_n_g  _a_n_d  _P_o_r_t_i_n_g  _G_N_U  _C_C _(_f_o_r _v_e_r_s_i_o_n _2_._0_), Richard M.
+       Stallman, November 1990; _T_h_e _C  _P_r_e_p_r_o_c_e_s_s_o_r,  Richard  M.
+       Stallman, July 1990; _U_s_i_n_g _G_D_B_: _A _G_u_i_d_e _t_o _t_h_e _G_N_U _S_o_u_r_c_e_-
+       _L_e_v_e_l _D_e_b_u_g_g_e_r, Richard M. Stallman and Roland  H.  Pesch,
+
+
+
+GNU Tools                   27dec1991                           9
+
+
+
+
+
+
+
+
+G++(1)                      GNU Tools                      G++(1)
+
+
+       December  1991;  _U_s_i_n_g _a_s_: _t_h_e _G_N_U _A_s_s_e_m_b_l_e_r, Dean Elsner,
+       Jay Fenlason & friends, March 1991; _g_l_d_: _t_h_e  _G_N_U  _l_i_n_k_e_r,
+       Steve Chamberlain and Roland Pesch, April 1991.
+
+
+BBUUGGSS
+       Report  bugs  to bbuugg--gg++++@@pprreepp..aaii..mmiitt..eedduu.  Bugs tend actu-
+       ally to be fixed if they can be isolated, so it is in your
+       interest  to  report  them  in such a way that they can be
+       easily reproduced.
+
+CCOOPPYYIINNGG
+       Copyright (c) 1991 Free Software Foundation, Inc.
+
+       Permission is granted  to  make  and  distribute  verbatim
+       copies  of  this  manual provided the copyright notice and
+       this permission notice are preserved on all copies.
+
+       Permission is granted to copy and distribute modified ver-
+       sions  of  this  manual  under the conditions for verbatim
+       copying, provided that the entire resulting  derived  work
+       is  distributed  under  the  terms  of a permission notice
+       identical to this one.
+
+       Permission is granted to copy and distribute  translations
+       of this manual into another language, under the above con-
+       ditions for modified versions, except that this permission
+       notice  may  be  included  in translations approved by the
+       Free  Software  Foundation  instead  of  in  the  original
+       English.
+
+AAUUTTHHOORRSS
+       See the GNU CC Manual for the contributors to GNU CC.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+GNU Tools                   27dec1991                          10
+
+
+
+
+
