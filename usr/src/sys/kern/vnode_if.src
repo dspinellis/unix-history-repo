@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)vnode_if.src	7.2 (Berkeley) %G%
+#	@(#)vnode_if.src	7.3 (Berkeley) %G%
 #
 vop_lookup {
 	IN struct vnode *dvp;
@@ -223,13 +223,6 @@ vop_blkatoff {
 	OUT char **res;
 	OUT struct buf **bpp;
 };
-
-# Needs to move to VFS interface?
-#vop_vget {
-#	IN struct mount *mp;
-#	IN ino_t ino;
-#	OUT struct vnode **vpp;
-#};
 
 vop_valloc {
 	IN struct vnode *pvp;
