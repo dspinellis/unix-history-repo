@@ -1,4 +1,4 @@
-# sccsid = "@(#)Makefile	1.2 (Berkeley) %G%"
+# sccsid = "@(#)Makefile	1.3 (Berkeley) %G%"
 #
 #	dump.h			header file
 #	dumpitime.c		reads /etc/ddate
@@ -17,14 +17,14 @@ PSRCS = \
 SRCS =  \
 	dump.h dumpitime.c \
 	dumpmain.c dumpoptr.c dumptape.c \
-	dumptraverse.c unctime.c
+	dumptraverse.c unctime.c l3tol.c
 
 OBJS = \
 	dumpitime.o \
 	dumpmain.o dumpoptr.o \
-	dumptape.o dumptraverse.o unctime.o
+	dumptape.o dumptraverse.o unctime.o l3tol.o
 
-DFLAGS = -DERNIE
+DFLAGS =
 CFLAGS = -O $(DFLAGS)
 
 dump:	$(OBJS)

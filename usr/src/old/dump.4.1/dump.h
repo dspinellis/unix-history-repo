@@ -1,23 +1,23 @@
 /*
- * "@(#)dump.h	1.1 (Berkeley) %G%"
+ * "@(#)dump.h	1.2 (Berkeley) %G%"
  */
 #define	NI	16
 #define	DIRPB	(BSIZE/sizeof(struct direct))
 
 #include <stdio.h>
 #include <ctype.h>
-#include <sys/param.h>
-#include <sys/stat.h>
-#include <sys/filsys.h>
-#include <sys/ino.h>
-#include <sys/inode.h>
-#include <sys/fblk.h>
-#include <sys/dir.h>
-#include <utmp.h>
-#include <time.h>
-#include <signal.h>
-#include <dumprestor.h>
-#include <fstab.h>
+#include "include.4.1/sys/param.h"
+#include "include.4.1/sys/stat.h"
+#include "include.4.1/sys/filsys.h"
+#include "include.4.1/sys/ino.h"
+#include "include.4.1/sys/inode.h"
+#include "include.4.1/sys/fblk.h"
+#include "include.4.1/sys/dir.h"
+#include "include.4.1/utmp.h"
+#include "include.4.1/time.h"
+#include "include.4.1/signal.h"
+#include "include.4.1/dumprestor.h"
+#include "include.4.1/fstab.h"
 
 #define	MWORD(m,i)	(m[(unsigned)(i-1)/MLEN])
 #define	MBIT(i)		(1<<((unsigned)(i-1)%MLEN))
@@ -35,6 +35,7 @@ short	nodmap[MSIZ];
 
 char	*disk;		/* name of the disk file */
 char	*tape;		/* name of the tape file */
+char	pipeout;	/* true => output to standard output */
 char	*increm;	/* name of the file containing incremental information*/
 char	incno;		/* increment number */
 int	uflag;		/* update flag */

@@ -1,6 +1,6 @@
-static	char *sccsid = "@(#)unctime.c	1.1 (Berkeley) %G%";
-#include <sys/types.h>
-#include <time.h>
+static	char *sccsid = "@(#)unctime.c	1.2 (Berkeley) %G%";
+#include "include.4.1/sys/types.h"
+#include "include.4.1/time.h"
 /*
  * Convert a ctime(3) format string into a system format date.
  * Return the date thus calculated.
