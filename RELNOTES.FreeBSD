@@ -1,6 +1,6 @@
                                  RELEASE NOTES
                                     FreeBSD
-                                  Release 1.0
+                                  Release 1.1
 
 1. Technical overview
 ---------------------
@@ -52,17 +52,18 @@ this.
 WD1003 (any generic MFM/RLL)
 WD1007 (any generic IDE/ESDI)
 
-Adaptec 154x series ISA SCSI controller as long as you have
-less than 16MB of memory.
+Adaptec 154x series ISA SCSI controller (as long as you have less than
+16MB of main memory).
 
 Adaptec 174x series EISA SCSI controller in standard and enhanced mode.
 
 Buslogic 545S.
+Buslogic 445S VLB SCSI controller
 
 Bustec 742A and 747.
 
-DTC 3290 EISA SCSI controller in 1542 emulation mode as long as
-you have less than 16MB of memory.
+DTC 3290 EISA SCSI controller in 1542 emulation mode (as long as
+you have less than 16MB of main memory).
 
 Ultra Store 14F and 34F.
 
@@ -72,6 +73,17 @@ DAT) and CD ROM drives.  Note:  This and the mcd driver (Mitsumi CDROM
 inteface card) is the only way a CD ROM drive may be currently
 attached to a FreeBSD system; we do not support SoundBlaster CDROM
 interface, or other "mini SCSI" adapters.
+
+The limitation some controllers have with >16MB of memory (as noted)
+is due to the fact that the ISA bus only has a DMA address space of 24 bits.
+If you do your arithmetic, you'll see that this makes it impossible to do
+direct DMA to any address >16MB.  This limitation is even true of some
+EISA controllers (which are normally 32 bit) when they're configured to
+emulate an ISA card, which they then do in *all* respects.  This problem
+is avoided entirely by IDE controllers (which do not use DMA), true EISA
+controllers (like the UltraStor or Adaptec 1742A) or VLB (local bus)
+controllers.
+
 
 
 2.2. Ethernet cards
@@ -95,6 +107,9 @@ Various 2 and 4 port serial/parallel cards.
 Simple (AST-like) multiport serial cards.
 
 Mitsumi CDROM interface and drive.
+
+Adlib, Soundblaster, Soundblaster Pro, ProAudioSpectrum, Gravis UltraSound
+and Roland MPU-401 sound cards.
 
 FreeBSD currently does NOT support IBM's microchannel (MCA) bus, but
 support is apparently close to materializing.  Details will be posted
@@ -120,6 +135,9 @@ Austria		ftp.tu-graz.ac.at:/pub/FreeBSD
 Germany		ftp.informatik.tu-muenchen.de:pub/comp/os/bsd/FreeBSD
 Germany		ftp.uni-duisburg.de:/pub/unix/FreeBSD
 Hong Kong	ftp.cs.cuhk.hk:/pub/FreeBSD
+The Netherlands	ftp.nl.net:/pub/os/FreeBSD
+United Kingdom	src.doc.ic.ac.uk:/packages/FreeBSD
+U.S.A.		ftp.dsu.edu:/pub/FreeBSD
 
 
 If you do not have access to the internet and electronic mail is your
@@ -194,6 +212,14 @@ on technical matters, or with offers of help, you may send mail to:
 
 		FreeBSD-hackers@freefall.cdrom.com
 
+Since these mailing lists can experience significant amounts of
+traffic, if you've got slow or expensive mail access and you're
+only interested in keeping up with significant FreeBSD events, you may
+find it preferable to subscribe to:
+
+		FreeBSD-announce@freefall.cdrom.com
+
+
 All but the FreeBSD-bugs groups can be freely joined by anyone wishing to
 do so.  Send mail to MajorDomo@freefall.cdrom.com and include the keyword
 `help' on a line by itself somewhere in the body of the message.  This
@@ -266,4 +292,4 @@ hope you enjoy this release of FreeBSD!
 
 			The FreeBSD Core Group
 
-$Id: RELNOTES.FreeBSD,v 1.20 1994/01/30 06:17:55 rgrimes Exp $
+$Id: RELNOTES.FreeBSD,v 1.21 1994/02/01 03:51:28 ache Exp $
