@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sd.c	7.7 (Berkeley) %G%
+ *	@(#)sd.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -545,13 +545,19 @@ sdustart(unit)
 		sdstart(unit);
 }
 
+/*
+ * Return:
+ *	0	if not really an error
+ *	<0	if we should do a retry
+ *	>0	if a fatal error
+ */
 static int
 sderror(unit, sc, hp, stat)
 	int unit, stat;
 	register struct sd_softc *sc;
 	register struct hp_device *hp;
 {
-	int retry = 0;
+	int cond = 1;
 
 	sdsense[unit].status = stat;
 	if (stat & STS_CHECKCOND) {
@@ -567,13 +573,20 @@ sderror(unit, sc, hp, stat)
 			printf(", key %d", sp->key);
 			if (sp->valid)
 				printf(", blk %d", *(int *)&sp->info1);
-			/* no sense or recovered error, try again */
-			if (sp->key == 0 || sp->key == 1)
-				retry = 1;
+			switch (sp->key) {
+			/* no sense, try again */
+			case 0:
+				cond = -1;
+				break;
+			/* recovered error, not a problem */
+			case 1:
+				cond = 0;
+				break;
+			}
 		}
 		printf("\n");
 	}
-	return(retry);
+	return(cond);
 }
 
 static void
@@ -679,7 +692,7 @@ sdintr(unit, stat)
 	register struct sd_softc *sc = &sd_softc[unit];
 	register struct buf *bp = sdtab[unit].b_actf;
 	register struct hp_device *hp = sc->sc_hd;
-	int retry;
+	int cond;
 	
 	if (bp == NULL) {
 		printf("sd%d: bp == NULL\n", unit);
@@ -693,18 +706,20 @@ sdintr(unit, stat)
 			printf("sd%d: sdintr: bad scsi status 0x%x\n",
 				unit, stat);
 #endif
-		retry = sderror(unit, sc, hp, stat);
-		if (retry && sdtab[unit].b_errcnt++ < SDRETRY) {
+		cond = sderror(unit, sc, hp, stat);
+		if (cond) {
+			if (cond < 0 && sdtab[unit].b_errcnt++ < SDRETRY) {
 #ifdef DEBUG
-			if (sddebug & SDB_ERROR)
-				printf("sd%d: retry #%d\n",
-				       unit, sdtab[unit].b_errcnt);
+				if (sddebug & SDB_ERROR)
+					printf("sd%d: retry #%d\n",
+					       unit, sdtab[unit].b_errcnt);
 #endif
-			sdstart(unit);
-			return;
+				sdstart(unit);
+				return;
+			}
+			bp->b_flags |= B_ERROR;
+			bp->b_error = EIO;
 		}
-		bp->b_flags |= B_ERROR;
-		bp->b_error = EIO;
 	}
 	sdfinish(unit, sc, bp);
 }
