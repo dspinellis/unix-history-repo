@@ -1,4 +1,4 @@
-#	@(#)README	8.2 (Berkeley) %G%
+#	@(#)README	8.3 (Berkeley) %G%
 
 This is the area for building the libdb library.  There are a number
 of porting directories, for various architecture/OS combinations.  Pick
@@ -13,7 +13,7 @@ symbolic links.
 	cp ../Makefile .
 	chmod 664 Makefile
 	ln -s ../clib .
-	mkdir include local
+	mkdir include
 	ln -s include sys
 	cd include
 	ln -s ../../include/*.h .
@@ -31,14 +31,15 @@ compat.h in that tree against the standard ones and see what changes
 were necessary, as they're probably necessary for you as well.  Then,
 enter "make" and see what happens!
 
-There are several subroutines that are found in POSIX 1003.2, or ANSI
+There are several subroutines that are found in POSIX 1003.2, ANSI
 C, or 4.4BSD that you may not have.  Once you get libdb.a to compile,
 go through the list of undefined routines and add entries to the MISC
 line in the Makefile as necessary.
 
-If you have to add some functions that are missing, please don't add
-them in the PORT/clib directory.  Add them in MACH/local directory,
-and add lines of the form:
+If you have to add some functions that are missing (and which aren't
+in the PORT/clib directory), please don't add them in the PORT/clib
+directory.  Add them in a MACH/local directory, and add lines of the
+form:
 
 	function.o: local/function.o
 		${CL} -Ilocal local/function.o
@@ -46,23 +47,29 @@ and add lines of the form:
 to your local Makefile.
 
 Hopefully, over time, we'll develop a set of system directories that
-are known to work.  If you send me the changes that were necessary
-to make your system work, this will happen much more quickly.
+are known to work.  If you send me the changes that were necessary to
+make your system work, this will happen much more quickly.
 
 In some of the system directories, you'll see a file named OTHER_PATCHES.
 This is a set of patches which you'll have to make from the top-level db
-directory to get libdb.a to run on this system.
+directory to get libdb.a to run on this system:
+
+	cd ..
+	patch < PORT/MACH/OTHER_PATCHES
+
+If patch prompts you for the name of the file to modify (some versions
+of patch don't figure it out on their own) use the file name which patch
+displays.
 
 Some knobs you may have to turn:
 
 In include/compat.h:
-	Before attempting to build nvi, you should look through the
+	Before attempting to build libdb, you should look through the
 	compat.h file, and adjust it as necessary for your system.
 	It's possible to use the #ifndef construct to figure out if a
 	#ifdef has been set, but C provides no similar method to figure
 	out if a typedef has been done.  Your compile errors should
 	give you a good indication of which ones you need.
-
 
 You may see warning messages about illegal pointer combinations.  Systems
 prototype malloc, calloc and realloc in different places, and the missing
@@ -79,19 +86,21 @@ The other parts of the PORT directory are as follows:
 	when you try and load libdb.a.
 	
 	The directory PORT/include is header files that the 4.4BSD
-	system had which your system may not have.  The really important
-	one is compat.h, which is a set of compatibility work-arounds
-	that you'll almost certainly have to modify for a new system.
+	system had which your system may not have.  There is also
+	one really important extra one, named compat.h, which is a
+	set of compatibility work-arounds that you'll almost certainly
+	have to copy and modify for a new system.
 
 	The symbolic link PORT/sys points to the PORT/include directory
-	so that includes of the form <sys/xxx.h> work.
+	so that includes of the form <sys/include.h> work.
 
 Some of the more common portability problems:
 
 	If you don't have:
 
-		memmove(3), add memmove.o
-		mkstemp(3), add mktemp.o
+		memmove(3):	add memmove.o
+		mkstemp(3):	add mktemp.o
+		strerror(3):	add strerror.o
 
 			... to the MISC line in the Makefile.
 
@@ -105,4 +114,17 @@ Some of the more common portability problems:
 	other than changing the source code to not use the snprintf calls.
 	If you have to make that change, check to see if your vsprintf
 	returns a length or a char *; if it's the latter, make sure you
-	set VSPRINTF_CHARSTAR in the include/compat.h file.
+	set VSPRINTF_CHARSTAR in the MACH/include/compat.h file.
+
+Installing the DB library:
+
+	The Makefile builds a C library named libdb.a.  This file needs
+	to be installed in a place where the loader will automatically
+	look for it (or, if you're building it for a single project,
+	wherever that project's Makefile loads it from).
+
+	In addition, the header file PORT/include/db.h must be copied to
+	a directory (often /usr/include/) where programs that use the
+	db package can include it in their source.  (If you intend to use
+	the ndbm interface to libdb, you'll need to copy the header file
+	PORT/include/ndbm.h as well.)
