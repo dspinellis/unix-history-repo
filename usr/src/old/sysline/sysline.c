@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)sysline.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)sysline.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -1182,7 +1182,10 @@ initterm()
 	}
 
 	/* the "-1" below is to avoid cursor wraparound problems */
-	columns = tgetnum("co") - 1;
+	columns = tgetnum("ws");
+	if (columns < 0)
+		columns = tgetnum("co");
+	columns -= 1;
 	if (window) {
 		strcpy(to_status_line, "\r");
 		cp = dis_status_line;	/* use the clear line sequence */
@@ -1258,11 +1261,15 @@ sysrup(hp)
 			hp->rh_file = open(filename, 0);
 		}
 	}
-	if (hp->rh_file < 0)
-		return sprintf(buffer, "%s?", hp->rh_host);
+	if (hp->rh_file < 0) {
+		(void) sprintf(buffer, "%s?", hp->rh_host);
+		return(buffer);
+	}
 	(void) lseek(hp->rh_file, (off_t)0, 0);
-	if (read(hp->rh_file, (char *)&wd, WHOD_HDR_SIZE) != WHOD_HDR_SIZE)
-		return sprintf(buffer, "%s ?", hp->rh_host);
+	if (read(hp->rh_file, (char *)&wd, WHOD_HDR_SIZE) != WHOD_HDR_SIZE) {
+		(void) sprintf(buffer, "%s ?", hp->rh_host);
+		return(buffer);
+	}
 	(void) time(&now);
 	if (now - wd.wd_recvtime > DOWN_THRESHOLD) {
 		long interval;
