@@ -8,17 +8,20 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pmap.c	7.11 (Berkeley) %G%
+ *	@(#)pmap.c	7.12 (Berkeley) %G%
  */
 
 /*
  *	HP9000/300 series physical map management code.
- *	For 68020/68030 machines with HP, 68551, or 68030 MMUs
- *		(models 320,350,318,319,330,340,360,370,345,375)
+ *	Supports:
+ *		68020 with HP MMU	models 320, 350
+ *		68020 with 68551 MMU	models 318, 319, 330 (all untested)
+ *		68030 with on-chip MMU	models 340, 360, 370, 345, 375, 400
+ *		68040 with on-chip MMU	models 380, 425, 433
  *	Don't even pay lip service to multiprocessor support.
  *
  *	XXX will only work for PAGE_SIZE == NBPG (i.e. 4096 bytes).
- *	Hence, there is no point in defining DYNPGSIZE.
+ *	Hence, there is no point in defining DYNPGSIZE as it stands now.
  */
 
 /*
