@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)syslogd.c	4.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslogd.c	4.6 (Berkeley) %G%";
 #endif
 
 /*
@@ -37,16 +37,19 @@ static char sccsid[] = "@(#)syslogd.c	4.5 (Berkeley) %G%";
 #include <stdio.h>
 #include <utmp.h>
 #include <ctype.h>
+#include <signal.h>
+#include <sysexits.h>
+#include <strings.h>
+
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
-#include <signal.h>
-#include <sysexits.h>
 #include <sys/socket.h>
 #include <sys/file.h>
 #include <sys/msgbuf.h>
 #include <sys/uio.h>
 #include <sys/un.h>
+
 #include <netinet/in.h>
 #include <netdb.h>
 
@@ -216,7 +219,7 @@ main(argc, argv)
 	alarm(MarkIntvl * 60);
 
 	for (;;) {
-		int domain, nfds, readfds = defreadfds;
+		int nfds, readfds = defreadfds;
 
 		nfds = select(20, &readfds, 0, 0, 0);
 		if (nfds == 0)
@@ -228,33 +231,31 @@ main(argc, argv)
 			continue;
 		}
 		if (readfds & (1 << funix)) {
-			domain = AF_UNIX;
 			len = sizeof fromunix;
 			i = recvfrom(funix, line, MAXLINE, 0, &fromunix, &len);
-		} else if (readfds & (1 << finet)) {
-			domain = AF_INET;
+			if (i > 0) {
+				line[i] = '\0';
+				printline(1, line);
+			} else if (i < 0 && errno != EINTR)
+				logerror("recvfrom");
+		}
+		if (readfds & (1 << finet)) {
 			len = sizeof frominet;
 			i = recvfrom(finet, line, MAXLINE, 0, &frominet, &len);
-		} else {
+			if (i > 0 && chkhost(&frominet)) {
+				line[i] = '\0';
+				printline(0, line);
+			} else if (i < 0 && errno != EINTR)
+				logerror("recvfrom");
+		} 
+		if (readfds & (1 << klog)) {
 			i = read(klog, line, sizeof(line) - 1);
-			if (i < 0) {
+			if (i > 0) {
+				line[i] = '\0';
+				printsys(line);
+			} else if (i < 0 && errno != EINTR)
 				logerror("read");
-				continue;
-			}
-			line[i] = '\0';
-			printsys(line);
-			continue;
 		}
-		if (i < 0) {
-			if (errno == EINTR)
-				continue;
-			logerror("recvfrom");
-			continue;
-		}
-		if (domain == AF_INET && !chkhost(&frominet))
-			continue;
-		line[i] = '\0';
-		printline(domain != AF_INET, line);
 	}
 }
 
@@ -519,11 +520,9 @@ init()
 			break;
 
 		/* strip off newline character */
-		for (p = cline; *p != '\0'; p++)
-			if (*p == '\n') {
-				*p = '\0';
-				break;
-			}
+		p = index(cline, '\n');
+		if (p)
+			*p = '\0';
 
 		dprintf("F: got line '%s'\n", cline);
 
@@ -592,11 +591,9 @@ init()
 	Sumask = LOG_SALERT;
 	for (i = 0; i < NSUSERS && fgets(cline, sizeof cline, cf) != NULL; i++) {
 		/* strip off newline */
-		for (p = cline; *p != '\0'; p++)
-			if (*p == '\n') {
-				*p = '\0';
-				break;
-			}
+		p = index(cline, '\n');
+		if (p)
+			*p = '\0';
 		dprintf("U: got line '%s'\n", cline);
 		p = cline;
 		if (isdigit(*p)) {
