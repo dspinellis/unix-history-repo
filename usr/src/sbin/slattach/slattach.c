@@ -25,10 +25,9 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)slattach.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)slattach.c	4.4 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <stdio.h>
 #include <sys/param.h>
 #include <sgtty.h>
 #include <sys/socket.h>
@@ -36,6 +35,8 @@ static char sccsid[] = "@(#)slattach.c	4.3 (Berkeley) %G%";
 #include <net/if.h>
 #include <netdb.h>
 #include <fcntl.h>
+#include <stdio.h>
+#include "pathnames.h"
 
 #define DEFAULT_BAUD	9600
 int	slipdisc = SLIPDISC;
@@ -61,8 +62,8 @@ main(argc, argv)
 		fprintf(stderr, "unknown speed %s", argv[2]);
 		exit(1);
 	}
-	if (strncmp("/dev/", dev, 5)) {
-		(void)sprintf(devname, "/dev/%s", dev);
+	if (strncmp(_PATH_DEV, dev, sizeof(_PATH_DEV) - 1)) {
+		(void)sprintf(devname, "%s/%s", _PATH_DEV, dev);
 		dev = devname;
 	}
 	if ((fd = open(dev, O_RDWR | O_NDELAY)) < 0) {
