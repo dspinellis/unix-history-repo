@@ -165,6 +165,9 @@ double x,y;
 {
         double logb(),scalb(),copysign(),log__L(),exp__E();
         double c,s,t,z,tx,ty;
+#ifdef TAHOE
+	double tahoe_tmp;
+#endif
         float sx,sy;
 	long k=0;
         int n,m;
@@ -207,7 +210,11 @@ double x,y;
 	   /* end of checking whether k==y */
 
                 sy=y; ty=y-sy;          /* y ~ sy + ty */
+#ifdef TAHOE
+		s = (tahoe_tmp = sx)*sy-k*ln2hi;
+#else
 		s=(double)sx*sy-k*ln2hi;        /* (sy+ty)*(sx+tx)-kln2 */
+#endif
 		z=(tx*ty-k*ln2lo);
 		tx=tx*sy; ty=sx*ty;
 		t=ty+z; t+=tx; t+=s;
