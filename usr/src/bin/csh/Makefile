@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.14 (Berkeley) %G%
+#	@(#)Makefile	5.15 (Berkeley) %G%
 #
 # C Shell with process control; VM/UNIX VAX Makefile
 # Bill Joy UC Berkeley; Jim Kulp IIASA, Austria
@@ -23,7 +23,6 @@
 
 DEFS=	-DTELL -DVFORK -DFILEC
 CFLAGS=	${DEFS} -I. -O
-XSTR=	/usr/ucb/xstr
 MAN=	csh.0
 
 SRCS=	alloc.c doprnt.c sh.c sh.char.c sh.dir.c sh.dol.c sh.err.c \
@@ -37,7 +36,7 @@ OBJS=	alloc.o doprnt.o sh.o sh.char.o sh.dir.o sh.dol.o sh.err.o \
 
 # Special massaging of C files for sharing of strings
 .c.o:
-	${CC} -E ${CFLAGS} $*.c | ${XSTR} -c -
+	${CC} -E ${CFLAGS} $*.c | xstr -c -
 	@${CC} -c ${CFLAGS} x.c
 	@mv -f x.o $*.o
 	@rm -f x.c
@@ -50,13 +49,13 @@ csh: ${OBJS} strings.o
 
 # strings.o, sh.init.o, and sh.char.o are specially processed to be shared
 strings.o: strings
-	${XSTR}
+	xstr
 	${CC} -c -R xs.c
 	mv -f xs.o strings.o
 	rm -f xs.c
 
 sh.char.o sh.init.o:
-	${CC} -E ${CFLAGS} $*.c | ${XSTR} -c -
+	${CC} -E ${CFLAGS} $*.c | xstr -c -
 	${CC} ${CFLAGS} -c -R x.c
 	mv -f x.o $*.o
 	rm -f x.c
