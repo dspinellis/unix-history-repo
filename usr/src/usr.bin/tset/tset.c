@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tset.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)tset.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -154,15 +154,10 @@ main(argc, argv)
 			tcsetattr(STDERR_FILENO, TCSADRAIN, &mode);
 	}
 
-	/*
-	 * The termcap file generally has a two-character name first in each
-	 * entry followed by more descriptive names.  If we ended up with the
-	 * first one, we switch to the second one for setting or reporting
-	 * information.
-	 */
-	p = strpbrk(tcapbuf, "|:");
-	if (p && *p != ':' && !strncmp(ttype, tcapbuf, p - tcapbuf)) {
-		t = ++p;
+	/* Get the terminal name from the entry. */
+	p = tcapbuf;
+	if (p != NULL && *p != ':') {
+		t = p;
 		if (p = strpbrk(p, "|:")) {
 			savech = *p;
 			*p = '\0';
