@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.200 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.201 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -962,6 +962,31 @@ setsignal(sig, handler)
 	if (sigaction(sig, &n, &o) < 0)
 		return SIG_ERR;
 	return o.sa_handler;
+#endif
+}
+/*
+**  RELEASESIGNAL -- release a held signal
+**
+**	Parameters:
+**		sig -- the signal to release.
+**
+**	Returns:
+**		0 on success.
+**		-1 on failure.
+*/
+
+int
+releasesignal(sig)
+	int sig;
+{
+#ifdef BSD4_3
+	return sigsetmask(sigblock(0) & ~(1 << sig));
+#else
+	sigset_t sset;
+
+	sigemptyset(&sset);
+	sigaddset(&sset, sig);
+	return sigprocmask(SIG_UNBLOCK, &sset, NULL);
 #endif
 }
 /*
