@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	4.7		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	4.8		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -297,25 +297,25 @@ EXTERN struct rewrite	*RewriteRules[MAXRWSETS];
 # define MATCHANY	'\021'	/* match one or more tokens */
 # define MATCHONE	'\022'	/* match exactly one token */
 # define MATCHCLASS	'\023'	/* match one token in a class */
-# define MATCHNCLASS	'\034'	/* match anything not in class */
-# define MATCHREPL	'\024'	/* replacement on RHS for above */
+# define MATCHNCLASS	'\024'	/* match anything not in class */
+# define MATCHREPL	'\025'	/* replacement on RHS for above */
 # define MATCHLOOKUP	'\035'	/* look up and replace a sequence */
 # define MATCHELOOKUP	'\036'	/* end of the sequence */
 
 /* right hand side items */
-# define CANONNET	'\025'	/* canonical net, next token */
-# define CANONHOST	'\026'	/* canonical host, next token */
-# define CANONUSER	'\027'	/* canonical user, next N tokens */
-# define CALLSUBR	'\030'	/* call another rewriting set */
+# define CANONNET	'\026'	/* canonical net, next token */
+# define CANONHOST	'\027'	/* canonical host, next token */
+# define CANONUSER	'\030'	/* canonical user, next N tokens */
+# define CALLSUBR	'\031'	/* call another rewriting set */
 
 /* conditionals in macros */
-# define CONDIF		'\031'	/* conditional if-then */
-# define CONDELSE	'\032'	/* conditional else */
-# define CONDFI		'\033'	/* conditional fi */
+# define CONDIF		'\032'	/* conditional if-then */
+# define CONDELSE	'\033'	/* conditional else */
+# define CONDFI		'\034'	/* conditional fi */
 
 /* bracket characters for host name lookup */
-# define HOSTBEGIN	'\034'	/* hostname lookup begin */
-# define HOSTEND	'\035'	/* hostname lookup end */
+# define HOSTBEGIN	'\035'	/* hostname lookup begin */
+# define HOSTEND	'\036'	/* hostname lookup end */
 
 /* \001 is also reserved as the macro expansion character */
 /*
