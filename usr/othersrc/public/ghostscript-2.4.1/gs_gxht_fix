@@ -1,0 +1,52 @@
+Article 1272 of gnu.ghostscript.bug:
+Newsgroups: gnu.ghostscript.bug
+Path: slustl!wupost!zaphod.mps.ohio-state.edu!cis.ohio-state.edu!aladdin.COM!ghost
+From: ghost@aladdin.COM (L. Peter Deutsch)
+Subject: Re: init fails
+Message-ID: <9204272317.1.UUL1.3#5127@aladdin.com>
+Sender: gnulists@ai.mit.edu
+Organization: GNUs Not Usenet
+References: ghost@aladdin.COM (L. Peter Deutsch)
+Distribution: gnu
+Date: Tue, 28 Apr 1992 06:17:32 GMT
+Approved: bug-ghostscript@prep.ai.mit.edu
+Lines: 34
+
+Re <9204280449.AA13147@raisin-nut> <cproto.704342606@marsh>:
+
+> >thanks for your reply. I tried your suggestion and compiled gs24 without
+> >optimization. It didn't change a bit. I then narrowed down the problem
+> >to the gs_init.ps script. By adding junk lines I discovered that the
+> >problem occurs towards the end of this script at a line consisting of
+> 
+> >                 scrinit
+>   ^^^^^^^
+> 
+> I'm sorry this should have been "setscreen".
+
+There is a bug in the halftone screen logic in Ghostscript 2.4.1 (and
+2.4 also) that may cause it to fail under some conditions for
+high-resolution printers.  To fix this, change lines 234-235 of
+gxht.c from
+
+        if ( num_cached == size && num_cached <= max_cached_tiles / 2 )
+           {    /* We can afford to replicate every tile vertically, */
+
+to
+
+        if ( num_cached == size &&
+             tile_bytes * num_cached <= max_ht_bits / 2
+           )
+           {    /* We can afford to replicate every tile vertically, */
+
+Please let me know if this fixes (or doesn't fix) the problem.
+
+L. Peter Deutsch :: Aladdin Enterprises :: P.O. box 60264, Palo Alto, CA 94306
+ghost@aladdin.com, ...decwrl!aladdin!ghost ; 415-322-0103 8-9 AM M-F/msg
+            "Implementation is the sincerest form of flattery."
+
+
+
+
+
+slustl$ 
