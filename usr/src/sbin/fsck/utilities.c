@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	5.15 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -214,7 +214,7 @@ rwerr(s, blk)
 
 ckfini()
 {
-	register BUFAREA *bp;
+	register BUFAREA *bp, *nbp;
 	int cnt = 0;
 
 	flush(&dfile, &sblk);
@@ -225,9 +225,13 @@ ckfini()
 		flush(&dfile, &sblk);
 	}
 	flush(&dfile, &cgblk);
-	for (bp = bufhead.b_prev; bp != &bufhead; bp = bp->b_prev) {
+	free(cgblk.b_un.b_buf);
+	for (bp = bufhead.b_prev; bp != &bufhead; bp = nbp) {
 		cnt++;
 		flush(&dfile, bp);
+		nbp = bp->b_prev;
+		free(bp->b_un.b_buf);
+		free((char *)bp);
 	}
 	if (bufhead.b_size != cnt)
 		errexit("Panic: lost %d buffers\n", bufhead.b_size - cnt);
