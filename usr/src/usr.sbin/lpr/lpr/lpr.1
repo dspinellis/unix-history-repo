@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)lpr.1	6.9 (Berkeley) %G%
+.\"     @(#)lpr.1	6.10 (Berkeley) %G%
 .\"
 .Dd 
 .Dt LPR 1
@@ -120,7 +120,9 @@ cat foo.c bar.c more.c \&| lpr \-#3
 will give three copies of the concatenation of the files. Often
 a site will disable this feature to encourage use of a photocopier
 instead.
-.It Fl Oo Cm 1234 Oc Ar font
+.It Xo
+.Fl Ns Oo Cm 1234 Oc Ar font
+.Xc
 Specifies a
 .Ar font
 to be mounted on font position
@@ -200,8 +202,9 @@ Temporary copies of "cf" files.
 .Xr lpc 8 ,
 .Xr lpd 8
 .Sh HISTORY
-.Nm Lpr
-appeared in
+The
+.Nm lpr
+command appeared in
 .Bx 3 .
 .Sh DIAGNOSTICS
 If you try to spool too large a file, it will be truncated.
