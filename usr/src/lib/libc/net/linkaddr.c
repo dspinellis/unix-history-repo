@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)linkaddr.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)linkaddr.c	5.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -92,16 +92,20 @@ link_ntoa(sdl)
 	register char *out = obuf; 
 	register int i;
 	register u_char *in = (u_char *)LLADDR(sdl);
-	u_char *inlim = in + sdl->sdl_nlen;
+	u_char *inlim = in + sdl->sdl_alen;
 	int firsttime = 1;
 
 	if (sdl->sdl_nlen) {
 		bcopy(sdl->sdl_data, obuf, sdl->sdl_nlen);
 		out += sdl->sdl_nlen;
-		*out++ = ':';
+		if (sdl->sdl_alen)
+			*out++ = ':';
 	}
 	while (in < inlim) {
-		if (firsttime) firsttime = 0; else *out++ = '.';
+		if (firsttime)
+			firsttime = 0;
+		else
+			*out++ = '.';
 		i = *in++;
 		if (i > 0xf) {
 			out[1] = hexlist[i & 0xf];
@@ -112,5 +116,5 @@ link_ntoa(sdl)
 			*out++ = hexlist[i];
 	}
 	*out = 0;
-	return(obuf);
+	return (obuf);
 }
