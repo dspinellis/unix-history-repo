@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)umount.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)umount.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -202,15 +202,23 @@ umountfs(name, typelist)
 #endif /* NFS */
 
 	if (stat(name, &stbuf) < 0) {
-		if ((mntpt = getmntname(name, MNTON, &type)) == 0)
+		if (getmntname(name, MNTFROM, &type) != 0)
+			mntpt = name;
+		else if ((mntpt = getmntname(name, MNTON, &type)) == 0) {
+			fprintf(stderr, "%s: not currently mounted\n", name);
 			return (0);
+		}
 	} else if ((stbuf.st_mode & S_IFMT) == S_IFBLK) {
-		if ((mntpt = getmntname(name, MNTON, &type)) == 0)
+		if ((mntpt = getmntname(name, MNTON, &type)) == 0) {
+			fprintf(stderr, "%s: not currently mounted\n", name);
 			return (0);
+		}
 	} else if ((stbuf.st_mode & S_IFMT) == S_IFDIR) {
 		mntpt = name;
-		if ((name = getmntname(mntpt, MNTFROM, &type)) == 0)
+		if (getmntname(mntpt, MNTFROM, &type) == 0) {
+			fprintf(stderr, "%s: not currently mounted\n", name);
 			return (0);
+		}
 	} else {
 		fprintf(stderr, "%s: not a directory or special device\n",
 			name);
@@ -297,7 +305,6 @@ getmntname(name, what, type)
 			return (mntbuf[i].f_mntfromname);
 		}
 	}
-	fprintf(stderr, "%s: not currently mounted\n", name);
 	return (0);
 }
 
