@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.11 (Berkeley) %G%
+#	@(#)Makefile	5.12 (Berkeley) %G%
 
 PROG=	restore
 LINKS=	${BINDIR}/restore ${BINDIR}/rrestore
@@ -9,7 +9,7 @@ BINOWN=	root
 BINGRP=	tty
 BINMODE=6555
 MAN8=	restore.0
-MLINKS+=restore.0 rrestore.0
+MLINKS+=restore.8 rrestore.8
 .PATH:	${.CURDIR}/../dump
 
 all: restore
