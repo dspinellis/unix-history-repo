@@ -13,9 +13,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)disktape.h	5.3 (Berkeley) %G%
+ *	@(#)disktape.h	5.4 (Berkeley) %G%
  *
- * from: $Header: disktape.h,v 1.3 92/12/02 03:44:07 torek Exp $ (LBL)
+ * from: $Header: disktape.h,v 1.4 93/04/30 00:02:16 torek Exp $ (LBL)
  */
 
 /*
@@ -56,6 +56,8 @@ struct scsi_cdb_modeselect10 {
 /*
  * Structure of MODE SENSE command (i.e., the cdb; 6 & 10 byte flavors).
  * Again, the 10-byte version merely allows more parameter bytes.
+ * Note that these lengths include the MODE SENSE headers, while those
+ * for individual mode pages do not.  (Consistency?  What's that?)
  */
 struct scsi_cdb_modesense6 {
 	u_char	cdb_cmd,	/* 0x1a */
@@ -87,7 +89,8 @@ struct scsi_cdb_modesense10 {
  * Both MODE_SENSE and MODE_SELECT use a Mode Parameter Header,
  * followed by an array of Block Descriptors, followed by an array
  * of Pages.  We define structures for the Block Descriptor and Page
- * first, then the two (6 and 10 byte) headers.
+ * header first, then the two (6 and 10 byte) Mode Parameter headers
+ * (not including the Block Descriptor(s) and any mode pages themselves).
  */
 struct scsi_ms_bd {		/* mode sense/select block descriptor */
 	u_char	bd_dc,		/* density code (tapes only) */
@@ -99,10 +102,10 @@ struct scsi_ms_bd {		/* mode sense/select block descriptor */
 		bd_blm,		/* block length */
 		bd_bll;		/* block length (LSB) */
 };
-struct scsi_ms_page {		/* mode sense/select page */
+struct scsi_ms_page_hdr {	/* mode sense/select page header */
 	u_char	mp_psc,		/* saveable flag + code */
-		mp_len,		/* parameter length */
-		mp_parm[1];	/* parameters (actual size mp_len) */
+		mp_len;		/* parameter length (excludes this header) */
+		/* followed by parameters */
 };
 #define	SCSI_MS_MP_SAVEABLE	0x80	/* page can be saved */
 /*				0x40	   reserved */
@@ -116,7 +119,7 @@ struct scsi_ms6 {
 		ms_mt,		/* medium type (disks only?) */
 		ms_dsp,		/* device specific parameter */
 		ms_bdl;		/* block descriptor length (bytes) */
-	struct	scsi_ms_bd ms_bd[1];	/* actually varies */
+	/* followed by block descriptors, if any */
 	/* followed by pages, if any */
 };
 /*
@@ -130,7 +133,7 @@ struct scsi_ms10 {
 		ms_xxx[2],	/* reserved */
 		ms_bdlh,	/* block descriptor length (bytes) (MSB) */
 		ms_bdll;	/* block descriptor length (bytes) (LSB) */
-	struct	scsi_ms_bd ms_bd[1];	/* actually varies */
+	/* followed by block descriptors, if any */
 	/* followed by pages, if any */
 };
 
@@ -198,9 +201,7 @@ struct scsi_ms10 {
  * Structure of a Disconnect/Reconnect Control mode page.
  */
 struct scsi_page_dr {
-	u_char	dr_psc,		/* saveable flag + code (0x02) */
-		dr_len,		/* length (0x0e) */
-		dr_full,	/* buffer full ratio */
+	u_char	dr_full,	/* buffer full ratio */
 		dr_empty,	/* buffer empty ratio */
 		dr_inacth,	/* bus inactivity timeout (MSB) */
 		dr_inactl,	/* bus inactivity timeout (LSB) */
