@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.17 (Berkeley) %G%
+#	@(#)Makefile	5.18 (Berkeley) %G%
 
 SUBDIR=	ac accton amd arp chown chroot cron dev_mkdb diskpart edquota \
 	inetd kgmon kvm_mkdb lpr mkproto mtree named nvi.recover portmap \
@@ -12,6 +12,8 @@ SUBDIR+=config iostat timed
 .elif ${MACHINE} == "i386"
 SUBDIR+=bad144 config iostat
 .elif ${MACHINE} == "luna68k"
+SUBDIR+=config iostat timed
+.elif ${MACHINE} == "mips"
 SUBDIR+=config iostat timed
 .elif ${MACHINE} == "sparc"
 SUBDIR+=config.new eeprom timed
