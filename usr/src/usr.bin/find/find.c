@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)find.c	4.32 (Berkeley) %G%";
+static char sccsid[] = "@(#)find.c	4.33 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -201,6 +201,7 @@ find_execute(plan, paths)
 		case FTS_DP:
 			if (!depth)
 				continue;
+			break;
 		case FTS_NS:
 			if (!(ftsoptions & FTS_NOSTAT)) {
 				(void)fprintf(stderr,
