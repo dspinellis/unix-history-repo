@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwclreol.c	3.5 83/08/16";
+static	char *sccsid = "@(#)wwclreol.c	3.6 83/08/17";
 #endif
 
 #include "ww.h"
@@ -44,15 +44,14 @@ char cleared;
 	buf = &w->ww_buf[row][col];
 	ncleared = nblank = 0;
 	for (i = w->ww_w.nc - col; --i >= 0;) {
+		buf++->c_w = ' ';
 		if (*smap++ != w->ww_index) {
 			if (s++->c_w == ' ')
 				nblank++;
-			buf++;
 			win++;
 			continue;
 		}
 		ncleared++; 
-		buf++->c_w = ' ';
 		*touched = 1;
 		if (*win == 0) {
 			nblank++;
