@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mail.local.c	8.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)mail.local.c	8.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -32,6 +32,7 @@ static char sccsid[] = "@(#)mail.local.c	8.16 (Berkeley) %G%";
 #include <syslog.h>
 #include <time.h>
 #include <unistd.h>
+#include <ctype.h>
 
 #if __STDC__
 #include <stdarg.h>
@@ -220,6 +221,7 @@ deliver(fd, name)
 	struct stat fsb, sb;
 	struct passwd *pw;
 	int mbfd, nr, nw, off;
+	char *p;
 	char biffmsg[100], buf[8*1024], path[MAXPATHLEN];
 	off_t curoff;
 
@@ -232,6 +234,24 @@ deliver(fd, name)
 			eval = EX_UNAVAILABLE;
 		warn("unknown name: %s", name);
 		return;
+	}
+
+	/*
+	 * Keep name reasonably short to avoid buffer overruns.
+	 *	This isn't necessary on BSD because of the proper
+	 *	definition of snprintf(), but it can cause problems
+	 *	on other systems.
+	 * Also, clear out any bogus characters.
+	 */
+
+	if (strlen(name) > 40)
+		name[40] = '\0';
+	for (p = name; *p != '\0'; p++)
+	{
+		if (!isascii(*p))
+			*p &= 0x7f;
+		else if (!isprint(*p))
+			*p = '.';
 	}
 
 	(void)snprintf(path, sizeof(path), "%s/%s", _PATH_MAILDIR, name);
@@ -321,8 +341,8 @@ tryagain:
 		goto err1;
 	}
 	while ((nr = read(fd, buf, sizeof(buf))) > 0)
-		for (off = 0; off < nr; nr -= nw, off += nw)
-			if ((nw = write(mbfd, buf + off, nr)) < 0) {
+		for (off = 0; off < nr; off += nw)
+			if ((nw = write(mbfd, buf + off, nr - off)) < 0) {
 				e_to_sys(errno);
 				warn("%s: %s", path, strerror(errno));
 				goto err2;;
@@ -362,7 +382,7 @@ err1:		(void)close(mbfd);
  * EPA 11/94.
  */
 
-char	lockname[50];
+char	lockname[MAXPATHLEN];
 int	locked = 0;
 
 lockmbox(path)
