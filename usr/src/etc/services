@@ -1,7 +1,7 @@
 #
 # Network services, Internet style
 #
-#	@(#)services	5.4 (Berkeley) %G%
+#	@(#)services	5.5 (Berkeley) %G%
 #
 echo		7/tcp
 echo		7/udp
