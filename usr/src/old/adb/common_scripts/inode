@@ -1,8 +1,6 @@
 ./"forw"16t"back"nXX
-+$<<vnode
-+/"devvp"16t"flag"8t"min"8t"maj"8t"ino"nXxbbD
-+/"id"16t"diroff"16t"fs"16t"dquot"nDDXX
-+/"text"16t"devlst"16t"endoff"16t"spare0"nXXDX
-+/"lastr"16t"freef"16t"freeb"n12+D----XXn
++/"vnode"16t"devvp"16t"flag"16t"min"8t"maj"n3Xbb++
++/"number"16t"fs"16t"dquot"nD3X
++/"diroff"16t"endoff"16t"lockedby"16t"wantedby"nXXDD
 +$<<dino
 .,<9-1$<inode
