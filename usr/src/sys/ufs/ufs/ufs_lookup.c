@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_lookup.c	7.26 (Berkeley) %G%
+ *	@(#)ufs_lookup.c	7.27 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -566,6 +566,9 @@ direnter(ip, ndp)
 		ndp->ni_count = newentrysize;
 		ndp->ni_resid = newentrysize;
 		ndp->ni_base = (caddr_t)&ndp->ni_dent;
+		ndp->ni_iov = &ndp->ni_nd.nd_iovec;
+		ndp->ni_iovcnt = 1;
+		ndp->ni_rw = UIO_WRITE;
 		ndp->ni_uioseg = UIO_SYSSPACE;
 		error =
 		    ufs_write(ndp->ni_dvp, &ndp->ni_uio, IO_SYNC, ndp->ni_cred);
@@ -575,7 +578,6 @@ direnter(ip, ndp)
 			dp->i_size = roundup(dp->i_size, DIRBLKSIZ);
 			dp->i_flag |= ICHG;
 		}
-		iput(dp);
 		return (error);
 	}
 
@@ -600,10 +602,8 @@ direnter(ip, ndp)
 	/*
 	 * Get the block containing the space for the new directory entry.
 	 */
-	if (error = blkatoff(dp, ndp->ni_offset, (char **)&dirbuf, &bp)) {
-		iput(dp);
+	if (error = blkatoff(dp, ndp->ni_offset, (char **)&dirbuf, &bp))
 		return (error);
-	}
 	/*
 	 * Find space for the new entry.  In the simple case, the
 	 * entry at offset base will have the space.  If it does
@@ -648,7 +648,6 @@ direnter(ip, ndp)
 	dp->i_flag |= IUPD|ICHG;
 	if (!error && ndp->ni_endoff && ndp->ni_endoff < dp->i_size)
 		error = itrunc(dp, (u_long)ndp->ni_endoff, IO_SYNC);
-	iput(dp);
 	return (error);
 }
 
@@ -679,6 +678,9 @@ dirremove(ndp)
 		ndp->ni_dent.d_ino = 0;
 		ndp->ni_count = ndp->ni_resid = DIRSIZ(&ndp->ni_dent);
 		ndp->ni_base = (caddr_t)&ndp->ni_dent;
+		ndp->ni_iov = &ndp->ni_nd.nd_iovec;
+		ndp->ni_iovcnt = 1;
+		ndp->ni_rw = UIO_WRITE;
 		ndp->ni_uioseg = UIO_SYSSPACE;
 		error =
 		    ufs_write(ndp->ni_dvp, &ndp->ni_uio, IO_SYNC, ndp->ni_cred);
@@ -710,6 +712,9 @@ dirrewrite(dp, ip, ndp)
 	ndp->ni_dent.d_ino = ip->i_number;
 	ndp->ni_count = ndp->ni_resid = DIRSIZ(&ndp->ni_dent);
 	ndp->ni_base = (caddr_t)&ndp->ni_dent;
+	ndp->ni_iov = &ndp->ni_nd.nd_iovec;
+	ndp->ni_iovcnt = 1;
+	ndp->ni_rw = UIO_WRITE;
 	ndp->ni_uioseg = UIO_SYSSPACE;
 	return (ufs_write(ITOV(dp), &ndp->ni_uio, IO_SYNC, ndp->ni_cred));
 }
