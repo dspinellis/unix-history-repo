@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.40 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.41 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -773,6 +773,19 @@ writable(filename, ctladdr, flags)
 **	Side Effects:
 **		reads the :include: file and sends to everyone
 **		listed in that file.
+**
+**	Security Note:
+**		If you have restricted chown (that is, you can't
+**		give a file away), it is reasonable to allow programs
+**		and files called from this :include: file to be to be
+**		run as the owner of the :include: file.  This is bogus
+**		if there is any chance of someone giving away a file.
+**		We assume that pre-POSIX systems can give away files.
+**
+**		There is an additional restriction that if you
+**		forward to a :include: file, it will not take on
+**		the ownership of the :include: file.  This may not
+**		be necessary, but shouldn't hurt.
 */
 
 static jmp_buf	CtxIncludeTimeout;
@@ -803,6 +816,9 @@ include(fname, forwarding, ctladdr, sendq, e)
 	int rval = 0;
 	int sfflags = forwarding ? SFF_MUSTOWN : SFF_ANYFILE;
 	struct stat st;
+#ifdef _POSIX_CHOWN_RESTRICTED
+	bool safechown;
+#endif
 	char buf[MAXLINE];
 
 	if (tTd(27, 2))
@@ -912,12 +928,15 @@ resetuid:
 		return rval;
 	}
 
-	if (ca == NULL)
+#ifdef _POSIX_CHOWN_RESTRICTED
+	safechown = fpathconf(fileno(fp), _PC_CHOWN_RESTRICTED) != -1;
+	if (ca == NULL && safechown)
 	{
 		ctladdr->q_uid = st.st_uid;
 		ctladdr->q_gid = st.st_gid;
 		ctladdr->q_flags |= QGOODUID;
 	}
+#endif
 	if (ca != NULL && ca->q_uid == st.st_uid)
 	{
 		/* optimization -- avoid getpwuid if we already have info */
@@ -926,13 +945,29 @@ resetuid:
 	}
 	else
 	{
+		char *sh;
 		register struct passwd *pw;
 
+		sh = "/SENDMAIL/ANY/SHELL/";
 		pw = getpwuid(st.st_uid);
-		if (pw == NULL || !usershellok(pw->pw_shell))
+		if (pw != NULL)
 		{
 			ctladdr->q_ruser = newstr(pw->pw_name);
+#ifdef _POSIX_CHOWN_RESTRICTED
+			if (safechown)
+				sh = pw->pw_shell;
+#endif
+		}
+		if (pw == NULL)
 			ctladdr->q_flags |= QBOGUSSHELL;
+		else if(!usershellok(sh))
+		{
+#ifdef _POSIX_CHOWN_RESTRICTED
+			if (safechown)
+				ctladdr->q_flags |= QBOGUSSHELL;
+			else
+#endif
+				ctladdr->q_flags |= QUNSAFEADDR;
 		}
 	}
 
