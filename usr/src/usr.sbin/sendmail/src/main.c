@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -29,7 +29,7 @@ static char sccsid[] = "@(#)main.c	8.3 (Berkeley) %G%";
 
 # ifdef lint
 char	edata;
-# endif lint
+# endif /* lint */
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -492,7 +492,7 @@ main(argc, argv, envp)
 				break;
 			}
 #ifdef HASSETVBUF
-			setvbuf(TrafficLogFile, NULL, _IOLBF, BUFSIZ);
+			setvbuf(TrafficLogFile, NULL, _IOLBF, 0);
 #else
 			setlinebuf(TrafficLogFile);
 #endif
@@ -835,7 +835,7 @@ main(argc, argv, envp)
 				exit(0);
 
 			/* disconnect from our controlling tty */
-			disconnect(TRUE, CurEnv);
+			disconnect(2, CurEnv);
 		}
 
 		dtype[0] = '\0';
@@ -911,6 +911,7 @@ main(argc, argv, envp)
 
 	if (*av == NULL && !GrabTo)
 	{
+		CurEnv->e_flags |= EF_GLOBALERRS;
 		usrerr("Usage: /usr/lib/sendmail [flags] addr...");
 		finis();
 	}
@@ -936,7 +937,10 @@ main(argc, argv, envp)
 
 	CurEnv->e_to = NULL;
 	if (OpMode != MD_VERIFY || GrabTo)
+	{
+		CurEnv->e_flags |= EF_GLOBALERRS;
 		collect(FALSE, FALSE, CurEnv);
+	}
 	errno = 0;
 
 	/* collect statistics */
