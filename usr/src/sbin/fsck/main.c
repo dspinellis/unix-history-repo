@@ -1,5 +1,5 @@
 #ifndef lint
-static char version[] = "@(#)main.c	3.4 (Berkeley) %G%";
+static char version[] = "@(#)main.c	3.5 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -122,6 +122,7 @@ checkfilesys(filesys)
 	char *filesys;
 {
 	daddr_t n_ffree, n_bfree;
+	struct dups *dp;
 
 	devname = filesys;
 	if (setup(filesys) == 0) {
@@ -194,6 +195,12 @@ checkfilesys(filesys)
 		n_blks += howmany(sblock.fs_cssize, sblock.fs_fsize);
 		if (n_blks -= fmax - (n_ffree + sblock.fs_frag * n_bfree))
 			printf("%d blocks missing\n", n_blks);
+		if (duplist != NULL) {
+			printf("The following duplicate blocks remain:");
+			for (dp = duplist; dp; dp = dp->next)
+				printf(" %d,", dp->dup);
+			printf("\n");
+		}
 	}
 	if (dfile.mod) {
 		(void)time(&sblock.fs_time);
