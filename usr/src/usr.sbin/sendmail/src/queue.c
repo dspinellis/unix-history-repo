@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.14		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.15		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.14		%G%);
+SCCSID(@(#)queue.c	3.15		%G%);
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -93,7 +93,7 @@ queueup(df)
 			printaddr(q, FALSE);
 		}
 # endif DEBUG
-		if (bitset(QQUEUEUP, q->q_flags))
+		if (queueall || bitset(QQUEUEUP, q->q_flags))
 			fprintf(f, "R%s\n", q->q_paddr);
 	}
 
