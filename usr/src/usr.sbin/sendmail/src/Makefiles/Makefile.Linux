@@ -7,7 +7,7 @@
 #
 #  This has been tested on Linux 0.99p10.
 #
-#	@(#)Makefile.Linux	8.2 (Berkeley) %G%
+#	@(#)Makefile.Linux	8.3 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
