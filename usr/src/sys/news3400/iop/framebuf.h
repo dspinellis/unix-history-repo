@@ -9,7 +9,7 @@
  *
  * from: $Hdr: framebuf.h,v 4.300 91/06/09 06:42:21 root Rel41 $ SONY
  *
- *	@(#)framebuf.h	7.1 (Berkeley) %G%
+ *	@(#)framebuf.h	7.2 (Berkeley) %G%
  */
 
 #ifndef __FRAMEBUF__
@@ -616,11 +616,7 @@ typedef struct {
 /*
  * FB IOCTL
  */
-#ifdef KERNEL
-#include "ioctl.h"
-#else /* KERNEL */
 #include <sys/ioctl.h>
-#endif /* KERNEL */
 
 #define FBIOCSETSCR		_IOW('F', 0, int)
 #define FBIOCGETSCR		_IOR('F', 1, int)

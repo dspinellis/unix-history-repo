@@ -9,26 +9,26 @@
  *
  * from: $Hdr: kb_ctrl.c,v 4.300 91/06/09 06:14:49 root Rel41 $ SONY
  *
- *	@(#)kb_ctrl.c	7.1 (Berkeley) %G%
+ *	@(#)kb_ctrl.c	7.2 (Berkeley) %G%
  */
 
 /*
  *	Keyboard driver
  */
 
-#include "../include/fix_machine_type.h"
+#include <machine/fix_machine_type.h>
 
 #ifdef IPC_MRX
-#include "../../h/ioctl.h"
-#include "../../iop/keyboard.h"
-#include "../../iop/kbreg.h"
+#include <sys/ioctl.h>
+#include <news3400/iop/keyboard.h>
+#include <news3400/iop/kbreg.h>
 #else
-#include "ioctl.h"
-#include "param.h"
-#include "systm.h"
-#include "types.h"
-#include "../iop/keyboard.h"
-#include "../iop/kbreg.h"
+#include <sys/ioctl.h>
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/types.h>
+#include <news3400/iop/keyboard.h>
+#include <news3400/iop/kbreg.h>
 #endif
 
 extern int tmode;
@@ -51,12 +51,12 @@ Key_table *key_table_addr = default_table;
 
 #ifdef CPU_SINGLE
 #include "ms.h"
-#include "clist.h"	
-#include "ttydev.h"
-#include "tty.h"
-#include "../sio/scc.h"
-#include "time.h"
-#include "../iop/mouse.h"
+#include <sys/clist.h>	
+#include <sys/ttydev.h>
+#include <sys/tty.h>
+#include <news3400/sio/scc.h>
+#include <sys/time.h>
+#include <news3400/iop/mouse.h>
 
 extern int cnrint();
 

@@ -9,28 +9,28 @@
  *
  * from: $Hdr: cons.c,v 4.300 91/06/09 06:34:41 root Rel41 $ SONY
  *
- *	@(#)bmcons.c	7.2 (Berkeley) %G%
+ *	@(#)bmcons.c	7.3 (Berkeley) %G%
  */
 
 /*
  * console driver
  */
-#include "../include/fix_machine_type.h"
-#include "param.h"
-#include "../include/pte.h"
-#include "conf.h"
-#include "proc.h"
-#include "user.h"
-#include "ioctl.h"
-#include "tty.h"
-#include "map.h"
-#include "buf.h"
-#include "clist.h"
-#include "file.h"
-#include "bm.h"
+#include <machine/fix_machine_type.h>
+#include <sys/param.h>
+#include <machine/pte.h>
+#include <sys/conf.h>
+#include <sys/proc.h>
+#include <sys/user.h>
+#include <sys/ioctl.h>
+#include <sys/tty.h>
+#include <sys/map.h>
+#include <sys/buf.h>
+#include <sys/clist.h>
+#include <sys/file.h>
+#include <sys/bm.h>
 
-#include "../hbdev/rsreg.h"
-#include "../sio/sccparam.h"
+#include <news3400/hbdev/rsreg.h>
+#include <news3400/sio/sccparam.h>
 
 #define	CN_RXE		RXE
 #define	CN_TXE		TXE
@@ -499,9 +499,9 @@ cncint()
  *	cn_set_param()
  */
 #ifdef IPC_MRX
-#include "../newsipc/newsipc.h"
-#include "../mrx/h/cio.h"
-#include "../mrx/h/console.h"
+#include <news3400/newsipc/newsipc.h>
+#include <news3400/mrx/h/cio.h>
+#include <news3400/mrx/h/console.h>
 
 #ifdef mips
 #define ipc_phys(x)	K0_TT0(x)
@@ -683,9 +683,9 @@ cnfont(port)
 #endif /* IPC_MRX */
 
 #ifdef CPU_SINGLE
-#include "../hbdev/rsreg.h"
-#include "../iop/framebuf.h"
-#include "../fb/fbdefs.h"
+#include <news3400/hbdev/rsreg.h>
+#include <news3400/iop/framebuf.h>
+#include <news3400/fb/fbdefs.h>
 
 int lastcount;
 int start_dimmer = 1;

@@ -9,7 +9,7 @@
  *
  * from: $Hdr: rs.c,v 4.300 91/06/09 06:43:03 root Rel41 $ SONY
  *
- *	@(#)rs.c	7.2 (Berkeley) %G%
+ *	@(#)rs.c	7.3 (Berkeley) %G%
  */
 
 /*	rs.c	6.1	83/07/29	*/
@@ -20,29 +20,29 @@
  * RS driver
  *
  */
-#include "../include/fix_machine_type.h"
+#include <machine/fix_machine_type.h>
 
 #if NBK > 0
 #include "bk.h"
 #endif
-#include "param.h"
-#include "conf.h"
-#include "proc.h"
-#include "user.h"
-#include "kernel.h"
-#include "ioctl.h"
-#include "tty.h"
-#include "buf.h"
-#include "malloc.h"
+#include <sys/param.h>
+#include <sys/conf.h>
+#include <sys/proc.h>
+#include <sys/user.h>
+#include <sys/kernel.h>
+#include <sys/ioctl.h>
+#include <sys/tty.h>
+#include <sys/buf.h>
+#include <sys/malloc.h>
 
 #ifdef CPU_SINGLE
-#include "../hbdev/hbvar.h"
+#include <news3400/hbdev/hbvar.h>
 #else
 #include "../iop/iopvar.h"
 #endif
 
-#include "../iop/rsreg.h"
-#include "../sio/sccparam.h"
+#include <news3400/iop/rsreg.h>
+#include <news3400/sio/sccparam.h>
 
 #define	RS_RXE	RXE
 #define	RS_TXE	TXE
@@ -817,9 +817,9 @@ rsflowctl(unit, block)
  *	rs_set_param()
  */
 #ifdef CPU_SINGLE
-#include "../hbdev/hbvar.h"
-#include "../hbdev/rsreg.h"
-#include "../sio/scc.h"
+#include <news3400/hbdev/hbvar.h>
+#include <news3400/hbdev/rsreg.h>
+#include <news3400/sio/scc.h>
 
 int	rslastcount[NRS*4];
 int	scc_unit[] = { 0, 1, -1, -1, 2, 3, 4, 5, 6, 7, 8, 9 };

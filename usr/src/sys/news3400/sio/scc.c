@@ -9,7 +9,7 @@
  *
  * from: $Hdr: scc.c,v 4.300 91/06/09 06:44:53 root Rel41 $ SONY
  *
- *	@(#)scc.c	7.1 (Berkeley) %G%
+ *	@(#)scc.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -23,25 +23,20 @@
  * Work Station Division, all rights RESERVED.
  */
 
-#include "../include/fix_machine_type.h"
-#include "../include/adrsmap.h"
+#include <machine/fix_machine_type.h>
+#include <machine/adrsmap.h>
 
-#ifdef news700
-#include "ms.h"
-#include "bm.h"
-#else
 #include "rs.h"
-#endif
 
-#include "param.h"
-#include "ioctl.h"
-#include "tty.h"
-#include "malloc.h"
+#include <sys/param.h>
+#include <sys/ioctl.h>
+#include <sys/tty.h>
+#include <sys/malloc.h>
 
-#include "sccparam.h"
-#include "sccreg.h"
-#include "scc.h"
-#include "scc.conf"
+#include <news3400/sio/sccparam.h>
+#include <news3400/sio/sccreg.h>
+#include <news3400/sio/scc.h>
+#include <news3400/sio/scc.conf>
 
 #define	PROBE_DATA	0x55
 

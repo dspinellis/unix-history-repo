@@ -9,7 +9,7 @@
  *
  * from: $Hdr: scu.h,v 4.300 91/07/02 16:38:38 root Rel41 $ SONY
  *
- *	@(#)scu.h	7.1 (Berkeley) %G%
+ *	@(#)scu.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -19,11 +19,7 @@
 #ifndef __SCU__
 #define __SCU__ 1
 
-#ifdef KERNEL
-#include "ioctl.h"
-#else
 #include <sys/ioctl.h>
-#endif
 
 #define	RAWSCSI_USE_PIO		0
 #define	RAWSCSI_USE_DMA		1

@@ -9,35 +9,35 @@
  *
  * from: $Hdr: ms.c,v 4.300 91/06/09 06:22:04 root Rel41 $ SONY
  *
- *	@(#)ms.c	7.2 (Berkeley) %G%
+ *	@(#)ms.c	7.3 (Berkeley) %G%
  */
 
-#include "../include/fix_machine_type.h"
+#include <machine/fix_machine_type.h>
 
-#include    "ms.h"
+#include "ms.h"
 #if NMS > 0
 /*
  * mouse 
  */
 
-#include "types.h"
-#include "../include/cpu.h"
-#include "../include/pte.h"
-#include "param.h"
-#include "proc.h"
-#include "user.h"
-#include "buf.h"
-#include "malloc.h"
-#include "systm.h"
-#include "uio.h"
-#include "kernel.h"
-#include "file.h"
+#include <sys/types.h>
+#include <machine/cpu.h>
+#include <machine/pte.h>
+#include <sys/param.h>
+#include <sys/proc.h>
+#include <sys/user.h>
+#include <sys/buf.h>
+#include <sys/malloc.h>
+#include <sys/systm.h>
+#include <sys/uio.h>
+#include <sys/kernel.h>
+#include <sys/file.h>
 
-#include "../iop/mouse.h"
-#include "../iop/msreg.h"
+#include <news3400/iop/mouse.h>
+#include <news3400/iop/msreg.h>
 
-#include "../sio/scc.h"
-#include "../hbdev/hbvar.h"
+#include <news3400/sio/scc.h>
+#include <news3400/hbdev/hbvar.h>
 
 #ifndef mips
 #define volatile

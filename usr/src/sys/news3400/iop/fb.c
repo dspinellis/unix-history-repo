@@ -9,10 +9,10 @@
  *
  * from: $Hdr: fb.c,v 4.300 91/06/27 20:43:06 root Rel41 $ SONY
  *
- *	@(#)fb.c	7.1 (Berkeley) %G%
+ *	@(#)fb.c	7.2 (Berkeley) %G%
  */
 
-#include "../include/fix_machine_type.h"
+#include <machine/fix_machine_type.h>
 
 #include "fb.h"
 #if NFB > 0
@@ -20,26 +20,26 @@
  * Frame buffer driver
  */
 
-#include "types.h"
-#include "../include/pte.h"
-#include "../include/cpu.h"
+#include <sys/types.h>
+#include <machine/pte.h>
+#include <machine/cpu.h>
 
-#include "param.h"
-#include "proc.h"
-#include "user.h"
-#include "buf.h"
-#include "vm/vm.h"
-#include "systm.h"
-#include "map.h"
-#include "uio.h"
-#include "kernel.h"
+#include <sys/param.h>
+#include <sys/proc.h>
+#include <sys/user.h>
+#include <sys/buf.h>
+#include <vm/vm.h>
+#include <sys/systm.h>
+#include <sys/map.h>
+#include <sys/uio.h>
+#include <sys/kernel.h>
 
-#include "../iop/framebuf.h"
-#include "../iop/fbreg.h"
-#include "../iodev/ioptohb.h"
+#include <news3400/iop/framebuf.h>
+#include <news3400/iop/fbreg.h>
+#include <news3400/iodev/ioptohb.h>
 
 #ifdef CPU_SINGLE
-#include "../hbdev/hbvar.h"
+#include <news3400/hbdev/hbvar.h>
 
 #define ipc_phys(x)	(caddr_t)((int)(x))
 #define ipc_log(x)	(caddr_t)((int)(x) | 0x80000000)
@@ -49,7 +49,7 @@
 
 extern rop_xint();
 #else /* CPU_SINGLE */
-#include "../iop/iopvar.h"
+#include <news3400/iop/iopvar.h>
 
 #ifdef IPC_MRX
 #include "../ipc/newsipc.h"

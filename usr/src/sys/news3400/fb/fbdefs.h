@@ -9,7 +9,7 @@
  *
  * from: $Hdr: fbdefs.h,v 4.300 91/06/09 06:33:54 root Rel41 $ SONY
  *
- *	@(#)fbdefs.h	7.2 (Berkeley) %G%
+ *	@(#)fbdefs.h	7.3 (Berkeley) %G%
  */
 
 #ifndef mips
@@ -34,7 +34,7 @@
 #ifdef IPC_MRX
 #define FB_LOCK
 #define FB_UNLOCK
-#include "../fb/fbsem.h" /* semaphore name */
+#include <news3400/fb/fbsem.h> /* semaphore name */
 #else /* IPC_MRX */
 #define FB_LOCK		wait(bitmap_use)
 #define FB_UNLOCK	signal(bitmap_use)

@@ -9,20 +9,20 @@
  *
  * from: $Hdr: vt100.c,v 4.300 91/06/09 06:14:56 root Rel41 $ SONY
  *
- *	@(#)vt100.c	7.2 (Berkeley) %G%
+ *	@(#)vt100.c	7.3 (Berkeley) %G%
  */
 
-#include "../include/fix_machine_type.h"
+#include <machine/fix_machine_type.h>
 
-#include "types.h"
-#include "param.h"
-#include "systm.h"
-#include "../iop/framebuf.h"
-#include "../iop/kbreg.h"
-#include "../iop/keyboard.h"
-#include "../fb/fbdefs.h"
-#include "../bm/vt100.h"
-#include "../bm/bitmapif.h"
+#include <sys/types.h>
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <news3400/iop/framebuf.h>
+#include <news3400/iop/kbreg.h>
+#include <news3400/iop/keyboard.h>
+#include <news3400/fb/fbdefs.h>
+#include <news3400/bm/vt100.h>
+#include <news3400/bm/bitmapif.h>
 
 #ifdef IPC_MRX
 #include "config.h"
@@ -40,7 +40,7 @@
 #endif
 
 #ifdef CPU_SINGLE
-#include "../sio/scc.h"
+#include <nes3400/sio/scc.h>
 #endif
 
 extern Key_string key_str;

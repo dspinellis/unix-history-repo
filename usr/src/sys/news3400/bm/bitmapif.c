@@ -9,27 +9,27 @@
  *
  * from: $Hdr: bitmapif.c,v 4.300 91/06/09 06:14:40 root Rel41 $ SONY
  *
- *	@(#)bitmapif.c	7.1 (Berkeley) %G%
+ *	@(#)bitmapif.c	7.2 (Berkeley) %G%
  */
 
-#include "../include/fix_machine_type.h"
+#include <machine/fix_machine_type.h>
 
 #ifdef IPC_MRX
-#include "../../h/param.h"
-#include "../../h/types.h"
-#include "../../iop/framebuf.h"
-#include "../../iop/fbreg.h"
+#include <sys/param.h>
+#include <sys/types.h>
+#include <news3400/iop/framebuf.h>
+#include <news3400/iop/fbreg.h>
 #else
-#include "param.h"
-#include "types.h"
-#include "../iop/framebuf.h"
-#include "../iop/fbreg.h"
+#include <sys/param.h>
+#include <sys/types.h>
+#include <news3400/iop/framebuf.h>
+#include <news3400/iop/fbreg.h>
 #endif
 
-#include "../fb/fbdefs.h"
+#include <news3400/fb/fbdefs.h>
 
-#include "../bm/vt100.h"
-#include "../bm/bitmapif.h"
+#include <news3400/bm/vt100.h>
+#include <news3400/bm/bitmapif.h>
 
 extern int bm_todo;
 extern int tmode;
@@ -56,7 +56,7 @@ extern int bitmap_use;
 #endif
 
 #ifdef CPU_SINGLE
-#include "../include/cpu.h"
+#include <machine/cpu.h>
 #define PRE_EMPT	need_resched()
 #else
 #define	PRE_EMPT

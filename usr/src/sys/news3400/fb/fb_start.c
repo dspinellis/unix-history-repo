@@ -9,27 +9,27 @@
  *
  * from: $Hdr: fb_start.c,v 4.300 91/06/27 20:42:40 root Rel41 $ SONY
  *
- *	@(#)fb_start.c	7.2 (Berkeley) %G%
+ *	@(#)fb_start.c	7.3 (Berkeley) %G%
  */
 
-#include "../include/fix_machine_type.h"
+#include <machine/fix_machine_type.h>
 
-#include "param.h"
-#include "systm.h"
+#include <sys/param.h>
+#include <sys/systm.h>
 
 #ifdef IPC_MRX
 #include "../../iop/framebuf.h"
 #include "../../iop/fbreg.h"
 #include "page.h"
 #else
-#include "../iop/framebuf.h"
-#include "../iop/fbreg.h"
+#include <news3400/iop/framebuf.h>
+#include <news3400/iop/fbreg.h>
 #endif
 
-#include "../fb/fbdefs.h"
+#include <news3400/fb/fbdefs.h>
 
 #ifdef CPU_SINGLE
-#include "../include/cpu.h"
+#include <machine/cpu.h>
 extern struct tty cons;
 extern int cnstart();
 #define PRE_EMPT	need_resched()

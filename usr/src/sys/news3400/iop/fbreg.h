@@ -9,12 +9,12 @@
  *
  * from: $Hdr: fbreg.h,v 4.300 91/06/27 20:43:07 root Rel41 $ SONY
  *
- *	@(#)fbreg.h	7.1 (Berkeley) %G%
+ *	@(#)fbreg.h	7.2 (Berkeley) %G%
  */
 
 #ifdef KERNEL
 
-#include "../include/fix_machine_type.h"
+#include <machine/fix_machine_type.h>
 
 struct fb_softc {
 	int	fbs_state;

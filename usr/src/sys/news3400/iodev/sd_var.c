@@ -9,7 +9,7 @@
  *
  * from: $Hdr: sd_var.c,v 4.300 91/06/09 06:38:23 root Rel41 $ SONY
  *
- *	@(#)sd_var.c	7.1 (Berkeley) %G%
+ *	@(#)sd_var.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -23,22 +23,14 @@
 #include "sd.h"
 #if NSD > 0
 
-#include "../include/fix_machine_type.h"
+#include <machine/fix_machine_type.h>
 
-#include "param.h"
-#include "buf.h"
-#include "disklabel.h"
+#include <sys/param.h>
+#include <sys/buf.h>
+#include <sys/disklabel.h>
 
-#if defined(news800) || defined(news1800)
-# include "../iop/iopvar.h"
-#endif
-
-#if defined(news1700)
-# include "../hbdev/hbvar.h"
-#endif
-
-#include "../iodev/scsireg.h"
-#include "../iodev/sdreg.h"
+#include <news3400/iodev/scsireg.h>
+#include <news3400/iodev/sdreg.h>
 
 struct iop/**/_ctlr *sdminfo[NSDC];
 struct iop/**/_device *sddinfo[NSD];

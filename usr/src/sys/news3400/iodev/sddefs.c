@@ -9,7 +9,7 @@
  *
  * from: $Hdr: sddefs.c,v 4.300 91/06/09 06:38:25 root Rel41 $ SONY
  *
- *	@(#)sddefs.c	7.1 (Berkeley) %G%
+ *	@(#)sddefs.c	7.2 (Berkeley) %G%
  */
 
 #include "sd.h"
@@ -22,17 +22,10 @@
  * SD device configuration file
  */
 
-#ifdef KERNEL
-#include "param.h"
-#include "../iodev/sdreg.h"
-#include "../iodev/scsireg.h"
-#include "../iodev/scu.h"
-#else
-#include "/sys/h/param.h"
-#include "/sys/iodev/sdreg.h"
-#include "/sys/iodev/scsireg.h"
-#include "/sys/iodev/scu.h"
-#endif
+#include <sys/param.h>
+#include <news3400/iodev/sdreg.h>
+#include <news3400/iodev/scsireg.h>
+#include <news3400/iodev/scu.h>
 
 char	revs_all[] = "????";
 

@@ -9,13 +9,13 @@
  *
  * from: $Hdr: kbreg.h,v 4.300 91/06/09 06:42:47 root Rel41 $ SONY
  *
- *	@(#)kbreg.h	7.1 (Berkeley) %G%
+ *	@(#)kbreg.h	7.2 (Berkeley) %G%
  */
 
 #ifndef __KEYBOARD__
 #define __KEYBOARD__ 1
 
-#include "machine/fix_machine_type.h"
+#include <machine/fix_machine_type.h>
 
 #define	key_any(x)	((x) != -1)
 #define	key_down(x)	(((x) & 0x80) == 0)

@@ -9,27 +9,27 @@
  *
  * from: $Hdr: kb_encode.c,v 4.300 91/06/09 06:14:51 root Rel41 $ SONY
  *
- *	@(#)kb_encode.c	7.3 (Berkeley) %G%
+ *	@(#)kb_encode.c	7.4 (Berkeley) %G%
  */
 
-#include "../include/fix_machine_type.h"
+#include <machine/fix_machine_type.h>
 
 #ifdef IPC_MRX
-#include "../../h/param.h"
-#include "../../h/systm.h"
-#include "../../h/types.h"
-#include "../../h/ioctl.h"
-#include "../../iop/keyboard.h"
-#include "../../iop/kbreg.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/types.h>
+#include <sys/ioctl.h>
+#include <news3400/iop/keyboard.h>
+#include <news3400/iop/kbreg.h>
 #else
-#include "param.h"
-#include "systm.h"
-#include "types.h"
-#include "ioctl.h"
-#include "../iop/keyboard.h"
-#include "../iop/kbreg.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/types.h>
+#include <sys/ioctl.h>
+#include <news3400/iop/keyboard.h>
+#include <news3400/iop/kbreg.h>
 #endif
-#include "malloc.h"
+#include <sys/malloc.h>
 
 extern int tmode;
 extern int country;

@@ -9,7 +9,7 @@
  *
  * from: $Hdr: scsireg.h,v 4.300 91/06/09 06:38:12 root Rel41 $ SONY
  *
- *	@(#)scsireg.h	7.1 (Berkeley) %G%
+ *	@(#)scsireg.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -19,12 +19,7 @@
 #ifndef __SCSIREG__
 #define __SCSIREG__ 1
 
-#ifdef KERNEL
-#include "../include/fix_machine_type.h"
-#else
-#include "machine/fix_machine_type.h"
-#endif
-
+#include <machine/fix_machine_type.h>
 
 /*
  *	initiator status byte bit image
