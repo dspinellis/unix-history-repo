@@ -1,5 +1,67 @@
-	@(#)README	1.1 (Berkeley) %G%
+Copyright (c) 1987 Regents of the University of California.
+All rights reserved.  The Berkeley software License Agreement
+specifies the terms and conditions for redistribution.
 
+	@(#)README	1.2 (Berkeley) %G%
+
+All files and subdirectories of this directory are recommended for
+rdisting except web2 and web2a (because of their size).  Details on
+most of these files is described under FILES below.
+
+The new subdirectory "special" contains lists of words in specialized
+fields, which may be hashed in with the regular lists on machines
+having many users working in these fields.  As of this writing, it
+contains two files.
+
+It is advised that system managers also create a directory
+/usr/local/dict.  (Such a directory will probably be provided, empty,
+in the next release.)  This can be used to maintain files of particular
+interest to users of the machine (e.g., surnames of members of the
+department on a departmental machine).
+
+Here is a script that might be used to customize the hashlists on a
+machine to include the words in /usr/dict/special/xxx, as well as two
+local lists called /usr/local/dict/surnames and
+/usr/local/dict/acronyms.
+
+	#
+	cd /usr/dict
+	mv hlista hlista.0; mv hlistb hlistb.0
+	cat special/xxx /usr/local/dict/{surnames,acronyms} | spellin hlista.0 > hlista
+	cat special/xxx /usr/local/dict/{surnames,acronyms} | spellin hlistb.0 > hlistb
+
+The new hashed lists, being named /usr/dict/hlist[ab], become the
+default lists for "spell"; the old lists can still be called with the -d
+option.
+
+Wordlists are in general sorted as in sort -df.  This makes no
+difference for spell's hashing process, but will make a difference
+commands that search them directly (such as "look").
+
+--------------------------------------------------------------------
+FILES and subdirectories in /usr/dict:
+    words -- everyday words, and important technical terms from all
+	fields, that are spelled the same in British and American usage.
+    american -- spellings accepted in American but not British usage.
+    british -- spellings accepted in British but not American usage.
+    stop -- forms that would otherwise be derivable by "spell" from
+	words in one of the above files, but should not be accepted.
+    hlista -- hashed list formed from files {words,american}.
+    hlistb -- hashed list formed from files {words,british}.
+    hstop  -- hashed list formed from file stop.
+    web2 -- words from Webster's 2nd International (see WEB below).
+    web2a -- compounds and phrases from Webster's 2nd International.
+    README -- this file
+    papers/ -- an (out-of-date) bibliographical database, used as the
+	default by the program "refer".
+    special/ -- directory of less common terms from specialized fields
+	special/4bsd -- commands and system calls (as in
+	    /usr/man/man[1238n]), and builtin csh commands (listed in
+	    /usr/man/man1/csh.1) of the current version of 4bsd Unix.
+	    (Supersedes old "/usr/src/usr.bin/spell/local".)
+	math -- technical mathematical terms not in /usr/dict/words.
+
+WEB (intro provided in posting)--------------------------------------
 Welcome to Webster's Second International, all 234,936 words worth.
 The 1934 copyright has elapsed, according to the supplier.  The
 supplemental 'web2a' list contains hyphenated terms as well as assorted
