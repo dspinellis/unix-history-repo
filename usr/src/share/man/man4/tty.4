@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)tty.4	6.3 (Berkeley) %G%
+.\"	@(#)tty.4	6.4 (Berkeley) %G%
 .\"
 .TH TTY 4 ""
 .UC 4
@@ -38,14 +38,17 @@ at very low overhead, and is described in
 .IR bk (4).
 .LP
 Line discipline switching is accomplished with the TIOCSETD 
-.I ioctl:
+.IR ioctl :
 .IP
-.B "int ldisc = LDISC; ioctl(filedes, TIOCSETD, &ldisc);"
+.B "int ldisc = LDISC;"
+.br
+.B "ioctl(f, TIOCSETD, &ldisc);"
 .LP
 where LDISC is OTTYDISC for the standard tty driver, NTTYDISC for the new
 driver and NETLDISC for the networking discipline.
 The standard (currently old) tty driver is discipline 0 by convention.
-The current line discipline can be obtained with the TIOCGETD ioctl.
+The current line discipline can be obtained with the TIOCGETD
+.IR ioctl .
 Pending input is discarded when the line discipline is changed.
 .PP
 All of the low-speed asynchronous
@@ -81,6 +84,15 @@ for output, when typed output is desired
 and it is tiresome to find out which terminal
 is currently in use.
 .LP
+A process can remove the association it has with its controlling
+terminal by opening the file
+.B /dev/tty
+and issuing a
+.IP
+.B "ioctl(f, TIOCNOTTY, 0);"
+.LP
+This is often desirable in server processes.
+.LP
 .B "Process groups."
 .LP
 Command processors such as
@@ -88,15 +100,15 @@ Command processors such as
 can arbitrate the terminal between different
 .I jobs
 by placing related jobs in a single process group and associating this
-process group with the terminal.  A terminals associated process group
+process group with the terminal.  A terminal's associated process group
 may be set using the TIOCSPGRP
 .IR ioctl (2):
 .IP
-\fBioctl(fildes, TIOCSPGRP, &pgrp)\fR
+.B "ioctl(fildes, TIOCSPGRP, &pgrp);"
 .LP
-or examined using TIOCGPGRP rather than TIOCSPGRP, returning the current
+or examined using TIOCGPGRP, which returns the current
 process group in
-.I pgrp.
+.IR pgrp .
 The new terminal driver aids in this arbitration by restricting access
 to the terminal by processes which are not in the current process group;
 see
@@ -111,7 +123,7 @@ amount of processing on the input and output characters:
 The normal mode.  In this mode lines of input are collected and input editing
 is done.  The edited line is made available when it is completed by
 a newline
-or when an EOT (control-D, hereafter ^D)
+or when the \fIt_brkc\fP character, normally an EOT (control-D, hereafter ^D),
 is entered.
 A carriage return is usually made synonymous with newline in this mode,
 and replaced with a newline whenever it is typed.
@@ -130,6 +142,7 @@ available as they are typed; no output processing is done either.
 .PP
 The style of input processing can also be very different when
 the terminal is put in non-blocking i/o mode; see
+the FNDELAY flag as described in
 .IR fcntl (2).
 In this case a
 .IR read (2)
@@ -151,9 +164,10 @@ choked, which is rare,
 or when the user has accumulated the maximum allowed number of
 input characters that have not yet been read by some program.
 Currently this limit is 256 characters.
-In the old terminal driver all the saved characters are thrown away
-when the limit is reached, without notice; the new driver simply refuses
-to accept any further input, and rings the terminal bell.
+In RAW mode, the terminal driver
+throws away all input and output without notice when the limit is reached.
+In CBREAK or cooked mode it refuses to accept any further input and,
+if in the new line discipline, rings the terminal bell.
 .PP
 Input characters are normally accepted in either even or odd parity
 with the parity bit being stripped off before the character is given to
@@ -162,7 +176,9 @@ it is possible to have input characters with that parity discarded (see the
 \fBSummary\fR below.)
 .PP
 In all of the line disciplines, it is possible to simulate terminal
-input using the TIOCSTI ioctl, which takes, as its third argument,
+input using the TIOCSTI
+.IR ioctl ,
+which takes, as its third argument,
 the address of a character.  The system pretends that this character
 was typed on the argument terminal, which must be the control terminal except
 for the super-user (this call is not in standard version 7 UNIX).
@@ -170,8 +186,9 @@ for the super-user (this call is not in standard version 7 UNIX).
 Input characters are normally echoed by putting them in an output queue
 as they arrive.  This may be disabled by clearing the ECHO bit in the
 flags word using the
-.IR stty (3)
-call or the TIOCSETN or TIOCSETP ioctls
+.IR stty (3C)
+call or the TIOCSETN or TIOCSETP
+.IR ioctl s
 (see the \fBSummary\fR below).
 .PP
 In cooked mode, terminal input is processed in units of lines.
@@ -187,18 +204,14 @@ It is not, however, necessary to read a whole line at
 once; any number of characters may be
 requested in a read, even one, without losing information.
 .PP
-During input, line editing is normally done, with the character `#'
-logically erasing the last character typed and the character `@'
+During input, line editing is normally done, with the DELETE character
+logically erasing the last character typed and the character ^U (control-U)
 logically erasing the entire current input line.
-These are often reset on crt's,
-with ^H replacing #,
-and ^U replacing @.
 These characters
 never erase beyond the beginning of the current input line or an ^D.
 These characters may be entered literally by
-preceding them with `\e\|'; in the old teletype driver both the `\e\|' and
-the character entered literally will appear on the screen; in the new
-driver the `\e\|' will normally disappear.
+preceding them with `\e\|'; the `\e\|' will normally be erased when the
+character is typed.
 .PP
 The drivers normally treat either a carriage return or a newline character
 as terminating an input line, replacing the return with a newline and echoing
@@ -209,11 +222,10 @@ and does not terminate cooked mode input.
 .PP
 In the new driver there is a literal-next character ^V which can be typed
 in both cooked and CBREAK mode preceding
-.B any
+.I any
 character to prevent its special meaning.  This is to be preferred to the
-use of `\e\|' escaping erase and kill characters, but `\e\|' is (at least
-temporarily) retained with its old function in the new driver for historical
-reasons.
+use of `\e\|' escaping erase and kill characters, but `\e\|' is
+retained with its old function in the new line discipline.
 .PP
 The new terminal driver also provides two other editing characters in
 normal mode.  The word-erase character, normally ^W, erases the preceding
@@ -226,12 +238,8 @@ which would normally be erased from the screen are fouled by program output.
 .LP
 .B "Input echoing and redisplay"
 .LP
-In the old terminal driver, nothing special occurs when an erase character
-is typed; the erase character is simply echoed.  When a kill character
-is typed it is echoed followed by a new-line (even if the character is
-not killing the line, because it was preceded by a `\e\|'!.)
-.PP
-The new terminal driver has several modes for handling the echoing of
+The terminal driver has several modes (not present in standard UNIX
+Version 7 systems) for handling the echoing of
 terminal input, controlled by bits in a local mode word.
 .LP
 .I "Hardcopy terminals."
@@ -239,8 +247,8 @@ When a hardcopy terminal is in use, the LPRTERA bit is normally set in
 the local mode word.  Characters which are logically erased are
 then printed out backwards preceded by `\e\|' and followed by `/' in this mode.
 .LP
-.I "Crt terminals."
-When a crt terminal is in use, the LCRTBS bit is normally set in the local
+.I "CRT terminals."
+When a CRT terminal is in use, the LCRTBS bit is normally set in the local
 mode word.  The terminal driver then echoes the proper number of erase
 characters when input is erased; in the normal case where the erase
 character is a ^H this causes the cursor of the terminal to back up
@@ -248,8 +256,8 @@ to where it was before the logically erased character was typed.
 If the input has become fouled due to interspersed asynchronous output,
 the input is automatically retyped.
 .LP
-.I "Erasing characters from a crt."
-When a crt terminal is in use, the LCRTERA bit may be set to cause
+.I "Erasing characters from a CRT."
+When a CRT terminal is in use, the LCRTERA bit may be set to cause
 input to be erased from the screen with a \*(lqbackspace-space-backspace\*(rq
 sequence when character or word deleting sequences are used.
 A LCRTKIL bit may be set as well, causing the input to
@@ -260,8 +268,7 @@ If the LCTLECH bit is set in the local state word, then non-printing (control)
 characters are normally echoed as ^X (for some X)
 rather than being echoed unmodified; delete is echoed as ^?.
 .LP
-The normal modes for using the new terminal driver on crt terminals
-are speed dependent.
+The normal modes for use on CRT terminals are speed dependent.
 At speeds less than 1200 baud, the LCRTERA and LCRTKILL processing
 is painfully slow, so 
 .IR stty (1)
@@ -287,7 +294,7 @@ When the queue has drained down to some threshold
 the program is resumed.
 Even parity is normally generated on output.
 The EOT character is not transmitted in cooked mode to prevent terminals
-that respond to it from hanging up; programs using raw or cbreak mode
+that respond to it from hanging up; programs using RAW or CBREAK mode
 should be careful.
 .PP
 The terminal drivers provide necessary processing for cooked and CBREAK mode
@@ -295,8 +302,9 @@ output including delay generation for certain special characters and parity
 generation.   Delays are available after backspaces ^H, form feeds ^L,
 carriage returns ^M, tabs ^I and newlines ^J.  The driver will also optionally
 expand tabs into spaces, where the tab stops are assumed to be set every
-eight columns.  These functions are controlled by bits in the tty flags word;
-see \fBSummary\fR below.
+eight columns, and optionally convert newlines to carriage returns
+followed by newline.  These functions are controlled by bits in the tty
+flags word; see \fBSummary\fR below.
 .PP
 The terminal drivers provide for mapping between upper and lower case
 on terminals lacking lower case, and for other special processing on
@@ -307,7 +315,9 @@ normally ^O, which sets the LFLUSHO bit in the local mode word, causing
 subsequent output to be flushed until it is cleared by a program or more
 input is typed.  This character has effect in both cooked and CBREAK modes
 and causes pending input to be retyped if there is any pending input.
-An ioctl to flush the characters in the input and output queues TIOCFLUSH,
+An
+.I ioctl
+to flush the characters in the input or output queues, TIOCFLUSH,
 is also available.
 .LP
 .B "Upper case terminals and Hazeltines"
@@ -317,9 +327,7 @@ all upper-case letters are mapped into
 the corresponding lower-case letter.
 The upper-case letter may be generated by preceding
 it by `\\'.
-If the new terminal driver is being used,
-then upper case letters
-are preceded by a `\e\|' when output.
+Upper case letters are preceded by a `\e\|' when output.
 In addition, the following escape sequences can be generated
 on output and accepted on input:
 .PP
@@ -330,7 +338,7 @@ use	\e\|\'	\e\|!	\e\|^	\e\|(	\e\|)
 .PP
 To deal with Hazeltine terminals, which do not understand that ~ has
 been made into an ASCII character, the LTILDE bit may be set in the local
-mode word when using the new terminal driver; in this case the character
+mode word; in this case the character
 ~ will be replaced with the character \` on output.
 .LP
 .B "Flow control."
@@ -353,14 +361,18 @@ conventions.
 There are several
 .I ioctl
 calls available to control the state of the terminal line.
-The TIOCSBRK ioctl will set the break bit in the hardware interface
+The TIOCSBRK
+.I ioctl
+will set the break bit in the hardware interface
 causing a break condition to exist; this can be cleared (usually after a delay
 with
 .IR sleep (3))
 by TIOCCBRK.
 Break conditions in the input are reflected as a null character in RAW mode
 or as the interrupt character in cooked or CBREAK mode.
-The TIOCCDTR ioctl will clear the data terminal ready condition; it can
+The TIOCCDTR
+.I ioctl
+will clear the data terminal ready condition; it can
 be set again by TIOCSDTR.
 .PP
 When the carrier signal from the dataset drops (usually
@@ -375,13 +387,17 @@ end-of-file on their input will terminate appropriately.
 .PP
 When using an ACU
 it is possible to ask that the phone line be hung up on the last close
-with the TIOCHPCL ioctl; this is normally done on the outgoing line.
+with the TIOCHPCL
+.IR ioctl ;
+this is normally done on the outgoing line.
 .LP
 .B "Interrupt characters."
 .PP
 There are several characters that generate interrupts in cooked and CBREAK
-mode; all are sent the processes in the control group of the terminal,
-as if a TIOCGPGRP ioctl were done to get the process group and then a
+mode; all are sent to the processes in the control group of the terminal,
+as if a TIOCGPGRP
+.I ioctl
+were done to get the process group and then a
 .IR killpg (2)
 system call were done,
 except that these characters also flush pending input and output when
@@ -390,10 +406,9 @@ typed at a terminal
 The characters shown here are the defaults; the field names in the structures
 (given below)
 are also shown.
-The characters may be changed,
-although this is not often done.
-.IP ^?
-\fBt_intrc\fR (Delete) generates a SIGINT signal.
+The characters may be changed.
+.IP ^C
+\fBt_intrc\fR (ETX) generates a SIGINT signal.
 This is the normal way to stop a process which is no longer interesting,
 or to regain control in an interactive program.
 .IP ^\e
@@ -419,26 +434,17 @@ control terminal attempts to read from that terminal its process group is
 sent a SIGTTIN signal.  This signal normally causes the members of
 that process group to stop. 
 If, however, the process is ignoring SIGTTIN, has SIGTTIN blocked,
-is an
-.IR "orphan process" ,
 or is in the middle of process creation using
 .IR vfork (2)),
-it is instead returned an end-of-file.  (An
-.I "orphan process"
-is a process whose
-parent has exited and has been inherited by the
-.IR init (8)
-process.)
-Under older UNIX systems
-these processes would typically have had their input files reset to
-.B /dev/null,
-so this is a compatible change.
+the read will return \-1 and set
+.I errno
+to EIO.
 .PP
 When using the new terminal driver with the LTOSTOP bit set in the local
 modes, a process is prohibited from writing on its control terminal if it is
 not in the distinguished process group for that terminal.
-Processes which are holding or ignoring SIGTTOU signals, which are 
-orphans, or which are in the middle of a
+Processes which are holding or ignoring SIGTTOU signals
+or which are in the middle of a
 .IR vfork (2)
 are excepted and allowed to produce output.
 .LP
@@ -450,7 +456,7 @@ driver data.  The first of these (\fBsgttyb\fR)
 contains that part of the information
 largely common between version 6 and version 7 UNIX systems.
 The second contains additional control characters added in version 7.
-The third is a word of local state peculiar to the new terminal driver,
+The third is a word of local state added in 4BSD,
 and the fourth is another structure of special characters added for the
 new driver.  In the future a single structure may be made available
 to programs which need to access all this information; most programs
@@ -514,8 +520,6 @@ EXTB	15	External B
 .fi
 .DT
 .PP
-In the current configuration,
-only 110, 150, 300 and 1200 baud are really supported on dial-up lines.
 Code conversion and line control required for
 IBM 2741's (134.5 baud)
 must be implemented by the user's
@@ -530,7 +534,7 @@ and
 .I sg_kill
 fields of the argument structure
 specify the erase and kill characters respectively.
-(Defaults are # and @.)
+(Defaults are DELETE and ^U.)
 .PP
 The
 .I sg_flags
@@ -562,12 +566,12 @@ NL0	0
 NL1	0000400
 NL2	0001000
 NL3	0001400
-EVENP	0000200	Even parity allowed on input (most terminals)
-ODDP	0000100	Odd parity allowed on input
+EVENP	0000200	Even parity allowed on input and generated on output
+ODDP	0000100	Odd parity allowed on input and generated on output
 RAW	0000040	Raw mode: wake up on all characters, 8-bit interface
-CRMOD	0000020	Map CR into LF; echo LF or CR as CR-LF
+CRMOD	0000020	Map CR into LF; output LF as CR-LF
 ECHO	0000010	Echo (full duplex)
-LCASE	0000004	Map upper case to lower on input
+LCASE	0000004	Map upper case to lower on input and lower to upper on output
 CBREAK	0000002	Return each character as soon as typed
 TANDEM	0000001	Automatic flow control
 .DT
@@ -611,21 +615,19 @@ disables all processing save output flushing with LFLUSHO;
 full 8 bits of input are given as soon as
 it is available; all 8 bits are passed on output.
 A break condition in the input is reported as a null character.
-If the input queue overflows in raw mode it is discarded; this applies
-to both new and old drivers.
+If the input queue overflows in raw mode all data in the input and output
+queues are discarded; this applies to both new and old drivers.
 .PP
 CRMOD causes input carriage returns to be turned into
-new-lines;
-input of either CR or LF causes LF-CR both to
-be echoed
-(for terminals with a new-line function).
+new-lines, and output and echoed new-lines to be output as a carriage return
+followed by a line feed.
 .PP
 CBREAK is a sort of half-cooked (rare?) mode.
 Programs can read each character as soon as typed, instead
 of waiting for a full line;
 all processing is done except the input editing:
 character and word erase and line kill, input reprint,
-and the special treatment of \e or EOT are disabled.
+and the special treatment of \e and EOT are disabled.
 .PP
 TANDEM mode causes the system to produce
 a stop character (default ^S) whenever the input
@@ -635,13 +637,21 @@ when the input queue has drained sufficiently.
 It is useful for flow control when the `terminal'
 is really another computer which understands the conventions.
 .LP
+.B Note:
+The same ``stop'' and ``start'' characters are used for both directions
+of flow control; the
+.I t_stopc
+character is accepted on input as the character that stops output and is
+produced on output as the character to stop input, and the
+.I t_startc
+character is accepted on input as the character that restarts output and is
+produced on output as the character to restart input.
+.LP
 .Ul "Basic ioctls"
 .PP
-In addition to the TIOCSETD and TIOCGETD disciplines discussed
-in \fBLine disciplines\fR above,
-a large number of other
+A large number of
 .IR ioctl (2)
-calls apply to terminals, and have the general form:
+calls apply to terminals.  Some have the general form:
 .PP
 .B #include <sgtty.h>
 .PP
@@ -662,7 +672,7 @@ before changing the modes.
 Set the parameters like TIOCSETP but do not delay or flush input.
 Input is not preserved, however, when changing to or from RAW.
 .PP
-With the following codes the
+With the following codes
 .I arg
 is ignored.
 .IP TIOCEXCL 15
@@ -675,15 +685,41 @@ When the file is closed for the last time,
 hang up the terminal.
 This is useful when the line is associated
 with an ACU used to place outgoing calls.
+.PP
+With the following codes
+.I arg
+is a pointer to an
+.BR int .
+.IP TIOCGETD 15
+.I arg
+is a pointer to an
+.B int
+into which is placed the current line discipline number.
+.IP TIOCSETD
+.I arg
+is a pointer to an
+.B int
+whose value becomes the current line discipline number.
 .IP TIOCFLUSH
-All characters waiting in input or output queues are flushed.
+If the
+.B int
+pointed to by
+.I arg
+has a zero value, all characters waiting in input or output queues are flushed.
+Otherwise, the value of the
+.B int
+is treated as the logical OR of the FREAD and FWRITE defined in
+.BR <sys/file.h> ;
+if the FREAD bit is set, all characters waiting in input queues are flushed,
+and if the FWRITE bit is set, all characters waiting in output queues are
+flushed.
 .LP
 The remaining calls are not available in vanilla version 7 UNIX.
 In cases where arguments are required, they are described; \fIarg\fR
 should otherwise be given as 0.
 .IP TIOCSTI 15
-the argument is the address of a character which the system
-pretends was typed on the terminal.
+the argument points to a character which the system
+pretends had been typed on the terminal.
 .IP TIOCSBRK 15
 the break bit is set in the terminal.
 .IP TIOCCBRK
@@ -692,18 +728,38 @@ the break bit is cleared.
 data terminal ready is set.
 .IP TIOCCDTR
 data terminal ready is cleared.
+.IP TIOCSTOP 15
+output is stopped as if the ``stop'' character had been typed.
+.IP TIOCSTART
+output is restarted as if the ``start'' character had been typed.
 .IP TIOCGPGRP
-arg is the address of a word into which is placed the process group
-number of the control terminal.
+.I arg
+is a pointer to an
+.B int
+into which is placed the process group ID of the process group
+for which this terminal is the control terminal.
 .IP TIOCSPGRP
-arg is a word (typically a process id) which becomes the process
-group for the control terminal.
+.I arg
+is a pointer to an
+.B int
+(typically a process ID); the process group whose process group ID
+is the value of this
+.B int
+becomes the process group for which this terminal is the control terminal.
+.IP TIOCOUTQ
+returns in the
+.B int
+pointed to by
+.I arg
+the number of characters queued up to be output to the terminal.
 .IP FIONREAD
-returns in the long integer whose address is arg the number
-of immediately readable characters from the argument unit.
-This works for files, pipes, and terminals, but not (yet)
-for multiplexed channels.
-.LP
+returns in the
+.B int
+pointed to by
+.I arg
+the number of immediately readable characters from the argument unit.
+This works for files, pipes, and terminals.
+.PP
 .Ul Tchars
 .PP
 The second structure associated with each terminal specifies
@@ -742,7 +798,9 @@ to produce a toggle effect.
 It is probably counterproductive to make
 other special characters (including erase and kill)
 identical.
-The applicable ioctl calls are:
+The applicable
+.I ioctl
+calls are:
 .IP TIOCGETC 12
 Get the special characters and put them in the specified structure.
 .IP TIOCSETC 12
@@ -750,9 +808,7 @@ Set the special characters to those given in the structure.
 .LP
 .Ul "Local mode"
 .PP
-The third structure associated with each terminal is a local mode word;
-except for the LNOHANG bit, this word is interpreted only when the new
-driver is in use.
+The third structure associated with each terminal is a local mode word.
 The bits of the local mode word are:
 .sp
 .nf
@@ -771,27 +827,39 @@ LPASS8	004000	Pass all 8 bits through on input, in any mode
 LCTLECH	010000	Echo input control chars as ^X, delete as ^?
 LPENDIN	020000	Retype pending input at next read or input character
 LDECCTQ	040000	Only ^Q restarts output after ^S, like DEC systems
+LNOFLSH	100000	Inhibit flushing of pending I/O when an interrupt character is typed.
 .fi
 .sp
 The applicable
 .I ioctl
 functions are:
 .IP TIOCLBIS 15
-arg is the address of a 
-mask which is the bits to be set in the local mode word.
+.I arg
+is a pointer to an
+.B int
+whose value is a mask containing the bits to be set in the local mode word.
 .IP TIOCLBIC
-arg is the address of a mask of bits to be cleared in the local mode word.
+.I arg
+is a pointer to an
+.B int
+whose value is a mask containing the bits to be cleared in the local mode word.
 .IP TIOCLSET
-arg is the address of a mask to be placed in the local mode word.
+.I arg
+is a pointer to an
+.B int
+whose value is stored in the local mode word.
 .IP TIOCLGET
-arg is the address of a word into which the current mask is placed.
+.I arg
+is a pointer to an
+.B int
+into which the current local mode word is placed.
 .LP
 .Ul "Local special chars"
 .PP
 The
 final structure associated with each terminal is the
 .I ltchars
-structure which defines interrupt characters
+structure which defines control characters
 for the new terminal driver.
 Its structure is:
 .nf
@@ -814,11 +882,13 @@ A value of \-1 disables the character.
 .PP
 The applicable \fIioctl\fR functions are:
 .IP TIOCSLTC 12
-args is the address of a 
+.I arg
+is a pointer to an
 .I ltchars
 structure which defines the new local special characters.
 .IP TIOCGLTC 12
-args is the address of a
+.I arg
+is a pointer to an
 .I ltchars
 structure into which is placed the current set of local special characters.
 .SH FILES
