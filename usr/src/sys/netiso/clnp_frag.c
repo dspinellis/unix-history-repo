@@ -26,7 +26,7 @@ SOFTWARE.
  */
 /* $Header: /var/src/sys/netiso/RCS/clnp_frag.c,v 5.1 89/02/09 16:20:26 hagens Exp $ */
 /* $Source: /var/src/sys/netiso/RCS/clnp_frag.c,v $ */
-/*	@(#)clnp_frag.c	7.6 (Berkeley) %G% */
+/*	@(#)clnp_frag.c	7.7 (Berkeley) %G% */
 
 #ifndef lint
 static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_frag.c,v 5.1 89/02/09 16:20:26 hagens Exp $";
@@ -82,37 +82,39 @@ int				total_len;	/* length of datagram */
 int				segoff;		/* offset of segpart in hdr */
 int				flags;		/* flags passed to clnp_output */
 {
-	struct clnp_fixed	*clnp;		/* ptr to fixed part of header */
+	struct clnp_fixed		*clnp = mtod(m, struct clnp_fixed *);
+	int						hdr_len = (int)clnp->cnf_hdr_len;
+	int						frag_size = (ifp->if_mtu - hdr_len) & ~7;
 
-	clnp = mtod(m, struct clnp_fixed *);
+	total_len -= hdr_len;
+	if ((clnp->cnf_type & CNF_SEG_OK) &&
+		(total_len >= 8) &&
+		(frag_size > 8 || (frag_size == 8 && !(total_len & 7)))) {
 
-	if (clnp->cnf_type & CNF_SEG_OK) {
 		struct mbuf			*hdr = NULL;		/* save copy of clnp hdr */
 		struct mbuf			*frag_hdr = NULL;
 		struct mbuf			*frag_data = NULL;
 		struct clnp_segment	seg_part, tmp_seg;	/* segmentation header */
 		extern int 			clnp_id;			/* id of datagram */
+		int					frag_size;
 		int					error = 0;
 
-		INCSTAT(cns_fragmented);
 
+		INCSTAT(cns_fragmented);
 		seg_part.cng_id = clnp_id++;
 		seg_part.cng_off = 0;
-		seg_part.cng_tot_len = total_len;
-
+		seg_part.cng_tot_len = total_len + hdr_len;
 		/*
 		 *	Duplicate header, and remove from packet
 		 */
-		if ((hdr = m_copy(m, 0, (int)clnp->cnf_hdr_len)) == NULL) {
+		if ((hdr = m_copy(m, 0, hdr_len)) == NULL) {
 			clnp_discard(m, GEN_CONGEST);
 			return(ENOBUFS);
 		}
-		m_adj(m, (int)clnp->cnf_hdr_len);
-		total_len -= clnp->cnf_hdr_len;
-		
+		m_adj(m, hdr_len);
+
 		while (total_len > 0) {
-			int		frag_size;
-			int		last_frag = 0;		/* true if this is the last fragment */
+			int		remaining, last_frag;
 
 			IFDEBUG(D_FRAG)
 				struct mbuf *mdump = frag_hdr;
@@ -127,17 +129,21 @@ int				flags;		/* flags passed to clnp_output */
 				printf("clnp_fragment: sum of mbuf chain %d:\n", tot_mlen);
 			ENDDEBUG
 			
-			frag_size = min(total_len, ifp->if_mtu - clnp->cnf_hdr_len);
-
-			/*
-			 *	For some stupid reason, fragments must be at least 8 bytes
-			 *	in length. If this fragment will cause the last one to 
-			 *	be less than 8 bytes, shorten this fragment a bit.
-			 */
-			if (((total_len - frag_size) > 0) && ((total_len - frag_size) < 8))
-				frag_size -= (8 - (total_len - frag_size));
+			frag_size = min(total_len, frag_size);
+			if ((remaining = total_len - frag_size) == 0)
+				last_frag = 1;
+			else {
+				/*
+				 *  If this fragment will cause the last one to 
+				 *	be less than 8 bytes, shorten this fragment a bit.
+				 *  The obscure test on frag_size above ensures that
+				 *  frag_size will be positive.
+				 */
+				last_frag = 0;
+				if (remaining < 8)
+						frag_size -= 8;
+			}
 			
-			last_frag = ((total_len - frag_size) == 0);
 
 			IFDEBUG(D_FRAG)
 				printf("clnp_fragment: seg off %d, size %d, remaining %d\n", 
@@ -156,13 +162,13 @@ int				flags;		/* flags passed to clnp_output */
 			} else {
 				/* duplicate header and data mbufs */
 				if ((frag_hdr = m_copy(hdr, 0, (int)M_COPYALL)) == NULL) {
-					clnp_discard(m, GEN_CONGEST);
-					m_freem(hdr);
+					clnp_discard(hdr, GEN_CONGEST);
+					m_freem(m);
 					return(ENOBUFS);
 				}
 				if ((frag_data = m_copy(m, 0, frag_size)) == NULL) {
-					clnp_discard(m, GEN_CONGEST);
-					m_freem(hdr);
+					clnp_discard(hdr, GEN_CONGEST);
+					m_freem(m);
 					m_freem(frag_hdr);
 					return(ENOBUFS);
 				}
@@ -186,7 +192,7 @@ int				flags;		/* flags passed to clnp_output */
 				sizeof(struct clnp_segment));
 
 			{
-				int	derived_len = clnp->cnf_hdr_len + frag_size;
+				int	derived_len = hdr_len + frag_size;
 				HTOC(clnp->cnf_seglen_msb, clnp->cnf_seglen_lsb, derived_len);
 				if ((frag_hdr->m_flags & M_PKTHDR) == 0)
 					panic("clnp_frag:lost header");
@@ -196,7 +202,7 @@ int				flags;		/* flags passed to clnp_output */
 			if (flags & CLNP_NO_CKSUM) {
 				HTOC(clnp->cnf_cksum_msb, clnp->cnf_cksum_lsb, 0);
 			} else {
-				iso_gen_csum(frag_hdr, CLNP_CKSUM_OFF, (int)clnp->cnf_hdr_len);
+				iso_gen_csum(frag_hdr, CLNP_CKSUM_OFF, hdr_len);
 			}
 
 			IFDEBUG(D_DUMPOUT)
@@ -227,8 +233,8 @@ int				flags;		/* flags passed to clnp_output */
 					 *	The error was not on the last fragment. We must
 					 *	free hdr and m before returning
 					 */
-					clnp_discard(m, GEN_NOREAS);
-					m_freem(hdr);
+					clnp_discard(hdr, GEN_NOREAS);
+					m_freem(m);
 				}
 				return(error);
 			}
@@ -260,6 +266,7 @@ int				flags;		/* flags passed to clnp_output */
 		}
 		return(0);
 	} else {
+	cantfrag:
 		INCSTAT(cns_cantfrag);
 		clnp_discard(m, GEN_SEGNEEDED);
 		return(EMSGSIZE);
