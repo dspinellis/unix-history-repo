@@ -1,7 +1,7 @@
 /* Copyright (c) 1985 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)interactive.c	3.2	(Berkeley)	%G%";
+static char sccsid[] = "@(#)interactive.c	3.3	(Berkeley)	%G%";
 #endif not lint
 
 #include "restore.h"
@@ -17,17 +17,6 @@ static jmp_buf reset;
 static char *nextarg = NULL;
 
 /*
- * Structure associated with file name globbing.
- */
-struct argnod {
-	struct argnod *argnxt;
-	char argval[1];
-}; 
-static struct argnod *gchain, *stakbot, *staktop;
-static char *brkend, *nullstr = "";
-struct argnod *locstak(), *endstak();
-
-/*
  * Structure and routines associated with listing directories.
  */
 struct afile {
@@ -35,6 +24,13 @@ struct afile {
 	char	*fname;		/* file name */
 	short	fflags;		/* extraction flags, if any */
 	char	ftype;		/* file type, e.g. LEAF or NODE */
+};
+struct arglist {
+	struct afile	*head;	/* start of argument list */
+	struct afile	*last;	/* end of argument list */
+	struct afile	*base;	/* current list arena */
+	int		nent;	/* maximum size of list */
+	char		*cmd;	/* the current command */
 };
 extern int fcmp();
 extern char *fmtentry();
@@ -47,6 +43,7 @@ runcmdshell()
 {
 	register struct entry *np;
 	ino_t ino;
+	static struct arglist alist = { 0, 0, 0, 0, 0 };
 	char curdir[MAXPATHLEN];
 	char name[MAXPATHLEN];
 	char cmd[BUFSIZ];
@@ -54,11 +51,12 @@ runcmdshell()
 	canon("/", curdir);
 loop:
 	if (setjmp(reset) != 0) {
-		gchain = 0;
+		for (; alist.head < alist.last; alist.head++)
+			freename(alist.head->fname);
 		nextarg = NULL;
 		volno = 0;
 	}
-	getcmd(curdir, cmd, name);
+	getcmd(curdir, cmd, name, &alist);
 	switch (cmd[0]) {
 	/*
 	 * Add elements to the extraction list.
@@ -203,8 +201,9 @@ loop:
  * "curdir" is prepended to it. Finally "canon" is called to
  * eliminate any embedded ".." components.
  */
-getcmd(curdir, cmd, name)
+getcmd(curdir, cmd, name, ap)
 	char *curdir, *cmd, *name;
+	struct arglist *ap;
 {
 	register char *cp;
 	static char input[BUFSIZ];
@@ -214,8 +213,12 @@ getcmd(curdir, cmd, name)
 	/*
 	 * Check to see if still processing arguments.
 	 */
-	if (gchain != 0)
-		goto getnextexp;
+	if (ap->head != ap->last) {
+		strcpy(name, ap->head->fname);
+		freename(ap->head->fname);
+		ap->head++;
+		return;
+	}
 	if (nextarg != NULL)
 		goto getnext;
 	/*
@@ -237,6 +240,7 @@ getcmd(curdir, cmd, name)
 	 * Copy the command into "cmd".
 	 */
 	cp = copynext(input, cmd);
+	ap->cmd = cmd;
 	/*
 	 * If no argument, use curdir as the default.
 	 */
@@ -269,10 +273,10 @@ getnext:
 		(void) strcat(output, rawname);
 		canon(output, name);
 	}
-	expandarg(name);
-getnextexp:
-	strcpy(name, gchain->argval);
-	gchain = gchain->argnxt;
+	expandarg(name, ap);
+	strcpy(name, ap->head->fname);
+	freename(ap->head->fname);
+	ap->head++;
 #	undef rawname
 }
 
@@ -327,7 +331,7 @@ copynext(input, output)
 
 /*
  * Canonicalize file names to always start with ``./'' and
- * remove any imbedded ".." components.
+ * remove any imbedded "." and ".." components.
  */
 canon(rawname, canonname)
 	char *rawname, *canonname;
@@ -342,17 +346,30 @@ canon(rawname, canonname)
 	else
 		(void) strcpy(canonname, "./");
 	(void) strcat(canonname, rawname);
-	len = strlen(canonname) - 1;
-	if (canonname[len] == '/')
-		canonname[len] = '\0';
 	/*
-	 * Eliminate extraneous ".." from pathnames.
+	 * Eliminate multiple and trailing '/'s
+	 */
+	for (cp = np = canonname; *np != '\0'; cp++) {
+		*cp = *np++;
+		while (*cp == '/' && *np == '/')
+			np++;
+	}
+	*cp = '\0';
+	if (*--cp == '/')
+		*cp = '\0';
+	/*
+	 * Eliminate extraneous "." and ".." from pathnames.
 	 */
 	for (np = canonname; *np != '\0'; ) {
 		np++;
 		cp = np;
 		while (*np != '/' && *np != '\0')
 			np++;
+		if (np - cp == 1 && *cp == '.') {
+			cp--;
+			(void) strcpy(cp, np);
+			np = cp;
+		}
 		if (np - cp == 2 && strncmp(cp, "..", 2) == 0) {
 			cp--;
 			while (cp > &canonname[1] && *--cp != '/')
@@ -371,49 +388,42 @@ canon(rawname, canonname)
  * "[...]" in params matches character class
  * "[...a-z...]" in params matches a through z.
  */
-expandarg(arg)
+expandarg(arg, ap)
 	char *arg;
+	register struct arglist *ap;
 {
-	static char *expbuf = NULL;
-	static unsigned expsize = BUFSIZ;
+	struct afile single;
 	int size;
-	char argbuf[BUFSIZ];
 
-	do {
-		if (expbuf != NULL)
-			free(expbuf);
-		expbuf = malloc(expsize);
-		brkend = expbuf + expsize;
-		expsize <<= 1;
-		stakbot = (struct argnod *)expbuf;
-		gchain = 0;
-		(void)strcpy(argbuf, arg);
-		size = expand(argbuf, 0);
-	} while (size < 0);
+	ap->head = ap->last = (struct afile *)0;
+	size = expand(arg, 0, ap);
 	if (size == 0) {
-		gchain = (struct argnod *)expbuf;
-		gchain->argnxt = 0;
-		(void)strcpy(gchain->argval, arg);
+		single.fnum = lookupname(arg)->e_ino;
+		single.fname = savename(arg);
+		ap->head = &single;
+		ap->last = ap->head + 1;
+		return;
 	}
+	qsort((char *)ap->head, ap->last - ap->head, sizeof *ap->head, fcmp);
 }
 
 /*
  * Expand a file name
  */
-expand(as, rflg)
+expand(as, rflg, ap)
 	char *as;
 	int rflg;
+	register struct arglist *ap;
 {
 	int		count, size;
 	char		dir = 0;
 	char		*rescan = 0;
 	DIR		*dirp;
 	register char	*s, *cs;
-	struct argnod	*schain = gchain;
+	int		sindex, rindex, lindex;
 	struct direct	*dp;
 	register char	slash; 
 	register char	*rs; 
-	struct argnod	*rchain;
 	register char	c;
 
 	/*
@@ -422,18 +432,18 @@ expand(as, rflg)
 	s = cs = as;
 	slash = 0;
 	while (*cs != '*' && *cs != '?' && *cs != '[') {	
-		if (*cs++==0) {	
+		if (*cs++ == 0) {	
 			if (rflg && slash)
 				break; 
 			else
 				return (0) ;
-		} else if (*cs=='/') {	
+		} else if (*cs == '/') {	
 			slash++;
 		}
 	}
 	for (;;) {	
 		if (cs == s) {	
-			s = nullstr;
+			s = "";
 			break;
 		} else if (*--cs == '/') {	
 			*cs = 0;
@@ -446,7 +456,7 @@ expand(as, rflg)
 		dir++;
 	count = 0;
 	if (*cs == 0)
-		*cs++=0200 ;
+		*cs++ = 0200;
 	if (dir) {
 		/*
 		 * check for rescan
@@ -456,33 +466,38 @@ expand(as, rflg)
 			if (*rs == '/') { 
 				rescan = rs; 
 				*rs = 0; 
-				gchain = 0 ;
 			}
 		} while (*rs++);
+		sindex = ap->last - ap->head;
 		while ((dp = rst_readdir(dirp)) != NULL && dp->d_ino != 0) {
 			if (!dflag && BIT(dp->d_ino, dumpmap) == 0)
 				continue;
 			if ((*dp->d_name == '.' && *cs != '.'))
 				continue;
 			if (gmatch(dp->d_name, cs)) {	
-				if (addg(s, dp->d_name, rescan) < 0)
+				if (addg(dp, s, rescan, ap) < 0)
 					return (-1);
 				count++;
 			}
 		}
 		if (rescan) {	
-			rchain = gchain; 
-			gchain = schain;
+			rindex = sindex; 
+			lindex = ap->last - ap->head;
 			if (count) {	
 				count = 0;
-				while (rchain) {	
-					size = expand(rchain->argval, 1);
+				while (rindex < lindex) {	
+					size = expand(ap->head[rindex].fname,
+					    1, ap);
 					if (size < 0)
 						return (size);
 					count += size;
-					rchain = rchain->argnxt;
+					rindex++;
 				}
 			}
+			bcopy((char *)&ap->head[lindex],
+			     (char *)&ap->head[sindex],
+			     (ap->last - &ap->head[rindex]) * sizeof *ap->head);
+			ap->last -= lindex - sindex;
 			*rescan = '/';
 		}
 	}
@@ -512,7 +527,7 @@ gmatch(s, p)
 		ok = 0; 
 		lc = 077777;
 		while (c = *p++) {	
-			if (c==']') {
+			if (c == ']') {
 				return (ok ? gmatch(s, p) : 0);
 			} else if (c == '-') {	
 				if (lc <= scc && scc <= (*p++))
@@ -550,24 +565,25 @@ gmatch(s, p)
 /*
  * Construct a matched name.
  */
-addg(as1, as2, as3)
-	char		*as1, *as2, *as3;
+addg(dp, as1, as3, ap)
+	struct direct	*dp;
+	char		*as1, *as3;
+	struct arglist	*ap;
 {
 	register char	*s1, *s2;
 	register int	c;
+	char		buf[BUFSIZ];
 
-	if ((s2 = (char *)locstak()) == 0)
-		return (-1);
-	s2 += sizeof(char *);
+	s2 = buf;
 	s1 = as1;
 	while (c = *s1++) {	
 		if ((c &= 0177) == 0) {	
-			*s2++='/';
+			*s2++ = '/';
 			break;
 		}
 		*s2++ = c;
 	}
-	s1 = as2;
+	s1 = dp->d_name;
 	while (*s2 = *s1++)
 		s2++;
 	if (s1 = as3) {	
@@ -575,47 +591,8 @@ addg(as1, as2, as3)
 		while (*s2++ = *++s1)
 			/* void */;
 	}
-	makearg(endstak(s2));
-	return (0);
-}
-
-/*
- * Add a matched name to the list.
- */
-makearg(args)
-	register struct argnod *args;
-{
-	args->argnxt = gchain;
-	gchain = args;
-}
-
-/*
- * set up stack for local use
- * should be followed by `endstak'
- */
-struct argnod *
-locstak()
-{
-	if (brkend - (char *)stakbot < 100) {	
-		fprintf(stderr, "ran out of arg space\n");
-		return (0);
-	}
-	return (stakbot);
-}
-
-/*
- * tidy up after `locstak'
- */
-struct argnod *
-endstak(argp)
-	register char *argp;
-{
-	register struct argnod *oldstak;
-
-	*argp++ = 0;
-	oldstak = stakbot;
-	stakbot = staktop = (struct argnod *)round((int)argp, sizeof(char *));
-	return (oldstak);
+	if (mkentry(buf, dp->d_ino, ap) == FAIL)
+		return (-1);
 }
 
 /*
@@ -627,91 +604,98 @@ printlist(name, ino, basename)
 	char *basename;
 {
 	register struct afile *fp;
-	struct afile *dfp0, *dfplast;
+	register struct direct *dp;
+	static struct arglist alist = { 0, 0, 0, 0, "ls" };
 	struct afile single;
 	DIR *dirp;
 
 	if ((dirp = rst_opendir(name)) == NULL) {
 		single.fnum = ino;
-		single.fname = savename(name + strlen(basename));
-		dfp0 = &single;
-		dfplast = dfp0 + 1;
+		single.fname = savename(name + strlen(basename) + 1);
+		alist.head = &single;
+		alist.last = alist.head + 1;
 	} else {
-		if (getdir(dirp, &dfp0, &dfplast) == FAIL)
-			return;
+		alist.head = (struct afile *)0;
+		fprintf(stderr, "%s:\n", name);
+		while (dp = rst_readdir(dirp)) {
+			if (dp == NULL || dp->d_ino == 0)
+				break;
+			if (!dflag && BIT(dp->d_ino, dumpmap) == 0)
+				continue;
+			if (vflag == 0 &&
+			    (strcmp(dp->d_name, ".") == 0 ||
+			     strcmp(dp->d_name, "..") == 0))
+				continue;
+			if (!mkentry(dp->d_name, dp->d_ino, &alist))
+				return;
+		}
 	}
-	qsort((char *)dfp0, dfplast - dfp0, sizeof (struct afile), fcmp);
-	formatf(dfp0, dfplast);
-	for (fp = dfp0; fp < dfplast; fp++)
-		freename(fp->fname);
+	if (alist.head != 0) {
+		qsort((char *)alist.head, alist.last - alist.head,
+			sizeof *alist.head, fcmp);
+		formatf(&alist);
+		for (fp = alist.head; fp < alist.last; fp++)
+			freename(fp->fname);
+	}
+	if (dirp != NULL)
+		fprintf(stderr, "\n");
 }
 
 /*
  * Read the contents of a directory.
  */
-getdir(dirp, pfp0, pfplast)
-	DIR *dirp;
-	struct afile **pfp0, **pfplast;
+mkentry(name, ino, ap)
+	char *name;
+	ino_t ino;
+	register struct arglist *ap;
 {
 	register struct afile *fp;
-	register struct direct *dp;
-	static struct afile *basefp = NULL;
-	static long nent = 20;
 
-	if (basefp == NULL) {
-		basefp = (struct afile *)calloc((unsigned)nent,
+	if (ap->base == NULL) {
+		ap->nent = 20;
+		ap->base = (struct afile *)calloc((unsigned)ap->nent,
 			sizeof (struct afile));
-		if (basefp == NULL) {
-			fprintf(stderr, "ls: out of memory\n");
+		if (ap->base == NULL) {
+			fprintf(stderr, "%s: out of memory\n", ap->cmd);
 			return (FAIL);
 		}
 	}
-	fp = *pfp0 = basefp;
-	*pfplast = *pfp0 + nent;
-	while (dp = rst_readdir(dirp)) {
-		if (dp == NULL || dp->d_ino == 0)
-			break;
-		if (!dflag && BIT(dp->d_ino, dumpmap) == 0)
-			continue;
-		if (vflag == 0 &&
-		    (strcmp(dp->d_name, ".") == 0 ||
-		     strcmp(dp->d_name, "..") == 0))
-			continue;
-		fp->fnum = dp->d_ino;
-		fp->fname = savename(dp->d_name);
-		fp++;
-		if (fp == *pfplast) {
-			basefp = (struct afile *)realloc((char *)basefp,
-			    (unsigned)(2 * nent * sizeof (struct afile)));
-			if (basefp == 0) {
-				fprintf(stderr, "ls: out of memory\n");
-				return (FAIL);
-			}
-			*pfp0 = basefp;
-			fp = *pfp0 + nent;
-			*pfplast = fp + nent;
-			nent *= 2;
+	if (ap->head == 0)
+		ap->head = ap->last = ap->base;
+	fp = ap->last;
+	fp->fnum = ino;
+	fp->fname = savename(name);
+	fp++;
+	if (fp == ap->head + ap->nent) {
+		ap->base = (struct afile *)realloc((char *)ap->base,
+		    (unsigned)(2 * ap->nent * sizeof (struct afile)));
+		if (ap->base == 0) {
+			fprintf(stderr, "%s: out of memory\n", ap->cmd);
+			return (FAIL);
 		}
+		ap->head = ap->base;
+		fp = ap->head + ap->nent;
+		ap->nent *= 2;
 	}
-	*pfplast = fp;
+	ap->last = fp;
 	return (GOOD);
 }
 
 /*
  * Print out a pretty listing of a directory
  */
-formatf(fp0, fplast)
-	struct afile *fp0, *fplast;
+formatf(ap)
+	register struct arglist *ap;
 {
 	register struct afile *fp;
 	struct entry *np;
-	int width = 0, w, nentry = fplast - fp0;
+	int width = 0, w, nentry = ap->last - ap->head;
 	int i, j, len, columns, lines;
 	char *cp;
 
-	if (fp0 == fplast)
+	if (ap->head == ap->last)
 		return;
-	for (fp = fp0; fp < fplast; fp++) {
+	for (fp = ap->head; fp < ap->last; fp++) {
 		fp->ftype = inodetype(fp->fnum);
 		np = lookupino(fp->fnum);
 		if (np != NIL)
@@ -729,10 +713,10 @@ formatf(fp0, fplast)
 	lines = (nentry + columns - 1) / columns;
 	for (i = 0; i < lines; i++) {
 		for (j = 0; j < columns; j++) {
-			fp = fp0 + j * lines + i;
+			fp = ap->head + j * lines + i;
 			cp = fmtentry(fp);
 			fprintf(stderr, "%s", cp);
-			if (fp + lines >= fplast) {
+			if (fp + lines >= ap->last) {
 				fprintf(stderr, "\n");
 				break;
 			}
