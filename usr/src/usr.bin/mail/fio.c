@@ -10,7 +10,7 @@
  * File I/O.
  */
 
-static char *SccsId = "@(#)fio.c	1.10 %G%";
+static char *SccsId = "@(#)fio.c	1.11 %G%";
 
 /*
  * Set up the input pointers while copying the mail file into
@@ -299,7 +299,7 @@ edstop()
 
 	if (readonly)
 		return;
-	sigsave(sigs, SIG_IGN);
+	holdsigs();
 	for (mp = &message[0], gotcha = 0; mp < &message[msgCount]; mp++) {
 		if (mp->m_flag & MNEW) {
 			mp->m_flag &= ~MNEW;
@@ -318,14 +318,14 @@ edstop()
 		mktemp(tempname);
 		if ((obuf = fopen(tempname, "w")) == NULL) {
 			perror(tempname);
-			sigret(sigs);
+			relsesigs();
 			reset(0);
 		}
 		if ((ibuf = fopen(editfile, "r")) == NULL) {
 			perror(editfile);
 			fclose(obuf);
 			remove(tempname);
-			sigret(sigs);
+			relsesigs();
 			reset(0);
 		}
 		while ((c = getc(ibuf)) != EOF)
@@ -335,7 +335,7 @@ edstop()
 		if ((ibuf = fopen(tempname, "r")) == NULL) {
 			perror(tempname);
 			remove(tempname);
-			sigret(sigs);
+			relsesigs();
 			reset(0);
 		}
 		remove(tempname);
@@ -344,7 +344,7 @@ edstop()
 	flush();
 	if ((obuf = fopen(editfile, "w")) == NULL) {
 		perror(editfile);
-		sigret(sigs);
+		relsesigs();
 		reset(0);
 	}
 	c = 0;
@@ -354,7 +354,7 @@ edstop()
 		c++;
 		if (send(mp, obuf) < 0) {
 			perror(editfile);
-			sigret(sigs);
+			relsesigs();
 			reset(0);
 		}
 	}
@@ -367,7 +367,7 @@ edstop()
 	fflush(obuf);
 	if (ferror(obuf)) {
 		perror(editfile);
-		sigret(sigs);
+		relsesigs();
 		reset(0);
 	}
 	fclose(obuf);
@@ -380,31 +380,29 @@ edstop()
 	flush();
 
 done:
-	sigret(sigs);
+	relsesigs();
 }
 
 /*
- * Save signals SIGHUP - SIGQUIT in sigs, set them all to action.
+ * Hold signals SIGHUP - SIGQUIT.
  */
-sigsave(sigs, action)
-	int (*sigs[])();
+holdsigs()
 {
 	register int i;
 
 	for (i = SIGHUP; i <= SIGQUIT; i++)
-		sigs[i - SIGHUP] = sigset(i, action);
+		sighold(i);
 }
 
 /*
- * Restore SIGHUP - SIGQUIT from sigs.
+ * Release signals SIGHUP - SIGQUIT
  */
-sigret(sigs)
-	int (*sigs[])();
+relsesigs()
 {
 	register int i;
-	
+
 	for (i = SIGHUP; i <= SIGQUIT; i++)
-		sigset(i, sigs[i - SIGHUP]);
+		sigrelse(i);
 }
 
 /*
