@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pccons.c	5.13 (Berkeley) %G%
+ *	@(#)pccons.c	5.14 (Berkeley) %G%
  */
 
 /*
@@ -211,7 +211,8 @@ pcrint(dev, irq, cpl)
 	if (kdbrintr(c, &pccons))
 		return;
 #endif
-	(*linesw[pccons.t_line].l_rint)(c&0xff, &pccons);
+	if (openf) /* 386bsd */
+		(*linesw[pccons.t_line].l_rint)(c&0xff, &pccons);
 }
 
 pcioctl(dev, cmd, data, flag, p)
