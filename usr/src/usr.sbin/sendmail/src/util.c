@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.59 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.60 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1764,8 +1764,8 @@ cleanstrcpy(t, f, l)
 char *
 denlstring(s, strict, logattacks)
 	char *s;
-	int strict;
-	int logattacks;
+	bool strict;
+	bool logattacks;
 {
 	register char *p;
 	int l;

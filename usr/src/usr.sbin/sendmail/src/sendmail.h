@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.110 (Berkeley) %G%
+ *	@(#)sendmail.h	8.111 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.110		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.111		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -1068,10 +1068,10 @@ extern char		*fgetfolded __P((char *, int, FILE *));
 extern ADDRESS		*recipient __P((ADDRESS *, ADDRESS **, int, ENVELOPE *));
 extern ENVELOPE		*newenvelope __P((ENVELOPE *, ENVELOPE *));
 extern void		dropenvelope __P((ENVELOPE *));
-extern void		clearenvelope __P((ENVELOPE *, int));
+extern void		clearenvelope __P((ENVELOPE *, bool));
 extern char		*username __P(());
 extern MCI		*mci_get __P((char *, MAILER *));
-extern char		*pintvl __P((time_t, int));
+extern char		*pintvl __P((time_t, bool));
 extern char		*map_rewrite __P((MAP *, char *, int, char **));
 extern ADDRESS		*getctladdr __P((ADDRESS *));
 extern char		*anynet_ntoa __P((SOCKADDR *));
@@ -1084,13 +1084,13 @@ extern void		closexscript __P((ENVELOPE *));
 extern sigfunc_t	setsignal __P((int, sigfunc_t));
 extern char		*shortenstring __P((char *, int));
 extern bool		usershellok __P((char *));
-extern void		commaize __P((HDR *, char *, int, MCI *, ENVELOPE *));
+extern void		commaize __P((HDR *, char *, bool, MCI *, ENVELOPE *));
 extern char		*hvalue __P((char *, HDR *));
 extern char		*defcharset __P((ENVELOPE *));
 extern bool		emptyaddr __P((ADDRESS *));
 extern int		sendtolist __P((char *, ADDRESS *, ADDRESS **, int, ENVELOPE *));
 extern bool		wordinclass __P((char *, int));
-extern char		*denlstring __P((char *, int, int));
+extern char		*denlstring __P((char *, bool, bool));
 extern void		printaddr __P((ADDRESS *, bool));
 extern void		makelower __P((char *));
 extern void		rebuildaliases __P((MAP *, bool));

@@ -4,13 +4,13 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)useful.h	8.2 (Berkeley) %G%
+ *	@(#)useful.h	8.3 (Berkeley) %G%
  */
 
 # include <sys/types.h>
 
 /* support for bool type */
-typedef char	bool;
+typedef int	bool;
 # define TRUE	1
 # define FALSE	0
 
