@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_input.c	7.18 (Berkeley) %G%
+ *	@(#)tp_input.c	7.19 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -851,7 +851,12 @@ again:
 		IncStat(ts_ER_rcvd);
 		e.ev_number = ER_TPDU;
 		e.ATTR(ER_TPDU).e_reason =  (u_char)hdr->tpdu_ERreason;
-		takes_data = FALSE;
+		CHECK (((int)dref <= 0 || dref >= N_TPREF || 
+			(tpcb = tp_ref[dref].tpr_pcb ) == (struct tp_pcb *) 0 ||
+			tpcb->tp_refp->tpr_state == REF_FREE ||
+			tpcb->tp_refp->tpr_state == REF_FROZEN),
+		       E_TP_MISM_REFS, ts_inv_dref, discard, 0)
+
 	} else {
 		/* tpdu type is CC, XPD, XAK, GR, AK, DR, DC, or DT */
 
