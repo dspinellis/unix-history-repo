@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)def.h	5.17 (Berkeley) %G%
+ *	@(#)def.h	5.18 (Berkeley) %G%
  */
 
 #include <sys/param.h>		/* includes <sys/types.h> */
@@ -223,6 +223,7 @@ struct ignoretab {
 #define	TOPEN	8			/* An '(' */
 #define	TCLOSE	9			/* A ')' */
 #define TPLUS	10			/* A '+' */
+#define TERROR	11			/* A lexical error */
 
 #define	REGDEP	2			/* Maximum regret depth. */
 #define	STRINGLEN	1024		/* Maximum length of string token */

@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)list.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)list.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -204,6 +204,9 @@ number:
 			}
 			star++;
 			break;
+
+		case TERROR:
+			return -1;
 		}
 		tok = scan(&bufp);
 	}
@@ -249,7 +252,7 @@ number:
 					}
 				}
 				else {
-					if (sender(*np, i)) {
+					if (matchsender(*np, i)) {
 						mc++;
 						break;
 					}
@@ -541,16 +544,20 @@ scan(sp)
 		c = *cp++;
 	}
 	while (c != '\0') {
-		if (c == quotec)
+		if (c == quotec) {
+			cp++;
 			break;
+		}
 		if (quotec == 0 && (c == ' ' || c == '\t'))
 			break;
 		if (cp2 - lexstring < STRINGLEN-1)
 			*cp2++ = c;
 		c = *cp++;
 	}
-	if (quotec && c == 0)
+	if (quotec && c == 0) {
 		fprintf(stderr, "Missing %c\n", quotec);
+		return TERROR;
+	}
 	*sp = --cp;
 	*cp2 = '\0';
 	return(TSTRING);
@@ -611,14 +618,14 @@ first(f, m)
  * if so.
  */
 
-sender(str, mesg)
+matchsender(str, mesg)
 	char *str;
 {
-	register struct message *mp;
 	register char *cp, *cp2, *backup;
 
-	mp = &message[mesg-1];
-	backup = cp2 = nameof(mp, 0);
+	if (!*str)	/* null string matches nothing instead of everything */
+		return 0;
+	backup = cp2 = nameof(&message[mesg - 1], 0);
 	cp = str;
 	while (*cp2) {
 		if (*cp == 0)
