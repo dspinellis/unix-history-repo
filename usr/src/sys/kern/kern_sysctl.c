@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sysctl.c	7.28 (Berkeley) %G%
+ *	@(#)kern_sysctl.c	7.29 (Berkeley) %G%
  */
 
 /*
@@ -53,8 +53,6 @@ struct sysctl_args {
 	void	*new;
 	u_int	newlen;
 };
-
-#define	STK_PARAMS	32	/* largest old/new values on stack */
 
 sysctl(p, uap, retval)
 	struct proc *p;
@@ -123,7 +121,7 @@ sysctl(p, uap, retval)
 		savelen = oldlen;
 	}
 	error = (*fn)(name + 1, uap->namelen - 1, uap->old, &oldlen,
-	    uap->new, uap->newlen);
+	    uap->new, uap->newlen, p);
 	if (uap->old != NULL) {
 		if (dolock)
 			vsunlock(uap->old, savelen, B_WRITE);
@@ -147,16 +145,21 @@ sysctl(p, uap, retval)
 char hostname[MAXHOSTNAMELEN];
 int hostnamelen;
 long hostid;
+int securelevel;
 
-kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
+/*
+ * kernel related system variables.
+ */
+kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 	int *name;
 	u_int namelen;
 	void *oldp;
 	u_int *oldlenp;
 	void *newp;
 	u_int newlen;
+	struct proc *p;
 {
-	int error;
+	int error, level;
 	extern char ostype[], osrelease[], version[];
 
 	/* all sysctl names at this level are terminal */
@@ -188,6 +191,15 @@ kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 		return (error);
 	case KERN_HOSTID:
 		return (sysctl_int(oldp, oldlenp, newp, newlen, &hostid));
+	case KERN_SECURELVL:
+		level = securelevel;
+		if ((error = sysctl_int(oldp, oldlenp, newp, newlen, &level)) ||
+		    newp == NULL)
+			return (error);
+		if (level < securelevel && p->p_pid != 1)
+			return (EPERM);
+		securelevel = level;
+		return (0);
 	case KERN_CLOCKRATE:
 		return (sysctl_clockrate(oldp, oldlenp));
 	case KERN_FILE:
@@ -202,13 +214,17 @@ kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	/* NOTREACHED */
 }
 
-hw_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
+/*
+ * hardware related system variables.
+ */
+hw_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 	int *name;
 	u_int namelen;
 	void *oldp;
 	u_int *oldlenp;
 	void *newp;
 	u_int newlen;
+	struct proc *p;
 {
 	extern char machine[], cpu_model[];
 
@@ -593,43 +609,43 @@ getkerninfo(p, uap, retval)
 		name[2] = (uap->op & 0xff0000) >> 16;
 		name[3] = uap->op & 0xff;
 		name[4] = uap->arg;
-		error = net_sysctl(name, 5, uap->where, &size, NULL, 0);
+		error = net_sysctl(name, 5, uap->where, &size, NULL, 0, p);
 		break;
 
 	case KINFO_VNODE:
 		name[0] = KERN_VNODE;
-		error = kern_sysctl(name, 1, uap->where, &size, NULL, 0);
+		error = kern_sysctl(name, 1, uap->where, &size, NULL, 0, p);
 		break;
 
 	case KINFO_PROC:
 		name[0] = KERN_PROC;
 		name[1] = uap->op & 0xff;
 		name[2] = uap->arg;
-		error = kern_sysctl(name, 3, uap->where, &size, NULL, 0);
+		error = kern_sysctl(name, 3, uap->where, &size, NULL, 0, p);
 		break;
 
 	case KINFO_FILE:
 		name[0] = KERN_FILE;
-		error = kern_sysctl(name, 1, uap->where, &size, NULL, 0);
+		error = kern_sysctl(name, 1, uap->where, &size, NULL, 0, p);
 		break;
 
 	case KINFO_METER:
 		name[0] = VM_METER;
-		error = vm_sysctl(name, 1, uap->where, &size, NULL, 0);
+		error = vm_sysctl(name, 1, uap->where, &size, NULL, 0, p);
 		break;
 
 	case KINFO_LOADAVG:
 		name[0] = VM_LOADAVG;
-		error = vm_sysctl(name, 1, uap->where, &size, NULL, 0);
+		error = vm_sysctl(name, 1, uap->where, &size, NULL, 0, p);
 		break;
 
 	case KINFO_CLOCKRATE:
 		name[0] = KERN_CLOCKRATE;
-		error = kern_sysctl(name, 1, uap->where, &size, NULL, 0);
+		error = kern_sysctl(name, 1, uap->where, &size, NULL, 0, p);
 		break;
 
 	default:
-		return (EINVAL);
+		return (EOPNOTSUPP);
 	}
 	if (error)
 		return (error);
