@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)finger.1	6.6 (Berkeley) %G%
+.\"	@(#)finger.1	6.7 (Berkeley) %G%
 .\"
 .TH FINGER 1 ""
 .UC 4
@@ -44,6 +44,9 @@ if a ``:'' is present, or days if a ``d'' is present.
 Login time is displayed as month, day, hours and minutes, unless
 more than six months ago, in which case the year is displayed rather
 than the hours and minutes.
+.PP
+Unknown devices as well as nonexistent idle and login times are
+displayed as single asterisks.
 .PP
 The
 .I -l
