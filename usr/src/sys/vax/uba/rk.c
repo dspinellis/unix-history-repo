@@ -1,4 +1,4 @@
-/*	rk.c	4.53	83/02/10	*/
+/*	rk.c	4.54	83/05/18	*/
 
 #include "rk.h"
 #if NHK > 0
@@ -775,5 +775,18 @@ rkdump(dev)
 		num -= blk;
 	}
 	return (0);
+}
+ 
+rksize(dev)
+	dev_t dev;
+{
+	int unit = minor(dev) >> 3;
+	struct uba_device *ui;
+	struct rkst *st;
+
+	if (unit >= NRK || (ui = rkdinfo[unit]) == 0 || ui->ui_alive == 0)
+		return (-1);
+	st = &rkst[ui->ui_type];
+	return (st->sizes[minor(dev) & 07].nblocks);
 }
 #endif
