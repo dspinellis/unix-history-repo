@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_sysent.c 1.1 90/07/09$
  *
- *	@(#)ultrix_sysent.c	7.3 (Berkeley) %G%
+ *	@(#)ultrix_sysent.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -124,7 +124,9 @@ int	getrlimit();
 int	setrlimit();
 int	okillpg();
 int	ogetsockname();
-int	getdirentries();
+int	ogetdirentries();
+int	ultrixgetdomainname();
+int	ultrixsetdomainname();
 int	ultrixgetsysinfo();
 
 /*
@@ -297,14 +299,14 @@ struct sysent ultrixsysent[] = {
 	0, nosys,			/* 156 = nosys */
 	0, nosys,			/* 157 = nosys */
 	0, notimp,			/* 158 = nfs_svc */
-	4, getdirentries,		/* 159 = getdirentries */
+	4, ogetdirentries,		/* 159 = getdirentries */
 	0, nosys,			/* 160 = nosys */
 	0, nosys,			/* 161 = nosys */
 	0, nosys,			/* 162 = nosys */
 	0, notimp,			/* 163 = nfs_biod */
 	0, notimp,			/* 164 = nfs_getfh */
-	0, notimp,			/* 165 = getdomainname */
-	0, notimp,			/* 166 = setdomainname */
+	0, ultrixgetdomainname,		/* 165 = getdomainname */
+	0, ultrixsetdomainname,		/* 166 = setdomainname */
 	0, nosys,			/* 167 = nosys */
 	0, nosys,			/* 168 = nosys */
 	0, notimp,			/* 169 = exportfs */
