@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)nfsstat.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)nfsstat.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -36,9 +36,6 @@ static char sccsid[] = "@(#)nfsstat.c	5.7 (Berkeley) %G%";
 #include <string.h>
 #include <paths.h>
 
-#define	YES	1
-#define	NO	0
-
 struct nlist nl[] = {
 #define	N_NFSSTAT	0
 	{ "_nfsstats" },
@@ -54,7 +51,9 @@ struct pte *Sysmap;
 int kflag, kmem;
 char *kernel = _PATH_UNIX;
 char *kmemf = _PATH_KMEM;
+
 off_t klseek();
+void intpr(), printhdr(), sidewaysintpr(), usage();
 
 main(argc, argv)
 	int argc;
@@ -62,13 +61,20 @@ main(argc, argv)
 {
 	extern int optind;
 	extern char *optarg;
-	unsigned int interval;
+	u_int interval;
 	int ch;
 
 	interval = 0;
-	while ((ch = getopt(argc, argv, "i:")) != EOF)
+	while ((ch = getopt(argc, argv, "M:N:w:")) != EOF)
 		switch(ch) {
-		case 'i':
+		case 'M':
+			kmemf = optarg;
+			kflag = 1;
+			break;
+		case 'N':
+			kernel = optarg;
+			break;
+		case 'w':
 			interval = atoi(optarg);
 			break;
 		case '?':
@@ -78,6 +84,8 @@ main(argc, argv)
 	argc -= optind;
 	argv += optind;
 
+#define	BACKWARD_COMPATIBILITY
+#ifdef	BACKWARD_COMPATIBILITY
 	if (*argv) {
 		kernel = *++argv;
 		if (*++argv) {
@@ -85,6 +93,7 @@ main(argc, argv)
 			kflag = 1;
 		}
 	}
+#endif
 	if (nlist(kernel, nl) < 0 || nl[0].n_type == 0) {
 		(void)fprintf(stderr, "nfsstate: %s: no namelist\n", kernel);
 		exit(1);
@@ -124,12 +133,13 @@ main(argc, argv)
 /*
  * Print a description of the network interfaces.
  */
+void
 intpr(nfsstataddr)
 	off_t nfsstataddr;
 {
 	struct nfsstats nfsstats;
 
-	klseek(kmem, nfsstataddr, 0);
+	klseek(kmem, nfsstataddr, 0L);
 	read(kmem, (char *)&nfsstats, sizeof(struct nfsstats));
 	printf("Client Info:\n");
 	printf("Rpc Counts:\n");
@@ -234,62 +244,66 @@ u_char	signalled;			/* set if alarm goes off "early" */
  * collected over that interval.  Assumes that interval is non-zero.
  * First line printed at top of screen is always cumulative.
  */
+void
 sidewaysintpr(interval, off)
-	unsigned interval;
+	u_int interval;
 	off_t off;
 {
 	struct nfsstats nfsstats, lastst;
-	register int line;
-	int oldmask;
+	int hdrcnt, oldmask;
 	void catchalarm();
 
-	klseek(kmem, off, 0);
+	klseek(kmem, off, 0L);
 
 	(void)signal(SIGALRM, catchalarm);
-	signalled = NO;
+	signalled = 0;
 	(void)alarm(interval);
 	bzero((caddr_t)&lastst, sizeof(lastst));
-banner:
-	printf("        %8.8s %8.8s %8.8s %8.8s %8.8s %8.8s %8.8s %8.8s\n",
-		"Getattr", "Lookup", "Readlink", "Read",
-		"Write", "Rename", "Link", "Readdir");
-	fflush(stdout);
-	line = 0;
-loop:
-	klseek(kmem, off, 0);
-	read(kmem, (char *)&nfsstats, sizeof nfsstats);
-	printf("Client: %8d %8d %8d %8d %8d %8d %8d %8d\n",
-		nfsstats.rpccnt[1]-lastst.rpccnt[1],
-		nfsstats.rpccnt[4]-lastst.rpccnt[4],
-		nfsstats.rpccnt[5]-lastst.rpccnt[5],
-		nfsstats.rpccnt[6]-lastst.rpccnt[6],
-		nfsstats.rpccnt[8]-lastst.rpccnt[8],
-		nfsstats.rpccnt[11]-lastst.rpccnt[11],
-		nfsstats.rpccnt[12]-lastst.rpccnt[12],
-		nfsstats.rpccnt[16]-lastst.rpccnt[16]);
-	printf("Server: %8d %8d %8d %8d %8d %8d %8d %8d\n",
-		nfsstats.srvrpccnt[1]-lastst.srvrpccnt[1],
-		nfsstats.srvrpccnt[4]-lastst.srvrpccnt[4],
-		nfsstats.srvrpccnt[5]-lastst.srvrpccnt[5],
-		nfsstats.srvrpccnt[6]-lastst.srvrpccnt[6],
-		nfsstats.srvrpccnt[8]-lastst.srvrpccnt[8],
-		nfsstats.srvrpccnt[11]-lastst.srvrpccnt[11],
-		nfsstats.srvrpccnt[12]-lastst.srvrpccnt[12],
-		nfsstats.srvrpccnt[16]-lastst.srvrpccnt[16]);
-	lastst = nfsstats;
-	fflush(stdout);
-	line++;
-	oldmask = sigblock(sigmask(SIGALRM));
-	if (!signalled) {
-		sigpause(0);
+
+	for (hdrcnt = 1;;) {
+		if (!--hdrcnt) {
+			printhdr();
+			hdrcnt = 20;
+		}
+		klseek(kmem, off, 0L);
+		read(kmem, (char *)&nfsstats, sizeof nfsstats);
+		printf("Client: %8d %8d %8d %8d %8d %8d %8d %8d\n",
+		    nfsstats.rpccnt[1]-lastst.rpccnt[1],
+		    nfsstats.rpccnt[4]-lastst.rpccnt[4],
+		    nfsstats.rpccnt[5]-lastst.rpccnt[5],
+		    nfsstats.rpccnt[6]-lastst.rpccnt[6],
+		    nfsstats.rpccnt[8]-lastst.rpccnt[8],
+		    nfsstats.rpccnt[11]-lastst.rpccnt[11],
+		    nfsstats.rpccnt[12]-lastst.rpccnt[12],
+		    nfsstats.rpccnt[16]-lastst.rpccnt[16]);
+		printf("Server: %8d %8d %8d %8d %8d %8d %8d %8d\n",
+		    nfsstats.srvrpccnt[1]-lastst.srvrpccnt[1],
+		    nfsstats.srvrpccnt[4]-lastst.srvrpccnt[4],
+		    nfsstats.srvrpccnt[5]-lastst.srvrpccnt[5],
+		    nfsstats.srvrpccnt[6]-lastst.srvrpccnt[6],
+		    nfsstats.srvrpccnt[8]-lastst.srvrpccnt[8],
+		    nfsstats.srvrpccnt[11]-lastst.srvrpccnt[11],
+		    nfsstats.srvrpccnt[12]-lastst.srvrpccnt[12],
+		    nfsstats.srvrpccnt[16]-lastst.srvrpccnt[16]);
+		lastst = nfsstats;
+		fflush(stdout);
+		oldmask = sigblock(sigmask(SIGALRM));
+		if (!signalled)
+			sigpause(0);
+		sigsetmask(oldmask);
+		signalled = 0;
+		(void)alarm(interval);
 	}
-	sigsetmask(oldmask);
-	signalled = NO;
-	(void)alarm(interval);
-	if (line == 21)
-		goto banner;
-	goto loop;
 	/*NOTREACHED*/
+}
+
+void
+printhdr()
+{
+	printf("        %8.8s %8.8s %8.8s %8.8s %8.8s %8.8s %8.8s %8.8s\n",
+	    "Getattr", "Lookup", "Readlink", "Read", "Write", "Rename",
+	    "Link", "Readdir");
+	fflush(stdout);
 }
 
 /*
@@ -299,7 +313,7 @@ loop:
 void
 catchalarm()
 {
-	signalled = YES;
+	signalled = 1;
 }
 
 /*
@@ -318,9 +332,10 @@ klseek(fd, base, off)
 	return (lseek(fd, base, off));
 }
 
+void
 usage()
 {
 	(void)fprintf(stderr,
-	    "usage: nfsstat [-i interval] [kernel [corefile]]\n");
+	    "usage: nfsstat [-M core] [-N system] [-w interval]\n");
 	exit(1);
 }
