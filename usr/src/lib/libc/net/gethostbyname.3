@@ -2,16 +2,16 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)gethostbyname.3	6.3 (Berkeley) %G%
+.\"	@(#)gethostbyname.3	6.4 (Berkeley) %G%
 .\"
-.TH GETHOSTENT 3N ""
+.TH GETHOSTBYNAME 3N ""
 .UC 5
 .SH NAME
-gethostent, gethostbyaddr, gethostbyname, sethostent, endhostent, sethostfile \- get network host entry
+gethostbyname, gethostbyaddr, gethostent, sethostent, endhostent \- get network host entry
 .SH SYNOPSIS
 .B "#include <netdb.h>
 .PP
-.B "struct hostent *gethostent()
+.B "extern int h_errno;
 .PP
 .B "struct hostent *gethostbyname(name)
 .br
@@ -21,117 +21,140 @@ gethostent, gethostbyaddr, gethostbyname, sethostent, endhostent, sethostfile \-
 .br
 .B "char *addr; int len, type;
 .PP
+.B "struct hostent *gethostent()
+.PP
 .B "sethostent(stayopen)
 .br
 .B "int stayopen;
 .PP
 .B "endhostent()
 .PP
-.B "sethostfile(name)
-.br
-.B "char *name;
 .SH DESCRIPTION
-.IR Gethostent ,
-.IR gethostbyname ,
+.I Gethostbyname
 and
 .I gethostbyaddr
 each return a pointer to an object with the
 following structure.
-Depending on how the library is configured,
-this structure contains either the broken-out
-fields of a line in the network host data base,
-.IR /etc/hosts ,
-or similar information obtained from the name server,
-.IR named (8).
+This structure contains either the information obtained from the name server,
+.IR named (8)
+or broken-out fields in a line in 
+.IR /etc/hosts .
+If the local name server is not running these routines do a lookup in
+.IR /etc/hosts .
 .RS
 .PP
 .nf
 struct	hostent {
 	char	*h_name;	/* official name of host */
 	char	**h_aliases;	/* alias list */
-	int	h_addrtype;	/* address type */
+	int	h_addrtype;	/* host address type */
 	int	h_length;	/* length of address */
-	char	*h_addr;	/* address */
+	char	**h_addr_list;	/* list of addresses from name server */
 };
+#define	h_addr  h_addr_list[0]	/* address, for backward compatibility */
 .ft R
 .ad
 .fi
 .RE
 .PP
 The members of this structure are:
-.TP \w'h_addrtype'u+2n
+.TP \w'h_addr_list'u+2n
 h_name
 Official name of the host.
-.TP \w'h_addrtype'u+2n
+.TP \w'h_addr_list'u+2n
 h_aliases
 A zero terminated array of alternate names for the host.
-.TP \w'h_addrtype'u+2n
+.TP \w'h_addr_list'u+2n
 h_addrtype
 The type of address being returned; currently always AF_INET.
-.TP \w'h_addrtype'u+2n
+.TP \w'h_addr_list'u+2n
 h_length
 The length, in bytes, of the address.
-.TP \w'h_addrtype'u+2n
+.TP \w'h_addr_list'u+2n
+h_addr_list
+A zero terminated array of network addresses for the host.
+Host addresses are returned in network byte order.
+.TP \w'h_addr_list'u+2n
 h_addr
-A pointer to the network address for the host.
-Host addresses are returned
-in network byte order.
-.PP
-.I Gethostent
-reads the next line of the file, opening the file if necessary.
+The first address in h_addr_list; this is for backward compatiblity.
 .PP
 .I Sethostent
-opens and rewinds the file.  If the
+allows a request for the use of a connected socket using TCP for queries.
+If the
 .I stayopen
 flag is non-zero,
-the host data base will not be closed after each call to 
+this sets the option to send all queries to the name server using TCP
+and to retain the connection after each call to 
 .I gethostbyname
 or
 .IR gethostbyaddr .
 .PP
 .I Endhostent
-closes the file.
+closes the TCP connection.
+.SH DIAGNOSTICS
 .PP
-.I Sethostfile
-changes the default host table file to
-.I name
-thus allowing these routines to be used with alternate host tables.
-Note that it does
-.I not 
-close the previous file.
-If this is desired,
-.I endhostent
-should be called prior to it.
-.PP
+Error return status from 
 .I Gethostbyname
 and
 .I gethostbyaddr
-sequentially search from the beginning
-of the file until a matching
-host name or
-host address is found,
-or until EOF is encountered.
-Host addresses are supplied in network order.
+is indicated by return of a null pointer.
+The external integer
+.IR h_errno
+may then be checked to see whether this is a temporary failure
+or an invalid or unknown host.
+.PP
+.IR h_errno
+can have the following values:
+.RS
+.IP HOST_NOT_FOUND \w'HOST_NOT_FOUND'u+2n
+No such host is known.
+.IP TRY_AGAIN \w'HOST_NOT_FOUND'u+2n
+This is usually a temporary error
+and means that the local server did not receive
+a response from an authoritative server.
+A retry at some later time may succeed.
+.IP NO_RECOVERY \w'HOST_NOT_FOUND'u+2n
+This is a non-recoverable error.
+.IP NO_ADDRESS \w'HOST_NOT_FOUND'u+2n
+The requested name is valid but does not have an IP address; 
+this is not a temporary error.  
+This means another type
+of request to the name server will result in an answer.
+.RE
 .SH FILES
 /etc/hosts
 .SH "SEE ALSO"
 hosts(5), resolver(3), named(8)
-.SH DIAGNOSTICS
-Null pointer
-(0) returned on EOF or error.
+.SH CAVEAT
+.PP
+.IR Gethostent
+is defined, and
+.IR sethostent 
+is redefined,
+when
+.IR libc
+is built to use only the routines to lookup in
+.IR /etc/hosts 
+and not the name server.
+.PP
+.IR Gethostent
+reads the next line of
+.IR /etc/hosts
+opening the file if necessary.
+.PP
+.IR Sethostent 
+is redefined to open and rewind the file.  If
+.I stayopen
+flag is non-zero,
+the hosts data base will not be closed after each call to
+.IR gethostent
+(either directly, or indirectly through 
+.IR gethostbyname
+or
+.IR gethostbyaddr).
 .SH BUGS
 All information
 is contained in a static area
 so it must be copied if it is
 to be saved.  Only the Internet
 address format is currently understood.
-.PP
-On sites configured to use the name server
-.IR named (8)
-instead of
-.IR /etc/hosts ,
-.I gethostent
-is not available
-and
-.I sethostfile
-is a no-op.
