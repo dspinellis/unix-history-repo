@@ -6,7 +6,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)deliver.c	3.77		%G%);
+SCCSID(@(#)deliver.c	3.78		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -1392,7 +1392,7 @@ mailfile(filename, ctladdr)
 			else
 				(void) setuid(ctladdr->q_uid);
 		}
-		f = fopen(filename, "a");
+		f = dfopen(filename, "a");
 		if (f == NULL)
 			exit(EX_CANTCREAT);
 
@@ -1401,7 +1401,7 @@ mailfile(filename, ctladdr)
 		(void) fclose(f);
 		(void) fflush(stdout);
 
-		/* reset ISUID & ISGID bits */
+		/* reset ISUID & ISGID bits for paranoid systems */
 		(void) chmod(filename, (int) stb.st_mode);
 		exit(EX_OK);
 		/*NOTREACHED*/

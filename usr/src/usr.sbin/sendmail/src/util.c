@@ -3,11 +3,12 @@
 # include <sys/types.h>
 # include <sys/stat.h>
 # include <sysexits.h>
-# include "useful.h"
+# include <errno.h>
 # include <ctype.h>
+# include "sendmail.h"
 # include "conf.h"
 
-SCCSID(@(#)util.c	3.14		%G%);
+SCCSID(@(#)util.c	3.15		%G%);
 
 /*
 **  STRIPQUOTES -- Strip quotes & quote bits from a string.
@@ -462,3 +463,31 @@ syslog(pri, fmt, args)
 
 # endif lint
 # endif LOG
+/*
+**  DFOPEN -- determined file open
+**
+**	This routine has the semantics of fopen, except that it will
+**	keep trying a few times to make this happen.  The idea is that
+**	on very loaded systems, we may run out of resources (inodes,
+**	whatever), so this tries to get around it.
+*/
+
+FILE *
+dfopen(filename, mode)
+	char *filename;
+	char *mode;
+{
+	register int tries;
+	register FILE *fp;
+	extern int errno;
+
+	for (tries = 0; tries < 10; tries++)
+	{
+		sleep(10 * tries);
+		errno = 0;
+		fp = fopen(filename, mode);
+		if (fp != NULL || errno != ENFILE)
+			break;
+	}
+	return (fp);
+}
