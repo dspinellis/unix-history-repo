@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lex.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)lex.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -16,6 +16,12 @@ static char sccsid[] = "@(#)lex.c	5.1 (Berkeley) %G%";
  * University of Utah CS Dept modification history:
  *
  * $Log:	lex.c,v $
+ * Revision 5.2  85/08/10  04:45:41  donn
+ * Jerry Berkman's changes to ifdef 66 code and handle -r8/double flag.
+ * 
+ * Revision 5.1  85/08/10  03:48:20  donn
+ * 4.3 alpha
+ * 
  * Revision 1.2  84/10/27  02:20:09  donn
  * Fixed bug where the input file and the name field of the include file
  * structure shared -- when the input file name was freed, the include file
@@ -690,9 +696,11 @@ if(pk = keystart[k])
 		if(*i=='\0' && j<=lastch+1)
 			{
 			nextch = j;
+#ifdef ONLY66
 			if(no66flag && pk->notinf66)
 				errstr("Not a Fortran 66 keyword: %s",
 					pk->keyname);
+#endif
 			return(pk->keyval);
 			}
 		}
@@ -940,7 +948,7 @@ numconst:
 	toklen = p - token;
 	*p = '\0';
 	if(havdbl) return(SDCON);
-	if(havdot || havexp) return(SRCON);
+	if(havdot || havexp) return( dblflag ? SDCON : SRCON);
 	return(SICON);
 badchar:
 	s[0] = *nextch++;
