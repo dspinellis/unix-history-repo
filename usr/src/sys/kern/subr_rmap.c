@@ -1,4 +1,4 @@
-/*	subr_rmap.c	4.8	82/10/21	*/
+/*	subr_rmap.c	4.9	83/05/18	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -89,7 +89,7 @@ rmalloc(mp, size)
 	register struct mapent *bp;
 	swblk_t first, rest;
 
-	if (size <= 0 || mp == swapmap && size > DMMAX)
+	if (size <= 0 || mp == swapmap && size > dmmax)
 		panic("rmalloc");
 	/*
 	 * Search for a piece of the resource map which has enough
@@ -102,8 +102,8 @@ rmalloc(mp, size)
 			 * then have to respect interleaving
 			 * boundaries.
 			 */
-			if (mp == swapmap &&
-			    (first = DMMAX - bp->m_addr%DMMAX) < bp->m_size) {
+			if (mp == swapmap && nswdev > 1 &&
+			    (first = dmmax - bp->m_addr%dmmax) < bp->m_size) {
 				if (bp->m_size - first < size)
 					continue;
 				addr = bp->m_addr + first;
