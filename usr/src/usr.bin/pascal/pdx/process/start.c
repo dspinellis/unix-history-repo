@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)start.c 1.3 %G%";
+static char sccsid[] = "@(#)start.c 1.4 %G%";
 
 /*
  * Begin execution.
@@ -123,4 +123,5 @@ LOCAL setsigtrace()
     psigtrace(p, SIGINT, TRUE);
     psigtrace(p, SIGTRAP, TRUE);
     psigtrace(p, SIGIOT, TRUE);
+    psigtrace(p, SIGILL, TRUE);
 }
