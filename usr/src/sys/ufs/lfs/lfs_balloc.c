@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_balloc.c	7.24 (Berkeley) %G%
+ *	@(#)lfs_balloc.c	7.25 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -251,4 +251,45 @@ lfs_getlbns(vp, bn, ap, nump)
 		metalbn -= -1 + off * sh;
 	}
 	return (0);
+}
+
+int
+lfs_balloc(vp, iosize, lbn, bpp)
+	struct vnode *vp;
+	u_long iosize;
+	daddr_t lbn;
+	struct buf **bpp;
+{
+	struct buf *bp;
+	struct inode *ip;
+	struct lfs *fs;
+	daddr_t daddr;
+	int error, newblock;
+
+	ip = VTOI(vp);
+	fs = ip->i_lfs;
+
+	/* 
+	 * Three cases: it's a block beyond the end of file, it's a block in
+	 * the file that may or may not have been assigned a disk address or
+	 * we're writing an entire block.  Note, if the daddr is unassigned,
+	 * the block might still have existed in the cache.  If it did, make
+	 * sure we don't count it as a new block or zero out its contents.
+	 */
+	newblock = ip->i_size <= lbn << fs->lfs_bshift;
+	if (!newblock && (error = lfs_bmap(vp, lbn, NULL, &daddr)))
+		return(error);
+
+	if (newblock || daddr == LFS_UNUSED_DADDR || iosize == fs->lfs_bsize) {
+		*bpp = bp = getblk(vp, lbn, fs->lfs_bsize);
+		if (newblock ||
+		    daddr == LFS_UNUSED_DADDR && !(bp->b_flags & B_CACHE)) {
+			++ip->i_blocks;
+			if (iosize != fs->lfs_bsize)
+				clrbuf(bp);
+		}
+		return(0);
+	}
+	return(bread(vp, lbn, fs->lfs_bsize, NOCRED, bpp));
+
 }
