@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.10 (Berkeley) %G%
+#	@(#)Makefile.inc	8.1 (Berkeley) %G%
 
 # compat-43 sources
 .PATH: ${.CURDIR}/${MACHINE}/compat-43 ${.CURDIR}/compat-43
