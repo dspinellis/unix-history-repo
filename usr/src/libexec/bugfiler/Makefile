@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.17 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 PROG=	bugfiler
 CFLAGS+=-I${.CURDIR}
