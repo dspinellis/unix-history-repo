@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)tcp_output.c	7.14 (Berkeley) %G%
+ *	@(#)tcp_output.c	7.13.1.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -296,6 +296,8 @@ send:
 		win = 0;
 	if (win < (int)(tp->rcv_adv - tp->rcv_nxt))
 		win = (int)(tp->rcv_adv - tp->rcv_nxt);
+	if (win > IP_MAXPACKET)
+		win = IP_MAXPACKET;
 	ti->ti_win = htons((u_short)win);
 	if (SEQ_GT(tp->snd_up, tp->snd_nxt)) {
 		ti->ti_urp = htons((u_short)(tp->snd_up - tp->snd_nxt));
