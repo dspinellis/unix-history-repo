@@ -1,0 +1,58 @@
+.TH LAST UCB 2/24/79 UCB
+.SH NAME
+last \- indicate last logins of users and teletypes
+.SH SYNOPSIS
+.B last
+[
+name ...
+] [
+tty ...
+]
+.SH DESCRIPTION
+.I Last
+will look back in the
+.I wtmp
+file which records all logins and logouts for information about
+a user, a teletype or any group of users and teletypes.
+Arguments specify names of users or teletypes of interest.
+Names of teletypes may be given fully or abbreviated.
+For example `last 0' is the same as `last tty0'.
+If multiple arguments are given, the information which applies
+to any of the arguments is printed.  For example `last root console'
+would list all of "root's" sessions as well as all sessions
+on the console terminal.
+.I Last
+will print the sessions of the specified users and teletypes,
+most recent first, indicating the times at which the session
+began, the duration of the session, and the teletype which the
+session took place on.
+If the session is still continuing or was cut short by a crash,
+.I last
+so indicates.
+.PP
+The teletype
+.B tty~
+records the crashes of the system; thus
+.DT
+.PP
+	last tty~
+.PP
+will give an indication of the reliability of the system.
+.PP
+.I Last
+with no arguments prints a record of all logins and logouts, in
+reverse order.
+.PP
+If
+.I last
+is interrupted, it indicates how far the search has progressed
+in
+.I wtmp.
+.SH FILES
+.DT
+/usr/adm/wtmp		login data base
+.SH SEE\ ALSO
+ac(1m), wtmp(5), saveboottime(UCB)
+.SH AUTHOR
+Howard Katseff
+.SH BUGS
