@@ -1,8 +1,9 @@
-/*	tty_conf.c	6.3	84/08/29	*/
+/*	tty_conf.c	6.4	84/12/21	*/
 
 #include "param.h"
 #include "systm.h"
 #include "buf.h"
+#include "ioctl.h"
 #include "tty.h"
 #include "conf.h"
 
