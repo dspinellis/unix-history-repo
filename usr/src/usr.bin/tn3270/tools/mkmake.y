@@ -144,7 +144,7 @@ token: TOKEN
     }
     | '$' '{' token '}'
     {
-	$$ = value_of($3);
+	$$ = variable($3);
     }
     ;
 
@@ -474,6 +474,28 @@ same_t *variable;
     } else {
 	return same_copy(ptr->value_list);
     }
+}
+
+same_t *
+variable(var_name)
+same_t *var_name;
+{
+    int length = strlen(var_name->string->string);
+    same_t *resolved;
+    char *newname;
+
+    if ((newname = malloc(length+1+3)) == 0) {
+	fprintf("Out of space for a variable name.\n");
+	exit(1);
+    }
+    newname[0] = '$';
+    newname[1] = '{';
+    strcpy(newname+2, var_name->string->string);
+    strcat(newname, "}");
+    resolved = same_item(string_lookup(newname));
+    free(newname);
+
+    return resolved;
 }
 
 
