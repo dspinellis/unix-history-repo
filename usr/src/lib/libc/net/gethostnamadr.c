@@ -1,4 +1,4 @@
-/*	gethostnamadr.c	4.3	83/12/21	*/
+/*	gethostnamadr.c	4.4	84/01/31	*/
 
 #include <stdio.h>
 #include <netdb.h>
@@ -9,39 +9,40 @@
 
 static char HOSTDB[] = "/etc/hosts";
 DBM *_host_db = (DBM *)NULL;
-static datum curkey;
 static struct hostent host;
 static char *host_aliases[MAXALIASES];
+static char hostbuf[BUFSIZ+1];
 int _host_stayopen;	/* set by sethostent(), cleared by endhostent() */
 
 static struct hostent *
 fetchhost(key)
 	datum key;
 {
-        register char *cp, **ap;
+        register char *cp, *tp, **ap;
 	register int naliases;
 
-        curkey = key;
-        if (curkey.dptr == 0)
+        if (key.dptr == 0)
                 return ((struct hostent *)NULL);
-	key = dbmfetch(_host_db, curkey);
+	key = dbmfetch(_host_db, key);
 	if (key.dptr == 0)
                 return ((struct hostent *)NULL);
         cp = key.dptr;
-	host.h_name = cp;
-	while (*cp++)
+	tp = hostbuf;
+	host.h_name = tp;
+	while (*tp++ = *cp++)
 		;
 	naliases = *(int *)cp; cp += sizeof (int);
 	for (ap = host_aliases; naliases > 0; naliases--) {
-		*ap++ = cp;
-		while (*cp++)
+		*ap++ = tp;
+		while (*tp++ = *cp++)
 			;
 	}
 	*ap = (char *)NULL;
 	host.h_aliases = host_aliases;
 	host.h_addrtype = *(int *)cp; cp += sizeof (int);
 	host.h_length = *(int *)cp; cp += sizeof (int);
-	host.h_addr = cp;
+	host.h_addr = tp;
+	bcopy(cp, tp, host.h_length);
         return (&host);
 }
 
