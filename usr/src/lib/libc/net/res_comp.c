@@ -5,13 +5,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)res_comp.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_comp.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <nameser.h>
+
 
 /*
  * Expand compressed domain name 'comp_dn' to full domain name.
@@ -250,11 +251,15 @@ getlong(msgp)
 	char *msgp;
 {
 	register u_char *p = (u_char *) msgp;
+	register u_long u;
 
-	return ((((((*p++ << 8) | *p++) << 8) | *p++) << 8) | *p);
+	u = *p++; u <<= 8;
+	u |= *p++; u <<= 8;
+	u |= *p++; u <<= 8;
+	return (u | *p);
 }
 
-u_short
+
 putshort(s, msgp)
 	register u_short s;
 	register char *msgp;
@@ -264,7 +269,6 @@ putshort(s, msgp)
 	msgp[0] = s >> 8;
 }
 
-u_long
 putlong(l, msgp)
 	register u_long l;
 	register char *msgp;
