@@ -187,8 +187,9 @@ localcheck_done:
 		}
 		free(queue);
 	}
-	else if (!sendtorem) {
-		puts("no entries");
+	if (!sendtorem) {
+		if (nitems == 0)
+			puts("no entries");
 		return;
 	}
 
