@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnetd.c	5.25 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -65,9 +65,7 @@ char	*neturg = 0;		/* one past last bye of urgent data */
 	/* the remote system seems to NOT be an old 4.2 */
 int	not42 = 1;
 
-
-char BANNER1[] = "\r\n\r\n4.3 BSD UNIX (",
-    BANNER2[] = ")\r\n\r\0\r\n\r\0";
+#define	BANNER	"\r\n\r\n4.3 BSD UNIX (%s)\r\n\r\r\n\r"
 
 		/* buffer for sub-options */
 char	subbuffer[100], *subpointer= subbuffer, *subend= subbuffer;
@@ -379,6 +377,13 @@ telnet(f, p)
 {
 	int on = 1;
 	char hostname[MAXHOSTNAMELEN];
+#define	TABBUFSIZ	512
+	char	defent[TABBUFSIZ];
+	char	defstrs[TABBUFSIZ];
+#undef	TABBUFSIZ
+	char *HE;
+	char *HN;
+	char *IM;
 
 	ioctl(f, FIONBIO, &on);
 	ioctl(p, FIONBIO, &on);
@@ -421,21 +426,34 @@ telnet(f, p)
 	/*
 	 * Show banner that getty never gave.
 	 *
-	 * The banner includes some null's (for TELNET CR disambiguation),
-	 * so we have to be somewhat complicated.
+	 * We put the banner in the pty input buffer.  This way, it
+	 * gets carriage return null processing, etc., just like all
+	 * other pty --> client data.
 	 */
 
 	gethostname(hostname, sizeof (hostname));
+	if (getent(defent, "default") == 1) {
+		char *getstr();
+		char *p=defstrs;
 
-	bcopy(BANNER1, nfrontp, sizeof BANNER1 -1);
-	nfrontp += sizeof BANNER1 - 1;
-	bcopy(hostname, nfrontp, strlen(hostname));
-	nfrontp += strlen(hostname);
-	bcopy(BANNER2, nfrontp, sizeof BANNER2 -1);
-	nfrontp += sizeof BANNER2 - 1;
+		HE = getstr("he", &p);
+		HN = getstr("hn", &p);
+		IM = getstr("im", &p);
+		if (HN && *HN)
+			strcpy(hostname, HN);
+		edithost(HE, hostname);
+		if (IM && *IM)
+			putf(IM, ptyibuf+1, p);
+	} else {
+		sprintf(ptyibuf+1, BANNER, hostname);
+	}
+
+	ptyip = ptyibuf+1;		/* Prime the pump */
+	pcc = strlen(ptyip);		/* ditto */
 
 	/* Clear ptybuf[0] - where the packet information is received */
 	ptyibuf[0] = 0;
+
 	/*
 	 * Call telrcv() once to pick up anything received during
 	 * terminal type negotiation.
@@ -1292,4 +1310,103 @@ rmut()
 	line[strlen("/dev/")] = 'p';
 	chmod(line, 0666);
 	chown(line, 0, 0);
+}
+
+char	editedhost[32];
+
+edithost(pat, host)
+	register char *pat;
+	register char *host;
+{
+	register char *res = editedhost;
+
+	if (!pat)
+		pat = "";
+	while (*pat) {
+		switch (*pat) {
+
+		case '#':
+			if (*host)
+				host++;
+			break;
+
+		case '@':
+			if (*host)
+				*res++ = *host++;
+			break;
+
+		default:
+			*res++ = *pat;
+			break;
+
+		}
+		if (res == &editedhost[sizeof editedhost - 1]) {
+			*res = '\0';
+			return;
+		}
+		pat++;
+	}
+	if (*host)
+		strncpy(res, host, sizeof editedhost - (res - editedhost) - 1);
+	else
+		*res = '\0';
+	editedhost[sizeof editedhost - 1] = '\0';
+}
+
+static char *putlocation;
+
+puts(s)
+register char *s;
+{
+
+	while (*s)
+		putchr(*s++);
+}
+
+putchr(cc)
+{
+	*putlocation++ = cc;
+}
+
+putf(cp, where, tty)
+register char *cp;
+char *where;
+int tty;
+{
+	char *slash;
+	char datebuffer[60];
+	extern char *rindex();
+
+	putlocation = where;
+
+	while (*cp) {
+		if (*cp != '%') {
+			putchr(*cp++);
+			continue;
+		}
+		switch (*++cp) {
+
+		case 't':
+			slash = rindex(line, '/');
+			if (slash == (char *) 0)
+				puts(line);
+			else
+				puts(&slash[1]);
+			break;
+
+		case 'h':
+			puts(editedhost);
+			break;
+
+		case 'd':
+			get_date(datebuffer);
+			puts(datebuffer);
+			break;
+
+		case '%':
+			putchr('%');
+			break;
+		}
+		cp++;
+	}
 }
