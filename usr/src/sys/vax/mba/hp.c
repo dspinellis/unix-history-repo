@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hp.c	7.10 (Berkeley) %G%
+ *	@(#)hp.c	7.11 (Berkeley) %G%
  */
 
 #ifdef HPDEBUG
@@ -616,9 +616,7 @@ hpdtint(mi, mbsr)
 	register int er1, er2;
 	struct hpsoftc *sc = &hpsoftc[mi->mi_unit];
 	int retry = 0;
-	int npf;
-	daddr_t bn;
-	int bcr;
+	int npf, bcr;
 
 	bcr = MASKREG(-mi->mi_mba->mba_bcr);
 	if (bp->b_flags & B_FORMAT) {
@@ -630,21 +628,24 @@ hpdtint(mi, mbsr)
 	if (hpaddr->hpds&HPDS_ERR || mbsr&MBSR_EBITS) {
 		er1 = hpaddr->hper1;
 		er2 = hpaddr->hper2;
-		if (bp->b_flags & B_BAD) {
+		if (bp->b_flags & B_BAD)
 			npf = bp->b_error;
-			bn = sc->sc_badbn;
-		} else {
+		else {
 			npf = btodb(bp->b_bcount + (DEV_BSIZE - 1) - bcr);
 			if (er1 & (HPER1_DCK | HPER1_ECH))
 				npf--;
-			bn = bp->b_blkno + npf;
 		}
 		if (HPWAIT(mi, hpaddr) == 0)
 			goto hard;
 #ifdef HPDEBUG
 		if (hpdebug) {
 			int dc = hpaddr->hpdc, da = hpaddr->hpda;
+			daddr_t bn;
 
+			if (bp->b_flags & B_BAD)
+				bn = sc->sc_badbn;
+			else
+				bn = bp->b_blkno + npf;
 			log(LOG_DEBUG,
 		    "hperr: bp %x cyl %d blk %d blkdone %d as %o dc %x da %x\n",
 				bp, bp->b_cylin, bn, sc->sc_blkdone,
@@ -665,7 +666,7 @@ hpdtint(mi, mbsr)
 			    hpunit(bp->b_dev));
 			bp->b_flags |= B_ERROR;
 		} else if (bp->b_flags & B_FORMAT) {
-			goto hard;
+			bp->b_flags |= B_ERROR;
 		} else if (RM80(mi->mi_type) && er2&HPER2_SSE) {
 			(void) hpecc(mi, SSE);
 			return (MBD_RESTARTED);
@@ -702,16 +703,16 @@ hpdtint(mi, mbsr)
 		    er1 & HPER1_HARD ||
 		    (!ML11(mi->mi_type) && (er2 & HPER2_HARD))) {
 hard:
-			bp->b_blkno = bn;		/* XXX */
-			harderr(bp, "hp");
+			diskerr(bp, "hp", "hard error", LOG_PRINTF, npf,
+			    &hplabel[mi->mi_unit]);
+			if (bp->b_flags & B_BAD)
+				printf(" (on replacement sector %d)",
+				    sc->sc_badbn);
 			if (mbsr & (MBSR_EBITS &~ (MBSR_DTABT|MBSR_MBEXC)))
-				printf("mbsr=%b ", mbsr, mbsr_bits);
-			printf("er1=%b er2=%b",
+				printf(" mbsr=%b", mbsr, mbsr_bits);
+			printf(" er1=%b er2=%b\n",
 			    MASKREG(hpaddr->hper1), HPER1_BITS,
 			    MASKREG(hpaddr->hper2), HPER2_BITS);
-			if (bp->b_flags & B_FORMAT)
-				printf(" (format i/o)");
-			printf("\n");
 			bp->b_flags |= B_ERROR;
 			bp->b_flags &= ~B_BAD;
 		} else
@@ -745,13 +746,11 @@ hard:
 		(void)HPWAIT(mi, hpaddr);
 		mbclrattn(mi);
 	}
-	if (mi->mi_tab.b_errcnt && (bp->b_flags & B_ERROR) == 0)
-		log(LOG_INFO, "hp%d%c: %d retries %sing sn%d\n",
-		    hpunit(bp->b_dev), 'a'+(minor(bp->b_dev)&07),
-		    mi->mi_tab.b_errcnt,
-		    (bp->b_flags & B_READ) ? "read" : "writ",
-		    (bp->b_flags & B_BAD) ?
-		    sc->sc_badbn : bp->b_blkno + sc->sc_blkdone);
+	if (mi->mi_tab.b_errcnt && (bp->b_flags & B_ERROR) == 0) {
+		diskerr(bp, "hp", "retries", LOG_INFO, sc->sc_blkdone,
+		    &hplabel[mi->mi_unit]);
+		addlog(": %d retries\n", mi->mi_tab.b_errcnt);
+	}
 	if ((bp->b_flags & B_BAD) && hpecc(mi, CONT))
 		return (MBD_RESTARTED);
 	sc->sc_blkdone = 0;
@@ -951,11 +950,10 @@ hpecc(mi, flag)
 		int bit, byte, mask;
 
 		npf--;		/* because block in error is previous block */
-		bn--;
+		diskerr(bp, "hp", "soft ecc", LOG_WARNING, npf, lp);
 		if (bp->b_flags & B_BAD)
-			bn = sc->sc_badbn;
-		log(LOG_WARNING, "hp%d%c: soft ecc sn%d\n", hpunit(bp->b_dev),
-		    'a'+(minor(bp->b_dev)&07), bn);
+			addlog(" (on replacement sector %d)", sc->sc_badbn);
+		addlog("\n");
 		mask = MASKREG(rp->hpec2);
 		i = MASKREG(rp->hpec1) - 1;		/* -1 makes 0 origin */
 		bit = i&07;
