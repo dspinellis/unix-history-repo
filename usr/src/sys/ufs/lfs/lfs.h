@@ -4,16 +4,19 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs.h	5.1 (Berkeley) %G%
+ *	@(#)lfs.h	5.2 (Berkeley) %G%
  */
 
-#define	MAXMNTLEN	512		/* XXX move from fs.h to mount.h */
-#define	LFSBLKSIZE	(4*1024)
+#define	LFS_LABELPAD	8192		/* LFS label size */
+#define	LFS_SBPAD	8192		/* LFS superblock size */
+#define MAXMNTLEN	512		/* XXX move from fs.h to mount.h */
+#define	LFS_BLKSIZE	4096		/* LFS block size */
 
 /* On-disk super block. */
 typedef struct lfs_super {
-#define	LFS_MAGIC	0xabababab
+#define	LFS_MAGIC	0xdeadbeef
 	u_long	lfs_magic;		/* magic number */
+#define	LFS_VERSION	1
 	u_long	lfs_version;		/* version number */
 
 	u_long	lfs_size;		/* number of blocks in fs */
@@ -52,8 +55,9 @@ typedef struct lfs_super {
 	u_long	lfs_fbshift;		/* fast mult/div for frag from block */
 	u_long	lfs_fsbtodb;		/* fsbtodb and dbtofsb shift constant */
 
-#define	MAXNUMSB	10
-	daddr_t	lfs_sboffs[MAXNUMSB];	/* super-block disk offsets */
+#define	LFS_MAXNUMSB		10
+#define	LFS_MIN_SBINTERVAL	5
+	daddr_t	lfs_sboffs[LFS_MAXNUMSB];	/* super-block disk offsets */
 } LFS_SUPER;
 
 #define	blksize(fs, ip, lbn)	LFSBLKSIZE
@@ -114,8 +118,16 @@ typedef struct lfs {
 #define	fs_tstamp	fs_super.lfs_tstamp
 #define	fs_version	fs_super.lfs_version
 
-/* Data structures in the ifile */
-#define	IFILE_NUM	1		/* inode number of the ifile */
+/* Fixed inode numbers. */
+#define	LFS_UNUSED_INUM	0		/* Out of band inode number. */
+#define	LFS_IFILE_INUM	1		/* Inode number of the ifile. */
+#define	LFS_FIRST_INUM	2		/* First free inode number. */
+
+/* 
+ * Used to access the first spare of the dinode which we use to store
+ * the ifile number so we can identify them
+ */
+#define	di_inum	di_spare[0]
 
 typedef struct ifile {
 	u_long	if_version;		/* inode version number */
@@ -125,8 +137,8 @@ typedef struct ifile {
 		ino_t	nextfree;	/* next-unallocated inode */
 		time_t	st_atime;	/* access time */
 	} __ifile_u;
-#define	if_st_atime	__ifile_u.st_atime;
-#define	if_nextfree	__ifile_u.nextfree;
+#define	if_st_atime	__ifile_u.st_atime
+#define	if_nextfree	__ifile_u.nextfree
 } IFILE;
 
 /* Segment table size, in blocks. */
@@ -134,11 +146,23 @@ typedef struct ifile {
 	(((fs)->fs_nseg * sizeof(SEGUSAGE) + \
 	    ((fs)->fs_bsize - 1)) << (fs)->fs_bshift)
 
+#define	SEGTABSIZE_SU(fs) \
+	(((fs)->lfs_nseg * sizeof(SEGUSAGE) + \
+	    ((fs)->lfs_bsize - 1)) >> (fs)->lfs_bshift)
+
 /* In-memory and on-disk checkpoint segment usage structure. */
 typedef struct segusage {
 	u_long	su_nbytes;		/* number of live bytes */
 	u_long	su_lastmod;		/* last modified timestamp */
+#define	SEGUSAGE_DIRTY			0x1
+	u_long	su_flags;
 } SEGUSAGE;
+
+/*
+ * All summary blocks are the same size, so we can always read a summary
+ * block easily from a segment
+ */
+#define	LFS_SUMMARY_SIZE	512
 
 /* On-disk segment summary information */
 typedef struct segsum {
