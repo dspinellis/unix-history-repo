@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_malloc.c	7.25 (Berkeley) 5/8/91
- *	$Id: kern_malloc.c,v 1.6 1994/01/14 16:24:48 davidg Exp $
+ *	$Id: kern_malloc.c,v 1.7 1994/02/10 00:20:26 davidg Exp $
  */
 
 #include "param.h"
@@ -41,6 +41,8 @@
 #include "malloc.h"
 #include "vm/vm.h"
 #include "vm/vm_kern.h"
+
+extern int vm_page_count;
 
 struct kmembuckets bucket[MINBUCKET + 16];
 struct kmemstats kmemstats[M_LAST];
