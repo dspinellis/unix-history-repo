@@ -1,13 +1,10 @@
 #ifndef lint
-static	char *sccsid = "@(#)error.c	3.2 83/08/16";
+static	char *sccsid = "@(#)error.c	3.3 83/11/22";
 #endif
 
 #include "defs.h"
-
-static char *filename;			/* source file name */
-static struct ww *errwin;		/* window for error reporting */
-static int errlineno;			/* lineno in errwin */
-static char baderror;			/* can't open the error window */
+#include "value.h"
+#include "context.h"
 
 #define ERRLINES 10			/* number of lines for errwin */
 
@@ -15,7 +12,7 @@ static char baderror;			/* can't open the error window */
 error(fmt, a, b, c, d, e, f, g, h)
 char *fmt;
 {
-	if (filename == 0) {
+	if (cx.x_type != X_FILE) {
 		if (terse)
 			wwbell();
 		else {
@@ -24,44 +21,34 @@ char *fmt;
 		}
 		return;
 	}
-	if (baderror)
+	if (cx.x_baderr)
 		return;
-	if (errwin == 0) {
+	if (cx.x_errwin == 0) {
 		char buf[512];
 
-		(void) sprintf(buf, "Errors from %s", filename);
-		if ((errwin = openiwin(ERRLINES, buf)) == 0) {
+		(void) sprintf(buf, "Errors from %s", cx.x_filename);
+		if ((cx.x_errwin = openiwin(ERRLINES, buf)) == 0) {
 			(void) wwprintf(cmdwin, "Can't open error window.  ");
-			baderror++;
+			cx.x_baderr = 1;
 			return;
 		}
-		errlineno = 0;
+		cx.x_errlineno = 0;
 	}
-	if (errlineno++ > ERRLINES - 4) {
-		waitnl(errwin);
-		errlineno = 0;
+	if (cx.x_errlineno++ > ERRLINES - 4) {
+		waitnl(cx.x_errwin);
+		cx.x_errlineno = 0;
 	}
-	if (lineno != 0)
-		(void) wwprintf(errwin, "line %d: ", lineno);
-	(void) wwprintf(errwin, fmt, a, b, c, d, e, f, g, h);
-	(void) wwprintf(errwin, "\n");
+	if (cx.x_lineno != 0)
+		(void) wwprintf(cx.x_errwin, "line %d: ", cx.x_lineno);
+	(void) wwprintf(cx.x_errwin, fmt, a, b, c, d, e, f, g, h);
+	(void) wwprintf(cx.x_errwin, "\n");
 }
 
-beginerror(fn)
-char *fn;
+err_end()
 {
-	filename = malloc((unsigned) strlen(fn) + 1);
-	(void) strcpy(filename, fn);
-}
-
-enderror()
-{
-	if (errwin != 0) {
-		waitnl(errwin);
-		closeiwin(errwin);
-		errwin = 0;
+	if (cx.x_errwin != 0) {
+		waitnl(cx.x_errwin);
+		closeiwin(cx.x_errwin);
+		cx.x_errwin = 0;
 	}
-	baderror = 0;
-	free(filename);
-	filename = 0;
 }

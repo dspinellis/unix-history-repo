@@ -1,5 +1,5 @@
 /*
- *	@(#)defs.h	3.5 83/11/02	
+ *	@(#)defs.h	3.6 83/11/22	
  */
 
 #include "ww.h"
@@ -47,11 +47,5 @@ char escapec;			/* escape character */
 
 struct ww *getwin();
 struct ww *openwin();
-struct ww *idtowin();
+struct ww *vtowin();
 struct ww *openiwin();
-
-	/* stuff for long commands */
-int argc;
-char *argv[100];
-int lineno;			/* line number in the source file */
-char insource;			/* we're in a source */
