@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)vacation.c	5.2 (Berkeley) %G%";
+static char	SccsId[] = "@(#)vacation.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 # include <sys/types.h>
@@ -278,12 +278,18 @@ knows(user)
 {
 	DATUM k, d;
 	long now;
+	auto long then;
 
 	time(&now);
 	k.dptr = user;
 	k.dsize = strlen(user) + 1;
 	d = fetch(k);
-	if (d.dptr == NULL || ((struct dbrec *) d.dptr)->sentdate + Timeout < now)
+	if (d.dptr == NULL)
+		return (FALSE);
+	
+	/* be careful on 68k's and others with alignment restrictions */
+	bcopy((char *) &((struct dbrec *) d.dptr)->sentdate, (char *) &then, sizeof then);
+	if (then + Timeout < now)
 		return (FALSE);
 	return (TRUE);
 }
