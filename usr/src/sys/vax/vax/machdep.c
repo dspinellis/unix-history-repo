@@ -1,7 +1,11 @@
-/*	machdep.c	4.36	81/05/09	*/
+/*	machdep.c	4.37	81/05/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
+#ifdef BBNNET
+#include "../bbnnet/net.h"
+#include "../bbnnet/ucb.h"
+#endif BBNNET
 #include "../h/dir.h"
 #include "../h/user.h"
 #include "../h/map.h"
@@ -115,7 +119,13 @@ startup(firstaddr)
 	valloc(swapmap, struct map, nswapmap = nproc * 2);
 	valloc(argmap, struct map, ARGMAPSIZE);
 	valloc(kernelmap, struct map, nproc);
-
+#ifdef BBNNET
+	valloc(netmap, struct map, nnetpages/2);
+	valloc(freetab, struct pfree, nnetpages);
+	valloclim(workfree, struct work, nwork, workNWORK);
+	valloclim(contab, struct ucb, nnetcon, conNCON);
+	valloclim(host, struct host, nhost, hostNHOST);
+#endif BBNNET
 	/*
 	 * Now allocate space for core map
 	 */
@@ -157,6 +167,13 @@ startup(firstaddr)
 	maxmem = freemem;
 	printf("avail mem = %d\n", ctob(maxmem));
 	rminit(kernelmap, USRPTSIZE, 1, "usrpt", nproc);
+
+#ifdef BBNNET
+	/*
+	 * Initialize network buffer management map.
+	 */
+	rminit(netmap, nnetpages-1, 1, "netpage", nnetpages/2);
+#endif BBNNET
 
 	/*
 	 * Configure the system.

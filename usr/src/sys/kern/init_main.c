@@ -1,4 +1,4 @@
-/*	init_main.c	4.15	81/04/28	*/
+/*	init_main.c	4.16	81/05/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -106,7 +106,6 @@ main(firstaddr)
 	 * table so that it can map dirty pages into
 	 * its address space during asychronous pushes.
 	 */
-
 	mpid = 1;
 	proc[0].p_szpt = clrnd(ctopt(nswbuf*CLSIZE*KLMAX + UPAGES));
 	proc[1].p_stat = SZOMB;		/* force it to be in proc slot 2 */
@@ -134,6 +133,13 @@ main(firstaddr)
 		 */
 		return;
 	}
+
+#ifdef BBNNET 
+	/*
+	 * Initialize bbn network.
+	 */
+	netinit();
+#endif BBNNET
 	proc[0].p_szpt = 1;
 	sched();
 }
