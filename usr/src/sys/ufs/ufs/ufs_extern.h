@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_extern.h	8.5 (Berkeley) %G%
+ *	@(#)ufs_extern.h	8.6 (Berkeley) %G%
  */
 
 struct buf;
@@ -61,6 +61,12 @@ int	 ufs_inactive __P((struct vop_inactive_args *));
 int	 ufs_init __P((void));
 int	 ufs_ioctl __P((struct vop_ioctl_args *));
 int	 ufs_islocked __P((struct vop_islocked_args *));
+#ifdef NFS
+int	 lease_check __P((struct vop_lease_args *));
+#define	 ufs_lease_check lease_check
+#else
+#define	 ufs_lease_check ((int (*) __P((struct vop_lease_args *)))nullop)
+#endif
 int	 ufs_link __P((struct vop_link_args *));
 int	 ufs_lock __P((struct vop_lock_args *));
 int	 ufs_lookup __P((struct vop_lookup_args *));
