@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)qv.c	1.12 (Berkeley) %G%
+ *	@(#)qv.c	1.13 (Berkeley) %G%
  */
 
 /*
@@ -372,9 +372,14 @@ qvopen(dev, flag)
 			/* make sure keyboard is always back to default */
 			qvkbdreset();
 			qvaddr->qv_csr |= QV_INT_ENABLE;
-			tp->t_flags = XTABS|EVENP|ECHO|CRMOD;
-		} else 
+			tp->t_iflag = TTYDEF_IFLAG;
+			tp->t_oflag = TTYDEF_OFLAG;
+			tp->t_lflag = TTYDEF_LFLAG;
+			tp->t_cflag = TTYDEF_CFLAG;
+		}
+		/* XXX ?why?  else 
 			tp->t_flags = RAW;
+		*/
 	}
 	/*
 	 * Process line discipline specific open if its not the
@@ -403,6 +408,7 @@ qvclose(dev, flag)
 	register struct tty *tp;
 	register unit;
 	register struct qvdevice *qvaddr;
+	int error;
 
 	unit = minor(dev);
 	tp = &qv_tty[unit];
@@ -421,12 +427,14 @@ qvclose(dev, flag)
 	 */
 	if (QVCHAN(unit) != QVMOUSECHAN) {
 		(*linesw[tp->t_line].l_close)(tp);
-		ttyclose(tp);
+		error = ttyclose(tp);
 	} else {
 		mouseon = 0;
 		qv_init( qvaddr );
+		error = 0;
 	}
 	tp->t_state = 0;
+	return (error);
 }
 
 qvread(dev, uio)
