@@ -1,4 +1,4 @@
-/*	locore.s	4.41	81/04/02	*/
+/*	locore.s	4.42	81/04/03	*/
 
 #include "../h/mtpr.h"
 #include "../h/trap.h"
@@ -497,9 +497,9 @@ _badaddr:
 0:
 	.word	8f-0b		# 1 is 780
 	.word	5f-0b		# 2 is 750
-	.word	5f-0b		# 3 is 730
+	.word	5f-0b		# 3 is 7ZZ
 5:
-#if defined(VAX750) || defined(VAX730)
+#if defined(VAX750) || defined(VAX7ZZ)
 	mtpr	$0xf,$MCESR
 #endif
 	brb	1f
