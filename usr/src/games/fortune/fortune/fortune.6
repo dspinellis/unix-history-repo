@@ -13,53 +13,139 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)fortune.6	6.3 (Berkeley) %G%
+.\"	@(#)fortune.6	6.4 (Berkeley) %G%
 .\"
 .TH FORTUNE 6 ""
 .UC 4
 .SH NAME
 fortune \- print a random, hopefully interesting, adage
 .SH SYNOPSIS
-.B fortune
+.B /usr/games/fortune
 [
 .B \-
 ] [
-.B \-wslao
+.B \-fwslaoe
 ]
-..[ file ]
+[
+.B \-m
+.I pattern
+.B \-i
+]
+[ [ \fIN\fP% ] \fIfile\fP/\fIdir\fP/\fBall\fP ]
 .SH DESCRIPTION
-.I Fortune
-with no arguments prints out a random adage. The flags mean:
+When
+.I fortune
+is run with no arguments
+it prints out a random epigram. The flags mean:
 .PP
 .TP 5
+.B \-f
+Print out the list of files
+which would be searched,
+but don't print a fortune.
 .B \-w
-Waits before termination
+Wait before termination
 for an amount of time calculated from the number of characters in the message.
 This is useful if it is executed as part of the logout procedure
 to guarantee that the message can be read before the screen is cleared.
 .TP 5
 .B \-s
-Short messages only.
+Short apothegms only.
 .TP 5
 .B \-l
-Long messages only.
+Long dictums only.
 .TP
 .B \-o
-Choose from an alternate list of adages,
+Choose from an alternate list of aphorisms,
 often used for potentially offensive ones.
 .TP
 .B \-a
-Choose from either list of adages.
+Choose from either list of maxims.
+.TP
+.B \-m
+Print out all fortunes which match the regular expression
+.I pattern .
+See
+.BR regex (3)
+or
+.BR regcmp (3)
+for description of patterns.
+.TP
+.B \-i
+Ignore case for
+.B \-m
+patterns.
+.TP
+.B \-e
+Consider all fortune files to be of equal size
+(see below on multiple files).
 .PP
-..The user may specify a file of adages.
-..This file must be created by strfile(6),
-..and be given by the user as
-...it file.
-..Only one such file may be named,
-..subsequent ones are ignored.
+The user may specify alternate sayings.
+You can specify a specific file,
+a directory which contains one or more files,
+or the special word
+.B all
+which says to use all the standard databases.
+The files must be created
+using
+.B strfile (8) .
+Any of these may be preceded by a percentage,
+which is a number
+.I N
+between 0 and 100 inclusive,
+followed by a
+.B % .
+If it is,
+there will be a
+.I N
+percent probability
+that an adage will be picked from that file or directory.
+If the percentages
+do not sum to 100,
+and there are specifications without percentages,
+the remaining percent
+will apply to those files and/or directories,
+in which case
+the probability of selecting from one of them
+will be based on their relative sizes.
+.PP
+As an example,
+given two databases
+.B funny
+and
+.B not-funny ,
+with
+.B funny
+twice as big,
+saying
+.RS
+fortune funny not-funny
+.RE
+will get you fortunes out of
+.B funny
+two-thirds of the time.
+The command
+.RS
+fortune 90% funny 10% not-funny
+.RE
+will pick out 90% of its fortunes from
+.B funny
+(the ``10% not-funny'' is unecessary,
+since 10% is all that's left).
+The
+.B \-e
+option says to consider all files equal;
+thus
+.RS
+fortune \-e
+.RE
+is equivalent to
+.RS
+fortune 50% funny 50% not-funny
+.RE
 .SH FILES
 /usr/games/lib/fortunes.dat
 .SH AUTHOR
 Ken Arnold
-...SH SEE\ ALSO
-..strfile(6)
+.SH "SEE ALSO"
+regex(3), regcmp(3), strfile(8)
