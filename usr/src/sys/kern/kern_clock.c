@@ -1,4 +1,4 @@
-/*	kern_clock.c	4.11	%G%	*/
+/*	kern_clock.c	4.12	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -206,7 +206,7 @@ softclock(pc, ps)
 		lbolt -= HZ;
 		++time;
 		wakeup((caddr_t)&lbolt);
-		for(pp = &proc[0]; pp < &proc[NPROC]; pp++)
+		for(pp = proc; pp < procNPROC; pp++)
 		if (pp->p_stat && pp->p_stat!=SZOMB) {
 			if(pp->p_time != 127)
 				pp->p_time++;
