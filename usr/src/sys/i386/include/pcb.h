@@ -7,14 +7,15 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pcb.h	5.7 (Berkeley) %G%
+ *	@(#)pcb.h	5.8 (Berkeley) %G%
  */
+
 
 /*
  * Intel 386 process control block
  */
-#include "tss.h"
-#include "npx.h"
+#include "machine/tss.h"
+#include "machine/npx.h"
 
 struct pcb {
 	struct	i386tss pcbtss;
@@ -33,7 +34,6 @@ struct pcb {
 #define	FP_NEEDSSAVE	0x2	/* needs save on next context switch */
 #define	FP_NEEDSRESTORE	0x4	/* need restore on next DNA fault */
 #define	FP_USESEMC	0x8	/* process uses EMC memory-mapped mode */
-#define	EX_TRAPSTK	0x10	/* process entered with a trap stack frame */
 	struct	save87	pcb_savefpu;
 	struct	emcsts	pcb_saveemc;
 	struct	pte	*pcb_p0br;
