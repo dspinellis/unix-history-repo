@@ -1,5 +1,5 @@
 #!/bin/sh
-#	dumpall.sh	1.5	%G%
+#	dumpall.sh	1.6	%G%
 #	shell script to do all pending dumps
 #	Asks for confirmation before proceeding
 PATH=:/etc:/bin:/usr/bin:
@@ -13,7 +13,7 @@ do
 	askagain=yes
 	while  [ $askagain = yes ]
 	do
-		echo -n "Dump file system $fi [yne]? "
+		echo -n "Dump file system $fi [ynle]? "
 		read ans
 		case $ans in
 		yes|y|Y)
@@ -21,15 +21,19 @@ do
 			/etc/dumplogclean
 			askagain=no
 			;;
+		list|l|L)
+			doadump $fi T
+			;;
 		exit|e|E)
 			exit 1
 			;;
 		no|n|N)
-			echo "Abandoned dump of $fi"
+			echo "Skipped dump of $fi"
 			askagain=no
 			;;
 		*)
-			echo 'Answer "y" to do a dump, "n" to skip this filesystem, "e" to exit from dumpall'
+			echo 'Answer "y" to do a dump, "n" to skip this filesystem'
+			echo '"l" to list level and tapes, "e" to exit from dumpall'
 			;;
 		esac
 	done
