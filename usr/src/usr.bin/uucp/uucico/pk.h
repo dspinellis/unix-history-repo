@@ -1,4 +1,4 @@
-/*	@(#)pk.h	5.5	%G%	*/
+/*	@(#)pk.h	5.6	(Berkeley)	%G%	*/
 
 struct header {
 	char	sync;
@@ -10,9 +10,7 @@ struct header {
 
 #define	HDRSIZ		6	/* Packet header size */
 #define	PACKSIZE	64	/* Standard packet size */
-#define WINDOWS		7
-
-#define TAILSIZE	0	/* Number of trailing nulls after packet    */
+#define WINDOWS		7	/* number of outstanding un-ack'd packets */
 
 struct pack {
 	short	p_state;	/* line state */
@@ -109,17 +107,6 @@ extern char	mask[8];
 #define	M_INITA	0200
 #define	M_INITB	0100
 
-#define	NPLINES	20
-
-/*
- * packet ioctl buf
- */
-struct	piocb {
-	unsigned t;
-	short	psize;
-	short	mode;
-	short	state;
-	char	window;
-};
+#define	NPLINES	2
 
 extern int pksizes[];
