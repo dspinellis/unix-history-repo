@@ -3,8 +3,9 @@
 # stdio sources
 .PATH: ${.CURDIR}/stdio
 
-SRCS+=	clrerr.c fclose.c fdopen.c feof.c ferror.c fflush.c fgetc.c \
-	fgetln.c fgetpos.c fgets.c fileno.c findfp.c flags.c fopen.c \
+SRCS+=	clrerr.c fclose.c fdopen.c feof.c ferror.c fflush.c \
+	fgetc.c fgetline.c fgetln.c fgetpos.c fgets.c \
+	fileno.c findfp.c flags.c fopen.c \
 	fprintf.c fpurge.c fputc.c fputs.c fread.c freopen.c fscanf.c \
 	fseek.c fsetpos.c ftell.c funopen.c fvwrite.c fwalk.c fwrite.c \
 	getc.c getchar.c gets.c getw.c makebuf.c perror.c printf.c putc.c \
