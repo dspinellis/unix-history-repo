@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 1990 The Regents of the University of California.
+ * Copyright (c) 1991 The Regents of the University of California.
  * All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	.asciz "@(#)fixdfsi.s	5.1 (Berkeley) 5/15/90"
+	.asciz "@(#)fixdfsi.s	5.4 (Berkeley) %G%"
 #endif /* LIBC_SCCS and not lint */
 
 	.globl ___fixdfsi
