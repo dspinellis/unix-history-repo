@@ -24,7 +24,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *	$Id: vidcontrol.c,v 1.1 1994/05/20 12:20:38 sos Exp $
+ *	$Id: vidcontrol.c,v 1.3 1994/05/23 11:14:57 sos Exp $
  */
 
 #include <ctype.h>
@@ -240,7 +240,7 @@ set_screensaver_type(char *type)
 			e = ioctl(0, CONS_GSAVER, &saver);
 			i ++;
 			if (e == 0)
-				printf("\t%d\t%s\n", saver.num, saver.name);
+				printf("\t%s\n", saver.name);
 		} while (e == 0);
 		if (e == -1 && errno != EIO)
 			perror("getting screensaver info");
