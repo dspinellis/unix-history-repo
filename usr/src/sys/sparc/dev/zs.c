@@ -13,9 +13,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)zs.c	8.1 (Berkeley) %G%
+ *	@(#)zs.c	7.5 (Berkeley) %G%
  *
- * from: $Header: zs.c,v 1.28 93/04/20 11:19:44 torek Exp $
+ * from: $Header: zs.c,v 1.29 93/07/15 02:57:07 torek Exp $
  */
 
 /*
@@ -229,9 +229,7 @@ zsattach(struct device *parent, struct device *dev, void *aux)
 #ifdef KGDB
 	if (ctp == NULL)
 		zs_checkkgdb(unit, cs, tp);
-	else
 #endif
-		zs_reset(&addr->zs_chan[CHAN_A], 0, cs->cs_speed);
 	if (unit == ZS_KBD) {
 		/*
 		 * Keyboard: tell /dev/kbd driver how to talk to us.
@@ -258,9 +256,7 @@ zsattach(struct device *parent, struct device *dev, void *aux)
 #ifdef KGDB
 	if (ctp == NULL)
 		zs_checkkgdb(unit, cs, tp);
-	else
 #endif
-		zs_reset(&addr->zs_chan[CHAN_B], 0, cs->cs_speed);
 	if (unit == ZS_MOUSE) {
 		/*
 		 * Mouse: tell /dev/mouse driver how to talk to us.
@@ -351,6 +347,8 @@ zscnputc(c)
 	register volatile struct zschan *zc = zs_conschan;
 	register int s;
 
+	if (c == '\n')
+		zscnputc('\r');
 	/*
 	 * Must block output interrupts (i.e., raise to >= splzs) without
 	 * lowering current ipl.  Need a better way.
@@ -390,6 +388,9 @@ zs_checkcons(struct zsinfo *zi, int unit, struct zs_chanstate *cs)
 	 * Rewire input and/or output.  Note that baud rate reflects
 	 * input settings, not output settings, but we can do no better
 	 * if the console is split across two ports.
+	 *
+	 * XXX	split consoles don't work anyway -- this needs to be
+	 *	thrown away and redone
 	 */
 	if (i) {
 		tp->t_param = zsparam;
@@ -405,7 +406,7 @@ zs_checkcons(struct zsinfo *zi, int unit, struct zs_chanstate *cs)
 	    zi->zi_dev.dv_xname, (unit & 1) + 'a', i ? (o ? "i/o" : i) : o);
 	cs->cs_consio = 1;
 	cs->cs_brkabort = 1;
-	return (i ? tp : NULL);
+	return (tp);
 }
 
 #ifdef KGDB
