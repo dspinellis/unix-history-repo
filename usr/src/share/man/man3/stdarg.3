@@ -7,7 +7,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)stdarg.3	8.1 (Berkeley) %G%
+.\"	@(#)stdarg.3	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt STDARG 3
@@ -123,11 +123,11 @@ void foo(char *fmt, ...)
 {
 	va_list ap;
 	int d;
-	char c, *p, *s;
+	char c, *s;
 
 	va_start(ap, fmt);
 	while (*fmt)
-		switch(*fmt++) {
+		switch (*fmt++) {
 		case 's':			/* string */
 			s = va_arg(ap, char *);
 			printf("string %s\en", s);
