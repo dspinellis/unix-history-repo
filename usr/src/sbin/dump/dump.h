@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dump.h	5.8 (Berkeley) %G%
+ *	@(#)dump.h	5.9 (Berkeley) %G%
  */
 
 #define	NI		16
@@ -12,14 +12,17 @@
 
 #include <sys/param.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <ufs/fs.h>
 #include <ufs/dinode.h>
-#include <protocols/dumprestore.h>
 #include <ufs/dir.h>
+#include <protocols/dumprestore.h>
 #include <utmp.h>
-#include <sys/signal.h>
+#include <signal.h>
 #include <fstab.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <ctype.h>
 
 #define	MWORD(m,i)	(m[(unsigned)(i-1)/NBBY])
@@ -65,24 +68,53 @@ time_t	tstart_writing;	/* when started writing the first tape block */
 char	*processname;
 struct fs *sblock;	/* the file system super block */
 char	buf[MAXBSIZE];
-long	dev_bsize;
+long	dev_bsize;	/* block size of underlying disk device */
+int	dev_bshift;	/* log2(dev_bsize) */
+int	tp_bshift;	/* log2(TP_BSIZE) */
 
-char	*ctime();
+/* operator interface functions */
+void	broadcast();
+void	lastdump();
+void	msg();
+void	msgtail();
+int	query();
+void	set_operators();
+void	timeest();
+
+/* mapping rouintes */
+void	est();
+void	bmapest();
+void	pass();
+void	mark();
+void	add();
+
+/* file dumping routines */
+void	dirdump();
+void	dump();
+void	blksout();
+void	bitmap();
+void	spclrec();
+void	bread();
+
+/* tape writing routines */
+int	alloctape();
+void	taprec();
+void	dmpblk();
+void	tflush();
+void	trewind();
+void	close_rewind();
+void	otape();
+
+void	dumpabort();
+void	Exit();
+void	getfstab();
+void	quit();
+
 char	*prdate();
-long	atol();
-int	mark();
-int	add();
-int	dirdump();
-int	dump();
-int	tapsrec();
-int	dmpspc();
-int	dsrch();
-int	nullf();
-char	*getsuffix();
 char	*rawname();
 struct dinode *getino();
 
-int	interrupt();		/* in case operator bangs on console */
+void	interrupt();		/* in case operator bangs on console */
 
 #define	HOUR	(60L*60L)
 #define	DAY	(24L*HOUR)
@@ -109,7 +141,7 @@ struct	idates {
 	char	id_incno;
 	time_t	id_ddate;
 };
-struct	itime{
+struct	itime {
 	struct	idates	it_value;
 	struct	itime	*it_next;
 };
@@ -117,19 +149,22 @@ struct	itime	*ithead;	/* head of the list version */
 int	nidates;		/* number of records (might be zero) */
 int	idates_in;		/* we have read the increment file */
 struct	idates	**idatev;	/* the arrayfied version */
-#define	ITITERATE(i, ip) for (i = 0,ip = idatev[0]; i < nidates; i++, ip = idatev[i])
+void	inititimes();
+void	getitime();
+void	putitime();
+#define	ITITERATE(i, ip) for (ip = idatev[i = 0]; i < nidates; ip = idatev[++i])
 
 /*
  *	We catch these interrupts
  */
-int	sighup();
-int	sigquit();
-int	sigill();
-int	sigtrap();
-int	sigfpe();
-int	sigkill();
-int	sigbus();
-int	sigsegv();
-int	sigsys();
-int	sigalrm();
-int	sigterm();
+void	sighup();
+void	sigquit();
+void	sigill();
+void	sigtrap();
+void	sigfpe();
+void	sigkill();
+void	sigbus();
+void	sigsegv();
+void	sigsys();
+void	sigalrm();
+void	sigterm();
