@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)tset.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)tset.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -310,7 +310,7 @@ static char sccsid[] = "@(#)tset.c	5.6 (Berkeley) %G%";
 # define	BACKSPACE	(CNTL('H'))
 # define	CHK(val, dft)	(val<=0 ? dft : val)
 # define	isdigit(c)	(c >= '0' && c <= '9')
-# define	isalnum(c)	(c > ' ' && !(index("<@=>!:|\177", c)) )
+# define	isalnum(c)	(c > ' ' && (index("<@=>!:|\177", c) == NULL))
 # define	OLDERASE	'#'
 # define	OLDKILL		'@'
 # define	OLDINTR		'\177'	/* del */
@@ -455,6 +455,7 @@ struct vterm {
 };
 
 int VirTermNo = -2;
+int	HasAM;			/* True if terminal has automatic margins */
 # endif CBVIRTTERM
 
 char	Erase_char;		/* new erase character */
@@ -483,8 +484,6 @@ int	RepOnly;		/* report only */
 int	CmndLine;		/* output full command lines (-s option) */
 int	Ask;			/* ask user for termtype */
 int	DoVirtTerm = YES;	/* Set up a virtual terminal */
-int	New = NO;		/* use new tty discipline */
-int	HasAM;			/* True if terminal has automatic margins */
 int	PadBaud;		/* Min rate of padding needed */
 int	lines, columns;
 
@@ -494,6 +493,9 @@ char	*Ttycap;		/* termcap line from termcap or environ */
 
 char	Aliasbuf[128];
 char	*Alias[16];
+
+extern char *strcpy();
+extern char *index();
 
 struct delay
 {
@@ -527,7 +529,9 @@ char	*argv[];
 	register char	*p;
 	char		*command;
 	register int	i;
+# ifdef CBVIRTTERM
 	int		j;
+# endif CBVIRTTERM
 	int		Break;
 	int		Not;
 	char		*nextarg();
@@ -559,32 +563,32 @@ char	*argv[];
 	int		lmode;
 	int		ldisc;
 
-	ioctl(FILEDES, TIOCLGET, &lmode);
-	ioctl(FILEDES, TIOCGETD, &ldisc);
+	(void) ioctl(FILEDES, TIOCLGET, (char *)&lmode);
+	(void) ioctl(FILEDES, TIOCGETD, (char *)&ldisc);
 # endif
 
 # ifndef USG
 	if (gtty(FILEDES, &mode) < 0)
 # else
-	if (ioctl(FILEDES, TCGETA, &mode) < 0)
+	if (ioctl(FILEDES, TCGETA, (char *)&mode) < 0)
 # endif
 	{
 		prs("Not a terminal\n");
 		exit(1);
 	}
-	bmove(&mode, &oldmode, sizeof mode);
+	bmove((char *)&mode, (char *)&oldmode, sizeof mode);
 # ifdef TIOCGETC
-	(void)ioctl(FILEDES, TIOCGETC, &tchar);
-	bmove(&tchar, &oldtchar, sizeof tchar);
+	(void) ioctl(FILEDES, TIOCGETC, (char *)&tchar);
+	bmove((char *)&tchar, (char *)&oldtchar, sizeof tchar);
 # endif
 # ifndef USG
 	ospeed = mode.sg_ospeed & 017;
 # else
 	ospeed = mode.c_cflag & CBAUD;
 # endif
-	signal(SIGINT, setmode);
-	signal(SIGQUIT, setmode);
-	signal(SIGTERM, setmode);
+	(void) signal(SIGINT, setmode);
+	(void) signal(SIGQUIT, setmode);
+	(void) signal(SIGTERM, setmode);
 
 	if (command = rindex(argv[0], '/'))
 		command++;
@@ -606,14 +610,14 @@ char	*argv[];
 
 		if (ldisc == NTTYDISC)
 		{
-			ioctl(FILEDES, TIOCGLTC, &ltc);
+			(void) ioctl(FILEDES, TIOCGLTC, (char *)&ltc);
 			ltc.t_suspc = CHK(ltc.t_suspc, CSUSP);
 			ltc.t_dsuspc = CHK(ltc.t_dsuspc, CDSUSP);
 			ltc.t_rprntc = CHK(ltc.t_rprntc, CRPRNT);
 			ltc.t_flushc = CHK(ltc.t_flushc, CFLUSH);
 			ltc.t_werasc = CHK(ltc.t_werasc, CWERASE);
 			ltc.t_lnextc = CHK(ltc.t_lnextc, CLNEXT);
-			ioctl(FILEDES, TIOCSLTC, &ltc);
+			(void) ioctl(FILEDES, TIOCSLTC, (char *)&ltc);
 		}
 #  endif UCB_NTTY
 #  ifndef USG
@@ -624,9 +628,9 @@ char	*argv[];
 		tchar.t_stopc = CHK(tchar.t_stopc, CSTOP);
 		tchar.t_eofc = CHK(tchar.t_eofc, CEOF);
 		/* brkc is left alone */
-		ioctl(FILEDES, TIOCSETC, &tchar);
+		(void) ioctl(FILEDES, TIOCSETC, (char *)&tchar);
 #ifdef TIOCLBIC
-		ioctl(FILEDES, TIOCLBIC, &lclear);
+		(void) ioctl(FILEDES, TIOCLBIC, (char *)&lclear);
 #endif TIOCLBIC
 #   endif TIOCGETC
 		mode.sg_flags &= ~(RAW
@@ -639,7 +643,7 @@ char	*argv[];
 		curkill = CHK(curkill, CKILL);
 		curintr = CHK(curintr, CINTR);
 #  else USG
-		ioctl(FILEDES, TCGETA, &mode);
+		(void) ioctl(FILEDES, TCGETA, (char *)&mode);
 		curerase = CHK(curerase, OLDERASE);
 		curkill = CHK(curkill, OLDKILL);
 		curintr = CHK(curintr, OLDINTR);
@@ -655,7 +659,7 @@ char	*argv[];
 		mode.c_cflag &= ~(CSIZE|PARODD|CLOCAL);
 		mode.c_lflag |= (ISIG|ICANON|ECHO|ECHOK);
 		mode.c_lflag &= ~(XCASE|ECHONL|NOFLSH);
-		ioctl(FILEDES, TCSETAW, &mode);
+		(void) ioctl(FILEDES, TCSETAW, (char *)&mode);
 #  endif USG
 # endif V6
 		Dash_u = YES;
@@ -683,7 +687,7 @@ char	*argv[];
 # ifdef UCB_NTTY
 			  case 'n':
 				ldisc = NTTYDISC;
-				if (ioctl(FILEDES, TIOCSETD, &ldisc)<0)
+				if (ioctl(FILEDES, TIOCSETD, (char *)&ldisc)<0)
 					fatal("ioctl ", "new");
 				continue;
 # endif
@@ -924,7 +928,7 @@ mapold:				Map->Ident = NewType;
 	 */
 	bufp = getenv("TERMCAP");
 	if (bufp && *bufp != '/')
-		strcpy(bufp-8, "NOTHING");	/* overwrite only "TERMCAP" */
+		(void) strcpy(bufp-8, "NOTHING"); /* overwrite only "TERMCAP" */
 	/* get current idea of terminal type from environment */
 	if (!Dash_h && TtyType == 0)
 		TtyType = getenv("TERM");
@@ -1172,7 +1176,7 @@ ask:
 				}
 			}
 		}
-		ioctl(FILEDES, TIOCLSET, &lmode);
+		(void) ioctl(FILEDES, TIOCLSET, (char *)&lmode);
 # endif
 
 		/* get pad character */
@@ -1184,12 +1188,12 @@ ask:
 		lines = tgetnum("li");
 
 		/* Set window size */
-		ioctl(FILEDES, TIOCGWINSZ, &win);
+		(void) ioctl(FILEDES, TIOCGWINSZ, (char *)&win);
 		if (win.ws_row == 0 && win.ws_col == 0 &&
 		    lines > 0 && columns > 0) {
 			win.ws_row = lines;
 			win.ws_col = columns;
-			ioctl(FILEDES, TIOCSWINSZ, &win);
+			(void) ioctl(FILEDES, TIOCSWINSZ, (char *)&win);
 		}
 		/* output startup string */
 		if (!NoInit)
@@ -1209,7 +1213,7 @@ ask:
 # endif
 # ifdef CBVIRTTERM
 			block.st_termt = 0;
-			ioctl(FILEDES, LDSETT, &block);
+			(void) ioctl(FILEDES, LDSETT, (char *)&block);
 # endif CBVIRTTERM
 			if (settabs()) {
 				settle = YES;
@@ -1262,13 +1266,13 @@ ask:
 
 			if ((sh = getenv("SHELL")) && (i = strlen(sh)) >= 3)
 			{
-				if ((csh = sequal(&sh[i-3], "csh")) && CmndLine)
-					write(STDOUT, "set noglob;\n", 12);
+			    if ((csh = sequal(&sh[i-3], "csh")) && CmndLine)
+				(void) write(STDOUT, "set noglob;\n", 12);
 			}
 			if (!csh)
 # endif
-				/* running Bourne shell */
-				write(STDOUT, "export TERMCAP TERM;\n", 21);
+			    /* running Bourne shell */
+			    (void) write(STDOUT, "export TERMCAP TERM;\n", 21);
 		}
 	}
 
@@ -1286,23 +1290,23 @@ ask:
 			if (csh)
 			{
 				if (CmndLine)
-					write(STDOUT, "setenv TERM ", 12);
-				write(STDOUT, TtyType, strlen(TtyType));
-				write(STDOUT, " ", 1);
+				    (void) write(STDOUT, "setenv TERM ", 12);
+				(void) write(STDOUT, TtyType, strlen(TtyType));
+				(void) write(STDOUT, " ", 1);
 				if (CmndLine)
-					write(STDOUT, ";\n", 2);
+				    (void) write(STDOUT, ";\n", 2);
 			}
 			else
 			{
-				write(STDOUT, "TERM=", 5);
-				write(STDOUT, TtyType, strlen(TtyType));
-				write(STDOUT, ";\n", 2);
+				(void) write(STDOUT, "TERM=", 5);
+				(void) write(STDOUT, TtyType, strlen(TtyType));
+				(void) write(STDOUT, ";\n", 2);
 			}
 		}
 		else if (Report)
 		{
-			write(STDOUT, TtyType, strlen(TtyType));
-			write(STDOUT, "\n", 1);
+			(void) write(STDOUT, TtyType, strlen(TtyType));
+			(void) write(STDOUT, "\n", 1);
 		}
 		if (Ureport)
 		{
@@ -1316,22 +1320,22 @@ ask:
 		{
 			if (csh)
 			{
-				if (CmndLine)
-					write(STDOUT, "setenv TERMCAP '", 16);
+			    if (CmndLine)
+				(void) write(STDOUT, "setenv TERMCAP '", 16);
 			}
 			else
-				write(STDOUT, "TERMCAP='", 9);
+			    (void) write(STDOUT, "TERMCAP='", 9);
 			wrtermcap(Ttycap);
 			if (csh)
 			{
 				if (CmndLine)
 				{
-					write(STDOUT, "';\n", 3);
-					write(STDOUT, "unset noglob;\n", 14);
+				    (void) write(STDOUT, "';\n", 3);
+				    (void) write(STDOUT, "unset noglob;\n", 14);
 				}
 			}
 			else
-				write(STDOUT, "';\n", 3);
+				(void) write(STDOUT, "';\n", 3);
 		}
 	}
 
@@ -1437,7 +1441,7 @@ int	flag;
 # ifdef TIOCGETC
 		ttytchars = &oldtchar;
 # endif
-	} else if (!bequal(&mode, &oldmode, sizeof mode)) {
+	} else if (!bequal((char *)&mode, (char *)&oldmode, sizeof mode)) {
 		ttymode = &mode;
 # ifdef TIOCGETC
 		ttytchars = &tchar;
@@ -1456,10 +1460,11 @@ int	flag;
 	if (ttymode)
 	{
 # ifdef USG
-		ioctl(FILEDES, TCSETAW, ttymode);
+		(void) ioctl(FILEDES, TCSETAW, (char *)ttymode);
 # else
 #  ifndef V6
-		ioctl(FILEDES, TIOCSETN, ttymode);     /* don't flush */
+		/* don't flush */
+		(void) ioctl(FILEDES, TIOCSETN, (char *)ttymode);
 #  else
 		stty(FILEDES, ttymode);
 #  endif
@@ -1467,7 +1472,7 @@ int	flag;
 	}
 # ifdef TIOCGETC
 	if (ttytchars) {
-		ioctl(FILEDES, TIOCSETC, ttytchars);
+		(void) ioctl(FILEDES, TIOCSETC, (char *)ttytchars);
 	}
 # endif
 # ifdef CBVIRTTERM
@@ -1475,7 +1480,7 @@ int	flag;
 		int r1, r2;
 		extern int errno;
 
-		r1 = ioctl(FILEDES, LDGETT, &block);
+		r1 = ioctl(FILEDES, LDGETT, (char *)&block);
 		block.st_flgs |= TM_SET;
 		block.st_termt = VirTermNo;
 		if (block.st_termt < 0)
@@ -1484,7 +1489,7 @@ int	flag;
 			block.st_flgs |= TM_ANL;
 		else
 			block.st_flgs &= ~TM_ANL;
-		r2 = ioctl(FILEDES, LDSETT, &block);
+		r2 = ioctl(FILEDES, LDSETT, (char *)&block);
 	}
 # endif
 
@@ -1600,7 +1605,7 @@ char	c;
 flush()
 {
 	if (OutPtr > 0)
-		write(2, OutBuf, OutPtr);
+		(void) write(2, OutBuf, OutPtr);
 	OutPtr = 0;
 }
 
@@ -1623,9 +1628,9 @@ char	*file;
 	}
 
 	while ((i = read(fd, buf, BUFSIZ)) > 0)
-		write(FILEDES, buf, i);
+		(void) write(FILEDES, buf, i);
 
-	close(fd);
+	(void) close(fd);
 }
 
 
@@ -1726,7 +1731,6 @@ stypeof(ttyid)
 char	*ttyid;
 {
 	register char	*PortType;
-	register char	*PortName;
 	register char	*TtyId;
 	struct ttyent *t;
 
@@ -1766,11 +1770,13 @@ wrtermcap(bp)
 char *bp;
 {
 	char buf[CAPBUFSIZ];
-	register int i;
 	char *p = buf;
 	char *tp;
 	char *putbuf();
 	int space, empty;
+# ifdef CBVIRTTERM
+	register int i;
+# endif CBVIRTTERM
 
 	/* discard names with blanks */
 /** May not be desireable ? **/
@@ -1890,10 +1896,12 @@ char *bp;
 # endif CBVIRTTERM
 		}
 		*p++ = *bp++;
+# ifdef CBVIRTTERM
 contin:		;
+# endif CBVIRTTERM
 	}
 	*p++ = ':';	/* we skipped the last : with the : lookahead hack */
-	write (STDOUT, buf, p-buf);
+	(void) write (STDOUT, buf, p-buf);
 }
 
 cancelled(cap)
@@ -1928,7 +1936,7 @@ char	*str;
 			break;
 		default:
 			if (*str <= ' ') {
-				sprintf(buf, "\\%03o", *str);
+				(void) sprintf(buf, "\\%03o", *str);
 				ptr = putbuf(ptr, buf);
 				str++;
 			} else
