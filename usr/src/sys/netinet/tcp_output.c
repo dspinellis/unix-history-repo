@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_output.c	7.5 (Berkeley) %G%
+ *	@(#)tcp_output.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -143,7 +143,7 @@ again:
 	 * to send into a small window), then must resend.
 	 */
 	if (len) {
-		if (len == tp->t_maxseg || len >= TCP_MSS)	/* a lot */
+		if (len == tp->t_maxseg)
 			goto send;
 		if ((idle || tp->t_flags & TF_NODELAY) &&
 		    len + off >= so->so_snd.sb_cc)
@@ -242,7 +242,8 @@ send:
 	 * window for use in delaying messages about window sizes.
 	 * If resending a FIN, be sure not to use a new sequence number.
 	 */
-	if (flags & TH_FIN && tp->t_flags & TF_SENTFIN && len == 0)
+	if (flags & TH_FIN && tp->t_flags & TF_SENTFIN && 
+	    tp->snd_nxt == tp->snd_max)
 		tp->snd_nxt--;
 	ti->ti_seq = htonl(tp->snd_nxt);
 	ti->ti_ack = htonl(tp->rcv_nxt);
@@ -328,6 +329,15 @@ send:
 	 */
 	if (tp->t_force == 0 || tp->t_timer[TCPT_PERSIST] == 0) {
 		/*
+		 * Time this transmission if not a retransmission and
+		 * not currently timing anything.
+		 */
+		if (tp->t_rtt == 0 && tp->snd_nxt == tp->snd_max) {
+			tp->t_rtt = 1;
+			tp->t_rtseq = tp->snd_nxt;
+			tcpstat.tcps_segstimed++;
+		}
+		/*
 		 * Advance snd_nxt over sequence space of this segment.
 		 */
 		if (flags & TH_SYN)
@@ -337,18 +347,8 @@ send:
 			tp->t_flags |= TF_SENTFIN;
 		}
 		tp->snd_nxt += len;
-		if (SEQ_GT(tp->snd_nxt, tp->snd_max)) {
+		if (SEQ_GT(tp->snd_nxt, tp->snd_max))
 			tp->snd_max = tp->snd_nxt;
-			/*
-			 * Time this transmission if not a retransmission and
-			 * not currently timing anything.
-			 */
-			if (tp->t_rtt == 0) {
-				tp->t_rtt = 1;
-				tp->t_rtseq = tp->snd_nxt - len;
-				tcpstat.tcps_segstimed++;
-			}
-		}
 
 		/*
 		 * Set retransmit timer if not currently set,
@@ -412,8 +412,7 @@ tcp_setpersist(tp)
 	 */
 	TCPT_RANGESET(tp->t_timer[TCPT_PERSIST],
 	    ((int)(tcp_beta * tp->t_srtt)) << tp->t_rxtshift,
-	    TCPTV_PERSMIN, TCPTV_MAX);
-	tp->t_rxtshift++;
-	if (tp->t_rxtshift >= TCP_MAXRXTSHIFT)
-		tp->t_rxtshift = 0;
+	    TCPTV_PERSMIN, TCPTV_PERSMAX);
+	if (tp->t_rxtshift < TCP_MAXRXTSHIFT)
+		tp->t_rxtshift++;
 }
