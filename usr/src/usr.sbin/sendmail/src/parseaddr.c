@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)parseaddr.c	3.28	%G%";
+static char	SccsId[] = "@(#)parseaddr.c	3.29	%G%";
 
 /*
 **  PARSE -- Parse an address
@@ -267,6 +267,14 @@ prescan(addr, delim)
 
 			  case DOLLAR:		/* $- etc. */
 				state = OPER;
+				if (isascii(c) && isdigit(c))
+				{
+					/* replacement */
+					c = MATCHREPL;
+					state = GETONE;
+					p--;
+					break;
+				}
 				switch (c)
 				{
 				  case '$':		/* literal $ */
@@ -274,12 +282,10 @@ prescan(addr, delim)
 
 				  case '+':		/* match anything */
 					c = MATCHANY;
-					state = GETONE;
 					break;
 
 				  case '-':		/* match one token */
 					c = MATCHONE;
-					state = GETONE;
 					break;
 
 				  case '=':		/* match one token of class */
@@ -468,12 +474,11 @@ toktype(c)
 
 struct match
 {
-	char	**firsttok;	/* first token matched */
-	char	**lasttok;	/* last token matched */
-	char	name;		/* name of parameter */
+	char	**first;	/* first token matched */
+	char	**last;		/* last token matched */
 };
 
-# define MAXMATCH	8	/* max params per rewrite */
+# define MAXMATCH	9	/* max params per rewrite */
 
 
 rewrite(pvp, ruleset)
@@ -483,9 +488,11 @@ rewrite(pvp, ruleset)
 	register char *ap;		/* address pointer */
 	register char *rp;		/* rewrite pointer */
 	register char **avp;		/* address vector pointer */
+	char **avfp;			/* first word in current match */
 	register char **rvp;		/* rewrite vector pointer */
-	struct rewrite *rwr;
-	struct match mlist[MAXMATCH];
+	struct rewrite *rwr;		/* pointer to current rewrite rule */
+	struct match mlist[MAXMATCH];	/* stores match on LHS */
+	struct match *mlp;		/* cur ptr into mlist */
 	char *npvp[MAXATOM+1];		/* temporary space for rebuild */
 	extern bool sameword();
 
@@ -513,8 +520,8 @@ rewrite(pvp, ruleset)
 # endif DEBUG
 
 		/* try to match on this rule */
-		clrmatch(mlist);
-		for (rvp = rwr->r_lhs, avp = pvp; *avp != NULL; )
+		mlp = mlist;
+		for (rvp = rwr->r_lhs, avfp = avp = pvp; *avp != NULL; )
 		{
 			ap = *avp;
 			rp = *rvp;
@@ -532,12 +539,16 @@ rewrite(pvp, ruleset)
 
 			  case MATCHONE:
 				/* match exactly one token */
-				setmatch(mlist, rp[1], avp, avp);
+				mlp->first = mlp->last = avp++;
+				mlp++;
+				avfp = avp;
 				break;
 
 			  case MATCHANY:
 				/* match any number of tokens */
-				setmatch(mlist, rp[1], (char **) NULL, avp);
+				mlp->first = avfp;
+				mlp->last = avp++;
+				mlp++;
 				break;
 
 			  case MATCHCLASS:
@@ -552,17 +563,23 @@ rewrite(pvp, ruleset)
 				s = stab(ap, ST_CLASS, ST_FIND);
 				if (s == NULL || (s->s_class & (1 << class)) == 0)
 					goto fail;
+
+				/* mark match */
+				mlp->first = mlp->last = avp++;
+				mlp++;
+				avfp = avp;
 				break;
 
 			  default:
 				/* must have exact match */
 				if (!sameword(rp, ap))
 					goto fail;
+				avp++;
+				avfp = avp;
 				break;
 			}
 
 			/* successful match on this token */
-			avp++;
 			rvp++;
 			continue;
 
@@ -572,15 +589,16 @@ rewrite(pvp, ruleset)
 			{
 				rp = *rvp;
 				if (*rp == MATCHANY)
-					break;
-
-				/* can't extend match: back up everything */
-				avp--;
-
-				if (*rp == MATCHONE)
 				{
-					/* undo binding */
-					setmatch(mlist, rp[1], (char **) NULL, (char **) NULL);
+					avfp = mlp->first;
+					break;
+				}
+				else if (*rp == MATCHONE || *rp == MATCHCLASS)
+				{
+					/* back out binding */
+					avp--;
+					avfp = avp;
+					mlp--;
 				}
 			}
 
@@ -609,26 +627,22 @@ rewrite(pvp, ruleset)
 			for (rvp = rwr->r_rhs, avp = npvp; *rvp != NULL; rvp++)
 			{
 				rp = *rvp;
-				if (*rp == MATCHANY)
+				if (*rp == MATCHREPL)
 				{
 					register struct match *m;
 					register char **pp;
-					extern struct match *findmatch();
 
-					m = findmatch(mlist, rp[1]);
-					if (m != NULL)
+					m = &mlist[rp[1] - '1'];
+					pp = m->first;
+					do
 					{
-						pp = m->firsttok;
-						do
+						if (avp >= &npvp[MAXATOM])
 						{
-							if (avp >= &npvp[MAXATOM])
-							{
-								syserr("rewrite: expansion too long");
-								return;
-							}
-							*avp++ = *pp;
-						} while (pp++ != m->lasttok);
-					}
+							syserr("rewrite: expansion too long");
+							return;
+						}
+						*avp++ = *pp;
+					} while (pp++ != m->last);
 				}
 				else
 				{
@@ -669,113 +683,6 @@ rewrite(pvp, ruleset)
 			rwr = rwr->r_next;
 		}
 	}
-}
-/*
-**  SETMATCH -- set parameter value in match vector
-**
-**	Parameters:
-**		mlist -- list of match values.
-**		name -- the character name of this parameter.
-**		first -- the first location of the replacement.
-**		last -- the last location of the replacement.
-**
-**		If last == NULL, delete this entry.
-**		If first == NULL, extend this entry (or add it if
-**			it does not exist).
-**
-**	Returns:
-**		nothing.
-**
-**	Side Effects:
-**		munges with mlist.
-*/
-
-setmatch(mlist, name, first, last)
-	struct match *mlist;
-	char name;
-	char **first;
-	char **last;
-{
-	register struct match *m;
-	struct match *nullm = NULL;
-
-	for (m = mlist; m < &mlist[MAXMATCH]; m++)
-	{
-		if (m->name == name)
-			break;
-		if (m->name == '\0')
-			nullm = m;
-	}
-
-	if (m >= &mlist[MAXMATCH])
-		m = nullm;
-
-	if (last == NULL)
-	{
-		m->name = '\0';
-		return;
-	}
-
-	if (m->name == '\0')
-	{
-		if (first == NULL)
-			m->firsttok = last;
-		else
-			m->firsttok = first;
-	}
-	m->name = name;
-	m->lasttok = last;
-}
-/*
-**  FINDMATCH -- find match in mlist
-**
-**	Parameters:
-**		mlist -- list to search.
-**		name -- name to find.
-**
-**	Returns:
-**		pointer to match structure.
-**		NULL if no match.
-**
-**	Side Effects:
-**		none.
-*/
-
-struct match *
-findmatch(mlist, name)
-	struct match *mlist;
-	char name;
-{
-	register struct match *m;
-
-	for (m = mlist; m < &mlist[MAXMATCH]; m++)
-	{
-		if (m->name == name)
-			return (m);
-	}
-
-	return (NULL);
-}
-/*
-**  CLRMATCH -- clear match list
-**
-**	Parameters:
-**		mlist -- list to clear.
-**
-**	Returns:
-**		none.
-**
-**	Side Effects:
-**		mlist is cleared.
-*/
-
-clrmatch(mlist)
-	struct match *mlist;
-{
-	register struct match *m;
-
-	for (m = mlist; m < &mlist[MAXMATCH]; m++)
-		m->name = '\0';
 }
 /*
 **  BUILDADDR -- build address from token vector.
