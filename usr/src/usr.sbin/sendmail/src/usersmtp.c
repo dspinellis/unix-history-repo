@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	6.12 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	6.13 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	6.12 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	6.13 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -346,7 +346,7 @@ smtpdata(m, mci, e)
 
 	/* terminate the message */
 	fprintf(mci->mci_out, ".%s", m->m_eol);
-	if (Verbose && !HoldErrs)
+	if (Verbose)
 		nmessage(Arpa_Info, ">>> .");
 
 	/* check for the results of the transaction */
@@ -541,7 +541,7 @@ reply(m, mci, e, timeout)
 		}
 
 		/* display the input for verbose mode */
-		if (Verbose && !HoldErrs)
+		if (Verbose)
 			nmessage(Arpa_Info, "%s", SmtpReplyBuffer);
 
 		/* if continuation is required, we can go on */
@@ -602,7 +602,7 @@ smtpmessage(f, m, mci, va_alist)
 	VA_START(mci);
 	(void) vsprintf(SmtpMsgBuffer, f, ap);
 	VA_END;
-	if (tTd(18, 1) || (Verbose && !HoldErrs))
+	if (tTd(18, 1) || Verbose)
 		nmessage(Arpa_Info, ">>> %s", SmtpMsgBuffer);
 	if (mci->mci_out != NULL)
 		fprintf(mci->mci_out, "%s%s", SmtpMsgBuffer,
