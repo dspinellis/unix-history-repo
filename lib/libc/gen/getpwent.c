@@ -33,7 +33,7 @@
 
 #if defined(LIBC_SCCS) && !defined(lint)
 /*static char *sccsid = "from: @(#)getpwent.c	5.21 (Berkeley) 3/14/91";*/
-static char *rcsid = "$Id: getpwent.c,v 1.6 1994/02/27 22:29:41 ache Exp $";
+static char *rcsid = "$Id: getpwent.c,v 1.7 1994/03/02 19:46:20 ache Exp $";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -496,6 +496,7 @@ __initdb()
 	if (!warned)
 		syslog(LOG_ERR, "%s: %m", p);
 #endif
+	warned = 1;
 	return(0);
 }
 
