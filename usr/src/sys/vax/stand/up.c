@@ -1,4 +1,4 @@
-/*	up.c	4.3	83/01/17	*/
+/*	up.c	4.4	83/01/18	*/
 
 /*
  * UNIBUS peripheral standalone driver
@@ -316,7 +316,7 @@ upecc(io, flag)
 	register struct st *st;
 	register int i;
 	caddr_t addr;
-	int bn, twc, npf, mask;
+	int bn, twc, npf, mask, cn, tn, sn;
 	daddr_t bbn;
 
 	/*
@@ -331,6 +331,10 @@ upecc(io, flag)
 	bn = io->i_bn + npf ;
 	st = &upst[up_type[io->i_unit]];
 	io->i_active = 2;
+	cn = bn/st->nspc;
+	sn = bn%st->nspc;
+	tn = sn/st->nsect;
+	sn = sn%st->nsect;
 	/*
 	 * action taken depends on the flag
 	 */
@@ -383,7 +387,7 @@ upecc(io, flag)
 		 * if not in bad sector table, return 1 (= hard error)
 		 */
 		up->upcs1 = UP_TRE|UP_DCLR|UP_GO;
-		if ((bbn = isbad(&upbad[io->i_unit], st, bn)) < 0)
+		if ((bbn = isbad(&upbad[io->i_unit], cn, tn, sn)) < 0)
 			return(1);
 		bbn = st->ncyl * st->nspc -st->nsect - 1 - bbn;
 		twc = up->upwc + sectsiz;
@@ -486,33 +490,3 @@ upioctl(io, cmd, arg)
 	}
 }
 
-/* this routine is common to up & hp, move to separate file */
-
-/*
- * Search the bad sector table looking for
- * the specified sector.  Return index if found.
- * Return -1 if not found.
- */
-
-isbad(bt, st, blno)
-	register struct dkbad *bt;
-	register struct st *st;
-{
-	register int i;
-	register long blk, bblk;
-	int trk, sec;
-
-	sec = blno % st->nspc;
-	trk = sec / st->nsect;
-	sec %= st->nsect;
-	blk = ((long)(blno/st->nspc) << 16) + (trk << 8) + sec;
-	for (i = 0; i < MAXBADDESC; i++) {
-		bblk = ((long)bt->bt_bad[i].bt_cyl << 16) +
-			bt->bt_bad[i].bt_trksec;
-		if (blk == bblk)
-			return (i);
-		if (blk < bblk || bblk < 0)
-			break;
-	}
-	return (-1);
-}
