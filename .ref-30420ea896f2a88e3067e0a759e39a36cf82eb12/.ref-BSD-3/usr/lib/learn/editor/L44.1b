@@ -1,0 +1,35 @@
+#print
+There is a file named "paragraph" in this directory.
+It contains three spelling errors, one line is duplicated,
+and the last line is missing (the paragraph should end
+"has been carefully coded and is now well under control.").
+Fix it up and rewrite it.  Then type "ready".
+#create Ref
+Held at arm's length, this program looks pretty impressive.
+There is a large assortment of data declarations, followed
+by a computation that is evidently complex enough
+to warrant a sub-procedure.  Declarations are neatly
+aligned, and the executable statements are staggered so
+as to indicate several levels of control nesting.
+There are text strings to suggest the intent of the program,
+and mnemonic identifiers to give hints about how the results
+are obtained.  The general impression conveyed is that
+this is a moderately complicated problem that
+has been carefully coded and is now well under control.
+#create paragraph
+Held at arm's length, this program looks pretty impressive.
+There is a large assortment of dta declarations, followed
+by a computation that is evidently complex enough
+to warrant a sub-procedure.  Declarations are neatly
+aligned, and the executable statements are stagggered so
+as to indicate several levels of control nesting.
+as to indicate several levels of control nesting.
+There are text strings to suggest the intent of the program,
+and mnemonic identifiers to give hints about how the results
+are obtained.  The genreal impression conveyed is that
+this is a moderately complicated problem that
+#user
+#cmp Ref paragraph
+#log
+#next
+44.1c 10

@@ -1,0 +1,18 @@
+#	@(#)windowrc	3.3 83/08/25
+
+# configuration file example for window manager
+# to be installed in ~/.windowrc
+#
+# creates two unequal sized windows of full screen width.
+
+# terse				# set terse mode
+# escape ^A			# set escape character
+# buffer 50			# set default buffer size
+				# initially, this is 48
+
+window * * 15 * 100		# top window 15 lines, 100 lines in the buffer
+label 1 "Top Window"		# label it
+window 17 * * *			# bottom window rest of the screen
+				# with default buffer size
+label 2 "Bottom Window"		# label
+%1				# current window is 1

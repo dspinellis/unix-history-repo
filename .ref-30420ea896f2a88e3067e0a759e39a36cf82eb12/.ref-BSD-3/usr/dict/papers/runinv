@@ -1,0 +1,4 @@
+/usr/lib/refer/mkey R* | /usr/lib/refer/inv -v -h997 -n Xind
+mv Xind.ia Ind.ia
+mv Xind.ib Ind.ib
+mv Xind.ic Ind.ic

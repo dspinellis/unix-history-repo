@@ -1,0 +1,116 @@
+#! /bin/csh
+#	@(#)remdiff	4.1	(Berkeley)	%G%
+#
+# usage: uudiff directory-local sys![directory-remote]
+#
+set UUDIR=/usr/src/cmd/uudiff
+set UUCP=/usr/src/cmd/uucp
+set SPOOL=/usr/tmp/uucp
+set UNIXNAME=vax1
+set DIFF=YES
+case $1 in
+	-d) set DIFF=NO; shift;;
+esac
+
+set HERE=`pwd`
+set ME=`getuid`
+
+set LOCAL=$1
+set SYS=`echo $2 | sed "s/!.*//"`
+if [ $SYS = $2 ]
+	then set SYS=$UNIXNAME
+fi
+
+set REMOTE=`echo $2 | sed "s/.*!//"`
+if [ x$REMOTE = x ]
+	then set $REMOTE = $LOCAL
+fi
+
+set LOCAL=`$UUDIR/lenrem $LOCAL $HERE`
+set REMOTE=`$UUDIR/lenrem $REMOTE $HERE`
+set LOCDIR=$LOCAL
+set DIR=YES
+set REMDIR=$REMOTE
+if [ -f $LOCDIR ]
+	then
+	set LOCDIR=`$UUDIR/trim $LOCDIR`
+	set REMDIR=`$UUDIR/trim $REMDIR`
+	set DIR=NO
+	fi
+
+cat >zza$pid <<!
+$UUCP/filsum $REMOTE >zzb$pid
+!
+uucp -f zza$pid $SYS!ef$pid
+$UUCP/tdemon >>/$UUCP/tmess &
+if [ $SYS = research ]
+	then
+	cat >$SPOOL/cq$pid <<%
+zzb$pid
+
+cp zzb$pid $HERE/zzc$pid
+%
+else
+uucp -f -w $SYS!zzb$pid $HERE/zzc$pid
+fi
+$UUCP/tdemon >>/$UUCP/tmess &
+$UUCP/filsum $LOCAL >zzd$pid
+cat >$SPOOL/cz$pid <<!
+$HERE/zzc$pid
+
+chdir $HERE
+cat >zzy$pid <<%
+rm zzb$pid
+%
+uucp -f zzy$pid $SYS!ey$pid
+rm zzy$pid
+cat >uudiff$pid <<%
+uudiff comparison of
+  $LOCAL here
+with
+  $REMOTE on system $SYS
+
+
+
+%
+$UUDIR/run1 zzd$pid zzc$pid  zzl$pid  | sort >>uudiff$pid
+
+cat >zzm$pid <<%
+cg$pid
+%
+cat >zzn$pid <<%
+
+chdir $HERE
+%
+
+if [ $DIFF = YES ]
+	then
+	if [ $DIR = NO ]
+		then $UUDIR/locpart $LOCAL >zzl$pid
+		fi
+	for f in \`cat zzl${pid}\`
+	do
+		if $UUDIR/printable $LOCDIR/\$f
+		then
+		if [ $DIR = YES ]
+			then uucp $SYS!$REMDIR/\$f \$f.$pid
+			else uucp $SYS!$REMOTE \$f.$pid
+			fi
+		echo $HERE/\$f.$pid >>zzm$pid
+		cat >>zzn$pid <<%
+
+echo >>uudiff$pid
+echo DIFF of \$f: '(< here, > remote)' >>uudiff$pid
+diff $LOCDIR/\$f \$f.$pid >>uudiff$pid
+%
+		fi
+	done
+fi
+
+cat >>zzn$pid <<%
+echo uudiff$pid arrived in $HERE "|" mail $ME
+rm zz?$pid
+%
+cat zzm$pid zzn$pid >>$SPOOL/cg$pid
+!
+$UUCP/tdemon >>/$UUCP/tmess 

@@ -1,0 +1,13 @@
+./"forw"16t"back"16t"state"8t"wstate"8t"modes"nppbbb
++/"xxx"8t"index"8t"order"nbbb++
++/"w.nr"16t"w.nc"nDD
++/"w.t"16t"w.b"16t"w.l"16t"w.r"nDDDD
++/"b.nr"16t"b.nc"nDD
++/"b.t"16t"b.b"16t"b.l"16t"b.r"nDDDD
++/"i.nr"16t"i.nc"nDD
++/"i.t"16t"i.b"16t"i.l"16t"i.r"nDDDD
++/"cur.r"16t"cur.c"nDD
++/"win"16t"buf"16t"cov"16t"fmap"16tnpppp
++/"nvis"np
++/"pty"16t"tty"16t"pid"16t"ttyname"nDDD11C
++/t

@@ -1,0 +1,26 @@
+CFLAGS = -O -DVMUNIX
+c = ni.o nii.o n1.o n2.o n3.o n4.o n5.o t6.o n7.o n8.o n9.o t10.o
+s = hytab.o suftab.o tab3.o
+troff : $c $s
+	$(CC) -z -o troff $s $c  
+hytab.o : hytab.c
+	cc -S hytab.c
+	/usr/src/cmd/as/:rofix hytab.s
+	as -o hytab.o hytab.s
+	rm hytab.s
+suftab.o: suftab.c
+	cc -S suftab.c
+	/usr/src/cmd/as/:rofix suftab.s
+	as -o suftab.o suftab.s
+	rm suftab.s
+# tab3.o: tab3.c
+# 	cc -S tab3.c
+# 	/usr/src/cmd/as/:rofix tab3.s
+# 	as -o tab3.o tab3.s
+# 	rm tab3.s
+# 
+install :
+	install -s troff /usr/bin
+
+clean :
+	rm -f *.o

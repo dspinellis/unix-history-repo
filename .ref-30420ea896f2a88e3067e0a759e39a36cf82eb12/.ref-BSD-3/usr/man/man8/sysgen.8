@@ -1,0 +1,213 @@
+.TH SYSGEN 8 VAX-11
+.SH NAME
+sysgen \- UNIX system generation from the distribution tape
+.SH DESCRIPTION
+This section explains how to generate an initial UNIX system
+from the distribution tape.  It assumes that you have some familiarity
+with the hardware: how to mount and unmount disk packs and magnetic tapes,
+and how to use the console.
+.SH PREREQUISITES
+.nf
+1	VAX-11/780 system with at least 512K bytes of memory
+1	RM03 or RP06 disk spindle (unit 0) with controller on MBA 0
+1	TE16 magnetic tape drive (unit 0) with TM03 formatter on MBA 1
+1	error-free disk pack for use on the RP06 spindle
+1	Third Berkeley distribution tape
+120	minutes of time
+.fi
+.SH OVERVIEW
+The distribution tape is recorded at 1600 bpi and contains three files.
+The first file is in
+.IR tp (5)
+format and contains stand-alone utility programs for handling disks,
+tapes, and the console.  The first file usually contains about 250
+blocks of 512 characters each.
+The second file on the distribution tape is a
+.IR dump (1)
+of an initial root file system (see
+.IR filsys (5)).
+The third and last file on the tape contains source code, and also
+object code and miscellaneous data, from the
+.I /usr
+file system.  The last file is in
+.IR tar (1)
+format, blocked 10240 characters per tape record, and contains several
+thousand records.
+The system generation process has three phases, corresponding to the
+three files on the distribution tape.  The first phase formats and
+verifies the disk pack.  The second phase creates the initial root
+file system on the disk.  The third phase establishes the
+.I /usr
+directory.
+.SH PROCEDURE
+.PP
+Read and understand this entire description before attempting anything else.
+Quotation marks ``'' surround literal character strings which you should type
+on the console.  The notation ``\er'' stands for the RETURN key.
+.PP
+Turn on the VAX-11/780 to LOCAL.  The POWER and ATTN lights should go on;
+if not, fix your hardware before proceeding.
+.PP
+Mount an error-free disk pack on the RP06 spindle, unit 0, MBA 0.
+Start the drive and set read-write (not write protect).  The START,
+CONTROL A, and DOOR LOCKED lights should be on.  If the READY light on the
+drive does not come on within 30 seconds, then fix your hardware before
+proceeding.
+.PP
+Mount the Berkeley distribution tape on the tape drive, unit 0, MBA 1.  All
+status lights (PWR, BOT, WRL, SELECT, LOAD, ONLINE) should be on.
+If the WRL light is not on, then remove the write ring from the reel and
+start again.  If the other lights are not on, then fix your hardware
+before proceeding.
+.PP
+Enter the commands HALT, UNJAM, INITIALIZE on the console.  These may
+usually be abbreviated to ``H\er'', ``U\er'', and ``I\er'', respectively.
+.PP
+Deposit in memory at a high address (e.g. 50000) the absolute tape boot program found in
+.IR bproc (8).
+Execute the code you deposited, using the ``START'' console command.
+One 512-byte bock (the
+.I tp
+boot program) will be read from the tape into VAX-11 memory beginning at
+location 0.
+.PP
+Give the console command ``START 0\er''.  This starts the
+.I tp
+boot program, which relocates itself high in memory, rewinds the tape,
+and then types an equal sign `=' on the console as a prompt.
+.PP
+If your pack is not formatted, then
+type ``rp6fmt\er''.  The
+.I tp
+boot will load a RM03/RP06 disk formatting program into memory and transfer
+control to it.
+Enter the MBA number and unit number (in this case, both ``0\er'') in
+response to the prompts.  The
+.I rp6fmt
+program will then format the disk; this should take approximately 20 minutes.
+Error messages may appear on the console if bad spots are found on the disk.
+There should not be any (you mounted an error-free pack, remember).
+If there are any error messages, sit tight and hope for the best.
+.PP
+When the
+.I rp6fmt
+program finishes, it will ask to format another pack.  Type ``\-1\er''
+to exit.  The equal sign prompt `=' of the
+.I tp
+boot should appear again.  Type ``rpread\er''.  This program verifies
+that the entire disk can be read.  Enter the unit number and starting
+block number (both ``0\er'') in response to the prompts.  Enter ``\er''
+when asked for the number of blocks; this will read the whole pack.
+Reading the disk takes 10 minutes.  Messages indicating bad spots
+may appear on the console.  The bad spots should match those found
+by the
+.I rp6fmt
+program.  All ECC errors should be correctible.  If there are any errors
+which are not correctible, you should probably start the whole boot
+procedure over with a better pack.
+.PP
+After the
+.I rpread
+program finishes, it will prompt for another read.
+Type ``\-1\er'' to exit; another `=' prompt from the
+.I tp
+boot will appear.
+.PP
+Type ``mkfs\er''.  This loads a stand-alone version of the
+.IR mkfs (1)
+program.
+It will first ask you for a file system size.
+The response needed is ``7942\er'', as this is the number
+of 1024 character file system blocks in the root file system,
+which occupies 15884 512 byte disk blocks.
+It will then ask you for a file system, and you should respond ``hp(0,0)\er.''
+When this program completes, you should receive another prompt
+from the
+.I tp
+boot.
+.PP
+Now type ``restor\er''.  This load a stand-alone versionof the
+.IR restor (1)
+program.
+It will ask you for a tape name.  You should respond ``ht(1,1)\er'',
+indicating the second file on ``unit 1'', which is a pseudonym for
+the 1600 bpi version of tape drive unit 0.
+.I Restor
+will then ask you for a disk name;
+you should respond ``hp(0,0)\er'' (as you did for
+.I mkfs.)
+.I Restor
+will finally give you a chance to back out, in case you goofed; if you
+didn't, hit return (your other alternative is to halt the CPU by
+hitting a ^P to get back to the LSI-11, and restarting the tape bootstrap.)
+.PP
+When restor finished, you are ready to boot VM/UNIX (yea!).
+The `=' prompt from
+.I tp
+boot should appear again.  Type ``boot\er''.  The
+.I boot
+program should then prompt with ``:''.  Type ``hp(0,0)vmunix\er''.
+This loads the operating system from disk and executes it.
+The system will give its version number and creation date,
+report the physical memory in your configuration
+and the memory not used by the operating system.  Then it will
+type ``#''.  This is the super-user prompt for single-user operation
+of the UNIX system.
+.PP
+Set the date and time using the
+.IR date (1)
+command.
+.PP
+Check the integrity of the root file system with
+.nf
+	icheck /dev/rrp0a
+	dcheck /dev/rrp0a
+.fi
+.PP
+(The command ``chk'' abbreviates dcheck and icheck, so you can say
+just ``chk /dev/rrp0a''.)
+If you have an RP-06, create a
+.I /usr
+file system with
+.nf
+	/etc/mkfs /dev/rp0g 145673
+	/etc/mount /dev/rp0g /usr
+.fi
+If you have an RM-03, use ``41040'' here rather than ``145673''.
+This takes 5 minutes.
+.PP
+Extract the remaining files from the distribution tape with
+.ta 0.5i 3.5i
+.nf
+	cd /usr
+	cp /dev/rmt4 /dev/null	;: bypasses tp file
+	cp /dev/rmt4 /dev/null	;: bypasses root dump
+	tar xbf 20 /dev/rmt0
+.fi
+This takes 20 minutes.
+.PP
+Check the integrity of the /usr file system with
+.nf
+	cd /
+	/etc/umount /dev/rp0g
+	chk /dev/rrp0g
+.fi
+.PP
+Establish the desired entries in the password file
+.IR /etc/passwd ,
+using the text editor
+.IR ed (1),
+or
+.IR ex (1)
+(see
+.IR adduser (8))
+.PP
+Set the terminal lines configuration in
+.I /etc/ttys
+using the text editor.
+.PP
+Edit the reconfiguration file
+.I /etc/rc
+as desired.
+.PP
+Type EOT (control-D) to start multi-user operation.

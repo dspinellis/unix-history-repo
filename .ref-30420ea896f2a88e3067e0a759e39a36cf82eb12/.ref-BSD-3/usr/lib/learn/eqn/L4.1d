@@ -1,0 +1,41 @@
+#once #create message
+.ND
+.LP
+You can put fractions over fractions with multiple "over"'s
+just as you can do multiple subscripts and superscripts,
+although fractions within fractions are much
+less common (probably because they are harder for
+people to read).
+Anyway, if you want, for example, something like
+.EQ
+a over b over c
+.EN
+you just type
+  .EQ
+  a over b over c
+  .EN
+
+As a drill, change "Example" so it produces an equation
+that looks like the following one, then type "ready".
+.pl 1
+#once #create Ref
+.LP
+.EQ
+x over x+x over x+x+x
+.EN
+.pl 1
+#once #create Example
+.LP
+.EQ
+right here
+.EN
+.pl 1
+#
+#once neqn Ref | nroff >X1 &
+#once neqn message Ref | nroff -T$term %s/tinyms -
+#user
+neqn Example | nroff >X2
+#cmp X1 X2
+#log
+#next
+5.1a

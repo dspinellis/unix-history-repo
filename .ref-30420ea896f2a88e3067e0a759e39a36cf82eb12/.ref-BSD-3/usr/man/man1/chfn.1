@@ -1,0 +1,45 @@
+.TH CHFN 1 10/11/79
+.UC
+.SH NAME
+chfn \- change full name of user
+.SH SYNOPSIS
+.B chfn
+name
+string
+.SH DESCRIPTION
+.I Chfn
+is a command similar to
+.IR passwd (1)
+except that it is used to change the gecos field of the password
+file rather than the password entry.
+Note that the string specified will replace the gecos field of the
+specified user.
+If (as on the UCB system) this field contains information in addition
+to the user's full name, this information must be included in string
+or it will be deleted.
+Hence chfn can be used to fix phone numbers, offices, etc.
+.PP
+An example use of this command would be
+.PP
+.DT
+	chfn mark \'& Horton,7686,508E,5240633\'
+.PP
+Note that the string must in general be quoted to shield blanks
+and special characters from the shell.
+The field should consist of the users name, followed by the last 4 digits
+of their office extension, followed by their office number and finally their
+home phone number.  Any of these can be eliminated.
+At UCB, offices can be given as ``508E'' for 508 Evans, and ``187MC'' for
+187M Cory.
+.PP
+It is a good idea to run 
+.IR finger (1)
+on the user before and after
+.I chfn
+to make sure you have formatted the data correctly.
+.SH SEE\ ALSO
+finger(1), passwd(5), chsh(1), passwd(1)
+.SH AUTHOR
+Mark Horton
+.SH BUGS
+The encoding of the office and extension information is installation dependent.

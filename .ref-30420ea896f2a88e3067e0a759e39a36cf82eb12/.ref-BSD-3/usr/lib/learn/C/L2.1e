@@ -1,0 +1,19 @@
+#print
+Is there any difference between
+
+   printf("%s", s);
+
+and
+
+   printf(s);
+
+Answer yes or no.
+#copyin
+#user
+#uncopyin
+#match yes
+#fail
+Consider the string "50% of the answers are wrong."
+#log
+#next
+3.1a 10

@@ -1,0 +1,44 @@
+.TH SPICE 1
+.UC
+.SH NAME
+spice \- electronic circuit simulation program
+.SH SYNOPSIS
+.B spice
+.SH DESCRIPTION
+.I Spice
+is a general-purpose circuit simulation program for nonlinear dc,
+nonlinear transient, and linear ac analyses.  Circuits may contain resistors,
+capacitors, inductors, mutual inductors, independent voltage and current
+sources, four types of dependent sources, transmission lines, and the four most
+common semiconductor devices:  diodes, bjts, jfets, and mosfets.
+.PP
+Spice has built-in models for the semiconductor devices, and the user need
+specify only the pertinent model parameter values.  The model for the bjt is
+based on the integral charge model of Gummel and Poon;
+however, if the Gummel-Poon
+parameters are not specified, the model reduces to the simpler Ebers-Moll
+model.  In either case, charge storage effects, ohmic resistances, and a
+current-dependent output conductance may be included.  The diode model can be
+used for either junction diodes or schottky barrier diodes.  The jfet model is
+based on the fet model of Shichman and Hodges.  The model for the mosfet is
+based on the Frohman-Grove model;  however, channel-length modulation,
+subthreshold conduction, and some short-channel effects are included.
+.PP
+Spice reads a circuit description of the form described in the Spice users
+guide and produces line-printer output.  The character plot width may be
+altered to suit the output device (see .WIDTH option).
+.SH SEE ALSO
+``Users Guide for Spice2'' by D. Dowell, A. R. Newton, D. O. Pederson
+.if t .sp .1i
+.if n .sp
+E. Cohen, ``Program Reference for Spice2,''  ERL Memo. ERL-M592, Electronics
+Research Laboratory, University of California, Berkeley, June, 1976.
+.if t .sp .1i
+.if n .sp
+L. W. Nagel, ``SPICE2: A Computer Program to Simulate Semiconductor Circuits,''
+ERL Memo. ERL-M520, Electronics Research Laboratory, University of California,
+Berkeley, May, 1975.
+.SH BUGS
+Date and time are not implemented in this version.
+.PP
+The capacitance model for MOSFETS has not been tested fully.
