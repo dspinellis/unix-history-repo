@@ -1,4 +1,4 @@
-/*	tip.h	4.7	82/07/29	*/
+/*	tip.h	4.8	82/12/24	*/
 /*
  * tip - terminal interface program
  *
@@ -81,7 +81,6 @@ typedef
 	acu_t;
 
 #define	equal(a, b)	(strcmp(a,b)==0)/* A nice function to string compare */
-#define CTRL(c)		('c'&037)
 
 /*
  * variable manipulation stuff --
