@@ -1,4 +1,4 @@
-/*	uipc_socket2.c	4.16	81/12/19	*/
+/*	uipc_socket2.c	4.17	81/12/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -258,7 +258,7 @@ sbappend(sb, m)
 	}
 	while (m) {
 		if (m->m_len == 0 && (int)m->m_act == 0) {
-			m = m->m_next;
+			m = m_free(m);
 			continue;
 		}
 		if (n && n->m_off <= MMAXOFF && m->m_off <= MMAXOFF &&
