@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)main.c	3.78.1.1		%G%);
+SCCSID(@(#)main.c	3.79		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -586,7 +586,7 @@ main(argc, argv)
 	**	If verifying, just ack.
 	*/
 
-	sendall(Mode == MD_VERIFY);
+	sendall(CurEnv, Mode == MD_VERIFY);
 
 	/*
 	** All done.
@@ -650,11 +650,6 @@ setfrom(from, realname)
 		printf("setfrom(%s, %s)\n", from, realname);
 # endif DEBUG
 
-	/*
-	**  Do validation to determine whether this user is allowed
-	**  to change the sender name.
-	*/
-
 	if (from != NULL)
 	{
 		if (strcmp(realname, "network") != 0 &&
@@ -671,12 +666,6 @@ setfrom(from, realname)
 		}
 	}
 
-	/*
-	**  Parse the sender name.
-	**	Arrange to send return messages to the same person.
-	**	Set up some environment info.
-	*/
-
 	SuprErrs = TRUE;
 	if (from == NULL || parse(from, &CurEnv->e_from, 1) == NULL)
 	{
@@ -685,7 +674,6 @@ setfrom(from, realname)
 	}
 	else
 		FromFlag = TRUE;
-	CurEnv->e_returnto = &CurEnv->e_from;
 	SuprErrs = FALSE;
 	CurEnv->e_from.q_uid = getuid();
 	CurEnv->e_from.q_gid = getgid();
@@ -739,31 +727,27 @@ setfrom(from, realname)
 
 finis()
 {
+	CurEnv = &MainEnvelope;
+
 # ifdef DEBUG
 	if (Debug > 0)
+	{
 		printf("\n====finis: stat %d sendreceipt %d FatalErrors %d\n",
 		     ExitStat, CurEnv->e_sendreceipt, FatalErrors);
+	}
 # endif DEBUG
 
 	/* send back return receipts as requested */
 	if (CurEnv->e_sendreceipt && ExitStat == EX_OK)
 		returntosender("Return receipt", FALSE);
 
-	/* mail back the transcript on errors */
-	if (FatalErrors)
-		savemail();
+	/* do error handling */
+	checkerrors(CurEnv);
 
+	/* now clean up bookeeping information */
 	if (Transcript != NULL)
 		(void) unlink(Transcript);
-	if (CurEnv->e_queueup)
-	{
-# ifdef QUEUE
-		queueup(InFileName);
-# else QUEUE
-		syserr("finis: trying to queue %s", CurEnv->e_df);
-# endif QUEUE
-	}
-	else
+	if (!CurEnv->e_queueup)
 		(void) unlink(CurEnv->e_df);
 	exit(ExitStat);
 }

@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-SCCSID(@(#)savemail.c	3.31.1.1		%G%);
+SCCSID(@(#)savemail.c	3.32		%G%);
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -36,17 +36,16 @@ savemail()
 
 	if (exclusive++ || CurEnv->e_class <= PRI_JUNK)
 		return;
-	ForceMail = TRUE;
+	/* ForceMail = TRUE; */
 
 	/*
 	**  In the unhappy event we don't know who to return the mail
 	**  to, make someone up.
 	*/
 
-	if (CurEnv->e_returnto == NULL)
+	if (CurEnv->e_from.q_paddr == NULL)
 	{
-		CurEnv->e_returnto = parse("root", (ADDRESS *) NULL, 0);
-		if (CurEnv->e_returnto == NULL)
+		if (parse("root", &CurEnv->e_from, 0) == NULL)
 		{
 			syserr("Cannot parse root!");
 			ExitStat = EX_SOFTWARE;
@@ -68,7 +67,7 @@ savemail()
 		ExitStat = EX_OK;
 		MailBack = TRUE;
 	}
-	if (!bitset(M_LOCAL, CurEnv->e_returnto->q_mailer->m_flags))
+	if (!bitset(M_LOCAL, CurEnv->e_from.q_mailer->m_flags))
 		MailBack = TRUE;
 
 	/*
@@ -132,16 +131,16 @@ savemail()
 	if (ArpaMode)
 		return;
 	p = NULL;
-	if (CurEnv->e_returnto->q_mailer == LocalMailer)
+	if (CurEnv->e_from.q_mailer == LocalMailer)
 	{
-		if (CurEnv->e_returnto->q_home != NULL)
-			p = CurEnv->e_returnto->q_home;
-		else if ((pw = getpwnam(CurEnv->e_returnto->q_user)) != NULL)
+		if (CurEnv->e_from.q_home != NULL)
+			p = CurEnv->e_from.q_home;
+		else if ((pw = getpwnam(CurEnv->e_from.q_user)) != NULL)
 			p = pw->pw_dir;
 	}
 	if (p == NULL)
 	{
-		syserr("Can't return mail to %s", CurEnv->e_returnto->q_paddr);
+		syserr("Can't return mail to %s", CurEnv->e_from.q_paddr);
 # ifdef DEBUG
 		p = "/usr/tmp";
 # else
@@ -171,6 +170,7 @@ savemail()
 **
 **	Parameters:
 **		msg -- the explanatory message.
+**		returnto -- the queue of people to send the message to.
 **		sendbody -- if TRUE, also send back the body of the
 **			message; otherwise just send the header.
 **
@@ -185,14 +185,24 @@ savemail()
 
 static bool	SendBody;
 
+#define MAXRETURNS	6	/* max depth of returning messages */
+
 returntosender(msg, sendbody)
 	char *msg;
 	bool sendbody;
 {
-	ADDRESS to_addr;
 	char buf[MAXNAME];
 	register int i;
 	extern errhdr();
+
+	if (++returndepth >= MAXRETURNS)
+	{
+		if (returndepth != MAXRETURNS)
+			syserr("returntosender: infinite recursion on %s", returnto->q_paddr);
+		/* don't "unrecurse" and fake a clean exit */
+		/* returndepth--; */
+		return (0);
+	}
 
 	NoAlias = TRUE;
 	ErrorMessage = msg;
@@ -205,12 +215,9 @@ returntosender(msg, sendbody)
 	{
 		syserr("Can't parse myself!");
 		ExitStat = EX_SOFTWARE;
+		returndepth--;
 		return (-1);
 	}
-	to_addr.q_next = NULL;
-	to_addr.q_flags &= ~QDONTSEND;
-	i = deliver(&to_addr, errhdr);
-	bmove((char *) &to_addr, (char *) &CurEnv->e_from, sizeof CurEnv->e_from);
 
 	/* if CurEnv->e_from was queued up, put in on CurEnv->e_sendqueue */
 	if (bitset(QQUEUEUP, CurEnv->e_from.q_flags))
@@ -219,11 +226,7 @@ returntosender(msg, sendbody)
 		CurEnv->e_sendqueue = &CurEnv->e_from;
 	}
 
-	if (i != 0)
-	{
-		syserr("Can't return mail to %s", CurEnv->e_from.q_paddr);
-		return (-1);
-	}
+	/* should check for delivery errors here */
 	return (0);
 }
 /*

@@ -6,7 +6,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)deliver.c	3.81		%G%);
+SCCSID(@(#)deliver.c	3.82		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -82,7 +82,6 @@ deliver(firstto, editfcn)
 
 	if (NoConnect && !QueueRun && bitset(M_EXPENSIVE, m->m_flags))
 	{
-		CurEnv->e_queueup = TRUE;
 		for (; to != NULL; to = to->q_next)
 			if (!bitset(QDONTSEND, to->q_flags))
 				to->q_flags |= QQUEUEUP|QDONTSEND;
@@ -171,10 +170,7 @@ deliver(firstto, editfcn)
 		i = smtpinit(m, pv, (ADDRESS *) NULL);
 # ifdef QUEUE
 		if (i == EX_TEMPFAIL)
-		{
-			CurEnv->e_queueup = TRUE;
 			tempfail = TRUE;
-		}
 # endif QUEUE
 # else SMTP
 		/* oops!  we don't implement SMTP */
@@ -264,10 +260,7 @@ deliver(firstto, editfcn)
 			{
 # ifdef QUEUE
 				if (i == EX_TEMPFAIL)
-				{
-					CurEnv->e_queueup = TRUE;
 					to->q_flags |= QQUEUEUP;
-				}
 				else
 # endif QUEUE
 				{
@@ -405,7 +398,6 @@ deliver(firstto, editfcn)
 # ifdef QUEUE
 	if (i == EX_TEMPFAIL)
 	{
-		CurEnv->e_queueup = TRUE;
 		for (to = tochain; to != NULL; to = to->q_tchain)
 			to->q_flags |= QQUEUEUP;
 	}
@@ -1430,6 +1422,7 @@ mailfile(filename, ctladdr)
 **  SENDALL -- actually send all the messages.
 **
 **	Parameters:
+**		e -- the envelope to send.
 **		verifyonly -- if set, only give verification messages.
 **
 **	Returns:
@@ -1437,23 +1430,28 @@ mailfile(filename, ctladdr)
 **
 **	Side Effects:
 **		Scans the send lists and sends everything it finds.
+**		Delivers any appropriate error messages.
 */
 
-sendall(verifyonly)
+sendall(e, verifyonly)
+	ENVELOPE *e;
 	bool verifyonly;
 {
 	register ADDRESS *q;
-	typedef int (*fnptr)();
 
 # ifdef DEBUG
 	if (Debug > 1)
 	{
 		printf("\nSend Queue:\n");
-		printaddr(CurEnv->e_sendqueue, TRUE);
+		printaddr(e->e_sendqueue, TRUE);
 	}
 # endif DEBUG
 
-	for (q = CurEnv->e_sendqueue; q != NULL; q = q->q_next)
+	/*
+	**  Run through the list and send everything.
+	*/
+
+	for (q = e->e_sendqueue; q != NULL; q = q->q_next)
 	{
 		if (verifyonly)
 		{
