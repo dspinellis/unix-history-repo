@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_map.c	8.2 (Berkeley) %G%
+ *	@(#)vm_map.c	8.3 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -251,15 +251,23 @@ vm_map_entry_t vm_map_entry_create(map)
 	vm_map_t	map;
 {
 	vm_map_entry_t	entry;
+#ifdef DEBUG
 	extern vm_map_t		kernel_map, kmem_map, mb_map, pager_map;
+	boolean_t		isspecial;
 
-	if (map == kernel_map || map == kmem_map || map == mb_map ||
-	    map == pager_map) {
-		if (entry = kentry_free)
-			kentry_free = kentry_free->next;
-	} else
+	isspecial = (map == kernel_map || map == kmem_map ||
+		     map == mb_map || map == pager_map);
+	if (isspecial && map->entries_pageable ||
+	    !isspecial && !map->entries_pageable)
+		panic("vm_map_entry_create: bogus map");
+#endif
+	if (map->entries_pageable) {
 		MALLOC(entry, vm_map_entry_t, sizeof(struct vm_map_entry),
 		       M_VMMAPENT, M_WAITOK);
+	} else {
+		if (entry = kentry_free)
+			kentry_free = kentry_free->next;
+	}
 	if (entry == NULL)
 		panic("vm_map_entry_create: out of map entries");
 
@@ -275,14 +283,22 @@ void vm_map_entry_dispose(map, entry)
 	vm_map_t	map;
 	vm_map_entry_t	entry;
 {
+#ifdef DEBUG
 	extern vm_map_t		kernel_map, kmem_map, mb_map, pager_map;
+	boolean_t		isspecial;
 
-	if (map == kernel_map || map == kmem_map || map == mb_map ||
-	    map == pager_map) {
+	isspecial = (map == kernel_map || map == kmem_map ||
+		     map == mb_map || map == pager_map);
+	if (isspecial && map->entries_pageable ||
+	    !isspecial && !map->entries_pageable)
+		panic("vm_map_entry_dispose: bogus map");
+#endif
+	if (map->entries_pageable) {
+		FREE(entry, M_VMMAPENT);
+	} else {
 		entry->next = kentry_free;
 		kentry_free = entry;
-	} else
-		FREE(entry, M_VMMAPENT);
+	}
 }
 
 /*
@@ -360,7 +376,7 @@ void vm_map_deallocate(map)
 }
 
 /*
- *	vm_map_insert:	[ internal use only ]
+ *	vm_map_insert:
  *
  *	Inserts the given whole VM object into the target
  *	map at the specified address range.  The object's
@@ -1186,9 +1202,6 @@ vm_map_pageable(map, start, end, new_pageable)
 		 *	Pass 1.
 		 */
 		while ((entry != &map->header) && (entry->start < end)) {
-#if 0
-		    vm_map_clip_end(map, entry, end);
-#endif
 		    if (entry->wired_count == 0) {
 
 			/*
@@ -1307,6 +1320,99 @@ vm_map_pageable(map, start, end, new_pageable)
 
 	vm_map_unlock(map);
 
+	return(KERN_SUCCESS);
+}
+
+/*
+ * vm_map_clean
+ *
+ * Push any dirty cached pages in the address range to their pager.
+ * If syncio is TRUE, dirty pages are written synchronously.
+ * If invalidate is TRUE, any cached pages are freed as well.
+ *
+ * Returns an error if any part of the specified range is not mapped.
+ */
+int
+vm_map_clean(map, start, end, syncio, invalidate)
+	vm_map_t	map;
+	vm_offset_t	start;
+	vm_offset_t	end;
+	boolean_t	syncio;
+	boolean_t	invalidate;
+{
+	register vm_map_entry_t current;
+	vm_map_entry_t entry;
+	vm_size_t size;
+	vm_object_t object;
+	vm_offset_t offset;
+
+	vm_map_lock_read(map);
+	VM_MAP_RANGE_CHECK(map, start, end);
+	if (!vm_map_lookup_entry(map, start, &entry)) {
+		vm_map_unlock_read(map);
+		return(KERN_INVALID_ADDRESS);
+	}
+
+	/*
+	 * Make a first pass to check for holes.
+	 */
+	for (current = entry; current->start < end; current = current->next) {
+		if (current->is_sub_map) {
+			vm_map_unlock_read(map);
+			return(KERN_INVALID_ARGUMENT);
+		}
+		if (end > current->end &&
+		    (current->next == &map->header ||
+		     current->end != current->next->start)) {
+			vm_map_unlock_read(map);
+			return(KERN_INVALID_ADDRESS);
+		}
+	}
+
+	/*
+	 * Make a second pass, cleaning/uncaching pages from the indicated
+	 * objects as we go.
+	 */
+	for (current = entry; current->start < end; current = current->next) {
+		offset = current->offset + (start - current->start);
+		size = (end <= current->end ? end : current->end) - start;
+		if (current->is_a_map) {
+			register vm_map_t smap;
+			vm_map_entry_t tentry;
+			vm_size_t tsize;
+
+			smap = current->object.share_map;
+			vm_map_lock_read(smap);
+			(void) vm_map_lookup_entry(smap, offset, &tentry);
+			tsize = tentry->end - offset;
+			if (tsize < size)
+				size = tsize;
+			object = tentry->object.vm_object;
+			offset = tentry->offset + (offset - tentry->start);
+			vm_object_lock(object);
+			vm_map_unlock_read(smap);
+		} else {
+			object = current->object.vm_object;
+			vm_object_lock(object);
+		}
+		/*
+		 * Flush pages if writing is allowed.
+		 * XXX should we continue on an error?
+		 */
+		if ((current->protection & VM_PROT_WRITE) &&
+		    !vm_object_page_clean(object, offset, offset+size,
+					  syncio, FALSE)) {
+			vm_object_unlock(object);
+			vm_map_unlock_read(map);
+			return(KERN_FAILURE);
+		}
+		if (invalidate)
+			vm_object_page_remove(object, offset, offset+size);
+		vm_object_unlock(object);
+		start += size;
+	}
+
+	vm_map_unlock_read(map);
 	return(KERN_SUCCESS);
 }
 
