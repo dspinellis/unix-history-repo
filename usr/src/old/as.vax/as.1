@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)as.1	6.1 (Berkeley) %G%
+.\"	@(#)as.1	6.2 (Berkeley) %G%
 .\"
 .TH AS 1 ""
 .UC 4
@@ -10,6 +10,9 @@
 as \- VAX-11 assembler
 .SH SYNOPSIS
 .B as
+[
+.B \-a1-16
+] [
 [
 .B \-d124
 ] [
@@ -32,6 +35,13 @@ objfile ] [ name ... ]
 .I As
 assembles the named files, or the standard input if no file name is specified.
 The available flags are:
+.TP
+.B \-a
+Specifies the alignment of procedures and data blocks.
+It is given as a power of two; thus an alignment of 3
+causes alignment on an eight byte boundry.
+The default is
+.B \-a2.
 .TP
 .B \-d
 Specifies the number of bytes to be assembled for offsets
