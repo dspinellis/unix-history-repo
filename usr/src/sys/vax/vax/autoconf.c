@@ -1,4 +1,4 @@
-/*	autoconf.c	4.33	82/02/08	*/
+/*	autoconf.c	4.34	82/03/31	*/
 
 /*
  * Setup the system to run on the current machine.
@@ -228,6 +228,8 @@ mbafind(nxv, nxp)
 	fnd.mi_mba = mdp;
 	fnd.mi_mbanum = nummba;
 	for (mbd = mdp->mba_drv, dn = 0; mbd < &mdp->mba_drv[8]; mbd++, dn++) {
+		if ((mbd->mbd_ds&MBDS_DPR) == 0)
+			continue;
 		dt = mbd->mbd_dt & 0xffff;
 		if (dt == 0)
 			continue;
