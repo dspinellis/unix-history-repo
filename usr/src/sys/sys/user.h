@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)user.h	7.12 (Berkeley) %G%
+ *	@(#)user.h	7.13 (Berkeley) %G%
  */
 
 #ifdef KERNEL
@@ -96,11 +96,6 @@ struct	user {
 	long	u_spare[8];
 	int	u_stack[1];
 };
-
-/* u_eosys values */
-#define	JUSTRETURN	1
-#define	RESTARTSYS	2
-#define NORMALRETURN	3
 
 /* u_error codes */
 #ifdef KERNEL
