@@ -1,3 +1,5 @@
+/* @(#)cribcur.h	1.5 (Berkeley) %G% */
+
 # define	PLAY_Y		15	/* size of player's hand window */
 # define	PLAY_X		12
 # define	TABLE_Y		21	/* size of table window */

@@ -1,3 +1,5 @@
+static char	*sccsid = "@(#)support.c	1.13 (Berkeley) %G%";
+
 #include	<curses.h>
 #include	"deck.h"
 #include	"cribbage.h"

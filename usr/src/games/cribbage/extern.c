@@ -1,3 +1,4 @@
+static char *sccsid = "@(#)extern.c	1.3 (Berkeley) %G%";
 # include	<curses.h>
 # include	"deck.h"
 # include	"cribbage.h"
