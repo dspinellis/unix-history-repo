@@ -1,4 +1,4 @@
-SCCSID = "@(#)Makefile 1.11 %G%"
+SCCSID = "@(#)Makefile 1.12 %G%"
 
 CFLAGS = -O
 DESTDIR =
@@ -53,8 +53,8 @@ install: px
 	cp px ${DESTDIR}/usr/ucb/px
 
 clean:
-	${RM}  *.o *.s px version opc* pic* OPnames.h objfmt.h libpc.h\
-		h02opcs.h errs lpr core tmp
+	${RM} *.o *.s px version opc* pic*
+	${RM} OPnames.h objfmt.h libpc.h h02opcs.h errs lpr core tmp
 
 prt: interp.s
 	sed -f clean.sed <interp.s
