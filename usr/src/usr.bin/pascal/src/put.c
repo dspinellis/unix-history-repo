@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)put.c 1.14 %G%";
+static char sccsid[] = "@(#)put.c 1.15 %G%";
 
 #include "whoami.h"
 #include "opcode.h"
@@ -185,8 +185,14 @@ put(a)
 		case O_FOR2U:
 		case O_FOR1D:
 		case O_FOR2D:
+			/* sub opcode optimization */
+			if (p[1] < 128 && p[1] >= -128 && p[1] != 0) {
+				suboppr = subop = p[1];
+				p++;
+				n--;
+			}
 			/* relative addressing */
-			p[3] -= ( unsigned ) lc + 3 * sizeof(short);
+			p[n - 1] -= ( unsigned ) lc + (n - 1) * sizeof(short);
 			break;
 		case O_CONC:
 #ifdef DEBUG
@@ -257,22 +263,38 @@ around:
 #endif
 			word(p[1]);
 			return (oldlc);
+		case O_FOR4U:
+		case O_FOR4D:
+			/* sub opcode optimization */
+			lp = (long *)&p[1];
+			if (*lp < 128 && *lp >= -128 && *lp != 0) {
+				suboppr = subop = *lp;
+				p += (sizeof(long) / sizeof(int));
+				n--;
+			}
+			/* relative addressing */
+			p[1 + (n - 2) * (sizeof(long) / sizeof(int))] -=
+			    (unsigned)lc + (sizeof(short) +
+			    (n - 2) * sizeof(long));
+			goto longgen;
 		case O_PUSH:
 			lp = (long *)&p[1];
 			if (*lp == 0)
 				return (oldlc);
-			if (*lp < 128 && *lp >= -128) {
+			/* and fall through */
+		case O_RANG4:
+		case O_RANG24:
+		case O_RSNG4:
+		case O_RSNG24:
+		case O_SUCC4:
+		case O_PRED4:
+			/* sub opcode optimization */
+			lp = (long *)&p[1];
+			if (*lp < 128 && *lp >= -128 && *lp != 0) {
 				suboppr = subop = *lp;
-				p++;
+				p += (sizeof(long) / sizeof(int));
 				n--;
-				break;
 			}
-			goto longgen;
-		case O_FOR4U:
-		case O_FOR4D:
-			/* relative addressing */
-			p[1 + 2 * (sizeof(long) / sizeof(int))] -=
-			    (unsigned)lc + (sizeof(short) + 2 * sizeof(long));
 			goto longgen;
 		case O_TRA4:
 		case O_CALL:
@@ -322,12 +344,6 @@ around:
 		case O_NODUMP:
 		case O_CON4:
 		case O_CASE4:
-		case O_RANG4:
-		case O_RANG24:
-		case O_RSNG4:
-		case O_RSNG24:
-		case O_SUCC4:
-		case O_PRED4:
 		longgen:
 			n = (n << 1) - 1;
 			if ( op == O_LRV || op == O_FOR4U || op == O_FOR4D)
