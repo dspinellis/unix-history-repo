@@ -3,7 +3,8 @@
 #
 SAD-2
 CA3lD-2
-A
+AA
+EA
 I BMACLIB/bibinc.shortnames
 .so \*(l]/bmac.std
 .de s[   \" start reference

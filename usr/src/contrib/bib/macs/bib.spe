@@ -48,7 +48,8 @@ D DCS DEPT of Computer Science
 D UADCS DCS, UA
 D DCSUA DCS, UA
 D CSD Computer Science DEPT
-A
+AA
+EA
 H
 .\" citation formatting string
 .ds [[ \s-2\u
@@ -59,8 +60,20 @@ H
 .ds .] .
 .ds [,
 .ds ,] ,
+.ds [?
+.ds ?] ?
+.ds [:
+.ds :] :
+.ds [;
+.ds ;] ;
+.ds [!
+.ds !] !
+.ds ["
+.ds "] \&"
+.ds ['
+.ds '] '
 .ds [<
-.ds >] " \&
+.ds >]
 .ds ], ,
 .ds ]- -
 .\" reference formmating strings
@@ -77,8 +90,6 @@ H
 .[-
 ..
 .de []   \" start to display collected references
-.SH
-References
 .LP
 ..
 .de ][   \" choose format
@@ -95,8 +106,11 @@ References
 .de 0[   \" other
 .s[
 .if !"\\*([A"" \\*([A,
-.if !"\\*([T"" \\*([T,
-.if !"\\*([O"" \\*([O\c
+.if !"\\*([E"" \{\
+.       ie \\n([E \\*([E, eds.,
+.       el \\*([E, ed.,\}
+.if !"\\*([T"" \\*([T\c
+.if !"\\*([O"" , \\*([O\c
 .if !"\\*([D"" , \\*([D\c
 \\&.
 .e[
@@ -104,6 +118,9 @@ References
 .de 1[ \" journal article
 .s[
 .if !"\\*([A"" \\*([A,
+.if !"\\*([E"" \{\
+.       ie \\n([E \\*([E, eds.,
+.       el \\*([E, ed.,\}
 .if !"\\*([T"" `\\*([T',
 \\fI\\*([J\\fP,
 .if !"\\*([V"" \\fB\\*([V\\fP,
@@ -117,7 +134,7 @@ References
 .de 2[ \" book
 .s[
 .ie !"\\*([A"" \\*([A,
-.el .if !"\\*([E"" \{\
+.if !"\\*([E"" \{\
 .       ie \\n([E \\*([E, eds.,
 .       el \\*([E, ed.,\}
 .if !"\\*([T"" \\fI\\*([T\\fP,
@@ -140,7 +157,9 @@ References
 .if !"\\*([T"" `\\*([T',
 in \\fI\\*([B\\fP,
 .if !"\\*([V"" vol. \\*([V,
-.if !"\\*([E"" \\*([E (ed.),
+.if !"\\*([E"" \{\
+.       ie \\n([E \\*([E, (eds.),
+.       el \\*([E, (ed.),\}
 .if !"\\*([I"" \\*([I,
 .if !"\\*([C"" \\*([C,
 .if !"\\*([D"" \\*([D\c
@@ -151,6 +170,9 @@ in \\fI\\*([B\\fP,
 .de 4[ \" report
 .s[
 .if !"\\*([A"" \\*([A,
+.if !"\\*([E"" \{\
+.       ie \\n([E \\*([E, eds.,
+.       el \\*([E, ed.,\}
 `\\*([T',
 \\*([R\c
 .if !"\\*([G"" \& (\\*([G)\c
@@ -164,13 +186,16 @@ in \\fI\\*([B\\fP,
 .de 5[ \" conference paper
 .s[
 .if !"\\*([A"" \\*([A,
+.if !"\\*([E"" \{\
+.       ie \\n([E \\*([E, eds.,
+.       el \\*([E, ed.,\}
 .if !"\\*([T"" `\\*([T',
 \\fI\\*([J\\fP,
 .if !"\\*([C"" \\*([C\c
 .if !"\\*([P"" , \\*([P\c
 .if !"\\*([D"" \& (\\*([D)\c
 \\&.
-.if !"\\*([O"" \\*([O.
+.if !"\\*([O"" \& \\*([O.
 .e[
 ..
 .de [-   \" clean up after yourself
