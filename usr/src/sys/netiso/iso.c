@@ -27,7 +27,7 @@ SOFTWARE.
 /*
  * $Header: iso.c,v 4.11 88/09/19 14:58:35 root Exp $ 
  * $Source: /usr/argo/sys/netiso/RCS/iso.c,v $ 
- *	@(#)iso.c	7.5 (Berkeley) %G%
+ *	@(#)iso.c	7.6 (Berkeley) %G%
  *
  * iso.c: miscellaneous routines to support the iso address family
  */
@@ -854,50 +854,6 @@ struct mbuf	*m;			/* data for set, buffer for get */
 	}
 
 	return error;
-}
-
-/*
- * FUNCTION:		iso_routeifp
- *
- * PURPOSE:			Route on a sockaddr and return ifp
- *
- * RETURNS:			ifp of outgoing interface, or null
- *
- * SIDE EFFECTS:	
- *
- * NOTES:			
- */
-struct iso_ifaddr *
-iso_routeifa(dst)
-struct sockaddr	*dst;		/* destination to route to */
-{
-	struct rtentry	*rt;
-	struct ifaddr *ifa = 0;
-	struct ifnet *ifp = 0;
-
-
-	IFDEBUG(D_ROUTE)
-		printf("iso_routeifp: dst:");
-		dump_isoaddr((struct sockaddr_iso *)dst);
-	ENDDEBUG
-
-	rt = rtalloc1(dst, 0);
-
-	if (rt) {
-		ifa = rt->rt_ifa;
-		ifp = rt->rt_ifp;
-		RTFREE(rt);
-	}
-
-	IFDEBUG(D_ROUTE)
-		printf("iso_routeifp: ifa x%x", ifa);
-		if (ifp)
-			printf(" (%s%d)\n", ifp->if_name, ifp->if_unit);
-		else
-			printf("\n");
-	ENDDEBUG
-
-	return((struct iso_ifaddr *)ifa);
 }
 #endif ISO
 
