@@ -1,4 +1,4 @@
-/*	ioctl.h	4.13	82/01/17	*/
+/*	ioctl.h	4.14	82/01/19	*/
 /*
  * ioctl definitions, and special character and local tty definitions
  */
@@ -90,6 +90,8 @@ struct ltchars {
 #define		TIOCPKT_FLUSHWRITE	2	/* flush packet */
 #define		TIOCPKT_STOP		4	/* stop output */
 #define		TIOCPKT_START		8	/* start output */
+#define	TIOCSTOP	(('t'<<8)|111)	/* stop output, like ^S */
+#define	TIOCSTART	(('t'<<8)|110)	/* start output, like ^Q */
 
 #define	OTTYDISC	0		/* old, v7 std tty driver */
 #define	NETLDISC	1		/* line discip for berk net */
