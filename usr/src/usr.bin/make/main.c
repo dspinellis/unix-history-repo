@@ -17,7 +17,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -389,8 +389,10 @@ main(argc, argv)
 		else
 			setenv("PWD", path, 1);
 	}
-	else 
+	else {
 		setenv("PWD", curdir, 1);
+		path = ".";
+	}
 
 	create = Lst_Init(FALSE);
 	makefiles = Lst_Init(FALSE);
