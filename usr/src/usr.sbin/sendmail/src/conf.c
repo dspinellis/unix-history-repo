@@ -2,7 +2,7 @@
 # include <pwd.h>
 # include "dlvrmail.h"
 
-static char SccsId[] = "@(#)conf.c	1.5	%G%";
+static char SccsId[] = "@(#)conf.c	1.6	%G%";
 # include <whoami.h>
 
 /*
@@ -137,7 +137,7 @@ struct mailer Mailer[] =
 	/* uucp mail (cheat & use Bell's v7 mail) */
 	{
 		"/bin/mail",
-		M_ROPT|M_NOHOST|M_STRIPQ,	EX_NOUSER,	UucpLocal,
+		M_ROPT|M_STRIPQ,		EX_NOUSER,	UucpLocal,
 # ifdef DUMBMAIL
 		{ "...uucp%mail", "$h!$u", NULL }
 # else
