@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)ps.c	4.3 (Berkeley) %G%";
+static	char *sccsid = "@(#)ps.c	4.4 (Berkeley) %G%";
 /*
  * ps; VAX 4BSD version
  */
@@ -33,6 +33,8 @@ struct nlist nl[] = {
 #define	X_MAXSLP	5
 	{ "_ccpu" },
 #define	X_CCPU		6
+	{ "_ecmx" },
+#define	X_ECMX		7
 	{ 0 },
 };
 
@@ -50,14 +52,14 @@ struct	asav {
 	char	*a_cmdp;
 	int	a_flag;
 	short	a_stat, a_uid, a_pid, a_nice, a_pri, a_slptime, a_time;
-	size_t	a_size, a_rss;
+	size_t	a_size, a_rss, a_tsiz, a_txtrss;
+	short	a_xccount;
 	char	a_tty[DIRSIZ+1];
 	dev_t	a_ttyd;
 	time_t	a_cpu;
 };
 
 char	*lhdr;
-/*	     F UID   PID  PPID CP PRI NI ADDR  SZ  RSS WCHAN ST TT  TIME */
 struct	lsav {
 	short	l_ppid;
 	char	l_cpu;
@@ -66,18 +68,13 @@ struct	lsav {
 };
 
 char	*uhdr;
-/*	USER       PID %CPU NI   SZ  RSS TT ST TIME */
-
 char	*shdr;
-/*	SSIZ   PID TT ST TIME */
 
 char	*vhdr;
-/*	   PID TT ST    TIME RES SL MINFLT MAJFLT SIZE  RSS  SRS TSIZ TRS %CP*/
 struct	vsav {
-	u_int	v_minflt, v_majflt;
-	size_t	v_swrss, v_tsiz, v_txtrss, v_txtswrss;
-	short	v_xccount;
-	short	v_pctcpu;
+	u_int	v_majflt;
+	size_t	v_swrss, v_txtswrss;
+	float	v_pctcpu;
 };
 
 struct	proc proc[8];		/* 8 = a few, for less syscalls */
@@ -96,10 +93,11 @@ int	chkpid;
 int	aflg, cflg, eflg, gflg, kflg, lflg, sflg, uflg, vflg, xflg;
 char	*tptr;
 char	*gettty(), *getcmd(), *getname(), *savestr(), *alloc(), *state();
-double	pcpu();
+double	pcpu(), pmem();
 int	pscomp();
 int	nswap, maxslp;
 double	ccpu;
+int	ecmx;
 struct	pte *Usrptma, *usrpt;
 
 struct	ttys {
@@ -116,6 +114,7 @@ int	cmdstart;
 int	twidth;
 char	*kmemf, *memf, *swapf, *nlistf;
 int	kmem, mem, swap;
+int	rawcpu;
 
 int	pcbpf;
 int	argaddr;
@@ -140,6 +139,9 @@ main(argc, argv)
 		ap = argv[0];
 		while (*ap) switch (*ap++) {
 
+		case 'C':
+			rawcpu++;
+			break;
 		case 'a':
 			aflg++;
 			break;
@@ -323,7 +325,12 @@ getkvars(argc, argv)
 		cantread("ccpu", kmemf);
 		exit(1);
 	}
-	if (vflg) {
+	lseek(kmem, (long)nl[X_ECMX].n_value, 0);
+	if (read(kmem, &ecmx, sizeof (ecmx)) != sizeof (ecmx)) {
+		cantread("ecmx", kmemf);
+		exit(1);
+	}
+	if (uflg || vflg) {
 		text = (struct text *)alloc(NTEXT * sizeof (struct text));
 		if (text == 0) {
 			fprintf(stderr, "no room for text table\n");
@@ -535,6 +542,7 @@ save()
 	register struct savcom *sp;
 	register struct asav *ap;
 	register char *cp;
+	register struct text *xp;
 	char *ttyp, *cmdp;
 
 	if (mproc->p_stat != SZOMB && getu() == 0)
@@ -550,9 +558,8 @@ save()
 	sp->ap->a_cmdp = cmdp;
 #define e(a,b) ap->a = mproc->b
 	e(a_flag, p_flag); e(a_stat, p_stat); e(a_nice, p_nice);
-	e(a_uid, p_uid); e(a_pid, p_pid); e(a_rss, p_rssize); e(a_pri, p_pri);
+	e(a_uid, p_uid); e(a_pid, p_pid); e(a_pri, p_pri);
 	e(a_slptime, p_slptime); e(a_time, p_time);
-#undef e
 	ap->a_tty[0] = ttyp[0];
 	ap->a_tty[1] = ttyp[1] ? ttyp[1] : ' ';
 	if (ap->a_stat == SZOMB) {
@@ -561,9 +568,18 @@ save()
 		ap->a_cpu = xp->xp_vm.vm_utime + xp->xp_vm.vm_stime;
 	} else {
 		ap->a_size = mproc->p_dsize + mproc->p_ssize;
+		e(a_rss, p_rssize); 
 		ap->a_ttyd = u.u_ttyd;
 		ap->a_cpu = u.u_vm.vm_utime + u.u_vm.vm_stime;
+		if (mproc->p_textp) {
+			xp = &text[mproc->p_textp -
+				    (struct text *)nl[X_TEXT].n_value];
+			ap->a_tsiz = xp->x_size;
+			ap->a_txtrss = xp->x_rssize;
+			ap->a_xccount = xp->x_ccount;
+		}
 	}
+#undef e
 	ap->a_cpu /= HZ;
 	if (lflg) {
 		register struct lsav *lp;
@@ -577,22 +593,14 @@ save()
 		lp->l_addr = pcbpf;
 	} else if (vflg) {
 		register struct vsav *vp;
-		register struct text *xp;
 
 		sp->sun.vp = vp = (struct vsav *)alloc(sizeof (struct vsav));
 #define e(a,b) vp->a = mproc->b
 		if (ap->a_stat != SZOMB) {
 			e(v_swrss, p_swrss);
-			vp->v_minflt = u.u_vm.vm_minflt;
 			vp->v_majflt = u.u_vm.vm_majflt;
-			if (mproc->p_textp) {
-				xp = &text[mproc->p_textp -
-				    (struct text *)nl[X_TEXT].n_value];
-				vp->v_tsiz = xp->x_size;
-				vp->v_txtrss = xp->x_rssize;
+			if (mproc->p_textp)
 				vp->v_txtswrss = xp->x_swrss;
-				vp->v_xccount = xp->x_ccount;
-			}
 		}
 		vp->v_pctcpu = pcpu();
 #undef e
@@ -611,12 +619,35 @@ save()
 }
 
 double
+pmem(ap)
+	register struct asav *ap;
+{
+	double fracmem;
+	int szptudot;
+
+	if ((ap->a_flag&SLOAD) == 0)
+		fracmem = 0.0;
+	else {
+		szptudot = UPAGES + clrnd(ctopt(ap->a_size+ap->a_tsiz));
+		fracmem = ((float)ap->a_rss+szptudot)/CLSIZE/ecmx;
+		if (ap->a_xccount)
+			fracmem += ((float)ap->a_txtrss)/CLSIZE/
+			    ap->a_xccount/ecmx;
+	}
+	return (100.0 * fracmem);
+}
+
+double
 pcpu()
 {
+	time_t time;
 
-	if (mproc->p_time == 0 || (mproc->p_flag&SLOAD) == 0)
+	time = mproc->p_time;
+	if (time == 0 || (mproc->p_flag&SLOAD) == 0)
 		return (0.0);
-	return (100.0 * mproc->p_pctcpu / (1.0 - exp(mproc->p_time * log(ccpu))));
+	if (rawcpu)
+		return (100.0 * mproc->p_pctcpu);
+	return (100.0 * mproc->p_pctcpu / (1.0 - exp(time * log(ccpu))));
 }
 
 getu()
@@ -753,7 +784,7 @@ retucomm:
 }
 
 char	*lhdr =
-"     F UID   PID  PPID CP PRI NI ADDR  SZ  RSS WCHAN ST TT  TIME";
+"     F UID   PID  PPID CP PRI NI ADDR  SZ  RSS WCHAN STAT TT  TIME";
 lpr(sp)
 	struct savcom *sp;
 {
@@ -765,7 +796,7 @@ lpr(sp)
 	    ap->a_pid, lp->l_ppid, lp->l_cpu&0377, ap->a_pri-PZERO,
 	    ap->a_nice-NZERO, lp->l_addr, ap->a_size/2, ap->a_rss/2);
 	printf(lp->l_wchan ? " %5x" : "      ", (int)lp->l_wchan&0xfffff);
-	printf(" %2.2s ", state(ap));
+	printf(" %4.4s ", state(ap));
 	ptty(ap->a_tty);
 	ptime(ap);
 }
@@ -785,41 +816,46 @@ ptime(ap)
 }
 
 char	*uhdr =
-"USER       PID %CPU NI   SZ  RSS TT ST  TIME";
+"USER       PID %CPU %MEM   SZ  RSS TT STAT  TIME";
 upr(sp)
 	struct savcom *sp;
 {
 	register struct asav *ap = sp->ap;
+	int vmsize, rmsize;
 
-	printf("%-8.8s %5u%5.1f%3d%5d%5d",
-	    getname(ap->a_uid), ap->a_pid, sp->sun.u_pctcpu, ap->a_nice-NZERO,
-	    ap->a_size/2, ap->a_rss/2);
+	vmsize = (ap->a_size + ap->a_tsiz)/2;
+	rmsize = ap->a_rss/2;
+	if (ap->a_xccount)
+		rmsize += ap->a_txtrss/ap->a_xccount/2;
+	printf("%-8.8s %5d%5.1f%5.1f%5d%5d",
+	    getname(ap->a_uid), ap->a_pid, sp->sun.u_pctcpu, pmem(ap),
+	    vmsize, rmsize);
 	putchar(' ');
 	ptty(ap->a_tty);
-	printf(" %2.2s", state(ap));
+	printf(" %4.4s", state(ap));
 	ptime(ap);
 }
 
 char *vhdr =
-"   PID TT ST    TIME RES SL MINFLT MAJFLT SIZE  RSS  SRS TSIZ TRS %CP";
+"  PID TT STAT  TIME SL RE PAGEIN SIZE  RSS  SRS TSIZ TRS %CPU %MEM";
 vpr(sp)
 	struct savcom *sp;
 {
 	register struct vsav *vp = sp->sun.vp;
 	register struct asav *ap = sp->ap;
 
-	printf("%6u ", ap->a_pid);
+	printf("%5u ", ap->a_pid);
 	ptty(ap->a_tty);
-	printf(" %4s", state(ap));
+	printf(" %4.4s", state(ap));
 	ptime(ap);
-	printf("%4d%3d%7d%7d%5d%5d%5d%5d%4d%4d",
-	   ap->a_time, ap->a_slptime, vp->v_minflt, vp->v_majflt,
+	printf("%3d%3d%7d%5d%5d%5d%5d%4d%5.1f%5.1f",
+	   ap->a_slptime, ap->a_time > 99 ? 99 : ap->a_time, vp->v_majflt,
 	   ap->a_size/2, ap->a_rss/2, vp->v_swrss/2,
-	   vp->v_tsiz/2, vp->v_txtrss/2, vp->v_pctcpu);
+	   ap->a_tsiz/2, ap->a_txtrss/2, vp->v_pctcpu, pmem(ap));
 }
 
 char	*shdr =
-"SSIZ   PID TT ST  TIME";
+"SSIZ   PID TT STAT  TIME";
 spr(sp)
 	struct savcom *sp;
 {
@@ -830,7 +866,7 @@ spr(sp)
 	printf("%5u", ap->a_pid);
 	putchar(' ');
 	ptty(ap->a_tty);
-	printf(" %2.2s", state(ap));
+	printf(" %4.4s", state(ap));
 	ptime(ap);
 }
 
@@ -873,7 +909,12 @@ state(ap)
 		stat = '?';
 	}
 	load = ap->a_flag & SLOAD ? ' ' : 'W';
-	nice = ap->a_nice > NZERO ? 'N' : ' ';
+	if (ap->a_nice < NZERO)
+		nice = '<';
+	else if (ap->a_nice > NZERO)
+		nice = 'N';
+	else
+		nice = ' ';
 	anom = ap->a_flag & (SANOM|SUANOM) ? 'A' : ' ';
 	res[0] = stat; res[1] = load; res[2] = nice; res[3] = anom;
 	return (res);
@@ -946,8 +987,8 @@ vsize(sp)
 	
 	if (ap->a_flag & SLOAD)
 		return (ap->a_rss +
-		    vp->v_txtrss / (vp->v_xccount ? vp->v_xccount : 1));
-	return (vp->v_swrss + (vp->v_xccount ? 0 : vp->v_txtswrss));
+		    ap->a_txtrss / (ap->a_xccount ? ap->a_xccount : 1));
+	return (vp->v_swrss + (ap->a_xccount ? 0 : vp->v_txtswrss));
 }
 
 #define	NMAX	8
@@ -965,7 +1006,7 @@ getname(uid)
 	static init;
 	struct passwd *getpwent();
 
-	if (names[uid][0])
+	if (uid >= 0 && uid < NUID && names[uid][0])
 		return (&names[uid][0]);
 	if (init == 2)
 		return (0);
