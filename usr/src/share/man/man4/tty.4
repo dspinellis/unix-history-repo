@@ -2,12 +2,14 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)tty.4	4.1 (Berkeley) %G%
+.\"	@(#)tty.4	5.1 (Berkeley) %G%
 .\"
-.TH TTY 4
+.TH TTY 4 "9 February 1983"
 .UC 4
 .SH NAME
 tty \- general terminal interface
+.SH SYNOPSIS
+.B #include <sgtty.h>
 .SH DESCRIPTION
 This section describes
 both a particular special file
@@ -29,9 +31,6 @@ and for compatibility with other standard version 7 UNIX systems.
 A newer terminal driver, with features for job control; this must
 be used when using
 .IR csh (1).
-See
-.IR newtty (1)
-for a short user-level summary.
 .IP "net"
 A line discipline used for networking and loading data into
 the system over communications lines.  It allows high speed input
@@ -84,9 +83,7 @@ is currently in use.
 .LP
 .B "Process groups."
 .LP
-As described more completely in
-.IR jobs (3),
-command processors such as
+Command processors such as
 .IR csh (1)
 can arbitrate the terminal between different
 .I jobs
@@ -131,14 +128,18 @@ Output processing is done.
 This mode eliminates all input processing and makes all input characters
 available as they are typed; no output processing is done either.
 .PP
-The style of input processing can also be very different when,
-in the new terminal driver, a process asks for notification
-via a SIGTTIN
-.IR signal (2)
-when input is ready to be read from the control terminal.  In this case a
+The style of input processing can also be very different when
+the terminal is put in non-blocking i/o mode; see
+.IR fcntl (2).
+In this case a
 .IR read (2)
 from the control terminal will never block, but rather
-return an error indication (EIO) if there is no input available.
+return an error indication (EWOULDBLOCK) if there is no
+input available.
+.PP
+A process may also request a SIGIO signal be sent it whenever input
+is present.  To enable this mode the FASYNC flag should be set using
+.IR fcntl (2).
 .LP
 .B "Input editing."
 .LP
@@ -164,12 +165,12 @@ In all of the line disciplines, it is possible to simulate terminal
 input using the TIOCSTI ioctl, which takes, as its third argument,
 the address of a character.  The system pretends that this character
 was typed on the argument terminal, which must be the control terminal except
-for the super-user (this call is not in standard version 7 UNIX)..
+for the super-user (this call is not in standard version 7 UNIX).
 .PP
 Input characters are normally echoed by putting them in an output queue
 as they arrive.  This may be disabled by clearing the ECHO bit in the
 flags word using the
-.IR stty (2)
+.IR stty (3)
 call or the TIOCSETN or TIOCSETP ioctls
 (see the \fBSummary\fR below).
 .PP
@@ -219,7 +220,7 @@ word, but not any spaces before it.  For the purposes of ^W, a word
 is defined as a sequence of non-blank characters, with tabs counted as
 blanks.
 Finally, the reprint character, normally ^R, retypes the pending input beginning
-on a new line.  Retyping occurs automagically in cooked mode if characters
+on a new line.  Retyping occurs automatically in cooked mode if characters
 which would normally be erased from the screen are fouled by program output.
 .LP
 .B "Input echoing and redisplay"
@@ -244,7 +245,7 @@ characters when input is erased; in the normal case where the erase
 character is a ^H this causes the cursor of the terminal to back up
 to where it was before the logically erased character was typed.
 If the input has become fouled due to interspersed asynchronous output,
-the input is automagically retyped.
+the input is automatically retyped.
 .LP
 .I "Erasing characters from a crt."
 When a crt terminal is in use, the LCRTERA bit may be set to cause
@@ -305,9 +306,8 @@ normally ^O, which sets the LFLUSHO bit in the local mode word, causing
 subsequent output to be flushed until it is cleared by a program or more
 input is typed.  This character has effect in both cooked and CBREAK modes
 and causes pending input to be retyped if there is any pending input.
-Ioctls to flush the characters in the input and output queues TIOCFLUSH,
-and to return the number of character still in the output queue
-TIOCOUTQ are also available.
+An ioctl to flush the characters in the input and output queues TIOCFLUSH,
+is also available.
 .LP
 .B "Upper case terminals and Hazeltines"
 .PP
@@ -392,7 +392,7 @@ are also shown.
 The characters may be changed,
 although this is not often done.
 .IP ^?
-\fBt_intrc\fR (Delete) generates a SIGINTR signal.
+\fBt_intrc\fR (Delete) generates a SIGINT signal.
 This is the normal way to stop a process which is no longer interesting,
 or to regain control in an interactive program.
 .IP ^\e
@@ -406,7 +406,7 @@ in the current directory.
 \fBt_suspc\fR (EM) generates a SIGTSTP signal, which is used to suspend
 the current process group.
 .IP ^Y
-\fBt_dstopc\fR (SUB) generates a SIGTSTP signal as ^Z does, but the
+\fBt_dsuspc\fR (SUB) generates a SIGTSTP signal as ^Z does, but the
 signal is sent when a program attempts to read the ^Y, rather than when
 it is typed.
 .LP
@@ -415,15 +415,20 @@ it is typed.
 When using the new terminal driver,
 if a process which is not in the distinguished process group of its
 control terminal attempts to read from that terminal its process group is
-sent a SIGTTIN signal, which normally causes the members of that process group
-to stop.  If, however, the process is ignoring or holding SIGTTIN signal
-is an orphan
-.IR "" ( i.e.
-its parent has exited and it has been inherited by the
-.IR init (8)
-process, or if it is a process in the middle of process creation using
+sent a SIGTTIN signal.  This signal normally causes the members of
+that process group to stop. 
+If, however, the process is ignoring SIGTTIN, has SIGTTIN blocked,
+is an
+.IR "orphan process" ,
+or is in the middle of process creation using
 .IR vfork (2)),
-it is instead returned an end-of-file.  Under older UNIX systems
+it is instead returned an end-of-file.  (An
+.I "orphan process"
+is a process whose
+parent has exited and has been inherited by the
+.IR init (8)
+process.)
+Under older UNIX systems
 these processes would typically have had their input files reset to
 .B /dev/null,
 so this is a compatible change.
@@ -794,10 +799,10 @@ Its structure is:
 .ft B
 struct ltchars {
 	char	t_suspc;	/* stop process signal */
-	char	t_dstopc;	/* delayed stop process signal */
+	char	t_dsuspc;	/* delayed stop process signal */
 	char	t_rprntc;	/* reprint line */
 	char	t_flushc;	/* flush output (toggles) */
-	char	t_werasec;	/* word erase */
+	char	t_werasc;	/* word erase */
 	char	t_lnextc;	/* literal next character */
 };
 .ft R
@@ -822,8 +827,12 @@ structure into which is placed the current set of local special characters.
 .br
 /dev/console
 .SH SEE ALSO
-csh(1), stty(1),
-ioctl(2), signal(2), sigsys(2), stty(2),
-getty(8), init(8), newtty(4)
+csh(1),
+stty(1),
+ioctl(2),
+sigvec(2),
+stty(3C),
+getty(8),
+init(8)
 .SH BUGS
 Half-duplex terminals are not supported.
