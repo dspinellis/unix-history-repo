@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.156 (Berkeley) %G%
+ *	@(#)conf.h	8.157 (Berkeley) %G%
  */
 
 /*
@@ -1183,6 +1183,7 @@ typedef int		(*sigfunc_t)();
 #  define IDENTPROTO	0	/* TCP/IP implementation is broken */
 # endif
 # ifdef uniosb
+#  include <sys/time.h>
 #  define NEEDVPRINTF	1	/* need a replacement for vprintf(3) */
 # endif
 # define NEEDGETOPT	1	/* need a replacement for getopt(3) */
@@ -1218,30 +1219,17 @@ extern int	errno;
 */
 
 #ifdef nec_ews_svr4
-# define SYSTEM5	1	/* include all the System V defines */
+# ifndef __svr4__
+#  define __svr4__		/* use all System V Releae 4 defines below */
+# endif
 # define SYS5SIGNALS	1	/* SysV signal semantics -- reset on each sig */
-# define HASINITGROUPS	1	/* has initgroups(3) call */
-# define HASSETREUID	1	/* has setreuid(2) call */
-# define setreuid(r, e)	seteuid(e)
 # define HASSETSID	1	/* has Posix setsid(2) call */
-# define LA_TYPE	LA_INT
 # define SFS_TYPE	SFS_USTAT	/* use System V ustat(2) syscall */
 # define GIDSET_T	gid_t
-# ifndef HASGETUSERSHELL
-#  define HASGETUSERSHELL	0	/* does not have getusershell(3) call */
-# endif
 # undef WIFEXITED
 # undef WEXITSTATUS
-# ifndef _PATH_UNIX
-#  define _PATH_UNIX		"/unix"
-# endif
-# ifndef _PATH_SENDMAILCF
-#  define _PATH_SENDMAILCF	"/var/ucblib/sendmail.cf"
-# endif
-# ifndef _PATH_SENDMAILPID
-#  define _PATH_SENDMAILPID	"/var/ucblib/sendmail.pid"
-# endif
-# define NAMELISTMASK	0x7fffffff		/* mask for nlist() values */
+# define NAMELISTMASK	0x7fffffff	/* mask for nlist() values */
+# include <sys/ksym.h>		/* for MIOC_READKSYM */
 #endif
 
 
