@@ -1,4 +1,4 @@
-/*	lp.c	6.4	84/08/29	*/
+/*	lp.c	6.5	85/02/08	*/
 
 #include "lp.h"
 #if NLP > 0
@@ -17,6 +17,7 @@
 #include "systm.h"
 #include "map.h"
 #include "uio.h"
+#include "ioctl.h"
 #include "tty.h"
 #include "kernel.h"
 
