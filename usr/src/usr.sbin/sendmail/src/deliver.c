@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.146		%G%);
+SCCSID(@(#)deliver.c	3.147		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -76,7 +76,7 @@ deliver(firstto, editfcn)
 	**		This should be on a per-mailer basis.
 	*/
 
-	if (NoConnect && !QueueRun && bitset(M_EXPENSIVE, m->m_flags) &&
+	if (NoConnect && !QueueRun && bitnset(M_EXPENSIVE, m->m_flags) &&
 	    !Verbose)
 	{
 		for (; to != NULL; to = to->q_next)
@@ -115,9 +115,9 @@ deliver(firstto, editfcn)
 	*pvp++ = m->m_argv[0];
 
 	/* insert -f or -r flag as appropriate */
-	if (bitset(M_FOPT|M_ROPT, m->m_flags) && FromFlag)
+	if (FromFlag && (bitnset(M_FOPT, m->m_flags) || bitnset(M_ROPT, m->m_flags)))
 	{
-		if (bitset(M_FOPT, m->m_flags))
+		if (bitnset(M_FOPT, m->m_flags))
 			*pvp++ = "-f";
 		else
 			*pvp++ = "-r";
@@ -182,7 +182,7 @@ deliver(firstto, editfcn)
 	for (; to != NULL; to = to->q_next)
 	{
 		/* avoid sending multiple recipients to dumb mailers */
-		if (tobuf[0] != '\0' && !bitset(M_MUSER, m->m_flags))
+		if (tobuf[0] != '\0' && !bitnset(M_MUSER, m->m_flags))
 			break;
 
 		/* if already sent or not for this host, don't send */
@@ -227,7 +227,7 @@ deliver(firstto, editfcn)
 		**	about them.
 		*/
 
-		if (bitset(M_STRIPQ, m->m_flags))
+		if (bitnset(M_STRIPQ, m->m_flags))
 		{
 			stripquotes(user, TRUE);
 			stripquotes(host, TRUE);
@@ -572,7 +572,7 @@ sendoff(e, m, pvp, ctladdr)
 	i = endmailer(pid, pvp[0]);
 
 	/* arrange a return receipt if requested */
-	if (e->e_receiptto != NULL && bitset(M_LOCAL, m->m_flags))
+	if (e->e_receiptto != NULL && bitnset(M_LOCAL, m->m_flags))
 	{
 		e->e_flags |= EF_SENDRECEIPT;
 		/* do we want to send back more info? */
@@ -784,7 +784,7 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 			_exit(EX_OSERR);
 		}
 		(void) close(mpvect[0]);
-		if (!bitset(M_RESTR, m->m_flags))
+		if (!bitnset(M_RESTR, m->m_flags))
 		{
 			if (ctladdr->q_uid == 0)
 			{

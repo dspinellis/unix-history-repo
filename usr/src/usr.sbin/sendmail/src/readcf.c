@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)readcf.c	3.52		%G%);
+SCCSID(@(#)readcf.c	3.53		%G%);
 
 /*
 **  READCF -- read control file.
@@ -50,7 +50,6 @@ readcf(cfname, safe)
 	bool safe;
 {
 	FILE *cf;
-	int class;
 	int ruleset = 0;
 	char *q;
 	char **pv;
@@ -138,17 +137,6 @@ readcf(cfname, safe)
 
 		  case 'C':		/* word class */
 		  case 'F':		/* word class from file */
-			class = buf[1];
-			if (!isalpha(class))
-			{
-				syserr("illegal class name %c", class);
-				break;
-			}
-			if (isupper(class))
-				class -= 'A';
-			else
-				class -= 'a';
-			
 			/* read list of words from argument or file */
 			if (buf[0] == 'F')
 			{
@@ -163,7 +151,7 @@ readcf(cfname, safe)
 					while (isspace(*++p))
 						continue;
 				}
-				fileclass(class, &buf[2], p);
+				fileclass(buf[1], &buf[2], p);
 				break;
 			}
 
@@ -182,10 +170,7 @@ readcf(cfname, safe)
 				delim = *p;
 				*p = '\0';
 				if (wd[0] != '\0')
-				{
-					s = stab(wd, ST_CLASS, ST_ENTER);
-					s->s_class |= 1L << class;
-				}
+					setclass(buf[1], wd);
 				*p = delim;
 			}
 			break;
@@ -305,7 +290,7 @@ fileclass(class, filename, fmt)
 		if (sscanf(buf, fmt, wordbuf) != 1)
 			continue;
 		s = stab(wordbuf, ST_CLASS, ST_ENTER);
-		s->s_class |= 1L << class;
+		setbitn(class, s->s_class);
 	}
 
 	(void) fclose(f);
@@ -341,7 +326,6 @@ makemailer(line, safe)
 	register STAB *s;
 	int i;
 	char fcode;
-	extern u_long mfencode();
 	extern int NextMailer;
 	extern char **makeargv();
 	extern char *munchstring();
@@ -389,9 +373,10 @@ makemailer(line, safe)
 			break;
 
 		  case 'F':		/* flags */
-			m->m_flags = mfencode(p);
+			for (; *p != '\0'; p++)
+				setbitn(*p, m->m_flags);
 			if (!safe)
-				m->m_flags &= ~M_RESTR;
+				clrbitn(M_RESTR, m->m_flags);
 			break;
 
 		  case 'S':		/* sender rewriting ruleset */
@@ -576,101 +561,6 @@ printrules()
 
 # endif DEBUG
 /*
-**  MFENCODE -- crack mailer options
-**
-**	These options modify the functioning of the mailer
-**	from the configuration table.
-**
-**	Parameters:
-**		p -- pointer to vector of options.
-**
-**	Returns:
-**		option list in binary.
-**
-**	Side Effects:
-**		none.
-*/
-
-struct optlist
-{
-	char	opt_name;	/* external name of option */
-	u_long	opt_value;	/* internal name of option */
-};
-struct optlist	OptList[] =
-{
-	'A',	M_ARPAFMT,
-	'C',	M_CANONICAL,
-	'D',	M_NEEDDATE,
-	'e',	M_EXPENSIVE,
-	'F',	M_NEEDFROM,
-	'f',	M_FOPT,
-	'h',	M_HST_UPPER,
-	'I',	M_INTERNAL,
-	'L',	M_LIMITS,
-	'l',	M_LOCAL,
-	'M',	M_MSGID,
-	'm',	M_MUSER,
-	'n',	M_NHDR,
-	'P',	M_RPATH,
-	'p',	M_FROMPATH,
-	'r',	M_ROPT,
-	'S',	M_RESTR,
-	's',	M_STRIPQ,
-	'U',	M_UGLYUUCP,
-	'u',	M_USR_UPPER,
-	'x',	M_FULLNAME,
-	'X',	M_XDOT,
-	'\0',	0
-};
-
-u_long
-mfencode(p)
-	register char *p;
-{
-	register struct optlist *o;
-	register u_long opts = 0;
-
-	while (*p != '\0')
-	{
-		for (o = OptList; o->opt_name != '\0' && o->opt_name != *p; o++)
-			continue;
-		opts |= o->opt_value;
-		p++;
-	}
-	return (opts);
-}
-/*
-**  MFDECODE -- decode mailer flags into external form.
-**
-**	Parameters:
-**		flags -- value of flags to decode.
-**		f -- file to write them onto.
-**
-**	Returns:
-**		none.
-**
-**	Side Effects:
-**		none.
-*/
-
-mfdecode(flags, f)
-	u_long flags;
-	FILE *f;
-{
-	register struct optlist *o;
-
-	putc('?', f);
-	for (o = OptList; o->opt_name != '\0'; o++)
-	{
-		if ((o->opt_value & flags) == o->opt_value)
-		{
-			flags &= ~o->opt_value;
-			putc(o->opt_name, f);
-		}
-	}
-	putc('?', f);
-}
-/*
 **  SETOPTION -- set global processing option
 **
 **	Parameters:
@@ -687,10 +577,10 @@ mfdecode(flags, f)
 **		Sets options as implied by the arguments.
 */
 
-static int	StickyOpt[128 / sizeof (int)];	/* set if option is stuck */
-extern char	*WizWord;			/* the stored wizard password */
+static BITMAP	StickyOpt;		/* set if option is stuck */
+extern char	*WizWord;		/* the stored wizard password */
 #ifdef DAEMON
-extern int	MaxConnections;			/* max simult. SMTP conns */
+extern int	MaxConnections;		/* max simult. SMTP conns */
 #endif DAEMON
 
 setoption(opt, val, safe, sticky)
@@ -699,8 +589,6 @@ setoption(opt, val, safe, sticky)
 	bool safe;
 	bool sticky;
 {
-	int smask;
-	int sindex;
 	extern bool atobool();
 
 # ifdef DEBUG
@@ -712,10 +600,7 @@ setoption(opt, val, safe, sticky)
 	**  See if this option is preset for us.
 	*/
 
-	sindex = opt;
-	smask = 1 << (sindex % sizeof (int));
-	sindex /= sizeof (int);
-	if (bitset(smask, StickyOpt[sindex]))
+	if (bitnset(opt, StickyOpt))
 	{
 # ifdef DEBUG
 		if (tTd(37, 1))
@@ -728,7 +613,7 @@ setoption(opt, val, safe, sticky)
 		printf("\n");
 #endif DEBUG
 	if (sticky)
-		StickyOpt[sindex] |= smask;
+		setbitn(opt, StickyOpt);
 
 	if (getruid() == 0)
 		safe = TRUE;
@@ -898,4 +783,27 @@ setoption(opt, val, safe, sticky)
 		break;
 	}
 	return;
+}
+/*
+**  SETCLASS -- set a word into a class
+**
+**	Parameters:
+**		class -- the class to put the word in.
+**		word -- the word to enter
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		puts the word into the symbol table.
+*/
+
+setclass(class, word)
+	int class;
+	char *word;
+{
+	register STAB *s;
+
+	s = stab(word, ST_CLASS, ST_ENTER);
+	setbitn(class, s->s_class);
 }

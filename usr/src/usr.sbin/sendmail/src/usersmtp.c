@@ -3,10 +3,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)usersmtp.c	3.40		%G%	(no SMTP));
+SCCSID(@(#)usersmtp.c	3.41		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)usersmtp.c	3.40		%G%);
+SCCSID(@(#)usersmtp.c	3.41		%G%);
 
 
 
@@ -94,7 +94,7 @@ smtpinit(m, pvp)
 	**  commands.
 	*/
 
-	if (bitset(M_INTERNAL, m->m_flags))
+	if (bitnset(M_INTERNAL, m->m_flags))
 	{
 		/* tell it to be verbose */
 		smtpmessage("VERB", m);
@@ -116,7 +116,7 @@ smtpinit(m, pvp)
 
 	(void) expand("$g", buf, &buf[sizeof buf - 1]);
 	if (CurEnv->e_from.q_mailer == LocalMailer ||
-	    !bitset(M_FROMPATH, m->m_flags))
+	    !bitnset(M_FROMPATH, m->m_flags))
 	{
 		smtpmessage("MAIL From:<%s>", m, buf);
 	}
@@ -284,6 +284,7 @@ smtpquit(name, m)
 */
 
 reply(m)
+	MAILER *m;
 {
 	(void) fflush(SmtpOut);
 

@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-SCCSID(@(#)savemail.c	3.56		%G%);
+SCCSID(@(#)savemail.c	3.57		%G%);
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -73,7 +73,7 @@ savemail(e)
 		ExitStat = EX_OK;
 		ErrorMode = EM_MAIL;
 	}
-	if (!bitset(M_LOCAL, e->e_from.q_mailer->m_flags))
+	if (!bitnset(M_LOCAL, e->e_from.q_mailer->m_flags))
 		ErrorMode = EM_MAIL;
 
 	/*
