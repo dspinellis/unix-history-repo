@@ -2,7 +2,7 @@
  * Copyright (c) 1982, 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *	@(#)init_main.c	7.39 (Berkeley) %G%
+ *	@(#)init_main.c	7.40 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -57,8 +57,7 @@ extern	struct user *proc0paddr;
  * routines including startup(), which does memory initialization
  * and autoconfiguration.
  */
-main(firstaddr)
-	int firstaddr;
+main()
 {
 	register int i;
 	register struct proc *p;
@@ -80,7 +79,7 @@ main(firstaddr)
 
 	vm_mem_init();
 	kmeminit();
-	startup(firstaddr);
+	cpu_startup();
 
 	/*
 	 * set up system process 0 (swapper)
