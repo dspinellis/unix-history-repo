@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getpwent.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)getpwent.c	5.17 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -24,14 +24,12 @@ static struct passwd _pw_passwd;	/* password structure */
 static DBM *_pw_db;			/* password database */
 static int _pw_keynum;			/* key counter */
 static int _pw_stayopen;		/* keep fd's open */
-static int _pw_euid;
 static int __hashpw(), __initdb();
 
 struct passwd *
 getpwent()
 {
 	datum key;
-	int rval;
 	char bf[sizeof(_pw_keynum) + 1];
 
 	if (!_pw_db && !__initdb())
@@ -42,14 +40,7 @@ getpwent()
 	bcopy((char *)&_pw_keynum, bf + 1, sizeof(_pw_keynum));
 	key.dptr = bf;
 	key.dsize = sizeof(_pw_keynum) + 1;
-	rval = __hashpw(key);
-
-	/* Can't leave secure database open. */
-	if (!_pw_euid) {
-		(void)dbm_close(_pw_db);
-		_pw_db = (DBM *)NULL;
-	}
-	return(rval ? &_pw_passwd : (struct passwd *)NULL);
+	return(__hashpw(key) ? &_pw_passwd : (struct passwd *)NULL);
 }
 
 struct passwd *
@@ -70,8 +61,7 @@ getpwnam(name)
 	key.dsize = len + 1;
 	rval = __hashpw(key);
 
-	/* Can't leave secure database open. */
-	if (!_pw_stayopen || !_pw_euid) {
+	if (!_pw_stayopen) {
 		(void)dbm_close(_pw_db);
 		_pw_db = (DBM *)NULL;
 	}
@@ -87,20 +77,20 @@ getpwuid(uid)
 #endif
 {
 	datum key;
-	int rval;
+	int keyuid, rval;
 	char bf[sizeof(uid) + 1];
 
 	if (!_pw_db && !__initdb())
 		return((struct passwd *)NULL);
 
 	bf[0] = _PW_KEYBYUID;
-	bcopy(&uid, bf + 1, sizeof(uid));
+	keyuid = uid;
+	bcopy(&keyuid, bf + 1, sizeof(keyuid));
 	key.dptr = bf;
-	key.dsize = sizeof(uid) + 1;
+	key.dsize = sizeof(keyuid) + 1;
 	rval = __hashpw(key);
 
-	/* Can't leave secure database open. */
-	if (!_pw_stayopen || !_pw_euid) {
+	if (!_pw_stayopen) {
 		(void)dbm_close(_pw_db);
 		_pw_db = (DBM *)NULL;
 	}
@@ -140,7 +130,7 @@ __initdb()
 	static int warned;
 	char *p;
 
-	p = (_pw_euid = geteuid()) ? _PATH_MP_DB : _PATH_SMP_DB;
+	p = (geteuid()) ? _PATH_MP_DB : _PATH_SMP_DB;
 	if (_pw_db = dbm_open(p, O_RDONLY, 0))
 		return(1);
 	if (!warned) {
