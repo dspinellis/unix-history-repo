@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)3.t	6.1 (Berkeley) %G%
+.\"	@(#)3.t	6.2 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -386,7 +386,7 @@ as \fItip\fP reverts to priveleged status to remove its lock files.
 After copying your version of /usr/spool, you should do:
 .DS
 \fB#\fP chown \-R daemon /usr/spool/at
-\fB#\fP chown \-R root /usr/spool/uucp
+\fB#\fP chown \-R uucp /usr/spool/uucp
 \fB#\fP chgrp \-R daemon /usr/spool/uucp
 \fB#\fP chmod \-R o\-w /usr/spool/uucp
 .DE
